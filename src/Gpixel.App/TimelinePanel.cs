@@ -11,6 +11,11 @@ namespace Gpixel.App;
 /// 그룹 레이어 행은 ▾/▸로 접고 펼치며, 그 아래에 부위 행이 들여 써서 보인다(이름 + 부위 크기). 그룹 행의 셀은 그룹 합성 썸네일이다.
 /// 행을 끌면 순서가 바뀐다: 일반 레이어·그룹은 맨 위 단계끼리(그룹은 부위와 함께), 부위는 같은 그룹 안에서만.
 /// </para>
+/// <para>
+/// 그룹은 스킨 슬롯이다: 그룹 행 이름 칸 오른쪽 칩에 지금 스킨 이름이, 부위 행 칩에는 그 부위가 보이는 스킨 이름(부위만 따로 고르면 강조)이
+/// 보이고, 칩을 누르면 스킨 관리 창(<see cref="SkinManagerWindow"/>)이 그 줄로 열린다. 우클릭 메뉴 "스킨"에서 추가·복제·이름·삭제·순서를,
+/// 부위는 "이 부위 스킨"에서 부위만 따로 입힐 스킨을 고른다. 지금 스킨에 자기 그림이 없어 기본 스킨 셀을 빌려 보이는 부위 셀은 흐리게 그린다.
+/// </para>
 /// </summary>
 public sealed class TimelinePanel : UserControl
 {
@@ -46,6 +51,7 @@ public sealed class TimelinePanel : UserControl
         var title = new TextBlock { Text = "타임라인", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(title, Dock.Left);
         headerRow.Children.Add(title);
+        // 스킨 관리 창은 이름 칸의 스킨 칩(클릭)·레이어 우클릭·프레임·레이어 메뉴에서 연다.
         headerRow.Children.Add(_info);
         var header = new Border { Height = 24, Background = AppTheme.BackBrush, Padding = new Thickness(6, 0, 0, 0), Child = headerRow };
         DockPanel.SetDock(header, Dock.Top);
@@ -77,6 +83,7 @@ public sealed class TimelinePanel : UserControl
             var layer = p.Layers[_ctx.CurrentLayer];
             var tag = _ctx.ActiveTag;
             int total = p.Frames.Sum(f => f.DurationMs);
+            string skin = SkinManagerWindow.SkinStatus(p, layer, _ctx.CurrentFrame);
             string kind = layer.Kind switch
             {
                 LayerKind.Group => "그룹",
@@ -84,6 +91,7 @@ public sealed class TimelinePanel : UserControl
                 _ => "",
             };
             _info.Text = $"프레임 {_ctx.CurrentFrame + 1}/{p.Frames.Count} · 레이어 \"{layer.Name}\"" + (kind.Length > 0 ? $" ({kind})" : "")
+                         + (skin.Length > 0 ? " · " + skin : "")
                          + (tag is null ? "" : $" · 태그 {tag.Name}") + $" · 전체 {total}ms";
         }
         else _info.Text = "";
@@ -379,7 +387,7 @@ public sealed class TimelinePanel : UserControl
     /// <summary>셀(레이어 × 프레임) 그림을 지운다.</summary>
     private void ClearCel(int layer, int frame)
     {
-        if (P is not { } p || p.Layers[layer].IsGroup || p.IsCelEmpty(layer, frame)) return;
+        if (P is not { } p || p.Layers[layer].IsGroup || p.IsCelEmpty(layer, frame) || p.IsCelInherited(layer, frame)) return;
         _ctx.Structural(() => p.SetCel(layer, frame, null, "셀 지우기"));
     }
 
@@ -631,6 +639,86 @@ public sealed class TimelinePanel : UserControl
         });
     }
 
+    // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
+
+    private static int SkinIndex(Layer group)
+    {
+        var skins = group.Skins;
+        for (int i = 0; i < skins.Count; i++)
+            if (ReferenceEquals(skins[i], group.ActiveSkin)) return i;
+        return 0;
+    }
+
+    /// <summary>스킨 관리 창을 연다(<paramref name="focus"/> = 강조·스크롤할 그룹/부위, null이면 그대로).</summary>
+    public void OpenSkinManager(Layer? focus) => SkinManagerWindow.Open(_ctx, this, focus);
+
+    /// <summary>메뉴 글자를 그대로 보이는 머리글(스킨·그룹 이름의 '_'가 접근 키로 바뀌지 않게).</summary>
+    private static TextBlock Plain(string text) => new() { Text = text };
+
+    /// <summary>그룹 스킨 메뉴 항목: 스킨 목록(고르면 바뀜, 지금 스킨에 표시) + 추가·복제·이름·삭제·순서(지금 스킨 대상) + 부위 되돌리기·관리 창.</summary>
+    private List<Control> SkinMenuItems(Layer group)
+    {
+        var skins = group.Skins;
+        var active = group.ActiveSkin!;
+        int at = SkinIndex(group);
+        var items = new List<Control>();
+        for (int i = 0; i < skins.Count; i++)
+        {
+            var skin = skins[i];
+            var item = new MenuItem
+            {
+                Header = Plain(i == 0 ? $"{skin.Name} (기본)" : skin.Name),
+                ToggleType = MenuItemToggleType.Radio,
+                IsChecked = ReferenceEquals(skin, active),
+            };
+            item.Click += (_, _) => Dispatcher.UIThread.Post(() => _ctx.SetActiveSkin(group, skin));
+            items.Add(item);
+        }
+        items.Add(new Separator());
+        items.Add(Item("새 스킨(빈)", () => SkinOps.AddSkin(_ctx, group, null)));
+        items.Add(Item("지금 스킨 복제", () => SkinOps.AddSkin(_ctx, group, active)));
+        items.Add(Item("스킨 이름 바꾸기…", () => SkinOps.RenameSkin(_ctx, this, group, active)));
+        items.Add(Item("스킨 삭제", () => SkinOps.DeleteSkin(_ctx, this, group, active), skins.Count > 1));
+        items.Add(Item("스킨 앞으로", () => SkinOps.MoveSkin(_ctx, group, at, at - 1), at > 0));
+        items.Add(Item("스킨 뒤로", () => SkinOps.MoveSkin(_ctx, group, at, at + 1), at < skins.Count - 1));
+        items.Add(new Separator());
+        bool anyOverride = P is { } p && p.ChildrenOf(group).Any(x => x.SkinOverride is not null);
+        items.Add(Item("모든 부위를 그룹 스킨으로", () => _ctx.ResetPartSkins(group), anyOverride));
+        items.Add(Item("스킨 관리…", () => OpenSkinManager(group)));
+        return items;
+    }
+
+    /// <summary>부위 "이 부위 스킨" 메뉴 항목: 그룹 따름 + 고를 수 있는 스킨(그룹 스킨 + 이 부위 전용 "(개별)", 지금 고른 것에 표시) + "＋ 이 부위 스킨…".</summary>
+    private List<Control> PartSkinMenuItems(Layer part, Layer group)
+    {
+        var own = part.SkinOverride;
+        var follow = new MenuItem
+        {
+            Header = Plain($"없음 (그룹 스킨 {group.ActiveSkin!.Name} 그대로)"),
+            ToggleType = MenuItemToggleType.Radio,
+            IsChecked = own is null,
+        };
+        follow.Click += (_, _) => Dispatcher.UIThread.Post(() => _ctx.SetPartSkin(part, null));
+        var items = new List<Control> { follow, new Separator() };
+        var skins = part.SkinChoices;
+        for (int i = 0; i < skins.Count; i++)
+        {
+            var skin = skins[i];
+            var item = new MenuItem
+            {
+                Header = Plain(skin.IsPartOnly ? $"{skin.Name} (개별)" : ReferenceEquals(skin, group.BaseSkin) ? $"{skin.Name} (기본)" : skin.Name),
+                ToggleType = MenuItemToggleType.Radio,
+                IsChecked = ReferenceEquals(skin, own),
+            };
+            item.Click += (_, _) => Dispatcher.UIThread.Post(() => _ctx.SetPartSkin(part, skin));
+            items.Add(item);
+        }
+        items.Add(new Separator());
+        items.Add(Item("＋ 이 부위 스킨…", () => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true)));
+        items.Add(Item("스킨 관리…", () => OpenSkinManager(part)));
+        return items;
+    }
+
     // ───────────── 태그 ─────────────
 
     /// <summary>고른 프레임 범위(없으면 현재 프레임)로 태그를 만든다.</summary>
@@ -739,9 +827,10 @@ public sealed class TimelinePanel : UserControl
         if (layer >= 0 && !p.Layers[layer].IsGroup)
         {
             items.Add(new Separator());
-            bool empty = p.IsCelEmpty(layer, frame);
+            bool empty = p.IsCelEmpty(layer, frame), inherited = p.IsCelInherited(layer, frame);
             items.Add(Item("이전 프레임 그림 복사", () => CopyCelFromPrevious(layer, frame), empty && PreviousCelFrame(p, layer, frame) >= 0));
-            items.Add(Item("셀 지우기", () => ClearCel(layer, frame), !empty));
+            // 빌린 셀은 이 스킨 자신의 그림이 없어 지울 것이 없다(기본 스킨 셀은 기본 스킨에서 지움).
+            items.Add(Item(inherited ? "셀 지우기 (기본 스킨 그림을 빌려 보이는 중)" : "셀 지우기", () => ClearCel(layer, frame), !empty && !inherited));
         }
         items.Add(new Separator());
         items.Add(Item("피벗을 기본값으로", () => _ctx.Structural(() => p.SetFramePivot(frame, null))));
@@ -779,12 +868,22 @@ public sealed class TimelinePanel : UserControl
             items.Add(new Separator());
             items.Add(Item($"부위 크기… ({layer.PartSize.Width}×{layer.PartSize.Height})", () => ResizePartAt(index)));
             items.Add(Item($"위치… ({layer.PartOffset.X}, {layer.PartOffset.Y})", () => SetPartPosition(index)));
+            if (layer.Parent is { IsGroup: true } owner)
+            {
+                items.Add(new MenuItem
+                {
+                    Header = Plain(layer.SkinOverride is { } own ? $"이 부위 스킨: {own.Name} ({(own.IsPartOnly ? "개별" : "부위만 따로")})" : $"이 부위 스킨: 없음 (그룹 스킨 {owner.ActiveSkin!.Name} 그대로)"),
+                    ItemsSource = PartSkinMenuItems(layer, owner),
+                });
+                items.Add(new MenuItem { Header = Plain($"그룹 스킨: {owner.ActiveSkin!.Name}"), ItemsSource = SkinMenuItems(owner) });
+            }
         }
         else if (layer.IsGroup)
         {
             items.Add(new Separator());
             items.Add(Item("부위 추가…", () => AddPartTo(layer)));
             items.Add(Item(layer.Collapsed ? "펼치기" : "접기", () => ToggleCollapsed(index)));
+            items.Add(new MenuItem { Header = Plain($"스킨: {layer.ActiveSkin!.Name}"), ItemsSource = SkinMenuItems(layer) });
         }
         items.Add(new Separator());
         items.Add(Item("새 레이어", AddLayer));
@@ -811,9 +910,15 @@ public sealed class TimelinePanel : UserControl
     /// </summary>
     private sealed class TimelineGrid : Avalonia.Controls.Grid
     {
-        private const int NameW = 180, TagH = 20, HeadH = 30, CellH = 36, CellW = 42;
-        /// <summary>이름 칸: 눈(0~24) · 자물쇠(24~48) · 그룹 접기 단추(48~64) · 이름(64~, 부위는 들여 씀).</summary>
+        private const int NameW = 270, TagH = 20, HeadH = 30, CellH = 36, CellW = 42;
+        /// <summary>이름 칸: 눈(0~24) · 자물쇠(24~48) · 그룹 접기 단추(48~64) · 이름(64~, 부위는 들여 씀) · 스킨 칩 · (부위) 크기.</summary>
         private const int ToggleX = 48, NameX = 64, Indent = 16;
+        /// <summary>스킨 칩 폭: 최대(긴 스킨 이름은 …), 최소(이름이 길어도 이만큼은 보임). 이름이 먼저 자리를 차지한다.</summary>
+        private const int SkinChipMaxW = 96, SkinChipMinW = 34;
+        /// <summary>기본 스킨 그림을 빌려 보이는 셀 썸네일의 불투명도.</summary>
+        private const double InheritedOpacity = 0.35;
+        private static readonly IPen ChipAccentPen = AppTheme.Pen(AppTheme.AccentColor);
+        private static readonly IBrush ChipAccentBrush = AppTheme.Brush(Color.FromArgb(90, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
 
         private static readonly IPen BorderPen = AppTheme.Pen(AppTheme.BorderColor);
         private static readonly IPen AccentPen = AppTheme.Pen(AppTheme.AccentColor, 2);
@@ -1334,6 +1439,60 @@ public sealed class TimelinePanel : UserControl
         /// <summary>레이어 이름이 시작하는 x(부위는 들여 씀).</summary>
         private static int NameLeft(Layer layer) => layer.IsPart ? NameX + Indent : layer.IsGroup ? NameX : ToggleX;
 
+        /// <summary>이름 칸에 보이는 레이어 이름(불투명도가 255가 아니면 % 붙임).</summary>
+        private static string LayerTitle(Layer layer) => layer.Name + (layer.Opacity < 255 ? $" ({layer.Opacity * 100 / 255}%)" : "");
+
+        /// <summary>부위 크기 글자("16×16")와 그 폭(이름 칸 맨 오른쪽).</summary>
+        private static (string Text, int W) PartSizeText(Layer part)
+        {
+            var text = $"{part.PartSize.Width}×{part.PartSize.Height}";
+            return (text, (int)Math.Ceiling(AppTheme.MeasureText(text, AppTheme.SmallFontSize).Width + 4));
+        }
+
+        /// <summary>
+        /// 그룹·부위 행 이름 칸 오른쪽 끝의 스킨 칩(x, 폭) — 그룹·부위가 같은 열에 맞춰진다(부위 크기 글자는 칩 왼쪽).
+        /// 그룹은 지금 스킨, 부위는 보이는 스킨 이름. 레이어 이름(부위는 크기 글자까지)이 먼저 자리를 차지하고,
+        /// 칩은 남은 자리(최소 <see cref="SkinChipMinW"/>, 최대 <see cref="SkinChipMaxW"/>)에 맞춰 이름이 …로 줄어든다.
+        /// 폭 0 = 칩 없음(일반 레이어·그룹 없는 부위).
+        /// </summary>
+        private static (int X, int W) SkinChip(Layer layer, int right)
+        {
+            if (layer.ShownSkin is not { } skin) return (0, 0);
+            int want = (int)Math.Ceiling(Math.Min(SkinChipMaxW, AppTheme.MeasureText(skin.Name, AppTheme.SmallFontSize).Width + 10));
+            int nameEnd = NameLeft(layer) + (int)Math.Ceiling(AppTheme.MeasureText(LayerTitle(layer), AppTheme.FontSize, bold: true).Width) + 6
+                          + (layer.IsPart ? PartSizeText(layer).W + 4 : 0);
+            int w = Math.Max(Math.Min(want, SkinChipMinW), Math.Min(want, right - nameEnd));
+            return (right - w, w);
+        }
+
+        /// <summary>스킨 칩(<see cref="SkinChip(Layer, int)"/>), 그리기와 같은 자리(클릭 찾기용).</summary>
+        private static (int X, int W) SkinChip(Layer layer) => SkinChip(layer, NameW - 4);
+
+        /// <summary>
+        /// 스킨 칩 그리기: 그룹 = 테두리 + 지금 스킨 이름, 부위 = 부위만 따로 고른 스킨이면 강조(파랑), 그룹을 따르면 흐린 테두리·글자.
+        /// </summary>
+        private static void DrawSkinChip(DrawingContext g, Layer layer, Rect r)
+        {
+            var name = layer.ShownSkin?.Name ?? "";
+            IBrush text;
+            if (layer.IsPart && layer.SkinOverride is not null)
+            {
+                g.DrawRectangle(ChipAccentBrush, ChipAccentPen, r.Deflate(0.5), 3, 3);
+                text = AppTheme.TextBrush;
+            }
+            else if (layer.IsPart)
+            {
+                g.DrawRectangle(null, BorderPen, r.Deflate(0.5), 3, 3);
+                text = AppTheme.DimTextBrush;
+            }
+            else
+            {
+                g.DrawRectangle(AppTheme.BackBrush, BorderPen, r.Deflate(0.5), 3, 3);
+                text = AppTheme.TextBrush;
+            }
+            Text(g, name, r.Deflate(new Thickness(4, 0)), text, small: true, center: true);
+        }
+
         // ── 레이어 이름 바로 고치기
 
         public void BeginRename(int index)
@@ -1487,7 +1646,15 @@ public sealed class TimelinePanel : UserControl
                 bool selected = Selected(l, f);
                 if (selected && !(l == curLayer && f == cur && ra < 0 && !_headerRange)) g.FillRectangle(RangeBrush, r);
                 if (Ctx.CelBitmap(l, f) is { } bmp)
-                    ImageUtil.DrawFitted(g, bmp, new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), r.Deflate(3), checker: true);
+                {
+                    var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+                    // 지금 스킨에 자기 그림이 없어 기본 스킨 셀을 물려받은 칸은 흐리게
+                    if (p.IsCelInherited(l, f))
+                    {
+                        using (g.PushOpacity(InheritedOpacity)) ImageUtil.DrawFitted(g, bmp, src, r.Deflate(3), checker: true);
+                    }
+                    else ImageUtil.DrawFitted(g, bmp, src, r.Deflate(3), checker: true);
+                }
                 else
                     g.DrawEllipse(AppTheme.BorderBrush, null, new Rect(r.X + r.Width / 2 - 3, r.Y + r.Height / 2 - 3, 6, 6));
                 if (l == curLayer && f == cur) g.DrawRectangle(null, AccentPen, r.Deflate(1));
@@ -1640,14 +1807,19 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(BorderPen, new Avalonia.Point(gx, y + CellH / 2.0), new Avalonia.Point(NameX + Indent - 4, y + CellH / 2.0));
                 }
                 int nameX = NameLeft(layer), right = NameW - 2;
+                // 스킨 칩은 그룹·부위 모두 이름 칸 오른쪽 끝(같은 열), 부위 크기 글자는 그 왼쪽.
+                if (SkinChip(layer, right - 2) is { W: > 0 } chip)
+                {
+                    DrawSkinChip(g, layer, new Rect(chip.X, y + 9, chip.W, CellH - 18));
+                    right = chip.X - 4;
+                }
                 if (layer.IsPart)
                 {
-                    var size = $"{layer.PartSize.Width}×{layer.PartSize.Height}";
-                    double sw = AppTheme.MeasureText(size, AppTheme.SmallFontSize).Width + 4;
-                    right -= (int)Math.Ceiling(sw);
-                    Text(g, size, new Rect(right, y, NameW - 2 - right, CellH), AppTheme.DimTextBrush, small: true);
+                    var (size, sw) = PartSizeText(layer);
+                    right -= sw;
+                    Text(g, size, new Rect(right, y, sw, CellH), AppTheme.DimTextBrush, small: true);
                 }
-                var name = layer.Name + (layer.Opacity < 255 ? $" ({layer.Opacity * 100 / 255}%)" : "");
+                var name = LayerTitle(layer);
                 Text(g, name, new Rect(nameX, y, Math.Max(1, right - nameX), CellH), shown ? AppTheme.TextBrush : AppTheme.DimTextBrush,
                     bold: l == curLayer || layer.IsGroup);
                 if (l >= 0 && _layerDropAt == l) g.DrawRectangle(null, AccentPen, new Rect(2, y + 2, NameW - 4, CellH - 4));
@@ -1721,6 +1893,13 @@ public sealed class TimelinePanel : UserControl
                 if (left && pos.X < 24) { Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible)); return; }
                 if (left && pos.X < ToggleX) { Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked)); return; }
                 if (left && nameLayer.IsGroup && pos.X < NameX) { _owner.ToggleCollapsed(l); return; }
+                if (left && SkinChip(nameLayer) is { W: > 0 } chip && pos.X >= chip.X && pos.X < chip.X + chip.W)
+                {
+                    // 스킨 칩: 이 그룹/부위로 스킨 관리 창 열기(우클릭은 레이어 메뉴의 "스킨"·"이 부위 스킨")
+                    Ctx.SetCurrentLayer(l);
+                    Dispatcher.UIThread.Post(() => _owner.OpenSkinManager(nameLayer));
+                    return;
+                }
                 Ctx.SetCurrentLayer(l);
                 if (right) { _owner.ShowLayerMenu(l); return; }
                 if (e.ClickCount == 2) { BeginRename(l); return; }
@@ -2027,7 +2206,9 @@ public sealed class TimelinePanel : UserControl
         {
             base.OnPointerWheelChanged(e);
             if (FromChild(e) && e.Source is TextBox) return;
-            var bar = (e.KeyModifiers & KeyModifiers.Shift) != 0 ? _v : _h;
+            // 기본 휠은 위아래(레이어), Ctrl(또는 Shift)+휠이나 트랙패드 가로 스크롤은 좌우(프레임).
+            bool sideways = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) != 0 || Math.Abs(e.Delta.X) > Math.Abs(e.Delta.Y);
+            var bar = sideways ? _h : _v;
             e.Handled = true;
             if (!bar.IsEnabled) return;
             double delta = Math.Abs(e.Delta.Y) >= Math.Abs(e.Delta.X) ? e.Delta.Y : e.Delta.X;

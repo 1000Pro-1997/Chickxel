@@ -53,7 +53,8 @@ public sealed class PixelTools
         Tool("get_document",
             "Describe the open document as JSON: file path, canvas (frame) width/height, frames [{index,durationMs,name}], " +
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked,opacity," +
-            "partWidth,partHeight,partX,partY (parts only),collapsed (groups only)}] (bottom to top; a group's parts are the layers " +
+            "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
+            "collapsed,skins,activeSkin (groups only)}] (bottom to top; a group's parts are the layers " +
             "directly below it), tags, current {frame,layer}, primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
             new JsonObject()),
@@ -268,6 +269,56 @@ public sealed class PixelTools
                 ["pivot_y"] = new JsonObject { ["type"] = "number", ["minimum"] = 0, ["maximum"] = 1, ["description"] = "Pivot y (0 = bottom, 1 = top)." },
             },
             "layer"),
+        Tool("list_skins",
+            "List every group with its skins (top to bottom like the timeline). A group is a skin slot: its skins are alternative " +
+            "drawings of the same parts (e.g. outfits); only the active skin is visible, and groups stack in layer order. The first " +
+            "skin is the base: a part's empty cel in another skin shows the base skin's drawing. A part may wear a different skin than " +
+            "its group (override, listed under `overrides`). A part may also own part-only skins (listed under `partSkins`, e.g. a hat " +
+            "only for Head): no other part or the group list has them, and they are worn only as that part's override (set_skin with part). " +
+            "All reading and drawing tools work on the part's shown skin (its override, " +
+            "else the group's active skin; drawing on a cel that shows the base drawing starts from a copy of it).",
+            new JsonObject()),
+        Tool("add_skin",
+            "Add a skin to a group; it becomes the group's active skin, so following drawing on its parts goes to the new skin. " +
+            "copy_active=true copies the active skin's own drawings; otherwise it starts empty (showing the base skin's drawing until you draw). " +
+            "With `part`: add a part-only skin that only that part has (e.g. a hat for Head) and make the part wear it; copy_shown=true copies the part's shown drawing.",
+            new JsonObject
+            {
+                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, narrows the part search).", 0),
+                ["name"] = Str("Skin name (default: automatic; made unique within the group, including part-only skins)."),
+                ["copy_active"] = Bool("Copy the active skin's drawings (default false; group skins only)."),
+                ["part"] = Str("Part layer name: create a part-only skin for this part instead of a group skin."),
+                ["copy_shown"] = Bool("With `part`: copy the part's currently shown skin drawings into the new part-only skin (default false)."),
+            }),
+        Tool("set_skin",
+            "Choose which skin of a group is visible and edited (switch outfit). With `part`, only that part wears `skin` (override — a group skin " +
+            "or one of that part's part-only skins); follow_group=true (or skin \"그룹\"/empty) makes the part follow its group's skin again. Not recorded in undo history.",
+            new JsonObject
+            {
+                ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, the part's group).", 0),
+                ["skin"] = Str("Skin name (see list_skins). Required unless part + follow_group. Part-only skins need `part`."),
+                ["part"] = Str("Part layer name: set the skin for this part only instead of the whole group."),
+                ["follow_group"] = Bool("With `part`: clear the part's own skin so it follows the group again (default false)."),
+            }),
+        Tool("list_outfits",
+            "List outfit presets: named snapshots of every group's skin plus per-part skin overrides. Each entry has its slots " +
+            "(group → skin), part overrides, whether it matches what is shown now, and entries that no longer exist (deleted group/part/skin, skipped on apply).",
+            new JsonObject()),
+        Tool("save_outfit",
+            "Save the current outfit (each group's active skin + part overrides) as a new outfit preset (undoable). " +
+            "Outfit presets can also be exported as extra frame sheets ({sheet}@{outfit}).",
+            new JsonObject
+            {
+                ["name"] = Str("Outfit name (default \"착장\"; made unique)."),
+            }),
+        Tool("apply_outfit",
+            "Wear an outfit preset: set each saved group's skin and its parts' overrides (see list_outfits). Groups not in the outfit stay as they are. " +
+            "Not recorded in undo history (like set_skin).",
+            new JsonObject
+            {
+                ["name"] = Str("Outfit preset name."),
+            },
+            "name"),
         Tool("resize_canvas",
             "Change the frame canvas size. Normal layers keep their pixels attached to `anchor` (parts that fall outside are cropped); " +
             "part layers keep their size and are shifted with the anchor. To resize a part use set_part.",
@@ -380,6 +431,12 @@ public sealed class PixelTools
                 "add_group" => AddGroup(name, a),
                 "add_part" => AddPart(name, a),
                 "set_part" => SetPart(name, a),
+                "list_skins" => ListSkins(),
+                "list_outfits" => ListOutfits(),
+                "save_outfit" => SaveOutfit(name, a),
+                "apply_outfit" => ApplyOutfit(name, a),
+                "add_skin" => AddSkin(name, a),
+                "set_skin" => SetSkin(name, a),
                 "resize_canvas" => ResizeCanvas(name, a),
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),
@@ -455,8 +512,15 @@ public sealed class PixelTools
                     o["partHeight"] = l.PartSize.Height;
                     o["partX"] = l.PartOffset.X;
                     o["partY"] = l.PartOffset.Y;
+                    if (l.SkinOverride is { } own) o["skinOverride"] = own.Name;
+                    if (l.OwnSkins is { Count: > 0 } partSkins) o["partSkins"] = Strings(partSkins.Select(s => s.Name).ToArray());
                 }
-                else if (l.IsGroup) o["collapsed"] = l.Collapsed;
+                else if (l.IsGroup)
+                {
+                    o["collapsed"] = l.Collapsed;
+                    o["skins"] = Strings(l.Skins.Select(s => s.Name).ToArray());
+                    o["activeSkin"] = l.ActiveSkin?.Name;
+                }
                 layers.Add(o);
             }
             doc["layers"] = layers;
@@ -473,7 +537,13 @@ public sealed class PixelTools
             doc["dirty"] = p.IsDirty;
             var sel = ctx.Selection;
             doc["selection"] = sel.HasSelection
-                ? new JsonObject { ["x"] = sel.Bounds.X, ["y"] = sel.Bounds.Y, ["width"] = sel.Bounds.Width, ["height"] = sel.Bounds.Height }
+                ? new JsonObject
+                {
+                    ["x"] = sel.Bounds.X, ["y"] = sel.Bounds.Y, ["width"] = sel.Bounds.Width, ["height"] = sel.Bounds.Height,
+                    // 원·자유·스마트 선택은 사각형 안의 일부 픽셀만 선택된다.
+                    ["shape"] = sel.IsRectangle ? "rectangle" : "mask",
+                    ["pixels"] = sel.Region.Count,
+                }
                 : null;
         }
         doc["primary"] = ctx.Primary.ToHex();
@@ -891,6 +961,182 @@ public sealed class PixelTools
         Ctx.SetCurrentLayer(index);
         var r = part.PartRect;
         return TextResult($"{tool}: part {index} \"{part.Name}\" {r.Width}x{r.Height} @({r.X},{r.Y}), pivot ({part.PartPivot.X:0.###},{part.PartPivot.Y:0.###})");
+    }
+
+    // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
+
+    /// <summary>스킨 도구의 그룹: <c>group</c> 인자, 없으면 고른 그룹(부위면 그 그룹).</summary>
+    private Layer SkinGroup(SpriteProject p, JsonObject? a)
+    {
+        int index;
+        if (Arg(a, "group") is not null) index = ReqIndex(a, "group", p.Layers.Count, "레이어");
+        else if (Ctx.CurrentGroup is { } current) index = p.IndexOf(current);
+        else throw new ToolError("group: 고른 그룹이 없습니다 — group 번호를 주세요(list_skins로 확인)");
+        var group = p.Layers[index];
+        if (!group.IsGroup) throw new ToolError($"layer {index} \"{group.Name}\"은(는) 그룹이 아닙니다 — 스킨은 그룹에만 있습니다");
+        return group;
+    }
+
+    private static string SkinNames(IEnumerable<Skin> skins) => string.Join(", ", skins.Select(s => s.Name));
+
+    private static string SkinNames(Layer group) => SkinNames(group.Skins);
+
+    private JsonObject ListSkins()
+    {
+        var p = RequireProject();
+        var groups = new JsonArray();
+        for (int i = p.Layers.Count - 1; i >= 0; i--)
+        {
+            var g = p.Layers[i];
+            if (!g.IsGroup) continue;
+            var o = new JsonObject
+            {
+                ["group"] = i, ["name"] = g.Name, ["visible"] = g.Visible,
+                ["skins"] = Strings(g.Skins.Select(s => s.Name).ToArray()),
+                ["active"] = g.ActiveSkin?.Name, ["base"] = g.BaseSkin?.Name,
+            };
+            var overrides = new JsonArray();
+            var partSkins = new JsonArray();
+            foreach (var part in p.ChildrenOf(g).Reverse())
+            {
+                if (part.SkinOverride is { } own)
+                    overrides.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skin"] = own.Name, ["partOnly"] = own.IsPartOnly });
+                if (part.OwnSkins is { Count: > 0 } ownSkins)
+                    partSkins.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skins"] = Strings(ownSkins.Select(s => s.Name).ToArray()) });
+            }
+            if (overrides.Count > 0) o["overrides"] = overrides;
+            if (partSkins.Count > 0) o["partSkins"] = partSkins;
+            groups.Add(o);
+        }
+        return TextResult(groups.Count == 0 ? "그룹이 없습니다 — add_group으로 만드세요" : groups.ToJsonString(JsonOptions));
+    }
+
+    private JsonObject AddSkin(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        var name = OptString(a, "name");
+        if (string.IsNullOrWhiteSpace(name)) name = null;
+        if (!string.IsNullOrEmpty(OptString(a, "part")?.Trim()))
+        {
+            var part = FindPart(p, a);
+            var owner = part.Parent!;
+            var shown = (OptBool(a, "copy_shown") ?? false) ? part.ShownSkin : null;
+            var partSkin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPartSkin(part, name?.Trim(), shown));
+            Ctx.SetCurrentLayer(p.IndexOf(part));
+            return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 전용 스킨 \"{partSkin.Name}\" 추가{(shown is null ? "" : $"(\"{shown.Name}\" 복제)")} — 이 부위가 입음. " +
+                              $"이 부위 전용 스킨: {SkinNames(part.OwnSkins)} (그룹 \"{owner.Name}\" 스킨: {SkinNames(owner)})");
+        }
+        var group = SkinGroup(p, a);
+        bool copy = OptBool(a, "copy_active") ?? false;
+        var from = copy ? group.ActiveSkin : null;
+        var skin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddSkin(group, name?.Trim(), from));
+        if (!ReferenceEquals(Ctx.CurrentGroup, group)) Ctx.SetCurrentLayer(p.IndexOf(group));
+        return TextResult($"{tool}: group {p.IndexOf(group)} \"{group.Name}\"에 스킨 \"{skin.Name}\" 추가{(from is null ? "" : $"(\"{from.Name}\" 복제)")} — 지금 스킨. 스킨: {SkinNames(group)}");
+    }
+
+    /// <summary>
+    /// 스킨을 이름으로(대소문자 무시 대비) 찾는다: <paramref name="part"/>가 있으면 그 부위가 고를 수 있는 스킨(그룹 스킨 + 그 부위 전용), 없으면 그룹 스킨. 없으면 도구 오류.
+    /// </summary>
+    private static Skin FindSkin(Layer group, string name, Layer? part = null)
+    {
+        var list = part?.SkinChoices ?? group.Skins;
+        if ((list.FirstOrDefault(s => s.Name == name) ?? list.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))) is { } found)
+            return found;
+        if (part is null && group.AllSkins.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { Owner: { } owner })
+            throw new ToolError($"\"{name}\"은(는) \"{owner.Name}\" 부위 전용 스킨입니다 — part \"{owner.Name}\"와 함께 set_skin하세요");
+        throw new ToolError(part is null
+            ? $"group \"{group.Name}\"에 \"{name}\" 스킨이 없습니다 — 있는 스킨: {SkinNames(group)}"
+            : $"part \"{part.Name}\"가 고를 수 있는 \"{name}\" 스킨이 없습니다 — 고를 수 있는 스킨: {SkinNames(list)}");
+    }
+
+    /// <summary>스킨 도구의 <c>part</c>(부위 이름, <c>group</c>이 있으면 그 그룹 안에서만). 없거나 여럿이면 도구 오류.</summary>
+    private Layer FindPart(SpriteProject p, JsonObject? a)
+    {
+        var partName = OptString(a, "part")?.Trim() ?? "";
+        var only = Arg(a, "group") is not null ? SkinGroup(p, a) : null;
+        var candidates = p.Layers.Where(l => l.IsPart && l.Parent is { IsGroup: true } && (only is null || ReferenceEquals(l.Parent, only))).ToList();
+        var matches = candidates.Where(l => l.Name == partName).ToList();
+        if (matches.Count == 0) matches = candidates.Where(l => string.Equals(l.Name, partName, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (matches.Count == 0)
+            throw new ToolError($"part: \"{partName}\" 부위가 없습니다{(only is null ? "" : $"(group \"{only.Name}\" 안)")} — get_document로 부위 이름을 확인하세요");
+        if (matches.Count > 1) throw new ToolError($"part: \"{partName}\" 부위가 여러 그룹에 있습니다 — group 번호를 함께 주세요");
+        return matches[0];
+    }
+
+    private JsonObject SetSkin(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        var name = OptString(a, "skin")?.Trim() ?? "";
+        bool follow = OptBool(a, "follow_group") ?? false;
+        var partName = OptString(a, "part")?.Trim();
+        if (string.IsNullOrEmpty(partName))
+        {
+            if (follow) throw new ToolError("follow_group: part(부위 이름)와 함께 쓰세요");
+            if (name.Length == 0) throw new ToolError("skin: 스킨 이름이 필요합니다(list_skins로 확인)");
+            var group = SkinGroup(p, a);
+            var skin = FindSkin(group, name);
+            Ctx.SetActiveSkin(group, skin);
+            return TextResult($"{tool}: group {p.IndexOf(group)} \"{group.Name}\" 지금 스킨 = \"{skin.Name}\"");
+        }
+
+        var part = FindPart(p, a);
+        var owner = part.Parent!;
+        // "그룹"은 그 이름의 스킨이 없을 때만 "그룹 따름"으로 본다.
+        if (follow || name.Length == 0 || (name == "그룹" && part.SkinChoices.All(s => s.Name != name)))
+        {
+            Ctx.SetPartSkin(part, null);
+            return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 그룹 스킨 따름 (지금 \"{owner.ActiveSkin?.Name}\")");
+        }
+        var own = FindSkin(owner, name, part);
+        Ctx.SetPartSkin(part, own);
+        return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\"만 스킨 \"{own.Name}\"{(own.IsPartOnly ? " (부위 전용)" : "")} (그룹 \"{owner.Name}\" 스킨은 \"{owner.ActiveSkin?.Name}\")");
+    }
+
+    private JsonObject ListOutfits()
+    {
+        var p = RequireProject();
+        var outfits = new JsonArray();
+        foreach (var outfit in p.Outfits)
+        {
+            var slots = new JsonArray();
+            foreach (var (group, skin) in outfit.Slots)
+                if (p.Layers.Contains(group))
+                    slots.Add(new JsonObject { ["group"] = p.IndexOf(group), ["name"] = group.Name, ["skin"] = skin.Name });
+            var parts = new JsonArray();
+            foreach (var (part, skin) in outfit.Parts)
+                if (p.Layers.Contains(part))
+                    parts.Add(new JsonObject { ["part"] = p.IndexOf(part), ["name"] = part.Name, ["skin"] = skin.Name });
+            var o = new JsonObject { ["name"] = outfit.Name, ["slots"] = slots, ["current"] = SkinManagerWindow.IsCurrentOutfit(p, outfit) };
+            if (parts.Count > 0) o["overrides"] = parts;
+            var missing = p.MissingOutfitEntries(outfit);
+            if (missing.Count > 0) o["missing"] = Strings(missing.ToArray());
+            outfits.Add(o);
+        }
+        return TextResult(outfits.Count == 0 ? "착장 프리셋이 없습니다 — save_outfit으로 지금 착장을 저장하세요" : outfits.ToJsonString(JsonOptions));
+    }
+
+    private JsonObject SaveOutfit(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        if (!p.Layers.Any(l => l.IsGroup)) throw new ToolError("그룹이 없습니다 — 착장은 그룹(스킨 칸)마다 스킨을 저장합니다");
+        var name = OptString(a, "name")?.Trim();
+        var outfit = p.Edit<Outfit>(Label(tool), ProjectChange.Layers | ProjectChange.Settings, () => p.SaveOutfit(string.IsNullOrEmpty(name) ? null : name));
+        return TextResult($"{tool}: 착장 \"{outfit.Name}\" 저장 (그룹 {outfit.Slots.Count}개, 부위 재정의 {outfit.Parts.Count}개). 착장: {string.Join(", ", p.Outfits.Select(o => o.Name))}");
+    }
+
+    private JsonObject ApplyOutfit(string tool, JsonObject? a)
+    {
+        var p = BeginMutation();
+        var name = OptString(a, "name")?.Trim() ?? "";
+        if (name.Length == 0) throw new ToolError("name: 착장 이름이 필요합니다(list_outfits로 확인)");
+        var outfit = p.Outfits.FirstOrDefault(o => o.Name == name)
+                     ?? p.Outfits.FirstOrDefault(o => string.Equals(o.Name, name, StringComparison.OrdinalIgnoreCase))
+                     ?? throw new ToolError(p.Outfits.Count == 0
+                         ? "착장 프리셋이 없습니다 — save_outfit으로 저장하세요"
+                         : $"\"{name}\" 착장이 없습니다 — 있는 착장: {string.Join(", ", p.Outfits.Select(o => o.Name))}");
+        IReadOnlyList<string> missing = [];
+        Ctx.Structural(() => missing = p.ApplyOutfit(outfit));
+        return TextResult($"{tool}: 착장 \"{outfit.Name}\" 입힘" + (missing.Count == 0 ? "" : $" — 건너뛴 항목: {string.Join(", ", missing)}"));
     }
 
     /// <summary>0~1 실수 인자.</summary>

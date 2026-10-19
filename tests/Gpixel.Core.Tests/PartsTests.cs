@@ -385,7 +385,7 @@ public class PartsTests
             ms.Position = 0;
             Assert.Equal(new Size(8, 5), PngIO.Load(ms).Size);
             using var json = new StreamReader(zip.GetEntry(ProjectIO.ProjectEntryName)!.Open());
-            Assert.Contains("\"version\": 2", json.ReadToEnd());
+            Assert.Contains($"\"version\": {ProjectIO.CurrentVersion}", json.ReadToEnd());
         }
 
         var warnings = new List<string>();
@@ -432,8 +432,9 @@ public class PartsTests
         Assert.Equal((80, 120, "hit"), (p.Frames[0].DurationMs, p.Frames[1].DurationMs, p.Frames[1].Name));
         Assert.Equal(TagDirection.PingPong, Assert.Single(p.Tags).Direction);
         Assert.Equal(Red, p.GetCel(1, 1)!.Get(1, 2));
-        Assert.Equal(("hero", 2, true, true, (string?)null),
-            (p.Export.FileName, p.Export.Columns, p.Export.ExportFrames, p.Export.ExportParts, p.Export.PartsFileName));
+        Assert.Equal(("hero", SheetGrid.Columns, 2, true, true, (string?)null),
+            (p.Export.FileName, p.Export.Common.Grid, p.Export.Common.GridCount, p.Export.ExportFrames, p.Export.ExportParts, p.Export.PartsFileName));
+        Assert.Null(p.Export.PartsOverride); // 부위가 없으면 공통 설정 한 벌(프레임 시트 설정)
     }
 
     /// <summary>예전(버전 1) 아틀라스 파일: 플레이어 고정 파일의 칸을 스프라이트로, 셀은 원본 시트에서 잘라 넣는다.</summary>
@@ -510,8 +511,8 @@ public class PartsTests
 
         // 저장(v2로 바뀜) + 내보내기: 부위 아틀라스가 예전 아틀라스 자리 → guid·spriteID·칸 그대로
         var saved = ProjectIO.SaveWithExport(p);
-        Assert.Equal(png, saved.Export!.Parts!.ImagePath);
-        Assert.Equal(dir.File("player@2x_frames.png"), saved.Export.Frames!.ImagePath);
+        Assert.Equal(png, Assert.Single(saved.Export!.Parts).ImagePath);
+        Assert.Equal(dir.File("player@2x_frames.png"), Assert.Single(saved.Export.Frames).ImagePath);
         var meta = UnityMeta.Read(png + ".meta");
         Assert.Equal(original.Guid, meta.Guid);
         Assert.Equal(original.Sprites.Select(s => (s.Name, s.UnityRect, s.Alignment, s.Pivot, s.Border, s.SpriteId, s.InternalId)),
@@ -574,6 +575,7 @@ public class PartsTests
         var g = p.AddGroup("캐릭터");
         p.AddPart(g, "Body", 6, 8, new Point(5, 8));
         p.AddPart(g, "Head", 8, 5, new Point(4, 3));
+        p.Export.ExportParts = true; // 새 프로젝트 기본은 프레임 시트만 — 둘 다 내보내기
         p.AddFrame();
         p.BeginCelStroke(1, 0).Clear(Red);
         p.CommitCelStroke("몸");
@@ -584,8 +586,8 @@ public class PartsTests
         p.SetPartBorder(1, new SpriteBorder(1, 1, 1, 1));
 
         var saved = ProjectIO.SaveWithExport(p, path);
-        var frames = saved.Export!.Frames!;
-        var parts = saved.Export.Parts!;
+        var frames = Assert.Single(saved.Export!.Frames);
+        var parts = Assert.Single(saved.Export.Parts);
         Assert.Equal(Path.Combine(dir.Path, "Assets", "hero.png"), frames.ImagePath);
         Assert.Equal(Path.Combine(dir.Path, "Assets", "hero_parts.png"), parts.ImagePath);
         Assert.Equal(parts.ImagePath, ProjectExport.GetPartsImagePath(p));
@@ -625,12 +627,12 @@ public class PartsTests
         // 하나씩 끄기
         p.Edit("끄기", ProjectChange.Settings, () => p.Export.ExportFrames = false);
         var onlyParts = ProjectExport.Export(p);
-        Assert.Null(onlyParts.Frames);
-        Assert.NotNull(onlyParts.Parts);
+        Assert.Empty(onlyParts.Frames);
+        Assert.Single(onlyParts.Parts);
         p.Edit("끄기", ProjectChange.Settings, () => { p.Export.ExportFrames = true; p.Export.ExportParts = false; });
         var onlyFrames = ProjectExport.Export(p);
-        Assert.NotNull(onlyFrames.Frames);
-        Assert.Null(onlyFrames.Parts);
+        Assert.Single(onlyFrames.Frames);
+        Assert.Empty(onlyFrames.Parts);
 
         // 이름이 같으면 거부
         p.Edit("이름", ProjectChange.Settings, () => { p.Export.ExportParts = true; p.Export.PartsFileName = "hero"; });
@@ -639,8 +641,8 @@ public class PartsTests
         // 부위가 없으면 부위 아틀라스 없음
         var plain = new SpriteProject(4, 4);
         var plainResult = ProjectIO.SaveWithExport(plain, dir.File("plain.gpixel")).Export!;
-        Assert.NotNull(plainResult.Frames);
-        Assert.Null(plainResult.Parts);
+        Assert.Single(plainResult.Frames);
+        Assert.Empty(plainResult.Parts);
         Assert.Empty(ProjectExport.BuildPartsSheet(plain, "plain_parts").Entries);
     }
 
@@ -653,8 +655,8 @@ public class PartsTests
         p.AddPart(g, "Head", 4, 3, new Point(2, 1));
         p.BeginCelStroke(1, 0).Clear(Red);
         p.CommitCelStroke("머리");
-        p.Edit("메타", ProjectChange.Settings, () => p.Export.WriteMeta = true);
-        var parts = ProjectIO.SaveWithExport(p, dir.File("hero.gpixel")).Export!.Parts!;
+        p.Edit("메타", ProjectChange.Settings, () => { p.Export.WriteMeta = true; p.Export.ExportParts = true; });
+        var parts = Assert.Single(ProjectIO.SaveWithExport(p, dir.File("hero.gpixel")).Export!.Parts);
         var before = UnityMeta.Read(parts.ImagePath + ".meta").Sprites.Single();
         Assert.Equal("Head", before.Name);
 
@@ -675,9 +677,10 @@ public class PartsTests
         var p = ProjectImport.Open(png).Project;
 
         var saved = ProjectIO.SaveWithExport(p);
-        Assert.Equal(png, saved.Export!.Parts!.ImagePath);
-        Assert.True(saved.Export.Parts.MetaWritten);
-        Assert.Null(saved.Export.Frames); // 가져온 아틀라스만 다시 쓰고 프레임 시트 사본은 만들지 않는다
+        var atlas = Assert.Single(saved.Export!.Parts);
+        Assert.Equal(png, atlas.ImagePath);
+        Assert.True(atlas.MetaWritten);
+        Assert.Empty(saved.Export.Frames); // 가져온 아틀라스만 다시 쓰고 프레임 시트 사본은 만들지 않는다
         Assert.False(File.Exists(dir.File("player@2x_frames.png")));
         var meta = UnityMeta.Read(png + ".meta");
         Assert.Equal(original.Guid, meta.Guid);
@@ -713,9 +716,10 @@ public class PartsTests
         p.CommitCelStroke("칠");
         p.Edit("배치", ProjectChange.Settings, () =>
         {
-            p.Export.Spacing = 2;
-            p.Export.AtlasPowerOfTwo = true;
-            p.Export.AtlasOrder = AtlasPackOrder.LargestFirst;
+            p.Export.Common.Layout = SheetLayout.Packed;
+            p.Export.Common.Spacing = 2;
+            p.Export.Common.PowerOfTwo = true;
+            p.Export.Common.PackOrder = AtlasPackOrder.LargestFirst;
         });
         var sheet = ProjectExport.BuildPartsSheet(p, "parts");
         Assert.Equal(["wide", "tall"], sheet.Entries.Select(e => e.Name));
@@ -809,7 +813,7 @@ public class PartsTests
         var g = p.AddGroup();
         p.AddPart(g, "Head", 2, 2);
         Paint(p, 1, 0, 0, 0, Red);
-        p.Edit("메타", ProjectChange.Settings, () => p.Export.WriteMeta = true);
+        p.Edit("메타", ProjectChange.Settings, () => { p.Export.WriteMeta = true; p.Export.ExportParts = true; });
         ProjectIO.SaveWithExport(p, oldPath);
         var oldPng = dir.File("hero.png");
         var oldParts = dir.File("hero_parts.png");

@@ -150,8 +150,7 @@ public sealed class ImportKindDialog : DialogBase
 public sealed class ResizeDialog : DialogBase
 {
     private readonly NumericUpDown _w, _h;
-    private readonly ToggleButton[] _anchors = new ToggleButton[9];
-    private int _anchor = 4;
+    private readonly AnchorPicker _anchor = new();
 
     public ResizeDialog(int width, int height, string title = "캔버스 크기") : base(title)
     {
@@ -160,13 +159,26 @@ public sealed class ResizeDialog : DialogBase
         Body.Children.Add(Ui.Label($"현재 크기: {width} × {height}"));
         Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
         Body.Children.Add(Ui.Label("기준점(기존 그림이 놓일 위치)"));
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"),
-            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
-            Background = AppTheme.PanelBrush,
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
+        Body.Children.Add(_anchor);
+    }
+
+    public int NewWidth => (int)_w.NumValue();
+    public int NewHeight => (int)_h.NumValue();
+    public Gpixel.Core.Model.Anchor ImageAnchor => _anchor.Value;
+}
+
+/// <summary>기준점 9방향 단추(라디오처럼 하나만 눌림).</summary>
+public sealed class AnchorPicker : Grid
+{
+    private readonly ToggleButton[] _buttons = new ToggleButton[9];
+
+    public AnchorPicker(Gpixel.Core.Model.Anchor value = Gpixel.Core.Model.Anchor.Center)
+    {
+        ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto");
+        RowDefinitions = new RowDefinitions("Auto,Auto,Auto");
+        Background = AppTheme.PanelBrush;
+        HorizontalAlignment = HorizontalAlignment.Left;
+        Value = value;
         string[] arrows = ["↖", "↑", "↗", "←", "●", "→", "↙", "↓", "↘"];
         for (int i = 0; i < 9; i++)
         {
@@ -179,25 +191,25 @@ public sealed class ResizeDialog : DialogBase
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(1),
-                IsChecked = i == 4,
+                IsChecked = i == (int)value,
             };
             // 라디오처럼: 하나만 눌려 있고, 눌린 걸 다시 눌러도 꺼지지 않는다.
             b.Click += (_, _) =>
             {
-                _anchor = index;
-                for (int k = 0; k < 9; k++) _anchors[k].IsChecked = k == index;
+                Value = (Gpixel.Core.Model.Anchor)index;
+                for (int k = 0; k < 9; k++) _buttons[k].IsChecked = k == index;
+                Changed?.Invoke(this, EventArgs.Empty);
             };
             Grid.SetColumn(b, i % 3);
             Grid.SetRow(b, i / 3);
-            _anchors[i] = b;
-            grid.Children.Add(b);
+            _buttons[i] = b;
+            Children.Add(b);
         }
-        Body.Children.Add(grid);
     }
 
-    public int NewWidth => (int)_w.NumValue();
-    public int NewHeight => (int)_h.NumValue();
-    public Gpixel.Core.Model.Anchor ImageAnchor => (Gpixel.Core.Model.Anchor)_anchor;
+    public Gpixel.Core.Model.Anchor Value { get; private set; }
+
+    public event EventHandler? Changed;
 }
 
 /// <summary>시트 한 장을 격자(칸 크기/칸 수) 또는 자동(덩어리)으로 나눠 프레임으로 만드는 설정.</summary>
@@ -307,14 +319,19 @@ public sealed class ColorField : StackPanel
         Color = color;
     }
 
+    /// <summary>색이 바뀌었다(대화상자로 고르거나 HEX를 고친 뒤, 코드로 바꿀 때 포함).</summary>
+    public event EventHandler? ColorChanged;
+
     public Color32 Color
     {
         get => Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c) ? c : _color;
         set
         {
+            bool changed = _color != value;
             _color = value;
             _hex.Text = value.ToHex();
             _swatch.InvalidateVisual();
+            if (changed) ColorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -426,14 +443,17 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("파일", "Ctrl+Shift+S", "다른 이름으로 저장"),
         ("파일", "Ctrl+E", "내보내기(설정 창 → 파란 내보내기)"),
         ("파일", "Ctrl+W", "닫기"),
-        ("편집", "Ctrl+Z", "실행취소"),
+        ("편집", "Ctrl+Z", "실행취소(파일 목록에서는 마지막 삭제 되살리기)"),
         ("편집", "Ctrl+Y / Ctrl+Shift+Z", "다시 실행"),
+        ("편집", "Ctrl+,", "환경 설정(실행취소 횟수·앱 휴지통 보관 기간)"),
         ("편집", "Ctrl+X / Ctrl+C / Ctrl+V", "잘라내기 / 복사(선택 없으면 프레임 전체) / 붙여넣기"),
         ("편집", Platform.IsMac ? "Delete / ⌫" : "Delete", "선택 내용 지우기"),
         ("편집", "Ctrl+A / Ctrl+D", "모두 선택 / 선택 해제"),
         ("편집", "Enter / Esc", "떠 있는 선택 내려놓기 / 선택 해제"),
         ("편집", "Shift+H / Shift+V", "좌우 / 상하 뒤집기(선택, 없으면 현재 셀)"),
         ("편집", "Ctrl+R / Ctrl+Shift+R", "90° 회전(선택, 없으면 캔버스 전체)"),
+        ("편집", "Ctrl+T", "변형 모드(선택, 없으면 현재 셀의 칠한 픽셀): 안쪽 끌기 = 옮기기, 손잡이 = 크기(Shift 비율, Alt 가운데), 바깥 = 회전(Shift 15°)"),
+        ("편집", "변형 중 Enter / Esc · Ctrl+Z", "변형 적용(실행취소 한 단계) / 변형 취소"),
         ("편집", "방향키 · Ctrl+Shift+방향키", "선택(이동 도구면 셀 내용) 1픽셀 옮기기"),
         ("편집", "Shift+방향키", "8픽셀 옮기기"),
         ("편집", "Ctrl+Alt+O", "외곽선 추가(기본색)"),
@@ -461,12 +481,16 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("도구", "B", "연필"),
         ("도구", "E", "지우개"),
         ("도구", "G", "채우기 (Shift+G: 같은 색 전체 전환)"),
+        ("도구", "F", "그라데이션 (끌어서 시작 → 끝, Shift: 45°, 정지점은 도구 설정)"),
         ("도구", "I (또는 Alt/Ctrl+클릭)", "스포이드"),
         ("도구", "L", "선 (Shift: 45° 단위)"),
         ("도구", "R", "사각형 (Shift: 정사각형)"),
         ("도구", "O", "원 (Shift: 정원)"),
         ("도구", "U", "도형 외곽 / 채움 전환"),
-        ("도구", "M", "사각 선택"),
+        ("도구", "M", "선택 칸 — 선택 도구를 쓰는 중이면 다음 선택 도구 (사각 → 원 → 자유 → 스마트)"),
+        ("도구", "Q", "자유 선택 (끌어서 테두리, 놓으면 닫힘)"),
+        ("도구", "W", "스마트 선택 (비슷한 색 영역, 채우기 설정 공유)"),
+        ("도구", "도구 칸 길게 누르기 / 오른쪽 클릭", "묶음 도구 펼쳐 바꾸기 (채우기·도형·선택)"),
         ("도구", "V", "이동(선택 없으면 셀 전체, 순환 옵션)"),
         ("도구", "D", "밝게(왼쪽) / 어둡게(오른쪽)"),
         ("도구", "T", "디더링(체커 무늬)"),
@@ -478,11 +502,13 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("도구", "Shift+X / Shift+Y", "좌우 / 상하 대칭 그리기"),
         ("도구", "Shift+클릭(연필류)", "마지막 점에서 직선"),
         ("보기", "휠", "확대 / 축소(1~64배)"),
+        ("도구", "Ctrl+휠(캔버스)", "브러시(펜) 크기 늘리기 / 줄이기"),
+        ("보기", "휠 / Ctrl+휠(타임라인)", "레이어 위아래 / 프레임 좌우 스크롤"),
         ("보기", "Space+드래그 / 가운데 버튼", "화면 이동"),
         ("보기", "Ctrl+0 / Ctrl+1", "화면에 맞추기 / 실제 크기"),
         ("보기", "Ctrl+= / Ctrl+-", "확대 / 축소"),
         ("보기", "Ctrl+G / Ctrl+Shift+G", "픽셀 격자 / 타일 격자"),
-        ("보기", "Ctrl+T", "타일 모드(5×5 / 큰 그림 3×3 반복)"),
+        ("보기", "Ctrl+Shift+T", "타일 모드(5×5 / 큰 그림 3×3 반복)"),
         ("보기", "Ctrl+J", "양파 껍질"),
         ("보기", "F8", "파일 브라우저 보이기/숨기기"),
         ("테스트", "F5", "움직임 테스트"),
@@ -518,6 +544,7 @@ public sealed class ShortcutHelpDialog : DialogBase
             }
             row++;
         }
+        Body.Children.Add(Ui.Label("기본 단축키 목록입니다. 바꾼 단축키는 메뉴 오른쪽에 보이며, 편집 > 환경 설정 > 단축키에서 바꾸고 JSON으로 내보내기·불러오기 합니다."));
         AddRow("분류", "키", "동작", true, AppTheme.PanelBrush);
         foreach (var (group, key, action) in Shortcuts)
             AddRow(group, Ui.Shortcut(key), Ui.Shortcut(action), false, null);

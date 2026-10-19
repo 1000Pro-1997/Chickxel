@@ -212,14 +212,14 @@ public class ProjectTests
         p.Edit("설정", ProjectChange.Settings | ProjectChange.Frames, () =>
         {
             p.Sprite.PixelsPerUnit = 32;
-            p.Export.Trim = true;
+            p.Export.Common.Trim = true;
             p.AddFrame();
             p.SetFrameDuration(1, 40);
         });
         Assert.Equal(1, p.History.UndoCount);
         p.Undo();
         Assert.Equal(16f, p.Sprite.PixelsPerUnit);
-        Assert.False(p.Export.Trim);
+        Assert.False(p.Export.Common.Trim);
         Assert.Single(p.Frames);
         p.Redo();
         Assert.Equal(40, p.Frames[1].DurationMs);
@@ -283,13 +283,35 @@ public class ProjectTests
     }
 
     [Fact]
+    public void UndoStack_LoweringCapacityDropsOldest_AndClamps()
+    {
+        var stack = new UndoStack(capacity: 10);
+        int value = 0;
+        for (int i = 1; i <= 5; i++)
+        {
+            int v = i;
+            value = v;
+            stack.RecordAction($"{v}", () => value = v - 1, () => value = v);
+        }
+        stack.Capacity = 2;
+        Assert.Equal(2, stack.UndoCount);
+        while (stack.Undo()) { }
+        Assert.Equal(3, value); // 4·5만 남음
+        stack.Capacity = 0;
+        Assert.Equal(1, stack.Capacity);
+        stack.Capacity = UndoStack.MaxCapacity + 1;
+        Assert.Equal(UndoStack.MaxCapacity, stack.Capacity);
+    }
+
+    [Fact]
     public void UndoGroup_RevertsWholeTurnAndSurvivesCapacity()
     {
         var p = new SpriteProject(4, 4);
+        p.History.Capacity = 100;
         p.BeginCelStroke(0, 0).Set(0, 0, Red);
         p.CommitCelStroke("사람");
         p.History.BeginGroup("AI");
-        for (int i = 0; i < UndoStack.DefaultCapacity + 5; i++)
+        for (int i = 0; i < p.History.Capacity + 5; i++)
         {
             p.BeginCelStroke(0, 0).Set(1, 0, new Color32((byte)i, 0, 0));
             p.CommitCelStroke("점");
@@ -308,7 +330,7 @@ public class ProjectTests
 
         Assert.True(p.Redo());
         Assert.Equal(2, p.Frames.Count);
-        Assert.Equal(new Color32(UndoStack.DefaultCapacity + 4, 0, 0), p.GetCel(0, 0)!.Get(1, 0));
+        Assert.Equal(new Color32(104, 0, 0), p.GetCel(0, 0)!.Get(1, 0));
     }
 
     [Fact]
@@ -352,12 +374,13 @@ public class ProjectTests
         {
             p.Sprite.PixelsPerUnit = 32;
             p.Sprite.DefaultPivot = Pivot.BottomCenter;
-            p.Export.Columns = 2;
-            p.Export.Spacing = 1;
-            p.Export.Trim = true;
+            p.Export.Common.Grid = SheetGrid.Columns;
+            p.Export.Common.GridCount = 2;
+            p.Export.Common.Spacing = 1;
+            p.Export.Common.Trim = true;
             p.Export.Folder = "out";
             p.Export.WriteMeta = true;
-            p.Export.Layout = SheetLayout.RowPerTag;
+            p.Export.Common.Order = GridOrder.ByPartTag;
         });
         Assert.NotNull(top);
         return p;
@@ -394,8 +417,9 @@ public class ProjectTests
             (tag.Name, tag.From, tag.To, tag.Direction, tag.Loop, tag.Color));
         Assert.Equal(32f, back.Sprite.PixelsPerUnit);
         Assert.Equal(Pivot.BottomCenter, back.Sprite.DefaultPivot);
-        Assert.Equal((2, 1, true, "out", (bool?)true, SheetLayout.RowPerTag),
-            (back.Export.Columns, back.Export.Spacing, back.Export.Trim, back.Export.Folder, back.Export.WriteMeta, back.Export.Layout));
+        var c = back.Export.Common;
+        Assert.Equal((SheetGrid.Columns, 2, 1, true, "out", (bool?)true, GridOrder.ByPartTag),
+            (c.Grid, c.GridCount, c.Spacing, c.Trim, back.Export.Folder, back.Export.WriteMeta, c.Order));
         for (int l = 0; l < 2; l++)
             for (int f = 0; f < 3; f++)
                 Assert.Equal(p.GetCel(l, f) is null, back.GetCel(l, f) is null);
@@ -474,7 +498,7 @@ public class ProjectTests
     public void Export_ColumnsLayout_NamesRectsAndAnimations()
     {
         var p = MakeWalkProject();
-        p.Edit("열", ProjectChange.Settings, () => { p.Export.Columns = 3; p.Export.Spacing = 2; });
+        p.Edit("열", ProjectChange.Settings, () => { p.Export.Common.Grid = SheetGrid.Columns; p.Export.Common.GridCount = 3; p.Export.Common.Spacing = 2; });
         var sheet = ProjectExport.BuildSheet(p, "hero");
         Assert.Equal((16 * 3 + 4, 16 * 2 + 2), (sheet.Image.Width, sheet.Image.Height));
         Assert.Equal(["walk_0", "walk_1", "walk_2", "idle_0", "idle_1"], sheet.Entries.Select(e => e.Name));
@@ -504,8 +528,10 @@ public class ProjectTests
         var p = MakeWalkProject();
         p.Edit("배치", ProjectChange.Settings, () =>
         {
-            p.Export.Layout = SheetLayout.RowPerTag;
-            p.Export.Trim = true;
+            p.Export.Common.Order = GridOrder.ByPartTag; // 태그마다 한 줄(줄바꿈 없음)
+            p.Export.Common.Grid = SheetGrid.Columns;
+            p.Export.Common.GridCount = SheetOptions.MaxGridCount;
+            p.Export.Common.Trim = true;
         });
         p.AddFrame(); // 태그 없는 빈 프레임 → 마지막 줄, 캔버스 전체
         var sheet = ProjectExport.BuildSheet(p, "hero");
@@ -514,7 +540,7 @@ public class ProjectTests
         Assert.Equal(new Rectangle(0, 0, 4, 8), first.Rect); // 4x8로 잘림
         Assert.Equal(new Pivot(0.5f, 0f), first.Pivot);       // 몸통 아래 가운데 = 원래 피벗 지점
         Assert.Equal(new Size(16, 16), sheet.CellSize);        // 빈 프레임은 잘리지 않음
-        Assert.Equal(new Rectangle(0, 32, 16, 16), sheet.Entries[^1].Rect);
+        Assert.Equal(new Rectangle(0, 34, 16, 16), sheet.Entries[^1].Rect); // 줄 높이 16 + 새 프로젝트 기본 간격 1px씩
         Assert.Equal("hero_5", sheet.Entries[^1].Name);
 
         // 피벗이 잘린 영역 밖이면 0~1 밖 값
@@ -544,7 +570,7 @@ public class ProjectTests
         var p = MakeWalkProject();
 
         var saved = ProjectIO.SaveWithExport(p, projectPath);
-        var export = saved.Export!.Frames!;
+        var export = Assert.Single(saved.Export!.Frames);
         Assert.Equal(Path.Combine(dir.Path, "Assets", "Art", "hero.png"), export.ImagePath);
         Assert.True(export.MetaWritten);
         Assert.Equal(5, export.SpriteCount);
@@ -552,8 +578,9 @@ public class ProjectTests
 
         var meta1 = UnityMeta.Read(export.ImagePath + ".meta");
         Assert.Equal(["walk_0", "walk_1", "walk_2", "idle_0", "idle_1"], meta1.Sprites.Select(s => s.Name));
-        Assert.Equal(new Rectangle(16, 0, 16, 16), meta1.Sprites[1].UnityRect);
-        Assert.Equal(16, PngIO.ReadSize(export.ImagePath).Height);
+        // 새 프로젝트 기본 칸 수 = 자동, 간격 1px: 16×16 다섯 칸 → 3×2(50×33). Unity 칸은 아래 왼쪽 원점.
+        Assert.Equal(new Rectangle(17, 17, 16, 16), meta1.Sprites[1].UnityRect);
+        Assert.Equal((50, 33), (PngIO.ReadSize(export.ImagePath).Width, PngIO.ReadSize(export.ImagePath).Height));
 
         // 예전 버전이 남긴 사이드카는 다시 내보낼 때 지운다(열 때 메타보다 먼저 읽혀 낡은 칸을 보여 주므로).
         File.WriteAllText(SidecarIO.GetPath(export.ImagePath), """{"version":1,"slices":[]}""");
@@ -582,7 +609,7 @@ public class ProjectTests
         // Unity 밖 + 메타 없음 → 자동이면 메타를 쓰지 않음
         var plain = new SpriteProject(4, 4);
         var plainPath = dir.File("plain.gpixel");
-        var r = ProjectIO.SaveWithExport(plain, plainPath).Export!.Frames!;
+        var r = Assert.Single(ProjectIO.SaveWithExport(plain, plainPath).Export!.Frames);
         Assert.False(r.MetaWritten);
         Assert.False(File.Exists(r.ImagePath + ".meta"));
     }
@@ -597,7 +624,7 @@ public class ProjectTests
         var p = MakeWalkProject();
         p.Edit("형식", ProjectChange.Settings, () => { p.Export.ImageFormat = ExportImageFormat.Jpg; p.Export.JpegQuality = 75; });
 
-        var jpg = ProjectIO.SaveWithExport(p, projectPath).Export!.Frames!;
+        var jpg = Assert.Single(ProjectIO.SaveWithExport(p, projectPath).Export!.Frames);
         Assert.Equal(Path.Combine(dir.Path, "Assets", "hero.jpg"), jpg.ImagePath);
         Assert.Equal([0xFF, 0xD8], File.ReadAllBytes(jpg.ImagePath)[..2]);
         Assert.True(jpg.MetaWritten);
@@ -615,7 +642,7 @@ public class ProjectTests
 
         // TGA는 무손실(알파 포함): 헤더 뒤 첫 픽셀 = 왼쪽 위 BGRA
         p.Edit("형식", ProjectChange.Settings, () => p.Export.ImageFormat = ExportImageFormat.Tga);
-        var tga = ProjectIO.SaveWithExport(p, renamed).Export!.Frames!;
+        var tga = Assert.Single(ProjectIO.SaveWithExport(p, renamed).Export!.Frames);
         var bytes = File.ReadAllBytes(tga.ImagePath);
         var expected = ProjectExport.BuildSheet(p, "knight").Image.Get(0, 0);
         Assert.Equal([expected.B, expected.G, expected.R, expected.A], bytes[18..22]);
@@ -631,6 +658,7 @@ public class ProjectTests
         p.AddPart(g, "Head", 2, 2);
         p.Edit("이름", ProjectChange.Settings, () =>
         {
+            p.Export.ExportParts = true; // 새 프로젝트 기본은 프레임 시트만 — 둘 다 내보내기
             p.Export.FileName = "hero_sheet";
             p.Export.PartsFileName = "hero_atlas";
             p.Export.ImageFormat = ExportImageFormat.Tga;
@@ -825,7 +853,7 @@ public class ProjectTests
         Assert.Equal(Pivot.BottomCenter, p.Sprite.DefaultPivot);
         Assert.All(p.Frames, f => Assert.Null(f.Pivot));
         Assert.Equal(32f, p.Sprite.PixelsPerUnit);
-        Assert.Equal(4, p.Export.Columns);
+        Assert.Equal((SheetGrid.Columns, 4), (p.Export.Common.Grid, p.Export.Common.GridCount));
         Assert.Equal(["walk_down", "walk_up"], p.Tags.Select(t => t.Name));
         Assert.Equal((0, 3), (p.Tags[0].From, p.Tags[0].To));
         Assert.Equal((4, 7), (p.Tags[1].From, p.Tags[1].To));

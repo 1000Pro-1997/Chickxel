@@ -181,7 +181,7 @@ public static class Raster
     /// 점들을 칠한다(이미지 밖·<paramref name="clip"/> 밖은 무시). <paramref name="alphaBlend"/>면 알파 합성.
     /// 실제로 바뀐 픽셀 수를 돌려준다.
     /// </summary>
-    public static int Plot(PixelImage image, IEnumerable<Point> points, Color32 color, Rectangle? clip = null,
+    public static int Plot(PixelImage image, IEnumerable<Point> points, Color32 color, PixelMask? clip = null,
         bool alphaBlend = false)
     {
         int changed = 0;
@@ -197,68 +197,84 @@ public static class Raster
 
     /// <summary>
     /// 채우기. <paramref name="contiguous"/>면 이어진 영역만(<paramref name="diagonal"/>이면 8방향, 아니면 4방향), 아니면 영역 안의 맞는 색 전체를 바꾼다.
-    /// <para>
-    /// 맞는 색: 클릭한 점(씨앗)의 색과 RGBA 채널마다의 차이 중 가장 큰 값이 <paramref name="tolerance"/>(0~255) 이하인 색.
-    /// 0이면 정확히 같은 색만이다. 투명(알파 0) 픽셀은 RGB가 없는 것으로 보아, 한쪽이 투명이면 알파 차이만 잰다(둘 다 투명이면 같은 색).
-    /// </para>
+    /// 영역은 <see cref="FloodRegion"/>으로 정한다.
     /// <para>
     /// <paramref name="sample"/>을 주면 영역은 그 그림(같은 크기, 예: 보이는 레이어 합성)의 색으로 정하고 칠하기는 <paramref name="image"/>에 한다.
     /// </para>
     /// 바뀐 픽셀 수를 돌려준다.
     /// </summary>
-    public static int FloodFill(PixelImage image, int x, int y, Color32 color, bool contiguous = true, Rectangle? clip = null,
+    public static int FloodFill(PixelImage image, int x, int y, Color32 color, bool contiguous = true, PixelMask? clip = null,
         int tolerance = 0, bool diagonal = false, PixelImage? sample = null)
     {
         if (sample is not null && (sample.Width != image.Width || sample.Height != image.Height))
             throw new ArgumentException("채우기 기준 그림의 크기가 대상과 다릅니다.", nameof(sample));
-        var area = Rectangle.Intersect(clip ?? image.Bounds, image.Bounds);
-        if (!area.Contains(x, y)) return 0;
-        tolerance = Math.Clamp(tolerance, 0, 255);
-        int w = image.Width;
-        var px = image.Pixels;
-        var src = (sample ?? image).Pixels;
-        var seed = src[y * w + x];
+        if (!image.Contains(x, y)) return 0;
         // 같은 그림에서 정확히 같은 색으로 채우면 바뀔 것이 없다.
-        if (sample is null && tolerance == 0 && seed == color) return 0;
-
+        if (sample is null && tolerance <= 0 && image.Get(x, y) == color) return 0;
+        var region = FloodRegion(sample ?? image, x, y, contiguous, clip, tolerance, diagonal);
+        var r = region.Bounds;
+        var px = image.Pixels;
         int changed = 0;
+        for (int ry = r.Top; ry < r.Bottom; ry++)
+            for (int rx = r.Left; rx < r.Right; rx++)
+            {
+                int i = ry * image.Width + rx;
+                if (!region.Contains(rx, ry) || px[i] == color) continue;
+                px[i] = color;
+                changed++;
+            }
+        return changed;
+    }
+
+    /// <summary>
+    /// 채우기·스마트 선택 영역: <paramref name="source"/>에서 (x,y)(씨앗)의 색과 맞는 칸.
+    /// <paramref name="contiguous"/>면 씨앗에서 이어진 칸만(<paramref name="diagonal"/>이면 8방향, 아니면 4방향), 아니면 <paramref name="clip"/> 안의 맞는 칸 전체.
+    /// <para>
+    /// 맞는 색: 씨앗 색과 RGBA 채널마다의 차이 중 가장 큰 값이 <paramref name="tolerance"/>(0~255) 이하인 색(<see cref="Matches"/>).
+    /// 0이면 정확히 같은 색만이다. 투명(알파 0) 픽셀은 RGB가 없는 것으로 보아, 한쪽이 투명이면 알파 차이만 잰다(둘 다 투명이면 같은 색).
+    /// </para>
+    /// 씨앗이 그림이나 <paramref name="clip"/> 밖이면 빈 영역. 돌려주는 영역은 그림 크기를 감싼다(필요하면 <see cref="PixelMask.Trim"/>).
+    /// </summary>
+    public static PixelMask FloodRegion(PixelImage source, int x, int y, bool contiguous = true, PixelMask? clip = null,
+        int tolerance = 0, bool diagonal = false)
+    {
+        var area = Rectangle.Intersect(clip?.Bounds ?? source.Bounds, source.Bounds);
+        if (!area.Contains(x, y) || clip is { } c0 && !c0.Contains(x, y)) return default;
+        // 모양 제한이면 칸마다 확인한다(사각형은 area로 충분).
+        PixelMask? shape = clip is { IsRectangle: false } ? clip : null;
+        tolerance = Math.Clamp(tolerance, 0, 255);
+        int w = source.Width;
+        var src = source.Pixels;
+        var seed = src[y * w + x];
+        var bits = new bool[src.Length];
+        bool Ok(int cx, int cy) => (shape is not { } s || s.Contains(cx, cy)) && Matches(src[cy * w + cx], seed, tolerance);
+
         if (!contiguous)
         {
             for (int ry = area.Top; ry < area.Bottom; ry++)
                 for (int rx = area.Left; rx < area.Right; rx++)
-                {
-                    int i = ry * w + rx;
-                    if (!Matches(src[i], seed, tolerance) || px[i] == color) continue;
-                    px[i] = color;
-                    changed++;
-                }
-            return changed;
+                    if (Ok(rx, ry)) bits[ry * w + rx] = true;
+            return new PixelMask(source.Bounds, bits);
         }
 
-        // 가로 구간 단위 채우기. visited가 이미 칠한 칸을 다시 보지 않게 막으므로 칠한 색이 기준에 맞아도 된다.
-        var visited = new bool[px.Length];
+        // 가로 구간 단위로 넓힌다. bits가 이미 넣은 칸을 다시 보지 않게 막는다.
         var stack = new Stack<(int X, int Y)>();
         stack.Push((x, y));
         while (stack.Count > 0)
         {
             var (sx, sy) = stack.Pop();
             int row = sy * w;
-            if (visited[row + sx] || !Matches(src[row + sx], seed, tolerance)) continue;
+            if (bits[row + sx] || !Ok(sx, sy)) continue;
             int lx = sx, rx = sx;
-            while (lx > area.Left && !visited[row + lx - 1] && Matches(src[row + lx - 1], seed, tolerance)) lx--;
-            while (rx < area.Right - 1 && !visited[row + rx + 1] && Matches(src[row + rx + 1], seed, tolerance)) rx++;
-            for (int cx = lx; cx <= rx; cx++)
-            {
-                int i = row + cx;
-                visited[i] = true;
-                if (px[i] != color) { px[i] = color; changed++; }
-            }
+            while (lx > area.Left && !bits[row + lx - 1] && Ok(lx - 1, sy)) lx--;
+            while (rx < area.Right - 1 && !bits[row + rx + 1] && Ok(rx + 1, sy)) rx++;
+            for (int cx = lx; cx <= rx; cx++) bits[row + cx] = true;
             int from = diagonal ? Math.Max(area.Left, lx - 1) : lx;
             int to = diagonal ? Math.Min(area.Right - 1, rx + 1) : rx;
             if (sy > area.Top) ScanRow(sy - 1, from, to);
             if (sy < area.Bottom - 1) ScanRow(sy + 1, from, to);
         }
-        return changed;
+        return new PixelMask(source.Bounds, bits);
 
         // 이웃 줄에서 맞는 구간마다 시작점 하나를 넣는다.
         void ScanRow(int ry, int from, int to)
@@ -266,8 +282,7 @@ public static class Raster
             bool inSpan = false;
             for (int cx = from; cx <= to; cx++)
             {
-                int j = ry * w + cx;
-                bool match = !visited[j] && Matches(src[j], seed, tolerance);
+                bool match = !bits[ry * w + cx] && Ok(cx, ry);
                 if (match && !inSpan) stack.Push((cx, ry));
                 inSpan = match;
             }
@@ -275,7 +290,7 @@ public static class Raster
     }
 
     /// <summary>
-    /// <see cref="FloodFill"/>의 색 비교: RGBA 채널 차이의 최댓값 ≤ <paramref name="tolerance"/>. 한쪽이 투명이면 알파 차이만 잰다.
+    /// <see cref="FloodRegion"/>의 색 비교: RGBA 채널 차이의 최댓값 ≤ <paramref name="tolerance"/>. 한쪽이 투명이면 알파 차이만 잰다.
     /// </summary>
     public static bool Matches(Color32 c, Color32 seed, int tolerance)
     {
@@ -286,15 +301,16 @@ public static class Raster
     }
 
     /// <summary>영역 안의 <paramref name="target"/>(투명은 모두 같은 색) 픽셀을 모두 바꾼다.</summary>
-    public static int ReplaceColor(PixelImage image, Color32 target, Color32 replacement, Rectangle? clip = null)
+    public static int ReplaceColor(PixelImage image, Color32 target, Color32 replacement, PixelMask? clip = null)
     {
-        var area = Rectangle.Intersect(clip ?? image.Bounds, image.Bounds);
+        var area = Rectangle.Intersect(clip?.Bounds ?? image.Bounds, image.Bounds);
         int changed = 0;
         var px = image.Pixels;
         for (int y = area.Top; y < area.Bottom; y++)
             for (int x = area.Left; x < area.Right; x++)
             {
                 int i = y * image.Width + x;
+                if (clip is { IsRectangle: false } c && !c.Contains(x, y)) continue;
                 if (!Color32.SameVisible(px[i], target) || px[i] == replacement) continue;
                 px[i] = replacement;
                 changed++;

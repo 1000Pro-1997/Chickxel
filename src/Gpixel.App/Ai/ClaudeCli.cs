@@ -36,6 +36,7 @@ public static class ClaudeCli
         - Before editing, always call get_document to learn the canvas size, frames, layers (including groups and parts), palette and the current frame/layer. When changing existing art, look at it first with get_image (overall look) and get_pixels (exact colors) for the area you will touch.
         - Coordinates: (0,0) is the top-left pixel, x grows to the right, y grows downward. All coordinates are inclusive pixel indices (a 16×16 canvas spans 0..15).
         - Frames are animation frames. Character parts (head, body, arms, legs) are "part" layers nested under a "group" layer: each part has its own size and its own drawing per frame, and one position (offset) inside the frame shared by all frames. When the target layer is a part, pixel coordinates are part-local ((0,0) = the part's top-left). You cannot draw on a group layer; pick one of its parts. Use add_group, add_part and set_part to create, move and resize parts.
+        - A group is also a skin slot: its skins (outfits) are alternative drawings of the same parts, and only the active skin is shown and edited. A part's empty cel in a non-base skin shows the base (first) skin's drawing. A single part may wear a different skin than its group (override). A part can also have its own part-only skins (e.g. a hat only for Head) that no other part or the group list shows; they are worn only through that part's override. Use list_skins to see them (part-only skins under partSkins), add_skin to add one (with part = a part-only skin for that part) and set_skin to switch (set_skin with part = only that part, accepting its part-only skins; follow_group = back to the group's skin); check which skin a part shows before drawing on it. Outfit presets save every group's skin + overrides under a name: list_outfits, save_outfit, apply_outfit.
         - For sprites and detailed art prefer draw_pixels: rows of characters plus a legend mapping each character to a color; a space (or a character missing from the legend) leaves that pixel unchanged. Use draw_shape, fill, set_pixels and clear for simple shapes and touch-ups.
         - Colors are "#RRGGBB", "#RRGGBBAA" or "transparent". Prefer colors from the document palette unless the user asks otherwise.
         - After editing, verify the result with get_image and fix mistakes before you reply.
@@ -576,6 +577,12 @@ public sealed class ClaudeSession : IDisposable
     public event Action? TextStarted;
     /// <summary>스트리밍 중인 답 글 조각.</summary>
     public event Action<string>? TextDelta;
+    /// <summary>
+    /// 응답 블록이 시작됨(진행 표시용): 종류("thinking" 생각 / "tool_use" 도구 호출 작성 / "text" 답 글)와 도구 이름(도구일 때, 접두어 뺌).
+    /// </summary>
+    public event Action<string, string?>? BlockStarted;
+    /// <summary>지금 블록에 받은 글자 수(생각·도구 입력 JSON·답 글 조각마다, 진행 표시용).</summary>
+    public event Action<int>? BlockProgress;
     /// <summary>다 받은 답 글 블록.</summary>
     public event Action<string>? AssistantText;
     public event Action<ToolUseInfo>? ToolUse;
@@ -816,11 +823,30 @@ public sealed class ClaudeSession : IDisposable
                 if (o["event"] is not JsonObject ev) break;
                 switch (ClaudeCli.Str(ev["type"]))
                 {
-                    case "content_block_start" when ev["content_block"] is JsonObject block && ClaudeCli.Str(block["type"]) == "text":
-                        TextStarted?.Invoke();
+                    case "content_block_start" when ev["content_block"] is JsonObject block:
+                        var kind = ClaudeCli.Str(block["type"]) ?? "";
+                        var blockName = ClaudeCli.Str(block["name"]);
+                        if (blockName is not null && blockName.StartsWith(ToolPrefix, StringComparison.Ordinal)) blockName = blockName[ToolPrefix.Length..];
+                        BlockStarted?.Invoke(kind, blockName);
+                        if (kind == "text") TextStarted?.Invoke();
                         break;
-                    case "content_block_delta" when ev["delta"] is JsonObject delta && ClaudeCli.Str(delta["type"]) == "text_delta":
-                        if (ClaudeCli.Str(delta["text"]) is { Length: > 0 } t) TextDelta?.Invoke(t);
+                    case "content_block_delta" when ev["delta"] is JsonObject delta:
+                        switch (ClaudeCli.Str(delta["type"]))
+                        {
+                            case "text_delta":
+                                if (ClaudeCli.Str(delta["text"]) is { Length: > 0 } t)
+                                {
+                                    BlockProgress?.Invoke(t.Length);
+                                    TextDelta?.Invoke(t);
+                                }
+                                break;
+                            case "thinking_delta":
+                                BlockProgress?.Invoke(ClaudeCli.Str(delta["thinking"])?.Length ?? 0);
+                                break;
+                            case "input_json_delta":
+                                BlockProgress?.Invoke(ClaudeCli.Str(delta["partial_json"])?.Length ?? 0);
+                                break;
+                        }
                         break;
                 }
                 break;

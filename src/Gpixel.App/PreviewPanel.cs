@@ -7,6 +7,7 @@ namespace Gpixel.App;
 /// <summary>
 /// Piskel식 미리보기(오른쪽 위): 현재 태그(없으면 전체 프레임)를 실시간으로 재생한다.
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
+/// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
 /// </summary>
 public sealed class PreviewPanel : UserControl
 {
@@ -32,6 +33,11 @@ public sealed class PreviewPanel : UserControl
     private List<int> _order = new();
     private int _orderIndex;
     private double _elapsedInFrame;
+    /// <summary>착장 줄: 그룹마다 이름 + 스킨 고르기 상자. 그룹이 없으면 숨김.</summary>
+    private readonly WrapPanel _outfit = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 1) };
+    private readonly Border _outfitHost;
+    /// <summary>착장 줄을 다시 만드는 중(상자 선택 바뀜을 스킨 고르기로 보지 않음).</summary>
+    private bool _syncingOutfit;
 
     /// <summary>재생 중 보이는 프레임이 바뀜(-1 = 재생 멈춤).</summary>
     public event EventHandler<int>? PlayingFrameChanged;
@@ -82,9 +88,25 @@ public sealed class PreviewPanel : UserControl
         bar.Children.Add(_fps);
         bar.Children.Add(_scaleButton);
         bar.Children.Add(_background);
+        _outfitHost = new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            IsVisible = false,
+            Child = new ScrollViewer
+            {
+                Content = _outfit,
+                MaxHeight = 92,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            },
+        };
+        DockPanel.SetDock(_outfitHost, Dock.Bottom);
         var root = new DockPanel();
         root.Children.Add(Ui.Header("미리보기"));
         root.Children.Add(bar);
+        root.Children.Add(_outfitHost);
         root.Children.Add(_view);
         Content = root;
         SetScale(0);
@@ -93,12 +115,109 @@ public sealed class PreviewPanel : UserControl
         ctx.ProjectReplaced += (_, _) =>
         {
             Stop();
+            RebuildOutfit();
             _view.InvalidateVisual();
         };
         ctx.ViewChanged += (_, _) => _view.InvalidateVisual();
         // 재생 중에 태그를 만들거나 고르면 그 태그 안에서 반복하도록 순서를 바꾼다.
         ctx.CurrentChanged += (_, _) => RefreshOrder();
-        ctx.ProjectChanged += (_, e) => { if ((e.Change & (ProjectChange.Tags | ProjectChange.Frames)) != 0) RefreshOrder(); };
+        ctx.ProjectChanged += (_, e) =>
+        {
+            if ((e.Change & (ProjectChange.Tags | ProjectChange.Frames)) != 0) RefreshOrder();
+            // 스킨 고르기·추가·삭제·이름·순서와 그룹 추가·삭제·이름은 모두 Layers 변경이다(실행취소 포함).
+            if ((e.Change & ProjectChange.Layers) != 0) RebuildOutfit();
+        };
+        RebuildOutfit();
+    }
+
+    // ───────────── 착장(그룹마다 보일 스킨) ─────────────
+
+    /// <summary>착장 줄을 프로젝트에 맞춰 다시 만든다(그룹이 없으면 숨김).</summary>
+    private void RebuildOutfit()
+    {
+        _syncingOutfit = true;
+        try
+        {
+            _outfit.Children.Clear();
+            var p = _ctx.Project;
+            var groups = p is null ? [] : p.Layers.Where(l => l.IsGroup).Reverse().ToList();
+            _outfitHost.IsVisible = groups.Count > 0;
+            if (p is null || groups.Count == 0) return;
+            var title = Ui.Label("착장");
+            title.Foreground = AppTheme.DimTextBrush;
+            title.VerticalAlignment = VerticalAlignment.Center;
+            title.Margin = new Thickness(2, 0, 4, 0);
+            _outfit.Children.Add(title);
+            foreach (var group in groups) _outfit.Children.Add(OutfitItem(p, group));
+            var manage = new Button
+            {
+                Content = "관리…",
+                Padding = new Thickness(6, 0),
+                MinHeight = 20,
+                Margin = new Thickness(2, 2, 2, 2),
+                VerticalAlignment = VerticalAlignment.Center,
+                Focusable = false,
+            }.Tip("스킨 관리 창: 스킨 카드로 갈아입히기·추가·복제·이름·삭제, 부위마다 따로 고르기");
+            manage.Click += (_, _) => SkinManagerWindow.Open(_ctx, this);
+            _outfit.Children.Add(manage);
+        }
+        finally
+        {
+            _syncingOutfit = false;
+        }
+    }
+
+    /// <summary>
+    /// 그룹 하나: 이름(누르면 스킨 관리 창이 그 그룹으로, 부위만 따로 고른 스킨이 있으면 "*") + 스킨 상자(스킨이 하나뿐이면 끔).
+    /// 고르면 그 그룹의 지금 스킨이 바뀐다(부위만 따로 고른 스킨은 그대로).
+    /// </summary>
+    private Control OutfitItem(SpriteProject p, Layer group)
+    {
+        int overrides = p.ChildrenOf(group).Count(x => x.SkinOverride is not null);
+        var label = new TextBlock
+        {
+            Text = overrides > 0 ? group.Name + " *" : group.Name,
+            Foreground = group.Visible ? AppTheme.TextBrush : AppTheme.DimTextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            MaxWidth = 80,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(4, 0, 2, 0),
+            Cursor = new Cursor(StandardCursorType.Hand),
+        }.Tip(overrides > 0 ? $"\"{group.Name}\": 부위 {overrides}개는 따로 고른 스킨 — 눌러서 스킨 관리" : $"\"{group.Name}\" — 눌러서 스킨 관리");
+        label.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(label).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            Dispatcher.UIThread.Post(() => SkinManagerWindow.Open(_ctx, this, group));
+        };
+        var combo = new ComboBox
+        {
+            Width = 92,
+            MinWidth = 0,
+            Margin = new Thickness(1, 2, 4, 2),
+            VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = group.Skins.Count > 1,
+        };
+        var skins = group.Skins.ToList();
+        for (int i = 0; i < skins.Count; i++)
+        {
+            combo.Items.Add(i == 0 && skins.Count > 1 ? $"{skins[i].Name} (기본)" : skins[i].Name);
+            if (ReferenceEquals(skins[i], group.ActiveSkin)) combo.SelectedIndex = i;
+        }
+        combo.Tip(skins.Count > 1
+            ? $"\"{group.Name}\" 그룹에 보일 스킨"
+            : $"\"{group.Name}\" 그룹은 스킨이 하나뿐입니다 — \"관리…\"에서 스킨을 더하세요");
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (_syncingOutfit || combo.SelectedIndex < 0 || combo.SelectedIndex >= skins.Count) return;
+            var skin = skins[combo.SelectedIndex];
+            // 고르기가 착장 줄을 다시 만들므로, 상자가 닫힌 뒤에 바꾼다.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_ctx.Project is { } p && p.Layers.Contains(group) && group.Skins.Contains(skin)) _ctx.SetActiveSkin(group, skin);
+            });
+        };
+        return new StackPanel { Orientation = Orientation.Horizontal, Children = { label, combo } };
     }
 
     private void StepScale(int direction)

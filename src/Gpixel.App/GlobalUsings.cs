@@ -14,3 +14,5 @@ global using Point = System.Drawing.Point;
 global using Size = System.Drawing.Size;
 global using Rectangle = System.Drawing.Rectangle;
 global using Color = Avalonia.Media.Color;
+// 그라데이션 색 정지점은 Core 형식(Avalonia.Media.GradientStop과 이름이 같다).
+global using GradientStop = Gpixel.Core.Edit.GradientStop;

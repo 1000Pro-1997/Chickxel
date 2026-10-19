@@ -255,6 +255,10 @@ public static class ProjectImport
 
         // 가져온 아틀라스 하나만 다시 쓴다. 프레임 시트는 같은 그림의 사본이라 기본으로 끄고, 켜면 겹치지 않는 이름을 쓴다.
         project.Export.ExportParts = true;
+        // 부위 이름 = 가져온 칸 이름(Unity guid·spriteID 기준)이므로 태그를 붙여도 이름이 바뀌지 않게 프레임 번호 규칙.
+        project.Export.Common.Naming = SpriteNaming.FrameNumber;
+        // 가져온 칸 위치를 지키는 자동 배치(원래 위치 유지).
+        project.Export.Common.Layout = SheetLayout.Packed;
         project.Export.PartsFileName = doc.BaseName;
         project.Export.ExportFrames = false;
         project.Export.FileName = doc.BaseName + "_frames";
@@ -344,18 +348,28 @@ public static class ProjectImport
         return true;
     }
 
-    /// <summary>칸이 격자 모양(모든 행의 칸 수가 같음)이면 같은 열 수·간격으로 내보내도록 설정한다.</summary>
+    /// <summary>칸이 격자 모양(모든 행의 칸 수가 같음)이면 같은 열 수·간격으로 내보내도록 설정한다(한 줄이면 세로 1칸).</summary>
     private static void DetectLayout(ExportSettings export, List<Rectangle> rects)
     {
+        var o = export.Common;
         var rows = SliceOrder.GroupRows(rects);
         int cols = rows[0].Count;
-        if (rows.Count > 1 && rows.All(r => r.Count == cols)) export.Columns = cols;
-        else if (rows.Count == 1) export.Columns = 0;
-        else export.Columns = rows.Max(r => r.Count);
+        if (rows.Count == 1)
+        {
+            o.Grid = SheetGrid.Rows;
+            o.GridCount = 1;
+        }
+        else
+        {
+            o.Grid = SheetGrid.Columns;
+            o.GridCount = rows.All(r => r.Count == cols) ? cols : rows.Max(r => r.Count);
+        }
         if (cols >= 2)
         {
             int gap = rects[rows[0][1]].X - rects[rows[0][0]].Right;
-            if (gap > 0) export.Spacing = gap;
+            // 원래 시트와 같은 모양으로 다시 내보내도록 간격을 그대로(붙어 있었으면 0 — 새 프로젝트 기본 1px을 쓰지 않음).
+            o.Spacing = Math.Max(0, gap);
         }
+        else o.Spacing = 0;
     }
 }

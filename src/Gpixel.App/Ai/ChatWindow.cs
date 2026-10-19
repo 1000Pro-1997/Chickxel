@@ -48,6 +48,13 @@ public sealed class ChatWindow : Window
     private readonly List<Attachment> _attachments = new();
     private readonly List<UndoStep> _steps = new();
     private readonly DispatcherTimer _terminalPoll = new() { Interval = TimeSpan.FromSeconds(2) };
+    /// <summary>차례 중 "생각 중…" 줄을 진행 상황(단계·받은 양·걸린 시간)으로 고쳐 쓴다.</summary>
+    private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private DateTime _turnStart, _phaseStart;
+    /// <summary>지금 단계: wait(응답 기다림) / thinking / tool_use(도구 호출 작성) / run(도구 실행) / text(답 쓰기).</summary>
+    private string _phase = "wait";
+    private string? _phaseTool;
+    private int _phaseChars;
 
     private string? _claudePath;
     private ClaudeSession? _session;
@@ -115,6 +122,7 @@ public sealed class ChatWindow : Window
             Foreground = AppTheme.DimTextBrush,
             FontStyle = FontStyle.Italic,
             Margin = new Thickness(2, 2),
+            TextWrapping = TextWrapping.Wrap,
         };
 
         _chips = new WrapPanel { IsVisible = false, Margin = new Thickness(0, 0, 0, 4) };
@@ -156,6 +164,7 @@ public sealed class ChatWindow : Window
         Content = new DockPanel { Children = { headerBorder, _body } };
 
         _terminalPoll.Tick += async (_, _) => await PollLoginAsync();
+        _progressTimer.Tick += (_, _) => UpdateProgress();
         _ctx.UndoChanged += OnUndoChanged;
         _ctx.ProjectReplaced += OnProjectReplaced;
         PositionChanged += (_, _) => SaveBounds();
@@ -469,6 +478,7 @@ public sealed class ChatWindow : Window
         s.ToolUse += info =>
         {
             if (_turn is not { } t) return;
+            SetPhase("run", info.Name);
             FinishStream(t);
             var line = new TextBlock
             {
@@ -481,6 +491,9 @@ public sealed class ChatWindow : Window
             if (info.Id.Length > 0) t.Tools[info.Id] = line;
             AddItem(line);
         };
+        s.BlockStarted += (kind, name) => { if (_turn is not null) SetPhase(kind, name); };
+        s.BlockProgress += chars => _phaseChars += chars;
+        s.ToolResult += info => { if (_turn is not null && info.ToolUseId.Length > 0) SetPhase("wait", null); };
         s.ToolResult += info =>
         {
             if (_turn is not { } t || !info.IsError || !t.Tools.TryGetValue(info.ToolUseId, out var line)) return;
@@ -567,6 +580,9 @@ public sealed class ChatWindow : Window
         }
         _turn = turn;
         _messages.Children.Add(_thinking);
+        _turnStart = DateTime.UtcNow;
+        SetPhase("wait", null);
+        _progressTimer.Start();
         UpdateInputState();
         RefreshSteps();
     }
@@ -587,6 +603,7 @@ public sealed class ChatWindow : Window
         _turn = null;
         FinishStream(turn);
         _messages.Children.Remove(_thinking);
+        _progressTimer.Stop();
 
         IUndoCommand? group = null;
         SpriteProject? project = turn.Project;
@@ -653,6 +670,37 @@ public sealed class ChatWindow : Window
         => _ctx.Project?.Path is { } file && Path.GetDirectoryName(file) is { Length: > 0 } dir ? dir : null;
 
     // ───────────── 메시지 목록 ─────────────
+
+    /// <summary>진행 단계를 바꾼다(받은 양·단계 시간은 0부터).</summary>
+    private void SetPhase(string phase, string? tool)
+    {
+        _phase = phase;
+        _phaseTool = tool;
+        _phaseChars = 0;
+        _phaseStart = DateTime.UtcNow;
+        UpdateProgress();
+    }
+
+    /// <summary>
+    /// "생각 중…" 줄: 지금 하는 일(응답 기다림·생각·도구 호출 작성(받은 양)·도구 실행·답 쓰기) + 그 단계 시간 + 전체 시간.
+    /// 큰 그림을 그리는 도구 호출은 작성에 오래 걸리므로 받은 양이 늘어나는 것으로 살아 있음을 보인다.
+    /// </summary>
+    private void UpdateProgress()
+    {
+        if (_turn is null) return;
+        var now = DateTime.UtcNow;
+        static string Time(TimeSpan t) => t.TotalMinutes >= 1 ? $"{(int)t.TotalMinutes}분 {t.Seconds}초" : $"{t.Seconds}초";
+        string Size(int chars) => chars >= 1024 ? $"{chars / 1024.0:0.0}K자" : $"{chars}자";
+        string what = _phase switch
+        {
+            "thinking" => $"생각 중… ({Size(_phaseChars)})",
+            "tool_use" => $"도구 호출 작성 중: {_phaseTool ?? "?"} ({Size(_phaseChars)})",
+            "run" => $"편집기에서 실행 중: {_phaseTool ?? "?"}",
+            "text" => "답 쓰는 중…",
+            _ => "응답 기다리는 중…",
+        };
+        _thinking.Text = $"{what} · {Time(now - _phaseStart)} (전체 {Time(now - _turnStart)})";
+    }
 
     /// <summary>메시지 목록 끝("생각 중…" 앞)에 붙인다.</summary>
     private void AddItem(Control c)

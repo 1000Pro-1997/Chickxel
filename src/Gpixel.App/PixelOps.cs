@@ -1,3 +1,4 @@
+using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
 
 namespace Gpixel.App;
@@ -6,27 +7,28 @@ namespace Gpixel.App;
 public static class PixelOps
 {
     /// <summary>
-    /// 영역 안의 불투명 픽셀 둘레(투명 픽셀 중 이웃이 불투명한 곳)에 1픽셀 외곽선을 그린다.
+    /// 영역 안의 불투명 픽셀 둘레(투명 픽셀 중 이웃이 불투명한 곳)에 1픽셀 외곽선을 그린다. 모양 영역이면 그 안의 픽셀만 보고 칠한다.
     /// <paramref name="diagonal"/>이면 대각선 이웃도 본다. 바뀐 픽셀 수를 돌려준다.
     /// </summary>
-    public static int AddOutline(PixelImage image, Rectangle region, Color32 color, bool diagonal)
+    public static int AddOutline(PixelImage image, PixelMask region, Color32 color, bool diagonal)
     {
-        var r = Rectangle.Intersect(region, image.Bounds);
+        var r = Rectangle.Intersect(region.Bounds, image.Bounds);
         if (r.IsEmpty) return 0;
         var src = image.Crop(r);
         int changed = 0;
+        bool Opaque(int x, int y) => (uint)x < (uint)r.Width && (uint)y < (uint)r.Height
+            && src.Pixels[y * r.Width + x].A != 0 && region.Contains(r.X + x, r.Y + y);
         for (int y = 0; y < r.Height; y++)
             for (int x = 0; x < r.Width; x++)
             {
-                if (src.Pixels[y * r.Width + x].A != 0) continue;
+                if (!region.Contains(r.X + x, r.Y + y) || src.Pixels[y * r.Width + x].A != 0) continue;
                 bool touch = false;
                 for (int dy = -1; dy <= 1 && !touch; dy++)
                     for (int dx = -1; dx <= 1 && !touch; dx++)
                     {
                         if (dx == 0 && dy == 0) continue;
                         if (!diagonal && dx != 0 && dy != 0) continue;
-                        int nx = x + dx, ny = y + dy;
-                        if ((uint)nx < (uint)r.Width && (uint)ny < (uint)r.Height && src.Pixels[ny * r.Width + nx].A != 0) touch = true;
+                        if (Opaque(x + dx, y + dy)) touch = true;
                     }
                 if (touch && image.Set(r.X + x, r.Y + y, color)) changed++;
             }

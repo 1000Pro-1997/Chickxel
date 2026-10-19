@@ -13,16 +13,18 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 
 /// <summary>
 /// <c>.gpixel</c> 프로젝트 파일 읽기/쓰기. 형식은 ZIP:
-/// <c>project.json</c>(버전 2, 캔버스·레이어(종류·그룹·부위 크기·위치·피벗·테두리)·프레임·태그·Unity·내보내기 설정) +
-/// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(셀, 부위 셀은 부위 크기). 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래.
+/// <c>project.json</c>(버전 3, 캔버스·레이어(종류·그룹·스킨·부위 크기·위치·피벗·테두리)·프레임·태그·Unity·내보내기 설정) +
+/// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(셀, 부위 셀은 부위 크기 — 부위는 그룹의 첫 스킨 셀) +
+/// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(부위의 첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그룹 스킨 목록 번호 1~).
+/// 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래.
 /// <para>
-/// 버전 1 애니메이션 파일은 그대로 읽는다. 버전 1 아틀라스 파일(<c>kind: Atlas</c>, <c>atlas/S{스프라이트}_L{레이어}.png</c>)은
+/// 버전 2 이하 파일은 그대로 읽는다(그룹마다 스킨 "기본" 하나). 버전 1 아틀라스 파일(<c>kind: Atlas</c>, <c>atlas/S{스프라이트}_L{레이어}.png</c>)은
 /// 그룹 "부위" + 스프라이트마다 부위 하나로 바꿔 읽는다(부위 아틀라스 이름은 예전 내보내기 이름이라 Unity guid·spriteID가 유지됨).
 /// </para>
 /// </summary>
 public static partial class ProjectIO
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
     public const string ProjectEntryName = "project.json";
 
     private static readonly JsonSerializerOptions Options = new()
@@ -37,13 +39,15 @@ public static partial class ProjectIO
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    [GeneratedRegex(@"^cels/L(\d+)_F(\d+)\.png$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^cels/L(\d+)_F(\d+)(?:_S(\d+))?\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex CelEntry();
 
     [GeneratedRegex(@"^atlas/S(\d+)_L(\d+)\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex AtlasEntry();
 
-    public static string CelEntryName(int layerIndex, int frameIndex) => $"cels/L{layerIndex}_F{frameIndex}.png";
+    /// <param name="skinIndex">부위의 스킨 번호(0 = 첫 스킨·일반 레이어).</param>
+    public static string CelEntryName(int layerIndex, int frameIndex, int skinIndex = 0)
+        => skinIndex == 0 ? $"cels/L{layerIndex}_F{frameIndex}.png" : $"cels/L{layerIndex}_F{frameIndex}_S{skinIndex}.png";
 
     // ───────────── 저장 ─────────────
 
@@ -60,7 +64,7 @@ public static partial class ProjectIO
         try
         {
             using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
-                Save(project, fs);
+                Save(project, fs, full);
             File.Move(temp, full, overwrite: true);
         }
         finally
@@ -71,18 +75,36 @@ public static partial class ProjectIO
         project.IsDirty = false;
     }
 
-    /// <summary>ZIP 내용을 스트림에 쓴다(경로·수정 여부는 바꾸지 않음).</summary>
-    public static void Save(SpriteProject project, Stream stream)
+    /// <summary>ZIP 내용을 스트림에 쓴다(경로·수정 여부는 바꾸지 않음). 경로를 모르므로 내보내기 기록(<see cref="SpriteProject.ExportedFiles"/>)은 쓰지 않는다.</summary>
+    public static void Save(SpriteProject project, Stream stream) => Save(project, stream, null);
+
+    /// <param name="projectPath">저장할 프로젝트 전체 경로(내보내기 기록을 이 파일 기준 상대 경로로 씀). null이면 기록을 쓰지 않는다.</param>
+    private static void Save(SpriteProject project, Stream stream, string? projectPath)
     {
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
-        var json = JsonSerializer.Serialize(ToDto(project), Options);
-        var entry = zip.CreateEntry(ProjectEntryName, CompressionLevel.Optimal);
-        using (var w = new StreamWriter(entry.Open(), new System.Text.UTF8Encoding(false)))
-            w.Write(json);
+        WriteProjectJson(zip, ToDto(project, projectPath));
 
         for (int li = 0; li < project.Layers.Count; li++)
+        {
+            var layer = project.Layers[li];
+            if (layer.IsGroup) continue;
+            var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
             for (int fi = 0; fi < project.Frames.Count; fi++)
-                WriteCel(zip, CelEntryName(li, fi), project.GetCel(li, fi));
+            {
+                var frame = project.Frames[fi];
+                WriteCel(zip, CelEntryName(li, fi), project.GetCelRaw(layer, frame, null));
+                for (int si = 1; si < skins.Count; si++)
+                    WriteCel(zip, CelEntryName(li, fi, si), project.GetCelRaw(layer, frame, skins[si]));
+            }
+        }
+    }
+
+    private static void WriteProjectJson(ZipArchive zip, ProjectDto dto)
+    {
+        var json = JsonSerializer.Serialize(dto, Options);
+        var entry = zip.CreateEntry(ProjectEntryName, CompressionLevel.Optimal);
+        using var w = new StreamWriter(entry.Open(), new System.Text.UTF8Encoding(false));
+        w.Write(json);
     }
 
     private static void WriteCel(ZipArchive zip, string name, PixelImage? cel)
@@ -95,21 +117,50 @@ public static partial class ProjectIO
     }
 
     /// <summary>
-    /// 저장(Ctrl+S): 프로젝트를 저장하고, 내보내기가 켜져 있으면 프레임 시트·부위 아틀라스 PNG + 사이드카 + (필요하면) Unity 메타도 쓴다.
+    /// 저장(Ctrl+S): 프로젝트를 저장하고, 내보내기가 켜져 있으면 프레임 시트·부위 아틀라스 이미지 + (필요하면) Unity 메타도 쓴다.
+    /// 내보낼 결과 목록(기록)은 저장 전에 정해 <c>.gpixel</c>에 함께 저장한다. 지난 기록에 있고 이번에 만들지 않는 옛 결과는
+    /// <see cref="ProjectExportResult.Stale"/>로 돌려준다(지우지 않음). 다른 경로로 저장하면 지난 기록은 원래 프로젝트 것이라 넘기지 않는다.
     /// 프로젝트 저장 뒤 내보내기가 실패하면 예외가 그대로 올라온다(프로젝트 파일은 이미 저장됨).
     /// </summary>
     /// <param name="path">저장 경로. null이면 <see cref="SpriteProject.Path"/>.</param>
     public static ProjectSaveResult SaveWithExport(SpriteProject project, string? path = null)
     {
         path ??= project.Path ?? throw new InvalidOperationException("저장할 경로가 없습니다.");
-        Save(project, path);
-        var export = project.Export.ExportOnSave ? ProjectExport.Export(project) : null;
-        return new ProjectSaveResult(project.Path!, export);
+        var full = Path.GetFullPath(path);
+        var previous = project.ExportedFiles;
+        if (project.Path is { } current && !string.Equals(Path.GetFullPath(current), full, StringComparison.OrdinalIgnoreCase))
+            project.ExportedFiles = null;
+        ExportPlan? plan = null;
+        Exception? planError = null;
+        if (project.Export.ExportOnSave)
+        {
+            try
+            {
+                plan = ProjectExport.Plan(project, full);
+                project.ExportedFiles = plan.Record;
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IOException or NotSupportedException)
+            {
+                planError = ex; // 프로젝트는 저장하고 내보내기 실패로 알린다
+            }
+        }
+        try
+        {
+            Save(project, full);
+        }
+        catch
+        {
+            project.ExportedFiles = previous;
+            throw;
+        }
+        if (planError is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(planError);
+        return new ProjectSaveResult(project.Path!, plan is null ? null : ProjectExport.Write(project, plan));
     }
 
     /// <summary>
-    /// 프로젝트에 등록된 내보내기 이미지 경로(파일 존재 여부와 무관): 프레임 시트(켜져 있으면), 부위 아틀라스(켜져 있고 부위가 있으면).
-    /// project.json만 읽어 셀은 풀지 않는다. 읽을 수 없으면 빈 목록.
+    /// 프로젝트에 등록된 내보내기 결과 경로(파일 존재 여부와 무관): 지금 설정으로 만들 결과(프레임 시트 파일들, 부위가 있으면 부위 아틀라스 파일들,
+    /// 켜져 있으면 Sprite Library 파일들) + 마지막으로 내보낸 기록의 이미지·<c>.spriteLib</c>. project.json만 읽어 셀은 풀지 않는다
+    /// (부위·스킨은 내용과 무관하게 셈). 읽을 수 없으면 빈 목록.
     /// </summary>
     public static IReadOnlyList<string> GetRegisteredExportPaths(string projectPath)
     {
@@ -123,18 +174,65 @@ public static partial class ProjectIO
         {
             return [];
         }
-        var export = new ExportSettings();
-        if (dto.Export is { } e) ApplyExport(export, e);
-        var full = Path.GetFullPath(projectPath);
-        var paths = new List<string>(2);
-        if (export.ExportFrames) paths.Add(ProjectExport.GetExportImagePath(export, full));
-        if (export.ExportParts && dto.Layers?.Any(l => l.Kind == LayerKind.Part) == true) paths.Add(ProjectExport.GetPartsImagePath(export, full));
+        return RegisteredPaths(dto, Path.GetFullPath(projectPath));
+    }
+
+    private static List<string> RegisteredPaths(ProjectDto dto, string fullProjectPath)
+    {
+        var paths = new List<string>();
+        if (dto.Width >= 1 && dto.Height >= 1 && dto.Width <= PixelImage.MaxSize && dto.Height <= PixelImage.MaxSize)
+        {
+            var (project, _) = FromDto(dto, null);
+            var (frames, parts) = ProjectExport.GetOutputPaths(project, fullProjectPath, assumePartContent: true);
+            paths.AddRange(frames);
+            paths.AddRange(parts);
+            paths.AddRange(ProjectExport.GetLibraryPaths(project, fullProjectPath, assumePartContent: true));
+        }
+        var outputs = Enum.GetValues<ExportImageFormat>().Select(f => f.Extension()).Append(ProjectExport.SpriteLibraryExtension).ToArray();
+        foreach (var file in ResolveRecord(dto.Exported, fullProjectPath) ?? [])
+            if (outputs.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase) && !paths.Contains(file, StringComparer.OrdinalIgnoreCase))
+                paths.Add(file);
         return paths;
     }
 
     /// <summary>
-    /// Returns the existing, default-named exports (frame sheet <c>{project}.png</c>, parts atlas <c>{project}_parts.png</c>)
-    /// and their existing companions. A custom folder or filename is never treated as owned by the project browser.
+    /// 내보내기 기록 → 전체 경로. 기록한 프로젝트 파일 이름(<c>owner</c>)이 지금 이름과 다르면(밖에서 복사·이름 바꿈) 남의 기록이므로 null.
+    /// </summary>
+    private static List<string>? ResolveRecord(ExportRecordDto? record, string? fullProjectPath)
+    {
+        if (record?.Files is null || fullProjectPath is null
+            || !string.Equals(record.Owner, Path.GetFileName(fullProjectPath), StringComparison.OrdinalIgnoreCase)) return null;
+        var dir = Path.GetDirectoryName(fullProjectPath) ?? "";
+        var files = new List<string>(record.Files.Count);
+        foreach (var f in record.Files)
+        {
+            if (string.IsNullOrWhiteSpace(f)) continue;
+            try
+            {
+                files.Add(Path.GetFullPath(Path.Combine(dir, f)));
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+            }
+        }
+        return files;
+    }
+
+    private static ExportRecordDto? ToRecordDto(IReadOnlyList<string>? files, string? fullProjectPath)
+    {
+        if (files is null || fullProjectPath is null) return null;
+        var dir = Path.GetDirectoryName(fullProjectPath) ?? "";
+        return new ExportRecordDto
+        {
+            Owner = Path.GetFileName(fullProjectPath),
+            Files = files.Select(f => Path.GetRelativePath(dir, f).Replace('\\', '/')).ToList(),
+        };
+    }
+
+    /// <summary>
+    /// Returns the existing, default-named exports (frame sheet <c>{project}.png</c> and its per-tag files, parts atlas <c>{project}_parts.png</c>
+    /// and its per-part files — from the current settings and the last export record) and their existing companions.
+    /// A custom folder or filename is never treated as owned by the project browser.
     /// Read only project.json so browsing a large project does not decode its cels.
     /// </summary>
     public static string[] GetOwnedDefaultExportPaths(string projectPath)
@@ -148,7 +246,10 @@ public static partial class ProjectIO
         return owned.ToArray();
     }
 
-    /// <summary>Existing default-named export PNGs owned by the project: frame sheet first, then parts atlas.</summary>
+    /// <summary>
+    /// Existing default-named export images owned by the project (frame sheets first, then parts atlases, then other recorded files):
+    /// in the project folder, named <c>{project}.*</c> or <c>{project}_*</c>, never a custom parts atlas name.
+    /// </summary>
     private static List<string> GetOwnedDefaultPngs(string projectPath)
     {
         ProjectDto dto;
@@ -159,35 +260,65 @@ public static partial class ProjectIO
             || !string.IsNullOrWhiteSpace(export.FileName)) return [];
 
         var full = Path.GetFullPath(projectPath);
-        var ext = (Enum.IsDefined(export.ImageFormat) ? export.ImageFormat : ExportImageFormat.Png).Extension();
-        var owned = new List<string>(2);
-        var frames = Path.ChangeExtension(full, ext);
-        if (export.ExportFrames && File.Exists(frames)) owned.Add(frames);
-        var parts = DefaultPartsImagePath(full, ext);
-        if (export.ExportParts && string.IsNullOrWhiteSpace(export.PartsFileName) && File.Exists(parts)) owned.Add(parts);
-        return owned;
+        var dir = Path.GetDirectoryName(full) ?? "";
+        var stem = Path.GetFileNameWithoutExtension(full);
+        var customParts = string.IsNullOrWhiteSpace(export.PartsFileName) ? null : export.PartsFileName.Trim();
+        return RegisteredPaths(dto, full)
+            .Where(p => IsDefaultNamed(p, dir, stem) && !(customParts is not null && HasStem(Path.GetFileName(p), customParts)) && File.Exists(p))
+            .ToList();
     }
 
-    /// <summary>기본 이름 부위 아틀라스 경로(<c>hero.gpixel</c> → <c>hero_parts.png</c>, 확장자는 내보내기 형식).</summary>
-    private static string DefaultPartsImagePath(string fullProjectPath, string extension)
-        => Path.Combine(Path.GetDirectoryName(fullProjectPath) ?? "", Path.GetFileNameWithoutExtension(fullProjectPath) + "_parts" + extension);
+    /// <summary>프로젝트 폴더에 있고 이름이 <c>{stem}.…</c> 또는 <c>{stem}_…</c>인지(기본 이름 내보내기·그 .meta).</summary>
+    private static bool IsDefaultNamed(string path, string dir, string stem)
+        => string.Equals(Path.GetDirectoryName(path), dir, StringComparison.OrdinalIgnoreCase) && HasStem(Path.GetFileName(path), stem);
 
-    /// <summary>Renames a project and its owned default exports together, without replacing any destination.</summary>
+    /// <summary>이름이 <c>{stem}.…</c>, <c>{stem}_…</c>, <c>{stem}@…</c>(착장·스킨 파일)인지.</summary>
+    private static bool HasStem(string fileName, string stem)
+        => fileName.StartsWith(stem + ".", StringComparison.OrdinalIgnoreCase) || fileName.StartsWith(stem + "_", StringComparison.OrdinalIgnoreCase)
+           || fileName.StartsWith(stem + ProjectExport.SkinSeparator, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>기본 이름 파일의 프로젝트 이름 바꾼 뒤 경로(<c>hero_walk.png</c> → <c>knight_walk.png</c>).</summary>
+    private static string RenamedDefault(string path, string oldStem, string newDir, string newStem)
+        => Path.Combine(newDir, newStem + Path.GetFileName(path)[oldStem.Length..]);
+
+    /// <summary>
+    /// 프로젝트 이름을 바꾼 뒤의 내보내기 기록: 프로젝트 폴더의 기본 이름 파일 중 함께 옮겨진 것(옛 자리에 없고 새 이름에 있음)을 새 경로로.
+    /// 열린 프로젝트의 메모리 기록에도 쓴다.
+    /// </summary>
+    public static IReadOnlyList<string>? RemapExportRecord(IReadOnlyList<string>? files, string oldProjectPath, string newProjectPath)
+    {
+        if (files is null) return null;
+        var oldFull = Path.GetFullPath(oldProjectPath);
+        var newFull = Path.GetFullPath(newProjectPath);
+        var oldDir = Path.GetDirectoryName(oldFull) ?? "";
+        var oldStem = Path.GetFileNameWithoutExtension(oldFull);
+        var newDir = Path.GetDirectoryName(newFull) ?? "";
+        var newStem = Path.GetFileNameWithoutExtension(newFull);
+        return files.Select(f =>
+        {
+            var full = Path.GetFullPath(f);
+            if (!IsDefaultNamed(full, oldDir, oldStem)) return full;
+            var moved = RenamedDefault(full, oldStem, newDir, newStem);
+            return !File.Exists(full) && File.Exists(moved) ? moved : full;
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Renames a project and its owned default exports together, without replacing any destination.
+    /// The export record inside the renamed project is updated to the new names.
+    /// </summary>
     public static void RenameWithOwnedDefaultExport(string oldProjectPath, string newProjectPath)
     {
         var oldFull = Path.GetFullPath(oldProjectPath);
         var newFull = Path.GetFullPath(newProjectPath);
-        // 소유한 기본 이름 이미지는 어떤 형식이든(확장자만 다름) 이름 짝을 만든다.
-        var pngNames = Enum.GetValues<ExportImageFormat>().Select(f => f.Extension()).SelectMany(ext => new (string Old, string New)[]
-        {
-            (Path.ChangeExtension(oldFull, ext), Path.ChangeExtension(newFull, ext)),
-            (DefaultPartsImagePath(oldFull, ext), DefaultPartsImagePath(newFull, ext)),
-        }).ToArray();
+        var oldStem = Path.GetFileNameWithoutExtension(oldFull);
+        var newDir = Path.GetDirectoryName(newFull) ?? "";
+        var newStem = Path.GetFileNameWithoutExtension(newFull);
         var paths = new List<(string Source, string Destination)>();
         var newPngs = new List<string>();
         foreach (var oldPng in GetOwnedDefaultPngs(oldProjectPath))
         {
-            var newPng = pngNames.First(n => n.Old == oldPng).New;
+            var newPng = RenamedDefault(oldPng, oldStem, newDir, newStem);
             newPngs.Add(newPng);
             paths.Add((oldPng, newPng));
             foreach (var source in DocumentIO.GetCompanionPaths(oldPng).Where(File.Exists))
@@ -228,6 +359,45 @@ public static partial class ProjectIO
             }
             throw;
         }
+        UpdateRecordAfterRename(oldFull, newFull);
+    }
+
+    /// <summary>
+    /// 이름을 바꾼 프로젝트 파일 안의 내보내기 기록을 새 이름으로 고쳐 쓴다(project.json만 바꾸고 나머지 항목은 그대로 복사).
+    /// 기록이 없거나 고칠 수 없으면 그대로 둔다(기록은 정리·숨김에만 쓰이고, 남의 기록으로 보이면 무시되므로 안전).
+    /// </summary>
+    private static void UpdateRecordAfterRename(string oldFull, string newFull)
+    {
+        var temp = newFull + ".gpixel-tmp";
+        try
+        {
+            ProjectDto dto;
+            using (var src = ZipFile.OpenRead(newFull))
+            {
+                dto = ReadDto(src);
+                if (ResolveRecord(dto.Exported, oldFull) is not { } files) return;
+                dto.Exported = ToRecordDto(RemapExportRecord(files, oldFull, newFull), newFull);
+                using var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None);
+                using var dst = new ZipArchive(fs, ZipArchiveMode.Create);
+                WriteProjectJson(dst, dto);
+                foreach (var e in src.Entries)
+                {
+                    if (string.Equals(e.FullName, ProjectEntryName, StringComparison.Ordinal)) continue;
+                    var copy = dst.CreateEntry(e.FullName, CompressionLevel.NoCompression);
+                    using var from = e.Open();
+                    using var to = copy.Open();
+                    from.CopyTo(to);
+                }
+            }
+            File.Move(temp, newFull, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+        }
+        finally
+        {
+            if (File.Exists(temp)) File.Delete(temp);
+        }
     }
 
     private static void MoveWithoutReplacing(string source, string destination)
@@ -259,7 +429,7 @@ public static partial class ProjectIO
         var full = Path.GetFullPath(path);
         SpriteProject project;
         using (var fs = File.OpenRead(full))
-            project = Load(fs, warnings, Path.GetFileNameWithoutExtension(full));
+            project = Load(fs, warnings, full);
         project.Path = full;
         project.IsDirty = false;
         return project;
@@ -268,9 +438,10 @@ public static partial class ProjectIO
     /// <inheritdoc cref="Load(string, ICollection{string}?)"/>
     public static SpriteProject Load(Stream stream, ICollection<string>? warnings = null) => Load(stream, warnings, null);
 
-    /// <param name="baseName">파일 이름(확장자 없이). 버전 1 아틀라스의 예전 내보내기 이름을 정할 때 쓴다(null이면 "sprite").</param>
-    private static SpriteProject Load(Stream stream, ICollection<string>? warnings, string? baseName)
+    /// <param name="fullPath">프로젝트 파일 경로. 버전 1 아틀라스의 예전 내보내기 이름(파일 이름, null이면 "sprite")과 내보내기 기록에 쓴다.</param>
+    private static SpriteProject Load(Stream stream, ICollection<string>? warnings, string? fullPath)
     {
+        var baseName = fullPath is null ? null : Path.GetFileNameWithoutExtension(fullPath);
         ZipArchive zip;
         try
         {
@@ -289,20 +460,33 @@ public static partial class ProjectIO
             if (dto.Kind == V1Kind.Atlas) return ConvertV1Atlas(zip, dto, warnings, baseName ?? "sprite");
 
             var (project, fileLayers) = FromDto(dto, warnings);
+            project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
             foreach (var e in zip.Entries)
             {
                 if (CelEntry().Match(e.FullName.Replace('\\', '/')) is not { Success: true } m) continue;
                 if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
-                    || fileLayers[li].IsGroup)
+                    || fileLayers[li].IsGroup || !TrySkin(m, fileLayers[li], out var skin))
                 {
                     warnings?.Add($"쓰이지 않는 셀 파일을 무시했습니다: {e.FullName}");
                     continue;
                 }
                 var layer = fileLayers[li];
-                if (ReadCel(e, project.CelSize(layer), warnings) is { } img) project.SetCelRaw(layer, project.Frames[fi], img);
+                if (ReadCel(e, project.CelSize(layer), warnings) is { } img) project.SetCelRaw(layer, project.Frames[fi], img, skin);
             }
+            project.NormalizeSkins();
             return project;
         }
+    }
+
+    /// <summary>셀 파일의 스킨 번호(<c>_S{n}</c>): 없으면 첫 스킨(null). 있으면 그룹에 그 번호(1~)의 스킨이 있는 부위일 때만 유효.</summary>
+    private static bool TrySkin(Match m, Layer layer, out Skin? skin)
+    {
+        skin = null;
+        if (!m.Groups[3].Success) return true;
+        var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
+        if (!TryIndex(m, 3, skins.Count, out var si) || si == 0) return false;
+        skin = skins[si];
+        return true;
     }
 
     /// <summary><c>project.json</c>을 읽고 버전을 확인한다.</summary>
@@ -461,12 +645,13 @@ public static partial class ProjectIO
         project.Export.PartsFileName = oldName;
         project.Export.ExportFrames = true;
         project.Export.FileName = oldName + "_frames";
+        ApplySheets(project, dto.Export ?? new ExportDto(), [], warnings);
         return project;
     }
 
     // ───────────── 변환 ─────────────
 
-    private static ProjectDto ToDto(SpriteProject p) => new()
+    private static ProjectDto ToDto(SpriteProject p, string? projectPath) => new()
     {
         Version = CurrentVersion,
         Width = p.Width,
@@ -487,6 +672,10 @@ public static partial class ProjectIO
             PartPivot = l.IsPart ? PivotDto.From(l.PartPivot) : null,
             PartBorder = l.IsPart && !l.PartBorder.IsNone ? [l.PartBorder.Left, l.PartBorder.Top, l.PartBorder.Right, l.PartBorder.Bottom] : null,
             PartSource = l.IsPart && l.PartSourceRect is { } r ? [r.X, r.Y, r.Width, r.Height] : null,
+            Skins = l.IsGroup ? l.AllSkins.Select(s => s.Name).ToList() : null,
+            SkinOwners = l.IsGroup && l.AllSkins.Any(s => s.Owner is not null) ? l.AllSkins.Select(s => s.Owner is { } o ? p.IndexOf(o) : -1).ToList() : null,
+            ActiveSkin = l.IsGroup && l.SkinList.IndexOf(l.ActiveSkin!) is > 0 and var ai ? ai : null,
+            Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
         }).ToList(),
         Frames = p.Frames.Select(f => new FrameDto
         {
@@ -518,18 +707,39 @@ public static partial class ProjectIO
             PartsFileName = p.Export.PartsFileName,
             ImageFormat = p.Export.ImageFormat,
             JpegQuality = p.Export.JpegQuality,
-            Layout = p.Export.Layout,
-            Columns = p.Export.Columns,
-            Spacing = p.Export.Spacing,
-            Trim = p.Export.Trim,
             SingleFrame = p.Export.SingleFrameIndex,
             WriteMeta = p.Export.WriteMeta,
-            AtlasMaxWidth = p.Export.AtlasMaxWidth,
-            AtlasPowerOfTwo = p.Export.AtlasPowerOfTwo,
-            AtlasOrder = p.Export.AtlasOrder,
+            SpriteLibrary = p.Export.WriteSpriteLibrary ? true : null,
             KeepImportedRects = p.Export.KeepImportedRects,
+            Sheet = SheetDto.From(p, p.Export.Common),
+            PartsSheet = p.Export.PartsOverride is { } po ? SheetDto.From(p, po) : null,
         },
+        Outfits = p.Outfits.Count == 0 ? null : p.Outfits.Select(o => new OutfitDto
+        {
+            Name = o.Name,
+            Slots = o.Slots.Select(s => SkinRef(p, s.Group, s.Group, s.Skin)).OfType<SkinRefDto>().ToList(),
+            Parts = o.Parts.Select(s => SkinRef(p, s.Part, s.Part.Parent, s.Skin)).OfType<SkinRefDto>().ToList(),
+        }).ToList(),
+        Exported = ToRecordDto(p.ExportedFiles, projectPath),
     };
+
+    private static List<T>? NullIfEmpty<T>(IEnumerable<T> items) => items.ToList() is { Count: > 0 } list ? list : null;
+
+    private static int IndexOf<T>(IReadOnlyList<T> list, T item) where T : class
+    {
+        for (int i = 0; i < list.Count; i++)
+            if (ReferenceEquals(list[i], item)) return i;
+        return -1;
+    }
+
+    /// <summary>(레이어 번호, 그 그룹의 스킨 번호). 레이어가 프로젝트에 없거나 스킨이 그룹에 없으면 null(지운 항목은 저장하지 않음).</summary>
+    private static SkinRefDto? SkinRef(SpriteProject p, Layer layer, Layer? group, Skin skin)
+        => p.IndexOf(layer) is >= 0 and var li && group is { IsGroup: true } g && p.IndexOf(g) >= 0 && IndexOf(g.AllSkins, skin) is >= 0 and var si
+            ? new SkinRefDto { Layer = li, Skin = si } : null;
+
+    /// <summary>스킨이 든 그룹 기준 참조(내보내기에서 뺄 스킨).</summary>
+    private static SkinRefDto? GroupSkinRef(SpriteProject p, Skin skin)
+        => p.Layers.FirstOrDefault(l => l.IsGroup && IndexOf(l.Skins, skin) >= 0) is { } g ? SkinRef(p, g, g, skin) : null;
 
     /// <summary>JSON → 프로젝트(셀 제외). 파일 안 레이어 순서 목록도 돌려준다(셀 파일 번호용, 구조를 고치면 순서가 바뀔 수 있음).</summary>
     private static (SpriteProject Project, List<Layer> FileLayers) FromDto(ProjectDto dto, ICollection<string>? warnings)
@@ -556,6 +766,20 @@ public static partial class ProjectIO
                 layer.PartBorder = l.PartBorder is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None;
                 layer.PartSourceRect = l.PartSource is { Length: >= 4 } r && r[2] > 0 && r[3] > 0 ? new Rectangle(r[0], r[1], r[2], r[3]) : null;
             }
+            else if (kind == LayerKind.Group && l.Skins is { Count: > 0 } names)
+            {
+                // 스킨 이름은 그룹 안에서 겹치지 않게(손상된 파일 대비). 스킨이 없던 예전 파일은 "기본" 하나.
+                var skins = new List<Skin>(names.Count);
+                foreach (var n in names)
+                {
+                    var name = string.IsNullOrWhiteSpace(n) ? "스킨" : n.Trim();
+                    var unique = name;
+                    for (int i = 2; skins.Any(s => s.Name == unique); i++) unique = $"{name} {i}";
+                    skins.Add(new Skin(unique));
+                }
+                layer.ReplaceSkinsRaw(skins);
+                if (l.ActiveSkin is int ai && ai >= 0 && ai < skins.Count) layer.SetActiveSkinRaw(skins[ai]);
+            }
             fileLayers.Add(layer);
             p.AddLayerRaw(layer);
         }
@@ -563,6 +787,17 @@ public static partial class ProjectIO
             if (fileLayers[i].IsPart && layerDtos[i].Parent is int gi && gi >= 0 && gi < fileLayers.Count && fileLayers[gi].IsGroup)
                 fileLayers[i].Parent = fileLayers[gi];
         if (p.NormalizeHierarchy()) warnings?.Add("레이어 그룹 구조가 잘못되어 고쳤습니다.");
+        for (int i = 0; i < fileLayers.Count; i++)
+            if (fileLayers[i] is { IsPart: true, Parent: { IsGroup: true } pg } part && layerDtos[i].Skin is int si && si >= 0 && si < pg.AllSkins.Count)
+                part.SetSkinOverrideRaw(pg.AllSkins[si]);
+        // 부위 전용 스킨의 주인(그 그룹의 부위가 아니면 전체 스킨으로 — 순서 정리는 셀을 읽은 뒤 NormalizeSkins)
+        for (int i = 0; i < fileLayers.Count; i++)
+            if (fileLayers[i].IsGroup && layerDtos[i].SkinOwners is { } owners)
+            {
+                var all = fileLayers[i].AllSkins;
+                for (int k = 1; k < all.Count && k < owners.Count; k++)
+                    if (ResolveLayer(fileLayers, owners[k]) is { IsPart: true } owner && ReferenceEquals(owner.Parent, fileLayers[i])) all[k].Owner = owner;
+            }
         if (p.Layers.Count == 0) p.AddLayerRaw(new Layer(p.NextLayerName()));
 
         foreach (var f in dto.Frames ?? [])
@@ -589,10 +824,36 @@ public static partial class ProjectIO
         }
 
         ApplySettings(p, dto);
+        ApplyOutfits(p, dto, fileLayers);
+        if (dto.Export is { } export) ApplySheets(p, export, fileLayers, warnings);
         return (p, fileLayers);
     }
 
-    /// <summary>Unity·내보내기 설정을 적용한다.</summary>
+    /// <summary>파일 안 (레이어 번호, 스킨 번호) → 그룹 스킨. 그룹이 아니거나 번호가 잘못되면 null.</summary>
+    private static Skin? ResolveSkin(List<Layer> fileLayers, SkinRefDto r)
+        => r.Layer >= 0 && r.Layer < fileLayers.Count && fileLayers[r.Layer] is var l
+           && (l.IsGroup ? l : l.IsPart ? l.Parent : null) is { IsGroup: true } g && r.Skin >= 0 && r.Skin < g.AllSkins.Count ? g.AllSkins[r.Skin] : null;
+
+    private static Layer? ResolveLayer(List<Layer> fileLayers, int index) => index >= 0 && index < fileLayers.Count ? fileLayers[index] : null;
+
+    /// <summary>착장 프리셋을 읽는다. 잘못된 항목은 건너뛴다.</summary>
+    private static void ApplyOutfits(SpriteProject p, ProjectDto dto, List<Layer> fileLayers)
+    {
+        foreach (var o in dto.Outfits ?? [])
+        {
+            var slots = new List<OutfitSlot>();
+            foreach (var s in o.Slots ?? [])
+                if (ResolveLayer(fileLayers, s.Layer) is { IsGroup: true } g && ResolveSkin(fileLayers, s) is { } skin && !slots.Any(x => x.Group == g))
+                    slots.Add(new OutfitSlot(g, skin));
+            var parts = new List<OutfitPart>();
+            foreach (var s in o.Parts ?? [])
+                if (ResolveLayer(fileLayers, s.Layer) is { IsPart: true } part && ResolveSkin(fileLayers, s) is { } skin && !parts.Any(x => x.Part == part))
+                    parts.Add(new OutfitPart(part, skin));
+            p.AddOutfitRaw(new Outfit(p.UniqueOutfitName(o.Name ?? ""), slots, parts));
+        }
+    }
+
+    /// <summary>Unity·내보내기 설정(시트 설정 제외 — <see cref="ApplySheets"/>)을 적용한다.</summary>
     private static void ApplySettings(SpriteProject p, ProjectDto dto)
     {
         if (dto.Unity is { } u)
@@ -618,16 +879,138 @@ public static partial class ProjectIO
         x.PartsFileName = string.IsNullOrWhiteSpace(e.PartsFileName) ? null : e.PartsFileName;
         x.ImageFormat = Enum.IsDefined(e.ImageFormat) ? e.ImageFormat : ExportImageFormat.Png;
         x.JpegQuality = e.JpegQuality;
-        x.Layout = e.Layout;
-        x.Columns = e.Columns;
-        x.Spacing = e.Spacing;
-        x.Trim = e.Trim;
         x.SingleFrameIndex = e.SingleFrame;
         x.WriteMeta = e.WriteMeta;
-        x.AtlasMaxWidth = e.AtlasMaxWidth;
-        x.AtlasPowerOfTwo = e.AtlasPowerOfTwo;
-        x.AtlasOrder = e.AtlasOrder;
+        x.WriteSpriteLibrary = e.SpriteLibrary == true;
         x.KeepImportedRects = e.KeepImportedRects;
+    }
+
+    /// <summary>
+    /// 시트 설정: 새 파일은 <c>sheet</c>(공통)·<c>partsSheet</c>(부위 아틀라스 따로). 예전 파일(프레임 시트·부위 아틀라스 설정이 따로 있던 형식)은
+    /// 두 설정을 각각 만들어, 부위 아틀라스 결과가 공통(프레임 시트) 설정으로도 같으면(또는 한쪽 결과를 내보내지 않으면) 하나로 합치고,
+    /// 다르면 부위 아틀라스를 "따로"(<see cref="ExportSettings.PartsOverride"/>)로 남겨 결과가 조용히 바뀌지 않게 한다.
+    /// </summary>
+    private static void ApplySheets(SpriteProject p, ExportDto e, List<Layer> fileLayers, ICollection<string>? warnings)
+    {
+        var x = p.Export;
+        if (e.Sheet is { } sheet)
+        {
+            sheet.ApplyTo(x.Common, p, fileLayers);
+            if (e.PartsSheet is { } ps)
+            {
+                var o = new SheetOptions();
+                ps.ApplyTo(o, p, fileLayers);
+                x.PartsOverride = o;
+            }
+            return;
+        }
+
+        // ── 예전 형식 → 공통 설정 ──
+        var frames = new SheetOptions
+        {
+            Layout = SheetLayout.Grid,
+            Spacing = e.Spacing ?? 0,
+            Trim = e.Trim == true,
+            MaxWidth = e.AtlasMaxWidth ?? 0,
+            PackOrder = e.AtlasOrder ?? AtlasPackOrder.KeepOrder,
+            SplitTags = e.SplitFrames == true,
+            SplitParts = e.SplitParts == true,
+            Naming = SpriteNaming.ByTag,
+            ExcludedLayers = (e.FrameExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray(),
+            BakeInheritedSkins = e.BakeInheritedSkins == true,
+        };
+        // 예전 프레임 시트: 태그마다 한 줄(줄바꿈 없음, 태그가 없던 파일은 격자와 같았음) / 격자(프레임 순, 칸 수 설정 — 설정이 없던 파일은 열 수 > 0 = 가로 N칸, 0 = 한 줄)
+        if (string.Equals(e.Layout, "RowPerTag", StringComparison.OrdinalIgnoreCase) && p.Tags.Count > 0)
+        {
+            frames.Order = GridOrder.ByPartTag;
+            frames.Grid = SheetGrid.Columns;
+            frames.GridCount = SheetOptions.MaxGridCount;
+        }
+        else if (e.FrameGrid is { } fg && Enum.IsDefined(fg))
+        {
+            frames.Grid = fg;
+            frames.GridCount = e.FrameGridCount ?? 1;
+        }
+        else if (e.Columns is > 0 and var columns)
+        {
+            frames.Grid = SheetGrid.Columns;
+            frames.GridCount = columns;
+        }
+        else
+        {
+            frames.Grid = SheetGrid.Rows;
+            frames.GridCount = 1;
+        }
+        var outfits = (e.FrameOutfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
+        if (outfits.Length > 0)
+        {
+            // 예전 "착장마다 따로 파일" → 고른 스킨(착장만) + 스킨마다 따로 파일
+            frames.Skins = SkinSource.Selected;
+            frames.Outfits = outfits;
+            frames.ExcludedSkins = p.Layers.Where(l => l.IsGroup).SelectMany(l => l.Skins).ToArray();
+            frames.SplitSkins = true;
+            if (e.FrameCurrentOutfit != false)
+                warnings?.Add("예전 \"지금 착장 + 착장 프리셋\" 프레임 시트 설정을 \"고른 스킨\"으로 옮겼습니다 — 지금 착장 파일(이름 그대로)은 더 만들지 않습니다. 필요하면 지금 착장을 착장으로 저장해 고르세요.");
+        }
+
+        var legacyParts = e.PartsLayout ?? "Packed";
+        var parts = new SheetOptions
+        {
+            Layout = string.Equals(legacyParts, "Packed", StringComparison.OrdinalIgnoreCase) ? SheetLayout.Packed : SheetLayout.Grid,
+            Order = legacyParts.ToLowerInvariant() switch
+            {
+                "rowperframe" => GridOrder.ByFrame,
+                "rowperparttag" => GridOrder.ByPartTag,
+                _ => GridOrder.ByPart,
+            },
+            Grid = e.PartsGrid is { } pg && Enum.IsDefined(pg) ? pg : SheetGrid.Auto,
+            GridCount = e.PartsGrid is { } pg2 && Enum.IsDefined(pg2) ? e.PartsGridCount ?? 1 : 1,
+            Spacing = frames.Spacing,
+            PowerOfTwo = e.AtlasPowerOfTwo == true,
+            MaxWidth = frames.MaxWidth,
+            PackOrder = frames.PackOrder,
+            SplitSkins = e.SplitSkins == true,
+            SplitParts = e.SplitParts == true,
+            // 이름 규칙이 없던 파일은 프레임 번호(이름이 바뀌면 Unity 참조가 끊김).
+            Naming = e.PartsNaming is { } pn && Enum.IsDefined(pn) ? pn : SpriteNaming.FrameNumber,
+            Skins = SkinSource.Selected,
+            ExcludedSkins = (e.ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray(),
+            Outfits = frames.Outfits,
+            BakeInheritedSkins = frames.BakeInheritedSkins,
+        };
+
+        bool partsMatter = x.ExportParts && p.Layers.Any(l => l.IsPart);
+        if (!x.ExportFrames && partsMatter) x.Common.CopyFrom(parts);
+        else
+        {
+            x.Common.CopyFrom(frames);
+            if (partsMatter && !SameForParts(p, frames, parts)) x.PartsOverride = parts;
+        }
+    }
+
+    /// <summary>부위 아틀라스 결과가 두 설정에서 같은지(이 프로젝트에서 뜻이 있는 항목만 비교 — 예전 파일 이행용).</summary>
+    internal static bool SameForParts(SpriteProject p, SheetOptions a, SheetOptions b)
+    {
+        bool tags = p.Tags.Count > 0;
+        bool skins = p.Layers.Any(l => l.IsGroup && l.Skins.Count > 1);
+        GridOrder Effective(GridOrder o)
+        {
+            if (tags || !o.Keys.Contains(GridKey.Tag)) return o;
+            int at = o.Keys.ToList().IndexOf(GridKey.Tag);
+            return new GridOrder(o.Keys.Where(k => k != GridKey.Tag).ToList(), o.RowBreak - (at < o.RowBreak ? 1 : 0)).Normalized();
+        }
+        if (a.Layout != b.Layout || a.Spacing != b.Spacing || a.Trim != b.Trim || a.PowerOfTwo != b.PowerOfTwo || a.SplitParts != b.SplitParts) return false;
+        if (Effective(a.Order) != Effective(b.Order)) return false;
+        if (a.Layout == SheetLayout.Grid && (a.Grid != b.Grid || (a.Grid != SheetGrid.Auto && a.GridCount != b.GridCount))) return false;
+        if (a.Layout == SheetLayout.Packed && (a.MaxWidth != b.MaxWidth || a.PackOrder != b.PackOrder)) return false;
+        if (tags && (a.SplitTags != b.SplitTags || a.Naming != b.Naming)) return false;
+        if (!a.ExcludedLayers.SequenceEqual(b.ExcludedLayers)) return false;
+        if (skins)
+        {
+            if (a.SplitSkins != b.SplitSkins || a.BakeInheritedSkins != b.BakeInheritedSkins || a.Skins != b.Skins) return false;
+            if (a.Skins == SkinSource.Selected && !a.ExcludedSkins.ToHashSet().SetEquals(b.ExcludedSkins)) return false;
+        }
+        return true;
     }
 
     // ───────────── JSON 형식 ─────────────
@@ -656,6 +1039,32 @@ public static partial class ProjectIO
         public List<TagDto>? Tags { get; set; }
         public UnityDto? Unity { get; set; }
         public ExportDto? Export { get; set; }
+        /// <summary>마지막으로 내보낸 결과 파일(없으면 기록 없음 — 예전 파일).</summary>
+        public ExportRecordDto? Exported { get; set; }
+        /// <summary>착장 프리셋(없으면 없음 — 예전 파일).</summary>
+        public List<OutfitDto>? Outfits { get; set; }
+    }
+
+    /// <summary>착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>
+    private sealed class OutfitDto
+    {
+        public string? Name { get; set; }
+        public List<SkinRefDto>? Slots { get; set; }
+        public List<SkinRefDto>? Parts { get; set; }
+    }
+
+    /// <summary>(레이어 번호, 그 레이어(부위면 그 그룹)의 스킨 번호).</summary>
+    private sealed class SkinRefDto
+    {
+        public int Layer { get; set; } = -1;
+        public int Skin { get; set; } = -1;
+    }
+
+    /// <summary>내보내기 기록: 기록한 프로젝트 파일 이름과 그 파일 기준 상대 경로(<c>/</c> 구분).</summary>
+    private sealed class ExportRecordDto
+    {
+        public string Owner { get; set; } = "";
+        public List<string>? Files { get; set; }
     }
 
     private sealed class LayerDto
@@ -679,6 +1088,14 @@ public static partial class ProjectIO
         public int[]? PartBorder { get; set; }
         /// <summary>부위의 가져온 원래 칸 [x, y, w, h](왼쪽 위 원점).</summary>
         public int[]? PartSource { get; set; }
+        /// <summary>그룹: 스킨 이름(순서대로, 첫 스킨 = 기본). 없으면(예전 파일) "기본" 하나.</summary>
+        public List<string>? Skins { get; set; }
+        /// <summary>그룹: 스킨마다 부위 전용 스킨의 주인 부위 번호(−1 = 전체 스킨). 없으면 모두 전체 스킨.</summary>
+        public List<int>? SkinOwners { get; set; }
+        /// <summary>그룹: 지금 스킨 번호(없으면 0).</summary>
+        public int? ActiveSkin { get; set; }
+        /// <summary>부위: 그룹 스킨 대신 보일 스킨 번호(재정의, 없으면 그룹을 따름).</summary>
+        public int? Skin { get; set; }
     }
 
     private sealed class FrameDto
@@ -768,16 +1185,110 @@ public static partial class ProjectIO
         public ExportImageFormat ImageFormat { get; set; } = ExportImageFormat.Png;
         public int JpegQuality { get; set; } = 90;
         public string? PartsFileName { get; set; }
-        public SheetLayout Layout { get; set; } = SheetLayout.Columns;
-        public int Columns { get; set; }
-        public int Spacing { get; set; }
-        public bool Trim { get; set; }
         public int SingleFrame { get; set; }
         public bool? WriteMeta { get; set; }
-        public int AtlasMaxWidth { get; set; }
-        public bool AtlasPowerOfTwo { get; set; }
-        public AtlasPackOrder AtlasOrder { get; set; } = AtlasPackOrder.KeepOrder;
+        /// <summary>Sprite Library(.spriteLib) 같이 쓰기(없으면 꺼짐).</summary>
+        public bool? SpriteLibrary { get; set; }
         public bool KeepImportedRects { get; set; } = true;
+        /// <summary>두 결과가 같이 쓰는 시트 설정(없으면 예전 형식 — 아래 읽기 전용 값들에서 옮김).</summary>
+        public SheetDto? Sheet { get; set; }
+        /// <summary>부위 아틀라스만 다른 시트 설정(없으면 공통).</summary>
+        public SheetDto? PartsSheet { get; set; }
+
+        // ── 예전 형식(읽기 전용, 쓰지 않음) ──
+        /// <summary>예전 프레임 시트 배치("Columns" / "RowPerTag").</summary>
+        public string? Layout { get; set; }
+        /// <summary>예전 파일의 프레임 시트 열 수(0 = 한 줄).</summary>
+        public int? Columns { get; set; }
+        public SheetGrid? FrameGrid { get; set; }
+        public int? FrameGridCount { get; set; }
+        public bool? SplitFrames { get; set; }
+        public int? Spacing { get; set; }
+        public bool? Trim { get; set; }
+        public int? AtlasMaxWidth { get; set; }
+        public bool? AtlasPowerOfTwo { get; set; }
+        public AtlasPackOrder? AtlasOrder { get; set; }
+        /// <summary>예전 부위 아틀라스 배치("Packed" / "RowPerPart" / "RowPerFrame" / "RowPerPartTag").</summary>
+        public string? PartsLayout { get; set; }
+        public SheetGrid? PartsGrid { get; set; }
+        public int? PartsGridCount { get; set; }
+        public bool? SplitParts { get; set; }
+        public bool? SplitSkins { get; set; }
+        public bool? FrameCurrentOutfit { get; set; }
+        public List<int>? FrameOutfits { get; set; }
+        public List<int>? FrameExcludedLayers { get; set; }
+        public List<SkinRefDto>? ExcludedSkins { get; set; }
+        public bool? BakeInheritedSkins { get; set; }
+        public SpriteNaming? PartsNaming { get; set; }
+    }
+
+    /// <summary>시트 설정 한 벌(<see cref="SheetOptions"/>). 스킨·레이어·착장은 파일 안 번호.</summary>
+    private sealed class SheetDto
+    {
+        public SheetLayout Layout { get; set; } = SheetLayout.Grid;
+        public List<GridKey>? Order { get; set; }
+        public int RowBreak { get; set; } = 2;
+        public SheetGrid Grid { get; set; } = SheetGrid.Auto;
+        public int GridCount { get; set; } = 4;
+        public int Spacing { get; set; } = 1;
+        public bool Trim { get; set; }
+        public bool PowerOfTwo { get; set; }
+        public int MaxWidth { get; set; }
+        public AtlasPackOrder PackOrder { get; set; } = AtlasPackOrder.KeepOrder;
+        public bool SplitTags { get; set; }
+        public bool SplitSkins { get; set; }
+        public bool SplitParts { get; set; }
+        public SpriteNaming Naming { get; set; } = SpriteNaming.ByTag;
+        public SkinSource Skins { get; set; } = SkinSource.Current;
+        public List<SkinRefDto>? ExcludedSkins { get; set; }
+        public List<int>? Outfits { get; set; }
+        public List<int>? ExcludedLayers { get; set; }
+        public bool? BakeInheritedSkins { get; set; }
+
+        public static SheetDto From(SpriteProject p, SheetOptions o) => new()
+        {
+            Layout = o.Layout,
+            Order = o.Order.Keys.ToList(),
+            RowBreak = o.Order.RowBreak,
+            Grid = o.Grid,
+            GridCount = o.GridCount,
+            Spacing = o.Spacing,
+            Trim = o.Trim,
+            PowerOfTwo = o.PowerOfTwo,
+            MaxWidth = o.MaxWidth,
+            PackOrder = o.PackOrder,
+            SplitTags = o.SplitTags,
+            SplitSkins = o.SplitSkins,
+            SplitParts = o.SplitParts,
+            Naming = o.Naming,
+            Skins = o.Skins,
+            ExcludedSkins = NullIfEmpty(o.ExcludedSkins.Select(s => GroupSkinRef(p, s)).OfType<SkinRefDto>()),
+            Outfits = NullIfEmpty(o.Outfits.Select(x => IndexOf(p.Outfits, x)).Where(i => i >= 0)),
+            ExcludedLayers = NullIfEmpty(o.ExcludedLayers.Select(p.IndexOf).Where(i => i >= 0)),
+            BakeInheritedSkins = o.BakeInheritedSkins ? true : null,
+        };
+
+        public void ApplyTo(SheetOptions o, SpriteProject p, List<Layer> fileLayers)
+        {
+            o.Layout = Enum.IsDefined(Layout) ? Layout : SheetLayout.Grid;
+            o.Order = new GridOrder((Order ?? [GridKey.Part, GridKey.Skin, GridKey.Frame]).Where(Enum.IsDefined).ToList(), RowBreak);
+            o.Grid = Enum.IsDefined(Grid) ? Grid : SheetGrid.Auto;
+            o.GridCount = GridCount;
+            o.Spacing = Spacing;
+            o.Trim = Trim;
+            o.PowerOfTwo = PowerOfTwo;
+            o.MaxWidth = MaxWidth;
+            o.PackOrder = Enum.IsDefined(PackOrder) ? PackOrder : AtlasPackOrder.KeepOrder;
+            o.SplitTags = SplitTags;
+            o.SplitSkins = SplitSkins;
+            o.SplitParts = SplitParts;
+            o.Naming = Enum.IsDefined(Naming) ? Naming : SpriteNaming.ByTag;
+            o.Skins = Enum.IsDefined(Skins) ? Skins : SkinSource.Current;
+            o.ExcludedSkins = (ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray();
+            o.Outfits = (Outfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
+            o.ExcludedLayers = (ExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray();
+            o.BakeInheritedSkins = BakeInheritedSkins == true;
+        }
     }
 
     /// <summary>버전 1 아틀라스 스프라이트(읽기 전용).</summary>

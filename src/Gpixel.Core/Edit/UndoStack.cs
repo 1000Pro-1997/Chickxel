@@ -11,23 +11,36 @@ public interface IUndoCommand
 }
 
 /// <summary>
-/// 실행취소/다시 스택(기본 100단계). 모든 기록은 <see cref="IUndoCommand"/> 하나의 목록으로 쌓인다:
+/// 실행취소/다시 스택(기본 <see cref="DefaultCapacity"/>단계, 최대 <see cref="MaxCapacity"/>). 모든 기록은 <see cref="IUndoCommand"/> 하나의 목록으로 쌓인다:
 /// 셀 픽셀 패치(스트로크), 프로젝트 구조 변경(레이어·프레임·태그·캔버스·설정), 임의 동작.
 /// 프로젝트 편집은 <see cref="SpriteProject"/>가 이 스택에 직접 기록한다.
 /// <see cref="BeginGroup"/>~<see cref="EndGroup"/> 사이의 기록은 한 단계로 묶인다(AI 한 번의 응답 등).
 /// </summary>
 public sealed class UndoStack
 {
-    public const int DefaultCapacity = 100;
+    public const int DefaultCapacity = 1000;
+    public const int MaxCapacity = 10000;
 
     private readonly List<IUndoCommand> _undo = new();
     private readonly List<IUndoCommand> _redo = new();
     private List<IUndoCommand>? _group;
     private string? _groupLabel;
+    private int _capacity;
 
-    public UndoStack(int capacity = DefaultCapacity) => Capacity = Math.Max(1, capacity);
+    public UndoStack(int capacity = DefaultCapacity) => Capacity = capacity;
 
-    public int Capacity { get; }
+    /// <summary>실행취소 단계 수(1~<see cref="MaxCapacity"/>로 맞춤). 줄이면 오래된 기록부터 버린다.</summary>
+    public int Capacity
+    {
+        get => _capacity;
+        set
+        {
+            _capacity = Math.Clamp(value, 1, MaxCapacity);
+            if (_undo.Count <= _capacity) return;
+            _undo.RemoveRange(0, _undo.Count - _capacity);
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>스택 내용이 바뀌면 발생(메뉴 활성화 갱신용).</summary>
     public event EventHandler? Changed;

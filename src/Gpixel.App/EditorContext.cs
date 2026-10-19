@@ -9,11 +9,20 @@ public enum ToolKind
     Pencil,
     Eraser,
     Fill,
+    /// <summary>선형 그라데이션: 끌어서 시작점 → 끝점(색 정지점·보간·디더링은 도구 설정).</summary>
+    Gradient,
     Picker,
     Line,
     Rectangle,
     Ellipse,
+    /// <summary>사각 선택.</summary>
     Select,
+    /// <summary>원 선택(Shift = 정원).</summary>
+    EllipseSelect,
+    /// <summary>자유 선택(올가미): 끌어 그린 닫힌 모양.</summary>
+    Lasso,
+    /// <summary>스마트 선택(마술봉): 클릭한 곳과 비슷한 색 영역(채우기 설정을 같이 씀).</summary>
+    MagicWand,
     Move,
     /// <summary>밝게(왼쪽)/어둡게(오른쪽) 브러시.</summary>
     Dodge,
@@ -95,11 +104,16 @@ public sealed class EditorContext
         set
         {
             if (_tool == value) return;
-            if (value is not (ToolKind.Select or ToolKind.Move)) CommitFloating();
+            // 변형 중이면 어떤 도구로 바꾸든 먼저 적용한다.
+            if (IsTransforming || (!IsSelectionTool(value) && value != ToolKind.Move)) CommitFloating();
             _tool = value;
             ToolChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+
+    /// <summary>선택 영역을 만드는 도구(사각·원·자유·스마트 선택): 떠 있는 선택을 유지하고 안쪽을 끌거나 방향키로 옮긴다.</summary>
+    public static bool IsSelectionTool(ToolKind t)
+        => t is ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso or ToolKind.MagicWand;
 
     public Color32 Primary
     {
@@ -197,6 +211,52 @@ public sealed class EditorContext
     /// <summary>이동 도구로 셀 내용을 옮길 때 밖으로 나간 픽셀을 반대편으로 돌린다.</summary>
     public bool MoveWrap { get => _moveWrap; set { _moveWrap = value; OptionsChanged(); } }
 
+    /// <summary>그라데이션 기본 정지점(검정 → 흰색).</summary>
+    public static readonly IReadOnlyList<GradientStop> DefaultGradientStops = [new(0, Color32.Black), new(1, Color32.White)];
+    private IReadOnlyList<GradientStop> _gradientStops = DefaultGradientStops;
+    private GradientInterpolation _gradientInterpolation = GradientInterpolation.Smooth;
+    private GradientDither _gradientDither = GradientDither.None;
+
+    /// <summary>그라데이션 색 정지점(2개 이상, 위치 0~1). 편집 순서를 그대로 두고 칠할 때 위치 순으로 쓴다.</summary>
+    public IReadOnlyList<GradientStop> GradientStops
+    {
+        get => _gradientStops;
+        set
+        {
+            if (value.Count < 2) throw new ArgumentException("그라데이션 정지점은 2개 이상이어야 합니다.", nameof(value));
+            _gradientStops = value.Select(s => s with { Position = Math.Clamp(s.Position, 0, 1) }).ToArray();
+            OptionsChanged();
+        }
+    }
+
+    /// <summary>그라데이션 기본 불투명도 정지점(처음·끝 모두 100%).</summary>
+    public static readonly IReadOnlyList<GradientAlphaStop> DefaultGradientAlphaStops = [new(0, 255), new(1, 255)];
+    private IReadOnlyList<GradientAlphaStop> _gradientAlphaStops = DefaultGradientAlphaStops;
+
+    /// <summary>그라데이션 불투명도 정지점(2개 이상, 위치 0~1, 색 정지점과 따로). 칠할 때 색 알파에 곱한다.</summary>
+    public IReadOnlyList<GradientAlphaStop> GradientAlphaStops
+    {
+        get => _gradientAlphaStops;
+        set
+        {
+            if (value.Count < 2) throw new ArgumentException("불투명도 정지점은 2개 이상이어야 합니다.", nameof(value));
+            _gradientAlphaStops = value.Select(s => s with { Position = Math.Clamp(s.Position, 0, 1) }).ToArray();
+            OptionsChanged();
+        }
+    }
+    /// <summary>그라데이션 보간: 부드럽게(RGBA 선형) / 단계(정지점 색 띠).</summary>
+    public GradientInterpolation GradientInterpolation
+    {
+        get => _gradientInterpolation;
+        set { if (!Enum.IsDefined(value)) value = GradientInterpolation.Smooth; if (_gradientInterpolation == value) return; _gradientInterpolation = value; OptionsChanged(); }
+    }
+    /// <summary>그라데이션 순서 디더링(부드럽게일 때만 씀).</summary>
+    public GradientDither GradientDither
+    {
+        get => _gradientDither;
+        set { if (!Enum.IsDefined(value)) value = GradientDither.None; if (_gradientDither == value) return; _gradientDither = value; OptionsChanged(); }
+    }
+
     private void OptionsChanged() => ToolOptionsChanged?.Invoke(this, EventArgs.Empty);
 
     public bool OnionSkin
@@ -237,6 +297,18 @@ public sealed class EditorContext
 
     private Size CurrentCanvasSize => new(CanvasWidth, CanvasHeight);
 
+    /// <summary>실행취소 단계 수(설정). 바꾸면 열린 프로젝트에도 바로 적용한다.</summary>
+    public int UndoCapacity
+    {
+        get => _undoCapacity;
+        set
+        {
+            _undoCapacity = Math.Clamp(value, 1, UndoStack.MaxCapacity);
+            if (Project is not null) Project.History.Capacity = _undoCapacity;
+        }
+    }
+    private int _undoCapacity = UndoStack.DefaultCapacity;
+
     public void SetProject(SpriteProject? project)
     {
         if (Project is not null)
@@ -258,6 +330,7 @@ public sealed class EditorContext
         _pivotPreview = null;
         if (project is not null)
         {
+            project.History.Capacity = UndoCapacity;
             project.Changed += OnProjectChanged;
             project.DirtyChanged += OnProjectDirty;
             project.History.Changed += OnUndoChanged;
@@ -275,7 +348,8 @@ public sealed class EditorContext
     private void OnProjectChanged(object? sender, ProjectChangedEventArgs e)
     {
         var p = Project!;
-        // 스트로크 중에는 현재 셀만 바뀐다. 그 밖의 변경(실행취소, 부위 위치·크기 등)은 모든 캐시를 버린다.
+        // 스트로크 중에는 현재 셀만 바뀐다. 그 밖의 변경(실행취소, 부위 위치·크기, 스킨 고르기·추가·삭제 등)은 모든 캐시를 버린다.
+        // 캐시 키(레이어, 프레임)는 그룹의 지금 스킨 기준이므로 스킨이 바뀌면(Layers | Pixels) 반드시 비워야 한다.
         if (e.Change == ProjectChange.Pixels && p.IsStrokeActive) InvalidateCurrent();
         else if ((e.Change & ~ProjectChange.Path & ~ProjectChange.Settings) != 0) ClearCaches();
         int layer = Math.Clamp(_layer, 0, p.Layers.Count - 1), frame = Math.Clamp(_frame, 0, p.Frames.Count - 1);
@@ -407,24 +481,197 @@ public sealed class EditorContext
 
     // ───────────── 선택 영역 편집(실행취소 묶음) ─────────────
 
-    /// <summary>선택 영역을 바꾸는 동작 전에 부른다: 아직 열린 기록이 없으면 현재 셀 스트로크를 시작한다.</summary>
+    /// <summary>
+    /// 선택 영역을 바꾸는 동작 전에 부른다: 아직 열린 기록이 없으면 현재 셀 스트로크를 시작한다.
+    /// 변형 중이면 다른 편집이므로 변형을 먼저 적용한다.
+    /// </summary>
     public void BeginSelectionEdit()
     {
-        if (Project is null || _selectionStrokeOpen) return;
+        if (Project is null) return;
+        if (IsTransforming) CommitFloating();
+        if (_selectionStrokeOpen) return;
         BeginStroke();
         _selectionStrokeOpen = true;
     }
 
-    /// <summary>떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다.</summary>
+    /// <summary>떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용한 뒤 내려놓는다(실행취소 한 단계).</summary>
     public void CommitFloating()
     {
         if (Project is null) return;
+        bool transformed = _transform is not null;
+        _transform = null;
         if (Selection.IsFloating && _strokeImage is { } img) Selection.Anchor(img);
         if (_selectionStrokeOpen)
         {
             _selectionStrokeOpen = false;
-            CommitStroke("선택 편집");
+            CommitStroke(transformed ? "변형" : "선택 편집");
         }
+        if (transformed) TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ───────────── 자유 변형 ─────────────
+
+    /// <summary>변형 중인 상태: 원본(떼어 낸 픽셀), 지금 값, 시작 전 선택 상태(취소용).</summary>
+    private sealed class TransformSession(FreeTransform source, SelectionState before, PixelImage? celBefore)
+    {
+        public FreeTransform Source { get; } = source;
+        /// <summary>시작 전 선택 상태(영역·모양·떠 있는 픽셀).</summary>
+        public SelectionState Before { get; } = before;
+        /// <summary>이미 열린 선택 편집 기록 안에서 시작했으면 그때의 셀 픽셀(취소 때 되돌림). 변형이 기록을 열었으면 null(기록째 취소).</summary>
+        public PixelImage? CelBefore { get; } = celBefore;
+        public TransformParams Params { get; set; } = source.Identity;
+        /// <summary>회전 중심(원본 좌표 — 변형을 따라 움직인다).</summary>
+        public (double X, double Y) PivotSource { get; set; } = source.SourceCenter;
+    }
+
+    private TransformSession? _transform;
+    private ResampleMode _transformResample = ResampleMode.RotSprite;
+
+    /// <summary>변형 모드에 들어가거나 나옴, 변형 값·회전 중심·리샘플링이 바뀜.</summary>
+    public event EventHandler? TransformChanged;
+
+    /// <summary>변형 모드(Ctrl+T)인지.</summary>
+    public bool IsTransforming => _transform is not null;
+
+    /// <summary>변형 원본(변형 중이 아니면 null).</summary>
+    public FreeTransform? Transform => _transform?.Source;
+
+    /// <summary>지금 변형 값(변형 중이 아니면 기본값).</summary>
+    public TransformParams TransformParams => _transform?.Params ?? default;
+
+    /// <summary>변형 리샘플링(기본 RotSprite). 변형 중에 바꾸면 바로 다시 그린다.</summary>
+    public ResampleMode TransformResample
+    {
+        get => _transformResample;
+        set
+        {
+            if (!Enum.IsDefined(value)) value = ResampleMode.RotSprite;
+            if (_transformResample == value) return;
+            _transformResample = value;
+            if (_transform is not null) RenderTransform();
+            else TransformChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>회전 중심(캔버스 연속 좌표). 변형 중이 아니면 (0,0).</summary>
+    public (double X, double Y) TransformPivot
+        => _transform is { } t ? t.Source.Map(t.Params, t.PivotSource.X, t.PivotSource.Y) : (0, 0);
+
+    /// <summary>
+    /// 변형 모드에 들어간다: 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 떼어 원본으로 삼는다. 회전 중심은 처음에 대상의 피벗 자리.
+    /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 변형 중이어도) null.
+    /// </summary>
+    public string? BeginTransform()
+    {
+        if (Project is null) return "열린 프로젝트가 없습니다.";
+        if (_transform is not null) return null;
+        if (IsGroupSelected) return "그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요.";
+        if (!CanEdit) return "현재 레이어가 숨김/잠금 상태라 변형할 수 없습니다.";
+        bool hadStroke = _selectionStrokeOpen;
+        var celBefore = hadStroke ? _strokeImage?.Clone() : null;
+        var before = Selection.Save();
+        BeginSelectionEdit();
+        var img = EditImage!;
+        if (!Selection.HasSelection)
+        {
+            var content = img.GetOpaqueBounds();
+            if (content.IsEmpty)
+            {
+                if (!hadStroke)
+                {
+                    _selectionStrokeOpen = false;
+                    CancelStroke();
+                }
+                return "변형할 픽셀이 없습니다(현재 셀이 비어 있음).";
+            }
+            Selection.Select(img, content);
+        }
+        Selection.Lift(img);
+        var source = new FreeTransform(Selection.Floating!, Selection.Region);
+        _transform = new TransformSession(source, before, celBefore);
+        // 회전 중심은 처음에 지금 대상의 피벗(부위면 부위 피벗, 아니면 프레임/기본 피벗 — 캔버스의 피벗 표시) 자리.
+        var (px, py) = Pivot.ToLocalPixel(CanvasWidth, CanvasHeight);
+        var pivotSource = source.Unmap(_transform.Params, px, py);
+        if (double.IsFinite(pivotSource.X) && double.IsFinite(pivotSource.Y)) _transform.PivotSource = pivotSource;
+        NotifyPixels();
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+        return null;
+    }
+
+    /// <summary>변형 값을 바꾸고 원본에서 다시 그린다(끄는 동안의 미리보기도 이것). 배율 0은 막는다.</summary>
+    public void SetTransformParams(TransformParams p)
+    {
+        if (_transform is not { } t) return;
+        if (!double.IsFinite(p.CenterX) || !double.IsFinite(p.CenterY) || !double.IsFinite(p.Angle)
+            || !double.IsFinite(p.ScaleX) || !double.IsFinite(p.ScaleY) || p.ScaleX == 0 || p.ScaleY == 0) return;
+        p = p with { Angle = TransformParams.NormalizeAngle(p.Angle) };
+        if (p == t.Params) return;
+        t.Params = p;
+        RenderTransform();
+    }
+
+    /// <summary>회전 중심을 캔버스 좌표로 옮긴다(그림은 그대로).</summary>
+    public void SetTransformPivot(double x, double y)
+    {
+        if (_transform is not { } t) return;
+        var src = t.Source.Unmap(t.Params, x, y);
+        if (!double.IsFinite(src.X) || !double.IsFinite(src.Y)) return;
+        t.PivotSource = src;
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>회전 중심을 원본 가운데로 되돌린다.</summary>
+    public void ResetTransformPivot()
+    {
+        if (_transform is not { } t) return;
+        t.PivotSource = t.Source.SourceCenter;
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 회전 중심을 기준으로 <paramref name="angle"/>(도)로 돌린 값: 회전 중심은 화면에서 제자리에 있다.
+    /// </summary>
+    public TransformParams RotatedAboutPivot(TransformParams start, double angle)
+    {
+        if (_transform is not { } t) return start;
+        var (px, py) = t.Source.Map(start, t.PivotSource.X, t.PivotSource.Y);
+        double rad = (angle - start.Angle) * Math.PI / 180;
+        double s = Math.Sin(rad), c = Math.Cos(rad);
+        double dx = start.CenterX - px, dy = start.CenterY - py;
+        return start with { Angle = angle, CenterX = px + dx * c - dy * s, CenterY = py + dx * s + dy * c };
+    }
+
+    /// <summary>변형을 적용한다: 결과를 내려놓고 실행취소 한 단계로 기록한다(결과 모양은 선택으로 남음).</summary>
+    public void CommitTransform() => CommitFloating();
+
+    /// <summary>변형을 취소한다: 셀 픽셀과 선택(떠 있었는지 포함)을 변형 전 그대로 되돌린다. 기록은 남지 않는다.</summary>
+    public void CancelTransform()
+    {
+        if (_transform is not { } t || Project is null) return;
+        _transform = null;
+        if (t.CelBefore is { } cel && _strokeImage is { } img)
+        {
+            // 이미 열려 있던 선택 편집 기록은 그대로 두고 그 안의 변형 전 상태로.
+            img.CopyFrom(cel);
+            Selection.Restore(t.Before);
+            NotifyPixels();
+        }
+        else
+        {
+            _selectionStrokeOpen = false;
+            CancelStroke();
+            Selection.Restore(t.Before);
+        }
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RenderTransform()
+    {
+        if (_transform is not { } t) return;
+        var r = t.Source.Render(t.Params, _transformResample);
+        Selection.SetFloating(r.Image, r.Region);
+        NotifyPixels();
+        TransformChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>구조 편집(레이어·프레임·태그·설정) 전에 열린 그리기를 마무리한다.</summary>
@@ -452,6 +699,42 @@ public sealed class EditorContext
         if (Project is null) return;
         CommitFloating();
         action();
+    }
+
+    // ───────────── 스킨(착장) ─────────────
+
+    /// <summary>그룹의 지금 스킨(착장)을 고른다(실행취소 기록 없음, 떠 있는 선택은 먼저 내려놓음).</summary>
+    public void SetActiveSkin(Layer group, Skin skin)
+    {
+        if (Project is not { } p || ReferenceEquals(group.ActiveSkin, skin)) return;
+        Structural(() => p.SetActiveSkin(group, skin));
+    }
+
+    /// <summary>부위 하나만 보일 스킨을 고른다(null = 그룹 스킨을 따름, 실행취소 기록 없음, 떠 있는 선택은 먼저 내려놓음).</summary>
+    public void SetPartSkin(Layer part, Skin? skin)
+    {
+        if (Project is not { } p || ReferenceEquals(part.SkinOverride, skin)) return;
+        Structural(() => p.SetPartSkin(part, skin));
+    }
+
+    /// <summary>그룹의 모든 부위를 그룹 스킨으로 되돌린다(재정의 지우기). 바뀐 것이 있으면 true.</summary>
+    public bool ResetPartSkins(Layer group)
+    {
+        if (Project is not { } p) return false;
+        bool changed = false;
+        Structural(() => changed = p.ResetPartSkins(group));
+        return changed;
+    }
+
+    /// <summary>그룹의 지금 스킨을 <paramref name="delta"/>칸 앞뒤로 돌린다(끝에서는 반대쪽으로). 스킨이 하나뿐이면 false.</summary>
+    public bool StepSkin(Layer group, int delta)
+    {
+        var skins = group.Skins;
+        if (skins.Count < 2 || group.ActiveSkin is not { } active) return false;
+        int i = 0;
+        while (i < skins.Count && !ReferenceEquals(skins[i], active)) i++;
+        SetActiveSkin(group, skins[((i + delta) % skins.Count + skins.Count) % skins.Count]);
+        return true;
     }
 
     public bool UndoStep()

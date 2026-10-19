@@ -58,6 +58,14 @@ public sealed class AppSettings
     public bool ShapeFilled { get; set; }
     public bool RightButtonErases { get; set; }
     public bool MoveWrap { get; set; } = true;
+    /// <summary>변형 모드(Ctrl+T) 리샘플링(기본 RotSprite).</summary>
+    public ResampleMode TransformResample { get; set; } = ResampleMode.RotSprite;
+    /// <summary>그라데이션 정지점("위치(0~1):#RRGGBBAA", 2개 이상). null = 기본(검정 → 흰색).</summary>
+    public List<string>? GradientStops { get; set; }
+    /// <summary>그라데이션 불투명도 정지점("위치(0~1):불투명도(0~255)", 2개 이상). null = 기본(100% → 100%).</summary>
+    public List<string>? GradientAlphaStops { get; set; }
+    public GradientInterpolation GradientInterpolation { get; set; } = GradientInterpolation.Smooth;
+    public GradientDither GradientDither { get; set; } = GradientDither.None;
     public string PrimaryColor { get; set; } = "#000000";
     /// <summary>이미지를 열 때마다 캔버스를 화면에 맞춘다(위 막대 "맞추기" 토글).</summary>
     public bool AutoFit { get; set; } = true;
@@ -81,6 +89,24 @@ public sealed class AppSettings
     public int ChatWidth { get; set; } = 420;
     public int ChatHeight { get; set; } = 640;
     public bool ChatOpen { get; set; }
+
+    // 내보내기 설정 창(Ctrl+E)
+    public int ExportX { get; set; } = -1;
+    public int ExportY { get; set; } = -1;
+    public int ExportWidth { get; set; } = 1100;
+    public int ExportHeight { get; set; } = 760;
+    /// <summary>왼쪽 설정 칸 너비 비율(0~1, 나머지는 오른쪽 미리보기).</summary>
+    public double ExportSplit { get; set; } = 0.46;
+    /// <summary>접어 둔 설정 묶음 이름(설정 프리셋·공통·파일·프레임 시트·부위 아틀라스·고급).</summary>
+    public List<string> ExportCollapsed { get; set; } = new();
+
+    // 편집·파일 브라우저(환경 설정 창)
+    /// <summary>실행취소 단계 수(1~10000).</summary>
+    public int UndoSteps { get; set; } = UndoStack.DefaultCapacity;
+    /// <summary>앱 휴지통 보관 기간(일). 지나면 영구 삭제.</summary>
+    public int TrashDays { get; set; } = 7;
+    /// <summary>사용자 단축키: 명령 Id("분류/이름") → 키 표기 목록(빈 목록 = 단축키 없음). 기본값과 다른 명령만 담는다.</summary>
+    public Dictionary<string, List<string>>? Shortcuts { get; set; }
 
     /// <summary>처음 실행할 때 쓰는 기본 팔레트(DawnBringer 32).</summary>
     public static readonly string[] DefaultPalette =

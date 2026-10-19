@@ -35,53 +35,12 @@ public static class Platform
         else Start("xdg-open", folder);
     }
 
-    /// <summary>파일을 휴지통으로 보낸다. 실패하면 IOException.</summary>
-    public static void MoveToTrash(string path)
-    {
-        if (!File.Exists(path)) throw new FileNotFoundException("파일이 없습니다.", path);
-        if (OperatingSystem.IsWindows())
-        {
-            Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(path,
-                Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-                Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-            return;
-        }
-        if (IsMac)
-        {
-            // Finder로 보내야 "되돌려 놓기"가 된다.
-            var script = $"tell application \"Finder\" to delete (POSIX file \"{EscapeAppleScript(Path.GetFullPath(path))}\")";
-            Run("osascript", "-e", script);
-        }
-        else Run("gio", "trash", path);
-        if (File.Exists(path)) throw new IOException($"휴지통으로 보내지 못했습니다: {path}");
-    }
-
-    private static string EscapeAppleScript(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
-
     private static void Start(string file, params string[] args)
     {
         var psi = new ProcessStartInfo(file) { UseShellExecute = false };
         if (OperatingSystem.IsWindows() && args.Length == 1) psi.Arguments = args[0];
         else foreach (var a in args) psi.ArgumentList.Add(a);
         try { Process.Start(psi)?.Dispose(); }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            throw new IOException(ex.Message, ex);
-        }
-    }
-
-    private static void Run(string file, params string[] args)
-    {
-        var psi = new ProcessStartInfo(file) { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
-        foreach (var a in args) psi.ArgumentList.Add(a);
-        try
-        {
-            using var p = Process.Start(psi) ?? throw new IOException($"{file}을(를) 실행하지 못했습니다.");
-            var err = p.StandardError.ReadToEnd();
-            p.StandardOutput.ReadToEnd();
-            if (!p.WaitForExit(15000)) throw new IOException($"{file} 응답 없음");
-            if (p.ExitCode != 0) throw new IOException(err.Trim().Length > 0 ? err.Trim() : $"{file} 종료 코드 {p.ExitCode}");
-        }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             throw new IOException(ex.Message, ex);

@@ -37,6 +37,37 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>목록 한 칸: 경로와 그 칸의 컨트롤들.</summary>
     private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content);
 
+    /// <summary>왼쪽 버튼을 누른 상태: 누른 곳(항목 패널 좌표, 스크롤과 함께 움직임), 그때의 선택(Ctrl이면 유지), 끌기 시작 여부.</summary>
+    private sealed class PressState(Avalonia.Point start, IReadOnlyList<object> baseSelection, bool modifier)
+    {
+        public Avalonia.Point Start { get; } = start;
+        public IReadOnlyList<object> BaseSelection { get; } = baseSelection;
+        public bool Modifier { get; } = modifier;
+        public bool Dragging { get; set; }
+        public bool SelectionChanged { get; set; }
+    }
+
+    private readonly Grid _listHost;
+    private readonly Border _marquee;
+    private PressState? _press;
+    /// <summary>고른 순서(합치기에서 "처음 고른 파일"·순서에 씀).</summary>
+    private readonly List<string> _selectionOrder = new();
+
+    /// <summary>합친 새 프로젝트의 Unity 설정 기본값(프로젝트 파일이 없을 때). MainForm이 마지막 PPU로 정한다.</summary>
+    public Func<SpriteSettings>? SpriteDefaults { get; set; }
+
+    /// <summary>지운 파일을 보관하는 앱 휴지통.</summary>
+    public AppTrash Trash { get; set; } = new(AppTrash.DefaultRoot);
+
+    /// <summary>휴지통 보관 기간(일). MainForm이 설정과 잇는다.</summary>
+    public Func<int> TrashDays { get; set; } = () => 7;
+
+    /// <summary>휴지통 창에서 보관 기간을 바꿨을 때.</summary>
+    public event Action<int>? TrashDaysChanged;
+
+    /// <summary>상태 표시줄에 보일 알림.</summary>
+    public event EventHandler<string>? Message;
+
     public FileBrowserPanel()
     {
         Background = AppTheme.PanelBrush;
@@ -68,7 +99,8 @@ public sealed class FileBrowserPanel : UserControl
 
         _list = new ListBox
         {
-            SelectionMode = SelectionMode.Single,
+            // 여러 개 고르기: Ctrl+클릭·Shift+클릭, 또는 끌어서 사각형으로(합치기·삭제).
+            SelectionMode = SelectionMode.Multiple,
             Background = AppTheme.InputBrush,
             Foreground = AppTheme.TextBrush,
             ItemsPanel = new FuncTemplate<Panel?>(() => new WrapPanel { Orientation = Orientation.Horizontal }),
@@ -76,21 +108,30 @@ public sealed class FileBrowserPanel : UserControl
         ScrollViewer.SetHorizontalScrollBarVisibility(_list, ScrollBarVisibility.Disabled);
         _list.SelectionChanged += (_, e) =>
         {
+            foreach (var r in e.RemovedItems) if (r is ListBoxItem { Tag: FileItem f }) _selectionOrder.Remove(f.Path);
+            foreach (var a in e.AddedItems) if (a is ListBoxItem { Tag: FileItem f } && !_selectionOrder.Contains(f.Path)) _selectionOrder.Add(f.Path);
             if (_suppressActivate) return;
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is ListBoxItem { Tag: FileItem f })
-                FileActivated?.Invoke(this, f.Path);
+            // 왼쪽 버튼을 누르고 있는 동안에는 끌어서 고르기일 수 있으므로 뗄 때 연다.
+            if (_press is not null) { _press.SelectionChanged = true; return; }
+            if (_list.SelectedItems?.Count == 1 && e.AddedItems.Count > 0 && e.AddedItems[0] is ListBoxItem { Tag: FileItem added })
+                FileActivated?.Invoke(this, added.Path);
         };
         _list.KeyDown += (_, e) =>
         {
-            if (e.Key == Key.F2 && SelectedItem is { } item) { BeginRename(item); e.Handled = true; }
+            if (e.Key == Key.F2 && SelectedPaths.Count == 1 && SelectedItem is { } item) { BeginRename(item); e.Handled = true; }
             else if (IsDeleteKey(e) && SelectedPath is not null) { DeleteSelected(); e.Handled = true; }
         };
-        // 빈 곳을 오른쪽 클릭하면 선택을 지운다(메뉴는 폴더 대상).
+        // 빈 곳을 오른쪽 클릭하면 선택을 지운다(메뉴는 폴더 대상). 왼쪽 버튼은 끌어서 고르기.
         _list.AddHandler(PointerPressedEvent, OnListPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        _list.AddHandler(PointerMovedEvent, OnListPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        _list.AddHandler(PointerReleasedEvent, OnListPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
+        _list.AddHandler(PointerCaptureLostEvent, (_, e) => { if (ReferenceEquals(e.Source, _list)) EndMarquee(); }, RoutingStrategies.Bubble, handledEventsToo: true);
 
         // 메뉴 동작은 메뉴가 닫힌 뒤에 한다(대화상자·이름 바꾸기 입력란 포커스).
         var miNew = new MenuItem { Header = "새 프로젝트…" };
         miNew.Click += (_, _) => Dispatcher.UIThread.Post(() => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""));
+        var miMerge = new MenuItem { Header = "합치기…" };
+        miMerge.Click += (_, _) => Dispatcher.UIThread.Post(MergeSelected);
         var miRename = new MenuItem { Header = "이름 바꾸기", InputGesture = new KeyGesture(Key.F2) };
         miRename.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (SelectedItem is { } item) BeginRename(item); }, DispatcherPriority.Background);
         var miExplorer = new MenuItem { Header = $"{Platform.FileManagerName}에서 열기" };
@@ -101,25 +142,50 @@ public sealed class FileBrowserPanel : UserControl
             InputGesture = Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete),
         };
         miDelete.Click += (_, _) => Dispatcher.UIThread.Post(DeleteSelected);
+        var miUndoDelete = new MenuItem { Header = "마지막 삭제 되살리기", InputGesture = new KeyGesture(Key.Z, Platform.CommandModifier) };
+        miUndoDelete.Click += (_, _) => Dispatcher.UIThread.Post(() => RestoreLastDeleted());
+        var miTrash = new MenuItem { Header = "앱 휴지통 보기…" };
+        miTrash.Click += (_, _) => Dispatcher.UIThread.Post(ShowTrash);
         _menu = new ContextMenu();
         _menu.Items.Add(miNew);
+        _menu.Items.Add(new Separator());
+        _menu.Items.Add(miMerge);
         _menu.Items.Add(new Separator());
         _menu.Items.Add(miRename);
         _menu.Items.Add(miExplorer);
         _menu.Items.Add(miDelete);
+        _menu.Items.Add(new Separator());
+        _menu.Items.Add(miUndoDelete);
+        _menu.Items.Add(miTrash);
         _menu.Opening += (_, _) =>
         {
             miNew.IsEnabled = RootFolder is not null;
-            bool hasFile = SelectedPath is not null;
-            miRename.IsEnabled = miDelete.IsEnabled = hasFile;
-            miExplorer.IsEnabled = hasFile || CurrentFolder is not null;
+            int count = SelectedPaths.Count;
+            miMerge.Header = count >= 2 ? $"{count}개 합치기…" : "합치기…(여러 개 고르기)";
+            miMerge.IsEnabled = count >= 2;
+            miRename.IsEnabled = count == 1;
+            miDelete.Header = count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)";
+            miUndoDelete.IsEnabled = Trash.Entries().Count > 0;
+            miDelete.IsEnabled = count > 0;
+            miExplorer.IsEnabled = count > 0 || CurrentFolder is not null;
         };
         _list.ContextMenu = _menu;
+
+        _marquee = new Border
+        {
+            BorderBrush = AppTheme.AccentBrush,
+            BorderThickness = new Thickness(1),
+            Background = new SolidColorBrush(AppTheme.AccentColor, 0.18),
+            IsVisible = false,
+            IsHitTestVisible = false,
+        };
+        var overlay = new Canvas { IsHitTestVisible = false, ClipToBounds = true, Children = { _marquee } };
+        _listHost = new Grid { Children = { _list, overlay } };
 
         var lower = new DockPanel { LastChildFill = true };
         lower.Children.Add(_search);
         lower.Children.Add(_includeSub);
-        lower.Children.Add(_list);
+        lower.Children.Add(_listHost);
         var splitter = new GridSplitter
         {
             ResizeDirection = GridResizeDirection.Rows,
@@ -216,6 +282,19 @@ public sealed class FileBrowserPanel : UserControl
     public string? SelectedPath => SelectedItem?.Path;
 
     private FileItem? SelectedItem => _list.SelectedItem is ListBoxItem { Tag: FileItem f } ? f : null;
+
+    /// <summary>고른 파일들(고른 순서).</summary>
+    private IReadOnlyList<string> SelectedPaths
+    {
+        get
+        {
+            var selected = (_list.SelectedItems?.OfType<ListBoxItem>() ?? []).Select(c => c.Tag).OfType<FileItem>().Select(f => f.Path).ToList();
+            var set = selected.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var ordered = _selectionOrder.Where(set.Contains).ToList();
+            ordered.AddRange(selected.Where(p => !ordered.Contains(p, StringComparer.OrdinalIgnoreCase)));
+            return ordered;
+        }
+    }
 
     public bool IncludeSubfolders
     {
@@ -354,7 +433,7 @@ public sealed class FileBrowserPanel : UserControl
     private void RefreshList()
     {
         var folder = CurrentFolder;
-        var keepSelected = SelectedPath;
+        var keepSelected = SelectedPaths;
         _thumbCts?.Cancel();
         _endRename?.Invoke(false);
         _suppressActivate = true;
@@ -416,7 +495,13 @@ public sealed class FileBrowserPanel : UserControl
                 else pending.Add((f, stamp));
                 _list.Items.Add(item.Container);
             }
-            if (keepSelected is not null && _items.TryGetValue(keepSelected, out kept)) _list.SelectedItem = kept.Container;
+            // 고른 순서대로 다시 고른다(순서 기억도 그대로).
+            foreach (var path in keepSelected)
+            {
+                if (!_items.TryGetValue(path, out var item)) continue;
+                _list.SelectedItems?.Add(item.Container);
+                kept ??= item;
+            }
         }
         finally
         {
@@ -549,9 +634,98 @@ public sealed class FileBrowserPanel : UserControl
 
     private void OnListPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(_list).Properties.IsRightButtonPressed) return;
-        if ((e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true) is null)
-            _list.SelectedItem = null;
+        var props = e.GetCurrentPoint(_list).Properties;
+        var source = e.Source as Visual;
+        if (props.IsRightButtonPressed)
+        {
+            if (source?.FindAncestorOfType<ListBoxItem>(includeSelf: true) is null)
+                _list.SelectedItem = null;
+            return;
+        }
+        if (!props.IsLeftButtonPressed || _list.ItemsPanelRoot is not { } panel) return;
+        if (source?.FindAncestorOfType<ScrollBar>(includeSelf: true) is not null || source is TextBox || source?.FindAncestorOfType<TextBox>() is not null) return;
+        bool command = Ui.HasCommand(e.KeyModifiers);
+        bool modifier = command || (e.KeyModifiers & KeyModifiers.Shift) != 0;
+        // Ctrl/⌘를 누르고 끌면 지금 선택에 더한다.
+        var baseSelection = command ? (_list.SelectedItems?.Cast<object>().ToList() ?? []) : [];
+        _press = new PressState(e.GetPosition(panel), baseSelection, modifier);
+    }
+
+    private void OnListPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_press is not { } press || _list.ItemsPanelRoot is not { } panel) return;
+        if (!e.GetCurrentPoint(_list).Properties.IsLeftButtonPressed)
+        {
+            EndMarquee();
+            return;
+        }
+        var pos = e.GetPosition(panel);
+        if (!press.Dragging)
+        {
+            if (Math.Abs(pos.X - press.Start.X) < 5 && Math.Abs(pos.Y - press.Start.Y) < 5) return;
+            press.Dragging = true;
+            e.Pointer.Capture(_list);
+        }
+        // 목록 위·아래 밖으로 끌면 그쪽으로 스크롤한다.
+        if (_list.FindDescendantOfType<ScrollViewer>() is { } sv)
+        {
+            double y = e.GetPosition(_list).Y;
+            double step = y < 0 ? y : y > _list.Bounds.Height ? y - _list.Bounds.Height : 0;
+            if (step != 0) sv.Offset = sv.Offset.WithY(Math.Clamp(sv.Offset.Y + step / 2, 0, Math.Max(0, sv.Extent.Height - sv.Viewport.Height)));
+        }
+        var rect = new Rect(press.Start, pos).Normalize();
+        var wanted = new HashSet<object>(press.BaseSelection);
+        foreach (var item in _items.Values)
+            if (item.Container.Bounds.Intersects(rect)) wanted.Add(item.Container);
+        _suppressActivate = true;
+        try
+        {
+            _list.Selection.BeginBatchUpdate();
+            for (int i = 0; i < _list.Items.Count; i++)
+            {
+                bool want = wanted.Contains(_list.Items[i]!);
+                if (want != _list.Selection.IsSelected(i))
+                {
+                    if (want) _list.Selection.Select(i);
+                    else _list.Selection.Deselect(i);
+                }
+            }
+            _list.Selection.EndBatchUpdate();
+        }
+        finally
+        {
+            _suppressActivate = false;
+        }
+        if (_marquee.Parent is Visual overlay && panel.TranslatePoint(rect.TopLeft, overlay) is { } topLeft)
+        {
+            Canvas.SetLeft(_marquee, topLeft.X);
+            Canvas.SetTop(_marquee, topLeft.Y);
+            _marquee.Width = rect.Width;
+            _marquee.Height = rect.Height;
+            _marquee.IsVisible = true;
+        }
+    }
+
+    private void OnListPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_press is not { } press) return;
+        if (press.Dragging)
+        {
+            e.Pointer.Capture(null);
+            EndMarquee();
+            return;
+        }
+        _press = null;
+        // 그냥 클릭(수정자 없음)으로 하나만 골랐으면 연다.
+        if (press.SelectionChanged && !press.Modifier && _list.SelectedItems?.Count == 1 && SelectedItem is { } item)
+            FileActivated?.Invoke(this, item.Path);
+    }
+
+    /// <summary>끌어서 고르기를 끝낸다(사각형 숨김).</summary>
+    private void EndMarquee()
+    {
+        if (_press is { Dragging: true }) _press = null;
+        _marquee.IsVisible = false;
     }
 
     private static bool IsDeleteKey(KeyEventArgs e)
@@ -665,37 +839,169 @@ public sealed class FileBrowserPanel : UserControl
         }
     }
 
+    /// <summary>
+    /// 파일과 함께 휴지통으로 보낼 파일: 프로젝트면 소유한 기본 내보내기(PNG·.meta 등), PNG면 있는 .meta·사이드카.
+    /// 읽을 수 없으면 예외.
+    /// </summary>
+    internal static List<string> CompanionsOf(string path)
+        => IsProject(path)
+            ? ProjectIO.GetOwnedDefaultExportPaths(path).ToList()
+            : DocumentIO.GetCompanionPaths(path).Where(File.Exists).ToList();
+
     private void DeleteSelected()
     {
-        var path = SelectedPath;
-        if (path is null) return;
+        var paths = SelectedPaths;
+        if (paths.Count == 0) return;
         List<string> companions;
         try
         {
-            companions = IsProject(path)
-                ? ProjectIO.GetOwnedDefaultExportPaths(path).ToList()
-                : DocumentIO.GetCompanionPaths(path).Where(File.Exists).ToList();
+            companions = paths.SelectMany(CompanionsOf).ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             Ui.Error(this, $"삭제할 파일을 확인하지 못했습니다.\n{ex.Message}");
             return;
         }
-        var extra = companions.Count > 0 ? $"\n함께 삭제: {string.Join(", ", companions.Select(Path.GetFileName))}" : "";
-        if (Ui.Ask(this, $"{Path.GetFileName(path)}을(를) 휴지통으로 보낼까요?{extra}", "삭제",
-                MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
+        // 앱 휴지통에 보관하므로 묻지 않는다(Ctrl+Z·휴지통 보기로 되살림).
+        var what = paths.Count == 1 ? Path.GetFileName(paths[0]) : $"{Path.GetFileName(paths[0])} 외 {paths.Count - 1}개";
+        TrashFiles(paths, companions, $"삭제: {what}");
+        RefreshList();
+    }
+
+    /// <summary>
+    /// 파일들(+딸린 파일)을 앱 휴지통의 항목 하나로 보낸다. 실패하면 알리고 false(옮긴 것은 휴지통에 남고 <see cref="FileDeleted"/>로 알림).
+    /// </summary>
+    private bool TrashFiles(IReadOnlyList<string> paths, IReadOnlyList<string> companions, string label)
+    {
+        var moved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (var p in companions.Append(path)) Platform.MoveToTrash(p);
+            var entry = Trash.Add(paths.Concat(companions), label);
+            if (entry is not null) moved.UnionWith(entry.Files.Select(f => f.OriginalPath));
+            Message?.Invoke(this, $"앱 휴지통으로 보냄: {label.Split(": ", 2)[^1]} — 파일 목록에서 Ctrl+Z로 되살리기 ({TrashDays()}일 보관)");
+            return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OperationCanceledException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"삭제를 완료하지 못했습니다. 일부 파일은 이미 휴지통으로 이동했을 수 있습니다.\n{ex.Message}");
+            Ui.Error(this, $"삭제를 완료하지 못했습니다. 옮긴 파일은 앱 휴지통에 있습니다.\n{ex.Message}");
+            moved.UnionWith(paths.Where(p => !File.Exists(p)));
+            return false;
+        }
+        finally
+        {
+            foreach (var p in paths) if (moved.Contains(Path.GetFullPath(p))) FileDeleted?.Invoke(this, p);
+        }
+    }
+
+    /// <summary>파일 목록에서 Ctrl+Z: 가장 최근에 지운 항목을 되살린다. 휴지통이 비었으면 false.</summary>
+    public bool RestoreLastDeleted()
+    {
+        Trash.Purge(TrashDays());
+        var last = Trash.Entries().FirstOrDefault();
+        if (last is null)
+        {
+            Message?.Invoke(this, "앱 휴지통이 비어 있습니다.");
+            return false;
+        }
+        try
+        {
+            var restored = Trash.Restore(last);
+            OnRestored(restored);
+            Message?.Invoke(this, $"되살림: {last.Label}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, ex.Message);
+        }
+        return true;
+    }
+
+    /// <summary>휴지통 보기 창.</summary>
+    private void ShowTrash()
+    {
+        var dlg = new TrashDialog(Trash, TrashDays(), d => TrashDaysChanged?.Invoke(d), OnRestored);
+        dlg.ShowDialog(this);
+    }
+
+    /// <summary>되살린 파일을 목록에 보이고 고른다(열지는 않음).</summary>
+    private void OnRestored(IReadOnlyList<string> restored)
+    {
+        RefreshList();
+        _suppressActivate = true;
+        try
+        {
+            _list.SelectedItem = null;
+            foreach (var p in restored)
+                if (_items.TryGetValue(p, out var item)) _list.SelectedItems?.Add(item.Container);
+        }
+        finally
+        {
+            _suppressActivate = false;
+        }
+        if (SelectedItem is { } first) _list.ScrollIntoView(first.Container);
+    }
+
+    /// <summary>
+    /// 고른 파일들을 새 <c>.gpixel</c> 하나로 합친다(첫 파일의 폴더에 저장 + 기본 내보내기, 그다음 그 프로젝트를 엶).
+    /// 원본 삭제를 켰으면: 결과 이름이 지울 원본과 겹치면 원본을 먼저 휴지통으로 보낸 뒤 저장하고, 아니면 저장한 뒤 지운다.
+    /// </summary>
+    private void MergeSelected()
+    {
+        var paths = SelectedPaths;
+        if (paths.Count < 2) return;
+        var items = new List<(string Path, MergeSource Source)>();
+        foreach (var path in paths)
+        {
+            try
+            {
+                items.Add((path, MergeSource.Load(path)));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
+            {
+                Ui.Error(this, $"{Path.GetFileName(path)}을(를) 읽지 못했습니다.\n{ex.Message}");
+                return;
+            }
+        }
+        var dlg = new MergeDialog(items, Path.GetDirectoryName(paths[0])!);
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        var project = ProjectMerge.Merge(dlg.Items.Select(i => i.Source).ToList(), dlg.Options, SpriteDefaults?.Invoke());
+        var target = dlg.ProjectPath;
+        var originals = dlg.Items.Select(i => i.Path).ToList();
+        List<string> companions = [];
+        if (dlg.DeleteOriginals)
+        {
+            try
+            {
+                companions = originals.SelectMany(CompanionsOf).ToList();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+            {
+                Ui.Error(this, $"삭제할 원본 파일을 확인하지 못했습니다. 합치지 않았습니다.\n{ex.Message}");
+                return;
+            }
+        }
+        bool trashFirst = dlg.DeleteOriginals && dlg.TargetPaths(dlg.ResultName).Any(File.Exists);
+        var trashLabel = $"합치기 원본({Path.GetFileName(target)}): {Path.GetFileName(originals[0])} 외 {originals.Count - 1}개";
+        if (trashFirst && !TrashFiles(originals, companions, trashLabel))
+        {
             RefreshList();
             return;
         }
-        FileDeleted?.Invoke(this, path);
+        try
+        {
+            ProjectIO.SaveWithExport(project, target);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or InvalidOperationException)
+        {
+            Ui.Error(this, $"합친 프로젝트를 저장하지 못했습니다.{(trashFirst ? " 원본은 휴지통에 있습니다." : "")}\n{target}\n\n{ex.Message}");
+            RefreshList();
+            return;
+        }
+        if (dlg.DeleteOriginals && !trashFirst) TrashFiles(originals, companions, trashLabel);
         RefreshList();
+        SelectFile(target);
+        FileActivated?.Invoke(this, target);
     }
 
     private static bool IsProject(string path) => path.EndsWith(SpriteProject.FileExtension, StringComparison.OrdinalIgnoreCase);

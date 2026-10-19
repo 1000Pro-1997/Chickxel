@@ -5,19 +5,22 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
-/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 도형(채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
+/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
+/// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
 /// </summary>
 public sealed class ToolOptionsPanel : UserControl
 {
-    private static readonly string[] PresetArrows = ["↖", "↑", "↗", "←", "●", "→", "↙", "↓", "↘"];
-    private static readonly PivotPreset[] PresetOrder =
-    [
-        PivotPreset.TopLeft, PivotPreset.TopCenter, PivotPreset.TopRight,
-        PivotPreset.LeftCenter, PivotPreset.Center, PivotPreset.RightCenter,
-        PivotPreset.BottomLeft, PivotPreset.BottomCenter, PivotPreset.BottomRight,
-    ];
+    /// <summary>피벗 5×5 단추 칸 수(한 변). 칸 사이 간격 = 1/4.</summary>
+    private const int PivotSteps = 5;
+    /// <summary>바깥 8방향·가운데 단추 글자(그 밖은 "·"), 위 왼쪽부터 행 순서.</summary>
+    private static readonly Dictionary<(int Col, int Row), string> PivotArrows = new()
+    {
+        [(0, 0)] = "↖", [(2, 0)] = "↑", [(4, 0)] = "↗",
+        [(0, 2)] = "←", [(2, 2)] = "●", [(4, 2)] = "→",
+        [(0, 4)] = "↙", [(2, 4)] = "↓", [(4, 4)] = "↘",
+    };
     private static readonly (BrushShape Shape, string Text, string Tip)[] Shapes =
     [
         (BrushShape.Square, "■ 사각", "사각 브러시"),
@@ -32,7 +35,7 @@ public sealed class ToolOptionsPanel : UserControl
 
     // 브러시
     private readonly Border _brushBox;
-    private readonly TextBlock _brushTitle;
+    private readonly TextBlock _brushTitle, _fillTitle;
     private readonly ToggleButton[] _shapeButtons = new ToggleButton[Shapes.Length];
     private readonly NumericUpDown _sizeNum;
     private readonly BrushPreview _brushPreview = new();
@@ -44,16 +47,31 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly ComboBox _fillSource, _pickSource, _ditherPattern;
     private readonly TextBlock _hint;
 
+    // 그라데이션
+    private readonly Border _gradientBox;
+    private readonly GradientBar _gradientBar;
+    private readonly NumericUpDown _stopPos, _stopAlpha;
+    private readonly ColorField _stopColor;
+    private readonly StackPanel _stopColorRow, _stopAlphaRow;
+    private readonly Button _stopDelete;
+    private readonly ComboBox _gradientMode, _gradientDither;
+
     // 피벗
     private readonly Border _pivotBox;
     private readonly Border _sliceBox;
     private readonly NumericUpDown _sL, _sT, _sR, _sB;
     private readonly Button _sliceClear;
     private readonly TextBlock _sliceTarget;
-    private readonly Button[] _presetButtons = new Button[9];
+    private readonly Button[] _presetButtons = new Button[PivotSteps * PivotSteps];
     private readonly NumericUpDown _pivotX, _pivotY;
     private readonly CheckBox _framePivot;
     private readonly TextBlock _pivotTarget, _pivotXMax, _pivotYMax;
+
+    // 변형 모드
+    private readonly Border _transformBox;
+    private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY;
+    private readonly ComboBox _tfResample;
+    private readonly TextBlock _tfInfo;
 
     public ToolOptionsPanel(EditorContext ctx)
     {
@@ -90,7 +108,7 @@ public sealed class ToolOptionsPanel : UserControl
         // ── 채우기
         _tolNum = NumBox(0, 100, v => _ctx.FillTolerance = v);
         _tolNum.Tip("허용 오차(%): 0 = 정확히 같은 색만. 높일수록 비슷한 색(RGBA 채널 차이의 최댓값이 이 비율×255 이하)도 같은 색으로 채웁니다.");
-        _contiguous = Check("이어진 영역만", "끄면 화면 안의 맞는 색을 모두 바꿉니다 (Shift+G)", v => _ctx.FillContiguous = v);
+        _contiguous = Check("이어진 영역만", "끄면 화면 안의 맞는 색을 모두 고릅니다(채우기·스마트 선택) (Shift+G)", v => _ctx.FillContiguous = v);
         _diagonal = Check("대각선으로도 잇기(8방향)", "이어진 영역을 대각선 이웃까지 넓힙니다", v => _ctx.FillDiagonal = v);
         _fillSource = Combo(v => _ctx.FillSampleVisible = v == 1);
         _fillSource.Tip("영역을 정하는 그림. 보이는 레이어 전체면 합성된 모습으로 경계를 찾고 칠하기는 현재 레이어에 합니다.");
@@ -99,6 +117,7 @@ public sealed class ToolOptionsPanel : UserControl
             _contiguous,
             _diagonal,
             Ui.Row(Ui.Label("기준"), _fillSource)));
+        _fillTitle = GroupTitle(_fillBox);
 
         // ── 스포이드
         _pickSource = Combo(v => _ctx.PickerSampleVisible = v == 1);
@@ -120,6 +139,61 @@ public sealed class ToolOptionsPanel : UserControl
         _ditherPattern.Tip("기본색이 차지하는 비율(2×2 순서 디더링). 나머지는 보조색");
         _ditherBox = Ui.Group("디더링", Ui.Stack(Ui.Row(Ui.Label("무늬"), _ditherPattern)));
 
+        // ── 그라데이션: 바(위 = 불투명도 정지점, 아래 = 색 정지점) + 고른 정지점의 위치·색/불투명도 + 보간·디더링
+        _gradientBar = new GradientBar { Margin = new Thickness(0, 2, 0, 2) };
+        _gradientBar.Tip("띠 위쪽 빈 곳 = 불투명도 정지점 추가 · 띠·아래쪽 빈 곳 = 색 정지점 추가 · 상자를 누르면 고르기, 좌우로 끌면 위치 · Delete: 고른 정지점 삭제(종류마다 2개는 남음)");
+        _gradientBar.StopsChanged += stops => _ctx.GradientStops = stops;
+        _gradientBar.AlphaStopsChanged += stops => _ctx.GradientAlphaStops = stops;
+        _gradientBar.SelectionChanged += (_, _) => RefreshGradientStop();
+        _stopPos = Ui.Num(0, 100, 0, 56, 1, 1m);
+        _stopPos.FormatString = "0.#";
+        _stopPos.Tip("고른 정지점의 위치(%, 왼쪽 0 ~ 오른쪽 100)");
+        _stopPos.ValueChanged += (_, _) =>
+        {
+            if (_updating) return;
+            double pos = (double)_stopPos.NumValue() / 100;
+            if (_gradientBar.SelectedIsAlpha) SetSelectedAlphaStop(s => s with { Position = pos });
+            else SetSelectedStop(s => s with { Position = pos });
+        };
+        _stopColor = new ColorField(Color32.Black);
+        _stopColor.Tip("고른 색 정지점의 색(칸을 누르면 색 고르기)");
+        _stopColor.ColorChanged += (_, _) => { if (!_updating) SetSelectedStop(s => s with { Color = _stopColor.Color }); };
+        var usePrimary = Ui.Button("기본색", (_, _) => SetSelectedStop(s => s with { Color = _ctx.Primary })).Tip("고른 색 정지점을 지금 기본색으로");
+        _stopAlpha = Ui.Num(0, 100, 100, 56, 1, 1m);
+        _stopAlpha.FormatString = "0.#";
+        _stopAlpha.Tip("고른 불투명도 정지점의 불투명도(%, 0 = 투명 ~ 100 = 불투명)");
+        _stopAlpha.ValueChanged += (_, _) =>
+        {
+            if (!_updating) SetSelectedAlphaStop(s => s with { Alpha = (byte)Math.Round((double)_stopAlpha.NumValue() * 255 / 100) });
+        };
+        _stopColorRow = Ui.Row(Ui.Label("색"), _stopColor, usePrimary);
+        _stopAlphaRow = Ui.Row(Ui.Label("불투명도"), _stopAlpha, Ui.Label("%"));
+        _stopDelete = Ui.Button("삭제", (_, _) => _gradientBar.DeleteSelected()).Tip("고른 정지점 삭제(Delete) — 종류마다 2개 이상 남습니다");
+        _gradientMode = Ui.Combo(150, "부드럽게", "단계(띠)");
+        _gradientMode.Tip("부드럽게: 이웃한 정지점 색을 RGBA(알파 포함)로 섞기 · 단계: 가장 가까운 정지점 색만 쓰는 띠");
+        _gradientMode.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _gradientMode.SelectedIndex < 0) return;
+            _ctx.GradientInterpolation = (GradientInterpolation)_gradientMode.SelectedIndex;
+        };
+        _gradientDither = Ui.Combo(150, "없음", "2×2 Bayer", "4×4 Bayer");
+        _gradientDither.Tip("부드럽게일 때 이웃한 두 정지점 색만 순서 디더링 무늬로 섞습니다(픽셀 아트용)");
+        _gradientDither.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _gradientDither.SelectedIndex < 0) return;
+            _ctx.GradientDither = (GradientDither)_gradientDither.SelectedIndex;
+        };
+        var gradientHelp = Dim("캔버스에서 시작점 → 끝점으로 끌어 칠합니다(Shift: 45°). 선택 영역이 있으면 그 안만 칠하고, 불투명도가 낮은 쪽은 아래를 그만큼 투명하게 바꿉니다.");
+        gradientHelp.TextWrapping = TextWrapping.Wrap;
+        _gradientBox = Ui.Group("그라데이션", Ui.Stack(
+            _gradientBar,
+            Ui.Row(Ui.Label("위치"), _stopPos, Ui.Label("%"), _stopDelete),
+            _stopColorRow,
+            _stopAlphaRow,
+            Ui.Row(Ui.Label("보간"), _gradientMode),
+            Ui.Row(Ui.Label("디더링"), _gradientDither),
+            gradientHelp));
+
         // ── 옵션(도구마다 보이는 것만)
         _pixelPerfect = Check("픽셀 퍼펙트", "1px 연필·지우개의 L자 모서리 제거 (P)", v => _ctx.PixelPerfect = v);
         _shapeFilled = Check("채움", "사각형·원을 채워 그리기 (U)", v => _ctx.ShapeFilled = v);
@@ -133,20 +207,23 @@ public sealed class ToolOptionsPanel : UserControl
         _mirrorBox = Ui.Group("대칭 그리기", Ui.Stack(_mirrorX, _mirrorY));
 
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
-        var presetGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"), RowDefinitions = new RowDefinitions("Auto,Auto,Auto"), Margin = new Thickness(0) };
-        for (int i = 0; i < 9; i++)
+        // 5×5: 가로·세로 0, 1/4, 1/2, 3/4, 1 지점(위 왼쪽 단추 = 왼쪽 위).
+        var stepDefs = string.Join(",", Enumerable.Repeat("Auto", PivotSteps));
+        var presetGrid = new Grid { ColumnDefinitions = new ColumnDefinitions(stepDefs), RowDefinitions = new RowDefinitions(stepDefs), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Left };
+        string[] quarters = ["0", "1/4", "1/2", "3/4", "1"];
+        for (int i = 0; i < _presetButtons.Length; i++)
         {
-            var preset = PresetOrder[i];
-            var b = Ui.Button(PresetArrows[i], (_, _) => ApplyPivot(SnappedPreset(preset)), 28);
-            b.Height = 24;
+            int col = i % PivotSteps, row = i / PivotSteps;
+            var b = Ui.Button(PivotArrows.GetValueOrDefault((col, row), "·"), (_, _) => ApplyPivot(SnappedStep(col, row)), 26);
+            b.Height = 22;
             b.Padding = new Thickness(0);
             b.HorizontalContentAlignment = HorizontalAlignment.Center;
             b.VerticalContentAlignment = VerticalAlignment.Center;
             b.Margin = new Thickness(1);
-            b.Tip(preset.ToString());
+            b.Tip($"X {quarters[col]} · Y {quarters[PivotSteps - 1 - row]}");
             _presetButtons[i] = b;
-            Grid.SetColumn(b, i % 3);
-            Grid.SetRow(b, i / 3);
+            Grid.SetColumn(b, col);
+            Grid.SetRow(b, row);
             presetGrid.Children.Add(b);
         }
         _pivotX = PixelNum();
@@ -175,7 +252,9 @@ public sealed class ToolOptionsPanel : UserControl
         _pivotTarget = Dim("");
         _pivotTarget.TextWrapping = TextWrapping.Wrap;
         _pivotBox = Ui.Group("피벗(포커스) — 캔버스에서 끌기", Ui.Stack(
-            Ui.Row(presetGrid, Ui.Stack(Ui.Row(Ui.Label("X"), _pivotX, _pivotXMax), Ui.Row(Ui.Label("Y"), _pivotY, _pivotYMax))),
+            presetGrid,
+            Ui.Row(Ui.Label("X"), _pivotX, _pivotXMax),
+            Ui.Row(Ui.Label("Y"), _pivotY, _pivotYMax),
             _framePivot,
             _pivotTarget));
 
@@ -206,7 +285,39 @@ public sealed class ToolOptionsPanel : UserControl
         _hint.TextWrapping = TextWrapping.Wrap;
         _hint.Margin = new Thickness(6, 6, 6, 6);
 
-        var stack = Ui.Stack(_brushBox, _fillBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint);
+        // ── 변형 모드(Ctrl+T): 숫자는 캔버스 손잡이와 함께 움직인다.
+        _tfAngle = TransformNum(-180, 180, "회전 각도(°, 시계 방향) — 회전 중심(캔버스의 주황 표시)을 기준으로",
+            v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)));
+        _tfScaleX = TransformNum(-3200, 3200, "가로 크기(%) — 음수 = 좌우 뒤집기, 중심 기준",
+            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleX = v / 100 }); });
+        _tfScaleY = TransformNum(-3200, 3200, "세로 크기(%) — 음수 = 상하 뒤집기, 중심 기준",
+            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleY = v / 100 }); });
+        _tfX = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 X(픽셀, 크기가 홀수면 .5)",
+            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterX = v }));
+        _tfY = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 Y(픽셀, 위가 0)",
+            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterY = v }));
+        _tfResample = Ui.Combo(150, "RotSprite", "최근접(Nearest)");
+        _tfResample.Tip("RotSprite: Scale2x를 세 번(8배) 키운 그림에서 집어 회전한 선이 덜 깨집니다(섞지 않아 새 색 없음). 최근접: 원본 픽셀을 그대로 집습니다. 0°·90°·180°·270°는 둘이 같습니다.");
+        _tfResample.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _tfResample.SelectedIndex < 0) return;
+            _ctx.TransformResample = (ResampleMode)_tfResample.SelectedIndex;
+        };
+        _tfInfo = Dim("");
+        var tfApply = Ui.Button("적용", (_, _) => _ctx.CommitTransform()).Tip("변형을 적용합니다(Enter) — 실행취소 한 단계");
+        var tfCancel = Ui.Button("취소", (_, _) => _ctx.CancelTransform()).Tip("변형 전으로 되돌립니다(Esc, Ctrl+Z)");
+        var tfHelp = Dim("캔버스: 안쪽 끌기 = 옮기기(1px 단위), 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준, 반대쪽을 넘기면 뒤집기), 바깥 = 회전(Shift 15°), 가운데 표시 끌기 = 회전 중심(더블클릭 = 가운데로). 방향키 = 1px 옮기기.");
+        tfHelp.TextWrapping = TextWrapping.Wrap;
+        _transformBox = Ui.Group("변형(회전·크기)", Ui.Stack(
+            Ui.Row(Ui.Label("각도"), _tfAngle, Ui.Label("°")),
+            Ui.Row(Ui.Label("가로"), _tfScaleX, Ui.Label("%"), Ui.Label("세로"), _tfScaleY, Ui.Label("%")),
+            Ui.Row(Ui.Label("중심 X"), _tfX, Ui.Label("Y"), _tfY),
+            Ui.Row(Ui.Label("리샘플링"), _tfResample),
+            _tfInfo,
+            Ui.Row(tfApply, tfCancel),
+            tfHelp));
+
+        var stack = Ui.Stack(_transformBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint);
         var header = Ui.Header("도구 설정");
         _title = (TextBlock)header.Child!;
         var root = new DockPanel();
@@ -216,6 +327,12 @@ public sealed class ToolOptionsPanel : UserControl
 
         ctx.ToolChanged += (_, _) => Refresh();
         ctx.ToolOptionsChanged += (_, _) => Refresh();
+        ctx.TransformChanged += (_, _) =>
+        {
+            // 들어가고 나올 때는 보이는 묶음을 바꾸고, 그 밖(끄는 중 등)은 숫자만 맞춘다.
+            if (_transformBox.IsVisible != _ctx.IsTransforming) Refresh();
+            else RefreshTransform();
+        };
         ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); };
         ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
         ctx.CurrentChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
@@ -259,6 +376,69 @@ public sealed class ToolOptionsPanel : UserControl
         return num;
     }
 
+    /// <summary>변형 값 숫자 칸(소수 한 자리, 좌우로 끌어 바꾸기). 바꾸면 바로 변형에 반영한다.</summary>
+    private NumericUpDown TransformNum(int min, int max, string tip, Action<double> apply)
+    {
+        var num = Ui.Num(min, max, 0, 60, 1, 1m);
+        num.FormatString = "0.#";
+        num.Tip(tip);
+        num.ValueChanged += (_, _) => { if (!_updating && num.Value is { } v) apply((double)v); };
+        return num;
+    }
+
+    /// <summary>바에서 고른 색 정지점을 바꾼다.</summary>
+    private void SetSelectedStop(Func<GradientStop, GradientStop> change)
+    {
+        if (_gradientBar.SelectedIsAlpha) return;
+        var list = _ctx.GradientStops.ToList();
+        int i = Math.Clamp(_gradientBar.SelectedIndex, 0, list.Count - 1);
+        list[i] = change(list[i]);
+        _ctx.GradientStops = list;
+    }
+
+    /// <summary>바에서 고른 불투명도 정지점을 바꾼다.</summary>
+    private void SetSelectedAlphaStop(Func<GradientAlphaStop, GradientAlphaStop> change)
+    {
+        if (!_gradientBar.SelectedIsAlpha) return;
+        var list = _ctx.GradientAlphaStops.ToList();
+        int i = Math.Clamp(_gradientBar.SelectedIndex, 0, list.Count - 1);
+        list[i] = change(list[i]);
+        _ctx.GradientAlphaStops = list;
+    }
+
+    /// <summary>고른 정지점의 위치·색(또는 불투명도)과 삭제 단추를 맞춘다. 색 줄·불투명도 줄은 고른 종류만 보인다.</summary>
+    private void RefreshGradientStop()
+    {
+        bool alpha = _gradientBar.SelectedIsAlpha;
+        bool was = _updating;
+        _updating = true;
+        try
+        {
+            _stopColorRow.IsVisible = !alpha;
+            _stopAlphaRow.IsVisible = alpha;
+            if (alpha)
+            {
+                var stops = _ctx.GradientAlphaStops;
+                var s = stops[Math.Clamp(_gradientBar.SelectedIndex, 0, stops.Count - 1)];
+                _stopPos.Value = (decimal)Math.Round(s.Position * 100, 1);
+                _stopAlpha.Value = (decimal)Math.Round(s.Alpha * 100 / 255.0, 1);
+                _stopDelete.IsEnabled = stops.Count > 2;
+            }
+            else
+            {
+                var stops = _ctx.GradientStops;
+                var s = stops[Math.Clamp(_gradientBar.SelectedIndex, 0, stops.Count - 1)];
+                _stopPos.Value = (decimal)Math.Round(s.Position * 100, 1);
+                _stopColor.Color = s.Color;
+                _stopDelete.IsEnabled = stops.Count > 2;
+            }
+        }
+        finally
+        {
+            _updating = was;
+        }
+    }
+
     private static NumericUpDown PixelNum()
     {
         var n = Ui.Num(0, PixelImage.MaxSize, 0, 56, 2, 0.5m);
@@ -279,10 +459,12 @@ public sealed class ToolOptionsPanel : UserControl
         _title.Text = $"도구 설정 · {MainForm.ToolName(tool)}";
         _brushBox.IsVisible = brush;
         _brushTitle.Text = shape ? "선 두께·펜 모양" : "브러시";
-        _fillBox.IsVisible = tool == ToolKind.Fill;
+        _fillBox.IsVisible = tool is ToolKind.Fill or ToolKind.MagicWand;
+        _fillTitle.Text = tool == ToolKind.MagicWand ? "스마트 선택(채우기와 같은 설정)" : "채우기";
         _pickerBox.IsVisible = tool == ToolKind.Picker;
         _dodgeBox.IsVisible = tool == ToolKind.Dodge;
         _ditherBox.IsVisible = tool == ToolKind.Dither;
+        _gradientBox.IsVisible = tool == ToolKind.Gradient;
         _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.Eraser;
         _shapeFilled.IsVisible = tool is ToolKind.Rectangle or ToolKind.Ellipse;
         _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse or ToolKind.Fill;
@@ -293,11 +475,23 @@ public sealed class ToolOptionsPanel : UserControl
         _sliceBox.IsVisible = tool == ToolKind.Slice;
         _hint.Text = tool switch
         {
-            ToolKind.Select => "사각 선택은 따로 설정이 없습니다. 드래그로 선택하고 안쪽을 끌어 옮깁니다.",
+            ToolKind.Select => "드래그로 사각형을 선택합니다(Shift: 정사각형). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.",
+            ToolKind.EllipseSelect => "드래그로 원을 선택합니다(Shift: 정원). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.",
+            ToolKind.Lasso => "끌어서 테두리를 그리면 놓을 때 처음 점과 이어 닫고 그 안을 선택합니다. 안쪽을 끌어 옮깁니다.",
+            ToolKind.MagicWand => "클릭한 곳과 비슷한 색 영역을 선택합니다. 옮기려면 이동(V)이나 방향키를 씁니다.",
             ToolKind.Move => "선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다.",
+            ToolKind.Gradient => "끌어서 시작점 → 끝점 방향으로 칠합니다. 실행취소는 한 번에 한 단계입니다.",
             _ => "",
         };
         _hint.IsVisible = _hint.Text.Length > 0;
+        _transformBox.IsVisible = _ctx.IsTransforming;
+        if (_ctx.IsTransforming)
+        {
+            // 변형 중에는 변형 값만 보인다.
+            _title.Text = "도구 설정 · 변형";
+            foreach (var box in new Control[] { _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
+                box.IsVisible = false;
+        }
 
         _updating = true;
         try
@@ -319,6 +513,13 @@ public sealed class ToolOptionsPanel : UserControl
             _wrap.IsChecked = _ctx.MoveWrap;
             _mirrorX.IsChecked = _ctx.MirrorX;
             _mirrorY.IsChecked = _ctx.MirrorY;
+            _gradientBar.Stops = _ctx.GradientStops;
+            _gradientBar.AlphaStops = _ctx.GradientAlphaStops;
+            _gradientBar.Mode = _ctx.GradientInterpolation;
+            _gradientMode.SelectedIndex = (int)_ctx.GradientInterpolation;
+            _gradientDither.SelectedIndex = (int)_ctx.GradientDither;
+            _gradientDither.IsEnabled = _ctx.GradientInterpolation == GradientInterpolation.Smooth;
+            RefreshGradientStop();
         }
         finally
         {
@@ -326,6 +527,37 @@ public sealed class ToolOptionsPanel : UserControl
         }
         RefreshPivot();
         RefreshSlice();
+        RefreshTransform();
+    }
+
+    // ───────────── 변형 ─────────────
+
+    /// <summary>변형 값을 숫자 칸에 보인다(변형 중일 때만).</summary>
+    private void RefreshTransform()
+    {
+        if (!_transformBox.IsVisible || _ctx.Transform is not { } t) return;
+        var p = _ctx.TransformParams;
+        bool wasUpdating = _updating;
+        _updating = true;
+        try
+        {
+            static decimal Num(double v, NumericUpDown n) => Math.Clamp((decimal)Math.Round(v, 1), n.Minimum, n.Maximum);
+            _tfAngle.Value = Num(p.Angle, _tfAngle);
+            _tfScaleX.Value = Num(p.ScaleX * 100, _tfScaleX);
+            _tfScaleY.Value = Num(p.ScaleY * 100, _tfScaleY);
+            _tfX.Value = Num(p.CenterX, _tfX);
+            _tfY.Value = Num(p.CenterY, _tfY);
+            _tfResample.SelectedIndex = (int)_ctx.TransformResample;
+            var src = t.SourceBounds;
+            var dst = _ctx.Selection.Bounds;
+            bool fallback = _ctx.TransformResample == ResampleMode.RotSprite && (long)src.Width * src.Height > FreeTransform.MaxRotSpriteArea;
+            _tfInfo.Text = $"원본 {src.Width}×{src.Height} → {dst.Width}×{dst.Height} px"
+                           + (fallback ? " · 큰 영역이라 최근접으로 집습니다" : "");
+        }
+        finally
+        {
+            _updating = wasUpdating;
+        }
     }
 
     // ───────────── 9-slice ─────────────
@@ -376,13 +608,22 @@ public sealed class ToolOptionsPanel : UserControl
         return _ctx.CurrentPart?.PartPivot ?? p.GetFramePivot(_ctx.CurrentFrame);
     }
 
-    /// <summary>프리셋을 정수 픽셀에 맞춘 피벗(가운데는 내림: 15px → 7px, 오른쪽 = 너비, 위 = 높이).</summary>
-    private Pivot SnappedPreset(PivotPreset preset)
+    /// <summary>
+    /// 5×5 단추(<paramref name="col"/>, <paramref name="row"/> = 0~4, 위 왼쪽부터)를 정수 픽셀에 맞춘 피벗:
+    /// 0 / 1/4 / 1/2 / 3/4 / 끝(가운데는 내림 15px → 7px, 1/4 = 16px → 4px, 3/4 = 너비 − 1/4 → 12px, 오른쪽 = 너비, 위 = 높이).
+    /// </summary>
+    private Pivot SnappedStep(int col, int row)
     {
         int w = TargetWidth, h = TargetHeight;
-        var n = Pivot.FromPreset(preset);
-        static int Snap(float v, int size) => v <= 0f ? 0 : v >= 1f ? size : size / 2;
-        return new Pivot(Snap(n.X, w) / (float)w, Snap(n.Y, h) / (float)h);
+        static int Snap(int step, int size) => step switch
+        {
+            0 => 0,
+            1 => size / 4,
+            2 => size / 2,
+            3 => size - size / 4,
+            _ => size,
+        };
+        return new Pivot(Snap(col, w) / (float)w, Snap(PivotSteps - 1 - row, h) / (float)h);
     }
 
     /// <summary>피벗 대상(부위 = 그 부위, 그 밖 = 현재 프레임/기본값)을 화면에 보인다. 피벗 도구일 때만.</summary>
@@ -416,11 +657,12 @@ public sealed class ToolOptionsPanel : UserControl
             _pivotY.Value = Math.Round((decimal)Math.Clamp(pivot.Y * h, 0, h), 2);
             _pivotXMax.Text = $"/ {w} px";
             _pivotYMax.Text = $"/ {h} px";
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < _presetButtons.Length; i++)
             {
-                var preset = PresetOrder[i];
-                var snapped = SnappedPreset(preset);
-                bool on = pivot == Pivot.FromPreset(preset)
+                int col = i % PivotSteps, row = i / PivotSteps;
+                var exact = new Pivot(col / 4f, (PivotSteps - 1 - row) / 4f);
+                var snapped = SnappedStep(col, row);
+                bool on = pivot == exact
                     || (Math.Abs((pivot.X - snapped.X) * w) < 0.01f && Math.Abs((pivot.Y - snapped.Y) * h) < 0.01f);
                 _presetButtons[i].Background = on ? AppTheme.AccentBrush : AppTheme.InputBrush;
             }
