@@ -124,26 +124,31 @@ public static class Raster
     }
 
     /// <summary>
-    /// 브러시 도장: (cx,cy)를 중심으로 한 변 <paramref name="size"/>(1~8 권장) 정사각형 또는 원.
-    /// 짝수 크기는 중심의 오른쪽·아래로 한 칸 더 넓다.
+    /// 브러시 도장: (cx,cy)를 중심으로 한 변 <paramref name="size"/>(1~<see cref="BrushFootprint.MaxSize"/>)인 <paramref name="shape"/> 모양.
+    /// 짝수 크기는 중심의 오른쪽·아래로 한 칸 더 넓다(<see cref="BrushFootprint"/>).
     /// </summary>
-    public static List<Point> Brush(int cx, int cy, int size, bool round = false)
+    public static List<Point> Brush(int cx, int cy, int size, BrushShape shape = BrushShape.Square)
     {
-        size = Math.Max(1, size);
-        int start = (size - 1) / 2;
-        var pts = new List<Point>(size * size);
-        float r = size / 2f;
-        for (int dy = 0; dy < size; dy++)
-            for (int dx = 0; dx < size; dx++)
-            {
-                if (round && size > 2)
-                {
-                    float fx = dx + 0.5f - r, fy = dy + 0.5f - r;
-                    if (fx * fx + fy * fy > r * r) continue;
-                }
-                pts.Add(new Point(cx - start + dx, cy - start + dy));
-            }
+        var offsets = BrushFootprint.Get(shape, size).Offsets;
+        var pts = new List<Point>(offsets.Count);
+        foreach (var o in offsets) pts.Add(new Point(cx + o.X, cy + o.Y));
         return pts;
+    }
+
+    /// <summary>
+    /// 순서 디더링(2×2 Bayer): (x,y)에 기본색을 칠할지. 체커는 절반, 25%는 네 칸에 한 칸, 75%는 네 칸에 세 칸이 기본색이다.
+    /// </summary>
+    public static bool DitherUsesPrimary(int x, int y, DitherPattern pattern)
+    {
+        // Bayer 2×2: [0 2; 3 1]
+        int bayer = (y & 1) == 0 ? ((x & 1) == 0 ? 0 : 2) : ((x & 1) == 0 ? 3 : 1);
+        int level = pattern switch
+        {
+            DitherPattern.Quarter => 1,
+            DitherPattern.ThreeQuarters => 3,
+            _ => 2,
+        };
+        return bayer < level;
     }
 
     /// <summary>
@@ -191,49 +196,93 @@ public static class Raster
     }
 
     /// <summary>
-    /// 채우기. <paramref name="contiguous"/>면 4방향으로 이어진 같은 색 영역만, 아니면 같은 색 전체를 바꾼다.
-    /// 투명 픽셀은 RGB와 관계없이 같은 색으로 본다. 바뀐 픽셀 수를 돌려준다.
+    /// 채우기. <paramref name="contiguous"/>면 이어진 영역만(<paramref name="diagonal"/>이면 8방향, 아니면 4방향), 아니면 영역 안의 맞는 색 전체를 바꾼다.
+    /// <para>
+    /// 맞는 색: 클릭한 점(씨앗)의 색과 RGBA 채널마다의 차이 중 가장 큰 값이 <paramref name="tolerance"/>(0~255) 이하인 색.
+    /// 0이면 정확히 같은 색만이다. 투명(알파 0) 픽셀은 RGB가 없는 것으로 보아, 한쪽이 투명이면 알파 차이만 잰다(둘 다 투명이면 같은 색).
+    /// </para>
+    /// <para>
+    /// <paramref name="sample"/>을 주면 영역은 그 그림(같은 크기, 예: 보이는 레이어 합성)의 색으로 정하고 칠하기는 <paramref name="image"/>에 한다.
+    /// </para>
+    /// 바뀐 픽셀 수를 돌려준다.
     /// </summary>
-    public static int FloodFill(PixelImage image, int x, int y, Color32 color, bool contiguous = true, Rectangle? clip = null)
+    public static int FloodFill(PixelImage image, int x, int y, Color32 color, bool contiguous = true, Rectangle? clip = null,
+        int tolerance = 0, bool diagonal = false, PixelImage? sample = null)
     {
+        if (sample is not null && (sample.Width != image.Width || sample.Height != image.Height))
+            throw new ArgumentException("채우기 기준 그림의 크기가 대상과 다릅니다.", nameof(sample));
         var area = Rectangle.Intersect(clip ?? image.Bounds, image.Bounds);
         if (!area.Contains(x, y)) return 0;
-        var target = image.Get(x, y);
-        if (target == color) return 0;
-        if (!contiguous) return ReplaceColor(image, target, color, area);
-
+        tolerance = Math.Clamp(tolerance, 0, 255);
         int w = image.Width;
         var px = image.Pixels;
+        var src = (sample ?? image).Pixels;
+        var seed = src[y * w + x];
+        // 같은 그림에서 정확히 같은 색으로 채우면 바뀔 것이 없다.
+        if (sample is null && tolerance == 0 && seed == color) return 0;
+
+        int changed = 0;
+        if (!contiguous)
+        {
+            for (int ry = area.Top; ry < area.Bottom; ry++)
+                for (int rx = area.Left; rx < area.Right; rx++)
+                {
+                    int i = ry * w + rx;
+                    if (!Matches(src[i], seed, tolerance) || px[i] == color) continue;
+                    px[i] = color;
+                    changed++;
+                }
+            return changed;
+        }
+
+        // 가로 구간 단위 채우기. visited가 이미 칠한 칸을 다시 보지 않게 막으므로 칠한 색이 기준에 맞아도 된다.
         var visited = new bool[px.Length];
         var stack = new Stack<(int X, int Y)>();
         stack.Push((x, y));
-        int changed = 0;
         while (stack.Count > 0)
         {
             var (sx, sy) = stack.Pop();
-            // 왼쪽 끝 찾기
-            int lx = sx;
-            while (lx > area.Left && !visited[sy * w + lx - 1] && Color32.SameVisible(px[sy * w + lx - 1], target)) lx--;
-            bool spanUp = false, spanDown = false;
-            for (int cx = lx; cx < area.Right; cx++)
+            int row = sy * w;
+            if (visited[row + sx] || !Matches(src[row + sx], seed, tolerance)) continue;
+            int lx = sx, rx = sx;
+            while (lx > area.Left && !visited[row + lx - 1] && Matches(src[row + lx - 1], seed, tolerance)) lx--;
+            while (rx < area.Right - 1 && !visited[row + rx + 1] && Matches(src[row + rx + 1], seed, tolerance)) rx++;
+            for (int cx = lx; cx <= rx; cx++)
             {
-                int i = sy * w + cx;
-                if (visited[i] || !Color32.SameVisible(px[i], target)) break;
+                int i = row + cx;
                 visited[i] = true;
                 if (px[i] != color) { px[i] = color; changed++; }
-                if (sy > area.Top) CheckRow(sy - 1, cx, ref spanUp);
-                if (sy < area.Bottom - 1) CheckRow(sy + 1, cx, ref spanDown);
             }
+            int from = diagonal ? Math.Max(area.Left, lx - 1) : lx;
+            int to = diagonal ? Math.Min(area.Right - 1, rx + 1) : rx;
+            if (sy > area.Top) ScanRow(sy - 1, from, to);
+            if (sy < area.Bottom - 1) ScanRow(sy + 1, from, to);
         }
         return changed;
 
-        void CheckRow(int ry, int cx, ref bool inSpan)
+        // 이웃 줄에서 맞는 구간마다 시작점 하나를 넣는다.
+        void ScanRow(int ry, int from, int to)
         {
-            int j = ry * w + cx;
-            bool match = !visited[j] && Color32.SameVisible(px[j], target);
-            if (match && !inSpan) stack.Push((cx, ry));
-            inSpan = match;
+            bool inSpan = false;
+            for (int cx = from; cx <= to; cx++)
+            {
+                int j = ry * w + cx;
+                bool match = !visited[j] && Matches(src[j], seed, tolerance);
+                if (match && !inSpan) stack.Push((cx, ry));
+                inSpan = match;
+            }
         }
+    }
+
+    /// <summary>
+    /// <see cref="FloodFill"/>의 색 비교: RGBA 채널 차이의 최댓값 ≤ <paramref name="tolerance"/>. 한쪽이 투명이면 알파 차이만 잰다.
+    /// </summary>
+    public static bool Matches(Color32 c, Color32 seed, int tolerance)
+    {
+        if (c.Argb == seed.Argb) return true;
+        if (c.A == 0 || seed.A == 0) return Math.Abs(c.A - seed.A) <= tolerance;
+        return Math.Abs(c.R - seed.R) <= tolerance && Math.Abs(c.G - seed.G) <= tolerance
+            && Math.Abs(c.B - seed.B) <= tolerance && Math.Abs(c.A - seed.A) <= tolerance;
     }
 
     /// <summary>영역 안의 <paramref name="target"/>(투명은 모두 같은 색) 픽셀을 모두 바꾼다.</summary>
@@ -252,4 +301,15 @@ public static class Raster
             }
         return changed;
     }
+}
+
+/// <summary>디더링 브러시 무늬(기본색 비율).</summary>
+public enum DitherPattern
+{
+    /// <summary>체커(50%).</summary>
+    Checker,
+    /// <summary>네 칸에 한 칸 기본색(25%).</summary>
+    Quarter,
+    /// <summary>네 칸에 세 칸 기본색(75%).</summary>
+    ThreeQuarters,
 }

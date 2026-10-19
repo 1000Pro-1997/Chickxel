@@ -39,6 +39,8 @@ public sealed class UnityMetaInfo
     public SpriteBorder Border { get; set; }
     public bool Readable { get; set; }
     public bool FullRectMesh { get; set; } = true;
+    /// <summary>나머지 텍스처 가져오기 설정(Extrude·Physics·Advanced·Wrap/Filter·Default 플랫폼). Max Size는 메타 원값.</summary>
+    public SpriteSettings Texture { get; } = new();
     public List<UnityMetaSprite> Sprites { get; } = new();
     /// <summary>시트(Single 스프라이트) 수준 spriteID.</summary>
     public string? SheetSpriteId { get; set; }
@@ -64,6 +66,23 @@ public sealed class UnityMetaInfo
         doc.Sprite.Border = Border;
         doc.Sprite.Readable = Readable;
         doc.Sprite.FullRectMesh = FullRectMesh;
+        var t = Texture;
+        doc.Sprite.ExtrudeEdges = t.ExtrudeEdges;
+        doc.Sprite.GeneratePhysicsShape = t.GeneratePhysicsShape;
+        doc.Sprite.SRgb = t.SRgb;
+        doc.Sprite.AlphaSource = t.AlphaSource;
+        doc.Sprite.AlphaIsTransparency = t.AlphaIsTransparency;
+        doc.Sprite.GenerateMipMaps = t.GenerateMipMaps;
+        doc.Sprite.WrapMode = t.WrapMode;
+        doc.Sprite.FilterMode = t.FilterMode;
+        doc.Sprite.AnisoLevel = t.AnisoLevel;
+        // 이미지에 맞춘 자동 크기와 같으면 자동으로 둔다(이미지가 커져도 따라감).
+        doc.Sprite.MaxTextureSize = t.MaxTextureSize == UnityMeta.MaxTextureSizeFor(doc.Width, doc.Height) ? 0 : t.MaxTextureSize;
+        doc.Sprite.ResizeAlgorithm = t.ResizeAlgorithm;
+        doc.Sprite.Format = t.Format;
+        doc.Sprite.Compression = t.Compression;
+        doc.Sprite.CrunchCompression = t.CrunchCompression;
+        doc.Sprite.CompressionQuality = t.CompressionQuality;
         doc.Slices.Clear();
         if (SpriteMode == SpriteMode.Multiple)
             doc.Slices.AddRange(ToSlices(doc.Height));
@@ -120,6 +139,27 @@ public static class UnityMeta
         info.Border = ReadBorder(ti["spriteBorder"]);
         info.Readable = Int(ti["isReadable"], 0) != 0;
         info.FullRectMesh = Int(ti["spriteMeshType"], 1) == 0;
+        var t = info.Texture;
+        var mip = ti["mipmaps"];
+        t.GenerateMipMaps = Int(mip?["enableMipMap"], 0) != 0;
+        t.SRgb = Int(mip?["sRGBTexture"], 1) != 0;
+        var ts = ti["textureSettings"];
+        t.FilterMode = EnumOr(Int(ts?["filterMode"], 0), TextureFilter.Point);
+        t.AnisoLevel = Int(ts?["aniso"], 1);
+        t.WrapMode = EnumOr(Int(ts?["wrapU"], 1), TextureWrap.Clamp);
+        t.ExtrudeEdges = Int(ti["spriteExtrude"], 1);
+        t.GeneratePhysicsShape = Int(ti["spriteGenerateFallbackPhysicsShape"], 1) != 0;
+        t.AlphaSource = EnumOr(Int(ti["alphaUsage"], 1), SpriteAlphaSource.InputTextureAlpha);
+        t.AlphaIsTransparency = Int(ti["alphaIsTransparency"], 1) != 0;
+        var platform = ti["platformSettings"]?.Items.FirstOrDefault(x => x["buildTarget"]?.Text == "DefaultTexturePlatform");
+        // Max Size 원값(0이 아니도록 SpriteSettings에 맞추지 않고 그대로) — ApplyTo에서 자동과 비교한다.
+        int maxSize = Int(platform?["maxTextureSize"] ?? ti["maxTextureSize"], 0);
+        t.MaxTextureSize = maxSize;
+        t.ResizeAlgorithm = EnumOr(Int(platform?["resizeAlgorithm"], 0), TextureResize.Mitchell);
+        t.Format = EnumOr(Int(platform?["textureFormat"], -1), TextureFormatChoice.Automatic);
+        t.Compression = EnumOr(Int(platform?["textureCompression"], 0), TextureCompressionChoice.None);
+        t.CrunchCompression = Int(platform?["crunchedCompression"], 0) != 0;
+        t.CompressionQuality = Int(platform?["compressionQuality"], 50);
         info.UserData = ti["userData"]?.Text ?? "";
         info.AssetBundleName = ti["assetBundleName"]?.Text ?? "";
         info.AssetBundleVariant = ti["assetBundleVariant"]?.Text ?? "";
@@ -227,7 +267,7 @@ public static class UnityMeta
             if (!unchanged.Contains(entry) && !table.Contains(entry)) table.Add(entry);
         }
 
-        int maxSize = MaxTextureSizeFor(doc.Width, doc.Height);
+        int maxSize = settings.MaxTextureSize > 0 ? settings.MaxTextureSize : MaxTextureSizeFor(doc.Width, doc.Height);
         var sb = new StringBuilder(4096);
         void L(string line) => sb.Append(line).Append('\n');
 
@@ -249,8 +289,8 @@ public static class UnityMeta
         L("  serializedVersion: 13");
         L("  mipmaps:");
         L("    mipMapMode: 0");
-        L("    enableMipMap: 0");
-        L("    sRGBTexture: 1");
+        L($"    enableMipMap: {(settings.GenerateMipMaps ? 1 : 0)}");
+        L($"    sRGBTexture: {(settings.SRgb ? 1 : 0)}");
         L("    linearTexture: 0");
         L("    fadeOut: 0");
         L("    borderMipMap: 0");
@@ -277,25 +317,25 @@ public static class UnityMeta
         L($"  maxTextureSize: {maxSize}");
         L("  textureSettings:");
         L("    serializedVersion: 2");
-        L("    filterMode: 0");
-        L("    aniso: 1");
+        L($"    filterMode: {(int)settings.FilterMode}");
+        L($"    aniso: {settings.AnisoLevel}");
         L("    mipBias: 0");
-        L("    wrapU: 1");
-        L("    wrapV: 1");
-        L("    wrapW: 1");
+        L($"    wrapU: {(int)settings.WrapMode}");
+        L($"    wrapV: {(int)settings.WrapMode}");
+        L($"    wrapW: {(int)settings.WrapMode}");
         L("  nPOTScale: 0");
         L("  lightmap: 0");
         L("  compressionQuality: 50");
         L($"  spriteMode: {(multiple ? 2 : 1)}");
-        L("  spriteExtrude: 1");
+        L($"  spriteExtrude: {settings.ExtrudeEdges}");
         L($"  spriteMeshType: {(settings.FullRectMesh ? 0 : 1)}");
         L($"  alignment: {AlignmentFor(settings.DefaultPivot, existing?.Alignment, existing?.SpritePivot)}");
         L($"  spritePivot: {Vec2(settings.DefaultPivot)}");
         L($"  spritePixelsToUnits: {F(settings.PixelsPerUnit)}");
         L($"  spriteBorder: {Vec4(settings.Border)}");
-        L("  spriteGenerateFallbackPhysicsShape: 1");
-        L("  alphaUsage: 1");
-        L("  alphaIsTransparency: 1");
+        L($"  spriteGenerateFallbackPhysicsShape: {(settings.GeneratePhysicsShape ? 1 : 0)}");
+        L($"  alphaUsage: {(int)settings.AlphaSource}");
+        L($"  alphaIsTransparency: {(settings.AlphaIsTransparency ? 1 : 0)}");
         L("  spriteTessellationMethod: 0");
         L("  spriteTessellationDetail: -1");
         L("  spriteGeometrySubdivision: -1");
@@ -312,17 +352,18 @@ public static class UnityMeta
         L("  swizzle: 50462976");
         L("  cookieLightType: 0");
         L("  platformSettings:");
-        // Default(압축 없음)가 실제 적용 값이고, Standalone은 재정의하지 않은 Unity 기본 직렬화 값 그대로 쓴다.
-        foreach (var (target, compression) in new[] { ("DefaultTexturePlatform", 0), ("Standalone", 1) })
+        // Default가 실제 적용 값(설정대로)이고, Standalone은 재정의하지 않은 Unity 기본 직렬화 값 그대로 쓴다.
+        foreach (var target in new[] { "DefaultTexturePlatform", "Standalone" })
         {
+            bool isDefault = target == "DefaultTexturePlatform";
             L("  - serializedVersion: 4");
             L($"    buildTarget: {target}");
             L($"    maxTextureSize: {maxSize}");
-            L("    resizeAlgorithm: 0");
-            L("    textureFormat: -1");
-            L($"    textureCompression: {compression}");
-            L("    compressionQuality: 50");
-            L("    crunchedCompression: 0");
+            L($"    resizeAlgorithm: {(isDefault ? (int)settings.ResizeAlgorithm : 0)}");
+            L($"    textureFormat: {(isDefault ? (int)settings.Format : -1)}");
+            L($"    textureCompression: {(isDefault ? (int)settings.Compression : 1)}");
+            L($"    compressionQuality: {(isDefault ? settings.CompressionQuality : 50)}");
+            L($"    crunchedCompression: {(isDefault && settings.CrunchCompression ? 1 : 0)}");
             L("    allowsAlphaSplitting: 0");
             L("    overridden: 0");
             L("    ignorePlatformSupport: 0");
@@ -505,6 +546,10 @@ public static class UnityMeta
     private static string F(float v) => v.ToString("R", CultureInfo.InvariantCulture).Replace('E', 'e');
 
     private static string Scalar(string? s) => string.IsNullOrEmpty(s) ? "" : MiniYaml.QuoteIfNeeded(s);
+
+    /// <summary>정의된 enum 값이면 그것, 아니면 기본값.</summary>
+    private static T EnumOr<T>(int value, T fallback) where T : struct, Enum
+        => Enum.IsDefined(typeof(T), value) ? (T)Enum.ToObject(typeof(T), value) : fallback;
 
     private static int Int(YamlNode? node, int fallback)
         => int.TryParse(node?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : fallback;

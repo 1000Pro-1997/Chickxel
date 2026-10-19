@@ -1,115 +1,146 @@
+using Avalonia.VisualTree;
+using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 
 namespace Gpixel.App;
 
 /// <summary>
-/// 새 프로젝트: 종류(애니메이션 / 아틀라스), 캔버스(아틀라스면 첫 스프라이트) 가로·세로, 배경(투명/보조색),
+/// 새 프로젝트: 캔버스 가로·세로, 시작 방식(일반 레이어 1 / 부위로 시작 = 그룹 + 첫 부위의 이름·크기), 배경(투명/보조색),
 /// 파일 브라우저에서 만들 때는 파일 이름도.
 /// </summary>
 public sealed class NewImageDialog : DialogBase
 {
-    private readonly NumericUpDown _w, _h;
+    private readonly NumericUpDown _w, _h, _partW, _partH;
     private readonly CheckBox _transparent;
     private readonly TextBox? _name;
-    private readonly RadioButton _animation, _atlas;
-    private readonly Label _sizeLabel;
+    private readonly TextBox _partName;
+    private readonly RadioButton _normal, _parts;
+    private readonly StackPanel _partRow;
 
     public NewImageDialog(int width, int height, string? fileName = null) : base("새 프로젝트", "만들기")
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
         _transparent = Ui.Check("배경 투명", true);
-        _animation = new RadioButton { Text = "애니메이션 (모든 프레임이 같은 캔버스 · 프레임·태그)", AutoSize = true, Checked = true, ForeColor = Theme.TextColor };
-        _atlas = new RadioButton { Text = "아틀라스 (스프라이트마다 크기·피벗이 다름 · 예: 캐릭터 부위)", AutoSize = true, ForeColor = Theme.TextColor };
-        _sizeLabel = Ui.Label("캔버스");
-        _animation.CheckedChanged += (_, _) => _sizeLabel.Text = _atlas.Checked ? "첫 스프라이트" : "캔버스";
+        _normal = new RadioButton { GroupName = "start", Content = "일반(레이어 1)", IsChecked = true, Foreground = AppTheme.TextBrush };
+        _parts = new RadioButton { GroupName = "start", Content = "부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)", Foreground = AppTheme.TextBrush };
+        _partName = Ui.Text("머리", 100);
+        _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70);
+        _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70);
+        _partRow = Ui.Row(Ui.Label("   첫 부위"), _partName, Ui.Label("가로"), _partW, Ui.Label("세로"), _partH, Ui.Label("px"));
+        _partRow.IsEnabled = false;
+        _parts.IsCheckedChanged += (_, _) => _partRow.IsEnabled = _parts.On();
         if (fileName is not null)
         {
             _name = Ui.Text(fileName, 220);
-            Body.Controls.Add(Ui.Row(Ui.Label("파일 이름"), _name, Ui.Label(SpriteProject.FileExtension)));
+            Body.Children.Add(Ui.Row(Ui.Label("파일 이름"), _name, Ui.Label(SpriteProject.FileExtension)));
         }
-        Body.Controls.Add(Ui.Label("종류", bold: true));
-        Body.Controls.Add(_animation);
-        Body.Controls.Add(_atlas);
-        Body.Controls.Add(Ui.Row(_sizeLabel, Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label("캔버스"), Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
         var presets = Ui.Row();
         foreach (var (pw, ph) in new[] { (16, 16), (32, 32), (16, 32), (64, 64), (128, 128), (256, 256) })
-        {
-            var b = Ui.Button($"{pw}×{ph}");
-            b.Click += (_, _) => { _w.Value = pw; _h.Value = ph; };
-            presets.Controls.Add(b);
-        }
-        Body.Controls.Add(presets);
-        Body.Controls.Add(_transparent);
-        Body.Controls.Add(Ui.Label("투명이 아니면 보조색으로 채웁니다."));
+            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
+        Body.Children.Add(presets);
+        Body.Children.Add(Ui.Label("시작", bold: true));
+        Body.Children.Add(_normal);
+        Body.Children.Add(_parts);
+        Body.Children.Add(_partRow);
+        Body.Children.Add(_transparent);
+        Body.Children.Add(Ui.Label("투명이 아니면 보조색으로 채웁니다."));
         OkButton.Click += (_, _) =>
         {
-            if (_name is null || FileName.Length > 0 && FileName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0) return;
-            Ui.Error(this, "파일 이름이 비었거나 쓸 수 없는 문자가 있습니다.");
-            DialogResult = DialogResult.None;
+            if (_name is not null && (FileName.Length == 0 || FileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+            {
+                Ui.Error(this, "파일 이름이 비었거나 쓸 수 없는 문자가 있습니다.");
+                DialogResult = DialogResult.None;
+                return;
+            }
+            if (StartWithParts && PartName.Length == 0)
+            {
+                Ui.Error(this, "첫 부위 이름을 입력하세요.");
+                DialogResult = DialogResult.None;
+            }
         };
     }
 
-    public int ImageWidth => (int)_w.Value;
-    public int ImageHeight => (int)_h.Value;
-    public bool Transparent => _transparent.Checked;
-    public string FileName => _name?.Text.Trim() ?? "";
-    public ProjectKind Kind => _atlas.Checked ? ProjectKind.Atlas : ProjectKind.Animation;
+    public int ImageWidth => (int)_w.NumValue();
+    public int ImageHeight => (int)_h.NumValue();
+    public bool Transparent => _transparent.On();
+    public string FileName => _name?.Text?.Trim() ?? "";
+    /// <summary>그룹 + 첫 부위로 시작(아니면 일반 레이어 1).</summary>
+    public bool StartWithParts => _parts.On();
+    public string PartName => _partName.Text?.Trim() ?? "";
+    public int PartWidth => (int)_partW.NumValue();
+    public int PartHeight => (int)_partH.NumValue();
 }
 
-/// <summary>아틀라스 스프라이트 추가: 이름 + 크기.</summary>
-public sealed class NewSpriteDialog : DialogBase
+/// <summary>부위 추가: 이름 + 크기(부위 캔버스).</summary>
+public sealed class NewPartDialog : DialogBase
 {
     private readonly TextBox _name;
     private readonly NumericUpDown _w, _h;
 
-    public NewSpriteDialog(string name, int width, int height) : base("새 스프라이트", "추가")
+    public NewPartDialog(string name, int width, int height) : base("새 부위", "추가")
     {
         _name = Ui.Text(name, 200);
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
-        Body.Controls.Add(Ui.Row(Ui.Label("이름"), _name));
-        Body.Controls.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
+        var names = Ui.Row(Ui.Label("이름"), _name);
+        foreach (var n in new[] { "머리", "몸", "팔", "다리" })
+            names.Children.Add(Ui.Button(n, (_, _) => _name.Text = n));
+        Body.Children.Add(names);
+        Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
         var presets = Ui.Row();
-        foreach (var (pw, ph) in new[] { (8, 8), (16, 16), (16, 32), (32, 32), (64, 64) })
-        {
-            var b = Ui.Button($"{pw}×{ph}");
-            b.Click += (_, _) => { _w.Value = pw; _h.Value = ph; };
-            presets.Controls.Add(b);
-        }
-        Body.Controls.Add(presets);
-        Body.Controls.Add(Ui.Label("이름이 겹치면 _1, _2 …가 붙습니다. 피벗은 프로젝트 기본 피벗."));
-        Shown += (_, _) => { _name.Focus(); _name.SelectAll(); };
+        foreach (var (pw, ph) in new[] { (8, 8), (8, 5), (16, 16), (16, 32), (32, 32) })
+            presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
+        Body.Children.Add(presets);
+        Body.Children.Add(Ui.Label("이름이 겹치면 _1, _2 …가 붙습니다. 처음 위치는 캔버스 가운데 — 그룹을 골라 끌어 배치하세요."));
+        Opened += (_, _) => { _name.Focus(); _name.SelectAll(); };
     }
 
-    public string SpriteName => _name.Text.Trim();
-    public int SpriteWidth => (int)_w.Value;
-    public int SpriteHeight => (int)_h.Value;
+    public string PartName => _name.Text?.Trim() ?? "";
+    public int PartWidth => (int)_w.NumValue();
+    public int PartHeight => (int)_h.NumValue();
 }
 
-/// <summary>PNG 가져오기: 칸이 모두 같은 크기일 때 아틀라스 / 애니메이션 프레임 중 고르기.</summary>
+/// <summary>부위 위치: 프레임 캔버스 안 왼쪽 위 X·Y(밖으로 나가도 됨).</summary>
+public sealed class PartOffsetDialog : DialogBase
+{
+    private readonly NumericUpDown _x, _y;
+
+    public PartOffsetDialog(string partName, Point offset) : base($"부위 위치 — {partName}")
+    {
+        _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80);
+        _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80);
+        Body.Children.Add(Ui.Label("프레임 캔버스에서 부위 왼쪽 위 위치(모든 프레임 공통)"));
+        Body.Children.Add(Ui.Row(Ui.Label("X"), _x, Ui.Label("Y"), _y, Ui.Label("px")));
+    }
+
+    public Point Offset => new((int)_x.NumValue(), (int)_y.NumValue());
+}
+
+/// <summary>PNG 가져오기: 칸이 모두 같은 크기일 때 부위 / 애니메이션 프레임 중 고르기.</summary>
 public sealed class ImportKindDialog : DialogBase
 {
-    public ImportKindDialog(string fileName, int sliceCount, Size sliceSize) : base("PNG 가져오기", "아틀라스로")
+    public ImportKindDialog(string fileName, int sliceCount, Size sliceSize) : base("PNG 가져오기", "부위로")
     {
-        Body.Controls.Add(Ui.Label($"{fileName}: 칸 {sliceCount}개가 모두 같은 크기({sliceSize.Width}×{sliceSize.Height})입니다.", bold: true));
-        Body.Controls.Add(Ui.Label("어떻게 가져올까요?"));
-        Body.Controls.Add(Ui.Label("· 아틀라스로: 칸마다 스프라이트 1개(이름·크기·피벗 그대로, 원래 위치 유지)"));
-        Body.Controls.Add(Ui.Label("· 애니메이션 프레임으로: 칸마다 프레임 1개(같은 캔버스, 태그로 애니메이션)"));
-        OkButton.DialogResult = DialogResult.Yes;
+        Body.Children.Add(Ui.Label($"{fileName}: 칸 {sliceCount}개가 모두 같은 크기({sliceSize.Width}×{sliceSize.Height})입니다.", bold: true));
+        Body.Children.Add(Ui.Label("어떻게 가져올까요?"));
+        Body.Children.Add(Ui.Label("· 부위로: 그룹 하나에 칸마다 부위 1개(이름·크기·피벗 그대로, 시트의 원래 위치에 배치)"));
+        Body.Children.Add(Ui.Label("· 애니메이션 프레임으로: 칸마다 프레임 1개(같은 캔버스, 태그로 애니메이션)"));
+        SetButtonResult(OkButton, DialogResult.Yes);
         OkButton.Width = 110;
         var anim = AddButton("애니메이션 프레임으로", DialogResult.No);
         anim.Width = 150;
     }
 
-    /// <summary>고른 종류(취소하면 null).</summary>
-    public static ProjectKind? Ask(IWin32Window owner, string fileName, int sliceCount, Size sliceSize)
+    /// <summary>고른 가져오기 방식(취소하면 null).</summary>
+    public static ImportMode? Ask(Visual? owner, string fileName, int sliceCount, Size sliceSize)
     {
-        using var dlg = new ImportKindDialog(fileName, sliceCount, sliceSize);
+        var dlg = new ImportKindDialog(fileName, sliceCount, sliceSize);
         return dlg.ShowDialog(owner) switch
         {
-            DialogResult.Yes => ProjectKind.Atlas,
-            DialogResult.No => ProjectKind.Animation,
+            DialogResult.Yes => ImportMode.Parts,
+            DialogResult.No => ImportMode.Frames,
             _ => null,
         };
     }
@@ -119,37 +150,54 @@ public sealed class ImportKindDialog : DialogBase
 public sealed class ResizeDialog : DialogBase
 {
     private readonly NumericUpDown _w, _h;
-    private readonly RadioButton[] _anchors = new RadioButton[9];
+    private readonly ToggleButton[] _anchors = new ToggleButton[9];
+    private int _anchor = 4;
 
     public ResizeDialog(int width, int height, string title = "캔버스 크기") : base(title)
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
-        Body.Controls.Add(Ui.Label($"현재 크기: {width} × {height}"));
-        Body.Controls.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
-        Body.Controls.Add(Ui.Label("기준점(기존 그림이 놓일 위치)"));
-        var grid = new TableLayoutPanel { ColumnCount = 3, RowCount = 3, AutoSize = true, BackColor = Theme.PanelColor };
+        Body.Children.Add(Ui.Label($"현재 크기: {width} × {height}"));
+        Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
+        Body.Children.Add(Ui.Label("기준점(기존 그림이 놓일 위치)"));
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+            Background = AppTheme.PanelBrush,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
         string[] arrows = ["↖", "↑", "↗", "←", "●", "→", "↙", "↓", "↘"];
         for (int i = 0; i < 9; i++)
         {
-            _anchors[i] = new RadioButton
+            int index = i;
+            var b = new ToggleButton
             {
-                Appearance = Appearance.Button,
-                Text = arrows[i],
+                Content = arrows[i],
                 Width = 32,
                 Height = 28,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Margin = new Padding(1),
-                Checked = i == 4,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(1),
+                IsChecked = i == 4,
             };
-            grid.Controls.Add(_anchors[i], i % 3, i / 3);
+            // 라디오처럼: 하나만 눌려 있고, 눌린 걸 다시 눌러도 꺼지지 않는다.
+            b.Click += (_, _) =>
+            {
+                _anchor = index;
+                for (int k = 0; k < 9; k++) _anchors[k].IsChecked = k == index;
+            };
+            Grid.SetColumn(b, i % 3);
+            Grid.SetRow(b, i / 3);
+            _anchors[i] = b;
+            grid.Children.Add(b);
         }
-        Body.Controls.Add(grid);
+        Body.Children.Add(grid);
     }
 
-    public int NewWidth => (int)_w.Value;
-    public int NewHeight => (int)_h.Value;
-    public Gpixel.Core.Model.Anchor ImageAnchor => (Gpixel.Core.Model.Anchor)Array.FindIndex(_anchors, r => r.Checked);
+    public int NewWidth => (int)_w.NumValue();
+    public int NewHeight => (int)_h.NumValue();
+    public Gpixel.Core.Model.Anchor ImageAnchor => (Gpixel.Core.Model.Anchor)_anchor;
 }
 
 /// <summary>시트 한 장을 격자(칸 크기/칸 수) 또는 자동(덩어리)으로 나눠 프레임으로 만드는 설정.</summary>
@@ -158,13 +206,14 @@ public sealed class SplitFramesDialog : DialogBase
     private readonly ComboBox _method;
     private readonly NumericUpDown _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize;
     private readonly CheckBox _skipEmpty;
-    private readonly Label _result;
+    private readonly TextBlock _result;
     private readonly Gpixel.Core.Model.PixelImage _image;
 
     public SplitFramesDialog(Gpixel.Core.Model.PixelImage image, int cellW, int cellH) : base("격자로 나눠 프레임 만들기", "나누기")
     {
         _image = image;
         _method = Ui.Combo(170, "격자 – 칸 크기", "격자 – 칸 수", "자동(덩어리마다)");
+        if (_method.SelectedIndex < 0) _method.SelectedIndex = 0;
         _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60);
         _cellH = Ui.Num(1, image.Height, Math.Min(cellH, image.Height), 60);
         _offX = Ui.Num(0, image.Width - 1, 0, 60);
@@ -176,21 +225,19 @@ public sealed class SplitFramesDialog : DialogBase
         _minSize = Ui.Num(1, 1024, 2, 60);
         _skipEmpty = Ui.Check("빈 칸 건너뛰기", true);
         _result = Ui.Label("");
-        Body.Controls.Add(Ui.Label($"현재 프레임 그림({image.Width}×{image.Height})을 칸마다 프레임 하나로 나눕니다."));
-        Body.Controls.Add(_method);
-        Body.Controls.Add(Ui.Row(Ui.Label("칸 가로"), _cellW, Ui.Label("세로"), _cellH));
-        Body.Controls.Add(Ui.Row(Ui.Label("여백 X"), _offX, Ui.Label("Y"), _offY));
-        Body.Controls.Add(Ui.Row(Ui.Label("간격 X"), _padX, Ui.Label("Y"), _padY));
-        Body.Controls.Add(Ui.Row(Ui.Label("열"), _cols, Ui.Label("행"), _rows));
-        Body.Controls.Add(Ui.Row(Ui.Label("자동: 최소 크기"), _minSize));
-        Body.Controls.Add(_skipEmpty);
-        Body.Controls.Add(_result);
-        foreach (Control c in new Control[] { _method, _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize, _skipEmpty })
-        {
-            if (c is NumericUpDown n) n.ValueChanged += (_, _) => UpdateResult();
-            else if (c is ComboBox cb) cb.SelectedIndexChanged += (_, _) => UpdateResult();
-            else if (c is CheckBox ch) ch.CheckedChanged += (_, _) => UpdateResult();
-        }
+        Body.Children.Add(Ui.Label($"현재 프레임 그림({image.Width}×{image.Height})을 칸마다 프레임 하나로 나눕니다."));
+        Body.Children.Add(_method);
+        Body.Children.Add(Ui.Row(Ui.Label("칸 가로"), _cellW, Ui.Label("세로"), _cellH));
+        Body.Children.Add(Ui.Row(Ui.Label("여백 X"), _offX, Ui.Label("Y"), _offY));
+        Body.Children.Add(Ui.Row(Ui.Label("간격 X"), _padX, Ui.Label("Y"), _padY));
+        Body.Children.Add(Ui.Row(Ui.Label("열"), _cols, Ui.Label("행"), _rows));
+        Body.Children.Add(Ui.Row(Ui.Label("자동: 최소 크기"), _minSize));
+        Body.Children.Add(_skipEmpty);
+        Body.Children.Add(_result);
+        foreach (var n in new[] { _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize })
+            n.ValueChanged += (_, _) => UpdateResult();
+        _method.SelectionChanged += (_, _) => UpdateResult();
+        _skipEmpty.IsCheckedChanged += (_, _) => UpdateResult();
         UpdateResult();
         OkButton.Click += (_, _) =>
         {
@@ -208,17 +255,17 @@ public sealed class SplitFramesDialog : DialogBase
             switch (_method.SelectedIndex)
             {
                 case 1:
-                    return Gpixel.Core.Slicing.CountSlicer.Slice(_image, (int)_cols.Value, (int)_rows.Value, _skipEmpty.Checked);
+                    return Gpixel.Core.Slicing.CountSlicer.Slice(_image, (int)_cols.NumValue(), (int)_rows.NumValue(), _skipEmpty.On());
                 case 2:
-                    return Gpixel.Core.Slicing.AutoSlicer.Slice(_image, (int)_minSize.Value);
+                    return Gpixel.Core.Slicing.AutoSlicer.Slice(_image, (int)_minSize.NumValue());
                 default:
                     var grid = new Gpixel.Core.Model.GridSettings
                     {
-                        CellW = (int)_cellW.Value, CellH = (int)_cellH.Value,
-                        OffsetX = (int)_offX.Value, OffsetY = (int)_offY.Value,
-                        PadX = (int)_padX.Value, PadY = (int)_padY.Value,
+                        CellW = (int)_cellW.NumValue(), CellH = (int)_cellH.NumValue(),
+                        OffsetX = (int)_offX.NumValue(), OffsetY = (int)_offY.NumValue(),
+                        PadX = (int)_padX.NumValue(), PadY = (int)_padY.NumValue(),
                     };
-                    return Gpixel.Core.Slicing.GridSlicer.Slice(_image, grid, _skipEmpty.Checked);
+                    return Gpixel.Core.Slicing.GridSlicer.Slice(_image, grid, _skipEmpty.On());
             }
         }
     }
@@ -233,40 +280,52 @@ public sealed class SplitFramesDialog : DialogBase
 }
 
 /// <summary>색 칸 + HEX 입력(칸을 누르면 색 대화상자).</summary>
-public sealed class ColorField : FlowLayoutPanel
+public sealed class ColorField : StackPanel
 {
-    private readonly Panel _swatch;
+    private readonly SwatchBox _swatch;
     private readonly TextBox _hex;
     private Color32 _color;
 
     public ColorField(Color32 color)
     {
-        AutoSize = true;
-        WrapContents = false;
-        Margin = new Padding(0);
-        BackColor = System.Drawing.Color.Transparent;
-        _swatch = new Panel { Size = new Size(28, 22), Margin = new Padding(3), Cursor = Cursors.Hand, BorderStyle = BorderStyle.FixedSingle };
-        _swatch.Paint += (_, e) => ImageUtil.DrawSwatch(e.Graphics, _swatch.ClientRectangle, _color);
-        _swatch.Click += (_, _) =>
+        Orientation = Orientation.Horizontal;
+        Margin = new Thickness(0);
+        Background = Brushes.Transparent;
+        _swatch = new SwatchBox(this) { Width = 28, Height = 22, Margin = new Thickness(3), Cursor = new Cursor(StandardCursorType.Hand) };
+        _swatch.PointerPressed += (_, e) =>
         {
-            using var dlg = new ColorDialog { Color = _color.ToColor(), FullOpen = true };
-            if (dlg.ShowDialog(FindForm()) == DialogResult.OK) Color = dlg.Color.ToColor32().WithAlpha(_color.A == 0 ? (byte)255 : _color.A);
+            if (!e.GetCurrentPoint(_swatch).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            // 색 고르기 대화상자가 알파도 고르므로 그대로 쓴다(투명→투명이면 불투명으로).
+            if (Ui.PickColor(this, _color) is { } c)
+                Color = c.A == 0 && _color.A == 0 ? c.WithAlpha(255) : c;
         };
         _hex = Ui.Text("", 90);
-        _hex.Leave += (_, _) => { if (Color32.TryParseHex(_hex.Text.Trim(), out var c)) Color = c; else _hex.Text = _color.ToHex(); };
-        Controls.Add(_swatch);
-        Controls.Add(_hex);
+        _hex.LostFocus += (_, _) => { if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) Color = c; else _hex.Text = _color.ToHex(); };
+        Children.Add(_swatch);
+        Children.Add(_hex);
         Color = color;
     }
 
     public Color32 Color
     {
-        get => Color32.TryParseHex(_hex.Text.Trim(), out var c) ? c : _color;
+        get => Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c) ? c : _color;
         set
         {
             _color = value;
             _hex.Text = value.ToHex();
-            _swatch.Invalidate();
+            _swatch.InvalidateVisual();
+        }
+    }
+
+    /// <summary>테두리 있는 색 칸(투명 부분은 체커).</summary>
+    private sealed class SwatchBox(ColorField owner) : Control
+    {
+        public override void Render(DrawingContext g)
+        {
+            var r = new Rect(Bounds.Size);
+            ImageUtil.DrawSwatch(g, r, owner._color);
+            g.DrawRectangle(null, AppTheme.Pen(AppTheme.BorderColor), r.Deflate(0.5));
         }
     }
 }
@@ -282,16 +341,16 @@ public sealed class ReplaceColorDialog : DialogBase
         _from = new ColorField(from);
         _to = new ColorField(to);
         _selectionOnly = Ui.Check("선택 영역 안만", hasSelection);
-        _selectionOnly.Enabled = hasSelection;
-        Body.Controls.Add(Ui.Row(Ui.Label("바꿀 색"), _from));
-        Body.Controls.Add(Ui.Row(Ui.Label("새 색  "), _to));
-        Body.Controls.Add(_selectionOnly);
-        Body.Controls.Add(Ui.Label("투명(알파 0)은 모두 같은 색으로 봅니다. 대상: 현재 레이어의 현재 프레임."));
+        _selectionOnly.IsEnabled = hasSelection;
+        Body.Children.Add(Ui.Row(Ui.Label("바꿀 색"), _from));
+        Body.Children.Add(Ui.Row(Ui.Label("새 색  "), _to));
+        Body.Children.Add(_selectionOnly);
+        Body.Children.Add(Ui.Label("투명(알파 0)은 모두 같은 색으로 봅니다. 대상: 현재 레이어의 현재 프레임."));
     }
 
     public Color32 From => _from.Color;
     public Color32 To => _to.Color;
-    public bool SelectionOnly => _selectionOnly.Checked;
+    public bool SelectionOnly => _selectionOnly.On();
 }
 
 /// <summary>격자 설정: 픽셀 격자 색, 타일 격자 크기·색.</summary>
@@ -306,46 +365,50 @@ public sealed class GridSettingsDialog : DialogBase
         _tileColor = new ColorField(tileColor);
         _tileW = Ui.Num(1, 4096, tile.Width, 64);
         _tileH = Ui.Num(1, 4096, tile.Height, 64);
-        Body.Controls.Add(Ui.Label("픽셀 격자(6배 이상 확대에서 보임)", bold: true));
-        Body.Controls.Add(Ui.Row(Ui.Label("색"), _pixelColor));
-        Body.Controls.Add(Ui.Label("타일 격자", bold: true));
-        Body.Controls.Add(Ui.Row(Ui.Label("가로"), _tileW, Ui.Label("세로"), _tileH, Ui.Label("px")));
-        Body.Controls.Add(Ui.Row(Ui.Label("색"), _tileColor));
-        Body.Controls.Add(Ui.Label("알파(#RRGGBBAA)로 진하기를 정합니다."));
+        Body.Children.Add(Ui.Label("픽셀 격자(6배 이상 확대에서 보임)", bold: true));
+        Body.Children.Add(Ui.Row(Ui.Label("색"), _pixelColor));
+        Body.Children.Add(Ui.Label("타일 격자", bold: true));
+        Body.Children.Add(Ui.Row(Ui.Label("가로"), _tileW, Ui.Label("세로"), _tileH, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label("색"), _tileColor));
+        Body.Children.Add(Ui.Label("알파(#RRGGBBAA)로 진하기를 정합니다."));
     }
 
     public Color32 PixelGridColor => _pixelColor.Color;
     public Color32 TileGridColor => _tileColor.Color;
-    public Size TileSize => new((int)_tileW.Value, (int)_tileH.Value);
+    public Size TileSize => new((int)_tileW.NumValue(), (int)_tileH.NumValue());
 }
 
 /// <summary>한 줄 입력(선택 목록 제안 포함 가능).</summary>
 public sealed class InputDialog : DialogBase
 {
-    private readonly ComboBox _box;
+    private readonly AutoCompleteBox _box;
 
     public InputDialog(string title, string prompt, string value, IEnumerable<string>? suggestions = null) : base(title)
     {
-        _box = new ComboBox
+        _box = new AutoCompleteBox
         {
-            DropDownStyle = ComboBoxStyle.DropDown,
             Width = 280,
+            MinimumPrefixLength = 0,
+            FilterMode = AutoCompleteFilterMode.ContainsOrdinal,
+            ItemsSource = suggestions?.ToList(),
             Text = value,
-            FlatStyle = FlatStyle.Flat,
         };
-        if (suggestions is not null) _box.Items.AddRange(suggestions.Cast<object>().ToArray());
-        _box.Text = value;
-        Body.Controls.Add(Ui.Label(prompt));
-        Body.Controls.Add(_box);
-        Shown += (_, _) => { _box.Focus(); _box.SelectAll(); };
+        Body.Children.Add(Ui.Label(prompt));
+        Body.Children.Add(_box);
+        Opened += (_, _) =>
+        {
+            _box.Focus();
+            // 안쪽 TextBox의 글자를 모두 고른다.
+            if (_box.GetVisualDescendants().OfType<TextBox>().FirstOrDefault() is { } tb) { tb.Focus(); tb.SelectAll(); }
+        };
     }
 
-    public string Value => _box.Text.Trim();
+    public string Value => _box.Text?.Trim() ?? "";
 
     /// <summary>입력을 받는다. 취소하거나 비었으면 null.</summary>
-    public static string? Ask(IWin32Window owner, string title, string prompt, string value, IEnumerable<string>? suggestions = null)
+    public static string? Ask(Visual? owner, string title, string prompt, string value, IEnumerable<string>? suggestions = null)
     {
-        using var dlg = new InputDialog(title, prompt, value, suggestions);
+        var dlg = new InputDialog(title, prompt, value, suggestions);
         return dlg.ShowDialog(owner) == DialogResult.OK && dlg.Value.Length > 0 ? dlg.Value : null;
     }
 }
@@ -361,12 +424,12 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("파일", "Ctrl+Shift+U", "Unity 프로젝트 열기(Unity Hub)"),
         ("파일", "Ctrl+S", "저장(.gpixel) + PNG 시트·.meta 내보내기"),
         ("파일", "Ctrl+Shift+S", "다른 이름으로 저장"),
-        ("파일", "Ctrl+E", "지금 내보내기"),
+        ("파일", "Ctrl+E", "내보내기(설정 창 → 파란 내보내기)"),
         ("파일", "Ctrl+W", "닫기"),
         ("편집", "Ctrl+Z", "실행취소"),
         ("편집", "Ctrl+Y / Ctrl+Shift+Z", "다시 실행"),
         ("편집", "Ctrl+X / Ctrl+C / Ctrl+V", "잘라내기 / 복사(선택 없으면 프레임 전체) / 붙여넣기"),
-        ("편집", "Delete", "선택 내용 지우기"),
+        ("편집", Platform.IsMac ? "Delete / ⌫" : "Delete", "선택 내용 지우기"),
         ("편집", "Ctrl+A / Ctrl+D", "모두 선택 / 선택 해제"),
         ("편집", "Enter / Esc", "떠 있는 선택 내려놓기 / 선택 해제"),
         ("편집", "Shift+H / Shift+V", "좌우 / 상하 뒤집기(선택, 없으면 현재 셀)"),
@@ -377,11 +440,23 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("편집", "Ctrl+Alt+R", "색 바꾸기"),
         ("편집", "Ctrl+Alt+C", "캔버스 크기"),
         ("프레임", "Shift+Enter", "재생 / 정지"),
-        ("프레임", ", / .", "이전 / 다음 프레임(아틀라스: 스프라이트)"),
-        ("프레임", "Home / End", "첫 / 마지막 프레임·스프라이트(캔버스 포커스)"),
-        ("프레임", "Alt+N / Alt+D", "새 빈 프레임 / 프레임 복제(아틀라스: 새 스프라이트 / 스프라이트 복제)"),
-        ("스프라이트", "F2 / 머리글 더블클릭", "아틀라스 스프라이트 이름 바꾸기"),
-        ("프레임", "Shift+N", "새 레이어"),
+        ("프레임", ", / .", "이전 / 다음 프레임"),
+        ("프레임", "Home / End", "첫 / 마지막 프레임(캔버스 포커스)"),
+        ("프레임", "Alt+N / Alt+D", "새 빈 프레임 / 프레임 복제"),
+        ("레이어", "Shift+N", "새 레이어"),
+        ("레이어", "Ctrl+Shift+N", "새 그룹"),
+        ("레이어", "Shift+P", "현재 그룹에 새 부위(그룹이 없으면 그룹도)"),
+        ("레이어", "F2 / 이름 더블클릭", "레이어 이름 바꾸기"),
+        ("레이어", "그룹 ▾/▸", "그룹 접기 / 펼치기"),
+        ("타임라인", "셀 끌기 / Shift+클릭", "여러 칸(행 × 프레임) 고르기"),
+        ("타임라인", "머리글 끌기", "프레임 범위 고르기 → 우클릭 \"태그 만들기\""),
+        ("타임라인", "태그 상자 안쪽 끝 끌기", "태그 범위 바꾸기"),
+        ("타임라인", "고른 칸 끌기 / Alt+끌기", "칸 묶음 옮기기 / 복사"),
+        ("타임라인", "Ctrl+C / Ctrl+X / Ctrl+V", "셀·프레임 복사 / 잘라내기 / 붙여넣기(타임라인을 누른 뒤)"),
+        ("타임라인", "다음 프레임 칸 ⧉ / ＋", "마지막 프레임 복사해서 추가 / 빈 프레임 추가"),
+        ("타임라인", "Delete / 머리글 더블클릭", "고른 프레임(범위) 삭제 / 프레임 길이"),
+        ("부위", "그룹 고르고 끌기", "부위 배치(방향키 1px · Shift 8px)"),
+        ("부위", "그룹에서 부위 더블클릭", "그 부위 고르기(부위 크기 캔버스로 그리기)"),
         ("프레임", "H (누르고 있기)", "이전 프레임 보기"),
         ("도구", "B", "연필"),
         ("도구", "E", "지우개"),
@@ -407,10 +482,11 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("보기", "Ctrl+0 / Ctrl+1", "화면에 맞추기 / 실제 크기"),
         ("보기", "Ctrl+= / Ctrl+-", "확대 / 축소"),
         ("보기", "Ctrl+G / Ctrl+Shift+G", "픽셀 격자 / 타일 격자"),
-        ("보기", "Ctrl+T", "타일 모드(3×3 반복)"),
+        ("보기", "Ctrl+T", "타일 모드(5×5 / 큰 그림 3×3 반복)"),
         ("보기", "Ctrl+J", "양파 껍질"),
         ("보기", "F8", "파일 브라우저 보이기/숨기기"),
         ("테스트", "F5", "움직임 테스트"),
+        ("AI", "Ctrl+L", "Claude 채팅(말로 그리기·고치기)"),
         ("도움말", "F1", "단축키 목록"),
         ("마우스", "왼쪽 / 오른쪽 버튼", "기본색 / 보조색(옵션: 지우개)으로 그리기"),
     ];
@@ -418,20 +494,40 @@ public sealed class ShortcutHelpDialog : DialogBase
     public ShortcutHelpDialog() : base("단축키")
     {
         CloseOnly();
-        var list = new ListView
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("70,200,270") };
+        int row = 0;
+        void AddRow(string a, string b, string c, bool bold, IBrush? back)
         {
-            View = View.Details,
-            FullRowSelect = true,
-            HeaderStyle = ColumnHeaderStyle.Nonclickable,
+            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            if (back is not null)
+            {
+                var bg = new Border { Background = back };
+                Grid.SetRow(bg, row);
+                Grid.SetColumnSpan(bg, 3);
+                grid.Children.Add(bg);
+            }
+            string[] texts = [a, b, c];
+            for (int col = 0; col < 3; col++)
+            {
+                var t = Ui.Label(texts[col], bold);
+                t.Margin = new Thickness(4, 2);
+                t.TextWrapping = TextWrapping.Wrap;
+                Grid.SetRow(t, row);
+                Grid.SetColumn(t, col);
+                grid.Children.Add(t);
+            }
+            row++;
+        }
+        AddRow("분류", "키", "동작", true, AppTheme.PanelBrush);
+        foreach (var (group, key, action) in Shortcuts)
+            AddRow(group, Ui.Shortcut(key), Ui.Shortcut(action), false, null);
+        Body.Children.Add(new ScrollViewer
+        {
+            Content = grid,
             Width = 560,
             Height = 520,
-            GridLines = false,
-        };
-        list.Columns.Add("분류", 70);
-        list.Columns.Add("키", 200);
-        list.Columns.Add("동작", 270);
-        foreach (var (group, key, action) in Shortcuts)
-            list.Items.Add(new ListViewItem([group, key, action]));
-        Body.Controls.Add(list);
+            Background = AppTheme.InputBrush,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        });
     }
 }

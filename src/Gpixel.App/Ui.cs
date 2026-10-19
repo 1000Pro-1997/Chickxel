@@ -1,28 +1,66 @@
+using System.Text.RegularExpressions;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
+using Gpixel.Core.Model;
+
 namespace Gpixel.App;
+
+/// <summary>대화상자 결과(WinForms와 같은 이름).</summary>
+public enum DialogResult
+{
+    None,
+    OK,
+    Cancel,
+    Yes,
+    No,
+}
+
+public enum MessageButtons
+{
+    OK,
+    OKCancel,
+    YesNo,
+    YesNoCancel,
+}
+
+public enum MessageIcon
+{
+    None,
+    Info,
+    Warning,
+    Error,
+    Question,
+}
+
+/// <summary>파일 대화상자 필터 한 줄. <paramref name="Patterns"/>는 "*.png" 형식.</summary>
+public sealed record FileFilter(string Name, params string[] Patterns);
 
 /// <summary>코드로 UI를 만들 때 쓰는 작은 도우미들.</summary>
 public static class Ui
 {
-    public static Label Label(string text, bool bold = false) => new()
+    public static TextBlock Label(string text, bool bold = false) => new()
     {
         Text = text,
-        AutoSize = true,
-        Font = bold ? Theme.BoldFont : Theme.UiFont,
-        ForeColor = Theme.TextColor,
-        Margin = new Padding(3, 6, 3, 3),
+        FontWeight = bold ? FontWeight.Bold : FontWeight.Normal,
+        Foreground = AppTheme.TextBrush,
+        Margin = new Thickness(3, 3, 3, 3),
+        VerticalAlignment = VerticalAlignment.Center,
+        TextWrapping = TextWrapping.NoWrap,
     };
 
-    public static Label Header(string text) => new()
+    /// <summary>패널 위쪽 제목 줄(DockPanel 위에 붙임).</summary>
+    public static Border Header(string text)
     {
-        Text = text,
-        Dock = DockStyle.Top,
-        Height = 24,
-        Font = Theme.BoldFont,
-        ForeColor = Theme.TextColor,
-        BackColor = Theme.BackColor,
-        TextAlign = ContentAlignment.MiddleLeft,
-        Padding = new Padding(6, 0, 0, 0),
-    };
+        var b = new Border
+        {
+            Height = 24,
+            Background = AppTheme.BackBrush,
+            Padding = new Thickness(6, 0, 0, 0),
+            Child = new TextBlock { Text = text, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center },
+        };
+        DockPanel.SetDock(b, Dock.Top);
+        return b;
+    }
 
     public static NumericUpDown Num(decimal min, decimal max, decimal value, int width = 60, int decimals = 0, decimal increment = 1)
         => new()
@@ -31,230 +69,450 @@ public static class Ui
             Maximum = max,
             Value = Math.Clamp(value, min, max),
             Width = width,
-            DecimalPlaces = decimals,
             Increment = increment,
-            BackColor = Theme.InputColor,
-            ForeColor = Theme.TextColor,
-            BorderStyle = BorderStyle.FixedSingle,
-            Margin = new Padding(3, 3, 3, 3),
+            FormatString = decimals > 0 ? "F" + decimals : "0",
+            Margin = new Thickness(3),
+            ClipValueToMinMax = true,
+            ShowButtonSpinner = false, // 좌우로 끌어 바꾼다(NumberScrub)
         };
 
-    public static Button Button(string text, EventHandler? onClick = null, int width = 0)
+    /// <summary>숫자 상자 값(비었으면 최소값).</summary>
+    public static decimal NumValue(this NumericUpDown n) => n.Value ?? n.Minimum;
+
+    public static Button Button(string text, EventHandler<RoutedEventArgs>? onClick = null, int width = 0)
     {
-        var b = new Button
-        {
-            Text = text,
-            AutoSize = width == 0,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Height = 26,
-            Padding = new Padding(4, 0, 4, 0),
-            Margin = new Padding(2),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Theme.InputColor,
-            ForeColor = Theme.TextColor,
-            UseVisualStyleBackColor = false,
-        };
+        var b = new Button { Content = text, Margin = new Thickness(2) };
         if (width > 0) b.Width = width;
-        b.FlatAppearance.BorderColor = Theme.BorderColor;
-        b.FlatAppearance.MouseOverBackColor = Theme.HoverColor;
         if (onClick is not null) b.Click += onClick;
         return b;
     }
 
     public static CheckBox Check(string text, bool value = false) => new()
     {
-        Text = text,
-        Checked = value,
-        AutoSize = true,
-        ForeColor = Theme.TextColor,
-        Margin = new Padding(3, 5, 3, 3),
+        Content = text,
+        IsChecked = value,
+        Margin = new Thickness(3, 2, 3, 2),
+        MinHeight = 22,
     };
+
+    /// <summary>체크 상자가 켜졌는지.</summary>
+    public static bool On(this ToggleButton t) => t.IsChecked == true;
 
     public static TextBox Text(string value = "", int width = 120) => new()
     {
         Text = value,
         Width = width,
-        BackColor = Theme.InputColor,
-        ForeColor = Theme.TextColor,
-        BorderStyle = BorderStyle.FixedSingle,
-        Margin = new Padding(3),
+        Margin = new Thickness(3),
     };
 
     public static ComboBox Combo(int width, params string[] items)
     {
-        var c = new ComboBox
-        {
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Width = width,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Theme.InputColor,
-            ForeColor = Theme.TextColor,
-            Margin = new Padding(3),
-        };
-        c.Items.AddRange(items);
+        var c = new ComboBox { Width = width, Margin = new Thickness(3) };
+        foreach (var it in items) c.Items.Add(it);
         if (items.Length > 0) c.SelectedIndex = 0;
         return c;
     }
 
-    /// <summary>자식들을 한 줄로 늘어놓는 흐름 패널.</summary>
-    public static FlowLayoutPanel Row(params Control[] controls)
+    /// <summary>자식들을 한 줄로 늘어놓는 패널.</summary>
+    public static StackPanel Row(params Control[] controls)
     {
-        var f = new FlowLayoutPanel
+        var f = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        foreach (var c in controls)
         {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0),
-            Padding = new Padding(0),
-            BackColor = Color.Transparent,
-        };
-        f.Controls.AddRange(controls);
+            c.VerticalAlignment = VerticalAlignment.Center;
+            f.Children.Add(c);
+        }
         return f;
     }
 
-    /// <summary>자식들을 위에서 아래로 쌓고 너비를 부모에 맞추는 패널(스크롤 패널 안에서 사용).</summary>
-    public static FlowLayoutPanel Stack(params Control[] controls)
+    /// <summary>자식들을 위에서 아래로 쌓는 패널.</summary>
+    public static StackPanel Stack(params Control[] controls)
     {
-        var f = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            WrapContents = false,
-            FlowDirection = FlowDirection.TopDown,
-            Margin = new Padding(0),
-            Padding = new Padding(4),
-            BackColor = Color.Transparent,
-        };
-        f.Controls.AddRange(controls);
+        var f = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(4), Spacing = 2 };
+        f.Children.AddRange(controls);
         return f;
     }
 
     /// <summary>제목 줄이 있는 묶음 상자.</summary>
-    public static GroupBox Group(string title, Control content)
+    public static Border Group(string title, Control content)
     {
-        var g = new GroupBox
+        var stack = new StackPanel { Spacing = 2 };
+        stack.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 0, 0, 2) });
+        stack.Children.Add(content);
+        return new Border
         {
-            Text = title,
-            ForeColor = Theme.TextColor,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Padding = new Padding(4, 2, 4, 4),
-            Margin = new Padding(2, 4, 2, 2),
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(6, 4, 6, 6),
+            Margin = new Thickness(2, 4, 2, 2),
+            Child = stack,
         };
-        content.Location = new Point(6, 20);
-        g.Controls.Add(content);
-        return g;
     }
 
-    /// <summary>내용을 세로로 스크롤해 보여 주는 채움 패널.</summary>
-    public static Panel ScrollHost(Control content)
+    /// <summary>내용을 세로로 스크롤해 보여 주는 패널.</summary>
+    public static ScrollViewer ScrollHost(Control content) => new()
     {
-        var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Theme.PanelColor };
-        content.Location = Point.Empty;
-        p.Controls.Add(content);
-        return p;
+        Content = content,
+        Background = AppTheme.PanelBrush,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+    };
+
+    /// <summary>도움말 풍선.</summary>
+    public static T Tip<T>(this T control, string? tip) where T : Control
+    {
+        ToolTip.SetTip(control, tip is null ? null : Shortcut(tip));
+        return control;
     }
+
+    // ───────────── 단축키 표기 ─────────────
+
+    private static readonly Regex ModifierToken = new(@"\b(Ctrl|Shift|Alt)\+", RegexOptions.Compiled);
+
+    /// <summary>
+    /// 단축키 문구("Ctrl+Shift+S")를 이 OS 표기로 바꾼다. macOS는 ⌘⇧⌥ 기호(Ctrl 자리 = ⌘), 그 밖은 그대로.
+    /// 문장 안에 섞인 단축키도 바꾼다.
+    /// </summary>
+    public static string Shortcut(string text)
+    {
+        if (!Platform.IsMac) return text;
+        return ModifierToken.Replace(text, m => m.Groups[1].Value switch
+        {
+            "Ctrl" => "⌘",
+            "Shift" => "⇧",
+            _ => "⌥",
+        });
+    }
+
+    /// <summary>"Ctrl" 자리 수정자(macOS = ⌘)가 눌렸는지.</summary>
+    public static bool HasCommand(KeyModifiers m) => (m & Platform.CommandModifier) != 0;
+
+    // ───────────── 창 찾기 ─────────────
+
+    public static Window? MainWindow
+        => (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+
+    /// <summary>컨트롤이 들어 있는 창(없으면 활성 창, 그다음 메인 창).</summary>
+    public static Window? Owner(Visual? visual)
+    {
+        if (visual is Window w) return w;
+        if (visual is not null && TopLevel.GetTopLevel(visual) is Window top) return top;
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        return lifetime?.Windows.FirstOrDefault(x => x.IsActive) ?? lifetime?.MainWindow;
+    }
+
+    // ───────────── 동기 대기(모달) ─────────────
+
+    /// <summary>
+    /// 작업이 끝날 때까지 UI 메시지를 돌리며 기다린다(중첩 디스패처 프레임). 대화상자를 WinForms처럼 동기로 쓰기 위한 것.
+    /// UI 스레드에서만 부른다.
+    /// </summary>
+    public static T Wait<T>(Task<T> task)
+    {
+        if (!task.IsCompleted)
+        {
+            var frame = new DispatcherFrame();
+            task.ContinueWith(_ => Dispatcher.UIThread.Post(() => frame.Continue = false), TaskScheduler.Default);
+            Dispatcher.UIThread.PushFrame(frame);
+        }
+        return task.GetAwaiter().GetResult();
+    }
+
+    public static void Wait(Task task) => Wait(task.ContinueWith(t => { t.GetAwaiter().GetResult(); return 0; }, TaskScheduler.Default));
+
+    /// <summary>창을 모달로 띄우고 닫힐 때까지 기다린다(주인 창이 없으면 그냥 띄움).</summary>
+    public static T? ShowModal<T>(Window dialog, Visual? owner)
+    {
+        var o = Owner(owner);
+        if (o is { IsVisible: true } && !ReferenceEquals(o, dialog)) return Wait(dialog.ShowDialog<T>(o));
+        var tcs = new TaskCompletionSource<T?>();
+        T? result = default;
+        dialog.Closed += (_, _) => tcs.TrySetResult(result);
+        dialog.Closing += (_, _) => { if (dialog is DialogBase db && db.DialogResult is var r && r is T t) result = t; };
+        dialog.Show();
+        return Wait(tcs.Task);
+    }
+
+    // ───────────── 알림 ─────────────
 
     /// <summary>오류 대화상자.</summary>
-    public static void Error(IWin32Window? owner, string message, string title = "오류")
-        => MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+    public static void Error(Visual? owner, string message, string title = "오류")
+        => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Error);
 
-    public static void Info(IWin32Window? owner, string message, string title = "Gpixel")
-        => MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+    public static void Info(Visual? owner, string message, string title = "Gpixel")
+        => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Info);
+
+    public static void Warn(Visual? owner, string message, string title = "알림")
+        => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Warning);
+
+    /// <summary>메시지 상자(WinForms MessageBox.Show 대신). 창 닫기 단추는 취소(YesNo는 아니요)다.</summary>
+    public static DialogResult Ask(Visual? owner, string message, string title, MessageButtons buttons, MessageIcon icon = MessageIcon.None)
+        => new MessageDialog(message, title, buttons, icon).ShowDialog(owner);
+
+    // ───────────── 파일 대화상자 ─────────────
+
+    private static IStorageProvider? Storage(Visual? owner) => Owner(owner)?.StorageProvider;
+
+    private static IStorageFolder? Folder(IStorageProvider sp, string? dir)
+        => string.IsNullOrEmpty(dir) || !Directory.Exists(dir) ? null : Wait(sp.TryGetFolderFromPathAsync(dir));
+
+    private static List<FilePickerFileType> Types(FileFilter[] filters)
+        => filters.Select(f => new FilePickerFileType(f.Name) { Patterns = f.Patterns }).ToList();
+
+    /// <summary>파일 하나 열기. 취소하면 null.</summary>
+    public static string? OpenFile(Visual? owner, string title, string? initialDir, params FileFilter[] filters)
+    {
+        if (Storage(owner) is not { } sp) return null;
+        var files = Wait(sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = filters.Length > 0 ? Types(filters) : null,
+            SuggestedStartLocation = Folder(sp, initialDir),
+        }));
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    /// <summary>저장할 파일 고르기(덮어쓰기 확인은 OS 대화상자가 함). 취소하면 null.</summary>
+    public static string? SaveFile(Visual? owner, string title, string? initialDir, string? suggestedName, string defaultExtension,
+        params FileFilter[] filters)
+    {
+        if (Storage(owner) is not { } sp) return null;
+        var file = Wait(sp.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = defaultExtension.TrimStart('.'),
+            FileTypeChoices = filters.Length > 0 ? Types(filters) : null,
+            SuggestedStartLocation = Folder(sp, initialDir),
+            ShowOverwritePrompt = true,
+        }));
+        var path = file?.TryGetLocalPath();
+        if (path is not null && Path.GetExtension(path).Length == 0 && defaultExtension.Length > 0)
+            path += "." + defaultExtension.TrimStart('.');
+        return path;
+    }
+
+    /// <summary>폴더 고르기. 취소하면 null.</summary>
+    public static string? PickFolder(Visual? owner, string title, string? initialDir = null)
+    {
+        if (Storage(owner) is not { } sp) return null;
+        var folders = Wait(sp.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            SuggestedStartLocation = Folder(sp, initialDir),
+        }));
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+    }
+
+    /// <summary>색 고르기 대화상자(알파 포함). 취소하면 null.</summary>
+    public static Color32? PickColor(Visual? owner, Color32 initial, string title = "색 고르기")
+    {
+        var dlg = new ColorPickDialog(title, initial);
+        return dlg.ShowDialog(owner) == DialogResult.OK ? dlg.Value : null;
+    }
 }
 
-/// <summary>어두운 테마의 확인/취소 대화상자 바탕.</summary>
-public class DialogBase : Form
+/// <summary>
+/// 어두운 테마의 확인/취소 대화상자 바탕. <see cref="ShowDialog"/>는 닫힐 때까지 기다리는 동기 모달이다.
+/// 결과가 정해진 단추(<see cref="OkButton"/>·<see cref="CancelButtonControl"/>·<see cref="AddButton"/>)를 누르면 그 결과로 닫히는데,
+/// 그 단추의 Click 처리기에서 <c>DialogResult = DialogResult.None</c>으로 하면 닫지 않는다(입력 검사용).
+/// 코드에서 <see cref="DialogResult"/>를 None 아닌 값으로 정하면 바로 그 결과로 닫힌다.
+/// </summary>
+public class DialogBase : Window
 {
-    protected readonly FlowLayoutPanel Body;
+    protected readonly StackPanel Body;
     protected readonly Button OkButton;
     protected readonly Button CancelButtonControl;
-    private readonly FlowLayoutPanel _buttons;
+    private readonly StackPanel _buttons;
+    private readonly Dictionary<Button, DialogResult> _results = new();
+    private DialogResult _result;
+    private bool _vetoed;
 
     public DialogBase(string title, string okText = "확인")
     {
-        Text = title;
-        Font = Theme.UiFont;
-        BackColor = Theme.PanelColor;
-        ForeColor = Theme.TextColor;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
+        Title = title;
+        CanResize = false;
         ShowInTaskbar = false;
-        StartPosition = FormStartPosition.CenterParent;
-        AutoSize = true;
-        AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        Padding = new Padding(10);
+        SizeToContent = SizeToContent.WidthAndHeight;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-        Body = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            BackColor = Theme.PanelColor,
-            Margin = new Padding(0),
-        };
+        Body = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
         OkButton = Ui.Button(okText, width: 90);
-        OkButton.DialogResult = DialogResult.OK;
+        OkButton.IsDefault = true;
         CancelButtonControl = Ui.Button("취소", width: 90);
-        CancelButtonControl.DialogResult = DialogResult.Cancel;
-        _buttons = new FlowLayoutPanel
+        CancelButtonControl.IsCancel = true;
+        _results[OkButton] = DialogResult.OK;
+        _results[CancelButtonControl] = DialogResult.Cancel;
+        _buttons = new StackPanel
         {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            FlowDirection = FlowDirection.RightToLeft,
-            WrapContents = false,
-            Anchor = AnchorStyles.Right,
-            Margin = new Padding(0, 10, 0, 0),
-            BackColor = Theme.PanelColor,
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 4,
+            Margin = new Thickness(0, 12, 0, 0),
         };
-        _buttons.Controls.Add(CancelButtonControl);
-        _buttons.Controls.Add(OkButton);
-        var root = new TableLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            ColumnCount = 1,
-            RowCount = 2,
-            BackColor = Theme.PanelColor,
-            Location = new Point(10, 10),
-        };
-        root.Controls.Add(Body, 0, 0);
-        root.Controls.Add(_buttons, 0, 1);
-        Controls.Add(root);
-        AcceptButton = OkButton;
-        CancelButton = CancelButtonControl;
+        _buttons.Children.Add(OkButton);
+        _buttons.Children.Add(CancelButtonControl);
+        var root = new DockPanel { Margin = new Thickness(12), LastChildFill = true };
+        DockPanel.SetDock(_buttons, Dock.Bottom);
+        root.Children.Add(_buttons);
+        root.Children.Add(Body);
+        Content = root;
+        // 단추 자신의 Click 처리기가 모두 끝난 뒤(창까지 올라온 뒤) 결과를 정한다.
+        AddHandler(Button.ClickEvent, OnAnyButtonClick, RoutingStrategies.Bubble);
     }
+
+    /// <summary>결과. None 아닌 값을 넣으면 그 결과로 닫히고, 단추 Click 처리기 안에서 None을 넣으면 닫기를 취소한다.</summary>
+    public DialogResult DialogResult
+    {
+        get => _result;
+        set
+        {
+            if (value == DialogResult.None)
+            {
+                _vetoed = true;
+                _result = DialogResult.None;
+                return;
+            }
+            _result = value;
+            Close(value);
+        }
+    }
+
+    private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not Button b || !_results.TryGetValue(b, out var r)) return;
+        bool vetoed = _vetoed;
+        _vetoed = false;
+        if (vetoed) return;
+        _result = r;
+        Close(r);
+    }
+
+    /// <summary>닫힐 때까지 기다리는 모달 대화상자. 창 닫기 단추로 닫으면 Cancel.</summary>
+    public DialogResult ShowDialog(Visual? owner)
+    {
+        _vetoed = false;
+        var r = Ui.ShowModal<DialogResult>(this, owner);
+        return r == DialogResult.None ? (_result == DialogResult.None ? DialogResult.Cancel : _result) : r;
+    }
+
+    /// <summary>단추를 누르면 이 결과로 닫히게 한다(WinForms Button.DialogResult 대신).</summary>
+    protected void SetButtonResult(Button button, DialogResult result) => _results[button] = result;
 
     /// <summary>확인 버튼 없이 닫기 버튼만 둔다.</summary>
     protected void CloseOnly()
     {
-        OkButton.Visible = false;
-        CancelButtonControl.Text = "닫기";
-        AcceptButton = CancelButtonControl;
+        OkButton.IsVisible = false;
+        OkButton.IsDefault = false;
+        CancelButtonControl.Content = "닫기";
+        CancelButtonControl.IsDefault = true;
     }
 
     /// <summary>확인·취소 사이에 결과 단추를 하나 더 둔다(누르면 그 결과로 닫힘).</summary>
     protected Button AddButton(string text, DialogResult result)
     {
         var b = Ui.Button(text, width: 90);
-        b.DialogResult = result;
-        _buttons.Controls.Add(b);
-        _buttons.Controls.SetChildIndex(b, 1);
+        _results[b] = result;
+        _buttons.Children.Insert(_buttons.Children.IndexOf(CancelButtonControl), b);
         return b;
     }
+}
 
-    protected override void OnHandleCreated(EventArgs e)
+/// <summary>메시지 상자.</summary>
+internal sealed class MessageDialog : DialogBase
+{
+    public MessageDialog(string message, string title, MessageButtons buttons, MessageIcon icon) : base(title)
     {
-        base.OnHandleCreated(e);
-        Theme.UseDarkTitleBar(this);
+        var (glyph, color) = icon switch
+        {
+            MessageIcon.Error => ("✕", Color.FromRgb(230, 90, 90)),
+            MessageIcon.Warning => ("!", AppTheme.WarningColor),
+            MessageIcon.Question => ("?", AppTheme.AccentColor),
+            MessageIcon.Info => ("i", AppTheme.AccentColor),
+            _ => ("", AppTheme.TextColor),
+        };
+        var row = new DockPanel();
+        if (glyph.Length > 0)
+        {
+            var badge = new Border
+            {
+                Width = 30,
+                Height = 30,
+                CornerRadius = new CornerRadius(15),
+                Background = AppTheme.Brush(color),
+                Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = VerticalAlignment.Top,
+                Child = new TextBlock
+                {
+                    Text = glyph,
+                    FontWeight = FontWeight.Bold,
+                    FontSize = 16,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            };
+            DockPanel.SetDock(badge, Dock.Left);
+            row.Children.Add(badge);
+        }
+        row.Children.Add(new SelectableTextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 520, VerticalAlignment = VerticalAlignment.Center });
+        Body.Children.Add(row);
+        Body.MinWidth = 280;
+
+        switch (buttons)
+        {
+            case MessageButtons.OK:
+                OkButton.IsVisible = true;
+                OkButton.IsCancel = true; // Esc로도 닫힌다(Windows MessageBox와 같게).
+                CancelButtonControl.IsVisible = false;
+                break;
+            case MessageButtons.OKCancel:
+                break;
+            case MessageButtons.YesNo:
+                OkButton.Content = "예";
+                SetButtonResult(OkButton, DialogResult.Yes);
+                CancelButtonControl.Content = "아니요";
+                SetButtonResult(CancelButtonControl, DialogResult.No);
+                break;
+            case MessageButtons.YesNoCancel:
+                OkButton.Content = "예";
+                SetButtonResult(OkButton, DialogResult.Yes);
+                AddButton("아니요", DialogResult.No);
+                break;
+        }
+        _noOnClose = buttons == MessageButtons.YesNo;
+        Opened += (_, _) => (OkButton.IsVisible ? OkButton : CancelButtonControl).Focus();
     }
 
-    protected override void OnLoad(EventArgs e)
+    private readonly bool _noOnClose;
+
+    public new DialogResult ShowDialog(Visual? owner)
     {
-        base.OnLoad(e);
-        Theme.Apply(this);
+        var r = base.ShowDialog(owner);
+        return r == DialogResult.Cancel && _noOnClose ? DialogResult.No : r;
     }
+}
+
+/// <summary>색 고르기(알파 포함).</summary>
+internal sealed class ColorPickDialog : DialogBase
+{
+    private readonly ColorView _view;
+
+    public ColorPickDialog(string title, Color32 initial) : base(title)
+    {
+        _view = new ColorView
+        {
+            Color = initial.ToColor(),
+            IsAlphaEnabled = true,
+            IsAlphaVisible = true,
+            IsColorPaletteVisible = false,
+            Width = 340,
+        };
+        Body.Children.Add(_view);
+    }
+
+    public Color32 Value => _view.Color.ToColor32();
 }

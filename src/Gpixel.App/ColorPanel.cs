@@ -1,5 +1,5 @@
-using System.Drawing.Drawing2D;
 using System.Globalization;
+using Avalonia.Media.Immutable;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 
@@ -8,7 +8,7 @@ namespace Gpixel.App;
 /// <summary>
 /// Aseprite식 왼쪽 열: 위에 기본색/보조색과 팔레트 메뉴, 가운데 팔레트 색 칸, 아래에 색 고르기
 /// (채도·명도 상자 + 색상 막대 + 알파 막대, RGBA·HSV·HEX 입력, 최근 색 16개).
-/// 팔레트는 추가·삭제·정렬, .hex 저장, .hex/.gpl 불러오기, 이미지에서 만들기를 지원한다.
+/// 팔레트는 추가·삭제·정렬, .hex 저장, .hex/.gpl 불러오기, 이미지에서 만들기, Lospec 웹에서 가져오기를 지원한다.
 /// </summary>
 public sealed class ColorPanel : UserControl
 {
@@ -20,8 +20,9 @@ public sealed class ColorPanel : UserControl
     private readonly NumericUpDown _r, _g, _b, _a, _hNum, _sNum, _vNum;
     private readonly TextBox _hex;
     private readonly SwatchGrid _recent, _palette;
-    private readonly Panel _paletteHost;
+    private readonly ScrollViewer _paletteHost;
     private bool _editSecondary;
+    private LospecPaletteDialog? _lospec;
     private bool _updating;
     private float _h, _s, _v;
 
@@ -31,18 +32,17 @@ public sealed class ColorPanel : UserControl
     public ColorPanel(EditorContext ctx)
     {
         _ctx = ctx;
-        BackColor = Theme.PanelColor;
+        Background = AppTheme.PanelBrush;
 
         _primarySlot = new ColorSlot("기본") { Selected = true };
         _secondarySlot = new ColorSlot("보조");
         _primarySlot.Click += (_, _) => SetEditTarget(false);
         _secondarySlot.Click += (_, _) => SetEditTarget(true);
-        var swap = Ui.Button("⇄", (_, _) => _ctx.SwapColors(), 26);
-        new ToolTip().SetToolTip(swap, "기본색 ↔ 보조색 (X)");
+        var swap = Ui.Button("⇄", (_, _) => _ctx.SwapColors(), 26).Tip("기본색 ↔ 보조색 (X)");
 
-        _sv = new SvBox { Size = new Size(170, 110), Margin = new Padding(3) };
-        _hue = new HueBar { Size = new Size(16, 110), Margin = new Padding(3) };
-        _alpha = new AlphaBar { Size = new Size(192, 12), Margin = new Padding(3) };
+        _sv = new SvBox { Width = 170, Height = 110, Margin = new Thickness(3) };
+        _hue = new HueBar { Width = 16, Height = 110, Margin = new Thickness(3) };
+        _alpha = new AlphaBar { Width = 192, Height = 12, Margin = new Thickness(3) };
         _sv.ValueChanged += (_, _) => { _s = _sv.S; _v = _sv.V; ApplyHsv(); };
         _hue.ValueChanged += (_, _) => { _h = _hue.Hue; _sv.Hue = _h; ApplyHsv(); };
         _alpha.ValueChanged += (_, _) => { if (!_updating) _a!.Value = _alpha.Alpha; };
@@ -59,89 +59,103 @@ public sealed class ColorPanel : UserControl
             n.ValueChanged += (_, _) =>
             {
                 if (_updating) return;
-                _h = (float)_hNum.Value;
-                _s = (float)_sNum.Value / 100f;
-                _v = (float)_vNum.Value / 100f;
+                _h = (float)_hNum.NumValue();
+                _s = (float)_sNum.NumValue() / 100f;
+                _v = (float)_vNum.NumValue() / 100f;
                 ApplyHsv();
             };
         _hex = Ui.Text("", 80);
-        _hex.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { ApplyHex(); e.SuppressKeyPress = true; } };
-        _hex.Leave += (_, _) => ApplyHex();
+        _hex.KeyDown += (_, e) => { if (e.Key == Key.Enter) { ApplyHex(); e.Handled = true; } };
+        _hex.LostFocus += (_, _) => ApplyHex();
 
         _recent = new SwatchGrid { Width = 196, Height = 30, Cell = 10 };
         _recent.ColorClicked += OnSwatchClicked;
-        _palette = new SwatchGrid { Cell = 14, Selectable = true, Location = Point.Empty };
+        _palette = new SwatchGrid { Cell = 14, ShowMarks = true, LeadingTransparent = true, Margin = new Thickness(0), FillHeight = true };
         _palette.ColorClicked += OnSwatchClicked;
         _palette.Colors.CollectionChangedByUser += (_, _) => { LayoutPalette(); PaletteChanged?.Invoke(this, EventArgs.Empty); };
 
         // ── 위: 팔레트 머리글(메뉴) + 기본/보조색
-        var menuButton = Ui.Button("☰", null, 26);
-        var menu = new ContextMenuStrip { Renderer = Theme.Renderer };
-        menu.Items.AddRange([
-            new ToolStripMenuItem("현재 색 추가", null, (_, _) => AddToPalette(CurrentColor)),
-            new ToolStripMenuItem("고른 색 삭제", null, (_, _) => RemoveFromPalette()),
-            new ToolStripMenuItem("색상 순으로 정렬", null, (_, _) => SortPalette()),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("팔레트 불러오기(.hex/.gpl)…", null, (_, _) => LoadPalette()),
-            new ToolStripMenuItem("팔레트 저장(.hex)…", null, (_, _) => SavePalette()),
-            new ToolStripMenuItem("이미지에서 팔레트 만들기", null, (_, _) => PaletteFromImage()),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("팔레트 비우기", null, (_, _) => { _palette.SetColors([]); _palette.Commit(); }),
-        ]);
-        foreach (ToolStripItem it in menu.Items) it.ForeColor = Theme.TextColor;
-        menuButton.Click += (_, _) => menu.Show(menuButton, new Point(0, menuButton.Height));
-        new ToolTip().SetToolTip(menuButton, "팔레트 메뉴");
-        var header = new Panel { Dock = DockStyle.Top, Height = 26, BackColor = Theme.BackColor };
-        var title = Ui.Label("팔레트", bold: true);
-        title.Location = new Point(6, 4);
-        title.Margin = Padding.Empty;
-        menuButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        var menuButton = Ui.Button("☰", null, 26).Tip("팔레트 메뉴");
         menuButton.Height = 22;
-        header.Controls.Add(title);
-        header.Controls.Add(menuButton);
-        header.Resize += (_, _) => menuButton.Location = new Point(header.Width - menuButton.Width - 2, 2);
+        menuButton.VerticalAlignment = VerticalAlignment.Center;
+        var menu = new ContextMenu
+        {
+            ItemsSource = new Control[]
+            {
+                Item("현재 색 추가", () => AddToPalette(CurrentColor)),
+                Item("기본색을 팔레트에서 삭제", RemoveFromPalette),
+                Item("색상 순으로 정렬", SortPalette),
+                new Separator(),
+                Item("팔레트 불러오기(.hex/.gpl)…", LoadPalette),
+                Item("팔레트 웹(Lospec)…", OpenLospec),
+                Item("팔레트 저장(.hex)…", SavePalette),
+                Item("이미지에서 팔레트 만들기", PaletteFromImage),
+                new Separator(),
+                Item("팔레트 비우기", () => { _palette.SetColors([]); _palette.Commit(); }),
+            },
+        };
+        menuButton.Click += (_, _) => menu.Open(menuButton);
+        var title = Ui.Label("팔레트", bold: true);
+        title.VerticalAlignment = VerticalAlignment.Center;
+        title.Margin = new Thickness(6, 0, 0, 0);
+        var header = new DockPanel { Height = 26, Background = AppTheme.BackBrush };
+        DockPanel.SetDock(menuButton, Dock.Right);
+        header.Children.Add(menuButton);
+        header.Children.Add(title);
+        DockPanel.SetDock(header, Dock.Top);
+
         var slots = Ui.Row(_primarySlot, _secondarySlot, swap);
-        slots.Dock = DockStyle.Top;
-        slots.AutoSize = false;
         slots.Height = 48;
-        slots.Padding = new Padding(2, 2, 0, 0);
+        slots.Margin = new Thickness(2, 2, 0, 0);
+        swap.VerticalAlignment = VerticalAlignment.Center;
+        DockPanel.SetDock(slots, Dock.Top);
 
         // ── 가운데: 팔레트 색 칸(스크롤)
-        _paletteHost = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Theme.InputColor };
-        _paletteHost.Controls.Add(_palette);
-        _paletteHost.Resize += (_, _) => LayoutPalette();
+        _paletteHost = new ScrollViewer
+        {
+            Content = _palette,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Background = AppTheme.InputBrush,
+        };
 
         // ── 아래: 색 고르기
         var picker = Ui.Stack(
             Ui.Row(_sv, _hue),
             _alpha,
-            Ui.Row(Ui.Label("R"), _r, Ui.Label("G"), _g, Ui.Label("B"), _b),
-            Ui.Row(Ui.Label("H"), _hNum, Ui.Label("S"), _sNum, Ui.Label("V"), _vNum),
-            Ui.Row(Ui.Label("A"), _a, Ui.Label("#"), _hex),
+            NumberGrid(),
             Ui.Label("최근 색"),
             _recent);
-        var pickerHost = new Panel { Dock = DockStyle.Bottom, Height = picker.PreferredSize.Height + 26, BackColor = Theme.PanelColor };
-        picker.Location = new Point(0, 24);
-        pickerHost.Controls.Add(picker);
-        pickerHost.Controls.Add(Ui.Header("색"));
+        var pickerHost = new DockPanel { Background = AppTheme.PanelBrush };
+        pickerHost.Children.Add(Ui.Header("색"));
+        pickerHost.Children.Add(picker);
+        DockPanel.SetDock(pickerHost, Dock.Bottom);
 
-        Controls.Add(_paletteHost);
-        Controls.Add(pickerHost);
-        Controls.Add(slots);
-        Controls.Add(header);
+        var root = new DockPanel();
+        root.Children.Add(header);
+        root.Children.Add(slots);
+        root.Children.Add(pickerHost);
+        root.Children.Add(_paletteHost);
+        Content = root;
 
         ctx.ColorsChanged += (_, _) => SyncFromContext();
         ctx.RecentColorsChanged += (_, _) => { _recent.SetColors(_ctx.RecentColors); };
         SyncFromContext();
     }
 
+    private static MenuItem Item(string text, Action action)
+    {
+        var mi = new MenuItem { Header = text };
+        // 메뉴가 닫힌 뒤에 한다(파일 대화상자·질문 상자가 메뉴 위에 뜨지 않게).
+        mi.Click += (_, _) => Dispatcher.UIThread.Post(action);
+        return mi;
+    }
+
     /// <summary>팔레트 칸 격자를 스크롤 영역 너비에 맞추고 높이를 행 수에 맞춘다.</summary>
     private void LayoutPalette()
     {
-        int w = Math.Max(40, _paletteHost.ClientSize.Width);
-        _palette.Width = w;
-        _palette.Height = Math.Max(_paletteHost.ClientSize.Height, _palette.RequiredHeight(w));
-        _palette.Invalidate();
+        _palette.InvalidateMeasure();
+        _palette.InvalidateVisual();
     }
 
     private Color32 CurrentColor => _editSecondary ? _ctx.Secondary : _ctx.Primary;
@@ -165,6 +179,7 @@ public sealed class ColorPanel : UserControl
         if (_updating) return;
         _primarySlot.Color = _ctx.Primary;
         _secondarySlot.Color = _ctx.Secondary;
+        _palette.SetMarks(_ctx.Primary, _ctx.Secondary);
         var c = CurrentColor;
         var (h, s, v) = c.ToHsv();
         // 무채색이면 색상(H)을 유지해 상자가 튀지 않게 한다.
@@ -186,7 +201,7 @@ public sealed class ColorPanel : UserControl
         _hNum.Value = (decimal)Math.Clamp(MathF.Round(_h), 0, 360);
         _sNum.Value = (decimal)Math.Clamp(MathF.Round(_s * 100), 0, 100);
         _vNum.Value = (decimal)Math.Clamp(MathF.Round(_v * 100), 0, 100);
-        if (!_hex.Focused) _hex.Text = c.ToHex();
+        if (!_hex.IsFocused) _hex.Text = c.ToHex();
         _hue.Hue = _h;
         _sv.Hue = _h;
         if (!fromHsv || !_sv.Dragging) _sv.SetSv(_s, _v);
@@ -196,7 +211,7 @@ public sealed class ColorPanel : UserControl
     private void ApplyHsv()
     {
         if (_updating) return;
-        var c = Color32.FromHsv(_h, _s, _v, (byte)_a.Value);
+        var c = Color32.FromHsv(_h, _s, _v, (byte)_a.NumValue());
         _updating = true;
         SetCurrent(c);
         _updating = false;
@@ -208,19 +223,52 @@ public sealed class ColorPanel : UserControl
     private void ApplyRgba()
     {
         if (_updating) return;
-        SetCurrent(new Color32((byte)_r.Value, (byte)_g.Value, (byte)_b.Value, (byte)_a.Value));
+        SetCurrent(new Color32((byte)_r.NumValue(), (byte)_g.NumValue(), (byte)_b.NumValue(), (byte)_a.NumValue()));
     }
 
     private void ApplyHex()
     {
-        if (Color32.TryParseHex(_hex.Text.Trim(), out var c)) SetCurrent(c);
+        if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) SetCurrent(c);
         else _hex.Text = CurrentColor.ToHex();
     }
 
-    private void OnSwatchClicked(object? sender, (Color32 Color, MouseButtons Button) e)
+    private void OnSwatchClicked(object? sender, (Color32 Color, MouseButton Button) e)
     {
-        if (e.Button == MouseButtons.Right) _ctx.Secondary = e.Color;
+        if (e.Button == MouseButton.Right) _ctx.Secondary = e.Color;
         else _ctx.Primary = e.Color;
+    }
+
+    /// <summary>R·G·B / H·S·V / A·# 세 줄. 숫자 상자는 패널 폭을 나눠 늘어나 좁아도 잘리지 않는다.</summary>
+    private Grid NumberGrid()
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*,Auto,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+        };
+        void Put(Control c, int row, int col, int span = 1)
+        {
+            Grid.SetRow(c, row);
+            Grid.SetColumn(c, col);
+            Grid.SetColumnSpan(c, span);
+            grid.Children.Add(c);
+        }
+        void Cell(string label, Control box, int row, int col, int span = 1)
+        {
+            var l = Ui.Label(label);
+            l.VerticalAlignment = VerticalAlignment.Center;
+            l.Margin = new Thickness(col == 0 ? 2 : 6, 0, 0, 0);
+            box.Width = double.NaN;
+            box.MinWidth = 0;
+            box.HorizontalAlignment = HorizontalAlignment.Stretch;
+            box.Margin = new Thickness(3, 2);
+            Put(l, row, col);
+            Put(box, row, col + 1, span);
+        }
+        Cell("R", _r, 0, 0); Cell("G", _g, 0, 2); Cell("B", _b, 0, 4);
+        Cell("H", _hNum, 1, 0); Cell("S", _sNum, 1, 2); Cell("V", _vNum, 1, 4);
+        Cell("A", _a, 2, 0); Cell("#", _hex, 2, 2, span: 3);
+        return grid;
     }
 
     // ───────────── 팔레트 ─────────────
@@ -237,16 +285,18 @@ public sealed class ColorPanel : UserControl
 
     private void AddToPalette(Color32 c)
     {
-        if (_palette.Colors.Contains(c)) return;
+        // 투명은 팔레트 맨 앞에 늘 있다.
+        if (c.A == 0 || _palette.Colors.Contains(c)) return;
         _palette.Colors.Add(c);
         _palette.Commit();
     }
 
     private void RemoveFromPalette()
     {
-        if (_palette.SelectedIndex < 0 || _palette.SelectedIndex >= _palette.Colors.Count) return;
-        _palette.Colors.RemoveAt(_palette.SelectedIndex);
-        _palette.SelectedIndex = Math.Min(_palette.SelectedIndex, _palette.Colors.Count - 1);
+        // 표시(테두리)되는 기본색 칸을 지운다. 맨 앞 투명은 지우지 않는다.
+        int i = _palette.Colors.IndexOf(_ctx.Primary);
+        if (_ctx.Primary.A == 0 || i < 0) return;
+        _palette.Colors.RemoveAt(i);
         _palette.Commit();
     }
 
@@ -264,14 +314,15 @@ public sealed class ColorPanel : UserControl
 
     private void LoadPalette()
     {
-        using var dlg = new OpenFileDialog { Filter = "팔레트 (*.hex;*.gpl)|*.hex;*.gpl|모든 파일|*.*", Title = "팔레트 불러오기" };
-        if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
+        var path = Ui.OpenFile(this, "팔레트 불러오기", null,
+            new FileFilter("팔레트", "*.hex", "*.gpl"), new FileFilter("모든 파일", "*.*"));
+        if (path is null) return;
         try
         {
-            var colors = PaletteIO.Load(dlg.FileName);
+            var colors = PaletteIO.Load(path);
             if (colors.Count == 0)
             {
-                Ui.Error(FindForm(), "파일에서 색을 찾지 못했습니다.");
+                Ui.Error(this, "파일에서 색을 찾지 못했습니다.");
                 return;
             }
             _palette.SetColors(colors);
@@ -279,89 +330,141 @@ public sealed class ColorPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(FindForm(), $"팔레트를 읽지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, $"팔레트를 읽지 못했습니다.\n{ex.Message}");
         }
     }
 
     private void SavePalette()
     {
-        using var dlg = new SaveFileDialog { Filter = "HEX 팔레트 (*.hex)|*.hex", Title = "팔레트 저장", FileName = "palette.hex" };
-        if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
+        var path = Ui.SaveFile(this, "팔레트 저장", null, "palette.hex", "hex", new FileFilter("HEX 팔레트", "*.hex"));
+        if (path is null) return;
         try
         {
-            PaletteIO.SaveHex(dlg.FileName, _palette.Colors);
+            PaletteIO.SaveHex(path, _palette.Colors);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(FindForm(), $"팔레트를 저장하지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, $"팔레트를 저장하지 못했습니다.\n{ex.Message}");
         }
     }
 
-    /// <summary>프로젝트의 모든 프레임(아틀라스면 모든 스프라이트, 보이는 레이어 합성)에 쓰인 색으로 팔레트를 만든다.</summary>
+    /// <summary>Lospec 팔레트 둘러보기 창(모달 아님, 하나만). 이미 열려 있으면 앞으로 가져온다.</summary>
+    private void OpenLospec()
+    {
+        if (_lospec is { } open)
+        {
+            open.Activate();
+            return;
+        }
+        var dlg = new LospecPaletteDialog(() => _palette.Colors,
+            colors => { _palette.SetColors(colors); _palette.Commit(); },
+            colors =>
+            {
+                int before = _palette.Colors.Count;
+                foreach (var c in colors)
+                    if (!_palette.Colors.Contains(c)) _palette.Colors.Add(c);
+                int added = _palette.Colors.Count - before;
+                if (added > 0) _palette.Commit();
+                return added;
+            });
+        dlg.Closed += (_, _) => _lospec = null;
+        _lospec = dlg;
+        if (Ui.Owner(this) is { } owner) dlg.Show(owner);
+        else dlg.Show();
+    }
+
+    /// <summary>프로젝트의 모든 프레임(보이는 레이어 합성)과 부위 셀(캔버스 밖으로 나간 부분 포함)에 쓰인 색으로 팔레트를 만든다.</summary>
     public void PaletteFromImage()
     {
         if (_ctx.Project is not { } p) return;
         var colors = new List<Color32>();
         var seen = new HashSet<Color32>();
-        int count = p.IsAtlas ? p.Sprites.Count : p.Frames.Count;
-        for (int i = 0; i < count && colors.Count < 256; i++)
-            foreach (var c in PaletteIO.ExtractFromImage(p.IsAtlas ? p.FlattenSprite(i) : p.Flatten(i)))
-                if (seen.Add(c) && colors.Count < 256) colors.Add(c);
+        void Add(PixelImage image)
+        {
+            foreach (var c in PaletteIO.ExtractFromImage(image))
+                if (colors.Count < 256 && seen.Add(c)) colors.Add(c);
+        }
+        var parts = p.Layers.Where(l => l.IsPart).ToList();
+        for (int i = 0; i < p.Frames.Count && colors.Count < 256; i++)
+        {
+            Add(p.Flatten(i));
+            foreach (var part in parts)
+                if (p.GetCel(part, p.Frames[i]) is { } cel) Add(cel);
+        }
         if (colors.Count == 0)
         {
-            Ui.Info(FindForm(), "이미지에 투명이 아닌 색이 없습니다.");
+            Ui.Info(this, "이미지에 투명이 아닌 색이 없습니다.");
             return;
         }
-        if (_palette.Colors.Count > 0 && MessageBox.Show(FindForm(), $"이미지에서 {colors.Count}색을 찾았습니다. 지금 팔레트를 바꿀까요?",
-                "이미지에서 팔레트 만들기", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+        if (_palette.Colors.Count > 0 && Ui.Ask(this, $"이미지에서 {colors.Count}색을 찾았습니다. 지금 팔레트를 바꿀까요?",
+                "이미지에서 팔레트 만들기", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         _palette.SetColors(colors);
         _palette.Commit();
     }
 
     // ───────────── 내부 컨트롤 ─────────────
 
+    private static readonly IPen BlackRing = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Black), 1.5);
+    private static readonly IPen WhiteRing = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), 1.5);
+    private static readonly IPen WhiteMarker = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), 2);
+
     /// <summary>기본/보조 색 칸.</summary>
     private sealed class ColorSlot : Control
     {
+        private readonly string _caption;
         private Color32 _color;
         private bool _selected;
 
         public ColorSlot(string caption)
         {
-            Text = caption;
-            Size = new Size(84, 40);
-            Margin = new Padding(3);
-            Cursor = Cursors.Hand;
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+            _caption = caption;
+            Width = 84;
+            Height = 40;
+            Margin = new Thickness(3);
+            Cursor = new Cursor(StandardCursorType.Hand);
         }
 
-        public Color32 Color { get => _color; set { _color = value; Invalidate(); } }
-        public bool Selected { get => _selected; set { _selected = value; Invalidate(); } }
+        public event EventHandler? Click;
 
-        protected override void OnPaint(PaintEventArgs e)
+        public Color32 Color { get => _color; set { _color = value; InvalidateVisual(); } }
+        public bool Selected { get => _selected; set { _selected = value; InvalidateVisual(); } }
+
+        public override void Render(DrawingContext g)
         {
-            var g = e.Graphics;
-            g.Clear(Theme.PanelColor);
-            var sw = new Rectangle(2, 2, 34, Height - 4);
+            double w = Bounds.Width, h = Bounds.Height;
+            g.FillRectangle(AppTheme.PanelBrush, new Rect(Bounds.Size));
+            var sw = new Rect(2, 2, 34, Math.Max(0, h - 4));
             ImageUtil.DrawSwatch(g, sw, _color);
-            using (var pen = new Pen(_selected ? Theme.AccentColor : Theme.BorderColor, _selected ? 2 : 1))
-                g.DrawRectangle(pen, sw);
-            TextRenderer.DrawText(g, Text, Theme.SmallFont, new Rectangle(38, 2, Width - 38, Height / 2), Theme.TextColor, TextFormatFlags.Left);
-            TextRenderer.DrawText(g, _color.ToHex(), Theme.SmallFont, new Rectangle(38, Height / 2, Width - 38, Height / 2), Theme.DimTextColor, TextFormatFlags.Left);
+            g.DrawRectangle(null, _selected ? AppTheme.Pen(AppTheme.AccentColor, 2) : AppTheme.Pen(AppTheme.BorderColor), sw.Deflate(_selected ? 1 : 0.5));
+            AppTheme.DrawTextIn(g, _caption, new Rect(38, 2, Math.Max(0, w - 38), h / 2), AppTheme.TextBrush, AppTheme.SmallFontSize);
+            AppTheme.DrawTextIn(g, _color.ToHex(), new Rect(38, h / 2, Math.Max(0, w - 38), h / 2), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+        }
+
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
+        {
+            base.OnPointerPressed(e);
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            Click?.Invoke(this, EventArgs.Empty);
         }
     }
 
     /// <summary>채도(가로)·명도(세로) 상자.</summary>
     private sealed class SvBox : Control
     {
+        private static readonly IBrush WhiteFade = new ImmutableLinearGradientBrush(
+            [new ImmutableGradientStop(0, Colors.White), new ImmutableGradientStop(1, Color.FromArgb(0, 255, 255, 255))],
+            startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(1, 0, RelativeUnit.Relative));
+        private static readonly IBrush BlackFade = new ImmutableLinearGradientBrush(
+            [new ImmutableGradientStop(0, Color.FromArgb(0, 0, 0, 0)), new ImmutableGradientStop(1, Colors.Black)],
+            startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(0, 1, RelativeUnit.Relative));
+
         private float _hue, _s, _v;
-        private Bitmap? _cache;
-        private float _cacheHue = -1;
 
         public SvBox()
         {
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-            Cursor = Cursors.Cross;
+            Cursor = new Cursor(StandardCursorType.Cross);
+            ClipToBounds = true;
         }
 
         public event EventHandler? ValueChanged;
@@ -372,76 +475,63 @@ public sealed class ColorPanel : UserControl
         public float Hue
         {
             get => _hue;
-            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; Invalidate(); }
+            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; InvalidateVisual(); }
         }
 
         public void SetSv(float s, float v)
         {
             _s = s;
             _v = v;
-            Invalidate();
+            InvalidateVisual();
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        public override void Render(DrawingContext g)
         {
-            if (_cache is null || _cache.Size != ClientSize || Math.Abs(_cacheHue - _hue) > 0.01f) RebuildCache();
-            e.Graphics.DrawImageUnscaled(_cache!, 0, 0);
-            float x = _s * (Width - 1), y = (1 - _v) * (Height - 1);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using var outer = new Pen(Color.Black, 1.5f);
-            using var inner = new Pen(Color.White, 1.5f);
-            e.Graphics.DrawEllipse(outer, x - 5, y - 5, 10, 10);
-            e.Graphics.DrawEllipse(inner, x - 4, y - 4, 8, 8);
+            var rect = new Rect(Bounds.Size);
+            g.FillRectangle(AppTheme.Brush(Color32.FromHsv(_hue, 1, 1).ToColor()), rect);
+            g.FillRectangle(WhiteFade, rect);
+            g.FillRectangle(BlackFade, rect);
+            double x = _s * (rect.Width - 1), y = (1 - _v) * (rect.Height - 1);
+            g.DrawEllipse(null, BlackRing, new Avalonia.Point(x, y), 5, 5);
+            g.DrawEllipse(null, WhiteRing, new Avalonia.Point(x, y), 4, 4);
         }
 
-        private void RebuildCache()
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            _cache?.Dispose();
-            _cache = new Bitmap(Math.Max(1, Width), Math.Max(1, Height));
-            _cacheHue = _hue;
-            using var g = Graphics.FromImage(_cache);
-            var rect = new Rectangle(0, 0, _cache.Width, _cache.Height);
-            using (var b = new SolidBrush(Color32.FromHsv(_hue, 1, 1).ToColor())) g.FillRectangle(b, rect);
-            using (var white = new LinearGradientBrush(rect, Color.White, Color.FromArgb(0, 255, 255, 255), LinearGradientMode.Horizontal))
-                g.FillRectangle(white, rect);
-            using (var black = new LinearGradientBrush(rect, Color.FromArgb(0, 0, 0, 0), Color.Black, LinearGradientMode.Vertical))
-                g.FillRectangle(black, rect);
-        }
-
-        protected override void OnMouseDown(MouseEventArgs e)
-        {
-            base.OnMouseDown(e);
-            if (e.Button != MouseButtons.Left) return;
+            base.OnPointerPressed(e);
+            var pt = e.GetCurrentPoint(this);
+            if (!pt.Properties.IsLeftButtonPressed) return;
             Dragging = true;
-            Capture = true;
-            Pick(e.Location);
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            Pick(pt.Position);
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
+        protected override void OnPointerMoved(PointerEventArgs e)
         {
-            base.OnMouseMove(e);
-            if (Dragging) Pick(e.Location);
+            base.OnPointerMoved(e);
+            if (Dragging) Pick(e.GetPosition(this));
         }
 
-        protected override void OnMouseUp(MouseEventArgs e)
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            base.OnMouseUp(e);
+            base.OnPointerReleased(e);
             Dragging = false;
-            Capture = false;
+            e.Pointer.Capture(null);
         }
 
-        private void Pick(Point p)
+        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
-            _s = Math.Clamp(p.X / (float)Math.Max(1, Width - 1), 0, 1);
-            _v = 1 - Math.Clamp(p.Y / (float)Math.Max(1, Height - 1), 0, 1);
-            Invalidate();
+            base.OnPointerCaptureLost(e);
+            Dragging = false;
+        }
+
+        private void Pick(Avalonia.Point p)
+        {
+            _s = (float)Math.Clamp(p.X / Math.Max(1, Bounds.Width - 1), 0, 1);
+            _v = 1 - (float)Math.Clamp(p.Y / Math.Max(1, Bounds.Height - 1), 0, 1);
+            InvalidateVisual();
             ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) _cache?.Dispose();
-            base.Dispose(disposing);
         }
     }
 
@@ -450,56 +540,82 @@ public sealed class ColorPanel : UserControl
     {
         private byte _alpha = 255;
         private Color32 _base = Color32.Black;
+        private IBrush? _gradient;
         private bool _drag;
 
         public AlphaBar()
         {
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-            Cursor = Cursors.Hand;
+            Cursor = new Cursor(StandardCursorType.Hand);
+            ClipToBounds = true;
         }
 
         public event EventHandler? ValueChanged;
 
-        public byte Alpha { get => _alpha; set { if (_alpha == value) return; _alpha = value; Invalidate(); } }
-        public Color32 BaseColor { get => _base; set { _base = value; Invalidate(); } }
-
-        protected override void OnPaint(PaintEventArgs e)
+        public byte Alpha { get => _alpha; set { if (_alpha == value) return; _alpha = value; InvalidateVisual(); } }
+        public Color32 BaseColor
         {
-            var rect = new Rectangle(0, 0, Width, Height);
-            Theme.DrawChecker(e.Graphics, rect, 4);
-            using (var brush = new LinearGradientBrush(rect, _base.WithAlpha(0).ToColor(), _base.WithAlpha(255).ToColor(), LinearGradientMode.Horizontal))
-                e.Graphics.FillRectangle(brush, rect);
-            float x = _alpha / 255f * (Width - 1);
-            using var pen = new Pen(Color.White, 2);
-            e.Graphics.DrawRectangle(pen, x - 2, 1, 4, Height - 3);
+            get => _base;
+            set
+            {
+                if (_gradient is not null && _base.WithAlpha(255) == value.WithAlpha(255)) { _base = value; return; }
+                _base = value;
+                _gradient = null;
+                InvalidateVisual();
+            }
         }
 
-        protected override void OnMouseDown(MouseEventArgs e)
+        /// <summary>양 끝 여백: 0·255에서도 표시가 잘리지 않게.</summary>
+        private const double Pad = 4;
+
+        private Rect BarRect => new(Pad, 0, Math.Max(1, Bounds.Width - 2 * Pad), Bounds.Height);
+
+        public override void Render(DrawingContext g)
         {
-            base.OnMouseDown(e);
-            if (e.Button != MouseButtons.Left) return;
+            var rect = BarRect;
+            AppTheme.DrawChecker(g, rect, 4);
+            _gradient ??= new ImmutableLinearGradientBrush(
+                [new ImmutableGradientStop(0, _base.WithAlpha(0).ToColor()), new ImmutableGradientStop(1, _base.WithAlpha(255).ToColor())],
+                startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(1, 0, RelativeUnit.Relative));
+            g.FillRectangle(_gradient, rect);
+            double x = rect.X + _alpha / 255.0 * (rect.Width - 1);
+            g.DrawRectangle(null, WhiteMarker, new Rect(x - 2, 1, 4, Math.Max(0, rect.Height - 3)));
+        }
+
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
+        {
+            base.OnPointerPressed(e);
+            var pt = e.GetCurrentPoint(this);
+            if (!pt.Properties.IsLeftButtonPressed) return;
             _drag = true;
-            Capture = true;
-            Pick(e.X);
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            Pick(pt.Position.X);
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
+        protected override void OnPointerMoved(PointerEventArgs e)
         {
-            base.OnMouseMove(e);
-            if (_drag) Pick(e.X);
+            base.OnPointerMoved(e);
+            if (_drag) Pick(e.GetPosition(this).X);
         }
 
-        protected override void OnMouseUp(MouseEventArgs e)
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            base.OnMouseUp(e);
+            base.OnPointerReleased(e);
             _drag = false;
-            Capture = false;
+            e.Pointer.Capture(null);
         }
 
-        private void Pick(int x)
+        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
-            _alpha = (byte)Math.Round(Math.Clamp(x / (float)Math.Max(1, Width - 1), 0, 1) * 255);
-            Invalidate();
+            base.OnPointerCaptureLost(e);
+            _drag = false;
+        }
+
+        private void Pick(double x)
+        {
+            var rect = BarRect;
+            _alpha = (byte)Math.Round(Math.Clamp((x - rect.X) / Math.Max(1, rect.Width - 1), 0, 1) * 255);
+            InvalidateVisual();
             ValueChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -507,13 +623,19 @@ public sealed class ColorPanel : UserControl
     /// <summary>세로 색상(H) 막대.</summary>
     private sealed class HueBar : Control
     {
+        private static readonly IBrush Spectrum = new ImmutableLinearGradientBrush(
+            Enumerable.Range(0, 7)
+                .Select(i => new ImmutableGradientStop(i / 6.0, i == 6 ? Colors.Red : Color32.FromHsv(i * 60 % 360, 1, 1).ToColor()))
+                .ToArray(),
+            startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(0, 1, RelativeUnit.Relative));
+
         private float _hue;
         private bool _drag;
 
         public HueBar()
         {
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-            Cursor = Cursors.Hand;
+            Cursor = new Cursor(StandardCursorType.Hand);
+            ClipToBounds = true;
         }
 
         public event EventHandler? ValueChanged;
@@ -521,55 +643,58 @@ public sealed class ColorPanel : UserControl
         public float Hue
         {
             get => _hue;
-            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; Invalidate(); }
+            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; InvalidateVisual(); }
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        /// <summary>위아래 여백: 0°·360°에서도 표시가 잘리지 않게.</summary>
+        private const double Pad = 4;
+
+        private Rect BarRect => new(0, Pad, Bounds.Width, Math.Max(1, Bounds.Height - 2 * Pad));
+
+        public override void Render(DrawingContext g)
         {
-            var rect = new Rectangle(0, 0, Width, Height);
-            using (var brush = new LinearGradientBrush(rect, Color.Red, Color.Red, LinearGradientMode.Vertical))
-            {
-                var blend = new ColorBlend
-                {
-                    Colors = Enumerable.Range(0, 7).Select(i => Color32.FromHsv(i * 60 % 360, 1, 1).ToColor()).ToArray(),
-                    Positions = [0f, 1 / 6f, 2 / 6f, 3 / 6f, 4 / 6f, 5 / 6f, 1f],
-                };
-                blend.Colors[6] = Color.Red;
-                brush.InterpolationColors = blend;
-                e.Graphics.FillRectangle(brush, rect);
-            }
-            float y = _hue / 360f * (Height - 1);
-            using var pen = new Pen(Color.White, 2);
-            e.Graphics.DrawRectangle(pen, 1, y - 2, Width - 3, 4);
+            var rect = BarRect;
+            g.FillRectangle(Spectrum, rect);
+            double y = rect.Y + _hue / 360.0 * (rect.Height - 1);
+            g.DrawRectangle(null, WhiteMarker, new Rect(1, y - 2, Math.Max(0, rect.Width - 3), 4));
         }
 
-        protected override void OnMouseDown(MouseEventArgs e)
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            base.OnMouseDown(e);
-            if (e.Button != MouseButtons.Left) return;
+            base.OnPointerPressed(e);
+            var pt = e.GetCurrentPoint(this);
+            if (!pt.Properties.IsLeftButtonPressed) return;
             _drag = true;
-            Capture = true;
-            Pick(e.Y);
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            Pick(pt.Position.Y);
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
+        protected override void OnPointerMoved(PointerEventArgs e)
         {
-            base.OnMouseMove(e);
-            if (_drag) Pick(e.Y);
+            base.OnPointerMoved(e);
+            if (_drag) Pick(e.GetPosition(this).Y);
         }
 
-        protected override void OnMouseUp(MouseEventArgs e)
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            base.OnMouseUp(e);
+            base.OnPointerReleased(e);
             _drag = false;
-            Capture = false;
+            e.Pointer.Capture(null);
         }
 
-        private void Pick(int y)
+        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
-            _hue = Math.Clamp(y / (float)Math.Max(1, Height - 1), 0, 1) * 360f;
+            base.OnPointerCaptureLost(e);
+            _drag = false;
+        }
+
+        private void Pick(double y)
+        {
+            var rect = BarRect;
+            _hue = (float)Math.Clamp((y - rect.Y) / Math.Max(1, rect.Height - 1), 0, 1) * 360f;
             if (_hue >= 360f) _hue = 359.9f;
-            Invalidate();
+            InvalidateVisual();
             ValueChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -582,117 +707,200 @@ public sealed class ColorList : List<Color32>
     public void RaiseChanged() => CollectionChangedByUser?.Invoke(this, EventArgs.Empty);
 }
 
-/// <summary>색 칸 격자(최근 색·팔레트). 왼쪽 클릭 = 기본색, 오른쪽 = 보조색.</summary>
+/// <summary>
+/// 색 칸 격자(최근 색·팔레트). 왼쪽 클릭 = 기본색, 오른쪽 = 보조색.
+/// <see cref="ShowMarks"/>면 기본색과 같은 칸은 흰 테두리, 보조색과 같은 칸은 파란 테두리, 둘 다 같은 칸은 왼쪽 흰·오른쪽 파랑 반반 테두리
+/// (색이 같은 칸이 없으면 표시도 없음). <see cref="LeadingTransparent"/>면 투명 칸이 늘 맨 앞에 있다(목록에는 저장하지 않음).
+/// </summary>
 public sealed class SwatchGrid : Control
 {
-    private readonly ToolTip _tip = new();
+    private static readonly IPen PrimaryPen = new ImmutablePen(new ImmutableSolidColorBrush(Avalonia.Media.Colors.White), 2);
+    private static readonly IPen SecondaryPen = new ImmutablePen(new ImmutableSolidColorBrush(AppTheme.AccentColor), 2);
+    private static readonly IPen OutlinePen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(20, 20, 24)), 1);
     private int _hoverIndex = -1;
+    private Color32? _primaryMark, _secondaryMark;
 
     public SwatchGrid()
     {
-        SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-        Margin = new Padding(3);
+        Margin = new Thickness(3);
     }
 
     public ColorList Colors { get; } = new();
     public int Cell { get; set; } = 16;
-    public bool Selectable { get; set; }
-    public int SelectedIndex { get; set; } = -1;
+    /// <summary>기본색·보조색과 같은 칸에 테두리를 그린다.</summary>
+    public bool ShowMarks { get; set; }
+    /// <summary>투명 칸을 늘 맨 앞에 보인다(<see cref="Colors"/>에 든 투명은 따로 보이지 않음).</summary>
+    public bool LeadingTransparent { get; set; }
 
-    public event EventHandler<(Color32 Color, MouseButtons Button)>? ColorClicked;
+    /// <summary>
+    /// 참이면 (고정 크기가 아닐 때) 너비는 주어진 공간에 맞추고 높이는 모든 칸이 보이는 만큼 잡는다
+    /// (스크롤 영역 안 팔레트용).
+    /// </summary>
+    public bool FillHeight { get; set; }
+
+    public event EventHandler<(Color32 Color, MouseButton Button)>? ColorClicked;
+
+    /// <summary>화면에 보이는 칸들(맨 앞 투명 포함).</summary>
+    private IReadOnlyList<Color32> Shown
+        => LeadingTransparent ? [Color32.Transparent, .. Colors.Where(c => c.A > 0)] : Colors;
 
     public void SetColors(IEnumerable<Color32> colors)
     {
         Colors.Clear();
         Colors.AddRange(colors);
-        SelectedIndex = -1;
-        Invalidate();
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
+    /// <summary>기본색·보조색 표시를 바꾼다.</summary>
+    public void SetMarks(Color32 primary, Color32 secondary)
+    {
+        if (_primaryMark == primary && _secondaryMark == secondary) return;
+        _primaryMark = primary;
+        _secondaryMark = secondary;
+        InvalidateVisual();
     }
 
     /// <summary>사용자 변경을 알리고 다시 그린다.</summary>
     public void Commit()
     {
         Colors.RaiseChanged();
-        Invalidate();
+        InvalidateMeasure();
+        InvalidateVisual();
     }
 
-    private int Columns => Math.Max(1, (Width - 2) / (Cell + 2));
+    private int Columns => Math.Max(1, ((int)Bounds.Width - 2) / (Cell + 2));
 
     /// <summary>주어진 너비에서 모든 칸을 보이는 데 필요한 높이.</summary>
     public int RequiredHeight(int width)
     {
         int cols = Math.Max(1, (width - 2) / (Cell + 2));
-        return 2 + (Colors.Count + cols - 1) / cols * (Cell + 2);
+        return 2 + (Shown.Count + cols - 1) / cols * (Cell + 2);
     }
 
-    private Rectangle CellRect(int i) => new(1 + i % Columns * (Cell + 2), 1 + i / Columns * (Cell + 2), Cell, Cell);
-
-    private int IndexAt(Point p)
+    protected override Avalonia.Size MeasureOverride(Avalonia.Size availableSize)
     {
-        for (int i = 0; i < Colors.Count; i++)
-            if (Rectangle.Inflate(CellRect(i), 1, 1).Contains(p)) return i;
+        if (!FillHeight) return base.MeasureOverride(availableSize);
+        int w = double.IsInfinity(availableSize.Width) ? 40 : Math.Max(40, (int)availableSize.Width);
+        double h = RequiredHeight(w);
+        // 스크롤 영역(세로 무한)이 아니면 남는 높이도 채운다.
+        if (!double.IsInfinity(availableSize.Height)) h = Math.Max(h, availableSize.Height);
+        return new Avalonia.Size(w, h);
+    }
+
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (FillHeight && e.WidthChanged) InvalidateMeasure();
+    }
+
+    private Rect CellRect(int i)
+    {
+        int cols = Columns;
+        return new Rect(1 + i % cols * (Cell + 2), 1 + i / cols * (Cell + 2), Cell, Cell);
+    }
+
+    private int IndexAt(Avalonia.Point p, int count)
+    {
+        for (int i = 0; i < count; i++)
+            if (CellRect(i).Inflate(1).Contains(p)) return i;
         return -1;
     }
 
-    protected override void OnPaint(PaintEventArgs e)
+    /// <summary>표시용 색 비교: 완전 투명끼리는 RGB와 관계없이 같다.</summary>
+    private static bool Same(Color32 a, Color32? b) => b is { } c && (a == c || (a.A == 0 && c.A == 0));
+
+    public override void Render(DrawingContext g)
     {
-        var g = e.Graphics;
-        g.Clear(Theme.InputColor);
-        if (Colors.Count == 0)
+        var bounds = new Rect(Bounds.Size);
+        g.FillRectangle(AppTheme.InputBrush, bounds);
+        var shown = Shown;
+        if (shown.Count == 0)
         {
-            TextRenderer.DrawText(g, "비어 있음", Theme.SmallFont, ClientRectangle, Theme.DimTextColor,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            AppTheme.DrawTextIn(g, "비어 있음", bounds, AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             return;
         }
-        for (int i = 0; i < Colors.Count; i++)
-        {
-            var r = CellRect(i);
-            if (r.Top > Height) break;
-            ImageUtil.DrawSwatch(g, r, Colors[i]);
-            if (Selectable && i == SelectedIndex)
+        // 같은 색이 여러 칸이면 첫 칸에만 표시한다.
+        int primary = -1, secondary = -1;
+        if (ShowMarks)
+            for (int i = 0; i < shown.Count; i++)
             {
-                using var pen = new Pen(Color.White, 2);
-                g.DrawRectangle(pen, Rectangle.Inflate(r, 1, 1));
+                if (primary < 0 && Same(shown[i], _primaryMark)) primary = i;
+                if (secondary < 0 && Same(shown[i], _secondaryMark)) secondary = i;
             }
-            else if (i == _hoverIndex)
+        using (g.PushClip(bounds))
+        {
+            for (int i = 0; i < shown.Count; i++)
             {
-                using var pen = new Pen(Theme.AccentColor);
-                g.DrawRectangle(pen, r.X - 1, r.Y - 1, r.Width + 1, r.Height + 1);
+                var r = CellRect(i);
+                if (r.Top > bounds.Height) break;
+                ImageUtil.DrawSwatch(g, r, shown[i]);
+                if (i == _hoverIndex && i != primary && i != secondary)
+                    g.DrawRectangle(null, AppTheme.Pen(AppTheme.AccentColor), r.Inflate(0.5));
+            }
+            if (primary >= 0 && primary == secondary) DrawHalfMark(g, CellRect(primary).Inflate(1));
+            else
+            {
+                if (primary >= 0) DrawMark(g, CellRect(primary).Inflate(1), PrimaryPen);
+                if (secondary >= 0) DrawMark(g, CellRect(secondary).Inflate(1), SecondaryPen);
             }
         }
     }
 
-    protected override void OnMouseMove(MouseEventArgs e)
+    private static void DrawMark(DrawingContext g, Rect r, IPen pen)
     {
-        base.OnMouseMove(e);
-        int i = IndexAt(e.Location);
+        g.DrawRectangle(null, OutlinePen, r.Inflate(1.5));
+        g.DrawRectangle(null, pen, r);
+    }
+
+    /// <summary>기본색 = 보조색인 칸: 왼쪽 절반 흰 테두리, 오른쪽 절반 파란 테두리.</summary>
+    private static void DrawHalfMark(DrawingContext g, Rect r)
+    {
+        g.DrawRectangle(null, OutlinePen, r.Inflate(1.5));
+        double mid = r.X + r.Width / 2;
+        void Path(IPen pen, double x0, double x1, double edgeX)
+        {
+            g.DrawLine(pen, new Avalonia.Point(x0, r.Top), new Avalonia.Point(x1, r.Top));
+            g.DrawLine(pen, new Avalonia.Point(x0, r.Bottom), new Avalonia.Point(x1, r.Bottom));
+            g.DrawLine(pen, new Avalonia.Point(edgeX, r.Top), new Avalonia.Point(edgeX, r.Bottom));
+        }
+        Path(PrimaryPen, r.Left - 1, mid, r.Left);
+        Path(SecondaryPen, mid, r.Right + 1, r.Right);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        var shown = Shown;
+        int i = IndexAt(e.GetPosition(this), shown.Count);
         if (i == _hoverIndex) return;
         _hoverIndex = i;
-        _tip.SetToolTip(this, i >= 0 ? Colors[i].ToHex() : null);
-        Invalidate();
+        ToolTip.SetTip(this, i < 0 ? null : shown[i].A == 0 ? "투명" : shown[i].ToHex());
+        InvalidateVisual();
     }
 
-    protected override void OnMouseLeave(EventArgs e)
+    protected override void OnPointerExited(PointerEventArgs e)
     {
-        base.OnMouseLeave(e);
+        base.OnPointerExited(e);
         _hoverIndex = -1;
-        Invalidate();
+        InvalidateVisual();
     }
 
-    protected override void OnMouseDown(MouseEventArgs e)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        base.OnMouseDown(e);
-        int i = IndexAt(e.Location);
+        base.OnPointerPressed(e);
+        var pt = e.GetCurrentPoint(this);
+        var shown = Shown;
+        int i = IndexAt(pt.Position, shown.Count);
         if (i < 0) return;
-        if (Selectable) SelectedIndex = i;
-        Invalidate();
-        ColorClicked?.Invoke(this, (Colors[i], e.Button));
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing) _tip.Dispose();
-        base.Dispose(disposing);
+        var button = pt.Properties.PointerUpdateKind switch
+        {
+            PointerUpdateKind.RightButtonPressed => MouseButton.Right,
+            PointerUpdateKind.MiddleButtonPressed => MouseButton.Middle,
+            _ => MouseButton.Left,
+        };
+        e.Handled = true;
+        ColorClicked?.Invoke(this, (shown[i], button));
     }
 }
 

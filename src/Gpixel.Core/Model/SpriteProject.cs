@@ -7,6 +7,10 @@ namespace Gpixel.Core.Model;
 /// Gpixel 프로젝트(<c>.gpixel</c>): 공통 캔버스 크기 × 레이어 × 프레임의 셀(cel) + 태그(애니메이션) +
 /// Unity·내보내기 설정 + 실행취소 기록.
 /// <para>
+/// 레이어는 아래 → 위 평평한 목록이다. 그룹(합친 레이어)의 부위 레이어들은 그룹 바로 아래에 이어 붙어 있고(<c>g-n … g-1</c>),
+/// 그룹·일반 레이어만 최상위이며 그룹은 겹치지 않는다. 부위는 자기 크기의 셀을 프레임마다 갖고, 모든 프레임에 공통인 위치에 합성된다.
+/// </para>
+/// <para>
 /// 모든 구조 변경 메서드(레이어·프레임·태그·캔버스·설정)는 <see cref="History"/>에 기록되고
 /// <see cref="Changed"/>를 발생시키며 수정됨 표시를 켠다. 그리기는 <see cref="BeginCelStroke"/> →
 /// 픽셀 수정(필요하면 <see cref="NotifyPixelsChanged"/>로 다시 그리기 알림) → <see cref="CommitCelStroke"/>로
@@ -22,24 +26,17 @@ public sealed class SpriteProject
     private readonly List<Layer> _layers = new();
     private readonly List<Frame> _frames = new();
     private readonly List<AnimationTag> _tags = new();
-    /// <summary>셀: (레이어, 주인) → 이미지. 주인은 <see cref="Frame"/>(애니메이션) 또는 <see cref="AtlasSprite"/>(아틀라스).</summary>
-    private readonly Dictionary<(Layer, object), PixelImage> _cels = new();
-    private readonly List<AtlasSprite> _sprites = new();
-    private ProjectKind _kind;
+    /// <summary>셀: (레이어, 프레임) → 이미지. 일반 레이어는 캔버스 크기, 부위는 부위 크기, 그룹은 셀이 없다.</summary>
+    private readonly Dictionary<(Layer, Frame), PixelImage> _cels = new();
     private int _width, _height;
     private string? _path;
     private bool _isDirty;
     private int _editDepth;
     private StrokeState? _stroke;
 
-    /// <summary>
-    /// 레이어 1개짜리 새 프로젝트. 애니메이션이면 빈 프레임 1개, 아틀라스면 캔버스 크기의 빈 스프라이트 1개("sprite")와
-    /// (쓰이지 않는) 프레임 1개를 갖는다.
-    /// </summary>
-    public SpriteProject(int width, int height, ProjectKind kind = ProjectKind.Animation) : this(width, height, addDefaults: true)
+    /// <summary>레이어 1개 · 빈 프레임 1개짜리 새 프로젝트.</summary>
+    public SpriteProject(int width, int height) : this(width, height, addDefaults: true)
     {
-        _kind = kind;
-        if (kind == ProjectKind.Atlas) _sprites.Add(new AtlasSprite("sprite", width, height) { Pivot = Sprite.DefaultPivot });
     }
 
     private SpriteProject(int width, int height, bool addDefaults)
@@ -53,8 +50,7 @@ public sealed class SpriteProject
     }
 
     /// <summary>레이어·프레임이 하나도 없는 프로젝트(파일 읽기·가져오기용, 내부 전용).</summary>
-    internal static SpriteProject CreateBlank(int width, int height, ProjectKind kind = ProjectKind.Animation)
-        => new(width, height, addDefaults: false) { _kind = kind };
+    internal static SpriteProject CreateBlank(int width, int height) => new(width, height, addDefaults: false);
 
     /// <summary>이미지 한 장(레이어 1개 · 프레임 1개)으로 새 프로젝트를 만든다.</summary>
     public static SpriteProject FromImage(PixelImage image, string layerName = "레이어 1")
@@ -75,24 +71,10 @@ public sealed class SpriteProject
     public Size Size => new(_width, _height);
     public Rectangle Bounds => new(0, 0, _width, _height);
 
-    /// <summary>레이어(0 = 맨 아래).</summary>
+    /// <summary>레이어(0 = 맨 아래). 그룹의 부위는 그룹 바로 아래에 이어 붙어 있다.</summary>
     public IReadOnlyList<Layer> Layers => _layers;
     public IReadOnlyList<Frame> Frames => _frames;
     public IReadOnlyList<AnimationTag> Tags => _tags;
-
-    /// <summary>프로젝트 종류(애니메이션 / 아틀라스). 파일을 만들 때 정해진다.</summary>
-    public ProjectKind Kind => _kind;
-
-    public bool IsAtlas => _kind == ProjectKind.Atlas;
-
-    /// <summary>아틀라스 스프라이트(애니메이션 프로젝트면 비어 있음).</summary>
-    public IReadOnlyList<AtlasSprite> Sprites => _sprites;
-
-    /// <summary>
-    /// 가져온 원래 시트 크기(아틀라스 "원래 위치 유지" 내보내기에서 시트를 최소 이 크기로 만들어 Unity 좌표가 같게 함).
-    /// 없으면 <see cref="Size.Empty"/>.
-    /// </summary>
-    public Size AtlasSourceSize { get; internal set; }
 
     /// <summary>Unity 설정(모드·PPU·기본 피벗·Single 테두리·메시·Read/Write). 바꿀 때는 <see cref="Edit(string, ProjectChange, Action)"/> 안에서.</summary>
     public SpriteSettings Sprite { get; } = new() { Mode = SpriteMode.Multiple };
@@ -161,7 +143,9 @@ public sealed class SpriteProject
 
     // ───────────── 셀 ─────────────
 
-    /// <summary>셀 이미지(빈 셀이면 null). 반환값을 직접 고치지 말고 스트로크로 고친다.</summary>
+    /// <summary>
+    /// 셀 이미지(빈 셀이면 null). 부위 셀은 부위 크기, 그룹은 항상 null. 반환값을 직접 고치지 말고 스트로크로 고친다.
+    /// </summary>
     public PixelImage? GetCel(int layerIndex, int frameIndex)
         => _cels.GetValueOrDefault((_layers[layerIndex], _frames[frameIndex]));
 
@@ -171,18 +155,27 @@ public sealed class SpriteProject
     public bool IsCelEmpty(int layerIndex, int frameIndex)
         => GetCel(layerIndex, frameIndex) is not { } c || c.IsRegionEmpty(c.Bounds);
 
-    /// <summary>셀을 통째로 바꾼다(null = 비우기, 실행취소됨). 이미지 크기는 캔버스와 같아야 한다.</summary>
+    /// <summary>
+    /// 셀을 통째로 바꾼다(null = 비우기, 실행취소됨). 이미지 크기는 캔버스(부위면 부위) 크기와 같아야 한다.
+    /// 그룹이면 <see cref="InvalidOperationException"/>.
+    /// </summary>
     public void SetCel(int layerIndex, int frameIndex, PixelImage? image, string label = "셀 바꾸기")
     {
-        var key = (_layers[layerIndex], _frames[frameIndex]);
-        if (image is not null && (image.Width != _width || image.Height != _height))
-            throw new ArgumentException("셀 크기는 캔버스 크기와 같아야 합니다.", nameof(image));
+        var layer = _layers[layerIndex];
+        if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
+        var key = (layer, _frames[frameIndex]);
+        var size = CelSize(layer);
+        if (image is not null && image.Size != size)
+            throw new ArgumentException(layer.IsPart ? "셀 크기는 부위 크기와 같아야 합니다." : "셀 크기는 캔버스 크기와 같아야 합니다.", nameof(image));
         Edit(label, ProjectChange.Pixels, () =>
         {
             if (image is null) _cels.Remove(key);
             else _cels[key] = image;
         });
     }
+
+    /// <summary>레이어 셀의 크기: 부위면 부위 크기, 아니면 캔버스 크기.</summary>
+    public Size CelSize(Layer layer) => layer.IsPart ? layer.PartSize : Size;
 
     /// <summary>
     /// 프레임의 보이는 레이어를 아래부터 불투명도를 곱해 합성한 새 이미지.
@@ -196,7 +189,8 @@ public sealed class SpriteProject
 
     /// <summary>
     /// <paramref name="target"/>(캔버스 크기)을 지우고 프레임을 합성해 넣는다(메모리 재사용).
-    /// <paramref name="layerFilter"/>가 있으면 그 레이어만(보이기 여부는 <paramref name="includeHidden"/>로).
+    /// 일반 레이어는 (0,0)에, 부위는 <see cref="Layer.PartOffset"/>에 불투명도 그룹×부위로 그린다. 숨긴 그룹은 부위도 숨긴다.
+    /// <paramref name="layerFilter"/>가 있으면 그리는 레이어(일반·부위)마다 걸러낸다(보이기 여부는 <paramref name="includeHidden"/>로).
     /// </summary>
     public void FlattenInto(PixelImage target, int frameIndex, bool includeHidden = false, Func<Layer, bool>? layerFilter = null)
     {
@@ -206,10 +200,33 @@ public sealed class SpriteProject
         var frame = _frames[frameIndex];
         foreach (var layer in _layers)
         {
-            if (!includeHidden && !layer.Visible) continue;
+            if (layer.IsGroup) continue;
+            if (!includeHidden && !(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
             if (layerFilter is not null && !layerFilter(layer)) continue;
-            if (_cels.TryGetValue((layer, frame), out var cel)) target.Composite(cel, 0, 0, layer.Opacity);
+            DrawCel(target, layer, frame);
         }
+    }
+
+    /// <summary>그룹 하나의 보이는 부위만 합성한 캔버스 크기 이미지(썸네일용, 그룹 자신의 보이기 여부는 무시).</summary>
+    public PixelImage FlattenGroup(Layer group, int frameIndex)
+    {
+        if (!group.IsGroup) throw new ArgumentException("그룹 레이어가 아닙니다.", nameof(group));
+        var result = new PixelImage(_width, _height);
+        var frame = _frames[frameIndex];
+        foreach (var part in ChildrenOf(group))
+            if (part.Visible) DrawCel(result, part, frame);
+        return result;
+    }
+
+    private void DrawCel(PixelImage target, Layer layer, Frame frame)
+    {
+        if (!_cels.TryGetValue((layer, frame), out var cel)) return;
+        if (layer.IsPart)
+        {
+            byte opacity = (byte)((layer.Opacity * (layer.Parent?.Opacity ?? 255) + 127) / 255);
+            target.Composite(cel, layer.PartOffset.X, layer.PartOffset.Y, opacity);
+        }
+        else target.Composite(cel, 0, 0, layer.Opacity);
     }
 
     // ───────────── 스트로크(픽셀 편집) ─────────────
@@ -217,30 +234,25 @@ public sealed class SpriteProject
     public bool IsStrokeActive => _stroke is not null;
 
     /// <summary>
-    /// 셀에 그리기 시작: 편집할 셀 이미지(없으면 투명 셀을 새로 만듦)를 돌려준다. 이 이미지를 직접 고친 뒤
-    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 잠긴 레이어면 <see cref="InvalidOperationException"/>.
+    /// 셀에 그리기 시작: 편집할 셀 이미지(없으면 투명 셀을 새로 만듦, 부위면 부위 크기)를 돌려준다. 이 이미지를 직접 고친 뒤
+    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 잠긴 레이어(또는 잠긴 그룹의 부위)·그룹이면
+    /// <see cref="InvalidOperationException"/>.
     /// </summary>
     public PixelImage BeginCelStroke(int layerIndex, int frameIndex)
-        => BeginStroke(_layers[layerIndex], _frames[frameIndex], _width, _height);
-
-    /// <summary>아틀라스 스프라이트 셀에 그리기 시작(<see cref="BeginCelStroke"/>와 같고, 확정·취소도 같은 메서드).</summary>
-    public PixelImage BeginSpriteStroke(int layerIndex, int spriteIndex)
     {
-        var sprite = _sprites[spriteIndex];
-        return BeginStroke(_layers[layerIndex], sprite, sprite.Width, sprite.Height);
-    }
-
-    private PixelImage BeginStroke(Layer layer, object owner, int width, int height)
-    {
+        var layer = _layers[layerIndex];
+        var frame = _frames[frameIndex];
+        if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
         if (_stroke is not null) CommitCelStroke("편집");
-        if (layer.Locked) throw new InvalidOperationException("잠긴 레이어에는 그릴 수 없습니다.");
-        bool created = !_cels.TryGetValue((layer, owner), out var image);
+        if (IsLayerLocked(layerIndex)) throw new InvalidOperationException("잠긴 레이어에는 그릴 수 없습니다.");
+        bool created = !_cels.TryGetValue((layer, frame), out var image);
         if (created)
         {
-            image = new PixelImage(width, height);
-            _cels[(layer, owner)] = image;
+            var size = CelSize(layer);
+            image = new PixelImage(size.Width, size.Height);
+            _cels[(layer, frame)] = image;
         }
-        _stroke = new StrokeState(layer, owner, image!, image!.Clone(), created);
+        _stroke = new StrokeState(layer, frame, image!, image!.Clone(), created);
         return image!;
     }
 
@@ -253,7 +265,7 @@ public sealed class SpriteProject
         var patch = PixelPatch.Create(s.Before, s.Image);
         if (patch is null)
         {
-            if (s.Created) _cels.Remove((s.Layer, s.Owner));
+            if (s.Created) _cels.Remove((s.Layer, s.Frame));
             return false;
         }
         History.Push(new CelStrokeCommand(this, label, s, patch));
@@ -268,7 +280,7 @@ public sealed class SpriteProject
         _stroke = null;
         if (s is null) return;
         s.Image.CopyFrom(s.Before);
-        if (s.Created) _cels.Remove((s.Layer, s.Owner));
+        if (s.Created) _cels.Remove((s.Layer, s.Frame));
         NotifyChanged(ProjectChange.Pixels, markDirty: false);
     }
 
@@ -330,77 +342,303 @@ public sealed class SpriteProject
 
     // ───────────── 레이어 ─────────────
 
-    /// <summary>빈 레이어를 <paramref name="index"/>(기본: 맨 위)에 넣는다.</summary>
+    private const string GroupHasNoCelsMessage = "그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요.";
+
+    /// <summary>그룹의 부위들(아래 → 위). 그룹이 아니면 빈 목록.</summary>
+    public IReadOnlyList<Layer> ChildrenOf(Layer group)
+    {
+        int g = _layers.IndexOf(group);
+        int n = ChildCount(g);
+        return n == 0 ? [] : _layers.GetRange(g - n, n);
+    }
+
+    /// <summary>그룹의 부위 수(그룹이 아니면 0).</summary>
+    public int ChildCount(Layer group) => ChildCount(_layers.IndexOf(group));
+
+    private int ChildCount(int groupIndex)
+    {
+        if (groupIndex < 0 || !_layers[groupIndex].IsGroup) return 0;
+        var group = _layers[groupIndex];
+        int n = 0;
+        while (groupIndex - n - 1 >= 0 && ReferenceEquals(_layers[groupIndex - n - 1].Parent, group)) n++;
+        return n;
+    }
+
+    /// <summary>실제로 보이는지: 자신이 보이고, 부위면 그룹도 보일 때.</summary>
+    public bool IsLayerVisible(int index)
+    {
+        var layer = _layers[index];
+        return layer.Visible && (layer.Parent?.Visible ?? true);
+    }
+
+    /// <summary>실제로 잠겼는지: 자신이 잠겼거나, 부위면 그룹이 잠겼을 때.</summary>
+    public bool IsLayerLocked(int index)
+    {
+        var layer = _layers[index];
+        return layer.Locked || (layer.Parent?.Locked ?? false);
+    }
+
+    /// <summary>최상위 레이어(일반·그룹) 덩어리의 시작 번호(그룹이면 맨 아래 부위).</summary>
+    private int BlockStart(int topIndex) => topIndex - ChildCount(topIndex);
+
+    /// <summary>최상위 레이어를 넣을 자리를 덩어리를 쪼개지 않는 경계로 맞춘다(그룹 안이면 그 그룹 바로 위).</summary>
+    private int TopLevelInsertIndex(int index)
+    {
+        int at = Math.Clamp(index, 0, _layers.Count);
+        if (at > 0 && _layers[at - 1].Parent is { } group) at = _layers.IndexOf(group) + 1;
+        return at;
+    }
+
+    private Layer RequirePart(int layerIndex)
+    {
+        var layer = _layers[layerIndex];
+        return layer.IsPart ? layer : throw new ArgumentException("부위 레이어가 아닙니다.", nameof(layerIndex));
+    }
+
+    /// <summary>빈 일반 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다.</summary>
     public Layer AddLayer(int? index = null, string? name = null)
     {
-        int at = Math.Clamp(index ?? _layers.Count, 0, _layers.Count);
+        int at = TopLevelInsertIndex(index ?? _layers.Count);
         var layer = new Layer(string.IsNullOrWhiteSpace(name) ? NextLayerName() : UniqueLayerName(name.Trim()));
         Edit("레이어 추가", ProjectChange.Layers, () => _layers.Insert(at, layer));
         return layer;
     }
 
-    /// <summary>레이어를 셀까지 복사해 바로 위에 넣는다.</summary>
+    /// <summary>빈 그룹(합친 레이어)을 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다.</summary>
+    public Layer AddGroup(string? name = null, int? index = null)
+    {
+        int at = TopLevelInsertIndex(index ?? _layers.Count);
+        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? "그룹" : name.Trim())) { Kind = LayerKind.Group };
+        Edit("그룹 추가", ProjectChange.Layers, () => _layers.Insert(at, group));
+        return group;
+    }
+
+    /// <summary>
+    /// 그룹의 맨 위 부위로 빈 부위 레이어를 넣는다. 위치를 안 주면 캔버스 가운데. 이름은 겹치지 않게 바뀐다.
+    /// 그룹이 아니거나 크기가 잘못되면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public Layer AddPart(Layer group, string? name, int width, int height, Point? offset = null)
+    {
+        if (!group.IsGroup || !_layers.Contains(group))
+            throw new ArgumentException("부위는 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.", nameof(group));
+        ValidatePartSize(width, height);
+        var part = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? "부위" : name.Trim()))
+        {
+            Kind = LayerKind.Part,
+            Parent = group,
+            PartSize = new Size(width, height),
+            PartOffset = offset ?? new Point((_width - width) / 2, (_height - height) / 2),
+        };
+        Edit("부위 추가", ProjectChange.Layers, () => _layers.Insert(_layers.IndexOf(group), part));
+        return part;
+    }
+
+    /// <summary>부위 위치(캔버스 안 왼쪽 위, 모든 프레임 공통).</summary>
+    public void SetPartOffset(int layerIndex, Point offset)
+    {
+        var part = RequirePart(layerIndex);
+        if (part.PartOffset == offset) return;
+        Edit("부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () => part.PartOffset = offset);
+    }
+
+    /// <summary>
+    /// 부위 크기 바꾸기: 모든 프레임의 셀을 <paramref name="anchor"/> 기준으로 옮기고, 그림이 캔버스에서 같은 자리에 남도록 위치를,
+    /// 같은 그림 지점을 가리키도록 피벗을 보정한다.
+    /// </summary>
+    public void ResizePart(int layerIndex, int width, int height, Anchor anchor)
+    {
+        var part = RequirePart(layerIndex);
+        ValidatePartSize(width, height);
+        var old = part.PartSize;
+        if (old.Width == width && old.Height == height) return;
+        var (ox, oy) = PixelImage.AnchorOffset(old.Width, old.Height, width, height, anchor);
+        var (px, py) = part.PartPivot.ToLocalPixel(old.Width, old.Height);
+        var pivot = new Pivot((px + ox) / width, 1f - (py + oy) / height);
+        var offset = new Point(part.PartOffset.X - ox, part.PartOffset.Y - oy);
+        Edit("부위 크기", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            foreach (var (frame, cel) in CelsOf(part)) _cels[(part, frame)] = cel.ResizeCanvas(width, height, anchor);
+            part.PartSize = new Size(width, height);
+            part.PartOffset = offset;
+            part.PartPivot = pivot;
+        });
+    }
+
+    /// <summary>부위 피벗(부위 기준 0~1, 아래 왼쪽 원점). 부위 아틀라스 내보내기에 쓴다.</summary>
+    public void SetPartPivot(int layerIndex, Pivot pivot)
+    {
+        var part = RequirePart(layerIndex);
+        Edit("부위 피벗", ProjectChange.Layers, () => part.PartPivot = pivot);
+    }
+
+    /// <summary>부위 9-slice 테두리(px). 부위 아틀라스 내보내기에 쓴다.</summary>
+    public void SetPartBorder(int layerIndex, SpriteBorder border)
+    {
+        var part = RequirePart(layerIndex);
+        Edit("부위 테두리", ProjectChange.Layers, () => part.PartBorder = border);
+    }
+
+    /// <summary>그룹 접기/펼치기(타임라인 표시용, 실행취소·수정됨 표시 없음).</summary>
+    public void SetLayerCollapsed(int layerIndex, bool collapsed)
+    {
+        var group = _layers[layerIndex];
+        if (!group.IsGroup) throw new ArgumentException("그룹 레이어가 아닙니다.", nameof(layerIndex));
+        if (group.Collapsed == collapsed) return;
+        group.Collapsed = collapsed;
+        NotifyChanged(ProjectChange.Layers, markDirty: false);
+    }
+
+    /// <summary>
+    /// 레이어를 셀까지 복사해 바로 위에 넣는다. 그룹은 부위까지 통째로(덩어리 바로 위), 부위는 같은 그룹 안 바로 위.
+    /// </summary>
     public Layer DuplicateLayer(int index)
     {
         var src = _layers[index];
-        var copy = new Layer(UniqueLayerName(src.Name + " 복사")) { Visible = src.Visible, Opacity = src.Opacity };
-        Edit("레이어 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        return Edit("레이어 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
+            var copy = CopyLayer(src, src.Parent);
             _layers.Insert(index + 1, copy);
-            foreach (var (owner, cel) in CelsOf(src))
-                _cels[(copy, owner)] = cel.Clone();
+            if (src.IsGroup)
+            {
+                var children = ChildrenOf(src).ToList();
+                for (int k = 0; k < children.Count; k++)
+                    _layers.Insert(index + 1 + k, CopyLayer(children[k], copy));
+            }
+            return copy;
         });
+    }
+
+    /// <summary>레이어 하나를 셀까지 복사한 새 레이어(목록에는 넣지 않음, 원래 칸 기억은 복사하지 않음).</summary>
+    private Layer CopyLayer(Layer src, Layer? parent)
+    {
+        var copy = new Layer(UniqueLayerName(src.Name + " 복사"))
+        {
+            Visible = src.Visible,
+            Opacity = src.Opacity,
+            Kind = src.Kind,
+            Parent = parent,
+            Collapsed = src.Collapsed,
+            PartSize = src.PartSize,
+            PartOffset = src.PartOffset,
+            PartPivot = src.PartPivot,
+            PartBorder = src.PartBorder,
+        };
+        foreach (var (frame, cel) in CelsOf(src)) _cels[(copy, frame)] = cel.Clone();
         return copy;
     }
 
-    /// <summary>레이어 삭제(마지막 하나는 지울 수 없음).</summary>
+    /// <summary>레이어 삭제. 그룹은 부위까지 지운다. 남는 레이어가 없으면 <see cref="InvalidOperationException"/>.</summary>
     public void DeleteLayer(int index)
     {
-        if (_layers.Count <= 1) throw new InvalidOperationException("마지막 레이어는 삭제할 수 없습니다.");
         var layer = _layers[index];
+        int start = layer.IsGroup ? BlockStart(index) : index;
+        int count = index - start + 1;
+        if (_layers.Count - count < 1) throw new InvalidOperationException("마지막 레이어는 지울 수 없습니다.");
         Edit("레이어 삭제", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            _layers.RemoveAt(index);
-            foreach (var (owner, _) in CelsOf(layer)) _cels.Remove((layer, owner));
-        });
-    }
-
-    /// <summary>레이어 순서 바꾸기(<paramref name="to"/> = 옮긴 뒤 위치).</summary>
-    public void MoveLayer(int from, int to)
-    {
-        var layer = _layers[from];
-        to = Math.Clamp(to, 0, _layers.Count - 1);
-        if (from == to) return;
-        Edit("레이어 이동", ProjectChange.Layers, () =>
-        {
-            _layers.RemoveAt(from);
-            _layers.Insert(to, layer);
+            foreach (var l in _layers.GetRange(start, count))
+                foreach (var (frame, _) in CelsOf(l)) _cels.Remove((l, frame));
+            _layers.RemoveRange(start, count);
         });
     }
 
     /// <summary>
-    /// 레이어를 아래 레이어에 병합한다(위 레이어를 불투명도대로 합성, 보이기 여부와 관계없이). 위 레이어는 삭제된다.
+    /// 레이어 순서 바꾸기. 부위는 자기 그룹 안에서만(<paramref name="to"/> = 옮긴 뒤 위치, 그룹 범위로 자름).
+    /// 일반 레이어·그룹은 덩어리째 옮기고, <paramref name="to"/>는 덩어리를 뺀 목록에서 덩어리가 들어갈 자리
+    /// (그룹 안이면 가까운 그룹 경계로 맞춤). 일반 레이어만 있으면 옮긴 뒤 위치와 같다.
+    /// </summary>
+    public void MoveLayer(int from, int to)
+    {
+        var layer = _layers[from];
+        if (layer.IsPart)
+        {
+            int g = _layers.IndexOf(layer.Parent!);
+            to = Math.Clamp(to, g - ChildCount(g), g - 1);
+            if (from == to) return;
+            Edit("레이어 이동", ProjectChange.Layers, () =>
+            {
+                _layers.RemoveAt(from);
+                _layers.Insert(to, layer);
+            });
+            return;
+        }
+
+        int start = BlockStart(from);
+        int count = from - start + 1;
+        var rest = new List<Layer>(_layers);
+        rest.RemoveRange(start, count);
+        int at = Math.Clamp(to, 0, rest.Count);
+        if (at > 0 && rest[at - 1].Parent is { } group)
+        {
+            int top = rest.IndexOf(group);
+            int bottom = top - rest.Count(l => ReferenceEquals(l.Parent, group));
+            int below = at - bottom, above = top + 1 - at;
+            at = below < above || (below == above && at < start) ? bottom : top + 1;
+        }
+        if (at == start) return;
+        var block = _layers.GetRange(start, count);
+        Edit("레이어 이동", ProjectChange.Layers, () =>
+        {
+            _layers.RemoveRange(start, count);
+            _layers.InsertRange(at, block);
+        });
+    }
+
+    /// <summary>한 칸 위로(▲): 부위는 그룹 안에서 위 부위와, 일반 레이어·그룹은 바로 위 덩어리와 자리를 바꾼다. 맨 위면 그대로.</summary>
+    public void MoveLayerUp(int index)
+    {
+        var layer = _layers[index];
+        if (layer.IsPart)
+        {
+            if (_layers[index + 1].IsPart) MoveLayer(index, index + 1);
+            return;
+        }
+        if (index == _layers.Count - 1) return;
+        var next = _layers[index + 1];
+        int aboveTop = next.Parent is { } g ? _layers.IndexOf(g) : index + 1;
+        MoveLayer(index, BlockStart(index) + (aboveTop - index));
+    }
+
+    /// <summary>한 칸 아래로(▼): 부위는 그룹 안에서 아래 부위와, 일반 레이어·그룹은 바로 아래 덩어리와 자리를 바꾼다. 맨 아래면 그대로.</summary>
+    public void MoveLayerDown(int index)
+    {
+        var layer = _layers[index];
+        if (layer.IsPart)
+        {
+            if (index > 0 && ReferenceEquals(_layers[index - 1].Parent, layer.Parent)) MoveLayer(index, index - 1);
+            return;
+        }
+        int start = BlockStart(index);
+        if (start == 0) return;
+        MoveLayer(index, BlockStart(start - 1));
+    }
+
+    /// <summary>
+    /// 일반 레이어를 바로 아래 일반 레이어에 병합한다(위 레이어를 불투명도대로 합성, 보이기 여부와 관계없이). 위 레이어는 삭제된다.
+    /// 부위·그룹이 끼면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public void MergeLayerDown(int index)
     {
         if (index <= 0 || index >= _layers.Count) throw new ArgumentOutOfRangeException(nameof(index), "아래에 병합할 레이어가 없습니다.");
         var upper = _layers[index];
         var lower = _layers[index - 1];
+        if (upper.Kind != LayerKind.Normal || lower.Kind != LayerKind.Normal)
+            throw new InvalidOperationException("부위·그룹 레이어는 아래로 병합할 수 없습니다.");
         Edit("아래 레이어와 병합", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            foreach (var (owner, top) in CelsOf(upper))
+            foreach (var (frame, top) in CelsOf(upper))
             {
-                var merged = _cels.TryGetValue((lower, owner), out var bottom) ? bottom.Clone() : new PixelImage(top.Width, top.Height);
+                var merged = _cels.TryGetValue((lower, frame), out var bottom) ? bottom.Clone() : new PixelImage(top.Width, top.Height);
                 merged.Composite(top, 0, 0, upper.Opacity);
-                _cels[(lower, owner)] = merged;
-                _cels.Remove((upper, owner));
+                _cels[(lower, frame)] = merged;
+                _cels.Remove((upper, frame));
             }
             _layers.RemoveAt(index);
         });
     }
 
-    /// <summary>레이어의 모든 셀(주인, 이미지) 사본 목록.</summary>
-    private List<(object Owner, PixelImage Cel)> CelsOf(Layer layer)
+    /// <summary>레이어의 모든 셀(프레임, 이미지) 사본 목록.</summary>
+    private List<(Frame Frame, PixelImage Cel)> CelsOf(Layer layer)
         => _cels.Where(kv => ReferenceEquals(kv.Key.Item1, layer)).Select(kv => (kv.Key.Item2, kv.Value)).ToList();
 
     /// <summary>레이어 속성 바꾸기(null인 값은 그대로).</summary>
@@ -566,7 +804,8 @@ public sealed class SpriteProject
     // ───────────── 캔버스 ─────────────
 
     /// <summary>
-    /// 캔버스 크기 바꾸기: 모든 셀을 <paramref name="anchor"/> 기준으로 옮기고, 피벗이 같은 그림 지점을 가리키도록 보정한다.
+    /// 캔버스 크기 바꾸기: 일반 레이어 셀을 <paramref name="anchor"/> 기준으로 옮기고, 부위는 위치만 같은 만큼 옮기며(부위 셀은 그대로),
+    /// 피벗이 같은 그림 지점을 가리키도록 보정한다.
     /// </summary>
     public void ResizeCanvas(int width, int height, Anchor anchor)
     {
@@ -579,9 +818,12 @@ public sealed class SpriteProject
             var (px, py) = p.ToLocalPixel(oldW, oldH);
             return new Pivot((px + ox) / width, 1f - (py + oy) / height);
         }
-        Edit("캔버스 크기", ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings, () =>
+        Edit("캔버스 크기", ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
-            foreach (var key in FrameCelKeys()) _cels[key] = _cels[key].ResizeCanvas(width, height, anchor);
+            foreach (var key in _cels.Keys.Where(k => !k.Item1.IsPart).ToList())
+                _cels[key] = _cels[key].ResizeCanvas(width, height, anchor);
+            foreach (var part in _layers.Where(l => l.IsPart))
+                part.PartOffset = new Point(part.PartOffset.X + ox, part.PartOffset.Y + oy);
             _width = width;
             _height = height;
             Sprite.DefaultPivot = Shift(Sprite.DefaultPivot);
@@ -590,183 +832,63 @@ public sealed class SpriteProject
         });
     }
 
-    /// <summary>모든 셀 좌우 뒤집기(피벗도 뒤집음).</summary>
+    /// <summary>모든 셀 좌우 뒤집기(피벗·부위 위치·테두리도 뒤집음).</summary>
     public void FlipCanvasHorizontal()
-        => TransformCanvas("좌우 뒤집기", ImageTransform.FlipHorizontal, p => new Pivot(1f - p.X, p.Y));
+    {
+        int w = _width;
+        TransformCanvas("좌우 뒤집기", ImageTransform.FlipHorizontal, p => new Pivot(1f - p.X, p.Y),
+            r => new Rectangle(w - r.Right, r.Y, r.Width, r.Height),
+            b => new SpriteBorder(b.Right, b.Top, b.Left, b.Bottom));
+    }
 
-    /// <summary>모든 셀 상하 뒤집기(피벗도 뒤집음).</summary>
+    /// <summary>모든 셀 상하 뒤집기(피벗·부위 위치·테두리도 뒤집음).</summary>
     public void FlipCanvasVertical()
-        => TransformCanvas("상하 뒤집기", ImageTransform.FlipVertical, p => new Pivot(p.X, 1f - p.Y));
+    {
+        int h = _height;
+        TransformCanvas("상하 뒤집기", ImageTransform.FlipVertical, p => new Pivot(p.X, 1f - p.Y),
+            r => new Rectangle(r.X, h - r.Bottom, r.Width, r.Height),
+            b => new SpriteBorder(b.Left, b.Bottom, b.Right, b.Top));
+    }
 
-    /// <summary>모든 셀 90° 회전(가로·세로가 바뀌고 피벗도 회전).</summary>
+    /// <summary>모든 셀 90° 회전(가로·세로가 바뀌고 피벗·부위 위치·크기·테두리도 회전).</summary>
     public void RotateCanvas90(bool clockwise = true)
-        => TransformCanvas(clockwise ? "시계 방향 회전" : "반시계 방향 회전",
-            img => ImageTransform.Rotate90(img, clockwise),
-            p => clockwise ? new Pivot(p.Y, 1f - p.X) : new Pivot(1f - p.Y, p.X));
+    {
+        int w = _width, h = _height;
+        if (clockwise)
+            TransformCanvas("시계 방향 회전", img => ImageTransform.Rotate90(img, true), p => new Pivot(p.Y, 1f - p.X),
+                r => new Rectangle(h - r.Bottom, r.X, r.Height, r.Width),
+                b => new SpriteBorder(b.Bottom, b.Left, b.Top, b.Right));
+        else
+            TransformCanvas("반시계 방향 회전", img => ImageTransform.Rotate90(img, false), p => new Pivot(1f - p.Y, p.X),
+                r => new Rectangle(r.Y, w - r.Right, r.Height, r.Width),
+                b => new SpriteBorder(b.Top, b.Right, b.Bottom, b.Left));
+    }
 
-    private void TransformCanvas(string label, Func<PixelImage, PixelImage> transform, Func<Pivot, Pivot> pivotMap)
+    /// <param name="transform">셀 이미지 변환(일반·부위 셀 모두).</param>
+    /// <param name="pivotMap">0~1 피벗 변환(기본·프레임·부위 피벗).</param>
+    /// <param name="partRectMap">변환 전 캔버스 안 부위 영역 → 변환 뒤 영역.</param>
+    /// <param name="borderMap">부위 9-slice 테두리 변환.</param>
+    private void TransformCanvas(string label, Func<PixelImage, PixelImage> transform, Func<Pivot, Pivot> pivotMap,
+        Func<Rectangle, Rectangle> partRectMap, Func<SpriteBorder, SpriteBorder> borderMap)
     {
         var probe = transform(new PixelImage(_width, _height));
-        Edit(label, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings, () =>
+        Edit(label, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
-            foreach (var key in FrameCelKeys()) _cels[key] = transform(_cels[key]);
+            foreach (var key in _cels.Keys.ToList()) _cels[key] = transform(_cels[key]);
+            foreach (var part in _layers.Where(l => l.IsPart))
+            {
+                var r = partRectMap(part.PartRect);
+                part.PartOffset = r.Location;
+                part.PartSize = r.Size;
+                part.PartPivot = pivotMap(part.PartPivot);
+                part.PartBorder = borderMap(part.PartBorder);
+            }
             _width = probe.Width;
             _height = probe.Height;
             Sprite.DefaultPivot = pivotMap(Sprite.DefaultPivot);
             foreach (var f in _frames)
                 if (f.Pivot is { } fp) f.Pivot = pivotMap(fp);
         });
-    }
-
-    /// <summary>애니메이션 프레임 셀의 키들(아틀라스 셀 제외).</summary>
-    private List<(Layer, object)> FrameCelKeys() => _cels.Keys.Where(k => k.Item2 is Frame).ToList();
-
-    // ───────────── 아틀라스 스프라이트 ─────────────
-
-    public int IndexOf(AtlasSprite sprite) => _sprites.IndexOf(sprite);
-
-    public AtlasSprite? FindSprite(string name) => _sprites.Find(s => s.Name == name);
-
-    /// <summary>스프라이트 셀(빈 셀이면 null). 반환값을 직접 고치지 말고 <see cref="BeginSpriteStroke"/>로 고친다.</summary>
-    public PixelImage? GetSpriteCel(int layerIndex, int spriteIndex)
-        => _cels.GetValueOrDefault((_layers[layerIndex], _sprites[spriteIndex]));
-
-    public bool IsSpriteCelEmpty(int layerIndex, int spriteIndex)
-        => GetSpriteCel(layerIndex, spriteIndex) is not { } c || c.IsRegionEmpty(c.Bounds);
-
-    /// <summary>스프라이트의 보이는 레이어를 합성한 새 이미지(스프라이트 크기).</summary>
-    public PixelImage FlattenSprite(int spriteIndex, bool includeHidden = false)
-    {
-        var sprite = _sprites[spriteIndex];
-        var result = new PixelImage(sprite.Width, sprite.Height);
-        FlattenSpriteInto(result, spriteIndex, includeHidden);
-        return result;
-    }
-
-    /// <summary><paramref name="target"/>(스프라이트 크기)을 지우고 스프라이트를 합성해 넣는다.</summary>
-    public void FlattenSpriteInto(PixelImage target, int spriteIndex, bool includeHidden = false, Func<Layer, bool>? layerFilter = null)
-    {
-        var sprite = _sprites[spriteIndex];
-        if (target.Width != sprite.Width || target.Height != sprite.Height)
-            throw new ArgumentException("대상 이미지 크기가 스프라이트와 다릅니다.", nameof(target));
-        target.Clear();
-        foreach (var layer in _layers)
-        {
-            if (!includeHidden && !layer.Visible) continue;
-            if (layerFilter is not null && !layerFilter(layer)) continue;
-            if (_cels.TryGetValue((layer, sprite), out var cel)) target.Composite(cel, 0, 0, layer.Opacity);
-        }
-    }
-
-    /// <summary>
-    /// 빈 스프라이트 추가(기본: 맨 끝). 이름은 겹치지 않게 바뀐다(<see cref="UniqueSpriteName"/>). 피벗은 프로젝트 기본 피벗.
-    /// </summary>
-    public AtlasSprite AddSprite(string? name, int width, int height, int? index = null)
-    {
-        ValidateSize(width, height);
-        int at = Math.Clamp(index ?? _sprites.Count, 0, _sprites.Count);
-        var sprite = new AtlasSprite(UniqueSpriteName(string.IsNullOrWhiteSpace(name) ? "sprite" : name.Trim()), width, height)
-        {
-            Pivot = Sprite.DefaultPivot,
-        };
-        Edit("스프라이트 추가", ProjectChange.Sprites, () => _sprites.Insert(at, sprite));
-        return sprite;
-    }
-
-    /// <summary>스프라이트를 셀까지 복사해 바로 뒤에 넣는다(이름 <c>{이름}_1</c> …, 원래 위치 기억은 없음).</summary>
-    public AtlasSprite DuplicateSprite(int index)
-    {
-        var src = _sprites[index];
-        var copy = new AtlasSprite(UniqueSpriteName(src.Name), src.Width, src.Height) { Pivot = src.Pivot, Border = src.Border };
-        Edit("스프라이트 복제", ProjectChange.Sprites | ProjectChange.Pixels, () =>
-        {
-            _sprites.Insert(index + 1, copy);
-            foreach (var layer in _layers)
-                if (_cels.TryGetValue((layer, src), out var cel)) _cels[(layer, copy)] = cel.Clone();
-        });
-        return copy;
-    }
-
-    /// <summary>스프라이트 삭제(마지막 하나는 지울 수 없음).</summary>
-    public void DeleteSprite(int index)
-    {
-        if (_sprites.Count <= 1) throw new InvalidOperationException("마지막 스프라이트는 삭제할 수 없습니다.");
-        var sprite = _sprites[index];
-        Edit("스프라이트 삭제", ProjectChange.Sprites | ProjectChange.Pixels, () =>
-        {
-            _sprites.RemoveAt(index);
-            foreach (var layer in _layers) _cels.Remove((layer, sprite));
-        });
-    }
-
-    /// <summary>스프라이트 순서 바꾸기(<paramref name="to"/> = 옮긴 뒤 위치).</summary>
-    public void MoveSprite(int from, int to)
-    {
-        var sprite = _sprites[from];
-        to = Math.Clamp(to, 0, _sprites.Count - 1);
-        if (from == to) return;
-        Edit("스프라이트 이동", ProjectChange.Sprites, () =>
-        {
-            _sprites.RemoveAt(from);
-            _sprites.Insert(to, sprite);
-        });
-    }
-
-    /// <summary>이름 바꾸기. 비었거나 다른 스프라이트가 쓰는 이름이면 <see cref="ArgumentException"/>.</summary>
-    public void RenameSprite(int index, string name)
-    {
-        var sprite = _sprites[index];
-        name = name.Trim();
-        if (name.Length == 0) throw new ArgumentException("스프라이트 이름이 비어 있습니다.", nameof(name));
-        if (_sprites.Any(s => !ReferenceEquals(s, sprite) && s.Name == name))
-            throw new ArgumentException($"이미 같은 이름의 스프라이트가 있습니다: {name}", nameof(name));
-        if (sprite.Name == name) return;
-        Edit("스프라이트 이름", ProjectChange.Sprites, () => sprite.Name = name);
-    }
-
-    /// <summary>스프라이트 피벗(스프라이트 기준 0~1, 아래 왼쪽 원점).</summary>
-    public void SetSpritePivot(int index, Pivot pivot)
-    {
-        var sprite = _sprites[index];
-        Edit("스프라이트 피벗", ProjectChange.Sprites, () => sprite.Pivot = pivot);
-    }
-
-    /// <summary>9-slice 테두리(px).</summary>
-    public void SetSpriteBorder(int index, SpriteBorder border)
-    {
-        var sprite = _sprites[index];
-        Edit("스프라이트 테두리", ProjectChange.Sprites, () => sprite.Border = border);
-    }
-
-    /// <summary>
-    /// 스프라이트 크기 바꾸기: 셀을 <paramref name="anchor"/> 기준으로 옮기고, 피벗은 같은 그림 픽셀을 가리키도록 보정한다.
-    /// </summary>
-    public void ResizeSprite(int index, int width, int height, Anchor anchor)
-    {
-        ValidateSize(width, height);
-        var sprite = _sprites[index];
-        if (width == sprite.Width && height == sprite.Height) return;
-        var (ox, oy) = PixelImage.AnchorOffset(sprite.Width, sprite.Height, width, height, anchor);
-        var (px, py) = sprite.Pivot.ToLocalPixel(sprite.Width, sprite.Height);
-        var pivot = new Pivot((px + ox) / width, 1f - (py + oy) / height);
-        Edit("스프라이트 크기", ProjectChange.Sprites | ProjectChange.Pixels, () =>
-        {
-            foreach (var layer in _layers)
-                if (_cels.TryGetValue((layer, sprite), out var cel)) _cels[(layer, sprite)] = cel.ResizeCanvas(width, height, anchor);
-            sprite.Width = width;
-            sprite.Height = height;
-            sprite.Pivot = pivot;
-        });
-    }
-
-    /// <summary>다른 스프라이트와 겹치지 않는 이름(<c>base</c>, <c>base_1</c>, …).</summary>
-    public string UniqueSpriteName(string baseName)
-    {
-        baseName = baseName.Trim();
-        if (baseName.Length == 0) baseName = "sprite";
-        if (FindSprite(baseName) is null) return baseName;
-        for (int i = 1; ; i++)
-            if (FindSprite($"{baseName}_{i}") is null) return $"{baseName}_{i}";
     }
 
     // ───────────── 이름 ─────────────
@@ -797,10 +919,52 @@ public sealed class SpriteProject
     // ───────────── 파일 읽기·가져오기용 내부 구성 ─────────────
 
     internal void AddLayerRaw(Layer layer) => _layers.Add(layer);
+    internal void ReplaceLayersRaw(IEnumerable<Layer> layers)
+    {
+        var list = layers.ToList();
+        _layers.Clear();
+        _layers.AddRange(list);
+    }
     internal void AddFrameRaw(Frame frame) => _frames.Add(frame);
     internal void AddTagRaw(AnimationTag tag) => _tags.Add(tag);
-    internal void SetCelRaw(Layer layer, object owner, PixelImage image) => _cels[(layer, owner)] = image;
-    internal void AddSpriteRaw(AtlasSprite sprite) => _sprites.Add(sprite);
+    internal void SetCelRaw(Layer layer, Frame frame, PixelImage image) => _cels[(layer, frame)] = image;
+
+    /// <summary>
+    /// 파일 읽기용: 그룹이 없는(또는 그룹이 아닌 부모를 가진) 부위는 일반 레이어로 바꾸고, 그룹의 부위를 그룹 바로 아래로 모은다.
+    /// 바꾼 것이 있으면 true.
+    /// </summary>
+    internal bool NormalizeHierarchy()
+    {
+        bool changed = false;
+        foreach (var layer in _layers)
+        {
+            if (layer.IsPart && (layer.Parent is not { IsGroup: true } parent || !_layers.Contains(parent)))
+            {
+                layer.Kind = LayerKind.Normal;
+                layer.Parent = null;
+                changed = true;
+            }
+            else if (!layer.IsPart && layer.Parent is not null)
+            {
+                layer.Parent = null;
+                changed = true;
+            }
+        }
+        var ordered = new List<Layer>(_layers.Count);
+        foreach (var layer in _layers)
+        {
+            if (layer.IsPart) continue;
+            if (layer.IsGroup) ordered.AddRange(_layers.Where(l => ReferenceEquals(l.Parent, layer)));
+            ordered.Add(layer);
+        }
+        if (!ordered.SequenceEqual(_layers))
+        {
+            _layers.Clear();
+            _layers.AddRange(ordered);
+            changed = true;
+        }
+        return changed;
+    }
 
     private static void ValidateSize(int width, int height)
     {
@@ -808,10 +972,16 @@ public sealed class SpriteProject
             throw new ArgumentOutOfRangeException(nameof(width), $"캔버스 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}x{height}");
     }
 
+    private static void ValidatePartSize(int width, int height)
+    {
+        if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
+            throw new ArgumentException($"부위 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}x{height}", nameof(width));
+    }
+
     // ───────────── 실행취소 기록 ─────────────
 
-    /// <summary>열린 스트로크. 주인은 <see cref="Frame"/> 또는 <see cref="AtlasSprite"/>.</summary>
-    private sealed record StrokeState(Layer Layer, object Owner, PixelImage Image, PixelImage Before, bool Created);
+    /// <summary>열린 스트로크.</summary>
+    private sealed record StrokeState(Layer Layer, Frame Frame, PixelImage Image, PixelImage Before, bool Created);
 
     private sealed class CelStrokeCommand(SpriteProject project, string label, StrokeState stroke, PixelPatch patch) : IUndoCommand
     {
@@ -820,13 +990,13 @@ public sealed class SpriteProject
         public void Undo()
         {
             patch.ApplyBefore(stroke.Image);
-            if (stroke.Created) project._cels.Remove((stroke.Layer, stroke.Owner));
+            if (stroke.Created) project._cels.Remove((stroke.Layer, stroke.Frame));
             project.NotifyChanged(ProjectChange.Pixels);
         }
 
         public void Redo()
         {
-            project._cels[(stroke.Layer, stroke.Owner)] = stroke.Image;
+            project._cels[(stroke.Layer, stroke.Frame)] = stroke.Image;
             patch.ApplyAfter(stroke.Image);
             project.NotifyChanged(ProjectChange.Pixels);
         }
@@ -850,15 +1020,38 @@ public sealed class SpriteProject
         }
     }
 
-    /// <summary>구조 상태 사본. 셀 이미지는 참조만 담는다(구조 편집은 셀을 새 이미지로 바꿔 넣으므로 안전).</summary>
+    private readonly record struct LayerState(
+        Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
+        Size PartSize, Point PartOffset, Pivot PartPivot, SpriteBorder PartBorder, Rectangle? PartSourceRect)
+    {
+        public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
+            l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect);
+
+        public Layer Apply()
+        {
+            Layer.Name = Name;
+            Layer.Visible = Visible;
+            Layer.Locked = Locked;
+            Layer.Opacity = Opacity;
+            Layer.Kind = Kind;
+            Layer.Parent = Parent;
+            Layer.PartSize = PartSize;
+            Layer.PartOffset = PartOffset;
+            Layer.PartPivot = PartPivot;
+            Layer.PartBorder = PartBorder;
+            Layer.PartSourceRect = PartSourceRect;
+            return Layer;
+        }
+    }
+
+    /// <summary>구조 상태 사본(그룹 접힘은 제외). 셀 이미지는 참조만 담는다(구조 편집은 셀을 새 이미지로 바꿔 넣으므로 안전).</summary>
     private sealed class Snapshot
     {
         private int _w, _h;
-        private (Layer Layer, string Name, bool Visible, bool Locked, byte Opacity)[] _layers = [];
+        private LayerState[] _layers = [];
         private (Frame Frame, int Ms, Pivot? Pivot, string? Name)[] _frames = [];
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
-        private (AtlasSprite Sprite, string Name, int W, int H, Pivot Pivot, SpriteBorder Border, Rectangle? Source)[] _sprites = [];
-        private KeyValuePair<(Layer, object), PixelImage>[] _cels = [];
+        private KeyValuePair<(Layer, Frame), PixelImage>[] _cels = [];
         private SpriteSettings _sprite = new();
         private ExportSettings _export = new();
 
@@ -866,10 +1059,9 @@ public sealed class SpriteProject
         {
             _w = p._width,
             _h = p._height,
-            _layers = p._layers.Select(l => (l, l.Name, l.Visible, l.Locked, l.Opacity)).ToArray(),
+            _layers = p._layers.Select(LayerState.Of).ToArray(),
             _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name)).ToArray(),
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
-            _sprites = p._sprites.Select(s => (s, s.Name, s.Width, s.Height, s.Pivot, s.Border, s.SourceRect)).ToArray(),
             _cels = p._cels.ToArray(),
             _sprite = p.Sprite.Clone(),
             _export = p.Export.Clone(),
@@ -880,14 +1072,7 @@ public sealed class SpriteProject
             p._width = _w;
             p._height = _h;
             p._layers.Clear();
-            foreach (var (layer, name, visible, locked, opacity) in _layers)
-            {
-                layer.Name = name;
-                layer.Visible = visible;
-                layer.Locked = locked;
-                layer.Opacity = opacity;
-                p._layers.Add(layer);
-            }
+            foreach (var state in _layers) p._layers.Add(state.Apply());
             p._frames.Clear();
             foreach (var (frame, ms, pivot, name) in _frames)
             {
@@ -906,17 +1091,6 @@ public sealed class SpriteProject
                 tag.Loop = state.Loop;
                 tag.Color = state.Color;
                 p._tags.Add(tag);
-            }
-            p._sprites.Clear();
-            foreach (var (sprite, name, w, h, pivot, border, source) in _sprites)
-            {
-                sprite.Name = name;
-                sprite.Width = w;
-                sprite.Height = h;
-                sprite.Pivot = pivot;
-                sprite.Border = border;
-                sprite.SourceRect = source;
-                p._sprites.Add(sprite);
             }
             p._cels.Clear();
             foreach (var kv in _cels) p._cels[kv.Key] = kv.Value;

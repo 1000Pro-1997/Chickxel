@@ -282,6 +282,51 @@ public class ProjectTests
         Assert.False(stack.CanRedo);
     }
 
+    [Fact]
+    public void UndoGroup_RevertsWholeTurnAndSurvivesCapacity()
+    {
+        var p = new SpriteProject(4, 4);
+        p.BeginCelStroke(0, 0).Set(0, 0, Red);
+        p.CommitCelStroke("사람");
+        p.History.BeginGroup("AI");
+        for (int i = 0; i < UndoStack.DefaultCapacity + 5; i++)
+        {
+            p.BeginCelStroke(0, 0).Set(1, 0, new Color32((byte)i, 0, 0));
+            p.CommitCelStroke("점");
+        }
+        p.AddFrame();
+        Assert.Equal("AI", p.History.UndoLabel);
+        var group = p.History.EndGroup()!;
+        Assert.Equal(1, p.History.UndoDepthOf(group));
+        Assert.Equal(2, p.History.UndoCount);
+
+        Assert.True(p.Undo());
+        Assert.Single(p.Frames);
+        Assert.Equal(Color32.Transparent, p.GetCel(0, 0)!.Get(1, 0));
+        Assert.Equal(Red, p.GetCel(0, 0)!.Get(0, 0));
+        Assert.Equal(1, p.History.RedoDepthOf(group));
+
+        Assert.True(p.Redo());
+        Assert.Equal(2, p.Frames.Count);
+        Assert.Equal(new Color32(UndoStack.DefaultCapacity + 4, 0, 0), p.GetCel(0, 0)!.Get(1, 0));
+    }
+
+    [Fact]
+    public void UndoGroup_UndoWhileOpenClosesGroupFirst()
+    {
+        var p = new SpriteProject(4, 4);
+        p.History.BeginGroup("AI");
+        p.AddFrame();
+        p.AddFrame();
+        Assert.True(p.Undo());
+        Assert.False(p.History.IsGrouping);
+        Assert.Single(p.Frames);
+        Assert.Null(p.History.EndGroup());
+        p.History.BeginGroup("빈 묶음");
+        Assert.Null(p.History.EndGroup());
+        Assert.False(p.History.CanUndo);
+    }
+
     // ───────────── 파일 ─────────────
 
     private static SpriteProject MakeSample()
@@ -499,23 +544,27 @@ public class ProjectTests
         var p = MakeWalkProject();
 
         var saved = ProjectIO.SaveWithExport(p, projectPath);
-        var export = Assert.IsType<ExportResult>(saved.Export);
-        Assert.Equal(Path.Combine(dir.Path, "Assets", "Art", "hero.png"), export.PngPath);
+        var export = saved.Export!.Frames!;
+        Assert.Equal(Path.Combine(dir.Path, "Assets", "Art", "hero.png"), export.ImagePath);
         Assert.True(export.MetaWritten);
         Assert.Equal(5, export.SpriteCount);
-        Assert.True(File.Exists(export.SidecarPath));
+        Assert.False(File.Exists(SidecarIO.GetPath(export.ImagePath))); // 편집 정보는 .gpixel에만
 
-        var meta1 = UnityMeta.Read(export.PngPath + ".meta");
+        var meta1 = UnityMeta.Read(export.ImagePath + ".meta");
         Assert.Equal(["walk_0", "walk_1", "walk_2", "idle_0", "idle_1"], meta1.Sprites.Select(s => s.Name));
         Assert.Equal(new Rectangle(16, 0, 16, 16), meta1.Sprites[1].UnityRect);
-        Assert.Equal(16, PngIO.ReadSize(export.PngPath).Height);
-        var sidecarDoc = DocumentIO.Load(export.PngPath).Document;
-        Assert.Equal(["walk", "idle"], sidecarDoc.Animations.Select(a => a.Name));
+        Assert.Equal(16, PngIO.ReadSize(export.ImagePath).Height);
+
+        // 예전 버전이 남긴 사이드카는 다시 내보낼 때 지운다(열 때 메타보다 먼저 읽혀 낡은 칸을 보여 주므로).
+        File.WriteAllText(SidecarIO.GetPath(export.ImagePath), """{"version":1,"slices":[]}""");
+        ProjectIO.SaveWithExport(p);
+        Assert.False(File.Exists(SidecarIO.GetPath(export.ImagePath)));
+        Assert.Equal(DocumentInfoSource.UnityMeta, DocumentIO.Load(export.ImagePath).Source);
 
         // 프레임 추가·태그 늘리고 다시 저장 → 같은 이름은 같은 guid·ID
         p.DuplicateFrame(2);
         ProjectIO.SaveWithExport(p);
-        var meta2 = UnityMeta.Read(export.PngPath + ".meta");
+        var meta2 = UnityMeta.Read(export.ImagePath + ".meta");
         Assert.Equal(meta1.Guid, meta2.Guid);
         Assert.Equal(6, meta2.Sprites.Count);
         var old = meta1.Sprites.ToDictionary(s => s.Name);
@@ -533,9 +582,70 @@ public class ProjectTests
         // Unity 밖 + 메타 없음 → 자동이면 메타를 쓰지 않음
         var plain = new SpriteProject(4, 4);
         var plainPath = dir.File("plain.gpixel");
-        var r = ProjectIO.SaveWithExport(plain, plainPath).Export!;
+        var r = ProjectIO.SaveWithExport(plain, plainPath).Export!.Frames!;
         Assert.False(r.MetaWritten);
-        Assert.False(File.Exists(r.PngPath + ".meta"));
+        Assert.False(File.Exists(r.ImagePath + ".meta"));
+    }
+
+    [Fact]
+    public void Export_ImageFormat_WritesThatFormatWithMeta_PersistsAndRenames()
+    {
+        using var dir = new TempDir();
+        Directory.CreateDirectory(Path.Combine(dir.Path, "Assets"));
+        Directory.CreateDirectory(Path.Combine(dir.Path, "ProjectSettings"));
+        var projectPath = Path.Combine(dir.Path, "Assets", "hero.gpixel");
+        var p = MakeWalkProject();
+        p.Edit("형식", ProjectChange.Settings, () => { p.Export.ImageFormat = ExportImageFormat.Jpg; p.Export.JpegQuality = 75; });
+
+        var jpg = ProjectIO.SaveWithExport(p, projectPath).Export!.Frames!;
+        Assert.Equal(Path.Combine(dir.Path, "Assets", "hero.jpg"), jpg.ImagePath);
+        Assert.Equal([0xFF, 0xD8], File.ReadAllBytes(jpg.ImagePath)[..2]);
+        Assert.True(jpg.MetaWritten);
+        Assert.Equal(5, UnityMeta.Read(jpg.ImagePath + ".meta").Sprites.Count);
+        Assert.False(File.Exists(Path.Combine(dir.Path, "Assets", "hero.png")));
+
+        var loaded = ProjectIO.Load(projectPath);
+        Assert.Equal((ExportImageFormat.Jpg, 75), (loaded.Export.ImageFormat, loaded.Export.JpegQuality));
+
+        // 소유한 기본 이름 내보내기는 형식이 달라도 프로젝트와 함께 이름이 바뀐다.
+        var renamed = Path.Combine(dir.Path, "Assets", "knight.gpixel");
+        ProjectIO.RenameWithOwnedDefaultExport(projectPath, renamed);
+        Assert.True(File.Exists(Path.Combine(dir.Path, "Assets", "knight.jpg")));
+        Assert.True(File.Exists(Path.Combine(dir.Path, "Assets", "knight.jpg.meta")));
+
+        // TGA는 무손실(알파 포함): 헤더 뒤 첫 픽셀 = 왼쪽 위 BGRA
+        p.Edit("형식", ProjectChange.Settings, () => p.Export.ImageFormat = ExportImageFormat.Tga);
+        var tga = ProjectIO.SaveWithExport(p, renamed).Export!.Frames!;
+        var bytes = File.ReadAllBytes(tga.ImagePath);
+        var expected = ProjectExport.BuildSheet(p, "knight").Image.Get(0, 0);
+        Assert.Equal([expected.B, expected.G, expected.R, expected.A], bytes[18..22]);
+    }
+
+    [Fact]
+    public void RegisteredExports_CustomNamesAreFoundAndOpenTheirProject()
+    {
+        using var dir = new TempDir();
+        var projectPath = dir.File("hero.gpixel");
+        var p = new SpriteProject(4, 4);
+        var g = p.AddGroup();
+        p.AddPart(g, "Head", 2, 2);
+        p.Edit("이름", ProjectChange.Settings, () =>
+        {
+            p.Export.FileName = "hero_sheet";
+            p.Export.PartsFileName = "hero_atlas";
+            p.Export.ImageFormat = ExportImageFormat.Tga;
+        });
+        ProjectIO.Save(p, projectPath);
+
+        Assert.Equal([dir.File("hero_sheet.tga"), dir.File("hero_atlas.tga")], ProjectIO.GetRegisteredExportPaths(projectPath));
+        Assert.Equal(projectPath, ProjectImport.FindProjectForImage(dir.File("hero_atlas.tga")));
+        Assert.Equal(projectPath, ProjectImport.FindProjectForImage(dir.File("hero.png"))); // 같은 이름
+        Assert.Null(ProjectImport.FindProjectForImage(dir.File("other.png")));
+
+        p.Edit("끄기", ProjectChange.Settings, () => p.Export.ExportFrames = false);
+        ProjectIO.Save(p, projectPath);
+        Assert.Equal([dir.File("hero_atlas.tga")], ProjectIO.GetRegisteredExportPaths(projectPath));
+        Assert.Null(ProjectImport.FindProjectForImage(dir.File("hero_sheet.tga")));
     }
 
     [Fact]
@@ -551,6 +661,7 @@ public class ProjectTests
         var oldPng = Path.ChangeExtension(oldPath, ".png");
         var newPng = Path.ChangeExtension(newPath, ".png");
         var guid = UnityMeta.Read(oldPng + ".meta").Guid;
+        File.WriteAllText(SidecarIO.GetPath(oldPng), "{}"); // 예전 버전이 남긴 사이드카도 함께 옮긴다
         Assert.Equal([oldPng, oldPng + ".meta", SidecarIO.GetPath(oldPng)],
             ProjectIO.GetOwnedDefaultExportPaths(oldPath));
 
@@ -583,7 +694,6 @@ public class ProjectTests
 
         Assert.True(File.Exists(oldPath));
         Assert.True(File.Exists(oldPng));
-        Assert.True(File.Exists(SidecarIO.GetPath(oldPng)));
         Assert.Equal("other image", File.ReadAllText(newPng));
         Assert.False(File.Exists(newPath));
     }
@@ -601,7 +711,7 @@ public class ProjectTests
         project.Edit("경로", ProjectChange.Settings,
             () => { project.Export.Folder = folder; project.Export.FileName = fileName; project.Export.WriteMeta = true; });
         ProjectIO.SaveWithExport(project, oldPath);
-        var custom = ProjectExport.GetExportPngPath(project);
+        var custom = ProjectExport.GetExportImagePath(project);
         var meta = File.ReadAllBytes(custom + ".meta");
         Assert.Empty(ProjectIO.GetOwnedDefaultExportPaths(oldPath));
 
@@ -611,7 +721,6 @@ public class ProjectTests
         Assert.True(File.Exists(newPath));
         Assert.Empty(ProjectIO.GetOwnedDefaultExportPaths(newPath));
         Assert.True(File.Exists(custom));
-        Assert.True(File.Exists(SidecarIO.GetPath(custom)));
         Assert.Equal(meta, File.ReadAllBytes(custom + ".meta"));
     }
 
@@ -647,7 +756,6 @@ public class ProjectTests
 
         Assert.True(File.Exists(newPath));
         Assert.True(File.Exists(dir.File("hero.png")));
-        Assert.True(File.Exists(SidecarIO.GetPath(dir.File("hero.png"))));
         Assert.Equal(guid, UnityMeta.Read(dir.File("hero.png.meta")).Guid);
         Assert.Equal("hero.png", Path.GetFileName(ProjectIO.GetOwnedDefaultExportPaths(newPath)[0]));
     }
@@ -677,9 +785,10 @@ public class ProjectTests
     {
         var p = new SpriteProject(2, 2);
         p.Edit("경로", ProjectChange.Settings, () => { p.Export.Folder = "../sheets"; p.Export.FileName = "char"; });
-        var png = ProjectExport.GetExportPngPath(p, @"C:\game\src\hero.gpixel");
-        Assert.Equal(Path.GetFullPath(@"C:\game\sheets\char.png"), png);
-        Assert.Throws<InvalidOperationException>(() => ProjectExport.GetExportPngPath(new SpriteProject(1, 1)));
+        var game = Path.Combine(Path.GetTempPath(), "game");
+        var png = ProjectExport.GetExportImagePath(p, Path.Combine(game, "src", "hero.gpixel"));
+        Assert.Equal(Path.GetFullPath(Path.Combine(game, "sheets", "char.png")), png);
+        Assert.Throws<InvalidOperationException>(() => ProjectExport.GetExportImagePath(new SpriteProject(1, 1)));
     }
 
     // ───────────── 가져오기 ─────────────
@@ -703,6 +812,7 @@ public class ProjectTests
         doc.Animations.Add(down);
         doc.Animations.Add(up);
         DocumentIO.Save(doc, png, writeMeta: true);
+        TestUtil.WriteLegacySidecar(doc, png); // 태그는 예전 사이드카의 애니메이션에서
         var originalMeta = UnityMeta.Read(png + ".meta");
 
         var opened = ProjectImport.Open(png);

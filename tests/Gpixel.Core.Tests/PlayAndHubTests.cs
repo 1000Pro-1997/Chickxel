@@ -66,6 +66,36 @@ public class PlayAndHubTests
         Assert.False(p.Exists);
     }
 
+    [Fact]
+    public void Hub_PrefersMigratedHubDb_OverStaleJson_AndFallsBackWhenDbUnreadable()
+    {
+        using var dir = new TempDir();
+        var json = dir.File("projects-v1.json");
+        File.WriteAllText(json, """{"schema_version":"v1","data":{"D:/Work/Old":{"title":"Old","path":"D:/Work/Old","lastModified":1700000000000}}}""");
+        var db = dir.File("hub.db");
+        using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={db};Pooling=False"))
+        {
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                PRAGMA journal_mode=WAL;
+                CREATE TABLE projects (path TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL);
+                INSERT INTO projects VALUES ('D:/Work/Old', '{"title":"Old","path":"D:/Work/Old","lastModified":1700000000000}', 1);
+                INSERT INTO projects VALUES ('D:/Work/MineWorld', '{"title":"MineWorld","path":"D:/Work/MineWorld","version":"6000.6.6f1","lastModified":1792372709958,"vcsProvider":"github"}', 2);
+                INSERT INTO projects VALUES ('D:/Work/Broken', 'not json', 3);
+                """;
+            cmd.ExecuteNonQuery();
+        }
+
+        var list = UnityHubProjects.Load([db, json], _ => true);
+        Assert.True(list.Success);
+        Assert.Equal(["MineWorld", "Old"], list.Projects.Select(p => p.Title));
+        Assert.Equal("6000.6.6f1", list.Projects[0].Version);
+
+        File.WriteAllText(db, "not a database");
+        Assert.Equal(["Old"], UnityHubProjects.Load([db, json], _ => true).Projects.Select(p => p.Title));
+    }
+
     // ───────────── 애니메이션 재생 ─────────────
 
     [Fact]

@@ -1,3 +1,6 @@
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Styling;
+
 namespace Gpixel.App;
 
 /// <summary>명령줄 인수: <c>--open-folder &lt;폴더&gt;</c>, <c>--open &lt;파일&gt;</c>(.gpixel/.png). 경로만 주면 --open과 같다.</summary>
@@ -17,11 +20,43 @@ public sealed record StartupArgs(string? OpenFolder, string? OpenFile)
                     file = args[++i];
                     break;
                 default:
-                    if (!args[i].StartsWith("--", StringComparison.Ordinal)) file ??= args[i];
+                    // macOS는 Finder에서 실행할 때 -psn_… 인수를 붙일 수 있다.
+                    if (!args[i].StartsWith('-')) file ??= args[i];
                     break;
             }
         }
         return new StartupArgs(folder, file);
+    }
+}
+
+/// <summary>Avalonia 앱: 어두운 Fluent 테마(촘촘한 크기) 위에 Gpixel 색을 입힌다.</summary>
+public sealed class App : Application
+{
+    public static StartupArgs Args { get; set; } = new(null, null);
+
+    public override void Initialize()
+    {
+        Name = "Gpixel";
+        RequestedThemeVariant = ThemeVariant.Dark;
+        Styles.Add(AppTheme.CreateFluentTheme());
+        Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://Gpixel.App/"))
+        {
+            Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"),
+        });
+        AppTheme.Install(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            var main = new MainForm(Args);
+            // 창이 뜬 뒤에 넣어야 Avalonia의 앱 초기화가 덮어쓰지 않는다.
+            if (OperatingSystem.IsMacOS()) main.Opened += (_, _) => Platform.SetMacDockIcon(Icons.AppIconPng());
+            desktop.MainWindow = main;
+        }
+        base.OnFrameworkInitializationCompleted();
     }
 }
 
@@ -31,9 +66,10 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
-        ApplicationConfiguration.Initialize();
-        // 목록 머리글·스크롤 막대·콤보 상자 등 공용 컨트롤도 어두운 테마로 그린다.
-        Application.SetColorMode(SystemColorMode.Dark);
-        Application.Run(new MainForm(StartupArgs.Parse(args)));
+        App.Args = StartupArgs.Parse(args);
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
+
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
 }

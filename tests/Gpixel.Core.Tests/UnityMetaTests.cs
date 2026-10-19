@@ -93,7 +93,7 @@ public class UnityMetaTests
         Assert.Contains("    enableMipMap: 0\n", text);
         Assert.Contains("    textureCompression: 0\n", text);
         Assert.Contains("    nameFileIdTable:\n      Arm: 1404073571\n      Body: -622449481\n      Head: 5499198\n      lag: 302612106\n", text);
-        Assert.True(File.Exists(png + ".gpixel.json"));
+        Assert.False(File.Exists(png + ".gpixel.json"));
         Assert.DoesNotContain("\r", text);
     }
 
@@ -261,7 +261,7 @@ public class UnityMetaTests
         Assert.All(first.Sprites, s => Assert.Equal(new Pivot(0.5f, 0f), s.Pivot));
 
         var reopened = DocumentIO.Load(png);
-        Assert.Equal(DocumentInfoSource.Sidecar, reopened.Source);
+        Assert.Equal(DocumentInfoSource.UnityMeta, reopened.Source);
         reopened.Document.Image.Set(0, 0, Color32.White);
         DocumentIO.Save(reopened.Document, null, writeMeta: true);
         var second = UnityMeta.Read(png + ".meta");
@@ -290,11 +290,64 @@ public class UnityMetaTests
         var a = dir.File("a.png");
         var doc = new Document(new PixelImage(2, 2));
         DocumentIO.Save(doc, a, writeMeta: true);
+        File.WriteAllText(a + ".gpixel.json", "{}"); // 예전 버전이 남긴 사이드카
         var guid = UnityMeta.Read(a + ".meta").Guid;
         var b = dir.File("b.png");
         DocumentIO.RenameWithCompanions(a, b);
         Assert.False(File.Exists(a));
         Assert.True(File.Exists(b + ".gpixel.json"));
         Assert.Equal(guid, UnityMeta.Read(b + ".meta").Guid);
+    }
+
+    [Fact]
+    public void TextureImportSettings_RoundTripThroughMetaAndProject()
+    {
+        var doc = new Document(new PixelImage(40, 20), "hero.png");
+        var t = doc.Sprite;
+        t.ExtrudeEdges = 3;
+        t.GeneratePhysicsShape = false;
+        t.SRgb = false;
+        t.AlphaSource = SpriteAlphaSource.None;
+        t.AlphaIsTransparency = false;
+        t.GenerateMipMaps = true;
+        t.WrapMode = TextureWrap.Repeat;
+        t.FilterMode = TextureFilter.Bilinear;
+        t.AnisoLevel = 4;
+        t.MaxTextureSize = 512;
+        t.ResizeAlgorithm = TextureResize.Bilinear;
+        t.Format = TextureFormatChoice.RGBA32;
+        t.Compression = TextureCompressionChoice.HighQuality;
+        t.CrunchCompression = true;
+        t.CompressionQuality = 80;
+
+        var yaml = UnityMeta.Generate(doc, null);
+        Assert.Contains("    enableMipMap: 1", yaml);
+        Assert.Contains("    filterMode: 1", yaml);
+        Assert.Contains("    wrapU: 0", yaml);
+        Assert.Contains("  spriteExtrude: 3", yaml);
+        Assert.Contains("  alphaUsage: 0", yaml);
+
+        var back = new Document(new PixelImage(40, 20), "hero.png");
+        UnityMeta.Parse(yaml).ApplyTo(back);
+        var b = back.Sprite;
+        Assert.Equal((3, false, false, SpriteAlphaSource.None, false, true), (b.ExtrudeEdges, b.GeneratePhysicsShape, b.SRgb, b.AlphaSource, b.AlphaIsTransparency, b.GenerateMipMaps));
+        Assert.Equal((TextureWrap.Repeat, TextureFilter.Bilinear, 4, 512), (b.WrapMode, b.FilterMode, b.AnisoLevel, b.MaxTextureSize));
+        Assert.Equal((TextureResize.Bilinear, TextureFormatChoice.RGBA32, TextureCompressionChoice.HighQuality, true, 80),
+            (b.ResizeAlgorithm, b.Format, b.Compression, b.CrunchCompression, b.CompressionQuality));
+
+        // 자동 크기(이미지에 맞춤)는 다시 읽어도 자동
+        var auto = new Document(new PixelImage(40, 20), "a.png");
+        var autoBack = new Document(new PixelImage(40, 20), "a.png");
+        UnityMeta.Parse(UnityMeta.Generate(auto, null)).ApplyTo(autoBack);
+        Assert.Equal(0, autoBack.Sprite.MaxTextureSize);
+
+        // 프로젝트 파일에도 저장된다
+        var p = new SpriteProject(4, 4);
+        p.Edit("설정", ProjectChange.Settings, () => p.Sprite.CopyFrom(t));
+        using var ms = new MemoryStream();
+        ProjectIO.Save(p, ms);
+        ms.Position = 0;
+        var loaded = ProjectIO.Load(ms).Sprite;
+        Assert.Equal((TextureFilter.Bilinear, TextureCompressionChoice.HighQuality, 512, 80, 3), (loaded.FilterMode, loaded.Compression, loaded.MaxTextureSize, loaded.CompressionQuality, loaded.ExtrudeEdges));
     }
 }

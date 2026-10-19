@@ -1,15 +1,13 @@
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using Gpixel.Core.Model;
 
 namespace Gpixel.App.PlayTest;
 
 /// <summary>화면에 그릴 한 프레임: 칸을 잘라 낸 비트맵 + 피벗 + 불투명 영역(모두 칸 기준 픽셀).</summary>
-internal sealed class SpriteFrame(Bitmap bitmap, float pivotX, float pivotY, Rectangle opaque) : IDisposable
+internal sealed class SpriteFrame(WriteableBitmap bitmap, float pivotX, float pivotY, Rectangle opaque) : IDisposable
 {
-    public Bitmap Bitmap { get; } = bitmap;
-    public int Width => Bitmap.Width;
-    public int Height => Bitmap.Height;
+    public WriteableBitmap Bitmap { get; } = bitmap;
+    public int Width => Bitmap.PixelSize.Width;
+    public int Height => Bitmap.PixelSize.Height;
 
     /// <summary>피벗 위치(칸 왼쪽 위 기준, y 아래가 +). 반전된 프레임이면 반전된 값.</summary>
     public float PivotX { get; } = pivotX;
@@ -125,34 +123,28 @@ internal sealed class PlaySprites : IDisposable
         return frame;
     }
 
-    private SpriteFrame Build(Rectangle rect, Pivot pivot, bool flipX)
+    private unsafe SpriteFrame Build(Rectangle rect, Pivot pivot, bool flipX)
     {
         int w = rect.Width, h = rect.Height;
-        var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
-        var data = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        var bmp = ImageUtil.NewBitmap(w, h);
         int minX = w, minY = h, maxX = -1, maxY = -1;
-        try
+        using (var fb = bmp.Lock())
         {
-            var row = new int[w];
             for (int y = 0; y < h; y++)
             {
-                var src = _pixels.AsSpan((rect.Y + y) * _imageWidth + rect.X, w);
-                MemoryMarshal.Cast<Color32, int>(src).CopyTo(row);
-                if (flipX) row.AsSpan().Reverse();
+                // BGRA(직선 알파) 비트맵은 Color32와 메모리 배치가 같다.
+                var row = new Span<Color32>((byte*)fb.Address + (long)y * fb.RowBytes, w);
+                _pixels.AsSpan((rect.Y + y) * _imageWidth + rect.X, w).CopyTo(row);
+                if (flipX) row.Reverse();
                 for (int x = 0; x < w; x++)
                 {
-                    if ((uint)row[x] >> 24 == 0) continue;
+                    if (row[x].A == 0) continue;
                     if (x < minX) minX = x;
                     if (x > maxX) maxX = x;
                     if (y < minY) minY = y;
                     maxY = y;
                 }
-                Marshal.Copy(row, 0, data.Scan0 + y * data.Stride, w);
             }
-        }
-        finally
-        {
-            bmp.UnlockBits(data);
         }
 
         var opaque = maxX < 0 ? new Rectangle(0, 0, w, h) : Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);

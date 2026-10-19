@@ -2,15 +2,6 @@ using System.Drawing;
 
 namespace Gpixel.Core.Model;
 
-/// <summary>프로젝트 종류.</summary>
-public enum ProjectKind
-{
-    /// <summary>모든 프레임이 같은 캔버스를 쓰는 애니메이션(프레임·태그).</summary>
-    Animation,
-    /// <summary>스프라이트마다 크기·피벗이 다른 묶음(예: 캐릭터 부위). 내보내면 한 장의 아틀라스로 자동 배치.</summary>
-    Atlas,
-}
-
 /// <summary>프로젝트에서 바뀐 부분(여러 개 조합 가능).</summary>
 [Flags]
 public enum ProjectChange
@@ -18,7 +9,7 @@ public enum ProjectChange
     None = 0,
     /// <summary>셀 픽셀 내용.</summary>
     Pixels = 1,
-    /// <summary>레이어 목록·속성(이름·보이기·잠금·불투명도·순서).</summary>
+    /// <summary>레이어 목록·속성(이름·보이기·잠금·불투명도·순서·그룹·부위 크기·위치·피벗).</summary>
     Layers = 2,
     /// <summary>프레임 목록·속성(길이·피벗·이름·순서).</summary>
     Frames = 4,
@@ -29,9 +20,7 @@ public enum ProjectChange
     Settings = 32,
     /// <summary>파일 경로(다른 이름으로 저장 등).</summary>
     Path = 64,
-    /// <summary>아틀라스 스프라이트 목록·속성(이름·크기·피벗·테두리·순서).</summary>
-    Sprites = 128,
-    All = Pixels | Layers | Frames | Tags | Canvas | Settings | Path | Sprites,
+    All = Pixels | Layers | Frames | Tags | Canvas | Settings | Path,
 }
 
 public sealed class ProjectChangedEventArgs(ProjectChange change) : EventArgs
@@ -39,7 +28,21 @@ public sealed class ProjectChangedEventArgs(ProjectChange change) : EventArgs
     public ProjectChange Change { get; } = change;
 }
 
-/// <summary>레이어. 순서는 <see cref="SpriteProject.Layers"/>에서 0번이 맨 아래.</summary>
+/// <summary>레이어 종류.</summary>
+public enum LayerKind
+{
+    /// <summary>일반 레이어: 셀이 캔버스 크기이고 (0,0)에 그려진다.</summary>
+    Normal,
+    /// <summary>그룹(합친 레이어): 셀이 없고, 바로 아래에 붙은 부위 레이어들을 묶는다.</summary>
+    Group,
+    /// <summary>부위 레이어: 자기 크기의 셀을 프레임마다 갖고, 모든 프레임에 공통인 위치(<see cref="Layer.PartOffset"/>)에 그려진다.</summary>
+    Part,
+}
+
+/// <summary>
+/// 레이어. 순서는 <see cref="SpriteProject.Layers"/>에서 0번이 맨 아래. 그룹의 부위들은 그룹 바로 아래에 이어 붙어 있다.
+/// 종류·부모·부위 속성은 <see cref="SpriteProject"/>의 메서드로만 바뀐다(실행취소됨).
+/// </summary>
 public sealed class Layer
 {
     public Layer(string name) => Name = name;
@@ -50,6 +53,27 @@ public sealed class Layer
     public bool Locked { get; set; }
     /// <summary>불투명도 0~255.</summary>
     public byte Opacity { get; set; } = 255;
+
+    public LayerKind Kind { get; internal set; }
+    /// <summary>부위 레이어의 그룹. 그 밖에는 null.</summary>
+    public Layer? Parent { get; internal set; }
+    public bool IsGroup => Kind == LayerKind.Group;
+    public bool IsPart => Kind == LayerKind.Part;
+    /// <summary>그룹: 타임라인에서 접혀 있는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
+    public bool Collapsed { get; internal set; }
+
+    /// <summary>부위: 셀 크기(부위 셀은 정확히 이 크기).</summary>
+    public Size PartSize { get; internal set; }
+    /// <summary>부위: 프레임 캔버스 안 왼쪽 위 위치(모든 프레임 공통, 캔버스 밖으로 나가도 됨).</summary>
+    public Point PartOffset { get; internal set; }
+    /// <summary>부위: 캔버스 안 영역.</summary>
+    public Rectangle PartRect => new(PartOffset, PartSize);
+    /// <summary>부위: 부위 아틀라스 내보내기 피벗(부위 기준 0~1, 아래 왼쪽 원점).</summary>
+    public Pivot PartPivot { get; internal set; } = Pivot.Center;
+    /// <summary>부위: 부위 아틀라스 내보내기 9-slice 테두리(px).</summary>
+    public SpriteBorder PartBorder { get; internal set; }
+    /// <summary>부위: 가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
+    public Rectangle? PartSourceRect { get; internal set; }
 
     public override string ToString() => Name;
 }
@@ -153,43 +177,41 @@ public enum SheetLayout
     RowPerTag,
 }
 
-/// <summary>
-/// 아틀라스 스프라이트: 이름, 자기 크기, 피벗(스프라이트 기준 0~1, 아래 왼쪽 원점), 9-slice 테두리,
-/// 가져온 시트에서의 원래 위치. 셀은 <see cref="SpriteProject"/>가 레이어마다 갖는다.
-/// 속성은 <see cref="SpriteProject"/>의 Set…/Rename/Resize 메서드로 바꿔야 실행취소된다.
-/// </summary>
-public sealed class AtlasSprite
-{
-    public AtlasSprite(string name, int width, int height)
-    {
-        Name = name;
-        Width = width;
-        Height = height;
-    }
-
-    public string Name { get; internal set; }
-    public int Width { get; internal set; }
-    public int Height { get; internal set; }
-    public Size Size => new(Width, Height);
-    public Pivot Pivot { get; internal set; } = Pivot.Center;
-    public SpriteBorder Border { get; internal set; }
-
-    /// <summary>가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
-    public Rectangle? SourceRect { get; internal set; }
-
-    public override string ToString() => $"{Name} ({Width}x{Height})";
-}
-
 /// <summary>아틀라스 배치 순서.</summary>
 public enum AtlasPackOrder
 {
-    /// <summary>스프라이트 목록 순서대로.</summary>
+    /// <summary>부위 순서대로(위 레이어부터).</summary>
     KeepOrder,
     /// <summary>큰 것(넓이)부터.</summary>
     LargestFirst,
 }
 
-/// <summary>저장 시 PNG 시트 + Unity 메타 내보내기 설정.</summary>
+/// <summary>내보낼 이미지 파일 형식(Unity가 가져올 수 있는 것들).</summary>
+public enum ExportImageFormat
+{
+    /// <summary>PNG(무손실, 투명 유지) — 기본.</summary>
+    Png,
+    /// <summary>JPG(손실 압축, 투명 없음 — 투명한 곳은 흰색).</summary>
+    Jpg,
+    /// <summary>TGA(무손실 32비트, 투명 유지).</summary>
+    Tga,
+    /// <summary>BMP(무손실 32비트, 투명 유지).</summary>
+    Bmp,
+}
+
+public static class ExportImageFormatExtensions
+{
+    /// <summary>점을 포함한 파일 확장자(".png" 등).</summary>
+    public static string Extension(this ExportImageFormat format) => format switch
+    {
+        ExportImageFormat.Jpg => ".jpg",
+        ExportImageFormat.Tga => ".tga",
+        ExportImageFormat.Bmp => ".bmp",
+        _ => ".png",
+    };
+}
+
+/// <summary>저장 시 이미지 시트(프레임 시트·부위 아틀라스) + Unity 메타 내보내기 설정.</summary>
 public sealed class ExportSettings
 {
     private int _columns;
@@ -203,8 +225,25 @@ public sealed class ExportSettings
     /// <summary>내보낼 폴더. null이면 프로젝트 파일과 같은 폴더.</summary>
     public string? Folder { get; set; }
 
-    /// <summary>내보낼 PNG 이름(확장자 없이). null이면 프로젝트 파일 이름.</summary>
+    /// <summary>프레임 시트 PNG 이름(확장자 없이). null이면 프로젝트 파일 이름.</summary>
     public string? FileName { get; set; }
+
+    /// <summary>프레임(애니메이션) 시트를 내보낼지.</summary>
+    public bool ExportFrames { get; set; } = true;
+
+    /// <summary>부위가 있으면 부위 아틀라스(부위 × 프레임마다 스프라이트 하나)도 내보낼지.</summary>
+    public bool ExportParts { get; set; } = true;
+
+    /// <summary>부위 아틀라스 PNG 이름(확장자 없이). null이면 <c>{프레임 시트 이름}_parts</c>.</summary>
+    public string? PartsFileName { get; set; }
+
+    /// <summary>내보낼 이미지 형식(프레임 시트·부위 아틀라스 공통).</summary>
+    public ExportImageFormat ImageFormat { get; set; } = ExportImageFormat.Png;
+
+    private int _jpegQuality = 90;
+
+    /// <summary>JPG 품질 1~100.</summary>
+    public int JpegQuality { get => _jpegQuality; set => _jpegQuality = Math.Clamp(value, 1, 100); }
 
     public SheetLayout Layout { get; set; } = SheetLayout.Columns;
 
@@ -235,20 +274,20 @@ public sealed class ExportSettings
     /// <summary>Unity 메타를 쓸지. null이면 자동(Unity 프로젝트 Assets 안이거나 이미 .meta가 있으면 씀).</summary>
     public bool? WriteMeta { get; set; }
 
-    /// <summary>아틀라스 최대 가로(px). 0이면 자동(전체 넓이의 제곱근 정도, 가장 넓은 스프라이트 이상).</summary>
+    /// <summary>부위 아틀라스 최대 가로(px). 0이면 자동(전체 넓이의 제곱근 정도, 가장 넓은 스프라이트 이상).</summary>
     public int AtlasMaxWidth
     {
         get => _atlasMaxWidth;
         set => _atlasMaxWidth = Math.Max(0, value);
     }
 
-    /// <summary>아틀라스 가로·세로를 2의 거듭제곱으로 맞춘다.</summary>
+    /// <summary>부위 아틀라스 가로·세로를 2의 거듭제곱으로 맞춘다.</summary>
     public bool AtlasPowerOfTwo { get; set; }
 
     public AtlasPackOrder AtlasOrder { get; set; } = AtlasPackOrder.KeepOrder;
 
     /// <summary>
-    /// 원래 위치 유지: 가져온 칸 안에 아직 들어가는 스프라이트는 원래 위치(왼쪽 위)에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치.
+    /// 원래 위치 유지(부위 아틀라스): 가져온 칸 안에 아직 들어가는 부위는 원래 위치(왼쪽 위)에 두고, 새로 생겼거나 커진 것만 빈 곳에 배치.
     /// </summary>
     public bool KeepImportedRects { get; set; } = true;
 
@@ -260,6 +299,9 @@ public sealed class ExportSettings
         ExportOnSave = other.ExportOnSave;
         Folder = other.Folder;
         FileName = other.FileName;
+        ExportFrames = other.ExportFrames;
+        ExportParts = other.ExportParts;
+        PartsFileName = other.PartsFileName;
         Layout = other.Layout;
         Columns = other.Columns;
         Spacing = other.Spacing;
@@ -270,5 +312,7 @@ public sealed class ExportSettings
         AtlasPowerOfTwo = other.AtlasPowerOfTwo;
         AtlasOrder = other.AtlasOrder;
         KeepImportedRects = other.KeepImportedRects;
+        ImageFormat = other.ImageFormat;
+        JpegQuality = other.JpegQuality;
     }
 }

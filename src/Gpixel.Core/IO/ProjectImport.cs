@@ -11,8 +11,17 @@ namespace Gpixel.Core.IO;
 /// <param name="Warning">사용자에게 알릴 말(손상된 사이드카·셀 등). 없으면 null.</param>
 public sealed record ProjectOpenResult(SpriteProject Project, bool Imported, string? SourcePngPath, string? Warning);
 
+/// <summary>PNG(스프라이트 시트) 가져오기 방식.</summary>
+public enum ImportMode
+{
+    /// <summary>칸마다 애니메이션 프레임 하나.</summary>
+    Frames,
+    /// <summary>칸마다 부위 레이어 하나(그룹 하나에 모음, 칸 크기 그대로).</summary>
+    Parts,
+}
+
 /// <summary>
-/// PNG 열기 전 분석 결과. <see cref="NeedsKindChoice"/>면 사용자에게 아틀라스/애니메이션 프레임 중 고르게 한 뒤
+/// PNG 열기 전 분석 결과. <see cref="NeedsModeChoice"/>면 사용자에게 부위/애니메이션 프레임 중 고르게 한 뒤
 /// <see cref="ProjectImport.Import"/>에 넘긴다.
 /// </summary>
 /// <param name="SourcePath">고른 파일(.png 또는 .gpixel).</param>
@@ -20,20 +29,20 @@ public sealed record ProjectOpenResult(SpriteProject Project, bool Imported, str
 /// <param name="Document">가져올 PNG 문서(기존 프로젝트를 열면 null).</param>
 /// <param name="SliceCount">유효한 칸 수(Multiple일 때).</param>
 /// <param name="SlicesSameSize">칸이 모두 같은 크기인지.</param>
-/// <param name="SuggestedKind">추천 종류: 칸 크기가 서로 다르면 아틀라스, 아니면 애니메이션.</param>
+/// <param name="SuggestedMode">추천 방식: 칸 크기가 서로 다르면 부위, 아니면 애니메이션 프레임.</param>
 /// <param name="Warning">읽으며 생긴 알림(손상된 사이드카 등).</param>
 public sealed record ImportAnalysis(
     string SourcePath, string? ExistingProjectPath, Document? Document, int SliceCount, bool SlicesSameSize,
-    ProjectKind SuggestedKind, string? Warning)
+    ImportMode SuggestedMode, string? Warning)
 {
-    /// <summary>칸이 여러 개이고 모두 같은 크기라 종류를 물어야 하는지.</summary>
-    public bool NeedsKindChoice => ExistingProjectPath is null && SliceCount > 1 && SlicesSameSize;
+    /// <summary>칸이 여러 개이고 모두 같은 크기라 방식을 물어야 하는지.</summary>
+    public bool NeedsModeChoice => ExistingProjectPath is null && SliceCount > 1 && SlicesSameSize;
 }
 
 /// <summary>
 /// PNG/<c>.gpixel</c> 열기와 PNG(스프라이트 시트) → 프로젝트 가져오기.
-/// <para>사용 순서: <see cref="Analyze"/> → (<see cref="ImportAnalysis.NeedsKindChoice"/>면 사용자에게 묻기) →
-/// <see cref="Import"/>. 한 번에 하려면 <see cref="Open"/>(종류를 안 주면 추천 종류).</para>
+/// <para>사용 순서: <see cref="Analyze"/> → (<see cref="ImportAnalysis.NeedsModeChoice"/>면 사용자에게 묻기) →
+/// <see cref="Import"/>. 한 번에 하려면 <see cref="Open"/>(방식을 안 주면 추천 방식).</para>
 /// <para>애니메이션으로 가져오기:</para>
 /// <list type="bullet">
 /// <item>Multiple이고 칸이 있으면 칸마다 프레임 1개(프레임 이름 = 칸 이름). 캔버스는 모든 칸의 피벗이 같은 캔버스 지점에
@@ -46,8 +55,9 @@ public sealed record ImportAnalysis(
 /// 쓰는 애니메이션의 ms.</item>
 /// <item>내보내기 설정: 같은 폴더·같은 이름 PNG, 칸이 격자 모양이면 같은 열 수·간격.</item>
 /// </list>
-/// <para>아틀라스로 가져오기: 칸마다 스프라이트 1개(이름·크기·피벗·테두리 그대로, 원래 칸 기억), 원래 시트 크기 기억,
-/// "원래 위치 유지" 켬. 칸이 없으면 이미지 전체가 스프라이트 1개. 사이드카 애니메이션은 쓰지 않는다.</para>
+/// <para>부위로 가져오기: 캔버스 = 시트 크기, 파일 이름의 그룹 하나에 칸마다 부위 1개(첫 칸 = 맨 위 부위, 이름·크기·피벗·테두리 그대로,
+/// 위치 = 칸 위치, 원래 칸 기억), 프레임 1개. 칸이 없으면 이미지 전체가 부위 1개. 사이드카 애니메이션은 쓰지 않는다.
+/// 내보내기: 부위 아틀라스 = 시트 이름(기존 .meta guid 재사용, "원래 위치 유지"), 프레임 시트 = <c>{시트 이름}_frames</c>.</para>
 /// </summary>
 public static class ProjectImport
 {
@@ -55,7 +65,28 @@ public static class ProjectImport
     public static string GetProjectPathForPng(string pngPath) => Path.ChangeExtension(Path.GetFullPath(pngPath), SpriteProject.FileExtension);
 
     /// <summary>
-    /// 파일을 분석한다: <c>.gpixel</c>이거나 같은 이름의 <c>.gpixel</c>이 있으면 그것을 열 것이라고 알려 주고,
+    /// 이미지를 만든 프로젝트: 같은 이름의 <c>.gpixel</c>, 없으면 같은 폴더에서 이 이미지를 내보내기로 등록한 <c>.gpixel</c>. 없으면 null.
+    /// </summary>
+    public static string? FindProjectForImage(string imagePath)
+    {
+        var full = Path.GetFullPath(imagePath);
+        var sameName = GetProjectPathForPng(full);
+        if (File.Exists(sameName)) return sameName;
+        var dir = Path.GetDirectoryName(full);
+        if (dir is null || !Directory.Exists(dir)) return null;
+        try
+        {
+            foreach (var project in Directory.EnumerateFiles(dir, "*" + SpriteProject.FileExtension))
+                if (ProjectIO.GetRegisteredExportPaths(project).Contains(full, StringComparer.OrdinalIgnoreCase)) return project;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 파일을 분석한다: <c>.gpixel</c>이거나 이 이미지를 만든 <c>.gpixel</c>(<see cref="FindProjectForImage"/>)이 있으면 그것을 열 것이라고 알려 주고,
     /// 아니면 PNG(+메타/사이드카)를 읽어 칸 정보를 알려 준다. 읽을 수 없으면 예외.
     /// </summary>
     /// <param name="defaults">사이드카·메타가 없는 PNG를 가져올 때 쓸 Unity 설정(마지막 PPU 등).</param>
@@ -63,22 +94,21 @@ public static class ProjectImport
     {
         var full = Path.GetFullPath(path);
         if (full.EndsWith(SpriteProject.FileExtension, StringComparison.OrdinalIgnoreCase))
-            return new ImportAnalysis(full, full, null, 0, false, ProjectKind.Animation, null);
-        var projectPath = GetProjectPathForPng(full);
-        if (File.Exists(projectPath))
-            return new ImportAnalysis(full, projectPath, null, 0, false, ProjectKind.Animation, null);
+            return new ImportAnalysis(full, full, null, 0, false, ImportMode.Frames, null);
+        if (FindProjectForImage(full) is { } projectPath)
+            return new ImportAnalysis(full, projectPath, null, 0, false, ImportMode.Frames, null);
 
         var load = DocumentIO.Load(full, defaults);
         var rects = ValidSlices(load.Document).Select(s => s.Rect).ToList();
         bool same = rects.Select(r => r.Size).Distinct().Count() <= 1;
-        return new ImportAnalysis(full, null, load.Document, rects.Count, same, SuggestKind(load.Document), load.Warning);
+        return new ImportAnalysis(full, null, load.Document, rects.Count, same, SuggestMode(load.Document), load.Warning);
     }
 
     /// <summary>
-    /// 분석 결과로 프로젝트를 연다(기존 <c>.gpixel</c>이면 그것을, 아니면 <paramref name="kind"/>(null = 추천)로 가져옴).
+    /// 분석 결과로 프로젝트를 연다(기존 <c>.gpixel</c>이면 그것을, 아니면 <paramref name="mode"/>(null = 추천)로 가져옴).
     /// 가져온 프로젝트의 <see cref="SpriteProject.Path"/>는 PNG 옆 <c>.gpixel</c> 제안 경로이고 수정됨이 아니다.
     /// </summary>
-    public static ProjectOpenResult Import(ImportAnalysis analysis, ProjectKind? kind = null)
+    public static ProjectOpenResult Import(ImportAnalysis analysis, ImportMode? mode = null)
     {
         var warnings = new List<string>();
         if (analysis.Warning is not null) warnings.Add(analysis.Warning);
@@ -89,7 +119,7 @@ public static class ProjectImport
             return new ProjectOpenResult(project, false, pickedPng ? analysis.SourcePath : null, Join(warnings));
         }
         var doc = analysis.Document ?? throw new ArgumentException("가져올 문서가 없습니다.", nameof(analysis));
-        var imported = FromDocument(doc, kind ?? analysis.SuggestedKind);
+        var imported = FromDocument(doc, mode ?? analysis.SuggestedMode);
         imported.Path = GetProjectPathForPng(analysis.SourcePath);
         imported.IsDirty = false;
         return new ProjectOpenResult(imported, true, analysis.SourcePath, Join(warnings));
@@ -99,13 +129,13 @@ public static class ProjectImport
     /// <c>.gpixel</c>이나 PNG를 한 번에 연다(<see cref="Analyze"/> + <see cref="Import"/>). PNG와 같은 이름의 <c>.gpixel</c>이
     /// 있으면 그것을 연다. 읽을 수 없으면 예외(<see cref="InvalidDataException"/>, <see cref="IOException"/> 등).
     /// </summary>
-    /// <param name="kind">가져올 종류. null이면 추천 종류(칸 크기가 다르면 아틀라스).</param>
-    public static ProjectOpenResult Open(string path, SpriteSettings? defaults = null, ProjectKind? kind = null)
-        => Import(Analyze(path, defaults), kind);
+    /// <param name="mode">가져올 방식. null이면 추천 방식(칸 크기가 다르면 부위).</param>
+    public static ProjectOpenResult Open(string path, SpriteSettings? defaults = null, ImportMode? mode = null)
+        => Import(Analyze(path, defaults), mode);
 
-    /// <summary>칸 크기가 서로 다르면 아틀라스, 아니면 애니메이션.</summary>
-    public static ProjectKind SuggestKind(Document doc)
-        => ValidSlices(doc).Select(s => s.Rect.Size).Distinct().Count() > 1 ? ProjectKind.Atlas : ProjectKind.Animation;
+    /// <summary>칸 크기가 서로 다르면 부위, 아니면 애니메이션 프레임.</summary>
+    public static ImportMode SuggestMode(Document doc)
+        => ValidSlices(doc).Select(s => s.Rect.Size).Distinct().Count() > 1 ? ImportMode.Parts : ImportMode.Frames;
 
     /// <summary>Multiple 문서의 이미지 안으로 자른 유효한 칸들.</summary>
     private static List<(Slice Slice, Rectangle Rect)> ValidSlices(Document doc)
@@ -119,10 +149,10 @@ public static class ProjectImport
     private static string? Join(List<string> warnings) => warnings.Count == 0 ? null : string.Join(Environment.NewLine, warnings);
 
     /// <summary>문서(시트 이미지 + 칸 + 애니메이션)를 프로젝트로 바꾼다. 규칙은 <see cref="ProjectImport"/> 참고.</summary>
-    public static SpriteProject FromDocument(Document doc, ProjectKind kind = ProjectKind.Animation)
+    public static SpriteProject FromDocument(Document doc, ImportMode mode = ImportMode.Frames)
     {
         var slices = ValidSlices(doc);
-        if (kind == ProjectKind.Atlas) return AtlasFromDocument(doc, slices);
+        if (mode == ImportMode.Parts) return PartsFromDocument(doc, slices);
 
         if (slices.Count == 0)
         {
@@ -189,31 +219,45 @@ public static class ProjectImport
         return project;
     }
 
-    /// <summary>칸마다 스프라이트 1개(칸이 없으면 이미지 전체 1개)인 아틀라스 프로젝트.</summary>
-    private static SpriteProject AtlasFromDocument(Document doc, List<(Slice Slice, Rectangle Rect)> slices)
+    /// <summary>시트 크기 캔버스 + 파일 이름의 그룹 하나에 칸마다 부위 1개(칸이 없으면 이미지 전체 1개)인 프로젝트.</summary>
+    private static SpriteProject PartsFromDocument(Document doc, List<(Slice Slice, Rectangle Rect)> slices)
     {
-        var parts = slices.Count > 0
+        var cells = slices.Count > 0
             ? slices.Select(s => (s.Slice.Name, s.Rect, s.Slice.Pivot, s.Slice.Border)).ToList()
             : [(doc.BaseName, doc.Image.Bounds, doc.Sprite.DefaultPivot, doc.Sprite.Border)];
-        var project = SpriteProject.CreateBlank(parts.Max(p => p.Item2.Width), parts.Max(p => p.Item2.Height), ProjectKind.Atlas);
-        var layer = new Layer("레이어 1");
-        project.AddLayerRaw(layer);
-        project.AddFrameRaw(new Frame());
+        var project = SpriteProject.CreateBlank(doc.Image.Width, doc.Image.Height);
+        var frame = new Frame();
+        project.AddFrameRaw(frame);
         project.Sprite.CopyFrom(doc.Sprite);
         project.Sprite.Mode = SpriteMode.Multiple;
-        project.AtlasSourceSize = doc.Image.Size;
-        foreach (var (name, rect, pivot, border) in parts)
+
+        // 부위 이름이 내보내기 칸 이름(=Unity guid·spriteID 기준)이므로 그룹보다 먼저 정한다.
+        var parts = new List<Layer>(cells.Count);
+        foreach (var (name, rect, pivot, border) in cells)
         {
-            var sprite = new AtlasSprite(project.UniqueSpriteName(string.IsNullOrWhiteSpace(name) ? "sprite" : name), rect.Width, rect.Height)
+            var part = new Layer(project.UniqueLayerName(string.IsNullOrWhiteSpace(name) ? "sprite" : name.Trim()))
             {
-                Pivot = pivot,
-                Border = border,
-                SourceRect = rect,
+                Kind = LayerKind.Part,
+                PartSize = rect.Size,
+                PartOffset = rect.Location,
+                PartPivot = pivot,
+                PartBorder = border,
+                PartSourceRect = rect,
             };
-            project.AddSpriteRaw(sprite);
+            parts.Add(part);
+            project.AddLayerRaw(part);
             var cel = doc.Image.Crop(rect);
-            if (!cel.IsRegionEmpty(cel.Bounds)) project.SetCelRaw(layer, sprite, cel);
+            if (!cel.IsRegionEmpty(cel.Bounds)) project.SetCelRaw(part, frame, cel);
         }
+        var group = new Layer(project.UniqueLayerName(doc.BaseName)) { Kind = LayerKind.Group };
+        foreach (var part in parts) part.Parent = group;
+        project.ReplaceLayersRaw([.. Enumerable.Reverse(parts), group]);
+
+        // 가져온 아틀라스 하나만 다시 쓴다. 프레임 시트는 같은 그림의 사본이라 기본으로 끄고, 켜면 겹치지 않는 이름을 쓴다.
+        project.Export.ExportParts = true;
+        project.Export.PartsFileName = doc.BaseName;
+        project.Export.ExportFrames = false;
+        project.Export.FileName = doc.BaseName + "_frames";
         return project;
     }
 

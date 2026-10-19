@@ -70,16 +70,18 @@ public static class DocumentIO
     }
 
     /// <summary>
-    /// 문서를 저장한다: PNG(RGBA 무손실) → 사이드카 → <paramref name="writeMeta"/>면 Unity 메타.
+    /// 문서를 저장한다: 이미지(기본 PNG, <paramref name="format"/>) → <paramref name="writeMeta"/>면 Unity 메타. 같은 이름의 예전 사이드카는 지운다.
     /// 성공하면 경로를 갱신하고 수정됨 표시를 끈다. 실패하면 예외를 그대로 던지고 수정됨 상태를 유지한다.
     /// </summary>
     /// <param name="pngPath">저장 경로. null이면 <see cref="Document.Path"/>.</param>
-    public static void Save(Document doc, string? pngPath, bool writeMeta)
+    public static void Save(Document doc, string? pngPath, bool writeMeta, ExportImageFormat format = ExportImageFormat.Png, int jpegQuality = 90)
     {
         var path = pngPath ?? doc.Path ?? throw new InvalidOperationException("저장할 경로가 없습니다.");
         path = Path.GetFullPath(path);
-        PngIO.Save(doc.Image, path);
-        SidecarIO.Save(doc, path);
+        ImageWriter.Save(doc.Image, path, format, jpegQuality);
+        // 예전 버전이 쓴 사이드카는 이제 낡은 정보이고 열 때 메타보다 먼저 읽히므로 지운다.
+        var sidecar = SidecarIO.GetPath(path);
+        if (File.Exists(sidecar)) File.Delete(sidecar);
         doc.Path = path;
         if (writeMeta) UnityMeta.Write(doc, path);
         doc.IsDirty = false;

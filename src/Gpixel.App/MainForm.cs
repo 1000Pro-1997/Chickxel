@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using Avalonia.Input.Platform;
 using Gpixel.App.PlayTest;
 using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
@@ -11,7 +11,7 @@ namespace Gpixel.App;
 /// 캔버스(가운데), 타임라인(아래), 미리보기·Unity/내보내기 독(오른쪽), 접을 수 있는 파일 브라우저(맨 왼쪽), 상태 표시줄.
 /// .gpixel 프로젝트 열기/저장(+시트 내보내기), 단축키, 설정 저장을 맡는다.
 /// </summary>
-public sealed class MainForm : Form
+public sealed class MainForm : Window, Ai.IAiHost
 {
     private enum KeyScope
     {
@@ -27,7 +27,7 @@ public sealed class MainForm : Form
     [
         (ToolKind.Pencil, "연필", "B", "왼쪽: 기본색 · 오른쪽: 보조색(또는 지우개) · Shift+클릭: 마지막 점에서 직선 · Ctrl/Alt+클릭: 색 집기"),
         (ToolKind.Eraser, "지우개", "E", "투명으로 지웁니다"),
-        (ToolKind.Fill, "채우기", "G", "이어진 같은 색 영역(전체색: 그 색 전부)을 채웁니다"),
+        (ToolKind.Fill, "채우기", "G", "클릭한 곳의 색(허용 오차 안의 비슷한 색 포함) 영역을 채웁니다"),
         (ToolKind.Picker, "스포이드", "I", "왼쪽: 기본색 · 오른쪽: 보조색으로 집기"),
         (ToolKind.Line, "선", "L", "Shift: 45° 단위"),
         (ToolKind.Rectangle, "사각형", "R", "Shift: 정사각형 · U: 외곽/채움"),
@@ -35,467 +35,674 @@ public sealed class MainForm : Form
         (ToolKind.Select, "사각 선택", "M", "드래그로 선택, 안쪽을 끌어 이동 · Enter: 내려놓기"),
         (ToolKind.Move, "이동", "V", "선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션)"),
         (ToolKind.Dodge, "밝게/어둡게", "D", "왼쪽: 밝게 · 오른쪽: 어둡게(한 획에 한 번)"),
-        (ToolKind.Dither, "디더링", "T", "체커 무늬로 기본색·보조색을 번갈아 칠합니다"),
+        (ToolKind.Dither, "디더링", "T", "무늬(체커·25%·75%)대로 기본색·보조색을 섞어 칠합니다"),
         (ToolKind.ReplaceBrush, "색 바꾸기 브러시", "C", "처음 닿은 색만 기본색으로 바꿉니다"),
         (ToolKind.Pivot, "피벗", "K", "끌어서 피벗(Unity 포커스)을 옮깁니다"),
+        (ToolKind.Slice, "9-slice", "S", "초록 선을 끌어 늘려도 안 늘어나는 테두리(Unity Sprite Border)를 정합니다 — UI 버튼·패널용"),
     ];
+
+    /// <summary>도구 이름(예: "연필").</summary>
+    internal static string ToolName(ToolKind tool) => ToolDefs.First(d => d.Tool == tool).Name;
+
+    /// <summary>단축키의 "Ctrl" 자리(macOS = ⌘).</summary>
+    private static readonly KeyModifiers Ctrl = Platform.CommandModifier;
+    private const KeyModifiers Shift = KeyModifiers.Shift;
+    private const KeyModifiers Alt = KeyModifiers.Alt;
+    private const KeyModifiers NoMods = KeyModifiers.None;
+
+    /// <summary>시스템 클립보드의 PNG 형식(Windows "PNG", macOS "public.png", 그 밖 "image/png").</summary>
+    private static readonly DataFormat<byte[]> PngClipboardFormat = DataFormat.CreateBytesPlatformFormat(
+        OperatingSystem.IsWindows() ? "PNG" : Platform.IsMac ? "public.png" : "image/png");
+
+    private const int SplitterSize = 3;
+    private const int MinPanelSize = 25;
 
     private readonly AppSettings _settings;
     private readonly StartupArgs _args;
     private readonly EditorContext _ctx = new();
-    private readonly Dictionary<Keys, (KeyScope Scope, Func<bool> Action)> _keys = new();
+    private readonly Dictionary<(Key Key, KeyModifiers Mods), (KeyScope Scope, Func<bool> Action)> _keys = new();
 
     private readonly PixelCanvas _canvas;
     private readonly StartPanel _start;
     private readonly FileBrowserPanel _browser;
     private readonly ColorPanel _colors;
-    private readonly SpritePanel _sprite;
+    private readonly ToolOptionsPanel _toolOptions;
     private readonly TimelinePanel _timeline;
     private readonly PreviewPanel _preview;
-    private readonly SplitContainer _splitFiles, _splitPalette, _splitRight, _splitTimeline, _splitRightDock;
 
-    private readonly Dictionary<ToolKind, ToolStripButton> _toolButtons = new();
-    private ToolStripButton _tbFiles = null!;
-    private ToolStripLabel _cbToolName = null!, _cbHint = null!, _cbBrushLabel = null!, _cbZoom = null!;
-    private ToolStripComboBox _cbBrush = null!;
-    private ToolStripButton _cbPixelPerfect = null!, _cbFilled = null!, _cbGlobalFill = null!, _cbRightErase = null!, _cbWrap = null!,
-        _cbMirrorX = null!, _cbMirrorY = null!, _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!;
-    private ToolStripSeparator _cbSepMirror = null!;
+    // 나눔 막대(Grid + GridSplitter): 고정되는 쪽의 열/행만 픽셀 크기, 나머지는 *.
+    private readonly Grid _splitFiles, _splitPalette, _splitRight, _splitTimeline, _splitRightDock;
+    private readonly ColumnDefinition _colFiles, _colPalette, _colRight;
+    private readonly RowDefinition _rowBottom, _rowPreview;
+    private readonly GridSplitter _filesSplitter;
 
-    private ToolStripMenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
-    private ToolStripMenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
-    private ToolStripMenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
+    private readonly Dictionary<ToolKind, ToggleButton> _toolButtons = new();
+    private ToggleButton _tbFiles = null!;
+    private TextBlock _cbToolName = null!, _cbHint = null!, _cbZoom = null!;
+    private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFit = null!;
+
+    private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
+    private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
+    private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
         _miRightErase = null!, _miWrap = null!;
-    private readonly List<ToolStripItem> _docItems = new();
-    /// <summary>애니메이션 프로젝트에서만 쓰는 명령(아틀라스면 비활성).</summary>
-    private readonly List<ToolStripItem> _animItems = new();
-    /// <summary>아틀라스 프로젝트에서만 쓰는 명령.</summary>
-    private readonly List<ToolStripItem> _atlasItems = new();
-    private ToolStripMenuItem _miPlayTest = null!, _miSpriteMenu = null!;
-    private readonly Dictionary<ToolKind, ToolStripMenuItem> _toolMenuItems = new();
+    private readonly List<MenuItem> _docItems = new();
+    private MenuItem _miPlayTest = null!;
+    private readonly Dictionary<ToolKind, MenuItem> _toolMenuItems = new();
 
-    private readonly ToolStripStatusLabel _stPos, _stColor, _stSize, _stFrame, _stZoom, _stDirty, _stMessage;
+    private readonly TextBlock _stPos, _stColor, _stSize, _stFrame, _stZoom, _stDirty, _stMessage;
 
     private PlayTestForm? _play;
-    private readonly System.Windows.Forms.Timer _playRefresh = new() { Interval = 400 };
+    private readonly DispatcherTimer _playRefresh = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private DateTime _docStamp;
     private bool _settingsApplied;
+    private bool _closeConfirmed, _closePending;
+    private Ai.McpServer? _mcp;
+    private Ai.ChatWindow? _chat;
+    /// <summary>최대화 전 일반 창 위치·크기(설정 저장용).</summary>
+    private PixelPoint _normalPosition;
+    private Avalonia.Size _normalSize;
 
     public MainForm(StartupArgs args)
     {
         _args = args;
         _settings = AppSettings.Load();
-        Text = "Gpixel";
-        Font = Theme.UiFont;
-        BackColor = Theme.BackColor;
-        ForeColor = Theme.TextColor;
-        StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(1280, 800);
-        MinimumSize = new Size(1000, 600);
+        Title = "Gpixel";
+        Background = AppTheme.BackBrush;
+        Foreground = AppTheme.TextBrush;
+        FontFamily = AppTheme.FontFamily;
+        FontSize = AppTheme.FontSize;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Width = 1280;
+        Height = 800;
+        MinWidth = 1000;
+        MinHeight = 600;
 
         // ── 패널
-        _canvas = new PixelCanvas(_ctx) { Dock = DockStyle.Fill };
-        _start = new StartPanel { Dock = DockStyle.Fill };
-        _browser = new FileBrowserPanel { Dock = DockStyle.Fill };
-        _colors = new ColorPanel(_ctx) { Dock = DockStyle.Fill };
-        _sprite = new SpritePanel(_ctx) { Dock = DockStyle.Fill };
-        _preview = new PreviewPanel(_ctx) { Dock = DockStyle.Fill };
-        _timeline = new TimelinePanel(_ctx, _preview) { Dock = DockStyle.Fill };
+        _canvas = new PixelCanvas(_ctx);
+        _start = new StartPanel();
+        _browser = new FileBrowserPanel();
+        _colors = new ColorPanel(_ctx);
+        _toolOptions = new ToolOptionsPanel(_ctx);
+        _preview = new PreviewPanel(_ctx);
+        _timeline = new TimelinePanel(_ctx, _preview);
 
-        var canvasHost = new Panel { Dock = DockStyle.Fill, BackColor = Theme.BackColor };
-        canvasHost.Controls.Add(_canvas);
-        canvasHost.Controls.Add(_start);
+        var canvasHost = new Panel { Background = AppTheme.BackBrush };
+        canvasHost.Children.Add(_canvas);
+        canvasHost.Children.Add(_start);
 
-        _splitRightDock = MakeSplit(Orientation.Horizontal, _preview, _sprite, FixedPanel.Panel1);
-        _splitTimeline = MakeSplit(Orientation.Horizontal, canvasHost, _timeline, FixedPanel.Panel2);
-        _splitRight = MakeSplit(Orientation.Vertical, _splitTimeline, _splitRightDock, FixedPanel.Panel2);
-        _splitPalette = MakeSplit(Orientation.Vertical, _colors, _splitRight, FixedPanel.Panel1);
-        var work = new Panel { Dock = DockStyle.Fill, BackColor = Theme.BackColor };
-        work.Controls.Add(_splitPalette);
-        work.Controls.Add(BuildToolBar());
-        _splitFiles = MakeSplit(Orientation.Vertical, _browser, work, FixedPanel.Panel1);
+        var s0 = _settings;
+        (_splitRightDock, _rowPreview, _) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
+        (_splitTimeline, _rowBottom, _) = MakeRowSplit(canvasHost, _timeline, fixedFirst: false, s0.BottomHeight);
+        (_splitRight, _colRight, _) = MakeColumnSplit(_splitTimeline, _splitRightDock, fixedFirst: false, s0.RightWidth);
+        (_splitPalette, _colPalette, _) = MakeColumnSplit(_colors, _splitRight, fixedFirst: true, s0.PaletteWidth);
+        var work = new DockPanel { Background = AppTheme.BackBrush };
+        var toolBar = BuildToolBar();
+        DockPanel.SetDock(toolBar, Dock.Left);
+        work.Children.Add(toolBar);
+        work.Children.Add(_splitPalette);
+        (_splitFiles, _colFiles, _filesSplitter) = MakeColumnSplit(_browser, work, fixedFirst: true, s0.LeftWidth);
 
         // ── 상태 표시줄
-        _stPos = StatusLabel(80);
-        _stColor = StatusLabel(100);
-        _stSize = StatusLabel(90);
-        _stFrame = StatusLabel(180);
-        _stZoom = StatusLabel(60);
-        _stDirty = StatusLabel(80);
-        _stMessage = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Theme.DimTextColor };
-        var status = new StatusStrip { SizingGrip = true, Renderer = Theme.Renderer, BackColor = Theme.PanelColor };
-        status.Items.AddRange([_stPos, _stColor, _stSize, _stFrame, _stZoom, _stDirty, _stMessage]);
+        var statusBar = new DockPanel { Height = 22, LastChildFill = true };
+        _stPos = StatusLabel(statusBar, 80);
+        _stColor = StatusLabel(statusBar, 100);
+        _stSize = StatusLabel(statusBar, 90);
+        _stFrame = StatusLabel(statusBar, 180);
+        _stZoom = StatusLabel(statusBar, 60);
+        _stDirty = StatusLabel(statusBar, 80);
+        _stMessage = new TextBlock
+        {
+            Foreground = AppTheme.DimTextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(6, 0, 6, 0),
+        };
+        statusBar.Children.Add(_stMessage);
+        var status = new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Child = statusBar,
+        };
 
         var menu = BuildMenu();
         var contextBar = BuildContextBar();
-        Controls.Add(_splitFiles);
-        Controls.Add(status);
-        Controls.Add(contextBar);
-        Controls.Add(menu);
-        MainMenuStrip = menu;
+        var root = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(menu, Dock.Top);
+        DockPanel.SetDock(contextBar, Dock.Top);
+        DockPanel.SetDock(status, Dock.Bottom);
+        root.Children.Add(menu);
+        root.Children.Add(contextBar);
+        root.Children.Add(status);
+        root.Children.Add(_splitFiles);
+        Content = root;
+
+        KeyState.Attach(this);
+        AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        Opened += (_, _) => OnShown();
+        Closing += OnWindowClosing;
+        // Windows는 최대화할 때 WindowState가 바뀌기 전에 위치·크기 이벤트가 오므로 상태가 정해진 뒤에 기록한다.
+        PositionChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
+        SizeChanged += (_, _) => Dispatcher.UIThread.Post(RememberNormalBounds);
 
         WireEvents();
         ApplySettingsBeforeShow();
-        Theme.Apply(this);
         UpdateAll();
     }
 
     // ───────────── 구성 ─────────────
 
-    private static SplitContainer MakeSplit(Orientation orientation, Control a, Control b, FixedPanel fixedPanel)
+    private static GridSplitter Splitter(GridResizeDirection direction)
     {
-        var sc = new SplitContainer
+        var sp = new GridSplitter
         {
-            Dock = DockStyle.Fill,
-            Orientation = orientation,
-            SplitterWidth = 3,
-            FixedPanel = fixedPanel,
-            BackColor = Theme.BorderColor,
+            ResizeDirection = direction,
+            Background = AppTheme.BorderBrush,
+            Focusable = false,
         };
-        sc.Panel1.BackColor = Theme.PanelColor;
-        sc.Panel2.BackColor = Theme.PanelColor;
-        sc.Panel1.Controls.Add(a);
-        sc.Panel2.Controls.Add(b);
-        return sc;
+        if (direction == GridResizeDirection.Columns) { sp.Width = SplitterSize; sp.MinWidth = SplitterSize; }
+        else { sp.Height = SplitterSize; sp.MinHeight = SplitterSize; }
+        return sp;
     }
 
-    private static ToolStripStatusLabel StatusLabel(int width) => new()
+    /// <summary>좌우로 나눈 칸. <paramref name="fixedFirst"/>면 왼쪽, 아니면 오른쪽이 고정 너비(창 크기가 바뀌어도 그대로).</summary>
+    private static (Grid Grid, ColumnDefinition Fixed, GridSplitter Splitter) MakeColumnSplit(Control a, Control b, bool fixedFirst, int size)
     {
-        AutoSize = false,
-        Width = width,
-        TextAlign = ContentAlignment.MiddleLeft,
-        BorderSides = ToolStripStatusLabelBorderSides.Right,
-        BorderStyle = Border3DStyle.Flat,
-        ForeColor = Theme.TextColor,
-    };
+        var fixedCol = new ColumnDefinition(new GridLength(size)) { MinWidth = MinPanelSize };
+        var starCol = new ColumnDefinition(1, GridUnitType.Star) { MinWidth = MinPanelSize };
+        var grid = new Grid { Background = AppTheme.PanelBrush };
+        grid.ColumnDefinitions.Add(fixedFirst ? fixedCol : starCol);
+        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        grid.ColumnDefinitions.Add(fixedFirst ? starCol : fixedCol);
+        var sp = Splitter(GridResizeDirection.Columns);
+        Grid.SetColumn(a, 0);
+        Grid.SetColumn(sp, 1);
+        Grid.SetColumn(b, 2);
+        grid.Children.Add(a);
+        grid.Children.Add(sp);
+        grid.Children.Add(b);
+        return (grid, fixedCol, sp);
+    }
+
+    /// <summary>위아래로 나눈 칸. <paramref name="fixedFirst"/>면 위, 아니면 아래가 고정 높이.</summary>
+    private static (Grid Grid, RowDefinition Fixed, GridSplitter Splitter) MakeRowSplit(Control a, Control b, bool fixedFirst, int size)
+    {
+        var fixedRow = new RowDefinition(new GridLength(size)) { MinHeight = MinPanelSize };
+        var starRow = new RowDefinition(1, GridUnitType.Star) { MinHeight = MinPanelSize };
+        var grid = new Grid { Background = AppTheme.PanelBrush };
+        grid.RowDefinitions.Add(fixedFirst ? fixedRow : starRow);
+        grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        grid.RowDefinitions.Add(fixedFirst ? starRow : fixedRow);
+        var sp = Splitter(GridResizeDirection.Rows);
+        Grid.SetRow(a, 0);
+        Grid.SetRow(sp, 1);
+        Grid.SetRow(b, 2);
+        grid.Children.Add(a);
+        grid.Children.Add(sp);
+        grid.Children.Add(b);
+        return (grid, fixedRow, sp);
+    }
+
+    /// <summary>고정 칸 크기를 나눔 전체 크기 안으로 맞춰 정한다(아직 배치 전이면 그대로).</summary>
+    private static double ClampSplit(double value, double total)
+    {
+        double max = total - MinPanelSize - SplitterSize;
+        return max <= MinPanelSize ? Math.Max(MinPanelSize, value) : Math.Clamp(value, MinPanelSize, max);
+    }
+
+    private static void SetSplit(ColumnDefinition col, Grid grid, int width)
+        => col.Width = new GridLength(ClampSplit(width, grid.Bounds.Width));
+
+    private static void SetSplit(RowDefinition row, Grid grid, int height)
+        => row.Height = new GridLength(ClampSplit(height, grid.Bounds.Height));
+
+    private static TextBlock StatusLabel(DockPanel host, int width)
+    {
+        var text = new TextBlock
+        {
+            Foreground = AppTheme.TextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var cell = new Border
+        {
+            Width = width,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Padding = new Thickness(4, 0, 4, 0),
+            Child = text,
+        };
+        DockPanel.SetDock(cell, Dock.Left);
+        host.Children.Add(cell);
+        return text;
+    }
+
+    private static Image IconImage(Bitmap bitmap, double size)
+    {
+        var img = new Image { Source = bitmap, Width = size, Height = size, Stretch = Stretch.Uniform };
+        // 원래 크기 이상은 점 그대로, 메뉴처럼 줄일 때는 부드럽게(점이 빠지지 않게).
+        RenderOptions.SetBitmapInterpolationMode(img, size >= bitmap.PixelSize.Width ? BitmapInterpolationMode.None : BitmapInterpolationMode.HighQuality);
+        return img;
+    }
 
     /// <summary>왼쪽 끝 세로 도구 막대(점 그림 아이콘, 도움말에 단축키).</summary>
-    private ToolStrip BuildToolBar()
+    private Control BuildToolBar()
     {
-        var ts = new ToolStrip
-        {
-            Dock = DockStyle.Left,
-            LayoutStyle = ToolStripLayoutStyle.VerticalStackWithOverflow,
-            GripStyle = ToolStripGripStyle.Hidden,
-            Renderer = Theme.Renderer,
-            BackColor = Theme.PanelColor,
-            Padding = new Padding(2, 4, 2, 4),
-            ImageScalingSize = new Size(Icons.Size, Icons.Size),
-            AutoSize = false,
-            Width = Icons.Size + 14,
-        };
-        _tbFiles = new ToolStripButton(Icons.Folder)
-        {
-            ToolTipText = "파일 브라우저 보이기/숨기기 (F8)",
-            DisplayStyle = ToolStripItemDisplayStyle.Image,
-            Margin = new Padding(1, 1, 1, 6),
-        };
-        _tbFiles.Click += (_, _) => SetFilesVisible(_splitFiles.Panel1Collapsed);
-        ts.Items.Add(_tbFiles);
+        var stack = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1 };
+        _tbFiles = ToolBarButton(Icons.Folder, "파일 브라우저 보이기/숨기기 (F8)");
+        _tbFiles.Margin = new Thickness(1, 1, 1, 6);
+        _tbFiles.Click += (_, _) => SetFilesVisible(!_filesShown, animate: true);
+        stack.Children.Add(_tbFiles);
         foreach (var (tool, name, key, _) in ToolDefs)
         {
-            var b = new ToolStripButton(Icons.For(tool))
-            {
-                ToolTipText = $"{name} ({key})",
-                DisplayStyle = ToolStripItemDisplayStyle.Image,
-                Margin = new Padding(1),
-            };
+            var b = ToolBarButton(Icons.For(tool), $"{name} ({key})");
             var t = tool;
-            b.Click += (_, _) => { _ctx.Tool = t; _canvas.Focus(); };
+            b.Click += (_, _) => { _ctx.Tool = t; UpdateToolUi(); _canvas.Focus(); };
             _toolButtons[tool] = b;
-            ts.Items.Add(b);
+            stack.Children.Add(b);
         }
-        return ts;
+        return new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Padding = new Thickness(2, 4, 2, 4),
+            Width = Icons.Size + 14,
+            // 32px 아이콘 14개 — 창이 낮으면 스크롤된다.
+            Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled },
+        };
     }
 
-    /// <summary>메뉴 아래 도구 옵션 막대(현재 도구에 맞는 옵션만 보임) + 보기 옵션·확대율.</summary>
-    private ToolStrip BuildContextBar()
+    private static ToggleButton ToolBarButton(Bitmap icon, string tip) => new ToggleButton
     {
-        var ts = new ToolStrip
-        {
-            Dock = DockStyle.Top,
-            GripStyle = ToolStripGripStyle.Hidden,
-            Renderer = Theme.Renderer,
-            BackColor = Theme.PanelColor,
-            Padding = new Padding(6, 2, 6, 2),
-        };
-        _cbToolName = new ToolStripLabel("연필") { Font = Theme.BoldFont, AutoSize = false, Width = 110, TextAlign = ContentAlignment.MiddleLeft };
-        _cbBrushLabel = new ToolStripLabel("크기");
-        _cbBrush = new ToolStripComboBox { DropDownStyle = ComboBoxStyle.DropDownList, AutoSize = false, Width = 44, FlatStyle = FlatStyle.Flat };
-        _cbBrush.Items.AddRange(Enumerable.Range(1, 8).Select(i => (object)i.ToString()).ToArray());
-        _cbBrush.ComboBox.BackColor = Theme.InputColor;
-        _cbBrush.ComboBox.ForeColor = Theme.TextColor;
-        _cbBrush.SelectedIndexChanged += (_, _) => { if (_cbBrush.SelectedIndex >= 0) _ctx.BrushSize = _cbBrush.SelectedIndex + 1; };
-        _cbBrush.ToolTipText = "브러시 크기 1~8 ([ / ])";
-        ts.Items.AddRange([_cbToolName, new ToolStripSeparator(), _cbBrushLabel, _cbBrush]);
-        _cbPixelPerfect = Toggle(ts, "픽셀 퍼펙트", "1px 연필의 L자 모서리 제거 (P)", () => _ctx.PixelPerfect = !_ctx.PixelPerfect);
-        _cbFilled = Toggle(ts, "채움", "사각형·원 채움 (U)", () => _ctx.ShapeFilled = !_ctx.ShapeFilled);
-        _cbGlobalFill = Toggle(ts, "같은 색 전체", "채우기: 이어진 영역 대신 같은 색 전체 (Shift+G)", () => _ctx.FillContiguous = !_ctx.FillContiguous);
-        _cbRightErase = Toggle(ts, "오른쪽=지우개", "오른쪽 버튼으로 보조색 대신 지우기", () => _ctx.RightButtonErases = !_ctx.RightButtonErases);
-        _cbWrap = Toggle(ts, "순환", "이동: 밖으로 나간 픽셀을 반대편으로", () => _ctx.MoveWrap = !_ctx.MoveWrap);
-        _cbSepMirror = new ToolStripSeparator();
-        ts.Items.Add(_cbSepMirror);
-        _cbMirrorX = Toggle(ts, "대칭 ↔", "좌우 대칭 그리기 (Shift+X)", () => _ctx.MirrorX = !_ctx.MirrorX);
-        _cbMirrorY = Toggle(ts, "대칭 ↕", "상하 대칭 그리기 (Shift+Y)", () => _ctx.MirrorY = !_ctx.MirrorY);
-        _cbHint = new ToolStripLabel("") { ForeColor = Theme.DimTextColor };
-        ts.Items.Add(new ToolStripSeparator());
-        ts.Items.Add(_cbHint);
+        Content = IconImage(icon, Icons.Size),
+        Padding = new Thickness(2),
+        Margin = new Thickness(1),
+        MinWidth = 0,
+        MinHeight = 0,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        Focusable = false,
+    }.Tip(tip);
+
+    /// <summary>메뉴 아래 막대: 현재 도구 이름·도움말(세부 설정은 오른쪽 독 "도구 설정") + 보기 옵션·확대율.</summary>
+    private Control BuildContextBar()
+    {
+        var bar = new DockPanel { LastChildFill = true };
 
         // 오른쪽 정렬: 보기·확대
-        RightButton(ts, "맞추기", "화면에 맞추기 (Ctrl+0)", _canvas.FitToWindow);
-        RightButton(ts, "＋", "확대 (Ctrl+=)", () => _canvas.ZoomStep(1));
-        _cbZoom = new ToolStripLabel("800%") { Alignment = ToolStripItemAlignment.Right, AutoSize = false, Width = 50 };
-        ts.Items.Add(_cbZoom);
-        RightButton(ts, "－", "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
-        ts.Items.Add(new ToolStripSeparator { Alignment = ToolStripItemAlignment.Right });
-        _cbOnion = RightToggle(ts, "양파", "양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J)", () => _ctx.OnionSkin = !_ctx.OnionSkin);
-        _cbPivot = RightToggle(ts, "피벗", "피벗 표시", () => SetShowPivot(!_canvas.ShowPivot));
-        _cbTiled = RightToggle(ts, "타일 모드", "3×3 반복해 보기·이어 그리기 (Ctrl+T)", () => SetTiledMode(!_canvas.TiledMode));
-        _cbTiles = RightToggle(ts, "타일 격자", "타일 격자 (Ctrl+Shift+G)", () => SetTileGrid(!_canvas.ShowTileGrid));
-        _cbGrid = RightToggle(ts, "격자", "픽셀 격자(6배 이상) (Ctrl+G)", () => SetPixelGrid(!_canvas.ShowPixelGrid));
-        foreach (ToolStripItem it in ts.Items) if (it != _cbHint) it.ForeColor = Theme.TextColor;
-        return ts;
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        DockPanel.SetDock(right, Dock.Right);
+        _cbGrid = Toggle(right, "격자", "픽셀 격자(6배 이상) (Ctrl+G)", () => SetPixelGrid(!_canvas.ShowPixelGrid));
+        _cbTiles = Toggle(right, "타일 격자", "타일 격자 (Ctrl+Shift+G)", () => SetTileGrid(!_canvas.ShowTileGrid));
+        _cbTiled = Toggle(right, "타일 모드", "반복해 보기(크지 않으면 5×5, 128px 넘으면 3×3)·이어 그리기 (Ctrl+T)", () => SetTiledMode(!_canvas.TiledMode));
+        _cbPivot = Toggle(right, "피벗", "피벗 표시", () => SetShowPivot(!_canvas.ShowPivot));
+        _cbOnion = Toggle(right, "양파", "양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J)", () => _ctx.OnionSkin = !_ctx.OnionSkin);
+        right.Children.Add(BarSeparator());
+        BarButton(right, "－", "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
+        _cbZoom = new TextBlock { Text = "800%", TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        right.Children.Add(ZoomPicker());
+        BarButton(right, "＋", "확대 (Ctrl+=)", () => _canvas.ZoomStep(1));
+        _cbFit = Toggle(right, "맞추기", "켜면 이미지를 열 때마다 화면에 맞춥니다(켜는 순간에도 한 번 맞춤) · Ctrl+0: 지금 맞추기", () =>
+        {
+            _canvas.AutoFit = !_canvas.AutoFit;
+            if (_canvas.AutoFit) _canvas.FitToWindow();
+        });
+        right.Children.Add(BarSeparator());
+        var claude = BarButton(right, "", "Claude 채팅: 말로 그림 만들기·고치기 (Ctrl+L)", ToggleChat);
+        claude.Content = IconImage(Icons.Claude, 16);
+        claude.Padding = new Thickness(5, 3);
+        bar.Children.Add(right);
+
+        _cbToolName = new TextBlock
+        {
+            Text = "연필",
+            FontWeight = FontWeight.Bold,
+            Width = 110,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        AddLeft(bar, _cbToolName);
+        AddLeft(bar, BarSeparator());
+        _cbHint = new TextBlock
+        {
+            Foreground = AppTheme.DimTextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(2, 0, 6, 0),
+        };
+        bar.Children.Add(_cbHint);
+
+        return new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(6, 2, 6, 2),
+            Child = bar,
+        };
     }
 
-    private static ToolStripButton Toggle(ToolStrip ts, string text, string tip, Action onClick)
+    /// <summary>확대율 글자: 누르면 대표 배율(100%~6400%)과 "화면에 맞추기"가 든 목록.</summary>
+    private Button ZoomPicker()
     {
-        var b = new ToolStripButton(text) { ToolTipText = tip, DisplayStyle = ToolStripItemDisplayStyle.Text, Margin = new Padding(1) };
+        var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+        var fit = new MenuItem { Header = "화면에 맞추기", InputGesture = new KeyGesture(Key.D0, Ctrl) };
+        fit.Click += (_, _) => _canvas.FitToWindow();
+        menu.Items.Add(fit);
+        menu.Items.Add(new Separator());
+        foreach (int z in new[] { 1, 2, 4, 8, 16, 32, 64 })
+        {
+            var item = new MenuItem { Header = $"{z * 100}%", ToggleType = MenuItemToggleType.Radio };
+            item.Click += (_, _) => _canvas.SetZoom(z);
+            menu.Items.Add(item);
+        }
+        menu.Opening += (_, _) =>
+        {
+            foreach (var item in menu.Items.OfType<MenuItem>())
+                if (item.ToggleType == MenuItemToggleType.Radio) item.IsChecked = item.Header as string == $"{_canvas.Zoom * 100}%";
+        };
+        var button = new Button
+        {
+            Content = _cbZoom,
+            Width = 62,
+            Padding = new Thickness(2),
+            Margin = new Thickness(1),
+            MinHeight = 0,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Focusable = false,
+            VerticalAlignment = VerticalAlignment.Center,
+            Flyout = menu,
+        }.Tip("확대율 — 눌러서 배율 고르기·화면에 맞추기");
+        return button;
+    }
+
+    private static void AddLeft(DockPanel bar, Control c)
+    {
+        DockPanel.SetDock(c, Dock.Left);
+        c.VerticalAlignment = VerticalAlignment.Center;
+        bar.Children.Add(c);
+    }
+
+    private static Border BarSeparator() => new()
+    {
+        Width = 1,
+        Background = AppTheme.BorderBrush,
+        Margin = new Thickness(5, 3, 5, 3),
+    };
+
+    /// <summary>켜고 끄는 글자 단추. 눌린 상태는 <see cref="UpdateToolUi"/>가 실제 값으로 맞춘다.</summary>
+    private ToggleButton Toggle(Panel host, string text, string tip, Action onClick)
+    {
+        var b = new ToggleButton
+        {
+            Content = text,
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(1),
+            MinHeight = 0,
+            Focusable = false,
+            VerticalAlignment = VerticalAlignment.Center,
+        }.Tip(tip);
+        b.Click += (_, _) => { onClick(); UpdateToolUi(); };
+        host.Children.Add(b);
+        return b;
+    }
+
+    private static Button BarButton(Panel host, string text, string tip, Action onClick)
+    {
+        var b = new Button
+        {
+            Content = text,
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(1),
+            MinHeight = 0,
+            Focusable = false,
+            VerticalAlignment = VerticalAlignment.Center,
+        }.Tip(tip);
         b.Click += (_, _) => onClick();
-        ts.Items.Add(b);
+        host.Children.Add(b);
         return b;
     }
 
-    private static ToolStripButton RightToggle(ToolStrip ts, string text, string tip, Action onClick)
+    private Menu BuildMenu()
     {
-        var b = Toggle(ts, text, tip, onClick);
-        b.Alignment = ToolStripItemAlignment.Right;
-        return b;
-    }
-
-    private static ToolStripButton RightButton(ToolStrip ts, string text, string tip, Action onClick)
-        => RightToggle(ts, text, tip, onClick);
-
-    private MenuStrip BuildMenu()
-    {
-        var menu = new MenuStrip { Renderer = Theme.Renderer, BackColor = Theme.PanelColor, ForeColor = Theme.TextColor };
+        var menu = new Menu { Background = AppTheme.PanelBrush };
 
         // 파일
-        var file = TopMenu("파일(&F)");
-        _miRecentFolders = new ToolStripMenuItem("최근 폴더") { ForeColor = Theme.TextColor };
-        _miRecentFiles = new ToolStripMenuItem("최근 파일") { ForeColor = Theme.TextColor };
-        _miRecentFolders.DropDownOpening += (_, _) => FillRecent(_miRecentFolders, _settings.RecentFolders, SetRootFolder);
-        _miRecentFiles.DropDownOpening += (_, _) => FillRecent(_miRecentFiles, _settings.RecentFiles, p => OpenFile(p));
-        _miRecentFolders.DropDownItems.Add("(비어 있음)");
-        _miRecentFiles.DropDownItems.Add("(비어 있음)");
-        file.DropDownItems.AddRange([
-            Cmd("새 프로젝트…", () => NewProject(null), "Ctrl+N", KeyScope.Global, Keys.Control | Keys.N),
-            Cmd("열기(.gpixel / PNG 가져오기)…", OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, Keys.Control | Keys.O),
-            Cmd("폴더 열기…", OpenFolder, "Ctrl+Shift+O", KeyScope.Global, Keys.Control | Keys.Shift | Keys.O),
-            Cmd("Unity 프로젝트 열기…", OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, Keys.Control | Keys.Shift | Keys.U),
+        var file = TopMenu("파일(_F)");
+        _miRecentFolders = new MenuItem { Header = MenuHeader("최근 폴더", null) };
+        _miRecentFiles = new MenuItem { Header = MenuHeader("최근 파일", null) };
+        _miRecentFolders.SubmenuOpened += (_, _) => FillRecent(_miRecentFolders, _settings.RecentFolders, SetRootFolder);
+        _miRecentFiles.SubmenuOpened += (_, _) => FillRecent(_miRecentFiles, _settings.RecentFiles, p => OpenFile(p));
+        _miRecentFolders.Items.Add(EmptyItem());
+        _miRecentFiles.Items.Add(EmptyItem());
+        AddItems(file,
+            Cmd("새 프로젝트…", () => NewProject(null), "Ctrl+N", KeyScope.Global, (Key.N, Ctrl)),
+            Cmd("열기(.gpixel / PNG 가져오기)…", OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, (Key.O, Ctrl)),
+            Cmd("폴더 열기…", OpenFolder, "Ctrl+Shift+O", KeyScope.Global, (Key.O, Ctrl | Shift)),
+            Cmd("Unity 프로젝트 열기…", OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, (Key.U, Ctrl | Shift)),
             _miRecentFolders,
             _miRecentFiles,
-            new ToolStripSeparator(),
-            DocCmd("저장(+ 시트 내보내기)", () => Save(), "Ctrl+S", KeyScope.Global, Keys.Control | Keys.S),
-            DocCmd("다른 이름으로 저장…", () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, Keys.Control | Keys.Shift | Keys.S),
-            DocCmd("지금 내보내기(PNG 시트 + .meta)", ExportNow, "Ctrl+E", KeyScope.Global, Keys.Control | Keys.E),
-            DocCmd("닫기", () => CloseProject(), "Ctrl+W", KeyScope.Global, Keys.Control | Keys.W),
-            new ToolStripSeparator(),
+            new Separator(),
+            DocCmd("저장(+ 시트 내보내기)", () => Save(), "Ctrl+S", KeyScope.Global, (Key.S, Ctrl)),
+            DocCmd("다른 이름으로 저장…", () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
+            DocCmd("내보내기…", OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
+            DocCmd("닫기", () => CloseProject(), "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
+            new Separator(),
             Cmd("시작 화면", ShowStart),
-            Cmd("끝내기", Close, "Alt+F4"),
-        ]);
+            // 끝내기 단축키는 OS가 처리한다(Windows Alt+F4, macOS 앱 메뉴의 ⌘Q).
+            Cmd("끝내기", Close, Platform.IsMac ? "Ctrl+Q" : "Alt+F4"));
 
         // 편집
-        var edit = TopMenu("편집(&E)");
-        _miUndo = Cmd("실행취소", Undo, "Ctrl+Z", KeyScope.NotInText, Keys.Control | Keys.Z);
-        _miRedo = Cmd("다시 실행", Redo, "Ctrl+Y", KeyScope.NotInText, Keys.Control | Keys.Y);
-        Bind(Keys.Control | Keys.Shift | Keys.Z, KeyScope.NotInText, Redo);
-        edit.DropDownItems.AddRange([
+        var edit = TopMenu("편집(_E)");
+        _miUndo = Cmd("실행취소", Undo, "Ctrl+Z", KeyScope.NotInText, (Key.Z, Ctrl));
+        _miRedo = Cmd("다시 실행", Redo, "Ctrl+Y", KeyScope.NotInText, (Key.Y, Ctrl));
+        Bind((Key.Z, Ctrl | Shift), KeyScope.NotInText, Redo);
+        (Key, KeyModifiers)[] deleteKeys = Platform.IsMac ? [(Key.Delete, NoMods), (Key.Back, NoMods)] : [(Key.Delete, NoMods)];
+        AddItems(edit,
             _miUndo,
             _miRedo,
-            new ToolStripSeparator(),
-            DocCmd("잘라내기", Cut, "Ctrl+X", KeyScope.NotInText, Keys.Control | Keys.X),
-            DocCmd("복사", Copy, "Ctrl+C", KeyScope.NotInText, Keys.Control | Keys.C),
-            DocCmd("붙여넣기", Paste, "Ctrl+V", KeyScope.NotInText, Keys.Control | Keys.V),
-            DocCmd("지우기", DeleteSelection, "Delete", KeyScope.Canvas, Keys.Delete),
-            new ToolStripSeparator(),
-            DocCmd("모두 선택", SelectAll, "Ctrl+A", KeyScope.NotInText, Keys.Control | Keys.A),
-            DocCmd("선택 해제", Deselect, "Ctrl+D", KeyScope.NotInText, Keys.Control | Keys.D),
-            new ToolStripSeparator(),
-            DocCmd("좌우 뒤집기(선택/셀)", () => Flip(true), "Shift+H", KeyScope.NotInText, Keys.Shift | Keys.H),
-            DocCmd("상하 뒤집기(선택/셀)", () => Flip(false), "Shift+V", KeyScope.NotInText, Keys.Shift | Keys.V),
-            DocCmd("90° 회전(선택/캔버스)", () => Rotate(true), "Ctrl+R", KeyScope.NotInText, Keys.Control | Keys.R),
-            DocCmd("-90° 회전(선택/캔버스)", () => Rotate(false), "Ctrl+Shift+R", KeyScope.NotInText, Keys.Control | Keys.Shift | Keys.R),
-            new ToolStripSeparator(),
-            DocCmd("외곽선 추가(기본색)", () => AddOutline(false), "Ctrl+Alt+O", KeyScope.NotInText, Keys.Control | Keys.Alt | Keys.O),
+            new Separator(),
+            DocCmd("잘라내기", Cut, "Ctrl+X", KeyScope.NotInText, (Key.X, Ctrl)),
+            DocCmd("복사", Copy, "Ctrl+C", KeyScope.NotInText, (Key.C, Ctrl)),
+            DocCmd("붙여넣기", Paste, "Ctrl+V", KeyScope.NotInText, (Key.V, Ctrl)),
+            DocCmd("지우기", DeleteSelection, "Delete", KeyScope.Canvas, deleteKeys),
+            new Separator(),
+            DocCmd("모두 선택", SelectAll, "Ctrl+A", KeyScope.NotInText, (Key.A, Ctrl)),
+            DocCmd("선택 해제", Deselect, "Ctrl+D", KeyScope.NotInText, (Key.D, Ctrl)),
+            new Separator(),
+            DocCmd("좌우 뒤집기(선택/셀)", () => Flip(true), "Shift+H", KeyScope.NotInText, (Key.H, Shift)),
+            DocCmd("상하 뒤집기(선택/셀)", () => Flip(false), "Shift+V", KeyScope.NotInText, (Key.V, Shift)),
+            DocCmd("90° 회전(선택/캔버스)", () => Rotate(true), "Ctrl+R", KeyScope.NotInText, (Key.R, Ctrl)),
+            DocCmd("-90° 회전(선택/캔버스)", () => Rotate(false), "Ctrl+Shift+R", KeyScope.NotInText, (Key.R, Ctrl | Shift)),
+            new Separator(),
+            DocCmd("외곽선 추가(기본색)", () => AddOutline(false), "Ctrl+Alt+O", KeyScope.NotInText, (Key.O, Ctrl | Alt)),
             DocCmd("외곽선 추가(대각 포함)", () => AddOutline(true)),
-            DocCmd("색 바꾸기…", ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, Keys.Control | Keys.Alt | Keys.R),
-            new ToolStripSeparator(),
-            DocCmd("캔버스 크기…(아틀라스: 스프라이트 크기)", ResizeCanvas, "Ctrl+Alt+C", KeyScope.Global, Keys.Control | Keys.Alt | Keys.C),
-            AnimCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
-            AnimCmd("캔버스 전체 상하 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
-            DocCmd("이미지에서 팔레트 만들기", _colors.PaletteFromImage),
-        ]);
-        Bind(Keys.Enter, KeyScope.Canvas, () => _ctx.CommitFloating());
-        Bind(Keys.Escape, KeyScope.Canvas, Deselect);
-        foreach (var (k, dx, dy) in new[] { (Keys.Left, -1, 0), (Keys.Right, 1, 0), (Keys.Up, 0, -1), (Keys.Down, 0, 1) })
+            DocCmd("색 바꾸기…", ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
+            new Separator(),
+            DocCmd("캔버스 크기…", ResizeCanvas, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
+            DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
+            DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
+            DocCmd("이미지에서 팔레트 만들기", _colors.PaletteFromImage));
+        Bind((Key.Enter, NoMods), KeyScope.Canvas, () => _ctx.CommitFloating());
+        Bind((Key.Escape, NoMods), KeyScope.Canvas, Deselect);
+        foreach (var (k, dx, dy) in new[] { (Key.Left, -1, 0), (Key.Right, 1, 0), (Key.Up, 0, -1), (Key.Down, 0, 1) })
         {
-            _keys[k] = (KeyScope.Canvas, () => _canvas.Nudge(dx, dy));
-            _keys[k | Keys.Control | Keys.Shift] = (KeyScope.Canvas, () => _canvas.Nudge(dx, dy));
-            _keys[k | Keys.Shift] = (KeyScope.Canvas, () => _canvas.Nudge(dx * 8, dy * 8));
+            _keys[(k, NoMods)] = (KeyScope.Canvas, () => _canvas.Nudge(dx, dy));
+            _keys[(k, Ctrl | Shift)] = (KeyScope.Canvas, () => _canvas.Nudge(dx, dy));
+            _keys[(k, Shift)] = (KeyScope.Canvas, () => _canvas.Nudge(dx * 8, dy * 8));
         }
 
         // 보기
-        var view = TopMenu("보기(&V)");
-        _miGrid = Cmd("픽셀 격자", () => SetPixelGrid(!_canvas.ShowPixelGrid), "Ctrl+G", KeyScope.Global, Keys.Control | Keys.G);
-        _miTiles = Cmd("타일 격자", () => SetTileGrid(!_canvas.ShowTileGrid), "Ctrl+Shift+G", KeyScope.Global, Keys.Control | Keys.Shift | Keys.G);
-        _miTiled = Cmd("타일 모드(3×3 반복)", () => SetTiledMode(!_canvas.TiledMode), "Ctrl+T", KeyScope.Global, Keys.Control | Keys.T);
-        _miPivot = Cmd("피벗 표시", () => SetShowPivot(!_canvas.ShowPivot));
-        _miOnion = AnimCmd("양파 껍질", () => _ctx.OnionSkin = !_ctx.OnionSkin, "Ctrl+J", KeyScope.Global, Keys.Control | Keys.J);
-        _miFiles = Cmd("파일 브라우저", () => SetFilesVisible(_splitFiles.Panel1Collapsed), "F8", KeyScope.Global, Keys.F8);
-        view.DropDownItems.AddRange([
-            Cmd("확대", () => _canvas.ZoomStep(1), "Ctrl+=", KeyScope.NotInText, Keys.Control | Keys.Oemplus, Keys.Control | Keys.Add),
-            Cmd("축소", () => _canvas.ZoomStep(-1), "Ctrl+-", KeyScope.NotInText, Keys.Control | Keys.OemMinus, Keys.Control | Keys.Subtract),
-            Cmd("화면에 맞추기", _canvas.FitToWindow, "Ctrl+0", KeyScope.Global, Keys.Control | Keys.D0, Keys.Control | Keys.NumPad0),
-            Cmd("실제 크기(1배)", () => _canvas.SetZoom(1), "Ctrl+1", KeyScope.Global, Keys.Control | Keys.D1, Keys.Control | Keys.NumPad1),
-            new ToolStripSeparator(),
+        var view = TopMenu("보기(_V)");
+        _miGrid = Checkable(Cmd("픽셀 격자", () => SetPixelGrid(!_canvas.ShowPixelGrid), "Ctrl+G", KeyScope.Global, (Key.G, Ctrl)));
+        _miTiles = Checkable(Cmd("타일 격자", () => SetTileGrid(!_canvas.ShowTileGrid), "Ctrl+Shift+G", KeyScope.Global, (Key.G, Ctrl | Shift)));
+        _miTiled = Checkable(Cmd("타일 모드(반복해 보기)", () => SetTiledMode(!_canvas.TiledMode), "Ctrl+T", KeyScope.Global, (Key.T, Ctrl)));
+        _miPivot = Checkable(Cmd("피벗 표시", () => SetShowPivot(!_canvas.ShowPivot)));
+        _miOnion = Checkable(DocCmd("양파 껍질", () => _ctx.OnionSkin = !_ctx.OnionSkin, "Ctrl+J", KeyScope.Global, (Key.J, Ctrl)));
+        _miFiles = Checkable(Cmd("파일 브라우저", () => SetFilesVisible(!_filesShown, animate: true), "F8", KeyScope.Global, (Key.F8, NoMods)));
+        AddItems(view,
+            Cmd("확대", () => _canvas.ZoomStep(1), "Ctrl+=", KeyScope.NotInText, (Key.OemPlus, Ctrl), (Key.Add, Ctrl)),
+            Cmd("축소", () => _canvas.ZoomStep(-1), "Ctrl+-", KeyScope.NotInText, (Key.OemMinus, Ctrl), (Key.Subtract, Ctrl)),
+            Cmd("화면에 맞추기", _canvas.FitToWindow, "Ctrl+0", KeyScope.Global, (Key.D0, Ctrl), (Key.NumPad0, Ctrl)),
+            Cmd("실제 크기(1배)", () => _canvas.SetZoom(1), "Ctrl+1", KeyScope.Global, (Key.D1, Ctrl), (Key.NumPad1, Ctrl)),
+            new Separator(),
             _miGrid, _miTiles, _miTiled, _miPivot, _miOnion,
             Cmd("격자 설정…", GridSettings),
-            new ToolStripSeparator(),
-            _miFiles,
-        ]);
-        // H를 누르고 있는 동안 이전 프레임 보기(애니메이션만)
-        _keys[Keys.H] = (KeyScope.NotInText, () => { if (_ctx.HasProject && !_ctx.IsAtlas) _canvas.PeekPrevious = true; return true; });
+            new Separator(),
+            _miFiles);
+        // H를 누르고 있는 동안 이전 프레임 보기
+        _keys[(Key.H, NoMods)] = (KeyScope.NotInText, () => { if (_ctx.HasProject) _canvas.PeekPrevious = true; return true; });
 
-        // 프레임(아틀라스면 이동 명령은 스프라이트 사이를 움직임)
-        var frame = TopMenu("프레임(&R)");
-        frame.DropDownItems.AddRange([
-            AnimCmd("재생 / 정지", _preview.TogglePlay, "Shift+Enter", KeyScope.Global, Keys.Shift | Keys.Enter),
-            DocCmd("이전 프레임/스프라이트", () => _timeline.StepFrame(-1), ",", KeyScope.NotInText, Keys.Oemcomma),
-            DocCmd("다음 프레임/스프라이트", () => _timeline.StepFrame(1), ".", KeyScope.NotInText, Keys.OemPeriod),
-            DocCmd("첫 프레임/스프라이트", () => _ctx.SetCurrentColumn(0), "Home", KeyScope.Canvas, Keys.Home),
-            DocCmd("마지막 프레임/스프라이트", () => _ctx.SetCurrentColumn(_ctx.ColumnCount - 1), "End", KeyScope.Canvas, Keys.End),
-            new ToolStripSeparator(),
-            AnimCmd("새 빈 프레임", _timeline.NewEmptyFrame, "Alt+N"),
-            AnimCmd("프레임 복제", _timeline.DuplicateFrame, "Alt+D"),
-            AnimCmd("프레임 삭제", _timeline.DeleteFrame),
-            new ToolStripSeparator(),
-            DocCmd("새 레이어", _timeline.AddLayer, "Shift+N", KeyScope.NotInText, Keys.Shift | Keys.N),
-            AnimCmd("새 태그(애니메이션)…", _timeline.NewTag),
-            new ToolStripSeparator(),
-            AnimCmd("격자로 나눠 프레임 만들기(시트 → 프레임)…", SplitIntoFrames),
-        ]);
-        // Alt+N / Alt+D: 애니메이션 = 프레임, 아틀라스 = 스프라이트
-        Bind(Keys.Alt | Keys.N, KeyScope.Global, () => { if (_ctx.IsAtlas) _timeline.AddSprite(); else _timeline.NewEmptyFrame(); });
-        Bind(Keys.Alt | Keys.D, KeyScope.Global, () => { if (_ctx.IsAtlas) _timeline.DuplicateSprite(); else _timeline.DuplicateFrame(); });
-
-        // 스프라이트(아틀라스)
-        _miSpriteMenu = TopMenu("스프라이트(&P)");
-        _miSpriteMenu.DropDownItems.AddRange([
-            AtlasCmd("새 스프라이트…", _timeline.AddSprite, "Alt+N"),
-            AtlasCmd("스프라이트 복제", _timeline.DuplicateSprite, "Alt+D"),
-            AtlasCmd("스프라이트 삭제", _timeline.DeleteSprite),
-            new ToolStripSeparator(),
-            AtlasCmd("이름 바꾸기", _timeline.BeginRenameSprite, "F2", KeyScope.NotInText, Keys.F2),
-            AtlasCmd("크기 바꾸기(기준점)…", _timeline.ResizeSprite),
-            AtlasCmd("앞으로", () => _timeline.MoveSprite(-1)),
-            AtlasCmd("뒤로", () => _timeline.MoveSprite(1)),
-        ]);
+        // 프레임·레이어
+        var frame = TopMenu("프레임·레이어(_R)");
+        AddItems(frame,
+            DocCmd("재생 / 정지", _preview.TogglePlay, "Shift+Enter", KeyScope.Global, (Key.Enter, Shift)),
+            DocCmd("이전 프레임", () => _timeline.StepFrame(-1), ",", KeyScope.NotInText, (Key.OemComma, NoMods)),
+            DocCmd("다음 프레임", () => _timeline.StepFrame(1), ".", KeyScope.NotInText, (Key.OemPeriod, NoMods)),
+            DocCmd("첫 프레임", () => _ctx.SetCurrentFrame(0), "Home", KeyScope.Canvas, (Key.Home, NoMods)),
+            DocCmd("마지막 프레임", () => _ctx.SetCurrentFrame(_ctx.FrameCount - 1), "End", KeyScope.Canvas, (Key.End, NoMods)),
+            new Separator(),
+            DocCmd("새 빈 프레임", _timeline.NewEmptyFrame, "Alt+N", KeyScope.Global, (Key.N, Alt)),
+            DocCmd("프레임 복제", _timeline.DuplicateFrame, "Alt+D", KeyScope.Global, (Key.D, Alt)),
+            DocCmd("프레임 삭제", _timeline.DeleteFrame),
+            new Separator(),
+            DocCmd("새 레이어", _timeline.AddLayer, "Shift+N", KeyScope.NotInText, (Key.N, Shift)),
+            DocCmd("새 그룹", _timeline.AddGroup, "Ctrl+Shift+N", KeyScope.Global, (Key.N, Ctrl | Shift)),
+            DocCmd("새 부위…", _timeline.AddPart, "Shift+P", KeyScope.NotInText, (Key.P, Shift)),
+            DocCmd("부위 크기…", _timeline.ResizePart),
+            DocCmd("레이어 이름 바꾸기", _timeline.BeginRenameLayer, "F2", KeyScope.NotInText, (Key.F2, NoMods)),
+            new Separator(),
+            DocCmd("새 태그(애니메이션)…", _timeline.NewTag),
+            new Separator(),
+            DocCmd("격자로 나눠 프레임 만들기(시트 → 프레임)…", SplitIntoFrames));
 
         // 도구
-        var tools = TopMenu("도구(&T)");
+        var tools = TopMenu("도구(_T)");
         foreach (var (tool, name, key, _) in ToolDefs)
         {
             var t = tool;
-            var keyCode = (Keys)Enum.Parse(typeof(Keys), key);
-            var mi = Cmd(name, () => _ctx.Tool = t, key, KeyScope.NotInText, keyCode);
-            mi.Image = Icons.For(tool);
+            // 이미 고른 도구를 다시 눌러도 메뉴 체크가 풀린 채로 남지 않게 UI를 다시 맞춘다.
+            var mi = Checkable(Cmd(name, () => { _ctx.Tool = t; UpdateToolUi(); }, key, KeyScope.NotInText, (Enum.Parse<Key>(key), NoMods)));
+            mi.Icon = IconImage(Icons.For(tool), 16);
             _toolMenuItems[tool] = mi;
-            tools.DropDownItems.Add(mi);
+            tools.Items.Add(mi);
         }
-        _miFilled = Cmd("도형 채움", () => _ctx.ShapeFilled = !_ctx.ShapeFilled, "U", KeyScope.NotInText, Keys.U);
-        _miGlobalFill = Cmd("채우기: 같은 색 전체", () => _ctx.FillContiguous = !_ctx.FillContiguous, "Shift+G", KeyScope.NotInText, Keys.Shift | Keys.G);
-        _miPixelPerfect = Cmd("픽셀 퍼펙트", () => _ctx.PixelPerfect = !_ctx.PixelPerfect, "P", KeyScope.NotInText, Keys.P);
-        _miMirrorX = Cmd("좌우 대칭 그리기", () => _ctx.MirrorX = !_ctx.MirrorX, "Shift+X", KeyScope.NotInText, Keys.Shift | Keys.X);
-        _miMirrorY = Cmd("상하 대칭 그리기", () => _ctx.MirrorY = !_ctx.MirrorY, "Shift+Y", KeyScope.NotInText, Keys.Shift | Keys.Y);
-        _miRightErase = Cmd("오른쪽 버튼 = 지우개", () => _ctx.RightButtonErases = !_ctx.RightButtonErases);
-        _miWrap = Cmd("이동: 순환", () => _ctx.MoveWrap = !_ctx.MoveWrap);
-        tools.DropDownItems.AddRange([
-            new ToolStripSeparator(),
+        _miFilled = Checkable(Cmd("도형 채움", () => _ctx.ShapeFilled = !_ctx.ShapeFilled, "U", KeyScope.NotInText, (Key.U, NoMods)));
+        _miGlobalFill = Checkable(Cmd("채우기: 같은 색 전체", () => _ctx.FillContiguous = !_ctx.FillContiguous, "Shift+G", KeyScope.NotInText, (Key.G, Shift)));
+        _miPixelPerfect = Checkable(Cmd("픽셀 퍼펙트", () => _ctx.PixelPerfect = !_ctx.PixelPerfect, "P", KeyScope.NotInText, (Key.P, NoMods)));
+        _miMirrorX = Checkable(Cmd("좌우 대칭 그리기", () => _ctx.MirrorX = !_ctx.MirrorX, "Shift+X", KeyScope.NotInText, (Key.X, Shift)));
+        _miMirrorY = Checkable(Cmd("상하 대칭 그리기", () => _ctx.MirrorY = !_ctx.MirrorY, "Shift+Y", KeyScope.NotInText, (Key.Y, Shift)));
+        _miRightErase = Checkable(Cmd("오른쪽 버튼 = 지우개", () => _ctx.RightButtonErases = !_ctx.RightButtonErases));
+        _miWrap = Checkable(Cmd("이동: 순환", () => _ctx.MoveWrap = !_ctx.MoveWrap));
+        AddItems(tools,
+            new Separator(),
             _miFilled, _miGlobalFill, _miPixelPerfect, _miMirrorX, _miMirrorY, _miRightErase, _miWrap,
-            new ToolStripSeparator(),
-            Cmd("브러시 크게", () => _ctx.BrushSize++, "]", KeyScope.NotInText, Keys.OemCloseBrackets),
-            Cmd("브러시 작게", () => _ctx.BrushSize--, "[", KeyScope.NotInText, Keys.OemOpenBrackets),
-            Cmd("기본색 ↔ 보조색", _ctx.SwapColors, "X", KeyScope.NotInText, Keys.X),
-        ]);
+            new Separator(),
+            Cmd("브러시 크게", () => _ctx.BrushSize++, "]", KeyScope.NotInText, (Key.OemCloseBrackets, NoMods)),
+            Cmd("브러시 작게", () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
+            Cmd("기본색 ↔ 보조색", _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
 
         // 테스트
-        var test = TopMenu("테스트(&S)");
-        _miPlayTest = Cmd("움직임 테스트", ShowPlayTest, "F5", KeyScope.Global, Keys.F5);
-        test.DropDownItems.Add(_miPlayTest);
+        var test = TopMenu("테스트(_S)");
+        _miPlayTest = Cmd("움직임 테스트", ShowPlayTest, "F5", KeyScope.Global, (Key.F5, NoMods));
+        test.Items.Add(_miPlayTest);
+
+        // AI
+        var ai = TopMenu("AI(_A)");
+        AddItems(ai, Cmd("Claude 채팅", ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)));
 
         // 도움말
-        var help = TopMenu("도움말(&H)");
-        help.DropDownItems.AddRange([
-            Cmd("단축키 목록", ShowShortcuts, "F1", KeyScope.Global, Keys.F1),
+        var help = TopMenu("도움말(_H)");
+        AddItems(help,
+            Cmd("단축키 목록", ShowShortcuts, "F1", KeyScope.Global, (Key.F1, NoMods)),
             Cmd("설정 파일 위치 열기", OpenSettingsFolder),
             Cmd("Gpixel 정보", () => Ui.Info(this,
                 "Gpixel — 게임용 픽셀 아트 편집기\n프레임·레이어는 .gpixel 프로젝트로 저장되고, 저장할 때 PNG 시트 + Unity .meta가 내보내집니다.\n\n설정: " + AppSettings.FilePath,
-                "Gpixel 정보")),
-        ]);
+                "Gpixel 정보")));
 
-        menu.Items.AddRange([file, edit, view, frame, _miSpriteMenu, tools, test, help]);
+        foreach (var top in new[] { file, edit, view, frame, tools, test, ai, help }) menu.Items.Add(top);
         return menu;
     }
 
-    private static ToolStripMenuItem TopMenu(string text) => new(text) { ForeColor = Theme.TextColor };
+    private static MenuItem TopMenu(string text) => new() { Header = text };
 
-    private ToolStripMenuItem Cmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params Keys[] keys)
+    private static void AddItems(MenuItem parent, params Control[] items)
     {
-        var mi = new ToolStripMenuItem(text) { ShortcutKeyDisplayString = keyText, ForeColor = Theme.TextColor };
-        mi.Click += (_, _) => action();
+        foreach (var it in items) parent.Items.Add(it);
+    }
+
+    /// <summary>메뉴 글자 + 오른쪽 단축키 표기(OS 표기로 바꿈). 밑줄(_)이 접근 키로 바뀌지 않게 TextBlock으로 그린다.</summary>
+    private static Grid MenuHeader(string text, string? keyText)
+    {
+        var g = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        g.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        if (keyText is not null)
+        {
+            var k = new TextBlock
+            {
+                Text = Ui.Shortcut(keyText),
+                Foreground = AppTheme.DimTextBrush,
+                Margin = new Thickness(24, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(k, 1);
+            g.Children.Add(k);
+        }
+        return g;
+    }
+
+    private static void SetMenuText(MenuItem mi, string text)
+    {
+        if (mi.Header is Grid g && g.Children.Count > 0 && g.Children[0] is TextBlock t) t.Text = text;
+        else mi.Header = text;
+    }
+
+    private static MenuItem Checkable(MenuItem mi)
+    {
+        mi.ToggleType = MenuItemToggleType.CheckBox;
+        return mi;
+    }
+
+    private static MenuItem EmptyItem() => new() { Header = MenuHeader("(비어 있음)", null), IsEnabled = false };
+
+    private MenuItem Cmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params (Key, KeyModifiers)[] keys)
+    {
+        var mi = new MenuItem { Header = MenuHeader(text, keyText) };
+        // 메뉴가 닫힌 뒤 실행한다(대화상자를 띄워도 메뉴가 남지 않게).
+        mi.Click += (_, _) => Dispatcher.UIThread.Post(action);
         foreach (var k in keys) Bind(k, scope, action);
         return mi;
     }
 
     /// <summary>프로젝트가 있어야 쓸 수 있는 명령(없으면 비활성).</summary>
-    private ToolStripMenuItem DocCmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params Keys[] keys)
+    private MenuItem DocCmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params (Key, KeyModifiers)[] keys)
     {
         var mi = Cmd(text, () => { if (_ctx.HasProject) action(); }, keyText, scope, keys);
         _docItems.Add(mi);
         return mi;
     }
 
-    /// <summary>애니메이션 프로젝트에서만 쓰는 명령(아틀라스·프로젝트 없음이면 비활성, 단축키도 무시).</summary>
-    private ToolStripMenuItem AnimCmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params Keys[] keys)
-    {
-        var mi = Cmd(text, () => { if (_ctx.HasProject && !_ctx.IsAtlas) action(); }, keyText, scope, keys);
-        _animItems.Add(mi);
-        return mi;
-    }
+    private void Bind((Key, KeyModifiers) key, KeyScope scope, Action action) => _keys[key] = (scope, () => { action(); return true; });
 
-    /// <summary>아틀라스 프로젝트에서만 쓰는 명령.</summary>
-    private ToolStripMenuItem AtlasCmd(string text, Action action, string? keyText = null, KeyScope scope = KeyScope.Global, params Keys[] keys)
+    private void FillRecent(MenuItem parent, List<string> list, Action<string> open)
     {
-        var mi = Cmd(text, () => { if (_ctx.IsAtlas) action(); }, keyText, scope, keys);
-        _atlasItems.Add(mi);
-        return mi;
-    }
-
-    private void Bind(Keys key, KeyScope scope, Action action) => _keys[key] = (scope, () => { action(); return true; });
-
-    private void FillRecent(ToolStripMenuItem parent, List<string> list, Action<string> open)
-    {
-        parent.DropDownItems.Clear();
+        parent.Items.Clear();
         foreach (var p in list)
         {
             var path = p;
-            parent.DropDownItems.Add(new ToolStripMenuItem(p, null, (_, _) => open(path)) { ForeColor = Theme.TextColor });
+            var mi = new MenuItem { Header = MenuHeader(p, null) };
+            mi.Click += (_, _) => Dispatcher.UIThread.Post(() => open(path));
+            parent.Items.Add(mi);
         }
-        if (list.Count == 0) parent.DropDownItems.Add(new ToolStripMenuItem("(비어 있음)") { Enabled = false });
+        if (list.Count == 0) parent.Items.Add(EmptyItem());
         else
         {
-            parent.DropDownItems.Add(new ToolStripSeparator());
-            parent.DropDownItems.Add(new ToolStripMenuItem("목록 지우기", null, (_, _) => list.Clear()) { ForeColor = Theme.TextColor });
+            parent.Items.Add(new Separator());
+            var clear = new MenuItem { Header = MenuHeader("목록 지우기", null) };
+            clear.Click += (_, _) => list.Clear();
+            parent.Items.Add(clear);
         }
     }
 
@@ -506,15 +713,13 @@ public sealed class MainForm : Form
         _ctx.ProjectReplaced += (_, _) =>
         {
             _docStamp = _ctx.Project?.Path is { } p ? SafeStamp(p) : default;
-            // 아틀라스는 움직임 테스트를 쓰지 않는다(미리보기만).
-            if (_ctx.IsAtlas) _play?.Close();
             _play?.DocumentChanged();
             UpdateAll();
         };
         _ctx.DirtyChanged += (_, _) => { UpdateTitle(); UpdateStatus(); };
         _ctx.ProjectChanged += (_, e) =>
         {
-            if ((e.Change & (ProjectChange.Canvas | ProjectChange.Path | ProjectChange.Frames | ProjectChange.Sprites)) != 0) { UpdateTitle(); UpdateStatus(); }
+            if ((e.Change & (ProjectChange.Canvas | ProjectChange.Path | ProjectChange.Frames | ProjectChange.Layers)) != 0) { UpdateTitle(); UpdateStatus(); }
             // 움직임 테스트 창은 편집이 잠시 멈추면 다시 읽는다(스트로크 중에는 미룸).
             if (_play is not null && !_ctx.Project!.IsStrokeActive)
             {
@@ -536,10 +741,8 @@ public sealed class MainForm : Form
         _browser.FileActivated += (_, path) =>
         {
             // 목록 선택 이벤트가 끝난 뒤 연다(저장 확인 대화상자·선택 되돌리기를 안전하게).
-            BeginInvoke(() => { if (!OpenFile(path)) _browser.SelectFile(_ctx.Project?.Path); });
+            Dispatcher.UIThread.Post(() => { if (!OpenFile(path)) _browser.SelectFile(_ctx.Project?.Path); });
         };
-        _browser.OpenFolderRequested += (_, _) => OpenFolder();
-        _browser.OpenUnityRequested += (_, _) => OpenUnityProject();
         _browser.NewImageRequested += (_, folder) => NewProject(folder);
         _browser.FileRenamed += (_, r) => OnFileRenamed(r.OldPath, r.NewPath);
         _browser.FileDeleted += (_, path) => OnFileDeleted(path);
@@ -550,9 +753,22 @@ public sealed class MainForm : Form
         _start.OpenFolderRequested += (_, _) => OpenFolder();
         _start.NewImageRequested += (_, _) => NewProject(null);
 
-        _sprite.PpuChanged += (_, v) => _settings.LastPpu = v;
-        _sprite.ExportRequested += (_, _) => ExportNow();
         _colors.PaletteChanged += (_, _) => _settings.Palette = _colors.Palette.Select(c => c.ToHex()).ToList();
+
+        // 숫자 상자를 끄는 동안의 값 변화(프로젝트 설정 등)는 실행취소 한 단계로 묶는다. Claude 차례처럼 이미 열린 묶음이 있으면 그 안에 둔다.
+        SpriteProject? scrubProject = null;
+        NumberScrub.Started += (_, _) =>
+        {
+            if (_ctx.Project is not { } p || p.History.InGroup) return;
+            p.History.BeginGroup(null);
+            scrubProject = p;
+        };
+        NumberScrub.Ended += (_, _) =>
+        {
+            if (scrubProject is not { } p) return;
+            scrubProject = null;
+            p.History.EndGroup();
+        };
     }
 
     // ───────────── 설정 ─────────────
@@ -560,14 +776,18 @@ public sealed class MainForm : Form
     private void ApplySettingsBeforeShow()
     {
         var s = _settings;
-        var bounds = new Rectangle(s.WindowX, s.WindowY, Math.Max(MinimumSize.Width, s.WindowWidth), Math.Max(MinimumSize.Height, s.WindowHeight));
-        if (s.WindowX >= 0 && Screen.AllScreens.Any(sc => sc.WorkingArea.IntersectsWith(bounds)))
+        double winW = Math.Max(MinWidth, s.WindowWidth), winH = Math.Max(MinHeight, s.WindowHeight);
+        Width = winW;
+        Height = winH;
+        _normalSize = new Avalonia.Size(winW, winH);
+        var bounds = new PixelRect(s.WindowX, s.WindowY, (int)winW, (int)winH);
+        if (s.WindowX >= 0 && Screens.All.Any(sc => sc.WorkingArea.Intersects(bounds)))
         {
-            StartPosition = FormStartPosition.Manual;
-            Bounds = bounds;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Position = new PixelPoint(s.WindowX, s.WindowY);
+            _normalPosition = Position;
         }
-        else Size = bounds.Size;
-        if (s.Maximized) WindowState = FormWindowState.Maximized;
+        if (s.Maximized) WindowState = WindowState.Maximized;
 
         _canvas.InitZoom(s.Zoom);
         _canvas.ShowPixelGrid = s.ShowPixelGrid;
@@ -579,73 +799,77 @@ public sealed class MainForm : Form
         _canvas.TileGridColor = ColorParse.ParseOr(s.TileGridColor, new Color32(90, 200, 255, 150)).ToColor();
         _ctx.OnionSkin = s.OnionSkin;
         _ctx.BrushSize = s.BrushSize;
+        _ctx.BrushShape = s.BrushShape;
+        _ctx.FillTolerance = s.FillTolerance;
+        _ctx.FillDiagonal = s.FillDiagonal;
+        _ctx.FillSampleVisible = s.FillSampleVisible;
+        _ctx.PickerSampleVisible = s.PickerSampleVisible;
+        _ctx.DodgeStrength = s.DodgeStrength;
+        _ctx.DitherPattern = s.DitherPattern;
         _ctx.PixelPerfect = s.PixelPerfect;
         _ctx.FillContiguous = s.FillContiguous;
         _ctx.ShapeFilled = s.ShapeFilled;
         _ctx.RightButtonErases = s.RightButtonErases;
         _ctx.MoveWrap = s.MoveWrap;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
-        _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.White);
+        _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
         foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
             if (Color32.TryParseHex(hex, out var c)) _ctx.PushRecentColor(c);
         _colors.SetRecent(_ctx.RecentColors);
         var palette = s.Palette ?? [.. AppSettings.DefaultPalette];
         _colors.SetPalette(palette.Select(h => Color32.TryParseHex(h, out var c) ? c : (Color32?)null).OfType<Color32>());
         _browser.IncludeSubfolders = s.IncludeSubfolders;
+        _canvas.AutoFit = s.AutoFit;
         _preview.ZoomSetting = s.PreviewZoom;
         _preview.FpsSetting = s.PreviewFps;
         _preview.BackgroundSetting = s.PreviewBackground;
         _start.SetRecent(s.RecentFolders, s.RecentFiles);
     }
 
-    protected override void OnHandleCreated(EventArgs e)
+    /// <summary>일반(최대화·최소화 아닌) 상태의 창 위치·크기를 기억한다(WinForms RestoreBounds 대신).</summary>
+    private void RememberNormalBounds()
     {
-        base.OnHandleCreated(e);
-        Theme.UseDarkTitleBar(this);
+        if (WindowState != WindowState.Normal || !IsVisible) return;
+        _normalPosition = Position;
+        _normalSize = ClientSize;
     }
 
-    protected override void OnShown(EventArgs e)
+    private void OnShown()
     {
-        base.OnShown(e);
         var s = _settings;
-        SetSplit(_splitFiles, s.LeftWidth);
-        SetSplit(_splitPalette, s.PaletteWidth);
-        SetSplit(_splitRight, _splitRight.Width - s.RightWidth - _splitRight.SplitterWidth);
-        SetSplit(_splitTimeline, _splitTimeline.Height - s.BottomHeight - _splitTimeline.SplitterWidth);
-        SetSplit(_splitRightDock, s.PreviewHeight);
+        SetSplit(_colFiles, _splitFiles, s.LeftWidth);
+        SetSplit(_colPalette, _splitPalette, s.PaletteWidth);
+        SetSplit(_colRight, _splitRight, s.RightWidth);
+        SetSplit(_rowBottom, _splitTimeline, s.BottomHeight);
+        SetSplit(_rowPreview, _splitRightDock, s.PreviewHeight);
         _browser.TreeHeight = s.BrowserTreeHeight;
         SetFilesVisible(s.FilesVisible);
         _settingsApplied = true;
+        RememberNormalBounds();
         _start.LoadHub();
         var folder = _args.OpenFolder ?? s.LastFolder;
         if (folder is not null && Directory.Exists(folder)) SetRootFolder(folder);
         else if (_args.OpenFolder is not null) Ui.Error(this, $"폴더를 찾을 수 없습니다:\n{_args.OpenFolder}");
         if (_args.OpenFile is not null) OpenFile(_args.OpenFile);
+        if (s.ChatOpen) Dispatcher.UIThread.Post(ToggleChat);
         _canvas.Focus();
-    }
-
-    private static void SetSplit(SplitContainer sc, int distance)
-    {
-        int size = sc.Orientation == Orientation.Vertical ? sc.Width : sc.Height;
-        int max = size - sc.Panel2MinSize - sc.SplitterWidth;
-        if (max <= sc.Panel1MinSize) return;
-        sc.SplitterDistance = Math.Clamp(distance, sc.Panel1MinSize, max);
     }
 
     private void SaveSettings()
     {
         var s = _settings;
-        s.Maximized = WindowState == FormWindowState.Maximized;
-        var b = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-        (s.WindowX, s.WindowY, s.WindowWidth, s.WindowHeight) = (b.X, b.Y, b.Width, b.Height);
+        s.Maximized = WindowState == WindowState.Maximized;
+        RememberNormalBounds();
+        (s.WindowX, s.WindowY, s.WindowWidth, s.WindowHeight) =
+            (_normalPosition.X, _normalPosition.Y, (int)Math.Round(_normalSize.Width), (int)Math.Round(_normalSize.Height));
         if (_settingsApplied)
         {
-            s.FilesVisible = !_splitFiles.Panel1Collapsed;
-            if (s.FilesVisible) s.LeftWidth = _splitFiles.SplitterDistance;
-            s.PaletteWidth = _splitPalette.SplitterDistance;
-            s.RightWidth = _splitRight.Width - _splitRight.SplitterDistance - _splitRight.SplitterWidth;
-            s.BottomHeight = _splitTimeline.Height - _splitTimeline.SplitterDistance - _splitTimeline.SplitterWidth;
-            s.PreviewHeight = _splitRightDock.SplitterDistance;
+            s.FilesVisible = _filesShown;
+            if (s.FilesVisible && _filesAnim is null) s.LeftWidth = (int)Math.Round(_colFiles.ActualWidth);
+            s.PaletteWidth = (int)Math.Round(_colPalette.ActualWidth);
+            s.RightWidth = (int)Math.Round(_colRight.ActualWidth);
+            s.BottomHeight = (int)Math.Round(_rowBottom.ActualHeight);
+            s.PreviewHeight = (int)Math.Round(_rowPreview.ActualHeight);
             s.BrowserTreeHeight = _browser.TreeHeight;
         }
         s.Zoom = _canvas.Zoom;
@@ -659,6 +883,13 @@ public sealed class MainForm : Form
         s.TileGridColor = _canvas.TileGridColor.ToColor32().ToHex();
         s.OnionSkin = _ctx.OnionSkin;
         s.BrushSize = _ctx.BrushSize;
+        s.BrushShape = _ctx.BrushShape;
+        s.FillTolerance = _ctx.FillTolerance;
+        s.FillDiagonal = _ctx.FillDiagonal;
+        s.FillSampleVisible = _ctx.FillSampleVisible;
+        s.PickerSampleVisible = _ctx.PickerSampleVisible;
+        s.DodgeStrength = _ctx.DodgeStrength;
+        s.DitherPattern = _ctx.DitherPattern;
         s.PixelPerfect = _ctx.PixelPerfect;
         s.FillContiguous = _ctx.FillContiguous;
         s.ShapeFilled = _ctx.ShapeFilled;
@@ -670,31 +901,49 @@ public sealed class MainForm : Form
         s.Palette = _colors.Palette.Select(c => c.ToHex()).ToList();
         s.IncludeSubfolders = _browser.IncludeSubfolders;
         s.LastFolder = _browser.RootFolder ?? s.LastFolder;
+        s.AutoFit = _canvas.AutoFit;
         s.PreviewZoom = _preview.ZoomSetting;
         s.PreviewFps = _preview.FpsSetting;
         s.PreviewBackground = _preview.BackgroundSetting;
         s.Save();
     }
 
-    protected override void OnFormClosing(FormClosingEventArgs e)
+    /// <summary>
+    /// 창 닫기: 저장 확인 대화상자는 Closing 처리 중에 띄울 수 없으므로, 수정된 프로젝트가 있으면 닫기를 일단 취소하고
+    /// 처리가 끝난 뒤 물어서 계속해도 되면 다시 닫는다.
+    /// </summary>
+    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        base.OnFormClosing(e);
-        if (e.Cancel) return;
-        if (!ConfirmDiscard())
+        if (_closeConfirmed) return;
+        _ctx.CommitFloating();
+        if (_ctx.Project is not { IsDirty: true })
         {
-            e.Cancel = true;
+            _play?.Close();
+            ShutdownChat();
+            SaveSettings();
             return;
         }
-        _play?.Close();
-        SaveSettings();
+        e.Cancel = true;
+        if (_closePending) return;
+        _closePending = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _closePending = false;
+            if (!ConfirmDiscard()) return;
+            _closeConfirmed = true;
+            _play?.Close();
+            ShutdownChat();
+            SaveSettings();
+            Close();
+        });
     }
 
     private void OpenSettingsFolder()
     {
         var dir = Path.GetDirectoryName(AppSettings.FilePath)!;
         SaveSettings();
-        try { System.Diagnostics.Process.Start("explorer.exe", $"\"{dir}\""); }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        try { Platform.OpenFolder(dir); }
+        catch (IOException ex)
         {
             Ui.Error(this, ex.Message);
         }
@@ -702,21 +951,22 @@ public sealed class MainForm : Form
 
     // ───────────── 키 처리 ─────────────
 
-    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    /// <summary>창 전체 키 미리 받기(터널): 포커스된 컨트롤보다 먼저 단축키 표를 본다.</summary>
+    private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
-        if (_keys.TryGetValue(keyData, out var entry) && CanRun(entry.Scope) && entry.Action())
-            return true;
-        return base.ProcessCmdKey(ref msg, keyData);
+        if (e.Handled) return;
+        var mods = e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta);
+        if (_keys.TryGetValue((e.Key, mods), out var entry) && CanRun(entry.Scope) && entry.Action())
+            e.Handled = true;
     }
 
     private bool CanRun(KeyScope scope)
     {
         if (scope == KeyScope.Global) return true;
-        var focus = NativeMethods.FocusedControl(out bool native);
-        if (scope == KeyScope.Canvas) return focus == _canvas;
-        bool textInput = native || focus is TextBoxBase || focus is ComboBox { DropDownStyle: not ComboBoxStyle.DropDownList }
-                         || focus is UpDownBase;
-        return !textInput;
+        var focus = FocusManager?.GetFocusedElement();
+        if (scope == KeyScope.Canvas) return ReferenceEquals(focus, _canvas);
+        // 글자 입력란(숫자 상자·편집 가능한 콤보 상자 안쪽 입력란 포함)이면 그 입력란이 키를 받는다.
+        return focus is not TextBox;
     }
 
     // ───────────── 화면 갱신 ─────────────
@@ -724,19 +974,11 @@ public sealed class MainForm : Form
     private void UpdateAll()
     {
         bool has = _ctx.HasProject;
-        _start.Visible = !has;
+        _start.IsVisible = !has;
         if (!has) _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
-        _canvas.Visible = has;
-        foreach (var item in _docItems) item.Enabled = has;
-        bool atlas = _ctx.IsAtlas;
-        foreach (var item in _animItems) item.Enabled = has && !atlas;
-        foreach (var item in _atlasItems) item.Enabled = atlas;
-        _miSpriteMenu.Visible = atlas;
-        _cbOnion.Visible = !atlas;
-        if (atlas) _canvas.PeekPrevious = false;
-        _miPlayTest.Text = atlas ? "움직임 테스트 — 아틀라스 프로젝트는 쓸 수 없음(미리보기만)" : "움직임 테스트";
-        _miPlayTest.ToolTipText = atlas ? AtlasPlayTestReason : null;
-        _miPlayTest.Enabled = !atlas;
+        _canvas.IsVisible = has;
+        foreach (var item in _docItems) item.IsEnabled = has;
+        _miPlayTest.IsEnabled = has;
         UpdateTitle();
         UpdateStatus();
         UpdateUndoItems();
@@ -746,7 +988,7 @@ public sealed class MainForm : Form
     private void UpdateTitle()
     {
         var p = _ctx.Project;
-        Text = p is null
+        Title = p is null
             ? "Gpixel"
             : $"{p.DisplayName}{(p.IsDirty ? " ●" : "")} — Gpixel" + (p.Path is { } path ? $"  ({Path.GetDirectoryName(path)})" : "");
     }
@@ -755,17 +997,28 @@ public sealed class MainForm : Form
     {
         var p = _ctx.Project;
         _stSize.Text = p is null ? "" : $"{_ctx.CanvasWidth} × {_ctx.CanvasHeight}";
-        _stFrame.Text = p is null ? ""
-            : _ctx.CurrentAtlasSprite is { } s ? $"스프라이트 {_ctx.CurrentSprite + 1}/{p.Sprites.Count} {s.Name} · L{_ctx.CurrentLayer + 1}"
-            : $"프레임 {_ctx.CurrentFrame + 1}/{p.Frames.Count} · L{_ctx.CurrentLayer + 1}";
+        _stFrame.Text = p is null ? "" : StatusFrameText(p);
         _stZoom.Text = $"{_canvas.Zoom * 100}%";
         _cbZoom.Text = $"{_canvas.Zoom * 100}%";
         if (p is null) _stDirty.Text = "";
         else
         {
             _stDirty.Text = p.IsDirty ? "● 수정됨" : "저장됨";
-            _stDirty.ForeColor = p.IsDirty ? Theme.WarningColor : Theme.TextColor;
+            _stDirty.Foreground = p.IsDirty ? AppTheme.WarningBrush : AppTheme.TextBrush;
         }
+    }
+
+    /// <summary>상태 표시줄의 "프레임 i/n · L k 이름" (부위면 크기도).</summary>
+    private string StatusFrameText(SpriteProject p)
+    {
+        var text = $"프레임 {_ctx.CurrentFrame + 1}/{p.Frames.Count} · L{_ctx.CurrentLayer + 1}";
+        if (_ctx.CurrentLayerObject is { } layer)
+        {
+            text += $" {layer.Name}";
+            if (layer.IsPart) text += $" ({layer.PartSize.Width}×{layer.PartSize.Height})";
+            else if (layer.IsGroup) text += " (그룹)";
+        }
+        return text;
     }
 
     private void UpdateHover(Point? pt)
@@ -784,44 +1037,35 @@ public sealed class MainForm : Form
     private void UpdateUndoItems()
     {
         var h = _ctx.Project?.History;
-        _miUndo.Enabled = h?.CanUndo == true;
-        _miRedo.Enabled = h?.CanRedo == true;
-        _miUndo.Text = h?.UndoLabel is { } u ? $"실행취소: {u}" : "실행취소";
-        _miRedo.Text = h?.RedoLabel is { } r ? $"다시 실행: {r}" : "다시 실행";
+        _miUndo.IsEnabled = h?.CanUndo == true;
+        _miRedo.IsEnabled = h?.CanRedo == true;
+        SetMenuText(_miUndo, h?.UndoLabel is { } u ? $"실행취소: {u}" : "실행취소");
+        SetMenuText(_miRedo, h?.RedoLabel is { } r ? $"다시 실행: {r}" : "다시 실행");
     }
 
     private void UpdateToolUi()
     {
         var tool = _ctx.Tool;
-        foreach (var (t, b) in _toolButtons) b.Checked = t == tool;
-        foreach (var (t, mi) in _toolMenuItems) mi.Checked = t == tool;
+        foreach (var (t, b) in _toolButtons) b.IsChecked = t == tool;
+        foreach (var (t, mi) in _toolMenuItems) mi.IsChecked = t == tool;
         var def = ToolDefs.First(d => d.Tool == tool);
         _cbToolName.Text = $"{def.Name} ({def.Key})";
-        _cbHint.Text = def.Hint;
-        bool brush = tool is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse
-            or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
-        bool paint = brush || tool == ToolKind.Fill;
-        _cbBrushLabel.Visible = _cbBrush.Visible = brush;
-        _cbPixelPerfect.Visible = tool is ToolKind.Pencil or ToolKind.Eraser;
-        _cbFilled.Visible = tool is ToolKind.Rectangle or ToolKind.Ellipse;
-        _cbGlobalFill.Visible = tool == ToolKind.Fill;
-        _cbRightErase.Visible = tool is ToolKind.Pencil or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse or ToolKind.Fill;
-        _cbWrap.Visible = tool == ToolKind.Move;
-        _cbSepMirror.Visible = _cbMirrorX.Visible = _cbMirrorY.Visible = paint;
-        _cbBrush.SelectedIndex = _ctx.BrushSize - 1;
-        _cbPixelPerfect.Checked = _miPixelPerfect.Checked = _ctx.PixelPerfect;
-        _cbFilled.Checked = _miFilled.Checked = _ctx.ShapeFilled;
-        _cbGlobalFill.Checked = _miGlobalFill.Checked = !_ctx.FillContiguous;
-        _cbRightErase.Checked = _miRightErase.Checked = _ctx.RightButtonErases;
-        _cbWrap.Checked = _miWrap.Checked = _ctx.MoveWrap;
-        _cbMirrorX.Checked = _miMirrorX.Checked = _ctx.MirrorX;
-        _cbMirrorY.Checked = _miMirrorY.Checked = _ctx.MirrorY;
-        _cbGrid.Checked = _miGrid.Checked = _canvas.ShowPixelGrid;
-        _cbTiles.Checked = _miTiles.Checked = _canvas.ShowTileGrid;
-        _cbTiled.Checked = _miTiled.Checked = _canvas.TiledMode;
-        _cbPivot.Checked = _miPivot.Checked = _canvas.ShowPivot;
-        _cbOnion.Checked = _miOnion.Checked = _ctx.OnionSkin;
-        _tbFiles.Checked = _miFiles.Checked = !_splitFiles.Panel1Collapsed;
+        // macOS: 색 집기는 ⌘/⌥+클릭(Ctrl+클릭은 오른쪽 클릭이 된다).
+        _cbHint.Text = Platform.IsMac ? Ui.Shortcut(def.Hint.Replace("Ctrl/Alt+", "Ctrl+/Alt+")) : def.Hint;
+        _miPixelPerfect.IsChecked = _ctx.PixelPerfect;
+        _miFilled.IsChecked = _ctx.ShapeFilled;
+        _miGlobalFill.IsChecked = !_ctx.FillContiguous;
+        _miRightErase.IsChecked = _ctx.RightButtonErases;
+        _miWrap.IsChecked = _ctx.MoveWrap;
+        _miMirrorX.IsChecked = _ctx.MirrorX;
+        _miMirrorY.IsChecked = _ctx.MirrorY;
+        _cbGrid.IsChecked = _miGrid.IsChecked = _canvas.ShowPixelGrid;
+        _cbTiles.IsChecked = _miTiles.IsChecked = _canvas.ShowTileGrid;
+        _cbTiled.IsChecked = _miTiled.IsChecked = _canvas.TiledMode;
+        _cbPivot.IsChecked = _miPivot.IsChecked = _canvas.ShowPivot;
+        _cbOnion.IsChecked = _miOnion.IsChecked = _ctx.OnionSkin;
+        _cbFit.IsChecked = _canvas.AutoFit;
+        _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
     }
 
     private void ShowMessage(string text) => _stMessage.Text = text;
@@ -837,16 +1081,62 @@ public sealed class MainForm : Form
         ShowMessage(on ? "타일 모드: 가장자리를 넘는 그리기가 반대편으로 이어집니다." : "타일 모드 끔");
     }
 
-    private void SetFilesVisible(bool visible)
+    private bool _filesShown = true;
+    private DispatcherTimer? _filesAnim;
+
+    /// <summary>
+    /// 파일 브라우저 칸 보이기/숨기기(숨기면 칸과 나눔 막대를 접는다). <paramref name="animate"/>면 폭이 부드럽게 늘고 준다(약 0.18초);
+    /// 도중에 다시 누르면 지금 폭에서 반대로 간다.
+    /// </summary>
+    private void SetFilesVisible(bool visible, bool animate = false)
     {
-        _splitFiles.Panel1Collapsed = !visible;
-        if (visible && _settingsApplied) SetSplit(_splitFiles, _settings.LeftWidth);
+        if (!visible && _filesShown && _browser.IsVisible && _settingsApplied && _filesAnim is null)
+            _settings.LeftWidth = (int)Math.Round(_colFiles.ActualWidth);
+        _filesShown = visible;
+        _filesAnim?.Stop();
+        _filesAnim = null;
+        double target = visible ? ClampSplit(_settings.LeftWidth, _splitFiles.Bounds.Width) : 0;
+        void Finish()
+        {
+            _browser.IsVisible = visible;
+            _filesSplitter.IsVisible = visible;
+            _colFiles.MinWidth = visible ? MinPanelSize : 0;
+            if (!visible) _colFiles.Width = new GridLength(0);
+            else if (_settingsApplied || _colFiles.Width.Value == 0) SetSplit(_colFiles, _splitFiles, _settings.LeftWidth);
+            UpdateToolUi();
+        }
+        if (!animate || _splitFiles.Bounds.Width <= 0)
+        {
+            Finish();
+            return;
+        }
+        // 움직이는 동안은 칸을 보이게 두고 최소 폭을 풀어 0까지 줄 수 있게 한다.
+        _browser.IsVisible = true;
+        _browser.ClipToBounds = true;
+        _filesSplitter.IsVisible = true;
+        _colFiles.MinWidth = 0;
+        double from = _colFiles.ActualWidth;
+        var start = DateTime.UtcNow;
+        const double DurationMs = 180;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(15) };
+        timer.Tick += (_, _) =>
+        {
+            double t = Math.Min(1, (DateTime.UtcNow - start).TotalMilliseconds / DurationMs);
+            double eased = 1 - Math.Pow(1 - t, 3);
+            _colFiles.Width = new GridLength(Math.Max(0, from + (target - from) * eased));
+            if (t < 1) return;
+            timer.Stop();
+            if (ReferenceEquals(_filesAnim, timer)) _filesAnim = null;
+            Finish();
+        };
+        _filesAnim = timer;
+        timer.Start();
         UpdateToolUi();
     }
 
     private void GridSettings()
     {
-        using var dlg = new GridSettingsDialog(_canvas.PixelGridColor.ToColor32(), _canvas.TileSize, _canvas.TileGridColor.ToColor32());
+        var dlg = new GridSettingsDialog(_canvas.PixelGridColor.ToColor32(), _canvas.TileSize, _canvas.TileGridColor.ToColor32());
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _canvas.PixelGridColor = dlg.PixelGridColor.ToColor();
         _canvas.TileGridColor = dlg.TileGridColor.ToColor();
@@ -863,32 +1153,23 @@ public sealed class MainForm : Form
 
     private void ShowShortcuts()
     {
-        using var dlg = new ShortcutHelpDialog();
+        var dlg = new ShortcutHelpDialog();
         dlg.ShowDialog(this);
     }
 
-    private const string AtlasPlayTestReason =
-        "아틀라스 프로젝트는 부위별 스프라이트 묶음이라 애니메이션(태그)이 없어 움직임 테스트를 쓸 수 없습니다.\n"
-        + "아틀라스는 오른쪽 위 미리보기로 고른 스프라이트를 확인하세요. 움직임 테스트는 애니메이션 프로젝트에서 태그(walk_down, idle, run …)로 합니다.";
-
-    /// <summary>움직임 테스트: 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음). 아틀라스는 이유를 알린다.</summary>
+    /// <summary>움직임 테스트: 프로젝트의 태그를 시트 문서로 만들어 넘긴다(편집하면 잠시 뒤 다시 읽음).</summary>
     private void ShowPlayTest()
     {
-        if (_ctx.IsAtlas)
+        if (_play is { IsClosed: false })
         {
-            ShowMessage("움직임 테스트: 아틀라스 프로젝트는 쓸 수 없습니다(미리보기만).");
-            Ui.Info(this, AtlasPlayTestReason, "움직임 테스트");
-            return;
-        }
-        if (_play is { IsDisposed: false })
-        {
-            if (_play.WindowState == FormWindowState.Minimized) _play.WindowState = FormWindowState.Normal;
+            if (_play.WindowState == WindowState.Minimized) _play.WindowState = WindowState.Normal;
             _play.Activate();
             return;
         }
-        _play = new PlayTestForm(() => _ctx.Project is { } p ? ProjectExport.BuildDocument(p, p.BaseName, allFrames: true) : null);
-        _play.FormClosed += (_, _) => _play = null;
-        _play.Show();
+        var play = new PlayTestForm(() => _ctx.Project is { } p ? ProjectExport.BuildDocument(p, p.BaseName, allFrames: true) : null);
+        play.Closed += (_, _) => { if (ReferenceEquals(_play, play)) _play = null; };
+        _play = play;
+        play.Show();
     }
 
     // ───────────── 파일 ─────────────
@@ -906,8 +1187,8 @@ public sealed class MainForm : Form
         if (p is null) return true;
         _ctx.CommitFloating();
         if (!p.IsDirty) return true;
-        var answer = MessageBox.Show(this, $"\"{p.DisplayName}\"의 변경 내용을 저장할까요?", "Gpixel",
-            MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+        var answer = Ui.Ask(this, $"\"{p.DisplayName}\"의 변경 내용을 저장할까요?", "Gpixel",
+            MessageButtons.YesNoCancel, MessageIcon.Question);
         return answer switch
         {
             DialogResult.Yes => Save(),
@@ -927,7 +1208,7 @@ public sealed class MainForm : Form
         }
         folder = Path.GetFullPath(folder);
         _browser.SetRoot(folder);
-        if (_splitFiles.Panel1Collapsed) SetFilesVisible(true);
+        if (!_filesShown) SetFilesVisible(true, animate: true);
         _settings.LastFolder = folder;
         AppSettings.PushRecent(_settings.RecentFolders, folder);
         _start.SetRecent(_settings.RecentFolders, _settings.RecentFiles);
@@ -937,77 +1218,99 @@ public sealed class MainForm : Form
 
     private void OpenFolder()
     {
-        using var dlg = new FolderBrowserDialog
-        {
-            Description = "편집할 그림이 있는 루트 폴더를 고르세요.",
-            UseDescriptionForTitle = true,
-            InitialDirectory = _browser.RootFolder ?? _settings.LastFolder ?? "",
-        };
-        if (dlg.ShowDialog(this) == DialogResult.OK) SetRootFolder(UnityHubDialog.ResolveAssets(dlg.SelectedPath));
+        var path = Ui.PickFolder(this, "편집할 그림이 있는 루트 폴더를 고르세요.", _browser.RootFolder ?? _settings.LastFolder);
+        if (path is not null) SetRootFolder(UnityHubDialog.ResolveAssets(path));
     }
 
     private void OpenUnityProject()
     {
-        using var dlg = new UnityHubDialog();
+        var dlg = new UnityHubDialog();
         if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedFolder is { } folder) SetRootFolder(folder);
     }
 
     private void OpenFileDialogCmd()
     {
-        using var dlg = new OpenFileDialog
-        {
-            Filter = "Gpixel 프로젝트·PNG (*.gpixel;*.png)|*.gpixel;*.png|Gpixel 프로젝트 (*.gpixel)|*.gpixel|PNG 이미지 (*.png)|*.png",
-            InitialDirectory = _browser.CurrentFolder ?? _settings.LastFolder ?? "",
-        };
-        if (dlg.ShowDialog(this) == DialogResult.OK) OpenFile(dlg.FileName);
+        var path = Ui.OpenFile(this, "열기", _browser.CurrentFolder ?? _settings.LastFolder,
+            new FileFilter("Gpixel 프로젝트·PNG", "*.gpixel", "*.png"),
+            new FileFilter("Gpixel 프로젝트", "*.gpixel"),
+            new FileFilter("PNG 이미지", "*.png"));
+        if (path is not null) OpenFile(path);
     }
 
     /// <summary>.gpixel을 열거나 PNG를 가져온다(같은 이름 .gpixel이 있으면 그것). 취소·실패하면 false.</summary>
-    private bool OpenFile(string path)
+    private bool OpenFile(string path) => OpenFile(path, interactive: true, out _);
+
+    /// <summary>
+    /// 파일 열기. <paramref name="interactive"/>가 false면(Claude 도구) 대화상자를 띄우지 않는다:
+    /// 저장 안 된 수정이 있으면 실패하고, 칸 크기가 모두 같은 시트는 애니메이션으로 가져오며, 결과·오류는 <paramref name="message"/>로 돌려준다.
+    /// </summary>
+    private bool OpenFile(string path, bool interactive, out string message)
     {
-        var full = Path.GetFullPath(path);
-        var target = full.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && File.Exists(ProjectImport.GetProjectPathForPng(full))
-            ? ProjectImport.GetProjectPathForPng(full)
+        message = "";
+        string full;
+        try { full = Path.GetFullPath(path); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            message = $"잘못된 경로입니다: {path}";
+            if (interactive) Ui.Error(this, message);
+            return false;
+        }
+        var target = !full.EndsWith(SpriteProject.FileExtension, StringComparison.OrdinalIgnoreCase) && ProjectImport.FindProjectForImage(full) is { } owner
+            ? owner
             : full;
-        if (_ctx.Project?.Path is { } cur && string.Equals(cur, target, StringComparison.OrdinalIgnoreCase)) return true;
+        if (_ctx.Project?.Path is { } cur && string.Equals(cur, target, StringComparison.OrdinalIgnoreCase))
+        {
+            message = $"이미 열려 있습니다: {Path.GetFileName(cur)}";
+            return true;
+        }
         if (!File.Exists(full))
         {
-            Ui.Error(this, $"파일을 찾을 수 없습니다:\n{full}");
+            message = $"파일을 찾을 수 없습니다:\n{full}";
+            if (interactive) Ui.Error(this, message);
             _settings.RecentFiles.Remove(path);
             return false;
         }
-        if (!ConfirmDiscard()) return false;
+        if (interactive ? !ConfirmDiscard() : !CanReplaceSilently(out message)) return false;
         ProjectOpenResult result;
         try
         {
             var analysis = ProjectImport.Analyze(full, new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple });
-            ProjectKind? kind = null;
-            if (analysis.NeedsKindChoice)
+            ImportMode? mode = null;
+            if (analysis.NeedsModeChoice)
             {
-                var size = analysis.Document!.Slices.Select(s => Rectangle.Intersect(s.Rect, analysis.Document.Image.Bounds).Size)
-                    .FirstOrDefault(s => s.Width > 0 && s.Height > 0);
-                kind = ImportKindDialog.Ask(this, Path.GetFileName(full), analysis.SliceCount, size);
-                if (kind is null) return false;
+                if (interactive)
+                {
+                    var size = analysis.Document!.Slices.Select(s => Rectangle.Intersect(s.Rect, analysis.Document.Image.Bounds).Size)
+                        .FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+                    mode = ImportKindDialog.Ask(this, Path.GetFileName(full), analysis.SliceCount, size);
+                    if (mode is null) return false;
+                }
+                else mode = ImportMode.Frames;
             }
-            result = ProjectImport.Import(analysis, kind);
+            result = ProjectImport.Import(analysis, mode);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or NotSupportedException
                                        or System.Text.Json.JsonException)
         {
-            Ui.Error(this, $"열지 못했습니다:\n{full}\n\n{ex.Message}");
+            message = $"열지 못했습니다:\n{full}\n\n{ex.Message}";
+            if (interactive) Ui.Error(this, message);
             return false;
         }
         _ctx.SetProject(result.Project);
         var p = result.Project;
         AppSettings.PushRecent(_settings.RecentFiles, result.Imported ? full : p.Path ?? full);
         _browser.SelectFile(p.Path is { } pp && File.Exists(pp) ? pp : full);
-        var contents = p.IsAtlas
-            ? $"아틀라스 · 스프라이트 {p.Sprites.Count}개"
-            : $"프레임 {p.Frames.Count}개 · 태그 {p.Tags.Count}개";
-        ShowMessage(result.Imported
+        int parts = p.Layers.Count(l => l.IsPart);
+        var contents = $"프레임 {p.Frames.Count}개 · 태그 {p.Tags.Count}개" + (parts > 0 ? $" · 부위 {parts}개" : "");
+        message = result.Imported
             ? $"PNG 가져옴: {Path.GetFileName(full)} → {contents} — 저장하면 {Path.GetFileName(p.Path)}이(가) 만들어집니다."
-            : $"열기: {p.DisplayName} (레이어 {p.Layers.Count} · {contents})");
-        if (result.Warning is { } w) MessageBox.Show(this, w, "알림", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            : $"열기: {p.DisplayName} (레이어 {p.Layers.Count} · {contents})";
+        ShowMessage(message);
+        if (result.Warning is { } w)
+        {
+            if (interactive) Ui.Warn(this, w);
+            else message += "\n" + w;
+        }
         return true;
     }
 
@@ -1015,7 +1318,7 @@ public sealed class MainForm : Form
     {
         var defaults = _ctx.HasProject ? (_ctx.CanvasWidth, _ctx.CanvasHeight) : (32, 32);
         if (folder is null && !ConfirmDiscard()) return;
-        using var dlg = new NewImageDialog(defaults.Item1, defaults.Item2, folder is null ? null : "new_sprite");
+        var dlg = new NewImageDialog(defaults.Item1, defaults.Item2, folder is null ? null : "new_sprite");
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         string? path = null;
         if (folder is not null)
@@ -1029,32 +1332,53 @@ public sealed class MainForm : Form
             }
             if (!ConfirmDiscard()) return;
         }
-        var p = new SpriteProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Kind);
-        p.Edit("새 프로젝트", ProjectChange.Settings | ProjectChange.Pixels, () =>
-        {
-            p.Sprite.PixelsPerUnit = _settings.LastPpu;
-            if (!dlg.Transparent && !p.IsAtlas)
-            {
-                var bg = new PixelImage(p.Width, p.Height);
-                bg.Clear(_ctx.Secondary);
-                p.SetCel(0, 0, bg);
-            }
-        });
-        if (!dlg.Transparent && p.IsAtlas)
-        {
-            p.BeginSpriteStroke(0, 0).Clear(_ctx.Secondary);
-            p.CommitCelStroke("배경");
-        }
-        p.History.Clear();
+        var p = BuildProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Transparent ? null : _ctx.Secondary,
+            dlg.StartWithParts, dlg.PartName, dlg.PartWidth, dlg.PartHeight);
         _ctx.SetProject(p);
+        SelectFirstPart(p);
         if (path is null)
         {
             p.IsDirty = true;
-            ShowMessage("새 프로젝트 — Ctrl+S로 저장할 위치를 고르세요.");
+            ShowMessage(Ui.Shortcut("새 프로젝트 — Ctrl+S로 저장할 위치를 고르세요."));
             return;
         }
         if (SaveTo(path)) _browser.RefreshFile(path);
         _browser.SelectFile(path);
+    }
+
+    /// <summary>
+    /// 새 프로젝트(기록 없음). <paramref name="background"/>가 있으면 첫 레이어 셀을 그 색으로 채운다.
+    /// <paramref name="startWithParts"/>면 그룹 + 첫 부위를 만들고 그 부위를 현재 레이어로 고른다(<see cref="SelectFirstPart"/>).
+    /// </summary>
+    private SpriteProject BuildProject(int width, int height, Color32? background,
+        bool startWithParts = false, string? partName = null, int partWidth = 0, int partHeight = 0)
+    {
+        var p = new SpriteProject(width, height);
+        p.Edit("새 프로젝트", ProjectChange.Settings | ProjectChange.Pixels, () =>
+        {
+            p.Sprite.PixelsPerUnit = _settings.LastPpu;
+            if (background is { } c)
+            {
+                var bg = new PixelImage(p.Width, p.Height);
+                bg.Clear(c);
+                p.SetCel(0, 0, bg);
+            }
+        });
+        if (startWithParts)
+        {
+            var group = p.AddGroup();
+            p.AddPart(group, string.IsNullOrWhiteSpace(partName) ? null : partName.Trim(),
+                Math.Clamp(partWidth, 1, width), Math.Clamp(partHeight, 1, height));
+        }
+        p.History.Clear();
+        return p;
+    }
+
+    /// <summary>새로 연 프로젝트에 부위가 있으면 맨 위 부위를 현재 레이어로 고른다.</summary>
+    private void SelectFirstPart(SpriteProject p)
+    {
+        for (int i = p.Layers.Count - 1; i >= 0; i--)
+            if (p.Layers[i].IsPart) { _ctx.SetCurrentLayer(i); return; }
     }
 
     private void CloseProject()
@@ -1078,18 +1402,19 @@ public sealed class MainForm : Form
     {
         var p = _ctx.Project;
         if (p is null) return false;
-        using var dlg = new SaveFileDialog
-        {
-            Filter = "Gpixel 프로젝트 (*.gpixel)|*.gpixel",
-            FileName = p.Path is null ? "sprite.gpixel" : Path.GetFileName(p.Path),
-            InitialDirectory = p.Path is null ? _browser.CurrentFolder ?? _settings.LastFolder ?? "" : Path.GetDirectoryName(p.Path)!,
-            OverwritePrompt = true,
-        };
-        if (dlg.ShowDialog(this) != DialogResult.OK) return false;
-        return SaveTo(dlg.FileName);
+        var path = Ui.SaveFile(this, "다른 이름으로 저장",
+            p.Path is null ? _browser.CurrentFolder ?? _settings.LastFolder : Path.GetDirectoryName(p.Path),
+            p.Path is null ? "sprite.gpixel" : Path.GetFileName(p.Path),
+            SpriteProject.FileExtension,
+            new FileFilter("Gpixel 프로젝트", "*.gpixel"));
+        if (path is null) return false;
+        return SaveTo(path);
     }
 
-    private bool SaveTo(string path)
+    private bool SaveTo(string path) => SaveTo(path, interactive: true, out _);
+
+    /// <summary>저장(+내보내기). <paramref name="interactive"/>가 false면 실패를 대화상자 대신 <paramref name="message"/>로 돌려준다.</summary>
+    private bool SaveTo(string path, bool interactive, out string message)
     {
         var p = _ctx.Project!;
         _ctx.CommitFloating();
@@ -1111,14 +1436,16 @@ public sealed class MainForm : Form
                 UpdateTitle();
                 UpdateStatus();
             }
-            Ui.Error(this, projectSaved
+            message = projectSaved
                 ? $"프로젝트는 저장했지만 PNG 시트·.meta 내보내기에 실패했습니다(다른 프로그램이 파일을 쓰고 있는지 확인하세요).\n{path}\n\n{ex.Message}"
-                : $"저장하지 못했습니다. 프로젝트는 수정된 상태로 남아 있습니다.\n{path}\n\n{ex.Message}", "저장 실패");
+                : $"저장하지 못했습니다. 프로젝트는 수정된 상태로 남아 있습니다.\n{path}\n\n{ex.Message}";
+            if (interactive) Ui.Error(this, message, "저장 실패");
             return false;
         }
         _docStamp = SafeStamp(result.ProjectPath);
         AppSettings.PushRecent(_settings.RecentFiles, result.ProjectPath);
-        ShowMessage($"저장: {Path.GetFileName(result.ProjectPath)}" + ExportSummary(result.Export));
+        message = $"저장: {Path.GetFileName(result.ProjectPath)}" + ExportSummary(result.Export);
+        ShowMessage(message);
         _browser.RefreshFile(result.ProjectPath);
         _browser.SelectFile(result.ProjectPath);
         _play?.DocumentChanged();
@@ -1127,8 +1454,25 @@ public sealed class MainForm : Form
         return true;
     }
 
-    private static string ExportSummary(ExportResult? e)
-        => e is null ? " (내보내기 꺼짐)" : $" → {Path.GetFileName(e.PngPath)} 칸 {e.SpriteCount}개" + (e.MetaWritten ? " + .meta" : "");
+    /// <summary>저장/내보내기 결과 요약: 프레임 시트와 부위 아틀라스 각각.</summary>
+    private static string ExportSummary(ProjectExportResult? e)
+    {
+        if (e is null || (e.Frames is null && e.Parts is null)) return " (내보내기 꺼짐)";
+        static string One(string label, ExportResult r)
+            => $"{label} {Path.GetFileName(r.ImagePath)} 칸 {r.SpriteCount}개" + (r.MetaWritten ? " + .meta" : "");
+        var parts = new List<string>(2);
+        if (e.Frames is { } f) parts.Add(One("프레임", f));
+        if (e.Parts is { } p) parts.Add(One("부위", p));
+        return " → " + string.Join(" · ", parts);
+    }
+
+    /// <summary>Ctrl+E: 내보내기 설정 창. 파란 "내보내기"를 누르면 창을 닫고 지금 설정대로 내보낸다.</summary>
+    private void OpenExportDialog()
+    {
+        if (!_ctx.HasProject) return;
+        var dlg = new UnityExportDialog(_ctx, v => _settings.LastPpu = v);
+        if (dlg.ShowDialog(this) == DialogResult.OK) ExportNow();
+    }
 
     private void ExportNow()
     {
@@ -1138,7 +1482,8 @@ public sealed class MainForm : Form
         {
             var e = ProjectExport.Export(p);
             ShowMessage("내보내기:" + ExportSummary(e).TrimStart(' ', '→'));
-            _browser.RefreshFile(e.PngPath);
+            if (e.Frames is { } f) _browser.RefreshFile(f.ImagePath);
+            if (e.Parts is { } pa) _browser.RefreshFile(pa.ImagePath);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
@@ -1180,7 +1525,7 @@ public sealed class MainForm : Form
         var message = p.IsDirty
             ? $"\"{p.DisplayName}\" 파일이 밖에서 바뀌었습니다.\n다시 불러오면 지금 수정한 내용은 사라집니다. 다시 불러올까요?"
             : $"\"{p.DisplayName}\" 파일이 밖에서 바뀌었습니다. 다시 불러올까요?";
-        if (MessageBox.Show(this, message, "파일 변경", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+        if (Ui.Ask(this, message, "파일 변경", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
         {
             ShowMessage("밖에서 바뀐 파일을 다시 불러오지 않았습니다. 저장하면 덮어씁니다.");
             return;
@@ -1206,12 +1551,14 @@ public sealed class MainForm : Form
 
     private void Copy()
     {
+        // 타임라인에 포커스가 있으면 셀/프레임 대상
+        if (_timeline.IsGridFocused) { _timeline.CopySelection(false); ShowMessage("타임라인: 복사"); return; }
         PixelImage? clip;
         if (_ctx.Selection.HasSelection) clip = _ctx.Selection.Copy(_ctx.EditImageOrEmpty);
         else
         {
-            // 선택이 없으면 현재 프레임(아틀라스면 현재 스프라이트) 합성 그림 전체를 복사한다.
-            clip = _ctx.IsAtlas ? _ctx.Project!.FlattenSprite(_ctx.CurrentSprite) : _ctx.Project!.Flatten(_ctx.CurrentFrame);
+            // 선택이 없으면 부위는 그 부위 셀, 그 밖에는 현재 프레임 합성 그림 전체를 복사한다.
+            clip = _ctx.CurrentPart is not null ? _ctx.EditImageOrEmpty.Clone() : _ctx.Project!.Flatten(_ctx.CurrentFrame);
         }
         if (clip is null) return;
         _ctx.Clipboard = clip;
@@ -1221,6 +1568,8 @@ public sealed class MainForm : Form
 
     private void Cut()
     {
+        // 타임라인에 포커스가 있으면 셀/프레임 대상
+        if (_timeline.IsGridFocused) { _timeline.CopySelection(true); ShowMessage("타임라인: 잘라내기"); return; }
         if (!_ctx.Selection.HasSelection)
         {
             ShowMessage("잘라낼 선택 영역이 없습니다.");
@@ -1236,19 +1585,23 @@ public sealed class MainForm : Form
         ShowMessage($"잘라내기: {clip.Width}×{clip.Height}");
     }
 
-    private static void PutOnSystemClipboard(PixelImage clip)
+    /// <summary>시스템 클립보드에 PNG로 올린다(다른 그림 프로그램에 붙여넣기용). 실패하면 앱 내부 클립보드만 쓴다.</summary>
+    private void PutOnSystemClipboard(PixelImage clip)
     {
+        if (Clipboard is not { } cb) return;
         try
         {
-            var data = new DataObject();
-            using var bmp = ImageUtil.ToBitmap(clip);
-            data.SetImage(new Bitmap(bmp));
-            var png = new MemoryStream();
+            using var png = new MemoryStream();
             PngIO.Save(clip, png);
-            data.SetData("PNG", false, png);
-            Clipboard.SetDataObject(data, copy: true);
+            var item = new DataTransferItem();
+            item.Set(PngClipboardFormat, png.ToArray());
+            // Windows 프로그램 대부분은 PNG 대신 비트맵(DIB)을 읽는다.
+            if (OperatingSystem.IsWindows()) item.SetBitmap(ImageUtil.ToBitmap(clip));
+            var data = new DataTransfer();
+            data.Add(item);
+            Ui.Wait(cb.SetDataAsync(data));
         }
-        catch (ExternalException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             // 다른 프로그램이 클립보드를 잡고 있으면 앱 내부 클립보드만 쓴다.
         }
@@ -1256,26 +1609,36 @@ public sealed class MainForm : Form
 
     private PixelImage? ReadClipboard()
     {
-        try
+        if (Clipboard is { } cb)
         {
-            if (Clipboard.GetDataObject()?.GetData("PNG") is MemoryStream png)
+            try
             {
-                png.Position = 0;
-                return PngIO.Load(png);
+                if (Ui.Wait(cb.TryGetValueAsync(PngClipboardFormat)) is { Length: > 0 } bytes)
+                {
+                    using var png = new MemoryStream(bytes, writable: false);
+                    return PngIO.Load(png);
+                }
+                using var bmp = Ui.Wait(cb.TryGetBitmapAsync());
+                if (bmp is not null)
+                {
+                    using var ms = new MemoryStream();
+                    bmp.Save(ms);
+                    ms.Position = 0;
+                    return PngIO.Load(ms);
+                }
             }
-            if (Clipboard.ContainsImage() && Clipboard.GetImage() is { } img)
+            catch (Exception ex) when (ex is not OutOfMemoryException)
             {
-                using (img) return ImageUtil.FromImage(img);
+                // 읽을 수 없는 클립보드 내용이면 앱 내부 클립보드를 쓴다.
             }
-        }
-        catch (Exception ex) when (ex is ExternalException or InvalidDataException or ArgumentException)
-        {
         }
         return _ctx.Clipboard;
     }
 
     private void Paste()
     {
+        // 타임라인에 포커스가 있으면 셀/프레임 대상
+        if (_timeline.IsGridFocused && _timeline.PasteSelection()) { ShowMessage("타임라인: 붙여넣기"); return; }
         var clip = ReadClipboard();
         if (clip is null)
         {
@@ -1310,7 +1673,7 @@ public sealed class MainForm : Form
 
     private void Deselect()
     {
-        if (!_ctx.HasProject) return;
+        if (!_ctx.HasProject || _canvas.ClearPartSelection()) return;
         _ctx.CommitFloating();
         _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
     }
@@ -1350,11 +1713,6 @@ public sealed class MainForm : Form
             ShowMessage("선택 회전 — Enter로 내려놓기");
             return;
         }
-        if (_ctx.IsAtlas)
-        {
-            ShowMessage("아틀라스: 회전할 영역을 먼저 선택하세요(캔버스 전체 회전은 애니메이션 프로젝트만).");
-            return;
-        }
         _ctx.Structural(() => _ctx.Project!.RotateCanvas90(clockwise));
         _canvas.FitToWindow();
         ShowMessage("캔버스 회전(모든 프레임)");
@@ -1377,7 +1735,7 @@ public sealed class MainForm : Form
     {
         if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
         _ctx.CommitFloating();
-        using var dlg = new ReplaceColorDialog(_ctx.Primary, _ctx.Secondary, _ctx.Selection.HasSelection);
+        var dlg = new ReplaceColorDialog(_ctx.Primary, _ctx.Secondary, _ctx.Selection.HasSelection);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         Rectangle? clip = dlg.SelectionOnly ? _ctx.Selection.Bounds : null;
         _ctx.BeginStroke();
@@ -1393,12 +1751,12 @@ public sealed class MainForm : Form
         var p = _ctx.Project!;
         _ctx.CommitFloating();
         var image = p.Flatten(_ctx.CurrentFrame);
-        using var dlg = new SplitFramesDialog(image, 16, 16);
+        var dlg = new SplitFramesDialog(image, 16, 16);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         var rects = dlg.Rects;
-        if (p.Frames.Count > 1 && MessageBox.Show(this,
+        if (p.Frames.Count > 1 && Ui.Ask(this,
                 $"지금 프레임 {p.Frames.Count}개·레이어·태그를 버리고, 현재 프레임 그림을 나눈 {rects.Count}개 프레임으로 바꿉니다. 실행취소할 수 없습니다.",
-                "격자로 나누기", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;
+                "격자로 나누기", MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
         var doc = new Document(image);
         doc.Sprite.CopyFrom(p.Sprite);
         doc.Sprite.Mode = SpriteMode.Multiple;
@@ -1413,21 +1771,147 @@ public sealed class MainForm : Form
         ShowMessage($"격자로 나눔: 프레임 {split.Frames.Count}개 ({split.Width}×{split.Height}) — 태그를 만들어 애니메이션을 정하세요.");
     }
 
-    /// <summary>캔버스 크기(아틀라스면 현재 스프라이트 크기) 바꾸기.</summary>
+    /// <summary>캔버스(프레임) 크기 바꾸기. 부위 크기는 "부위 크기…"로 바꾼다.</summary>
     private void ResizeCanvas()
     {
         var p = _ctx.Project!;
-        if (p.IsAtlas)
-        {
-            _timeline.ResizeSprite();
-            ShowMessage($"스프라이트 크기: {_ctx.CanvasWidth}×{_ctx.CanvasHeight}");
-            return;
-        }
-        using var dlg = new ResizeDialog(p.Width, p.Height);
+        var dlg = new ResizeDialog(p.Width, p.Height);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         if (dlg.NewWidth == p.Width && dlg.NewHeight == p.Height) return;
         _ctx.Structural(() => p.ResizeCanvas(dlg.NewWidth, dlg.NewHeight, dlg.ImageAnchor));
         _canvas.FitToWindow();
         ShowMessage($"캔버스 크기: {p.Width}×{p.Height}");
     }
+
+    // ───────────── Claude 채팅(AI 도구 호스트) ─────────────
+
+    /// <summary>Claude 채팅 창을 연다(이미 열려 있으면 앞으로). 처음 열 때 편집기 안 MCP 서버를 띄운다.</summary>
+    private void ToggleChat()
+    {
+        if (_chat is not null)
+        {
+            if (_chat.WindowState == WindowState.Minimized) _chat.WindowState = WindowState.Normal;
+            _chat.Activate();
+            return;
+        }
+        if (_mcp is null)
+        {
+            var server = new Ai.McpServer(new Ai.PixelTools(this));
+            try { server.Start(); }
+            catch (Exception ex) when (ex is System.Net.HttpListenerException or System.Net.Sockets.SocketException or InvalidOperationException)
+            {
+                server.Dispose();
+                Ui.Error(this, $"Claude 연결용 내부 서버(MCP)를 시작하지 못했습니다.\n{ex.Message}");
+                return;
+            }
+            _mcp = server;
+        }
+        var chat = new Ai.ChatWindow(_ctx, _mcp, _settings);
+        chat.Closed += (_, _) => { if (ReferenceEquals(_chat, chat)) _chat = null; };
+        _chat = chat;
+        chat.Show(this);
+    }
+
+    /// <summary>앱을 닫을 때: 채팅이 열려 있었는지 기억하고 Claude 프로세스·MCP 서버를 끝낸다.</summary>
+    private void ShutdownChat()
+    {
+        _settings.ChatOpen = _chat is not null;
+        if (_chat is { } chat)
+        {
+            _chat = null;
+            chat.Shutdown();
+            chat.Close();
+        }
+        _mcp?.Dispose();
+        _mcp = null;
+    }
+
+    /// <summary>Claude 도구가 지금 프로젝트를 바꿔도 되는지(저장 안 된 수정이 있으면 안 됨 — 대화상자 없이).</summary>
+    private bool CanReplaceSilently(out string message)
+    {
+        _ctx.CommitFloating();
+        if (_ctx.Project is { IsDirty: true } p)
+        {
+            message = $"\"{p.DisplayName}\"에 저장 안 된 수정이 있습니다. 먼저 save_project로 저장하거나 사용자에게 저장·닫기를 부탁하세요.";
+            return false;
+        }
+        message = "";
+        return true;
+    }
+
+    EditorContext Ai.IAiHost.Context => _ctx;
+
+    string? Ai.IAiHost.CurrentFolder => _browser.CurrentFolder ?? _browser.RootFolder;
+
+    IReadOnlyList<Color32> Ai.IAiHost.Palette => _colors.Palette;
+
+    void Ai.IAiHost.SetPalette(IReadOnlyList<Color32> colors) => _colors.SetPalette(colors);
+
+    bool Ai.IAiHost.CreateProject(int width, int height, string? fileName, Color32? background, out string message)
+    {
+        if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
+        {
+            message = $"크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}×{height}";
+            return false;
+        }
+        string? path = null;
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            var folder = _browser.CurrentFolder ?? _browser.RootFolder;
+            if (folder is null)
+            {
+                message = "열린 폴더가 없어 파일로 저장할 수 없습니다. file_name 없이 만들거나 사용자에게 폴더를 열어 달라고 하세요.";
+                return false;
+            }
+            var name = Path.GetFileName(fileName.Trim());
+            if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                message = $"쓸 수 없는 파일 이름입니다: {fileName}";
+                return false;
+            }
+            if (!name.EndsWith(SpriteProject.FileExtension, StringComparison.OrdinalIgnoreCase)) name += SpriteProject.FileExtension;
+            path = Path.Combine(folder, name);
+            if (File.Exists(path))
+            {
+                message = $"이미 같은 이름의 파일이 있습니다: {path}";
+                return false;
+            }
+        }
+        if (!CanReplaceSilently(out message)) return false;
+        var p = BuildProject(width, height, background);
+        _ctx.SetProject(p);
+        if (path is null)
+        {
+            p.IsDirty = true;
+            message = $"새 프로젝트 {width}×{height} — 아직 저장 위치 없음";
+            ShowMessage(message);
+            return true;
+        }
+        if (!SaveTo(path, interactive: false, out var saveMessage))
+        {
+            message = $"새 프로젝트를 만들었지만 저장하지 못했습니다: {saveMessage}";
+            return true;
+        }
+        _browser.RefreshFile(path);
+        _browser.SelectFile(path);
+        message = $"새 프로젝트 {width}×{height} → {path}";
+        return true;
+    }
+
+    bool Ai.IAiHost.SaveProject(out string message)
+    {
+        if (_ctx.Project is not { } p)
+        {
+            message = "열린 프로젝트가 없습니다.";
+            return false;
+        }
+        if (p.Path is null)
+        {
+            message = "아직 저장 위치가 없는 프로젝트입니다. 사용자에게 Ctrl+S(⌘S)로 저장 위치를 고르도록 안내하세요.";
+            return false;
+        }
+        return SaveTo(p.Path, interactive: false, out message);
+    }
+
+    bool Ai.IAiHost.OpenFile(string path, out string message) => OpenFile(path, interactive: false, out message);
 }

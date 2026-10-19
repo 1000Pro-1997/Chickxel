@@ -129,48 +129,6 @@ public class PngAndSidecarTests
     }
 
     [Fact]
-    public void Sidecar_RoundTrip_PreservesEverything()
-    {
-        var doc = Document.CreateNew(64, 32);
-        doc.Sprite.Mode = SpriteMode.Multiple;
-        doc.Sprite.PixelsPerUnit = 32;
-        doc.Sprite.DefaultPivot = Pivot.BottomCenter;
-        doc.Sprite.Border = new SpriteBorder(1, 2, 3, 4);
-        doc.Sprite.FullRectMesh = false;
-        doc.Sprite.Readable = true;
-        doc.Slices.Add(new Slice("hero_0", new Rectangle(0, 0, 16, 32), new Pivot(0.25f, 0.75f), new SpriteBorder(1, 0, 2, 0)));
-        doc.Slices.Add(new Slice("hero_1", new Rectangle(16, 0, 16, 32), Pivot.Center));
-        var clip = new AnimationClip("walk_down") { Loop = false, Fps = 12 };
-        clip.AddFrame("hero_0", 80);
-        clip.AddFrame("hero_1", 120);
-        doc.Animations.Add(clip);
-        doc.Grid = new GridSettings { CellW = 16, CellH = 32, OffsetX = 1, OffsetY = 2, PadX = 3, PadY = 4 };
-
-        var json = SidecarIO.Serialize(doc);
-        var back = Document.CreateNew(64, 32);
-        SidecarIO.Deserialize(json, back);
-
-        Assert.Equal(SpriteMode.Multiple, back.Sprite.Mode);
-        Assert.Equal(32f, back.Sprite.PixelsPerUnit);
-        Assert.Equal(Pivot.BottomCenter, back.Sprite.DefaultPivot);
-        Assert.Equal(new SpriteBorder(1, 2, 3, 4), back.Sprite.Border);
-        Assert.False(back.Sprite.FullRectMesh);
-        Assert.True(back.Sprite.Readable);
-        Assert.Equal(2, back.Slices.Count);
-        Assert.Equal(new Rectangle(0, 0, 16, 32), back.Slices[0].Rect);
-        Assert.Equal(new Pivot(0.25f, 0.75f), back.Slices[0].Pivot);
-        Assert.Equal(new SpriteBorder(1, 0, 2, 0), back.Slices[0].Border);
-        var a = Assert.Single(back.Animations);
-        Assert.Equal("walk_down", a.Name);
-        Assert.False(a.Loop);
-        Assert.Equal(12, a.Fps);
-        Assert.Equal(["hero_0", "hero_1"], a.Frames.Select(f => f.Slice));
-        Assert.Equal([80, 120], a.Frames.Select(f => f.Ms));
-        Assert.Equal(3, back.Grid.PadX);
-        Assert.Equal(2, back.Grid.OffsetY);
-    }
-
-    [Fact]
     public void Sidecar_ReadsSpecExample()
     {
         const string json = """

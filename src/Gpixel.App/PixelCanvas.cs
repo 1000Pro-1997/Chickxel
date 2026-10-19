@@ -1,32 +1,76 @@
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
+using Avalonia.Media.Immutable;
+using Avalonia.Platform;
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
 
 namespace Gpixel.App;
 
 /// <summary>
-/// 픽셀 캔버스: 현재 프레임 한 장(아틀라스면 고른 스프라이트 하나, 보이는 레이어 합성)을 정수 배율(1~64)로 보여 주고,
-/// 현재 레이어의 셀에 그린다. 체커 배경, 픽셀/타일 격자, 타일 모드(3×3 반복), 대칭 안내선, 피벗, 9-slice 안내선(아틀라스),
-/// 선택 영역, 양파 껍질, H 누르는 동안 이전 프레임 보기.
+/// 픽셀 캔버스: 현재 프레임 한 장(보이는 레이어 합성)을 정수 배율(1~64)로 보여 주고, 현재 레이어의 셀에 그린다.
+/// 체커 배경, 픽셀/타일 격자, 타일 모드(5×5, 큰 그림은 3×3 반복), 대칭 안내선, 피벗, 9-slice 안내선(부위), 선택 영역, 양파 껍질,
+/// H 누르는 동안 이전 프레임 보기.
+/// <para>
+/// 부위를 고르면 캔버스 = 그 부위(부위 크기, 부위 안 좌표로 그림)이고 프레임의 나머지는 흐리게 둘레에 보인다.
+/// 그룹을 고르면 프레임 합성을 보며 부위를 배치한다: 올린 부위 테두리·이름, 끌어서 옮기기(놓으면 실행취소 한 단계),
+/// 방향키로 1px(Shift 8px) 옮기기, 더블클릭으로 그 부위 고르기.
+/// </para>
 /// </summary>
 public sealed class PixelCanvas : Control
 {
     public static readonly int[] ZoomLevels = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
 
-    private enum DragMode { None, Pan, Stroke, Shape, Fill, Picker, Marquee, MoveSelection, MoveLayer, Pivot }
+    private enum DragMode { None, Pan, Stroke, Shape, Fill, Picker, Marquee, MoveSelection, MoveLayer, Pivot, Arrange, Slice }
+
+    /// <summary>9-slice 도구로 끄는 테두리 선.</summary>
+    private enum SliceEdge { None, Left, Top, Right, Bottom }
+
+    private static readonly ImmutableDashStyle Dash = new([4.0, 2.0], 0);
+    private static readonly IPen BorderPen = AppTheme.Pen(AppTheme.BorderColor);
+    private static readonly IPen MirrorPen = AppTheme.Pen(Color.FromArgb(200, 255, 90, 160), 1.5, Dash);
+    private static readonly IPen SliceBorderPen = AppTheme.Pen(Color.FromArgb(220, 90, 220, 120), 1, Dash);
+    /// <summary>9-slice 도구: Unity 스프라이트 편집기처럼 초록 실선과 손잡이.</summary>
+    private static readonly IPen SliceEditPen = AppTheme.Pen(Color.FromArgb(255, 60, 230, 90), 1);
+    private static readonly IPen SliceEditActivePen = AppTheme.Pen(Color.FromArgb(255, 160, 255, 170), 2);
+    private static readonly IBrush SliceHandleBrush = AppTheme.Brush(Color.FromArgb(255, 60, 230, 90));
+    private static readonly IPen SliceHandlePen = AppTheme.Pen(Color.FromArgb(255, 10, 40, 15), 1);
+    private static readonly IPen FrameBoundsPen = AppTheme.Pen(Color.FromArgb(110, 255, 255, 255), 1, Dash);
+    private static readonly IPen PartFaintPen = AppTheme.Pen(Color.FromArgb(90, 255, 255, 255), 1, Dash);
+    private static readonly IPen PartHoverPen = AppTheme.Pen(AppTheme.AccentColor, 1.5, Dash);
+    private static readonly IPen PartSelectedPen = AppTheme.Pen(AppTheme.AccentColor, 2);
+    private static readonly IBrush LabelBrush = AppTheme.Brush(Color.FromArgb(200, 0, 0, 0));
+    private static readonly IPen PivotActivePen = AppTheme.Pen(Colors.White, 1.5);
+    private static readonly IPen PivotPen = AppTheme.Pen(Color.FromArgb(255, 255, 120, 80), 1.5);
+    /// <summary>그룹 화면에서 부위마다의 피벗(파란색, 프레임 피벗보다 작게).</summary>
+    private static readonly IPen PartPivotPen = AppTheme.Pen(Color.FromRgb(90, 170, 255), 1.5);
+    private static readonly IBrush PartPivotBrush = AppTheme.Brush(Color.FromRgb(90, 170, 255));
+    private static readonly IPen PivotBackPen = AppTheme.Pen(Color.FromArgb(160, 0, 0, 0), 3.5);
+    private static readonly IPen WhitePen = AppTheme.Pen(Colors.White);
+    private static readonly IPen CursorWhitePen = AppTheme.Pen(Color.FromArgb(200, 255, 255, 255));
+    private static readonly IPen CursorBlackPen = AppTheme.Pen(Color.FromArgb(200, 0, 0, 0));
+    private static readonly IPen CursorOutlineBackPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(200, 0, 0, 0)), 3, null, PenLineCap.Square);
+    private static readonly IPen CursorOutlineFrontPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(220, 255, 255, 255)), 1, null, PenLineCap.Square);
+    private static readonly IBrush DimBrush = AppTheme.Brush(Color.FromArgb(70, 0, 0, 0));
+    private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
+    private static readonly Cursor SizeAllCursor = new(StandardCursorType.SizeAll);
+    private static readonly Cursor CrossCursor = new(StandardCursorType.Cross);
+    private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
+    private static readonly Cursor SizeWeCursor = new(StandardCursorType.SizeWestEast);
+    private static readonly Cursor SizeNsCursor = new(StandardCursorType.SizeNorthSouth);
+    private static readonly Lazy<Cursor> PickerCursor = new(BuildPickerCursor);
 
     private readonly EditorContext _ctx;
-    private Bitmap? _floatingBmp;
+    private WriteableBitmap? _floatingBmp;
+    private WriteableBitmap? _ghostPrev, _ghostNext;
     private int _zoom = 8;
     private Point _offset;
-    private readonly System.Windows.Forms.Timer _antsTimer = new() { Interval = 120 };
-    private readonly System.Windows.Forms.Timer _peekTimer = new() { Interval = 40 };
+    private readonly DispatcherTimer _antsTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
+    private readonly DispatcherTimer _peekTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private int _antsPhase;
+    private bool _pendingCenter;
 
     // 드래그 상태
     private DragMode _drag;
-    private MouseButtons _dragButton;
+    private MouseButton _dragButton;
     private Point _dragStartScreen, _lastScreen;
     private Point _startPx, _lastPx;
     private PixelImage? _strokeBase;
@@ -36,27 +80,38 @@ public sealed class PixelCanvas : Control
     private HashSet<Point>? _visited;
     private ToolKind _strokeTool;
     private Pivot _pivotBefore;
+    private SliceEdge _sliceEdge;
+    /// <summary>9-slice 도구로 끄는 동안의 테두리(놓을 때 실행취소 한 단계로 반영).</summary>
+    private SpriteBorder? _sliceDraft;
+    /// <summary>끄는 9-slice의 대상(그룹 화면의 부위, 아니면 null = 현재 대상)과 그 이미지 좌표 사각형.</summary>
+    private Layer? _slicePart;
+    private Rectangle _sliceRect;
     private bool _dragMoved;
     private bool _altUsed;
+    private KeyModifiers _mods;
     private Point? _hoverPx;
     private Point? _lastStrokeEnd;
+    private Point _mouseScreen;
+
+    // 그룹 화면(부위 배치)
+    private Layer? _arrangePart, _hoverPart;
+    /// <summary>그룹 화면에서 클릭해 고른 부위(파란 실선, 방향키로 옮김). 빈 곳을 누르면 풀린다.</summary>
+    private Layer? _selectedPart;
+    private Point _arrangeStart, _arrangeOffset;
 
     public PixelCanvas(EditorContext ctx)
     {
         _ctx = ctx;
-        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint
-                 | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
-        TabStop = true;
-        BackColor = Theme.BackColor;
+        Focusable = true;
+        ClipToBounds = true;
         _antsTimer.Tick += (_, _) =>
         {
             _antsPhase = (_antsPhase + 1) % 8;
-            if (_ctx.Selection.HasSelection) Invalidate();
+            if (_ctx.Selection.HasSelection) InvalidateVisual();
         };
-        _antsTimer.Start();
         _peekTimer.Tick += (_, _) =>
         {
-            if (NativeMethods.IsKeyDown(Keys.H)) return;
+            if (KeyState.IsDown(Key.H)) return;
             _peekTimer.Stop();
             PeekPrevious = false;
         };
@@ -66,42 +121,96 @@ public sealed class PixelCanvas : Control
             UpdateFloatingBitmap();
             _lastStrokeEnd = null;
             // 프로젝트가 열리며 캔버스가 막 보이게 된 경우 배치가 끝난 뒤 가운데 놓는다.
-            if (IsHandleCreated) BeginInvoke(CenterImage);
-            else CenterImage();
-            Invalidate();
+            CenterImage();
+            Dispatcher.UIThread.Post(CenterImage, DispatcherPriority.Loaded);
+            InvalidateVisual();
         };
         ctx.ViewChanged += (_, _) =>
         {
-            // 아틀라스에서 크기가 다른 스프라이트로 바뀌면 가운데 다시 놓는다.
-            var size = new Size(W, H);
-            if (_ctx.HasProject && size != _shownSize)
-            {
-                _shownSize = size;
-                CenterImage();
-            }
-            Invalidate();
+            if (_ctx.HasProject) SyncShownView();
+            if (!_ctx.IsGroupSelected) _hoverPart = null;
+            InvalidateVisual();
         };
-        ctx.Selection.Changed += (_, _) => { UpdateFloatingBitmap(); Invalidate(); };
-        ctx.OnionSkinChanged += (_, _) => Invalidate();
-        ctx.ToolChanged += (_, _) => { UpdateCursor(); Invalidate(); };
-        ctx.ToolOptionsChanged += (_, _) => Invalidate();
+        ctx.Selection.Changed += (_, _) => { UpdateFloatingBitmap(); InvalidateVisual(); };
+        ctx.OnionSkinChanged += (_, _) => InvalidateVisual();
+        ctx.ToolChanged += (_, _) => { UpdateCursor(); InvalidateVisual(); };
+        ctx.ToolOptionsChanged += (_, _) => InvalidateVisual();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _antsTimer.Start();
+        // Alt를 누르고 떼면(캔버스에 포커스가 없어도) 커서를 스포이드로 바꾸거나 되돌린다.
+        if (TopLevel.GetTopLevel(this) is { } top)
+        {
+            top.AddHandler(KeyDownEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
+            top.AddHandler(KeyUpEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
+        }
+    }
+
+    private void OnWindowKey(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.LeftAlt or Key.RightAlt && IsPointerOver)
+            Dispatcher.UIThread.Post(UpdateCursor); // KeyState가 먼저 갱신된 뒤에
+    }
+
+    /// <summary>스포이드 도구 아이콘을 2배로 키우고 어두운 테두리를 두른 커서(끝이 집는 점).</summary>
+    private static Cursor BuildPickerCursor()
+    {
+        PixelImage icon;
+        using (var s = AssetLoader.Open(new Uri("avares://Gpixel.App/Assets/Tools/picker.png")))
+            icon = Gpixel.Core.IO.PngIO.Load(s);
+        const int scale = 2, size = 16 * scale + 2;
+        var img = new PixelImage(size, size);
+        bool Lit(int x, int y) => icon.Get(x, y).A > 100;
+        var outline = new Color32(20, 20, 24, 255);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                int sx = (x - 1) / scale, sy = (y - 1) / scale;
+                if (x >= 1 && y >= 1 && Lit(sx, sy)) { img.Set(x, y, new Color32(255, 255, 255, 255)); continue; }
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx >= 1 && ny >= 1 && Lit((nx - 1) / scale, (ny - 1) / scale)) { img.Set(x, y, outline); goto next; }
+                    }
+                next:;
+            }
+        // 집는 점 = 아이콘의 가장 아래 왼쪽 픽셀
+        var tip = new PixelPoint(0, size - 1);
+        for (int y = 15; y >= 0 && tip.X == 0; y--)
+            for (int x = 0; x < 16; x++)
+                if (Lit(x, y)) { tip = new PixelPoint(1 + x * scale, 1 + y * scale + scale - 1); break; }
+        return new Cursor(ImageUtil.ToBitmap(img), tip);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _antsTimer.Stop();
+        _peekTimer.Stop();
     }
 
     // ───────────── 보기 옵션 ─────────────
 
     private bool _showPixelGrid = true, _showPivot = true, _showTileGrid, _tiledMode, _peekPrevious;
-    private Size _shownSize;
+    private Size _shownFrameSize;
+    private Point _shownOrigin;
     private Size _tileSize = new(16, 16);
     private Color _pixelGridColor = Color.FromArgb(64, 255, 255, 255), _tileGridColor = Color.FromArgb(150, 90, 200, 255);
 
-    public bool ShowPixelGrid { get => _showPixelGrid; set { _showPixelGrid = value; Invalidate(); } }
-    public bool ShowPivot { get => _showPivot; set { _showPivot = value; Invalidate(); } }
-    public bool ShowTileGrid { get => _showTileGrid; set { _showTileGrid = value; Invalidate(); } }
-    /// <summary>타일 모드: 그림을 3×3으로 반복해 보여 주고, 가장자리를 넘는 그리기는 반대편으로 이어진다.</summary>
-    public bool TiledMode { get => _tiledMode; set { _tiledMode = value; Invalidate(); } }
-    public Size TileSize { get => _tileSize; set { _tileSize = new Size(Math.Max(1, value.Width), Math.Max(1, value.Height)); Invalidate(); } }
-    public Color PixelGridColor { get => _pixelGridColor; set { _pixelGridColor = value; Invalidate(); } }
-    public Color TileGridColor { get => _tileGridColor; set { _tileGridColor = value; Invalidate(); } }
+    public bool ShowPixelGrid { get => _showPixelGrid; set { _showPixelGrid = value; InvalidateVisual(); } }
+    public bool ShowPivot { get => _showPivot; set { _showPivot = value; InvalidateVisual(); } }
+    public bool ShowTileGrid { get => _showTileGrid; set { _showTileGrid = value; InvalidateVisual(); } }
+    /// <summary>프로젝트를 열 때마다 화면에 맞춘다(맞추기 토글).</summary>
+    public bool AutoFit { get; set; } = true;
+    /// <summary>타일 모드: 그림을 반복해 보여 주고(크지 않으면 5×5, 한 변이 <see cref="LargeTileSize"/>px 넘으면 3×3), 가장자리를 넘는 그리기는 반대편으로 이어진다.</summary>
+    public bool TiledMode { get => _tiledMode; set { _tiledMode = value; InvalidateVisual(); } }
+    public Size TileSize { get => _tileSize; set { _tileSize = new Size(Math.Max(1, value.Width), Math.Max(1, value.Height)); InvalidateVisual(); } }
+    public Color PixelGridColor { get => _pixelGridColor; set { _pixelGridColor = value; InvalidateVisual(); } }
+    public Color TileGridColor { get => _tileGridColor; set { _tileGridColor = value; InvalidateVisual(); } }
 
     /// <summary>H를 누르고 있는 동안 이전 프레임을 보여 준다.</summary>
     public bool PeekPrevious
@@ -112,7 +221,7 @@ public sealed class PixelCanvas : Control
             if (_peekPrevious == value) return;
             _peekPrevious = value;
             if (value) _peekTimer.Start();
-            Invalidate();
+            InvalidateVisual();
         }
     }
 
@@ -127,34 +236,46 @@ public sealed class PixelCanvas : Control
 
     private int W => _ctx.CanvasWidth;
     private int H => _ctx.CanvasHeight;
+    private int ClientWidth => (int)Bounds.Width;
+    private int ClientHeight => (int)Bounds.Height;
 
     // ───────────── 좌표·확대 ─────────────
 
     private Rectangle ImageScreenRect => new(_offset.X, _offset.Y, W * _zoom, H * _zoom);
 
+    private static Point ToInt(Avalonia.Point p) => new((int)Math.Floor(p.X), (int)Math.Floor(p.Y));
+
+    private static Rect ToRect(Rectangle r) => new(r.X, r.Y, r.Width, r.Height);
+
     private Point ScreenToPixel(Point p) => new(FloorDiv(p.X - _offset.X, _zoom), FloorDiv(p.Y - _offset.Y, _zoom));
 
-    private PointF ScreenToImageF(Point p) => new((p.X - _offset.X) / (float)_zoom, (p.Y - _offset.Y) / (float)_zoom);
+    private Avalonia.Point ScreenToImageF(Point p) => new((p.X - _offset.X) / (double)_zoom, (p.Y - _offset.Y) / (double)_zoom);
 
-    private PointF ImageToScreen(float x, float y) => new(_offset.X + x * _zoom, _offset.Y + y * _zoom);
+    private Avalonia.Point ImageToScreen(double x, double y) => new(_offset.X + x * _zoom, _offset.Y + y * _zoom);
 
     private Rectangle ImageToScreen(Rectangle r) => new(_offset.X + r.X * _zoom, _offset.Y + r.Y * _zoom, r.Width * _zoom, r.Height * _zoom);
 
     private static int FloorDiv(int a, int b) => (int)Math.Floor(a / (double)b);
 
     /// <summary>타일 모드면 그림 밖 좌표를 안으로 감는다.</summary>
+    /// <summary>이보다 큰(한 변이라도) 그림은 타일 모드에서 3×3, 아니면 5×5로 반복한다.</summary>
+    private const int LargeTileSize = 128;
+
+    /// <summary>타일 모드에서 가운데 칸 둘레로 몇 겹 반복하는지(꺼짐 0, 큰 그림 1 = 3×3, 그 밖 2 = 5×5).</summary>
+    private int TileRadius => !_tiledMode ? 0 : W > LargeTileSize || H > LargeTileSize ? 1 : 2;
+
     private Point Wrap(Point p) => _tiledMode && W > 0 && H > 0 ? new Point(PixelOps.Mod(p.X, W), PixelOps.Mod(p.Y, H)) : p;
 
     public void SetZoom(int zoom, Point? anchor = null)
     {
         zoom = Math.Clamp(zoom, 1, 64);
         if (zoom == _zoom) return;
-        var a = anchor ?? new Point(ClientSize.Width / 2, ClientSize.Height / 2);
-        float ix = (a.X - _offset.X) / (float)_zoom, iy = (a.Y - _offset.Y) / (float)_zoom;
+        var a = anchor ?? new Point(ClientWidth / 2, ClientHeight / 2);
+        double ix = (a.X - _offset.X) / (double)_zoom, iy = (a.Y - _offset.Y) / (double)_zoom;
         _zoom = zoom;
         _offset = new Point((int)Math.Round(a.X - ix * zoom), (int)Math.Round(a.Y - iy * zoom));
         ZoomChanged?.Invoke(this, EventArgs.Empty);
-        Invalidate();
+        InvalidateVisual();
     }
 
     public void ZoomStep(int direction, Point? anchor = null)
@@ -169,37 +290,73 @@ public sealed class PixelCanvas : Control
     public void FitToWindow()
     {
         if (!_ctx.HasProject) return;
-        int n = _tiledMode ? 3 : 1;
-        int fit = (int)Math.Floor(Math.Min((ClientSize.Width - 24) / (double)(W * n), (ClientSize.Height - 24) / (double)(H * n)));
+        int n = TileRadius * 2 + 1;
+        int fit = (int)Math.Floor(Math.Min((ClientWidth - 24) / (double)(W * n), (ClientHeight - 24) / (double)(H * n)));
         _zoom = Math.Clamp(fit, 1, 64);
         CenterOffset();
         ZoomChanged?.Invoke(this, EventArgs.Empty);
-        Invalidate();
+        InvalidateVisual();
     }
 
-    /// <summary>프로젝트를 연 직후: 현재 확대율로 가운데 놓되 화면보다 크면 맞춘다.</summary>
+    /// <summary>프로젝트를 연 직후: <see cref="AutoFit"/>이면 화면에 맞추고, 아니면 현재 확대율로 가운데 놓되 화면보다 크면 맞춘다.</summary>
     private void CenterImage()
     {
         if (!_ctx.HasProject) return;
-        _shownSize = new Size(W, H);
-        if (W * _zoom > ClientSize.Width - 24 || H * _zoom > ClientSize.Height - 24)
+        _shownFrameSize = _ctx.Project!.Size;
+        _shownOrigin = ShownOrigin;
+        if (ClientWidth <= 0 || ClientHeight <= 0)
+        {
+            // 아직 배치 전: 크기가 정해지면 가운데 놓는다.
+            _pendingCenter = true;
+            return;
+        }
+        _pendingCenter = false;
+        if (AutoFit || W * _zoom > ClientWidth - 24 || H * _zoom > ClientHeight - 24)
         {
             FitToWindow();
             return;
         }
         CenterOffset();
+        InvalidateVisual();
     }
 
     private void CenterOffset()
-        => _offset = new Point((ClientSize.Width - W * _zoom) / 2, (ClientSize.Height - H * _zoom) / 2);
+        => _offset = new Point((ClientWidth - W * _zoom) / 2, (ClientHeight - H * _zoom) / 2);
+
+    /// <summary>캔버스 (0,0)이 프레임에서 놓인 곳: 부위 화면이면 부위 위치, 아니면 (0,0).</summary>
+    private Point ShownOrigin => _ctx.CurrentPart?.PartOffset ?? Point.Empty;
+
+    /// <summary>
+    /// 보이는 대상이 바뀜: 프레임 크기가 바뀌면 가운데 다시 놓고, 부위 ↔ 프레임(또는 부위 위치)이 바뀌면
+    /// 프레임 그림이 화면에서 그 자리에 머물도록 옮긴다.
+    /// </summary>
+    private void SyncShownView()
+    {
+        if (_ctx.Project!.Size != _shownFrameSize)
+        {
+            CenterImage();
+            return;
+        }
+        var origin = ShownOrigin;
+        if (origin == _shownOrigin) return;
+        _offset.Offset((origin.X - _shownOrigin.X) * _zoom, (origin.Y - _shownOrigin.Y) * _zoom);
+        _shownOrigin = origin;
+    }
 
     /// <summary>설정에서 읽은 확대율을 그대로 적용한다(이벤트 없음).</summary>
     public void InitZoom(int zoom) => _zoom = Math.Clamp(zoom, 1, 64);
 
-    protected override void OnVisibleChanged(EventArgs e)
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        base.OnVisibleChanged(e);
-        if (Visible && _ctx.HasProject && IsHandleCreated) BeginInvoke(CenterImage);
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty && IsVisible && _ctx.HasProject)
+            Dispatcher.UIThread.Post(CenterImage, DispatcherPriority.Loaded);
+    }
+
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (_pendingCenter) CenterImage();
     }
 
     // ───────────── 그리기 ─────────────
@@ -210,254 +367,528 @@ public sealed class PixelCanvas : Control
         _floatingBmp = _ctx.Selection.Floating is { } f ? ImageUtil.ToBitmap(f) : null;
     }
 
-    protected override void OnPaint(PaintEventArgs e)
+    public override void Render(DrawingContext g)
     {
-        var g = e.Graphics;
-        g.Clear(Theme.BackColor);
+        g.FillRectangle(AppTheme.BackBrush, new Rect(Bounds.Size));
         if (!_ctx.HasProject) return;
-        var bmp = _ctx.DisplayBitmap!;
-        if (_peekPrevious && _ctx.CurrentFrame > 0 && _ctx.FrameBitmap(_ctx.CurrentFrame - 1) is { } prev) bmp = prev;
+        int frame = _ctx.CurrentFrame;
+        Bitmap? bmp = _ctx.DisplayBitmap;
+        bool peek = _peekPrevious && frame > 0;
+        if (peek) bmp = _ctx.ViewBitmap(frame - 1);
+        // 그룹 화면에서 부위를 끄는 중: 그 부위를 뺀 합성 위에 옮긴 자리로 그린다.
+        var dragged = _drag == DragMode.Arrange && !peek ? _arrangePart : null;
+        if (dragged is not null) bmp = _ctx.ContextBitmap(frame, dragged);
 
-        g.InterpolationMode = InterpolationMode.NearestNeighbor;
-        g.PixelOffsetMode = PixelOffsetMode.Half;
-        if (_tiledMode)
+        using (ImageUtil.Pixelated(g))
         {
-            for (int ty = -1; ty <= 1; ty++)
-                for (int tx = -1; tx <= 1; tx++)
-                {
-                    if (tx == 0 && ty == 0) continue;
-                    DrawImageAt(g, bmp, tx * W, ty * H);
-                }
-            // 가운데(편집하는 칸)가 구분되도록 둘레를 살짝 어둡게.
-            using var dim = new SolidBrush(Color.FromArgb(70, 0, 0, 0));
-            var region = new Region(ImageToScreen(new Rectangle(-W, -H, W * 3, H * 3)));
-            region.Exclude(ImageScreenRect);
-            g.FillRegion(dim, region);
+            if (_ctx.CurrentPart is { } part && !_tiledMode) DrawPartSurroundings(g, part, peek ? frame - 1 : frame);
+            if (_tiledMode)
+            {
+                int r = TileRadius;
+                for (int ty = -r; ty <= r; ty++)
+                    for (int tx = -r; tx <= r; tx++)
+                    {
+                        if (tx == 0 && ty == 0) continue;
+                        DrawImageAt(g, bmp, tx * W, ty * H);
+                    }
+                // 가운데(편집하는 칸)가 구분되도록 둘레를 살짝 어둡게.
+                var all = ImageToScreen(new Rectangle(-W * r, -H * r, W * (2 * r + 1), H * (2 * r + 1)));
+                var c = ImageScreenRect;
+                g.FillRectangle(DimBrush, new Rect(all.X, all.Y, all.Width, c.Y - all.Y));
+                g.FillRectangle(DimBrush, new Rect(all.X, c.Bottom, all.Width, all.Bottom - c.Bottom));
+                g.FillRectangle(DimBrush, new Rect(all.X, c.Y, c.X - all.X, c.Height));
+                g.FillRectangle(DimBrush, new Rect(c.Right, c.Y, all.Right - c.Right, c.Height));
+            }
+            DrawImageAt(g, bmp, 0, 0);
+            if (dragged is not null) DrawDraggedPart(g, dragged, frame);
+            if (_floatingBmp is not null && !_peekPrevious)
+                g.DrawImage(_floatingBmp, new Rect(0, 0, _floatingBmp.PixelSize.Width, _floatingBmp.PixelSize.Height),
+                    ToRect(ImageToScreen(_ctx.Selection.Bounds)));
+            if (!_peekPrevious) DrawOnionSkin(g);
         }
-        DrawImageAt(g, bmp, 0, 0);
-        if (_floatingBmp is not null && !_peekPrevious)
-            g.DrawImage(_floatingBmp, ImageToScreen(_ctx.Selection.Bounds), new Rectangle(0, 0, _floatingBmp.Width, _floatingBmp.Height), GraphicsUnit.Pixel);
-        if (!_peekPrevious) DrawOnionSkin(g);
-        g.PixelOffsetMode = PixelOffsetMode.Default;
 
         var src = VisibleSourceRect(0, 0);
         if (_showPixelGrid && _zoom >= 6) DrawPixelGrid(g, src);
         if (_showTileGrid) DrawTileGrid(g, src);
         var imgRect = ImageScreenRect;
-        using (var border = new Pen(Theme.BorderColor))
-            g.DrawRectangle(border, imgRect.X - 1, imgRect.Y - 1, imgRect.Width + 1, imgRect.Height + 1);
+        g.DrawRectangle(null, BorderPen, new Rect(imgRect.X - 0.5, imgRect.Y - 0.5, imgRect.Width + 1, imgRect.Height + 1));
         DrawSymmetryGuides(g);
-        DrawSpriteBorder(g);
+        bool slicing = _ctx.Tool == ToolKind.Slice && !_peekPrevious;
+        if (!slicing) DrawPartBorder(g);
+        if (_ctx.IsGroupSelected && !_peekPrevious) DrawPartOutlines(g);
+        if (slicing) DrawSliceEditor(g);
+        if ((_showPivot || _ctx.Tool == ToolKind.Pivot) && _ctx.IsGroupSelected && !_peekPrevious) DrawPartPivots(g);
         if (_showPivot || _ctx.Tool == ToolKind.Pivot) DrawPivot(g);
         if (_ctx.Selection.HasSelection) DrawMarquee(g, ImageToScreen(_ctx.Selection.Bounds));
         DrawBrushCursor(g);
         if (_peekPrevious)
-            TextRenderer.DrawText(g, _ctx.CurrentFrame > 0 ? $"이전 프레임 {_ctx.CurrentFrame} 보는 중 (H)" : "이전 프레임이 없습니다",
-                Theme.BoldFont, new Point(8, 8), Theme.WarningColor);
-        if (!_ctx.CanEdit)
-            TextRenderer.DrawText(g, "현재 레이어가 숨김/잠금 상태라 그릴 수 없습니다", Theme.UiFont, new Point(8, Height - 24), Theme.WarningColor);
+            AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? $"이전 프레임 {_ctx.CurrentFrame} 보는 중 (H)" : "이전 프레임이 없습니다",
+                new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);
+        if (_ctx.IsGroupSelected)
+            AppTheme.DrawText(g, "그룹: 클릭 = 부위 고르기(파랑)·끌어 배치 · 빈 곳 클릭/Esc = 해제 · 방향키 = 고른 부위 1px(Shift 8px) · 더블클릭 = 그 부위 편집",
+                new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
+        else if (!_ctx.CanEdit)
+            AppTheme.DrawText(g, "현재 레이어가 숨김/잠금 상태라 그릴 수 없습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
     }
 
-    /// <summary>그림을 (ox,oy) 이미지 좌표만큼 옮긴 위치에 보이는 부분만 그린다.</summary>
-    private void DrawImageAt(Graphics g, Bitmap bmp, int ox, int oy)
+    /// <summary>캔버스 크기의 그림을 (ox,oy) 이미지 좌표만큼 옮긴 위치에 체커 배경과 함께 보이는 부분만 그린다(그림이 없으면 체커만).</summary>
+    private void DrawImageAt(DrawingContext g, Bitmap? bmp, int ox, int oy) => DrawBitmapAt(g, bmp, ox, oy, W, H, checker: true);
+
+    /// <summary><paramref name="w"/>×<paramref name="h"/> 그림을 (ox,oy) 이미지 좌표에 보이는 부분만 그린다.</summary>
+    private void DrawBitmapAt(DrawingContext g, Bitmap? bmp, int ox, int oy, int w, int h, bool checker)
     {
-        var src = VisibleSourceRect(ox, oy);
+        var src = VisibleSourceRect(ox, oy, w, h);
         if (src.Width <= 0 || src.Height <= 0) return;
-        var dest = ImageToScreen(new Rectangle(src.X + ox, src.Y + oy, src.Width, src.Height));
-        var oldOffset = g.PixelOffsetMode;
-        g.PixelOffsetMode = PixelOffsetMode.Default;
-        Theme.DrawChecker(g, Rectangle.Intersect(dest, ClientRectangle), 8);
-        g.PixelOffsetMode = oldOffset;
-        g.DrawImage(bmp, dest, src, GraphicsUnit.Pixel);
+        var dest = ToRect(ImageToScreen(new Rectangle(src.X + ox, src.Y + oy, src.Width, src.Height)));
+        if (checker) AppTheme.DrawChecker(g, dest.Intersect(new Rect(Bounds.Size)), 8);
+        if (bmp is not null) g.DrawImage(bmp, ToRect(src), dest);
     }
 
-    private Rectangle VisibleSourceRect(int ox, int oy)
+    private Rectangle VisibleSourceRect(int ox, int oy) => VisibleSourceRect(ox, oy, W, H);
+
+    private Rectangle VisibleSourceRect(int ox, int oy, int w, int h)
     {
         var tl = ScreenToPixel(Point.Empty);
-        var br = ScreenToPixel(new Point(ClientSize.Width, ClientSize.Height));
-        return Rectangle.Intersect(Rectangle.FromLTRB(tl.X - ox, tl.Y - oy, br.X + 1 - ox, br.Y + 1 - oy), new Rectangle(0, 0, W, H));
+        var br = ScreenToPixel(new Point(ClientWidth, ClientHeight));
+        return Rectangle.Intersect(Rectangle.FromLTRB(tl.X - ox, tl.Y - oy, br.X + 1 - ox, br.Y + 1 - oy), new Rectangle(0, 0, w, h));
     }
 
-    private void DrawPixelGrid(Graphics g, Rectangle src)
+    /// <summary>부위 화면: 프레임의 나머지(이 부위를 뺀 합성)를 부위 위치만큼 옮겨 흐리게, 프레임 경계는 점선으로.</summary>
+    private void DrawPartSurroundings(DrawingContext g, Layer part, int frame)
+    {
+        if (_ctx.Project is not { } p || _ctx.ContextBitmap(frame, part) is not { } around) return;
+        int ox = -part.PartOffset.X, oy = -part.PartOffset.Y;
+        using (g.PushOpacity(0.35)) DrawBitmapAt(g, around, ox, oy, p.Width, p.Height, checker: false);
+        var r = ImageToScreen(new Rectangle(ox, oy, p.Width, p.Height));
+        g.DrawRectangle(null, FrameBoundsPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
+    }
+
+    /// <summary>그룹 화면에서 끄는 부위를 옮긴 자리에 그린다(그룹·부위 불투명도 반영).</summary>
+    private void DrawDraggedPart(DrawingContext g, Layer part, int frame)
+    {
+        if (_ctx.Project is not { } p || _ctx.CelBitmap(p.IndexOf(part), frame) is not { } cel) return;
+        double opacity = (part.Parent?.Opacity ?? 255) * part.Opacity / (255.0 * 255.0);
+        using (g.PushOpacity(opacity))
+            DrawBitmapAt(g, cel, _arrangeOffset.X, _arrangeOffset.Y, part.PartSize.Width, part.PartSize.Height, checker: false);
+    }
+
+    /// <summary>그룹 화면: 보이는 부위마다 흐린 테두리, 올리거나 끄는 부위는 밝은 테두리 + 이름·크기(끄는 중이면 위치).</summary>
+    private void DrawPartOutlines(DrawingContext g)
+    {
+        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return;
+        var selected = SelectedPartIn(p, group);
+        var hover = _arrangePart ?? _hoverPart;
+        foreach (var part in p.ChildrenOf(group))
+        {
+            if (ReferenceEquals(part, hover) || ReferenceEquals(part, selected) || !p.IsLayerVisible(p.IndexOf(part))) continue;
+            var r = ImageToScreen(part.PartRect);
+            g.DrawRectangle(null, PartFaintPen, new Rect(r.X + 0.5, r.Y + 0.5, Math.Max(0, r.Width - 1), Math.Max(0, r.Height - 1)));
+        }
+        Rect ScreenRectOf(Layer part)
+        {
+            var rect = part.PartRect;
+            if (ReferenceEquals(part, _arrangePart)) rect.Location = _arrangeOffset;
+            var sr = ImageToScreen(rect);
+            return new Rect(sr.X + 0.5, sr.Y + 0.5, Math.Max(0, sr.Width - 1), Math.Max(0, sr.Height - 1));
+        }
+        // 고른 부위: 파란 실선(늘 보임). 마우스가 올라간 다른 부위: 파란 점선.
+        if (selected is not null) g.DrawRectangle(null, PartSelectedPen, ScreenRectOf(selected));
+        if (hover is not null && !ReferenceEquals(hover, selected) && ReferenceEquals(hover.Parent, group))
+            g.DrawRectangle(null, PartHoverPen, ScreenRectOf(hover));
+        var active = hover is not null && ReferenceEquals(hover.Parent, group) ? hover : selected;
+        if (active is null) return;
+        var rect = active.PartRect;
+        if (ReferenceEquals(active, _arrangePart)) rect.Location = _arrangeOffset;
+        var s = ImageToScreen(rect);
+        var label = $"{active.Name}  {rect.Width}×{rect.Height}" + (ReferenceEquals(active, _arrangePart) || ReferenceEquals(active, selected) ? $"  ({rect.X}, {rect.Y})" : "");
+        var size = AppTheme.MeasureText(label, AppTheme.SmallFontSize);
+        double ly = s.Y - size.Height - 3 >= 0 ? s.Y - size.Height - 3 : s.Bottom + 2;
+        g.FillRectangle(LabelBrush, new Rect(s.X, ly, size.Width + 6, size.Height + 2));
+        AppTheme.DrawText(g, label, new Avalonia.Point(s.X + 3, ly + 1), Brushes.White, AppTheme.SmallFontSize);
+    }
+
+    private void DrawPixelGrid(DrawingContext g, Rectangle src)
     {
         var c = _pixelGridColor;
-        using var pen = new Pen(_zoom >= 12 ? c : Color.FromArgb(Math.Max(16, c.A * 3 / 4), c));
+        var pen = AppTheme.Pen(_zoom >= 12 ? c : Color.FromArgb((byte)Math.Max(16, c.A * 3 / 4), c.R, c.G, c.B));
         for (int x = src.Left; x <= src.Right; x++)
         {
-            float sx = _offset.X + x * _zoom;
-            g.DrawLine(pen, sx, _offset.Y + src.Top * _zoom, sx, _offset.Y + src.Bottom * _zoom);
+            double sx = _offset.X + x * _zoom + 0.5;
+            g.DrawLine(pen, new Avalonia.Point(sx, _offset.Y + src.Top * _zoom), new Avalonia.Point(sx, _offset.Y + src.Bottom * _zoom));
         }
         for (int y = src.Top; y <= src.Bottom; y++)
         {
-            float sy = _offset.Y + y * _zoom;
-            g.DrawLine(pen, _offset.X + src.Left * _zoom, sy, _offset.X + src.Right * _zoom, sy);
+            double sy = _offset.Y + y * _zoom + 0.5;
+            g.DrawLine(pen, new Avalonia.Point(_offset.X + src.Left * _zoom, sy), new Avalonia.Point(_offset.X + src.Right * _zoom, sy));
         }
     }
 
-    private void DrawTileGrid(Graphics g, Rectangle src)
+    private void DrawTileGrid(DrawingContext g, Rectangle src)
     {
-        using var pen = new Pen(_tileGridColor);
+        var pen = AppTheme.Pen(_tileGridColor);
         int tw = _tileSize.Width, th = _tileSize.Height;
         for (int x = src.Left / tw * tw; x <= src.Right; x += tw)
-            g.DrawLine(pen, _offset.X + x * _zoom, _offset.Y + src.Top * _zoom, _offset.X + x * _zoom, _offset.Y + src.Bottom * _zoom);
+        {
+            double sx = _offset.X + x * _zoom + 0.5;
+            g.DrawLine(pen, new Avalonia.Point(sx, _offset.Y + src.Top * _zoom), new Avalonia.Point(sx, _offset.Y + src.Bottom * _zoom));
+        }
         for (int y = src.Top / th * th; y <= src.Bottom; y += th)
-            g.DrawLine(pen, _offset.X + src.Left * _zoom, _offset.Y + y * _zoom, _offset.X + src.Right * _zoom, _offset.Y + y * _zoom);
+        {
+            double sy = _offset.Y + y * _zoom + 0.5;
+            g.DrawLine(pen, new Avalonia.Point(_offset.X + src.Left * _zoom, sy), new Avalonia.Point(_offset.X + src.Right * _zoom, sy));
+        }
     }
 
-    private void DrawSymmetryGuides(Graphics g)
+    private void DrawSymmetryGuides(DrawingContext g)
     {
         if (!_ctx.MirrorX && !_ctx.MirrorY) return;
         var r = ImageScreenRect;
-        using var pen = new Pen(Color.FromArgb(200, 255, 90, 160), 1.5f) { DashStyle = DashStyle.Dash };
         if (_ctx.MirrorX)
         {
-            float x = r.X + r.Width / 2f;
-            g.DrawLine(pen, x, r.Top - 10, x, r.Bottom + 10);
+            double x = r.X + r.Width / 2.0;
+            g.DrawLine(MirrorPen, new Avalonia.Point(x, r.Top - 10), new Avalonia.Point(x, r.Bottom + 10));
         }
         if (_ctx.MirrorY)
         {
-            float y = r.Y + r.Height / 2f;
-            g.DrawLine(pen, r.Left - 10, y, r.Right + 10, y);
+            double y = r.Y + r.Height / 2.0;
+            g.DrawLine(MirrorPen, new Avalonia.Point(r.Left - 10, y), new Avalonia.Point(r.Right + 10, y));
         }
     }
 
-    /// <summary>아틀라스: 현재 스프라이트의 9-slice 테두리 안내선(점선).</summary>
-    private void DrawSpriteBorder(Graphics g)
+    /// <summary>부위 화면: 현재 부위의 9-slice 테두리 안내선(점선).</summary>
+    private void DrawPartBorder(DrawingContext g)
     {
-        if (_ctx.CurrentAtlasSprite is not { } s || s.Border.IsNone) return;
+        if (_ctx.CurrentPart is not { } part || part.PartBorder.IsNone) return;
         var r = ImageScreenRect;
-        var b = s.Border;
-        using var pen = new Pen(Color.FromArgb(220, 90, 220, 120), 1f) { DashStyle = DashStyle.Dash };
-        if (b.Left > 0) g.DrawLine(pen, r.Left + b.Left * _zoom, r.Top, r.Left + b.Left * _zoom, r.Bottom);
-        if (b.Right > 0) g.DrawLine(pen, r.Right - b.Right * _zoom, r.Top, r.Right - b.Right * _zoom, r.Bottom);
-        if (b.Top > 0) g.DrawLine(pen, r.Left, r.Top + b.Top * _zoom, r.Right, r.Top + b.Top * _zoom);
-        if (b.Bottom > 0) g.DrawLine(pen, r.Left, r.Bottom - b.Bottom * _zoom, r.Right, r.Bottom - b.Bottom * _zoom);
+        var b = part.PartBorder;
+        void Line(double x1, double y1, double x2, double y2)
+            => g.DrawLine(SliceBorderPen, new Avalonia.Point(x1, y1), new Avalonia.Point(x2, y2));
+        if (b.Left > 0) Line(r.Left + b.Left * _zoom + 0.5, r.Top, r.Left + b.Left * _zoom + 0.5, r.Bottom);
+        if (b.Right > 0) Line(r.Right - b.Right * _zoom + 0.5, r.Top, r.Right - b.Right * _zoom + 0.5, r.Bottom);
+        if (b.Top > 0) Line(r.Left, r.Top + b.Top * _zoom + 0.5, r.Right, r.Top + b.Top * _zoom + 0.5);
+        if (b.Bottom > 0) Line(r.Left, r.Bottom - b.Bottom * _zoom + 0.5, r.Right, r.Bottom - b.Bottom * _zoom + 0.5);
     }
 
-    private void DrawPivot(Graphics g)
+    /// <summary>9-slice 대상 하나: 그룹 화면의 부위(아니면 null = 현재 대상), 이미지 좌표 사각형, 테두리.</summary>
+    private readonly record struct SliceTarget(Layer? Part, Rectangle Rect, SpriteBorder Border);
+
+    /// <summary>9-slice 도구로 보이는 대상들: 그룹 화면이면 보이는 부위 전부(끄는 부위는 옮긴 자리), 아니면 현재 대상(부위 또는 프레임) 하나.</summary>
+    private IEnumerable<SliceTarget> SliceTargets()
+    {
+        if (_ctx.Project is not { } p) yield break;
+        if (!_ctx.IsGroupSelected)
+        {
+            yield return new SliceTarget(null, new Rectangle(0, 0, W, H), _ctx.SliceBorder);
+            yield break;
+        }
+        if (_ctx.CurrentGroup is not { } group) yield break;
+        foreach (var part in p.ChildrenOf(group))
+        {
+            if (!p.IsLayerVisible(p.IndexOf(part))) continue;
+            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : part.PartOffset;
+            yield return new SliceTarget(part, new Rectangle(offset, part.PartSize), part.PartBorder);
+        }
+    }
+
+    private bool IsDraggedSlice(SliceTarget t)
+        => _drag == DragMode.Slice && ReferenceEquals(t.Part, _slicePart) && t.Rect == _sliceRect;
+
+    /// <summary>9-slice 도구: 대상마다 네 테두리 선(0이면 가장자리)을 초록 실선으로, 가운데에 끄는 손잡이를 그린다.</summary>
+    private void DrawSliceEditor(DrawingContext g)
+    {
+        foreach (var t in SliceTargets())
+        {
+            bool dragged = IsDraggedSlice(t);
+            var r = ImageToScreen(t.Rect);
+            var b = dragged && _sliceDraft is { } d ? d : t.Border;
+            double left = r.Left + b.Left * _zoom + 0.5, right = r.Right - b.Right * _zoom - 0.5;
+            double top = r.Top + b.Top * _zoom + 0.5, bottom = r.Bottom - b.Bottom * _zoom - 0.5;
+            IPen PenFor(SliceEdge edge) => dragged && _sliceEdge == edge ? SliceEditActivePen : SliceEditPen;
+            g.DrawLine(PenFor(SliceEdge.Left), new Avalonia.Point(left, r.Top), new Avalonia.Point(left, r.Bottom));
+            g.DrawLine(PenFor(SliceEdge.Right), new Avalonia.Point(right, r.Top), new Avalonia.Point(right, r.Bottom));
+            g.DrawLine(PenFor(SliceEdge.Top), new Avalonia.Point(r.Left, top), new Avalonia.Point(r.Right, top));
+            g.DrawLine(PenFor(SliceEdge.Bottom), new Avalonia.Point(r.Left, bottom), new Avalonia.Point(r.Right, bottom));
+            double cx = (r.Left + r.Right) / 2.0, cy = (r.Top + r.Bottom) / 2.0;
+            void Handle(double x, double y) => g.DrawRectangle(SliceHandleBrush, SliceHandlePen, new Rect(x - 4, y - 4, 8, 8));
+            Handle(left, cy);
+            Handle(right, cy);
+            Handle(cx, top);
+            Handle(cx, bottom);
+        }
+    }
+
+    /// <summary>화면 위치에서 가장 가까운 9-slice 선(6px 안)과 그 대상. 없으면 null.</summary>
+    private (SliceTarget Target, SliceEdge Edge)? SliceHitAt(Point screen)
+    {
+        const double Grab = 6;
+        (SliceTarget Target, SliceEdge Edge)? best = null;
+        double bestDistance = Grab;
+        foreach (var t in SliceTargets())
+        {
+            var r = ImageToScreen(t.Rect);
+            var b = t.Border;
+            bool inX = screen.X >= r.Left - Grab && screen.X <= r.Right + Grab;
+            bool inY = screen.Y >= r.Top - Grab && screen.Y <= r.Bottom + Grab;
+            void Try(SliceEdge edge, bool inRange, double distance)
+            {
+                if (!inRange || distance > bestDistance) return;
+                bestDistance = distance;
+                best = (t, edge);
+            }
+            Try(SliceEdge.Left, inY, Math.Abs(screen.X - (r.Left + b.Left * _zoom)));
+            Try(SliceEdge.Right, inY, Math.Abs(screen.X - (r.Right - b.Right * _zoom)));
+            Try(SliceEdge.Top, inX, Math.Abs(screen.Y - (r.Top + b.Top * _zoom)));
+            Try(SliceEdge.Bottom, inX, Math.Abs(screen.Y - (r.Bottom - b.Bottom * _zoom)));
+        }
+        return best;
+    }
+
+    /// <summary>9-slice 선을 잡았으면 끌기를 시작하고 true.</summary>
+    private bool BeginSliceDrag(Point screen)
+    {
+        if (SliceHitAt(screen) is not { } hit) return false;
+        _slicePart = hit.Target.Part;
+        _sliceRect = hit.Target.Rect;
+        _sliceEdge = hit.Edge;
+        _sliceDraft = hit.Target.Border;
+        _drag = DragMode.Slice;
+        return true;
+    }
+
+    /// <summary>끄는 선을 마우스 위치의 가장 가까운 픽셀 경계로 옮긴다(반대쪽 선을 넘지 않음).</summary>
+    private void DragSlice(Point screen)
+    {
+        if (_sliceDraft is not { } b) return;
+        int w = _sliceRect.Width, h = _sliceRect.Height;
+        int x = (int)Math.Round((screen.X - _offset.X) / (double)_zoom) - _sliceRect.X;
+        int y = (int)Math.Round((screen.Y - _offset.Y) / (double)_zoom) - _sliceRect.Y;
+        var next = _sliceEdge switch
+        {
+            SliceEdge.Left => b with { Left = Math.Clamp(x, 0, w - b.Right) },
+            SliceEdge.Right => b with { Right = Math.Clamp(w - x, 0, w - b.Left) },
+            SliceEdge.Top => b with { Top = Math.Clamp(y, 0, h - b.Bottom) },
+            SliceEdge.Bottom => b with { Bottom = Math.Clamp(h - y, 0, h - b.Top) },
+            _ => b,
+        };
+        if (next == b) return;
+        _sliceDraft = next;
+        InvalidateVisual();
+    }
+
+    /// <summary>그룹 화면: 보이는 부위마다 그 부위의 피벗(부위 아틀라스용)을 파란 표시로(끄는 부위는 옮긴 자리 기준).</summary>
+    private void DrawPartPivots(DrawingContext g)
+    {
+        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return;
+        foreach (var part in p.ChildrenOf(group))
+        {
+            if (!p.IsLayerVisible(p.IndexOf(part))) continue;
+            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : part.PartOffset;
+            var (lx, ly) = part.PartPivot.ToLocalPixel(part.PartSize.Width, part.PartSize.Height);
+            var c = ImageToScreen(offset.X + lx, offset.Y + ly);
+            const double r = 3, arm = 3;
+            g.DrawEllipse(null, PivotBackPen, c, r, r);
+            g.DrawEllipse(PartPivotBrush, null, c, r - 1, r - 1);
+            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X - r - arm, c.Y), new Avalonia.Point(c.X - r, c.Y));
+            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X + r, c.Y), new Avalonia.Point(c.X + r + arm, c.Y));
+            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X, c.Y - r - arm), new Avalonia.Point(c.X, c.Y - r));
+            g.DrawLine(PartPivotPen, new Avalonia.Point(c.X, c.Y + r), new Avalonia.Point(c.X, c.Y + r + arm));
+        }
+    }
+
+    private void DrawPivot(DrawingContext g)
     {
         var (px, py) = _ctx.Pivot.ToLocalPixel(W, H);
         var p = ImageToScreen(px, py);
-        var old = g.SmoothingMode;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        using var pen = new Pen(_ctx.Tool == ToolKind.Pivot ? Color.White : Color.FromArgb(255, 120, 80), 1.5f);
-        using var back = new Pen(Color.FromArgb(160, 0, 0, 0), 3.5f);
-        const float r = 5f;
-        g.DrawEllipse(back, p.X - r, p.Y - r, r * 2, r * 2);
-        g.DrawEllipse(pen, p.X - r, p.Y - r, r * 2, r * 2);
-        g.DrawLine(pen, p.X - r - 4, p.Y, p.X + r + 4, p.Y);
-        g.DrawLine(pen, p.X, p.Y - r - 4, p.X, p.Y + r + 4);
-        g.SmoothingMode = old;
+        var pen = _ctx.Tool == ToolKind.Pivot ? PivotActivePen : PivotPen;
+        const double r = 5;
+        g.DrawEllipse(null, PivotBackPen, p, r, r);
+        g.DrawEllipse(null, pen, p, r, r);
+        g.DrawLine(pen, new Avalonia.Point(p.X - r - 4, p.Y), new Avalonia.Point(p.X + r + 4, p.Y));
+        g.DrawLine(pen, new Avalonia.Point(p.X, p.Y - r - 4), new Avalonia.Point(p.X, p.Y + r + 4));
     }
 
-    private void DrawMarquee(Graphics g, Rectangle r)
+    private void DrawMarquee(DrawingContext g, Rectangle r)
     {
-        using var white = new Pen(Color.White);
-        using var black = new Pen(Color.Black) { DashPattern = [4f, 4f], DashOffset = _antsPhase };
-        g.DrawRectangle(white, r.X, r.Y, r.Width - 1, r.Height - 1);
-        g.DrawRectangle(black, r.X, r.Y, r.Width - 1, r.Height - 1);
+        var black = AppTheme.Pen(Colors.Black, 1, new ImmutableDashStyle([4.0, 4.0], _antsPhase));
+        var rect = new Rect(r.X + 0.5, r.Y + 0.5, r.Width - 1, r.Height - 1);
+        g.DrawRectangle(null, WhitePen, rect);
+        g.DrawRectangle(null, black, rect);
     }
 
     private static bool UsesBrush(ToolKind t)
         => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
-    private void DrawBrushCursor(Graphics g)
+    private void DrawBrushCursor(DrawingContext g)
     {
-        if (_hoverPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool)) return;
-        int size = _ctx.BrushSize, start = (size - 1) / 2;
-        var r = ImageToScreen(new Rectangle(p.X - start, p.Y - start, size, size));
-        using var pen = new Pen(Color.FromArgb(200, 255, 255, 255));
-        using var pen2 = new Pen(Color.FromArgb(200, 0, 0, 0));
-        g.DrawRectangle(pen2, r.X - 1, r.Y - 1, r.Width + 1, r.Height + 1);
-        g.DrawRectangle(pen, r.X, r.Y, r.Width - 1, r.Height - 1);
+        if (_hoverPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsGroupSelected) return;
+        var brush = _ctx.Brush;
+        int size = brush.Size, start = brush.Start;
+        if (brush.Shape == BrushShape.Square || size <= 2)
+        {
+            var r = ImageToScreen(new Rectangle(p.X - start, p.Y - start, size, size));
+            g.DrawRectangle(null, CursorBlackPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
+            g.DrawRectangle(null, CursorWhitePen, new Rect(r.X + 0.5, r.Y + 0.5, r.Width - 1, r.Height - 1));
+            return;
+        }
+        // 원·마름모: 도장 바깥 경계선(칸 모서리를 따라)을 검은 테두리 위에 흰 선으로.
+        var geo = new StreamGeometry();
+        using (var c = geo.Open())
+        {
+            void Seg(double x0, double y0, double x1, double y1)
+            {
+                c.BeginFigure(new Avalonia.Point(x0, y0), false);
+                c.LineTo(new Avalonia.Point(x1, y1));
+                c.EndFigure(false);
+            }
+            foreach (var o in brush.Offsets)
+            {
+                double x0 = _offset.X + (p.X + o.X) * _zoom + 0.5, y0 = _offset.Y + (p.Y + o.Y) * _zoom + 0.5;
+                double x1 = x0 + _zoom, y1 = y0 + _zoom;
+                if (!brush.Contains(o.X, o.Y - 1)) Seg(x0, y0, x1, y0);
+                if (!brush.Contains(o.X, o.Y + 1)) Seg(x0, y1, x1, y1);
+                if (!brush.Contains(o.X - 1, o.Y)) Seg(x0, y0, x0, y1);
+                if (!brush.Contains(o.X + 1, o.Y)) Seg(x1, y0, x1, y1);
+            }
+        }
+        g.DrawGeometry(null, CursorOutlineBackPen, geo);
+        g.DrawGeometry(null, CursorOutlineFrontPen, geo);
     }
 
-    private void DrawOnionSkin(Graphics g)
+    private void DrawOnionSkin(DrawingContext g)
     {
         if (!_ctx.OnionSkin) return;
         int i = _ctx.CurrentFrame;
-        if (i > 0 && _ctx.FrameBitmap(i - 1) is { } prev) DrawGhost(g, prev, 1f, 0.45f, 0.45f);
-        if (i + 1 < _ctx.FrameCount && _ctx.FrameBitmap(i + 1) is { } next) DrawGhost(g, next, 0.45f, 0.75f, 1f);
+        if (i > 0 && _ctx.ViewBitmap(i - 1) is { } prev) DrawGhost(g, prev, ref _ghostPrev, 1f, 0.45f, 0.45f);
+        if (i + 1 < _ctx.FrameCount && _ctx.ViewBitmap(i + 1) is { } next) DrawGhost(g, next, ref _ghostNext, 0.45f, 0.75f, 1f);
     }
 
-    private void DrawGhost(Graphics g, Bitmap bmp, float r, float gr, float b)
+    /// <summary>색을 물들이고 30% 불투명도로 만든 사본을 그린다(사본 비트맵은 재사용).</summary>
+    private void DrawGhost(DrawingContext g, WriteableBitmap bmp, ref WriteableBitmap? ghost, float r, float gr, float b)
     {
         var src = VisibleSourceRect(0, 0);
         if (src.IsEmpty) return;
-        var matrix = new ColorMatrix([
-            [r, 0, 0, 0, 0],
-            [0, gr, 0, 0, 0],
-            [0, 0, b, 0, 0],
-            [0, 0, 0, 0.3f, 0],
-            [0, 0, 0, 0, 1],
-        ]);
-        using var attrs = new ImageAttributes();
-        attrs.SetColorMatrix(matrix);
-        g.DrawImage(bmp, ImageToScreen(src), src.X, src.Y, src.Width, src.Height, GraphicsUnit.Pixel, attrs);
+        if (ghost is null || ghost.PixelSize != bmp.PixelSize)
+        {
+            ghost?.Dispose();
+            ghost = ImageUtil.NewBitmap(bmp.PixelSize.Width, bmp.PixelSize.Height);
+        }
+        Tint(bmp, ghost, r, gr, b);
+        g.DrawImage(ghost, ToRect(src), ToRect(ImageToScreen(src)));
+    }
+
+    private static unsafe void Tint(WriteableBitmap source, WriteableBitmap dest, float r, float gr, float b)
+    {
+        using var s = source.Lock();
+        using var d = dest.Lock();
+        int w = s.Size.Width, h = s.Size.Height;
+        for (int y = 0; y < h; y++)
+        {
+            byte* sp = (byte*)s.Address + y * s.RowBytes;
+            byte* dp = (byte*)d.Address + y * d.RowBytes;
+            for (int x = 0; x < w; x++, sp += 4, dp += 4)
+            {
+                // BGRA(직선 알파)
+                dp[0] = (byte)(sp[0] * b);
+                dp[1] = (byte)(sp[1] * gr);
+                dp[2] = (byte)(sp[2] * r);
+                dp[3] = (byte)(sp[3] * 0.3f);
+            }
+        }
     }
 
     // ───────────── 입력 ─────────────
 
-    protected override bool IsInputKey(Keys keyData)
-        => (keyData & Keys.KeyCode) is Keys.Left or Keys.Right or Keys.Up or Keys.Down || base.IsInputKey(keyData);
-
-    protected override void WndProc(ref Message m)
+    protected override void OnKeyUp(KeyEventArgs e)
     {
-        const int WM_SYSKEYUP = 0x105;
+        base.OnKeyUp(e);
         // Alt를 눌러 임시 스포이드를 쓴 뒤 Alt를 떼면 메뉴가 활성화되지 않도록 삼킨다.
-        if (m.Msg == WM_SYSKEYUP && (int)m.WParam == (int)Keys.Menu && _altUsed)
+        if (e.Key is Key.LeftAlt or Key.RightAlt && _altUsed)
         {
             _altUsed = false;
-            return;
+            e.Handled = true;
         }
-        base.WndProc(ref m);
     }
 
-    protected override void OnMouseWheel(MouseEventArgs e)
+    private double _wheelAccum;
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
-        base.OnMouseWheel(e);
-        if (_ctx.HasProject) ZoomStep(Math.Sign(e.Delta), e.Location);
+        base.OnPointerWheelChanged(e);
+        if (!_ctx.HasProject || e.Delta.Y == 0) return;
+        e.Handled = true;
+        // 트랙패드(macOS)는 작은 값을 잇달아 보내므로 한 눈금(1.0)이 모일 때마다 한 단계씩 확대한다.
+        if (Math.Sign(_wheelAccum) != Math.Sign(e.Delta.Y)) _wheelAccum = 0;
+        _wheelAccum += e.Delta.Y;
+        if (Math.Abs(_wheelAccum) < 1) return;
+        int step = Math.Sign(_wheelAccum);
+        _wheelAccum -= step;
+        ZoomStep(step, ToInt(e.GetPosition(this)));
     }
 
     private static bool IsPaintTool(ToolKind t)
         => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Fill or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
-    protected override void OnMouseDown(MouseEventArgs e)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        base.OnMouseDown(e);
+        base.OnPointerPressed(e);
         Focus();
-        if (!_ctx.HasProject || _drag != DragMode.None) return;
-        _dragButton = e.Button;
-        _dragStartScreen = _lastScreen = e.Location;
-        _dragMoved = false;
-        var px = ScreenToPixel(e.Location);
-        _startPx = _lastPx = px;
-
-        if (e.Button == MouseButtons.Middle || (e.Button == MouseButtons.Left && NativeMethods.IsKeyDown(Keys.Space)))
+        if (!_ctx.HasProject) return;
+        var pt = e.GetCurrentPoint(this);
+        if (_drag != DragMode.None)
         {
-            _drag = DragMode.Pan;
-            Cursor = Cursors.SizeAll;
-            Capture = true;
+            if (TryCancelByOtherButton(pt, e.Pointer)) e.Handled = true;
             return;
         }
-        if (e.Button is not (MouseButtons.Left or MouseButtons.Right)) return;
+        var button = pt.Properties.PointerUpdateKind switch
+        {
+            PointerUpdateKind.LeftButtonPressed => MouseButton.Left,
+            PointerUpdateKind.RightButtonPressed => MouseButton.Right,
+            PointerUpdateKind.MiddleButtonPressed => MouseButton.Middle,
+            _ => MouseButton.None,
+        };
+        var loc = ToInt(pt.Position);
+        _mods = e.KeyModifiers;
+        _dragButton = button;
+        _dragStartScreen = _lastScreen = _mouseScreen = loc;
+        _dragMoved = false;
+        var px = ScreenToPixel(loc);
+        _startPx = _lastPx = px;
+        e.Handled = true;
+
+        if (button == MouseButton.Middle || (button == MouseButton.Left && KeyState.IsDown(Key.Space)))
+        {
+            _drag = DragMode.Pan;
+            Cursor = SizeAllCursor;
+            e.Pointer.Capture(this);
+            return;
+        }
+        if (button is not (MouseButton.Left or MouseButton.Right)) return;
+        if (_ctx.IsGroupSelected)
+        {
+            // 그룹 화면: 9-slice 도구로 부위의 초록 선을 잡으면 그 선을, 아니면 어떤 도구든 부위 배치.
+            if (button == MouseButton.Left && _ctx.Tool == ToolKind.Slice && BeginSliceDrag(loc)) { }
+            else if (button == MouseButton.Left) BeginArrange(px, e.ClickCount);
+            if (_drag is DragMode.Arrange or DragMode.Slice) e.Pointer.Capture(this);
+            return;
+        }
 
         var tool = _ctx.Tool;
-        var mods = ModifierKeys;
-        if (IsPaintTool(tool) && (mods & (Keys.Alt | Keys.Control)) != 0)
+        var mods = e.KeyModifiers;
+        bool alt = (mods & KeyModifiers.Alt) != 0;
+        if (IsPaintTool(tool) && (alt || Ui.HasCommand(mods)))
         {
-            // Alt 또는 Ctrl+클릭: 임시 스포이드
+            // Alt 또는 Ctrl(⌘)+클릭: 임시 스포이드
             tool = ToolKind.Picker;
-            _altUsed = (mods & Keys.Alt) != 0;
+            _altUsed = alt;
         }
         if (IsPaintTool(tool) && !_ctx.CanEdit)
         {
             Message?.Invoke(this, "현재 레이어가 숨김/잠금 상태라 그릴 수 없습니다.");
             return;
         }
-        Capture = true;
+        e.Pointer.Capture(this);
         switch (tool)
         {
             case ToolKind.Pencil:
@@ -465,8 +896,8 @@ public sealed class PixelCanvas : Control
             case ToolKind.Dodge:
             case ToolKind.Dither:
             case ToolKind.ReplaceBrush:
-                BeginPixelStroke(tool, e.Button, Wrap(px));
-                if ((mods & Keys.Shift) != 0 && _lastStrokeEnd is { } from)
+                BeginPixelStroke(tool, button, Wrap(px));
+                if ((mods & KeyModifiers.Shift) != 0 && _lastStrokeEnd is { } from)
                     foreach (var p in Raster.Line(from, px)) StampAt(p);   // Shift+클릭: 마지막 점에서 직선
                 else StampAt(px);
                 _ctx.NotifyPixels();
@@ -475,21 +906,21 @@ public sealed class PixelCanvas : Control
             case ToolKind.Line:
             case ToolKind.Rectangle:
             case ToolKind.Ellipse:
-                BeginPixelStroke(tool, e.Button, px);
+                BeginPixelStroke(tool, button, px);
                 DrawShape(px);
                 _drag = DragMode.Shape;
                 break;
             case ToolKind.Fill:
-                BeginPixelStroke(tool, e.Button, px);
+                BeginPixelStroke(tool, button, px);
                 FillAt(Wrap(px));
                 _drag = DragMode.Fill;
                 break;
             case ToolKind.Picker:
-                PickAt(Wrap(px), e.Button);
+                PickAt(Wrap(px), button);
                 _drag = DragMode.Picker;
                 break;
             case ToolKind.Select:
-                if (e.Button != MouseButtons.Left) break;
+                if (button != MouseButton.Left) break;
                 if (_ctx.Selection.HasSelection && _ctx.Selection.Bounds.Contains(px)) BeginMoveSelection();
                 else
                 {
@@ -498,44 +929,53 @@ public sealed class PixelCanvas : Control
                 }
                 break;
             case ToolKind.Move:
-                if (e.Button != MouseButtons.Left) break;
+                if (button != MouseButton.Left) break;
                 if (_ctx.Selection.HasSelection) BeginMoveSelection();
                 else BeginMoveLayer();
                 break;
+            case ToolKind.Slice:
+                if (button == MouseButton.Left) BeginSliceDrag(loc);
+                break;
             case ToolKind.Pivot:
-                if (e.Button != MouseButtons.Left) break;
+                if (button != MouseButton.Left) break;
                 _pivotBefore = _ctx.Pivot;
                 _drag = DragMode.Pivot;
-                DragPivot(e.Location);
+                DragPivot(loc);
                 break;
         }
-        if (_drag == DragMode.None) Capture = false;
+        if (_drag == DragMode.None) e.Pointer.Capture(null);
     }
 
-    protected override void OnMouseMove(MouseEventArgs e)
+    protected override void OnPointerMoved(PointerEventArgs e)
     {
-        base.OnMouseMove(e);
+        base.OnPointerMoved(e);
+        // 다른 버튼을 누른 채 또 누르면(화음) 플랫폼에 따라 이동 이벤트로 온다.
+        if (TryCancelByOtherButton(e.GetCurrentPoint(this), e.Pointer)) return;
+        var loc = ToInt(e.GetPosition(this));
+        _mouseScreen = loc;
+        _mods = e.KeyModifiers;
         if (!_ctx.HasProject) return;
-        var px = ScreenToPixel(e.Location);
+        var px = ScreenToPixel(loc);
         var wrapped = Wrap(px);
         Point? hover = wrapped.X >= 0 && wrapped.Y >= 0 && wrapped.X < W && wrapped.Y < H ? wrapped : null;
         if (hover != _hoverPx)
         {
             _hoverPx = hover;
             HoverChanged?.Invoke(this, hover);
-            if (_drag == DragMode.None) Invalidate();
+            if (_drag == DragMode.None) InvalidateVisual();
         }
-        if (Math.Abs(e.X - _dragStartScreen.X) + Math.Abs(e.Y - _dragStartScreen.Y) > 3) _dragMoved = true;
+        if (Math.Abs(loc.X - _dragStartScreen.X) + Math.Abs(loc.Y - _dragStartScreen.Y) > 3) _dragMoved = true;
 
         switch (_drag)
         {
             case DragMode.None:
+                if (_ctx.IsGroupSelected) UpdateHoverPart(px);
                 UpdateCursor(px);
                 return;
             case DragMode.Pan:
-                _offset.Offset(e.X - _lastScreen.X, e.Y - _lastScreen.Y);
-                _lastScreen = e.Location;
-                Invalidate();
+                _offset.Offset(loc.X - _lastScreen.X, loc.Y - _lastScreen.Y);
+                _lastScreen = loc;
+                InvalidateVisual();
                 return;
             case DragMode.Stroke:
                 if (px == _lastPx) return;
@@ -550,7 +990,7 @@ public sealed class PixelCanvas : Control
                 PickAt(wrapped, _dragButton);
                 break;
             case DragMode.Marquee:
-                if (_dragMoved) _ctx.Selection.Select(_ctx.EditImageOrEmpty, Raster.RectFromPoints(_startPx, px, (ModifierKeys & Keys.Shift) != 0));
+                if (_dragMoved) _ctx.Selection.Select(_ctx.EditImageOrEmpty, Raster.RectFromPoints(_startPx, px, (_mods & KeyModifiers.Shift) != 0));
                 break;
             case DragMode.MoveSelection:
                 if (px == _lastPx) return;
@@ -563,25 +1003,44 @@ public sealed class PixelCanvas : Control
                 _ctx.NotifyPixels();
                 break;
             case DragMode.Pivot:
-                DragPivot(e.Location);
+                DragPivot(loc);
                 break;
+            case DragMode.Slice:
+                DragSlice(loc);
+                break;
+            case DragMode.Arrange:
+            {
+                var offset = new Point(_arrangeStart.X + px.X - _startPx.X, _arrangeStart.Y + px.Y - _startPx.Y);
+                if (offset != _arrangeOffset)
+                {
+                    _arrangeOffset = offset;
+                    InvalidateVisual();
+                }
+                break;
+            }
         }
         _lastPx = px;
-        _lastScreen = e.Location;
+        _lastScreen = loc;
     }
 
-    protected override void OnMouseUp(MouseEventArgs e)
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        base.OnMouseUp(e);
-        if (_drag == DragMode.None || e.Button != _dragButton) return;
+        base.OnPointerReleased(e);
+        if (_drag == DragMode.None || e.InitialPressMouseButton != _dragButton) return;
+        e.Handled = true;
+        EndDrag(ToInt(e.GetPosition(this)));
+        e.Pointer.Capture(null);
+    }
+
+    private void EndDrag(Point location)
+    {
         var mode = _drag;
         _drag = DragMode.None;
-        Capture = false;
         if (!_ctx.HasProject) return;
         switch (mode)
         {
             case DragMode.Pan:
-                UpdateCursor(ScreenToPixel(e.Location));
+                UpdateCursor(ScreenToPixel(location));
                 break;
             case DragMode.Stroke:
                 _lastStrokeEnd = Wrap(_lastPx);
@@ -605,37 +1064,65 @@ public sealed class PixelCanvas : Control
             case DragMode.Pivot:
                 _ctx.CommitPivot(_pivotBefore);
                 break;
+            case DragMode.Slice:
+                var draft = _sliceDraft;
+                var slicePart = _slicePart;
+                _sliceDraft = null;
+                _slicePart = null;
+                _sliceEdge = SliceEdge.None;
+                if (draft is { } d)
+                {
+                    if (slicePart is not null) _ctx.SetPartBorder(slicePart, d);
+                    else _ctx.SetSliceBorder(d);
+                }
+                UpdateCursor(ScreenToPixel(location));
+                break;
+            case DragMode.Arrange:
+                EndArrange();
+                break;
         }
-        Invalidate();
+        InvalidateVisual();
     }
 
-    protected override void OnMouseLeave(EventArgs e)
+    protected override void OnPointerExited(PointerEventArgs e)
     {
-        base.OnMouseLeave(e);
+        base.OnPointerExited(e);
+        if (_hoverPart is not null && _drag == DragMode.None)
+        {
+            _hoverPart = null;
+            InvalidateVisual();
+        }
         if (_hoverPx is null) return;
         _hoverPx = null;
         HoverChanged?.Invoke(this, null);
-        Invalidate();
+        InvalidateVisual();
     }
 
-    protected override void OnLostFocus(EventArgs e)
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        // 드래그 중 캡처를 잃으면 지금까지를 확정한다.
+        if (_drag != DragMode.None) EndDrag(_lastScreen);
+    }
+
+    protected override void OnLostFocus(RoutedEventArgs e)
     {
         base.OnLostFocus(e);
         if (_drag == DragMode.None) return;
         // 드래그 중 포커스를 잃으면(대화상자 등) 지금까지를 확정한다.
-        OnMouseUp(new MouseEventArgs(_dragButton, 0, _lastScreen.X, _lastScreen.Y, 0));
+        EndDrag(_lastScreen);
     }
 
     // ───────────── 그리기 도구 ─────────────
 
-    private void BeginPixelStroke(ToolKind tool, MouseButtons button, Point start)
+    private void BeginPixelStroke(ToolKind tool, MouseButton button, Point start)
     {
         _ctx.CommitFloating();
         _ctx.BeginStroke();
         var img = _ctx.EditImage!;
         _strokeBase = img.Clone();
         _strokeTool = tool;
-        bool right = button == MouseButtons.Right;
+        bool right = button == MouseButton.Right;
         _strokeColor = tool switch
         {
             ToolKind.Eraser => Color32.Transparent,
@@ -671,6 +1158,31 @@ public sealed class PixelCanvas : Control
         _visited = null;
     }
 
+    /// <summary>선·사각형·원(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
+    private bool TryCancelByOtherButton(PointerPoint pt, IPointer pointer)
+    {
+        if (_drag is not (DragMode.Shape or DragMode.Stroke)) return false;
+        var kind = pt.Properties.PointerUpdateKind;
+        bool other = (_dragButton == MouseButton.Left && kind == PointerUpdateKind.RightButtonPressed)
+                     || (_dragButton == MouseButton.Right && kind == PointerUpdateKind.LeftButtonPressed);
+        if (!other) return false;
+        CancelPixelStroke();
+        pointer.Capture(null);
+        return true;
+    }
+
+    /// <summary>그리던 획을 버린다(셀은 시작 전으로, 실행취소 기록 없음). 누르고 있던 버튼을 떼도 아무 일도 없다.</summary>
+    private void CancelPixelStroke()
+    {
+        _drag = DragMode.None;
+        _ctx.CancelStroke();
+        _strokeBase = null;
+        _ppStroke = null;
+        _visited = null;
+        Message?.Invoke(this, "그리기 취소");
+        InvalidateVisual();
+    }
+
     /// <summary>점들을 타일 모드 감기 → 대칭 순으로 바꾼다.</summary>
     private List<Point> Targets(IEnumerable<Point> pts)
         => Raster.Mirror(pts.Select(Wrap), W, H, _ctx.MirrorX, _ctx.MirrorY);
@@ -682,17 +1194,20 @@ public sealed class PixelCanvas : Control
         switch (_strokeTool)
         {
             case ToolKind.Dither:
-                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize)))
+                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if (clip is null || clip.Value.Contains(m))
-                        img.Set(m.X, m.Y, ((m.X + m.Y) & 1) == 0 ? _strokeColor : _strokeColor2);
+                        img.Set(m.X, m.Y, Raster.DitherUsesPrimary(m.X, m.Y, _ctx.DitherPattern) ? _strokeColor : _strokeColor2);
                 return;
             case ToolKind.Dodge:
-                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize)))
+            {
+                float amount = _ctx.DodgeStrength / 100f;
+                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if ((clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y) && _visited!.Add(m))
-                        img.Set(m.X, m.Y, PixelOps.Dodge(img.Get(m.X, m.Y), _strokeLighten));
+                        img.Set(m.X, m.Y, PixelOps.Dodge(img.Get(m.X, m.Y), _strokeLighten, amount));
                 return;
+            }
             case ToolKind.ReplaceBrush:
-                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize)))
+                foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if ((clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y)
                         && Color32.SameVisible(_strokeBase!.Get(m.X, m.Y), _replaceTarget))
                         img.Set(m.X, m.Y, _strokeColor);
@@ -707,14 +1222,14 @@ public sealed class PixelCanvas : Control
             if (draw is { } d) Raster.Plot(img, Targets([d]), _strokeColor, clip);
             return;
         }
-        Raster.Plot(img, Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize)), _strokeColor, clip);
+        Raster.Plot(img, Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)), _strokeColor, clip);
     }
 
     private void DrawShape(Point end)
     {
         var img = _ctx.EditImage!;
         img.CopyFrom(_strokeBase!);
-        bool shift = (ModifierKeys & Keys.Shift) != 0;
+        bool shift = (_mods & KeyModifiers.Shift) != 0;
         List<Point> pts;
         switch (_strokeTool)
         {
@@ -739,14 +1254,14 @@ public sealed class PixelCanvas : Control
         _ctx.NotifyPixels();
     }
 
-    /// <summary>선 점들에 브러시 크기를 입힌다.</summary>
+    /// <summary>선 점들에 브러시(크기·모양)를 입힌다.</summary>
     private List<Point> WithBrush(List<Point> pts)
     {
         if (_ctx.BrushSize <= 1) return pts;
         var set = new HashSet<Point>();
         var list = new List<Point>();
         foreach (var p in pts)
-            foreach (var b in Raster.Brush(p.X, p.Y, _ctx.BrushSize))
+            foreach (var b in Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape))
                 if (set.Add(b)) list.Add(b);
         return list;
     }
@@ -766,23 +1281,28 @@ public sealed class PixelCanvas : Control
     {
         var img = _ctx.EditImage!;
         if (!img.Contains(p.X, p.Y)) return;
+        // 보이는 레이어 기준: 칠하기 전 합성으로 영역을 정한다(대칭 점들도 같은 기준).
+        var sample = _ctx.FillSampleVisible ? _ctx.VisibleImage() : null;
+        if (sample is not null && (sample.Width != img.Width || sample.Height != img.Height)) sample = null;
         int changed = 0;
         foreach (var m in Raster.Mirror([p], W, H, _ctx.MirrorX, _ctx.MirrorY))
-            changed += Raster.FloodFill(img, m.X, m.Y, _strokeColor, _ctx.FillContiguous, _ctx.Selection.Clip);
+            changed += Raster.FloodFill(img, m.X, m.Y, _strokeColor, _ctx.FillContiguous, _ctx.Selection.Clip,
+                _ctx.FillToleranceChannels, _ctx.FillDiagonal, sample);
         if (changed > 0) _ctx.NotifyPixels();
     }
 
-    /// <summary>보이는 색(합성 결과)을 집는다.</summary>
-    private void PickAt(Point p, MouseButtons button)
+    /// <summary>색을 집는다: 보이는 색(합성 결과) 또는 현재 레이어의 색(스포이드 기준 옵션). 떠 있는 선택 내용이 위에 있으면 그 색.</summary>
+    private void PickAt(Point p, MouseButton button)
     {
         if (p.X < 0 || p.Y < 0 || p.X >= W || p.Y >= H) return;
-        var c = _ctx.CompositeColorAt(p.X, p.Y);
+        var c = _ctx.PickerSampleVisible ? _ctx.CompositeColorAt(p.X, p.Y)
+            : _ctx.EditImage is { } cel ? cel.Get(p.X, p.Y) : Color32.Transparent;
         if (_ctx.Selection.Floating is { } f && _ctx.Selection.Bounds.Contains(p))
         {
             var fc = f.Get(p.X - _ctx.Selection.Bounds.X, p.Y - _ctx.Selection.Bounds.Y);
             if (fc.A != 0) c = fc;
         }
-        if (button == MouseButtons.Right) _ctx.Secondary = c;
+        if (button == MouseButton.Right) _ctx.Secondary = c;
         else _ctx.Primary = c;
     }
 
@@ -813,9 +1333,10 @@ public sealed class PixelCanvas : Control
         _drag = DragMode.MoveLayer;
     }
 
-    /// <summary>방향키로 선택 내용(없으면 이동 도구에서 레이어 내용)을 옮긴다.</summary>
+    /// <summary>방향키로 선택 내용(없으면 이동 도구에서 레이어 내용, 그룹 화면이면 부위 위치)을 옮긴다.</summary>
     public bool Nudge(int dx, int dy)
     {
+        if (_ctx.IsGroupSelected) return NudgePart(dx, dy);
         if (!_ctx.HasProject || !_ctx.CanEdit) return false;
         if (_ctx.Selection.HasSelection && _ctx.Tool is ToolKind.Select or ToolKind.Move)
         {
@@ -847,35 +1368,160 @@ public sealed class PixelCanvas : Control
     {
         var f = ScreenToImageF(screen);
         // 반 픽셀 단위로 맞춘다.
-        float fx = MathF.Round(f.X * 2) / 2, fy = MathF.Round(f.Y * 2) / 2;
+        float fx = MathF.Round((float)f.X * 2) / 2, fy = MathF.Round((float)f.Y * 2) / 2;
         _ctx.PreviewPivot(Pivot.FromLocalPixel(fx, fy, W, H));
+    }
+
+    // ───────────── 그룹 화면: 부위 배치 ─────────────
+
+    /// <summary>
+    /// 프레임 좌표 <paramref name="px"/> 아래의 맨 위 보이는 부위(현재 그룹). 그 자리에 칠한 픽셀이 있는 부위를 먼저,
+    /// 없으면 사각형만 겹치는 부위를 고른다.
+    /// </summary>
+    private Layer? PartAt(Point px)
+    {
+        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group) return null;
+        var parts = p.ChildrenOf(group);
+        Layer? byRect = null;
+        for (int i = parts.Count - 1; i >= 0; i--)
+        {
+            var part = parts[i];
+            int index = p.IndexOf(part);
+            if (!p.IsLayerVisible(index) || !part.PartRect.Contains(px)) continue;
+            if (p.GetCel(index, _ctx.CurrentFrame) is { } cel && cel.Get(px.X - part.PartOffset.X, px.Y - part.PartOffset.Y).A != 0) return part;
+            byRect ??= part;
+        }
+        return byRect;
+    }
+
+    /// <summary>고른 부위가 아직 이 그룹의 부위이면 그것, 아니면 null.</summary>
+    private Layer? SelectedPartIn(SpriteProject p, Layer group)
+        => _selectedPart is { } part && ReferenceEquals(part.Parent, group) && p.Layers.Contains(part) ? part : null;
+
+    /// <summary>그룹 화면에서 고른 부위를 푼다(Esc). 풀었으면 true.</summary>
+    public bool ClearPartSelection()
+    {
+        if (_selectedPart is null || !_ctx.IsGroupSelected) return false;
+        _selectedPart = null;
+        InvalidateVisual();
+        return true;
+    }
+
+    private void UpdateHoverPart(Point px)
+    {
+        var part = PartAt(px);
+        if (ReferenceEquals(part, _hoverPart)) return;
+        _hoverPart = part;
+        InvalidateVisual();
+    }
+
+    /// <summary>그룹 화면 누르기: 더블클릭이면 그 부위 레이어를 고르고, 아니면 부위 끌기를 시작한다.</summary>
+    private void BeginArrange(Point px, int clickCount)
+    {
+        if (_ctx.Project is not { } p) return;
+        var part = PartAt(px);
+        if (part is null)
+        {
+            if (_selectedPart is not null)
+            {
+                _selectedPart = null;
+                InvalidateVisual();
+                Message?.Invoke(this, "부위 선택 해제");
+            }
+            return;
+        }
+        _selectedPart = part;
+        InvalidateVisual();
+        int index = p.IndexOf(part);
+        if (clickCount >= 2)
+        {
+            _hoverPart = null;
+            _ctx.SetCurrentLayer(index);
+            Message?.Invoke(this, $"부위 \"{part.Name}\" 고름");
+            return;
+        }
+        if (p.IsLayerLocked(index))
+        {
+            Message?.Invoke(this, $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다.");
+            return;
+        }
+        _ctx.CommitFloating();
+        _arrangePart = part;
+        _arrangeStart = _arrangeOffset = part.PartOffset;
+        _drag = DragMode.Arrange;
+        Cursor = SizeAllCursor;
+    }
+
+    /// <summary>부위 끌기를 마친다: 위치가 바뀌었으면 실행취소 한 단계로 기록한다.</summary>
+    private void EndArrange()
+    {
+        var part = _arrangePart;
+        _arrangePart = null;
+        if (part is null || _ctx.Project is not { } p || _arrangeOffset == _arrangeStart) return;
+        int index = p.IndexOf(part);
+        if (index < 0) return;
+        var offset = _arrangeOffset;
+        _ctx.Structural(() => p.SetPartOffset(index, offset));
+        Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
+    }
+
+    /// <summary>그룹 화면 방향키: 마지막으로 올리거나 끈 부위(없으면 그룹 맨 위 부위)를 옮긴다.</summary>
+    private bool NudgePart(int dx, int dy)
+    {
+        if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group || _drag != DragMode.None) return false;
+        if (SelectedPartIn(p, group) is not { } part)
+        {
+            Message?.Invoke(this, "부위를 클릭해 고른 뒤 방향키로 옮깁니다.");
+            return true;
+        }
+        int index = p.IndexOf(part);
+        if (p.IsLayerLocked(index))
+        {
+            Message?.Invoke(this, $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다.");
+            return true;
+        }
+        var offset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
+        _ctx.Structural(() => p.SetPartOffset(index, offset));
+        Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
+        return true;
     }
 
     // ───────────── 커서 ─────────────
 
-    private void UpdateCursor() => UpdateCursor(ScreenToPixel(PointToClient(MousePosition)));
+    private void UpdateCursor() => UpdateCursor(ScreenToPixel(_mouseScreen));
 
     private void UpdateCursor(Point px)
     {
-        if (!_ctx.HasProject) { Cursor = Cursors.Default; return; }
-        if (NativeMethods.IsKeyDown(Keys.Space)) { Cursor = Cursors.Hand; return; }
+        if (!_ctx.HasProject) { Cursor = ArrowCursor; return; }
+        if (KeyState.IsDown(Key.Space)) { Cursor = HandCursor; return; }
+        if (_ctx.Tool == ToolKind.Slice && SliceHitAt(_mouseScreen) is { } hit)
+        {
+            Cursor = hit.Edge is SliceEdge.Left or SliceEdge.Right ? SizeWeCursor : SizeNsCursor;
+            return;
+        }
+        if (_ctx.IsGroupSelected)
+        {
+            Cursor = PartAt(px) is null ? ArrowCursor : SizeAllCursor;
+            return;
+        }
+        if (_ctx.Tool == ToolKind.Slice)
+        {
+            Cursor = ArrowCursor;
+            return;
+        }
+        if (_ctx.Tool == ToolKind.Picker
+            || IsPaintTool(_ctx.Tool) && (KeyState.IsDown(Key.LeftAlt) || KeyState.IsDown(Key.RightAlt))
+               && new Rectangle(0, 0, _ctx.CanvasWidth, _ctx.CanvasHeight).Contains(px))
+        {
+            Cursor = PickerCursor.Value;
+            return;
+        }
         Cursor = _ctx.Tool switch
         {
-            ToolKind.Move => Cursors.SizeAll,
-            ToolKind.Select when _ctx.Selection.HasSelection && _ctx.Selection.Bounds.Contains(px) => Cursors.SizeAll,
-            ToolKind.Pivot => Cursors.Hand,
-            _ => Cursors.Cross,
+            ToolKind.Move => SizeAllCursor,
+            ToolKind.Select when _ctx.Selection.HasSelection && _ctx.Selection.Bounds.Contains(px) => SizeAllCursor,
+            ToolKind.Pivot => HandCursor,
+            _ => CrossCursor,
         };
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _antsTimer.Dispose();
-            _peekTimer.Dispose();
-            _floatingBmp?.Dispose();
-        }
-        base.Dispose(disposing);
     }
 }

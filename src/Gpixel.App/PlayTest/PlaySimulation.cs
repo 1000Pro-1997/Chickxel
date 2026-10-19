@@ -1,9 +1,9 @@
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Numerics;
 using System.Text;
 using Gpixel.Core.Model;
 using Gpixel.Core.Play;
+using RectangleF = System.Drawing.RectangleF;
+using SizeF = System.Drawing.SizeF;
 
 namespace Gpixel.App.PlayTest;
 
@@ -23,17 +23,25 @@ internal readonly record struct PlayRenderOptions(int Scale, bool ShowGrid, bool
 /// 움직임 테스트의 상태: 탑뷰/플랫포머 컨트롤러, 맵, 애니메이션 재생기. 고정 간격으로 진행하고 화면에 그린다.
 /// 위치는 픽셀 단위(y 아래가 +)이며 캐릭터 위치에 칸의 피벗이 놓인다.
 /// </summary>
-internal sealed class PlaySimulation : IDisposable
+internal sealed class PlaySimulation
 {
     private const float TopDownStep = 1f / 60f;
     private const float MaxFrameTime = 0.25f;
     private const int RoomCellsW = 20;
     private const int RoomCellsH = 14;
 
-    private static readonly Color ColliderColor = Color.FromArgb(120, 220, 120);
+    private static readonly Color ColliderColor = Color.FromRgb(120, 220, 120);
+    private static readonly IBrush ColliderFill = AppTheme.Brush(Color.FromArgb(40, 120, 220, 120));
+    private static readonly IPen ColliderPen = AppTheme.Pen(ColliderColor);
+    private static readonly IPen GridPen = AppTheme.Pen(Color.FromArgb(70, AppTheme.DimTextColor.R, AppTheme.DimTextColor.G, AppTheme.DimTextColor.B));
+    private static readonly IPen RoomBorderPen = AppTheme.Pen(AppTheme.BorderColor, 2);
+    private static readonly IPen PlatformEdgePen = AppTheme.Pen(AppTheme.BorderColor);
+    private static readonly IPen OneWayTopPen = AppTheme.Pen(AppTheme.DimTextColor, 2);
+    private static readonly IPen PivotShadowPen = AppTheme.Pen(Colors.Black, 3);
+    private static readonly IPen PivotPen = AppTheme.Pen(AppTheme.AccentColor);
+    private static readonly IPen MissingPen = AppTheme.Pen(AppTheme.WarningColor, 2);
 
     private readonly AnimationPlayer _player = new();
-    private readonly ImageAttributes _spriteAttributes = new();
     private PlaySprites _sprites = PlaySprites.Empty;
     private float _topDownAccumulator;
     private int _levelPpu = -1;
@@ -42,12 +50,6 @@ internal sealed class PlaySimulation : IDisposable
     private RectangleF _box;
 
     private RectangleF _room;
-
-    public PlaySimulation()
-    {
-        // 칸 가장자리 픽셀이 바깥 투명과 섞이지 않게 한다.
-        _spriteAttributes.SetWrapMode(WrapMode.TileFlipXY);
-    }
 
     public PlayMode Mode { get; private set; } = PlayMode.TopDown;
     public TopDownController TopDown { get; } = new();
@@ -213,16 +215,18 @@ internal sealed class PlaySimulation : IDisposable
 
     // ───────────────────────── 그리기 ─────────────────────────
 
-    public void Render(Graphics g, Size size, PlayRenderOptions options)
+    public void Render(DrawingContext g, Avalonia.Size viewSize, PlayRenderOptions options)
     {
-        g.Clear(Theme.BackColor);
+        var full = new Rect(viewSize);
+        g.FillRectangle(AppTheme.BackBrush, full);
         if (!_sprites.HasDocument)
         {
-            TextRenderer.DrawText(g, "열린 이미지가 없습니다.", Theme.UiFont, new Rectangle(Point.Empty, size), Theme.DimTextColor,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            var ft = AppTheme.Text("열린 이미지가 없습니다.", AppTheme.DimTextBrush);
+            g.DrawText(ft, new Avalonia.Point((viewSize.Width - ft.Width) / 2, (viewSize.Height - ft.Height) / 2));
             return;
         }
 
+        var size = new Size((int)viewSize.Width, (int)viewSize.Height);
         int scale = Math.Max(1, options.Scale);
         var pivot = PivotPosition;
         // 카메라는 캐릭터 상자 가운데를 정수 픽셀로 따라간다(격자·발판이 화면 픽셀에 딱 맞도록).
@@ -230,37 +234,29 @@ internal sealed class PlaySimulation : IDisposable
         int camY = (int)MathF.Floor(pivot.Y + _box.Y + _box.Height / 2 + 0.5f);
         int ox = size.Width / 2 - camX * scale;
         int oy = size.Height / 2 - camY * scale;
-        RectangleF ToScreen(RectangleF r) => new(ox + r.X * scale, oy + r.Y * scale, r.Width * scale, r.Height * scale);
+        Rect ToScreen(RectangleF r) => new(ox + r.X * scale, oy + r.Y * scale, r.Width * scale, r.Height * scale);
 
         int cellPx = _sprites.PixelsPerUnit * scale;
         if (Mode == PlayMode.TopDown)
         {
             var room = ToScreen(_room);
-            using (var floor = new SolidBrush(Theme.PanelColor)) g.FillRectangle(floor, room);
+            g.FillRectangle(AppTheme.PanelBrush, room);
             if (options.ShowGrid)
             {
-                var oldClip = g.Clip;
-                g.SetClip(room, CombineMode.Intersect);
-                DrawGrid(g, size, ox, oy, cellPx);
-                g.Clip = oldClip;
-                oldClip.Dispose();
+                using (g.PushClip(room)) DrawGrid(g, size, ox, oy, cellPx);
             }
-            using var border = new Pen(Theme.BorderColor, 2);
-            g.DrawRectangle(border, room.X, room.Y, room.Width, room.Height);
+            g.DrawRectangle(null, RoomBorderPen, room);
         }
         else
         {
             if (options.ShowGrid) DrawGrid(g, size, ox, oy, cellPx);
-            using var solid = new SolidBrush(Theme.InputColor);
-            using var oneWay = new SolidBrush(Theme.CheckerA);
-            using var edge = new Pen(Theme.BorderColor);
-            using var top = new Pen(Theme.DimTextColor, 2);
+            var oneWay = AppTheme.Brush(AppTheme.CheckerA);
             foreach (var platform in Platformer.Platforms)
             {
                 var r = ToScreen(platform.Bounds);
-                g.FillRectangle(platform.OneWay ? oneWay : solid, r);
-                if (platform.OneWay) g.DrawLine(top, r.Left, r.Top + 1, r.Right, r.Top + 1);
-                else g.DrawRectangle(edge, r.X, r.Y, r.Width - 1, r.Height - 1);
+                g.FillRectangle(platform.OneWay ? oneWay : AppTheme.InputBrush, r);
+                if (platform.OneWay) g.DrawLine(OneWayTopPen, new Avalonia.Point(r.Left, r.Top + 1), new Avalonia.Point(r.Right, r.Top + 1));
+                else g.DrawRectangle(null, PlatformEdgePen, Crisp(r));
             }
         }
 
@@ -271,63 +267,61 @@ internal sealed class PlaySimulation : IDisposable
             var box = Mode == PlayMode.TopDown
                 ? ToScreen(new RectangleF(pivot.X + _box.X, pivot.Y + _box.Y, _box.Width, _box.Height))
                 : ToScreen(Platformer.Collider);
-            using var fill = new SolidBrush(Color.FromArgb(40, ColliderColor));
-            using var pen = new Pen(ColliderColor);
-            g.FillRectangle(fill, box);
-            g.DrawRectangle(pen, box.X, box.Y, box.Width - 1, box.Height - 1);
+            g.FillRectangle(ColliderFill, box);
+            g.DrawRectangle(null, ColliderPen, Crisp(box));
         }
 
         if (options.ShowPivot)
         {
-            float px = ox + pivot.X * scale, py = oy + pivot.Y * scale;
-            using var shadow = new Pen(Color.Black, 3);
-            using var pen = new Pen(Theme.AccentColor);
-            const float arm = 6;
-            g.DrawLine(shadow, px - arm, py, px + arm, py);
-            g.DrawLine(shadow, px, py - arm, px, py + arm);
-            g.DrawLine(pen, px - arm, py, px + arm, py);
-            g.DrawLine(pen, px, py - arm, px, py + arm);
+            double px = ox + pivot.X * scale, py = oy + pivot.Y * scale;
+            const double arm = 6;
+            var h1 = new Avalonia.Point(px - arm, py);
+            var h2 = new Avalonia.Point(px + arm, py);
+            var v1 = new Avalonia.Point(px, py - arm);
+            var v2 = new Avalonia.Point(px, py + arm);
+            g.DrawLine(PivotShadowPen, h1, h2);
+            g.DrawLine(PivotShadowPen, v1, v2);
+            g.DrawLine(PivotPen, h1, h2);
+            g.DrawLine(PivotPen, v1, v2);
         }
 
         if (!options.HasFocus)
         {
-            TextRenderer.DrawText(g, "화면을 클릭하면 키보드로 조작합니다.", Theme.UiFont, new Point(10, 10), Theme.WarningColor);
+            AppTheme.DrawText(g, "화면을 클릭하면 키보드로 조작합니다.", new Avalonia.Point(10, 10), AppTheme.WarningBrush);
         }
     }
 
-    private static void DrawGrid(Graphics g, Size size, int ox, int oy, int cellPx)
+    /// <summary>1픽셀 테두리가 화면 픽셀에 맞도록 반 픽셀 안쪽으로 줄인 사각형.</summary>
+    private static Rect Crisp(Rect r) => r.Width > 1 && r.Height > 1 ? r.Deflate(0.5) : r;
+
+    private static void DrawGrid(DrawingContext g, Size size, int ox, int oy, int cellPx)
     {
         if (cellPx < 4) return;
-        using var pen = new Pen(Color.FromArgb(70, Theme.DimTextColor));
-        for (int x = ((ox % cellPx) + cellPx) % cellPx; x < size.Width; x += cellPx) g.DrawLine(pen, x, 0, x, size.Height);
-        for (int y = ((oy % cellPx) + cellPx) % cellPx; y < size.Height; y += cellPx) g.DrawLine(pen, 0, y, size.Width, y);
+        for (int x = ((ox % cellPx) + cellPx) % cellPx; x < size.Width; x += cellPx)
+            g.DrawLine(GridPen, new Avalonia.Point(x + 0.5, 0), new Avalonia.Point(x + 0.5, size.Height));
+        for (int y = ((oy % cellPx) + cellPx) % cellPx; y < size.Height; y += cellPx)
+            g.DrawLine(GridPen, new Avalonia.Point(0, y + 0.5), new Avalonia.Point(size.Width, y + 0.5));
     }
 
-    private void DrawCharacter(Graphics g, Vector2 pivot, int ox, int oy, int scale)
+    private void DrawCharacter(DrawingContext g, Vector2 pivot, int ox, int oy, int scale)
     {
         var sliceName = CurrentSliceName;
         var frame = sliceName is null ? null : _sprites.GetFrame(sliceName, FlipX);
         if (frame is null)
         {
             // 칸을 찾을 수 없으면 캐릭터 상자 자리에 X를 그린다.
-            var r = new RectangleF(ox + (pivot.X + _box.X) * scale, oy + (pivot.Y + _box.Y) * scale, _box.Width * scale, _box.Height * scale);
-            using var pen = new Pen(Theme.WarningColor, 2);
-            g.DrawRectangle(pen, r.X, r.Y, r.Width, r.Height);
-            g.DrawLine(pen, r.Left, r.Top, r.Right, r.Bottom);
-            g.DrawLine(pen, r.Right, r.Top, r.Left, r.Bottom);
+            var r = new Rect(ox + (pivot.X + _box.X) * scale, oy + (pivot.Y + _box.Y) * scale, _box.Width * scale, _box.Height * scale);
+            g.DrawRectangle(null, MissingPen, r);
+            g.DrawLine(MissingPen, r.TopLeft, r.BottomRight);
+            g.DrawLine(MissingPen, r.TopRight, r.BottomLeft);
             return;
         }
 
         int wx = (int)MathF.Floor(pivot.X - frame.PivotX + 0.5f);
         int wy = (int)MathF.Floor(pivot.Y - frame.PivotY + 0.5f);
-        var dest = new Rectangle(ox + wx * scale, oy + wy * scale, frame.Width * scale, frame.Height * scale);
-        var oldInterpolation = g.InterpolationMode;
-        var oldOffset = g.PixelOffsetMode;
-        g.InterpolationMode = InterpolationMode.NearestNeighbor;
-        g.PixelOffsetMode = PixelOffsetMode.Half;
-        g.DrawImage(frame.Bitmap, dest, 0, 0, frame.Width, frame.Height, GraphicsUnit.Pixel, _spriteAttributes);
-        g.InterpolationMode = oldInterpolation;
-        g.PixelOffsetMode = oldOffset;
+        var dest = new Rect(ox + wx * scale, oy + wy * scale, frame.Width * scale, frame.Height * scale);
+        using (ImageUtil.Pixelated(g))
+            g.DrawImage(frame.Bitmap, new Rect(0, 0, frame.Width, frame.Height), dest);
     }
 
     // ───────────────────────── 상태 설명 ─────────────────────────
@@ -522,5 +516,4 @@ internal sealed class PlaySimulation : IDisposable
         _ => "아래",
     };
 
-    public void Dispose() => _spriteAttributes.Dispose();
 }

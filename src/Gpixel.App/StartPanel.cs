@@ -5,10 +5,12 @@ namespace Gpixel.App;
 /// <summary>시작 화면: 최근 폴더·최근 파일 + Unity Hub 프로젝트에서 바로 고르기.</summary>
 public sealed class StartPanel : UserControl
 {
+    private static readonly double[] HubColumns = [180, 100, 120, 300];
+
     private readonly ListBox _recentFolders;
     private readonly ListBox _recentFiles;
-    private readonly ListView _hub;
-    private readonly Label _hubMessage;
+    private readonly ListBox _hub;
+    private readonly TextBlock _hubMessage;
 
     public event EventHandler<string>? FolderChosen;
     public event EventHandler<string>? FileChosen;
@@ -17,129 +19,122 @@ public sealed class StartPanel : UserControl
 
     public StartPanel()
     {
-        BackColor = Theme.BackColor;
-        Padding = new Padding(24);
+        Background = AppTheme.BackBrush;
+        Padding = new Thickness(24);
 
-        var title = new Label
+        var title = new TextBlock
         {
             Text = "Gpixel",
-            Font = new Font("Malgun Gothic", 20f, FontStyle.Bold),
-            ForeColor = Theme.TextColor,
-            AutoSize = true,
-            Margin = new Padding(3, 0, 3, 0),
+            FontFamily = AppTheme.FontFamily,
+            FontSize = 26,
+            FontWeight = FontWeight.Bold,
+            Foreground = AppTheme.TextBrush,
+            Margin = new Thickness(3, 0, 3, 0),
         };
         var subtitle = Ui.Label("게임용 픽셀 아트 편집기 — 폴더나 Unity 프로젝트를 고르세요.");
-        subtitle.ForeColor = Theme.DimTextColor;
+        subtitle.Foreground = AppTheme.DimTextBrush;
         var actions = Ui.Row(
             Ui.Button("폴더 열기…", (_, _) => OpenFolderRequested?.Invoke(this, EventArgs.Empty)),
             Ui.Button("새 프로젝트…", (_, _) => NewImageRequested?.Invoke(this, EventArgs.Empty)),
             Ui.Button("Hub 목록 새로 고침", (_, _) => LoadHub()));
+        actions.Margin = new Thickness(0, 4);
 
         _recentFolders = MakeList();
-        _recentFolders.DoubleClick += (_, _) => { if (_recentFolders.SelectedItem is string s) FolderChosen?.Invoke(this, s); };
-        _recentFolders.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter && _recentFolders.SelectedItem is string s) FolderChosen?.Invoke(this, s); };
+        _recentFolders.DoubleTapped += (_, _) => { if (Selected(_recentFolders) is { } s) FolderChosen?.Invoke(this, s); };
+        _recentFolders.KeyDown += (_, e) => { if (e.Key == Key.Enter && Selected(_recentFolders) is { } s) FolderChosen?.Invoke(this, s); };
         _recentFiles = MakeList();
-        _recentFiles.DoubleClick += (_, _) => { if (_recentFiles.SelectedItem is string s) FileChosen?.Invoke(this, s); };
-        _recentFiles.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter && _recentFiles.SelectedItem is string s) FileChosen?.Invoke(this, s); };
+        _recentFiles.DoubleTapped += (_, _) => { if (Selected(_recentFiles) is { } s) FileChosen?.Invoke(this, s); };
+        _recentFiles.KeyDown += (_, e) => { if (e.Key == Key.Enter && Selected(_recentFiles) is { } s) FileChosen?.Invoke(this, s); };
 
-        _hub = new ListView
-        {
-            View = View.Details,
-            FullRowSelect = true,
-            MultiSelect = false,
-            HeaderStyle = ColumnHeaderStyle.Nonclickable,
-            Dock = DockStyle.Fill,
-            BackColor = Theme.InputColor,
-            ForeColor = Theme.TextColor,
-            BorderStyle = BorderStyle.None,
-            ShowItemToolTips = true,
-        };
-        _hub.Columns.Add("이름", 180);
-        _hub.Columns.Add("Unity 버전", 100);
-        _hub.Columns.Add("마지막 수정", 120);
-        _hub.Columns.Add("경로", 300);
-        _hub.DoubleClick += (_, _) => ChooseHub();
-        _hub.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) ChooseHub(); };
+        _hub = new ListBox();
+        _hub.DoubleTapped += (_, _) => ChooseHub();
+        _hub.KeyDown += (_, e) => { if (e.Key == Key.Enter) ChooseHub(); };
+        var hubTable = UnityHubDialog.Table(_hub, HubColumns);
         _hubMessage = Ui.Label("");
-        _hubMessage.Dock = DockStyle.Top;
+        _hubMessage.TextWrapping = TextWrapping.Wrap;
+        _hubMessage.IsVisible = false;
+        DockPanel.SetDock(_hubMessage, Dock.Top);
 
-        var layout = new TableLayoutPanel
+        var layout = new Grid
         {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 5,
-            BackColor = Theme.BackColor,
+            ColumnDefinitions = new ColumnDefinitions("4*,6*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,*"),
+            Background = AppTheme.BackBrush,
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        layout.Controls.Add(title, 0, 0);
-        layout.SetColumnSpan(title, 2);
-        layout.Controls.Add(subtitle, 0, 1);
-        layout.SetColumnSpan(subtitle, 2);
-        layout.Controls.Add(actions, 0, 2);
-        layout.SetColumnSpan(actions, 2);
-        layout.Controls.Add(Section("최근 폴더 (더블클릭)", _recentFolders), 0, 3);
-        layout.Controls.Add(Section("최근 파일 (더블클릭)", _recentFiles), 0, 4);
-        var hubBox = Section("Unity Hub 프로젝트 (더블클릭하면 Assets 폴더를 엽니다)", _hub);
-        hubBox.Controls.Add(_hubMessage);
-        _hubMessage.BringToFront();
-        _hub.BringToFront();
-        layout.Controls.Add(hubBox, 1, 3);
-        layout.SetRowSpan(hubBox, 2);
-        Controls.Add(layout);
+        Place(layout, title, 0, 0, columnSpan: 2);
+        Place(layout, subtitle, 1, 0, columnSpan: 2);
+        Place(layout, actions, 2, 0, columnSpan: 2);
+        Place(layout, Section("최근 폴더 (더블클릭)", _recentFolders), 3, 0);
+        Place(layout, Section("최근 파일 (더블클릭)", _recentFiles), 4, 0);
+        Place(layout, Section("Unity Hub 프로젝트 (더블클릭하면 Assets 폴더를 엽니다)", hubTable, _hubMessage), 3, 1, rowSpan: 2);
+        Content = layout;
+    }
+
+    private static void Place(Grid grid, Control c, int row, int column, int rowSpan = 1, int columnSpan = 1)
+    {
+        Grid.SetRow(c, row);
+        Grid.SetColumn(c, column);
+        Grid.SetRowSpan(c, rowSpan);
+        Grid.SetColumnSpan(c, columnSpan);
+        grid.Children.Add(c);
     }
 
     private static ListBox MakeList() => new()
     {
-        Dock = DockStyle.Fill,
-        BackColor = Theme.InputColor,
-        ForeColor = Theme.TextColor,
-        BorderStyle = BorderStyle.None,
-        IntegralHeight = false,
-        ItemHeight = 20,
+        SelectionMode = SelectionMode.Single,
+        Background = AppTheme.InputBrush,
+        Foreground = AppTheme.TextBrush,
     };
 
-    private static Panel Section(string title, Control content)
+    /// <summary>제목 줄(+ 그 아래 덧붙일 컨트롤) 아래에 내용을 채운 칸.</summary>
+    private static DockPanel Section(string title, Control content, Control? belowTitle = null)
     {
-        var p = new Panel { Dock = DockStyle.Fill, Padding = new Padding(4), BackColor = Theme.BackColor };
-        content.Dock = DockStyle.Fill;
-        p.Controls.Add(content);
+        var p = new DockPanel { LastChildFill = true, Margin = new Thickness(4), Background = AppTheme.BackBrush };
         var label = Ui.Label(title, bold: true);
-        label.Dock = DockStyle.Top;
-        p.Controls.Add(label);
+        DockPanel.SetDock(label, Dock.Top);
+        p.Children.Add(label);
+        if (belowTitle is not null)
+        {
+            DockPanel.SetDock(belowTitle, Dock.Top);
+            p.Children.Add(belowTitle);
+        }
+        p.Children.Add(content);
         return p;
     }
 
+    private static void FillStrings(ListBox list, IEnumerable<string> items)
+    {
+        list.Items.Clear();
+        foreach (var s in items)
+            list.Items.Add(new ListBoxItem { Content = s, Tag = s, Padding = new Thickness(6, 2), MinHeight = 20 });
+    }
+
+    private static string? Selected(ListBox list) => (list.SelectedItem as ListBoxItem)?.Tag as string;
+
     public void SetRecent(IEnumerable<string> folders, IEnumerable<string> files)
     {
-        _recentFolders.Items.Clear();
-        _recentFolders.Items.AddRange(folders.Cast<object>().ToArray());
-        _recentFiles.Items.Clear();
-        _recentFiles.Items.AddRange(files.Cast<object>().ToArray());
+        FillStrings(_recentFolders, folders);
+        FillStrings(_recentFiles, files);
     }
 
     /// <summary>Unity Hub 목록을 다시 읽는다.</summary>
     public void LoadHub()
     {
         var result = UnityHubProjects.Load();
-        UnityHubDialog.Fill(_hub, result.Projects);
-        _hubMessage.ForeColor = result.Success ? Theme.DimTextColor : Theme.WarningColor;
+        UnityHubDialog.Fill(_hub, result.Projects, HubColumns);
+        _hubMessage.Foreground = result.Success ? AppTheme.DimTextBrush : AppTheme.WarningBrush;
         _hubMessage.Text = !result.Success
             ? $"Unity Hub 목록을 읽지 못했습니다({result.Error}). \"폴더 열기\"로 직접 고르세요."
             : result.Projects.Count == 0 ? "등록된 프로젝트가 없습니다. \"폴더 열기\"로 직접 고르세요." : "";
+        _hubMessage.IsVisible = !string.IsNullOrEmpty(_hubMessage.Text);
     }
 
     private void ChooseHub()
     {
-        if (_hub.SelectedItems.Count == 0 || _hub.SelectedItems[0].Tag is not UnityHubProject p) return;
+        if (UnityHubDialog.SelectedProject(_hub) is not { } p) return;
         if (!p.Exists || !Directory.Exists(p.AssetsPath))
         {
-            Ui.Error(FindForm(), $"프로젝트 폴더를 찾을 수 없습니다:\n{p.AssetsPath}");
+            Ui.Error(this, $"프로젝트 폴더를 찾을 수 없습니다:\n{p.AssetsPath}");
             return;
         }
         FolderChosen?.Invoke(this, p.AssetsPath);

@@ -14,6 +14,7 @@ public interface IUndoCommand
 /// 실행취소/다시 스택(기본 100단계). 모든 기록은 <see cref="IUndoCommand"/> 하나의 목록으로 쌓인다:
 /// 셀 픽셀 패치(스트로크), 프로젝트 구조 변경(레이어·프레임·태그·캔버스·설정), 임의 동작.
 /// 프로젝트 편집은 <see cref="SpriteProject"/>가 이 스택에 직접 기록한다.
+/// <see cref="BeginGroup"/>~<see cref="EndGroup"/> 사이의 기록은 한 단계로 묶인다(AI 한 번의 응답 등).
 /// </summary>
 public sealed class UndoStack
 {
@@ -21,6 +22,8 @@ public sealed class UndoStack
 
     private readonly List<IUndoCommand> _undo = new();
     private readonly List<IUndoCommand> _redo = new();
+    private List<IUndoCommand>? _group;
+    private string? _groupLabel;
 
     public UndoStack(int capacity = DefaultCapacity) => Capacity = Math.Max(1, capacity);
 
@@ -29,18 +32,27 @@ public sealed class UndoStack
     /// <summary>스택 내용이 바뀌면 발생(메뉴 활성화 갱신용).</summary>
     public event EventHandler? Changed;
 
-    public bool CanUndo => _undo.Count > 0;
+    private bool GroupHasItems => _group is { Count: > 0 };
+
+    public bool CanUndo => _undo.Count > 0 || GroupHasItems;
     public bool CanRedo => _redo.Count > 0;
-    public int UndoCount => _undo.Count;
+    public int UndoCount => _undo.Count + (GroupHasItems ? 1 : 0);
     public int RedoCount => _redo.Count;
-    public string? UndoLabel => _undo.Count > 0 ? _undo[^1].Label : null;
+    public string? UndoLabel => GroupHasItems ? _groupLabel ?? _group![0].Label : _undo.Count > 0 ? _undo[^1].Label : null;
     public string? RedoLabel => _redo.Count > 0 ? _redo[^1].Label : null;
 
-    /// <summary>이미 적용된 동작을 기록한다. 다시 실행 목록은 지워진다.</summary>
+    /// <summary>묶음이 열려 있는지.</summary>
+    public bool IsGrouping => _group is not null;
+
+    /// <summary>이미 적용된 동작을 기록한다. 다시 실행 목록은 지워진다. 묶음이 열려 있으면 묶음에 넣는다.</summary>
     public void Push(IUndoCommand command)
     {
-        _undo.Add(command);
-        if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
+        if (_group is not null) _group.Add(command);
+        else
+        {
+            _undo.Add(command);
+            if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
+        }
         _redo.Clear();
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -48,8 +60,50 @@ public sealed class UndoStack
     /// <summary>이미 적용된 임의 동작을 기록한다(실행취소/다시 때 각 함수가 불림).</summary>
     public void RecordAction(string label, Action undo, Action redo) => Push(new ActionCommand(label, undo, redo));
 
+    /// <summary>묶음이 열려 있는지.</summary>
+    public bool InGroup => _group is not null;
+
+    /// <summary>
+    /// 이후 기록을 한 단계(<paramref name="label"/>)로 묶기 시작한다. 열린 묶음이 있으면 먼저 닫는다.
+    /// <paramref name="label"/>이 null이면 묶음 안 첫 기록의 이름을 쓴다.
+    /// </summary>
+    public void BeginGroup(string? label)
+    {
+        EndGroup();
+        _group = new List<IUndoCommand>();
+        _groupLabel = label;
+    }
+
+    /// <summary>묶음을 닫고 한 단계로 기록한다. 기록된 것이 없으면 null. 실행취소·다시 실행도 열린 묶음을 먼저 닫는다.</summary>
+    public IUndoCommand? EndGroup()
+    {
+        if (_group is not { } items) return null;
+        _group = null;
+        if (items.Count == 0) return null;
+        var command = new GroupCommand(_groupLabel ?? items[0].Label, items);
+        _undo.Add(command);
+        if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
+        Changed?.Invoke(this, EventArgs.Empty);
+        return command;
+    }
+
+    /// <summary><paramref name="command"/>를 실행취소하려면 몇 번 되돌려야 하는지(맨 위 = 1). 없으면 -1.</summary>
+    public int UndoDepthOf(IUndoCommand command)
+    {
+        int i = _undo.LastIndexOf(command);
+        return i < 0 ? -1 : _undo.Count - i;
+    }
+
+    /// <summary><paramref name="command"/>를 다시 실행하려면 몇 번 다시 해야 하는지(맨 위 = 1). 없으면 -1.</summary>
+    public int RedoDepthOf(IUndoCommand command)
+    {
+        int i = _redo.LastIndexOf(command);
+        return i < 0 ? -1 : _redo.Count - i;
+    }
+
     public bool Undo()
     {
+        EndGroup();
         if (_undo.Count == 0) return false;
         var command = _undo[^1];
         _undo.RemoveAt(_undo.Count - 1);
@@ -61,6 +115,7 @@ public sealed class UndoStack
 
     public bool Redo()
     {
+        EndGroup();
         if (_redo.Count == 0) return false;
         var command = _redo[^1];
         _redo.RemoveAt(_redo.Count - 1);
@@ -74,6 +129,7 @@ public sealed class UndoStack
     {
         _undo.Clear();
         _redo.Clear();
+        _group = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -82,6 +138,22 @@ public sealed class UndoStack
         public string Label { get; } = label;
         public void Undo() => undo();
         public void Redo() => redo();
+    }
+
+    /// <summary>묶음: 되돌릴 때는 거꾸로, 다시 할 때는 순서대로.</summary>
+    private sealed class GroupCommand(string label, List<IUndoCommand> items) : IUndoCommand
+    {
+        public string Label { get; } = label;
+
+        public void Undo()
+        {
+            for (int i = items.Count - 1; i >= 0; i--) items[i].Undo();
+        }
+
+        public void Redo()
+        {
+            foreach (var c in items) c.Redo();
+        }
     }
 }
 

@@ -21,6 +21,31 @@ internal static class TestUtil
         }
         return img;
     }
+
+    /// <summary>예전 버전이 PNG 옆에 쓰던 사이드카(<c>.png.gpixel.json</c>)를 흉내 내어 쓴다(가져오기 호환 시험용).</summary>
+    public static void WriteLegacySidecar(Gpixel.Core.Model.Document doc, string pngPath)
+    {
+        var dto = new
+        {
+            version = 1,
+            spriteMode = doc.Sprite.Mode.ToString(),
+            pixelsPerUnit = doc.Sprite.PixelsPerUnit,
+            defaultPivot = new { x = doc.Sprite.DefaultPivot.X, y = doc.Sprite.DefaultPivot.Y },
+            slices = doc.Slices.Select(s => new
+            {
+                name = s.Name, x = s.Rect.X, y = s.Rect.Y, w = s.Rect.Width, h = s.Rect.Height,
+                pivot = new { x = s.Pivot.X, y = s.Pivot.Y },
+                border = new[] { s.Border.Left, s.Border.Top, s.Border.Right, s.Border.Bottom },
+            }),
+            animations = doc.Animations.Select(a => new
+            {
+                name = a.Name, loop = a.Loop, fps = a.Fps,
+                frames = a.Frames.Select(f => new { slice = f.Slice, ms = f.Ms }),
+            }),
+        };
+        System.IO.File.WriteAllText(Gpixel.Core.IO.SidecarIO.GetPath(pngPath), System.Text.Json.JsonSerializer.Serialize(dto));
+    }
+
 }
 
 /// <summary>테스트마다 쓰고 지우는 임시 폴더.</summary>

@@ -1,5 +1,4 @@
 using System.Drawing;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Gpixel.Core.Model;
@@ -7,7 +6,8 @@ using Gpixel.Core.Model;
 namespace Gpixel.Core.IO;
 
 /// <summary>
-/// 편집기 사이드카 <c>&lt;이미지&gt;.png.gpixel.json</c> 읽기/쓰기(스프라이트 설정·칸·애니메이션·격자).
+/// 예전 버전이 PNG 옆에 쓰던 편집기 사이드카 <c>&lt;이미지&gt;.png.gpixel.json</c>(스프라이트 설정·칸·애니메이션·격자)를 읽는다.
+/// 이제 편집 정보는 <c>.gpixel</c>에만 저장하고 사이드카는 쓰지 않는다 — PNG를 가져올 때 남아 있는 사이드카의 애니메이션을 살리기 위해서만 읽는다.
 /// 좌표는 왼쪽 위 원점, 피벗은 Unity와 같은 아래 왼쪽 원점 0~1, 테두리 배열은 [왼쪽, 위, 오른쪽, 아래].
 /// </summary>
 public static class SidecarIO
@@ -17,53 +17,13 @@ public static class SidecarIO
 
     private static readonly JsonSerializerOptions Options = new()
     {
-        WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new JsonStringEnumConverter() },
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
     public static string GetPath(string pngPath) => pngPath + Extension;
-
-    /// <summary>문서 내용을 JSON 문자열로.</summary>
-    public static string Serialize(Document doc)
-    {
-        var s = doc.Sprite;
-        var dto = new SidecarDto
-        {
-            Version = CurrentVersion,
-            SpriteMode = s.Mode,
-            PixelsPerUnit = s.PixelsPerUnit,
-            DefaultPivot = PivotDto.From(s.DefaultPivot),
-            Border = s.Border.IsNone ? null : BorderArray(s.Border),
-            FullRect = s.FullRectMesh,
-            Readable = s.Readable,
-            Slices = doc.Slices.Select(sl => new SliceDto
-            {
-                Name = sl.Name,
-                X = sl.Rect.X, Y = sl.Rect.Y, W = sl.Rect.Width, H = sl.Rect.Height,
-                Pivot = PivotDto.From(sl.Pivot),
-                Border = BorderArray(sl.Border),
-            }).ToList(),
-            Animations = doc.Animations.Select(a => new AnimationDto
-            {
-                Name = a.Name,
-                Loop = a.Loop,
-                Fps = a.Fps,
-                Frames = a.Frames.Select(f => new FrameDto { Slice = f.Slice, Ms = f.Ms }).ToList(),
-            }).ToList(),
-            Grid = new GridDto
-            {
-                CellW = doc.Grid.CellW, CellH = doc.Grid.CellH,
-                OffsetX = doc.Grid.OffsetX, OffsetY = doc.Grid.OffsetY,
-                PadX = doc.Grid.PadX, PadY = doc.Grid.PadY,
-            },
-        };
-        return JsonSerializer.Serialize(dto, Options);
-    }
 
     /// <summary>
     /// JSON을 읽어 문서의 스프라이트 설정·칸·애니메이션·격자를 바꾼다(이미지·수정 여부는 그대로).
@@ -111,22 +71,6 @@ public static class SidecarIO
         }
     }
 
-    /// <summary>사이드카 파일을 쓴다(임시 파일 후 바꿔치기).</summary>
-    public static void Save(Document doc, string pngPath)
-    {
-        var path = GetPath(pngPath);
-        var temp = path + ".gpixel-tmp";
-        try
-        {
-            File.WriteAllText(temp, Serialize(doc), new UTF8Encoding(false));
-            File.Move(temp, path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(temp)) File.Delete(temp);
-        }
-    }
-
     /// <summary>사이드카 파일이 있으면 읽어 문서에 적용하고 true. 없으면 false.</summary>
     public static bool TryLoad(string pngPath, Document doc)
     {
@@ -135,8 +79,6 @@ public static class SidecarIO
         Deserialize(File.ReadAllText(path), doc);
         return true;
     }
-
-    private static int[] BorderArray(SpriteBorder b) => [b.Left, b.Top, b.Right, b.Bottom];
 
     private static SpriteBorder ParseBorder(int[]? a)
         => a is { Length: >= 4 } ? new SpriteBorder(a[0], a[1], a[2], a[3]) : SpriteBorder.None;
@@ -162,7 +104,6 @@ public static class SidecarIO
     {
         public float X { get; set; } = 0.5f;
         public float Y { get; set; } = 0.5f;
-        public static PivotDto From(Pivot p) => new() { X = p.X, Y = p.Y };
         public Pivot ToPivot() => float.IsFinite(X) && float.IsFinite(Y) ? new Pivot(X, Y) : Pivot.Center;
     }
 

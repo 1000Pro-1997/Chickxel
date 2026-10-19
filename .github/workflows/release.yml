@@ -1,0 +1,40 @@
+# 태그(v1.2.0 등)를 푸시하면 Windows exe와 macOS .app(Apple Silicon/Intel)을 만들어 GitHub 릴리스에 올린다.
+# 수동 실행(workflow_dispatch)하면 릴리스 없이 Actions 아티팩트로만 받을 수 있다.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Test
+        run: dotnet test tests/Gpixel.Core.Tests -c Release
+
+      - name: Publish
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="0.0.0-ci.${GITHUB_RUN_NUMBER}"; fi
+          ./publish.sh "$VERSION"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gpixel
+          path: dist/*.zip
+
+      - name: GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Gpixel $GITHUB_REF_NAME" --generate-notes

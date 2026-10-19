@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Gpixel.Core\Gpixel.Core.csproj" />
@@ -6,15 +6,30 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyTitle>Gpixel</AssemblyTitle>
     <Product>Gpixel</Product>
-    <!-- UI는 모두 코드로 만들고 디자이너 직렬화를 쓰지 않는다. -->
-    <NoWarn>$(NoWarn);WFO1000</NoWarn>
+    <AssemblyName>Gpixel.App</AssemblyName>
+    <!-- UI는 모두 코드로 만든다(XAML 없음). -->
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Windows exe 아이콘(32×32 점 그림에서 만든 16~256) -->
+    <ApplicationIcon>Assets\AppIcon\gpixel.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 도구 아이콘(32×32 PNG)과 창 아이콘 -->
+    <AvaloniaResource Include="Assets\Tools\*.png" />
+    <AvaloniaResource Include="Assets\AppIcon\gpixel-256.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.22" />
+  </ItemGroup>
 
 </Project>
