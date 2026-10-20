@@ -3690,6 +3690,13 @@ public sealed class TimelinePanel : UserControl
                 e.Handled = true;
                 return;
             }
+            if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down && (e.KeyModifiers & ~KeyModifiers.Shift) == 0)
+            {
+                bool dragging = _marquee is not null || _dragFrom >= 0 || _layerDragFrom >= 0 || _blockRows is not null || _fxDragLayer is not null || _fxLayer is not null;
+                if (!dragging) MoveByKey(e.Key, (e.KeyModifiers & KeyModifiers.Shift) != 0);
+                e.Handled = true;
+                return;
+            }
             // macOS 키보드의 "delete"는 Back 키다.
             if (e.Key == Key.Delete || (Platform.IsMac && e.Key == Key.Back))
             {
@@ -3699,6 +3706,66 @@ public sealed class TimelinePanel : UserControl
                 e.Handled = true;
             }
             else if (e.Key == Key.F2) { _owner.BeginRenameLayer(); e.Handled = true; }
+        }
+
+        /// <summary>
+        /// 방향키: 선택을 옆 프레임(←→)·옆 레이어(↑↓)로 옮긴다(현재 칸도 따라감). Shift = 끌어서 고르듯 넓히기.
+        /// 프레임 선택은 ←→, 레이어 선택은 ↑↓로 그 종류를 유지하고, 다른 방향이나 셀·효과 선택이면 셀 선택으로 움직인다.
+        /// </summary>
+        private void MoveByKey(Key key, bool extend)
+        {
+            if (Ctx.Project is not { } p || p.Frames.Count == 0) return;
+            var rows = Rows();
+            if (rows.Count == 0) return;
+            int dx = key == Key.Left ? -1 : key == Key.Right ? 1 : 0, dy = key == Key.Up ? -1 : key == Key.Down ? 1 : 0;
+            int lastFrame = p.Frames.Count - 1;
+            if (_kind == SelKind.Frames && dx != 0)
+            {
+                int t = Math.Clamp(Ctx.CurrentFrame + dx, 0, lastFrame);
+                if (extend)
+                {
+                    int anchor = _frameAnchor >= 0 && _frameAnchor <= lastFrame ? _frameAnchor : Ctx.CurrentFrame;
+                    SelectFrameRange(anchor, t);
+                    _frameAnchor = anchor;
+                }
+                else { SelectFrames([t]); _frameAnchor = t; }
+                Ctx.SetCurrentFrame(t);
+            }
+            else if (_kind == SelKind.Layers && dy != 0)
+            {
+                int cur = Math.Max(0, rows.IndexOf(Ctx.CurrentLayer));
+                int t = Math.Clamp(cur + dy, 0, rows.Count - 1);
+                if (extend)
+                {
+                    var anchorLayer = _layerAnchor is { } la && rows.Contains(p.IndexOf(la)) ? la : p.Layers[rows[cur]];
+                    SelectLayerRows(rows.IndexOf(p.IndexOf(anchorLayer)), t);
+                    _layerAnchor = anchorLayer;
+                }
+                else { SelectLayers([p.Layers[rows[t]]]); _layerAnchor = p.Layers[rows[t]]; }
+                Ctx.SetCurrentLayer(rows[t]);
+            }
+            else if (extend && _kind == SelKind.Cels)
+            {
+                // 시작 칸(현재 칸)은 그대로 두고 끝 칸만 옮긴다.
+                int endFrame = _rangeA >= 0 ? _rangeB : Ctx.CurrentFrame;
+                int endRow = _rowEnd is { } re && rows.IndexOf(p.IndexOf(re)) is var ri && ri >= 0 ? ri : Math.Max(0, rows.IndexOf(Ctx.CurrentLayer));
+                endFrame = Math.Clamp(endFrame + dx, 0, lastFrame);
+                endRow = Math.Clamp(endRow + dy, 0, rows.Count - 1);
+                if (_rangeA < 0) _rangeA = Ctx.CurrentFrame;
+                _rangeB = endFrame;
+                _rowEnd = rows[endRow] == Ctx.CurrentLayer ? null : p.Layers[rows[endRow]];
+                if (_rangeA == _rangeB && _rowEnd is null) _rangeA = _rangeB = -1;
+            }
+            else
+            {
+                int cur = Math.Max(0, rows.IndexOf(Ctx.CurrentLayer));
+                int row = Math.Clamp(cur + dy, 0, rows.Count - 1), frame = Math.Clamp(Ctx.CurrentFrame + dx, 0, lastFrame);
+                ResetRange();
+                Ctx.SetCurrent(rows[row], frame);
+            }
+            InvalidateVisual();
+            EnsureCurrentVisible();
+            _owner.HintSelection();
         }
     }
 }
