@@ -187,58 +187,6 @@ public sealed class TimelinePanel : UserControl
     }
 
     /// <summary>
-    /// Ctrl/⌘+D(타임라인을 누른 뒤): 고른 종류대로 복제(실행취소 한 단계). 프레임 = 고른 프레임들(이어진 범위면 그 뒤에 통째로, 떨어져 있으면 각각 바로 뒤),
-    /// 레이어 = 고른 레이어들(그룹은 부위까지, 이름 끝 숫자 +1). 그 밖에는 현재 프레임. 복제한 것을 고른다.
-    /// </summary>
-    public void DuplicateSelection()
-    {
-        if (P is not { } p) return;
-        if (_grid.Kind == SelKind.Layers)
-        {
-            var layers = _grid.SelectedLayerList().Select(i => p.Layers[i]).ToList();
-            // 그룹을 골랐으면 그 부위는 그룹과 함께 복제되므로 뺀다.
-            layers.RemoveAll(l => l.Parent is { } g && layers.Contains(g));
-            if (layers.Count == 0) return;
-            var copies = new List<Layer>();
-            _ctx.Structural(() => p.Edit("레이어 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
-            {
-                foreach (var l in layers) copies.Add(p.DuplicateLayer(p.IndexOf(l)));
-            }));
-            _ctx.SetCurrentLayer(p.IndexOf(copies[0]));
-            _grid.SelectLayerSet(copies);
-            Say($"레이어 {copies.Count}개 복제: {string.Join(", ", copies.Select(c => c.Name))}");
-            return;
-        }
-        var frames = _grid.Kind == SelKind.Frames ? _grid.SelectedFrameList() : [_ctx.CurrentFrame];
-        frames.Sort();
-        if (frames.Count == 0) return;
-        bool contiguous = frames[^1] - frames[0] == frames.Count - 1;
-        var result = new List<int>();
-        _ctx.Structural(() => p.Edit("프레임 복제", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
-        {
-            if (contiguous)
-            {
-                // a..b 뒤에 a'..b'를 차례로: 복제(바로 뒤에 생김)한 것을 지금까지 붙인 복사본 뒤로 옮긴다.
-                int a = frames[0], b = frames[^1], n = frames.Count;
-                for (int k = 0; k < n; k++)
-                {
-                    p.DuplicateFrame(a + k);
-                    p.MoveFrame(a + k + 1, b + 1 + k);
-                }
-                result.AddRange(Enumerable.Range(b + 1, n));
-            }
-            else
-            {
-                for (int j = frames.Count - 1; j >= 0; j--) p.DuplicateFrame(frames[j]);
-                for (int j = 0; j < frames.Count; j++) result.Add(frames[j] + j + 1);
-            }
-        }));
-        _ctx.SetCurrentFrame(result[0]);
-        if (_grid.Kind == SelKind.Frames || frames.Count > 1) _grid.SelectFrames(result);
-        Say($"프레임 {result.Count}개 복제");
-    }
-
-    /// <summary>
     /// 고른 프레임(머리글로 골랐으면 그 프레임들, 아니면 현재 프레임)을 지운다(실행취소 한 단계).
     /// 모든 프레임을 지울 수는 없다(상태 표시줄에 알림).
     /// </summary>
@@ -400,8 +348,9 @@ public sealed class TimelinePanel : UserControl
     /// <summary>
     /// 복사한 셀/프레임. <see cref="WholeFrames"/>면 프레임 전체(모든 레이어 + 길이, <see cref="Frames"/>),
     /// 아니면 고른 행 × 프레임 묶음(<see cref="Rows"/>, 붙일 때 클릭한 셀이 왼쪽 위).
+    /// 레이어 선택을 복사했으면 <see cref="SourceLayers"/> = 그 레이어들(붙이면 같은 프로젝트에 남아 있는 한 새 레이어로 복제).
     /// </summary>
-    private sealed record CelClip(bool WholeFrames, int FrameCount, List<Dictionary<Layer, PixelImage>> Frames, List<int> Durations, List<ClipRow> Rows);
+    private sealed record CelClip(bool WholeFrames, int FrameCount, List<Dictionary<Layer, PixelImage>> Frames, List<int> Durations, List<ClipRow> Rows, List<Layer>? SourceLayers = null);
 
     private static CelClip? _clip;
 
@@ -569,7 +518,14 @@ public sealed class TimelinePanel : UserControl
             return;
         }
         var (rows, frames) = CelBlock();
-        _clip = new CelClip(false, frames.Count, [], frames.Select(f => p.Frames[f].DurationMs).ToList(), CaptureCells(p, rows, frames));
+        List<Layer>? sources = null;
+        if (_grid.Kind == SelKind.Layers)
+        {
+            // 레이어 통째 복사: 그룹을 골랐으면 그 부위는 그룹과 함께 복제되므로 뺀다.
+            sources = _grid.SelectedLayerList().Select(i => p.Layers[i]).ToList();
+            sources.RemoveAll(l => l.Parent is { } g && sources.Contains(g));
+        }
+        _clip = new CelClip(false, frames.Count, [], frames.Select(f => p.Frames[f].DurationMs).ToList(), CaptureCells(p, rows, frames), sources);
         if (cut) ClearSelectedCels();
     }
 
@@ -590,6 +546,19 @@ public sealed class TimelinePanel : UserControl
             return true;
         }
         if (P is not { } p || _clip is not { } clip || clip.FrameCount == 0) return false;
+        if (clip.SourceLayers is { Count: > 0 } sourceLayers && sourceLayers.All(l => p.IndexOf(l) >= 0))
+        {
+            // 레이어 통째 붙여넣기: 새 레이어로(원래 레이어 바로 위, 그룹은 부위까지, 이름 끝 숫자 +1)
+            var copies = new List<Layer>();
+            _ctx.Structural(() => p.Edit("레이어 붙여넣기", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            {
+                foreach (var l in sourceLayers) copies.Add(p.DuplicateLayer(p.IndexOf(l)));
+            }));
+            _ctx.SetCurrentLayer(p.IndexOf(copies[0]));
+            _grid.SelectLayerSet(copies);
+            Say(Ui.Shortcut($"새 레이어 {copies.Count}개: {string.Join(", ", copies.Select(c => c.Name))} — Ctrl+Z로 되돌립니다."));
+            return true;
+        }
         if (clip.WholeFrames)
         {
             int at = SelectedFrames().Max() + 1;
