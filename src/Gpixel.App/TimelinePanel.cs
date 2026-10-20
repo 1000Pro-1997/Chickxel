@@ -3330,6 +3330,18 @@ public sealed class TimelinePanel : UserControl
             return LayoutBadge(layer) is { W: > 0 } b && pos.X >= b.X && pos.X < b.X + b.W ? layer : null;
         }
 
+        /// <summary>누르면 바로 동작하는 작은 단추 위인지(손 모양 커서): 이름 칸의 눈·자물쇠·접기·fx·스킨 칩, 프레임 끝 열의 ⧉/＋.</summary>
+        private bool IsClickableAt(Avalonia.Point pos)
+        {
+            if (Ctx.Project is not { } p || pos.Y < TagH) return false;
+            if (pos.X >= NameW) return IsGhostColumn(pos.X) && FxRowAt(pos.Y) is null;
+            if (FxRowAt(pos.Y) is not null || LayerAt(pos.Y) is var l && l < 0) return false;
+            var layer = p.Layers[l];
+            if (pos.X < ToggleX || (layer.IsGroup && pos.X < NameX)) return true;
+            return FxBadge(layer) is { W: > 0 } fx && pos.X >= fx.X && pos.X < fx.X + fx.W
+                || SkinChip(layer) is { W: > 0 } chip && pos.X >= chip.X && pos.X < chip.X + chip.W;
+        }
+
         /// <summary>◆ 위에 마우스가 올라감/벗어남: 강조, 도움말 풍선, 상태 줄 안내.</summary>
         private void SetLayoutBadgeHover(Layer? group)
         {
@@ -3515,7 +3527,7 @@ public sealed class TimelinePanel : UserControl
                 (Layer, int)? fxHover = fx is { } h ? (h.Layer, h.Index) : null;
                 if (fxHover != _fxHover) { _fxHover = fxHover; InvalidateVisual(); }
                 var badge = LayoutBadgeAt(pos);
-                if (badge is not null) Cursor = HandCursor;
+                if (badge is not null || IsClickableAt(pos)) Cursor = HandCursor;
                 if (!ReferenceEquals(badge, _layoutBadgeHover)) SetLayoutBadgeHover(badge);
                 return;
             }
