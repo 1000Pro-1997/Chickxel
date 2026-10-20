@@ -364,9 +364,17 @@ public sealed class TimelinePanel : UserControl
             ? new ClipRow([], ChildrenTopDown(p, g).Select(c => frames.Select(f => p.GetCel(c, p.Frames[f])?.Clone()).ToArray()).ToList())
             : new ClipRow(frames.Select(f => p.GetCel(l, f)?.Clone()).ToArray(), null)).ToList();
 
-    /// <summary>행(레이어 번호)을 셀이 있는 레이어로 펼친다(그룹 행은 그 부위들, 겹치면 한 번).</summary>
+    /// <summary>
+    /// 행(레이어 번호)을 셀이 있는 레이어로 펼친다(겹치면 한 번). 그룹 행은 그 부위들 — 단, 그 그룹의 부위 행이 하나라도 함께 골라져 있으면
+    /// 고른 부위 행만 쓴다(그룹 행 + 위 부위 몇 개를 고른 묶음이 고르지 않은 아래 부위까지 지우지 않게).
+    /// </summary>
     private static IEnumerable<int> CelLayers(SpriteProject p, IReadOnlyList<int> rowLayers)
-        => rowLayers.SelectMany(l => p.Layers[l] is { IsGroup: true } g ? ChildrenTopDown(p, g).Select(p.IndexOf) : [l]).Distinct();
+    {
+        var picked = rowLayers.ToHashSet();
+        return rowLayers.SelectMany(l => p.Layers[l] is { IsGroup: true } g
+            ? p.ChildrenOf(g).Any(c => picked.Contains(p.IndexOf(c))) ? [] : ChildrenTopDown(p, g).Select(p.IndexOf)
+            : [l]).Distinct();
+    }
 
     /// <summary>행 × 프레임의 셀을 비운다(그룹 행은 그 부위들). <see cref="SpriteProject.Edit"/> 안에서 부른다.</summary>
     private static void ClearCells(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames)
@@ -1280,6 +1288,8 @@ public sealed class TimelinePanel : UserControl
         private static readonly IPen BorderPen = AppTheme.Pen(AppTheme.BorderColor);
         private static readonly IPen AccentPen = AppTheme.Pen(AppTheme.AccentColor, 2);
         private static readonly IPen WhitePen = AppTheme.Pen(Colors.White);
+        /// <summary>프레임·레이어·효과 선택 중의 현재 칸 테두리(파랗지 않게, 흐린 흰색).</summary>
+        private static readonly IPen CurrentCelPen = AppTheme.Pen(Color.FromArgb(110, 255, 255, 255));
         private static readonly IPen PlayPen = AppTheme.Pen(Color.FromRgb(120, 230, 120), 2);
         private static readonly IBrush RangeBrush = AppTheme.Brush(Color.FromArgb(60, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IBrush PivotBrush = AppTheme.Brush(Color.FromRgb(255, 120, 80));
@@ -2376,7 +2386,8 @@ public sealed class TimelinePanel : UserControl
                 }
                 else
                     g.DrawEllipse(AppTheme.BorderBrush, null, new Rect(r.X + r.Width / 2 - 3, r.Y + r.Height / 2 - 3, 6, 6));
-                if (l == curLayer && f == cur) g.DrawRectangle(null, AccentPen, r.Deflate(1));
+                // 파란 테두리는 셀 선택일 때만: 프레임·레이어·효과를 고른 동안은 그 선택 외곽선이 파랗고, 현재 칸은 흐린 흰 테두리로만 표시
+                if (l == curLayer && f == cur) g.DrawRectangle(null, _kind == SelKind.Cels ? AccentPen : CurrentCelPen, r.Deflate(_kind == SelKind.Cels ? 1 : 0.5));
                 else g.DrawRectangle(null, BorderPen, r.Deflate(0.5));
             }
 
