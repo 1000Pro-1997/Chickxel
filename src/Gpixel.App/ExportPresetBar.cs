@@ -29,10 +29,10 @@ public sealed class ExportPresetBar : StackPanel
             .Tip("지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)");
         var load = Ui.Button("불러오기 ▾");
         load.Tip("프리셋을 지금 프로젝트에 적용(실행취소 1단계)");
-        load.Click += (_, _) => new ContextMenu { ItemsSource = LoadMenu() }.Open(load);
+        load.Click += (_, _) => PopupMenus.Show(load, LoadMenu(), PlacementMode.BottomEdgeAlignedLeft);
         var manage = Ui.Button("관리 ▾");
         manage.Tip("사용자 프리셋 이름 바꾸기·덮어쓰기·삭제, JSON 내보내기/가져오기");
-        manage.Click += (_, _) => new ContextMenu { ItemsSource = ManageMenu() }.Open(manage);
+        manage.Click += (_, _) => PopupMenus.Show(manage, ManageMenu(), PlacementMode.BottomEdgeAlignedLeft);
         _status = new TextBlock
         {
             Foreground = AppTheme.DimTextBrush,

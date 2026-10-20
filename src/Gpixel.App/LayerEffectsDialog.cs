@@ -1,4 +1,3 @@
-using Avalonia.VisualTree;
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
 
@@ -55,6 +54,13 @@ public sealed class LayerEffectsDialog : DialogBase
         _down = Ui.Button("아래로", (_, _) => Move(1), 60);
         _list = new ListBox { Width = 300, Height = 170, Margin = new Thickness(3) };
         ToolTip.SetTip(_list, "줄을 끌어 순서를 바꿉니다(위에서부터 차례로 적용).");
+        _drag.Moved += (from, to) =>
+        {
+            var effect = _effects[from];
+            _effects.RemoveAt(from);
+            _effects.Insert(to, effect);
+            RebuildList(to);
+        };
         _list.SelectionChanged += (_, _) =>
         {
             if (_syncing) return;
@@ -63,11 +69,9 @@ public sealed class LayerEffectsDialog : DialogBase
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = 300 };
 
-        // 끌기 자리 표시(파란 선)를 목록 위에 겹쳐 그리려고 Grid로 감싼다.
-        var listHost = new Grid { Children = { _list } };
         var left = Ui.Stack(
             Ui.Row(kind, add),
-            listHost,
+            _list,
             Ui.Row(_remove, _up, _down),
             Ui.Group("설정", _settings));
         left.Width = 320;
@@ -109,6 +113,7 @@ public sealed class LayerEffectsDialog : DialogBase
     private void RebuildList(int select)
     {
         _syncing = true;
+        _drag.Clear();
         _list.Items.Clear();
         for (int i = 0; i < _effects.Count; i++)
         {
@@ -124,8 +129,8 @@ public sealed class LayerEffectsDialog : DialogBase
             row.Children.Add(check);
             row.Children.Add(text);
             var item = new ListBoxItem { Content = row };
-            HookDrag(item, at);
             _list.Items.Add(item);
+            _drag.Attach(item);
         }
         _list.SelectedIndex = Math.Clamp(select, -1, _effects.Count - 1);
         _syncing = false;
@@ -169,92 +174,7 @@ public sealed class LayerEffectsDialog : DialogBase
         RebuildList(j);
     }
 
-    // ───────────── 끌어서 순서 바꾸기 ─────────────
-
-    private int _dragFrom = -1;
-    private Avalonia.Point _dragStart;
-    private bool _dragging;
-    private int _dropAt = -1;
-    private Border? _dropLine;
-
-    /// <summary>줄을 누른 채 위아래로 끌면 놓은 자리로 옮긴다(파란 선 = 들어갈 자리). 체크 상자 누르기는 끌기가 아니다.</summary>
-    private void HookDrag(ListBoxItem item, int index)
-    {
-        item.AddHandler(PointerPressedEvent, (_, e) =>
-        {
-            if (!e.GetCurrentPoint(item).Properties.IsLeftButtonPressed || e.Source is Visual v && v.FindAncestorOfType<CheckBox>(includeSelf: true) is not null) return;
-            _dragFrom = index;
-            _dragStart = e.GetPosition(_list);
-            _dragging = false;
-        }, RoutingStrategies.Tunnel);
-        item.AddHandler(PointerMovedEvent, (_, e) =>
-        {
-            if (_dragFrom < 0 || !e.GetCurrentPoint(item).Properties.IsLeftButtonPressed) return;
-            var p = e.GetPosition(_list);
-            if (!_dragging)
-            {
-                if (Math.Abs(p.Y - _dragStart.Y) < 4) return;
-                _dragging = true;
-                e.Pointer.Capture(item);
-                item.Cursor = new Cursor(StandardCursorType.SizeNorthSouth);
-            }
-            ShowDropLine(DropIndexAt(p.Y));
-        }, RoutingStrategies.Tunnel);
-        item.AddHandler(PointerReleasedEvent, (_, e) =>
-        {
-            if (_dragFrom < 0) return;
-            int from = _dragFrom, to = _dropAt;
-            bool dragged = _dragging;
-            _dragFrom = -1;
-            _dragging = false;
-            item.Cursor = null;
-            HideDropLine();
-            if (!dragged) return;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-            // to = 들어갈 틈(0..Count). 자기 자리 앞뒤 틈이면 그대로.
-            if (to < 0 || to == from || to == from + 1) return;
-            var effect = _effects[from];
-            _effects.RemoveAt(from);
-            int insert = to > from ? to - 1 : to;
-            _effects.Insert(insert, effect);
-            RebuildList(insert);
-        }, RoutingStrategies.Tunnel);
-    }
-
-    /// <summary>목록 안 Y 위치에서 들어갈 틈 번호(0 = 맨 위, Count = 맨 아래).</summary>
-    private int DropIndexAt(double y)
-    {
-        for (int i = 0; i < _list.Items.Count; i++)
-        {
-            if (_list.Items[i] is not ListBoxItem item) continue;
-            var top = item.TranslatePoint(new Avalonia.Point(0, 0), _list);
-            if (top is not { } t) continue;
-            if (y < t.Y + item.Bounds.Height / 2) return i;
-        }
-        return _list.Items.Count;
-    }
-
-    private void ShowDropLine(int gap)
-    {
-        _dropAt = gap;
-        if (_list.GetVisualParent() is not Panel host) return;
-        _dropLine ??= new Border { Height = 2, Background = AppTheme.AccentBrush, IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Top };
-        if (!host.Children.Contains(_dropLine)) host.Children.Add(_dropLine);
-        double y;
-        if (gap < _list.Items.Count && _list.Items[gap] is ListBoxItem item && item.TranslatePoint(new Avalonia.Point(0, 0), host) is { } t) y = t.Y;
-        else if (_list.Items.Count > 0 && _list.Items[^1] is ListBoxItem last && last.TranslatePoint(new Avalonia.Point(0, last.Bounds.Height), host) is { } b) y = b.Y;
-        else return;
-        _dropLine.Width = _list.Bounds.Width - 8;
-        _dropLine.HorizontalAlignment = HorizontalAlignment.Left;
-        _dropLine.Margin = new Thickness(_list.Margin.Left + 4, y - 1, 0, 0);
-    }
-
-    private void HideDropLine()
-    {
-        _dropAt = -1;
-        if (_dropLine?.Parent is Panel host) host.Children.Remove(_dropLine);
-    }
+    private readonly DragReorder _drag = new();
 
     /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다.</summary>
     private void Update(int index, LayerEffect effect)

@@ -62,14 +62,10 @@ public sealed class PreferencesDialog : DialogBase
         shortcuts.Children.Add(bottom);
         shortcuts.Children.Add(new ScrollViewer { Content = _rows, Height = 420, Width = 720, Background = AppTheme.InputBrush });
 
-        Body.Children.Add(new TabControl
-        {
-            Items =
-            {
-                new TabItem { Header = "일반", Content = general },
-                new TabItem { Header = "단축키", Content = shortcuts },
-            },
-        });
+        var tabs = new TabView();
+        tabs.AddPage("일반", general);
+        tabs.AddPage("단축키", shortcuts);
+        Body.Children.Add(tabs);
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
         AddHandler(KeyDownEvent, OnCaptureKeyDown, RoutingStrategies.Tunnel);

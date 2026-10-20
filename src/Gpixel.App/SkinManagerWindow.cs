@@ -31,7 +31,7 @@ public sealed class SkinManagerWindow : Window
     private Layer? _focus;
     private bool _scrollToFocus;
     /// <summary>보기 거르기: 0 = 전체, 1 = 그룹 스킨(전체 스킨)만, 2 = 개별 스킨(부위 전용)만.</summary>
-    private readonly SegmentedToggle _filter = new("전체", "그룹 스킨", "개별 스킨");
+    private readonly TabStrip _filter = new(TabStripKind.Segmented, "전체", "그룹 스킨", "개별 스킨");
 
     private bool ShowFull => _filter.SelectedIndex != 2;
     private bool ShowPartOnly => _filter.SelectedIndex != 1;
@@ -58,9 +58,9 @@ public sealed class SkinManagerWindow : Window
         var previewTitle = Ui.Label("전체 착장 (지금 프레임)", bold: true);
         previewTitle.Margin = new Thickness(0, 0, 0, 2);
         _filter.SelectedIndex = 0;
-        _filter.SetOptionTip(0, "그룹 스킨과 부위 전용(개별) 스킨을 모두 보기")
-            .SetOptionTip(1, "그룹 전체 스킨만 보기(부위 줄에는 \"없음\" + 그룹 스킨)")
-            .SetOptionTip(2, "부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)");
+        _filter.SetTip(0, "그룹 스킨과 부위 전용(개별) 스킨을 모두 보기")
+            .SetTip(1, "그룹 전체 스킨만 보기(부위 줄에는 \"없음\" + 그룹 스킨)")
+            .SetTip(2, "부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)");
         _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Rebuild);
         var filterLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4), Children = { Ui.Label("보기"), _filter } };
         var content = new StackPanel { Margin = new Thickness(10, 8), Children = { filterLine, help, previewTitle, _preview, _outfits, _list } };
@@ -592,12 +592,7 @@ public sealed class SkinManagerWindow : Window
             // 다시 만들기가 이 카드를 지우므로 처리기가 끝난 뒤에 적용한다.
             Dispatcher.UIThread.Post(apply);
         };
-        card.PointerReleased += (_, e) =>
-        {
-            if (e.InitialPressMouseButton != MouseButton.Right) return;
-            e.Handled = true;
-            new ContextMenu { ItemsSource = menu() }.Open(card);
-        };
+        PopupMenus.Attach(card, menu);
     }
 
     private static MenuItem Item(string text, Action action, bool enabled = true)

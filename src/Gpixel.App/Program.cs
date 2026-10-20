@@ -44,6 +44,7 @@ public sealed class App : Application
             Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"),
         });
         AppTheme.Install(this);
+        PopupMenus.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()

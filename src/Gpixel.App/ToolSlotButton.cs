@@ -190,6 +190,6 @@ public sealed class ToolSlotButton : ToggleButton
             };
             list.Children.Add(item);
         }
-        flyout.ShowAt(this);
+        PopupMenus.Show(this, flyout);
     }
 }

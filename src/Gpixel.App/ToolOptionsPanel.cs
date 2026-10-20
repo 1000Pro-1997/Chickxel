@@ -36,7 +36,8 @@ public sealed class ToolOptionsPanel : UserControl
     // 브러시
     private readonly Border _brushBox;
     private readonly TextBlock _brushTitle, _fillTitle;
-    private readonly ToggleButton[] _shapeButtons = new ToggleButton[Shapes.Length];
+    /// <summary>브러시 모양(<see cref="Shapes"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly TabStrip _shapes = new(TabStripKind.Segmented, [.. Shapes.Select(s => s.Text)]) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly NumericUpDown _sizeNum;
     private readonly BrushPreview _brushPreview = new();
 
@@ -79,24 +80,16 @@ public sealed class ToolOptionsPanel : UserControl
         Background = AppTheme.PanelBrush;
 
         // ── 브러시: 모양 단추 + 크기(슬라이더·숫자) + 미리보기
-        var shapeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
-        for (int i = 0; i < Shapes.Length; i++)
+        for (int i = 0; i < Shapes.Length; i++) _shapes.SetTip(i, Shapes[i].Tip);
+        _shapes.SelectionChanged += (_, _) =>
         {
-            var (shape, text, tip) = Shapes[i];
-            var b = new ToggleButton
-            {
-                Content = text,
-                Padding = new Thickness(6, 2, 6, 2),
-                MinHeight = 0,
-                Focusable = false,
-            }.Tip(tip);
-            b.Click += (_, _) => { _ctx.BrushShape = shape; Refresh(); };
-            _shapeButtons[i] = b;
-            shapeRow.Children.Add(b);
-        }
+            if (_updating || _shapes.SelectedIndex < 0) return;
+            _ctx.BrushShape = Shapes[_shapes.SelectedIndex].Shape;
+            Refresh();
+        };
         _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v);
         _sizeNum.Tip($"브러시 크기 1~{BrushFootprint.MaxSize} — 좌우로 끌거나 [ / ]");
-        var brushRight = new StackPanel { Spacing = 4, Children = { shapeRow, Ui.Row(Ui.Label("크기"), _sizeNum) } };
+        var brushRight = new StackPanel { Spacing = 4, Children = { _shapes, Ui.Row(Ui.Label("크기"), _sizeNum) } };
         _brushPreview.Margin = new Thickness(0, 0, 6, 0);
         _brushPreview.VerticalAlignment = VerticalAlignment.Top;
         _brushPreview.Tip("브러시 모양 미리보기(한 칸 = 한 픽셀)");
@@ -496,7 +489,7 @@ public sealed class ToolOptionsPanel : UserControl
         _updating = true;
         try
         {
-            for (int i = 0; i < Shapes.Length; i++) _shapeButtons[i].IsChecked = Shapes[i].Shape == _ctx.BrushShape;
+            _shapes.SelectedIndex = Array.FindIndex(Shapes, s => s.Shape == _ctx.BrushShape);
             _sizeNum.Value = _ctx.BrushSize;
             _brushPreview.Footprint = _ctx.Brush;
             _tolNum.Value = _ctx.FillTolerance;

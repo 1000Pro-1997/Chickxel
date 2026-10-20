@@ -33,9 +33,11 @@ public sealed class UnityExportDialog : DialogBase
     private readonly List<Action<SpriteProject>> _atOpen = new();
     /// <summary>글자 칸의 아직 반영하지 않은 값을 반영(창을 닫을 때).</summary>
     private readonly List<Action> _commitTexts = new();
-    private readonly TabControl _tabs;
-    private readonly TabItem _mainTab, _importTab;
+    /// <summary>탭: [내보내기 | Import Settings].</summary>
+    private readonly TabView _tabs = new();
+    private const int MainPage = 0, ImportPage = 1;
     private readonly Grid _columns;
+    private readonly Control _importPage;
     private readonly Expander _advanced;
     private readonly PreviewSection _framesSection, _partsSection;
     private readonly DispatcherTimer _rebuild = new() { Interval = TimeSpan.FromMilliseconds(300) };
@@ -122,46 +124,33 @@ public sealed class UnityExportDialog : DialogBase
         _columns.Children.Add(splitter);
         _columns.Children.Add(preview);
 
-        _mainTab = Tab("내보내기", _columns);
-        _importTab = Tab("Import Settings", Ui.ScrollHost(BuildImportTab()));
-        _tabs = new TabControl { Padding = new Thickness(0, 4, 0, 0) };
-        _tabs.Items.Add(_mainTab);
-        _tabs.Items.Add(_importTab);
-        _tabs.SelectedItem = _mainTab;
+        _tabs.AddPage("내보내기", _columns);
+        _importPage = Ui.ScrollHost(BuildImportTab());
+        _tabs.AddPage("Import Settings", _importPage);
         Opened += (_, _) => { if (_previewDirty) RebuildPreview(); };
-        // Unity Import Settings는 .meta를 쓸 때만 의미가 있다.
-        _refresh.Add(p =>
-        {
-            bool meta = p.Export.WriteMeta != false;
-            _importTab.IsVisible = meta;
-            if (!meta && _tabs.SelectedItem == _importTab) _tabs.SelectedItem = _mainTab;
-        });
-        _tabs.SelectionChanged += (_, e) =>
-        {
-            // 안쪽 목록·콤보의 SelectionChanged도 여기로 올라오므로 탭 자신의 것만 본다.
-            if (e.Source == _tabs && _tabs.SelectedItem == _mainTab && _previewDirty) RebuildPreview();
-        };
+        // Unity Import Settings는 .meta를 쓸 때만 의미가 있다(숨기면 내보내기 탭으로).
+        _refresh.Add(p => _tabs.SetPageVisible(ImportPage, p.Export.WriteMeta != false));
+        _tabs.SelectionChanged += (_, _) => { if (_tabs.SelectedIndex == MainPage && _previewDirty) RebuildPreview(); };
 
         // 대화상자 본문(StackPanel)은 높이를 주지 않으므로 탭을 바깥 DockPanel의 채우기 칸에 바로 둔다.
         // 탭 줄 오른쪽 끝: 프리셋 단추(누르면 저장·불러오기·관리·기본 설정 창).
         var presetBar = new ExportPresetBar(ctx, this);
-        var presets = new Button
+        var presetFlyout = new Flyout
+        {
+            Placement = PlacementMode.BottomEdgeAlignedRight,
+            Content = new Border { Width = 320, Padding = new Thickness(4), Child = presetBar },
+        };
+        var presetButton = new Button
         {
             Content = "프리셋 ▾",
             Padding = new Thickness(10, 3),
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(0, 2, 2, 0),
-            Flyout = new Flyout
-            {
-                Placement = PlacementMode.BottomEdgeAlignedRight,
-                Content = new Border { Width = 320, Padding = new Thickness(4), Child = presetBar },
-            },
+            Margin = new Thickness(8, 0, 2, 1),
         }.Tip("내보내기 설정 프리셋: 지금 설정 저장 · 불러오기 · 관리 · 기본 설정으로 되돌리기");
-        var tabHost = new Grid { Children = { _tabs, presets } };
+        presetButton.Click += (_, _) => PopupMenus.Show(presetButton, presetFlyout);
+        _tabs.Strip.Trailing = presetButton;
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);
-        root.Children.Add(tabHost);
+        root.Children.Add(_tabs);
 
         _rebuild.Tick += (_, _) => { _rebuild.Stop(); RebuildPreview(); };
         _onReplaced = (_, _) => { _customPivot = false; RememberAtOpen(); RefreshAll(); ScheduleRebuild(); };
@@ -216,7 +205,7 @@ public sealed class UnityExportDialog : DialogBase
     /// <summary>고급 묶음을 펼치고 그리로 스크롤한다.</summary>
     private void ShowAdvanced()
     {
-        _tabs.SelectedItem = _mainTab;
+        _tabs.SelectedIndex = MainPage;
         _advanced.IsExpanded = true;
         Dispatcher.UIThread.Post(() => _advanced.BringIntoView(), DispatcherPriority.Background);
     }
@@ -389,9 +378,9 @@ public sealed class UnityExportDialog : DialogBase
         jpegQuality.Tip("JPG 품질 1~100. 높을수록 깨끗하고 파일이 큽니다.");
         _refresh.Add(p => jpegLabel.IsVisible = jpegQuality.IsVisible = p.Export.ImageFormat == ExportImageFormat.Jpg);
         var meta = Seg<bool?>(".meta 쓰기", [false, null, true], ["끔", "자동", "항상"], p => p.Export.WriteMeta, (p, v) => p.Export.WriteMeta = v)
-            .SetOptionTip(0, "이미지만 내보냅니다(Unity를 쓰지 않을 때). 부위 아틀라스는 Sprite Library를 쓰면 .meta를 항상 씁니다.")
-            .SetOptionTip(1, "Unity 프로젝트 Assets 안이거나 이미 .meta가 있을 때만 씁니다.")
-            .SetOptionTip(2, "언제나 .meta를 같이 씁니다.");
+            .SetTip(0, "이미지만 내보냅니다(Unity를 쓰지 않을 때). 부위 아틀라스는 Sprite Library를 쓰면 .meta를 항상 씁니다.")
+            .SetTip(1, "Unity 프로젝트 Assets 안이거나 이미 .meta가 있을 때만 씁니다.")
+            .SetTip(2, "언제나 .meta를 같이 씁니다.");
         var fileBox = Ui.Stack(
             Setting("저장 시 내보내기", "프로젝트를 저장(Ctrl+S)할 때 이미지도 내보냅니다. 끄면 내보내기 단추로만 내보냅니다.",
                 OnOff("저장 시 내보내기", p => p.Export.ExportOnSave, (p, v) => p.Export.ExportOnSave = v)),
@@ -438,8 +427,8 @@ public sealed class UnityExportDialog : DialogBase
         var overrideRow = Setting("시트별 다르게", null, Line(
             Seg("시트별 다르게", [false, true], ["끔", "켬"], p => p.Export.PartsOverride is not null,
                     (p, v) => p.Export.PartsOverride = v ? p.Export.Common.Clone() : null)
-                .SetOptionTip(0, "부위 아틀라스도 공통 시트 설정을 씁니다.")
-                .SetOptionTip(1, "부위 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김)."),
+                .SetTip(0, "부위 아틀라스도 공통 시트 설정을 씁니다.")
+                .SetTip(1, "부위 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김)."),
             Info("공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 부위 아틀라스만 다르게 쓰려면 켭니다. " +
                  "끄면 따로 둔 설정을 버리고 공통 설정을 씁니다(실행취소로 되돌릴 수 있음).")));
         // 파일을 열 때부터 따로 설정이 있었으면(예전 파일을 옮긴 경우 등) 그 까닭과 되돌리는 단추.
@@ -516,16 +505,16 @@ public sealed class UnityExportDialog : DialogBase
     /// 내보낼 결과(프레임 시트 / 부위 아틀라스 / 둘 다). 저장 값은 <see cref="ExportSettings.ExportFrames"/>·<see cref="ExportSettings.ExportParts"/> 두 개
     /// (둘 다 꺼진 예전 설정이면 아무것도 고르지 않은 모양).
     /// </summary>
-    private SegmentedToggle OutputChoice() => Seg("내보낼 결과", [0, 1, 2], ["프레임 시트", "부위 아틀라스", "둘 다"],
+    private TabStrip OutputChoice() => Seg("내보낼 결과", [0, 1, 2], ["프레임 시트", "부위 아틀라스", "둘 다"],
             p => p.Export.ExportFrames && p.Export.ExportParts ? 2 : p.Export.ExportParts ? 1 : p.Export.ExportFrames ? 0 : -1,
             (p, v) =>
             {
                 p.Export.ExportFrames = v != 1;
                 p.Export.ExportParts = v != 0;
             })
-        .SetOptionTip(0, "그룹·부위를 합성한 프레임마다 한 칸(애니메이션용)")
-        .SetOptionTip(1, "부위 × 프레임마다 한 칸(부위별 스프라이트, 항상 Multiple)")
-        .SetOptionTip(2, "두 결과를 따로 파일로");
+        .SetTip(0, "그룹·부위를 합성한 프레임마다 한 칸(애니메이션용)")
+        .SetTip(1, "부위 × 프레임마다 한 칸(부위별 스프라이트, 항상 Multiple)")
+        .SetTip(2, "두 결과를 따로 파일로");
 
     /// <summary>부위 레이어가 있는지.</summary>
     private static bool HasParts(SpriteProject p) => p.Layers.Any(l => l.IsPart);
@@ -599,8 +588,8 @@ public sealed class UnityExportDialog : DialogBase
 
         // ── 스킨 ──
         var skins = Seg(u + "내보낼 스킨", [SkinSource.Current, SkinSource.Selected], ["지금 착장", "고른 스킨"], p => O(p).Skins, (p, v) => O(p).Skins = v)
-            .SetOptionTip(0, "프레임 시트: 지금 착장 합성 한 벌. 부위 아틀라스: 부위마다 지금 보이는 스킨만.")
-            .SetOptionTip(1, overrideBlock
+            .SetTip(0, "프레임 시트: 지금 착장 합성 한 벌. 부위 아틀라스: 부위마다 지금 보이는 스킨만.")
+            .SetTip(1, overrideBlock
                 ? "체크한 스킨의 부위 스프라이트(첫 스킨이 아닌 스킨이 직접 그린 칸은 {이름}@{스킨})."
                 : "체크한 스킨(과 착장 프리셋)마다: 프레임 시트는 그 그룹만 그 스킨으로 바꾼 합성 한 벌씩(나머지 그룹은 지금 착장), 부위 아틀라스는 체크한 스킨의 부위 스프라이트.");
         var pick = Ui.Button("스킨 고르기…", (_, _) => PickSkins(options, overrideBlock, PartsUse));
@@ -621,28 +610,28 @@ public sealed class UnityExportDialog : DialogBase
         });
         var splitSkins = Setting("스킨 담기", "고른 스킨 항목을 파일에 담는 방법.",
             Seg(u + "스킨마다 따로 파일", [false, true], ["한 이미지", "따로 파일"], p => O(p).SplitSkins, (p, v) => O(p).SplitSkins = v)
-                .SetOptionTip(0, "모든 스킨 항목을 한 이미지에(프레임 시트 칸 이름 {이름}@{스킨}).")
-                .SetOptionTip(1, "스킨 항목마다 {시트}@{스킨} 파일 하나(+ .meta, 첫 항목은 원래 이름). 칸 이름은 파일마다 같아 Unity에서 시트만 바꿔 끼우면 됩니다."));
+                .SetTip(0, "모든 스킨 항목을 한 이미지에(프레임 시트 칸 이름 {이름}@{스킨}).")
+                .SetTip(1, "스킨 항목마다 {시트}@{스킨} 파일 하나(+ .meta, 첫 항목은 원래 이름). 칸 이름은 파일마다 같아 Unity에서 시트만 바꿔 끼우면 됩니다."));
         _refresh.Add(p => splitSkins.IsVisible = O(p).Skins == SkinSource.Selected);
 
         // ── 배치 ──
         var layout = Setting("배치", null,
             Seg(u + "시트 배치", [SheetLayout.Grid, SheetLayout.Packed], ["격자", "자동 배치"], p => O(p).Layout, (p, v) => O(p).Layout = v)
-                .SetOptionTip(0, "정렬 기준·줄바꿈·칸 수대로 줄과 열에 놓습니다(같은 프레임은 같은 열, 빈 칸은 비워 둠).")
-                .SetOptionTip(1, "크기가 다른 칸을 빈틈이 적게 채워 넣습니다(최대 가로·넣는 순서)."));
+                .SetTip(0, "정렬 기준·줄바꿈·칸 수대로 줄과 열에 놓습니다(같은 프레임은 같은 열, 빈 칸은 비워 둠).")
+                .SetTip(1, "크기가 다른 칸을 빈틈이 적게 채워 넣습니다(최대 가로·넣는 순서)."));
         var order = OrderRow(O, PartsUse, u);
         var gridMode = Seg(u + "칸 수", [SheetGrid.Auto, SheetGrid.Columns, SheetGrid.Rows], ["자동", "가로 N칸", "세로 N칸"], p => O(p).Grid, (p, v) => O(p).Grid = v)
-            .SetOptionTip(0, "시트가 정사각형에 가깝게(긴 변이 가장 작게 → 빈 칸이 적게 → 가로로 넓게).")
-            .SetOptionTip(1, "한 줄에 N칸씩(넘치면 다음 줄).")
-            .SetOptionTip(2, "전체 줄 수가 N 이하가 되게.");
+            .SetTip(0, "시트가 정사각형에 가깝게(긴 변이 가장 작게 → 빈 칸이 적게 → 가로로 넓게).")
+            .SetTip(1, "한 줄에 N칸씩(넘치면 다음 줄).")
+            .SetTip(2, "전체 줄 수가 N 이하가 되게.");
         var gridCount = IntNum(u + "칸 수", 1, SheetOptions.MaxGridCount, 60, p => O(p).GridCount, (p, v) => O(p).GridCount = v);
         var gridRow = Setting("칸 수", "줄바꿈 단위마다 새 줄에서 시작하고, 그 안에서 칸 수로 줄을 바꿉니다.", Line(gridMode, gridCount));
         var maxWidthRow = Setting("최대 가로", "자동 배치 시트의 최대 가로. 0 = 자동(전체 넓이의 제곱근 정도, 가장 넓은 칸 이상).",
             Line(IntNum(u + "최대 가로", 0, PixelImage.MaxSize, 64, p => O(p).MaxWidth, (p, v) => O(p).MaxWidth = v), Ui.Label("px (0 = 자동)")));
         var packOrder = Setting("넣는 순서", null,
             Seg(u + "넣는 순서", [AtlasPackOrder.KeepOrder, AtlasPackOrder.LargestFirst], ["정렬 순서대로", "큰 것부터"], p => O(p).PackOrder, (p, v) => O(p).PackOrder = v)
-                .SetOptionTip(0, "위 정렬 기준 순서대로 채워 넣습니다.")
-                .SetOptionTip(1, "넓이가 큰 칸부터 넣습니다(빈틈이 더 적음)."));
+                .SetTip(0, "위 정렬 기준 순서대로 채워 넣습니다.")
+                .SetTip(1, "넓이가 큰 칸부터 넣습니다(빈틈이 더 적음)."));
         _refresh.Add(p =>
         {
             var o = O(p);
@@ -667,8 +656,8 @@ public sealed class UnityExportDialog : DialogBase
         // ── 칸 이름 ──
         var naming = Setting("칸 이름", "Unity .meta에 쓰는 스프라이트 이름 규칙. 바꾸면 이미 Unity에서 쓰던 스프라이트 참조가 끊길 수 있습니다.",
             Seg(u + "칸 이름 규칙", [SpriteNaming.FrameNumber, SpriteNaming.ByTag], ["프레임 번호", "태그 기준"], p => O(p).Naming, (p, v) => O(p).Naming = v)
-                .SetOptionTip(0, "프레임 시트 {시트}_{프레임}, 부위 아틀라스 {부위}(프레임 0)·{부위}_{프레임} — 프레임을 늘려도 이름이 그대로.")
-                .SetOptionTip(1, "프레임 시트 {태그}_{태그 안 번호}, 부위 아틀라스 {부위}_{태그}_{번호}. 태그 없는 프레임은 프레임 번호 규칙."));
+                .SetTip(0, "프레임 시트 {시트}_{프레임}, 부위 아틀라스 {부위}(프레임 0)·{부위}_{프레임} — 프레임을 늘려도 이름이 그대로.")
+                .SetTip(1, "프레임 시트 {태그}_{태그 안 번호}, 부위 아틀라스 {부위}_{태그}_{번호}. 태그 없는 프레임은 프레임 번호 규칙."));
         var namingWarning = Warning("칸 이름 규칙을 바꿨습니다 — Unity는 스프라이트를 이름으로 이어받으므로, 이미 쓰던 곳(프리팹·애니메이션 등)의 참조가 끊길 수 있습니다. " +
                                     "되돌리려면 실행취소(Ctrl+Z).");
         SpriteNaming? namingAtOpen = null;
@@ -731,10 +720,10 @@ public sealed class UnityExportDialog : DialogBase
     /// <summary>부위 아틀라스에 들어가는(부위가 있는) 그룹, 위→아래.</summary>
     private static List<Layer> PartGroups(SpriteProject p) => p.Layers.Where(l => l.IsGroup && p.ChildCount(l) > 0).Reverse().ToList();
 
-    /// <summary>작은 선택(2~4개) 단추 묶음(<see cref="Choice"/>의 <see cref="SegmentedToggle"/> 꼴). 값이 목록에 없으면 아무것도 고르지 않은 모양.</summary>
-    private SegmentedToggle Seg<T>(string undo, T[] values, string[] labels, Func<SpriteProject, T> get, Action<SpriteProject, T> set)
+    /// <summary>작은 선택(2~4개) 단추 묶음(<see cref="Choice"/>의 <see cref="TabStripKind.Segmented"/> 꼴). 값이 목록에 없으면 아무것도 고르지 않은 모양.</summary>
+    private TabStrip Seg<T>(string undo, T[] values, string[] labels, Func<SpriteProject, T> get, Action<SpriteProject, T> set)
     {
-        var s = new SegmentedToggle(labels);
+        var s = new TabStrip(TabStripKind.Segmented, labels);
         s.SelectionChanged += (_, _) =>
         {
             if (s.SelectedIndex < 0) return;
@@ -746,7 +735,7 @@ public sealed class UnityExportDialog : DialogBase
     }
 
     /// <summary>끔 / 켬.</summary>
-    private SegmentedToggle OnOff(string undo, Func<SpriteProject, bool> get, Action<SpriteProject, bool> set)
+    private TabStrip OnOff(string undo, Func<SpriteProject, bool> get, Action<SpriteProject, bool> set)
         => Seg(undo, [false, true], ["끔", "켬"], get, set);
 
     /// <summary>값 목록 중 하나를 고르는 콤보.</summary>
@@ -904,14 +893,6 @@ public sealed class UnityExportDialog : DialogBase
         row.Opacity = on ? 1 : 0.5;
     }
 
-    private static TabItem Tab(string header, Control content) => new()
-    {
-        Header = new TextBlock { Text = header, FontSize = 13 },
-        Content = content,
-        MinHeight = 0,
-        Padding = new Thickness(10, 4),
-    };
-
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
     private static TextBlock PathLabel()
@@ -1019,7 +1000,8 @@ public sealed class UnityExportDialog : DialogBase
         _updating = true;
         try
         {
-            _tabs.IsEnabled = _ctx.HasProject;
+            // 프로젝트가 없으면 페이지만 끈다(탭 줄 오른쪽 프리셋 단추의 "관리"는 프로젝트 없이도 쓴다).
+            _columns.IsEnabled = _importPage.IsEnabled = _ctx.HasProject;
             if (_ctx.Project is not { } p) return;
             foreach (var refresh in _refresh) refresh(p);
             _framesSection.Panel.IsVisible = FramesShown(p);
@@ -1155,7 +1137,7 @@ public sealed class UnityExportDialog : DialogBase
     private void ScheduleRebuild()
     {
         _previewDirty = true;
-        if (_tabs.SelectedItem != _mainTab) return;
+        if (_tabs.SelectedIndex != MainPage) return;
         _rebuild.Stop();
         _rebuild.Start();
     }

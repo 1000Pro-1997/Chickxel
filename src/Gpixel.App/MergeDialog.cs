@@ -4,7 +4,8 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 /// <summary>
-/// 파일 브라우저에서 고른 파일 합치기: 순서, 결과 이름, 방식(레이어/그룹/스킨/프레임), 캔버스 크기·기준점, 원본 삭제, 미리보기.
+/// 파일 브라우저에서 고른 파일 합치기: 순서(끌어서 바꾸기), 결과 이름, 방식(레이어/그룹/스킨/프레임), 그룹·스킨이면 빈 첫 항목,
+/// 캔버스 크기·기준점, 원본 삭제, 미리보기.
 /// </summary>
 public sealed class MergeDialog : DialogBase
 {
@@ -15,7 +16,8 @@ public sealed class MergeDialog : DialogBase
     private readonly RadioButton _layers, _group, _skins, _frames;
     private readonly NumericUpDown _w, _h;
     private readonly AnchorPicker _anchor = new();
-    private readonly CheckBox _deleteOriginals;
+    private readonly CheckBox _deleteOriginals, _emptyFirst;
+    private readonly DragReorder _drag = new();
     private readonly MergePreview _preview = new();
     private readonly TimelinePreview _timeline = new();
     private readonly TextBlock _info, _warning;
@@ -28,9 +30,13 @@ public sealed class MergeDialog : DialogBase
         _items = items.ToList();
         _folder = folder;
 
-        _order = new ListBox { Width = 220, Height = 150, Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush };
+        _order = new ListBox { Width = 220, Height = 150, Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush }
+            .Tip("줄을 끌어 순서를 바꿉니다(위 = 먼저).");
+        _drag.Moved += (from, to) => MoveItem(from, to);
         var up = Ui.Button("▲", (_, _) => MoveSelected(-1), 32).Tip("위로(먼저)");
         var down = Ui.Button("▼", (_, _) => MoveSelected(1), 32).Tip("아래로(나중)");
+        _emptyFirst = Ui.Check("첫 항목을 빈 칸으로");
+        _emptyFirst.IsVisible = false;
         RefreshOrder(0);
 
         var maxW = items.Max(i => i.Source.Size.Width);
@@ -56,6 +62,7 @@ public sealed class MergeDialog : DialogBase
             Ui.Row(Ui.Label("이름"), _name, Ui.Label(SpriteProject.FileExtension)),
             Ui.Label("합치는 방식", bold: true),
             _layers, _group, _skins, _frames,
+            _emptyFirst,
             Ui.Label("캔버스", bold: true),
             Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px"), fit),
             Ui.Label("기준점(파일 그림이 놓일 위치)"),
@@ -76,7 +83,8 @@ public sealed class MergeDialog : DialogBase
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
 
-        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => UpdatePreview();
+        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { UpdateEmptyFirst(); UpdatePreview(); };
+        _emptyFirst.IsCheckedChanged += (_, _) => { RefreshOrder(Selected); UpdatePreview(); };
         _w.ValueChanged += (_, _) => UpdatePreview();
         _h.ValueChanged += (_, _) => UpdatePreview();
         _anchor.Changed += (_, _) => UpdatePreview();
@@ -102,7 +110,9 @@ public sealed class MergeDialog : DialogBase
     public string ProjectPath => Path.Combine(_folder, ResultName + SpriteProject.FileExtension);
     public bool DeleteOriginals => _deleteOriginals.On();
     public MergeMode Mode => _group.On() ? MergeMode.Group : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
-    public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName);
+    /// <summary>빈 첫 항목을 넣는지(그룹·스킨 방식에서 켰을 때만).</summary>
+    private bool EmptyFirst => _emptyFirst.On() && Mode is MergeMode.Group or MergeMode.Skins;
+    public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName, EmptyFirst);
 
     /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹·스킨이면 부위 아틀라스도).</summary>
     public IEnumerable<string> TargetPaths(string name)
@@ -135,20 +145,60 @@ public sealed class MergeDialog : DialogBase
             if (!TargetPaths($"{name}_{i}").Any(File.Exists)) return $"{name}_{i}";
     }
 
+    /// <summary>순서 목록 맨 위의 빈 항목 줄 수(지금 목록에 빈 첫 항목 줄이 있으면 1 — 고정, 끌 수 없음).</summary>
+    private int _lead;
+
+    /// <summary>고른 파일 번호(빈 항목 줄 뺀 번호, 없으면 -1).</summary>
+    private int Selected => Math.Max(-1, _order.SelectedIndex - _lead);
+
+    private void UpdateEmptyFirst()
+    {
+        bool group = _group.On();
+        _emptyFirst.IsVisible = group || _skins.On();
+        _emptyFirst.Content = group
+            ? $"첫 항목을 빈 칸으로(맨 위에 빈 부위 \"{ProjectMerge.EmptyName}\")"
+            : $"첫 항목을 빈 칸으로(기본 스킨 = 빈 스킨 \"{ProjectMerge.EmptyName}\")";
+        _emptyFirst.Tip(group
+            ? "그룹 맨 위에 그림 없는 부위를 넣습니다 — 합친 파일 부위들은 그 아래 대안이 됩니다."
+            : "첫(기본·지금) 스킨을 그림 없는 스킨으로 둡니다 — 합친 파일 스킨들은 그 뒤에 옷 갈아입기 대안이 됩니다.");
+        RefreshOrder(Selected);
+    }
+
     private void RefreshOrder(int select)
     {
+        _drag.Clear();
         _order.Items.Clear();
+        _lead = EmptyFirst ? 1 : 0;
+        if (_lead > 0)
+            _order.Items.Add(new ListBoxItem
+            {
+                Content = $"∅ {ProjectMerge.EmptyName} ({(_group.On() ? "빈 부위" : "빈 스킨")}, 고정)",
+                IsEnabled = false,
+                Foreground = AppTheme.DimTextBrush,
+            });
         foreach (var (path, s) in _items)
-            _order.Items.Add(new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.Frames.Count > 1 ? $", {s.Frames.Count}프레임" : "")})" });
-        _order.SelectedIndex = select;
+        {
+            var item = new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.Frames.Count > 1 ? $", {s.Frames.Count}프레임" : "")})" };
+            _order.Items.Add(item);
+            _drag.Attach(item);
+        }
+        _order.SelectedIndex = select < 0 ? -1 : Math.Min(select, _items.Count - 1) + _lead;
     }
 
     private void MoveSelected(int delta)
     {
-        int i = _order.SelectedIndex, j = i + delta;
-        if (i < 0 || j < 0 || j >= _items.Count) return;
-        (_items[i], _items[j]) = (_items[j], _items[i]);
-        RefreshOrder(j);
+        int i = Selected;
+        if (i >= 0) MoveItem(i, i + delta);
+    }
+
+    /// <summary>파일 <paramref name="from"/>을 <paramref name="to"/>번(옮긴 뒤 번호)으로 옮기고 미리보기를 다시 만든다.</summary>
+    private void MoveItem(int from, int to)
+    {
+        if (from < 0 || from >= _items.Count || to < 0 || to >= _items.Count || from == to) return;
+        var item = _items[from];
+        _items.RemoveAt(from);
+        _items.Insert(to, item);
+        RefreshOrder(to);
         UpdatePreview();
     }
 
@@ -188,7 +238,7 @@ public sealed class MergeDialog : DialogBase
         int parts = p.Layers.Count(l => l.IsPart);
         int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
         _info.Text = $"{p.Width}×{p.Height} · 레이어 {p.Layers.Count(l => !l.IsPart)}개" + (parts > 0 ? $"(부위 {parts}개)" : "")
-                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨)" : "")
+                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨{(EmptyFirst ? $" \"{ProjectMerge.EmptyName}\" — 비어 보임" : "")})" : "")
                      + $" · 프레임 {p.Frames.Count}개" + (p.Tags.Count > 0 ? $" · 태그 {p.Tags.Count}개" : "");
     }
 

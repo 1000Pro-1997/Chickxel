@@ -31,7 +31,7 @@ public sealed class ChatWindow : Window
     private readonly AppSettings _settings;
 
     private readonly TextBlock _status;
-    private readonly SegmentedToggle _providerToggle;
+    private readonly TabStrip _providerToggle;
     private readonly ComboBox _model;
     private readonly Button _newChat;
     private readonly Border _body;
@@ -94,14 +94,14 @@ public sealed class ChatWindow : Window
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(4, 0),
         };
-        _providerToggle = new SegmentedToggle([.. AiProvider.All.Select(p => p.Name)])
+        _providerToggle = new TabStrip(TabStripKind.Segmented, [.. AiProvider.All.Select(p => p.Name)])
         {
             SelectedIndex = AiProvider.All.ToList().IndexOf(_provider),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(3, 0),
         };
         foreach (var (p, i) in AiProvider.All.Select((p, i) => (p, i)))
-            _providerToggle.SetOptionTip(i, $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음).");
+            _providerToggle.SetTip(i, $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음).");
         _providerToggle.SelectionChanged += (_, _) => OnProviderChanged();
         _model = new ComboBox { Width = 190, Margin = new Thickness(3), VerticalAlignment = VerticalAlignment.Center };
         _model.SelectionChanged += (_, _) => OnModelChanged();

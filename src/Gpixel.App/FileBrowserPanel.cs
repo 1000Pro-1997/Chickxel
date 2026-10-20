@@ -20,7 +20,6 @@ public sealed class FileBrowserPanel : UserControl
     private readonly TreeView _tree;
     private readonly ListBox _list;
     private readonly Grid _split;
-    private readonly ContextMenu _menu;
     private readonly DispatcherTimer _watchTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly HashSet<string> _pendingChanges = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, (DateTime Stamp, WriteableBitmap Thumb)> _thumbCache = new(StringComparer.OrdinalIgnoreCase);
@@ -127,49 +126,7 @@ public sealed class FileBrowserPanel : UserControl
         _list.AddHandler(PointerReleasedEvent, OnListPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
         _list.AddHandler(PointerCaptureLostEvent, (_, e) => { if (ReferenceEquals(e.Source, _list)) EndMarquee(); }, RoutingStrategies.Bubble, handledEventsToo: true);
 
-        // 메뉴 동작은 메뉴가 닫힌 뒤에 한다(대화상자·이름 바꾸기 입력란 포커스).
-        var miNew = new MenuItem { Header = "새 프로젝트…" };
-        miNew.Click += (_, _) => Dispatcher.UIThread.Post(() => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""));
-        var miMerge = new MenuItem { Header = "합치기…" };
-        miMerge.Click += (_, _) => Dispatcher.UIThread.Post(MergeSelected);
-        var miRename = new MenuItem { Header = "이름 바꾸기", InputGesture = new KeyGesture(Key.F2) };
-        miRename.Click += (_, _) => Dispatcher.UIThread.Post(() => { if (SelectedItem is { } item) BeginRename(item); }, DispatcherPriority.Background);
-        var miExplorer = new MenuItem { Header = $"{Platform.FileManagerName}에서 열기" };
-        miExplorer.Click += (_, _) => Dispatcher.UIThread.Post(ShowInExplorer);
-        var miDelete = new MenuItem
-        {
-            Header = "삭제(휴지통)",
-            InputGesture = Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete),
-        };
-        miDelete.Click += (_, _) => Dispatcher.UIThread.Post(DeleteSelected);
-        var miUndoDelete = new MenuItem { Header = "마지막 삭제 되살리기", InputGesture = new KeyGesture(Key.Z, Platform.CommandModifier) };
-        miUndoDelete.Click += (_, _) => Dispatcher.UIThread.Post(() => RestoreLastDeleted());
-        var miTrash = new MenuItem { Header = "앱 휴지통 보기…" };
-        miTrash.Click += (_, _) => Dispatcher.UIThread.Post(ShowTrash);
-        _menu = new ContextMenu();
-        _menu.Items.Add(miNew);
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(miMerge);
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(miRename);
-        _menu.Items.Add(miExplorer);
-        _menu.Items.Add(miDelete);
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(miUndoDelete);
-        _menu.Items.Add(miTrash);
-        _menu.Opening += (_, _) =>
-        {
-            miNew.IsEnabled = RootFolder is not null;
-            int count = SelectedPaths.Count;
-            miMerge.Header = count >= 2 ? $"{count}개 합치기…" : "합치기…(여러 개 고르기)";
-            miMerge.IsEnabled = count >= 2;
-            miRename.IsEnabled = count == 1;
-            miDelete.Header = count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)";
-            miUndoDelete.IsEnabled = Trash.Entries().Count > 0;
-            miDelete.IsEnabled = count > 0;
-            miExplorer.IsEnabled = count > 0 || CurrentFolder is not null;
-        };
-        _list.ContextMenu = _menu;
+        PopupMenus.Attach(_list, ListMenu);
 
         _marquee = new Border
         {
@@ -630,6 +587,32 @@ public sealed class FileBrowserPanel : UserControl
         {
             _suppressActivate = false;
         }
+    }
+
+    /// <summary>목록 우클릭 메뉴(열 때마다 지금 선택에 맞춰 만든다). 동작은 메뉴가 닫힌 뒤에 한다(대화상자·이름 바꾸기 입력란 포커스).</summary>
+    private Control[] ListMenu()
+    {
+        int count = SelectedPaths.Count;
+        static MenuItem Item(string header, Action action, bool enabled, KeyGesture? gesture = null, DispatcherPriority? priority = null)
+        {
+            var item = new MenuItem { Header = header, IsEnabled = enabled, InputGesture = gesture };
+            item.Click += (_, _) => Dispatcher.UIThread.Post(action, priority ?? DispatcherPriority.Default);
+            return item;
+        }
+        return
+        [
+            Item("새 프로젝트…", () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
+            new Separator(),
+            Item(count >= 2 ? $"{count}개 합치기…" : "합치기…(여러 개 고르기)", MergeSelected, count >= 2),
+            new Separator(),
+            Item("이름 바꾸기", () => { if (SelectedItem is { } item) BeginRename(item); }, count == 1, new KeyGesture(Key.F2), DispatcherPriority.Background),
+            Item($"{Platform.FileManagerName}에서 열기", ShowInExplorer, count > 0 || CurrentFolder is not null),
+            Item(count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)", DeleteSelected, count > 0,
+                Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete)),
+            new Separator(),
+            Item("마지막 삭제 되살리기", () => RestoreLastDeleted(), Trash.Entries().Count > 0, new KeyGesture(Key.Z, Platform.CommandModifier)),
+            Item("앱 휴지통 보기…", ShowTrash, true),
+        ];
     }
 
     private void OnListPointerPressed(object? sender, PointerPressedEventArgs e)

@@ -24,7 +24,8 @@ public sealed class ColorPanel : UserControl
     private readonly HoneycombPicker _honeycomb;
     private readonly WheelPicker _wheel;
     private readonly SliderPicker _sliders;
-    private readonly PickerModeTabs _modeTabs;
+    /// <summary>색 고르기 방식 탭(<see cref="ColorPickerModes.All"/> 순서).</summary>
+    private readonly TabStrip _modeTabs = new(TabStripKind.Compact) { Margin = new Thickness(0, 0, 2, 0) };
     private readonly NumericUpDown _r, _g, _b, _a, _hNum, _sNum, _vNum;
     private readonly TextBox _hex;
     private readonly SwatchGrid _recent;
@@ -71,8 +72,9 @@ public sealed class ColorPanel : UserControl
         _sliders = new SliderPicker { Margin = new Thickness(3) };
         _sliders.RgbPicked += (_, c) => SetCurrent(c.WithAlpha((byte)_a!.NumValue()));
         _sliders.HsvPicked += (_, hsv) => { (_h, _s, _v) = hsv; ApplyHsv(); };
-        _modeTabs = new PickerModeTabs { Margin = new Thickness(0, 0, 2, 0) };
-        _modeTabs.ModeChanged += (_, _) => PickerMode = _modeTabs.Mode;
+        foreach (var mode in ColorPickerModes.All)
+            _modeTabs.Add(null, ColorPickerModes.Icon(mode), $"색 고르기: {ColorPickerModes.Name(mode)}");
+        _modeTabs.SelectionChanged += (_, _) => ShowPicker();
 
         _r = Ui.Num(0, 255, 0, 44);
         _g = Ui.Num(0, 255, 0, 44);
@@ -183,15 +185,21 @@ public sealed class ColorPanel : UserControl
     /// <summary>색 고르기 방식(사각형·벌집·색상환·슬라이더). 알파 막대·숫자 칸은 방식과 관계없이 그대로다.</summary>
     public ColorPickerMode PickerMode
     {
-        get => _modeTabs.Mode;
+        get => _modeTabs.SelectedIndex < 0 ? ColorPickerMode.Square : ColorPickerModes.All[_modeTabs.SelectedIndex];
         set
         {
-            _modeTabs.Mode = value;
-            _squarePicker.IsVisible = value == ColorPickerMode.Square;
-            _honeycomb.IsVisible = value == ColorPickerMode.Honeycomb;
-            _wheel.IsVisible = value == ColorPickerMode.Wheel;
-            _sliders.IsVisible = value == ColorPickerMode.Sliders;
+            _modeTabs.SelectedIndex = Array.IndexOf(ColorPickerModes.All, value);
+            ShowPicker();
         }
+    }
+
+    private void ShowPicker()
+    {
+        var mode = PickerMode;
+        _squarePicker.IsVisible = mode == ColorPickerMode.Square;
+        _honeycomb.IsVisible = mode == ColorPickerMode.Honeycomb;
+        _wheel.IsVisible = mode == ColorPickerMode.Wheel;
+        _sliders.IsVisible = mode == ColorPickerMode.Sliders;
     }
 
     private void SyncFromContext()
@@ -429,44 +437,40 @@ public sealed class ColorPanel : UserControl
             e.Handled = true;
             Dispatcher.UIThread.Post(() => RenamePalette(s));
         };
-        header.ContextRequested += (_, e) =>
+        PopupMenus.Attach(header, () =>
         {
-            e.Handled = true;
             SetActive(s);
-            SectionMenu(s).Open(header);
-        };
+            return SectionMenu(s);
+        });
         menuButton.Click += (_, _) =>
         {
             SetActive(s);
-            SectionMenu(s).Open(menuButton);
+            PopupMenus.Show(menuButton, SectionMenu(s), PlacementMode.BottomEdgeAlignedLeft);
         };
         return s;
     }
 
-    private ContextMenu SectionMenu(PaletteSection s)
+    private Control[] SectionMenu(PaletteSection s)
     {
         int index = _sections.IndexOf(s);
-        return new ContextMenu
-        {
-            ItemsSource = new Control[]
-            {
-                Item("현재 색 추가", () => AddToPalette(s, CurrentColor)),
-                Item("기본색을 팔레트에서 삭제", () => RemoveFromPalette(s)),
-                Item("색상 순으로 정렬", () => SortPalette(s)),
-                new Separator(),
-                Item("팔레트 불러오기(.hex/.gpl)…", () => LoadPalette(s)),
-                Item("팔레트 웹(Lospec)…", () => OpenLospec(s)),
-                Item("팔레트 저장(.hex)…", () => SavePalette(s)),
-                Item("이미지에서 팔레트 만들기", () => PaletteFromImage(s)),
-                Item("팔레트 색으로 변환…", () => ConvertImage(s), _ctx.HasProject),
-                new Separator(),
-                Item("이름 바꾸기…", () => RenamePalette(s)),
-                Item("위로", () => MovePalette(s, -1), index > 0),
-                Item("아래로", () => MovePalette(s, 1), index < _sections.Count - 1),
-                Item("팔레트 비우기", () => { s.Grid.SetColors([]); s.Grid.Commit(); }, s.Grid.Colors.Count > 0),
-                Item("팔레트 삭제", () => DeletePalette(s), _sections.Count > 1),
-            },
-        };
+        return
+        [
+            Item("현재 색 추가", () => AddToPalette(s, CurrentColor)),
+            Item("기본색을 팔레트에서 삭제", () => RemoveFromPalette(s)),
+            Item("색상 순으로 정렬", () => SortPalette(s)),
+            new Separator(),
+            Item("팔레트 불러오기(.hex/.gpl)…", () => LoadPalette(s)),
+            Item("팔레트 웹(Lospec)…", () => OpenLospec(s)),
+            Item("팔레트 저장(.hex)…", () => SavePalette(s)),
+            Item("이미지에서 팔레트 만들기", () => PaletteFromImage(s)),
+            Item("팔레트 색으로 변환…", () => ConvertImage(s), _ctx.HasProject),
+            new Separator(),
+            Item("이름 바꾸기…", () => RenamePalette(s)),
+            Item("위로", () => MovePalette(s, -1), index > 0),
+            Item("아래로", () => MovePalette(s, 1), index < _sections.Count - 1),
+            Item("팔레트 비우기", () => { s.Grid.SetColors([]); s.Grid.Commit(); }, s.Grid.Colors.Count > 0),
+            Item("팔레트 삭제", () => DeletePalette(s), _sections.Count > 1),
+        ];
     }
 
     /// <summary>칸을 순서대로 다시 넣는다(투명 칸은 첫 팔레트에만) + 새 팔레트 단추.</summary>

@@ -22,8 +22,8 @@ public sealed class PlayTestForm : Window
     private PlaySprites _sprites = PlaySprites.Empty;
     private bool _scaleChosen;
 
-    private readonly RadioButton _topDownMode = ModeButton("탑뷰");
-    private readonly RadioButton _platformerMode = ModeButton("플랫포머");
+    /// <summary>모드: 0 = 탑뷰, 1 = 플랫포머(고르면 아래 설정 묶음이 바뀜).</summary>
+    private readonly TabStrip _mode = new(TabStripKind.Segmented, "탑뷰", "플랫포머") { Margin = new Thickness(0, 0, 0, 6) };
     private readonly NumericUpDown _scale = Number(1, 16, 4, 1);
     private readonly CheckBox _showGrid = Check("격자 표시 (1칸 = PPU)", true);
     private readonly CheckBox _showPivot = Check("피벗 표시", true);
@@ -65,15 +65,6 @@ public sealed class PlayTestForm : Window
         _jumpPower = Number(0, 5000, (decimal)ps.JumpVelocity, 10);
         _maxFall = Number(10, 10000, (decimal)ps.MaxFallSpeed, 10);
 
-        var modeRow = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 4,
-            Margin = new Thickness(0, 0, 0, 6),
-        };
-        modeRow.Children.Add(_topDownMode);
-        modeRow.Children.Add(_platformerMode);
-
         _topDownGroup.Children.Add(Header("탑뷰"));
         _topDownGroup.Children.Add(Row("이동 속도 (px/s)", _topDownSpeed));
 
@@ -105,7 +96,7 @@ public sealed class PlayTestForm : Window
         var sideStack = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(12, 10, 8, 10) };
         sideStack.Children.AddRange(new Control[]
         {
-            Header("모드"), modeRow,
+            Header("모드"), _mode,
             Header("보기"), Row("배율 (정수)", _scale),
             _showGrid, _showPivot, _showCollider, _plainFacesRight,
             _topDownGroup, _platformerGroup, resetButton,
@@ -130,9 +121,8 @@ public sealed class PlayTestForm : Window
         root.Children.Add(_view);
         Content = root;
 
-        _topDownMode.IsChecked = true;
-        _topDownMode.IsCheckedChanged += (_, _) => ApplyMode();
-        _platformerMode.IsCheckedChanged += (_, _) => ApplyMode();
+        _mode.SelectedIndex = 0;
+        _mode.SelectionChanged += (_, _) => ApplyMode();
         _plainFacesRight.IsCheckedChanged += (_, _) =>
         {
             _sim.PlainFacesRight = _plainFacesRight.On();
@@ -211,7 +201,7 @@ public sealed class PlayTestForm : Window
 
     private void ApplyMode()
     {
-        var mode = _platformerMode.On() ? PlayMode.Platformer : PlayMode.TopDown;
+        var mode = _mode.SelectedIndex == 1 ? PlayMode.Platformer : PlayMode.TopDown;
         _sim.SetMode(mode);
         _topDownGroup.IsVisible = mode == PlayMode.TopDown;
         _platformerGroup.IsVisible = mode == PlayMode.Platformer;
@@ -298,14 +288,6 @@ public sealed class PlayTestForm : Window
     }
 
     // ───────────────────────── 컨트롤 만들기 ─────────────────────────
-
-    private static RadioButton ModeButton(string text) => new()
-    {
-        Content = text,
-        GroupName = "PlayTestMode",
-        Width = RowWidth / 2 - 2,
-        Height = 30,
-    };
 
     private static NumericUpDown Number(decimal min, decimal max, decimal value, decimal step) => new()
     {

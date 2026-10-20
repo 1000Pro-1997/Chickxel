@@ -419,22 +419,19 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>확대율 글자: 누르면 대표 배율(100%~6400%)과 "화면에 맞추기"가 든 목록.</summary>
     private Button ZoomPicker()
     {
-        var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
-        var fit = new MenuItem { Header = "화면에 맞추기", InputGesture = new KeyGesture(Key.D0, Ctrl) };
-        fit.Click += (_, _) => _canvas.FitToWindow();
-        menu.Items.Add(fit);
-        menu.Items.Add(new Separator());
-        foreach (int z in new[] { 1, 2, 4, 8, 16, 32, 64 })
+        List<Control> Items()
         {
-            var item = new MenuItem { Header = $"{z * 100}%", ToggleType = MenuItemToggleType.Radio };
-            item.Click += (_, _) => _canvas.SetZoom(z);
-            menu.Items.Add(item);
+            var fit = new MenuItem { Header = "화면에 맞추기", InputGesture = new KeyGesture(Key.D0, Ctrl) };
+            fit.Click += (_, _) => _canvas.FitToWindow();
+            var items = new List<Control> { fit, new Separator() };
+            foreach (int z in new[] { 1, 2, 4, 8, 16, 32, 64 })
+            {
+                var item = new MenuItem { Header = $"{z * 100}%", ToggleType = MenuItemToggleType.Radio, IsChecked = _canvas.Zoom == z };
+                item.Click += (_, _) => _canvas.SetZoom(z);
+                items.Add(item);
+            }
+            return items;
         }
-        menu.Opening += (_, _) =>
-        {
-            foreach (var item in menu.Items.OfType<MenuItem>())
-                if (item.ToggleType == MenuItemToggleType.Radio) item.IsChecked = item.Header as string == $"{_canvas.Zoom * 100}%";
-        };
         var button = new Button
         {
             Content = _cbZoom,
@@ -446,8 +443,8 @@ public sealed class MainForm : Window, Ai.IAiHost
             BorderThickness = new Thickness(0),
             Focusable = false,
             VerticalAlignment = VerticalAlignment.Center,
-            Flyout = menu,
         }.Tip("확대율 — 눌러서 배율 고르기·화면에 맞추기");
+        button.Click += (_, _) => PopupMenus.Show(button, Items(), PlacementMode.BottomEdgeAlignedLeft);
         return button;
     }
 
@@ -867,6 +864,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         _canvas.ZoomChanged += (_, _) => { _settings.Zoom = _canvas.Zoom; UpdateStatus(); };
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
         _canvas.Message += (_, m) => ShowMessage(m);
+        _timeline.Message += (_, m) => ShowMessage(m);
 
         _browser.SpriteDefaults = () => new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple };
         _browser.TrashPolicy = () => _settings.TrashPolicy;

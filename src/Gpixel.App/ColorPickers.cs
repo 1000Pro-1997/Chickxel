@@ -448,116 +448,59 @@ internal sealed class SliderPicker : PickerPaint.DragControl
     }
 }
 
-/// <summary>색 고르기 방식 탭(작은 그림 단추 넷: 사각형·벌집·색상환·슬라이더, 풍선 도움말에 이름).</summary>
-internal sealed class PickerModeTabs : Control
+/// <summary>색 고르기 방식 목록·이름·탭 그림(색 패널 "색" 머리글 오른쪽 작은 <see cref="TabStrip"/>: 그림만, 풍선 도움말에 이름).</summary>
+internal static class ColorPickerModes
 {
-    private const double TabW = 26, TabH = 20;
-    private static readonly (ColorPickerMode Mode, string Name)[] Tabs =
-    [
-        (ColorPickerMode.Square, "사각형"),
-        (ColorPickerMode.Honeycomb, "벌집"),
-        (ColorPickerMode.Wheel, "색상환"),
-        (ColorPickerMode.Sliders, "슬라이더"),
-    ];
+    /// <summary>탭 순서.</summary>
+    public static readonly ColorPickerMode[] All = [ColorPickerMode.Square, ColorPickerMode.Honeycomb, ColorPickerMode.Wheel, ColorPickerMode.Sliders];
 
-    private ColorPickerMode _mode;
-    private int _hover = -1;
-
-    public PickerModeTabs()
+    public static string Name(ColorPickerMode mode) => mode switch
     {
-        Width = TabW * Tabs.Length;
-        Height = TabH;
-        Cursor = new Cursor(StandardCursorType.Hand);
-        VerticalAlignment = VerticalAlignment.Center;
-    }
+        ColorPickerMode.Square => "사각형",
+        ColorPickerMode.Honeycomb => "벌집",
+        ColorPickerMode.Wheel => "색상환",
+        _ => "슬라이더",
+    };
 
-    public event EventHandler? ModeChanged;
-
-    public ColorPickerMode Mode
+    /// <summary>방식을 나타내는 작은 그림(가운데 기준 약 14×12).</summary>
+    public static TabIconPainter Icon(ColorPickerMode mode) => (g, r, brush) =>
     {
-        get => _mode;
-        set { if (_mode == value) return; _mode = value; InvalidateVisual(); }
-    }
-
-    public override void Render(DrawingContext g)
-    {
-        PickerPaint.FillHitArea(g, Bounds);
-        for (int i = 0; i < Tabs.Length; i++)
+        var pen = AppTheme.Pen(brush.Color, 1.2);
+        var c = r.Center;
+        switch (mode)
         {
-            var r = new Rect(i * TabW, 0, TabW, TabH);
-            bool selected = Tabs[i].Mode == _mode;
-            if (selected) g.FillRectangle(AppTheme.InputBrush, r);
-            else if (i == _hover) g.FillRectangle(AppTheme.HoverBrush, r);
-            if (selected) g.FillRectangle(AppTheme.AccentBrush, new Rect(r.X, r.Bottom - 2, r.Width, 2));
-            var pen = AppTheme.Pen(selected ? AppTheme.TextColor : AppTheme.DimTextColor, 1.2);
-            var c = new Avalonia.Point(r.X + TabW / 2, r.Y + (TabH - 2) / 2);
-            switch (Tabs[i].Mode)
-            {
-                case ColorPickerMode.Square:
-                    g.DrawRectangle(null, pen, new Rect(c.X - 7, c.Y - 5, 10, 10));
-                    g.DrawRectangle(null, pen, new Rect(c.X + 5, c.Y - 5, 2, 10));
-                    break;
-                case ColorPickerMode.Honeycomb:
-                    var geo = new StreamGeometry();
-                    using (var ctx = geo.Open())
+            case ColorPickerMode.Square:
+                g.DrawRectangle(null, pen, new Rect(c.X - 7, c.Y - 5, 10, 10));
+                g.DrawRectangle(null, pen, new Rect(c.X + 5, c.Y - 5, 2, 10));
+                break;
+            case ColorPickerMode.Honeycomb:
+                var geo = new StreamGeometry();
+                using (var ctx = geo.Open())
+                {
+                    for (int k = 0; k < 6; k++)
                     {
-                        for (int k = 0; k < 6; k++)
-                        {
-                            double a = Math.PI / 180 * (60 * k - 90);
-                            var p = new Avalonia.Point(c.X + 6 * Math.Cos(a), c.Y + 6 * Math.Sin(a));
-                            if (k == 0) ctx.BeginFigure(p, false);
-                            else ctx.LineTo(p);
-                        }
-                        ctx.EndFigure(true);
+                        double a = Math.PI / 180 * (60 * k - 90);
+                        var p = new Avalonia.Point(c.X + 6 * Math.Cos(a), c.Y + 6 * Math.Sin(a));
+                        if (k == 0) ctx.BeginFigure(p, false);
+                        else ctx.LineTo(p);
                     }
-                    g.DrawGeometry(null, pen, geo);
-                    break;
-                case ColorPickerMode.Wheel:
-                    g.DrawEllipse(null, AppTheme.Pen(selected ? AppTheme.TextColor : AppTheme.DimTextColor, 2.2), c, 5.5, 5.5);
-                    g.DrawRectangle(null, pen, new Rect(c.X - 2, c.Y - 2, 4, 4));
-                    break;
-                default:
-                    for (int k = -1; k <= 1; k++)
-                    {
-                        double y = c.Y + k * 4;
-                        g.DrawLine(pen, new Avalonia.Point(c.X - 7, y), new Avalonia.Point(c.X + 7, y));
-                        double kx = c.X + (k == 0 ? 3 : k < 0 ? -3 : 0);
-                        g.FillRectangle(selected ? AppTheme.TextBrush : AppTheme.DimTextBrush, new Rect(kx - 1.5, y - 1.5, 3, 3));
-                    }
-                    break;
-            }
+                    ctx.EndFigure(true);
+                }
+                g.DrawGeometry(null, pen, geo);
+                break;
+            case ColorPickerMode.Wheel:
+                g.DrawEllipse(null, AppTheme.Pen(brush.Color, 2.2), c, 5.5, 5.5);
+                g.DrawRectangle(null, pen, new Rect(c.X - 2, c.Y - 2, 4, 4));
+                break;
+            default:
+                for (int k = -1; k <= 1; k++)
+                {
+                    double y = c.Y + k * 4;
+                    g.DrawLine(pen, new Avalonia.Point(c.X - 7, y), new Avalonia.Point(c.X + 7, y));
+                    double kx = c.X + (k == 0 ? 3 : k < 0 ? -3 : 0);
+                    g.FillRectangle(brush, new Rect(kx - 1.5, y - 1.5, 3, 3));
+                }
+                break;
         }
-    }
-
-    private int IndexAt(Avalonia.Point p) => p.Y < 0 || p.Y > TabH ? -1 : Math.Clamp((int)(p.X / TabW), 0, Tabs.Length - 1);
-
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        base.OnPointerMoved(e);
-        int i = IndexAt(e.GetPosition(this));
-        if (i == _hover) return;
-        _hover = i;
-        ToolTip.SetTip(this, i < 0 ? null : $"색 고르기: {Tabs[i].Name}");
-        InvalidateVisual();
-    }
-
-    protected override void OnPointerExited(PointerEventArgs e)
-    {
-        base.OnPointerExited(e);
-        _hover = -1;
-        InvalidateVisual();
-    }
-
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        base.OnPointerPressed(e);
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-        int i = IndexAt(e.GetPosition(this));
-        if (i < 0) return;
-        e.Handled = true;
-        if (Tabs[i].Mode == _mode) return;
-        _mode = Tabs[i].Mode;
-        InvalidateVisual();
-        ModeChanged?.Invoke(this, EventArgs.Empty);
-    }
+    };
 }

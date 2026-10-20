@@ -152,18 +152,57 @@ public sealed class TimelinePanel : UserControl
         }));
         _grid.ResetRange();
         _ctx.SetCurrentFrame(Math.Min(frames.Min(), p.Frames.Count - 1));
+        Say(Ui.Shortcut($"프레임 {frames.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
+    }
+
+    /// <summary>타임라인에서 한 일·할 일을 상태 표시줄에 알린다.</summary>
+    public event EventHandler<string>? Message;
+
+    private void Say(string text) => Message?.Invoke(this, text);
+
+    /// <summary>머리글·이름 칸으로 고른 열·행에 Delete가 무엇을 할지 알린다.</summary>
+    private void HintSelection()
+    {
+        if (_grid.WholeRows)
+            Say($"레이어 행 {_grid.SelectedRowLayers().Count}개 선택(모든 프레임) — Delete: 셀 지우기(레이어는 남음) · 이름을 끌면 레이어 순서 바꾸기");
+        else if (_grid.HeaderRange)
+            Say($"프레임 {SelectedFrames().Count}개 열 선택(모든 레이어) — Delete: 프레임 삭제 · 머리글을 끌면 프레임 순서 바꾸기");
+    }
+
+    /// <summary>이름 칸으로 고른 행 전체의 셀을 지운다(레이어는 남음, 실행취소 한 단계).</summary>
+    public void ClearSelectedRows()
+    {
+        int rows = _grid.SelectedRowLayers().Count;
+        ClearSelectedCels();
+        Say(Ui.Shortcut($"레이어 {rows}개 행의 셀을 모두 지웠습니다(레이어는 남음) — Ctrl+Z로 되돌립니다."));
     }
 
     public void MoveFrame(int delta) => MoveFrameTo(_ctx.CurrentFrame, _ctx.CurrentFrame + delta);
 
     /// <summary>프레임 순서 바꾸기.</summary>
-    private void MoveFrameTo(int from, int to)
+    private void MoveFrameTo(int from, int to) => MoveFramesTo(from, from, to);
+
+    /// <summary>
+    /// 이어진 프레임 [<paramref name="a"/>, <paramref name="b"/>]를 옮긴 뒤 첫 프레임이 <paramref name="to"/>가 되게 옮긴다(실행취소 한 단계).
+    /// 옮긴 프레임들을 열 선택으로 남기고 현재 프레임은 덩어리 안 같은 자리.
+    /// </summary>
+    private void MoveFramesTo(int a, int b, int to)
     {
         if (P is not { } p) return;
-        to = Math.Clamp(to, 0, p.Frames.Count - 1);
-        if (from == to) return;
-        _ctx.Structural(() => p.MoveFrame(from, to));
-        _ctx.SetCurrentFrame(to);
+        int count = b - a + 1;
+        to = Math.Clamp(to, 0, p.Frames.Count - count);
+        if (to == a) return;
+        int current = to + Math.Clamp(_ctx.CurrentFrame - a, 0, count - 1);
+        _ctx.Structural(() => p.Edit("프레임 이동", ProjectChange.Frames, () =>
+        {
+            for (int k = 0; k < count; k++)
+            {
+                if (to < a) p.MoveFrame(a + k, to + k);
+                else p.MoveFrame(a, to + count - 1);
+            }
+        }));
+        _ctx.SetCurrentFrame(current);
+        if (_grid.HeaderRange) _grid.SetRange(to, to + count - 1, header: true);
     }
 
     /// <summary>마지막 프레임 뒤에 프레임을 하나 붙인다(<paramref name="copy"/>면 마지막 프레임을 그림까지 복사). 그 프레임의 <paramref name="layer"/>를 고른다.</summary>
@@ -806,11 +845,8 @@ public sealed class TimelinePanel : UserControl
         return item;
     }
 
-    private void ShowMenu(params Control[] items)
-    {
-        var menu = new ContextMenu { ItemsSource = items };
-        menu.Open(_grid);
-    }
+    /// <summary>격자 누르기에서 연다(그 누르기는 이미 처리됨): 마지막 포인터 위치에, 다른 메뉴는 닫고.</summary>
+    private void ShowMenu(params Control[] items) => PopupMenus.Show(_grid, items);
 
     /// <summary>프레임 머리글·셀 우클릭 메뉴. 셀이면(<paramref name="layer"/> ≥ 0) 셀 동작도 넣는다.</summary>
     private void ShowFrameMenu(int frame, int layer = -1)
@@ -1026,8 +1062,20 @@ public sealed class TimelinePanel : UserControl
         private TextBox? _rename;
         private Layer? _renameLayer;
         private int _rangeA = -1, _rangeB = -1;
-        private int _dragFrom = -1, _dropAt = -1, _layerDragFrom = -1, _layerDropAt = -1;
-        private Avalonia.Point _press;
+        /// <summary>
+        /// 머리글·이름 칸 누름 → 끌어서 순서 바꾸기(<see cref="ReorderCore"/> 문턱을 넘으면 <see cref="_reordering"/>).
+        /// 프레임: 누른 프레임, 옮길 덩어리 [<see cref="_dragA"/>, <see cref="_dragB"/>], 미리보기의 옮긴 뒤 첫 프레임.
+        /// 레이어: 누른 레이어, 미리보기 놓을 자리 레이어(-1 = 제자리).
+        /// </summary>
+        private int _dragFrom = -1, _dragA, _dragB, _dropTo = -1, _layerDragFrom = -1, _layerTo = -1;
+        private bool _reordering;
+        /// <summary>여러 열을 고른 채 그 안의 머리글을 눌렀음(끌지 않고 떼면 그 열 하나만 고름).</summary>
+        private bool _collapseOnRelease;
+        private IPointer? _dragPointer;
+        private Avalonia.Point _press, _pressContent, _lastPointer;
+        private readonly ReorderAutoScroll _autoScroll;
+        /// <summary>이름 칸 클릭으로 고른 행 전체(모든 프레임) 선택 — Delete = 그 행들의 셀 지우기.</summary>
+        private bool _wholeRows;
         /// <summary>마지막 범위를 프레임 머리글에서 골랐는지(복사·붙여넣기·삭제가 프레임 전체 대상).</summary>
         private bool _headerRange;
         /// <summary>셀·머리글 끌어서 범위 고르기 중인 시작 프레임(-1 = 아님).</summary>
@@ -1118,7 +1166,11 @@ public sealed class TimelinePanel : UserControl
                 public int Full;
                 /// <summary>크기(px)·펼침(0~1) 애니메이션.</summary>
                 public Anim Size, Open;
-                public int Px, Pos, TargetPos;
+                /// <summary>끌어서 순서 바꾸기 미리보기의 밀림(px): 다른 칸은 비켜 서고(애니메이션), 뜬 칸은 포인터를 따라감.</summary>
+                public ReorderTween Shift;
+                public bool Lifted;
+                /// <summary>Pos = 그리는 위치(밀림 포함), Base = 제자리(클릭 위치 찾기용).</summary>
+                public int Px, Pos, Base, TargetPos;
                 public double OpenNow;
             }
 
@@ -1139,10 +1191,66 @@ public sealed class TimelinePanel : UserControl
             public bool Animating { get; private set; }
             public int SlotCount => _slots.Count;
 
+            /// <summary>그리는 차례로 k번째 칸(뜬 칸은 맨 나중 — 다른 칸 위에 보이게).</summary>
             public View Get(int k)
             {
-                var s = _slots[k];
+                var s = _paint is { } order ? _slots[order[k]] : _slots[k];
                 return new View(s.Item, s.Index, s.Pos, s.Px, s.Full, s.OpenNow);
+            }
+
+            private int[]? _paint;
+
+            /// <summary>
+            /// 순서 바꾸기 미리보기: 칸들이 <paramref name="sequence"/>(칸 번호를 새 차례로) 순서로 놓인 자리로 미끄러진다.
+            /// <paramref name="lifted"/> 칸은 제자리에서 <paramref name="liftOffset"/>만큼(포인터를 따라) 바로 옮겨 그린다.
+            /// </summary>
+            public void Preview(IReadOnlyList<int> sequence, Func<int, bool> lifted, int liftOffset, long now)
+            {
+                int pos = 0;
+                foreach (int i in sequence)
+                {
+                    var s = _live[i];
+                    s.Lifted = lifted(i);
+                    s.Shift.Go(s.Lifted ? liftOffset : pos - s.Base, now, animate: !s.Lifted);
+                    pos += s.Px;
+                }
+                Update(now);
+            }
+
+            /// <summary>미리보기를 끝낸다: <paramref name="animate"/>면 제자리로 미끄러져 돌아간다(취소).</summary>
+            public void ClearPreview(bool animate, long now)
+            {
+                foreach (var s in _slots)
+                {
+                    s.Lifted = false;
+                    s.Shift.Go(0, now, animate);
+                }
+                Update(now);
+            }
+
+            /// <summary>칸마다 지금 그리는 위치(놓은 뒤 새 자리로 이어서 미끄러지게 <see cref="SettleFrom"/>에 넘긴다).</summary>
+            public Dictionary<object, int> Displayed()
+            {
+                var d = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
+                foreach (var s in _slots) d.TryAdd(s.Item, s.Pos);
+                return d;
+            }
+
+            /// <summary>순서를 바꾼 뒤(<see cref="Sync"/> 다음): 칸들이 <paramref name="displayed"/> 위치에서 새 제자리로 미끄러진다.</summary>
+            public void SettleFrom(Dictionary<object, int> displayed, long now)
+            {
+                Update(now);
+                foreach (var s in _slots)
+                {
+                    s.Lifted = false;
+                    s.Shift.Go(0, now, animate: false);
+                    if (displayed.TryGetValue(s.Item, out int was) && was != s.Base)
+                    {
+                        s.Shift.Go(was - s.Base, now, animate: false);
+                        s.Shift.Go(0, now, animate: true);
+                    }
+                }
+                Update(now);
             }
 
             /// <summary>칸 <paramref name="i"/>가 이미 이 상태인지(바뀐 게 없으면 다시 맞추지 않으려고).</summary>
@@ -1204,16 +1312,18 @@ public sealed class TimelinePanel : UserControl
             public void Update(long now)
             {
                 int pos = 0, target = 0;
-                bool animating = false;
+                bool animating = false, lifted = false;
                 for (int k = 0; k < _slots.Count; k++)
                 {
                     var s = _slots[k];
-                    bool done = s.Size.Settle(now) & s.Open.Settle(now);
+                    bool done = s.Size.Settle(now) & s.Open.Settle(now) & s.Shift.Settle(now);
                     if (s.Index < 0 && done) { _slots.RemoveAt(k--); continue; }
                     animating |= !done;
+                    lifted |= s.Lifted;
                     s.Px = (int)Math.Round(s.Size.At(now));
                     s.OpenNow = s.Open.At(now);
-                    s.Pos = pos;
+                    s.Base = pos;
+                    s.Pos = pos + (int)Math.Round(s.Shift.At(now));
                     s.TargetPos = target;
                     pos += s.Px;
                     if (s.Index >= 0 && s.Shown) target += s.Full;
@@ -1221,10 +1331,14 @@ public sealed class TimelinePanel : UserControl
                 Total = pos;
                 TargetTotal = target;
                 Animating = animating;
+                _paint = lifted ? [.. Enumerable.Range(0, _slots.Count).OrderBy(k => _slots[k].Lifted ? 1 : 0)] : null;
             }
 
-            /// <summary>칸 <paramref name="i"/>의 현재 시작 위치(범위 밖은 칸 크기로 이어서).</summary>
+            /// <summary>칸 <paramref name="i"/>의 현재 그리는 시작 위치(범위 밖은 칸 크기로 이어서).</summary>
             public int Pos(int i) => i < 0 ? i * size : i < _live.Length ? _live[i].Pos : Total + (i - _live.Length) * size;
+
+            /// <summary>칸 <paramref name="i"/>의 제자리 시작 위치(순서 바꾸기 미리보기 밀림 뺌).</summary>
+            public int BasePos(int i) => i < 0 ? i * size : i < _live.Length ? _live[i].Base : Total + (i - _live.Length) * size;
 
             /// <summary>애니메이션이 끝났을 때의 시작 위치.</summary>
             public int TargetPos(int i) => i < 0 ? i * size : i < _live.Length ? _live[i].TargetPos : TargetTotal + (i - _live.Length) * size;
@@ -1239,7 +1353,7 @@ public sealed class TimelinePanel : UserControl
                 while (lo < hi)
                 {
                     int mid = (lo + hi + 1) / 2;
-                    if (_slots[mid].Pos <= pos) lo = mid;
+                    if (_slots[mid].Base <= pos) lo = mid;
                     else hi = mid - 1;
                 }
                 return lo;
@@ -1259,15 +1373,6 @@ public sealed class TimelinePanel : UserControl
                 for (k++; k < _slots.Count; k++)
                     if (_slots[k] is { Index: >= 0, Shown: true } s) return s.Index;
                 return _live.Length;
-            }
-
-            /// <summary><paramref name="pos"/>에서 가장 가까운 칸 경계(칸 i 앞 = i).</summary>
-            public int BoundaryAt(double pos)
-            {
-                if (pos < 0) return (int)Math.Round(pos / size);
-                if (pos >= Total) return _live.Length + (int)Math.Round((pos - Total) / size);
-                var s = _slots[SlotAt(pos)];
-                return s is { Index: >= 0, Shown: true } ? (int)Math.Round(s.Index + (pos - s.Pos) / s.Px) : IndexAt(pos, false);
             }
         }
 
@@ -1352,6 +1457,7 @@ public sealed class TimelinePanel : UserControl
             _v.SizeChanged += (_, _) => UpdateScrollSize();
             _h.SizeChanged += (_, _) => UpdateScrollSize();
             _animTimer.Tick += OnAnimTick;
+            _autoScroll = new ReorderAutoScroll(AutoScrollBy);
         }
 
         private EditorContext Ctx => _owner._ctx;
@@ -1367,7 +1473,24 @@ public sealed class TimelinePanel : UserControl
             set { _playing = value; InvalidateVisual(); }
         }
 
-        public void ResetRange() { _rangeA = _rangeB = -1; _headerRange = false; _rowEnd = null; InvalidateVisual(); }
+        public void ResetRange() { _rangeA = _rangeB = -1; _headerRange = false; _rowEnd = null; _wholeRows = false; InvalidateVisual(); }
+
+        /// <summary>
+        /// 이름 칸으로 고른 행 전체 선택인지: 현재 레이어 ~ <see cref="_rowEnd"/> 행의 모든 프레임
+        /// (프레임 수가 바뀌거나 범위를 다른 곳에서 고치면 더는 행 전체가 아님).
+        /// </summary>
+        public bool WholeRows => _wholeRows && !_headerRange && Range == (0, Ctx.FrameCount - 1);
+
+        /// <summary>행 전체를 고른다(시작 행 = 현재 레이어, 끝 행 = <paramref name="end"/>, null이면 한 행).</summary>
+        private void SelectWholeRows(Layer? end)
+        {
+            _rangeA = 0;
+            _rangeB = Math.Max(0, Ctx.FrameCount - 1);
+            _headerRange = false;
+            _rowEnd = end;
+            _wholeRows = true;
+            InvalidateVisual();
+        }
 
         /// <summary>보이는 행의 레이어 번호(위→아래).</summary>
         public List<int> VisibleRows() => Rows();
@@ -1393,6 +1516,7 @@ public sealed class TimelinePanel : UserControl
             _rangeB = frameB;
             _headerRange = false;
             _rowEnd = end;
+            _wholeRows = false;
             InvalidateVisual();
         }
 
@@ -1400,7 +1524,7 @@ public sealed class TimelinePanel : UserControl
         public bool HeaderRange => _headerRange && _rangeA >= 0;
 
         /// <summary>범위를 정한다(셀 옮긴 뒤 등).</summary>
-        public void SetRange(int a, int b, bool header) { _rangeA = a; _rangeB = b; _headerRange = header; _rowEnd = null; InvalidateVisual(); }
+        public void SetRange(int a, int b, bool header) { _rangeA = a; _rangeB = b; _headerRange = header; _rowEnd = null; _wholeRows = false; InvalidateVisual(); }
 
         private bool InRange(int f) => _rangeA >= 0 && f >= Math.Min(_rangeA, _rangeB) && f <= Math.Max(_rangeA, _rangeB);
 
@@ -2007,12 +2131,6 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(pen, new Avalonia.Point(x1 - 5, bottom), new Avalonia.Point(x1, bottom));
                 }
             }
-            if (_dropAt >= 0)
-            {
-                double x = FrameX(_dropAt);
-                using (g.PushClip(new Rect(NameW, 0, Math.Max(0, width - NameW), height)))
-                    g.DrawLine(AccentPen, new Avalonia.Point(x, 0), new Avalonia.Point(x, height));
-            }
 
             // 레이어 이름 한 줄(지워져 줄어드는 유령 행은 흐리게)
             void DrawName(int y, int l, Layer layer, double open)
@@ -2058,7 +2176,6 @@ public sealed class TimelinePanel : UserControl
                 var name = LayerTitle(layer);
                 Text(g, name, new Rect(nameX, y, Math.Max(1, right - nameX), CellH), shown ? AppTheme.TextBrush : AppTheme.DimTextBrush,
                     bold: l == curLayer || layer.IsGroup);
-                if (l >= 0 && _layerDropAt == l) g.DrawRectangle(null, AccentPen, new Rect(2, y + 2, NameW - 4, CellH - 4));
             }
 
             // 효과 줄 이름 칸: 종류 색 띠 · 켜기 체크 상자(누르면 켜고 끔) · 효과 이름(범위가 있으면 프레임 번호)
@@ -2116,6 +2233,19 @@ public sealed class TimelinePanel : UserControl
             }
             g.DrawLine(BorderPen, new Avalonia.Point(NameW - 0.5, 0), new Avalonia.Point(NameW - 0.5, height));
             g.DrawLine(BorderPen, new Avalonia.Point(0, TagH + HeadH - 0.5), new Avalonia.Point(width, TagH + HeadH - 0.5));
+            // 끌어서 순서 바꾸기: 뜬(포인터를 따라오는) 열·행을 강조색으로 덮어 들고 있는 칸임을 보인다. 다른 칸은 비켜 선 자리에 그려져 있다.
+            if (_reordering && _dragFrom >= 0)
+            {
+                double x0 = FrameX(_dragA), x1 = FrameX(_dragB) + FrameW(_dragB), bottom = Math.Min(height, top + _rowT.Total);
+                using (g.PushClip(new Rect(NameW, 0, Math.Max(0, width - NameW), height)))
+                    g.DrawRectangle(RangeBrush, AccentPen, new Rect(x0 + 1, TagH + 1, Math.Max(0, x1 - x0 - 2), Math.Max(0, bottom - TagH - 2)));
+            }
+            if (_reordering && _layerDragFrom >= 0 && _liftRows.Count > 0)
+            {
+                double y0 = top + _liftRows.Min(_rowT.Pos), h = _liftRows.Sum(_rowT.Px);
+                using (g.PushClip(new Rect(0, TagH + HeadH, width, Math.Max(0, height - TagH - HeadH))))
+                    g.DrawRectangle(RangeBrush, AccentPen, new Rect(1, y0 + 1, Math.Max(0, width - 2), Math.Max(0, h - 2)));
+            }
         }
 
         /// <summary>스크롤 막대·이름 상자에서 온 이벤트는 격자가 처리하지 않는다.</summary>
@@ -2150,6 +2280,7 @@ public sealed class TimelinePanel : UserControl
                 if (e.ClickCount == 2) { _owner.EditTag(tag); return; }
                 _rangeA = tag.From;
                 _rangeB = tag.To;
+                _wholeRows = false;
                 Ctx.SetCurrentFrame(tag.From);
                 InvalidateVisual();
                 return;
@@ -2176,9 +2307,27 @@ public sealed class TimelinePanel : UserControl
                     Dispatcher.UIThread.Post(() => _owner.OpenSkinManager(nameLayer));
                     return;
                 }
+                if (right)
+                {
+                    // 고른 행 안을 우클릭하면 행 선택을 그대로 두고 메뉴만 연다.
+                    if (!(WholeRows && SelectedRowLayers().Contains(l))) { Ctx.SetCurrentLayer(l); ResetRange(); }
+                    _owner.ShowLayerMenu(l);
+                    return;
+                }
+                if (!left) return;
+                if (e.ClickCount == 2) { Ctx.SetCurrentLayer(l); BeginRename(l); return; }
+                if ((e.KeyModifiers & KeyModifiers.Shift) != 0)
+                {
+                    // 시작 행(현재 레이어)은 그대로 두고 끝 행까지 행 전체(모든 프레임)를 고른다.
+                    SelectWholeRows(l == Ctx.CurrentLayer ? null : nameLayer);
+                    _owner.HintSelection();
+                    return;
+                }
+                // 누르기 = 그 행 전체(모든 프레임 셀) 고르기 + 현재 레이어, 문턱 넘게 끌기 = 레이어 순서 바꾸기.
+                _pressContent = new Avalonia.Point(ContentX(pos.X), ContentY(pos.Y));
                 Ctx.SetCurrentLayer(l);
-                if (right) { _owner.ShowLayerMenu(l); return; }
-                if (e.ClickCount == 2) { BeginRename(l); return; }
+                SelectWholeRows(null);
+                _owner.HintSelection();
                 _layerDragFrom = l;
                 e.Pointer.Capture(this);
                 return;
@@ -2223,6 +2372,7 @@ public sealed class TimelinePanel : UserControl
                 if (_rangeA < 0) _rangeA = Ctx.CurrentFrame;
                 _rangeB = f;
                 _headerRange = inHeader;
+                _wholeRows = false;
                 if (!inHeader && l >= 0) _rowEnd = l == Ctx.CurrentLayer ? null : p.Layers[l];
                 InvalidateVisual();
                 return;
@@ -2230,19 +2380,23 @@ public sealed class TimelinePanel : UserControl
             if (inHeader)
             {
                 if (e.ClickCount == 2) { _owner.SetDuration(); return; }
-                bool selected = InRange(f) ? _headerRange : _rangeA < 0 && f == Ctx.CurrentFrame;
+                // 누르기 = 그 열 전체(모든 레이어 셀) 고르기, 문턱 넘게 끌기 = 프레임 순서 바꾸기(여러 열을 고른 채 그 안을 누르면 덩어리째).
+                var (ra, rb) = Range;
+                bool inMulti = _headerRange && ra >= 0 && rb > ra && f >= ra && f <= rb;
+                _pressContent = new Avalonia.Point(ContentX(pos.X), ContentY(pos.Y));
                 Ctx.SetCurrentFrame(f);
-                if (selected && !(InRange(f) && Math.Abs(_rangeB - _rangeA) > 0))
+                if (inMulti)
                 {
-                    // 이미 고른 한 프레임: 끌어서 순서 바꾸기
-                    _dragFrom = f;
+                    (_dragA, _dragB) = (ra, rb);
+                    _collapseOnRelease = true;
                 }
                 else
                 {
-                    _rangeA = _rangeB = f;
-                    _headerRange = true;
-                    _selectFrom = f;
+                    SetRange(f, f, header: true);
+                    _dragA = _dragB = f;
                 }
+                _dragFrom = f;
+                _owner.HintSelection();
                 e.Pointer.Capture(this);
                 InvalidateVisual();
                 return;
@@ -2376,19 +2530,88 @@ public sealed class TimelinePanel : UserControl
             return false;
         }
 
+        // ───────────── 끌어서 순서 바꾸기(공통 계산 = ReorderCore, 미리보기 = Track 밀림: 뜬 칸은 포인터를 따라오고 다른 칸은 비켜 섬) ─────────────
+
+        /// <summary>레이어 끌기에서 뜬 행(행 배치의 칸 번호, 그룹이면 부위 행까지).</summary>
+        private List<int> _liftRows = new();
+
         /// <summary>
-        /// 레이어 행 끌기의 놓을 자리: 부위는 같은 그룹의 다른 부위, 일반 레이어·그룹은 다른 맨 위 단계 레이어
-        /// (부위 행 위면 그 그룹). 놓을 수 없으면 -1.
+        /// 포인터 위치로 미리보기를 다시 맞춘다. 프레임: 앞뒤 프레임은 한 칸씩, 고른 덩어리는 한 단위로.
+        /// 레이어: 부위는 같은 그룹의 부위끼리, 일반 레이어·그룹은 맨 위 단계끼리(그룹은 부위 행과 한 덩어리). 가장자리면 자동 스크롤.
         /// </summary>
-        private int LayerDropTarget(int from, int over)
+        private void UpdateReorder(Avalonia.Point pos)
         {
-            if (Ctx.Project is not { } p || from < 0 || over < 0 || from >= p.Layers.Count) return -1;
-            var src = p.Layers[from];
-            var dst = p.Layers[over];
-            if (src.Parent is { } group) return ReferenceEquals(dst.Parent, group) && over != from ? over : -1;
-            if (dst.Parent is { } owner) dst = owner;
-            int target = p.IndexOf(dst);
-            return target == from ? -1 : target;
+            if (Ctx.Project is not { } p) return;
+            _lastPointer = pos;
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            var starts = new List<double>();
+            var sizes = new List<double>();
+            if (_dragFrom >= 0)
+            {
+                int n = p.Frames.Count, a = _dragA, b = _dragB, count = b - a + 1;
+                for (int f = 0; f < a; f++) { starts.Add(_colT.BasePos(f)); sizes.Add(_colT.Px(f)); }
+                double blockStart = _colT.BasePos(a), blockSize = _colT.BasePos(b) + _colT.Px(b) - blockStart;
+                starts.Add(blockStart);
+                sizes.Add(blockSize);
+                for (int f = b + 1; f < n; f++) { starts.Add(_colT.BasePos(f)); sizes.Add(_colT.Px(f)); }
+                double end = _colT.BasePos(n - 1) + _colT.Px(n - 1);
+                // 뜬 덩어리의 가운데가 첫 칸 앞 ~ 마지막 칸 끝 안에서 따라온다(끝까지 끌면 맨 앞·맨 뒤 자리).
+                double offset = Math.Clamp(ContentX(pos.X) - _pressContent.X, -blockStart - blockSize / 2, end - blockStart - blockSize / 2);
+                int to = ReorderCore.TargetIndex(starts, sizes, a, blockStart + offset + blockSize / 2);
+                var sequence = new List<int>(n);
+                foreach (int u in ReorderCore.Order(starts.Count, a, to))
+                {
+                    if (u < a) sequence.Add(u);
+                    else if (u == a) for (int f = a; f <= b; f++) sequence.Add(f);
+                    else sequence.Add(u + count - 1);
+                }
+                _colT.Preview(sequence, f => f >= a && f <= b, (int)Math.Round(offset), now);
+                _dropTo = to;
+                _autoScroll.Set(ReorderCore.EdgeSpeed(pos.X, NameW, ClientW));
+            }
+            else if (_layerDragFrom >= 0 && _layerDragFrom < p.Layers.Count)
+            {
+                var src = p.Layers[_layerDragFrom];
+                // 같은 단계 레이어(위→아래)와 각자의 행(그룹은 부위 행까지 — 행 배치에서 이어져 있음)
+                var siblings = (src.Parent is { } group ? p.ChildrenOf(group) : p.Layers.Where(l => l.Parent is null)).Reverse().ToList();
+                var units = siblings.Select(l =>
+                {
+                    var rows = new List<int> { RowItem(p.IndexOf(l)) };
+                    if (l.IsGroup) rows.AddRange(ChildrenTopDown(p, l).Select(c => RowItem(p.IndexOf(c))));
+                    return rows;
+                }).ToList();
+                int from = siblings.IndexOf(src);
+                foreach (var u in units) { starts.Add(_rowT.BasePos(u[0])); sizes.Add(u.Sum(_rowT.Px)); }
+                double first = starts[0], last = starts[^1] + sizes[^1];
+                double offset = Math.Clamp(ContentY(pos.Y) - _pressContent.Y, first - starts[from] - sizes[from] / 2, last - starts[from] - sizes[from] / 2);
+                int to = ReorderCore.TargetIndex(starts, sizes, from, starts[from] + offset + sizes[from] / 2);
+                // 전체 행 차례: 같은 단계 레이어들이 차지한 행 구간만 새 순서로, 나머지 행은 제자리.
+                int spanStart = units[0][0], spanEnd = units[^1][^1];
+                var sequence = new List<int>(_rowT.Count);
+                for (int i = 0; i < spanStart; i++) sequence.Add(i);
+                foreach (int u in ReorderCore.Order(units.Count, from, to)) sequence.AddRange(units[u]);
+                for (int i = spanEnd + 1; i < _rowT.Count; i++) sequence.Add(i);
+                _liftRows = units[from];
+                var lifted = new HashSet<int>(_liftRows);
+                _rowT.Preview(sequence, lifted.Contains, (int)Math.Round(offset), now);
+                _layerTo = to == from ? -1 : p.IndexOf(siblings[to]);
+                _autoScroll.Set(ReorderCore.EdgeSpeed(pos.Y, TagH + HeadH, ClientH));
+            }
+            if ((_rowT.Animating || _colT.Animating) && !_animTimer.IsEnabled) _animTimer.Start();
+            InvalidateVisual();
+        }
+
+        /// <summary>끄는 동안 가장자리 자동 스크롤(프레임 = 좌우, 레이어 = 위아래).</summary>
+        private bool AutoScrollBy(double delta)
+        {
+            if (!_reordering) return false;
+            var bar = _dragFrom >= 0 ? _h : _v;
+            if (!bar.IsEnabled) return false;
+            double old = bar.Value;
+            bar.Value = Math.Clamp(old + delta, 0, bar.Maximum);
+            if (bar.Value == old) return false;
+            UpdateReorder(_lastPointer);
+            return true;
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
@@ -2449,19 +2672,14 @@ public sealed class TimelinePanel : UserControl
                 if (fxHover != _fxHover) { _fxHover = fxHover; InvalidateVisual(); }
                 return;
             }
-            if (Math.Abs(pos.X - _press.X) + Math.Abs(pos.Y - _press.Y) < 6) return;
-            if (_dragFrom >= 0)
+            if (!_reordering)
             {
-                int drop = Math.Clamp(_colT.BoundaryAt(ContentX(pos.X)), 0, Ctx.FrameCount);
-                if (drop != _dropAt) { _dropAt = drop; InvalidateVisual(); }
-                Cursor = new Cursor(StandardCursorType.SizeWestEast);
+                if (!ReorderCore.Exceeded(_press, pos)) return;
+                _reordering = true;
+                Cursor = new Cursor(_dragFrom >= 0 ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth);
             }
-            else
-            {
-                int target = LayerDropTarget(_layerDragFrom, LayerAt(pos.Y));
-                if (target != _layerDropAt) { _layerDropAt = target; InvalidateVisual(); }
-                Cursor = new Cursor(target >= 0 ? StandardCursorType.SizeNorthSouth : StandardCursorType.No);
-            }
+            _dragPointer = e.Pointer;
+            UpdateReorder(pos);
         }
 
         private static bool IsCopyModifier(KeyModifiers m) => (m & KeyModifiers.Alt) != 0 || Ui.HasCommand(m) || (m & KeyModifiers.Control) != 0;
@@ -2567,19 +2785,42 @@ public sealed class TimelinePanel : UserControl
             if (_dragFrom >= 0 || _layerDragFrom >= 0) FinishDrag(false);
         }
 
+        /// <summary>
+        /// 머리글·이름 칸 누름을 끝낸다. 끌지 않았으면 클릭(여러 열 안을 눌렀으면 그 열 하나만 고름).
+        /// 끌었으면 <paramref name="apply"/>일 때 실행취소 한 단계로 옮기고 칸들이 지금 자리에서 새 자리로 이어 미끄러지며,
+        /// 아니면(Esc·붙잡기 잃음) 제자리로 돌아간다.
+        /// </summary>
         private void FinishDrag(bool apply)
         {
-            int dragFrom = _dragFrom, dropAt = _dropAt, layerFrom = _layerDragFrom, layerTo = _layerDropAt;
-            _dragFrom = _dropAt = _layerDragFrom = _layerDropAt = -1;
+            int dragFrom = _dragFrom, a = _dragA, b = _dragB, dropTo = _dropTo, layerFrom = _layerDragFrom, layerTo = _layerTo;
+            bool reordering = _reordering, collapse = _collapseOnRelease;
+            _dragFrom = _dropTo = _layerDragFrom = _layerTo = -1;
+            _reordering = _collapseOnRelease = false;
+            _dragPointer = null;
+            _liftRows = new();
+            _autoScroll.Set(0);
             Cursor = Cursor.Default;
-            InvalidateVisual();
-            if (!apply) return;
-            if (dragFrom >= 0 && dropAt >= 0)
+            if (!reordering)
             {
-                int to = dropAt > dragFrom ? dropAt - 1 : dropAt;
-                if (to != dragFrom) _owner.MoveFrameTo(dragFrom, to);
+                if (apply && collapse && dragFrom >= 0) SetRange(dragFrom, dragFrom, header: true);
+                InvalidateVisual();
+                return;
             }
-            if (layerFrom >= 0 && layerTo >= 0 && layerTo != layerFrom) _owner.MoveLayerTo(layerFrom, layerTo);
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            bool frames = dragFrom >= 0;
+            var track = frames ? _colT : _rowT;
+            bool move = apply && (frames ? dropTo >= 0 && dropTo != a : layerTo >= 0);
+            if (!move) track.ClearPreview(animate: true, now);
+            else
+            {
+                var shown = track.Displayed();
+                track.ClearPreview(animate: false, now);
+                if (frames) _owner.MoveFramesTo(a, b, dropTo);
+                else _owner.MoveLayerTo(layerFrom, layerTo);
+                track.SettleFrom(shown, System.Diagnostics.Stopwatch.GetTimestamp());
+            }
+            if (track.Animating && !_animTimer.IsEnabled) _animTimer.Start();
+            InvalidateVisual();
         }
 
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -2601,11 +2842,21 @@ public sealed class TimelinePanel : UserControl
         {
             base.OnKeyDown(e);
             if (e.Handled || e.Source is TextBox) return;
+            if (e.Key == Key.Escape && _reordering)
+            {
+                // 끌기 취소: 칸들이 제자리로 돌아간다.
+                var pointer = _dragPointer;
+                FinishDrag(false);
+                pointer?.Capture(null);
+                e.Handled = true;
+                return;
+            }
             // macOS 키보드의 "delete"는 Back 키다.
             if (e.Key == Key.Delete || (Platform.IsMac && e.Key == Key.Back))
             {
-                // 고른 프레임(범위)을 지운다. 셀 그림만 지우기는 우클릭 "셀 지우기".
-                _owner.DeleteFrame();
+                // 행 전체(이름 칸으로 고름) = 그 행들의 셀 지우기(레이어는 남음), 그 밖 = 고른 프레임(열·범위) 삭제.
+                if (WholeRows) _owner.ClearSelectedRows();
+                else _owner.DeleteFrame();
                 e.Handled = true;
             }
             else if (e.Key == Key.F2) { _owner.BeginRenameLayer(); e.Handled = true; }
