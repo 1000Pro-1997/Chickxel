@@ -95,28 +95,21 @@ public class ProjectMergeTests
     }
 
     [Fact]
-    public void EmptyFirst_Group_EmptyTopPart_Skins_EmptyBaseSkin()
+    public void BlankCover_Group_HidesPartsSoGroupIsEmpty_ButPartsKeepPixelsAndExport()
     {
         var sources = new[] { Solid("hat", 2, 1, Red), Solid("helmet", 3, 3, Blue, frames: 2) };
-        var g = ProjectMerge.Merge(sources, new MergeOptions(MergeMode.Group, 5, 5, Anchor.TopLeft, "head", EmptyFirst: true));
-        // 맨 위(마지막 레이어 앞) = 빈 부위 "없음", 그 아래 파일 부위들
-        Assert.Equal(["helmet", "hat", ProjectMerge.EmptyName, "head"], g.Layers.Select(l => l.Name));
-        var empty = g.Layers[2];
-        Assert.True(empty.IsPart);
-        Assert.Same(g.Layers[3], empty.Parent);
-        Assert.Equal(new Size(3, 3), empty.PartSize);
-        Assert.All(Enumerable.Range(0, g.Frames.Count), f => Assert.Null(g.GetCel(2, f)));
-        Assert.Equal(Red, g.Flatten(0)[0, 0]); // 빈 부위는 아무것도 가리지 않음
+        var g = ProjectMerge.Merge(sources, new MergeOptions(MergeMode.Group, 5, 5, Anchor.TopLeft, "head", BlankCover: true));
+        Assert.Equal(["helmet", "hat", "head"], g.Layers.Select(l => l.Name)); // 빈 부위를 더 넣지 않는다
+        var group = g.Layers[2];
+        Assert.All(g.ChildrenOf(group), part => Assert.False(part.Visible));
+        Assert.True(group.Visible);
+        Assert.True(g.FlattenGroup(group, 0).IsRegionEmpty(new System.Drawing.Rectangle(0, 0, 5, 5))); // 그룹 행 썸네일 = 빈 그림
+        Assert.True(g.Flatten(0).IsRegionEmpty(new System.Drawing.Rectangle(0, 0, 5, 5)));
+        Assert.Equal(Red, g.GetCel(1, 0)![0, 0]); // 부위 그림은 그대로
+        Assert.Equal(3, ProjectExport.BuildPartsSheet(g, "head_parts").Entries.Count); // 숨겨도 아틀라스엔 모든 부위 칸(hat 1 + helmet 2)
 
-        var s = ProjectMerge.Merge(sources, new MergeOptions(MergeMode.Skins, 5, 5, Anchor.TopLeft, "head", EmptyFirst: true));
-        var (part, group) = (s.Layers[0], s.Layers[1]);
-        Assert.Equal([ProjectMerge.EmptyName, "hat", "helmet"], group.Skins.Select(k => k.Name));
-        Assert.Same(group.Skins[0], group.ActiveSkin);
-        Assert.Null(s.GetSkinCel(part, s.Frames[0], group.Skins[0]));
-        Assert.Equal(default, s.Flatten(0)[0, 0]); // 기본 스킨이 비었으니 그림 없음
-        Assert.Equal(Red, s.GetSkinCel(part, s.Frames[0], group.Skins[1])![0, 0]);
-        Assert.Null(s.GetSkinCel(part, s.Frames[1], group.Skins[1])); // 모자란 프레임은 빈 기본 스킨을 물려받아 비어 보임
-        Assert.Equal(Blue, s.GetSkinCel(part, s.Frames[1], group.Skins[2])![2, 2]);
+        var shown = ProjectMerge.Merge(sources, new MergeOptions(MergeMode.Group, 5, 5, Anchor.TopLeft, "head"));
+        Assert.All(shown.ChildrenOf(shown.Layers[2]), part => Assert.True(part.Visible));
     }
 
     [Fact]

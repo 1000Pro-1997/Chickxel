@@ -4,7 +4,7 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 /// <summary>
-/// 파일 브라우저에서 고른 파일 합치기: 순서(끌어서 바꾸기), 결과 이름, 방식(레이어/그룹/스킨/프레임), 그룹·스킨이면 빈 첫 항목,
+/// 파일 브라우저에서 고른 파일 합치기: 순서(끌어서 바꾸기), 결과 이름, 방식(레이어/그룹/스킨/프레임), 그룹이면 빈 대표 이미지,
 /// 캔버스 크기·기준점, 원본 삭제, 미리보기.
 /// </summary>
 public sealed class MergeDialog : DialogBase
@@ -16,7 +16,7 @@ public sealed class MergeDialog : DialogBase
     private readonly RadioButton _layers, _group, _skins, _frames;
     private readonly NumericUpDown _w, _h;
     private readonly AnchorPicker _anchor = new();
-    private readonly CheckBox _deleteOriginals, _emptyFirst;
+    private readonly CheckBox _deleteOriginals, _blankCover;
     private readonly DragReorder _drag = new();
     private readonly MergePreview _preview = new();
     private readonly TimelinePreview _timeline = new();
@@ -35,8 +35,11 @@ public sealed class MergeDialog : DialogBase
         _drag.Moved += (from, to) => MoveItem(from, to);
         var up = Ui.Button("▲", (_, _) => MoveSelected(-1), 32).Tip("위로(먼저)");
         var down = Ui.Button("▼", (_, _) => MoveSelected(1), 32).Tip("아래로(나중)");
-        _emptyFirst = Ui.Check("첫 항목을 빈 칸으로");
-        _emptyFirst.IsVisible = false;
+        _blankCover = Ui.Check("빈 대표 이미지");
+        _blankCover.IsEnabled = false;
+        _blankCover.VerticalAlignment = VerticalAlignment.Center;
+        _blankCover.Tip("그룹 행(대표 이미지)과 프레임 시트를 비워 둡니다 — 부위를 모두 숨긴 채로 만들고, 부위 그림은 그대로라 부위 아틀라스에는 모두 나갑니다. "
+                        + "부위는 타임라인에서 눈을 켜면 보입니다. \"그룹으로\"를 고르면 켤 수 있습니다.");
         RefreshOrder(0);
 
         var maxW = items.Max(i => i.Source.Size.Width);
@@ -61,8 +64,7 @@ public sealed class MergeDialog : DialogBase
             Ui.Row(_order, Ui.Stack(up, down)),
             Ui.Row(Ui.Label("이름"), _name, Ui.Label(SpriteProject.FileExtension)),
             Ui.Label("합치는 방식", bold: true),
-            _layers, _group, _skins, _frames,
-            _emptyFirst,
+            _layers, GroupRow(), _skins, _frames,
             Ui.Label("캔버스", bold: true),
             Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px"), fit),
             Ui.Label("기준점(파일 그림이 놓일 위치)"),
@@ -83,8 +85,8 @@ public sealed class MergeDialog : DialogBase
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
 
-        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { UpdateEmptyFirst(); UpdatePreview(); };
-        _emptyFirst.IsCheckedChanged += (_, _) => { RefreshOrder(Selected); UpdatePreview(); };
+        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => { _blankCover.IsEnabled = _group.On(); UpdatePreview(); };
+        _blankCover.IsCheckedChanged += (_, _) => UpdatePreview();
         _w.ValueChanged += (_, _) => UpdatePreview();
         _h.ValueChanged += (_, _) => UpdatePreview();
         _anchor.Changed += (_, _) => UpdatePreview();
@@ -110,9 +112,9 @@ public sealed class MergeDialog : DialogBase
     public string ProjectPath => Path.Combine(_folder, ResultName + SpriteProject.FileExtension);
     public bool DeleteOriginals => _deleteOriginals.On();
     public MergeMode Mode => _group.On() ? MergeMode.Group : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
-    /// <summary>빈 첫 항목을 넣는지(그룹·스킨 방식에서 켰을 때만).</summary>
-    private bool EmptyFirst => _emptyFirst.On() && Mode is MergeMode.Group or MergeMode.Skins;
-    public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName, EmptyFirst);
+    /// <summary>빈 대표 이미지(그룹 방식에서 켰을 때만).</summary>
+    private bool BlankCover => _blankCover.On() && Mode == MergeMode.Group;
+    public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName, BlankCover);
 
     /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹·스킨이면 부위 아틀라스도).</summary>
     public IEnumerable<string> TargetPaths(string name)
@@ -138,6 +140,16 @@ public sealed class MergeDialog : DialogBase
     private static RadioButton Radio(string text, string tip, bool on)
         => new RadioButton { GroupName = "merge-mode", Content = text, IsChecked = on, Foreground = AppTheme.TextBrush }.Tip(tip);
 
+    /// <summary>"그룹으로" 줄: 라디오 오른쪽에 같은 줄로 "빈 대표 이미지"(그룹으로를 고를 때만 켤 수 있음, 아니면 회색).</summary>
+    private Grid GroupRow()
+    {
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,Auto") };
+        row.Children.Add(_group);
+        Grid.SetColumn(_blankCover, 1);
+        row.Children.Add(_blankCover);
+        return row;
+    }
+
     private string UniqueName(string name)
     {
         if (!TargetPaths(name).Any(File.Exists)) return name;
@@ -145,44 +157,20 @@ public sealed class MergeDialog : DialogBase
             if (!TargetPaths($"{name}_{i}").Any(File.Exists)) return $"{name}_{i}";
     }
 
-    /// <summary>순서 목록 맨 위의 빈 항목 줄 수(지금 목록에 빈 첫 항목 줄이 있으면 1 — 고정, 끌 수 없음).</summary>
-    private int _lead;
-
-    /// <summary>고른 파일 번호(빈 항목 줄 뺀 번호, 없으면 -1).</summary>
-    private int Selected => Math.Max(-1, _order.SelectedIndex - _lead);
-
-    private void UpdateEmptyFirst()
-    {
-        bool group = _group.On();
-        _emptyFirst.IsVisible = group || _skins.On();
-        _emptyFirst.Content = group
-            ? $"첫 항목을 빈 칸으로(맨 위에 빈 부위 \"{ProjectMerge.EmptyName}\")"
-            : $"첫 항목을 빈 칸으로(기본 스킨 = 빈 스킨 \"{ProjectMerge.EmptyName}\")";
-        _emptyFirst.Tip(group
-            ? "그룹 맨 위에 그림 없는 부위를 넣습니다 — 합친 파일 부위들은 그 아래 대안이 됩니다."
-            : "첫(기본·지금) 스킨을 그림 없는 스킨으로 둡니다 — 합친 파일 스킨들은 그 뒤에 옷 갈아입기 대안이 됩니다.");
-        RefreshOrder(Selected);
-    }
+    /// <summary>고른 파일 번호(없으면 -1).</summary>
+    private int Selected => _order.SelectedIndex;
 
     private void RefreshOrder(int select)
     {
         _drag.Clear();
         _order.Items.Clear();
-        _lead = EmptyFirst ? 1 : 0;
-        if (_lead > 0)
-            _order.Items.Add(new ListBoxItem
-            {
-                Content = $"∅ {ProjectMerge.EmptyName} ({(_group.On() ? "빈 부위" : "빈 스킨")}, 고정)",
-                IsEnabled = false,
-                Foreground = AppTheme.DimTextBrush,
-            });
         foreach (var (path, s) in _items)
         {
             var item = new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.Frames.Count > 1 ? $", {s.Frames.Count}프레임" : "")})" };
             _order.Items.Add(item);
             _drag.Attach(item);
         }
-        _order.SelectedIndex = select < 0 ? -1 : Math.Min(select, _items.Count - 1) + _lead;
+        _order.SelectedIndex = select < 0 ? -1 : Math.Min(select, _items.Count - 1);
     }
 
     private void MoveSelected(int delta)
@@ -238,7 +226,8 @@ public sealed class MergeDialog : DialogBase
         int parts = p.Layers.Count(l => l.IsPart);
         int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
         _info.Text = $"{p.Width}×{p.Height} · 레이어 {p.Layers.Count(l => !l.IsPart)}개" + (parts > 0 ? $"(부위 {parts}개)" : "")
-                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨{(EmptyFirst ? $" \"{ProjectMerge.EmptyName}\" — 비어 보임" : "")})" : "")
+                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨)" : "")
+                     + (BlankCover ? " · 대표 이미지 비움(부위 숨김)" : "")
                      + $" · 프레임 {p.Frames.Count}개" + (p.Tags.Count > 0 ? $" · 태그 {p.Tags.Count}개" : "");
     }
 
@@ -318,7 +307,7 @@ public sealed class MergeDialog : DialogBase
             for (int li = p.Layers.Count - 1; li >= 0; li--)
             {
                 var layer = p.Layers[li];
-                string name = layer.IsGroup ? $"▼ {layer.Name}" : layer.IsPart ? $"    └ {layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}" : layer.Name;
+                string name = layer.IsGroup ? $"▼ {layer.Name}" : layer.IsPart ? $"    └ {layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}{(layer.Visible ? "" : "  (숨김)")}" : layer.Name;
                 int index = li;
                 _rows.Add((name, layer.IsGroup, layer.IsPart, false,
                     Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));

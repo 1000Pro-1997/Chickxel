@@ -63,19 +63,18 @@ public sealed class MergeSource
 /// <param name="Height">결과 캔버스 세로.</param>
 /// <param name="Anchor">파일 그림을 캔버스에 놓을 기준점.</param>
 /// <param name="Name">결과 이름(그룹·스킨 방식이면 그룹 이름).</param>
-/// <param name="EmptyFirst">그룹·스킨 방식에서 맨 앞에 빈 항목(<see cref="ProjectMerge.EmptyName"/>)을 넣는다: 그룹이면 맨 위 빈 부위, 스킨이면 첫(기본·지금) 스킨이 빈 스킨.
-/// 합친 파일들은 그 뒤의 대안이 된다. 레이어·프레임 방식에서는 쓰지 않는다.</param>
-public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor Anchor, string Name, bool EmptyFirst = false);
+/// <param name="BlankCover">그룹 방식에서 빈 대표 이미지: 부위를 모두 숨겨 그룹(타임라인 그룹 행·프레임 시트)이 비어 보이게 한다.
+/// 부위 그림은 그대로라 부위 아틀라스에는 모두 나가고, 눈을 켜면 보인다. 다른 방식에서는 쓰지 않는다.</param>
+public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor Anchor, string Name, bool BlankCover = false);
 
 /// <summary>
 /// 파일 여러 개 → 새 프로젝트(기록 없음, 수정됨 아님).
 /// <list type="bullet">
 /// <item>레이어: 첫 파일이 맨 위 레이어(레이어 이름 = 파일 이름). 프레임 수 = 가장 많은 파일의 프레임 수.</item>
 /// <item>그룹: 그룹 하나(<see cref="MergeOptions.Name"/>)에 첫 파일이 맨 위 부위. 부위 크기 = 파일 크기, 위치 = 기준점.
-/// <see cref="MergeOptions.EmptyFirst"/>면 그 위에 빈 부위 "없음"(크기 = 가장 큰 파일, 기준점 위치).</item>
+/// <see cref="MergeOptions.BlankCover"/>면 부위를 모두 숨긴다(빈 대표 이미지).</item>
 /// <item>스킨: 그룹 하나(<see cref="MergeOptions.Name"/>)에 부위 "부위" 하나, 파일마다 전체 스킨 하나(스킨 이름 = 파일 이름, 첫 파일 = 첫 스킨·지금 스킨).
-/// 부위 크기 = 가장 큰 파일 크기(기준점 위치), 작은 파일은 부위 안 기준점에 놓는다. 프레임이 모자란 스킨은 빈 칸이라 첫 스킨 셀을 물려받는다.
-/// <see cref="MergeOptions.EmptyFirst"/>면 첫(기본·지금) 스킨이 그림 없는 "없음"이고 파일 스킨은 그 뒤(모자란 프레임은 비어 보임).</item>
+/// 부위 크기 = 가장 큰 파일 크기(기준점 위치), 작은 파일은 부위 안 기준점에 놓는다. 프레임이 모자란 스킨은 빈 칸이라 첫 스킨 셀을 물려받는다.</item>
 /// <item>프레임: 파일 순서대로 프레임을 이어 붙인다. 프레임이 하나인 파일은 그 프레임의 칸 이름 = 파일 이름,
 /// 여러 개인 파일은 자기 태그를 옮겨 오고 태그가 없으면 파일 이름으로 태그 하나.</item>
 /// </list>
@@ -84,9 +83,6 @@ public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor 
 /// </summary>
 public static class ProjectMerge
 {
-    /// <summary>빈 첫 항목(<see cref="MergeOptions.EmptyFirst"/>)의 이름.</summary>
-    public const string EmptyName = "없음";
-
     public static SpriteProject Merge(IReadOnlyList<MergeSource> sources, MergeOptions options, SpriteSettings? spriteDefaults = null)
     {
         if (sources.Count == 0) throw new ArgumentException("합칠 파일이 없습니다.", nameof(sources));
@@ -137,22 +133,10 @@ public static class ProjectMerge
                     Parent = group,
                     PartSize = s.Size,
                     PartOffset = new Point(x, y),
+                    Visible = !options.BlankCover,
                 };
                 p.AddLayerRaw(part);
                 for (int f = 0; f < s.Frames.Count; f++) SetCel(p, part, frames[f], s.Frames[f].Clone());
-            }
-            if (options.EmptyFirst)
-            {
-                // 맨 위 빈 부위(가장 큰 파일 크기, 기준점 위치): 부위를 하나씩 켜 보는 대안 묶음의 "아무것도 없음".
-                var size = new Size(sources.Max(s => s.Size.Width), sources.Max(s => s.Size.Height));
-                var (x, y) = PixelImage.AnchorOffset(size.Width, size.Height, w, h, options.Anchor);
-                p.AddLayerRaw(new Layer(UniqueName(p, EmptyName, group.Name))
-                {
-                    Kind = LayerKind.Part,
-                    Parent = group,
-                    PartSize = size,
-                    PartOffset = new Point(x, y),
-                });
             }
             p.AddLayerRaw(group);
         }
@@ -168,16 +152,14 @@ public static class ProjectMerge
                 PartSize = size,
                 PartOffset = new Point(x, y),
             };
-            var skins = new List<Skin>(sources.Count + 1);
-            if (options.EmptyFirst) skins.Add(new Skin(EmptyName));
-            int first = skins.Count;
+            var skins = new List<Skin>(sources.Count);
             foreach (var s in sources) skins.Add(new Skin(UniqueSkinName(skins, s.Name)));
             group.ReplaceSkinsRaw(skins);
             p.AddLayerRaw(part);
             p.AddLayerRaw(group);
             for (int i = 0; i < sources.Count; i++)
                 for (int f = 0; f < sources[i].Frames.Count; f++)
-                    SetCel(p, part, frames[f], sources[i].Frames[f].ResizeCanvas(size.Width, size.Height, options.Anchor), skins[first + i]);
+                    SetCel(p, part, frames[f], sources[i].Frames[f].ResizeCanvas(size.Width, size.Height, options.Anchor), skins[i]);
         }
         else
         {
