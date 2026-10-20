@@ -521,6 +521,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             DocCmd("저장(+ 시트 내보내기)", () => Save(), "Ctrl+S", KeyScope.Global, (Key.S, Ctrl)),
             DocCmd("다른 이름으로 저장…", () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
             DocCmd("내보내기…", OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
+            DocCmd("GIF 애니메이션으로 내보내기…", ExportGif),
             DocCmd("닫기", () => CloseProject(), "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
             new Separator(),
             Cmd("시작 화면", ShowStart),
@@ -1738,6 +1739,14 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (!_ctx.HasProject) return;
         var dlg = new UnityExportDialog(_ctx, _settings, v => _settings.LastPpu = v);
         if (dlg.ShowDialog(this) == DialogResult.OK) ExportNow();
+    }
+
+    /// <summary>파일 > GIF 애니메이션으로 내보내기: 범위·배율·반복·배경을 고르는 창(프로젝트는 바꾸지 않음).</summary>
+    private void ExportGif()
+    {
+        if (GifExportDialog.Run(_ctx, _settings, this) is not var (message, path)) return;
+        ShowMessage(message);
+        _browser.RefreshFile(path);
     }
 
     private void ExportNow()

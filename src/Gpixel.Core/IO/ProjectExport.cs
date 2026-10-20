@@ -567,6 +567,11 @@ public static class ProjectExport
         => project.FlattenOutfit(frameIndex, outfit, project.Export.Frames.ExcludedLayers);
 
     /// <summary>
+    /// 프레임 하나를 프레임 시트 칸과 똑같이(지금 착장, 레이어 효과, 숨긴·내보내기에서 뺀 레이어 제외) 캔버스 크기 그대로 합성 — GIF 등 애니메이션 내보내기용.
+    /// </summary>
+    public static PixelImage CompositeFrame(SpriteProject project, int frameIndex) => Composite(project, frameIndex, null);
+
+    /// <summary>
     /// 프레임 시트 한 장: 스킨 항목 × 프레임(태그 기준이 정렬에 있으면 여러 태그에 든 프레임은 태그마다). <paramref name="frames"/>가 null이면 모든 프레임,
     /// 아니면 그 프레임들(이름 태그 = <paramref name="fileTag"/>). 항목이 여럿이면(한 이미지에 모두) 칸 이름 뒤에 <c>@{항목}</c>.
     /// </summary>

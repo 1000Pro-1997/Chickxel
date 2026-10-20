@@ -107,6 +107,14 @@ public sealed class AppSettings
     /// <summary>접어 둔 설정 묶음 이름(설정 프리셋·공통·파일·프레임 시트·부위 아틀라스·고급).</summary>
     public List<string> ExportCollapsed { get; set; } = new();
 
+    // GIF 애니메이션 내보내기(마지막으로 쓴 값, 앱 전체)
+    /// <summary>재생 횟수(0 = 무한 반복).</summary>
+    public int GifPlayCount { get; set; }
+    /// <summary>배경색 위에 합성(꺼짐 = 투명 배경).</summary>
+    public bool GifUseBackground { get; set; }
+    /// <summary>배경색(#RRGGBB, 투명으로 돌려도 기억).</summary>
+    public string GifBackgroundColor { get; set; } = "#FFFFFF";
+
     // 편집·파일 브라우저(환경 설정 창)
     /// <summary>실행취소 단계 수(1~10000).</summary>
     public int UndoSteps { get; set; } = UndoStack.DefaultCapacity;
