@@ -1158,6 +1158,9 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>창 전체 키 미리 받기(터널): 포커스된 컨트롤보다 먼저 단축키 표를 본다.</summary>
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
+        // Ctrl(⌘)을 누르는 동안의 임시 이동 도구는 단축키(⌘T·⌘V 등)를 누르는 순간 먼저 원래 도구로 되돌린다 —
+        // 단축키가 시작한 변형·붙여넣기가 ⌘를 뗄 때의 도구 되돌리기에 적용(취소)되지 않게.
+        _canvas.EndTempMoveForShortcut(e.Key);
         if (e.Handled) return;
         var mods = e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta);
         if (_keys.TryGetValue((e.Key, mods), out var entry) && CanRun(entry.Scope) && entry.Action())

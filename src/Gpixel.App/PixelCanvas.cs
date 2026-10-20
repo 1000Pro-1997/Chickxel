@@ -225,7 +225,20 @@ public sealed class PixelCanvas : Control
         if (_drag != DragMode.None) { _tempMoveEndPending = true; return; }
         _tempMoveFrom = null;
         _tempMoveEndPending = false;
-        if (_ctx.Tool == ToolKind.Move) _ctx.Tool = previous; // 그동안 다른 도구를 골랐으면 그대로 둔다
+        // 그동안 다른 도구를 골랐거나 변형 중이면(도구를 바꾸면 변형이 적용돼 버림) 그대로 둔다.
+        if (_ctx.Tool == ToolKind.Move && !_ctx.IsTransforming) _ctx.Tool = previous;
+    }
+
+    /// <summary>
+    /// Ctrl(⌘)을 누른 채 다른 키를 누름(⌘T·⌘V 같은 단축키): 단축키가 실행되기 전에 임시 이동 도구를 원래 도구로 되돌린다.
+    /// 끄는 중이면 그대로 둔다. MainForm의 단축키 처리 맨 앞에서 부른다.
+    /// </summary>
+    public void EndTempMoveForShortcut(Key key)
+    {
+        if (_tempMoveFrom is null || _drag != DragMode.None
+            || key is Key.LeftCtrl or Key.RightCtrl or Key.LWin or Key.RWin or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt)
+            return;
+        EndTempMove();
     }
 
     /// <summary>스포이드 도구 아이콘을 2배로 키우고 어두운 테두리를 두른 커서(끝이 집는 점).</summary>
