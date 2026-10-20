@@ -78,7 +78,7 @@ public sealed class UnityExportDialog : DialogBase
         _partsSection = BuildSection("② ", overrideLine);
         var previewHelp = Beside(
             Note("저장(Ctrl+S)·내보내기를 하면 아래 결과 파일이 만들어집니다. 칸 목록의 이름이 Unity .meta의 스프라이트 이름입니다."),
-            Info("프레임 시트: 그룹·부위를 합성한 프레임마다 한 칸(애니메이션용). 부위 아틀라스: 부위 × 프레임마다 한 칸(부위별 스프라이트, 부위가 있을 때만). " +
+            Ui.InfoBadge("프레임 시트: 그룹·부위를 합성한 프레임마다 한 칸(애니메이션용). 부위 아틀라스: 부위 × 프레임마다 한 칸(부위별 스프라이트, 부위가 있을 때만). " +
                  "칸을 고르면 편집기에서 그 프레임(부위 아틀라스는 그 부위·스킨)으로 갑니다."));
         var preview = Ui.ScrollHost(Ui.Stack(previewHelp, _framesSection.Panel, _partsSection.Panel));
 
@@ -414,7 +414,7 @@ public sealed class UnityExportDialog : DialogBase
             OnOff("원래 위치 유지", p => p.Export.KeepImportedRects, (p, v) => p.Export.KeepImportedRects = v));
         var libraryRow = Setting("Sprite Library", null, Line(
             OnOff("Sprite Library", p => p.Export.WriteSpriteLibrary, (p, v) => p.Export.WriteSpriteLibrary = v),
-            Info("부위 아틀라스 옆에 Unity 2D Animation 패키지의 Sprite Library Asset을 그룹 × 스킨마다 하나씩 씁니다: {부위 아틀라스}_{그룹}@{스킨}.spriteLib(+ .meta). " +
+            Ui.InfoBadge("부위 아틀라스 옆에 Unity 2D Animation 패키지의 Sprite Library Asset을 그룹 × 스킨마다 하나씩 씁니다: {부위 아틀라스}_{그룹}@{스킨}.spriteLib(+ .meta). " +
                  "Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(물려받는 칸은 첫 스킨 스프라이트, \"물려받은 칸도 이 스킨 스프라이트로\"면 그 스킨 것). " +
                  "\"고른 스킨\"이면 체크한 스킨만 .spriteLib을 씁니다. 부위 전용(개별) 스킨도 .spriteLib 하나({그룹}@{스킨}): 그 부위 Category만 그 스킨 스프라이트, 나머지 Category는 기본 스킨 스프라이트 — " +
                  "Category·Label이 다른 라이브러리와 같아 바꿔 끼우면 그 부위만 바뀝니다(\"기본 + 모자\"). " +
@@ -429,7 +429,7 @@ public sealed class UnityExportDialog : DialogBase
                     (p, v) => p.Export.PartsOverride = v ? p.Export.Common.Clone() : null)
                 .SetTip(0, "부위 아틀라스도 공통 시트 설정을 씁니다.")
                 .SetTip(1, "부위 아틀라스만 따로 설정합니다(켜는 순간의 공통 설정을 복사해 시작 — 아래에 설정 칸이 한 벌 더 생김)."),
-            Info("공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 부위 아틀라스만 다르게 쓰려면 켭니다. " +
+            Ui.InfoBadge("공통 시트 설정(스킨·배치·정렬·칸 수·따로 파일·칸 이름·간격·잘라내기·2의 거듭제곱)을 부위 아틀라스만 다르게 쓰려면 켭니다. " +
                  "끄면 따로 둔 설정을 버리고 공통 설정을 씁니다(실행취소로 되돌릴 수 있음).")));
         // 파일을 열 때부터 따로 설정이 있었으면(예전 파일을 옮긴 경우 등) 그 까닭과 되돌리는 단추.
         bool overrideAtOpen = false;
@@ -944,22 +944,6 @@ public sealed class UnityExportDialog : DialogBase
         var t = Note(text);
         t.Foreground = AppTheme.WarningBrush;
         return t;
-    }
-
-    /// <summary>긴 도움말을 담는 ⓘ 표시(올리면 풍선).</summary>
-    private static TextBlock Info(string tip)
-    {
-        var t = new TextBlock
-        {
-            Text = "ⓘ",
-            Foreground = AppTheme.DimTextBrush,
-            Background = Brushes.Transparent,
-            Margin = new Thickness(4, 0),
-            Padding = new Thickness(2),
-            VerticalAlignment = VerticalAlignment.Center,
-            Cursor = new Cursor(StandardCursorType.Help),
-        };
-        return t.Tip(tip);
     }
 
     /// <summary>묶음 제목(바꿀 수 있는 글).</summary>

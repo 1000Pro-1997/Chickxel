@@ -48,6 +48,34 @@ public static class Ui
         TextWrapping = TextWrapping.NoWrap,
     };
 
+    /// <summary>긴 설명을 담는 정보 표시: 모서리가 둥근 작은 네모 안의 "i"(마우스를 올리면 풍선).</summary>
+    public static Border InfoBadge(string tip)
+    {
+        var b = new Border
+        {
+            Width = 16,
+            Height = 16,
+            CornerRadius = new CornerRadius(4),
+            BorderBrush = AppTheme.DimTextBrush,
+            BorderThickness = new Thickness(1),
+            Background = Brushes.Transparent,
+            Margin = new Thickness(4, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Cursor(StandardCursorType.Help),
+            Child = new TextBlock
+            {
+                Text = "i",
+                FontSize = AppTheme.SmallFontSize,
+                FontWeight = FontWeight.Bold,
+                Foreground = AppTheme.DimTextBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        ToolTip.SetTip(b, tip);
+        return b;
+    }
+
     /// <summary>패널 위쪽 제목 줄(DockPanel 위에 붙임).</summary>
     public static Border Header(string text)
     {

@@ -27,8 +27,7 @@ public sealed partial class LayerEffectsDialog
         {
             var tile = new EffectTile(k, Kinds[k], IsAnimated(k) ? ThumbSteps : 1) { Width = TileWidth, Height = TileHeight, Margin = new Thickness(2) };
             ToolTip.SetTip(tile, $"{Kinds[k]}\n{DescriptionOf(k)}" + (tile.Animated ? "\n움직이는 효과 — 프레임 범위 동안 움직입니다." : "")
-                                 + (tile.Animated && motionTip is not null ? " " + motionTip : "")
-                                 + "\n\n두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다.");
+                                 + (tile.Animated && motionTip is not null ? " " + motionTip : ""));
             tile.Show(0, RenderThumb);
             AttachTileInput(tile);
             _tiles.Add(tile);
@@ -51,7 +50,7 @@ public sealed partial class LayerEffectsDialog
             Height = 560,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         };
-        return Ui.Stack(Ui.Label("효과 종류", bold: true), Hint("두 번 누르거나 효과 목록으로 끌어 놓으면 추가", width), scroll);
+        return Ui.Stack(Ui.Row(Ui.Label("효과 종류", bold: true), Ui.InfoBadge("두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에).")), scroll);
     }
 
     /// <summary>미리보기 원본: 지금 프레임 그림(투명 여백을 잘라 냄). 비었거나 너무 크면 작은 견본 그림.</summary>

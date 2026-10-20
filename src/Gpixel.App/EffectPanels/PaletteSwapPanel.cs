@@ -29,7 +29,7 @@ public sealed partial class LayerEffectsDialog
         var source = SourceAt(_frame);
         IReadOnlyList<Color32> used = source is null ? [] : PaletteRemap.UsedColors(source);
 
-        if (p.Pairs.Count == 0) _settings.Children.Add(Hint("바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."));
+        if (p.Pairs.Count == 0) SettingsRow(Ui.Label("바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."));
         for (int k = 0; k < p.Pairs.Count; k++)
         {
             int at = k;

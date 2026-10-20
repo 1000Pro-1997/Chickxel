@@ -117,15 +117,23 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 _addFrom.Value = _addTo.Value = _frame + 1; // 모든 프레임을 덮는 범위 = "모든 프레임"이라 지금 프레임 하나로 시작
             _addFrom.IsEnabled = _addTo.IsEnabled = !_addAll.On();
             _addRangeTouched = true;
+            SyncStripRange();
         };
-        _addFrom.ValueChanged += (_, _) => _addRangeTouched = true;
-        _addTo.ValueChanged += (_, _) => _addRangeTouched = true;
+        _addFrom.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
+        _addTo.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
         _remove = Ui.Button("삭제", (_, _) => Remove(), 60);
         _up = Ui.Button("위로", (_, _) => Move(-1), 60);
         _down = Ui.Button("아래로", (_, _) => Move(1), 60);
         _bake = Ui.Button("영구 적용", (_, _) => Bake(), 80);
         _list = new ListBox { Width = 300, Height = 170, Margin = new Thickness(3) };
-        ToolTip.SetTip(_list, "줄을 끌어 순서를 바꿉니다(위에서부터 차례로 적용).");
+        ToolTip.SetTip(_list, "줄을 끌어 순서를 바꿉니다(위에서부터 차례로 적용). Delete = 고른 효과 삭제.");
+        _list.KeyDown += (_, e) =>
+        {
+            if (e.Key is not (Key.Delete or Key.Back) || Selected < 0) return;
+            e.Handled = true;
+            Remove();
+            _list.Focus(); // 이어서 Delete를 누를 수 있게
+        };
         _drag.Moved += (from, to) =>
         {
             var effect = _effects[from];
@@ -139,6 +147,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             ShowSettings();
             UpdateButtons();
             SyncPlayback();
+            SyncStripRange();
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = 300 };
 
@@ -157,9 +166,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _preview.Width = PreviewBox * 2 + 12;
         _preview.Height = PreviewBox + 20;
         _caption = Ui.Label("");
-        _caption.TextWrapping = TextWrapping.Wrap;
-        _caption.Width = RightWidth;
-        _caption.MinHeight = 34; // 두 줄 자리 — 글이 길어지고 짧아져도 아래가 출렁이지 않게
+        _caption.Foreground = AppTheme.DimTextBrush;
         _play = Ui.Button("▶ 재생", (_, _) => TogglePlay(), 80);
         ToolTip.SetTip(_play, "움직이는 효과(터지기 ~ 충격파 고리)를 고른 효과의 프레임 범위로 돌려 봅니다.");
         var loop = Ui.Check("끝에서 바로 처음으로", s_seamlessLoop);
@@ -168,10 +175,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ToolTip.SetTip(loop, "재생할 때 마지막 프레임을 더 보여 주지 않고 곧바로 첫 프레임으로 이어서 반복합니다(게임에서 반복 재생하는 모습).");
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, loop),
+            Ui.Row(_play, loop, Ui.InfoBadge(Intro(layer))),
             _caption,
             _preview,
-            Hint(Intro(layer), PreviewBox * 2 + 12));
+            BuildFrameStrip());
         right.Width = RightWidth; // 고정 — 진행 % 등 글 길이에 따라 창 폭이 흔들리지 않게
 
         var root = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -185,7 +192,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
         Closed += (_, _) =>
         {
             _timer.Stop();
+            _stripTimer.Stop();
             DisposePalette();
+            _strip.Dispose();
             int index = _project.IndexOf(_layer);
             if (index >= 0 && !_baked) _project.EndLayerEffectsPreview(index, _original, DialogResult == DialogResult.OK);
             _preview.Dispose();
@@ -193,10 +202,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     private static string Intro(Layer layer)
-        => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도 자동으로). 위에서부터 차례로 적용됩니다."
-           + " 움직이는 효과(터지기 ~ 충격파 고리)는 프레임 범위의 첫 프레임에서 시작해 마지막 프레임에서 끝납니다(범위가 길수록 느림)."
-           + (layer.IsGroup ? " 그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에 들어갑니다(부위 아틀라스에는 부위 자신의 효과만)." : "")
-           + (layer.IsPart ? " 부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
+        => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도). 위에서부터 차례로 적용됩니다.\n"
+           + "움직이는 효과는 프레임 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"
+           + "미리보기는 프레임 범위와 관계없이 켜진 효과를 모두 보입니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 프레임 범위."
+           + (layer.IsGroup ? "\n그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다." : "")
+           + (layer.IsPart ? "\n부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
 
     // ───────────── 목록 ─────────────
 
@@ -298,6 +308,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>목록이 바뀜: 단추 상태, 캔버스(미리보기 효과)·전/후 미리보기를 갱신한다.</summary>
     private void Changed()
     {
+        InvalidateStrip();
         UpdateButtons();
         int index = _project.IndexOf(_layer);
         if (index >= 0) _project.PreviewLayerEffects(index, _effects);
@@ -383,13 +394,27 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     // ───────────── 설정 ─────────────
 
+    /// <summary>고른 효과의 설정 칸을 다시 만든다. 설명 글은 칸에 늘어놓지 않고 프레임 범위 줄 끝의 정보 표시(i) 풍선에 모은다.</summary>
     private void ShowSettings()
+    {
+        _rangeRow = null;
+        FillSettings();
+        var hints = _settings.Children.OfType<TextBlock>().Where(t => t.Classes.Contains(HintClass)).ToList();
+        if (hints.Count == 0 || _rangeRow is null) return;
+        foreach (var h in hints) _settings.Children.Remove(h);
+        _rangeRow.Children.Add(Ui.InfoBadge(string.Join("\n\n", hints.Select(h => h.Text))));
+    }
+
+    /// <summary>설정 칸의 프레임 범위 줄(설명 정보 표시를 붙일 곳).</summary>
+    private StackPanel? _rangeRow;
+
+    private void FillSettings()
     {
         _settings.Children.Clear();
         int i = Selected;
         if (i < 0 || i >= _effects.Count)
         {
-            _settings.Children.Add(Ui.Label(_effects.Count == 0 ? "효과가 없습니다 — 위에서 골라 추가하세요." : "효과를 고르세요."));
+            _settings.Children.Add(Ui.Label(_effects.Count == 0 ? "효과가 없습니다 — 왼쪽에서 골라 추가하세요." : "효과를 고르세요."));
             return;
         }
         var e = _effects[i];
@@ -568,18 +593,23 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
-        _settings.Children.Add(Ui.Row(all, Ui.Label("프레임"), from, Ui.Label("~"), to));
+        _rangeRow = Ui.Row(all, from, Ui.Label("~"), to);
+        _settings.Children.Add(_rangeRow);
     }
 
     /// <summary>설정 칸에 한 줄.</summary>
     private void SettingsRow(params Control[] row) => _settings.Children.Add(Ui.Row(row));
 
+    private const string HintClass = "effect-hint";
+
+    /// <summary>설명 글. 설정 칸에 넣으면 <see cref="ShowSettings"/>가 정보 표시 풍선으로 옮긴다(펼침 상자 안에서는 그대로 보임).</summary>
     private static TextBlock Hint(string text, double maxWidth = 290)
     {
         var t = Ui.Label(text);
         t.TextWrapping = TextWrapping.Wrap;
         t.MaxWidth = maxWidth;
         t.Foreground = AppTheme.DimTextBrush;
+        t.Classes.Add(HintClass);
         return t;
     }
 
@@ -692,6 +722,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void RefreshPreview()
     {
         int f = _previewFrame, n = _project.Frames.Count;
+        _strip.Current = f;
         var source = SourceAt(f);
         string where = _layer.IsGroup ? " (그룹 합성)" : _layer.IsPart ? " (부위)" : "";
         if (source is null)
@@ -706,7 +737,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         before.Blit(source, -dx, -dy);
         _preview.SetImages(before, after);
         string progress = Selected >= 0 && Selected < effects.Count && effects[Selected] is AnimatedEffect a ? $" · 진행 {a.Time * 100:0}%" : "";
-        _caption.Text = $"미리보기 — 프레임 {f + 1}{where}{progress} · 프레임 범위와 관계없이 켜진 효과 모두";
+        _caption.Text = $"프레임 {f + 1}{where}{progress}";
     }
 
     /// <summary>전·후를 같은 크기·같은 정수 배율로 나란히 그린다(후 그림이 번진 만큼 둘 다 넓힘).</summary>

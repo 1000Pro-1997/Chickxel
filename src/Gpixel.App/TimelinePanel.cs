@@ -1433,8 +1433,8 @@ public sealed class TimelinePanel : UserControl
         private static readonly IBrush LightSelBrush = AppTheme.Brush(Color.FromArgb(28, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IBrush MarqueeBrush = AppTheme.Brush(Color.FromArgb(48, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IPen MarqueePen = AppTheme.Pen(AppTheme.AccentColor);
-        /// <summary>마우스가 올라간 셀(Frame == 프레임 수면 "다음 프레임" 칸)과 왼쪽 반(true)/오른쪽 반.</summary>
-        private (int Layer, int Frame, bool Left) _hover = (-1, -1, false);
+        /// <summary>마우스가 올라간 셀(Frame == 프레임 수면 "다음 프레임" 칸)과 위쪽 반(true, ⧉)/아래쪽 반(＋).</summary>
+        private (int Layer, int Frame, bool Top) _hover = (-1, -1, false);
         /// <summary>태그 범위 끌기: 대상 태그, 오른쪽 끝(true)/왼쪽 끝, 끄는 중인 범위.</summary>
         private AnimationTag? _tagEdit;
         private bool _tagEditRight;
@@ -2089,8 +2089,8 @@ public sealed class TimelinePanel : UserControl
         private bool IsGhostColumn(double x)
             => x >= NameW && ContentX(x) >= _colT.Total && ContentX(x) < _colT.Total + CellW;
 
-        /// <summary>프레임 칸의 왼쪽 반 위인지.</summary>
-        private bool LeftHalf(double x, int f) => x < FrameX(f) + FrameW(f) / 2.0;
+        /// <summary>"다음 프레임" 칸의 위쪽 반(⧉ 복사) 위인지 — <paramref name="layer"/> &lt; 0이면 머리글 칸.</summary>
+        private bool TopHalf(double y, int layer) => y < (layer < 0 ? TagH + HeadH / 2.0 : LayerY(layer) + CellH / 2.0);
 
         /// <summary>가장 가까운 보이는 행 번호.</summary>
         private int RowAtClamped(double y)
@@ -2403,17 +2403,17 @@ public sealed class TimelinePanel : UserControl
 
         private static readonly IBrush SplitHoverBrush = AppTheme.Brush(Color.FromRgb(74, 74, 84));
 
-        /// <summary>칸을 반으로 나눠 왼쪽 ⧉(복사)·오른쪽 ＋ 아이콘을 그린다. <paramref name="hoverLeft"/>: 올라간 반(없으면 null).</summary>
-        private static void DrawSplit(DrawingContext g, Rect r, bool copyEnabled, bool? hoverLeft, bool dim = false)
+        /// <summary>칸을 위아래 반으로 나눠 위 ⧉(복사)·아래 ＋ 아이콘을 그린다. <paramref name="hoverTop"/>: 올라간 반(없으면 null).</summary>
+        private static void DrawSplit(DrawingContext g, Rect r, bool copyEnabled, bool? hoverTop, bool dim = false)
         {
-            var left = new Rect(r.X, r.Y, r.Width / 2, r.Height);
-            var right = new Rect(r.X + r.Width / 2, r.Y, r.Width / 2, r.Height);
-            if (hoverLeft == true && copyEnabled) g.FillRectangle(SplitHoverBrush, left);
-            if (hoverLeft == false) g.FillRectangle(SplitHoverBrush, right);
-            g.DrawLine(BorderPen, new Avalonia.Point(Math.Round(r.Center.X) + 0.5, r.Y + 6), new Avalonia.Point(Math.Round(r.Center.X) + 0.5, r.Bottom - 6));
+            var top = new Rect(r.X, r.Y, r.Width, r.Height / 2);
+            var bottom = new Rect(r.X, r.Y + r.Height / 2, r.Width, r.Height / 2);
+            if (hoverTop == true && copyEnabled) g.FillRectangle(SplitHoverBrush, top);
+            if (hoverTop == false) g.FillRectangle(SplitHoverBrush, bottom);
+            g.DrawLine(BorderPen, new Avalonia.Point(r.X + 6, Math.Round(r.Center.Y) + 0.5), new Avalonia.Point(r.Right - 6, Math.Round(r.Center.Y) + 0.5));
             var on = dim ? AppTheme.DimTextBrush : AppTheme.TextBrush;
-            if (copyEnabled) VectorIcons.Draw(g, VectorIcon.Copy, left, 12, on);
-            VectorIcons.Draw(g, VectorIcon.Plus, right, 12, on);
+            if (copyEnabled) VectorIcons.Draw(g, VectorIcon.Copy, top, 11, on);
+            VectorIcons.Draw(g, VectorIcon.Plus, bottom, 11, on);
         }
 
         /// <summary>배치의 행이 가리키는 레이어 번호(지워져 줄어드는 유령 행은 -1).</summary>
@@ -2550,7 +2550,7 @@ public sealed class TimelinePanel : UserControl
                             var r = new Rect(gx + 1, cy + 1, CellW - 2, CellH - 2);
                             g.FillRectangle(GhostBrush, r);
                             bool hovered = _hover.Frame == frames; // 어느 줄의 단추든 프레임 전체를 복사·추가하므로 열 전체를 함께 강조
-                            DrawSplit(g, r, true, hovered ? _hover.Left : null, dim: !hovered);
+                            DrawSplit(g, r, true, hovered ? _hover.Top : null, dim: !hovered);
                         }
                     }
                     // 효과 줄(접거나 펼치는 중이면 보이는 만큼)
@@ -2658,7 +2658,7 @@ public sealed class TimelinePanel : UserControl
                     var r = new Rect(FrameX(frames) + 1, TagH + 1, CellW - 2, HeadH - 2);
                     g.FillRectangle(GhostBrush, r);
                     bool hovered = _hover.Frame == frames;
-                    DrawSplit(g, r, true, hovered ? _hover.Left : null, dim: !hovered);
+                    DrawSplit(g, r, true, hovered ? _hover.Top : null, dim: !hovered);
                 }
                 // 태그는 머리글 칸까지 내려오는 괄호로 묶어 보인다.
                 foreach (var tag in p.Tags)
@@ -2983,7 +2983,7 @@ public sealed class TimelinePanel : UserControl
             }
             if (IsGhostColumn(pos.X) && pos.Y >= TagH)
             {
-                if (left) _owner.AppendFrame(LeftHalf(pos.X, Ctx.FrameCount), l >= 0 ? l : Ctx.CurrentLayer);
+                if (left) _owner.AppendFrame(TopHalf(pos.Y, pos.Y < TagH + HeadH ? -1 : l), l >= 0 ? l : Ctx.CurrentLayer);
                 else if (right) _owner.ShowEmptyMenu();
                 return;
             }
@@ -3618,7 +3618,7 @@ public sealed class TimelinePanel : UserControl
                 int f = ghost ? Ctx.FrameCount : FrameAt(pos.X);
                 bool header = pos.Y < TagH + HeadH;
                 int l = header ? -1 : LayerAt(pos.Y);
-                if (ghost && FxRowAt(pos.Y) is null) hover = (l, f, LeftHalf(pos.X, f));
+                if (ghost && FxRowAt(pos.Y) is null) hover = (l, f, TopHalf(pos.Y, l));
             }
             if (hover == _hover) return;
             _hover = hover;
