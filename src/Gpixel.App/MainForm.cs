@@ -1247,11 +1247,23 @@ public sealed class MainForm : Window, Ai.IAiHost
         SetMenuText(_miRedo, h?.RedoLabel is { } r ? $"다시 실행: {r}" : "다시 실행");
     }
 
-    /// <summary>M: 선택 칸의 도구(마지막에 고른 선택 도구)를 고른다. 이미 선택 도구를 쓰는 중이면 칸 안의 다음 도구로(사각 → 원 → 자유 → 스마트).</summary>
+    /// <summary>M을 이만큼 안에 다시 눌러야 선택 칸의 다음 도구로 넘어간다.</summary>
+    private static readonly TimeSpan SelectCycleWindow = TimeSpan.FromSeconds(10);
+    private DateTime _lastSelectCycleKey = DateTime.MinValue;
+
+    /// <summary>
+    /// M: 선택 칸의 도구(마지막에 고른 선택 도구)를 고른다. 이미 선택 도구를 쓰는 중이고 직전 M이 10초 안이면 칸 안의 다음 도구로(사각 → 원 → 자유 → 스마트).
+    /// 10초가 지났으면 바로 바꾸지 않고, 10초 안에 한 번 더 누르면 바꾼다. 다른 도구를 쓰는 중이면 선택 칸 도구로만 바꾼다.
+    /// </summary>
     private void CycleSelectionTool()
     {
         var slot = _toolSlots.First(s => s.Contains(ToolKind.Select));
-        _ctx.Tool = slot.Contains(_ctx.Tool) ? slot.Next(_ctx.Tool) : slot.Current;
+        var now = DateTime.UtcNow;
+        bool recent = now - _lastSelectCycleKey <= SelectCycleWindow;
+        _lastSelectCycleKey = now;
+        if (!slot.Contains(_ctx.Tool)) _ctx.Tool = slot.Current;
+        else if (recent) _ctx.Tool = slot.Next(_ctx.Tool);
+        else ShowMessage(Ui.Shortcut($"{ToolDefs.First(d => d.Tool == _ctx.Tool).Name} — 10초 안에 {KeyText($"도구/{SelectCycleName}")}를 한 번 더 누르면 다음 선택 도구로 바뀝니다."));
         UpdateToolUi();
     }
 
