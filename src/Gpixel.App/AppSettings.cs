@@ -89,6 +89,8 @@ public sealed class AppSettings
     // AI 채팅(Claude Code·Codex)
     /// <summary>채팅에 쓰는 CLI("claude" / "codex", 모르는 값 = claude).</summary>
     public string ChatProvider { get; set; } = "claude";
+    /// <summary>채팅의 "지금 레이어만": 보낼 때의 문서·현재 레이어(그룹이면 그 부위들)만 AI가 고침(나머지는 보기만). 두 탭이 같이 씀.</summary>
+    public bool AiCurrentLayerOnly { get; set; }
     /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>
     public string? AiModel { get; set; }
     /// <summary>claude 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>

@@ -37,6 +37,9 @@ public sealed class McpServer : IDisposable
         Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
     }
 
+    /// <summary>편집기 도구(차례마다 편집 범위를 정하려고 채팅 창이 씀).</summary>
+    public PixelTools Tools => _tools;
+
     /// <summary>"http://127.0.0.1:포트/mcp"(시작 전이면 빈 문자열).</summary>
     public string Url => _port == 0 ? "" : $"http://{_host}:{_port}/mcp";
 

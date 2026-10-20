@@ -44,6 +44,17 @@ public sealed class PixelTools
 
     public PixelTools(IAiHost host) => _host = host;
 
+    /// <summary>
+    /// 편집 범위(채팅의 "지금 레이어만" — 차례 동안). 있으면 그 문서의 그 레이어(그룹이면 그 부위들까지)만 픽셀 도구로 고치고,
+    /// 다른 레이어·문서·구조(프레임·레이어·스킨·캔버스·파일)는 읽기만 된다. null = 제한 없음.
+    /// </summary>
+    public EditScope? Scope { get; set; }
+
+    /// <summary>범위가 있어도 쓸 수 있는 도구(읽기·저장).</summary>
+    private static readonly HashSet<string> ScopeFreeTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "save_project"];
+    /// <summary>범위 안 레이어면 쓸 수 있는 픽셀 도구(<see cref="EditTarget"/>에서 검사).</summary>
+    private static readonly HashSet<string> ScopedPixelTools = ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"];
+
     private EditorContext Ctx => _host.Context;
 
     // ───────────── 도구 목록 ─────────────
@@ -55,7 +66,8 @@ public sealed class PixelTools
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked,opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
             "collapsed,skins,activeSkin (groups only)}] (bottom to top; a group's parts are the layers " +
-            "directly below it), tags, current {frame,layer}, primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
+            "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to one layer: edit only that layer, everything else is read-only), " +
+            "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
             new JsonObject()),
         Tool("get_image",
@@ -413,6 +425,8 @@ public sealed class PixelTools
         try
         {
             var a = arguments;
+            if (Scope is { } scope && !ScopeFreeTools.Contains(name) && !ScopedPixelTools.Contains(name))
+                throw new ToolError($"편집 범위가 \"{scope.Layer.Name}\" 레이어로 제한되어 있어 {name}은(는) 쓸 수 없습니다 — 그 레이어의 픽셀만 고칠 수 있고 나머지는 볼 수만 있습니다(사용자가 채팅의 \"지금 레이어만\"을 끄면 됨)");
             return name switch
             {
                 "get_document" => GetDocument(),
@@ -538,6 +552,14 @@ public sealed class PixelTools
             }
             doc["tags"] = tags;
             doc["current"] = new JsonObject { ["frame"] = ctx.CurrentFrame, ["layer"] = ctx.CurrentLayer };
+            if (Scope is { } scope)
+                doc["editScope"] = ReferenceEquals(scope.Project, p)
+                    ? new JsonObject
+                    {
+                        ["layer"] = p.IndexOf(scope.Layer), ["name"] = scope.Layer.Name,
+                        ["note"] = "Only this layer" + (scope.Layer.IsGroup ? " and its parts" : "") + " may be changed (pixel tools, any frame). Everything else is read-only.",
+                    }
+                    : new JsonObject { ["note"] = "Read-only: the document open when this turn started is no longer open." };
             doc["dirty"] = p.IsDirty;
             var sel = ctx.Selection;
             doc["selection"] = sel.HasSelection
@@ -1279,6 +1301,10 @@ public sealed class PixelTools
         var p = BeginMutation();
         int frame = Frame(a), layer = LayerIndex(a);
         var l = p.Layers[layer];
+        if (Scope is { } scope && (!ReferenceEquals(p, scope.Project) || !scope.Allows(l)))
+            throw new ToolError(ReferenceEquals(p, scope.Project)
+                ? $"편집 범위 밖입니다 — \"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}만 고칠 수 있고 layer {layer} \"{l.Name}\"은(는) 볼 수만 있습니다"
+                : "편집 범위 밖입니다 — 차례를 시작할 때 열려 있던 문서만 고칠 수 있습니다(지금은 다른 문서가 열려 있음)");
         if (l.IsGroup) throw new ToolError("그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요");
         if (p.IsLayerLocked(layer))
             throw new ToolError($"layer {layer} \"{l.Name}\"(또는 그 그룹)이(가) 잠겨 있습니다 — 사용자에게 잠금 해제를 부탁하세요");
@@ -1461,4 +1487,10 @@ public sealed class PixelTools
         ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }),
         ["isError"] = isError,
     };
+}
+
+/// <summary>AI 편집 범위: 문서 하나의 레이어 하나(그룹이면 그 부위들까지).</summary>
+public sealed record EditScope(SpriteProject Project, Layer Layer)
+{
+    public bool Allows(Layer layer) => ReferenceEquals(layer, Layer) || ReferenceEquals(layer.Parent, Layer);
 }

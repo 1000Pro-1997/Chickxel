@@ -186,6 +186,14 @@ public sealed class ChatWindow : Window
     /// <summary>차례가 도는 탭(없으면 null). 차례는 모든 탭을 통틀어 하나만 돈다.</summary>
     private ChatTab? RunningTab => _tabs.FirstOrDefault(t => t.IsRunning);
 
+    /// <summary>"지금 레이어만"(두 탭 공통 설정): 설정에 넣고 모든 탭의 단추를 맞춘다. 진행 중인 차례의 범위는 그대로(다음 메시지부터).</summary>
+    private void SetCurrentLayerOnly(bool on)
+    {
+        if (_settings.AiCurrentLayerOnly == on) return;
+        _settings.AiCurrentLayerOnly = on;
+        foreach (var t in _tabs) t.SyncScopeToggle(on);
+    }
+
     /// <summary>어느 탭의 차례가 시작·끝남: 탭 이름의 작업 중 표시와 모든 탭의 보내기·되돌리기 단추를 고친다.</summary>
     private void OnTurnsChanged()
     {
@@ -460,6 +468,13 @@ public sealed class ChatWindow : Window
         private readonly WrapPanel _chips;
         private readonly TextBox _input;
         private readonly Button _sendButton, _stopButton;
+        private readonly ToggleButton _scopeToggle;
+
+        /// <summary>"지금 레이어만" 단추를 설정 값에 맞춘다(다른 탭에서 바꿨을 때).</summary>
+        public void SyncScopeToggle(bool on)
+        {
+            if (_scopeToggle.IsChecked != on) _scopeToggle.IsChecked = on;
+        }
 
         private readonly List<Attachment> _attachments = new();
         private readonly List<UndoStep> _steps = new();
@@ -517,17 +532,29 @@ public sealed class ChatWindow : Window
             ScrollViewer.SetVerticalScrollBarVisibility(_input, ScrollBarVisibility.Auto);
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
             var imageButton = Ui.Button("이미지…", (_, _) => AttachFile()).Tip("PNG·JPG·GIF·WebP 이미지를 첨부");
-            var canvasButton = Ui.Button("캔버스 첨부", (_, _) => AttachCanvas()).Tip("지금 프레임 모습을 확대해 첨부");
+            var canvasButton = Ui.Button("캔버스 첨부", (_, _) => AttachCanvas()).Tip("지금 프레임 모습을 확대해 첨부(참고 그림 — 작업 대상은 바뀌지 않음)");
+            _scopeToggle = new ToggleButton
+            {
+                Content = "지금 레이어만",
+                IsChecked = _w._settings.AiCurrentLayerOnly,
+                Margin = new Thickness(3, 0, 0, 0),
+                Padding = new Thickness(8, 3),
+                VerticalAlignment = VerticalAlignment.Center,
+                Focusable = false,
+            }.Tip("켜면 보낼 때 고른 레이어(그룹이면 그 부위들)만 AI가 고칩니다. 다른 레이어·다른 파일은 볼 수만 있고, 프레임·레이어·스킨 추가 같은 구조 변경도 막습니다.");
+            _scopeToggle.IsCheckedChanged += (_, _) => _w.SetCurrentLayerOnly(_scopeToggle.IsChecked == true);
             _sendButton = Ui.Button("보내기", (_, _) => Send()).Tip("Enter");
             _stopButton = Ui.Button("정지", (_, _) => StopTurn());
             _stopButton.IsVisible = false;
-            var buttons = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto,Auto"), Margin = new Thickness(0, 4, 0, 0) };
+            var buttons = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*,Auto,Auto"), Margin = new Thickness(0, 4, 0, 0) };
             buttons.Children.Add(imageButton);
             Grid.SetColumn(canvasButton, 1);
             buttons.Children.Add(canvasButton);
-            Grid.SetColumn(_sendButton, 3);
+            Grid.SetColumn(_scopeToggle, 2);
+            buttons.Children.Add(_scopeToggle);
+            Grid.SetColumn(_sendButton, 4);
             buttons.Children.Add(_sendButton);
-            Grid.SetColumn(_stopButton, 4);
+            Grid.SetColumn(_stopButton, 5);
             buttons.Children.Add(_stopButton);
             var inputArea = new Border
             {
@@ -959,12 +986,21 @@ public sealed class ChatWindow : Window
             var attachments = _attachments.ToList();
             session.WorkingDirectory = _w.ProjectFolder();
             session.Model = CurrentModel();
+            // "지금 레이어만": 보내는 순간의 문서·현재 레이어로 편집 범위를 정하고(도구가 막음), AI에게도 알린다.
+            var ctx = _w._ctx;
+            var scope = _w._settings.AiCurrentLayerOnly && ctx.Project is { } sp && ctx.CurrentLayer >= 0 && ctx.CurrentLayer < sp.Layers.Count
+                ? new EditScope(sp, sp.Layers[ctx.CurrentLayer])
+                : null;
+            string scopeText = scope is null ? "" : $"\"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}";
+            _w._mcp.Tools.Scope = scope;
             try
             {
-                session.Send(text, attachments.Select(a => a.Png).ToList());
+                session.Send(scope is null ? text : $"[편집 범위: {scopeText}만 고치세요. 다른 레이어·문서·구조는 볼 수만 있습니다.]\n{text}",
+                    attachments.Select(a => a.Png).ToList());
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
+                _w._mcp.Tools.Scope = null;
                 AddSystemLine($"{Provider.Command}를 실행하지 못했습니다: {ex.Message}", error: true);
                 return;
             }
@@ -973,6 +1009,7 @@ public sealed class ChatWindow : Window
             RemoveHint();
             _follow = true;
             AddUserBubble(text, attachments);
+            if (scope is not null) AddSystemLine($"편집 범위: {scopeText}만 — 나머지는 보기만", error: false);
 
             var label = $"{Provider.Name}: {Shorten(text.Length > 0 ? text : "(이미지)", 24)}";
             var turn = new Turn(label);
@@ -1005,6 +1042,7 @@ public sealed class ChatWindow : Window
         {
             if (_turn is not { } turn) return;
             _turn = null;
+            _w._mcp.Tools.Scope = null;
             FinishStream(turn);
             _messages.Children.Remove(_thinking);
             _progressTimer.Stop();
