@@ -140,6 +140,16 @@ public sealed class AppSettings
     /// <summary>사용자 단축키: 명령 Id("분류/이름") → 키 표기 목록(빈 목록 = 단축키 없음). 기본값과 다른 명령만 담는다.</summary>
     public Dictionary<string, List<string>>? Shortcuts { get; set; }
 
+    // 저장(환경 설정 창)
+    /// <summary>자동 저장: 편집이 <see cref="AutoSaveDelaySeconds"/>초 동안 없으면 지금 문서를 Ctrl+S처럼 저장(파일이 있는 문서만).</summary>
+    public bool AutoSave { get; set; } = true;
+    /// <summary>자동 저장까지 기다리는 시간(초, <see cref="MinAutoSaveDelay"/>~<see cref="MaxAutoSaveDelay"/>).</summary>
+    public int AutoSaveDelaySeconds { get; set; } = DefaultAutoSaveDelay;
+    public const int DefaultAutoSaveDelay = 10, MinAutoSaveDelay = 3, MaxAutoSaveDelay = 600;
+
+    [JsonIgnore]
+    public TimeSpan AutoSaveDelay => TimeSpan.FromSeconds(Math.Clamp(AutoSaveDelaySeconds, MinAutoSaveDelay, MaxAutoSaveDelay));
+
     // 업데이트
     /// <summary>시작할 때마다 새 버전을 자동으로 확인(배포판만, 새 버전이면 업데이트 창). 도움말 > 업데이트 확인은 이 설정과 관계없이 확인한다.</summary>
     public bool UpdateCheck { get; set; } = true;

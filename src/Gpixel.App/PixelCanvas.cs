@@ -498,6 +498,9 @@ public sealed class PixelCanvas : Control
     /// <summary>지금 확대율과 그림 위치(메모리에 남긴 문서를 다시 열 때 <see cref="RestoreView"/>로 되돌림).</summary>
     public (int Zoom, Point Offset) View => (_zoom, _offset);
 
+    /// <summary>마우스로 끄는 중인지(그리기·선택·이동·화면 이동 등 — 자동 저장은 끝날 때까지 미룬다).</summary>
+    public bool IsDragging => _drag != DragMode.None;
+
     /// <summary>확대율·그림 위치를 되돌린다(프로젝트를 바꾸고 현재 레이어·프레임을 정한 뒤 부른다). 미뤄 둔 가운데 놓기는 취소한다.</summary>
     public void RestoreView((int Zoom, Point Offset) view)
     {

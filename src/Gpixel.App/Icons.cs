@@ -43,6 +43,12 @@ public static class Icons
     /// <summary>AI 채팅(Claude·Codex) 단추 아이콘(주황색 별, 16×16).</summary>
     public static Bitmap Claude => Load("claude");
 
+    /// <summary>도구 막대 아래 저장 단추 아이콘(플로피 디스크).</summary>
+    public static Bitmap Save => Load("save");
+
+    /// <summary>도구 막대 아래 "저장한 내용으로 되돌리기" 단추 아이콘(시계 반대 방향 화살표).</summary>
+    public static Bitmap Revert => Load("revert");
+
     private static Bitmap Load(string name)
     {
         if (Cache.TryGetValue(name, out var bmp)) return bmp;

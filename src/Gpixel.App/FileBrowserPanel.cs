@@ -657,12 +657,30 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>목록 우클릭 메뉴(열 때마다 지금 선택에 맞춰 만든다). 동작은 메뉴가 닫힌 뒤에 한다(대화상자·이름 바꾸기 입력란 포커스).</summary>
     private Control[] ListMenu()
     {
-        int count = SelectedPaths.Count;
+        var paths = SelectedPaths;
+        int count = paths.Count;
         static MenuItem Item(string header, Action action, bool enabled, KeyGesture? gesture = null, DispatcherPriority? priority = null)
         {
             var item = new MenuItem { Header = header, IsEnabled = enabled, InputGesture = gesture };
             item.Click += (_, _) => Dispatcher.UIThread.Post(action, priority ?? DispatcherPriority.Default);
             return item;
+        }
+        List<string> projectsOnly;
+        try
+        {
+            projectsOnly = ProjectFilesOnlyDeletion(paths);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            projectsOnly = []; // 딸린 파일을 모르면 일반 삭제와 다른지 알 수 없으므로 숨긴다(삭제가 오류를 알린다).
+        }
+        MenuItem? projectsOnlyItem = null;
+        if (projectsOnly.Count > 0)
+        {
+            projectsOnlyItem = Item(projectsOnly.Count > 1 ? $".gpixel 파일 {projectsOnly.Count}개만 삭제 (휴지통)" : ".gpixel 파일만 삭제 (휴지통)",
+                () => DeleteProjectFilesOnly(projectsOnly), true);
+            ToolTip.SetTip(projectsOnlyItem, "내보낸 PNG·.meta 등 다른 파일은 그대로 두고 .gpixel 프로젝트 파일만 앱 휴지통으로 보냅니다.\n"
+                                             + "마지막 삭제 되살리기(Ctrl+Z)·앱 휴지통 보기로 되살립니다.");
         }
         return
         [
@@ -674,6 +692,7 @@ public sealed class FileBrowserPanel : UserControl
             Item($"{Platform.FileManagerName}에서 열기", ShowInExplorer, count > 0 || CurrentFolder is not null),
             Item(count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)", DeleteSelected, count > 0,
                 Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete)),
+            .. projectsOnlyItem is null ? Array.Empty<Control>() : [projectsOnlyItem],
             new Separator(),
             Item("마지막 삭제 되살리기", () => RestoreLastDeleted(), Trash.Entries().Count > 0, new KeyGesture(Key.Z, Platform.CommandModifier)),
             Item("앱 휴지통 보기…", ShowTrash, true),
@@ -913,6 +932,29 @@ public sealed class FileBrowserPanel : UserControl
         // 앱 휴지통에 보관하므로 묻지 않는다(Ctrl+Z·휴지통 보기로 되살림).
         var what = paths.Count == 1 ? Path.GetFileName(paths[0]) : $"{Path.GetFileName(paths[0])} 외 {paths.Count - 1}개";
         TrashFiles(paths, companions, $"삭제: {what}");
+        RefreshList();
+    }
+
+    /// <summary>
+    /// 고른 파일 중 <c>.gpixel</c> 프로젝트 파일만(내보낸 PNG·.meta와 다른 파일은 남김).
+    /// 일반 삭제가 이보다 더 지우지 않으면(프로젝트가 없거나, 고른 것이 모두 프로젝트이고 딸린 내보내기도 없으면) 삭제와 같으므로 빈 목록.
+    /// 딸린 파일을 읽을 수 없으면 예외.
+    /// </summary>
+    internal static List<string> ProjectFilesOnlyDeletion(IReadOnlyList<string> paths)
+    {
+        var projects = paths.Where(IsProject).ToList();
+        if (projects.Count == 0) return [];
+        if (projects.Count < paths.Count) return projects;
+        return projects.Any(p => CompanionsOf(p).Count > 0) ? projects : [];
+    }
+
+    /// <summary>프로젝트 파일만 휴지통으로(내보내기는 남김). 일반 삭제처럼 묻지 않고 Ctrl+Z로 되살린다.</summary>
+    private void DeleteProjectFilesOnly(IReadOnlyList<string> projects)
+    {
+        var existing = projects.Where(File.Exists).ToList();
+        if (existing.Count == 0) return;
+        var what = existing.Count == 1 ? Path.GetFileName(existing[0]) : $"{Path.GetFileName(existing[0])} 외 {existing.Count - 1}개";
+        TrashFiles(existing, [], $"삭제(.gpixel만): {what}");
         RefreshList();
     }
 

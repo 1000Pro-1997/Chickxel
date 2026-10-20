@@ -99,6 +99,8 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     private readonly List<ToolSlotButton> _toolSlots = new();
     private ToggleButton _tbFiles = null!;
+    /// <summary>도구 막대 아래 끝 저장·되돌리기 단추(<see cref="UpdateSaveButtons"/>가 켜고 끈다).</summary>
+    private Button _tbSave = null!, _tbRevert = null!;
     private TextBlock _cbToolName = null!, _cbHint = null!, _cbZoom = null!;
     private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFit = null!;
     /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
@@ -109,13 +111,15 @@ public sealed class MainForm : Window, Ai.IAiHost
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
         _miRightErase = null!, _miWrap = null!;
     private readonly List<MenuItem> _docItems = new();
-    private MenuItem _miPlayTest = null!;
+    private MenuItem _miPlayTest = null!, _miRevert = null!;
     private readonly Dictionary<ToolKind, MenuItem> _toolMenuItems = new();
 
     private readonly TextBlock _stPos, _stColor, _stSize, _stFrame, _stZoom, _stDirty, _stMessage;
 
     private PlayTestForm? _play;
     private readonly DispatcherTimer _playRefresh = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    /// <summary>자동 저장: 편집할 때마다 다시 재는 한 번짜리 타이머(<see cref="RestartAutoSave"/>, <see cref="AutoSaveTick"/>).</summary>
+    private readonly DispatcherTimer _autoSave = new();
     private DateTime _docStamp;
     private bool _settingsApplied;
     private bool _closeConfirmed, _closePending;
@@ -317,7 +321,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         return img;
     }
 
-    /// <summary>왼쪽 끝 세로 도구 막대(점 그림 아이콘, 도움말에 단축키).</summary>
+    /// <summary>왼쪽 끝 세로 도구 막대(점 그림 아이콘, 도움말에 단축키). 아래 끝에는 저장·되돌리기 단추가 붙어 있고 도구 칸만 스크롤된다.</summary>
     private Control BuildToolBar()
     {
         var stack = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1 };
@@ -332,6 +336,16 @@ public sealed class MainForm : Window, Ai.IAiHost
             _toolSlots.Add(slot);
             stack.Children.Add(slot);
         }
+        _tbSave = ToolBarAction(Icons.Save, "저장 (Ctrl+S)", () => Save());
+        _tbRevert = ToolBarAction(Icons.Revert, "저장한 내용으로 되돌리기", RevertToSaved);
+        var actions = new StackPanel { Orientation = Orientation.Vertical, Spacing = 1, Margin = new Thickness(0, 6, 0, 0) };
+        actions.Children.Add(_tbSave);
+        actions.Children.Add(_tbRevert);
+        var bar = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(actions, Dock.Bottom);
+        bar.Children.Add(actions);
+        // 32px 아이콘 칸 12개(도형·선택은 묶음) — 창이 낮으면 스크롤된다.
+        bar.Children.Add(new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         return new Border
         {
             Background = AppTheme.PanelBrush,
@@ -339,8 +353,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = new Thickness(2, 4, 2, 4),
             Width = Icons.Size + 14,
-            // 32px 아이콘 칸 12개(도형·선택은 묶음) — 창이 낮으면 스크롤된다.
-            Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled },
+            Child = bar,
         };
     }
 
@@ -354,6 +367,32 @@ public sealed class MainForm : Window, Ai.IAiHost
         HorizontalAlignment = HorizontalAlignment.Center,
         Focusable = false,
     }.Tip(tip);
+
+    /// <summary>도구 막대 아래 명령 단추(저장·되돌리기). 켜고 끄기는 <see cref="SetToolBarActionEnabled"/>(꺼지면 아이콘이 흐려짐).</summary>
+    private static Button ToolBarAction(Bitmap icon, string tip, Action onClick)
+    {
+        var b = new Button
+        {
+            Content = IconImage(icon, Icons.Size),
+            Padding = new Thickness(2),
+            Margin = new Thickness(1),
+            MinWidth = 0,
+            MinHeight = 0,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Focusable = false,
+        }.Tip(tip);
+        ToolTip.SetShowOnDisabled(b, true);
+        b.Click += (_, _) => onClick();
+        return b;
+    }
+
+    private static void SetToolBarActionEnabled(Button b, bool on)
+    {
+        b.IsEnabled = on;
+        if (b.Content is Image icon) icon.Opacity = on ? 1 : 0.35;
+    }
 
     /// <summary>메뉴 아래 막대: 현재 도구 이름·도움말(세부 설정은 오른쪽 독 "도구 설정") + 보기 옵션·확대율.</summary>
     private Control BuildContextBar()
@@ -523,6 +562,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             new Separator(),
             DocCmd("저장(+ 시트 내보내기)", () => Save(), "Ctrl+S", KeyScope.Global, (Key.S, Ctrl)),
             DocCmd("다른 이름으로 저장…", () => SaveAs(), "Ctrl+Shift+S", KeyScope.Global, (Key.S, Ctrl | Shift)),
+            _miRevert = Cmd("저장한 내용으로 되돌리기", RevertToSaved),
             DocCmd("내보내기…", OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
             DocCmd("GIF 애니메이션으로 내보내기…", ExportGif),
             DocCmd("닫기", () => CloseProject(), "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
@@ -873,7 +913,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         };
         _playRefresh.Tick += (_, _) => { _playRefresh.Stop(); _play?.DocumentChanged(); };
         _ctx.CurrentChanged += (_, _) => { UpdateStatus(); UpdateToolUi(); };
-        _ctx.UndoChanged += (_, _) => UpdateUndoItems();
+        // 실행취소 기록이 바뀔 때마다(편집·실행취소·다시 실행, 문서 바꿈) 자동 저장 타이머를 처음부터 다시 잰다.
+        _ctx.UndoChanged += (_, _) => { UpdateUndoItems(); RestartAutoSave(); };
+        _autoSave.Tick += (_, _) => AutoSaveTick();
         _ctx.ToolChanged += (_, _) => UpdateToolUi();
         _ctx.ToolOptionsChanged += (_, _) => UpdateToolUi();
         _ctx.OnionSkinChanged += (_, _) => UpdateToolUi();
@@ -1207,6 +1249,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         UpdateTitle();
         UpdateStatus();
         UpdateUndoItems();
+        UpdateSaveButtons();
         UpdateToolUi();
     }
 
@@ -1393,15 +1436,19 @@ public sealed class MainForm : Window, Ai.IAiHost
         UpdateToolUi();
     }
 
-    /// <summary>환경 설정(실행취소 횟수·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
+    /// <summary>환경 설정(실행취소 횟수·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
     private void ShowPreferences()
     {
-        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.TrashPolicy, _settings.UpdateCheck,
+        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.AutoSave, _settings.AutoSaveDelaySeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _settings.UndoSteps = dlg.UndoSteps;
         _settings.TrashPolicy = dlg.TrashPolicy;
         _settings.UpdateCheck = dlg.UpdateCheck;
+        // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
+        _settings.AutoSave = dlg.AutoSave;
+        _settings.AutoSaveDelaySeconds = dlg.AutoSaveDelaySeconds;
+        if (!_settings.AutoSave) _autoSave.Stop();
         _ctx.UndoCapacity = dlg.UndoSteps;
         _browser.Trash.Purge(dlg.TrashPolicy);
         // 기본값과 다른 명령만 저장한다(나중에 기본 단축키가 바뀌어도 고치지 않은 명령은 따라감).
@@ -1480,7 +1527,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>
     /// 다른 문서로 바꿔도 되는지. 저장 위치가 있는 문서는 수정돼 있어도 묻지 않고 메모리에 남긴다(<see cref="SwitchTo"/>).
     /// 저장한 적 없는 새 프로젝트에 수정이 있을 때만 저장 여부를 묻는다. 계속해도 되면 true.
-    /// <paramref name="interactive"/>가 false면(Claude 도구) 사용자 작업을 몰래 바꾸지 않도록, 저장 안 된 수정이 있으면 묻지 않고 실패한다.
+    /// <paramref name="interactive"/>가 false면(AI 도구) 묻지 않으므로, 바꾸면 버려지는 수정(저장한 적 없는 새 프로젝트)이 있을 때만 실패한다.
     /// </summary>
     private bool ConfirmLeave(bool interactive, out string message)
     {
@@ -1488,13 +1535,12 @@ public sealed class MainForm : Window, Ai.IAiHost
         var p = _ctx.Project;
         if (p is null) return true;
         _ctx.CommitFloating();
-        if (!p.IsDirty) return true;
+        if (!p.IsDirty || p.Path is not null) return true;
         if (!interactive)
         {
-            message = $"\"{p.DisplayName}\"에 저장 안 된 수정이 있습니다. 먼저 save_project로 저장하거나 사용자에게 저장·닫기를 부탁하세요.";
+            message = $"\"{p.DisplayName}\"은(는) 아직 저장한 적 없는 새 프로젝트라 바꾸면 수정이 사라집니다. 사용자에게 저장할지 물어보세요(부탁하면 save_project).";
             return false;
         }
-        if (p.Path is not null) return true;
         var answer = Ui.Ask(this, $"\"{p.DisplayName}\"은(는) 아직 저장하지 않은 새 프로젝트입니다. 변경 내용을 저장할까요?", "Gpixel",
             MessageButtons.YesNoCancel, MessageIcon.Question);
         return answer switch
@@ -1537,7 +1583,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         SyncUnsaved();
     }
 
-    /// <summary>파일 목록의 빨간 점(저장 안 한 변경)과 메모리 썸네일을 맞춘다.</summary>
+    /// <summary>파일 목록의 빨간 점(저장 안 한 변경)과 메모리 썸네일, 도구 막대의 저장·되돌리기 단추를 맞춘다.</summary>
     private void SyncUnsaved()
     {
         var files = new Dictionary<string, PixelImage?>(StringComparer.OrdinalIgnoreCase);
@@ -1546,6 +1592,56 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (_ctx.Project is { IsDirty: true } p)
             foreach (var path in OpenDocument.PathsOf(p, _currentSource)) files[path] = _currentThumb;
         _browser.SetUnsaved(files);
+        UpdateSaveButtons();
+    }
+
+    /// <summary>저장 단추는 지금 문서에 저장 안 한 수정이 있을 때만, 되돌리기(단추·메뉴)는 거기에 더해 디스크에 되돌릴 파일이 있을 때만 켠다.</summary>
+    private void UpdateSaveButtons()
+    {
+        bool revert = RevertPath is not null;
+        SetToolBarActionEnabled(_tbSave, _ctx.Project is { IsDirty: true });
+        SetToolBarActionEnabled(_tbRevert, revert);
+        _miRevert.IsEnabled = revert;
+    }
+
+    /// <summary>"저장한 내용으로 되돌리기"로 다시 읽을 파일: 수정된 지금 문서의 프로젝트 파일(아직 없으면 가져온 PNG). 수정이 없거나 디스크에 파일이 없으면 null.</summary>
+    private string? RevertPath
+        => _ctx.Project is not { IsDirty: true } p ? null
+            : p.Path is { } path && File.Exists(path) ? path
+            : _currentSource is { } source && File.Exists(source) ? source
+            : null;
+
+    /// <summary>
+    /// 저장한 내용으로 되돌리기: 확인한 뒤 지금 문서의 수정·실행취소 기록을 버리고 파일을 다시 연다(<see cref="OpenFile(string)"/>).
+    /// 레이어·프레임·확대율·위치는 그대로 둔다. 다시 열지 못하면(가져오기 취소·읽기 오류) 수정한 문서를 버리지 않고 되돌려 놓는다.
+    /// </summary>
+    private void RevertToSaved()
+    {
+        if (_ctx.Project is not { } p || RevertPath is not { } path) return;
+        var name = Path.GetFileName(path);
+        // 묻는 동안 자동 저장이 버릴 수정을 파일에 써 버리지 않게 멈춘다.
+        _autoSave.Stop();
+        if (Ui.Ask(this, $"\"{name}\"의 저장 안 된 수정을 버리고 파일에 저장된 내용으로 되돌릴까요? 되돌린 뒤에는 실행취소할 수 없습니다.",
+                "저장한 내용으로 되돌리기", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
+        {
+            RestartAutoSave();
+            return;
+        }
+        var (source, layer, frame, view) = (_currentSource, _ctx.CurrentLayer, _ctx.CurrentFrame, _canvas.View);
+        p.IsDirty = false;
+        _ctx.SetProject(null);
+        // 같은 파일의 메모리 사본이 남아 있으면 디스크 대신 그것을 꺼내므로 먼저 버린다.
+        if (_docs.Find(path) is { } stale) _docs.Remove(stale);
+        bool reopened = OpenFile(path);
+        if (!reopened)
+        {
+            p.IsDirty = true;
+            SwitchTo(p, source);
+            _browser.SelectFile(CurrentTilePath);
+        }
+        _ctx.SetCurrent(layer, frame);
+        _canvas.RestoreView(view);
+        if (reopened) ShowMessage($"저장한 내용으로 되돌림: {name}{UnsavedSuffix}");
     }
 
     /// <summary>
@@ -1560,6 +1656,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         foreach (var doc in _docs.Items) files.Add(DescribeUnsaved(doc.Project, doc.SourcePath, doc.Thumbnail));
         if (files.Count == 0) return true;
         var dlg = new UnsavedChangesDialog(files);
+        // 묻는 동안 자동 저장이 "저장 안 함"으로 고를 문서를 써 버리지 않게 멈춘다(취소하면 다시 잰다).
+        _autoSave.Stop();
         switch (dlg.ShowDialog(this))
         {
             case DialogResult.No:
@@ -1567,6 +1665,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             case DialogResult.Yes:
                 break;
             default:
+                RestartAutoSave();
                 return false;
         }
         foreach (var p in dlg.Checked)
@@ -1808,6 +1907,35 @@ public sealed class MainForm : Window, Ai.IAiHost
         return SaveTo(p.Path);
     }
 
+    /// <summary>자동 저장 타이머를 처음부터 다시 잰다(편집할 때마다 — 편집이 멈춘 지 정한 시간이 지나야 저장). 꺼져 있으면 멈춘다.</summary>
+    private void RestartAutoSave()
+    {
+        _autoSave.Stop();
+        if (!_settings.AutoSave || !_ctx.HasProject) return;
+        _autoSave.Interval = _settings.AutoSaveDelay;
+        _autoSave.Start();
+    }
+
+    /// <summary>
+    /// 자동 저장: 지금 문서를 Ctrl+S와 같이(내보내기 포함) 묻지 않고 저장한다. 디스크에 프로젝트 파일이 이미 있는 문서만 —
+    /// 저장한 적 없는 새 프로젝트·아직 .gpixel이 없는 PNG 가져오기는 저장하지 않는다. 그리는 중·끄는 중·떠 있는 선택·변형·묶음 기록(값 끌기, AI 차례) 중이면
+    /// 다시 기다린다. 결과·실패는 상태 표시줄에만 알린다.
+    /// </summary>
+    private void AutoSaveTick()
+    {
+        _autoSave.Stop();
+        if (!_settings.AutoSave || _ctx.Project is not { IsDirty: true, Path: { } path } p || !File.Exists(path)) return;
+        if (p.IsStrokeActive || p.History.InGroup || _canvas.IsDragging || _ctx.Selection.IsFloating || _ctx.IsTransforming)
+        {
+            _autoSave.Start();
+            return;
+        }
+        var name = Path.GetFileName(path);
+        ShowMessage(SaveTo(path, interactive: false, out var message)
+            ? $"자동 저장됨 ({name}){UnsavedSuffix}"
+            : $"자동 저장 ({name}) — " + string.Join(" ", message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)));
+    }
+
     private bool SaveAs()
     {
         var p = _ctx.Project;
@@ -2000,6 +2128,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (_ctx.Project?.Path is { } p && string.Equals(p, path, StringComparison.OrdinalIgnoreCase))
         {
             _ctx.Project.IsDirty = true;
+            UpdateSaveButtons();
             ShowMessage($"열린 프로젝트 파일을 휴지통으로 보냈습니다: {Path.GetFileName(path)} — 저장하면 다시 만듭니다.");
         }
         if (_docs.Find(path) is { } doc)
@@ -2025,16 +2154,20 @@ public sealed class MainForm : Window, Ai.IAiHost
         }
         var p = _ctx.Project;
         if (p?.Path is not { } path || !paths.Any(x => string.Equals(x, path, StringComparison.OrdinalIgnoreCase))) return;
-        if (!File.Exists(path)) return;
+        // 파일이 없어졌으면 되돌릴 것도 없다(되돌리기 단추를 끈다).
+        if (!File.Exists(path)) { UpdateSaveButtons(); return; }
         var stamp = SafeStamp(path);
         if (stamp == _docStamp) return;
         _docStamp = stamp;
         var message = p.IsDirty
             ? $"\"{p.DisplayName}\" 파일이 밖에서 바뀌었습니다.\n다시 불러오면 지금 수정한 내용은 사라집니다. 다시 불러올까요?"
             : $"\"{p.DisplayName}\" 파일이 밖에서 바뀌었습니다. 다시 불러올까요?";
+        // 묻는 동안 자동 저장이 밖에서 바뀐 파일을 덮어쓰지 않게 멈춘다.
+        _autoSave.Stop();
         if (Ui.Ask(this, message, "파일 변경", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
         {
             ShowMessage("밖에서 바뀐 파일을 다시 불러오지 않았습니다. 저장하면 덮어씁니다.");
+            RestartAutoSave();
             return;
         }
         p.IsDirty = false;

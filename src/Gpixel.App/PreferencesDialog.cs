@@ -4,13 +4,15 @@ using Gpixel.Core.Edit;
 namespace Gpixel.App;
 
 /// <summary>
-/// 환경 설정: 일반(실행취소 횟수, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
+/// 환경 설정: 일반(실행취소 횟수, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
 {
     private readonly NumericUpDown _undo;
     private readonly TrashPolicyEditor _trash;
+    private readonly CheckBox _autoSave;
+    private readonly NumericUpDown _autoSaveDelay;
     private readonly CheckBox _updateCheck;
     private readonly IReadOnlyList<ShortcutCommand> _commands;
     private readonly Dictionary<string, List<KeyChord>> _keys;
@@ -21,8 +23,8 @@ public sealed class PreferencesDialog : DialogBase
     private (string Id, bool Replace)? _capture;
 
     /// <param name="keys">명령 Id → 지금 단축키.</param>
-    public PreferencesDialog(int undoSteps, TrashPolicy trashPolicy, bool updateCheck, IReadOnlyList<ShortcutCommand> commands,
-        IReadOnlyDictionary<string, List<KeyChord>> keys)
+    public PreferencesDialog(int undoSteps, bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
+        IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
         : base("환경 설정")
     {
         _commands = commands;
@@ -30,6 +32,13 @@ public sealed class PreferencesDialog : DialogBase
 
         _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90);
         _trash = new TrashPolicyEditor(trashPolicy);
+        _autoSave = Ui.Check("자동 저장", autoSave);
+        _autoSaveDelay = Ui.Num(AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay,
+            Math.Clamp(autoSaveDelay, AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay), 70);
+        _autoSaveDelay.IsEnabled = autoSave;
+        _autoSave.IsCheckedChanged += (_, _) => _autoSaveDelay.IsEnabled = _autoSave.On();
+        var autoSaveNote = Ui.Label("저장한 적 있는 파일만, Ctrl+S와 같이(켜져 있으면 시트 내보내기 포함) 저장합니다. 새 프로젝트는 저장하지 않습니다.");
+        autoSaveNote.Foreground = AppTheme.DimTextBrush;
         _updateCheck = Ui.Check("시작할 때 새 버전 확인(있으면 업데이트 창)", updateCheck);
         var updateNote = Ui.Label(AppInfo.IsDevBuild
             ? $"지금은 개발 빌드({AppInfo.VersionText})라 자동으로 확인하지 않습니다. 도움말 > 업데이트 확인…은 언제든 쓸 수 있습니다."
@@ -38,6 +47,10 @@ public sealed class PreferencesDialog : DialogBase
         var general = Ui.Stack(
             Ui.Row(Ui.Label("실행취소 횟수"), _undo, Ui.Label($"단계 (기본 {UndoStack.DefaultCapacity}, 최대 {UndoStack.MaxCapacity})")),
             Ui.Label("줄이면 열린 프로젝트의 오래된 기록부터 버립니다. 많을수록 메모리를 더 씁니다."),
+            Ui.Label("저장", bold: true),
+            Ui.Row(_autoSave, _autoSaveDelay,
+                Ui.Label($"초 동안 편집이 없으면 저장 (기본 {AppSettings.DefaultAutoSaveDelay}, {AppSettings.MinAutoSaveDelay}~{AppSettings.MaxAutoSaveDelay})")),
+            autoSaveNote,
             Ui.Label("앱 휴지통(파일 브라우저에서 지운 파일) 보관", bold: true),
             _trash,
             Ui.Label("업데이트", bold: true),
@@ -72,6 +85,8 @@ public sealed class PreferencesDialog : DialogBase
     }
 
     public int UndoSteps => (int)_undo.NumValue();
+    public bool AutoSave => _autoSave.On();
+    public int AutoSaveDelaySeconds => (int)_autoSaveDelay.NumValue();
     public TrashPolicy TrashPolicy => _trash.Policy;
     public bool UpdateCheck => _updateCheck.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
