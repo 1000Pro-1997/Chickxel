@@ -176,11 +176,12 @@ public sealed class PixelCanvas : Control
     {
         base.OnAttachedToVisualTree(e);
         _antsTimer.Start();
-        // Alt를 누르고 떼면(캔버스에 포커스가 없어도) 커서를 스포이드로 바꾸거나 되돌린다.
+        // Alt를 누르고 떼면(캔버스에 포커스가 없어도) 커서를 스포이드로 바꾸거나 되돌린다. Ctrl(⌘)은 누르는 동안 임시 이동 도구.
         if (TopLevel.GetTopLevel(this) is { } top)
         {
             top.AddHandler(KeyDownEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
             top.AddHandler(KeyUpEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
+            if (top is Window window) window.Deactivated += (_, _) => EndTempMove();
         }
     }
 
@@ -188,6 +189,43 @@ public sealed class PixelCanvas : Control
     {
         if (e.Key is Key.LeftAlt or Key.RightAlt && IsPointerOver)
             Dispatcher.UIThread.Post(UpdateCursor); // KeyState가 먼저 갱신된 뒤에
+        if (IsCommandKey(e.Key))
+        {
+            if (e.RoutedEvent == KeyDownEvent) { if (IsPointerOver) BeginTempMove(); }
+            else EndTempMove();
+        }
+    }
+
+    // ───────────── 임시 이동 도구(Ctrl/⌘를 누르는 동안) ─────────────
+
+    /// <summary>Ctrl(⌘)을 누르기 전 도구(임시 이동 중이 아니면 null).</summary>
+    private ToolKind? _tempMoveFrom;
+    /// <summary>끄는 중에 Ctrl(⌘)을 뗐으면 끌기가 끝난 뒤 되돌린다.</summary>
+    private bool _tempMoveEndPending;
+
+    private static bool IsCommandKey(Key key)
+        => Platform.IsMac ? key is Key.LWin or Key.RWin : key is Key.LeftCtrl or Key.RightCtrl;
+
+    /// <summary>
+    /// Ctrl(⌘)을 누르는 동안 이동 도구로 바꾼다(도구 막대의 이동 단추도 눌린 모습, 커서 = 이동). 떼면 원래 도구로.
+    /// 그룹 화면·변형 중·글자 입력 중·끄는 중이거나 이미 이동 도구면 바꾸지 않는다.
+    /// </summary>
+    private void BeginTempMove()
+    {
+        if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsGroupSelected || _ctx.IsTransforming
+            || _ctx.Tool == ToolKind.Move || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
+            return;
+        _tempMoveFrom = _ctx.Tool;
+        _ctx.Tool = ToolKind.Move;
+    }
+
+    private void EndTempMove()
+    {
+        if (_tempMoveFrom is not { } previous) return;
+        if (_drag != DragMode.None) { _tempMoveEndPending = true; return; }
+        _tempMoveFrom = null;
+        _tempMoveEndPending = false;
+        if (_ctx.Tool == ToolKind.Move) _ctx.Tool = previous; // 그동안 다른 도구를 골랐으면 그대로 둔다
     }
 
     /// <summary>스포이드 도구 아이콘을 2배로 키우고 어두운 테두리를 두른 커서(끝이 집는 점).</summary>
@@ -1082,14 +1120,16 @@ public sealed class PixelCanvas : Control
             return;
         }
 
-        var tool = _ctx.Tool;
         var mods = e.KeyModifiers;
+        // Ctrl(⌘)을 캔버스 밖에서 누르고 들어와 누른 경우도 임시 이동 도구로
+        if (Ui.HasCommand(mods)) BeginTempMove();
+        var tool = _ctx.Tool;
         bool alt = (mods & KeyModifiers.Alt) != 0;
-        if (IsPaintTool(tool) && (alt || Ui.HasCommand(mods)))
+        if (IsPaintTool(tool) && alt)
         {
-            // Alt 또는 Ctrl(⌘)+클릭: 임시 스포이드
+            // Alt+클릭: 임시 스포이드
             tool = ToolKind.Picker;
-            _altUsed = alt;
+            _altUsed = true;
         }
         if (IsPaintTool(tool) && !_ctx.CanEdit)
         {
@@ -1285,6 +1325,8 @@ public sealed class PixelCanvas : Control
         e.Handled = true;
         EndDrag(ToInt(e.GetPosition(this)));
         e.Pointer.Capture(null);
+        // 끄는 중에 Ctrl(⌘)을 뗐으면 이제 원래 도구로
+        if (_tempMoveEndPending) EndTempMove();
     }
 
     private void EndDrag(Point location)

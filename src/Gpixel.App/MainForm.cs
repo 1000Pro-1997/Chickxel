@@ -25,7 +25,7 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     private static readonly (ToolKind Tool, string Name, string Key, string Hint)[] ToolDefs =
     [
-        (ToolKind.Pencil, "연필", "B", "왼쪽: 기본색 · 오른쪽: 보조색(또는 지우개) · Shift+클릭: 마지막 점에서 직선 · Ctrl/Alt+클릭: 색 집기"),
+        (ToolKind.Pencil, "연필", "B", "왼쪽: 기본색 · 오른쪽: 보조색(또는 지우개) · Shift+클릭: 마지막 점에서 직선 · Alt+클릭: 색 집기"),
         (ToolKind.Eraser, "지우개", "E", "투명으로 지웁니다"),
         (ToolKind.Fill, "채우기", "G", "클릭한 곳의 색(허용 오차 안의 비슷한 색 포함) 영역을 채웁니다"),
         (ToolKind.Gradient, "그라데이션", "F", "끌어서 시작점 → 끝점 방향으로 칠합니다(선택 영역이 있으면 그 안만) · Shift: 45° 단위 · 색 정지점·보간·디더링은 도구 설정"),
@@ -37,7 +37,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         (ToolKind.EllipseSelect, "원 선택", "", "드래그로 원 선택(Shift: 정원), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구"),
         (ToolKind.Lasso, "자유 선택", "Q", "끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · Enter: 내려놓기"),
         (ToolKind.MagicWand, "스마트 선택", "W", "클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · 옮기기: V/방향키"),
-        (ToolKind.Move, "이동", "V", "선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션)"),
+        (ToolKind.Move, "이동", "V", "선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션) · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)"),
         (ToolKind.Dodge, "밝게/어둡게", "D", "왼쪽: 밝게 · 오른쪽: 어둡게(한 획에 한 번)"),
         (ToolKind.Dither, "디더링", "T", "무늬(체커·25%·75%)대로 기본색·보조색을 섞어 칠합니다"),
         (ToolKind.ReplaceBrush, "색 바꾸기 브러시", "C", "처음 닿은 색만 기본색으로 바꿉니다"),
@@ -1267,8 +1267,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         foreach (var (t, mi) in _toolMenuItems) mi.IsChecked = t == tool;
         var def = ToolDefs.First(d => d.Tool == tool);
         _cbToolName.Text = Ui.Shortcut(ToolKeyText(tool) is { Length: > 0 } key ? $"{def.Name} ({key})" : def.Name);
-        // macOS: 색 집기는 ⌘/⌥+클릭(Ctrl+클릭은 오른쪽 클릭이 된다).
-        _cbHint.Text = Platform.IsMac ? Ui.Shortcut(def.Hint.Replace("Ctrl/Alt+", "Ctrl+/Alt+")) : def.Hint;
+        _cbHint.Text = Ui.Shortcut(def.Hint);
         _miPixelPerfect.IsChecked = _ctx.PixelPerfect;
         _miFilled.IsChecked = _ctx.ShapeFilled;
         _miGlobalFill.IsChecked = !_ctx.FillContiguous;

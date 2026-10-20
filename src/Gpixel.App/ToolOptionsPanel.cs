@@ -114,8 +114,8 @@ public sealed class ToolOptionsPanel : UserControl
 
         // ── 스포이드
         _pickSource = Combo(v => _ctx.PickerSampleVisible = v == 1);
-        _pickSource.Tip("색을 집을 그림(Alt/Ctrl+클릭 임시 스포이드도 같음)");
-        _pickerBox = Ui.Group("스포이드", Ui.Stack(Ui.Row(Ui.Label("기준"), _pickSource), Dim("Alt/Ctrl+클릭으로 쓰는 임시 스포이드에도 적용됩니다.")));
+        _pickSource.Tip("색을 집을 그림(Alt+클릭 임시 스포이드도 같음)");
+        _pickerBox = Ui.Group("스포이드", Ui.Stack(Ui.Row(Ui.Label("기준"), _pickSource), Dim("Alt+클릭으로 쓰는 임시 스포이드에도 적용됩니다.")));
 
         // ── 밝게/어둡게
         _dodgeNum = NumBox(1, EditorContext.MaxDodgeStrength, v => _ctx.DodgeStrength = v);
