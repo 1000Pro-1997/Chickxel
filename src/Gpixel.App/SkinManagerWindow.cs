@@ -50,7 +50,7 @@ public sealed class SkinManagerWindow : Window
         var help = new TextBlock
         {
             Text = "그룹 = 스킨 칸: 같은 그룹의 스킨은 서로 갈아입히는 그림이고(한 번에 하나), 그룹들은 레이어 순서대로 겹칩니다. " +
-                   "카드를 누르면 바로 적용 · 우클릭 = 복제·이름·삭제·순서. \"▸ 부위별\"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨(\"＋ 이 부위 스킨\")을 만들 수 있습니다.",
+                   "카드를 누르면 바로 적용 · 두 번 누르면 적용하고 창 닫기 · 우클릭 = 복제·이름·삭제·순서. \"▸ 부위별\"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨(\"＋ 이 부위 스킨\")을 만들 수 있습니다.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.DimTextBrush,
             Margin = new Thickness(0, 0, 0, 6),
@@ -64,7 +64,21 @@ public sealed class SkinManagerWindow : Window
         _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Rebuild);
         var filterLine = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4), Children = { Ui.Label("보기"), _filter } };
         var content = new StackPanel { Margin = new Thickness(10, 8), Children = { filterLine, help, previewTitle, _preview, _outfits, _list } };
-        Content = Ui.ScrollHost(content);
+        // 아래 확인 단추(Enter·Esc도 닫기): 카드를 누를 때마다 이미 적용되므로 창만 닫는다.
+        var ok = new Button { Content = "확인", MinWidth = 90, IsDefault = true, IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
+        ok.Click += (_, _) => Close();
+        var footer = new Border
+        {
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(10, 6),
+            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok } },
+        };
+        var root = new DockPanel();
+        DockPanel.SetDock(footer, Dock.Bottom);
+        root.Children.Add(footer);
+        root.Children.Add(Ui.ScrollHost(content));
+        Content = root;
 
         _timer.Tick += (_, _) =>
         {
@@ -592,7 +606,7 @@ public sealed class SkinManagerWindow : Window
         };
     }
 
-    /// <summary>왼쪽 클릭 = <paramref name="apply"/>, 오른쪽 클릭 = 메뉴.</summary>
+    /// <summary>왼쪽 클릭 = <paramref name="apply"/>, 두 번 누르기 = 적용하고 창 닫기, 오른쪽 클릭 = 메뉴.</summary>
     /// <param name="onRelease">끌어서 순서를 바꾸는 카드: 누를 때가 아니라 끌지 않고 놓을 때 입힌다(끌면 <see cref="DragReorder"/>가 놓기를 처리함).</param>
     private void Clickable(Control card, Action apply, Func<Control[]> menu, bool onRelease = false)
     {
@@ -600,6 +614,11 @@ public sealed class SkinManagerWindow : Window
         {
             if (!e.GetCurrentPoint(card).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
+            if (e.ClickCount >= 2)
+            {
+                Dispatcher.UIThread.Post(() => { apply(); Close(); });
+                return;
+            }
             // 다시 만들기가 이 카드를 지우므로 처리기가 끝난 뒤에 적용한다.
             if (!onRelease) Dispatcher.UIThread.Post(apply);
         };
