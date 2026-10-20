@@ -746,7 +746,7 @@ public sealed class SpriteProject
     /// </summary>
     private Layer CopyLayer(Layer src, Layer? parent, Dictionary<Skin, Skin> skinMap)
     {
-        var copy = new Layer(UniqueLayerName(src.Name + " 복사"))
+        var copy = new Layer(NextNumberedName(src.Name, n => _layers.Any(l => l.Name == n)))
         {
             Visible = src.Visible,
             Opacity = src.Opacity,
@@ -1686,6 +1686,36 @@ public sealed class SpriteProject
         if (_layers.All(l => l.Name != baseName)) return baseName;
         for (int i = 2; ; i++)
             if (_layers.All(l => l.Name != $"{baseName} {i}")) return $"{baseName} {i}";
+    }
+
+    /// <summary>
+    /// 복제 이름: 이름 끝이 숫자면 그 숫자 + 1(자릿수 그대로 — <c>item_009</c> → <c>item_010</c>, <c>a-99</c> → <c>a-100</c>),
+    /// 숫자가 없으면 <c>_1</c>을 붙인다. <paramref name="taken"/>인 이름이면 쓰이지 않을 때까지 더 올린다.
+    /// </summary>
+    public static string NextNumberedName(string name, Func<string, bool> taken)
+    {
+        int end = name.Length, start = end;
+        while (start > 0 && char.IsAsciiDigit(name[start - 1])) start--;
+        string prefix, format;
+        System.Numerics.BigInteger n;
+        if (start == end)
+        {
+            prefix = name + "_";
+            format = "";
+            n = 0;
+        }
+        else
+        {
+            prefix = name[..start];
+            format = new string('0', end - start);
+            n = System.Numerics.BigInteger.Parse(name[start..], System.Globalization.CultureInfo.InvariantCulture);
+        }
+        while (true)
+        {
+            n++;
+            var candidate = prefix + n.ToString(format, System.Globalization.CultureInfo.InvariantCulture);
+            if (!taken(candidate)) return candidate;
+        }
     }
 
     /// <summary>"레이어 N" 중 쓰이지 않은 다음 이름.</summary>

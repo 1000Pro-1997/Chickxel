@@ -187,6 +187,58 @@ public sealed class TimelinePanel : UserControl
     }
 
     /// <summary>
+    /// Ctrl/⌘+D(타임라인을 누른 뒤): 고른 종류대로 복제(실행취소 한 단계). 프레임 = 고른 프레임들(이어진 범위면 그 뒤에 통째로, 떨어져 있으면 각각 바로 뒤),
+    /// 레이어 = 고른 레이어들(그룹은 부위까지, 이름 끝 숫자 +1). 그 밖에는 현재 프레임. 복제한 것을 고른다.
+    /// </summary>
+    public void DuplicateSelection()
+    {
+        if (P is not { } p) return;
+        if (_grid.Kind == SelKind.Layers)
+        {
+            var layers = _grid.SelectedLayerList().Select(i => p.Layers[i]).ToList();
+            // 그룹을 골랐으면 그 부위는 그룹과 함께 복제되므로 뺀다.
+            layers.RemoveAll(l => l.Parent is { } g && layers.Contains(g));
+            if (layers.Count == 0) return;
+            var copies = new List<Layer>();
+            _ctx.Structural(() => p.Edit("레이어 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            {
+                foreach (var l in layers) copies.Add(p.DuplicateLayer(p.IndexOf(l)));
+            }));
+            _ctx.SetCurrentLayer(p.IndexOf(copies[0]));
+            _grid.SelectLayerSet(copies);
+            Say($"레이어 {copies.Count}개 복제: {string.Join(", ", copies.Select(c => c.Name))}");
+            return;
+        }
+        var frames = _grid.Kind == SelKind.Frames ? _grid.SelectedFrameList() : [_ctx.CurrentFrame];
+        frames.Sort();
+        if (frames.Count == 0) return;
+        bool contiguous = frames[^1] - frames[0] == frames.Count - 1;
+        var result = new List<int>();
+        _ctx.Structural(() => p.Edit("프레임 복제", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        {
+            if (contiguous)
+            {
+                // a..b 뒤에 a'..b'를 차례로: 복제(바로 뒤에 생김)한 것을 지금까지 붙인 복사본 뒤로 옮긴다.
+                int a = frames[0], b = frames[^1], n = frames.Count;
+                for (int k = 0; k < n; k++)
+                {
+                    p.DuplicateFrame(a + k);
+                    p.MoveFrame(a + k + 1, b + 1 + k);
+                }
+                result.AddRange(Enumerable.Range(b + 1, n));
+            }
+            else
+            {
+                for (int j = frames.Count - 1; j >= 0; j--) p.DuplicateFrame(frames[j]);
+                for (int j = 0; j < frames.Count; j++) result.Add(frames[j] + j + 1);
+            }
+        }));
+        _ctx.SetCurrentFrame(result[0]);
+        if (_grid.Kind == SelKind.Frames || frames.Count > 1) _grid.SelectFrames(result);
+        Say($"프레임 {result.Count}개 복제");
+    }
+
+    /// <summary>
     /// 고른 프레임(머리글로 골랐으면 그 프레임들, 아니면 현재 프레임)을 지운다(실행취소 한 단계).
     /// 모든 프레임을 지울 수는 없다(상태 표시줄에 알림).
     /// </summary>
@@ -1796,6 +1848,14 @@ public sealed class TimelinePanel : UserControl
         public void SelectFrameRange(int a, int b) => SelectFrames(Enumerable.Range(Math.Min(a, b), Math.Abs(b - a) + 1));
 
         /// <summary>레이어(이름 칸)들을 고른다(빈 목록이면 현재 칸).</summary>
+        /// <summary>레이어들을 고른다(복제한 레이어 고르기 등).</summary>
+        public void SelectLayerSet(IEnumerable<Layer> layers)
+        {
+            var list = layers.ToList();
+            SelectLayers(list);
+            if (list.Count > 0) _layerAnchor = list[0];
+        }
+
         private void SelectLayers(IEnumerable<Layer> layers)
         {
             ClearSelection();
@@ -2455,7 +2515,7 @@ public sealed class TimelinePanel : UserControl
                         {
                             var r = new Rect(gx + 1, cy + 1, CellW - 2, CellH - 2);
                             g.FillRectangle(GhostBrush, r);
-                            bool hovered = l >= 0 && _hover.Layer == l && _hover.Frame == frames;
+                            bool hovered = _hover.Frame == frames; // 어느 줄의 단추든 프레임 전체를 복사·추가하므로 열 전체를 함께 강조
                             DrawSplit(g, r, true, hovered ? _hover.Left : null, dim: !hovered);
                         }
                     }
@@ -2563,7 +2623,7 @@ public sealed class TimelinePanel : UserControl
                 {
                     var r = new Rect(FrameX(frames) + 1, TagH + 1, CellW - 2, HeadH - 2);
                     g.FillRectangle(GhostBrush, r);
-                    bool hovered = _hover.Layer == -1 && _hover.Frame == frames;
+                    bool hovered = _hover.Frame == frames;
                     DrawSplit(g, r, true, hovered ? _hover.Left : null, dim: !hovered);
                 }
                 // 태그는 머리글 칸까지 내려오는 괄호로 묶어 보인다.

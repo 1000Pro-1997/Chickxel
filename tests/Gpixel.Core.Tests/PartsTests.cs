@@ -154,7 +154,7 @@ public class PartsTests
         AssertHierarchy(p);
 
         var dupG = p.DuplicateLayer(3);
-        Assert.Equal(["레이어 1", "A", "B", "G", "A 복사", "B 복사", "G 복사", "위"], Names(p));
+        Assert.Equal(["레이어 1", "A", "B", "G", "A_1", "B_1", "G_1", "위"], Names(p));
         Assert.True(dupG.IsGroup);
         Assert.Equal(2, p.ChildCount(dupG));
         Assert.Equal(Red, p.GetCel(4, 0)!.Get(1, 1));
@@ -164,31 +164,31 @@ public class PartsTests
 
         var dupB = p.DuplicateLayer(2);
         Assert.Same(g, dupB.Parent);
-        Assert.Equal(["레이어 1", "A", "B", "B 복사 2", "G", "A 복사", "B 복사", "G 복사", "위"], Names(p));
+        Assert.Equal(["레이어 1", "A", "B", "B_2", "G", "A_1", "B_1", "G_1", "위"], Names(p));
         AssertHierarchy(p);
 
         // 부위는 자기 그룹 안에서만
         p.MoveLayer(1, 99);
-        Assert.Equal(["레이어 1", "B", "B 복사 2", "A", "G"], Names(p).Take(5));
+        Assert.Equal(["레이어 1", "B", "B_2", "A", "G"], Names(p).Take(5));
         p.MoveLayer(3, 0);
-        Assert.Equal(["레이어 1", "A", "B", "B 복사 2", "G"], Names(p).Take(5));
+        Assert.Equal(["레이어 1", "A", "B", "B_2", "G"], Names(p).Take(5));
         AssertHierarchy(p);
 
         // 그룹은 덩어리째
         p.MoveLayer(7, 0);
-        Assert.Equal(["A 복사", "B 복사", "G 복사", "레이어 1", "A", "B", "B 복사 2", "G", "위"], Names(p));
+        Assert.Equal(["A_1", "B_1", "G_1", "레이어 1", "A", "B", "B_2", "G", "위"], Names(p));
         // 그룹 안으로 넣으면 가까운 경계로
         p.MoveLayer(8, 5);
-        Assert.Equal(["A 복사", "B 복사", "G 복사", "레이어 1", "위", "A", "B", "B 복사 2", "G"], Names(p));
+        Assert.Equal(["A_1", "B_1", "G_1", "레이어 1", "위", "A", "B", "B_2", "G"], Names(p));
         AssertHierarchy(p);
 
         // ▲▼
         p.MoveLayerUp(4);
-        Assert.Equal(["A 복사", "B 복사", "G 복사", "레이어 1", "A", "B", "B 복사 2", "G", "위"], Names(p));
+        Assert.Equal(["A_1", "B_1", "G_1", "레이어 1", "A", "B", "B_2", "G", "위"], Names(p));
         p.MoveLayerDown(7);
-        Assert.Equal(["A 복사", "B 복사", "G 복사", "A", "B", "B 복사 2", "G", "레이어 1", "위"], Names(p));
+        Assert.Equal(["A_1", "B_1", "G_1", "A", "B", "B_2", "G", "레이어 1", "위"], Names(p));
         p.MoveLayerDown(6);
-        Assert.Equal(["A", "B", "B 복사 2", "G", "A 복사", "B 복사", "G 복사", "레이어 1", "위"], Names(p));
+        Assert.Equal(["A", "B", "B_2", "G", "A_1", "B_1", "G_1", "레이어 1", "위"], Names(p));
         int undo = p.History.UndoCount;
         p.MoveLayerDown(3);   // 맨 아래 덩어리
         p.MoveLayerUp(8);     // 맨 위
@@ -196,9 +196,9 @@ public class PartsTests
         p.MoveLayerDown(0);   // 맨 아래 부위
         Assert.Equal(undo, p.History.UndoCount);
         p.MoveLayerDown(2);
-        Assert.Equal(["A", "B 복사 2", "B", "G"], Names(p).Take(4));
+        Assert.Equal(["A", "B_2", "B", "G"], Names(p).Take(4));
         p.MoveLayerUp(1);
-        Assert.Equal(["A", "B", "B 복사 2", "G"], Names(p).Take(4));
+        Assert.Equal(["A", "B", "B_2", "G"], Names(p).Take(4));
         AssertHierarchy(p);
 
         // 병합은 일반 → 일반만
@@ -212,7 +212,7 @@ public class PartsTests
 
         // 그룹 삭제는 부위까지
         p.DeleteLayer(3);
-        Assert.Equal(["A 복사", "B 복사", "G 복사", "레이어 1"], Names(p));
+        Assert.Equal(["A_1", "B_1", "G_1", "레이어 1"], Names(p));
         AssertHierarchy(p);
         p.Undo();
         Assert.Equal(Red, p.GetCel(0, 0)!.Get(1, 1));

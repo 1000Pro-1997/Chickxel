@@ -83,6 +83,20 @@ public class ProjectTests
 
     // ───────────── 구조 편집 + 실행취소 ─────────────
 
+    [Theory]
+    [InlineData("item", "item_1")]
+    [InlineData("item_1", "item_2")]
+    [InlineData("item_009", "item_010")]
+    [InlineData("a-99", "a-100")]
+    [InlineData("tile00", "tile01")]
+    [InlineData("7", "8")]
+    public void NextNumberedName_IncrementsTrailingNumberKeepingWidth(string name, string expected)
+        => Assert.Equal(expected, SpriteProject.NextNumberedName(name, _ => false));
+
+    [Fact]
+    public void NextNumberedName_SkipsTakenNames()
+        => Assert.Equal("item_3", SpriteProject.NextNumberedName("item_1", n => n is "item_2"));
+
     [Fact]
     public void Layers_AddDuplicateMoveMergeDelete_WithUndo()
     {
@@ -96,7 +110,7 @@ public class ProjectTests
         Assert.Equal(3, p.Layers.Count);
         Assert.Equal(Blue, p.GetCel(2, 0)!.Get(1, 1));
         Assert.NotSame(p.GetCel(1, 0), p.GetCel(2, 0));
-        Assert.Equal("위 복사", dup.Name);
+        Assert.Equal("위_1", dup.Name);
 
         p.MoveLayer(2, 0);
         Assert.Same(dup, p.Layers[0]);

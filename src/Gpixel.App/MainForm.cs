@@ -1959,6 +1959,8 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     private void Deselect()
     {
+        // 타임라인에 포커스가 있으면 Ctrl/⌘+D = 고른 프레임·레이어 복제
+        if (_timeline.IsGridFocused) { _timeline.DuplicateSelection(); return; }
         if (!_ctx.HasProject || _canvas.ClearPartSelection()) return;
         _ctx.CommitFloating();
         _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
