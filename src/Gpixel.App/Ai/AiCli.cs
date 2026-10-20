@@ -42,7 +42,7 @@ public static class AiCli
         - After editing, verify the result with get_image and fix mistakes before you reply.
         - Your whole turn becomes a single undo step for the user, so several tool calls per request are fine.
         - Don't save (save_project) unless the user asks.
-        - To start a new image use new_project. It fails when the open project has unsaved changes; then tell the user and ask them to save or close it first. Never save on your own to get around it.
+        - To start a new image use new_project (the previous document stays open in the file list, edits kept). It fails only when the open project is a never-saved new project with changes; then tell the user and ask whether to save it. Never save on your own to get around it.
         - Images the user attaches are references; the canvas itself changes only through the tools.
         - If a tool refuses (hidden or locked layer, no open project, ...), tell the user instead of working around it.
         """;

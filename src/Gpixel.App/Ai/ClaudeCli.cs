@@ -10,8 +10,9 @@ namespace Gpixel.App.Ai;
 
 /// <summary>
 /// Claude Code CLI(<c>claude</c>): 로그인 상태는 <c>claude auth status --json</c>, 대화는 <see cref="ClaudeSession"/>.
-/// 모델 목록은 별칭(opus·sonnet·haiku, 늘 최신 버전을 가리킴)이고, 세션 시작 때 Claude Code가 알려 주는 실제 모델 ID를
-/// <see cref="AppSettings.ClaudeResolvedModels"/>에 기억해 "Opus 5.5"처럼 버전까지 보인다.
+/// 모델 목록은 Claude Code가 받아 둔 모델 목록(<see cref="ClaudeCatalog"/>)의 주요 모델을 실제 ID와 이름("Opus 5.5")으로 보인다.
+/// 목록 파일이 없으면 별칭(opus·sonnet·haiku)을 보이고, 세션 시작 때 Claude Code가 알려 주는 실제 모델 ID를
+/// <see cref="AppSettings.ClaudeResolvedModels"/>에 기억해 버전까지 보인다.
 /// </summary>
 public sealed partial class ClaudeProvider : AiProvider
 {
@@ -24,6 +25,11 @@ public sealed partial class ClaudeProvider : AiProvider
         ("sonnet", "균형", "Sonnet: 성능과 속도의 균형 — 대부분의 그림 작업에 알맞습니다."),
         ("haiku", "가장 빠름", "Haiku: 가장 빠르고 사용량이 적음 — 간단한 수정에 알맞습니다."),
     ];
+
+    private static bool IsAlias(string model) => Aliases.Any(a => string.Equals(a.Alias, BaseModel(model), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>"[1m]" 같은 문맥 길이 꼬리표를 뗀 모델 값.</summary>
+    private static string BaseModel(string model) => model.Trim() is var m && m.IndexOf('[') is var i and > 0 ? m[..i] : model.Trim();
 
     public override string Id => "claude";
     public override string Name => "Claude";
@@ -74,24 +80,48 @@ public sealed partial class ClaudeProvider : AiProvider
     public override IReadOnlyList<ModelChoice> Models(AppSettings settings)
     {
         var resolved = settings.ClaudeResolvedModels ?? [];
+        var catalog = ClaudeCatalog.Load(ConfigDir());
         var configured = ConfiguredModel();
-        string? Known(string key) => resolved.TryGetValue(key, out var id) ? PrettyName(id) : null;
+        string? Learned(string key) => resolved.TryGetValue(key, out var id) ? Name(id) : null;
+        // 모델 값 → 이름: 목록의 이름(별칭은 가리키는 모델) → 기억한 실제 모델 → ID 모양으로 짐작.
+        string Name(string model)
+        {
+            var trimmed = model.Trim();
+            var id = BaseModel(trimmed);
+            var ctx = trimmed.Length > id.Length ? $" ({trimmed[(id.Length + 1)..].TrimEnd(']').ToUpperInvariant()})" : "";
+            if (catalog?.AliasTargets.TryGetValue(id.ToLowerInvariant(), out var target) == true) id = target;
+            return (catalog?.Names.TryGetValue(id, out var name) == true ? name : PrettyName(id)) + ctx;
+        }
 
-        var defaultName = Known(DefaultKeyPrefix + (configured ?? "")) ?? (configured is not null ? PrettyName(configured) : null);
+        var defaultName = Learned(DefaultKeyPrefix + (configured ?? ""))
+                          ?? (configured is not null ? Name(configured) : catalog?.DefaultModel is { } d ? Name(d) : null);
         var list = new List<ModelChoice>
         {
             new(null, defaultName is not null ? $"기본 · {defaultName}" : "기본 · 요금제 기본 모델",
                 configured is not null
                     ? $"Claude Code 설정의 모델({configured})을 씁니다."
-                    : "Claude Code 기본값(요금제마다 다름)을 씁니다. 한 번 답을 받으면 실제 모델 이름이 보입니다."),
+                    : "Claude Code 기본값(요금제마다 다름)을 씁니다."),
         };
-        foreach (var (alias, hint, tip) in Aliases)
+        if (catalog is { Main.Count: > 0 })
         {
-            var name = Known(alias) ?? PrettyName(alias) + " (최신)";
-            list.Add(new ModelChoice(alias, $"{name} · {hint}", tip));
+            foreach (var m in catalog.Main)
+            {
+                var alias = Aliases.FirstOrDefault(a => a.Alias == m.Family);
+                list.Add(new ModelChoice(m.Id, alias.Hint is { } hint ? $"{m.Name} · {hint}" : m.Name,
+                    alias.Tip is { } tip ? $"{tip} ({m.Id})" : $"{m.Description} ({m.Id})".Trim()));
+            }
+        }
+        else
+        {
+            foreach (var (alias, hint, tip) in Aliases)
+                list.Add(new ModelChoice(alias, $"{Learned(alias) ?? PrettyName(alias) + " (최신)"} · {hint}", tip));
         }
         if (settings.AiModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
-            list.Add(new ModelChoice(custom, Known(custom) ?? PrettyName(custom), "설정 파일에 적힌 모델"));
+        {
+            var name = Learned(custom) ?? Name(custom);
+            list.Add(new ModelChoice(custom, IsAlias(custom) ? $"{name} · {BaseModel(custom)} 별칭" : name,
+                IsAlias(custom) ? $"별칭 {custom} — Claude Code가 가리키는 모델이 바뀌면 함께 바뀝니다." : "설정 파일에 적힌 모델"));
+        }
         return list;
     }
 
@@ -106,6 +136,10 @@ public sealed partial class ClaudeProvider : AiProvider
 
     public override IChatSession CreateSession(string path, McpServer mcp) => new ClaudeSession(path, mcp);
 
+    /// <summary>Claude Code 설정 폴더(<c>$CLAUDE_CONFIG_DIR</c> 또는 <c>~/.claude</c>).</summary>
+    private static string ConfigDir()
+        => Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR") is { Length: > 0 } custom ? AiCli.ExpandHome(custom) : Path.Combine(AiCli.Home, ".claude");
+
     /// <summary>
     /// 모델을 넘기지 않을 때 Claude Code가 쓰는 설정 값: 환경 변수 <c>ANTHROPIC_MODEL</c> → 사용자 설정
     /// (<c>$CLAUDE_CONFIG_DIR/settings.json</c> 또는 <c>~/.claude/settings.json</c>)의 <c>model</c>. 없으면 null(요금제 기본값).
@@ -113,10 +147,9 @@ public sealed partial class ClaudeProvider : AiProvider
     private static string? ConfiguredModel()
     {
         if (Environment.GetEnvironmentVariable("ANTHROPIC_MODEL") is { Length: > 0 } env) return env.Trim();
-        var dir = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR") is { Length: > 0 } custom ? AiCli.ExpandHome(custom) : Path.Combine(AiCli.Home, ".claude");
         try
         {
-            var file = Path.Combine(dir, "settings.json");
+            var file = Path.Combine(ConfigDir(), "settings.json");
             if (!File.Exists(file)) return null;
             return JsonNode.Parse(File.ReadAllText(file)) is JsonObject o && AiCli.Str(o["model"]) is { Length: > 0 } model ? model.Trim() : null;
         }
@@ -145,6 +178,61 @@ public sealed partial class ClaudeProvider : AiProvider
     [GeneratedRegex(@"^(?:claude-(?:(?<fam>opus|sonnet|haiku)-(?<maj>\d+)(?:-(?<min>\d{1,2}))?|(?<maj>\d+)(?:-(?<min>\d{1,2}))?-(?<fam>opus|sonnet|haiku))(?:-\d{8})?|(?<fam>opus|sonnet|haiku))(?:\[(?<ctx>\d+[km])\])?$",
         RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture)]
     private static partial Regex ModelIdPattern();
+}
+
+/// <summary>
+/// Claude Code가 받아 두는 모델 목록(<c>~/.claude/cache/model-catalog/*.json</c>, 가장 최근 것): 주요 모델(<c>section = "main"</c>),
+/// 모든 모델의 ID → 이름, 별칭(opus·sonnet·haiku)이 가리키는 모델, 설정이 없을 때의 기본 모델.
+/// Claude Code 내부 파일이라 모양이 바뀌거나 없으면 null(별칭 목록으로 돌아감).
+/// </summary>
+public sealed record ClaudeCatalog(
+    IReadOnlyList<(string Id, string Name, string Family, string Description)> Main,
+    IReadOnlyDictionary<string, string> Names,
+    IReadOnlyDictionary<string, string> AliasTargets,
+    string? DefaultModel)
+{
+    public static ClaudeCatalog? Load(string configDir)
+    {
+        try
+        {
+            var dir = Path.Combine(configDir, "cache", "model-catalog");
+            if (!Directory.Exists(dir)) return null;
+            ClaudeCatalog? best = null;
+            double bestAt = double.MinValue;
+            foreach (var file in Directory.EnumerateFiles(dir, "*.json"))
+            {
+                if (JsonNode.Parse(File.ReadAllText(file)) is not JsonObject root || root["catalog"] is not JsonObject cat) continue;
+                double at = root["fetchedAt"] is JsonValue v && v.TryGetValue(out double d) ? d : 0;
+                if (at < bestAt || Parse(cat) is not { } parsed) continue;
+                best = parsed;
+                bestAt = at;
+            }
+            return best;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static ClaudeCatalog? Parse(JsonObject cat)
+    {
+        if (cat["config"] is not JsonObject config || config["models"] is not JsonArray models) return null;
+        var main = new List<(string, string, string, string)>();
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var node in models)
+        {
+            if (node is not JsonObject m || AiCli.Str(m["id"]) is not { Length: > 0 } id || AiCli.Str(m["name"]) is not { Length: > 0 } name) continue;
+            names[id] = name;
+            if (AiCli.Str(m["section"]) == "main")
+                main.Add((id, name, AiCli.Str(m["runtime"]?["family"]) ?? "", AiCli.Str(m["description"]) ?? ""));
+        }
+        var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (config["provider_alias_targets"] is JsonObject targets)
+            foreach (var (alias, node) in targets)
+                if (AiCli.Str(node?["default"]) is { Length: > 0 } target) aliases[alias] = target;
+        return names.Count == 0 ? null : new ClaudeCatalog(main, names, aliases, AiCli.Str(cat["state"]?["model"]));
+    }
 }
 
 /// <summary>

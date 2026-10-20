@@ -353,7 +353,7 @@ public sealed class PixelTools
                 ["secondary"] = ColorProp("Secondary color."),
             }),
         Tool("new_project",
-            "Create a new empty project and open it (fails if the open project has unsaved changes). With file_name the project " +
+            "Create a new empty project and open it (the previous document stays open with its edits; fails only if it is a never-saved new project with changes). With file_name the project " +
             "is saved as a .gpixel file in the current folder (fails if that file exists).",
             new JsonObject
             {
@@ -367,7 +367,7 @@ public sealed class PixelTools
             "Save the open project to its file (and export the sheet if the project is set up to). Fails if it has never been saved.",
             new JsonObject()),
         Tool("open_file",
-            "Open a .gpixel project or a .png image (fails if the open project has unsaved changes). Relative paths are resolved " +
+            "Open a .gpixel project or a .png image (fails only if the open project is a never-saved new project with changes). Relative paths are resolved " +
             "against the current folder.",
             new JsonObject { ["path"] = Str("File path.") },
             "path"));

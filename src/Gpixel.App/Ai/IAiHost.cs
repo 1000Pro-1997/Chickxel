@@ -19,7 +19,7 @@ public interface IAiHost
     void SetPalette(IReadOnlyList<Color32> colors);
 
     /// <summary>
-    /// 새 프로젝트를 만든다. 열린 프로젝트에 저장 안 된 수정이 있으면 실패한다.
+    /// 새 프로젝트를 만든다. 열린 문서는 수정이 있어도 메모리에 남고, 저장한 적 없는 새 프로젝트에 수정이 있을 때만 실패한다.
     /// <paramref name="fileName"/>이 있으면 <see cref="CurrentFolder"/>에 저장한다(같은 이름 파일이 있으면 실패).
     /// </summary>
     bool CreateProject(int width, int height, string? fileName, Color32? background, out string message);
@@ -27,6 +27,6 @@ public interface IAiHost
     /// <summary>열린 프로젝트를 지금 경로에 저장(+설정대로 시트 내보내기). 경로가 없으면 실패.</summary>
     bool SaveProject(out string message);
 
-    /// <summary>.gpixel/PNG를 연다. 열린 프로젝트에 저장 안 된 수정이 있으면 실패한다.</summary>
+    /// <summary>.gpixel/PNG를 연다. 저장한 적 없는 새 프로젝트에 수정이 있을 때만 실패한다(다른 문서는 메모리에 남음).</summary>
     bool OpenFile(string path, out string message);
 }

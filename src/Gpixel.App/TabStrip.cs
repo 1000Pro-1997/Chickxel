@@ -18,7 +18,7 @@ public delegate void TabIconPainter(DrawingContext g, Rect area, IImmutableSolid
 
 /// <summary>
 /// 앱 공통 탭 줄: 대화상자 페이지 탭·패널 머리글 탭·값 고르기 묶음이 모두 이것을 쓴다(<see cref="TabStripKind"/>로 크기·모양만 다름).
-/// 탭마다 글자 그리고/또는 그림(<see cref="Add"/>), 도움말(<see cref="SetTip"/>), 숨기기(<see cref="SetTabVisible"/>).
+/// 탭마다 글자 그리고/또는 그림(<see cref="Add"/>), 글자 바꾸기(<see cref="SetText"/>), 도움말(<see cref="SetTip"/>), 숨기기(<see cref="SetTabVisible"/>).
 /// 마우스 올리면 밝게, 클릭하면 고른다. 키보드: 포커스가 있으면 ←/→·Home/End, Ctrl+Tab / Ctrl+Shift+Tab(돌아가며).
 /// 줄 오른쪽 끝에 다른 컨트롤을 둘 수 있다(<see cref="Trailing"/>, 페이지·작은 탭).
 /// <see cref="SelectedIndex"/>가 바뀌면(코드로 바꿔도) <see cref="SelectionChanged"/> — 콤보 상자와 같다.
@@ -32,10 +32,12 @@ public sealed class TabStrip : Border
     /// <summary>값 고르기 묶음의 바깥 모서리 반지름(앱의 다른 단추와 같은 둥근 사각형).</summary>
     private const double SegmentRadius = 4;
 
-    private sealed class Tab(Border box, TextBlock text, TabIcon? icon)
+    private sealed class Tab(Border box, TextBlock text, TextBlock? reserve, TabIcon? icon)
     {
         public readonly Border Box = box;
         public readonly TextBlock Text = text;
+        /// <summary>굵은 글자 너비를 잡아 두는 보이지 않는 글자(글자 없는 탭은 null).</summary>
+        public readonly TextBlock? Reserve = reserve;
         public readonly TabIcon? Icon = icon;
     }
 
@@ -151,10 +153,11 @@ public sealed class TabStrip : Border
             content.Children.Add(iconView);
         }
         var label = new TextBlock { Text = text, FontSize = fontSize, VerticalAlignment = VerticalAlignment.Center };
+        TextBlock? reserve = null;
         if (text is not null)
         {
             // 고른 탭은 굵게 — 굵은 글자 너비를 미리 잡아 두어 고를 때 탭 너비가 흔들리지 않게 한다.
-            var reserve = new TextBlock { Text = text, FontSize = fontSize, FontWeight = FontWeight.SemiBold, Opacity = 0, IsHitTestVisible = false };
+            reserve = new TextBlock { Text = text, FontSize = fontSize, FontWeight = FontWeight.SemiBold, Opacity = 0, IsHitTestVisible = false };
             content.Children.Add(new Panel { Children = { reserve, label }, VerticalAlignment = VerticalAlignment.Center });
         }
         var box = new Border
@@ -180,7 +183,7 @@ public sealed class TabStrip : Border
         box.PointerEntered += (_, _) => { _hover = index; UpdateVisuals(); };
         box.PointerExited += (_, _) => { if (_hover == index) _hover = -1; UpdateVisuals(); };
         box.Tip(tip);
-        _tabs.Add(new Tab(box, label, iconView));
+        _tabs.Add(new Tab(box, label, reserve, iconView));
         _row.Children.Add(box);
         UpdateVisuals();
         return index;
@@ -190,6 +193,16 @@ public sealed class TabStrip : Border
     public TabStrip SetTip(int index, string? tip)
     {
         _tabs[index].Box.Tip(tip);
+        return this;
+    }
+
+    /// <summary>글자가 있는 탭의 글자를 바꾼다(예: 작업 중 표시).</summary>
+    public TabStrip SetText(int index, string text)
+    {
+        var tab = _tabs[index];
+        if (tab.Reserve is not { } reserve) throw new InvalidOperationException("글자 없는 탭입니다.");
+        reserve.Text = text;
+        tab.Text.Text = text;
         return this;
     }
 
