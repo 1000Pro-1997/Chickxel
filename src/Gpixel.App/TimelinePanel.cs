@@ -524,15 +524,39 @@ public sealed class TimelinePanel : UserControl
         _ctx.Structural(() => p.ResizePart(index, dlg.NewWidth, dlg.NewHeight, dlg.ImageAnchor));
     }
 
-    /// <summary>부위 위치(프레임 안 왼쪽 위 X·Y) 입력.</summary>
+    /// <summary>부위 위치(프레임 안 왼쪽 위 X·Y) 입력. 그룹이 자동 배치 중이면 옮기기 전에 자동 배치를 풀지 묻는다(풀기 + 옮기기 = 실행취소 한 단계).</summary>
     private void SetPartPosition(int index)
     {
         if (P is not { } p || index < 0 || index >= p.Layers.Count || !p.Layers[index].IsPart) return;
         var part = p.Layers[index];
         var dlg = new PartOffsetDialog(part.Name, part.PartOffset);
         if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Offset == part.PartOffset) return;
-        var offset = dlg.Offset;
-        _ctx.Structural(() => p.SetPartOffset(index, offset));
+        if (!GroupLayoutDialog.ConfirmManualMove(this, part)) return;
+        _ctx.MovePart(part, dlg.Offset);
+    }
+
+    /// <summary>그룹 자동 배치 설정 창(적용 = 켜기·설정, "자동 배치 끄기" = 끄기 — 각각 실행취소 한 단계).</summary>
+    private void EditGroupLayout(int index)
+    {
+        if (P is not { } p || index < 0 || index >= p.Layers.Count || p.Layers[index] is not { IsGroup: true } group) return;
+        var dlg = new GroupLayoutDialog(p, group, _ctx.CurrentFrame);
+        switch (dlg.ShowDialog(this))
+        {
+            case DialogResult.OK:
+                bool was = group.AutoLayout is not null;
+                _ctx.SetGroupLayout(group, dlg.Layout);
+                Say(was ? $"그룹 \"{group.Name}\" 자동 배치 설정을 바꿨습니다" : $"그룹 \"{group.Name}\" 자동 배치 켜짐 — 부위를 더하거나 크기를 바꾸면 다시 배치합니다");
+                break;
+            case DialogResult.No:
+                TurnOffGroupLayout(group);
+                break;
+        }
+    }
+
+    private void TurnOffGroupLayout(Layer group)
+    {
+        _ctx.SetGroupLayout(group, null);
+        Say($"그룹 \"{group.Name}\" 자동 배치 끔 — 부위는 지금 자리에 그대로");
     }
 
     /// <summary>그룹 접기/펼치기(기록·수정 표시 없음). 접는 그룹 안 부위를 고르고 있었으면 그룹을 고른다.</summary>
@@ -933,7 +957,7 @@ public sealed class TimelinePanel : UserControl
         {
             items.Add(new Separator());
             items.Add(Item($"부위 크기… ({layer.PartSize.Width}×{layer.PartSize.Height})", () => ResizePartAt(index)));
-            items.Add(Item($"위치… ({layer.PartOffset.X}, {layer.PartOffset.Y})", () => SetPartPosition(index)));
+            items.Add(Item($"위치… ({layer.PartOffset.X}, {layer.PartOffset.Y})" + (layer.IsAutoLaidOut ? " · 자동 배치 중" : ""), () => SetPartPosition(index)));
             if (layer.Parent is { IsGroup: true } owner)
             {
                 items.Add(new MenuItem
@@ -949,6 +973,14 @@ public sealed class TimelinePanel : UserControl
             items.Add(new Separator());
             items.Add(Item("부위 추가…", () => AddPartTo(layer)));
             items.Add(Item(layer.Collapsed ? "펼치기" : "접기", () => ToggleCollapsed(index)));
+            var layoutItem = Item(layer.AutoLayout is null ? "자동 배치…" : "자동 배치 설정…", () => EditGroupLayout(index));
+            if (layer.AutoLayout is not null)
+            {
+                layoutItem.ToggleType = MenuItemToggleType.CheckBox;
+                layoutItem.IsChecked = true;
+            }
+            items.Add(layoutItem);
+            if (layer.AutoLayout is not null) items.Add(Item("자동 배치 끄기", () => TurnOffGroupLayout(layer)));
             items.Add(new MenuItem { Header = Plain($"스킨: {layer.ActiveSkin!.Name}"), ItemsSource = SkinMenuItems(layer) });
         }
         items.Add(new Separator());
@@ -1105,6 +1137,9 @@ public sealed class TimelinePanel : UserControl
         private int _fxGrab, _fxFrom, _fxTo;
         /// <summary>마우스가 올라간 효과 상자(손잡이 강조용).</summary>
         private (Layer Layer, int Index)? _fxHover;
+        /// <summary>마우스가 올라간 자동 배치 표시 ◆의 그룹(도움말 풍선·강조용).</summary>
+        private Layer? _layoutBadgeHover;
+        private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
         private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeWestEast);
         private static readonly IBrush GhostBrush = AppTheme.Brush(Color.FromRgb(38, 38, 43));
         private int _playing = -1;
@@ -1728,8 +1763,39 @@ public sealed class TimelinePanel : UserControl
             if (fw == 0) return (0, 0);
             int right = NameW - 2;
             if (SkinChip(layer) is { W: > 0 } chip) right = chip.X - 4;
+            right -= LayoutBadgeW(layer);
             if (layer.IsPart) right -= PartSizeText(layer).W;
             return (right - fw, fw);
+        }
+
+        /// <summary>자동 배치 표시(◆, 자동 배치가 켜진 그룹만)의 폭(없으면 0).</summary>
+        private static int LayoutBadgeW(Layer layer) => layer is { IsGroup: true, AutoLayout: not null } ? 16 : 0;
+
+        /// <summary>자동 배치 표시 ◆ 자리(x, 폭) — 스킨 칩 바로 왼쪽, 그리기와 같은 자리(누르면 자동 배치 설정). 폭 0 = 자동 배치 꺼짐.</summary>
+        private static (int X, int W) LayoutBadge(Layer layer)
+        {
+            int w = LayoutBadgeW(layer);
+            if (w == 0) return (0, 0);
+            int right = NameW - 2;
+            if (SkinChip(layer) is { W: > 0 } chip) right = chip.X - 2;
+            return (right - w, w);
+        }
+
+        /// <summary>자동 배치 표시 ◆(강조색 마름모, 마우스를 올리면 밝은 바탕).</summary>
+        private static void DrawLayoutBadge(DrawingContext g, Rect r, bool hovered)
+        {
+            if (hovered) g.DrawRectangle(ChipAccentBrush, null, r.Deflate(new Thickness(1, 9)), 3, 3);
+            double cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2, h = 4.5;
+            var geo = new StreamGeometry();
+            using (var c = geo.Open())
+            {
+                c.BeginFigure(new Avalonia.Point(cx, cy - h), true);
+                c.LineTo(new Avalonia.Point(cx + h, cy));
+                c.LineTo(new Avalonia.Point(cx, cy + h));
+                c.LineTo(new Avalonia.Point(cx - h, cy));
+                c.EndFigure(true);
+            }
+            g.DrawGeometry(AppTheme.AccentBrush, null, geo);
         }
 
         /// <summary>효과 종류마다의 상자 색.</summary>
@@ -1756,7 +1822,7 @@ public sealed class TimelinePanel : UserControl
             if (layer.ShownSkin is not { } skin) return (0, 0);
             int want = (int)Math.Ceiling(Math.Min(SkinChipMaxW, AppTheme.MeasureText(skin.Name, AppTheme.SmallFontSize).Width + 10));
             int nameEnd = NameLeft(layer) + (int)Math.Ceiling(AppTheme.MeasureText(LayerTitle(layer), AppTheme.FontSize, bold: true).Width) + 6
-                          + (layer.IsPart ? PartSizeText(layer).W + 4 : 0) + FxBadgeW(layer);
+                          + (layer.IsPart ? PartSizeText(layer).W + 4 : 0) + FxBadgeW(layer) + LayoutBadgeW(layer);
             int w = Math.Max(Math.Min(want, SkinChipMinW), Math.Min(want, right - nameEnd));
             return (right - w, w);
         }
@@ -2159,6 +2225,12 @@ public sealed class TimelinePanel : UserControl
                     DrawSkinChip(g, layer, new Rect(chip.X, y + 9, chip.W, CellH - 18));
                     right = chip.X - 4;
                 }
+                // 자동 배치가 켜진 그룹: 스킨 칩 왼쪽에 ◆(누르면 설정)
+                if (LayoutBadge(layer) is { W: > 0 } lb)
+                {
+                    DrawLayoutBadge(g, new Rect(lb.X, y, lb.W, CellH), ReferenceEquals(_layoutBadgeHover, layer));
+                    right = lb.X - 2;
+                }
                 if (layer.IsPart)
                 {
                     var (size, sw) = PartSizeText(layer);
@@ -2299,6 +2371,13 @@ public sealed class TimelinePanel : UserControl
                 if (left && pos.X < 24) { Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible)); return; }
                 if (left && pos.X < ToggleX) { Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked)); return; }
                 if (left && nameLayer.IsGroup && pos.X < NameX) { _owner.ToggleCollapsed(l); return; }
+                if (left && LayoutBadge(nameLayer) is { W: > 0 } lb && pos.X >= lb.X && pos.X < lb.X + lb.W)
+                {
+                    // ◆ 자동 배치 표시: 설정 창
+                    Ctx.SetCurrentLayer(l);
+                    Dispatcher.UIThread.Post(() => _owner.EditGroupLayout(l));
+                    return;
+                }
                 if (left && FxBadge(nameLayer) is { W: > 0 } fx && pos.X >= fx.X && pos.X < fx.X + fx.W) { _owner.ToggleEffectRows(l); return; }
                 if (left && SkinChip(nameLayer) is { W: > 0 } chip && pos.X >= chip.X && pos.X < chip.X + chip.W)
                 {
@@ -2516,6 +2595,25 @@ public sealed class TimelinePanel : UserControl
             return FxGripAt(pos.X, layer.Effects[row.Effect], p.Frames.Count) is { } grip ? (layer, row.Effect, grip) : null;
         }
 
+        /// <summary>점 위 자동 배치 표시 ◆의 그룹(이름 칸 레이어 본줄만, 아니면 null).</summary>
+        private Layer? LayoutBadgeAt(Avalonia.Point pos)
+        {
+            if (pos.X >= NameW || Ctx.Project is not { } p || FxRowAt(pos.Y) is not null || LayerAt(pos.Y) is var l && l < 0) return null;
+            var layer = p.Layers[l];
+            return LayoutBadge(layer) is { W: > 0 } b && pos.X >= b.X && pos.X < b.X + b.W ? layer : null;
+        }
+
+        /// <summary>◆ 위에 마우스가 올라감/벗어남: 강조, 도움말 풍선, 상태 줄 안내.</summary>
+        private void SetLayoutBadgeHover(Layer? group)
+        {
+            _layoutBadgeHover = group;
+            const string tip = "자동 배치 켜짐 — 눌러 설정";
+            ToolTip.SetTip(this, group is null ? null : tip);
+            ToolTip.SetIsOpen(this, group is not null);
+            if (group is not null) _owner.Say($"그룹 \"{group.Name}\": {tip}");
+            InvalidateVisual();
+        }
+
         /// <summary>고른 셀 묶음에 그림이 하나라도 있는지(그룹 행은 그 부위들).</summary>
         private bool BlockHasContent(SpriteProject p, List<int> rowLayers)
         {
@@ -2670,6 +2768,9 @@ public sealed class TimelinePanel : UserControl
                 if (!ReferenceEquals(edge?.Tag, _tagHover)) { _tagHover = edge?.Tag; InvalidateVisual(); }
                 (Layer, int)? fxHover = fx is { } h ? (h.Layer, h.Index) : null;
                 if (fxHover != _fxHover) { _fxHover = fxHover; InvalidateVisual(); }
+                var badge = LayoutBadgeAt(pos);
+                if (badge is not null) Cursor = HandCursor;
+                if (!ReferenceEquals(badge, _layoutBadgeHover)) SetLayoutBadgeHover(badge);
                 return;
             }
             if (!_reordering)
@@ -2706,6 +2807,7 @@ public sealed class TimelinePanel : UserControl
             base.OnPointerExited(e);
             if (_tagHover is not null) { _tagHover = null; InvalidateVisual(); }
             if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
+            if (_layoutBadgeHover is not null) SetLayoutBadgeHover(null);
             if (_hover.Frame < 0) return;
             _hover = (-1, -1, false);
             InvalidateVisual();

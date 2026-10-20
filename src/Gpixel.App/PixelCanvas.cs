@@ -1781,6 +1781,22 @@ public sealed class PixelCanvas : Control
             Message?.Invoke(this, $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다.");
             return;
         }
+        if (part.IsAutoLaidOut)
+        {
+            // 끌기 시작에서 한 번만 묻는다. 대화상자가 마우스 놓기를 가져가므로 끌기는 잇지 않고, 확인하면 자동 배치를 끈다(다시 끌면 옮겨짐).
+            var group = part.Parent!;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!GroupLayoutDialog.ConfirmManualMove(this, part))
+                {
+                    Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다");
+                    return;
+                }
+                _ctx.SetGroupLayout(group, null);
+                Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치를 껐습니다 — 이제 부위를 끌어 옮길 수 있습니다");
+            });
+            return;
+        }
         _ctx.CommitFloating();
         _arrangePart = part;
         _arrangeStart = _arrangeOffset = part.PartOffset;
@@ -1793,11 +1809,9 @@ public sealed class PixelCanvas : Control
     {
         var part = _arrangePart;
         _arrangePart = null;
-        if (part is null || _ctx.Project is not { } p || _arrangeOffset == _arrangeStart) return;
-        int index = p.IndexOf(part);
-        if (index < 0) return;
+        if (part is null || _ctx.Project is not { } p || _arrangeOffset == _arrangeStart || p.IndexOf(part) < 0) return;
         var offset = _arrangeOffset;
-        _ctx.Structural(() => p.SetPartOffset(index, offset));
+        _ctx.MovePart(part, offset);
         Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
     }
 
@@ -1817,7 +1831,12 @@ public sealed class PixelCanvas : Control
             return true;
         }
         var offset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
-        _ctx.Structural(() => p.SetPartOffset(index, offset));
+        if (!GroupLayoutDialog.ConfirmManualMove(this, part))
+        {
+            Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다");
+            return true;
+        }
+        _ctx.MovePart(part, offset);
         Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
         return true;
     }

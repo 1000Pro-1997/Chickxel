@@ -694,6 +694,26 @@ public sealed class EditorContext
         Structural(() => p.SetPartBorder(index, border));
     }
 
+    /// <summary>
+    /// 부위를 옮긴다(실행취소 한 단계). 그룹이 자동 배치 중이면 같은 단계에서 자동 배치를 끈다 — 먼저 <see cref="GroupLayoutDialog.ConfirmManualMove"/>로 물어본 뒤 부른다.
+    /// </summary>
+    public void MovePart(Layer part, Point offset)
+    {
+        if (Project is not { } p || p.IndexOf(part) is var index && index < 0 || part.PartOffset == offset) return;
+        Structural(() => p.Edit(part.IsAutoLaidOut ? "부위 위치 (자동 배치 끄기)" : "부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            if (part.Parent is { AutoLayout: not null } group) p.SetGroupLayout(group, null);
+            p.SetPartOffset(index, offset);
+        }));
+    }
+
+    /// <summary>그룹 자동 배치 켜기·설정(null = 끄기, 부위는 그 자리에), 실행취소 한 단계.</summary>
+    public void SetGroupLayout(Layer group, GroupLayout? layout)
+    {
+        if (Project is not { } p || !p.Layers.Contains(group)) return;
+        Structural(() => p.SetGroupLayout(group, layout));
+    }
+
     public void Structural(Action action)
     {
         if (Project is null) return;

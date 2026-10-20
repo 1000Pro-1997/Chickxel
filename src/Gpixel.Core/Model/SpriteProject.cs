@@ -464,6 +464,7 @@ public sealed class SpriteProject
     /// <summary>
     /// 실행취소 가능한 편집 하나: 전후 상태(레이어·프레임·태그 목록과 속성, 셀 참조, 캔버스 크기, 설정)를
     /// 기록한다. 안에서 다른 편집 메서드를 불러도 한 단계로 묶인다. 예외가 나면 편집 전으로 되돌린다.
+    /// 끝에 자동 배치가 켜진 그룹의 부위 위치를 다시 계산해 같은 단계에 넣는다(<see cref="Layer.AutoLayout"/>).
     /// 셀 이미지는 참조만 기록하므로 <paramref name="action"/> 안에서 기존 셀 픽셀을 직접 고치지 말고
     /// 새 이미지로 바꿔 넣어야 한다(픽셀 편집은 스트로크로).
     /// </summary>
@@ -480,6 +481,7 @@ public sealed class SpriteProject
         try
         {
             action();
+            change |= RelayoutGroups();
         }
         catch
         {
@@ -594,12 +596,55 @@ public sealed class SpriteProject
         return part;
     }
 
-    /// <summary>부위 위치(캔버스 안 왼쪽 위, 모든 프레임 공통).</summary>
+    /// <summary>부위 위치(캔버스 안 왼쪽 위, 모든 프레임 공통). 자동 배치 중인 그룹의 부위면 <see cref="InvalidOperationException"/>(먼저 <see cref="SetGroupLayout"/>로 끄기).</summary>
     public void SetPartOffset(int layerIndex, Point offset)
     {
         var part = RequirePart(layerIndex);
         if (part.PartOffset == offset) return;
+        if (part.IsAutoLaidOut)
+            throw new InvalidOperationException($"그룹 \"{part.Parent!.Name}\"은(는) 자동 배치 중이라 부위를 옮길 수 없습니다 — 먼저 자동 배치를 끄세요.");
         Edit("부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () => part.PartOffset = offset);
+    }
+
+    /// <summary>
+    /// 그룹 자동 배치 켜기·설정 바꾸기(<paramref name="layout"/>, 범위 밖 값은 맞춤) 또는 끄기(null — 부위는 지금 위치에 그대로). 실행취소 한 단계, 같으면 기록 없음.
+    /// 켜면 부위 위치를 바로 다시 계산하고, 그 뒤 편집마다 다시 맞춘다.
+    /// </summary>
+    public void SetGroupLayout(Layer group, GroupLayout? layout)
+    {
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("이 프로젝트의 그룹 레이어가 아닙니다.", nameof(group));
+        layout = layout?.Normalized();
+        if (Equals(group.AutoLayout, layout)) return;
+        var label = layout is null ? "자동 배치 끄기" : group.AutoLayout is null ? "자동 배치" : "자동 배치 설정";
+        Edit(label, ProjectChange.Layers | ProjectChange.Pixels, () => group.AutoLayout = layout);
+    }
+
+    /// <summary>
+    /// <paramref name="layout"/>대로 놓았을 때 그룹 부위들의 위치(넣는 순서, 숨긴 부위를 빼면 그 부위는 없음). 프로젝트는 바꾸지 않는다(미리 보기·다시 배치용).
+    /// </summary>
+    public IReadOnlyList<(Layer Part, Point Offset)> ComputeGroupLayout(Layer group, GroupLayout layout)
+    {
+        var parts = ChildrenOf(group).Where(l => layout.IncludeHidden || l.Visible).ToList();
+        if (layout.Order == GroupLayoutOrder.TopFirst) parts.Reverse();
+        var offsets = layout.Arrange(parts.Select(l => l.PartSize).ToList(), Bounds);
+        return parts.Select((l, i) => (l, offsets[i])).ToList();
+    }
+
+    /// <summary>자동 배치가 켜진 그룹마다 부위 위치를 다시 맞춘다(편집 안에서만 — <see cref="Edit(string, ProjectChange, Action)"/> 끝). 옮긴 것이 있으면 바뀐 부분.</summary>
+    private ProjectChange RelayoutGroups()
+    {
+        bool moved = false;
+        for (int i = 0; i < _layers.Count; i++)
+        {
+            if (_layers[i] is not { IsGroup: true, AutoLayout: { } layout } group) continue;
+            foreach (var (part, offset) in ComputeGroupLayout(group, layout))
+            {
+                if (part.PartOffset == offset) continue;
+                part.PartOffset = offset;
+                moved = true;
+            }
+        }
+        return moved ? ProjectChange.Layers | ProjectChange.Pixels : ProjectChange.None;
     }
 
     /// <summary>
@@ -709,6 +754,7 @@ public sealed class SpriteProject
             Parent = parent,
             Collapsed = src.Collapsed,
             EffectsCollapsed = src.EffectsCollapsed,
+            AutoLayout = src.AutoLayout,
             PartSize = src.PartSize,
             PartOffset = src.PartOffset,
             PartPivot = src.PartPivot,
@@ -1761,11 +1807,11 @@ public sealed class SpriteProject
     private readonly record struct LayerState(
         Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
         Size PartSize, Point PartOffset, Pivot PartPivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
-        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects)
+        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects, GroupLayout? AutoLayout)
     {
         public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
             l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect,
-            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects);
+            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects, l.AutoLayout);
 
         /// <summary>
         /// 상태를 되돌린다. 지금 스킨(착장)은 실행취소 대상이 아니므로 스킨 목록 구성이 같으면 지금 고른 스킨을 그대로 두고,
@@ -1784,6 +1830,7 @@ public sealed class SpriteProject
             Layer.PartPivot = PartPivot;
             Layer.PartBorder = PartBorder;
             Layer.PartSourceRect = PartSourceRect;
+            Layer.AutoLayout = AutoLayout;
             Layer.Effects = Effects;
             if (Skins is not null)
             {

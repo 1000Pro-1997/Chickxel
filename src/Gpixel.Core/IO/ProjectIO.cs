@@ -678,6 +678,7 @@ public static partial class ProjectIO
             ActiveSkin = l.IsGroup && l.SkinList.IndexOf(l.ActiveSkin!) is > 0 and var ai ? ai : null,
             Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
             Effects = l.Effects.Count > 0 ? l.Effects.Select(e => (EffectDto?)EffectDto.From(e)).ToList() : null,
+            AutoLayout = l is { IsGroup: true, AutoLayout: { } al } ? GroupLayoutDto.From(al) : null,
         }).ToList(),
         Frames = p.Frames.Select(f => new FrameDto
         {
@@ -783,6 +784,7 @@ public static partial class ProjectIO
                 layer.ReplaceSkinsRaw(skins);
                 if (l.ActiveSkin is int ai && ai >= 0 && ai < skins.Count) layer.SetActiveSkinRaw(skins[ai]);
             }
+            if (kind == LayerKind.Group && l.AutoLayout is { } layoutDto) layer.AutoLayout = layoutDto.ToLayout();
             if (l.Effects is { Count: > 0 } effects)
             {
                 var list = new List<LayerEffect>(effects.Count);
@@ -1115,6 +1117,49 @@ public static partial class ProjectIO
         public int? Skin { get; set; }
         /// <summary>레이어 효과(적용 순서대로). 없으면 효과 없음.</summary>
         public List<EffectDto?>? Effects { get; set; }
+        /// <summary>그룹: 자동 배치 설정. 없으면 끔.</summary>
+        public GroupLayoutDto? AutoLayout { get; set; }
+    }
+
+    /// <summary>그룹 자동 배치(<see cref="GroupLayout"/>). 없는 값은 기본값.</summary>
+    private sealed class GroupLayoutDto
+    {
+        public GroupLayoutDirection Direction { get; set; } = GroupLayoutDirection.Row;
+        public int? Columns { get; set; }
+        public LayoutAlign Align { get; set; } = LayoutAlign.Center;
+        public LayoutDistribution Distribution { get; set; } = LayoutDistribution.Center;
+        public int Gap { get; set; } = 1;
+        public int Margin { get; set; }
+        public GroupLayoutOrder Order { get; set; } = GroupLayoutOrder.TopFirst;
+        public bool IncludeHidden { get; set; } = true;
+        /// <summary>배치 영역 [x, y, w, h]. 없으면 캔버스 전체.</summary>
+        public int[]? Area { get; set; }
+
+        public static GroupLayoutDto From(GroupLayout l) => new()
+        {
+            Direction = l.Direction,
+            Columns = l.Direction == GroupLayoutDirection.Grid ? l.Columns : null,
+            Align = l.Align,
+            Distribution = l.Distribution,
+            Gap = l.Gap,
+            Margin = l.Margin,
+            Order = l.Order,
+            IncludeHidden = l.IncludeHidden,
+            Area = l.Area is { } a ? [a.X, a.Y, a.Width, a.Height] : null,
+        };
+
+        public GroupLayout ToLayout() => new GroupLayout
+        {
+            Direction = Direction,
+            Columns = Columns ?? 2,
+            Align = Align,
+            Distribution = Distribution,
+            Gap = Gap,
+            Margin = Margin,
+            Order = Order,
+            IncludeHidden = IncludeHidden,
+            Area = Area is { Length: >= 4 } a ? new Rectangle(a[0], a[1], a[2], a[3]) : null,
+        }.Normalized();
     }
 
     /// <summary>레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay(모르는 종류는 읽을 때 건너뜀).</summary>

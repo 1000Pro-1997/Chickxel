@@ -241,7 +241,8 @@ public sealed class PixelTools
             "Add a part layer to a group. A part has its own size and its own drawing in every frame, and one position (x, y = its " +
             "top-left inside the frame canvas) shared by all frames. It becomes the top part of the group and the current layer. " +
             "Drawing tools on a part use part-local coordinates (0,0 = the part's top-left). Returns its index and the group's " +
-            "new index: parts are inserted directly below their group in the layer list, so indices of the group and of layers above it grow by 1.",
+            "new index: parts are inserted directly below their group in the layer list, so indices of the group and of layers above it grow by 1. " +
+            "If the group has auto layout (get_document `autoLayout`), x/y are ignored and the group's parts are re-arranged.",
             new JsonObject
             {
                 ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part).", 0),
@@ -255,7 +256,9 @@ public sealed class PixelTools
         Tool("set_part",
             "Change a part layer: its position (x, y inside the frame canvas, shared by all frames), its size (width/height; " +
             "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas), " +
-            "and/or its Unity pivot (0..1, origin bottom-left).",
+            "and/or its Unity pivot (0..1, origin bottom-left). A part of a group with auto layout (get_document `autoLayout`) " +
+            "cannot be moved with x/y (error) — its position is computed automatically; resizing re-arranges the group. " +
+            "Only the user can turn auto layout off (timeline group menu \"자동 배치 끄기\").",
             new JsonObject
             {
                 ["layer"] = Int("Part layer index.", 0),
@@ -520,6 +523,7 @@ public sealed class PixelTools
                     o["collapsed"] = l.Collapsed;
                     o["skins"] = Strings(l.Skins.Select(s => s.Name).ToArray());
                     o["activeSkin"] = l.ActiveSkin?.Name;
+                    if (l.AutoLayout is { } al) o["autoLayout"] = LayoutText(al);
                 }
                 layers.Add(o);
             }
@@ -921,9 +925,18 @@ public sealed class PixelTools
         var part = p.Edit<Layer>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPart(group, name, width, height, offset));
         int index = p.IndexOf(part);
         Ctx.SetCurrentLayer(index);
+        var laidOut = group.AutoLayout is null ? "" : offset is null ? $" — group auto layout ({LayoutText(group.AutoLayout)}) re-arranged its parts"
+            : $" — x/y ignored: group has auto layout ({LayoutText(group.AutoLayout)}), its parts were re-arranged";
         return TextResult($"{tool}: part {index} \"{part.Name}\" {width}x{height} @({part.PartOffset.X},{part.PartOffset.Y}) 추가 — 지금 layer {index} (좌표는 부위 안 기준), " +
-                          $"group \"{group.Name}\"은(는) 이제 layer {p.IndexOf(group)}");
+                          $"group \"{group.Name}\"은(는) 이제 layer {p.IndexOf(group)}" + laidOut);
     }
+
+    /// <summary>자동 배치 설정 한 줄 요약(AI에게 알려 줌).</summary>
+    private static string LayoutText(GroupLayout l)
+        => $"{l.Direction.ToString().ToLowerInvariant()}{(l.Direction == GroupLayoutDirection.Grid ? $" {l.Columns} columns" : "")}, " +
+           $"align {l.Align.ToString().ToLowerInvariant()}, distribution {l.Distribution.ToString().ToLowerInvariant()}, gap {l.Gap}, margin {l.Margin}, " +
+           $"order {(l.Order == GroupLayoutOrder.TopFirst ? "top part first" : "bottom part first")}" +
+           (l.IncludeHidden ? "" : ", hidden parts excluded") + (l.Area is { } a ? $", area ({a.X},{a.Y}) {a.Width}x{a.Height}" : "");
 
     private JsonObject SetPart(string tool, JsonObject? a)
     {
@@ -938,6 +951,10 @@ public sealed class PixelTools
         if (x is null && y is null && width is null && height is null && pivotX is null && pivotY is null)
             throw new ToolError("바꿀 값(x, y, width, height, pivot_x, pivot_y) 중 하나 이상이 필요합니다");
 
+        if ((x is not null || y is not null) && part.IsAutoLaidOut)
+            throw new ToolError($"part {index} \"{part.Name}\"의 group \"{part.Parent!.Name}\"은(는) 자동 배치(auto layout: {LayoutText(part.Parent.AutoLayout!)}) 중이라 " +
+                                "x/y로 옮길 수 없습니다 — 위치는 자동으로 정해집니다(width/height·pivot은 바꿀 수 있음, 크기를 바꾸면 다시 배치). " +
+                                "옮기려면 사용자에게 타임라인 그룹 메뉴의 \"자동 배치 끄기\"를 부탁하세요");
         var size = part.PartSize;
         int newW = width ?? size.Width, newH = height ?? size.Height;
         bool resize = newW != size.Width || newH != size.Height;

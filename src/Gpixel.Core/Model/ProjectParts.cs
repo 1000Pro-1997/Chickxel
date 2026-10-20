@@ -63,6 +63,13 @@ public sealed class Layer
     public bool Collapsed { get; internal set; }
     /// <summary>타임라인에서 효과 줄(효과마다 한 줄)을 접어 두었는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
     public bool EffectsCollapsed { get; internal set; }
+    /// <summary>
+    /// 그룹: 자동 배치 설정(null = 끔). 켜져 있으면 부위 위치를 <see cref="SpriteProject"/>가 편집마다 다시 계산하고, 부위를 손으로 옮길 수 없다(먼저 끄기).
+    /// 바꿀 때는 <see cref="SpriteProject.SetGroupLayout"/>로(실행취소됨).
+    /// </summary>
+    public GroupLayout? AutoLayout { get; internal set; }
+    /// <summary>부위: 그룹이 자동 배치 중이라 위치를 손으로 바꿀 수 없는지.</summary>
+    public bool IsAutoLaidOut => IsPart && Parent is { IsGroup: true, AutoLayout: not null };
 
     /// <summary>부위: 셀 크기(부위 셀은 정확히 이 크기).</summary>
     public Size PartSize { get; internal set; }
