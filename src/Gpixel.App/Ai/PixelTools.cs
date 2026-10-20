@@ -1273,15 +1273,13 @@ public sealed class PixelTools
         return p;
     }
 
-    /// <summary>픽셀 도구의 대상 셀을 고르고 그룹·숨김·잠금을 검사한다.</summary>
+    /// <summary>픽셀 도구의 대상 셀을 고르고 그룹·잠금을 검사한다(숨긴 레이어에는 그릴 수 있다 — 앱과 같음).</summary>
     private Target EditTarget(JsonObject? a)
     {
         var p = BeginMutation();
         int frame = Frame(a), layer = LayerIndex(a);
         var l = p.Layers[layer];
         if (l.IsGroup) throw new ToolError("그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요");
-        if (!p.IsLayerVisible(layer))
-            throw new ToolError($"layer {layer} \"{l.Name}\"(또는 그 그룹)이(가) 숨겨져 있습니다 — set_layer로 visible=true로 바꾼 뒤 다시 시도하세요");
         if (p.IsLayerLocked(layer))
             throw new ToolError($"layer {layer} \"{l.Name}\"(또는 그 그룹)이(가) 잠겨 있습니다 — 사용자에게 잠금 해제를 부탁하세요");
         var (w, h) = SourceSize(p, layer);

@@ -1860,7 +1860,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             ShowMessage("잘라낼 선택 영역이 없습니다.");
             return;
         }
-        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
         _ctx.BeginSelectionEdit();
         var clip = _ctx.Selection.Cut(_ctx.EditImage!)!;
         _ctx.NotifyPixels();
@@ -1930,7 +1930,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             ShowMessage("붙여넣을 그림이 없습니다.");
             return;
         }
-        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
         // 끌어 옮길 수 있는 선택 도구(사각·원·자유)는 그대로 두고, 그 밖이면 사각 선택으로.
         if (_ctx.Tool is not (ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso)) _ctx.Tool = ToolKind.Select;
         _ctx.CommitFloating();
@@ -1967,7 +1967,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>선택이 있으면 선택 내용, 없으면 현재 셀을 뒤집는다.</summary>
     private void Flip(bool horizontal)
     {
-        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
         string label = horizontal ? "좌우 뒤집기" : "상하 뒤집기";
         if (_ctx.Selection.HasSelection)
         {
@@ -1992,7 +1992,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         if (_ctx.Selection.HasSelection)
         {
-            if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+            if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
             _ctx.BeginSelectionEdit();
             _ctx.Selection.Rotate90(_ctx.EditImage!, clockwise);
             _ctx.NotifyPixels();
@@ -2021,7 +2021,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>선택 영역(없으면 현재 셀 전체)의 불투명 픽셀 둘레에 기본색으로 1픽셀 외곽선.</summary>
     private void AddOutline(bool diagonal)
     {
-        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
         _ctx.CommitFloating();
         PixelMask region = _ctx.Selection.HasSelection ? _ctx.Selection.Region : new Rectangle(0, 0, _ctx.CanvasWidth, _ctx.CanvasHeight);
         _ctx.BeginStroke();
@@ -2033,7 +2033,7 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     private void ReplaceColor()
     {
-        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 숨김/잠금 상태입니다."); return; }
+        if (!_ctx.CanEdit) { ShowMessage("현재 레이어가 잠겨 있습니다."); return; }
         _ctx.CommitFloating();
         var dlg = new ReplaceColorDialog(_ctx.Primary, _ctx.Secondary, _ctx.Selection.HasSelection);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;

@@ -100,7 +100,7 @@ public sealed class PaletteConvertDialog : DialogBase
         var dither = Dither;
         if (Scope == PaletteConvertScope.CurrentCel)
         {
-            if (!_ctx.CanEdit) return "현재 레이어가 숨김/잠금 상태입니다.";
+            if (!_ctx.CanEdit) return "현재 레이어가 잠겨 있습니다.";
             _ctx.BeginStroke();
             int n = _remap.Apply(_ctx.EditImage!, dither, SelectionClip);
             _ctx.NotifyPixels();

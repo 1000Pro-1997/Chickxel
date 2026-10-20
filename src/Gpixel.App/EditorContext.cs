@@ -429,9 +429,9 @@ public sealed class EditorContext
 
     // ───────────── 그리기 대상 ─────────────
 
-    /// <summary>현재 레이어가 그룹이 아니고, 보이고(그룹 포함), 잠기지 않았으면(그룹 포함) true.</summary>
+    /// <summary>현재 레이어가 그룹이 아니고 잠기지 않았으면(그룹 포함) true. 숨긴 레이어에도 그릴 수 있다.</summary>
     public bool CanEdit
-        => Project is { } p && !p.Layers[_layer].IsGroup && p.IsLayerVisible(_layer) && !p.IsLayerLocked(_layer);
+        => Project is { } p && !p.Layers[_layer].IsGroup && !p.IsLayerLocked(_layer);
 
     /// <summary>현재 셀 이미지(스트로크 중이면 그 이미지, 부위면 부위 크기, 그룹·빈 셀이면 null).</summary>
     public PixelImage? EditImage => _strokeImage ?? Project?.GetCel(_layer, _frame);
@@ -566,7 +566,7 @@ public sealed class EditorContext
         if (Project is null) return "열린 프로젝트가 없습니다.";
         if (_transform is not null) return null;
         if (IsGroupSelected) return "그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요.";
-        if (!CanEdit) return "현재 레이어가 숨김/잠금 상태라 변형할 수 없습니다.";
+        if (!CanEdit) return "현재 레이어가 잠겨 있어 변형할 수 없습니다.";
         bool hadStroke = _selectionStrokeOpen;
         var celBefore = hadStroke ? _strokeImage?.Clone() : null;
         var before = Selection.Save();

@@ -531,6 +531,11 @@ public sealed class PixelCanvas : Control
             }
             DrawImageAt(g, bmp, 0, 0);
             if (dragged is not null) DrawDraggedPart(g, dragged, frame);
+            // 숨긴 일반 레이어도 그릴 수 있으므로, 현재 레이어가 숨김이면 그 셀을 반투명하게 위에 얹어 그리는 것이 보이게 한다(합성·내보내기는 그대로 숨김).
+            if (!peek && !_tiledMode && _ctx.Project is { } hp && _ctx.CurrentPart is null && hp.Layers[_ctx.CurrentLayer] is { IsGroup: false } cur
+                && !hp.IsLayerVisible(_ctx.CurrentLayer) && _ctx.CelBitmap(_ctx.CurrentLayer, frame) is { } hiddenCel)
+                using (g.PushOpacity(0.6))
+                    DrawBitmapAt(g, hiddenCel, 0, 0, W, H, checker: false);
             if (_floatingBmp is not null && !_peekPrevious)
                 g.DrawImage(_floatingBmp, new Rect(0, 0, _floatingBmp.PixelSize.Width, _floatingBmp.PixelSize.Height),
                     ToRect(ImageToScreen(_ctx.Selection.Bounds)));
@@ -564,7 +569,9 @@ public sealed class PixelCanvas : Control
             AppTheme.DrawText(g, "변형: 안쪽 끌기 = 옮기기 · 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준) · 바깥 = 회전(Shift 15°) · 가운데 표시 끌기 = 회전 중심 · Enter 적용 · Esc 취소",
                 new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
         else if (!_ctx.CanEdit)
-            AppTheme.DrawText(g, "현재 레이어가 숨김/잠금 상태라 그릴 수 없습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
+            AppTheme.DrawText(g, "현재 레이어가 잠겨 있어 그릴 수 없습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
+        else if (_ctx.Project is { } vp && !vp.IsLayerVisible(_ctx.CurrentLayer))
+            AppTheme.DrawText(g, _ctx.CurrentPart is null ? "숨긴 레이어를 편집하는 중 — 캔버스에서만 반투명하게 보이고 미리보기·내보내기에는 나오지 않습니다" : "숨긴 부위를 편집하는 중 — 미리보기·프레임 시트에는 나오지 않습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
         else if (_ctx.Project is { } p && _ctx.CurrentPart is { Parent.IsGroup: true } part && p.IsCelInherited(_ctx.CurrentLayer, _ctx.CurrentFrame))
             AppTheme.DrawText(g, $"{SkinManagerWindow.SkinStatus(p, part, _ctx.CurrentFrame)} — 그리면 그 그림을 이 스킨 셀로 복사해 고칩니다",
                 new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
@@ -1133,7 +1140,7 @@ public sealed class PixelCanvas : Control
         }
         if (IsPaintTool(tool) && !_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 숨김/잠금 상태라 그릴 수 없습니다.");
+            Message?.Invoke(this, "현재 레이어가 잠겨 있어 그릴 수 없습니다.");
             return;
         }
         e.Pointer.Capture(this);
@@ -1684,7 +1691,7 @@ public sealed class PixelCanvas : Control
     {
         if (!_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 숨김/잠금 상태라 옮길 수 없습니다.");
+            Message?.Invoke(this, "현재 레이어가 잠겨 있어 옮길 수 없습니다.");
             return;
         }
         _ctx.BeginSelectionEdit();
@@ -1696,7 +1703,7 @@ public sealed class PixelCanvas : Control
     {
         if (!_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 숨김/잠금 상태라 옮길 수 없습니다.");
+            Message?.Invoke(this, "현재 레이어가 잠겨 있어 옮길 수 없습니다.");
             return;
         }
         _ctx.CommitFloating();
