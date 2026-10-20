@@ -844,12 +844,12 @@ public sealed class TimelinePanel : UserControl
     /// <summary>
     /// 레이어 효과 대화상자(고치는 동안 캔버스에 바로 보이고, 확인 = 실행취소 한 단계, 취소 = 되돌림). <paramref name="focus"/>: 처음 고를 효과 번호(-1 = 첫 효과).
     /// </summary>
-    private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null, int addKind = -1)
+    private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null)
     {
         if (P is not { } p || index < 0 || index >= p.Layers.Count) return;
         _ctx.Structural(() =>
         {
-            var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, addKind);
+            var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, motionRange ?? newRange);
             dialog.ShowDialog(this);
             if (dialog.BakeMessage is { } message) Say(message);
         });
@@ -1094,27 +1094,15 @@ public sealed class TimelinePanel : UserControl
             Item("셀 잘라내기 (Ctrl+X)", () => CopySelection(true)),
             Item(_clip is { WholeFrames: true } ? "프레임 붙여넣기 (Ctrl+V)" : "셀 붙여넣기 (Ctrl+V)", () => PasteSelection(), _clip is not null),
         ]);
-        // 고른 칸들의 프레임 범위에만 입혀지는 효과를 바로 추가(창이 그 효과를 고른 채 열림).
+        // 효과 창을 고른 칸들의 프레임 범위로 열어 거기서 종류·범위를 골라 추가한다.
         var effectRange = FrameRange.Of(frames.Min(), frames.Max(), p.Frames.Count);
-        var add = new MenuItem { Header = $"효과 추가 ({(effectRange is null ? "모든 프레임" : range)})" };
         // 움직이는 효과는 여러 프레임에 걸쳐야 움직이므로, 한 프레임만 골랐으면 그 프레임부터 그 태그(없으면 애니메이션) 끝까지로 넓힌다.
         int start = frames.Min();
         int end = frames.Count > 1 ? frames.Max()
             : p.Tags.Where(t => t.From <= start && start <= t.To).Select(t => t.To).DefaultIfEmpty(p.Frames.Count - 1).Max();
         var motionRange = FrameRange.Of(start, end, p.Frames.Count);
-        for (int k = 0; k < LayerEffectsDialog.Kinds.Length; k++)
-        {
-            int kind = k;
-            bool motion = LayerEffectsDialog.IsAnimated(k);
-            if (motion && k > 0 && !LayerEffectsDialog.IsAnimated(k - 1)) add.Items.Add(new Separator());
-            var r = motion ? motionRange : effectRange;
-            string text = motion && frames.Count == 1
-                ? $"{LayerEffectsDialog.Kinds[k]} ({(r is { } m ? m.From == m.To ? $"프레임 {m.From + 1}만 — 움직이려면 여러 프레임" : $"프레임 {m.From + 1}~{m.To + 1}" : "모든 프레임")})"
-                : LayerEffectsDialog.Kinds[k];
-            add.Items.Add(Item(text, () => EditLayerEffects(layer, -1, r, kind)));
-        }
         items.Add(new Separator());
-        items.Add(add);
+        items.Add(Item($"효과 추가… ({(effectRange is null ? "모든 프레임" : range)})", () => EditLayerEffects(layer, -1, effectRange, motionRange)));
         items.Add(new Separator());
         items.Add(Item($"태그 만들기… ({range})", NewTag));
         items.Add(Item("뒤에 빈 프레임 (Alt+N)", NewEmptyFrame));

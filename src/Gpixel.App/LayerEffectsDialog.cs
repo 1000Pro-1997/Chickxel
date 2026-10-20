@@ -11,10 +11,11 @@ namespace Gpixel.App;
 public sealed partial class LayerEffectsDialog : DialogBase
 {
     private const int PreviewBox = 220;
+    /// <summary>오른쪽(미리보기) 칸 폭 — 고정(넉넉히): 설명 글이 바뀌어도 창 폭이 그대로.</summary>
+    private const int RightWidth = PreviewBox * 2 + 72;
 
     /// <summary>
     /// 추가할 수 있는 효과 종류(이름, 새 효과 만들기) — 번호 = <see cref="Create"/>의 kind. 고정 효과 먼저, 움직이는 효과는 뒤에 모아 둔다.
-    /// 타임라인 셀 메뉴 "효과 추가 ▸"도 같은 목록(움직이는 효과 앞에 구분선).
     /// </summary>
     private static readonly (string Name, Func<LayerEffect> New)[] KindTable =
     [
@@ -80,17 +81,19 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private readonly PreviewView _preview = new();
     private readonly DispatcherTimer _timer = new();
     private int _previewFrame;
+    /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
+    private static bool s_seamlessLoop;
     private bool _syncing, _baked;
 
     /// <summary>영구 적용으로 닫혔으면 상태 표시줄에 보일 알림.</summary>
     public string? BakeMessage { get; private set; }
 
     /// <param name="focus">처음 고를 효과 번호(범위 밖이면 첫 효과).</param>
-    /// <param name="newRange">새로 추가하는 효과의 프레임 범위(타임라인에서 칸을 고르고 "효과 추가"로 열었을 때). null = 모든 프레임.</param>
-    /// <param name="addKind">열자마자 추가할 효과 종류(-1 = 추가하지 않음).</param>
-    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, int addKind = -1) : base($"레이어 효과 — {layer.Name}")
+    /// <param name="newRange">"추가 범위"의 처음 값(타임라인에서 칸을 고르고 "효과 추가…"로 열었을 때 그 프레임들). null = 모든 프레임.</param>
+    /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
+    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base($"레이어 효과 — {layer.Name}")
     {
-        _newRange = newRange;
+        _motionRange = motionRange ?? newRange;
         _project = ctx.Project ?? throw new InvalidOperationException("열린 프로젝트가 없습니다.");
         _layer = layer;
         _frame = Math.Clamp(ctx.CurrentFrame, 0, _project.Frames.Count - 1);
@@ -98,8 +101,21 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _original = layer.Effects;
         _effects = [.. layer.Effects];
 
-        var kind = Ui.Combo(150, Kinds);
-        var add = Ui.Button("추가", (_, _) => Add(kind.SelectedIndex), 60);
+        int n = _project.Frames.Count;
+        _addAll = Ui.Check("모든 프레임", newRange is null);
+        _addFrom = Ui.Num(1, n, (newRange?.From ?? 0) + 1, 56);
+        _addTo = Ui.Num(1, n, (newRange?.To ?? n - 1) + 1, 56);
+        _addFrom.IsEnabled = _addTo.IsEnabled = newRange is not null;
+        ToolTip.SetTip(_addAll, "추가하는 효과가 입혀질 프레임(추가한 뒤에도 아래 설정에서 바꿀 수 있음).");
+        _addAll.IsCheckedChanged += (_, _) =>
+        {
+            if (!_addAll.On() && (int)_addFrom.NumValue() == 1 && (int)_addTo.NumValue() == n)
+                _addFrom.Value = _addTo.Value = _frame + 1; // 모든 프레임을 덮는 범위 = "모든 프레임"이라 지금 프레임 하나로 시작
+            _addFrom.IsEnabled = _addTo.IsEnabled = !_addAll.On();
+            _addRangeTouched = true;
+        };
+        _addFrom.ValueChanged += (_, _) => _addRangeTouched = true;
+        _addTo.ValueChanged += (_, _) => _addRangeTouched = true;
         _remove = Ui.Button("삭제", (_, _) => Remove(), 60);
         _up = Ui.Button("위로", (_, _) => Move(-1), 60);
         _down = Ui.Button("아래로", (_, _) => Move(1), 60);
@@ -122,8 +138,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = 300 };
 
+        string? motionTip = _motionRange != newRange && _motionRange is { } mr
+            ? $"추가 범위를 그대로 두고 움직이는 효과(터지기 ~ 충격파 고리)를 추가하면 여러 프레임에 걸치도록 프레임 {mr.From + 1}~{mr.To + 1}로 넓혀 추가합니다."
+            : null;
+        var rangeLabel = Ui.Label("추가 범위");
+        if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
         var left = Ui.Stack(
-            Ui.Row(kind, add),
+            Ui.Row(rangeLabel, _addAll, Ui.Label("프레임"), _addFrom, Ui.Label("~"), _addTo),
             _list,
             Ui.Row(_remove, _up, _down, _bake),
             Ui.Group("설정", new ScrollViewer { Content = _settings, MaxHeight = 430, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
@@ -132,26 +153,35 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _preview.Width = PreviewBox * 2 + 12;
         _preview.Height = PreviewBox + 20;
         _caption = Ui.Label("");
+        _caption.TextWrapping = TextWrapping.Wrap;
+        _caption.Width = RightWidth;
+        _caption.MinHeight = 34; // 두 줄 자리 — 글이 길어지고 짧아져도 아래가 출렁이지 않게
         _play = Ui.Button("▶ 재생", (_, _) => TogglePlay(), 80);
         ToolTip.SetTip(_play, "움직이는 효과(터지기 ~ 충격파 고리)를 고른 효과의 프레임 범위로 돌려 봅니다.");
+        var loop = Ui.Check("끝에서 바로 처음으로", s_seamlessLoop);
+        loop.VerticalAlignment = VerticalAlignment.Center;
+        loop.IsCheckedChanged += (_, _) => s_seamlessLoop = loop.On();
+        ToolTip.SetTip(loop, "재생할 때 마지막 프레임을 더 보여 주지 않고 곧바로 첫 프레임으로 이어서 반복합니다(게임에서 반복 재생하는 모습).");
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, _caption),
+            Ui.Row(_play, loop),
+            _caption,
             _preview,
             Hint(Intro(layer), PreviewBox * 2 + 12));
+        right.Width = RightWidth; // 고정 — 진행 % 등 글 길이에 따라 창 폭이 흔들리지 않게
 
         var root = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        root.Children.Add(BuildPalette(motionTip));
         root.Children.Add(left);
         root.Children.Add(right);
         Body.Children.Add(root);
 
         RebuildList(_effects.Count == 0 ? -1 : focus >= 0 && focus < _effects.Count ? focus : 0);
-        if (addKind >= 0) Add(addKind);
-        if (newRange is { } nr) kind.Tip($"추가하는 효과는 고른 칸(프레임 {nr})에만 입혀집니다.");
         SyncPlayback();
         Closed += (_, _) =>
         {
             _timer.Stop();
+            DisposePalette();
             int index = _project.IndexOf(_layer);
             if (index >= 0 && !_baked) _project.EndLayerEffectsPreview(index, _original, DialogResult == DialogResult.OK);
             _preview.Dispose();
@@ -166,7 +196,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     // ───────────── 목록 ─────────────
 
-    private readonly FrameRange? _newRange;
+    private readonly CheckBox _addAll;
+    private readonly NumericUpDown _addFrom, _addTo;
+    /// <summary>추가 범위를 손대지 않았을 때 움직이는 효과에 쓸 범위.</summary>
+    private readonly FrameRange? _motionRange;
+    private bool _addRangeTouched;
 
     private int Selected => _list.SelectedIndex;
 
@@ -211,12 +245,17 @@ public sealed partial class LayerEffectsDialog : DialogBase
                                       + (extra > 0 ? $" 위의 켜진 효과 {extra}개도 함께 구워집니다(보이던 그대로가 되도록)." : "")));
     }
 
-    private void Add(int kind)
+    /// <summary>종류 <paramref name="kind"/>의 새 효과를 추가 범위로 목록 <paramref name="at"/>번째에 넣고 고른다.</summary>
+    private void Add(int kind, int at)
     {
         var effect = Create(kind);
-        if (_newRange is { } range) effect = effect with { Frames = range };
-        _effects.Add(effect);
-        RebuildList(_effects.Count - 1);
+        int n = _project.Frames.Count;
+        var range = !_addRangeTouched && IsAnimated(kind) ? _motionRange
+            : _addAll.On() ? null : FrameRange.Of((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1, n);
+        if (range is not null) effect = effect with { Frames = range };
+        at = Math.Clamp(at, 0, _effects.Count);
+        _effects.Insert(at, effect);
+        RebuildList(at);
     }
 
     private void Remove()
@@ -624,7 +663,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _timer.Start();
     }
 
-    /// <summary>재생 중 다음 프레임(범위 끝 다음은 처음 — 끝 프레임은 조금 더 보여 줌).</summary>
+    /// <summary>재생 중 다음 프레임(범위 끝 다음은 처음 — "끝에서 바로 처음으로"가 꺼져 있으면 끝 프레임은 조금 더 보여 줌).</summary>
     private void NextPreviewFrame()
     {
         if (PlayRange() is not { } range)
@@ -634,7 +673,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         }
         _previewFrame = _previewFrame >= range.To || _previewFrame < range.From ? range.From : _previewFrame + 1;
         int ms = Math.Max(40, _project.Frames[_previewFrame].DurationMs);
-        _timer.Interval = TimeSpan.FromMilliseconds(_previewFrame == range.To ? ms * 3 : ms);
+        _timer.Interval = TimeSpan.FromMilliseconds(_previewFrame == range.To && !s_seamlessLoop ? ms * 3 : ms);
         RefreshPreview();
     }
 
