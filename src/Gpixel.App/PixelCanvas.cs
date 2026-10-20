@@ -575,19 +575,9 @@ public sealed class PixelCanvas : Control
         if (_peekPrevious)
             AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? $"이전 프레임 {_ctx.CurrentFrame} 보는 중 (H)" : "이전 프레임이 없습니다",
                 new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);
-        if (_ctx.IsGroupSelected)
-            AppTheme.DrawText(g, "그룹: 클릭 = 부위 고르기(파랑)·끌어 배치 · 빈 곳 클릭/Esc = 해제 · 방향키 = 고른 부위 1px(Shift 8px) · 더블클릭 = 그 부위 편집",
-                new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
-        else if (_ctx.IsTransforming)
-            AppTheme.DrawText(g, "변형: 안쪽 끌기 = 옮기기 · 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준) · 바깥 = 회전(Shift 15°) · 가운데 표시 끌기 = 회전 중심 · Enter 적용 · Esc 취소",
-                new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
-        else if (!_ctx.CanEdit)
+        // 캔버스 아래 안내는 그릴 수 없을 때(잠금) 경고만 — 사용법 설명은 도움말·상태 표시줄에.
+        if (!_ctx.IsGroupSelected && !_ctx.IsTransforming && !_ctx.CanEdit)
             AppTheme.DrawText(g, "현재 레이어가 잠겨 있어 그릴 수 없습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
-        else if (_ctx.Project is { } vp && !vp.IsLayerVisible(_ctx.CurrentLayer))
-            AppTheme.DrawText(g, _ctx.CurrentPart is null ? "숨긴 레이어를 편집하는 중 — 캔버스에서만 반투명하게 보이고 미리보기·내보내기에는 나오지 않습니다" : "숨긴 부위를 편집하는 중 — 미리보기·프레임 시트에는 나오지 않습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
-        else if (_ctx.Project is { } p && _ctx.CurrentPart is { Parent.IsGroup: true } part && p.IsCelInherited(_ctx.CurrentLayer, _ctx.CurrentFrame))
-            AppTheme.DrawText(g, $"{SkinManagerWindow.SkinStatus(p, part, _ctx.CurrentFrame)} — 그리면 그 그림을 이 스킨 셀로 복사해 고칩니다",
-                new Avalonia.Point(8, Bounds.Height - 24), AppTheme.DimTextBrush);
     }
 
     /// <summary>캔버스 크기의 그림을 (ox,oy) 이미지 좌표만큼 옮긴 위치에 체커 배경과 함께 보이는 부분만 그린다(그림이 없으면 체커만).</summary>
