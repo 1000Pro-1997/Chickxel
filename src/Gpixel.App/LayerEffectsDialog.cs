@@ -15,33 +15,37 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private const int RightWidth = PreviewBox * 2 + 72;
 
     /// <summary>
-    /// 추가할 수 있는 효과 종류(이름, 새 효과 만들기) — 번호 = <see cref="Create"/>의 kind. 고정 효과 먼저, 움직이는 효과는 뒤에 모아 둔다.
+    /// 추가할 수 있는 효과 종류(이름, 한 줄 설명, 새 효과 만들기) — 번호 = <see cref="Create"/>의 kind. 고정 효과 먼저, 움직이는 효과는 뒤에 모아 둔다.
+    /// 설명은 효과 종류 상자의 도움말에 보인다.
     /// </summary>
-    private static readonly (string Name, Func<LayerEffect> New)[] KindTable =
+    private static readonly (string Name, string Description, Func<LayerEffect> New)[] KindTable =
     [
-        ("외곽선", () => new OutlineEffect()),
-        ("그림자", () => new ShadowEffect()),
-        ("가장자리 빛·그늘", () => new RimLightEffect()),
-        ("색 덮기", () => new ColorOverlayEffect()),
-        ("그라데이션 덮기", () => new GradientOverlayEffect()),
-        ("안쪽 빛", () => new InnerGlowEffect()),
-        ("색 바꾸기", () => new PaletteSwapEffect()),
-        ("색조 보정", () => new ColorAdjustEffect()),
-        ("반사", () => new ReflectionEffect()),
-        ("터지기", () => new ExplodeEffect()),
-        ("빛 지나가기", () => new ShineEffect()),
-        ("늘었다 줄기", () => new SquashEffect()),
-        ("피격 번쩍임", () => new HitFlashEffect()),
-        ("깜빡이기", () => new BlinkEffect()),
-        ("흔들기", () => new ShakeEffect()),
-        ("둥실둥실", () => new BobEffect()),
-        ("나타나기 / 사라지기", () => new AppearEffect()),
-        ("녹아내리기", () => new MeltEffect()),
-        ("회전", () => new RotateEffect()),
-        ("잔상", () => new AfterimageEffect()),
-        ("색 순환", () => new ColorCycleEffect()),
-        ("충격파 고리", () => new ShockwaveEffect()),
+        ("외곽선", "그림 둘레에 테두리 선을 두릅니다(바깥 = 그림 밖에, 안쪽 = 가장자리 픽셀에).", () => new OutlineEffect()),
+        ("그림자", "그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다.", () => new ShadowEffect()),
+        ("가장자리 빛·그늘", "빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다.", () => new RimLightEffect()),
+        ("색 덮기", "보이는 픽셀을 한 색으로 물들입니다(100% = 실루엣).", () => new ColorOverlayEffect()),
+        ("그라데이션 덮기", "보이는 픽셀에 두 색이 차츰 바뀌는 그라데이션을 섞습니다(디더 무늬도 됨).", () => new GradientOverlayEffect()),
+        ("안쪽 빛", "가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다.", () => new InnerGlowEffect()),
+        ("색 바꾸기", "고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전).", () => new PaletteSwapEffect()),
+        ("색조 보정", "흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로).", () => new ColorAdjustEffect()),
+        ("반사", "그림을 위아래로 뒤집어 아래에 점점 옅게 비춥니다(물·바닥 반사).", () => new ReflectionEffect()),
+        ("터지기", "픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.", () => new ExplodeEffect()),
+        ("빛 지나가기", "빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임).", () => new ShineEffect()),
+        ("늘었다 줄기", "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.", () => new SquashEffect()),
+        ("피격 번쩍임", "맞았을 때처럼 그림이 한 색으로 번쩍입니다.", () => new HitFlashEffect()),
+        ("깜빡이기", "보였다 숨었다를 되풀이합니다(무적 시간 표시 등).", () => new BlinkEffect()),
+        ("흔들기", "그림 전체가 픽셀 단위로 덜덜 떱니다.", () => new ShakeEffect()),
+        ("둥실둥실", "위아래로 부드럽게 떠오르고 가라앉습니다(대기 동작).", () => new BobEffect()),
+        ("나타나기 / 사라지기", "디더·흩어짐·쓸기·투명도로 그림이 나타나거나 사라집니다.", () => new AppearEffect()),
+        ("녹아내리기", "픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다.", () => new MeltEffect()),
+        ("회전", "그림을 돌립니다(RotSprite — 새 색·반투명 없이).", () => new RotateEffect()),
+        ("잔상", "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다.", () => new AfterimageEffect()),
+        ("색 순환", "정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색).", () => new ColorCycleEffect()),
+        ("충격파 고리", "중심에서 픽셀 원 고리가 퍼져 나갑니다.", () => new ShockwaveEffect()),
     ];
+
+    /// <summary>효과 종류의 한 줄 설명(번호 = <see cref="Create"/>의 kind).</summary>
+    private static string DescriptionOf(int kind) => KindTable[kind].Description;
 
     /// <summary>효과 종류 이름(번호 = <see cref="Create"/>의 kind).</summary>
     internal static readonly string[] Kinds = KindTable.Select(k => k.Name).ToArray();

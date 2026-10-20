@@ -26,7 +26,9 @@ public sealed partial class LayerEffectsDialog
         for (int k = 0; k < KindTable.Length; k++)
         {
             var tile = new EffectTile(k, Kinds[k], IsAnimated(k) ? ThumbSteps : 1) { Width = TileWidth, Height = TileHeight, Margin = new Thickness(2) };
-            ToolTip.SetTip(tile, $"{Kinds[k]} — 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다." + (tile.Animated && motionTip is not null ? " " + motionTip : ""));
+            ToolTip.SetTip(tile, $"{Kinds[k]}\n{DescriptionOf(k)}" + (tile.Animated ? "\n움직이는 효과 — 프레임 범위 동안 움직입니다." : "")
+                                 + (tile.Animated && motionTip is not null ? " " + motionTip : "")
+                                 + "\n\n두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다.");
             tile.Show(0, RenderThumb);
             AttachTileInput(tile);
             _tiles.Add(tile);
