@@ -33,7 +33,9 @@ public sealed record LospecQuery(
     string Tag = "",
     int Page = 0);
 
-/// <summary>Lospec 팔레트 하나. <see cref="Author"/>는 작성자가 없으면 빈 문자열.</summary>
+/// <summary>
+/// Lospec 팔레트 하나. <see cref="Author"/>는 작성자가 없으면 빈 문자열. <see cref="Examples"/>는 그 팔레트로 그린 예시 그림 주소(없으면 비어 있음).
+/// </summary>
 public sealed record LospecPalette(
     string Title,
     string Slug,
@@ -41,7 +43,8 @@ public sealed record LospecPalette(
     IReadOnlyList<Color32> Colors,
     int Likes,
     int Downloads,
-    IReadOnlyList<string> Tags)
+    IReadOnlyList<string> Tags,
+    IReadOnlyList<Uri> Examples)
 {
     /// <summary>Lospec 웹 페이지 주소.</summary>
     public string WebUrl => LospecPalettes.WebUrl(Slug);
@@ -56,6 +59,8 @@ public sealed record LospecPage(IReadOnlyList<LospecPalette> Palettes, int Total
 public static class LospecPalettes
 {
     public const string BaseUrl = "https://lospec.com/palette-list";
+    /// <summary>예시 그림(<c>examples[].image</c>, 상대 경로)이 있는 곳.</summary>
+    public const string CdnUrl = "https://cdn.lospec.com/";
     public const string UserAgent = "Gpixel";
 
     /// <summary>
@@ -125,7 +130,11 @@ public static class LospecPalettes
                 if (e.TryGetProperty("tags", out var t) && t.ValueKind == JsonValueKind.Array)
                     foreach (var tag in t.EnumerateArray())
                         if (tag.ValueKind == JsonValueKind.String && tag.GetString() is { Length: > 0 } s) tags.Add(s);
-                list.Add(new LospecPalette(title, slug, author, colors, Int(e, "likes"), Int(e, "downloads"), tags));
+                var examples = new List<Uri>();
+                if (e.TryGetProperty("examples", out var ex) && ex.ValueKind == JsonValueKind.Array)
+                    foreach (var item in ex.EnumerateArray())
+                        if (item.ValueKind == JsonValueKind.Object && ExampleUrl(Str(item, "image")) is { } url) examples.Add(url);
+                list.Add(new LospecPalette(title, slug, author, colors, Int(e, "likes"), Int(e, "downloads"), tags, examples));
             }
         }
         int total = Int(root, "totalCount");
@@ -145,7 +154,7 @@ public static class LospecPalettes
             var colors = ParseColors(root);
             if (colors.Count == 0) return null;
             string name = Str(root, "name");
-            return new LospecPalette(name.Length > 0 ? name : slug, slug, Str(root, "author"), colors, 0, 0, []);
+            return new LospecPalette(name.Length > 0 ? name : slug, slug, Str(root, "author"), colors, 0, 0, [], []);
         }
         catch (FormatException)
         {
@@ -175,6 +184,26 @@ public static class LospecPalettes
         // 내려받기용이라 Content-Type이 application/octet-stream으로 온다. JSON이 아니면 ParseSingle이 null을 준다.
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         return ParseSingle(json, slug);
+    }
+
+    /// <summary>예시 그림 주소: 절대 주소(http/https)는 그대로, 상대 경로는 <see cref="CdnUrl"/> 아래. 비었거나 이상하면 null.</summary>
+    public static Uri? ExampleUrl(string image)
+    {
+        image = image.Trim();
+        if (image.Length == 0) return null;
+        if (Uri.TryCreate(image, UriKind.Absolute, out var abs))
+            return abs.Scheme is "http" or "https" ? abs : null;
+        return Uri.TryCreate(CdnUrl + image.TrimStart('/'), UriKind.Absolute, out var rel) ? rel : null;
+    }
+
+    /// <summary>예시 그림(PNG 등) 바이트를 내려받는다. 네트워크 오류는 <see cref="HttpRequestException"/>.</summary>
+    public static async Task<byte[]> FetchImageAsync(HttpClient http, Uri url, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.UserAgent.ParseAdd(UserAgent);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static HttpRequestMessage Request(Uri url)

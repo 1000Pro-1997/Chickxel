@@ -4,12 +4,14 @@ using Gpixel.Core.Edit;
 namespace Gpixel.App;
 
 /// <summary>
-/// 환경 설정: 일반(실행취소 횟수, 앱 휴지통 보관 기간) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
+/// 환경 설정: 일반(실행취소 횟수, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
 {
-    private readonly NumericUpDown _undo, _trash;
+    private readonly NumericUpDown _undo;
+    private readonly TrashPolicyEditor _trash;
+    private readonly CheckBox _updateCheck;
     private readonly IReadOnlyList<ShortcutCommand> _commands;
     private readonly Dictionary<string, List<KeyChord>> _keys;
     private readonly TextBox _search;
@@ -19,18 +21,28 @@ public sealed class PreferencesDialog : DialogBase
     private (string Id, bool Replace)? _capture;
 
     /// <param name="keys">명령 Id → 지금 단축키.</param>
-    public PreferencesDialog(int undoSteps, int trashDays, IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
+    public PreferencesDialog(int undoSteps, TrashPolicy trashPolicy, bool updateCheck, IReadOnlyList<ShortcutCommand> commands,
+        IReadOnlyDictionary<string, List<KeyChord>> keys)
         : base("환경 설정")
     {
         _commands = commands;
         _keys = commands.ToDictionary(c => c.Id, c => keys.TryGetValue(c.Id, out var k) ? k.ToList() : c.Defaults.ToList());
 
         _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90);
-        _trash = Ui.Num(1, 365, Math.Clamp(trashDays, 1, 365), 90);
+        _trash = new TrashPolicyEditor(trashPolicy);
+        _updateCheck = Ui.Check("시작할 때 새 버전 확인(있으면 업데이트 창)", updateCheck);
+        var updateNote = Ui.Label(AppInfo.IsDevBuild
+            ? $"지금은 개발 빌드({AppInfo.VersionText})라 자동으로 확인하지 않습니다. 도움말 > 업데이트 확인…은 언제든 쓸 수 있습니다."
+            : $"지금 버전 {AppInfo.VersionText} · 도움말 > 업데이트 확인…으로 언제든 확인할 수 있습니다.");
+        updateNote.Foreground = AppTheme.DimTextBrush;
         var general = Ui.Stack(
             Ui.Row(Ui.Label("실행취소 횟수"), _undo, Ui.Label($"단계 (기본 {UndoStack.DefaultCapacity}, 최대 {UndoStack.MaxCapacity})")),
             Ui.Label("줄이면 열린 프로젝트의 오래된 기록부터 버립니다. 많을수록 메모리를 더 씁니다."),
-            Ui.Row(Ui.Label("앱 휴지통 보관"), _trash, Ui.Label("일 — 파일 브라우저에서 지운 파일, 지나면 영구 삭제")));
+            Ui.Label("앱 휴지통(파일 브라우저에서 지운 파일) 보관", bold: true),
+            _trash,
+            Ui.Label("업데이트", bold: true),
+            _updateCheck,
+            updateNote);
 
         _search = new TextBox { Watermark = "명령·키 검색", Width = 260, Margin = new Thickness(2) };
         _search.TextChanged += (_, _) => RebuildRows();
@@ -64,7 +76,8 @@ public sealed class PreferencesDialog : DialogBase
     }
 
     public int UndoSteps => (int)_undo.NumValue();
-    public int TrashDays => (int)_trash.NumValue();
+    public TrashPolicy TrashPolicy => _trash.Policy;
+    public bool UpdateCheck => _updateCheck.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
     public IReadOnlyDictionary<string, List<KeyChord>> Keys => _keys;
 

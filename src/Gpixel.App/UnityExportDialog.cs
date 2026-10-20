@@ -9,7 +9,7 @@ namespace Gpixel.App;
 /// 내보내기 설정 창(Ctrl+E, 파일 > 내보내기…; 파란 "내보내기"는 OK로 닫혀 호출한 쪽이 내보냄). 바꾸면 바로 프로젝트에 적용된다(설정 하나마다 실행취소 1단계).
 /// 탭은 [내보내기 | Import Settings](Import Settings = Unity Texture Importer 인스펙터와 같은 항목·이름, .meta를 쓸 때만 보임).
 /// 내보내기 탭 = 왼쪽 설정 칸(세로 스크롤) | 끌어서 너비를 바꾸는 나눔줄 | 오른쪽 미리보기(세로 스크롤). 설정 칸은 한 곳에만 둔다 — 위에서 아래로 접을 수 있는 묶음:
-/// 설정 프리셋(<see cref="ExportPresetBar"/>) → 공통(내보낼 결과 + 두 결과가 같이 쓰는 시트 설정 <see cref="ExportSettings.Common"/>) → 파일(저장 시 내보내기·폴더·형식·.meta)
+/// 탭 줄 오른쪽 "프리셋 ▾"(<see cref="ExportPresetBar"/>), 왼쪽 묶음: 공통(내보낼 결과 + 두 결과가 같이 쓰는 시트 설정 <see cref="ExportSettings.Common"/>) → 파일(저장 시 내보내기·폴더·형식·.meta)
 /// → 프레임 시트(이름·Single 프레임·경로) → 부위 아틀라스(이름·원래 위치 유지·Sprite Library·경로) → 고급("시트별 다르게" — <see cref="ExportSettings.PartsOverride"/>, 켜면 시트 설정 칸이 한 벌 더).
 /// 미리보기 = 만들어질 결과 파일(① 프레임 시트, ② 부위 아틀라스 — 파일마다 이름 + 칸 너비에 맞춘 시트 + 칸 목록).
 /// 창 크기·위치·나눔 비율·접은 묶음은 <see cref="AppSettings"/>에 기억한다.
@@ -52,6 +52,8 @@ public sealed class UnityExportDialog : DialogBase
         _settings = settings;
         _ppuChanged = ppuChanged;
         CloseOnly();
+        // Enter로 창이 닫히거나 내보내지지 않게 한다(닫기는 단추·Esc만). 이름 칸의 Enter는 그 값 반영.
+        CancelButtonControl.IsDefault = false;
         // 닫기 옆 파란 "내보내기": 창을 닫고(입력 중인 값도 반영) 호출한 쪽이 내보낸다.
         var export = AddButton("내보내기", DialogResult.OK);
         export.Background = AppTheme.AccentBrush;
@@ -91,7 +93,6 @@ public sealed class UnityExportDialog : DialogBase
             partsBox.IsVisible = _advanced.IsVisible = PartsShown(p);
         });
         var settingsColumn = Ui.ScrollHost(Ui.Stack(
-            Section("presets", SectionTitle("설정 프리셋"), new ExportPresetBar(ctx, this)),
             Section("common", commonTitle, BuildCommonBlock(commonTitle)),
             Section("files", SectionTitle("파일 (두 결과 공통)"), files),
             framesBox,
@@ -142,9 +143,25 @@ public sealed class UnityExportDialog : DialogBase
         };
 
         // 대화상자 본문(StackPanel)은 높이를 주지 않으므로 탭을 바깥 DockPanel의 채우기 칸에 바로 둔다.
+        // 탭 줄 오른쪽 끝: 프리셋 단추(누르면 저장·불러오기·관리·기본 설정 창).
+        var presetBar = new ExportPresetBar(ctx, this);
+        var presets = new Button
+        {
+            Content = "프리셋 ▾",
+            Padding = new Thickness(10, 3),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 2, 2, 0),
+            Flyout = new Flyout
+            {
+                Placement = PlacementMode.BottomEdgeAlignedRight,
+                Content = new Border { Width = 320, Padding = new Thickness(4), Child = presetBar },
+            },
+        }.Tip("내보내기 설정 프리셋: 지금 설정 저장 · 불러오기 · 관리 · 기본 설정으로 되돌리기");
+        var tabHost = new Grid { Children = { _tabs, presets } };
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);
-        root.Children.Add(_tabs);
+        root.Children.Add(tabHost);
 
         _rebuild.Tick += (_, _) => { _rebuild.Stop(); RebuildPreview(); };
         _onReplaced = (_, _) => { _customPivot = false; RememberAtOpen(); RefreshAll(); ScheduleRebuild(); };
@@ -208,7 +225,7 @@ public sealed class UnityExportDialog : DialogBase
     {
         base.OnClosing(e);
         if (e.Cancel) return;
-        // Enter(닫기 단추)로 닫아도 입력 중이던 이름·폴더가 반영되게.
+        // 닫기·Esc·창 닫기 단추로 닫아도 입력 중이던 이름·폴더가 반영되게.
         foreach (var commit in _commitTexts) commit();
         SavePlacement();
     }
@@ -831,6 +848,12 @@ public sealed class UnityExportDialog : DialogBase
         t.Watermark = watermark;
         void Commit() { var v = NullIfEmpty(t.Text); EditSettings(undo, p => get(p) != v, p => set(p, v)); }
         t.LostFocus += (_, _) => Commit();
+        t.KeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Enter) return;
+            Commit();
+            e.Handled = true;
+        };
         _commitTexts.Add(Commit);
         _refresh.Add(p => { if (!t.IsFocused) t.Text = get(p) ?? ""; });
         return t;

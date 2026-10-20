@@ -126,6 +126,21 @@ public static class AppTheme
         {
             Setters = { new Setter(TemplatedControl.BackgroundProperty, AccentBrush) },
         });
+        // 접는 묶음(Expander)의 제목 줄도 ToggleButton이라 펼치면(:checked) 위 스타일로 파래진다 — 패널 머리글과 같은 차분한 색으로 덮는다.
+        // 의사 클래스가 붙은 스타일이 붙지 않은 스타일보다 우선하므로 펼친 상태(:checked)도 따로 적는다(뒤에 둬서 이긴다).
+        foreach (var selector in new Func<Selector?, Selector>[]
+                 {
+                     x => x.OfType<Expander>().Template().OfType<ToggleButton>(),
+                     x => x.OfType<Expander>().Template().OfType<ToggleButton>().Class(":checked"),
+                 })
+            app.Styles.Add(new Style(selector)
+            {
+                Setters =
+                {
+                    new Setter(TemplatedControl.BackgroundProperty, BackBrush),
+                    new Setter(TemplatedControl.ForegroundProperty, TextBrush),
+                },
+            });
         foreach (var type in new[] { typeof(TextBox), typeof(ComboBox), typeof(NumericUpDown) })
         {
             app.Styles.Add(new Style(x => x.OfType(type))

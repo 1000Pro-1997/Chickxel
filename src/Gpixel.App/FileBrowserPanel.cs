@@ -59,11 +59,11 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>지운 파일을 보관하는 앱 휴지통.</summary>
     public AppTrash Trash { get; set; } = new(AppTrash.DefaultRoot);
 
-    /// <summary>휴지통 보관 기간(일). MainForm이 설정과 잇는다.</summary>
-    public Func<int> TrashDays { get; set; } = () => 7;
+    /// <summary>휴지통 보관 정책(기간·용량). MainForm이 설정과 잇는다.</summary>
+    public Func<TrashPolicy> TrashPolicy { get; set; } = () => Gpixel.App.TrashPolicy.Default;
 
-    /// <summary>휴지통 창에서 보관 기간을 바꿨을 때.</summary>
-    public event Action<int>? TrashDaysChanged;
+    /// <summary>휴지통 창에서 보관 정책을 바꿨을 때.</summary>
+    public event Action<TrashPolicy>? TrashPolicyChanged;
 
     /// <summary>상태 표시줄에 보일 알림.</summary>
     public event EventHandler<string>? Message;
@@ -878,7 +878,10 @@ public sealed class FileBrowserPanel : UserControl
         {
             var entry = Trash.Add(paths.Concat(companions), label);
             if (entry is not null) moved.UnionWith(entry.Files.Select(f => f.OriginalPath));
-            Message?.Invoke(this, $"앱 휴지통으로 보냄: {label.Split(": ", 2)[^1]} — 파일 목록에서 Ctrl+Z로 되살리기 ({TrashDays()}일 보관)");
+            // 용량이 넘치면 오래된 항목부터 지운다(방금 넣은 항목은 가장 새것이라 마지막에).
+            int purged = Trash.Purge(TrashPolicy());
+            Message?.Invoke(this, $"앱 휴지통으로 보냄: {label.Split(": ", 2)[^1]} — 파일 목록에서 Ctrl+Z로 되살리기 ({TrashPolicy().Describe()})"
+                                  + (purged > 0 ? $" · 오래된 항목 {purged}개 영구 삭제" : ""));
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -896,7 +899,7 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>파일 목록에서 Ctrl+Z: 가장 최근에 지운 항목을 되살린다. 휴지통이 비었으면 false.</summary>
     public bool RestoreLastDeleted()
     {
-        Trash.Purge(TrashDays());
+        Trash.Purge(TrashPolicy());
         var last = Trash.Entries().FirstOrDefault();
         if (last is null)
         {
@@ -919,7 +922,7 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>휴지통 보기 창.</summary>
     private void ShowTrash()
     {
-        var dlg = new TrashDialog(Trash, TrashDays(), d => TrashDaysChanged?.Invoke(d), OnRestored);
+        var dlg = new TrashDialog(Trash, TrashPolicy(), p => TrashPolicyChanged?.Invoke(p), OnRestored);
         dlg.ShowDialog(this);
     }
 

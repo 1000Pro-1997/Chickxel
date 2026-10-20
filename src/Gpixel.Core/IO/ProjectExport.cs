@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Text;
+using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
 using Gpixel.Core.Slicing;
 
@@ -428,6 +429,26 @@ public static class ProjectExport
         return (image.Crop(r), new Pivot((px - r.X) / r.Width, 1f - (py - r.Y) / r.Height), b);
     }
 
+    /// <summary>
+    /// 부위 아틀라스 스프라이트 하나: 부위 셀에 그 부위 자신의 효과(<see cref="Layer.Effects"/> 중 프레임 <paramref name="frameIndex"/>가 범위 안인 것)를 입힌 그림.
+    /// 바깥 외곽선·그림자처럼 밖으로 번지는 효과가 있으면 스프라이트를 효과 여백만큼 넓히고 — 여백은 프레임 범위와 관계없이 켜진 모든 효과 기준이라
+    /// 효과가 없는 프레임도 같은 크기(모든 프레임·스킨 같은 크기) — 피벗은 같은 픽셀을, 9-slice 테두리는 같은 선을 가리키도록 옮긴다
+    /// (Unity에서 같은 피벗에 놓으면 그림이 캔버스와 같은 자리에 보인다). 그룹 효과는 부위들을 합친 모양에 대한 것이라 부위 스프라이트에는 넣지 않는다
+    /// (프레임 시트에만). 효과가 없으면 셀·피벗·테두리 그대로.
+    /// </summary>
+    private static (PixelImage Image, Pivot Pivot, SpriteBorder Border) PartSprite(Layer part, PixelImage cel, int frameIndex)
+    {
+        var pad = LayerEffects.Padding(part.Effects, cel.Width, cel.Height);
+        var (image, dx, dy) = LayerEffects.Render(cel, part.EffectsAt(frameIndex), pad);
+        if (ReferenceEquals(image, cel)) return (cel, part.PartPivot, part.PartBorder);
+        int left = -dx, top = -dy, right = image.Width - cel.Width - left, bottom = image.Height - cel.Height - top;
+        var (px, py) = part.PartPivot.ToLocalPixel(cel.Width, cel.Height);
+        var pivot = new Pivot((px + left) / image.Width, 1f - (py + top) / image.Height);
+        var border = part.PartBorder.IsNone ? part.PartBorder
+            : new SpriteBorder(part.PartBorder.Left + left, part.PartBorder.Top + top, part.PartBorder.Right + right, part.PartBorder.Bottom + bottom);
+        return (image, pivot, border);
+    }
+
     // ───────────── 프레임 시트 ─────────────
 
     /// <summary>
@@ -815,13 +836,14 @@ public static class ProjectExport
         var untagged = Enumerable.Range(0, project.Frames.Count).Where(i => project.TagOfFrame(i) is null).ToList();
         var fileFrames = cels.Select(c => c.Frame).Distinct().Order().ToList();
 
-        // 그림(구워 넣는 칸이면 물려받은 첫 스킨 그림)·잘라내기
+        // 그림(구워 넣는 칸이면 물려받은 첫 스킨 그림) + 부위 효과·잘라내기
         var images = new (PixelImage Image, Pivot Pivot, SpriteBorder Border)[cels.Count];
         for (int i = 0; i < cels.Count; i++)
         {
             var (part, skin, fi) = cels[i];
             var cel = skin is null ? project.GetCelRaw(part, project.Frames[fi], null) : project.GetSkinCel(part, project.Frames[fi], skin);
-            images[i] = TrimCel(cel!, part.PartPivot, part.PartBorder, o.Trim);
+            var (image, pivot, border) = PartSprite(part, cel!, fi);
+            images[i] = TrimCel(image, pivot, border, o.Trim);
         }
 
         var values = cels.Select(c =>

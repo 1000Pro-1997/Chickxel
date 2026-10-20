@@ -29,6 +29,11 @@ public sealed class LospecPaletteDialog : DialogBase
     private readonly ListBox _list;
     private readonly TextBlock _detailTitle, _detailInfo, _hoverHex, _note;
     private readonly BigSwatches _swatches;
+    private readonly ExampleStrip _examples;
+    private readonly TextBlock _examplesNote;
+    private CancellationTokenSource? _examplesCts;
+    /// <summary>내려받은 예시 그림(창을 닫으면 버림).</summary>
+    private readonly Dictionary<Uri, Bitmap?> _exampleCache = new();
     private readonly Button _use, _add, _save, _web;
     private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(350) };
 
@@ -116,14 +121,36 @@ public sealed class LospecPaletteDialog : DialogBase
         _hoverHex = new TextBlock { Foreground = AppTheme.TextBrush, FontFamily = new FontFamily("Menlo, Consolas, monospace"), VerticalAlignment = VerticalAlignment.Center, MinWidth = 80 };
         _swatches = new BigSwatches();
         _swatches.HoverChanged += (_, c) => _hoverHex.Text = c?.ToHex() ?? "";
+        // 왼쪽: 팔레트 칸과 같은 크기로 줄바꿈한 색 칸. 오른쪽: 이 팔레트로 그린 예시 그림.
         var swatchHost = new ScrollViewer
         {
             Content = _swatches,
-            MaxHeight = 116,
+            Width = BigSwatches.PreferredWidth,
+            Height = ExampleHeight,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Background = AppTheme.InputBrush,
         };
+        _examples = new ExampleStrip();
+        _examplesNote = new TextBlock
+        {
+            Foreground = AppTheme.DimTextBrush,
+            FontSize = AppTheme.SmallFontSize,
+            Margin = new Thickness(6, 4),
+            TextWrapping = TextWrapping.Wrap,
+            IsHitTestVisible = false,
+        };
+        // 예시 그림: 칸을 장 수만큼 똑같이 나눠 보이고, 마우스를 올린 장이 부드럽게 넓어진다(Lospec 사이트처럼).
+        var examplesHost = new Panel
+        {
+            Children = { _examples, _examplesNote },
+            Height = ExampleHeight,
+            Background = AppTheme.InputBrush,
+            Margin = new Thickness(6, 0, 0, 0),
+            ClipToBounds = true,
+        };
+        Grid.SetColumn(examplesHost, 1);
+        var swatchRow = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { swatchHost, examplesHost } };
         _use = Ui.Button("팔레트로 쓰기", (_, _) => { if (Selected is { } p) UsePalette(p); });
         _add = Ui.Button("현재 팔레트에 추가", (_, _) => { if (Selected is { } p) AppendPalette(p); });
         _save = Ui.Button(".hex로 저장…", (_, _) => { if (Selected is { } p) SavePalette(p); });
@@ -142,7 +169,7 @@ public sealed class LospecPaletteDialog : DialogBase
             BorderThickness = new Thickness(1),
             Padding = new Thickness(6, 4),
             Margin = new Thickness(0, 6, 0, 0),
-            Child = new StackPanel { Spacing = 3, Children = { hexRow, _detailInfo, swatchHost, actions } },
+            Child = new StackPanel { Spacing = 3, Children = { hexRow, _detailInfo, swatchRow, actions } },
         };
 
         var credit = new TextBlock
@@ -172,6 +199,9 @@ public sealed class LospecPaletteDialog : DialogBase
         Opened += (_, _) => { _tag.Focus(); Search(); };
     }
 
+    /// <summary>고른 팔레트 칸(색 칸·예시 그림)의 높이.</summary>
+    private const double ExampleHeight = 140;
+
     private static Control Gap() => new Border { Width = 10 };
 
     private LospecPalette? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as LospecPalette;
@@ -182,6 +212,10 @@ public sealed class LospecPaletteDialog : DialogBase
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
+        _examplesCts?.Cancel();
+        _examples.Clear();
+        foreach (var bmp in _exampleCache.Values) bmp?.Dispose();
+        _exampleCache.Clear();
         base.OnClosed(e);
     }
 
@@ -356,9 +390,54 @@ public sealed class LospecPaletteDialog : DialogBase
         _detailTitle.Text = p?.Title ?? "팔레트를 고르세요";
         _detailInfo.Text = p is null ? "목록을 두 번 누르면 바로 팔레트로 씁니다." : Info(p) + (p.Tags.Count > 0 ? " · " + string.Join(", ", p.Tags) : "");
         _swatches.SetColors(p?.Colors ?? []);
+        ShowExamples(p);
         _hoverHex.Text = "";
         _note.Text = "";
         foreach (var b in new[] { _use, _add, _save, _web }) b.IsEnabled = p is not null;
+    }
+
+    /// <summary>고른 팔레트의 예시 그림을 오른쪽에 내려받아 보인다(픽셀이 그대로 보이게 정수 배율, 고르는 팔레트가 바뀌면 받던 것은 취소).</summary>
+    private async void ShowExamples(LospecPalette? p)
+    {
+        _examplesCts?.Cancel();
+        _examples.Clear();
+        if (p is null || p.Examples.Count == 0)
+        {
+            _examplesNote.Text = p is null ? "" : "이 팔레트에는 예시 그림이 없습니다.";
+            return;
+        }
+        var cts = _examplesCts = new CancellationTokenSource();
+        _examplesNote.Text = "예시 그림 불러오는 중…";
+        int shown = 0;
+        foreach (var url in p.Examples.Take(6))
+        {
+            if (!_exampleCache.TryGetValue(url, out var bmp))
+            {
+                try
+                {
+                    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                    timeout.CancelAfter(TimeSpan.FromSeconds(15));
+                    var bytes = await LospecPalettes.FetchImageAsync(Http, url, timeout.Token);
+                    using var ms = new MemoryStream(bytes);
+                    bmp = new Bitmap(ms);
+                }
+                catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or ArgumentException or InvalidOperationException
+                                               or IOException or NotSupportedException)
+                {
+                    bmp = null;
+                }
+                _exampleCache[url] = bmp;
+            }
+            if (cts.IsCancellationRequested) return;
+            if (bmp is null) continue;
+            _examples.Add(bmp, $"{bmp.PixelSize.Width}×{bmp.PixelSize.Height}px · {Path.GetFileName(url.LocalPath)}");
+            shown++;
+        }
+        _examplesNote.Text = shown == 0 ? "예시 그림을 불러오지 못했습니다." : "";
     }
 
     private void UsePalette(LospecPalette p)
@@ -426,7 +505,10 @@ public sealed class LospecPaletteDialog : DialogBase
     /// <summary>고른 팔레트의 큰 색 칸(너비에 맞춰 줄바꿈). 마우스를 올린 색은 풍선 도움말과 <see cref="HoverChanged"/>로 알린다.</summary>
     private sealed class BigSwatches : Control
     {
-        private const double Cell = 26, GapPx = 2;
+        /// <summary>편집기 팔레트 칸과 같은 크기(14px + 2px 간격).</summary>
+        private const double Cell = 14, GapPx = 2;
+        /// <summary>한 줄 12칸 너비(편집기 팔레트 열과 비슷하게).</summary>
+        public const double PreferredWidth = GapPx + 12 * (Cell + GapPx) + 14;
         private IReadOnlyList<Color32> _colors = [];
         private int _hover = -1;
 
@@ -490,6 +572,132 @@ public sealed class LospecPaletteDialog : DialogBase
             ToolTip.SetTip(this, c?.ToHex());
             HoverChanged?.Invoke(this, c);
             InvalidateVisual();
+        }
+    }
+
+    /// <summary>
+    /// 예시 그림 띠: 너비를 장 수만큼 똑같이 나눠 장마다 그림 가운데를 보여 주고(픽셀 그대로 정수 배율), 마우스를 올린 장이
+    /// 부드럽게 넓어지며(나머지는 좁아짐) 그림 전체가 보인다. 마우스가 나가면 다시 똑같이 나뉜다.
+    /// </summary>
+    private sealed class ExampleStrip : Control
+    {
+        private const double GapPx = 2, Ease = 0.22;
+        private readonly List<(Bitmap Bitmap, string Tip)> _items = new();
+        private readonly List<double> _weights = new();
+        private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(15) };
+        private int _hover = -1;
+
+        public ExampleStrip()
+        {
+            ClipToBounds = true;
+            _timer.Tick += (_, _) => Step();
+        }
+
+        public void Clear()
+        {
+            _items.Clear();
+            _weights.Clear();
+            _hover = -1;
+            _timer.Stop();
+            ToolTip.SetTip(this, null);
+            InvalidateVisual();
+        }
+
+        public void Add(Bitmap bitmap, string tip)
+        {
+            _items.Add((bitmap, tip));
+            _weights.Add(1);
+            InvalidateVisual();
+        }
+
+        /// <summary>그림이 칸 높이에 들어가는 배율(작으면 정수 배로 키움).</summary>
+        private double ScaleOf(Bitmap b)
+        {
+            double h = Math.Max(1, b.PixelSize.Height), max = Math.Max(1, Bounds.Height - 8);
+            return h <= max ? Math.Floor(max / h) : max / h;
+        }
+
+        /// <summary>마우스를 올린 장의 목표 몫: 그 그림 전체 너비가 들어갈 만큼(나머지 장은 몫 1).</summary>
+        private double HoverWeight(int i)
+        {
+            int n = _items.Count;
+            if (n <= 1) return 1;
+            double total = Bounds.Width - GapPx * (n - 1);
+            double want = _items[i].Bitmap.PixelSize.Width * ScaleOf(_items[i].Bitmap) + 8;
+            // 나머지 장은 최소 24px은 남긴다.
+            double maxShare = Math.Max(1, total - 24 * (n - 1));
+            double share = Math.Clamp(want, total / n, maxShare);
+            // share / (share + (n-1)*rest) = weight / (weight + n - 1)
+            double restEach = (total - share) / (n - 1);
+            return restEach <= 0 ? 1 : share / restEach;
+        }
+
+        private void Step()
+        {
+            bool moving = false;
+            for (int i = 0; i < _weights.Count; i++)
+            {
+                double target = i == _hover ? HoverWeight(i) : 1;
+                double next = _weights[i] + (target - _weights[i]) * Ease;
+                if (Math.Abs(target - next) < 0.01) next = target;
+                else moving = true;
+                _weights[i] = next;
+            }
+            if (!moving) _timer.Stop();
+            InvalidateVisual();
+        }
+
+        private IEnumerable<(int Index, Rect Rect)> Strips()
+        {
+            int n = _items.Count;
+            double total = Bounds.Width - GapPx * (n - 1), sum = _weights.Sum(), x = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double w = total * _weights[i] / sum;
+                yield return (i, new Rect(x, 0, Math.Max(0, w), Bounds.Height));
+                x += w + GapPx;
+            }
+        }
+
+        public override void Render(DrawingContext g)
+        {
+            if (_items.Count == 0) return;
+            foreach (var (i, r) in Strips())
+            {
+                var bmp = _items[i].Bitmap;
+                double scale = ScaleOf(bmp);
+                double w = bmp.PixelSize.Width * scale, h = bmp.PixelSize.Height * scale;
+                // 칸 가운데에 그림 가운데를 맞춘다(좁으면 양옆이 잘림).
+                var dest = new Rect(Math.Round(r.X + (r.Width - w) / 2), Math.Round((r.Height - h) / 2), w, h);
+                using (g.PushClip(r))
+                using (ImageUtil.Pixelated(g))
+                    g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), dest);
+                if (i == _hover) g.DrawRectangle(null, AppTheme.Pen(AppTheme.AccentColor, 2), r.Deflate(1));
+            }
+        }
+
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+            double x = e.GetPosition(this).X;
+            int hover = -1;
+            foreach (var (i, r) in Strips())
+                if (x >= r.X && x < r.Right + GapPx) { hover = i; break; }
+            SetHover(hover);
+        }
+
+        protected override void OnPointerExited(PointerEventArgs e)
+        {
+            base.OnPointerExited(e);
+            SetHover(-1);
+        }
+
+        private void SetHover(int i)
+        {
+            if (i == _hover) return;
+            _hover = i;
+            ToolTip.SetTip(this, i >= 0 ? _items[i].Tip : null);
+            _timer.Start();
         }
     }
 }

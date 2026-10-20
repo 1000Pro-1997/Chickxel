@@ -1,0 +1,24 @@
+# Third-party notices
+
+Gpixel itself is released under the MIT License (see `LICENSE`). Release builds bundle or use the following third-party components.
+
+| Component | Use | License |
+|---|---|---|
+| [.NET runtime](https://github.com/dotnet/runtime) | Self-contained runtime in release builds | MIT |
+| [Avalonia](https://github.com/AvaloniaUI/Avalonia) (Avalonia, Desktop, Themes.Fluent, Controls.ColorPicker) | Cross-platform UI | MIT |
+| [SkiaSharp](https://github.com/mono/SkiaSharp) / [HarfBuzzSharp](https://github.com/mono/SkiaSharp) | Rendering and text shaping (via Avalonia) | MIT |
+| [Skia](https://skia.org) | 2D graphics library (via SkiaSharp) | BSD-3-Clause |
+| [HarfBuzz](https://github.com/harfbuzz/harfbuzz) | Text shaping (via HarfBuzzSharp) | MIT ("Old MIT") |
+| [Tmds.DBus.Protocol](https://github.com/tmds/Tmds.DBus), [MicroCom.Runtime](https://github.com/kekekeks/MicroCom) | Avalonia platform dependencies | MIT |
+| [Microsoft.Data.Sqlite](https://github.com/dotnet/efcore) | Reading the Unity Hub project list (`hub.db`) | MIT |
+| [SQLitePCLRaw](https://github.com/ericsink/SQLitePCL.raw) | SQLite native bindings | Apache-2.0 |
+| [SQLite](https://sqlite.org) | Embedded database engine | Public domain |
+| [Lucide](https://lucide.dev) | Shapes of a few line icons (eye, lock, copy, plus, refresh, layers) redrawn in `VectorIcons.cs` | ISC |
+| DawnBringer 32 palette by DawnBringer | Default palette colors | Freely shared by the author |
+
+## Online content
+
+- **Lospec palettes** (`팔레트 웹(Lospec)…`): palette lists and example images are fetched at run time from [lospec.com](https://lospec.com/palette-list) only when that window is opened. Palettes and example images belong to their respective authors; nothing from Lospec is bundled with Gpixel.
+- **Claude chat**: uses the user's own locally installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI and its login. Gpixel does not bundle or redistribute Claude Code; usage is subject to Anthropic's terms.
+
+The full license texts of the MIT, BSD-3-Clause, Apache-2.0 and ISC licensed components are available at the linked project pages.

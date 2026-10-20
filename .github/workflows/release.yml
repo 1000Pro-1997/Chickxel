@@ -31,10 +31,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: gpixel
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
 
       - name: GitHub release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Gpixel $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt --title "Gpixel $GITHUB_REF_NAME" --generate-notes

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Gpixel.Core.Edit;
+using Gpixel.Core.Model;
 
 namespace Gpixel.App;
 
@@ -71,6 +72,12 @@ public sealed class AppSettings
     public bool AutoFit { get; set; } = true;
     public string SecondaryColor { get; set; } = "#00000000";
     public List<string> RecentColors { get; set; } = new();
+    /// <summary>색 고르기 방식(사각형·벌집·색상환·슬라이더).</summary>
+    public ColorPickerMode ColorPickerMode { get; set; } = ColorPickerMode.Square;
+    /// <summary>팔레트 열의 팔레트들(위 → 아래). null = 처음 실행(기본 팔레트 하나).</summary>
+    public List<PaletteSetting>? Palettes { get; set; }
+    /// <summary>예전 버전의 팔레트 하나(읽기만 — <see cref="Load"/>가 <see cref="Palettes"/> 첫 항목으로 옮기고 다시 쓰지 않음).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Palette { get; set; }
 
     // 프로젝트·미리보기
@@ -103,12 +110,30 @@ public sealed class AppSettings
     // 편집·파일 브라우저(환경 설정 창)
     /// <summary>실행취소 단계 수(1~10000).</summary>
     public int UndoSteps { get; set; } = UndoStack.DefaultCapacity;
-    /// <summary>앱 휴지통 보관 기간(일). 지나면 영구 삭제.</summary>
-    public int TrashDays { get; set; } = 7;
+    /// <summary>앱 휴지통 보관 기간(일). 0 = 제한 없음(기본). 지나면 영구 삭제.</summary>
+    public int TrashKeepDays { get; set; } = TrashPolicy.Default.Days;
+    /// <summary>앱 휴지통 최대 용량(MB). 0 = 제한 없음. 넘치면 오래된 항목부터 영구 삭제(기본 1GB).</summary>
+    public int TrashMaxMegabytes { get; set; } = TrashPolicy.Default.MaxMegabytes;
+
+    [JsonIgnore]
+    public TrashPolicy TrashPolicy
+    {
+        get => new(Math.Max(0, TrashKeepDays), Math.Max(0, TrashMaxMegabytes));
+        set { TrashKeepDays = value.Days; TrashMaxMegabytes = value.MaxMegabytes; }
+    }
     /// <summary>사용자 단축키: 명령 Id("분류/이름") → 키 표기 목록(빈 목록 = 단축키 없음). 기본값과 다른 명령만 담는다.</summary>
     public Dictionary<string, List<string>>? Shortcuts { get; set; }
 
+    // 업데이트
+    /// <summary>시작할 때마다 새 버전을 자동으로 확인(배포판만, 새 버전이면 업데이트 창). 도움말 > 업데이트 확인은 이 설정과 관계없이 확인한다.</summary>
+    public bool UpdateCheck { get; set; } = true;
+    /// <summary>"다음 업데이트까지 띄우지 않기"로 고른 버전(자동 확인에서 알리지 않음). null = 없음.</summary>
+    public string? SkippedVersion { get; set; }
+
     /// <summary>처음 실행할 때 쓰는 기본 팔레트(DawnBringer 32).</summary>
+    public const string DefaultPaletteName = "DawnBringer 32";
+
+    /// <inheritdoc cref="DefaultPaletteName"/>
     public static readonly string[] DefaultPalette =
     [
         "000000", "222034", "45283C", "663931", "8F563B", "DF7126", "D9A066", "EEC39A",
@@ -128,12 +153,23 @@ public sealed class AppSettings
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), Options) ?? new AppSettings();
+                return Migrate(JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), Options) ?? new AppSettings());
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
         }
         return new AppSettings();
+    }
+
+    /// <summary>예전 형식을 옮긴다: 팔레트 하나(<see cref="Palette"/>) → <see cref="Palettes"/> 첫 항목 "팔레트 1".</summary>
+    private static AppSettings Migrate(AppSettings s)
+    {
+        if (s.Palette is { } old)
+        {
+            s.Palettes ??= [new PaletteSetting { Name = "팔레트 1", Colors = old }];
+            s.Palette = null;
+        }
+        return s;
     }
 
     /// <summary>설정 파일을 쓴다. 실패하면 false(설정 저장 실패는 작업을 막지 않는다).</summary>
@@ -157,4 +193,19 @@ public sealed class AppSettings
         list.Insert(0, path);
         if (list.Count > MaxRecent) list.RemoveRange(MaxRecent, list.Count - MaxRecent);
     }
+}
+
+/// <summary>설정 파일에 저장하는 팔레트 하나(이름, "#RRGGBB" 색 목록, 접힘).</summary>
+public sealed class PaletteSetting
+{
+    public string Name { get; set; } = "";
+    public List<string> Colors { get; set; } = new();
+    public bool Collapsed { get; set; }
+
+    public static PaletteSetting From(NamedPalette p)
+        => new() { Name = p.Name, Colors = [.. p.Colors.Select(c => c.ToHex())], Collapsed = p.Collapsed };
+
+    /// <summary>읽을 수 없는 색 문자열은 건너뛴다.</summary>
+    public NamedPalette ToPalette()
+        => new(Name, [.. Colors.Select(h => Color32.TryParseHex(h, out var c) ? c : (Color32?)null).OfType<Color32>()], Collapsed);
 }

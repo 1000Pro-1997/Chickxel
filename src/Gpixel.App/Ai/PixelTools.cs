@@ -331,7 +331,7 @@ public sealed class PixelTools
             },
             "width", "height"),
         Tool("set_palette",
-            "Replace the palette shown in the editor's color panel.",
+            "Replace the colors of the active palette (the last clicked/edited one) in the editor's color panel.",
             new JsonObject
             {
                 ["colors"] = new JsonObject

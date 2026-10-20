@@ -230,6 +230,34 @@ public sealed class SpriteProject
         });
     }
 
+    /// <summary>저장된 모든 셀(부위면 모든 스킨 자신의 셀). 읽기 전용으로 쓴다(고치려면 스트로크나 <see cref="MapCels"/>).</summary>
+    public IEnumerable<(Layer Layer, Frame Frame, PixelImage Cel)> StoredCels
+        => _cels.Select(kv => (kv.Key.Layer, kv.Key.Frame, kv.Value));
+
+    /// <summary>
+    /// 여러 셀의 픽셀을 한꺼번에 바꾼다(실행취소 한 단계). <paramref name="include"/>가 참인 레이어·프레임의 저장된 셀마다
+    /// (부위면 모든 스킨 자신의 셀) <paramref name="map"/>을 부르고, 새 이미지(같은 크기)를 돌려주면 그것으로 바꿔 넣는다(null = 그대로).
+    /// 잠긴 레이어(잠긴 그룹의 부위 포함)는 건너뛴다. 바꾼 셀 수를 돌려준다(0이면 기록 없음).
+    /// </summary>
+    public int MapCels(string label, Func<Layer, Frame, bool> include, Func<PixelImage, PixelImage?> map)
+    {
+        if (_stroke is not null) CommitCelStroke("편집");
+        var changes = new List<(CelKey Key, PixelImage Image)>();
+        foreach (var (key, cel) in _cels)
+        {
+            if (key.Layer.Locked || (key.Layer.Parent?.Locked ?? false) || !include(key.Layer, key.Frame)) continue;
+            if (map(cel) is not { } image) continue;
+            if (image.Size != cel.Size) throw new ArgumentException("바꾼 셀 이미지 크기가 원래 셀과 다릅니다.", nameof(map));
+            changes.Add((key, image));
+        }
+        if (changes.Count == 0) return 0;
+        Edit(label, ProjectChange.Pixels, () =>
+        {
+            foreach (var (key, image) in changes) _cels[key] = image;
+        });
+        return changes.Count;
+    }
+
     /// <summary>레이어 셀의 크기: 부위면 부위 크기, 아니면 캔버스 크기.</summary>
     public Size CelSize(Layer layer) => layer.IsPart ? layer.PartSize : Size;
 
@@ -246,25 +274,40 @@ public sealed class SpriteProject
     /// <summary>
     /// <paramref name="target"/>(캔버스 크기)을 지우고 프레임을 합성해 넣는다(메모리 재사용).
     /// 일반 레이어는 (0,0)에, 부위는 <see cref="Layer.PartOffset"/>에 불투명도 그룹×부위로 그린다(그룹의 지금 스킨, 빈 셀은 첫 스킨 셀). 숨긴 그룹은 부위도 숨긴다.
+    /// 레이어 효과(<see cref="Layer.Effects"/>, 이 프레임이 범위 안인 것만)는 셀마다 입혀 그리고(밖으로 번진 부분은 캔버스에서 잘림), 이 프레임에 효과가 켜진 그룹은
+    /// 부위들을 먼저 합친 그림에 그룹 효과를 입혀 그룹 불투명도로 한 번에 그린다(<see cref="DrawGroup"/>).
     /// <paramref name="layerFilter"/>가 있으면 그리는 레이어(일반·부위)마다 걸러낸다(보이기 여부는 <paramref name="includeHidden"/>로).
+    /// <paramref name="celMap"/>이 있으면 그리기 전에 셀 이미지를 그 결과로 바꿔 그린다(미리보기용, 셀은 그대로 — 효과는 바꾼 그림에 입힘).
     /// </summary>
-    public void FlattenInto(PixelImage target, int frameIndex, bool includeHidden = false, Func<Layer, bool>? layerFilter = null)
+    public void FlattenInto(PixelImage target, int frameIndex, bool includeHidden = false, Func<Layer, bool>? layerFilter = null,
+        Func<Layer, PixelImage, PixelImage>? celMap = null)
     {
         if (target.Width != _width || target.Height != _height)
             throw new ArgumentException("대상 이미지 크기가 캔버스와 다릅니다.", nameof(target));
         target.Clear();
         var frame = _frames[frameIndex];
+        PixelImage? CelOf(Layer layer)
+        {
+            if (layerFilter is not null && !layerFilter(layer)) return null;
+            var cel = GetCel(layer, frame);
+            return cel is not null && celMap is not null ? celMap(layer, cel) : cel;
+        }
         foreach (var layer in _layers)
         {
-            if (layer.IsGroup) continue;
+            if (layer.IsGroup)
+            {
+                if (layer.HasActiveEffectsAt(frameIndex) && (includeHidden || layer.Visible))
+                    DrawGroup(target, layer, frameIndex, part => includeHidden || part.Visible ? CelOf(part) : null);
+                continue;
+            }
+            if (layer.Parent is { IsGroup: true } pg && pg.HasActiveEffectsAt(frameIndex)) continue; // 그룹 차례에 함께 그린다
             if (!includeHidden && !(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
-            if (layerFilter is not null && !layerFilter(layer)) continue;
-            DrawCel(target, layer, frame);
+            DrawCel(target, layer, frameIndex, CelOf(layer));
         }
     }
 
     /// <summary>
-    /// 그룹 하나의 보이는 부위만 합성한 캔버스 크기 이미지(썸네일용, 그룹 자신의 보이기 여부는 무시). 부위마다 지금 보이는 스킨으로,
+    /// 그룹 하나의 보이는 부위만 합성한 캔버스 크기 이미지(썸네일용, 그룹 자신의 보이기 여부는 무시, 효과 포함). 부위마다 지금 보이는 스킨으로,
     /// <paramref name="skin"/>을 주면 부위 재정의와 관계없이 모든 부위를 그 스킨으로 입혀 본다(빈 셀은 첫 스킨 셀).
     /// </summary>
     public PixelImage FlattenGroup(Layer group, int frameIndex, Skin? skin = null)
@@ -272,22 +315,69 @@ public sealed class SpriteProject
         if (!group.IsGroup) throw new ArgumentException("그룹 레이어가 아닙니다.", nameof(group));
         var result = new PixelImage(_width, _height);
         var frame = _frames[frameIndex];
-        foreach (var part in ChildrenOf(group))
-            if (part.Visible) DrawCel(result, part, skin is null ? GetCel(part, frame) : GetSkinCel(part, frame, skin));
+        PixelImage? CelOf(Layer part) => !part.Visible ? null : skin is null ? GetCel(part, frame) : GetSkinCel(part, frame, skin);
+        if (group.HasActiveEffectsAt(frameIndex)) DrawGroup(result, group, frameIndex, CelOf);
+        else
+            foreach (var part in ChildrenOf(group))
+                DrawCel(result, part, frameIndex, CelOf(part));
         return result;
     }
 
-    private void DrawCel(PixelImage target, Layer layer, Frame frame) => DrawCel(target, layer, GetCel(layer, frame));
+    /// <summary>
+    /// 레이어 효과가 입혀질 그림(효과 미리보기용, 효과 없이): 일반 레이어·부위는 지금 보이는 셀, 그룹은 보이는 부위들을 부위 불투명도·부위 효과로 합친
+    /// 캔버스 크기 그림(그룹 효과·그룹 불투명도 없이). 빈 셀(그룹이면 그릴 부위 없음)이면 null.
+    /// </summary>
+    public PixelImage? EffectSource(Layer layer, int frameIndex)
+    {
+        var frame = _frames[frameIndex];
+        if (!layer.IsGroup) return GetCel(layer, frame);
+        PixelImage? result = null;
+        foreach (var part in ChildrenOf(layer))
+        {
+            if (!part.Visible || GetCel(part, frame) is not { } cel) continue;
+            result ??= new PixelImage(_width, _height);
+            DrawLayerImage(result, part, frameIndex, cel, part.Opacity, 0, 0);
+        }
+        return result;
+    }
 
-    private static void DrawCel(PixelImage target, Layer layer, PixelImage? cel)
+    /// <summary>
+    /// 이 프레임에 효과가 켜진 그룹: 부위들(<paramref name="celOf"/>가 null이면 뺌)을 부위 불투명도·부위 효과로 효과 여백만큼 넓힌 캔버스에 먼저 합친 뒤
+    /// 그룹 효과(이 프레임 범위 안인 것)를 입혀 <paramref name="target"/>에 그룹 불투명도로 그린다(캔버스 밖은 잘림).
+    /// </summary>
+    private void DrawGroup(PixelImage target, Layer group, int frameIndex, Func<Layer, PixelImage?> celOf)
+    {
+        var effects = group.EffectsAt(frameIndex);
+        var pad = LayerEffects.Padding(effects, _width, _height);
+        PixelImage? buffer = null;
+        foreach (var part in ChildrenOf(group))
+        {
+            if (celOf(part) is not { } cel) continue;
+            buffer ??= new PixelImage(_width + pad.Left + pad.Right, _height + pad.Top + pad.Bottom);
+            DrawLayerImage(buffer, part, frameIndex, cel, part.Opacity, pad.Left, pad.Top);
+        }
+        if (buffer is null) return;
+        LayerEffects.Apply(buffer, effects);
+        target.Composite(buffer, -pad.Left, -pad.Top, group.Opacity);
+    }
+
+    private static void DrawCel(PixelImage target, Layer layer, int frameIndex, PixelImage? cel)
     {
         if (cel is null) return;
+        byte opacity = layer.IsPart ? (byte)((layer.Opacity * (layer.Parent?.Opacity ?? 255) + 127) / 255) : layer.Opacity;
+        DrawLayerImage(target, layer, frameIndex, cel, opacity, 0, 0);
+    }
+
+    /// <summary>셀 하나를 레이어 자기 효과(이 프레임 범위 안인 것)까지 입혀 (부위면 부위 위치) + (<paramref name="ox"/>, <paramref name="oy"/>)에 합성한다.</summary>
+    private static void DrawLayerImage(PixelImage target, Layer layer, int frameIndex, PixelImage cel, byte opacity, int ox, int oy)
+    {
         if (layer.IsPart)
         {
-            byte opacity = (byte)((layer.Opacity * (layer.Parent?.Opacity ?? 255) + 127) / 255);
-            target.Composite(cel, layer.PartOffset.X, layer.PartOffset.Y, opacity);
+            ox += layer.PartOffset.X;
+            oy += layer.PartOffset.Y;
         }
-        else target.Composite(cel, 0, 0, layer.Opacity);
+        var (image, dx, dy) = LayerEffects.Render(cel, layer.EffectsAt(frameIndex));
+        target.Composite(image, ox + dx, oy + dy, opacity);
     }
 
     // ───────────── 스트로크(픽셀 편집) ─────────────
@@ -559,6 +649,15 @@ public sealed class SpriteProject
         NotifyChanged(ProjectChange.Layers, markDirty: false);
     }
 
+    /// <summary>타임라인 효과 줄 접기/펼치기(표시용, 실행취소·수정됨 표시 없음).</summary>
+    public void SetLayerEffectsCollapsed(int layerIndex, bool collapsed)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.EffectsCollapsed == collapsed) return;
+        layer.EffectsCollapsed = collapsed;
+        NotifyChanged(ProjectChange.Layers, markDirty: false);
+    }
+
     /// <summary>
     /// 레이어를 셀까지 복사해 바로 위에 넣는다. 그룹은 부위·스킨까지 통째로(덩어리 바로 위), 부위는 같은 그룹 안 바로 위(모든 스킨 셀).
     /// </summary>
@@ -609,10 +708,12 @@ public sealed class SpriteProject
             Kind = src.Kind,
             Parent = parent,
             Collapsed = src.Collapsed,
+            EffectsCollapsed = src.EffectsCollapsed,
             PartSize = src.PartSize,
             PartOffset = src.PartOffset,
             PartPivot = src.PartPivot,
             PartBorder = src.PartBorder,
+            Effects = src.Effects,
         };
         if (src.IsGroup)
         {
@@ -715,8 +816,8 @@ public sealed class SpriteProject
     }
 
     /// <summary>
-    /// 일반 레이어를 바로 아래 일반 레이어에 병합한다(위 레이어를 불투명도대로 합성, 보이기 여부와 관계없이). 위 레이어는 삭제된다.
-    /// 부위·그룹이 끼면 <see cref="InvalidOperationException"/>.
+    /// 일반 레이어를 바로 아래 일반 레이어에 병합한다(위 레이어를 효과를 구워 넣고 불투명도대로 합성, 보이기 여부와 관계없이 — 캔버스 밖으로 번진 효과는 잘림).
+    /// 위 레이어는 삭제된다. 부위·그룹이 끼면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public void MergeLayerDown(int index)
     {
@@ -731,7 +832,8 @@ public sealed class SpriteProject
             {
                 var lowerKey = new CelKey(lower, key.Frame, null);
                 var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom.Clone() : new PixelImage(top.Width, top.Height);
-                merged.Composite(top, 0, 0, upper.Opacity);
+                var (image, dx, dy) = LayerEffects.Render(top, upper.EffectsAt(_frames.IndexOf(key.Frame)));
+                merged.Composite(image, dx, dy, upper.Opacity);
                 _cels[lowerKey] = merged;
                 _cels.Remove(key);
             }
@@ -758,6 +860,38 @@ public sealed class SpriteProject
             if (locked is { } l) layer.Locked = l;
             if (opacity is { } o) layer.Opacity = o;
         });
+    }
+
+    /// <summary>레이어 효과 목록을 통째로 바꾼다(실행취소 한 단계, 같으면 기록 없음). 일반·부위·그룹 모두.</summary>
+    public void SetLayerEffects(int index, IReadOnlyList<LayerEffect> effects)
+    {
+        var layer = _layers[index];
+        var list = effects.ToArray();
+        if (layer.Effects.SequenceEqual(list)) return;
+        Edit("레이어 효과", ProjectChange.Layers, () => layer.Effects = list);
+    }
+
+    /// <summary>
+    /// 효과 미리보기(대화상자에서 고치는 동안): 실행취소 기록·수정됨 표시 없이 바꾸고 다시 그리게 한다.
+    /// 끝낼 때 <see cref="EndLayerEffectsPreview"/>를 반드시 부른다.
+    /// </summary>
+    public void PreviewLayerEffects(int index, IReadOnlyList<LayerEffect> effects)
+    {
+        _layers[index].Effects = effects.ToArray();
+        NotifyChanged(ProjectChange.Layers, markDirty: false);
+    }
+
+    /// <summary>
+    /// 효과 미리보기 끝: 레이어를 미리보기 전 효과(<paramref name="original"/>)로 되돌리고, <paramref name="commit"/>이면 미리보던 효과를
+    /// <see cref="SetLayerEffects"/>로 확정한다(실행취소 한 단계 = 대화상자 한 번).
+    /// </summary>
+    public void EndLayerEffectsPreview(int index, IReadOnlyList<LayerEffect> original, bool commit)
+    {
+        var layer = _layers[index];
+        var previewed = layer.Effects;
+        layer.Effects = original.ToArray();
+        if (commit) SetLayerEffects(index, previewed);
+        if (!commit || layer.Effects.SequenceEqual(original)) NotifyChanged(ProjectChange.Layers, markDirty: false);
     }
 
     // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
@@ -1206,11 +1340,20 @@ public sealed class SpriteProject
     {
         var result = new PixelImage(_width, _height);
         var frame = _frames[frameIndex];
+        bool Excluded(Layer layer) => excluded is { Count: > 0 } && excluded.Contains(layer);
+        PixelImage? PartCel(Layer part) => ResolveCel(part, frame, SkinKey(part, SkinUnder(part, outfit)));
         foreach (var layer in _layers)
         {
-            if (layer.IsGroup || !(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
-            if (excluded is { Count: > 0 } && (excluded.Contains(layer) || (layer.Parent is { } g && excluded.Contains(g)))) continue;
-            DrawCel(result, layer, layer.IsPart ? ResolveCel(layer, frame, SkinKey(layer, SkinUnder(layer, outfit))) : GetCel(layer, frame));
+            if (layer.IsGroup)
+            {
+                if (layer.HasActiveEffectsAt(frameIndex) && layer.Visible && !Excluded(layer))
+                    DrawGroup(result, layer, frameIndex, part => part.Visible ? PartCel(part) : null);
+                continue;
+            }
+            if (layer.Parent is { IsGroup: true } pg && pg.HasActiveEffectsAt(frameIndex)) continue; // 그룹 차례에 함께 그린다
+            if (!(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
+            if (Excluded(layer) || (layer.Parent is { } g && Excluded(g))) continue;
+            DrawCel(result, layer, frameIndex, layer.IsPart ? PartCel(layer) : GetCel(layer, frame));
         }
         return result;
     }
@@ -1219,7 +1362,7 @@ public sealed class SpriteProject
 
     /// <summary>
     /// 빈 프레임을 <paramref name="index"/>(기본: 맨 끝)에 넣는다. 길이는 앞 프레임과 같다.
-    /// 태그 범위 안(시작 뒤 ~ 끝)에 넣으면 그 태그가 늘어나고, 뒤쪽 태그는 밀린다.
+    /// 태그·효과 프레임 범위 안(시작 뒤 ~ 끝)에 넣으면 그 범위가 늘어나고, 뒤쪽 범위는 밀린다.
     /// </summary>
     public Frame AddFrame(int? index = null)
     {
@@ -1234,11 +1377,12 @@ public sealed class SpriteProject
                 if (t.From >= at) { t.From++; t.To++; }
                 else if (t.To >= at) t.To++;
             }
+            MapEffectRanges(r => r.From >= at ? new FrameRange(r.From + 1, r.To + 1) : r.To >= at ? new FrameRange(r.From, r.To + 1) : r);
         });
         return frame;
     }
 
-    /// <summary>프레임을 셀까지 복사해 바로 뒤에 넣는다. 원래 프레임을 포함한 태그는 늘어난다.</summary>
+    /// <summary>프레임을 셀까지 복사해 바로 뒤에 넣는다. 원래 프레임을 포함한 태그·효과 범위는 늘어난다.</summary>
     public Frame DuplicateFrame(int index)
     {
         var src = _frames[index];
@@ -1252,11 +1396,15 @@ public sealed class SpriteProject
                 if (t.From > index) { t.From++; t.To++; }
                 else if (t.To >= index) t.To++;
             }
+            MapEffectRanges(r => r.From > index ? new FrameRange(r.From + 1, r.To + 1) : r.To >= index ? new FrameRange(r.From, r.To + 1) : r);
         });
         return copy;
     }
 
-    /// <summary>프레임 삭제(마지막 하나는 지울 수 없음). 태그 범위가 줄고, 비게 된 태그는 지워진다.</summary>
+    /// <summary>
+    /// 프레임 삭제(마지막 하나는 지울 수 없음). 태그·효과 범위가 줄고, 비게 된 태그와 범위의 프레임이 모두 지워진 효과는 지워진다
+    /// (같은 실행취소 단계라 되돌리면 함께 돌아온다).
+    /// </summary>
     public void DeleteFrame(int index)
     {
         if (_frames.Count <= 1) throw new InvalidOperationException("마지막 프레임은 삭제할 수 없습니다.");
@@ -1271,12 +1419,14 @@ public sealed class SpriteProject
                 if (t.To >= index) t.To--;
             }
             _tags.RemoveAll(t => t.To < t.From);
+            MapEffectRanges(r => r.From == index && r.To == index ? null
+                : new FrameRange(r.From > index ? r.From - 1 : r.From, r.To >= index ? r.To - 1 : r.To));
         });
     }
 
     /// <summary>
-    /// 프레임 순서 바꾸기(<paramref name="to"/> = 옮긴 뒤 위치). 태그 범위는 프레임 번호 기준이라 그대로다
-    /// (태그 안의 순서를 바꾸거나 다른 태그 칸으로 옮기는 동작).
+    /// 프레임 순서 바꾸기(<paramref name="to"/> = 옮긴 뒤 위치). 태그·효과 범위는 프레임 번호 기준이라 그대로다
+    /// (태그 안의 순서를 바꾸거나 다른 태그 칸으로 옮기는 동작, 효과는 그 자리에 온 프레임에 입혀짐).
     /// </summary>
     public void MoveFrame(int from, int to)
     {
@@ -1288,6 +1438,29 @@ public sealed class SpriteProject
             _frames.RemoveAt(from);
             _frames.Insert(to, frame);
         });
+    }
+
+    /// <summary>
+    /// 모든 레이어 효과의 프레임 범위를 <paramref name="map"/>으로 고친다(모든 프레임 효과는 그대로, <paramref name="map"/>이 null이면 그 효과를 지움).
+    /// 바뀐 레이어만 새 목록으로 바꾼다(편집 안에서 불러 실행취소 기록에 함께 든다).
+    /// </summary>
+    private void MapEffectRanges(Func<FrameRange, FrameRange?> map)
+    {
+        foreach (var layer in _layers)
+        {
+            List<LayerEffect>? list = null;
+            for (int i = 0; i < layer.Effects.Count; i++)
+            {
+                var e = layer.Effects[i];
+                var next = e.Frames is { } r ? map(r) : null;
+                bool same = e.Frames is null || next == e.Frames;
+                if (same && list is null) continue;
+                list ??= [.. layer.Effects.Take(i)];
+                if (same) list.Add(e);
+                else if (next is not null) list.Add(e with { Frames = next });
+            }
+            if (list is not null) layer.Effects = list.ToArray();
+        }
     }
 
     public void SetFrameDuration(int index, int durationMs)
@@ -1588,11 +1761,11 @@ public sealed class SpriteProject
     private readonly record struct LayerState(
         Layer Layer, string Name, bool Visible, bool Locked, byte Opacity, LayerKind Kind, Layer? Parent,
         Size PartSize, Point PartOffset, Pivot PartPivot, SpriteBorder PartBorder, Rectangle? PartSourceRect,
-        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin)
+        (Skin Skin, string Name, Layer? Owner)[]? Skins, Skin? ActiveSkin, IReadOnlyList<LayerEffect> Effects)
     {
         public static LayerState Of(Layer l) => new(l, l.Name, l.Visible, l.Locked, l.Opacity, l.Kind, l.Parent,
             l.PartSize, l.PartOffset, l.PartPivot, l.PartBorder, l.PartSourceRect,
-            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null);
+            l.IsGroup ? l.SkinList.Select(s => (s, s.Name, s.Owner)).ToArray() : null, l.IsGroup ? l.ActiveSkin : null, l.Effects);
 
         /// <summary>
         /// 상태를 되돌린다. 지금 스킨(착장)은 실행취소 대상이 아니므로 스킨 목록 구성이 같으면 지금 고른 스킨을 그대로 두고,
@@ -1611,6 +1784,7 @@ public sealed class SpriteProject
             Layer.PartPivot = PartPivot;
             Layer.PartBorder = PartBorder;
             Layer.PartSourceRect = PartSourceRect;
+            Layer.Effects = Effects;
             if (Skins is not null)
             {
                 var current = Layer.ActiveSkinRaw;

@@ -61,6 +61,8 @@ public sealed class Layer
     public bool IsPart => Kind == LayerKind.Part;
     /// <summary>그룹: 타임라인에서 접혀 있는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
     public bool Collapsed { get; internal set; }
+    /// <summary>타임라인에서 효과 줄(효과마다 한 줄)을 접어 두었는지(파일에 저장, 실행취소·수정됨 표시 없음).</summary>
+    public bool EffectsCollapsed { get; internal set; }
 
     /// <summary>부위: 셀 크기(부위 셀은 정확히 이 크기).</summary>
     public Size PartSize { get; internal set; }
@@ -74,6 +76,21 @@ public sealed class Layer
     public SpriteBorder PartBorder { get; internal set; }
     /// <summary>부위: 가져온 시트에서의 원래 칸(왼쪽 위 원점). "원래 위치 유지" 내보내기에 쓴다. 없으면 null.</summary>
     public Rectangle? PartSourceRect { get; internal set; }
+
+    /// <summary>
+    /// 레이어 효과(앞에서부터 차례로 적용, 비파괴 — 셀 픽셀은 그대로). 일반·부위는 그 셀에, 그룹은 그 부위들을 합친 그림에 입힌다.
+    /// 바꿀 때는 <see cref="SpriteProject.SetLayerEffects"/>로.
+    /// </summary>
+    public IReadOnlyList<LayerEffect> Effects { get; internal set; } = [];
+
+    /// <summary>켜진 효과가 하나라도 있는지(어느 프레임이든).</summary>
+    public bool HasActiveEffects => Edit.LayerEffects.AnyEnabled(Effects);
+
+    /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 프레임 범위 안인) 효과가 있는지.</summary>
+    public bool HasActiveEffectsAt(int frameIndex) => Edit.LayerEffects.AnyActive(Effects, frameIndex);
+
+    /// <summary>프레임 <paramref name="frameIndex"/>의 효과 목록(범위 밖 효과를 뺌, <see cref="Edit.LayerEffects.At"/>).</summary>
+    public IReadOnlyList<LayerEffect> EffectsAt(int frameIndex) => Edit.LayerEffects.At(Effects, frameIndex);
 
     /// <summary>그룹의 첫 스킨 기본 이름(스킨이 없던 예전 파일·새 그룹).</summary>
     public const string DefaultSkinName = "기본";

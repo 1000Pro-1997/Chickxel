@@ -66,7 +66,8 @@ public class LospecTests
           "palettes": [
             { "title": "famicube 16", "slug": "famicube-16", "colors": ["e03c28", "#871646", "zzzzzz", 5, "abc"],
               "numberOfColors": 16, "likes": 36, "downloads": "1,271", "tags": ["fantasyconsole", ""],
-              "user": { "name": "polyphrog", "slug": "poly-phrog" }, "url": "/palette-list/famicube-16" },
+              "user": { "name": "polyphrog", "slug": "poly-phrog" }, "url": "/palette-list/famicube-16",
+              "examples": [ { "image": "palette-examples/famicube-1.png" }, { "image": "" }, "bad", { "image": "https://example.com/a.png" }, { "image": "ftp://x/y.png" } ] },
             { "title": "No User", "slug": "no-user", "colors": ["000000", "ffffff80"], "likes": 2, "downloads": "9" },
             { "title": "No Colors", "slug": "no-colors", "colors": ["nothex"] },
             "garbage",
@@ -91,11 +92,13 @@ public class LospecTests
         Assert.Equal(1271, a.Downloads);
         Assert.Equal(["fantasyconsole"], a.Tags);
         Assert.Equal("https://lospec.com/palette-list/famicube-16", a.WebUrl);
+        Assert.Equal(["https://cdn.lospec.com/palette-examples/famicube-1.png", "https://example.com/a.png"], a.Examples.Select(u => u.AbsoluteUri));
 
         var b = page.Palettes[1];
         Assert.Equal("", b.Author);
         Assert.Equal([new Color32(0, 0, 0), new Color32(255, 255, 255, 0x80)], b.Colors);
         Assert.Empty(b.Tags);
+        Assert.Empty(b.Examples);
 
         var c = page.Palettes[2];
         Assert.Equal("untitled", c.Title);

@@ -101,6 +101,8 @@ public sealed class MainForm : Window, Ai.IAiHost
     private ToggleButton _tbFiles = null!;
     private TextBlock _cbToolName = null!, _cbHint = null!, _cbZoom = null!;
     private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFit = null!;
+    /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
+    private Button _cbUpdate = null!;
 
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
     private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
@@ -119,6 +121,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     private bool _closeConfirmed, _closePending;
     private Ai.McpServer? _mcp;
     private Ai.ChatWindow? _chat;
+    private readonly Updater _updater;
     /// <summary>최대화 전 일반 창 위치·크기(설정 저장용).</summary>
     private PixelPoint _normalPosition;
     private Avalonia.Size _normalSize;
@@ -127,6 +130,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         _args = args;
         _settings = AppSettings.Load();
+        _updater = new Updater(_settings, this, ShowMessage, ShowUpdateButton, ConfirmDiscard, ExitForUpdate);
         Title = "Gpixel";
         Background = AppTheme.BackBrush;
         Foreground = AppTheme.TextBrush;
@@ -350,9 +354,18 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         var bar = new DockPanel { LastChildFill = true };
 
-        // 오른쪽 정렬: 보기·확대
+        // 오른쪽 정렬: (새 버전 알림) 보기·확대
         var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
         DockPanel.SetDock(right, Dock.Right);
+        _cbUpdate = BarButton(right, "업데이트", "새 버전이 나왔습니다 — 눌러서 바뀐 점 보기·설치", () =>
+        {
+            if (_updater.Available is { } release) _updater.ShowUpdateDialog(release);
+        });
+        _cbUpdate.Background = AppTheme.AccentBrush;
+        _cbUpdate.Foreground = Brushes.White;
+        _cbUpdate.FontWeight = FontWeight.Bold;
+        _cbUpdate.Margin = new Thickness(1, 1, 6, 1);
+        _cbUpdate.IsVisible = false;
         _cbGrid = Toggle(right, "격자", "픽셀 격자(6배 이상) (Ctrl+G)", () => SetPixelGrid(!_canvas.ShowPixelGrid));
         _cbTiles = Toggle(right, "타일 격자", "타일 격자 (Ctrl+Shift+G)", () => SetTileGrid(!_canvas.ShowTileGrid));
         _cbTiled = Toggle(right, "타일 모드", "반복해 보기(크지 않으면 5×5, 128px 넘으면 3×3)·이어 그리기 (Ctrl+Shift+T)", () => SetTiledMode(!_canvas.TiledMode));
@@ -545,6 +558,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", _colors.PaletteFromImage),
+            DocCmd("팔레트 색으로 변환…", _colors.ConvertImageToActivePalette),
             new Separator(),
             Cmd("환경 설정…", ShowPreferences, "Ctrl+,", KeyScope.Global, (Key.OemComma, Ctrl)));
         Bind("편집", "선택 내려놓기", KeyScope.Canvas, () =>
@@ -660,9 +674,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         AddItems(help,
             Cmd("단축키 목록", ShowShortcuts, "F1", KeyScope.Global, (Key.F1, NoMods)),
             Cmd("설정 파일 위치 열기", OpenSettingsFolder),
-            Cmd("Gpixel 정보", () => Ui.Info(this,
-                "Gpixel — 게임용 픽셀 아트 편집기\n프레임·레이어는 .gpixel 프로젝트로 저장되고, 저장할 때 PNG 시트 + Unity .meta가 내보내집니다.\n\n설정: " + AppSettings.FilePath,
-                "Gpixel 정보")));
+            new Separator(),
+            Cmd("업데이트 확인…", () => _ = _updater.CheckAsync(manual: true)),
+            Cmd("Gpixel 정보…", () => new AboutDialog().ShowDialog(this)));
 
         foreach (var top in new[] { file, edit, view, frame, tools, test, ai, help }) menu.Items.Add(top);
         return menu;
@@ -854,11 +868,11 @@ public sealed class MainForm : Window, Ai.IAiHost
         _canvas.Message += (_, m) => ShowMessage(m);
 
         _browser.SpriteDefaults = () => new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple };
-        _browser.TrashDays = () => Math.Max(1, _settings.TrashDays);
-        _browser.TrashDaysChanged += days => _settings.TrashDays = days;
+        _browser.TrashPolicy = () => _settings.TrashPolicy;
+        _browser.TrashPolicyChanged += policy => _settings.TrashPolicy = policy;
         _browser.Message += (_, m) => ShowMessage(m);
-        // 보관 기간이 지난 휴지통 항목은 시작할 때 영구 삭제한다.
-        _browser.Trash.Purge(Math.Max(1, _settings.TrashDays));
+        // 보관 기간이 지났거나 용량을 넘친 휴지통 항목은 시작할 때 영구 삭제한다.
+        _browser.Trash.Purge(_settings.TrashPolicy);
         _browser.FileActivated += (_, path) =>
         {
             // 목록 선택 이벤트가 끝난 뒤 연다(저장 확인 대화상자·선택 되돌리기를 안전하게).
@@ -874,7 +888,12 @@ public sealed class MainForm : Window, Ai.IAiHost
         _start.OpenFolderRequested += (_, _) => OpenFolder();
         _start.NewImageRequested += (_, _) => NewProject(null);
 
-        _colors.PaletteChanged += (_, _) => _settings.Palette = _colors.Palette.Select(c => c.ToHex()).ToList();
+        _colors.PalettesChanged += (_, _) => _settings.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
+        _colors.Message += (_, m) => ShowMessage(m);
+
+        // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
+        ColorPickDialog.Sources = () => new ColorPickSources(_colors.Palettes, _ctx.RecentColors.ToList(),
+            () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null);
 
         // 숫자 상자를 끄는 동안의 값 변화(프로젝트 설정 등)는 실행취소 한 단계로 묶는다. Claude 차례처럼 이미 열린 묶음이 있으면 그 안에 둔다.
         SpriteProject? scrubProject = null;
@@ -944,8 +963,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
             if (Color32.TryParseHex(hex, out var c)) _ctx.PushRecentColor(c);
         _colors.SetRecent(_ctx.RecentColors);
-        var palette = s.Palette ?? [.. AppSettings.DefaultPalette];
-        _colors.SetPalette(palette.Select(h => Color32.TryParseHex(h, out var c) ? c : (Color32?)null).OfType<Color32>());
+        var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
+        _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
+        _colors.PickerMode = s.ColorPickerMode;
         _browser.IncludeSubfolders = s.IncludeSubfolders;
         _canvas.AutoFit = s.AutoFit;
         _preview.ZoomSetting = s.PreviewZoom;
@@ -981,6 +1001,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (_args.OpenFile is not null) OpenFile(_args.OpenFile);
         if (s.ChatOpen) Dispatcher.UIThread.Post(ToggleChat);
         _canvas.Focus();
+        _updater.OnStartup();
     }
 
     /// <summary>설정의 그라데이션 정지점("위치:#색")을 읽는다. 없거나 2개보다 적게 읽히면 null(기본값 유지).</summary>
@@ -1064,7 +1085,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();
         s.RecentColors = _ctx.RecentColors.Select(c => c.ToHex()).ToList();
-        s.Palette = _colors.Palette.Select(c => c.ToHex()).ToList();
+        s.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
+        s.ColorPickerMode = _colors.PickerMode;
         s.IncludeSubfolders = _browser.IncludeSubfolders;
         s.LastFolder = _browser.RootFolder ?? s.LastFolder;
         s.AutoFit = _canvas.AutoFit;
@@ -1102,6 +1124,23 @@ public sealed class MainForm : Window, Ai.IAiHost
             SaveSettings();
             Close();
         });
+    }
+
+    /// <summary>위 막대 "업데이트" 단추: 알릴 새 버전이 있을 때만 보인다.</summary>
+    private void ShowUpdateButton(ReleaseInfo? release)
+    {
+        _cbUpdate.IsVisible = release is not null;
+        if (release is not null) _cbUpdate.Content = $"업데이트 {release.Version}";
+    }
+
+    /// <summary>업데이트 설치 스크립트를 띄운 뒤 앱을 끝낸다(저장 여부는 <see cref="ConfirmDiscard"/>로 이미 물었다).</summary>
+    private void ExitForUpdate()
+    {
+        _closeConfirmed = true;
+        _play?.Close();
+        ShutdownChat();
+        SaveSettings();
+        Close();
     }
 
     private void OpenSettingsFolder()
@@ -1323,16 +1362,17 @@ public sealed class MainForm : Window, Ai.IAiHost
         UpdateToolUi();
     }
 
-    /// <summary>환경 설정(실행취소 횟수·앱 휴지통 보관 기간·단축키).</summary>
+    /// <summary>환경 설정(실행취소 횟수·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
     private void ShowPreferences()
     {
-        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.TrashDays,
+        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _settings.UndoSteps = dlg.UndoSteps;
-        _settings.TrashDays = dlg.TrashDays;
+        _settings.TrashPolicy = dlg.TrashPolicy;
+        _settings.UpdateCheck = dlg.UpdateCheck;
         _ctx.UndoCapacity = dlg.UndoSteps;
-        _browser.Trash.Purge(dlg.TrashDays);
+        _browser.Trash.Purge(dlg.TrashPolicy);
         // 기본값과 다른 명령만 저장한다(나중에 기본 단축키가 바뀌어도 고치지 않은 명령은 따라감).
         var custom = _commands
             .Where(c => dlg.Keys.TryGetValue(c.Info.Id, out var k) && !k.SequenceEqual(c.Info.Defaults))
@@ -2110,9 +2150,9 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     string? Ai.IAiHost.CurrentFolder => _browser.CurrentFolder ?? _browser.RootFolder;
 
-    IReadOnlyList<Color32> Ai.IAiHost.Palette => _colors.Palette;
+    IReadOnlyList<Color32> Ai.IAiHost.Palette => _colors.ActivePalette;
 
-    void Ai.IAiHost.SetPalette(IReadOnlyList<Color32> colors) => _colors.SetPalette(colors);
+    void Ai.IAiHost.SetPalette(IReadOnlyList<Color32> colors) => _colors.SetActivePalette(colors);
 
     bool Ai.IAiHost.CreateProject(int width, int height, string? fileName, Color32? background, out string message)
     {

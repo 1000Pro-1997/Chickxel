@@ -4,7 +4,7 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 /// <summary>
-/// 내보내기 설정 창 맨 위 "설정 프리셋" 줄: [프리셋 저장…] [불러오기 ▾] [관리 ▾].
+/// 내보내기 설정 창 탭 줄 오른쪽 "프리셋 ▾" 창의 내용: [지금 설정 저장…] [불러오기 ▾] [관리 ▾] [기본 설정으로].
 /// 프리셋 = 프로젝트에 매이지 않는 내보내기 설정 묶음(<see cref="ExportPreset"/>). 불러오면 지금 프로젝트에 적용(실행취소 1단계),
 /// 사용자 프리셋은 앱 설정 폴더의 <see cref="ExportPresets.FileName"/>에 저장한다(기본 제공 프리셋은 이름 바꾸기·덮어쓰기·삭제 불가).
 /// </summary>
@@ -25,7 +25,7 @@ public sealed class ExportPresetBar : StackPanel
         _ctx = ctx;
         _owner = owner;
         Spacing = 2;
-        var save = Ui.Button("프리셋 저장…", (_, _) => Dispatcher.UIThread.Post(SaveCurrent))
+        var save = Ui.Button("지금 설정 저장…", (_, _) => Dispatcher.UIThread.Post(SaveCurrent))
             .Tip("지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)");
         var load = Ui.Button("불러오기 ▾");
         load.Tip("프리셋을 지금 프로젝트에 적용(실행취소 1단계)");
@@ -40,7 +40,10 @@ public sealed class ExportPresetBar : StackPanel
             FontSize = AppTheme.SmallFontSize,
             Margin = new Thickness(3, 0),
         };
-        Children.Add(new WrapPanel { Orientation = Orientation.Horizontal, Children = { save, load, manage } });
+        var reset = Ui.Button("기본 설정으로", (_, _) => Apply(ExportPreset.Capture(new ExportSettings(), "기본 설정")))
+            .Tip("내보내기 설정을 처음 값으로 되돌립니다(파일 이름·폴더는 그대로, 실행취소 1단계)");
+        Children.Add(new TextBlock { Text = "내보내기 설정 프리셋", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(3, 0, 0, 2) });
+        Children.Add(new WrapPanel { Orientation = Orientation.Horizontal, Children = { save, load, manage, reset } });
         Children.Add(_status);
         try
         {

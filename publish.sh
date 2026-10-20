@@ -3,6 +3,7 @@
 #   dist/Gpixel-windows-x64.zip  → 압축 풀고 Gpixel.exe 더블클릭
 #   dist/Gpixel-macos-arm64.zip  → Apple Silicon(M1~) Mac용 Gpixel.app
 #   dist/Gpixel-macos-x64.zip    → Intel Mac용 Gpixel.app
+#   dist/SHA256SUMS.txt          → zip들의 SHA-256(앱의 자동 업데이트가 이것으로 검증한다)
 # 사용: ./publish.sh [버전]   (예: ./publish.sh 1.2.0, 기본 1.0.0)
 # Linux에서도 Windows zip은 만들 수 있다(.app 서명은 macOS에서만).
 set -eu
@@ -51,6 +52,9 @@ if [ "$(uname -s)" = "Darwin" ]; then
 else
   echo "macOS가 아니라서 .app은 건너뜁니다."
 fi
+
+# ── 체크섬: 앱의 자동 업데이트는 이 파일이 없는 릴리스는 자동으로 설치하지 않는다.
+(cd "$DIST" && if command -v shasum >/dev/null 2>&1; then shasum -a 256 *.zip; else sha256sum *.zip; fi > SHA256SUMS.txt)
 
 rm -rf "$WORK"
 echo

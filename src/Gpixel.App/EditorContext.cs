@@ -913,8 +913,8 @@ public sealed class EditorContext
     }
 
     /// <summary>
-    /// 셀 하나(레이어 × 프레임)의 비트맵: 그룹이면 그 그룹의 합성(프레임 크기), 부위·일반 레이어면 셀.
-    /// 빈 셀(그룹이면 모든 부위가 빈 셀)이면 null. 호출자는 Dispose하지 않는다.
+    /// 셀 하나(레이어 × 프레임)의 비트맵: 그룹이면 그 그룹의 합성(프레임 크기, 그룹 효과 포함), 일반 레이어면 효과를 입힌 셀(캔버스 크기로 잘림),
+    /// 부위면 셀 그대로(부위 화면에서 고치는 그림이라 효과 없이). 빈 셀(그룹이면 모든 부위가 빈 셀)이면 null. 호출자는 Dispose하지 않는다.
     /// </summary>
     public WriteableBitmap? CelBitmap(int layer, int frame)
     {
@@ -925,7 +925,8 @@ public sealed class EditorContext
         PixelImage? img;
         if (l.IsGroup)
             img = p.ChildrenOf(l).Any(c => p.GetCel(c, p.Frames[frame]) is not null) ? p.FlattenGroup(l, frame) : null;
-        else img = p.GetCel(layer, frame);
+        else if (p.GetCel(layer, frame) is { } cel) img = l.IsPart ? cel : LayerEffects.RenderClipped(cel, l.EffectsAt(frame));
+        else img = null;
         if (img is null) return null;
         bmp = ImageUtil.ToBitmap(img);
         _celCache[key] = bmp;

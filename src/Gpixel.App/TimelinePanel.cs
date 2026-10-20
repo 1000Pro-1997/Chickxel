@@ -628,6 +628,15 @@ public sealed class TimelinePanel : UserControl
         _ctx.Structural(() => p.SetLayerProperties(index, opacity: v));
     }
 
+    /// <summary>
+    /// 레이어 효과 대화상자(고치는 동안 캔버스에 바로 보이고, 확인 = 실행취소 한 단계, 취소 = 되돌림). <paramref name="focus"/>: 처음 고를 효과 번호(-1 = 첫 효과).
+    /// </summary>
+    private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null, int addKind = -1)
+    {
+        if (P is not { } p || index < 0 || index >= p.Layers.Count) return;
+        _ctx.Structural(() => new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, addKind).ShowDialog(this));
+    }
+
     private void ToggleLayer(int index, bool lockToggle)
     {
         if (P is not { } p) return;
@@ -824,6 +833,22 @@ public sealed class TimelinePanel : UserControl
             Item(layer >= 0 ? "셀 잘라내기 (Ctrl+X)" : "프레임 잘라내기 (Ctrl+X)", () => CopySelection(true)),
             Item(_clip is { WholeFrames: true } ? "프레임 붙여넣기 (Ctrl+V)" : "셀 붙여넣기 (Ctrl+V)", () => PasteSelection(), _clip is not null),
         };
+        if (layer >= 0)
+        {
+            // 고른 칸들의 프레임 범위에만 입혀지는 효과를 바로 추가(창이 그 효과를 고른 채 열림).
+            int from = frames.Count > 0 ? frames.Min() : frame, to = frames.Count > 0 ? frames.Max() : frame;
+            var effectRange = FrameRange.Of(from, to, p.Frames.Count);
+            string kindsFor = effectRange is null ? "모든 프레임" : range;
+            var add = new MenuItem { Header = $"효과 추가 ({kindsFor})" };
+            string[] kinds = ["외곽선", "그림자", "가장자리 빛·그늘", "색 덮기"];
+            for (int k = 0; k < kinds.Length; k++)
+            {
+                int kind = k;
+                add.Items.Add(Item(kinds[k], () => EditLayerEffects(layer, -1, effectRange, kind)));
+            }
+            items.Add(new Separator());
+            items.Add(add);
+        }
         if (layer >= 0 && !p.Layers[layer].IsGroup)
         {
             items.Add(new Separator());
@@ -860,9 +885,14 @@ public sealed class TimelinePanel : UserControl
         {
             Item("이름 바꾸기", BeginRenameLayer),
             Item("불투명도…", () => SetLayerOpacity(index)),
+            Item(layer.Effects.Count > 0 ? $"효과… ({layer.Effects.Count})" : "효과…", () => EditLayerEffects(index)),
+        };
+        if (layer.Effects.Count > 0) items.Add(Item(layer.EffectsCollapsed ? "효과 줄 펼치기" : "효과 줄 접기", () => ToggleEffectRows(index)));
+        items.AddRange(
+        [
             Item("보이기/숨기기", () => ToggleLayer(index, false)),
             Item("잠금/풀기", () => ToggleLayer(index, true)),
-        };
+        ]);
         if (layer.IsPart)
         {
             items.Add(new Separator());
@@ -902,6 +932,61 @@ public sealed class TimelinePanel : UserControl
         Item("이 태그 재생", () => { _ctx.SelectedTag = tag; _ctx.SetCurrentFrame(tag.From); _preview.Play(); }),
         Item("삭제", () => DeleteTag(tag)));
 
+    /// <summary>
+    /// 효과 줄 우클릭 메뉴(효과 <paramref name="effectIndex"/>, 누른 프레임 <paramref name="frame"/>). <paramref name="inBox"/>: 효과 상자 위(아니면 상자 밖 빈 칸).
+    /// 메뉴 한 항목 = 실행취소 한 단계.
+    /// </summary>
+    private void ShowEffectMenu(Layer layer, int effectIndex, int frame, bool inBox)
+    {
+        if (P is not { } p || effectIndex >= layer.Effects.Count) return;
+        var effect = layer.Effects[effectIndex];
+        int last = p.Frames.Count - 1;
+        var (from, to) = effect.Frames is { } r ? (r.From, r.To) : (0, last);
+        void SetRange(int a, int b) => ChangeEffect(layer, effectIndex, e => e with { Frames = FrameRange.Of(a, b, p.Frames.Count) });
+        var items = new List<Control>
+        {
+            Item("효과 설정…", () => EditLayerEffects(p.IndexOf(layer), effectIndex)),
+            new Separator(),
+        };
+        if (!inBox)
+        {
+            items.Add(Item($"여기(프레임 {frame + 1})까지 늘리기", () => SetRange(Math.Min(from, frame), Math.Max(to, frame))));
+            items.Add(Item($"여기부터 복사본 추가 (프레임 {frame + 1}~끝)", () => ChangeEffects(layer, list =>
+                list.Insert(effectIndex + 1, effect with { Frames = FrameRange.Of(frame, last, p.Frames.Count) }))));
+            items.Add(new Separator());
+        }
+        items.Add(Item("모든 프레임으로", () => SetRange(0, last), effect.Frames is not null));
+        items.Add(Item($"이 프레임만 (프레임 {frame + 1})", () => SetRange(frame, frame), (from, to) != (frame, frame)));
+        items.Add(Item("이 프레임부터 끝까지", () => SetRange(frame, last), (from, to) != (frame, last)));
+        items.Add(Item("처음부터 이 프레임까지", () => SetRange(0, frame), (from, to) != (0, frame)));
+        items.Add(new Separator());
+        items.Add(Item(effect.Enabled ? "끄기" : "켜기", () => SetEffectEnabled(layer, effectIndex, !effect.Enabled)));
+        items.Add(Item("삭제", () => ChangeEffects(layer, list => list.RemoveAt(effectIndex))));
+        ShowMenu([.. items]);
+    }
+
+    /// <summary>효과 목록을 고쳐 넣는다(실행취소 한 단계, 그대로면 기록 없음).</summary>
+    private void ChangeEffects(Layer layer, Action<List<LayerEffect>> change)
+    {
+        if (P is not { } p || p.IndexOf(layer) is var index && index < 0) return;
+        var list = layer.Effects.ToList();
+        change(list);
+        _ctx.Structural(() => p.SetLayerEffects(index, list));
+    }
+
+    /// <summary>효과 하나를 바꾼다(실행취소 한 단계).</summary>
+    private void ChangeEffect(Layer layer, int effectIndex, Func<LayerEffect, LayerEffect> change)
+        => ChangeEffects(layer, list => { if (effectIndex < list.Count) list[effectIndex] = change(list[effectIndex]); });
+
+    private void SetEffectEnabled(Layer layer, int effectIndex, bool enabled) => ChangeEffect(layer, effectIndex, e => e with { Enabled = enabled });
+
+    /// <summary>레이어 아래 효과 줄 접기/펼치기(기록·수정 표시 없음).</summary>
+    private void ToggleEffectRows(int index)
+    {
+        if (P is not { } p || index < 0 || index >= p.Layers.Count) return;
+        p.SetLayerEffectsCollapsed(index, !p.Layers[index].EffectsCollapsed);
+    }
+
     // ───────────── 격자 ─────────────
 
     /// <summary>
@@ -926,6 +1011,14 @@ public sealed class TimelinePanel : UserControl
         private static readonly IPen PlayPen = AppTheme.Pen(Color.FromRgb(120, 230, 120), 2);
         private static readonly IBrush RangeBrush = AppTheme.Brush(Color.FromArgb(60, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IBrush PivotBrush = AppTheme.Brush(Color.FromRgb(255, 120, 80));
+
+        /// <summary>효과 줄(레이어 행 아래, 효과마다 한 줄) 높이와 줄 바탕·현재 프레임 칸·이름 칸 바탕.</summary>
+        private const int FxH = 16;
+        private static readonly IBrush FxCellBrush = AppTheme.Brush(Color.FromRgb(44, 44, 50));
+        private static readonly IBrush FxCurBrush = AppTheme.Brush(Color.FromRgb(56, 56, 64));
+        private static readonly IBrush FxNameBrush = AppTheme.Brush(Color.FromRgb(40, 40, 46));
+        private static readonly IPen FxCheckPen = AppTheme.Pen(Colors.White, 1.5);
+        private static readonly Cursor MoveCursor = new(StandardCursorType.SizeAll);
 
         private readonly TimelinePanel _owner;
         private readonly ScrollBar _h = new() { Orientation = Orientation.Horizontal, AllowAutoHide = false, Minimum = 0 };
@@ -956,6 +1049,14 @@ public sealed class TimelinePanel : UserControl
         private int _tagFrom, _tagTo;
         /// <summary>끝 손잡이에 마우스가 올라간 태그(손잡이 강조용).</summary>
         private AnimationTag? _tagHover;
+        /// <summary>효과 범위 끌기: 대상 레이어·효과 번호, 끄는 쪽(왼쪽 끝·오른쪽 끝·통째로), 끌기 전 효과 목록, 누른 프레임, 끌기 전 범위.</summary>
+        private Layer? _fxLayer;
+        private int _fxIndex;
+        private FxGrip _fxGrip;
+        private IReadOnlyList<LayerEffect>? _fxOriginal;
+        private int _fxGrab, _fxFrom, _fxTo;
+        /// <summary>마우스가 올라간 효과 상자(손잡이 강조용).</summary>
+        private (Layer Layer, int Index)? _fxHover;
         private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeWestEast);
         private static readonly IBrush GhostBrush = AppTheme.Brush(Color.FromRgb(38, 38, 43));
         private int _playing = -1;
@@ -965,15 +1066,17 @@ public sealed class TimelinePanel : UserControl
         private readonly DispatcherTimer _animTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
 
         /// <summary>
-        /// 한 축(행 또는 열) 칸들의 배치. 칸은 프로젝트의 레이어/프레임 객체(참조)로 알아본다. 새 칸은 0에서 제 크기로 자라고,
-        /// 숨는 칸(접힌 그룹의 부위)은 0으로 줄며, 지운 칸은 유령으로 남아 0까지 줄어든 뒤 빠진다.
-        /// 멈춰 있으면 칸 위치 = (앞에 있는 보이는 칸 수 × 칸 크기)로 애니메이션 없는 배치와 정확히 같다.
+        /// 한 축(행 또는 열) 칸들의 배치. 칸은 프로젝트의 레이어/프레임 객체(참조)로 알아본다. 칸마다 제 크기(px)가 있고(행은 효과 줄만큼 큼),
+        /// 새 칸은 0에서 제 크기로 자라고, 숨는 칸(접힌 그룹의 부위)은 0으로 줄며, 지운 칸은 유령으로 남아 0까지 줄어든 뒤 빠진다.
+        /// 제 크기가 바뀐 칸(효과 줄을 펼치고 접음)은 새 크기로 자라고 준다.
+        /// 멈춰 있으면 칸 위치 = 앞에 있는 보이는 칸들의 크기 합으로 애니메이션 없는 배치와 정확히 같다.
+        /// <paramref name="size"/>는 기본 칸 크기(배치 밖 위치를 셀 때 씀).
         /// </summary>
         private sealed class Track(int size)
         {
             private static readonly long Duration = System.Diagnostics.Stopwatch.Frequency * 180 / 1000;
 
-            /// <summary>한 값(0~1)의 ease-out cubic 이동.</summary>
+            /// <summary>한 값의 ease-out cubic 이동.</summary>
             private struct Anim
             {
                 public double From, To;
@@ -1011,16 +1114,19 @@ public sealed class TimelinePanel : UserControl
                 /// <summary>칸 번호(-1 = 지워져 줄어드는 유령).</summary>
                 public int Index = -1;
                 public bool Shown;
+                /// <summary>보일 때의 크기(px).</summary>
+                public int Full;
+                /// <summary>크기(px)·펼침(0~1) 애니메이션.</summary>
                 public Anim Size, Open;
                 public int Px, Pos, TargetPos;
                 public double OpenNow;
             }
 
-            /// <summary>칸 하나의 목표 상태: 보임 여부와 (그룹 행) 펼침 여부.</summary>
-            public readonly record struct Entry(object Item, bool Shown, bool Open);
+            /// <summary>칸 하나의 목표 상태: 보임 여부, (그룹 행) 펼침 여부, 보일 때의 크기(px).</summary>
+            public readonly record struct Entry(object Item, bool Shown, bool Open, int Size);
 
-            /// <summary>그릴 때 보는 칸: 칸 번호(-1 = 유령), 현재 위치·크기(px), 펼침 정도(0~1).</summary>
-            public readonly record struct View(object Item, int Index, int Pos, int Px, double Open);
+            /// <summary>그릴 때 보는 칸: 칸 번호(-1 = 유령), 현재 위치·크기(px), 보일 때의 크기(px), 펼침 정도(0~1).</summary>
+            public readonly record struct View(object Item, int Index, int Pos, int Px, int Full, double Open);
 
             private List<Slot> _slots = new();
             private Slot[] _live = [];
@@ -1036,12 +1142,12 @@ public sealed class TimelinePanel : UserControl
             public View Get(int k)
             {
                 var s = _slots[k];
-                return new View(s.Item, s.Index, s.Pos, s.Px, s.OpenNow);
+                return new View(s.Item, s.Index, s.Pos, s.Px, s.Full, s.OpenNow);
             }
 
             /// <summary>칸 <paramref name="i"/>가 이미 이 상태인지(바뀐 게 없으면 다시 맞추지 않으려고).</summary>
-            public bool Matches(int i, object item, bool shown, bool open)
-                => _live[i] is var s && ReferenceEquals(s.Item, item) && s.Shown == shown && s.Open.To == (open ? 1 : 0);
+            public bool Matches(int i, object item, bool shown, bool open, int px)
+                => _live[i] is var s && ReferenceEquals(s.Item, item) && s.Shown == shown && s.Full == px && s.Open.To == (open ? 1 : 0);
 
             /// <summary>
             /// 칸 목록을 새 상태에 맞춘다. <paramref name="animate"/>면 크기·펼침이 지금 값에서 목표로 움직이고, 빠진 칸은 원래 자리(앞 칸 뒤)에
@@ -1070,7 +1176,8 @@ public sealed class TimelinePanel : UserControl
                     }
                     s.Index = i;
                     s.Shown = e.Shown;
-                    s.Size.Go(e.Shown ? 1 : 0, now, animate);
+                    s.Full = e.Size;
+                    s.Size.Go(e.Shown ? e.Size : 0, now, animate);
                     s.Open.Go(open, now, animate);
                     live[i] = s;
                     next.Add(s);
@@ -1104,12 +1211,12 @@ public sealed class TimelinePanel : UserControl
                     bool done = s.Size.Settle(now) & s.Open.Settle(now);
                     if (s.Index < 0 && done) { _slots.RemoveAt(k--); continue; }
                     animating |= !done;
-                    s.Px = (int)Math.Round(s.Size.At(now) * size);
+                    s.Px = (int)Math.Round(s.Size.At(now));
                     s.OpenNow = s.Open.At(now);
                     s.Pos = pos;
                     s.TargetPos = target;
                     pos += s.Px;
-                    if (s.Index >= 0 && s.Shown) target += size;
+                    if (s.Index >= 0 && s.Shown) target += s.Full;
                 }
                 Total = pos;
                 TargetTotal = target;
@@ -1165,7 +1272,7 @@ public sealed class TimelinePanel : UserControl
         }
 
         /// <summary>
-        /// 행·열 배치를 프로젝트에 맞춘다(바뀐 게 없으면 할 일 없음). <paramref name="animate"/>면 새·지운·접고 펼친 행과 새·지운 열이
+        /// 행·열 배치를 프로젝트에 맞춘다(바뀐 게 없으면 할 일 없음). <paramref name="animate"/>면 새·지운·접고 펼친 행(효과 줄 포함)과 새·지운 열이
         /// 부드럽게 자라고 줄며, 아니면(다른 파일 열기) 바로 맞춘다.
         /// </summary>
         public void SyncLayout(bool animate)
@@ -1179,7 +1286,7 @@ public sealed class TimelinePanel : UserControl
             for (int i = 0; same && i < n; i++)
             {
                 var l = p!.Layers[n - 1 - i];
-                same = _rowT.Matches(i, l, Shown(l), Open(l));
+                same = _rowT.Matches(i, l, Shown(l), Open(l), RowFull(l));
             }
             if (!same)
             {
@@ -1187,16 +1294,16 @@ public sealed class TimelinePanel : UserControl
                 for (int i = 0; i < n; i++)
                 {
                     var l = p!.Layers[n - 1 - i];
-                    rows[i] = new Track.Entry(l, Shown(l), Open(l));
+                    rows[i] = new Track.Entry(l, Shown(l), Open(l), RowFull(l));
                 }
                 _rowT.Sync(rows, animate, now);
             }
             same = animate && frames == _colT.Count;
-            for (int f = 0; same && f < frames; f++) same = _colT.Matches(f, p!.Frames[f], true, false);
+            for (int f = 0; same && f < frames; f++) same = _colT.Matches(f, p!.Frames[f], true, false, CellW);
             if (!same)
             {
                 var cols = new Track.Entry[frames];
-                for (int f = 0; f < frames; f++) cols[f] = new Track.Entry(p!.Frames[f], true, false);
+                for (int f = 0; f < frames; f++) cols[f] = new Track.Entry(p!.Frames[f], true, false, CellW);
                 _colT.Sync(cols, animate, now);
             }
             if (_rowT.Animating || _colT.Animating)
@@ -1399,12 +1506,49 @@ public sealed class TimelinePanel : UserControl
             return Math.Max(0, rows.IndexOf(_rowT.Count - 1 - item));
         }
 
-        /// <summary>y 위 레이어(숨거나 지워져 줄어드는 중인 행 위면 -1).</summary>
+        /// <summary>y 위 레이어(숨거나 지워져 줄어드는 중인 행 위면 -1). 레이어 아래 효과 줄 위도 그 레이어.</summary>
         private int LayerAt(double y)
         {
             if (y < TagH + HeadH) return -1;
             int item = _rowT.IndexAt(ContentY(y), exact: true);
             return item >= 0 && item < _rowT.Count ? _rowT.Count - 1 - item : -1;
+        }
+
+        /// <summary>효과 상자의 잡는 곳: 왼쪽 끝 손잡이 · 오른쪽 끝 손잡이 · 몸통(범위 통째로 옮김).</summary>
+        private enum FxGrip { Left, Right, Body }
+
+        /// <summary>레이어 행 아래 효과 줄 수(효과마다 한 줄, 효과 줄을 접었으면 0).</summary>
+        private static int FxRows(Layer layer) => layer.EffectsCollapsed ? 0 : layer.Effects.Count;
+
+        /// <summary>레이어 행의 높이(본줄 + 효과 줄).</summary>
+        private static int RowFull(Layer layer) => CellH + FxRows(layer) * FxH;
+
+        /// <summary>효과가 입혀지는 프레임 범위(모든 프레임이면 처음 ~ 끝, 프레임 수 밖은 끝으로).</summary>
+        private static (int From, int To) FxSpan(LayerEffect effect, int frames)
+            => effect.Frames is { } r ? (Math.Min(r.From, frames - 1), Math.Min(r.To, frames - 1)) : (0, frames - 1);
+
+        /// <summary>효과 상자의 왼쪽·오른쪽 x(그리기·클릭 찾기 공용).</summary>
+        private (double X0, double X1) FxX(LayerEffect effect, int frames)
+        {
+            var (from, to) = FxSpan(effect, frames);
+            return (FrameX(from) + 2, FrameX(to) + FrameW(to) - 2);
+        }
+
+        /// <summary>y 위 효과 줄(레이어 번호, 효과 번호). 레이어 본줄이나 줄 밖이면 null.</summary>
+        private (int Layer, int Effect)? FxRowAt(double y)
+        {
+            if (Ctx.Project is not { } p || LayerAt(y) is var l && l < 0) return null;
+            int k = (int)Math.Floor((y - LayerY(l) - CellH) / FxH);
+            return k >= 0 && k < FxRows(p.Layers[l]) ? (l, k) : null;
+        }
+
+        /// <summary>x 위 효과 상자의 잡는 곳(끝 손잡이 = 상자 폭의 1/3, 최대 8px). 상자 밖이면 null.</summary>
+        private FxGrip? FxGripAt(double x, LayerEffect effect, int frames)
+        {
+            var (x0, x1) = FxX(effect, frames);
+            if (x < x0 || x > x1) return null;
+            double grip = Math.Min(8, (x1 - x0) / 3);
+            return x <= x0 + grip ? FxGrip.Left : x >= x1 - grip ? FxGrip.Right : FxGrip.Body;
         }
 
         /// <summary>그릴 때 쓰는 태그 범위(끄는 중이면 미리보기 범위).</summary>
@@ -1449,6 +1593,34 @@ public sealed class TimelinePanel : UserControl
             return (text, (int)Math.Ceiling(AppTheme.MeasureText(text, AppTheme.SmallFontSize).Width + 4));
         }
 
+        /// <summary>효과 표시("fx", 효과가 있으면)의 폭(없으면 0). 모두 꺼져 있으면 흐리게 그린다.</summary>
+        private static int FxBadgeW(Layer layer)
+            => layer.Effects.Count == 0 ? 0 : (int)Math.Ceiling(AppTheme.MeasureText("fx", AppTheme.SmallFontSize, bold: true).Width + 6);
+
+        /// <summary>"fx" 표시 자리(x, 폭) — 그리기와 같은 자리(클릭하면 효과 줄 접기/펼치기). 폭 0 = 효과 없음.</summary>
+        private static (int X, int W) FxBadge(Layer layer)
+        {
+            int fw = FxBadgeW(layer);
+            if (fw == 0) return (0, 0);
+            int right = NameW - 2;
+            if (SkinChip(layer) is { W: > 0 } chip) right = chip.X - 4;
+            if (layer.IsPart) right -= PartSizeText(layer).W;
+            return (right - fw, fw);
+        }
+
+        /// <summary>효과 종류마다의 상자 색.</summary>
+        private static Color FxColor(LayerEffect effect) => effect switch
+        {
+            OutlineEffect => Color.FromRgb(232, 160, 72),
+            ShadowEffect => Color.FromRgb(118, 124, 196),
+            RimLightEffect => Color.FromRgb(226, 210, 110),
+            ColorOverlayEffect => Color.FromRgb(196, 96, 170),
+            _ => AppTheme.AccentColor,
+        };
+
+        /// <summary>효과 줄 이름 칸의 켜기 체크 상자 왼쪽 x(레이어 이름보다 조금 들여 씀). 상자 폭 10px, 누르는 자리는 앞뒤로 조금 넓게.</summary>
+        private static int FxCheckX(Layer layer) => NameLeft(layer) + 10;
+
         /// <summary>
         /// 그룹·부위 행 이름 칸 오른쪽 끝의 스킨 칩(x, 폭) — 그룹·부위가 같은 열에 맞춰진다(부위 크기 글자는 칩 왼쪽).
         /// 그룹은 지금 스킨, 부위는 보이는 스킨 이름. 레이어 이름(부위는 크기 글자까지)이 먼저 자리를 차지하고,
@@ -1460,7 +1632,7 @@ public sealed class TimelinePanel : UserControl
             if (layer.ShownSkin is not { } skin) return (0, 0);
             int want = (int)Math.Ceiling(Math.Min(SkinChipMaxW, AppTheme.MeasureText(skin.Name, AppTheme.SmallFontSize).Width + 10));
             int nameEnd = NameLeft(layer) + (int)Math.Ceiling(AppTheme.MeasureText(LayerTitle(layer), AppTheme.FontSize, bold: true).Width) + 6
-                          + (layer.IsPart ? PartSizeText(layer).W + 4 : 0);
+                          + (layer.IsPart ? PartSizeText(layer).W + 4 : 0) + FxBadgeW(layer);
             int w = Math.Max(Math.Min(want, SkinChipMinW), Math.Min(want, right - nameEnd));
             return (right - w, w);
         }
@@ -1662,6 +1834,39 @@ public sealed class TimelinePanel : UserControl
                 else g.DrawRectangle(null, BorderPen, r.Deflate(0.5));
             }
 
+            // 효과 줄 하나(레이어 아래, 효과 하나): 프레임 칸 바탕 + 효과가 입혀지는 프레임에 걸친 둥근 상자(종류마다 색, 꺼진 효과는 흐리게).
+            void DrawFxRow(int ry, Layer layer, int k)
+            {
+                for (int ck = 0; ck < _colT.SlotCount; ck++)
+                {
+                    var col = _colT.Get(ck);
+                    int x = left + col.Pos;
+                    if (col.Px <= 0 || x + col.Px < cellsClip.Left || x > cellsClip.Right) continue;
+                    g.FillRectangle(FrameOf(p, col) == cur ? FxCurBrush : FxCellBrush, new Rect(x + 1, ry, Math.Max(0, col.Px - 2), FxH - 1));
+                }
+                if (k >= layer.Effects.Count || frames == 0) return;
+                var effect = layer.Effects[k];
+                var (x0, x1) = FxX(effect, frames);
+                if (x1 - x0 < 1) return;
+                var box = new Rect(x0, ry + 1, x1 - x0, FxH - 3);
+                var color = FxColor(effect);
+                bool editing = ReferenceEquals(_fxLayer, layer) && _fxIndex == k;
+                bool hovered = editing || (_fxHover is { } h && ReferenceEquals(h.Layer, layer) && h.Index == k);
+                IBrush ink = IsBright(color) ? Brushes.Black : Brushes.White;
+                using (g.PushOpacity(effect.Enabled ? 1 : 0.4))
+                {
+                    g.DrawRectangle(AppTheme.Brush(color), editing ? WhitePen : null, box, 3, 3);
+                    if (hovered)
+                    {
+                        // 끝 손잡이(끌어서 범위 바꾸기)
+                        g.FillRectangle(ink, new Rect(box.X + 2, box.Y + 3, 2, box.Height - 6));
+                        g.FillRectangle(ink, new Rect(box.Right - 4, box.Y + 3, 2, box.Height - 6));
+                    }
+                    if (box.Width - 14 >= AppTheme.MeasureText(effect.DisplayName, AppTheme.SmallFontSize).Width)
+                        Text(g, effect.DisplayName, box.Deflate(new Thickness(7, 0)), ink, small: true);
+                }
+            }
+
             using (g.PushClip(cellsClip))
             {
                 for (int rk = 0; rk < _rowT.SlotCount; rk++)
@@ -1669,7 +1874,8 @@ public sealed class TimelinePanel : UserControl
                     var row = _rowT.Get(rk);
                     int y = top + row.Pos;
                     if (row.Px <= 0 || y + row.Px < cellsClip.Top || y > cellsClip.Bottom) continue;
-                    int l = LayerOf(p, row), cy = y + row.Px - CellH;
+                    // 줄어드는 중이라 본줄보다 작으면 본줄을 아래 끝에 붙여(앞 행 밑에서 밀려 나오듯), 아니면 위에 붙이고 효과 줄은 그 아래
+                    int l = LayerOf(p, row), cy = row.Px >= CellH ? y : y + row.Px - CellH;
                     for (int ck = 0; ck < _colT.SlotCount; ck++)
                     {
                         var col = _colT.Get(ck);
@@ -1694,6 +1900,14 @@ public sealed class TimelinePanel : UserControl
                             DrawSplit(g, r, true, hovered ? _hover.Left : null, dim: !hovered);
                         }
                     }
+                    // 효과 줄(접거나 펼치는 중이면 보이는 만큼)
+                    var rowLayer = (Layer)row.Item;
+                    int fxRows = row.Px > CellH ? Math.Min(rowLayer.Effects.Count, (row.Px - CellH + FxH - 1) / FxH) : 0;
+                    if (fxRows > 0)
+                    {
+                        using (g.PushClip(new Rect(NameW, y, Math.Max(0, width - NameW), row.Px)))
+                            for (int k = 0; k < fxRows; k++) DrawFxRow(cy + CellH + k * FxH, rowLayer, k);
+                    }
                 }
                 // 셀 묶음 끌기: 놓을 자리
                 if (_blockRows is not null && _blockDrop.Row >= 0)
@@ -1706,10 +1920,16 @@ public sealed class TimelinePanel : UserControl
                             g.DrawRectangle(RangeBrush, AccentPen, r);
                         }
                 }
-                if (_playing >= 0)
+                // 재생 중인 프레임: 열 전체(셀들)를 초록 외곽선 네모로(머리글 칸도 같은 색으로 이어서 그린다).
+                if (_playing >= 0 && _playing < p.Frames.Count && Rows() is { Count: > 0 } playRows)
                 {
-                    double x = FrameX(_playing) + FrameW(_playing) / 2;
-                    g.DrawLine(PlayPen, new Avalonia.Point(x, cellsClip.Top), new Avalonia.Point(x, cellsClip.Bottom));
+                    int last = playRows[^1];
+                    double bottom = Math.Min(cellsClip.Bottom, LayerY(last) + _rowT.Px(RowItem(last)));
+                    double l = FrameX(_playing) + 1, r = FrameX(_playing) + FrameW(_playing) - 1, b = bottom - 1;
+                    // 위쪽은 머리글 칸 네모와 이어지게 열어 둔다.
+                    g.DrawLine(PlayPen, new Avalonia.Point(l, cellsClip.Top - 2), new Avalonia.Point(l, b));
+                    g.DrawLine(PlayPen, new Avalonia.Point(r, cellsClip.Top - 2), new Avalonia.Point(r, b));
+                    g.DrawLine(PlayPen, new Avalonia.Point(l - 1, b), new Avalonia.Point(r + 1, b));
                 }
             }
 
@@ -1724,6 +1944,14 @@ public sealed class TimelinePanel : UserControl
                 Text(g, p.Frames[f].DurationMs + "ms", new Rect(x, TagH + 15, CellW, 14), AppTheme.DimTextBrush, small: true, center: true);
                 if (p.Frames[f].Pivot is not null)
                     AppTheme.DrawText(g, "◆", new Avalonia.Point(x + CellW - 12, TagH), PivotBrush, AppTheme.SmallFontSize);
+                if (f == _playing)
+                {
+                    // 재생 중인 열 네모의 윗부분(아래쪽은 셀 쪽에서 이어 그린다).
+                    double l = x + 1, rr = x + CellW - 1, top = TagH + 1;
+                    g.DrawLine(PlayPen, new Avalonia.Point(l - 1, top), new Avalonia.Point(rr + 1, top));
+                    g.DrawLine(PlayPen, new Avalonia.Point(l, top), new Avalonia.Point(l, TagH + HeadH + 2));
+                    g.DrawLine(PlayPen, new Avalonia.Point(rr, top), new Avalonia.Point(rr, TagH + HeadH + 2));
+                }
             }
 
             // 태그 띠 + 프레임 머리글
@@ -1819,10 +2047,52 @@ public sealed class TimelinePanel : UserControl
                     right -= sw;
                     Text(g, size, new Rect(right, y, sw, CellH), AppTheme.DimTextBrush, small: true);
                 }
+                if (FxBadge(layer) is { W: > 0 } fx)
+                {
+                    right = fx.X;
+                    // 효과 줄이 펼쳐져 있으면 눌린 단추처럼(누르면 접고 펼침)
+                    if (!layer.EffectsCollapsed && layer.Effects.Count > 0)
+                        g.DrawRectangle(ChipAccentBrush, null, new Rect(fx.X + 1, y + 10, fx.W - 2, CellH - 20), 3, 3);
+                    Text(g, "fx", new Rect(fx.X, y, fx.W, CellH), layer.HasActiveEffects ? AppTheme.AccentBrush : AppTheme.DimTextBrush, small: true, bold: true, center: true);
+                }
                 var name = LayerTitle(layer);
                 Text(g, name, new Rect(nameX, y, Math.Max(1, right - nameX), CellH), shown ? AppTheme.TextBrush : AppTheme.DimTextBrush,
                     bold: l == curLayer || layer.IsGroup);
                 if (l >= 0 && _layerDropAt == l) g.DrawRectangle(null, AccentPen, new Rect(2, y + 2, NameW - 4, CellH - 4));
+            }
+
+            // 효과 줄 이름 칸: 종류 색 띠 · 켜기 체크 상자(누르면 켜고 끔) · 효과 이름(범위가 있으면 프레임 번호)
+            void DrawFxName(int ry, Layer layer, int k, bool last)
+            {
+                g.FillRectangle(FxNameBrush, new Rect(0, ry, NameW, FxH));
+                if (layer.IsPart)
+                {
+                    double gx = ToggleX + (NameX - ToggleX) / 2.0 + 0.5;
+                    g.DrawLine(BorderPen, new Avalonia.Point(gx, ry), new Avalonia.Point(gx, ry + FxH));
+                }
+                if (last) g.DrawLine(BorderPen, new Avalonia.Point(0, ry + FxH - 0.5), new Avalonia.Point(NameW, ry + FxH - 0.5));
+                if (k >= layer.Effects.Count) return;
+                var effect = layer.Effects[k];
+                int x = FxCheckX(layer);
+                g.FillRectangle(AppTheme.Brush(FxColor(effect)), new Rect(x - 7, ry + 3, 3, FxH - 6));
+                var check = new Rect(x + 0.5, ry + 3.5, 9, 9);
+                g.DrawRectangle(effect.Enabled ? AppTheme.AccentBrush : null, BorderPen, check, 2, 2);
+                if (effect.Enabled)
+                {
+                    g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 2, check.Y + 4.5), new Avalonia.Point(check.X + 4, check.Y + 6.5));
+                    g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 4, check.Y + 6.5), new Avalonia.Point(check.X + 7.5, check.Y + 2.5));
+                }
+                var label = effect.DisplayName + (effect.Frames is { } fr ? $" · 프레임 {fr}" : "");
+                Text(g, label, new Rect(x + 15, ry, Math.Max(1, NameW - x - 19), FxH), effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush, small: true);
+            }
+
+            // 레이어 행 하나: 본줄 + 효과 줄(줄어드는 중이라 본줄보다 작으면 본줄을 아래 끝에 붙임)
+            void DrawNameBlock(int y, Track.View row, int l, Layer layer)
+            {
+                int ny = row.Px >= CellH ? y : y + row.Px - CellH;
+                int fxRows = row.Px > CellH ? Math.Min(layer.Effects.Count, (row.Px - CellH + FxH - 1) / FxH) : 0;
+                DrawName(ny, l, layer, row.Open);
+                for (int k = 0; k < fxRows; k++) DrawFxName(ny + CellH + k * FxH, layer, k, k == fxRows - 1);
             }
 
             // 레이어 이름 열
@@ -1837,11 +2107,11 @@ public sealed class TimelinePanel : UserControl
                     if (row.Px <= 0 || y + row.Px < namesClip.Top || y > namesClip.Bottom) continue;
                     int l = LayerOf(p, row);
                     var layer = (Layer)row.Item;
-                    if (row.Px < CellH)
+                    if (row.Px < Math.Max(CellH, row.Full))
                     {
-                        using (g.PushClip(new Rect(0, y, NameW, row.Px))) DrawName(y + row.Px - CellH, l, layer, row.Open);
+                        using (g.PushClip(new Rect(0, y, NameW, row.Px))) DrawNameBlock(y, row, l, layer);
                     }
-                    else DrawName(y, l, layer, row.Open);
+                    else DrawNameBlock(y, row, l, layer);
                 }
             }
             g.DrawLine(BorderPen, new Avalonia.Point(NameW - 0.5, 0), new Avalonia.Point(NameW - 0.5, height));
@@ -1886,6 +2156,11 @@ public sealed class TimelinePanel : UserControl
             }
             int f = FrameAt(pos.X), l = LayerAt(pos.Y);
             bool inHeader = pos.Y >= TagH && pos.Y < TagH + HeadH;
+            if (FxRowAt(pos.Y) is { } fxRow)
+            {
+                PressFx(e, fxRow.Layer, fxRow.Effect, pos, left, right);
+                return;
+            }
             if (pos.X < NameW && l >= 0)
             {
                 // 레이어 이름 열: 눈/자물쇠/접기/이름
@@ -1893,6 +2168,7 @@ public sealed class TimelinePanel : UserControl
                 if (left && pos.X < 24) { Ctx.Structural(() => p.SetLayerProperties(l, visible: !nameLayer.Visible)); return; }
                 if (left && pos.X < ToggleX) { Ctx.Structural(() => p.SetLayerProperties(l, locked: !nameLayer.Locked)); return; }
                 if (left && nameLayer.IsGroup && pos.X < NameX) { _owner.ToggleCollapsed(l); return; }
+                if (left && FxBadge(nameLayer) is { W: > 0 } fx && pos.X >= fx.X && pos.X < fx.X + fx.W) { _owner.ToggleEffectRows(l); return; }
                 if (left && SkinChip(nameLayer) is { W: > 0 } chip && pos.X >= chip.X && pos.X < chip.X + chip.W)
                 {
                     // 스킨 칩: 이 그룹/부위로 스킨 관리 창 열기(우클릭은 레이어 메뉴의 "스킨"·"이 부위 스킨")
@@ -1999,6 +2275,93 @@ public sealed class TimelinePanel : UserControl
             InvalidateVisual();
         }
 
+        /// <summary>
+        /// 효과 줄 누르기. 이름 칸: 체크 상자 = 켜고 끄기, 두 번 = 효과 설정, 우클릭 = 메뉴. 프레임 칸: 상자 끝 손잡이를 끌면 범위의 그 끝을,
+        /// 몸통을 끌면 범위를 통째로 옮기고(놓을 때 실행취소 한 단계, 끄는 동안 캔버스에 바로 보임), 두 번 = 효과 설정, 우클릭 = 메뉴(상자 밖이면 늘리기·복사본 추가).
+        /// </summary>
+        private void PressFx(PointerPressedEventArgs e, int l, int k, Avalonia.Point pos, bool left, bool right)
+        {
+            if (Ctx.Project is not { } p) return;
+            var layer = p.Layers[l];
+            var effect = layer.Effects[k];
+            if (pos.X < NameW)
+            {
+                int cx = FxCheckX(layer);
+                if (left && pos.X >= cx - 4 && pos.X < cx + 14) { _owner.SetEffectEnabled(layer, k, !effect.Enabled); return; }
+                Ctx.SetCurrentLayer(l);
+                if (right) _owner.ShowEffectMenu(layer, k, Ctx.CurrentFrame, inBox: true);
+                else if (left && e.ClickCount == 2) Dispatcher.UIThread.Post(() => _owner.EditLayerEffects(p.IndexOf(layer), k));
+                return;
+            }
+            int f = FrameAt(pos.X);
+            if (f < 0)
+            {
+                if (right) _owner.ShowEmptyMenu();
+                return;
+            }
+            var grip = FxGripAt(pos.X, effect, p.Frames.Count);
+            ResetRange();
+            Ctx.SetCurrent(l, f);
+            if (right) { _owner.ShowEffectMenu(layer, k, f, grip is not null); return; }
+            if (!left || grip is not { } g) return;
+            if (e.ClickCount == 2) { Dispatcher.UIThread.Post(() => _owner.EditLayerEffects(p.IndexOf(layer), k)); return; }
+            _fxLayer = layer;
+            _fxIndex = k;
+            _fxGrip = g;
+            _fxOriginal = layer.Effects;
+            _fxGrab = f;
+            (_fxFrom, _fxTo) = FxSpan(effect, p.Frames.Count);
+            e.Pointer.Capture(this);
+            InvalidateVisual();
+        }
+
+        /// <summary>효과 범위 끌기 중: 프레임 칸에 맞춰 새 범위를 미리보기로 넣는다(기록 없음, 모든 프레임을 덮으면 "모든 프레임").</summary>
+        private void DragFx(Avalonia.Point pos)
+        {
+            if (Ctx.Project is not { } p || _fxLayer is not { } layer || _fxOriginal is not { } original) return;
+            int index = p.IndexOf(layer), n = p.Frames.Count;
+            if (index < 0 || _fxIndex >= original.Count || _fxIndex >= layer.Effects.Count) return;
+            int f = FrameAtClamped(pos.X), from = _fxFrom, to = _fxTo;
+            switch (_fxGrip)
+            {
+                case FxGrip.Left: from = Math.Min(f, _fxTo); break;
+                case FxGrip.Right: to = Math.Max(f, _fxFrom); break;
+                default:
+                    int d = Math.Clamp(f - _fxGrab, -_fxFrom, n - 1 - _fxTo);
+                    from += d;
+                    to += d;
+                    break;
+            }
+            Cursor = _fxGrip == FxGrip.Body ? MoveCursor : ResizeCursor;
+            var effect = original[_fxIndex] with { Frames = FrameRange.Of(from, to, n) };
+            if (layer.Effects[_fxIndex] == effect) return;
+            var list = original.ToArray();
+            list[_fxIndex] = effect;
+            p.PreviewLayerEffects(index, list);
+        }
+
+        /// <summary>효과 범위 끌기 끝: <paramref name="commit"/>이면 미리보던 범위를 실행취소 한 단계로 확정, 아니면 끌기 전으로 되돌린다.</summary>
+        private void FinishFx(bool commit)
+        {
+            var (layer, original) = (_fxLayer, _fxOriginal);
+            _fxLayer = null;
+            _fxOriginal = null;
+            Cursor = Cursor.Default;
+            InvalidateVisual();
+            if (layer is null || original is null || Ctx.Project is not { } p) return;
+            int index = p.IndexOf(layer);
+            if (index < 0 || ReferenceEquals(layer.Effects, original)) return;
+            Ctx.Structural(() => p.EndLayerEffectsPreview(index, original, commit));
+        }
+
+        /// <summary>점 위 효과 상자와 잡는 곳(프레임 칸 쪽 효과 줄만, 상자 밖이면 null).</summary>
+        private (Layer Layer, int Index, FxGrip Grip)? FxHitAt(Avalonia.Point pos)
+        {
+            if (pos.X < NameW || Ctx.Project is not { } p || FxRowAt(pos.Y) is not { } row) return null;
+            var layer = p.Layers[row.Layer];
+            return FxGripAt(pos.X, layer.Effects[row.Effect], p.Frames.Count) is { } grip ? (layer, row.Effect, grip) : null;
+        }
+
         /// <summary>고른 셀 묶음에 그림이 하나라도 있는지(그룹 행은 그 부위들).</summary>
         private bool BlockHasContent(SpriteProject p, List<int> rowLayers)
         {
@@ -2041,6 +2404,11 @@ public sealed class TimelinePanel : UserControl
                 InvalidateVisual();
                 return;
             }
+            if (_fxLayer is not null)
+            {
+                DragFx(pos);
+                return;
+            }
             if (_selectFrom >= 0)
             {
                 int f2 = FrameAtClamped(pos.X);
@@ -2074,8 +2442,11 @@ public sealed class TimelinePanel : UserControl
             {
                 UpdateHover(pos);
                 var edge = TagEdgeAt(pos);
-                Cursor = edge is null ? Cursor.Default : ResizeCursor;
+                var fx = FxHitAt(pos);
+                Cursor = edge is not null || fx is { Grip: not FxGrip.Body } ? ResizeCursor : fx is not null ? MoveCursor : Cursor.Default;
                 if (!ReferenceEquals(edge?.Tag, _tagHover)) { _tagHover = edge?.Tag; InvalidateVisual(); }
+                (Layer, int)? fxHover = fx is { } h ? (h.Layer, h.Index) : null;
+                if (fxHover != _fxHover) { _fxHover = fxHover; InvalidateVisual(); }
                 return;
             }
             if (Math.Abs(pos.X - _press.X) + Math.Abs(pos.Y - _press.Y) < 6) return;
@@ -2105,7 +2476,7 @@ public sealed class TimelinePanel : UserControl
                 int f = ghost ? Ctx.FrameCount : FrameAt(pos.X);
                 bool header = pos.Y < TagH + HeadH;
                 int l = header ? -1 : LayerAt(pos.Y);
-                if (ghost) hover = (l, f, LeftHalf(pos.X, f));
+                if (ghost && FxRowAt(pos.Y) is null) hover = (l, f, LeftHalf(pos.X, f));
             }
             if (hover == _hover) return;
             _hover = hover;
@@ -2116,6 +2487,7 @@ public sealed class TimelinePanel : UserControl
         {
             base.OnPointerExited(e);
             if (_tagHover is not null) { _tagHover = null; InvalidateVisual(); }
+            if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
             if (_hover.Frame < 0) return;
             _hover = (-1, -1, false);
             InvalidateVisual();
@@ -2124,6 +2496,13 @@ public sealed class TimelinePanel : UserControl
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
+            if (_fxLayer is not null)
+            {
+                // 먼저 확정한다: 캡처를 풀면 OnPointerCaptureLost가 끌기를 취소한다.
+                FinishFx(true);
+                e.Pointer.Capture(null);
+                return;
+            }
             if (_tagEdit is { } edited)
             {
                 var (from, to) = (_tagFrom, _tagTo);
@@ -2171,6 +2550,7 @@ public sealed class TimelinePanel : UserControl
         {
             base.OnPointerCaptureLost(e);
             _selectFrom = -1;
+            if (_fxLayer is not null) FinishFx(false);
             if (_tagEdit is not null)
             {
                 _tagEdit = null;

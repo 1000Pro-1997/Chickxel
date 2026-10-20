@@ -1,0 +1,11 @@
+name: 기능 제안
+description: 있으면 좋을 기능을 알려 주세요
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: 어떤 기능인가요?
+      description: 무엇을 하고 싶은지, 지금은 어떻게 하고 있는지. 참고 화면이나 다른 프로그램 예시가 있으면 붙여 주세요.
+    validations:
+      required: true

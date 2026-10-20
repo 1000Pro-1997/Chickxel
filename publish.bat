@@ -19,6 +19,8 @@ dotnet publish src\Gpixel.App\Gpixel.App.csproj -c Release -r win-x64 --self-con
 mkdir dist\Gpixel-windows-x64
 copy /y dist\.work\win-x64\Gpixel.App.exe dist\Gpixel-windows-x64\Gpixel.exe >nul
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\Gpixel-windows-x64' -DestinationPath 'dist\Gpixel-windows-x64.zip' -Force" || exit /b 1
+rem 체크섬: 앱의 자동 업데이트가 내려받은 zip을 이것으로 검증한다.
+powershell -NoProfile -Command "$h = (Get-FileHash -Algorithm SHA256 'dist\Gpixel-windows-x64.zip').Hash.ToLower(); Set-Content -Encoding ascii -Path 'dist\SHA256SUMS.txt' -Value ($h + '  Gpixel-windows-x64.zip')" || exit /b 1
 rmdir /s /q dist\.work
 
 echo.

@@ -665,6 +665,7 @@ public static partial class ProjectIO
             Kind = l.Kind == LayerKind.Normal ? null : l.Kind,
             Parent = l.Parent is { } g ? p.IndexOf(g) : null,
             Collapsed = l.IsGroup && l.Collapsed ? true : null,
+            EffectsCollapsed = l.EffectsCollapsed ? true : null,
             PartWidth = l.IsPart ? l.PartSize.Width : null,
             PartHeight = l.IsPart ? l.PartSize.Height : null,
             PartX = l.IsPart ? l.PartOffset.X : null,
@@ -676,6 +677,7 @@ public static partial class ProjectIO
             SkinOwners = l.IsGroup && l.AllSkins.Any(s => s.Owner is not null) ? l.AllSkins.Select(s => s.Owner is { } o ? p.IndexOf(o) : -1).ToList() : null,
             ActiveSkin = l.IsGroup && l.SkinList.IndexOf(l.ActiveSkin!) is > 0 and var ai ? ai : null,
             Skin = l is { IsPart: true, SkinOverride: { } so, Parent: { } pg } ? pg.SkinList.IndexOf(so) : null,
+            Effects = l.Effects.Count > 0 ? l.Effects.Select(e => (EffectDto?)EffectDto.From(e)).ToList() : null,
         }).ToList(),
         Frames = p.Frames.Select(f => new FrameDto
         {
@@ -757,6 +759,7 @@ public static partial class ProjectIO
                 Opacity = (byte)Math.Clamp(l.Opacity, 0, 255),
                 Kind = kind,
                 Collapsed = kind == LayerKind.Group && l.Collapsed == true,
+                EffectsCollapsed = l.EffectsCollapsed == true,
             };
             if (kind == LayerKind.Part)
             {
@@ -779,6 +782,14 @@ public static partial class ProjectIO
                 }
                 layer.ReplaceSkinsRaw(skins);
                 if (l.ActiveSkin is int ai && ai >= 0 && ai < skins.Count) layer.SetActiveSkinRaw(skins[ai]);
+            }
+            if (l.Effects is { Count: > 0 } effects)
+            {
+                var list = new List<LayerEffect>(effects.Count);
+                foreach (var e in effects)
+                    if (e?.ToEffect() is { } effect) list.Add(effect);
+                    else warnings?.Add($"레이어 \"{layer.Name}\"의 알 수 없는 효과({e?.Type})를 건너뛰었습니다.");
+                layer.Effects = list;
             }
             fileLayers.Add(layer);
             p.AddLayerRaw(layer);
@@ -808,6 +819,10 @@ public static partial class ProjectIO
                 Name = string.IsNullOrWhiteSpace(f.Name) ? null : f.Name,
             });
         if (p.Frames.Count == 0) p.AddFrameRaw(new Frame());
+        // 효과 프레임 범위는 프레임 수에 맞춘다(손상된 파일 대비 — 밖은 안으로, 모든 프레임을 덮으면 모든 프레임).
+        foreach (var layer in p.Layers)
+            if (layer.Effects.Any(e => e.Frames is not null))
+                layer.Effects = layer.Effects.Select(e => e.Frames is { } r ? e with { Frames = FrameRange.Of(r.From, r.To, p.Frames.Count) } : e).ToArray();
 
         foreach (var t in dto.Tags ?? [])
         {
@@ -1079,6 +1094,8 @@ public static partial class ProjectIO
         public int? Parent { get; set; }
         /// <summary>그룹: 타임라인에서 접힘.</summary>
         public bool? Collapsed { get; set; }
+        /// <summary>타임라인에서 효과 줄을 접음.</summary>
+        public bool? EffectsCollapsed { get; set; }
         public int? PartWidth { get; set; }
         public int? PartHeight { get; set; }
         public int? PartX { get; set; }
@@ -1096,6 +1113,79 @@ public static partial class ProjectIO
         public int? ActiveSkin { get; set; }
         /// <summary>부위: 그룹 스킨 대신 보일 스킨 번호(재정의, 없으면 그룹을 따름).</summary>
         public int? Skin { get; set; }
+        /// <summary>레이어 효과(적용 순서대로). 없으면 효과 없음.</summary>
+        public List<EffectDto?>? Effects { get; set; }
+    }
+
+    /// <summary>레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay(모르는 종류는 읽을 때 건너뜀).</summary>
+    private sealed class EffectDto
+    {
+        public string? Type { get; set; }
+        public bool Enabled { get; set; } = true;
+        /// <summary>외곽선·그림자·색 덮기 색, 가장자리 빛의 빛 색("#RRGGBBAA").</summary>
+        public string? Color { get; set; }
+        /// <summary>가장자리 빛의 그늘 색.</summary>
+        public string? Shade { get; set; }
+        public int? Thickness { get; set; }
+        public bool? Diagonal { get; set; }
+        public bool? Inside { get; set; }
+        public int? X { get; set; }
+        public int? Y { get; set; }
+        /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
+        public string? Direction { get; set; }
+        public int? Amount { get; set; }
+        /// <summary>적용할 프레임 범위 [시작, 끝](0부터, 양 끝 포함). 없으면 모든 프레임(예전 파일).</summary>
+        public int[]? Frames { get; set; }
+
+        public static EffectDto From(LayerEffect effect)
+        {
+            var dto = effect switch
+            {
+                OutlineEffect o => new EffectDto { Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside },
+                ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY },
+                RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString() },
+                ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount },
+                _ => throw new NotSupportedException($"저장할 수 없는 효과: {effect.GetType().Name}"),
+            };
+            dto.Enabled = effect.Enabled;
+            dto.Frames = effect.Frames is { } f ? [f.From, f.To] : null;
+            return dto;
+        }
+
+        private static Color32 ColorOr(string? hex, Color32 fallback) => Color32.TryParseHex(hex, out var c) ? c : fallback;
+
+        /// <summary>효과로 바꾼다(모르는 종류면 null). 프레임 범위는 음수만 걸러 두고, 프레임 수에 맞추기는 프레임을 읽은 뒤에 한다.</summary>
+        public LayerEffect? ToEffect()
+        {
+            var effect = ToKind();
+            if (effect is null || Frames is not [int from, int to]) return effect;
+            return effect with { Frames = new FrameRange(Math.Max(0, Math.Min(from, to)), Math.Max(0, Math.Max(from, to))) };
+        }
+
+        private LayerEffect? ToKind()
+        {
+            switch (Type?.Trim().ToLowerInvariant())
+            {
+                case "outline":
+                    var o = new OutlineEffect();
+                    return o with { Enabled = Enabled, Color = ColorOr(Color, o.Color), Thickness = Thickness ?? o.Thickness, Diagonal = Diagonal ?? o.Diagonal, Inside = Inside ?? o.Inside };
+                case "shadow":
+                    var s = new ShadowEffect();
+                    return s with { Enabled = Enabled, Color = ColorOr(Color, s.Color), OffsetX = X ?? s.OffsetX, OffsetY = Y ?? s.OffsetY };
+                case "rim":
+                    var r = new RimLightEffect();
+                    return r with
+                    {
+                        Enabled = Enabled, Light = ColorOr(Color, r.Light), Shade = ColorOr(Shade, r.Shade),
+                        Direction = Enum.TryParse<LightDirection>(Direction, true, out var d) && Enum.IsDefined(d) ? d : r.Direction,
+                    };
+                case "overlay":
+                    var c = new ColorOverlayEffect();
+                    return c with { Enabled = Enabled, Color = ColorOr(Color, c.Color), Amount = Amount ?? c.Amount };
+                default:
+                    return null;
+            }
+        }
     }
 
     private sealed class FrameDto
