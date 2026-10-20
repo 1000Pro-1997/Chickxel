@@ -6,8 +6,9 @@ namespace Gpixel.App;
 /// Aseprite식 타임라인: 행 = 레이어(위가 맨 위 레이어), 열 = 프레임, 위쪽 띠 = 태그(애니메이션).
 /// 셀 썸네일은 실시간으로 갱신된다. 도구 단추 없이 우클릭 메뉴(프레임 머리글·셀·레이어 이름·빈 곳)와 마지막 프레임 뒤
 /// "다음 프레임" 칸(⧉ 복사해서 추가 · ＋ 빈 프레임 추가)으로 편집한다. 셀·프레임 복사는 고른 뒤 Ctrl/⌘+C·V.
-/// 선택은 한 번에 한 종류다: 프레임(머리글), 레이어(이름 칸), 셀 묶음(행 × 프레임). 고르지 않은 칸을 누른 채 끌면 사각형으로 여러 개를 고르고,
-/// Delete(⌫)는 고른 종류대로 프레임 삭제 · 레이어 삭제 · 셀 그림 지우기다. 우클릭 "태그 만들기"로 태그(애니메이션)로 묶는다. 재생은 미리보기에서(태그 안에서 반복).
+/// 선택은 한 번에 한 종류다: 프레임(머리글), 레이어(이름 칸), 효과(효과 줄 이름·상자), 셀 묶음(행 × 프레임). 고르지 않은 칸을 누른 채 끌면 사각형으로 여러 개를 고르고,
+/// Delete(⌫)는 고른 종류대로 프레임 삭제 · 레이어 삭제 · 효과 삭제 · 셀 그림 지우기다. 효과 이름을 끌면 효과 순서를 바꾸거나 다른 레이어로 옮긴다.
+/// 우클릭 "태그 만들기"로 태그(애니메이션)로 묶는다. 재생은 미리보기에서(태그 안에서 반복).
 /// <para>
 /// 그룹 레이어 행은 ▾/▸로 접고 펼치며, 그 아래에 부위 행이 들여 써서 보인다(이름 + 부위 크기). 그룹 행의 셀은 그룹 합성 썸네일이다.
 /// 고른 머리글·이름을 끌면 순서가 바뀐다: 일반 레이어·그룹은 맨 위 단계끼리(그룹은 부위와 함께), 부위는 같은 그룹 안에서만.
@@ -104,8 +105,8 @@ public sealed class TimelinePanel : UserControl
 
     private SpriteProject? P => _ctx.Project;
 
-    /// <summary>타임라인 선택 종류(한 번에 하나): 셀 묶음(기본 = 현재 칸) · 프레임(머리글) · 레이어(이름 칸).</summary>
-    private enum SelKind { Cels, Frames, Layers }
+    /// <summary>타임라인 선택 종류(한 번에 하나): 셀 묶음(기본 = 현재 칸) · 프레임(머리글) · 레이어(이름 칸) · 효과(효과 줄 이름·상자).</summary>
+    private enum SelKind { Cels, Frames, Layers, Effects }
 
     /// <summary>고른 프레임(오름차순): 프레임 선택이면 그 프레임들, 셀 묶음이면 그 프레임 범위, 아니면 현재 프레임.</summary>
     private List<int> SelectedFrames()
@@ -149,6 +150,8 @@ public sealed class TimelinePanel : UserControl
             case SelKind.Layers:
                 var layers = _grid.SelectedLayerList();
                 return layers.Count == 1 ? $"레이어 \"{p.Layers[layers[0]].Name}\" 선택됨" : $"레이어 {layers.Count}개 선택됨";
+            case SelKind.Effects:
+                return $"효과 {_grid.SelectedEffectList().Count}개 선택됨";
             default:
                 var (rows, frames) = CelBlock();
                 return rows.Count * frames.Count == 1
@@ -240,13 +243,14 @@ public sealed class TimelinePanel : UserControl
         Say(Ui.Shortcut($"레이어 {targets.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
     }
 
-    /// <summary>Delete(⌫): 고른 종류대로 — 프레임 삭제 · 레이어 삭제 · 셀 지우기.</summary>
+    /// <summary>Delete(⌫): 고른 종류대로 — 프레임 삭제 · 레이어 삭제 · 효과 삭제 · 셀 지우기.</summary>
     private void DeleteSelection()
     {
         switch (_grid.Kind)
         {
             case SelKind.Frames: DeleteFrame(); break;
             case SelKind.Layers: DeleteSelectedLayers(); break;
+            case SelKind.Effects: DeleteSelectedEffects(); break;
             default: ClearSelectedCels(); break;
         }
     }
@@ -267,6 +271,9 @@ public sealed class TimelinePanel : UserControl
                 break;
             case SelKind.Layers:
                 Say($"{label} — {DeleteKeyName}: 레이어 삭제 · 고른 이름을 끌면 순서 바꾸기");
+                break;
+            case SelKind.Effects:
+                Say($"{label} — {DeleteKeyName}: 효과 삭제 · 효과 이름을 끌면 순서 바꾸기(다른 레이어 줄에 놓으면 그 레이어로 옮김)");
                 break;
             default:
                 var (rows, frames) = CelBlock();
@@ -345,6 +352,9 @@ public sealed class TimelinePanel : UserControl
     private sealed record CelClip(bool WholeFrames, int FrameCount, List<Dictionary<Layer, PixelImage>> Frames, List<int> Durations, List<ClipRow> Rows);
 
     private static CelClip? _clip;
+
+    /// <summary>복사한 효과(효과 줄로 골라 Ctrl/⌘+C). 셀·프레임 복사와 같은 클립보드라 마지막에 복사한 것 하나만 남는다.</summary>
+    private static List<LayerEffect>? _fxClip;
 
     private static List<Layer> ChildrenTopDown(SpriteProject p, Layer group) => p.ChildrenOf(group).Reverse().ToList();
 
@@ -475,12 +485,20 @@ public sealed class TimelinePanel : UserControl
     public bool IsGridFocused => _grid.IsKeyboardFocusWithin;
 
     /// <summary>
-    /// 고른 것을 복사한다: 프레임 선택 = 프레임 전체(모든 레이어 + 길이), 레이어 선택 = 그 레이어들의 모든 프레임 셀, 셀 묶음 = 그 셀들.
-    /// <paramref name="cut"/>이면 프레임은 지우고 셀은 비운다.
+    /// 고른 것을 복사한다: 프레임 선택 = 프레임 전체(모든 레이어 + 길이), 레이어 선택 = 그 레이어들의 모든 프레임 셀, 효과 선택 = 그 효과들,
+    /// 셀 묶음 = 그 셀들. <paramref name="cut"/>이면 프레임·효과는 지우고 셀은 비운다.
     /// </summary>
     public void CopySelection(bool cut)
     {
         if (P is not { } p) return;
+        if (_grid.Kind == SelKind.Effects)
+        {
+            _fxClip = _grid.SelectedEffectList().Select(x => x.Layer.Effects[x.Index]).ToList();
+            _clip = null;
+            if (cut) DeleteSelectedEffects();
+            return;
+        }
+        _fxClip = null;
         if (_grid.Kind == SelKind.Frames)
         {
             var selected = SelectedFrames();
@@ -496,12 +514,21 @@ public sealed class TimelinePanel : UserControl
     }
 
     /// <summary>
-    /// 붙여넣기: 프레임 복사였으면 현재 프레임(범위 끝) 뒤에 그 프레임들을 끼워 넣고, 셀 복사였으면 클릭한 셀을 왼쪽 위로 해서
-    /// 같은 모양(행 × 프레임)으로 덮어쓴다(셀 크기가 다른 칸은 건너뜀). 모자라는 프레임은 붙인다.
+    /// 붙여넣기: 효과 복사였으면 현재 레이어 효과 목록 끝에 붙이고(실행취소 한 단계, 붙인 효과가 골라짐), 프레임 복사였으면 현재 프레임(범위 끝) 뒤에
+    /// 그 프레임들을 끼워 넣고, 셀 복사였으면 클릭한 셀을 왼쪽 위로 해서 같은 모양(행 × 프레임)으로 덮어쓴다(셀 크기가 다른 칸은 건너뜀). 모자라는 프레임은 붙인다.
     /// </summary>
-    /// <returns>타임라인에 복사해 둔 셀/프레임이 있어 붙여 넣었으면(또는 붙일 수 없다고 알렸으면) true, 없으면 false(그림 붙여넣기로 넘김).</returns>
+    /// <returns>타임라인에 복사해 둔 셀/프레임/효과가 있어 붙여 넣었으면(또는 붙일 수 없다고 알렸으면) true, 없으면 false(그림 붙여넣기로 넘김).</returns>
     public bool PasteSelection()
     {
+        if (P is { } fp && _fxClip is { Count: > 0 } effects)
+        {
+            var layer = fp.Layers[_ctx.CurrentLayer];
+            int first = layer.Effects.Count;
+            ChangeEffects(layer, list => list.AddRange(effects));
+            _grid.SelectEffects(Enumerable.Range(first, effects.Count).Select(i => (layer, i)));
+            Say(Ui.Shortcut($"효과 {effects.Count}개를 \"{layer.Name}\"에 붙였습니다 — Ctrl+Z로 되돌립니다."));
+            return true;
+        }
         if (P is not { } p || _clip is not { } clip || clip.FrameCount == 0) return false;
         if (clip.WholeFrames)
         {
@@ -1130,7 +1157,7 @@ public sealed class TimelinePanel : UserControl
 
     /// <summary>
     /// 효과 줄 우클릭 메뉴(효과 <paramref name="effectIndex"/>, 누른 프레임 <paramref name="frame"/>). <paramref name="inBox"/>: 효과 상자 위(아니면 상자 밖 빈 칸).
-    /// 메뉴 한 항목 = 실행취소 한 단계.
+    /// 맨 위에 고른 효과 수, 삭제는 고른 효과 모두, 나머지는 누른 효과 대상. 메뉴 한 항목 = 실행취소 한 단계.
     /// </summary>
     private void ShowEffectMenu(Layer layer, int effectIndex, int frame, bool inBox)
     {
@@ -1141,6 +1168,8 @@ public sealed class TimelinePanel : UserControl
         void SetRange(int a, int b) => ChangeEffect(layer, effectIndex, e => e with { Frames = FrameRange.Of(a, b, p.Frames.Count) });
         var items = new List<Control>
         {
+            SelectionHeader(),
+            new Separator(),
             Item("효과 설정…", () => EditLayerEffects(p.IndexOf(layer), effectIndex)),
             new Separator(),
         };
@@ -1157,8 +1186,55 @@ public sealed class TimelinePanel : UserControl
         items.Add(Item("처음부터 이 프레임까지", () => SetRange(0, frame), (from, to) != (0, frame)));
         items.Add(new Separator());
         items.Add(Item(effect.Enabled ? "끄기" : "켜기", () => SetEffectEnabled(layer, effectIndex, !effect.Enabled)));
-        items.Add(Item("삭제", () => ChangeEffects(layer, list => list.RemoveAt(effectIndex))));
+        int selected = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList().Count : 1;
+        items.Add(Item(selected > 1 ? $"삭제 (효과 {selected}개) ({DeleteKeyName})" : $"삭제 ({DeleteKeyName})", DeleteSelectedEffects));
+        items.Add(new Separator());
+        items.Add(Item("효과 복사 (Ctrl+C)", () => CopySelection(false)));
+        items.Add(Item($"효과 붙여넣기 → 현재 레이어 (Ctrl+V)", () => PasteSelection(), _fxClip is { Count: > 0 }));
         ShowMenu([.. items]);
+    }
+
+    /// <summary>고른 효과(여러 레이어에 걸쳐도 됨)를 지운다(실행취소 한 단계).</summary>
+    private void DeleteSelectedEffects()
+    {
+        if (P is not { } p) return;
+        var chosen = _grid.SelectedEffectList();
+        if (chosen.Count == 0) return;
+        _ctx.Structural(() => p.Edit("효과 삭제", ProjectChange.Layers, () =>
+        {
+            foreach (var group in chosen.GroupBy(x => x.Layer))
+            {
+                var drop = group.Select(x => x.Index).ToHashSet();
+                p.SetLayerEffects(p.IndexOf(group.Key), group.Key.Effects.Where((_, i) => !drop.Contains(i)).ToList());
+            }
+        }));
+        _grid.ResetRange();
+        Say(Ui.Shortcut($"효과 {chosen.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
+    }
+
+    /// <summary>
+    /// 효과 덩어리(<paramref name="source"/>의 [<paramref name="a"/>, <paramref name="b"/>])를 <paramref name="target"/> 레이어의
+    /// <paramref name="at"/> 자리(같은 레이어면 덩어리를 뺀 목록 기준)로 옮긴다(실행취소 한 단계). 옮긴 효과가 골라진다.
+    /// </summary>
+    private void MoveEffects(Layer source, int a, int b, Layer target, int at)
+    {
+        if (P is not { } p || p.IndexOf(source) < 0 || p.IndexOf(target) < 0 || b >= source.Effects.Count) return;
+        var block = source.Effects.Skip(a).Take(b - a + 1).ToList();
+        var rest = source.Effects.Where((_, i) => i < a || i > b).ToList();
+        bool same = ReferenceEquals(source, target);
+        var dest = same ? rest : target.Effects.ToList();
+        at = Math.Clamp(at, 0, dest.Count);
+        if (same && at == a) return;
+        dest.InsertRange(at, block);
+        _ctx.Structural(() => p.Edit(same ? "효과 순서" : "효과 옮기기", ProjectChange.Layers, () =>
+        {
+            if (!same) p.SetLayerEffects(p.IndexOf(source), rest);
+            p.SetLayerEffects(p.IndexOf(target), dest);
+        }));
+        // 옮긴 효과가 보이게(접어 둔 효과 줄은 펼침, 기록 없음)
+        if (target.EffectsCollapsed) p.SetLayerEffectsCollapsed(p.IndexOf(target), false);
+        _grid.SelectEffects(Enumerable.Range(at, block.Count).Select(i => (target, i)));
+        Say(Ui.Shortcut(same ? $"효과 순서를 바꿨습니다 — Ctrl+Z로 되돌립니다." : $"효과 {block.Count}개를 \"{target.Name}\"(으)로 옮겼습니다 — Ctrl+Z로 되돌립니다."));
     }
 
     /// <summary>효과 목록을 고쳐 넣는다(실행취소 한 단계, 그대로면 기록 없음).</summary>
@@ -1245,6 +1321,20 @@ public sealed class TimelinePanel : UserControl
         /// <summary>이름 칸으로 고른 레이어(떨어져 있어도 됨)와 Shift+클릭 기준 레이어.</summary>
         private readonly HashSet<Layer> _selLayers = new(ReferenceEqualityComparer.Instance);
         private Layer? _layerAnchor;
+        /// <summary>효과 줄로 고른 효과(레이어, 효과 번호 — 여러 레이어 가능)와 Shift+클릭 기준 효과.</summary>
+        private readonly HashSet<(Layer Layer, int Index)> _selFx = new();
+        private (Layer Layer, int Index)? _fxAnchor;
+        /// <summary>
+        /// 효과 이름 끌기: 대상 레이어(null = 아님), 누른 효과, 옮길 덩어리 [<see cref="_fxDragA"/>, <see cref="_fxDragB"/>](그 레이어에서 이어진 고른 효과),
+        /// 문턱을 넘었는지, 끌지 않고 떼면 누른 효과 하나만 고를지, 같은 레이어 안 놓을 자리(덩어리를 뺀 목록 기준),
+        /// 다른 레이어에 놓을 때 그 레이어·자리(null = 같은 레이어 안), 효과 줄마다의 미리보기 밀림(px).
+        /// </summary>
+        private Layer? _fxDragLayer;
+        private int _fxDragFrom, _fxDragA, _fxDragB, _fxDropTo;
+        private bool _fxReordering, _fxCollapse;
+        private (Layer Layer, int Index)? _fxDropOther;
+        private ReorderTween[] _fxShift = [];
+        private double _fxLift;
         /// <summary>
         /// 사각형 끌어 고르기(누른 칸이 고른 것이 아닐 때): 종류(null = 아님), 문턱을 넘어 사각형이 보이는지,
         /// 누른 곳(스크롤되는 축은 내용 좌표), 시작 칸(프레임 번호, 레이어는 보이는 행 번호).
@@ -1602,7 +1692,7 @@ public sealed class TimelinePanel : UserControl
             long now = System.Diagnostics.Stopwatch.GetTimestamp();
             _rowT.Update(now);
             _colT.Update(now);
-            if (!_rowT.Animating && !_colT.Animating) _animTimer.Stop();
+            if (!_rowT.Animating && !_colT.Animating && !FxAnimating(now)) _animTimer.Stop();
             UpdateScrollSize();
             InvalidateVisual();
         }
@@ -1675,6 +1765,7 @@ public sealed class TimelinePanel : UserControl
             _rowEnd = null;
             _selFrames.Clear();
             _selLayers.Clear();
+            _selFx.Clear();
             _kind = SelKind.Cels;
         }
 
@@ -1700,6 +1791,46 @@ public sealed class TimelinePanel : UserControl
             ClearSelection();
             _selLayers.UnionWith(layers);
             if (_selLayers.Count > 0) _kind = SelKind.Layers;
+            InvalidateVisual();
+        }
+
+        /// <summary>효과 줄로 고른 효과(위 레이어부터, 레이어 안은 효과 순서대로).</summary>
+        public List<(Layer Layer, int Index)> SelectedEffectList()
+        {
+            if (Ctx.Project is not { } p) return [];
+            return [.. _selFx.OrderByDescending(x => p.IndexOf(x.Layer)).ThenBy(x => x.Index)];
+        }
+
+        /// <summary>효과들을 고른다(빈 목록이면 현재 칸).</summary>
+        public void SelectEffects(IEnumerable<(Layer Layer, int Index)> effects)
+        {
+            ClearSelection();
+            _selFx.UnionWith(effects);
+            if (_selFx.Count > 0) _kind = SelKind.Effects;
+            InvalidateVisual();
+        }
+
+        private bool IsEffectSelected(Layer layer, int index) => _kind == SelKind.Effects && _selFx.Contains((layer, index));
+
+        /// <summary>
+        /// Ctrl/⌘+클릭 = 효과 하나 더하기·빼기, Shift+클릭 = 기준 효과와 같은 레이어면 그 사이 효과 모두 더하기(다른 레이어면 그 효과 더하기).
+        /// 다른 레이어의 효과도 함께 고를 수 있다. 다 빠지면 현재 칸.
+        /// </summary>
+        private void ModifyEffectSelection((Layer Layer, int Index) key, bool range)
+        {
+            bool had = _kind == SelKind.Effects;
+            if (!had) ClearSelection();
+            _kind = SelKind.Effects;
+            if (range && had && _fxAnchor is { } anchor && ReferenceEquals(anchor.Layer, key.Layer) && anchor.Index < key.Layer.Effects.Count)
+            {
+                for (int i = Math.Min(anchor.Index, key.Index); i <= Math.Max(anchor.Index, key.Index); i++) _selFx.Add((key.Layer, i));
+            }
+            else if (range || !_selFx.Remove(key))
+            {
+                _selFx.Add(key);
+                _fxAnchor = key;
+            }
+            if (_selFx.Count == 0) ClearSelection();
             InvalidateVisual();
         }
 
@@ -1785,7 +1916,9 @@ public sealed class TimelinePanel : UserControl
             else if (_rowEnd is not null && p.IndexOf(_rowEnd) < 0) _rowEnd = null;
             _selFrames.RemoveWhere(f => f >= p.Frames.Count);
             _selLayers.RemoveWhere(l => p.IndexOf(l) < 0);
-            if ((_kind == SelKind.Frames && _selFrames.Count == 0) || (_kind == SelKind.Layers && _selLayers.Count == 0)) ClearSelection();
+            _selFx.RemoveWhere(x => p.IndexOf(x.Layer) < 0 || x.Index >= x.Layer.Effects.Count);
+            if ((_kind == SelKind.Frames && _selFrames.Count == 0) || (_kind == SelKind.Layers && _selLayers.Count == 0)
+                || (_kind == SelKind.Effects && _selFx.Count == 0)) ClearSelection();
         }
 
         /// <summary>보이는 행의 레이어 번호(맨 위 레이어부터, 접힌 그룹의 부위는 뺌).</summary>
@@ -2278,6 +2411,8 @@ public sealed class TimelinePanel : UserControl
                     if (box.Width - 14 >= AppTheme.MeasureText(effect.DisplayName, AppTheme.SmallFontSize).Width)
                         Text(g, effect.DisplayName, box.Deflate(new Thickness(7, 0)), ink, small: true);
                 }
+                // 고른 효과: 상자 둘레에 파란 테두리
+                if (IsEffectSelected(layer, k)) g.DrawRectangle(null, AccentPen, box.Inflate(1.5), 4, 4);
             }
 
             using (g.PushClip(cellsClip))
@@ -2319,7 +2454,11 @@ public sealed class TimelinePanel : UserControl
                     if (fxRows > 0)
                     {
                         using (g.PushClip(new Rect(NameW, y, Math.Max(0, width - NameW), row.Px)))
-                            for (int k = 0; k < fxRows; k++) DrawFxRow(cy + CellH + k * FxH, rowLayer, k);
+                            // 끌어서 순서 바꾸는 중이면 밀린 자리에, 뜬 줄은 맨 나중(위)에
+                            for (int pass = 0; pass < 2; pass++)
+                                for (int k = 0; k < fxRows; k++)
+                                    if (FxShiftOf(rowLayer, k) is var (s, lifted) && lifted == (pass == 1))
+                                        DrawFxRow(cy + CellH + k * FxH + s, rowLayer, k);
                     }
                 }
                 // 셀 묶음(두 칸 이상) 둘레의 파란 테두리(한 칸이면 현재 칸 테두리가 그 표시)
@@ -2493,6 +2632,8 @@ public sealed class TimelinePanel : UserControl
             void DrawFxName(int ry, Layer layer, int k, bool last)
             {
                 g.FillRectangle(FxNameBrush, new Rect(0, ry, NameW, FxH));
+                bool selected = IsEffectSelected(layer, k);
+                if (selected) g.FillRectangle(RangeBrush, new Rect(0, ry, NameW, FxH));
                 if (layer.IsPart)
                 {
                     double gx = ToggleX + (NameX - ToggleX) / 2.0 + 0.5;
@@ -2512,6 +2653,7 @@ public sealed class TimelinePanel : UserControl
                 }
                 var label = effect.DisplayName + (effect.Frames is { } fr ? $" · 프레임 {fr}" : "");
                 Text(g, label, new Rect(x + 15, ry, Math.Max(1, NameW - x - 19), FxH), effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush, small: true);
+                if (selected) g.DrawRectangle(null, AccentPen, new Rect(1, ry + 1, NameW - 3, FxH - 2));
             }
 
             // 레이어 행 하나: 본줄 + 효과 줄(줄어드는 중이라 본줄보다 작으면 본줄을 아래 끝에 붙임)
@@ -2520,7 +2662,10 @@ public sealed class TimelinePanel : UserControl
                 int ny = row.Px >= CellH ? y : y + row.Px - CellH;
                 int fxRows = row.Px > CellH ? Math.Min(layer.Effects.Count, (row.Px - CellH + FxH - 1) / FxH) : 0;
                 DrawName(ny, l, layer, row.Open);
-                for (int k = 0; k < fxRows; k++) DrawFxName(ny + CellH + k * FxH, layer, k, k == fxRows - 1);
+                for (int pass = 0; pass < 2; pass++)
+                    for (int k = 0; k < fxRows; k++)
+                        if (FxShiftOf(layer, k) is var (s, lifted) && lifted == (pass == 1))
+                            DrawFxName(ny + CellH + k * FxH + s, layer, k, k == fxRows - 1);
             }
 
             // 레이어 이름 열
@@ -2566,6 +2711,21 @@ public sealed class TimelinePanel : UserControl
                 double y0 = top + _liftRows.Min(_rowT.Pos), h = _liftRows.Sum(_rowT.Px);
                 using (g.PushClip(new Rect(0, TagH + HeadH, width, Math.Max(0, height - TagH - HeadH))))
                     g.DrawRectangle(RangeBrush, AccentPen, new Rect(1, y0 + 1, Math.Max(0, width - 2), Math.Max(0, h - 2)));
+            }
+            // 효과 이름 끌기: 옮길 효과 줄을 강조색으로 덮고(같은 레이어 안이면 포인터를 따라옴), 다른 레이어에 놓을 자리는 파란 선으로
+            if (_fxReordering && _fxDragLayer is { } fxLayer && p.IndexOf(fxLayer) is var fli && fli >= 0)
+            {
+                using (g.PushClip(new Rect(0, TagH + HeadH, width, Math.Max(0, height - TagH - HeadH))))
+                {
+                    double y0 = LayerY(fli) + CellH + _fxDragA * FxH + _fxLift;
+                    g.DrawRectangle(RangeBrush, AccentPen, new Rect(1, y0 + 1, Math.Max(0, width - 2), (_fxDragB - _fxDragA + 1) * FxH - 2));
+                    if (_fxDropOther is { } drop && p.IndexOf(drop.Layer) is var ti && ti >= 0)
+                    {
+                        g.FillRectangle(RangeBrush, new Rect(0, LayerY(ti), NameW, CellH));
+                        double ly = LayerY(ti) + CellH + (drop.Layer.EffectsCollapsed ? 0 : drop.Index * FxH);
+                        g.DrawLine(AccentPen, new Avalonia.Point(0, ly), new Avalonia.Point(width, ly));
+                    }
+                }
             }
             // 사각형 끌어 고르기: 누른 곳에서 포인터까지(머리글은 머리글 줄 높이, 이름 칸은 이름 칸 폭으로) 옅은 파란 사각형
             if (_marquee is { } mk && _marqueeShown)
@@ -2637,7 +2797,7 @@ public sealed class TimelinePanel : UserControl
             bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0, cmd = Ui.HasCommand(e.KeyModifiers);
             if (FxRowAt(pos.Y) is { } fxRow)
             {
-                PressFx(e, fxRow.Layer, fxRow.Effect, pos, left, right);
+                PressFx(e, fxRow.Layer, fxRow.Effect, pos, left, right, shift, cmd);
                 return;
             }
             if (pos.X < NameW && l >= 0)
@@ -2891,21 +3051,51 @@ public sealed class TimelinePanel : UserControl
         }
 
         /// <summary>
-        /// 효과 줄 누르기. 이름 칸: 체크 상자 = 켜고 끄기, 두 번 = 효과 설정, 우클릭 = 메뉴. 프레임 칸: 상자 끝 손잡이를 끌면 범위의 그 끝을,
-        /// 몸통을 끌면 범위를 통째로 옮기고(놓을 때 실행취소 한 단계, 끄는 동안 캔버스에 바로 보임), 두 번 = 효과 설정, 우클릭 = 메뉴(상자 밖이면 늘리기·복사본 추가).
+        /// 효과 줄 누르기(누른 효과를 고름 — Shift/Ctrl/⌘ = 더 고르기, 고른 효과 위 우클릭은 선택 그대로). 이름 칸: 체크 상자 = 켜고 끄기(선택은 그대로),
+        /// 끌기 = 효과 순서 바꾸기(다른 레이어 줄에 놓으면 그 레이어로 옮김), 두 번 = 효과 설정, 우클릭 = 메뉴. 프레임 칸: 상자 끝 손잡이를 끌면 범위의 그 끝을,
+        /// 몸통을 끌면 범위를 통째로 옮기고(놓을 때 실행취소 한 단계, 끄는 동안 캔버스에 바로 보임), 두 번 = 효과 설정, 우클릭 = 메뉴(상자 밖이면 늘리기·복사본 추가),
+        /// 상자 밖 빈 칸 클릭 = 선택 풀기.
         /// </summary>
-        private void PressFx(PointerPressedEventArgs e, int l, int k, Avalonia.Point pos, bool left, bool right)
+        private void PressFx(PointerPressedEventArgs e, int l, int k, Avalonia.Point pos, bool left, bool right, bool shift, bool cmd)
         {
             if (Ctx.Project is not { } p) return;
             var layer = p.Layers[l];
             var effect = layer.Effects[k];
+            var key = (layer, k);
+            bool selected = IsEffectSelected(layer, k);
             if (pos.X < NameW)
             {
                 int cx = FxCheckX(layer);
                 if (left && pos.X >= cx - 4 && pos.X < cx + 14) { _owner.SetEffectEnabled(layer, k, !effect.Enabled); return; }
                 Ctx.SetCurrentLayer(l);
-                if (right) _owner.ShowEffectMenu(layer, k, Ctx.CurrentFrame, inBox: true);
-                else if (left && e.ClickCount == 2) Dispatcher.UIThread.Post(() => _owner.EditLayerEffects(p.IndexOf(layer), k));
+                if (right)
+                {
+                    if (!selected) { SelectEffects([key]); _fxAnchor = key; }
+                    _owner.HintSelection();
+                    _owner.ShowEffectMenu(layer, k, Ctx.CurrentFrame, inBox: true);
+                    return;
+                }
+                if (!left) return;
+                if (e.ClickCount == 2) { Dispatcher.UIThread.Post(() => _owner.EditLayerEffects(p.IndexOf(layer), k)); return; }
+                if (shift || cmd)
+                {
+                    ModifyEffectSelection(key, range: shift);
+                    _owner.HintSelection();
+                    return;
+                }
+                // 누르기 = 고르기(이미 고른 것이면 그대로), 끌기 = 그 레이어에서 이어진 고른 효과째 순서 바꾸기(떼면 누른 효과 하나만 고름).
+                if (!selected) SelectEffects([key]);
+                _fxAnchor = key;
+                int a = k, b = k;
+                while (a > 0 && _selFx.Contains((layer, a - 1))) a--;
+                while (b < layer.Effects.Count - 1 && _selFx.Contains((layer, b + 1))) b++;
+                _fxDragLayer = layer;
+                (_fxDragFrom, _fxDragA, _fxDragB) = (k, a, b);
+                _fxCollapse = _selFx.Count > 1;
+                _fxShift = new ReorderTween[layer.Effects.Count];
+                _pressContent = new Avalonia.Point(ContentX(pos.X), ContentY(pos.Y));
+                _owner.HintSelection();
+                e.Pointer.Capture(this);
                 return;
             }
             int f = FrameAt(pos.X);
@@ -2915,11 +3105,28 @@ public sealed class TimelinePanel : UserControl
                 return;
             }
             var grip = FxGripAt(pos.X, effect, p.Frames.Count);
-            ResetRange();
             Ctx.SetCurrent(l, f);
-            if (right) { _owner.ShowEffectMenu(layer, k, f, grip is not null); return; }
-            if (!left || grip is not { } g) return;
+            if (right)
+            {
+                if (!selected) { SelectEffects([key]); _fxAnchor = key; }
+                _owner.HintSelection();
+                _owner.ShowEffectMenu(layer, k, f, grip is not null);
+                return;
+            }
+            if (!left) return;
+            if (grip is not { } g) { ResetRange(); return; }
+            if (shift || cmd)
+            {
+                ModifyEffectSelection(key, range: shift);
+                _owner.HintSelection();
+                return;
+            }
             if (e.ClickCount == 2) { Dispatcher.UIThread.Post(() => _owner.EditLayerEffects(p.IndexOf(layer), k)); return; }
+            // 누르기 = 고르기(이미 고른 것이면 그대로) + 끌면 범위 바꾸기
+            _fxCollapse = selected && _selFx.Count > 1;
+            if (!selected) SelectEffects([key]);
+            _fxAnchor = key;
+            _owner.HintSelection();
             _fxLayer = layer;
             _fxIndex = k;
             _fxGrip = g;
@@ -2928,6 +3135,104 @@ public sealed class TimelinePanel : UserControl
             (_fxFrom, _fxTo) = FxSpan(effect, p.Frames.Count);
             e.Pointer.Capture(this);
             InvalidateVisual();
+        }
+
+        /// <summary>
+        /// 효과 이름 끌기 중: 포인터가 끄는 레이어 안이면 효과 줄 순서 미리보기(덩어리가 포인터를 따라오고 다른 줄은 비켜 섬, <see cref="ReorderCore"/>),
+        /// 다른 레이어 위면 그 레이어 효과 목록에 넣을 자리(<see cref="_fxDropOther"/>)를 보인다. 가장자리면 위아래 자동 스크롤.
+        /// </summary>
+        private void UpdateFxReorder(Avalonia.Point pos)
+        {
+            if (Ctx.Project is not { } p || _fxDragLayer is not { } layer || p.IndexOf(layer) is var li && li < 0) return;
+            _lastPointer = pos;
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            int n = Math.Min(layer.Effects.Count, _fxShift.Length), a = _fxDragA, b = Math.Min(_fxDragB, n - 1), count = b - a + 1;
+            int over = LayerAt(pos.Y);
+            _fxDropOther = null;
+            if (over >= 0 && over != li)
+            {
+                // 다른 레이어 위: 효과 줄 위면 그 줄 위/아래 반에 따라 앞/뒤, 본줄 위면 맨 앞(효과 줄을 접어 두었으면 맨 뒤)
+                var target = p.Layers[over];
+                int at = FxRowAt(pos.Y) is { } row && row.Layer == over
+                    ? row.Effect + (pos.Y - (LayerY(over) + CellH + row.Effect * FxH) >= FxH / 2.0 ? 1 : 0)
+                    : target.EffectsCollapsed ? target.Effects.Count : 0;
+                _fxDropOther = (target, at);
+                for (int i = 0; i < n; i++) _fxShift[i].Go(0, now, animate: true);
+                _fxLift = 0;
+            }
+            else
+            {
+                // 같은 레이어 안: 덩어리를 한 단위로 놓을 자리를 셈
+                var starts = new List<double>();
+                var sizes = new List<double>();
+                for (int i = 0; i < a; i++) { starts.Add(i * FxH); sizes.Add(FxH); }
+                starts.Add(a * FxH);
+                sizes.Add(count * FxH);
+                for (int i = b + 1; i < n; i++) { starts.Add(i * FxH); sizes.Add(FxH); }
+                // 놓을 자리: 덩어리 가운데가 첫 줄 앞 ~ 마지막 줄 끝까지 따라온다(끝까지 끌면 맨 앞·맨 뒤). 그리는 자리는 효과 줄 안으로 자른다.
+                double raw = ContentY(pos.Y) - _pressContent.Y, half = count * FxH / 2.0;
+                double reach = Math.Clamp(raw, -a * FxH - half, (n - a) * FxH - half);
+                double offset = Math.Clamp(raw, -a * FxH, (n - 1 - b) * FxH);
+                int to = ReorderCore.TargetIndex(starts, sizes, a, a * FxH + reach + half);
+                int slot = 0;
+                foreach (int u in ReorderCore.Order(starts.Count, a, to))
+                {
+                    if (u == a) { slot += count; continue; }
+                    int i = u < a ? u : u + count - 1;
+                    _fxShift[i].Go((slot - i) * FxH, now, animate: true);
+                    slot++;
+                }
+                for (int i = a; i <= b; i++) _fxShift[i].Go(offset, now, animate: false);
+                _fxLift = offset;
+                _fxDropTo = to;
+            }
+            _scrollV.Set(ReorderCore.EdgeSpeed(pos.Y, TagH + HeadH, ClientH));
+            if (!_animTimer.IsEnabled) _animTimer.Start();
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// 효과 이름 누름을 끝낸다. 끌지 않았으면 클릭(여러 개를 고른 채 눌렀으면 그 효과 하나만 고름). 끌었으면 <paramref name="apply"/>일 때
+        /// 같은 레이어 안 순서 바꾸기 또는 다른 레이어로 옮기기(실행취소 한 단계), 아니면(Esc·붙잡기 잃음) 제자리로.
+        /// </summary>
+        private void FinishFxReorder(bool apply)
+        {
+            var layer = _fxDragLayer;
+            bool reordering = _fxReordering;
+            var (from, a, b, to, other) = (_fxDragFrom, _fxDragA, _fxDragB, _fxDropTo, _fxDropOther);
+            _fxDragLayer = null;
+            _fxReordering = false;
+            _fxDropOther = null;
+            _fxShift = [];
+            _fxLift = 0;
+            _scrollV.Set(0);
+            Cursor = Cursor.Default;
+            InvalidateVisual();
+            if (layer is null) return;
+            if (!reordering)
+            {
+                if (apply && _fxCollapse) { SelectEffects([(layer, from)]); _owner.HintSelection(); }
+                return;
+            }
+            if (!apply) return;
+            if (other is { } drop) _owner.MoveEffects(layer, a, b, drop.Layer, drop.Index);
+            else _owner.MoveEffects(layer, a, b, layer, to);
+        }
+
+        /// <summary>효과 이름 끌기 미리보기에서 효과 줄 <paramref name="k"/>의 밀림(px)과 떠서 포인터를 따라오는지.</summary>
+        private (int Shift, bool Lifted) FxShiftOf(Layer layer, int k)
+        {
+            if (!_fxReordering || !ReferenceEquals(layer, _fxDragLayer) || k >= _fxShift.Length) return (0, false);
+            bool lifted = _fxDropOther is null && k >= _fxDragA && k <= _fxDragB;
+            return ((int)Math.Round(_fxShift[k].At(System.Diagnostics.Stopwatch.GetTimestamp())), lifted);
+        }
+
+        /// <summary>효과 줄 밀림 애니메이션이 아직 움직이는지(끝난 것은 목표에 고정).</summary>
+        private bool FxAnimating(long now)
+        {
+            bool moving = false;
+            for (int i = 0; i < _fxShift.Length; i++) moving |= !_fxShift[i].Settle(now);
+            return moving;
         }
 
         /// <summary>효과 범위 끌기 중: 프레임 칸에 맞춰 새 범위를 미리보기로 넣는다(기록 없음, 모든 프레임을 덮으면 "모든 프레임").</summary>
@@ -3098,12 +3403,13 @@ public sealed class TimelinePanel : UserControl
         /// <summary>끄는 동안(순서 바꾸기·사각형 고르기) 가장자리 자동 스크롤: <paramref name="bar"/>를 움직이고 놓을 자리·고른 범위를 다시 센다.</summary>
         private bool AutoScrollBy(ScrollBar bar, double delta)
         {
-            if (!_reordering && _marquee is null) return false;
+            if (!_reordering && !_fxReordering && _marquee is null) return false;
             if (!bar.IsEnabled) return false;
             double old = bar.Value;
             bar.Value = Math.Clamp(old + delta, 0, bar.Maximum);
             if (bar.Value == old) return false;
             if (_marquee is not null) UpdateMarquee();
+            else if (_fxReordering) UpdateFxReorder(_lastPointer);
             else UpdateReorder(_lastPointer);
             return true;
         }
@@ -3124,6 +3430,18 @@ public sealed class TimelinePanel : UserControl
             if (_fxLayer is not null)
             {
                 DragFx(pos);
+                return;
+            }
+            if (_fxDragLayer is not null)
+            {
+                if (!_fxReordering)
+                {
+                    if (!ReorderCore.Exceeded(_press, pos)) return;
+                    _fxReordering = true;
+                    Cursor = new Cursor(StandardCursorType.SizeNorthSouth);
+                }
+                _dragPointer = e.Pointer;
+                UpdateFxReorder(pos);
                 return;
             }
             if (_marquee is not null)
@@ -3204,10 +3522,19 @@ public sealed class TimelinePanel : UserControl
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
-            if (_fxLayer is not null)
+            if (_fxLayer is { } fxLayer)
             {
-                // 먼저 확정한다: 캡처를 풀면 OnPointerCaptureLost가 끌기를 취소한다.
+                // 먼저 확정한다: 캡처를 풀면 OnPointerCaptureLost가 끌기를 취소한다. 끌지 않고 뗐으면(클릭) 여럿 중 그 효과 하나만 고른다.
+                var key = (fxLayer, _fxIndex);
+                bool click = !ReorderCore.Exceeded(_press, e.GetPosition(this));
                 FinishFx(true);
+                if (click && _fxCollapse) { SelectEffects([key]); _owner.HintSelection(); }
+                e.Pointer.Capture(null);
+                return;
+            }
+            if (_fxDragLayer is not null)
+            {
+                FinishFxReorder(true);
                 e.Pointer.Capture(null);
                 return;
             }
@@ -3258,6 +3585,7 @@ public sealed class TimelinePanel : UserControl
             base.OnPointerCaptureLost(e);
             EndMarquee(hint: false);
             if (_fxLayer is not null) FinishFx(false);
+            if (_fxDragLayer is not null) FinishFxReorder(false);
             if (_tagEdit is not null)
             {
                 _tagEdit = null;
@@ -3341,11 +3669,12 @@ public sealed class TimelinePanel : UserControl
         {
             base.OnKeyDown(e);
             if (e.Handled || e.Source is TextBox) return;
-            if (e.Key == Key.Escape && _reordering)
+            if (e.Key == Key.Escape && (_reordering || _fxReordering))
             {
                 // 끌기 취소: 칸들이 제자리로 돌아간다.
                 var pointer = _dragPointer;
-                FinishDrag(false);
+                if (_fxReordering) FinishFxReorder(false);
+                else FinishDrag(false);
                 pointer?.Capture(null);
                 e.Handled = true;
                 return;
@@ -3354,7 +3683,7 @@ public sealed class TimelinePanel : UserControl
             if (e.Key == Key.Delete || (Platform.IsMac && e.Key == Key.Back))
             {
                 // 고른 종류대로: 프레임 = 프레임 삭제, 레이어 = 레이어 삭제, 셀 = 셀 그림 지우기(끄는 중에는 무시).
-                bool dragging = _marquee is not null || _dragFrom >= 0 || _layerDragFrom >= 0 || _blockRows is not null;
+                bool dragging = _marquee is not null || _dragFrom >= 0 || _layerDragFrom >= 0 || _blockRows is not null || _fxDragLayer is not null || _fxLayer is not null;
                 if (!dragging) _owner.DeleteSelection();
                 e.Handled = true;
             }
