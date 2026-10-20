@@ -13,6 +13,9 @@ public sealed class SkinManagerWindow : Window
 {
     private const int GroupThumb = 72, PartThumb = 52, PreviewH = 200;
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
+    private static readonly Cursor PanCursor = new(StandardCursorType.SizeWestEast);
+    /// <summary>처음 크기(예전 680×720의 1.7배 — 화면보다 크면 화면 안으로 줄임).</summary>
+    private const double StartWidth = 680 * 1.7, StartHeight = 720 * 1.7;
 
     private static SkinManagerWindow? _instance;
 
@@ -30,6 +33,8 @@ public sealed class SkinManagerWindow : Window
     /// <summary>강조할 그룹/부위(칩을 눌러 열었을 때), 다음 다시 만들기에서 그 줄로 스크롤할지.</summary>
     private Layer? _focus;
     private bool _scrollToFocus;
+    /// <summary>그룹 상자의 가로 스크롤 위치(카드를 눌러 다시 만들어도 보던 자리 그대로).</summary>
+    private readonly Dictionary<Layer, double> _scrollX = new(ReferenceEqualityComparer.Instance);
     /// <summary>보기 거르기: 0 = 전체, 1 = 그룹 스킨(전체 스킨)만, 2 = 개별 스킨(부위 전용)만.</summary>
     private readonly TabStrip _filter = new(TabStripKind.Segmented, "전체", "그룹 스킨", "개별 스킨");
 
@@ -41,11 +46,12 @@ public sealed class SkinManagerWindow : Window
         _ctx = ctx;
         Title = "스킨 관리";
         ShowInTaskbar = false;
-        Width = 680;
-        Height = 720;
+        Width = StartWidth;
+        Height = StartHeight;
         MinWidth = 360;
         MinHeight = 320;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Opened += (_, _) => FitToScreen();
 
         var help = new TextBlock
         {
@@ -96,6 +102,66 @@ public sealed class SkinManagerWindow : Window
             e.Handled = true;
             Close();
         };
+    }
+
+    /// <summary>처음 크기가 화면 작업 영역보다 크면 화면 안으로 줄이고 가운데에 둔다.</summary>
+    private void FitToScreen()
+    {
+        if ((Screens.ScreenFromWindow(this) ?? Screens.Primary) is not { } screen) return;
+        var area = screen.WorkingArea;
+        double scale = screen.Scaling, maxW = area.Width / scale * 0.95, maxH = area.Height / scale * 0.92;
+        if (Width <= maxW && Height <= maxH) return;
+        Width = Math.Min(Width, maxW);
+        Height = Math.Min(Height, maxH);
+        Position = new PixelPoint(area.X + (int)((area.Width - Width * scale) / 2), area.Y + (int)((area.Height - Height * scale) / 2));
+    }
+
+    /// <summary>
+    /// 그룹 상자 안(그룹 카드 줄 + 부위 줄)을 한 가로 스크롤로 묶고, 카드 사이 빈 곳을 잡아 좌우로 끌면 통째로 옮긴다.
+    /// 카드·단추는 누르기를 먼저 처리하므로 여기까지 오지 않는다(카드 끌기 = 순서 바꾸기 그대로).
+    /// </summary>
+    private ScrollViewer PanScroll(Layer group, Control content)
+    {
+        var sv = new ScrollViewer
+        {
+            Content = content,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Background = Brushes.Transparent,
+        };
+        Avalonia.Point? press = null;
+        double pressOffset = 0;
+        sv.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(sv).Properties.IsLeftButtonPressed) return;
+            press = e.GetPosition(sv);
+            pressOffset = sv.Offset.X;
+            sv.Cursor = PanCursor;
+            e.Pointer.Capture(sv);
+            e.Handled = true;
+        };
+        sv.PointerMoved += (_, e) =>
+        {
+            if (press is not { } start) return;
+            double max = Math.Max(0, sv.Extent.Width - sv.Viewport.Width);
+            sv.Offset = sv.Offset.WithX(Math.Clamp(pressOffset - (e.GetPosition(sv).X - start.X), 0, max));
+        };
+        void End()
+        {
+            press = null;
+            sv.Cursor = null;
+        }
+        sv.PointerReleased += (_, e) =>
+        {
+            if (press is null) return;
+            End();
+            e.Pointer.Capture(null);
+        };
+        sv.PointerCaptureLost += (_, _) => End();
+        sv.ScrollChanged += (_, _) => _scrollX[group] = sv.Offset.X;
+        if (_scrollX.TryGetValue(group, out var x) && x > 0)
+            Dispatcher.UIThread.Post(() => sv.Offset = sv.Offset.WithX(x), DispatcherPriority.Loaded);
+        return sv;
     }
 
     /// <summary>
@@ -419,10 +485,12 @@ public sealed class SkinManagerWindow : Window
         }
         head.Children.Add(name);
 
-        var body = new StackPanel { Children = { head } };
+        // 그룹 카드 줄과 부위 줄은 한 가로 스크롤로 함께 움직인다(빈 곳을 잡고 좌우로 끌기).
+        var inner = new StackPanel();
+        var body = new StackPanel { Children = { head, PanScroll(group, inner) } };
         if (ShowFull)
         {
-            // 카드는 한 줄(가로 스크롤)로 늘어놓아 끌어서 순서를 바꾼다(맨 앞 = 기본 스킨). 누르기만 하면 그 스킨을 입힌다.
+            // 카드는 한 줄로 늘어놓아 끌어서 순서를 바꾼다(맨 앞 = 기본 스킨). 누르기만 하면 그 스킨을 입힌다.
             var cards = new StackPanel { Orientation = Orientation.Horizontal };
             var drag = new DragReorder(Orientation.Horizontal);
             drag.Moved += (from, to) => Dispatcher.UIThread.Post(() => SkinOps.MoveSkin(_ctx, group, from, to));
@@ -443,21 +511,16 @@ public sealed class SkinManagerWindow : Window
             add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
             // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
             cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
-            body.Children.Add(new ScrollViewer
-            {
-                Content = cards,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            });
+            inner.Children.Add(cards);
         }
-        else if (parts.Count == 0) body.Children.Add(Note("부위가 없습니다 — 개별 스킨은 부위마다 만듭니다."));
+        else if (parts.Count == 0) inner.Children.Add(Note("부위가 없습니다 — 개별 스킨은 부위마다 만듭니다."));
         if (expanded)
         {
             foreach (var part in parts)
             {
                 var partRow = PartRow(p, group, part, frame);
                 if (ReferenceEquals(part, _focus)) focusRow = partRow;
-                body.Children.Add(partRow);
+                inner.Children.Add(partRow);
             }
         }
         var row = new Border
@@ -485,7 +548,8 @@ public sealed class SkinManagerWindow : Window
         var baseSkin = group.BaseSkin;
         bool baseHas = baseSkin is not null && HasContent(p.GetOwnCel(part, f, baseSkin));
 
-        var cards = new WrapPanel { Orientation = Orientation.Horizontal };
+        // 한 줄로(줄바꿈하지 않음) — 넘치면 그룹 상자째 가로로 끌어 본다.
+        var cards = new StackPanel { Orientation = Orientation.Horizontal };
         WriteableBitmap? Cel(Skin skin) => p.GetSkinCel(part, f, skin) is { } cel && HasContent(cel) ? Track(cel) : null;
 
         if (ShowFull)
@@ -540,7 +604,7 @@ public sealed class SkinManagerWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(4, 0, 6, 0),
         }.Tip(own is null ? $"{part.Name}: 그룹 스킨을 따름" : $"{part.Name}: 부위만 따로 \"{own.Name}\"");
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("110,*") };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("110,Auto") };
         grid.Children.Add(label);
         Grid.SetColumn(cards, 1);
         grid.Children.Add(cards);
