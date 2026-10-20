@@ -2,7 +2,7 @@ using Gpixel.Core.IO;
 
 namespace Gpixel.App;
 
-/// <summary>Gpixel 정보: 이름·버전·한 줄 설명, 저장소·릴리스·문제 신고 링크, 라이선스, 오픈 소스 고지, Claude CLI 안내, 설정 파일 위치.</summary>
+/// <summary>Gpixel 정보: 이름·버전·한 줄 설명, 저장소·릴리스·문제 신고 링크, 라이선스, 오픈 소스 고지, AI CLI(Claude·Codex) 안내, 설정 파일 위치.</summary>
 public sealed class AboutDialog : DialogBase
 {
     private const double TextWidth = 470;
@@ -32,9 +32,9 @@ public sealed class AboutDialog : DialogBase
         Body.Children.Add(Text("MIT 라이선스 · Copyright © 2026 천성훈 (1000Pro-1997)"));
         Body.Children.Add(Text("Gpixel이 쓰는 오픈 소스 구성 요소(.NET, Avalonia, SkiaSharp, SQLite 등)의 라이선스 고지는 THIRD-PARTY-NOTICES.md에 있습니다."));
         Body.Children.Add(Ui.Row(Link("오픈 소스 고지 보기", AppInfo.ThirdPartyNoticesUrl)));
-        Body.Children.Add(Section("Claude 채팅"));
-        Body.Children.Add(Text("Claude 채팅은 이 컴퓨터에 따로 설치한 Claude Code CLI(Anthropic)와 그 로그인을 씁니다. "
-            + "Gpixel에는 Claude Code가 들어 있지 않으며, 사용에는 Anthropic 약관이 적용됩니다."));
+        Body.Children.Add(Section("AI 채팅(Claude·Codex)"));
+        Body.Children.Add(Text("AI 채팅은 이 컴퓨터에 따로 설치한 Claude Code CLI(Anthropic) 또는 Codex CLI(OpenAI)와 그 로그인을 씁니다(API 키를 넣지 않음). "
+            + "Gpixel에는 두 CLI가 들어 있지 않으며, 사용에는 각 회사의 약관이 적용됩니다."));
         var settings = Text("설정 파일: " + AppSettings.FilePath);
         settings.Foreground = AppTheme.DimTextBrush;
         settings.Margin = new Thickness(3, 10, 3, 3);

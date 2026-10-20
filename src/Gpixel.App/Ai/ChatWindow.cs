@@ -11,9 +11,9 @@ using Gpixel.Core.Model;
 namespace Gpixel.App.Ai;
 
 /// <summary>
-/// Claude 채팅 창(메인 창에 딸린 도구 창). 사용자 컴퓨터의 Claude Code CLI와 그 로그인을 쓰고,
-/// Claude는 편집기 안 MCP 서버(<see cref="McpServer"/>)의 도구로 열린 그림을 고친다.
-/// 처음에는 CLI 찾기 → 로그인 → 채팅 순서로 화면이 바뀐다. Claude의 한 차례(turn)는 실행취소 한 단계로 묶이고,
+/// AI 채팅 창(메인 창에 딸린 도구 창). 사용자 컴퓨터의 AI CLI(Claude Code 또는 Codex, <see cref="AiProvider"/>)와 그 로그인을 쓰고,
+/// AI는 편집기 안 MCP 서버(<see cref="McpServer"/>)의 도구로 열린 그림을 고친다. 머리줄에서 CLI·모델을 바꾼다.
+/// 처음에는 CLI 찾기 → 로그인 → 채팅 순서로 화면이 바뀐다. AI의 한 차례(turn)는 실행취소 한 단계로 묶이고,
 /// 차례마다 캔버스 모습과 "이 단계 되돌리기/다시 적용" 단추가 붙는다.
 /// </summary>
 public sealed class ChatWindow : Window
@@ -21,8 +21,6 @@ public sealed class ChatWindow : Window
     private static readonly IBrush ErrorBrush = AppTheme.Brush(Color.FromRgb(240, 110, 110));
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
     private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
-    private static readonly string?[] ModelValues = [null, "sonnet", "opus", "haiku"];
-    private static readonly string[] ModelLabels = ["기본", "sonnet", "opus", "haiku"];
     private const int SnapshotMax = 240;
     private const int CanvasAttachSide = 512;
     /// <summary>첨부 이미지의 긴 변 최대(이보다 크면 줄여서 PNG로 보냄).</summary>
@@ -33,6 +31,7 @@ public sealed class ChatWindow : Window
     private readonly AppSettings _settings;
 
     private readonly TextBlock _status;
+    private readonly SegmentedToggle _providerToggle;
     private readonly ComboBox _model;
     private readonly Button _newChat;
     private readonly Border _body;
@@ -56,11 +55,14 @@ public sealed class ChatWindow : Window
     private string? _phaseTool;
     private int _phaseChars;
 
-    private string? _claudePath;
-    private ClaudeSession? _session;
-    private ClaudeLogin? _login;
+    private AiProvider _provider;
+    private string? _cliPath;
+    private IChatSession? _session;
+    private CliLogin? _login;
+    /// <summary>모델 목록 칸(<see cref="_model"/>의 항목 순서).</summary>
+    private IReadOnlyList<ModelChoice> _modelChoices = [];
     private Turn? _turn;
-    private bool _follow = true, _checking, _polling, _shutdown, _ready;
+    private bool _follow = true, _checking, _polling, _shutdown, _ready, _fillingModels;
 
     public ChatWindow(EditorContext ctx, McpServer mcp, AppSettings settings)
     {
@@ -68,7 +70,8 @@ public sealed class ChatWindow : Window
         _mcp = mcp;
         _settings = settings;
 
-        Title = "Claude";
+        _provider = AiProvider.FromId(settings.ChatProvider);
+        Title = _provider.Name;
         ShowInTaskbar = false;
         MinWidth = 300;
         MinHeight = 360;
@@ -83,7 +86,7 @@ public sealed class ChatWindow : Window
         }
         else WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-        // ── 머리줄: 로그인 상태 · 모델 · 새 대화
+        // ── 머리줄: 로그인 상태 · AI(Claude/Codex) · 모델 · 새 대화
         _status = new TextBlock
         {
             Foreground = AppTheme.DimTextBrush,
@@ -91,17 +94,27 @@ public sealed class ChatWindow : Window
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(4, 0),
         };
-        _model = Ui.Combo(90, ModelLabels);
-        _model.SelectedIndex = Math.Max(0, Array.IndexOf(ModelValues, settings.AiModel));
+        _providerToggle = new SegmentedToggle([.. AiProvider.All.Select(p => p.Name)])
+        {
+            SelectedIndex = AiProvider.All.ToList().IndexOf(_provider),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(3, 0),
+        };
+        foreach (var (p, i) in AiProvider.All.Select((p, i) => (p, i)))
+            _providerToggle.SetOptionTip(i, $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음).");
+        _providerToggle.SelectionChanged += (_, _) => OnProviderChanged();
+        _model = new ComboBox { Width = 190, Margin = new Thickness(3), VerticalAlignment = VerticalAlignment.Center };
         _model.SelectionChanged += (_, _) => OnModelChanged();
-        _model.Tip("Claude 모델(기본 = Claude Code 설정값). 바꾸면 다음 메시지부터 적용");
+        FillModels();
         _newChat = Ui.Button("새 대화", (_, _) => NewConversation());
         _newChat.Tip("대화를 비우고 새로 시작");
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), Margin = new Thickness(4, 3) };
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), Margin = new Thickness(4, 3) };
         header.Children.Add(_status);
-        Grid.SetColumn(_model, 1);
+        Grid.SetColumn(_providerToggle, 1);
+        header.Children.Add(_providerToggle);
+        Grid.SetColumn(_model, 2);
         header.Children.Add(_model);
-        Grid.SetColumn(_newChat, 2);
+        Grid.SetColumn(_newChat, 3);
         header.Children.Add(_newChat);
         var headerBorder = new Border
         {
@@ -174,7 +187,7 @@ public sealed class ChatWindow : Window
         _ready = true;
     }
 
-    /// <summary>Claude 프로세스를 끝낸다(앱을 닫을 때 메인 창이 부름). 진행 중인 차례는 멈춘다.</summary>
+    /// <summary>AI 프로세스를 끝낸다(앱을 닫을 때 메인 창이 부름). 진행 중인 차례는 멈춘다.</summary>
     public void Shutdown()
     {
         if (_shutdown) return;
@@ -236,26 +249,27 @@ public sealed class ChatWindow : Window
             SetHeader("확인 중…", inChat: false);
             SetBody(new TextBlock
             {
-                Text = "Claude Code 확인 중…",
+                Text = $"{_provider.ProductName} 확인 중…",
                 Foreground = AppTheme.DimTextBrush,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             });
-            var path = ClaudeCli.Locate(_settings.ClaudePath);
+            var provider = _provider;
+            var path = provider.Locate(_settings);
             if (path is null)
             {
                 ShowNoCli();
                 return;
             }
-            if (_claudePath != path)
+            if (_cliPath != path)
             {
                 if (_turn is not null) StopTurn();
                 _session?.Dispose();
                 _session = null;
             }
-            _claudePath = path;
-            var status = await ClaudeCli.GetAuthStatusAsync(path);
-            if (_shutdown) return;
+            _cliPath = path;
+            var status = await provider.GetAuthStatusAsync(path);
+            if (_shutdown || !ReferenceEquals(provider, _provider)) return;
             if (status.LoggedIn) ShowChat(status);
             else ShowLogin(status);
         }
@@ -270,28 +284,27 @@ public sealed class ChatWindow : Window
     /// <summary>CLI가 없을 때: 설치 안내.</summary>
     private void ShowNoCli()
     {
-        SetHeader("Claude Code 없음", inChat: false);
+        var p = _provider;
+        SetHeader($"{p.ProductName} 없음", inChat: false);
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
-        stack.Children.Add(TitleText("Claude Code를 찾지 못했습니다"));
-        stack.Children.Add(WrapText("이 창은 컴퓨터에 설치된 Claude Code(claude 명령)와 사용자의 Claude 계정(Pro·Max 구독 등)으로 동작합니다. " +
+        stack.Children.Add(TitleText($"{p.ProductName}를 찾지 못했습니다"));
+        stack.Children.Add(WrapText($"이 창은 컴퓨터에 설치된 {p.ProductName}({p.Command} 명령)와 사용자의 {p.AccountText}으로 동작합니다(API 키를 넣지 않음). " +
                                     "터미널에서 아래 명령으로 설치한 뒤 \"다시 확인\"을 누르세요."));
-        var unix = CommandBox("macOS · Linux (터미널)", "curl -fsSL https://claude.ai/install.sh | bash");
-        var win = CommandBox("Windows (PowerShell)", "irm https://claude.ai/install.ps1 | iex");
-        if (OperatingSystem.IsWindows()) stack.Children.AddRange([win, unix]);
-        else stack.Children.AddRange([unix, win]);
+        foreach (var (title, command) in p.InstallCommands) stack.Children.Add(CommandBox(title, command));
         var recheck = Ui.Button("다시 확인", (_, _) => Recheck());
         recheck.HorizontalAlignment = HorizontalAlignment.Left;
         stack.Children.Add(recheck);
 
-        var pathBox = new TextBox { Text = _settings.ClaudePath ?? "", Watermark = "예: /opt/homebrew/bin/claude", Margin = new Thickness(0, 2) };
+        var overridePath = p.GetPathOverride(_settings);
+        var pathBox = new TextBox { Text = overridePath ?? "", Watermark = p.PathExample, Margin = new Thickness(0, 2) };
         var browse = Ui.Button("찾아보기…", (_, _) =>
         {
-            if (Ui.OpenFile(this, "claude 실행 파일", null) is { } picked) pathBox.Text = picked;
+            if (Ui.OpenFile(this, $"{p.Command} 실행 파일", null) is { } picked) pathBox.Text = picked;
         });
         var apply = Ui.Button("적용", (_, _) =>
         {
             var text = (pathBox.Text ?? "").Trim();
-            _settings.ClaudePath = text.Length == 0 ? null : text;
+            p.SetPathOverride(_settings, text.Length == 0 ? null : text);
             Recheck();
         });
         var pathRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
@@ -301,26 +314,27 @@ public sealed class ChatWindow : Window
         Grid.SetColumn(apply, 2);
         pathRow.Children.Add(apply);
         var pathStack = new StackPanel { Spacing = 4 };
-        pathStack.Children.Add(WrapText("이미 설치했는데 못 찾으면 claude 실행 파일 경로를 직접 정하세요(터미널에서 \"which claude\" 또는 \"where claude\").", dim: true));
+        pathStack.Children.Add(WrapText($"이미 설치했는데 못 찾으면 {p.Command} 실행 파일 경로를 직접 정하세요(터미널에서 \"which {p.Command}\" 또는 \"where {p.Command}\").", dim: true));
         pathStack.Children.Add(pathRow);
-        if (!string.IsNullOrWhiteSpace(_settings.ClaudePath))
-            pathStack.Children.Add(WrapText($"지정한 경로에 claude가 없습니다: {_settings.ClaudePath}", error: true));
-        stack.Children.Add(Ui.Group("claude 경로 직접 지정", pathStack));
+        if (!string.IsNullOrWhiteSpace(overridePath))
+            pathStack.Children.Add(WrapText($"지정한 경로에 {p.Command}가 없습니다: {overridePath}", error: true));
+        stack.Children.Add(Ui.Group($"{p.Command} 경로 직접 지정", pathStack));
         SetBody(Ui.ScrollHost(stack));
     }
 
     /// <summary>로그인 안 됨: 숨은 로그인(주소 표시)·터미널 로그인·다시 확인.</summary>
     private void ShowLogin(AuthStatus status)
     {
+        var p = _provider;
         SetHeader("로그인 필요", inChat: false);
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
-        stack.Children.Add(TitleText("Claude 계정으로 로그인하세요"));
-        stack.Children.Add(WrapText("Claude 구독(Pro·Max 등) 계정으로 로그인하면 Claude가 이 편집기에서 그림을 보고 고칠 수 있습니다. " +
-                                    "로그인 정보는 Claude Code가 보관하며 Gpixel은 읽지 않습니다."));
+        stack.Children.Add(TitleText($"{p.Name} 계정으로 로그인하세요"));
+        stack.Children.Add(WrapText($"{p.AccountText}으로 로그인하면 {p.Name}가 이 편집기에서 그림을 보고 고칠 수 있습니다. " +
+                                    $"로그인 정보는 {p.ProductName}가 보관하며 Gpixel은 읽지 않습니다."));
         if (status.Error is { } err) stack.Children.Add(WrapText($"로그인 상태를 확인하지 못했습니다: {err}", error: true));
         var info = new StackPanel { Spacing = 6 };
-        var login = Ui.Button("Claude로 로그인", (_, _) => StartLogin(info));
-        var terminal = Ui.Button("터미널에서 로그인", (_, _) => StartTerminalLogin(info)).Tip("터미널 창에서 claude auth login 실행");
+        var login = Ui.Button($"{p.Name}로 로그인", (_, _) => StartLogin(info));
+        var terminal = Ui.Button("터미널에서 로그인", (_, _) => StartTerminalLogin(info)).Tip($"터미널 창에서 {p.Command} {string.Join(' ', p.LoginArgs)} 실행");
         var recheck = Ui.Button("다시 확인", (_, _) => Recheck());
         stack.Children.Add(new WrapPanel { Children = { login, terminal, recheck } });
         stack.Children.Add(info);
@@ -329,7 +343,7 @@ public sealed class ChatWindow : Window
 
     private void StartLogin(StackPanel info)
     {
-        if (_claudePath is not { } path) return;
+        if (_cliPath is not { } path) return;
         LeaveLogin();
         info.Children.Clear();
         info.Children.Add(WrapText("브라우저가 열리면 로그인을 마치세요. 열리지 않으면 아래 주소를 누르세요.", dim: true));
@@ -338,7 +352,8 @@ public sealed class ChatWindow : Window
         var codeBox = new TextBox { Watermark = "인증 코드", Margin = new Thickness(0, 2) };
         var codeRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         codeRow.Children.Add(codeBox);
-        var login = new ClaudeLogin(path);
+        var takesCode = _provider.LoginTakesCode;
+        var login = new CliLogin(_provider, path);
         var sendCode = Ui.Button("코드 보내기", (_, _) =>
         {
             if (string.IsNullOrWhiteSpace(codeBox.Text)) return;
@@ -355,7 +370,7 @@ public sealed class ChatWindow : Window
         login.UrlFound += url =>
         {
             urls.Children.Add(LinkRow(url));
-            codePanel.IsVisible = true;
+            codePanel.IsVisible = takesCode;
         };
         login.OutputLine += line => output.Text = line;
         login.Succeeded += st =>
@@ -381,18 +396,19 @@ public sealed class ChatWindow : Window
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
         {
             login.Dispose();
-            info.Children.Add(WrapText($"claude를 실행하지 못했습니다: {ex.Message}", error: true));
+            info.Children.Add(WrapText($"{_provider.Command}를 실행하지 못했습니다: {ex.Message}", error: true));
         }
     }
 
     private void StartTerminalLogin(StackPanel info)
     {
-        if (_claudePath is not { } path) return;
+        if (_cliPath is not { } path) return;
         LeaveLogin();
         info.Children.Clear();
-        if (!ClaudeCli.OpenLoginTerminal(path, out var error))
+        var command = $"{_provider.Command} {string.Join(' ', _provider.LoginArgs)}";
+        if (!AiCli.OpenLoginTerminal(path, _provider.LoginArgs, out var error))
         {
-            info.Children.Add(WrapText($"터미널을 열지 못했습니다: {error}\n터미널에서 직접 \"{path}\" auth login 을 실행한 뒤 \"다시 확인\"을 누르세요.", error: true));
+            info.Children.Add(WrapText($"터미널을 열지 못했습니다: {error}\n터미널에서 직접 \"{command}\"를 실행한 뒤 \"다시 확인\"을 누르세요.", error: true));
             return;
         }
         info.Children.Add(WrapText("터미널 창에서 로그인을 마치세요. 로그인되면 저절로 채팅으로 넘어갑니다(안 되면 \"다시 확인\").", dim: true));
@@ -402,12 +418,13 @@ public sealed class ChatWindow : Window
     /// <summary>터미널 로그인 중: 2초마다 로그인 상태를 본다.</summary>
     private async Task PollLoginAsync()
     {
-        if (_polling || _claudePath is not { } path) return;
+        if (_polling || _cliPath is not { } path) return;
         _polling = true;
         try
         {
-            var status = await ClaudeCli.GetAuthStatusAsync(path);
-            if (_terminalPoll.IsEnabled && status.LoggedIn && !_shutdown)
+            var provider = _provider;
+            var status = await provider.GetAuthStatusAsync(path);
+            if (_terminalPoll.IsEnabled && status.LoggedIn && !_shutdown && ReferenceEquals(provider, _provider))
             {
                 _terminalPoll.Stop();
                 ShowChat(status);
@@ -430,12 +447,13 @@ public sealed class ChatWindow : Window
     private void ShowChat(AuthStatus status)
     {
         LeaveLogin();
-        if (_claudePath is not { } path) return;
+        if (_cliPath is not { } path) return;
         var who = status.Describe();
         SetHeader(who.Length > 0 ? who : "로그인됨", inChat: true);
         if (_session is null)
         {
-            _session = new ClaudeSession(path, _mcp) { Model = CurrentModel() };
+            _session = _provider.CreateSession(path, _mcp);
+            _session.Model = CurrentModel();
             HookSession(_session);
         }
         SetBody(_chatPanel);
@@ -445,7 +463,7 @@ public sealed class ChatWindow : Window
 
     // ───────────── 세션 이벤트 ─────────────
 
-    private void HookSession(ClaudeSession s)
+    private void HookSession(IChatSession s)
     {
         s.TextStarted += () =>
         {
@@ -506,34 +524,83 @@ public sealed class ChatWindow : Window
             if (_turn is not null) EndTurn(error, r, cancelled: false);
             else if (error is not null) AddSystemLine(error, error: true);
             // 로그인이 풀렸으면 로그인 화면으로(대화 내용은 남아 있다가 다시 로그인하면 보인다).
-            if (r.IsError && r.Text is { } text && (text.Contains("/login", StringComparison.OrdinalIgnoreCase)
-                                                     || text.Contains("Invalid API key", StringComparison.OrdinalIgnoreCase)))
-                Recheck();
+            if (r.NeedsLogin) Recheck();
         };
         s.Exited += info =>
         {
-            var msg = $"Claude 프로세스가 끝났습니다(코드 {info.ExitCode}).";
+            var msg = $"{_provider.Name} 프로세스가 끝났습니다(코드 {info.ExitCode}).";
             if (info.StderrTail.Length > 0) msg += "\n" + info.StderrTail;
             if (_turn is not null) EndTurn(msg, null, cancelled: false);
             else AddSystemLine(msg, error: true);
         };
         s.Notice += text => AddSystemLine(text, error: false);
+        s.ModelResolved += model =>
+        {
+            if (ReferenceEquals(s, _session) && _provider.RememberResolved(_settings, s.Model, model)) FillModels();
+        };
     }
 
     // ───────────── 보내기·차례 ─────────────
 
-    private string? CurrentModel() => ModelValues[Math.Clamp(_model.SelectedIndex, 0, ModelValues.Length - 1)];
+    private string? CurrentModel()
+        => _modelChoices.Count == 0 ? null : _modelChoices[Math.Clamp(_model.SelectedIndex, 0, _modelChoices.Count - 1)].Value;
+
+    /// <summary>모델 목록을 지금 AI의 칸으로 채우고 설정에 저장된 모델을 고른다(이름에 실제 버전이 붙으면 다시 부름).</summary>
+    private void FillModels()
+    {
+        _fillingModels = true;
+        try
+        {
+            _modelChoices = _provider.Models(_settings);
+            _model.Items.Clear();
+            foreach (var c in _modelChoices)
+            {
+                var item = new ComboBoxItem { Content = c.Label };
+                if (c.Tip is { Length: > 0 } tip) item.Tip(tip);
+                _model.Items.Add(item);
+            }
+            var saved = _provider.GetModel(_settings);
+            _model.SelectedIndex = Math.Max(0, _modelChoices.ToList().FindIndex(c => c.Value == saved));
+            _model.Tip($"{_provider.Name} 모델(기본 = {_provider.ProductName} 설정값). 바꾸면 다음 메시지부터 적용");
+        }
+        finally
+        {
+            _fillingModels = false;
+        }
+    }
 
     private void OnModelChanged()
     {
+        if (_fillingModels || _model.SelectedIndex < 0) return;
         var model = CurrentModel();
-        if (_settings.AiModel == model) return;
-        _settings.AiModel = model;
+        if (_provider.GetModel(_settings) == model) return;
+        _provider.SetModel(_settings, model);
         if (_session is null) return;
         if (_turn is not null) StopTurn();
         _session.Model = model;
         _session.Restart();
-        AddSystemLine($"모델: {ModelLabels[Math.Max(0, _model.SelectedIndex)]} — 다음 메시지부터 적용됩니다.", error: false);
+        AddSystemLine($"모델: {_modelChoices[_model.SelectedIndex].Label} — 다음 메시지부터 적용됩니다.", error: false);
+    }
+
+    /// <summary>Claude ↔ Codex: 지금 대화를 끝내고(화면의 글은 남김) 새 CLI를 확인한다. 대화 맥락은 이어지지 않는다.</summary>
+    private void OnProviderChanged()
+    {
+        if (_providerToggle.SelectedIndex < 0) return;
+        var provider = AiProvider.All[_providerToggle.SelectedIndex];
+        if (ReferenceEquals(provider, _provider)) return;
+        if (_turn is not null) StopTurn();
+        LeaveLogin();
+        _session?.Dispose();
+        _session = null;
+        _cliPath = null;
+        _provider = provider;
+        _settings.ChatProvider = provider.Id;
+        Title = provider.Name;
+        FillModels();
+        if (_messages.Children.Count > 0 && _hint is null)
+            AddSystemLine($"{provider.Name}로 바꿨습니다 — 새 대화로 시작합니다(앞 대화는 {provider.Name}가 모릅니다).", error: false);
+        _checking = false;
+        Recheck();
     }
 
     private void NewConversation()
@@ -560,7 +627,7 @@ public sealed class ChatWindow : Window
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
         {
-            AddSystemLine($"claude를 실행하지 못했습니다: {ex.Message}", error: true);
+            AddSystemLine($"{_provider.Command}를 실행하지 못했습니다: {ex.Message}", error: true);
             return;
         }
         _input.Text = "";
@@ -569,7 +636,7 @@ public sealed class ChatWindow : Window
         _follow = true;
         AddUserBubble(text, attachments);
 
-        var label = $"Claude: {Shorten(text.Length > 0 ? text : "(이미지)", 24)}";
+        var label = $"{_provider.Name}: {Shorten(text.Length > 0 ? text : "(이미지)", 24)}";
         var turn = new Turn(label);
         if (_ctx.Project is { } p)
         {
@@ -1172,7 +1239,7 @@ public sealed class ChatWindow : Window
         {
             try
             {
-                ClaudeCli.OpenUrl(url);
+                AiCli.OpenUrl(url);
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
             {

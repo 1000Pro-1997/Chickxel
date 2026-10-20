@@ -11,11 +11,11 @@ using ImageAnchor = Gpixel.Core.Model.Anchor;
 namespace Gpixel.App.Ai;
 
 /// <summary>
-/// Claude가 MCP로 부르는 편집 도구 모음. 도구 설명·입력 스키마는 모델이 읽으므로 영어, 결과 요약·오류 문구는 한국어다.
+/// AI(Claude·Codex)가 MCP로 부르는 편집 도구 모음. 도구 설명·입력 스키마는 모델이 읽으므로 영어, 결과 요약·오류 문구는 한국어다.
 /// <para>
 /// <see cref="Call"/>은 UI 스레드에서 불린다(호출자가 넘겨 줌). 대화상자는 절대 띄우지 않는다.
 /// 바꾸는 도구는 떠 있는 선택을 먼저 내려놓고, 숨겨진·잠긴 레이어와 그룹 레이어는 거부하고, 캔버스 밖은 잘라 내며,
-/// 실행취소 기록을 정확히 하나("Claude: 도구이름") 남기고, 고친 프레임·레이어를 현재로 만든다.
+/// 실행취소 기록을 정확히 하나("AI: 도구이름") 남기고, 고친 프레임·레이어를 현재로 만든다.
 /// 픽셀은 셀 스트로크로, 구조(프레임·레이어·그룹·부위·태그·캔버스)는 프로젝트 메서드를 바깥 <see cref="SpriteProject.Edit(string, ProjectChange, Action)"/>로 감싸 한 단계로 기록한다.
 /// <c>frame</c>은 항상 프레임 번호다. <c>layer</c>가 부위면 좌표는 부위 안 좌표(부위 왼쪽 위 = 0,0)다.
 /// </para>
@@ -1243,7 +1243,7 @@ public sealed class PixelTools
     /// <summary>픽셀을 고칠 셀(검증 끝난 프레임·레이어와 그 크기 — 부위면 부위 크기).</summary>
     private readonly record struct Target(SpriteProject Project, int Frame, int Layer, int Width, int Height);
 
-    private static string Label(string tool) => "Claude: " + tool;
+    private static string Label(string tool) => "AI: " + tool;
 
     private SpriteProject RequireProject() => Ctx.Project ?? throw new ToolError(NoProject);
 

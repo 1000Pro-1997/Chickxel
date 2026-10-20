@@ -382,7 +382,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             if (_canvas.AutoFit) _canvas.FitToWindow();
         });
         right.Children.Add(BarSeparator());
-        var claude = BarButton(right, "", "Claude 채팅: 말로 그림 만들기·고치기 (Ctrl+L)", ToggleChat);
+        var claude = BarButton(right, "", "AI 채팅(Claude·Codex): 말로 그림 만들기·고치기 (Ctrl+L)", ToggleChat);
         claude.Content = IconImage(Icons.Claude, 16);
         claude.Padding = new Thickness(5, 3);
         bar.Children.Add(right);
@@ -668,7 +668,7 @@ public sealed class MainForm : Window, Ai.IAiHost
 
         // AI
         var ai = TopMenu("AI(_A)");
-        AddItems(ai, Cmd("Claude 채팅", ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)));
+        AddItems(ai, Cmd("AI 채팅", ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)));
 
         // 도움말
         var help = TopMenu("도움말(_H)");
@@ -2099,9 +2099,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         ShowMessage($"캔버스 크기: {p.Width}×{p.Height}");
     }
 
-    // ───────────── Claude 채팅(AI 도구 호스트) ─────────────
+    // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────
 
-    /// <summary>Claude 채팅 창을 연다(이미 열려 있으면 앞으로). 처음 열 때 편집기 안 MCP 서버를 띄운다.</summary>
+    /// <summary>AI 채팅 창을 연다(이미 열려 있으면 앞으로). 처음 열 때 편집기 안 MCP 서버를 띄운다.</summary>
     private void ToggleChat()
     {
         if (_chat is not null)
@@ -2117,7 +2117,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             catch (Exception ex) when (ex is System.Net.HttpListenerException or System.Net.Sockets.SocketException or InvalidOperationException)
             {
                 server.Dispose();
-                Ui.Error(this, $"Claude 연결용 내부 서버(MCP)를 시작하지 못했습니다.\n{ex.Message}");
+                Ui.Error(this, $"AI 연결용 내부 서버(MCP)를 시작하지 못했습니다.\n{ex.Message}");
                 return;
             }
             _mcp = server;
@@ -2128,7 +2128,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         chat.Show(this);
     }
 
-    /// <summary>앱을 닫을 때: 채팅이 열려 있었는지 기억하고 Claude 프로세스·MCP 서버를 끝낸다.</summary>
+    /// <summary>앱을 닫을 때: 채팅이 열려 있었는지 기억하고 AI 프로세스·MCP 서버를 끝낸다.</summary>
     private void ShutdownChat()
     {
         _settings.ChatOpen = _chat is not null;

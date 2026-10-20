@@ -40,7 +40,7 @@ public static class Icons
     /// <summary>파일 브라우저 열고 닫기 아이콘.</summary>
     public static Bitmap Folder => Load("folder");
 
-    /// <summary>Claude 채팅 단추 아이콘(주황색 별, 16×16).</summary>
+    /// <summary>AI 채팅(Claude·Codex) 단추 아이콘(주황색 별, 16×16).</summary>
     public static Bitmap Claude => Load("claude");
 
     private static Bitmap Load(string name)

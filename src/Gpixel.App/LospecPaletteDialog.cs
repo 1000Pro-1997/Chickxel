@@ -474,7 +474,7 @@ public sealed class LospecPaletteDialog : DialogBase
     {
         try
         {
-            ClaudeCli.OpenUrl(url);
+            AiCli.OpenUrl(url);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
         {

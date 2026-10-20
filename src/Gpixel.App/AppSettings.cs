@@ -86,11 +86,19 @@ public sealed class AppSettings
     public int PreviewZoom { get; set; } = 0;
     public int PreviewFps { get; set; } = 0;
 
-    // Claude 채팅
-    /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "sonnet"/"opus"/"haiku").</summary>
+    // AI 채팅(Claude Code·Codex)
+    /// <summary>채팅에 쓰는 CLI("claude" / "codex", 모르는 값 = claude).</summary>
+    public string ChatProvider { get; set; } = "claude";
+    /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>
     public string? AiModel { get; set; }
     /// <summary>claude 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
     public string? ClaudePath { get; set; }
+    /// <summary>Claude Code가 알려 준 실제 모델 ID: 보낸 별칭(기본값은 "default:" + Claude Code 설정의 모델) → ID. 목록에 버전을 보이는 데 쓴다.</summary>
+    public Dictionary<string, string>? ClaudeResolvedModels { get; set; }
+    /// <summary>Codex 모델(null = Codex 설정의 기본값, 예: "gpt-6-astra").</summary>
+    public string? CodexModel { get; set; }
+    /// <summary>codex 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
+    public string? CodexPath { get; set; }
     public int ChatX { get; set; } = -1;
     public int ChatY { get; set; } = -1;
     public int ChatWidth { get; set; } = 420;
@@ -169,7 +177,10 @@ public sealed class AppSettings
         return new AppSettings();
     }
 
-    /// <summary>예전 형식을 옮긴다: 팔레트 하나(<see cref="Palette"/>) → <see cref="Palettes"/> 첫 항목 "팔레트 1".</summary>
+    /// <summary>
+    /// 예전 형식을 옮긴다: 팔레트 하나(<see cref="Palette"/>) → <see cref="Palettes"/> 첫 항목 "팔레트 1",
+    /// 단축키 명령 "AI/Claude 채팅" → "AI/AI 채팅"(Codex가 더해져 이름이 바뀜).
+    /// </summary>
     private static AppSettings Migrate(AppSettings s)
     {
         if (s.Palette is { } old)
@@ -177,6 +188,7 @@ public sealed class AppSettings
             s.Palettes ??= [new PaletteSetting { Name = "팔레트 1", Colors = old }];
             s.Palette = null;
         }
+        if (s.Shortcuts is { } keys && keys.Remove("AI/Claude 채팅", out var chat)) keys.TryAdd("AI/AI 채팅", chat);
         return s;
     }
 
