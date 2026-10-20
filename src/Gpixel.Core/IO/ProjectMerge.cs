@@ -12,6 +12,8 @@ public enum MergeMode
     Group,
     /// <summary>파일마다 프레임(파일의 프레임을 차례로 이어 붙임).</summary>
     Frames,
+    /// <summary>그룹 1개 안에 부위 1개, 파일마다 그 그룹의 스킨 1개(부위 크기 = 가장 큰 파일, 기준점 위치).</summary>
+    Skins,
 }
 
 /// <summary>
@@ -60,7 +62,7 @@ public sealed class MergeSource
 /// <param name="Width">결과 캔버스 가로.</param>
 /// <param name="Height">결과 캔버스 세로.</param>
 /// <param name="Anchor">파일 그림을 캔버스에 놓을 기준점.</param>
-/// <param name="Name">결과 이름(그룹 방식이면 그룹 이름).</param>
+/// <param name="Name">결과 이름(그룹·스킨 방식이면 그룹 이름).</param>
 public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor Anchor, string Name);
 
 /// <summary>
@@ -68,10 +70,12 @@ public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor 
 /// <list type="bullet">
 /// <item>레이어: 첫 파일이 맨 위 레이어(레이어 이름 = 파일 이름). 프레임 수 = 가장 많은 파일의 프레임 수.</item>
 /// <item>그룹: 그룹 하나(<see cref="MergeOptions.Name"/>)에 첫 파일이 맨 위 부위. 부위 크기 = 파일 크기, 위치 = 기준점.</item>
+/// <item>스킨: 그룹 하나(<see cref="MergeOptions.Name"/>)에 부위 "부위" 하나, 파일마다 전체 스킨 하나(스킨 이름 = 파일 이름, 첫 파일 = 첫 스킨·지금 스킨).
+/// 부위 크기 = 가장 큰 파일 크기(기준점 위치), 작은 파일은 부위 안 기준점에 놓는다. 프레임이 모자란 스킨은 빈 칸이라 첫 스킨 셀을 물려받는다.</item>
 /// <item>프레임: 파일 순서대로 프레임을 이어 붙인다. 프레임이 하나인 파일은 그 프레임의 칸 이름 = 파일 이름,
 /// 여러 개인 파일은 자기 태그를 옮겨 오고 태그가 없으면 파일 이름으로 태그 하나.</item>
 /// </list>
-/// 레이어·그룹 방식의 프레임 길이는 그 프레임이 있는 첫 파일의 길이, 태그는 이름이 겹치지 않는 것만 옮긴다.
+/// 레이어·그룹·스킨 방식의 프레임 길이는 그 프레임이 있는 첫 파일의 길이, 태그는 이름이 겹치지 않는 것만 옮긴다.
 /// Unity 설정은 첫 프로젝트 파일의 것(없으면 <paramref name="spriteDefaults"/>).
 /// </summary>
 public static class ProjectMerge
@@ -116,7 +120,7 @@ public static class ProjectMerge
         var ordered = sources.Reverse().ToList();
         if (options.Mode == MergeMode.Group)
         {
-            var group = new Layer(string.IsNullOrWhiteSpace(options.Name) ? "그룹" : options.Name.Trim()) { Kind = LayerKind.Group };
+            var group = NewGroup(options);
             foreach (var s in ordered)
             {
                 var (x, y) = PixelImage.AnchorOffset(s.Size.Width, s.Size.Height, w, h, options.Anchor);
@@ -131,6 +135,27 @@ public static class ProjectMerge
                 for (int f = 0; f < s.Frames.Count; f++) SetCel(p, part, frames[f], s.Frames[f].Clone());
             }
             p.AddLayerRaw(group);
+        }
+        else if (options.Mode == MergeMode.Skins)
+        {
+            var group = NewGroup(options);
+            var size = new Size(sources.Max(s => s.Size.Width), sources.Max(s => s.Size.Height));
+            var (x, y) = PixelImage.AnchorOffset(size.Width, size.Height, w, h, options.Anchor);
+            var part = new Layer(UniqueName(p, "부위", group.Name))
+            {
+                Kind = LayerKind.Part,
+                Parent = group,
+                PartSize = size,
+                PartOffset = new Point(x, y),
+            };
+            var skins = new List<Skin>(sources.Count);
+            foreach (var s in sources) skins.Add(new Skin(UniqueSkinName(skins, s.Name)));
+            group.ReplaceSkinsRaw(skins);
+            p.AddLayerRaw(part);
+            p.AddLayerRaw(group);
+            for (int i = 0; i < sources.Count; i++)
+                for (int f = 0; f < sources[i].Frames.Count; f++)
+                    SetCel(p, part, frames[f], sources[i].Frames[f].ResizeCanvas(size.Width, size.Height, options.Anchor), skins[i]);
         }
         else
         {
@@ -175,9 +200,21 @@ public static class ProjectMerge
         return fromEnd ? affix.TrimStart('_', '-', ' ', '.', '@') : affix.TrimEnd('_', '-', ' ', '.', '@');
     }
 
-    private static void SetCel(SpriteProject p, Layer layer, Frame frame, PixelImage image)
+    private static Layer NewGroup(MergeOptions options)
+        => new(string.IsNullOrWhiteSpace(options.Name) ? "그룹" : options.Name.Trim()) { Kind = LayerKind.Group };
+
+    private static void SetCel(SpriteProject p, Layer layer, Frame frame, PixelImage image, Skin? skin = null)
     {
-        if (!image.IsRegionEmpty(image.Bounds)) p.SetCelRaw(layer, frame, image);
+        if (!image.IsRegionEmpty(image.Bounds)) p.SetCelRaw(layer, frame, image, skin);
+    }
+
+    private static string UniqueSkinName(List<Skin> taken, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) name = "스킨";
+        bool Used(string n) => taken.Any(s => s.Name == n);
+        if (!Used(name)) return name;
+        for (int i = 2; ; i++)
+            if (!Used($"{name} {i}")) return $"{name} {i}";
     }
 
     private static AnimationTag Shifted(AnimationTag t, int offset)

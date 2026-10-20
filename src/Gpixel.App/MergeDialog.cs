@@ -4,7 +4,7 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 /// <summary>
-/// 파일 브라우저에서 고른 파일 합치기: 순서, 결과 이름, 방식(레이어/그룹/프레임), 캔버스 크기·기준점, 원본 삭제, 미리보기.
+/// 파일 브라우저에서 고른 파일 합치기: 순서, 결과 이름, 방식(레이어/그룹/스킨/프레임), 캔버스 크기·기준점, 원본 삭제, 미리보기.
 /// </summary>
 public sealed class MergeDialog : DialogBase
 {
@@ -12,7 +12,7 @@ public sealed class MergeDialog : DialogBase
     private readonly string _folder;
     private readonly ListBox _order;
     private readonly TextBox _name;
-    private readonly RadioButton _layers, _group, _frames;
+    private readonly RadioButton _layers, _group, _skins, _frames;
     private readonly NumericUpDown _w, _h;
     private readonly AnchorPicker _anchor = new();
     private readonly CheckBox _deleteOriginals;
@@ -37,6 +37,7 @@ public sealed class MergeDialog : DialogBase
         var maxH = items.Max(i => i.Source.Size.Height);
         _layers = Radio("레이어로", "파일마다 레이어 1개(첫 파일이 맨 위)", true);
         _group = Radio("그룹으로", "그룹 하나에 파일마다 부위 1개(파일 크기 그대로)", false);
+        _skins = Radio("스킨으로", "그룹 하나에 부위 1개, 파일마다 스킨 1개(스킨 이름 = 파일 이름, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일)", false);
         _frames = Radio("프레임으로", "파일마다 프레임(차례로 이어 붙임, 칸 이름 = 파일 이름)", false);
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
         _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70);
@@ -54,7 +55,7 @@ public sealed class MergeDialog : DialogBase
             Ui.Row(_order, Ui.Stack(up, down)),
             Ui.Row(Ui.Label("이름"), _name, Ui.Label(SpriteProject.FileExtension)),
             Ui.Label("합치는 방식", bold: true),
-            _layers, _group, _frames,
+            _layers, _group, _skins, _frames,
             Ui.Label("캔버스", bold: true),
             Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px"), fit),
             Ui.Label("기준점(파일 그림이 놓일 위치)"),
@@ -75,7 +76,7 @@ public sealed class MergeDialog : DialogBase
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
 
-        foreach (var r in new[] { _layers, _group, _frames }) r.IsCheckedChanged += (_, _) => UpdatePreview();
+        foreach (var r in new[] { _layers, _group, _skins, _frames }) r.IsCheckedChanged += (_, _) => UpdatePreview();
         _w.ValueChanged += (_, _) => UpdatePreview();
         _h.ValueChanged += (_, _) => UpdatePreview();
         _anchor.Changed += (_, _) => UpdatePreview();
@@ -100,15 +101,15 @@ public sealed class MergeDialog : DialogBase
     public string ResultName => _name.Text?.Trim() ?? "";
     public string ProjectPath => Path.Combine(_folder, ResultName + SpriteProject.FileExtension);
     public bool DeleteOriginals => _deleteOriginals.On();
-    public MergeMode Mode => _group.On() ? MergeMode.Group : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
+    public MergeMode Mode => _group.On() ? MergeMode.Group : _skins.On() ? MergeMode.Skins : _frames.On() ? MergeMode.Frames : MergeMode.Layers;
     public MergeOptions Options => new(Mode, (int)_w.NumValue(), (int)_h.NumValue(), _anchor.Value, ResultName);
 
-    /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹이면 부위 아틀라스도).</summary>
+    /// <summary>저장하면 생기는 파일: 프로젝트, 기본 내보내기 프레임 시트(그룹·스킨이면 부위 아틀라스도).</summary>
     public IEnumerable<string> TargetPaths(string name)
     {
         yield return Path.Combine(_folder, name + SpriteProject.FileExtension);
         yield return Path.Combine(_folder, name + ".png");
-        if (Mode == MergeMode.Group) yield return Path.Combine(_folder, name + "_parts.png");
+        if (Mode is MergeMode.Group or MergeMode.Skins) yield return Path.Combine(_folder, name + "_parts.png");
     }
 
     /// <summary>원본을 지울 때 함께 지워지는 파일(원본 + 딸린 파일). 확인할 수 없는 딸린 파일은 뺀다.</summary>
@@ -185,7 +186,9 @@ public sealed class MergeDialog : DialogBase
         _preview.SetProject(p);
         _timeline.SetProject(p);
         int parts = p.Layers.Count(l => l.IsPart);
+        int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
         _info.Text = $"{p.Width}×{p.Height} · 레이어 {p.Layers.Count(l => !l.IsPart)}개" + (parts > 0 ? $"(부위 {parts}개)" : "")
+                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨)" : "")
                      + $" · 프레임 {p.Frames.Count}개" + (p.Tags.Count > 0 ? $" · 태그 {p.Tags.Count}개" : "");
     }
 
@@ -246,27 +249,35 @@ public sealed class MergeDialog : DialogBase
 
     /// <summary>
     /// 합친 결과의 타임라인 모양(읽기 전용): 위쪽 태그 띠, 프레임 번호·길이, 행마다 레이어(그룹 ▼, 부위는 들여쓰기)와 칸 썸네일.
+    /// 스킨이 여럿인 그룹의 부위 아래에는 스킨마다 흐린 행(타임라인에서는 착장을 바꿔 보는 그림)을 덧붙인다.
     /// 빈 칸은 비워 둔다. 행 순서는 타임라인과 같이 맨 위 레이어부터.
     /// </summary>
     private sealed class TimelinePreview : Control
     {
         private const double NameW = 150, CellW = 44, RowH = 34, Thumb = 28, HeadH = 30, TagH = 16;
         private SpriteProject? _project;
-        private readonly Dictionary<(int Layer, int Frame), WriteableBitmap> _thumbs = new();
+        private readonly List<(string Name, bool Group, bool Part, bool Skin, WriteableBitmap?[] Thumbs)> _rows = new();
 
         public void SetProject(SpriteProject p)
         {
             Clear();
             _project = p;
-            for (int li = 0; li < p.Layers.Count; li++)
-                for (int f = 0; f < p.Frames.Count; f++)
-                {
-                    var layer = p.Layers[li];
-                    var img = layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(li, f);
-                    if (img is not null && !img.IsRegionEmpty(img.Bounds)) _thumbs[(li, f)] = ImageUtil.MakeThumbnail(img, (int)Thumb);
-                }
+            WriteableBitmap?[] Thumbs(Func<int, PixelImage?> cel)
+                => Enumerable.Range(0, p.Frames.Count)
+                    .Select(f => cel(f) is { } img && !img.IsRegionEmpty(img.Bounds) ? ImageUtil.MakeThumbnail(img, (int)Thumb) : null).ToArray();
+            for (int li = p.Layers.Count - 1; li >= 0; li--)
+            {
+                var layer = p.Layers[li];
+                string name = layer.IsGroup ? $"▼ {layer.Name}" : layer.IsPart ? $"    └ {layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}" : layer.Name;
+                int index = li;
+                _rows.Add((name, layer.IsGroup, layer.IsPart, false,
+                    Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));
+                if (layer is { IsPart: true, Parent: { IsGroup: true } g } && g.Skins.Count > 1)
+                    foreach (var skin in g.Skins)
+                        _rows.Add(($"        ◇ {skin.Name}", false, false, true, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
+            }
             Width = NameW + p.Frames.Count * CellW + 4;
-            Height = Top + p.Layers.Count * RowH + 2;
+            Height = Top + _rows.Count * RowH + 2;
             InvalidateMeasure();
             InvalidateVisual();
         }
@@ -275,8 +286,9 @@ public sealed class MergeDialog : DialogBase
 
         public void Clear()
         {
-            foreach (var b in _thumbs.Values) b.Dispose();
-            _thumbs.Clear();
+            foreach (var row in _rows)
+                foreach (var b in row.Thumbs) b?.Dispose();
+            _rows.Clear();
             _project = null;
         }
 
@@ -306,20 +318,17 @@ public sealed class MergeDialog : DialogBase
             }
             double top = Top;
             g.DrawLine(line, new Avalonia.Point(0, top - 0.5), new Avalonia.Point(Bounds.Width, top - 0.5));
-            // 타임라인처럼 맨 위 레이어부터.
-            for (int row = 0; row < p.Layers.Count; row++)
+            for (int row = 0; row < _rows.Count; row++)
             {
-                int li = p.Layers.Count - 1 - row;
-                var layer = p.Layers[li];
+                var (name, isGroup, isPart, isSkin, thumbs) = _rows[row];
                 double y = top + row * RowH;
-                if (layer.IsGroup) g.FillRectangle(AppTheme.HoverBrush, new Rect(0, y, Bounds.Width, RowH));
-                string name = layer.IsGroup ? $"▼ {layer.Name}" : layer.IsPart ? $"    └ {layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}" : layer.Name;
-                AppTheme.DrawTextIn(g, name, new Rect(6, y, NameW - 8, RowH), AppTheme.TextBrush, small, bold: !layer.IsPart, padLeft: 0);
-                for (int f = 0; f < p.Frames.Count; f++)
+                if (isGroup) g.FillRectangle(AppTheme.HoverBrush, new Rect(0, y, Bounds.Width, RowH));
+                AppTheme.DrawTextIn(g, name, new Rect(6, y, NameW - 8, RowH), isSkin ? AppTheme.DimTextBrush : AppTheme.TextBrush, small, bold: !isPart && !isSkin, padLeft: 0);
+                for (int f = 0; f < thumbs.Length; f++)
                 {
                     var cell = new Rect(NameW + f * CellW + (CellW - Thumb) / 2, y + (RowH - Thumb) / 2, Thumb, Thumb);
                     g.FillRectangle(AppTheme.InputBrush, cell);
-                    if (_thumbs.TryGetValue((li, f), out var bmp))
+                    if (thumbs[f] is { } bmp)
                         using (ImageUtil.Pixelated(g))
                             g.DrawImage(bmp, cell);
                 }

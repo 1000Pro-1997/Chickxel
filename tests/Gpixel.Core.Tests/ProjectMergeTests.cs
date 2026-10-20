@@ -73,6 +73,28 @@ public class ProjectMergeTests
     }
 
     [Fact]
+    public void Skins_OnePartWithSkinPerFile_MissingFramesInheritFirstSkin()
+    {
+        var p = ProjectMerge.Merge([Solid("red", 2, 2, Red, frames: 2), Solid("blue", 1, 1, Blue), Solid("red", 2, 2, Blue)],
+            new MergeOptions(MergeMode.Skins, 4, 4, Anchor.BottomRight, "ore"));
+        Assert.Equal(["부위", "ore"], p.Layers.Select(l => l.Name));
+        var (part, group) = (p.Layers[0], p.Layers[1]);
+        Assert.Same(group, part.Parent);
+        Assert.Equal(new Size(2, 2), part.PartSize);
+        Assert.Equal(new Point(2, 2), part.PartOffset);
+        Assert.Equal(["red", "blue", "red 2"], group.Skins.Select(s => s.Name));
+        Assert.Same(group.Skins[0], group.ActiveSkin);
+        Assert.Equal(2, p.Frames.Count);
+
+        var blue = group.Skins[1];
+        var cel = p.GetSkinCel(part, p.Frames[0], blue)!;
+        Assert.Equal(Blue, cel[1, 1]);              // 1×1이 2×2 부위 안 오른쪽 아래
+        Assert.Equal(default, cel[0, 0]);
+        Assert.Equal(Red, p.GetSkinCel(part, p.Frames[1], blue)![0, 0]); // 프레임 2는 없어서 첫 스킨을 물려받음
+        Assert.Equal(Red, p.Flatten(0)[2, 2]);
+    }
+
+    [Fact]
     public void Layers_FrameCountIsMax_ShorterSourcesLeaveEmptyCels()
     {
         var p = ProjectMerge.Merge([Solid("a", 2, 2, Red), Solid("b", 2, 2, Blue, frames: 2)],
