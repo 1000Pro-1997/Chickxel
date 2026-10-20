@@ -1439,7 +1439,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>환경 설정(실행취소 횟수·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
     private void ShowPreferences()
     {
-        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.AutoSave, _settings.AutoSaveDelaySeconds, _settings.TrashPolicy, _settings.UpdateCheck,
+        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _settings.UndoSteps = dlg.UndoSteps;
@@ -1447,7 +1447,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         _settings.UpdateCheck = dlg.UpdateCheck;
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
         _settings.AutoSave = dlg.AutoSave;
-        _settings.AutoSaveDelaySeconds = dlg.AutoSaveDelaySeconds;
+        _settings.AutoSaveIdleSeconds = dlg.AutoSaveIdleSeconds;
         if (!_settings.AutoSave) _autoSave.Stop();
         _ctx.UndoCapacity = dlg.UndoSteps;
         _browser.Trash.Purge(dlg.TrashPolicy);

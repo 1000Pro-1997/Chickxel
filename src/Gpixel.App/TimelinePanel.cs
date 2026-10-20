@@ -1433,8 +1433,8 @@ public sealed class TimelinePanel : UserControl
         private static readonly IBrush LightSelBrush = AppTheme.Brush(Color.FromArgb(28, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IBrush MarqueeBrush = AppTheme.Brush(Color.FromArgb(48, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IPen MarqueePen = AppTheme.Pen(AppTheme.AccentColor);
-        /// <summary>마우스가 올라간 셀(Frame == 프레임 수면 "다음 프레임" 칸)과 위쪽 반(true, ⧉)/아래쪽 반(＋).</summary>
-        private (int Layer, int Frame, bool Top) _hover = (-1, -1, false);
+        /// <summary>마우스가 올라간 프레임 열(프레임 수면 "다음 프레임" 칸)과 머리글(＋ 빈 프레임) 위인지 — 아니면 셀 줄(⧉ 복사).</summary>
+        private (int Frame, bool Header) _hover = (-1, false);
         /// <summary>태그 범위 끌기: 대상 태그, 오른쪽 끝(true)/왼쪽 끝, 끄는 중인 범위.</summary>
         private AnimationTag? _tagEdit;
         private bool _tagEditRight;
@@ -2089,9 +2089,6 @@ public sealed class TimelinePanel : UserControl
         private bool IsGhostColumn(double x)
             => x >= NameW && ContentX(x) >= _colT.Total && ContentX(x) < _colT.Total + CellW;
 
-        /// <summary>"다음 프레임" 칸의 위쪽 반(⧉ 복사) 위인지 — <paramref name="layer"/> &lt; 0이면 머리글 칸.</summary>
-        private bool TopHalf(double y, int layer) => y < (layer < 0 ? TagH + HeadH / 2.0 : LayerY(layer) + CellH / 2.0);
-
         /// <summary>가장 가까운 보이는 행 번호.</summary>
         private int RowAtClamped(double y)
         {
@@ -2401,19 +2398,13 @@ public sealed class TimelinePanel : UserControl
             g.DrawGeometry(AppTheme.TextBrush, null, geo);
         }
 
-        private static readonly IBrush SplitHoverBrush = AppTheme.Brush(Color.FromRgb(74, 74, 84));
+        private static readonly IBrush GhostHoverBrush = AppTheme.Brush(Color.FromRgb(74, 74, 84));
 
-        /// <summary>칸을 위아래 반으로 나눠 위 ⧉(복사)·아래 ＋ 아이콘을 그린다. <paramref name="hoverTop"/>: 올라간 반(없으면 null).</summary>
-        private static void DrawSplit(DrawingContext g, Rect r, bool copyEnabled, bool? hoverTop, bool dim = false)
+        /// <summary>"다음 프레임" 칸 단추 하나: 칸 가운데 아이콘(⧉ 복사 또는 ＋ 빈 프레임), 올라가 있으면 밝은 바탕.</summary>
+        private static void DrawGhostButton(DrawingContext g, Rect r, VectorIcon icon, bool hovered)
         {
-            var top = new Rect(r.X, r.Y, r.Width, r.Height / 2);
-            var bottom = new Rect(r.X, r.Y + r.Height / 2, r.Width, r.Height / 2);
-            if (hoverTop == true && copyEnabled) g.FillRectangle(SplitHoverBrush, top);
-            if (hoverTop == false) g.FillRectangle(SplitHoverBrush, bottom);
-            g.DrawLine(BorderPen, new Avalonia.Point(r.X + 6, Math.Round(r.Center.Y) + 0.5), new Avalonia.Point(r.Right - 6, Math.Round(r.Center.Y) + 0.5));
-            var on = dim ? AppTheme.DimTextBrush : AppTheme.TextBrush;
-            if (copyEnabled) VectorIcons.Draw(g, VectorIcon.Copy, top, 11, on);
-            VectorIcons.Draw(g, VectorIcon.Plus, bottom, 11, on);
+            if (hovered) g.FillRectangle(GhostHoverBrush, r);
+            VectorIcons.Draw(g, icon, r, 12, hovered ? AppTheme.TextBrush : AppTheme.DimTextBrush);
         }
 
         /// <summary>배치의 행이 가리키는 레이어 번호(지워져 줄어드는 유령 행은 -1).</summary>
@@ -2549,8 +2540,8 @@ public sealed class TimelinePanel : UserControl
                         {
                             var r = new Rect(gx + 1, cy + 1, CellW - 2, CellH - 2);
                             g.FillRectangle(GhostBrush, r);
-                            bool hovered = _hover.Frame == frames; // 어느 줄의 단추든 프레임 전체를 복사·추가하므로 열 전체를 함께 강조
-                            DrawSplit(g, r, true, hovered ? _hover.Top : null, dim: !hovered);
+                            // 어느 줄의 ⧉든 프레임 전체를 복사하므로 열의 ⧉를 함께 강조
+                            DrawGhostButton(g, r, VectorIcon.Copy, _hover is { Frame: var hf, Header: false } && hf == frames);
                         }
                     }
                     // 효과 줄(접거나 펼치는 중이면 보이는 만큼)
@@ -2657,8 +2648,7 @@ public sealed class TimelinePanel : UserControl
                 {
                     var r = new Rect(FrameX(frames) + 1, TagH + 1, CellW - 2, HeadH - 2);
                     g.FillRectangle(GhostBrush, r);
-                    bool hovered = _hover.Frame == frames;
-                    DrawSplit(g, r, true, hovered ? _hover.Top : null, dim: !hovered);
+                    DrawGhostButton(g, r, VectorIcon.Plus, _hover is { Frame: var hf, Header: true } && hf == frames);
                 }
                 // 태그는 머리글 칸까지 내려오는 괄호로 묶어 보인다.
                 foreach (var tag in p.Tags)
@@ -2983,7 +2973,7 @@ public sealed class TimelinePanel : UserControl
             }
             if (IsGhostColumn(pos.X) && pos.Y >= TagH)
             {
-                if (left) _owner.AppendFrame(TopHalf(pos.Y, pos.Y < TagH + HeadH ? -1 : l), l >= 0 ? l : Ctx.CurrentLayer);
+                if (left) _owner.AppendFrame(copy: pos.Y >= TagH + HeadH, l >= 0 ? l : Ctx.CurrentLayer);
                 else if (right) _owner.ShowEmptyMenu();
                 return;
             }
@@ -3608,17 +3598,14 @@ public sealed class TimelinePanel : UserControl
 
         private static bool IsCopyModifier(KeyModifiers m) => (m & KeyModifiers.Alt) != 0 || Ui.HasCommand(m) || (m & KeyModifiers.Control) != 0;
 
-        /// <summary>마우스가 올라간 "다음 프레임" 칸(반쪽 아이콘 강조용).</summary>
+        /// <summary>마우스가 올라간 "다음 프레임" 칸(단추 강조용).</summary>
         private void UpdateHover(Avalonia.Point pos)
         {
-            (int, int, bool) hover = (-1, -1, false);
-            if (Ctx.Project is not null && pos.X >= NameW && pos.Y >= TagH)
+            (int, bool) hover = (-1, false);
+            if (Ctx.Project is not null && pos.X >= NameW && pos.Y >= TagH && IsGhostColumn(pos.X))
             {
-                bool ghost = IsGhostColumn(pos.X);
-                int f = ghost ? Ctx.FrameCount : FrameAt(pos.X);
                 bool header = pos.Y < TagH + HeadH;
-                int l = header ? -1 : LayerAt(pos.Y);
-                if (ghost && FxRowAt(pos.Y) is null) hover = (l, f, TopHalf(pos.Y, l));
+                if (header || FxRowAt(pos.Y) is null) hover = (Ctx.FrameCount, header);
             }
             if (hover == _hover) return;
             _hover = hover;
@@ -3632,7 +3619,7 @@ public sealed class TimelinePanel : UserControl
             if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
             if (_layoutBadgeHover is not null) SetLayoutBadgeHover(null);
             if (_hover.Frame < 0) return;
-            _hover = (-1, -1, false);
+            _hover = (-1, false);
             InvalidateVisual();
         }
 

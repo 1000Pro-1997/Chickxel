@@ -86,7 +86,7 @@ public sealed class PreferencesDialog : DialogBase
 
     public int UndoSteps => (int)_undo.NumValue();
     public bool AutoSave => _autoSave.On();
-    public int AutoSaveDelaySeconds => (int)_autoSaveDelay.NumValue();
+    public int AutoSaveIdleSeconds => (int)_autoSaveDelay.NumValue();
     public TrashPolicy TrashPolicy => _trash.Policy;
     public bool UpdateCheck => _updateCheck.On();
     /// <summary>명령 Id → 정한 단축키(모든 명령).</summary>
