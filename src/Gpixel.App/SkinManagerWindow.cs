@@ -408,23 +408,33 @@ public sealed class SkinManagerWindow : Window
         var body = new StackPanel { Children = { head } };
         if (ShowFull)
         {
-            var cards = new WrapPanel { Orientation = Orientation.Horizontal };
+            // 카드는 한 줄(가로 스크롤)로 늘어놓아 끌어서 순서를 바꾼다(맨 앞 = 기본 스킨). 누르기만 하면 그 스킨을 입힌다.
+            var cards = new StackPanel { Orientation = Orientation.Horizontal };
+            var drag = new DragReorder(Orientation.Horizontal);
+            drag.Moved += (from, to) => Dispatcher.UIThread.Post(() => SkinOps.MoveSkin(_ctx, group, from, to));
             var skins = group.Skins;
             for (int i = 0; i < skins.Count; i++)
             {
                 var skin = skins[i];
                 var bmp = Track(p.FlattenGroup(group, frame, skin));
                 var card = Card(bmp, p.Size, GroupThumb, i == 0 ? $"{skin.Name} (기본)" : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null);
-                card.Tip($"\"{group.Name}\" 그룹에 \"{skin.Name}\" 입히기 · 우클릭 = 메뉴");
+                card.Tip($"\"{group.Name}\" 그룹에 \"{skin.Name}\" 입히기 · 끌어서 순서 바꾸기(맨 앞 = 기본) · 우클릭 = 메뉴");
                 int index = i;
-                Clickable(card, () => _ctx.SetActiveSkin(group, skin), () => GroupCardMenu(group, skin, index));
+                Clickable(card, () => _ctx.SetActiveSkin(group, skin), () => GroupCardMenu(group, skin, index), onRelease: true);
+                drag.Attach(card);
                 cards.Children.Add(card);
             }
             var add = Ui.Button("＋ 새 스킨", (_, _) => SkinOps.AddSkin(_ctx, group, null)).Tip("빈 스킨 추가(빈 셀은 기본 스킨 그림을 빌려 보임)");
             var dup = Ui.Button("복제", (_, _) => SkinOps.AddSkin(_ctx, group, group.ActiveSkin)).Tip("지금 스킨을 그림째 복제");
             add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
+            // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
             cards.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { add, dup } });
-            body.Children.Add(cards);
+            body.Children.Add(new ScrollViewer
+            {
+                Content = cards,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            });
         }
         else if (parts.Count == 0) body.Children.Add(Note("부위가 없습니다 — 개별 스킨은 부위마다 만듭니다."));
         if (expanded)
@@ -583,15 +593,23 @@ public sealed class SkinManagerWindow : Window
     }
 
     /// <summary>왼쪽 클릭 = <paramref name="apply"/>, 오른쪽 클릭 = 메뉴.</summary>
-    private void Clickable(Control card, Action apply, Func<Control[]> menu)
+    /// <param name="onRelease">끌어서 순서를 바꾸는 카드: 누를 때가 아니라 끌지 않고 놓을 때 입힌다(끌면 <see cref="DragReorder"/>가 놓기를 처리함).</param>
+    private void Clickable(Control card, Action apply, Func<Control[]> menu, bool onRelease = false)
     {
         card.PointerPressed += (_, e) =>
         {
             if (!e.GetCurrentPoint(card).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
             // 다시 만들기가 이 카드를 지우므로 처리기가 끝난 뒤에 적용한다.
-            Dispatcher.UIThread.Post(apply);
+            if (!onRelease) Dispatcher.UIThread.Post(apply);
         };
+        if (onRelease)
+            card.PointerReleased += (_, e) =>
+            {
+                if (e.InitialPressMouseButton != MouseButton.Left || !card.Bounds.WithX(0).WithY(0).Contains(e.GetPosition(card))) return;
+                e.Handled = true;
+                Dispatcher.UIThread.Post(apply);
+            };
         PopupMenus.Attach(card, menu);
     }
 
