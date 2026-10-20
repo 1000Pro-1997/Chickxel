@@ -25,6 +25,8 @@ public sealed class FileBrowserPanel : UserControl
     private readonly Dictionary<string, (DateTime Stamp, WriteableBitmap Thumb)> _thumbCache = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>지금 목록에 있는 항목(경로 → 항목).</summary>
     private readonly Dictionary<string, FileItem> _items = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>저장하지 않은 변경이 있는 파일(경로 → 메모리 속 그림과 그 썸네일; 그림이 없으면 디스크 썸네일).</summary>
+    private readonly Dictionary<string, (PixelImage? Image, WriteableBitmap? Thumb)> _unsaved = new(StringComparer.OrdinalIgnoreCase);
     private FileSystemWatcher? _watcher;
     private CancellationTokenSource? _thumbCts;
     private bool _structureChanged;
@@ -33,8 +35,8 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>이름 바꾸기 중이면 끝내는 동작(true = 적용, false = 취소).</summary>
     private Action<bool>? _endRename;
 
-    /// <summary>목록 한 칸: 경로와 그 칸의 컨트롤들.</summary>
-    private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content);
+    /// <summary>목록 한 칸: 경로, 그 칸의 컨트롤들(Dot = 저장 안 한 변경 빨간 점), 기본 도움말.</summary>
+    private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content, Control Dot, string Tip);
 
     /// <summary>왼쪽 버튼을 누른 상태: 누른 곳(항목 패널 좌표, 스크롤과 함께 움직임), 그때의 선택(Ctrl이면 유지), 끌기 시작 여부.</summary>
     private sealed class PressState(Avalonia.Point start, IReadOnlyList<object> baseSelection, bool modifier)
@@ -54,6 +56,12 @@ public sealed class FileBrowserPanel : UserControl
 
     /// <summary>합친 새 프로젝트의 Unity 설정 기본값(프로젝트 파일이 없을 때). MainForm이 마지막 PPU로 정한다.</summary>
     public Func<SpriteSettings>? SpriteDefaults { get; set; }
+
+    /// <summary>
+    /// 경로의 열린 문서(지금 문서 또는 메모리에 남겨 둔 저장 안 한 문서, 프로젝트 경로나 가져온 PNG 경로로 찾음). 없으면 null(디스크에서 읽음).
+    /// MainForm이 정한다. 돌려준 인스턴스는 편집 중인 문서이므로 읽기만 한다.
+    /// </summary>
+    public Func<string, SpriteProject?>? FindOpenDocument { get; set; }
 
     /// <summary>지운 파일을 보관하는 앱 휴지통.</summary>
     public AppTrash Trash { get; set; } = new(AppTrash.DefaultRoot);
@@ -450,6 +458,7 @@ public sealed class FileBrowserPanel : UserControl
                 var stamp = SafeStamp(f);
                 if (_thumbCache.TryGetValue(f, out var cached) && cached.Stamp == stamp) item.Thumb.Source = cached.Thumb;
                 else pending.Add((f, stamp));
+                ApplyUnsaved(item);
                 _list.Items.Add(item.Container);
             }
             // 고른 순서대로 다시 고른다(순서 기억도 그대로).
@@ -472,7 +481,7 @@ public sealed class FileBrowserPanel : UserControl
     /// <c>.gpixel</c> 프로젝트(레이어·프레임을 보관하는 편집 원본) 표시: 썸네일 오른쪽 아래 파란 레이어 배지.
     /// 그냥 PNG(내보낸 결과물이나 프로젝트 없는 이미지)는 배지가 없다.
     /// </summary>
-    private static Control WithProjectBadge(Image thumb)
+    private static Border ProjectBadge()
     {
         var badge = new Border
         {
@@ -489,8 +498,24 @@ public sealed class FileBrowserPanel : UserControl
             Child = new IconView(VectorIcon.Layers, Brushes.White, 2.4),
         };
         ToolTip.SetTip(badge, "Gpixel 프로젝트(.gpixel) — 레이어·프레임을 보관하는 편집 원본");
-        return new Grid { Width = ThumbSize, Height = ThumbSize, HorizontalAlignment = HorizontalAlignment.Center, Children = { thumb, badge } };
+        return badge;
     }
+
+    /// <summary>저장하지 않은 변경 표시: 썸네일 왼쪽 위 빨간 점(어두운 테두리).</summary>
+    private static Border UnsavedDot() => new()
+    {
+        Width = 9,
+        Height = 9,
+        CornerRadius = new CornerRadius(4.5),
+        Background = AppTheme.UnsavedBrush,
+        BorderBrush = AppTheme.BackBrush,
+        BorderThickness = new Thickness(1.5),
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Top,
+        Margin = new Thickness(-3, -3, 0, 0),
+        IsVisible = false,
+        IsHitTestVisible = false,
+    };
 
     private FileItem MakeItem(string path, string tip)
     {
@@ -507,7 +532,11 @@ public sealed class FileBrowserPanel : UserControl
             Foreground = AppTheme.TextBrush,
         };
         var content = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
-        content.Children.Add(IsProject(path) ? WithProjectBadge(thumb) : thumb);
+        var dot = UnsavedDot();
+        var tile = new Grid { Width = ThumbSize, Height = ThumbSize, HorizontalAlignment = HorizontalAlignment.Center, Children = { thumb } };
+        if (IsProject(path)) tile.Children.Add(ProjectBadge());
+        tile.Children.Add(dot);
+        content.Children.Add(tile);
         content.Children.Add(label);
         var container = new ListBoxItem
         {
@@ -519,7 +548,7 @@ public sealed class FileBrowserPanel : UserControl
             HorizontalContentAlignment = HorizontalAlignment.Center,
         };
         ToolTip.SetTip(container, tip);
-        var item = new FileItem(path, container, thumb, label, content);
+        var item = new FileItem(path, container, thumb, label, content, dot, tip);
         container.Tag = item;
         _items[path] = item;
         return item;
@@ -555,7 +584,7 @@ public sealed class FileBrowserPanel : UserControl
                 {
                     _thumbCache.TryGetValue(path, out var old);
                     _thumbCache[path] = (stamp, thumb);
-                    if (_items.TryGetValue(path, out var item)) item.Thumb.Source = thumb;
+                    if (_items.TryGetValue(path, out var item) && _unsaved.GetValueOrDefault(path).Thumb is null) item.Thumb.Source = thumb;
                     old.Thumb?.Dispose();
                 });
             }
@@ -568,6 +597,42 @@ public sealed class FileBrowserPanel : UserControl
         _thumbCache.Remove(path, out var old);
         RefreshList();
         old.Thumb?.Dispose();
+    }
+
+    /// <summary>
+    /// 저장하지 않은 변경이 있는 파일들(경로 → 메모리 속 그림, null이면 디스크 썸네일 그대로)을 정한다:
+    /// 칸 왼쪽 위 빨간 점, 도움말 "저장하지 않은 변경 있음", 그림이 있으면 그 그림을 썸네일로.
+    /// </summary>
+    public void SetUnsaved(IReadOnlyDictionary<string, PixelImage?> files)
+    {
+        var stale = new List<WriteableBitmap>();
+        var changed = new HashSet<string>(_unsaved.Keys, StringComparer.OrdinalIgnoreCase);
+        foreach (var (path, old) in _unsaved.ToList())
+        {
+            if (files.TryGetValue(path, out var image) && ReferenceEquals(image, old.Image)) { changed.Remove(path); continue; }
+            _unsaved.Remove(path);
+            if (old.Thumb is not null) stale.Add(old.Thumb);
+        }
+        foreach (var (path, image) in files)
+        {
+            if (_unsaved.ContainsKey(path)) continue;
+            _unsaved[path] = (image, image is null ? null : ImageUtil.MakeThumbnail(image, ThumbSize));
+            changed.Add(path);
+        }
+        foreach (var path in changed)
+            if (_items.TryGetValue(path, out var item)) ApplyUnsaved(item);
+        foreach (var bmp in stale) bmp.Dispose();
+    }
+
+    /// <summary>칸에 저장 안 한 변경 표시(점·도움말·메모리 썸네일)를 맞춘다.</summary>
+    private void ApplyUnsaved(FileItem item)
+    {
+        bool unsaved = _unsaved.TryGetValue(item.Path, out var entry);
+        item.Dot.IsVisible = unsaved;
+        ToolTip.SetTip(item.Container, unsaved ? item.Tip + "\n저장하지 않은 변경 있음" : item.Tip);
+        if (entry.Thumb is not null) item.Thumb.Source = entry.Thumb;
+        else if (item.Thumb.Source is not null && !_thumbCache.Values.Any(c => ReferenceEquals(c.Thumb, item.Thumb.Source)))
+            item.Thumb.Source = _thumbCache.TryGetValue(item.Path, out var cached) ? cached.Thumb : null;
     }
 
     /// <summary>목록에서 파일을 선택 표시한다(열기 이벤트 없이).</summary>
@@ -940,7 +1005,7 @@ public sealed class FileBrowserPanel : UserControl
         {
             try
             {
-                items.Add((path, MergeSource.Load(path)));
+                items.Add((path, MergeSource.Load(path, FindOpenDocument?.Invoke(path))));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
             {

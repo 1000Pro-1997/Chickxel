@@ -83,6 +83,8 @@ public sealed class PixelCanvas : Control
     private readonly DispatcherTimer _peekTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private int _antsPhase;
     private bool _pendingCenter;
+    /// <summary>가운데 놓기 예약 번호: <see cref="RestoreView"/>가 올리면 미뤄 둔 가운데 놓기는 건너뛴다.</summary>
+    private int _centerVersion;
 
     // 드래그 상태
     private DragMode _drag;
@@ -152,7 +154,7 @@ public sealed class PixelCanvas : Control
             _lastStrokeEnd = null;
             // 프로젝트가 열리며 캔버스가 막 보이게 된 경우 배치가 끝난 뒤 가운데 놓는다.
             CenterImage();
-            Dispatcher.UIThread.Post(CenterImage, DispatcherPriority.Loaded);
+            PostCenterImage();
             InvalidateVisual();
         };
         ctx.ViewChanged += (_, _) =>
@@ -486,6 +488,30 @@ public sealed class PixelCanvas : Control
         _shownOrigin = origin;
     }
 
+    /// <summary>배치가 끝난 뒤 가운데 놓는다(그사이 <see cref="RestoreView"/>로 보기를 되돌렸으면 건너뜀).</summary>
+    private void PostCenterImage()
+    {
+        int version = ++_centerVersion;
+        Dispatcher.UIThread.Post(() => { if (version == _centerVersion) CenterImage(); }, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>지금 확대율과 그림 위치(메모리에 남긴 문서를 다시 열 때 <see cref="RestoreView"/>로 되돌림).</summary>
+    public (int Zoom, Point Offset) View => (_zoom, _offset);
+
+    /// <summary>확대율·그림 위치를 되돌린다(프로젝트를 바꾸고 현재 레이어·프레임을 정한 뒤 부른다). 미뤄 둔 가운데 놓기는 취소한다.</summary>
+    public void RestoreView((int Zoom, Point Offset) view)
+    {
+        if (!_ctx.HasProject) return;
+        _centerVersion++;
+        _pendingCenter = false;
+        _shownFrameSize = _ctx.Project!.Size;
+        _shownOrigin = ShownOrigin;
+        _zoom = Math.Clamp(view.Zoom, 1, 64);
+        _offset = view.Offset;
+        ZoomChanged?.Invoke(this, EventArgs.Empty);
+        InvalidateVisual();
+    }
+
     /// <summary>설정에서 읽은 확대율을 그대로 적용한다(이벤트 없음).</summary>
     public void InitZoom(int zoom) => _zoom = Math.Clamp(zoom, 1, 64);
 
@@ -493,7 +519,7 @@ public sealed class PixelCanvas : Control
     {
         base.OnPropertyChanged(change);
         if (change.Property == IsVisibleProperty && IsVisible && _ctx.HasProject)
-            Dispatcher.UIThread.Post(CenterImage, DispatcherPriority.Loaded);
+            PostCenterImage();
     }
 
     protected override void OnSizeChanged(SizeChangedEventArgs e)

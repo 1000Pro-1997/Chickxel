@@ -17,6 +17,8 @@ public static class AppTheme
     public static readonly Color AccentColor = Color.FromRgb(86, 156, 214);
     public static readonly Color BorderColor = Color.FromRgb(70, 70, 78);
     public static readonly Color WarningColor = Color.FromRgb(230, 160, 70);
+    /// <summary>저장하지 않은 변경 표시(파일 목록의 빨간 점).</summary>
+    public static readonly Color UnsavedColor = Color.FromRgb(235, 64, 64);
     public static readonly Color CheckerA = Color.FromRgb(68, 68, 72);
     public static readonly Color CheckerB = Color.FromRgb(92, 92, 98);
 
@@ -29,6 +31,7 @@ public static class AppTheme
     public static readonly IImmutableSolidColorBrush AccentBrush = new ImmutableSolidColorBrush(AccentColor);
     public static readonly IImmutableSolidColorBrush BorderBrush = new ImmutableSolidColorBrush(BorderColor);
     public static readonly IImmutableSolidColorBrush WarningBrush = new ImmutableSolidColorBrush(WarningColor);
+    public static readonly IImmutableSolidColorBrush UnsavedBrush = new ImmutableSolidColorBrush(UnsavedColor);
 
     /// <summary>한글이 고르게 보이는 OS 기본 글꼴(Windows: 맑은 고딕, macOS: Apple SD 산돌고딕 Neo).</summary>
     public static readonly FontFamily FontFamily = new(

@@ -5,7 +5,7 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 파일 브라우저에서 고른 파일 합치기: 순서(끌어서 바꾸기), 결과 이름, 방식(레이어/그룹/스킨/프레임), 그룹이면 빈 대표 이미지,
-/// 캔버스 크기·기준점, 원본 삭제, 미리보기.
+/// 캔버스 크기·기준점, 원본 삭제, 미리보기. <c>.gpixel</c>의 그룹·스킨 등 구조는 어느 방식이든 유지하고, 어떻게 옮기는지 안내한다.
 /// </summary>
 public sealed class MergeDialog : DialogBase
 {
@@ -20,7 +20,7 @@ public sealed class MergeDialog : DialogBase
     private readonly DragReorder _drag = new();
     private readonly MergePreview _preview = new();
     private readonly TimelinePreview _timeline = new();
-    private readonly TextBlock _info, _warning;
+    private readonly TextBlock _info, _warning, _notes;
     private bool _ready;
 
     /// <param name="items">합칠 파일(고른 순서)과 읽은 내용.</param>
@@ -44,10 +44,11 @@ public sealed class MergeDialog : DialogBase
 
         var maxW = items.Max(i => i.Source.Size.Width);
         var maxH = items.Max(i => i.Source.Size.Height);
-        _layers = Radio("레이어로", "파일마다 레이어 1개(첫 파일이 맨 위)", true);
-        _group = Radio("그룹으로", "그룹 하나에 파일마다 부위 1개(파일 크기 그대로)", false);
-        _skins = Radio("스킨으로", "그룹 하나에 부위 1개, 파일마다 스킨 1개(스킨 이름 = 파일 이름, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일)", false);
-        _frames = Radio("프레임으로", "파일마다 프레임(차례로 이어 붙임, 칸 이름 = 파일 이름)", false);
+        _layers = Radio("레이어로", "그림 파일마다 레이어 1개, 프로젝트(.gpixel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)", true);
+        _group = Radio("그룹으로", "그룹 하나에 그림 파일마다 부위 1개(파일 크기 그대로). 그룹이 있는 .gpixel이 있으면 그 첫 그룹에 부위를 더합니다(부위·스킨 유지)", false);
+        _skins = Radio("스킨으로", "그룹 하나에 그림 파일마다 스킨 1개(스킨 이름 = 파일 이름). 그룹이 있는 .gpixel이 있으면 그 그룹에 새 스킨으로 더합니다"
+                                  + "(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일", false);
+        _frames = Radio("프레임으로", "파일마다 프레임(차례로 이어 붙임, 칸 이름 = 파일 이름). .gpixel은 레이어 구조·태그를 그대로 가져옵니다", false);
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
         _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70);
         _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70);
@@ -58,6 +59,10 @@ public sealed class MergeDialog : DialogBase
         _warning.Foreground = Brushes.OrangeRed;
         _warning.TextWrapping = TextWrapping.Wrap;
         _warning.MaxWidth = 300;
+        _notes = Ui.Label("");
+        _notes.Foreground = AppTheme.DimTextBrush;
+        _notes.TextWrapping = TextWrapping.Wrap;
+        _notes.MaxWidth = 300;
 
         var left = Ui.Stack(
             Ui.Label("순서(위 = 먼저)", bold: true),
@@ -71,7 +76,7 @@ public sealed class MergeDialog : DialogBase
             _anchor,
             _deleteOriginals,
             _warning);
-        var right = Ui.Stack(Ui.Label("미리보기", bold: true), _preview, _info);
+        var right = Ui.Stack(Ui.Label("미리보기", bold: true), _preview, _info, _notes);
         Body.Children.Add(Ui.Row(left, right));
         // 합친 결과가 타임라인에서 어떻게 보이는지(행 = 레이어·그룹·부위, 열 = 프레임) — 방식을 바꾸면 바로 바뀐다.
         Body.Children.Add(Ui.Label("타임라인에서는 이렇게 보입니다", bold: true));
@@ -166,7 +171,7 @@ public sealed class MergeDialog : DialogBase
         _order.Items.Clear();
         foreach (var (path, s) in _items)
         {
-            var item = new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.Frames.Count > 1 ? $", {s.Frames.Count}프레임" : "")})" };
+            var item = new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.FrameCount > 1 ? $", {s.FrameCount}프레임" : "")})" };
             _order.Items.Add(item);
             _drag.Attach(item);
         }
@@ -220,15 +225,18 @@ public sealed class MergeDialog : DialogBase
     {
         if (!_ready) return;
         UpdateWarning();
-        var p = ProjectMerge.Merge(_items.Select(i => i.Source).ToList(), Options);
+        var notes = new List<string>();
+        var p = ProjectMerge.Merge(_items.Select(i => i.Source).ToList(), Options, notes: notes);
         _preview.SetProject(p);
         _timeline.SetProject(p);
         int parts = p.Layers.Count(l => l.IsPart);
         int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
         _info.Text = $"{p.Width}×{p.Height} · 레이어 {p.Layers.Count(l => !l.IsPart)}개" + (parts > 0 ? $"(부위 {parts}개)" : "")
-                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 첫 스킨)" : "")
+                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 지금 스킨)" : "")
                      + (BlankCover ? " · 대표 이미지 비움(부위 숨김)" : "")
                      + $" · 프레임 {p.Frames.Count}개" + (p.Tags.Count > 0 ? $" · 태그 {p.Tags.Count}개" : "");
+        _notes.Text = string.Join("\n", notes.Select(n => "• " + n));
+        _notes.IsVisible = notes.Count > 0;
     }
 
     /// <summary>결과 프레임을 차례로 재생하는 미리보기(체커 배경, 정수 배율).</summary>
@@ -288,7 +296,7 @@ public sealed class MergeDialog : DialogBase
 
     /// <summary>
     /// 합친 결과의 타임라인 모양(읽기 전용): 위쪽 태그 띠, 프레임 번호·길이, 행마다 레이어(그룹 ▼, 부위는 들여쓰기)와 칸 썸네일.
-    /// 스킨이 여럿인 그룹의 부위 아래에는 스킨마다 흐린 행(타임라인에서는 착장을 바꿔 보는 그림)을 덧붙인다.
+    /// 스킨이 여럿인 부위(그룹 전체 스킨 + 그 부위 전용 스킨) 아래에는 스킨마다 흐린 행(타임라인에서는 착장을 바꿔 보는 그림)을 덧붙인다.
     /// 빈 칸은 비워 둔다. 행 순서는 타임라인과 같이 맨 위 레이어부터.
     /// </summary>
     private sealed class TimelinePreview : Control
@@ -311,9 +319,9 @@ public sealed class MergeDialog : DialogBase
                 int index = li;
                 _rows.Add((name, layer.IsGroup, layer.IsPart, false,
                     Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));
-                if (layer is { IsPart: true, Parent: { IsGroup: true } g } && g.Skins.Count > 1)
-                    foreach (var skin in g.Skins)
-                        _rows.Add(($"        ◇ {skin.Name}", false, false, true, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
+                if (layer is { IsPart: true, SkinChoices.Count: > 1 })
+                    foreach (var skin in layer.SkinChoices)
+                        _rows.Add(($"        {(skin.IsPartOnly ? "◆" : "◇")} {skin.Name}", false, false, true, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
             }
             Width = NameW + p.Frames.Count * CellW + 4;
             Height = Top + _rows.Count * RowH + 2;
