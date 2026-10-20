@@ -362,7 +362,7 @@ public sealed class LospecPaletteDialog : DialogBase
         DockPanel.SetDock(title, Dock.Left);
         head.Children.Add(title);
         head.Children.Add(info);
-        var strip = new SwatchStrip(p.Colors) { Height = 16, Margin = new Thickness(0, 3, 0, 0) };
+        var strip = new SwatchStrip(p.Colors) { Margin = new Thickness(0, 3, 0, 0) };
         var item = new ListBoxItem
         {
             Content = new StackPanel { Children = { head, strip } },
@@ -484,21 +484,30 @@ public sealed class LospecPaletteDialog : DialogBase
 
     // ───────────── 내부 컨트롤 ─────────────
 
-    /// <summary>목록 한 줄의 색 띠: 모든 색을 너비에 맞춰 늘이거나 줄인다.</summary>
+    /// <summary>목록 한 줄의 색 칸: 고른 팔레트 칸과 같은 크기(14px + 2px 간격)로 늘어놓고 너비가 모자라면 줄을 바꾼다.</summary>
     private sealed class SwatchStrip(IReadOnlyList<Color32> colors) : Control
     {
+        private const double Cell = 14, GapPx = 2;
+
+        private static int Columns(double width) => Math.Max(1, (int)((width + GapPx) / (Cell + GapPx)));
+
+        protected override Avalonia.Size MeasureOverride(Avalonia.Size available)
+        {
+            double width = double.IsInfinity(available.Width) ? colors.Count * (Cell + GapPx) : available.Width;
+            int rows = Math.Max(1, (colors.Count + Columns(width) - 1) / Columns(width));
+            return new Avalonia.Size(Math.Min(width, colors.Count * (Cell + GapPx)), rows * (Cell + GapPx) - GapPx);
+        }
+
         public override void Render(DrawingContext g)
         {
-            var b = new Rect(Bounds.Size);
-            if (colors.Count == 0 || b.Width <= 0) return;
-            double w = b.Width / colors.Count;
+            int cols = Columns(Bounds.Width);
+            var border = AppTheme.Pen(AppTheme.BorderColor);
             for (int i = 0; i < colors.Count; i++)
             {
-                // 칸 사이가 비지 않게 다음 칸 시작점까지 채운다(반올림해 경계를 픽셀에 맞춤).
-                double x0 = Math.Round(i * w), x1 = Math.Round((i + 1) * w);
-                ImageUtil.DrawSwatch(g, new Rect(x0, 0, Math.Max(1, x1 - x0), b.Height), colors[i]);
+                var r = new Rect(i % cols * (Cell + GapPx), i / cols * (Cell + GapPx), Cell, Cell);
+                ImageUtil.DrawSwatch(g, r, colors[i]);
+                g.DrawRectangle(null, border, r.Deflate(0.5));
             }
-            g.DrawRectangle(null, AppTheme.Pen(AppTheme.BorderColor), b.Deflate(0.5));
         }
     }
 
@@ -576,16 +585,21 @@ public sealed class LospecPaletteDialog : DialogBase
     }
 
     /// <summary>
-    /// 예시 그림 띠: 너비를 장 수만큼 똑같이 나눠 장마다 그림 가운데를 보여 주고(픽셀 그대로 정수 배율), 마우스를 올린 장이
-    /// 부드럽게 넓어지며(나머지는 좁아짐) 그림 전체가 보인다. 마우스가 나가면 다시 똑같이 나뉜다.
+    /// 예시 그림 띠: 너비를 장 수만큼 똑같이 나눠 장마다 그림 가운데를 보여 준다(픽셀 그대로 정수 배율). 나눈 칸은 마우스를 올려도 그대로이고,
+    /// 칸에 마우스를 올리면 그 그림이 자기 칸에서 띠 전체로 부드럽게 커져 크게 보인다(다른 칸으로 옮기면 그 그림으로 바뀜, 나가면 다시 작아짐).
+    /// 아래 작은 막대가 지금 보이는 칸을 표시한다.
     /// </summary>
     private sealed class ExampleStrip : Control
     {
-        private const double GapPx = 2, Ease = 0.22;
+        private const double GapPx = 2, Ease = 0.25, IndicatorH = 3;
         private readonly List<(Bitmap Bitmap, string Tip)> _items = new();
-        private readonly List<double> _weights = new();
         private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(15) };
+        /// <summary>마우스가 올라간 칸(-1 = 없음).</summary>
         private int _hover = -1;
+        /// <summary>크게 보이는 그림(작아지는 동안에도 남아 있음).</summary>
+        private int _shown = -1;
+        /// <summary>크게 보이기 진행(0 = 자기 칸, 1 = 띠 전체).</summary>
+        private double _t;
 
         public ExampleStrip()
         {
@@ -596,8 +610,8 @@ public sealed class LospecPaletteDialog : DialogBase
         public void Clear()
         {
             _items.Clear();
-            _weights.Clear();
-            _hover = -1;
+            _hover = _shown = -1;
+            _t = 0;
             _timer.Stop();
             ToolTip.SetTip(this, null);
             InvalidateVisual();
@@ -606,73 +620,82 @@ public sealed class LospecPaletteDialog : DialogBase
         public void Add(Bitmap bitmap, string tip)
         {
             _items.Add((bitmap, tip));
-            _weights.Add(1);
             InvalidateVisual();
         }
 
-        /// <summary>그림이 칸 높이에 들어가는 배율(작으면 정수 배로 키움).</summary>
-        private double ScaleOf(Bitmap b)
+        /// <summary>칸 <paramref name="i"/>(장 수만큼 똑같이 나눈 고정 칸).</summary>
+        private Rect Zone(int i)
+        {
+            int n = Math.Max(1, _items.Count);
+            double w = (Bounds.Width - GapPx * (n - 1)) / n;
+            return new Rect(Math.Round(i * (w + GapPx)), 0, Math.Max(0, Math.Round(w)), Bounds.Height);
+        }
+
+        /// <summary>그림이 <paramref name="area"/>에 들어가는 배율(키울 수 있으면 정수 배).</summary>
+        private static double FitScale(Bitmap b, Rect area)
+        {
+            double s = Math.Min(Math.Max(1, area.Width - 8) / Math.Max(1, b.PixelSize.Width), Math.Max(1, area.Height - 8) / Math.Max(1, b.PixelSize.Height));
+            return s >= 1 ? Math.Floor(s) : s;
+        }
+
+        /// <summary>칸에 놓을 때 배율: 높이에 맞춤(가로는 잘림).</summary>
+        private double StripScale(Bitmap b)
         {
             double h = Math.Max(1, b.PixelSize.Height), max = Math.Max(1, Bounds.Height - 8);
             return h <= max ? Math.Floor(max / h) : max / h;
         }
 
-        /// <summary>마우스를 올린 장의 목표 몫: 그 그림 전체 너비가 들어갈 만큼(나머지 장은 몫 1).</summary>
-        private double HoverWeight(int i)
-        {
-            int n = _items.Count;
-            if (n <= 1) return 1;
-            double total = Bounds.Width - GapPx * (n - 1);
-            double want = _items[i].Bitmap.PixelSize.Width * ScaleOf(_items[i].Bitmap) + 8;
-            // 나머지 장은 최소 24px은 남긴다.
-            double maxShare = Math.Max(1, total - 24 * (n - 1));
-            double share = Math.Clamp(want, total / n, maxShare);
-            // share / (share + (n-1)*rest) = weight / (weight + n - 1)
-            double restEach = (total - share) / (n - 1);
-            return restEach <= 0 ? 1 : share / restEach;
-        }
-
         private void Step()
         {
-            bool moving = false;
-            for (int i = 0; i < _weights.Count; i++)
+            double target = _hover >= 0 ? 1 : 0;
+            _t += (target - _t) * Ease;
+            if (Math.Abs(target - _t) < 0.01)
             {
-                double target = i == _hover ? HoverWeight(i) : 1;
-                double next = _weights[i] + (target - _weights[i]) * Ease;
-                if (Math.Abs(target - next) < 0.01) next = target;
-                else moving = true;
-                _weights[i] = next;
+                _t = target;
+                if (_t == 0) _shown = -1;
+                _timer.Stop();
             }
-            if (!moving) _timer.Stop();
             InvalidateVisual();
         }
 
-        private IEnumerable<(int Index, Rect Rect)> Strips()
+        private static void DrawImage(DrawingContext g, Bitmap bmp, Rect area, double scale)
         {
-            int n = _items.Count;
-            double total = Bounds.Width - GapPx * (n - 1), sum = _weights.Sum(), x = 0;
-            for (int i = 0; i < n; i++)
-            {
-                double w = total * _weights[i] / sum;
-                yield return (i, new Rect(x, 0, Math.Max(0, w), Bounds.Height));
-                x += w + GapPx;
-            }
+            double w = bmp.PixelSize.Width * scale, h = bmp.PixelSize.Height * scale;
+            var dest = new Rect(Math.Round(area.X + (area.Width - w) / 2), Math.Round(area.Y + (area.Height - h) / 2), w, h);
+            using (g.PushClip(area))
+            using (ImageUtil.Pixelated(g))
+                g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), dest);
         }
 
         public override void Render(DrawingContext g)
         {
-            if (_items.Count == 0) return;
-            foreach (var (i, r) in Strips())
+            int n = _items.Count;
+            if (n == 0) return;
+            for (int i = 0; i < n; i++)
+                DrawImage(g, _items[i].Bitmap, Zone(i), StripScale(_items[i].Bitmap));
+            if (_shown >= 0 && _t > 0)
             {
-                var bmp = _items[i].Bitmap;
-                double scale = ScaleOf(bmp);
-                double w = bmp.PixelSize.Width * scale, h = bmp.PixelSize.Height * scale;
-                // 칸 가운데에 그림 가운데를 맞춘다(좁으면 양옆이 잘림).
-                var dest = new Rect(Math.Round(r.X + (r.Width - w) / 2), Math.Round((r.Height - h) / 2), w, h);
-                using (g.PushClip(r))
-                using (ImageUtil.Pixelated(g))
-                    g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), dest);
-                if (i == _hover) g.DrawRectangle(null, AppTheme.Pen(AppTheme.AccentColor, 2), r.Deflate(1));
+                // 자기 칸 → 띠 전체로 커지는 판(뒤 칸들은 판이 덮음).
+                var from = Zone(_shown);
+                var full = new Rect(Bounds.Size);
+                double e = 1 - Math.Pow(1 - _t, 3);
+                var panel = new Rect(from.X + (full.X - from.X) * e, 0, from.Width + (full.Width - from.Width) * e, full.Height);
+                g.FillRectangle(AppTheme.InputBrush, panel);
+                var bmp = _items[_shown].Bitmap;
+                // 배율도 칸 배율 → 전체 맞춤 배율로 함께 바뀐다(끝에서 정수 배율로 딱 맞음).
+                double s0 = StripScale(bmp), s1 = FitScale(bmp, full);
+                DrawImage(g, bmp, panel, _t >= 1 ? s1 : s0 + (s1 - s0) * e);
+                g.DrawRectangle(null, AppTheme.Pen(AppTheme.AccentColor, 2), panel.Deflate(1));
+            }
+            if (n > 1 && (_hover >= 0 || _t > 0))
+            {
+                // 아래 칸 표시: 고정 칸마다 짧은 막대, 지금 보이는 칸은 강조색.
+                for (int i = 0; i < n; i++)
+                {
+                    var z = Zone(i);
+                    var bar = new Rect(z.X + 4, Bounds.Height - IndicatorH - 3, Math.Max(0, z.Width - 8), IndicatorH);
+                    g.FillRectangle(i == _shown ? AppTheme.AccentBrush : AppTheme.Brush(Color.FromArgb(150, 255, 255, 255)), bar);
+                }
             }
         }
 
@@ -681,8 +704,11 @@ public sealed class LospecPaletteDialog : DialogBase
             base.OnPointerMoved(e);
             double x = e.GetPosition(this).X;
             int hover = -1;
-            foreach (var (i, r) in Strips())
-                if (x >= r.X && x < r.Right + GapPx) { hover = i; break; }
+            for (int i = 0; i < _items.Count; i++)
+            {
+                var z = Zone(i);
+                if (x >= z.X && x < z.Right + GapPx) { hover = i; break; }
+            }
             SetHover(hover);
         }
 
@@ -696,8 +722,10 @@ public sealed class LospecPaletteDialog : DialogBase
         {
             if (i == _hover) return;
             _hover = i;
+            if (i >= 0) _shown = i; // 커진 상태에서 다른 칸으로 옮기면 바로 그 그림으로
             ToolTip.SetTip(this, i >= 0 ? _items[i].Tip : null);
             _timer.Start();
+            InvalidateVisual();
         }
     }
 }
