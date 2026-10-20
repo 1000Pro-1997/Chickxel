@@ -298,7 +298,8 @@ public sealed class ColorField : StackPanel
     private readonly TextBox _hex;
     private Color32 _color;
 
-    public ColorField(Color32 color)
+    /// <param name="hexWidth">HEX 입력 칸 너비(좁은 줄에 여럿 놓을 때 줄임).</param>
+    public ColorField(Color32 color, int hexWidth = 90)
     {
         Orientation = Orientation.Horizontal;
         Margin = new Thickness(0);
@@ -312,7 +313,7 @@ public sealed class ColorField : StackPanel
             if (Ui.PickColor(this, _color) is { } c)
                 Color = c.A == 0 && _color.A == 0 ? c.WithAlpha(255) : c;
         };
-        _hex = Ui.Text("", 90);
+        _hex = Ui.Text("", hexWidth);
         _hex.LostFocus += (_, _) => { if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) Color = c; else _hex.Text = _color.ToHex(); };
         Children.Add(_swatch);
         Children.Add(_hex);

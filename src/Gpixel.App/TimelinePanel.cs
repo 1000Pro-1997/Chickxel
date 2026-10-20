@@ -1106,7 +1106,7 @@ public sealed class TimelinePanel : UserControl
         {
             int kind = k;
             bool motion = LayerEffectsDialog.IsAnimated(k);
-            if (motion && k == 4) add.Items.Add(new Separator());
+            if (motion && k > 0 && !LayerEffectsDialog.IsAnimated(k - 1)) add.Items.Add(new Separator());
             var r = motion ? motionRange : effectRange;
             string text = motion && frames.Count == 1
                 ? $"{LayerEffectsDialog.Kinds[k]} ({(r is { } m ? m.From == m.To ? $"프레임 {m.From + 1}만 — 움직이려면 여러 프레임" : $"프레임 {m.From + 1}~{m.To + 1}" : "모든 프레임")})"
@@ -2255,9 +2255,24 @@ public sealed class TimelinePanel : UserControl
             ShadowEffect => Color.FromRgb(118, 124, 196),
             RimLightEffect => Color.FromRgb(226, 210, 110),
             ColorOverlayEffect => Color.FromRgb(196, 96, 170),
+            GradientOverlayEffect => Color.FromRgb(240, 120, 150),
+            InnerGlowEffect => Color.FromRgb(250, 236, 170),
+            PaletteSwapEffect => Color.FromRgb(150, 110, 230),
+            ColorAdjustEffect => Color.FromRgb(160, 160, 160),
+            ReflectionEffect => Color.FromRgb(70, 150, 200),
             ExplodeEffect => Color.FromRgb(236, 72, 40),
             ShineEffect => Color.FromRgb(120, 214, 236),
             SquashEffect => Color.FromRgb(110, 200, 120),
+            HitFlashEffect => Color.FromRgb(250, 250, 250),
+            BlinkEffect => Color.FromRgb(200, 170, 255),
+            ShakeEffect => Color.FromRgb(186, 84, 60),
+            BobEffect => Color.FromRgb(160, 236, 214),
+            AppearEffect => Color.FromRgb(206, 232, 86),
+            MeltEffect => Color.FromRgb(160, 112, 72),
+            RotateEffect => Color.FromRgb(70, 96, 232),
+            AfterimageEffect => Color.FromRgb(40, 190, 160),
+            ColorCycleEffect => Color.FromRgb(230, 60, 120),
+            ShockwaveEffect => Color.FromRgb(255, 214, 40),
             _ => AppTheme.AccentColor,
         };
 

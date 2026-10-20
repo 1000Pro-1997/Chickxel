@@ -436,10 +436,12 @@ public static class ProjectExport
     /// (Unity에서 같은 피벗에 놓으면 그림이 캔버스와 같은 자리에 보인다). 그룹 효과는 부위들을 합친 모양에 대한 것이라 부위 스프라이트에는 넣지 않는다
     /// (프레임 시트에만). 효과가 없으면 셀·피벗·테두리 그대로.
     /// </summary>
-    private static (PixelImage Image, Pivot Pivot, SpriteBorder Border) PartSprite(SpriteProject project, Layer part, PixelImage cel, int frameIndex)
+    private static (PixelImage Image, Pivot Pivot, SpriteBorder Border) PartSprite(SpriteProject project, Layer part, Skin? skin, PixelImage cel, int frameIndex)
     {
         var pad = LayerEffects.Padding(part.Effects, cel.Width, cel.Height);
-        var (image, dx, dy) = LayerEffects.Render(cel, project.EffectsAt(part, frameIndex), pad);
+        // 다른 프레임을 보는 효과(잔상)도 이 칸과 같은 스킨(없으면 첫 스킨)의 셀을 본다
+        var effects = project.EffectsAt(part, frameIndex, skin ?? part.Parent?.SkinList.FirstOrDefault());
+        var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
         if (ReferenceEquals(image, cel)) return (cel, part.PartPivot, part.PartBorder);
         int left = -dx, top = -dy, right = image.Width - cel.Width - left, bottom = image.Height - cel.Height - top;
         var (px, py) = part.PartPivot.ToLocalPixel(cel.Width, cel.Height);
@@ -847,7 +849,7 @@ public static class ProjectExport
         {
             var (part, skin, fi) = cels[i];
             var cel = skin is null ? project.GetCelRaw(part, project.Frames[fi], null) : project.GetSkinCel(part, project.Frames[fi], skin);
-            var (image, pivot, border) = PartSprite(project, part, cel!, fi);
+            var (image, pivot, border) = PartSprite(project, part, skin, cel!, fi);
             images[i] = TrimCel(image, pivot, border, o.Trim);
         }
 

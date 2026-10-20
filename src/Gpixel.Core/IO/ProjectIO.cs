@@ -1162,7 +1162,10 @@ public static partial class ProjectIO
         }.Normalized();
     }
 
-    /// <summary>레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay(모르는 종류는 읽을 때 건너뜀).</summary>
+    /// <summary>
+    /// 레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay · gradient · innerglow · swap · adjust · reflection, 움직이는 효과 explode · shine · squash
+    /// (모르는 종류는 읽을 때 건너뜀).
+    /// </summary>
     private sealed class EffectDto
     {
         public string? Type { get; set; }
@@ -1206,15 +1209,65 @@ public static partial class ProjectIO
         public string? Anchor { get; set; }
         public bool? StretchFirst { get; set; }
         public int? Bounces { get; set; }
+        // 정적 효과(StaticFx)
+        /// <summary>그라데이션 덮기의 색 B(색 A = <see cref="Color"/>).</summary>
+        public string? Color2 { get; set; }
+        /// <summary>그라데이션 덮기·안쪽 빛의 섞기(<see cref="EffectBlend"/> 이름).</summary>
+        public string? Blend { get; set; }
+        /// <summary>그라데이션 덮기의 디더(<see cref="EffectDither"/> 이름), 그림자의 디더 밀도(<see cref="ShadowDither"/> 이름, 없으면 반투명 — 예전 파일).</summary>
+        public string? Dither { get; set; }
+        /// <summary>색 바꾸기: [바꿀 색, 바뀐 색] 쌍들과 허용 차이.</summary>
+        public List<string[]>? Pairs { get; set; }
+        public int? Tolerance { get; set; }
+        /// <summary>색조 보정(<see cref="ColorAdjustMode"/> 이름과 방식별 값).</summary>
+        public string? Mode { get; set; }
+        public int? Hue { get; set; }
+        public int? Brightness { get; set; }
+        public int? Contrast { get; set; }
+        public int? Saturation { get; set; }
+        /// <summary>반사(색 입히기 = <see cref="Color"/>).</summary>
+        public int? Gap { get; set; }
+        public int? Height { get; set; }
+        public int? OpacityStart { get; set; }
+        public int? OpacityEnd { get; set; }
+        public bool? DitherFade { get; set; }
+        public int? Wave { get; set; }
+        public bool? Above { get; set; }
         /// <summary>적용할 프레임 범위 [시작, 끝](0부터, 양 끝 포함). 없으면 모든 프레임(예전 파일).</summary>
         public int[]? Frames { get; set; }
+        // 움직이는 효과(AnimFx): 피격 번쩍임 모양·깜빡이기 간격 방식은 Mode, 둥실둥실 높이는 Height, 쓸기 방향은 Direction, 녹아내리기 불규칙함은 Spread,
+        // 충격파 최대 반지름은 Distance를 함께 쓴다.
+        /// <summary>피격 번쩍임·깜빡이기·흔들기 횟수, 둥실둥실 오르내림 횟수, 잔상 개수.</summary>
+        public int? Count { get; set; }
+        /// <summary>깜빡이기 숨김 방식(<see cref="BlinkHide"/>), 나타나기 방식(<see cref="AppearStyle"/>) 이름.</summary>
+        public string? Style { get; set; }
+        /// <summary>흔들기·둥실둥실 축(<see cref="EffectAxis"/> 이름).</summary>
+        public string? Axis { get; set; }
+        public bool? Decay { get; set; }
+        public bool? Regular { get; set; }
+        /// <summary>잔상 간격(프레임).</summary>
+        public int? Interval { get; set; }
+        /// <summary>깜빡이기 반투명 불투명도, 잔상 불투명도(%).</summary>
+        public int? Opacity { get; set; }
+        public bool? Tint { get; set; }
+        /// <summary>색 순환 색들("#RRGGBBAA").</summary>
+        public string[]? Colors { get; set; }
+        public int? Steps { get; set; }
+        public bool? Reverse { get; set; }
+        public bool? Clockwise { get; set; }
+        public bool? Behind { get; set; }
+        public bool? Stretch { get; set; }
+        public int? OnFrames { get; set; }
+        public int? OffFrames { get; set; }
+        public bool? Disappear { get; set; }
+        public int? Edge { get; set; }
 
         public static EffectDto From(LayerEffect effect)
         {
             var dto = effect switch
             {
                 OutlineEffect o => new EffectDto { Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside },
-                ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY },
+                ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY, Dither = s.Dither == ShadowDither.None ? null : s.Dither.ToString() },
                 RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString() },
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount },
                 ExplodeEffect x => new EffectDto
@@ -1225,6 +1278,48 @@ public static partial class ProjectIO
                 },
                 ShineEffect s => new EffectDto { Type = "shine", Angle = s.Angle, Width = s.Width, Color = s.Color.ToHex(), Amount = s.Strength, Softness = s.Softness },
                 SquashEffect q => new EffectDto { Type = "squash", Amount = q.Amount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
+                GradientOverlayEffect g => new EffectDto
+                {
+                    Type = "gradient", Color = g.ColorA.ToHex(), Color2 = g.ColorB.ToHex(), Angle = g.Angle, Amount = g.Strength, Blend = g.Blend.ToString(), Dither = g.Dither.ToString(),
+                },
+                InnerGlowEffect g => new EffectDto { Type = "innerglow", Color = g.Color.ToHex(), Thickness = g.Size, Amount = g.Strength, Fade = g.Fade, Blend = g.Blend.ToString() },
+                PaletteSwapEffect p => new EffectDto { Type = "swap", Pairs = p.Pairs.Select(q => new[] { q.From.ToHex(), q.To.ToHex() }).ToList(), Tolerance = p.Tolerance },
+                ColorAdjustEffect c => new EffectDto
+                {
+                    Type = "adjust", Mode = c.Mode.ToString(), Amount = c.Amount, Hue = c.Hue, Brightness = c.Brightness, Contrast = c.Contrast, Saturation = c.Saturation,
+                },
+                ReflectionEffect m => new EffectDto
+                {
+                    Type = "reflection", Gap = m.Gap, Height = m.Height, OpacityStart = m.OpacityStart, OpacityEnd = m.OpacityEnd, DitherFade = m.DitherFade,
+                    Color = m.Tint.ToHex(), Wave = m.Wave, Above = m.Above,
+                },
+                HitFlashEffect hit => new EffectDto { Type = "hitflash", Color = hit.Color.ToHex(), Amount = hit.Strength, Count = hit.Count, Mode = hit.Shape.ToString() },
+                BlinkEffect blink => new EffectDto
+                {
+                    Type = "blink", Mode = blink.Timing.ToString(), OnFrames = blink.OnFrames, OffFrames = blink.OffFrames, Count = blink.Count, Style = blink.Hide.ToString(),
+                    Opacity = blink.Opacity,
+                },
+                ShakeEffect shake => new EffectDto
+                {
+                    Type = "shake", Axis = shake.Axis.ToString(), Amount = shake.Amount, Count = shake.Count, Decay = shake.Decay, Regular = shake.Regular, Seed = shake.Seed,
+                },
+                BobEffect bob => new EffectDto { Type = "bob", Height = bob.Height, Count = bob.Cycles, Axis = bob.Axis.ToString() },
+                AppearEffect appear => new EffectDto
+                {
+                    Type = "appear", Disappear = appear.Disappear, Style = appear.Style.ToString(), Direction = appear.From.ToString(), Edge = appear.Edge, Seed = appear.Seed,
+                },
+                MeltEffect melt => new EffectDto { Type = "melt", Distance = melt.Distance, Spread = melt.Irregularity, Stretch = melt.Stretch, Fade = melt.Fade, Seed = melt.Seed },
+                RotateEffect rotate => new EffectDto { Type = "rotate", Angle = rotate.Angle, Anchor = rotate.Anchor.ToString(), Clockwise = rotate.Clockwise },
+                AfterimageEffect after => new EffectDto
+                {
+                    Type = "afterimage", Count = after.Count, Interval = after.Interval, Opacity = after.Opacity, Tint = after.Tint, Color = after.TintColor.ToHex(),
+                },
+                ColorCycleEffect cycle => new EffectDto { Type = "colorcycle", Colors = cycle.Colors.Select(k => k.ToHex()).ToArray(), Steps = cycle.Steps, Reverse = cycle.Reverse },
+                ShockwaveEffect wave => new EffectDto
+                {
+                    Type = "shockwave", Center = wave.Center.ToString(), X = wave.CenterX, Y = wave.CenterY, Distance = wave.Radius, Thickness = wave.Thickness,
+                    Color = wave.Color.ToHex(), Fade = wave.Fade, Behind = wave.Behind,
+                },
                 _ => throw new NotSupportedException($"저장할 수 없는 효과: {effect.GetType().Name}"),
             };
             dto.Enabled = effect.Enabled;
@@ -1260,7 +1355,7 @@ public static partial class ProjectIO
                     return o with { Enabled = Enabled, Color = ColorOr(Color, o.Color), Thickness = Thickness ?? o.Thickness, Diagonal = Diagonal ?? o.Diagonal, Inside = Inside ?? o.Inside };
                 case "shadow":
                     var s = new ShadowEffect();
-                    return s with { Enabled = Enabled, Color = ColorOr(Color, s.Color), OffsetX = X ?? s.OffsetX, OffsetY = Y ?? s.OffsetY };
+                    return s with { Enabled = Enabled, Color = ColorOr(Color, s.Color), OffsetX = X ?? s.OffsetX, OffsetY = Y ?? s.OffsetY, Dither = EnumOr(Dither, s.Dither) };
                 case "rim":
                     var r = new RimLightEffect();
                     return r with
@@ -1291,6 +1386,97 @@ public static partial class ProjectIO
                     return Animated(q with
                     {
                         Amount = Amount ?? q.Amount, Anchor = EnumOr(Anchor, q.Anchor), StretchFirst = StretchFirst ?? q.StretchFirst, Bounces = Bounces ?? q.Bounces,
+                    });
+                case "gradient":
+                    var g = new GradientOverlayEffect();
+                    return g with
+                    {
+                        Enabled = Enabled, ColorA = ColorOr(Color, g.ColorA), ColorB = ColorOr(Color2, g.ColorB), Angle = Angle ?? g.Angle, Strength = Amount ?? g.Strength,
+                        Blend = EnumOr(Blend, g.Blend), Dither = EnumOr(Dither, g.Dither),
+                    };
+                case "innerglow":
+                    var ig = new InnerGlowEffect();
+                    return ig with
+                    {
+                        Enabled = Enabled, Color = ColorOr(Color, ig.Color), Size = Thickness ?? ig.Size, Strength = Amount ?? ig.Strength, Fade = Fade ?? ig.Fade,
+                        Blend = EnumOr(Blend, ig.Blend),
+                    };
+                case "swap":
+                    var sw = new PaletteSwapEffect();
+                    return sw with
+                    {
+                        Enabled = Enabled, Tolerance = Tolerance ?? sw.Tolerance,
+                        Pairs = (Pairs ?? []).Where(q => q is [_, _] && Color32.TryParseHex(q[0], out _) && Color32.TryParseHex(q[1], out _))
+                            .Select(q => new ColorSwap(ColorOr(q[0], default), ColorOr(q[1], default))).ToArray(),
+                    };
+                case "adjust":
+                    var ad = new ColorAdjustEffect();
+                    return ad with
+                    {
+                        Enabled = Enabled, Mode = EnumOr(Mode, ad.Mode), Amount = Amount ?? ad.Amount, Hue = Hue ?? ad.Hue, Brightness = Brightness ?? ad.Brightness,
+                        Contrast = Contrast ?? ad.Contrast, Saturation = Saturation ?? ad.Saturation,
+                    };
+                case "reflection":
+                    var m = new ReflectionEffect();
+                    return m with
+                    {
+                        Enabled = Enabled, Gap = Gap ?? m.Gap, Height = Height ?? m.Height, OpacityStart = OpacityStart ?? m.OpacityStart, OpacityEnd = OpacityEnd ?? m.OpacityEnd,
+                        DitherFade = DitherFade ?? m.DitherFade, Tint = ColorOr(Color, m.Tint), Wave = Wave ?? m.Wave, Above = Above ?? m.Above,
+                    };
+                case "hitflash":
+                    var hf = new HitFlashEffect();
+                    return Animated(hf with { Color = ColorOr(Color, hf.Color), Strength = Amount ?? hf.Strength, Count = Count ?? hf.Count, Shape = EnumOr(Mode, hf.Shape) });
+                case "blink":
+                    var bl = new BlinkEffect();
+                    return Animated(bl with
+                    {
+                        Timing = EnumOr(Mode, bl.Timing), OnFrames = OnFrames ?? bl.OnFrames, OffFrames = OffFrames ?? bl.OffFrames, Count = Count ?? bl.Count,
+                        Hide = EnumOr(Style, bl.Hide), Opacity = Opacity ?? bl.Opacity,
+                    });
+                case "shake":
+                    var sk = new ShakeEffect();
+                    return Animated(sk with
+                    {
+                        Axis = EnumOr(Axis, sk.Axis), Amount = Amount ?? sk.Amount, Count = Count ?? sk.Count, Decay = Decay ?? sk.Decay, Regular = Regular ?? sk.Regular,
+                        Seed = Seed ?? sk.Seed,
+                    });
+                case "bob":
+                    var bo = new BobEffect();
+                    return Animated(bo with { Height = Height ?? bo.Height, Cycles = Count ?? bo.Cycles, Axis = EnumOr(Axis, bo.Axis) });
+                case "appear":
+                    var ap = new AppearEffect();
+                    return Animated(ap with
+                    {
+                        Disappear = Disappear ?? ap.Disappear, Style = EnumOr(Style, ap.Style), From = EnumOr(Direction, ap.From), Edge = Edge ?? ap.Edge, Seed = Seed ?? ap.Seed,
+                    });
+                case "melt":
+                    var me = new MeltEffect();
+                    return Animated(me with
+                    {
+                        Distance = Distance ?? me.Distance, Irregularity = Spread ?? me.Irregularity, Stretch = Stretch ?? me.Stretch, Fade = Fade ?? me.Fade, Seed = Seed ?? me.Seed,
+                    });
+                case "rotate":
+                    var ro = new RotateEffect();
+                    return Animated(ro with { Angle = Angle ?? ro.Angle, Anchor = EnumOr(Anchor, ro.Anchor), Clockwise = Clockwise ?? ro.Clockwise });
+                case "afterimage":
+                    var ai = new AfterimageEffect();
+                    return Animated(ai with
+                    {
+                        Count = Count ?? ai.Count, Interval = Interval ?? ai.Interval, Opacity = Opacity ?? ai.Opacity, Tint = Tint ?? ai.Tint, TintColor = ColorOr(Color, ai.TintColor),
+                    });
+                case "colorcycle":
+                    var cc = new ColorCycleEffect();
+                    return Animated(cc with
+                    {
+                        Colors = Colors is null ? cc.Colors : Colors.Where(h => Color32.TryParseHex(h, out _)).Select(h => ColorOr(h, default)).ToArray(),
+                        Steps = Steps ?? cc.Steps, Reverse = Reverse ?? cc.Reverse,
+                    });
+                case "shockwave":
+                    var sh = new ShockwaveEffect();
+                    return Animated(sh with
+                    {
+                        Center = EnumOr(Center, sh.Center), CenterX = X ?? sh.CenterX, CenterY = Y ?? sh.CenterY, Radius = Distance ?? sh.Radius, Thickness = Thickness ?? sh.Thickness,
+                        Color = ColorOr(Color, sh.Color), Fade = Fade ?? sh.Fade, Behind = Behind ?? sh.Behind,
                     });
                 default:
                     return null;

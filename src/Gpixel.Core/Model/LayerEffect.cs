@@ -77,7 +77,10 @@ public sealed record OutlineEffect : LayerEffect
     public override string DisplayName => "외곽선";
 }
 
-/// <summary>그림자: 그림 모양 그대로(단단한 그림자) 한 색으로 (X, Y)px 옮겨 뒤에 깐다.</summary>
+/// <summary>
+/// 그림자: 그림 모양 그대로(단단한 그림자) 한 색으로 (X, Y)px 옮겨 뒤에 깐다.
+/// <see cref="Dither"/>를 고르면 반투명 대신 불투명한 색을 그 밀도의 Bayer 무늬 칸에만 깐다(색의 알파는 쓰지 않음).
+/// </summary>
 public sealed record ShadowEffect : LayerEffect
 {
     public const int MaxOffset = 16;
@@ -93,7 +96,19 @@ public sealed record ShadowEffect : LayerEffect
     /// <summary>아래로 옮길 px(음수 = 위), ±<see cref="MaxOffset"/>.</summary>
     public int OffsetY { get => _y; init => _y = Math.Clamp(value, -MaxOffset, MaxOffset); }
 
+    /// <summary>디더 밀도(없음 = 색의 알파로 반투명). 예전 파일은 없음.</summary>
+    public ShadowDither Dither { get; init; } = ShadowDither.None;
+
     public override string DisplayName => "그림자";
+}
+
+/// <summary>디더 그림자 밀도(4×4 Bayer 무늬에서 칠하는 칸 비율). 50% = 바둑판.</summary>
+public enum ShadowDither
+{
+    None,
+    Light25,
+    Half50,
+    Dense75,
 }
 
 /// <summary>빛이 오는 방향(가장자리 빛·그늘).</summary>
@@ -170,8 +185,8 @@ public enum EffectRepeat
 /// <summary>
 /// 움직이는(애니메이션) 효과: 모습이 효과의 프레임 범위 안 진행 <see cref="Time"/>(범위 첫 프레임 0 → 마지막 프레임 1)에 따라 바뀐다.
 /// 범위가 길면 느리게, 짧으면 빠르게 움직인다. 범위가 null이면 애니메이션 전체가 범위다.
-/// 저장되는 설정은 빠르기 곡선·반복뿐이고, 그릴 프레임 위치(<see cref="FrameStep"/>·<see cref="FrameSpan"/>)와 피벗(<see cref="PivotPoint"/>)은
-/// 그릴 때 <see cref="Edit.LayerEffects.At"/>이 채운 사본에만 있다(저장 안 함, 목록에 든 효과는 0).
+/// 저장되는 설정은 빠르기 곡선·반복뿐이고, 그릴 프레임 위치(<see cref="FrameStep"/>·<see cref="FrameSpan"/>)와 피벗(<see cref="PivotPoint"/>)·다른 프레임 원본(<see cref="FrameSource"/>)은
+/// 그릴 때 <see cref="Edit.LayerEffects.At"/>이 채운 사본에만 있다(저장 안 함, 목록에 든 효과는 0·null).
 /// </summary>
 public abstract record AnimatedEffect : LayerEffect
 {
@@ -194,6 +209,15 @@ public abstract record AnimatedEffect : LayerEffect
     /// <summary>그릴 때만: 피벗 자리(효과 원본 — 셀·그룹이면 캔버스 — 왼쪽 위 기준 px). null이면 원본 가운데.</summary>
     public System.Drawing.PointF? PivotPoint { get; init; }
 
+    /// <summary>
+    /// 그릴 때만: 프레임 번호 → 그 프레임의 효과 원본(셀, 그룹이면 부위 합성 — 효과 없이, 원본과 같은 크기, 빈 셀이면 null). 잔상처럼 다른 프레임 그림이 필요한 효과가 쓴다.
+    /// null이면 다른 프레임을 쓰지 않는다. 주는 쪽이 셀 원본 그대로를 주므로(효과 재귀 없음) 결과는 셀 내용만으로 정해진다.
+    /// </summary>
+    public Func<int, PixelImage?>? FrameSource { get; init; }
+
+    /// <summary>그릴 때만: 그리는 프레임 번호(범위 시작 + <see cref="FrameStep"/>).</summary>
+    public int FrameIndex => (Frames?.From ?? 0) + FrameStep;
+
     /// <summary>진행 t = (프레임 − 시작) / max(1, 끝 − 시작), 0~1.</summary>
     public double Time => Math.Clamp((double)FrameStep / Math.Max(1, FrameSpan), 0, 1);
 
@@ -203,11 +227,14 @@ public abstract record AnimatedEffect : LayerEffect
     /// <summary>반복과 빠르기 곡선을 넣은 진행(0~1).</summary>
     public double Progress => Ease(Phase, Easing);
 
-    /// <summary>프레임 <paramref name="frameIndex"/>(프레임 <paramref name="frameCount"/>개 중)에 그릴 사본: 범위 안 위치와 피벗을 채운다(범위 밖이면 가까운 끝).</summary>
-    public AnimatedEffect AtFrame(int frameIndex, int frameCount, System.Drawing.PointF? pivot)
+    /// <summary>
+    /// 프레임 <paramref name="frameIndex"/>(프레임 <paramref name="frameCount"/>개 중)에 그릴 사본: 범위 안 위치와 피벗, 다른 프레임 원본(<paramref name="frameSource"/>)을 채운다
+    /// (범위 밖이면 가까운 끝).
+    /// </summary>
+    public AnimatedEffect AtFrame(int frameIndex, int frameCount, System.Drawing.PointF? pivot, Func<int, PixelImage?>? frameSource = null)
     {
         var (from, to) = Frames is { } r ? (r.From, r.To) : (0, Math.Max(0, frameCount - 1));
-        return this with { FrameStep = Math.Clamp(frameIndex - from, 0, to - from), FrameSpan = to - from, PivotPoint = pivot };
+        return this with { FrameStep = Math.Clamp(frameIndex - from, 0, to - from), FrameSpan = to - from, PivotPoint = pivot, FrameSource = frameSource };
     }
 
     /// <summary>

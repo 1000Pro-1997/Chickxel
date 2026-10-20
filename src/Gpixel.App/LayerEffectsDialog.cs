@@ -8,24 +8,45 @@ namespace Gpixel.App;
 /// 고치는 동안 캔버스에도 바로 보이고(<see cref="SpriteProject.PreviewLayerEffects"/>), 확인이면 대화상자 한 번이 실행취소 한 단계,
 /// 취소·창 닫기면 원래대로 돌아간다(<see cref="SpriteProject.EndLayerEffectsPreview"/>).
 /// </summary>
-public sealed class LayerEffectsDialog : DialogBase
+public sealed partial class LayerEffectsDialog : DialogBase
 {
     private const int PreviewBox = 220;
 
-    /// <summary>추가할 수 있는 효과 종류(번호 = <see cref="Create"/>의 kind). 타임라인 셀 메뉴 "효과 추가 ▸"도 같은 목록.</summary>
-    internal static readonly string[] Kinds = ["외곽선", "그림자", "가장자리 빛·그늘", "색 덮기", "터지기", "빛 지나가기", "늘었다 줄기"];
+    /// <summary>
+    /// 추가할 수 있는 효과 종류(이름, 새 효과 만들기) — 번호 = <see cref="Create"/>의 kind. 고정 효과 먼저, 움직이는 효과는 뒤에 모아 둔다.
+    /// 타임라인 셀 메뉴 "효과 추가 ▸"도 같은 목록(움직이는 효과 앞에 구분선).
+    /// </summary>
+    private static readonly (string Name, Func<LayerEffect> New)[] KindTable =
+    [
+        ("외곽선", () => new OutlineEffect()),
+        ("그림자", () => new ShadowEffect()),
+        ("가장자리 빛·그늘", () => new RimLightEffect()),
+        ("색 덮기", () => new ColorOverlayEffect()),
+        ("그라데이션 덮기", () => new GradientOverlayEffect()),
+        ("안쪽 빛", () => new InnerGlowEffect()),
+        ("색 바꾸기", () => new PaletteSwapEffect()),
+        ("색조 보정", () => new ColorAdjustEffect()),
+        ("반사", () => new ReflectionEffect()),
+        ("터지기", () => new ExplodeEffect()),
+        ("빛 지나가기", () => new ShineEffect()),
+        ("늘었다 줄기", () => new SquashEffect()),
+        ("피격 번쩍임", () => new HitFlashEffect()),
+        ("깜빡이기", () => new BlinkEffect()),
+        ("흔들기", () => new ShakeEffect()),
+        ("둥실둥실", () => new BobEffect()),
+        ("나타나기 / 사라지기", () => new AppearEffect()),
+        ("녹아내리기", () => new MeltEffect()),
+        ("회전", () => new RotateEffect()),
+        ("잔상", () => new AfterimageEffect()),
+        ("색 순환", () => new ColorCycleEffect()),
+        ("충격파 고리", () => new ShockwaveEffect()),
+    ];
 
-    /// <summary>종류 번호의 새 효과(기본 설정).</summary>
-    internal static LayerEffect Create(int kind) => kind switch
-    {
-        1 => new ShadowEffect(),
-        2 => new RimLightEffect(),
-        3 => new ColorOverlayEffect(),
-        4 => new ExplodeEffect(),
-        5 => new ShineEffect(),
-        6 => new SquashEffect(),
-        _ => new OutlineEffect(),
-    };
+    /// <summary>효과 종류 이름(번호 = <see cref="Create"/>의 kind).</summary>
+    internal static readonly string[] Kinds = KindTable.Select(k => k.Name).ToArray();
+
+    /// <summary>종류 번호의 새 효과(기본 설정, 범위 밖이면 외곽선).</summary>
+    internal static LayerEffect Create(int kind) => (kind >= 0 && kind < KindTable.Length ? KindTable[kind] : KindTable[0]).New();
 
     /// <summary>종류가 움직이는 효과(프레임 범위에 따라 모습이 바뀜)인지.</summary>
     internal static bool IsAnimated(int kind) => Create(kind) is AnimatedEffect;
@@ -41,6 +62,9 @@ public sealed class LayerEffectsDialog : DialogBase
     private static readonly string[] Repeats = ["한 번", "반복", "왕복"];
     private static readonly string[] Centers = ["가운데", "피벗", "아래 가운데", "직접 (X, Y)"];
     private static readonly string[] Anchors = ["아래 가운데 (발 고정)", "가운데", "피벗"];
+    private static readonly string[] ShadowDithers = ["없음 (반투명)", "25%", "50% (바둑판)", "75%"];
+    private static readonly string[] Blends = ["덮기", "곱하기", "스크린"];
+    private static readonly string[] Dithers = ["없음 (부드럽게)", "2×2 Bayer", "4×4 Bayer"];
 
     private readonly SpriteProject _project;
     private readonly Layer _layer;
@@ -109,7 +133,7 @@ public sealed class LayerEffectsDialog : DialogBase
         _preview.Height = PreviewBox + 20;
         _caption = Ui.Label("");
         _play = Ui.Button("▶ 재생", (_, _) => TogglePlay(), 80);
-        ToolTip.SetTip(_play, "움직이는 효과(터지기·빛 지나가기·늘었다 줄기)를 고른 효과의 프레임 범위로 돌려 봅니다.");
+        ToolTip.SetTip(_play, "움직이는 효과(터지기 ~ 충격파 고리)를 고른 효과의 프레임 범위로 돌려 봅니다.");
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
             Ui.Row(_play, _caption),
@@ -136,7 +160,7 @@ public sealed class LayerEffectsDialog : DialogBase
 
     private static string Intro(Layer layer)
         => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도 자동으로). 위에서부터 차례로 적용됩니다."
-           + " 터지기·빛 지나가기·늘었다 줄기는 프레임 범위의 첫 프레임에서 시작해 마지막 프레임에서 끝납니다(범위가 길수록 느림)."
+           + " 움직이는 효과(터지기 ~ 충격파 고리)는 프레임 범위의 첫 프레임에서 시작해 마지막 프레임에서 끝납니다(범위가 길수록 느림)."
            + (layer.IsGroup ? " 그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에 들어갑니다(부위 아틀라스에는 부위 자신의 효과만)." : "")
            + (layer.IsPart ? " 부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
 
@@ -240,12 +264,28 @@ public sealed class LayerEffectsDialog : DialogBase
     private static string Summary(LayerEffect e) => (e switch
     {
         OutlineEffect o => $"외곽선 · {(o.Inside ? "안쪽" : "바깥")} {o.Thickness}px · {(o.Diagonal ? "8방향" : "4방향")} · {o.Color.ToHex()}",
-        ShadowEffect s => $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}",
+        ShadowEffect s => $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}" + (s.Dither != ShadowDither.None ? $" · 디더 {ShadowDithers[(int)s.Dither]}" : ""),
         RimLightEffect r => $"가장자리 빛·그늘 · {Directions.First(d => d.Dir == r.Direction).Name}",
         ColorOverlayEffect c => $"색 덮기 · {c.Amount}% · {c.Color.ToHex()}",
         ExplodeEffect x => $"터지기 · {x.Distance}px · {Centers[(int)x.Center].Split(' ')[0]}" + (x.KeepOriginal ? " · 원본 남김" : ""),
         ShineEffect s => $"빛 지나가기 · {s.Angle}° · {s.Width}px · {s.Strength}%",
         SquashEffect q => $"늘었다 줄기 · {q.Amount}% · {q.Bounces}번",
+        GradientOverlayEffect g => $"그라데이션 덮기 · {g.Angle}° · {Blends[(int)g.Blend]} · {g.Strength}%" + (g.Dither != EffectDither.None ? $" · {Dithers[(int)g.Dither]}" : ""),
+        InnerGlowEffect g => $"안쪽 빛 · {g.Size}px · {g.Strength}% · {g.Color.ToHex()}",
+        PaletteSwapEffect p => $"색 바꾸기 · {p.Pairs.Count}쌍" + (p.Tolerance > 0 ? $" · 허용 {p.Tolerance}" : ""),
+        ColorAdjustEffect c => $"색조 보정 · {AdjustSummary(c)}",
+        ReflectionEffect m => $"반사 · {(m.Above ? "위" : "아래")} · 간격 {m.Gap}px · {m.Height}% · {m.OpacityStart}→{m.OpacityEnd}%" + (m.DitherFade ? " · 디더" : ""),
+        HitFlashEffect hit => $"피격 번쩍임 · {hit.Count}번 · {hit.Strength}% · {hit.Color.ToHex()}" + (hit.Shape == HitFlashShape.Fade ? " · 엷어짐" : ""),
+        BlinkEffect blink => $"깜빡이기 · " + (blink.Timing == BlinkTiming.Frames ? $"보임 {blink.OnFrames} / 숨김 {blink.OffFrames}프레임" : $"{blink.Count}번")
+                             + $" · {BlinkHides[(int)blink.Hide]}",
+        ShakeEffect shake => $"흔들기 · {Axes[(int)shake.Axis]} · {shake.Amount}px · {shake.Count}번" + (shake.Decay ? " · 줄어듦" : "") + (shake.Regular ? " · 규칙적" : ""),
+        BobEffect bob => $"둥실둥실 · {(bob.Axis == EffectAxis.Horizontal ? "좌우" : "위아래")} · {bob.Height}px · {bob.Cycles}번",
+        AppearEffect appear => $"{appear.DisplayName} · {AppearStyles[(int)appear.Style]}" + (appear.Style == AppearStyle.Wipe ? $" · {WipeFroms[(int)appear.From]}부터" : ""),
+        MeltEffect melt => $"녹아내리기 · {melt.Distance}px · 불규칙 {melt.Irregularity}%",
+        RotateEffect rotate => $"회전 · {rotate.Angle}° · {(rotate.Clockwise ? "시계" : "반시계")} 방향 · {Anchors[(int)rotate.Anchor].Split(' ')[0]}",
+        AfterimageEffect after => $"잔상 · {after.Count}개 · 간격 {after.Interval} · {after.Opacity}%" + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
+        ColorCycleEffect cycle => $"색 순환 · {cycle.Colors.Count}색 · {cycle.Steps}칸" + (cycle.Reverse ? " · 거꾸로" : ""),
+        ShockwaveEffect wave => $"충격파 고리 · {wave.Radius}px · 두께 {wave.Thickness} · {(wave.Behind ? "뒤" : "앞")}",
         _ => e.DisplayName,
     }) + (e.Frames is { } f ? $" · 프레임 {f}" : "");
 
@@ -329,7 +369,8 @@ public sealed class LayerEffectsDialog : DialogBase
                     Ui.Label("Y"),
                     NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetY, v => Set(x => (ShadowEffect)x with { OffsetY = v })),
                     Ui.Label("px"));
-                _settings.Children.Add(Hint("그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기)."));
+                Add(Ui.Label("디더"), ChoiceEditor(ShadowDithers, (int)s.Dither, k => Set(x => (ShadowEffect)x with { Dither = (ShadowDither)k })));
+                _settings.Children.Add(Hint("그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기). 디더를 고르면 반투명 대신 불투명한 색을 그 밀도의 무늬(50% = 바둑판)로 깝니다."));
                 break;
             case RimLightEffect r:
                 Add(Ui.Label("빛이 오는 쪽"),
@@ -400,26 +441,47 @@ public sealed class LayerEffectsDialog : DialogBase
                 _settings.Children.Add(Hint("젤리처럼 출렁이다 원래 모양으로 돌아옵니다(가로 1 + 세기 × 출렁임, 세로 1 − 세기 × 출렁임). 픽셀은 늘이거나 줄여도 또렷합니다."));
                 break;
             }
+            case GradientOverlayEffect g: GradientPanel(g, Set); break;
+            case InnerGlowEffect g: InnerGlowPanel(g, Set); break;
+            case PaletteSwapEffect p: PaletteSwapPanel(p, Set); break;
+            case ColorAdjustEffect c: ColorAdjustPanel(c, Set); break;
+            case ReflectionEffect m: ReflectionPanel(m, Set); break;
+            case HitFlashEffect hit: HitFlashPanel(hit, Set); break;
+            case BlinkEffect blink: BlinkPanel(blink, Set); break;
+            case ShakeEffect shake: ShakePanel(shake, Set); break;
+            case BobEffect bob: BobPanel(bob, Set); break;
+            case AppearEffect appear: AppearPanel(appear, Set); break;
+            case MeltEffect melt: MeltPanel(melt, Set); break;
+            case RotateEffect rotate: RotatePanel(rotate, Set); break;
+            case AfterimageEffect after: AfterimagePanel(after, Set); break;
+            case ColorCycleEffect cycle: ColorCyclePanel(cycle, Set); break;
+            case ShockwaveEffect wave: ShockwavePanel(wave, Set); break;
         }
     }
 
-    /// <summary>움직이는 효과 공통: 빠르기 곡선, 반복(한 번/반복/왕복 + 횟수), 범위 길이 안내.</summary>
-    private void AddMotionEditors(int i, Action<Func<LayerEffect, LayerEffect>> set)
+    /// <summary>
+    /// 움직이는 효과 공통: 빠르기 곡선, 반복(한 번/반복/왕복 + 횟수), 범위 길이 안내. <paramref name="timing"/>이 false면(진행 곡선을 쓰지 않는 효과 — 깜빡이기 프레임 간격·잔상)
+    /// 범위 안내만.
+    /// </summary>
+    private void AddMotionEditors(int i, Action<Func<LayerEffect, LayerEffect>> set, bool timing = true)
     {
         var a = (AnimatedEffect)_effects[i];
-        Add(Ui.Label("빠르기"), ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
+        if (timing) AddTimingEditors(a, set);
+        var (from, to) = RangeOf(a);
+        _settings.Children.Add(Hint($"지금 {to - from + 1}프레임(프레임 {from + 1}~{to + 1}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다."
+                                    + (from == to ? " 한 프레임이면 움직이지 않습니다." : "")));
+    }
+
+    private void AddTimingEditors(AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
+    {
+        SettingsRow(Ui.Label("빠르기"), ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
         var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
         count.IsEnabled = a.Repeat != EffectRepeat.Once;
-        Add(Ui.Label("반복"), ChoiceEditor(Repeats, (int)a.Repeat, k =>
+        SettingsRow(Ui.Label("반복"), ChoiceEditor(Repeats, (int)a.Repeat, k =>
         {
             count.IsEnabled = (EffectRepeat)k != EffectRepeat.Once;
             set(o => (AnimatedEffect)o with { Repeat = (EffectRepeat)k });
         }), count, Ui.Label("번"));
-        var (from, to) = RangeOf(a);
-        _settings.Children.Add(Hint($"지금 {to - from + 1}프레임(프레임 {from + 1}~{to + 1}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다."
-                                    + (from == to ? " 한 프레임이면 움직이지 않습니다." : "")));
-
-        void Add(params Control[] row) => _settings.Children.Add(Ui.Row(row));
     }
 
     /// <summary>
@@ -465,6 +527,9 @@ public sealed class LayerEffectsDialog : DialogBase
         to.ValueChanged += (_, _) => Apply();
         _settings.Children.Add(Ui.Row(all, Ui.Label("프레임"), from, Ui.Label("~"), to));
     }
+
+    /// <summary>설정 칸에 한 줄.</summary>
+    private void SettingsRow(params Control[] row) => _settings.Children.Add(Ui.Row(row));
 
     private static TextBlock Hint(string text, double maxWidth = 290)
     {
@@ -592,7 +657,7 @@ public sealed class LayerEffectsDialog : DialogBase
             _preview.SetImages(null, null);
             return;
         }
-        var effects = LayerEffects.Animate(_effects, f, n, _project.EffectPivot(_layer, f));
+        var effects = LayerEffects.Animate(_effects, f, n, _project.EffectPivot(_layer, f), LayerEffects.UsesOtherFrames(_effects) ? SourceAt : null);
         var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(_effects, source.Width, source.Height));
         var before = new PixelImage(after.Width, after.Height);
         before.Blit(source, -dx, -dy);

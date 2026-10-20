@@ -11,7 +11,7 @@ public readonly record struct EffectPadding(int Left, int Top, int Right, int Bo
 
 /// <summary>
 /// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 효과 목록은 앞에서부터 차례로 적용되고(앞 효과의 결과가 다음 효과의 입력), 꺼진 효과는 건너뛴다.
-/// 모양은 알파가 0이 아닌 픽셀이다. 바깥 외곽선·그림자·터지기·늘었다 줄기는 그림 밖으로 번지므로 <see cref="Render(PixelImage, IReadOnlyList{LayerEffect})"/>는 그만큼(<see cref="Padding"/>)
+/// 모양은 알파가 0이 아닌 픽셀이다. 바깥 외곽선·그림자·반사·터지기·늘었다 줄기는 그림 밖으로 번지므로 <see cref="Render(PixelImage, IReadOnlyList{LayerEffect})"/>는 그만큼(<see cref="Padding"/>)
 /// 넓힌 이미지와 원래 그림의 왼쪽 위가 놓인 자리를 돌려준다. 이미지 밖은 투명으로 본다.
 /// 그리기 함수는 받은 목록을 프레임 범위(<see cref="LayerEffect.Frames"/>)와 관계없이 그린다 — 프레임 하나를 그릴 때는 부르는 쪽이
 /// <see cref="At"/>으로 그 프레임에 입힐 효과만 골라(움직이는 효과는 그 프레임의 진행을 채워) 넘긴다.
@@ -34,28 +34,40 @@ public static class LayerEffects
         return false;
     }
 
+    /// <summary>켜진 효과 중 다른 프레임 그림을 보는 효과(잔상)가 있는지 — 있을 때만 <see cref="At"/>에 다른 프레임 원본을 넘긴다.</summary>
+    public static bool UsesOtherFrames(IReadOnlyList<LayerEffect> effects)
+    {
+        for (int i = 0; i < effects.Count; i++)
+            if (effects[i] is AfterimageEffect { Enabled: true }) return true;
+        return false;
+    }
+
     /// <summary>
     /// 프레임 <paramref name="frameIndex"/>(프레임 <paramref name="frameCount"/>개 중)에 그릴 효과: 범위 밖 효과를 빼고(순서 그대로, 꺼진 효과도 남음 — 그리기가 건너뜀),
-    /// 움직이는 효과(<see cref="AnimatedEffect"/>)는 그 프레임의 진행과 <paramref name="pivot"/>(효과 원본 왼쪽 위 기준 px)을 채운 사본으로 바꾼다.
+    /// 움직이는 효과(<see cref="AnimatedEffect"/>)는 그 프레임의 진행과 <paramref name="pivot"/>(효과 원본 왼쪽 위 기준 px), 다른 프레임 원본
+    /// <paramref name="frameSource"/>(프레임 번호 → 그 프레임 효과 원본, 잔상용 — <see cref="AnimatedEffect.FrameSource"/>)를 채운 사본으로 바꾼다.
     /// 바꿀 것이 없으면 <paramref name="effects"/> 그대로(복사 없음).
     /// </summary>
-    public static IReadOnlyList<LayerEffect> At(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null)
-        => Resolve(effects, frameIndex, frameCount, pivot, inRangeOnly: true);
+    public static IReadOnlyList<LayerEffect> At(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null,
+        Func<int, PixelImage?>? frameSource = null)
+        => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: true);
 
     /// <summary>
     /// 프레임 범위와 관계없이 모든 효과를 프레임 <paramref name="frameIndex"/>로 움직인 목록(범위 밖이면 가까운 끝의 모습) — 효과 창 미리보기용.
     /// </summary>
-    public static IReadOnlyList<LayerEffect> Animate(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null)
-        => Resolve(effects, frameIndex, frameCount, pivot, inRangeOnly: false);
+    public static IReadOnlyList<LayerEffect> Animate(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null,
+        Func<int, PixelImage?>? frameSource = null)
+        => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: false);
 
-    private static IReadOnlyList<LayerEffect> Resolve(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot, bool inRangeOnly)
+    private static IReadOnlyList<LayerEffect> Resolve(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot,
+        Func<int, PixelImage?>? frameSource, bool inRangeOnly)
     {
         List<LayerEffect>? list = null;
         for (int i = 0; i < effects.Count; i++)
         {
             var e = effects[i];
             LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex) ? null
-                : e is AnimatedEffect a ? a.AtFrame(frameIndex, frameCount, pivot) : e;
+                : e is AnimatedEffect a ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) : e;
             if (list is null && !ReferenceEquals(r, e))
             {
                 list = new List<LayerEffect>(effects.Count);
@@ -81,7 +93,8 @@ public static class LayerEffects
     /// <summary>
     /// <paramref name="width"/>×<paramref name="height"/> 그림에 켜진 효과들이 그림 밖으로 넓힐 수 있는 최대 여백(차례대로 쌓임: 외곽선 뒤 그림자면 외곽선까지 그림자가 진다).
     /// 프레임 범위·진행은 보지 않으므로 어느 프레임의 효과 묶음 여백보다도 작지 않다(효과를 빼면 여백은 줄기만 함) — 모든 프레임 같은 크기로 넓힐 때 쓴다.
-    /// 터지기는 거리(+ 중력 쪽), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼 넓힌다.
+    /// 터지기는 거리(+ 중력 쪽), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이 × 높이%(+ 물결 폭만큼 양옆) 넓힌다.
+    /// 흔들기·둥실둥실·녹아내리기·회전·충격파 고리는 <see cref="MotionPadding.Of"/>(세기·높이·거리·돌린 그림·반지름)만큼 넓힌다.
     /// 넓힌 크기가 <see cref="PixelImage.MaxSize"/>를 넘는 축은 여백 없이(그 축은 이미지 끝에서 잘림).
     /// </summary>
     public static EffectPadding Padding(IReadOnlyList<LayerEffect> effects, int width, int height)
@@ -127,6 +140,25 @@ public static class LayerEffects
                     r += gx;
                     t += up;
                     b += down;
+                    break;
+                }
+                case ReflectionEffect m:
+                {
+                    // 그림(지금까지 넓힌 크기)의 높이 × 높이%만큼 간격 너머에 비친다 — 보이는 영역이 아무리 커도 그 안
+                    int reach = m.Gap + ReflectionRender.RowsFor(height + t + b, m.Height);
+                    if (m.Above) t += reach;
+                    else b += reach;
+                    l += m.Wave;
+                    r += m.Wave;
+                    break;
+                }
+                case ShakeEffect or BobEffect or MeltEffect or RotateEffect or ShockwaveEffect:
+                {
+                    var (gl, gt, gr, gb) = MotionPadding.Of(e, width + l + r, height + t + b);
+                    l += gl;
+                    t += gt;
+                    r += gr;
+                    b += gb;
                     break;
                 }
             }
@@ -177,12 +209,27 @@ public static class LayerEffects
             switch (e)
             {
                 case OutlineEffect o: Outline(image, o); break;
-                case ShadowEffect s: Shadow(image, s); break;
+                case ShadowEffect s: Shadow(image, s, source); break;
                 case RimLightEffect r: Rim(image, r); break;
                 case ColorOverlayEffect c: Overlay(image, c); break;
                 case ExplodeEffect x: Explode(image, x, source); break;
                 case ShineEffect s: Shine(image, s); break;
                 case SquashEffect q: Squash(image, q, source); break;
+                case GradientOverlayEffect g: GradientOverlayRender.Apply(image, g, source); break;
+                case InnerGlowEffect g: InnerGlowRender.Apply(image, g); break;
+                case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p); break;
+                case ColorAdjustEffect c: ColorAdjustRender.Apply(image, c); break;
+                case ReflectionEffect m: ReflectionRender.Apply(image, m, source); break;
+                case HitFlashEffect f: HitFlashRender.Apply(image, f); break;
+                case BlinkEffect k: BlinkRender.Apply(image, k, source); break;
+                case ShakeEffect k: ShakeRender.Apply(image, k); break;
+                case BobEffect k: ShakeRender.Apply(image, k); break;
+                case AppearEffect a: AppearRender.Apply(image, a, source); break;
+                case MeltEffect m: MeltRender.Apply(image, m, source); break;
+                case RotateEffect q: RotateRender.Apply(image, q, source); break;
+                case AfterimageEffect a: AfterimageRender.Apply(image, a, source); break;
+                case ColorCycleEffect c: ColorCycleRender.Apply(image, c); break;
+                case ShockwaveEffect w: ShockwaveRender.Apply(image, w, source); break;
             }
         }
     }
@@ -209,9 +256,12 @@ public static class LayerEffects
         }
     }
 
-    private static void Shadow(PixelImage image, ShadowEffect s)
+    /// <summary>그림자. 디더면 반투명 대신 색(불투명)을 밀도 무늬(4×4 Bayer, 효과 원본 왼쪽 위 기준)의 칸에만 깐다.</summary>
+    private static void Shadow(PixelImage image, ShadowEffect s, Rectangle source)
     {
         int w = image.Width, h = image.Height, dx = s.OffsetX, dy = s.OffsetY;
+        int density = s.Dither switch { ShadowDither.Light25 => 4, ShadowDither.Half50 => 8, ShadowDither.Dense75 => 12, _ => 0 };
+        var solid = s.Color.WithAlpha(255);
         var px = image.Pixels;
         var src = (Color32[])px.Clone();
         for (int y = 0; y < h; y++)
@@ -224,7 +274,10 @@ public static class LayerEffects
                 if ((uint)sx >= (uint)w) continue;
                 byte a = src[sy * w + sx].A;
                 if (a == 0) continue;
-                var shadow = s.Color.WithAlpha((byte)((s.Color.A * a + 127) / 255));
+                Color32 shadow;
+                if (density == 0) shadow = s.Color.WithAlpha((byte)((s.Color.A * a + 127) / 255));
+                else if (Bayer.Threshold4(x - source.X, y - source.Y) < density) shadow = solid;
+                else continue;
                 int i = y * w + x;
                 px[i] = Color32.BlendOver(shadow, src[i]);
             }
@@ -391,13 +444,13 @@ public static class LayerEffects
     }
 
     /// <summary>피벗 자리(이미지 기준): 없으면 원본 가운데.</summary>
-    private static (double X, double Y) PivotIn(PointF? pivot, Rectangle source)
+    internal static (double X, double Y) PivotIn(PointF? pivot, Rectangle source)
         => pivot is { } p ? (source.X + p.X, source.Y + p.Y) : (source.X + source.Width / 2.0, source.Y + source.Height / 2.0);
 
-    private static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
+    internal static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
 
     /// <summary>시드·조각 자리·용도로 정해지는 0 이상 1 미만의 수(늘 같음).</summary>
-    private static double Random(int seed, int x, int y, int salt)
+    internal static double Random(int seed, int x, int y, int salt)
     {
         uint h = (uint)seed * 0x9E3779B1u ^ (uint)x * 0x85EBCA77u ^ (uint)y * 0xC2B2AE3Du ^ (uint)(salt + 1) * 0x27D4EB2Fu;
         h ^= h >> 15;
@@ -409,7 +462,7 @@ public static class LayerEffects
     }
 
     /// <summary>스크린(밝게 더하기)을 <paramref name="amount"/>/255만큼(알파는 그대로).</summary>
-    private static Color32 Screen(Color32 dst, Color32 color, int amount)
+    internal static Color32 Screen(Color32 dst, Color32 color, int amount)
     {
         byte S(byte d, byte c)
         {
@@ -422,7 +475,7 @@ public static class LayerEffects
     // ───────────── 도우미 ─────────────
 
     /// <summary>알파가 0이 아닌 픽셀.</summary>
-    private static bool[] Mask(Color32[] px)
+    internal static bool[] Mask(Color32[] px)
     {
         var mask = new bool[px.Length];
         for (int i = 0; i < px.Length; i++) mask[i] = px[i].A != 0;
@@ -430,7 +483,7 @@ public static class LayerEffects
     }
 
     /// <summary>한 칸 넓히기(4방향 = 십자, 8방향 = 모서리 포함).</summary>
-    private static bool[] Dilate(bool[] src, int w, int h, bool diagonal)
+    internal static bool[] Dilate(bool[] src, int w, int h, bool diagonal)
     {
         var dst = new bool[src.Length];
         for (int y = 0; y < h; y++)
@@ -443,7 +496,7 @@ public static class LayerEffects
     }
 
     /// <summary>한 칸 깎기: 이웃(4/8방향) 중 하나라도 비었거나 이미지 밖이면 빠진다.</summary>
-    private static bool[] Erode(bool[] src, int w, int h, bool diagonal)
+    internal static bool[] Erode(bool[] src, int w, int h, bool diagonal)
     {
         var dst = new bool[src.Length];
         for (int y = 0; y < h; y++)
@@ -479,7 +532,7 @@ public static class LayerEffects
     }
 
     /// <summary><paramref name="dst"/>의 RGB를 <paramref name="color"/> 쪽으로 <paramref name="amount"/>/255만큼(알파는 그대로).</summary>
-    private static Color32 Mix(Color32 dst, Color32 color, int amount)
+    internal static Color32 Mix(Color32 dst, Color32 color, int amount)
     {
         if (amount <= 0) return dst;
         int keep = 255 - amount;

@@ -382,10 +382,29 @@ public sealed class SpriteProject
 
     /// <summary>
     /// 프레임 <paramref name="frameIndex"/>에 입힐 레이어 효과(<see cref="LayerEffects.At"/>): 범위 밖 효과를 빼고, 움직이는 효과는 그 프레임의 진행과
-    /// 피벗(<see cref="EffectPivot"/>)을 채운다.
+    /// 피벗(<see cref="EffectPivot"/>)을, 다른 프레임 그림을 쓰는 효과(잔상)가 있으면 다른 프레임 원본(<see cref="EffectFrameSource"/>)도 채운다.
+    /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(부위 아틀라스의 스킨별 셀).
     /// </summary>
-    public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex)
-        => LayerEffects.At(layer.Effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex));
+    public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex, Skin? skin = null)
+        => EffectsAt(layer, layer.Effects, frameIndex, skin is null || layer.IsGroup ? null : f => GetSkinCel(layer, _frames[f], skin));
+
+    /// <summary>
+    /// 레이어의 효과 목록 <paramref name="effects"/>를 프레임 <paramref name="frameIndex"/>에 맞춘다. 다른 프레임 원본은 <paramref name="cels"/>(프레임 번호 → 셀, null =
+    /// <see cref="EffectFrameSource"/>), 잔상이 없으면 넣지 않는다(만들 것 없음).
+    /// </summary>
+    private IReadOnlyList<LayerEffect> EffectsAt(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, PixelImage?>? cels)
+    {
+        Func<int, PixelImage?>? source = !LayerEffects.UsesOtherFrames(effects) ? null
+            : cels is null ? EffectFrameSource(layer)
+            : f => (uint)f < (uint)_frames.Count ? cels(f) : null;
+        return LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source);
+    }
+
+    /// <summary>
+    /// 효과가 다른 프레임 그림을 볼 때 쓰는 원본(프레임 번호 → <see cref="EffectSource"/> — 셀 그대로, 그룹이면 부위 합성, 범위 밖·빈 셀이면 null).
+    /// 효과 없이 셀만 보므로 그 프레임의 효과가 다시 불리지 않고, 결과는 셀 내용만으로 정해진다.
+    /// </summary>
+    public Func<int, PixelImage?> EffectFrameSource(Layer layer) => f => (uint)f < (uint)_frames.Count ? EffectSource(layer, f) : null;
 
     /// <summary>효과의 "피벗" 자리(효과 원본 왼쪽 위 기준 px): 부위면 부위 피벗(부위 셀 기준), 그 밖에는 프레임 피벗(캔버스 기준).</summary>
     public PointF EffectPivot(Layer layer, int frameIndex)
@@ -890,11 +909,12 @@ public sealed class SpriteProject
             throw new InvalidOperationException("부위·그룹 레이어는 아래로 병합할 수 없습니다.");
         Edit("아래 레이어와 병합", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            foreach (var (key, top) in CelsOf(upper))
+            // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다.
+            var rendered = CelsOf(upper).Select(c => (c.Key, Render: LayerEffects.Render(c.Cel, EffectsAt(upper, _frames.IndexOf(c.Key.Frame))))).ToList();
+            foreach (var (key, (image, dx, dy)) in rendered)
             {
                 var lowerKey = new CelKey(lower, key.Frame, null);
-                var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom.Clone() : new PixelImage(top.Width, top.Height);
-                var (image, dx, dy) = LayerEffects.Render(top, EffectsAt(upper, _frames.IndexOf(key.Frame)));
+                var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom.Clone() : new PixelImage(_width, _height);
                 merged.Composite(image, dx, dy, upper.Opacity);
                 _cels[lowerKey] = merged;
                 _cels.Remove(key);
@@ -984,7 +1004,9 @@ public sealed class SpriteProject
         foreach (var (key, cel) in CelsOf(layer))
         {
             int f = _frames.IndexOf(key.Frame);
-            var effects = LayerEffects.At(baked, f, _frames.Count, EffectPivot(layer, f));
+            // 잔상은 같은 스킨의 다른 프레임 셀(굽기 전 그대로)을 본다
+            var skinKey = key.Skin;
+            var effects = EffectsAt(layer, baked, f, other => ResolveCel(layer, _frames[other], skinKey));
             if (effects.Count == 0) continue;
             var (image, _, _) = LayerEffects.Render(cel, effects, pad);
             rendered.Add((key, image));

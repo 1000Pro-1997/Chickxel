@@ -93,6 +93,19 @@ public sealed class PaletteRemap
         return set.Count;
     }
 
+    /// <summary>투명이 아닌 픽셀에 쓰인 색(RGB, 불투명으로 모음)을 많이 쓰인 순서로 최대 <paramref name="max"/>개 — 색 바꾸기의 "그림에서 색 가져오기".</summary>
+    public static IReadOnlyList<Color32> UsedColors(PixelImage image, int max = 64)
+    {
+        var counts = new Dictionary<uint, int>();
+        foreach (var c in image.Pixels)
+        {
+            if (c.A == 0) continue;
+            uint rgb = c.Argb | 0xFF000000u;
+            counts[rgb] = counts.GetValueOrDefault(rgb) + 1;
+        }
+        return counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).Take(max).Select(kv => new Color32(kv.Key)).ToList();
+    }
+
     /// <summary>두 색 섞기 비율 <c>T</c>(0 = A만, 1 = B만)와 칸의 Bayer 문턱을 견줘 A 또는 B.</summary>
     private int Dithered(int rgb, int x, int y)
     {

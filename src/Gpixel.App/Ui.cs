@@ -556,7 +556,8 @@ internal sealed class ColorPickDialog : DialogBase
 
     public Color32 Value => _view.Color.ToColor32();
 
-    private static WrapPanel Swatches(IEnumerable<Color32> colors, Action<Color32> pick)
+    /// <summary>색 칸들(누르면 <paramref name="pick"/>) — 색 고르기 창과 효과 창의 "그림에서 색 가져오기"가 같이 쓴다.</summary>
+    internal static WrapPanel Swatches(IEnumerable<Color32> colors, Action<Color32> pick)
     {
         var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var c in colors.Distinct())
