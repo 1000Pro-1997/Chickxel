@@ -847,7 +847,12 @@ public sealed class TimelinePanel : UserControl
     private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null, int addKind = -1)
     {
         if (P is not { } p || index < 0 || index >= p.Layers.Count) return;
-        _ctx.Structural(() => new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, addKind).ShowDialog(this));
+        _ctx.Structural(() =>
+        {
+            var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, addKind);
+            dialog.ShowDialog(this);
+            if (dialog.BakeMessage is { } message) Say(message);
+        });
     }
 
     private void ToggleLayer(int index, bool lockToggle)
@@ -1092,11 +1097,21 @@ public sealed class TimelinePanel : UserControl
         // 고른 칸들의 프레임 범위에만 입혀지는 효과를 바로 추가(창이 그 효과를 고른 채 열림).
         var effectRange = FrameRange.Of(frames.Min(), frames.Max(), p.Frames.Count);
         var add = new MenuItem { Header = $"효과 추가 ({(effectRange is null ? "모든 프레임" : range)})" };
-        string[] kinds = ["외곽선", "그림자", "가장자리 빛·그늘", "색 덮기"];
-        for (int k = 0; k < kinds.Length; k++)
+        // 움직이는 효과는 여러 프레임에 걸쳐야 움직이므로, 한 프레임만 골랐으면 그 프레임부터 그 태그(없으면 애니메이션) 끝까지로 넓힌다.
+        int start = frames.Min();
+        int end = frames.Count > 1 ? frames.Max()
+            : p.Tags.Where(t => t.From <= start && start <= t.To).Select(t => t.To).DefaultIfEmpty(p.Frames.Count - 1).Max();
+        var motionRange = FrameRange.Of(start, end, p.Frames.Count);
+        for (int k = 0; k < LayerEffectsDialog.Kinds.Length; k++)
         {
             int kind = k;
-            add.Items.Add(Item(kinds[k], () => EditLayerEffects(layer, -1, effectRange, kind)));
+            bool motion = LayerEffectsDialog.IsAnimated(k);
+            if (motion && k == 4) add.Items.Add(new Separator());
+            var r = motion ? motionRange : effectRange;
+            string text = motion && frames.Count == 1
+                ? $"{LayerEffectsDialog.Kinds[k]} ({(r is { } m ? m.From == m.To ? $"프레임 {m.From + 1}만 — 움직이려면 여러 프레임" : $"프레임 {m.From + 1}~{m.To + 1}" : "모든 프레임")})"
+                : LayerEffectsDialog.Kinds[k];
+            add.Items.Add(Item(text, () => EditLayerEffects(layer, -1, r, kind)));
         }
         items.Add(new Separator());
         items.Add(add);
@@ -1217,10 +1232,54 @@ public sealed class TimelinePanel : UserControl
         items.Add(Item(effect.Enabled ? "끄기" : "켜기", () => SetEffectEnabled(layer, effectIndex, !effect.Enabled)));
         int selected = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList().Count : 1;
         items.Add(Item(selected > 1 ? $"삭제 (효과 {selected}개) ({DeleteKeyName})" : $"삭제 ({DeleteKeyName})", DeleteSelectedEffects));
+        items.Add(BakeItem(p, layer, effectIndex));
         items.Add(new Separator());
         items.Add(Item("효과 복사 (Ctrl+C)", () => CopySelection(false)));
         items.Add(Item($"효과 붙여넣기 → 현재 레이어 (Ctrl+V)", () => PasteSelection(), _fxClip is { Count: > 0 }));
         ShowMenu([.. items]);
+    }
+
+    /// <summary>영구 적용할 효과: 효과 줄로 고른 효과들(없으면 누른 효과 하나), 레이어별.</summary>
+    private List<(Layer Layer, int[] Indices)> BakeTargets(Layer layer, int effectIndex)
+    {
+        var chosen = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList() : [];
+        if (chosen.Count == 0) chosen = [(layer, effectIndex)];
+        return [.. chosen.GroupBy(x => x.Layer).Select(g => (g.Key, g.Select(x => x.Index).ToArray()))];
+    }
+
+    /// <summary>
+    /// "효과 영구 적용" 메뉴 항목: 위(앞)의 켜진 효과까지 함께 구워지면 "(위 효과 N개 포함)". 그룹·잠긴 레이어면 꺼 두고 까닭을 풍선 도움말로.
+    /// </summary>
+    private MenuItem BakeItem(SpriteProject p, Layer layer, int effectIndex)
+    {
+        var targets = BakeTargets(layer, effectIndex);
+        int extra = targets.Sum(t => Gpixel.Core.Edit.LayerEffects.BakeSet(t.Layer.Effects, t.Indices).Count - t.Indices.Length);
+        string? why = targets.Select(t => LayerEffectsDialog.CanBake(p, t.Layer).Why).FirstOrDefault(w => w is not null);
+        var item = Item(extra > 0 ? $"효과 영구 적용 (위 효과 {extra}개 포함)" : "효과 영구 적용", BakeSelectedEffects, why is null);
+        ToolTip.SetTip(item, why ?? "효과를 셀 픽셀에 구워 넣고(이후 그림처럼 고칠 수 있음) 효과는 지웁니다. 실행취소 한 단계."
+                                   + (extra > 0 ? " 고른 효과는 위 효과의 결과에 입혀지므로 위의 켜진 효과도 함께 굽습니다(보이던 그대로)." : ""));
+        ToolTip.SetShowOnDisabled(item, true);
+        return item;
+
+        void BakeSelectedEffects()
+        {
+            var messages = new List<string>();
+            try
+            {
+                _ctx.Structural(() => p.Edit("효과 영구 적용", ProjectChange.Layers | ProjectChange.Pixels, () =>
+                {
+                    foreach (var (target, indices) in targets)
+                        messages.Add(LayerEffectsDialog.BakeSummary(p.BakeLayerEffects(p.IndexOf(target), indices), target));
+                }));
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+            {
+                Ui.Error(this, ex.Message);
+                return;
+            }
+            _grid.ResetRange();
+            Say(messages.Count == 1 ? messages[0] : string.Join(" / ", messages));
+        }
     }
 
     /// <summary>고른 효과(여러 레이어에 걸쳐도 됨)를 지운다(실행취소 한 단계).</summary>
@@ -2196,6 +2255,9 @@ public sealed class TimelinePanel : UserControl
             ShadowEffect => Color.FromRgb(118, 124, 196),
             RimLightEffect => Color.FromRgb(226, 210, 110),
             ColorOverlayEffect => Color.FromRgb(196, 96, 170),
+            ExplodeEffect => Color.FromRgb(236, 72, 40),
+            ShineEffect => Color.FromRgb(120, 214, 236),
+            SquashEffect => Color.FromRgb(110, 200, 120),
             _ => AppTheme.AccentColor,
         };
 

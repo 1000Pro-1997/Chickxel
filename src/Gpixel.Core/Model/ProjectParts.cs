@@ -96,9 +96,6 @@ public sealed class Layer
     /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 프레임 범위 안인) 효과가 있는지.</summary>
     public bool HasActiveEffectsAt(int frameIndex) => Edit.LayerEffects.AnyActive(Effects, frameIndex);
 
-    /// <summary>프레임 <paramref name="frameIndex"/>의 효과 목록(범위 밖 효과를 뺌, <see cref="Edit.LayerEffects.At"/>).</summary>
-    public IReadOnlyList<LayerEffect> EffectsAt(int frameIndex) => Edit.LayerEffects.At(Effects, frameIndex);
-
     /// <summary>그룹의 첫 스킨 기본 이름(스킨이 없던 예전 파일·새 그룹).</summary>
     public const string DefaultSkinName = "기본";
 

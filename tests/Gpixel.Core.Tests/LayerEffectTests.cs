@@ -112,7 +112,7 @@ public class LayerEffectTests
         var (img, x, y) = LayerEffects.Render(src, effects);
         Assert.Same(src, img);
         Assert.Equal((0, 0), (x, y));
-        Assert.True(LayerEffects.Padding(effects).IsNone);
+        Assert.True(LayerEffects.Padding(effects, 2, 2).IsNone);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class LayerEffectTests
         Assert.Equal(Black, overlayFirst.Get(1, 0));
         Assert.Equal(White, overlayFirst.Get(1, 1));
         // 그림자는 앞 효과(외곽선)까지 옮겨 깐다
-        var pad = LayerEffects.Padding([outline, new ShadowEffect { OffsetX = 2, OffsetY = 0 }]);
+        var pad = LayerEffects.Padding([outline, new ShadowEffect { OffsetX = 2, OffsetY = 0 }], 1, 1);
         Assert.Equal(new EffectPadding(1, 1, 3, 1), pad);
     }
 

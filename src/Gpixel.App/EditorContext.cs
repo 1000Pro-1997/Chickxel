@@ -945,7 +945,7 @@ public sealed class EditorContext
         PixelImage? img;
         if (l.IsGroup)
             img = p.ChildrenOf(l).Any(c => p.GetCel(c, p.Frames[frame]) is not null) ? p.FlattenGroup(l, frame) : null;
-        else if (p.GetCel(layer, frame) is { } cel) img = l.IsPart ? cel : LayerEffects.RenderClipped(cel, l.EffectsAt(frame));
+        else if (p.GetCel(layer, frame) is { } cel) img = l.IsPart ? cel : LayerEffects.RenderClipped(cel, p.EffectsAt(l, frame));
         else img = null;
         if (img is null) return null;
         bmp = ImageUtil.ToBitmap(img);

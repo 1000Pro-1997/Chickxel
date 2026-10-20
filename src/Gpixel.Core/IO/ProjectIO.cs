@@ -1167,18 +1167,45 @@ public static partial class ProjectIO
     {
         public string? Type { get; set; }
         public bool Enabled { get; set; } = true;
-        /// <summary>외곽선·그림자·색 덮기 색, 가장자리 빛의 빛 색("#RRGGBBAA").</summary>
+        /// <summary>외곽선·그림자·색 덮기·빛 지나가기 색, 가장자리 빛의 빛 색("#RRGGBBAA").</summary>
         public string? Color { get; set; }
         /// <summary>가장자리 빛의 그늘 색.</summary>
         public string? Shade { get; set; }
         public int? Thickness { get; set; }
         public bool? Diagonal { get; set; }
         public bool? Inside { get; set; }
+        /// <summary>그림자 X·Y, 터지기 직접 중심 X·Y.</summary>
         public int? X { get; set; }
         public int? Y { get; set; }
         /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
         public string? Direction { get; set; }
+        /// <summary>색 덮기 양, 빛 지나가기 세기, 늘었다 줄기 세기(%).</summary>
         public int? Amount { get; set; }
+        /// <summary>움직이는 효과: 빠르기 곡선·반복(<see cref="EffectEasing"/>·<see cref="EffectRepeat"/> 이름)과 반복 횟수.</summary>
+        public string? Easing { get; set; }
+        public string? Repeat { get; set; }
+        public int? RepeatCount { get; set; }
+        /// <summary>터지기.</summary>
+        public int? Distance { get; set; }
+        public string? Center { get; set; }
+        public int? Spread { get; set; }
+        public int? Gravity { get; set; }
+        public int? PieceSize { get; set; }
+        public bool? Fade { get; set; }
+        public int? FadeStart { get; set; }
+        public bool? Shrink { get; set; }
+        public int? Seed { get; set; }
+        public bool? KeepOriginal { get; set; }
+        public int? FlashFrames { get; set; }
+        public string? FlashColor { get; set; }
+        /// <summary>빛 지나가기.</summary>
+        public int? Angle { get; set; }
+        public int? Width { get; set; }
+        public int? Softness { get; set; }
+        /// <summary>늘었다 줄기.</summary>
+        public string? Anchor { get; set; }
+        public bool? StretchFirst { get; set; }
+        public int? Bounces { get; set; }
         /// <summary>적용할 프레임 범위 [시작, 끝](0부터, 양 끝 포함). 없으면 모든 프레임(예전 파일).</summary>
         public int[]? Frames { get; set; }
 
@@ -1190,12 +1217,29 @@ public static partial class ProjectIO
                 ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY },
                 RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString() },
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount },
+                ExplodeEffect x => new EffectDto
+                {
+                    Type = "explode", Distance = x.Distance, Center = x.Center.ToString(), X = x.CenterX, Y = x.CenterY, Spread = x.Spread, Gravity = x.Gravity,
+                    PieceSize = x.PieceSize, Fade = x.Fade, FadeStart = x.FadeStart, Shrink = x.Shrink, Seed = x.Seed, KeepOriginal = x.KeepOriginal,
+                    FlashFrames = x.FlashFrames, FlashColor = x.FlashColor.ToHex(),
+                },
+                ShineEffect s => new EffectDto { Type = "shine", Angle = s.Angle, Width = s.Width, Color = s.Color.ToHex(), Amount = s.Strength, Softness = s.Softness },
+                SquashEffect q => new EffectDto { Type = "squash", Amount = q.Amount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
                 _ => throw new NotSupportedException($"저장할 수 없는 효과: {effect.GetType().Name}"),
             };
             dto.Enabled = effect.Enabled;
             dto.Frames = effect.Frames is { } f ? [f.From, f.To] : null;
+            if (effect is AnimatedEffect a)
+            {
+                dto.Easing = a.Easing.ToString();
+                dto.Repeat = a.Repeat.ToString();
+                dto.RepeatCount = a.RepeatCount;
+            }
             return dto;
         }
+
+        private static T EnumOr<T>(string? name, T fallback) where T : struct, Enum
+            => Enum.TryParse<T>(name, true, out var v) && Enum.IsDefined(v) ? v : fallback;
 
         private static Color32 ColorOr(string? hex, Color32 fallback) => Color32.TryParseHex(hex, out var c) ? c : fallback;
 
@@ -1222,15 +1266,40 @@ public static partial class ProjectIO
                     return r with
                     {
                         Enabled = Enabled, Light = ColorOr(Color, r.Light), Shade = ColorOr(Shade, r.Shade),
-                        Direction = Enum.TryParse<LightDirection>(Direction, true, out var d) && Enum.IsDefined(d) ? d : r.Direction,
+                        Direction = EnumOr(Direction, r.Direction),
                     };
                 case "overlay":
                     var c = new ColorOverlayEffect();
                     return c with { Enabled = Enabled, Color = ColorOr(Color, c.Color), Amount = Amount ?? c.Amount };
+                case "explode":
+                    var x = new ExplodeEffect();
+                    return Animated(x with
+                    {
+                        Distance = Distance ?? x.Distance, Center = EnumOr(Center, x.Center), CenterX = X ?? x.CenterX, CenterY = Y ?? x.CenterY,
+                        Spread = Spread ?? x.Spread, Gravity = Gravity ?? x.Gravity, PieceSize = PieceSize ?? x.PieceSize, Fade = Fade ?? x.Fade,
+                        FadeStart = FadeStart ?? x.FadeStart, Shrink = Shrink ?? x.Shrink, Seed = Seed ?? x.Seed, KeepOriginal = KeepOriginal ?? x.KeepOriginal,
+                        FlashFrames = FlashFrames ?? x.FlashFrames, FlashColor = ColorOr(FlashColor, x.FlashColor),
+                    });
+                case "shine":
+                    var s2 = new ShineEffect();
+                    return Animated(s2 with
+                    {
+                        Angle = Angle ?? s2.Angle, Width = Width ?? s2.Width, Color = ColorOr(Color, s2.Color), Strength = Amount ?? s2.Strength, Softness = Softness ?? s2.Softness,
+                    });
+                case "squash":
+                    var q = new SquashEffect();
+                    return Animated(q with
+                    {
+                        Amount = Amount ?? q.Amount, Anchor = EnumOr(Anchor, q.Anchor), StretchFirst = StretchFirst ?? q.StretchFirst, Bounces = Bounces ?? q.Bounces,
+                    });
                 default:
                     return null;
             }
         }
+
+        /// <summary>움직이는 효과 공통 설정(없으면 그 종류의 기본값).</summary>
+        private AnimatedEffect Animated(AnimatedEffect effect)
+            => effect with { Enabled = Enabled, Easing = EnumOr(Easing, effect.Easing), Repeat = EnumOr(Repeat, effect.Repeat), RepeatCount = RepeatCount ?? effect.RepeatCount };
     }
 
     private sealed class FrameDto

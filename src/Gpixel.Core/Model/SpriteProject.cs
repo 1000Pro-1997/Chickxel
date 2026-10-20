@@ -347,7 +347,7 @@ public sealed class SpriteProject
     /// </summary>
     private void DrawGroup(PixelImage target, Layer group, int frameIndex, Func<Layer, PixelImage?> celOf)
     {
-        var effects = group.EffectsAt(frameIndex);
+        var effects = EffectsAt(group, frameIndex);
         var pad = LayerEffects.Padding(effects, _width, _height);
         PixelImage? buffer = null;
         foreach (var part in ChildrenOf(group))
@@ -357,11 +357,11 @@ public sealed class SpriteProject
             DrawLayerImage(buffer, part, frameIndex, cel, part.Opacity, pad.Left, pad.Top);
         }
         if (buffer is null) return;
-        LayerEffects.Apply(buffer, effects);
+        LayerEffects.Apply(buffer, effects, new Rectangle(pad.Left, pad.Top, _width, _height));
         target.Composite(buffer, -pad.Left, -pad.Top, group.Opacity);
     }
 
-    private static void DrawCel(PixelImage target, Layer layer, int frameIndex, PixelImage? cel)
+    private void DrawCel(PixelImage target, Layer layer, int frameIndex, PixelImage? cel)
     {
         if (cel is null) return;
         byte opacity = layer.IsPart ? (byte)((layer.Opacity * (layer.Parent?.Opacity ?? 255) + 127) / 255) : layer.Opacity;
@@ -369,15 +369,31 @@ public sealed class SpriteProject
     }
 
     /// <summary>셀 하나를 레이어 자기 효과(이 프레임 범위 안인 것)까지 입혀 (부위면 부위 위치) + (<paramref name="ox"/>, <paramref name="oy"/>)에 합성한다.</summary>
-    private static void DrawLayerImage(PixelImage target, Layer layer, int frameIndex, PixelImage cel, byte opacity, int ox, int oy)
+    private void DrawLayerImage(PixelImage target, Layer layer, int frameIndex, PixelImage cel, byte opacity, int ox, int oy)
     {
         if (layer.IsPart)
         {
             ox += layer.PartOffset.X;
             oy += layer.PartOffset.Y;
         }
-        var (image, dx, dy) = LayerEffects.Render(cel, layer.EffectsAt(frameIndex));
+        var (image, dx, dy) = LayerEffects.Render(cel, EffectsAt(layer, frameIndex));
         target.Composite(image, ox + dx, oy + dy, opacity);
+    }
+
+    /// <summary>
+    /// 프레임 <paramref name="frameIndex"/>에 입힐 레이어 효과(<see cref="LayerEffects.At"/>): 범위 밖 효과를 빼고, 움직이는 효과는 그 프레임의 진행과
+    /// 피벗(<see cref="EffectPivot"/>)을 채운다.
+    /// </summary>
+    public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex)
+        => LayerEffects.At(layer.Effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex));
+
+    /// <summary>효과의 "피벗" 자리(효과 원본 왼쪽 위 기준 px): 부위면 부위 피벗(부위 셀 기준), 그 밖에는 프레임 피벗(캔버스 기준).</summary>
+    public PointF EffectPivot(Layer layer, int frameIndex)
+    {
+        var (x, y) = layer.IsPart
+            ? layer.PartPivot.ToLocalPixel(layer.PartSize.Width, layer.PartSize.Height)
+            : GetFramePivot(Math.Clamp(frameIndex, 0, _frames.Count - 1)).ToLocalPixel(_width, _height);
+        return new PointF(x, y);
     }
 
     // ───────────── 스트로크(픽셀 편집) ─────────────
@@ -878,7 +894,7 @@ public sealed class SpriteProject
             {
                 var lowerKey = new CelKey(lower, key.Frame, null);
                 var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom.Clone() : new PixelImage(top.Width, top.Height);
-                var (image, dx, dy) = LayerEffects.Render(top, upper.EffectsAt(_frames.IndexOf(key.Frame)));
+                var (image, dx, dy) = LayerEffects.Render(top, EffectsAt(upper, _frames.IndexOf(key.Frame)));
                 merged.Composite(image, dx, dy, upper.Opacity);
                 _cels[lowerKey] = merged;
                 _cels.Remove(key);
@@ -938,6 +954,69 @@ public sealed class SpriteProject
         layer.Effects = original.ToArray();
         if (commit) SetLayerEffects(index, previewed);
         if (!commit || layer.Effects.SequenceEqual(original)) NotifyChanged(ProjectChange.Layers, markDirty: false);
+    }
+
+    /// <summary>
+    /// 효과 영구 적용(실행취소 한 단계): <see cref="LayerEffects.BakeSet"/>의 효과(고른 효과 + 그 위의 켜진 효과)를 그 효과들이 입혀지는 프레임의
+    /// 저장된 셀마다(부위면 모든 스킨 자신의 셀 — 물려받아 보이는 스킨 셀은 첫 스킨 셀이 구워지므로 그대로) 보이던 그대로 구워 넣고 목록에서 뺀다.
+    /// 아래(뒤) 효과는 효과로 남는다. 일반 레이어는 캔버스 크기로 잘리고, 부위는 번진 그림이 들어가도록 부위 크기·위치를 넓힌다
+    /// (모든 프레임·스킨 셀을 같이 옮기고, 피벗·테두리는 같은 그림 지점 — 자동 배치 그룹이면 다시 배치). 효과가 바꾸지 않는 프레임도 그대로 구운 것으로 친다.
+    /// 그룹(효과가 여러 부위의 합성에 입혀짐)·잠긴 레이어는 <see cref="InvalidOperationException"/>.
+    /// </summary>
+    /// <returns>구운 효과(목록 순서)와 그 프레임 범위(합, null = 모든 프레임), 바꾼 셀 수, 부위를 넓혔는지.</returns>
+    public (IReadOnlyList<LayerEffect> Baked, FrameRange? Frames, int Cels, bool Grown) BakeLayerEffects(int layerIndex, IEnumerable<int> effectIndices)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.IsGroup) throw new InvalidOperationException("그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.");
+        if (layer.Locked || layer.Parent is { Locked: true }) throw new InvalidOperationException("잠긴 레이어에는 효과를 영구 적용할 수 없습니다.");
+        var order = LayerEffects.BakeSet(layer.Effects, effectIndices);
+        if (order.Count == 0) throw new ArgumentException("영구 적용할 효과가 없습니다.", nameof(effectIndices));
+        LayerEffect[] baked = [.. order.Select(i => layer.Effects[i] with { Enabled = true })];
+        LayerEffect[] rest = [.. layer.Effects.Where((_, i) => !order.Contains(i))];
+        FrameRange? range = baked.Any(e => e.Frames is null) ? null
+            : FrameRange.Of(baked.Min(e => e.Frames!.Value.From), baked.Max(e => e.Frames!.Value.To), _frames.Count);
+
+        var size = CelSize(layer);
+        var pad = layer.IsPart ? LayerEffects.Padding(baked, size.Width, size.Height) : default;
+        var keep = new Rectangle(pad.Left, pad.Top, size.Width, size.Height); // 원래 셀 자리(넓힌 그림 기준)
+        var rendered = new List<(CelKey Key, PixelImage Image)>();
+        var area = keep;
+        foreach (var (key, cel) in CelsOf(layer))
+        {
+            int f = _frames.IndexOf(key.Frame);
+            var effects = LayerEffects.At(baked, f, _frames.Count, EffectPivot(layer, f));
+            if (effects.Count == 0) continue;
+            var (image, _, _) = LayerEffects.Render(cel, effects, pad);
+            rendered.Add((key, image));
+            if (layer.IsPart && image.GetOpaqueBounds() is { IsEmpty: false } b) area = Rectangle.Union(area, b);
+        }
+        bool grow = area != keep;
+        if (grow) ValidatePartSize(area.Width, area.Height);
+        Edit("효과 영구 적용", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            if (grow)
+            {
+                int ox = keep.X - area.X, oy = keep.Y - area.Y; // 넓힌 부위 안 원래 셀 자리
+                foreach (var (key, cel) in CelsOf(layer))
+                {
+                    var moved = new PixelImage(area.Width, area.Height);
+                    moved.Blit(cel, ox, oy);
+                    _cels[key] = moved;
+                }
+                var (px, py) = layer.PartPivot.ToLocalPixel(size.Width, size.Height);
+                layer.PartPivot = new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
+                if (!layer.PartBorder.IsNone)
+                {
+                    var b = layer.PartBorder;
+                    layer.PartBorder = new SpriteBorder(b.Left + ox, b.Top + oy, b.Right + area.Right - keep.Right, b.Bottom + area.Bottom - keep.Bottom);
+                }
+                layer.PartOffset = new Point(layer.PartOffset.X - ox, layer.PartOffset.Y - oy);
+                layer.PartSize = area.Size;
+            }
+            foreach (var (key, image) in rendered) _cels[key] = image.Crop(area);
+            layer.Effects = rest;
+        });
+        return (baked, range, rendered.Count, grow);
     }
 
     // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
