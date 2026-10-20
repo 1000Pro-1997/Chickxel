@@ -177,14 +177,35 @@ public sealed class FileBrowserPanel : UserControl
         _watchTimer.Tick += (_, _) => FlushWatcherChanges();
     }
 
-    /// <summary>"파일" 제목 줄 + 오른쪽 끝 새로 고침 아이콘(누르면 한 바퀴 돌며 새로 고침). 폴더 열기는 파일 메뉴(Ctrl+Shift+O·Ctrl+Shift+U).</summary>
+    /// <summary>
+    /// "파일" 제목 줄 + 오른쪽 끝 아이콘(VS Code처럼): 새 픽셀 파일(.gpixel — 새 프로젝트 창) · 새 폴더 · 새로 고침(누르면 한 바퀴 돌며).
+    /// 새 파일·폴더는 트리에서 고른 폴더 안에 만든다. 폴더 열기는 파일 메뉴(Ctrl+Shift+O·Ctrl+Shift+U).
+    /// </summary>
     private Border BuildHeader()
     {
         var header = Ui.Header("파일");
         var title = (TextBlock)header.Child!;
         header.Child = null;
         var icon = new SpinningIcon(VectorIcon.Refresh) { Width = 14, Height = 14 };
-        var refresh = new Button
+        var refresh = HeaderButton(icon, "새로 고침", () =>
+        {
+            icon.Spin();
+            RefreshAll();
+        });
+        var newFolder = HeaderButton(new IconView(VectorIcon.FolderPlus) { Width = 15, Height = 15 }, "새 폴더(고른 폴더 안에)", NewFolder);
+        var newFile = HeaderButton(new IconView(VectorIcon.FilePlus) { Width = 15, Height = 15 }, "새 픽셀 파일(.gpixel, 고른 폴더 안에)", () =>
+        {
+            if (RootFolder is not null) NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder);
+        });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Children = { newFile, newFolder, refresh } };
+        DockPanel.SetDock(buttons, Dock.Right);
+        header.Child = new DockPanel { LastChildFill = true, Children = { buttons, title } };
+        return header;
+    }
+
+    private static Button HeaderButton(Control icon, string tip, Action click)
+    {
+        var b = new Button
         {
             Content = icon,
             Width = 22,
@@ -197,15 +218,39 @@ public sealed class FileBrowserPanel : UserControl
             VerticalContentAlignment = VerticalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Focusable = false,
-        }.Tip("새로 고침");
-        refresh.Click += (_, _) =>
+        }.Tip(tip);
+        b.Click += (_, _) => click();
+        return b;
+    }
+
+    /// <summary>트리에서 고른 폴더(없으면 맨 위 폴더) 안에 새 폴더를 만들고 그 폴더를 고른다.</summary>
+    private void NewFolder()
+    {
+        if ((CurrentFolder ?? RootFolder) is not { } parent || !Directory.Exists(parent)) return;
+        var suggested = "새 폴더";
+        for (int n = 2; Directory.Exists(Path.Combine(parent, suggested)); n++) suggested = $"새 폴더 {n}";
+        if (InputDialog.Ask(this, "새 폴더", $"{parent} 안에 만들 폴더 이름", suggested) is not { } name) return;
+        if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name is "." or "..")
         {
-            icon.Spin();
-            RefreshAll();
-        };
-        DockPanel.SetDock(refresh, Dock.Right);
-        header.Child = new DockPanel { LastChildFill = true, Children = { refresh, title } };
-        return header;
+            Ui.Error(this, $"폴더 이름에 쓸 수 없는 글자가 있습니다: {name}");
+            return;
+        }
+        var path = Path.Combine(parent, name);
+        if (Directory.Exists(path) || File.Exists(path))
+        {
+            Ui.Error(this, $"이미 같은 이름이 있습니다:\n{path}");
+            return;
+        }
+        try
+        {
+            Directory.CreateDirectory(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, $"폴더를 만들지 못했습니다.\n{ex.Message}");
+            return;
+        }
+        RebuildTree(path);
     }
 
     /// <summary>선 아이콘. <see cref="Spin"/>하면 한 바퀴(감속) 돈다.</summary>
