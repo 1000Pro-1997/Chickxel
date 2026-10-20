@@ -104,8 +104,8 @@ public sealed class EditorContext
         set
         {
             if (_tool == value) return;
-            // 변형 중이면 어떤 도구로 바꾸든 먼저 적용한다.
-            if (IsTransforming || (!IsSelectionTool(value) && value != ToolKind.Move)) CommitFloating();
+            // 변형·캔버스 크기 모드면 어떤 도구로 바꾸든 먼저 적용한다.
+            if (IsTransforming || IsCanvasResizing || (!IsSelectionTool(value) && value != ToolKind.Move)) CommitFloating();
             _tool = value;
             ToolChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -351,7 +351,11 @@ public sealed class EditorContext
         // 스트로크 중에는 현재 셀만 바뀐다. 그 밖의 변경(실행취소, 부위 위치·크기, 스킨 고르기·추가·삭제 등)은 모든 캐시를 버린다.
         // 캐시 키(레이어, 프레임)는 그룹의 지금 스킨 기준이므로 스킨이 바뀌면(Layers | Pixels) 반드시 비워야 한다.
         if (e.Change == ProjectChange.Pixels && p.IsStrokeActive) InvalidateCurrent();
-        else if ((e.Change & ~ProjectChange.Path & ~ProjectChange.Settings) != 0) ClearCaches();
+        else if ((e.Change & ~ProjectChange.Path & ~ProjectChange.Settings) != 0)
+        {
+            ClearCaches();
+            SyncCanvasResize();
+        }
         int layer = Math.Clamp(_layer, 0, p.Layers.Count - 1), frame = Math.Clamp(_frame, 0, p.Frames.Count - 1);
         bool currentChanged = layer != _layer || frame != _frame;
         _layer = layer;
@@ -483,21 +487,25 @@ public sealed class EditorContext
 
     /// <summary>
     /// 선택 영역을 바꾸는 동작 전에 부른다: 아직 열린 기록이 없으면 현재 셀 스트로크를 시작한다.
-    /// 변형 중이면 다른 편집이므로 변형을 먼저 적용한다.
+    /// 변형·캔버스 크기 모드면 다른 편집이므로 먼저 적용한다.
     /// </summary>
     public void BeginSelectionEdit()
     {
         if (Project is null) return;
-        if (IsTransforming) CommitFloating();
+        if (IsTransforming || IsCanvasResizing) CommitFloating();
         if (_selectionStrokeOpen) return;
         BeginStroke();
         _selectionStrokeOpen = true;
     }
 
-    /// <summary>떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용한 뒤 내려놓는다(실행취소 한 단계).</summary>
+    /// <summary>
+    /// 떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용한 뒤 내려놓고(실행취소 한 단계),
+    /// 캔버스 크기 모드면 그것을 적용한다(실행취소 한 단계).
+    /// </summary>
     public void CommitFloating()
     {
         if (Project is null) return;
+        ApplyCanvasResize();
         bool transformed = _transform is not null;
         _transform = null;
         if (Selection.IsFloating && _strokeImage is { } img) Selection.Anchor(img);
@@ -566,6 +574,8 @@ public sealed class EditorContext
         if (Project is null) return "열린 프로젝트가 없습니다.";
         if (_transform is not null) return null;
         if (IsGroupSelected) return "그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요.";
+        // 캔버스 크기 모드면 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 시작 전 선택 상태를 저장하기 전에).
+        ApplyCanvasResize();
         if (!CanEdit) return "현재 레이어가 잠겨 있어 변형할 수 없습니다.";
         bool hadStroke = _selectionStrokeOpen;
         var celBefore = hadStroke ? _strokeImage?.Clone() : null;
@@ -672,6 +682,121 @@ public sealed class EditorContext
         Selection.SetFloating(r.Image, r.Region);
         NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ───────────── 캔버스 크기 모드 ─────────────
+
+    /// <summary>캔버스 크기 모드 상태: 원래 그림(현재 프레임 합성), 새 캔버스 자리, 원래 그림이 놓일 사각형, 미리보기.</summary>
+    private sealed class CanvasResizeSession(PixelImage source)
+    {
+        /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음).</summary>
+        public PixelImage Source { get; set; } = source;
+        /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게).</summary>
+        public Rectangle Canvas { get; set; } = new(0, 0, source.Width, source.Height);
+        /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기).</summary>
+        public Rectangle Image { get; set; } = new(0, 0, source.Width, source.Height);
+        /// <summary>결과 미리보기(새 캔버스 크기). 값이 바뀌면 버리고 그릴 때 다시 만든다.</summary>
+        public WriteableBitmap? Preview { get; set; }
+    }
+
+    private CanvasResizeSession? _canvasResize;
+
+    /// <summary>캔버스 크기 모드에 들어가거나 나옴, 값이 바뀜.</summary>
+    public event EventHandler? CanvasResizeChanged;
+
+    /// <summary>캔버스 크기 모드를 적용해 프로젝트가 바뀜(상태 표시줄 알림 글).</summary>
+    public event EventHandler<string>? CanvasResized;
+
+    /// <summary>캔버스 크기 모드(Ctrl+Alt+C)인지.</summary>
+    public bool IsCanvasResizing => _canvasResize is not null;
+
+    /// <summary>원래 캔버스(프레임) 크기.</summary>
+    public Size CanvasResizeSource => _canvasResize?.Source.Size ?? Size.Empty;
+
+    /// <summary>새 캔버스(원래 프레임 좌표, 크기 = 새 캔버스 크기). 모드가 아니면 빈 사각형.</summary>
+    public Rectangle CanvasResizeCanvas => _canvasResize?.Canvas ?? Rectangle.Empty;
+
+    /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표). 모드가 아니면 빈 사각형.</summary>
+    public Rectangle CanvasResizeImage => _canvasResize?.Image ?? Rectangle.Empty;
+
+    /// <summary>적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접으로). 모드가 아니면 null. 호출자는 Dispose하지 않는다.</summary>
+    public WriteableBitmap? CanvasResizeBitmap
+        => _canvasResize is not { } s ? null
+            : s.Preview ??= ImageUtil.ToBitmap(ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image));
+
+    /// <summary>
+    /// 캔버스 크기 모드에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 프레임 합성 전체(부위를 골랐어도)를 미리보기로 보인다.
+    /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 모드여도) null.
+    /// </summary>
+    public string? BeginCanvasResize()
+    {
+        if (Project is null) return "열린 프로젝트가 없습니다.";
+        if (_canvasResize is not null) return null;
+        CommitFloating();
+        if (CompositeEntry(_frame) is not { } entry) return "현재 프레임이 없습니다.";
+        _canvasResize = new CanvasResizeSession(entry.Image);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+        return null;
+    }
+
+    /// <summary>새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞춘다.</summary>
+    public void SetCanvasResize(Rectangle canvas, Rectangle image)
+    {
+        if (_canvasResize is not { } s) return;
+        static int Clamp(int v) => Math.Clamp(v, 1, PixelImage.MaxSize);
+        canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
+        image.Size = new Size(Clamp(image.Width), Clamp(image.Height));
+        if (canvas == s.Canvas && image == s.Image) return;
+        s.Canvas = canvas;
+        s.Image = image;
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>캔버스 크기 모드를 적용한다(바뀐 것이 있으면 실행취소 한 단계).</summary>
+    public void CommitCanvasResize() => CommitFloating();
+
+    /// <summary>캔버스 크기 모드를 취소한다(프로젝트는 그대로).</summary>
+    public void CancelCanvasResize()
+    {
+        if (_canvasResize is not { } s) return;
+        _canvasResize = null;
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ApplyCanvasResize()
+    {
+        if (_canvasResize is not { } s || Project is not { } p) return;
+        _canvasResize = null;
+        DropCanvasResizePreview(s);
+        var (canvas, image) = (s.Canvas.Size, s.Image);
+        bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size);
+        if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+        if (!changed) return;
+        bool scaled = image.Size != s.Source.Size;
+        CanvasResized?.Invoke(this, $"캔버스 크기: {canvas.Width}×{canvas.Height}" + (scaled ? $" · 그림 {image.Width}×{image.Height}" : ""));
+    }
+
+    /// <summary>모드 중에 프로젝트가 바뀜(레이어 보이기 등): 캔버스 크기가 그대로면 미리보기 원본을 새 합성으로, 바뀌었으면 모드를 취소한다.</summary>
+    private void SyncCanvasResize()
+    {
+        if (_canvasResize is not { } s || Project is not { } p) return;
+        if (p.Size != s.Source.Size || CompositeEntry(_frame) is not { } entry)
+        {
+            CancelCanvasResize();
+            return;
+        }
+        s.Source = entry.Image;
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static void DropCanvasResizePreview(CanvasResizeSession s)
+    {
+        s.Preview?.Dispose();
+        s.Preview = null;
     }
 
     /// <summary>구조 편집(레이어·프레임·태그·설정) 전에 열린 그리기를 마무리한다.</summary>

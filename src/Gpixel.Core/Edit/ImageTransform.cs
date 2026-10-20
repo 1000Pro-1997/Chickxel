@@ -1,3 +1,4 @@
+using System.Drawing;
 using Gpixel.Core.Model;
 
 namespace Gpixel.Core.Edit;
@@ -55,6 +56,28 @@ public static class ImageTransform
     /// <summary>캔버스 크기 바꾸기(<see cref="PixelImage.ResizeCanvas"/>와 같음).</summary>
     public static PixelImage ResizeCanvas(PixelImage src, int width, int height, Anchor anchor, Color32 fill = default)
         => src.ResizeCanvas(width, height, anchor, fill);
+
+    /// <summary>
+    /// 캔버스 크기 바꾸기 + 크기 바꾸기(최근접): <paramref name="width"/>×<paramref name="height"/> 새 이미지의 <paramref name="rect"/> 자리에
+    /// 원본을 rect 크기로 늘이거나 줄여 놓는다(새 이미지 밖은 잘리고 나머지는 투명). 집는 픽셀은 <see cref="ScaleNearest"/>와 같고, 보이는 부분만 계산한다.
+    /// </summary>
+    public static PixelImage ResizeCanvasScaled(PixelImage src, int width, int height, Rectangle rect)
+    {
+        var dst = new PixelImage(width, height);
+        if (rect.Width == src.Width && rect.Height == src.Height)
+        {
+            dst.Blit(src, rect.X, rect.Y);
+            return dst;
+        }
+        var r = Rectangle.Intersect(rect, dst.Bounds);
+        for (int y = r.Top; y < r.Bottom; y++)
+        {
+            int row = (int)((long)(y - rect.Y) * src.Height / rect.Height) * src.Width;
+            for (int x = r.Left; x < r.Right; x++)
+                dst.Pixels[y * width + x] = src.Pixels[row + (int)((long)(x - rect.X) * src.Width / rect.Width)];
+        }
+        return dst;
+    }
 
     /// <summary>정수 배율 확대/축소(최근접). 축소는 각 칸의 왼쪽 위 픽셀을 쓴다.</summary>
     public static PixelImage ScaleNearest(PixelImage src, int width, int height)

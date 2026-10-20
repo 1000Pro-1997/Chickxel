@@ -146,13 +146,13 @@ public sealed class ImportKindDialog : DialogBase
     }
 }
 
-/// <summary>캔버스 크기 바꾸기: 새 크기 + 기존 그림 기준점(9방향).</summary>
+/// <summary>부위 크기 바꾸기: 새 크기 + 기존 그림 기준점(9방향). 캔버스 크기는 캔버스 크기 모드(Ctrl+Alt+C)로 바꾼다.</summary>
 public sealed class ResizeDialog : DialogBase
 {
     private readonly NumericUpDown _w, _h;
     private readonly AnchorPicker _anchor = new();
 
-    public ResizeDialog(int width, int height, string title = "캔버스 크기") : base(title)
+    public ResizeDialog(int width, int height, string title) : base(title)
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
@@ -208,6 +208,13 @@ public sealed class AnchorPicker : Grid
     }
 
     public Gpixel.Core.Model.Anchor Value { get; private set; }
+
+    /// <summary>눌린 단추만 바꾼다(<see cref="Changed"/> 없음). null = 아무것도 눌리지 않음(<see cref="Value"/>는 그대로).</summary>
+    public void Show(Gpixel.Core.Model.Anchor? value)
+    {
+        if (value is { } v) Value = v;
+        for (int k = 0; k < 9; k++) _buttons[k].IsChecked = k == (int?)value;
+    }
 
     public event EventHandler? Changed;
 }

@@ -306,6 +306,109 @@ public class PartsTests
         Assert.Equal(size, part.PartSize);
     }
 
+    /// <summary>피벗이 가리키는 칸 안 픽셀 좌표(0~1 ↔ 픽셀 변환의 float 오차는 무시).</summary>
+    private static void AssertPivotAt(Pivot pivot, int width, int height, float x, float y)
+    {
+        var (px, py) = pivot.ToLocalPixel(width, height);
+        Assert.Equal(x, px, 3);
+        Assert.Equal(y, py, 3);
+    }
+
+    [Fact]
+    public void ResizeCanvasAndScale_ExtendWithOffset_KeepsPixelsAtShiftedPosition()
+    {
+        var p = new SpriteProject(4, 3);
+        Paint(p, 0, 0, 0, 0, Red);
+        Paint(p, 0, 0, 3, 2, Blue);
+        p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = Pivot.BottomCenter); // 픽셀 (2,3)
+        int depth = p.History.UndoCount;
+
+        p.ResizeCanvasAndScale(7, 6, new Rectangle(2, 1, 4, 3));
+        Assert.Equal((7, 6), (p.Width, p.Height));
+        Assert.Equal(depth + 1, p.History.UndoCount);
+        var cel = p.GetCel(0, 0)!;
+        Assert.Equal(Red, cel.Get(2, 1));
+        Assert.Equal(Blue, cel.Get(5, 3));
+        Assert.Equal(Color32.Transparent, cel.Get(0, 0));
+        AssertPivotAt(p.Sprite.DefaultPivot, 7, 6, 4, 4);
+
+        // 같은 크기·자리면 아무것도 하지 않는다.
+        p.ResizeCanvasAndScale(7, 6, new Rectangle(0, 0, 7, 6));
+        Assert.Equal(depth + 1, p.History.UndoCount);
+        p.Undo();
+        Assert.Equal((4, 3), (p.Width, p.Height));
+        Assert.Equal(Blue, p.GetCel(0, 0)!.Get(3, 2));
+    }
+
+    [Fact]
+    public void ResizeCanvasAndScale_DoubleScale_MapsPixelsNearest_AndCropsOutside()
+    {
+        var p = new SpriteProject(2, 2);
+        Color32[] colors = [Red, Green, Blue, Color32.Black];
+        for (int i = 0; i < 4; i++) Paint(p, 0, 0, i % 2, i / 2, colors[i]);
+        p.SetFramePivot(0, new Pivot(0.5f, 0.5f)); // 픽셀 (1,1)
+
+        p.ResizeCanvasAndScale(5, 5, new Rectangle(1, 1, 4, 4));
+        var cel = p.GetCel(0, 0)!;
+        for (int y = 0; y < 5; y++)
+            for (int x = 0; x < 5; x++)
+            {
+                var expected = x == 0 || y == 0 ? Color32.Transparent : colors[(y - 1) / 2 * 2 + (x - 1) / 2];
+                Assert.Equal(expected, cel.Get(x, y));
+            }
+        AssertPivotAt(p.Frames[0].Pivot!.Value, 5, 5, 3, 3); // 같은 그림 지점(가운데)
+        p.Undo();
+
+        // 3배로 키우고 캔버스 밖은 잘린다: 왼쪽 위 3×3이 빨강, (3,3)부터 검정
+        p.ResizeCanvasAndScale(4, 4, new Rectangle(0, 0, 6, 6));
+        cel = p.GetCel(0, 0)!;
+        Assert.Equal(Red, cel.Get(2, 2));
+        Assert.Equal(Green, cel.Get(3, 0));
+        Assert.Equal(Color32.Black, cel.Get(3, 3));
+    }
+
+    [Fact]
+    public void ResizeCanvasAndScale_ScalesParts_AllSkins_Border_AndPivotPoints()
+    {
+        var p = new SpriteProject(8, 8);
+        var g = p.AddGroup("몸");
+        var part = p.AddPart(g, "팔", 2, 3, new Point(1, 2));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 1, 0, Red);
+        var baseSkin = g.BaseSkin!;
+        var knight = p.AddSkin(g, "knight");
+        p.SetActiveSkin(g, knight);
+        Paint(p, pi, 0, 0, 2, Blue);
+        p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 2));
+        p.SetPartPivot(pi, new Pivot(0.25f, 0f));
+        p.Edit("피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = Pivot.BottomCenter); // 픽셀 (4,8)
+        p.SetActiveSkin(g, baseSkin);
+
+        // 2배 + 왼쪽 위 여백 (2,1)
+        p.ResizeCanvasAndScale(20, 18, new Rectangle(2, 1, 16, 16));
+        Assert.Equal(new Rectangle(4, 5, 4, 6), part.PartRect);
+        Assert.Equal(new SpriteBorder(2, 2, 2, 4), part.PartBorder);
+        Assert.Equal(new Pivot(0.25f, 0f), part.PartPivot);
+        AssertPivotAt(p.Sprite.DefaultPivot, 20, 18, 10, 17);
+        var baseCel = p.GetSkinCel(part, p.Frames[0], baseSkin)!;
+        Assert.Equal(new Size(4, 6), baseCel.Size);
+        foreach (var (x, y) in new[] { (2, 0), (3, 0), (2, 1), (3, 1) }) Assert.Equal(Red, baseCel.Get(x, y));
+        Assert.Equal(Color32.Transparent, baseCel.Get(1, 0));
+        var knightCel = p.GetSkinCel(part, p.Frames[0], knight)!;
+        Assert.Equal(new Size(4, 6), knightCel.Size);
+        foreach (var (x, y) in new[] { (0, 4), (1, 4), (0, 5), (1, 5) }) Assert.Equal(Blue, knightCel.Get(x, y));
+        // 합성에서도 같은 자리: 원래 (2,2)의 빨강 → (2 + 2*2, 1 + 2*2)부터 2×2
+        Assert.Equal(Red, p.Flatten(0).Get(6, 5));
+        p.Undo();
+        Assert.Equal(new Rectangle(1, 2, 2, 3), part.PartRect);
+        Assert.Equal(new SpriteBorder(1, 1, 1, 2), part.PartBorder);
+
+        // 반으로(가장자리마다 반올림, 최소 1): 왼쪽 1→1, 오른쪽 3→2, 위 2→1, 아래 5→3
+        p.ResizeCanvasAndScale(4, 4, new Rectangle(0, 0, 4, 4));
+        Assert.Equal(new Rectangle(1, 1, 1, 2), part.PartRect);
+        Assert.Equal(new SpriteBorder(1, 1, 0, 1), part.PartBorder);
+    }
+
     // ───────────── 실행취소 ─────────────
 
     [Fact]

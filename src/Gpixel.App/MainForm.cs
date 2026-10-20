@@ -603,7 +603,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             DocCmd("외곽선 추가(대각 포함)", () => AddOutline(true)),
             DocCmd("색 바꾸기…", ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
             new Separator(),
-            DocCmd("캔버스 크기…", ResizeCanvas, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
+            DocCmd("캔버스 크기…", BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", _colors.PaletteFromImage),
@@ -619,12 +619,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         }, (Key.Enter, NoMods));
         Bind("편집", "선택 해제(캔버스)", KeyScope.Canvas, () =>
         {
-            if (_ctx.IsTransforming)
-            {
-                _ctx.CancelTransform();
-                ShowMessage("변형 취소");
-            }
-            else Deselect();
+            if (!CancelMode()) Deselect();
             return true;
         }, (Key.Escape, NoMods));
         foreach (var (k, dx, dy, dir) in new[] { (Key.Left, -1, 0, "왼쪽으로"), (Key.Right, 1, 0, "오른쪽으로"), (Key.Up, 0, -1, "위로"), (Key.Down, 0, 1, "아래로") })
@@ -924,6 +919,12 @@ public sealed class MainForm : Window, Ai.IAiHost
         _ctx.ToolChanged += (_, _) => UpdateToolUi();
         _ctx.ToolOptionsChanged += (_, _) => UpdateToolUi();
         _ctx.OnionSkinChanged += (_, _) => UpdateToolUi();
+        // 캔버스 크기 모드를 적용하면(확인·Enter, 다른 편집 전 자동 적용) 새 크기를 화면에 맞춘다.
+        _ctx.CanvasResized += (_, message) =>
+        {
+            _canvas.FitToWindow();
+            ShowMessage(message);
+        };
 
         _canvas.ZoomChanged += (_, _) => { _settings.Zoom = _canvas.Zoom; UpdateStatus(); };
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
@@ -1967,7 +1968,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         _autoSave.Stop();
         if (!_settings.AutoSave || _ctx.Project is not { IsDirty: true, Path: { } path } p || !File.Exists(path)) return;
-        if (p.IsStrokeActive || p.History.InGroup || _canvas.IsDragging || _ctx.Selection.IsFloating || _ctx.IsTransforming)
+        if (p.IsStrokeActive || p.History.InGroup || _canvas.IsDragging || _ctx.Selection.IsFloating || _ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
             _autoSave.Start();
             return;
@@ -2227,15 +2228,25 @@ public sealed class MainForm : Window, Ai.IAiHost
             _browser.RestoreLastDeleted();
             return;
         }
-        // 변형 중이면 변형 전으로 되돌린다(Esc와 같음).
+        // 변형·캔버스 크기 모드면 시작 전으로 되돌린다(Esc와 같음).
+        if (CancelMode()) return;
+        var label = _ctx.Project?.History.UndoLabel;
+        if (_ctx.UndoStep()) ShowMessage($"실행취소: {label}");
+    }
+
+    /// <summary>변형·캔버스 크기 모드면 취소하고 알린다(Esc·Ctrl+Z). 모드가 아니었으면 false.</summary>
+    private bool CancelMode()
+    {
         if (_ctx.IsTransforming)
         {
             _ctx.CancelTransform();
             ShowMessage("변형 취소");
-            return;
+            return true;
         }
-        var label = _ctx.Project?.History.UndoLabel;
-        if (_ctx.UndoStep()) ShowMessage($"실행취소: {label}");
+        if (!_ctx.IsCanvasResizing) return false;
+        _ctx.CancelCanvasResize();
+        ShowMessage("캔버스 크기 취소");
+        return true;
     }
 
     private void Redo()
@@ -2497,16 +2508,19 @@ public sealed class MainForm : Window, Ai.IAiHost
         ShowMessage($"격자로 나눔: 프레임 {split.Frames.Count}개 ({split.Width}×{split.Height}) — 태그를 만들어 애니메이션을 정하세요.");
     }
 
-    /// <summary>캔버스(프레임) 크기 바꾸기. 부위 크기는 "부위 크기…"로 바꾼다.</summary>
-    private void ResizeCanvas()
+    /// <summary>
+    /// 캔버스 크기 모드(Ctrl+Alt+C): 캔버스 손잡이와 도구 설정 숫자로 새 크기, 그림 자리·크기를 정한다. Enter·확인 = 적용, Esc·Ctrl+Z = 취소.
+    /// 부위 크기는 "부위 크기…"로 바꾼다.
+    /// </summary>
+    private void BeginCanvasResize()
     {
-        var p = _ctx.Project!;
-        var dlg = new ResizeDialog(p.Width, p.Height);
-        if (dlg.ShowDialog(this) != DialogResult.OK) return;
-        if (dlg.NewWidth == p.Width && dlg.NewHeight == p.Height) return;
-        _ctx.Structural(() => p.ResizeCanvas(dlg.NewWidth, dlg.NewHeight, dlg.ImageAnchor));
-        _canvas.FitToWindow();
-        ShowMessage($"캔버스 크기: {p.Width}×{p.Height}");
+        if (_ctx.BeginCanvasResize() is { } error)
+        {
+            ShowMessage(error);
+            return;
+        }
+        ShowMessage("캔버스 크기: 손잡이 = 가장자리, Ctrl+끌기 = 그림 크기도 함께(Shift 비율 유지), 그림 안쪽 = 옮기기 — Enter 확인, Esc 취소");
+        _canvas.Focus();
     }
 
     // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────

@@ -1685,31 +1685,74 @@ public sealed class SpriteProject
 
     /// <summary>
     /// 캔버스 크기 바꾸기: 일반 레이어 셀을 <paramref name="anchor"/> 기준으로 옮기고, 부위는 위치만 같은 만큼 옮기며(부위 셀은 그대로),
-    /// 피벗이 같은 그림 지점을 가리키도록 보정한다.
+    /// 피벗이 같은 그림 지점을 가리키도록 보정한다(<see cref="ResizeCanvasAndScale"/>의 배율 1).
     /// </summary>
     public void ResizeCanvas(int width, int height, Anchor anchor)
     {
-        ValidateSize(width, height);
-        if (width == _width && height == _height) return;
         var (ox, oy) = PixelImage.AnchorOffset(_width, _height, width, height, anchor);
+        ResizeCanvasAndScale(width, height, new Rectangle(ox, oy, _width, _height));
+    }
+
+    /// <summary>
+    /// 캔버스 크기 바꾸기 + 그림 크기 바꾸기(실행취소 한 단계): 새 캔버스 <paramref name="width"/>×<paramref name="height"/>에서 지금 캔버스 전체 그림이
+    /// <paramref name="image"/>(새 캔버스 좌표) 자리에 그 크기로 놓인다. 일반 레이어 셀은 최근접으로 늘이거나 줄여 놓고(캔버스 밖은 잘림),
+    /// 부위는 위치·크기를 같은 비율로(가장자리마다 반올림, 최소 1) 바꿔 옮기며 모든 스킨의 셀을 새 부위 크기로 최근접, 9-slice 테두리도 비율대로 바꾼다.
+    /// 기본·프레임 피벗은 같은 그림 지점을 가리키도록 옮긴다(부위 피벗은 부위 기준이라 그대로). 그림 크기가 같으면 부위는 위치만 옮긴다.
+    /// </summary>
+    public void ResizeCanvasAndScale(int width, int height, Rectangle image)
+    {
+        ValidateSize(width, height);
+        if (image.Width < 1 || image.Height < 1 || image.Width > PixelImage.MaxSize || image.Height > PixelImage.MaxSize)
+            throw new ArgumentOutOfRangeException(nameof(image), $"그림 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {image.Width}x{image.Height}");
         int oldW = _width, oldH = _height;
-        Pivot Shift(Pivot p)
+        if (width == oldW && height == oldH && image == new Rectangle(0, 0, oldW, oldH)) return;
+        float sx = (float)image.Width / oldW, sy = (float)image.Height / oldH;
+        Pivot Map(Pivot p)
         {
             var (px, py) = p.ToLocalPixel(oldW, oldH);
-            return new Pivot((px + ox) / width, 1f - (py + oy) / height);
+            return new Pivot((px * sx + image.X) / width, 1f - (py * sy + image.Y) / height);
         }
+        // 원래 캔버스 좌표 → 새 캔버스 좌표(반올림). 부위 가장자리를 따로 옮겨 맞닿은 부위는 계속 맞닿는다.
+        int MapX(int x) => image.X + (int)Math.Floor((double)x * image.Width / oldW + 0.5);
+        int MapY(int y) => image.Y + (int)Math.Floor((double)y * image.Height / oldH + 0.5);
+        var parts = _layers.Where(l => l.IsPart).Select(part =>
+        {
+            var r = part.PartRect;
+            int left = MapX(r.Left), top = MapY(r.Top);
+            int w = Math.Clamp(MapX(r.Right) - left, 1, PixelImage.MaxSize), h = Math.Clamp(MapY(r.Bottom) - top, 1, PixelImage.MaxSize);
+            return (Part: part, Rect: new Rectangle(left, top, w, h));
+        }).ToList();
         Edit("캔버스 크기", ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
             foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).ToList())
-                _cels[key] = _cels[key].ResizeCanvas(width, height, anchor);
-            foreach (var part in _layers.Where(l => l.IsPart))
-                part.PartOffset = new Point(part.PartOffset.X + ox, part.PartOffset.Y + oy);
+                _cels[key] = ImageTransform.ResizeCanvasScaled(_cels[key], width, height, image);
+            foreach (var (part, rect) in parts)
+            {
+                var old = part.PartSize;
+                part.PartOffset = rect.Location;
+                if (rect.Size == old) continue;
+                foreach (var (key, cel) in CelsOf(part)) _cels[key] = ImageTransform.ScaleNearest(cel, rect.Width, rect.Height);
+                part.PartSize = rect.Size;
+                part.PartBorder = ScaleBorder(part.PartBorder, old, rect.Size);
+            }
             _width = width;
             _height = height;
-            Sprite.DefaultPivot = Shift(Sprite.DefaultPivot);
+            Sprite.DefaultPivot = Map(Sprite.DefaultPivot);
             foreach (var f in _frames)
-                if (f.Pivot is { } fp) f.Pivot = Shift(fp);
+                if (f.Pivot is { } fp) f.Pivot = Map(fp);
         });
+    }
+
+    /// <summary>9-slice 테두리를 부위 크기 비율대로(반올림) 바꾼다. 마주 보는 두 변의 합은 새 크기를 넘지 않는다.</summary>
+    private static SpriteBorder ScaleBorder(SpriteBorder b, Size from, Size to)
+    {
+        if (b.IsNone) return b;
+        static int Scale(int v, int from, int to) => (int)Math.Floor((double)v * to / from + 0.5);
+        int left = Math.Min(Scale(b.Left, from.Width, to.Width), to.Width);
+        int right = Math.Min(Scale(b.Right, from.Width, to.Width), to.Width - left);
+        int top = Math.Min(Scale(b.Top, from.Height, to.Height), to.Height);
+        int bottom = Math.Min(Scale(b.Bottom, from.Height, to.Height), to.Height - top);
+        return new SpriteBorder(left, top, right, bottom);
     }
 
     /// <summary>모든 셀 좌우 뒤집기(피벗·부위 위치·테두리도 뒤집음).</summary>

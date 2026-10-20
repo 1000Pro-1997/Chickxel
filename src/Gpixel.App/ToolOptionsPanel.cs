@@ -7,6 +7,7 @@ namespace Gpixel.App;
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
 /// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
+/// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로, 그림 가로·세로(%)·위치, 기준점 9방향, 비율 유지, 확인/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
 /// </summary>
@@ -73,6 +74,13 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly NumericUpDown _tfAngle, _tfScaleX, _tfScaleY, _tfX, _tfY;
     private readonly ComboBox _tfResample;
     private readonly TextBlock _tfInfo;
+
+    // 캔버스 크기 모드
+    private readonly Border _canvasResizeBox;
+    private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
+    private readonly TextBlock _crWidthPercent, _crHeightPercent;
+    private readonly CheckBox _crKeepRatio;
+    private readonly AnchorPicker _crAnchor = new();
 
     public ToolOptionsPanel(EditorContext ctx)
     {
@@ -310,7 +318,46 @@ public sealed class ToolOptionsPanel : UserControl
             Ui.Row(tfApply, tfCancel),
             tfHelp));
 
-        var stack = Ui.Stack(_transformBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint);
+        // ── 캔버스 크기 모드(Ctrl+Alt+C): 숫자는 캔버스 손잡이와 함께 움직인다.
+        _crKeepRatio = Ui.Check("그림 비율 유지", true).Tip("그림 가로·세로 칸 하나를 바꾸면 다른 쪽도 원래 그림 비율대로 맞춥니다");
+        _crKeepRatio.Focusable = false;
+        _crWidth = CanvasResizeNum(1, "새 캔버스 가로(px) — 오른쪽 가장자리가 움직이고 그림은 제자리",
+            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Width = v }, _ctx.CanvasResizeImage));
+        _crHeight = CanvasResizeNum(1, "새 캔버스 세로(px) — 아래 가장자리가 움직이고 그림은 제자리",
+            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Height = v }, _ctx.CanvasResizeImage));
+        _crImageWidth = CanvasResizeNum(1, "그림 가로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
+            v => SetCanvasResizeImage(i => i with { Width = v, Height = _crKeepRatio.On() ? RatioHeight(v) : i.Height }));
+        _crImageHeight = CanvasResizeNum(1, "그림 세로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
+            v => SetCanvasResizeImage(i => i with { Height = v, Width = _crKeepRatio.On() ? RatioWidth(v) : i.Width }));
+        _crX = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 X(새 캔버스 기준, 음수 = 왼쪽이 잘림)",
+            v => SetCanvasResizeImage(i => i with { X = v }));
+        _crY = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 Y(새 캔버스 기준, 음수 = 위가 잘림)",
+            v => SetCanvasResizeImage(i => i with { Y = v }));
+        _crWidthPercent = Dim("");
+        _crHeightPercent = Dim("");
+        _crAnchor.Tip("그림을 지금 캔버스 안의 이 자리(9방향)에 놓습니다");
+        _crAnchor.Changed += (_, _) =>
+        {
+            if (_updating) return;
+            var c = _ctx.CanvasResizeCanvas;
+            var (x, y) = PixelImage.AnchorOffset(_ctx.CanvasResizeImage.Width, _ctx.CanvasResizeImage.Height, c.Width, c.Height, _crAnchor.Value);
+            SetCanvasResizeImage(i => i with { X = x, Y = y });
+        };
+        var crApply = Ui.Button("확인", (_, _) => _ctx.CommitCanvasResize()).Tip("캔버스 크기를 적용합니다(Enter) — 실행취소 한 단계");
+        var crCancel = Ui.Button("취소", (_, _) => _ctx.CancelCanvasResize()).Tip("바꾸지 않고 끝냅니다(Esc, Ctrl+Z)");
+        var crHelp = Dim("캔버스: 네모 손잡이 = 그 가장자리 옮기기(그림은 제자리, 여백이 늘거나 잘림), Ctrl+끌기 = 그림 가장자리도 함께(여백 그대로 그림 크기, 모서리 + Shift 비율 유지), 그림 안쪽 끌기 = 옮기기. 방향키 = 그림 1px 옮기기.");
+        crHelp.TextWrapping = TextWrapping.Wrap;
+        _canvasResizeBox = Ui.Group("캔버스 크기", Ui.Stack(
+            Ui.Row(Ui.Label("캔버스 가로"), _crWidth, Ui.Label("세로"), _crHeight),
+            Ui.Row(Ui.Label("그림 가로"), _crImageWidth, _crWidthPercent),
+            Ui.Row(Ui.Label("그림 세로"), _crImageHeight, _crHeightPercent),
+            _crKeepRatio,
+            Ui.Row(Ui.Label("그림 위치 X"), _crX, Ui.Label("Y"), _crY),
+            Ui.Row(Ui.Label("기준점"), _crAnchor),
+            Ui.Row(crApply, crCancel),
+            crHelp));
+
+        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint);
         var header = Ui.Header("도구 설정");
         _title = (TextBlock)header.Child!;
         var root = new DockPanel();
@@ -325,6 +372,11 @@ public sealed class ToolOptionsPanel : UserControl
             // 들어가고 나올 때는 보이는 묶음을 바꾸고, 그 밖(끄는 중 등)은 숫자만 맞춘다.
             if (_transformBox.IsVisible != _ctx.IsTransforming) Refresh();
             else RefreshTransform();
+        };
+        ctx.CanvasResizeChanged += (_, _) =>
+        {
+            if (_canvasResizeBox.IsVisible != _ctx.IsCanvasResizing) Refresh();
+            else RefreshCanvasResize();
         };
         ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); };
         ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
@@ -377,6 +429,33 @@ public sealed class ToolOptionsPanel : UserControl
         num.Tip(tip);
         num.ValueChanged += (_, _) => { if (!_updating && num.Value is { } v) apply((double)v); };
         return num;
+    }
+
+    /// <summary>캔버스 크기 모드 숫자 칸(정수, 좌우로 끌어 바꾸기). 바꾸면 바로 캔버스 크기 모드에 반영한다.</summary>
+    private NumericUpDown CanvasResizeNum(int min, string tip, Action<int> apply)
+    {
+        var num = Ui.Num(min, PixelImage.MaxSize, 1, 60);
+        num.Tip(tip);
+        num.ValueChanged += (_, _) => { if (!_updating && num.Value is { } v) apply((int)v); };
+        return num;
+    }
+
+    /// <summary>캔버스는 그대로 두고 그림 사각형(새 캔버스 좌표)만 바꾼다.</summary>
+    private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
+        => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
+
+    /// <summary>원래 그림 비율로 그림 가로 <paramref name="width"/>에 맞는 세로(1 이상).</summary>
+    private int RatioHeight(int width)
+    {
+        var s = _ctx.CanvasResizeSource;
+        return Math.Max(1, (int)Math.Round((double)width * s.Height / s.Width));
+    }
+
+    /// <summary>원래 그림 비율로 그림 세로 <paramref name="height"/>에 맞는 가로(1 이상).</summary>
+    private int RatioWidth(int height)
+    {
+        var s = _ctx.CanvasResizeSource;
+        return Math.Max(1, (int)Math.Round((double)height * s.Width / s.Height));
     }
 
     /// <summary>바에서 고른 색 정지점을 바꾼다.</summary>
@@ -478,10 +557,11 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _hint.IsVisible = _hint.Text.Length > 0;
         _transformBox.IsVisible = _ctx.IsTransforming;
-        if (_ctx.IsTransforming)
+        _canvasResizeBox.IsVisible = _ctx.IsCanvasResizing;
+        if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
-            // 변형 중에는 변형 값만 보인다.
-            _title.Text = "도구 설정 · 변형";
+            // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
+            _title.Text = _ctx.IsTransforming ? "도구 설정 · 변형" : "도구 설정 · 캔버스 크기";
             foreach (var box in new Control[] { _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -521,6 +601,7 @@ public sealed class ToolOptionsPanel : UserControl
         RefreshPivot();
         RefreshSlice();
         RefreshTransform();
+        RefreshCanvasResize();
     }
 
     // ───────────── 변형 ─────────────
@@ -546,6 +627,37 @@ public sealed class ToolOptionsPanel : UserControl
             bool fallback = _ctx.TransformResample == ResampleMode.RotSprite && (long)src.Width * src.Height > FreeTransform.MaxRotSpriteArea;
             _tfInfo.Text = $"원본 {src.Width}×{src.Height} → {dst.Width}×{dst.Height} px"
                            + (fallback ? " · 큰 영역이라 최근접으로 집습니다" : "");
+        }
+        finally
+        {
+            _updating = wasUpdating;
+        }
+    }
+
+    // ───────────── 캔버스 크기 ─────────────
+
+    /// <summary>캔버스 크기 모드 값을 숫자 칸·기준점에 보인다(모드일 때만). 그림 자리가 9방향 중 하나와 맞으면 그 단추가 눌린다.</summary>
+    private void RefreshCanvasResize()
+    {
+        if (!_canvasResizeBox.IsVisible || !_ctx.IsCanvasResizing) return;
+        var c = _ctx.CanvasResizeCanvas;
+        var i = _ctx.CanvasResizeImage;
+        var s = _ctx.CanvasResizeSource;
+        bool wasUpdating = _updating;
+        _updating = true;
+        try
+        {
+            _crWidth.Value = c.Width;
+            _crHeight.Value = c.Height;
+            _crImageWidth.Value = i.Width;
+            _crImageHeight.Value = i.Height;
+            _crX.Value = Math.Clamp(i.X, _crX.Minimum, _crX.Maximum);
+            _crY.Value = Math.Clamp(i.Y, _crY.Minimum, _crY.Maximum);
+            _crWidthPercent.Text = $"{i.Width * 100.0 / s.Width:0.#}%";
+            _crHeightPercent.Text = $"{i.Height * 100.0 / s.Height:0.#}%";
+            var anchors = Enum.GetValues<Anchor>();
+            int match = Array.FindIndex(anchors, a => PixelImage.AnchorOffset(i.Width, i.Height, c.Width, c.Height, a) == (i.X, i.Y));
+            _crAnchor.Show(match < 0 ? null : anchors[match]);
         }
         finally
         {
