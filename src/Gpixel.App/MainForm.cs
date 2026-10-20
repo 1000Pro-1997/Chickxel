@@ -412,7 +412,12 @@ public sealed class MainForm : Window, Ai.IAiHost
         _cbUpdate.Margin = new Thickness(1, 1, 6, 1);
         _cbUpdate.IsVisible = false;
         _cbGrid = Toggle(right, "격자", "픽셀 격자(6배 이상) (Ctrl+G)", () => SetPixelGrid(!_canvas.ShowPixelGrid));
-        _cbTiles = Toggle(right, "타일 격자", "타일 격자 (Ctrl+Shift+G)", () => SetTileGrid(!_canvas.ShowTileGrid));
+        _cbTiles = Toggle(right, "타일 격자", "타일 격자 (Ctrl+Shift+G) · 우클릭 = 크기·색", () => SetTileGrid(!_canvas.ShowTileGrid));
+        _cbTiles.ContextRequested += (_, e) =>
+        {
+            e.Handled = true;
+            TileGridFlyout().ShowAt(_cbTiles);
+        };
         _cbTiled = Toggle(right, "타일 모드", "반복해 보기(크지 않으면 5×5, 128px 넘으면 3×3)·이어 그리기 (Ctrl+Shift+T)", () => SetTiledMode(!_canvas.TiledMode));
         _cbPivot = Toggle(right, "피벗", "피벗 표시", () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, "양파", "양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J)", () => _ctx.OnionSkin = !_ctx.OnionSkin);
@@ -1434,6 +1439,43 @@ public sealed class MainForm : Window, Ai.IAiHost
         _canvas.TileGridColor = dlg.TileGridColor.ToColor();
         _canvas.TileSize = dlg.TileSize;
         UpdateToolUi();
+    }
+
+    /// <summary>"타일 격자" 단추 우클릭 팝업: 타일 가로·세로·색을 바로 바꾼다(꺼져 있으면 켬). 값은 격자 설정 창과 같이 앱 설정에 저장.</summary>
+    private Flyout TileGridFlyout()
+    {
+        var size = _canvas.TileSize;
+        var w = Ui.Num(1, 4096, size.Width, 64);
+        var h = Ui.Num(1, 4096, size.Height, 64);
+        var color = new ColorField(_canvas.TileGridColor.ToColor32());
+        void Apply()
+        {
+            _canvas.TileSize = new Size((int)w.NumValue(), (int)h.NumValue());
+            _canvas.TileGridColor = color.Color.ToColor();
+            if (!_canvas.ShowTileGrid) SetTileGrid(true);
+            UpdateToolUi();
+        }
+        w.ValueChanged += (_, _) => Apply();
+        h.ValueChanged += (_, _) => Apply();
+        color.ColorChanged += (_, _) => Apply();
+        var presets = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
+        foreach (int n in new[] { 8, 16, 32, 64 })
+            presets.Children.Add(Ui.Button($"{n}×{n}", (_, _) => { w.Value = n; h.Value = n; }).Tip($"타일 {n}×{n}px"));
+        return new Flyout
+        {
+            Placement = PlacementMode.BottomEdgeAlignedRight,
+            Content = new StackPanel
+            {
+                Spacing = 2,
+                Children =
+                {
+                    Ui.Label("타일 격자", bold: true),
+                    Ui.Row(Ui.Label("가로"), w, Ui.Label("세로"), h, Ui.Label("px")),
+                    presets,
+                    Ui.Row(Ui.Label("색"), color, Ui.InfoBadge("알파(#RRGGBBAA)로 진하기를 정합니다.")),
+                },
+            },
+        };
     }
 
     /// <summary>환경 설정(실행취소 횟수·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>

@@ -553,7 +553,13 @@ public sealed class PixelCanvas : Control
 
         using (ImageUtil.Pixelated(g))
         {
-            if (_ctx.CurrentPart is { } part && !_tiledMode) DrawPartSurroundings(g, part, peek ? frame - 1 : frame);
+            // 부위 화면: 부위 칸 체커 → 프레임의 나머지(다른 부위·그룹·레이어)를 흐리게 → 부위 그림. 부위 칸 안에서도 주변이 비쳐 맞춰 그릴 수 있다.
+            bool partView = _ctx.CurrentPart is not null && !_tiledMode;
+            if (partView)
+            {
+                DrawBitmapAt(g, null, 0, 0, W, H, checker: true);
+                DrawPartSurroundings(g, _ctx.CurrentPart!, peek ? frame - 1 : frame);
+            }
             if (_tiledMode)
             {
                 int r = TileRadius;
@@ -571,7 +577,8 @@ public sealed class PixelCanvas : Control
                 g.FillRectangle(DimBrush, new Rect(all.X, c.Y, c.X - all.X, c.Height));
                 g.FillRectangle(DimBrush, new Rect(c.Right, c.Y, all.Right - c.Right, c.Height));
             }
-            DrawImageAt(g, bmp, 0, 0);
+            if (partView) DrawBitmapAt(g, bmp, 0, 0, W, H, checker: false);
+            else DrawImageAt(g, bmp, 0, 0);
             if (dragged is not null) DrawDraggedPart(g, dragged, frame);
             // 숨긴 일반 레이어도 그릴 수 있으므로, 현재 레이어가 숨김이면 그 셀을 반투명하게 위에 얹어 그리는 것이 보이게 한다(합성·내보내기는 그대로 숨김).
             if (!peek && !_tiledMode && _ctx.Project is { } hp && _ctx.CurrentPart is null && hp.Layers[_ctx.CurrentLayer] is { IsGroup: false } cur
