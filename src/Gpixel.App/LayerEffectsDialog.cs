@@ -140,10 +140,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private readonly ListBox _list;
     private readonly StackPanel _settings;
     private readonly Button _remove, _up, _down, _bake, _play;
+    private readonly CheckBox _effectOnly;
     private readonly TextBlock _caption;
     private readonly PreviewView _preview = new();
     private readonly DispatcherTimer _timer = new();
     private int _previewFrame;
+    /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
+    private static bool s_effectOnly = true;
     /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
     private static bool s_seamlessLoop;
     private bool _syncing, _baked;
@@ -205,7 +208,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             if (_syncing) return;
             ShowSettings();
             UpdateButtons();
-            SyncPlayback();
+            SyncPlayback(restart: true);
             SyncStripRange();
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
@@ -228,14 +231,22 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _caption = Ui.Label("");
         _caption.Foreground = AppTheme.DimTextBrush;
         _play = Ui.Button(VectorIcon.Play, "재생", (_, _) => TogglePlay(), 80);
-        ToolTip.SetTip(_play, "움직이는 효과(터지기 ~ 충격파 고리)를 고른 효과의 프레임 범위로 돌려 봅니다.");
+        ToolTip.SetTip(_play, "고른 효과의 범위 또는 늘린 뒤 전체 프레임을 돌려 봅니다.");
+        _effectOnly = Ui.Check("고른 효과 범위만", s_effectOnly);
+        _effectOnly.VerticalAlignment = VerticalAlignment.Center;
+        _effectOnly.IsCheckedChanged += (_, _) =>
+        {
+            s_effectOnly = _effectOnly.On();
+            SyncPlayback(restart: true);
+        };
+        ToolTip.SetTip(_effectOnly, "켜면 고른 효과가 입혀지는 프레임만, 끄면 늘리기로 더해질 프레임까지 전체를 재생합니다.");
         var loop = Ui.Check("끝에서 바로 처음으로", s_seamlessLoop);
         loop.VerticalAlignment = VerticalAlignment.Center;
         loop.IsCheckedChanged += (_, _) => s_seamlessLoop = loop.On();
         ToolTip.SetTip(loop, "재생할 때 마지막 프레임을 더 보여 주지 않고 곧바로 첫 프레임으로 이어서 반복합니다(게임에서 반복 재생하는 모습).");
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, loop, Ui.InfoBadge(Intro(layer))),
+            Ui.Row(_play, _effectOnly, loop, Ui.InfoBadge(Intro(layer))),
             _caption,
             _preview,
             BuildFrameStrip());
@@ -248,7 +259,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         Body.Children.Add(root);
 
         RebuildList(_effects.Count == 0 ? -1 : focus >= 0 && focus < _effects.Count ? focus : 0);
-        SyncPlayback();
         Closed += (_, _) =>
         {
             _timer.Stop();
@@ -264,7 +274,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private static string Intro(Layer layer)
         => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도). 위에서부터 차례로 적용됩니다.\n"
            + "움직이는 효과는 프레임 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"
-           + "미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 고른 효과의 프레임 범위."
+           + "미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 효과를 고르면 그 범위를 바로 재생하고, '고른 효과 범위만'을 끄면 늘린 뒤 전체 프레임을 재생합니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 고른 효과의 프레임 범위."
            + (layer.IsGroup ? "\n그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다." : "")
            + (layer.IsPart ? "\n부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
 
@@ -304,7 +314,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _syncing = false;
         ShowSettings();
         Changed();
-        SyncPlayback();
+        SyncPlayback(restart: Selected >= 0);
     }
 
     private void UpdateButtons()
@@ -807,33 +817,38 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private (int From, int To) RangeOf(LayerEffect e)
         => e.Frames is { } r ? (r.From, Math.Min(r.To, _project.Frames.Count - 1)) : (0, _project.Frames.Count - 1);
 
-    /// <summary>재생할 범위: 고른 효과가 움직이는 효과면 그 범위, 아니면 켜진 움직이는 효과가 있을 때 모든 프레임. 돌릴 것이 없으면 null.</summary>
+    /// <summary>재생할 범위: "고른 효과 범위만"이면 고른 효과 범위, 체크를 끄면 늘린 뒤 전체 프레임.</summary>
     private (int From, int To)? PlayRange()
     {
-        if (Selected >= 0 && Selected < _effects.Count && _effects[Selected] is AnimatedEffect a) return VRangeOf(a);
-        return _effects.Any(e => e is AnimatedEffect { Enabled: true }) ? (0, VirtualCount - 1) : null;
+        if (_effectOnly.On())
+            return Selected >= 0 && Selected < _effects.Count ? VRangeOf(_effects[Selected]) : null;
+        return VirtualCount > 0 ? (0, VirtualCount - 1) : null;
     }
 
-    /// <summary>고른 효과가 움직이는 효과면 그 범위를 돌려 보고(자동 재생), 돌릴 것이 없으면 멈추고 지금 프레임으로.</summary>
-    private void SyncPlayback()
+    /// <summary>재생 범위를 현재 상태에 맞춘다. 효과를 새로 골랐거나 범위 방식을 바꾸면 처음부터 곧바로 재생한다.</summary>
+    private void SyncPlayback(bool restart = false)
     {
         var range = PlayRange();
         _play.IsEnabled = range is not null;
-        bool animatedSelected = Selected >= 0 && Selected < _effects.Count && _effects[Selected] is AnimatedEffect;
-        if (range is null || !animatedSelected && !_timer.IsEnabled)
+        if (range is null)
         {
             _timer.Stop();
-            if (_previewFrame != VirtualOf(_frame))
+            int frame = Math.Clamp(VirtualOf(_frame), 0, VirtualCount - 1);
+            if (_previewFrame != frame)
             {
-                _previewFrame = VirtualOf(_frame);
+                _previewFrame = frame;
                 RefreshPreview();
             }
         }
-        else if (animatedSelected && !_timer.IsEnabled)
+        else
         {
-            var (from, to) = range.Value;
-            if (_previewFrame < from || _previewFrame > to) _previewFrame = from;
-            StartTimer();
+            bool moved = restart || _previewFrame < range.Value.From || _previewFrame > range.Value.To;
+            if (moved)
+            {
+                _previewFrame = range.Value.From;
+                RefreshPreview();
+            }
+            if (restart) StartTimer();
         }
         _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, "멈춤") : Ui.IconLabel(VectorIcon.Play, "재생");
     }
