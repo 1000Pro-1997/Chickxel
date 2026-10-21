@@ -80,6 +80,7 @@ Gpixel은 계정·분석·광고 기능이 없고, 그림이나 파일을 어디
 - 필요: .NET 10 SDK. UI는 Avalonia(Windows·macOS·Linux 공용 코드).
 - 소스에서 바로 실행: Windows `run.bat` · macOS/Linux `./run.sh` (인수는 그대로 앱에 넘어감)
 - 빌드·테스트: `dotnet build Gpixel.sln`, `dotnet test Gpixel.sln`
+- 작업 규칙: [AGENTS.md](AGENTS.md) — UI에 이모지·기호 문자를 아이콘으로 쓰지 않고 벡터(SVG 경로) 아이콘으로 그립니다(`VectorIcons.cs`). 문서·커밋 메시지에도 이모지를 쓰지 않습니다.
 - 아이콘: 도구 아이콘은 `src/Gpixel.App/Assets/Tools/*.png`(16×16 단색 점 그림, 도구 막대에는 2배로 표시), 앱 아이콘은 `Assets/AppIcon/`(16×16 원본 `gpixel.png`에서 만든 `gpixel.ico`·`Gpixel.icns`·창/Dock 아이콘 `gpixel-256.png`). PNG는 Gpixel로 열어 바로 고칠 수 있습니다.
 
 ## 화면 (Aseprite식 배치)
@@ -219,7 +220,7 @@ Gpixel은 계정·분석·광고 기능이 없고, 그림이나 파일을 어디
 VS Code의 Claude·Codex 확장처럼 편집기 안에서 AI와 대화하며 그림을 만들고 고칩니다. API 키를 넣지 않고, 컴퓨터에 설치된 **Claude Code**(Claude 구독 로그인) 또는 **Codex CLI**(ChatGPT 구독 로그인)를 그대로 씁니다. 창 위쪽 **[Claude | Codex]** 는 **탭**입니다(보던 탭은 설정에 기억). 탭마다 대화·세션·입력란·첨부·모델·로그인 화면·되돌리기 단추가 따로 있고, 탭을 바꿔도 대화가 끊기거나 새로 시작하지 않습니다 — 처음 보는 탭만 CLI·로그인을 확인합니다.
 
 - **뒤에서 계속**: 답을 받는 중에 다른 탭으로 가도 그 차례는 멈추지 않고, 글은 원래 탭에 계속 붙습니다. 도는 동안 탭 이름 뒤에 **점**이 붙습니다. 두 AI가 같은 캔버스를 함께 고치지 않도록 **차례는 한 번에 하나만** 돕니다 — 한 탭이 작업 중이면 다른 탭의 보내기는 "Codex가 작업 중입니다 — 끝난 뒤 보내세요" 같은 줄만 남기고 보내지 않으며(입력한 글은 그대로), 이 단계 되돌리기 단추도 차례가 끝날 때까지 쉽니다.
-- **열기**: 메뉴 아래 막대 오른쪽 **✦** 단추, 메뉴 **AI > AI 채팅**, 또는 Ctrl+L. 작은 창으로 따로 뜨고 위치·크기를 기억합니다(앱을 닫을 때 열려 있었으면 다음에 다시 엶).
+- **열기**: 메뉴 아래 막대 오른쪽 **AI 채팅** 단추(주황 별 모양 아이콘), 메뉴 **AI > AI 채팅**, 또는 Ctrl+L. 작은 창으로 따로 뜨고 위치·크기를 기억합니다(앱을 닫을 때 열려 있었으면 다음에 다시 엶).
 - **처음 한 번**: CLI가 없으면 설치 명령을 보여 줍니다 — Claude Code: macOS/Linux `curl -fsSL https://claude.ai/install.sh | bash`, Windows PowerShell `irm https://claude.ai/install.ps1 | iex` / Codex: `npm install -g @openai/codex`(macOS는 `brew install --cask codex`도), macOS의 ChatGPT 앱에 들어 있는 Codex CLI는 저절로 찾습니다. 복사 단추·직접 경로 지정(CLI마다 따로)도 있습니다. 로그인이 안 되어 있으면 **Claude로 로그인 / Codex로 로그인**(숨은 `claude auth login` / `codex login`, 브라우저가 열림) 또는 **터미널에서 로그인**을 누르고, 끝나면 자동으로 채팅으로 넘어갑니다. 위쪽에 계정(Claude는 이메일·요금제, Codex는 "ChatGPT 계정")이 보입니다.
 - **대화**: Enter 보내기, Shift+Enter 줄바꿈. **이미지…**로 참고 그림을 붙이고 **캔버스 첨부**로 지금 프레임을 보여 줄 수 있습니다. **모델**과 **새 대화**는 위쪽에 있고 보이는 탭에만 적용됩니다(모델은 AI마다 따로 기억). 모델 목록 첫 칸 **기본**에는 실제로 쓰일 모델이 붙어 보입니다 — Claude: Claude Code 설정(`~/.claude/settings.json`의 `model`, 예: "기본 · Opus 4.8 (1M)")이나 한 번 답을 받은 뒤 알게 된 모델, Codex: `~/.codex/config.toml`의 `model`(예: "기본 · GPT-5.6-Sol"). Claude는 Claude Code가 받아 둔 모델 목록(`~/.claude/cache/model-catalog/`)의 주요 모델을 정확한 이름으로 보입니다(예: **Opus 5.5 · 가장 똑똑함 / Sonnet 5.5 · 균형 / Haiku 5.5 · 가장 빠름**, 마우스를 올리면 모델 ID — 목록 파일이 없으면 opus·sonnet·haiku 별칭, 한 번 쓰면 버전까지 보임. 예전에 고른 별칭은 "Opus 5 · opus 별칭"처럼 남음), Codex는 Codex가 받아 둔 모델 목록(`~/.codex/models_cache.json` — 예: GPT-6-Astra, GPT-6.1-Sol, GPT-6-Luna; 마우스를 올리면 설명)입니다. 바꾸면 다음 메시지부터 적용됩니다. 답이 오는 동안 **정지**로 멈춥니다.
 - **지금 레이어만**(입력란 아래 **캔버스 첨부** 옆 토글, 두 탭 공통·앱 설정에 기억): 켜고 보내면 **보내는 순간 열린 문서의 현재 레이어**(그룹이면 그 부위들까지)만 AI가 고칩니다 — 그 레이어의 모든 프레임에 그릴 수 있고, 다른 레이어·다른 파일은 **볼 수만** 있으며 프레임·레이어·태그·그룹·부위·스킨·착장·캔버스·팔레트 바꾸기, 새 프로젝트·열기 같은 도구는 거절됩니다(저장은 됨). 채팅에 `편집 범위: "hair" 레이어만`이 보이고, AI도 `get_document`의 `editScope`와 메시지 앞머리로 범위를 압니다. 차례 중에 다른 파일을 열면 그 파일은 고치지 않습니다. 끄면 다음 메시지부터 제한이 없어집니다. **캔버스 첨부**는 작업 대상과 상관없는 참고 그림입니다.
