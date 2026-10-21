@@ -24,7 +24,7 @@ public sealed class PlayTestForm : Window
 
     /// <summary>모드: 0 = 탑뷰, 1 = 플랫포머(고르면 아래 설정 묶음이 바뀜).</summary>
     private readonly TabStrip _mode = new(TabStripKind.Segmented, "탑뷰", "플랫포머") { Margin = new Thickness(0, 0, 0, 6) };
-    private readonly NumericUpDown _scale = Number(1, 16, 4, 1);
+    private readonly NumericUpDown _scale = Number(1, 16, 4, 1).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("×").RecentKey("playtest.scale");
     private readonly CheckBox _showGrid = Check("격자 표시 (1칸 = PPU)", true);
     private readonly CheckBox _showPivot = Check("피벗 표시", true);
     private readonly CheckBox _showCollider = Check("충돌 상자 표시", false);
@@ -58,12 +58,16 @@ public sealed class PlayTestForm : Window
         ShowInTaskbar = true;
         KeyState.Attach(this);
 
-        _topDownSpeed = Number(0, 2000, (decimal)_sim.TopDown.Speed, 10);
+        decimal[] speeds = [30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
+        _topDownSpeed = Number(0, 2000, (decimal)_sim.TopDown.Speed, 10).Presets(speeds).Unit("px/s").RecentKey("playtest.speed");
         var ps = _sim.Platformer.Settings;
-        _moveSpeed = Number(0, 2000, (decimal)ps.MoveSpeed, 10);
-        _gravity = Number(0, 10000, (decimal)ps.Gravity, 50);
-        _jumpPower = Number(0, 5000, (decimal)ps.JumpVelocity, 10);
-        _maxFall = Number(10, 10000, (decimal)ps.MaxFallSpeed, 10);
+        _moveSpeed = Number(0, 2000, (decimal)ps.MoveSpeed, 10).Presets(speeds).Unit("px/s").RecentKey("playtest.speed");
+        _gravity = Number(0, 10000, (decimal)ps.Gravity, 50)
+            .Presets(300, 500, 600, 800, 900, 1000, 1200, 1500, 2000, 3000).Unit("px/s²").RecentKey("playtest.gravity");
+        _jumpPower = Number(0, 5000, (decimal)ps.JumpVelocity, 10)
+            .Presets(150, 200, 250, 300, 350, 400, 500, 600).Unit("px/s").RecentKey("playtest.jump");
+        _maxFall = Number(10, 10000, (decimal)ps.MaxFallSpeed, 10)
+            .Presets(200, 300, 400, 500, 600, 800, 1000).Unit("px/s").RecentKey("playtest.fall");
 
         _topDownGroup.Children.Add(Header("탑뷰"));
         _topDownGroup.Children.Add(Row("이동 속도 (px/s)", _topDownSpeed));

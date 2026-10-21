@@ -1227,6 +1227,17 @@ public static partial class ProjectIO
         public int? OffFrames { get; set; }
         public bool? Disappear { get; set; }
         public int? Edge { get; set; }
+        // 홀로그램: 색 = Color, 색 세기 = Amount, 주사선 간격 = Gap·방식 = Style, 띠 두께 = Thickness, 투명도 = Opacity, 디더 = DitherFade, 최대 밀림 = Distance, 시드 = Seed.
+        public int? ScanStrength { get; set; }
+        public bool? Scroll { get; set; }
+        public bool? Band { get; set; }
+        public int? BandStrength { get; set; }
+        public int? FlickerRate { get; set; }
+        public int? FlickerStrength { get; set; }
+        public int? GlitchRate { get; set; }
+        public bool? RgbSplit { get; set; }
+        public bool? EdgeGlow { get; set; }
+        public int? EdgeOpacity { get; set; }
 
         public static EffectDto From(LayerEffect effect)
         {
@@ -1285,6 +1296,13 @@ public static partial class ProjectIO
                 {
                     Type = "shockwave", Center = wave.Center.ToString(), X = wave.CenterX, Y = wave.CenterY, Distance = wave.Radius, Thickness = wave.Thickness,
                     Color = wave.Color.ToHex(), Fade = wave.Fade, Behind = wave.Behind,
+                },
+                HologramEffect holo => new EffectDto
+                {
+                    Type = "hologram", Color = holo.Color.ToHex(), Amount = holo.TintStrength, Gap = holo.ScanGap, ScanStrength = holo.ScanStrength, Style = holo.ScanStyle.ToString(),
+                    Scroll = holo.ScanScroll, Band = holo.Band, Thickness = holo.BandSize, BandStrength = holo.BandStrength, Opacity = holo.Opacity, DitherFade = holo.Dither,
+                    FlickerRate = holo.FlickerRate, FlickerStrength = holo.FlickerStrength, GlitchRate = holo.GlitchRate, Distance = holo.GlitchShift, RgbSplit = holo.RgbSplit,
+                    EdgeGlow = holo.EdgeGlow, EdgeOpacity = holo.EdgeOpacity, Seed = holo.Seed,
                 },
                 _ => throw new NotSupportedException($"저장할 수 없는 효과: {effect.GetType().Name}"),
             };
@@ -1443,6 +1461,16 @@ public static partial class ProjectIO
                     {
                         Center = EnumOr(Center, sh.Center), CenterX = X ?? sh.CenterX, CenterY = Y ?? sh.CenterY, Radius = Distance ?? sh.Radius, Thickness = Thickness ?? sh.Thickness,
                         Color = ColorOr(Color, sh.Color), Fade = Fade ?? sh.Fade, Behind = Behind ?? sh.Behind,
+                    });
+                case "hologram":
+                    var ho = new HologramEffect();
+                    return Animated(ho with
+                    {
+                        Color = ColorOr(Color, ho.Color), TintStrength = Amount ?? ho.TintStrength, ScanGap = Gap ?? ho.ScanGap, ScanStrength = ScanStrength ?? ho.ScanStrength,
+                        ScanStyle = EnumOr(Style, ho.ScanStyle), ScanScroll = Scroll ?? ho.ScanScroll, Band = Band ?? ho.Band, BandSize = Thickness ?? ho.BandSize,
+                        BandStrength = BandStrength ?? ho.BandStrength, Opacity = Opacity ?? ho.Opacity, Dither = DitherFade ?? ho.Dither, FlickerRate = FlickerRate ?? ho.FlickerRate,
+                        FlickerStrength = FlickerStrength ?? ho.FlickerStrength, GlitchRate = GlitchRate ?? ho.GlitchRate, GlitchShift = Distance ?? ho.GlitchShift,
+                        RgbSplit = RgbSplit ?? ho.RgbSplit, EdgeGlow = EdgeGlow ?? ho.EdgeGlow, EdgeOpacity = EdgeOpacity ?? ho.EdgeOpacity, Seed = Seed ?? ho.Seed,
                     });
                 default:
                     return null;

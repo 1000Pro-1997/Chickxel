@@ -11,12 +11,12 @@ public sealed partial class LayerEffectsDialog
     {
         static HitFlashEffect H(LayerEffect v) => (HitFlashEffect)v;
         var color = ColorEditor(e.Color, v => set(o => H(o) with { Color = v }));
-        SettingsRow(Ui.Label("색"), color,
+        SettingsRow("색", color,
             Ui.Button("흰색", (_, _) => color.Color = Color32.White, 44),
             Ui.Button("빨강", (_, _) => color.Color = HitRed, 44));
-        SettingsRow(Ui.Label("세기"), NumEditor(0, 100, e.Strength, v => set(o => H(o) with { Strength = v })), Ui.Label("%"),
-            Ui.Label("  횟수"), NumEditor(1, HitFlashEffect.MaxCount, e.Count, v => set(o => H(o) with { Count = v })), Ui.Label("번"));
-        SettingsRow(Ui.Label("모양"), ChoiceEditor(["꽉 채움 (켜졌다 꺼짐)", "점점 엷어짐"], (int)e.Shape, k => set(o => H(o) with { Shape = (HitFlashShape)k })));
+        SettingsRow("세기", NumEditor(0, 100, e.Strength, NumKinds.Strength, v => set(o => H(o) with { Strength = v })), Ui.Label("%"),
+            Ui.Label("  횟수"), NumEditor(1, HitFlashEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => H(o) with { Count = v })), Ui.Label("번"));
+        SettingsRow("모양", ChoiceEditor(["꽉 채움 (켜졌다 꺼짐)", "점점 엷어짐"], (int)e.Shape, k => set(o => H(o) with { Shape = (HitFlashShape)k })));
         AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint("범위 첫 프레임에서 바로 보이는 픽셀이 그 색으로 번쩍이고(투명도는 그대로), 횟수만큼 되풀이한 뒤 마지막 프레임은 원래 그림입니다."));
     }

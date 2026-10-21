@@ -2258,6 +2258,7 @@ public sealed class TimelinePanel : UserControl
             AfterimageEffect => Color.FromRgb(40, 190, 160),
             ColorCycleEffect => Color.FromRgb(230, 60, 120),
             ShockwaveEffect => Color.FromRgb(255, 214, 40),
+            HologramEffect => Color.FromRgb(0, 180, 255),
             _ => AppTheme.AccentColor,
         };
 
@@ -3878,8 +3879,8 @@ public sealed class TagDialog : DialogBase
         _name = new ComboBox { IsEditable = true, Width = 200, Margin = new Thickness(3) };
         foreach (var s in TimelinePanel.SuggestedNames.Where(s => !project.HasTag(s) || s == tag?.Name)) _name.Items.Add(s);
         _name.Text = tag?.Name ?? TimelinePanel.SuggestedNames.FirstOrDefault(s => !project.HasTag(s)) ?? project.UniqueTagName("anim");
-        _from = Ui.Num(1, n, from + 1, 60);
-        _to = Ui.Num(1, n, to + 1, 60);
+        _from = Ui.Num(1, n, from + 1, 60).Presets(Ui.FrameNumbers(n)).RecentKey("tag.frame");
+        _to = Ui.Num(1, n, to + 1, 60).Presets(Ui.FrameNumbers(n)).RecentKey("tag.frame");
         _direction = Ui.Combo(110, "정방향", "역방향", "왕복");
         _direction.SelectedIndex = (int)(tag?.Direction ?? TagDirection.Forward);
         _loop = Ui.Check("반복", tag?.Loop ?? true);

@@ -95,7 +95,8 @@ public sealed class ToolOptionsPanel : UserControl
             _ctx.BrushShape = Shapes[_shapes.SelectedIndex].Shape;
             Refresh();
         };
-        _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32);
+        _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32).Unit("px").RecentKey("brush.size");
         _sizeNum.Tip($"브러시 크기 1~{BrushFootprint.MaxSize} — 좌우로 끌거나 [ / ]");
         var brushRight = new StackPanel { Spacing = 4, Children = { _shapes, Ui.Row(Ui.Label("크기"), _sizeNum) } };
         _brushPreview.Margin = new Thickness(0, 0, 6, 0);
@@ -107,7 +108,8 @@ public sealed class ToolOptionsPanel : UserControl
         _brushTitle = GroupTitle(_brushBox);
 
         // ── 채우기
-        _tolNum = NumBox(0, 100, v => _ctx.FillTolerance = v);
+        _tolNum = NumBox(0, 100, v => _ctx.FillTolerance = v)
+            .Presets(0, 5, 10, 15, 20, 25, 33, 50, 66, 75, 100).Unit("%").RecentKey("fill.tolerance");
         _tolNum.Tip("허용 오차(%): 0 = 정확히 같은 색만. 높일수록 비슷한 색(RGBA 채널 차이의 최댓값이 이 비율×255 이하)도 같은 색으로 채웁니다.");
         _contiguous = Check("이어진 영역만", "끄면 화면 안의 맞는 색을 모두 고릅니다(채우기·스마트 선택) (Shift+G)", v => _ctx.FillContiguous = v);
         _diagonal = Check("대각선으로도 잇기(8방향)", "이어진 영역을 대각선 이웃까지 넓힙니다", v => _ctx.FillDiagonal = v);
@@ -126,7 +128,8 @@ public sealed class ToolOptionsPanel : UserControl
         _pickerBox = Ui.Group("스포이드", Ui.Stack(Ui.Row(Ui.Label("기준"), _pickSource), Dim("Alt+클릭으로 쓰는 임시 스포이드에도 적용됩니다.")));
 
         // ── 밝게/어둡게
-        _dodgeNum = NumBox(1, EditorContext.MaxDodgeStrength, v => _ctx.DodgeStrength = v);
+        _dodgeNum = NumBox(1, EditorContext.MaxDodgeStrength, v => _ctx.DodgeStrength = v)
+            .Presets(1, 2, 3, 5, 8, 10, 15, 20, 25, 33, 50).Unit("%").RecentKey("dodge.strength");
         _dodgeNum.Tip("한 번에 바꿀 명도(%) — 한 획에 한 픽셀은 한 번만");
         _dodgeBox = Ui.Group("밝게/어둡게", Ui.Stack(Ui.Row(Ui.Label("세기"), _dodgeNum, Ui.Label("%"))));
 
@@ -146,7 +149,7 @@ public sealed class ToolOptionsPanel : UserControl
         _gradientBar.StopsChanged += stops => _ctx.GradientStops = stops;
         _gradientBar.AlphaStopsChanged += stops => _ctx.GradientAlphaStops = stops;
         _gradientBar.SelectionChanged += (_, _) => RefreshGradientStop();
-        _stopPos = Ui.Num(0, 100, 0, 56, 1, 1m);
+        _stopPos = Ui.Num(0, 100, 0, 56, 1, 1m).Presets(0, 10, 25, 33.3m, 50, 66.7m, 75, 90, 100).Unit("%").RecentKey("gradient.position");
         _stopPos.FormatString = "0.#";
         _stopPos.Tip("고른 정지점의 위치(%, 왼쪽 0 ~ 오른쪽 100)");
         _stopPos.ValueChanged += (_, _) =>
@@ -160,7 +163,7 @@ public sealed class ToolOptionsPanel : UserControl
         _stopColor.Tip("고른 색 정지점의 색(칸을 누르면 색 고르기)");
         _stopColor.ColorChanged += (_, _) => { if (!_updating) SetSelectedStop(s => s with { Color = _stopColor.Color }); };
         var usePrimary = Ui.Button("기본색", (_, _) => SetSelectedStop(s => s with { Color = _ctx.Primary })).Tip("고른 색 정지점을 지금 기본색으로");
-        _stopAlpha = Ui.Num(0, 100, 100, 56, 1, 1m);
+        _stopAlpha = Ui.Num(0, 100, 100, 56, 1, 1m).Presets(Ui.Percents).Unit("%").RecentKey("opacity");
         _stopAlpha.FormatString = "0.#";
         _stopAlpha.Tip("고른 불투명도 정지점의 불투명도(%, 0 = 투명 ~ 100 = 불투명)");
         _stopAlpha.ValueChanged += (_, _) =>
@@ -227,8 +230,8 @@ public sealed class ToolOptionsPanel : UserControl
             Grid.SetRow(b, row);
             presetGrid.Children.Add(b);
         }
-        _pivotX = PixelNum();
-        _pivotY = PixelNum();
+        _pivotX = PixelNum("pivot.x");
+        _pivotY = PixelNum("pivot.y");
         _pivotX.Tip("왼쪽에서 몇 px(0.5 단위)");
         _pivotY.Tip("아래에서 몇 px(0.5 단위, Unity와 같이 아래가 0)");
         _pivotXMax = Dim("");
@@ -260,10 +263,10 @@ public sealed class ToolOptionsPanel : UserControl
             _pivotTarget));
 
         // ── 9-slice(S): 캔버스에서 초록 선을 끌거나 숫자로
-        _sL = Ui.Num(0, PixelImage.MaxSize, 0, 44);
-        _sT = Ui.Num(0, PixelImage.MaxSize, 0, 44);
-        _sR = Ui.Num(0, PixelImage.MaxSize, 0, 44);
-        _sB = Ui.Num(0, PixelImage.MaxSize, 0, 44);
+        _sL = SliceNum();
+        _sT = SliceNum();
+        _sR = SliceNum();
+        _sB = SliceNum();
         foreach (var n in new[] { _sL, _sT, _sR, _sB })
             n.ValueChanged += (_, _) =>
             {
@@ -288,15 +291,21 @@ public sealed class ToolOptionsPanel : UserControl
 
         // ── 변형 모드(Ctrl+T): 숫자는 캔버스 손잡이와 함께 움직인다.
         _tfAngle = TransformNum(-180, 180, "회전 각도(°, 시계 방향) — 회전 중심(캔버스의 주황 표시)을 기준으로",
-            v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)));
+            v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)))
+            .Presets(-180, -135, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180).Unit("°").RecentKey("transform.angle");
+        // 0%는 적용하지 않으므로 목록에 없음(−100% = 뒤집기).
+        decimal[] scales = [-200, -100, 25, 50, 75, 100, 150, 200, 300, 400, 800];
         _tfScaleX = TransformNum(-3200, 3200, "가로 크기(%) — 음수 = 좌우 뒤집기, 중심 기준",
-            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleX = v / 100 }); });
+            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleX = v / 100 }); })
+            .Presets(scales).Unit("%").RecentKey("transform.scale");
         _tfScaleY = TransformNum(-3200, 3200, "세로 크기(%) — 음수 = 상하 뒤집기, 중심 기준",
-            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleY = v / 100 }); });
+            v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleY = v / 100 }); })
+            .Presets(scales).Unit("%").RecentKey("transform.scale");
+        // 중심 X·Y 예시 값은 캔버스 크기에 맞춰 RefreshTransform에서 정한다(0 · 1/4 · 1/2 · 3/4 · 끝).
         _tfX = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 X(픽셀, 크기가 홀수면 .5)",
-            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterX = v }));
+            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterX = v })).Unit("px").RecentKey("transform.center.x");
         _tfY = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 Y(픽셀, 위가 0)",
-            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterY = v }));
+            v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterY = v })).Unit("px").RecentKey("transform.center.y");
         _tfResample = Ui.Combo(150, "RotSprite", "최근접(Nearest)");
         _tfResample.Tip("RotSprite: Scale2x를 세 번(8배) 키운 그림에서 집어 회전한 선이 덜 깨집니다(섞지 않아 새 색 없음). 최근접: 원본 픽셀을 그대로 집습니다. 0°·90°·180°·270°는 둘이 같습니다.");
         _tfResample.SelectionChanged += (_, _) =>
@@ -322,17 +331,23 @@ public sealed class ToolOptionsPanel : UserControl
         _crKeepRatio = Ui.Check("그림 비율 유지", true).Tip("그림 가로·세로 칸 하나를 바꾸면 다른 쪽도 원래 그림 비율대로 맞춥니다");
         _crKeepRatio.Focusable = false;
         _crWidth = CanvasResizeNum(1, "새 캔버스 가로(px) — 오른쪽 가장자리가 움직이고 그림은 제자리",
-            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Width = v }, _ctx.CanvasResizeImage));
+            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Width = v }, _ctx.CanvasResizeImage))
+            .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crHeight = CanvasResizeNum(1, "새 캔버스 세로(px) — 아래 가장자리가 움직이고 그림은 제자리",
-            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Height = v }, _ctx.CanvasResizeImage));
+            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Height = v }, _ctx.CanvasResizeImage))
+            .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crImageWidth = CanvasResizeNum(1, "그림 가로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
-            v => SetCanvasResizeImage(i => i with { Width = v, Height = _crKeepRatio.On() ? RatioHeight(v) : i.Height }));
+            v => SetCanvasResizeImage(i => i with { Width = v, Height = _crKeepRatio.On() ? RatioHeight(v) : i.Height }))
+            .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crImageHeight = CanvasResizeNum(1, "그림 세로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
-            v => SetCanvasResizeImage(i => i with { Height = v, Width = _crKeepRatio.On() ? RatioWidth(v) : i.Width }));
+            v => SetCanvasResizeImage(i => i with { Height = v, Width = _crKeepRatio.On() ? RatioWidth(v) : i.Width }))
+            .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crX = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 X(새 캔버스 기준, 음수 = 왼쪽이 잘림)",
-            v => SetCanvasResizeImage(i => i with { X = v }));
+            v => SetCanvasResizeImage(i => i with { X = v }))
+            .Presets(Ui.Offsets).Unit("px").RecentKey("offset");
         _crY = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 Y(새 캔버스 기준, 음수 = 위가 잘림)",
-            v => SetCanvasResizeImage(i => i with { Y = v }));
+            v => SetCanvasResizeImage(i => i with { Y = v }))
+            .Presets(Ui.Offsets).Unit("px").RecentKey("offset");
         _crWidthPercent = Dim("");
         _crHeightPercent = Dim("");
         _crAnchor.Tip("그림을 지금 캔버스 안의 이 자리(9방향)에 놓습니다");
@@ -511,12 +526,20 @@ public sealed class ToolOptionsPanel : UserControl
         }
     }
 
-    private static NumericUpDown PixelNum()
+    /// <summary>피벗 픽셀 칸(0.5 단위). 예시 값은 대상 크기에 맞춰 <see cref="RefreshPivot"/>에서 정한다.</summary>
+    private static NumericUpDown PixelNum(string key)
     {
-        var n = Ui.Num(0, PixelImage.MaxSize, 0, 56, 2, 0.5m);
+        var n = Ui.Num(0, PixelImage.MaxSize, 0, 56, 2, 0.5m).Unit("px").RecentKey(key);
         n.FormatString = "0.##";
         return n;
     }
+
+    /// <summary>9-slice 테두리 칸(px, 네 칸이 최근 값을 함께 씀).</summary>
+    private static NumericUpDown SliceNum()
+        => Ui.Num(0, PixelImage.MaxSize, 0, 44).Presets(0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24).Unit("px").RecentKey("slice.border");
+
+    /// <summary>크기 <paramref name="size"/>(px)의 대표 위치: 0 · 1/4 · 가운데(내림·정확) · 3/4 · 끝.</summary>
+    private static decimal[] Quarters(int size) => [0, size / 4, size / 2, size / 2m, size - size / 4, size];
 
     // ───────────── 상태 → 화면 ─────────────
 
@@ -621,6 +644,8 @@ public sealed class ToolOptionsPanel : UserControl
             _tfScaleY.Value = Num(p.ScaleY * 100, _tfScaleY);
             _tfX.Value = Num(p.CenterX, _tfX);
             _tfY.Value = Num(p.CenterY, _tfY);
+            _tfX.Presets(Quarters(Math.Max(1, _ctx.CanvasWidth)));
+            _tfY.Presets(Quarters(Math.Max(1, _ctx.CanvasHeight)));
             _tfResample.SelectedIndex = (int)_ctx.TransformResample;
             var src = t.SourceBounds;
             var dst = _ctx.Selection.Bounds;
@@ -758,6 +783,8 @@ public sealed class ToolOptionsPanel : UserControl
             int w = TargetWidth, h = TargetHeight;
             _pivotX.Maximum = w;
             _pivotY.Maximum = h;
+            _pivotX.Presets(Quarters(w));
+            _pivotY.Presets(Quarters(h));
             _pivotX.Value = Math.Round((decimal)Math.Clamp(pivot.X * w, 0, w), 2);
             _pivotY.Value = Math.Round((decimal)Math.Clamp(pivot.Y * h, 0, h), 2);
             _pivotXMax.Text = $"/ {w} px";

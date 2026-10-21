@@ -235,7 +235,7 @@ public sealed class UnityExportDialog : DialogBase
     private Control BuildImportTab()
     {
         var mode = Choice("스프라이트 모드", [SpriteMode.Single, SpriteMode.Multiple], ["Single", "Multiple"], p => p.Sprite.Mode, (p, v) => p.Sprite.Mode = v);
-        var ppu = Ui.Num(1, 10000, 16, 80);
+        var ppu = Ui.Num(1, 10000, 16, 80).Presets(1, 8, 16, 24, 32, 48, 64, 100, 128, 256).RecentKey("unity.ppu");
         ppu.ValueChanged += (_, _) =>
         {
             float v = (float)ppu.NumValue();
@@ -244,13 +244,13 @@ public sealed class UnityExportDialog : DialogBase
         _refresh.Add(p => ppu.Value = (decimal)Math.Clamp(p.Sprite.PixelsPerUnit, 1, 10000));
         var mesh = Choice("메시 형식", [true, false], ["Full Rect", "Tight"], p => p.Sprite.FullRectMesh, (p, v) => p.Sprite.FullRectMesh = v);
         var extrudeRow = Field("Extrude Edges", "Tight 메시를 외곽선에서 바깥으로 넓힐 픽셀 수(0~32). Mesh Type이 Tight일 때만 쓰입니다.",
-            IntSlider("Extrude Edges", 0, 32, p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v));
+            IntSlider("Extrude Edges", 0, 32, [0, 1, 2, 3, 4, 6, 8, 16, 32], "px", "unity.extrude", p => p.Sprite.ExtrudeEdges, (p, v) => p.Sprite.ExtrudeEdges = v));
         _refresh.Add(p => SetEnabled(extrudeRow, !p.Sprite.FullRectMesh));
 
         // 피벗(Single 모드만): 프리셋 또는 Custom(X/Y). 피벗 도구(K)와 같은 프로젝트 기본 피벗.
         var pivot = Ui.Combo(220, PivotNames);
-        var pivotX = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m);
-        var pivotY = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m);
+        var pivotX = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
+        var pivotY = Ui.Num(0, 1, 0.5m, 60, 3, 0.05m).Presets(0, 0.25m, 0.5m, 0.75m, 1).RecentKey("unity.pivot");
         var pivotRow = Field("Pivot", "Single 모드 스프라이트의 피벗 = 프로젝트 기본 피벗(피벗 도구(K)와 같은 값, 프레임별 피벗이 있으면 그 프레임 값이 쓰임).", pivot);
         var customRow = Field("Custom Pivot", "피벗 위치(0~1, 왼쪽 아래가 0,0 · 오른쪽 위가 1,1).", Ui.Row(Ui.Label("X"), pivotX, Ui.Label("Y"), pivotY));
         pivot.SelectionChanged += (_, _) =>
@@ -312,7 +312,7 @@ public sealed class UnityExportDialog : DialogBase
         int[] maxSizes = [0, .. SpriteSettings.MaxTextureSizes];
         string[] maxSizeNames = ["Auto (fit)", .. SpriteSettings.MaxTextureSizes.Select(s => s.ToString(CultureInfo.InvariantCulture))];
         var qualityRow = Field("Compressor Quality", "Crunch 압축 품질(0~100). 높을수록 좋고 느립니다. Use Crunch Compression을 켰을 때만 쓰입니다.",
-            IntSlider("Compressor Quality", 0, 100, p => p.Sprite.CompressionQuality, (p, v) => p.Sprite.CompressionQuality = v));
+            IntSlider("Compressor Quality", 0, 100, [0, 25, 50, 75, 90, 100], "%", "unity.crunch", p => p.Sprite.CompressionQuality, (p, v) => p.Sprite.CompressionQuality = v));
         _refresh.Add(p => SetEnabled(qualityRow, p.Sprite.CrunchCompression));
         var platform = Ui.Group("Default", Ui.Stack(
             Field("Max Size", "텍스처 최대 크기. Auto (fit) = 이미지가 들어가는 가장 작은 2의 거듭제곱. 시트가 더 크면 Unity가 줄입니다.",
@@ -356,7 +356,7 @@ public sealed class UnityExportDialog : DialogBase
                 Choice("Filter Mode", [TextureFilter.Point, TextureFilter.Bilinear, TextureFilter.Trilinear], ["Point (no filter)", "Bilinear", "Trilinear"],
                     p => p.Sprite.FilterMode, (p, v) => p.Sprite.FilterMode = v)),
             Field("Aniso Level", "비스듬히 볼 때의 텍스처 품질(0~16). 밉맵이 있을 때 쓰입니다.",
-                IntSlider("Aniso Level", 0, 16, p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)),
+                IntSlider("Aniso Level", 0, 16, [0, 1, 2, 4, 8, 16], "", "unity.aniso", p => p.Sprite.AnisoLevel, (p, v) => p.Sprite.AnisoLevel = v)),
             platform);
     }
 
@@ -374,7 +374,8 @@ public sealed class UnityExportDialog : DialogBase
         var format = Choice("파일 형식", [ExportImageFormat.Png, ExportImageFormat.Jpg, ExportImageFormat.Tga, ExportImageFormat.Bmp],
             ["PNG(무손실·투명)", "JPG(투명 없음)", "TGA", "BMP"], p => p.Export.ImageFormat, (p, v) => p.Export.ImageFormat = v, 170);
         var jpegLabel = Ui.Label("품질");
-        var jpegQuality = IntNum("JPG 품질", 1, 100, 54, p => p.Export.JpegQuality, (p, v) => p.Export.JpegQuality = v);
+        var jpegQuality = IntNum("JPG 품질", 1, 100, 54, p => p.Export.JpegQuality, (p, v) => p.Export.JpegQuality = v)
+            .Presets(50, 60, 70, 75, 80, 85, 90, 95, 100).Unit("%").RecentKey("export.jpeg");
         jpegQuality.Tip("JPG 품질 1~100. 높을수록 깨끗하고 파일이 큽니다.");
         _refresh.Add(p => jpegLabel.IsVisible = jpegQuality.IsVisible = p.Export.ImageFormat == ExportImageFormat.Jpg);
         var meta = Seg<bool?>(".meta 쓰기", [false, null, true], ["끔", "자동", "항상"], p => p.Export.WriteMeta, (p, v) => p.Export.WriteMeta = v)
@@ -389,7 +390,7 @@ public sealed class UnityExportDialog : DialogBase
             Setting("Unity .meta", "Unity가 읽는 스프라이트 설정(.meta)을 이미지 옆에 씁니다. 항목은 Import Settings 탭에 있습니다.", meta));
 
         // ── 프레임 시트 ──
-        var singleFrame = Ui.Num(1, 9999, 1, 54);
+        var singleFrame = Ui.Num(1, 9999, 1, 54).RecentKey("export.frame");
         singleFrame.ValueChanged += (_, _) =>
         {
             int v = (int)singleFrame.NumValue() - 1;
@@ -399,6 +400,7 @@ public sealed class UnityExportDialog : DialogBase
         _refresh.Add(p =>
         {
             singleFrame.Maximum = Math.Max(1, p.Frames.Count);
+            singleFrame.Presets(Ui.FrameNumbers(p.Frames.Count));
             singleFrame.Value = Math.Clamp(p.Export.SingleFrameIndex + 1, 1, Math.Max(1, p.Frames.Count));
             singleRow.IsVisible = p.Sprite.Mode == SpriteMode.Single;
         });
@@ -624,10 +626,12 @@ public sealed class UnityExportDialog : DialogBase
             .SetTip(0, "시트가 정사각형에 가깝게(긴 변이 가장 작게 → 빈 칸이 적게 → 가로로 넓게).")
             .SetTip(1, "한 줄에 N칸씩(넘치면 다음 줄).")
             .SetTip(2, "전체 줄 수가 N 이하가 되게.");
-        var gridCount = IntNum(u + "칸 수", 1, SheetOptions.MaxGridCount, 60, p => O(p).GridCount, (p, v) => O(p).GridCount = v);
+        var gridCount = IntNum(u + "칸 수", 1, SheetOptions.MaxGridCount, 60, p => O(p).GridCount, (p, v) => O(p).GridCount = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("칸").RecentKey("export.grid.count");
         var gridRow = Setting("칸 수", "줄바꿈 단위마다 새 줄에서 시작하고, 그 안에서 칸 수로 줄을 바꿉니다.", Line(gridMode, gridCount));
         var maxWidthRow = Setting("최대 가로", "자동 배치 시트의 최대 가로. 0 = 자동(전체 넓이의 제곱근 정도, 가장 넓은 칸 이상).",
-            Line(IntNum(u + "최대 가로", 0, PixelImage.MaxSize, 64, p => O(p).MaxWidth, (p, v) => O(p).MaxWidth = v), Ui.Label("px (0 = 자동)")));
+            Line(IntNum(u + "최대 가로", 0, PixelImage.MaxSize, 64, p => O(p).MaxWidth, (p, v) => O(p).MaxWidth = v)
+                .Presets([0, 128, 256, 512, 1024, 2048, 4096], [], v => v == 0 ? "0 (자동)" : $"{v:0} px").RecentKey("export.maxwidth"), Ui.Label("px (0 = 자동)")));
         var packOrder = Setting("넣는 순서", null,
             Seg(u + "넣는 순서", [AtlasPackOrder.KeepOrder, AtlasPackOrder.LargestFirst], ["정렬 순서대로", "큰 것부터"], p => O(p).PackOrder, (p, v) => O(p).PackOrder = v)
                 .SetTip(0, "위 정렬 기준 순서대로 채워 넣습니다.")
@@ -665,7 +669,8 @@ public sealed class UnityExportDialog : DialogBase
         _refresh.Add(p => namingWarning.IsVisible = namingAtOpen is { } n && O(p).Naming != n);
 
         var spacing = Setting("칸 사이 간격", "옆 칸 색이 Unity에서 번지지 않게 칸 사이를 띄웁니다(기본 1).",
-            Line(IntNum(u + "칸 간격", 0, 64, 54, p => O(p).Spacing, (p, v) => O(p).Spacing = v), Ui.Label("px")));
+            Line(IntNum(u + "칸 간격", 0, 64, 54, p => O(p).Spacing, (p, v) => O(p).Spacing = v)
+                .Presets(0, 1, 2, 3, 4, 8, 16).Unit("px").RecentKey("export.spacing"), Ui.Label("px")));
         var trim = Setting("테두리 잘라내기", "칸마다 투명한 테두리를 잘라냅니다(피벗은 같은 지점을, 9-slice 테두리는 같은 선을 가리키도록 보정).",
             OnOff(u + "테두리 잘라내기", p => O(p).Trim, (p, v) => O(p).Trim = v));
         var pot = Setting("2의 거듭제곱", "시트 가로·세로를 2의 거듭제곱(…, 256, 512, 1024 …)으로 맞춥니다.",
@@ -772,7 +777,7 @@ public sealed class UnityExportDialog : DialogBase
     /// <summary>
     /// Unity처럼 슬라이더 + 숫자 칸. 끄는 동안에는 숫자만 따라가고 놓을 때 한 번 반영한다(실행취소 1단계).
     /// </summary>
-    private Control IntSlider(string undo, int min, int max, Func<SpriteProject, int> get, Action<SpriteProject, int> set)
+    private Control IntSlider(string undo, int min, int max, decimal[] presets, string unit, string recentKey, Func<SpriteProject, int> get, Action<SpriteProject, int> set)
     {
         var slider = new Slider
         {
@@ -785,7 +790,7 @@ public sealed class UnityExportDialog : DialogBase
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(3, 0),
         };
-        var num = Ui.Num(min, max, min, 40);
+        var num = Ui.Num(min, max, min, 40).Presets(presets).Unit(unit).RecentKey(recentKey);
         bool syncing = false, pressed = false;
         void Commit(int v) => EditSettings(undo, p => get(p) != v, p => set(p, v));
         num.ValueChanged += (_, _) =>

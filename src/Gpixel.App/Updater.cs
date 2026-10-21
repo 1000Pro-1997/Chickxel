@@ -180,10 +180,12 @@ public sealed class Updater
         => $"업데이트 정보를 찾지 못했습니다. {why}\n\n지금 버전: {AppInfo.VersionText}\n릴리스 페이지: {AppUpdate.ReleasesUrl}";
 
     /// <summary>
-    /// API로 같은 태그의 릴리스 설명·공개일·실제 파일 목록을 얻어 붙인다. 한도 초과·오류·태그가 다르면 웹 주소로 얻은 정보를 그대로 쓴다.
+    /// 바뀐 점을 붙인다. 먼저 릴리스에 함께 올린 <c>CHANGELOG.md</c>(웹 내려받기 주소라 API 한도 없음)에서 지금 버전 다음 ~ 새 버전 절을 고르고,
+    /// 없으면 API의 릴리스 설명을 쓴다. 둘 다 못 읽으면 웹 주소로 얻은 정보를 그대로(업데이트 창이 버전별 링크를 보여 줌).
     /// </summary>
     private async Task<ReleaseInfo> WithNotesAsync(ReleaseInfo fromPage)
     {
+        if (await ChangelogNotesAsync(fromPage) is { Length: > 0 } notes) return fromPage with { Notes = notes };
         try
         {
             using var timeout = new CancellationTokenSource(ApiTimeout);
@@ -199,6 +201,26 @@ public sealed class Updater
         catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException or IOException or FormatException)
         {
             return fromPage;
+        }
+    }
+
+    /// <summary>새 버전 릴리스의 <c>CHANGELOG.md</c>에서 지금 버전보다 높은 절들(없거나 못 읽으면 null).</summary>
+    private async Task<string?> ChangelogNotesAsync(ReleaseInfo release)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(ApiTimeout);
+            var url = new Uri($"{AppUpdate.ReleasesUrl}/download/{Uri.EscapeDataString(release.Tag)}/{ChangelogNotes.AssetName}");
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            AddHeaders(request);
+            using var response = await _http.SendAsync(request, timeout.Token);
+            if (!response.IsSuccessStatusCode) return null;
+            var text = await response.Content.ReadAsStringAsync(timeout.Token);
+            return ChangelogNotes.Between(text, AppInfo.Version, release.Version);
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException or IOException)
+        {
+            return null;
         }
     }
 

@@ -48,7 +48,10 @@ public sealed class PreviewPanel : UserControl
         Background = AppTheme.PanelBrush;
         _view = new View(this);
         _play = Ui.Button("▶", (_, _) => TogglePlay(), 34).Tip("재생/정지 (Shift+Enter)");
-        _fps = Ui.Num(0, 60, 0, 46).Presets(0, 4, 6, 8, 10, 12, 15, 20, 24, 30, 60).Tip("미리보기 FPS (0 = 프레임마다 정한 길이)");
+        _fps = Ui.Num(0, 60, 0, 46)
+            .Presets([0, 4, 6, 8, 10, 12, 15, 20, 24, 30, 60], [], v => v == 0 ? "0 (프레임마다 정한 길이)" : $"{v:0} FPS")
+            .RecentKey("preview.fps")
+            .Tip("미리보기 FPS (0 = 프레임마다 정한 길이)");
         _scaleButton = new Button
         {
             Width = 52,

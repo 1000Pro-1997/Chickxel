@@ -255,3 +255,65 @@ public static class AppUpdate
     private static bool Bool(JsonElement e, string name)
         => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
 }
+
+/// <summary>
+/// 저장소의 <c>CHANGELOG.md</c>(한국어 "바뀐 점")에서 버전 절을 고른다. 절 머리는 <c>## v1.2.3 (날짜)</c>이고, 범위로 쓴 절
+/// (<c>## v1.10.x</c>, <c>## v1.0.0 ~ v1.5.x</c>)은 머리의 가장 높은 버전으로 본다(<c>x</c> = 그 부 버전의 끝).
+/// 릴리스마다 파일로 함께 올려 업데이트 창이 API 한도 없이 읽는다.
+/// </summary>
+public static class ChangelogNotes
+{
+    /// <summary>릴리스에 함께 올리는 파일 이름.</summary>
+    public const string AssetName = "CHANGELOG.md";
+
+    private static readonly System.Text.RegularExpressions.Regex VersionToken =
+        new(@"v?(\d+)\.(\d+)(?:\.(\d+|x))?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// <paramref name="current"/>보다 높고 <paramref name="latest"/> 이하인 절들(새 버전부터, 머리는 "v1.2.3 (날짜)" 줄로, 강조 기호 **·` 뺌).
+    /// 맞는 절이 없거나 글이 비었으면 빈 문자열.
+    /// </summary>
+    public static string Between(string? markdown, SemVersion current, SemVersion latest)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return "";
+        var picked = new List<string>();
+        List<string>? section = null;
+        foreach (var raw in markdown.Replace("\r\n", "\n").Split('\n'))
+        {
+            if (raw.StartsWith("## ", StringComparison.Ordinal))
+            {
+                Flush();
+                var v = HeaderVersion(raw[3..]);
+                section = v is not null && v > current && v <= latest ? [raw[3..].Trim()] : null;
+                continue;
+            }
+            if (raw.StartsWith("# ", StringComparison.Ordinal)) { Flush(); section = null; continue; }
+            section?.Add(raw);
+        }
+        Flush();
+        return string.Join("\n\n", picked);
+
+        void Flush()
+        {
+            if (section is null) return;
+            while (section.Count > 1 && string.IsNullOrWhiteSpace(section[^1])) section.RemoveAt(section.Count - 1);
+            // 앱에서는 글자로만 보이므로 마크다운 강조(**·`)는 뺀다.
+            picked.Add(string.Join("\n", section).Replace("**", "").Replace("`", ""));
+            section = null;
+        }
+    }
+
+    /// <summary>절 머리의 가장 높은 버전(<c>x</c>는 그 부 버전의 끝). 버전이 없으면 null.</summary>
+    public static SemVersion? HeaderVersion(string header)
+    {
+        SemVersion? best = null;
+        foreach (System.Text.RegularExpressions.Match m in VersionToken.Matches(header))
+        {
+            int major = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), minor = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+            int patch = !m.Groups[3].Success ? 0 : m.Groups[3].Value is "x" or "X" ? int.MaxValue : int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture);
+            var v = new SemVersion(major, minor, patch);
+            if (best is null || v > best) best = v;
+        }
+        return best;
+    }
+}

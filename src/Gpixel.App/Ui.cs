@@ -107,6 +107,25 @@ public static class Ui
     /// <summary>숫자 상자 값(비었으면 최소값).</summary>
     public static decimal NumValue(this NumericUpDown n) => n.Value ?? n.Minimum;
 
+    // 숫자 상자 우클릭 예시 값(NumberPresets.Presets)에 여러 곳에서 쓰는 목록.
+    /// <summary>스프라이트·캔버스 가로·세로(px).</summary>
+    public static readonly decimal[] SpriteSizes = [8, 16, 24, 32, 48, 64, 96, 128, 256, 512, 1024];
+    /// <summary>부위(머리·몸·팔·다리) 가로·세로(px).</summary>
+    public static readonly decimal[] PartSizes = [4, 6, 8, 10, 12, 16, 20, 24, 32, 48, 64];
+    /// <summary>타일 격자 칸(px).</summary>
+    public static readonly decimal[] TileSizes = [8, 12, 16, 24, 32, 48, 64, 128];
+    /// <summary>위치 옮김·오프셋(px, 음수 포함).</summary>
+    public static readonly decimal[] Offsets = [-16, -8, -4, -2, -1, 0, 1, 2, 4, 8, 16];
+    /// <summary>프레임 번호(1부터) 예시: 12개 이하면 전부, 많으면 앞쪽 몇 개·고른 간격·마지막 프레임.</summary>
+    public static decimal[] FrameNumbers(int count)
+        => count <= 12
+            ? [.. Enumerable.Range(1, Math.Max(1, count)).Select(i => (decimal)i)]
+            : [.. new decimal[] { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48 }.Where(v => v < count).Take(11).Append(count)];
+    /// <summary>여백·간격 같은 짧은 거리(px).</summary>
+    public static readonly decimal[] Spacings = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+    /// <summary>비율·세기·불투명도(%).</summary>
+    public static readonly decimal[] Percents = [0, 10, 25, 33, 50, 66, 75, 90, 100];
+
     public static Button Button(string text, EventHandler<RoutedEventArgs>? onClick = null, int width = 0)
     {
         var b = new Button { Content = text, Margin = new Thickness(2) };
@@ -215,25 +234,6 @@ public static class Ui
 
     /// <summary>"Ctrl" 자리 수정자(macOS = ⌘)가 눌렸는지.</summary>
     public static bool HasCommand(KeyModifiers m) => (m & Platform.CommandModifier) != 0;
-
-    /// <summary>
-    /// 글자·숫자 입력란 밖을 누르면 입력 상태를 끝낸다: 누른 곳이 포커스를 가져가지 않았으면(캔버스 빈 곳·패널 등) <paramref name="fallback"/>으로
-    /// 포커스를 옮긴다(숫자 상자는 이때 값이 확정됨). 창마다 한 번 부른다.
-    /// </summary>
-    public static void ReleaseTextFocusOnOutsideClick(TopLevel top, Func<IInputElement?> fallback)
-    {
-        top.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
-        {
-            if (top.FocusManager?.GetFocusedElement() is not TextBox box) return;
-            Control owner = Avalonia.VisualTree.VisualExtensions.FindAncestorOfType<NumericUpDown>(box) is { } num ? num : box;
-            if (e.Source is Visual v && (ReferenceEquals(v, owner) || Avalonia.VisualTree.VisualExtensions.IsVisualAncestorOf(owner, v))) return;
-            // 누른 곳이 스스로 포커스를 가져가는지 본 뒤에(버튼·다른 입력란이면 그대로 둠).
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (ReferenceEquals(top.FocusManager?.GetFocusedElement(), box)) (fallback() ?? top).Focus();
-            });
-        }, RoutingStrategies.Tunnel, handledEventsToo: true);
-    }
 
     // ───────────── 창 찾기 ─────────────
 
@@ -391,7 +391,6 @@ public class DialogBase : Window
         OkButton.IsDefault = true;
         CancelButtonControl = Ui.Button("취소", width: 90);
         CancelButtonControl.IsCancel = true;
-        Ui.ReleaseTextFocusOnOutsideClick(this, () => this);
         _results[OkButton] = DialogResult.OK;
         _results[CancelButtonControl] = DialogResult.Cancel;
         _buttons = new StackPanel

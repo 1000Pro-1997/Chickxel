@@ -28,22 +28,22 @@ public sealed class GroupLayoutDialog : DialogBase
         var current = group.AutoLayout;
         var l = current ?? new GroupLayout();
         _direction.SelectedIndex = (int)l.Direction;
-        _columns = Ui.Num(1, GroupLayout.MaxColumns, l.Columns, 56);
+        _columns = Ui.Num(1, GroupLayout.MaxColumns, l.Columns, 56).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("열").RecentKey("layout.columns");
         _align.SelectedIndex = (int)l.Align;
         _distribution.SelectedIndex = (int)l.Distribution;
         _distribution.SetTip(3, "첫 부위는 영역 시작, 끝 부위는 영역 끝에 붙이고 사이를 고르게(간격보다 좁아지면 간격으로 앞에서 모음)");
-        _gap = Ui.Num(0, GroupLayout.MaxSpacing, l.Gap, 56);
-        _margin = Ui.Num(0, GroupLayout.MaxSpacing, l.Margin, 56);
+        _gap = Ui.Num(0, GroupLayout.MaxSpacing, l.Gap, 56).Presets(Ui.Spacings).Unit("px").RecentKey("layout.gap");
+        _margin = Ui.Num(0, GroupLayout.MaxSpacing, l.Margin, 56).Presets(Ui.Spacings).Unit("px").RecentKey("layout.margin");
         _order.SelectedIndex = (int)l.Order;
         _order.SetTip(0, "타임라인 순서: 맨 위 부위가 먼저(왼쪽·위)").SetTip(1, "타임라인 거꾸로: 맨 아래 부위가 먼저");
         _includeHidden = Ui.Check("숨긴 부위도 자리 차지", l.IncludeHidden)
             .Tip("켜면(기본) 보이기를 켜고 꺼도 다른 부위가 움직이지 않습니다. 끄면 숨긴 부위는 제자리에 두고 보이는 부위만 배치합니다.");
         var area = l.Area ?? project.Bounds;
         _wholeCanvas = Ui.Check("캔버스 전체", l.Area is null);
-        _ax = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.X, 56);
-        _ay = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.Y, 56);
-        _aw = Ui.Num(1, PixelImage.MaxSize, area.Width, 56);
-        _ah = Ui.Num(1, PixelImage.MaxSize, area.Height, 56);
+        _ax = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.X, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
+        _ay = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.Y, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
+        _aw = Ui.Num(1, PixelImage.MaxSize, area.Width, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
+        _ah = Ui.Num(1, PixelImage.MaxSize, area.Height, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
         _preview = new GroupLayoutPreview(project, group, frameIndex) { Width = 340, Height = 190 };
 
         _columnsRow = Ui.Row(Ui.Label("열"), _columns);

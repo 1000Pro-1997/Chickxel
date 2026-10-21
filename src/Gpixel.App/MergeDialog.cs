@@ -50,8 +50,8 @@ public sealed class MergeDialog : DialogBase
                                   + "(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일", false);
         _frames = Radio("프레임으로", "파일마다 프레임(차례로 이어 붙임, 칸 이름 = 파일 이름). .gpixel은 레이어 구조·태그를 그대로 가져옵니다", false);
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
-        _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70);
-        _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70);
+        _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
+        _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         var fit = Ui.Button("가장 큰 크기", (_, _) => { _w.Value = maxW; _h.Value = maxH; });
         _deleteOriginals = Ui.Check("원본 삭제(앱 휴지통에 보관, Ctrl+Z로 되살림) — 끄면 원본을 그대로 둡니다");
         _info = Ui.Label("");

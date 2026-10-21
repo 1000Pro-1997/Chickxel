@@ -16,9 +16,10 @@ public sealed class TrashPolicyEditor : StackPanel
     {
         Spacing = 2;
         _daysOn = Ui.Check("기간 제한");
-        _days = Ui.Num(1, 3650, policy.Days > 0 ? policy.Days : 30, 70);
+        _days = Ui.Num(1, 3650, policy.Days > 0 ? policy.Days : 30, 70).Presets(1, 3, 7, 14, 30, 60, 90, 180, 365).Unit("일").RecentKey("trash.days");
         _sizeOn = Ui.Check("용량 제한");
-        _gb = Ui.Num(0.1m, 1000, policy.MaxMegabytes > 0 ? Math.Round(policy.MaxMegabytes / 1024m, 1) : 1, 70, 1, 0.1m);
+        _gb = Ui.Num(0.1m, 1000, policy.MaxMegabytes > 0 ? Math.Round(policy.MaxMegabytes / 1024m, 1) : 1, 70, 1, 0.1m)
+            .Presets(0.5m, 1, 2, 5, 10, 20, 50, 100).Unit("GB").RecentKey("trash.gb");
         _gb.FormatString = "0.#";
         _daysOn.IsChecked = policy.Days > 0;
         _sizeOn.IsChecked = policy.MaxMegabytes > 0;

@@ -222,8 +222,8 @@ public sealed class MainForm : Window, Ai.IAiHost
 
         KeyState.Attach(this);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
-        // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다.
-        Ui.ReleaseTextFocusOnOutsideClick(this, () => _canvas);
+        // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다(공통 모듈).
+        TextFocusRelease.SetFallback(this, () => _canvas);
         Opened += (_, _) => OnShown();
         Closing += OnWindowClosing;
         // Windows는 최대화할 때 WindowState가 바뀌기 전에 위치·크기 이벤트가 오므로 상태가 정해진 뒤에 기록한다.
@@ -1533,9 +1533,9 @@ public sealed class MainForm : Window, Ai.IAiHost
     /// <summary>"양파" 단추 우클릭 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기.</summary>
     private Flyout OnionFlyout()
     {
-        var before = Ui.Num(0, 5, _canvas.OnionBefore, 56);
-        var after = Ui.Num(0, 5, _canvas.OnionAfter, 56);
-        var opacity = Ui.Num(5, 90, _canvas.OnionOpacity, 56);
+        var before = Ui.Num(0, 5, _canvas.OnionBefore, 56).Presets(0, 1, 2, 3, 4, 5).Unit("프레임").RecentKey("onion.frames");
+        var after = Ui.Num(0, 5, _canvas.OnionAfter, 56).Presets(0, 1, 2, 3, 4, 5).Unit("프레임").RecentKey("onion.frames");
+        var opacity = Ui.Num(5, 90, _canvas.OnionOpacity, 56).Presets(10, 15, 20, 25, 33, 40, 50, 66, 75, 90).Unit("%").RecentKey("onion.opacity");
         var tint = Ui.Check("색 물들이기(앞 = 빨강, 뒤 = 파랑)", _canvas.OnionTint);
         void Apply()
         {
@@ -1560,8 +1560,8 @@ public sealed class MainForm : Window, Ai.IAiHost
     private Flyout TileGridFlyout()
     {
         var size = _canvas.TileSize;
-        var w = Ui.Num(1, 4096, size.Width, 64);
-        var h = Ui.Num(1, 4096, size.Height, 64);
+        var w = Ui.Num(1, 4096, size.Width, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
+        var h = Ui.Num(1, 4096, size.Height, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
         var color = new ColorField(_canvas.TileGridColor.ToColor32());
         void Apply()
         {

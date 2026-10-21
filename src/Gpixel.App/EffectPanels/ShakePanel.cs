@@ -10,19 +10,19 @@ public sealed partial class LayerEffectsDialog
     private void ShakePanel(ShakeEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static ShakeEffect S(LayerEffect v) => (ShakeEffect)v;
-        SettingsRow(Ui.Label("방향"), ChoiceEditor(Axes, (int)e.Axis, k => set(o => S(o) with { Axis = (EffectAxis)k })));
-        SettingsRow(Ui.Label("세기"), NumEditor(1, ShakeEffect.MaxAmount, e.Amount, v => set(o => S(o) with { Amount = v })), Ui.Label("px"),
-            Ui.Label("  횟수"), NumEditor(1, ShakeEffect.MaxCount, e.Count, v => set(o => S(o) with { Count = v })), Ui.Label("번"));
-        SettingsRow(CheckEditor("줄어듦 (끝으로 갈수록 약하게)", e.Decay, v => set(o => S(o) with { Decay = v })));
-        var seed = NumEditor(0, ShakeEffect.MaxSeed, e.Seed, v => set(o => S(o) with { Seed = v }));
+        SettingsRow("방향", ChoiceEditor(Axes, (int)e.Axis, k => set(o => S(o) with { Axis = (EffectAxis)k })));
+        SettingsRow("세기", NumEditor(1, ShakeEffect.MaxAmount, e.Amount, NumKinds.Px, v => set(o => S(o) with { Amount = v })), Ui.Label("px"),
+            Ui.Label("  횟수"), NumEditor(1, ShakeEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => S(o) with { Count = v })), Ui.Label("번"));
+        SettingsRow("", CheckEditor("줄어듦 (끝으로 갈수록 약하게)", e.Decay, v => set(o => S(o) with { Decay = v })));
+        var seed = NumEditor(0, ShakeEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => S(o) with { Seed = v }));
         var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, ShakeEffect.MaxSeed + 1), 36).Tip("다른 흔들림(시드를 무작위로)");
         seed.IsEnabled = reroll.IsEnabled = !e.Regular;
-        SettingsRow(Ui.Label("움직임"), ChoiceEditor(["무작위 (시드)", "규칙적 (사인)"], e.Regular ? 1 : 0, k =>
+        SettingsRow("움직임", ChoiceEditor(["무작위 (시드)", "규칙적 (사인)"], e.Regular ? 1 : 0, k =>
         {
             seed.IsEnabled = reroll.IsEnabled = k == 0;
             set(o => S(o) with { Regular = k == 1 });
         }));
-        SettingsRow(Ui.Label("    시드"), seed, reroll);
+        SettingsSubRow("시드", seed, reroll);
         AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint("그림 전체를 정수 픽셀만큼 옮겨 떱니다(많아야 세기 px). 시작·끝 프레임은 제자리이고, 흔들리는 만큼 부위 스프라이트에 여백이 생깁니다."));
     }

@@ -19,14 +19,14 @@ public sealed class NewImageDialog : DialogBase
 
     public NewImageDialog(int width, int height, string? fileName = null) : base("새 프로젝트", "만들기")
     {
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
+        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
+        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _transparent = Ui.Check("배경 투명", true);
         _normal = new RadioButton { GroupName = "start", Content = "일반(레이어 1)", IsChecked = true, Foreground = AppTheme.TextBrush };
         _parts = new RadioButton { GroupName = "start", Content = "부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)", Foreground = AppTheme.TextBrush };
         _partName = Ui.Text("머리", 100);
-        _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70);
-        _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70);
+        _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         _partRow = Ui.Row(Ui.Label("   첫 부위"), _partName, Ui.Label("가로"), _partW, Ui.Label("세로"), _partH, Ui.Label("px"));
         _partRow.IsEnabled = false;
         _parts.IsCheckedChanged += (_, _) => _partRow.IsEnabled = _parts.On();
@@ -82,8 +82,8 @@ public sealed class NewPartDialog : DialogBase
     public NewPartDialog(string name, int width, int height) : base("새 부위", "추가")
     {
         _name = Ui.Text(name, 200);
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
+        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
+        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         var names = Ui.Row(Ui.Label("이름"), _name);
         foreach (var n in new[] { "머리", "몸", "팔", "다리" })
             names.Children.Add(Ui.Button(n, (_, _) => _name.Text = n));
@@ -109,8 +109,10 @@ public sealed class PartOffsetDialog : DialogBase
 
     public PartOffsetDialog(string partName, Point offset) : base($"부위 위치 — {partName}")
     {
-        _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80);
-        _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80);
+        // 프레임 캔버스 안의 왼쪽 위 위치: 흔한 칸 경계 위주, 조금 밖으로 내민 음수도
+        decimal[] positions = [-8, -4, 0, 2, 4, 8, 12, 16, 24, 32, 48, 64];
+        _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80).Presets(positions).Unit("px").RecentKey("part.position");
+        _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80).Presets(positions).Unit("px").RecentKey("part.position");
         Body.Children.Add(Ui.Label("프레임 캔버스에서 부위 왼쪽 위 위치(모든 프레임 공통)"));
         Body.Children.Add(Ui.Row(Ui.Label("X"), _x, Ui.Label("Y"), _y, Ui.Label("px")));
     }
@@ -154,8 +156,8 @@ public sealed class ResizeDialog : DialogBase
 
     public ResizeDialog(int width, int height, string title) : base(title)
     {
-        _w = Ui.Num(1, PixelImage.MaxSize, width, 80);
-        _h = Ui.Num(1, PixelImage.MaxSize, height, 80);
+        _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
+        _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         Body.Children.Add(Ui.Label($"현재 크기: {width} × {height}"));
         Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
         Body.Children.Add(Ui.Label("기준점(기존 그림이 놓일 위치)"));
@@ -233,15 +235,16 @@ public sealed class SplitFramesDialog : DialogBase
         _image = image;
         _method = Ui.Combo(170, "격자 – 칸 크기", "격자 – 칸 수", "자동(덩어리마다)");
         if (_method.SelectedIndex < 0) _method.SelectedIndex = 0;
-        _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60);
-        _cellH = Ui.Num(1, image.Height, Math.Min(cellH, image.Height), 60);
-        _offX = Ui.Num(0, image.Width - 1, 0, 60);
-        _offY = Ui.Num(0, image.Height - 1, 0, 60);
-        _padX = Ui.Num(0, image.Width, 0, 60);
-        _padY = Ui.Num(0, image.Height, 0, 60);
-        _cols = Ui.Num(1, image.Width, Math.Max(1, image.Width / Math.Max(1, cellW)), 60);
-        _rows = Ui.Num(1, image.Height, Math.Max(1, image.Height / Math.Max(1, cellH)), 60);
-        _minSize = Ui.Num(1, 1024, 2, 60);
+        decimal[] counts = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
+        _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
+        _cellH = Ui.Num(1, image.Height, Math.Min(cellH, image.Height), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
+        _offX = Ui.Num(0, image.Width - 1, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.margin");
+        _offY = Ui.Num(0, image.Height - 1, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.margin");
+        _padX = Ui.Num(0, image.Width, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.spacing");
+        _padY = Ui.Num(0, image.Height, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.spacing");
+        _cols = Ui.Num(1, image.Width, Math.Max(1, image.Width / Math.Max(1, cellW)), 60).Presets(counts).Unit("칸").RecentKey("sheet.count");
+        _rows = Ui.Num(1, image.Height, Math.Max(1, image.Height / Math.Max(1, cellH)), 60).Presets(counts).Unit("칸").RecentKey("sheet.count");
+        _minSize = Ui.Num(1, 1024, 2, 60).Presets(1, 2, 3, 4, 6, 8, 12, 16, 24, 32).Unit("px").RecentKey("autoslice.min");
         _skipEmpty = Ui.Check("빈 칸 건너뛰기", true);
         _result = Ui.Label("");
         Body.Children.Add(Ui.Label($"현재 프레임 그림({image.Width}×{image.Height})을 칸마다 프레임 하나로 나눕니다."));
@@ -388,8 +391,8 @@ public sealed class GridSettingsDialog : DialogBase
     {
         _pixelColor = new ColorField(pixelColor);
         _tileColor = new ColorField(tileColor);
-        _tileW = Ui.Num(1, 4096, tile.Width, 64);
-        _tileH = Ui.Num(1, 4096, tile.Height, 64);
+        _tileW = Ui.Num(1, 4096, tile.Width, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
+        _tileH = Ui.Num(1, 4096, tile.Height, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
         Body.Children.Add(Ui.Label("픽셀 격자(6배 이상 확대에서 보임)", bold: true));
         Body.Children.Add(Ui.Row(Ui.Label("색"), _pixelColor));
         Body.Children.Add(Ui.Label("타일 격자", bold: true));

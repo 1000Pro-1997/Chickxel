@@ -44,9 +44,12 @@ public sealed class UpdateDialog : DialogBase
             Margin = new Thickness(3, 0, 3, 2),
         });
         Body.Children.Add(Ui.Label($"Gpixel {release.Version}  ·  지금 버전 {AppInfo.VersionText}{published}"));
+        string pageUrl = release.PageUrl.ToString();
         Body.Children.Add(new TextBox
         {
-            Text = release.Notes.Trim().Length > 0 ? release.Notes.Trim() : "(바뀐 점은 \"릴리스 페이지 열기\"에서 볼 수 있습니다.)",
+            Text = release.Notes.Trim().Length > 0
+                ? release.Notes.Trim()
+                : $"바뀐 점을 불러오지 못했습니다.\n\nGpixel {release.Version}의 바뀐 점은 아래 링크(릴리스 페이지)에서 볼 수 있습니다:\n{pageUrl}",
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
@@ -54,6 +57,18 @@ public sealed class UpdateDialog : DialogBase
             Height = 280,
             Margin = new Thickness(3, 6, 3, 3),
         });
+        // 버전별 릴리스 페이지 링크(설명을 읽었든 못 읽었든 늘 보임)
+        var link = new Button
+        {
+            Content = new TextBlock { Text = $"Gpixel {release.Version} 바뀐 점 — 릴리스 페이지 열기 ↗", TextDecorations = TextDecorations.Underline },
+            Foreground = AppTheme.AccentBrush,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(3, 0),
+            Cursor = new Cursor(StandardCursorType.Hand),
+        }.Tip(pageUrl);
+        link.Click += (_, _) => Updater.OpenUrl(this, pageUrl);
+        Body.Children.Add(link);
         _note = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,

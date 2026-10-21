@@ -94,7 +94,8 @@ public static class LayerEffects
     /// <paramref name="width"/>×<paramref name="height"/> 그림에 켜진 효과들이 그림 밖으로 넓힐 수 있는 최대 여백(차례대로 쌓임: 외곽선 뒤 그림자면 외곽선까지 그림자가 진다).
     /// 프레임 범위·진행은 보지 않으므로 어느 프레임의 효과 묶음 여백보다도 작지 않다(효과를 빼면 여백은 줄기만 함) — 모든 프레임 같은 크기로 넓힐 때 쓴다.
     /// 터지기는 거리(+ 중력 쪽), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이 × 높이%(+ 물결 폭만큼 양옆) 넓힌다.
-    /// 흔들기·둥실둥실·녹아내리기·회전·충격파 고리는 <see cref="MotionPadding.Of"/>(세기·높이·거리·돌린 그림·반지름)만큼 넓힌다.
+    /// 흔들기·둥실둥실·녹아내리기·회전·충격파 고리는 <see cref="MotionPadding.Of"/>(세기·높이·거리·돌린 그림·반지름)만큼 넓힌다. 홀로그램은 좌우로 글리치 최대 밀림,
+    /// 테두리 빛이면 사방으로 1px 더.
     /// 넓힌 크기가 <see cref="PixelImage.MaxSize"/>를 넘는 축은 여백 없이(그 축은 이미지 끝에서 잘림).
     /// </summary>
     public static EffectPadding Padding(IReadOnlyList<LayerEffect> effects, int width, int height)
@@ -150,6 +151,16 @@ public static class LayerEffects
                     else b += reach;
                     l += m.Wave;
                     r += m.Wave;
+                    break;
+                }
+                case HologramEffect g:
+                {
+                    // 글리치 조각이 좌우로 최대 밀림만큼, 테두리 빛이 사방 1px(밀린 조각 둘레까지)
+                    int edge = g.EdgeGlow ? 1 : 0;
+                    l += g.GlitchReach + edge;
+                    r += g.GlitchReach + edge;
+                    t += edge;
+                    b += edge;
                     break;
                 }
                 case ShakeEffect or BobEffect or MeltEffect or RotateEffect or ShockwaveEffect:
@@ -230,6 +241,7 @@ public static class LayerEffects
                 case AfterimageEffect a: AfterimageRender.Apply(image, a, source); break;
                 case ColorCycleEffect c: ColorCycleRender.Apply(image, c); break;
                 case ShockwaveEffect w: ShockwaveRender.Apply(image, w, source); break;
+                case HologramEffect g: HologramRender.Apply(image, g, source); break;
             }
         }
     }

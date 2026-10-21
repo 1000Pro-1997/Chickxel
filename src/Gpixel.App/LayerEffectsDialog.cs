@@ -13,6 +13,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private const int PreviewBox = 220;
     /// <summary>오른쪽(미리보기) 칸 폭 — 고정(넉넉히): 설명 글이 바뀌어도 창 폭이 그대로.</summary>
     private const int RightWidth = PreviewBox * 2 + 72;
+    /// <summary>가운데(효과 목록·설정) 칸 폭.</summary>
+    private const int SettingsWidth = 350;
 
     /// <summary>
     /// 추가할 수 있는 효과 종류(이름, 한 줄 설명, 새 효과 만들기) — 번호 = <see cref="Create"/>의 kind. 고정 효과 먼저, 움직이는 효과는 뒤에 모아 둔다.
@@ -42,6 +44,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ("잔상", "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다.", () => new AfterimageEffect()),
         ("색 순환", "정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색).", () => new ColorCycleEffect()),
         ("충격파 고리", "중심에서 픽셀 원 고리가 퍼져 나갑니다.", () => new ShockwaveEffect()),
+        ("홀로그램", "한 색의 투사 영상처럼 물들이고 주사선·밝은 띠·깜빡임·글리치를 더합니다(SF 홀로그램).", () => new HologramEffect()),
     ];
 
     /// <summary>효과 종류의 한 줄 설명(번호 = <see cref="Create"/>의 kind).</summary>
@@ -70,6 +73,62 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private static readonly string[] ShadowDithers = ["없음 (반투명)", "25%", "50% (바둑판)", "75%"];
     private static readonly string[] Blends = ["덮기", "곱하기", "스크린"];
     private static readonly string[] Dithers = ["없음 (부드럽게)", "2×2 Bayer", "4×4 Bayer"];
+
+    /// <summary>숫자 칸 종류: 우클릭 예시 값(칸 범위 밖 값은 빠짐), 단위(메뉴 글자), 최근 값 묶음 이름. <paramref name="Format"/>가 있으면 단위 대신 그 글자.</summary>
+    private sealed record NumKind(string Key, string Unit, decimal[] Values, Func<decimal, string>? Format = null);
+
+    /// <summary>효과 설정의 숫자 칸 종류(같은 종류끼리 최근 값을 나눔).</summary>
+    private static class NumKinds
+    {
+        /// <summary>지나가는·바뀌는 방향(0~359°).</summary>
+        public static readonly NumKind Angle = new("effect.angle", "°", [0, 15, 30, 45, 60, 90, 120, 135, 180, 225, 270, 315]);
+        /// <summary>범위 동안 도는 전체 각도(360 = 한 바퀴).</summary>
+        public static readonly NumKind Rotation = new("effect.rotation", "°", [15, 30, 45, 90, 180, 270, 360, 540, 720, 1080, 1440]);
+        /// <summary>색상 돌리기(−180~180°).</summary>
+        public static readonly NumKind Hue = new("effect.hue", "°", [-180, -120, -90, -60, -30, 0, 30, 60, 90, 120, 180]);
+        /// <summary>세기·양(0~100%).</summary>
+        public static readonly NumKind Strength = new("effect.strength", "%", [0, 10, 25, 33, 50, 66, 75, 90, 100]);
+        /// <summary>불투명도(0~100%).</summary>
+        public static readonly NumKind Opacity = new("effect.opacity", "%", [0, 10, 20, 25, 33, 40, 50, 60, 75, 90, 100]);
+        /// <summary>밝기·대비·채도(−100~100%).</summary>
+        public static readonly NumKind Adjust = new("effect.adjust", "%", [-100, -75, -50, -25, -10, 0, 10, 25, 50, 75, 100]);
+        /// <summary>빈도(프레임 중 몇 %).</summary>
+        public static readonly NumKind Rate = new("effect.rate", "%", [0, 5, 10, 15, 20, 25, 33, 50, 75, 100]);
+        /// <summary>흩어짐·불규칙함(0~100%).</summary>
+        public static readonly NumKind Random = new("effect.random", "%", [0, 10, 20, 25, 33, 50, 66, 75, 90, 100]);
+        /// <summary>진행 중 시작 시점(0~100%).</summary>
+        public static readonly NumKind Progress = new("effect.progress", "%", [0, 10, 20, 25, 33, 40, 50, 60, 66, 75, 90]);
+        /// <summary>그림 크기의 몇 %(반사 높이).</summary>
+        public static readonly NumKind Portion = new("effect.portion", "%", [10, 20, 25, 33, 40, 50, 60, 66, 75, 100]);
+        /// <summary>늘었다 줄기 세기(1~50%).</summary>
+        public static readonly NumKind Squash = new("effect.squash", "%", [5, 10, 15, 20, 25, 30, 40, 50]);
+        /// <summary>작은 픽셀 거리(폭·높이·흔들림·간격·밀림).</summary>
+        public static readonly NumKind Px = new("effect.px", "px", [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]);
+        /// <summary>선·띠·고리 두께.</summary>
+        public static readonly NumKind Thickness = new("effect.thickness", "px", [1, 2, 3, 4, 5, 6, 8, 12, 16]);
+        /// <summary>그림자 X·Y 옮김(음수 = 왼쪽·위).</summary>
+        public static readonly NumKind Offset = new("effect.offset", "px", [-8, -4, -3, -2, -1, 0, 1, 2, 3, 4, 8]);
+        /// <summary>날아가는·흘러내리는 거리, 고리 반지름.</summary>
+        public static readonly NumKind Distance = new("effect.distance", "px", [4, 8, 12, 16, 24, 32, 48, 64, 96, 128]);
+        /// <summary>중력(음수 = 위로).</summary>
+        public static readonly NumKind Gravity = new("effect.gravity", "px", [-16, -8, -4, -2, 0, 2, 4, 6, 8, 16, 32]);
+        /// <summary>터지기 조각 크기(1~4px).</summary>
+        public static readonly NumKind Piece = new("effect.piece", "px", [1, 2, 3, 4]);
+        /// <summary>범위 안 횟수(튕김·번쩍임·깜빡임·흔들림·오르내림).</summary>
+        public static readonly NumKind Count = new("effect.count", "번", [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
+        /// <summary>움직임 반복 횟수.</summary>
+        public static readonly NumKind Repeat = new("effect.repeat", "번", [1, 2, 3, 4, 5, 6, 8]);
+        /// <summary>프레임 수(보임·숨김·번쩍임·잔상 간격).</summary>
+        public static readonly NumKind Frames = new("effect.frames", "프레임", [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
+        /// <summary>잔상 개수.</summary>
+        public static readonly NumKind Copies = new("effect.copies", "개", [1, 2, 3, 4, 5, 6, 8]);
+        /// <summary>주사선 간격(줄).</summary>
+        public static readonly NumKind ScanGap = new("effect.scanGap", "줄", [2, 3, 4, 5, 6]);
+        /// <summary>무작위 시드.</summary>
+        public static readonly NumKind Seed = new("effect.seed", "", [1, 2, 3, 7, 42, 1234]);
+        /// <summary>색 허용 차이(R·G·B 0~255).</summary>
+        public static readonly NumKind Tolerance = new("effect.tolerance", "", [0, 4, 8, 16, 24, 32, 48, 64, 96, 128]);
+    }
 
     private readonly SpriteProject _project;
     private readonly Layer _layer;
@@ -107,8 +166,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
         int n = _project.Frames.Count;
         _addAll = Ui.Check("모든 프레임", newRange is null);
-        _addFrom = Ui.Num(1, n, (newRange?.From ?? 0) + 1, 56);
-        _addTo = Ui.Num(1, n, (newRange?.To ?? n - 1) + 1, 56);
+        _addFrom = WithKind(Ui.Num(1, n, (newRange?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
+        _addTo = WithKind(Ui.Num(1, n, (newRange?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
         _addFrom.IsEnabled = _addTo.IsEnabled = newRange is not null;
         ToolTip.SetTip(_addAll, "추가하는 효과가 입혀질 프레임(추가한 뒤에도 아래 설정에서 바꿀 수 있음).");
         _addAll.IsCheckedChanged += (_, _) =>
@@ -125,7 +184,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _up = Ui.Button("위로", (_, _) => Move(-1), 60);
         _down = Ui.Button("아래로", (_, _) => Move(1), 60);
         _bake = Ui.Button("영구 적용", (_, _) => Bake(), 80);
-        _list = new ListBox { Width = 300, Height = 170, Margin = new Thickness(3) };
+        _list = new ListBox { Width = SettingsWidth, Height = 170, Margin = new Thickness(3) };
         ToolTip.SetTip(_list, "줄을 끌어 순서를 바꿉니다(위에서부터 차례로 적용). Delete = 고른 효과 삭제.");
         _list.KeyDown += (_, e) =>
         {
@@ -149,7 +208,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
             SyncPlayback();
             SyncStripRange();
         };
-        _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = 300 };
+        _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
+        Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
 
         string? motionTip = _motionRange != newRange && _motionRange is { } mr
             ? $"추가 범위를 그대로 두고 움직이는 효과(터지기 ~ 충격파 고리)를 추가하면 여러 프레임에 걸치도록 프레임 {mr.From + 1}~{mr.To + 1}로 넓혀 추가합니다."
@@ -161,7 +221,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             _list,
             Ui.Row(_remove, _up, _down, _bake),
             Ui.Group("설정", new ScrollViewer { Content = _settings, MaxHeight = 430, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
-        left.Width = 330;
+        left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;
         _preview.Height = PreviewBox + 20;
@@ -340,6 +400,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         AfterimageEffect after => $"잔상 · {after.Count}개 · 간격 {after.Interval} · {after.Opacity}%" + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
         ColorCycleEffect cycle => $"색 순환 · {cycle.Colors.Count}색 · {cycle.Steps}칸" + (cycle.Reverse ? " · 거꾸로" : ""),
         ShockwaveEffect wave => $"충격파 고리 · {wave.Radius}px · 두께 {wave.Thickness} · {(wave.Behind ? "뒤" : "앞")}",
+        HologramEffect holo => $"홀로그램 · {holo.Color.ToHex()} · {holo.TintStrength}% · 투명도 {holo.Opacity}%" + (holo.Dither ? " · 디더" : "")
+                               + (holo.GlitchRate > 0 ? $" · 글리치 {holo.GlitchRate}%" : ""),
         _ => e.DisplayName,
     }) + (e.Frames is { } f ? $" · 프레임 {f}" : "");
 
@@ -419,68 +481,67 @@ public sealed partial class LayerEffectsDialog : DialogBase
         }
         var e = _effects[i];
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
-        void Add(params Control[] row) => _settings.Children.Add(Ui.Row(row));
         AddRangeEditor(i);
 
         switch (e)
         {
             case OutlineEffect o:
-                Add(Ui.Label("색"), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })));
-                Add(Ui.Label("두께"), NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
-                Add(Ui.Label("방향"), ChoiceEditor(["4방향 (십자)", "8방향 (모서리 포함)"], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
-                Add(Ui.Label("위치"), ChoiceEditor(["바깥 (그림 밖으로)", "안쪽 (가장자리 픽셀)"], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
+                SettingsRow("색", ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })));
+                SettingsRow("두께", NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
+                SettingsRow("방향", ChoiceEditor(["4방향 (십자)", "8방향 (모서리 포함)"], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
+                SettingsRow("위치", ChoiceEditor(["바깥 (그림 밖으로)", "안쪽 (가장자리 픽셀)"], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
                 break;
             case ShadowEffect s:
-                Add(Ui.Label("색"), ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })));
-                Add(Ui.Label("X"),
-                    NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetX, v => Set(x => (ShadowEffect)x with { OffsetX = v })),
+                SettingsRow("색", ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })));
+                SettingsRow("X",
+                    NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetX, NumKinds.Offset, v => Set(x => (ShadowEffect)x with { OffsetX = v })),
                     Ui.Label("Y"),
-                    NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetY, v => Set(x => (ShadowEffect)x with { OffsetY = v })),
+                    NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetY, NumKinds.Offset, v => Set(x => (ShadowEffect)x with { OffsetY = v })),
                     Ui.Label("px"));
-                Add(Ui.Label("디더"), ChoiceEditor(ShadowDithers, (int)s.Dither, k => Set(x => (ShadowEffect)x with { Dither = (ShadowDither)k })));
+                SettingsRow("디더", ChoiceEditor(ShadowDithers, (int)s.Dither, k => Set(x => (ShadowEffect)x with { Dither = (ShadowDither)k })));
                 _settings.Children.Add(Hint("그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기). 디더를 고르면 반투명 대신 불투명한 색을 그 밀도의 무늬(50% = 바둑판)로 깝니다."));
                 break;
             case RimLightEffect r:
-                Add(Ui.Label("빛이 오는 쪽"),
+                SettingsRow("빛이 오는 쪽",
                     ChoiceEditor(Directions.Select(d => d.Name).ToArray(), Array.FindIndex(Directions, d => d.Dir == r.Direction),
                         k => Set(x => (RimLightEffect)x with { Direction = Directions[k].Dir })));
-                Add(Ui.Label("빛 색"), ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })));
-                Add(Ui.Label("그늘 색"), ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })));
+                SettingsRow("빛 색", ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })));
+                SettingsRow("그늘 색", ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })));
                 _settings.Children.Add(Hint("빛 쪽 가장자리 1px에 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함)."));
                 break;
             case ColorOverlayEffect c:
-                Add(Ui.Label("색"), ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })));
-                Add(Ui.Label("양"), NumEditor(0, 100, c.Amount, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
+                SettingsRow("색", ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })));
+                SettingsRow("양", NumEditor(0, 100, c.Amount, NumKinds.Strength, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
                 _settings.Children.Add(Hint("보이는 픽셀을 그 색 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."));
                 break;
             case ExplodeEffect x:
             {
                 ExplodeEffect X(LayerEffect v) => (ExplodeEffect)v;
-                Add(Ui.Label("거리"), NumEditor(1, ExplodeEffect.MaxDistance, x.Distance, v => Set(o => X(o) with { Distance = v })), Ui.Label("px (끝까지 날아가는 거리)"));
-                var cx = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterX, v => Set(o => X(o) with { CenterX = v }));
-                var cy = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterY, v => Set(o => X(o) with { CenterY = v }));
+                SettingsRow("거리", NumEditor(1, ExplodeEffect.MaxDistance, x.Distance, NumKinds.Distance, v => Set(o => X(o) with { Distance = v })), Ui.Label("px (끝까지 날아가는 거리)"));
+                var cx = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterX, CenterKind(vertical: false), v => Set(o => X(o) with { CenterX = v }));
+                var cy = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterY, CenterKind(vertical: true), v => Set(o => X(o) with { CenterY = v }));
                 cx.IsEnabled = cy.IsEnabled = x.Center == ExplodeCenter.Custom;
-                Add(Ui.Label("중심"), ChoiceEditor(Centers, (int)x.Center, k =>
+                SettingsRow("중심", ChoiceEditor(Centers, (int)x.Center, k =>
                 {
                     cx.IsEnabled = cy.IsEnabled = (ExplodeCenter)k == ExplodeCenter.Custom;
                     Set(o => X(o) with { Center = (ExplodeCenter)k });
                 }));
-                Add(Ui.Label("    X"), cx, Ui.Label("Y"), cy, Ui.Label("px (원본 왼쪽 위 기준)"));
-                Add(Ui.Label("흩어짐"), NumEditor(0, 100, x.Spread, v => Set(o => X(o) with { Spread = v })), Ui.Label("%"),
-                    Ui.Label("  중력"), NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
-                Add(Ui.Label("조각 크기"), NumEditor(1, ExplodeEffect.MaxPieceSize, x.PieceSize, v => Set(o => X(o) with { PieceSize = v })), Ui.Label("px"),
+                SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label("px (원본 왼쪽 위 기준)"));
+                SettingsRow("흩어짐", NumEditor(0, 100, x.Spread, NumKinds.Random, v => Set(o => X(o) with { Spread = v })), Ui.Label("%"),
+                    Ui.Label("  중력"), NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, NumKinds.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
+                SettingsRow("조각 크기", NumEditor(1, ExplodeEffect.MaxPieceSize, x.PieceSize, NumKinds.Piece, v => Set(o => X(o) with { PieceSize = v })), Ui.Label("px"),
                     CheckEditor("끝으로 갈수록 작게", x.Shrink, v => Set(o => X(o) with { Shrink = v })));
-                var fadeStart = NumEditor(0, 100, x.FadeStart, v => Set(o => X(o) with { FadeStart = v }));
+                var fadeStart = NumEditor(0, 100, x.FadeStart, NumKinds.Progress, v => Set(o => X(o) with { FadeStart = v }));
                 fadeStart.IsEnabled = x.Fade;
-                Add(CheckEditor("사라짐 (흐려지기)", x.Fade, v => { fadeStart.IsEnabled = v; Set(o => X(o) with { Fade = v }); }),
+                SettingsCheckRow(CheckEditor("사라짐", x.Fade, v => { fadeStart.IsEnabled = v; Set(o => X(o) with { Fade = v }); }).Tip("끝으로 갈수록 흐려지며 사라집니다(시작 = 흐려지기 시작하는 진행 %)."),
                     Ui.Label("시작"), fadeStart, Ui.Label("%"));
-                Add(Ui.Label("번쩍임"), NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label("프레임"),
+                SettingsRow("번쩍임", NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, NumKinds.Frames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label("프레임"),
                     ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })));
-                Add(CheckEditor("원본 남기기 (복사본이 날아감)", x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
-                var seed = NumEditor(0, ExplodeEffect.MaxSeed, x.Seed, v => Set(o => X(o) with { Seed = v }));
+                SettingsRow("", CheckEditor("원본 남기기 (복사본이 날아감)", x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
+                var seed = NumEditor(0, ExplodeEffect.MaxSeed, x.Seed, NumKinds.Seed, v => Set(o => X(o) with { Seed = v }));
                 var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, ExplodeEffect.MaxSeed + 1), 36);
                 ToolTip.SetTip(reroll, "다른 흩어짐(시드를 무작위로)");
-                Add(Ui.Label("시드"), seed, reroll);
+                SettingsRow("시드", seed, reroll);
                 AddMotionEditors(i, Set);
                 _settings.Children.Add(Hint("범위 첫 프레임은 원래 그림 그대로, 그 뒤로 보이는 픽셀이 중심에서 바깥으로 튀어 나가며 사라집니다. 셀 그림은 그대로입니다."
                                             + " 범위의 프레임마다 그 프레임 그림이 조각이 됩니다(그림이 없는 프레임은 터질 것도 없음)."));
@@ -489,11 +550,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case ShineEffect s:
             {
                 ShineEffect S(LayerEffect v) => (ShineEffect)v;
-                Add(Ui.Label("각도"), NumEditor(0, 359, s.Angle, v => Set(o => S(o) with { Angle = v })), Ui.Label("° (지나가는 방향, 45 = ↗)"));
-                Add(Ui.Label("폭"), NumEditor(1, ShineEffect.MaxWidth, s.Width, v => Set(o => S(o) with { Width = v })), Ui.Label("px"),
-                    Ui.Label("  세기"), NumEditor(0, 100, s.Strength, v => Set(o => S(o) with { Strength = v })), Ui.Label("%"));
-                Add(Ui.Label("색"), ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })));
-                Add(Ui.Label("부드러움"), ChoiceEditor(["딱딱하게", "가장자리 1px", "가장자리 2px"], s.Softness, k => Set(o => S(o) with { Softness = k })));
+                SettingsRow("각도", NumEditor(0, 359, s.Angle, NumKinds.Angle, v => Set(o => S(o) with { Angle = v })), Ui.Label("° (지나가는 방향, 45 = ↗)"));
+                SettingsRow("폭", NumEditor(1, ShineEffect.MaxWidth, s.Width, NumKinds.Px, v => Set(o => S(o) with { Width = v })), Ui.Label("px"),
+                    Ui.Label("  세기"), NumEditor(0, 100, s.Strength, NumKinds.Strength, v => Set(o => S(o) with { Strength = v })), Ui.Label("%"));
+                SettingsRow("색", ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })));
+                SettingsRow("부드러움", ChoiceEditor(["딱딱하게", "가장자리 1px", "가장자리 2px"], s.Softness, k => Set(o => S(o) with { Softness = k })));
                 AddMotionEditors(i, Set);
                 _settings.Children.Add(Hint("빛 띠가 그림 한쪽 바로 밖에서 들어와 반대쪽으로 빠져나갑니다. 보이는 픽셀만 밝아지고(스크린), 투명한 곳·투명도는 그대로입니다."));
                 break;
@@ -501,10 +562,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case SquashEffect q:
             {
                 SquashEffect Q(LayerEffect v) => (SquashEffect)v;
-                Add(Ui.Label("세기"), NumEditor(1, SquashEffect.MaxAmount, q.Amount, v => Set(o => Q(o) with { Amount = v })), Ui.Label("%"),
-                    Ui.Label("  튕김"), NumEditor(1, SquashEffect.MaxBounces, q.Bounces, v => Set(o => Q(o) with { Bounces = v })), Ui.Label("번"));
-                Add(Ui.Label("기준점"), ChoiceEditor(Anchors, (int)q.Anchor, k => Set(o => Q(o) with { Anchor = (SquashAnchor)k })));
-                Add(Ui.Label("순서"), ChoiceEditor(["옆으로 먼저 (납작 → 길쭉)", "위로 먼저 (길쭉 → 납작)"], q.StretchFirst ? 1 : 0, k => Set(o => Q(o) with { StretchFirst = k == 1 })));
+                SettingsRow("세기", NumEditor(1, SquashEffect.MaxAmount, q.Amount, NumKinds.Squash, v => Set(o => Q(o) with { Amount = v })), Ui.Label("%"),
+                    Ui.Label("  튕김"), NumEditor(1, SquashEffect.MaxBounces, q.Bounces, NumKinds.Count, v => Set(o => Q(o) with { Bounces = v })), Ui.Label("번"));
+                SettingsRow("기준점", ChoiceEditor(Anchors, (int)q.Anchor, k => Set(o => Q(o) with { Anchor = (SquashAnchor)k })));
+                SettingsRow("순서", ChoiceEditor(["옆으로 먼저 (납작 → 길쭉)", "위로 먼저 (길쭉 → 납작)"], q.StretchFirst ? 1 : 0, k => Set(o => Q(o) with { StretchFirst = k == 1 })));
                 AddMotionEditors(i, Set);
                 _settings.Children.Add(Hint("젤리처럼 출렁이다 원래 모양으로 돌아옵니다(가로 1 + 세기 × 출렁임, 세로 1 − 세기 × 출렁임). 픽셀은 늘이거나 줄여도 또렷합니다."));
                 break;
@@ -524,6 +585,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case AfterimageEffect after: AfterimagePanel(after, Set); break;
             case ColorCycleEffect cycle: ColorCyclePanel(cycle, Set); break;
             case ShockwaveEffect wave: ShockwavePanel(wave, Set); break;
+            case HologramEffect holo: HologramPanel(holo, Set); break;
         }
     }
 
@@ -542,10 +604,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private void AddTimingEditors(AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
     {
-        SettingsRow(Ui.Label("빠르기"), ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
-        var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
+        SettingsRow("빠르기", ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
+        var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, NumKinds.Repeat, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
         count.IsEnabled = a.Repeat != EffectRepeat.Once;
-        SettingsRow(Ui.Label("반복"), ChoiceEditor(Repeats, (int)a.Repeat, k =>
+        SettingsRow("반복", ChoiceEditor(Repeats, (int)a.Repeat, k =>
         {
             count.IsEnabled = (EffectRepeat)k != EffectRepeat.Once;
             set(o => (AnimatedEffect)o with { Repeat = (EffectRepeat)k });
@@ -561,8 +623,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         int n = _project.Frames.Count;
         var range = _effects[i].Frames;
         var all = Ui.Check("모든 프레임", range is null);
-        var from = Ui.Num(1, n, (range?.From ?? 0) + 1, 56);
-        var to = Ui.Num(1, n, (range?.To ?? n - 1) + 1, 56);
+        var from = WithKind(Ui.Num(1, n, (range?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
+        var to = WithKind(Ui.Num(1, n, (range?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
         from.IsEnabled = to.IsEnabled = range is not null;
         bool syncing = false;
         void Apply()
@@ -593,12 +655,62 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
-        _rangeRow = Ui.Row(all, from, Ui.Label("~"), to);
-        _settings.Children.Add(_rangeRow);
+        _rangeRow = SettingsRow("범위", all, from, Ui.Label("~"), to);
     }
 
-    /// <summary>설정 칸에 한 줄.</summary>
-    private void SettingsRow(params Control[] row) => _settings.Children.Add(Ui.Row(row));
+    /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다.</summary>
+    private const string LabelColumn = "EffectSettingsLabel";
+    /// <summary>위 줄에 딸린 줄(<see cref="SettingsSubRow"/>)의 이름 들여쓰기.</summary>
+    private const double SubIndent = 12;
+
+    /// <summary>
+    /// 설정 칸에 한 줄: 왼쪽 이름 열(모든 줄이 같은 폭, 왼쪽 맞춤)에 <paramref name="label"/>, 오른쪽 열에 컨트롤들(모든 줄이 같은 x에서 시작).
+    /// 이름이 ""면 오른쪽 열만. 오른쪽 열 줄을 돌려준다.
+    /// </summary>
+    private StackPanel SettingsRow(string label, params Control[] controls) => FormRow(label.Length == 0 ? null : Ui.Label(label), 0, controls);
+
+    /// <summary>위 줄에 딸린 줄(위 줄 고름에 따라 쓰이는 값): 이름을 조금 들여 쓴다.</summary>
+    private StackPanel SettingsSubRow(string label, params Control[] controls) => FormRow(Ui.Label(label), SubIndent, controls);
+
+    /// <summary>체크 상자가 이름인 줄(켜야 오른쪽 값을 씀): 체크 상자가 이름 열에 들어간다.</summary>
+    private StackPanel SettingsCheckRow(CheckBox head, params Control[] controls) => FormRow(head, 0, controls);
+
+    private StackPanel FormRow(Control? head, double indent, Control[] controls)
+    {
+        if (head is not null)
+        {
+            head.VerticalAlignment = VerticalAlignment.Center;
+            head.Margin = new Thickness(head.Margin.Left + indent, head.Margin.Top, head.Margin.Right + 6, head.Margin.Bottom);
+        }
+        var row = Ui.Row(controls);
+        AddFormRow(head, row);
+        return row;
+    }
+
+    /// <summary>오른쪽 열에 한 덩어리(줄 바꿈 패널 등 — 열 폭에 맞춰 늘어남). 이름은 첫 줄 높이에 맞춘다.</summary>
+    private void SettingsBlock(string label, Control body)
+    {
+        var head = Ui.Label(label);
+        head.VerticalAlignment = VerticalAlignment.Top;
+        head.Margin = new Thickness(3, 6, 9, 3);
+        AddFormRow(head, body);
+    }
+
+    /// <summary>이름 열(<see cref="LabelColumn"/> 공유 폭, 왼쪽 맞춤) + 값 열 한 줄을 설정 칸에 넣는다.</summary>
+    private void AddFormRow(Control? head, Control body)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = LabelColumn });
+        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        if (head is not null)
+        {
+            head.HorizontalAlignment = HorizontalAlignment.Left;
+            grid.Children.Add(head);
+        }
+        Grid.SetColumn(body, 1);
+        grid.Children.Add(body);
+        _settings.Children.Add(grid);
+    }
 
     private const string HintClass = "effect-hint";
 
@@ -620,11 +732,48 @@ public sealed partial class LayerEffectsDialog : DialogBase
         return field;
     }
 
-    private static NumericUpDown NumEditor(int min, int max, int value, Action<int> changed)
+    /// <summary>효과 값 숫자 칸: <paramref name="kind"/>의 우클릭 예시 값·단위·최근 값 묶음을 붙인다.</summary>
+    private static NumericUpDown NumEditor(int min, int max, int value, NumKind kind, Action<int> changed)
     {
-        var n = Ui.Num(min, max, value, 56);
+        var n = WithKind(Ui.Num(min, max, value, 56), kind);
         n.ValueChanged += (_, _) => changed((int)n.NumValue());
         return n;
+    }
+
+    private static NumericUpDown WithKind(NumericUpDown n, NumKind kind) => n.Presets(kind.Values, [], kind.Format).Unit(kind.Unit).RecentKey(kind.Key);
+
+    /// <summary>
+    /// 프레임 번호 칸(1부터, 범위 시작·끝) 예시: 처음·지금·마지막 프레임과 태그 시작(끝) 프레임에 이름을 붙이고, 남는 자리는 고른 간격.
+    /// </summary>
+    private NumKind FrameNumberKind(bool end)
+    {
+        int n = _project.Frames.Count, now = _frame + 1;
+        var names = new Dictionary<decimal, string>();
+        foreach (var t in _project.Tags)
+            if ((end ? t.To : t.From) + 1 is var f && f >= 1 && f <= n) names.TryAdd(f, $"{t.Name} {(end ? "끝" : "시작")}");
+        names[now] = names.TryGetValue(now, out var tag) ? $"지금 · {tag}" : "지금";
+        var values = new SortedSet<decimal>(names.Keys) { 1, n };
+        foreach (var v in Ui.FrameNumbers(n))
+        {
+            if (values.Count >= 12) break;
+            values.Add(v);
+        }
+        return new(end ? "effect.frame.to" : "effect.frame.from", "", [.. values],
+            v => names.TryGetValue(v, out var name) ? $"{v} ({name})" : $"{v}");
+    }
+
+    /// <summary>중심 X·Y 칸(원본 왼쪽 위 기준 px) 예시: 0, 그림 가운데·끝(이름 붙임)과 흔한 거리.</summary>
+    private NumKind CenterKind(bool vertical)
+    {
+        var source = SourceAt(_frame);
+        int size = source is null ? vertical ? _project.Height : _project.Width : vertical ? source.Height : source.Width;
+        decimal mid = size / 2, last = Math.Max(0, size - 1);
+        var values = new SortedSet<decimal> { 0, mid, last };
+        foreach (var v in new decimal[] { 4, 8, 16, 24, 32, 48, 64 })
+            if (v < last && values.Count < 10) values.Add(v);
+        string edge = vertical ? "아래 끝" : "오른쪽 끝";
+        return new(vertical ? "effect.center.y" : "effect.center.x", "px", [.. values],
+            v => v == mid ? $"{v} px (가운데)" : v == last && v > 0 ? $"{v} px ({edge})" : $"{v} px");
     }
 
     private static ComboBox ChoiceEditor(string[] items, int selected, Action<int> changed)

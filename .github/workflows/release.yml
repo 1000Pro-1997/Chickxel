@@ -39,4 +39,12 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt --title "Gpixel $GITHUB_REF_NAME" --generate-notes
+        run: |
+          # 릴리스 설명 = CHANGELOG.md의 이 버전 절(없으면 GitHub 자동 노트). CHANGELOG.md는 파일로도 올려 앱 업데이트 창이 API 없이 읽는다.
+          awk -v tag="$GITHUB_REF_NAME" '
+            /^## / { inside = (index($0, "## " tag " ") == 1 || $0 == "## " tag); next }
+            /^# / { inside = 0 }
+            inside { print }
+          ' CHANGELOG.md > dist/RELEASE_NOTES.md
+          if [ -s dist/RELEASE_NOTES.md ]; then NOTES=(--notes-file dist/RELEASE_NOTES.md); else NOTES=(--generate-notes); fi
+          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md --title "Gpixel $GITHUB_REF_NAME" "${NOTES[@]}"

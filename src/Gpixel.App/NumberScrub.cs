@@ -51,7 +51,7 @@ public static class NumberScrub
             {
                 void UpdateCursor() => text.Cursor = text.IsKeyboardFocusWithin ? null : ScrubCursor;
                 text.GotFocus += (_, _) => UpdateCursor();
-                text.LostFocus += (_, _) => UpdateCursor();
+                text.LostFocus += (_, _) => { UpdateCursor(); NumberPresets.Remember(n); }; // 입력을 마친 값 = 최근 값
                 UpdateCursor();
             }
             n.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -140,6 +140,7 @@ public static class NumberScrub
         if (scrubbed)
         {
             Ended?.Invoke(null, n);
+            NumberPresets.Remember(n);
             return;
         }
         // 끌지 않은 클릭: 글자 입력.
@@ -155,7 +156,7 @@ public static class NumberScrub
         if (sender is not NumericUpDown n || !States.TryGetValue(n, out var s) || !s.Pressed) return;
         bool scrubbed = s.Scrubbing;
         s.Pressed = s.Scrubbing = false;
-        if (scrubbed) Ended?.Invoke(null, n);
+        if (scrubbed) { Ended?.Invoke(null, n); NumberPresets.Remember(n); }
     }
 
     private static double ScalingOf(Visual v) => TopLevel.GetTopLevel(v)?.RenderScaling ?? 1;

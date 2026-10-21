@@ -206,4 +206,39 @@ public class UpdateTests
         Assert.Equal(b.ToLowerInvariant(), map["gpixel-windows-x64.zip"]);
         Assert.Equal(a, map["Gpixel-macos-x64.zip"]);
     }
+
+    private const string Changelog = """
+        # 바뀐 점
+
+        설명 문단.
+
+        ## v1.13.0 (2026-10-21)
+        - 홀로그램
+
+        ## v1.12.0 (2026-10-21)
+        - 실행취소 기록
+
+        ## v1.10.x (2026-10-20)
+        - 저장 단추
+
+        ## v1.0.0 ~ v1.5.x (2026-10-20)
+        - 첫 공개
+        """;
+
+    [Fact]
+    public void Changelog_Between_PicksSectionsAboveCurrentUpToLatest_NewestFirst()
+    {
+        var notes = ChangelogNotes.Between(Changelog, new SemVersion(1, 11, 0), new SemVersion(1, 13, 0));
+        Assert.Equal("v1.13.0 (2026-10-21)\n- 홀로그램\n\nv1.12.0 (2026-10-21)\n- 실행취소 기록", notes);
+        Assert.DoesNotContain("설명 문단", notes);
+    }
+
+    [Fact]
+    public void Changelog_RangeHeaders_CountAsTheirHighestVersion()
+    {
+        Assert.Contains("저장 단추", ChangelogNotes.Between(Changelog, new SemVersion(1, 10, 3), new SemVersion(1, 12, 0)));
+        Assert.Equal(new SemVersion(1, 5, int.MaxValue), ChangelogNotes.HeaderVersion("v1.0.0 ~ v1.5.x (2026-10-20)"));
+        Assert.Equal("", ChangelogNotes.Between(Changelog, new SemVersion(1, 13, 0), new SemVersion(1, 13, 0)));
+        Assert.Equal("", ChangelogNotes.Between(null, new SemVersion(1, 0, 0), new SemVersion(2, 0, 0)));
+    }
 }

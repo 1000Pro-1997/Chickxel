@@ -10,25 +10,25 @@ public sealed partial class LayerEffectsDialog
     private void BlinkPanel(BlinkEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static BlinkEffect B(LayerEffect v) => (BlinkEffect)v;
-        var on = NumEditor(1, BlinkEffect.MaxFrames, e.OnFrames, v => set(o => B(o) with { OnFrames = v }));
-        var off = NumEditor(1, BlinkEffect.MaxFrames, e.OffFrames, v => set(o => B(o) with { OffFrames = v }));
-        var count = NumEditor(1, BlinkEffect.MaxCount, e.Count, v => set(o => B(o) with { Count = v }));
+        var on = NumEditor(1, BlinkEffect.MaxFrames, e.OnFrames, NumKinds.Frames, v => set(o => B(o) with { OnFrames = v }));
+        var off = NumEditor(1, BlinkEffect.MaxFrames, e.OffFrames, NumKinds.Frames, v => set(o => B(o) with { OffFrames = v }));
+        var count = NumEditor(1, BlinkEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => B(o) with { Count = v }));
         void Sync(BlinkTiming t)
         {
             on.IsEnabled = off.IsEnabled = t == BlinkTiming.Frames;
             count.IsEnabled = t == BlinkTiming.Count;
         }
         Sync(e.Timing);
-        SettingsRow(Ui.Label("간격"), ChoiceEditor(["프레임 수로", "범위 안 횟수로"], (int)e.Timing, k =>
+        SettingsRow("간격", ChoiceEditor(["프레임 수로", "범위 안 횟수로"], (int)e.Timing, k =>
         {
             Sync((BlinkTiming)k);
             set(o => B(o) with { Timing = (BlinkTiming)k });
         }));
-        SettingsRow(Ui.Label("    보임"), on, Ui.Label("숨김"), off, Ui.Label("프레임"));
-        SettingsRow(Ui.Label("    횟수"), count, Ui.Label("번 (범위 안)"));
-        var opacity = NumEditor(0, 100, e.Opacity, v => set(o => B(o) with { Opacity = v }));
+        SettingsSubRow("보임", on, Ui.Label("숨김"), off, Ui.Label("프레임"));
+        SettingsSubRow("횟수", count, Ui.Label("번 (범위 안)"));
+        var opacity = NumEditor(0, 100, e.Opacity, NumKinds.Opacity, v => set(o => B(o) with { Opacity = v }));
         opacity.IsEnabled = e.Hide == BlinkHide.Translucent;
-        SettingsRow(Ui.Label("숨김 방식"), ChoiceEditor(BlinkHides, (int)e.Hide, k =>
+        SettingsRow("숨김 방식", ChoiceEditor(BlinkHides, (int)e.Hide, k =>
         {
             opacity.IsEnabled = (BlinkHide)k == BlinkHide.Translucent;
             set(o => B(o) with { Hide = (BlinkHide)k });

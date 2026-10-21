@@ -29,7 +29,7 @@ public sealed partial class LayerEffectsDialog
         var source = SourceAt(_frame);
         IReadOnlyList<Color32> used = source is null ? [] : PaletteRemap.UsedColors(source);
 
-        if (p.Pairs.Count == 0) SettingsRow(Ui.Label("바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."));
+        if (p.Pairs.Count == 0) _settings.Children.Add(Ui.Label("바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."));
         for (int k = 0; k < p.Pairs.Count; k++)
         {
             int at = k;
@@ -42,7 +42,7 @@ public sealed partial class LayerEffectsDialog
                 set(o => P(o) with { Pairs = P(o).Pairs.Where((_, j) => j != at).ToArray() });
                 ShowSettings();
             }, 26).Tip("이 쌍 빼기");
-            SettingsRow(from, Ui.Label("→"), to, remove);
+            SettingsRow($"{k + 1}", from, Ui.Label("→"), to, remove);
         }
 
         var add = Ui.Button("+ 쌍 추가", (_, _) =>
@@ -71,8 +71,8 @@ public sealed partial class LayerEffectsDialog
             flyout.Content = panel;
             pick.Flyout = flyout;
         }
-        SettingsRow(add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : "그림에 쓰인 색을 골라 쌍으로 추가합니다."));
-        SettingsRow(Ui.Label("허용 차이"), NumEditor(0, PaletteSwapEffect.MaxTolerance, p.Tolerance, v => set(o => P(o) with { Tolerance = v })), Ui.Label("(0 = 정확히 같은 색만)"));
+        SettingsRow("", add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : "그림에 쓰인 색을 골라 쌍으로 추가합니다."));
+        SettingsRow("허용 차이", NumEditor(0, PaletteSwapEffect.MaxTolerance, p.Tolerance, NumKinds.Tolerance, v => set(o => P(o) with { Tolerance = v })), Ui.Label("(0 = 정확히 같은 색만)"));
         _settings.Children.Add(Hint("보이는 픽셀의 색이 왼쪽 색과 같으면(R·G·B 차이가 허용 차이 이하) 오른쪽 색으로 바꿉니다. 위의 쌍이 먼저이고 한 번만 바뀌므로 두 색 맞바꾸기도 됩니다."
                                     + " 바뀐 색의 투명도 = 원래 투명도 × 오른쪽 색 투명도(투명으로 바꾸면 지워짐)."));
     }

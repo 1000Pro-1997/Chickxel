@@ -8,12 +8,12 @@ public sealed partial class LayerEffectsDialog
     private void AfterimagePanel(AfterimageEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static AfterimageEffect A(LayerEffect v) => (AfterimageEffect)v;
-        SettingsRow(Ui.Label("개수"), NumEditor(1, AfterimageEffect.MaxCount, e.Count, v => set(o => A(o) with { Count = v })), Ui.Label("개"),
-            Ui.Label("  간격"), NumEditor(1, AfterimageEffect.MaxInterval, e.Interval, v => set(o => A(o) with { Interval = v })), Ui.Label("프레임"));
-        SettingsRow(Ui.Label("불투명도"), NumEditor(1, 100, e.Opacity, v => set(o => A(o) with { Opacity = v })), Ui.Label("% (가장 가까운 잔상, 멀수록 옅게)"));
+        SettingsRow("개수", NumEditor(1, AfterimageEffect.MaxCount, e.Count, NumKinds.Copies, v => set(o => A(o) with { Count = v })), Ui.Label("개"),
+            Ui.Label("  간격"), NumEditor(1, AfterimageEffect.MaxInterval, e.Interval, NumKinds.Frames, v => set(o => A(o) with { Interval = v })), Ui.Label("프레임"));
+        SettingsRow("불투명도", NumEditor(1, 100, e.Opacity, NumKinds.Opacity, v => set(o => A(o) with { Opacity = v })), Ui.Label("% (가장 가까운 잔상, 멀수록 옅게)"));
         var tint = ColorEditor(e.TintColor, v => set(o => A(o) with { TintColor = v }));
         tint.IsEnabled = e.Tint;
-        SettingsRow(CheckEditor("색 입히기", e.Tint, v =>
+        SettingsCheckRow(CheckEditor("색 입히기", e.Tint, v =>
         {
             tint.IsEnabled = v;
             set(o => A(o) with { Tint = v });

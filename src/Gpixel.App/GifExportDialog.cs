@@ -51,10 +51,11 @@ public sealed class GifExportDialog : DialogBase
         (_currentTag is not null ? _rangeCurrent : _rangeAll).IsChecked = true;
 
         int side = Math.Max(_project.Width, _project.Height);
-        _scale = Ui.Num(1, MaxScale, Math.Clamp((int)Math.Round(256.0 / side), 1, MaxScale), width: 60);
+        _scale = Ui.Num(1, MaxScale, Math.Clamp((int)Math.Round(256.0 / side), 1, MaxScale), width: 60)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10).Unit("×").RecentKey("gif.scale");
         _loopForever = Radio("loop", "무한 반복");
         _loopCount = Radio("loop", "재생 횟수");
-        _plays = Ui.Num(1, 100, Math.Max(1, settings.GifPlayCount), width: 60);
+        _plays = Ui.Num(1, 100, Math.Max(1, settings.GifPlayCount), width: 60).Presets(1, 2, 3, 4, 5, 10, 20).Unit("번").RecentKey("gif.plays");
         (settings.GifPlayCount <= 0 ? _loopForever : _loopCount).IsChecked = true;
 
         _bgTransparent = Radio("bg", "투명(알파 50% 미만은 투명, 나머지는 불투명)");

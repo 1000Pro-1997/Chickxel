@@ -1,0 +1,130 @@
+using System.Drawing;
+using Gpixel.Core.Model;
+
+namespace Gpixel.Core.Edit;
+
+/// <summary>
+/// 홀로그램(<see cref="HologramEffect"/>) 그리기. 차례: 글리치 조각 밀기 → 보이는 픽셀마다 색(명암 그대로) → 밝은 띠 또는 주사선 → RGB 분리(글리치 프레임)
+/// → 알파 × 투명도 × 깜빡임(디더면 Bayer 칸만) → 테두리 빛. 주사선·디더 무늬는 원본 왼쪽 위 기준, 띠·글리치 조각은 보이는 그림 범위 기준이라
+/// 캔버스·부위 아틀라스에서 같다.
+/// </summary>
+internal static class HologramRender
+{
+    public static void Apply(PixelImage image, HologramEffect e, Rectangle source)
+    {
+        var bounds = image.GetOpaqueBounds();
+        if (bounds.IsEmpty) return;
+        int w = image.Width, step = e.FrameStep;
+        var px = image.Pixels;
+
+        var slices = e.GlitchSlices(step, bounds.Height);
+        if (slices.Count > 0) Glitch(px, w, bounds, slices);
+
+        var shape = LayerEffects.Mask(px);
+        double u = e.Progress, flicker = e.FlickerAt(step);
+        int tint = (e.TintStrength * 255 + 50) / 100, band = e.Band ? (e.BandStrength * 255 + 50) / 100 : 0, scan = e.ScanStrength;
+        var bandLight = LayerEffects.Mix(e.Color, Color32.White, 128);
+        int gap = e.ScanGap, offset = e.ScanOffset(u);
+        // 띠 위 끝: 진행 0 = 보이는 그림 바로 위(두께만큼), 1 = 바로 아래 — 양 끝 프레임엔 닿는 픽셀이 없다
+        int bandTop = (int)Math.Round(bounds.Top - e.BandSize + (bounds.Bottom - bounds.Top + e.BandSize) * u, MidpointRounding.AwayFromZero);
+        double opacity = e.Opacity / 100.0 * flicker;
+
+        // 색·띠·주사선(알파는 그대로) — RGB 분리가 이웃 결과를 보므로 먼저 모두 만든다
+        var rgb = new Color32[px.Length];
+        var keep = new double[px.Length];
+        for (int y = bounds.Top; y < bounds.Bottom; y++)
+        {
+            bool inBand = band > 0 && y >= bandTop && y < bandTop + e.BandSize;
+            bool scanRow = !inBand && scan > 0 && ((y - source.Y - offset) % gap + gap) % gap == 0;
+            double rowKeep = scanRow && e.ScanStyle == HologramScanStyle.Fade ? 1 - scan / 100.0 : 1;
+            for (int x = 0; x < w; x++)
+            {
+                int i = y * w + x;
+                if (!shape[i]) continue;
+                var c = LayerEffects.Mix(px[i], Tint(px[i], e.Color), tint);
+                if (inBand) c = LayerEffects.Screen(c, bandLight, band);
+                else if (scanRow && e.ScanStyle == HologramScanStyle.Darken) c = Darken(c, scan);
+                rgb[i] = c;
+                keep[i] = opacity * rowKeep;
+            }
+        }
+
+        bool split = e.RgbSplit && slices.Count > 0;
+        for (int y = bounds.Top; y < bounds.Bottom; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int i = y * w + x;
+                if (!shape[i]) continue;
+                var c = rgb[i];
+                if (split)
+                {
+                    byte r = x > 0 && shape[i - 1] ? rgb[i - 1].R : (byte)0, b = x + 1 < w && shape[i + 1] ? rgb[i + 1].B : (byte)0;
+                    c = new Color32(r, c.G, b, c.A);
+                }
+                px[i] = Fade(c, keep[i], e.Dither, x - source.X, y - source.Y);
+            }
+
+        if (e.EdgeGlow && e.EdgeOpacity > 0) Glow(image, shape, e, opacity * e.EdgeOpacity / 100.0, source);
+    }
+
+    /// <summary>글리치: 조각 줄들을 좌우로 민다(원래 그림에서 읽음 — 겹치면 뒤 조각이 이김, 밀려 나간 자리는 투명).</summary>
+    private static void Glitch(Color32[] px, int w, Rectangle bounds, IReadOnlyList<(int Top, int Height, int Shift)> slices)
+    {
+        var src = (Color32[])px.Clone();
+        foreach (var (top, height, shift) in slices)
+            for (int y = bounds.Top + top; y < Math.Min(bounds.Bottom, bounds.Top + top + height); y++)
+            {
+                int row = y * w;
+                for (int x = 0; x < w; x++)
+                {
+                    int sx = x - shift;
+                    px[row + x] = (uint)sx < (uint)w ? src[row + sx] : Color32.Transparent;
+                }
+            }
+    }
+
+    /// <summary>
+    /// 홀로그램 색: 밝기 L(0~255)에서 목표 = 색 × (0.3 + 0.7 × L/192)(L ≤ 192), 그 위는 색에서 흰색 쪽으로 0.6 × (L − 192)/63. 채널마다 L에 단조(명암 순서 유지).
+    /// </summary>
+    internal static Color32 Tint(Color32 c, Color32 color)
+    {
+        double l = 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;
+        byte T(byte k) => l <= 192
+            ? (byte)Math.Round(k * (0.3 + 0.7 * l / 192), MidpointRounding.AwayFromZero)
+            : (byte)Math.Round(k + (255 - k) * 0.6 * (l - 192) / 63, MidpointRounding.AwayFromZero);
+        return new Color32(T(color.R), T(color.G), T(color.B), c.A);
+    }
+
+    private static Color32 Darken(Color32 c, int strength)
+    {
+        int keep = 100 - strength;
+        byte D(byte v) => (byte)((v * keep + 50) / 100);
+        return new Color32(D(c.R), D(c.G), D(c.B), c.A);
+    }
+
+    /// <summary>알파 × <paramref name="keep"/>(디더면 4×4 Bayer 칸만 알파 그대로, 나머지는 투명).</summary>
+    private static Color32 Fade(Color32 c, double keep, bool dither, int bx, int by)
+    {
+        if (keep >= 1) return c;
+        if (dither) return Bayer.On(EffectDither.Bayer4, keep, bx, by) ? c : Color32.Transparent;
+        byte a = (byte)Math.Round(c.A * keep, MidpointRounding.AwayFromZero);
+        return a == 0 ? Color32.Transparent : c.WithAlpha(a);
+    }
+
+    /// <summary>테두리 빛: 모양 밖 4방향 이웃 1px에 색(알파 255 × <paramref name="keep"/>, 디더면 무늬 칸만 불투명).</summary>
+    private static void Glow(PixelImage image, bool[] shape, HologramEffect e, double keep, Rectangle source)
+    {
+        int w = image.Width, h = image.Height;
+        var px = image.Pixels;
+        var solid = e.Color.WithAlpha(255);
+        bool In(int x, int y) => (uint)x < (uint)w && (uint)y < (uint)h && shape[y * w + x];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int i = y * w + x;
+                if (shape[i] || !(In(x - 1, y) || In(x + 1, y) || In(x, y - 1) || In(x, y + 1))) continue;
+                var c = Fade(solid, keep, e.Dither, x - source.X, y - source.Y);
+                if (c.A != 0) px[i] = c; // 모양 밖은 투명이라 그대로 놓는다
+            }
+    }
+}

@@ -35,11 +35,14 @@ public sealed class PreferencesDialog : DialogBase
         _commands = commands;
         _keys = commands.ToDictionary(c => c.Id, c => keys.TryGetValue(c.Id, out var k) ? k.ToList() : c.Defaults.ToList());
 
-        _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90);
+        _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90)
+            .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit("단계").RecentKey("undo.steps");
         _trash = new TrashPolicyEditor(trashPolicy);
         _historyOn = Ui.Check("파일을 닫아도 실행취소 기록 남기기", historyEnabled);
-        _historyDays = Ui.Num(0, 3650, Math.Clamp(historyPolicy.Days, 0, 3650), 70);
-        _historyMb = Ui.Num(10, 100_000, Math.Clamp(historyPolicy.MaxMegabytes, 10, 100_000), 80);
+        _historyDays = Ui.Num(0, 3650, Math.Clamp(historyPolicy.Days, 0, 3650), 70)
+            .Presets(0, 1, 3, 7, 14, 30, 60, 90, 180, 365).Unit("일").RecentKey("history.days");
+        _historyMb = Ui.Num(10, 100_000, Math.Clamp(historyPolicy.MaxMegabytes, 10, 100_000), 80)
+            .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit("MB").RecentKey("history.mb");
         void SyncHistory() => _historyDays.IsEnabled = _historyMb.IsEnabled = _historyOn.On();
         _historyOn.IsCheckedChanged += (_, _) => SyncHistory();
         SyncHistory();
@@ -56,7 +59,8 @@ public sealed class PreferencesDialog : DialogBase
         historyNote.Foreground = AppTheme.DimTextBrush;
         _autoSave = Ui.Check("자동 저장", autoSave);
         _autoSaveDelay = Ui.Num(AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay,
-            Math.Clamp(autoSaveDelay, AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay), 70);
+                Math.Clamp(autoSaveDelay, AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay), 70)
+            .Presets(1, 2, 3, 5, 10, 15, 30, 60, 120, 300, 600).Unit("초").RecentKey("autosave.delay");
         _autoSaveDelay.IsEnabled = autoSave;
         _autoSave.IsCheckedChanged += (_, _) => _autoSaveDelay.IsEnabled = _autoSave.On();
         var autoSaveNote = Ui.Label("저장한 적 있는 파일만, Ctrl+S와 같이(켜져 있으면 시트 내보내기 포함) 저장합니다. 새 프로젝트는 저장하지 않습니다.");

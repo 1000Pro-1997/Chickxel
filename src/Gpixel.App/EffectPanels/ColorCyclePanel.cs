@@ -28,7 +28,7 @@ public sealed partial class LayerEffectsDialog
         var source = SourceAt(_frame);
         IReadOnlyList<Color32> used = source is null ? [] : PaletteRemap.UsedColors(source);
 
-        var row = new WrapPanel { Orientation = Orientation.Horizontal, MaxWidth = 300 };
+        var row = new WrapPanel { Orientation = Orientation.Horizontal };
         for (int k = 0; k < e.Colors.Count; k++)
         {
             int at = k;
@@ -42,7 +42,7 @@ public sealed partial class LayerEffectsDialog
             remove.IsEnabled = e.Colors.Count > ColorCycleEffect.MinColors;
             row.Children.Add(Ui.Row(Ui.Label($"{k + 1}"), field, remove));
         }
-        _settings.Children.Add(row);
+        SettingsBlock("색", row);
 
         bool full = e.Colors.Count >= ColorCycleEffect.MaxColors;
         var add = Ui.Button("+ 색 추가", (_, _) =>
@@ -66,10 +66,18 @@ public sealed partial class LayerEffectsDialog
             flyout.Content = panel;
             pick.Flyout = flyout;
         }
-        SettingsRow(add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : full ? $"색은 {ColorCycleEffect.MaxColors}개까지입니다." : "그림에 쓰인 색을 골라 넣습니다."));
-        SettingsRow(Ui.Label("칸 수"), NumEditor(1, ColorCycleEffect.MaxSteps, e.Steps, v => set(o => C(o) with { Steps = v })), Ui.Label("칸 (범위 동안 넘어가는 횟수)"));
-        SettingsRow(Ui.Label("방향"), ChoiceEditor(["앞으로 (1 → 2 → …)", "거꾸로"], e.Reverse ? 1 : 0, k => set(o => C(o) with { Reverse = k == 1 })));
+        SettingsRow("", add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : full ? $"색은 {ColorCycleEffect.MaxColors}개까지입니다." : "그림에 쓰인 색을 골라 넣습니다."));
+        SettingsRow("칸 수", NumEditor(1, ColorCycleEffect.MaxSteps, e.Steps, StepsKind(e.Colors.Count), v => set(o => C(o) with { Steps = v })), Ui.Label("칸 (범위 동안 넘어가는 횟수)"));
+        SettingsRow("방향", ChoiceEditor(["앞으로 (1 → 2 → …)", "거꾸로"], e.Reverse ? 1 : 0, k => set(o => C(o) with { Reverse = k == 1 })));
         AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint($"그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다(목록에 없는 색·투명도는 그대로). 칸 수가 색 개수({e.Colors.Count})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온)."));
+    }
+
+    /// <summary>칸 수 예시: 1과 색 개수의 배수(범위 끝이 처음과 같아 되풀이해도 이어짐 — "N바퀴"로 보임).</summary>
+    private static NumKind StepsKind(int colors)
+    {
+        var values = new SortedSet<decimal> { 1 };
+        for (int k = 1; values.Count < 12 && k * colors <= ColorCycleEffect.MaxSteps; k++) values.Add(k * colors);
+        return new("effect.cycle.steps", "칸", [.. values], v => v % colors == 0 ? $"{v} 칸 ({v / colors}바퀴)" : $"{v} 칸");
     }
 }

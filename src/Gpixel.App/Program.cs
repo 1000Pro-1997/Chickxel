@@ -45,6 +45,7 @@ public sealed class App : Application
         });
         AppTheme.Install(this);
         PopupMenus.Install();
+        TextFocusRelease.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()

@@ -64,7 +64,7 @@ public sealed class LospecPaletteDialog : DialogBase
         // ── 거르기 줄
         _sort = Ui.Combo(100, "인기", "다운로드순", "최신", "이름순");
         _filter = Ui.Combo(84, "전체", "최대", "최소", "정확히");
-        _count = Ui.Num(1, 256, 8, 64);
+        _count = Ui.Num(1, 256, 8, 64).Presets(2, 3, 4, 5, 6, 8, 12, 16, 24, 32, 64, 256).Unit("색").RecentKey("palette.count");
         _count.IsEnabled = false;
         _tag = Ui.Text("", 150);
         _tag.Watermark = "태그 또는 이름";

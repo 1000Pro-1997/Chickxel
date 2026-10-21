@@ -76,13 +76,15 @@ public sealed class ColorPanel : UserControl
             _modeTabs.Add(null, ColorPickerModes.Icon(mode), $"색 고르기: {ColorPickerModes.Name(mode)}");
         _modeTabs.SelectionChanged += (_, _) => ShowPicker();
 
-        _r = Ui.Num(0, 255, 0, 44);
-        _g = Ui.Num(0, 255, 0, 44);
-        _b = Ui.Num(0, 255, 0, 44);
-        _a = Ui.Num(0, 255, 255, 44);
-        _hNum = Ui.Num(0, 360, 0, 44);
-        _sNum = Ui.Num(0, 100, 0, 44);
-        _vNum = Ui.Num(0, 100, 0, 44);
+        decimal[] channel = [0, 32, 64, 96, 128, 160, 192, 224, 255];
+        _r = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
+        _g = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
+        _b = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
+        _a = Ui.Num(0, 255, 255, 44).Presets(channel).RecentKey("color.alpha");
+        // 색상환 30° 간격: 빨강 0 · 노랑 60 · 초록 120 · 청록 180 · 파랑 240 · 자홍 300
+        _hNum = Ui.Num(0, 360, 0, 44).Presets(0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330).Unit("°").RecentKey("color.hue");
+        _sNum = Ui.Num(0, 100, 0, 44).Presets(Ui.Percents).Unit("%").RecentKey("color.saturation");
+        _vNum = Ui.Num(0, 100, 0, 44).Presets(Ui.Percents).Unit("%").RecentKey("color.value");
         foreach (var n in new[] { _r, _g, _b, _a }) n.ValueChanged += (_, _) => ApplyRgba();
         foreach (var n in new[] { _hNum, _sNum, _vNum })
             n.ValueChanged += (_, _) =>
