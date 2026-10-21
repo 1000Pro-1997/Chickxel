@@ -729,7 +729,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void AddRangeEditor(int i)
     {
         var effect = _effects[i];
-        bool virtualRange = _extension is not null && !ReferenceEquals(effect, _extensionOwner);
+        bool virtualRange = UsesVirtualTimeline(effect);
         int n = virtualRange ? VirtualCount : _project.Frames.Count;
         FrameRange? range = virtualRange
             ? _virtualRangeOverrides.TryGetValue(effect, out var direct)

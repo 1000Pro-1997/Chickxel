@@ -85,7 +85,12 @@ public sealed partial class LayerEffectsDialog
     /// 다른 방법이면 범위 길이보다 크게 했을 때 확인할 때 그만큼 프레임을 더한다.
     /// </summary>
     private bool UsesVirtualTimeline(LayerEffect e)
-        => _extension is not null && !ReferenceEquals(e, _extensionOwner);
+    {
+        if (_extension is not { } extension) return false;
+        if (!ReferenceEquals(e, _extensionOwner)) return true;
+        if (!_virtualRangeOverrides.TryGetValue(e, out var direct)) return false;
+        return direct != extension.MapRange(new FrameRange(extension.From, extension.To));
+    }
 
     private (int From, int To) EditableRangeOf(LayerEffect e)
         => UsesVirtualTimeline(e) ? VRangeOf(e) : RangeOf(e);
@@ -197,8 +202,12 @@ public sealed partial class LayerEffectsDialog
         int frames = virtualTimeline ? VirtualCount : _project.Frames.Count;
         int after = frames - 1 - to;
         bool existing = UsesExisting(e);
+        bool ownerRangeFixed = _extension is { } active && _extensionOwner is { } activeOwner
+            && _virtualRangeOverrides.TryGetValue(activeOwner, out var ownerRange)
+            && ownerRange != active.MapRange(new FrameRange(active.From, active.To));
         string other = _extension is { } pending && _extensionOwner is { } owner && !ReferenceEquals(e, owner)
-            ? $"추가 유지 · {owner.DisplayName} +{pending.Added}" : "";
+            ? ownerRangeFixed ? $"추가 유지 · 전체 {VirtualCount}프레임" : $"추가 유지 · {owner.DisplayName} +{pending.Added}"
+            : "";
         _extendSyncing = true;
         if (existing)
         {
@@ -336,11 +345,32 @@ public sealed partial class LayerEffectsDialog
     {
         var (ext, cells) = _dragBase;
         bool selected = Selected >= 0 && Selected < _effects.Count;
-        // 이미 예정된 사본 칸 안에서 다른 효과를 끈 것은 그 효과의 적용 범위만 정한 것이다.
-        // 사본을 포함했다는 이유로 기존 프레임 추가를 새 효과 소유의 짧은 추가로 교체하면 안 된다.
-        if (selected && ext is not null && !ReferenceEquals(_effects[Selected], _extensionOwner) && b < cells)
+        // 예정된 타임라인 안에서 끈 것은 고른 효과의 적용 범위만 정한다.
+        // 전체를 덮어도 명시한 끝을 기억해야 나중에 다른 효과가 타임라인을 더 늘릴 때 함께 늘어나지 않는다.
+        if (selected && ext is not null && b < cells)
         {
-            SetVirtualRange(Selected, FrameRange.Of(a, b, cells));
+            SetVirtualRange(Selected, new FrameRange(a, b));
+            ShowSettings();
+            SyncStripRange();
+            return;
+        }
+        // 현재 마지막 칸 너머로 끌면 기존 추가 방식을 그대로 사용해 공용 타임라인만 늘린다.
+        // 먼저 정한 효과 범위는 현재 끝에 고정하고, 이번 효과는 끈 시작~끝을 별도 범위로 가진다.
+        if (selected && ext is not null && b >= cells)
+        {
+            var selectedEffect = _effects[Selected];
+            var owner = _extensionOwner;
+            if (owner is not null && !ReferenceEquals(owner, selectedEffect)
+                && !_virtualRangeOverrides.ContainsKey(owner))
+            {
+                var (ownerFrom, ownerTo) = VRangeOf(owner);
+                _virtualRangeOverrides[owner] = new FrameRange(ownerFrom, ownerTo);
+                RefreshEffectSummary(_effects.FindIndex(e => ReferenceEquals(e, owner)));
+            }
+            int count = FrameExtension.ClampCount(ext.Value.Length, ext.Value.Count + b - cells + 1);
+            SetExtension(new FrameExtension(ext.Value.From, ext.Value.To, count, ext.Value.Mode), owner ?? selectedEffect);
+            int to = Math.Min(b, VirtualCount - 1);
+            SetVirtualRange(Selected, new FrameRange(Math.Min(a, to), to));
             ShowSettings();
             SyncStripRange();
             return;
