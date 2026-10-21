@@ -66,7 +66,7 @@ public readonly record struct EffectCanvasExpansion(int Width, int Height, int O
 }
 
 /// <summary>
-/// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 효과 목록은 앞에서부터 차례로 적용되고(앞 효과의 결과가 다음 효과의 입력), 꺼진 효과는 건너뛴다.
+/// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 잔상을 뺀 효과는 목록 순서대로 적용하고, 잔상은 다른 효과가 각 프레임에 적용된 모습을 현재 그림 뒤에 합성한다. 꺼진 효과는 건너뛴다.
 /// 모양은 알파가 0이 아닌 픽셀이다. 바깥 외곽선·그림자·반사·터지기·늘었다 줄기는 그림 밖으로 번지므로 <see cref="Render(PixelImage, IReadOnlyList{LayerEffect})"/>는 그만큼(<see cref="Padding"/>)
 /// 넓힌 이미지와 원래 그림의 왼쪽 위가 놓인 자리를 돌려준다. 이미지 밖은 투명으로 본다.
 /// 그리기 함수는 받은 목록을 프레임 범위(<see cref="LayerEffect.Frames"/>)와 관계없이 그린다 — 프레임 하나를 그릴 때는 부르는 쪽이
@@ -105,8 +105,8 @@ public static class LayerEffects
     /// 바꿀 것이 없으면 <paramref name="effects"/> 그대로(복사 없음).
     /// </summary>
     public static IReadOnlyList<LayerEffect> At(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null,
-        Func<int, PixelImage?>? frameSource = null)
-        => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: true);
+        Func<int, PixelImage?>? frameSource = null, Func<int, PointF?>? framePivot = null)
+        => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: true, framePivot);
 
     /// <summary>
     /// 프레임 범위와 관계없이 모든 효과를 프레임 <paramref name="frameIndex"/>로 움직인 목록(범위 밖이면 가까운 끝의 모습) — 효과 창 미리보기용.
@@ -116,14 +116,27 @@ public static class LayerEffects
         => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: false);
 
     private static IReadOnlyList<LayerEffect> Resolve(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot,
-        Func<int, PixelImage?>? frameSource, bool inRangeOnly)
+        Func<int, PixelImage?>? frameSource, bool inRangeOnly, Func<int, PointF?>? framePivot = null)
     {
+        Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? rendered = null;
+        if (frameSource is not null && effects.Any(e => e is AfterimageEffect { Enabled: true } && (!inRangeOnly || e.AppliesTo(frameIndex)))
+            && effects.Any(e => e.Enabled && e is not AfterimageEffect))
+        {
+            var others = effects.Where(e => e is not AfterimageEffect).ToArray();
+            rendered = (f, raw) =>
+            {
+                var previous = At(others, f, frameCount, framePivot?.Invoke(f) ?? pivot);
+                return Render(raw, previous, Padding(others, raw.Width, raw.Height));
+            };
+        }
         List<LayerEffect>? list = null;
         for (int i = 0; i < effects.Count; i++)
         {
             var e = effects[i];
             LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex) ? null
-                : e is AnimatedEffect a ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) : e;
+                : e is AfterimageEffect a
+                    ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) with { RenderedFrameSource = rendered }
+                    : e is AnimatedEffect animated ? animated.AtFrame(frameIndex, frameCount, pivot) : e;
             if (list is null && !ReferenceEquals(r, e))
             {
                 list = new List<LayerEffect>(effects.Count);
@@ -135,14 +148,14 @@ public static class LayerEffects
     }
 
     /// <summary>
-    /// 영구 적용할 효과 번호(목록 순서): 고른 효과(꺼져 있어도)와 그보다 위(앞)의 켜진 효과 모두 — 고른 효과는 앞 효과의 결과에 입혀지므로 함께 구워야
-    /// 보이던 그대로가 된다. 마지막으로 고른 효과보다 아래(뒤) 효과는 넣지 않는다. 고른 것이 없으면 빈 목록.
+    /// 영구 적용할 효과 번호(목록 순서): 고른 효과(꺼져 있어도)와 그보다 위(앞)의 켜진 효과 모두.
+    /// 잔상을 고르면 앞뒤의 켜진 효과까지 구워야 각 프레임의 완성된 모습이 잔상에도 남는다. 고른 것이 없으면 빈 목록.
     /// </summary>
     public static IReadOnlyList<int> BakeSet(IReadOnlyList<LayerEffect> effects, IEnumerable<int> selected)
     {
         var chosen = selected.Where(i => i >= 0 && i < effects.Count).ToHashSet();
         if (chosen.Count == 0) return [];
-        int last = chosen.Max();
+        int last = chosen.Any(i => effects[i] is AfterimageEffect) ? effects.Count - 1 : chosen.Max();
         return Enumerable.Range(0, last + 1).Where(i => chosen.Contains(i) || effects[i].Enabled).ToList();
     }
 
@@ -182,11 +195,11 @@ public static class LayerEffects
                     break;
                 case SquashEffect q:
                 {
-                    // 기준점에서 그림 끝까지는 많아야 지금 크기(기준점이 그림 가운데면 절반) — 거기에 세기를 곱한 만큼 자란다(+1 반올림 몫).
-                    double s = q.Amount / 100.0;
+                    // 기준점에서 그림 끝까지는 많아야 지금 크기(기준점이 그림 가운데면 절반) — 축별 세기만큼 자란다.
+                    double sx = q.WidthAmount / 100.0, sy = q.HeightAmount / 100.0;
                     int cw = width + l + r, ch = height + t + b;
-                    int half = (int)Math.Ceiling(cw * s / 2) + 1, full = (int)Math.Ceiling(cw * s) + 1;
-                    int halfH = (int)Math.Ceiling(ch * s / 2) + 1, fullH = (int)Math.Ceiling(ch * s) + 1;
+                    int half = sx == 0 ? 0 : (int)Math.Ceiling(cw * sx / 2) + 1, full = sx == 0 ? 0 : (int)Math.Ceiling(cw * sx) + 1;
+                    int halfH = sy == 0 ? 0 : (int)Math.Ceiling(ch * sy / 2) + 1, fullH = sy == 0 ? 0 : (int)Math.Ceiling(ch * sy) + 1;
                     (int gx, int up, int down) = q.Anchor switch
                     {
                         SquashAnchor.BottomCenter => (half, fullH, 0),
@@ -275,52 +288,61 @@ public static class LayerEffects
             if (!e.Enabled) continue;
             switch (e)
             {
-                case OutlineEffect o: Outline(image, o); break;
+                case OutlineEffect o: Outline(image, o, source); break;
                 case ShadowEffect s: Shadow(image, s, source); break;
-                case RimLightEffect r: Rim(image, r); break;
-                case ColorOverlayEffect c: Overlay(image, c); break;
+                case RimLightEffect r: Rim(image, r, source); break;
+                case ColorOverlayEffect c: Overlay(image, c, source); break;
                 case ExplodeEffect x: Explode(image, x, source); break;
-                case ShineEffect s: Shine(image, s); break;
+                case ShineEffect s: Shine(image, s, source); break;
                 case SquashEffect q: Squash(image, q, source); break;
                 case GradientOverlayEffect g: GradientOverlayRender.Apply(image, g, source); break;
-                case InnerGlowEffect g: InnerGlowRender.Apply(image, g); break;
-                case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p); break;
+                case InnerGlowEffect g: InnerGlowRender.Apply(image, g, source); break;
+                case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p, source); break;
                 case ColorAdjustEffect c: ColorAdjustRender.Apply(image, c); break;
                 case ReflectionEffect m: ReflectionRender.Apply(image, m, source); break;
-                case HitFlashEffect f: HitFlashRender.Apply(image, f); break;
+                case HitFlashEffect f: HitFlashRender.Apply(image, f, source); break;
                 case BlinkEffect k: BlinkRender.Apply(image, k, source); break;
                 case ShakeEffect k: ShakeRender.Apply(image, k); break;
                 case BobEffect k: ShakeRender.Apply(image, k); break;
                 case AppearEffect a: AppearRender.Apply(image, a, source); break;
                 case MeltEffect m: MeltRender.Apply(image, m, source); break;
                 case RotateEffect q: RotateRender.Apply(image, q, source); break;
-                case AfterimageEffect a: AfterimageRender.Apply(image, a, source); break;
-                case ColorCycleEffect c: ColorCycleRender.Apply(image, c); break;
+                case ColorCycleEffect c: ColorCycleRender.Apply(image, c, source); break;
                 case ShockwaveEffect w: ShockwaveRender.Apply(image, w, source); break;
                 case HologramEffect g: HologramRender.Apply(image, g, source); break;
             }
         }
+        // 잔상은 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
+        foreach (var e in effects)
+            if (e is AfterimageEffect { Enabled: true } after) AfterimageRender.Apply(image, after, source);
     }
 
     // ───────────── 효과 ─────────────
 
-    private static void Outline(PixelImage image, OutlineEffect o)
+    private static void Outline(PixelImage image, OutlineEffect o, Rectangle source)
     {
         int w = image.Width, h = image.Height;
         var px = image.Pixels;
         var shape = Mask(px);
         var grown = shape;
+        var bounds = o.ColorGradients.ContainsKey(nameof(OutlineEffect.Color)) ? image.GetOpaqueBounds() : default;
+        var color = EffectGradientSampler.For(o, nameof(OutlineEffect.Color), bounds, o.Color, source.X, source.Y);
         if (o.Inside)
         {
             for (int k = 0; k < o.Thickness; k++) grown = Erode(grown, w, h, o.Diagonal);
             for (int i = 0; i < px.Length; i++)
-                if (shape[i] && !grown[i]) px[i] = Mix(px[i], o.Color, o.Color.A);
+                if (shape[i] && !grown[i])
+                {
+                    var c = color.Sample(i % image.Width, i / image.Width);
+                    px[i] = Mix(px[i], c, c.A);
+                }
         }
         else
         {
             for (int k = 0; k < o.Thickness; k++) grown = Dilate(grown, w, h, o.Diagonal);
             for (int i = 0; i < px.Length; i++)
-                if (grown[i] && !shape[i]) px[i] = o.Color;
+                if (grown[i] && !shape[i])
+                    px[i] = color.Sample(i % image.Width, i / image.Width);
         }
     }
 
@@ -330,6 +352,8 @@ public static class LayerEffects
         int w = image.Width, h = image.Height, dx = s.OffsetX, dy = s.OffsetY;
         int density = s.Dither switch { ShadowDither.Light25 => 4, ShadowDither.Half50 => 8, ShadowDither.Dense75 => 12, _ => 0 };
         var solid = s.Color.WithAlpha(255);
+        var bounds = s.ColorGradients.ContainsKey(nameof(ShadowEffect.Color)) ? image.GetOpaqueBounds() : default;
+        var color = EffectGradientSampler.For(s, nameof(ShadowEffect.Color), bounds, s.Color, source.X, source.Y);
         var px = image.Pixels;
         var src = (Color32[])px.Clone();
         for (int y = 0; y < h; y++)
@@ -343,8 +367,13 @@ public static class LayerEffects
                 byte a = src[sy * w + sx].A;
                 if (a == 0) continue;
                 Color32 shadow;
-                if (density == 0) shadow = s.Color.WithAlpha((byte)((s.Color.A * a + 127) / 255));
-                else if (Bayer.Threshold4(x - source.X, y - source.Y) < density) shadow = solid;
+                if (density == 0)
+                {
+                    var sampled = color.Sample(x, y);
+                    shadow = sampled.WithAlpha((byte)((sampled.A * a + 127) / 255));
+                }
+                else if (Bayer.Threshold4(x - source.X, y - source.Y) < density)
+                    shadow = color.HasGradient ? color.Sample(x, y) : solid;
                 else continue;
                 int i = y * w + x;
                 px[i] = Color32.BlendOver(shadow, src[i]);
@@ -352,31 +381,55 @@ public static class LayerEffects
         }
     }
 
-    private static void Rim(PixelImage image, RimLightEffect r)
+    private static void Rim(PixelImage image, RimLightEffect r, Rectangle source)
     {
         int w = image.Width, h = image.Height;
         var px = image.Pixels;
         var shape = Mask(px);
         var (vx, vy) = r.Vector;
+        var bounds = r.ColorGradients.Count > 0 ? image.GetOpaqueBounds() : default;
+        var light = EffectGradientSampler.For(r, nameof(RimLightEffect.Light), bounds, r.Light, source.X, source.Y);
+        var shade = EffectGradientSampler.For(r, nameof(RimLightEffect.Shade), bounds, r.Shade, source.X, source.Y);
         bool Solid(int x, int y) => (uint)x < (uint)w && (uint)y < (uint)h && shape[y * w + x];
-        bool Edge(int x, int y, int dx, int dy) => (dx != 0 && !Solid(x + dx, y)) || (dy != 0 && !Solid(x, y + dy));
+        bool Edge(int x, int y, int dx, int dy)
+        {
+            for (int distance = 1; distance <= r.Size; distance++)
+                if ((dx != 0 && !Solid(x + dx * distance, y)) || (dy != 0 && !Solid(x, y + dy * distance)))
+                    return true;
+            return false;
+        }
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 int i = y * w + x;
                 if (!shape[i]) continue;
-                if (r.Light.A != 0 && Edge(x, y, vx, vy)) px[i] = Mix(px[i], r.Light, r.Light.A);
-                else if (r.Shade.A != 0 && Edge(x, y, -vx, -vy)) px[i] = Mix(px[i], r.Shade, r.Shade.A);
+                if ((r.Light.A != 0 || light.HasGradient) && Edge(x, y, vx, vy))
+                {
+                    var color = light.Sample(x, y);
+                    px[i] = Mix(px[i], color, color.A);
+                }
+                else if ((r.Shade.A != 0 || shade.HasGradient) && Edge(x, y, -vx, -vy))
+                {
+                    var color = shade.Sample(x, y);
+                    px[i] = Mix(px[i], color, color.A);
+                }
             }
     }
 
-    private static void Overlay(PixelImage image, ColorOverlayEffect c)
+    private static void Overlay(PixelImage image, ColorOverlayEffect c, Rectangle source)
     {
         int amount = (c.Amount * 255 + 50) / 100;
         if (amount == 0) return;
+        var bounds = c.ColorGradients.ContainsKey(nameof(ColorOverlayEffect.Color)) ? image.GetOpaqueBounds() : default;
+        var color = EffectGradientSampler.For(c, nameof(ColorOverlayEffect.Color), bounds, c.Color, source.X, source.Y);
         var px = image.Pixels;
+        int w = image.Width;
         for (int i = 0; i < px.Length; i++)
-            if (px[i].A != 0) px[i] = Mix(px[i], c.Color, amount);
+        {
+            if (px[i].A == 0) continue;
+            var sampled = color.Sample(i % w, i / w);
+            px[i] = Mix(px[i], sampled, (amount * sampled.A + 127) / 255);
+        }
     }
 
     // ───────────── 움직이는 효과 ─────────────
@@ -389,6 +442,9 @@ public static class LayerEffects
         if (u <= 0 && flash == 0) return; // 시작 = 원래 그림 그대로
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
+        var flashColor = flash > 0
+            ? EffectGradientSampler.For(e, nameof(ExplodeEffect.FlashColor), bounds, e.FlashColor, source.X, source.Y)
+            : default;
         int w = image.Width, h = image.Height, n = e.PieceSize;
         var px = image.Pixels;
         var src = (Color32[])px.Clone();
@@ -432,7 +488,11 @@ public static class LayerEffects
                             if ((uint)xx >= (uint)w || (uint)tx >= (uint)w) continue;
                             var c = src[yy * w + xx];
                             if (c.A == 0) continue;
-                            if (flash > 0) c = Mix(c, e.FlashColor, flash);
+                            if (flash > 0)
+                            {
+                                var sampled = flashColor.Sample(xx, yy);
+                                c = Mix(c, sampled, flashColor.HasGradient ? (flash * sampled.A + 127) / 255 : flash);
+                            }
                             if (fade < 1)
                             {
                                 byte a = (byte)Math.Round(c.A * fade);
@@ -450,12 +510,13 @@ public static class LayerEffects
                 if (src[i].A != 0) px[i] = Color32.BlendOver(px[i], src[i]);
     }
 
-    private static void Shine(PixelImage image, ShineEffect s)
+    private static void Shine(PixelImage image, ShineEffect s, Rectangle source)
     {
         int amount = (s.Strength * 255 + 50) / 100;
         if (amount == 0) return;
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
+        var color = EffectGradientSampler.For(s, nameof(ShineEffect.Color), bounds, s.Color, source.X, source.Y);
         double angle = s.Angle * Math.PI / 180, dx = Math.Cos(angle), dy = -Math.Sin(angle); // y는 아래로
         double Along(double x, double y) => x * dx + y * dy;
         double l = bounds.Left + 0.5, r = bounds.Right - 0.5, top = bounds.Top + 0.5, bottom = bounds.Bottom - 0.5;
@@ -474,7 +535,11 @@ public static class LayerEffects
                 double d = Math.Abs(Along(x + 0.5, y + 0.5) - c);
                 if (d > reach) continue;
                 int k = d <= half ? amount : amount * (s.Softness + 1 - (int)Math.Ceiling(d - half)) / (s.Softness + 1);
-                if (k > 0) px[i] = Screen(px[i], s.Color, k);
+                if (k > 0)
+                {
+                    var sampled = color.Sample(x, y);
+                    px[i] = Screen(px[i], sampled, color.HasGradient ? (k * sampled.A + 127) / 255 : k);
+                }
             }
     }
 
@@ -484,7 +549,7 @@ public static class LayerEffects
         if (Math.Abs(f) < 1e-9) return;
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
-        double k = q.Amount / 100.0 * f, sx = 1 + k, sy = 1 - k;
+        double sx = 1 + q.WidthAmount / 100.0 * f, sy = 1 - q.HeightAmount / 100.0 * f;
         var (ax, ay) = q.Anchor switch
         {
             SquashAnchor.BottomCenter => (bounds.Left + bounds.Width / 2.0, (double)bounds.Bottom),

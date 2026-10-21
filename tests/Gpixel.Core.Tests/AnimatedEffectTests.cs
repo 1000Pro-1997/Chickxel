@@ -182,7 +182,7 @@ public class AnimatedEffectTests
     public void Squash_StartAndEndAreOriginal()
     {
         var src = Filled(6, 8, Red);
-        var squash = new SquashEffect { Amount = 30, Bounces = 3 };
+        var squash = new SquashEffect { WidthAmount = 30, HeightAmount = 30, Bounces = 3 };
         Assert.True(SameAsSource(src, At(src, squash, 0, 7)));
         Assert.True(SameAsSource(src, At(src, squash, 7, 7)));
     }
@@ -191,16 +191,30 @@ public class AnimatedEffectTests
     public void Squash_MidSquashIsWiderAndShorter_BottomRowStays()
     {
         var src = Filled(6, 10, Red);
-        var (img, r) = At(src, new SquashEffect { Amount = 20, Bounces = 1 }, 2, 10); // 첫 봉우리 근처 = 옆으로 넓게
+        var (img, r) = At(src, new SquashEffect { WidthAmount = 20, HeightAmount = 20, Bounces = 1 }, 2, 10); // 첫 봉우리 근처 = 옆으로 넓게
         int Row(int y) => Enumerable.Range(0, img.Width).Count(x => img.Get(x, y).A != 0);
         int bottom = r.Bottom - 1;
         Assert.True(Row(bottom) > 6);
         Assert.Equal(0, Row(bottom + 1)); // 발은 그 자리
         Assert.Equal(0, Row(r.Top)); // 낮아짐
         // 위로 먼저면 반대: 좁고 높게
-        var (tall, r2) = At(src, new SquashEffect { Amount = 20, Bounces = 1, StretchFirst = true }, 2, 10);
+        var (tall, r2) = At(src, new SquashEffect { WidthAmount = 20, HeightAmount = 20, Bounces = 1, StretchFirst = true }, 2, 10);
         Assert.True(Enumerable.Range(0, tall.Width).Count(x => tall.Get(x, r2.Bottom - 1).A != 0) < 6);
         Assert.True(Enumerable.Range(0, tall.Width).Count(x => tall.Get(x, r2.Top - 1).A != 0) > 0);
+    }
+
+    [Fact]
+    public void Squash_SeparateAxisAmountsKeepZeroAxisFixed()
+    {
+        var src = Filled(10, 10, Red);
+        var (wide, wideSource) = At(src, new SquashEffect { WidthAmount = 40, HeightAmount = 0, Bounces = 1 }, 2, 10);
+        var (tall, tallSource) = At(src, new SquashEffect { WidthAmount = 0, HeightAmount = 40, Bounces = 1, StretchFirst = true }, 2, 10);
+        Assert.True(wide.GetOpaqueBounds().Width > src.Width);
+        Assert.Equal(src.Height, wide.GetOpaqueBounds().Height);
+        Assert.Equal(wideSource.Y, wide.GetOpaqueBounds().Y);
+        Assert.Equal(src.Width, tall.GetOpaqueBounds().Width);
+        Assert.True(tall.GetOpaqueBounds().Height > src.Height);
+        Assert.Equal(tallSource.X, tall.GetOpaqueBounds().X);
     }
 
     // ───────────── 저장 ─────────────
@@ -219,7 +233,7 @@ public class AnimatedEffectTests
                 Repeat = EffectRepeat.PingPong, RepeatCount = 3, Frames = new FrameRange(0, 0),
             },
             new ShineEffect { Angle = 300, Width = 5, Color = new Color32(255, 240, 0), Strength = 55, Softness = 2, Repeat = EffectRepeat.Loop, RepeatCount = 2, Enabled = false },
-            new SquashEffect { Amount = 35, Anchor = SquashAnchor.Pivot, StretchFirst = true, Bounces = 3, Easing = EffectEasing.EaseOut },
+            new SquashEffect { WidthAmount = 35, HeightAmount = 15, Anchor = SquashAnchor.Pivot, StretchFirst = true, Bounces = 3, Easing = EffectEasing.EaseOut },
         ];
         p.SetLayerEffects(0, fx);
         using var stream = new MemoryStream();
@@ -244,6 +258,22 @@ public class AnimatedEffectTests
         }
         stream.Position = 0;
         Assert.Equal([new ExplodeEffect(), new ShineEffect(), new SquashEffect()], ProjectIO.Load(stream).Layers[0].Effects);
+
+        // 이전 프로젝트의 공통 세기는 두 축에 동일하게 적용한다.
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
+            root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[2] = new System.Text.Json.Nodes.JsonObject { ["type"] = "squash", ["amount"] = 35 };
+            entry.Delete();
+            using var w = zip.CreateEntry(ProjectIO.ProjectEntryName).Open();
+            using var writer = new System.Text.Json.Utf8JsonWriter(w);
+            root.WriteTo(writer);
+        }
+        stream.Position = 0;
+        var legacy = (SquashEffect)ProjectIO.Load(stream).Layers[0].Effects[2];
+        Assert.Equal((35, 35), (legacy.WidthAmount, legacy.HeightAmount));
     }
 
     // ───────────── 영구 적용 ─────────────

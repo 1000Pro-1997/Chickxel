@@ -8,7 +8,8 @@ public sealed partial class LayerEffectsDialog
     private void HologramPanel(HologramEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static HologramEffect H(LayerEffect v) => (HologramEffect)v;
-        SettingsRow("색", ColorEditor(e.Color, v => set(o => H(o) with { Color = v })));
+        SettingsRow("색", EffectColorEditor(e, nameof(HologramEffect.Color),
+            ColorEditor(e.Color, v => set(o => H(o) with { Color = v })), set));
         SettingsRow("색 세기", NumEditor(0, 100, e.TintStrength, NumKinds.Strength, v => set(o => H(o) with { TintStrength = v })), Ui.Label("%"));
         SettingsRow("주사선 간격", NumEditor(HologramEffect.MinScanGap, HologramEffect.MaxScanGap, e.ScanGap, NumKinds.ScanGap, v => set(o => H(o) with { ScanGap = v })), Ui.Label("줄"),
             Ui.Label("  세기"), NumEditor(0, 100, e.ScanStrength, NumKinds.Strength, v => set(o => H(o) with { ScanStrength = v })), Ui.Label("% (0 = 끔)"));

@@ -1,8 +1,8 @@
 namespace Gpixel.Core.Model;
 
 /// <summary>
-/// 안쪽 빛: 그림 가장자리(투명한 이웃·이미지 끝과 닿은 픽셀)에서 안쪽으로 <see cref="Size"/>px까지 한 색을 섞는다(알파는 그대로, 색의 알파는 쓰지 않음).
-/// 가장자리 1px이 <see cref="Strength"/>%, <see cref="Fade"/>면 안쪽으로 갈수록 한 단계씩 약해진다(계단식, 번짐 없음).
+/// 안쪽 빛: 그림 가장자리(투명한 이웃·이미지 끝과 닿은 픽셀)에서 안쪽으로 <see cref="Size"/>px까지 색을 섞는다(픽셀 알파는 그대로, 단색 알파는 쓰지 않음).
+/// 가장자리 1px이 <see cref="Strength"/>%, <see cref="Fade"/>면 안쪽으로 갈수록 한 단계씩 약해진다(색 그라데이션 알파는 세기에 곱한다).
 /// 거리는 8방향(모서리 포함)으로 센다.
 /// </summary>
 public sealed record InnerGlowEffect : LayerEffect

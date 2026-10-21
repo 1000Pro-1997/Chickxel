@@ -461,11 +461,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         OutlineEffect o => $"외곽선 · {(o.Inside ? "안쪽" : "바깥")} {o.Thickness}px · {(o.Diagonal ? "8방향" : "4방향")} · {o.Color.ToHex()}",
         ShadowEffect s => $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}" + (s.Dither != ShadowDither.None ? $" · 디더 {ShadowDithers[(int)s.Dither]}" : ""),
-        RimLightEffect r => $"가장자리 빛·그늘 · {Directions.First(d => d.Dir == r.Direction).Name}",
+        RimLightEffect r => $"가장자리 빛·그늘 · {Directions.First(d => d.Dir == r.Direction).Name} · {r.Size}px",
         ColorOverlayEffect c => $"색 덮기 · {c.Amount}% · {c.Color.ToHex()}",
         ExplodeEffect x => $"터지기 · {x.Distance}px · {Centers[(int)x.Center].Split(' ')[0]}" + (x.KeepOriginal ? " · 원본 남김" : ""),
         ShineEffect s => $"빛 지나가기 · {s.Angle}° · {s.Width}px · {s.Strength}%",
-        SquashEffect q => $"늘었다 줄기 · {q.Amount}% · {q.Bounces}번",
+        SquashEffect q => $"늘었다 줄기 · 가로 {q.WidthAmount}% · 세로 {q.HeightAmount}% · {q.Bounces}번",
         GradientOverlayEffect g => $"그라데이션 덮기 · {g.Angle}° · {Blends[(int)g.Blend]} · {g.Strength}%" + (g.Dither != EffectDither.None ? $" · {Dithers[(int)g.Dither]}" : ""),
         InnerGlowEffect g => $"안쪽 빛 · {g.Size}px · {g.Strength}% · {g.Color.ToHex()}",
         PaletteSwapEffect p => $"색 바꾸기 · {p.Pairs.Count}쌍" + (p.Tolerance > 0 ? $" · 허용 {p.Tolerance}" : ""),
@@ -594,13 +594,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
         switch (e)
         {
             case OutlineEffect o:
-                SettingsRow("색", ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })));
+                SettingsRow("색", EffectColorEditor(o, nameof(OutlineEffect.Color), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })), Set));
                 SettingsRow("두께", NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
                 SettingsRow("방향", ChoiceEditor(["4방향 (십자)", "8방향 (모서리 포함)"], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
                 SettingsRow("위치", ChoiceEditor(["바깥 (그림 밖으로)", "안쪽 (가장자리 픽셀)"], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
                 break;
             case ShadowEffect s:
-                SettingsRow("색", ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })));
+                SettingsRow("색", EffectColorEditor(s, nameof(ShadowEffect.Color), ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })), Set));
                 SettingsRow("X",
                     NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetX, NumKinds.Offset, v => Set(x => (ShadowEffect)x with { OffsetX = v })),
                     Ui.Label("Y"),
@@ -613,12 +613,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 SettingsRow("빛이 오는 쪽",
                     ChoiceEditor(Directions.Select(d => d.Name).ToArray(), Array.FindIndex(Directions, d => d.Dir == r.Direction),
                         k => Set(x => (RimLightEffect)x with { Direction = Directions[k].Dir })));
-                SettingsRow("빛 색", ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })));
-                SettingsRow("그늘 색", ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })));
-                _settings.Children.Add(Hint("빛 쪽 가장자리 1px에 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함)."));
+                SettingsRow("범위", NumEditor(1, RimLightEffect.MaxSize, r.Size, NumKinds.Thickness,
+                    v => Set(x => (RimLightEffect)x with { Size = v })), Ui.Label("px"));
+                SettingsRow("빛 색", EffectColorEditor(r, nameof(RimLightEffect.Light), ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })), Set));
+                SettingsRow("그늘 색", EffectColorEditor(r, nameof(RimLightEffect.Shade), ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })), Set));
+                _settings.Children.Add(Hint("빛 쪽 가장자리에서 지정한 칸 수만큼 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함)."));
                 break;
             case ColorOverlayEffect c:
-                SettingsRow("색", ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })));
+                SettingsRow("색", EffectColorEditor(c, nameof(ColorOverlayEffect.Color), ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })), Set));
                 SettingsRow("양", NumEditor(0, 100, c.Amount, NumKinds.Strength, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
                 _settings.Children.Add(Hint("보이는 픽셀을 그 색 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."));
                 break;
@@ -643,8 +645,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 fadeStart.IsEnabled = x.Fade;
                 SettingsCheckRow(CheckEditor("사라짐", x.Fade, v => { fadeStart.IsEnabled = v; Set(o => X(o) with { Fade = v }); }).Tip("끝으로 갈수록 흐려지며 사라집니다(시작 = 흐려지기 시작하는 진행 %)."),
                     Ui.Label("시작"), fadeStart, Ui.Label("%"));
-                SettingsRow("번쩍임", NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, NumKinds.Frames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label("프레임"),
-                    ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })));
+                SettingsRow("번쩍임", NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, NumKinds.Frames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label("프레임"));
+                SettingsSubRow("번쩍임 색", EffectColorEditor(x, nameof(ExplodeEffect.FlashColor), ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })), Set));
                 SettingsRow("", CheckEditor("원본 남기기 (복사본이 날아감)", x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
                 var seed = NumEditor(0, ExplodeEffect.MaxSeed, x.Seed, NumKinds.Seed, v => Set(o => X(o) with { Seed = v }));
                 var reroll = Ui.IconButton(VectorIcon.Dice, null, (_, _) => seed.Value = System.Random.Shared.Next(0, ExplodeEffect.MaxSeed + 1), 36);
@@ -661,7 +663,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 SettingsRow("각도", NumEditor(0, 359, s.Angle, NumKinds.Angle, v => Set(o => S(o) with { Angle = v })), Ui.Label("° (지나가는 방향, 45 = ↗)"));
                 SettingsRow("폭", NumEditor(1, ShineEffect.MaxWidth, s.Width, NumKinds.Px, v => Set(o => S(o) with { Width = v })), Ui.Label("px"),
                     Ui.Label("  세기"), NumEditor(0, 100, s.Strength, NumKinds.Strength, v => Set(o => S(o) with { Strength = v })), Ui.Label("%"));
-                SettingsRow("색", ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })));
+                SettingsRow("색", EffectColorEditor(s, nameof(ShineEffect.Color), ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })), Set));
                 SettingsRow("부드러움", ChoiceEditor(["딱딱하게", "가장자리 1px", "가장자리 2px"], s.Softness, k => Set(o => S(o) with { Softness = k })));
                 AddMotionEditors(i, Set);
                 _settings.Children.Add(Hint("빛 띠가 그림 한쪽 바로 밖에서 들어와 반대쪽으로 빠져나갑니다. 보이는 픽셀만 밝아지고(스크린), 투명한 곳·투명도는 그대로입니다."));
@@ -670,12 +672,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case SquashEffect q:
             {
                 SquashEffect Q(LayerEffect v) => (SquashEffect)v;
-                SettingsRow("세기", NumEditor(1, SquashEffect.MaxAmount, q.Amount, NumKinds.Squash, v => Set(o => Q(o) with { Amount = v })), Ui.Label("%"),
-                    Ui.Label("  튕김"), NumEditor(1, SquashEffect.MaxBounces, q.Bounces, NumKinds.Count, v => Set(o => Q(o) with { Bounces = v })), Ui.Label("번"));
+                SettingsRow("가로 세기", NumEditor(0, SquashEffect.MaxAmount, q.WidthAmount, NumKinds.Squash, v => Set(o => Q(o) with { WidthAmount = v })), Ui.Label("%"),
+                    Ui.Label("  세로 세기"), NumEditor(0, SquashEffect.MaxAmount, q.HeightAmount, NumKinds.Squash, v => Set(o => Q(o) with { HeightAmount = v })), Ui.Label("%"));
+                SettingsRow("튕김", NumEditor(1, SquashEffect.MaxBounces, q.Bounces, NumKinds.Count, v => Set(o => Q(o) with { Bounces = v })), Ui.Label("번"));
                 SettingsRow("기준점", ChoiceEditor(Anchors, (int)q.Anchor, k => Set(o => Q(o) with { Anchor = (SquashAnchor)k })));
                 SettingsRow("순서", ChoiceEditor(["옆으로 먼저 (납작 → 길쭉)", "위로 먼저 (길쭉 → 납작)"], q.StretchFirst ? 1 : 0, k => Set(o => Q(o) with { StretchFirst = k == 1 })));
                 AddMotionEditors(i, Set);
-                _settings.Children.Add(Hint("젤리처럼 출렁이다 원래 모양으로 돌아옵니다(가로 1 + 세기 × 출렁임, 세로 1 − 세기 × 출렁임). 픽셀은 늘이거나 줄여도 또렷합니다."));
+                _settings.Children.Add(Hint("가로·세로 세기를 따로 정해 출렁입니다. 0%인 축은 고정되고 픽셀은 늘이거나 줄여도 또렷합니다."));
                 break;
             }
             case GradientOverlayEffect g: GradientPanel(g, Set); break;
@@ -852,7 +855,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static ColorField ColorEditor(Color32 value, Action<Color32> changed)
     {
-        var field = new ColorField(value);
+        var field = new ColorField(value) { LivePreview = true };
         field.ColorChanged += (_, _) => changed(field.Color);
         return field;
     }

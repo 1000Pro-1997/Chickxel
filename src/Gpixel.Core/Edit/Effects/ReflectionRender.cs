@@ -18,6 +18,10 @@ internal static class ReflectionRender
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
         int w = image.Width, h = image.Height, rows = RowsFor(bounds.Height, m.Height);
+        var tintBounds = m.Above
+            ? Rectangle.FromLTRB(bounds.Left, bounds.Top - m.Gap - rows, bounds.Right, bounds.Bottom)
+            : Rectangle.FromLTRB(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom + m.Gap + rows);
+        var tintColor = EffectGradientSampler.For(m, nameof(m.Tint), tintBounds, m.Tint, source.X, source.Y);
         var px = image.Pixels;
         // 비친 줄은 모두 보이는 영역 밖(위 또는 아래)이라 읽는 줄과 겹치지 않는다
         for (int j = 0; j < rows; j++)
@@ -44,7 +48,8 @@ internal static class ReflectionRender
                     if (a == 0) continue;
                     c = c.WithAlpha(a);
                 }
-                if (m.Tint.A != 0) c = LayerEffects.Mix(c, m.Tint, m.Tint.A);
+                var tint = tintColor.Sample(tx, ty);
+                if (tint.A != 0) c = LayerEffects.Mix(c, tint, tint.A);
                 int i = ty * w + tx;
                 px[i] = Color32.BlendOver(c, px[i]);
             }

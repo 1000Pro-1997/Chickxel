@@ -324,9 +324,12 @@ public sealed class ColorField : StackPanel
         {
             if (!e.GetCurrentPoint(_swatch).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
-            // 색 고르기 대화상자가 알파도 고르므로 그대로 쓴다(투명→투명이면 불투명으로).
-            if (Ui.PickColor(this, _color) is { } c)
-                Color = c.A == 0 && _color.A == 0 ? c.WithAlpha(255) : c;
+            var original = _color;
+            var chosen = Ui.PickColor(this, original, onPreview: LivePreview ? c => Color = c : null);
+            if (chosen is { } c)
+                Color = !LivePreview && c.A == 0 && original.A == 0 ? c.WithAlpha(255) : c;
+            else if (LivePreview)
+                Color = original;
         };
         _hex = Ui.Text("", hexWidth);
         _hex.LostFocus += (_, _) => { if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) Color = c; else _hex.Text = _color.ToHex(); };
@@ -335,7 +338,10 @@ public sealed class ColorField : StackPanel
         Color = color;
     }
 
-    /// <summary>색이 바뀌었다(대화상자로 고르거나 HEX를 고친 뒤, 코드로 바꿀 때 포함).</summary>
+    /// <summary>색 고르기 창을 열어 둔 동안 색 변경을 전달한다. 취소하면 열기 전 색으로 복원한다.</summary>
+    public bool LivePreview { get; set; }
+
+    /// <summary>색이 바뀌었다(실시간 미리보기를 켜면 대화상자에서도 즉시, HEX를 고친 뒤, 코드로 바꿀 때 포함).</summary>
     public event EventHandler? ColorChanged;
 
     public Color32 Color

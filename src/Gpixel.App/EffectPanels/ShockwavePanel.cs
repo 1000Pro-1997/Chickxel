@@ -19,7 +19,8 @@ public sealed partial class LayerEffectsDialog
         SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label("px (원본 왼쪽 위 기준)"));
         SettingsRow("최대 반지름", NumEditor(1, ShockwaveEffect.MaxRadius, e.Radius, NumKinds.Distance, v => set(o => W(o) with { Radius = v })), Ui.Label("px"),
             Ui.Label("  두께"), NumEditor(1, ShockwaveEffect.MaxThickness, e.Thickness, NumKinds.Thickness, v => set(o => W(o) with { Thickness = v })), Ui.Label("px"));
-        SettingsRow("색", ColorEditor(e.Color, v => set(o => W(o) with { Color = v })));
+        SettingsRow("색", EffectColorEditor(e, nameof(ShockwaveEffect.Color),
+            ColorEditor(e.Color, v => set(o => W(o) with { Color = v })), set));
         SettingsRow("", CheckEditor("사라짐 (퍼지며 옅어짐)", e.Fade, v => set(o => W(o) with { Fade = v })));
         SettingsRow("위치", ChoiceEditor(["그림 앞 (위에)", "그림 뒤 (아래에)"], e.Behind ? 1 : 0, k => set(o => W(o) with { Behind = k == 1 })));
         AddMotionEditors(Selected, set);

@@ -10,27 +10,35 @@ internal static class AfterimageRender
     {
         if (e.FrameSource is not { } frameSource) return;
         int w = image.Width, h = image.Height;
+        var tintColor = EffectGradientSampler.For(e, nameof(e.TintColor), source, e.TintColor, source.X, source.Y);
         Color32[]? ghosts = null;
         for (int k = e.Count; k >= 1; k--) // 먼 잔상부터 깔고 가까운 잔상을 위에
         {
             int back = k * e.Interval;
             if (back > e.FrameStep) continue; // 범위 안 프레임만
-            if (frameSource(e.FrameIndex - back) is not { } ghost || ghost.Width != source.Width || ghost.Height != source.Height) continue;
+            if (frameSource(e.FrameIndex - back) is not { } raw || raw.Width != source.Width || raw.Height != source.Height) continue;
             byte opacity = e.GhostOpacity(k);
             if (opacity == 0) continue;
             ghosts ??= new Color32[w * h];
+            var rendered = e.RenderedFrameSource?.Invoke(e.FrameIndex - back, raw);
+            var ghost = rendered?.Image ?? raw;
+            int originX = source.X + (rendered?.OffsetX ?? 0), originY = source.Y + (rendered?.OffsetY ?? 0);
             var gp = ghost.Pixels;
             for (int gy = 0; gy < ghost.Height; gy++)
             {
-                int y = gy + source.Y;
+                int y = gy + originY;
                 if ((uint)y >= (uint)h) continue;
                 for (int gx = 0; gx < ghost.Width; gx++)
                 {
-                    int x = gx + source.X;
+                    int x = gx + originX;
                     if ((uint)x >= (uint)w) continue;
                     var c = gp[gy * ghost.Width + gx];
                     if (c.A == 0) continue;
-                    if (e.Tint) c = LayerEffects.Mix(c, e.TintColor, e.TintColor.A);
+                    if (e.Tint)
+                    {
+                        var tint = tintColor.Sample(x, y);
+                        c = LayerEffects.Mix(c, tint, tint.A);
+                    }
                     byte a = (byte)((c.A * opacity + 127) / 255);
                     if (a == 0) continue;
                     int i = y * w + x;

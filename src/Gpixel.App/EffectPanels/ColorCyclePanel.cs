@@ -32,15 +32,19 @@ public sealed partial class LayerEffectsDialog
         for (int k = 0; k < e.Colors.Count; k++)
         {
             int at = k;
-            var field = new ColorField(e.Colors[k], 64);
+            var field = new ColorField(e.Colors[k], 64) { LivePreview = true };
             field.ColorChanged += (_, _) => set(o => C(o) with { Colors = C(o).Colors.Select((c, j) => j == at ? field.Color : c).ToArray() });
             var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
             {
-                set(o => C(o) with { Colors = C(o).Colors.Where((_, j) => j != at).ToArray() });
+                set(o =>
+                {
+                    var colors = C(o).Colors.Where((_, j) => j != at).ToArray();
+                    return C(o) with { Colors = colors, ColorGradients = RemoveIndexedGradient(o.ColorGradients, "Colors", at) };
+                });
                 ShowSettings();
             }, 26).Tip("이 색 빼기");
             remove.IsEnabled = e.Colors.Count > ColorCycleEffect.MinColors;
-            row.Children.Add(Ui.Row(Ui.Label($"{k + 1}"), field, remove));
+            row.Children.Add(Ui.Row(Ui.Label($"{k + 1}"), EffectColorEditor(e, $"Colors[{at}]", field, set), remove));
         }
         SettingsBlock("색", row);
 
@@ -70,7 +74,7 @@ public sealed partial class LayerEffectsDialog
         SettingsRow("칸 수", NumEditor(1, ColorCycleEffect.MaxSteps, e.Steps, StepsKind(e.Colors.Count), v => set(o => C(o) with { Steps = v })), Ui.Label("칸 (범위 동안 넘어가는 횟수)"));
         SettingsRow("방향", ChoiceEditor(["앞으로 (1 → 2 → …)", "거꾸로"], e.Reverse ? 1 : 0, k => set(o => C(o) with { Reverse = k == 1 })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint($"그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다(목록에 없는 색·투명도는 그대로). 칸 수가 색 개수({e.Colors.Count})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온)."));
+        _settings.Children.Add(Hint($"그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다. 그라데이션 색은 픽셀 위치마다 샘플링합니다. 목록에 없는 색·투명도는 그대로입니다. 칸 수가 색 개수({e.Colors.Count})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온)."));
     }
 
     /// <summary>칸 수 예시: 1과 색 개수의 배수(범위 끝이 처음과 같아 되풀이해도 이어짐 — "N바퀴"로 보임).</summary>

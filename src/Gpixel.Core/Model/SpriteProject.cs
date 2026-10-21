@@ -348,7 +348,7 @@ public sealed partial class SpriteProject
     private void DrawGroup(PixelImage target, Layer group, int frameIndex, Func<Layer, PixelImage?> celOf)
     {
         var effects = EffectsAt(group, frameIndex);
-        var pad = LayerEffects.Padding(effects, _width, _height);
+        var pad = LayerEffects.Padding(LayerEffects.UsesOtherFrames(effects) ? group.Effects : effects, _width, _height);
         PixelImage? buffer = null;
         foreach (var part in ChildrenOf(group))
         {
@@ -376,7 +376,10 @@ public sealed partial class SpriteProject
             ox += layer.PartOffset.X;
             oy += layer.PartOffset.Y;
         }
-        var (image, dx, dy) = LayerEffects.Render(cel, EffectsAt(layer, frameIndex));
+        var effects = EffectsAt(layer, frameIndex);
+        var (image, dx, dy) = LayerEffects.UsesOtherFrames(effects)
+            ? LayerEffects.Render(cel, effects, LayerEffects.Padding(layer.Effects, cel.Width, cel.Height))
+            : LayerEffects.Render(cel, effects);
         target.Composite(image, ox + dx, oy + dy, opacity);
     }
 
@@ -397,12 +400,13 @@ public sealed partial class SpriteProject
         Func<int, PixelImage?>? source = !LayerEffects.UsesOtherFrames(effects) ? null
             : cels is null ? EffectFrameSource(layer)
             : f => (uint)f < (uint)_frames.Count ? cels(f) : null;
-        return LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source);
+        return LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source,
+            source is null ? null : f => EffectPivot(layer, f));
     }
 
     /// <summary>
     /// 효과가 다른 프레임 그림을 볼 때 쓰는 원본(프레임 번호 → <see cref="EffectSource"/> — 셀 그대로, 그룹이면 부위 합성, 범위 밖·빈 셀이면 null).
-    /// 효과 없이 셀만 보므로 그 프레임의 효과가 다시 불리지 않고, 결과는 셀 내용만으로 정해진다.
+    /// 원본만 제공하고 잔상은 그 프레임의 다른 효과를 별도로 적용하므로 효과 재귀 없이 그 프레임 모습을 얻는다.
     /// </summary>
     public Func<int, PixelImage?> EffectFrameSource(Layer layer) => f => (uint)f < (uint)_frames.Count ? EffectSource(layer, f) : null;
 
@@ -910,7 +914,14 @@ public sealed partial class SpriteProject
         Edit("아래 레이어와 병합", ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다.
-            var rendered = CelsOf(upper).Select(c => (c.Key, Render: LayerEffects.Render(c.Cel, EffectsAt(upper, _frames.IndexOf(c.Key.Frame))))).ToList();
+            (PixelImage Image, int OffsetX, int OffsetY) RenderUpper(CelKey key, PixelImage cel)
+            {
+                var effects = EffectsAt(upper, _frames.IndexOf(key.Frame));
+                return LayerEffects.UsesOtherFrames(effects)
+                    ? LayerEffects.Render(cel, effects, LayerEffects.Padding(upper.Effects, cel.Width, cel.Height))
+                    : LayerEffects.Render(cel, effects);
+            }
+            var rendered = CelsOf(upper).Select(c => (c.Key, Render: RenderUpper(c.Key, c.Cel))).ToList();
             foreach (var (key, (image, dx, dy)) in rendered)
             {
                 var lowerKey = new CelKey(lower, key.Frame, null);

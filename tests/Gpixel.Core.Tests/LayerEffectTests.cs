@@ -91,6 +91,18 @@ public class LayerEffectTests
     }
 
     [Fact]
+    public void Overlay_ColorAlphaControlsMixWithoutErasingOriginalAlpha()
+    {
+        var src = new PixelImage(2, 1);
+        src[0, 0] = Red;
+        src[1, 0] = Red.WithAlpha(77);
+        var half = LayerEffects.RenderClipped(src, [new ColorOverlayEffect { Color = Blue.WithAlpha(128), Amount = 100 }]);
+        Assert.Equal(new Color32(127, 0, 128), half[0, 0]);
+        Assert.Equal(new Color32(127, 0, 128, 77), half[1, 0]);
+        Assert.True(LayerEffects.RenderClipped(src, [new ColorOverlayEffect { Color = Blue.WithAlpha(0) }]).ContentEquals(src));
+    }
+
+    [Fact]
     public void RimLight_LightsFacingEdgesShadesOpposite()
     {
         var (img, _, _) = LayerEffects.Render(Filled(3, 3, Red),
@@ -102,6 +114,17 @@ public class LayerEffectTests
         Assert.Equal(Red, img.Get(1, 1));
         Assert.Equal(Black, img.Get(2, 2));
         Assert.Equal(White, img.Get(2, 0));
+    }
+
+    [Fact]
+    public void RimLight_SizeCoversSeveralPixelsWithoutPaintingTransparentAreas()
+    {
+        var src = Filled(7, 1, Red);
+        var image = LayerEffects.RenderClipped(src,
+            [new RimLightEffect { Direction = LightDirection.Left, Light = White, Shade = Black, Size = 2 }]);
+        Assert.Equal([White, White, Red, Red, Red, Black, Black], image.Pixels);
+        Assert.Equal(1, new RimLightEffect { Size = 0 }.Size);
+        Assert.Equal(RimLightEffect.MaxSize, new RimLightEffect { Size = 100 }.Size);
     }
 
     [Fact]
@@ -282,7 +305,7 @@ public class LayerEffectTests
         [
             new OutlineEffect { Color = new Color32(1, 2, 3, 200), Thickness = 3, Diagonal = true, Inside = true },
             new ShadowEffect { Color = new Color32(9, 8, 7, 100), OffsetX = -4, OffsetY = 5, Enabled = false },
-            new RimLightEffect { Light = new Color32(250, 240, 10, 90), Shade = Color32.Transparent, Direction = LightDirection.BottomRight },
+            new RimLightEffect { Light = new Color32(250, 240, 10, 90), Shade = Color32.Transparent, Direction = LightDirection.BottomRight, Size = 3 },
             new ColorOverlayEffect { Color = Blue, Amount = 37 },
         ];
         p.SetLayerEffects(p.IndexOf(g), groupFx);

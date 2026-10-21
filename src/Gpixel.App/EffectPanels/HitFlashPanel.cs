@@ -11,8 +11,8 @@ public sealed partial class LayerEffectsDialog
     {
         static HitFlashEffect H(LayerEffect v) => (HitFlashEffect)v;
         var color = ColorEditor(e.Color, v => set(o => H(o) with { Color = v }));
-        SettingsRow("색", color,
-            Ui.Button("흰색", (_, _) => color.Color = Color32.White, 44),
+        SettingsRow("색", EffectColorEditor(e, nameof(HitFlashEffect.Color), color, set));
+        SettingsSubRow("단색 빠른 선택", Ui.Button("흰색", (_, _) => color.Color = Color32.White, 44),
             Ui.Button("빨강", (_, _) => color.Color = HitRed, 44));
         SettingsRow("세기", NumEditor(0, 100, e.Strength, NumKinds.Strength, v => set(o => H(o) with { Strength = v })), Ui.Label("%"),
             Ui.Label("  횟수"), NumEditor(1, HitFlashEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => H(o) with { Count = v })), Ui.Label("번"));

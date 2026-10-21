@@ -32,7 +32,7 @@ public sealed record HologramEffect : AnimatedEffect
     private readonly int _tint = 85, _gap = 2, _scan = 40, _band = 2, _bandStrength = 60, _opacity = 75;
     private readonly int _flickerRate = 15, _flicker = 40, _glitchRate = 20, _shift = 2, _edge = 50, _seed = 2;
 
-    /// <summary>홀로그램 색(알파는 쓰지 않음).</summary>
+    /// <summary>홀로그램 단색(단색 알파는 쓰지 않음; 색 그라데이션의 알파는 색 세기·띠·테두리 빛에 곱한다).</summary>
     public Color32 Color { get; init; } = DefaultColor;
 
     /// <summary>색 세기 0~100%(0 = 원래 색).</summary>

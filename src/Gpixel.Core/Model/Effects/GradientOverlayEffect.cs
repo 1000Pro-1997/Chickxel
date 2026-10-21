@@ -20,9 +20,10 @@ public enum EffectDither
 }
 
 /// <summary>
-/// 그라데이션 덮기: 보이는 픽셀(알파 0이 아닌 픽셀)에만 색 A → 색 B 그라데이션을 <see cref="Strength"/>%만큼 섞는다(알파는 그대로, 색의 알파는 쓰지 않음).
-/// 그라데이션은 그 프레임 그림의 보이는 영역 한쪽 끝(A)에서 반대쪽 끝(B)까지 <see cref="Angle"/> 방향으로 간다(0 = 왼쪽 → 오른쪽, 90 = 아래 → 위, 270 = 위 → 아래).
-/// 디더를 켜면 픽셀마다 A·B 중 하나만 고른다(Bayer 무늬, 효과 원본 왼쪽 위 기준이라 여백이 달라도 같은 무늬).
+/// 그라데이션 덮기: 보이는 픽셀에 A → B 그라데이션을 <see cref="Strength"/>%만큼 섞는다(픽셀 알파는 그대로).
+/// 색 알파는 혼합 세기에 곱한다. <see cref="LayerEffect.ColorGradients"/>의 Gradient 슬롯을 지정하면
+/// A/B 대신 색·불투명도 정지점, 보간, 디더와 각도를 가진 그라데이션을 쓴다.
+/// 기본 A/B 그라데이션은 보이는 영역을 <see cref="Angle"/> 방향으로 가로지르며, 디더 무늬는 원본 왼쪽 위 기준이다.
 /// </summary>
 public sealed record GradientOverlayEffect : LayerEffect
 {

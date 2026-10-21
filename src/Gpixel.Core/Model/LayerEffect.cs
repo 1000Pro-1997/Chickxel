@@ -18,6 +18,10 @@ public abstract record LayerEffect
     /// </summary>
     public FrameRange? Frames { get; init; }
 
+    /// <summary>각 색 설정의 그라데이션. 키는 색 속성 이름(목록 색은 인덱스 포함); 없는 키는 단색 설정을 쓴다.</summary>
+    public IReadOnlyDictionary<string, EffectColorGradient> ColorGradients { get; init; }
+        = System.Collections.Immutable.ImmutableDictionary<string, EffectColorGradient>.Empty;
+
     /// <summary>프레임 <paramref name="frameIndex"/>가 범위 안인지(켜짐 여부와 무관).</summary>
     public bool AppliesTo(int frameIndex) => Frames is not { } r || r.Contains(frameIndex);
 
@@ -120,11 +124,16 @@ public enum LightDirection
 }
 
 /// <summary>
-/// 가장자리 빛·그늘: 빛 쪽을 향한 가장자리 픽셀(그 방향 이웃이 투명)에 빛 색을, 반대쪽 가장자리에 그늘 색을 1px 안쪽으로 덧칠한다(알파는 그대로).
+/// 가장자리 빛·그늘: 빛 방향으로 지정한 거리 안에 투명 픽셀이 있으면 빛 색을, 반대쪽이면 그늘 색을 덧칠한다(알파는 그대로).
 /// 대각선 방향이면 그 두 축 중 하나라도 비면 가장자리다. 한 픽셀이 양쪽 다 해당하면 빛이 이긴다. 색 알파 0 = 그쪽은 칠하지 않음.
 /// </summary>
 public sealed record RimLightEffect : LayerEffect
 {
+    public const int MaxSize = 16;
+    private readonly int _size = 1;
+
+    /// <summary>가장자리에서 안쪽으로 칠할 칸 수 1~<see cref="MaxSize"/>.</summary>
+    public int Size { get => _size; init => _size = Math.Clamp(value, 1, MaxSize); }
     public Color32 Light { get; init; } = new(255, 255, 255, 160);
     public Color32 Shade { get; init; } = new(0, 0, 0, 96);
     public LightDirection Direction { get; init; } = LightDirection.TopLeft;
@@ -145,7 +154,7 @@ public sealed record RimLightEffect : LayerEffect
     };
 }
 
-/// <summary>색 덮기: 보이는 픽셀의 색을 <see cref="Amount"/>%만큼 한 색 쪽으로(100% = 실루엣), 알파는 그대로. 색의 알파는 쓰지 않는다.</summary>
+/// <summary>색 덮기: 보이는 픽셀의 RGB를 색(또는 그라데이션) 쪽으로 <see cref="Amount"/>% × 색 알파만큼 섞는다. 원본 픽셀 알파는 그대로.</summary>
 public sealed record ColorOverlayEffect : LayerEffect
 {
     private readonly int _amount = 100;
@@ -214,6 +223,9 @@ public abstract record AnimatedEffect : LayerEffect
     /// null이면 다른 프레임을 쓰지 않는다. 주는 쪽이 셀 원본 그대로를 주므로(효과 재귀 없음) 결과는 셀 내용만으로 정해진다.
     /// </summary>
     public Func<int, PixelImage?>? FrameSource { get; init; }
+
+    /// <summary>그릴 때만: 앞 프레임에 잔상을 제외한 효과를 적용한 그림과 원본 대비 위치.</summary>
+    public Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? RenderedFrameSource { get; init; }
 
     /// <summary>그릴 때만: 그리는 프레임 번호(범위 시작 + <see cref="FrameStep"/>).</summary>
     public int FrameIndex => (Frames?.From ?? 0) + FrameStep;
@@ -368,17 +380,20 @@ public enum SquashAnchor
 }
 
 /// <summary>
-/// 늘었다 줄기(젤리): 가로 배율 1 + s·f(t), 세로 배율 1 − s·f(t). f는 0에서 시작해 <see cref="Bounces"/>번 출렁이며 줄어들어 끝(t = 1)에서 0인 감쇠 사인
+/// 늘었다 줄기(젤리): 가로 배율 1 + 가로 세기·f(t), 세로 배율 1 − 세로 세기·f(t). f는 0에서 시작해 <see cref="Bounces"/>번 출렁이며 줄어들어 끝(t = 1)에서 0인 감쇠 사인
 /// (첫 봉우리 = 1). 옆으로 먼저면 먼저 납작·넓게, 위로 먼저면 먼저 좁고 길게. 최근접 샘플링이라 픽셀이 또렷하다.
 /// </summary>
 public sealed record SquashEffect : AnimatedEffect
 {
     public const int MaxAmount = 50, MaxBounces = 3;
 
-    private readonly int _amount = 20, _bounces = 2;
+    private readonly int _widthAmount = 20, _heightAmount = 20, _bounces = 2;
 
-    /// <summary>세기: 최대 배율 변화 1~<see cref="MaxAmount"/>%.</summary>
-    public int Amount { get => _amount; init => _amount = Math.Clamp(value, 1, MaxAmount); }
+    /// <summary>가로 최대 배율 변화 0~<see cref="MaxAmount"/>%(0 = 가로 고정).</summary>
+    public int WidthAmount { get => _widthAmount; init => _widthAmount = Math.Clamp(value, 0, MaxAmount); }
+
+    /// <summary>세로 최대 배율 변화 0~<see cref="MaxAmount"/>%(0 = 세로 고정).</summary>
+    public int HeightAmount { get => _heightAmount; init => _heightAmount = Math.Clamp(value, 0, MaxAmount); }
 
     public SquashAnchor Anchor { get; init; } = SquashAnchor.BottomCenter;
 

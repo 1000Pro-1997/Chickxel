@@ -33,6 +33,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly EditorContext _ctx;
     private readonly TextBlock _title;
     private bool _updating;
+    private bool _gradientSyncing;
 
     // 브러시
     private readonly Border _brushBox;
@@ -51,12 +52,7 @@ public sealed class ToolOptionsPanel : UserControl
 
     // 그라데이션
     private readonly Border _gradientBox;
-    private readonly GradientBar _gradientBar;
-    private readonly NumericUpDown _stopPos, _stopAlpha;
-    private readonly ColorField _stopColor;
-    private readonly StackPanel _stopColorRow, _stopAlphaRow;
-    private readonly Button _stopDelete;
-    private readonly ComboBox _gradientMode, _gradientDither;
+    private readonly GradientEditor _gradientEditor;
 
     // 피벗
     private readonly Border _pivotBox;
@@ -144,60 +140,23 @@ public sealed class ToolOptionsPanel : UserControl
         _ditherPattern.Tip("기본색이 차지하는 비율(2×2 순서 디더링). 나머지는 보조색");
         _ditherBox = Ui.Group("디더링", Ui.Stack(Ui.Row(Ui.Label("무늬"), _ditherPattern)));
 
-        // ── 그라데이션: 바(위 = 불투명도 정지점, 아래 = 색 정지점) + 고른 정지점의 위치·색/불투명도 + 보간·디더링
-        _gradientBar = new GradientBar { Margin = new Thickness(0, 2, 0, 2) };
-        _gradientBar.Tip("띠 위쪽 빈 곳 = 불투명도 정지점 추가 · 띠·아래쪽 빈 곳 = 색 정지점 추가 · 상자를 누르면 고르기, 좌우로 끌면 위치 · Delete: 고른 정지점 삭제(종류마다 2개는 남음)");
-        _gradientBar.StopsChanged += stops => _ctx.GradientStops = stops;
-        _gradientBar.AlphaStopsChanged += stops => _ctx.GradientAlphaStops = stops;
-        _gradientBar.SelectionChanged += (_, _) => RefreshGradientStop();
-        _stopPos = Ui.Num(0, 100, 0, 56, 1, 1m).Presets(0, 10, 25, 33.3m, 50, 66.7m, 75, 90, 100).Unit("%").RecentKey("gradient.position");
-        _stopPos.FormatString = "0.#";
-        _stopPos.Tip("고른 정지점의 위치(%, 왼쪽 0 ~ 오른쪽 100)");
-        _stopPos.ValueChanged += (_, _) =>
+        // ── 그라데이션: 같은 정지점 편집기를 도구와 레이어 효과에 사용한다.
+        _gradientEditor = new GradientEditor(() => _ctx.Primary);
+        _gradientEditor.Changed += () =>
         {
-            if (_updating) return;
-            double pos = (double)_stopPos.NumValue() / 100;
-            if (_gradientBar.SelectedIsAlpha) SetSelectedAlphaStop(s => s with { Position = pos });
-            else SetSelectedStop(s => s with { Position = pos });
-        };
-        _stopColor = new ColorField(Color32.Black);
-        _stopColor.Tip("고른 색 정지점의 색(칸을 누르면 색 고르기)");
-        _stopColor.ColorChanged += (_, _) => { if (!_updating) SetSelectedStop(s => s with { Color = _stopColor.Color }); };
-        var usePrimary = Ui.Button("기본색", (_, _) => SetSelectedStop(s => s with { Color = _ctx.Primary })).Tip("고른 색 정지점을 지금 기본색으로");
-        _stopAlpha = Ui.Num(0, 100, 100, 56, 1, 1m).Presets(Ui.Percents).Unit("%").RecentKey("opacity");
-        _stopAlpha.FormatString = "0.#";
-        _stopAlpha.Tip("고른 불투명도 정지점의 불투명도(%, 0 = 투명 ~ 100 = 불투명)");
-        _stopAlpha.ValueChanged += (_, _) =>
-        {
-            if (!_updating) SetSelectedAlphaStop(s => s with { Alpha = (byte)Math.Round((double)_stopAlpha.NumValue() * 255 / 100) });
-        };
-        _stopColorRow = Ui.Row(Ui.Label("색"), _stopColor, usePrimary);
-        _stopAlphaRow = Ui.Row(Ui.Label("불투명도"), _stopAlpha, Ui.Label("%"));
-        _stopDelete = Ui.Button("삭제", (_, _) => _gradientBar.DeleteSelected()).Tip("고른 정지점 삭제(Delete) — 종류마다 2개 이상 남습니다");
-        _gradientMode = Ui.Combo(150, "부드럽게", "단계(띠)");
-        _gradientMode.Tip("부드럽게: 이웃한 정지점 색을 RGBA(알파 포함)로 섞기 · 단계: 가장 가까운 정지점 색만 쓰는 띠");
-        _gradientMode.SelectionChanged += (_, _) =>
-        {
-            if (_updating || _gradientMode.SelectedIndex < 0) return;
-            _ctx.GradientInterpolation = (GradientInterpolation)_gradientMode.SelectedIndex;
-        };
-        _gradientDither = Ui.Combo(150, "없음", "2×2 Bayer", "4×4 Bayer");
-        _gradientDither.Tip("부드럽게일 때 이웃한 두 정지점 색만 순서 디더링 무늬로 섞습니다(픽셀 아트용)");
-        _gradientDither.SelectionChanged += (_, _) =>
-        {
-            if (_updating || _gradientDither.SelectedIndex < 0) return;
-            _ctx.GradientDither = (GradientDither)_gradientDither.SelectedIndex;
+            _gradientSyncing = true;
+            try
+            {
+                _ctx.GradientStops = _gradientEditor.Stops;
+                _ctx.GradientAlphaStops = _gradientEditor.AlphaStops;
+                _ctx.GradientInterpolation = _gradientEditor.Interpolation;
+                _ctx.GradientDither = _gradientEditor.Dither;
+            }
+            finally { _gradientSyncing = false; }
         };
         var gradientHelp = Dim("캔버스에서 시작점 → 끝점으로 끌어 칠합니다(Shift: 45°). 선택 영역이 있으면 그 안만 칠하고, 불투명도가 낮은 쪽은 아래를 그만큼 투명하게 바꿉니다.");
         gradientHelp.TextWrapping = TextWrapping.Wrap;
-        _gradientBox = Ui.Group("그라데이션", Ui.Stack(
-            _gradientBar,
-            Ui.Row(Ui.Label("위치"), _stopPos, Ui.Label("%"), _stopDelete),
-            _stopColorRow,
-            _stopAlphaRow,
-            Ui.Row(Ui.Label("보간"), _gradientMode),
-            Ui.Row(Ui.Label("디더링"), _gradientDither),
-            gradientHelp));
+        _gradientBox = Ui.Group("그라데이션", Ui.Stack(_gradientEditor, gradientHelp));
 
         // ── 옵션(도구마다 보이는 것만)
         _pixelPerfect = Check("픽셀 퍼펙트", "1px 연필·지우개의 L자 모서리 제거 (P)", v => _ctx.PixelPerfect = v);
@@ -479,59 +438,6 @@ public sealed class ToolOptionsPanel : UserControl
         return Math.Max(1, (int)Math.Round((double)height * s.Width / s.Height));
     }
 
-    /// <summary>바에서 고른 색 정지점을 바꾼다.</summary>
-    private void SetSelectedStop(Func<GradientStop, GradientStop> change)
-    {
-        if (_gradientBar.SelectedIsAlpha) return;
-        var list = _ctx.GradientStops.ToList();
-        int i = Math.Clamp(_gradientBar.SelectedIndex, 0, list.Count - 1);
-        list[i] = change(list[i]);
-        _ctx.GradientStops = list;
-    }
-
-    /// <summary>바에서 고른 불투명도 정지점을 바꾼다.</summary>
-    private void SetSelectedAlphaStop(Func<GradientAlphaStop, GradientAlphaStop> change)
-    {
-        if (!_gradientBar.SelectedIsAlpha) return;
-        var list = _ctx.GradientAlphaStops.ToList();
-        int i = Math.Clamp(_gradientBar.SelectedIndex, 0, list.Count - 1);
-        list[i] = change(list[i]);
-        _ctx.GradientAlphaStops = list;
-    }
-
-    /// <summary>고른 정지점의 위치·색(또는 불투명도)과 삭제 단추를 맞춘다. 색 줄·불투명도 줄은 고른 종류만 보인다.</summary>
-    private void RefreshGradientStop()
-    {
-        bool alpha = _gradientBar.SelectedIsAlpha;
-        bool was = _updating;
-        _updating = true;
-        try
-        {
-            _stopColorRow.IsVisible = !alpha;
-            _stopAlphaRow.IsVisible = alpha;
-            if (alpha)
-            {
-                var stops = _ctx.GradientAlphaStops;
-                var s = stops[Math.Clamp(_gradientBar.SelectedIndex, 0, stops.Count - 1)];
-                _stopPos.Value = (decimal)Math.Round(s.Position * 100, 1);
-                _stopAlpha.Value = (decimal)Math.Round(s.Alpha * 100 / 255.0, 1);
-                _stopDelete.IsEnabled = stops.Count > 2;
-            }
-            else
-            {
-                var stops = _ctx.GradientStops;
-                var s = stops[Math.Clamp(_gradientBar.SelectedIndex, 0, stops.Count - 1)];
-                _stopPos.Value = (decimal)Math.Round(s.Position * 100, 1);
-                _stopColor.Color = s.Color;
-                _stopDelete.IsEnabled = stops.Count > 2;
-            }
-        }
-        finally
-        {
-            _updating = was;
-        }
-    }
-
     /// <summary>피벗 픽셀 칸(0.5 단위). 예시 값은 대상 크기에 맞춰 <see cref="RefreshPivot"/>에서 정한다.</summary>
     private static NumericUpDown PixelNum(string key)
     {
@@ -615,13 +521,9 @@ public sealed class ToolOptionsPanel : UserControl
             _wrap.IsChecked = _ctx.MoveWrap;
             _mirrorX.IsChecked = _ctx.MirrorX;
             _mirrorY.IsChecked = _ctx.MirrorY;
-            _gradientBar.Stops = _ctx.GradientStops;
-            _gradientBar.AlphaStops = _ctx.GradientAlphaStops;
-            _gradientBar.Mode = _ctx.GradientInterpolation;
-            _gradientMode.SelectedIndex = (int)_ctx.GradientInterpolation;
-            _gradientDither.SelectedIndex = (int)_ctx.GradientDither;
-            _gradientDither.IsEnabled = _ctx.GradientInterpolation == GradientInterpolation.Smooth;
-            RefreshGradientStop();
+            if (!_gradientSyncing)
+                _gradientEditor.Load(_ctx.GradientStops, _ctx.GradientAlphaStops,
+                    _ctx.GradientInterpolation, _ctx.GradientDither);
         }
         finally
         {

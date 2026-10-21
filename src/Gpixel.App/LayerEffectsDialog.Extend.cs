@@ -75,7 +75,8 @@ public sealed partial class LayerEffectsDialog
         int original = OriginalOf(frame);
         if (SourceAt(original) is not { } source) return (null, []);
         return (source, LayerEffects.At(effects, frame, VirtualCount, _project.EffectPivot(_layer, original),
-            LayerEffects.UsesOtherFrames(effects) ? VirtualSourceAt : null));
+            LayerEffects.UsesOtherFrames(effects) ? VirtualSourceAt : null,
+            f => _project.EffectPivot(_layer, OriginalOf(f))));
     }
 
     // ───────────── 설정 칸 ─────────────

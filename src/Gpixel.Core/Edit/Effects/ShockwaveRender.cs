@@ -12,8 +12,9 @@ internal static class ShockwaveRender
         int r = e.RadiusAt(u);
         if (r < 1) return;
         // 반지름은 빠르기 곡선대로, 옅어짐은 시간대로(처음 빠르게면 끝 무렵에 이미 보이지 않게 되지 않도록)
-        byte alpha = (byte)Math.Round(e.Color.A * (e.Fade ? 1 - e.Phase : 1), MidpointRounding.AwayFromZero);
-        if (alpha == 0) return;
+        double fade = e.Fade ? 1 - e.Phase : 1;
+        if (fade <= 0) return;
+        if (!e.ColorGradients.ContainsKey(nameof(e.Color)) && e.Color.A == 0) return;
         var (cx, cy) = Center(image, e, source);
         int w = image.Width, h = image.Height;
         var ring = new bool[w * h];
@@ -48,10 +49,18 @@ internal static class ShockwaveRender
                     if (d > inner && d <= outer) Plot(x, y);
                 }
         }
-        var color = e.Color.WithAlpha(alpha);
+        var color = EffectGradientSampler.For(e, nameof(e.Color),
+            Rectangle.FromLTRB(cx - r, cy - r, cx + r + 1, cy + r + 1), e.Color, source.X, source.Y);
         var px = image.Pixels;
         for (int i = 0; i < px.Length; i++)
-            if (ring[i]) px[i] = e.Behind ? Color32.BlendOver(color, px[i]) : Color32.BlendOver(px[i], color);
+            if (ring[i])
+            {
+                var sampled = color.Sample(i % w, i / w);
+                byte alpha = (byte)Math.Round(sampled.A * fade, MidpointRounding.AwayFromZero);
+                if (alpha == 0) continue;
+                var ringColor = sampled.WithAlpha(alpha);
+                px[i] = e.Behind ? Color32.BlendOver(ringColor, px[i]) : Color32.BlendOver(px[i], ringColor);
+            }
     }
 
     /// <summary>고리 중심 픽셀(이미지 기준): 가운데·아래 가운데는 보이는 그림 범위 기준(비면 원본 가운데).</summary>

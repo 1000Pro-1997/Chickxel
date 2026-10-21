@@ -1128,6 +1128,50 @@ public static partial class ProjectIO
         }.Normalized();
     }
 
+    /// <summary>색 설정의 그라데이션 저장 형식(기존 단색 속성은 그대로 유지).</summary>
+    internal sealed class ColorGradientDto
+    {
+        public int Angle { get; set; }
+        public string? Interpolation { get; set; }
+        public string? Dither { get; set; }
+        public ColorStopDto[]? Stops { get; set; }
+        public AlphaStopDto[]? AlphaStops { get; set; }
+
+        public static ColorGradientDto From(EffectColorGradient gradient) => new()
+        {
+            Angle = gradient.Angle,
+            Interpolation = gradient.Interpolation.ToString(),
+            Dither = gradient.Dither.ToString(),
+            Stops = gradient.Stops.Select(s => new ColorStopDto { Position = s.Position, Color = s.Color.ToHex() }).ToArray(),
+            AlphaStops = gradient.AlphaStops.Select(s => new AlphaStopDto { Position = s.Position, Alpha = s.Alpha }).ToArray(),
+        };
+
+        public EffectColorGradient ToGradient() => new()
+        {
+            Angle = Angle,
+            Interpolation = Enum.TryParse<Gpixel.Core.Edit.GradientInterpolation>(Interpolation, true, out var mode) && Enum.IsDefined(mode)
+                ? mode : Gpixel.Core.Edit.GradientInterpolation.Smooth,
+            Dither = Enum.TryParse<Gpixel.Core.Edit.GradientDither>(Dither, true, out var dither) && Enum.IsDefined(dither)
+                ? dither : Gpixel.Core.Edit.GradientDither.None,
+            Stops = Stops?.Where(s => s is not null && Color32.TryParseHex(s.Color, out _))
+                .Select(s => new Gpixel.Core.Edit.GradientStop(s.Position, Color32.TryParseHex(s.Color, out var c) ? c : Color32.White)).ToArray()
+                ?? [],
+            AlphaStops = AlphaStops?.Where(s => s is not null).Select(s => new Gpixel.Core.Edit.GradientAlphaStop(s.Position, s.Alpha)).ToArray() ?? [],
+        };
+    }
+
+    internal sealed class ColorStopDto
+    {
+        public double Position { get; set; }
+        public string? Color { get; set; }
+    }
+
+    internal sealed class AlphaStopDto
+    {
+        public double Position { get; set; }
+        public byte Alpha { get; set; }
+    }
+
     /// <summary>
     /// 레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay · gradient · innerglow · swap · adjust · reflection, 움직이는 효과 explode · shine · squash
     /// (모르는 종류는 읽을 때 건너뜀).
@@ -1140,6 +1184,8 @@ public static partial class ProjectIO
         public string? Color { get; set; }
         /// <summary>가장자리 빛의 그늘 색.</summary>
         public string? Shade { get; set; }
+        /// <summary>색 설정별 그라데이션(키 = 속성 이름, 없으면 단색).</summary>
+        public Dictionary<string, ColorGradientDto>? ColorGradients { get; set; }
         public int? Thickness { get; set; }
         public bool? Diagonal { get; set; }
         public bool? Inside { get; set; }
@@ -1148,8 +1194,11 @@ public static partial class ProjectIO
         public int? Y { get; set; }
         /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
         public string? Direction { get; set; }
-        /// <summary>색 덮기 양, 빛 지나가기 세기, 늘었다 줄기 세기(%).</summary>
+        /// <summary>색 덮기 양, 빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%).</summary>
         public int? Amount { get; set; }
+        /// <summary>늘었다 줄기의 축별 세기(%).</summary>
+        public int? WidthAmount { get; set; }
+        public int? HeightAmount { get; set; }
         /// <summary>움직이는 효과: 빠르기 곡선·반복(<see cref="EffectEasing"/>·<see cref="EffectRepeat"/> 이름)과 반복 횟수.</summary>
         public string? Easing { get; set; }
         public string? Repeat { get; set; }
@@ -1245,7 +1294,7 @@ public static partial class ProjectIO
             {
                 OutlineEffect o => new EffectDto { Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside },
                 ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY, Dither = s.Dither == ShadowDither.None ? null : s.Dither.ToString() },
-                RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString() },
+                RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString(), Thickness = r.Size },
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount },
                 ExplodeEffect x => new EffectDto
                 {
@@ -1254,7 +1303,7 @@ public static partial class ProjectIO
                     FlashFrames = x.FlashFrames, FlashColor = x.FlashColor.ToHex(),
                 },
                 ShineEffect s => new EffectDto { Type = "shine", Angle = s.Angle, Width = s.Width, Color = s.Color.ToHex(), Amount = s.Strength, Softness = s.Softness },
-                SquashEffect q => new EffectDto { Type = "squash", Amount = q.Amount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
+                SquashEffect q => new EffectDto { Type = "squash", WidthAmount = q.WidthAmount, HeightAmount = q.HeightAmount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
                 GradientOverlayEffect g => new EffectDto
                 {
                     Type = "gradient", Color = g.ColorA.ToHex(), Color2 = g.ColorB.ToHex(), Angle = g.Angle, Amount = g.Strength, Blend = g.Blend.ToString(), Dither = g.Dither.ToString(),
@@ -1308,6 +1357,10 @@ public static partial class ProjectIO
             };
             dto.Enabled = effect.Enabled;
             dto.Frames = effect.Frames is { } f ? [f.From, f.To] : null;
+            if (effect.ColorGradients.Count > 0)
+                dto.ColorGradients = effect.ColorGradients.ToDictionary(
+                    entry => entry.Key,
+                    entry => ColorGradientDto.From(entry.Value));
             if (effect is AnimatedEffect a)
             {
                 dto.Easing = a.Easing.ToString();
@@ -1326,7 +1379,12 @@ public static partial class ProjectIO
         public LayerEffect? ToEffect()
         {
             var effect = ToKind();
-            if (effect is null || Frames is not [int from, int to]) return effect;
+            if (effect is null) return null;
+            if (ColorGradients is { Count: > 0 })
+                effect = effect with { ColorGradients = ColorGradients
+                    .Where(entry => !string.IsNullOrWhiteSpace(entry.Key) && entry.Value is not null)
+                    .ToDictionary(entry => entry.Key, entry => entry.Value.ToGradient()) };
+            if (Frames is not [int from, int to]) return effect;
             return effect with { Frames = new FrameRange(Math.Max(0, Math.Min(from, to)), Math.Max(0, Math.Max(from, to))) };
         }
 
@@ -1345,7 +1403,7 @@ public static partial class ProjectIO
                     return r with
                     {
                         Enabled = Enabled, Light = ColorOr(Color, r.Light), Shade = ColorOr(Shade, r.Shade),
-                        Direction = EnumOr(Direction, r.Direction),
+                        Direction = EnumOr(Direction, r.Direction), Size = Thickness ?? r.Size,
                     };
                 case "overlay":
                     var c = new ColorOverlayEffect();
@@ -1369,7 +1427,8 @@ public static partial class ProjectIO
                     var q = new SquashEffect();
                     return Animated(q with
                     {
-                        Amount = Amount ?? q.Amount, Anchor = EnumOr(Anchor, q.Anchor), StretchFirst = StretchFirst ?? q.StretchFirst, Bounces = Bounces ?? q.Bounces,
+                        WidthAmount = WidthAmount ?? Amount ?? q.WidthAmount, HeightAmount = HeightAmount ?? Amount ?? q.HeightAmount,
+                        Anchor = EnumOr(Anchor, q.Anchor), StretchFirst = StretchFirst ?? q.StretchFirst, Bounces = Bounces ?? q.Bounces,
                     });
                 case "gradient":
                     var g = new GradientOverlayEffect();

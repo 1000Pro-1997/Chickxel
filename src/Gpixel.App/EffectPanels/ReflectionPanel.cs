@@ -14,7 +14,8 @@ public sealed partial class LayerEffectsDialog
         SettingsRow("불투명도", NumEditor(0, 100, m.OpacityStart, NumKinds.Opacity, v => set(o => M(o) with { OpacityStart = v })), Ui.Label("% →"),
             NumEditor(0, 100, m.OpacityEnd, NumKinds.Opacity, v => set(o => M(o) with { OpacityEnd = v })), Ui.Label("%"));
         SettingsRow("", CheckEditor("디더로 흐리기 (반투명 대신 무늬)", m.DitherFade, v => set(o => M(o) with { DitherFade = v })));
-        SettingsRow("색 입히기", ColorEditor(m.Tint, v => set(o => M(o) with { Tint = v })));
+        SettingsRow("색 입히기", EffectColorEditor(m, nameof(ReflectionEffect.Tint),
+            ColorEditor(m.Tint, v => set(o => M(o) with { Tint = v })), set));
         SettingsRow("물결", NumEditor(0, ReflectionEffect.MaxWave, m.Wave, NumKinds.Px, v => set(o => M(o) with { Wave = v })), Ui.Label("px (줄마다 가로로 흔듦, 0 = 끔)"));
         _settings.Children.Add(Hint("그 프레임 그림을 위아래로 뒤집어 간격만큼 띄워 뒤에 깝니다(높이 = 그림 높이의 몇 %가 비칠지)."
                                     + " 그림 쪽 줄이 시작 불투명도, 끝 줄이 끝 불투명도입니다. 색 입히기의 투명도 = 물드는 세기(0 = 안 물들임)."));

@@ -33,16 +33,21 @@ public sealed partial class LayerEffectsDialog
         for (int k = 0; k < p.Pairs.Count; k++)
         {
             int at = k;
-            var from = new ColorField(p.Pairs[k].From, 64);
-            var to = new ColorField(p.Pairs[k].To, 64);
+            var from = new ColorField(p.Pairs[k].From, 64) { LivePreview = true };
+            var to = new ColorField(p.Pairs[k].To, 64) { LivePreview = true };
             from.ColorChanged += (_, _) => ChangePair(at, q => q with { From = from.Color });
             to.ColorChanged += (_, _) => ChangePair(at, q => q with { To = to.Color });
             var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
             {
-                set(o => P(o) with { Pairs = P(o).Pairs.Where((_, j) => j != at).ToArray() });
+                set(o => P(o) with
+                {
+                    Pairs = P(o).Pairs.Where((_, j) => j != at).ToArray(),
+                    ColorGradients = RemoveIndexedGradient(o.ColorGradients, "Pairs", at)
+                });
                 ShowSettings();
             }, 26).Tip("이 쌍 빼기");
-            SettingsRow($"{k + 1}", from, Ui.Icon(VectorIcon.ArrowRight, 13), to, remove);
+            SettingsRow($"{k + 1} 원본", EffectColorEditor(p, $"Pairs[{at}].From", from, set));
+            SettingsSubRow("대상", EffectColorEditor(p, $"Pairs[{at}].To", to, set), remove);
         }
 
         var add = Ui.Button(VectorIcon.Plus, "쌍 추가", (_, _) =>
@@ -73,7 +78,7 @@ public sealed partial class LayerEffectsDialog
         }
         SettingsRow("", add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : "그림에 쓰인 색을 골라 쌍으로 추가합니다."));
         SettingsRow("허용 차이", NumEditor(0, PaletteSwapEffect.MaxTolerance, p.Tolerance, NumKinds.Tolerance, v => set(o => P(o) with { Tolerance = v })), Ui.Label("(0 = 정확히 같은 색만)"));
-        _settings.Children.Add(Hint("보이는 픽셀의 색이 왼쪽 색과 같으면(R·G·B 차이가 허용 차이 이하) 오른쪽 색으로 바꿉니다. 위의 쌍이 먼저이고 한 번만 바뀌므로 두 색 맞바꾸기도 됩니다."
-                                    + " 바뀐 색의 투명도 = 원래 투명도 × 오른쪽 색 투명도(투명으로 바꾸면 지워짐)."));
+        _settings.Children.Add(Hint("보이는 픽셀의 색이 원본 색과 같으면(R·G·B 차이가 허용 차이 이하) 대상 색으로 바꿉니다. 그라데이션을 선택하면 픽셀 위치마다 원본·대상 색을 샘플링합니다. 위의 쌍이 먼저이고 한 번만 바뀝니다."
+                                    + " 바뀐 색의 투명도 = 원래 투명도 × 대상 색 투명도(투명으로 바꾸면 지워짐)."));
     }
 }

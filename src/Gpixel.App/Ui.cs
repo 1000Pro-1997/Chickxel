@@ -411,10 +411,10 @@ public static class Ui
         return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 
-    /// <summary>색 고르기 대화상자(알파 포함). 취소하면 null.</summary>
-    public static Color32? PickColor(Visual? owner, Color32 initial, string title = "색 고르기")
+    /// <summary>색 고르기 대화상자(알파 포함). 취소하면 null. 미리보기 콜백은 색을 고르는 동안에도 호출된다.</summary>
+    public static Color32? PickColor(Visual? owner, Color32 initial, string title = "색 고르기", Action<Color32>? onPreview = null)
     {
-        var dlg = new ColorPickDialog(title, initial);
+        var dlg = new ColorPickDialog(title, initial, onPreview);
         return dlg.ShowDialog(owner) == DialogResult.OK ? dlg.Value : null;
     }
 }
@@ -627,8 +627,9 @@ internal sealed class ColorPickDialog : DialogBase
     public static Func<ColorPickSources?>? Sources { get; set; }
 
     private readonly ColorView _view;
+    private readonly List<PaletteSection> _palettes = new();
 
-    public ColorPickDialog(string title, Color32 initial) : base(title)
+    public ColorPickDialog(string title, Color32 initial, Action<Color32>? onPreview = null) : base(title)
     {
         _view = new ColorView
         {
@@ -638,6 +639,13 @@ internal sealed class ColorPickDialog : DialogBase
             IsColorPaletteVisible = false,
             Width = 340,
         };
+        _view.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != ColorView.ColorProperty) return;
+            var color = Value;
+            foreach (var palette in _palettes) palette.Grid.SetMarks(color, color);
+            onPreview?.Invoke(color);
+        };
         if (Sources?.Invoke() is not { } src)
         {
             Body.Children.Add(_view);
@@ -645,15 +653,30 @@ internal sealed class ColorPickDialog : DialogBase
         }
         var side = new StackPanel { Spacing = 4, Width = 230, Margin = new Thickness(10, 0, 0, 0) };
         void Pick(Color32 c) => _view.Color = c.ToColor();
-        foreach (var p in src.Palettes.Where(p => p.Colors.Count > 0))
+        for (int i = 0; i < src.Palettes.Count; i++)
         {
-            side.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush });
-            side.Children.Add(Swatches(p.Colors, Pick));
+            var p = src.Palettes[i];
+            var palette = new PaletteSection(p.Name, p.Colors, p.Collapsed, editable: false);
+            palette.Grid.LeadingTransparent = i == 0;
+            palette.Grid.SetMarks(initial, initial);
+            palette.Grid.ColorClicked += (_, e) => Pick(e.Color);
+            palette.ArrowButton.PointerPressed += (_, e) =>
+            {
+                if (!e.GetCurrentPoint(palette.ArrowButton).Properties.IsLeftButtonPressed) return;
+                e.Handled = true;
+                palette.Collapsed = !palette.Collapsed;
+                palette.Refresh(false);
+            };
+            _palettes.Add(palette);
+            side.Children.Add(palette);
         }
         if (src.Recent.Count > 0)
         {
             side.Children.Add(new TextBlock { Text = "최근 색", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush });
-            side.Children.Add(Swatches(src.Recent, Pick));
+            var recent = new SwatchGrid { Width = 196, Height = 30, Cell = 10 };
+            recent.SetColors(src.Recent);
+            recent.ColorClicked += (_, e) => Pick(e.Color);
+            side.Children.Add(recent);
         }
         var image = src.Image();
         if (image is not null)
@@ -674,7 +697,7 @@ internal sealed class ColorPickDialog : DialogBase
 
     public Color32 Value => _view.Color.ToColor32();
 
-    /// <summary>색 칸들(누르면 <paramref name="pick"/>) — 색 고르기 창과 효과 창의 "그림에서 색 가져오기"가 같이 쓴다.</summary>
+    /// <summary>효과 창에서 그림의 색을 고르는 칸들(누르면 <paramref name="pick"/>).</summary>
     internal static WrapPanel Swatches(IEnumerable<Color32> colors, Action<Color32> pick)
     {
         var wrap = new WrapPanel { Orientation = Orientation.Horizontal };

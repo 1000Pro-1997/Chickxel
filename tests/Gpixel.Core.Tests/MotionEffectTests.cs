@@ -233,6 +233,30 @@ public class MotionEffectTests
         Assert.Equal(1, Opaque(p.Flatten(0))); // 범위 밖은 효과 없음
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Afterimage_FollowsHistoricalMotionRegardlessOfEffectOrder(bool afterimageFirst)
+    {
+        var p = new SpriteProject(5, 7);
+        for (int i = 0; i < 4; i++) p.DuplicateFrame(0);
+        for (int f = 0; f < 5; f++)
+        {
+            var cel = new PixelImage(5, 7);
+            cel[2, 3] = Red;
+            p.SetCel(0, f, cel);
+        }
+        var bob = new BobEffect { Height = 2 };
+        var after = new AfterimageEffect { Count = 1, Opacity = 50 };
+        p.SetLayerEffects(0, afterimageFirst ? [after, bob] : [bob, after]);
+
+        var frame = p.Flatten(2);
+        Assert.Equal(Red, frame[2, 3]);
+        Assert.InRange((int)frame[2, 1].A, 120, 135);
+        Assert.Equal(0, frame[2, 2].A);
+        Assert.Equal(0, frame[2, 5].A);
+    }
+
     [Fact]
     public void Afterimage_BakeKeepsLook()
     {
@@ -249,6 +273,39 @@ public class MotionEffectTests
         p.BakeLayerEffects(0, [0]);
         Assert.Empty(p.Layers[0].Effects);
         Assert.All(Enumerable.Range(0, 3), f => Assert.True(before[f].ContentEquals(p.Flatten(f))));
+    }
+
+    [Fact]
+    public void Afterimage_BakingWithLaterMotionKeepsHistoricalPositions()
+    {
+        var p = new SpriteProject(5, 7);
+        for (int i = 0; i < 4; i++) p.DuplicateFrame(0);
+        var cel = new PixelImage(5, 7);
+        cel[2, 3] = Red;
+        for (int f = 0; f < 5; f++) p.SetCel(0, f, cel);
+        p.SetLayerEffects(0, [new AfterimageEffect { Count = 1, Opacity = 50 }, new BobEffect { Height = 2 }]);
+        var before = Enumerable.Range(0, 5).Select(f => p.Flatten(f)).ToList();
+        p.BakeLayerEffects(0, [0]);
+        Assert.Empty(p.Layers[0].Effects);
+        for (int f = 0; f < 5; f++) Assert.True(before[f].ContentEquals(p.Flatten(f)), $"frame {f}");
+    }
+
+    [Fact]
+    public void Afterimage_RetainsPaddingForMotionThatEndedBeforeCurrentFrame()
+    {
+        var p = new SpriteProject(5, 7);
+        for (int i = 0; i < 4; i++) p.DuplicateFrame(0);
+        var cel = new PixelImage(5, 7);
+        cel[2, 2] = Red;
+        for (int f = 0; f < 5; f++) p.SetCel(0, f, cel);
+        p.SetLayerEffects(0,
+        [
+            new BobEffect { Height = 2, Frames = new FrameRange(0, 3) },
+            new AfterimageEffect { Count = 1, Interval = 3, Opacity = 50, Frames = new FrameRange(1, 4) },
+        ]);
+        var frame = p.Flatten(4);
+        Assert.Equal(Red, frame[2, 2]);
+        Assert.InRange((int)frame[2, 0].A, 120, 135);
     }
 
     // ───────────── 색 순환 ─────────────

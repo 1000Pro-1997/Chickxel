@@ -19,7 +19,7 @@ public sealed record HitFlashEffect : AnimatedEffect
 
     private readonly int _strength = 100, _count = 2;
 
-    /// <summary>번쩍이는 색(알파는 쓰지 않음, 기본 흰색 — 빨강이면 피해 느낌).</summary>
+    /// <summary>번쩍이는 단색(단색 알파는 쓰지 않음, 기본 흰색 — 빨강이면 피해 느낌). 색 그라데이션의 알파는 세기에 곱한다.</summary>
     public Color32 Color { get; init; } = Color32.White;
 
     /// <summary>세기 0~100%(100 = 실루엣).</summary>

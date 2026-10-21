@@ -305,24 +305,9 @@ public sealed class ColorPanel : UserControl
     }
 
     // ───────────── 팔레트 ─────────────
-
-    /// <summary>팔레트 칸 하나: 머리글(접기 화살표, 이름, 색 수, 메뉴 단추) + 색 칸 격자.</summary>
-    private sealed class PaletteSection(string name, bool collapsed, SwatchGrid grid, Border header, IconView arrow,
-        TextBlock title, TextBlock count, StackPanel root)
-    {
-        public string Name { get; set; } = name;
-        public bool Collapsed { get; set; } = collapsed;
-        public SwatchGrid Grid { get; } = grid;
-        public Border Header { get; } = header;
-        public IconView Arrow { get; } = arrow;
-        public TextBlock Title { get; } = title;
-        public TextBlock Count { get; } = count;
-        public StackPanel Root { get; } = root;
-    }
-
     /// <summary>모든 팔레트(위 → 아래).</summary>
     public IReadOnlyList<NamedPalette> Palettes
-        => [.. _sections.Select(s => new NamedPalette(s.Name, [.. s.Grid.Colors], s.Collapsed))];
+        => [.. _sections.Select(s => new NamedPalette(s.PaletteName, [.. s.Grid.Colors], s.Collapsed))];
 
     /// <summary>팔레트 목록을 통째로 바꾼다(비었으면 빈 "팔레트 1" 하나). 첫 팔레트가 활성 팔레트가 된다. 변경 알림은 내지 않는다.</summary>
     public void SetPalettes(IEnumerable<NamedPalette> palettes)
@@ -358,65 +343,13 @@ public sealed class ColorPanel : UserControl
 
     private PaletteSection CreateSection(string name, IEnumerable<Color32> colors, bool collapsed)
     {
-        var grid = new SwatchGrid { Cell = 14, ShowMarks = true, Margin = new Thickness(0), FillHeight = true, MinHeight = 20 };
-        grid.SetColors(colors);
+        var s = new PaletteSection(name, colors, collapsed, editable: true);
+        var grid = s.Grid;
+        var arrow = s.ArrowButton;
+        var header = s.Header;
+        var title = s.Title;
+        var menuButton = s.MenuButton;
         grid.SetMarks(_ctx.Primary, _ctx.Secondary);
-        var arrowIcon = new IconView(VectorIcon.ChevronRight, AppTheme.DimTextBrush)
-        {
-            Width = 12,
-            Height = 12,
-            IsHitTestVisible = false,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        var arrow = new Border
-        {
-            Width = 16,
-            Child = arrowIcon,
-            Background = Brushes.Transparent,
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        ToolTip.SetTip(arrow, "접기/펼치기");
-        var title = new TextBlock
-        {
-            Foreground = AppTheme.TextBrush,
-            FontWeight = FontWeight.Bold,
-            VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            Margin = new Thickness(2, 0, 4, 0),
-        };
-        var count = new TextBlock
-        {
-            Foreground = AppTheme.DimTextBrush,
-            FontSize = AppTheme.SmallFontSize,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 2, 0),
-        };
-        var menuButton = Ui.IconButton(VectorIcon.Menu, "이 팔레트 메뉴", null, 26, 13);
-        menuButton.Height = 20;
-        menuButton.Margin = new Thickness(1);
-        menuButton.VerticalAlignment = VerticalAlignment.Center;
-        var row = new DockPanel();
-        DockPanel.SetDock(arrow, Dock.Left);
-        DockPanel.SetDock(menuButton, Dock.Right);
-        DockPanel.SetDock(count, Dock.Right);
-        row.Children.Add(arrow);
-        row.Children.Add(menuButton);
-        row.Children.Add(count);
-        row.Children.Add(title);
-        var header = new Border
-        {
-            Height = 24,
-            Background = AppTheme.BackBrush,
-            BorderThickness = new Thickness(0, 0, 0, 2),
-            Padding = new Thickness(2, 0, 0, 0),
-            Child = row,
-        };
-        ToolTip.SetTip(title, "두 번 누르면 이름 바꾸기 · 오른쪽 단추 = 메뉴");
-        var root = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(0, 0, 0, 4) };
-        root.Children.Add(header);
-        root.Children.Add(grid);
-        var s = new PaletteSection(name, collapsed, grid, header, arrowIcon, title, count, root);
 
         grid.ColorClicked += (sender, e) =>
         {
@@ -502,13 +435,7 @@ public sealed class ColorPanel : UserControl
     {
         var active = Active;
         foreach (var s in _sections)
-        {
-            s.Title.Text = s.Name;
-            s.Count.Text = s.Grid.Colors.Count.ToString(CultureInfo.InvariantCulture);
-            s.Arrow.Icon = s.Collapsed ? VectorIcon.ChevronRight : VectorIcon.ChevronDown;
-            s.Grid.IsVisible = !s.Collapsed;
-            s.Header.BorderBrush = ReferenceEquals(s, active) ? AppTheme.AccentBrush : AppTheme.BackBrush;
-        }
+            s.Refresh(ReferenceEquals(s, active));
     }
 
     private void SetActive(PaletteSection s)
@@ -524,7 +451,7 @@ public sealed class ColorPanel : UserControl
     private string NextPaletteName()
     {
         for (int i = _sections.Count + 1; ; i++)
-            if (_sections.All(s => s.Name != $"팔레트 {i}")) return $"팔레트 {i}";
+            if (_sections.All(s => s.PaletteName != $"팔레트 {i}")) return $"팔레트 {i}";
     }
 
     private void AddPalette()
@@ -539,8 +466,8 @@ public sealed class ColorPanel : UserControl
 
     private void RenamePalette(PaletteSection s)
     {
-        if (!_sections.Contains(s) || InputDialog.Ask(this, "팔레트 이름 바꾸기", "이름", s.Name) is not { } name || name == s.Name) return;
-        s.Name = name;
+        if (!_sections.Contains(s) || InputDialog.Ask(this, "팔레트 이름 바꾸기", "이름", s.PaletteName) is not { } name || name == s.PaletteName) return;
+        s.PaletteName = name;
         _active = s;
         RefreshSections();
         RaisePalettesChanged();
@@ -561,7 +488,7 @@ public sealed class ColorPanel : UserControl
     {
         int index = _sections.IndexOf(s);
         if (index < 0 || _sections.Count <= 1) return;
-        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"팔레트 \"{s.Name}\"({s.Grid.Colors.Count}색)을 삭제할까요?", "팔레트 삭제",
+        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"팔레트 \"{s.PaletteName}\"({s.Grid.Colors.Count}색)을 삭제할까요?", "팔레트 삭제",
                 MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         _sections.RemoveAt(index);
         if (ReferenceEquals(_active, s)) _active = _sections[Math.Min(index, _sections.Count - 1)];
@@ -623,7 +550,7 @@ public sealed class ColorPanel : UserControl
     private void SavePalette(PaletteSection s)
     {
         var invalid = Path.GetInvalidFileNameChars();
-        string fileName = new string([.. s.Name.Select(ch => invalid.Contains(ch) ? '_' : ch)]).Trim();
+        string fileName = new string([.. s.PaletteName.Select(ch => invalid.Contains(ch) ? '_' : ch)]).Trim();
         var path = Ui.SaveFile(this, "팔레트 저장", null, (fileName.Length > 0 ? fileName : "palette") + ".hex", "hex",
             new FileFilter("HEX 팔레트", "*.hex"));
         if (path is null) return;
@@ -696,7 +623,7 @@ public sealed class ColorPanel : UserControl
             Ui.Info(this, "이미지에 투명이 아닌 색이 없습니다.");
             return;
         }
-        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"이미지에서 {colors.Count}색을 찾았습니다. 팔레트 \"{s.Name}\"을 바꿀까요?",
+        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"이미지에서 {colors.Count}색을 찾았습니다. 팔레트 \"{s.PaletteName}\"을 바꿀까요?",
                 "이미지에서 팔레트 만들기", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         s.Grid.SetColors(colors);
         s.Grid.Commit();
@@ -706,7 +633,7 @@ public sealed class ColorPanel : UserControl
     {
         _active = s;
         RefreshSections();
-        if (PaletteConvertDialog.Run(_ctx, this, [.. s.Grid.Colors], s.Name) is { } message) Message?.Invoke(this, message);
+        if (PaletteConvertDialog.Run(_ctx, this, [.. s.Grid.Colors], s.PaletteName) is { } message) Message?.Invoke(this, message);
     }
 
     // ───────────── 내부 컨트롤 ─────────────
