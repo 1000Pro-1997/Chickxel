@@ -276,8 +276,16 @@ public class ProjectTests
         Assert.Equal(new Pivot(1f, 0.5f), p.Sprite.DefaultPivot);
     }
 
+    /// <summary>UndoStack 시험용 동작(실행취소/다시 때 각 함수를 부름).</summary>
+    private sealed class TestCommand(string label, Action undo, Action redo) : IUndoCommand
+    {
+        public string Label { get; } = label;
+        public void Undo() => undo();
+        public void Redo() => redo();
+    }
+
     [Fact]
-    public void UndoStack_CapacityAndRecordAction()
+    public void UndoStack_CapacityAndRedo()
     {
         var stack = new UndoStack(capacity: 3);
         int value = 0;
@@ -285,14 +293,14 @@ public class ProjectTests
         {
             int v = i;
             value = v;
-            stack.RecordAction($"{v}", () => value = v - 1, () => value = v);
+            stack.Push(new TestCommand($"{v}", () => value = v - 1, () => value = v));
         }
         Assert.Equal(3, stack.UndoCount);
         while (stack.Undo()) { }
         Assert.Equal(2, value);
         stack.Redo();
         Assert.Equal(3, value);
-        stack.RecordAction("x", () => { }, () => { });
+        stack.Push(new TestCommand("x", () => { }, () => { }));
         Assert.False(stack.CanRedo);
     }
 
@@ -305,7 +313,7 @@ public class ProjectTests
         {
             int v = i;
             value = v;
-            stack.RecordAction($"{v}", () => value = v - 1, () => value = v);
+            stack.Push(new TestCommand($"{v}", () => value = v - 1, () => value = v));
         }
         stack.Capacity = 2;
         Assert.Equal(2, stack.UndoCount);

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Gpixel.Core.Edit;
+using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 
 namespace Gpixel.App;
@@ -148,6 +149,19 @@ public sealed class AppSettings
     {
         get => new(Math.Max(0, TrashKeepDays), Math.Max(0, TrashMaxMegabytes));
         set { TrashKeepDays = value.Days; TrashMaxMegabytes = value.MaxMegabytes; }
+    }
+    /// <summary>파일을 닫아도 실행취소 기록을 앱 설정 폴더에 남긴다(<see cref="UndoHistoryKeeper"/>). 끄면 새로 쓰지도 읽지도 않는다.</summary>
+    public bool UndoHistoryEnabled { get; set; } = true;
+    /// <summary>남긴 실행취소 기록 보관 기간(일, 마지막으로 쓰거나 연 뒤로). 0 = 제한 없음.</summary>
+    public int UndoHistoryKeepDays { get; set; } = UndoHistoryPolicy.DefaultDays;
+    /// <summary>남긴 실행취소 기록 전체 최대 용량(MB). 넘치면 오래 안 쓴 기록부터 지운다.</summary>
+    public int UndoHistoryMaxMegabytes { get; set; } = UndoHistoryPolicy.DefaultMaxMegabytes;
+
+    [JsonIgnore]
+    public UndoHistoryPolicy UndoHistoryPolicy
+    {
+        get => new(Math.Max(0, UndoHistoryKeepDays), Math.Max(0, UndoHistoryMaxMegabytes));
+        set { UndoHistoryKeepDays = value.Days; UndoHistoryMaxMegabytes = value.MaxMegabytes; }
     }
     /// <summary>사용자 단축키: 명령 Id("분류/이름") → 키 표기 목록(빈 목록 = 단축키 없음). 기본값과 다른 명령만 담는다.</summary>
     public Dictionary<string, List<string>>? Shortcuts { get; set; }

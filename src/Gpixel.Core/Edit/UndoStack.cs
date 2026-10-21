@@ -12,7 +12,7 @@ public interface IUndoCommand
 
 /// <summary>
 /// 실행취소/다시 스택(기본 <see cref="DefaultCapacity"/>단계, 최대 <see cref="MaxCapacity"/>). 모든 기록은 <see cref="IUndoCommand"/> 하나의 목록으로 쌓인다:
-/// 셀 픽셀 패치(스트로크), 프로젝트 구조 변경(레이어·프레임·태그·캔버스·설정), 임의 동작.
+/// 셀 픽셀 패치(스트로크), 프로젝트 구조 변경(레이어·프레임·태그·캔버스·설정). 둘 다 파일에 남길 수 있다(<see cref="IO.UndoHistoryIO"/>).
 /// 프로젝트 편집은 <see cref="SpriteProject"/>가 이 스택에 직접 기록한다.
 /// <see cref="BeginGroup"/>~<see cref="EndGroup"/> 사이의 기록은 한 단계로 묶인다(AI 한 번의 응답 등).
 /// </summary>
@@ -38,12 +38,21 @@ public sealed class UndoStack
             _capacity = Math.Clamp(value, 1, MaxCapacity);
             if (_undo.Count <= _capacity) return;
             _undo.RemoveRange(0, _undo.Count - _capacity);
-            Changed?.Invoke(this, EventArgs.Empty);
+            OnChanged();
         }
     }
 
     /// <summary>스택 내용이 바뀌면 발생(메뉴 활성화 갱신용).</summary>
     public event EventHandler? Changed;
+
+    /// <summary>내용이 바뀔 때마다 늘어나는 번호(기록을 파일에 남긴 뒤 바뀌었는지 볼 때 쓴다).</summary>
+    public long Version { get; private set; }
+
+    private void OnChanged()
+    {
+        Version++;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     private bool GroupHasItems => _group is { Count: > 0 };
 
@@ -67,11 +76,8 @@ public sealed class UndoStack
             if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
         }
         _redo.Clear();
-        Changed?.Invoke(this, EventArgs.Empty);
+        OnChanged();
     }
-
-    /// <summary>이미 적용된 임의 동작을 기록한다(실행취소/다시 때 각 함수가 불림).</summary>
-    public void RecordAction(string label, Action undo, Action redo) => Push(new ActionCommand(label, undo, redo));
 
     /// <summary>묶음이 열려 있는지.</summary>
     public bool InGroup => _group is not null;
@@ -96,7 +102,7 @@ public sealed class UndoStack
         var command = new GroupCommand(_groupLabel ?? items[0].Label, items);
         _undo.Add(command);
         if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
-        Changed?.Invoke(this, EventArgs.Empty);
+        OnChanged();
         return command;
     }
 
@@ -122,7 +128,7 @@ public sealed class UndoStack
         _undo.RemoveAt(_undo.Count - 1);
         command.Undo();
         _redo.Add(command);
-        Changed?.Invoke(this, EventArgs.Empty);
+        OnChanged();
         return true;
     }
 
@@ -134,7 +140,7 @@ public sealed class UndoStack
         _redo.RemoveAt(_redo.Count - 1);
         command.Redo();
         _undo.Add(command);
-        Changed?.Invoke(this, EventArgs.Empty);
+        OnChanged();
         return true;
     }
 
@@ -143,20 +149,31 @@ public sealed class UndoStack
         _undo.Clear();
         _redo.Clear();
         _group = null;
-        Changed?.Invoke(this, EventArgs.Empty);
+        OnChanged();
     }
 
-    private sealed class ActionCommand(string label, Action undo, Action redo) : IUndoCommand
+    /// <summary>파일 저장용 사본: 실행취소 목록(오래된 것부터), 다시 실행 목록(먼 것부터 — 마지막이 다음 다시 실행), 열린 묶음(기록이 있으면 한 단계로).</summary>
+    internal (List<IUndoCommand> Undo, List<IUndoCommand> Redo, IUndoCommand? OpenGroup) Contents()
+        => (_undo.ToList(), _redo.ToList(), GroupHasItems ? new GroupCommand(_groupLabel ?? _group![0].Label, _group!.ToList()) : null);
+
+    /// <summary>파일에서 읽은 기록으로 바꾼다(실행취소 목록은 <see cref="Capacity"/>를 넘으면 오래된 것부터 버림). 열린 묶음은 닫지 않고 버린다.</summary>
+    internal void Load(IEnumerable<IUndoCommand> undo, IEnumerable<IUndoCommand> redo)
     {
-        public string Label { get; } = label;
-        public void Undo() => undo();
-        public void Redo() => redo();
+        _undo.Clear();
+        _undo.AddRange(undo);
+        if (_undo.Count > Capacity) _undo.RemoveRange(0, _undo.Count - Capacity);
+        _redo.Clear();
+        _redo.AddRange(redo);
+        _group = null;
+        OnChanged();
     }
 
     /// <summary>묶음: 되돌릴 때는 거꾸로, 다시 할 때는 순서대로.</summary>
-    private sealed class GroupCommand(string label, List<IUndoCommand> items) : IUndoCommand
+    internal sealed class GroupCommand(string label, List<IUndoCommand> items) : IUndoCommand
     {
         public string Label { get; } = label;
+
+        public IReadOnlyList<IUndoCommand> Items => items;
 
         public void Undo()
         {
@@ -188,6 +205,18 @@ public sealed class PixelPatch
 
     /// <summary>바뀐 픽셀 수.</summary>
     public int Count => _indices.Length;
+
+    /// <summary>파일 저장용: 크기, 바뀐 픽셀 번호(오름차순), 이전 값, 이후 값(그대로 — 고치지 말 것).</summary>
+    internal (int Width, int Height, int[] Indices, Color32[] Before, Color32[] After) Parts => (_width, _height, _indices, _before, _after);
+
+    /// <summary>파일에서 읽은 패치. 길이·번호 범위가 맞지 않으면 <see cref="InvalidDataException"/>.</summary>
+    internal static PixelPatch FromParts(int width, int height, int[] indices, Color32[] before, Color32[] after)
+    {
+        if (width < 1 || height < 1 || indices.Length != before.Length || indices.Length != after.Length
+            || indices.Any(i => i < 0 || i >= width * height))
+            throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.");
+        return new PixelPatch(width, height, indices, before, after);
+    }
 
     /// <summary>두 이미지의 차이. 같으면 null. 크기가 다르면 <see cref="ArgumentException"/>.</summary>
     public static PixelPatch? Create(PixelImage before, PixelImage after)

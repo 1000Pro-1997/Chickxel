@@ -1,15 +1,18 @@
 using System.Text.Json;
 using Gpixel.Core.Edit;
+using Gpixel.Core.IO;
 
 namespace Gpixel.App;
 
 /// <summary>
-/// 환경 설정: 일반(실행취소 횟수, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
+/// 환경 설정: 일반(실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
 {
     private readonly NumericUpDown _undo;
+    private readonly CheckBox _historyOn;
+    private readonly NumericUpDown _historyDays, _historyMb;
     private readonly TrashPolicyEditor _trash;
     private readonly CheckBox _autoSave;
     private readonly NumericUpDown _autoSaveDelay;
@@ -23,7 +26,9 @@ public sealed class PreferencesDialog : DialogBase
     private (string Id, bool Replace)? _capture;
 
     /// <param name="keys">명령 Id → 지금 단축키.</param>
-    public PreferencesDialog(int undoSteps, bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
+    /// <param name="history">남긴 실행취소 기록(지금 용량 표시·모두 지우기).</param>
+    public PreferencesDialog(int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
+        bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
         : base("환경 설정")
     {
@@ -32,6 +37,23 @@ public sealed class PreferencesDialog : DialogBase
 
         _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90);
         _trash = new TrashPolicyEditor(trashPolicy);
+        _historyOn = Ui.Check("파일을 닫아도 실행취소 기록 남기기", historyEnabled);
+        _historyDays = Ui.Num(0, 3650, Math.Clamp(historyPolicy.Days, 0, 3650), 70);
+        _historyMb = Ui.Num(10, 100_000, Math.Clamp(historyPolicy.MaxMegabytes, 10, 100_000), 80);
+        void SyncHistory() => _historyDays.IsEnabled = _historyMb.IsEnabled = _historyOn.On();
+        _historyOn.IsCheckedChanged += (_, _) => SyncHistory();
+        SyncHistory();
+        var historyUsage = Ui.Label(history.DescribeUsage());
+        historyUsage.Foreground = AppTheme.DimTextBrush;
+        var historyClear = Ui.Button("기록 모두 지우기", (_, _) =>
+        {
+            if (Ui.Ask(this, "남겨 둔 실행취소 기록을 모두 지울까요? 열려 있는 파일의 지금 실행취소는 그대로입니다.", "실행취소 기록",
+                    MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+            history.Clear();
+            historyUsage.Text = history.DescribeUsage();
+        });
+        var historyNote = Ui.Label("앱 설정 폴더에 따로 저장합니다(.gpixel 파일은 그대로). 저장한 상태까지만 남기고, 파일이 없어졌거나 밖에서 바뀐 기록은 저절로 지웁니다.");
+        historyNote.Foreground = AppTheme.DimTextBrush;
         _autoSave = Ui.Check("자동 저장", autoSave);
         _autoSaveDelay = Ui.Num(AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay,
             Math.Clamp(autoSaveDelay, AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay), 70);
@@ -47,6 +69,13 @@ public sealed class PreferencesDialog : DialogBase
         var general = Ui.Stack(
             Ui.Row(Ui.Label("실행취소 횟수"), _undo, Ui.Label($"단계 (기본 {UndoStack.DefaultCapacity}, 최대 {UndoStack.MaxCapacity})")),
             Ui.Label("줄이면 열린 프로젝트의 오래된 기록부터 버립니다. 많을수록 메모리를 더 씁니다."),
+            Ui.Label("실행취소 기록", bold: true),
+            _historyOn,
+            Ui.Row(Ui.Label("보관 기간"), _historyDays, Ui.Label("일 (0 = 제한 없음) — 그동안 열지 않은 파일의 기록은 지웁니다"))
+                .Tip("파일을 마지막으로 저장하거나 연 뒤로 셉니다."),
+            Ui.Row(Ui.Label("최대 용량"), _historyMb, Ui.Label($"MB (기본 {UndoHistoryPolicy.DefaultMaxMegabytes}) — 넘치면 오래 안 연 파일 기록부터 지웁니다")),
+            Ui.Row(historyUsage, historyClear),
+            historyNote,
             Ui.Label("저장", bold: true),
             Ui.Row(_autoSave, _autoSaveDelay,
                 Ui.Label($"초 동안 편집이 없으면 저장 (기본 {AppSettings.DefaultAutoSaveDelay}, {AppSettings.MinAutoSaveDelay}~{AppSettings.MaxAutoSaveDelay})")),
@@ -86,6 +115,8 @@ public sealed class PreferencesDialog : DialogBase
 
     public int UndoSteps => (int)_undo.NumValue();
     public bool AutoSave => _autoSave.On();
+    public bool UndoHistoryEnabled => _historyOn.On();
+    public UndoHistoryPolicy UndoHistoryPolicy => new((int)_historyDays.NumValue(), (int)_historyMb.NumValue());
     public int AutoSaveIdleSeconds => (int)_autoSaveDelay.NumValue();
     public TrashPolicy TrashPolicy => _trash.Policy;
     public bool UpdateCheck => _updateCheck.On();

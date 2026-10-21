@@ -80,6 +80,8 @@ public sealed class MainForm : Window, Ai.IAiHost
     private const int MinPanelSize = 25;
 
     private readonly AppSettings _settings;
+    /// <summary>파일을 닫아도 남는 실행취소 기록.</summary>
+    private readonly UndoHistoryKeeper _history;
     private readonly StartupArgs _args;
     private readonly EditorContext _ctx = new();
 
@@ -143,6 +145,8 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         _args = args;
         _settings = AppSettings.Load();
+        _history = new UndoHistoryKeeper(_settings);
+        _history.Failed += m => Dispatcher.UIThread.Post(() => ShowMessage($"실행취소 기록을 쓰지 못했습니다: {m}"));
         _updater = new Updater(_settings, this, ShowMessage, ShowUpdateButton, ConfirmCloseAll, ExitForUpdate);
         Title = "Gpixel";
         Background = AppTheme.BackBrush;
@@ -948,6 +952,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         _browser.Message += (_, m) => ShowMessage(m);
         // 보관 기간이 지났거나 용량을 넘친 휴지통 항목은 시작할 때 영구 삭제한다.
         _browser.Trash.Purge(_settings.TrashPolicy);
+        // 남긴 실행취소 기록도: 원래 파일이 없어졌거나 밖에서 바뀌었거나 오래 안 썼거나 용량을 넘친 것(백그라운드).
+        _history.Cleanup();
         _browser.FileActivated += (_, path) =>
         {
             // 목록 선택 이벤트가 끝난 뒤 연다(대화상자·선택 되돌리기를 안전하게).
@@ -1197,6 +1203,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         {
             _play?.Close();
             ShutdownChat();
+            ShutdownHistory();
             SaveSettings();
             return;
         }
@@ -1210,6 +1217,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             _closeConfirmed = true;
             _play?.Close();
             ShutdownChat();
+            ShutdownHistory();
             SaveSettings();
             Close();
         });
@@ -1228,8 +1236,16 @@ public sealed class MainForm : Window, Ai.IAiHost
         _closeConfirmed = true;
         _play?.Close();
         ShutdownChat();
+        ShutdownHistory();
         SaveSettings();
         Close();
+    }
+
+    /// <summary>끝내기 전에: 저장한 그대로인 지금 문서의 실행취소 기록을 남기고, 기다리던 기록 쓰기가 끝나기를 잠깐 기다린다.</summary>
+    private void ShutdownHistory()
+    {
+        if (_ctx.Project is { } p) _history.Leaving(p);
+        _history.Flush(TimeSpan.FromSeconds(10));
     }
 
     private void OpenSettingsFolder()
@@ -1566,13 +1582,24 @@ public sealed class MainForm : Window, Ai.IAiHost
             Ui.Row(Ui.Label("색"), color, Ui.InfoBadge("알파(#RRGGBBAA)로 진하기를 정합니다.")));
     }
 
-    /// <summary>환경 설정(실행취소 횟수·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
+    /// <summary>환경 설정(실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
     private void ShowPreferences()
     {
-        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
+        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
+            _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         _settings.UndoSteps = dlg.UndoSteps;
+        bool turnedOff = _settings.UndoHistoryEnabled && !dlg.UndoHistoryEnabled;
+        _settings.UndoHistoryEnabled = dlg.UndoHistoryEnabled;
+        _settings.UndoHistoryPolicy = dlg.UndoHistoryPolicy;
+        // 끄면 새로 쓰지 않는다. 이미 남긴 기록은 지울지 묻고, 두면 보관 기간·용량 정리가 맡는다.
+        if (turnedOff && _history.Usage() is { Files: > 0 } usage
+            && Ui.Ask(this, $"남겨 둔 실행취소 기록({AppTrash.FormatSize(usage.Bytes)} · 파일 {usage.Files}개)도 지금 지울까요?\n" +
+                            "\"아니요\"면 그대로 두고 보관 기간·최대 용량에 따라 저절로 지워집니다(다시 켜면 이어서 씁니다).",
+                "실행취소 기록", MessageButtons.YesNo, MessageIcon.Question) == DialogResult.Yes)
+            _history.Clear();
+        _history.Cleanup();
         _settings.TrashPolicy = dlg.TrashPolicy;
         _settings.UpdateCheck = dlg.UpdateCheck;
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
@@ -1693,6 +1720,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (_ctx.Project is { } cur && !ReferenceEquals(cur, next))
         {
             _ctx.CommitFloating();
+            // 저장한 그대로인 문서는 버리기 전에 실행취소 기록을 남긴다(수정된 문서는 메모리에 남고, 기록은 저장할 때 씀).
+            _history.Leaving(cur);
             if (cur is { IsDirty: true, Path: not null })
             {
                 var (zoom, offset) = _canvas.View;
@@ -1751,7 +1780,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         var name = Path.GetFileName(path);
         // 묻는 동안 자동 저장이 버릴 수정을 파일에 써 버리지 않게 멈춘다.
         _autoSave.Stop();
-        if (Ui.Ask(this, $"\"{name}\"의 저장 안 된 수정을 버리고 파일에 저장된 내용으로 되돌릴까요? 되돌린 뒤에는 실행취소할 수 없습니다.",
+        if (Ui.Ask(this, $"\"{name}\"의 저장 안 된 수정을 버리고 파일에 저장된 내용으로 되돌릴까요? 버린 수정은 실행취소로 되살릴 수 없습니다.",
                 "저장한 내용으로 되돌리기", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
         {
             RestartAutoSave();
@@ -1927,6 +1956,8 @@ public sealed class MainForm : Window, Ai.IAiHost
             if (interactive) Ui.Error(this, message);
             return false;
         }
+        // 디스크에서 연 프로젝트 파일이면 남겨 둔 실행취소 기록을 이어 받는다(화면에 띄우기 전에).
+        var historyNote = result.Imported ? null : _history.Restore(result.Project);
         SwitchTo(result.Project, result.Imported ? result.SourcePngPath : null);
         var p = result.Project;
         AppSettings.PushRecent(_settings.RecentFiles, result.Imported ? full : p.Path ?? full);
@@ -1936,7 +1967,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         message = result.Imported
             ? $"PNG 가져옴: {Path.GetFileName(full)} → {contents} — 저장하면 {Path.GetFileName(p.Path)}이(가) 만들어집니다."
             : $"열기: {p.DisplayName} (레이어 {p.Layers.Count} · {contents})";
-        message += UnsavedSuffix;
+        message += historyNote + UnsavedSuffix;
         ShowMessage(message);
         if (result.Warning is { } w)
         {
@@ -2105,6 +2136,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             bool projectSaved = !p.IsDirty && SafeStamp(path) is var stamp && stamp != default && stamp != stampBefore;
             if (projectSaved)
             {
+                _history.Saved(p);
                 if (current)
                 {
                     _docStamp = SafeStamp(p.Path!);
@@ -2120,6 +2152,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             return false;
         }
         AppSettings.PushRecent(_settings.RecentFiles, result.ProjectPath);
+        _history.Saved(p);
         message = $"저장: {Path.GetFileName(result.ProjectPath)}" + ExportSummary(result.Export) + TrashStale(result.Export);
         _browser.RefreshFile(result.ProjectPath);
         if (current)
@@ -2228,6 +2261,17 @@ public sealed class MainForm : Window, Ai.IAiHost
         }
         if (stored) _docs.NotifyChanged();
         else SyncUnsaved();
+        _history.Renamed(oldPath, newPath, OpenProjects);
+    }
+
+    /// <summary>열린 프로젝트: 지금 문서 + 메모리에 남겨 둔 문서.</summary>
+    private IEnumerable<SpriteProject> OpenProjects
+    {
+        get
+        {
+            if (_ctx.Project is { } p) yield return p;
+            foreach (var doc in _docs.Items) yield return doc.Project;
+        }
     }
 
     /// <summary>
@@ -2255,6 +2299,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     private void OnFileDeleted(string path)
     {
         _settings.RecentFiles.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        _history.Deleted(path);
         if (_ctx.Project?.Path is { } p && string.Equals(p, path, StringComparison.OrdinalIgnoreCase))
         {
             _ctx.Project.IsDirty = true;

@@ -23,7 +23,7 @@ namespace Gpixel.Core.Model;
 /// <see cref="Edit(string, ProjectChange, Action)"/> 안에서 바꿔야 실행취소된다.
 /// </para>
 /// </summary>
-public sealed class SpriteProject
+public sealed partial class SpriteProject
 {
     public const string UntitledName = "새 프로젝트";
     public const string FileExtension = ".gpixel";
@@ -1944,6 +1944,8 @@ public sealed class SpriteProject
     private sealed class CelStrokeCommand(SpriteProject project, string label, StrokeState stroke, PixelPatch patch) : IUndoCommand
     {
         public string Label { get; } = label;
+        public StrokeState Stroke => stroke;
+        public PixelPatch Patch => patch;
 
         public void Undo()
         {
@@ -1964,6 +1966,9 @@ public sealed class SpriteProject
         : IUndoCommand
     {
         public string Label { get; } = label;
+        public Snapshot Before => before;
+        public Snapshot After => after;
+        public ProjectChange Change => change;
 
         public void Undo()
         {
@@ -2024,7 +2029,7 @@ public sealed class SpriteProject
     }
 
     /// <summary>구조 상태 사본(그룹 접힘은 제외). 셀 이미지는 참조만 담는다(구조 편집은 셀을 새 이미지로 바꿔 넣으므로 안전).</summary>
-    private sealed class Snapshot
+    private sealed partial class Snapshot
     {
         private int _w, _h;
         private LayerState[] _layers = [];

@@ -27,7 +27,7 @@ public static partial class ProjectIO
     public const int CurrentVersion = 3;
     public const string ProjectEntryName = "project.json";
 
-    private static readonly JsonSerializerOptions Options = new()
+    internal static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -690,33 +690,8 @@ public static partial class ProjectIO
         {
             Name = t.Name, From = t.From, To = t.To, Direction = t.Direction, Loop = t.Loop, Color = t.Color.ToHex(),
         }).ToList(),
-        Unity = new UnityDto
-        {
-            SpriteMode = p.Sprite.Mode,
-            PixelsPerUnit = p.Sprite.PixelsPerUnit,
-            DefaultPivot = PivotDto.From(p.Sprite.DefaultPivot),
-            Border = p.Sprite.Border.IsNone ? null : [p.Sprite.Border.Left, p.Sprite.Border.Top, p.Sprite.Border.Right, p.Sprite.Border.Bottom],
-            FullRect = p.Sprite.FullRectMesh,
-            Readable = p.Sprite.Readable,
-            Texture = TextureDto.From(p.Sprite),
-        },
-        Export = new ExportDto
-        {
-            OnSave = p.Export.ExportOnSave,
-            Folder = p.Export.Folder,
-            FileName = p.Export.FileName,
-            ExportFrames = p.Export.ExportFrames,
-            ExportParts = p.Export.ExportParts,
-            PartsFileName = p.Export.PartsFileName,
-            ImageFormat = p.Export.ImageFormat,
-            JpegQuality = p.Export.JpegQuality,
-            SingleFrame = p.Export.SingleFrameIndex,
-            WriteMeta = p.Export.WriteMeta,
-            SpriteLibrary = p.Export.WriteSpriteLibrary ? true : null,
-            KeepImportedRects = p.Export.KeepImportedRects,
-            Sheet = SheetDto.From(p, p.Export.Common),
-            PartsSheet = p.Export.PartsOverride is { } po ? SheetDto.From(p, po) : null,
-        },
+        Unity = UnityDto.From(p.Sprite),
+        Export = ExportDto.From(p.Export, p),
         Outfits = p.Outfits.Count == 0 ? null : p.Outfits.Select(o => new OutfitDto
         {
             Name = o.Name,
@@ -873,20 +848,11 @@ public static partial class ProjectIO
     /// <summary>Unity·내보내기 설정(시트 설정 제외 — <see cref="ApplySheets"/>)을 적용한다.</summary>
     private static void ApplySettings(SpriteProject p, ProjectDto dto)
     {
-        if (dto.Unity is { } u)
-        {
-            p.Sprite.Mode = u.SpriteMode;
-            p.Sprite.PixelsPerUnit = u.PixelsPerUnit;
-            p.Sprite.DefaultPivot = u.DefaultPivot?.ToPivot() ?? Pivot.Center;
-            p.Sprite.Border = u.Border is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None;
-            p.Sprite.FullRectMesh = u.FullRect;
-            p.Sprite.Readable = u.Readable;
-            u.Texture?.ApplyTo(p.Sprite);
-        }
+        dto.Unity?.ApplyTo(p.Sprite);
         if (dto.Export is { } e) ApplyExport(p.Export, e);
     }
 
-    private static void ApplyExport(ExportSettings x, ExportDto e)
+    internal static void ApplyExport(ExportSettings x, ExportDto e)
     {
         x.ExportOnSave = e.OnSave;
         x.Folder = string.IsNullOrWhiteSpace(e.Folder) ? null : e.Folder;
@@ -1071,7 +1037,7 @@ public static partial class ProjectIO
     }
 
     /// <summary>(레이어 번호, 그 레이어(부위면 그 그룹)의 스킨 번호).</summary>
-    private sealed class SkinRefDto
+    internal sealed class SkinRefDto
     {
         public int Layer { get; set; } = -1;
         public int Skin { get; set; } = -1;
@@ -1122,7 +1088,7 @@ public static partial class ProjectIO
     }
 
     /// <summary>그룹 자동 배치(<see cref="GroupLayout"/>). 없는 값은 기본값.</summary>
-    private sealed class GroupLayoutDto
+    internal sealed class GroupLayoutDto
     {
         public GroupLayoutDirection Direction { get; set; } = GroupLayoutDirection.Row;
         public int? Columns { get; set; }
@@ -1166,7 +1132,7 @@ public static partial class ProjectIO
     /// 레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay · gradient · innerglow · swap · adjust · reflection, 움직이는 효과 explode · shine · squash
     /// (모르는 종류는 읽을 때 건너뜀).
     /// </summary>
-    private sealed class EffectDto
+    internal sealed class EffectDto
     {
         public string? Type { get; set; }
         public bool Enabled { get; set; } = true;
@@ -1505,7 +1471,7 @@ public static partial class ProjectIO
         public string? Color { get; set; }
     }
 
-    private sealed class UnityDto
+    internal sealed class UnityDto
     {
         public SpriteMode SpriteMode { get; set; } = SpriteMode.Multiple;
         public float PixelsPerUnit { get; set; } = SpriteSettings.DefaultPixelsPerUnit;
@@ -1516,10 +1482,32 @@ public static partial class ProjectIO
         public bool Readable { get; set; }
         /// <summary>Unity 텍스처 가져오기 설정(없으면 기본값 — 예전 파일).</summary>
         public TextureDto? Texture { get; set; }
+
+        public static UnityDto From(SpriteSettings s) => new()
+        {
+            SpriteMode = s.Mode,
+            PixelsPerUnit = s.PixelsPerUnit,
+            DefaultPivot = PivotDto.From(s.DefaultPivot),
+            Border = s.Border.IsNone ? null : [s.Border.Left, s.Border.Top, s.Border.Right, s.Border.Bottom],
+            FullRect = s.FullRectMesh,
+            Readable = s.Readable,
+            Texture = TextureDto.From(s),
+        };
+
+        public void ApplyTo(SpriteSettings s)
+        {
+            s.Mode = SpriteMode;
+            s.PixelsPerUnit = PixelsPerUnit;
+            s.DefaultPivot = DefaultPivot?.ToPivot() ?? Pivot.Center;
+            s.Border = Border is { Length: >= 4 } b ? new SpriteBorder(b[0], b[1], b[2], b[3]) : SpriteBorder.None;
+            s.FullRectMesh = FullRect;
+            s.Readable = Readable;
+            Texture?.ApplyTo(s);
+        }
     }
 
     /// <summary>Unity 인스펙터 항목(Extrude·Physics·Advanced·Wrap/Filter·Default 플랫폼).</summary>
-    private sealed class TextureDto
+    internal sealed class TextureDto
     {
         public int ExtrudeEdges { get; set; } = 1;
         public bool GeneratePhysicsShape { get; set; } = true;
@@ -1565,7 +1553,7 @@ public static partial class ProjectIO
         }
     }
 
-    private sealed class ExportDto
+    internal sealed class ExportDto
     {
         public bool OnSave { get; set; } = true;
         public string? Folder { get; set; }
@@ -1610,10 +1598,29 @@ public static partial class ProjectIO
         public List<SkinRefDto>? ExcludedSkins { get; set; }
         public bool? BakeInheritedSkins { get; set; }
         public SpriteNaming? PartsNaming { get; set; }
+
+        /// <param name="p">시트 설정의 스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 적지 않는다(실행취소 기록은 따로 적음).</param>
+        public static ExportDto From(ExportSettings x, SpriteProject? p) => new()
+        {
+            OnSave = x.ExportOnSave,
+            Folder = x.Folder,
+            FileName = x.FileName,
+            ExportFrames = x.ExportFrames,
+            ExportParts = x.ExportParts,
+            PartsFileName = x.PartsFileName,
+            ImageFormat = x.ImageFormat,
+            JpegQuality = x.JpegQuality,
+            SingleFrame = x.SingleFrameIndex,
+            WriteMeta = x.WriteMeta,
+            SpriteLibrary = x.WriteSpriteLibrary ? true : null,
+            KeepImportedRects = x.KeepImportedRects,
+            Sheet = SheetDto.From(p, x.Common),
+            PartsSheet = x.PartsOverride is { } po ? SheetDto.From(p, po) : null,
+        };
     }
 
     /// <summary>시트 설정 한 벌(<see cref="SheetOptions"/>). 스킨·레이어·착장은 파일 안 번호.</summary>
-    private sealed class SheetDto
+    internal sealed class SheetDto
     {
         public SheetLayout Layout { get; set; } = SheetLayout.Grid;
         public List<GridKey>? Order { get; set; }
@@ -1635,7 +1642,8 @@ public static partial class ProjectIO
         public List<int>? ExcludedLayers { get; set; }
         public bool? BakeInheritedSkins { get; set; }
 
-        public static SheetDto From(SpriteProject p, SheetOptions o) => new()
+        /// <param name="p">스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 값만 적는다.</param>
+        public static SheetDto From(SpriteProject? p, SheetOptions o) => new()
         {
             Layout = o.Layout,
             Order = o.Order.Keys.ToList(),
@@ -1652,13 +1660,22 @@ public static partial class ProjectIO
             SplitParts = o.SplitParts,
             Naming = o.Naming,
             Skins = o.Skins,
-            ExcludedSkins = NullIfEmpty(o.ExcludedSkins.Select(s => GroupSkinRef(p, s)).OfType<SkinRefDto>()),
-            Outfits = NullIfEmpty(o.Outfits.Select(x => IndexOf(p.Outfits, x)).Where(i => i >= 0)),
-            ExcludedLayers = NullIfEmpty(o.ExcludedLayers.Select(p.IndexOf).Where(i => i >= 0)),
+            ExcludedSkins = p is null ? null : NullIfEmpty(o.ExcludedSkins.Select(s => GroupSkinRef(p, s)).OfType<SkinRefDto>()),
+            Outfits = p is null ? null : NullIfEmpty(o.Outfits.Select(x => IndexOf(p.Outfits, x)).Where(i => i >= 0)),
+            ExcludedLayers = p is null ? null : NullIfEmpty(o.ExcludedLayers.Select(p.IndexOf).Where(i => i >= 0)),
             BakeInheritedSkins = o.BakeInheritedSkins ? true : null,
         };
 
         public void ApplyTo(SheetOptions o, SpriteProject p, List<Layer> fileLayers)
+        {
+            ApplyValues(o);
+            o.ExcludedSkins = (ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray();
+            o.Outfits = (Outfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
+            o.ExcludedLayers = (ExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray();
+        }
+
+        /// <summary>스킨·레이어·착장 목록을 뺀 값만 적용한다.</summary>
+        public void ApplyValues(SheetOptions o)
         {
             o.Layout = Enum.IsDefined(Layout) ? Layout : SheetLayout.Grid;
             o.Order = new GridOrder((Order ?? [GridKey.Part, GridKey.Skin, GridKey.Frame]).Where(Enum.IsDefined).ToList(), RowBreak);
@@ -1674,9 +1691,6 @@ public static partial class ProjectIO
             o.SplitParts = SplitParts;
             o.Naming = Enum.IsDefined(Naming) ? Naming : SpriteNaming.ByTag;
             o.Skins = Enum.IsDefined(Skins) ? Skins : SkinSource.Current;
-            o.ExcludedSkins = (ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray();
-            o.Outfits = (Outfits ?? []).Where(i => i >= 0 && i < p.Outfits.Count).Select(i => p.Outfits[i]).Distinct().ToArray();
-            o.ExcludedLayers = (ExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray();
             o.BakeInheritedSkins = BakeInheritedSkins == true;
         }
     }
@@ -1694,7 +1708,7 @@ public static partial class ProjectIO
         public int[]? Source { get; set; }
     }
 
-    private sealed class PivotDto
+    internal sealed class PivotDto
     {
         public float X { get; set; } = 0.5f;
         public float Y { get; set; } = 0.5f;
