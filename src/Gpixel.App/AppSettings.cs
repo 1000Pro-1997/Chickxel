@@ -40,6 +40,16 @@ public sealed class AppSettings
     public string PixelGridColor { get; set; } = "#FFFFFF40";
     public string TileGridColor { get; set; } = "#5AC8FF96";
     public bool OnionSkin { get; set; }
+    /// <summary>픽셀 격자를 보이기 시작하는 배율.</summary>
+    public int PixelGridMinZoom { get; set; } = 6;
+    /// <summary>타일 모드 반복 겹 수(0 = 자동).</summary>
+    public int TileRepeat { get; set; }
+    public bool TileDim { get; set; } = true;
+    public int OnionBefore { get; set; } = 1;
+    public int OnionAfter { get; set; } = 1;
+    /// <summary>양파 껍질 불투명도(%).</summary>
+    public int OnionOpacity { get; set; } = 30;
+    public bool OnionTint { get; set; } = true;
 
     // 도구
     public int BrushSize { get; set; } = 1;

@@ -216,6 +216,25 @@ public static class Ui
     /// <summary>"Ctrl" 자리 수정자(macOS = ⌘)가 눌렸는지.</summary>
     public static bool HasCommand(KeyModifiers m) => (m & Platform.CommandModifier) != 0;
 
+    /// <summary>
+    /// 글자·숫자 입력란 밖을 누르면 입력 상태를 끝낸다: 누른 곳이 포커스를 가져가지 않았으면(캔버스 빈 곳·패널 등) <paramref name="fallback"/>으로
+    /// 포커스를 옮긴다(숫자 상자는 이때 값이 확정됨). 창마다 한 번 부른다.
+    /// </summary>
+    public static void ReleaseTextFocusOnOutsideClick(TopLevel top, Func<IInputElement?> fallback)
+    {
+        top.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
+        {
+            if (top.FocusManager?.GetFocusedElement() is not TextBox box) return;
+            Control owner = Avalonia.VisualTree.VisualExtensions.FindAncestorOfType<NumericUpDown>(box) is { } num ? num : box;
+            if (e.Source is Visual v && (ReferenceEquals(v, owner) || Avalonia.VisualTree.VisualExtensions.IsVisualAncestorOf(owner, v))) return;
+            // 누른 곳이 스스로 포커스를 가져가는지 본 뒤에(버튼·다른 입력란이면 그대로 둠).
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ReferenceEquals(top.FocusManager?.GetFocusedElement(), box)) (fallback() ?? top).Focus();
+            });
+        }, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
     // ───────────── 창 찾기 ─────────────
 
     public static Window? MainWindow
@@ -372,6 +391,7 @@ public class DialogBase : Window
         OkButton.IsDefault = true;
         CancelButtonControl = Ui.Button("취소", width: 90);
         CancelButtonControl.IsCancel = true;
+        Ui.ReleaseTextFocusOnOutsideClick(this, () => this);
         _results[OkButton] = DialogResult.OK;
         _results[CancelButtonControl] = DialogResult.Cancel;
         _buttons = new StackPanel

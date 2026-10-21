@@ -81,7 +81,8 @@ public sealed class PixelCanvas : Control
 
     private readonly EditorContext _ctx;
     private WriteableBitmap? _floatingBmp;
-    private WriteableBitmap? _ghostPrev, _ghostNext;
+    /// <summary>양파 껍질 사본(프레임 거리 −5~+5마다 재사용).</summary>
+    private readonly Dictionary<int, WriteableBitmap> _ghosts = new();
     private int _zoom = 8;
     private Point _offset;
     private readonly DispatcherTimer _antsTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
@@ -368,6 +369,24 @@ public sealed class PixelCanvas : Control
     public Size TileSize { get => _tileSize; set { _tileSize = new Size(Math.Max(1, value.Width), Math.Max(1, value.Height)); InvalidateVisual(); } }
     public Color PixelGridColor { get => _pixelGridColor; set { _pixelGridColor = value; InvalidateVisual(); } }
     public Color TileGridColor { get => _tileGridColor; set { _tileGridColor = value; InvalidateVisual(); } }
+    private int _pixelGridMinZoom = 6, _tileRepeat;
+    private bool _tileDim = true;
+    /// <summary>픽셀 격자를 이 배율 이상에서만 그린다(2~16).</summary>
+    public int PixelGridMinZoom { get => _pixelGridMinZoom; set { _pixelGridMinZoom = Math.Clamp(value, 2, 16); InvalidateVisual(); } }
+    /// <summary>타일 모드 반복 겹 수: 0 = 자동(큰 그림 3×3, 그 밖 5×5), 1 = 3×3, 2 = 5×5, 3 = 7×7.</summary>
+    public int TileRepeat { get => _tileRepeat; set { _tileRepeat = Math.Clamp(value, 0, 3); InvalidateVisual(); } }
+    /// <summary>타일 모드에서 가운데(편집하는 칸) 둘레를 어둡게.</summary>
+    public bool TileDim { get => _tileDim; set { _tileDim = value; InvalidateVisual(); } }
+    private int _onionBefore = 1, _onionAfter = 1, _onionOpacity = 30;
+    private bool _onionTint = true;
+    /// <summary>양파 껍질: 앞 프레임 수(0~5).</summary>
+    public int OnionBefore { get => _onionBefore; set { _onionBefore = Math.Clamp(value, 0, 5); InvalidateVisual(); } }
+    /// <summary>양파 껍질: 뒤 프레임 수(0~5).</summary>
+    public int OnionAfter { get => _onionAfter; set { _onionAfter = Math.Clamp(value, 0, 5); InvalidateVisual(); } }
+    /// <summary>양파 껍질 불투명도(가장 가까운 프레임, %). 멀어질수록 옅어진다.</summary>
+    public int OnionOpacity { get => _onionOpacity; set { _onionOpacity = Math.Clamp(value, 5, 90); InvalidateVisual(); } }
+    /// <summary>양파 껍질 색 물들이기(앞 = 빨강, 뒤 = 파랑). 끄면 원래 색.</summary>
+    public bool OnionTint { get => _onionTint; set { _onionTint = value; InvalidateVisual(); } }
 
     /// <summary>"이전 프레임 보기"에 쓰는 키(누르고 있는 동안 보임, 사용자 단축키). 없으면 null.</summary>
     public Key? PeekKey { get; set; } = Key.H;
@@ -422,7 +441,7 @@ public sealed class PixelCanvas : Control
     private const int LargeTileSize = 128;
 
     /// <summary>타일 모드에서 가운데 칸 둘레로 몇 겹 반복하는지(꺼짐 0, 큰 그림 1 = 3×3, 그 밖 2 = 5×5).</summary>
-    private int TileRadius => !_tiledMode ? 0 : W > LargeTileSize || H > LargeTileSize ? 1 : 2;
+    private int TileRadius => !_tiledMode ? 0 : _tileRepeat > 0 ? _tileRepeat : W > LargeTileSize || H > LargeTileSize ? 1 : 2;
 
     private Point Wrap(Point p) => _tiledMode && W > 0 && H > 0 ? new Point(PixelOps.Mod(p.X, W), PixelOps.Mod(p.Y, H)) : p;
 
@@ -589,13 +608,16 @@ public sealed class PixelCanvas : Control
                         if (tx == 0 && ty == 0) continue;
                         DrawImageAt(g, bmp, tx * W, ty * H);
                     }
-                // 가운데(편집하는 칸)가 구분되도록 둘레를 살짝 어둡게.
-                var all = ImageToScreen(new Rectangle(-W * r, -H * r, W * (2 * r + 1), H * (2 * r + 1)));
-                var c = ImageScreenRect;
-                g.FillRectangle(DimBrush, new Rect(all.X, all.Y, all.Width, c.Y - all.Y));
-                g.FillRectangle(DimBrush, new Rect(all.X, c.Bottom, all.Width, all.Bottom - c.Bottom));
-                g.FillRectangle(DimBrush, new Rect(all.X, c.Y, c.X - all.X, c.Height));
-                g.FillRectangle(DimBrush, new Rect(c.Right, c.Y, all.Right - c.Right, c.Height));
+                // 가운데(편집하는 칸)가 구분되도록 둘레를 살짝 어둡게(끌 수 있음).
+                if (_tileDim)
+                {
+                    var all = ImageToScreen(new Rectangle(-W * r, -H * r, W * (2 * r + 1), H * (2 * r + 1)));
+                    var c = ImageScreenRect;
+                    g.FillRectangle(DimBrush, new Rect(all.X, all.Y, all.Width, c.Y - all.Y));
+                    g.FillRectangle(DimBrush, new Rect(all.X, c.Bottom, all.Width, all.Bottom - c.Bottom));
+                    g.FillRectangle(DimBrush, new Rect(all.X, c.Y, c.X - all.X, c.Height));
+                    g.FillRectangle(DimBrush, new Rect(c.Right, c.Y, all.Right - c.Right, c.Height));
+                }
             }
             if (partView) DrawBitmapAt(g, bmp, 0, 0, W, H, checker: false);
             else DrawImageAt(g, bmp, 0, 0);
@@ -612,7 +634,7 @@ public sealed class PixelCanvas : Control
         }
 
         var src = VisibleSourceRect(0, 0);
-        if (_showPixelGrid && _zoom >= 6) DrawPixelGrid(g, src);
+        if (_showPixelGrid && _zoom >= _pixelGridMinZoom) DrawPixelGrid(g, src);
         if (_showTileGrid) DrawTileGrid(g, src);
         var imgRect = ImageScreenRect;
         g.DrawRectangle(null, BorderPen, new Rect(imgRect.X - 0.5, imgRect.Y - 0.5, imgRect.Width + 1, imgRect.Height + 1));
@@ -1057,25 +1079,36 @@ public sealed class PixelCanvas : Control
     {
         if (!_ctx.OnionSkin) return;
         int i = _ctx.CurrentFrame;
-        if (i > 0 && _ctx.ViewBitmap(i - 1) is { } prev) DrawGhost(g, prev, ref _ghostPrev, 1f, 0.45f, 0.45f);
-        if (i + 1 < _ctx.FrameCount && _ctx.ViewBitmap(i + 1) is { } next) DrawGhost(g, next, ref _ghostNext, 0.45f, 0.75f, 1f);
+        // 먼 프레임부터 그려 가까운 프레임이 위에 오게. 멀어질수록 옅게(가장 먼 프레임 = 가까운 것의 약 40%).
+        void Ghost(int d, int count)
+        {
+            int f = i + d;
+            if (f < 0 || f >= _ctx.FrameCount || _ctx.ViewBitmap(f) is not { } bmp) return;
+            int k = Math.Abs(d);
+            float alpha = _onionOpacity / 100f * (count <= 1 ? 1f : 1f - 0.6f * (k - 1) / (count - 1));
+            var (r, gr, b) = !_onionTint ? (1f, 1f, 1f) : d < 0 ? (1f, 0.45f, 0.45f) : (0.45f, 0.75f, 1f);
+            DrawGhost(g, bmp, d, r, gr, b, alpha);
+        }
+        for (int d = _onionBefore; d >= 1; d--) Ghost(-d, _onionBefore);
+        for (int d = _onionAfter; d >= 1; d--) Ghost(d, _onionAfter);
     }
 
-    /// <summary>색을 물들이고 30% 불투명도로 만든 사본을 그린다(사본 비트맵은 재사용).</summary>
-    private void DrawGhost(DrawingContext g, WriteableBitmap bmp, ref WriteableBitmap? ghost, float r, float gr, float b)
+    /// <summary>색을 물들이고 <paramref name="alpha"/> 불투명도로 만든 사본을 그린다(사본 비트맵은 프레임 거리마다 재사용).</summary>
+    private void DrawGhost(DrawingContext g, WriteableBitmap bmp, int key, float r, float gr, float b, float alpha)
     {
         var src = VisibleSourceRect(0, 0);
         if (src.IsEmpty) return;
-        if (ghost is null || ghost.PixelSize != bmp.PixelSize)
+        if (!_ghosts.TryGetValue(key, out var ghost) || ghost.PixelSize != bmp.PixelSize)
         {
             ghost?.Dispose();
             ghost = ImageUtil.NewBitmap(bmp.PixelSize.Width, bmp.PixelSize.Height);
+            _ghosts[key] = ghost;
         }
-        Tint(bmp, ghost, r, gr, b);
+        Tint(bmp, ghost, r, gr, b, alpha);
         g.DrawImage(ghost, ToRect(src), ToRect(ImageToScreen(src)));
     }
 
-    private static unsafe void Tint(WriteableBitmap source, WriteableBitmap dest, float r, float gr, float b)
+    private static unsafe void Tint(WriteableBitmap source, WriteableBitmap dest, float r, float gr, float b, float alpha)
     {
         using var s = source.Lock();
         using var d = dest.Lock();
@@ -1090,7 +1123,7 @@ public sealed class PixelCanvas : Control
                 dp[0] = (byte)(sp[0] * b);
                 dp[1] = (byte)(sp[1] * gr);
                 dp[2] = (byte)(sp[2] * r);
-                dp[3] = (byte)(sp[3] * 0.3f);
+                dp[3] = (byte)(sp[3] * alpha);
             }
         }
     }
@@ -2228,7 +2261,7 @@ public sealed class PixelCanvas : Control
             DrawBitmapAt(g, _ctx.CanvasResizeBitmap, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
         }
         var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);
-        if (_showPixelGrid && _zoom >= 6 && !visible.IsEmpty)
+        if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
             DrawPixelGrid(g, new Rectangle(visible.X + canvas.X, visible.Y + canvas.Y, visible.Width, visible.Height));
         g.DrawRectangle(null, FrameBoundsPen, new Rect(imageScreen.X + 0.5, imageScreen.Y + 0.5, Math.Max(0, imageScreen.Width - 1), Math.Max(0, imageScreen.Height - 1)));
         var c = ImageToScreen(canvas);

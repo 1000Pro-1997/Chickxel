@@ -215,6 +215,8 @@ public sealed class MainForm : Window, Ai.IAiHost
 
         KeyState.Attach(this);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다.
+        Ui.ReleaseTextFocusOnOutsideClick(this, () => _canvas);
         Opened += (_, _) => OnShown();
         Closing += OnWindowClosing;
         // Windows는 최대화할 때 WindowState가 바뀌기 전에 위치·크기 이벤트가 오므로 상태가 정해진 뒤에 기록한다.
@@ -411,16 +413,18 @@ public sealed class MainForm : Window, Ai.IAiHost
         _cbUpdate.FontWeight = FontWeight.Bold;
         _cbUpdate.Margin = new Thickness(1, 1, 6, 1);
         _cbUpdate.IsVisible = false;
-        _cbGrid = Toggle(right, "격자", "픽셀 격자(6배 이상) (Ctrl+G)", () => SetPixelGrid(!_canvas.ShowPixelGrid));
+        _cbGrid = Toggle(right, "격자", "픽셀 격자 (Ctrl+G) · 우클릭 = 색·보이는 배율", () => SetPixelGrid(!_canvas.ShowPixelGrid));
         _cbTiles = Toggle(right, "타일 격자", "타일 격자 (Ctrl+Shift+G) · 우클릭 = 크기·색", () => SetTileGrid(!_canvas.ShowTileGrid));
-        _cbTiles.ContextRequested += (_, e) =>
-        {
-            e.Handled = true;
-            TileGridFlyout().ShowAt(_cbTiles);
-        };
-        _cbTiled = Toggle(right, "타일 모드", "반복해 보기(크지 않으면 5×5, 128px 넘으면 3×3)·이어 그리기 (Ctrl+Shift+T)", () => SetTiledMode(!_canvas.TiledMode));
+        _cbTiled = Toggle(right, "타일 모드", "반복해 보기·이어 그리기 (Ctrl+Shift+T) · 우클릭 = 반복 크기·주변 어둡게", () => SetTiledMode(!_canvas.TiledMode));
         _cbPivot = Toggle(right, "피벗", "피벗 표시", () => SetShowPivot(!_canvas.ShowPivot));
-        _cbOnion = Toggle(right, "양파", "양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J)", () => _ctx.OnionSkin = !_ctx.OnionSkin);
+        _cbOnion = Toggle(right, "양파", "양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J) · 우클릭 = 프레임 수·진하기·색", () => _ctx.OnionSkin = !_ctx.OnionSkin);
+        // 우클릭 = 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
+        foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout) })
+            button.ContextRequested += (_, e) =>
+            {
+                e.Handled = true;
+                PopupMenus.Show(button, flyout());
+            };
         right.Children.Add(BarSeparator());
         BarButton(right, "－", "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
         _cbZoom = new TextBlock { Text = "800%", TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -1005,6 +1009,13 @@ public sealed class MainForm : Window, Ai.IAiHost
         _canvas.PixelGridColor = ColorParse.ParseOr(s.PixelGridColor, new Color32(255, 255, 255, 48)).ToColor();
         _canvas.TileGridColor = ColorParse.ParseOr(s.TileGridColor, new Color32(90, 200, 255, 150)).ToColor();
         _ctx.OnionSkin = s.OnionSkin;
+        _canvas.PixelGridMinZoom = s.PixelGridMinZoom;
+        _canvas.TileRepeat = s.TileRepeat;
+        _canvas.TileDim = s.TileDim;
+        _canvas.OnionBefore = s.OnionBefore;
+        _canvas.OnionAfter = s.OnionAfter;
+        _canvas.OnionOpacity = s.OnionOpacity;
+        _canvas.OnionTint = s.OnionTint;
         _ctx.BrushSize = s.BrushSize;
         _ctx.BrushShape = s.BrushShape;
         _ctx.FillTolerance = s.FillTolerance;
@@ -1129,6 +1140,13 @@ public sealed class MainForm : Window, Ai.IAiHost
         s.PixelGridColor = _canvas.PixelGridColor.ToColor32().ToHex();
         s.TileGridColor = _canvas.TileGridColor.ToColor32().ToHex();
         s.OnionSkin = _ctx.OnionSkin;
+        s.PixelGridMinZoom = _canvas.PixelGridMinZoom;
+        s.TileRepeat = _canvas.TileRepeat;
+        s.TileDim = _canvas.TileDim;
+        s.OnionBefore = _canvas.OnionBefore;
+        s.OnionAfter = _canvas.OnionAfter;
+        s.OnionOpacity = _canvas.OnionOpacity;
+        s.OnionTint = _canvas.OnionTint;
         s.BrushSize = _ctx.BrushSize;
         s.BrushShape = _ctx.BrushShape;
         s.FillTolerance = _ctx.FillTolerance;
@@ -1442,6 +1460,78 @@ public sealed class MainForm : Window, Ai.IAiHost
         UpdateToolUi();
     }
 
+    private static Flyout SettingsFlyout(string title, params Control[] rows)
+    {
+        var panel = new StackPanel { Spacing = 2, Children = { Ui.Label(title, bold: true) } };
+        foreach (var r in rows) panel.Children.Add(r);
+        return new Flyout { Placement = PlacementMode.BottomEdgeAlignedRight, Content = panel };
+    }
+
+    /// <summary>"격자" 단추 우클릭 팝업: 픽셀 격자 색(알파 = 진하기)과 보이기 시작하는 배율.</summary>
+    private Flyout PixelGridFlyout()
+    {
+        var color = new ColorField(_canvas.PixelGridColor.ToColor32());
+        var zoom = new ComboBox { ItemsSource = new[] { "2배", "4배", "6배", "8배", "12배", "16배" }, MinWidth = 80 };
+        int[] zooms = [2, 4, 6, 8, 12, 16];
+        zoom.SelectedIndex = Math.Max(0, Array.IndexOf(zooms, _canvas.PixelGridMinZoom) is var zi && zi >= 0 ? zi : 2);
+        void Apply()
+        {
+            _canvas.PixelGridColor = color.Color.ToColor();
+            _canvas.PixelGridMinZoom = zooms[Math.Max(0, zoom.SelectedIndex)];
+            if (!_canvas.ShowPixelGrid) SetPixelGrid(true);
+            UpdateToolUi();
+        }
+        color.ColorChanged += (_, _) => Apply();
+        zoom.SelectionChanged += (_, _) => Apply();
+        return SettingsFlyout("픽셀 격자",
+            Ui.Row(Ui.Label("색"), color, Ui.InfoBadge("알파(#RRGGBBAA)로 진하기를 정합니다.")),
+            Ui.Row(Ui.Label("이 배율부터 보이기"), zoom));
+    }
+
+    /// <summary>"타일 모드" 단추 우클릭 팝업: 반복 크기(자동·3×3·5×5·7×7)와 주변 어둡게.</summary>
+    private Flyout TiledModeFlyout()
+    {
+        var repeat = new TabStrip(TabStripKind.Segmented, "자동", "3×3", "5×5", "7×7") { SelectedIndex = _canvas.TileRepeat };
+        repeat.SetTip(0, "그림이 128px보다 크면 3×3, 아니면 5×5");
+        var dim = Ui.Check("가운데 둘레 어둡게", _canvas.TileDim);
+        void Apply()
+        {
+            _canvas.TileRepeat = Math.Max(0, repeat.SelectedIndex);
+            _canvas.TileDim = dim.On();
+            if (!_canvas.TiledMode) SetTiledMode(true);
+            UpdateToolUi();
+        }
+        repeat.SelectionChanged += (_, _) => Apply();
+        dim.IsCheckedChanged += (_, _) => Apply();
+        return SettingsFlyout("타일 모드", Ui.Row(Ui.Label("반복"), repeat), dim);
+    }
+
+    /// <summary>"양파" 단추 우클릭 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기.</summary>
+    private Flyout OnionFlyout()
+    {
+        var before = Ui.Num(0, 5, _canvas.OnionBefore, 56);
+        var after = Ui.Num(0, 5, _canvas.OnionAfter, 56);
+        var opacity = Ui.Num(5, 90, _canvas.OnionOpacity, 56);
+        var tint = Ui.Check("색 물들이기(앞 = 빨강, 뒤 = 파랑)", _canvas.OnionTint);
+        void Apply()
+        {
+            _canvas.OnionBefore = (int)before.NumValue();
+            _canvas.OnionAfter = (int)after.NumValue();
+            _canvas.OnionOpacity = (int)opacity.NumValue();
+            _canvas.OnionTint = tint.On();
+            if (!_ctx.OnionSkin) _ctx.OnionSkin = true;
+            UpdateToolUi();
+        }
+        before.ValueChanged += (_, _) => Apply();
+        after.ValueChanged += (_, _) => Apply();
+        opacity.ValueChanged += (_, _) => Apply();
+        tint.IsCheckedChanged += (_, _) => Apply();
+        return SettingsFlyout("양파 껍질",
+            Ui.Row(Ui.Label("앞"), before, Ui.Label("뒤"), after, Ui.Label("프레임")),
+            Ui.Row(Ui.Label("진하기"), opacity, Ui.Label("% (멀수록 옅게)")),
+            tint);
+    }
+
     /// <summary>"타일 격자" 단추 우클릭 팝업: 타일 가로·세로·색을 바로 바꾼다(꺼져 있으면 켬). 값은 격자 설정 창과 같이 앱 설정에 저장.</summary>
     private Flyout TileGridFlyout()
     {
@@ -1462,21 +1552,10 @@ public sealed class MainForm : Window, Ai.IAiHost
         var presets = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
         foreach (int n in new[] { 8, 16, 32, 64 })
             presets.Children.Add(Ui.Button($"{n}×{n}", (_, _) => { w.Value = n; h.Value = n; }).Tip($"타일 {n}×{n}px"));
-        return new Flyout
-        {
-            Placement = PlacementMode.BottomEdgeAlignedRight,
-            Content = new StackPanel
-            {
-                Spacing = 2,
-                Children =
-                {
-                    Ui.Label("타일 격자", bold: true),
-                    Ui.Row(Ui.Label("가로"), w, Ui.Label("세로"), h, Ui.Label("px")),
-                    presets,
-                    Ui.Row(Ui.Label("색"), color, Ui.InfoBadge("알파(#RRGGBBAA)로 진하기를 정합니다.")),
-                },
-            },
-        };
+        return SettingsFlyout("타일 격자",
+            Ui.Row(Ui.Label("가로"), w, Ui.Label("세로"), h, Ui.Label("px")),
+            presets,
+            Ui.Row(Ui.Label("색"), color, Ui.InfoBadge("알파(#RRGGBBAA)로 진하기를 정합니다.")));
     }
 
     /// <summary>환경 설정(실행취소 횟수·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
