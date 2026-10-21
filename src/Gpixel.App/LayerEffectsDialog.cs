@@ -349,7 +349,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 if (_syncing || at >= _effects.Count) return;
                 Update(at, _effects[at] with { Enabled = check.IsChecked == true });
             };
-            var text = new TextBlock { Text = Summary(_effects[i]), VerticalAlignment = VerticalAlignment.Center };
+            var text = new TextBlock { Text = EffectSummary(_effects[i]), VerticalAlignment = VerticalAlignment.Center };
             var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent };
             row.Children.Add(check);
             row.Children.Add(text);
@@ -393,6 +393,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         if (Selected is var i && i < 0) return;
         var removed = _effects[i];
+        _virtualRangeOverrides.Remove(removed);
         if (ReferenceEquals(removed, _extensionOwner)) SetExtension(null, null);
         if (ReferenceEquals(removed, _preferExistingFor))
         {
@@ -419,13 +420,15 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
         var old = _effects[index];
         _effects[index] = effect;
+        if (_virtualRangeOverrides.Remove(old, out var virtualRange))
+            _virtualRangeOverrides[effect] = virtualRange;
         if (ReferenceEquals(old, _extensionOwner)) _extensionOwner = effect;
         if (ReferenceEquals(old, _preferExistingFor)) _preferExistingFor = effect;
         if (_list.Items[index] is ListBoxItem { Content: StackPanel { Children: [CheckBox check, TextBlock text] } })
         {
             _syncing = true;
             check.IsChecked = effect.Enabled;
-            text.Text = Summary(effect);
+            text.Text = EffectSummary(effect);
             _syncing = false;
         }
         Changed();
@@ -442,6 +445,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (index >= 0) _project.PreviewLayerEffects(index, _effects);
         RefreshPreview();
         SyncCanvasExpansion();
+    }
+
+    private string EffectSummary(LayerEffect e)
+        => Summary(_virtualRangeOverrides.TryGetValue(e, out var range) ? e with { Frames = range } : e);
+
+    private void RefreshEffectSummary(int index)
+    {
+        if (index >= 0 && index < _effects.Count
+            && _list.Items[index] is ListBoxItem { Content: StackPanel { Children: [_, TextBlock text] } })
+            text.Text = EffectSummary(_effects[index]);
     }
 
     private static string Summary(LayerEffect e) => (e switch
@@ -715,8 +728,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// </summary>
     private void AddRangeEditor(int i)
     {
-        int n = _project.Frames.Count;
-        var range = _effects[i].Frames;
+        var effect = _effects[i];
+        bool virtualRange = _extension is not null && !ReferenceEquals(effect, _extensionOwner);
+        int n = virtualRange ? VirtualCount : _project.Frames.Count;
+        FrameRange? range = virtualRange
+            ? _virtualRangeOverrides.TryGetValue(effect, out var direct)
+                ? direct
+                : effect.Frames is { } stored && _extension is { } extension ? extension.MapRange(stored) : null
+            : effect.Frames;
         var all = Ui.Check("모든 프레임", range is null);
         var from = WithKind(Ui.Num(1, n, (range?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
         var to = WithKind(Ui.Num(1, n, (range?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
@@ -735,8 +754,15 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 syncing = false;
             }
             from.IsEnabled = to.IsEnabled = next is not null;
-            FollowRange(_effects[i], next);
-            Update(i, _effects[i] with { Frames = next });
+            if (virtualRange)
+            {
+                SetVirtualRange(i, next);
+            }
+            else
+            {
+                FollowRange(_effects[i], next);
+                Update(i, _effects[i] with { Frames = next });
+            }
             SyncExtendEditor();
             if (_effects[i] is AnimatedEffect) ShowSettings(); // 범위 길이 안내 갱신
         }

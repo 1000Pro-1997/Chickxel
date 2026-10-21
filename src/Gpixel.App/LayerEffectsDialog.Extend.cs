@@ -24,6 +24,11 @@ public sealed partial class LayerEffectsDialog
     /// <summary>확인할 때 할 프레임 늘리기(null = 늘리지 않음, 원래 프레임 번호 기준)와 이를 만든 효과.</summary>
     private FrameExtension? _extension;
     private LayerEffect? _extensionOwner;
+    /// <summary>
+    /// 프레임 추가 미리보기에서 사본 칸 일부만 고른 효과의 범위(늘린 뒤 번호).
+    /// 원래 프레임 번호만으로는 같은 원본에서 생긴 사본 1~2와 1~10을 구분할 수 없어 별도로 보관한다.
+    /// </summary>
+    private readonly Dictionary<LayerEffect, FrameRange> _virtualRangeOverrides = new(ReferenceEqualityComparer.Instance);
     private NumericUpDown? _extendCount;
     private ComboBox? _extendModeBox;
     private TextBlock? _extendNote;
@@ -47,6 +52,7 @@ public sealed partial class LayerEffectsDialog
     /// <summary>효과의 범위(늘린 뒤 번호).</summary>
     private (int From, int To) VRangeOf(LayerEffect e)
     {
+        if (_virtualRangeOverrides.TryGetValue(e, out var direct)) return (direct.From, direct.To);
         var (from, to) = RangeOf(e);
         if (_extension is not { } x) return (from, to);
         var r = x.MapRange(new FrameRange(from, to));
@@ -55,7 +61,11 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>효과 목록(범위를 늘린 뒤 번호로) — 미리보기와 확정에 쓴다.</summary>
     private IReadOnlyList<LayerEffect> VirtualEffects()
-        => _extension is not { } x ? _effects : _effects.Select(e => e.Frames is { } r ? e with { Frames = x.MapRange(r) } : e).ToArray();
+        => _extension is not { } x
+            ? _effects
+            : _effects.Select(e => _virtualRangeOverrides.TryGetValue(e, out var direct)
+                ? e with { Frames = direct }
+                : e.Frames is { } r ? e with { Frames = x.MapRange(r) } : e).ToArray();
 
     private PixelImage? VirtualSourceAt(int frame) => SourceAt(OriginalOf(frame));
 
@@ -74,9 +84,15 @@ public sealed partial class LayerEffectsDialog
     /// 범위 줄 아래: 프레임 수와 늘리기 방법. "원래 프레임으로"면 프레임 수 = 범위 길이(범위 뒤에 이미 있는 프레임까지만 — 끝을 옮김, 프레임은 더하지 않음),
     /// 다른 방법이면 범위 길이보다 크게 했을 때 확인할 때 그만큼 프레임을 더한다.
     /// </summary>
+    private bool UsesVirtualTimeline(LayerEffect e)
+        => _extension is not null && !ReferenceEquals(e, _extensionOwner);
+
+    private (int From, int To) EditableRangeOf(LayerEffect e)
+        => UsesVirtualTimeline(e) ? VRangeOf(e) : RangeOf(e);
+
     private void AddExtendEditor(int i)
     {
-        var (from, to) = RangeOf(_effects[i]);
+        var (from, to) = EditableRangeOf(_effects[i]);
         int n = to - from + 1;
         var count = Ui.Num(1, Math.Max(n, FrameExtension.MaxCount), n, 56);
         var mode = Ui.Combo(170, ExtendModes);
@@ -93,7 +109,7 @@ public sealed partial class LayerEffectsDialog
             if (_extendSyncing || _extendFor != i || !ReferenceEquals(_extendCount, count)
                 || i < 0 || i >= _effects.Count) return;
             var e = _effects[i];
-            var (f, t) = RangeOf(e);
+            var (f, t) = EditableRangeOf(e);
             int c = (int)count.NumValue();
             if (UsesExisting(e)) SetRangeLength(i, c);
             // 칸은 다른 범위의 늘리기로 늘어 보이는 길이(MaxCount 넘을 수 있음)까지 보이므로, 이 범위의 새 늘리기는 늘릴 수 있는 수로 맞춘다
@@ -140,6 +156,7 @@ public sealed partial class LayerEffectsDialog
     /// </summary>
     private bool UsesExisting(LayerEffect e)
     {
+        if (UsesVirtualTimeline(e)) return true;
         bool? preference = ReferenceEquals(e, _preferExistingFor) ? _preferExisting : null;
         return Anchored(e) is null && (preference ?? RangeOf(e).To < _project.Frames.Count - 1);
     }
@@ -148,6 +165,15 @@ public sealed partial class LayerEffectsDialog
     private void SetRangeLength(int i, int length)
     {
         var e = _effects[i];
+        if (UsesVirtualTimeline(e))
+        {
+            var (fromVirtual, _) = VRangeOf(e);
+            SetVirtualRange(i, FrameRange.Of(fromVirtual,
+                Math.Clamp(fromVirtual + length - 1, fromVirtual, VirtualCount - 1), VirtualCount));
+            ShowSettings();
+            SyncPlayback();
+            return;
+        }
         int n = _project.Frames.Count;
         var (from, _) = RangeOf(e);
         _preferExistingFor = e;
@@ -165,9 +191,11 @@ public sealed partial class LayerEffectsDialog
         if (_extendCount is not { } count || _extendModeBox is not { } mode || _extendNote is not { } note
             || _extendFor < 0 || _extendFor >= _effects.Count) return;
         var e = _effects[_extendFor];
-        var (from, to) = RangeOf(e);
-        var (vFrom, vTo) = VRangeOf(e);
-        int n = to - from + 1, now = vTo - vFrom + 1, frames = _project.Frames.Count, after = frames - 1 - to;
+        bool virtualTimeline = UsesVirtualTimeline(e);
+        var (from, to) = virtualTimeline ? VRangeOf(e) : RangeOf(e);
+        int n = to - from + 1, now = n;
+        int frames = virtualTimeline ? VirtualCount : _project.Frames.Count;
+        int after = frames - 1 - to;
         bool existing = UsesExisting(e);
         string other = _extension is { } pending && _extensionOwner is { } owner && !ReferenceEquals(e, owner)
             ? $"추가 유지 · {owner.DisplayName} +{pending.Added}" : "";
@@ -217,14 +245,74 @@ public sealed partial class LayerEffectsDialog
             return;
         }
         int original = OriginalOf(_previewFrame);
+        var previous = _extension;
         _extension = next;
         _extensionOwner = next is null ? null : owner;
+        if (next is null && previous is { } oldExtension)
+            CollapseVirtualRanges(oldExtension);
+        else if (next is not null)
+            ClampVirtualRanges(VirtualCount);
         _previewFrame = Math.Clamp(VirtualOf(original), 0, VirtualCount - 1);
         SyncExtendEditor();
         InvalidateStrip();
         RefreshPreview();
         SyncPlayback();
         SyncCanvasExpansion();
+    }
+
+    /// <summary>프레임 추가를 취소할 때 사본 칸 범위를 원래 프레임 범위로 되돌린다.</summary>
+    private void CollapseVirtualRanges(FrameExtension oldExtension)
+    {
+        foreach (var (effect, range) in _virtualRangeOverrides.ToArray())
+        {
+            int index = _effects.FindIndex(e => ReferenceEquals(e, effect));
+            if (index < 0) continue;
+            int from = oldExtension.OriginalFrame(range.From);
+            int to = oldExtension.OriginalFrame(range.To);
+            var replacement = effect with { Frames = FrameRange.Of(Math.Min(from, to), Math.Max(from, to), _project.Frames.Count) };
+            _effects[index] = replacement;
+            if (ReferenceEquals(effect, _extensionOwner)) _extensionOwner = replacement;
+            if (ReferenceEquals(effect, _preferExistingFor)) _preferExistingFor = replacement;
+            RefreshEffectSummary(index);
+        }
+        _virtualRangeOverrides.Clear();
+    }
+
+    /// <summary>프레임 추가 길이가 바뀌어도 별도로 고른 사본 범위를 새 미리보기 끝 안에 둔다.</summary>
+    private void ClampVirtualRanges(int count)
+    {
+        foreach (var effect in _virtualRangeOverrides.Keys.ToArray())
+        {
+            var range = _virtualRangeOverrides[effect];
+            int from = Math.Clamp(range.From, 0, count - 1);
+            int to = Math.Clamp(range.To, from, count - 1);
+            _virtualRangeOverrides[effect] = new FrameRange(from, to);
+            RefreshEffectSummary(_effects.FindIndex(e => ReferenceEquals(e, effect)));
+        }
+    }
+
+    /// <summary>늘린 뒤 프레임 번호로 고른 효과 하나의 범위만 바꾼다. 프레임 추가 계획은 건드리지 않는다.</summary>
+    private void SetVirtualRange(int index, FrameRange? range)
+    {
+        if (index < 0 || index >= _effects.Count) return;
+        var effect = _effects[index];
+        if (range is null)
+        {
+            _virtualRangeOverrides.Remove(effect);
+            var all = effect with { Frames = null };
+            if (all != effect)
+            {
+                Update(index, all);
+                return;
+            }
+        }
+        else
+        {
+            _virtualRangeOverrides[effect] = range.Value;
+        }
+        RefreshEffectSummary(index);
+        Changed();
+        SyncPlayback();
     }
 
     /// <summary>
@@ -236,9 +324,8 @@ public sealed partial class LayerEffectsDialog
         if (!ReferenceEquals(old, _extensionOwner) || _extension is not { } x || RangeOf(old) != (x.From, x.To)) return;
         int n = _project.Frames.Count;
         var (from, to) = next is { } r ? (r.From, Math.Min(r.To, n - 1)) : (0, n - 1);
-        _extension = x.Count > to - from + 1 ? new FrameExtension(from, to, x.Count, x.Mode) : null;
-        if (_extension is null) _extensionOwner = null;
-        _previewFrame = Math.Clamp(_previewFrame, 0, VirtualCount - 1);
+        FrameExtension? moved = x.Count > to - from + 1 ? new FrameExtension(from, to, x.Count, x.Mode) : null;
+        SetExtension(moved, moved is null ? null : old);
     }
 
     /// <summary>
@@ -249,6 +336,15 @@ public sealed partial class LayerEffectsDialog
     {
         var (ext, cells) = _dragBase;
         bool selected = Selected >= 0 && Selected < _effects.Count;
+        // 이미 예정된 사본 칸 안에서 다른 효과를 끈 것은 그 효과의 적용 범위만 정한 것이다.
+        // 사본을 포함했다는 이유로 기존 프레임 추가를 새 효과 소유의 짧은 추가로 교체하면 안 된다.
+        if (selected && ext is not null && !ReferenceEquals(_effects[Selected], _extensionOwner) && b < cells)
+        {
+            SetVirtualRange(Selected, FrameRange.Of(a, b, cells));
+            ShowSettings();
+            SyncStripRange();
+            return;
+        }
         int last = Math.Min(b, cells - 1);
         int lo = int.MaxValue, hi = -1;
         bool copies = false;
