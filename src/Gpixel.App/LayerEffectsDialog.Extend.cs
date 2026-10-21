@@ -89,32 +89,36 @@ public sealed partial class LayerEffectsDialog
         SyncExtendEditor();
         count.ValueChanged += (_, _) =>
         {
-            if (_extendSyncing || _extendFor < 0 || _extendFor >= _effects.Count) return;
-            var e = _effects[_extendFor];
+            // 선택을 바꾸며 없어진 설정 칸이 늦게 ValueChanged를 보내도 새로 고른 효과를 건드리지 않는다.
+            if (_extendSyncing || _extendFor != i || !ReferenceEquals(_extendCount, count)
+                || i < 0 || i >= _effects.Count) return;
+            var e = _effects[i];
             var (f, t) = RangeOf(e);
             int c = (int)count.NumValue();
-            if (UsesExisting(e)) SetRangeLength(_extendFor, c);
+            if (UsesExisting(e)) SetRangeLength(i, c);
             // 칸은 다른 범위의 늘리기로 늘어 보이는 길이(MaxCount 넘을 수 있음)까지 보이므로, 이 범위의 새 늘리기는 늘릴 수 있는 수로 맞춘다
-            else SetExtension(new FrameExtension(f, t, FrameExtension.ClampCount(t - f + 1, c), s_extendMode));
+            else SetExtension(new FrameExtension(f, t, FrameExtension.ClampCount(t - f + 1, c), s_extendMode), e);
         };
         mode.SelectionChanged += (_, _) =>
         {
-            if (_extendSyncing || mode.SelectedIndex < 0 || _extendFor < 0 || _extendFor >= _effects.Count) return;
-            var e = _effects[_extendFor];
+            // 없어진 ComboBox의 지연 이벤트를 현재 효과의 입력으로 오인하지 않는다.
+            if (_extendSyncing || _extendFor != i || !ReferenceEquals(_extendModeBox, mode)
+                || mode.SelectedIndex < 0 || i < 0 || i >= _effects.Count) return;
+            var e = _effects[i];
             var anchored = Anchored(e);
             if (mode.SelectedIndex == 0)
             {
                 _preferExistingFor = e;
                 _preferExisting = true;
                 // 더하려던 프레임 수만큼 뒤의 원래 프레임으로(있는 만큼)
-                if (anchored is { } x) SetRangeLength(_extendFor, x.Count);
+                if (anchored is { } x) SetRangeLength(i, x.Count);
                 else SyncExtendEditor();
                 return;
             }
             _preferExistingFor = e;
             _preferExisting = false;
             s_extendMode = (FrameExtendMode)(mode.SelectedIndex - 1);
-            if (anchored is { } a) SetExtension(new FrameExtension(a.From, a.To, a.Count, s_extendMode));
+            if (anchored is { } a) SetExtension(new FrameExtension(a.From, a.To, a.Count, s_extendMode), e);
             else SyncExtendEditor();
         };
         ToolTip.SetTip(count, "이 효과 범위의 프레임 수. 원래 프레임으로: 범위 끝을 뒤에 이미 있는 프레임까지 넓힙니다(프레임은 그대로)."
@@ -149,7 +153,7 @@ public sealed partial class LayerEffectsDialog
         _preferExistingFor = e;
         _preferExisting = true;
         // 이 효과가 만든 늘리기를 없애면 칸 수가 바뀐다 — 범위가 그대로여도(Update가 아무것도 안 함) 프레임 줄·미리보기를 맞춘다.
-        if (Anchored(e) is not null) SetExtension(null);
+        if (Anchored(e) is not null) SetExtension(null, null);
         Update(i, e with { Frames = FrameRange.Of(from, Math.Clamp(from + length - 1, from, n - 1), n) });
         ShowSettings(); // 범위 숫자 칸·범위 길이 안내 갱신
         SyncPlayback();
@@ -203,18 +207,18 @@ public sealed partial class LayerEffectsDialog
             v => v == toEnd && v != n ? $"{v}프레임 (끝 프레임까지)" : v == n ? $"{v}프레임 (그대로)" : v == n * 2 ? $"{v}프레임 (×2)" : v == n * 3 ? $"{v}프레임 (×3)" : $"{v}프레임");
     }
 
-    /// <summary>고른 효과의 늘리기를 바꾸고(같은 수면 늘리지 않음) 미리보기·프레임 줄·설정 칸을 맞춘다.</summary>
-    private void SetExtension(FrameExtension? extension)
+    /// <summary>효과의 늘리기를 바꾸고(같은 수면 늘리지 않음) 미리보기·프레임 줄·설정 칸을 맞춘다. 소유자는 선택 상태가 아니라 입력을 낸 효과로 정한다.</summary>
+    private void SetExtension(FrameExtension? extension, LayerEffect? owner)
     {
         var next = extension is { Added: > 0 } ? extension : null;
         if (next == _extension)
         {
-            if (next is null) _extensionOwner = null;
+            _extensionOwner = next is null ? null : owner ?? _extensionOwner;
             return;
         }
         int original = OriginalOf(_previewFrame);
         _extension = next;
-        _extensionOwner = next is not null && Selected >= 0 && Selected < _effects.Count ? _effects[Selected] : null;
+        _extensionOwner = next is null ? null : owner;
         _previewFrame = Math.Clamp(VirtualOf(original), 0, VirtualCount - 1);
         SyncExtendEditor();
         InvalidateStrip();
@@ -264,12 +268,21 @@ public sealed partial class LayerEffectsDialog
         }
         int n = hi - lo + 1;
         var next = _extension;
+        LayerEffect? nextOwner = _extensionOwner;
         if (b >= cells || copies)
+        {
             next = new FrameExtension(lo, hi, FrameExtension.ClampCount(n, b - a + 1), s_extendMode);
+            nextOwner = _effects[Selected];
+        }
         else if (Anchored(_effects[Selected]) is not null)
+        {
             next = null; // 늘리기를 만든 효과의 범위를 원래 칸 안으로 다시 고름
+            nextOwner = null;
+        }
         SetRangeFromStrip(range);
-        SetExtension(next);
+        // 다른 효과의 범위를 원래 프레임 안에서 고치는 일은 기존 늘리기에 전혀 손대지 않는다.
+        if (next != _extension || !ReferenceEquals(nextOwner, _extensionOwner))
+            SetExtension(next, nextOwner);
     }
 
     // ───────────── 확정 ─────────────

@@ -393,7 +393,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         if (Selected is var i && i < 0) return;
         var removed = _effects[i];
-        if (ReferenceEquals(removed, _extensionOwner)) SetExtension(null);
+        if (ReferenceEquals(removed, _extensionOwner)) SetExtension(null, null);
         if (ReferenceEquals(removed, _preferExistingFor))
         {
             _preferExistingFor = null;
@@ -724,7 +724,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         bool syncing = false;
         void Apply()
         {
-            if (syncing) return;
+            // 선택을 바꾸며 없어진 범위 칸의 지연 이벤트는 이전 효과에도, 새 효과에도 적용하지 않는다.
+            if (syncing || Selected != i || _extendFor != i) return;
             var next = all.On() ? null : FrameRange.Of((int)from.NumValue() - 1, (int)to.NumValue() - 1, n);
             if (next is null && !all.On())
             {
