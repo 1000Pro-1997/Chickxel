@@ -4,9 +4,9 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 /// <summary>
-/// 전·후 미리보기 아래 프레임 줄: 프레임마다 그 프레임 범위 안의 효과를 입힌 작은 그림. 이 창의 공통 범위가 파랗게 보이고,
-/// 끌어서 공통 범위를 정하며(위 숫자 칸과 같은 값), 누르면 그 프레임을 미리보기에 보인다.
-/// 이 창에서 추가한 효과를 고른 채 범위 끝을 마지막 칸 너머로 끌면 점선 빈 칸이 생기며 그만큼 프레임을 늘린다(<see cref="DragRange"/>).
+/// 전·후 미리보기 아래 프레임 줄: 프레임마다 효과를 입힌 작은 그림. 고른 효과(없으면 "추가 범위")의 프레임 범위가 파랗게 보이고,
+/// 끌어서 범위를 정하며(아래 숫자 칸과 같은 값), 누르면 그 프레임을 미리보기에 보인다.
+/// 효과를 고른 채 범위 끝을 마지막 칸 너머로 끌면 점선 빈 칸이 생기며 그만큼 프레임을 늘린다(<see cref="DragRange"/>).
 /// 프레임을 늘리는 중이면 늘린 뒤 차례의 프레임을 보이고 더해질 사본 칸은 점선 테두리.
 /// </summary>
 public sealed partial class LayerEffectsDialog
@@ -62,20 +62,37 @@ public sealed partial class LayerEffectsDialog
         _stripTimer.Start();
     }
 
-    /// <summary>프레임 줄의 파란 범위: 이 창에서 새로 추가하는 효과들의 공통 범위.</summary>
+    /// <summary>프레임 줄의 파란 범위(늘린 뒤 번호): 고른 효과의 범위, 효과를 고르지 않았으면 추가 범위.</summary>
     private void SyncStripRange()
     {
         int n = _project.Frames.Count;
-        _strip.CanExtend = Selected >= 0 && Selected < _effects.Count && IsSessionEffect(_effects[Selected]);
-        var range = CommonRange();
-        var (from, to) = range is { } r ? (r.From, Math.Min(r.To, n - 1)) : (0, n - 1);
+        bool selected = Selected >= 0 && Selected < _effects.Count;
+        _strip.CanExtend = selected;
+        if (selected)
+        {
+            _strip.Range = VRangeOf(_effects[Selected]);
+            return;
+        }
+        var (from, to) = _addAll.On() ? (0, n - 1) : ((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1);
         _strip.Range = (VirtualOf(from), _extension is { } x ? x.MapRange(new FrameRange(from, Math.Max(from, to))).To : to);
     }
 
-    /// <summary>프레임 줄에서 끌어 정한 범위를 이 창의 공통 범위와 새로 추가한 모든 효과에 넣는다. null = 모든 프레임.</summary>
+    /// <summary>프레임 줄에서 끌어 정한 범위(원래 번호)를 고른 효과(없으면 추가 범위)에 넣는다. null = 모든 프레임.</summary>
     private void SetRangeFromStrip(FrameRange? range)
     {
-        SetCommonRange(range);
+        int n = _project.Frames.Count;
+        if (Selected >= 0 && Selected < _effects.Count)
+        {
+            Update(Selected, _effects[Selected] with { Frames = range });
+            ShowSettings(); // 숫자 칸 갱신
+        }
+        else
+        {
+            _addAll.IsChecked = range is null;
+            _addFrom.Value = (range?.From ?? 0) + 1;
+            _addTo.Value = (range?.To ?? n - 1) + 1;
+            _addRangeTouched = true;
+        }
         SyncStripRange();
     }
 

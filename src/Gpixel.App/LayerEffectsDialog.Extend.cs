@@ -139,12 +139,10 @@ public sealed partial class LayerEffectsDialog
         int n = _project.Frames.Count;
         var (from, _) = RangeOf(e);
         _preferExisting = true;
-        // 늘리기를 없애면 칸 수가 바뀐다 — 범위가 그대로여도 프레임 줄·미리보기를 맞춘다.
+        // 늘리기를 없애면 칸 수가 바뀐다 — 범위가 그대로여도(Update가 아무것도 안 함) 프레임 줄·미리보기를 맞춘다.
         if (Anchored(e) is not null) SetExtension(null);
-        var range = FrameRange.Of(from, Math.Clamp(from + length - 1, from, n - 1), n);
-        if (IsSessionEffect(e)) SetCommonRange(range);
-        else Update(i, e with { Frames = range });
-        ShowSettings(); // 범위·범위 길이 안내 갱신
+        Update(i, e with { Frames = FrameRange.Of(from, Math.Clamp(from + length - 1, from, n - 1), n) });
+        ShowSettings(); // 범위 숫자 칸·범위 길이 안내 갱신
         SyncPlayback();
     }
 
@@ -221,12 +219,12 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>
     /// 프레임 줄에서 칸 <paramref name="a"/> ~ <paramref name="b"/>를 끔(누른 때의 칸 차례 기준, <paramref name="b"/>가 칸 수 이상 = 마지막 칸 너머의 빈 칸).
-    /// 원래 프레임 범위로 바꿔 이 창의 공통 범위에 넣고, 마지막 칸 너머까지 끌었거나 늘어난 칸(사본)을 덮으면 고른 칸 수만큼 늘린다.
+    /// 원래 프레임 범위로 바꿔 고른 효과(없으면 추가 범위)에 넣고, 마지막 칸 너머까지 끌었거나 늘어난 칸(사본)을 덮으면 고른 칸 수만큼 늘린다.
     /// </summary>
     private void DragRange(int a, int b)
     {
         var (ext, cells) = _dragBase;
-        bool selected = Selected >= 0 && Selected < _effects.Count && IsSessionEffect(_effects[Selected]);
+        bool selected = Selected >= 0 && Selected < _effects.Count;
         int last = Math.Min(b, cells - 1);
         int lo = int.MaxValue, hi = -1;
         bool copies = false;

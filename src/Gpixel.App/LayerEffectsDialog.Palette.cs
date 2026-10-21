@@ -5,7 +5,7 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 효과 창 왼쪽 끝의 효과 종류 칸: 종류마다 미리보기 그림(지금 프레임 그림에 기본 설정으로 입힌 모습 — 움직이는 효과는 돌려 보임) + 이름 상자.
-/// 두 번 누르거나 효과 목록으로 끌어 놓으면 이 창의 공통 범위로 추가한다(끌어 놓으면 놓은 자리에).
+/// 두 번 누르거나 효과 목록으로 끌어 놓으면 "추가 범위"로 추가한다(끌어 놓으면 놓은 자리에).
 /// </summary>
 public sealed partial class LayerEffectsDialog
 {
@@ -19,14 +19,15 @@ public sealed partial class LayerEffectsDialog
     private Avalonia.Point _pressPoint;
     private bool _tileDragging;
 
-    private Control BuildPalette()
+    private Control BuildPalette(string? motionTip)
     {
         _thumbSource = ThumbSource();
         var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
         for (int k = 0; k < KindTable.Length; k++)
         {
             var tile = new EffectTile(k, Kinds[k], IsAnimated(k) ? ThumbSteps : 1) { Width = TileWidth, Height = TileHeight, Margin = new Thickness(2) };
-            ToolTip.SetTip(tile, $"{Kinds[k]}\n{DescriptionOf(k)}" + (tile.Animated ? "\n움직이는 효과 — 위 공통 범위 동안 움직입니다." : ""));
+            ToolTip.SetTip(tile, $"{Kinds[k]}\n{DescriptionOf(k)}" + (tile.Animated ? "\n움직이는 효과 — 프레임 범위 동안 움직입니다." : "")
+                                 + (tile.Animated && motionTip is not null ? " " + motionTip : ""));
             tile.Show(0, RenderThumb);
             AttachTileInput(tile);
             _tiles.Add(tile);
