@@ -142,7 +142,7 @@ public sealed class UnityExportDialog : DialogBase
         };
         var presetButton = new Button
         {
-            Content = "프리셋 ▾",
+            Content = Ui.IconLabel(VectorIcon.ChevronDown, "프리셋", iconAfter: true),
             Padding = new Thickness(10, 3),
             Margin = new Thickness(8, 0, 2, 1),
         }.Tip("내보내기 설정 프리셋: 지금 설정 저장 · 불러오기 · 관리 · 기본 설정으로 되돌리기");

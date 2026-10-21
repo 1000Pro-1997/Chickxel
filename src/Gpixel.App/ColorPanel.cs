@@ -56,7 +56,7 @@ public sealed class ColorPanel : UserControl
         _secondarySlot = new ColorSlot("보조");
         _primarySlot.Click += (_, _) => SetEditTarget(false);
         _secondarySlot.Click += (_, _) => SetEditTarget(true);
-        var swap = Ui.Button("⇄", (_, _) => _ctx.SwapColors(), 26).Tip("기본색 ↔ 보조색 (X)");
+        var swap = Ui.IconButton(VectorIcon.Swap, "기본색 ↔ 보조색 (X)", (_, _) => _ctx.SwapColors(), 26);
 
         _sv = new SvBox { Width = 170, Height = 110, Margin = new Thickness(3) };
         _hue = new HueBar { Width = 16, Height = 110, Margin = new Thickness(3) };
@@ -112,7 +112,7 @@ public sealed class ColorPanel : UserControl
         DockPanel.SetDock(slots, Dock.Top);
 
         // ── 가운데: 팔레트 칸들(머리글 + 색 칸) + 새 팔레트 단추(스크롤)
-        _addPalette = Ui.Button("+ 새 팔레트", (_, _) => AddPalette()).Tip("빈 팔레트를 맨 아래에 추가");
+        _addPalette = Ui.Button(VectorIcon.Plus, "새 팔레트", (_, _) => AddPalette()).Tip("빈 팔레트를 맨 아래에 추가");
         _addPalette.HorizontalAlignment = HorizontalAlignment.Stretch;
         _addPalette.HorizontalContentAlignment = HorizontalAlignment.Center;
         _addPalette.Margin = new Thickness(4, 6, 4, 8);
@@ -306,15 +306,15 @@ public sealed class ColorPanel : UserControl
 
     // ───────────── 팔레트 ─────────────
 
-    /// <summary>팔레트 칸 하나: 머리글(접기 ▾/▸, 이름, 색 수, ≡ 메뉴) + 색 칸 격자.</summary>
-    private sealed class PaletteSection(string name, bool collapsed, SwatchGrid grid, Border header, TextBlock arrow,
+    /// <summary>팔레트 칸 하나: 머리글(접기 화살표, 이름, 색 수, 메뉴 단추) + 색 칸 격자.</summary>
+    private sealed class PaletteSection(string name, bool collapsed, SwatchGrid grid, Border header, IconView arrow,
         TextBlock title, TextBlock count, StackPanel root)
     {
         public string Name { get; set; } = name;
         public bool Collapsed { get; set; } = collapsed;
         public SwatchGrid Grid { get; } = grid;
         public Border Header { get; } = header;
-        public TextBlock Arrow { get; } = arrow;
+        public IconView Arrow { get; } = arrow;
         public TextBlock Title { get; } = title;
         public TextBlock Count { get; } = count;
         public StackPanel Root { get; } = root;
@@ -361,12 +361,18 @@ public sealed class ColorPanel : UserControl
         var grid = new SwatchGrid { Cell = 14, ShowMarks = true, Margin = new Thickness(0), FillHeight = true, MinHeight = 20 };
         grid.SetColors(colors);
         grid.SetMarks(_ctx.Primary, _ctx.Secondary);
-        var arrow = new TextBlock
+        var arrowIcon = new IconView(VectorIcon.ChevronRight, AppTheme.DimTextBrush)
+        {
+            Width = 12,
+            Height = 12,
+            IsHitTestVisible = false,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var arrow = new Border
         {
             Width = 16,
-            TextAlignment = TextAlignment.Center,
-            Foreground = AppTheme.DimTextBrush,
-            VerticalAlignment = VerticalAlignment.Center,
+            Child = arrowIcon,
             Background = Brushes.Transparent,
             Cursor = new Cursor(StandardCursorType.Hand),
         };
@@ -386,7 +392,7 @@ public sealed class ColorPanel : UserControl
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 2, 0),
         };
-        var menuButton = Ui.Button("☰", null, 26).Tip("이 팔레트 메뉴");
+        var menuButton = Ui.IconButton(VectorIcon.Menu, "이 팔레트 메뉴", null, 26, 13);
         menuButton.Height = 20;
         menuButton.Margin = new Thickness(1);
         menuButton.VerticalAlignment = VerticalAlignment.Center;
@@ -410,7 +416,7 @@ public sealed class ColorPanel : UserControl
         var root = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(0, 0, 0, 4) };
         root.Children.Add(header);
         root.Children.Add(grid);
-        var s = new PaletteSection(name, collapsed, grid, header, arrow, title, count, root);
+        var s = new PaletteSection(name, collapsed, grid, header, arrowIcon, title, count, root);
 
         grid.ColorClicked += (sender, e) =>
         {
@@ -499,7 +505,7 @@ public sealed class ColorPanel : UserControl
         {
             s.Title.Text = s.Name;
             s.Count.Text = s.Grid.Colors.Count.ToString(CultureInfo.InvariantCulture);
-            s.Arrow.Text = s.Collapsed ? "▸" : "▾";
+            s.Arrow.Icon = s.Collapsed ? VectorIcon.ChevronRight : VectorIcon.ChevronDown;
             s.Grid.IsVisible = !s.Collapsed;
             s.Header.BorderBrush = ReferenceEquals(s, active) ? AppTheme.AccentBrush : AppTheme.BackBrush;
         }

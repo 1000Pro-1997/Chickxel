@@ -189,18 +189,17 @@ public sealed class SortOrderList : Border
         if (hadFocus) Dispatcher.UIThread.Post(() => Focus());
     }
 
-    /// <summary>부위·스킨·프레임 줄: ⠿(끌기 손잡이) + 순번 + 이름 + ▲▼.</summary>
+    /// <summary>부위·스킨·프레임 줄: 끌기 손잡이 + 순번 + 이름 + 앞으로/뒤로 단추.</summary>
     private Border KeyRow(GridKey key, int ordinal, IReadOnlyList<GridKey> keys, out Control handle)
     {
         var units = keys.Where(k => k != GridKey.Tag).ToList();
         int unit = units.IndexOf(key);
         bool shown = ordinal > 0;
-        handle = new TextBlock
+        handle = new Border
         {
-            Text = "⠿",
-            Foreground = AppTheme.DimTextBrush,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Child = new IconView(VectorIcon.Grip, AppTheme.DimTextBrush) { Width = 13, Height = 13, IsHitTestVisible = false },
+            VerticalAlignment = VerticalAlignment.Stretch,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = Brushes.Transparent,
             Cursor = GrabCursor,
         }.Tip("끌어서 순서 바꾸기 (Alt+↑/↓)");
@@ -211,11 +210,11 @@ public sealed class SortOrderList : Border
             _ => "",
         };
         return RowGrid(key, handle, ordinal, KeyName(key) + hint, shown,
-            ArrowButton("▲", "앞으로(더 큰 기준) — Alt+↑", unit > 0, () => MoveBy(key, -1)),
-            ArrowButton("▼", "뒤로 — Alt+↓", unit < units.Count - 1, () => MoveBy(key, 1)));
+            ArrowButton(VectorIcon.ChevronUp, "앞으로(더 큰 기준) — Alt+↑", unit > 0, () => MoveBy(key, -1)),
+            ArrowButton(VectorIcon.ChevronDown, "뒤로 — Alt+↓", unit < units.Count - 1, () => MoveBy(key, 1)));
     }
 
-    /// <summary>태그 줄: 프레임에 붙어 다님(손잡이·▲▼ 없음) + 끔/켬. 끄면 흐리게, 순번 없음.</summary>
+    /// <summary>태그 줄: 프레임에 붙어 다님(손잡이·앞뒤 단추 없음) + 끔/켬. 끄면 흐리게, 순번 없음.</summary>
     private Control TagRow(bool on, int ordinal)
     {
         var toggle = new TabStrip(TabStripKind.Segmented, "끔", "켬") { SelectedIndex = on ? 1 : 0, Margin = new Thickness(2, 0) }
@@ -226,8 +225,13 @@ public sealed class SortOrderList : Border
             if (_order is not { } order || toggle.SelectedIndex < 0) return;
             Raise("태그 정렬", WithTag(order, toggle.SelectedIndex == 1));
         };
-        var handle = new TextBlock { Text = "↳", Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center }
-            .Tip("태그는 늘 프레임 바로 앞에 붙어 다닙니다(프레임을 옮기면 같이 옮겨짐)");
+        var handle = new IconView(VectorIcon.CornerDownRight, AppTheme.DimTextBrush)
+        {
+            Width = 12,
+            Height = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        }.Tip("태그는 늘 프레임 바로 앞에 붙어 다닙니다(프레임을 옮기면 같이 옮겨짐)");
         var row = RowGrid(GridKey.Tag, handle, ordinal, on ? "태그 (프레임 바로 앞)" : "태그 (꺼짐 — 켜면 여기)", on, toggle);
         return row;
     }
@@ -284,11 +288,11 @@ public sealed class SortOrderList : Border
         return row;
     }
 
-    private static Button ArrowButton(string text, string tip, bool enabled, Action action)
+    private static Button ArrowButton(VectorIcon icon, string tip, bool enabled, Action action)
     {
         var b = new Button
         {
-            Content = text,
+            Content = Ui.Icon(icon, 12),
             Width = 22,
             Height = 20,
             Padding = new Thickness(0),
@@ -303,21 +307,13 @@ public sealed class SortOrderList : Border
     }
 
     /// <summary>
-    /// 기준 사이 줄바꿈 자리: 고른 자리 = "◉ ↵ 여기서 새 줄"(강조색 선), 아니면 흐린 "○ 여기서 새 줄"(누르면 그 자리로).
+    /// 기준 사이 줄바꿈 자리: 고른 자리 = 켜진 라디오 + 줄바꿈 화살표 + "여기서 새 줄"(강조색 선), 아니면 흐린 빈 라디오 + "여기서 새 줄"(누르면 그 자리로).
     /// <paramref name="rowBreak"/> = 이 자리를 고르면 될 줄바꿈 단위(앞에서 센 전체 기준 수).
     /// </summary>
     private Control BreakSlot(int rowBreak, bool selected, IReadOnlyList<GridKey> keys)
     {
         var above = string.Join("·", keys.Take(rowBreak).Where(Shown).Select(KeyName));
-        var text = new TextBlock
-        {
-            Text = selected ? $"◉ ↵ 여기서 새 줄 — {above}마다 한 줄" : "○ 여기서 새 줄",
-            FontSize = AppTheme.SmallFontSize,
-            Foreground = selected ? AppTheme.AccentBrush : AppTheme.DimTextBrush,
-            FontWeight = selected ? FontWeight.SemiBold : FontWeight.Normal,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(40, 0, 0, 0),
-        };
+        var text = SlotLabel(selected, selected ? $"여기서 새 줄 — {above}마다 한 줄" : "여기서 새 줄", newLine: selected);
         var slot = new Border
         {
             Height = SlotHeight,
@@ -351,15 +347,7 @@ public sealed class SortOrderList : Border
             Margin = new Thickness(18, 2, 4, 0),
             Opacity = selected ? 1 : 0.6,
             Cursor = HandCursor,
-            Child = new TextBlock
-            {
-                Text = selected ? "◉ 줄바꿈 없음 (칸 수로만 줄을 바꿈)" : "○ 줄바꿈 없음 (칸 수로만)",
-                FontSize = AppTheme.SmallFontSize,
-                Foreground = selected ? AppTheme.AccentBrush : AppTheme.DimTextBrush,
-                FontWeight = selected ? FontWeight.SemiBold : FontWeight.Normal,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(40, 0, 0, 0),
-            },
+            Child = SlotLabel(selected, selected ? "줄바꿈 없음 (칸 수로만 줄을 바꿈)" : "줄바꿈 없음 (칸 수로만)", newLine: false),
         }.Tip("모든 칸을 이어서 놓고 칸 수로만 줄을 바꿉니다");
         slot.PointerEntered += (_, _) => { if (!selected) slot.Opacity = 1; };
         slot.PointerExited += (_, _) => { if (!selected) slot.Opacity = 0.6; };
@@ -371,6 +359,24 @@ public sealed class SortOrderList : Border
             Raise("줄바꿈", new GridOrder(order.Keys, 0));
         };
         return slot;
+    }
+
+    /// <summary>줄바꿈 자리 글: 라디오 표시(고름 = 가운데 점) + (<paramref name="newLine"/>면 줄바꿈 화살표) + 글자, 고르면 강조색.</summary>
+    private static StackPanel SlotLabel(bool selected, string text, bool newLine)
+    {
+        var brush = selected ? AppTheme.AccentBrush : AppTheme.DimTextBrush;
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(40, 0, 0, 0) };
+        row.Children.Add(new IconView(selected ? VectorIcon.CircleDot : VectorIcon.Circle, brush) { Width = 10, Height = 10, VerticalAlignment = VerticalAlignment.Center });
+        if (newLine) row.Children.Add(new IconView(VectorIcon.CornerDownLeft, brush) { Width = 11, Height = 11, VerticalAlignment = VerticalAlignment.Center });
+        row.Children.Add(new TextBlock
+        {
+            Text = text,
+            FontSize = AppTheme.SmallFontSize,
+            Foreground = brush,
+            FontWeight = selected ? FontWeight.SemiBold : FontWeight.Normal,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        return row;
     }
 
     private void UpdateSelection()

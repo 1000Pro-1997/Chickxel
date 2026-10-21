@@ -120,6 +120,16 @@ public sealed class MainForm : Window, Ai.IAiHost
     private readonly Dictionary<ToolKind, MenuItem> _toolMenuItems = new();
 
     private readonly TextBlock _stPos, _stColor, _stSize, _stFrame, _stZoom, _stDirty, _stMessage;
+    /// <summary>상태 표시줄 "수정됨" 앞의 점.</summary>
+    private readonly IconView _stDirtyDot = new(VectorIcon.Dot, AppTheme.WarningBrush)
+    {
+        Width = 8,
+        Height = 8,
+        Filled = true,
+        IsVisible = false,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(0, 0, 4, 0),
+    };
 
     private PlayTestForm? _play;
     private readonly DispatcherTimer _playRefresh = new() { Interval = TimeSpan.FromMilliseconds(400) };
@@ -192,6 +202,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         _stFrame = StatusLabel(statusBar, 180);
         _stZoom = StatusLabel(statusBar, 60);
         _stDirty = StatusLabel(statusBar, 80);
+        var dirtyCell = (Border)_stDirty.Parent!;
+        dirtyCell.Child = null;
+        dirtyCell.Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _stDirtyDot, _stDirty } };
         _stMessage = new TextBlock
         {
             Foreground = AppTheme.DimTextBrush,
@@ -433,9 +446,9 @@ public sealed class MainForm : Window, Ai.IAiHost
                 PopupMenus.Show(button, flyout());
             };
         right.Children.Add(BarSeparator());
-        BarButton(right, "－", "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
+        BarButton(right, BarIcon(VectorIcon.Minus), "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
         right.Children.Add(_cbZoom = ZoomBox());
-        BarButton(right, "＋", "확대 (Ctrl+=)", () => _canvas.ZoomStep(1));
+        BarButton(right, BarIcon(VectorIcon.Plus), "확대 (Ctrl+=)", () => _canvas.ZoomStep(1));
         _cbFit = Toggle(right, "맞추기", "켜면 이미지를 열 때마다 화면에 맞춥니다(켜는 순간에도 한 번 맞춤) · Ctrl+0: 지금 맞추기", () =>
         {
             _canvas.AutoFit = !_canvas.AutoFit;
@@ -543,11 +556,19 @@ public sealed class MainForm : Window, Ai.IAiHost
         return b;
     }
 
-    private static Button BarButton(Panel host, string text, string tip, Action onClick)
+    /// <summary>위쪽 막대 단추 안 아이콘(글자 단추와 같은 높이).</summary>
+    private static IconView BarIcon(VectorIcon icon)
+    {
+        var v = Ui.Icon(icon, 12);
+        v.Margin = new Thickness(0, 2);
+        return v;
+    }
+
+    private static Button BarButton(Panel host, object content, string tip, Action onClick)
     {
         var b = new Button
         {
-            Content = text,
+            Content = content,
             Padding = new Thickness(6, 2, 6, 2),
             Margin = new Thickness(1),
             MinHeight = 0,
@@ -1316,10 +1337,11 @@ public sealed class MainForm : Window, Ai.IAiHost
         _syncingZoom = true;
         _cbZoom.Value = _canvas.Zoom * 100;
         _syncingZoom = false;
+        _stDirtyDot.IsVisible = p?.IsDirty == true;
         if (p is null) _stDirty.Text = "";
         else
         {
-            _stDirty.Text = p.IsDirty ? "● 수정됨" : "저장됨";
+            _stDirty.Text = p.IsDirty ? "수정됨" : "저장됨";
             _stDirty.Foreground = p.IsDirty ? AppTheme.WarningBrush : AppTheme.TextBrush;
         }
     }

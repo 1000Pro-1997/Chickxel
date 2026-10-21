@@ -13,6 +13,18 @@ internal enum PlayMode
     Platformer,
 }
 
+/// <summary>애니메이션 이름 줄 앞 표시: 지금 재생에 고른 이름, 있음, 다른 애니메이션으로 대신, 없음.</summary>
+internal enum NameMark
+{
+    Chosen,
+    Found,
+    Substitute,
+    Missing,
+}
+
+/// <summary>표시(<see cref="NameMark"/>)가 붙은 이름 한 줄.</summary>
+internal readonly record struct MarkedName(NameMark Mark, string Text);
+
 /// <summary>한 번의 갱신에 쓰는 키 입력. <see cref="JumpPressed"/>는 이번에 새로 눌렸을 때만 true.</summary>
 internal readonly record struct PlayInput(bool Left, bool Right, bool Up, bool Down, bool JumpHeld, bool JumpPressed);
 
@@ -326,10 +338,10 @@ internal sealed class PlaySimulation
 
     // ───────────────────────── 상태 설명 ─────────────────────────
 
-    /// <summary>재생 중인 애니메이션, 상태, 이름 후보 순서(대체 포함).</summary>
-    public string DescribePlaying()
+    /// <summary>재생 중인 애니메이션·상태 글과, 이름 후보 순서(위에서부터, 고른 것에서 멈춤).</summary>
+    public (string Text, IReadOnlyList<MarkedName> Candidates) DescribePlaying()
     {
-        if (!_sprites.HasDocument) return "열린 이미지가 없습니다.";
+        if (!_sprites.HasDocument) return ("열린 이미지가 없습니다.", []);
         var sb = new StringBuilder();
         if (Mode == PlayMode.TopDown)
         {
@@ -376,22 +388,16 @@ internal sealed class PlaySimulation
             sb.AppendLine("재생: 보여 줄 애니메이션·칸이 없습니다.");
         }
 
-        sb.AppendLine("이름 후보(위에서부터):");
-        bool found = false;
+        sb.Append("이름 후보(위에서부터):");
+        var candidates = new List<MarkedName>();
         foreach (var (name, flip) in CurrentCandidates())
         {
             bool exists = _sprites.HasClip(name);
-            bool chosen = !found && exists && Choice is { } c && c.Name == name;
-            sb.Append(chosen ? "  ▶ " : exists ? "  ✓ " : "  ✗ ").Append(name);
-            if (flip) sb.Append(" (반전)");
-            sb.AppendLine();
-            if (chosen)
-            {
-                found = true;
-                break;
-            }
+            bool chosen = exists && Choice is { } c && c.Name == name;
+            candidates.Add(new MarkedName(chosen ? NameMark.Chosen : exists ? NameMark.Found : NameMark.Missing, flip ? name + " (반전)" : name));
+            if (chosen) break;
         }
-        return sb.ToString().TrimEnd();
+        return (sb.ToString(), candidates);
     }
 
     /// <summary>지금 상태에서 컨트롤러가 시도하는 이름 순서(코어 선택 규칙과 같은 순서).</summary>
@@ -434,30 +440,31 @@ internal sealed class PlaySimulation
     };
 
     /// <summary>
-    /// 이 모드가 기대하는 애니메이션 이름마다 실제로 쓰일 애니메이션. ✓ 그대로 있음, △ 다른 것으로 대신, ✗ 없음.
+    /// 이 모드가 기대하는 애니메이션 이름마다 실제로 쓰일 애니메이션: 그대로 있음(<see cref="NameMark.Found"/>),
+    /// 다른 것으로 대신(<see cref="NameMark.Substitute"/>), 없음(<see cref="NameMark.Missing"/>).
     /// </summary>
-    public (string Lines, string? Hint) DescribeExpected()
+    public (IReadOnlyList<MarkedName> Lines, string? Hint) DescribeExpected()
     {
-        if (!_sprites.HasDocument) return ("", null);
-        var sb = new StringBuilder();
+        if (!_sprites.HasDocument) return ([], null);
+        var lines = new List<MarkedName>();
         bool anySubstitute = false, anyMissing = false;
 
         void Line(string expected, AnimationChoice? choice)
         {
             if (choice is { } c && c.Name == expected && !c.FlipX)
             {
-                sb.Append("✓ ").AppendLine(expected);
+                lines.Add(new MarkedName(NameMark.Found, expected));
                 return;
             }
             if (choice is { } other)
             {
                 anySubstitute = true;
-                sb.Append("△ ").Append(expected).Append(" → ").Append(other.Name).AppendLine(other.FlipX ? " (반전)" : "");
+                lines.Add(new MarkedName(NameMark.Substitute, $"{expected} → {other.Name}" + (other.FlipX ? " (반전)" : "")));
             }
             else
             {
                 anyMissing = true;
-                sb.Append("✗ ").Append(expected).AppendLine(" 없음");
+                lines.Add(new MarkedName(NameMark.Missing, $"{expected} 없음"));
             }
         }
 
@@ -497,11 +504,11 @@ internal sealed class PlaySimulation
         else if (anySubstitute || anyMissing)
         {
             var parts = new List<string>();
-            if (anySubstitute) parts.Add("△는 다른 애니메이션으로 대신합니다");
-            if (anyMissing) parts.Add($"✗는 대신할 것도 없어 첫 애니메이션 '{_sprites.ClipNames[0]}'을(를) 씁니다");
+            if (anySubstitute) parts.Add("세모 표시는 다른 애니메이션으로 대신합니다");
+            if (anyMissing) parts.Add($"X 표시는 대신할 것도 없어 첫 애니메이션 '{_sprites.ClipNames[0]}'을(를) 씁니다");
             hint = string.Join(". ", parts) + ". 위 이름으로 애니메이션을 만들면 상태에 따라 자동으로 골라집니다.";
         }
-        return (sb.ToString().TrimEnd(), hint);
+        return (lines, hint);
 
         AnimationChoice? IdleChoice(Facing f)
             => AnimationSelector.Resolve(["idle"], f, has, PlainFacesRight)

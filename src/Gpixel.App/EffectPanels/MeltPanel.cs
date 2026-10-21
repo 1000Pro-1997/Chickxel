@@ -13,7 +13,7 @@ public sealed partial class LayerEffectsDialog
         SettingsRow("", CheckEditor("늘어짐 (흘러내린 자국)", e.Stretch, v => set(o => M(o) with { Stretch = v })),
             CheckEditor("사라짐", e.Fade, v => set(o => M(o) with { Fade = v })));
         var seed = NumEditor(0, MeltEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => M(o) with { Seed = v }));
-        var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, MeltEffect.MaxSeed + 1), 36).Tip("다른 녹는 모양(시드를 무작위로)");
+        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 녹는 모양(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, MeltEffect.MaxSeed + 1), 36);
         SettingsRow("시드", seed, reroll);
         AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint("픽셀이 열마다 조금씩 다른 때·빠르기로 아래로 흘러내리고(늘어짐이면 아래쪽일수록 더 내려가 자국이 남음), 사라짐이면 다 내려가면서 투명해집니다."

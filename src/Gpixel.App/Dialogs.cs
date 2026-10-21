@@ -181,13 +181,18 @@ public sealed class AnchorPicker : Grid
         Background = AppTheme.PanelBrush;
         HorizontalAlignment = HorizontalAlignment.Left;
         Value = value;
-        string[] arrows = ["↖", "↑", "↗", "←", "●", "→", "↙", "↓", "↘"];
+        VectorIcon[] arrows =
+        [
+            VectorIcon.ArrowUpLeft, VectorIcon.ArrowUp, VectorIcon.ArrowUpRight,
+            VectorIcon.ArrowLeft, VectorIcon.Dot, VectorIcon.ArrowRight,
+            VectorIcon.ArrowDownLeft, VectorIcon.ArrowDown, VectorIcon.ArrowDownRight,
+        ];
         for (int i = 0; i < 9; i++)
         {
             int index = i;
             var b = new ToggleButton
             {
-                Content = arrows[i],
+                Content = i == 4 ? Ui.Icon(VectorIcon.Dot, 14, filled: true) : Ui.Icon(arrows[i], 14),
                 Width = 32,
                 Height = 28,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -478,13 +483,13 @@ public sealed class ShortcutHelpDialog : DialogBase
         ("레이어", "Ctrl+Shift+N", "새 그룹"),
         ("레이어", "Shift+P", "현재 그룹에 새 부위(그룹이 없으면 그룹도)"),
         ("레이어", "F2 / 이름 더블클릭", "레이어 이름 바꾸기"),
-        ("레이어", "그룹 ▾/▸", "그룹 접기 / 펼치기"),
+        ("레이어", "그룹 이름 앞 삼각형", "그룹 접기 / 펼치기"),
         ("타임라인", "셀 끌기 / Shift+클릭", "여러 칸(행 × 프레임) 고르기"),
         ("타임라인", "머리글 끌기", "프레임 범위 고르기 → 우클릭 \"태그 만들기\""),
         ("타임라인", "태그 상자 안쪽 끝 끌기", "태그 범위 바꾸기"),
         ("타임라인", "고른 칸 끌기 / Alt+끌기", "칸 묶음 옮기기 / 복사"),
         ("타임라인", "Ctrl+C / Ctrl+X / Ctrl+V", "셀·프레임 복사 / 잘라내기 / 붙여넣기(타임라인을 누른 뒤)"),
-        ("타임라인", "다음 프레임 칸 ⧉ / ＋", "마지막 프레임 복사해서 추가 / 빈 프레임 추가"),
+        ("타임라인", "다음 프레임 칸의 복사 / 더하기 단추", "마지막 프레임 복사해서 추가 / 빈 프레임 추가"),
         ("타임라인", "Delete / 머리글 더블클릭", "고른 프레임(범위) 삭제 / 프레임 길이"),
         ("부위", "그룹 고르고 끌기", "부위 배치(방향키 1px · Shift 8px)"),
         ("부위", "그룹에서 부위 더블클릭", "그 부위 고르기(부위 크기 캔버스로 그리기)"),

@@ -12,7 +12,7 @@ public sealed partial class LayerEffectsDialog
         var a = ColorEditor(g.ColorA, v => set(o => G(o) with { ColorA = v }));
         var b = ColorEditor(g.ColorB, v => set(o => G(o) with { ColorB = v }));
         SettingsRow("색 A", a);
-        SettingsRow("색 B", b, Ui.Button("⇄", (_, _) => (a.Color, b.Color) = (b.Color, a.Color), 32).Tip("색 A와 B를 맞바꿉니다"));
+        SettingsRow("색 B", b, Ui.IconButton(VectorIcon.Swap, "색 A와 B를 맞바꿉니다", (_, _) => (a.Color, b.Color) = (b.Color, a.Color), 32));
         SettingsRow("세기", NumEditor(0, 100, g.Strength, NumKinds.Strength, v => set(o => G(o) with { Strength = v })), Ui.Label("%"));
         SettingsRow("섞기", ChoiceEditor(Blends, (int)g.Blend, k => set(o => G(o) with { Blend = (EffectBlend)k })));
         SettingsRow("디더", ChoiceEditor(Dithers, (int)g.Dither, k => set(o => G(o) with { Dither = (EffectDither)k })));

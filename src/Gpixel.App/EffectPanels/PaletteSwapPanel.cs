@@ -37,21 +37,21 @@ public sealed partial class LayerEffectsDialog
             var to = new ColorField(p.Pairs[k].To, 64);
             from.ColorChanged += (_, _) => ChangePair(at, q => q with { From = from.Color });
             to.ColorChanged += (_, _) => ChangePair(at, q => q with { To = to.Color });
-            var remove = Ui.Button("−", (_, _) =>
+            var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
             {
                 set(o => P(o) with { Pairs = P(o).Pairs.Where((_, j) => j != at).ToArray() });
                 ShowSettings();
             }, 26).Tip("이 쌍 빼기");
-            SettingsRow($"{k + 1}", from, Ui.Label("→"), to, remove);
+            SettingsRow($"{k + 1}", from, Ui.Icon(VectorIcon.ArrowRight, 13), to, remove);
         }
 
-        var add = Ui.Button("+ 쌍 추가", (_, _) =>
+        var add = Ui.Button(VectorIcon.Plus, "쌍 추가", (_, _) =>
         {
             // 아직 바꾸지 않는, 가장 많이 쓰인 색부터(없으면 검정)
             var next = used.FirstOrDefault(c => !P(_effects[Selected]).Pairs.Any(q => q.From.R == c.R && q.From.G == c.G && q.From.B == c.B), Color32.Black);
             AddPairs([next]);
         });
-        var pick = Ui.Button("그림에서 색 가져오기 ▾");
+        var pick = Ui.Button(VectorIcon.ChevronDown, "그림에서 색 가져오기", iconAfter: true);
         if (used.Count == 0) pick.IsEnabled = false;
         else
         {

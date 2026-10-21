@@ -58,9 +58,11 @@ public sealed class UpdateDialog : DialogBase
             Margin = new Thickness(3, 6, 3, 3),
         });
         // 버전별 릴리스 페이지 링크(설명을 읽었든 못 읽었든 늘 보임)
+        var linkLabel = Ui.IconLabel(VectorIcon.ExternalLink, $"Gpixel {release.Version} 바뀐 점 — 릴리스 페이지 열기", iconAfter: true);
+        ((TextBlock)linkLabel.Children[0]).TextDecorations = TextDecorations.Underline;
         var link = new Button
         {
-            Content = new TextBlock { Text = $"Gpixel {release.Version} 바뀐 점 — 릴리스 페이지 열기 ↗", TextDecorations = TextDecorations.Underline },
+            Content = linkLabel,
             Foreground = AppTheme.AccentBrush,
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),

@@ -1548,6 +1548,51 @@ public sealed partial class SpriteProject
         return copy;
     }
 
+    /// <inheritdoc cref="ExtendFrames(FrameExtension)"/>
+    public void ExtendFrames(int from, int to, int count, FrameExtendMode mode) => ExtendFrames(new FrameExtension(from, to, count, mode));
+
+    /// <summary>
+    /// 프레임 늘리기(실행취소 한 단계): 프레임 [From, To]를 <see cref="FrameExtension.Count"/>개로 바꾼다 — 자리마다 <see cref="FrameExtension.SourceOf"/>의 원래 프레임,
+    /// 원래 프레임이 처음 오는 자리는 그 프레임 그대로, 나머지는 사본(모든 레이어·스킨 셀을 복사, 길이·피벗 같음, 칸 이름은 비움 — 이름 규칙).
+    /// 태그·모든 레이어 효과 범위는 <see cref="FrameExtension.MapRange"/>로 바뀐다(범위를 덮으면 늘어나고 뒤쪽은 밀림). 같은 수면 아무것도 하지 않는다.
+    /// </summary>
+    public void ExtendFrames(FrameExtension extension)
+    {
+        var x = extension;
+        if (x.To >= _frames.Count) throw new ArgumentOutOfRangeException(nameof(extension), $"프레임 범위가 잘못되었습니다: {x.From + 1}~{x.To + 1}");
+        if (x.Added == 0) return;
+        var sources = _frames.GetRange(x.From, x.Length);
+        Edit("프레임 늘리기", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        {
+            var cels = new List<(CelKey Key, PixelImage Cel)>?[x.Length];
+            var result = new Frame[x.Count];
+            var placed = new bool[x.Length];
+            for (int k = 0; k < x.Count; k++)
+            {
+                int s = x.SourceOf(k);
+                var src = sources[s];
+                if (!placed[s])
+                {
+                    placed[s] = true;
+                    result[k] = src;
+                    continue;
+                }
+                var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
+                foreach (var (key, cel) in cels[s] ??= CelsOf(src)) _cels[key with { Frame = copy }] = cel.Clone();
+                result[k] = copy;
+            }
+            _frames.RemoveRange(x.From, x.Length);
+            _frames.InsertRange(x.From, result);
+            foreach (var t in _tags)
+            {
+                var r = x.MapRange(new FrameRange(t.From, t.To));
+                t.From = r.From;
+                t.To = r.To;
+            }
+            MapEffectRanges(r => x.MapRange(r));
+        });
+    }
+
     /// <summary>
     /// 프레임 삭제(마지막 하나는 지울 수 없음). 태그·효과 범위가 줄고, 비게 된 태그와 범위의 프레임이 모두 지워진 효과는 지워진다
     /// (같은 실행취소 단계라 되돌리면 함께 돌아온다).

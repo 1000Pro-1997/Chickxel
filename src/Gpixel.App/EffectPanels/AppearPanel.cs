@@ -15,7 +15,7 @@ public sealed partial class LayerEffectsDialog
         var from = ChoiceEditor(WipeFroms, (int)e.From, k => set(o => A(o) with { From = (WipeDirection)k }));
         var edge = ChoiceEditor(["딱딱하게", "디더 1px", "디더 2px"], e.Edge, k => set(o => A(o) with { Edge = k }));
         var seed = NumEditor(0, AppearEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => A(o) with { Seed = v }));
-        var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, AppearEffect.MaxSeed + 1), 36).Tip("다른 흩어짐(시드를 무작위로)");
+        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 흩어짐(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, AppearEffect.MaxSeed + 1), 36);
         void Sync(AppearStyle s)
         {
             from.IsEnabled = edge.IsEnabled = s == AppearStyle.Wipe;

@@ -74,14 +74,19 @@ public sealed class ChatWindow : Window
         };
         _tabs = [.. AiProvider.All.Select((p, i) => new ChatTab(this, p, i))];
         _visible = _tabs[AiProvider.All.ToList().IndexOf(AiProvider.FromId(settings.ChatProvider))];
-        _providerToggle = new TabStrip(TabStripKind.Segmented, [.. AiProvider.All.Select(p => p.Name)])
+        _providerToggle = new TabStrip(TabStripKind.Segmented)
         {
-            SelectedIndex = _visible.Index,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(3, 0),
         };
-        foreach (var (p, i) in AiProvider.All.Select((p, i) => (p, i)))
-            _providerToggle.SetTip(i, $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음). 탭마다 대화가 따로 있습니다.");
+        // 글자 뒤 점 = 그 탭이 답을 쓰는 중(SetIconVisible로 켜고 끔)
+        foreach (var p in AiProvider.All)
+        {
+            int i = _providerToggle.Add(p.Name, (g, r, b) => VectorIcons.Draw(g, VectorIcon.Dot, r, 8, b, filled: true),
+                $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음). 탭마다 대화가 따로 있습니다.", iconAfter: true);
+            _providerToggle.SetIconVisible(i, false);
+        }
+        _providerToggle.SelectedIndex = _visible.Index;
         _providerToggle.SelectionChanged += (_, _) => OnProviderToggled();
         _modelHost = new Border { VerticalAlignment = VerticalAlignment.Center };
         _newChat = Ui.Button("새 대화", (_, _) => _visible.NewConversation());
@@ -199,7 +204,7 @@ public sealed class ChatWindow : Window
     {
         foreach (var t in _tabs)
         {
-            _providerToggle.SetText(t.Index, t.IsRunning ? $"{t.Provider.Name} ●" : t.Provider.Name);
+            _providerToggle.SetIconVisible(t.Index, t.IsRunning);
             t.UpdateInputState();
             t.RefreshSteps();
         }
@@ -1394,7 +1399,7 @@ public sealed class ChatWindow : Window
             _attachments.Add(a);
             var remove = new Button
             {
-                Content = "✕",
+                Content = new IconView(VectorIcon.X) { Width = 10, Height = 10, Margin = new Thickness(0, 2) },
                 Padding = new Thickness(3, 0),
                 MinHeight = 0,
                 FontSize = AppTheme.SmallFontSize,

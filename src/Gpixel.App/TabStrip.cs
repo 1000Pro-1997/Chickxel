@@ -128,8 +128,11 @@ public sealed class TabStrip : Border
         }
     }
 
-    /// <summary>탭 하나를 끝에 더한다(글자·그림 중 하나는 있어야 함). 돌려주는 값 = 탭 번호.</summary>
-    public int Add(string? text, TabIconPainter? icon = null, string? tip = null)
+    /// <summary>
+    /// 탭 하나를 끝에 더한다(글자·그림 중 하나는 있어야 함). 돌려주는 값 = 탭 번호.
+    /// <paramref name="iconAfter"/>면 그림이 글자 뒤의 작은 표시(예: 작업 중 점, <see cref="SetIconVisible"/>로 켜고 끔).
+    /// </summary>
+    public int Add(string? text, TabIconPainter? icon = null, string? tip = null, bool iconAfter = false)
     {
         if (text is null && icon is null) throw new ArgumentException("탭에는 글자나 그림이 있어야 합니다.", nameof(text));
         int index = _tabs.Count;
@@ -149,8 +152,9 @@ public sealed class TabStrip : Border
         TabIcon? iconView = null;
         if (icon is not null)
         {
-            iconView = new TabIcon(icon) { Width = 16, Height = 14, VerticalAlignment = VerticalAlignment.Center };
-            content.Children.Add(iconView);
+            // 글자 옆 그림은 좁게(글자 기호 한 자 폭), 그림만 있는 탭은 넓게
+            iconView = new TabIcon(icon) { Width = iconAfter ? 10 : text is null ? 16 : 12, Height = 14, VerticalAlignment = VerticalAlignment.Center };
+            if (!iconAfter) content.Children.Add(iconView);
         }
         var label = new TextBlock { Text = text, FontSize = fontSize, VerticalAlignment = VerticalAlignment.Center };
         TextBlock? reserve = null;
@@ -160,6 +164,7 @@ public sealed class TabStrip : Border
             reserve = new TextBlock { Text = text, FontSize = fontSize, FontWeight = FontWeight.SemiBold, Opacity = 0, IsHitTestVisible = false };
             content.Children.Add(new Panel { Children = { reserve, label }, VerticalAlignment = VerticalAlignment.Center });
         }
+        if (iconAfter && iconView is not null) content.Children.Add(iconView);
         var box = new Border
         {
             Child = content,
@@ -203,6 +208,14 @@ public sealed class TabStrip : Border
         if (tab.Reserve is not { } reserve) throw new InvalidOperationException("글자 없는 탭입니다.");
         reserve.Text = text;
         tab.Text.Text = text;
+        return this;
+    }
+
+    /// <summary>그림이 있는 탭의 그림을 보이거나 감춘다(예: 글자 뒤 작업 중 점).</summary>
+    public TabStrip SetIconVisible(int index, bool visible)
+    {
+        if (_tabs[index].Icon is not { } icon) throw new InvalidOperationException("그림 없는 탭입니다.");
+        icon.IsVisible = visible;
         return this;
     }
 

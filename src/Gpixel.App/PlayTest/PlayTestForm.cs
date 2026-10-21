@@ -37,7 +37,10 @@ public sealed class PlayTestForm : Window
     private readonly StackPanel _topDownGroup = Group();
     private readonly StackPanel _platformerGroup = Group();
     private readonly TextBlock _playingLabel = InfoLabel();
-    private readonly TextBlock _expectedLabel = InfoLabel();
+    /// <summary>재생 중 이름 후보 줄들(표시 아이콘 + 이름).</summary>
+    private readonly StackPanel _candidateList = MarkedList();
+    /// <summary>기대하는 애니메이션 이름 줄들(표시 아이콘 + 이름).</summary>
+    private readonly StackPanel _expectedList = MarkedList();
     private readonly TextBlock _hintLabel = InfoLabel();
     private readonly TextBlock _keysLabel = InfoLabel();
 
@@ -104,8 +107,8 @@ public sealed class PlayTestForm : Window
             Header("보기"), Row("배율 (정수)", _scale),
             _showGrid, _showPivot, _showCollider, _plainFacesRight,
             _topDownGroup, _platformerGroup, resetButton,
-            Header("재생 중"), _playingLabel,
-            Header("애니메이션 이름 확인"), _expectedLabel, _hintLabel, _keysLabel,
+            Header("재생 중"), _playingLabel, _candidateList,
+            Header("애니메이션 이름 확인"), _expectedList, _hintLabel, _keysLabel,
         });
         var side = new ScrollViewer
         {
@@ -221,16 +224,50 @@ public sealed class PlayTestForm : Window
     private void RefreshExpected()
     {
         var (lines, hint) = _sim.DescribeExpected();
-        SetText(_expectedLabel, lines);
+        SetMarked(_expectedList, lines);
         SetText(_hintLabel, hint ?? "");
         _hintLabel.IsVisible = hint is not null;
     }
 
-    private void RefreshPlaying() => SetText(_playingLabel, _sim.DescribePlaying());
+    private void RefreshPlaying()
+    {
+        var (text, candidates) = _sim.DescribePlaying();
+        SetText(_playingLabel, text);
+        SetMarked(_candidateList, candidates);
+    }
 
     private static void SetText(TextBlock label, string text)
     {
         if (label.Text != text) label.Text = text;
+    }
+
+    /// <summary>표시 붙은 이름 줄들을 채운다(매 틱 불리므로 내용이 같으면 그대로 둔다).</summary>
+    private static void SetMarked(StackPanel list, IReadOnlyList<MarkedName> lines)
+    {
+        if (list.Tag is IReadOnlyList<MarkedName> shown && shown.SequenceEqual(lines)) return;
+        list.Tag = lines;
+        list.Children.Clear();
+        foreach (var line in lines)
+        {
+            var (icon, brush, filled) = line.Mark switch
+            {
+                NameMark.Chosen => (VectorIcon.Play, AppTheme.AccentBrush, true),
+                NameMark.Found => (VectorIcon.Check, AppTheme.TextBrush, false),
+                NameMark.Substitute => (VectorIcon.Triangle, AppTheme.WarningBrush, false),
+                _ => (VectorIcon.X, AppTheme.WarningBrush, false),
+            };
+            list.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 5,
+                Children =
+                {
+                    new IconView(icon, brush) { Width = 11, Height = 11, Filled = filled, VerticalAlignment = VerticalAlignment.Center },
+                    new TextBlock { Text = line.Text, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center },
+                },
+            });
+        }
+        list.IsVisible = lines.Count > 0;
     }
 
     // ───────────────────────── 실행 루프·입력 ─────────────────────────
@@ -322,6 +359,15 @@ public sealed class PlayTestForm : Window
     {
         Foreground = AppTheme.TextBrush,
         TextWrapping = TextWrapping.Wrap,
+        MaxWidth = RowWidth,
+        HorizontalAlignment = HorizontalAlignment.Left,
+        Margin = new Thickness(0, 0, 0, 4),
+    };
+
+    private static StackPanel MarkedList() => new()
+    {
+        Orientation = Orientation.Vertical,
+        Spacing = 1,
         MaxWidth = RowWidth,
         HorizontalAlignment = HorizontalAlignment.Left,
         Margin = new Thickness(0, 0, 0, 4),

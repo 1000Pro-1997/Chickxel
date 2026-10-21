@@ -15,7 +15,7 @@ public sealed partial class LayerEffectsDialog
             Ui.Label("  횟수"), NumEditor(1, ShakeEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => S(o) with { Count = v })), Ui.Label("번"));
         SettingsRow("", CheckEditor("줄어듦 (끝으로 갈수록 약하게)", e.Decay, v => set(o => S(o) with { Decay = v })));
         var seed = NumEditor(0, ShakeEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => S(o) with { Seed = v }));
-        var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, ShakeEffect.MaxSeed + 1), 36).Tip("다른 흔들림(시드를 무작위로)");
+        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 흔들림(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, ShakeEffect.MaxSeed + 1), 36);
         seed.IsEnabled = reroll.IsEnabled = !e.Regular;
         SettingsRow("움직임", ChoiceEditor(["무작위 (시드)", "규칙적 (사인)"], e.Regular ? 1 : 0, k =>
         {

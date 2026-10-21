@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using Avalonia.Controls.Documents;
 using Gpixel.App.Ai;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
@@ -325,9 +326,9 @@ public sealed class LospecPaletteDialog : DialogBase
         if (_loaded == 0 && _pinned is null)
             SetStatus(_query.Tag.Length > 0 ? $"'{_query.Tag}' 태그나 이름에 맞는 팔레트가 없습니다." : "조건에 맞는 팔레트가 없습니다.", error: false);
         else if (_loaded == 0)
-            SetStatus($"'{_query.Tag}' 태그는 없고, 이름이 맞는 팔레트(★)를 찾았습니다.", error: false);
+            SetStatus($"'{_query.Tag}' 태그는 없고, 이름이 맞는 팔레트(별 표시)를 찾았습니다.", error: false);
         else
-            SetStatus($"{_loaded} / {_total}" + (_pinned is not null ? " · ★ 이름이 맞는 팔레트를 맨 위에 두었습니다" : ""), error: false);
+            SetStatus($"{_loaded} / {_total}" + (_pinned is not null ? " · 이름이 맞는 팔레트(별 표시)를 맨 위에 두었습니다" : ""), error: false);
     }
 
     /// <summary>단추를 누른 결과(팔레트로 씀·덧붙임·저장)를 단추 옆에 알린다.</summary>
@@ -344,20 +345,23 @@ public sealed class LospecPaletteDialog : DialogBase
     {
         var title = new TextBlock
         {
-            Text = (pinned ? "★ " : "") + p.Title,
             FontWeight = FontWeight.Bold,
             Foreground = AppTheme.TextBrush,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
+        if (pinned)
+            title.Inlines = [Ui.InlineIcon(VectorIcon.Star, AppTheme.TextBrush, 12, filled: true), new Run(" " + p.Title)];
+        else
+            title.Text = p.Title;
         var info = new TextBlock
         {
-            Text = Info(p),
             Foreground = AppTheme.DimTextBrush,
             FontSize = AppTheme.SmallFontSize,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(10, 0, 0, 0),
         };
+        FillInfo(info, p);
         var head = new DockPanel();
         DockPanel.SetDock(title, Dock.Left);
         head.Children.Add(title);
@@ -373,14 +377,24 @@ public sealed class LospecPaletteDialog : DialogBase
         return item;
     }
 
-    private static string Info(LospecPalette p)
+    /// <summary>작성자 · 색 수 · 좋아요(하트) · 내려받기(아래 화살표) 수 + <paramref name="suffix"/>를 글 줄에 채운다(아이콘은 글자색).</summary>
+    private static void FillInfo(TextBlock target, LospecPalette p, string suffix = "")
     {
-        var parts = new List<string>();
-        if (p.Author.Length > 0) parts.Add(p.Author);
-        parts.Add($"{p.Colors.Count}색");
-        if (p.Likes > 0) parts.Add($"♥ {p.Likes.ToString("N0", CultureInfo.InvariantCulture)}");
-        if (p.Downloads > 0) parts.Add($"↓ {p.Downloads.ToString("N0", CultureInfo.InvariantCulture)}");
-        return string.Join(" · ", parts);
+        var head = new List<string>();
+        if (p.Author.Length > 0) head.Add(p.Author);
+        head.Add($"{p.Colors.Count}색");
+        var brush = target.Foreground ?? AppTheme.DimTextBrush;
+        var inlines = new InlineCollection { new Run(string.Join(" · ", head)) };
+        void Stat(VectorIcon icon, int count)
+        {
+            inlines.Add(new Run(" · "));
+            inlines.Add(Ui.InlineIcon(icon, brush, 10));
+            inlines.Add(new Run(" " + count.ToString("N0", CultureInfo.InvariantCulture)));
+        }
+        if (p.Likes > 0) Stat(VectorIcon.Heart, p.Likes);
+        if (p.Downloads > 0) Stat(VectorIcon.Download, p.Downloads);
+        if (suffix.Length > 0) inlines.Add(new Run(suffix));
+        target.Inlines = inlines;
     }
 
     // ───────────── 고른 팔레트 ─────────────
@@ -388,7 +402,8 @@ public sealed class LospecPaletteDialog : DialogBase
     private void ShowDetail(LospecPalette? p)
     {
         _detailTitle.Text = p?.Title ?? "팔레트를 고르세요";
-        _detailInfo.Text = p is null ? "목록을 두 번 누르면 바로 팔레트로 씁니다." : Info(p) + (p.Tags.Count > 0 ? " · " + string.Join(", ", p.Tags) : "");
+        if (p is null) _detailInfo.Inlines = [new Run("목록을 두 번 누르면 바로 팔레트로 씁니다.")];
+        else FillInfo(_detailInfo, p, p.Tags.Count > 0 ? " · " + string.Join(", ", p.Tags) : "");
         _swatches.SetColors(p?.Colors ?? []);
         ShowExamples(p);
         _hoverHex.Text = "";

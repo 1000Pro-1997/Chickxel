@@ -851,7 +851,7 @@ public sealed class TimelinePanel : UserControl
         {
             var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, motionRange ?? newRange);
             dialog.ShowDialog(this);
-            if (dialog.BakeMessage is { } message) Say(message);
+            if (dialog.ResultMessage is { } message) Say(message);
         });
     }
 
@@ -941,7 +941,9 @@ public sealed class TimelinePanel : UserControl
             items.Add(item);
         }
         items.Add(new Separator());
-        items.Add(Item("＋ 이 부위 스킨…", () => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true)));
+        var addPartSkin = Item("이 부위 스킨…", () => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true));
+        addPartSkin.Icon = Ui.Icon(VectorIcon.Plus, 14);
+        items.Add(addPartSkin);
         items.Add(Item("스킨 관리…", () => OpenSkinManager(part)));
         return items;
     }
@@ -2600,7 +2602,7 @@ public sealed class TimelinePanel : UserControl
                 Text(g, (f + 1).ToString(), new Rect(x, TagH, CellW, 16), f == cur ? AppTheme.AccentBrush : AppTheme.TextBrush, bold: true, center: true);
                 Text(g, p.Frames[f].DurationMs + "ms", new Rect(x, TagH + 15, CellW, 14), AppTheme.DimTextBrush, small: true, center: true);
                 if (p.Frames[f].Pivot is not null)
-                    AppTheme.DrawText(g, "◆", new Avalonia.Point(x + CellW - 12, TagH), PivotBrush, AppTheme.SmallFontSize);
+                    VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(x + CellW - 12, TagH + 2, 10, 10), 9, PivotBrush, filled: true);
                 if (f == _playing)
                 {
                     // 재생 중인 열 네모의 윗부분(아래쪽은 셀 쪽에서 이어 그린다).
@@ -2630,9 +2632,17 @@ public sealed class TimelinePanel : UserControl
                         g.FillRectangle(grip, new Rect(r.X + 2, r.Y + 3, 2, r.Height - 6));
                         g.FillRectangle(grip, new Rect(r.Right - 4, r.Y + 3, 2, r.Height - 6));
                     }
-                    var arrow = tag.Direction switch { TagDirection.Reverse => "◀ ", TagDirection.PingPong => "↔ ", _ => "" };
-                    Text(g, arrow + tag.Name + (tag.Loop ? "" : " (1회)"), r.Deflate(new Thickness(2, 0)),
-                        IsBright(color) ? Brushes.Black : Brushes.White, small: true);
+                    // 방향 표시(역방향 = 왼쪽 화살표, 왕복 = 양쪽 화살표) + 이름
+                    var ink = IsBright(color) ? Brushes.Black : Brushes.White;
+                    VectorIcon? arrow = tag.Direction switch { TagDirection.Reverse => VectorIcon.ArrowLeft, TagDirection.PingPong => VectorIcon.MoveHorizontal, _ => null };
+                    var textRect = r.Deflate(new Thickness(2, 0));
+                    if (arrow is { } a)
+                    {
+                        using (g.PushClip(r))
+                            VectorIcons.Draw(g, a, new Rect(textRect.X, r.Y, 11, r.Height), 10, ink);
+                        textRect = new Rect(textRect.X + 14, textRect.Y, Math.Max(0, textRect.Width - 14), textRect.Height);
+                    }
+                    Text(g, tag.Name + (tag.Loop ? "" : " (1회)"), textRect, ink, small: true);
                 }
                 for (int ck = 0; ck < _colT.SlotCount; ck++)
                 {

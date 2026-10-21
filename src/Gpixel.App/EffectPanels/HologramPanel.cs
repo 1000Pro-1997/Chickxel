@@ -31,7 +31,7 @@ public sealed partial class LayerEffectsDialog
         SettingsCheckRow(CheckEditor("테두리 빛", e.EdgeGlow, v => { edge.IsEnabled = v; set(o => H(o) with { EdgeGlow = v }); }).Tip("그림 둘레 1px에 빛 테두리를 두릅니다."),
             Ui.Label("세기"), edge, Ui.Label("%"));
         var seed = NumEditor(0, HologramEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => H(o) with { Seed = v }));
-        var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, HologramEffect.MaxSeed + 1), 36).Tip("다른 깜빡임·글리치(시드를 무작위로)");
+        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 깜빡임·글리치(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, HologramEffect.MaxSeed + 1), 36);
         SettingsRow("시드", seed, reroll);
         AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint("보이는 픽셀을 밝기 그대로 한 색으로 물들인(명암·모양 유지) SF 홀로그램입니다. 주사선 줄마다 어둡게·투명하게 하고, 흐르기면 범위 동안 한 간격 아래로 흐릅니다."

@@ -148,8 +148,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private static bool s_seamlessLoop;
     private bool _syncing, _baked;
 
-    /// <summary>영구 적용으로 닫혔으면 상태 표시줄에 보일 알림.</summary>
-    public string? BakeMessage { get; private set; }
+    /// <summary>확인(프레임을 늘렸을 때)·영구 적용으로 닫혔으면 상태 표시줄에 보일 알림.</summary>
+    public string? ResultMessage { get; private set; }
 
     /// <param name="focus">처음 고를 효과 번호(범위 밖이면 첫 효과).</param>
     /// <param name="newRange">"추가 범위"의 처음 값(타임라인에서 칸을 고르고 "효과 추가…"로 열었을 때 그 프레임들). null = 모든 프레임.</param>
@@ -227,7 +227,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _preview.Height = PreviewBox + 20;
         _caption = Ui.Label("");
         _caption.Foreground = AppTheme.DimTextBrush;
-        _play = Ui.Button("▶ 재생", (_, _) => TogglePlay(), 80);
+        _play = Ui.Button(VectorIcon.Play, "재생", (_, _) => TogglePlay(), 80);
         ToolTip.SetTip(_play, "움직이는 효과(터지기 ~ 충격파 고리)를 고른 효과의 프레임 범위로 돌려 봅니다.");
         var loop = Ui.Check("끝에서 바로 처음으로", s_seamlessLoop);
         loop.VerticalAlignment = VerticalAlignment.Center;
@@ -256,7 +256,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             DisposePalette();
             _strip.Dispose();
             int index = _project.IndexOf(_layer);
-            if (index >= 0 && !_baked) _project.EndLayerEffectsPreview(index, _original, DialogResult == DialogResult.OK);
+            if (index >= 0 && !_baked) EndPreview(index, DialogResult == DialogResult.OK);
             _preview.Dispose();
         };
     }
@@ -369,6 +369,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void Changed()
     {
         InvalidateStrip();
+        SyncExtendEditor();
         UpdateButtons();
         int index = _project.IndexOf(_layer);
         if (index >= 0) _project.PreviewLayerEffects(index, _effects);
@@ -432,17 +433,20 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         int index = _project.IndexOf(_layer), selected = Selected;
         if (index < 0 || selected < 0) return;
-        var list = _effects.ToList();
+        var list = VirtualEffects().ToList();
+        var extension = _extension;
         _project.EndLayerEffectsPreview(index, _original, commit: false);
         try
         {
             (IReadOnlyList<LayerEffect>, FrameRange?, int, bool) result = default;
-            _project.Edit("효과 영구 적용", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            var change = ProjectChange.Layers | ProjectChange.Pixels | (extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags);
+            _project.Edit(extension is null ? "효과 영구 적용" : "프레임 늘리기 · 효과 영구 적용", change, () =>
             {
+                if (extension is { } ext) _project.ExtendFrames(ext);
                 _project.SetLayerEffects(index, list);
                 result = _project.BakeLayerEffects(index, [selected]);
             });
-            BakeMessage = BakeSummary(result, _layer);
+            ResultMessage = (extension is { } x ? ExtendSummary(x) + " · " : "") + BakeSummary(result, _layer);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
@@ -460,6 +464,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void ShowSettings()
     {
         _rangeRow = null;
+        _extendCount = null;
+        _extendModeBox = null;
+        _extendFor = -1;
         FillSettings();
         var hints = _settings.Children.OfType<TextBlock>().Where(t => t.Classes.Contains(HintClass)).ToList();
         if (hints.Count == 0 || _rangeRow is null) return;
@@ -539,7 +546,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
                     ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })));
                 SettingsRow("", CheckEditor("원본 남기기 (복사본이 날아감)", x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
                 var seed = NumEditor(0, ExplodeEffect.MaxSeed, x.Seed, NumKinds.Seed, v => Set(o => X(o) with { Seed = v }));
-                var reroll = Ui.Button("🎲", (_, _) => seed.Value = System.Random.Shared.Next(0, ExplodeEffect.MaxSeed + 1), 36);
+                var reroll = Ui.IconButton(VectorIcon.Dice, null, (_, _) => seed.Value = System.Random.Shared.Next(0, ExplodeEffect.MaxSeed + 1), 36);
                 ToolTip.SetTip(reroll, "다른 흩어짐(시드를 무작위로)");
                 SettingsRow("시드", seed, reroll);
                 AddMotionEditors(i, Set);
@@ -597,7 +604,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         var a = (AnimatedEffect)_effects[i];
         if (timing) AddTimingEditors(a, set);
-        var (from, to) = RangeOf(a);
+        var (from, to) = VRangeOf(a);
         _settings.Children.Add(Hint($"지금 {to - from + 1}프레임(프레임 {from + 1}~{to + 1}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다."
                                     + (from == to ? " 한 프레임이면 움직이지 않습니다." : "")));
     }
@@ -639,7 +646,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 syncing = false;
             }
             from.IsEnabled = to.IsEnabled = next is not null;
+            FollowRange(_effects[i], next);
             Update(i, _effects[i] with { Frames = next });
+            SyncExtendEditor();
             if (_effects[i] is AnimatedEffect) ShowSettings(); // 범위 길이 안내 갱신
         }
         all.IsCheckedChanged += (_, _) =>
@@ -656,6 +665,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
         _rangeRow = SettingsRow("범위", all, from, Ui.Label("~"), to);
+        AddExtendEditor(i);
     }
 
     /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다.</summary>
@@ -800,8 +810,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>재생할 범위: 고른 효과가 움직이는 효과면 그 범위, 아니면 켜진 움직이는 효과가 있을 때 모든 프레임. 돌릴 것이 없으면 null.</summary>
     private (int From, int To)? PlayRange()
     {
-        if (Selected >= 0 && Selected < _effects.Count && _effects[Selected] is AnimatedEffect a) return RangeOf(a);
-        return _effects.Any(e => e is AnimatedEffect { Enabled: true }) ? (0, _project.Frames.Count - 1) : null;
+        if (Selected >= 0 && Selected < _effects.Count && _effects[Selected] is AnimatedEffect a) return VRangeOf(a);
+        return _effects.Any(e => e is AnimatedEffect { Enabled: true }) ? (0, VirtualCount - 1) : null;
     }
 
     /// <summary>고른 효과가 움직이는 효과면 그 범위를 돌려 보고(자동 재생), 돌릴 것이 없으면 멈추고 지금 프레임으로.</summary>
@@ -813,9 +823,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (range is null || !animatedSelected && !_timer.IsEnabled)
         {
             _timer.Stop();
-            if (_previewFrame != _frame)
+            if (_previewFrame != VirtualOf(_frame))
             {
-                _previewFrame = _frame;
+                _previewFrame = VirtualOf(_frame);
                 RefreshPreview();
             }
         }
@@ -825,7 +835,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             if (_previewFrame < from || _previewFrame > to) _previewFrame = from;
             StartTimer();
         }
-        _play.Content = _timer.IsEnabled ? "⏸ 멈춤" : "▶ 재생";
+        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, "멈춤") : Ui.IconLabel(VectorIcon.Play, "재생");
     }
 
     private void TogglePlay()
@@ -837,12 +847,12 @@ public sealed partial class LayerEffectsDialog : DialogBase
             StartTimer();
             RefreshPreview();
         }
-        _play.Content = _timer.IsEnabled ? "⏸ 멈춤" : "▶ 재생";
+        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, "멈춤") : Ui.IconLabel(VectorIcon.Play, "재생");
     }
 
     private void StartTimer()
     {
-        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(40, _project.Frames[_previewFrame].DurationMs));
+        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(40, _project.Frames[OriginalOf(_previewFrame)].DurationMs));
         _timer.Start();
     }
 
@@ -855,7 +865,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             return;
         }
         _previewFrame = _previewFrame >= range.To || _previewFrame < range.From ? range.From : _previewFrame + 1;
-        int ms = Math.Max(40, _project.Frames[_previewFrame].DurationMs);
+        int ms = Math.Max(40, _project.Frames[OriginalOf(_previewFrame)].DurationMs);
         _timer.Interval = TimeSpan.FromMilliseconds(_previewFrame == range.To && !s_seamlessLoop ? ms * 3 : ms);
         RefreshPreview();
     }
@@ -867,21 +877,26 @@ public sealed partial class LayerEffectsDialog : DialogBase
         return src;
     }
 
-    /// <summary>미리보기 프레임의 전(효과 없이)·후(모든 효과를 그 프레임으로 움직여)를 그린다. 크기는 모든 프레임 같게(효과 여백 전체).</summary>
+    /// <summary>
+    /// 미리보기 프레임의 전(효과 없이)·후(모든 효과를 그 프레임으로 움직여)를 그린다. 크기는 모든 프레임 같게(효과 여백 전체).
+    /// 프레임을 늘리는 중이면 늘린 뒤 차례의 프레임(<see cref="AnimateAt"/>).
+    /// </summary>
     private void RefreshPreview()
     {
-        int f = _previewFrame, n = _project.Frames.Count;
+        int f = _previewFrame;
         _strip.Current = f;
-        var source = SourceAt(f);
+        var all = VirtualEffects();
+        var (source, effects) = AnimateAt(f, all);
         string where = _layer.IsGroup ? " (그룹 합성)" : _layer.IsPart ? " (부위)" : "";
+        if (_extension is not null)
+            where = $"/{VirtualCount}{where} · 원래 프레임 {OriginalOf(f) + 1}{(IsCopyFrame(f) ? " 사본" : "")}";
         if (source is null)
         {
             _caption.Text = $"프레임 {f + 1}{where}";
             _preview.SetImages(null, null);
             return;
         }
-        var effects = LayerEffects.Animate(_effects, f, n, _project.EffectPivot(_layer, f), LayerEffects.UsesOtherFrames(_effects) ? SourceAt : null);
-        var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(_effects, source.Width, source.Height));
+        var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height));
         var before = new PixelImage(after.Width, after.Height);
         before.Blit(source, -dx, -dy);
         _preview.SetImages(before, after);

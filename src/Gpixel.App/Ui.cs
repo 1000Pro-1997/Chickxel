@@ -48,7 +48,7 @@ public static class Ui
         TextWrapping = TextWrapping.NoWrap,
     };
 
-    /// <summary>긴 설명을 담는 정보 표시: 모서리가 둥근 작은 네모 안의 "i"(마우스를 올리면 풍선).</summary>
+    /// <summary>긴 설명을 담는 정보 표시: 모서리가 둥근 작은 네모 안의 "i" 아이콘(마우스를 올리면 풍선).</summary>
     public static Border InfoBadge(string tip)
     {
         var b = new Border
@@ -62,15 +62,7 @@ public static class Ui
             Margin = new Thickness(4, 0),
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = new Cursor(StandardCursorType.Help),
-            Child = new TextBlock
-            {
-                Text = "i",
-                FontSize = AppTheme.SmallFontSize,
-                FontWeight = FontWeight.Bold,
-                Foreground = AppTheme.DimTextBrush,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
+            Child = new IconView(VectorIcon.InfoMark, AppTheme.DimTextBrush, 2.6) { Width = 11, Height = 11 },
         };
         ToolTip.SetTip(b, tip);
         return b;
@@ -132,6 +124,53 @@ public static class Ui
         if (width > 0) b.Width = width;
         if (onClick is not null) b.Click += onClick;
         return b;
+    }
+
+    /// <summary>선 아이콘 하나(붓을 주지 않으면 둘레 글자색을 물려받음). <paramref name="filled"/>면 도형 안을 채운다.</summary>
+    public static IconView Icon(VectorIcon icon, double size = 13, bool filled = false) => new(icon)
+    {
+        Width = size,
+        Height = size,
+        Filled = filled,
+        VerticalAlignment = VerticalAlignment.Center,
+    };
+
+    /// <summary>글 줄(TextBlock.Inlines) 안에 넣는 선 아이콘(글자 가운데 높이).</summary>
+    public static Avalonia.Controls.Documents.InlineUIContainer InlineIcon(VectorIcon icon, IBrush brush, double size, bool filled = false)
+        => new(new IconView(icon, brush) { Width = size, Height = size, Filled = filled }) { BaselineAlignment = BaselineAlignment.Center };
+
+    /// <summary>
+    /// 선 아이콘 + 글자 한 줄(단추·체크 상자·메뉴 내용). 아이콘은 글자색을 물려받아 꺼짐·올림 색을 따른다.
+    /// <paramref name="iconAfter"/>면 아이콘이 글자 뒤(메뉴를 여는 단추의 아래 화살표처럼).
+    /// </summary>
+    public static StackPanel IconLabel(VectorIcon icon, string text, double size = 13, bool iconAfter = false)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
+        if (!iconAfter) row.Children.Add(Icon(icon, size));
+        row.Children.Add(label);
+        if (iconAfter) row.Children.Add(Icon(icon, size - 2));
+        return row;
+    }
+
+    /// <summary>아이콘 + 글자 단추.</summary>
+    public static Button Button(VectorIcon icon, string text, EventHandler<RoutedEventArgs>? onClick = null, int width = 0, bool iconAfter = false)
+    {
+        var b = Button(text, onClick, width);
+        b.Content = IconLabel(icon, text, iconAfter: iconAfter);
+        return b;
+    }
+
+    /// <summary>아이콘만 있는 단추(뜻은 풍선 <paramref name="tip"/>으로).</summary>
+    public static Button IconButton(VectorIcon icon, string? tip, EventHandler<RoutedEventArgs>? onClick = null, int width = 0, double size = 14)
+    {
+        var b = Button("", onClick, width);
+        var iv = Icon(icon, size);
+        iv.Margin = new Thickness(0, Math.Max(0, (16 - size) / 2));
+        b.Content = iv;
+        b.HorizontalContentAlignment = HorizontalAlignment.Center;
+        b.VerticalContentAlignment = VerticalAlignment.Center;
+        return b.Tip(tip);
     }
 
     public static CheckBox Check(string text, bool value = false) => new()
@@ -473,16 +512,22 @@ internal sealed class MessageDialog : DialogBase
 {
     public MessageDialog(string message, string title, MessageButtons buttons, MessageIcon icon) : base(title)
     {
-        var (glyph, color) = icon switch
+        VectorIcon? mark = icon switch
         {
-            MessageIcon.Error => ("✕", Color.FromRgb(230, 90, 90)),
-            MessageIcon.Warning => ("!", AppTheme.WarningColor),
-            MessageIcon.Question => ("?", AppTheme.AccentColor),
-            MessageIcon.Info => ("i", AppTheme.AccentColor),
-            _ => ("", AppTheme.TextColor),
+            MessageIcon.Error => VectorIcon.X,
+            MessageIcon.Warning => VectorIcon.ExclamationMark,
+            MessageIcon.Question => VectorIcon.QuestionMark,
+            MessageIcon.Info => VectorIcon.InfoMark,
+            _ => null,
+        };
+        var color = icon switch
+        {
+            MessageIcon.Error => Color.FromRgb(230, 90, 90),
+            MessageIcon.Warning => AppTheme.WarningColor,
+            _ => AppTheme.AccentColor,
         };
         var row = new DockPanel();
-        if (glyph.Length > 0)
+        if (mark is { } m)
         {
             var badge = new Border
             {
@@ -492,15 +537,7 @@ internal sealed class MessageDialog : DialogBase
                 Background = AppTheme.Brush(color),
                 Margin = new Thickness(0, 0, 12, 0),
                 VerticalAlignment = VerticalAlignment.Top,
-                Child = new TextBlock
-                {
-                    Text = glyph,
-                    FontWeight = FontWeight.Bold,
-                    FontSize = 16,
-                    Foreground = Brushes.White,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                },
+                Child = new IconView(m, Brushes.White, 3) { Width = 18, Height = 18 },
             };
             DockPanel.SetDock(badge, Dock.Left);
             row.Children.Add(badge);

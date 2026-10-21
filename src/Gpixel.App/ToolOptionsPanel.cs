@@ -15,18 +15,18 @@ public sealed class ToolOptionsPanel : UserControl
 {
     /// <summary>피벗 5×5 단추 칸 수(한 변). 칸 사이 간격 = 1/4.</summary>
     private const int PivotSteps = 5;
-    /// <summary>바깥 8방향·가운데 단추 글자(그 밖은 "·"), 위 왼쪽부터 행 순서.</summary>
-    private static readonly Dictionary<(int Col, int Row), string> PivotArrows = new()
+    /// <summary>바깥 8방향·가운데 단추 아이콘(그 밖은 작은 점), 위 왼쪽부터 행 순서.</summary>
+    private static readonly Dictionary<(int Col, int Row), VectorIcon> PivotArrows = new()
     {
-        [(0, 0)] = "↖", [(2, 0)] = "↑", [(4, 0)] = "↗",
-        [(0, 2)] = "←", [(2, 2)] = "●", [(4, 2)] = "→",
-        [(0, 4)] = "↙", [(2, 4)] = "↓", [(4, 4)] = "↘",
+        [(0, 0)] = VectorIcon.ArrowUpLeft, [(2, 0)] = VectorIcon.ArrowUp, [(4, 0)] = VectorIcon.ArrowUpRight,
+        [(0, 2)] = VectorIcon.ArrowLeft, [(2, 2)] = VectorIcon.Dot, [(4, 2)] = VectorIcon.ArrowRight,
+        [(0, 4)] = VectorIcon.ArrowDownLeft, [(2, 4)] = VectorIcon.ArrowDown, [(4, 4)] = VectorIcon.ArrowDownRight,
     };
-    private static readonly (BrushShape Shape, string Text, string Tip)[] Shapes =
+    private static readonly (BrushShape Shape, VectorIcon Icon, string Text, string Tip)[] Shapes =
     [
-        (BrushShape.Square, "■ 사각", "사각 브러시"),
-        (BrushShape.Circle, "● 원", "원 브러시(크기 3 이상부터 둥글게)"),
-        (BrushShape.Diamond, "◆ 마름모", "마름모 브러시(크기 3 이상부터)"),
+        (BrushShape.Square, VectorIcon.Square, "사각", "사각 브러시"),
+        (BrushShape.Circle, VectorIcon.Circle, "원", "원 브러시(크기 3 이상부터 둥글게)"),
+        (BrushShape.Diamond, VectorIcon.Diamond, "마름모", "마름모 브러시(크기 3 이상부터)"),
     ];
     private static readonly string[] SourceNames = ["현재 레이어", "보이는 레이어 전체"];
 
@@ -38,7 +38,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly Border _brushBox;
     private readonly TextBlock _brushTitle, _fillTitle;
     /// <summary>브러시 모양(<see cref="Shapes"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
-    private readonly TabStrip _shapes = new(TabStripKind.Segmented, [.. Shapes.Select(s => s.Text)]) { Focusable = false, IsTabStop = false, Margin = default };
+    private readonly TabStrip _shapes = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly NumericUpDown _sizeNum;
     private readonly BrushPreview _brushPreview = new();
 
@@ -88,7 +88,8 @@ public sealed class ToolOptionsPanel : UserControl
         Background = AppTheme.PanelBrush;
 
         // ── 브러시: 모양 단추 + 크기(슬라이더·숫자) + 미리보기
-        for (int i = 0; i < Shapes.Length; i++) _shapes.SetTip(i, Shapes[i].Tip);
+        foreach (var s in Shapes)
+            _shapes.Add(s.Text, (g, r, b) => VectorIcons.Draw(g, s.Icon, r, 10, b, filled: true), s.Tip);
         _shapes.SelectionChanged += (_, _) =>
         {
             if (_updating || _shapes.SelectedIndex < 0) return;
@@ -206,8 +207,10 @@ public sealed class ToolOptionsPanel : UserControl
         _optionsBox = Ui.Group("옵션", Ui.Stack(_pixelPerfect, _shapeFilled, _rightErase, _wrap));
 
         // ── 대칭
-        _mirrorX = Check("좌우 대칭 ↔", "좌우 대칭 그리기 (Shift+X)", v => _ctx.MirrorX = v);
-        _mirrorY = Check("상하 대칭 ↕", "상하 대칭 그리기 (Shift+Y)", v => _ctx.MirrorY = v);
+        _mirrorX = Check("좌우 대칭", "좌우 대칭 그리기 (Shift+X)", v => _ctx.MirrorX = v);
+        _mirrorX.Content = Ui.IconLabel(VectorIcon.MoveHorizontal, "좌우 대칭", iconAfter: true);
+        _mirrorY = Check("상하 대칭", "상하 대칭 그리기 (Shift+Y)", v => _ctx.MirrorY = v);
+        _mirrorY.Content = Ui.IconLabel(VectorIcon.MoveVertical, "상하 대칭", iconAfter: true);
         _mirrorBox = Ui.Group("대칭 그리기", Ui.Stack(_mirrorX, _mirrorY));
 
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
@@ -218,7 +221,10 @@ public sealed class ToolOptionsPanel : UserControl
         for (int i = 0; i < _presetButtons.Length; i++)
         {
             int col = i % PivotSteps, row = i / PivotSteps;
-            var b = Ui.Button(PivotArrows.GetValueOrDefault((col, row), "·"), (_, _) => ApplyPivot(SnappedStep(col, row)), 26);
+            var b = Ui.Button("", (_, _) => ApplyPivot(SnappedStep(col, row)), 26);
+            b.Content = PivotArrows.TryGetValue((col, row), out var arrow)
+                ? Ui.Icon(arrow, arrow == VectorIcon.Dot ? 14 : 12, filled: arrow == VectorIcon.Dot)
+                : Ui.Icon(VectorIcon.Dot, 8, filled: true);
             b.Height = 22;
             b.Padding = new Thickness(0);
             b.HorizontalContentAlignment = HorizontalAlignment.Center;

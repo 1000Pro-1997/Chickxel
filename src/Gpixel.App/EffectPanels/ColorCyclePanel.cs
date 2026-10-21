@@ -34,7 +34,7 @@ public sealed partial class LayerEffectsDialog
             int at = k;
             var field = new ColorField(e.Colors[k], 64);
             field.ColorChanged += (_, _) => set(o => C(o) with { Colors = C(o).Colors.Select((c, j) => j == at ? field.Color : c).ToArray() });
-            var remove = Ui.Button("−", (_, _) =>
+            var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
             {
                 set(o => C(o) with { Colors = C(o).Colors.Where((_, j) => j != at).ToArray() });
                 ShowSettings();
@@ -45,13 +45,13 @@ public sealed partial class LayerEffectsDialog
         SettingsBlock("색", row);
 
         bool full = e.Colors.Count >= ColorCycleEffect.MaxColors;
-        var add = Ui.Button("+ 색 추가", (_, _) =>
+        var add = Ui.Button(VectorIcon.Plus, "색 추가", (_, _) =>
         {
             var next = used.FirstOrDefault(c => !C(_effects[Selected]).Colors.Any(x => SameRgb(x, c)), Color32.Black);
             AddColors([next]);
         });
         add.IsEnabled = !full;
-        var pick = Ui.Button("그림에서 색 가져오기 ▾");
+        var pick = Ui.Button(VectorIcon.ChevronDown, "그림에서 색 가져오기", iconAfter: true);
         if (used.Count == 0 || full) pick.IsEnabled = false;
         else
         {

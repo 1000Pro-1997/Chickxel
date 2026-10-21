@@ -33,8 +33,8 @@ public sealed class MergeDialog : DialogBase
         _order = new ListBox { Width = 220, Height = 150, Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush }
             .Tip("줄을 끌어 순서를 바꿉니다(위 = 먼저).");
         _drag.Moved += (from, to) => MoveItem(from, to);
-        var up = Ui.Button("▲", (_, _) => MoveSelected(-1), 32).Tip("위로(먼저)");
-        var down = Ui.Button("▼", (_, _) => MoveSelected(1), 32).Tip("아래로(나중)");
+        var up = Ui.IconButton(VectorIcon.ChevronUp, "위로(먼저)", (_, _) => MoveSelected(-1), 32);
+        var down = Ui.IconButton(VectorIcon.ChevronDown, "아래로(나중)", (_, _) => MoveSelected(1), 32);
         _blankCover = Ui.Check("빈 대표 이미지");
         _blankCover.IsEnabled = false;
         _blankCover.VerticalAlignment = VerticalAlignment.Center;
@@ -303,7 +303,7 @@ public sealed class MergeDialog : DialogBase
     {
         private const double NameW = 150, CellW = 44, RowH = 34, Thumb = 28, HeadH = 30, TagH = 16;
         private SpriteProject? _project;
-        private readonly List<(string Name, bool Group, bool Part, bool Skin, WriteableBitmap?[] Thumbs)> _rows = new();
+        private readonly List<(string Name, bool Group, bool Part, bool Skin, bool PartOnly, WriteableBitmap?[] Thumbs)> _rows = new();
 
         public void SetProject(SpriteProject p)
         {
@@ -315,13 +315,13 @@ public sealed class MergeDialog : DialogBase
             for (int li = p.Layers.Count - 1; li >= 0; li--)
             {
                 var layer = p.Layers[li];
-                string name = layer.IsGroup ? $"▼ {layer.Name}" : layer.IsPart ? $"    └ {layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}{(layer.Visible ? "" : "  (숨김)")}" : layer.Name;
+                string name = layer.IsPart ? $"{layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}{(layer.Visible ? "" : "  (숨김)")}" : layer.Name;
                 int index = li;
-                _rows.Add((name, layer.IsGroup, layer.IsPart, false,
+                _rows.Add((name, layer.IsGroup, layer.IsPart, false, false,
                     Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));
                 if (layer is { IsPart: true, SkinChoices.Count: > 1 })
                     foreach (var skin in layer.SkinChoices)
-                        _rows.Add(($"        {(skin.IsPartOnly ? "◆" : "◇")} {skin.Name}", false, false, true, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
+                        _rows.Add((skin.Name, false, false, true, skin.IsPartOnly, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
             }
             Width = NameW + p.Frames.Count * CellW + 4;
             Height = Top + _rows.Count * RowH + 2;
@@ -367,10 +367,28 @@ public sealed class MergeDialog : DialogBase
             g.DrawLine(line, new Avalonia.Point(0, top - 0.5), new Avalonia.Point(Bounds.Width, top - 0.5));
             for (int row = 0; row < _rows.Count; row++)
             {
-                var (name, isGroup, isPart, isSkin, thumbs) = _rows[row];
-                double y = top + row * RowH;
+                var (name, isGroup, isPart, isSkin, partOnly, thumbs) = _rows[row];
+                double y = top + row * RowH, cy = y + RowH / 2;
                 if (isGroup) g.FillRectangle(AppTheme.HoverBrush, new Rect(0, y, Bounds.Width, RowH));
-                AppTheme.DrawTextIn(g, name, new Rect(6, y, NameW - 8, RowH), isSkin ? AppTheme.DimTextBrush : AppTheme.TextBrush, small, bold: !isPart && !isSkin, padLeft: 0);
+                // 이름 앞 표시: 그룹 = 펼친 삼각형, 부위 = 나무 가지, 스킨 = 마름모(부위 전용이면 채움)
+                double textX = 6;
+                if (isGroup)
+                {
+                    VectorIcons.Draw(g, VectorIcon.ChevronDown, new Rect(4, y, 12, RowH), 11, AppTheme.TextBrush);
+                    textX = 20;
+                }
+                else if (isPart)
+                {
+                    g.DrawLine(line, new Avalonia.Point(20.5, y), new Avalonia.Point(20.5, cy + 0.5));
+                    g.DrawLine(line, new Avalonia.Point(20.5, cy + 0.5), new Avalonia.Point(28, cy + 0.5));
+                    textX = 32;
+                }
+                else if (isSkin)
+                {
+                    VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(34, y, 10, RowH), 9, AppTheme.DimTextBrush, filled: partOnly);
+                    textX = 48;
+                }
+                AppTheme.DrawTextIn(g, name, new Rect(textX, y, NameW - textX - 2, RowH), isSkin ? AppTheme.DimTextBrush : AppTheme.TextBrush, small, bold: !isPart && !isSkin, padLeft: 0);
                 for (int f = 0; f < thumbs.Length; f++)
                 {
                     var cell = new Rect(NameW + f * CellW + (CellW - Thumb) / 2, y + (RowH - Thumb) / 2, Thumb, Thumb);

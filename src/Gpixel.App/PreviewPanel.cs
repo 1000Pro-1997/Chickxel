@@ -47,7 +47,7 @@ public sealed class PreviewPanel : UserControl
         _ctx = ctx;
         Background = AppTheme.PanelBrush;
         _view = new View(this);
-        _play = Ui.Button("▶", (_, _) => TogglePlay(), 34).Tip("재생/정지 (Shift+Enter)");
+        _play = Ui.IconButton(VectorIcon.Play, "재생/정지 (Shift+Enter)", (_, _) => TogglePlay(), 34, 13);
         _fps = Ui.Num(0, 60, 0, 46)
             .Presets([0, 4, 6, 8, 10, 12, 15, 20, 24, 30, 60], [], v => v == 0 ? "0 (프레임마다 정한 길이)" : $"{v:0} FPS")
             .RecentKey("preview.fps")
@@ -353,7 +353,7 @@ public sealed class PreviewPanel : UserControl
         _elapsedInFrame = 0;
         _clock.Restart();
         _timer.Start();
-        _play.Content = "⏸";
+        ((IconView)_play.Content!).Icon = VectorIcon.Pause;
         PlayingFrameChanged?.Invoke(this, ShownFrame);
         _view.InvalidateVisual();
     }
@@ -362,7 +362,7 @@ public sealed class PreviewPanel : UserControl
     {
         if (!_timer.IsEnabled) return;
         _timer.Stop();
-        _play.Content = "▶";
+        ((IconView)_play.Content!).Icon = VectorIcon.Play;
         PlayingFrameChanged?.Invoke(this, -1);
         _view.InvalidateVisual();
     }

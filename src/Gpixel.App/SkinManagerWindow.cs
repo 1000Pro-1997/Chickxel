@@ -56,7 +56,7 @@ public sealed class SkinManagerWindow : Window
         var help = new TextBlock
         {
             Text = "그룹 = 스킨 칸: 같은 그룹의 스킨은 서로 갈아입히는 그림이고(한 번에 하나), 그룹들은 레이어 순서대로 겹칩니다. " +
-                   "카드를 누르면 바로 적용 · 두 번 누르면 적용하고 창 닫기 · 우클릭 = 복제·이름·삭제·순서. \"▸ 부위별\"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨(\"＋ 이 부위 스킨\")을 만들 수 있습니다.",
+                   "카드를 누르면 바로 적용 · 두 번 누르면 적용하고 창 닫기 · 우클릭 = 복제·이름·삭제·순서. \"부위별\"에서 부위 하나만 다른 스킨을 입히거나, 그 부위에만 있는 개별 스킨(\"이 부위 스킨\")을 만들 수 있습니다.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.DimTextBrush,
             Margin = new Thickness(0, 0, 0, 6),
@@ -453,7 +453,7 @@ public sealed class SkinManagerWindow : Window
 
         var toggle = new Button
         {
-            Content = $"{(expanded ? "▾" : "▸")} 부위별 ({parts.Count}{(partOnly > 0 ? $" · 개별 {partOnly}" : "")})",
+            Content = Ui.IconLabel(expanded ? VectorIcon.ChevronDown : VectorIcon.ChevronRight, $"부위별 ({parts.Count}{(partOnly > 0 ? $" · 개별 {partOnly}" : "")})", 12),
             Padding = new Thickness(6, 1),
             Margin = new Thickness(0, 0, 6, 0),
             VerticalAlignment = VerticalAlignment.Center,
@@ -506,7 +506,7 @@ public sealed class SkinManagerWindow : Window
                 drag.Attach(card);
                 cards.Children.Add(card);
             }
-            var add = Ui.Button("＋ 새 스킨", (_, _) => SkinOps.AddSkin(_ctx, group, null)).Tip("빈 스킨 추가(빈 셀은 기본 스킨 그림을 빌려 보임)");
+            var add = Ui.Button(VectorIcon.Plus, "새 스킨", (_, _) => SkinOps.AddSkin(_ctx, group, null)).Tip("빈 스킨 추가(빈 셀은 기본 스킨 그림을 빌려 보임)");
             var dup = Ui.Button("복제", (_, _) => SkinOps.AddSkin(_ctx, group, group.ActiveSkin)).Tip("지금 스킨을 그림째 복제");
             add.HorizontalAlignment = dup.HorizontalAlignment = HorizontalAlignment.Stretch;
             // 단추는 카드 줄 끝에(등록하지 않은 줄이라 끄는 동안 제자리를 지킨다).
@@ -586,7 +586,7 @@ public sealed class SkinManagerWindow : Window
                 Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartOnlyCardMenu(group, part, skin, index, count));
                 cards.Children.Add(card);
             }
-            var add = Ui.Button("＋ 이 부위 스킨", (_, _) => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true))
+            var add = Ui.Button(VectorIcon.Plus, "이 부위 스킨", (_, _) => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true))
                 .Tip($"\"{part.Name}\"에만 있는 새 스킨(개별 스킨) 추가 — 빈 칸은 기본 스킨 그림을 빌려 보임");
             var dup = Ui.Button("복제", (_, _) => SkinOps.AddPartSkin(_ctx, this, part, part.ShownSkin, prompt: true))
                 .Tip($"\"{part.Name}\"에 지금 보이는 스킨(\"{part.ShownSkin?.Name}\") 그림을 복제해 이 부위 전용 스킨으로");

@@ -38,7 +38,7 @@ public sealed class UnityHubDialog : DialogBase
         }
         else
         {
-            message.Text = "★ 즐겨찾기 먼저, 최근 수정 순. 회색은 경로가 없어진 프로젝트입니다.";
+            message.Text = "즐겨찾기(별 표시) 먼저, 최근 수정 순. 회색은 경로가 없어진 프로젝트입니다.";
         }
         Fill(_list, result.Projects, Columns);
 
@@ -66,10 +66,12 @@ public sealed class UnityHubDialog : DialogBase
         foreach (var p in projects)
         {
             var row = Row(columnWidths, p.Exists ? AppTheme.TextBrush : AppTheme.DimTextBrush, false,
-                (p.IsFavorite ? "★ " : "") + p.Title,
+                p.Title,
                 p.Version,
                 p.LastModified?.LocalDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "",
                 p.Path);
+            if (p.IsFavorite && row.Children[0] is TextBlock title)
+                title.Inlines = [Ui.InlineIcon(VectorIcon.Star, title.Foreground ?? AppTheme.TextBrush, 12, filled: true), new Avalonia.Controls.Documents.Run(" " + p.Title)];
             var item = new ListBoxItem { Content = row, Tag = p, Padding = new Thickness(0, 3), MinHeight = 22 };
             ToolTip.SetTip(item, p.Exists ? p.Path : p.Path + " (경로 없음)");
             list.Items.Add(item);
