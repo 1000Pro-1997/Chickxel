@@ -844,12 +844,12 @@ public sealed class TimelinePanel : UserControl
     /// <summary>
     /// 레이어 효과 대화상자(고치는 동안 캔버스에 바로 보이고, 확인 = 실행취소 한 단계, 취소 = 되돌림). <paramref name="focus"/>: 처음 고를 효과 번호(-1 = 첫 효과).
     /// </summary>
-    private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null)
+    private void EditLayerEffects(int index, int focus = -1, FrameRange? newRange = null)
     {
         if (P is not { } p || index < 0 || index >= p.Layers.Count) return;
         _ctx.Structural(() =>
         {
-            var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange, motionRange ?? newRange);
+            var dialog = new LayerEffectsDialog(_ctx, p.Layers[index], focus, newRange);
             dialog.ShowDialog(this);
             if (dialog.ResultMessage is { } message) Say(message);
         });
@@ -1096,15 +1096,10 @@ public sealed class TimelinePanel : UserControl
             Item("셀 잘라내기 (Ctrl+X)", () => CopySelection(true)),
             Item(_clip is { WholeFrames: true } ? "프레임 붙여넣기 (Ctrl+V)" : "셀 붙여넣기 (Ctrl+V)", () => PasteSelection(), _clip is not null),
         ]);
-        // 효과 창을 고른 칸들의 프레임 범위로 열어 거기서 종류·범위를 골라 추가한다.
+        // 이 창에서 추가하는 효과는 고른 칸들의 프레임 범위를 모두 함께 쓴다.
         var effectRange = FrameRange.Of(frames.Min(), frames.Max(), p.Frames.Count);
-        // 움직이는 효과는 여러 프레임에 걸쳐야 움직이므로, 한 프레임만 골랐으면 그 프레임부터 그 태그(없으면 애니메이션) 끝까지로 넓힌다.
-        int start = frames.Min();
-        int end = frames.Count > 1 ? frames.Max()
-            : p.Tags.Where(t => t.From <= start && start <= t.To).Select(t => t.To).DefaultIfEmpty(p.Frames.Count - 1).Max();
-        var motionRange = FrameRange.Of(start, end, p.Frames.Count);
         items.Add(new Separator());
-        items.Add(Item($"효과 추가… ({(effectRange is null ? "모든 프레임" : range)})", () => EditLayerEffects(layer, -1, effectRange, motionRange)));
+        items.Add(Item($"효과 추가… ({(effectRange is null ? "모든 프레임" : range)})", () => EditLayerEffects(layer, -1, effectRange)));
         items.Add(new Separator());
         items.Add(Item($"태그 만들기… ({range})", NewTag));
         items.Add(Item("뒤에 빈 프레임 (Alt+N)", NewEmptyFrame));

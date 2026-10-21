@@ -152,11 +152,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
     public string? ResultMessage { get; private set; }
 
     /// <param name="focus">처음 고를 효과 번호(범위 밖이면 첫 효과).</param>
-    /// <param name="newRange">"추가 범위"의 처음 값(타임라인에서 칸을 고르고 "효과 추가…"로 열었을 때 그 프레임들). null = 모든 프레임.</param>
-    /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
-    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base($"레이어 효과 — {layer.Name}")
+    /// <param name="newRange">이 창에서 새로 추가하는 효과들의 공통 범위(타임라인에서 고른 프레임들). null = 모든 프레임.</param>
+    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null) : base($"레이어 효과 — {layer.Name}")
     {
-        _motionRange = motionRange ?? newRange;
         _project = ctx.Project ?? throw new InvalidOperationException("열린 프로젝트가 없습니다.");
         _layer = layer;
         _frame = Math.Clamp(ctx.CurrentFrame, 0, _project.Frames.Count - 1);
@@ -169,17 +167,20 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _addFrom = WithKind(Ui.Num(1, n, (newRange?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
         _addTo = WithKind(Ui.Num(1, n, (newRange?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
         _addFrom.IsEnabled = _addTo.IsEnabled = newRange is not null;
-        ToolTip.SetTip(_addAll, "추가하는 효과가 입혀질 프레임(추가한 뒤에도 아래 설정에서 바꿀 수 있음).");
+        ToolTip.SetTip(_addAll, "이 창에서 새로 추가하는 모든 효과에 함께 적용할 프레임 범위입니다.");
         _addAll.IsCheckedChanged += (_, _) =>
         {
+            if (_addRangeSyncing) return;
             if (!_addAll.On() && (int)_addFrom.NumValue() == 1 && (int)_addTo.NumValue() == n)
-                _addFrom.Value = _addTo.Value = _frame + 1; // 모든 프레임을 덮는 범위 = "모든 프레임"이라 지금 프레임 하나로 시작
-            _addFrom.IsEnabled = _addTo.IsEnabled = !_addAll.On();
-            _addRangeTouched = true;
-            SyncStripRange();
+            {
+                _addRangeSyncing = true;
+                _addFrom.Value = _addTo.Value = _frame + 1; // 모든 프레임을 덮는 범위는 "모든 프레임"과 같으므로 지금 프레임 하나로 시작
+                _addRangeSyncing = false;
+            }
+            ApplyCommonRange();
         };
-        _addFrom.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
-        _addTo.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
+        _addFrom.ValueChanged += (_, _) => ApplyCommonRange();
+        _addTo.ValueChanged += (_, _) => ApplyCommonRange();
         _remove = Ui.Button("삭제", (_, _) => Remove(), 60);
         _up = Ui.Button("위로", (_, _) => Move(-1), 60);
         _down = Ui.Button("아래로", (_, _) => Move(1), 60);
@@ -211,11 +212,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
 
-        string? motionTip = _motionRange != newRange && _motionRange is { } mr
-            ? $"추가 범위를 그대로 두고 움직이는 효과(터지기 ~ 충격파 고리)를 추가하면 여러 프레임에 걸치도록 프레임 {mr.From + 1}~{mr.To + 1}로 넓혀 추가합니다."
-            : null;
-        var rangeLabel = Ui.Label("추가 범위");
-        if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
+        var rangeLabel = Ui.Label("공통 범위");
+        ToolTip.SetTip(rangeLabel, "이 창에서 새로 추가한 효과들은 이 범위를 함께 씁니다. 다른 범위의 효과는 창을 다시 열어 추가하세요.");
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label("프레임"), _addFrom, Ui.Label("~"), _addTo),
             _list,
@@ -242,7 +240,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         right.Width = RightWidth; // 고정 — 진행 % 등 글 길이에 따라 창 폭이 흔들리지 않게
 
         var root = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        root.Children.Add(BuildPalette(motionTip));
+        root.Children.Add(BuildPalette());
         root.Children.Add(left);
         root.Children.Add(right);
         Body.Children.Add(root);
@@ -263,8 +261,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static string Intro(Layer layer)
         => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도). 위에서부터 차례로 적용됩니다.\n"
-           + "움직이는 효과는 프레임 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"
-           + "미리보기는 프레임 범위와 관계없이 켜진 효과를 모두 보입니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 프레임 범위."
+           + "이 창에서 새로 추가한 효과들은 위의 공통 범위를 함께 씁니다. 다른 범위는 창을 다시 열어 추가하세요.\n"
+           + "움직이는 효과는 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"
+           + "미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 공통 범위."
            + (layer.IsGroup ? "\n그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다." : "")
            + (layer.IsPart ? "\n부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
 
@@ -272,11 +271,64 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private readonly CheckBox _addAll;
     private readonly NumericUpDown _addFrom, _addTo;
-    /// <summary>추가 범위를 손대지 않았을 때 움직이는 효과에 쓸 범위.</summary>
-    private readonly FrameRange? _motionRange;
-    private bool _addRangeTouched;
+    /// <summary>이 창에서 새로 추가한 효과. 기존 효과는 제 범위를 유지하고, 이 효과들만 위 공통 범위를 함께 따른다.</summary>
+    private readonly HashSet<LayerEffect> _sessionEffects = new(ReferenceEqualityComparer.Instance);
+    private bool _addRangeSyncing;
 
     private int Selected => _list.SelectedIndex;
+
+    private bool IsSessionEffect(LayerEffect effect) => _sessionEffects.Contains(effect);
+
+    /// <summary>위 공통 범위 숫자 칸의 값(null = 모든 프레임).</summary>
+    private FrameRange? CommonRange()
+        => _addAll.On() ? null : FrameRange.Of((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1, _project.Frames.Count);
+
+    /// <summary>공통 범위를 위 숫자 칸과 이 창에서 추가한 모든 효과에 반영한다.</summary>
+    private void SetCommonRange(FrameRange? range)
+    {
+        _addRangeSyncing = true;
+        _addAll.IsChecked = range is null;
+        _addFrom.Value = (range?.From ?? 0) + 1;
+        _addTo.Value = (range?.To ?? _project.Frames.Count - 1) + 1;
+        _addRangeSyncing = false;
+        ApplyCommonRange();
+    }
+
+    private void ApplyCommonRange()
+    {
+        if (_addRangeSyncing) return;
+        int n = _project.Frames.Count;
+        var range = CommonRange();
+        if (range is null && !_addAll.On())
+        {
+            _addRangeSyncing = true;
+            _addAll.IsChecked = true;
+            _addRangeSyncing = false;
+        }
+        _addFrom.IsEnabled = _addTo.IsEnabled = range is not null;
+
+        var first = _effects.FirstOrDefault(IsSessionEffect);
+        if (first is not null) FollowRange(first, range);
+        bool changed = false;
+        for (int i = 0; i < _effects.Count; i++)
+        {
+            var old = _effects[i];
+            if (!IsSessionEffect(old) || old.Frames == range) continue;
+            ReplaceEffect(i, old with { Frames = range });
+            changed = true;
+        }
+        if (changed)
+        {
+            ShowSettings();
+            Changed();
+            SyncPlayback();
+        }
+        else
+        {
+            SyncStripRange();
+            SyncExtendEditor();
+        }
+    }
 
     private void RebuildList(int select)
     {
@@ -319,22 +371,22 @@ public sealed partial class LayerEffectsDialog : DialogBase
                                       + (extra > 0 ? $" 위의 켜진 효과 {extra}개도 함께 구워집니다(보이던 그대로가 되도록)." : "")));
     }
 
-    /// <summary>종류 <paramref name="kind"/>의 새 효과를 추가 범위로 목록 <paramref name="at"/>번째에 넣고 고른다.</summary>
+    /// <summary>종류 <paramref name="kind"/>의 새 효과를 이 창의 공통 범위로 목록 <paramref name="at"/>번째에 넣고 고른다.</summary>
     private void Add(int kind, int at)
     {
         var effect = Create(kind);
-        int n = _project.Frames.Count;
-        var range = !_addRangeTouched && IsAnimated(kind) ? _motionRange
-            : _addAll.On() ? null : FrameRange.Of((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1, n);
+        var range = CommonRange();
         if (range is not null) effect = effect with { Frames = range };
         at = Math.Clamp(at, 0, _effects.Count);
         _effects.Insert(at, effect);
+        _sessionEffects.Add(effect);
         RebuildList(at);
     }
 
     private void Remove()
     {
         if (Selected is var i && i < 0) return;
+        _sessionEffects.Remove(_effects[i]);
         _effects.RemoveAt(i);
         RebuildList(Math.Min(i, _effects.Count - 1));
     }
@@ -349,11 +401,12 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private readonly DragReorder _drag = new();
 
-    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다.</summary>
-    private void Update(int index, LayerEffect effect)
+    /// <summary>효과 하나를 목록과 화면 줄에 바꾼다. 이 창에서 추가한 효과라는 표시는 불변 사본에도 이어진다.</summary>
+    private void ReplaceEffect(int index, LayerEffect effect)
     {
-        if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
+        bool session = _sessionEffects.Remove(_effects[index]);
         _effects[index] = effect;
+        if (session) _sessionEffects.Add(effect);
         if (_list.Items[index] is ListBoxItem { Content: StackPanel { Children: [CheckBox check, TextBlock text] } })
         {
             _syncing = true;
@@ -361,6 +414,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
             text.Text = Summary(effect);
             _syncing = false;
         }
+    }
+
+    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다.</summary>
+    private void Update(int index, LayerEffect effect)
+    {
+        if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
+        ReplaceEffect(index, effect);
         Changed();
         SyncPlayback();
     }
@@ -488,7 +548,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         }
         var e = _effects[i];
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
-        AddRangeEditor(i);
+        AddRangeDisplay(i);
 
         switch (e)
         {
@@ -621,50 +681,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
         }), count, Ui.Label("번"));
     }
 
-    /// <summary>
-    /// 프레임 범위: "모든 프레임"(나중에 늘어난 프레임까지) 또는 시작~끝 프레임(1부터). 체크를 풀면 현재 프레임 하나로 시작한다.
-    /// 타임라인의 효과 줄에서 상자 끝을 끌어도 바뀐다.
-    /// </summary>
-    private void AddRangeEditor(int i)
+    /// <summary>고른 효과의 범위는 읽기만 한다. 이 창에서 추가한 효과의 범위는 위 공통 범위에서 함께 바꾼다.</summary>
+    private void AddRangeDisplay(int i)
     {
         int n = _project.Frames.Count;
         var range = _effects[i].Frames;
-        var all = Ui.Check("모든 프레임", range is null);
-        var from = WithKind(Ui.Num(1, n, (range?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
-        var to = WithKind(Ui.Num(1, n, (range?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
-        from.IsEnabled = to.IsEnabled = range is not null;
-        bool syncing = false;
-        void Apply()
-        {
-            if (syncing) return;
-            var next = all.On() ? null : FrameRange.Of((int)from.NumValue() - 1, (int)to.NumValue() - 1, n);
-            if (next is null && !all.On())
-            {
-                // 모든 프레임을 덮는 범위 = "모든 프레임"
-                syncing = true;
-                all.IsChecked = true;
-                syncing = false;
-            }
-            from.IsEnabled = to.IsEnabled = next is not null;
-            FollowRange(_effects[i], next);
-            Update(i, _effects[i] with { Frames = next });
-            SyncExtendEditor();
-            if (_effects[i] is AnimatedEffect) ShowSettings(); // 범위 길이 안내 갱신
-        }
-        all.IsCheckedChanged += (_, _) =>
-        {
-            if (!all.On() && (int)from.NumValue() == 1 && (int)to.NumValue() == n)
-            {
-                // 모든 프레임을 덮는 범위는 "모든 프레임"과 같으므로 현재 프레임 하나로 시작한다.
-                syncing = true;
-                from.Value = to.Value = _frame + 1;
-                syncing = false;
-            }
-            Apply();
-        };
-        from.ValueChanged += (_, _) => Apply();
-        to.ValueChanged += (_, _) => Apply();
-        _rangeRow = SettingsRow("범위", all, from, Ui.Label("~"), to);
+        string text = range is null ? "모든 프레임"
+            : range.Value.From == range.Value.To ? $"프레임 {range.Value.From + 1}"
+            : $"프레임 {range.Value.From + 1}~{Math.Min(range.Value.To, n - 1) + 1}";
+        if (IsSessionEffect(_effects[i])) text += " (위 공통 범위)";
+        _rangeRow = SettingsRow("범위", Ui.Label(text));
         AddExtendEditor(i);
     }
 
@@ -878,7 +904,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     /// <summary>
-    /// 미리보기 프레임의 전(효과 없이)·후(모든 효과를 그 프레임으로 움직여)를 그린다. 크기는 모든 프레임 같게(효과 여백 전체).
+    /// 미리보기 프레임의 전(효과 없이)·후(그 프레임 범위 안의 효과만)를 그린다. 크기는 모든 프레임 같게(효과 여백 전체).
     /// 프레임을 늘리는 중이면 늘린 뒤 차례의 프레임(<see cref="AnimateAt"/>).
     /// </summary>
     private void RefreshPreview()
@@ -900,7 +926,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var before = new PixelImage(after.Width, after.Height);
         before.Blit(source, -dx, -dy);
         _preview.SetImages(before, after);
-        string progress = Selected >= 0 && Selected < effects.Count && effects[Selected] is AnimatedEffect a ? $" · 진행 {a.Time * 100:0}%" : "";
+        string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)
+            ? $" · 진행 {a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100:0}%" : "";
         _caption.Text = $"프레임 {f + 1}{where}{progress}";
     }
 
