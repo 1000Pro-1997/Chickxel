@@ -140,13 +140,19 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private readonly ListBox _list;
     private readonly StackPanel _settings;
     private readonly Button _remove, _up, _down, _bake, _play;
-    private readonly CheckBox _effectOnly;
+    private readonly CheckBox _effectOnly, _expandCanvas;
+    private readonly ComboBox _expandMode;
+    private readonly TextBlock _expandNote;
     private readonly TextBlock _caption;
     private readonly PreviewView _preview = new();
     private readonly DispatcherTimer _timer = new();
     private int _previewFrame;
     /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
     private static bool s_effectOnly = true;
+    /// <summary>효과에 맞춘 캔버스 확대 방식. 앱을 켜 둔 동안 유지.</summary>
+    private static EffectCanvasExpandMode s_canvasExpandMode;
+    /// <summary>확인 단추에서 검증·계산한 캔버스 확대(닫힌 뒤 같은 결과를 적용).</summary>
+    private EffectCanvasExpansion? _confirmedCanvasExpansion;
     /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
     private static bool s_seamlessLoop;
     private bool _syncing, _baked;
@@ -214,16 +220,57 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
 
+        _expandCanvas = Ui.Check("효과만큼 캔버스 확대", false);
+        _expandMode = Ui.Combo(110, ["최소한으로", "비율 유지"]);
+        _expandMode.SelectedIndex = (int)s_canvasExpandMode;
+        _expandMode.IsEnabled = false;
+        _expandNote = Ui.Label("");
+        _expandNote.Foreground = AppTheme.DimTextBrush;
+        _expandNote.Margin = new Thickness(3, 0, 0, 2);
+        _expandNote.TextWrapping = TextWrapping.Wrap;
+        _expandNote.MaxWidth = SettingsWidth;
+        _expandNote.IsVisible = false;
+        ToolTip.SetTip(_expandCanvas, "확인할 때 이 레이어의 켜진 효과가 캔버스 밖에서 잘리지 않도록 캔버스를 늘립니다. 그림 크기는 바꾸지 않고 모든 레이어·부위·피벗을 함께 옮깁니다.");
+        ToolTip.SetTip(_expandMode, "최소한으로: 효과가 나간 방향만 필요한 만큼 · 비율 유지: 효과를 모두 담으면서 원래 캔버스 가로세로 비율을 유지");
+        _expandCanvas.IsCheckedChanged += (_, _) =>
+        {
+            _expandMode.IsEnabled = _expandCanvas.On();
+            _expandNote.IsVisible = _expandCanvas.On();
+            SyncCanvasExpansion();
+        };
+        _expandMode.SelectionChanged += (_, _) =>
+        {
+            if (_expandMode.SelectedIndex < 0) return;
+            s_canvasExpandMode = (EffectCanvasExpandMode)_expandMode.SelectedIndex;
+            SyncCanvasExpansion();
+        };
+        OkButton.Click += (_, _) =>
+        {
+            _confirmedCanvasExpansion = null;
+            if (!_expandCanvas.On()) return;
+            try
+            {
+                _confirmedCanvasExpansion = CanvasExpansion(VirtualEffects());
+            }
+            catch (InvalidOperationException ex)
+            {
+                DialogResult = DialogResult.None;
+                Ui.Error(this, ex.Message);
+            }
+        };
+
         string? motionTip = _motionRange != newRange && _motionRange is { } mr
             ? $"추가 범위를 그대로 두고 움직이는 효과(터지기 ~ 충격파 고리)를 추가하면 여러 프레임에 걸치도록 프레임 {mr.From + 1}~{mr.To + 1}로 넓혀 추가합니다."
             : null;
         var rangeLabel = Ui.Label("추가 범위");
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
+        var canvasExpand = Ui.Stack(Ui.Row(_expandCanvas, _expandMode), _expandNote);
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label("프레임"), _addFrom, Ui.Label("~"), _addTo),
             _list,
             Ui.Row(_remove, _up, _down, _bake),
-            Ui.Group("설정", new ScrollViewer { Content = _settings, MaxHeight = 430, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
+            canvasExpand,
+            Ui.Group("설정", new ScrollViewer { Content = _settings, MaxHeight = 390, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
         left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;
@@ -394,6 +441,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         int index = _project.IndexOf(_layer);
         if (index >= 0) _project.PreviewLayerEffects(index, _effects);
         RefreshPreview();
+        SyncCanvasExpansion();
     }
 
     private static string Summary(LayerEffect e) => (e switch
@@ -455,18 +503,38 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (index < 0 || selected < 0) return;
         var list = VirtualEffects().ToList();
         var extension = _extension;
+        EffectCanvasExpansion? expansion = null;
+        try
+        {
+            if (_expandCanvas.On() && CanvasExpansion(list) is { } plan && !plan.IsNone(_project.Width, _project.Height))
+                expansion = plan;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Ui.Error(this, ex.Message);
+            return;
+        }
+        int oldWidth = _project.Width, oldHeight = _project.Height;
         _project.EndLayerEffectsPreview(index, _original, commit: false);
         try
         {
             (IReadOnlyList<LayerEffect>, FrameRange?, int, bool) result = default;
-            var change = ProjectChange.Layers | ProjectChange.Pixels | (extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags);
-            _project.Edit(extension is null ? "효과 영구 적용" : "프레임 늘리기 · 효과 영구 적용", change, () =>
+            var change = ProjectChange.Layers | ProjectChange.Pixels
+                         | (extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags)
+                         | (expansion is null ? 0 : ProjectChange.Canvas | ProjectChange.Frames | ProjectChange.Settings);
+            string label = extension is not null && expansion is not null ? "프레임·캔버스 늘리기 · 효과 영구 적용"
+                : extension is not null ? "프레임 늘리기 · 효과 영구 적용"
+                : expansion is not null ? "캔버스 확대 · 효과 영구 적용" : "효과 영구 적용";
+            _project.Edit(label, change, () =>
             {
                 if (extension is { } ext) _project.ExtendFrames(ext);
                 _project.SetLayerEffects(index, list);
+                if (expansion is { } grow) ApplyCanvasExpansion(grow);
                 result = _project.BakeLayerEffects(index, [selected]);
             });
-            ResultMessage = (extension is { } x ? ExtendSummary(x) + " · " : "") + BakeSummary(result, _layer);
+            ResultMessage = (extension is { } x ? ExtendSummary(x) + " · " : "")
+                            + (expansion is { } grow ? CanvasExpansionSummary(oldWidth, oldHeight, grow) + " · " : "")
+                            + BakeSummary(result, _layer);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {

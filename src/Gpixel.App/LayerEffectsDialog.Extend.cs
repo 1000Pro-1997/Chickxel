@@ -220,6 +220,7 @@ public sealed partial class LayerEffectsDialog
         InvalidateStrip();
         RefreshPreview();
         SyncPlayback();
+        SyncCanvasExpansion();
     }
 
     /// <summary>
@@ -274,23 +275,53 @@ public sealed partial class LayerEffectsDialog
     // ───────────── 확정 ─────────────
 
     /// <summary>
-    /// 미리보기 끝(창이 닫힘): 확인이고 늘리기가 있으면 프레임을 늘리고 효과(늘린 뒤 범위)를 넣는다(실행취소 한 단계), 아니면 효과만 확정·취소.
+    /// 미리보기 끝(창이 닫힘): 확인이면 효과와 선택한 프레임·캔버스 늘리기를 한 실행취소 단계로 확정한다. 취소면 모두 원래대로.
     /// </summary>
     private void EndPreview(int index, bool commit)
     {
-        if (!commit || _extension is not { } x)
+        if (!commit)
         {
-            _project.EndLayerEffectsPreview(index, _original, commit);
+            _project.EndLayerEffectsPreview(index, _original, commit: false);
             return;
         }
         var list = VirtualEffects();
-        _project.EndLayerEffectsPreview(index, _original, commit: false);
-        _project.Edit("레이어 효과 · 프레임 늘리기", ProjectChange.Layers | ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        EffectCanvasExpansion? expansion = null;
+        try
         {
-            _project.ExtendFrames(x);
+            if (_expandCanvas.On())
+            {
+                var plan = _confirmedCanvasExpansion ?? CanvasExpansion(list);
+                if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _project.EndLayerEffectsPreview(index, _original, commit: false);
+            ResultMessage = $"캔버스를 확대하지 못해 효과를 적용하지 않았습니다: {ex.Message}";
+            return;
+        }
+        if (_extension is null && expansion is null)
+        {
+            _project.EndLayerEffectsPreview(index, _original, commit: true);
+            return;
+        }
+        int oldWidth = _project.Width, oldHeight = _project.Height;
+        _project.EndLayerEffectsPreview(index, _original, commit: false);
+        var change = ProjectChange.Layers
+                     | (_extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels)
+                     | (expansion is null ? 0 : ProjectChange.Canvas | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Pixels);
+        string label = _extension is not null && expansion is not null ? "레이어 효과 · 프레임·캔버스 늘리기"
+            : _extension is not null ? "레이어 효과 · 프레임 늘리기" : "레이어 효과 · 캔버스 확대";
+        _project.Edit(label, change, () =>
+        {
+            if (_extension is { } ext) _project.ExtendFrames(ext);
             _project.SetLayerEffects(index, list);
+            if (expansion is { } grow) ApplyCanvasExpansion(grow);
         });
-        ResultMessage = ExtendSummary(x) + " — Ctrl+Z로 되돌립니다.";
+        ResultMessage = (_extension is { } x ? ExtendSummary(x) : "")
+                        + (_extension is not null && expansion is not null ? " · " : "")
+                        + (expansion is { } grow ? CanvasExpansionSummary(oldWidth, oldHeight, grow) : "")
+                        + " — Ctrl+Z로 되돌립니다.";
     }
 
     /// <summary>"프레임 1~4: 4개 → 12개로 늘림 (같은 비율로)".</summary>

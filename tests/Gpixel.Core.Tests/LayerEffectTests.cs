@@ -432,6 +432,33 @@ public class LayerEffectTests
         Assert.Equal(new FrameRange(6, 6), Range(1));
     }
 
+    [Fact]
+    public void EffectCanvasExpansion_MinimumAddsOnlyOverflowingSides()
+    {
+        var plan = EffectCanvasExpansion.FromBounds(16, 8, new Rectangle(-3, 2, 22, 7), EffectCanvasExpandMode.Minimum);
+
+        Assert.Equal(new EffectCanvasExpansion(22, 9, 3, 0, false), plan);
+        Assert.False(plan.IsNone(16, 8));
+    }
+
+    [Fact]
+    public void EffectCanvasExpansion_KeepRatioAddsCenteredSlack()
+    {
+        var plan = EffectCanvasExpansion.FromBounds(16, 8, new Rectangle(-3, 2, 22, 7), EffectCanvasExpandMode.KeepRatio);
+
+        Assert.Equal(new EffectCanvasExpansion(22, 11, 3, 1, true), plan);
+        Assert.Equal(2d, (double)plan.Width / plan.Height, 1);
+    }
+
+    [Fact]
+    public void EffectCanvasExpansion_InsideCanvasDoesNothing()
+    {
+        var plan = EffectCanvasExpansion.FromBounds(16, 8, new Rectangle(2, 1, 10, 6), EffectCanvasExpandMode.KeepRatio);
+
+        Assert.True(plan.IsNone(16, 8));
+        Assert.True(plan.RatioPreserved);
+    }
+
     [Theory]
     [InlineData(0, 4, 5, null, null)]
     [InlineData(1, 9, 5, 1, 4)]

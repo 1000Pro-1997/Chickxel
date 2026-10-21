@@ -9,6 +9,62 @@ public readonly record struct EffectPadding(int Left, int Top, int Right, int Bo
     public bool IsNone => Left == 0 && Top == 0 && Right == 0 && Bottom == 0;
 }
 
+/// <summary>효과가 캔버스 밖으로 나간 부분을 담도록 캔버스를 늘리는 방식.</summary>
+public enum EffectCanvasExpandMode
+{
+    /// <summary>필요한 방향만 필요한 픽셀 수만큼 늘린다.</summary>
+    Minimum,
+    /// <summary>필요한 크기를 담는 범위에서 원래 캔버스 가로세로 비율을 유지한다.</summary>
+    KeepRatio,
+}
+
+/// <summary>효과를 담을 새 캔버스 크기와 그 안에서 원래 캔버스 왼쪽 위가 놓일 자리.</summary>
+public readonly record struct EffectCanvasExpansion(int Width, int Height, int OffsetX, int OffsetY, bool RatioPreserved)
+{
+    public bool IsNone(int oldWidth, int oldHeight)
+        => Width == oldWidth && Height == oldHeight && OffsetX == 0 && OffsetY == 0;
+
+    /// <summary>
+    /// 원래 <paramref name="width"/>×<paramref name="height"/> 캔버스와 효과 결과 <paramref name="effectBounds"/>를 모두 담는 가장 작은 확대.
+    /// 비율 유지 결과가 이미지 최대 크기를 넘으면 효과를 자르지 않는 최소 확대를 돌려주고 <see cref="RatioPreserved"/>는 false다.
+    /// </summary>
+    public static EffectCanvasExpansion FromBounds(int width, int height, Rectangle effectBounds, EffectCanvasExpandMode mode)
+    {
+        if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
+            throw new ArgumentOutOfRangeException(nameof(width), $"캔버스 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}×{height}");
+        var required = effectBounds.IsEmpty
+            ? new Rectangle(0, 0, width, height)
+            : Rectangle.Union(new Rectangle(0, 0, width, height), effectBounds);
+        long left = Math.Max(0L, -(long)required.Left), top = Math.Max(0L, -(long)required.Top);
+        long right = Math.Max(0L, (long)required.Right - width), bottom = Math.Max(0L, (long)required.Bottom - height);
+        long minimumWidth = width + left + right, minimumHeight = height + top + bottom;
+        if (minimumWidth > PixelImage.MaxSize || minimumHeight > PixelImage.MaxSize)
+            throw new InvalidOperationException($"효과를 자르지 않고 담으려면 캔버스가 {minimumWidth}×{minimumHeight}px여야 합니다(최대 {PixelImage.MaxSize}×{PixelImage.MaxSize}px).");
+
+        int resultWidth = (int)minimumWidth, resultHeight = (int)minimumHeight;
+        bool kept = mode == EffectCanvasExpandMode.KeepRatio;
+        if (kept)
+        {
+            double scale = Math.Max((double)resultWidth / width, (double)resultHeight / height);
+            int ratioWidth = Math.Max(resultWidth, (int)Math.Ceiling(width * scale - 1e-9));
+            int ratioHeight = Math.Max(resultHeight, (int)Math.Ceiling(height * scale - 1e-9));
+            if (ratioWidth <= PixelImage.MaxSize && ratioHeight <= PixelImage.MaxSize)
+            {
+                int extraX = ratioWidth - resultWidth, extraY = ratioHeight - resultHeight;
+                left += extraX / 2;
+                top += extraY / 2;
+                resultWidth = ratioWidth;
+                resultHeight = ratioHeight;
+            }
+            else
+            {
+                kept = false;
+            }
+        }
+        return new EffectCanvasExpansion(resultWidth, resultHeight, (int)left, (int)top, kept);
+    }
+}
+
 /// <summary>
 /// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 효과 목록은 앞에서부터 차례로 적용되고(앞 효과의 결과가 다음 효과의 입력), 꺼진 효과는 건너뛴다.
 /// 모양은 알파가 0이 아닌 픽셀이다. 바깥 외곽선·그림자·반사·터지기·늘었다 줄기는 그림 밖으로 번지므로 <see cref="Render(PixelImage, IReadOnlyList{LayerEffect})"/>는 그만큼(<see cref="Padding"/>)
