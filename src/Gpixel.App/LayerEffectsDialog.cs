@@ -345,6 +345,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void Remove()
     {
         if (Selected is var i && i < 0) return;
+        var removed = _effects[i];
+        if (ReferenceEquals(removed, _extensionOwner)) SetExtension(null);
+        if (ReferenceEquals(removed, _preferExistingFor))
+        {
+            _preferExistingFor = null;
+            _preferExisting = null;
+        }
         _effects.RemoveAt(i);
         RebuildList(Math.Min(i, _effects.Count - 1));
     }
@@ -359,11 +366,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private readonly DragReorder _drag = new();
 
-    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다.</summary>
+    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다. 늘리기 소유 효과도 새 불변 사본을 따라간다.</summary>
     private void Update(int index, LayerEffect effect)
     {
         if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
+        var old = _effects[index];
         _effects[index] = effect;
+        if (ReferenceEquals(old, _extensionOwner)) _extensionOwner = effect;
+        if (ReferenceEquals(old, _preferExistingFor)) _preferExistingFor = effect;
         if (_list.Items[index] is ListBoxItem { Content: StackPanel { Children: [CheckBox check, TextBlock text] } })
         {
             _syncing = true;
