@@ -8,10 +8,13 @@ public static class Platform
 {
     public static bool IsMac => OperatingSystem.IsMacOS();
 
-    /// <summary>앱 설정 바탕 폴더(Windows: %AppData%, macOS: ~/Library/Application Support, Linux: ~/.config).</summary>
-    public static string AppDataDirectory => Environment.GetFolderPath(IsMac
-        ? Environment.SpecialFolder.LocalApplicationData
-        : Environment.SpecialFolder.ApplicationData);
+    /// <summary>설정 바탕 폴더를 바꾸는 환경 변수(시험용) — 설정·휴지통·기록·오류 로그가 모두 그 아래 Gpixel 폴더로 간다.</summary>
+    public const string DataDirVariable = "GPIXEL_DATA_DIR";
+
+    /// <summary>앱 설정 바탕 폴더(Windows: %AppData%, macOS: ~/Library/Application Support, Linux: ~/.config, <see cref="DataDirVariable"/>가 있으면 그것).</summary>
+    public static string AppDataDirectory => Environment.GetEnvironmentVariable(DataDirVariable) is { Length: > 0 } dir
+        ? dir
+        : Environment.GetFolderPath(IsMac ? Environment.SpecialFolder.LocalApplicationData : Environment.SpecialFolder.ApplicationData);
 
     /// <summary>메뉴에 쓰는 파일 관리자 이름.</summary>
     public static string FileManagerName => OperatingSystem.IsWindows() ? "탐색기" : IsMac ? "Finder" : "파일 관리자";

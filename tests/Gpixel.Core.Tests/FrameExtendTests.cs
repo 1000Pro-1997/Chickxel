@@ -167,4 +167,16 @@ public class FrameExtendTests
         Assert.Equal(new FrameRange(9, 9), x.MapRange(new FrameRange(5, 5)));
         Assert.Equal(4, Enumerable.Range(0, 10).Count(x.IsCopy));
     }
+
+    [Theory]
+    [InlineData(4, 2, 4)]     // 범위보다 짧게 → 범위 길이(줄이기 없음)
+    [InlineData(4, 12, 12)]
+    [InlineData(26, 268, 256)] // 다른 범위가 늘어 보이는 길이 → 최대 프레임 수
+    [InlineData(300, 400, 300)] // 범위가 이미 최대보다 길면 그 길이
+    public void FrameExtension_ClampCount_GivesConstructibleCount(int length, int count, int expected)
+    {
+        int clamped = FrameExtension.ClampCount(length, count);
+        Assert.Equal(expected, clamped);
+        Assert.Equal(clamped, new FrameExtension(0, length - 1, clamped, FrameExtendMode.Stretch).Count);
+    }
 }

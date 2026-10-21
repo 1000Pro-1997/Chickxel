@@ -45,6 +45,12 @@ public readonly record struct FrameExtension
     /// <summary>더해지는 프레임 수(Count − n).</summary>
     public int Added => Count - Length;
 
+    /// <summary>
+    /// 길이 <paramref name="length"/>인 범위를 늘릴 수 있는 프레임 수로 맞춘다: 범위 길이 이상, <see cref="MaxCount"/> 이하(범위가 이미 그보다 길면 그 길이).
+    /// 다른 범위가 늘어나 보이는 프레임 수처럼 그 밖의 값을 받은 곳에서 생성자에 넘기기 전에 쓴다.
+    /// </summary>
+    public static int ClampCount(int length, int count) => Math.Clamp(count, length, Math.Max(length, MaxCount));
+
     /// <summary>늘린 범위의 <paramref name="k"/>번째(0 ~ Count−1) 자리가 원래 범위의 몇 번째(0 ~ n−1) 프레임인지.</summary>
     public int SourceOf(int k) => Mode switch
     {

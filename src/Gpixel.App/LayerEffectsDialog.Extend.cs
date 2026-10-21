@@ -92,7 +92,8 @@ public sealed partial class LayerEffectsDialog
             var (f, t) = RangeOf(e);
             int c = (int)count.NumValue();
             if (UsesExisting(e)) SetRangeLength(_extendFor, c);
-            else SetExtension(new FrameExtension(f, t, Math.Max(t - f + 1, c), s_extendMode));
+            // 칸은 다른 범위의 늘리기로 늘어 보이는 길이(MaxCount 넘을 수 있음)까지 보이므로, 이 범위의 새 늘리기는 늘릴 수 있는 수로 맞춘다
+            else SetExtension(new FrameExtension(f, t, FrameExtension.ClampCount(t - f + 1, c), s_extendMode));
         };
         mode.SelectionChanged += (_, _) =>
         {
@@ -138,9 +139,9 @@ public sealed partial class LayerEffectsDialog
         int n = _project.Frames.Count;
         var (from, _) = RangeOf(e);
         _preferExisting = true;
-        if (Anchored(e) is not null) _extension = null;
+        // 늘리기를 없애면 칸 수가 바뀐다 — 범위가 그대로여도(Update가 아무것도 안 함) 프레임 줄·미리보기를 맞춘다.
+        if (Anchored(e) is not null) SetExtension(null);
         Update(i, e with { Frames = FrameRange.Of(from, Math.Clamp(from + length - 1, from, n - 1), n) });
-        _previewFrame = Math.Clamp(_previewFrame, 0, VirtualCount - 1);
         ShowSettings(); // 범위 숫자 칸·범위 길이 안내 갱신
         SyncPlayback();
     }
@@ -159,8 +160,9 @@ public sealed partial class LayerEffectsDialog
         if (existing)
         {
             WithKind(count, CountKind(n, frames - from));
-            count.Maximum = Math.Max(n, frames - from);
+            // 최소를 먼저 1로: 최대를 먼저 줄이면 그때의 최소(다른 방법일 때의 범위 길이) 아래로 못 내려가 큰 최대가 남는다(NumericUpDown 강제 조정).
             count.Minimum = 1;
+            count.Maximum = Math.Max(n, frames - from);
             count.Value = n;
             mode.SelectedIndex = 0;
             note.Text = after > 0 ? $"뒤에 프레임 {after}개 있음" : "뒤에 프레임 없음 — 더하려면 다른 방법";
@@ -243,7 +245,7 @@ public sealed partial class LayerEffectsDialog
         int n = hi - lo + 1;
         var next = _extension;
         if (b >= cells || copies)
-            next = new FrameExtension(lo, hi, Math.Clamp(b - a + 1, n, Math.Max(n, FrameExtension.MaxCount)), s_extendMode);
+            next = new FrameExtension(lo, hi, FrameExtension.ClampCount(n, b - a + 1), s_extendMode);
         else if (_extension is { } x && RangeOf(_effects[Selected]) == (x.From, x.To))
             next = null; // 늘린 범위를 원래 칸 안으로 다시 고름
         SetRangeFromStrip(range);

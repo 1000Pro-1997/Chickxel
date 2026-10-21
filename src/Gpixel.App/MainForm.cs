@@ -753,6 +753,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         AddItems(help,
             Cmd("단축키 목록", ShowShortcuts, "F1", KeyScope.Global, (Key.F1, NoMods)),
             Cmd("설정 파일 위치 열기", OpenSettingsFolder),
+            Cmd("오류 로그 폴더 열기", OpenLogFolder),
             new Separator(),
             Cmd("업데이트 확인…", () => _ = _updater.CheckAsync(manual: true)),
             Cmd("Gpixel 정보…", () => new AboutDialog().ShowDialog(this)));
@@ -996,6 +997,10 @@ public sealed class MainForm : Window, Ai.IAiHost
         // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
         ColorPickDialog.Sources = () => new ColorPickSources(_colors.Palettes, _ctx.RecentColors.ToList(),
             () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null);
+
+        // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(지금 문서 + 메모리에 남겨 둔 문서).
+        CrashGuard.UnsavedProjects = () => (_ctx.Project is { IsDirty: true } p ? [p] : Array.Empty<SpriteProject>())
+            .Concat(_docs.Items.Select(d => d.Project));
 
         // 숫자 상자를 끄는 동안의 값 변화(프로젝트 설정 등)는 실행취소 한 단계로 묶는다. Claude 차례처럼 이미 열린 묶음이 있으면 그 안에 둔다.
         SpriteProject? scrubProject = null;
@@ -1275,6 +1280,15 @@ public sealed class MainForm : Window, Ai.IAiHost
         SaveSettings();
         try { Platform.OpenFolder(dir); }
         catch (IOException ex)
+        {
+            Ui.Error(this, ex.Message);
+        }
+    }
+
+    private void OpenLogFolder()
+    {
+        try { CrashGuard.OpenLogFolder(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Ui.Error(this, ex.Message);
         }

@@ -292,32 +292,50 @@ public static class Ui
 
     /// <summary>
     /// 작업이 끝날 때까지 UI 메시지를 돌리며 기다린다(중첩 디스패처 프레임). 대화상자를 WinForms처럼 동기로 쓰기 위한 것.
-    /// UI 스레드에서만 부른다.
+    /// UI 스레드에서만 부른다. 프레임 밖으로 던져진 예외(macOS 창 이벤트 예외)는 <see cref="CrashGuard.Recover"/>가 알린 뒤 계속 기다린다.
     /// </summary>
     public static T Wait<T>(Task<T> task)
     {
-        if (!task.IsCompleted)
+        while (!task.IsCompleted)
         {
             var frame = new DispatcherFrame();
             task.ContinueWith(_ => Dispatcher.UIThread.Post(() => frame.Continue = false), TaskScheduler.Default);
-            Dispatcher.UIThread.PushFrame(frame);
+            try
+            {
+                Dispatcher.UIThread.PushFrame(frame);
+                break;
+            }
+            catch (Exception e) when (CrashGuard.Recover(e, "대화상자 실행 루프"))
+            {
+                // 알렸으니 대화상자를 계속 돌린다.
+            }
         }
         return task.GetAwaiter().GetResult();
     }
 
     public static void Wait(Task task) => Wait(task.ContinueWith(t => { t.GetAwaiter().GetResult(); return 0; }, TaskScheduler.Default));
 
-    /// <summary>창을 모달로 띄우고 닫힐 때까지 기다린다(주인 창이 없으면 그냥 띄움).</summary>
+    /// <summary>
+    /// 창을 모달로 띄우고 닫힐 때까지 기다린다(주인 창이 없으면 그냥 띄움). <see cref="DialogBase"/>는 닫힘 처리기(Closed)가 예외를 내
+    /// 결과가 오지 않아도(<see cref="CrashGuard"/>가 알림 — 그 뒤 처리기와 결과 알림이 건너뛰어짐) 창이 닫혔으면 더 기다리지 않는다(기본값).
+    /// </summary>
     public static T? ShowModal<T>(Window dialog, Visual? owner)
     {
         var o = Owner(owner);
-        if (o is { IsVisible: true } && !ReferenceEquals(o, dialog)) return Wait(dialog.ShowDialog<T>(o));
-        var tcs = new TaskCompletionSource<T?>();
-        T? result = default;
-        dialog.Closed += (_, _) => tcs.TrySetResult(result);
-        dialog.Closing += (_, _) => { if (dialog is DialogBase db && db.DialogResult is var r && r is T t) result = t; };
-        dialog.Show();
-        return Wait(tcs.Task);
+        Task<T?> result;
+        if (o is { IsVisible: true } && !ReferenceEquals(o, dialog)) result = dialog.ShowDialog<T?>(o);
+        else
+        {
+            var tcs = new TaskCompletionSource<T?>();
+            T? value = default;
+            dialog.Closed += (_, _) => tcs.TrySetResult(value);
+            dialog.Closing += (_, _) => { if (dialog is DialogBase db && db.DialogResult is var r && r is T t) value = t; };
+            dialog.Show();
+            result = tcs.Task;
+        }
+        if (dialog is not DialogBase closing) return Wait(result);
+        Wait(Task.WhenAny(result, closing.ClosedTask));
+        return result.IsCompleted ? result.GetAwaiter().GetResult() : default;
     }
 
     // ───────────── 알림 ─────────────
@@ -505,12 +523,53 @@ public class DialogBase : Window
         _buttons.Children.Insert(_buttons.Children.IndexOf(CancelButtonControl), b);
         return b;
     }
+
+    private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>창이 닫히면 끝나는 작업 — Closed 처리기보다 먼저 끝나므로 처리기가 예외를 내도 끝난다(<see cref="Ui.ShowModal{T}"/>).</summary>
+    internal Task ClosedTask => _closed.Task;
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _closed.TrySetResult();
+        base.OnClosed(e);
+    }
 }
 
 /// <summary>메시지 상자.</summary>
 internal sealed class MessageDialog : DialogBase
 {
     public MessageDialog(string message, string title, MessageButtons buttons, MessageIcon icon) : base(title)
+    {
+        Body.Children.Add(MessageRow(message, icon));
+        Body.MinWidth = 280;
+        switch (buttons)
+        {
+            case MessageButtons.OK:
+                OkButton.IsVisible = true;
+                OkButton.IsCancel = true; // Esc로도 닫힌다(Windows MessageBox와 같게).
+                CancelButtonControl.IsVisible = false;
+                break;
+            case MessageButtons.OKCancel:
+                break;
+            case MessageButtons.YesNo:
+                OkButton.Content = "예";
+                SetButtonResult(OkButton, DialogResult.Yes);
+                CancelButtonControl.Content = "아니요";
+                SetButtonResult(CancelButtonControl, DialogResult.No);
+                break;
+            case MessageButtons.YesNoCancel:
+                OkButton.Content = "예";
+                SetButtonResult(OkButton, DialogResult.Yes);
+                AddButton("아니요", DialogResult.No);
+                break;
+        }
+        _noOnClose = buttons == MessageButtons.YesNo;
+        Opened += (_, _) => (OkButton.IsVisible ? OkButton : CancelButtonControl).Focus();
+    }
+
+    /// <summary>메시지 상자 본문: 왼쪽 아이콘 동그라미(아이콘 없으면 생략) + 고를 수 있는 메시지 글.</summary>
+    internal static Control MessageRow(string message, MessageIcon icon)
     {
         VectorIcon? mark = icon switch
         {
@@ -543,32 +602,7 @@ internal sealed class MessageDialog : DialogBase
             row.Children.Add(badge);
         }
         row.Children.Add(new SelectableTextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 520, VerticalAlignment = VerticalAlignment.Center });
-        Body.Children.Add(row);
-        Body.MinWidth = 280;
-
-        switch (buttons)
-        {
-            case MessageButtons.OK:
-                OkButton.IsVisible = true;
-                OkButton.IsCancel = true; // Esc로도 닫힌다(Windows MessageBox와 같게).
-                CancelButtonControl.IsVisible = false;
-                break;
-            case MessageButtons.OKCancel:
-                break;
-            case MessageButtons.YesNo:
-                OkButton.Content = "예";
-                SetButtonResult(OkButton, DialogResult.Yes);
-                CancelButtonControl.Content = "아니요";
-                SetButtonResult(CancelButtonControl, DialogResult.No);
-                break;
-            case MessageButtons.YesNoCancel:
-                OkButton.Content = "예";
-                SetButtonResult(OkButton, DialogResult.Yes);
-                AddButton("아니요", DialogResult.No);
-                break;
-        }
-        _noOnClose = buttons == MessageButtons.YesNo;
-        Opened += (_, _) => (OkButton.IsVisible ? OkButton : CancelButtonControl).Focus();
+        return row;
     }
 
     private readonly bool _noOnClose;

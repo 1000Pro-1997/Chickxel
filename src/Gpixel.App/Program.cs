@@ -64,12 +64,12 @@ public sealed class App : Application
 
 static class Program
 {
-    /// <summary>앱 진입점.</summary>
+    /// <summary>앱 진입점. 처리하지 못한 예외는 <see cref="CrashGuard"/>가 로그를 남기고 알린 뒤 앱을 계속 돌린다.</summary>
     [STAThread]
-    static void Main(string[] args)
+    static int Main(string[] args)
     {
         App.Args = StartupArgs.Parse(args);
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        return CrashGuard.Run(BuildAvaloniaApp(), args);
     }
 
     public static AppBuilder BuildAvaloniaApp()

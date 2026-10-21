@@ -18,6 +18,8 @@ public sealed partial class LayerEffectsDialog
     {
         _strip.FrameClicked += f =>
         {
+            // 칸 그림은 잠깐 모았다가 그리므로(_stripTimer) 줄이 아직 이전 칸 수일 수 있다 — 지금 없는 프레임 칸은 무시
+            if (f >= VirtualCount) return;
             _timer.Stop();
             _play.Content = Ui.IconLabel(VectorIcon.Play, "재생");
             _previewFrame = f;
@@ -25,6 +27,7 @@ public sealed partial class LayerEffectsDialog
         };
         _strip.DragStarted += () => _dragBase = (_extension, VirtualCount);
         _strip.RangeDragged += DragRange;
+        _strip.RenderRequested += RenderStrip;
         // 효과를 바꿀 때마다 모든 프레임을 다시 그리지 않도록 잠깐 모았다가 그린다.
         _stripTimer.Tick += (_, _) =>
         {
@@ -114,8 +117,8 @@ public sealed partial class LayerEffectsDialog
         private (int From, int To) _range;
         private int _current, _press = -1, _dragTo = -1;
         private bool _dragging;
-        /// <summary>끄는 동안 미룬 칸 다시 그리기(칸 수가 바뀌면 끄는 칸 차례가 흔들리지 않게 놓을 때 그림).</summary>
-        private Action? _deferred;
+        /// <summary>끄는 동안 칸 수가 바뀌어 다시 그리기를 미뤘는지(칸 차례가 흔들리지 않게 — 놓을 때 <see cref="RenderRequested"/>).</summary>
+        private bool _stale;
 
         public FrameStrip()
         {
@@ -133,6 +136,9 @@ public sealed partial class LayerEffectsDialog
 
         /// <summary>끄는 중: 누른 칸 ~ 지금 칸(작은 쪽, 큰 쪽). <see cref="CanExtend"/>면 큰 쪽이 칸 수 이상(마지막 칸 너머)일 수 있다.</summary>
         public event Action<int, int>? RangeDragged;
+
+        /// <summary>놓음: 끄는 동안 미룬 칸 다시 그리기 — 받는 쪽이 지금 상태로 <see cref="SetFrames"/>를 다시 부른다.</summary>
+        public event Action? RenderRequested;
 
         /// <summary>마지막 칸 너머로 끌어 늘릴 수 있는지.</summary>
         public bool CanExtend { get; set; }
@@ -164,9 +170,10 @@ public sealed partial class LayerEffectsDialog
         {
             if (_dragging && count != _thumbs.Length)
             {
-                _deferred = () => SetFrames(count, render, isCopy);
+                _stale = true;
                 return;
             }
+            _stale = false;
             Dispose();
             _thumbs = new WriteableBitmap?[count];
             _copies = new bool[count];
@@ -232,11 +239,12 @@ public sealed partial class LayerEffectsDialog
         {
             _press = _dragTo = -1;
             _dragging = false;
-            var deferred = _deferred;
-            _deferred = null;
-            deferred?.Invoke();
             UpdateWidth();
             InvalidateVisual();
+            if (!_stale) return;
+            // 미룬 동안 늘리기가 또 바뀌었을 수 있으므로 그때 받은 칸 수·그리기가 아니라 지금 상태로 다시 그린다.
+            _stale = false;
+            RenderRequested?.Invoke();
         }
 
         private static Rect CellRect(int f) => new(Gap + f * (Cell + Gap), 3, Cell, Cell);
