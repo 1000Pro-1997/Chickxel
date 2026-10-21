@@ -34,13 +34,16 @@ public sealed partial class LayerEffectsDialog
             _stripTimer.Stop();
             RenderStrip();
         };
+        // 칸이 너비를 넘으면 다음 줄로(세로 스크롤은 여러 줄이 넘칠 때만).
+        _strip.Width = PreviewBox * 2 + 12 - 14;
         RenderStrip();
         return new ScrollViewer
         {
             Content = _strip,
             Width = PreviewBox * 2 + 12,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            MaxHeight = FrameStrip.HeightFor(3),
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
         };
     }
 
@@ -101,10 +104,13 @@ public sealed partial class LayerEffectsDialog
         return LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height)).Image;
     }
 
-    /// <summary>프레임 칸 줄(가로 스크롤). 칸 = 효과를 입힌 그림 + 프레임 번호.</summary>
+    /// <summary>프레임 칸(너비가 차면 다음 줄로 줄바꿈, 세로 스크롤). 칸 = 효과를 입힌 그림 + 프레임 번호.</summary>
     private sealed class FrameStrip : Control, IDisposable
     {
-        private const int Cell = 44, Gap = 2;
+        private const int Cell = 44, Gap = 2, RowPitch = Cell + 4, Top = 3;
+
+        /// <summary><paramref name="rows"/>줄일 때 높이.</summary>
+        public static double HeightFor(int rows) => Top + Math.Max(1, rows) * RowPitch - 1;
         private static readonly IBrush RangeBrush = AppTheme.Brush(Color.FromArgb(70, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
         private static readonly IBrush OutsideBrush = AppTheme.Brush(Color.FromArgb(140, 0, 0, 0));
         private static readonly IPen CurrentPen = new Pen(Brushes.White, 2);
@@ -122,8 +128,9 @@ public sealed partial class LayerEffectsDialog
 
         public FrameStrip()
         {
-            Height = Cell + 6;
-            HorizontalAlignment = HorizontalAlignment.Left; // 칸이 늘어도(끌어 늘리기) 앞 칸 자리가 그대로
+            Height = HeightFor(1);
+            HorizontalAlignment = HorizontalAlignment.Left;
+            VerticalAlignment = VerticalAlignment.Top; // 줄이 늘어도(끌어 늘리기) 앞 칸 자리가 그대로
             Cursor = new Cursor(StandardCursorType.Hand);
             ToolTip.SetTip(this, "누르면 그 프레임을 보고, 끌면 프레임 범위를 정합니다. 효과를 고른 채 마지막 칸 너머로 끌면 프레임을 늘립니다(점선 칸).");
         }
@@ -186,15 +193,37 @@ public sealed partial class LayerEffectsDialog
             InvalidateVisual();
         }
 
-        private void UpdateWidth() => Width = Math.Max(1, Math.Max(_thumbs.Length, _dragTo + 1) * (Cell + Gap) + Gap);
+        /// <summary>한 줄에 들어가는 칸 수(너비 기준).</summary>
+        private int Columns
+        {
+            get
+            {
+                double w = double.IsNaN(Width) ? Bounds.Width : Width;
+                return Math.Max(1, (int)Math.Floor((w - Gap) / (Cell + Gap)));
+            }
+        }
 
-        private int CellAt(double x) => Math.Max(0, (int)Math.Floor((x - Gap) / (Cell + Gap)));
+        /// <summary>칸 수(끄는 중 늘린 빈 칸 포함)에 맞춰 줄 수 = 높이를 정한다.</summary>
+        private void UpdateWidth()
+        {
+            int cells = Math.Max(1, Math.Max(_thumbs.Length, _dragTo + 1));
+            Height = HeightFor((cells + Columns - 1) / Columns);
+        }
+
+        /// <summary>점 아래 칸 번호: 줄 × 한 줄 칸 수 + 열(오른쪽 밖은 그 줄 끝 칸, 마지막 줄 아래는 그다음 줄 = 칸 수 너머).</summary>
+        private int CellAt(Avalonia.Point p)
+        {
+            int cols = Columns;
+            int col = Math.Clamp((int)Math.Floor((p.X - Gap) / (Cell + Gap)), 0, cols - 1);
+            int row = Math.Max(0, (int)Math.Floor((p.Y - Top) / RowPitch));
+            return row * cols + col;
+        }
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
             if (_thumbs.Length == 0 || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-            _press = Math.Min(CellAt(e.GetPosition(this).X), _thumbs.Length - 1);
+            _press = Math.Min(CellAt(e.GetPosition(this)), _thumbs.Length - 1);
             _dragging = false;
             DragStarted?.Invoke();
             e.Pointer.Capture(this);
@@ -205,7 +234,7 @@ public sealed partial class LayerEffectsDialog
         {
             base.OnPointerMoved(e);
             if (_press < 0) return;
-            int f = Math.Min(CellAt(e.GetPosition(this).X), CanExtend ? _thumbs.Length + FrameExtension.MaxCount : _thumbs.Length - 1);
+            int f = Math.Min(CellAt(e.GetPosition(this)), CanExtend ? _thumbs.Length + FrameExtension.MaxCount : _thumbs.Length - 1);
             if (!_dragging && f == _press) return;
             _dragging = true;
             if (f != _dragTo)
@@ -247,7 +276,22 @@ public sealed partial class LayerEffectsDialog
             RenderRequested?.Invoke();
         }
 
-        private static Rect CellRect(int f) => new(Gap + f * (Cell + Gap), 3, Cell, Cell);
+        private Rect CellRect(int f)
+        {
+            int cols = Columns;
+            return new(Gap + f % cols * (Cell + Gap), Top + f / cols * RowPitch, Cell, Cell);
+        }
+
+        /// <summary>칸 <paramref name="from"/>~<paramref name="to"/>을 줄마다 덮는 사각형(줄바꿈되면 줄마다 하나).</summary>
+        private IEnumerable<Rect> RangeRects(int from, int to)
+        {
+            int cols = Columns;
+            for (int row = from / cols; row <= to / cols; row++)
+            {
+                int a = Math.Max(from, row * cols), b = Math.Min(to, row * cols + cols - 1);
+                yield return new Rect(Gap / 2.0 + a % cols * (Cell + Gap), Top - 2 + row * RowPitch, (b - a + 1) * (Cell + Gap), Cell + 4);
+            }
+        }
 
         public override void Render(DrawingContext g)
         {
@@ -255,7 +299,7 @@ public sealed partial class LayerEffectsDialog
             if (_thumbs.Length == 0) return;
             // 끄는 동안은 누른 때의 칸 차례로 끈 칸을, 아니면 받은 범위를 보인다.
             var (from, to) = _dragging && _dragTo >= 0 ? (Math.Min(_press, _dragTo), Math.Max(_press, _dragTo)) : _range;
-            g.FillRectangle(RangeBrush, new Rect(Gap / 2.0 + from * (Cell + Gap), 0, (to - from + 1) * (Cell + Gap), Bounds.Height));
+            foreach (var r in RangeRects(from, to)) g.FillRectangle(RangeBrush, r);
             for (int f = 0; f < _thumbs.Length; f++)
             {
                 var cell = CellRect(f);
@@ -278,7 +322,7 @@ public sealed partial class LayerEffectsDialog
                 AppTheme.DrawTextIn(g, "+", cell, AppTheme.DimTextBrush, center: true);
                 AppTheme.DrawTextIn(g, (f + 1).ToString(), new Rect(cell.X + 2, cell.Bottom - 14, cell.Width - 4, 13), AppTheme.TextBrush, AppTheme.SmallFontSize - 1);
             }
-            g.DrawRectangle(null, RangePen, new Rect(Gap / 2.0 + from * (Cell + Gap) + 1, 1, (to - from + 1) * (Cell + Gap) - 2, Bounds.Height - 2));
+            foreach (var r in RangeRects(from, to)) g.DrawRectangle(null, RangePen, r.Deflate(1));
             if (_current >= 0 && _current < _thumbs.Length)
                 g.DrawRectangle(null, CurrentPen, CellRect(_current).Deflate(1));
         }
