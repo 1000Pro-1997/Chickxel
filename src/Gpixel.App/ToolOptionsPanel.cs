@@ -95,7 +95,7 @@ public sealed class ToolOptionsPanel : UserControl
             _ctx.BrushShape = Shapes[_shapes.SelectedIndex].Shape;
             Refresh();
         };
-        _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v);
+        _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32);
         _sizeNum.Tip($"브러시 크기 1~{BrushFootprint.MaxSize} — 좌우로 끌거나 [ / ]");
         var brushRight = new StackPanel { Spacing = 4, Children = { _shapes, Ui.Row(Ui.Label("크기"), _sizeNum) } };
         _brushPreview.Margin = new Thickness(0, 0, 6, 0);

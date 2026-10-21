@@ -101,7 +101,10 @@ public sealed class MainForm : Window, Ai.IAiHost
     private ToggleButton _tbFiles = null!;
     /// <summary>도구 막대 아래 끝 저장·되돌리기 단추(<see cref="UpdateSaveButtons"/>가 켜고 끈다).</summary>
     private Button _tbSave = null!, _tbRevert = null!;
-    private TextBlock _cbToolName = null!, _cbHint = null!, _cbZoom = null!;
+    private TextBlock _cbToolName = null!, _cbHint = null!;
+    /// <summary>확대율 숫자 상자(%): 클릭 = 직접 입력, 좌우로 끌기 = 바꾸기, 우클릭 = 화면에 맞추기·대표 배율 목록.</summary>
+    private NumericUpDown _cbZoom = null!;
+    private bool _syncingZoom;
     private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFit = null!;
     /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
     private Button _cbUpdate = null!;
@@ -427,8 +430,7 @@ public sealed class MainForm : Window, Ai.IAiHost
             };
         right.Children.Add(BarSeparator());
         BarButton(right, "－", "축소 (Ctrl+-)", () => _canvas.ZoomStep(-1));
-        _cbZoom = new TextBlock { Text = "800%", TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        right.Children.Add(ZoomPicker());
+        right.Children.Add(_cbZoom = ZoomBox());
         BarButton(right, "＋", "확대 (Ctrl+=)", () => _canvas.ZoomStep(1));
         _cbFit = Toggle(right, "맞추기", "켜면 이미지를 열 때마다 화면에 맞춥니다(켜는 순간에도 한 번 맞춤) · Ctrl+0: 지금 맞추기", () =>
         {
@@ -470,36 +472,40 @@ public sealed class MainForm : Window, Ai.IAiHost
         };
     }
 
-    /// <summary>확대율 글자: 누르면 대표 배율(100%~6400%)과 "화면에 맞추기"가 든 목록.</summary>
-    private Button ZoomPicker()
+    /// <summary>
+    /// 확대율 숫자 상자(100%~6400%, 캔버스 배율은 정수 배라 가까운 배율로 맞춤): 클릭하면 직접 입력, 좌우로 끌면 한 배씩,
+    /// 우클릭하면 "화면에 맞추기"와 대표 배율 목록(공통 숫자 상자 메뉴).
+    /// </summary>
+    private NumericUpDown ZoomBox()
     {
-        List<Control> Items()
+        var box = Ui.Num(100, 6400, _canvas.Zoom * 100, 70, increment: 100);
+        box.Margin = new Thickness(1);
+        box.TextConverter = new PercentConverter();
+        box.VerticalAlignment = VerticalAlignment.Center;
+        box.Tip("확대율 — 눌러서 직접 입력(%) · 좌우로 끌어 바꾸기 · 우클릭 = 화면에 맞추기·배율 목록");
+        box.Presets([100, 200, 400, 800, 1600, 3200, 6400],
+            [new NumberAction("화면에 맞추기", () => _canvas.FitToWindow(), new KeyGesture(Key.D0, Ctrl))],
+            v => $"{v:0}%");
+        box.ValueChanged += (_, _) =>
         {
-            var fit = new MenuItem { Header = "화면에 맞추기", InputGesture = new KeyGesture(Key.D0, Ctrl) };
-            fit.Click += (_, _) => _canvas.FitToWindow();
-            var items = new List<Control> { fit, new Separator() };
-            foreach (int z in new[] { 1, 2, 4, 8, 16, 32, 64 })
-            {
-                var item = new MenuItem { Header = $"{z * 100}%", ToggleType = MenuItemToggleType.Radio, IsChecked = _canvas.Zoom == z };
-                item.Click += (_, _) => _canvas.SetZoom(z);
-                items.Add(item);
-            }
-            return items;
-        }
-        var button = new Button
-        {
-            Content = _cbZoom,
-            Width = 62,
-            Padding = new Thickness(2),
-            Margin = new Thickness(1),
-            MinHeight = 0,
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Focusable = false,
-            VerticalAlignment = VerticalAlignment.Center,
-        }.Tip("확대율 — 눌러서 배율 고르기·화면에 맞추기");
-        button.Click += (_, _) => PopupMenus.Show(button, Items(), PlacementMode.BottomEdgeAlignedLeft);
-        return button;
+            if (_syncingZoom || box.Value is not { } v) return;
+            _canvas.SetZoom((int)Math.Round(v / 100m, MidpointRounding.AwayFromZero));
+            // 정수 배가 아니면(예: 150%) 실제 배율로 고쳐 보인다.
+            if (v != _canvas.Zoom * 100) Dispatcher.UIThread.Post(UpdateToolUi);
+        };
+        return box;
+    }
+
+    /// <summary>
+    /// 숫자 상자 글자 변환(NumericUpDown.TextConverter는 Convert = 글자 → 값, ConvertBack = 값 → 글자): "1600%" ↔ 1600, 입력 때 % 기호는 있어도 없어도 됨.
+    /// </summary>
+    private sealed class PercentConverter : Avalonia.Data.Converters.IValueConverter
+    {
+        public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+            => decimal.TryParse((value as string)?.Replace("%", "").Trim(), System.Globalization.NumberStyles.Number, culture, out var d) ? d : null;
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+            => value is decimal d ? $"{d:0}%" : "";
     }
 
     private static void AddLeft(DockPanel bar, Control c)
@@ -1291,7 +1297,9 @@ public sealed class MainForm : Window, Ai.IAiHost
         _stSize.Text = p is null ? "" : $"{_ctx.CanvasWidth} × {_ctx.CanvasHeight}";
         _stFrame.Text = p is null ? "" : StatusFrameText(p);
         _stZoom.Text = $"{_canvas.Zoom * 100}%";
-        _cbZoom.Text = $"{_canvas.Zoom * 100}%";
+        _syncingZoom = true;
+        _cbZoom.Value = _canvas.Zoom * 100;
+        _syncingZoom = false;
         if (p is null) _stDirty.Text = "";
         else
         {

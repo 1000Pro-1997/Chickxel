@@ -58,6 +58,8 @@ public static class NumberScrub
             n.AddHandler(InputElement.PointerMovedEvent, OnMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
             n.AddHandler(InputElement.PointerReleasedEvent, OnReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
             n.AddHandler(InputElement.PointerCaptureLostEvent, OnCaptureLost, RoutingStrategies.Direct, handledEventsToo: true);
+            // 입력 중이 아닐 때 우클릭 = 예시 값 목록(글상자 기본 메뉴보다 먼저 받도록 터널).
+            n.AddHandler(Control.ContextRequestedEvent, NumberPresets.OnContextRequested, RoutingStrategies.Tunnel);
         });
     }
 

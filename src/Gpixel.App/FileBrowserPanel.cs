@@ -699,6 +699,42 @@ public sealed class FileBrowserPanel : UserControl
         }
     }
 
+    /// <summary>
+    /// 파일이 든 폴더를 위 폴더 트리에서 고르고(필요하면 펼침·스크롤) 잠깐 깜빡여 표시한다. 목록은 그 폴더로 바뀌고 그 파일이 선택된 채로 남는다.
+    /// (하위 폴더 포함으로 보던 파일이 실제로 어느 폴더에 있는지 찾을 때)
+    /// </summary>
+    public void RevealFolderOf(string path)
+    {
+        if (_tree.Items.Count == 0 || _tree.Items[0] is not TreeViewItem root || Path.GetDirectoryName(path) is not { } folder) return;
+        if (FindOrExpand(root, folder) is not { } node) return;
+        // 방금 펼친 노드는 화면에 만들어진 뒤에야 고를 수 있다.
+        Dispatcher.UIThread.Post(() =>
+        {
+            _tree.SelectedItem = node;
+            node.IsSelected = true;
+            node.BringIntoView();
+            FlashNode(node);
+            // 목록이 그 폴더로 바뀐 뒤 그 파일을 다시 고른다.
+            Dispatcher.UIThread.Post(() => SelectFile(path), DispatcherPriority.Background);
+        }, DispatcherPriority.Background);
+    }
+
+    /// <summary>트리 노드를 강조색으로 세 번 깜빡인다(약 1초).</summary>
+    private static void FlashNode(TreeViewItem node)
+    {
+        int ticks = 0;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(160) };
+        timer.Tick += (_, _) =>
+        {
+            ticks++;
+            if (ticks >= 7) { node.ClearValue(TemplatedControl.BackgroundProperty); timer.Stop(); return; }
+            if (ticks % 2 == 1) node.Background = AppTheme.AccentBrush;
+            else node.ClearValue(TemplatedControl.BackgroundProperty);
+        };
+        node.Background = AppTheme.AccentBrush;
+        timer.Start();
+    }
+
     /// <summary>목록 우클릭 메뉴(열 때마다 지금 선택에 맞춰 만든다). 동작은 메뉴가 닫힌 뒤에 한다(대화상자·이름 바꾸기 입력란 포커스).</summary>
     private Control[] ListMenu()
     {
@@ -735,6 +771,7 @@ public sealed class FileBrowserPanel : UserControl
             new Separator(),
             Item("이름 바꾸기", () => { if (SelectedItem is { } item) BeginRename(item); }, count == 1, new KeyGesture(Key.F2), DispatcherPriority.Background),
             Item($"{Platform.FileManagerName}에서 열기", ShowInExplorer, count > 0 || CurrentFolder is not null),
+            Item("이미지 폴더 선택", () => { if (paths.Count == 1) RevealFolderOf(paths[0]); }, count == 1),
             Item(count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)", DeleteSelected, count > 0,
                 Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete)),
             .. projectsOnlyItem is null ? Array.Empty<Control>() : [projectsOnlyItem],
