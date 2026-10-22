@@ -2,63 +2,56 @@ using Gpixel.Core.Model;
 
 namespace Gpixel.App;
 
-/// <summary>색 고르기에 함께 보일 앱 팔레트·최근 색·현재 프레임 공급자.</summary>
+/// <summary>색 고르기에 함께 보일 앱 팔레트·최근 색·현재 프레임과 공용 색 고르기 방식.</summary>
 public sealed record ColorPickSources(
     IReadOnlyList<NamedPalette> Palettes,
     IReadOnlyList<Color32> Recent,
-    Func<PixelImage?> Image);
+    Func<PixelImage?> Image,
+    ColorPickerMode Mode = ColorPickerMode.Square,
+    Action<ColorPickerMode>? SetMode = null);
 
-/// <summary>
-/// 앱 전체가 공유하는 색 편집기. 왼쪽의 RGBA 색상 편집기와 오른쪽의 팔레트·최근 색·스포이드를 조합한다.
-/// </summary>
+/// <summary>메인과 똑같은 4방식 색 편집기 왼쪽, 팔레트·스포이드 오른쪽을 조합한 팝업 내용.</summary>
 internal sealed class ColorPickerEditor : StackPanel
 {
     /// <summary>MainForm이 연결하는 현재 팔레트·최근 색·현재 프레임 공급자.</summary>
     public static Func<ColorPickSources?>? Sources { get; set; }
 
-    private readonly ColorView _view;
+    private readonly ColorEditor _editor;
     private readonly ColorSourcePicker? _sources;
 
     public ColorPickerEditor(Color32 initial)
     {
         Orientation = Orientation.Horizontal;
-        _view = new ColorView
+        var source = Sources?.Invoke();
+        _editor = new ColorEditor(initial, source?.Recent) { Width = 210 };
+        if (source is not null) _editor.Mode = source.Mode;
+        _editor.ColorChanged += (_, _) =>
         {
-            Color = initial.ToColor(),
-            IsAlphaEnabled = true,
-            IsAlphaVisible = true,
-            IsColorPaletteVisible = false,
-            Width = 340,
-        };
-        Children.Add(_view);
-
-        if (Sources?.Invoke() is { } sources)
-        {
-            _sources = new ColorSourcePicker(sources, initial, color => Color = color);
-            Children.Add(_sources);
-        }
-
-        _view.PropertyChanged += (_, e) =>
-        {
-            if (e.Property != ColorView.ColorProperty) return;
             _sources?.SetSelected(Color);
             ColorChanged?.Invoke(this, EventArgs.Empty);
         };
+        _editor.RecentColorClicked += (_, e) => _editor.Pick(e.Color);
+        if (source?.SetMode is { } setMode)
+            _editor.ModeChanged += (_, _) => setMode(_editor.Mode);
+        Children.Add(_editor);
+
+        if (source is not null)
+        {
+            _sources = new ColorSourcePicker(source, initial, _editor.Pick);
+            Children.Add(_sources);
+        }
     }
 
     public event EventHandler? ColorChanged;
 
     public Color32 Color
     {
-        get => _view.Color.ToColor32();
-        set
-        {
-            if (_view.Color.ToColor32() != value) _view.Color = value.ToColor();
-        }
+        get => _editor.Color;
+        set => _editor.Color = value;
     }
 }
 
-/// <summary>색 편집기 오른쪽에서 앱 팔레트·최근 색·현재 프레임 스포이드를 제공하는 재사용 모듈.</summary>
+/// <summary>색 편집기 오른쪽에서 앱 팔레트와 현재 프레임 스포이드를 제공하는 재사용 모듈.</summary>
 internal sealed class ColorSourcePicker : ScrollViewer
 {
     private readonly List<PaletteSection> _palettes = new();
@@ -88,14 +81,6 @@ internal sealed class ColorSourcePicker : ScrollViewer
             body.Children.Add(palette);
         }
 
-        if (sources.Recent.Count > 0)
-        {
-            body.Children.Add(new TextBlock { Text = "최근 색", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush });
-            var recent = new SwatchGrid { Width = 196, Height = 30, Cell = 10 };
-            recent.SetColors(sources.Recent);
-            recent.ColorClicked += (_, e) => pick(e.Color);
-            body.Children.Add(recent);
-        }
 
         if (sources.Image() is { } image)
         {

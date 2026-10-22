@@ -17,18 +17,7 @@ public sealed class ColorPanel : UserControl
 {
     private readonly EditorContext _ctx;
     private readonly ColorSlot _primarySlot, _secondarySlot;
-    private readonly SvBox _sv;
-    private readonly HueBar _hue;
-    private readonly AlphaBar _alpha;
-    private readonly StackPanel _squarePicker;
-    private readonly HoneycombPicker _honeycomb;
-    private readonly WheelPicker _wheel;
-    private readonly SliderPicker _sliders;
-    /// <summary>색 고르기 방식 탭(<see cref="ColorPickerModes.All"/> 순서).</summary>
-    private readonly TabStrip _modeTabs = new(TabStripKind.Compact) { Margin = new Thickness(0, 0, 2, 0) };
-    private readonly NumericUpDown _r, _g, _b, _a, _hNum, _sNum, _vNum;
-    private readonly TextBox _hex;
-    private readonly SwatchGrid _recent;
+    private readonly ColorEditor _editor;
     private readonly ScrollViewer _paletteHost;
     private readonly StackPanel _sectionsPanel;
     private readonly Button _addPalette;
@@ -38,8 +27,6 @@ public sealed class ColorPanel : UserControl
     private LospecPaletteDialog? _lospec;
     /// <summary>열린 Lospec 창이 색을 넣을 팔레트(그 창을 마지막으로 연 팔레트).</summary>
     private PaletteSection? _lospecTarget;
-    private bool _updating;
-    private float _h, _s, _v;
 
     /// <summary>팔레트 목록·이름·색·접힘·순서가 바뀜(설정 저장용).</summary>
     public event EventHandler? PalettesChanged;
@@ -58,49 +45,9 @@ public sealed class ColorPanel : UserControl
         _secondarySlot.Click += (_, _) => SetEditTarget(true);
         var swap = Ui.IconButton(VectorIcon.Swap, "기본색 ↔ 보조색 (X)", (_, _) => _ctx.SwapColors(), 26);
 
-        _sv = new SvBox { Width = 170, Height = 110, Margin = new Thickness(3) };
-        _hue = new HueBar { Width = 16, Height = 110, Margin = new Thickness(3) };
-        _alpha = new AlphaBar { Width = 192, Height = 12, Margin = new Thickness(3) };
-        _sv.ValueChanged += (_, _) => { _s = _sv.S; _v = _sv.V; ApplyHsv(); };
-        _hue.ValueChanged += (_, _) => { _h = _hue.Hue; _sv.Hue = _h; ApplyHsv(); };
-        _alpha.ValueChanged += (_, _) => { if (!_updating) _a!.Value = _alpha.Alpha; };
-        _squarePicker = Ui.Row(_sv, _hue);
-        _honeycomb = new HoneycombPicker { Margin = new Thickness(3) };
-        _honeycomb.ColorPicked += (_, c) => SetCurrent(c.WithAlpha((byte)_a!.NumValue()));
-        _wheel = new WheelPicker { Margin = new Thickness(3) };
-        _wheel.ValueChanged += (_, _) => { _h = _wheel.Hue; _s = _wheel.S; _v = _wheel.V; ApplyHsv(); };
-        _sliders = new SliderPicker { Margin = new Thickness(3) };
-        _sliders.RgbPicked += (_, c) => SetCurrent(c.WithAlpha((byte)_a!.NumValue()));
-        _sliders.HsvPicked += (_, hsv) => { (_h, _s, _v) = hsv; ApplyHsv(); };
-        foreach (var mode in ColorPickerModes.All)
-            _modeTabs.Add(null, ColorPickerModes.Icon(mode), $"색 고르기: {ColorPickerModes.Name(mode)}");
-        _modeTabs.SelectionChanged += (_, _) => ShowPicker();
-
-        decimal[] channel = [0, 32, 64, 96, 128, 160, 192, 224, 255];
-        _r = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
-        _g = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
-        _b = Ui.Num(0, 255, 0, 44).Presets(channel).RecentKey("color.rgb");
-        _a = Ui.Num(0, 255, 255, 44).Presets(channel).RecentKey("color.alpha");
-        // 색상환 30° 간격: 빨강 0 · 노랑 60 · 초록 120 · 청록 180 · 파랑 240 · 자홍 300
-        _hNum = Ui.Num(0, 360, 0, 44).Presets(0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330).Unit("°").RecentKey("color.hue");
-        _sNum = Ui.Num(0, 100, 0, 44).Presets(Ui.Percents).Unit("%").RecentKey("color.saturation");
-        _vNum = Ui.Num(0, 100, 0, 44).Presets(Ui.Percents).Unit("%").RecentKey("color.value");
-        foreach (var n in new[] { _r, _g, _b, _a }) n.ValueChanged += (_, _) => ApplyRgba();
-        foreach (var n in new[] { _hNum, _sNum, _vNum })
-            n.ValueChanged += (_, _) =>
-            {
-                if (_updating) return;
-                _h = (float)_hNum.NumValue();
-                _s = (float)_sNum.NumValue() / 100f;
-                _v = (float)_vNum.NumValue() / 100f;
-                ApplyHsv();
-            };
-        _hex = Ui.Text("", 80);
-        _hex.KeyDown += (_, e) => { if (e.Key == Key.Enter) { ApplyHex(); e.Handled = true; } };
-        _hex.LostFocus += (_, _) => ApplyHex();
-
-        _recent = new SwatchGrid { Width = 196, Height = 30, Cell = 10 };
-        _recent.ColorClicked += OnSwatchClicked;
+        _editor = new ColorEditor(_ctx.Primary, _ctx.RecentColors);
+        _editor.ColorChanged += (_, _) => SetCurrent(_editor.Color);
+        _editor.RecentColorClicked += OnSwatchClicked;
 
         // ── 위: 팔레트 제목 + 기본/보조색
         var header = Ui.Header("팔레트");
@@ -126,37 +73,18 @@ public sealed class ColorPanel : UserControl
         };
         SetPalettes([]);
 
-        // ── 아래: 색 고르기(머리글 오른쪽 탭으로 방식 고르기)
-        var pickerArea = new Panel { Children = { _squarePicker, _honeycomb, _wheel, _sliders } };
-        var picker = Ui.Stack(
-            pickerArea,
-            _alpha,
-            NumberGrid(),
-            Ui.Label("최근 색"),
-            _recent);
-        var colorHeader = Ui.Header("색");
-        var colorTitle = colorHeader.Child!;
-        colorHeader.Child = null;
-        var colorHeaderRow = new DockPanel();
-        DockPanel.SetDock(_modeTabs, Dock.Right);
-        colorHeaderRow.Children.Add(_modeTabs);
-        colorHeaderRow.Children.Add(colorTitle);
-        colorHeader.Child = colorHeaderRow;
-        PickerMode = ColorPickerMode.Square;
-        var pickerHost = new DockPanel { Background = AppTheme.PanelBrush };
-        pickerHost.Children.Add(colorHeader);
-        pickerHost.Children.Add(picker);
-        DockPanel.SetDock(pickerHost, Dock.Bottom);
+        // ── 아래: 메인과 팝업이 똑같이 공유하는 색 편집기
+        DockPanel.SetDock(_editor, Dock.Bottom);
 
         var root = new DockPanel();
         root.Children.Add(header);
         root.Children.Add(slots);
-        root.Children.Add(pickerHost);
+        root.Children.Add(_editor);
         root.Children.Add(_paletteHost);
         Content = root;
 
         ctx.ColorsChanged += (_, _) => SyncFromContext();
-        ctx.RecentColorsChanged += (_, _) => { _recent.SetColors(_ctx.RecentColors); };
+        ctx.RecentColorsChanged += (_, _) => _editor.SetRecent(_ctx.RecentColors);
         SyncFromContext();
     }
 
@@ -184,124 +112,25 @@ public sealed class ColorPanel : UserControl
         SyncFromContext();
     }
 
-    /// <summary>색 고르기 방식(사각형·벌집·색상환·슬라이더). 알파 막대·숫자 칸은 방식과 관계없이 그대로다.</summary>
+    /// <summary>색 고르기 방식(사각형·벌집·색상환·슬라이더). 팝업과 같은 공용 편집기를 쓴다.</summary>
     public ColorPickerMode PickerMode
     {
-        get => _modeTabs.SelectedIndex < 0 ? ColorPickerMode.Square : ColorPickerModes.All[_modeTabs.SelectedIndex];
-        set
-        {
-            _modeTabs.SelectedIndex = Array.IndexOf(ColorPickerModes.All, value);
-            ShowPicker();
-        }
-    }
-
-    private void ShowPicker()
-    {
-        var mode = PickerMode;
-        _squarePicker.IsVisible = mode == ColorPickerMode.Square;
-        _honeycomb.IsVisible = mode == ColorPickerMode.Honeycomb;
-        _wheel.IsVisible = mode == ColorPickerMode.Wheel;
-        _sliders.IsVisible = mode == ColorPickerMode.Sliders;
+        get => _editor.Mode;
+        set => _editor.Mode = value;
     }
 
     private void SyncFromContext()
     {
-        if (_updating) return;
         _primarySlot.Color = _ctx.Primary;
         _secondarySlot.Color = _ctx.Secondary;
         foreach (var section in _sections) section.Grid.SetMarks(_ctx.Primary, _ctx.Secondary);
-        var c = CurrentColor;
-        var (h, s, v) = c.ToHsv();
-        // 무채색이면 색상(H)을 유지해 상자가 튀지 않게 한다.
-        if (s > 0 && v > 0) _h = h;
-        if (v > 0) _s = s;
-        _v = v;
-        UpdateEditors(c, fromHsv: false);
-    }
-
-    private void UpdateEditors(Color32 c, bool fromHsv)
-    {
-        _updating = true;
-        _r.Value = c.R;
-        _g.Value = c.G;
-        _b.Value = c.B;
-        _a.Value = c.A;
-        _alpha.Alpha = c.A;
-        _alpha.BaseColor = c;
-        _hNum.Value = (decimal)Math.Clamp(MathF.Round(_h), 0, 360);
-        _sNum.Value = (decimal)Math.Clamp(MathF.Round(_s * 100), 0, 100);
-        _vNum.Value = (decimal)Math.Clamp(MathF.Round(_v * 100), 0, 100);
-        if (!_hex.IsFocused) _hex.Text = c.ToHex();
-        _hue.Hue = _h;
-        _sv.Hue = _h;
-        if (!fromHsv || !_sv.Dragging) _sv.SetSv(_s, _v);
-        _honeycomb.Current = c;
-        _wheel.SetHsv(_h, _s, _v);
-        _sliders.SetColor(c, _h, _s, _v);
-        _updating = false;
-    }
-
-    private void ApplyHsv()
-    {
-        if (_updating) return;
-        var c = Color32.FromHsv(_h, _s, _v, (byte)_a.NumValue());
-        _updating = true;
-        SetCurrent(c);
-        _updating = false;
-        _primarySlot.Color = _ctx.Primary;
-        _secondarySlot.Color = _ctx.Secondary;
-        UpdateEditors(c, fromHsv: true);
-    }
-
-    private void ApplyRgba()
-    {
-        if (_updating) return;
-        SetCurrent(new Color32((byte)_r.NumValue(), (byte)_g.NumValue(), (byte)_b.NumValue(), (byte)_a.NumValue()));
-    }
-
-    private void ApplyHex()
-    {
-        if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) SetCurrent(c);
-        else _hex.Text = CurrentColor.ToHex();
+        _editor.Color = CurrentColor;
     }
 
     private void OnSwatchClicked(object? sender, (Color32 Color, MouseButton Button) e)
     {
         if (e.Button == MouseButton.Right) _ctx.Secondary = e.Color;
         else _ctx.Primary = e.Color;
-    }
-
-    /// <summary>R·G·B / H·S·V / A·# 세 줄. 숫자 상자는 패널 폭을 나눠 늘어나 좁아도 잘리지 않는다.</summary>
-    private Grid NumberGrid()
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*,Auto,*"),
-            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
-        };
-        void Put(Control c, int row, int col, int span = 1)
-        {
-            Grid.SetRow(c, row);
-            Grid.SetColumn(c, col);
-            Grid.SetColumnSpan(c, span);
-            grid.Children.Add(c);
-        }
-        void Cell(string label, Control box, int row, int col, int span = 1)
-        {
-            var l = Ui.Label(label);
-            l.VerticalAlignment = VerticalAlignment.Center;
-            l.Margin = new Thickness(col == 0 ? 2 : 6, 0, 0, 0);
-            box.Width = double.NaN;
-            box.MinWidth = 0;
-            box.HorizontalAlignment = HorizontalAlignment.Stretch;
-            box.Margin = new Thickness(3, 2);
-            Put(l, row, col);
-            Put(box, row, col + 1, span);
-        }
-        Cell("R", _r, 0, 0); Cell("G", _g, 0, 2); Cell("B", _b, 0, 4);
-        Cell("H", _hNum, 1, 0); Cell("S", _sNum, 1, 2); Cell("V", _vNum, 1, 4);
-        Cell("A", _a, 2, 0); Cell("#", _hex, 2, 2, span: 3);
-        return grid;
     }
 
     // ───────────── 팔레트 ─────────────
@@ -337,7 +166,7 @@ public sealed class ColorPanel : UserControl
     /// <summary>현재 이미지를 활성 팔레트 색으로 바꾼다(대화상자).</summary>
     public void ConvertImageToActivePalette() => ConvertImage(Active);
 
-    public void SetRecent(IEnumerable<Color32> colors) => _recent.SetColors(colors);
+    public void SetRecent(IEnumerable<Color32> colors) => _editor.SetRecent(colors);
 
     private PaletteSection Active => _active is { } a && _sections.Contains(a) ? a : _sections[0];
 
@@ -679,239 +508,6 @@ public sealed class ColorPanel : UserControl
         }
     }
 
-    /// <summary>채도(가로)·명도(세로) 상자.</summary>
-    private sealed class SvBox : Control
-    {
-        private float _hue, _s, _v;
-
-        public SvBox()
-        {
-            Cursor = new Cursor(StandardCursorType.Cross);
-            ClipToBounds = true;
-        }
-
-        public event EventHandler? ValueChanged;
-        public float S => _s;
-        public float V => _v;
-        public bool Dragging { get; private set; }
-
-        public float Hue
-        {
-            get => _hue;
-            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; InvalidateVisual(); }
-        }
-
-        public void SetSv(float s, float v)
-        {
-            _s = s;
-            _v = v;
-            InvalidateVisual();
-        }
-
-        public override void Render(DrawingContext g) => PickerPaint.DrawSvSquare(g, new Rect(Bounds.Size), _hue, _s, _v);
-
-        protected override void OnPointerPressed(PointerPressedEventArgs e)
-        {
-            base.OnPointerPressed(e);
-            var pt = e.GetCurrentPoint(this);
-            if (!pt.Properties.IsLeftButtonPressed) return;
-            Dragging = true;
-            e.Pointer.Capture(this);
-            e.Handled = true;
-            Pick(pt.Position);
-        }
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            if (Dragging) Pick(e.GetPosition(this));
-        }
-
-        protected override void OnPointerReleased(PointerReleasedEventArgs e)
-        {
-            base.OnPointerReleased(e);
-            Dragging = false;
-            e.Pointer.Capture(null);
-        }
-
-        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-        {
-            base.OnPointerCaptureLost(e);
-            Dragging = false;
-        }
-
-        private void Pick(Avalonia.Point p)
-        {
-            _s = (float)Math.Clamp(p.X / Math.Max(1, Bounds.Width - 1), 0, 1);
-            _v = 1 - (float)Math.Clamp(p.Y / Math.Max(1, Bounds.Height - 1), 0, 1);
-            InvalidateVisual();
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    /// <summary>가로 알파 막대(체커 위에 현재 색의 투명→불투명).</summary>
-    private sealed class AlphaBar : Control
-    {
-        private byte _alpha = 255;
-        private Color32 _base = Color32.Black;
-        private IBrush? _gradient;
-        private bool _drag;
-
-        public AlphaBar()
-        {
-            Cursor = new Cursor(StandardCursorType.Hand);
-            ClipToBounds = true;
-        }
-
-        public event EventHandler? ValueChanged;
-
-        public byte Alpha { get => _alpha; set { if (_alpha == value) return; _alpha = value; InvalidateVisual(); } }
-        public Color32 BaseColor
-        {
-            get => _base;
-            set
-            {
-                if (_gradient is not null && _base.WithAlpha(255) == value.WithAlpha(255)) { _base = value; return; }
-                _base = value;
-                _gradient = null;
-                InvalidateVisual();
-            }
-        }
-
-        /// <summary>양 끝 여백: 0·255에서도 표시가 잘리지 않게.</summary>
-        private const double Pad = 4;
-
-        private Rect BarRect => new(Pad, 0, Math.Max(1, Bounds.Width - 2 * Pad), Bounds.Height);
-
-        public override void Render(DrawingContext g)
-        {
-            var rect = BarRect;
-            AppTheme.DrawChecker(g, rect, 4);
-            _gradient ??= new ImmutableLinearGradientBrush(
-                [new ImmutableGradientStop(0, _base.WithAlpha(0).ToColor()), new ImmutableGradientStop(1, _base.WithAlpha(255).ToColor())],
-                startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(1, 0, RelativeUnit.Relative));
-            g.FillRectangle(_gradient, rect);
-            double x = rect.X + _alpha / 255.0 * (rect.Width - 1);
-            g.DrawRectangle(null, PickerPaint.WhiteMarker, new Rect(x - 2, 1, 4, Math.Max(0, rect.Height - 3)));
-        }
-
-        protected override void OnPointerPressed(PointerPressedEventArgs e)
-        {
-            base.OnPointerPressed(e);
-            var pt = e.GetCurrentPoint(this);
-            if (!pt.Properties.IsLeftButtonPressed) return;
-            _drag = true;
-            e.Pointer.Capture(this);
-            e.Handled = true;
-            Pick(pt.Position.X);
-        }
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            if (_drag) Pick(e.GetPosition(this).X);
-        }
-
-        protected override void OnPointerReleased(PointerReleasedEventArgs e)
-        {
-            base.OnPointerReleased(e);
-            _drag = false;
-            e.Pointer.Capture(null);
-        }
-
-        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-        {
-            base.OnPointerCaptureLost(e);
-            _drag = false;
-        }
-
-        private void Pick(double x)
-        {
-            var rect = BarRect;
-            _alpha = (byte)Math.Round(Math.Clamp((x - rect.X) / Math.Max(1, rect.Width - 1), 0, 1) * 255);
-            InvalidateVisual();
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    /// <summary>세로 색상(H) 막대.</summary>
-    private sealed class HueBar : Control
-    {
-        private static readonly IBrush Spectrum = new ImmutableLinearGradientBrush(
-            Enumerable.Range(0, 7)
-                .Select(i => new ImmutableGradientStop(i / 6.0, i == 6 ? Colors.Red : Color32.FromHsv(i * 60 % 360, 1, 1).ToColor()))
-                .ToArray(),
-            startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(0, 1, RelativeUnit.Relative));
-
-        private float _hue;
-        private bool _drag;
-
-        public HueBar()
-        {
-            Cursor = new Cursor(StandardCursorType.Hand);
-            ClipToBounds = true;
-        }
-
-        public event EventHandler? ValueChanged;
-
-        public float Hue
-        {
-            get => _hue;
-            set { if (Math.Abs(_hue - value) < 0.01f) return; _hue = value; InvalidateVisual(); }
-        }
-
-        /// <summary>위아래 여백: 0°·360°에서도 표시가 잘리지 않게.</summary>
-        private const double Pad = 4;
-
-        private Rect BarRect => new(0, Pad, Bounds.Width, Math.Max(1, Bounds.Height - 2 * Pad));
-
-        public override void Render(DrawingContext g)
-        {
-            var rect = BarRect;
-            g.FillRectangle(Spectrum, rect);
-            double y = rect.Y + _hue / 360.0 * (rect.Height - 1);
-            g.DrawRectangle(null, PickerPaint.WhiteMarker, new Rect(1, y - 2, Math.Max(0, rect.Width - 3), 4));
-        }
-
-        protected override void OnPointerPressed(PointerPressedEventArgs e)
-        {
-            base.OnPointerPressed(e);
-            var pt = e.GetCurrentPoint(this);
-            if (!pt.Properties.IsLeftButtonPressed) return;
-            _drag = true;
-            e.Pointer.Capture(this);
-            e.Handled = true;
-            Pick(pt.Position.Y);
-        }
-
-        protected override void OnPointerMoved(PointerEventArgs e)
-        {
-            base.OnPointerMoved(e);
-            if (_drag) Pick(e.GetPosition(this).Y);
-        }
-
-        protected override void OnPointerReleased(PointerReleasedEventArgs e)
-        {
-            base.OnPointerReleased(e);
-            _drag = false;
-            e.Pointer.Capture(null);
-        }
-
-        protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-        {
-            base.OnPointerCaptureLost(e);
-            _drag = false;
-        }
-
-        private void Pick(double y)
-        {
-            var rect = BarRect;
-            _hue = (float)Math.Clamp((y - rect.Y) / Math.Max(1, rect.Height - 1), 0, 1) * 360f;
-            if (_hue >= 360f) _hue = 359.9f;
-            InvalidateVisual();
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
 }
 
 /// <summary>이름 있는 팔레트(색 목록 + 팔레트 열에서 접혔는지).</summary>

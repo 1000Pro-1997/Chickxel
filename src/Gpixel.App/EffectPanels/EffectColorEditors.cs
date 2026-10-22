@@ -11,9 +11,9 @@ public sealed partial class LayerEffectsDialog
     {
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
         var mode = Ui.Combo(104, "일반색", "그라데이션");
-        var editor = new GradientEditor(spatialAngle: true);
-        var flyout = new Flyout { Content = new Border { Width = 340, Padding = new Thickness(8), Child = editor } };
-        void ShowEditor() => Dispatcher.UIThread.Post(() => PopupMenus.Show(mode, flyout));
+        var editor = new GradientEditor(spatialAngle: true) { Width = 280 };
+        var body = Ui.Stack(Ui.Row(field, mode), editor);
+        body.Margin = new Thickness(0);
 
         EffectColorGradient InitialGradient()
             => new()
@@ -45,6 +45,7 @@ public sealed partial class LayerEffectsDialog
 
         mode.SelectedIndex = gradientMode ? 1 : 0;
         field.IsVisible = !gradientMode;
+        editor.IsVisible = gradientMode;
         if (gradientMode && effect.ColorGradients.TryGetValue(slot, out var existing))
             editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither, existing.Angle);
         mode.SelectionChanged += (_, _) =>
@@ -53,6 +54,7 @@ public sealed partial class LayerEffectsDialog
             bool enabled = mode.SelectedIndex == 1;
             bool wasGradient = gradientMode;
             field.IsVisible = !enabled;
+            editor.IsVisible = enabled;
             if (enabled)
             {
                 var gradient = wasGradient
@@ -65,7 +67,6 @@ public sealed partial class LayerEffectsDialog
                 editor.Load(gradient.Stops, gradient.AlphaStops, gradient.Interpolation, gradient.Dither, gradient.Angle);
                 gradientMode = true;
                 ChangeGradient(gradient);
-                ShowEditor();
             }
             else
             {
@@ -73,12 +74,7 @@ public sealed partial class LayerEffectsDialog
                 ChangeGradient(null);
             }
         };
-        // 이미 그라데이션인 칸도 같은 항목을 다시 누르면 별도 \"정지점 편집\" 단추 없이 곧바로 연다.
-        mode.DropDownClosed += (_, _) =>
-        {
-            if (mode.SelectedIndex == 1) ShowEditor();
-        };
-        return Ui.Row(field, mode);
+        return body;
     }
 
     /// <summary>Keep gradient slots aligned with surviving entries after deleting an indexed color.</summary>

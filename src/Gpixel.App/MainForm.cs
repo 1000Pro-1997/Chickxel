@@ -995,8 +995,10 @@ public sealed class MainForm : Window, Ai.IAiHost
         _colors.Message += (_, m) => ShowMessage(m);
 
         // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
-        ColorPickerEditor.Sources = () => new ColorPickSources(_colors.Palettes, _ctx.RecentColors.ToList(),
-            () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null);
+        ColorPickerEditor.Sources = () => new ColorPickSources(
+            _colors.Palettes, _ctx.RecentColors.ToList(),
+            () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null,
+            _colors.PickerMode, mode => _colors.PickerMode = mode);
 
         // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(지금 문서 + 메모리에 남겨 둔 문서).
         CrashGuard.UnsavedProjects = () => (_ctx.Project is { IsDirty: true } p ? [p] : Array.Empty<SpriteProject>())

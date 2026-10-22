@@ -328,7 +328,7 @@ public sealed class ColorField : StackPanel
             editor.ColorChanged += (_, _) => Color = editor.Color;
             var flyout = new Flyout
             {
-                Content = new Border { Width = 596, Padding = new Thickness(8), Child = editor },
+                Content = new Border { Width = 466, Padding = new Thickness(8), Child = editor },
             };
             flyout.FlyoutPresenterClasses.Add("color-picker");
             PopupMenus.Show(_swatch, flyout);
