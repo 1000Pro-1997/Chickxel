@@ -49,6 +49,8 @@ public interface IChatSession : IDisposable
     event Action<ExitInfo>? Exited;
     /// <summary>사용자에게 알릴 짧은 안내(이어 가기 실패·CLI 경고 등).</summary>
     event Action<string>? Notice;
+    /// <summary>CLI가 gpixel MCP에 연결하지 못함(세션 프로세스마다 한 번). 글은 짐작한 원인과 확인할 것.</summary>
+    event Action<string>? McpProblem;
     /// <summary>CLI가 알려 준 실제 모델 ID(기본값·별칭이 가리킨 것). 알려 주지 않는 CLI는 부르지 않는다.</summary>
     event Action<string>? ModelResolved;
 

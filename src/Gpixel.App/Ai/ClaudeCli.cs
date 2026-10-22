@@ -254,6 +254,11 @@ public sealed class ClaudeSession : IChatSession
     private int _generation;
     private string? _sessionCwd, _pendingLine;
     private bool _resuming, _sawInit;
+    /// <summary>이 프로세스를 띄울 때의 MCP 요청 수와, 연결 문제를 이미 알렸거나 연결을 확인했는지.</summary>
+    private McpCounters _mcpSince;
+    private bool _mcpChecked;
+    /// <summary>Claude Code가 init에서 알려 준 gpixel 서버 상태("connected"·"pending"·"failed" 등, 목록에 없으면 "목록에 없음").</summary>
+    private string? _mcpStatus;
 
     public ClaudeSession(string claudePath, McpServer mcp)
     {
@@ -292,6 +297,7 @@ public sealed class ClaudeSession : IChatSession
     public event Action<ExitInfo>? Exited;
     /// <summary>사용자에게 알릴 짧은 안내(이어 가기 실패 등).</summary>
     public event Action<string>? Notice;
+    public event Action<string>? McpProblem;
 
     /// <summary>
     /// 메시지(글 + PNG 이미지)를 보낸다. 프로세스가 없으면 띄운다(실행 실패는 예외: Win32Exception 등).
@@ -376,6 +382,9 @@ public sealed class ClaudeSession : IChatSession
                 if (stderr.Length > 8000) stderr.Remove(0, stderr.Length - 4000);
             }
         };
+        _mcpSince = _mcp.Counters;
+        _mcpChecked = false;
+        _mcpStatus = null;
         p.Start();
         p.BeginErrorReadLine();
         int gen = ++_generation;
@@ -516,6 +525,7 @@ public sealed class ClaudeSession : IChatSession
                     _sawInit = true;
                     SetSessionId(AiCli.Str(o["session_id"]));
                     if (AiCli.Str(o["model"]) is { Length: > 0 } model) ModelResolved?.Invoke(model);
+                    CheckMcpStatus(o["mcp_servers"]);
                 }
                 break;
             case "stream_event":
@@ -584,6 +594,11 @@ public sealed class ClaudeSession : IChatSession
                     RestartFresh();
                     break;
                 }
+                if (!_mcpChecked)
+                {
+                    _mcpChecked = true;
+                    if (!_mcp.ToolsListedSince(_mcpSince)) McpProblem?.Invoke(_mcp.DescribeProblem(_mcpSince, _mcpStatus));
+                }
                 SetSessionId(AiCli.Str(o["session_id"]));
                 IsTurnActive = false;
                 _pendingLine = null;
@@ -595,6 +610,17 @@ public sealed class ClaudeSession : IChatSession
                     AiCli.Num(o["total_cost_usd"]), AiCli.Num(o["duration_ms"]), needsLogin));
                 break;
         }
+    }
+
+    /// <summary>init의 MCP 서버 목록에서 gpixel 상태를 읽는다. 확실히 실패했으면 바로 알리고, 연결 중이면 차례 끝에 다시 본다.</summary>
+    private void CheckMcpStatus(JsonNode? servers)
+    {
+        if (servers is not JsonArray list) return;
+        var gpixel = list.OfType<JsonObject>().FirstOrDefault(s => AiCli.Str(s["name"]) == McpServer.ServerName);
+        _mcpStatus = gpixel is null ? "목록에 없음" : AiCli.Str(gpixel["status"]);
+        if (_mcpChecked || _mcpStatus is "connected" or "pending" or null) return;
+        _mcpChecked = true;
+        McpProblem?.Invoke(_mcp.DescribeProblem(_mcpSince, _mcpStatus));
     }
 
     private void SetSessionId(string? id)

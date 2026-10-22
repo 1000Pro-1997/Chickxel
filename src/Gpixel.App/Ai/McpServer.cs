@@ -30,6 +30,7 @@ public sealed class McpServer : IDisposable
     private int _port;
     private string? _configPath;
     private volatile bool _disposed;
+    private long _requests, _unauthorized, _toolLists;
 
     public McpServer(PixelTools tools)
     {
@@ -45,6 +46,24 @@ public sealed class McpServer : IDisposable
 
     /// <summary>요청 헤더 <c>Authorization: Bearer …</c>에 넣어야 하는 무작위 토큰(32바이트 16진수).</summary>
     public string Token { get; }
+
+    /// <summary>지금까지 받은 /mcp 요청 수(진단용). 세션이 시작할 때 찍어 두고 나중에 비교한다.</summary>
+    public McpCounters Counters => new(Interlocked.Read(ref _requests), Interlocked.Read(ref _unauthorized), Interlocked.Read(ref _toolLists));
+
+    /// <summary>CLI가 <paramref name="since"/> 뒤로 도구 목록을 받아 갔는지(= gpixel MCP에 연결됐는지).</summary>
+    public bool ToolsListedSince(McpCounters since) => Interlocked.Read(ref _toolLists) > since.ToolLists;
+
+    /// <summary>연결 실패 안내: <paramref name="since"/> 뒤로 서버가 본 요청으로 어디서 막혔는지 짐작한다.</summary>
+    public string DescribeProblem(McpCounters since, string? cliStatus)
+    {
+        var now = Counters;
+        var head = cliStatus is null ? "gpixel MCP에 연결하지 못했습니다" : $"gpixel MCP에 연결하지 못했습니다(CLI 상태: {cliStatus})";
+        if (now.Requests == since.Requests)
+            return $"{head}. Gpixel 내부 서버({Url})로 요청이 오지 않았습니다. 프록시(HTTP_PROXY·HTTPS_PROXY 환경 변수)·VPN·보안 프로그램이 이 PC 안 연결(127.0.0.1)을 막는지, CLI가 최신 버전인지 확인하세요.";
+        if (now.Unauthorized > since.Unauthorized)
+            return $"{head}. 요청은 왔지만 인증 토큰이 맞지 않았습니다. CLI가 MCP 설정의 인증 헤더를 보내지 않았을 수 있으니 CLI를 최신 버전으로 업데이트하세요.";
+        return $"{head}. 요청은 왔지만 도구 목록을 받기 전에 끊겼습니다. CLI를 최신 버전으로 업데이트한 뒤 새 대화로 다시 시도하세요.";
+    }
 
     /// <summary>빈 포트를 찾아 듣기 시작한다. 이미 시작했으면 아무것도 안 한다.</summary>
     public void Start()
@@ -188,8 +207,10 @@ public sealed class McpServer : IDisposable
                 response.StatusCode = 404;
                 return;
             }
+            Interlocked.Increment(ref _requests);
             if (!Authorized(request))
             {
+                Interlocked.Increment(ref _unauthorized);
                 response.StatusCode = 401;
                 response.AddHeader("WWW-Authenticate", "Bearer");
                 return;
@@ -340,6 +361,7 @@ public sealed class McpServer : IDisposable
                 case "ping":
                     return Result(id, new JsonObject());
                 case "tools/list":
+                    Interlocked.Increment(ref _toolLists);
                     return Result(id, new JsonObject { ["tools"] = _tools.ListTools() });
                 case "tools/call":
                     var name = AsString(parameters?["name"]);
@@ -387,3 +409,6 @@ public sealed class McpServer : IDisposable
 
     private static string? AsString(JsonNode? n) => n is JsonValue v && v.TryGetValue(out string? s) ? s : null;
 }
+
+/// <summary>MCP 서버가 받은 요청 수(진단용): 전체 /mcp 요청, 토큰이 틀린 요청, tools/list.</summary>
+public readonly record struct McpCounters(long Requests, long Unauthorized, long ToolLists);

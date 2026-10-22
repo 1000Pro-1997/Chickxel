@@ -182,6 +182,9 @@ public sealed class CodexSession : IChatSession
     private string? _pendingText, _lastError;
     private List<string> _pendingImages = [];
     private bool _resuming, _sawThread;
+    /// <summary>이 프로세스를 띄울 때의 MCP 요청 수와, 이 대화에서 연결 문제를 이미 알렸는지.</summary>
+    private McpCounters _mcpSince;
+    private bool _mcpProblemShown;
 
     public CodexSession(string codexPath, McpServer mcp)
     {
@@ -211,6 +214,7 @@ public sealed class CodexSession : IChatSession
     public event Action<TurnResult>? TurnCompleted;
     public event Action<ExitInfo>? Exited;
     public event Action<string>? Notice;
+    public event Action<string>? McpProblem;
 
     public void Send(string text, IReadOnlyList<byte[]> pngImages)
     {
@@ -255,6 +259,7 @@ public sealed class CodexSession : IChatSession
         Cancel();
         SessionId = null;
         _shownNotices.Clear();
+        _mcpProblemShown = false;
     }
 
     public void Dispose() => Cancel();
@@ -285,6 +290,7 @@ public sealed class CodexSession : IChatSession
                 if (stderr.Length > 8000) stderr.Remove(0, stderr.Length - 4000);
             }
         };
+        _mcpSince = _mcp.Counters;
         p.Start();
         p.BeginErrorReadLine();
         int gen = ++_generation;
@@ -478,6 +484,11 @@ public sealed class CodexSession : IChatSession
                 if (o["item"] is JsonObject item) HandleItem(AiCli.Str(o["type"])!, item);
                 break;
             case "turn.completed":
+                if (!_mcpProblemShown && !_mcp.ToolsListedSince(_mcpSince))
+                {
+                    _mcpProblemShown = true;
+                    McpProblem?.Invoke(_mcp.DescribeProblem(_mcpSince, null));
+                }
                 Finish(new TurnResult(false, null, null, null, null));
                 break;
             case "turn.failed":

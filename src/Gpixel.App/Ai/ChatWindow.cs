@@ -964,6 +964,7 @@ public sealed class ChatWindow : Window
                 else AddSystemLine(msg, error: true);
             };
             s.Notice += text => AddSystemLine(text, error: false);
+            s.McpProblem += text => AddSystemLine(text, error: true);
             s.ModelResolved += model =>
             {
                 if (ReferenceEquals(s, _session) && Provider.RememberResolved(_w._settings, s.Model, model)) FillModels();
