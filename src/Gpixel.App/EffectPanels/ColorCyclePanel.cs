@@ -32,7 +32,7 @@ public sealed partial class LayerEffectsDialog
         for (int k = 0; k < e.Colors.Count; k++)
         {
             int at = k;
-            var field = new ColorField(e.Colors[k], 64) { LivePreview = true };
+            var field = new ColorField(e.Colors[k], 64);
             field.ColorChanged += (_, _) => set(o => C(o) with { Colors = C(o).Colors.Select((c, j) => j == at ? field.Color : c).ToArray() });
             var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
             {
@@ -62,7 +62,7 @@ public sealed partial class LayerEffectsDialog
             var flyout = new Flyout();
             var panel = new StackPanel { Spacing = 4, MaxWidth = 280 };
             panel.Children.Add(Hint($"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 순환할 색에 넣습니다(최대 {ColorCycleEffect.MaxColors}개).", 270));
-            panel.Children.Add(ColorPickDialog.Swatches(used, c =>
+            panel.Children.Add(ColorSourcePicker.Swatches(used, c =>
             {
                 flyout.Hide();
                 AddColors([c]);

@@ -855,7 +855,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static ColorField ColorEditor(Color32 value, Action<Color32> changed)
     {
-        var field = new ColorField(value) { LivePreview = true };
+        var field = new ColorField(value);
         field.ColorChanged += (_, _) => changed(field.Color);
         return field;
     }

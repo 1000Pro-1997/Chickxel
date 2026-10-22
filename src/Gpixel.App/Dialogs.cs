@@ -306,7 +306,7 @@ public sealed class SplitFramesDialog : DialogBase
     }
 }
 
-/// <summary>색 칸 + HEX 입력(칸을 누르면 색 대화상자).</summary>
+/// <summary>색 칸 + HEX 입력. 색 칸을 누르면 공용 색 편집기와 메인 팔레트가 팝업으로 열린다.</summary>
 public sealed class ColorField : StackPanel
 {
     private readonly SwatchBox _swatch;
@@ -324,12 +324,14 @@ public sealed class ColorField : StackPanel
         {
             if (!e.GetCurrentPoint(_swatch).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
-            var original = _color;
-            var chosen = Ui.PickColor(this, original, onPreview: LivePreview ? c => Color = c : null);
-            if (chosen is { } c)
-                Color = !LivePreview && c.A == 0 && original.A == 0 ? c.WithAlpha(255) : c;
-            else if (LivePreview)
-                Color = original;
+            var editor = new ColorPickerEditor(Color);
+            editor.ColorChanged += (_, _) => Color = editor.Color;
+            var flyout = new Flyout
+            {
+                Content = new Border { Width = 596, Padding = new Thickness(8), Child = editor },
+            };
+            flyout.FlyoutPresenterClasses.Add("color-picker");
+            PopupMenus.Show(_swatch, flyout);
         };
         _hex = Ui.Text("", hexWidth);
         _hex.LostFocus += (_, _) => { if (Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c)) Color = c; else _hex.Text = _color.ToHex(); };
@@ -338,10 +340,7 @@ public sealed class ColorField : StackPanel
         Color = color;
     }
 
-    /// <summary>색 고르기 창을 열어 둔 동안 색 변경을 전달한다. 취소하면 열기 전 색으로 복원한다.</summary>
-    public bool LivePreview { get; set; }
-
-    /// <summary>색이 바뀌었다(실시간 미리보기를 켜면 대화상자에서도 즉시, HEX를 고친 뒤, 코드로 바꿀 때 포함).</summary>
+    /// <summary>팝업, HEX 입력 또는 코드에서 색이 바뀌었다.</summary>
     public event EventHandler? ColorChanged;
 
     public Color32 Color

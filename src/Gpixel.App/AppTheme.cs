@@ -161,6 +161,11 @@ public static class AppTheme
         {
             Setters = { new Setter(TemplatedControl.PaddingProperty, new Thickness(8, 3)) },
         });
+        // 공용 색 편집 Flyout은 기본 Fluent 최대 폭(약 480px)을 넘어 색 편집기와 팔레트를 나란히 온전히 보인다.
+        app.Styles.Add(new Style(x => x.OfType<FlyoutPresenter>().Class("color-picker"))
+        {
+            Setters = { new Setter(Layoutable.MaxWidthProperty, 620d) },
+        });
         // 숫자 상자: 위/아래 단추 없이 좌우로 끌어 값 바꾸기.
         NumberScrub.Install();
         app.Styles.Add(new Style(x => x.OfType<NumericUpDown>().Template().OfType<TextBox>())

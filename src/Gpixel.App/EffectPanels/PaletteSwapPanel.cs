@@ -33,8 +33,8 @@ public sealed partial class LayerEffectsDialog
         for (int k = 0; k < p.Pairs.Count; k++)
         {
             int at = k;
-            var from = new ColorField(p.Pairs[k].From, 64) { LivePreview = true };
-            var to = new ColorField(p.Pairs[k].To, 64) { LivePreview = true };
+            var from = new ColorField(p.Pairs[k].From, 64);
+            var to = new ColorField(p.Pairs[k].To, 64);
             from.ColorChanged += (_, _) => ChangePair(at, q => q with { From = from.Color });
             to.ColorChanged += (_, _) => ChangePair(at, q => q with { To = to.Color });
             var remove = Ui.IconButton(VectorIcon.Minus, null, (_, _) =>
@@ -63,7 +63,7 @@ public sealed partial class LayerEffectsDialog
             var flyout = new Flyout();
             var panel = new StackPanel { Spacing = 4, MaxWidth = 280 };
             panel.Children.Add(Hint($"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 그 색을 바꿀 쌍을 추가합니다.", 270));
-            panel.Children.Add(ColorPickDialog.Swatches(used, c =>
+            panel.Children.Add(ColorSourcePicker.Swatches(used, c =>
             {
                 flyout.Hide();
                 AddPairs([c]);

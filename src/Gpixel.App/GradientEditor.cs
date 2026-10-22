@@ -40,7 +40,7 @@ public sealed class GradientEditor : StackPanel
             if (_bar.SelectedIsAlpha) ChangeAlpha(s => s with { Position = value });
             else ChangeColor(s => s with { Position = value });
         };
-        _color = new ColorField(Color32.Black) { LivePreview = true };
+        _color = new ColorField(Color32.Black);
         _color.ColorChanged += (_, _) => { if (!_updating) ChangeColor(s => s with { Color = _color.Color }); };
         _alpha = Ui.Num(0, 100, 100, 56, 1, 1m).Presets(Ui.Percents).Unit("%").RecentKey("opacity");
         _alpha.FormatString = "0.#";

@@ -9,13 +9,11 @@ public sealed partial class LayerEffectsDialog
     private Control EffectColorEditor(LayerEffect effect, string slot, ColorField field,
         Action<Func<LayerEffect, LayerEffect>> set)
     {
-        field.LivePreview = true;
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
         var mode = Ui.Combo(104, "일반색", "그라데이션");
-        var edit = Ui.Button("정지점 편집");
         var editor = new GradientEditor(spatialAngle: true);
         var flyout = new Flyout { Content = new Border { Width = 340, Padding = new Thickness(8), Child = editor } };
-        edit.Flyout = flyout;
+        void ShowEditor() => Dispatcher.UIThread.Post(() => PopupMenus.Show(mode, flyout));
 
         EffectColorGradient InitialGradient()
             => new()
@@ -47,18 +45,17 @@ public sealed partial class LayerEffectsDialog
 
         mode.SelectedIndex = gradientMode ? 1 : 0;
         field.IsVisible = !gradientMode;
-        edit.IsVisible = gradientMode;
         if (gradientMode && effect.ColorGradients.TryGetValue(slot, out var existing))
             editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither, existing.Angle);
         mode.SelectionChanged += (_, _) =>
         {
             if (mode.SelectedIndex < 0) return;
             bool enabled = mode.SelectedIndex == 1;
+            bool wasGradient = gradientMode;
             field.IsVisible = !enabled;
-            edit.IsVisible = enabled;
             if (enabled)
             {
-                var gradient = gradientMode
+                var gradient = wasGradient
                     ? new EffectColorGradient
                     {
                         Stops = editor.Stops, AlphaStops = editor.AlphaStops,
@@ -68,10 +65,20 @@ public sealed partial class LayerEffectsDialog
                 editor.Load(gradient.Stops, gradient.AlphaStops, gradient.Interpolation, gradient.Dither, gradient.Angle);
                 gradientMode = true;
                 ChangeGradient(gradient);
+                ShowEditor();
             }
-            else ChangeGradient(null);
+            else
+            {
+                gradientMode = false;
+                ChangeGradient(null);
+            }
         };
-        return Ui.Row(field, mode, edit);
+        // 이미 그라데이션인 칸도 같은 항목을 다시 누르면 별도 \"정지점 편집\" 단추 없이 곧바로 연다.
+        mode.DropDownClosed += (_, _) =>
+        {
+            if (mode.SelectedIndex == 1) ShowEditor();
+        };
+        return Ui.Row(field, mode);
     }
 
     /// <summary>Keep gradient slots aligned with surviving entries after deleting an indexed color.</summary>
