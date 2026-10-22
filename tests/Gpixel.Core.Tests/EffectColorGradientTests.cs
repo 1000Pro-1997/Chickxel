@@ -20,7 +20,7 @@ public class EffectColorGradientTests
         };
 
     [Fact]
-    public void OverlayGradient_InterpolatesStopsAndIndependentOpacity_PreservesPixelAlpha()
+    public void ColorOverlayGradient_InterpolatesStopsAndIndependentOpacity_PreservesPixelAlpha()
     {
         var image = new PixelImage(3, 1);
         image.Clear(new Color32(0, 0, 0, 77));
@@ -28,9 +28,9 @@ public class EffectColorGradientTests
         {
             AlphaStops = [new(1, 255), new(0, 0)],
         };
-        var effect = new GradientOverlayEffect
+        var effect = new ColorOverlayEffect
         {
-            ColorGradients = new Dictionary<string, EffectColorGradient> { ["Gradient"] = gradient },
+            ColorGradients = new Dictionary<string, EffectColorGradient> { [nameof(ColorOverlayEffect.Color)] = gradient },
         };
 
         var result = LayerEffects.RenderClipped(image, [effect]);
@@ -42,13 +42,16 @@ public class EffectColorGradientTests
     }
 
     [Fact]
-    public void LegacyOverlay_ColorAlphaControlsIntensity_NotPixelAlpha()
+    public void ColorOverlayGradient_ColorAlphaControlsIntensity_NotPixelAlpha()
     {
         var image = new PixelImage(2, 1);
         image.Clear(new Color32(0, 0, 0, 91));
-        var effect = new GradientOverlayEffect
+        var effect = new ColorOverlayEffect
         {
-            ColorA = Red.WithAlpha(0), ColorB = Blue.WithAlpha(255), Angle = 0,
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(ColorOverlayEffect.Color)] = Horizontal(Red.WithAlpha(0), Blue),
+            },
         };
         var result = LayerEffects.RenderClipped(image, [effect]);
         Assert.Equal(image[0, 0], result[0, 0]);

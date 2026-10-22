@@ -428,7 +428,8 @@ public static class LayerEffects
         {
             if (px[i].A == 0) continue;
             var sampled = color.Sample(i % w, i / w);
-            px[i] = Mix(px[i], sampled, (amount * sampled.A + 127) / 255);
+            int strength = (amount * sampled.A + 127) / 255;
+            if (strength != 0) px[i] = GradientOverlayRender.Blend(px[i], sampled, strength, c.Blend);
         }
     }
 

@@ -52,6 +52,43 @@ public class AnimatedEffectTests
         Assert.Equal(0.0, ((AnimatedEffect)LayerEffects.At([new ShineEffect { Frames = new FrameRange(3, 3) }], 3, 5)[0]).Time);
     }
 
+    // ───────────── 시간 그라데이션 ─────────────
+
+    [Fact]
+    public void GradientChange_SamplesStopsFromFirstToLastFrame()
+    {
+        var blue = new Color32(0, 0, 255);
+        var effect = new GradientOverlayEffect
+        {
+            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, blue)] },
+            Easing = EffectEasing.Linear,
+        };
+        var src = Filled(2, 2, Black.WithAlpha(77));
+
+        Assert.All(At(src, effect, 0, 4).Image.Pixels, pixel => Assert.Equal(Red.WithAlpha(77), pixel));
+        Assert.All(At(src, effect, 2, 4).Image.Pixels, pixel => Assert.Equal(new Color32(128, 0, 128, 77), pixel));
+        Assert.All(At(src, effect, 4, 4).Image.Pixels, pixel => Assert.Equal(blue.WithAlpha(77), pixel));
+    }
+
+    [Fact]
+    public void GradientChange_DitherUsesOnlyAdjacentStopColorsDuringTransition()
+    {
+        var blue = new Color32(0, 0, 255);
+        var effect = new GradientOverlayEffect
+        {
+            Gradient = new EffectColorGradient
+            {
+                Stops = [new(0, Red), new(1, blue)],
+                Dither = GradientDither.Bayer2,
+            },
+        };
+        var pixels = At(Filled(2, 2, Color32.White), effect, 1, 2).Image.Pixels;
+
+        Assert.All(pixels, pixel => Assert.True(pixel == Red || pixel == blue, pixel.ToHex()));
+        Assert.Equal(2, pixels.Count(pixel => pixel == Red));
+        Assert.Equal(2, pixels.Count(pixel => pixel == blue));
+    }
+
     // ───────────── 터지기 ─────────────
 
     private static readonly ExplodeEffect Burst = new() { Distance = 8, Spread = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };

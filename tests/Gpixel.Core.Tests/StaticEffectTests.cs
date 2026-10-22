@@ -18,17 +18,23 @@ public class StaticEffectTests
         return img;
     }
 
-    // ───────────── 그라데이션 덮기 ─────────────
+    // ───────────── 색 덮기 공간 그라데이션 ─────────────
 
     [Fact]
-    public void Gradient_OnlyOpaquePixels_TopIsColorA_BottomIsColorB_AlphaKept()
+    public void ColorOverlayGradient_OnlyOpaquePixels_TopIsFirstStop_BottomIsLastStop_AlphaKept()
     {
         var src = new PixelImage(5, 6);
         for (int y = 1; y < 6; y++)
             for (int x = 1; x < 4; x++)
                 src[x, y] = Color32.White;
         src[2, 3] = Color32.White.WithAlpha(100);
-        var g = new GradientOverlayEffect { ColorA = Red, ColorB = Blue, Angle = 270 };
+        var g = new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(ColorOverlayEffect.Color)] = new() { Stops = [new(0, Red), new(1, Blue)], Angle = 270 },
+            },
+        };
 
         var (img, ox, oy) = LayerEffects.Render(src, [g]);
         Assert.Equal((0, 0, src.Size), (ox, oy, img.Size));
@@ -43,13 +49,20 @@ public class StaticEffectTests
     }
 
     [Theory]
-    [InlineData(EffectDither.Bayer2)]
-    [InlineData(EffectDither.Bayer4)]
-    public void Gradient_BayerDither_UsesOnlyTheTwoColors(EffectDither dither)
+    [InlineData(GradientDither.Bayer2)]
+    [InlineData(GradientDither.Bayer4)]
+    public void ColorOverlayGradient_BayerDither_UsesOnlyTheTwoColors(GradientDither dither)
     {
         var src = Filled(8, 8, new Color32(10, 200, 30));
-        var img = LayerEffects.RenderClipped(src, [new GradientOverlayEffect { ColorA = Red, ColorB = Blue, Angle = 270, Dither = dither }]);
-        Assert.All(img.Pixels, p => Assert.True(p == Red || p == Blue, p.ToHex()));
+        var effect = new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(ColorOverlayEffect.Color)] = new() { Stops = [new(0, Red), new(1, Blue)], Angle = 270, Dither = dither },
+            },
+        };
+        var img = LayerEffects.RenderClipped(src, [effect]);
+        Assert.All(img.Pixels, pixel => Assert.True(pixel == Red || pixel == Blue, pixel.ToHex()));
         Assert.All(Enumerable.Range(0, 8), x => Assert.Equal(Red, img[x, 0])); // 첫 줄은 모두 A
         Assert.All(Enumerable.Range(0, 8), x => Assert.Equal(Blue, img[x, 7])); // 끝 줄은 모두 B
         int Blues(int y0, int y1) => Enumerable.Range(y0, y1 - y0).Sum(y => Enumerable.Range(0, 8).Count(x => img[x, y] == Blue));
@@ -187,13 +200,21 @@ public class StaticEffectTests
     // ───────────── 저장 ─────────────
 
     [Fact]
-    public void SaveLoad_RoundTripsStaticEffects_OldShadowWithoutDitherLoads()
+    public void SaveLoad_RoundTripsEffects_AndMigratesOldSpatialGradient()
     {
         var p = new SpriteProject(8, 8);
         p.DuplicateFrame(0); // 범위(프레임 1만)가 "모든 프레임"으로 바뀌지 않게
         LayerEffect[] fx =
         [
-            new GradientOverlayEffect { ColorA = new(1, 2, 3), ColorB = new(4, 5, 6, 7), Angle = 45, Strength = 60, Blend = EffectBlend.Multiply, Dither = EffectDither.Bayer2 },
+            new GradientOverlayEffect
+            {
+                Gradient = new EffectColorGradient
+                {
+                    Stops = [new(0, new Color32(1, 2, 3)), new(1, new Color32(4, 5, 6, 7))],
+                    Dither = GradientDither.Bayer2,
+                },
+                Strength = 60, Blend = EffectBlend.Multiply, Easing = EffectEasing.EaseIn,
+            },
             new InnerGlowEffect { Color = new(9, 8, 7), Size = 5, Strength = 33, Fade = false, Blend = EffectBlend.Normal, Enabled = false },
             new PaletteSwapEffect { Pairs = [new(Red, Blue), new(Green, Color32.Transparent)], Tolerance = 12, Frames = new FrameRange(0, 0) },
             new ColorAdjustEffect { Mode = ColorAdjustMode.BrightnessContrast, Amount = 40, Hue = -90, Brightness = 20, Contrast = -30, Saturation = 70 },
@@ -215,7 +236,33 @@ public class StaticEffectTests
             var effects = root["layers"]!.AsArray()[0]!["effects"]!.AsArray();
             effects.Clear();
             effects.Add(new System.Text.Json.Nodes.JsonObject { ["type"] = "shadow", ["enabled"] = true, ["color"] = "#00000080", ["x"] = 2, ["y"] = 1 });
-            foreach (var type in new[] { "gradient", "innerglow", "swap", "adjust", "reflection" })
+            effects.Add(new System.Text.Json.Nodes.JsonObject
+            {
+                ["type"] = "gradient", ["color"] = "#010203", ["color2"] = "#04050607",
+                ["angle"] = 45, ["amount"] = 60, ["blend"] = "Multiply", ["dither"] = "Bayer2",
+            });
+            effects.Add(System.Text.Json.Nodes.JsonNode.Parse("""
+                {
+                  "type": "gradient",
+                  "amount": 40,
+                  "colorGradients": {
+                    "Gradient": {
+                      "angle": 90,
+                      "interpolation": "Steps",
+                      "dither": "Bayer4",
+                      "stops": [
+                        { "position": 0, "color": "#00FF00" },
+                        { "position": 1, "color": "#0000FF" }
+                      ],
+                      "alphaStops": [
+                        { "position": 0, "alpha": 255 },
+                        { "position": 1, "alpha": 64 }
+                      ]
+                    }
+                  }
+                }
+                """));
+            foreach (var type in new[] { "innerglow", "swap", "adjust", "reflection" })
                 effects.Add(new System.Text.Json.Nodes.JsonObject { ["type"] = type });
             entry.Delete();
             using var w = zip.CreateEntry(ProjectIO.ProjectEntryName).Open();
@@ -223,11 +270,35 @@ public class StaticEffectTests
             root.WriteTo(writer);
         }
         stream.Position = 0;
+        var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+        Assert.Equal(new ShadowEffect { Color = Black.WithAlpha(128), OffsetX = 2, OffsetY = 1 }, loaded[0]);
+        var migrated = Assert.IsType<ColorOverlayEffect>(loaded[1]);
+        Assert.Equal((new Color32(1, 2, 3), 60, EffectBlend.Multiply), (migrated.Color, migrated.Amount, migrated.Blend));
+        var spatial = Assert.Single(migrated.ColorGradients).Value;
+        Assert.Equal(45, spatial.Angle);
+        Assert.Equal(GradientDither.Bayer2, spatial.Dither);
+        Assert.True(spatial.StraightRgba);
+        Assert.Equal([new GradientStop(0, new Color32(1, 2, 3)), new GradientStop(1, new Color32(4, 5, 6, 7))], spatial.Stops);
+        Assert.Empty(spatial.AlphaStops);
+        var migrationProbe = migrated with
+        {
+            Amount = 100,
+            Blend = EffectBlend.Normal,
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(ColorOverlayEffect.Color)] = spatial with { Angle = 0, Dither = GradientDither.None },
+            },
+        };
+        Assert.Equal(new Color32(2, 2, 3), LayerEffects.RenderClipped(Filled(3, 1, Black), [migrationProbe])[1, 0]);
+        var custom = Assert.IsType<ColorOverlayEffect>(loaded[2]);
+        Assert.Equal(40, custom.Amount);
+        var customSpatial = Assert.Single(custom.ColorGradients).Value;
+        Assert.Equal((90, GradientInterpolation.Steps, GradientDither.Bayer4),
+            (customSpatial.Angle, customSpatial.Interpolation, customSpatial.Dither));
+        Assert.Equal([new GradientStop(0, Green), new GradientStop(1, Blue)], customSpatial.Stops);
+        Assert.Equal([new GradientAlphaStop(0, 255), new GradientAlphaStop(1, 64)], customSpatial.AlphaStops);
         Assert.Equal(
-            [
-                new ShadowEffect { Color = Black.WithAlpha(128), OffsetX = 2, OffsetY = 1 },
-                new GradientOverlayEffect(), new InnerGlowEffect(), new PaletteSwapEffect(), new ColorAdjustEffect(), new ReflectionEffect(),
-            ],
-            ProjectIO.Load(stream).Layers[0].Effects);
+            [new InnerGlowEffect(), new PaletteSwapEffect(), new ColorAdjustEffect(), new ReflectionEffect()],
+            loaded.Skip(3));
     }
 }

@@ -1,3 +1,5 @@
+using Gpixel.Core.Edit;
+
 namespace Gpixel.Core.Model;
 
 /// <summary>색을 그림 픽셀에 섞는 방법(그라데이션 덮기·안쪽 빛).</summary>
@@ -20,27 +22,23 @@ public enum EffectDither
 }
 
 /// <summary>
-/// 그라데이션 덮기: 보이는 픽셀에 A → B 그라데이션을 <see cref="Strength"/>%만큼 섞는다(픽셀 알파는 그대로).
-/// 색 알파는 혼합 세기에 곱한다. <see cref="LayerEffect.ColorGradients"/>의 Gradient 슬롯을 지정하면
-/// A/B 대신 색·불투명도 정지점, 보간, 디더와 각도를 가진 그라데이션을 쓴다.
-/// 기본 A/B 그라데이션은 보이는 영역을 <see cref="Angle"/> 방향으로 가로지르며, 디더 무늬는 원본 왼쪽 위 기준이다.
+/// 시간 그라데이션: 효과 범위의 진행 0→1에 따라 <see cref="Gradient"/>의 색을 골라 보이는 픽셀에
+/// <see cref="Strength"/>%만큼 섞는다(픽셀 알파는 그대로). 부드러운 보간은 프레임마다 한 색으로 변하고,
+/// 디더를 켜면 전환 중인 두 색을 픽셀 무늬로 섞는다.
 /// </summary>
-public sealed record GradientOverlayEffect : LayerEffect
+public sealed record GradientOverlayEffect : AnimatedEffect
 {
-    private readonly int _angle = 270, _strength = 100;
+    private readonly int _strength = 100;
 
-    public Color32 ColorA { get; init; } = new(255, 230, 120);
-    public Color32 ColorB { get; init; } = new(200, 60, 40);
-
-    /// <summary>A에서 B로 가는 방향(도, 0~359, 0 = →, 90 = ↑).</summary>
-    public int Angle { get => _angle; init => _angle = ((value % 360) + 360) % 360; }
+    public EffectColorGradient Gradient { get; init; } = new()
+    {
+        Stops = [new(0, new Color32(255, 230, 120)), new(1, new Color32(200, 60, 40))],
+    };
 
     /// <summary>0~100(%).</summary>
     public int Strength { get => _strength; init => _strength = Math.Clamp(value, 0, 100); }
 
     public EffectBlend Blend { get; init; } = EffectBlend.Normal;
 
-    public EffectDither Dither { get; init; } = EffectDither.None;
-
-    public override string DisplayName => "그라데이션 덮기";
+    public override string DisplayName => "그라데이션 변화";
 }

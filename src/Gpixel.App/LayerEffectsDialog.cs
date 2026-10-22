@@ -25,8 +25,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ("외곽선", "그림 둘레에 테두리 선을 두릅니다(바깥 = 그림 밖에, 안쪽 = 가장자리 픽셀에).", () => new OutlineEffect()),
         ("그림자", "그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다.", () => new ShadowEffect()),
         ("가장자리 빛·그늘", "빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다.", () => new RimLightEffect()),
-        ("색 덮기", "보이는 픽셀을 한 색으로 물들입니다(100% = 실루엣).", () => new ColorOverlayEffect()),
-        ("그라데이션 덮기", "보이는 픽셀에 두 색이 차츰 바뀌는 그라데이션을 섞습니다(디더 무늬도 됨).", () => new GradientOverlayEffect()),
+        ("색 덮기", "보이는 픽셀을 한 색이나 공간 그라데이션으로 물들입니다(100% = 실루엣).", () => new ColorOverlayEffect()),
         ("안쪽 빛", "가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다.", () => new InnerGlowEffect()),
         ("색 바꾸기", "고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전).", () => new PaletteSwapEffect()),
         ("색조 보정", "흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로).", () => new ColorAdjustEffect()),
@@ -34,6 +33,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ("터지기", "픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.", () => new ExplodeEffect()),
         ("빛 지나가기", "빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임).", () => new ShineEffect()),
         ("늘었다 줄기", "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.", () => new SquashEffect()),
+        ("그라데이션 변화", "효과 범위의 시간에 따라 그라데이션 정지점 색으로 그림 전체가 변합니다.", () => new GradientOverlayEffect()),
         ("피격 번쩍임", "맞았을 때처럼 그림이 한 색으로 번쩍입니다.", () => new HitFlashEffect()),
         ("깜빡이기", "보였다 숨었다를 되풀이합니다(무적 시간 표시 등).", () => new BlinkEffect()),
         ("흔들기", "그림 전체가 픽셀 단위로 덜덜 떱니다.", () => new ShakeEffect()),
@@ -462,11 +462,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
         OutlineEffect o => $"외곽선 · {(o.Inside ? "안쪽" : "바깥")} {o.Thickness}px · {(o.Diagonal ? "8방향" : "4방향")} · {o.Color.ToHex()}",
         ShadowEffect s => $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}" + (s.Dither != ShadowDither.None ? $" · 디더 {ShadowDithers[(int)s.Dither]}" : ""),
         RimLightEffect r => $"가장자리 빛·그늘 · {Directions.First(d => d.Dir == r.Direction).Name} · {r.Size}px",
-        ColorOverlayEffect c => $"색 덮기 · {c.Amount}% · {c.Color.ToHex()}",
+        ColorOverlayEffect c => $"색 덮기 · {Blends[(int)c.Blend]} · {c.Amount}% · {c.Color.ToHex()}",
         ExplodeEffect x => $"터지기 · {x.Distance}px · {Centers[(int)x.Center].Split(' ')[0]}" + (x.KeepOriginal ? " · 원본 남김" : ""),
         ShineEffect s => $"빛 지나가기 · {s.Angle}° · {s.Width}px · {s.Strength}%",
         SquashEffect q => $"늘었다 줄기 · 가로 {q.WidthAmount}% · 세로 {q.HeightAmount}% · {q.Bounces}번",
-        GradientOverlayEffect g => $"그라데이션 덮기 · {g.Angle}° · {Blends[(int)g.Blend]} · {g.Strength}%" + (g.Dither != EffectDither.None ? $" · {Dithers[(int)g.Dither]}" : ""),
+        GradientOverlayEffect g => $"그라데이션 변화 · {g.Gradient.Stops.Count}색 · {Blends[(int)g.Blend]} · {g.Strength}%",
         InnerGlowEffect g => $"안쪽 빛 · {g.Size}px · {g.Strength}% · {g.Color.ToHex()}",
         PaletteSwapEffect p => $"색 바꾸기 · {p.Pairs.Count}쌍" + (p.Tolerance > 0 ? $" · 허용 {p.Tolerance}" : ""),
         ColorAdjustEffect c => $"색조 보정 · {AdjustSummary(c)}",
@@ -622,7 +622,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case ColorOverlayEffect c:
                 SettingsRow("색", EffectColorEditor(c, nameof(ColorOverlayEffect.Color), ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })), Set));
                 SettingsRow("양", NumEditor(0, 100, c.Amount, NumKinds.Strength, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
-                _settings.Children.Add(Hint("보이는 픽셀을 그 색 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."));
+                SettingsRow("섞기", ChoiceEditor(Blends, (int)c.Blend, k => Set(x => (ColorOverlayEffect)x with { Blend = (EffectBlend)k })));
+                _settings.Children.Add(Hint("보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."));
                 break;
             case ExplodeEffect x:
             {
