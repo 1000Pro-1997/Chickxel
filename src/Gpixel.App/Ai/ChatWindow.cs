@@ -484,6 +484,7 @@ public sealed class ChatWindow : Window
         private readonly List<Attachment> _attachments = new();
         private readonly List<UndoStep> _steps = new();
         private readonly DispatcherTimer _terminalPoll = new() { Interval = TimeSpan.FromSeconds(2) };
+        private readonly DispatcherTimer _installPoll = new() { Interval = TimeSpan.FromSeconds(2) };
         /// <summary>차례 중 "생각 중…" 줄을 진행 상황(단계·받은 양·걸린 시간)으로 고쳐 쓴다.</summary>
         private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
         private DateTime _turnStart, _phaseStart;
@@ -500,7 +501,7 @@ public sealed class ChatWindow : Window
         private Turn? _turn;
         private TextBlock? _hint;
         /// <summary><see cref="_started"/>: 처음 보일 때 확인을 시작했음(다시 볼 때는 확인하지 않음).</summary>
-        private bool _follow = true, _checking, _polling, _started, _fillingModels;
+        private bool _follow = true, _checking, _polling, _installChecking, _started, _fillingModels;
 
         public ChatTab(ChatWindow w, AiProvider provider, int index)
         {
@@ -573,6 +574,7 @@ public sealed class ChatWindow : Window
             _chatPanel = new DockPanel { Children = { inputArea, _scroll } };
 
             _terminalPoll.Tick += async (_, _) => await PollLoginAsync();
+            _installPoll.Tick += async (_, _) => await PollInstallAsync();
             _progressTimer.Tick += (_, _) => UpdateProgress();
             AddHint();
             SetHeader("", inChat: false);
@@ -607,6 +609,7 @@ public sealed class ChatWindow : Window
         /// <summary>창을 닫을 때: 로그인·세션을 끝낸다(차례는 먼저 <see cref="StopTurn"/>).</summary>
         public void Close()
         {
+            _installPoll.Stop();
             LeaveLogin();
             _session?.Dispose();
             _session = null;
@@ -644,7 +647,7 @@ public sealed class ChatWindow : Window
                 var path = Provider.Locate(_w._settings);
                 if (path is null)
                 {
-                    ShowNoCli();
+                    if (!_installPoll.IsEnabled) ShowNoCli();
                     return;
                 }
                 if (_cliPath != path)
@@ -666,6 +669,42 @@ public sealed class ChatWindow : Window
         }
 
         private async void Recheck() => await CheckAsync();
+        private async Task PollInstallAsync()
+        {
+            if (_installChecking || _checking || _w._shutdown) return;
+            _installChecking = true;
+            try
+            {
+                var path = Provider.Locate(_w._settings);
+                if (path is null) return;
+                if (_cliPath != path)
+                {
+                    await CheckAsync();
+                    return;
+                }
+                var status = await Provider.GetAuthStatusAsync(path);
+                if (!_w._shutdown && status.LoggedIn) ShowChat(status);
+            }
+            finally
+            {
+                _installChecking = false;
+            }
+        }
+
+        private void StartInstall()
+        {
+            var steps = AiInstaller.Preview(Provider);
+            if (Ui.Ask(_w, $"{Provider.ProductName} 설치 및 로그인에 다음 명령을 사용합니다.\n\n{steps}\n\n공식 설치 프로그램과 계정 로그인은 터미널·브라우저에서 진행됩니다. 실행할까요?",
+                    "AI 설치", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+            if (!AiInstaller.OpenTerminal(Provider, out var error))
+            {
+                Ui.Error(_w, $"터미널을 열지 못했습니다.\n{error}");
+                return;
+            }
+            _installPoll.Start();
+            ShowNoCli();
+        }
+
 
         /// <summary>CLI가 없을 때: 설치 안내.</summary>
         private void ShowNoCli()
@@ -675,7 +714,12 @@ public sealed class ChatWindow : Window
             var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
             stack.Children.Add(TitleText($"{p.ProductName}를 찾지 못했습니다"));
             stack.Children.Add(WrapText($"이 창은 컴퓨터에 설치된 {p.ProductName}({p.Command} 명령)와 사용자의 {p.AccountText}으로 동작합니다(API 키를 넣지 않음). " +
-                                        "터미널에서 아래 명령으로 설치한 뒤 \"다시 확인\"을 누르세요."));
+                                        "MCP는 Gpixel에 들어 있으며 CLI만 따로 설치합니다."));
+            var install = Ui.Button("터미널에서 설치하고 로그인", (_, _) => StartInstall());
+            install.HorizontalAlignment = HorizontalAlignment.Left;
+            stack.Children.Add(install);
+            if (_installPoll.IsEnabled) stack.Children.Add(WrapText("터미널에서 설치·로그인을 진행하세요. 완료되면 채팅으로 자동 전환됩니다. 오류가 나면 아래 명령으로 직접 설치할 수 있습니다.", dim: true));
+            else stack.Children.Add(WrapText("명령을 확인하고 터미널에서 설치할 수 있습니다. 직접 설치하려면 아래 명령을 복사하세요.", dim: true));
             foreach (var (title, command) in p.InstallCommands) stack.Children.Add(_w.CommandBox(title, command));
             var recheck = Ui.Button("다시 확인", (_, _) => Recheck());
             recheck.HorizontalAlignment = HorizontalAlignment.Left;
@@ -831,6 +875,7 @@ public sealed class ChatWindow : Window
 
         private void ShowChat(AuthStatus status)
         {
+            _installPoll.Stop();
             LeaveLogin();
             if (_cliPath is not { } path) return;
             var who = status.Describe();

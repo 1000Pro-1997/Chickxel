@@ -90,6 +90,8 @@ public static class AiCli
             yield return Path.Combine(Home, ".local", "bin", command + ".exe");
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (appData.Length > 0) yield return Path.Combine(appData, "npm", command + ".cmd");
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (localAppData.Length > 0) yield return Path.Combine(localAppData, "Gpixel", "Node", command + ".cmd");
             foreach (var dir in PathEntries())
             {
                 yield return Path.Combine(dir, command + ".exe");
@@ -134,6 +136,8 @@ public static class AiCli
         {
             dirs.Add(Path.Combine(Home, ".local", "bin"));
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (localAppData.Length > 0) dirs.Add(Path.Combine(localAppData, "Gpixel", "Node"));
             if (appData.Length > 0) dirs.Add(Path.Combine(appData, "npm"));
         }
         else dirs.AddRange(UnixProbeDirectories());
