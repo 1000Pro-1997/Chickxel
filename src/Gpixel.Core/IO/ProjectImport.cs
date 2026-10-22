@@ -118,7 +118,7 @@ public static class ProjectImport
             var project = ProjectIO.Load(existing, warnings);
             return new ProjectOpenResult(project, false, pickedPng ? analysis.SourcePath : null, Join(warnings));
         }
-        var doc = analysis.Document ?? throw new ArgumentException("가져올 문서가 없습니다.", nameof(analysis));
+        var doc = analysis.Document ?? throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Import_NoDocument, nameof(analysis));
         var imported = FromDocument(doc, mode ?? analysis.SuggestedMode);
         imported.Path = GetProjectPathForPng(analysis.SourcePath);
         imported.IsDirty = false;
@@ -170,7 +170,7 @@ public static class ProjectImport
         int height = Math.Max(1, slices.Select((s, i) => offsets[i].Item2 + s.Rect.Height).Max());
 
         var project = SpriteProject.CreateBlank(width, height);
-        var layer = new Layer("레이어 1");
+        var layer = new Layer(project.NextLayerName());
         project.AddLayerRaw(layer);
         project.Sprite.CopyFrom(doc.Sprite);
         project.Sprite.Mode = SpriteMode.Multiple;

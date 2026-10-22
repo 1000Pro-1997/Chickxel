@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -22,29 +23,29 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// </summary>
     private static readonly (string Name, string Description, Func<LayerEffect> New)[] KindTable =
     [
-        ("외곽선", "그림 둘레에 테두리 선을 두릅니다(바깥 = 그림 밖에, 안쪽 = 가장자리 픽셀에).", () => new OutlineEffect()),
-        ("그림자", "그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다.", () => new ShadowEffect()),
-        ("가장자리 빛·그늘", "빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다.", () => new RimLightEffect()),
-        ("색 덮기", "보이는 픽셀을 한 색이나 공간 그라데이션으로 물들입니다(100% = 실루엣).", () => new ColorOverlayEffect()),
-        ("안쪽 빛", "가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다.", () => new InnerGlowEffect()),
-        ("색 바꾸기", "고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전).", () => new PaletteSwapEffect()),
-        ("색조 보정", "흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로).", () => new ColorAdjustEffect()),
-        ("반사", "그림을 위아래로 뒤집어 아래에 점점 옅게 비춥니다(물·바닥 반사).", () => new ReflectionEffect()),
-        ("터지기", "픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.", () => new ExplodeEffect()),
-        ("빛 지나가기", "빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임).", () => new ShineEffect()),
-        ("늘었다 줄기", "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.", () => new SquashEffect()),
-        ("그라데이션 변화", "효과 범위의 시간에 따라 그라데이션 정지점 색으로 그림 전체가 변합니다.", () => new GradientOverlayEffect()),
-        ("피격 번쩍임", "맞았을 때처럼 그림이 한 색으로 번쩍입니다.", () => new HitFlashEffect()),
-        ("깜빡이기", "보였다 숨었다를 되풀이합니다(무적 시간 표시 등).", () => new BlinkEffect()),
-        ("흔들기", "그림 전체가 픽셀 단위로 덜덜 떱니다.", () => new ShakeEffect()),
-        ("둥실둥실", "위아래로 부드럽게 떠오르고 가라앉습니다(대기 동작).", () => new BobEffect()),
-        ("나타나기 / 사라지기", "디더·흩어짐·쓸기·투명도로 그림이 나타나거나 사라집니다.", () => new AppearEffect()),
-        ("녹아내리기", "픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다.", () => new MeltEffect()),
-        ("회전", "그림을 돌립니다(RotSprite — 새 색·반투명 없이).", () => new RotateEffect()),
-        ("잔상", "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다.", () => new AfterimageEffect()),
-        ("색 순환", "정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색).", () => new ColorCycleEffect()),
-        ("충격파 고리", "중심에서 픽셀 원 고리가 퍼져 나갑니다.", () => new ShockwaveEffect()),
-        ("홀로그램", "한 색의 투사 영상처럼 물들이고 주사선·밝은 띠·깜빡임·글리치를 더합니다(SF 홀로그램).", () => new HologramEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_5C190C1C74, UiStrings.S_LayerEffectsDialog_KindTable_45261BC59C, () => new OutlineEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_10CD6603BC, UiStrings.S_LayerEffectsDialog_KindTable_2576225185, () => new ShadowEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_126136E630, UiStrings.S_LayerEffectsDialog_KindTable_4230F44F0C, () => new RimLightEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_C29C82BC8E, UiStrings.S_LayerEffectsDialog_KindTable_03AE924348, () => new ColorOverlayEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_25FE384908, UiStrings.S_LayerEffectsDialog_KindTable_6134E7833F, () => new InnerGlowEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_20C2A2DCF6, UiStrings.S_LayerEffectsDialog_KindTable_4E3A3D50CE, () => new PaletteSwapEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_CA9E953421, UiStrings.S_LayerEffectsDialog_KindTable_02A04E0B04, () => new ColorAdjustEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_5627BD3D9D, UiStrings.S_LayerEffectsDialog_KindTable_6A331276D8, () => new ReflectionEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_AC8A98B707, UiStrings.S_LayerEffectsDialog_KindTable_91F153F61A, () => new ExplodeEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_174D9850CC, UiStrings.S_LayerEffectsDialog_KindTable_E97AB47F1D, () => new ShineEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_792E7BADCE, UiStrings.S_LayerEffectsDialog_KindTable_7C6C1B6117, () => new SquashEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_20186332CF, UiStrings.S_LayerEffectsDialog_KindTable_8153DDED55, () => new GradientOverlayEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_1725C3F28A, UiStrings.S_LayerEffectsDialog_KindTable_993BDE3846, () => new HitFlashEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_510993AD9E, UiStrings.S_LayerEffectsDialog_KindTable_4E942C831D, () => new BlinkEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_2C5AB3754D, UiStrings.S_LayerEffectsDialog_KindTable_043CDEE3B8, () => new ShakeEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_F5A6D8375C, UiStrings.S_LayerEffectsDialog_KindTable_361470DFA9, () => new BobEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_F6C9786974, UiStrings.S_LayerEffectsDialog_KindTable_FFF387B9B9, () => new AppearEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_4A3575A660, UiStrings.S_LayerEffectsDialog_KindTable_1B49B1765C, () => new MeltEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_B65A656A1B, UiStrings.S_LayerEffectsDialog_KindTable_34F6760645, () => new RotateEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_C41906B546, UiStrings.S_LayerEffectsDialog_KindTable_69C80DA119, () => new AfterimageEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_23A9E57A2F, UiStrings.S_LayerEffectsDialog_KindTable_1ABE2A05EE, () => new ColorCycleEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_71D60FCC7E, UiStrings.S_LayerEffectsDialog_KindTable_CB2F9D0913, () => new ShockwaveEffect()),
+        (UiStrings.S_LayerEffectsDialog_KindTable_2B322D7A38, UiStrings.S_LayerEffectsDialog_KindTable_EF5C5A3497, () => new HologramEffect()),
     ];
 
     /// <summary>효과 종류의 한 줄 설명(번호 = <see cref="Create"/>의 kind).</summary>
@@ -61,18 +62,18 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static readonly (LightDirection Dir, string Name)[] Directions =
     [
-        (LightDirection.TopLeft, "왼쪽 위"), (LightDirection.Top, "위"), (LightDirection.TopRight, "오른쪽 위"),
-        (LightDirection.Left, "왼쪽"), (LightDirection.Right, "오른쪽"),
-        (LightDirection.BottomLeft, "왼쪽 아래"), (LightDirection.Bottom, "아래"), (LightDirection.BottomRight, "오른쪽 아래"),
+        (LightDirection.TopLeft, UiStrings.S_LayerEffectsDialog_Directions_38A213C040), (LightDirection.Top, UiStrings.S_LayerEffectsDialog_Directions_53073620AC), (LightDirection.TopRight, UiStrings.S_LayerEffectsDialog_Directions_E2ADEEE3AD),
+        (LightDirection.Left, UiStrings.S_LayerEffectsDialog_Directions_87DE11F0BD), (LightDirection.Right, UiStrings.S_LayerEffectsDialog_Directions_A573091255),
+        (LightDirection.BottomLeft, UiStrings.S_LayerEffectsDialog_Directions_2D3F13D6AD), (LightDirection.Bottom, UiStrings.S_LayerEffectsDialog_Directions_B1DECE0B86), (LightDirection.BottomRight, UiStrings.S_LayerEffectsDialog_Directions_73A07AC9E0),
     ];
 
-    private static readonly string[] Easings = ["처음 빠르게", "일정하게", "천천히 시작", "천천히 시작·끝"];
-    private static readonly string[] Repeats = ["한 번", "반복", "왕복"];
-    private static readonly string[] Centers = ["가운데", "피벗", "아래 가운데", "직접 (X, Y)"];
-    private static readonly string[] Anchors = ["아래 가운데 (발 고정)", "가운데", "피벗"];
-    private static readonly string[] ShadowDithers = ["없음 (반투명)", "25%", "50% (바둑판)", "75%"];
-    private static readonly string[] Blends = ["덮기", "곱하기", "스크린"];
-    private static readonly string[] Dithers = ["없음 (부드럽게)", "2×2 Bayer", "4×4 Bayer"];
+    private static readonly string[] Easings = [UiStrings.S_LayerEffectsDialog_Easings_4FA414FBAC, UiStrings.S_LayerEffectsDialog_Easings_BDEEAEDE46, UiStrings.S_LayerEffectsDialog_Easings_503369007B, UiStrings.S_LayerEffectsDialog_Easings_7665ED231C];
+    private static readonly string[] Repeats = [UiStrings.S_LayerEffectsDialog_Repeats_3E39AFFB4A, UiStrings.S_LayerEffectsDialog_Repeats_753C57FE3B, UiStrings.S_LayerEffectsDialog_Repeats_466235A991];
+    private static readonly string[] Centers = [UiStrings.S_LayerEffectsDialog_Centers_17A9293CA6, UiStrings.S_LayerEffectsDialog_Centers_7CA53FB898, UiStrings.S_LayerEffectsDialog_Centers_4EEB98A21E, UiStrings.S_LayerEffectsDialog_Centers_8D791DFBBE];
+    private static readonly string[] Anchors = [UiStrings.S_LayerEffectsDialog_Anchors_0EC3ED31B9, UiStrings.S_LayerEffectsDialog_Anchors_1F3A9869CE, UiStrings.S_LayerEffectsDialog_Anchors_6466116779];
+    private static readonly string[] ShadowDithers = [UiStrings.S_LayerEffectsDialog_ShadowDithers_85A6B2AD26, "25%", UiStrings.S_LayerEffectsDialog_ShadowDithers_BC77BAD2B0, "75%"];
+    private static readonly string[] Blends = [UiStrings.S_LayerEffectsDialog_Blends_69D924C609, UiStrings.S_LayerEffectsDialog_Blends_1725732230, UiStrings.S_LayerEffectsDialog_Blends_5260B3BD7E];
+    private static readonly string[] Dithers = [UiStrings.S_LayerEffectsDialog_Dithers_19C7C4899C, "2×2 Bayer", "4×4 Bayer"];
 
     /// <summary>숫자 칸 종류: 우클릭 예시 값(칸 범위 밖 값은 빠짐), 단위(메뉴 글자), 최근 값 묶음 이름. <paramref name="Format"/>가 있으면 단위 대신 그 글자.</summary>
     private sealed record NumKind(string Key, string Unit, decimal[] Values, Func<decimal, string>? Format = null);
@@ -115,15 +116,15 @@ public sealed partial class LayerEffectsDialog : DialogBase
         /// <summary>터지기 조각 크기(1~4px).</summary>
         public static readonly NumKind Piece = new("effect.piece", "px", [1, 2, 3, 4]);
         /// <summary>범위 안 횟수(튕김·번쩍임·깜빡임·흔들림·오르내림).</summary>
-        public static readonly NumKind Count = new("effect.count", "번", [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
+        public static readonly NumKind Count = new("effect.count", UiStrings.S_LayerEffectsDialog_Count_A61CE50C3B, [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
         /// <summary>움직임 반복 횟수.</summary>
-        public static readonly NumKind Repeat = new("effect.repeat", "번", [1, 2, 3, 4, 5, 6, 8]);
+        public static readonly NumKind Repeat = new("effect.repeat", UiStrings.S_LayerEffectsDialog_Repeat_ABB1AFE73B, [1, 2, 3, 4, 5, 6, 8]);
         /// <summary>프레임 수(보임·숨김·번쩍임·잔상 간격).</summary>
-        public static readonly NumKind Frames = new("effect.frames", "프레임", [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
+        public static readonly NumKind Frames = new("effect.frames", UiStrings.S_LayerEffectsDialog_Frames_656538CC7F, [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
         /// <summary>잔상 개수.</summary>
-        public static readonly NumKind Copies = new("effect.copies", "개", [1, 2, 3, 4, 5, 6, 8]);
+        public static readonly NumKind Copies = new("effect.copies", UiStrings.S_LayerEffectsDialog_Copies_54ACB79D5D, [1, 2, 3, 4, 5, 6, 8]);
         /// <summary>주사선 간격(줄).</summary>
-        public static readonly NumKind ScanGap = new("effect.scanGap", "줄", [2, 3, 4, 5, 6]);
+        public static readonly NumKind ScanGap = new("effect.scanGap", UiStrings.S_LayerEffectsDialog_ScanGap_5A028BD5A6, [2, 3, 4, 5, 6]);
         /// <summary>무작위 시드.</summary>
         public static readonly NumKind Seed = new("effect.seed", "", [1, 2, 3, 7, 42, 1234]);
         /// <summary>색 허용 차이(R·G·B 0~255).</summary>
@@ -163,10 +164,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <param name="focus">처음 고를 효과 번호(범위 밖이면 첫 효과).</param>
     /// <param name="newRange">"추가 범위"의 처음 값(타임라인에서 칸을 고르고 "효과 추가…"로 열었을 때 그 프레임들). null = 모든 프레임.</param>
     /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
-    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base($"레이어 효과 — {layer.Name}")
+    public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_7E8F1A60E2,layer.Name))
     {
         _motionRange = motionRange ?? newRange;
-        _project = ctx.Project ?? throw new InvalidOperationException("열린 프로젝트가 없습니다.");
+        _project = ctx.Project ?? throw new InvalidOperationException(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_42089F3C1D);
         _layer = layer;
         _frame = Math.Clamp(ctx.CurrentFrame, 0, _project.Frames.Count - 1);
         _previewFrame = _frame;
@@ -174,11 +175,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _effects = [.. layer.Effects];
 
         int n = _project.Frames.Count;
-        _addAll = Ui.Check("모든 프레임", newRange is null);
+        _addAll = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_562B8ABA6D, newRange is null);
         _addFrom = WithKind(Ui.Num(1, n, (newRange?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
         _addTo = WithKind(Ui.Num(1, n, (newRange?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
         _addFrom.IsEnabled = _addTo.IsEnabled = newRange is not null;
-        ToolTip.SetTip(_addAll, "추가하는 효과가 입혀질 프레임(추가한 뒤에도 아래 설정에서 바꿀 수 있음).");
+        ToolTip.SetTip(_addAll, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_58CE85AE10);
         _addAll.IsCheckedChanged += (_, _) =>
         {
             if (!_addAll.On() && (int)_addFrom.NumValue() == 1 && (int)_addTo.NumValue() == n)
@@ -189,12 +190,12 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         _addFrom.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
         _addTo.ValueChanged += (_, _) => { _addRangeTouched = true; SyncStripRange(); };
-        _remove = Ui.Button("삭제", (_, _) => Remove(), 60);
-        _up = Ui.Button("위로", (_, _) => Move(-1), 60);
-        _down = Ui.Button("아래로", (_, _) => Move(1), 60);
-        _bake = Ui.Button("영구 적용", (_, _) => Bake(), 80);
+        _remove = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_DEC8D5CC64, (_, _) => Remove(), 60);
+        _up = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4E920AEA13, (_, _) => Move(-1), 60);
+        _down = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_FE8FEDFCFF, (_, _) => Move(1), 60);
+        _bake = Ui.Button(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_769C41A711, (_, _) => Bake(), 80);
         _list = new ListBox { Width = SettingsWidth, Height = 170, Margin = new Thickness(3) };
-        ToolTip.SetTip(_list, "줄을 끌어 순서를 바꿉니다(위에서부터 차례로 적용). Delete = 고른 효과 삭제.");
+        ToolTip.SetTip(_list, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_A48FBAD60B);
         _list.KeyDown += (_, e) =>
         {
             if (e.Key is not (Key.Delete or Key.Back) || Selected < 0) return;
@@ -220,8 +221,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
 
-        _expandCanvas = Ui.Check("효과만큼 캔버스 확대", false);
-        _expandMode = Ui.Combo(110, ["최소한으로", "비율 유지"]);
+        _expandCanvas = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_420801482E, false);
+        _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F]);
         _expandMode.SelectedIndex = (int)s_canvasExpandMode;
         _expandMode.IsEnabled = false;
         _expandNote = Ui.Label("");
@@ -230,8 +231,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _expandNote.TextWrapping = TextWrapping.Wrap;
         _expandNote.MaxWidth = SettingsWidth;
         _expandNote.IsVisible = false;
-        ToolTip.SetTip(_expandCanvas, "확인할 때 이 레이어의 켜진 효과가 캔버스 밖에서 잘리지 않도록 캔버스를 늘립니다. 그림 크기는 바꾸지 않고 모든 레이어·부위·피벗을 함께 옮깁니다.");
-        ToolTip.SetTip(_expandMode, "최소한으로: 효과가 나간 방향만 필요한 만큼 · 비율 유지: 효과를 모두 담으면서 원래 캔버스 가로세로 비율을 유지");
+        ToolTip.SetTip(_expandCanvas, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_98461A52E4);
+        ToolTip.SetTip(_expandMode, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4DF95CBC10);
         _expandCanvas.IsCheckedChanged += (_, _) =>
         {
             _expandMode.IsEnabled = _expandCanvas.On();
@@ -260,37 +261,37 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
 
         string? motionTip = _motionRange != newRange && _motionRange is { } mr
-            ? $"추가 범위를 그대로 두고 움직이는 효과(터지기 ~ 충격파 고리)를 추가하면 여러 프레임에 걸치도록 프레임 {mr.From + 1}~{mr.To + 1}로 넓혀 추가합니다."
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F60FBD674C,mr.From + 1,mr.To + 1)
             : null;
-        var rangeLabel = Ui.Label("추가 범위");
+        var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
         var canvasExpand = Ui.Stack(Ui.Row(_expandCanvas, _expandMode), _expandNote);
         var left = Ui.Stack(
-            Ui.Row(rangeLabel, _addAll, Ui.Label("프레임"), _addFrom, Ui.Label("~"), _addTo),
+            Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo),
             _list,
             Ui.Row(_remove, _up, _down, _bake),
             canvasExpand,
-            Ui.Group("설정", new ScrollViewer { Content = _settings, MaxHeight = 390, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
+            Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, new ScrollViewer { Content = _settings, MaxHeight = 390, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
         left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;
         _preview.Height = PreviewBox + 20;
         _caption = Ui.Label("");
         _caption.Foreground = AppTheme.DimTextBrush;
-        _play = Ui.Button(VectorIcon.Play, "재생", (_, _) => TogglePlay(), 80);
-        ToolTip.SetTip(_play, "고른 효과의 범위 또는 늘린 뒤 전체 프레임을 돌려 봅니다.");
-        _effectOnly = Ui.Check("고른 효과 범위만", s_effectOnly);
+        _play = Ui.Button(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_3DC0585476, (_, _) => TogglePlay(), 80);
+        ToolTip.SetTip(_play, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_46C6465E13);
+        _effectOnly = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_BEC5ADB6D1, s_effectOnly);
         _effectOnly.VerticalAlignment = VerticalAlignment.Center;
         _effectOnly.IsCheckedChanged += (_, _) =>
         {
             s_effectOnly = _effectOnly.On();
             SyncPlayback(restart: true);
         };
-        ToolTip.SetTip(_effectOnly, "켜면 고른 효과가 입혀지는 프레임만, 끄면 늘리기로 더해질 프레임까지 전체를 재생합니다.");
-        var loop = Ui.Check("끝에서 바로 처음으로", s_seamlessLoop);
+        ToolTip.SetTip(_effectOnly, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_2138B1E743);
+        var loop = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_96BC2CE00E, s_seamlessLoop);
         loop.VerticalAlignment = VerticalAlignment.Center;
         loop.IsCheckedChanged += (_, _) => s_seamlessLoop = loop.On();
-        ToolTip.SetTip(loop, "재생할 때 마지막 프레임을 더 보여 주지 않고 곧바로 첫 프레임으로 이어서 반복합니다(게임에서 반복 재생하는 모습).");
+        ToolTip.SetTip(loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
             Ui.Row(_play, _effectOnly, loop, Ui.InfoBadge(Intro(layer))),
@@ -319,11 +320,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     private static string Intro(Layer layer)
-        => "효과는 그림을 고치지 않고 보일 때만 입혀집니다(나중에 그린 것에도). 위에서부터 차례로 적용됩니다.\n"
-           + "움직이는 효과는 프레임 범위의 처음에서 시작해 끝에서 끝납니다(범위가 길수록 느림).\n"
-           + "미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 효과를 고르면 그 범위를 바로 재생하고, '고른 효과 범위만'을 끄면 늘린 뒤 전체 프레임을 재생합니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 고른 효과의 프레임 범위."
-           + (layer.IsGroup ? "\n그룹 효과는 부위들을 합친 모양에 입혀지며 프레임 시트에만 들어갑니다." : "")
-           + (layer.IsPart ? "\n부위 아틀라스에서는 번지는 만큼 스프라이트가 커지고 피벗은 같은 자리를 가리킵니다." : "");
+        => UiStrings.S_LayerEffectsDialog_Intro_AA476847D8
+           + UiStrings.S_LayerEffectsDialog_Intro_3052848546
+           + UiStrings.S_LayerEffectsDialog_Intro_C71F0948BE
+           + (layer.IsGroup ? UiStrings.S_LayerEffectsDialog_Intro_5F6126CBFA : "")
+           + (layer.IsPart ? UiStrings.S_LayerEffectsDialog_Intro_03C1A71EB9 : "");
 
     // ───────────── 목록 ─────────────
 
@@ -372,8 +373,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var (canBake, why) = CanBake(_project, _layer);
         _bake.IsEnabled = canBake && Selected >= 0;
         int extra = Selected >= 0 ? LayerEffects.BakeSet(_effects, [Selected]).Count - 1 : 0;
-        ToolTip.SetTip(_bake, why ?? ("고른 효과를 셀 픽셀에 구워 넣고 효과에서 뺍니다(실행취소 한 단계, 창이 닫힘)."
-                                      + (extra > 0 ? $" 위의 켜진 효과 {extra}개도 함께 구워집니다(보이던 그대로가 되도록)." : "")));
+        ToolTip.SetTip(_bake, why ?? (UiStrings.S_LayerEffectsDialog_UpdateButtons_ADC8E0220B
+                                      + (extra > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_UpdateButtons_DFC3F498B4,extra) : "")));
     }
 
     /// <summary>종류 <paramref name="kind"/>의 새 효과를 추가 범위로 목록 <paramref name="at"/>번째에 넣고 고른다.</summary>
@@ -459,41 +460,41 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static string Summary(LayerEffect e) => (e switch
     {
-        OutlineEffect o => $"외곽선 · {(o.Inside ? "안쪽" : "바깥")} {o.Thickness}px · {(o.Diagonal ? "8방향" : "4방향")} · {o.Color.ToHex()}",
-        ShadowEffect s => $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}" + (s.Dither != ShadowDither.None ? $" · 디더 {ShadowDithers[(int)s.Dither]}" : ""),
-        RimLightEffect r => $"가장자리 빛·그늘 · {Directions.First(d => d.Dir == r.Direction).Name} · {r.Size}px",
-        ColorOverlayEffect c => $"색 덮기 · {Blends[(int)c.Blend]} · {c.Amount}% · {c.Color.ToHex()}",
-        ExplodeEffect x => $"터지기 · {x.Distance}px · {Centers[(int)x.Center].Split(' ')[0]}" + (x.KeepOriginal ? " · 원본 남김" : ""),
-        ShineEffect s => $"빛 지나가기 · {s.Angle}° · {s.Width}px · {s.Strength}%",
-        SquashEffect q => $"늘었다 줄기 · 가로 {q.WidthAmount}% · 세로 {q.HeightAmount}% · {q.Bounces}번",
-        GradientOverlayEffect g => $"그라데이션 변화 · {g.Gradient.Stops.Count}색 · {Blends[(int)g.Blend]} · {g.Strength}%",
-        InnerGlowEffect g => $"안쪽 빛 · {g.Size}px · {g.Strength}% · {g.Color.ToHex()}",
-        PaletteSwapEffect p => $"색 바꾸기 · {p.Pairs.Count}쌍" + (p.Tolerance > 0 ? $" · 허용 {p.Tolerance}" : ""),
-        ColorAdjustEffect c => $"색조 보정 · {AdjustSummary(c)}",
-        ReflectionEffect m => $"반사 · {(m.Above ? "위" : "아래")} · 간격 {m.Gap}px · {m.Height}% · {m.OpacityStart}→{m.OpacityEnd}%" + (m.DitherFade ? " · 디더" : ""),
-        HitFlashEffect hit => $"피격 번쩍임 · {hit.Count}번 · {hit.Strength}% · {hit.Color.ToHex()}" + (hit.Shape == HitFlashShape.Fade ? " · 엷어짐" : ""),
-        BlinkEffect blink => $"깜빡이기 · " + (blink.Timing == BlinkTiming.Frames ? $"보임 {blink.OnFrames} / 숨김 {blink.OffFrames}프레임" : $"{blink.Count}번")
+        OutlineEffect o => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E7A8C83171,(o.Inside ? UiStrings.S_LayerEffectsDialog_Summary_192DBA1F7C : UiStrings.S_LayerEffectsDialog_Summary_78B20FF1F4),o.Thickness,(o.Diagonal ? UiStrings.S_LayerEffectsDialog_Summary_009BCE5A4C : UiStrings.S_LayerEffectsDialog_Summary_2629FC9A9D),o.Color.ToHex()),
+        ShadowEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E233F2401C,s.OffsetX,s.OffsetY,s.Color.ToHex()) + (s.Dither != ShadowDither.None ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_FDDC95CFEA,ShadowDithers[(int)s.Dither]) : ""),
+        RimLightEffect r => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0B62ABBEE2,Directions.First(d => d.Dir == r.Direction).Name,r.Size),
+        ColorOverlayEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F824955A0D,Blends[(int)c.Blend],c.Amount,c.Color.ToHex()),
+        ExplodeEffect x => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DE0B23D063,x.Distance,Centers[(int)x.Center].Split(' ')[0]) + (x.KeepOriginal ? UiStrings.S_LayerEffectsDialog_Summary_30757AF9AF : ""),
+        ShineEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F451DAAC0A,s.Angle,s.Width,s.Strength),
+        SquashEffect q => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_963828451F,q.WidthAmount,q.HeightAmount,q.Bounces),
+        GradientOverlayEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_51DCB418AA,g.Gradient.Stops.Count,Blends[(int)g.Blend],g.Strength),
+        InnerGlowEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_B8FE86B3A0,g.Size,g.Strength,g.Color.ToHex()),
+        PaletteSwapEffect p => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_53B3F1206A,p.Pairs.Count) + (p.Tolerance > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E77A16477B,p.Tolerance) : ""),
+        ColorAdjustEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_62017EE627,AdjustSummary(c)),
+        ReflectionEffect m => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_54368CD4DD,(m.Above ? UiStrings.S_LayerEffectsDialog_Summary_99CAC4A07E : UiStrings.S_LayerEffectsDialog_Summary_F724879C11),m.Gap,m.Height,m.OpacityStart,m.OpacityEnd) + (m.DitherFade ? UiStrings.S_LayerEffectsDialog_Summary_823544BC03 : ""),
+        HitFlashEffect hit => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_A9AB403D93,hit.Count,hit.Strength,hit.Color.ToHex()) + (hit.Shape == HitFlashShape.Fade ? UiStrings.S_LayerEffectsDialog_Summary_1BF53EA7E5 : ""),
+        BlinkEffect blink => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0080B38202) + (blink.Timing == BlinkTiming.Frames ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_855D00FD34,blink.OnFrames,blink.OffFrames) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_7D1229802B,blink.Count))
                              + $" · {BlinkHides[(int)blink.Hide]}",
-        ShakeEffect shake => $"흔들기 · {Axes[(int)shake.Axis]} · {shake.Amount}px · {shake.Count}번" + (shake.Decay ? " · 줄어듦" : "") + (shake.Regular ? " · 규칙적" : ""),
-        BobEffect bob => $"둥실둥실 · {(bob.Axis == EffectAxis.Horizontal ? "좌우" : "위아래")} · {bob.Height}px · {bob.Cycles}번",
-        AppearEffect appear => $"{appear.DisplayName} · {AppearStyles[(int)appear.Style]}" + (appear.Style == AppearStyle.Wipe ? $" · {WipeFroms[(int)appear.From]}부터" : ""),
-        MeltEffect melt => $"녹아내리기 · {melt.Distance}px · 불규칙 {melt.Irregularity}%",
-        RotateEffect rotate => $"회전 · {rotate.Angle}° · {(rotate.Clockwise ? "시계" : "반시계")} 방향 · {Anchors[(int)rotate.Anchor].Split(' ')[0]}",
-        AfterimageEffect after => $"잔상 · {after.Count}개 · 간격 {after.Interval} · {after.Opacity}%" + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
-        ColorCycleEffect cycle => $"색 순환 · {cycle.Colors.Count}색 · {cycle.Steps}칸" + (cycle.Reverse ? " · 거꾸로" : ""),
-        ShockwaveEffect wave => $"충격파 고리 · {wave.Radius}px · 두께 {wave.Thickness} · {(wave.Behind ? "뒤" : "앞")}",
-        HologramEffect holo => $"홀로그램 · {holo.Color.ToHex()} · {holo.TintStrength}% · 투명도 {holo.Opacity}%" + (holo.Dither ? " · 디더" : "")
-                               + (holo.GlitchRate > 0 ? $" · 글리치 {holo.GlitchRate}%" : ""),
+        ShakeEffect shake => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_92D1EF3203,Axes[(int)shake.Axis],shake.Amount,shake.Count) + (shake.Decay ? UiStrings.S_LayerEffectsDialog_Summary_1D40117C02 : "") + (shake.Regular ? UiStrings.S_LayerEffectsDialog_Summary_4DA5BACD5A : ""),
+        BobEffect bob => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_BBAD57A076,(bob.Axis == EffectAxis.Horizontal ? UiStrings.S_LayerEffectsDialog_Summary_3722634F0B : UiStrings.S_LayerEffectsDialog_Summary_EFCA029C51),bob.Height,bob.Cycles),
+        AppearEffect appear => $"{appear.DisplayName} · {AppearStyles[(int)appear.Style]}" + (appear.Style == AppearStyle.Wipe ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_C36AC46BAE,WipeFroms[(int)appear.From]) : ""),
+        MeltEffect melt => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DA48E085AF,melt.Distance,melt.Irregularity),
+        RotateEffect rotate => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_4AD4C2E7D2,rotate.Angle,(rotate.Clockwise ? UiStrings.S_LayerEffectsDialog_Summary_C95AC144BE : UiStrings.S_LayerEffectsDialog_Summary_32A77EF015),Anchors[(int)rotate.Anchor].Split(' ')[0]),
+        AfterimageEffect after => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_4BF321B781,after.Count,after.Interval,after.Opacity) + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
+        ColorCycleEffect cycle => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_055B04E8E0,cycle.Colors.Count,cycle.Steps) + (cycle.Reverse ? UiStrings.S_LayerEffectsDialog_Summary_D6E8941524 : ""),
+        ShockwaveEffect wave => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_D07B4E5446,wave.Radius,wave.Thickness,(wave.Behind ? UiStrings.S_LayerEffectsDialog_Summary_E3B52B00EB : UiStrings.S_LayerEffectsDialog_Summary_BC26FFFDAA)),
+        HologramEffect holo => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_8FC3C16840,holo.Color.ToHex(),holo.TintStrength,holo.Opacity) + (holo.Dither ? UiStrings.S_LayerEffectsDialog_Summary_823544BC03 : "")
+                               + (holo.GlitchRate > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_7B535BB782,holo.GlitchRate) : ""),
         _ => e.DisplayName,
-    }) + (e.Frames is { } f ? $" · 프레임 {f}" : "");
+    }) + (e.Frames is { } f ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_58CF9C9156,f) : "");
 
     // ───────────── 영구 적용 ─────────────
 
     /// <summary>레이어에 효과를 영구 적용할 수 있는지와, 안 되면 그 까닭.</summary>
     internal static (bool Ok, string? Why) CanBake(SpriteProject project, Layer layer)
     {
-        if (layer.IsGroup) return (false, "그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.");
-        if (project.IsLayerLocked(project.IndexOf(layer))) return (false, "잠긴 레이어에는 영구 적용할 수 없습니다.");
+        if (layer.IsGroup) return (false, UiStrings.S_LayerEffectsDialog_CanBake_F0B223C43A);
+        if (project.IsLayerLocked(project.IndexOf(layer))) return (false, UiStrings.S_LayerEffectsDialog_CanBake_235F1CD0DC);
         return (true, null);
     }
 
@@ -501,11 +502,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// 효과 영구 적용(<see cref="SpriteProject.BakeLayerEffects"/>)한 결과 알림 — "효과 영구 적용: 외곽선 (프레임 1~4)".
     /// </summary>
     internal static string BakeSummary((IReadOnlyList<LayerEffect> Baked, FrameRange? Frames, int Cels, bool Grown) r, Layer layer)
-        => $"효과 영구 적용: {string.Join(", ", r.Baked.Select(e => e.DisplayName))} ("
-           + (r.Frames is { } f ? f.From == f.To ? $"프레임 {f.From + 1}" : $"프레임 {f.From + 1}~{f.To + 1}" : "모든 프레임")
-           + $", 셀 {r.Cels}개)"
-           + (r.Grown ? $" · 부위 크기 {layer.PartSize.Width}×{layer.PartSize.Height}로 넓힘" : "")
-           + " — Ctrl+Z로 되돌립니다.";
+        => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_BakeSummary_5A9A6172BE,string.Join(", ", r.Baked.Select(e => e.DisplayName)))
+           + (r.Frames is { } f ? f.From == f.To ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_BakeSummary_E38062A45D,f.From + 1) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_BakeSummary_1887A237E0,f.From + 1,f.To + 1) : UiStrings.S_LayerEffectsDialog_BakeSummary_5A6EC98D59)
+           + string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_BakeSummary_76F41482A1,r.Cels)
+           + (r.Grown ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_BakeSummary_E39243C108,layer.PartSize.Width,layer.PartSize.Height) : "")
+           + UiStrings.S_LayerEffectsDialog_BakeSummary_49B857E682;
 
     /// <summary>
     /// 고른 효과 영구 적용: 창에서 고친 효과 목록을 확정하고 곧바로 구워 넣는다(둘을 합쳐 실행취소 한 단계). 창은 닫힌다.
@@ -535,9 +536,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
             var change = ProjectChange.Layers | ProjectChange.Pixels
                          | (extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags)
                          | (expansion is null ? 0 : ProjectChange.Canvas | ProjectChange.Frames | ProjectChange.Settings);
-            string label = extension is not null && expansion is not null ? "프레임·캔버스 늘리기 · 효과 영구 적용"
-                : extension is not null ? "프레임 늘리기 · 효과 영구 적용"
-                : expansion is not null ? "캔버스 확대 · 효과 영구 적용" : "효과 영구 적용";
+            string label = extension is not null && expansion is not null ? UiStrings.S_LayerEffectsDialog_Bake_E014268BBB
+                : extension is not null ? UiStrings.S_LayerEffectsDialog_Bake_E079C5BFE1
+                : expansion is not null ? UiStrings.S_LayerEffectsDialog_Bake_D0F7807D90 : UiStrings.S_LayerEffectsDialog_Bake_D15392AB9F;
             _project.Edit(label, change, () =>
             {
                 if (extension is { } ext) _project.ExtendFrames(ext);
@@ -584,7 +585,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         int i = Selected;
         if (i < 0 || i >= _effects.Count)
         {
-            _settings.Children.Add(Ui.Label(_effects.Count == 0 ? "효과가 없습니다 — 왼쪽에서 골라 추가하세요." : "효과를 고르세요."));
+            _settings.Children.Add(Ui.Label(_effects.Count == 0 ? UiStrings.S_LayerEffectsDialog_FillSettings_24136B66D0 : UiStrings.S_LayerEffectsDialog_FillSettings_12D0C7E74E));
             return;
         }
         var e = _effects[i];
@@ -594,92 +595,92 @@ public sealed partial class LayerEffectsDialog : DialogBase
         switch (e)
         {
             case OutlineEffect o:
-                SettingsRow("색", EffectColorEditor(o, nameof(OutlineEffect.Color), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })), Set));
-                SettingsRow("두께", NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
-                SettingsRow("방향", ChoiceEditor(["4방향 (십자)", "8방향 (모서리 포함)"], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
-                SettingsRow("위치", ChoiceEditor(["바깥 (그림 밖으로)", "안쪽 (가장자리 픽셀)"], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(o, nameof(OutlineEffect.Color), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })), Set));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_A81FAFD1EE, NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_7AEF607F6B, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_85BBD645E0, UiStrings.S_LayerEffectsDialog_FillSettings_D2ECBA6FD8], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E78408846D, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_62FD728E7C, UiStrings.S_LayerEffectsDialog_FillSettings_4331838592], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
                 break;
             case ShadowEffect s:
-                SettingsRow("색", EffectColorEditor(s, nameof(ShadowEffect.Color), ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })), Set));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(s, nameof(ShadowEffect.Color), ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })), Set));
                 SettingsRow("X",
                     NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetX, NumKinds.Offset, v => Set(x => (ShadowEffect)x with { OffsetX = v })),
                     Ui.Label("Y"),
                     NumEditor(-ShadowEffect.MaxOffset, ShadowEffect.MaxOffset, s.OffsetY, NumKinds.Offset, v => Set(x => (ShadowEffect)x with { OffsetY = v })),
                     Ui.Label("px"));
-                SettingsRow("디더", ChoiceEditor(ShadowDithers, (int)s.Dither, k => Set(x => (ShadowEffect)x with { Dither = (ShadowDither)k })));
-                _settings.Children.Add(Hint("그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기). 디더를 고르면 반투명 대신 불투명한 색을 그 밀도의 무늬(50% = 바둑판)로 깝니다."));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_FEA25AE8B2, ChoiceEditor(ShadowDithers, (int)s.Dither, k => Set(x => (ShadowEffect)x with { Dither = (ShadowDither)k })));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_9577438EC7));
                 break;
             case RimLightEffect r:
-                SettingsRow("빛이 오는 쪽",
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_66BE69E8AB,
                     ChoiceEditor(Directions.Select(d => d.Name).ToArray(), Array.FindIndex(Directions, d => d.Dir == r.Direction),
                         k => Set(x => (RimLightEffect)x with { Direction = Directions[k].Dir })));
-                SettingsRow("범위", NumEditor(1, RimLightEffect.MaxSize, r.Size, NumKinds.Thickness,
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_3CA6157165, NumEditor(1, RimLightEffect.MaxSize, r.Size, NumKinds.Thickness,
                     v => Set(x => (RimLightEffect)x with { Size = v })), Ui.Label("px"));
-                SettingsRow("빛 색", EffectColorEditor(r, nameof(RimLightEffect.Light), ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })), Set));
-                SettingsRow("그늘 색", EffectColorEditor(r, nameof(RimLightEffect.Shade), ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })), Set));
-                _settings.Children.Add(Hint("빛 쪽 가장자리에서 지정한 칸 수만큼 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함)."));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_1381B5CF89, EffectColorEditor(r, nameof(RimLightEffect.Light), ColorEditor(r.Light, c => Set(x => (RimLightEffect)x with { Light = c })), Set));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_6E13AD4474, EffectColorEditor(r, nameof(RimLightEffect.Shade), ColorEditor(r.Shade, c => Set(x => (RimLightEffect)x with { Shade = c })), Set));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_0AB9179C30));
                 break;
             case ColorOverlayEffect c:
-                SettingsRow("색", EffectColorEditor(c, nameof(ColorOverlayEffect.Color), ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })), Set));
-                SettingsRow("양", NumEditor(0, 100, c.Amount, NumKinds.Strength, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
-                SettingsRow("섞기", ChoiceEditor(Blends, (int)c.Blend, k => Set(x => (ColorOverlayEffect)x with { Blend = (EffectBlend)k })));
-                _settings.Children.Add(Hint("보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(c, nameof(ColorOverlayEffect.Color), ColorEditor(c.Color, v => Set(x => (ColorOverlayEffect)x with { Color = v })), Set));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_5522C8DF65, NumEditor(0, 100, c.Amount, NumKinds.Strength, v => Set(x => (ColorOverlayEffect)x with { Amount = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_5DD23B47AC, ChoiceEditor(Blends, (int)c.Blend, k => Set(x => (ColorOverlayEffect)x with { Blend = (EffectBlend)k })));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_BD67E1B5C4));
                 break;
             case ExplodeEffect x:
             {
                 ExplodeEffect X(LayerEffect v) => (ExplodeEffect)v;
-                SettingsRow("거리", NumEditor(1, ExplodeEffect.MaxDistance, x.Distance, NumKinds.Distance, v => Set(o => X(o) with { Distance = v })), Ui.Label("px (끝까지 날아가는 거리)"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_98D374602B, NumEditor(1, ExplodeEffect.MaxDistance, x.Distance, NumKinds.Distance, v => Set(o => X(o) with { Distance = v })), Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_534E0855BE));
                 var cx = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterX, CenterKind(vertical: false), v => Set(o => X(o) with { CenterX = v }));
                 var cy = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterY, CenterKind(vertical: true), v => Set(o => X(o) with { CenterY = v }));
                 cx.IsEnabled = cy.IsEnabled = x.Center == ExplodeCenter.Custom;
-                SettingsRow("중심", ChoiceEditor(Centers, (int)x.Center, k =>
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_5C5C39442A, ChoiceEditor(Centers, (int)x.Center, k =>
                 {
                     cx.IsEnabled = cy.IsEnabled = (ExplodeCenter)k == ExplodeCenter.Custom;
                     Set(o => X(o) with { Center = (ExplodeCenter)k });
                 }));
-                SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label("px (원본 왼쪽 위 기준)"));
-                SettingsRow("흩어짐", NumEditor(0, 100, x.Spread, NumKinds.Random, v => Set(o => X(o) with { Spread = v })), Ui.Label("%"),
-                    Ui.Label("  중력"), NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, NumKinds.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
-                SettingsRow("조각 크기", NumEditor(1, ExplodeEffect.MaxPieceSize, x.PieceSize, NumKinds.Piece, v => Set(o => X(o) with { PieceSize = v })), Ui.Label("px"),
-                    CheckEditor("끝으로 갈수록 작게", x.Shrink, v => Set(o => X(o) with { Shrink = v })));
+                SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_A89FB839CA));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_9E6E8E6EFE, NumEditor(0, 100, x.Spread, NumKinds.Random, v => Set(o => X(o) with { Spread = v })), Ui.Label("%"),
+                    Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_1C82F0E839), NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, NumKinds.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E1CC351651, NumEditor(1, ExplodeEffect.MaxPieceSize, x.PieceSize, NumKinds.Piece, v => Set(o => X(o) with { PieceSize = v })), Ui.Label("px"),
+                    CheckEditor(UiStrings.S_LayerEffectsDialog_FillSettings_880B57A4CE, x.Shrink, v => Set(o => X(o) with { Shrink = v })));
                 var fadeStart = NumEditor(0, 100, x.FadeStart, NumKinds.Progress, v => Set(o => X(o) with { FadeStart = v }));
                 fadeStart.IsEnabled = x.Fade;
-                SettingsCheckRow(CheckEditor("사라짐", x.Fade, v => { fadeStart.IsEnabled = v; Set(o => X(o) with { Fade = v }); }).Tip("끝으로 갈수록 흐려지며 사라집니다(시작 = 흐려지기 시작하는 진행 %)."),
-                    Ui.Label("시작"), fadeStart, Ui.Label("%"));
-                SettingsRow("번쩍임", NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, NumKinds.Frames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label("프레임"));
-                SettingsSubRow("번쩍임 색", EffectColorEditor(x, nameof(ExplodeEffect.FlashColor), ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })), Set));
-                SettingsRow("", CheckEditor("원본 남기기 (복사본이 날아감)", x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
+                SettingsCheckRow(CheckEditor(UiStrings.S_LayerEffectsDialog_FillSettings_08EF532DFB, x.Fade, v => { fadeStart.IsEnabled = v; Set(o => X(o) with { Fade = v }); }).Tip(UiStrings.S_LayerEffectsDialog_FillSettings_E831CF80BB),
+                    Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_E8E9684F4B), fadeStart, Ui.Label("%"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_288AED0ECC, NumEditor(0, ExplodeEffect.MaxFlashFrames, x.FlashFrames, NumKinds.Frames, v => Set(o => X(o) with { FlashFrames = v })), Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_5F8BA1F369));
+                SettingsSubRow(UiStrings.S_LayerEffectsDialog_FillSettings_6D8B67BF59, EffectColorEditor(x, nameof(ExplodeEffect.FlashColor), ColorEditor(x.FlashColor, v => Set(o => X(o) with { FlashColor = v })), Set));
+                SettingsRow("", CheckEditor(UiStrings.S_LayerEffectsDialog_FillSettings_7049E2D1FE, x.KeepOriginal, v => Set(o => X(o) with { KeepOriginal = v })));
                 var seed = NumEditor(0, ExplodeEffect.MaxSeed, x.Seed, NumKinds.Seed, v => Set(o => X(o) with { Seed = v }));
                 var reroll = Ui.IconButton(VectorIcon.Dice, null, (_, _) => seed.Value = System.Random.Shared.Next(0, ExplodeEffect.MaxSeed + 1), 36);
-                ToolTip.SetTip(reroll, "다른 흩어짐(시드를 무작위로)");
-                SettingsRow("시드", seed, reroll);
+                ToolTip.SetTip(reroll, UiStrings.S_LayerEffectsDialog_FillSettings_BE76D99E55);
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E37116317A, seed, reroll);
                 AddMotionEditors(i, Set);
-                _settings.Children.Add(Hint("범위 첫 프레임은 원래 그림 그대로, 그 뒤로 보이는 픽셀이 중심에서 바깥으로 튀어 나가며 사라집니다. 셀 그림은 그대로입니다."
-                                            + " 범위의 프레임마다 그 프레임 그림이 조각이 됩니다(그림이 없는 프레임은 터질 것도 없음)."));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_171EBAB542
+                                            + UiStrings.S_LayerEffectsDialog_FillSettings_CD2E150E76));
                 break;
             }
             case ShineEffect s:
             {
                 ShineEffect S(LayerEffect v) => (ShineEffect)v;
-                SettingsRow("각도", NumEditor(0, 359, s.Angle, NumKinds.Angle, v => Set(o => S(o) with { Angle = v })), Ui.Label("° (지나가는 방향, 45 = ↗)"));
-                SettingsRow("폭", NumEditor(1, ShineEffect.MaxWidth, s.Width, NumKinds.Px, v => Set(o => S(o) with { Width = v })), Ui.Label("px"),
-                    Ui.Label("  세기"), NumEditor(0, 100, s.Strength, NumKinds.Strength, v => Set(o => S(o) with { Strength = v })), Ui.Label("%"));
-                SettingsRow("색", EffectColorEditor(s, nameof(ShineEffect.Color), ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })), Set));
-                SettingsRow("부드러움", ChoiceEditor(["딱딱하게", "가장자리 1px", "가장자리 2px"], s.Softness, k => Set(o => S(o) with { Softness = k })));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_1192DC8149, NumEditor(0, 359, s.Angle, NumKinds.Angle, v => Set(o => S(o) with { Angle = v })), Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_C4DC26AC14));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_D370965ED0, NumEditor(1, ShineEffect.MaxWidth, s.Width, NumKinds.Px, v => Set(o => S(o) with { Width = v })), Ui.Label("px"),
+                    Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_6C80368CF6), NumEditor(0, 100, s.Strength, NumKinds.Strength, v => Set(o => S(o) with { Strength = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(s, nameof(ShineEffect.Color), ColorEditor(s.Color, v => Set(o => S(o) with { Color = v })), Set));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_48FAB42CF8, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_28DDBC6B0B, UiStrings.S_LayerEffectsDialog_FillSettings_AB233EA745, UiStrings.S_LayerEffectsDialog_FillSettings_541ACE652F], s.Softness, k => Set(o => S(o) with { Softness = k })));
                 AddMotionEditors(i, Set);
-                _settings.Children.Add(Hint("빛 띠가 그림 한쪽 바로 밖에서 들어와 반대쪽으로 빠져나갑니다. 보이는 픽셀만 밝아지고(스크린), 투명한 곳·투명도는 그대로입니다."));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_2118984CA5));
                 break;
             }
             case SquashEffect q:
             {
                 SquashEffect Q(LayerEffect v) => (SquashEffect)v;
-                SettingsRow("가로 세기", NumEditor(0, SquashEffect.MaxAmount, q.WidthAmount, NumKinds.Squash, v => Set(o => Q(o) with { WidthAmount = v })), Ui.Label("%"),
-                    Ui.Label("  세로 세기"), NumEditor(0, SquashEffect.MaxAmount, q.HeightAmount, NumKinds.Squash, v => Set(o => Q(o) with { HeightAmount = v })), Ui.Label("%"));
-                SettingsRow("튕김", NumEditor(1, SquashEffect.MaxBounces, q.Bounces, NumKinds.Count, v => Set(o => Q(o) with { Bounces = v })), Ui.Label("번"));
-                SettingsRow("기준점", ChoiceEditor(Anchors, (int)q.Anchor, k => Set(o => Q(o) with { Anchor = (SquashAnchor)k })));
-                SettingsRow("순서", ChoiceEditor(["옆으로 먼저 (납작 → 길쭉)", "위로 먼저 (길쭉 → 납작)"], q.StretchFirst ? 1 : 0, k => Set(o => Q(o) with { StretchFirst = k == 1 })));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_3029688617, NumEditor(0, SquashEffect.MaxAmount, q.WidthAmount, NumKinds.Squash, v => Set(o => Q(o) with { WidthAmount = v })), Ui.Label("%"),
+                    Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_DA003AD5F5), NumEditor(0, SquashEffect.MaxAmount, q.HeightAmount, NumKinds.Squash, v => Set(o => Q(o) with { HeightAmount = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_7D4825E02A, NumEditor(1, SquashEffect.MaxBounces, q.Bounces, NumKinds.Count, v => Set(o => Q(o) with { Bounces = v })), Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_9926E8F548));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_4165F7C464, ChoiceEditor(Anchors, (int)q.Anchor, k => Set(o => Q(o) with { Anchor = (SquashAnchor)k })));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_4D51C71D99, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_4147FCFCA9, UiStrings.S_LayerEffectsDialog_FillSettings_B8F02D5B5D], q.StretchFirst ? 1 : 0, k => Set(o => Q(o) with { StretchFirst = k == 1 })));
                 AddMotionEditors(i, Set);
-                _settings.Children.Add(Hint("가로·세로 세기를 따로 정해 출렁입니다. 0%인 축은 고정되고 픽셀은 늘이거나 줄여도 또렷합니다."));
+                _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_9691881EA3));
                 break;
             }
             case GradientOverlayEffect g: GradientPanel(g, Set); break;
@@ -710,20 +711,20 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var a = (AnimatedEffect)_effects[i];
         if (timing) AddTimingEditors(a, set);
         var (from, to) = VRangeOf(a);
-        _settings.Children.Add(Hint($"지금 {to - from + 1}프레임(프레임 {from + 1}~{to + 1}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다."
-                                    + (from == to ? " 한 프레임이면 움직이지 않습니다." : "")));
+        _settings.Children.Add(Hint(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_AddMotionEditors_610C3B2627,to - from + 1,from + 1,to + 1)
+                                    + (from == to ? UiStrings.S_LayerEffectsDialog_AddMotionEditors_9BD880B938 : "")));
     }
 
     private void AddTimingEditors(AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
     {
-        SettingsRow("빠르기", ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
+        SettingsRow(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF, ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
         var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, NumKinds.Repeat, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
         count.IsEnabled = a.Repeat != EffectRepeat.Once;
-        SettingsRow("반복", ChoiceEditor(Repeats, (int)a.Repeat, k =>
+        SettingsRow(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B, ChoiceEditor(Repeats, (int)a.Repeat, k =>
         {
             count.IsEnabled = (EffectRepeat)k != EffectRepeat.Once;
             set(o => (AnimatedEffect)o with { Repeat = (EffectRepeat)k });
-        }), count, Ui.Label("번"));
+        }), count, Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_433F81EB07));
     }
 
     /// <summary>
@@ -740,7 +741,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 ? direct
                 : effect.Frames is { } stored && _extension is { } extension ? extension.MapRange(stored) : null
             : effect.Frames;
-        var all = Ui.Check("모든 프레임", range is null);
+        var all = Ui.Check(UiStrings.S_LayerEffectsDialog_AddRangeEditor_1629B10BDB, range is null);
         var from = WithKind(Ui.Num(1, n, (range?.From ?? 0) + 1, 56), FrameNumberKind(end: false));
         var to = WithKind(Ui.Num(1, n, (range?.To ?? n - 1) + 1, 56), FrameNumberKind(end: true));
         from.IsEnabled = to.IsEnabled = range is not null;
@@ -783,7 +784,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
-        _rangeRow = SettingsRow("범위", all, from, Ui.Label("~"), to);
+        _rangeRow = SettingsRow(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
         AddExtendEditor(i);
     }
 
@@ -879,8 +880,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         int n = _project.Frames.Count, now = _frame + 1;
         var names = new Dictionary<decimal, string>();
         foreach (var t in _project.Tags)
-            if ((end ? t.To : t.From) + 1 is var f && f >= 1 && f <= n) names.TryAdd(f, $"{t.Name} {(end ? "끝" : "시작")}");
-        names[now] = names.TryGetValue(now, out var tag) ? $"지금 · {tag}" : "지금";
+            if ((end ? t.To : t.From) + 1 is var f && f >= 1 && f <= n) names.TryAdd(f, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_FrameNumberKind_D50B47CDF3,t.Name,(end ? UiStrings.S_LayerEffectsDialog_FrameNumberKind_FC90F137FF : UiStrings.S_LayerEffectsDialog_FrameNumberKind_5E664EA7C3)));
+        names[now] = names.TryGetValue(now, out var tag) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_FrameNumberKind_F07F8BC693,tag) : UiStrings.S_LayerEffectsDialog_FrameNumberKind_36C0AD1206;
         var values = new SortedSet<decimal>(names.Keys) { 1, n };
         foreach (var v in Ui.FrameNumbers(n))
         {
@@ -900,9 +901,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var values = new SortedSet<decimal> { 0, mid, last };
         foreach (var v in new decimal[] { 4, 8, 16, 24, 32, 48, 64 })
             if (v < last && values.Count < 10) values.Add(v);
-        string edge = vertical ? "아래 끝" : "오른쪽 끝";
+        string edge = vertical ? UiStrings.S_LayerEffectsDialog_CenterKind_7529E535E3 : UiStrings.S_LayerEffectsDialog_CenterKind_DE4F2D8B9E;
         return new(vertical ? "effect.center.y" : "effect.center.x", "px", [.. values],
-            v => v == mid ? $"{v} px (가운데)" : v == last && v > 0 ? $"{v} px ({edge})" : $"{v} px");
+            v => v == mid ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_CenterKind_6FC4EF0158,v) : v == last && v > 0 ? $"{v} px ({edge})" : $"{v} px");
     }
 
     private static ComboBox ChoiceEditor(string[] items, int selected, Action<int> changed)
@@ -959,7 +960,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             }
             if (restart) StartTimer();
         }
-        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, "멈춤") : Ui.IconLabel(VectorIcon.Play, "재생");
+        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, UiStrings.S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0) : Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_SyncPlayback_1100994439);
     }
 
     private void TogglePlay()
@@ -971,7 +972,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             StartTimer();
             RefreshPreview();
         }
-        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, "멈춤") : Ui.IconLabel(VectorIcon.Play, "재생");
+        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, UiStrings.S_LayerEffectsDialog_TogglePlay_BB46370149) : Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_TogglePlay_BF65C1C421);
     }
 
     private void StartTimer()
@@ -1011,12 +1012,12 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _strip.Current = f;
         var all = VirtualEffects();
         var (source, effects) = AnimateAt(f, all);
-        string where = _layer.IsGroup ? " (그룹 합성)" : _layer.IsPart ? " (부위)" : "";
+        string where = _layer.IsGroup ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BDAFE80FE8 : _layer.IsPart ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BD6BE5C32E : "";
         if (_extension is not null)
-            where = $"/{VirtualCount}{where} · 원래 프레임 {OriginalOf(f) + 1}{(IsCopyFrame(f) ? " 사본" : "")}";
+            where = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_6A782EF4D8,VirtualCount,where,OriginalOf(f) + 1,(IsCopyFrame(f) ? UiStrings.S_LayerEffectsDialog_RefreshPreview_E18A9F9C35 : ""));
         if (source is null)
         {
-            _caption.Text = $"프레임 {f + 1}{where}";
+            _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_A0B1282CEF,f + 1,where);
             _preview.SetImages(null, null);
             return;
         }
@@ -1025,8 +1026,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         before.Blit(source, -dx, -dy);
         _preview.SetImages(before, after);
         string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)
-            ? $" · 진행 {a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100:0}%" : "";
-        _caption.Text = $"프레임 {f + 1}{where}{progress}";
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_19220A5382,a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100) : "";
+        _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_64659703DD,f + 1,where,progress);
     }
 
     /// <summary>전·후를 같은 크기·같은 정수 배율로 나란히 그린다(후 그림이 번진 만큼 둘 다 넓힘).</summary>
@@ -1051,13 +1052,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
             g.FillRectangle(AppTheme.BackBrush, b);
             if (_before is null || _after is null)
             {
-                AppTheme.DrawTextIn(g, "이 프레임에 그림이 없습니다", b, AppTheme.DimTextBrush, center: true);
+                AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_BF9D824663, b, AppTheme.DimTextBrush, center: true);
                 return;
             }
             double half = (b.Width - 12) / 2, top = 18;
             var src = new Rectangle(0, 0, _before.PixelSize.Width, _before.PixelSize.Height);
-            AppTheme.DrawTextIn(g, "전", new Rect(0, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
-            AppTheme.DrawTextIn(g, "후", new Rect(half + 12, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
+            AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_71A8D08947, new Rect(0, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
+            AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_894FF3899A, new Rect(half + 12, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             var area = new Rect(0, top, half, b.Height - top);
             double fit = Math.Min(area.Width / src.Width, area.Height / src.Height);
             int scale = fit >= 1 ? (int)Math.Floor(fit) : 0; // 같은 배율로(작으면 맞춤 축소)

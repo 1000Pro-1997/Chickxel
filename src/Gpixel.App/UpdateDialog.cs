@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -28,28 +29,28 @@ public sealed class UpdateDialog : DialogBase
     private CancellationTokenSource? _cts;
 
     public UpdateDialog(ReleaseInfo release, InstallPlan? plan, string? reason, Updater updater)
-        : base("Gpixel 업데이트", "지금 업데이트")
+        : base(UiStrings.S_UpdateDialog_UpdateDialog_EBAD7C8C6E, UiStrings.S_UpdateDialog_UpdateDialog_0A1D8AF8D9)
     {
         _release = release;
         _plan = plan;
         _updater = updater;
 
-        string published = release.PublishedAt is { } at ? $"  ·  {at.ToLocalTime():yyyy-MM-dd} 공개" : "";
+        string published = release.PublishedAt is { } at ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_C2600A01FA,at.ToLocalTime()) : "";
         Body.Children.Add(new TextBlock
         {
-            Text = "새 버전이 나왔습니다",
+            Text = UiStrings.S_UpdateDialog_UpdateDialog_37AA46F322,
             FontSize = 16,
             FontWeight = FontWeight.Bold,
             Foreground = AppTheme.TextBrush,
             Margin = new Thickness(3, 0, 3, 2),
         });
-        Body.Children.Add(Ui.Label($"Gpixel {release.Version}  ·  지금 버전 {AppInfo.VersionText}{published}"));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_7B9D65167A,release.Version,AppInfo.VersionText,published)));
         string pageUrl = release.PageUrl.ToString();
         Body.Children.Add(new TextBox
         {
             Text = release.Notes.Trim().Length > 0
                 ? release.Notes.Trim()
-                : $"바뀐 점을 불러오지 못했습니다.\n\nGpixel {release.Version}의 바뀐 점은 아래 링크(릴리스 페이지)에서 볼 수 있습니다:\n{pageUrl}",
+                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_BC1BC0ABAE,release.Version,pageUrl),
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
@@ -58,7 +59,7 @@ public sealed class UpdateDialog : DialogBase
             Margin = new Thickness(3, 6, 3, 3),
         });
         // 버전별 릴리스 페이지 링크(설명을 읽었든 못 읽었든 늘 보임)
-        var linkLabel = Ui.IconLabel(VectorIcon.ExternalLink, $"Gpixel {release.Version} 바뀐 점 — 릴리스 페이지 열기", iconAfter: true);
+        var linkLabel = Ui.IconLabel(VectorIcon.ExternalLink, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_D7A2B2A2F5,release.Version), iconAfter: true);
         ((TextBlock)linkLabel.Children[0]).TextDecorations = TextDecorations.Underline;
         var link = new Button
         {
@@ -92,10 +93,10 @@ public sealed class UpdateDialog : DialogBase
 
         OkButton.IsEnabled = plan is not null;
         OkButton.Click += OnInstallClick;
-        _skip = AddButton("다음 업데이트까지 띄우지 않기", DialogResult.No);
-        _skip.Tip($"Gpixel {release.Version}은(는) 다시 알리지 않고, 그보다 새 버전이 나오면 다시 알립니다.");
+        _skip = AddButton(UiStrings.S_UpdateDialog_UpdateDialog_610C2A5D3F, DialogResult.No);
+        _skip.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_DFA012F0A4,release.Version));
         _skip.Click += (_, _) => Choice = UpdateChoice.Skip;
-        _page = AddButton("릴리스 페이지 열기", DialogResult.Yes);
+        _page = AddButton(UiStrings.S_UpdateDialog_UpdateDialog_6150741919, DialogResult.Yes);
         _page.Click += (_, _) =>
         {
             DialogResult = DialogResult.None; // 창은 그대로 둔다
@@ -106,8 +107,8 @@ public sealed class UpdateDialog : DialogBase
             OkButton.IsDefault = false;
             _page.IsDefault = true;
         }
-        CancelButtonControl.Content = "나중에";
-        CancelButtonControl.Tip("다음에 실행할 때 다시 알립니다.");
+        CancelButtonControl.Content = UiStrings.S_UpdateDialog_UpdateDialog_45C551D917;
+        CancelButtonControl.Tip(UiStrings.S_UpdateDialog_UpdateDialog_024D578A11);
         CancelButtonControl.Click += (_, _) =>
         {
             if (_cts is not { } cts) return; // 나중에 → 닫기
@@ -147,7 +148,7 @@ public sealed class UpdateDialog : DialogBase
         OkButton.IsVisible = !busy;
         _skip.IsVisible = !busy;
         _page.IsVisible = !busy;
-        CancelButtonControl.Content = busy ? "취소" : "나중에";
+        CancelButtonControl.Content = busy ? UiStrings.S_UpdateDialog_SetBusy_A70B0328BE : UiStrings.S_UpdateDialog_SetBusy_969BCB017F;
         _progressRow.IsVisible = busy;
         if (!busy) ShowProgress(new UpdateProgress("", 0, 0));
     }
@@ -175,7 +176,7 @@ public sealed class UpdateDialog : DialogBase
             if (cts.IsCancellationRequested)
             {
                 Updater.TryDeleteDirectory(staged.Directory);
-                ShowNote("내려받기를 취소했습니다.", warning: false);
+                ShowNote(UiStrings.S_UpdateDialog_OnInstallClick_6FBADA2123, warning: false);
                 return;
             }
             Staged = staged;
@@ -184,7 +185,7 @@ public sealed class UpdateDialog : DialogBase
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
-            ShowNote("내려받기를 취소했습니다.", warning: false);
+            ShowNote(UiStrings.S_UpdateDialog_OnInstallClick_6FBADA2123, warning: false);
         }
         catch (Exception ex) when (ex is UpdateException or HttpRequestException or IOException or UnauthorizedAccessException
             or OperationCanceledException or InvalidDataException or Win32Exception)
@@ -192,10 +193,10 @@ public sealed class UpdateDialog : DialogBase
             ShowNote(ex switch
             {
                 UpdateException => ex.Message,
-                OperationCanceledException => "서버가 응답하지 않습니다. 잠시 뒤 다시 시도하세요.",
-                HttpRequestException => $"내려받지 못했습니다. 인터넷 연결을 확인하세요.\n({ex.Message})",
-                _ => $"업데이트를 준비하지 못했습니다.\n({ex.Message})",
-            } + "\n지금 버전은 그대로입니다.", warning: true);
+                OperationCanceledException => UiStrings.S_UpdateDialog_OnInstallClick_4BCE1D30C9,
+                HttpRequestException => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_OnInstallClick_BEAEA4027A,ex.Message),
+                _ => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_OnInstallClick_D88482409D,ex.Message),
+            } + UiStrings.S_UpdateDialog_OnInstallClick_08324A0C55, warning: true);
         }
         finally
         {

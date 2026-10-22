@@ -195,10 +195,10 @@ public static class ExportPresets
         }
         catch (JsonException ex)
         {
-            throw new InvalidDataException($"내보내기 설정 프리셋 파일을 읽지 못했습니다: {ex.Message}", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatPreset_ReadFailed(error: ex.Message), ex);
         }
         if (dto is null) return [];
-        if (dto.Version > FileVersion) throw new InvalidDataException($"더 새로운 Gpixel의 프리셋 파일입니다(형식 버전 {dto.Version}).");
+        if (dto.Version > FileVersion) throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatPreset_NewerVersion(version: dto.Version));
         var list = new List<ExportPreset>();
         foreach (var p in dto.Presets ?? [])
         {
@@ -234,7 +234,7 @@ public static class ExportPresets
         var list = current.Where(p => !p.BuiltIn).ToList();
         foreach (var p in imported)
         {
-            var name = BuiltIns.Any(b => b.Name == p.Name) ? p.Name + " (가져옴)" : p.Name;
+            var name = BuiltIns.Any(b => b.Name == p.Name) ? p.Name + Gpixel.Core.Localization.DomainStrings.ExportPreset_ImportedSuffix : p.Name;
             var copy = p.Clone(name);
             int i = list.FindIndex(x => x.Name == name);
             if (i >= 0) list[i] = copy;

@@ -33,6 +33,8 @@ public sealed record StartupArgs(string? OpenFolder, string? OpenFile)
 public sealed class App : Application
 {
     public static StartupArgs Args { get; set; } = new(null, null);
+    /// <summary>시작할 때 읽은 설정(화면 언어를 정하려고 창보다 먼저 읽음). 메인 창이 그대로 쓴다.</summary>
+    public static AppSettings Settings { get; set; } = new();
 
     public override void Initialize()
     {
@@ -53,7 +55,7 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-            var main = new MainForm(Args);
+            var main = new MainForm(Args, Settings);
             // 창이 뜬 뒤에 넣어야 Avalonia의 앱 초기화가 덮어쓰지 않는다.
             if (OperatingSystem.IsMacOS()) main.Opened += (_, _) => Platform.SetMacDockIcon(Icons.AppIconPng());
             desktop.MainWindow = main;
@@ -69,6 +71,9 @@ static class Program
     static int Main(string[] args)
     {
         App.Args = StartupArgs.Parse(args);
+        // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다.
+        App.Settings = AppSettings.Load();
+        Localization.UiLanguage.Apply(App.Settings.Language);
         return CrashGuard.Run(BuildAvaloniaApp(), args);
     }
 

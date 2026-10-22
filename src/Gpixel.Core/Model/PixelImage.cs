@@ -37,7 +37,7 @@ public sealed class PixelImage
     {
         ValidateSize(width, height);
         if (pixels.Length != width * height)
-            throw new ArgumentException("픽셀 배열 길이가 크기와 맞지 않습니다.", nameof(pixels));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Image_InvalidPixelArray, nameof(pixels));
         Width = width;
         Height = height;
         Pixels = pixels;
@@ -46,7 +46,7 @@ public sealed class PixelImage
     private static void ValidateSize(int width, int height)
     {
         if (width < 1 || height < 1 || width > MaxSize || height > MaxSize)
-            throw new ArgumentOutOfRangeException(nameof(width), $"이미지 크기는 1~{MaxSize} 사이여야 합니다: {width}x{height}");
+            throw new ArgumentOutOfRangeException(nameof(width), Gpixel.Core.Localization.DomainStrings.FormatImage_InvalidSize(max: MaxSize, width: width, height: height));
     }
 
     public Rectangle Bounds => new(0, 0, Width, Height);
@@ -79,7 +79,7 @@ public sealed class PixelImage
     public void CopyFrom(PixelImage other)
     {
         if (other.Width != Width || other.Height != Height)
-            throw new ArgumentException("크기가 같은 이미지만 복사할 수 있습니다.", nameof(other));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Image_DifferentCopySize, nameof(other));
         Array.Copy(other.Pixels, Pixels, Pixels.Length);
     }
 

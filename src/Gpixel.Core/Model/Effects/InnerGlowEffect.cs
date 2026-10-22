@@ -24,5 +24,5 @@ public sealed record InnerGlowEffect : LayerEffect
 
     public EffectBlend Blend { get; init; } = EffectBlend.Screen;
 
-    public override string DisplayName => "안쪽 빛";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_InnerGlow;
 }

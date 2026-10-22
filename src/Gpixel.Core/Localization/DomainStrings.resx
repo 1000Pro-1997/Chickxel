@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Effect_Outline" xml:space="preserve"><value>외곽선</value></data>
+  <data name="Effect_Shadow" xml:space="preserve"><value>그림자</value></data>
+  <data name="Effect_EdgeLightShade" xml:space="preserve"><value>가장자리 빛·그늘</value></data>
+  <data name="Effect_ColorOverlay" xml:space="preserve"><value>색 덮기</value></data>
+  <data name="Effect_Explode" xml:space="preserve"><value>터지기</value></data>
+  <data name="Effect_LightSweep" xml:space="preserve"><value>빛 지나가기</value></data>
+  <data name="Effect_SquashStretch" xml:space="preserve"><value>늘었다 줄기</value></data>
+  <data name="Effect_Afterimage" xml:space="preserve"><value>잔상</value></data>
+  <data name="Effect_Disappear" xml:space="preserve"><value>사라지기</value></data>
+  <data name="Effect_Appear" xml:space="preserve"><value>나타나기</value></data>
+  <data name="Effect_Blink" xml:space="preserve"><value>깜빡이기</value></data>
+  <data name="Effect_Bob" xml:space="preserve"><value>둥실둥실</value></data>
+  <data name="Effect_ColorAdjust" xml:space="preserve"><value>색조 보정</value></data>
+  <data name="Effect_ColorCycle" xml:space="preserve"><value>색 순환</value></data>
+  <data name="Effect_GradientChange" xml:space="preserve"><value>그라데이션 변화</value></data>
+  <data name="Effect_HitFlash" xml:space="preserve"><value>피격 번쩍임</value></data>
+  <data name="Effect_Hologram" xml:space="preserve"><value>홀로그램</value></data>
+  <data name="Effect_InnerGlow" xml:space="preserve"><value>안쪽 빛</value></data>
+  <data name="Effect_Melt" xml:space="preserve"><value>녹아내리기</value></data>
+  <data name="Effect_PaletteSwap" xml:space="preserve"><value>색 바꾸기</value></data>
+  <data name="Effect_Reflection" xml:space="preserve"><value>반사</value></data>
+  <data name="Effect_Rotate" xml:space="preserve"><value>회전</value></data>
+  <data name="Effect_Shake" xml:space="preserve"><value>흔들기</value></data>
+  <data name="Effect_Shockwave" xml:space="preserve"><value>충격파 고리</value></data>
+  <data name="Frames_InvalidRange" xml:space="preserve"><value>프레임 범위가 잘못되었습니다: {from}~{to}</value><comment>from, to = 범위의 양 끝 프레임 번호.</comment></data>
+  <data name="Frames_TooFew" xml:space="preserve"><value>프레임 수({count})가 범위 길이({length})보다 작습니다 — 줄이기는 할 수 없습니다.</value><comment>count = 요청한 프레임 수; length = 원래 범위 길이.</comment></data>
+  <data name="Frames_TooMany" xml:space="preserve"><value>프레임 수는 {max}개까지입니다.</value><comment>max = 프레임 수 상한.</comment></data>
+  <data name="Frames_Stretch" xml:space="preserve"><value>같은 비율로</value></data>
+  <data name="Frames_HoldFirst" xml:space="preserve"><value>첫 프레임으로</value></data>
+  <data name="Frames_HoldLast" xml:space="preserve"><value>마지막 프레임으로</value></data>
+  <data name="Frames_Repeat" xml:space="preserve"><value>반복</value></data>
+  <data name="Image_InvalidPixelArray" xml:space="preserve"><value>픽셀 배열 길이가 크기와 맞지 않습니다.</value></data>
+  <data name="Image_InvalidSize" xml:space="preserve"><value>이미지 크기는 1~{max} 사이여야 합니다: {width}x{height}</value><comment>max = 최대 축 크기; width, height = 전달된 이미지 크기.</comment></data>
+  <data name="Image_DifferentCopySize" xml:space="preserve"><value>크기가 같은 이미지만 복사할 수 있습니다.</value></data>
+  <data name="Image_DifferentComparisonSize" xml:space="preserve"><value>크기가 같은 이미지만 비교할 수 있습니다.</value></data>
+  <data name="Transform_RegionSizeMismatch" xml:space="preserve"><value>떼어 낸 픽셀 크기가 영역 사각형과 다릅니다.</value></data>
+  <data name="Gradient_EmptyStops" xml:space="preserve"><value>정지점이 하나 이상 있어야 합니다.</value></data>
+  <data name="Canvas_InvalidSize" xml:space="preserve"><value>캔버스 크기는 1~{max} 사이여야 합니다: {width}×{height}</value><comment>max = 최대 축 크기; width, height = 전달된 캔버스 크기.</comment></data>
+  <data name="Canvas_EffectTooLarge" xml:space="preserve"><value>효과를 자르지 않고 담으려면 캔버스가 {width}×{height}px여야 합니다(최대 {max}×{max}px).</value><comment>width, height = 필요한 캔버스 크기; max = 최대 축 크기.</comment></data>
+  <data name="Palette_NoOpaqueColors" xml:space="preserve"><value>팔레트에 투명이 아닌 색이 없습니다.</value></data>
+  <data name="Mask_NegativeSize" xml:space="preserve"><value>영역 크기는 음수일 수 없습니다.</value></data>
+  <data name="Mask_BitSizeMismatch" xml:space="preserve"><value>영역 비트 수가 사각형 크기와 다릅니다.</value></data>
+  <data name="Fill_SourceSizeMismatch" xml:space="preserve"><value>채우기 기준 그림의 크기가 대상과 다릅니다.</value></data>
+  <data name="Selection_RegionSizeMismatch" xml:space="preserve"><value>떠 있는 픽셀 크기가 영역 사각형과 다릅니다.</value></data>
+  <data name="History_CorruptPixelPatch" xml:space="preserve"><value>실행취소 기록의 픽셀 패치가 손상되었습니다.</value></data>
+  <data name="History_PatchSizeMismatch" xml:space="preserve"><value>패치와 이미지 크기가 다릅니다.</value></data>
+  <data name="Atlas_InvalidSpriteSize" xml:space="preserve"><value>스프라이트 크기가 잘못되었습니다: {size}</value><comment>size = 스프라이트의 Size 구조체.</comment></data>
+  <data name="Document_UntitledName" xml:space="preserve"><value>새 이미지</value></data>
+  <data name="Document_IgnoreSidecar" xml:space="preserve"><value>편집 정보 파일(.gpixel.json)을 읽지 못해 무시했습니다: {error}</value><comment>error = 파일을 읽을 때 발생한 오류 메시지.</comment></data>
+  <data name="Document_NoSavePath" xml:space="preserve"><value>저장할 경로가 없습니다.</value></data>
+  <data name="File_NameExists" xml:space="preserve"><value>이미 같은 이름의 파일이 있습니다: {name}</value><comment>name = 충돌한 파일 이름.</comment></data>
+  <data name="Preset_ReadFailed" xml:space="preserve"><value>내보내기 설정 프리셋 파일을 읽지 못했습니다: {error}</value><comment>error = 프리셋 JSON을 읽을 때 발생한 오류 메시지.</comment></data>
+  <data name="Preset_NewerVersion" xml:space="preserve"><value>더 새로운 Gpixel의 프리셋 파일입니다(형식 버전 {version}).</value><comment>version = 프리셋 파일 형식 버전.</comment></data>
+  <data name="Gif_NoFrames" xml:space="preserve"><value>GIF로 쓸 프레임이 없습니다.</value></data>
+  <data name="Gif_FrameSizeMismatch" xml:space="preserve"><value>GIF 프레임 크기가 서로 다릅니다.</value></data>
+  <data name="Gif_SizeTooLarge" xml:space="preserve"><value>GIF 크기는 {max}px까지입니다({width}×{height}).</value><comment>max = GIF 축 크기 상한; width, height = 출력 크기.</comment></data>
+  <data name="Lospec_InvalidObject" xml:space="preserve"><value>Lospec 응답이 객체가 아닙니다.</value></data>
+  <data name="Lospec_ReadFailed" xml:space="preserve"><value>Lospec 응답을 읽지 못했습니다: {error}</value><comment>error = JSON 구문 분석 오류 메시지.</comment></data>
+  <data name="Export_CurrentOutfit" xml:space="preserve"><value>지금 착장</value></data>
+  <data name="Export_SaveProjectFirst" xml:space="preserve"><value>프로젝트를 먼저 저장해야 내보낼 수 있습니다.</value></data>
+  <data name="Export_DuplicateFile" xml:space="preserve"><value>내보낼 파일 이름이 겹칩니다({name}). 프레임 시트·부위 아틀라스·태그·부위·스킨 이름을 바꿔 주세요.</value><comment>name = 중복된 내보내기 파일 이름.</comment></data>
+  <data name="Sidecar_Empty" xml:space="preserve"><value>사이드카 내용이 비어 있습니다.</value></data>
+  <data name="UnityHub_ListReadFailed" xml:space="preserve"><value>Unity Hub 목록을 읽을 수 없습니다: {error}</value><comment>error = 목록을 읽을 때 발생한 오류 메시지.</comment></data>
+  <data name="UnityHub_ListNotFound" xml:space="preserve"><value>Unity Hub 프로젝트 목록 파일을 찾을 수 없습니다.</value></data>
+  <data name="UnityHub_DatabaseReadFailed" xml:space="preserve"><value>Unity Hub 목록(hub.db)을 읽을 수 없습니다: {error}</value><comment>error = 데이터베이스 오류 메시지.</comment></data>
+  <data name="UnityHub_CorruptList" xml:space="preserve"><value>Unity Hub 목록 파일이 손상되었습니다: {error}</value><comment>error = 목록 JSON의 구문 분석 오류 메시지.</comment></data>
+  <data name="UnityHub_UnknownListFormat" xml:space="preserve"><value>Unity Hub 목록 형식을 알 수 없습니다.</value></data>
+  <data name="Update_ReadFailed" xml:space="preserve"><value>릴리스 정보를 읽지 못했습니다: {error}</value><comment>error = 릴리스 JSON 구문 분석 오류 메시지.</comment></data>
+  <data name="Update_InvalidObject" xml:space="preserve"><value>릴리스 정보가 객체가 아닙니다.</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>실행취소 기록이 비어 있습니다.</value></data>
+  <data name="History_Corrupt" xml:space="preserve"><value>실행취소 기록이 손상되었습니다.</value></data>
+  <data name="History_CorruptMessage" xml:space="preserve"><value>실행취소 기록이 손상되었습니다: {error}</value><comment>error = 기록 읽기 오류 메시지.</comment></data>
+  <data name="History_UnsupportedVersion" xml:space="preserve"><value>실행취소 기록 형식 버전({version})을 읽을 수 없습니다.</value><comment>version = 읽을 수 없는 기록 버전 번호.</comment></data>
+  <data name="History_CorruptChunkMessage" xml:space="preserve"><value>실행취소 기록 조각이 손상되었습니다: {error}</value><comment>error = 기록 조각의 압축 해제 오류 메시지.</comment></data>
+  <data name="History_CorruptCellImage" xml:space="preserve"><value>실행취소 기록의 셀 그림이 손상되었습니다.</value></data>
+  <data name="History_CorruptChunkName" xml:space="preserve"><value>실행취소 기록이 손상되었습니다(조각 이름).</value></data>
+  <data name="History_MissingChunkFile" xml:space="preserve"><value>실행취소 기록의 조각 파일이 없습니다.</value></data>
+  <data name="History_CorruptChunk" xml:space="preserve"><value>실행취소 기록 조각이 손상되었습니다.</value></data>
+  <data name="History_UnsavableStep" xml:space="preserve"><value>저장할 수 없는 실행취소 단계: {type}</value><comment>type = 실행취소 단계의 .NET 타입 이름.</comment></data>
+  <data name="History_CannotReadWhilePainting" xml:space="preserve"><value>그리는 중에는 실행취소 기록을 읽을 수 없습니다.</value></data>
+  <data name="History_ProjectMismatch" xml:space="preserve"><value>실행취소 기록이 프로젝트 파일과 맞지 않습니다.</value></data>
+  <data name="Project_RenameRestoreFailed" xml:space="preserve"><value>이름 변경에 실패했고 이전 파일 이름도 복구하지 못했습니다.</value></data>
+  <data name="Project_InvalidFile" xml:space="preserve"><value>Gpixel 프로젝트 파일이 아니거나 손상되었습니다: {error}</value><comment>error = 프로젝트 압축 파일 오류 메시지.</comment></data>
+  <data name="Project_InvalidCanvas" xml:space="preserve"><value>캔버스 크기가 잘못되었습니다: {width}x{height}</value><comment>width, height = 프로젝트 파일에 저장된 캔버스 크기.</comment></data>
+  <data name="Project_UnusedCell" xml:space="preserve"><value>쓰이지 않는 셀 파일을 무시했습니다: {name}</value><comment>name = 압축 파일의 셀 경로.</comment></data>
+  <data name="Project_MissingInfo" xml:space="preserve"><value>프로젝트 정보(project.json)가 없습니다.</value></data>
+  <data name="Project_EmptyInfo" xml:space="preserve"><value>프로젝트 정보가 비어 있습니다.</value></data>
+  <data name="Project_CorruptInfo" xml:space="preserve"><value>프로젝트 정보(project.json)가 손상되었습니다: {error}</value><comment>error = JSON 구문 분석 오류 메시지.</comment></data>
+  <data name="Project_NewerVersion" xml:space="preserve"><value>이 파일은 더 새로운 Gpixel(형식 버전 {version})에서 만들어졌습니다. 이 버전은 {current}까지 읽을 수 있습니다.</value><comment>version = 파일 형식 버전; current = 이 앱이 읽을 수 있는 최신 버전.</comment></data>
+  <data name="Project_CellReadFailed" xml:space="preserve"><value>셀을 읽지 못해 비웠습니다({name}): {error}</value><comment>name = 셀 경로; error = 셀 읽기 오류 메시지.</comment></data>
+  <data name="Project_CellResized" xml:space="preserve"><value>셀 크기가 맞지 않아 왼쪽 위에 맞췄습니다: {name}</value><comment>name = 잘못된 크기의 셀 경로.</comment></data>
+  <data name="Project_CombinedLayers" xml:space="preserve"><value>예전 아틀라스의 레이어 {count}개를 부위마다 한 장으로 합쳤습니다(보이는 레이어만).</value><comment>count = 예전 아틀라스에서 내용이 있던 레이어 수.</comment></data>
+  <data name="Project_UnknownEffect" xml:space="preserve"><value>레이어 "{layer}"의 알 수 없는 효과({type})를 건너뛰었습니다.</value><comment>layer = 레이어 이름; type = 읽을 수 없는 효과 형식 ID.</comment></data>
+  <data name="Project_RepairedHierarchy" xml:space="preserve"><value>레이어 그룹 구조가 잘못되어 고쳤습니다.</value></data>
+  <data name="Project_MigratedLegacyOutfit" xml:space="preserve"><value>예전 "지금 착장 + 착장 프리셋" 프레임 시트 설정을 "고른 스킨"으로 옮겼습니다 — 지금 착장 파일(이름 그대로)은 더 만들지 않습니다. 필요하면 지금 착장을 착장으로 저장해 고르세요.</value></data>
+  <data name="Merge_NoFrames" xml:space="preserve"><value>프레임이 없습니다.</value></data>
+  <data name="Merge_DurationCountMismatch" xml:space="preserve"><value>프레임 길이 수가 프레임 수와 다릅니다.</value></data>
+  <data name="Merge_FrameSizeMismatch" xml:space="preserve"><value>프레임 그림 크기가 서로 다릅니다.</value></data>
+  <data name="Merge_NoSources" xml:space="preserve"><value>합칠 파일이 없습니다.</value></data>
+  <data name="Merge_Keep" xml:space="preserve"><value>{name}의 {kept} 유지합니다.</value><comment>name = 파일 이름; kept = 유지한 레이어 구조 설명(목적격 조사 포함).</comment></data>
+  <data name="Merge_KeepGroupAsParts" xml:space="preserve"><value>{name}의 {kept} 유지합니다 — 그림은 "{group}" 그룹의 새 부위로 넣습니다.</value><comment>name = 파일 이름; kept = 유지한 구조 설명; group = 대상 그룹 이름.</comment></data>
+  <data name="Merge_KeepAside" xml:space="preserve"><value>{name}의 {kept} 그대로 옆에 넣습니다.</value><comment>name = 파일 이름; kept = 유지한 구조 설명.</comment></data>
+  <data name="Merge_LayersToParts" xml:space="preserve"><value>{name}의 레이어 {count}개를 부위 {count}개로 넣습니다.</value><comment>name = 파일 이름; count = 부위로 바꾼 레이어 수.</comment></data>
+  <data name="Merge_BlankCover" xml:space="preserve"><value>빈 대표 이미지: "{group}" 그룹의 부위를 모두(원래 부위 포함) 숨깁니다.</value><comment>group = 숨길 대상 그룹 이름.</comment></data>
+  <data name="Merge_KeepGroupAsSkins" xml:space="preserve"><value>{name}의 {kept} 유지합니다 — 그림은 "{group}" 그룹의 새 스킨으로 넣습니다.</value><comment>name = 파일 이름; kept = 유지한 구조 설명; group = 대상 그룹 이름.</comment></data>
+  <data name="Merge_AppendSkins" xml:space="preserve"><value>{name}의 "{source}" 그룹 스킨 {count}개를 "{target}" 그룹에 더합니다.</value><comment>name = 파일 이름; source, target = 그룹 이름; count = 추가할 스킨 수.</comment></data>
+  <data name="Merge_GroupAside" xml:space="preserve"><value>{name}의 "{source}" 그룹은 부위가 "{target}" 그룹과 달라 따로 넣습니다.</value><comment>name = 파일 이름; source, target = 그룹 이름.</comment></data>
+  <data name="Merge_GrewPart" xml:space="preserve"><value>, 부위를 {width}×{height}로 키움</value><comment>width, height = 늘어난 부위 크기; 새 스킨 병합 설명의 삽입 구절.</comment></data>
+  <data name="Merge_NewSkin" xml:space="preserve"><value>{name} → "{group}" 그룹의 새 스킨 "{skin}"(부위 "{part}"{grown}).</value><comment>name = 파일 이름; group = 그룹 이름; skin = 스킨 이름; part = 부위 이름; grown = 부위 크기 확장 설명(없으면 빈 문자열).</comment></data>
+  <data name="Merge_KeepFrameStructure" xml:space="preserve"><value>{name}의 {kept} 유지합니다(이름·설정이 같은 레이어는 이어 붙임).</value><comment>name = 파일 이름; kept = 유지한 구조 설명.</comment></data>
+  <data name="Merge_RenameTag" xml:space="preserve"><value>태그 "{name}"이(가) 겹쳐 "{renamed}"(으)로 바꿉니다.</value><comment>name = 원래 태그 이름; renamed = 겹치지 않도록 바꾼 이름.</comment></data>
+  <data name="Merge_KeepLayerStructure" xml:space="preserve"><value>레이어 구조를</value><comment>병합 알림 문장에 삽입하는 목적격 조사 포함 구절.</comment></data>
+  <data name="Merge_KeepGroupsAndSkins" xml:space="preserve"><value>그룹·스킨을</value><comment>병합 알림 문장에 삽입하는 목적격 조사 포함 구절.</comment></data>
+  <data name="Merge_KeepGroups" xml:space="preserve"><value>그룹을</value><comment>병합 알림 문장에 삽입하는 목적격 조사 포함 구절.</comment></data>
+  <data name="Naming_Rows" xml:space="preserve"><value>{keys} / 줄 {row}</value><comment>keys = 화살표로 연결한 칸 이름 규칙 목록; row = 줄바꿈 위치.</comment></data>
+  <data name="Project_UntitledName" xml:space="preserve"><value>새 프로젝트</value></data>
+  <data name="Project_PartCelSizeMismatch" xml:space="preserve"><value>셀 크기는 부위 크기와 같아야 합니다.</value></data>
+  <data name="Project_CanvasCelSizeMismatch" xml:space="preserve"><value>셀 크기는 캔버스 크기와 같아야 합니다.</value></data>
+  <data name="Project_ChangeCel" xml:space="preserve"><value>셀 바꾸기</value></data>
+  <data name="Project_Edit" xml:space="preserve"><value>편집</value></data>
+  <data name="Project_ChangedCelSizeMismatch" xml:space="preserve"><value>바꾼 셀 이미지 크기가 원래 셀과 다릅니다.</value></data>
+  <data name="Project_TargetCanvasSizeMismatch" xml:space="preserve"><value>대상 이미지 크기가 캔버스와 다릅니다.</value></data>
+  <data name="Project_NotGroupLayer" xml:space="preserve"><value>그룹 레이어가 아닙니다.</value></data>
+  <data name="Project_LockedLayerCannotDraw" xml:space="preserve"><value>잠긴 레이어에는 그릴 수 없습니다.</value></data>
+  <data name="Project_GroupCannotDraw" xml:space="preserve"><value>그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요.</value></data>
+  <data name="Project_NotPartLayer" xml:space="preserve"><value>부위 레이어가 아닙니다.</value></data>
+  <data name="Project_AddLayer" xml:space="preserve"><value>레이어 추가</value></data>
+  <data name="Project_AddGroup" xml:space="preserve"><value>그룹 추가</value></data>
+  <data name="Project_AddPartRequiresGroup" xml:space="preserve"><value>부위는 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.</value></data>
+  <data name="Project_AddPart" xml:space="preserve"><value>부위 추가</value></data>
+  <data name="Project_AutoLayoutBlocksMove" xml:space="preserve"><value>그룹 "{name}"은(는) 자동 배치 중이라 부위를 옮길 수 없습니다 — 먼저 자동 배치를 끄세요.</value><comment>name = 자동 배치 중인 그룹 이름.</comment></data>
+  <data name="Project_MovePart" xml:space="preserve"><value>부위 위치</value></data>
+  <data name="Project_GroupNotInProject" xml:space="preserve"><value>이 프로젝트의 그룹 레이어가 아닙니다.</value></data>
+  <data name="Project_DisableAutoLayout" xml:space="preserve"><value>자동 배치 끄기</value></data>
+  <data name="Project_AutoLayout" xml:space="preserve"><value>자동 배치</value></data>
+  <data name="Project_AutoLayoutSettings" xml:space="preserve"><value>자동 배치 설정</value></data>
+  <data name="Project_ResizePart" xml:space="preserve"><value>부위 크기</value></data>
+  <data name="Project_PartPivot" xml:space="preserve"><value>부위 피벗</value></data>
+  <data name="Project_PartBorder" xml:space="preserve"><value>부위 테두리</value></data>
+  <data name="Project_DefaultLayerName" xml:space="preserve"><value>레이어 {number}</value><comment>number = 새 프로젝트에서 만든 레이어 번호. 기존 파일의 이름은 바꾸지 않음.</comment></data>
+  <data name="Project_DefaultGroupName" xml:space="preserve"><value>그룹</value></data>
+  <data name="Project_DefaultPartName" xml:space="preserve"><value>부위</value></data>
+  <data name="Project_DefaultSkinName" xml:space="preserve"><value>스킨</value></data>
+  <data name="Project_DefaultOutfitName" xml:space="preserve"><value>착장</value><comment>새 착장 이름이 비었을 때의 기본값. 저장된 착장 이름은 바꾸지 않음.</comment></data>
+  <data name="ExportPreset_ImportedSuffix" xml:space="preserve"><value> (가져옴)</value><comment>기본 제공 프리셋과 이름이 겹치는 가져온 프리셋의 새 저장 이름.</comment></data>
+  <data name="Project_CopiedName" xml:space="preserve"><value>{name} 복사</value><comment>name = 복제할 스킨의 이름.</comment></data>
+  <data name="Project_PartSkinName" xml:space="preserve"><value>{part} 스킨</value><comment>part = 부위 이름.</comment></data>
+  <data name="Project_DuplicateLayer" xml:space="preserve"><value>레이어 복제</value></data>
+  <data name="Project_CannotDeleteLastLayer" xml:space="preserve"><value>마지막 레이어는 지울 수 없습니다.</value></data>
+  <data name="Project_DeleteLayer" xml:space="preserve"><value>레이어 삭제</value></data>
+  <data name="Project_MoveLayer" xml:space="preserve"><value>레이어 이동</value></data>
+  <data name="Project_NoLayerBelow" xml:space="preserve"><value>아래에 병합할 레이어가 없습니다.</value></data>
+  <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>부위·그룹 레이어는 아래로 병합할 수 없습니다.</value></data>
+  <data name="Project_MergeDown" xml:space="preserve"><value>아래 레이어와 병합</value></data>
+  <data name="Project_LayerProperties" xml:space="preserve"><value>레이어 속성</value></data>
+  <data name="Project_LayerEffects" xml:space="preserve"><value>레이어 효과</value></data>
+  <data name="Project_CannotBakeGroupEffects" xml:space="preserve"><value>그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.</value></data>
+  <data name="Project_CannotBakeLockedLayerEffects" xml:space="preserve"><value>잠긴 레이어에는 효과를 영구 적용할 수 없습니다.</value></data>
+  <data name="Project_NoEffectsToBake" xml:space="preserve"><value>영구 적용할 효과가 없습니다.</value></data>
+  <data name="Project_BakeEffects" xml:space="preserve"><value>효과 영구 적용</value></data>
+  <data name="Project_SkinNotInGroup" xml:space="preserve"><value>그룹에 없는 스킨입니다.</value></data>
+  <data name="Project_PartNotInProjectGroup" xml:space="preserve"><value>이 프로젝트의 그룹에 든 부위 레이어가 아닙니다.</value></data>
+  <data name="Project_AddSkinRequiresGroup" xml:space="preserve"><value>스킨은 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.</value></data>
+  <data name="Project_AddSkin" xml:space="preserve"><value>스킨 추가</value></data>
+  <data name="Project_DuplicateSkin" xml:space="preserve"><value>스킨 복제</value></data>
+  <data name="Project_InvalidPartSkin" xml:space="preserve"><value>이 부위가 고를 수 없는 스킨입니다.</value></data>
+  <data name="Project_AddPartSkin" xml:space="preserve"><value>부위 스킨 추가</value></data>
+  <data name="Project_DuplicatePartSkin" xml:space="preserve"><value>부위 스킨 복제</value></data>
+  <data name="Project_PromoteSkin" xml:space="preserve"><value>전체 스킨으로 올리기</value></data>
+  <data name="Project_PartNotInGroup" xml:space="preserve"><value>그룹의 부위가 아닙니다.</value></data>
+  <data name="Project_CannotDemoteBaseSkin" xml:space="preserve"><value>첫 스킨(기본)은 부위 전용으로 내릴 수 없습니다.</value></data>
+  <data name="Project_DemoteSkin" xml:space="preserve"><value>부위 전용으로 내리기</value></data>
+  <data name="Project_EmptySkinName" xml:space="preserve"><value>스킨 이름이 비어 있습니다.</value></data>
+  <data name="Project_DuplicateSkinName" xml:space="preserve"><value>그룹에 이미 같은 이름의 스킨이 있습니다: {name}</value><comment>name = 입력한 중복 스킨 이름.</comment></data>
+  <data name="Project_RenameSkin" xml:space="preserve"><value>스킨 이름</value></data>
+  <data name="Project_CannotDeleteLastSkin" xml:space="preserve"><value>그룹의 마지막 스킨은 지울 수 없습니다.</value></data>
+  <data name="Project_DeleteSkin" xml:space="preserve"><value>스킨 삭제</value></data>
+  <data name="Project_ReorderSkin" xml:space="preserve"><value>스킨 순서</value></data>
+  <data name="Project_PartSkinCannotApplyToGroup" xml:space="preserve"><value>부위 전용 스킨은 그룹 전체에 입힐 수 없습니다 — 그 부위에 입히세요.</value></data>
+  <data name="Project_OtherPartSkin" xml:space="preserve"><value>다른 부위 전용 스킨입니다.</value></data>
+  <data name="Project_OutfitNotInProject" xml:space="preserve"><value>이 프로젝트의 착장이 아닙니다.</value></data>
+  <data name="Project_SaveOutfit" xml:space="preserve"><value>착장 저장</value></data>
+  <data name="Project_OverwriteOutfit" xml:space="preserve"><value>착장 덮어쓰기</value></data>
+  <data name="Project_EmptyOutfitName" xml:space="preserve"><value>착장 이름이 비어 있습니다.</value></data>
+  <data name="Project_DuplicateOutfitName" xml:space="preserve"><value>이미 같은 이름의 착장이 있습니다: {name}</value><comment>name = 입력한 중복 착장 이름.</comment></data>
+  <data name="Project_RenameOutfit" xml:space="preserve"><value>착장 이름</value></data>
+  <data name="Project_DeleteOutfit" xml:space="preserve"><value>착장 삭제</value></data>
+  <data name="Project_ReorderOutfit" xml:space="preserve"><value>착장 순서</value></data>
+  <data name="Project_MissingOutfitGroup" xml:space="preserve"><value>"{name}" 그룹이 없습니다</value><comment>name = 착장에 저장된 그룹 이름.</comment></data>
+  <data name="Project_MissingOutfitGroupSkin" xml:space="preserve"><value>"{group}" 그룹에 "{skin}" 스킨이 없습니다</value><comment>group = 그룹 이름; skin = 해당 착장에 저장된 스킨 이름.</comment></data>
+  <data name="Project_MissingOutfitPart" xml:space="preserve"><value>"{name}" 부위가 없습니다</value><comment>name = 착장에 저장된 부위 이름.</comment></data>
+  <data name="Project_MissingOutfitPartSkin" xml:space="preserve"><value>"{part}" 부위의 "{skin}" 스킨이 없습니다</value><comment>part = 부위 이름; skin = 해당 착장에 저장된 스킨 이름.</comment></data>
+  <data name="Project_AddFrame" xml:space="preserve"><value>프레임 추가</value></data>
+  <data name="Project_DuplicateFrame" xml:space="preserve"><value>프레임 복제</value></data>
+  <data name="Project_ExtendFrames" xml:space="preserve"><value>프레임 늘리기</value></data>
+  <data name="Project_CannotDeleteLastFrame" xml:space="preserve"><value>마지막 프레임은 삭제할 수 없습니다.</value></data>
+  <data name="Project_DeleteFrame" xml:space="preserve"><value>프레임 삭제</value></data>
+  <data name="Project_MoveFrame" xml:space="preserve"><value>프레임 이동</value></data>
+  <data name="Project_FrameDuration" xml:space="preserve"><value>프레임 길이</value></data>
+  <data name="Project_FramePivot" xml:space="preserve"><value>프레임 피벗</value></data>
+  <data name="Project_FrameName" xml:space="preserve"><value>프레임 이름</value></data>
+  <data name="Project_AddTag" xml:space="preserve"><value>태그 추가</value></data>
+  <data name="Project_EditTag" xml:space="preserve"><value>태그 편집</value></data>
+  <data name="Project_DeleteTag" xml:space="preserve"><value>태그 삭제</value></data>
+  <data name="Project_EmptyTagName" xml:space="preserve"><value>태그 이름이 비어 있습니다.</value></data>
+  <data name="Project_DuplicateTagName" xml:space="preserve"><value>이미 같은 이름의 태그가 있습니다: {name}</value><comment>name = 입력한 중복 태그 이름.</comment></data>
+  <data name="Project_InvalidTagRange" xml:space="preserve"><value>태그 프레임 범위가 잘못되었습니다: {from}~{to}</value><comment>from, to = 입력한 태그의 프레임 번호.</comment></data>
+  <data name="Project_InvalidImageSize" xml:space="preserve"><value>그림 크기는 1~{max} 사이여야 합니다: {width}x{height}</value><comment>max = 최대 축 크기; width, height = 입력 이미지의 크기.</comment></data>
+  <data name="Project_CanvasSize" xml:space="preserve"><value>캔버스 크기</value></data>
+  <data name="Project_FlipHorizontal" xml:space="preserve"><value>좌우 뒤집기</value></data>
+  <data name="Project_FlipVertical" xml:space="preserve"><value>상하 뒤집기</value></data>
+  <data name="Project_RotateClockwise" xml:space="preserve"><value>시계 방향 회전</value></data>
+  <data name="Project_RotateCounterclockwise" xml:space="preserve"><value>반시계 방향 회전</value></data>
+  <data name="Project_InvalidPartSize" xml:space="preserve"><value>부위 크기는 1~{max} 사이여야 합니다: {width}x{height}</value><comment>max = 최대 축 크기; width, height = 입력 부위 크기.</comment></data>
+  <data name="Project_UnsavableEffect" xml:space="preserve"><value>저장할 수 없는 효과: {type}</value><comment>type = 직렬화할 수 없는 효과의 .NET 타입 이름.</comment></data>
+  <data name="Import_NoDocument" xml:space="preserve"><value>가져올 문서가 없습니다.</value></data>
+</root>

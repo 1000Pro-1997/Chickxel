@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -8,12 +9,12 @@ public sealed partial class LayerEffectsDialog
     private void InnerGlowPanel(InnerGlowEffect g, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static InnerGlowEffect G(LayerEffect v) => (InnerGlowEffect)v;
-        SettingsRow("색", EffectColorEditor(g, nameof(InnerGlowEffect.Color),
+        SettingsRow(UiStrings.S_InnerGlowPanel_InnerGlowPanel_4E24CB6117, EffectColorEditor(g, nameof(InnerGlowEffect.Color),
             ColorEditor(g.Color, v => set(o => G(o) with { Color = v })), set));
-        SettingsRow("두께", NumEditor(1, InnerGlowEffect.MaxSize, g.Size, NumKinds.Thickness, v => set(o => G(o) with { Size = v })), Ui.Label("px"),
-            Ui.Label("  세기"), NumEditor(0, 100, g.Strength, NumKinds.Strength, v => set(o => G(o) with { Strength = v })), Ui.Label("%"));
-        SettingsRow("섞기", ChoiceEditor(Blends, (int)g.Blend, k => set(o => G(o) with { Blend = (EffectBlend)k })));
-        SettingsRow("", CheckEditor("안쪽으로 갈수록 약하게 (계단식)", g.Fade, v => set(o => G(o) with { Fade = v })));
-        _settings.Children.Add(Hint("그림 가장자리에서 안쪽으로 두께만큼 색을 섞습니다(모서리 포함 8방향 거리, 원래 픽셀의 투명도는 그대로)."));
+        SettingsRow(UiStrings.S_InnerGlowPanel_InnerGlowPanel_F17849B03D, NumEditor(1, InnerGlowEffect.MaxSize, g.Size, NumKinds.Thickness, v => set(o => G(o) with { Size = v })), Ui.Label("px"),
+            Ui.Label(UiStrings.S_InnerGlowPanel_InnerGlowPanel_71F36E8E3A), NumEditor(0, 100, g.Strength, NumKinds.Strength, v => set(o => G(o) with { Strength = v })), Ui.Label("%"));
+        SettingsRow(UiStrings.S_InnerGlowPanel_InnerGlowPanel_A12FD928D4, ChoiceEditor(Blends, (int)g.Blend, k => set(o => G(o) with { Blend = (EffectBlend)k })));
+        SettingsRow("", CheckEditor(UiStrings.S_InnerGlowPanel_InnerGlowPanel_960F2D4C03, g.Fade, v => set(o => G(o) with { Fade = v })));
+        _settings.Children.Add(Hint(UiStrings.S_InnerGlowPanel_InnerGlowPanel_E8C879B3C5));
     }
 }

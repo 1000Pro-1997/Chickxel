@@ -2,6 +2,7 @@ using System.Globalization;
 using Avalonia.Media.Immutable;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -39,18 +40,18 @@ public sealed class ColorPanel : UserControl
         _ctx = ctx;
         Background = AppTheme.PanelBrush;
 
-        _primarySlot = new ColorSlot("기본") { Selected = true };
-        _secondarySlot = new ColorSlot("보조");
+        _primarySlot = new ColorSlot(UiStrings.S_ColorPanel_ColorPanel_195645F007) { Selected = true };
+        _secondarySlot = new ColorSlot(UiStrings.S_ColorPanel_ColorPanel_0B93355BEE);
         _primarySlot.Click += (_, _) => SetEditTarget(false);
         _secondarySlot.Click += (_, _) => SetEditTarget(true);
-        var swap = Ui.IconButton(VectorIcon.Swap, "기본색 ↔ 보조색 (X)", (_, _) => _ctx.SwapColors(), 26);
+        var swap = Ui.IconButton(VectorIcon.Swap, UiStrings.S_ColorPanel_ColorPanel_B61A799223, (_, _) => _ctx.SwapColors(), 26);
 
         _editor = new ColorEditor(_ctx.Primary, _ctx.RecentColors);
         _editor.ColorChanged += (_, _) => SetCurrent(_editor.Color);
         _editor.RecentColorClicked += OnSwatchClicked;
 
         // ── 위: 팔레트 제목 + 기본/보조색
-        var header = Ui.Header("팔레트");
+        var header = Ui.Header(UiStrings.S_ColorPanel_ColorPanel_B96AEE0468);
 
         var slots = Ui.Row(_primarySlot, _secondarySlot, swap);
         slots.Height = 48;
@@ -59,7 +60,7 @@ public sealed class ColorPanel : UserControl
         DockPanel.SetDock(slots, Dock.Top);
 
         // ── 가운데: 팔레트 칸들(머리글 + 색 칸) + 새 팔레트 단추(스크롤)
-        _addPalette = Ui.Button(VectorIcon.Plus, "새 팔레트", (_, _) => AddPalette()).Tip("빈 팔레트를 맨 아래에 추가");
+        _addPalette = Ui.Button(VectorIcon.Plus, UiStrings.S_ColorPanel_ColorPanel_C7B5B33FE3, (_, _) => AddPalette()).Tip(UiStrings.S_ColorPanel_ColorPanel_197998B972);
         _addPalette.HorizontalAlignment = HorizontalAlignment.Stretch;
         _addPalette.HorizontalContentAlignment = HorizontalAlignment.Center;
         _addPalette.Margin = new Thickness(4, 6, 4, 8);
@@ -225,21 +226,21 @@ public sealed class ColorPanel : UserControl
         int index = _sections.IndexOf(s);
         return
         [
-            Item("현재 색 추가", () => AddToPalette(s, CurrentColor)),
-            Item("기본색을 팔레트에서 삭제", () => RemoveFromPalette(s)),
-            Item("색상 순으로 정렬", () => SortPalette(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_6B5F562A33, () => AddToPalette(s, CurrentColor)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_E11BC26CCA, () => RemoveFromPalette(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_99C40336CD, () => SortPalette(s)),
             new Separator(),
-            Item("팔레트 불러오기(.hex/.gpl)…", () => LoadPalette(s)),
-            Item("팔레트 웹(Lospec)…", () => OpenLospec(s)),
-            Item("팔레트 저장(.hex)…", () => SavePalette(s)),
-            Item("이미지에서 팔레트 만들기", () => PaletteFromImage(s)),
-            Item("팔레트 색으로 변환…", () => ConvertImage(s), _ctx.HasProject),
+            Item(UiStrings.S_ColorPanel_SectionMenu_F614342A09, () => LoadPalette(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_8C285D8080, () => OpenLospec(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_39B0AAF262, () => SavePalette(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_7B7D7BEB97, () => PaletteFromImage(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_65C4F22AE2, () => ConvertImage(s), _ctx.HasProject),
             new Separator(),
-            Item("이름 바꾸기…", () => RenamePalette(s)),
-            Item("위로", () => MovePalette(s, -1), index > 0),
-            Item("아래로", () => MovePalette(s, 1), index < _sections.Count - 1),
-            Item("팔레트 비우기", () => { s.Grid.SetColors([]); s.Grid.Commit(); }, s.Grid.Colors.Count > 0),
-            Item("팔레트 삭제", () => DeletePalette(s), _sections.Count > 1),
+            Item(UiStrings.S_ColorPanel_SectionMenu_64E969B02E, () => RenamePalette(s)),
+            Item(UiStrings.S_ColorPanel_SectionMenu_4C7EB2DA21, () => MovePalette(s, -1), index > 0),
+            Item(UiStrings.S_ColorPanel_SectionMenu_299E405790, () => MovePalette(s, 1), index < _sections.Count - 1),
+            Item(UiStrings.S_ColorPanel_SectionMenu_8DA4CD616C, () => { s.Grid.SetColors([]); s.Grid.Commit(); }, s.Grid.Colors.Count > 0),
+            Item(UiStrings.S_ColorPanel_SectionMenu_F324D27E74, () => DeletePalette(s), _sections.Count > 1),
         ];
     }
 
@@ -280,7 +281,10 @@ public sealed class ColorPanel : UserControl
     private string NextPaletteName()
     {
         for (int i = _sections.Count + 1; ; i++)
-            if (_sections.All(s => s.PaletteName != $"팔레트 {i}")) return $"팔레트 {i}";
+        {
+            var name = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ColorPanel_NextPaletteName_497ECFC04A, i);
+            if (_sections.All(s => s.PaletteName != name)) return name;
+        }
     }
 
     private void AddPalette()
@@ -295,7 +299,7 @@ public sealed class ColorPanel : UserControl
 
     private void RenamePalette(PaletteSection s)
     {
-        if (!_sections.Contains(s) || InputDialog.Ask(this, "팔레트 이름 바꾸기", "이름", s.PaletteName) is not { } name || name == s.PaletteName) return;
+        if (!_sections.Contains(s) || InputDialog.Ask(this, UiStrings.S_ColorPanel_RenamePalette_427E33B59C, UiStrings.S_ColorPanel_RenamePalette_068D403D46, s.PaletteName) is not { } name || name == s.PaletteName) return;
         s.PaletteName = name;
         _active = s;
         RefreshSections();
@@ -317,7 +321,7 @@ public sealed class ColorPanel : UserControl
     {
         int index = _sections.IndexOf(s);
         if (index < 0 || _sections.Count <= 1) return;
-        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"팔레트 \"{s.PaletteName}\"({s.Grid.Colors.Count}색)을 삭제할까요?", "팔레트 삭제",
+        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorPanel_DeletePalette_0A673C4D6C,s.PaletteName,s.Grid.Colors.Count), UiStrings.S_ColorPanel_DeletePalette_C07F74F11A,
                 MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         _sections.RemoveAt(index);
         if (ReferenceEquals(_active, s)) _active = _sections[Math.Min(index, _sections.Count - 1)];
@@ -356,15 +360,15 @@ public sealed class ColorPanel : UserControl
 
     private void LoadPalette(PaletteSection s)
     {
-        var path = Ui.OpenFile(this, "팔레트 불러오기", null,
-            new FileFilter("팔레트", "*.hex", "*.gpl"), new FileFilter("모든 파일", "*.*"));
+        var path = Ui.OpenFile(this, UiStrings.S_ColorPanel_LoadPalette_3310F46ECE, null,
+            new FileFilter(UiStrings.S_ColorPanel_LoadPalette_9D3D5672C7, "*.hex", "*.gpl"), new FileFilter(UiStrings.S_ColorPanel_LoadPalette_8142E478F5, "*.*"));
         if (path is null) return;
         try
         {
             var colors = PaletteIO.Load(path);
             if (colors.Count == 0)
             {
-                Ui.Error(this, "파일에서 색을 찾지 못했습니다.");
+                Ui.Error(this, UiStrings.S_ColorPanel_LoadPalette_7D6D623706);
                 return;
             }
             s.Grid.SetColors(colors);
@@ -372,7 +376,7 @@ public sealed class ColorPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"팔레트를 읽지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorPanel_LoadPalette_A14CF681D1,ex.Message));
         }
     }
 
@@ -380,8 +384,8 @@ public sealed class ColorPanel : UserControl
     {
         var invalid = Path.GetInvalidFileNameChars();
         string fileName = new string([.. s.PaletteName.Select(ch => invalid.Contains(ch) ? '_' : ch)]).Trim();
-        var path = Ui.SaveFile(this, "팔레트 저장", null, (fileName.Length > 0 ? fileName : "palette") + ".hex", "hex",
-            new FileFilter("HEX 팔레트", "*.hex"));
+        var path = Ui.SaveFile(this, UiStrings.S_ColorPanel_SavePalette_025163AA2F, null, (fileName.Length > 0 ? fileName : "palette") + ".hex", "hex",
+            new FileFilter(UiStrings.S_ColorPanel_SavePalette_836AB9D8EA, "*.hex"));
         if (path is null) return;
         try
         {
@@ -389,7 +393,7 @@ public sealed class ColorPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"팔레트를 저장하지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorPanel_SavePalette_86BA21EC2E,ex.Message));
         }
     }
 
@@ -449,11 +453,11 @@ public sealed class ColorPanel : UserControl
         }
         if (colors.Count == 0)
         {
-            Ui.Info(this, "이미지에 투명이 아닌 색이 없습니다.");
+            Ui.Info(this, UiStrings.S_ColorPanel_PaletteFromImage_5F29209EAB);
             return;
         }
-        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, $"이미지에서 {colors.Count}색을 찾았습니다. 팔레트 \"{s.PaletteName}\"을 바꿀까요?",
-                "이미지에서 팔레트 만들기", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+        if (s.Grid.Colors.Count > 0 && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorPanel_PaletteFromImage_5BF333D17D,colors.Count,s.PaletteName),
+                UiStrings.S_ColorPanel_PaletteFromImage_3B7B772DC0, MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         s.Grid.SetColors(colors);
         s.Grid.Commit();
     }
@@ -630,7 +634,7 @@ public sealed class SwatchGrid : Control
         var shown = Shown;
         if (shown.Count == 0)
         {
-            AppTheme.DrawTextIn(g, "비어 있음", bounds, AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
+            AppTheme.DrawTextIn(g, UiStrings.S_ColorPanel_Render_7ACAF89E7C, bounds, AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             return;
         }
         // 같은 색이 여러 칸이면 첫 칸에만 표시한다.
@@ -688,7 +692,7 @@ public sealed class SwatchGrid : Control
         int i = IndexAt(e.GetPosition(this), shown.Count);
         if (i == _hoverIndex) return;
         _hoverIndex = i;
-        ToolTip.SetTip(this, i < 0 ? null : shown[i].A == 0 ? "투명" : shown[i].ToHex());
+        ToolTip.SetTip(this, i < 0 ? null : shown[i].A == 0 ? UiStrings.S_ColorPanel_OnPointerMoved_D44392062E : shown[i].ToHex());
         InvalidateVisual();
     }
 

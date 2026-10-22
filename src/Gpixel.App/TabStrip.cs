@@ -1,4 +1,5 @@
 using Avalonia.Media.Immutable;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -134,7 +135,7 @@ public sealed class TabStrip : Border
     /// </summary>
     public int Add(string? text, TabIconPainter? icon = null, string? tip = null, bool iconAfter = false)
     {
-        if (text is null && icon is null) throw new ArgumentException("탭에는 글자나 그림이 있어야 합니다.", nameof(text));
+        if (text is null && icon is null) throw new ArgumentException(UiStrings.S_TabStrip_Add_0D472C8D06, nameof(text));
         int index = _tabs.Count;
         var (fontSize, height, padding, minWidth) = Kind switch
         {
@@ -205,7 +206,7 @@ public sealed class TabStrip : Border
     public TabStrip SetText(int index, string text)
     {
         var tab = _tabs[index];
-        if (tab.Reserve is not { } reserve) throw new InvalidOperationException("글자 없는 탭입니다.");
+        if (tab.Reserve is not { } reserve) throw new InvalidOperationException(UiStrings.S_TabStrip_SetText_73932E4743);
         reserve.Text = text;
         tab.Text.Text = text;
         return this;
@@ -214,7 +215,7 @@ public sealed class TabStrip : Border
     /// <summary>그림이 있는 탭의 그림을 보이거나 감춘다(예: 글자 뒤 작업 중 점).</summary>
     public TabStrip SetIconVisible(int index, bool visible)
     {
-        if (_tabs[index].Icon is not { } icon) throw new InvalidOperationException("그림 없는 탭입니다.");
+        if (_tabs[index].Icon is not { } icon) throw new InvalidOperationException(UiStrings.S_TabStrip_SetIconVisible_5D94F67133);
         icon.IsVisible = visible;
         return this;
     }

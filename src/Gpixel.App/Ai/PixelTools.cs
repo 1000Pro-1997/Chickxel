@@ -7,6 +7,7 @@ using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using ImageAnchor = Gpixel.Core.Model.Anchor;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -25,7 +26,7 @@ public sealed class PixelTools
     /// <summary>JSON 직렬화 옵션(한글을 \u 이스케이프하지 않음).</summary>
     internal static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    private const string NoProject = "열린 프로젝트가 없습니다 — new_project로 만드세요";
+    private static readonly string NoProject = UiStrings.PixelTools_NoProject;
     private const string ColorFormat = "\"#RRGGBB\", \"#RRGGBBAA\" or \"transparent\"";
     /// <summary>get_pixels 영역 한 변 최대.</summary>
     private const int MaxPixelRegion = 128;
@@ -270,7 +271,7 @@ public sealed class PixelTools
             "every frame's drawing stays attached to `anchor` and the position is adjusted so pixels stay where they are on the canvas), " +
             "and/or its Unity pivot (0..1, origin bottom-left). A part of a group with auto layout (get_document `autoLayout`) " +
             "cannot be moved with x/y (error) — its position is computed automatically; resizing re-arranges the group. " +
-            "Only the user can turn auto layout off (timeline group menu \"자동 배치 끄기\").",
+            UiStrings.S_PixelTools_ListTools_72B03826BE,
             new JsonObject
             {
                 ["layer"] = Int("Part layer index.", 0),
@@ -307,7 +308,7 @@ public sealed class PixelTools
             }),
         Tool("set_skin",
             "Choose which skin of a group is visible and edited (switch outfit). With `part`, only that part wears `skin` (override — a group skin " +
-            "or one of that part's part-only skins); follow_group=true (or skin \"그룹\"/empty) makes the part follow its group's skin again. Not recorded in undo history.",
+            UiStrings.S_PixelTools_ListTools_AB0616E25B,
             new JsonObject
             {
                 ["group"] = Int("Index of the group layer (default: the selected group, or the group of the selected part; with `part`, the part's group).", 0),
@@ -324,7 +325,7 @@ public sealed class PixelTools
             "Outfit presets can also be exported as extra frame sheets ({sheet}@{outfit}).",
             new JsonObject
             {
-                ["name"] = Str("Outfit name (default \"착장\"; made unique)."),
+                ["name"] = Str(UiStrings.S_PixelTools_ListTools_9ECBDEAA4B),
             }),
         Tool("apply_outfit",
             "Wear an outfit preset: set each saved group's skin and its parts' overrides (see list_outfits). Groups not in the outfit stay as they are. " +
@@ -426,7 +427,7 @@ public sealed class PixelTools
         {
             var a = arguments;
             if (Scope is { } scope && !ScopeFreeTools.Contains(name) && !ScopedPixelTools.Contains(name))
-                throw new ToolError($"편집 범위가 \"{scope.Layer.Name}\" 레이어로 제한되어 있어 {name}은(는) 쓸 수 없습니다 — 그 레이어의 픽셀만 고칠 수 있고 나머지는 볼 수만 있습니다(사용자가 채팅의 \"지금 레이어만\"을 끄면 됨)");
+                throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_641D76DC81,scope.Layer.Name,name));
             return name switch
             {
                 "get_document" => GetDocument(),
@@ -460,7 +461,7 @@ public sealed class PixelTools
                 "new_project" => NewProject(name, a),
                 "save_project" => SaveProject(name),
                 "open_file" => OpenFile(name, a),
-                _ => TextResult($"알 수 없는 도구입니다: {name}", isError: true),
+                _ => TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_A9A0750467,name), isError: true),
             };
         }
         catch (ToolError e)
@@ -469,7 +470,7 @@ public sealed class PixelTools
         }
         catch (Exception e)
         {
-            return TextResult($"{name} 실패: {CleanMessage(e)}", isError: true);
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_B686C7AE84,name,CleanMessage(e)), isError: true);
         }
     }
 
@@ -497,7 +498,7 @@ public sealed class PixelTools
         if (ctx.Project is not { } p)
         {
             doc["open"] = false;
-            doc["message"] = "열린 프로젝트가 없습니다 — new_project로 만들거나 open_file로 여세요";
+            doc["message"] = UiStrings.S_PixelTools_GetDocument_AF683C7E03;
         }
         else
         {
@@ -611,8 +612,8 @@ public sealed class PixelTools
 
         using var ms = new MemoryStream();
         PngIO.Save(output, ms);
-        var zoom = step > 1 ? $"×1/{step} (축소)" : $"×{scale}";
-        var text = $"{w}x{h} px, {zoom} (frame {frame}, {(layer is { } l ? $"layer {l}" : "합성")})";
+        var zoom = step > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetImage_DA57EB7572,step) : $"×{scale}";
+        var text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetImage_19E8EA70BE,w,h,zoom,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetImage_D66933B71D));
         return new JsonObject
         {
             ["content"] = new JsonArray(
@@ -630,7 +631,7 @@ public sealed class PixelTools
         var (w, h) = SourceSize(p, layer);
         var r = Region(a, w, h);
         if (r.Width > MaxPixelRegion || r.Height > MaxPixelRegion)
-            throw new ToolError($"영역 {r.Width}x{r.Height}이(가) 너무 큽니다 (최대 {MaxPixelRegion}x{MaxPixelRegion}) — x, y, width, height로 나눠 요청하세요");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_253D7F232C,r.Width,r.Height,MaxPixelRegion,MaxPixelRegion));
         var src = Source(p, frame, layer);
 
         var codes = new Dictionary<Color32, char>();
@@ -652,7 +653,7 @@ public sealed class PixelTools
                 if (!codes.TryGetValue(c, out var code))
                 {
                     if (codes.Count >= LegendCodes.Length)
-                        throw new ToolError($"영역에 색이 {LegendCodes.Length}가지보다 많습니다 — 더 작은 영역(x, y, width, height)으로 나눠 요청하세요");
+                        throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_22896ED9D5,LegendCodes.Length));
                     code = LegendCodes[codes.Count];
                     codes[c] = code;
                     legend.Add((code, c));
@@ -663,7 +664,7 @@ public sealed class PixelTools
         }
 
         var sb = new StringBuilder();
-        sb.Append($"x={r.X} y={r.Y} width={r.Width} height={r.Height} (frame {frame}, {(layer is { } l ? $"layer {l}" : "합성")})\n");
+        sb.Append(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_E9751A4291,r.X,r.Y,r.Width,r.Height,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetPixels_B41D2BDA18)));
         sb.Append("legend:\n");
         foreach (var (code, color) in legend) sb.Append(code).Append(" = ").Append(color.ToHex()).Append('\n');
         if (anyTransparent) sb.Append(". = transparent\n");
@@ -681,17 +682,17 @@ public sealed class PixelTools
         var rowNodes = ReqArray(a, "rows");
         var rows = new string[rowNodes.Count];
         for (int i = 0; i < rows.Length; i++)
-            rows[i] = AsString(rowNodes[i]) ?? throw new ToolError($"rows[{i}]: 문자열이 필요합니다");
-        if (Arg(a, "legend") is not JsonObject legendNode) throw new ToolError("legend: {\"글자\": \"색\"} 객체가 필요합니다");
+            rows[i] = AsString(rowNodes[i]) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_F2344C45D2,i));
+        if (Arg(a, "legend") is not JsonObject legendNode) throw new ToolError(UiStrings.S_PixelTools_DrawPixels_BF7428FA5E);
         var legend = new Dictionary<char, Color32>();
         foreach (var (key, value) in legendNode)
         {
-            if (key.Length != 1) throw new ToolError($"legend 키는 한 글자여야 합니다 (받은 키: \"{key}\")");
+            if (key.Length != 1) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_6BDAD1B426,key));
             if (key[0] == ' ') continue; // 공백은 항상 "그대로 둠"
-            var text = AsString(value) ?? throw new ToolError($"legend[\"{key}\"]: 색 문자열이 필요합니다");
+            var text = AsString(value) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_0668E3491C,key));
             legend[key[0]] = ParseColor(text, $"legend[\"{key}\"]");
         }
-        if (legend.Count == 0) throw new ToolError("legend가 비어 있습니다");
+        if (legend.Count == 0) throw new ToolError(UiStrings.S_PixelTools_DrawPixels_CFA63047A0);
 
         int outside = 0;
         int changed = Stroke(tool, t, img =>
@@ -710,18 +711,18 @@ public sealed class PixelTools
             }
             return n;
         });
-        return Done(tool, changed, t, outside > 0 ? $" — 캔버스 밖 {outside} px 무시" : "");
+        return Done(tool, changed, t, outside > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_E040619801,outside) : "");
     }
 
     private JsonObject SetPixels(string tool, JsonObject? a)
     {
         var t = EditTarget(a);
         var nodes = ReqArray(a, "pixels");
-        if (nodes.Count > 65536) throw new ToolError($"pixels가 너무 많습니다 ({nodes.Count}개, 최대 65536) — draw_pixels를 쓰세요");
+        if (nodes.Count > 65536) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPixels_FB1F744072,nodes.Count));
         var pixels = new List<(int X, int Y, Color32 Color)>(nodes.Count);
         for (int i = 0; i < nodes.Count; i++)
         {
-            if (nodes[i] is not JsonObject o) throw new ToolError($"pixels[{i}]: {{x, y, color}} 객체가 필요합니다");
+            if (nodes[i] is not JsonObject o) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPixels_92568A434D,i));
             try
             {
                 pixels.Add((ReqInt(o, "x", -CoordLimit, CoordLimit), ReqInt(o, "y", -CoordLimit, CoordLimit), ReqColor(o, "color")));
@@ -743,7 +744,7 @@ public sealed class PixelTools
             }
             return n;
         });
-        return Done(tool, changed, t, outside > 0 ? $" — 캔버스 밖 {outside} px 무시" : "");
+        return Done(tool, changed, t, outside > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPixels_87EB8FF2FA,outside) : "");
     }
 
     private JsonObject DrawShape(string tool, JsonObject? a)
@@ -825,26 +826,26 @@ public sealed class PixelTools
             if (duration is { } d) p.SetFrameDuration(index, d);
         });
         ctx.SetCurrent(ctx.CurrentLayer, index);
-        var copied = duplicate ? $" (frame {after} 복제)" : "";
-        return TextResult($"{tool}: frame {index} 추가{copied}, {p.Frames[index].DurationMs}ms — 지금 frame {index}, 전체 {p.Frames.Count}프레임");
+        var copied = duplicate ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddFrame_2D747F44EA,after) : "";
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddFrame_12226322D1,tool,index,copied,p.Frames[index].DurationMs,index,p.Frames.Count));
     }
 
     private JsonObject DeleteFrame(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var ctx = Ctx;
-        int frame = ReqIndex(a, "frame", p.Frames.Count, "프레임");
-        if (p.Frames.Count <= 1) throw new ToolError("마지막 프레임은 삭제할 수 없습니다");
+        int frame = ReqIndex(a, "frame", p.Frames.Count, UiStrings.S_PixelTools_DeleteFrame_EBFF79A82B);
+        if (p.Frames.Count <= 1) throw new ToolError(UiStrings.S_PixelTools_DeleteFrame_26646ACB37);
         p.Edit(Label(tool), ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () => p.DeleteFrame(frame));
         int current = Math.Min(frame, p.Frames.Count - 1);
         ctx.SetCurrent(ctx.CurrentLayer, current);
-        return TextResult($"{tool}: frame {frame} 삭제 — 남은 {p.Frames.Count}개, 지금 frame {current}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DeleteFrame_9F9A023B3D,tool,frame,p.Frames.Count,current));
     }
 
     private JsonObject SetFrameDuration(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        int frame = ReqIndex(a, "frame", p.Frames.Count, "프레임");
+        int frame = ReqIndex(a, "frame", p.Frames.Count, UiStrings.S_PixelTools_SetFrameDuration_D6FFD433A4);
         int duration = ReqInt(a, "duration_ms", 1, MaxDurationMs);
         if (p.Frames[frame].DurationMs != duration)
             p.Edit(Label(tool), ProjectChange.Frames, () => p.SetFrameDuration(frame, duration));
@@ -860,29 +861,29 @@ public sealed class PixelTools
         var layer = p.Edit<Layer>(Label(tool), ProjectChange.Layers, () => p.AddLayer(null, name));
         int index = p.IndexOf(layer);
         Ctx.SetCurrentLayer(index);
-        return TextResult($"{tool}: layer {index} \"{layer.Name}\" 추가 — 지금 layer {index}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddLayer_7D353B4074,tool,index,layer.Name,index));
     }
 
     private JsonObject SetLayer(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        int index = ReqIndex(a, "layer", p.Layers.Count, "레이어");
+        int index = ReqIndex(a, "layer", p.Layers.Count, UiStrings.S_PixelTools_SetLayer_09E271A6D6);
         var name = OptString(a, "name");
         bool? visible = OptBool(a, "visible");
         int? opacity = OptInt(a, "opacity", 0, 255);
         if (string.IsNullOrWhiteSpace(name)) name = null;
         if (name is null && visible is null && opacity is null)
-            throw new ToolError("바꿀 값(name, visible, opacity) 중 하나 이상이 필요합니다");
+            throw new ToolError(UiStrings.S_PixelTools_SetLayer_F617978E39);
         var layer = p.Layers[index];
         if ((name is null || name.Trim() == layer.Name) && (visible is null || visible == layer.Visible)
             && (opacity is null || opacity == layer.Opacity))
         {
             Ctx.SetCurrentLayer(index);
-            return TextResult($"{tool}: layer {index} \"{layer.Name}\" — 바뀐 것 없음");
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_A108A37060,tool,index,layer.Name));
         }
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerProperties(index, name, visible, null, (byte?)opacity));
         Ctx.SetCurrentLayer(index);
-        return TextResult($"{tool}: layer {index} \"{layer.Name}\" — {(layer.Visible ? "보임" : "숨김")}, 불투명도 {layer.Opacity}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_6917D3B1D2,tool,index,layer.Name,(layer.Visible ? UiStrings.S_PixelTools_SetLayer_E13C63FCCD : UiStrings.S_PixelTools_SetLayer_2CB582875D),layer.Opacity));
     }
 
     private JsonObject SetCurrent(string tool, JsonObject? a)
@@ -891,31 +892,31 @@ public sealed class PixelTools
         var ctx = Ctx;
         int frame = Frame(a), layer = LayerIndex(a);
         ctx.SetCurrent(layer, frame);
-        return TextResult($"{tool}: 지금 frame {ctx.CurrentFrame}, layer {ctx.CurrentLayer} \"{p.Layers[ctx.CurrentLayer].Name}\"");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetCurrent_A7FC6EA86C,tool,ctx.CurrentFrame,ctx.CurrentLayer,p.Layers[ctx.CurrentLayer].Name));
     }
 
     private JsonObject AddTag(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var name = (ReqString(a, "name")).Trim();
-        if (name.Length == 0) throw new ToolError("name: 태그 이름이 비어 있습니다");
-        if (p.HasTag(name)) throw new ToolError($"이미 같은 이름의 태그가 있습니다: {name}");
+        if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_AddTag_ED4C6C4C7A);
+        if (p.HasTag(name)) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddTag_539E903F42,name));
         int last = p.Frames.Count - 1;
         int from = ReqInt(a, "from", 0, last), to = ReqInt(a, "to", 0, last);
-        if (from > to) throw new ToolError($"from({from})이 to({to})보다 클 수 없습니다");
+        if (from > to) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddTag_0FAD02A9A1,from,to));
         var direction = OptString(a, "direction")?.Trim().ToLowerInvariant().Replace("-", "").Replace("_", "") switch
         {
             null or "forward" => TagDirection.Forward,
             "reverse" => TagDirection.Reverse,
             "pingpong" => TagDirection.PingPong,
-            _ => throw new ToolError("direction: \"forward\", \"reverse\", \"pingpong\" 중 하나여야 합니다"),
+            _ => throw new ToolError(UiStrings.S_PixelTools_AddTag_991B0871CA),
         };
         bool loop = OptBool(a, "loop") ?? true;
         var tag = p.Edit<AnimationTag>(Label(tool), ProjectChange.Tags, () => p.AddTag(name, from, to, direction, loop));
         var ctx = Ctx;
         ctx.SetCurrent(ctx.CurrentLayer, from);
         ctx.SelectedTag = tag;
-        return TextResult($"{tool}: 태그 \"{tag.Name}\" frame {from}~{to}, {DirectionName(direction)}{(loop ? ", 반복" : ", 1회")}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddTag_863CFC4389,tool,tag.Name,from,to,DirectionName(direction),(loop ? UiStrings.S_PixelTools_AddTag_EAF043AC5F : UiStrings.S_PixelTools_AddTag_3AE2286F4B)));
     }
 
     private JsonObject AddGroup(string tool, JsonObject? a)
@@ -926,20 +927,20 @@ public sealed class PixelTools
         var group = p.Edit<Layer>(Label(tool), ProjectChange.Layers, () => p.AddGroup(name?.Trim()));
         int index = p.IndexOf(group);
         Ctx.SetCurrentLayer(index);
-        return TextResult($"{tool}: group {index} \"{group.Name}\" 추가 — add_part(group={index})로 부위를 더하세요");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddGroup_E09E45483A,tool,index,group.Name,index));
     }
 
     private JsonObject AddPart(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         int groupIndex;
-        if (a?["group"] is not null) groupIndex = ReqIndex(a, "group", p.Layers.Count, "레이어");
+        if (a?["group"] is not null) groupIndex = ReqIndex(a, "group", p.Layers.Count, UiStrings.S_PixelTools_AddPart_BC2BD68B08);
         else if (Ctx.CurrentGroup is { } current) groupIndex = p.IndexOf(current);
-        else throw new ToolError("group: 고른 그룹이 없습니다 — group 번호를 주거나 add_group으로 먼저 그룹을 만드세요");
+        else throw new ToolError(UiStrings.S_PixelTools_AddPart_25FD2C2EF3);
         var group = p.Layers[groupIndex];
-        if (!group.IsGroup) throw new ToolError($"layer {groupIndex} \"{group.Name}\"은(는) 그룹이 아닙니다 — add_group으로 먼저 그룹을 만드세요");
+        if (!group.IsGroup) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_15F86D7485,groupIndex,group.Name));
         var name = ReqString(a, "name").Trim();
-        if (name.Length == 0) throw new ToolError("name: 부위 이름이 비어 있습니다");
+        if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_AddPart_09DD29C130);
         int width = ReqInt(a, "width", 1, PixelImage.MaxSize), height = ReqInt(a, "height", 1, PixelImage.MaxSize);
         int? x = OptInt(a, "x", -CoordLimit, CoordLimit), y = OptInt(a, "y", -CoordLimit, CoordLimit);
         Point? offset = x is null && y is null ? null
@@ -949,8 +950,8 @@ public sealed class PixelTools
         Ctx.SetCurrentLayer(index);
         var laidOut = group.AutoLayout is null ? "" : offset is null ? $" — group auto layout ({LayoutText(group.AutoLayout)}) re-arranged its parts"
             : $" — x/y ignored: group has auto layout ({LayoutText(group.AutoLayout)}), its parts were re-arranged";
-        return TextResult($"{tool}: part {index} \"{part.Name}\" {width}x{height} @({part.PartOffset.X},{part.PartOffset.Y}) 추가 — 지금 layer {index} (좌표는 부위 안 기준), " +
-                          $"group \"{group.Name}\"은(는) 이제 layer {p.IndexOf(group)}" + laidOut);
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_3061D4B6E3,tool,index,part.Name,width,height,part.PartOffset.X,part.PartOffset.Y,index) +
+                          string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_A07448527C,group.Name,p.IndexOf(group)) + laidOut);
     }
 
     /// <summary>자동 배치 설정 한 줄 요약(AI에게 알려 줌).</summary>
@@ -963,20 +964,20 @@ public sealed class PixelTools
     private JsonObject SetPart(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        int index = ReqIndex(a, "layer", p.Layers.Count, "레이어");
+        int index = ReqIndex(a, "layer", p.Layers.Count, UiStrings.S_PixelTools_SetPart_9A098737D8);
         var part = p.Layers[index];
-        if (!part.IsPart) throw new ToolError($"layer {index} \"{part.Name}\"은(는) 부위 레이어가 아닙니다");
+        if (!part.IsPart) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPart_E4221AFE6B,index,part.Name));
         int? x = OptInt(a, "x", -CoordLimit, CoordLimit), y = OptInt(a, "y", -CoordLimit, CoordLimit);
         int? width = OptInt(a, "width", 1, PixelImage.MaxSize), height = OptInt(a, "height", 1, PixelImage.MaxSize);
         var anchor = ParseAnchor(a);
         double? pivotX = OptUnit(a, "pivot_x"), pivotY = OptUnit(a, "pivot_y");
         if (x is null && y is null && width is null && height is null && pivotX is null && pivotY is null)
-            throw new ToolError("바꿀 값(x, y, width, height, pivot_x, pivot_y) 중 하나 이상이 필요합니다");
+            throw new ToolError(UiStrings.S_PixelTools_SetPart_DC2B0B514A);
 
         if ((x is not null || y is not null) && part.IsAutoLaidOut)
-            throw new ToolError($"part {index} \"{part.Name}\"의 group \"{part.Parent!.Name}\"은(는) 자동 배치(auto layout: {LayoutText(part.Parent.AutoLayout!)}) 중이라 " +
-                                "x/y로 옮길 수 없습니다 — 위치는 자동으로 정해집니다(width/height·pivot은 바꿀 수 있음, 크기를 바꾸면 다시 배치). " +
-                                "옮기려면 사용자에게 타임라인 그룹 메뉴의 \"자동 배치 끄기\"를 부탁하세요");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPart_F85DAA9BD6,index,part.Name,part.Parent!.Name,LayoutText(part.Parent.AutoLayout!)) +
+                                UiStrings.S_PixelTools_SetPart_5D875D42AD +
+                                UiStrings.S_PixelTools_SetPart_CAF27E7871);
         var size = part.PartSize;
         int newW = width ?? size.Width, newH = height ?? size.Height;
         bool resize = newW != size.Width || newH != size.Height;
@@ -1008,11 +1009,11 @@ public sealed class PixelTools
     private Layer SkinGroup(SpriteProject p, JsonObject? a)
     {
         int index;
-        if (Arg(a, "group") is not null) index = ReqIndex(a, "group", p.Layers.Count, "레이어");
+        if (Arg(a, "group") is not null) index = ReqIndex(a, "group", p.Layers.Count, UiStrings.S_PixelTools_SkinGroup_2D95F83BA1);
         else if (Ctx.CurrentGroup is { } current) index = p.IndexOf(current);
-        else throw new ToolError("group: 고른 그룹이 없습니다 — group 번호를 주세요(list_skins로 확인)");
+        else throw new ToolError(UiStrings.S_PixelTools_SkinGroup_0CF99DE2D6);
         var group = p.Layers[index];
-        if (!group.IsGroup) throw new ToolError($"layer {index} \"{group.Name}\"은(는) 그룹이 아닙니다 — 스킨은 그룹에만 있습니다");
+        if (!group.IsGroup) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SkinGroup_D5D19F5AF0,index,group.Name));
         return group;
     }
 
@@ -1047,7 +1048,7 @@ public sealed class PixelTools
             if (partSkins.Count > 0) o["partSkins"] = partSkins;
             groups.Add(o);
         }
-        return TextResult(groups.Count == 0 ? "그룹이 없습니다 — add_group으로 만드세요" : groups.ToJsonString(JsonOptions));
+        return TextResult(groups.Count == 0 ? UiStrings.S_PixelTools_ListSkins_8CD8E58EBF : groups.ToJsonString(JsonOptions));
     }
 
     private JsonObject AddSkin(string tool, JsonObject? a)
@@ -1062,15 +1063,15 @@ public sealed class PixelTools
             var shown = (OptBool(a, "copy_shown") ?? false) ? part.ShownSkin : null;
             var partSkin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPartSkin(part, name?.Trim(), shown));
             Ctx.SetCurrentLayer(p.IndexOf(part));
-            return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 전용 스킨 \"{partSkin.Name}\" 추가{(shown is null ? "" : $"(\"{shown.Name}\" 복제)")} — 이 부위가 입음. " +
-                              $"이 부위 전용 스킨: {SkinNames(part.OwnSkins)} (그룹 \"{owner.Name}\" 스킨: {SkinNames(owner)})");
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_1EA783533B,tool,p.IndexOf(part),part.Name,partSkin.Name,(shown is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_F888789A15,shown.Name))) +
+                              string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_393B167AD9,SkinNames(part.OwnSkins),owner.Name,SkinNames(owner)));
         }
         var group = SkinGroup(p, a);
         bool copy = OptBool(a, "copy_active") ?? false;
         var from = copy ? group.ActiveSkin : null;
         var skin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddSkin(group, name?.Trim(), from));
         if (!ReferenceEquals(Ctx.CurrentGroup, group)) Ctx.SetCurrentLayer(p.IndexOf(group));
-        return TextResult($"{tool}: group {p.IndexOf(group)} \"{group.Name}\"에 스킨 \"{skin.Name}\" 추가{(from is null ? "" : $"(\"{from.Name}\" 복제)")} — 지금 스킨. 스킨: {SkinNames(group)}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_54FCA02E4C,tool,p.IndexOf(group),group.Name,skin.Name,(from is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_F888789A15,from.Name)),SkinNames(group)));
     }
 
     /// <summary>
@@ -1082,10 +1083,10 @@ public sealed class PixelTools
         if ((list.FirstOrDefault(s => s.Name == name) ?? list.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))) is { } found)
             return found;
         if (part is null && group.AllSkins.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { Owner: { } owner })
-            throw new ToolError($"\"{name}\"은(는) \"{owner.Name}\" 부위 전용 스킨입니다 — part \"{owner.Name}\"와 함께 set_skin하세요");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_6CF8F35517,name,owner.Name,owner.Name));
         throw new ToolError(part is null
-            ? $"group \"{group.Name}\"에 \"{name}\" 스킨이 없습니다 — 있는 스킨: {SkinNames(group)}"
-            : $"part \"{part.Name}\"가 고를 수 있는 \"{name}\" 스킨이 없습니다 — 고를 수 있는 스킨: {SkinNames(list)}");
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_0757E1B5D3,group.Name,name,SkinNames(group))
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindSkin_77883ACBEF,part.Name,name,SkinNames(list)));
     }
 
     /// <summary>스킨 도구의 <c>part</c>(부위 이름, <c>group</c>이 있으면 그 그룹 안에서만). 없거나 여럿이면 도구 오류.</summary>
@@ -1097,8 +1098,8 @@ public sealed class PixelTools
         var matches = candidates.Where(l => l.Name == partName).ToList();
         if (matches.Count == 0) matches = candidates.Where(l => string.Equals(l.Name, partName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (matches.Count == 0)
-            throw new ToolError($"part: \"{partName}\" 부위가 없습니다{(only is null ? "" : $"(group \"{only.Name}\" 안)")} — get_document로 부위 이름을 확인하세요");
-        if (matches.Count > 1) throw new ToolError($"part: \"{partName}\" 부위가 여러 그룹에 있습니다 — group 번호를 함께 주세요");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_77F7827042,partName,(only is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_F1C0C05B87,only.Name))));
+        if (matches.Count > 1) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_FindPart_3F27777CE1,partName));
         return matches[0];
     }
 
@@ -1110,12 +1111,12 @@ public sealed class PixelTools
         var partName = OptString(a, "part")?.Trim();
         if (string.IsNullOrEmpty(partName))
         {
-            if (follow) throw new ToolError("follow_group: part(부위 이름)와 함께 쓰세요");
-            if (name.Length == 0) throw new ToolError("skin: 스킨 이름이 필요합니다(list_skins로 확인)");
+            if (follow) throw new ToolError(UiStrings.S_PixelTools_SetSkin_DD7C155818);
+            if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
             var group = SkinGroup(p, a);
             var skin = FindSkin(group, name);
             Ctx.SetActiveSkin(group, skin);
-            return TextResult($"{tool}: group {p.IndexOf(group)} \"{group.Name}\" 지금 스킨 = \"{skin.Name}\"");
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_EF3CA69B88,tool,p.IndexOf(group),group.Name,skin.Name));
         }
 
         var part = FindPart(p, a);
@@ -1124,11 +1125,11 @@ public sealed class PixelTools
         if (follow || name.Length == 0 || (name == "그룹" && part.SkinChoices.All(s => s.Name != name)))
         {
             Ctx.SetPartSkin(part, null);
-            return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\" 그룹 스킨 따름 (지금 \"{owner.ActiveSkin?.Name}\")");
+            return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_B5C70D7B8B,tool,p.IndexOf(part),part.Name,owner.ActiveSkin?.Name));
         }
         var own = FindSkin(owner, name, part);
         Ctx.SetPartSkin(part, own);
-        return TextResult($"{tool}: part {p.IndexOf(part)} \"{part.Name}\"만 스킨 \"{own.Name}\"{(own.IsPartOnly ? " (부위 전용)" : "")} (그룹 \"{owner.Name}\" 스킨은 \"{owner.ActiveSkin?.Name}\")");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_7A841A0D99,tool,p.IndexOf(part),part.Name,own.Name,(own.IsPartOnly ? UiStrings.S_PixelTools_SetSkin_1F0ADB2566 : ""),owner.Name,owner.ActiveSkin?.Name));
     }
 
     private JsonObject ListOutfits()
@@ -1151,31 +1152,31 @@ public sealed class PixelTools
             if (missing.Count > 0) o["missing"] = Strings(missing.ToArray());
             outfits.Add(o);
         }
-        return TextResult(outfits.Count == 0 ? "착장 프리셋이 없습니다 — save_outfit으로 지금 착장을 저장하세요" : outfits.ToJsonString(JsonOptions));
+        return TextResult(outfits.Count == 0 ? UiStrings.S_PixelTools_ListOutfits_AC348035B4 : outfits.ToJsonString(JsonOptions));
     }
 
     private JsonObject SaveOutfit(string tool, JsonObject? a)
     {
         var p = BeginMutation();
-        if (!p.Layers.Any(l => l.IsGroup)) throw new ToolError("그룹이 없습니다 — 착장은 그룹(스킨 칸)마다 스킨을 저장합니다");
+        if (!p.Layers.Any(l => l.IsGroup)) throw new ToolError(UiStrings.S_PixelTools_SaveOutfit_F985F9316F);
         var name = OptString(a, "name")?.Trim();
         var outfit = p.Edit<Outfit>(Label(tool), ProjectChange.Layers | ProjectChange.Settings, () => p.SaveOutfit(string.IsNullOrEmpty(name) ? null : name));
-        return TextResult($"{tool}: 착장 \"{outfit.Name}\" 저장 (그룹 {outfit.Slots.Count}개, 부위 재정의 {outfit.Parts.Count}개). 착장: {string.Join(", ", p.Outfits.Select(o => o.Name))}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SaveOutfit_852122358E,tool,outfit.Name,outfit.Slots.Count,outfit.Parts.Count,string.Join(", ", p.Outfits.Select(o => o.Name))));
     }
 
     private JsonObject ApplyOutfit(string tool, JsonObject? a)
     {
         var p = BeginMutation();
         var name = OptString(a, "name")?.Trim() ?? "";
-        if (name.Length == 0) throw new ToolError("name: 착장 이름이 필요합니다(list_outfits로 확인)");
+        if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_ApplyOutfit_CBD0035EE8);
         var outfit = p.Outfits.FirstOrDefault(o => o.Name == name)
                      ?? p.Outfits.FirstOrDefault(o => string.Equals(o.Name, name, StringComparison.OrdinalIgnoreCase))
                      ?? throw new ToolError(p.Outfits.Count == 0
-                         ? "착장 프리셋이 없습니다 — save_outfit으로 저장하세요"
-                         : $"\"{name}\" 착장이 없습니다 — 있는 착장: {string.Join(", ", p.Outfits.Select(o => o.Name))}");
+                         ? UiStrings.S_PixelTools_ApplyOutfit_F6B996D5D3
+                         : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_2BAE4914BE,name,string.Join(", ", p.Outfits.Select(o => o.Name))));
         IReadOnlyList<string> missing = [];
         Ctx.Structural(() => missing = p.ApplyOutfit(outfit));
-        return TextResult($"{tool}: 착장 \"{outfit.Name}\" 입힘" + (missing.Count == 0 ? "" : $" — 건너뛴 항목: {string.Join(", ", missing)}"));
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_F49A169E48,tool,outfit.Name) + (missing.Count == 0 ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_4168EF87C1,string.Join(", ", missing))));
     }
 
     /// <summary>0~1 실수 인자.</summary>
@@ -1185,8 +1186,8 @@ public sealed class PixelTools
         double v;
         if (n is JsonValue jv && jv.TryGetValue(out double d)) v = d;
         else if (n is JsonValue sv && sv.TryGetValue(out string? s) && double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out d)) v = d;
-        else throw new ToolError($"{key}: 숫자가 필요합니다 (받은 값: {Show(n)})");
-        if (double.IsNaN(v) || v < 0 || v > 1) throw new ToolError($"{key}: 0~1 범위여야 합니다 (받은 값: {v})");
+        else throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptUnit_EAACA0D2C0,key,Show(n)));
+        if (double.IsNaN(v) || v < 0 || v > 1) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptUnit_128FE4737A,key,v));
         return v;
     }
 
@@ -1209,10 +1210,10 @@ public sealed class PixelTools
         int width = ReqInt(a, "width", 1, PixelImage.MaxSize), height = ReqInt(a, "height", 1, PixelImage.MaxSize);
         var anchor = ParseAnchor(a);
         int oldW = p.Width, oldH = p.Height;
-        if (oldW == width && oldH == height) return TextResult($"{tool}: 캔버스가 이미 {width}x{height}입니다 — 바뀐 것 없음");
+        if (oldW == width && oldH == height) return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ResizeCanvas_432D915165,tool,width,height));
         p.Edit(Label(tool), ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Layers | ProjectChange.Settings,
             () => p.ResizeCanvas(width, height, anchor));
-        return TextResult($"{tool}: 캔버스 {oldW}x{oldH} → {width}x{height}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ResizeCanvas_B4587312A5,tool,oldW,oldH,width,height));
     }
 
     private static readonly string[] AnchorNames =
@@ -1224,15 +1225,15 @@ public sealed class PixelTools
     {
         RequireProject();
         var nodes = ReqArray(a, "colors");
-        if (nodes.Count is < 1 or > 256) throw new ToolError($"colors: 1~256개여야 합니다 (받은 개수: {nodes.Count})");
+        if (nodes.Count is < 1 or > 256) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPalette_A5313A3F06,nodes.Count));
         var colors = new List<Color32>(nodes.Count);
         for (int i = 0; i < nodes.Count; i++)
         {
-            var text = AsString(nodes[i]) ?? throw new ToolError($"colors[{i}]: 색 문자열이 필요합니다");
+            var text = AsString(nodes[i]) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPalette_FD99906145,i));
             colors.Add(ParseColor(text, $"colors[{i}]"));
         }
         _host.SetPalette(colors);
-        return TextResult($"{tool}: 팔레트 {colors.Count}색으로 바꿈");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPalette_72B3137A75,tool,colors.Count));
     }
 
     private JsonObject SetColors(string tool, JsonObject? a)
@@ -1240,11 +1241,11 @@ public sealed class PixelTools
         RequireProject();
         var primary = OptColor(a, "primary");
         var secondary = OptColor(a, "secondary");
-        if (primary is null && secondary is null) throw new ToolError("primary 또는 secondary 중 하나 이상이 필요합니다");
+        if (primary is null && secondary is null) throw new ToolError(UiStrings.S_PixelTools_SetColors_6BD8E48BBD);
         var ctx = Ctx;
         if (primary is { } pc) ctx.Primary = pc;
         if (secondary is { } sc) ctx.Secondary = sc;
-        return TextResult($"{tool}: 기본색 {ctx.Primary.ToHex()}, 보조색 {ctx.Secondary.ToHex()}");
+        return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetColors_FAA64284B1,tool,ctx.Primary.ToHex(),ctx.Secondary.ToHex()));
     }
 
     private JsonObject NewProject(string tool, JsonObject? a)
@@ -1268,7 +1269,7 @@ public sealed class PixelTools
     private JsonObject OpenFile(string tool, JsonObject? a)
     {
         var path = ReqString(a, "path").Trim();
-        if (path.Length == 0) throw new ToolError("path가 비어 있습니다");
+        if (path.Length == 0) throw new ToolError(UiStrings.S_PixelTools_OpenFile_DED3780569);
         if (path == "~" || path.StartsWith("~/", StringComparison.Ordinal))
             path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), path.TrimStart('~').TrimStart('/'));
         else if (!Path.IsPathRooted(path) && _host.CurrentFolder is { } folder)
@@ -1291,7 +1292,7 @@ public sealed class PixelTools
     {
         var p = RequireProject();
         Ctx.CommitFloating();
-        if (p.IsStrokeActive) throw new ToolError("사용자가 지금 그리는 중입니다 — 잠시 뒤 다시 시도하세요");
+        if (p.IsStrokeActive) throw new ToolError(UiStrings.S_PixelTools_BeginMutation_F25614FB73);
         return p;
     }
 
@@ -1303,11 +1304,11 @@ public sealed class PixelTools
         var l = p.Layers[layer];
         if (Scope is { } scope && (!ReferenceEquals(p, scope.Project) || !scope.Allows(l)))
             throw new ToolError(ReferenceEquals(p, scope.Project)
-                ? $"편집 범위 밖입니다 — \"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}만 고칠 수 있고 layer {layer} \"{l.Name}\"은(는) 볼 수만 있습니다"
-                : "편집 범위 밖입니다 — 차례를 시작할 때 열려 있던 문서만 고칠 수 있습니다(지금은 다른 문서가 열려 있음)");
-        if (l.IsGroup) throw new ToolError("그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요");
+                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_EditTarget_7C911AF779,scope.Layer.Name,(scope.Layer.IsGroup ? UiStrings.S_PixelTools_EditTarget_7CA7F88A4A : ""),layer,l.Name)
+                : UiStrings.S_PixelTools_EditTarget_502F3C3D23);
+        if (l.IsGroup) throw new ToolError(UiStrings.S_PixelTools_EditTarget_1DEA54562E);
         if (p.IsLayerLocked(layer))
-            throw new ToolError($"layer {layer} \"{l.Name}\"(또는 그 그룹)이(가) 잠겨 있습니다 — 사용자에게 잠금 해제를 부탁하세요");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_EditTarget_F0AFAA4B8B,layer,l.Name));
         var (w, h) = SourceSize(p, layer);
         return new Target(p, frame, layer, w, h);
     }
@@ -1336,7 +1337,7 @@ public sealed class PixelTools
     }
 
     private static JsonObject Done(string tool, int changed, Target t, string extra = "")
-        => TextResult($"{tool}: {changed} px 바뀜 (frame {t.Frame}, layer {t.Layer}{(t.Project.Layers[t.Layer].IsPart ? ", 부위 안 좌표" : "")}){extra}");
+        => TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Done_F6B2C3D9C5,tool,changed,t.Frame,t.Layer,(t.Project.Layers[t.Layer].IsPart ? UiStrings.S_PixelTools_Done_73DD65CE69 : ""),extra));
 
     /// <summary>읽기/쓰기 대상 크기: 부위면 부위 크기, 아니면 캔버스(프레임) 크기.</summary>
     private static (int Width, int Height) SourceSize(SpriteProject p, int? layer)
@@ -1359,11 +1360,11 @@ public sealed class PixelTools
         _ => "normal",
     };
 
-    private int Frame(JsonObject? a) => OptIndex(a, "frame", Ctx.FrameCount, "프레임") ?? Ctx.CurrentFrame;
+    private int Frame(JsonObject? a) => OptIndex(a, "frame", Ctx.FrameCount, UiStrings.S_PixelTools_Frame_CAED4A473B) ?? Ctx.CurrentFrame;
 
     private int LayerIndex(JsonObject? a) => OptLayer(a) ?? Ctx.CurrentLayer;
 
-    private int? OptLayer(JsonObject? a) => OptIndex(a, "layer", Ctx.LayerCount, "레이어");
+    private int? OptLayer(JsonObject? a) => OptIndex(a, "layer", Ctx.LayerCount, UiStrings.S_PixelTools_OptLayer_44CE7E7287);
 
     /// <summary>영역 인자(x, y, width, height; 기본 = 캔버스 전체)를 캔버스로 자른다. 비면 오류.</summary>
     private static Rectangle Region(JsonObject? a, int w, int h)
@@ -1371,7 +1372,7 @@ public sealed class PixelTools
         int x = OptInt(a, "x", -CoordLimit, CoordLimit) ?? 0, y = OptInt(a, "y", -CoordLimit, CoordLimit) ?? 0;
         int rw = OptInt(a, "width", 1, CoordLimit) ?? w - x, rh = OptInt(a, "height", 1, CoordLimit) ?? h - y;
         var r = rw <= 0 || rh <= 0 ? Rectangle.Empty : Rectangle.Intersect(new Rectangle(x, y, rw, rh), new Rectangle(0, 0, w, h));
-        if (r.Width <= 0 || r.Height <= 0) throw new ToolError($"영역이 캔버스({w}x{h}) 밖입니다");
+        if (r.Width <= 0 || r.Height <= 0) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Region_1F9F69DB71,w,h));
         return r;
     }
 
@@ -1408,25 +1409,25 @@ public sealed class PixelTools
     private static int? OptInt(JsonObject? a, string key, int min = int.MinValue, int max = int.MaxValue)
     {
         if (Arg(a, key) is not { } n) return null;
-        if (!TryInt(n, out int v)) throw new ToolError($"{key}: 정수가 필요합니다 (받은 값: {Show(n)})");
-        if (v < min || v > max) throw new ToolError($"{key}: {min}~{max} 범위여야 합니다 (받은 값: {v})");
+        if (!TryInt(n, out int v)) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptInt_38C98D8657,key,Show(n)));
+        if (v < min || v > max) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptInt_9BB1F7C63A,key,min,max,v));
         return v;
     }
 
     private static int ReqInt(JsonObject? a, string key, int min = int.MinValue, int max = int.MaxValue)
-        => OptInt(a, key, min, max) ?? throw new ToolError($"{key} 값이 필요합니다");
+        => OptInt(a, key, min, max) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqInt_27A61716E9,key));
 
     /// <summary>번호 인자(0 ~ count-1).</summary>
     private static int? OptIndex(JsonObject? a, string key, int count, string what)
     {
         if (Arg(a, key) is not { } n) return null;
-        if (!TryInt(n, out int v)) throw new ToolError($"{key}: 정수가 필요합니다 (받은 값: {Show(n)})");
-        if (v < 0 || v >= count) throw new ToolError($"{key} {v}: {what} 번호는 0~{count - 1} 범위여야 합니다");
+        if (!TryInt(n, out int v)) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptIndex_D858DEC2E1,key,Show(n)));
+        if (v < 0 || v >= count) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptIndex_4F2BADBB8B,key,v,what,count - 1));
         return v;
     }
 
     private static int ReqIndex(JsonObject? a, string key, int count, string what)
-        => OptIndex(a, key, count, what) ?? throw new ToolError($"{key} 값이 필요합니다");
+        => OptIndex(a, key, count, what) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqIndex_6802669E97,key));
 
     private static bool? OptBool(JsonObject? a, string key)
     {
@@ -1436,38 +1437,38 @@ public sealed class PixelTools
             if (v.TryGetValue(out bool b)) return b;
             if (v.TryGetValue(out string? s) && bool.TryParse(s.Trim(), out b)) return b;
         }
-        throw new ToolError($"{key}: true 또는 false가 필요합니다 (받은 값: {Show(n)})");
+        throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptBool_180F2686A9,key,Show(n)));
     }
 
     private static string? OptString(JsonObject? a, string key)
     {
         if (Arg(a, key) is not { } n) return null;
-        return AsString(n) ?? throw new ToolError($"{key}: 문자열이 필요합니다 (받은 값: {Show(n)})");
+        return AsString(n) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptString_BD6F3666E6,key,Show(n)));
     }
 
     private static string ReqString(JsonObject? a, string key)
-        => OptString(a, key) ?? throw new ToolError($"{key} 값이 필요합니다");
+        => OptString(a, key) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqString_E51CB43389,key));
 
     private static JsonArray ReqArray(JsonObject? a, string key)
-        => Arg(a, key) as JsonArray ?? throw new ToolError($"{key}: 배열이 필요합니다");
+        => Arg(a, key) as JsonArray ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqArray_C2A791FDD4,key));
 
     private static string? OptEnum(JsonObject? a, string key, params string[] values)
     {
         if (OptString(a, key) is not { } s) return null;
         var v = s.Trim().ToLowerInvariant();
         if (!values.Contains(v))
-            throw new ToolError($"{key}: {string.Join(", ", values.Select(x => $"\"{x}\""))} 중 하나여야 합니다 (받은 값: \"{s}\")");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_OptEnum_C7C7FFC14E,key,string.Join(", ", values.Select(x => $"\"{x}\"")),s));
         return v;
     }
 
     private static string ReqEnum(JsonObject? a, string key, params string[] values)
-        => OptEnum(a, key, values) ?? throw new ToolError($"{key} 값이 필요합니다");
+        => OptEnum(a, key, values) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqEnum_8ADDDC09D0,key));
 
     private static Color32? OptColor(JsonObject? a, string key)
         => OptString(a, key) is { } s ? ParseColor(s, key) : null;
 
     private static Color32 ReqColor(JsonObject? a, string key)
-        => OptColor(a, key) ?? throw new ToolError($"{key} 값이 필요합니다");
+        => OptColor(a, key) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ReqColor_C60084F177,key));
 
     /// <summary>"#RRGGBB" / "#RRGGBBAA" / "transparent". 알파 0은 모두 같은 투명으로 맞춘다.</summary>
     private static Color32 ParseColor(string text, string key)
@@ -1476,7 +1477,7 @@ public sealed class PixelTools
         if (s.Equals("transparent", StringComparison.OrdinalIgnoreCase) || s.Equals("none", StringComparison.OrdinalIgnoreCase))
             return Color32.Transparent;
         if (!Color32.TryParseHex(s, out var c))
-            throw new ToolError($"{key}: 색은 \"#RRGGBB\", \"#RRGGBBAA\" 또는 \"transparent\" 형식이어야 합니다 (받은 값: \"{text}\")");
+            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ParseColor_D545855664,key,text));
         return c.A == 0 ? Color32.Transparent : c;
     }
 

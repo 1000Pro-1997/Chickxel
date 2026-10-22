@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -91,7 +92,7 @@ public static class NumberPresets
         if (Recent.TryGetValue(KeyOf(n), out var recent) && recent >= n.Minimum && recent <= n.Maximum)
         {
             if (items.Count > 0) items.Add(new Separator());
-            var item = new MenuItem { Header = new TextBlock { Text = $"최근: {Label(recent)}", HorizontalAlignment = HorizontalAlignment.Left } };
+            var item = new MenuItem { Header = new TextBlock { Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_NumberPresets_OnContextRequested_246AFAFD23,Label(recent)), HorizontalAlignment = HorizontalAlignment.Left } };
             item.Click += (_, _) => Pick(recent);
             items.Add(item);
         }

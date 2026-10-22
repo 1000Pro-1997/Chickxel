@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -26,7 +27,7 @@ public sealed class GradientEditor : StackPanel
     public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false)
     {
         Spacing = 4;
-        _bar.Tip("위쪽 빈 곳 = 불투명도 정지점 추가 · 띠/아래쪽 빈 곳 = 색 정지점 추가 · 끌어서 이동 · Delete로 삭제");
+        _bar.Tip(UiStrings.S_GradientEditor_GradientEditor_5D23258D24);
         _bar.StopsChanged += value => { _stops = value; Changed?.Invoke(); RefreshSelected(); };
         _bar.AlphaStopsChanged += value => { _alphaStops = value; Changed?.Invoke(); RefreshSelected(); };
         _bar.SelectionChanged += (_, _) => RefreshSelected();
@@ -48,13 +49,13 @@ public sealed class GradientEditor : StackPanel
         {
             if (!_updating) ChangeAlpha(s => s with { Alpha = (byte)Math.Round((double)_alpha.NumValue() * 255 / 100) });
         };
-        _colorRow = Ui.Row(Ui.Label("색"), _color);
+        _colorRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_ABB8BC9619), _color);
         if (primaryColor is not null)
-            _colorRow.Children.Add(Ui.Button("기본색", (_, _) => ChangeColor(s => s with { Color = primaryColor() })));
-        _alphaRow = Ui.Row(Ui.Label("불투명도"), _alpha, Ui.Label("%"));
-        _delete = Ui.Button("삭제", (_, _) => _bar.DeleteSelected()).Tip("고른 정지점 삭제 (각 종류 최소 2개)");
-        _interpolation = Ui.Combo(150, "부드럽게", "단계(띠)");
-        _dither = Ui.Combo(150, "없음", "2×2 Bayer", "4×4 Bayer");
+            _colorRow.Children.Add(Ui.Button(UiStrings.S_GradientEditor_GradientEditor_9E5B25FE7A, (_, _) => ChangeColor(s => s with { Color = primaryColor() })));
+        _alphaRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D945F5766C), _alpha, Ui.Label("%"));
+        _delete = Ui.Button(UiStrings.S_GradientEditor_GradientEditor_01174C479B, (_, _) => _bar.DeleteSelected()).Tip(UiStrings.S_GradientEditor_GradientEditor_303D5EC437);
+        _interpolation = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_E0FC6F50AE, UiStrings.S_GradientEditor_GradientEditor_07C7B1752B);
+        _dither = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_C103727A20, "2×2 Bayer", "4×4 Bayer");
         _interpolation.SelectionChanged += (_, _) =>
         {
             if (_updating || _interpolation.SelectedIndex < 0) return;
@@ -70,11 +71,11 @@ public sealed class GradientEditor : StackPanel
             Changed?.Invoke();
         };
         Children.Add(_bar);
-        Children.Add(Ui.Row(Ui.Label("위치"), _position, Ui.Label("%"), _delete));
+        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_3C9416C632), _position, Ui.Label("%"), _delete));
         Children.Add(_colorRow);
         Children.Add(_alphaRow);
-        Children.Add(Ui.Row(Ui.Label("보간"), _interpolation));
-        Children.Add(Ui.Row(Ui.Label("디더링"), _dither));
+        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_554C6D3CFC), _interpolation));
+        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_75C017194C), _dither));
         if (spatialAngle)
         {
             _angleEditor = Ui.Num(0, 359, 0, 56, 1, 1m).Unit("°").RecentKey("effect.gradient.angle");
@@ -84,7 +85,7 @@ public sealed class GradientEditor : StackPanel
                 _angle = (int)_angleEditor.NumValue();
                 Changed?.Invoke();
             };
-            Children.Add(Ui.Row(Ui.Label("각도"), _angleEditor, Ui.Label("° (0 = 오른쪽, 90 = 위)")));
+            Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D5C20D5832), _angleEditor, Ui.Label(UiStrings.S_GradientEditor_GradientEditor_DEFF285651)));
         }
         Load(_stops, _alphaStops, _mode, _ditherMode);
     }

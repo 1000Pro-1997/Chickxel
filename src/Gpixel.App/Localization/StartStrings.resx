@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Subtitle" xml:space="preserve"><value>게임용 픽셀 아트 편집기 — 폴더나 Unity 프로젝트를 고르세요.</value></data>
+  <data name="OpenFolder" xml:space="preserve"><value>폴더 열기…</value></data>
+  <data name="NewProject" xml:space="preserve"><value>새 프로젝트…</value></data>
+  <data name="RefreshHub" xml:space="preserve"><value>Hub 목록 새로 고침</value></data>
+  <data name="RecentFolders" xml:space="preserve"><value>최근 폴더 (더블클릭)</value></data>
+  <data name="RecentFiles" xml:space="preserve"><value>최근 파일 (더블클릭)</value></data>
+  <data name="HubProjects" xml:space="preserve"><value>Unity Hub 프로젝트 (더블클릭하면 Assets 폴더를 엽니다)</value></data>
+  <data name="HubLoadFailed" xml:space="preserve"><value>Unity Hub 목록을 읽지 못했습니다({error}). "폴더 열기"로 직접 고르세요.</value><comment>error = Unity Hub 목록을 읽지 못한 이유.</comment></data>
+  <data name="HubEmpty" xml:space="preserve"><value>등록된 프로젝트가 없습니다. "폴더 열기"로 직접 고르세요.</value></data>
+  <data name="HubFolderMissing" xml:space="preserve"><value>프로젝트 폴더를 찾을 수 없습니다:
+{path}</value><comment>path = 찾을 수 없는 Assets 폴더의 경로.</comment></data>
+</root>

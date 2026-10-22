@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -21,7 +22,7 @@ public sealed partial class LayerEffectsDialog
             // 칸 그림은 잠깐 모았다가 그리므로(_stripTimer) 줄이 아직 이전 칸 수일 수 있다 — 지금 없는 프레임 칸은 무시
             if (f >= VirtualCount) return;
             _timer.Stop();
-            _play.Content = Ui.IconLabel(VectorIcon.Play, "재생");
+            _play.Content = Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_Frames_BuildFrameStrip_9111DBA210);
             _previewFrame = f;
             RefreshPreview();
         };
@@ -132,7 +133,7 @@ public sealed partial class LayerEffectsDialog
             HorizontalAlignment = HorizontalAlignment.Left;
             VerticalAlignment = VerticalAlignment.Top; // 줄이 늘어도(끌어 늘리기) 앞 칸 자리가 그대로
             Cursor = new Cursor(StandardCursorType.Hand);
-            ToolTip.SetTip(this, "누르면 그 프레임을 보고, 끌면 프레임 범위를 정합니다. 효과를 고른 채 마지막 칸 너머로 끌면 프레임을 늘립니다(점선 칸).");
+            ToolTip.SetTip(this, UiStrings.S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70);
         }
 
         /// <summary>누름(끌지 않음): 그 프레임을 미리보기에.</summary>

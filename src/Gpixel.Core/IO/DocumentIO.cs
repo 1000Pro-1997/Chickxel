@@ -46,7 +46,7 @@ public static class DocumentIO
             }
             catch (JsonException ex)
             {
-                warning = $"편집 정보 파일(.gpixel.json)을 읽지 못해 무시했습니다: {ex.Message}";
+                warning = Gpixel.Core.Localization.DomainStrings.FormatDocument_IgnoreSidecar(error: ex.Message);
                 doc.Slices.Clear();
                 doc.Animations.Clear();
             }
@@ -76,7 +76,7 @@ public static class DocumentIO
     /// <param name="pngPath">저장 경로. null이면 <see cref="Document.Path"/>.</param>
     public static void Save(Document doc, string? pngPath, bool writeMeta, ExportImageFormat format = ExportImageFormat.Png, int jpegQuality = 90)
     {
-        var path = pngPath ?? doc.Path ?? throw new InvalidOperationException("저장할 경로가 없습니다.");
+        var path = pngPath ?? doc.Path ?? throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.Document_NoSavePath);
         path = Path.GetFullPath(path);
         ImageWriter.Save(doc.Image, path, format, jpegQuality);
         // 예전 버전이 쓴 사이드카는 이제 낡은 정보이고 열 때 메타보다 먼저 읽히므로 지운다.
@@ -97,7 +97,7 @@ public static class DocumentIO
     /// </summary>
     public static void RenameWithCompanions(string oldPngPath, string newPngPath)
     {
-        if (File.Exists(newPngPath)) throw new IOException($"이미 같은 이름의 파일이 있습니다: {Path.GetFileName(newPngPath)}");
+        if (File.Exists(newPngPath)) throw new IOException(Gpixel.Core.Localization.DomainStrings.FormatFile_NameExists(name: Path.GetFileName(newPngPath)));
         File.Move(oldPngPath, newPngPath);
         var oldCompanions = GetCompanionPaths(oldPngPath);
         var newCompanions = GetCompanionPaths(newPngPath);

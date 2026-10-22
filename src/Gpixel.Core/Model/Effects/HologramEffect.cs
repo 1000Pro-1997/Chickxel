@@ -87,7 +87,7 @@ public sealed record HologramEffect : AnimatedEffect
 
     public int Seed { get => _seed; init => _seed = Math.Clamp(value, 0, MaxSeed); }
 
-    public override string DisplayName => "홀로그램";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Hologram;
 
     /// <summary>좌우로 번지는 px(글리치 최대 밀림, 글리치가 꺼져 있으면 0).</summary>
     public int GlitchReach => GlitchRate > 0 ? GlitchShift : 0;

@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
 using Gpixel.Core.Model;
+using Gpixel.Core.Localization;
 
 namespace Gpixel.Core.IO;
 
@@ -155,7 +156,7 @@ public static class PngIO
     {
         Span<byte> sig = stackalloc byte[8];
         ReadExactly(stream, sig);
-        if (!sig.SequenceEqual(Signature)) throw new InvalidDataException("PNG 파일이 아닙니다.");
+        if (!sig.SequenceEqual(Signature)) throw new InvalidDataException(CoreStrings.Png_InvalidFile);
 
         var d = new PngData();
         bool sawHeader = false;
@@ -164,7 +165,7 @@ public static class PngIO
         {
             if (!TryReadExactly(stream, head)) break; // IEND 없이 끝난 파일도 허용
             int length = BinaryPrimitives.ReadInt32BigEndian(head);
-            if (length < 0) throw new InvalidDataException("PNG 청크 길이가 잘못되었습니다.");
+            if (length < 0) throw new InvalidDataException(CoreStrings.Png_InvalidChunkLength);
             string type = Encoding.ASCII.GetString(head[4..8]);
             if (type == "IEND") break;
 
@@ -181,7 +182,7 @@ public static class PngIO
             switch (type)
             {
                 case "IHDR":
-                    if (length < 13) throw new InvalidDataException("IHDR가 잘못되었습니다.");
+                    if (length < 13) throw new InvalidDataException(CoreStrings.Png_InvalidHeader);
                     d.Width = BinaryPrimitives.ReadInt32BigEndian(data);
                     d.Height = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(4));
                     d.BitDepth = data[8];
@@ -210,7 +211,7 @@ public static class PngIO
                     break;
             }
         }
-        if (!sawHeader) throw new InvalidDataException("PNG 헤더(IHDR)가 없습니다.");
+        if (!sawHeader) throw new InvalidDataException(CoreStrings.Png_HeaderMissing);
         return d;
     }
 
@@ -219,14 +220,14 @@ public static class PngIO
         int channels = d.ColorType switch
         {
             0 => 1, 2 => 3, 3 => 1, 4 => 2, 6 => 4,
-            _ => throw new InvalidDataException($"지원하지 않는 PNG 색 형식: {d.ColorType}"),
+            _ => throw new InvalidDataException(CoreStrings.FormatPng_UnsupportedColorType(colorType: d.ColorType)),
         };
         if (d.BitDepth is not (1 or 2 or 4 or 8 or 16))
-            throw new InvalidDataException($"지원하지 않는 PNG 비트 깊이: {d.BitDepth}");
+            throw new InvalidDataException(CoreStrings.FormatPng_UnsupportedBitDepth(bitDepth: d.BitDepth));
         if (d.ColorType == 3 && d.Palette is null)
-            throw new InvalidDataException("팔레트(PLTE)가 없습니다.");
+            throw new InvalidDataException(CoreStrings.Png_PaletteMissing);
         if (d.Width < 1 || d.Height < 1 || d.Width > PixelImage.MaxSize || d.Height > PixelImage.MaxSize)
-            throw new InvalidDataException($"이미지 크기가 너무 큽니다: {d.Width}x{d.Height}");
+            throw new InvalidDataException(CoreStrings.FormatPng_ImageTooLarge(width: d.Width, height: d.Height));
 
         d.Idat.Position = 0;
         using var z = new ZLibStream(d.Idat, CompressionMode.Decompress);
@@ -292,7 +293,7 @@ public static class PngIO
                     cur[i] += (byte)Paeth(i >= bpp ? cur[i - bpp] : 0, prev[i], i >= bpp ? prev[i - bpp] : 0);
                 break;
             default:
-                throw new InvalidDataException($"PNG 필터 값이 잘못되었습니다: {filter}");
+                throw new InvalidDataException(CoreStrings.FormatPng_InvalidFilter(filter: filter));
         }
     }
 
@@ -366,7 +367,7 @@ public static class PngIO
 
     private static void ReadExactly(Stream s, Span<byte> buffer)
     {
-        if (!TryReadExactly(s, buffer)) throw new InvalidDataException("PNG 데이터가 중간에 끝났습니다.");
+        if (!TryReadExactly(s, buffer)) throw new InvalidDataException(CoreStrings.Png_Truncated);
     }
 
     private static bool TryReadExactly(Stream s, Span<byte> buffer)

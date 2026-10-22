@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -24,11 +25,11 @@ public sealed class ToolOptionsPanel : UserControl
     };
     private static readonly (BrushShape Shape, VectorIcon Icon, string Text, string Tip)[] Shapes =
     [
-        (BrushShape.Square, VectorIcon.Square, "사각", "사각 브러시"),
-        (BrushShape.Circle, VectorIcon.Circle, "원", "원 브러시(크기 3 이상부터 둥글게)"),
-        (BrushShape.Diamond, VectorIcon.Diamond, "마름모", "마름모 브러시(크기 3 이상부터)"),
+        (BrushShape.Square, VectorIcon.Square, UiStrings.S_ToolOptionsPanel_Shapes_157988A91F, UiStrings.S_ToolOptionsPanel_Shapes_B8823EE594),
+        (BrushShape.Circle, VectorIcon.Circle, UiStrings.S_ToolOptionsPanel_Shapes_C6B5555BE7, UiStrings.S_ToolOptionsPanel_Shapes_C3C41E96DA),
+        (BrushShape.Diamond, VectorIcon.Diamond, UiStrings.S_ToolOptionsPanel_Shapes_E6AFBF1490, UiStrings.S_ToolOptionsPanel_Shapes_8D0E0B04AC),
     ];
-    private static readonly string[] SourceNames = ["현재 레이어", "보이는 레이어 전체"];
+    private static readonly string[] SourceNames = [UiStrings.S_ToolOptionsPanel_SourceNames_6198D7D9B6, UiStrings.S_ToolOptionsPanel_SourceNames_06199A4484];
 
     private readonly EditorContext _ctx;
     private readonly TextBlock _title;
@@ -94,51 +95,51 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v)
             .Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32).Unit("px").RecentKey("brush.size");
-        _sizeNum.Tip($"브러시 크기 1~{BrushFootprint.MaxSize} — 좌우로 끌거나 [ / ]");
-        var brushRight = new StackPanel { Spacing = 4, Children = { _shapes, Ui.Row(Ui.Label("크기"), _sizeNum) } };
+        _sizeNum.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_041B00982B,BrushFootprint.MaxSize));
+        var brushRight = new StackPanel { Spacing = 4, Children = { _shapes, Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CAF69A1BB7), _sizeNum) } };
         _brushPreview.Margin = new Thickness(0, 0, 6, 0);
         _brushPreview.VerticalAlignment = VerticalAlignment.Top;
-        _brushPreview.Tip("브러시 모양 미리보기(한 칸 = 한 픽셀)");
+        _brushPreview.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FC317FE6C0);
         Grid.SetColumn(brushRight, 1);
         var brushGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { _brushPreview, brushRight } };
-        _brushBox = Ui.Group("브러시", Ui.Stack(brushGrid));
+        _brushBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_244D56A524, Ui.Stack(brushGrid));
         _brushTitle = GroupTitle(_brushBox);
 
         // ── 채우기
         _tolNum = NumBox(0, 100, v => _ctx.FillTolerance = v)
             .Presets(0, 5, 10, 15, 20, 25, 33, 50, 66, 75, 100).Unit("%").RecentKey("fill.tolerance");
-        _tolNum.Tip("허용 오차(%): 0 = 정확히 같은 색만. 높일수록 비슷한 색(RGBA 채널 차이의 최댓값이 이 비율×255 이하)도 같은 색으로 채웁니다.");
-        _contiguous = Check("이어진 영역만", "끄면 화면 안의 맞는 색을 모두 고릅니다(채우기·스마트 선택) (Shift+G)", v => _ctx.FillContiguous = v);
-        _diagonal = Check("대각선으로도 잇기(8방향)", "이어진 영역을 대각선 이웃까지 넓힙니다", v => _ctx.FillDiagonal = v);
+        _tolNum.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2990A5AB95);
+        _contiguous = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A91BCFC490, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0A75032EF4, v => _ctx.FillContiguous = v);
+        _diagonal = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B062F4CFD2, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_1D5510BF06, v => _ctx.FillDiagonal = v);
         _fillSource = Combo(v => _ctx.FillSampleVisible = v == 1);
-        _fillSource.Tip("영역을 정하는 그림. 보이는 레이어 전체면 합성된 모습으로 경계를 찾고 칠하기는 현재 레이어에 합니다.");
-        _fillBox = Ui.Group("채우기", Ui.Stack(
-            Ui.Row(Ui.Label("허용 오차"), _tolNum, Ui.Label("%")),
+        _fillSource.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_37EFFDFA5B);
+        _fillBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_096C96B0A9, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02), _tolNum, Ui.Label("%")),
             _contiguous,
             _diagonal,
-            Ui.Row(Ui.Label("기준"), _fillSource)));
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0), _fillSource)));
         _fillTitle = GroupTitle(_fillBox);
 
         // ── 스포이드
         _pickSource = Combo(v => _ctx.PickerSampleVisible = v == 1);
-        _pickSource.Tip("색을 집을 그림(Alt+클릭 임시 스포이드도 같음)");
-        _pickerBox = Ui.Group("스포이드", Ui.Stack(Ui.Row(Ui.Label("기준"), _pickSource), Dim("Alt+클릭으로 쓰는 임시 스포이드에도 적용됩니다.")));
+        _pickSource.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D2DF12FE4F);
+        _pickerBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_410CC5D3AF, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0), _pickSource), Dim(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F8FA881EE9)));
 
         // ── 밝게/어둡게
         _dodgeNum = NumBox(1, EditorContext.MaxDodgeStrength, v => _ctx.DodgeStrength = v)
             .Presets(1, 2, 3, 5, 8, 10, 15, 20, 25, 33, 50).Unit("%").RecentKey("dodge.strength");
-        _dodgeNum.Tip("한 번에 바꿀 명도(%) — 한 획에 한 픽셀은 한 번만");
-        _dodgeBox = Ui.Group("밝게/어둡게", Ui.Stack(Ui.Row(Ui.Label("세기"), _dodgeNum, Ui.Label("%"))));
+        _dodgeNum.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_5D33990D7E);
+        _dodgeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D0A7B65132, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1), _dodgeNum, Ui.Label("%"))));
 
         // ── 디더링
-        _ditherPattern = Ui.Combo(150, "체커 (50%)", "성기게 (25%)", "촘촘하게 (75%)");
+        _ditherPattern = Ui.Combo(150, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_189071FAD4, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0CF48A0E79, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A181F0EEA8);
         _ditherPattern.SelectionChanged += (_, _) =>
         {
             if (_updating || _ditherPattern.SelectedIndex < 0) return;
             _ctx.DitherPattern = (DitherPattern)_ditherPattern.SelectedIndex;
         };
-        _ditherPattern.Tip("기본색이 차지하는 비율(2×2 순서 디더링). 나머지는 보조색");
-        _ditherBox = Ui.Group("디더링", Ui.Stack(Ui.Row(Ui.Label("무늬"), _ditherPattern)));
+        _ditherPattern.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_7D99E90556);
+        _ditherBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FC57CE224F, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_607280800B), _ditherPattern)));
 
         // ── 그라데이션: 같은 정지점 편집기를 도구와 레이어 효과에 사용한다.
         _gradientEditor = new GradientEditor(() => _ctx.Primary);
@@ -154,23 +155,23 @@ public sealed class ToolOptionsPanel : UserControl
             }
             finally { _gradientSyncing = false; }
         };
-        var gradientHelp = Dim("캔버스에서 시작점 → 끝점으로 끌어 칠합니다(Shift: 45°). 선택 영역이 있으면 그 안만 칠하고, 불투명도가 낮은 쪽은 아래를 그만큼 투명하게 바꿉니다.");
+        var gradientHelp = Dim(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_DA4BE7471C);
         gradientHelp.TextWrapping = TextWrapping.Wrap;
-        _gradientBox = Ui.Group("그라데이션", Ui.Stack(_gradientEditor, gradientHelp));
+        _gradientBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3700B54FB1, Ui.Stack(_gradientEditor, gradientHelp));
 
         // ── 옵션(도구마다 보이는 것만)
-        _pixelPerfect = Check("픽셀 퍼펙트", "1px 연필·지우개의 L자 모서리 제거 (P)", v => _ctx.PixelPerfect = v);
-        _shapeFilled = Check("채움", "사각형·원을 채워 그리기 (U)", v => _ctx.ShapeFilled = v);
-        _rightErase = Check("오른쪽 버튼 = 지우개", "오른쪽 버튼으로 보조색 대신 지우기", v => _ctx.RightButtonErases = v);
-        _wrap = Check("순환", "이동: 밖으로 나간 픽셀을 반대편으로", v => _ctx.MoveWrap = v);
-        _optionsBox = Ui.Group("옵션", Ui.Stack(_pixelPerfect, _shapeFilled, _rightErase, _wrap));
+        _pixelPerfect = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4DC4117198, v => _ctx.PixelPerfect = v);
+        _shapeFilled = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA, v => _ctx.ShapeFilled = v);
+        _rightErase = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4E9F04FE20, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E1EAC3C042, v => _ctx.RightButtonErases = v);
+        _wrap = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_07A907E085, v => _ctx.MoveWrap = v);
+        _optionsBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0B9E51B984, Ui.Stack(_pixelPerfect, _shapeFilled, _rightErase, _wrap));
 
         // ── 대칭
-        _mirrorX = Check("좌우 대칭", "좌우 대칭 그리기 (Shift+X)", v => _ctx.MirrorX = v);
-        _mirrorX.Content = Ui.IconLabel(VectorIcon.MoveHorizontal, "좌우 대칭", iconAfter: true);
-        _mirrorY = Check("상하 대칭", "상하 대칭 그리기 (Shift+Y)", v => _ctx.MirrorY = v);
-        _mirrorY.Content = Ui.IconLabel(VectorIcon.MoveVertical, "상하 대칭", iconAfter: true);
-        _mirrorBox = Ui.Group("대칭 그리기", Ui.Stack(_mirrorX, _mirrorY));
+        _mirrorX = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2ADAF37DF1, v => _ctx.MirrorX = v);
+        _mirrorX.Content = Ui.IconLabel(VectorIcon.MoveHorizontal, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D, iconAfter: true);
+        _mirrorY = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3FD1E9A85E, v => _ctx.MirrorY = v);
+        _mirrorY.Content = Ui.IconLabel(VectorIcon.MoveVertical, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98, iconAfter: true);
+        _mirrorBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0E1824FF47, Ui.Stack(_mirrorX, _mirrorY));
 
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
         // 5×5: 가로·세로 0, 1/4, 1/2, 3/4, 1 지점(위 왼쪽 단추 = 왼쪽 위).
@@ -197,8 +198,8 @@ public sealed class ToolOptionsPanel : UserControl
         }
         _pivotX = PixelNum("pivot.x");
         _pivotY = PixelNum("pivot.y");
-        _pivotX.Tip("왼쪽에서 몇 px(0.5 단위)");
-        _pivotY.Tip("아래에서 몇 px(0.5 단위, Unity와 같이 아래가 0)");
+        _pivotX.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_862EF0756D);
+        _pivotY.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_6F1F475A03);
         _pivotXMax = Dim("");
         _pivotYMax = Dim("");
         _pivotX.ValueChanged += (_, _) =>
@@ -211,7 +212,7 @@ public sealed class ToolOptionsPanel : UserControl
             if (_updating || TargetPivot() is not { } cur) return;
             ApplyPivot(new Pivot(cur.X, (float)(_pivotY.NumValue() / TargetHeight)));
         };
-        _framePivot = Ui.Check("현재 프레임만 따로");
+        _framePivot = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3);
         _framePivot.IsCheckedChanged += (_, _) =>
         {
             if (_updating || _ctx.Project is not { } p) return;
@@ -220,7 +221,7 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _pivotTarget = Dim("");
         _pivotTarget.TextWrapping = TextWrapping.Wrap;
-        _pivotBox = Ui.Group("피벗(포커스) — 캔버스에서 끌기", Ui.Stack(
+        _pivotBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_C554693D22, Ui.Stack(
             presetGrid,
             Ui.Row(Ui.Label("X"), _pivotX, _pivotXMax),
             Ui.Row(Ui.Label("Y"), _pivotY, _pivotYMax),
@@ -240,10 +241,10 @@ public sealed class ToolOptionsPanel : UserControl
             };
         _sliceTarget = Dim("");
         _sliceTarget.TextWrapping = TextWrapping.Wrap;
-        var sliceHelp = Dim("크기를 늘려도 초록 선 바깥(모서리·가장자리)은 늘어나지 않고 가운데만 늘어납니다. Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널용이고, 0이면 꺼짐입니다.");
+        var sliceHelp = Dim(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A527F1585C);
         sliceHelp.TextWrapping = TextWrapping.Wrap;
-        _sliceClear = Ui.Button("모두 0", (_, _) => _ctx.SetSliceBorder(SpriteBorder.None)).Tip("테두리 지우기(9-slice 끄기)");
-        _sliceBox = Ui.Group("9-slice 테두리(px) — 초록 선 끌기", Ui.Stack(
+        _sliceClear = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_6A9E3F0F27, (_, _) => _ctx.SetSliceBorder(SpriteBorder.None)).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_98ABAB10EB);
+        _sliceBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5622FB876, Ui.Stack(
             Ui.Row(Ui.Label("L"), _sL, Ui.Label("R"), _sR),
             Ui.Row(Ui.Label("T"), _sT, Ui.Label("B"), _sB),
             _sliceClear,
@@ -255,67 +256,67 @@ public sealed class ToolOptionsPanel : UserControl
         _hint.Margin = new Thickness(6, 6, 6, 6);
 
         // ── 변형 모드(Ctrl+T): 숫자는 캔버스 손잡이와 함께 움직인다.
-        _tfAngle = TransformNum(-180, 180, "회전 각도(°, 시계 방향) — 회전 중심(캔버스의 주황 표시)을 기준으로",
+        _tfAngle = TransformNum(-180, 180, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_DF32263ADE,
             v => _ctx.SetTransformParams(_ctx.RotatedAboutPivot(_ctx.TransformParams, v)))
             .Presets(-180, -135, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180).Unit("°").RecentKey("transform.angle");
         // 0%는 적용하지 않으므로 목록에 없음(−100% = 뒤집기).
         decimal[] scales = [-200, -100, 25, 50, 75, 100, 150, 200, 300, 400, 800];
-        _tfScaleX = TransformNum(-3200, 3200, "가로 크기(%) — 음수 = 좌우 뒤집기, 중심 기준",
+        _tfScaleX = TransformNum(-3200, 3200, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F91C1F9AF4,
             v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleX = v / 100 }); })
             .Presets(scales).Unit("%").RecentKey("transform.scale");
-        _tfScaleY = TransformNum(-3200, 3200, "세로 크기(%) — 음수 = 상하 뒤집기, 중심 기준",
+        _tfScaleY = TransformNum(-3200, 3200, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_162B6458A5,
             v => { if (v != 0) _ctx.SetTransformParams(_ctx.TransformParams with { ScaleY = v / 100 }); })
             .Presets(scales).Unit("%").RecentKey("transform.scale");
         // 중심 X·Y 예시 값은 캔버스 크기에 맞춰 RefreshTransform에서 정한다(0 · 1/4 · 1/2 · 3/4 · 끝).
-        _tfX = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 X(픽셀, 크기가 홀수면 .5)",
+        _tfX = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_704C85E278,
             v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterX = v })).Unit("px").RecentKey("transform.center.x");
-        _tfY = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, "변형한 영역 중심의 Y(픽셀, 위가 0)",
+        _tfY = TransformNum(-PixelImage.MaxSize, PixelImage.MaxSize, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_48CEA6539D,
             v => _ctx.SetTransformParams(_ctx.TransformParams with { CenterY = v })).Unit("px").RecentKey("transform.center.y");
-        _tfResample = Ui.Combo(150, "RotSprite", "최근접(Nearest)");
-        _tfResample.Tip("RotSprite: Scale2x를 세 번(8배) 키운 그림에서 집어 회전한 선이 덜 깨집니다(섞지 않아 새 색 없음). 최근접: 원본 픽셀을 그대로 집습니다. 0°·90°·180°·270°는 둘이 같습니다.");
+        _tfResample = Ui.Combo(150, "RotSprite", UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E);
+        _tfResample.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EA92356D34);
         _tfResample.SelectionChanged += (_, _) =>
         {
             if (_updating || _tfResample.SelectedIndex < 0) return;
             _ctx.TransformResample = (ResampleMode)_tfResample.SelectedIndex;
         };
         _tfInfo = Dim("");
-        var tfApply = Ui.Button("적용", (_, _) => _ctx.CommitTransform()).Tip("변형을 적용합니다(Enter) — 실행취소 한 단계");
-        var tfCancel = Ui.Button("취소", (_, _) => _ctx.CancelTransform()).Tip("변형 전으로 되돌립니다(Esc, Ctrl+Z)");
-        var tfHelp = Dim("캔버스: 안쪽 끌기 = 옮기기(1px 단위), 네모 손잡이 = 크기(Shift 비율 유지, Alt 가운데 기준, 반대쪽을 넘기면 뒤집기), 바깥 = 회전(Shift 15°), 가운데 표시 끌기 = 회전 중심(더블클릭 = 가운데로). 방향키 = 1px 옮기기.");
+        var tfApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5, (_, _) => _ctx.CommitTransform()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2077BDA76D);
+        var tfCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelTransform()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F1CB28FBF9);
+        var tfHelp = Dim(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BFD255FFEA);
         tfHelp.TextWrapping = TextWrapping.Wrap;
-        _transformBox = Ui.Group("변형(회전·크기)", Ui.Stack(
-            Ui.Row(Ui.Label("각도"), _tfAngle, Ui.Label("°")),
-            Ui.Row(Ui.Label("가로"), _tfScaleX, Ui.Label("%"), Ui.Label("세로"), _tfScaleY, Ui.Label("%")),
-            Ui.Row(Ui.Label("중심 X"), _tfX, Ui.Label("Y"), _tfY),
-            Ui.Row(Ui.Label("리샘플링"), _tfResample),
+        _transformBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E4C9B1697C, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_51B15B9385), _tfAngle, Ui.Label("°")),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_571538645F), _tfScaleX, Ui.Label("%"), Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _tfScaleY, Ui.Label("%")),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CADA521CE3), _tfX, Ui.Label("Y"), _tfY),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4), _tfResample),
             _tfInfo,
             Ui.Row(tfApply, tfCancel),
             tfHelp));
 
         // ── 캔버스 크기 모드(Ctrl+Alt+C): 숫자는 캔버스 손잡이와 함께 움직인다.
-        _crKeepRatio = Ui.Check("그림 비율 유지", true).Tip("그림 가로·세로 칸 하나를 바꾸면 다른 쪽도 원래 그림 비율대로 맞춥니다");
+        _crKeepRatio = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D, true).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3);
         _crKeepRatio.Focusable = false;
-        _crWidth = CanvasResizeNum(1, "새 캔버스 가로(px) — 오른쪽 가장자리가 움직이고 그림은 제자리",
+        _crWidth = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_74D4C14CA4,
             v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Width = v }, _ctx.CanvasResizeImage))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _crHeight = CanvasResizeNum(1, "새 캔버스 세로(px) — 아래 가장자리가 움직이고 그림은 제자리",
+        _crHeight = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F4AD01A341,
             v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Height = v }, _ctx.CanvasResizeImage))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _crImageWidth = CanvasResizeNum(1, "그림 가로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
+        _crImageWidth = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FE3628272B,
             v => SetCanvasResizeImage(i => i with { Width = v, Height = _crKeepRatio.On() ? RatioHeight(v) : i.Height }))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _crImageHeight = CanvasResizeNum(1, "그림 세로(px) — 최근접으로 늘이거나 줄입니다(왼쪽 위 기준)",
+        _crImageHeight = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CD5D0492CE,
             v => SetCanvasResizeImage(i => i with { Height = v, Width = _crKeepRatio.On() ? RatioWidth(v) : i.Width }))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _crX = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 X(새 캔버스 기준, 음수 = 왼쪽이 잘림)",
+        _crX = CanvasResizeNum(-PixelImage.MaxSize, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_63B49FC3F3,
             v => SetCanvasResizeImage(i => i with { X = v }))
             .Presets(Ui.Offsets).Unit("px").RecentKey("offset");
-        _crY = CanvasResizeNum(-PixelImage.MaxSize, "그림 왼쪽 위의 Y(새 캔버스 기준, 음수 = 위가 잘림)",
+        _crY = CanvasResizeNum(-PixelImage.MaxSize, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_1C39223AA7,
             v => SetCanvasResizeImage(i => i with { Y = v }))
             .Presets(Ui.Offsets).Unit("px").RecentKey("offset");
         _crWidthPercent = Dim("");
         _crHeightPercent = Dim("");
-        _crAnchor.Tip("그림을 지금 캔버스 안의 이 자리(9방향)에 놓습니다");
+        _crAnchor.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A61B0CA3D3);
         _crAnchor.Changed += (_, _) =>
         {
             if (_updating) return;
@@ -323,22 +324,22 @@ public sealed class ToolOptionsPanel : UserControl
             var (x, y) = PixelImage.AnchorOffset(_ctx.CanvasResizeImage.Width, _ctx.CanvasResizeImage.Height, c.Width, c.Height, _crAnchor.Value);
             SetCanvasResizeImage(i => i with { X = x, Y = y });
         };
-        var crApply = Ui.Button("확인", (_, _) => _ctx.CommitCanvasResize()).Tip("캔버스 크기를 적용합니다(Enter) — 실행취소 한 단계");
-        var crCancel = Ui.Button("취소", (_, _) => _ctx.CancelCanvasResize()).Tip("바꾸지 않고 끝냅니다(Esc, Ctrl+Z)");
-        var crHelp = Dim("캔버스: 네모 손잡이 = 그 가장자리 옮기기(그림은 제자리, 여백이 늘거나 잘림), Ctrl+끌기 = 그림 가장자리도 함께(여백 그대로 그림 크기, 모서리 + Shift 비율 유지), 그림 안쪽 끌기 = 옮기기. 방향키 = 그림 1px 옮기기.");
+        var crApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B, (_, _) => _ctx.CommitCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
+        var crCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_495785D5E4);
+        var crHelp = Dim(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6);
         crHelp.TextWrapping = TextWrapping.Wrap;
-        _canvasResizeBox = Ui.Group("캔버스 크기", Ui.Stack(
-            Ui.Row(Ui.Label("캔버스 가로"), _crWidth, Ui.Label("세로"), _crHeight),
-            Ui.Row(Ui.Label("그림 가로"), _crImageWidth, _crWidthPercent),
-            Ui.Row(Ui.Label("그림 세로"), _crImageHeight, _crHeightPercent),
+        _canvasResizeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715), _crImageHeight, _crHeightPercent),
             _crKeepRatio,
-            Ui.Row(Ui.Label("그림 위치 X"), _crX, Ui.Label("Y"), _crY),
-            Ui.Row(Ui.Label("기준점"), _crAnchor),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CD2CB5A3E8), _crX, Ui.Label("Y"), _crY),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
             Ui.Row(crApply, crCancel),
             crHelp));
 
         var stack = Ui.Stack(_canvasResizeBox, _transformBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint);
-        var header = Ui.Header("도구 설정");
+        var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
         var root = new DockPanel();
         root.Children.Add(header);
@@ -463,11 +464,11 @@ public sealed class ToolOptionsPanel : UserControl
         bool brush = shape || tool is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
         bool paint = brush || tool == ToolKind.Fill;
 
-        _title.Text = $"도구 설정 · {MainForm.ToolName(tool)}";
+        _title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_Refresh_2AA5BFEE57,MainForm.ToolName(tool));
         _brushBox.IsVisible = brush;
-        _brushTitle.Text = shape ? "선 두께·펜 모양" : "브러시";
+        _brushTitle.Text = shape ? UiStrings.S_ToolOptionsPanel_Refresh_FD736DAE6B : UiStrings.S_ToolOptionsPanel_Refresh_5A8AEEEBD3;
         _fillBox.IsVisible = tool is ToolKind.Fill or ToolKind.MagicWand;
-        _fillTitle.Text = tool == ToolKind.MagicWand ? "스마트 선택(채우기와 같은 설정)" : "채우기";
+        _fillTitle.Text = tool == ToolKind.MagicWand ? UiStrings.S_ToolOptionsPanel_Refresh_EA94B5AD1D : UiStrings.S_ToolOptionsPanel_Refresh_ADEB941184;
         _pickerBox.IsVisible = tool == ToolKind.Picker;
         _dodgeBox.IsVisible = tool == ToolKind.Dodge;
         _ditherBox.IsVisible = tool == ToolKind.Dither;
@@ -482,12 +483,12 @@ public sealed class ToolOptionsPanel : UserControl
         _sliceBox.IsVisible = tool == ToolKind.Slice;
         _hint.Text = tool switch
         {
-            ToolKind.Select => "드래그로 사각형을 선택합니다(Shift: 정사각형). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.",
-            ToolKind.EllipseSelect => "드래그로 원을 선택합니다(Shift: 정원). 안쪽을 끌어 옮기고 Enter로 내려놓습니다. M: 다음 선택 도구.",
-            ToolKind.Lasso => "끌어서 테두리를 그리면 놓을 때 처음 점과 이어 닫고 그 안을 선택합니다. 안쪽을 끌어 옮깁니다.",
-            ToolKind.MagicWand => "클릭한 곳과 비슷한 색 영역을 선택합니다. 옮기려면 이동(V)이나 방향키를 씁니다.",
-            ToolKind.Move => "선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다.",
-            ToolKind.Gradient => "끌어서 시작점 → 끝점 방향으로 칠합니다. 실행취소는 한 번에 한 단계입니다.",
+            ToolKind.Select => UiStrings.S_ToolOptionsPanel_Refresh_147A90B5B7,
+            ToolKind.EllipseSelect => UiStrings.S_ToolOptionsPanel_Refresh_E1081EA049,
+            ToolKind.Lasso => UiStrings.S_ToolOptionsPanel_Refresh_84BF1C9645,
+            ToolKind.MagicWand => UiStrings.S_ToolOptionsPanel_Refresh_E90544A4CC,
+            ToolKind.Move => UiStrings.S_ToolOptionsPanel_Refresh_00F0C73AC7,
+            ToolKind.Gradient => UiStrings.S_ToolOptionsPanel_Refresh_FB6D406AF9,
             _ => "",
         };
         _hint.IsVisible = _hint.Text.Length > 0;
@@ -496,7 +497,7 @@ public sealed class ToolOptionsPanel : UserControl
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
             // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
-            _title.Text = _ctx.IsTransforming ? "도구 설정 · 변형" : "도구 설정 · 캔버스 크기";
+            _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
             foreach (var box in new Control[] { _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -558,8 +559,8 @@ public sealed class ToolOptionsPanel : UserControl
             var src = t.SourceBounds;
             var dst = _ctx.Selection.Bounds;
             bool fallback = _ctx.TransformResample == ResampleMode.RotSprite && (long)src.Width * src.Height > FreeTransform.MaxRotSpriteArea;
-            _tfInfo.Text = $"원본 {src.Width}×{src.Height} → {dst.Width}×{dst.Height} px"
-                           + (fallback ? " · 큰 영역이라 최근접으로 집습니다" : "");
+            _tfInfo.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshTransform_DB65681040,src.Width,src.Height,dst.Width,dst.Height)
+                           + (fallback ? UiStrings.S_ToolOptionsPanel_RefreshTransform_08535E328B : "");
         }
         finally
         {
@@ -622,10 +623,10 @@ public sealed class ToolOptionsPanel : UserControl
             _sT.Value = Math.Clamp(b.Top, 0, h);
             _sB.Value = Math.Clamp(b.Bottom, 0, h);
             _sliceTarget.Text = group
-                ? "그룹 화면: 부위마다 캔버스의 초록 선을 끌어 바꿉니다. 숫자로 바꾸려면 타임라인에서 부위를 고르세요."
+                ? UiStrings.S_ToolOptionsPanel_RefreshSlice_4979FEE313
                 : _ctx.CurrentPart is { } part
-                    ? $"대상: 부위 \"{part.Name}\" ({part.PartSize.Width}×{part.PartSize.Height})"
-                    : $"대상: 프레임 시트 모든 칸 ({w}×{h})";
+                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshSlice_6437D6774C,part.Name,part.PartSize.Width,part.PartSize.Height)
+                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshSlice_0CBE78E12F,w,h);
         }
         finally
         {
@@ -676,7 +677,7 @@ public sealed class ToolOptionsPanel : UserControl
             if (_ctx.CurrentPart is { } part)
             {
                 _framePivot.IsVisible = false;
-                _pivotTarget.Text = $"대상: 부위 \"{part.Name}\" ({part.PartSize.Width}×{part.PartSize.Height}, 부위 아틀라스)";
+                _pivotTarget.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshPivot_7752FB81E5,part.Name,part.PartSize.Width,part.PartSize.Height);
             }
             else
             {
@@ -684,7 +685,7 @@ public sealed class ToolOptionsPanel : UserControl
                 bool own = p.Frames[f].Pivot is not null;
                 _framePivot.IsVisible = true;
                 _framePivot.IsChecked = own;
-                _pivotTarget.Text = own ? $"대상: 프레임 {f + 1}만" : "대상: 프로젝트 기본 피벗(모든 프레임)";
+                _pivotTarget.Text = own ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshPivot_DC250333A2,f + 1) : UiStrings.S_ToolOptionsPanel_RefreshPivot_880B20EF26;
             }
             // 끄는 중이면 미리보기 값.
             var pivot = _ctx.Pivot;
@@ -725,7 +726,7 @@ public sealed class ToolOptionsPanel : UserControl
         int f = _ctx.CurrentFrame;
         if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivot(f, pivot));
         else if (p.Sprite.DefaultPivot != pivot)
-            _ctx.Structural(() => p.Edit("기본 피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
+            _ctx.Structural(() => p.Edit(UiStrings.S_ToolOptionsPanel_ApplyPivot_4E8342E979, ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
     }
 
     /// <summary>브러시 도장을 칸(픽셀)으로 그린 작은 미리보기.</summary>

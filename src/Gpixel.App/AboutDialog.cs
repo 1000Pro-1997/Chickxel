@@ -1,4 +1,5 @@
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -7,7 +8,7 @@ public sealed class AboutDialog : DialogBase
 {
     private const double TextWidth = 470;
 
-    public AboutDialog() : base("Gpixel 정보")
+    public AboutDialog() : base(UiStrings.S_AboutDialog_AboutDialog_39A221AE8E)
     {
         CloseOnly();
 
@@ -16,8 +17,8 @@ public sealed class AboutDialog : DialogBase
         RenderOptions.SetBitmapInterpolationMode(icon, BitmapInterpolationMode.HighQuality);
         var heading = new StackPanel { Spacing = 2, Margin = new Thickness(12, 0, 0, 0) };
         heading.Children.Add(new TextBlock { Text = AppInfo.Name, FontSize = 22, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush });
-        heading.Children.Add(Text($"버전 {AppInfo.VersionText}" + (AppInfo.IsDevBuild ? " (개발 빌드)" : "")));
-        heading.Children.Add(Text("게임용 픽셀 아트 편집기 — 프레임·레이어를 .gpixel 프로젝트로 저장하고, 저장할 때 PNG 시트와 Unity .meta를 함께 내보냅니다."));
+        heading.Children.Add(Text(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AboutDialog_AboutDialog_280F145056,AppInfo.VersionText) + (AppInfo.IsDevBuild ? UiStrings.S_AboutDialog_AboutDialog_27606A6DB7 : "")));
+        heading.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_4A7237E3B0));
         var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         DockPanel.SetDock(icon, Dock.Left);
         top.Children.Add(icon);
@@ -25,17 +26,17 @@ public sealed class AboutDialog : DialogBase
         Body.Children.Add(top);
 
         Body.Children.Add(Ui.Row(
-            Link("GitHub 저장소", AppUpdate.RepoUrl),
-            Link("릴리스", AppUpdate.ReleasesUrl),
-            Link("문제 신고", AppUpdate.IssuesUrl)));
-        Body.Children.Add(Section("라이선스"));
-        Body.Children.Add(Text("MIT 라이선스 · Copyright © 2026 천성훈 (1000Pro-1997)"));
-        Body.Children.Add(Text("Gpixel이 쓰는 오픈 소스 구성 요소(.NET, Avalonia, SkiaSharp, SQLite 등)의 라이선스 고지는 THIRD-PARTY-NOTICES.md에 있습니다."));
-        Body.Children.Add(Ui.Row(Link("오픈 소스 고지 보기", AppInfo.ThirdPartyNoticesUrl)));
-        Body.Children.Add(Section("AI 채팅(Claude·Codex)"));
-        Body.Children.Add(Text("AI 채팅은 이 컴퓨터에 따로 설치한 Claude Code CLI(Anthropic) 또는 Codex CLI(OpenAI)와 그 로그인을 씁니다(API 키를 넣지 않음). "
-            + "Gpixel에는 두 CLI가 들어 있지 않으며, 사용에는 각 회사의 약관이 적용됩니다."));
-        var settings = Text("설정 파일: " + AppSettings.FilePath);
+            Link(UiStrings.S_AboutDialog_AboutDialog_1BCE018BCE, AppUpdate.RepoUrl),
+            Link(UiStrings.S_AboutDialog_AboutDialog_617FEF961D, AppUpdate.ReleasesUrl),
+            Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)));
+        Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_E3F28341F4));
+        Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_BE04412652));
+        Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_38A0479DD2));
+        Body.Children.Add(Ui.Row(Link(UiStrings.S_AboutDialog_AboutDialog_2085099DF4, AppInfo.ThirdPartyNoticesUrl)));
+        Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_5B2E2D16BC));
+        Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_672604ED50
+            + UiStrings.S_AboutDialog_AboutDialog_AE8CAE05A3));
+        var settings = Text(UiStrings.S_AboutDialog_AboutDialog_D59819BEBD + AppSettings.FilePath);
         settings.Foreground = AppTheme.DimTextBrush;
         settings.Margin = new Thickness(3, 10, 3, 3);
         Body.Children.Add(settings);

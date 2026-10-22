@@ -43,7 +43,7 @@ public static class AtlasPacker
         for (int i = 0; i < n; i++)
         {
             if (sizes[i].Width < 1 || sizes[i].Height < 1)
-                throw new ArgumentException($"스프라이트 크기가 잘못되었습니다: {sizes[i]}", nameof(sizes));
+                throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.FormatAtlas_InvalidSpriteSize(size: sizes[i]), nameof(sizes));
             if (fixedRects is not null && i < fixedRects.Count && fixedRects[i] is { } r
                 && r.X >= 0 && r.Y >= 0 && sizes[i].Width <= r.Width && sizes[i].Height <= r.Height)
             {

@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Gpixel.App.Ai;
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -91,20 +92,20 @@ public sealed class Updater
     {
         if (_checking)
         {
-            if (manual) _showMessage("업데이트를 확인하는 중입니다…");
+            if (manual) _showMessage(UiStrings.S_Updater_CheckAsync_33CBE4EAD6);
             return;
         }
         _checking = true;
         try
         {
-            if (manual) _showMessage("업데이트 확인 중…");
+            if (manual) _showMessage(UiStrings.S_Updater_CheckAsync_C61279BB18);
             var result = await FetchLatestAsync();
             if (result.Problem is { } problem)
             {
                 if (!manual) return;
                 _showMessage("");
-                if (result.NoReleases) Ui.Info(_owner, problem, "업데이트 확인");
-                else Ui.Warn(_owner, problem, "업데이트 확인");
+                if (result.NoReleases) Ui.Info(_owner, problem, UiStrings.S_Updater_CheckAsync_709BB6FDD1);
+                else Ui.Warn(_owner, problem, UiStrings.S_Updater_CheckAsync_709BB6FDD1);
                 return;
             }
             var release = result.Release;
@@ -113,8 +114,8 @@ public sealed class Updater
                 SetAvailable(null);
                 if (!manual) return;
                 _showMessage("");
-                Ui.Info(_owner, $"최신 버전을 쓰고 있습니다.\n\n지금 버전: {AppInfo.VersionText}"
-                    + (release is null ? "" : $"\n최신 릴리스: {release.Version}"), "업데이트 확인");
+                Ui.Info(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_CheckAsync_B80A4C36E4,AppInfo.VersionText)
+                    + (release is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_CheckAsync_48998BE659,release.Version)), UiStrings.S_Updater_CheckAsync_709BB6FDD1);
                 return;
             }
             if (!manual && IsSkipped(release!))
@@ -123,7 +124,7 @@ public sealed class Updater
                 return;
             }
             SetAvailable(release);
-            _showMessage($"새 버전이 나왔습니다: Gpixel {release!.Version}");
+            _showMessage(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_CheckAsync_CFB3246BF9,release!.Version));
             // 다른 창이 떠 있으면(시작할 때 연 대화상자 등) 겹치지 않게, 위 막대 단추로만 알린다.
             if (manual || !_owner.OwnedWindows.Any()) ShowUpdateDialog(release);
         }
@@ -155,29 +156,29 @@ public sealed class Updater
             AddHeaders(request);
             using var response = await _pageHttp.SendAsync(request, timeout.Token);
             if (response.StatusCode == HttpStatusCode.NotFound)
-                return new LatestResult(null, NoReleaseText("저장소를 찾지 못했습니다(비공개이거나 주소가 바뀌었을 수 있습니다)."), NoReleases: true);
+                return new LatestResult(null, NoReleaseText(UiStrings.S_Updater_FetchLatestAsync_057AEC6641), NoReleases: true);
             if ((int)response.StatusCode is < 300 or >= 400 || response.Headers.Location is not { } location)
-                return new LatestResult(null, $"GitHub가 예상과 다르게 답했습니다({(int)response.StatusCode} {response.ReasonPhrase}). 잠시 뒤 다시 확인하세요.", false);
+                return new LatestResult(null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_FetchLatestAsync_877F1750C7,(int)response.StatusCode,response.ReasonPhrase), false);
             if (!location.IsAbsoluteUri) location = new Uri(AppUpdate.LatestReleasePageUrl, location);
             if (AppUpdate.ReleaseFromLatestRedirect(location) is not { } release)
                 return location.AbsolutePath.TrimEnd('/').EndsWith("/releases", StringComparison.Ordinal)
-                    ? new LatestResult(null, NoReleaseText("아직 공개된 릴리스가 없습니다."), NoReleases: true)
-                    : new LatestResult(null, "최신 릴리스의 태그가 버전 형식(vX.Y.Z)이 아니어서 비교할 수 없습니다.", false);
+                    ? new LatestResult(null, NoReleaseText(UiStrings.S_Updater_FetchLatestAsync_2FB5F659ED), NoReleases: true)
+                    : new LatestResult(null, UiStrings.S_Updater_FetchLatestAsync_05702F1BD5, false);
             if (AppUpdate.IsNewer(AppInfo.Version, release)) release = await WithNotesAsync(release);
             return new LatestResult(release, null, false);
         }
         catch (OperationCanceledException)
         {
-            return new LatestResult(null, $"GitHub가 {ApiTimeout.TotalSeconds:0}초 안에 응답하지 않았습니다. 인터넷 연결을 확인하고 다시 시도하세요.", false);
+            return new LatestResult(null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_FetchLatestAsync_4E33D29A1C,ApiTimeout.TotalSeconds), false);
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException)
         {
-            return new LatestResult(null, $"GitHub에 연결하지 못했습니다. 인터넷 연결을 확인하세요.\n({ex.Message})", false);
+            return new LatestResult(null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_FetchLatestAsync_92FDE0EACD,ex.Message), false);
         }
     }
 
     private static string NoReleaseText(string why)
-        => $"업데이트 정보를 찾지 못했습니다. {why}\n\n지금 버전: {AppInfo.VersionText}\n릴리스 페이지: {AppUpdate.ReleasesUrl}";
+        => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_NoReleaseText_EB9E89C82C,why,AppInfo.VersionText,AppUpdate.ReleasesUrl);
 
     /// <summary>
     /// 바뀐 점을 붙인다. 먼저 릴리스에 함께 올린 <c>CHANGELOG.md</c>(웹 내려받기 주소라 API 한도 없음)에서 지금 버전 다음 ~ 새 버전 절을 고르고,
@@ -244,7 +245,7 @@ public sealed class Updater
                 _settings.SkippedVersion = release.Version.ToString();
                 _settings.Save();
                 SetAvailable(null);
-                _showMessage($"Gpixel {release.Version}은(는) 다시 띄우지 않습니다(더 새 버전이 나오면 알림). 도움말 > 업데이트 확인으로 언제든 볼 수 있습니다.");
+                _showMessage(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_ShowUpdateDialog_A63ECF4271,release.Version));
                 break;
             case UpdateChoice.Install when dlg.Staged is { } staged:
                 Install(staged);
@@ -257,26 +258,26 @@ public sealed class Updater
     /// </summary>
     public static (InstallPlan? Plan, string? Reason) PlanInstall(ReleaseInfo release)
     {
-        const string manual = "\n릴리스 페이지에서 받아 직접 바꿔 주세요.";
+        string manual = UiStrings.Updater_ManualInstall;
         if (AppInfo.InstallKind == InstallKind.Development || AppInfo.InstallPath is not { } target)
-            return (null, "소스에서 실행한 개발 빌드는 자동으로 설치할 수 없습니다." + manual);
+            return (null, UiStrings.S_Updater_PlanInstall_3ABC93510F + manual);
         if (AppInfo.IsDevBuild)
-            return (null, $"시험 빌드({AppInfo.VersionText})는 자동으로 설치할 수 없습니다." + manual);
+            return (null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_PlanInstall_FA52471F79,AppInfo.VersionText) + manual);
         var os = OperatingSystem.IsWindows() ? UpdateOs.Windows : OperatingSystem.IsMacOS() ? UpdateOs.MacOS : UpdateOs.Other;
         var arch = RuntimeInformation.OSArchitecture;
         if (AppUpdate.AssetName(os, arch) is not { } assetName)
-            return (null, "이 운영체제·CPU는 자동 설치를 지원하지 않습니다." + manual);
+            return (null, UiStrings.S_Updater_PlanInstall_AF27F58056 + manual);
         if (release.Asset(assetName) is not { } asset)
-            return (null, $"이 릴리스에는 이 컴퓨터용 파일({assetName})이 없습니다." + manual);
+            return (null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_PlanInstall_EE7CBEAB5D,assetName) + manual);
         if (release.Asset(AppUpdate.ChecksumsAssetName) is not { } sums)
-            return (null, $"이 릴리스에는 체크섬 파일({AppUpdate.ChecksumsAssetName})이 없어 내려받은 파일을 검증할 수 없으므로 자동으로 설치하지 않습니다." + manual);
+            return (null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_PlanInstall_583D1BF21E,AppUpdate.ChecksumsAssetName) + manual);
         if (target.Contains("/AppTranslocation/", StringComparison.Ordinal))
-            return (null, "macOS가 앱을 임시 위치에서 실행하고 있습니다(App Translocation).\nGpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하면 자동 업데이트를 쓸 수 있습니다.");
+            return (null, UiStrings.S_Updater_PlanInstall_4AA3FC6149);
         var dirs = AppInfo.InstallKind == InstallKind.MacBundle
             ? new[] { Path.GetDirectoryName(target)!, Path.Combine(target, "Contents", "MacOS") }
             : new[] { Path.GetDirectoryName(target)! };
         if (dirs.FirstOrDefault(d => !CanWrite(d)) is { } locked)
-            return (null, $"설치 폴더에 쓸 권한이 없어 자동으로 바꿀 수 없습니다.\n{locked}" + manual);
+            return (null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_PlanInstall_7002837ACB,locked) + manual);
         return (new InstallPlan(release, asset, sums, AppInfo.InstallKind, target), null);
     }
 
@@ -305,7 +306,7 @@ public sealed class Updater
         Directory.CreateDirectory(dir);
         try
         {
-            progress.Report(new UpdateProgress("체크섬 받는 중…", 0, 0));
+            progress.Report(new UpdateProgress(UiStrings.S_Updater_DownloadAndStageAsync_EA757C7E25, 0, 0));
             string sums;
             using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
@@ -317,19 +318,19 @@ public sealed class Updater
                 sums = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
             }
             if (!AppUpdate.ParseChecksums(sums).TryGetValue(plan.Asset.Name, out var expected))
-                throw new UpdateException($"체크섬 파일에 {plan.Asset.Name}의 값이 없어 검증할 수 없습니다.");
+                throw new UpdateException(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_DownloadAndStageAsync_1F7AC300ED,plan.Asset.Name));
 
             var zip = Path.Combine(dir, plan.Asset.Name);
             await DownloadFileAsync(plan.Asset, zip, progress, cancellationToken).ConfigureAwait(false);
 
-            progress.Report(new UpdateProgress("검증하는 중…", 0, 0));
+            progress.Report(new UpdateProgress(UiStrings.S_Updater_DownloadAndStageAsync_DEB5CB9937, 0, 0));
             string actual;
             await using (var fs = new FileStream(zip, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16, useAsync: true))
                 actual = Convert.ToHexStringLower(await SHA256.HashDataAsync(fs, cancellationToken).ConfigureAwait(false));
             if (actual != expected)
-                throw new UpdateException("내려받은 파일의 SHA-256이 체크섬과 다릅니다. 파일이 손상되었거나 바뀌었을 수 있어 설치하지 않습니다.");
+                throw new UpdateException(UiStrings.S_Updater_DownloadAndStageAsync_850D382F27);
 
-            progress.Report(new UpdateProgress("압축 푸는 중…", 0, 0));
+            progress.Report(new UpdateProgress(UiStrings.S_Updater_DownloadAndStageAsync_8CBFE6F9BA, 0, 0));
             var extracted = Path.Combine(dir, "new");
             await ExtractAsync(zip, extracted, cancellationToken).ConfigureAwait(false);
             File.Delete(zip);
@@ -342,7 +343,7 @@ public sealed class Updater
                 bool complete = File.Exists(Path.Combine(app, "Contents", "Info.plist")) && File.Exists(Path.Combine(app, "Contents", "MacOS", "Gpixel.App"));
                 newApp = complete ? app : null;
             }
-            if (newApp is null) throw new UpdateException($"{plan.Asset.Name} 안에서 새 앱을 찾지 못했습니다.");
+            if (newApp is null) throw new UpdateException(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_DownloadAndStageAsync_26908971A2,plan.Asset.Name));
             return new StagedUpdate(plan, dir, newApp);
         }
         catch
@@ -354,7 +355,7 @@ public sealed class Updater
 
     private async Task DownloadFileAsync(ReleaseAsset asset, string path, IProgress<UpdateProgress> progress, CancellationToken cancellationToken)
     {
-        const string stage = "내려받는 중…";
+        string stage = UiStrings.Updater_Downloading;
         using var request = new HttpRequestMessage(HttpMethod.Get, asset.DownloadUrl);
         AddHeaders(request);
         request.Headers.Accept.ParseAdd("application/octet-stream");
@@ -394,10 +395,10 @@ public sealed class Updater
         Directory.CreateDirectory(destination);
         var psi = new ProcessStartInfo("/usr/bin/ditto") { UseShellExecute = false, RedirectStandardError = true };
         foreach (var a in new[] { "-x", "-k", zip, destination }) psi.ArgumentList.Add(a);
-        using var p = Process.Start(psi) ?? throw new UpdateException("ditto를 실행하지 못했습니다.");
+        using var p = Process.Start(psi) ?? throw new UpdateException(UiStrings.S_Updater_ExtractAsync_4841CB6A40);
         var error = p.StandardError.ReadToEndAsync(cancellationToken);
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        if (p.ExitCode != 0) throw new UpdateException($"압축을 풀지 못했습니다.\n{(await error.ConfigureAwait(false)).Trim()}");
+        if (p.ExitCode != 0) throw new UpdateException(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_ExtractAsync_A83ED14485,(await error.ConfigureAwait(false)).Trim()));
     }
 
     // ───────────── 설치 ─────────────
@@ -408,7 +409,7 @@ public sealed class Updater
         if (!_confirmExit())
         {
             TryDeleteDirectory(staged.Directory);
-            _showMessage("업데이트를 취소했습니다.");
+            _showMessage(UiStrings.S_Updater_Install_D174C68643);
             return;
         }
         try
@@ -418,7 +419,7 @@ public sealed class Updater
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
         {
             TryDeleteDirectory(staged.Directory);
-            Ui.Error(_owner, $"업데이트를 설치하지 못했습니다. 지금 버전은 그대로입니다.\n{ex.Message}");
+            Ui.Error(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_Install_5DA8D5A17A,ex.Message));
             return;
         }
         _exit();
@@ -447,7 +448,7 @@ public sealed class Updater
             psi = new ProcessStartInfo("/bin/sh") { UseShellExecute = false };
             psi.ArgumentList.Add(script);
         }
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("설치 스크립트를 실행하지 못했습니다.");
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException(UiStrings.S_Updater_LaunchInstaller_C514D8BB78);
     }
 
     private static string PsQuote(string s) => "'" + s.Replace("'", "''") + "'";
@@ -458,94 +459,13 @@ public sealed class Updater
     /// Windows 설치 스크립트(PowerShell): 앱이 끝나기를 기다렸다가(최대 2분) exe를 .old로 옮기고 새 exe를 복사해 실행한 뒤 .old를 지운다.
     /// 복사가 실패하면 .old를 되돌리고 이전 버전을 다시 실행한다.
     /// </summary>
-    public static string BuildWindowsScript(int pid, string targetExe, string newExe, string stagingDir, string logPath) => $$"""
-        # Gpixel 업데이트: 앱이 끝나면 exe를 바꾸고 다시 실행한다. 실패하면 이전 exe를 되돌린다.
-        $ErrorActionPreference = 'Stop'
-        $appPid = {{pid}}
-        $target = {{PsQuote(targetExe)}}
-        $new = {{PsQuote(newExe)}}
-        $staging = {{PsQuote(stagingDir)}}
-        $log = {{PsQuote(logPath)}}
-        $old = $target + '.old'
-        function Log([string]$m) { try { Add-Content -LiteralPath $log -Value ((Get-Date -Format 's') + ' ' + $m) -Encoding UTF8 } catch {} }
-        function Alert([string]$m) {
-            try {
-                Add-Type -AssemblyName PresentationFramework
-                [System.Windows.MessageBox]::Show("Gpixel 업데이트를 설치하지 못했습니다. 이전 버전을 그대로 둡니다.`n`n$m`n`n기록: $log", 'Gpixel') | Out-Null
-            } catch {}
-        }
-        Log "update to $new"
-        for ($i = 0; $i -lt 600 -and (Get-Process -Id $appPid -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 200 }
-        if (Get-Process -Id $appPid -ErrorAction SilentlyContinue) { Log 'app did not exit'; Alert 'Gpixel이 끝나지 않았습니다.'; exit 1 }
-        try {
-            if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Force }
-            Move-Item -LiteralPath $target -Destination $old
-        } catch {
-            Log "move failed: $_"; Alert "$_"
-            if (Test-Path -LiteralPath $target) { Start-Process -FilePath $target }
-            exit 1
-        }
-        try {
-            Copy-Item -LiteralPath $new -Destination $target
-        } catch {
-            Log "copy failed: $_"
-            Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
-            Move-Item -LiteralPath $old -Destination $target
-            Alert "$_"
-            Start-Process -FilePath $target
-            exit 1
-        }
-        Unblock-File -LiteralPath $target -ErrorAction SilentlyContinue
-        Start-Process -FilePath $target -WorkingDirectory (Split-Path -Parent $target)
-        Start-Sleep -Seconds 2
-        Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue
-        Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
-        Log 'done'
-
-        """;
+    public static string BuildWindowsScript(int pid, string targetExe, string newExe, string stagingDir, string logPath) => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_BuildWindowsScript_D0380BD988,pid,PsQuote(targetExe),PsQuote(newExe),PsQuote(stagingDir),PsQuote(logPath));
 
     /// <summary>
     /// macOS 설치 스크립트(sh): 앱이 끝나기를 기다렸다가(최대 2분) .app을 .old로 옮기고 새 .app을 ditto로 복사,
     /// 격리 표시(com.apple.quarantine)를 지우고 open으로 다시 실행한 뒤 .old를 지운다. 복사가 실패하면 .old를 되돌리고 이전 버전을 연다.
     /// </summary>
-    public static string BuildMacScript(int pid, string targetApp, string newApp, string stagingDir, string logPath) => $$"""
-        #!/bin/sh
-        # Gpixel 업데이트: 앱이 끝나면 .app을 바꾸고 다시 실행한다. 실패하면 이전 .app을 되돌린다.
-        APP_PID={{pid}}
-        TARGET={{ShQuote(targetApp)}}
-        NEW={{ShQuote(newApp)}}
-        STAGING={{ShQuote(stagingDir)}}
-        LOG={{ShQuote(logPath)}}
-        BACKUP="$TARGET.old"
-        exec >>"$LOG" 2>&1
-        echo "$(date '+%Y-%m-%dT%H:%M:%S') update to $NEW"
-        alert() {
-          osascript -e 'display alert "Gpixel 업데이트를 설치하지 못했습니다" message "이전 버전을 그대로 둡니다. 자세한 내용은 임시 폴더의 gpixel-update.log에 있습니다." as warning' >/dev/null 2>&1
-        }
-        i=0
-        while kill -0 "$APP_PID" 2>/dev/null; do
-          i=$((i + 1))
-          if [ "$i" -gt 600 ]; then echo "app did not exit"; alert; exit 1; fi
-          sleep 0.2
-        done
-        xattr -dr com.apple.quarantine "$NEW" 2>/dev/null
-        rm -rf "$BACKUP"
-        if ! mv "$TARGET" "$BACKUP"; then echo "move failed"; alert; open "$TARGET"; exit 1; fi
-        if ! ditto "$NEW" "$TARGET"; then
-          echo "copy failed"
-          rm -rf "$TARGET"
-          mv "$BACKUP" "$TARGET"
-          alert
-          open "$TARGET"
-          exit 1
-        fi
-        xattr -dr com.apple.quarantine "$TARGET" 2>/dev/null
-        rm -rf "$BACKUP"
-        open "$TARGET"
-        rm -rf "$STAGING"
-        echo "done"
-
-        """;
+    public static string BuildMacScript(int pid, string targetApp, string newApp, string stagingDir, string logPath) => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_BuildMacScript_6FF460617F,pid,ShQuote(targetApp),ShQuote(newApp),ShQuote(stagingDir),ShQuote(logPath));
 
     /// <summary>지난 업데이트가 남긴 것(이전 exe/.app의 .old, 하루 넘은 준비 폴더)을 지운다. 실패는 무시.</summary>
     private static void CleanupPreviousUpdate()
@@ -594,7 +514,7 @@ public sealed class Updater
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
         {
-            Ui.Error(owner, $"브라우저를 열지 못했습니다.\n{url}\n{ex.Message}");
+            Ui.Error(owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_OpenUrl_3535AE6451,url,ex.Message));
         }
     }
 }

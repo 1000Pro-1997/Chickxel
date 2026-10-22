@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -11,19 +12,19 @@ public sealed partial class LayerEffectsDialog
         var cx = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, e.CenterX, CenterKind(vertical: false), v => set(o => W(o) with { CenterX = v }));
         var cy = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, e.CenterY, CenterKind(vertical: true), v => set(o => W(o) with { CenterY = v }));
         cx.IsEnabled = cy.IsEnabled = e.Center == ExplodeCenter.Custom;
-        SettingsRow("중심", ChoiceEditor(Centers, (int)e.Center, k =>
+        SettingsRow(UiStrings.S_ShockwavePanel_ShockwavePanel_005BCC51DE, ChoiceEditor(Centers, (int)e.Center, k =>
         {
             cx.IsEnabled = cy.IsEnabled = (ExplodeCenter)k == ExplodeCenter.Custom;
             set(o => W(o) with { Center = (ExplodeCenter)k });
         }));
-        SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label("px (원본 왼쪽 위 기준)"));
-        SettingsRow("최대 반지름", NumEditor(1, ShockwaveEffect.MaxRadius, e.Radius, NumKinds.Distance, v => set(o => W(o) with { Radius = v })), Ui.Label("px"),
-            Ui.Label("  두께"), NumEditor(1, ShockwaveEffect.MaxThickness, e.Thickness, NumKinds.Thickness, v => set(o => W(o) with { Thickness = v })), Ui.Label("px"));
-        SettingsRow("색", EffectColorEditor(e, nameof(ShockwaveEffect.Color),
+        SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label(UiStrings.S_ShockwavePanel_ShockwavePanel_8A907D46C9));
+        SettingsRow(UiStrings.S_ShockwavePanel_ShockwavePanel_CBB90B0ACA, NumEditor(1, ShockwaveEffect.MaxRadius, e.Radius, NumKinds.Distance, v => set(o => W(o) with { Radius = v })), Ui.Label("px"),
+            Ui.Label(UiStrings.S_ShockwavePanel_ShockwavePanel_61134FA980), NumEditor(1, ShockwaveEffect.MaxThickness, e.Thickness, NumKinds.Thickness, v => set(o => W(o) with { Thickness = v })), Ui.Label("px"));
+        SettingsRow(UiStrings.S_ShockwavePanel_ShockwavePanel_D20485811B, EffectColorEditor(e, nameof(ShockwaveEffect.Color),
             ColorEditor(e.Color, v => set(o => W(o) with { Color = v })), set));
-        SettingsRow("", CheckEditor("사라짐 (퍼지며 옅어짐)", e.Fade, v => set(o => W(o) with { Fade = v })));
-        SettingsRow("위치", ChoiceEditor(["그림 앞 (위에)", "그림 뒤 (아래에)"], e.Behind ? 1 : 0, k => set(o => W(o) with { Behind = k == 1 })));
+        SettingsRow("", CheckEditor(UiStrings.S_ShockwavePanel_ShockwavePanel_DF8C5BBEB2, e.Fade, v => set(o => W(o) with { Fade = v })));
+        SettingsRow(UiStrings.S_ShockwavePanel_ShockwavePanel_632117D3C6, ChoiceEditor([UiStrings.S_ShockwavePanel_ShockwavePanel_B5365A0F6F, UiStrings.S_ShockwavePanel_ShockwavePanel_0E8726B50C], e.Behind ? 1 : 0, k => set(o => W(o) with { Behind = k == 1 })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("중심 픽셀에서 고리가 최대 반지름까지 퍼집니다(두께 1px = 중점 원 — 빈틈·겹침 없는 픽셀 원). 범위 첫 프레임은 반지름 0이라 보이지 않고, 사방으로 반지름만큼 여백이 생깁니다."));
+        _settings.Children.Add(Hint(UiStrings.S_ShockwavePanel_ShockwavePanel_2DDDFC38DA));
     }
 }

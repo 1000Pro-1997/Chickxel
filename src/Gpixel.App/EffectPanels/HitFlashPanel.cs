@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -11,13 +12,13 @@ public sealed partial class LayerEffectsDialog
     {
         static HitFlashEffect H(LayerEffect v) => (HitFlashEffect)v;
         var color = ColorEditor(e.Color, v => set(o => H(o) with { Color = v }));
-        SettingsRow("색", EffectColorEditor(e, nameof(HitFlashEffect.Color), color, set));
-        SettingsSubRow("단색 빠른 선택", Ui.Button("흰색", (_, _) => color.Color = Color32.White, 44),
-            Ui.Button("빨강", (_, _) => color.Color = HitRed, 44));
-        SettingsRow("세기", NumEditor(0, 100, e.Strength, NumKinds.Strength, v => set(o => H(o) with { Strength = v })), Ui.Label("%"),
-            Ui.Label("  횟수"), NumEditor(1, HitFlashEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => H(o) with { Count = v })), Ui.Label("번"));
-        SettingsRow("모양", ChoiceEditor(["꽉 채움 (켜졌다 꺼짐)", "점점 엷어짐"], (int)e.Shape, k => set(o => H(o) with { Shape = (HitFlashShape)k })));
+        SettingsRow(UiStrings.S_HitFlashPanel_HitFlashPanel_87C0FCC7BF, EffectColorEditor(e, nameof(HitFlashEffect.Color), color, set));
+        SettingsSubRow(UiStrings.S_HitFlashPanel_HitFlashPanel_22EFA1DDB7, Ui.Button(UiStrings.S_HitFlashPanel_HitFlashPanel_A0E4CF80CE, (_, _) => color.Color = Color32.White, 44),
+            Ui.Button(UiStrings.S_HitFlashPanel_HitFlashPanel_18EE8BF22A, (_, _) => color.Color = HitRed, 44));
+        SettingsRow(UiStrings.S_HitFlashPanel_HitFlashPanel_99AEB41746, NumEditor(0, 100, e.Strength, NumKinds.Strength, v => set(o => H(o) with { Strength = v })), Ui.Label("%"),
+            Ui.Label(UiStrings.S_HitFlashPanel_HitFlashPanel_0327FF94F2), NumEditor(1, HitFlashEffect.MaxCount, e.Count, NumKinds.Count, v => set(o => H(o) with { Count = v })), Ui.Label(UiStrings.S_HitFlashPanel_HitFlashPanel_229E2DBA32));
+        SettingsRow(UiStrings.S_HitFlashPanel_HitFlashPanel_9FA01E0FEA, ChoiceEditor([UiStrings.S_HitFlashPanel_HitFlashPanel_B8D805778F, UiStrings.S_HitFlashPanel_HitFlashPanel_9185899AD1], (int)e.Shape, k => set(o => H(o) with { Shape = (HitFlashShape)k })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("범위 첫 프레임에서 바로 보이는 픽셀이 그 색으로 번쩍이고(투명도는 그대로), 횟수만큼 되풀이한 뒤 마지막 프레임은 원래 그림입니다."));
+        _settings.Children.Add(Hint(UiStrings.S_HitFlashPanel_HitFlashPanel_5F33353139));
     }
 }

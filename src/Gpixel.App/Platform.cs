@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -17,7 +18,7 @@ public static class Platform
         : Environment.GetFolderPath(IsMac ? Environment.SpecialFolder.LocalApplicationData : Environment.SpecialFolder.ApplicationData);
 
     /// <summary>메뉴에 쓰는 파일 관리자 이름.</summary>
-    public static string FileManagerName => OperatingSystem.IsWindows() ? "탐색기" : IsMac ? "Finder" : "파일 관리자";
+    public static string FileManagerName => OperatingSystem.IsWindows() ? UiStrings.S_Platform_FileManagerName_A921F4AA78 : IsMac ? "Finder" : UiStrings.S_Platform_FileManagerName_3FB771636C;
 
     /// <summary>단축키의 "Ctrl" 자리(macOS는 ⌘).</summary>
     public static KeyModifiers CommandModifier => IsMac ? KeyModifiers.Meta : KeyModifiers.Control;

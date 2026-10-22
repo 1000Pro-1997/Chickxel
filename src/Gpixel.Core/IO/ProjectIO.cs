@@ -126,7 +126,7 @@ public static partial class ProjectIO
     /// <param name="path">저장 경로. null이면 <see cref="SpriteProject.Path"/>.</param>
     public static ProjectSaveResult SaveWithExport(SpriteProject project, string? path = null)
     {
-        path ??= project.Path ?? throw new InvalidOperationException("저장할 경로가 없습니다.");
+        path ??= project.Path ?? throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.Document_NoSavePath);
         var full = Path.GetFullPath(path);
         var previous = project.ExportedFiles;
         if (project.Path is { } current && !string.Equals(Path.GetFullPath(current), full, StringComparison.OrdinalIgnoreCase))
@@ -329,14 +329,14 @@ public static partial class ProjectIO
 
         foreach (var (source, destination) in paths)
             if (!string.Equals(source, destination, StringComparison.OrdinalIgnoreCase) && File.Exists(destination))
-                throw new IOException($"이미 같은 이름의 파일이 있습니다: {Path.GetFileName(destination)}");
+                throw new IOException(Gpixel.Core.Localization.DomainStrings.FormatFile_NameExists(name: Path.GetFileName(destination)));
 
         // An orphan companion at the new name must not become associated with the moved PNG.
         foreach (var newPng in newPngs)
             foreach (var destination in DocumentIO.GetCompanionPaths(newPng))
                 if (!paths.Any(p => string.Equals(p.Destination, destination, StringComparison.OrdinalIgnoreCase))
                     && File.Exists(destination))
-                    throw new IOException($"이미 같은 이름의 파일이 있습니다: {Path.GetFileName(destination)}");
+                    throw new IOException(Gpixel.Core.Localization.DomainStrings.FormatFile_NameExists(name: Path.GetFileName(destination)));
 
         var moved = new List<(string Source, string Destination)>();
         try
@@ -356,7 +356,7 @@ public static partial class ProjectIO
             }
             catch (Exception rollback) when (rollback is IOException or UnauthorizedAccessException)
             {
-                throw new IOException("이름 변경에 실패했고 이전 파일 이름도 복구하지 못했습니다.", new AggregateException(ex, rollback));
+                throw new IOException(Gpixel.Core.Localization.DomainStrings.Project_RenameRestoreFailed, new AggregateException(ex, rollback));
             }
             throw;
         }
@@ -450,14 +450,14 @@ public static partial class ProjectIO
         }
         catch (InvalidDataException ex)
         {
-            throw new InvalidDataException($"Gpixel 프로젝트 파일이 아니거나 손상되었습니다: {ex.Message}", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatProject_InvalidFile(error: ex.Message), ex);
         }
 
         using (zip)
         {
             var dto = ReadDto(zip);
             if (dto.Width < 1 || dto.Height < 1 || dto.Width > PixelImage.MaxSize || dto.Height > PixelImage.MaxSize)
-                throw new InvalidDataException($"캔버스 크기가 잘못되었습니다: {dto.Width}x{dto.Height}");
+                throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatProject_InvalidCanvas(width: dto.Width, height: dto.Height));
             if (dto.Kind == V1Kind.Atlas) return ConvertV1Atlas(zip, dto, warnings, baseName ?? "sprite");
 
             var (project, fileLayers) = FromDto(dto, warnings);
@@ -468,7 +468,7 @@ public static partial class ProjectIO
                 if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
                     || fileLayers[li].IsGroup || !TrySkin(m, fileLayers[li], out var skin))
                 {
-                    warnings?.Add($"쓰이지 않는 셀 파일을 무시했습니다: {e.FullName}");
+                    warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_UnusedCell(name: e.FullName));
                     continue;
                 }
                 var layer = fileLayers[li];
@@ -494,21 +494,21 @@ public static partial class ProjectIO
     private static ProjectDto ReadDto(ZipArchive zip)
     {
         var entry = zip.GetEntry(ProjectEntryName)
-                    ?? throw new InvalidDataException("프로젝트 정보(project.json)가 없습니다.");
+                    ?? throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.Project_MissingInfo);
         ProjectDto dto;
         try
         {
             using var s = entry.Open();
             dto = JsonSerializer.Deserialize<ProjectDto>(s, Options)
-                  ?? throw new InvalidDataException("프로젝트 정보가 비어 있습니다.");
+                  ?? throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.Project_EmptyInfo);
         }
         catch (JsonException ex)
         {
-            throw new InvalidDataException($"프로젝트 정보(project.json)가 손상되었습니다: {ex.Message}", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatProject_CorruptInfo(error: ex.Message), ex);
         }
         if (dto.Version > CurrentVersion)
             throw new InvalidDataException(
-                $"이 파일은 더 새로운 Gpixel(형식 버전 {dto.Version})에서 만들어졌습니다. 이 버전은 {CurrentVersion}까지 읽을 수 있습니다.");
+                Gpixel.Core.Localization.DomainStrings.FormatProject_NewerVersion(version: dto.Version, current: CurrentVersion));
         return dto;
     }
 
@@ -526,13 +526,13 @@ public static partial class ProjectIO
         }
         catch (InvalidDataException ex)
         {
-            warnings?.Add($"셀을 읽지 못해 비웠습니다({e.FullName}): {ex.Message}");
+            warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_CellReadFailed(name: e.FullName, error: ex.Message));
             return null;
         }
         if (img.Size == size) return img;
         var fitted = new PixelImage(size.Width, size.Height);
         fitted.Blit(img, 0, 0);
-        warnings?.Add($"셀 크기가 맞지 않아 왼쪽 위에 맞췄습니다: {e.FullName}");
+        warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_CellResized(name: e.FullName));
         return fitted;
     }
 
@@ -573,7 +573,7 @@ public static partial class ProjectIO
                 si = sprites.FindIndex(s => s.FileIndex == fileSprite);
             if (si < 0 || !TryIndex(m, 2, layerCount, out var li))
             {
-                warnings?.Add($"쓰이지 않는 셀 파일을 무시했습니다: {e.FullName}");
+                warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_UnusedCell(name: e.FullName));
                 continue;
             }
             var size = new Size(sprites[si].Dto.Width, sprites[si].Dto.Height);
@@ -581,7 +581,7 @@ public static partial class ProjectIO
         }
         int layersWithContent = cels.Keys.Select(k => k.Layer).Distinct().Count();
         if (layersWithContent > 1)
-            warnings?.Add($"예전 아틀라스의 레이어 {layersWithContent}개를 부위마다 한 장으로 합쳤습니다(보이는 레이어만).");
+            warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_CombinedLayers(count: layersWithContent));
 
         // 캔버스·위치
         Rectangle? Source(SpriteDto s) => s.Source is { Length: >= 4 } r && r[2] > 0 && r[3] > 0 ? new Rectangle(r[0], r[1], r[2], r[3]) : null;
@@ -766,7 +766,7 @@ public static partial class ProjectIO
                 var list = new List<LayerEffect>(effects.Count);
                 foreach (var e in effects)
                     if (e?.ToEffect() is { } effect) list.Add(effect);
-                    else warnings?.Add($"레이어 \"{layer.Name}\"의 알 수 없는 효과({e?.Type})를 건너뛰었습니다.");
+                    else warnings?.Add(Gpixel.Core.Localization.DomainStrings.FormatProject_UnknownEffect(layer: layer.Name, type: e?.Type));
                 layer.Effects = list;
             }
             fileLayers.Add(layer);
@@ -775,7 +775,7 @@ public static partial class ProjectIO
         for (int i = 0; i < fileLayers.Count; i++)
             if (fileLayers[i].IsPart && layerDtos[i].Parent is int gi && gi >= 0 && gi < fileLayers.Count && fileLayers[gi].IsGroup)
                 fileLayers[i].Parent = fileLayers[gi];
-        if (p.NormalizeHierarchy()) warnings?.Add("레이어 그룹 구조가 잘못되어 고쳤습니다.");
+        if (p.NormalizeHierarchy()) warnings?.Add(Gpixel.Core.Localization.DomainStrings.Project_RepairedHierarchy);
         for (int i = 0; i < fileLayers.Count; i++)
             if (fileLayers[i] is { IsPart: true, Parent: { IsGroup: true } pg } part && layerDtos[i].Skin is int si && si >= 0 && si < pg.AllSkins.Count)
                 part.SetSkinOverrideRaw(pg.AllSkins[si]);
@@ -934,7 +934,7 @@ public static partial class ProjectIO
             frames.ExcludedSkins = p.Layers.Where(l => l.IsGroup).SelectMany(l => l.Skins).ToArray();
             frames.SplitSkins = true;
             if (e.FrameCurrentOutfit != false)
-                warnings?.Add("예전 \"지금 착장 + 착장 프리셋\" 프레임 시트 설정을 \"고른 스킨\"으로 옮겼습니다 — 지금 착장 파일(이름 그대로)은 더 만들지 않습니다. 필요하면 지금 착장을 착장으로 저장해 고르세요.");
+                warnings?.Add(Gpixel.Core.Localization.DomainStrings.Project_MigratedLegacyOutfit);
         }
 
         var legacyParts = e.PartsLayout ?? "Packed";
@@ -1359,7 +1359,7 @@ public static partial class ProjectIO
                     FlickerRate = holo.FlickerRate, FlickerStrength = holo.FlickerStrength, GlitchRate = holo.GlitchRate, Distance = holo.GlitchShift, RgbSplit = holo.RgbSplit,
                     EdgeGlow = holo.EdgeGlow, EdgeOpacity = holo.EdgeOpacity, Seed = holo.Seed,
                 },
-                _ => throw new NotSupportedException($"저장할 수 없는 효과: {effect.GetType().Name}"),
+                _ => throw new NotSupportedException(Gpixel.Core.Localization.DomainStrings.FormatProject_UnsavableEffect(type: effect.GetType().Name)),
             };
             dto.Enabled = effect.Enabled;
             dto.Frames = effect.Frames is { } f ? [f.From, f.To] : null;

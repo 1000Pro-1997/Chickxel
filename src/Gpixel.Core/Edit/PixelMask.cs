@@ -17,9 +17,9 @@ public readonly struct PixelMask
     public PixelMask(Rectangle bounds, bool[]? bits = null)
     {
         if (bounds.Width < 0 || bounds.Height < 0)
-            throw new ArgumentOutOfRangeException(nameof(bounds), "영역 크기는 음수일 수 없습니다.");
+            throw new ArgumentOutOfRangeException(nameof(bounds), Gpixel.Core.Localization.DomainStrings.Mask_NegativeSize);
         if (bits is not null && bits.Length != bounds.Width * bounds.Height)
-            throw new ArgumentException("영역 비트 수가 사각형 크기와 다릅니다.", nameof(bits));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Mask_BitSizeMismatch, nameof(bits));
         Bounds = bounds;
         _bits = bits;
     }

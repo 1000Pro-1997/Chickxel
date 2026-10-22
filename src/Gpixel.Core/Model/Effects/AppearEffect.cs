@@ -48,7 +48,7 @@ public sealed record AppearEffect : AnimatedEffect
     /// <summary>흩어짐 시드 0~<see cref="MaxSeed"/>.</summary>
     public int Seed { get => _seed; init => _seed = Math.Clamp(value, 0, MaxSeed); }
 
-    public override string DisplayName => Disappear ? "사라지기" : "나타나기";
+    public override string DisplayName => Disappear ? Gpixel.Core.Localization.DomainStrings.Effect_Disappear : Gpixel.Core.Localization.DomainStrings.Effect_Appear;
 
     /// <summary>진행 <paramref name="u"/>의 보임 0~1.</summary>
     public double Visibility(double u) => Math.Clamp(Disappear ? 1 - u : u, 0, 1);

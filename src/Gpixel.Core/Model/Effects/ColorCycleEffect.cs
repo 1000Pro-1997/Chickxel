@@ -27,7 +27,7 @@ public sealed record ColorCycleEffect : AnimatedEffect
     /// <summary>거꾸로(i → i − k).</summary>
     public bool Reverse { get; init; }
 
-    public override string DisplayName => "색 순환";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_ColorCycle;
 
     /// <summary>진행 <paramref name="u"/>에서 넘어간 칸 수 k(0 ≤ k &lt; 색 개수).</summary>
     public int Shift(double u)

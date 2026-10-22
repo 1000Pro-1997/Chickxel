@@ -24,9 +24,9 @@ public readonly record struct FrameExtension
 
     public FrameExtension(int from, int to, int count, FrameExtendMode mode)
     {
-        if (from < 0 || to < from) throw new ArgumentOutOfRangeException(nameof(from), $"프레임 범위가 잘못되었습니다: {from}~{to}");
-        if (count < to - from + 1) throw new ArgumentOutOfRangeException(nameof(count), $"프레임 수({count})가 범위 길이({to - from + 1})보다 작습니다 — 줄이기는 할 수 없습니다.");
-        if (count > Math.Max(MaxCount, to - from + 1)) throw new ArgumentOutOfRangeException(nameof(count), $"프레임 수는 {MaxCount}개까지입니다.");
+        if (from < 0 || to < from) throw new ArgumentOutOfRangeException(nameof(from), Gpixel.Core.Localization.DomainStrings.FormatFrames_InvalidRange(from: from, to: to));
+        if (count < to - from + 1) throw new ArgumentOutOfRangeException(nameof(count), Gpixel.Core.Localization.DomainStrings.FormatFrames_TooFew(count: count, length: to - from + 1));
+        if (count > Math.Max(MaxCount, to - from + 1)) throw new ArgumentOutOfRangeException(nameof(count), Gpixel.Core.Localization.DomainStrings.FormatFrames_TooMany(max: MaxCount));
         From = from;
         To = to;
         Count = count;
@@ -101,9 +101,9 @@ public readonly record struct FrameExtension
     /// <summary>방법 이름(화면 표시).</summary>
     public static string ModeName(FrameExtendMode mode) => mode switch
     {
-        FrameExtendMode.Stretch => "같은 비율로",
-        FrameExtendMode.HoldFirst => "첫 프레임으로",
-        FrameExtendMode.HoldLast => "마지막 프레임으로",
-        _ => "반복",
+        FrameExtendMode.Stretch => Gpixel.Core.Localization.DomainStrings.Frames_Stretch,
+        FrameExtendMode.HoldFirst => Gpixel.Core.Localization.DomainStrings.Frames_HoldFirst,
+        FrameExtendMode.HoldLast => Gpixel.Core.Localization.DomainStrings.Frames_HoldLast,
+        _ => Gpixel.Core.Localization.DomainStrings.Frames_Repeat,
     };
 }

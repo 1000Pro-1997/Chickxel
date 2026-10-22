@@ -39,7 +39,7 @@ public sealed record ShakeEffect : AnimatedEffect
     /// <summary>무작위 시드 0~<see cref="MaxSeed"/>.</summary>
     public int Seed { get => _seed; init => _seed = Math.Clamp(value, 0, MaxSeed); }
 
-    public override string DisplayName => "흔들기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Shake;
 
     /// <summary>진행 <paramref name="u"/>의 옮김(px, 정수).</summary>
     public (int X, int Y) Offset(double u)

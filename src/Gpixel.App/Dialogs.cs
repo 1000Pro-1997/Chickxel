@@ -1,6 +1,7 @@
 using Avalonia.VisualTree;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -17,46 +18,46 @@ public sealed class NewImageDialog : DialogBase
     private readonly RadioButton _normal, _parts;
     private readonly StackPanel _partRow;
 
-    public NewImageDialog(int width, int height, string? fileName = null) : base("새 프로젝트", "만들기")
+    public NewImageDialog(int width, int height, string? fileName = null) : base(UiStrings.S_Dialogs_NewImageDialog_7A2F4AE34E, UiStrings.S_Dialogs_NewImageDialog_7D347172F9)
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        _transparent = Ui.Check("배경 투명", true);
-        _normal = new RadioButton { GroupName = "start", Content = "일반(레이어 1)", IsChecked = true, Foreground = AppTheme.TextBrush };
-        _parts = new RadioButton { GroupName = "start", Content = "부위로 시작(그룹 + 첫 부위 · 예: 머리·몸·팔·다리)", Foreground = AppTheme.TextBrush };
-        _partName = Ui.Text("머리", 100);
+        _transparent = Ui.Check(UiStrings.S_Dialogs_NewImageDialog_1BD6059500, true);
+        _normal = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_6F947592B8, IsChecked = true, Foreground = AppTheme.TextBrush };
+        _parts = new RadioButton { GroupName = "start", Content = UiStrings.S_Dialogs_NewImageDialog_0F2FF932AA, Foreground = AppTheme.TextBrush };
+        _partName = Ui.Text(UiStrings.S_Dialogs_NewImageDialog_AB87E30975, 100);
         _partW = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, width), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         _partH = Ui.Num(1, PixelImage.MaxSize, Math.Min(8, height), 70).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        _partRow = Ui.Row(Ui.Label("   첫 부위"), _partName, Ui.Label("가로"), _partW, Ui.Label("세로"), _partH, Ui.Label("px"));
+        _partRow = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_7C07F3BD59), _partName, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _partW, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _partH, Ui.Label("px"));
         _partRow.IsEnabled = false;
         _parts.IsCheckedChanged += (_, _) => _partRow.IsEnabled = _parts.On();
         if (fileName is not null)
         {
             _name = Ui.Text(fileName, 220);
-            Body.Children.Add(Ui.Row(Ui.Label("파일 이름"), _name, Ui.Label(SpriteProject.FileExtension)));
+            Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_BF763338DC), _name, Ui.Label(SpriteProject.FileExtension)));
         }
-        Body.Children.Add(Ui.Row(Ui.Label("캔버스"), Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _w, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _h, Ui.Label("px")));
         var presets = Ui.Row();
         foreach (var (pw, ph) in new[] { (16, 16), (32, 32), (16, 32), (64, 64), (128, 128), (256, 256) })
             presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
         Body.Children.Add(presets);
-        Body.Children.Add(Ui.Label("시작", bold: true));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_DA31ACDA8F, bold: true));
         Body.Children.Add(_normal);
         Body.Children.Add(_parts);
         Body.Children.Add(_partRow);
         Body.Children.Add(_transparent);
-        Body.Children.Add(Ui.Label("투명이 아니면 보조색으로 채웁니다."));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_8376337E30));
         OkButton.Click += (_, _) =>
         {
             if (_name is not null && (FileName.Length == 0 || FileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
             {
-                Ui.Error(this, "파일 이름이 비었거나 쓸 수 없는 문자가 있습니다.");
+                Ui.Error(this, UiStrings.S_Dialogs_NewImageDialog_E71C7CF793);
                 DialogResult = DialogResult.None;
                 return;
             }
             if (StartWithParts && PartName.Length == 0)
             {
-                Ui.Error(this, "첫 부위 이름을 입력하세요.");
+                Ui.Error(this, UiStrings.S_Dialogs_NewImageDialog_DFFA42AA00);
                 DialogResult = DialogResult.None;
             }
         };
@@ -79,21 +80,21 @@ public sealed class NewPartDialog : DialogBase
     private readonly TextBox _name;
     private readonly NumericUpDown _w, _h;
 
-    public NewPartDialog(string name, int width, int height) : base("새 부위", "추가")
+    public NewPartDialog(string name, int width, int height) : base(UiStrings.S_Dialogs_NewPartDialog_2F37A51A37, UiStrings.S_Dialogs_NewPartDialog_961BAAAD27)
     {
         _name = Ui.Text(name, 200);
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.PartSizes).Unit("px").RecentKey("part.size");
-        var names = Ui.Row(Ui.Label("이름"), _name);
-        foreach (var n in new[] { "머리", "몸", "팔", "다리" })
+        var names = Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A37D1FAE04), _name);
+        foreach (var n in new[] { UiStrings.S_Dialogs_NewPartDialog_2C2DA45F93, UiStrings.S_Dialogs_NewPartDialog_24E2B88EB7, UiStrings.S_Dialogs_NewPartDialog_EA5F33CDE6, UiStrings.S_Dialogs_NewPartDialog_FE7511726E })
             names.Children.Add(Ui.Button(n, (_, _) => _name.Text = n));
         Body.Children.Add(names);
-        Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_0DFD005474), _w, Ui.Label(UiStrings.S_Dialogs_NewPartDialog_F6B6C03DD0), _h, Ui.Label("px")));
         var presets = Ui.Row();
         foreach (var (pw, ph) in new[] { (8, 8), (8, 5), (16, 16), (16, 32), (32, 32) })
             presets.Children.Add(Ui.Button($"{pw}×{ph}", (_, _) => { _w.Value = pw; _h.Value = ph; }));
         Body.Children.Add(presets);
-        Body.Children.Add(Ui.Label("이름이 겹치면 _1, _2 …가 붙습니다. 처음 위치는 캔버스 가운데 — 그룹을 골라 끌어 배치하세요."));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_NewPartDialog_A409FD6D21));
         Opened += (_, _) => { _name.Focus(); _name.SelectAll(); };
     }
 
@@ -107,13 +108,13 @@ public sealed class PartOffsetDialog : DialogBase
 {
     private readonly NumericUpDown _x, _y;
 
-    public PartOffsetDialog(string partName, Point offset) : base($"부위 위치 — {partName}")
+    public PartOffsetDialog(string partName, Point offset) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_PartOffsetDialog_24B8E24EE4,partName))
     {
         // 프레임 캔버스 안의 왼쪽 위 위치: 흔한 칸 경계 위주, 조금 밖으로 내민 음수도
         decimal[] positions = [-8, -4, 0, 2, 4, 8, 12, 16, 24, 32, 48, 64];
         _x = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.X, 80).Presets(positions).Unit("px").RecentKey("part.position");
         _y = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, offset.Y, 80).Presets(positions).Unit("px").RecentKey("part.position");
-        Body.Children.Add(Ui.Label("프레임 캔버스에서 부위 왼쪽 위 위치(모든 프레임 공통)"));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_PartOffsetDialog_0C8997B97B));
         Body.Children.Add(Ui.Row(Ui.Label("X"), _x, Ui.Label("Y"), _y, Ui.Label("px")));
     }
 
@@ -123,15 +124,15 @@ public sealed class PartOffsetDialog : DialogBase
 /// <summary>PNG 가져오기: 칸이 모두 같은 크기일 때 부위 / 애니메이션 프레임 중 고르기.</summary>
 public sealed class ImportKindDialog : DialogBase
 {
-    public ImportKindDialog(string fileName, int sliceCount, Size sliceSize) : base("PNG 가져오기", "부위로")
+    public ImportKindDialog(string fileName, int sliceCount, Size sliceSize) : base(UiStrings.S_Dialogs_ImportKindDialog_E1ED0FF7D0, UiStrings.S_Dialogs_ImportKindDialog_5EAAD1D0AB)
     {
-        Body.Children.Add(Ui.Label($"{fileName}: 칸 {sliceCount}개가 모두 같은 크기({sliceSize.Width}×{sliceSize.Height})입니다.", bold: true));
-        Body.Children.Add(Ui.Label("어떻게 가져올까요?"));
-        Body.Children.Add(Ui.Label("· 부위로: 그룹 하나에 칸마다 부위 1개(이름·크기·피벗 그대로, 시트의 원래 위치에 배치)"));
-        Body.Children.Add(Ui.Label("· 애니메이션 프레임으로: 칸마다 프레임 1개(같은 캔버스, 태그로 애니메이션)"));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_ImportKindDialog_F7F2CAA9B5,fileName,sliceCount,sliceSize.Width,sliceSize.Height), bold: true));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_0162B199AF));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_6C0B0B1FB9));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ImportKindDialog_C65D508A8F));
         SetButtonResult(OkButton, DialogResult.Yes);
         OkButton.Width = 110;
-        var anim = AddButton("애니메이션 프레임으로", DialogResult.No);
+        var anim = AddButton(UiStrings.S_Dialogs_ImportKindDialog_F16B548693, DialogResult.No);
         anim.Width = 150;
     }
 
@@ -158,9 +159,9 @@ public sealed class ResizeDialog : DialogBase
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        Body.Children.Add(Ui.Label($"현재 크기: {width} × {height}"));
-        Body.Children.Add(Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px")));
-        Body.Children.Add(Ui.Label("기준점(기존 그림이 놓일 위치)"));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_ResizeDialog_EA62E1C6CB,width,height)));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_C4A4F3494A), _w, Ui.Label(UiStrings.S_Dialogs_ResizeDialog_F0673D9964), _h, Ui.Label("px")));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ResizeDialog_497FE1221E));
         Body.Children.Add(_anchor);
     }
 
@@ -235,10 +236,10 @@ public sealed class SplitFramesDialog : DialogBase
     private readonly TextBlock _result;
     private readonly Gpixel.Core.Model.PixelImage _image;
 
-    public SplitFramesDialog(Gpixel.Core.Model.PixelImage image, int cellW, int cellH) : base("격자로 나눠 프레임 만들기", "나누기")
+    public SplitFramesDialog(Gpixel.Core.Model.PixelImage image, int cellW, int cellH) : base(UiStrings.S_Dialogs_SplitFramesDialog_AA00952270, UiStrings.S_Dialogs_SplitFramesDialog_CC55D4341C)
     {
         _image = image;
-        _method = Ui.Combo(170, "격자 – 칸 크기", "격자 – 칸 수", "자동(덩어리마다)");
+        _method = Ui.Combo(170, UiStrings.S_Dialogs_SplitFramesDialog_E531B3BF12, UiStrings.S_Dialogs_SplitFramesDialog_6D54D43F1D, UiStrings.S_Dialogs_SplitFramesDialog_08AC8DBD4F);
         if (_method.SelectedIndex < 0) _method.SelectedIndex = 0;
         decimal[] counts = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
         _cellW = Ui.Num(1, image.Width, Math.Min(cellW, image.Width), 60).Presets(Ui.SpriteSizes).Unit("px").RecentKey("cell.size");
@@ -247,18 +248,18 @@ public sealed class SplitFramesDialog : DialogBase
         _offY = Ui.Num(0, image.Height - 1, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.margin");
         _padX = Ui.Num(0, image.Width, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.spacing");
         _padY = Ui.Num(0, image.Height, 0, 60).Presets(Ui.Spacings).Unit("px").RecentKey("sheet.spacing");
-        _cols = Ui.Num(1, image.Width, Math.Max(1, image.Width / Math.Max(1, cellW)), 60).Presets(counts).Unit("칸").RecentKey("sheet.count");
-        _rows = Ui.Num(1, image.Height, Math.Max(1, image.Height / Math.Max(1, cellH)), 60).Presets(counts).Unit("칸").RecentKey("sheet.count");
+        _cols = Ui.Num(1, image.Width, Math.Max(1, image.Width / Math.Max(1, cellW)), 60).Presets(counts).Unit(UiStrings.S_Dialogs_SplitFramesDialog_C156C2AE58).RecentKey("sheet.count");
+        _rows = Ui.Num(1, image.Height, Math.Max(1, image.Height / Math.Max(1, cellH)), 60).Presets(counts).Unit(UiStrings.S_Dialogs_SplitFramesDialog_C156C2AE58).RecentKey("sheet.count");
         _minSize = Ui.Num(1, 1024, 2, 60).Presets(1, 2, 3, 4, 6, 8, 12, 16, 24, 32).Unit("px").RecentKey("autoslice.min");
-        _skipEmpty = Ui.Check("빈 칸 건너뛰기", true);
+        _skipEmpty = Ui.Check(UiStrings.S_Dialogs_SplitFramesDialog_B6C30C0EF4, true);
         _result = Ui.Label("");
-        Body.Children.Add(Ui.Label($"현재 프레임 그림({image.Width}×{image.Height})을 칸마다 프레임 하나로 나눕니다."));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_SplitFramesDialog_B7C2E8311F,image.Width,image.Height)));
         Body.Children.Add(_method);
-        Body.Children.Add(Ui.Row(Ui.Label("칸 가로"), _cellW, Ui.Label("세로"), _cellH));
-        Body.Children.Add(Ui.Row(Ui.Label("여백 X"), _offX, Ui.Label("Y"), _offY));
-        Body.Children.Add(Ui.Row(Ui.Label("간격 X"), _padX, Ui.Label("Y"), _padY));
-        Body.Children.Add(Ui.Row(Ui.Label("열"), _cols, Ui.Label("행"), _rows));
-        Body.Children.Add(Ui.Row(Ui.Label("자동: 최소 크기"), _minSize));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_84FD67B968), _cellW, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_5473AAAF60), _cellH));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_9C87DD306F), _offX, Ui.Label("Y"), _offY));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_DC3CD0F4DA), _padX, Ui.Label("Y"), _padY));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_D213350F0D), _cols, Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_7F8BCA446D), _rows));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_SplitFramesDialog_36ABCCA237), _minSize));
         Body.Children.Add(_skipEmpty);
         Body.Children.Add(_result);
         foreach (var n in new[] { _cellW, _cellH, _offX, _offY, _padX, _padY, _cols, _rows, _minSize })
@@ -269,7 +270,7 @@ public sealed class SplitFramesDialog : DialogBase
         OkButton.Click += (_, _) =>
         {
             if (Rects.Count > 0) return;
-            Ui.Error(this, "만들어질 칸이 없습니다. 설정을 확인하세요.");
+            Ui.Error(this, UiStrings.S_Dialogs_SplitFramesDialog_7AE557EFFF);
             DialogResult = DialogResult.None;
         };
     }
@@ -301,8 +302,8 @@ public sealed class SplitFramesDialog : DialogBase
     {
         var rects = Rects;
         _result.Text = rects.Count == 0
-            ? "만들어질 칸: 없음"
-            : $"만들어질 프레임: {rects.Count}개 (캔버스 {rects.Max(r => r.Width)}×{rects.Max(r => r.Height)})";
+            ? UiStrings.S_Dialogs_UpdateResult_0CE7149528
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Dialogs_UpdateResult_7A4F61BFA8,rects.Count,rects.Max(r => r.Width),rects.Max(r => r.Height));
     }
 }
 
@@ -374,16 +375,16 @@ public sealed class ReplaceColorDialog : DialogBase
     private readonly ColorField _from, _to;
     private readonly CheckBox _selectionOnly;
 
-    public ReplaceColorDialog(Color32 from, Color32 to, bool hasSelection) : base("색 바꾸기", "바꾸기")
+    public ReplaceColorDialog(Color32 from, Color32 to, bool hasSelection) : base(UiStrings.S_Dialogs_ReplaceColorDialog_D512F65023, UiStrings.S_Dialogs_ReplaceColorDialog_EDA3D827F9)
     {
         _from = new ColorField(from);
         _to = new ColorField(to);
-        _selectionOnly = Ui.Check("선택 영역 안만", hasSelection);
+        _selectionOnly = Ui.Check(UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295, hasSelection);
         _selectionOnly.IsEnabled = hasSelection;
-        Body.Children.Add(Ui.Row(Ui.Label("바꿀 색"), _from));
-        Body.Children.Add(Ui.Row(Ui.Label("새 색  "), _to));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_B456BDF62D), _from));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_D361ED4C0A), _to));
         Body.Children.Add(_selectionOnly);
-        Body.Children.Add(Ui.Label("투명(알파 0)은 모두 같은 색으로 봅니다. 대상: 현재 레이어의 현재 프레임."));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ReplaceColorDialog_8D2F0F6870));
     }
 
     public Color32 From => _from.Color;
@@ -397,18 +398,18 @@ public sealed class GridSettingsDialog : DialogBase
     private readonly ColorField _pixelColor, _tileColor;
     private readonly NumericUpDown _tileW, _tileH;
 
-    public GridSettingsDialog(Color32 pixelColor, Size tile, Color32 tileColor) : base("격자 설정")
+    public GridSettingsDialog(Color32 pixelColor, Size tile, Color32 tileColor) : base(UiStrings.S_Dialogs_GridSettingsDialog_100AEB4ECD)
     {
         _pixelColor = new ColorField(pixelColor);
         _tileColor = new ColorField(tileColor);
         _tileW = Ui.Num(1, 4096, tile.Width, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
         _tileH = Ui.Num(1, 4096, tile.Height, 64).Presets(Ui.TileSizes).Unit("px").RecentKey("tile.size");
-        Body.Children.Add(Ui.Label("픽셀 격자(6배 이상 확대에서 보임)", bold: true));
-        Body.Children.Add(Ui.Row(Ui.Label("색"), _pixelColor));
-        Body.Children.Add(Ui.Label("타일 격자", bold: true));
-        Body.Children.Add(Ui.Row(Ui.Label("가로"), _tileW, Ui.Label("세로"), _tileH, Ui.Label("px")));
-        Body.Children.Add(Ui.Row(Ui.Label("색"), _tileColor));
-        Body.Children.Add(Ui.Label("알파(#RRGGBBAA)로 진하기를 정합니다."));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_32C718E6B0, bold: true));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _pixelColor));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_1E51753746, bold: true));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_8997F6CAB3), _tileW, Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_934A32A181), _tileH, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_0F749AB890), _tileColor));
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_GridSettingsDialog_356D2B7E9E));
     }
 
     public Color32 PixelGridColor => _pixelColor.Color;
@@ -456,89 +457,89 @@ public sealed class ShortcutHelpDialog : DialogBase
 {
     public static readonly (string Group, string Key, string Action)[] Shortcuts =
     [
-        ("파일", "Ctrl+N", "새 프로젝트"),
-        ("파일", "Ctrl+O", "열기(.gpixel / PNG 가져오기)"),
-        ("파일", "Ctrl+Shift+O", "폴더 열기"),
-        ("파일", "Ctrl+Shift+U", "Unity 프로젝트 열기(Unity Hub)"),
-        ("파일", "Ctrl+S", "저장(.gpixel) + PNG 시트·.meta 내보내기"),
-        ("파일", "Ctrl+Shift+S", "다른 이름으로 저장"),
-        ("파일", "Ctrl+E", "내보내기(설정 창 → 파란 내보내기)"),
-        ("파일", "Ctrl+W", "닫기"),
-        ("편집", "Ctrl+Z", "실행취소(파일 목록에서는 마지막 삭제 되살리기)"),
-        ("편집", "Ctrl+Y / Ctrl+Shift+Z", "다시 실행"),
-        ("편집", "Ctrl+,", "환경 설정(실행취소 횟수·앱 휴지통 보관 기간)"),
-        ("편집", "Ctrl+X / Ctrl+C / Ctrl+V", "잘라내기 / 복사(선택 없으면 프레임 전체) / 붙여넣기"),
-        ("편집", Platform.IsMac ? "Delete / ⌫" : "Delete", "선택 내용 지우기"),
-        ("편집", "Ctrl+A / Ctrl+D", "모두 선택 / 선택 해제"),
-        ("편집", "Enter / Esc", "떠 있는 선택 내려놓기 / 선택 해제"),
-        ("편집", "Shift+H / Shift+V", "좌우 / 상하 뒤집기(선택, 없으면 현재 셀)"),
-        ("편집", "Ctrl+R / Ctrl+Shift+R", "90° 회전(선택, 없으면 캔버스 전체)"),
-        ("편집", "Ctrl+T", "변형 모드(선택, 없으면 현재 셀의 칠한 픽셀): 안쪽 끌기 = 옮기기, 손잡이 = 크기(Shift 비율, Alt 가운데), 바깥 = 회전(Shift 15°)"),
-        ("편집", "변형 중 Enter / Esc · Ctrl+Z", "변형 적용(실행취소 한 단계) / 변형 취소"),
-        ("편집", "방향키 · Ctrl+Shift+방향키", "선택(이동 도구면 셀 내용) 1픽셀 옮기기"),
-        ("편집", "Shift+방향키", "8픽셀 옮기기"),
-        ("편집", "Ctrl+Alt+O", "외곽선 추가(기본색)"),
-        ("편집", "Ctrl+Alt+R", "색 바꾸기"),
-        ("편집", "Ctrl+Alt+C", "캔버스 크기"),
-        ("프레임", "Shift+Enter", "재생 / 정지"),
-        ("프레임", ", / .", "이전 / 다음 프레임"),
-        ("프레임", "Home / End", "첫 / 마지막 프레임(캔버스 포커스)"),
-        ("프레임", "Alt+N / Alt+D", "새 빈 프레임 / 프레임 복제"),
-        ("레이어", "Shift+N", "새 레이어"),
-        ("레이어", "Ctrl+Shift+N", "새 그룹"),
-        ("레이어", "Shift+P", "현재 그룹에 새 부위(그룹이 없으면 그룹도)"),
-        ("레이어", "F2 / 이름 더블클릭", "레이어 이름 바꾸기"),
-        ("레이어", "그룹 이름 앞 삼각형", "그룹 접기 / 펼치기"),
-        ("타임라인", "셀 끌기 / Shift+클릭", "여러 칸(행 × 프레임) 고르기"),
-        ("타임라인", "머리글 끌기", "프레임 범위 고르기 → 우클릭 \"태그 만들기\""),
-        ("타임라인", "태그 상자 안쪽 끝 끌기", "태그 범위 바꾸기"),
-        ("타임라인", "고른 칸 끌기 / Alt+끌기", "칸 묶음 옮기기 / 복사"),
-        ("타임라인", "Ctrl+C / Ctrl+X / Ctrl+V", "셀·프레임 복사 / 잘라내기 / 붙여넣기(타임라인을 누른 뒤)"),
-        ("타임라인", "다음 프레임 칸의 복사 / 더하기 단추", "마지막 프레임 복사해서 추가 / 빈 프레임 추가"),
-        ("타임라인", "Delete / 머리글 더블클릭", "고른 프레임(범위) 삭제 / 프레임 길이"),
-        ("부위", "그룹 고르고 끌기", "부위 배치(방향키 1px · Shift 8px)"),
-        ("부위", "그룹에서 부위 더블클릭", "그 부위 고르기(부위 크기 캔버스로 그리기)"),
-        ("프레임", "H (누르고 있기)", "이전 프레임 보기"),
-        ("도구", "B", "연필"),
-        ("도구", "E", "지우개"),
-        ("도구", "G", "채우기 (Shift+G: 같은 색 전체 전환)"),
-        ("도구", "F", "그라데이션 (끌어서 시작 → 끝, Shift: 45°, 정지점은 도구 설정)"),
-        ("도구", "I (또는 Alt+클릭)", "스포이드"),
-        ("도구", "L", "선 (Shift: 45° 단위)"),
-        ("도구", "R", "사각형 (Shift: 정사각형)"),
-        ("도구", "O", "원 (Shift: 정원)"),
-        ("도구", "U", "도형 외곽 / 채움 전환"),
-        ("도구", "M", "선택 칸 — 선택 도구를 쓰는 중이면 다음 선택 도구 (사각 → 원 → 자유 → 스마트)"),
-        ("도구", "Q", "자유 선택 (끌어서 테두리, 놓으면 닫힘)"),
-        ("도구", "W", "스마트 선택 (비슷한 색 영역, 채우기 설정 공유)"),
-        ("도구", "도구 칸 길게 누르기 / 오른쪽 클릭", "묶음 도구 펼쳐 바꾸기 (채우기·도형·선택)"),
-        ("도구", "V (또는 Ctrl+드래그 — 누르는 동안)", "이동(선택 없으면 셀 전체, 순환 옵션)"),
-        ("도구", "D", "밝게(왼쪽) / 어둡게(오른쪽)"),
-        ("도구", "T", "디더링(체커 무늬)"),
-        ("도구", "C", "색 바꾸기 브러시"),
-        ("도구", "K", "피벗 끌기"),
-        ("도구", "[ / ]", "브러시 크기 줄이기 / 늘리기"),
-        ("도구", "P", "픽셀 퍼펙트 켜기/끄기"),
-        ("도구", "X", "기본색 ↔ 보조색 교환"),
-        ("도구", "Shift+X / Shift+Y", "좌우 / 상하 대칭 그리기"),
-        ("도구", "Shift+클릭(연필류)", "마지막 점에서 직선"),
-        ("보기", "휠", "확대 / 축소(1~64배)"),
-        ("도구", "Ctrl+휠(캔버스)", "브러시(펜) 크기 늘리기 / 줄이기"),
-        ("보기", "휠 / Ctrl+휠(타임라인)", "레이어 위아래 / 프레임 좌우 스크롤"),
-        ("보기", "Space+드래그 / 가운데 버튼", "화면 이동"),
-        ("보기", "Ctrl+0 / Ctrl+1", "화면에 맞추기 / 실제 크기"),
-        ("보기", "Ctrl+= / Ctrl+-", "확대 / 축소"),
-        ("보기", "Ctrl+G / Ctrl+Shift+G", "픽셀 격자 / 타일 격자"),
-        ("보기", "Ctrl+Shift+T", "타일 모드(5×5 / 큰 그림 3×3 반복)"),
-        ("보기", "Ctrl+J", "양파 껍질"),
-        ("보기", "F8", "파일 브라우저 보이기/숨기기"),
-        ("테스트", "F5", "움직임 테스트"),
-        ("AI", "Ctrl+L", "AI 채팅 — Claude·Codex(말로 그리기·고치기)"),
-        ("도움말", "F1", "단축키 목록"),
-        ("마우스", "왼쪽 / 오른쪽 버튼", "기본색 / 보조색(옵션: 지우개)으로 그리기"),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+N", UiStrings.S_Dialogs_Shortcuts_EFEB5D2162),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+O", UiStrings.S_Dialogs_Shortcuts_6760ED067E),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+Shift+O", UiStrings.S_Dialogs_Shortcuts_2B9CAB397B),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+Shift+U", UiStrings.S_Dialogs_Shortcuts_DB4E346999),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+S", UiStrings.S_Dialogs_Shortcuts_45F476C257),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+Shift+S", UiStrings.S_Dialogs_Shortcuts_8B17B51BE3),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+E", UiStrings.S_Dialogs_Shortcuts_0B183E4E8D),
+        (UiStrings.S_Dialogs_Shortcuts_7D7F9ACF6D, "Ctrl+W", UiStrings.S_Dialogs_Shortcuts_8980D9A859),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Z", UiStrings.S_Dialogs_Shortcuts_91284AEEDC),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Y / Ctrl+Shift+Z", UiStrings.S_Dialogs_Shortcuts_E4A0BFBB0C),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+,", UiStrings.S_Dialogs_Shortcuts_1565A446F4),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+X / Ctrl+C / Ctrl+V", UiStrings.S_Dialogs_Shortcuts_F5FA573A5A),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, Platform.IsMac ? "Delete / ⌫" : "Delete", UiStrings.S_Dialogs_Shortcuts_7E84FD5492),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+A / Ctrl+D", UiStrings.S_Dialogs_Shortcuts_5FC87736AC),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Enter / Esc", UiStrings.S_Dialogs_Shortcuts_38B69F2A2F),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Shift+H / Shift+V", UiStrings.S_Dialogs_Shortcuts_B672785A4E),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+R / Ctrl+Shift+R", UiStrings.S_Dialogs_Shortcuts_662DA22B3A),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+T", UiStrings.S_Dialogs_Shortcuts_E1937C2A7E),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, UiStrings.S_Dialogs_Shortcuts_E1C05D9B32, UiStrings.S_Dialogs_Shortcuts_52A2CB03ED),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, UiStrings.S_Dialogs_Shortcuts_277551CED2, UiStrings.S_Dialogs_Shortcuts_FAE04D0081),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, UiStrings.S_Dialogs_Shortcuts_BD86C3C490, UiStrings.S_Dialogs_Shortcuts_E014D4B8B3),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+O", UiStrings.S_Dialogs_Shortcuts_669BA7D949),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+R", UiStrings.S_Dialogs_Shortcuts_5F294C19DF),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+C", UiStrings.S_Dialogs_Shortcuts_F869736C79),
+        (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Shift+Enter", UiStrings.S_Dialogs_Shortcuts_E5B5E47196),
+        (UiStrings.S_Dialogs_Shortcuts_A069FAB880, ", / .", UiStrings.S_Dialogs_Shortcuts_864C7AA661),
+        (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Home / End", UiStrings.S_Dialogs_Shortcuts_D49FC130EF),
+        (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Alt+N / Alt+D", UiStrings.S_Dialogs_Shortcuts_1B6FD3C420),
+        (UiStrings.S_Dialogs_Shortcuts_0DA3C79665, "Shift+N", UiStrings.S_Dialogs_Shortcuts_F141C62B2F),
+        (UiStrings.S_Dialogs_Shortcuts_0DA3C79665, "Ctrl+Shift+N", UiStrings.S_Dialogs_Shortcuts_E485ABF61D),
+        (UiStrings.S_Dialogs_Shortcuts_0DA3C79665, "Shift+P", UiStrings.S_Dialogs_Shortcuts_CD3EC97621),
+        (UiStrings.S_Dialogs_Shortcuts_0DA3C79665, UiStrings.S_Dialogs_Shortcuts_C171BDC125, UiStrings.S_Dialogs_Shortcuts_B509609DFC),
+        (UiStrings.S_Dialogs_Shortcuts_0DA3C79665, UiStrings.S_Dialogs_Shortcuts_1C35C1C5A5, UiStrings.S_Dialogs_Shortcuts_846D4758F6),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_1801ED1758, UiStrings.S_Dialogs_Shortcuts_57366E3F77),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_D9CD891666, UiStrings.S_Dialogs_Shortcuts_7CE7A346C0),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_1D4D69FEBB, UiStrings.S_Dialogs_Shortcuts_76C0AB65F2),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_744D097883, UiStrings.S_Dialogs_Shortcuts_778F677E82),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, "Ctrl+C / Ctrl+X / Ctrl+V", UiStrings.S_Dialogs_Shortcuts_DD21ABD0E2),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_551C1C1477, UiStrings.S_Dialogs_Shortcuts_4433121F4C),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_6FA30CF6A4, UiStrings.S_Dialogs_Shortcuts_3DBB46587D),
+        (UiStrings.S_Dialogs_Shortcuts_BF8A231C98, UiStrings.S_Dialogs_Shortcuts_BA96D2C3EB, UiStrings.S_Dialogs_Shortcuts_699BE4B36E),
+        (UiStrings.S_Dialogs_Shortcuts_BF8A231C98, UiStrings.S_Dialogs_Shortcuts_6AF34AD7B6, UiStrings.S_Dialogs_Shortcuts_1C2B1A1E5E),
+        (UiStrings.S_Dialogs_Shortcuts_A069FAB880, UiStrings.S_Dialogs_Shortcuts_89EBA10751, UiStrings.S_Dialogs_Shortcuts_F50A780EEA),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "B", UiStrings.S_Dialogs_Shortcuts_8DDFCADA9D),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "E", UiStrings.S_Dialogs_Shortcuts_25E99AD68A),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "G", UiStrings.S_Dialogs_Shortcuts_946C7D8FC7),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "F", UiStrings.S_Dialogs_Shortcuts_0432F72DFF),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_38E4E2F3CE, UiStrings.S_Dialogs_Shortcuts_F8F7C54D54),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "L", UiStrings.S_Dialogs_Shortcuts_63ADB1FB8F),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "R", UiStrings.S_Dialogs_Shortcuts_DAEB4ED541),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "O", UiStrings.S_Dialogs_Shortcuts_495263DD23),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "U", UiStrings.S_Dialogs_Shortcuts_094D63C9FA),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "M", UiStrings.S_Dialogs_Shortcuts_7E24CFF354),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "Q", UiStrings.S_Dialogs_Shortcuts_2C42C899BE),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "W", UiStrings.S_Dialogs_Shortcuts_EDD59A4672),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_FCF789E683, UiStrings.S_Dialogs_Shortcuts_90C65F584D),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_50CAA43D24, UiStrings.S_Dialogs_Shortcuts_4A05EA78E2),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "D", UiStrings.S_Dialogs_Shortcuts_BFE4A309E1),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "T", UiStrings.S_Dialogs_Shortcuts_A171E1ED26),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "C", UiStrings.S_Dialogs_Shortcuts_F2DB2601F2),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "K", UiStrings.S_Dialogs_Shortcuts_F892032BCA),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "[ / ]", UiStrings.S_Dialogs_Shortcuts_A2ACEFDBE7),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "P", UiStrings.S_Dialogs_Shortcuts_113C7D14A1),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "X", UiStrings.S_Dialogs_Shortcuts_6759557E42),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "Shift+X / Shift+Y", UiStrings.S_Dialogs_Shortcuts_0963C5F4ED),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_8E216B788D, UiStrings.S_Dialogs_Shortcuts_1F0C6D3C83),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, UiStrings.S_Dialogs_Shortcuts_6DB7F163BF, UiStrings.S_Dialogs_Shortcuts_45DD7D9C62),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_FEE4BB43A7, UiStrings.S_Dialogs_Shortcuts_9A0AAD2E25),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, UiStrings.S_Dialogs_Shortcuts_033B73C2A4, UiStrings.S_Dialogs_Shortcuts_D663A4CCA6),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, UiStrings.S_Dialogs_Shortcuts_D1CD5B98A5, UiStrings.S_Dialogs_Shortcuts_30B9A84541),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "Ctrl+0 / Ctrl+1", UiStrings.S_Dialogs_Shortcuts_5DB5D4EBD4),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "Ctrl+= / Ctrl+-", UiStrings.S_Dialogs_Shortcuts_48AD2BB98E),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "Ctrl+G / Ctrl+Shift+G", UiStrings.S_Dialogs_Shortcuts_BC827F884D),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "Ctrl+Shift+T", UiStrings.S_Dialogs_Shortcuts_42916C914B),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "Ctrl+J", UiStrings.S_Dialogs_Shortcuts_821AC00B5A),
+        (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "F8", UiStrings.S_Dialogs_Shortcuts_BC85BDFD60),
+        (UiStrings.S_Dialogs_Shortcuts_249FBBC3DD, "F5", UiStrings.S_Dialogs_Shortcuts_39DA072B09),
+        ("AI", "Ctrl+L", UiStrings.S_Dialogs_Shortcuts_D8744C6D64),
+        (UiStrings.S_Dialogs_Shortcuts_8FC1214E44, "F1", UiStrings.S_Dialogs_Shortcuts_6A1571C5A3),
+        (UiStrings.S_Dialogs_Shortcuts_3577B85684, UiStrings.S_Dialogs_Shortcuts_F0B0D29737, UiStrings.S_Dialogs_Shortcuts_C65D718314),
     ];
 
-    public ShortcutHelpDialog() : base("단축키")
+    public ShortcutHelpDialog() : base(UiStrings.S_Dialogs_ShortcutHelpDialog_40F6EB91B0)
     {
         CloseOnly();
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("70,200,270") };
@@ -565,8 +566,8 @@ public sealed class ShortcutHelpDialog : DialogBase
             }
             row++;
         }
-        Body.Children.Add(Ui.Label("기본 단축키 목록입니다. 바꾼 단축키는 메뉴 오른쪽에 보이며, 편집 > 환경 설정 > 단축키에서 바꾸고 JSON으로 내보내기·불러오기 합니다."));
-        AddRow("분류", "키", "동작", true, AppTheme.PanelBrush);
+        Body.Children.Add(Ui.Label(UiStrings.S_Dialogs_ShortcutHelpDialog_66FDB77042));
+        AddRow(UiStrings.S_Dialogs_ShortcutHelpDialog_12C51EAE62, UiStrings.S_Dialogs_ShortcutHelpDialog_378916AAF8, UiStrings.S_Dialogs_ShortcutHelpDialog_DF90340663, true, AppTheme.PanelBrush);
         foreach (var (group, key, action) in Shortcuts)
             AddRow(group, Ui.Shortcut(key), Ui.Shortcut(action), false, null);
         Body.Children.Add(new ScrollViewer

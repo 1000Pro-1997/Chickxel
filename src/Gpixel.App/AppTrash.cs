@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -19,8 +20,8 @@ public readonly record struct TrashPolicy(int Days, int MaxMegabytes)
     /// <summary>"기간 제한 없음 · 용량 1GB까지"처럼 짧은 설명.</summary>
     public string Describe()
     {
-        string days = Days > 0 ? $"{Days}일 보관" : "기간 제한 없음";
-        string size = MaxMegabytes > 0 ? $"{AppTrash.FormatSize(MaxBytes)}까지" : "용량 제한 없음";
+        string days = Days > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AppTrash_Describe_11EBAE0E3E,Days) : UiStrings.S_AppTrash_Describe_ED0D38DA1D;
+        string size = MaxMegabytes > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AppTrash_Describe_E7FB7A8909,AppTrash.FormatSize(MaxBytes)) : UiStrings.S_AppTrash_Describe_715BEC5E40;
         return $"{days} · {size}";
     }
 }
@@ -102,7 +103,7 @@ public sealed class AppTrash
     {
         var conflicts = Conflicts(entry);
         if (conflicts.Count > 0)
-            throw new IOException($"같은 이름의 파일이 이미 있어 되살리지 않았습니다: {string.Join(", ", conflicts.Select(Path.GetFileName))}");
+            throw new IOException(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AppTrash_Restore_022042A106,string.Join(", ", conflicts.Select(Path.GetFileName))));
         var dir = Path.Combine(Root, entry.Id);
         var restored = new List<string>();
         foreach (var f in entry.Files)

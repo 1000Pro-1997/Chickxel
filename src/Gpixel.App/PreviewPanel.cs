@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Avalonia.Controls.Templates;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -11,7 +12,7 @@ namespace Gpixel.App;
 /// </summary>
 public sealed class PreviewPanel : UserControl
 {
-    private static readonly string[] Backgrounds = ["체커", "검정", "흰색", "회색", "초록", "사용자 색…"];
+    private static readonly string[] Backgrounds = [UiStrings.S_PreviewPanel_Backgrounds_D9726B3169, UiStrings.S_PreviewPanel_Backgrounds_7DB5254C5D, UiStrings.S_PreviewPanel_Backgrounds_E200745781, UiStrings.S_PreviewPanel_Backgrounds_3785BA5E7F, UiStrings.S_PreviewPanel_Backgrounds_9E0985F1EA, UiStrings.S_PreviewPanel_Backgrounds_0814BC3C7C];
     private static readonly Color?[] PresetColors = [null, Colors.Black, Colors.White, Color.FromRgb(128, 128, 128), Color.FromRgb(60, 140, 70), null];
 
     /// <summary>배경 목록 항목: 이름 + 색 견본(null = 체커).</summary>
@@ -47,11 +48,11 @@ public sealed class PreviewPanel : UserControl
         _ctx = ctx;
         Background = AppTheme.PanelBrush;
         _view = new View(this);
-        _play = Ui.IconButton(VectorIcon.Play, "재생/정지 (Shift+Enter)", (_, _) => TogglePlay(), 34, 13);
+        _play = Ui.IconButton(VectorIcon.Play, UiStrings.S_PreviewPanel_PreviewPanel_0F8DBBD3C8, (_, _) => TogglePlay(), 34, 13);
         _fps = Ui.Num(0, 60, 0, 46)
-            .Presets([0, 4, 6, 8, 10, 12, 15, 20, 24, 30, 60], [], v => v == 0 ? "0 (프레임마다 정한 길이)" : $"{v:0} FPS")
+            .Presets([0, 4, 6, 8, 10, 12, 15, 20, 24, 30, 60], [], v => v == 0 ? UiStrings.S_PreviewPanel_PreviewPanel_DFA250A1B3 : $"{v:0} FPS")
             .RecentKey("preview.fps")
-            .Tip("미리보기 FPS (0 = 프레임마다 정한 길이)");
+            .Tip(UiStrings.S_PreviewPanel_PreviewPanel_F37E165A04);
         _scaleButton = new Button
         {
             Width = 52,
@@ -60,7 +61,7 @@ public sealed class PreviewPanel : UserControl
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Focusable = false,
-        }.Tip("배율: 클릭하면 맞춤 → 1× → 2× → 4× 차례로, 오른쪽 클릭은 거꾸로");
+        }.Tip(UiStrings.S_PreviewPanel_PreviewPanel_6984708585);
         _scaleButton.Click += (_, _) => StepScale(+1);
         _scaleButton.PointerReleased += (_, e) =>
         {
@@ -80,7 +81,7 @@ public sealed class PreviewPanel : UserControl
         for (int i = 0; i < Backgrounds.Length; i++)
             _background.Items.Add(new BackgroundOption(Backgrounds[i], i == Backgrounds.Length - 1 ? _customColor : PresetColors[i]));
         _background.SelectedIndex = 0;
-        _background.Tip("미리보기 배경");
+        _background.Tip(UiStrings.S_PreviewPanel_PreviewPanel_83BA43E90E);
         _background.SelectionChanged += (_, _) => { if (!_suppressBackground) OnBackgroundChanged(); };
         var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = AppTheme.PanelBrush };
         DockPanel.SetDock(bar, Dock.Bottom);
@@ -107,7 +108,7 @@ public sealed class PreviewPanel : UserControl
         };
         DockPanel.SetDock(_outfitHost, Dock.Bottom);
         var root = new DockPanel();
-        root.Children.Add(Ui.Header("미리보기"));
+        root.Children.Add(Ui.Header(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D));
         root.Children.Add(bar);
         root.Children.Add(_outfitHost);
         root.Children.Add(_view);
@@ -146,7 +147,7 @@ public sealed class PreviewPanel : UserControl
             var groups = p is null ? [] : p.Layers.Where(l => l.IsGroup).Reverse().ToList();
             _outfitHost.IsVisible = groups.Count > 0;
             if (p is null || groups.Count == 0) return;
-            var title = Ui.Label("착장");
+            var title = Ui.Label(UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5);
             title.Foreground = AppTheme.DimTextBrush;
             title.VerticalAlignment = VerticalAlignment.Center;
             title.Margin = new Thickness(2, 0, 4, 0);
@@ -154,13 +155,13 @@ public sealed class PreviewPanel : UserControl
             foreach (var group in groups) _outfit.Children.Add(OutfitItem(p, group));
             var manage = new Button
             {
-                Content = "관리…",
+                Content = UiStrings.S_PreviewPanel_RebuildOutfit_090268890B,
                 Padding = new Thickness(6, 0),
                 MinHeight = 20,
                 Margin = new Thickness(2, 2, 2, 2),
                 VerticalAlignment = VerticalAlignment.Center,
                 Focusable = false,
-            }.Tip("스킨 관리 창: 스킨 카드로 갈아입히기·추가·복제·이름·삭제, 부위마다 따로 고르기");
+            }.Tip(UiStrings.S_PreviewPanel_RebuildOutfit_12AE9802EA);
             manage.Click += (_, _) => SkinManagerWindow.Open(_ctx, this);
             _outfit.Children.Add(manage);
         }
@@ -186,7 +187,7 @@ public sealed class PreviewPanel : UserControl
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(4, 0, 2, 0),
             Cursor = new Cursor(StandardCursorType.Hand),
-        }.Tip(overrides > 0 ? $"\"{group.Name}\": 부위 {overrides}개는 따로 고른 스킨 — 눌러서 스킨 관리" : $"\"{group.Name}\" — 눌러서 스킨 관리");
+        }.Tip(overrides > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_210601903B,group.Name,overrides) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_0C4037D29A,group.Name));
         label.PointerPressed += (_, e) =>
         {
             if (!e.GetCurrentPoint(label).Properties.IsLeftButtonPressed) return;
@@ -204,12 +205,12 @@ public sealed class PreviewPanel : UserControl
         var skins = group.Skins.ToList();
         for (int i = 0; i < skins.Count; i++)
         {
-            combo.Items.Add(i == 0 && skins.Count > 1 ? $"{skins[i].Name} (기본)" : skins[i].Name);
+            combo.Items.Add(i == 0 && skins.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_CC61BCD084,skins[i].Name) : skins[i].Name);
             if (ReferenceEquals(skins[i], group.ActiveSkin)) combo.SelectedIndex = i;
         }
         combo.Tip(skins.Count > 1
-            ? $"\"{group.Name}\" 그룹에 보일 스킨"
-            : $"\"{group.Name}\" 그룹은 스킨이 하나뿐입니다 — \"관리…\"에서 스킨을 더하세요");
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_1F81422509,group.Name)
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreviewPanel_OutfitItem_78809E4FDB,group.Name));
         combo.SelectionChanged += (_, _) =>
         {
             if (_syncingOutfit || combo.SelectedIndex < 0 || combo.SelectedIndex >= skins.Count) return;
@@ -232,7 +233,7 @@ public sealed class PreviewPanel : UserControl
     private void SetScale(int scale)
     {
         _scale = scale;
-        _scaleButton.Content = scale == 0 ? "맞춤" : $"{scale}×";
+        _scaleButton.Content = scale == 0 ? UiStrings.S_PreviewPanel_SetScale_EBF1B9D1AA : $"{scale}×";
         _view.InvalidateVisual();
     }
 

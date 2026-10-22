@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -50,7 +51,7 @@ public sealed class TimelinePanel : UserControl
         _info.TextTrimming = TextTrimming.CharacterEllipsis;
         _info.HorizontalAlignment = HorizontalAlignment.Right;
         var headerRow = new DockPanel();
-        var title = new TextBlock { Text = "타임라인", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
+        var title = new TextBlock { Text = UiStrings.S_TimelinePanel_TimelinePanel_7AE6DC18E2, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(title, Dock.Left);
         headerRow.Children.Add(title);
         // 스킨 관리 창은 이름 칸의 스킨 칩(클릭)·레이어 우클릭·프레임·레이어 메뉴에서 연다.
@@ -88,13 +89,13 @@ public sealed class TimelinePanel : UserControl
             string skin = SkinManagerWindow.SkinStatus(p, layer, _ctx.CurrentFrame);
             string kind = layer.Kind switch
             {
-                LayerKind.Group => "그룹",
-                LayerKind.Part => $"부위 {layer.PartSize.Width}×{layer.PartSize.Height} @{layer.PartOffset.X},{layer.PartOffset.Y}",
+                LayerKind.Group => UiStrings.S_TimelinePanel_RefreshUi_974D2C80BE,
+                LayerKind.Part => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_FB257005C1,layer.PartSize.Width,layer.PartSize.Height,layer.PartOffset.X,layer.PartOffset.Y),
                 _ => "",
             };
-            _info.Text = $"프레임 {_ctx.CurrentFrame + 1}/{p.Frames.Count} · 레이어 \"{layer.Name}\"" + (kind.Length > 0 ? $" ({kind})" : "")
+            _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_4411E2A453,_ctx.CurrentFrame + 1,p.Frames.Count,layer.Name) + (kind.Length > 0 ? $" ({kind})" : "")
                          + (skin.Length > 0 ? " · " + skin : "")
-                         + (tag is null ? "" : $" · 태그 {tag.Name}") + $" · 전체 {total}ms";
+                         + (tag is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_32131C1BFE,tag.Name)) + string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_52FFAF00E4,total);
         }
         else _info.Text = "";
         _grid.UpdateScrollSize();
@@ -136,7 +137,7 @@ public sealed class TimelinePanel : UserControl
             parts.Add(i == j ? $"{frames[i] + 1}" : $"{frames[i] + 1}~{frames[j] + 1}");
             i = j + 1;
         }
-        return "프레임 " + (parts.Count > 4 ? string.Join(", ", parts.Take(4)) + ", …" : string.Join(", ", parts));
+        return UiStrings.S_TimelinePanel_FramesText_48424FAB15 + (parts.Count > 4 ? string.Join(", ", parts.Take(4)) + ", …" : string.Join(", ", parts));
     }
 
     /// <summary>지금 선택을 한 줄로(우클릭 메뉴 맨 위·상태 표시줄): "프레임 1~3 선택됨" 등.</summary>
@@ -146,17 +147,17 @@ public sealed class TimelinePanel : UserControl
         switch (_grid.Kind)
         {
             case SelKind.Frames:
-                return $"{FramesText(SelectedFrames())} 선택됨";
+                return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_075B714127,FramesText(SelectedFrames()));
             case SelKind.Layers:
                 var layers = _grid.SelectedLayerList();
-                return layers.Count == 1 ? $"레이어 \"{p.Layers[layers[0]].Name}\" 선택됨" : $"레이어 {layers.Count}개 선택됨";
+                return layers.Count == 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_AA461A1A65,p.Layers[layers[0]].Name) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_3173DC9CF6,layers.Count);
             case SelKind.Effects:
-                return $"효과 {_grid.SelectedEffectList().Count}개 선택됨";
+                return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_1E6AFDB6EB,_grid.SelectedEffectList().Count);
             default:
                 var (rows, frames) = CelBlock();
                 return rows.Count * frames.Count == 1
-                    ? $"셀 선택됨 (\"{p.Layers[rows[0]].Name}\" · 프레임 {frames[0] + 1})"
-                    : $"셀 {rows.Count * frames.Count}칸 선택됨 (레이어 {rows.Count}개 × {FramesText(frames)})";
+                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_859E808144,p.Layers[rows[0]].Name,frames[0] + 1)
+                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_23DBB6720C,rows.Count * frames.Count,rows.Count,FramesText(frames));
         }
     }
 
@@ -196,16 +197,16 @@ public sealed class TimelinePanel : UserControl
         var frames = _grid.Kind == SelKind.Frames ? _grid.SelectedFrameList() : [_ctx.CurrentFrame];
         if (frames.Count >= p.Frames.Count)
         {
-            Say(p.Frames.Count <= 1 ? "마지막 프레임은 지울 수 없습니다." : "모든 프레임을 지울 수는 없습니다 — 프레임이 하나는 남아야 합니다.");
+            Say(p.Frames.Count <= 1 ? UiStrings.S_TimelinePanel_DeleteFrame_AD774265A7 : UiStrings.S_TimelinePanel_DeleteFrame_C2EAA70A6A);
             return;
         }
-        _ctx.Structural(() => p.Edit("프레임 삭제", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_DeleteFrame_E1F5D9F6F9, ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             foreach (var f in frames.OrderByDescending(f => f)) p.DeleteFrame(f);
         }));
         _grid.ResetRange();
         _ctx.SetCurrentFrame(Math.Min(frames.Min(), p.Frames.Count - 1));
-        Say(Ui.Shortcut($"프레임 {frames.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
+        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_DeleteFrame_543084E51E,frames.Count)));
     }
 
     /// <summary>
@@ -227,20 +228,20 @@ public sealed class TimelinePanel : UserControl
         }
         if (removed.Count >= p.Layers.Count)
         {
-            Say("마지막 레이어는 지울 수 없습니다 — 레이어가 하나는 남아야 합니다.");
+            Say(UiStrings.S_TimelinePanel_DeleteSelectedLayers_2BE5077D81);
             return;
         }
         // 지운 뒤 고를 레이어: 지운 것 중 맨 위 자리에서 아래로(없으면 위로) 가장 가까운 남는 레이어.
         int top = targets.Max(p.IndexOf);
         var keep = Enumerable.Range(0, top + 1).Reverse().Concat(Enumerable.Range(top + 1, p.Layers.Count - top - 1))
             .Select(i => p.Layers[i]).First(l => !removed.Contains(l));
-        _ctx.Structural(() => p.Edit("레이어 삭제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_DeleteSelectedLayers_26BC9EF176, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             foreach (var l in targets) p.DeleteLayer(p.IndexOf(l));
         }));
         _grid.ResetRange();
         _ctx.SetCurrentLayer(p.IndexOf(keep));
-        Say(Ui.Shortcut($"레이어 {targets.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
+        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_DeleteSelectedLayers_E133662A1B,targets.Count)));
     }
 
     /// <summary>Delete(⌫): 고른 종류대로 — 프레임 삭제 · 레이어 삭제 · 효과 삭제 · 셀 지우기.</summary>
@@ -267,17 +268,17 @@ public sealed class TimelinePanel : UserControl
         switch (_grid.Kind)
         {
             case SelKind.Frames:
-                Say($"{label} — {DeleteKeyName}: 프레임 삭제 · 고른 머리글을 끌면 순서 바꾸기");
+                Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_HintSelection_C0C0B9A3F0,label,DeleteKeyName));
                 break;
             case SelKind.Layers:
-                Say($"{label} — {DeleteKeyName}: 레이어 삭제 · 고른 이름을 끌면 순서 바꾸기");
+                Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_HintSelection_11CAA114DF,label,DeleteKeyName));
                 break;
             case SelKind.Effects:
-                Say($"{label} — {DeleteKeyName}: 효과 삭제 · 효과 이름을 끌면 순서 바꾸기(다른 레이어 줄에 놓으면 그 레이어로 옮김)");
+                Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_HintSelection_AA6C34F7A0,label,DeleteKeyName));
                 break;
             default:
                 var (rows, frames) = CelBlock();
-                if (rows.Count * frames.Count > 1) Say($"{label} — {DeleteKeyName}: 셀 지우기 · 묶음 안을 끌면 옮기기");
+                if (rows.Count * frames.Count > 1) Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_HintSelection_C2A7554EE6,label,DeleteKeyName));
                 break;
         }
     }
@@ -298,7 +299,7 @@ public sealed class TimelinePanel : UserControl
         to = Math.Clamp(to, 0, p.Frames.Count - count);
         if (to == a) return;
         int current = to + Math.Clamp(_ctx.CurrentFrame - a, 0, count - 1);
-        _ctx.Structural(() => p.Edit("프레임 이동", ProjectChange.Frames, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_MoveFramesTo_757096FDA0, ProjectChange.Frames, () =>
         {
             for (int k = 0; k < count; k++)
             {
@@ -336,7 +337,7 @@ public sealed class TimelinePanel : UserControl
         if (P is not { } p) return;
         int from = PreviousCelFrame(p, layer, frame);
         if (from < 0 || p.GetCel(layer, from) is not { } cel) return;
-        _ctx.Structural(() => p.SetCel(layer, frame, cel.Clone(), "이전 프레임 셀 복사"));
+        _ctx.Structural(() => p.SetCel(layer, frame, cel.Clone(), UiStrings.S_TimelinePanel_CopyCelFromPrevious_8B15F7626C));
         _ctx.SetCurrent(layer, frame);
     }
 
@@ -444,7 +445,7 @@ public sealed class TimelinePanel : UserControl
             var src = p.Layers[rowLayers[i]];
             if (ti >= visible.Count || !RowsCompatible(p, src, p.Layers[visible[ti]]))
             {
-                Ui.Info(this, "셀 크기나 종류가 다른 행으로는 옮길 수 없습니다(부위는 같은 크기, 그룹은 그룹 행으로).");
+                Ui.Info(this, UiStrings.S_TimelinePanel_MoveBlock_1527D93EE0);
                 return;
             }
         }
@@ -452,7 +453,7 @@ public sealed class TimelinePanel : UserControl
         // 놓을 자리의 레이어(편집 뒤에도 같은 객체)
         var topLayer = p.Layers[visible[toRow]];
         var endLayer = p.Layers[visible[Math.Min(visible.Count - 1, toRow + rowLayers.Count - 1)]];
-        _ctx.Structural(() => p.Edit(copy ? "셀 복사" : "셀 옮기기", ProjectChange.Pixels | ProjectChange.Frames, () =>
+        _ctx.Structural(() => p.Edit(copy ? UiStrings.S_TimelinePanel_MoveBlock_5B9FB74E7C : UiStrings.S_TimelinePanel_MoveBlock_0DFDF5525C, ProjectChange.Pixels | ProjectChange.Frames, () =>
         {
             if (!copy) ClearCells(p, rowLayers, frames);
             WriteCells(p, data, frameCount, visible, toRow, toFrame);
@@ -481,11 +482,11 @@ public sealed class TimelinePanel : UserControl
         var (rows, frames) = CelBlock();
         if (!HasOwnCels(p, rows, frames))
         {
-            Say("고른 셀에 지울 그림이 없습니다.");
+            Say(UiStrings.S_TimelinePanel_ClearSelectedCels_D1426A0A3D);
             return;
         }
-        _ctx.Structural(() => p.Edit("셀 지우기", ProjectChange.Pixels, () => ClearCells(p, rows, frames)));
-        Say(Ui.Shortcut($"셀 {rows.Count * frames.Count}칸 지움 — Ctrl+Z로 되돌립니다."));
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_ClearSelectedCels_1EE69E248F, ProjectChange.Pixels, () => ClearCells(p, rows, frames)));
+        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ClearSelectedCels_C789A97AE4,rows.Count * frames.Count)));
     }
 
     // ───────────── 셀·프레임 복사·붙여넣기(타임라인에 포커스가 있을 때 Ctrl/⌘+C·X·V) ─────────────
@@ -542,7 +543,7 @@ public sealed class TimelinePanel : UserControl
             int first = layer.Effects.Count;
             ChangeEffects(layer, list => list.AddRange(effects));
             _grid.SelectEffects(Enumerable.Range(first, effects.Count).Select(i => (layer, i)));
-            Say(Ui.Shortcut($"효과 {effects.Count}개를 \"{layer.Name}\"에 붙였습니다 — Ctrl+Z로 되돌립니다."));
+            Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PasteSelection_C3B9B97345,effects.Count,layer.Name)));
             return true;
         }
         if (P is not { } p || _clip is not { } clip || clip.FrameCount == 0) return false;
@@ -550,19 +551,19 @@ public sealed class TimelinePanel : UserControl
         {
             // 레이어 통째 붙여넣기: 새 레이어로(원래 레이어 바로 위, 그룹은 부위까지, 이름 끝 숫자 +1)
             var copies = new List<Layer>();
-            _ctx.Structural(() => p.Edit("레이어 붙여넣기", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_PasteSelection_9BF1D96331, ProjectChange.Layers | ProjectChange.Pixels, () =>
             {
                 foreach (var l in sourceLayers) copies.Add(p.DuplicateLayer(p.IndexOf(l)));
             }));
             _ctx.SetCurrentLayer(p.IndexOf(copies[0]));
             _grid.SelectLayerSet(copies);
-            Say(Ui.Shortcut($"새 레이어 {copies.Count}개: {string.Join(", ", copies.Select(c => c.Name))} — Ctrl+Z로 되돌립니다."));
+            Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PasteSelection_7024507CB1,copies.Count,string.Join(", ", copies.Select(c => c.Name)))));
             return true;
         }
         if (clip.WholeFrames)
         {
             int at = SelectedFrames().Max() + 1;
-            _ctx.Structural(() => p.Edit("프레임 붙여넣기", ProjectChange.Frames | ProjectChange.Pixels | ProjectChange.Tags, () =>
+            _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_PasteSelection_BEEE4A4E80, ProjectChange.Frames | ProjectChange.Pixels | ProjectChange.Tags, () =>
             {
                 for (int i = 0; i < clip.Frames.Count; i++)
                 {
@@ -585,11 +586,11 @@ public sealed class TimelinePanel : UserControl
         var topLayer = p.Layers[visible[top]];
         var endLayer = p.Layers[visible[Math.Min(visible.Count - 1, top + clip.Rows.Count - 1)]];
         int written = 0;
-        _ctx.Structural(() => p.Edit("셀 붙여넣기", ProjectChange.Pixels | ProjectChange.Frames, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_PasteSelection_BABB32C8AD, ProjectChange.Pixels | ProjectChange.Frames, () =>
             written = WriteCells(p, clip.Rows, clip.FrameCount, visible, top, start)));
         if (written == 0)
         {
-            Ui.Info(this, "붙여 넣을 수 있는 칸이 없습니다. 셀 크기가 같은 레이어(그룹은 그룹 행)를 골라 주세요.");
+            Ui.Info(this, UiStrings.S_TimelinePanel_PasteSelection_1A8BE9258F);
             return true;
         }
         _grid.SelectRect(p.IndexOf(topLayer), start, endLayer, start + clip.FrameCount - 1);
@@ -601,15 +602,15 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var frames = SelectedFrames();
-        var text = InputDialog.Ask(this, "프레임 길이", frames.Count > 1 ? $"프레임 {frames.Count}개의 길이(ms)" : "프레임 길이(ms)",
+        var text = InputDialog.Ask(this, UiStrings.S_TimelinePanel_SetDuration_6EBBF2FC7D, frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SetDuration_F54842A5D1,frames.Count) : UiStrings.S_TimelinePanel_SetDuration_9A16EE4A6C,
             p.Frames[frames[0]].DurationMs.ToString(), ["50", "80", "100", "120", "150", "200"]);
         if (text is null) return;
         if (!int.TryParse(text, out var ms) || ms < 1 || ms > 60000)
         {
-            Ui.Error(this, "1~60000 사이 숫자를 입력하세요.");
+            Ui.Error(this, UiStrings.S_TimelinePanel_SetDuration_8569508DA9);
             return;
         }
-        _ctx.Structural(() => p.Edit("프레임 길이", ProjectChange.Frames, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_SetDuration_6EBBF2FC7D, ProjectChange.Frames, () =>
         {
             foreach (var f in frames) p.SetFrameDuration(f, ms);
         }));
@@ -651,14 +652,14 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var size = _ctx.CurrentPart?.PartSize ?? new Size(Math.Min(16, p.Width), Math.Min(16, p.Height));
-        var dlg = new NewPartDialog(p.UniqueLayerName("부위"), size.Width, size.Height);
+        var dlg = new NewPartDialog(p.UniqueLayerName(UiStrings.S_TimelinePanel_AddPartTo_3720B51812), size.Width, size.Height);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         string? name = dlg.PartName.Length > 0 ? dlg.PartName : null;
         int at = SlotAboveCurrent(p);
         Layer? part = null;
         try
         {
-            _ctx.Structural(() => p.Edit("부위 추가", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_AddPartTo_315E69F074, ProjectChange.Layers | ProjectChange.Pixels, () =>
             {
                 var target = group ?? p.AddGroup(null, at);
                 part = p.AddPart(target, name, dlg.PartWidth, dlg.PartHeight);
@@ -681,10 +682,10 @@ public sealed class TimelinePanel : UserControl
         var part = p.Layers[index];
         if (!part.IsPart)
         {
-            Ui.Info(this, "부위 레이어를 고르세요.");
+            Ui.Info(this, UiStrings.S_TimelinePanel_ResizePartAt_98A5871C4A);
             return;
         }
-        var dlg = new ResizeDialog(part.PartSize.Width, part.PartSize.Height, $"부위 크기 — {part.Name}");
+        var dlg = new ResizeDialog(part.PartSize.Width, part.PartSize.Height, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ResizePartAt_AAF40A125F,part.Name));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         if (dlg.NewWidth == part.PartSize.Width && dlg.NewHeight == part.PartSize.Height) return;
         _ctx.Structural(() => p.ResizePart(index, dlg.NewWidth, dlg.NewHeight, dlg.ImageAnchor));
@@ -711,7 +712,7 @@ public sealed class TimelinePanel : UserControl
             case DialogResult.OK:
                 bool was = group.AutoLayout is not null;
                 _ctx.SetGroupLayout(group, dlg.Layout);
-                Say(was ? $"그룹 \"{group.Name}\" 자동 배치 설정을 바꿨습니다" : $"그룹 \"{group.Name}\" 자동 배치 켜짐 — 부위를 더하거나 크기를 바꾸면 다시 배치합니다");
+                Say(was ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_EditGroupLayout_6F86F3E62E,group.Name) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_EditGroupLayout_5EF8040D39,group.Name));
                 break;
             case DialogResult.No:
                 TurnOffGroupLayout(group);
@@ -722,7 +723,7 @@ public sealed class TimelinePanel : UserControl
     private void TurnOffGroupLayout(Layer group)
     {
         _ctx.SetGroupLayout(group, null);
-        Say($"그룹 \"{group.Name}\" 자동 배치 끔 — 부위는 지금 자리에 그대로");
+        Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_TurnOffGroupLayout_B5D4ABA3A0,group.Name));
     }
 
     /// <summary>그룹 접기/펼치기(기록·수정 표시 없음). 접는 그룹 안 부위를 고르고 있었으면 그룹을 고른다.</summary>
@@ -774,7 +775,7 @@ public sealed class TimelinePanel : UserControl
         if (P is not { } p || steps == 0 || block.Count == 0) return;
         // 위로는 맨 위 레이어부터, 아래로는 맨 아래부터 옮겨야 덩어리 안 순서가 그대로다.
         var order = steps > 0 ? block : block.Reverse().ToList();
-        _ctx.Structural(() => p.Edit("레이어 이동", ProjectChange.Layers, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_MoveLayersTo_0546BCFC65, ProjectChange.Layers, () =>
         {
             foreach (var layer in order)
                 for (int i = 0; i < Math.Abs(steps); i++)
@@ -796,7 +797,7 @@ public sealed class TimelinePanel : UserControl
         int at = _ctx.CurrentLayer;
         if (!CanMergeDown(p, at))
         {
-            Ui.Info(this, at == 0 ? "맨 아래 레이어는 아래로 병합할 수 없습니다." : "부위·그룹 레이어는 아래로 병합할 수 없습니다.");
+            Ui.Info(this, at == 0 ? UiStrings.S_TimelinePanel_MergeDown_8D22D2F9DB : UiStrings.S_TimelinePanel_MergeDown_D5363E1C76);
             return;
         }
         try
@@ -831,11 +832,11 @@ public sealed class TimelinePanel : UserControl
     private void SetLayerOpacity(int index)
     {
         if (P is not { } p) return;
-        var text = InputDialog.Ask(this, "레이어 불투명도", "불투명도(0~255)", p.Layers[index].Opacity.ToString(), ["255", "192", "128", "64"]);
+        var text = InputDialog.Ask(this, UiStrings.S_TimelinePanel_SetLayerOpacity_CF46646372, UiStrings.S_TimelinePanel_SetLayerOpacity_D496BC50BE, p.Layers[index].Opacity.ToString(), ["255", "192", "128", "64"]);
         if (text is null) return;
         if (!byte.TryParse(text, out var v))
         {
-            Ui.Error(this, "0~255 사이 숫자를 입력하세요.");
+            Ui.Error(this, UiStrings.S_TimelinePanel_SetLayerOpacity_367789B53A);
             return;
         }
         _ctx.Structural(() => p.SetLayerProperties(index, opacity: v));
@@ -894,7 +895,7 @@ public sealed class TimelinePanel : UserControl
             var skin = skins[i];
             var item = new MenuItem
             {
-                Header = Plain(i == 0 ? $"{skin.Name} (기본)" : skin.Name),
+                Header = Plain(i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SkinMenuItems_38CB630C12,skin.Name) : skin.Name),
                 ToggleType = MenuItemToggleType.Radio,
                 IsChecked = ReferenceEquals(skin, active),
             };
@@ -902,16 +903,16 @@ public sealed class TimelinePanel : UserControl
             items.Add(item);
         }
         items.Add(new Separator());
-        items.Add(Item("새 스킨(빈)", () => SkinOps.AddSkin(_ctx, group, null)));
-        items.Add(Item("지금 스킨 복제", () => SkinOps.AddSkin(_ctx, group, active)));
-        items.Add(Item("스킨 이름 바꾸기…", () => SkinOps.RenameSkin(_ctx, this, group, active)));
-        items.Add(Item("스킨 삭제", () => SkinOps.DeleteSkin(_ctx, this, group, active), skins.Count > 1));
-        items.Add(Item("스킨 앞으로", () => SkinOps.MoveSkin(_ctx, group, at, at - 1), at > 0));
-        items.Add(Item("스킨 뒤로", () => SkinOps.MoveSkin(_ctx, group, at, at + 1), at < skins.Count - 1));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_B0E982373D, () => SkinOps.AddSkin(_ctx, group, null)));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_F014A7BFC2, () => SkinOps.AddSkin(_ctx, group, active)));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_0E021CC75C, () => SkinOps.RenameSkin(_ctx, this, group, active)));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_BF2AA28CBD, () => SkinOps.DeleteSkin(_ctx, this, group, active), skins.Count > 1));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_409F86FB97, () => SkinOps.MoveSkin(_ctx, group, at, at - 1), at > 0));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_721A9DB29E, () => SkinOps.MoveSkin(_ctx, group, at, at + 1), at < skins.Count - 1));
         items.Add(new Separator());
         bool anyOverride = P is { } p && p.ChildrenOf(group).Any(x => x.SkinOverride is not null);
-        items.Add(Item("모든 부위를 그룹 스킨으로", () => _ctx.ResetPartSkins(group), anyOverride));
-        items.Add(Item("스킨 관리…", () => OpenSkinManager(group)));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_40DF34EC49, () => _ctx.ResetPartSkins(group), anyOverride));
+        items.Add(Item(UiStrings.S_TimelinePanel_SkinMenuItems_B61606E9A0, () => OpenSkinManager(group)));
         return items;
     }
 
@@ -921,7 +922,7 @@ public sealed class TimelinePanel : UserControl
         var own = part.SkinOverride;
         var follow = new MenuItem
         {
-            Header = Plain($"없음 (그룹 스킨 {group.ActiveSkin!.Name} 그대로)"),
+            Header = Plain(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PartSkinMenuItems_EB384BCB51,group.ActiveSkin!.Name)),
             ToggleType = MenuItemToggleType.Radio,
             IsChecked = own is null,
         };
@@ -933,7 +934,7 @@ public sealed class TimelinePanel : UserControl
             var skin = skins[i];
             var item = new MenuItem
             {
-                Header = Plain(skin.IsPartOnly ? $"{skin.Name} (개별)" : ReferenceEquals(skin, group.BaseSkin) ? $"{skin.Name} (기본)" : skin.Name),
+                Header = Plain(skin.IsPartOnly ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PartSkinMenuItems_6C100EAA80,skin.Name) : ReferenceEquals(skin, group.BaseSkin) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PartSkinMenuItems_CF3C760D28,skin.Name) : skin.Name),
                 ToggleType = MenuItemToggleType.Radio,
                 IsChecked = ReferenceEquals(skin, own),
             };
@@ -941,10 +942,10 @@ public sealed class TimelinePanel : UserControl
             items.Add(item);
         }
         items.Add(new Separator());
-        var addPartSkin = Item("이 부위 스킨…", () => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true));
+        var addPartSkin = Item(UiStrings.S_TimelinePanel_PartSkinMenuItems_AD14B32035, () => SkinOps.AddPartSkin(_ctx, this, part, null, prompt: true));
         addPartSkin.Icon = Ui.Icon(VectorIcon.Plus, 14);
         items.Add(addPartSkin);
-        items.Add(Item("스킨 관리…", () => OpenSkinManager(part)));
+        items.Add(Item(UiStrings.S_TimelinePanel_PartSkinMenuItems_179840054C, () => OpenSkinManager(part)));
         return items;
     }
 
@@ -961,7 +962,7 @@ public sealed class TimelinePanel : UserControl
         try
         {
             AnimationTag? tag = null;
-            _ctx.Structural(() => p.Edit("태그 추가", ProjectChange.Tags, () =>
+            _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_NewTag_89C5F490AE, ProjectChange.Tags, () =>
             {
                 tag = p.AddTag(dlg.TagName, dlg.From, dlg.To, dlg.Direction, dlg.Loop);
                 p.SetTag(p.Tags.ToList().IndexOf(tag), color: dlg.TagColor);
@@ -1036,11 +1037,11 @@ public sealed class TimelinePanel : UserControl
     private void AddFrameTail(List<Control> items, SpriteProject p, int frame)
     {
         items.Add(new Separator());
-        items.Add(Item("피벗을 기본값으로", () => _ctx.Structural(() => p.SetFramePivot(frame, null))));
-        items.Add(Item("이 프레임만 피벗 따로 쓰기", () => _ctx.Structural(() => p.SetFramePivot(frame, p.GetFramePivot(frame)))));
-        items.Add(Item("내보낼 칸 이름…", () =>
+        items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_30B4C69887, () => _ctx.Structural(() => p.SetFramePivot(frame, null))));
+        items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_8439D90B67, () => _ctx.Structural(() => p.SetFramePivot(frame, p.GetFramePivot(frame)))));
+        items.Add(Item(UiStrings.S_TimelinePanel_AddFrameTail_3DE73C6921, () =>
         {
-            var name = InputDialog.Ask(this, "칸 이름", "내보낼 칸 이름(비우면 규칙: {태그}_{번호})", p.Frames[frame].Name ?? "");
+            var name = InputDialog.Ask(this, UiStrings.S_TimelinePanel_AddFrameTail_5171DB3A9B, UiStrings.S_TimelinePanel_AddFrameTail_E23FDB5695, p.Frames[frame].Name ?? "");
             if (name is not null) _ctx.Structural(() => p.SetFrameName(frame, name));
         }));
     }
@@ -1050,23 +1051,23 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var frames = SelectedFrames();
-        string range = FramesText(frames), span = frames.Count > 1 ? $"프레임 {frames[0] + 1}~{frames[^1] + 1}" : $"프레임 {frames[0] + 1}";
+        string range = FramesText(frames), span = frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_A98AE8BAA0,frames[0] + 1,frames[^1] + 1) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_7849DB91AC,frames[0] + 1);
         var items = new List<Control>
         {
             SelectionHeader(),
             new Separator(),
-            Item($"태그 만들기… ({span})", NewTag),
+            Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_478619FBFF,span), NewTag),
             new Separator(),
-            Item("뒤에 빈 프레임 (Alt+N)", NewEmptyFrame),
-            Item("프레임 복제 (Alt+D)", DuplicateFrame),
-            Item(frames.Count > 1 ? $"삭제 ({range}) ({DeleteKeyName})" : $"삭제 ({DeleteKeyName})", DeleteFrame, frames.Count < p.Frames.Count),
-            Item("앞으로 옮기기", () => MoveFrame(-1), frame > 0),
-            Item("뒤로 옮기기", () => MoveFrame(1), frame < p.Frames.Count - 1),
-            Item($"길이… ({p.Frames[frame].DurationMs}ms)", SetDuration),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_0B9E635B3B, NewEmptyFrame),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_E852DE24A6, DuplicateFrame),
+            Item(frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_B87D177398,range,DeleteKeyName) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_F31A4BEC0A,DeleteKeyName), DeleteFrame, frames.Count < p.Frames.Count),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_90C081CF35, () => MoveFrame(-1), frame > 0),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_65AE77A221, () => MoveFrame(1), frame < p.Frames.Count - 1),
+            Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowFrameMenu_7DE4BD5946,p.Frames[frame].DurationMs), SetDuration),
             new Separator(),
-            Item("프레임 복사 (Ctrl+C)", () => CopySelection(false)),
-            Item("프레임 잘라내기 (Ctrl+X)", () => CopySelection(true), frames.Count < p.Frames.Count),
-            Item(_clip is { WholeFrames: true } ? "프레임 붙여넣기 (Ctrl+V)" : "셀 붙여넣기 (Ctrl+V)", () => PasteSelection(), _clip is not null),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_53613EAC0A, () => CopySelection(false)),
+            Item(UiStrings.S_TimelinePanel_ShowFrameMenu_F0463E8E47, () => CopySelection(true), frames.Count < p.Frames.Count),
+            Item(_clip is { WholeFrames: true } ? UiStrings.S_TimelinePanel_ShowFrameMenu_CEA5C91779 : UiStrings.S_TimelinePanel_ShowFrameMenu_3588867D6D, () => PasteSelection(), _clip is not null),
         };
         AddFrameTail(items, p, frame);
         ShowMenu([.. items]);
@@ -1077,7 +1078,7 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var (rows, frames) = CelBlock();
-        string range = frames.Count > 1 ? $"프레임 {frames.Min() + 1}~{frames.Max() + 1}" : $"프레임 {frames[0] + 1}";
+        string range = frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_4140F7A491,frames.Min() + 1,frames.Max() + 1) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F687732B1B,frames[0] + 1);
         bool single = rows.Count * frames.Count == 1;
         // 빌린 셀은 이 스킨 자신의 그림이 없어 지울 것이 없다(기본 스킨 셀은 기본 스킨에서 지움).
         bool borrowed = single && !p.Layers[layer].IsGroup && p.IsCelInherited(layer, frame);
@@ -1085,16 +1086,16 @@ public sealed class TimelinePanel : UserControl
         {
             SelectionHeader(),
             new Separator(),
-            Item(borrowed ? $"셀 지우기 (기본 스킨 그림을 빌려 보이는 중)" : $"셀 지우기 ({DeleteKeyName})", ClearSelectedCels, HasOwnCels(p, rows, frames)),
+            Item(borrowed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F4960F4C1A) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_470F8D50A4,DeleteKeyName), ClearSelectedCels, HasOwnCels(p, rows, frames)),
         };
         if (single && !p.Layers[layer].IsGroup)
-            items.Add(Item("이전 프레임 그림 복사", () => CopyCelFromPrevious(layer, frame), p.IsCelEmpty(layer, frame) && PreviousCelFrame(p, layer, frame) >= 0));
+            items.Add(Item(UiStrings.S_TimelinePanel_ShowCelMenu_F578B13F0B, () => CopyCelFromPrevious(layer, frame), p.IsCelEmpty(layer, frame) && PreviousCelFrame(p, layer, frame) >= 0));
         items.AddRange(
         [
             new Separator(),
-            Item("셀 복사 (Ctrl+C)", () => CopySelection(false)),
-            Item("셀 잘라내기 (Ctrl+X)", () => CopySelection(true)),
-            Item(_clip is { WholeFrames: true } ? "프레임 붙여넣기 (Ctrl+V)" : "셀 붙여넣기 (Ctrl+V)", () => PasteSelection(), _clip is not null),
+            Item(UiStrings.S_TimelinePanel_ShowCelMenu_6618250E5A, () => CopySelection(false)),
+            Item(UiStrings.S_TimelinePanel_ShowCelMenu_8FF74D6DA3, () => CopySelection(true)),
+            Item(_clip is { WholeFrames: true } ? UiStrings.S_TimelinePanel_ShowCelMenu_A934B99F70 : UiStrings.S_TimelinePanel_ShowCelMenu_8E28DA59DD, () => PasteSelection(), _clip is not null),
         ]);
         // 효과 창을 고른 칸들의 프레임 범위로 열어 거기서 종류·범위를 골라 추가한다.
         var effectRange = FrameRange.Of(frames.Min(), frames.Max(), p.Frames.Count);
@@ -1104,24 +1105,24 @@ public sealed class TimelinePanel : UserControl
             : p.Tags.Where(t => t.From <= start && start <= t.To).Select(t => t.To).DefaultIfEmpty(p.Frames.Count - 1).Max();
         var motionRange = FrameRange.Of(start, end, p.Frames.Count);
         items.Add(new Separator());
-        items.Add(Item($"효과 추가… ({(effectRange is null ? "모든 프레임" : range)})", () => EditLayerEffects(layer, -1, effectRange, motionRange)));
+        items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_21F847E58A,(effectRange is null ? UiStrings.S_TimelinePanel_ShowCelMenu_1631708D81 : range)), () => EditLayerEffects(layer, -1, effectRange, motionRange)));
         items.Add(new Separator());
-        items.Add(Item($"태그 만들기… ({range})", NewTag));
-        items.Add(Item("뒤에 빈 프레임 (Alt+N)", NewEmptyFrame));
-        items.Add(Item("프레임 복제 (Alt+D)", DuplicateFrame));
-        items.Add(Item($"길이… ({p.Frames[frame].DurationMs}ms)", SetDuration));
+        items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_A6F62B79BC,range), NewTag));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowCelMenu_1AE424CCE8, NewEmptyFrame));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowCelMenu_5BF39C02EE, DuplicateFrame));
+        items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_28166ED748,p.Frames[frame].DurationMs), SetDuration));
         AddFrameTail(items, p, frame);
         ShowMenu([.. items]);
     }
 
     /// <summary>레이어 이름 열 빈 곳·왼쪽 위 칸 우클릭: 새로 만들기.</summary>
     private void ShowEmptyMenu() => ShowMenu(
-        Item("새 레이어 (Shift+N)", AddLayer),
-        Item("새 그룹", AddGroup),
-        Item("새 부위… (Shift+P)", AddPart),
+        Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_BD6EAD0E34, AddLayer),
+        Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_3C96CCD165, AddGroup),
+        Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_3E26686E9F, AddPart),
         new Separator(),
-        Item("끝에 빈 프레임", () => AppendFrame(false, _ctx.CurrentLayer)),
-        Item("끝에 마지막 프레임 복사", () => AppendFrame(true, _ctx.CurrentLayer)));
+        Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_43E7688224, () => AppendFrame(false, _ctx.CurrentLayer)),
+        Item(UiStrings.S_TimelinePanel_ShowEmptyMenu_A8038996C4, () => AppendFrame(true, _ctx.CurrentLayer)));
 
     private void ShowLayerMenu(int index)
     {
@@ -1131,63 +1132,63 @@ public sealed class TimelinePanel : UserControl
         {
             SelectionHeader(),
             new Separator(),
-            Item("이름 바꾸기", BeginRenameLayer),
-            Item("불투명도…", () => SetLayerOpacity(index)),
-            Item(layer.Effects.Count > 0 ? $"효과… ({layer.Effects.Count})" : "효과…", () => EditLayerEffects(index)),
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_89E0EF3AE5, BeginRenameLayer),
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_D344F8CCE8, () => SetLayerOpacity(index)),
+            Item(layer.Effects.Count > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_4C4B49E76B,layer.Effects.Count) : UiStrings.S_TimelinePanel_ShowLayerMenu_C11C7262F2, () => EditLayerEffects(index)),
         };
-        if (layer.Effects.Count > 0) items.Add(Item(layer.EffectsCollapsed ? "효과 줄 펼치기" : "효과 줄 접기", () => ToggleEffectRows(index)));
+        if (layer.Effects.Count > 0) items.Add(Item(layer.EffectsCollapsed ? UiStrings.S_TimelinePanel_ShowLayerMenu_BD012C50E0 : UiStrings.S_TimelinePanel_ShowLayerMenu_15B443F2B3, () => ToggleEffectRows(index)));
         items.AddRange(
         [
-            Item("보이기/숨기기", () => ToggleLayer(index, false)),
-            Item("잠금/풀기", () => ToggleLayer(index, true)),
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_E46DC4274C, () => ToggleLayer(index, false)),
+            Item(UiStrings.S_TimelinePanel_ShowLayerMenu_205CF20EA0, () => ToggleLayer(index, true)),
         ]);
         if (layer.IsPart)
         {
             items.Add(new Separator());
-            items.Add(Item($"부위 크기… ({layer.PartSize.Width}×{layer.PartSize.Height})", () => ResizePartAt(index)));
-            items.Add(Item($"위치… ({layer.PartOffset.X}, {layer.PartOffset.Y})" + (layer.IsAutoLaidOut ? " · 자동 배치 중" : ""), () => SetPartPosition(index)));
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_66BE4C8AA7,layer.PartSize.Width,layer.PartSize.Height), () => ResizePartAt(index)));
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_73BDC86998,layer.PartOffset.X,layer.PartOffset.Y) + (layer.IsAutoLaidOut ? UiStrings.S_TimelinePanel_ShowLayerMenu_8A6B808B32 : ""), () => SetPartPosition(index)));
             if (layer.Parent is { IsGroup: true } owner)
             {
                 items.Add(new MenuItem
                 {
-                    Header = Plain(layer.SkinOverride is { } own ? $"이 부위 스킨: {own.Name} ({(own.IsPartOnly ? "개별" : "부위만 따로")})" : $"이 부위 스킨: 없음 (그룹 스킨 {owner.ActiveSkin!.Name} 그대로)"),
+                    Header = Plain(layer.SkinOverride is { } own ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_24F3803FE4,own.Name,(own.IsPartOnly ? UiStrings.S_TimelinePanel_ShowLayerMenu_5BB456B67D : UiStrings.S_TimelinePanel_ShowLayerMenu_FA9043A1C8)) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_595B6531BF,owner.ActiveSkin!.Name)),
                     ItemsSource = PartSkinMenuItems(layer, owner),
                 });
-                items.Add(new MenuItem { Header = Plain($"그룹 스킨: {owner.ActiveSkin!.Name}"), ItemsSource = SkinMenuItems(owner) });
+                items.Add(new MenuItem { Header = Plain(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_5312E16A53,owner.ActiveSkin!.Name)), ItemsSource = SkinMenuItems(owner) });
             }
         }
         else if (layer.IsGroup)
         {
             items.Add(new Separator());
-            items.Add(Item("부위 추가…", () => AddPartTo(layer)));
-            items.Add(Item(layer.Collapsed ? "펼치기" : "접기", () => ToggleCollapsed(index)));
-            var layoutItem = Item(layer.AutoLayout is null ? "자동 배치…" : "자동 배치 설정…", () => EditGroupLayout(index));
+            items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_CC4093DC8F, () => AddPartTo(layer)));
+            items.Add(Item(layer.Collapsed ? UiStrings.S_TimelinePanel_ShowLayerMenu_8BC8B2C00F : UiStrings.S_TimelinePanel_ShowLayerMenu_DF2CF41103, () => ToggleCollapsed(index)));
+            var layoutItem = Item(layer.AutoLayout is null ? UiStrings.S_TimelinePanel_ShowLayerMenu_E476AEFAC3 : UiStrings.S_TimelinePanel_ShowLayerMenu_05537BB2FE, () => EditGroupLayout(index));
             if (layer.AutoLayout is not null)
             {
                 layoutItem.ToggleType = MenuItemToggleType.CheckBox;
                 layoutItem.IsChecked = true;
             }
             items.Add(layoutItem);
-            if (layer.AutoLayout is not null) items.Add(Item("자동 배치 끄기", () => TurnOffGroupLayout(layer)));
-            items.Add(new MenuItem { Header = Plain($"스킨: {layer.ActiveSkin!.Name}"), ItemsSource = SkinMenuItems(layer) });
+            if (layer.AutoLayout is not null) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_14ED4902E9, () => TurnOffGroupLayout(layer)));
+            items.Add(new MenuItem { Header = Plain(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_07F7E49A77,layer.ActiveSkin!.Name)), ItemsSource = SkinMenuItems(layer) });
         }
         items.Add(new Separator());
-        items.Add(Item("새 레이어", AddLayer));
-        items.Add(Item("새 그룹", AddGroup));
-        if (!layer.IsGroup) items.Add(Item("새 부위…", AddPart));
-        items.Add(Item("복제", DuplicateLayer));
-        items.Add(Item("위로", () => MoveLayer(1)));
-        items.Add(Item("아래로", () => MoveLayer(-1)));
-        items.Add(Item("아래와 병합", MergeDown, CanMergeDown(p, index)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_AA2FF06061, AddLayer));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_13B10F0946, AddGroup));
+        if (!layer.IsGroup) items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_804EB6B1D9, AddPart));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_1524FC7BD9, DuplicateLayer));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_9BA618B63B, () => MoveLayer(1)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_51558AB208, () => MoveLayer(-1)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowLayerMenu_54B2D67C9E, MergeDown, CanMergeDown(p, index)));
         int selected = _grid.Kind == SelKind.Layers ? _grid.SelectedLayerList().Count : 1;
-        items.Add(Item(selected > 1 ? $"삭제 (레이어 {selected}개) ({DeleteKeyName})" : $"삭제 ({DeleteKeyName})", DeleteSelectedLayers));
+        items.Add(Item(selected > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_4572E665BD,selected,DeleteKeyName) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_568F9BADA5,DeleteKeyName), DeleteSelectedLayers));
         ShowMenu([.. items]);
     }
 
     private void ShowTagMenu(AnimationTag tag) => ShowMenu(
-        Item("태그 속성…", () => EditTag(tag)),
-        Item("이 태그 재생", () => { _ctx.SelectedTag = tag; _ctx.SetCurrentFrame(tag.From); _preview.Play(); }),
-        Item("삭제", () => DeleteTag(tag)));
+        Item(UiStrings.S_TimelinePanel_ShowTagMenu_2102446206, () => EditTag(tag)),
+        Item(UiStrings.S_TimelinePanel_ShowTagMenu_F2CC864CE4, () => { _ctx.SelectedTag = tag; _ctx.SetCurrentFrame(tag.From); _preview.Play(); }),
+        Item(UiStrings.S_TimelinePanel_ShowTagMenu_CB0220F6BE, () => DeleteTag(tag)));
 
     /// <summary>
     /// 효과 줄 우클릭 메뉴(효과 <paramref name="effectIndex"/>, 누른 프레임 <paramref name="frame"/>). <paramref name="inBox"/>: 효과 상자 위(아니면 상자 밖 빈 칸).
@@ -1204,28 +1205,28 @@ public sealed class TimelinePanel : UserControl
         {
             SelectionHeader(),
             new Separator(),
-            Item("효과 설정…", () => EditLayerEffects(p.IndexOf(layer), effectIndex)),
+            Item(UiStrings.S_TimelinePanel_ShowEffectMenu_62925D147C, () => EditLayerEffects(p.IndexOf(layer), effectIndex)),
             new Separator(),
         };
         if (!inBox)
         {
-            items.Add(Item($"여기(프레임 {frame + 1})까지 늘리기", () => SetRange(Math.Min(from, frame), Math.Max(to, frame))));
-            items.Add(Item($"여기부터 복사본 추가 (프레임 {frame + 1}~끝)", () => ChangeEffects(layer, list =>
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_8640EB7B98,frame + 1), () => SetRange(Math.Min(from, frame), Math.Max(to, frame))));
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_A8337F1B36,frame + 1), () => ChangeEffects(layer, list =>
                 list.Insert(effectIndex + 1, effect with { Frames = FrameRange.Of(frame, last, p.Frames.Count) }))));
             items.Add(new Separator());
         }
-        items.Add(Item("모든 프레임으로", () => SetRange(0, last), effect.Frames is not null));
-        items.Add(Item($"이 프레임만 (프레임 {frame + 1})", () => SetRange(frame, frame), (from, to) != (frame, frame)));
-        items.Add(Item("이 프레임부터 끝까지", () => SetRange(frame, last), (from, to) != (frame, last)));
-        items.Add(Item("처음부터 이 프레임까지", () => SetRange(0, frame), (from, to) != (0, frame)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_818FAF1DA5, () => SetRange(0, last), effect.Frames is not null));
+        items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_181217F649,frame + 1), () => SetRange(frame, frame), (from, to) != (frame, frame)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_C98E3A64DD, () => SetRange(frame, last), (from, to) != (frame, last)));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_79EB88D409, () => SetRange(0, frame), (from, to) != (0, frame)));
         items.Add(new Separator());
-        items.Add(Item(effect.Enabled ? "끄기" : "켜기", () => SetEffectEnabled(layer, effectIndex, !effect.Enabled)));
+        items.Add(Item(effect.Enabled ? UiStrings.S_TimelinePanel_ShowEffectMenu_2CA080D647 : UiStrings.S_TimelinePanel_ShowEffectMenu_BDEDBE0115, () => SetEffectEnabled(layer, effectIndex, !effect.Enabled)));
         int selected = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList().Count : 1;
-        items.Add(Item(selected > 1 ? $"삭제 (효과 {selected}개) ({DeleteKeyName})" : $"삭제 ({DeleteKeyName})", DeleteSelectedEffects));
+        items.Add(Item(selected > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_94213B6D1A,selected,DeleteKeyName) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_0C9DDBBB24,DeleteKeyName), DeleteSelectedEffects));
         items.Add(BakeItem(p, layer, effectIndex));
         items.Add(new Separator());
-        items.Add(Item("효과 복사 (Ctrl+C)", () => CopySelection(false)));
-        items.Add(Item($"효과 붙여넣기 → 현재 레이어 (Ctrl+V)", () => PasteSelection(), _fxClip is { Count: > 0 }));
+        items.Add(Item(UiStrings.S_TimelinePanel_ShowEffectMenu_B155BA0146, () => CopySelection(false)));
+        items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowEffectMenu_44E405DEFB), () => PasteSelection(), _fxClip is { Count: > 0 }));
         ShowMenu([.. items]);
     }
 
@@ -1245,9 +1246,9 @@ public sealed class TimelinePanel : UserControl
         var targets = BakeTargets(layer, effectIndex);
         int extra = targets.Sum(t => Gpixel.Core.Edit.LayerEffects.BakeSet(t.Layer.Effects, t.Indices).Count - t.Indices.Length);
         string? why = targets.Select(t => LayerEffectsDialog.CanBake(p, t.Layer).Why).FirstOrDefault(w => w is not null);
-        var item = Item(extra > 0 ? $"효과 영구 적용 (위 효과 {extra}개 포함)" : "효과 영구 적용", BakeSelectedEffects, why is null);
-        ToolTip.SetTip(item, why ?? "효과를 셀 픽셀에 구워 넣고(이후 그림처럼 고칠 수 있음) 효과는 지웁니다. 실행취소 한 단계."
-                                   + (extra > 0 ? " 고른 효과는 위 효과의 결과에 입혀지므로 위의 켜진 효과도 함께 굽습니다(보이던 그대로)." : ""));
+        var item = Item(extra > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_BakeItem_E6E9674BDF,extra) : UiStrings.S_TimelinePanel_BakeItem_F52DF1DF1B, BakeSelectedEffects, why is null);
+        ToolTip.SetTip(item, why ?? UiStrings.S_TimelinePanel_BakeItem_1998F6F6DC
+                                   + (extra > 0 ? UiStrings.S_TimelinePanel_BakeItem_1E2A5FF4B7 : ""));
         ToolTip.SetShowOnDisabled(item, true);
         return item;
 
@@ -1256,7 +1257,7 @@ public sealed class TimelinePanel : UserControl
             var messages = new List<string>();
             try
             {
-                _ctx.Structural(() => p.Edit("효과 영구 적용", ProjectChange.Layers | ProjectChange.Pixels, () =>
+                _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_BakeItem_F52DF1DF1B, ProjectChange.Layers | ProjectChange.Pixels, () =>
                 {
                     foreach (var (target, indices) in targets)
                         messages.Add(LayerEffectsDialog.BakeSummary(p.BakeLayerEffects(p.IndexOf(target), indices), target));
@@ -1278,7 +1279,7 @@ public sealed class TimelinePanel : UserControl
         if (P is not { } p) return;
         var chosen = _grid.SelectedEffectList();
         if (chosen.Count == 0) return;
-        _ctx.Structural(() => p.Edit("효과 삭제", ProjectChange.Layers, () =>
+        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_DeleteSelectedEffects_5A67D334E0, ProjectChange.Layers, () =>
         {
             foreach (var group in chosen.GroupBy(x => x.Layer))
             {
@@ -1287,7 +1288,7 @@ public sealed class TimelinePanel : UserControl
             }
         }));
         _grid.ResetRange();
-        Say(Ui.Shortcut($"효과 {chosen.Count}개 삭제 — Ctrl+Z로 되돌립니다."));
+        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_DeleteSelectedEffects_3D286DB37F,chosen.Count)));
     }
 
     /// <summary>
@@ -1304,7 +1305,7 @@ public sealed class TimelinePanel : UserControl
         at = Math.Clamp(at, 0, dest.Count);
         if (same && at == a) return;
         dest.InsertRange(at, block);
-        _ctx.Structural(() => p.Edit(same ? "효과 순서" : "효과 옮기기", ProjectChange.Layers, () =>
+        _ctx.Structural(() => p.Edit(same ? UiStrings.S_TimelinePanel_MoveEffects_42F6E813C8 : UiStrings.S_TimelinePanel_MoveEffects_678C3C2110, ProjectChange.Layers, () =>
         {
             if (!same) p.SetLayerEffects(p.IndexOf(source), rest);
             p.SetLayerEffects(p.IndexOf(target), dest);
@@ -1312,7 +1313,7 @@ public sealed class TimelinePanel : UserControl
         // 옮긴 효과가 보이게(접어 둔 효과 줄은 펼침, 기록 없음)
         if (target.EffectsCollapsed) p.SetLayerEffectsCollapsed(p.IndexOf(target), false);
         _grid.SelectEffects(Enumerable.Range(at, block.Count).Select(i => (target, i)));
-        Say(Ui.Shortcut(same ? $"효과 순서를 바꿨습니다 — Ctrl+Z로 되돌립니다." : $"효과 {block.Count}개를 \"{target.Name}\"(으)로 옮겼습니다 — Ctrl+Z로 되돌립니다."));
+        Say(Ui.Shortcut(same ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_0BC382FE0B) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_D2762F8B1A,block.Count,target.Name)));
     }
 
     /// <summary>효과 목록을 고쳐 넣는다(실행취소 한 단계, 그대로면 기록 없음).</summary>
@@ -2642,7 +2643,7 @@ public sealed class TimelinePanel : UserControl
                             VectorIcons.Draw(g, a, new Rect(textRect.X, r.Y, 11, r.Height), 10, ink);
                         textRect = new Rect(textRect.X + 14, textRect.Y, Math.Max(0, textRect.Width - 14), textRect.Height);
                     }
-                    Text(g, tag.Name + (tag.Loop ? "" : " (1회)"), textRect, ink, small: true);
+                    Text(g, tag.Name + (tag.Loop ? "" : UiStrings.S_TimelinePanel_Paint_6A31D51450), textRect, ink, small: true);
                 }
                 for (int ck = 0; ck < _colT.SlotCount; ck++)
                 {
@@ -2757,7 +2758,7 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 2, check.Y + 4.5), new Avalonia.Point(check.X + 4, check.Y + 6.5));
                     g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 4, check.Y + 6.5), new Avalonia.Point(check.X + 7.5, check.Y + 2.5));
                 }
-                var label = effect.DisplayName + (effect.Frames is { } fr ? $" · 프레임 {fr}" : "");
+                var label = effect.DisplayName + (effect.Frames is { } fr ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_Paint_5AB8DD426F,fr) : "");
                 Text(g, label, new Rect(x + 15, ry, Math.Max(1, NameW - x - 19), FxH), effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush, small: true);
                 if (selected) g.DrawRectangle(null, AccentPen, new Rect(1, ry + 1, NameW - 3, FxH - 2));
             }
@@ -2776,7 +2777,7 @@ public sealed class TimelinePanel : UserControl
 
             // 레이어 이름 열
             g.FillRectangle(AppTheme.PanelBrush, new Rect(0, 0, NameW, TagH + HeadH));
-            Text(g, "레이어 \\ 프레임", new Rect(4, TagH, NameW - 8, HeadH), AppTheme.DimTextBrush, small: true);
+            Text(g, UiStrings.S_TimelinePanel_Paint_E44BCB02E8, new Rect(4, TagH, NameW - 8, HeadH), AppTheme.DimTextBrush, small: true);
             using (g.PushClip(namesClip))
             {
                 for (int rk = 0; rk < _rowT.SlotCount; rk++)
@@ -3412,10 +3413,10 @@ public sealed class TimelinePanel : UserControl
         private void SetLayoutBadgeHover(Layer? group)
         {
             _layoutBadgeHover = group;
-            const string tip = "자동 배치 켜짐 — 눌러 설정";
+            string tip = UiStrings.Timeline_LayoutBadgeTip;
             ToolTip.SetTip(this, group is null ? null : tip);
             ToolTip.SetIsOpen(this, group is not null);
-            if (group is not null) _owner.Say($"그룹 \"{group.Name}\": {tip}");
+            if (group is not null) _owner.Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SetLayoutBadgeHover_309A0A0649,group.Name,tip));
             InvalidateVisual();
         }
 
@@ -3883,7 +3884,7 @@ public sealed class TagDialog : DialogBase
     private readonly CheckBox _loop;
     private readonly ColorField _color;
 
-    public TagDialog(SpriteProject project, AnimationTag? tag, int from, int to) : base(tag is null ? "새 태그(애니메이션)" : "태그 속성")
+    public TagDialog(SpriteProject project, AnimationTag? tag, int from, int to) : base(tag is null ? UiStrings.S_TimelinePanel_TagDialog_723CE1A597 : UiStrings.S_TimelinePanel_TagDialog_74D5D76F0D)
     {
         int n = project.Frames.Count;
         _name = new ComboBox { IsEditable = true, Width = 200, Margin = new Thickness(3) };
@@ -3891,25 +3892,25 @@ public sealed class TagDialog : DialogBase
         _name.Text = tag?.Name ?? TimelinePanel.SuggestedNames.FirstOrDefault(s => !project.HasTag(s)) ?? project.UniqueTagName("anim");
         _from = Ui.Num(1, n, from + 1, 60).Presets(Ui.FrameNumbers(n)).RecentKey("tag.frame");
         _to = Ui.Num(1, n, to + 1, 60).Presets(Ui.FrameNumbers(n)).RecentKey("tag.frame");
-        _direction = Ui.Combo(110, "정방향", "역방향", "왕복");
+        _direction = Ui.Combo(110, UiStrings.S_TimelinePanel_TagDialog_29A4F2A73C, UiStrings.S_TimelinePanel_TagDialog_11A983652D, UiStrings.S_TimelinePanel_TagDialog_B280AE24E4);
         _direction.SelectedIndex = (int)(tag?.Direction ?? TagDirection.Forward);
-        _loop = Ui.Check("반복", tag?.Loop ?? true);
+        _loop = Ui.Check(UiStrings.S_TimelinePanel_TagDialog_C8283F32B5, tag?.Loop ?? true);
         _color = new ColorField(tag?.Color ?? AnimationTag.DefaultColors[project.Tags.Count % AnimationTag.DefaultColors.Count]);
-        Body.Children.Add(Ui.Label("이름 (테스트 규칙: idle_down, walk_left, run, jump, fall …)"));
+        Body.Children.Add(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_9C825E0AF6));
         Body.Children.Add(_name);
-        Body.Children.Add(Ui.Row(Ui.Label("프레임"), _from, Ui.Label("~"), _to));
-        Body.Children.Add(Ui.Row(Ui.Label("방향"), _direction, _loop));
-        Body.Children.Add(Ui.Row(Ui.Label("색"), _color));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_0F6A4740E4), _from, Ui.Label("~"), _to));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_94754AAEF6), _direction, _loop));
+        Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_TimelinePanel_TagDialog_6A8F38ED94), _color));
         OkButton.Click += (_, _) =>
         {
-            if (TagName.Length == 0) { Ui.Error(this, "이름을 입력하세요."); DialogResult = DialogResult.None; return; }
+            if (TagName.Length == 0) { Ui.Error(this, UiStrings.S_TimelinePanel_TagDialog_84CC38ACF3); DialogResult = DialogResult.None; return; }
             if (project.Tags.Any(t => t.Name == TagName && !ReferenceEquals(t, tag)))
             {
-                Ui.Error(this, $"\"{TagName}\" 태그가 이미 있습니다.");
+                Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_TagDialog_DF0CF7BD36,TagName));
                 DialogResult = DialogResult.None;
                 return;
             }
-            if (_to.NumValue() < _from.NumValue()) { Ui.Error(this, "끝 프레임이 시작보다 앞입니다."); DialogResult = DialogResult.None; }
+            if (_to.NumValue() < _from.NumValue()) { Ui.Error(this, UiStrings.S_TimelinePanel_TagDialog_96907A65F2); DialogResult = DialogResult.None; }
         };
     }
 

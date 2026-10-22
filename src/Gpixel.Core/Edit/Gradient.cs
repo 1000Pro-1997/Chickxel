@@ -99,7 +99,7 @@ public static class Gradient
     public static Color32 ColorAt(IReadOnlyList<GradientStop> stops, double t, GradientInterpolation mode = GradientInterpolation.Smooth,
         GradientDither dither = GradientDither.None, int x = 0, int y = 0)
     {
-        if (stops.Count == 0) throw new ArgumentException("정지점이 하나 이상 있어야 합니다.", nameof(stops));
+        if (stops.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Gradient_EmptyStops, nameof(stops));
         if (t <= stops[0].Position) return stops[0].Color;
         if (t >= stops[^1].Position) return stops[^1].Color;
         int i = 0;
@@ -144,7 +144,7 @@ public static class Gradient
     {
         if (start == end) return 0;
         var sorted = Sorted(stops);
-        if (sorted.Count == 0) throw new ArgumentException("정지점이 하나 이상 있어야 합니다.", nameof(stops));
+        if (sorted.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Gradient_EmptyStops, nameof(stops));
         var alpha = SortedAlpha(alphaStops ?? []);
         var area = Rectangle.Intersect(clip?.Bounds ?? image.Bounds, image.Bounds);
         int changed = 0;

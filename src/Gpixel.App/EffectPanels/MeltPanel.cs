@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -8,15 +9,15 @@ public sealed partial class LayerEffectsDialog
     private void MeltPanel(MeltEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static MeltEffect M(LayerEffect v) => (MeltEffect)v;
-        SettingsRow("거리", NumEditor(1, MeltEffect.MaxDistance, e.Distance, NumKinds.Distance, v => set(o => M(o) with { Distance = v })), Ui.Label("px (끝까지 내려가는 거리)"));
-        SettingsRow("불규칙함", NumEditor(0, 100, e.Irregularity, NumKinds.Random, v => set(o => M(o) with { Irregularity = v })), Ui.Label("% (열마다 늦게·느리게)"));
-        SettingsRow("", CheckEditor("늘어짐 (흘러내린 자국)", e.Stretch, v => set(o => M(o) with { Stretch = v })),
-            CheckEditor("사라짐", e.Fade, v => set(o => M(o) with { Fade = v })));
+        SettingsRow(UiStrings.S_MeltPanel_MeltPanel_F9F8B83973, NumEditor(1, MeltEffect.MaxDistance, e.Distance, NumKinds.Distance, v => set(o => M(o) with { Distance = v })), Ui.Label(UiStrings.S_MeltPanel_MeltPanel_6EDA79E298));
+        SettingsRow(UiStrings.S_MeltPanel_MeltPanel_51CBEF5EB8, NumEditor(0, 100, e.Irregularity, NumKinds.Random, v => set(o => M(o) with { Irregularity = v })), Ui.Label(UiStrings.S_MeltPanel_MeltPanel_54B1D35C64));
+        SettingsRow("", CheckEditor(UiStrings.S_MeltPanel_MeltPanel_05D178E28F, e.Stretch, v => set(o => M(o) with { Stretch = v })),
+            CheckEditor(UiStrings.S_MeltPanel_MeltPanel_A67CF586F8, e.Fade, v => set(o => M(o) with { Fade = v })));
         var seed = NumEditor(0, MeltEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => M(o) with { Seed = v }));
-        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 녹는 모양(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, MeltEffect.MaxSeed + 1), 36);
-        SettingsRow("시드", seed, reroll);
+        var reroll = Ui.IconButton(VectorIcon.Dice, UiStrings.S_MeltPanel_MeltPanel_B26E6FC89A, (_, _) => seed.Value = System.Random.Shared.Next(0, MeltEffect.MaxSeed + 1), 36);
+        SettingsRow(UiStrings.S_MeltPanel_MeltPanel_E8772786EA, seed, reroll);
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("픽셀이 열마다 조금씩 다른 때·빠르기로 아래로 흘러내리고(늘어짐이면 아래쪽일수록 더 내려가 자국이 남음), 사라짐이면 다 내려가면서 투명해집니다."
-                                    + " 범위 첫 프레임은 그림 그대로, 아래로 거리만큼 여백이 생깁니다."));
+        _settings.Children.Add(Hint(UiStrings.S_MeltPanel_MeltPanel_CB59847BAC
+                                    + UiStrings.S_MeltPanel_MeltPanel_C1680743FF));
     }
 }

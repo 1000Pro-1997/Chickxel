@@ -28,10 +28,10 @@ public sealed class MergeSource
     /// <summary>그림 파일: 프레임마다 그림 한 장(모두 같은 크기)과 길이.</summary>
     public MergeSource(string name, IReadOnlyList<PixelImage> frames, IReadOnlyList<int> durations)
     {
-        if (frames.Count == 0) throw new ArgumentException("프레임이 없습니다.", nameof(frames));
-        if (durations.Count != frames.Count) throw new ArgumentException("프레임 길이 수가 프레임 수와 다릅니다.", nameof(durations));
+        if (frames.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Merge_NoFrames, nameof(frames));
+        if (durations.Count != frames.Count) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Merge_DurationCountMismatch, nameof(durations));
         var size = frames[0].Size;
-        if (frames.Any(f => f.Size != size)) throw new ArgumentException("프레임 그림 크기가 서로 다릅니다.", nameof(frames));
+        if (frames.Any(f => f.Size != size)) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Merge_FrameSizeMismatch, nameof(frames));
         var p = SpriteProject.CreateBlank(size.Width, size.Height);
         var layer = new Layer(name);
         p.AddLayerRaw(layer);
@@ -49,7 +49,7 @@ public sealed class MergeSource
     /// <summary>프로젝트(<c>.gpixel</c> 또는 열려 있는 문서). 바꾸지 않고 읽기만 한다.</summary>
     public MergeSource(string name, SpriteProject project)
     {
-        if (project.Frames.Count == 0) throw new ArgumentException("프레임이 없습니다.", nameof(project));
+        if (project.Frames.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Merge_NoFrames, nameof(project));
         Name = name;
         FileName = name + SpriteProject.FileExtension;
         Project = project;
@@ -136,7 +136,7 @@ public static class ProjectMerge
     public static SpriteProject Merge(IReadOnlyList<MergeSource> sources, MergeOptions options, SpriteSettings? spriteDefaults = null,
         List<string>? notes = null)
     {
-        if (sources.Count == 0) throw new ArgumentException("합칠 파일이 없습니다.", nameof(sources));
+        if (sources.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Merge_NoSources, nameof(sources));
         var p = new Builder(sources, options, notes).Build();
         if (sources.FirstOrDefault(s => s.IsProject) is { } first)
         {
@@ -235,7 +235,7 @@ public static class ProjectMerge
                 else
                 {
                     foreach (var top in TopLevel(s)) list.AddRange(CopyBlock(s, top, _frames, 0));
-                    Note($"{s.FileName}의 {Kept(s)} 유지합니다.");
+                    Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_Keep(name: s.FileName, kept: Kept(s)));
                 }
                 perSource.Add(list);
             }
@@ -252,7 +252,7 @@ public static class ProjectMerge
             {
                 perSource[t.Index] = CopyAll(t.Source);
                 group = MapsOf(t.Source).Layers[t.Group];
-                Note($"{t.Source.FileName}의 {Kept(t.Source)} 유지합니다 — 그림은 \"{t.Group.Name}\" 그룹의 새 부위로 넣습니다.");
+                Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_KeepGroupAsParts(name: t.Source.FileName, kept: Kept(t.Source), group: t.Group.Name));
             }
             group ??= new Layer(NewGroupName()) { Kind = LayerKind.Group };
             for (int i = 0; i < sources.Count; i++)
@@ -262,13 +262,13 @@ public static class ProjectMerge
                 if (s.HasGroups)
                 {
                     perSource[i] = CopyAll(s);
-                    Note($"{s.FileName}의 {Kept(s)} 그대로 옆에 넣습니다.");
+                    Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_KeepAside(name: s.FileName, kept: Kept(s)));
                     continue;
                 }
                 perSource[i] = [];
                 var layers = TopLevel(s).ToList();
                 newParts[i] = layers.Select(l => ImagePart(s, l, layers.Count == 1 ? s.Name : $"{s.Name} {l.Name}", group)).ToList();
-                if (layers.Count > 1) Note($"{s.FileName}의 레이어 {layers.Count}개를 부위 {layers.Count}개로 넣습니다.");
+                if (layers.Count > 1) Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_LayersToParts(name: s.FileName, count: layers.Count));
             }
 
             // 목록 순서 = 위 → 아래: 대상 파일보다 앞 파일의 부위는 원래 부위 위, 뒤 파일은 아래.
@@ -292,7 +292,7 @@ public static class ProjectMerge
             }
             if (options.BlankCover)
                 foreach (var part in perSource.SelectMany(l => l).Where(l => ReferenceEquals(l.Parent, group))) part.Visible = false;
-            if (options.BlankCover && target is not null) Note($"빈 대표 이미지: \"{group.Name}\" 그룹의 부위를 모두(원래 부위 포함) 숨깁니다.");
+            if (options.BlankCover && target is not null) Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_BlankCover(group: group.Name));
             for (int i = sources.Count - 1; i >= 0; i--) _stack.AddRange(perSource[i]);
         }
 
@@ -308,7 +308,7 @@ public static class ProjectMerge
             {
                 perSource[t.Index] = CopyAll(t.Source);
                 group = MapsOf(t.Source).Layers[t.Group];
-                Note($"{t.Source.FileName}의 {Kept(t.Source)} 유지합니다 — 그림은 \"{t.Group.Name}\" 그룹의 새 스킨으로 넣습니다.");
+                Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_KeepGroupAsSkins(name: t.Source.FileName, kept: Kept(t.Source), group: t.Group.Name));
             }
             else if (sources.Any(s => s.ImageLayer is not null))
             {
@@ -317,7 +317,7 @@ public static class ProjectMerge
                 group = new Layer(NewGroupName()) { Kind = LayerKind.Group };
                 var size = new Size(images.Max(s => s.Size.Width), images.Max(s => s.Size.Height));
                 var (x, y) = PixelImage.AnchorOffset(size.Width, size.Height, W, H, options.Anchor);
-                var part = new Layer("부위") { Kind = LayerKind.Part, Parent = group, PartSize = size, PartOffset = new Point(x, y) };
+                var part = new Layer(Gpixel.Core.Localization.DomainStrings.Project_DefaultPartName) { Kind = LayerKind.Part, Parent = group, PartSize = size, PartOffset = new Point(x, y) };
                 group.ReplaceSkinsRaw([firstSkin = new Skin(images[0].Name)]);
                 perSource[sources.ToList().IndexOf(images[0])] = [part, group];
             }
@@ -338,14 +338,14 @@ public static class ProjectMerge
                     if (top.IsGroup && group is not null && target is not null && SkinsFit(s, top, group, GroupParts()))
                     {
                         AppendSkins(s, top, group, GroupParts());
-                        Note($"{s.FileName}의 \"{top.Name}\" 그룹 스킨 {top.AllSkins.Count}개를 \"{group.Name}\" 그룹에 더합니다.");
+                        Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_AppendSkins(name: s.FileName, source: top.Name, count: top.AllSkins.Count, target: group.Name));
                         continue;
                     }
                     perSource[i].AddRange(CopyBlock(s, top, _frames, 0));
                     if (top.IsGroup && group is not null)
-                        Note($"{s.FileName}의 \"{top.Name}\" 그룹은 부위가 \"{group.Name}\" 그룹과 달라 따로 넣습니다.");
+                        Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_GroupAside(name: s.FileName, source: top.Name, target: group.Name));
                 }
-                if (!s.HasGroups) Note($"{s.FileName}의 {Kept(s)} 그대로 옆에 넣습니다.");
+                if (!s.HasGroups) Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_KeepAside(name: s.FileName, kept: Kept(s)));
             }
             for (int i = sources.Count - 1; i >= 0; i--) _stack.AddRange(perSource[i]);
         }
@@ -360,13 +360,13 @@ public static class ProjectMerge
             if (part is null)
             {
                 var (x, y) = PixelImage.AnchorOffset(size.Width, size.Height, W, H, options.Anchor);
-                part = new Layer("부위") { Kind = LayerKind.Part, Parent = group, PartSize = size, PartOffset = new Point(x, y) };
+                part = new Layer(Gpixel.Core.Localization.DomainStrings.Project_DefaultPartName) { Kind = LayerKind.Part, Parent = group, PartSize = size, PartOffset = new Point(x, y) };
                 ownList.Add(part); // 그룹 없이 부위만: 아래 FinishLayers 전에 그룹 바로 아래로 옮긴다.
             }
             else if (size.Width > part.PartSize.Width || size.Height > part.PartSize.Height)
             {
                 GrowPart(part, group, Math.Max(size.Width, part.PartSize.Width), Math.Max(size.Height, part.PartSize.Height));
-                grown = $", 부위를 {part.PartSize.Width}×{part.PartSize.Height}로 키움";
+                grown = Gpixel.Core.Localization.DomainStrings.FormatMerge_GrewPart(width: part.PartSize.Width, height: part.PartSize.Height);
             }
             if (skin is null)
             {
@@ -376,7 +376,7 @@ public static class ProjectMerge
             for (int i = 0; i < s.FrameCount; i++)
                 if (s.Project.GetCelRaw(image, s.Project.Frames[i], null) is { } cel && HasContent(cel))
                     _p.SetCelRaw(part, _frames[i], cel.ResizeCanvas(part.PartSize.Width, part.PartSize.Height, options.Anchor), skin);
-            if (noteIt) Note($"{s.FileName} → \"{group.Name}\" 그룹의 새 스킨 \"{skin.Name}\"(부위 \"{part.Name}\"{grown}).");
+            if (noteIt) Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_NewSkin(name: s.FileName, group: group.Name, skin: skin.Name, part: part.Name, grown: grown));
         }
 
         /// <summary>부위를 기준점으로 키운다: 모든 스킨 셀을 옮기고, 그림이 캔버스에서 같은 자리에 남도록 위치를, 같은 지점을 가리키도록 피벗을 맞춘다.</summary>
@@ -460,7 +460,7 @@ public static class ProjectMerge
                     if (target is null)
                     {
                         target = CopyProps(image, null, start);
-                        if (!s.IsProject) target.Name = "레이어 1";
+                        if (!s.IsProject) target.Name = Gpixel.Core.Localization.DomainStrings.FormatProject_DefaultLayerName(number: 1);
                         _stack.Add(target);
                     }
                     MapsOf(s).Layers[image] = target;
@@ -469,7 +469,7 @@ public static class ProjectMerge
                 else
                 {
                     MergeFramesStructure(s, frameMap, start);
-                    Note($"{s.FileName}의 {Kept(s)} 유지합니다(이름·설정이 같은 레이어는 이어 붙임).");
+                    Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_KeepFrameStructure(name: s.FileName, kept: Kept(s)));
                 }
                 if (s.FrameCount > 1 && s.Project.Tags.Count == 0)
                     AddTag(new AnimationTag(s.Name, start, _p.Frames.Count - 1) { Color = AnimationTag.DefaultColors[_p.Tags.Count % AnimationTag.DefaultColors.Count] });
@@ -766,7 +766,7 @@ public static class ProjectMerge
             {
                 if (same.From == tag.From && same.To == tag.To) return;
                 var renamed = _p.UniqueTagName(tag.Name);
-                Note($"태그 \"{tag.Name}\"이(가) 겹쳐 \"{renamed}\"(으)로 바꿉니다.");
+                Note(Gpixel.Core.Localization.DomainStrings.FormatMerge_RenameTag(name: tag.Name, renamed: renamed));
                 tag.Name = renamed;
             }
             _p.AddTagRaw(tag);
@@ -801,14 +801,14 @@ public static class ProjectMerge
 
         private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
 
-        private string NewGroupName() => string.IsNullOrWhiteSpace(options.Name) ? "그룹" : options.Name.Trim();
+        private string NewGroupName() => string.IsNullOrWhiteSpace(options.Name) ? Gpixel.Core.Localization.DomainStrings.Project_DefaultGroupName : options.Name.Trim();
 
         /// <summary>지키는 구조 설명(목적격 조사 포함): "그룹·스킨을" / "그룹을" / "레이어 구조를".</summary>
         private static string Kept(MergeSource s)
         {
             var groups = s.Project.Layers.Where(l => l.IsGroup).ToList();
-            if (groups.Count == 0) return "레이어 구조를";
-            return groups.Any(g => g.AllSkins.Count > 1) ? "그룹·스킨을" : "그룹을";
+            if (groups.Count == 0) return Gpixel.Core.Localization.DomainStrings.Merge_KeepLayerStructure;
+            return groups.Any(g => g.AllSkins.Count > 1) ? Gpixel.Core.Localization.DomainStrings.Merge_KeepGroupsAndSkins : Gpixel.Core.Localization.DomainStrings.Merge_KeepGroups;
         }
 
         private void Note(string text)

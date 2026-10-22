@@ -34,7 +34,7 @@ public sealed record ShockwaveEffect : AnimatedEffect
     /// <summary>true = 그림 뒤에 깔기, false = 그림 위에.</summary>
     public bool Behind { get; init; }
 
-    public override string DisplayName => "충격파 고리";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Shockwave;
 
     /// <summary>진행 <paramref name="u"/>의 반지름(px).</summary>
     public int RadiusAt(double u) => (int)Math.Round(Radius * Math.Clamp(u, 0, 1), MidpointRounding.AwayFromZero);

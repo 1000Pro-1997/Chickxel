@@ -1,5 +1,6 @@
 using Avalonia.VisualTree;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -17,11 +18,11 @@ internal sealed class UnsavedChangesDialog : DialogBase
     private readonly List<(UnsavedFile File, CheckBox Box)> _rows = new();
     private readonly List<WriteableBitmap> _thumbs = new();
 
-    public UnsavedChangesDialog(IReadOnlyList<UnsavedFile> files) : base("저장하지 않은 변경", "선택한 파일 저장")
+    public UnsavedChangesDialog(IReadOnlyList<UnsavedFile> files) : base(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_CDE0AC4DCE, UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_2541BFCB80)
     {
         Body.Children.Add(Ui.Label(files.Count == 1
-            ? "저장하지 않은 변경이 있는 파일이 있습니다. 저장할까요?"
-            : $"저장하지 않은 변경이 있는 파일이 {files.Count}개 있습니다. 저장할 파일을 고르세요.", bold: true));
+            ? UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_10BDA86213
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_8786C69C9A,files.Count), bold: true));
         var list = new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Margin = new Thickness(0, 6, 0, 0) };
         foreach (var file in files) list.Children.Add(MakeRow(file));
         Body.Children.Add(new ScrollViewer
@@ -34,7 +35,7 @@ internal sealed class UnsavedChangesDialog : DialogBase
         });
         SetButtonResult(OkButton, DialogResult.Yes);
         OkButton.Width = 130;
-        AddButton("저장 안 함", DialogResult.No);
+        AddButton(UiStrings.S_UnsavedChangesDialog_UnsavedChangesDialog_A5BC13DA85, DialogResult.No);
         UpdateOk();
         Opened += (_, _) => OkButton.Focus();
         Closed += (_, _) => { foreach (var t in _thumbs) t.Dispose(); };

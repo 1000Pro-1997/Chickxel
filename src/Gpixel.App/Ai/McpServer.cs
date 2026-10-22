@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -57,12 +58,12 @@ public sealed class McpServer : IDisposable
     public string DescribeProblem(McpCounters since, string? cliStatus)
     {
         var now = Counters;
-        var head = cliStatus is null ? "gpixel MCP에 연결하지 못했습니다" : $"gpixel MCP에 연결하지 못했습니다(CLI 상태: {cliStatus})";
+        var head = cliStatus is null ? UiStrings.S_McpServer_DescribeProblem_23C0F2EB81 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_BEA0D8C5FE,cliStatus);
         if (now.Requests == since.Requests)
-            return $"{head}. Gpixel 내부 서버({Url})로 요청이 오지 않았습니다. 프록시(HTTP_PROXY·HTTPS_PROXY 환경 변수)·VPN·보안 프로그램이 이 PC 안 연결(127.0.0.1)을 막는지, CLI가 최신 버전인지 확인하세요.";
+            return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_EDC6AA4CA7,head,Url);
         if (now.Unauthorized > since.Unauthorized)
-            return $"{head}. 요청은 왔지만 인증 토큰이 맞지 않았습니다. CLI가 MCP 설정의 인증 헤더를 보내지 않았을 수 있으니 CLI를 최신 버전으로 업데이트하세요.";
-        return $"{head}. 요청은 왔지만 도구 목록을 받기 전에 끊겼습니다. CLI를 최신 버전으로 업데이트한 뒤 새 대화로 다시 시도하세요.";
+            return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_AB4BF0B540,head);
+        return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_7D8C7E9591,head);
     }
 
     /// <summary>빈 포트를 찾아 듣기 시작한다. 이미 시작했으면 아무것도 안 한다.</summary>
@@ -97,7 +98,7 @@ public sealed class McpServer : IDisposable
                     return;
                 }
             }
-            throw new InvalidOperationException($"MCP 서버를 시작하지 못했습니다: {last?.Message}", last);
+            throw new InvalidOperationException(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_Start_FF0B0F6631,last?.Message), last);
         }
     }
 
@@ -391,7 +392,7 @@ public sealed class McpServer : IDisposable
         {
             return new JsonObject
             {
-                ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"{name} 실패: {e.Message}" }),
+                ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_CallToolAsync_526F48F779,name,e.Message) }),
                 ["isError"] = true,
             };
         }

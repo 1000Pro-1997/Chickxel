@@ -41,5 +41,5 @@ public sealed record ColorAdjustEffect : LayerEffect
     /// <summary>채도 −100~100(%).</summary>
     public int Saturation { get => _saturation; init => _saturation = Math.Clamp(value, -100, 100); }
 
-    public override string DisplayName => "색조 보정";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_ColorAdjust;
 }

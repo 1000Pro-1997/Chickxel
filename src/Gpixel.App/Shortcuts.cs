@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -99,8 +100,8 @@ public static class Shortcuts
     public static Dictionary<string, List<KeyChord>> FromJson(string json, IEnumerable<ShortcutCommand> commands, List<string> unknown, List<string> invalid)
     {
         var known = commands.Select(c => c.Id).ToHashSet();
-        var root = JsonNode.Parse(json) as JsonObject ?? throw new JsonException("JSON 객체가 아닙니다.");
-        var map = root["shortcuts"] as JsonObject ?? throw new JsonException("\"shortcuts\" 항목이 없습니다.");
+        var root = JsonNode.Parse(json) as JsonObject ?? throw new JsonException(UiStrings.S_Shortcuts_FromJson_F9C402A341);
+        var map = root["shortcuts"] as JsonObject ?? throw new JsonException(UiStrings.S_Shortcuts_FromJson_86871DD6CC);
         var result = new Dictionary<string, List<KeyChord>>();
         foreach (var (id, node) in map)
         {

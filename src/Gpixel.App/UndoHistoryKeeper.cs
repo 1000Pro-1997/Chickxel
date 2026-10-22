@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -86,9 +87,9 @@ public sealed class UndoHistoryKeeper
         state.WrittenVersion = p.History.Version;
         return result.Status switch
         {
-            UndoHistoryLoadStatus.Loaded => $" — 실행취소 기록 {result.Steps}단계를 이어 받음",
-            UndoHistoryLoadStatus.Stale => " — 파일이 밖에서 바뀌어 지난 실행취소 기록은 버렸습니다",
-            UndoHistoryLoadStatus.Failed => $" — 지난 실행취소 기록을 읽지 못해 버렸습니다({result.Error})",
+            UndoHistoryLoadStatus.Loaded => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UndoHistoryKeeper_Restore_50F9884DE9,result.Steps),
+            UndoHistoryLoadStatus.Stale => UiStrings.S_UndoHistoryKeeper_Restore_9182EA34DA,
+            UndoHistoryLoadStatus.Failed => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UndoHistoryKeeper_Restore_3476961A46,result.Error),
             _ => null,
         };
     }
@@ -159,7 +160,7 @@ public sealed class UndoHistoryKeeper
     public string DescribeUsage()
     {
         var (bytes, files) = Usage();
-        return files == 0 ? "지금 남은 기록 없음" : $"지금 {AppTrash.FormatSize(bytes)} · 파일 {files}개";
+        return files == 0 ? UiStrings.S_UndoHistoryKeeper_DescribeUsage_D8C7803DCD : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UndoHistoryKeeper_DescribeUsage_4F87DAB40A,AppTrash.FormatSize(bytes),files);
     }
 
     /// <summary>남긴 기록을 모두 지운다(열린 문서의 실행취소 기록은 그대로 — 다음에 저장하면 다시 씀).</summary>

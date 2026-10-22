@@ -34,7 +34,7 @@ public sealed record FrameVariant(string? Suffix, Layer? Group, Skin? Skin, Outf
     public bool IsCurrent => Group is null && Outfit is null;
 
     /// <summary>화면 표시용 이름.</summary>
-    public string Label => Outfit is { } o ? o.Name : Group is { } g && Skin is { } s ? $"{g.Name} · {s.Name}" : "지금 착장";
+    public string Label => Outfit is { } o ? o.Name : Group is { } g && Skin is { } s ? $"{g.Name} · {s.Name}" : Gpixel.Core.Localization.DomainStrings.Export_CurrentOutfit;
 }
 
 /// <summary>결과 파일 하나(이미지 또는 <c>.spriteLib</c>)를 내보낸 결과. 스프라이트 수는 Sprite Library면 항목(라벨) 수.</summary>
@@ -115,7 +115,7 @@ public static class ProjectExport
     }
 
     private static string RequirePath(SpriteProject project, string? projectPath)
-        => projectPath ?? project.Path ?? throw new InvalidOperationException("프로젝트를 먼저 저장해야 내보낼 수 있습니다.");
+        => projectPath ?? project.Path ?? throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.Export_SaveProjectFirst);
 
     private static string GetExportFolder(ExportSettings export, string projectPath)
     {
@@ -971,7 +971,7 @@ public static class ProjectExport
         var images = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in frames.Concat(parts).Concat(libraries))
             if (!images.Add(path))
-                throw new InvalidOperationException($"내보낼 파일 이름이 겹칩니다({Path.GetFileName(path)}). 프레임 시트·부위 아틀라스·태그·부위·스킨 이름을 바꿔 주세요.");
+                throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.FormatExport_DuplicateFile(name: Path.GetFileName(path)));
 
         var record = new List<string>();
         foreach (var image in frames)

@@ -38,5 +38,5 @@ public sealed record ReflectionEffect : LayerEffect
     /// <summary>true = 위로 비침(천장·물속), false = 아래(바닥·물).</summary>
     public bool Above { get; init; }
 
-    public override string DisplayName => "반사";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Reflection;
 }

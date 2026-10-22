@@ -207,7 +207,7 @@ public static class Raster
         int tolerance = 0, bool diagonal = false, PixelImage? sample = null)
     {
         if (sample is not null && (sample.Width != image.Width || sample.Height != image.Height))
-            throw new ArgumentException("채우기 기준 그림의 크기가 대상과 다릅니다.", nameof(sample));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Fill_SourceSizeMismatch, nameof(sample));
         if (!image.Contains(x, y)) return 0;
         // 같은 그림에서 정확히 같은 색으로 채우면 바뀔 것이 없다.
         if (sample is null && tolerance <= 0 && image.Get(x, y) == color) return 0;

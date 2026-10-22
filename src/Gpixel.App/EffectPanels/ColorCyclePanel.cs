@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -42,26 +43,26 @@ public sealed partial class LayerEffectsDialog
                     return C(o) with { Colors = colors, ColorGradients = RemoveIndexedGradient(o.ColorGradients, "Colors", at) };
                 });
                 ShowSettings();
-            }, 26).Tip("이 색 빼기");
+            }, 26).Tip(UiStrings.S_ColorCyclePanel_ColorCyclePanel_616BE6A276);
             remove.IsEnabled = e.Colors.Count > ColorCycleEffect.MinColors;
             row.Children.Add(Ui.Row(Ui.Label($"{k + 1}"), EffectColorEditor(e, $"Colors[{at}]", field, set), remove));
         }
-        SettingsBlock("색", row);
+        SettingsBlock(UiStrings.S_ColorCyclePanel_ColorCyclePanel_8143B75ED5, row);
 
         bool full = e.Colors.Count >= ColorCycleEffect.MaxColors;
-        var add = Ui.Button(VectorIcon.Plus, "색 추가", (_, _) =>
+        var add = Ui.Button(VectorIcon.Plus, UiStrings.S_ColorCyclePanel_ColorCyclePanel_2547771D95, (_, _) =>
         {
             var next = used.FirstOrDefault(c => !C(_effects[Selected]).Colors.Any(x => SameRgb(x, c)), Color32.Black);
             AddColors([next]);
         });
         add.IsEnabled = !full;
-        var pick = Ui.Button(VectorIcon.ChevronDown, "그림에서 색 가져오기", iconAfter: true);
+        var pick = Ui.Button(VectorIcon.ChevronDown, UiStrings.S_ColorCyclePanel_ColorCyclePanel_8226D4FEF2, iconAfter: true);
         if (used.Count == 0 || full) pick.IsEnabled = false;
         else
         {
             var flyout = new Flyout();
             var panel = new StackPanel { Spacing = 4, MaxWidth = 280 };
-            panel.Children.Add(Hint($"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 순환할 색에 넣습니다(최대 {ColorCycleEffect.MaxColors}개).", 270));
+            panel.Children.Add(Hint(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorCyclePanel_ColorCyclePanel_01F3077949,used.Count,ColorCycleEffect.MaxColors), 270));
             panel.Children.Add(ColorSourcePicker.Swatches(used, c =>
             {
                 flyout.Hide();
@@ -70,11 +71,11 @@ public sealed partial class LayerEffectsDialog
             flyout.Content = panel;
             pick.Flyout = flyout;
         }
-        SettingsRow("", add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : full ? $"색은 {ColorCycleEffect.MaxColors}개까지입니다." : "그림에 쓰인 색을 골라 넣습니다."));
-        SettingsRow("칸 수", NumEditor(1, ColorCycleEffect.MaxSteps, e.Steps, StepsKind(e.Colors.Count), v => set(o => C(o) with { Steps = v })), Ui.Label("칸 (범위 동안 넘어가는 횟수)"));
-        SettingsRow("방향", ChoiceEditor(["앞으로 (1 → 2 → …)", "거꾸로"], e.Reverse ? 1 : 0, k => set(o => C(o) with { Reverse = k == 1 })));
+        SettingsRow("", add, pick.Tip(used.Count == 0 ? UiStrings.S_ColorCyclePanel_ColorCyclePanel_0EEDA7D564 : full ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorCyclePanel_ColorCyclePanel_0B215E7023,ColorCycleEffect.MaxColors) : UiStrings.S_ColorCyclePanel_ColorCyclePanel_445502367F));
+        SettingsRow(UiStrings.S_ColorCyclePanel_ColorCyclePanel_6FEDC6C546, NumEditor(1, ColorCycleEffect.MaxSteps, e.Steps, StepsKind(e.Colors.Count), v => set(o => C(o) with { Steps = v })), Ui.Label(UiStrings.S_ColorCyclePanel_ColorCyclePanel_83D3EFAB2B));
+        SettingsRow(UiStrings.S_ColorCyclePanel_ColorCyclePanel_CABADA1123, ChoiceEditor([UiStrings.S_ColorCyclePanel_ColorCyclePanel_F617CA003E, UiStrings.S_ColorCyclePanel_ColorCyclePanel_642EDB4627], e.Reverse ? 1 : 0, k => set(o => C(o) with { Reverse = k == 1 })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint($"그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다. 그라데이션 색은 픽셀 위치마다 샘플링합니다. 목록에 없는 색·투명도는 그대로입니다. 칸 수가 색 개수({e.Colors.Count})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온)."));
+        _settings.Children.Add(Hint(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorCyclePanel_ColorCyclePanel_68BE16C6B6,e.Colors.Count)));
     }
 
     /// <summary>칸 수 예시: 1과 색 개수의 배수(범위 끝이 처음과 같아 되풀이해도 이어짐 — "N바퀴"로 보임).</summary>
@@ -82,6 +83,6 @@ public sealed partial class LayerEffectsDialog
     {
         var values = new SortedSet<decimal> { 1 };
         for (int k = 1; values.Count < 12 && k * colors <= ColorCycleEffect.MaxSteps; k++) values.Add(k * colors);
-        return new("effect.cycle.steps", "칸", [.. values], v => v % colors == 0 ? $"{v} 칸 ({v / colors}바퀴)" : $"{v} 칸");
+        return new("effect.cycle.steps", UiStrings.S_ColorCyclePanel_StepsKind_1B32549397, [.. values], v => v % colors == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorCyclePanel_StepsKind_B56274D955,v,v / colors) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorCyclePanel_StepsKind_AD2B00B33A,v));
     }
 }

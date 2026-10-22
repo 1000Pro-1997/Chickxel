@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -21,13 +22,13 @@ public sealed partial class LayerEffectsDialog
                 Dither = editor.Dither,
             }
         });
-        _settings.Children.Add(Ui.Group("시간 그라데이션", editor));
-        SettingsRow("세기", NumEditor(0, 100, g.Strength, NumKinds.Strength,
+        _settings.Children.Add(Ui.Group(UiStrings.S_GradientPanel_GradientPanel_BF99C1BE30, editor));
+        SettingsRow(UiStrings.S_GradientPanel_GradientPanel_A91464E1CE, NumEditor(0, 100, g.Strength, NumKinds.Strength,
             value => set(effect => G(effect) with { Strength = value })), Ui.Label("%"));
-        SettingsRow("섞기", ChoiceEditor(Blends, (int)g.Blend,
+        SettingsRow(UiStrings.S_GradientPanel_GradientPanel_B93B4EB88D, ChoiceEditor(Blends, (int)g.Blend,
             index => set(effect => G(effect) with { Blend = (EffectBlend)index })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("범위 첫 프레임에는 그라데이션 왼쪽 끝 색, 마지막 프레임에는 오른쪽 끝 색이 적용되고 중간 프레임은 정지점 위치대로 변합니다."
-                                    + " 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다."));
+        _settings.Children.Add(Hint(UiStrings.S_GradientPanel_GradientPanel_07BCE35122
+                                    + UiStrings.S_GradientPanel_GradientPanel_002A41B539));
     }
 }

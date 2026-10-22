@@ -20,7 +20,7 @@ public sealed record RotateEffect : AnimatedEffect
     /// <summary>true = 시계 방향, false = 반시계 방향.</summary>
     public bool Clockwise { get; init; } = true;
 
-    public override string DisplayName => "회전";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Rotate;
 
     /// <summary>진행 <paramref name="u"/>의 회전 각(도, 시계 방향 +).</summary>
     public double DegreesAt(double u) => (Clockwise ? 1 : -1) * Angle * Math.Clamp(u, 0, 1);

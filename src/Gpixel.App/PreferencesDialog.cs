@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -30,17 +31,17 @@ public sealed class PreferencesDialog : DialogBase
     public PreferencesDialog(int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
-        : base("환경 설정")
+        : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         _commands = commands;
         _keys = commands.ToDictionary(c => c.Id, c => keys.TryGetValue(c.Id, out var k) ? k.ToList() : c.Defaults.ToList());
 
         _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90)
-            .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit("단계").RecentKey("undo.steps");
+            .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit(UiStrings.S_PreferencesDialog_PreferencesDialog_B8D956911B).RecentKey("undo.steps");
         _trash = new TrashPolicyEditor(trashPolicy);
-        _historyOn = Ui.Check("파일을 닫아도 실행취소 기록 남기기", historyEnabled);
+        _historyOn = Ui.Check(UiStrings.S_PreferencesDialog_PreferencesDialog_3AC3D9A229, historyEnabled);
         _historyDays = Ui.Num(0, 3650, Math.Clamp(historyPolicy.Days, 0, 3650), 70)
-            .Presets(0, 1, 3, 7, 14, 30, 60, 90, 180, 365).Unit("일").RecentKey("history.days");
+            .Presets(0, 1, 3, 7, 14, 30, 60, 90, 180, 365).Unit(UiStrings.S_PreferencesDialog_PreferencesDialog_9D2E2327DF).RecentKey("history.days");
         _historyMb = Ui.Num(10, 100_000, Math.Clamp(historyPolicy.MaxMegabytes, 10, 100_000), 80)
             .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit("MB").RecentKey("history.mb");
         void SyncHistory() => _historyDays.IsEnabled = _historyMb.IsEnabled = _historyOn.On();
@@ -48,60 +49,60 @@ public sealed class PreferencesDialog : DialogBase
         SyncHistory();
         var historyUsage = Ui.Label(history.DescribeUsage());
         historyUsage.Foreground = AppTheme.DimTextBrush;
-        var historyClear = Ui.Button("기록 모두 지우기", (_, _) =>
+        var historyClear = Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_A127858673, (_, _) =>
         {
-            if (Ui.Ask(this, "남겨 둔 실행취소 기록을 모두 지울까요? 열려 있는 파일의 지금 실행취소는 그대로입니다.", "실행취소 기록",
+            if (Ui.Ask(this, UiStrings.S_PreferencesDialog_PreferencesDialog_10A5B7FEA9, UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5,
                     MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
             history.Clear();
             historyUsage.Text = history.DescribeUsage();
         });
-        var historyNote = Ui.Label("앱 설정 폴더에 따로 저장합니다(.gpixel 파일은 그대로). 저장한 상태까지만 남기고, 파일이 없어졌거나 밖에서 바뀐 기록은 저절로 지웁니다.");
+        var historyNote = Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_BF42374CBC);
         historyNote.Foreground = AppTheme.DimTextBrush;
-        _autoSave = Ui.Check("자동 저장", autoSave);
+        _autoSave = Ui.Check(UiStrings.S_PreferencesDialog_PreferencesDialog_D3AF99B338, autoSave);
         _autoSaveDelay = Ui.Num(AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay,
                 Math.Clamp(autoSaveDelay, AppSettings.MinAutoSaveDelay, AppSettings.MaxAutoSaveDelay), 70)
-            .Presets(1, 2, 3, 5, 10, 15, 30, 60, 120, 300, 600).Unit("초").RecentKey("autosave.delay");
+            .Presets(1, 2, 3, 5, 10, 15, 30, 60, 120, 300, 600).Unit(UiStrings.S_PreferencesDialog_PreferencesDialog_681608AF43).RecentKey("autosave.delay");
         _autoSaveDelay.IsEnabled = autoSave;
         _autoSave.IsCheckedChanged += (_, _) => _autoSaveDelay.IsEnabled = _autoSave.On();
-        var autoSaveNote = Ui.Label("저장한 적 있는 파일만, Ctrl+S와 같이(켜져 있으면 시트 내보내기 포함) 저장합니다. 새 프로젝트는 저장하지 않습니다.");
+        var autoSaveNote = Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_0D594ECE55);
         autoSaveNote.Foreground = AppTheme.DimTextBrush;
-        _updateCheck = Ui.Check("시작할 때 새 버전 확인(있으면 업데이트 창)", updateCheck);
+        _updateCheck = Ui.Check(UiStrings.S_PreferencesDialog_PreferencesDialog_20E707DCCA, updateCheck);
         var updateNote = Ui.Label(AppInfo.IsDevBuild
-            ? $"지금은 개발 빌드({AppInfo.VersionText})라 자동으로 확인하지 않습니다. 도움말 > 업데이트 확인…은 언제든 쓸 수 있습니다."
-            : $"지금 버전 {AppInfo.VersionText} · 도움말 > 업데이트 확인…으로 언제든 확인할 수 있습니다.");
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_4B32B49831,AppInfo.VersionText)
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_80B1F80264,AppInfo.VersionText));
         updateNote.Foreground = AppTheme.DimTextBrush;
         var general = Ui.Stack(
-            Ui.Row(Ui.Label("실행취소 횟수"), _undo, Ui.Label($"단계 (기본 {UndoStack.DefaultCapacity}, 최대 {UndoStack.MaxCapacity})")),
-            Ui.Label("줄이면 열린 프로젝트의 오래된 기록부터 버립니다. 많을수록 메모리를 더 씁니다."),
-            Ui.Label("실행취소 기록", bold: true),
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity))),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, bold: true),
             _historyOn,
-            Ui.Row(Ui.Label("보관 기간"), _historyDays, Ui.Label("일 (0 = 제한 없음) — 그동안 열지 않은 파일의 기록은 지웁니다"))
-                .Tip("파일을 마지막으로 저장하거나 연 뒤로 셉니다."),
-            Ui.Row(Ui.Label("최대 용량"), _historyMb, Ui.Label($"MB (기본 {UndoHistoryPolicy.DefaultMaxMegabytes}) — 넘치면 오래 안 연 파일 기록부터 지웁니다")),
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_566552BAB9), _historyDays, Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_8FA707928D))
+                .Tip(UiStrings.S_PreferencesDialog_PreferencesDialog_F8AA857BED),
+            Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_AFE766F9E0), _historyMb, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_F7A34332AC,UndoHistoryPolicy.DefaultMaxMegabytes))),
             Ui.Row(historyUsage, historyClear),
             historyNote,
-            Ui.Label("저장", bold: true),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_06B0DD01B8, bold: true),
             Ui.Row(_autoSave, _autoSaveDelay,
-                Ui.Label($"초 동안 편집이 없으면 저장 (기본 {AppSettings.DefaultAutoSaveDelay}, {AppSettings.MinAutoSaveDelay}~{AppSettings.MaxAutoSaveDelay})")),
+                Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_19CDB23584,AppSettings.DefaultAutoSaveDelay,AppSettings.MinAutoSaveDelay,AppSettings.MaxAutoSaveDelay))),
             autoSaveNote,
-            Ui.Label("앱 휴지통(파일 브라우저에서 지운 파일) 보관", bold: true),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B57D05987F, bold: true),
             _trash,
-            Ui.Label("업데이트", bold: true),
+            Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_B4D135E19E, bold: true),
             _updateCheck,
             updateNote);
 
-        _search = new TextBox { Watermark = "명령·키 검색", Width = 260, Margin = new Thickness(2) };
+        _search = new TextBox { Watermark = UiStrings.S_PreferencesDialog_PreferencesDialog_3384322E72, Width = 260, Margin = new Thickness(2) };
         _search.TextChanged += (_, _) => RebuildRows();
         _status = Ui.Label("");
         _status.Foreground = AppTheme.DimTextBrush;
         var shortcuts = new DockPanel { LastChildFill = true };
-        var top = Ui.Row(_search, Ui.Label("\"바꾸기\"·\"추가\"를 누른 뒤 키를 누르세요(Esc = 취소)."));
+        var top = Ui.Row(_search, Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_DAAB44E61A));
         DockPanel.SetDock(top, Dock.Top);
         var bottom = Ui.Stack(
             Ui.Row(
-                Ui.Button("모두 기본값", (_, _) => ResetAll()),
-                Ui.Button("내보내기(JSON)…", (_, _) => Export()),
-                Ui.Button("불러오기(JSON)…", (_, _) => Import())),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CAB27CF286, (_, _) => ResetAll()),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_CC8999072A, (_, _) => Export()),
+                Ui.Button(UiStrings.S_PreferencesDialog_PreferencesDialog_1B59D72F85, (_, _) => Import())),
             _status);
         DockPanel.SetDock(bottom, Dock.Bottom);
         shortcuts.Children.Add(top);
@@ -109,8 +110,8 @@ public sealed class PreferencesDialog : DialogBase
         shortcuts.Children.Add(new ScrollViewer { Content = _rows, Height = 420, Width = 720, Background = AppTheme.InputBrush });
 
         var tabs = new TabView();
-        tabs.AddPage("일반", general);
-        tabs.AddPage("단축키", shortcuts);
+        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
+        tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
         Body.Children.Add(tabs);
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
@@ -144,16 +145,16 @@ public sealed class PreferencesDialog : DialogBase
             cat.Foreground = AppTheme.DimTextBrush;
             var name = Ui.Label(c.Name, bold: changed);
             name.TextTrimming = TextTrimming.CharacterEllipsis;
-            ToolTip.SetTip(name, c.Id);
-            var key = Ui.Label(capturing ? "키를 누르세요… (Esc 취소)" : keyText.Length > 0 ? keyText : "—");
+            ToolTip.SetTip(name, $"{c.Category}/{c.Name}");
+            var key = Ui.Label(capturing ? UiStrings.S_PreferencesDialog_RebuildRows_57377CDB79 : keyText.Length > 0 ? keyText : "—");
             if (capturing) key.Foreground = AppTheme.AccentBrush;
             key.TextTrimming = TextTrimming.CharacterEllipsis;
             var id = c.Id;
             var buttons = Ui.Row(
-                SmallButton("바꾸기", () => StartCapture(id, replace: true)),
-                SmallButton("추가", () => StartCapture(id, replace: false)),
-                SmallButton("없음", () => { _keys[id] = new(); RebuildRows(); }),
-                SmallButton("기본값", () => SetKeys(id, c.Defaults.ToList())));
+                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_6C524CA777, () => StartCapture(id, replace: true)),
+                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_9004EC4503, () => StartCapture(id, replace: false)),
+                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_688679199B, () => { _keys[id] = new(); RebuildRows(); }),
+                SmallButton(UiStrings.S_PreferencesDialog_RebuildRows_49F151E4F2, () => SetKeys(id, c.Defaults.ToList())));
             Grid.SetColumn(name, 1);
             Grid.SetColumn(key, 2);
             Grid.SetColumn(buttons, 3);
@@ -203,8 +204,8 @@ public sealed class PreferencesDialog : DialogBase
         var clashes = _commands.Where(c => c.Id != id && _keys[c.Id].Any(keys.Contains)).ToList();
         if (clashes.Count > 0)
         {
-            var list = string.Join("\n", clashes.Select(c => $"· {c.Id} ({string.Join(", ", _keys[c.Id].Where(keys.Contains).Select(k => Ui.Shortcut(Shortcuts.Format(k))))})"));
-            if (Ui.Ask(this, $"이미 쓰는 키입니다:\n{list}\n\n그 명령에서 빼고 지정할까요?", "단축키 겹침", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
+            var list = string.Join("\n", clashes.Select(c => $"· {c.Category}/{c.Name} ({string.Join(", ", _keys[c.Id].Where(keys.Contains).Select(k => Ui.Shortcut(Shortcuts.Format(k))))})"));
+            if (Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_SetKeys_B4AB7E77B7,list), UiStrings.S_PreferencesDialog_SetKeys_26698A6D77, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
             {
                 RebuildRows();
                 return;
@@ -219,29 +220,29 @@ public sealed class PreferencesDialog : DialogBase
     private void ResetAll()
     {
         foreach (var c in _commands) _keys[c.Id] = c.Defaults.ToList();
-        _status.Text = "모든 단축키를 기본값으로 되돌렸습니다(확인을 눌러야 적용).";
+        _status.Text = UiStrings.S_PreferencesDialog_ResetAll_28F401ED03;
         RebuildRows();
     }
 
     private void Export()
     {
-        var path = Ui.SaveFile(this, "단축키 내보내기", null, "gpixel-shortcuts.json", ".json", new FileFilter("JSON", "*.json"));
+        var path = Ui.SaveFile(this, UiStrings.S_PreferencesDialog_Export_545A631C51, null, "gpixel-shortcuts.json", ".json", new FileFilter("JSON", "*.json"));
         if (path is null) return;
         try
         {
             File.WriteAllText(path, Shortcuts.ToJson(_commands, _keys));
-            _status.Text = $"내보냄: {path}";
+            _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Export_5710461F4B,path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"내보내지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Export_CA2C8FC7D6,ex.Message));
         }
     }
 
     /// <summary>JSON의 명령은 그 단축키로 바꾸고(파일에 없는 명령은 그대로), 겹치는 키가 생기면 알린다.</summary>
     private void Import()
     {
-        var path = Ui.OpenFile(this, "단축키 불러오기", null, new FileFilter("JSON", "*.json"));
+        var path = Ui.OpenFile(this, UiStrings.S_PreferencesDialog_Import_C177CCAFE9, null, new FileFilter("JSON", "*.json"));
         if (path is null) return;
         var unknown = new List<string>();
         var invalid = new List<string>();
@@ -252,19 +253,19 @@ public sealed class PreferencesDialog : DialogBase
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
         {
-            Ui.Error(this, $"불러오지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Import_08B3AAE84F,ex.Message));
             return;
         }
         foreach (var (id, keys) in loaded) _keys[id] = keys;
-        var dupes = _commands.SelectMany(c => _keys[c.Id].Select(k => (k, c.Id))).GroupBy(x => x.k).Where(g => g.Count() > 1)
-            .Select(g => $"{Ui.Shortcut(Shortcuts.Format(g.Key))}: {string.Join(", ", g.Select(x => x.Id))}").ToList();
-        var notes = new List<string> { $"불러옴: 명령 {loaded.Count}개" };
-        if (unknown.Count > 0) notes.Add($"모르는 명령 {unknown.Count}개 건너뜀");
-        if (invalid.Count > 0) notes.Add($"읽을 수 없는 키 {invalid.Count}개 건너뜀");
-        _status.Text = string.Join(" · ", notes) + " (확인을 눌러야 적용)";
+        var dupes = _commands.SelectMany(c => _keys[c.Id].Select(k => (k, Name: $"{c.Category}/{c.Name}"))).GroupBy(x => x.k).Where(g => g.Count() > 1)
+            .Select(g => $"{Ui.Shortcut(Shortcuts.Format(g.Key))}: {string.Join(", ", g.Select(x => x.Name))}").ToList();
+        var notes = new List<string> { string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Import_180B01420C,loaded.Count) };
+        if (unknown.Count > 0) notes.Add(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Import_B3C5D28F5F,unknown.Count));
+        if (invalid.Count > 0) notes.Add(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_Import_8BE2475A32,invalid.Count));
+        _status.Text = string.Join(" · ", notes) + UiStrings.S_PreferencesDialog_Import_E21914C069;
         if (dupes.Count > 0 || invalid.Count > 0)
-            Ui.Info(this, string.Join("\n", (dupes.Count > 0 ? ["겹치는 키(나중 명령이 이김 — 고쳐 주세요):", .. dupes] : Array.Empty<string>())
-                .Concat(invalid.Count > 0 ? ["읽을 수 없는 키:", .. invalid] : Array.Empty<string>())), "단축키 불러오기");
+            Ui.Info(this, string.Join("\n", (dupes.Count > 0 ? [UiStrings.S_PreferencesDialog_Import_509BBD7051, .. dupes] : Array.Empty<string>())
+                .Concat(invalid.Count > 0 ? [UiStrings.S_PreferencesDialog_Import_BD2AAB15B7, .. invalid] : Array.Empty<string>())), UiStrings.S_PreferencesDialog_Import_C177CCAFE9);
         RebuildRows();
     }
 }

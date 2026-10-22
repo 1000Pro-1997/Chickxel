@@ -5,6 +5,7 @@ using Gpixel.App.Ai;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using Avalonia.VisualTree;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -48,7 +49,7 @@ public sealed class LospecPaletteDialog : DialogBase
     /// <param name="replace">팔레트를 이 색들로 바꾼다.</param>
     /// <param name="append">이 색들을 덧붙이고(겹치는 색 제외) 덧붙인 수를 돌려준다.</param>
     public LospecPaletteDialog(Func<IReadOnlyList<Color32>> current, Action<IReadOnlyList<Color32>> replace,
-        Func<IReadOnlyList<Color32>, int> append) : base("팔레트 웹 — Lospec")
+        Func<IReadOnlyList<Color32>, int> append) : base(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_BA8E30F0A4)
     {
         _current = current;
         _replace = replace;
@@ -63,21 +64,21 @@ public sealed class LospecPaletteDialog : DialogBase
         MinHeight = 440;
 
         // ── 거르기 줄
-        _sort = Ui.Combo(100, "인기", "다운로드순", "최신", "이름순");
-        _filter = Ui.Combo(84, "전체", "최대", "최소", "정확히");
-        _count = Ui.Num(1, 256, 8, 64).Presets(2, 3, 4, 5, 6, 8, 12, 16, 24, 32, 64, 256).Unit("색").RecentKey("palette.count");
+        _sort = Ui.Combo(100, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C6B4CAD5AA, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_02A80D18D3, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_1C3280FE06, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_6859F79425);
+        _filter = Ui.Combo(84, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_07EB862B40, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_06F3644153, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_E2D53DCDA5, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_A394BB00BB);
+        _count = Ui.Num(1, 256, 8, 64).Presets(2, 3, 4, 5, 6, 8, 12, 16, 24, 32, 64, 256).Unit(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C4911E03B6).RecentKey("palette.count");
         _count.IsEnabled = false;
         _tag = Ui.Text("", 150);
-        _tag.Watermark = "태그 또는 이름";
-        ToolTip.SetTip(_tag, "태그(예: gameboy, pico8)로 거릅니다. 팔레트 이름(예: sweetie 16)이 맞으면 맨 위에 보여 줍니다.");
+        _tag.Watermark = UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_2308C983F0;
+        ToolTip.SetTip(_tag, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_3CF9E5D276);
         _tag.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Search(); } };
         _sort.SelectionChanged += (_, _) => Search();
         _filter.SelectionChanged += (_, _) => { _count.IsEnabled = _filter.SelectedIndex > 0; Search(); };
         _count.ValueChanged += (_, _) => { if (_filter.SelectedIndex > 0) { _debounce.Stop(); _debounce.Start(); } };
         _debounce.Tick += (_, _) => { _debounce.Stop(); Search(); };
-        var search = Ui.Button("검색", (_, _) => Search(), 60);
+        var search = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_0D176B4714, (_, _) => Search(), 60);
         var filters = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var c in new Control[] { Ui.Label("정렬"), _sort, Gap(), Ui.Label("색 수"), _filter, _count, Gap(), Ui.Label("태그"), _tag, search })
+        foreach (var c in new Control[] { Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_EE68758A30), _sort, Gap(), Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_F66FE6E7DA), _filter, _count, Gap(), Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_ECD11E2F35), _tag, search })
         {
             c.VerticalAlignment = VerticalAlignment.Center;
             filters.Children.Add(c);
@@ -85,7 +86,7 @@ public sealed class LospecPaletteDialog : DialogBase
 
         // ── 상태 줄
         _status = new TextBlock { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
-        _retry = Ui.Button("다시 시도", (_, _) => Retry());
+        _retry = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_530A8326D1, (_, _) => Retry());
         _retry.IsVisible = false;
         var statusRow = new DockPanel { Margin = new Thickness(2, 2, 2, 4) };
         DockPanel.SetDock(_retry, Dock.Right);
@@ -112,7 +113,7 @@ public sealed class LospecPaletteDialog : DialogBase
         {
             if (e.Source is ScrollViewer sv && sv.Extent.Height > 0 && sv.Offset.Y + sv.Viewport.Height >= sv.Extent.Height - 60) LoadMoreIfIdle();
         });
-        _more = Ui.Button("더 보기", (_, _) => LoadMoreIfIdle(), 90);
+        _more = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_A4B23137E6, (_, _) => LoadMoreIfIdle(), 90);
         _more.HorizontalAlignment = HorizontalAlignment.Center;
         _more.IsVisible = false;
 
@@ -152,10 +153,10 @@ public sealed class LospecPaletteDialog : DialogBase
         };
         Grid.SetColumn(examplesHost, 1);
         var swatchRow = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { swatchHost, examplesHost } };
-        _use = Ui.Button("팔레트로 쓰기", (_, _) => { if (Selected is { } p) UsePalette(p); });
-        _add = Ui.Button("현재 팔레트에 추가", (_, _) => { if (Selected is { } p) AppendPalette(p); });
-        _save = Ui.Button(".hex로 저장…", (_, _) => { if (Selected is { } p) SavePalette(p); });
-        _web = Ui.Button("Lospec에서 보기", (_, _) => { if (Selected is { } p) OpenWeb(p.WebUrl); });
+        _use = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_41463D2C53, (_, _) => { if (Selected is { } p) UsePalette(p); });
+        _add = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_9163206E82, (_, _) => { if (Selected is { } p) AppendPalette(p); });
+        _save = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_48D4D57A7C, (_, _) => { if (Selected is { } p) SavePalette(p); });
+        _web = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C15363FA9A, (_, _) => { if (Selected is { } p) OpenWeb(p.WebUrl); });
         _note = new TextBlock { Foreground = AppTheme.AccentBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var b in new Control[] { _use, _add, _save, _web, _note }) actions.Children.Add(b);
@@ -175,7 +176,7 @@ public sealed class LospecPaletteDialog : DialogBase
 
         var credit = new TextBlock
         {
-            Text = "팔레트 출처: Lospec.com (각 팔레트 작성자)",
+            Text = UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_E2E07547CF,
             Foreground = AppTheme.DimTextBrush,
             FontSize = AppTheme.SmallFontSize,
             Margin = new Thickness(2, 6, 0, 0),
@@ -263,7 +264,7 @@ public sealed class LospecPaletteDialog : DialogBase
     {
         _loading = true;
         _failed = false;
-        SetStatus(_nextPage == 0 ? "불러오는 중…" : $"{_loaded} / {_total} · 더 불러오는 중…", error: false);
+        SetStatus(_nextPage == 0 ? UiStrings.S_LospecPaletteDialog_LoadPageAsync_3756910EA9 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_LoadPageAsync_CD0A6F99BD,_loaded,_total), error: false);
         _more.IsVisible = false;
         try
         {
@@ -294,9 +295,9 @@ public sealed class LospecPaletteDialog : DialogBase
             _failed = true;
             SetStatus(ex switch
             {
-                OperationCanceledException => $"Lospec이 {RequestTimeout.TotalSeconds:0}초 안에 응답하지 않았습니다. 잠시 뒤 다시 시도하세요.",
-                FormatException => "Lospec 응답을 읽지 못했습니다. 사이트 형식이 바뀌었을 수 있습니다.",
-                _ => $"Lospec에 연결하지 못했습니다. 인터넷 연결을 확인하세요.\n({ex.Message})",
+                OperationCanceledException => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_LoadPageAsync_8947DCE5D3,RequestTimeout.TotalSeconds),
+                FormatException => UiStrings.S_LospecPaletteDialog_LoadPageAsync_7E7F70A765,
+                _ => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_LoadPageAsync_018F29C1E9,ex.Message),
             }, error: true);
         }
     }
@@ -324,11 +325,11 @@ public sealed class LospecPaletteDialog : DialogBase
         bool more = _loaded < _total;
         _more.IsVisible = more;
         if (_loaded == 0 && _pinned is null)
-            SetStatus(_query.Tag.Length > 0 ? $"'{_query.Tag}' 태그나 이름에 맞는 팔레트가 없습니다." : "조건에 맞는 팔레트가 없습니다.", error: false);
+            SetStatus(_query.Tag.Length > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UpdateCountStatus_89312F3E76,_query.Tag) : UiStrings.S_LospecPaletteDialog_UpdateCountStatus_FACBC1CCC7, error: false);
         else if (_loaded == 0)
-            SetStatus($"'{_query.Tag}' 태그는 없고, 이름이 맞는 팔레트(별 표시)를 찾았습니다.", error: false);
+            SetStatus(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UpdateCountStatus_5AA76C9F5F,_query.Tag), error: false);
         else
-            SetStatus($"{_loaded} / {_total}" + (_pinned is not null ? " · 이름이 맞는 팔레트(별 표시)를 맨 위에 두었습니다" : ""), error: false);
+            SetStatus($"{_loaded} / {_total}" + (_pinned is not null ? UiStrings.S_LospecPaletteDialog_UpdateCountStatus_27B678EA3A : ""), error: false);
     }
 
     /// <summary>단추를 누른 결과(팔레트로 씀·덧붙임·저장)를 단추 옆에 알린다.</summary>
@@ -373,7 +374,7 @@ public sealed class LospecPaletteDialog : DialogBase
             Tag = p,
             Padding = new Thickness(6, 4),
         };
-        ToolTip.SetTip(item, p.Tags.Count > 0 ? "태그: " + string.Join(", ", p.Tags) : null);
+        ToolTip.SetTip(item, p.Tags.Count > 0 ? UiStrings.S_LospecPaletteDialog_MakeItem_759399DD94 + string.Join(", ", p.Tags) : null);
         return item;
     }
 
@@ -382,7 +383,7 @@ public sealed class LospecPaletteDialog : DialogBase
     {
         var head = new List<string>();
         if (p.Author.Length > 0) head.Add(p.Author);
-        head.Add($"{p.Colors.Count}색");
+        head.Add(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_FillInfo_8490C7D755,p.Colors.Count));
         var brush = target.Foreground ?? AppTheme.DimTextBrush;
         var inlines = new InlineCollection { new Run(string.Join(" · ", head)) };
         void Stat(VectorIcon icon, int count)
@@ -401,8 +402,8 @@ public sealed class LospecPaletteDialog : DialogBase
 
     private void ShowDetail(LospecPalette? p)
     {
-        _detailTitle.Text = p?.Title ?? "팔레트를 고르세요";
-        if (p is null) _detailInfo.Inlines = [new Run("목록을 두 번 누르면 바로 팔레트로 씁니다.")];
+        _detailTitle.Text = p?.Title ?? UiStrings.S_LospecPaletteDialog_ShowDetail_3963CB3400;
+        if (p is null) _detailInfo.Inlines = [new Run(UiStrings.S_LospecPaletteDialog_ShowDetail_699C49ACD8)];
         else FillInfo(_detailInfo, p, p.Tags.Count > 0 ? " · " + string.Join(", ", p.Tags) : "");
         _swatches.SetColors(p?.Colors ?? []);
         ShowExamples(p);
@@ -418,11 +419,11 @@ public sealed class LospecPaletteDialog : DialogBase
         _examples.Clear();
         if (p is null || p.Examples.Count == 0)
         {
-            _examplesNote.Text = p is null ? "" : "이 팔레트에는 예시 그림이 없습니다.";
+            _examplesNote.Text = p is null ? "" : UiStrings.S_LospecPaletteDialog_ShowExamples_5CCC9687E1;
             return;
         }
         var cts = _examplesCts = new CancellationTokenSource();
-        _examplesNote.Text = "예시 그림 불러오는 중…";
+        _examplesNote.Text = UiStrings.S_LospecPaletteDialog_ShowExamples_05EE4FBC6D;
         int shown = 0;
         foreach (var url in p.Examples.Take(6))
         {
@@ -452,36 +453,36 @@ public sealed class LospecPaletteDialog : DialogBase
             _examples.Add(bmp, $"{bmp.PixelSize.Width}×{bmp.PixelSize.Height}px · {Path.GetFileName(url.LocalPath)}");
             shown++;
         }
-        _examplesNote.Text = shown == 0 ? "예시 그림을 불러오지 못했습니다." : "";
+        _examplesNote.Text = shown == 0 ? UiStrings.S_LospecPaletteDialog_ShowExamples_7293A60341 : "";
     }
 
     private void UsePalette(LospecPalette p)
     {
         int n = _current().Count;
-        if (n > 0 && Ui.Ask(this, $"지금 팔레트({n}색)를 '{p.Title}'({p.Colors.Count}색)으로 바꿀까요?",
-                "팔레트로 쓰기", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+        if (n > 0 && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UsePalette_61DD05834E,n,p.Title,p.Colors.Count),
+                UiStrings.S_LospecPaletteDialog_UsePalette_D1481F9E4E, MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
         _replace(p.Colors);
-        Note($"'{p.Title}'을(를) 팔레트로 썼습니다.");
+        Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UsePalette_DDD1C3B449,p.Title));
     }
 
     private void AppendPalette(LospecPalette p)
     {
         int added = _append(p.Colors);
-        Note(added > 0 ? $"{added}색을 덧붙였습니다." : "덧붙일 새 색이 없습니다(모두 이미 있음).");
+        Note(added > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_AppendPalette_C42B6B0D5F,added) : UiStrings.S_LospecPaletteDialog_AppendPalette_0829A17CC4);
     }
 
     private void SavePalette(LospecPalette p)
     {
-        var path = Ui.SaveFile(this, "팔레트 저장", null, p.Slug + ".hex", "hex", new FileFilter("HEX 팔레트", "*.hex"));
+        var path = Ui.SaveFile(this, UiStrings.S_LospecPaletteDialog_SavePalette_E26650B496, null, p.Slug + ".hex", "hex", new FileFilter(UiStrings.S_LospecPaletteDialog_SavePalette_8D2EB5880E, "*.hex"));
         if (path is null) return;
         try
         {
             PaletteIO.SaveHex(path, p.Colors);
-            Note($"저장했습니다: {Path.GetFileName(path)}");
+            Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_SavePalette_5FC897CDCA,Path.GetFileName(path)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"팔레트를 저장하지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_SavePalette_4C07BA89FD,ex.Message));
         }
     }
 
@@ -493,7 +494,7 @@ public sealed class LospecPaletteDialog : DialogBase
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
         {
-            Ui.Error(this, $"브라우저를 열지 못했습니다.\n{url}\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_OpenWeb_335A7C88C9,url,ex.Message));
         }
     }
 

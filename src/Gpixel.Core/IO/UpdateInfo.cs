@@ -168,12 +168,12 @@ public static class AppUpdate
         }
         catch (JsonException ex)
         {
-            throw new FormatException("릴리스 정보를 읽지 못했습니다: " + ex.Message, ex);
+            throw new FormatException(Gpixel.Core.Localization.DomainStrings.FormatUpdate_ReadFailed(error: ex.Message), ex);
         }
         using (doc)
         {
             var root = doc.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) throw new FormatException("릴리스 정보가 객체가 아닙니다.");
+            if (root.ValueKind != JsonValueKind.Object) throw new FormatException(Gpixel.Core.Localization.DomainStrings.Update_InvalidObject);
             string tag = Str(root, "tag_name");
             if (!SemVersion.TryParse(tag, out var version)) return null;
             if (!Uri.TryCreate(Str(root, "html_url"), UriKind.Absolute, out var page) || page.Scheme != Uri.UriSchemeHttps) return null;

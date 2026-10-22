@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -8,36 +9,36 @@ public sealed partial class LayerEffectsDialog
     private void HologramPanel(HologramEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static HologramEffect H(LayerEffect v) => (HologramEffect)v;
-        SettingsRow("색", EffectColorEditor(e, nameof(HologramEffect.Color),
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_E28C969851, EffectColorEditor(e, nameof(HologramEffect.Color),
             ColorEditor(e.Color, v => set(o => H(o) with { Color = v })), set));
-        SettingsRow("색 세기", NumEditor(0, 100, e.TintStrength, NumKinds.Strength, v => set(o => H(o) with { TintStrength = v })), Ui.Label("%"));
-        SettingsRow("주사선 간격", NumEditor(HologramEffect.MinScanGap, HologramEffect.MaxScanGap, e.ScanGap, NumKinds.ScanGap, v => set(o => H(o) with { ScanGap = v })), Ui.Label("줄"),
-            Ui.Label("  세기"), NumEditor(0, 100, e.ScanStrength, NumKinds.Strength, v => set(o => H(o) with { ScanStrength = v })), Ui.Label("% (0 = 끔)"));
-        SettingsSubRow("방식", ChoiceEditor(["어둡게", "투명하게"], (int)e.ScanStyle, k => set(o => H(o) with { ScanStyle = (HologramScanStyle)k })),
-            CheckEditor("흐르기", e.ScanScroll, v => set(o => H(o) with { ScanScroll = v })));
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_1FC95DFB01, NumEditor(0, 100, e.TintStrength, NumKinds.Strength, v => set(o => H(o) with { TintStrength = v })), Ui.Label("%"));
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_F5867029B4, NumEditor(HologramEffect.MinScanGap, HologramEffect.MaxScanGap, e.ScanGap, NumKinds.ScanGap, v => set(o => H(o) with { ScanGap = v })), Ui.Label(UiStrings.S_HologramPanel_HologramPanel_972F2E71DA),
+            Ui.Label(UiStrings.S_HologramPanel_HologramPanel_6178D2E678), NumEditor(0, 100, e.ScanStrength, NumKinds.Strength, v => set(o => H(o) with { ScanStrength = v })), Ui.Label(UiStrings.S_HologramPanel_HologramPanel_9B9738A14C));
+        SettingsSubRow(UiStrings.S_HologramPanel_HologramPanel_AF6E8C1272, ChoiceEditor([UiStrings.S_HologramPanel_HologramPanel_BB87A93F94, UiStrings.S_HologramPanel_HologramPanel_07629FDFDF], (int)e.ScanStyle, k => set(o => H(o) with { ScanStyle = (HologramScanStyle)k })),
+            CheckEditor(UiStrings.S_HologramPanel_HologramPanel_966D3D0180, e.ScanScroll, v => set(o => H(o) with { ScanScroll = v })));
         var bandSize = NumEditor(1, HologramEffect.MaxBandSize, e.BandSize, NumKinds.Thickness, v => set(o => H(o) with { BandSize = v }));
         var bandStrength = NumEditor(0, 100, e.BandStrength, NumKinds.Strength, v => set(o => H(o) with { BandStrength = v }));
         bandSize.IsEnabled = bandStrength.IsEnabled = e.Band;
-        SettingsCheckRow(CheckEditor("밝은 띠", e.Band, v => { bandSize.IsEnabled = bandStrength.IsEnabled = v; set(o => H(o) with { Band = v }); }),
-            Ui.Label("두께"), bandSize, Ui.Label("px"), Ui.Label("  세기"), bandStrength, Ui.Label("%"));
-        SettingsRow("투명도", NumEditor(0, 100, e.Opacity, NumKinds.Opacity, v => set(o => H(o) with { Opacity = v })), Ui.Label("%"));
-        SettingsRow("", CheckEditor("디더 (반투명 대신 Bayer 무늬)", e.Dither, v => set(o => H(o) with { Dither = v })));
-        SettingsRow("깜빡임 빈도", NumEditor(0, 100, e.FlickerRate, NumKinds.Rate, v => set(o => H(o) with { FlickerRate = v })), Ui.Label("%"),
-            Ui.Label("  세기"), NumEditor(0, 100, e.FlickerStrength, NumKinds.Strength, v => set(o => H(o) with { FlickerStrength = v })), Ui.Label("%"));
-        SettingsRow("글리치 빈도", NumEditor(0, 100, e.GlitchRate, NumKinds.Rate, v => set(o => H(o) with { GlitchRate = v })), Ui.Label("%"),
-            Ui.Label("  최대 밀림"), NumEditor(1, HologramEffect.MaxGlitchShift, e.GlitchShift, NumKinds.Px, v => set(o => H(o) with { GlitchShift = v })), Ui.Label("px"));
-        SettingsRow("", CheckEditor("RGB 분리 (빨강·파랑 1px 어긋남)", e.RgbSplit, v => set(o => H(o) with { RgbSplit = v })).Tip("글리치 프레임에 빨강·파랑이 1px 어긋납니다."));
+        SettingsCheckRow(CheckEditor(UiStrings.S_HologramPanel_HologramPanel_2A2020E4D9, e.Band, v => { bandSize.IsEnabled = bandStrength.IsEnabled = v; set(o => H(o) with { Band = v }); }),
+            Ui.Label(UiStrings.S_HologramPanel_HologramPanel_9F93A9BB2A), bandSize, Ui.Label("px"), Ui.Label(UiStrings.S_HologramPanel_HologramPanel_6178D2E678), bandStrength, Ui.Label("%"));
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_1BF34BE317, NumEditor(0, 100, e.Opacity, NumKinds.Opacity, v => set(o => H(o) with { Opacity = v })), Ui.Label("%"));
+        SettingsRow("", CheckEditor(UiStrings.S_HologramPanel_HologramPanel_BAED2225EC, e.Dither, v => set(o => H(o) with { Dither = v })));
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_C49A6BC313, NumEditor(0, 100, e.FlickerRate, NumKinds.Rate, v => set(o => H(o) with { FlickerRate = v })), Ui.Label("%"),
+            Ui.Label(UiStrings.S_HologramPanel_HologramPanel_6178D2E678), NumEditor(0, 100, e.FlickerStrength, NumKinds.Strength, v => set(o => H(o) with { FlickerStrength = v })), Ui.Label("%"));
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_E9515F56FA, NumEditor(0, 100, e.GlitchRate, NumKinds.Rate, v => set(o => H(o) with { GlitchRate = v })), Ui.Label("%"),
+            Ui.Label(UiStrings.S_HologramPanel_HologramPanel_48D9F3060D), NumEditor(1, HologramEffect.MaxGlitchShift, e.GlitchShift, NumKinds.Px, v => set(o => H(o) with { GlitchShift = v })), Ui.Label("px"));
+        SettingsRow("", CheckEditor(UiStrings.S_HologramPanel_HologramPanel_A5CD9BF54F, e.RgbSplit, v => set(o => H(o) with { RgbSplit = v })).Tip(UiStrings.S_HologramPanel_HologramPanel_389F58CAAE));
         var edge = NumEditor(0, 100, e.EdgeOpacity, NumKinds.Strength, v => set(o => H(o) with { EdgeOpacity = v }));
         edge.IsEnabled = e.EdgeGlow;
-        SettingsCheckRow(CheckEditor("테두리 빛", e.EdgeGlow, v => { edge.IsEnabled = v; set(o => H(o) with { EdgeGlow = v }); }).Tip("그림 둘레 1px에 빛 테두리를 두릅니다."),
-            Ui.Label("세기"), edge, Ui.Label("%"));
+        SettingsCheckRow(CheckEditor(UiStrings.S_HologramPanel_HologramPanel_412239FF25, e.EdgeGlow, v => { edge.IsEnabled = v; set(o => H(o) with { EdgeGlow = v }); }).Tip(UiStrings.S_HologramPanel_HologramPanel_7898EACDA1),
+            Ui.Label(UiStrings.S_HologramPanel_HologramPanel_13DAB2BCA6), edge, Ui.Label("%"));
         var seed = NumEditor(0, HologramEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => H(o) with { Seed = v }));
-        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 깜빡임·글리치(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, HologramEffect.MaxSeed + 1), 36);
-        SettingsRow("시드", seed, reroll);
+        var reroll = Ui.IconButton(VectorIcon.Dice, UiStrings.S_HologramPanel_HologramPanel_B535B6DA1C, (_, _) => seed.Value = System.Random.Shared.Next(0, HologramEffect.MaxSeed + 1), 36);
+        SettingsRow(UiStrings.S_HologramPanel_HologramPanel_22ACBFBD6E, seed, reroll);
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("보이는 픽셀을 밝기 그대로 한 색으로 물들인(명암·모양 유지) SF 홀로그램입니다. 주사선 줄마다 어둡게·투명하게 하고, 흐르기면 범위 동안 한 간격 아래로 흐릅니다."
-                                    + " 밝은 띠는 범위 처음에 그림 위에서 들어와 끝에 아래로 빠져나갑니다(빠르기·반복이 주사선 흐름과 띠에 쓰임)."));
-        _settings.Children.Add(Hint("깜빡임·글리치는 시드와 범위 안 프레임 번호로 정해집니다(같은 설정이면 캔버스·내보내기·GIF가 같음). 글리치 프레임엔 1~3개 가로 조각(1~3px)이 좌우로 밀리므로"
-                                    + " 좌우로 최대 밀림만큼, 테두리 빛이면 사방 1px 여백이 생깁니다."));
+        _settings.Children.Add(Hint(UiStrings.S_HologramPanel_HologramPanel_8BEC9DAD82
+                                    + UiStrings.S_HologramPanel_HologramPanel_D3554CA8CE));
+        _settings.Children.Add(Hint(UiStrings.S_HologramPanel_HologramPanel_359C86A8C6
+                                    + UiStrings.S_HologramPanel_HologramPanel_CEBC71D120));
     }
 }

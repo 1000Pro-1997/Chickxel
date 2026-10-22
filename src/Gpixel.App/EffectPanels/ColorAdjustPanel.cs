@@ -1,10 +1,11 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
 public sealed partial class LayerEffectsDialog
 {
-    private static readonly string[] AdjustModes = ["흑백", "세피아", "색조 이동", "밝기·대비", "채도"];
+    private static readonly string[] AdjustModes = [UiStrings.S_ColorAdjustPanel_AdjustModes_2C243D40ED, UiStrings.S_ColorAdjustPanel_AdjustModes_7D62C1B761, UiStrings.S_ColorAdjustPanel_AdjustModes_C19765AF80, UiStrings.S_ColorAdjustPanel_AdjustModes_0FF6A836A6, UiStrings.S_ColorAdjustPanel_AdjustModes_66B88ADD3C];
 
     private static string AdjustSummary(ColorAdjustEffect c) => AdjustModes[(int)c.Mode] + c.Mode switch
     {
@@ -18,7 +19,7 @@ public sealed partial class LayerEffectsDialog
     private void ColorAdjustPanel(ColorAdjustEffect c, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static ColorAdjustEffect C(LayerEffect v) => (ColorAdjustEffect)v;
-        SettingsRow("방식", ChoiceEditor(AdjustModes, (int)c.Mode, k =>
+        SettingsRow(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_1F1978AFAD, ChoiceEditor(AdjustModes, (int)c.Mode, k =>
         {
             set(o => C(o) with { Mode = (ColorAdjustMode)k });
             ShowSettings(); // 그 방식의 값 칸으로
@@ -27,19 +28,19 @@ public sealed partial class LayerEffectsDialog
         {
             case ColorAdjustMode.Grayscale:
             case ColorAdjustMode.Sepia:
-                SettingsRow("양", NumEditor(0, 100, c.Amount, NumKinds.Strength, v => set(o => C(o) with { Amount = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_703B3CD995, NumEditor(0, 100, c.Amount, NumKinds.Strength, v => set(o => C(o) with { Amount = v })), Ui.Label("%"));
                 break;
             case ColorAdjustMode.HueShift:
-                SettingsRow("색상", NumEditor(-ColorAdjustEffect.MaxHue, ColorAdjustEffect.MaxHue, c.Hue, NumKinds.Hue, v => set(o => C(o) with { Hue = v })), Ui.Label("° 돌리기"));
+                SettingsRow(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_7292A6B699, NumEditor(-ColorAdjustEffect.MaxHue, ColorAdjustEffect.MaxHue, c.Hue, NumKinds.Hue, v => set(o => C(o) with { Hue = v })), Ui.Label(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_F55E326D7F));
                 break;
             case ColorAdjustMode.BrightnessContrast:
-                SettingsRow("밝기", NumEditor(-100, 100, c.Brightness, NumKinds.Adjust, v => set(o => C(o) with { Brightness = v })), Ui.Label("%"),
-                    Ui.Label("  대비"), NumEditor(-100, 100, c.Contrast, NumKinds.Adjust, v => set(o => C(o) with { Contrast = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_8395FE49C9, NumEditor(-100, 100, c.Brightness, NumKinds.Adjust, v => set(o => C(o) with { Brightness = v })), Ui.Label("%"),
+                    Ui.Label(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_001F11B58B), NumEditor(-100, 100, c.Contrast, NumKinds.Adjust, v => set(o => C(o) with { Contrast = v })), Ui.Label("%"));
                 break;
             case ColorAdjustMode.Saturation:
-                SettingsRow("채도", NumEditor(-100, 100, c.Saturation, NumKinds.Adjust, v => set(o => C(o) with { Saturation = v })), Ui.Label("% (−100 = 흑백)"));
+                SettingsRow(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_B92B34DA64, NumEditor(-100, 100, c.Saturation, NumKinds.Adjust, v => set(o => C(o) with { Saturation = v })), Ui.Label(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_DFBB738FE0));
                 break;
         }
-        _settings.Children.Add(Hint("보이는 픽셀의 색만 바꿉니다(투명도는 그대로). 셀 그림은 그대로라 언제든 끄거나 되돌릴 수 있습니다."));
+        _settings.Children.Add(Hint(UiStrings.S_ColorAdjustPanel_ColorAdjustPanel_65D7B7FC26));
     }
 }

@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -40,12 +41,12 @@ public sealed partial class LayerEffectsDialog
             var plan = CanvasExpansion(VirtualEffects());
             _expandNote.Foreground = AppTheme.DimTextBrush;
             _expandNote.Text = plan.IsNone(_project.Width, _project.Height)
-                ? $"{_project.Width}×{_project.Height} · 이미 캔버스 안에 들어감"
+                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_BDEB632BC8,_project.Width,_project.Height)
                 : $"{_project.Width}×{_project.Height} → {plan.Width}×{plan.Height}"
-                  + (s_canvasExpandMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? " · 최대 크기로 비율 유지 불가" : "");
+                  + (s_canvasExpandMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_6BBDE7B81F : "");
             ToolTip.SetTip(_expandNote, plan.IsNone(_project.Width, _project.Height)
-                ? "효과 결과가 현재 캔버스 밖으로 나가지 않아 크기를 바꾸지 않습니다."
-                : $"원래 그림의 왼쪽 위를 새 캔버스 ({plan.OffsetX}, {plan.OffsetY})에 놓습니다. 그림 픽셀은 확대하지 않습니다.");
+                ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_EFFF97903C
+                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_AA4018CCC5,plan.OffsetX,plan.OffsetY));
         }
         catch (InvalidOperationException ex)
         {
@@ -61,5 +62,5 @@ public sealed partial class LayerEffectsDialog
             new Rectangle(plan.OffsetX, plan.OffsetY, _project.Width, _project.Height));
 
     private static string CanvasExpansionSummary(int oldWidth, int oldHeight, EffectCanvasExpansion plan)
-        => $"캔버스 {oldWidth}×{oldHeight} → {plan.Width}×{plan.Height}로 확대";
+        => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Canvas_CanvasExpansionSummary_332F7D70DF,oldWidth,oldHeight,plan.Width,plan.Height);
 }

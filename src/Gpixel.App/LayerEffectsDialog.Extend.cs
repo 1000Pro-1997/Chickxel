@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -14,7 +15,7 @@ public sealed partial class LayerEffectsDialog
 {
     /// <summary>늘리기 상자 항목: 0 = 원래 프레임으로(범위 뒤에 있는 프레임으로 범위만 넓힘), 1~ = <see cref="FrameExtendMode"/>(프레임을 더함).</summary>
     private static readonly string[] ExtendModes =
-        ["원래 프레임으로", .. Enum.GetValues<FrameExtendMode>().Select(FrameExtension.ModeName)];
+        [UiStrings.S_LayerEffectsDialog_Extend_ExtendModes_1696F70224, .. Enum.GetValues<FrameExtendMode>().Select(FrameExtension.ModeName)];
     /// <summary>프레임을 더하는 늘리기 방법(앱을 켜 둔 동안 유지).</summary>
     private static FrameExtendMode s_extendMode = FrameExtendMode.Stretch;
     /// <summary>"원래 프레임으로"를 직접 고른 효과와 값(null = 정하지 않음 → 범위 뒤에 프레임이 있으면 원래 프레임으로).</summary>
@@ -143,13 +144,13 @@ public sealed partial class LayerEffectsDialog
             if (anchored is { } a) SetExtension(new FrameExtension(a.From, a.To, a.Count, s_extendMode), e);
             else SyncExtendEditor();
         };
-        ToolTip.SetTip(count, "이 효과 범위의 프레임 수. 원래 프레임으로: 범위 끝을 뒤에 이미 있는 프레임까지 넓힙니다(프레임은 그대로)."
-                              + " 다른 방법: 범위 길이보다 크게 하면 확인할 때 그만큼 프레임을 더해 애니메이션을 늘립니다(모든 프레임이면 애니메이션 전체)."
-                              + " 미리보기는 늘린 뒤 모습입니다. 프레임 줄에서 범위 끝을 마지막 칸 너머로 끌어도 됩니다.");
-        ToolTip.SetTip(mode, "늘리는 방법 — 원래 프레임으로: 범위 뒤에 있는 프레임을 그대로 씀(끝 프레임까지) · 같은 비율로: 프레임마다 고르게 되풀이 · "
-                             + "첫 프레임으로: 첫 프레임을 앞에 더 둠 · 마지막 프레임으로: 마지막 프레임을 뒤에 더 둠 · 반복: 1, 2, …, n을 되풀이.");
-        SettingsRow("프레임 수", count, Ui.Label("프레임"), note);
-        SettingsSubRow("늘리기", mode);
+        ToolTip.SetTip(count, UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_D32421D815
+                              + UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_2F234110A6
+                              + UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_62BCE2A82A);
+        ToolTip.SetTip(mode, UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_13C7CE4286
+                             + UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_F918A1A976);
+        SettingsRow(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_82FB7C16B7, count, Ui.Label(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_090E611E8C), note);
+        SettingsSubRow(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_9F00E1A6E8, mode);
     }
 
     /// <summary>늘리기가 이 효과에서 만들어졌고 아직 그 효과 범위에 걸려 있으면 그 늘리기.</summary>
@@ -207,7 +208,7 @@ public sealed partial class LayerEffectsDialog
             && _virtualRangeOverrides.TryGetValue(activeOwner, out var ownerRange)
             && ownerRange != active.MapRange(new FrameRange(active.From, active.To));
         string other = _extension is { } pending && _extensionOwner is { } owner && !ReferenceEquals(e, owner)
-            ? ownerRangeFixed ? $"추가 유지 · 전체 {VirtualCount}프레임" : $"추가 유지 · {owner.DisplayName} +{pending.Added}"
+            ? ownerRangeFixed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_SyncExtendEditor_A62BFC8D52,VirtualCount) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_SyncExtendEditor_21BE29469F,owner.DisplayName,pending.Added)
             : "";
         _extendSyncing = true;
         if (existing)
@@ -219,7 +220,7 @@ public sealed partial class LayerEffectsDialog
             count.Value = n;
             mode.SelectedIndex = 0;
             note.Text = other.Length > 0 ? other
-                : after > 0 ? $"뒤에 프레임 {after}개 있음" : "뒤에 프레임 없음 — 더하려면 다른 방법";
+                : after > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_SyncExtendEditor_B069C0BD72,after) : UiStrings.S_LayerEffectsDialog_Extend_SyncExtendEditor_37065AF08C;
         }
         else
         {
@@ -228,7 +229,7 @@ public sealed partial class LayerEffectsDialog
             count.Minimum = n;
             count.Value = now;
             mode.SelectedIndex = (int)(Anchored(e)?.Mode ?? s_extendMode) + 1;
-            note.Text = Anchored(e) is { } x ? $"확인하면 프레임 {x.Added}개 더함" : other;
+            note.Text = Anchored(e) is { } x ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_SyncExtendEditor_15BD7E7B69,x.Added) : other;
         }
         _extendSyncing = false;
     }
@@ -241,8 +242,8 @@ public sealed partial class LayerEffectsDialog
             if (v > n || toEnd is not null) values.Add(v);
         if (toEnd is { } end) values.Add(end);
         values.RemoveWhere(v => v > (toEnd ?? Math.Max(n, FrameExtension.MaxCount)));
-        return new("effect.frameCount", "프레임", [.. values],
-            v => v == toEnd && v != n ? $"{v}프레임 (끝 프레임까지)" : v == n ? $"{v}프레임 (그대로)" : v == n * 2 ? $"{v}프레임 (×2)" : v == n * 3 ? $"{v}프레임 (×3)" : $"{v}프레임");
+        return new("effect.frameCount", UiStrings.S_LayerEffectsDialog_Extend_CountKind_1B579E1C9B, [.. values],
+            v => v == toEnd && v != n ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_CountKind_9B2960D545,v) : v == n ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_CountKind_9709EC01B8,v) : v == n * 2 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_CountKind_C66AF18AEF,v) : v == n * 3 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_CountKind_6D528965EF,v) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_CountKind_C5B2B11647,v));
     }
 
     /// <summary>효과의 늘리기를 바꾸고(같은 수면 늘리지 않음) 미리보기·프레임 줄·설정 칸을 맞춘다. 소유자는 선택 상태가 아니라 입력을 낸 효과로 정한다.</summary>
@@ -437,7 +438,7 @@ public sealed partial class LayerEffectsDialog
         catch (InvalidOperationException ex)
         {
             _project.EndLayerEffectsPreview(index, _original, commit: false);
-            ResultMessage = $"캔버스를 확대하지 못해 효과를 적용하지 않았습니다: {ex.Message}";
+            ResultMessage = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_EndPreview_3FACEB3EDB,ex.Message);
             return;
         }
         if (_extension is null && expansion is null)
@@ -450,8 +451,8 @@ public sealed partial class LayerEffectsDialog
         var change = ProjectChange.Layers
                      | (_extension is null ? 0 : ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels)
                      | (expansion is null ? 0 : ProjectChange.Canvas | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Pixels);
-        string label = _extension is not null && expansion is not null ? "레이어 효과 · 프레임·캔버스 늘리기"
-            : _extension is not null ? "레이어 효과 · 프레임 늘리기" : "레이어 효과 · 캔버스 확대";
+        string label = _extension is not null && expansion is not null ? UiStrings.S_LayerEffectsDialog_Extend_EndPreview_FE2B132140
+            : _extension is not null ? UiStrings.S_LayerEffectsDialog_Extend_EndPreview_E092F138F7 : UiStrings.S_LayerEffectsDialog_Extend_EndPreview_7BCD2BFB57;
         _project.Edit(label, change, () =>
         {
             if (_extension is { } ext) _project.ExtendFrames(ext);
@@ -461,10 +462,10 @@ public sealed partial class LayerEffectsDialog
         ResultMessage = (_extension is { } x ? ExtendSummary(x) : "")
                         + (_extension is not null && expansion is not null ? " · " : "")
                         + (expansion is { } grow ? CanvasExpansionSummary(oldWidth, oldHeight, grow) : "")
-                        + " — Ctrl+Z로 되돌립니다.";
+                        + UiStrings.S_LayerEffectsDialog_Extend_EndPreview_1FF7594D8B;
     }
 
     /// <summary>"프레임 1~4: 4개 → 12개로 늘림 (같은 비율로)".</summary>
     internal static string ExtendSummary(FrameExtension x)
-        => $"프레임 {(x.From == x.To ? $"{x.From + 1}" : $"{x.From + 1}~{x.To + 1}")}: {x.Length}개 → {x.Count}개로 늘림 ({FrameExtension.ModeName(x.Mode)})";
+        => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Extend_ExtendSummary_FC60832737,(x.From == x.To ? $"{x.From + 1}" : $"{x.From + 1}~{x.To + 1}"),x.Length,x.Count,FrameExtension.ModeName(x.Mode));
 }

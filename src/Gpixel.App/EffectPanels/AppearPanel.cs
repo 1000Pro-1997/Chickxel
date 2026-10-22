@@ -1,37 +1,38 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
 public sealed partial class LayerEffectsDialog
 {
-    private static readonly string[] AppearStyles = ["투명도", "디더 (4×4 Bayer)", "쓸기", "픽셀 흩어짐"];
-    private static readonly string[] WipeFroms = ["위", "아래", "왼쪽", "오른쪽"];
+    private static readonly string[] AppearStyles = [UiStrings.S_AppearPanel_AppearStyles_E0D9F50D27, UiStrings.S_AppearPanel_AppearStyles_ECD851BCD0, UiStrings.S_AppearPanel_AppearStyles_46BC34F4A2, UiStrings.S_AppearPanel_AppearStyles_9CC60E3158];
+    private static readonly string[] WipeFroms = [UiStrings.S_AppearPanel_WipeFroms_EB53C9C591, UiStrings.S_AppearPanel_WipeFroms_0918652A12, UiStrings.S_AppearPanel_WipeFroms_958C17A305, UiStrings.S_AppearPanel_WipeFroms_A2A7C74FBD];
 
     /// <summary>나타나기 / 사라지기 설정: 모드, 방식, 쓸기 시작 쪽·가장자리, 흩어짐 시드.</summary>
     private void AppearPanel(AppearEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static AppearEffect A(LayerEffect v) => (AppearEffect)v;
-        SettingsRow("모드", ChoiceEditor(["나타나기", "사라지기"], e.Disappear ? 1 : 0, k => set(o => A(o) with { Disappear = k == 1 })));
+        SettingsRow(UiStrings.S_AppearPanel_AppearPanel_F80AD5770E, ChoiceEditor([UiStrings.S_AppearPanel_AppearPanel_90162B77C1, UiStrings.S_AppearPanel_AppearPanel_BBFA2D6AB2], e.Disappear ? 1 : 0, k => set(o => A(o) with { Disappear = k == 1 })));
         var from = ChoiceEditor(WipeFroms, (int)e.From, k => set(o => A(o) with { From = (WipeDirection)k }));
-        var edge = ChoiceEditor(["딱딱하게", "디더 1px", "디더 2px"], e.Edge, k => set(o => A(o) with { Edge = k }));
+        var edge = ChoiceEditor([UiStrings.S_AppearPanel_AppearPanel_098B9035F3, UiStrings.S_AppearPanel_AppearPanel_FD5AFA1D94, UiStrings.S_AppearPanel_AppearPanel_4E8113A1CD], e.Edge, k => set(o => A(o) with { Edge = k }));
         var seed = NumEditor(0, AppearEffect.MaxSeed, e.Seed, NumKinds.Seed, v => set(o => A(o) with { Seed = v }));
-        var reroll = Ui.IconButton(VectorIcon.Dice, "다른 흩어짐(시드를 무작위로)", (_, _) => seed.Value = System.Random.Shared.Next(0, AppearEffect.MaxSeed + 1), 36);
+        var reroll = Ui.IconButton(VectorIcon.Dice, UiStrings.S_AppearPanel_AppearPanel_C98C9F62B6, (_, _) => seed.Value = System.Random.Shared.Next(0, AppearEffect.MaxSeed + 1), 36);
         void Sync(AppearStyle s)
         {
             from.IsEnabled = edge.IsEnabled = s == AppearStyle.Wipe;
             seed.IsEnabled = reroll.IsEnabled = s == AppearStyle.Scatter;
         }
         Sync(e.Style);
-        SettingsRow("방식", ChoiceEditor(AppearStyles, (int)e.Style, k =>
+        SettingsRow(UiStrings.S_AppearPanel_AppearPanel_A482C10A17, ChoiceEditor(AppearStyles, (int)e.Style, k =>
         {
             Sync((AppearStyle)k);
             set(o => A(o) with { Style = (AppearStyle)k });
         }));
-        SettingsSubRow("쓸기 시작", from);
-        SettingsSubRow("가장자리", edge);
-        SettingsSubRow("시드", seed, reroll);
+        SettingsSubRow(UiStrings.S_AppearPanel_AppearPanel_9968F0C72F, from);
+        SettingsSubRow(UiStrings.S_AppearPanel_AppearPanel_5B6934AD2F, edge);
+        SettingsSubRow(UiStrings.S_AppearPanel_AppearPanel_B64448AEFD, seed, reroll);
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("나타나기는 범위 첫 프레임이 비어 있고 마지막 프레임이 그림 그대로, 사라지기는 그 반대입니다. 디더·흩어짐·쓸기는 픽셀이 켜지고 꺼지기만 해서(반투명 없음) 픽셀 아트에 어울립니다."
-                                    + " 쓸기는 고른 쪽에서 시작합니다(사라지기면 그 쪽부터 지워짐)."));
+        _settings.Children.Add(Hint(UiStrings.S_AppearPanel_AppearPanel_43B9AEFDD3
+                                    + UiStrings.S_AppearPanel_AppearPanel_EDC4509A6B));
     }
 }

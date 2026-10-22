@@ -62,12 +62,12 @@ public static class GifWriter
 
     public static GifInfo Write(IReadOnlyList<GifFrame> frames, Stream stream, GifOptions options)
     {
-        if (frames.Count == 0) throw new ArgumentException("GIF로 쓸 프레임이 없습니다.", nameof(frames));
+        if (frames.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Gif_NoFrames, nameof(frames));
         int w = frames[0].Image.Width, h = frames[0].Image.Height;
-        if (frames.Any(f => f.Image.Width != w || f.Image.Height != h)) throw new ArgumentException("GIF 프레임 크기가 서로 다릅니다.", nameof(frames));
+        if (frames.Any(f => f.Image.Width != w || f.Image.Height != h)) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Gif_FrameSizeMismatch, nameof(frames));
         int scale = Math.Clamp(options.Scale, 1, GifOptions.MaxScale);
         int sw = w * scale, sh = h * scale;
-        if (sw > ushort.MaxValue || sh > ushort.MaxValue) throw new ArgumentException($"GIF 크기는 {ushort.MaxValue}px까지입니다({sw}×{sh}).", nameof(options));
+        if (sw > ushort.MaxValue || sh > ushort.MaxValue) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.FormatGif_SizeTooLarge(max: ushort.MaxValue, width: sw, height: sh), nameof(options));
 
         // 1) 프레임마다 불투명 색(배경 합성 또는 알파 문턱)으로 정리: 0 = 투명, 나머지는 0xFF RRGGBB.
         var pixels = frames.Select(f => Flatten(f.Image, options.Background)).ToList();

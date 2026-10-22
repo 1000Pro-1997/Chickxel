@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -223,7 +224,7 @@ public sealed class EditorContext
         get => _gradientStops;
         set
         {
-            if (value.Count < 2) throw new ArgumentException("그라데이션 정지점은 2개 이상이어야 합니다.", nameof(value));
+            if (value.Count < 2) throw new ArgumentException(UiStrings.S_EditorContext_GradientStops_B89D363377, nameof(value));
             _gradientStops = value.Select(s => s with { Position = Math.Clamp(s.Position, 0, 1) }).ToArray();
             OptionsChanged();
         }
@@ -239,7 +240,7 @@ public sealed class EditorContext
         get => _gradientAlphaStops;
         set
         {
-            if (value.Count < 2) throw new ArgumentException("불투명도 정지점은 2개 이상이어야 합니다.", nameof(value));
+            if (value.Count < 2) throw new ArgumentException(UiStrings.S_EditorContext_GradientAlphaStops_AB19024421, nameof(value));
             _gradientAlphaStops = value.Select(s => s with { Position = Math.Clamp(s.Position, 0, 1) }).ToArray();
             OptionsChanged();
         }
@@ -512,7 +513,7 @@ public sealed class EditorContext
         if (_selectionStrokeOpen)
         {
             _selectionStrokeOpen = false;
-            CommitStroke(transformed ? "변형" : "선택 편집");
+            CommitStroke(transformed ? UiStrings.S_EditorContext_CommitFloating_19E799222E : UiStrings.S_EditorContext_CommitFloating_9E9E894C6C);
         }
         if (transformed) TransformChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -571,12 +572,12 @@ public sealed class EditorContext
     /// </summary>
     public string? BeginTransform()
     {
-        if (Project is null) return "열린 프로젝트가 없습니다.";
+        if (Project is null) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
         if (_transform is not null) return null;
-        if (IsGroupSelected) return "그룹 화면에서는 변형할 수 없습니다. 부위나 레이어를 고르세요.";
+        if (IsGroupSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
         // 캔버스 크기 모드면 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 시작 전 선택 상태를 저장하기 전에).
         ApplyCanvasResize();
-        if (!CanEdit) return "현재 레이어가 잠겨 있어 변형할 수 없습니다.";
+        if (!CanEdit) return UiStrings.S_EditorContext_BeginTransform_C545365EE1;
         bool hadStroke = _selectionStrokeOpen;
         var celBefore = hadStroke ? _strokeImage?.Clone() : null;
         var before = Selection.Save();
@@ -592,7 +593,7 @@ public sealed class EditorContext
                     _selectionStrokeOpen = false;
                     CancelStroke();
                 }
-                return "변형할 픽셀이 없습니다(현재 셀이 비어 있음).";
+                return UiStrings.S_EditorContext_BeginTransform_433795A813;
             }
             Selection.Select(img, content);
         }
@@ -730,10 +731,10 @@ public sealed class EditorContext
     /// </summary>
     public string? BeginCanvasResize()
     {
-        if (Project is null) return "열린 프로젝트가 없습니다.";
+        if (Project is null) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
         if (_canvasResize is not null) return null;
         CommitFloating();
-        if (CompositeEntry(_frame) is not { } entry) return "현재 프레임이 없습니다.";
+        if (CompositeEntry(_frame) is not { } entry) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
         _canvasResize = new CanvasResizeSession(entry.Image);
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
         return null;
@@ -776,7 +777,7 @@ public sealed class EditorContext
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
         if (!changed) return;
         bool scaled = image.Size != s.Source.Size;
-        CanvasResized?.Invoke(this, $"캔버스 크기: {canvas.Width}×{canvas.Height}" + (scaled ? $" · 그림 {image.Width}×{image.Height}" : ""));
+        CanvasResized?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_EditorContext_ApplyCanvasResize_B3AC8F3521,canvas.Width,canvas.Height) + (scaled ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_EditorContext_ApplyCanvasResize_2F84F43E48,image.Width,image.Height) : ""));
     }
 
     /// <summary>모드 중에 프로젝트가 바뀜(레이어 보이기 등): 캔버스 크기가 그대로면 미리보기 원본을 새 합성으로, 바뀌었으면 모드를 취소한다.</summary>
@@ -808,7 +809,7 @@ public sealed class EditorContext
     {
         if (Project is not { } p || border == SliceBorder) return;
         if (CurrentPart is { } part) SetPartBorder(part, border);
-        else Structural(() => p.Edit("9-slice 테두리", ProjectChange.Settings, () => p.Sprite.Border = border));
+        else Structural(() => p.Edit(UiStrings.S_EditorContext_SetSliceBorder_738B84377F, ProjectChange.Settings, () => p.Sprite.Border = border));
     }
 
     /// <summary>부위 하나의 9-slice 테두리를 바꾼다(그룹 화면에서 끌 때, 실행취소 한 단계).</summary>
@@ -825,7 +826,7 @@ public sealed class EditorContext
     public void MovePart(Layer part, Point offset)
     {
         if (Project is not { } p || p.IndexOf(part) is var index && index < 0 || part.PartOffset == offset) return;
-        Structural(() => p.Edit(part.IsAutoLaidOut ? "부위 위치 (자동 배치 끄기)" : "부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Structural(() => p.Edit(part.IsAutoLaidOut ? UiStrings.S_EditorContext_MovePart_9205E8CE1C : UiStrings.S_EditorContext_MovePart_B02E0EA2B6, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             if (part.Parent is { AutoLayout: not null } group) p.SetGroupLayout(group, null);
             p.SetPartOffset(index, offset);
@@ -920,7 +921,7 @@ public sealed class EditorContext
         if (after == before) { ViewChanged?.Invoke(this, EventArgs.Empty); return; }
         if (CurrentPart is not null) p.SetPartPivot(_layer, after);
         else if (p.Frames[_frame].Pivot is not null) p.SetFramePivot(_frame, after);
-        else p.Edit("기본 피벗", ProjectChange.Settings, () => p.Sprite.DefaultPivot = after);
+        else p.Edit(UiStrings.S_EditorContext_CommitPivot_463E10A971, ProjectChange.Settings, () => p.Sprite.DefaultPivot = after);
     }
 
     // ───────────── 합성 비트맵 캐시 ─────────────

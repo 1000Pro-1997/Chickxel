@@ -33,7 +33,7 @@ public sealed class DocumentChangedEventArgs(DocumentChange change) : EventArgs
 public sealed class Document
 {
     /// <summary>경로가 없는 새 문서의 표시 이름.</summary>
-    public const string UntitledName = "새 이미지";
+    public static string UntitledName => Gpixel.Core.Localization.DomainStrings.Document_UntitledName;
 
     private PixelImage _image;
     private string? _path;

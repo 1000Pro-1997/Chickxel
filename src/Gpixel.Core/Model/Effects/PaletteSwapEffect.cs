@@ -23,7 +23,7 @@ public sealed record PaletteSwapEffect : LayerEffect
     /// <summary>채널(R·G·B)마다 허용하는 차이 0~<see cref="MaxTolerance"/>(0 = 정확히 같은 색만).</summary>
     public int Tolerance { get => _tolerance; init => _tolerance = Math.Clamp(value, 0, MaxTolerance); }
 
-    public override string DisplayName => "색 바꾸기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_PaletteSwap;
 
     public bool Equals(PaletteSwapEffect? other)
         => other is not null && base.Equals(other) && _tolerance == other._tolerance && _pairs.SequenceEqual(other._pairs);

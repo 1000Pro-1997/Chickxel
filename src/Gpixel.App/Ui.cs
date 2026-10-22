@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -305,7 +306,7 @@ public static class Ui
                 Dispatcher.UIThread.PushFrame(frame);
                 break;
             }
-            catch (Exception e) when (CrashGuard.Recover(e, "대화상자 실행 루프"))
+            catch (Exception e) when (CrashGuard.Recover(e, UiStrings.S_Ui_Wait_69BB057E0C))
             {
                 // 알렸으니 대화상자를 계속 돌린다.
             }
@@ -341,14 +342,14 @@ public static class Ui
     // ───────────── 알림 ─────────────
 
     /// <summary>오류 대화상자.</summary>
-    public static void Error(Visual? owner, string message, string title = "오류")
-        => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Error);
+    public static void Error(Visual? owner, string message, string? title = null)
+        => Ask(owner, message, title ?? UiStrings.S_Ui_Error_D70BCF2886, MessageButtons.OK, MessageIcon.Error);
 
     public static void Info(Visual? owner, string message, string title = "Gpixel")
         => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Info);
 
-    public static void Warn(Visual? owner, string message, string title = "알림")
-        => Ask(owner, message, title, MessageButtons.OK, MessageIcon.Warning);
+    public static void Warn(Visual? owner, string message, string? title = null)
+        => Ask(owner, message, title ?? UiStrings.S_Ui_Warn_A8228BB7D9, MessageButtons.OK, MessageIcon.Warning);
 
     /// <summary>메시지 상자(WinForms MessageBox.Show 대신). 창 닫기 단추는 취소(YesNo는 아니요)다.</summary>
     public static DialogResult Ask(Visual? owner, string message, string title, MessageButtons buttons, MessageIcon icon = MessageIcon.None)
@@ -412,9 +413,9 @@ public static class Ui
     }
 
     /// <summary>색 고르기 대화상자(알파 포함). 취소하면 null. 미리보기 콜백은 색을 고르는 동안에도 호출된다.</summary>
-    public static Color32? PickColor(Visual? owner, Color32 initial, string title = "색 고르기", Action<Color32>? onPreview = null)
+    public static Color32? PickColor(Visual? owner, Color32 initial, string? title = null, Action<Color32>? onPreview = null)
     {
-        var dlg = new ColorPickDialog(title, initial, onPreview);
+        var dlg = new ColorPickDialog(title ?? UiStrings.S_Ui_PickColor_83B9DBA5AF, initial, onPreview);
         return dlg.ShowDialog(owner) == DialogResult.OK ? dlg.Value : null;
     }
 }
@@ -435,8 +436,9 @@ public class DialogBase : Window
     private DialogResult _result;
     private bool _vetoed;
 
-    public DialogBase(string title, string okText = "확인")
+    public DialogBase(string title, string? okText = null)
     {
+        okText ??= UiStrings.S_Ui_DialogBase_3713D24337;
         Title = title;
         CanResize = false;
         ShowInTaskbar = false;
@@ -446,7 +448,7 @@ public class DialogBase : Window
         Body = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
         OkButton = Ui.Button(okText, width: 90);
         OkButton.IsDefault = true;
-        CancelButtonControl = Ui.Button("취소", width: 90);
+        CancelButtonControl = Ui.Button(UiStrings.S_Ui_DialogBase_A9649D1FA1, width: 90);
         CancelButtonControl.IsCancel = true;
         _results[OkButton] = DialogResult.OK;
         _results[CancelButtonControl] = DialogResult.Cancel;
@@ -511,7 +513,7 @@ public class DialogBase : Window
     {
         OkButton.IsVisible = false;
         OkButton.IsDefault = false;
-        CancelButtonControl.Content = "닫기";
+        CancelButtonControl.Content = UiStrings.S_Ui_CloseOnly_11312F9A81;
         CancelButtonControl.IsDefault = true;
     }
 
@@ -553,15 +555,15 @@ internal sealed class MessageDialog : DialogBase
             case MessageButtons.OKCancel:
                 break;
             case MessageButtons.YesNo:
-                OkButton.Content = "예";
+                OkButton.Content = UiStrings.S_Ui_MessageDialog_76C4BD0F9B;
                 SetButtonResult(OkButton, DialogResult.Yes);
-                CancelButtonControl.Content = "아니요";
+                CancelButtonControl.Content = UiStrings.S_Ui_MessageDialog_6922C2357A;
                 SetButtonResult(CancelButtonControl, DialogResult.No);
                 break;
             case MessageButtons.YesNoCancel:
-                OkButton.Content = "예";
+                OkButton.Content = UiStrings.S_Ui_MessageDialog_76C4BD0F9B;
                 SetButtonResult(OkButton, DialogResult.Yes);
-                AddButton("아니요", DialogResult.No);
+                AddButton(UiStrings.S_Ui_MessageDialog_6922C2357A, DialogResult.No);
                 break;
         }
         _noOnClose = buttons == MessageButtons.YesNo;

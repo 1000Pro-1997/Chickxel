@@ -1,4 +1,5 @@
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -31,12 +32,12 @@ public sealed class StartPanel : UserControl
             Foreground = AppTheme.TextBrush,
             Margin = new Thickness(3, 0, 3, 0),
         };
-        var subtitle = Ui.Label("게임용 픽셀 아트 편집기 — 폴더나 Unity 프로젝트를 고르세요.");
+        var subtitle = Ui.Label(StartStrings.Subtitle);
         subtitle.Foreground = AppTheme.DimTextBrush;
         var actions = Ui.Row(
-            Ui.Button("폴더 열기…", (_, _) => OpenFolderRequested?.Invoke(this, EventArgs.Empty)),
-            Ui.Button("새 프로젝트…", (_, _) => NewImageRequested?.Invoke(this, EventArgs.Empty)),
-            Ui.Button("Hub 목록 새로 고침", (_, _) => LoadHub()));
+            Ui.Button(StartStrings.OpenFolder, (_, _) => OpenFolderRequested?.Invoke(this, EventArgs.Empty)),
+            Ui.Button(StartStrings.NewProject, (_, _) => NewImageRequested?.Invoke(this, EventArgs.Empty)),
+            Ui.Button(StartStrings.RefreshHub, (_, _) => LoadHub()));
         actions.Margin = new Thickness(0, 4);
 
         _recentFolders = MakeList();
@@ -64,9 +65,9 @@ public sealed class StartPanel : UserControl
         Place(layout, title, 0, 0, columnSpan: 2);
         Place(layout, subtitle, 1, 0, columnSpan: 2);
         Place(layout, actions, 2, 0, columnSpan: 2);
-        Place(layout, Section("최근 폴더 (더블클릭)", _recentFolders), 3, 0);
-        Place(layout, Section("최근 파일 (더블클릭)", _recentFiles), 4, 0);
-        Place(layout, Section("Unity Hub 프로젝트 (더블클릭하면 Assets 폴더를 엽니다)", hubTable, _hubMessage), 3, 1, rowSpan: 2);
+        Place(layout, Section(StartStrings.RecentFolders, _recentFolders), 3, 0);
+        Place(layout, Section(StartStrings.RecentFiles, _recentFiles), 4, 0);
+        Place(layout, Section(StartStrings.HubProjects, hubTable, _hubMessage), 3, 1, rowSpan: 2);
         Content = layout;
     }
 
@@ -124,8 +125,8 @@ public sealed class StartPanel : UserControl
         UnityHubDialog.Fill(_hub, result.Projects, HubColumns);
         _hubMessage.Foreground = result.Success ? AppTheme.DimTextBrush : AppTheme.WarningBrush;
         _hubMessage.Text = !result.Success
-            ? $"Unity Hub 목록을 읽지 못했습니다({result.Error}). \"폴더 열기\"로 직접 고르세요."
-            : result.Projects.Count == 0 ? "등록된 프로젝트가 없습니다. \"폴더 열기\"로 직접 고르세요." : "";
+            ? StartStrings.FormatHubLoadFailed(error: result.Error)
+            : result.Projects.Count == 0 ? StartStrings.HubEmpty : "";
         _hubMessage.IsVisible = !string.IsNullOrEmpty(_hubMessage.Text);
     }
 
@@ -134,7 +135,7 @@ public sealed class StartPanel : UserControl
         if (UnityHubDialog.SelectedProject(_hub) is not { } p) return;
         if (!p.Exists || !Directory.Exists(p.AssetsPath))
         {
-            Ui.Error(this, $"프로젝트 폴더를 찾을 수 없습니다:\n{p.AssetsPath}");
+            Ui.Error(this, StartStrings.FormatHubFolderMissing(path: p.AssetsPath));
             return;
         }
         FolderChosen?.Invoke(this, p.AssetsPath);

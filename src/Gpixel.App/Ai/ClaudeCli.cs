@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -21,9 +22,9 @@ public sealed partial class ClaudeProvider : AiProvider
 
     private static readonly (string Alias, string Hint, string Tip)[] Aliases =
     [
-        ("opus", "가장 똑똑함", "Opus: 가장 뛰어난 모델 — 복잡한 그림·애니메이션에 강하지만 느리고 사용량을 많이 씁니다."),
-        ("sonnet", "균형", "Sonnet: 성능과 속도의 균형 — 대부분의 그림 작업에 알맞습니다."),
-        ("haiku", "가장 빠름", "Haiku: 가장 빠르고 사용량이 적음 — 간단한 수정에 알맞습니다."),
+        ("opus", UiStrings.S_ClaudeCli_Aliases_FB8E7B5244, UiStrings.S_ClaudeCli_Aliases_E680EAD01B),
+        ("sonnet", UiStrings.S_ClaudeCli_Aliases_52F235016A, UiStrings.S_ClaudeCli_Aliases_42281164DA),
+        ("haiku", UiStrings.S_ClaudeCli_Aliases_32AA2E3322, UiStrings.S_ClaudeCli_Aliases_7FC8C1B69A),
     ];
 
     private static bool IsAlias(string model) => Aliases.Any(a => string.Equals(a.Alias, BaseModel(model), StringComparison.OrdinalIgnoreCase));
@@ -35,16 +36,16 @@ public sealed partial class ClaudeProvider : AiProvider
     public override string Name => "Claude";
     public override string ProductName => "Claude Code";
     public override string Command => "claude";
-    public override string AccountText => "Claude 구독(Pro·Max 등) 계정";
+    public override string AccountText => UiStrings.S_ClaudeCli_AccountText_B2D662EB6E;
     public override IReadOnlyList<string> LoginArgs { get; } = ["auth", "login"];
     public override bool LoginTakesCode => true;
-    public override string PathExample => "예: /opt/homebrew/bin/claude";
+    public override string PathExample => UiStrings.S_ClaudeCli_PathExample_1B14AE488B;
 
     public override IReadOnlyList<(string Title, string Command)> InstallCommands
     {
         get
         {
-            (string, string) unix = ("macOS · Linux (터미널)", "curl -fsSL https://claude.ai/install.sh | bash");
+            (string, string) unix = (UiStrings.S_ClaudeCli_InstallCommands_70BD2CD707, "curl -fsSL https://claude.ai/install.sh | bash");
             (string, string) win = ("Windows (PowerShell)", "irm https://claude.ai/install.ps1 | iex");
             return OperatingSystem.IsWindows() ? [win, unix] : [unix, win];
         }
@@ -97,10 +98,10 @@ public sealed partial class ClaudeProvider : AiProvider
                           ?? (configured is not null ? Name(configured) : catalog?.DefaultModel is { } d ? Name(d) : null);
         var list = new List<ModelChoice>
         {
-            new(null, defaultName is not null ? $"기본 · {defaultName}" : "기본 · 요금제 기본 모델",
+            new(null, defaultName is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_C32F36E3D8,defaultName) : UiStrings.S_ClaudeCli_Models_497C1B2930,
                 configured is not null
-                    ? $"Claude Code 설정의 모델({configured})을 씁니다."
-                    : "Claude Code 기본값(요금제마다 다름)을 씁니다."),
+                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_576D372047,configured)
+                    : UiStrings.S_ClaudeCli_Models_A14F4A45A8),
         };
         if (catalog is { Main.Count: > 0 })
         {
@@ -114,13 +115,13 @@ public sealed partial class ClaudeProvider : AiProvider
         else
         {
             foreach (var (alias, hint, tip) in Aliases)
-                list.Add(new ModelChoice(alias, $"{Learned(alias) ?? PrettyName(alias) + " (최신)"} · {hint}", tip));
+                list.Add(new ModelChoice(alias, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_BAF4B07362,Learned(alias) ?? PrettyName(alias) + UiStrings.S_ClaudeCli_Models_4B9F38E324,hint), tip));
         }
         if (settings.AiModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
         {
             var name = Learned(custom) ?? Name(custom);
-            list.Add(new ModelChoice(custom, IsAlias(custom) ? $"{name} · {BaseModel(custom)} 별칭" : name,
-                IsAlias(custom) ? $"별칭 {custom} — Claude Code가 가리키는 모델이 바뀌면 함께 바뀝니다." : "설정 파일에 적힌 모델"));
+            list.Add(new ModelChoice(custom, IsAlias(custom) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_24B7B5B99B,name,BaseModel(custom)) : name,
+                IsAlias(custom) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ClaudeCli_Models_2569D19437,custom) : UiStrings.S_ClaudeCli_Models_529BDF05AB));
         }
         return list;
     }
@@ -314,7 +315,7 @@ public sealed class ClaudeSession : IChatSession
                 ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = "image/png", ["data"] = Convert.ToBase64String(png) },
             });
         }
-        if (text.Length > 0 || content.Count == 0) content.Add(new JsonObject { ["type"] = "text", ["text"] = text.Length > 0 ? text : "(이미지)" });
+        if (text.Length > 0 || content.Count == 0) content.Add(new JsonObject { ["type"] = "text", ["text"] = text.Length > 0 ? text : UiStrings.S_ClaudeCli_Send_B72FA88EEA });
         var line = new JsonObject
         {
             ["type"] = "user",
@@ -499,7 +500,7 @@ public sealed class ClaudeSession : IChatSession
         KillProcess();
         SessionId = null;
         _sessionCwd = null;
-        Notice?.Invoke("이전 대화를 이어 가지 못해 새 대화로 보냈습니다.");
+        Notice?.Invoke(UiStrings.S_ClaudeCli_RestartFresh_821977AA3D);
         try
         {
             StartProcess();
@@ -617,7 +618,7 @@ public sealed class ClaudeSession : IChatSession
     {
         if (servers is not JsonArray list) return;
         var gpixel = list.OfType<JsonObject>().FirstOrDefault(s => AiCli.Str(s["name"]) == McpServer.ServerName);
-        _mcpStatus = gpixel is null ? "목록에 없음" : AiCli.Str(gpixel["status"]);
+        _mcpStatus = gpixel is null ? UiStrings.S_ClaudeCli_CheckMcpStatus_B9CFC13832 : AiCli.Str(gpixel["status"]);
         if (_mcpChecked || _mcpStatus is "connected" or "pending" or null) return;
         _mcpChecked = true;
         McpProblem?.Invoke(_mcp.DescribeProblem(_mcpSince, _mcpStatus));
@@ -635,7 +636,7 @@ public sealed class ClaudeSession : IChatSession
         {
             JsonValue v => AiCli.Str(v),
             JsonArray a => a.OfType<JsonObject>().Where(b => AiCli.Str(b["type"]) == "text").Select(b => AiCli.Str(b["text"])).FirstOrDefault(s => !string.IsNullOrEmpty(s))
-                           ?? (a.OfType<JsonObject>().Any(b => AiCli.Str(b["type"]) == "image") ? "(이미지)" : null),
+                           ?? (a.OfType<JsonObject>().Any(b => AiCli.Str(b["type"]) == "image") ? UiStrings.S_ClaudeCli_ResultText_5FC8FABEA3 : null),
             _ => null,
         };
         text = (text ?? "").Trim();

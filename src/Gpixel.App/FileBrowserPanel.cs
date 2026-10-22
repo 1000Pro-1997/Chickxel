@@ -2,6 +2,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.VisualTree;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -84,14 +85,14 @@ public sealed class FileBrowserPanel : UserControl
             TextTrimming = TextTrimming.CharacterEllipsis,
             Foreground = AppTheme.DimTextBrush,
             Padding = new Thickness(4, 4, 0, 0),
-            Text = "폴더를 여세요",
+            Text = UiStrings.S_FileBrowserPanel_FileBrowserPanel_771668A357,
         };
         DockPanel.SetDock(_rootLabel, Dock.Top);
 
-        _search = new TextBox { Watermark = "파일 이름 검색", Margin = new Thickness(2) };
+        _search = new TextBox { Watermark = UiStrings.S_FileBrowserPanel_FileBrowserPanel_0918E7E454, Margin = new Thickness(2) };
         _search.TextChanged += (_, _) => RefreshList();
         DockPanel.SetDock(_search, Dock.Top);
-        _includeSub = Ui.Check("하위 폴더 포함", true);
+        _includeSub = Ui.Check(UiStrings.S_FileBrowserPanel_FileBrowserPanel_9C35775EF4, true);
         _includeSub.Margin = new Thickness(6, 0, 3, 2);
         _includeSub.IsCheckedChanged += (_, _) => RefreshList();
         DockPanel.SetDock(_includeSub, Dock.Top);
@@ -183,17 +184,17 @@ public sealed class FileBrowserPanel : UserControl
     /// </summary>
     private Border BuildHeader()
     {
-        var header = Ui.Header("파일");
+        var header = Ui.Header(UiStrings.S_FileBrowserPanel_BuildHeader_6F62028F17);
         var title = (TextBlock)header.Child!;
         header.Child = null;
         var icon = new SpinningIcon(VectorIcon.Refresh) { Width = 14, Height = 14 };
-        var refresh = HeaderButton(icon, "새로 고침", () =>
+        var refresh = HeaderButton(icon, UiStrings.S_FileBrowserPanel_BuildHeader_2F2AC43715, () =>
         {
             icon.Spin();
             RefreshAll();
         });
-        var newFolder = HeaderButton(new IconView(VectorIcon.FolderPlus) { Width = 15, Height = 15 }, "새 폴더(고른 폴더 안에)", NewFolder);
-        var newFile = HeaderButton(new IconView(VectorIcon.FilePlus) { Width = 15, Height = 15 }, "새 픽셀 파일(.gpixel, 고른 폴더 안에)", () =>
+        var newFolder = HeaderButton(new IconView(VectorIcon.FolderPlus) { Width = 15, Height = 15 }, UiStrings.S_FileBrowserPanel_BuildHeader_FAE18EB89C, NewFolder);
+        var newFile = HeaderButton(new IconView(VectorIcon.FilePlus) { Width = 15, Height = 15 }, UiStrings.S_FileBrowserPanel_BuildHeader_A9BCCFFDB7, () =>
         {
             if (RootFolder is not null) NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder);
         });
@@ -227,18 +228,18 @@ public sealed class FileBrowserPanel : UserControl
     private void NewFolder()
     {
         if ((CurrentFolder ?? RootFolder) is not { } parent || !Directory.Exists(parent)) return;
-        var suggested = "새 폴더";
-        for (int n = 2; Directory.Exists(Path.Combine(parent, suggested)); n++) suggested = $"새 폴더 {n}";
-        if (InputDialog.Ask(this, "새 폴더", $"{parent} 안에 만들 폴더 이름", suggested) is not { } name) return;
+        var suggested = UiStrings.S_FileBrowserPanel_NewFolder_C3C710DE5C;
+        for (int n = 2; Directory.Exists(Path.Combine(parent, suggested)); n++) suggested = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_NewFolder_E8E2E7E79D,n);
+        if (InputDialog.Ask(this, UiStrings.S_FileBrowserPanel_NewFolder_C3C710DE5C, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_NewFolder_24D67BC2F2,parent), suggested) is not { } name) return;
         if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name is "." or "..")
         {
-            Ui.Error(this, $"폴더 이름에 쓸 수 없는 글자가 있습니다: {name}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_NewFolder_E8C72D3C43,name));
             return;
         }
         var path = Path.Combine(parent, name);
         if (Directory.Exists(path) || File.Exists(path))
         {
-            Ui.Error(this, $"이미 같은 이름이 있습니다:\n{path}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_NewFolder_B3AFB9D932,path));
             return;
         }
         try
@@ -247,7 +248,7 @@ public sealed class FileBrowserPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"폴더를 만들지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_NewFolder_4D7D9C0D34,ex.Message));
             return;
         }
         RebuildTree(path);
@@ -498,7 +499,7 @@ public sealed class FileBrowserPanel : UserControl
             {
                 var tip = Path.GetRelativePath(RootFolder ?? folder, f);
                 if (exportsOf.TryGetValue(f, out var outputs) && outputs.Count > 0)
-                    tip += "\n내보내기: " + string.Join(", ", outputs.Select(o => Path.GetRelativePath(Path.GetDirectoryName(f)!, o)));
+                    tip += UiStrings.S_FileBrowserPanel_RefreshList_AB16A8824B + string.Join(", ", outputs.Select(o => Path.GetRelativePath(Path.GetDirectoryName(f)!, o)));
                 var item = MakeItem(f, tip);
                 var stamp = SafeStamp(f);
                 if (_thumbCache.TryGetValue(f, out var cached) && cached.Stamp == stamp) item.Thumb.Source = cached.Thumb;
@@ -542,7 +543,7 @@ public sealed class FileBrowserPanel : UserControl
             Margin = new Thickness(0, 0, -4, -2),
             Child = new IconView(VectorIcon.Layers, Brushes.White, 2.4),
         };
-        ToolTip.SetTip(badge, "Gpixel 프로젝트(.gpixel) — 레이어·프레임을 보관하는 편집 원본");
+        ToolTip.SetTip(badge, UiStrings.S_FileBrowserPanel_ProjectBadge_E9D1D0E582);
         return badge;
     }
 
@@ -674,7 +675,7 @@ public sealed class FileBrowserPanel : UserControl
     {
         bool unsaved = _unsaved.TryGetValue(item.Path, out var entry);
         item.Dot.IsVisible = unsaved;
-        ToolTip.SetTip(item.Container, unsaved ? item.Tip + "\n저장하지 않은 변경 있음" : item.Tip);
+        ToolTip.SetTip(item.Container, unsaved ? item.Tip + UiStrings.S_FileBrowserPanel_ApplyUnsaved_AFDFDFD168 : item.Tip);
         if (entry.Thumb is not null) item.Thumb.Source = entry.Thumb;
         else if (item.Thumb.Source is not null && !_thumbCache.Values.Any(c => ReferenceEquals(c.Thumb, item.Thumb.Source)))
             item.Thumb.Source = _thumbCache.TryGetValue(item.Path, out var cached) ? cached.Thumb : null;
@@ -758,26 +759,26 @@ public sealed class FileBrowserPanel : UserControl
         MenuItem? projectsOnlyItem = null;
         if (projectsOnly.Count > 0)
         {
-            projectsOnlyItem = Item(projectsOnly.Count > 1 ? $".gpixel 파일 {projectsOnly.Count}개만 삭제 (휴지통)" : ".gpixel 파일만 삭제 (휴지통)",
+            projectsOnlyItem = Item(projectsOnly.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_F35AB082B3,projectsOnly.Count) : UiStrings.S_FileBrowserPanel_ListMenu_9B8C4F5504,
                 () => DeleteProjectFilesOnly(projectsOnly), true);
-            ToolTip.SetTip(projectsOnlyItem, "내보낸 PNG·.meta 등 다른 파일은 그대로 두고 .gpixel 프로젝트 파일만 앱 휴지통으로 보냅니다.\n"
-                                             + "마지막 삭제 되살리기(Ctrl+Z)·앱 휴지통 보기로 되살립니다.");
+            ToolTip.SetTip(projectsOnlyItem, UiStrings.S_FileBrowserPanel_ListMenu_F72A938B51
+                                             + UiStrings.S_FileBrowserPanel_ListMenu_1BFD2CD3AE);
         }
         return
         [
-            Item("새 프로젝트…", () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
+            Item(UiStrings.S_FileBrowserPanel_ListMenu_1299ADE057, () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
             new Separator(),
-            Item(count >= 2 ? $"{count}개 합치기…" : "합치기…(여러 개 고르기)", MergeSelected, count >= 2),
+            Item(count >= 2 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_1C7165B3A5,count) : UiStrings.S_FileBrowserPanel_ListMenu_06B813FF5F, MergeSelected, count >= 2),
             new Separator(),
-            Item("이름 바꾸기", () => { if (SelectedItem is { } item) BeginRename(item); }, count == 1, new KeyGesture(Key.F2), DispatcherPriority.Background),
-            Item($"{Platform.FileManagerName}에서 열기", ShowInExplorer, count > 0 || CurrentFolder is not null),
-            Item("이미지 폴더 선택", () => { if (paths.Count == 1) RevealFolderOf(paths[0]); }, count == 1),
-            Item(count > 1 ? $"{count}개 삭제(휴지통)" : "삭제(휴지통)", DeleteSelected, count > 0,
+            Item(UiStrings.S_FileBrowserPanel_ListMenu_9C29BBC4F7, () => { if (SelectedItem is { } item) BeginRename(item); }, count == 1, new KeyGesture(Key.F2), DispatcherPriority.Background),
+            Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_B1C1369643,Platform.FileManagerName), ShowInExplorer, count > 0 || CurrentFolder is not null),
+            Item(UiStrings.S_FileBrowserPanel_ListMenu_A16228CF35, () => { if (paths.Count == 1) RevealFolderOf(paths[0]); }, count == 1),
+            Item(count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_01B5A0C03C,count) : UiStrings.S_FileBrowserPanel_ListMenu_E78953BDA3, DeleteSelected, count > 0,
                 Platform.IsMac ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete)),
             .. projectsOnlyItem is null ? Array.Empty<Control>() : [projectsOnlyItem],
             new Separator(),
-            Item("마지막 삭제 되살리기", () => RestoreLastDeleted(), Trash.Entries().Count > 0, new KeyGesture(Key.Z, Platform.CommandModifier)),
-            Item("앱 휴지통 보기…", ShowTrash, true),
+            Item(UiStrings.S_FileBrowserPanel_ListMenu_FD792AE5B7, () => RestoreLastDeleted(), Trash.Entries().Count > 0, new KeyGesture(Key.Z, Platform.CommandModifier)),
+            Item(UiStrings.S_FileBrowserPanel_ListMenu_5FC61831E6, ShowTrash, true),
         ];
     }
 
@@ -942,7 +943,7 @@ public sealed class FileBrowserPanel : UserControl
         if (!newName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) newName += ext;
         if (newName.Length <= ext.Length || newName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            Ui.Error(this, "쓸 수 없는 파일 이름입니다.");
+            Ui.Error(this, UiStrings.S_FileBrowserPanel_Rename_55189D1414);
             return;
         }
         var newPath = Path.Combine(Path.GetDirectoryName(oldPath)!, newName);
@@ -962,7 +963,7 @@ public sealed class FileBrowserPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            Ui.Error(this, $"이름을 바꾸지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_Rename_A9EAEE0E61,ex.Message));
             return;
         }
         FileRenamed?.Invoke(this, (oldPath, newPath));
@@ -984,7 +985,7 @@ public sealed class FileBrowserPanel : UserControl
         }
         catch (IOException ex)
         {
-            Ui.Error(this, $"{Platform.FileManagerName}를 열지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ShowInExplorer_08041FBD31,Platform.FileManagerName,ex.Message));
         }
     }
 
@@ -1008,12 +1009,12 @@ public sealed class FileBrowserPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            Ui.Error(this, $"삭제할 파일을 확인하지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_DeleteSelected_816311E9EF,ex.Message));
             return;
         }
         // 앱 휴지통에 보관하므로 묻지 않는다(Ctrl+Z·휴지통 보기로 되살림).
-        var what = paths.Count == 1 ? Path.GetFileName(paths[0]) : $"{Path.GetFileName(paths[0])} 외 {paths.Count - 1}개";
-        TrashFiles(paths, companions, $"삭제: {what}");
+        var what = paths.Count == 1 ? Path.GetFileName(paths[0]) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_DeleteSelected_773E860265,Path.GetFileName(paths[0]),paths.Count - 1);
+        TrashFiles(paths, companions, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_DeleteSelected_A43604BD66,what));
         RefreshList();
     }
 
@@ -1035,8 +1036,8 @@ public sealed class FileBrowserPanel : UserControl
     {
         var existing = projects.Where(File.Exists).ToList();
         if (existing.Count == 0) return;
-        var what = existing.Count == 1 ? Path.GetFileName(existing[0]) : $"{Path.GetFileName(existing[0])} 외 {existing.Count - 1}개";
-        TrashFiles(existing, [], $"삭제(.gpixel만): {what}");
+        var what = existing.Count == 1 ? Path.GetFileName(existing[0]) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_DeleteProjectFilesOnly_08F3E17C6D,Path.GetFileName(existing[0]),existing.Count - 1);
+        TrashFiles(existing, [], string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_DeleteProjectFilesOnly_F581110A07,what));
         RefreshList();
     }
 
@@ -1052,13 +1053,13 @@ public sealed class FileBrowserPanel : UserControl
             if (entry is not null) moved.UnionWith(entry.Files.Select(f => f.OriginalPath));
             // 용량이 넘치면 오래된 항목부터 지운다(방금 넣은 항목은 가장 새것이라 마지막에).
             int purged = Trash.Purge(TrashPolicy());
-            Message?.Invoke(this, $"앱 휴지통으로 보냄: {label.Split(": ", 2)[^1]} — 파일 목록에서 Ctrl+Z로 되살리기 ({TrashPolicy().Describe()})"
-                                  + (purged > 0 ? $" · 오래된 항목 {purged}개 영구 삭제" : ""));
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_TrashFiles_0B4E51595A,label.Split(": ", 2)[^1],TrashPolicy().Describe())
+                                  + (purged > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_TrashFiles_8A275448B2,purged) : ""));
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"삭제를 완료하지 못했습니다. 옮긴 파일은 앱 휴지통에 있습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_TrashFiles_DEFE206710,ex.Message));
             moved.UnionWith(paths.Where(p => !File.Exists(p)));
             return false;
         }
@@ -1075,14 +1076,14 @@ public sealed class FileBrowserPanel : UserControl
         var last = Trash.Entries().FirstOrDefault();
         if (last is null)
         {
-            Message?.Invoke(this, "앱 휴지통이 비어 있습니다.");
+            Message?.Invoke(this, UiStrings.S_FileBrowserPanel_RestoreLastDeleted_1E96406912);
             return false;
         }
         try
         {
             var restored = Trash.Restore(last);
             OnRestored(restored);
-            Message?.Invoke(this, $"되살림: {last.Label}");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_RestoreLastDeleted_9CA813D777,last.Label));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -1133,7 +1134,7 @@ public sealed class FileBrowserPanel : UserControl
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
             {
-                Ui.Error(this, $"{Path.GetFileName(path)}을(를) 읽지 못했습니다.\n{ex.Message}");
+                Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_MergeSelected_C3939B87F0,Path.GetFileName(path),ex.Message));
                 return;
             }
         }
@@ -1152,12 +1153,12 @@ public sealed class FileBrowserPanel : UserControl
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             {
-                Ui.Error(this, $"삭제할 원본 파일을 확인하지 못했습니다. 합치지 않았습니다.\n{ex.Message}");
+                Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_MergeSelected_536B51355C,ex.Message));
                 return;
             }
         }
         bool trashFirst = dlg.DeleteOriginals && dlg.TargetPaths(dlg.ResultName).Any(File.Exists);
-        var trashLabel = $"합치기 원본({Path.GetFileName(target)}): {Path.GetFileName(originals[0])} 외 {originals.Count - 1}개";
+        var trashLabel = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_MergeSelected_FA8A9430AD,Path.GetFileName(target),Path.GetFileName(originals[0]),originals.Count - 1);
         if (trashFirst && !TrashFiles(originals, companions, trashLabel))
         {
             RefreshList();
@@ -1169,7 +1170,7 @@ public sealed class FileBrowserPanel : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or InvalidOperationException)
         {
-            Ui.Error(this, $"합친 프로젝트를 저장하지 못했습니다.{(trashFirst ? " 원본은 휴지통에 있습니다." : "")}\n{target}\n\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_MergeSelected_724DC713A5,(trashFirst ? UiStrings.S_FileBrowserPanel_MergeSelected_4E46361A76 : ""),target,ex.Message));
             RefreshList();
             return;
         }

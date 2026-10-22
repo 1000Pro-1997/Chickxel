@@ -26,7 +26,7 @@ public sealed record AfterimageEffect : AnimatedEffect
     /// <summary>잔상에 입힐 색(알파 = 세기).</summary>
     public Color32 TintColor { get; init; } = new(80, 150, 255);
 
-    public override string DisplayName => "잔상";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Afterimage;
 
     /// <summary>k번째 잔상(1부터)의 불투명도 0~255.</summary>
     public byte GhostOpacity(int k) => (byte)Math.Clamp((Opacity * 255 * (Count - k + 1) / Count + 50) / 100, 0, 255);

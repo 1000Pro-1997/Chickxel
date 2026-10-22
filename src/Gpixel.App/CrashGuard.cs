@@ -3,6 +3,7 @@ using System.Text;
 using Avalonia.Controls.ApplicationLifetimes;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -55,7 +56,7 @@ public static class CrashGuard
         AppDomain.CurrentDomain.UnhandledException += (_, e) => OnFatal(e.ExceptionObject as Exception, e.IsTerminating);
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
-            Log(e.Exception, "관찰되지 않은 Task 예외(앱 계속)");
+            Log(e.Exception, UiStrings.S_CrashGuard_Run_9A96A3E2F9);
             e.SetObserved();
         };
         builder.AfterSetup(_ => InstallDispatcher());
@@ -63,7 +64,7 @@ public static class CrashGuard
         {
             return builder.StartWithClassicDesktopLifetime(args);
         }
-        catch (Exception e) when (CanResume() && Recover(e, "메인 실행 루프"))
+        catch (Exception e) when (CanResume() && Recover(e, UiStrings.S_CrashGuard_Run_19B16BF9A9))
         {
             return ResumeMainLoop();
         }
@@ -74,7 +75,7 @@ public static class CrashGuard
     {
         if (_installed) return;
         _installed = true;
-        Dispatcher.UIThread.UnhandledException += (_, e) => e.Handled = Recover(e.Exception, "UI 스레드 작업");
+        Dispatcher.UIThread.UnhandledException += (_, e) => e.Handled = Recover(e.Exception, UiStrings.S_CrashGuard_InstallDispatcher_C20B6EAA3B);
         Dispatcher.UIThread.ShutdownStarted += (_, _) => _shuttingDown = true;
     }
 
@@ -101,7 +102,7 @@ public static class CrashGuard
                 Environment.ExitCode = exitCode;
                 return exitCode;
             }
-            catch (Exception e) when (CanResume() && Recover(e, "메인 실행 루프"))
+            catch (Exception e) when (CanResume() && Recover(e, UiStrings.S_CrashGuard_ResumeMainLoop_F498C55218))
             {
                 // 알렸으니 이어서 돈다.
             }
@@ -115,7 +116,7 @@ public static class CrashGuard
     public static bool Recover(Exception e, string source)
     {
         if (!_installed || _shuttingDown) return false;
-        var path = Log(e, source + " — 처리함(앱 계속)");
+        var path = Log(e, source + UiStrings.S_CrashGuard_Recover_C9E2C1EC9E);
         if (Burst() || _dialogOpen || _dialogBroken) return true;
         _dialogOpen = true; // 띄우기를 예약한 때부터(그 사이 예외는 로그만)
         try
@@ -152,7 +153,7 @@ public static class CrashGuard
         {
             // 알림 창도 못 띄우면 이제부터 로그만
             _dialogBroken = true;
-            Log(ex, "오류 알림 창");
+            Log(ex, UiStrings.S_CrashGuard_ShowDialog_2163AA43BD);
         }
         finally
         {
@@ -163,10 +164,10 @@ public static class CrashGuard
     private static string Summary(Exception e, string? logPath)
     {
         var message = e.Message.Length > 300 ? e.Message[..300] + "…" : e.Message;
-        return "예상하지 못한 오류가 생겼습니다 — 작업은 계속할 수 있습니다.\n\n"
+        return UiStrings.S_CrashGuard_Summary_756D71A877
                + $"{e.GetType().Name}: {message}\n\n"
-               + (logPath is not null ? $"오류 내용을 로그에 남겼습니다: {Path.GetFileName(logPath)}\n" : "")
-               + "저장하지 않은 작업이 있으면 먼저 저장해 두세요.";
+               + (logPath is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CrashGuard_Summary_9CA92BBE5E,Path.GetFileName(logPath)) : "")
+               + UiStrings.S_CrashGuard_Summary_35DAD57FC4;
     }
 
     /// <summary>오류 로그 폴더를 파일 관리자로 연다(없으면 만든다).</summary>
@@ -179,7 +180,7 @@ public static class CrashGuard
     /// <summary>다른 스레드(또는 메인 루프 밖)의 처리하지 못한 예외: 로그, 앱이 끝나면 수정된 문서 비상 저장.</summary>
     private static void OnFatal(Exception? e, bool terminating)
     {
-        if (e is not null) Log(e, terminating ? "처리하지 못한 예외 — 앱이 끝남" : "처리하지 못한 예외(앱 계속)");
+        if (e is not null) Log(e, terminating ? UiStrings.S_CrashGuard_OnFatal_B962FB416E : UiStrings.S_CrashGuard_OnFatal_55B42030F8);
         if (terminating) EmergencySave();
     }
 
@@ -202,11 +203,11 @@ public static class CrashGuard
                     var name = string.Concat(Path.GetFileNameWithoutExtension(p.DisplayName).Split(Path.GetInvalidFileNameChars()));
                     var path = Path.Combine(RecoveryDirectory, $"{name}-{stamp}-{++n}{SpriteProject.FileExtension}");
                     using (var stream = File.Create(path)) ProjectIO.Save(p, stream);
-                    Log(null, $"비상 저장: {path}");
+                    Log(null, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CrashGuard_EmergencySave_3206D81AC2,path));
                 }
                 catch (Exception ex)
                 {
-                    Log(ex, $"비상 저장 실패: {p.DisplayName}");
+                    Log(ex, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CrashGuard_EmergencySave_3B295813C9,p.DisplayName));
                 }
             }
         }
@@ -217,7 +218,7 @@ public static class CrashGuard
         }
         catch (Exception ex)
         {
-            Log(ex, "비상 저장 실패");
+            Log(ex, UiStrings.S_CrashGuard_EmergencySave_F5D4306C56);
         }
     }
 
@@ -255,8 +256,8 @@ public static class CrashGuard
         sb.AppendLine($"===== {now:yyyy-MM-dd HH:mm:ss.fff zzz} — {source}");
         sb.AppendLine($"Gpixel {AppInfo.VersionText} ({AppInfo.InstallKind})");
         sb.AppendLine($"OS: {RuntimeInformation.OSDescription} · {RuntimeInformation.OSArchitecture} · {RuntimeInformation.FrameworkDescription}");
-        sb.AppendLine($"스레드: {Environment.CurrentManagedThreadId}{(Dispatcher.UIThread.CheckAccess() ? " (UI)" : "")}");
-        sb.AppendLine($"창: {ActiveWindowTitle()}");
+        sb.AppendLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CrashGuard_Describe_732C4602C8,Environment.CurrentManagedThreadId,(Dispatcher.UIThread.CheckAccess() ? " (UI)" : "")));
+        sb.AppendLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CrashGuard_Describe_60D73F9563,ActiveWindowTitle()));
         if (e is not null) sb.AppendLine(e.ToString());
         sb.AppendLine();
         return sb.ToString();
@@ -265,14 +266,14 @@ public static class CrashGuard
     /// <summary>활성 창 제목(없으면 메인 창). UI 스레드가 아니면 읽지 않는다.</summary>
     private static string ActiveWindowTitle()
     {
-        if (!Dispatcher.UIThread.CheckAccess()) return "(UI 스레드가 아니라 알 수 없음)";
+        if (!Dispatcher.UIThread.CheckAccess()) return UiStrings.S_CrashGuard_ActiveWindowTitle_DD13D01EBB;
         try
         {
-            return Ui.Owner(null)?.Title ?? "(없음)";
+            return Ui.Owner(null)?.Title ?? UiStrings.S_CrashGuard_ActiveWindowTitle_DC1E8FED9D;
         }
         catch (Exception)
         {
-            return "(알 수 없음)";
+            return UiStrings.S_CrashGuard_ActiveWindowTitle_076C9E002D;
         }
     }
 
@@ -291,11 +292,11 @@ public static class CrashGuard
 /// <summary>처리하지 못한 오류 알림: 무슨 오류인지와 로그 파일, "로그 폴더 열기"(창은 그대로)·"확인".</summary>
 internal sealed class CrashDialog : DialogBase
 {
-    public CrashDialog(string message) : base("Gpixel — 오류")
+    public CrashDialog(string message) : base(UiStrings.S_CrashGuard_CrashDialog_E9BDC482E3)
     {
         Body.Children.Add(MessageDialog.MessageRow(message, MessageIcon.Error));
         Body.MinWidth = 280;
-        OkButton.Content = "로그 폴더 열기";
+        OkButton.Content = UiStrings.S_CrashGuard_CrashDialog_AA2995CAF6;
         OkButton.IsDefault = false;
         OkButton.Click += (_, _) =>
         {
@@ -306,7 +307,7 @@ internal sealed class CrashDialog : DialogBase
             }
             DialogResult = DialogResult.None; // 닫지 않음
         };
-        CancelButtonControl.Content = "확인";
+        CancelButtonControl.Content = UiStrings.S_CrashGuard_CrashDialog_8FDCF832FD;
         CancelButtonControl.IsDefault = true;
         Opened += (_, _) => CancelButtonControl.Focus();
     }

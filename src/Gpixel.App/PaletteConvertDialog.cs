@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -21,7 +22,7 @@ public enum PaletteConvertScope
 /// </summary>
 public sealed class PaletteConvertDialog : DialogBase
 {
-    private const string Label = "팔레트 색으로 변환";
+    private static readonly string Label = UiStrings.PaletteConvert_Title;
 
     private readonly EditorContext _ctx;
     private readonly SpriteProject _project;
@@ -32,36 +33,36 @@ public sealed class PaletteConvertDialog : DialogBase
     /// <summary>디더링마다 셀 → 바꾼 사본(바뀐 것이 없으면 null). 미리보기·색 수 계산과 실제 변환이 같이 쓴다.</summary>
     private readonly Dictionary<PaletteDither, Dictionary<PixelImage, PixelImage?>> _mapped = new();
 
-    private PaletteConvertDialog(EditorContext ctx, SpriteProject project, PaletteRemap remap, string paletteName) : base($"{Label} — {paletteName}", "변환")
+    private PaletteConvertDialog(EditorContext ctx, SpriteProject project, PaletteRemap remap, string paletteName) : base($"{Label} — {paletteName}", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_52F9376144)
     {
         _ctx = ctx;
         _project = project;
         _remap = remap;
-        _cel = Radio("scope", "현재 셀(선택 영역이 있으면 선택 안만)");
-        _layer = Radio("scope", "현재 레이어의 모든 프레임(부위면 모든 스킨)");
-        _all = Radio("scope", "모든 레이어·프레임(스킨 셀 포함)");
-        _noDither = Radio("dither", "디더링 없음(가장 가까운 색)");
-        _bayer = Radio("dither", "순서 디더링(Bayer 4×4)");
+        _cel = Radio("scope", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_4BF144BF9A);
+        _layer = Radio("scope", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_982BB7EF41);
+        _all = Radio("scope", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_28DF63893B);
+        _noDither = Radio("dither", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_541E54A55D);
+        _bayer = Radio("dither", UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_BDEC5A51EB);
         _cel.IsEnabled = ctx.CanEdit;
         _layer.IsEnabled = ctx.CurrentLayerObject is { IsGroup: false } && !project.IsLayerLocked(ctx.CurrentLayer);
         (_cel.IsEnabled ? _cel : _layer.IsEnabled ? _layer : _all).IsChecked = true;
         _noDither.IsChecked = true;
 
-        _before = new ImageView("전");
-        _after = new ImageView("후");
+        _before = new ImageView(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_8D277CDF45);
+        _after = new ImageView(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_487B63AF2E);
         _count = new TextBlock { Foreground = AppTheme.TextBrush, Margin = new Thickness(2, 4, 2, 0) };
 
-        Body.Children.Add(Ui.Label($"팔레트 \"{paletteName}\" — 투명이 아닌 색 {remap.Count}개"));
-        Body.Children.Add(Ui.Label("대상", bold: true));
+        Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_8CE25638B7,paletteName,remap.Count)));
+        Body.Children.Add(Ui.Label(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_2AE3FF9667, bold: true));
         Body.Children.Add(_cel);
         Body.Children.Add(_layer);
         Body.Children.Add(_all);
-        Body.Children.Add(Ui.Label("디더링", bold: true));
+        Body.Children.Add(Ui.Label(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_3E84BC3FF1, bold: true));
         Body.Children.Add(_noDither);
         Body.Children.Add(_bayer);
         Body.Children.Add(Ui.Row(_before, _after));
         Body.Children.Add(_count);
-        Body.Children.Add(Ui.Label("미리보기: 현재 프레임(보이는 레이어 합성). 잠긴 레이어는 건너뜁니다.\n알파는 그대로 두고 완전 투명 픽셀은 바꾸지 않습니다. 실행취소 한 단계."));
+        Body.Children.Add(Ui.Label(UiStrings.S_PaletteConvertDialog_PaletteConvertDialog_0988821852));
 
         foreach (var r in new[] { _cel, _layer, _all, _noDither, _bayer })
             // 같은 묶음의 다른 단추가 아직 꺼지기 전에 불리므로, 한 묶음의 바뀜이 다 끝난 뒤에 미리보기를 고친다.
@@ -86,7 +87,7 @@ public sealed class PaletteConvertDialog : DialogBase
         }
         catch (ArgumentException)
         {
-            Ui.Info(owner, $"팔레트 \"{paletteName}\"에 투명이 아닌 색이 없습니다. 색을 넣은 뒤 다시 하세요.", Label);
+            Ui.Info(owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_Run_6433CC1607,paletteName), Label);
             return null;
         }
         ctx.CommitFloating();
@@ -100,17 +101,17 @@ public sealed class PaletteConvertDialog : DialogBase
         var dither = Dither;
         if (Scope == PaletteConvertScope.CurrentCel)
         {
-            if (!_ctx.CanEdit) return "현재 레이어가 잠겨 있습니다.";
+            if (!_ctx.CanEdit) return UiStrings.S_PaletteConvertDialog_Apply_2B4635834B;
             _ctx.BeginStroke();
             int n = _remap.Apply(_ctx.EditImage!, dither, SelectionClip);
             _ctx.NotifyPixels();
             _ctx.CommitStroke(Label);
-            return n > 0 ? $"{Label}: {n}픽셀(현재 셀)" : $"{Label}: 바꿀 픽셀이 없습니다(이미 팔레트 색).";
+            return n > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_Apply_7FEFC3F8B0,Label,n) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_Apply_2EF2CA7E96,Label);
         }
         int cels = 0;
         var target = Target();
         _ctx.Structural(() => cels = _project.MapCels(Label, target, cel => Mapped(cel, dither)));
-        return cels > 0 ? $"{Label}: 셀 {cels}개" : $"{Label}: 바꿀 픽셀이 없습니다(이미 팔레트 색).";
+        return cels > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_Apply_4B82D58C1B,Label,cels) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_Apply_2EF2CA7E96,Label);
     }
 
     private PixelMask? SelectionClip => _ctx.Selection.HasSelection ? _ctx.Selection.Region : null;
@@ -181,7 +182,7 @@ public sealed class PaletteConvertDialog : DialogBase
                 Count(image, before);
                 Count(Mapped(image, dither) ?? image, afterSet);
             }
-        _count.Text = $"대상의 색 수: {before.Count} → {afterSet.Count}";
+        _count.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteConvertDialog_UpdatePreview_716EED2D13,before.Count,afterSet.Count);
     }
 
     private static RadioButton Radio(string group, string text)

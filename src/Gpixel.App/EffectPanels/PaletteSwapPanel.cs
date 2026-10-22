@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -29,7 +30,7 @@ public sealed partial class LayerEffectsDialog
         var source = SourceAt(_frame);
         IReadOnlyList<Color32> used = source is null ? [] : PaletteRemap.UsedColors(source);
 
-        if (p.Pairs.Count == 0) _settings.Children.Add(Ui.Label("바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."));
+        if (p.Pairs.Count == 0) _settings.Children.Add(Ui.Label(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_3C34A2519A));
         for (int k = 0; k < p.Pairs.Count; k++)
         {
             int at = k;
@@ -45,30 +46,30 @@ public sealed partial class LayerEffectsDialog
                     ColorGradients = RemoveIndexedGradient(o.ColorGradients, "Pairs", at)
                 });
                 ShowSettings();
-            }, 26).Tip("이 쌍 빼기");
-            SettingsRow($"{k + 1} 원본", EffectColorEditor(p, $"Pairs[{at}].From", from, set));
-            SettingsSubRow("대상", EffectColorEditor(p, $"Pairs[{at}].To", to, set), remove);
+            }, 26).Tip(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_A5869DACA1);
+            SettingsRow(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_AF44DD45FB,k + 1), EffectColorEditor(p, $"Pairs[{at}].From", from, set));
+            SettingsSubRow(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_9A0CDB44A5, EffectColorEditor(p, $"Pairs[{at}].To", to, set), remove);
         }
 
-        var add = Ui.Button(VectorIcon.Plus, "쌍 추가", (_, _) =>
+        var add = Ui.Button(VectorIcon.Plus, UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_6A0B119B5E, (_, _) =>
         {
             // 아직 바꾸지 않는, 가장 많이 쓰인 색부터(없으면 검정)
             var next = used.FirstOrDefault(c => !P(_effects[Selected]).Pairs.Any(q => q.From.R == c.R && q.From.G == c.G && q.From.B == c.B), Color32.Black);
             AddPairs([next]);
         });
-        var pick = Ui.Button(VectorIcon.ChevronDown, "그림에서 색 가져오기", iconAfter: true);
+        var pick = Ui.Button(VectorIcon.ChevronDown, UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_A0FD948BEA, iconAfter: true);
         if (used.Count == 0) pick.IsEnabled = false;
         else
         {
             var flyout = new Flyout();
             var panel = new StackPanel { Spacing = 4, MaxWidth = 280 };
-            panel.Children.Add(Hint($"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 그 색을 바꿀 쌍을 추가합니다.", 270));
+            panel.Children.Add(Hint(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_F438B961E1,used.Count), 270));
             panel.Children.Add(ColorSourcePicker.Swatches(used, c =>
             {
                 flyout.Hide();
                 AddPairs([c]);
             }));
-            panel.Children.Add(Ui.Button("모두 추가", (_, _) =>
+            panel.Children.Add(Ui.Button(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_F5BECD6FF3, (_, _) =>
             {
                 flyout.Hide();
                 AddPairs(used);
@@ -76,9 +77,9 @@ public sealed partial class LayerEffectsDialog
             flyout.Content = panel;
             pick.Flyout = flyout;
         }
-        SettingsRow("", add, pick.Tip(used.Count == 0 ? "이 프레임에 그림이 없습니다." : "그림에 쓰인 색을 골라 쌍으로 추가합니다."));
-        SettingsRow("허용 차이", NumEditor(0, PaletteSwapEffect.MaxTolerance, p.Tolerance, NumKinds.Tolerance, v => set(o => P(o) with { Tolerance = v })), Ui.Label("(0 = 정확히 같은 색만)"));
-        _settings.Children.Add(Hint("보이는 픽셀의 색이 원본 색과 같으면(R·G·B 차이가 허용 차이 이하) 대상 색으로 바꿉니다. 그라데이션을 선택하면 픽셀 위치마다 원본·대상 색을 샘플링합니다. 위의 쌍이 먼저이고 한 번만 바뀝니다."
-                                    + " 바뀐 색의 투명도 = 원래 투명도 × 대상 색 투명도(투명으로 바꾸면 지워짐)."));
+        SettingsRow("", add, pick.Tip(used.Count == 0 ? UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_303CA10FC1 : UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_2DE0DA2A3A));
+        SettingsRow(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_62C7E01DDC, NumEditor(0, PaletteSwapEffect.MaxTolerance, p.Tolerance, NumKinds.Tolerance, v => set(o => P(o) with { Tolerance = v })), Ui.Label(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_17E5DDE5F7));
+        _settings.Children.Add(Hint(UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_A4E05A1C7D
+                                    + UiStrings.S_PaletteSwapPanel_PaletteSwapPanel_3C2DFB743B));
     }
 }

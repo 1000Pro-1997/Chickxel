@@ -94,7 +94,7 @@ public sealed class FreeTransform
     public FreeTransform(PixelImage image, PixelMask region)
     {
         if (region.Bounds.Width != image.Width || region.Bounds.Height != image.Height)
-            throw new ArgumentException("떼어 낸 픽셀 크기가 영역 사각형과 다릅니다.", nameof(image));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Transform_RegionSizeMismatch, nameof(image));
         _image = image.Clone();
         _region = region;
     }

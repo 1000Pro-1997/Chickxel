@@ -41,7 +41,7 @@ public sealed class PaletteRemap
             int rgb = (int)(c.Argb & 0xFFFFFF);
             if (seen.Add(rgb)) list.Add(rgb);
         }
-        if (list.Count == 0) throw new ArgumentException("팔레트에 투명이 아닌 색이 없습니다.", nameof(palette));
+        if (list.Count == 0) throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Palette_NoOpaqueColors, nameof(palette));
         _rgb = [.. list];
         _exact = seen;
     }

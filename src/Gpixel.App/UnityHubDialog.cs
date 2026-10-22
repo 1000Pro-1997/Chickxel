@@ -1,5 +1,6 @@
 using System.Globalization;
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -10,14 +11,14 @@ namespace Gpixel.App;
 public sealed class UnityHubDialog : DialogBase
 {
     private static readonly double[] Columns = [200, 110, 130, 270];
-    private static readonly string[] ColumnTitles = ["이름", "Unity 버전", "마지막 수정", "경로"];
+    private static readonly string[] ColumnTitles = [UiStrings.S_UnityHubDialog_ColumnTitles_B82E425CB9, UiStrings.S_UnityHubDialog_ColumnTitles_9A52A778E0, UiStrings.S_UnityHubDialog_ColumnTitles_76E7750967, UiStrings.S_UnityHubDialog_ColumnTitles_0A77D4532D];
 
     private readonly ListBox _list;
 
     /// <summary>고른 폴더(프로젝트의 Assets 또는 직접 고른 폴더).</summary>
     public string? SelectedFolder { get; private set; }
 
-    public UnityHubDialog() : base("Unity 프로젝트 열기", "열기")
+    public UnityHubDialog() : base(UiStrings.S_UnityHubDialog_UnityHubDialog_01D74C119C, UiStrings.S_UnityHubDialog_UnityHubDialog_F72E128AEB)
     {
         _list = new ListBox();
         _list.DoubleTapped += (_, _) => { if (TryAccept()) DialogResult = DialogResult.OK; };
@@ -29,22 +30,22 @@ public sealed class UnityHubDialog : DialogBase
         var message = Ui.Label("");
         if (!result.Success)
         {
-            message.Text = $"Unity Hub 프로젝트 목록을 읽지 못했습니다: {result.Error}\n아래 \"폴더 직접 선택\"으로 프로젝트의 Assets 폴더를 고르세요.";
+            message.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityHubDialog_UnityHubDialog_DE17A87853,result.Error);
             message.Foreground = AppTheme.WarningBrush;
         }
         else if (result.Projects.Count == 0)
         {
-            message.Text = "Unity Hub에 등록된 프로젝트가 없습니다. \"폴더 직접 선택\"을 쓰세요.";
+            message.Text = UiStrings.S_UnityHubDialog_UnityHubDialog_C641F4E17C;
         }
         else
         {
-            message.Text = "즐겨찾기(별 표시) 먼저, 최근 수정 순. 회색은 경로가 없어진 프로젝트입니다.";
+            message.Text = UiStrings.S_UnityHubDialog_UnityHubDialog_73DB9F4625;
         }
         Fill(_list, result.Projects, Columns);
 
-        var browse = Ui.Button("폴더 직접 선택…", (_, _) =>
+        var browse = Ui.Button(UiStrings.S_UnityHubDialog_UnityHubDialog_F177BFF283, (_, _) =>
         {
-            var folder = Ui.PickFolder(this, "열 폴더(Unity 프로젝트의 Assets 등)를 고르세요.");
+            var folder = Ui.PickFolder(this, UiStrings.S_UnityHubDialog_UnityHubDialog_E8C247F967);
             if (folder is null) return;
             SelectedFolder = ResolveAssets(folder);
             DialogResult = DialogResult.OK;
@@ -73,7 +74,7 @@ public sealed class UnityHubDialog : DialogBase
             if (p.IsFavorite && row.Children[0] is TextBlock title)
                 title.Inlines = [Ui.InlineIcon(VectorIcon.Star, title.Foreground ?? AppTheme.TextBrush, 12, filled: true), new Avalonia.Controls.Documents.Run(" " + p.Title)];
             var item = new ListBoxItem { Content = row, Tag = p, Padding = new Thickness(0, 3), MinHeight = 22 };
-            ToolTip.SetTip(item, p.Exists ? p.Path : p.Path + " (경로 없음)");
+            ToolTip.SetTip(item, p.Exists ? p.Path : p.Path + UiStrings.S_UnityHubDialog_Fill_E521211C81);
             list.Items.Add(item);
         }
     }
@@ -139,12 +140,12 @@ public sealed class UnityHubDialog : DialogBase
     {
         if (SelectedProject(_list) is not { } p)
         {
-            Ui.Info(this, "목록에서 프로젝트를 고르세요.");
+            Ui.Info(this, UiStrings.S_UnityHubDialog_TryAccept_B70708BDC1);
             return false;
         }
         if (!p.Exists || !Directory.Exists(p.AssetsPath))
         {
-            Ui.Error(this, $"프로젝트 폴더를 찾을 수 없습니다:\n{p.AssetsPath}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UnityHubDialog_TryAccept_C901C91A1A,p.AssetsPath));
             return false;
         }
         SelectedFolder = p.AssetsPath;

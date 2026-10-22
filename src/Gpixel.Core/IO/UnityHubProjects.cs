@@ -66,14 +66,14 @@ public static class UnityHubProjects
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                lastError = $"Unity Hub 목록을 읽을 수 없습니다: {ex.Message}";
+                lastError = Gpixel.Core.Localization.DomainStrings.FormatUnityHub_ListReadFailed(error: ex.Message);
                 continue;
             }
             var result = Parse(json, directoryExists);
             if (result.Success) return result;
             lastError = result.Error;
         }
-        return new UnityHubProjectList([], lastError ?? "Unity Hub 프로젝트 목록 파일을 찾을 수 없습니다.");
+        return new UnityHubProjectList([], lastError ?? Gpixel.Core.Localization.DomainStrings.UnityHub_ListNotFound);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public static class UnityHubProjects
         }
         catch (SqliteException ex)
         {
-            return new UnityHubProjectList([], $"Unity Hub 목록(hub.db)을 읽을 수 없습니다: {ex.Message}");
+            return new UnityHubProjectList([], Gpixel.Core.Localization.DomainStrings.FormatUnityHub_DatabaseReadFailed(error: ex.Message));
         }
         return new UnityHubProjectList(Sort(list), null);
     }
@@ -127,7 +127,7 @@ public static class UnityHubProjects
         }
         catch (JsonException ex)
         {
-            return new UnityHubProjectList([], $"Unity Hub 목록 파일이 손상되었습니다: {ex.Message}");
+            return new UnityHubProjectList([], Gpixel.Core.Localization.DomainStrings.FormatUnityHub_CorruptList(error: ex.Message));
         }
 
         using (doc)
@@ -157,7 +157,7 @@ public static class UnityHubProjects
             }
             else
             {
-                return new UnityHubProjectList([], "Unity Hub 목록 형식을 알 수 없습니다.");
+                return new UnityHubProjectList([], Gpixel.Core.Localization.DomainStrings.UnityHub_UnknownListFormat);
             }
 
             return new UnityHubProjectList(Sort(list), null);

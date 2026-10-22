@@ -214,7 +214,7 @@ public sealed class PixelPatch
     {
         if (width < 1 || height < 1 || indices.Length != before.Length || indices.Length != after.Length
             || indices.Any(i => i < 0 || i >= width * height))
-            throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.");
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptPixelPatch);
         return new PixelPatch(width, height, indices, before, after);
     }
 
@@ -222,7 +222,7 @@ public sealed class PixelPatch
     public static PixelPatch? Create(PixelImage before, PixelImage after)
     {
         if (before.Width != after.Width || before.Height != after.Height)
-            throw new ArgumentException("크기가 같은 이미지만 비교할 수 있습니다.", nameof(after));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Image_DifferentComparisonSize, nameof(after));
         var b = before.Pixels;
         var a = after.Pixels;
         var indices = new List<int>();
@@ -249,7 +249,7 @@ public sealed class PixelPatch
     private void Apply(PixelImage image, Color32[] values)
     {
         if (image.Width != _width || image.Height != _height)
-            throw new InvalidOperationException("패치와 이미지 크기가 다릅니다.");
+            throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.History_PatchSizeMismatch);
         for (int k = 0; k < _indices.Length; k++) image.Pixels[_indices[k]] = values[k];
     }
 }

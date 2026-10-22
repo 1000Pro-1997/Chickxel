@@ -31,7 +31,7 @@ public readonly record struct EffectCanvasExpansion(int Width, int Height, int O
     public static EffectCanvasExpansion FromBounds(int width, int height, Rectangle effectBounds, EffectCanvasExpandMode mode)
     {
         if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
-            throw new ArgumentOutOfRangeException(nameof(width), $"캔버스 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}×{height}");
+            throw new ArgumentOutOfRangeException(nameof(width), Gpixel.Core.Localization.DomainStrings.FormatCanvas_InvalidSize(max: PixelImage.MaxSize, width: width, height: height));
         var required = effectBounds.IsEmpty
             ? new Rectangle(0, 0, width, height)
             : Rectangle.Union(new Rectangle(0, 0, width, height), effectBounds);
@@ -39,7 +39,7 @@ public readonly record struct EffectCanvasExpansion(int Width, int Height, int O
         long right = Math.Max(0L, (long)required.Right - width), bottom = Math.Max(0L, (long)required.Bottom - height);
         long minimumWidth = width + left + right, minimumHeight = height + top + bottom;
         if (minimumWidth > PixelImage.MaxSize || minimumHeight > PixelImage.MaxSize)
-            throw new InvalidOperationException($"효과를 자르지 않고 담으려면 캔버스가 {minimumWidth}×{minimumHeight}px여야 합니다(최대 {PixelImage.MaxSize}×{PixelImage.MaxSize}px).");
+            throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.FormatCanvas_EffectTooLarge(width: minimumWidth, height: minimumHeight, max: PixelImage.MaxSize));
 
         int resultWidth = (int)minimumWidth, resultHeight = (int)minimumHeight;
         bool kept = mode == EffectCanvasExpandMode.KeepRatio;

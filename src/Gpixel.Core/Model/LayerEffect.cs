@@ -34,7 +34,7 @@ public readonly record struct FrameRange
 {
     public FrameRange(int from, int to)
     {
-        if (from < 0 || to < from) throw new ArgumentOutOfRangeException(nameof(from), $"프레임 범위가 잘못되었습니다: {from}~{to}");
+        if (from < 0 || to < from) throw new ArgumentOutOfRangeException(nameof(from), Gpixel.Core.Localization.DomainStrings.FormatFrames_InvalidRange(from: from, to: to));
         From = from;
         To = to;
     }
@@ -78,7 +78,7 @@ public sealed record OutlineEffect : LayerEffect
     /// <summary>true = 안쪽(그림 가장자리 픽셀을 칠함, 크기 그대로), false = 바깥(그림 밖으로 두께만큼 커짐).</summary>
     public bool Inside { get; init; }
 
-    public override string DisplayName => "외곽선";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Outline;
 }
 
 /// <summary>
@@ -103,7 +103,7 @@ public sealed record ShadowEffect : LayerEffect
     /// <summary>디더 밀도(없음 = 색의 알파로 반투명). 예전 파일은 없음.</summary>
     public ShadowDither Dither { get; init; } = ShadowDither.None;
 
-    public override string DisplayName => "그림자";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Shadow;
 }
 
 /// <summary>디더 그림자 밀도(4×4 Bayer 무늬에서 칠하는 칸 비율). 50% = 바둑판.</summary>
@@ -138,7 +138,7 @@ public sealed record RimLightEffect : LayerEffect
     public Color32 Shade { get; init; } = new(0, 0, 0, 96);
     public LightDirection Direction { get; init; } = LightDirection.TopLeft;
 
-    public override string DisplayName => "가장자리 빛·그늘";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_EdgeLightShade;
 
     /// <summary>빛이 오는 쪽 (dx, dy) — 각각 −1, 0, 1(왼쪽 위 원점).</summary>
     public (int X, int Y) Vector => Direction switch
@@ -167,7 +167,7 @@ public sealed record ColorOverlayEffect : LayerEffect
     /// <summary>색을 원본에 섞는 방식. 예전 파일은 일반 덮기.</summary>
     public EffectBlend Blend { get; init; } = EffectBlend.Normal;
 
-    public override string DisplayName => "색 덮기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_ColorOverlay;
 }
 
 /// <summary>움직이는 효과의 빠르기 곡선(진행 0→1을 어떻게 지나가는지).</summary>
@@ -340,7 +340,7 @@ public sealed record ExplodeEffect : AnimatedEffect
 
     public Color32 FlashColor { get; init; } = Color32.White;
 
-    public override string DisplayName => "터지기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Explode;
 }
 
 /// <summary>
@@ -368,7 +368,7 @@ public sealed record ShineEffect : AnimatedEffect
     /// <summary>부드러움 0(딱딱한 띠)~<see cref="MaxSoftness"/>px(양옆 계단식 가장자리).</summary>
     public int Softness { get => _soft; init => _soft = Math.Clamp(value, 0, MaxSoftness); }
 
-    public override string DisplayName => "빛 지나가기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_LightSweep;
 }
 
 /// <summary>늘었다 줄기의 기준점(이 점은 움직이지 않음).</summary>
@@ -406,7 +406,7 @@ public sealed record SquashEffect : AnimatedEffect
     /// <summary>튕김 횟수 1~<see cref="MaxBounces"/>(출렁임 수).</summary>
     public int Bounces { get => _bounces; init => _bounces = Math.Clamp(value, 1, MaxBounces); }
 
-    public override string DisplayName => "늘었다 줄기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_SquashStretch;
 
     private const double Damping = 2.5;
     private static readonly double[] Peaks = Enumerable.Range(1, MaxBounces).Select(b =>

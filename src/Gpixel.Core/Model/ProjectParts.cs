@@ -413,7 +413,7 @@ public sealed record GridOrder
         return h.ToHashCode();
     }
 
-    public override string ToString() => string.Join(" → ", Keys) + $" / 줄 {RowBreak}";
+    public override string ToString() => Gpixel.Core.Localization.DomainStrings.FormatNaming_Rows(keys: string.Join(" → ", Keys), row: RowBreak);
 }
 
 /// <summary>칸(스프라이트) 이름 규칙(프레임 시트·부위 아틀라스 공통).</summary>

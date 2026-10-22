@@ -1,5 +1,6 @@
 using Avalonia.Media.Immutable;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -456,10 +457,10 @@ internal static class ColorPickerModes
 
     public static string Name(ColorPickerMode mode) => mode switch
     {
-        ColorPickerMode.Square => "사각형",
-        ColorPickerMode.Honeycomb => "벌집",
-        ColorPickerMode.Wheel => "색상환",
-        _ => "슬라이더",
+        ColorPickerMode.Square => UiStrings.S_ColorPickers_Name_B6557C1430,
+        ColorPickerMode.Honeycomb => UiStrings.S_ColorPickers_Name_C21FB98CC0,
+        ColorPickerMode.Wheel => UiStrings.S_ColorPickers_Name_5E5B391CB2,
+        _ => UiStrings.S_ColorPickers_Name_73C3C4C63D,
     };
 
     /// <summary>방식을 나타내는 작은 그림(가운데 기준 약 14×12).</summary>

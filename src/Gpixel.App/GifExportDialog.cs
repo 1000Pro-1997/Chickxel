@@ -1,5 +1,6 @@
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -11,7 +12,7 @@ namespace Gpixel.App;
 /// </summary>
 public sealed class GifExportDialog : DialogBase
 {
-    private const string Label = "GIF 애니메이션으로 내보내기";
+    private static readonly string Label = UiStrings.GifExport_Title;
     private const int MaxScale = 10;
     private const double PreviewBox = 384;
 
@@ -34,17 +35,17 @@ public sealed class GifExportDialog : DialogBase
     /// <summary>마지막 내보내기 결과 문구(상태 표시줄용).</summary>
     public string? ResultMessage { get; private set; }
 
-    public GifExportDialog(EditorContext ctx, AppSettings settings) : base(Label, "내보내기…")
+    public GifExportDialog(EditorContext ctx, AppSettings settings) : base(Label, UiStrings.S_GifExportDialog_GifExportDialog_AEA1CD8AEB)
     {
         _ctx = ctx;
-        _project = ctx.Project ?? throw new InvalidOperationException("프로젝트가 없습니다.");
+        _project = ctx.Project ?? throw new InvalidOperationException(UiStrings.S_GifExportDialog_GifExportDialog_E1EFCD56F3);
         _settings = settings;
         _currentTag = _project.TagOfFrame(ctx.CurrentFrame);
 
-        _rangeCurrent = Radio("range", _currentTag is { } ct ? $"현재 태그 \"{ct.Name}\"{DirectionText(ct)}" : "현재 태그(현재 프레임이 태그 안에 없음)");
+        _rangeCurrent = Radio("range", _currentTag is { } ct ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_GifExportDialog_9970DF5446,ct.Name,DirectionText(ct)) : UiStrings.S_GifExportDialog_GifExportDialog_5F18243314);
         _rangeCurrent.IsEnabled = _currentTag is not null;
-        _rangeAll = Radio("range", $"모든 프레임({_project.Frames.Count}개)");
-        _rangeTag = Radio("range", "태그 고르기");
+        _rangeAll = Radio("range", string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_GifExportDialog_B4BA578A27,_project.Frames.Count));
+        _rangeTag = Radio("range", UiStrings.S_GifExportDialog_GifExportDialog_99C0D7A91D);
         _tagCombo = Ui.Combo(165, _project.Tags.Select(t => $"{t.Name}  [{t.From}–{t.To}]{DirectionText(t)}").ToArray());
         _rangeTag.IsEnabled = _tagCombo.IsEnabled = _project.Tags.Count > 0;
         if (_currentTag is not null) _tagCombo.SelectedIndex = _project.Tags.ToList().IndexOf(_currentTag);
@@ -53,13 +54,13 @@ public sealed class GifExportDialog : DialogBase
         int side = Math.Max(_project.Width, _project.Height);
         _scale = Ui.Num(1, MaxScale, Math.Clamp((int)Math.Round(256.0 / side), 1, MaxScale), width: 60)
             .Presets(1, 2, 3, 4, 5, 6, 8, 10).Unit("×").RecentKey("gif.scale");
-        _loopForever = Radio("loop", "무한 반복");
-        _loopCount = Radio("loop", "재생 횟수");
-        _plays = Ui.Num(1, 100, Math.Max(1, settings.GifPlayCount), width: 60).Presets(1, 2, 3, 4, 5, 10, 20).Unit("번").RecentKey("gif.plays");
+        _loopForever = Radio("loop", UiStrings.S_GifExportDialog_GifExportDialog_4ED3569BED);
+        _loopCount = Radio("loop", UiStrings.S_GifExportDialog_GifExportDialog_E8CE6F1D02);
+        _plays = Ui.Num(1, 100, Math.Max(1, settings.GifPlayCount), width: 60).Presets(1, 2, 3, 4, 5, 10, 20).Unit(UiStrings.S_GifExportDialog_GifExportDialog_D748D56877).RecentKey("gif.plays");
         (settings.GifPlayCount <= 0 ? _loopForever : _loopCount).IsChecked = true;
 
-        _bgTransparent = Radio("bg", "투명(알파 50% 미만은 투명, 나머지는 불투명)");
-        _bgColor = Radio("bg", "배경색 위에 합성");
+        _bgTransparent = Radio("bg", UiStrings.S_GifExportDialog_GifExportDialog_D4D8F12988);
+        _bgColor = Radio("bg", UiStrings.S_GifExportDialog_GifExportDialog_E03CFDC4D0);
         _color = new ColorField(Color32.TryParseHex(settings.GifBackgroundColor, out var bg) ? bg.WithAlpha(255) : Color32.White);
         (settings.GifUseBackground ? _bgColor : _bgTransparent).IsChecked = true;
 
@@ -73,10 +74,10 @@ public sealed class GifExportDialog : DialogBase
             Width = 300,
             Children =
             {
-                Ui.Group("범위", Ui.Stack(_rangeCurrent, _rangeAll, Ui.Row(_rangeTag, _tagCombo))),
-                Ui.Group("배율", Ui.Row(_scale, Ui.Label("×  (최근접 — 픽셀 그대로 키움)"))),
-                Ui.Group("반복", Ui.Stack(_loopForever, Ui.Row(_loopCount, _plays, Ui.Label("번")))),
-                Ui.Group("배경", Ui.Stack(_bgTransparent, Ui.Row(_bgColor, _color))),
+                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_463F80B168, Ui.Stack(_rangeCurrent, _rangeAll, Ui.Row(_rangeTag, _tagCombo))),
+                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_012E0A74BF, Ui.Row(_scale, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_5AE6A9747B))),
+                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_C51C583CC7, Ui.Stack(_loopForever, Ui.Row(_loopCount, _plays, Ui.Label(UiStrings.S_GifExportDialog_GifExportDialog_D748D56877)))),
+                Ui.Group(UiStrings.S_GifExportDialog_GifExportDialog_7934F88ACA, Ui.Stack(_bgTransparent, Ui.Row(_bgColor, _color))),
             },
         };
         var previewColumn = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0, 0, 0), Children = { _preview, _info, _result } };
@@ -147,8 +148,8 @@ public sealed class GifExportDialog : DialogBase
 
     private static string DirectionText(AnimationTag t) => t.Direction switch
     {
-        TagDirection.Reverse => " · 역방향",
-        TagDirection.PingPong => " · 왕복",
+        TagDirection.Reverse => UiStrings.S_GifExportDialog_DirectionText_FE009F0D02,
+        TagDirection.PingPong => UiStrings.S_GifExportDialog_DirectionText_46319C3ED7,
         _ => "",
     };
 
@@ -192,7 +193,7 @@ public sealed class GifExportDialog : DialogBase
     {
         if (_frames.Count == 0)
         {
-            _info.Text = "내보낼 프레임이 없습니다.";
+            _info.Text = UiStrings.S_GifExportDialog_UpdateInfo_6C5E244357;
             OkButton.IsEnabled = false;
             return;
         }
@@ -206,15 +207,15 @@ public sealed class GifExportDialog : DialogBase
                 if (c.A != 0) colors.Add(c.Argb);
             if (colors.Count > 256) break;
         }
-        var colorText = colors.Count <= 255 ? $"색 {colors.Count}개(무손실)" : "색이 많아 프레임마다 256색 이하로 줄임";
-        _info.Text = $"결과: {_project.Width * Scale}×{_project.Height * Scale}px · 프레임 {_frames.Count}개 · {totalCs / 100.0:0.##}초 · {colorText}\n"
-                     + "프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다.";
+        var colorText = colors.Count <= 255 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_UpdateInfo_54CA1099E7,colors.Count) : UiStrings.S_GifExportDialog_UpdateInfo_4F67ADEB79;
+        _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_UpdateInfo_93DC3D6433,_project.Width * Scale,_project.Height * Scale,_frames.Count,totalCs / 100.0,colorText)
+                     + UiStrings.S_GifExportDialog_UpdateInfo_A51D1C2D3A;
     }
 
     private void ChooseAndExport()
     {
         var dir = _project.Path is { } p ? Path.GetDirectoryName(p) : _settings.LastFolder;
-        var path = Ui.SaveFile(this, Label, dir, SuggestedFileName, ".gif", new FileFilter("GIF 애니메이션", ["*.gif"]));
+        var path = Ui.SaveFile(this, Label, dir, SuggestedFileName, ".gif", new FileFilter(UiStrings.S_GifExportDialog_ChooseAndExport_AC2A7BE712, ["*.gif"]));
         if (path is null) return;
         ExportTo(path);
     }
@@ -227,18 +228,18 @@ public sealed class GifExportDialog : DialogBase
             var info = GifWriter.Save(_frames, path, new GifOptions { Scale = Scale, PlayCount = PlayCount, Background = BackgroundColor });
             long bytes = new FileInfo(path).Length;
             ExportedPath = path;
-            var loops = PlayCount == 0 ? "무한 반복" : $"{PlayCount}번 재생";
-            ResultMessage = $"GIF 내보내기: {Path.GetFileName(path)} ({info.Width}×{info.Height}, 프레임 {info.FrameCount}개, {info.TotalMs / 1000.0:0.##}초, {loops}, {FormatSize(bytes)})";
-            _result.Text = $"저장함: {Path.GetFileName(path)}\n{FormatSize(bytes)} · {info.Width}×{info.Height}px · 프레임 {info.FrameCount}개 · {info.TotalMs / 1000.0:0.##}초 · {loops}"
-                           + (info.ExactPalette ? $" · 색 {info.Colors}개(무손실)" : $" · 프레임마다 최대 {info.Colors}색");
+            var loops = PlayCount == 0 ? UiStrings.S_GifExportDialog_ExportTo_D1F78B3F5D : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_721F431829,PlayCount);
+            ResultMessage = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_5A7D0115A3,Path.GetFileName(path),info.Width,info.Height,info.FrameCount,info.TotalMs / 1000.0,loops,FormatSize(bytes));
+            _result.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_9D8DE615C3,Path.GetFileName(path),FormatSize(bytes),info.Width,info.Height,info.FrameCount,info.TotalMs / 1000.0,loops)
+                           + (info.ExactPalette ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_BB910D7364,info.Colors) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_F8D1B6ECFE,info.Colors));
             _result.IsVisible = true;
-            CancelButtonControl.Content = "닫기";
+            CancelButtonControl.Content = UiStrings.S_GifExportDialog_ExportTo_722DAE0C92;
             SaveSettings();
             return info;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Ui.Error(this, $"GIF를 쓰지 못했습니다.\n{ex.Message}", "GIF 내보내기 실패");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_ExportTo_F498BE85D9,ex.Message), UiStrings.S_GifExportDialog_ExportTo_D19C71FE4B);
             return null;
         }
     }
@@ -297,7 +298,7 @@ public sealed class GifExportDialog : DialogBase
             var area = new Rect(0, 18, bounds.Width, bounds.Height - 18);
             if (_frames.Count == 0 || _index >= _frames.Count)
             {
-                AppTheme.DrawTextIn(g, "미리보기", new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+                AppTheme.DrawTextIn(g, UiStrings.S_GifExportDialog_Render_15D5CAFA3B, new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
                 return;
             }
             var bmp = _frames[_index];
@@ -305,7 +306,7 @@ public sealed class GifExportDialog : DialogBase
             double s = _scale;
             while (s > 1 && (w * s > area.Width || h * s > area.Height)) s--;
             if (w * s > area.Width || h * s > area.Height) s = Math.Min(area.Width / w, area.Height / h);
-            var caption = s == _scale ? $"미리보기 — {_scale}× (실제 크기)" : $"미리보기 — {s:0.##}×로 줄여 보임(내보내기 {_scale}×)";
+            var caption = s == _scale ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_Render_2D68770584,_scale) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GifExportDialog_Render_BABF280D4D,s,_scale);
             AppTheme.DrawTextIn(g, $"{caption} · {_index + 1}/{_frames.Count}", new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
             var dest = new Rect(area.X + Math.Floor((area.Width - w * s) / 2), area.Y + Math.Floor((area.Height - h * s) / 2), w * s, h * s);
             if (_background is { } bg) g.FillRectangle(new SolidColorBrush(bg.ToColor()), dest);

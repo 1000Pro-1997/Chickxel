@@ -54,14 +54,14 @@ public static class UndoHistoryIO
         try
         {
             manifest = JsonSerializer.Deserialize<HistoryManifestDto>(Decompress(File.ReadAllBytes(Path.Combine(directory, ManifestName))), Json)
-                       ?? throw new InvalidDataException("실행취소 기록이 비어 있습니다.");
+                       ?? throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_Empty);
         }
         catch (JsonException ex)
         {
-            throw new InvalidDataException($"실행취소 기록이 손상되었습니다: {ex.Message}", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatHistory_CorruptMessage(error: ex.Message), ex);
         }
         if (manifest.Version != FormatVersion)
-            throw new InvalidDataException($"실행취소 기록 형식 버전({manifest.Version})을 읽을 수 없습니다.");
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatHistory_UnsupportedVersion(version: manifest.Version));
         return project.LoadHistory(manifest, new HistoryBlobs(directory));
     }
 
@@ -98,7 +98,7 @@ public static class UndoHistoryIO
         }
         catch (InvalidDataException ex)
         {
-            throw new InvalidDataException($"실행취소 기록 조각이 손상되었습니다: {ex.Message}", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatHistory_CorruptChunkMessage(error: ex.Message), ex);
         }
     }
 
@@ -140,11 +140,11 @@ public static class UndoHistoryIO
         try
         {
             if (r.ReadInt32() != ImageMagic || r.ReadInt32() != width || r.ReadInt32() != height || data.Length != 12 + width * height * 4)
-                throw new InvalidDataException("실행취소 기록의 셀 그림이 손상되었습니다.");
+                throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptCellImage);
         }
         catch (EndOfStreamException ex)
         {
-            throw new InvalidDataException("실행취소 기록의 셀 그림이 손상되었습니다.", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptCellImage, ex);
         }
         var pixels = new Color32[width * height];
         data.AsSpan(12).CopyTo(MemoryMarshal.AsBytes(pixels.AsSpan()));
@@ -179,22 +179,22 @@ public static class UndoHistoryIO
         try
         {
             using var r = new BinaryReader(new MemoryStream(data));
-            if (r.ReadInt32() != PatchMagic) throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.");
+            if (r.ReadInt32() != PatchMagic) throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptPixelPatch);
             int width = r.ReadInt32(), height = r.ReadInt32(), count = r.ReadInt32();
             if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize || count < 1 || count > width * height)
-                throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.");
+                throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptPixelPatch);
             var indices = new int[count];
             int prev = 0;
             for (int k = 0; k < count; k++) indices[k] = prev += r.Read7BitEncodedInt();
             var before = new Color32[count];
             var after = new Color32[count];
             if (r.Read(MemoryMarshal.AsBytes(before.AsSpan())) != count * 4 || r.Read(MemoryMarshal.AsBytes(after.AsSpan())) != count * 4)
-                throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.");
+                throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptPixelPatch);
             return PixelPatch.FromParts(width, height, indices, before, after);
         }
         catch (Exception ex) when (ex is EndOfStreamException or FormatException)
         {
-            throw new InvalidDataException("실행취소 기록의 픽셀 패치가 손상되었습니다.", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptPixelPatch, ex);
         }
     }
 }
@@ -264,7 +264,7 @@ internal sealed class HistoryBlobs(string directory)
     /// <summary>조각 내용(내용이 해시와 다르면 손상으로 봄).</summary>
     public byte[] Get(string? hash)
     {
-        if (!IsHash(hash)) throw new InvalidDataException("실행취소 기록이 손상되었습니다(조각 이름).");
+        if (!IsHash(hash)) throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptChunkName);
         byte[] payload;
         try
         {
@@ -272,9 +272,9 @@ internal sealed class HistoryBlobs(string directory)
         }
         catch (FileNotFoundException ex)
         {
-            throw new InvalidDataException("실행취소 기록의 조각 파일이 없습니다.", ex);
+            throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_MissingChunkFile, ex);
         }
-        if (HashOf(payload) != hash) throw new InvalidDataException("실행취소 기록 조각이 손상되었습니다.");
+        if (HashOf(payload) != hash) throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.History_CorruptChunk);
         return payload;
     }
 

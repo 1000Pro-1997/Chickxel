@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -8,11 +9,11 @@ public sealed partial class LayerEffectsDialog
     private void BobPanel(BobEffect e, Action<Func<LayerEffect, LayerEffect>> set)
     {
         static BobEffect B(LayerEffect v) => (BobEffect)v;
-        SettingsRow("높이", NumEditor(1, BobEffect.MaxHeight, e.Height, NumKinds.Px, v => set(o => B(o) with { Height = v })), Ui.Label("px"),
-            Ui.Label("  횟수"), NumEditor(1, BobEffect.MaxCycles, e.Cycles, NumKinds.Count, v => set(o => B(o) with { Cycles = v })), Ui.Label("번"));
-        SettingsRow("방향", ChoiceEditor(["위아래", "좌우"], e.Axis == EffectAxis.Horizontal ? 1 : 0,
+        SettingsRow(UiStrings.S_BobPanel_BobPanel_58A5A73C75, NumEditor(1, BobEffect.MaxHeight, e.Height, NumKinds.Px, v => set(o => B(o) with { Height = v })), Ui.Label("px"),
+            Ui.Label(UiStrings.S_BobPanel_BobPanel_93ECFDAAAF), NumEditor(1, BobEffect.MaxCycles, e.Cycles, NumKinds.Count, v => set(o => B(o) with { Cycles = v })), Ui.Label(UiStrings.S_BobPanel_BobPanel_62AE6AF173));
+        SettingsRow(UiStrings.S_BobPanel_BobPanel_817E586669, ChoiceEditor([UiStrings.S_BobPanel_BobPanel_178B12E7C6, UiStrings.S_BobPanel_BobPanel_EC9342821C], e.Axis == EffectAxis.Horizontal ? 1 : 0,
             k => set(o => B(o) with { Axis = k == 1 ? EffectAxis.Horizontal : EffectAxis.Vertical })));
         AddMotionEditors(Selected, set);
-        _settings.Children.Add(Hint("사인 곡선으로 부드럽게 오르내립니다(가운데에서 위·아래로 높이 px, 정수 픽셀). 범위 처음과 끝이 같아서 되풀이해도 끊기지 않습니다 — 범위의 마지막 프레임은 첫 프레임과 같은 모습입니다."));
+        _settings.Children.Add(Hint(UiStrings.S_BobPanel_BobPanel_A229A39E90));
     }
 }

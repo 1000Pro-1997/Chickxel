@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -8,53 +9,53 @@ namespace Gpixel.App;
 /// </summary>
 public sealed class GroupLayoutDialog : DialogBase
 {
-    private readonly TabStrip _direction = new(TabStripKind.Segmented, "가로", "세로", "격자");
+    private readonly TabStrip _direction = new(TabStripKind.Segmented, UiStrings.S_GroupLayoutDialog__direction_6B1CAE4C99, UiStrings.S_GroupLayoutDialog__direction_E3EF05F240, UiStrings.S_GroupLayoutDialog__direction_9FCD02FD15);
     private readonly NumericUpDown _columns;
     private readonly StackPanel _columnsRow;
     private readonly TextBlock _alignLabel = FieldLabel("");
-    private readonly TabStrip _align = new(TabStripKind.Segmented, "시작", "가운데", "끝");
+    private readonly TabStrip _align = new(TabStripKind.Segmented, UiStrings.S_GroupLayoutDialog__align_485FD29A3F, UiStrings.S_GroupLayoutDialog__align_5ABA2EF80F, UiStrings.S_GroupLayoutDialog__align_2EA62D4A63);
     private readonly TextBlock _distLabel = FieldLabel("");
-    private readonly TabStrip _distribution = new(TabStripKind.Segmented, "앞", "가운데", "끝", "고르게");
+    private readonly TabStrip _distribution = new(TabStripKind.Segmented, UiStrings.S_GroupLayoutDialog__distribution_B9E0583737, UiStrings.S_GroupLayoutDialog__distribution_B09A8FB8A9, UiStrings.S_GroupLayoutDialog__distribution_8B75602905, UiStrings.S_GroupLayoutDialog__distribution_3B6B9AD168);
     private readonly NumericUpDown _gap, _margin;
-    private readonly TabStrip _order = new(TabStripKind.Segmented, "위 부위부터", "아래 부위부터");
+    private readonly TabStrip _order = new(TabStripKind.Segmented, UiStrings.S_GroupLayoutDialog__order_76C685F2DF, UiStrings.S_GroupLayoutDialog__order_BBF74458D7);
     private readonly CheckBox _includeHidden;
     private readonly CheckBox _wholeCanvas;
     private readonly NumericUpDown _ax, _ay, _aw, _ah;
     private readonly GroupLayoutPreview _preview;
 
     public GroupLayoutDialog(SpriteProject project, Layer group, int frameIndex)
-        : base($"자동 배치 — {group.Name}", "적용")
+        : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_330CFAC850,group.Name), UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_11FBBFBF67)
     {
         var current = group.AutoLayout;
         var l = current ?? new GroupLayout();
         _direction.SelectedIndex = (int)l.Direction;
-        _columns = Ui.Num(1, GroupLayout.MaxColumns, l.Columns, 56).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("열").RecentKey("layout.columns");
+        _columns = Ui.Num(1, GroupLayout.MaxColumns, l.Columns, 56).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_4B983CA7BF).RecentKey("layout.columns");
         _align.SelectedIndex = (int)l.Align;
         _distribution.SelectedIndex = (int)l.Distribution;
-        _distribution.SetTip(3, "첫 부위는 영역 시작, 끝 부위는 영역 끝에 붙이고 사이를 고르게(간격보다 좁아지면 간격으로 앞에서 모음)");
+        _distribution.SetTip(3, UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_29C26D42F5);
         _gap = Ui.Num(0, GroupLayout.MaxSpacing, l.Gap, 56).Presets(Ui.Spacings).Unit("px").RecentKey("layout.gap");
         _margin = Ui.Num(0, GroupLayout.MaxSpacing, l.Margin, 56).Presets(Ui.Spacings).Unit("px").RecentKey("layout.margin");
         _order.SelectedIndex = (int)l.Order;
-        _order.SetTip(0, "타임라인 순서: 맨 위 부위가 먼저(왼쪽·위)").SetTip(1, "타임라인 거꾸로: 맨 아래 부위가 먼저");
-        _includeHidden = Ui.Check("숨긴 부위도 자리 차지", l.IncludeHidden)
-            .Tip("켜면(기본) 보이기를 켜고 꺼도 다른 부위가 움직이지 않습니다. 끄면 숨긴 부위는 제자리에 두고 보이는 부위만 배치합니다.");
+        _order.SetTip(0, UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_AE6AA2A01D).SetTip(1, UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_9566846ECA);
+        _includeHidden = Ui.Check(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_6754C5A624, l.IncludeHidden)
+            .Tip(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_FC0D1D2082);
         var area = l.Area ?? project.Bounds;
-        _wholeCanvas = Ui.Check("캔버스 전체", l.Area is null);
+        _wholeCanvas = Ui.Check(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_2586C42060, l.Area is null);
         _ax = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.X, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
         _ay = Ui.Num(-PixelImage.MaxSize, PixelImage.MaxSize, area.Y, 56).Presets(Ui.Offsets).Unit("px").RecentKey("layout.area.pos");
         _aw = Ui.Num(1, PixelImage.MaxSize, area.Width, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
         _ah = Ui.Num(1, PixelImage.MaxSize, area.Height, 56).Presets(Ui.SpriteSizes).Unit("px").RecentKey("layout.area.size");
         _preview = new GroupLayoutPreview(project, group, frameIndex) { Width = 340, Height = 190 };
 
-        _columnsRow = Ui.Row(Ui.Label("열"), _columns);
+        _columnsRow = Ui.Row(Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_4B983CA7BF), _columns);
         int parts = project.ChildCount(group);
-        Body.Children.Add(Note($"부위 {parts}개를 크기(테두리 상자)대로 늘어놓습니다. 켜 두면 부위를 더하거나 지우거나 순서·크기·캔버스를 바꿀 때마다 다시 배치합니다(피벗은 그대로)."));
-        Body.Children.Add(Ui.Row(FieldLabel("방향"), _direction, _columnsRow));
+        Body.Children.Add(Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_6446F8431F,parts)));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_9331E25300), _direction, _columnsRow));
         Body.Children.Add(Ui.Row(_alignLabel, _align));
         Body.Children.Add(Ui.Row(_distLabel, _distribution));
-        Body.Children.Add(Ui.Row(FieldLabel("간격"), _gap, Ui.Label("px"), Ui.Label("   여백"), _margin, Ui.Label("px")));
-        Body.Children.Add(Ui.Row(FieldLabel("순서"), _order));
-        Body.Children.Add(Ui.Row(FieldLabel("영역"), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, Ui.Label("W"), _aw, Ui.Label("H"), _ah));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_3C32EBCE78), _gap, Ui.Label("px"), Ui.Label(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_BE647B487C), _margin, Ui.Label("px")));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_915D00697D), _order));
+        Body.Children.Add(Ui.Row(FieldLabel(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_639D409AD1), _wholeCanvas, Ui.Label("X"), _ax, Ui.Label("Y"), _ay, Ui.Label("W"), _aw, Ui.Label("H"), _ah));
         Body.Children.Add(Ui.Row(FieldLabel(""), _includeHidden));
         Body.Children.Add(new Border
         {
@@ -65,11 +66,11 @@ public sealed class GroupLayoutDialog : DialogBase
             HorizontalAlignment = HorizontalAlignment.Left,
         });
         Body.Children.Add(Note(current is null
-            ? "켜 두면 부위를 손으로 옮길 때 자동 배치를 풀지 물어봅니다."
-            : "자동 배치 켜짐 — 손으로 옮기려면 끄세요(부위는 지금 자리에 그대로)."));
+            ? UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_878F07851A
+            : UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_FA3F69CD5B));
         if (current is not null)
         {
-            var off = AddButton("자동 배치 끄기", DialogResult.No);
+            var off = AddButton(UiStrings.S_GroupLayoutDialog_GroupLayoutDialog_27D562E065, DialogResult.No);
             off.Width = 120;
         }
 
@@ -103,17 +104,17 @@ public sealed class GroupLayoutDialog : DialogBase
         _columnsRow.IsVisible = dir == GroupLayoutDirection.Grid;
         (_alignLabel.Text, _distLabel.Text) = dir switch
         {
-            GroupLayoutDirection.Row => ("세로 맞춤", "가로 배치"),
-            GroupLayoutDirection.Column => ("가로 맞춤", "세로 배치"),
-            _ => ("칸 안 맞춤", "배치"),
+            GroupLayoutDirection.Row => (UiStrings.S_GroupLayoutDialog_Refresh_79769D8A13, UiStrings.S_GroupLayoutDialog_Refresh_8D2CA7DA17),
+            GroupLayoutDirection.Column => (UiStrings.S_GroupLayoutDialog_Refresh_432A5531EE, UiStrings.S_GroupLayoutDialog_Refresh_2B870264D5),
+            _ => (UiStrings.S_GroupLayoutDialog_Refresh_576E2DD3BA, UiStrings.S_GroupLayoutDialog_Refresh_310506C3FB),
         };
         var (start, end) = dir switch
         {
-            GroupLayoutDirection.Row => ("위", "아래"),
-            GroupLayoutDirection.Column => ("왼쪽", "오른쪽"),
-            _ => ("왼쪽 위", "오른쪽 아래"),
+            GroupLayoutDirection.Row => (UiStrings.S_GroupLayoutDialog_Refresh_2661884A8A, UiStrings.S_GroupLayoutDialog_Refresh_43F30CF9CE),
+            GroupLayoutDirection.Column => (UiStrings.S_GroupLayoutDialog_Refresh_EBE829199A, UiStrings.S_GroupLayoutDialog_Refresh_D30DD7ACE5),
+            _ => (UiStrings.S_GroupLayoutDialog_Refresh_B49F4A4010, UiStrings.S_GroupLayoutDialog_Refresh_2B96211826),
         };
-        _align.SetTip(0, $"{start}에 맞춤").SetTip(1, "가운데에 맞춤").SetTip(2, $"{end}에 맞춤");
+        _align.SetTip(0, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_Refresh_6AC90345A7,start)).SetTip(1, UiStrings.S_GroupLayoutDialog_Refresh_10B14D798B).SetTip(2, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_Refresh_6AC90345A7,end));
         foreach (var n in new[] { _ax, _ay, _aw, _ah }) n.IsEnabled = !_wholeCanvas.On();
         _preview.Layout = Layout;
     }
@@ -140,7 +141,7 @@ public sealed class GroupLayoutDialog : DialogBase
     /// </summary>
     public static bool ConfirmManualMove(Visual? owner, Layer part)
         => !part.IsAutoLaidOut
-           || Ui.Ask(owner, "이 그룹은 자동 배치 중입니다. 자동 배치를 풀고 옮길까요?", $"자동 배치 — {part.Parent!.Name}",
+           || Ui.Ask(owner, UiStrings.S_GroupLayoutDialog_ConfirmManualMove_3813FDBEE5, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_GroupLayoutDialog_ConfirmManualMove_B57E70811F,part.Parent!.Name),
                MessageButtons.OKCancel, MessageIcon.Question) == DialogResult.OK;
 }
 

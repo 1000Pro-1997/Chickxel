@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Gpixel.Core</RootNamespace>
+    <!-- 기본(중립) 언어 문구 = 한국어. 다른 언어는 Localization/*.<언어>.resx 위성 어셈블리. -->
+    <NeutralLanguage>ko</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +15,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="5.0.0-1.25277.114" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Localization/<클래스>.resx → 같은 이름의 정적 클래스(속성 = 문구, Format… = 자리 표시자 채우기) -->
+    <EmbeddedResource Update="Localization\*.resx" Public="true" EmitFormatMethods="true" />
   </ItemGroup>
 
 </Project>

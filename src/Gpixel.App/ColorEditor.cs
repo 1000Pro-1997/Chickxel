@@ -1,5 +1,6 @@
 using Avalonia.Media.Immutable;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -45,7 +46,7 @@ internal sealed class ColorEditor : UserControl
         _sliders.RgbPicked += (_, color) => SetFromRgb(color.WithAlpha((byte)_a!.NumValue()));
         _sliders.HsvPicked += (_, hsv) => { (_h, _s, _v) = hsv; ApplyHsv(); };
         foreach (var mode in ColorPickerModes.All)
-            _modeTabs.Add(null, ColorPickerModes.Icon(mode), $"색 고르기: {ColorPickerModes.Name(mode)}");
+            _modeTabs.Add(null, ColorPickerModes.Icon(mode), string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ColorEditor_ColorEditor_FA32B6E89E,ColorPickerModes.Name(mode)));
         _modeTabs.SelectionChanged += (_, _) =>
         {
             ShowPicker();
@@ -79,8 +80,8 @@ internal sealed class ColorEditor : UserControl
         _recent.ColorClicked += (_, e) => RecentColorClicked?.Invoke(this, e);
 
         var pickerArea = new Panel { Children = { _squarePicker, _honeycomb, _wheel, _sliders } };
-        var body = Ui.Stack(pickerArea, _alpha, NumberGrid(), Ui.Label("최근 색"), _recent);
-        var header = Ui.Header("색");
+        var body = Ui.Stack(pickerArea, _alpha, NumberGrid(), Ui.Label(UiStrings.S_ColorEditor_ColorEditor_2156C5C575), _recent);
+        var header = Ui.Header(UiStrings.S_ColorEditor_ColorEditor_551150B3F7);
         var title = header.Child!;
         header.Child = null;
         var headerRow = new DockPanel();

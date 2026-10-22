@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -39,7 +40,7 @@ internal sealed class PaletteSection : StackPanel
             Background = Brushes.Transparent,
             Cursor = new Cursor(StandardCursorType.Hand),
         };
-        ToolTip.SetTip(ArrowButton, "접기/펼치기");
+        ToolTip.SetTip(ArrowButton, UiStrings.S_PaletteSection_PaletteSection_5C40417A3E);
         Title = new TextBlock
         {
             Foreground = AppTheme.TextBrush,
@@ -55,7 +56,7 @@ internal sealed class PaletteSection : StackPanel
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 2, 0),
         };
-        MenuButton = Ui.IconButton(VectorIcon.Menu, "이 팔레트 메뉴", null, 26, 13);
+        MenuButton = Ui.IconButton(VectorIcon.Menu, UiStrings.S_PaletteSection_PaletteSection_003DA891E2, null, 26, 13);
         MenuButton.Height = 20;
         MenuButton.Margin = new Thickness(1);
         MenuButton.VerticalAlignment = VerticalAlignment.Center;
@@ -76,7 +77,7 @@ internal sealed class PaletteSection : StackPanel
             Padding = new Thickness(2, 0, 0, 0),
             Child = row,
         };
-        ToolTip.SetTip(Title, editable ? "두 번 누르면 이름 바꾸기 · 오른쪽 단추 = 메뉴" : "팔레트 색을 누르면 선택됩니다");
+        ToolTip.SetTip(Title, editable ? UiStrings.S_PaletteSection_PaletteSection_B4F1EEF45C : UiStrings.S_PaletteSection_PaletteSection_CF481ADEDA);
         Children.Add(Header);
         Children.Add(Grid);
         Refresh(false);

@@ -40,5 +40,5 @@ public sealed record GradientOverlayEffect : AnimatedEffect
 
     public EffectBlend Blend { get; init; } = EffectBlend.Normal;
 
-    public override string DisplayName => "그라데이션 변화";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_GradientChange;
 }

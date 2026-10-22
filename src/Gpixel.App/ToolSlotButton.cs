@@ -1,4 +1,5 @@
 using Path = Avalonia.Controls.Shapes.Path;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -26,7 +27,7 @@ public sealed class ToolSlotButton : ToggleButton
     /// <param name="keyText">도구 단축키 표기(바뀌면 <see cref="RefreshTip"/>).</param>
     public ToolSlotButton(IReadOnlyList<(ToolKind Tool, string Name)> tools, Func<ToolKind, string> keyText)
     {
-        if (tools.Count == 0) throw new ArgumentException("도구 칸에는 도구가 하나 이상 있어야 합니다.", nameof(tools));
+        if (tools.Count == 0) throw new ArgumentException(UiStrings.S_ToolSlotButton_ToolSlotButton_3CFF705466, nameof(tools));
         _tools = tools;
         _keyText = keyText;
         Current = tools[0].Tool;
@@ -97,7 +98,7 @@ public sealed class ToolSlotButton : ToggleButton
     {
         string tip = Label(Current);
         if (IsGroup)
-            tip += $"\n길게 누르기/오른쪽 클릭: {string.Join(" · ", _tools.Select(t => Label(t.Tool)))}";
+            tip += string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolSlotButton_RefreshTip_0CDC077422,string.Join(" · ", _tools.Select(t => Label(t.Tool))));
         this.Tip(tip);
     }
 

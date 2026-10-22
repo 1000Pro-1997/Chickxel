@@ -1,3 +1,4 @@
+using Gpixel.App.Localization;
 namespace Gpixel.App;
 
 /// <summary>앱 휴지통 보기: 지운 항목 목록(최근 것부터), 되살리기·영구 삭제·비우기, 보관 정책(기간·용량, 각각 끌 수 있음).</summary>
@@ -16,7 +17,7 @@ public sealed class TrashDialog : DialogBase
     /// <param name="policy">보관 정책.</param>
     /// <param name="policyChanged">정책을 바꿨을 때(설정 저장).</param>
     /// <param name="restored">되살린 파일 경로들.</param>
-    public TrashDialog(AppTrash trash, TrashPolicy policy, Action<TrashPolicy> policyChanged, Action<IReadOnlyList<string>> restored) : base("앱 휴지통")
+    public TrashDialog(AppTrash trash, TrashPolicy policy, Action<TrashPolicy> policyChanged, Action<IReadOnlyList<string>> restored) : base(UiStrings.S_TrashDialog_TrashDialog_5DAE31D03A)
     {
         _trash = trash;
         _restored = restored;
@@ -37,10 +38,10 @@ public sealed class TrashDialog : DialogBase
         };
         _usage = Ui.Label("");
         _usage.Foreground = AppTheme.DimTextBrush;
-        var restore = Ui.Button("되살리기", (_, _) => RestoreSelected(), 100);
-        var delete = Ui.Button("영구 삭제", (_, _) => DeleteSelected(), 100);
-        var empty = Ui.Button("비우기", (_, _) => EmptyAll(), 100);
-        Body.Children.Add(Ui.Label("파일 브라우저에서 지운 파일(합치기로 지운 원본 포함)을 보관합니다. 파일 목록에서 Ctrl+Z로 마지막 삭제를 되살립니다."));
+        var restore = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_2C94038691, (_, _) => RestoreSelected(), 100);
+        var delete = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_C67DF450F5, (_, _) => DeleteSelected(), 100);
+        var empty = Ui.Button(UiStrings.S_TrashDialog_TrashDialog_9D1463258E, (_, _) => EmptyAll(), 100);
+        Body.Children.Add(Ui.Label(UiStrings.S_TrashDialog_TrashDialog_A74F61165C));
         Body.Children.Add(_policy);
         Body.Children.Add(_usage);
         // 왼쪽 목록(이미지면 작은 미리보기), 오른쪽 고른 항목의 큰 미리보기.
@@ -70,7 +71,7 @@ public sealed class TrashDialog : DialogBase
         _trash.Purge(Policy);
         _entries = _trash.Entries();
         long total = _entries.Sum(_trash.SizeOf);
-        _usage.Text = $"지금 {_entries.Count}개 · {AppTrash.FormatSize(total)}" + (Policy.MaxBytes > 0 ? $" / {AppTrash.FormatSize(Policy.MaxBytes)}" : "");
+        _usage.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_Reload_FAE72AD0B4,_entries.Count,AppTrash.FormatSize(total)) + (Policy.MaxBytes > 0 ? $" / {AppTrash.FormatSize(Policy.MaxBytes)}" : "");
         _list.Items.Clear();
         foreach (var e in _entries)
         {
@@ -88,7 +89,7 @@ public sealed class TrashDialog : DialogBase
                         thumb,
                         new TextBlock
                         {
-                            Text = $"{e.DeletedUtc.ToLocalTime():yyyy-MM-dd HH:mm} · {e.Label} · {(Policy.Days > 0 ? $"{AppTrash.DaysLeft(e, Policy.Days)}일 남음" : "기간 제한 없음")} · {AppTrash.FormatSize(_trash.SizeOf(e))}\n   {files}",
+                            Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_Reload_A1E6202FC4,e.DeletedUtc.ToLocalTime(),e.Label,(Policy.Days > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_Reload_00DDCF5548,AppTrash.DaysLeft(e, Policy.Days)) : UiStrings.S_TrashDialog_Reload_734995695F),AppTrash.FormatSize(_trash.SizeOf(e)),files),
                             TextTrimming = TextTrimming.CharacterEllipsis,
                             VerticalAlignment = VerticalAlignment.Center,
                         },
@@ -99,7 +100,7 @@ public sealed class TrashDialog : DialogBase
             ToolTip.SetTip(item, string.Join("\n", e.Files.Select(f => f.OriginalPath)));
             _list.Items.Add(item);
         }
-        if (_entries.Count == 0) _list.Items.Add(new ListBoxItem { Content = "비어 있음", IsEnabled = false });
+        if (_entries.Count == 0) _list.Items.Add(new ListBoxItem { Content = UiStrings.S_TrashDialog_Reload_929AEA2693, IsEnabled = false });
         ShowPreview();
     }
 
@@ -140,7 +141,7 @@ public sealed class TrashDialog : DialogBase
         else
         {
             _preview.Source = null;
-            _previewInfo.Text = e is null ? "항목을 고르면 미리보기가 보입니다." : "미리볼 이미지가 없습니다.";
+            _previewInfo.Text = e is null ? UiStrings.S_TrashDialog_ShowPreview_8408F83804 : UiStrings.S_TrashDialog_ShowPreview_4BE4E0AA4F;
         }
     }
 
@@ -165,14 +166,14 @@ public sealed class TrashDialog : DialogBase
     {
         var sel = Selected();
         if (sel.Count == 0) return;
-        if (Ui.Ask(this, $"항목 {sel.Count}개를 영구 삭제할까요? 되돌릴 수 없습니다.", "영구 삭제", MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
+        if (Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_DeleteSelected_24E807F59E,sel.Count), UiStrings.S_TrashDialog_DeleteSelected_2C75877A47, MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
         Remove(sel);
     }
 
     private void EmptyAll()
     {
         if (_entries.Count == 0) return;
-        if (Ui.Ask(this, $"휴지통의 항목 {_entries.Count}개를 모두 영구 삭제할까요? 되돌릴 수 없습니다.", "비우기", MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
+        if (Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_EmptyAll_C72A684107,_entries.Count), UiStrings.S_TrashDialog_EmptyAll_DF79DF30A5, MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
         Remove(_entries);
     }
 
@@ -184,7 +185,7 @@ public sealed class TrashDialog : DialogBase
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, $"일부 항목을 지우지 못했습니다.\n{ex.Message}");
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TrashDialog_Remove_35FEE27075,ex.Message));
         }
         Reload();
     }

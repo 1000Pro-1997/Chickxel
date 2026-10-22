@@ -28,5 +28,5 @@ public sealed record MeltEffect : AnimatedEffect
 
     public int Seed { get => _seed; init => _seed = Math.Clamp(value, 0, MaxSeed); }
 
-    public override string DisplayName => "녹아내리기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Melt;
 }

@@ -30,7 +30,7 @@ public sealed record HitFlashEffect : AnimatedEffect
 
     public HitFlashShape Shape { get; init; } = HitFlashShape.Solid;
 
-    public override string DisplayName => "피격 번쩍임";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_HitFlash;
 
     /// <summary>진행 <paramref name="u"/>에서 색을 섞는 양 0~1(끝 u ≥ 1은 0).</summary>
     public double Amount(double u)

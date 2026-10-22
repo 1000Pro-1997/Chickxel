@@ -32,7 +32,7 @@ public static class SidecarIO
     public static void Deserialize(string json, Document doc)
     {
         var dto = JsonSerializer.Deserialize<SidecarDto>(json, Options)
-                  ?? throw new JsonException("사이드카 내용이 비어 있습니다.");
+                  ?? throw new JsonException(Gpixel.Core.Localization.DomainStrings.Sidecar_Empty);
         var s = doc.Sprite;
         s.Mode = dto.SpriteMode;
         s.PixelsPerUnit = dto.PixelsPerUnit;

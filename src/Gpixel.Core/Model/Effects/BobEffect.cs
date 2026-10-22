@@ -20,7 +20,7 @@ public sealed record BobEffect : AnimatedEffect
     /// <summary>위아래(<see cref="EffectAxis.Vertical"/>) 또는 좌우(<see cref="EffectAxis.Horizontal"/>).</summary>
     public EffectAxis Axis { get => _axis; init => _axis = value == EffectAxis.Horizontal ? EffectAxis.Horizontal : EffectAxis.Vertical; }
 
-    public override string DisplayName => "둥실둥실";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Bob;
 
     /// <summary>진행 <paramref name="u"/>의 옮김(px, 정수, |옮김| ≤ 높이).</summary>
     public (int X, int Y) Offset(double u)

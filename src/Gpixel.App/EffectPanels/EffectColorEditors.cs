@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -10,7 +11,7 @@ public sealed partial class LayerEffectsDialog
         Action<Func<LayerEffect, LayerEffect>> set)
     {
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
-        var mode = Ui.Combo(104, "일반색", "그라데이션");
+        var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1);
         var editor = new GradientEditor(spatialAngle: true) { Width = 280 };
         var body = Ui.Stack(Ui.Row(field, mode), editor);
         body.Margin = new Thickness(0);

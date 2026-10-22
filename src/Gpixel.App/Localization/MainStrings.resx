@@ -1,0 +1,1065 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Tool_Pencil_Name" xml:space="preserve">
+    <value>연필</value>
+  </data>
+  <data name="Tool_Pencil_Hint" xml:space="preserve">
+    <value>왼쪽: 기본색 · 오른쪽: 보조색(또는 지우개) · Shift+클릭: 마지막 점에서 직선 · Alt+클릭: 색 집기</value>
+  </data>
+  <data name="Tool_Eraser_Name" xml:space="preserve">
+    <value>지우개</value>
+  </data>
+  <data name="Tool_Eraser_Hint" xml:space="preserve">
+    <value>투명으로 지웁니다</value>
+  </data>
+  <data name="Tool_Fill_Name" xml:space="preserve">
+    <value>채우기</value>
+  </data>
+  <data name="Tool_Fill_Hint" xml:space="preserve">
+    <value>클릭한 곳의 색(허용 오차 안의 비슷한 색 포함) 영역을 채웁니다</value>
+  </data>
+  <data name="Tool_Gradient_Name" xml:space="preserve">
+    <value>그라데이션</value>
+  </data>
+  <data name="Tool_Gradient_Hint" xml:space="preserve">
+    <value>끌어서 시작점 → 끝점 방향으로 칠합니다(선택 영역이 있으면 그 안만) · Shift: 45° 단위 · 색 정지점·보간·디더링은 도구 설정</value>
+  </data>
+  <data name="Tool_Picker_Name" xml:space="preserve">
+    <value>스포이드</value>
+  </data>
+  <data name="Tool_Picker_Hint" xml:space="preserve">
+    <value>왼쪽: 기본색 · 오른쪽: 보조색으로 집기</value>
+  </data>
+  <data name="Tool_Line_Name" xml:space="preserve">
+    <value>선</value>
+  </data>
+  <data name="Tool_Line_Hint" xml:space="preserve">
+    <value>Shift: 45° 단위</value>
+  </data>
+  <data name="Tool_Rectangle_Name" xml:space="preserve">
+    <value>사각형</value>
+  </data>
+  <data name="Tool_Rectangle_Hint" xml:space="preserve">
+    <value>Shift: 정사각형 · U: 외곽/채움</value>
+  </data>
+  <data name="Tool_Ellipse_Name" xml:space="preserve">
+    <value>원</value>
+  </data>
+  <data name="Tool_Ellipse_Hint" xml:space="preserve">
+    <value>Shift: 정원 · U: 외곽/채움</value>
+  </data>
+  <data name="Tool_Select_Name" xml:space="preserve">
+    <value>사각 선택</value>
+  </data>
+  <data name="Tool_Select_Hint" xml:space="preserve">
+    <value>드래그로 선택(Shift: 정사각형), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</value>
+  </data>
+  <data name="Tool_EllipseSelect_Name" xml:space="preserve">
+    <value>원 선택</value>
+  </data>
+  <data name="Tool_EllipseSelect_Hint" xml:space="preserve">
+    <value>드래그로 원 선택(Shift: 정원), 안쪽을 끌어 이동 · Enter: 내려놓기 · M: 다음 선택 도구</value>
+  </data>
+  <data name="Tool_Lasso_Name" xml:space="preserve">
+    <value>자유 선택</value>
+  </data>
+  <data name="Tool_Lasso_Hint" xml:space="preserve">
+    <value>끌어서 테두리를 그리면 놓을 때 닫아 선택, 안쪽을 끌어 이동 · Enter: 내려놓기</value>
+  </data>
+  <data name="Tool_MagicWand_Name" xml:space="preserve">
+    <value>스마트 선택</value>
+  </data>
+  <data name="Tool_MagicWand_Hint" xml:space="preserve">
+    <value>클릭한 곳과 비슷한 색 영역 선택(허용 오차·이어진 영역·기준은 채우기와 같은 설정) · 옮기기: V/방향키</value>
+  </data>
+  <data name="Tool_Move_Name" xml:space="preserve">
+    <value>이동</value>
+  </data>
+  <data name="Tool_Move_Hint" xml:space="preserve">
+    <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션) · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
+  </data>
+  <data name="Tool_Dodge_Name" xml:space="preserve">
+    <value>밝게/어둡게</value>
+  </data>
+  <data name="Tool_Dodge_Hint" xml:space="preserve">
+    <value>왼쪽: 밝게 · 오른쪽: 어둡게(한 획에 한 번)</value>
+  </data>
+  <data name="Tool_Dither_Name" xml:space="preserve">
+    <value>디더링</value>
+  </data>
+  <data name="Tool_Dither_Hint" xml:space="preserve">
+    <value>무늬(체커·25%·75%)대로 기본색·보조색을 섞어 칠합니다</value>
+  </data>
+  <data name="Tool_ReplaceBrush_Name" xml:space="preserve">
+    <value>색 바꾸기 브러시</value>
+  </data>
+  <data name="Tool_ReplaceBrush_Hint" xml:space="preserve">
+    <value>처음 닿은 색만 기본색으로 바꿉니다</value>
+  </data>
+  <data name="Tool_Pivot_Name" xml:space="preserve">
+    <value>피벗</value>
+  </data>
+  <data name="Tool_Pivot_Hint" xml:space="preserve">
+    <value>끌어서 피벗(Unity 포커스)을 옮깁니다</value>
+  </data>
+  <data name="Ui_035" xml:space="preserve">
+    <value>초록 선을 끌어 늘려도 안 늘어나는 테두리(Unity Sprite Border)를 정합니다 — UI 버튼·패널용</value>
+  </data>
+  <data name="Ui_036" xml:space="preserve">
+    <value>파일 브라우저 보이기/숨기기 (F8)</value>
+  </data>
+  <data name="Ui_037" xml:space="preserve">
+    <value>저장 (Ctrl+S)</value>
+  </data>
+  <data name="Ui_038" xml:space="preserve">
+    <value>저장한 내용으로 되돌리기</value>
+  </data>
+  <data name="Ui_039" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="Ui_040" xml:space="preserve">
+    <value>새 버전이 나왔습니다 — 눌러서 바뀐 점 보기·설치</value>
+  </data>
+  <data name="Ui_041" xml:space="preserve">
+    <value>격자</value>
+  </data>
+  <data name="Ui_042" xml:space="preserve">
+    <value>픽셀 격자 (Ctrl+G) · 우클릭 = 색·보이는 배율</value>
+  </data>
+  <data name="Ui_043" xml:space="preserve">
+    <value>타일 격자</value>
+  </data>
+  <data name="Ui_044" xml:space="preserve">
+    <value>타일 격자 (Ctrl+Shift+G) · 우클릭 = 크기·색</value>
+  </data>
+  <data name="Ui_045" xml:space="preserve">
+    <value>타일 모드</value>
+  </data>
+  <data name="Ui_046" xml:space="preserve">
+    <value>반복해 보기·이어 그리기 (Ctrl+Shift+T) · 우클릭 = 반복 크기·주변 어둡게</value>
+  </data>
+  <data name="Ui_047" xml:space="preserve">
+    <value>피벗</value>
+  </data>
+  <data name="Ui_048" xml:space="preserve">
+    <value>피벗 표시</value>
+  </data>
+  <data name="Ui_049" xml:space="preserve">
+    <value>양파</value>
+  </data>
+  <data name="Ui_050" xml:space="preserve">
+    <value>양파 껍질: 앞/뒤 프레임 겹쳐 보기 (Ctrl+J) · 우클릭 = 프레임 수·진하기·색</value>
+  </data>
+  <data name="Ui_051" xml:space="preserve">
+    <value>축소 (Ctrl+-)</value>
+  </data>
+  <data name="Ui_052" xml:space="preserve">
+    <value>확대 (Ctrl+=)</value>
+  </data>
+  <data name="Ui_053" xml:space="preserve">
+    <value>맞추기</value>
+  </data>
+  <data name="Ui_054" xml:space="preserve">
+    <value>켜면 이미지를 열 때마다 화면에 맞춥니다(켜는 순간에도 한 번 맞춤) · Ctrl+0: 지금 맞추기</value>
+  </data>
+  <data name="Ui_055" xml:space="preserve">
+    <value>AI 채팅(Claude·Codex): 말로 그림 만들기·고치기 (Ctrl+L)</value>
+  </data>
+  <data name="Ui_056" xml:space="preserve">
+    <value>연필</value>
+  </data>
+  <data name="Ui_057" xml:space="preserve">
+    <value>확대율 — 눌러서 직접 입력(%) · 좌우로 끌어 바꾸기 · 우클릭 = 화면에 맞추기·배율 목록</value>
+  </data>
+  <data name="Ui_058" xml:space="preserve">
+    <value>화면에 맞추기</value>
+  </data>
+  <data name="Menu_File" xml:space="preserve">
+    <value>파일(_F)</value>
+  </data>
+  <data name="Ui_061" xml:space="preserve">
+    <value>최근 폴더</value>
+  </data>
+  <data name="Ui_062" xml:space="preserve">
+    <value>최근 파일</value>
+  </data>
+  <data name="Menu_File_NewProject_063" xml:space="preserve">
+    <value>새 프로젝트…</value>
+  </data>
+  <data name="Menu_File_OpenFileDialogCmd_065" xml:space="preserve">
+    <value>열기(.gpixel / PNG 가져오기)…</value>
+  </data>
+  <data name="Menu_File_OpenFolder_067" xml:space="preserve">
+    <value>폴더 열기…</value>
+  </data>
+  <data name="Menu_File_OpenUnityProject_069" xml:space="preserve">
+    <value>Unity 프로젝트 열기…</value>
+  </data>
+  <data name="Menu_File_Save_071" xml:space="preserve">
+    <value>저장(+ 시트 내보내기)</value>
+  </data>
+  <data name="Menu_File_SaveAs_073" xml:space="preserve">
+    <value>다른 이름으로 저장…</value>
+  </data>
+  <data name="Menu_File_Command_075" xml:space="preserve">
+    <value>저장한 내용으로 되돌리기</value>
+  </data>
+  <data name="Menu_File_OpenExportDialog_077" xml:space="preserve">
+    <value>내보내기…</value>
+  </data>
+  <data name="Menu_File_Command_079" xml:space="preserve">
+    <value>GIF 애니메이션으로 내보내기…</value>
+  </data>
+  <data name="Menu_File_CloseProject_081" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="Menu_File_Command_083" xml:space="preserve">
+    <value>시작 화면</value>
+  </data>
+  <data name="Menu_File_Close_085" xml:space="preserve">
+    <value>끝내기</value>
+  </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>편집(_E)</value>
+  </data>
+  <data name="Menu_Edit_Undo_089" xml:space="preserve">
+    <value>실행취소</value>
+  </data>
+  <data name="Menu_Edit_Redo_091" xml:space="preserve">
+    <value>다시 실행</value>
+  </data>
+  <data name="Menu_Edit_Cut_093" xml:space="preserve">
+    <value>잘라내기</value>
+  </data>
+  <data name="Menu_Edit_Copy_095" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="Menu_Edit_Paste_097" xml:space="preserve">
+    <value>붙여넣기</value>
+  </data>
+  <data name="Menu_Edit_DeleteSelection_099" xml:space="preserve">
+    <value>지우기</value>
+  </data>
+  <data name="Menu_Edit_SelectAll_101" xml:space="preserve">
+    <value>모두 선택</value>
+  </data>
+  <data name="Menu_Edit_Deselect_103" xml:space="preserve">
+    <value>선택 해제</value>
+  </data>
+  <data name="Menu_Edit_Flip_105" xml:space="preserve">
+    <value>좌우 뒤집기(선택/셀)</value>
+  </data>
+  <data name="Menu_Edit_Flip_107" xml:space="preserve">
+    <value>상하 뒤집기(선택/셀)</value>
+  </data>
+  <data name="Menu_Edit_Rotate_109" xml:space="preserve">
+    <value>90° 회전(선택/캔버스)</value>
+  </data>
+  <data name="Menu_Edit_Rotate_111" xml:space="preserve">
+    <value>-90° 회전(선택/캔버스)</value>
+  </data>
+  <data name="Menu_Edit_BeginTransform_113" xml:space="preserve">
+    <value>변형(회전·크기)…</value>
+  </data>
+  <data name="Menu_Edit_AddOutline_115" xml:space="preserve">
+    <value>외곽선 추가(기본색)</value>
+  </data>
+  <data name="Menu_Edit_AddOutline_117" xml:space="preserve">
+    <value>외곽선 추가(대각 포함)</value>
+  </data>
+  <data name="Menu_Edit_ReplaceColor_119" xml:space="preserve">
+    <value>색 바꾸기…</value>
+  </data>
+  <data name="Menu_Edit_BeginCanvasResize_121" xml:space="preserve">
+    <value>캔버스 크기…</value>
+  </data>
+  <data name="Menu_Edit_Structural_123" xml:space="preserve">
+    <value>캔버스 전체 좌우 뒤집기(모든 프레임)</value>
+  </data>
+  <data name="Menu_Edit_Structural_125" xml:space="preserve">
+    <value>캔버스 전체 상하 뒤집기(모든 프레임)</value>
+  </data>
+  <data name="Menu_Edit_Command_127" xml:space="preserve">
+    <value>이미지에서 팔레트 만들기</value>
+  </data>
+  <data name="Menu_Edit_Command_129" xml:space="preserve">
+    <value>팔레트 색으로 변환…</value>
+  </data>
+  <data name="Menu_Edit_ShowPreferences_131" xml:space="preserve">
+    <value>환경 설정…</value>
+  </data>
+  <data name="Message_133" xml:space="preserve">
+    <value>변형 적용</value>
+  </data>
+  <data name="Ui_134" xml:space="preserve">
+    <value>왼쪽으로</value>
+  </data>
+  <data name="Ui_135" xml:space="preserve">
+    <value>오른쪽으로</value>
+  </data>
+  <data name="Ui_136" xml:space="preserve">
+    <value>위로</value>
+  </data>
+  <data name="Ui_137" xml:space="preserve">
+    <value>아래로</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>보기(_V)</value>
+  </data>
+  <data name="Menu_View_SetPixelGrid_140" xml:space="preserve">
+    <value>픽셀 격자</value>
+  </data>
+  <data name="Menu_View_SetTileGrid_142" xml:space="preserve">
+    <value>타일 격자</value>
+  </data>
+  <data name="Menu_View_SetTiledMode_144" xml:space="preserve">
+    <value>타일 모드(반복해 보기)</value>
+  </data>
+  <data name="Menu_View_SetShowPivot_146" xml:space="preserve">
+    <value>피벗 표시</value>
+  </data>
+  <data name="Menu_View_OnionSkin_148" xml:space="preserve">
+    <value>양파 껍질</value>
+  </data>
+  <data name="Menu_View_SetFilesVisible_150" xml:space="preserve">
+    <value>파일 브라우저</value>
+  </data>
+  <data name="Menu_View_ZoomStep_152" xml:space="preserve">
+    <value>확대</value>
+  </data>
+  <data name="Menu_View_ZoomStep_154" xml:space="preserve">
+    <value>축소</value>
+  </data>
+  <data name="Menu_View_FitToWindow_156" xml:space="preserve">
+    <value>화면에 맞추기</value>
+  </data>
+  <data name="Menu_View_SetZoom_158" xml:space="preserve">
+    <value>실제 크기(1배)</value>
+  </data>
+  <data name="Menu_View_Command_160" xml:space="preserve">
+    <value>격자 설정…</value>
+  </data>
+  <data name="Menu_FrameLayer" xml:space="preserve">
+    <value>프레임·레이어(_R)</value>
+  </data>
+  <data name="Menu_FrameLayer_TogglePlay_164" xml:space="preserve">
+    <value>재생 / 정지</value>
+  </data>
+  <data name="Menu_FrameLayer_StepFrame_166" xml:space="preserve">
+    <value>이전 프레임</value>
+  </data>
+  <data name="Menu_FrameLayer_StepFrame_168" xml:space="preserve">
+    <value>다음 프레임</value>
+  </data>
+  <data name="Menu_FrameLayer_SetCurrentFrame_170" xml:space="preserve">
+    <value>첫 프레임</value>
+  </data>
+  <data name="Menu_FrameLayer_SetCurrentFrame_172" xml:space="preserve">
+    <value>마지막 프레임</value>
+  </data>
+  <data name="Menu_FrameLayer_NewEmptyFrame_174" xml:space="preserve">
+    <value>새 빈 프레임</value>
+  </data>
+  <data name="Menu_FrameLayer_DuplicateFrame_176" xml:space="preserve">
+    <value>프레임 복제</value>
+  </data>
+  <data name="Menu_FrameLayer_Command_178" xml:space="preserve">
+    <value>프레임 삭제</value>
+  </data>
+  <data name="Menu_FrameLayer_AddLayer_180" xml:space="preserve">
+    <value>새 레이어</value>
+  </data>
+  <data name="Menu_FrameLayer_AddGroup_182" xml:space="preserve">
+    <value>새 그룹</value>
+  </data>
+  <data name="Menu_FrameLayer_AddPart_184" xml:space="preserve">
+    <value>새 부위…</value>
+  </data>
+  <data name="Menu_FrameLayer_Command_186" xml:space="preserve">
+    <value>부위 크기…</value>
+  </data>
+  <data name="Menu_FrameLayer_BeginRenameLayer_188" xml:space="preserve">
+    <value>레이어 이름 바꾸기</value>
+  </data>
+  <data name="Menu_FrameLayer_StepSkin_190" xml:space="preserve">
+    <value>이전 스킨(현재 그룹)</value>
+  </data>
+  <data name="Menu_FrameLayer_StepSkin_192" xml:space="preserve">
+    <value>다음 스킨(현재 그룹)</value>
+  </data>
+  <data name="Menu_FrameLayer_OpenSkinManager_194" xml:space="preserve">
+    <value>스킨 관리…</value>
+  </data>
+  <data name="Menu_FrameLayer_Command_196" xml:space="preserve">
+    <value>새 태그(애니메이션)…</value>
+  </data>
+  <data name="Menu_FrameLayer_Command_198" xml:space="preserve">
+    <value>격자로 나눠 프레임 만들기(시트 → 프레임)…</value>
+  </data>
+  <data name="Menu_Tools" xml:space="preserve">
+    <value>도구(_T)</value>
+  </data>
+  <data name="Menu_Tools_ShapeFilled_202" xml:space="preserve">
+    <value>도형 채움</value>
+  </data>
+  <data name="Menu_Tools_FillContiguous_204" xml:space="preserve">
+    <value>채우기: 같은 색 전체</value>
+  </data>
+  <data name="Menu_Tools_PixelPerfect_206" xml:space="preserve">
+    <value>픽셀 퍼펙트</value>
+  </data>
+  <data name="Menu_Tools_MirrorX_208" xml:space="preserve">
+    <value>좌우 대칭 그리기</value>
+  </data>
+  <data name="Menu_Tools_MirrorY_210" xml:space="preserve">
+    <value>상하 대칭 그리기</value>
+  </data>
+  <data name="Menu_Tools_RightButtonErases_212" xml:space="preserve">
+    <value>오른쪽 버튼 = 지우개</value>
+  </data>
+  <data name="Menu_Tools_MoveWrap_214" xml:space="preserve">
+    <value>이동: 순환</value>
+  </data>
+  <data name="Menu_Tools_BrushSize_216" xml:space="preserve">
+    <value>브러시 크게</value>
+  </data>
+  <data name="Menu_Tools_BrushSize_218" xml:space="preserve">
+    <value>브러시 작게</value>
+  </data>
+  <data name="Menu_Tools_SwapColors_220" xml:space="preserve">
+    <value>기본색 ↔ 보조색</value>
+  </data>
+  <data name="Menu_Test" xml:space="preserve">
+    <value>테스트(_S)</value>
+  </data>
+  <data name="Menu_Test_ShowPlayTest_224" xml:space="preserve">
+    <value>움직임 테스트</value>
+  </data>
+  <data name="Menu_Ai_ToggleChat_226" xml:space="preserve">
+    <value>AI 채팅</value>
+  </data>
+  <data name="Menu_Help" xml:space="preserve">
+    <value>도움말(_H)</value>
+  </data>
+  <data name="Menu_Help_ShowShortcuts_230" xml:space="preserve">
+    <value>단축키 목록</value>
+  </data>
+  <data name="Menu_Help_Command_232" xml:space="preserve">
+    <value>설정 파일 위치 열기</value>
+  </data>
+  <data name="Menu_Help_Command_234" xml:space="preserve">
+    <value>오류 로그 폴더 열기</value>
+  </data>
+  <data name="Menu_Help_CheckAsync_236" xml:space="preserve">
+    <value>업데이트 확인…</value>
+  </data>
+  <data name="Menu_Help_AboutDialog_238" xml:space="preserve">
+    <value>Gpixel 정보…</value>
+  </data>
+  <data name="Ui_240" xml:space="preserve">
+    <value>(비어 있음)</value>
+  </data>
+  <data name="Ui_241" xml:space="preserve">
+    <value>파일 브라우저 보이기/숨기기</value>
+  </data>
+  <data name="Ui_242" xml:space="preserve">
+    <value>목록 지우기</value>
+  </data>
+  <data name="Ui_243" xml:space="preserve">
+    <value>수정됨</value>
+  </data>
+  <data name="Ui_244" xml:space="preserve">
+    <value>저장됨</value>
+  </data>
+  <data name="Ui_245" xml:space="preserve">
+    <value> (그룹)</value>
+  </data>
+  <data name="Ui_246" xml:space="preserve">
+    <value>투명</value>
+  </data>
+  <data name="Message_248" xml:space="preserve">
+    <value>타일 모드: 가장자리를 넘는 그리기가 반대편으로 이어집니다.</value>
+  </data>
+  <data name="Message_249" xml:space="preserve">
+    <value>타일 모드 끔</value>
+  </data>
+  <data name="Ui_250" xml:space="preserve">
+    <value>2배</value>
+  </data>
+  <data name="Ui_251" xml:space="preserve">
+    <value>4배</value>
+  </data>
+  <data name="Ui_252" xml:space="preserve">
+    <value>6배</value>
+  </data>
+  <data name="Ui_253" xml:space="preserve">
+    <value>8배</value>
+  </data>
+  <data name="Ui_254" xml:space="preserve">
+    <value>12배</value>
+  </data>
+  <data name="Ui_255" xml:space="preserve">
+    <value>16배</value>
+  </data>
+  <data name="Ui_256" xml:space="preserve">
+    <value>픽셀 격자</value>
+  </data>
+  <data name="Message_257" xml:space="preserve">
+    <value>색</value>
+  </data>
+  <data name="Message_258" xml:space="preserve">
+    <value>알파(#RRGGBBAA)로 진하기를 정합니다.</value>
+  </data>
+  <data name="Message_259" xml:space="preserve">
+    <value>이 배율부터 보이기</value>
+  </data>
+  <data name="Ui_260" xml:space="preserve">
+    <value>자동</value>
+  </data>
+  <data name="Ui_261" xml:space="preserve">
+    <value>그림이 128px보다 크면 3×3, 아니면 5×5</value>
+  </data>
+  <data name="Message_262" xml:space="preserve">
+    <value>가운데 둘레 어둡게</value>
+  </data>
+  <data name="Message_263" xml:space="preserve">
+    <value>타일 모드</value>
+  </data>
+  <data name="Message_264" xml:space="preserve">
+    <value>반복</value>
+  </data>
+  <data name="Message_265" xml:space="preserve">
+    <value>프레임</value>
+  </data>
+  <data name="Message_266" xml:space="preserve">
+    <value>프레임</value>
+  </data>
+  <data name="Message_267" xml:space="preserve">
+    <value>색 물들이기(앞 = 빨강, 뒤 = 파랑)</value>
+  </data>
+  <data name="Ui_268" xml:space="preserve">
+    <value>양파 껍질</value>
+  </data>
+  <data name="Message_269" xml:space="preserve">
+    <value>앞</value>
+  </data>
+  <data name="Message_270" xml:space="preserve">
+    <value>뒤</value>
+  </data>
+  <data name="Message_271" xml:space="preserve">
+    <value>프레임</value>
+  </data>
+  <data name="Message_272" xml:space="preserve">
+    <value>진하기</value>
+  </data>
+  <data name="Message_273" xml:space="preserve">
+    <value>% (멀수록 옅게)</value>
+  </data>
+  <data name="Ui_274" xml:space="preserve">
+    <value>타일 격자</value>
+  </data>
+  <data name="Message_275" xml:space="preserve">
+    <value>가로</value>
+  </data>
+  <data name="Message_276" xml:space="preserve">
+    <value>세로</value>
+  </data>
+  <data name="Message_277" xml:space="preserve">
+    <value>색</value>
+  </data>
+  <data name="Message_278" xml:space="preserve">
+    <value>알파(#RRGGBBAA)로 진하기를 정합니다.</value>
+  </data>
+  <data name="Ui_280" xml:space="preserve">
+    <value>실행취소 기록</value>
+  </data>
+  <data name="Ui_284" xml:space="preserve">
+    <value>저장한 내용으로 되돌리기</value>
+  </data>
+  <data name="Ui_286" xml:space="preserve">
+    <value>새 프로젝트</value>
+  </data>
+  <data name="Ui_287" xml:space="preserve">
+    <value>저장 위치를 고릅니다</value>
+  </data>
+  <data name="Message_289" xml:space="preserve">
+    <value>편집할 그림이 있는 루트 폴더를 고르세요.</value>
+  </data>
+  <data name="Message_290" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="Ui_291" xml:space="preserve">
+    <value>Gpixel 프로젝트·PNG</value>
+  </data>
+  <data name="Ui_292" xml:space="preserve">
+    <value>Gpixel 프로젝트</value>
+  </data>
+  <data name="Ui_293" xml:space="preserve">
+    <value>PNG 이미지</value>
+  </data>
+  <data name="Message_294" xml:space="preserve">
+    <value>새 프로젝트 — Ctrl+S로 저장할 위치를 고르세요.</value>
+  </data>
+  <data name="Ui_295" xml:space="preserve">
+    <value>새 프로젝트</value>
+  </data>
+  <data name="Message_296" xml:space="preserve">
+    <value>다른 이름으로 저장</value>
+  </data>
+  <data name="Ui_297" xml:space="preserve">
+    <value>Gpixel 프로젝트</value>
+  </data>
+  <data name="Message_298" xml:space="preserve">
+    <value>저장 실패</value>
+  </data>
+  <data name="Ui_299" xml:space="preserve">
+    <value> (내보내기 꺼짐)</value>
+  </data>
+  <data name="Ui_300" xml:space="preserve">
+    <value>칸</value>
+  </data>
+  <data name="Ui_301" xml:space="preserve">
+    <value>프레임</value>
+  </data>
+  <data name="Ui_302" xml:space="preserve">
+    <value>부위</value>
+  </data>
+  <data name="Ui_303" xml:space="preserve">
+    <value>라벨</value>
+  </data>
+  <data name="Message_304" xml:space="preserve">
+    <value>내보내기:</value>
+  </data>
+  <data name="Message_308" xml:space="preserve">
+    <value>파일 변경</value>
+  </data>
+  <data name="Message_309" xml:space="preserve">
+    <value>밖에서 바뀐 파일을 다시 불러오지 않았습니다. 저장하면 덮어씁니다.</value>
+  </data>
+  <data name="Message_310" xml:space="preserve">
+    <value>변형 취소</value>
+  </data>
+  <data name="Message_311" xml:space="preserve">
+    <value>캔버스 크기 취소</value>
+  </data>
+  <data name="Message_312" xml:space="preserve">
+    <value>타임라인: 복사</value>
+  </data>
+  <data name="Message_313" xml:space="preserve">
+    <value>타임라인: 잘라내기</value>
+  </data>
+  <data name="Message_314" xml:space="preserve">
+    <value>잘라낼 선택 영역이 없습니다.</value>
+  </data>
+  <data name="Message_315" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Message_316" xml:space="preserve">
+    <value>타임라인: 붙여넣기</value>
+  </data>
+  <data name="Message_317" xml:space="preserve">
+    <value>붙여넣을 그림이 없습니다.</value>
+  </data>
+  <data name="Message_318" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Message_319" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Ui_320" xml:space="preserve">
+    <value>좌우 뒤집기</value>
+  </data>
+  <data name="Ui_321" xml:space="preserve">
+    <value>상하 뒤집기</value>
+  </data>
+  <data name="Message_322" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Message_323" xml:space="preserve">
+    <value>선택 회전 — Enter로 내려놓기</value>
+  </data>
+  <data name="Message_324" xml:space="preserve">
+    <value>캔버스 회전(모든 프레임)</value>
+  </data>
+  <data name="Message_325" xml:space="preserve">
+    <value>변형: 안쪽 = 옮기기, 손잡이 = 크기, 바깥 = 회전 — Enter 적용, Esc 취소</value>
+  </data>
+  <data name="Message_326" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Message_327" xml:space="preserve">
+    <value>현재 레이어가 잠겨 있습니다.</value>
+  </data>
+  <data name="Message_328" xml:space="preserve">
+    <value>그룹이나 부위를 고르면 그 그룹의 스킨을 바꿀 수 있습니다.</value>
+  </data>
+  <data name="Ui_331" xml:space="preserve">
+    <value>격자로 나누기</value>
+  </data>
+  <data name="Message_332" xml:space="preserve">
+    <value>캔버스 크기: 손잡이 = 가장자리, Ctrl+끌기 = 그림 크기도 함께(Shift 비율 유지), 그림 안쪽 = 옮기기 — Enter 확인, Esc 취소</value>
+  </data>
+  <data name="Message_333" xml:space="preserve">
+    <value>열린 폴더가 없어 파일로 저장할 수 없습니다. file_name 없이 만들거나 사용자에게 폴더를 열어 달라고 하세요.</value>
+  </data>
+  <data name="Message_334" xml:space="preserve">
+    <value>열린 프로젝트가 없습니다.</value>
+  </data>
+  <data name="Message_335" xml:space="preserve">
+    <value>아직 저장 위치가 없는 프로젝트입니다. 사용자에게 Ctrl+S(⌘S)로 저장 위치를 고르도록 안내하세요.</value>
+  </data>
+  <data name="Message_336" xml:space="preserve">
+    <value>실행취소 기록을 쓰지 못했습니다: {m}</value>
+    <comment>m = m</comment>
+  </data>
+  <data name="Message_337" xml:space="preserve">
+    <value>폴더를 찾을 수 없습니다:
+{openFolder}</value>
+    <comment>openFolder = _args.OpenFolder</comment>
+  </data>
+  <data name="Message_338" xml:space="preserve">
+    <value>업데이트 {version}</value>
+    <comment>version = release.Version</comment>
+  </data>
+  <data name="Message_339" xml:space="preserve">
+    <value>프레임 {value}/{count} · L{value2}</value>
+    <comment>value = _ctx.CurrentFrame + 1; count = p.Frames.Count; value2 = _ctx.CurrentLayer + 1</comment>
+  </data>
+  <data name="Message_340" xml:space="preserve">
+    <value>실행취소: {u}</value>
+    <comment>u = u</comment>
+  </data>
+  <data name="Message_341" xml:space="preserve">
+    <value>다시 실행: {r}</value>
+    <comment>r = r</comment>
+  </data>
+  <data name="Message_342" xml:space="preserve">
+    <value>타일 {n}×{n2}px</value>
+    <comment>n = n; n2 = n</comment>
+  </data>
+  <data name="Message_343" xml:space="preserve">
+    <value>남겨 둔 실행취소 기록({bytes} · 파일 {files}개)도 지금 지울까요?
+"아니요"면 그대로 두고 보관 기간·최대 용량에 따라 저절로 지워집니다(다시 켜면 이어서 씁니다).</value>
+    <comment>bytes = 실행취소 기록 크기; files = 남겨 둔 실행취소 기록 파일 수</comment>
+  </data>
+  <data name="Message_344" xml:space="preserve">
+    <value> · 저장 안 한 파일 {n}개</value>
+    <comment>n = n</comment>
+  </data>
+  <data name="Message_345" xml:space="preserve">
+    <value>"{displayName}"은(는) 아직 저장한 적 없는 새 프로젝트라 바꾸면 수정이 사라집니다. 사용자에게 저장할지 물어보세요(부탁하면 save_project).</value>
+    <comment>displayName = p.DisplayName</comment>
+  </data>
+  <data name="Message_346" xml:space="preserve">
+    <value>"{displayName}"은(는) 아직 저장하지 않은 새 프로젝트입니다. 변경 내용을 저장할까요?</value>
+    <comment>displayName = p.DisplayName</comment>
+  </data>
+  <data name="Message_347" xml:space="preserve">
+    <value>"{name}"의 저장 안 된 수정을 버리고 파일에 저장된 내용으로 되돌릴까요? 버린 수정은 실행취소로 되살릴 수 없습니다.</value>
+    <comment>name = name</comment>
+  </data>
+  <data name="Message_348" xml:space="preserve">
+    <value>저장한 내용으로 되돌림: {name}{unsavedSuffix}</value>
+    <comment>name = name; unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_349" xml:space="preserve">
+    <value>"{displayName}"을(를) 저장하지 못해 끝내지 않았습니다.{unsavedSuffix}</value>
+    <comment>displayName = p.DisplayName; unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_350" xml:space="preserve">
+    <value>저장하면 {value}을(를) 만듭니다</value>
+    <comment>value = Path.GetFileName(path)</comment>
+  </data>
+  <data name="Message_351" xml:space="preserve">
+    <value>폴더를 찾을 수 없습니다:
+{folder}</value>
+    <comment>folder = folder</comment>
+  </data>
+  <data name="Message_352" xml:space="preserve">
+    <value>폴더: {folder}</value>
+    <comment>folder = folder</comment>
+  </data>
+  <data name="Message_353" xml:space="preserve">
+    <value>Unity 프로젝트 "{value}" — 저장하면 시트와 .meta를 함께 내보냅니다.</value>
+    <comment>value = Path.GetFileName(unityRoot)</comment>
+  </data>
+  <data name="Message_354" xml:space="preserve">
+    <value>잘못된 경로입니다: {path}</value>
+    <comment>path = path</comment>
+  </data>
+  <data name="Message_355" xml:space="preserve">
+    <value>이미 열려 있습니다: {value}</value>
+    <comment>value = Path.GetFileName(target)</comment>
+  </data>
+  <data name="Message_356" xml:space="preserve">
+    <value>열기: {value} — 저장하지 않은 변경을 이어서 편집합니다{unsavedSuffix}</value>
+    <comment>value = Path.GetFileName(CurrentTilePath); unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_357" xml:space="preserve">
+    <value>파일을 찾을 수 없습니다:
+{full}</value>
+    <comment>full = full</comment>
+  </data>
+  <data name="Message_358" xml:space="preserve">
+    <value>열지 못했습니다:
+{full}
+
+{message}</value>
+    <comment>full = full; message = ex.Message</comment>
+  </data>
+  <data name="Message_359" xml:space="preserve">
+    <value>프레임 {count}개 · 태그 {count2}개</value>
+    <comment>count = p.Frames.Count; count2 = p.Tags.Count</comment>
+  </data>
+  <data name="Message_360" xml:space="preserve">
+    <value> · 부위 {parts}개</value>
+    <comment>parts = parts</comment>
+  </data>
+  <data name="Message_361" xml:space="preserve">
+    <value>PNG 가져옴: {value} → {contents} — 저장하면 {path}이(가) 만들어집니다.</value>
+    <comment>value = Path.GetFileName(full); contents = contents; path = Path.GetFileName(p.Path)</comment>
+  </data>
+  <data name="Message_362" xml:space="preserve">
+    <value>열기: {displayName} (레이어 {count} · {contents})</value>
+    <comment>displayName = p.DisplayName; count = p.Layers.Count; contents = contents</comment>
+  </data>
+  <data name="Message_363" xml:space="preserve">
+    <value>이미 같은 이름의 파일이 있습니다:
+{path}</value>
+    <comment>path = path</comment>
+  </data>
+  <data name="Message_364" xml:space="preserve">
+    <value>닫음 — 저장하지 않은 변경은 메모리에 남아 있습니다(파일 목록의 빨간 점){unsavedSuffix}</value>
+    <comment>unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_365" xml:space="preserve">
+    <value>자동 저장됨 ({name}){unsavedSuffix}</value>
+    <comment>name = name; unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_366" xml:space="preserve">
+    <value>자동 저장 ({name}) — </value>
+    <comment>name = name</comment>
+  </data>
+  <data name="Message_367" xml:space="preserve">
+    <value>프로젝트는 저장했지만 PNG 시트·.meta 내보내기에 실패했습니다(다른 프로그램이 파일을 쓰고 있는지 확인하세요).
+{path}
+
+{message}</value>
+    <comment>path = path; message = ex.Message</comment>
+  </data>
+  <data name="Message_368" xml:space="preserve">
+    <value>저장하지 못했습니다. 프로젝트는 수정된 상태로 남아 있습니다.
+{path}
+
+{message}</value>
+    <comment>path = path; message = ex.Message</comment>
+  </data>
+  <data name="Message_369" xml:space="preserve">
+    <value>저장: {projectPath}</value>
+    <comment>projectPath = Path.GetFileName(result.ProjectPath)</comment>
+  </data>
+  <data name="Message_370" xml:space="preserve">
+    <value>{label} {imagePath} {unit} {spriteCount}개{meta}</value>
+    <comment>label = label; imagePath = Path.GetFileName(files[0].ImagePath); unit = unit; spriteCount = files[0].SpriteCount; meta = meta</comment>
+  </data>
+  <data name="Message_371" xml:space="preserve">
+    <value>{label} {count}개 파일 {unit} {spriteCount}개{meta}</value>
+    <comment>label = label; count = files.Count; unit = unit; spriteCount = files.Sum(r =&gt; r.SpriteCount); meta = meta</comment>
+  </data>
+  <data name="Message_372" xml:space="preserve">
+    <value> · 옛 결과 {value}개 정리(앱 휴지통)</value>
+    <comment>value = entry?.Files.Count ?? 0</comment>
+  </data>
+  <data name="Message_373" xml:space="preserve">
+    <value> · 옛 결과 정리 실패({message})</value>
+    <comment>message = ex.Message</comment>
+  </data>
+  <data name="Message_374" xml:space="preserve">
+    <value>내보내지 못했습니다.
+{message}</value>
+    <comment>message = ex.Message</comment>
+  </data>
+  <data name="Message_375" xml:space="preserve">
+    <value>이름 바꿈: {value}</value>
+    <comment>value = Path.GetFileName(newPath)</comment>
+  </data>
+  <data name="Message_376" xml:space="preserve">
+    <value>열린 프로젝트 파일을 휴지통으로 보냈습니다: {value} — 저장하면 다시 만듭니다.</value>
+    <comment>value = Path.GetFileName(path)</comment>
+  </data>
+  <data name="Message_377" xml:space="preserve">
+    <value>휴지통으로 보낸 {value}의 저장하지 않은 변경을 메모리에서 버렸습니다{unsavedSuffix}</value>
+    <comment>value = Path.GetFileName(path); unsavedSuffix = UnsavedSuffix</comment>
+  </data>
+  <data name="Message_378" xml:space="preserve">
+    <value>"{value}" 파일이 밖에서 바뀌었지만 메모리의 저장하지 않은 변경을 그대로 둡니다 — 저장하면 덮어씁니다.</value>
+    <comment>value = Path.GetFileName(disk)</comment>
+  </data>
+  <data name="Message_379" xml:space="preserve">
+    <value>"{displayName}" 파일이 밖에서 바뀌었습니다.
+다시 불러오면 지금 수정한 내용은 사라집니다. 다시 불러올까요?</value>
+    <comment>displayName = p.DisplayName</comment>
+  </data>
+  <data name="Message_380" xml:space="preserve">
+    <value>"{displayName}" 파일이 밖에서 바뀌었습니다. 다시 불러올까요?</value>
+    <comment>displayName = p.DisplayName</comment>
+  </data>
+  <data name="Message_381" xml:space="preserve">
+    <value>실행취소: {label}</value>
+    <comment>label = label</comment>
+  </data>
+  <data name="Message_382" xml:space="preserve">
+    <value>다시 실행: {label}</value>
+    <comment>label = label</comment>
+  </data>
+  <data name="Message_383" xml:space="preserve">
+    <value>복사: {width}×{height}</value>
+    <comment>width = clip.Width; height = clip.Height</comment>
+  </data>
+  <data name="Message_384" xml:space="preserve">
+    <value>잘라내기: {width}×{height}</value>
+    <comment>width = clip.Width; height = clip.Height</comment>
+  </data>
+  <data name="Message_385" xml:space="preserve">
+    <value>붙여넣기: {width}×{height} — 끌어서 옮기고 Enter로 내려놓기</value>
+    <comment>width = clip.Width; height = clip.Height</comment>
+  </data>
+  <data name="Message_386" xml:space="preserve">
+    <value>{label}(선택) — Enter로 내려놓기</value>
+    <comment>label = label</comment>
+  </data>
+  <data name="Message_387" xml:space="preserve">
+    <value>{label}(현재 셀)</value>
+    <comment>label = label</comment>
+  </data>
+  <data name="Message_388" xml:space="preserve">
+    <value>외곽선 {n}픽셀</value>
+    <comment>n = n</comment>
+  </data>
+  <data name="Message_389" xml:space="preserve">
+    <value>색 바꾸기: {n}픽셀</value>
+    <comment>n = n</comment>
+  </data>
+  <data name="Message_390" xml:space="preserve">
+    <value>"{name}" 스킨: {name2}</value>
+    <comment>name = group.Name; name2 = group.ActiveSkin!.Name</comment>
+  </data>
+  <data name="Message_391" xml:space="preserve">
+    <value>"{name}" 그룹은 스킨이 하나뿐입니다 — 타임라인 이름 칸의 스킨 칩을 눌러 스킨 관리 창에서 스킨을 더하세요.</value>
+    <comment>name = group.Name</comment>
+  </data>
+  <data name="Message_392" xml:space="preserve">
+    <value>지금 프레임 {count}개·레이어·태그를 버리고, 현재 프레임 그림을 나눈 {count2}개 프레임으로 바꿉니다. 실행취소할 수 없습니다.</value>
+    <comment>count = p.Frames.Count; count2 = rects.Count</comment>
+  </data>
+  <data name="Message_393" xml:space="preserve">
+    <value>격자로 나눔: 프레임 {count}개 ({width}×{height}) — 태그를 만들어 애니메이션을 정하세요.</value>
+    <comment>count = split.Frames.Count; width = split.Width; height = split.Height</comment>
+  </data>
+  <data name="Message_394" xml:space="preserve">
+    <value>AI 연결용 내부 서버(MCP)를 시작하지 못했습니다.
+{message}</value>
+    <comment>message = ex.Message</comment>
+  </data>
+  <data name="Message_395" xml:space="preserve">
+    <value>크기는 1~{maxSize} 사이여야 합니다: {width}×{height}</value>
+    <comment>maxSize = PixelImage.MaxSize; width = width; height = height</comment>
+  </data>
+  <data name="Message_396" xml:space="preserve">
+    <value>쓸 수 없는 파일 이름입니다: {fileName}</value>
+    <comment>fileName = fileName</comment>
+  </data>
+  <data name="Message_397" xml:space="preserve">
+    <value>이미 같은 이름의 파일이 있습니다: {path}</value>
+    <comment>path = path</comment>
+  </data>
+  <data name="Message_398" xml:space="preserve">
+    <value>새 프로젝트 {width}×{height} — 아직 저장 위치 없음</value>
+    <comment>width = width; height = height</comment>
+  </data>
+  <data name="Message_399" xml:space="preserve">
+    <value>새 프로젝트를 만들었지만 저장하지 못했습니다: {saveMessage}</value>
+    <comment>saveMessage = saveMessage</comment>
+  </data>
+  <data name="Message_400" xml:space="preserve">
+    <value>새 프로젝트 {width}×{height} → {path}</value>
+    <comment>width = width; height = height; path = path</comment>
+  </data>
+  <data name="Shortcut_DuplicateId" xml:space="preserve">
+    <value>단축키 명령 이름이 겹칩니다: {id}</value>
+    <comment>id = 충돌한 단축키 식별자</comment>
+  </data>
+  <data name="Shortcut_CommitSelection" xml:space="preserve">
+    <value>선택 내려놓기</value>
+  </data>
+  <data name="Shortcut_DeselectCanvas" xml:space="preserve">
+    <value>선택 해제(캔버스)</value>
+  </data>
+  <data name="Shortcut_PeekPrevious" xml:space="preserve">
+    <value>이전 프레임 보기(누르고 있기)</value>
+  </data>
+  <data name="Shortcut_CycleSelection" xml:space="preserve">
+    <value>선택 칸(다음 선택 도구)</value>
+  </data>
+  <data name="Shortcut_NudgeOne" xml:space="preserve">
+    <value>1px {direction} 옮기기</value>
+    <comment>direction = 이동 방향</comment>
+  </data>
+  <data name="Shortcut_NudgeEight" xml:space="preserve">
+    <value>8px {direction} 옮기기</value>
+    <comment>direction = 이동 방향</comment>
+  </data>
+  <data name="Shortcut_CycleAgain" xml:space="preserve">
+    <value>{tool} — 10초 안에 {shortcut}를 한 번 더 누르면 다음 선택 도구로 바뀝니다.</value>
+    <comment>tool = 선택 도구 이름; shortcut = 선택 칸 단축키</comment>
+  </data>
+  <data name="Message_NoOutlinePixels" xml:space="preserve">
+    <value>외곽선을 그릴 곳이 없습니다(불투명 픽셀이 없음).</value>
+  </data>
+  <data name="Menu_Category_Ai" xml:space="preserve">
+    <value>AI(_A)</value>
+  </data>
+  <data name="ShortcutCategory_File" xml:space="preserve">
+    <value>파일</value>
+  </data>
+  <data name="ShortcutCategory_Edit" xml:space="preserve">
+    <value>편집</value>
+  </data>
+  <data name="ShortcutCategory_View" xml:space="preserve">
+    <value>보기</value>
+  </data>
+  <data name="ShortcutCategory_FrameLayer" xml:space="preserve">
+    <value>프레임·레이어</value>
+  </data>
+  <data name="ShortcutCategory_Tools" xml:space="preserve">
+    <value>도구</value>
+  </data>
+  <data name="ShortcutCategory_Test" xml:space="preserve">
+    <value>테스트</value>
+  </data>
+  <data name="ShortcutCategory_Ai" xml:space="preserve">
+    <value>AI</value>
+  </data>
+  <data name="ShortcutCategory_Help" xml:space="preserve">
+    <value>도움말</value>
+  </data>
+  <data name="Export_FailureTitle" xml:space="preserve">
+    <value>내보내기 실패</value>
+  </data>
+  <data name="Export_TrashOne" xml:space="preserve"><value>내보내기 정리: {name}</value><comment>name = 이번 내보내기에서 지운 기존 결과 파일.</comment></data>
+  <data name="Export_TrashMany" xml:space="preserve"><value>내보내기 정리: {name} 외 {count}개</value><comment>name = 첫 파일 이름; count = 그 밖의 파일 수.</comment></data>
+  <data name="Edit_AddOutline" xml:space="preserve"><value>외곽선 추가</value></data>
+  <data name="Edit_ReplaceColor" xml:space="preserve"><value>색 바꾸기</value></data>
+</root>

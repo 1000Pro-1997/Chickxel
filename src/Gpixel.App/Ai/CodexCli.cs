@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -22,10 +23,10 @@ public sealed partial class CodexProvider : AiProvider
     public override string Name => "Codex";
     public override string ProductName => "Codex CLI";
     public override string Command => "codex";
-    public override string AccountText => "ChatGPT 구독(Plus·Pro 등) 계정";
+    public override string AccountText => UiStrings.S_CodexCli_AccountText_1E08625C6D;
     public override IReadOnlyList<string> LoginArgs { get; } = ["login"];
     public override bool LoginTakesCode => false;
-    public override string PathExample => "예: /opt/homebrew/bin/codex";
+    public override string PathExample => UiStrings.S_CodexCli_PathExample_3ED981ED48;
 
     public override IReadOnlyList<(string Title, string Command)> InstallCommands
     {
@@ -59,7 +60,7 @@ public sealed partial class CodexProvider : AiProvider
         var line = text.Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.StartsWith("Logged in", StringComparison.OrdinalIgnoreCase));
         if (run.ExitCode == 0 && line is not null)
         {
-            var method = line.Contains("ChatGPT", StringComparison.OrdinalIgnoreCase) ? "ChatGPT 계정" : line.Contains("API key", StringComparison.OrdinalIgnoreCase) ? "API 키" : null;
+            var method = line.Contains("ChatGPT", StringComparison.OrdinalIgnoreCase) ? UiStrings.S_CodexCli_GetAuthStatusAsync_B4C85F6401 : line.Contains("API key", StringComparison.OrdinalIgnoreCase) ? UiStrings.S_CodexCli_GetAuthStatusAsync_A733CEFDD4 : null;
             return new AuthStatus(true, null, null, method, null);
         }
         bool notLoggedIn = text.Contains("Not logged in", StringComparison.OrdinalIgnoreCase);
@@ -88,12 +89,12 @@ public sealed partial class CodexProvider : AiProvider
         var configured = ConfiguredModel();
         var list = new List<ModelChoice>
         {
-            new(null, configured is not null ? $"기본 · {Display(configured)}" : "기본 · Codex 기본 모델",
-                configured is not null ? $"Codex 설정(config.toml)의 모델({configured})을 씁니다." : "Codex 기본값을 씁니다(config.toml에 model이 없음)."),
+            new(null, configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_7FE99F2479,Display(configured)) : UiStrings.S_CodexCli_Models_7DA9DF3E69,
+                configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_C805CAE060,configured) : UiStrings.S_CodexCli_Models_BB8E3AA96C),
         };
         foreach (var (slug, name, description) in models) list.Add(new ModelChoice(slug, name, description));
         if (settings.CodexModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
-            list.Add(new ModelChoice(custom, custom, "설정 파일에 적힌 모델"));
+            list.Add(new ModelChoice(custom, custom, UiStrings.S_CodexCli_Models_58FF126F54));
         return list;
     }
 
@@ -229,7 +230,7 @@ public sealed class CodexSession : IChatSession
             File.WriteAllBytes(file, png);
             images.Add(file);
         }
-        _pendingText = text.Length > 0 ? text : "(이미지)";
+        _pendingText = text.Length > 0 ? text : UiStrings.S_CodexCli_Send_08F762A264;
         _pendingImages = images;
         IsTurnActive = true;
         try
@@ -450,7 +451,7 @@ public sealed class CodexSession : IChatSession
     {
         KillProcess();
         SessionId = null;
-        Notice?.Invoke("이전 대화를 이어 가지 못해 새 대화로 보냈습니다.");
+        Notice?.Invoke(UiStrings.S_CodexCli_RestartFresh_C0DA978EB6);
         try
         {
             StartProcess();
@@ -492,7 +493,7 @@ public sealed class CodexSession : IChatSession
                 Finish(new TurnResult(false, null, null, null, null));
                 break;
             case "turn.failed":
-                var message = AiCli.Str(o["error"]?["message"]) ?? _lastError ?? "알 수 없는 오류";
+                var message = AiCli.Str(o["error"]?["message"]) ?? _lastError ?? UiStrings.S_CodexCli_Handle_5F455D112B;
                 Finish(new TurnResult(true, null, message, null, null, IsAuthError(message)));
                 break;
             case "error":
@@ -566,7 +567,7 @@ public sealed class CodexSession : IChatSession
     {
         var text = content is JsonArray a
             ? a.OfType<JsonObject>().Where(b => AiCli.Str(b["type"]) == "text").Select(b => AiCli.Str(b["text"])).FirstOrDefault(s => !string.IsNullOrEmpty(s))
-              ?? (a.OfType<JsonObject>().Any(b => AiCli.Str(b["type"]) == "image") ? "(이미지)" : null)
+              ?? (a.OfType<JsonObject>().Any(b => AiCli.Str(b["type"]) == "image") ? UiStrings.S_CodexCli_ResultText_5FD63B1BE7 : null)
             : null;
         text = (text ?? "").Trim();
         return text.Length > 300 ? text[..300] + "…" : text;

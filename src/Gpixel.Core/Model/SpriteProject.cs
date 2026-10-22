@@ -1,5 +1,6 @@
 using System.Drawing;
 using Gpixel.Core.Edit;
+using Gpixel.Core.Localization;
 
 namespace Gpixel.Core.Model;
 
@@ -25,7 +26,7 @@ namespace Gpixel.Core.Model;
 /// </summary>
 public sealed partial class SpriteProject
 {
-    public const string UntitledName = "새 프로젝트";
+    public static string UntitledName => DomainStrings.Project_UntitledName;
     public const string FileExtension = ".gpixel";
 
     private readonly List<Layer> _layers = new();
@@ -62,10 +63,10 @@ public sealed partial class SpriteProject
     internal static SpriteProject CreateBlank(int width, int height) => new(width, height, addDefaults: false);
 
     /// <summary>이미지 한 장(레이어 1개 · 프레임 1개)으로 새 프로젝트를 만든다.</summary>
-    public static SpriteProject FromImage(PixelImage image, string layerName = "레이어 1")
+    public static SpriteProject FromImage(PixelImage image, string? layerName = null)
     {
         var p = CreateBlank(image.Width, image.Height);
-        var layer = new Layer(layerName);
+        var layer = new Layer(layerName ?? p.NextLayerName());
         var frame = new Frame();
         p._layers.Add(layer);
         p._frames.Add(frame);
@@ -215,15 +216,15 @@ public sealed partial class SpriteProject
     /// 지금 스킨의 셀을 통째로 바꾼다(null = 비우기 — 첫 스킨이 아니면 다시 첫 스킨 셀을 물려받음, 실행취소됨).
     /// 이미지 크기는 캔버스(부위면 부위) 크기와 같아야 한다. 그룹이면 <see cref="InvalidOperationException"/>.
     /// </summary>
-    public void SetCel(int layerIndex, int frameIndex, PixelImage? image, string label = "셀 바꾸기")
+    public void SetCel(int layerIndex, int frameIndex, PixelImage? image, string? label = null)
     {
         var layer = _layers[layerIndex];
         if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
         var key = new CelKey(layer, _frames[frameIndex], ActiveKey(layer));
         var size = CelSize(layer);
         if (image is not null && image.Size != size)
-            throw new ArgumentException(layer.IsPart ? "셀 크기는 부위 크기와 같아야 합니다." : "셀 크기는 캔버스 크기와 같아야 합니다.", nameof(image));
-        Edit(label, ProjectChange.Pixels, () =>
+            throw new ArgumentException(layer.IsPart ? DomainStrings.Project_PartCelSizeMismatch : DomainStrings.Project_CanvasCelSizeMismatch, nameof(image));
+        Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
         {
             if (image is null) _cels.Remove(key);
             else _cels[key] = image;
@@ -241,13 +242,13 @@ public sealed partial class SpriteProject
     /// </summary>
     public int MapCels(string label, Func<Layer, Frame, bool> include, Func<PixelImage, PixelImage?> map)
     {
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         var changes = new List<(CelKey Key, PixelImage Image)>();
         foreach (var (key, cel) in _cels)
         {
             if (key.Layer.Locked || (key.Layer.Parent?.Locked ?? false) || !include(key.Layer, key.Frame)) continue;
             if (map(cel) is not { } image) continue;
-            if (image.Size != cel.Size) throw new ArgumentException("바꾼 셀 이미지 크기가 원래 셀과 다릅니다.", nameof(map));
+            if (image.Size != cel.Size) throw new ArgumentException(DomainStrings.Project_ChangedCelSizeMismatch, nameof(map));
             changes.Add((key, image));
         }
         if (changes.Count == 0) return 0;
@@ -283,7 +284,7 @@ public sealed partial class SpriteProject
         Func<Layer, PixelImage, PixelImage>? celMap = null)
     {
         if (target.Width != _width || target.Height != _height)
-            throw new ArgumentException("대상 이미지 크기가 캔버스와 다릅니다.", nameof(target));
+            throw new ArgumentException(DomainStrings.Project_TargetCanvasSizeMismatch, nameof(target));
         target.Clear();
         var frame = _frames[frameIndex];
         PixelImage? CelOf(Layer layer)
@@ -312,7 +313,7 @@ public sealed partial class SpriteProject
     /// </summary>
     public PixelImage FlattenGroup(Layer group, int frameIndex, Skin? skin = null)
     {
-        if (!group.IsGroup) throw new ArgumentException("그룹 레이어가 아닙니다.", nameof(group));
+        if (!group.IsGroup) throw new ArgumentException(DomainStrings.Project_NotGroupLayer, nameof(group));
         var result = new PixelImage(_width, _height);
         var frame = _frames[frameIndex];
         PixelImage? CelOf(Layer part) => !part.Visible ? null : skin is null ? GetCel(part, frame) : GetSkinCel(part, frame, skin);
@@ -434,8 +435,8 @@ public sealed partial class SpriteProject
         var layer = _layers[layerIndex];
         var frame = _frames[frameIndex];
         if (layer.IsGroup) throw new InvalidOperationException(GroupHasNoCelsMessage);
-        if (_stroke is not null) CommitCelStroke("편집");
-        if (IsLayerLocked(layerIndex)) throw new InvalidOperationException("잠긴 레이어에는 그릴 수 없습니다.");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
+        if (IsLayerLocked(layerIndex)) throw new InvalidOperationException(DomainStrings.Project_LockedLayerCannotDraw);
         var key = new CelKey(layer, frame, ActiveKey(layer));
         bool created = !_cels.TryGetValue(key, out var image);
         if (created)
@@ -487,14 +488,14 @@ public sealed partial class SpriteProject
     /// <summary>열린 스트로크를 확정한 뒤 실행취소.</summary>
     public bool Undo()
     {
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         return History.Undo();
     }
 
     /// <summary>열린 스트로크를 확정한 뒤 다시 실행.</summary>
     public bool Redo()
     {
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         return History.Redo();
     }
 
@@ -514,7 +515,7 @@ public sealed partial class SpriteProject
             action();
             return;
         }
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         var before = Snapshot.Capture(this);
         _editDepth++;
         try
@@ -544,7 +545,7 @@ public sealed partial class SpriteProject
 
     // ───────────── 레이어 ─────────────
 
-    private const string GroupHasNoCelsMessage = "그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요.";
+    private static string GroupHasNoCelsMessage => DomainStrings.Project_GroupCannotDraw;
 
     /// <summary>그룹의 부위들(아래 → 위). 그룹이 아니면 빈 목록.</summary>
     public IReadOnlyList<Layer> ChildrenOf(Layer group)
@@ -594,7 +595,7 @@ public sealed partial class SpriteProject
     private Layer RequirePart(int layerIndex)
     {
         var layer = _layers[layerIndex];
-        return layer.IsPart ? layer : throw new ArgumentException("부위 레이어가 아닙니다.", nameof(layerIndex));
+        return layer.IsPart ? layer : throw new ArgumentException(DomainStrings.Project_NotPartLayer, nameof(layerIndex));
     }
 
     /// <summary>빈 일반 레이어를 <paramref name="index"/>(기본: 맨 위, 그룹 안이면 그 그룹 위)에 넣는다.</summary>
@@ -602,7 +603,7 @@ public sealed partial class SpriteProject
     {
         int at = TopLevelInsertIndex(index ?? _layers.Count);
         var layer = new Layer(string.IsNullOrWhiteSpace(name) ? NextLayerName() : UniqueLayerName(name.Trim()));
-        Edit("레이어 추가", ProjectChange.Layers, () => _layers.Insert(at, layer));
+        Edit(DomainStrings.Project_AddLayer, ProjectChange.Layers, () => _layers.Insert(at, layer));
         return layer;
     }
 
@@ -610,8 +611,8 @@ public sealed partial class SpriteProject
     public Layer AddGroup(string? name = null, int? index = null)
     {
         int at = TopLevelInsertIndex(index ?? _layers.Count);
-        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? "그룹" : name.Trim())) { Kind = LayerKind.Group };
-        Edit("그룹 추가", ProjectChange.Layers, () => _layers.Insert(at, group));
+        var group = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultGroupName : name.Trim())) { Kind = LayerKind.Group };
+        Edit(DomainStrings.Project_AddGroup, ProjectChange.Layers, () => _layers.Insert(at, group));
         return group;
     }
 
@@ -622,16 +623,16 @@ public sealed partial class SpriteProject
     public Layer AddPart(Layer group, string? name, int width, int height, Point? offset = null)
     {
         if (!group.IsGroup || !_layers.Contains(group))
-            throw new ArgumentException("부위는 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.", nameof(group));
+            throw new ArgumentException(DomainStrings.Project_AddPartRequiresGroup, nameof(group));
         ValidatePartSize(width, height);
-        var part = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? "부위" : name.Trim()))
+        var part = new Layer(UniqueLayerName(string.IsNullOrWhiteSpace(name) ? DomainStrings.Project_DefaultPartName : name.Trim()))
         {
             Kind = LayerKind.Part,
             Parent = group,
             PartSize = new Size(width, height),
             PartOffset = offset ?? new Point((_width - width) / 2, (_height - height) / 2),
         };
-        Edit("부위 추가", ProjectChange.Layers, () => _layers.Insert(_layers.IndexOf(group), part));
+        Edit(DomainStrings.Project_AddPart, ProjectChange.Layers, () => _layers.Insert(_layers.IndexOf(group), part));
         return part;
     }
 
@@ -641,8 +642,8 @@ public sealed partial class SpriteProject
         var part = RequirePart(layerIndex);
         if (part.PartOffset == offset) return;
         if (part.IsAutoLaidOut)
-            throw new InvalidOperationException($"그룹 \"{part.Parent!.Name}\"은(는) 자동 배치 중이라 부위를 옮길 수 없습니다 — 먼저 자동 배치를 끄세요.");
-        Edit("부위 위치", ProjectChange.Layers | ProjectChange.Pixels, () => part.PartOffset = offset);
+            throw new InvalidOperationException(DomainStrings.FormatProject_AutoLayoutBlocksMove(name: part.Parent!.Name));
+        Edit(DomainStrings.Project_MovePart, ProjectChange.Layers | ProjectChange.Pixels, () => part.PartOffset = offset);
     }
 
     /// <summary>
@@ -651,10 +652,10 @@ public sealed partial class SpriteProject
     /// </summary>
     public void SetGroupLayout(Layer group, GroupLayout? layout)
     {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("이 프로젝트의 그룹 레이어가 아닙니다.", nameof(group));
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
         layout = layout?.Normalized();
         if (Equals(group.AutoLayout, layout)) return;
-        var label = layout is null ? "자동 배치 끄기" : group.AutoLayout is null ? "자동 배치" : "자동 배치 설정";
+        var label = layout is null ? DomainStrings.Project_DisableAutoLayout : group.AutoLayout is null ? DomainStrings.Project_AutoLayout : DomainStrings.Project_AutoLayoutSettings;
         Edit(label, ProjectChange.Layers | ProjectChange.Pixels, () => group.AutoLayout = layout);
     }
 
@@ -700,7 +701,7 @@ public sealed partial class SpriteProject
         var (px, py) = part.PartPivot.ToLocalPixel(old.Width, old.Height);
         var pivot = new Pivot((px + ox) / width, 1f - (py + oy) / height);
         var offset = new Point(part.PartOffset.X - ox, part.PartOffset.Y - oy);
-        Edit("부위 크기", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_ResizePart, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             foreach (var (key, cel) in CelsOf(part)) _cels[key] = cel.ResizeCanvas(width, height, anchor);
             part.PartSize = new Size(width, height);
@@ -713,21 +714,21 @@ public sealed partial class SpriteProject
     public void SetPartPivot(int layerIndex, Pivot pivot)
     {
         var part = RequirePart(layerIndex);
-        Edit("부위 피벗", ProjectChange.Layers, () => part.PartPivot = pivot);
+        Edit(DomainStrings.Project_PartPivot, ProjectChange.Layers, () => part.PartPivot = pivot);
     }
 
     /// <summary>부위 9-slice 테두리(px). 부위 아틀라스 내보내기에 쓴다.</summary>
     public void SetPartBorder(int layerIndex, SpriteBorder border)
     {
         var part = RequirePart(layerIndex);
-        Edit("부위 테두리", ProjectChange.Layers, () => part.PartBorder = border);
+        Edit(DomainStrings.Project_PartBorder, ProjectChange.Layers, () => part.PartBorder = border);
     }
 
     /// <summary>그룹 접기/펼치기(타임라인 표시용, 실행취소·수정됨 표시 없음).</summary>
     public void SetLayerCollapsed(int layerIndex, bool collapsed)
     {
         var group = _layers[layerIndex];
-        if (!group.IsGroup) throw new ArgumentException("그룹 레이어가 아닙니다.", nameof(layerIndex));
+        if (!group.IsGroup) throw new ArgumentException(DomainStrings.Project_NotGroupLayer, nameof(layerIndex));
         if (group.Collapsed == collapsed) return;
         group.Collapsed = collapsed;
         NotifyChanged(ProjectChange.Layers, markDirty: false);
@@ -748,14 +749,14 @@ public sealed partial class SpriteProject
     public Layer DuplicateLayer(int index)
     {
         var src = _layers[index];
-        return Edit("레이어 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        return Edit(DomainStrings.Project_DuplicateLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             var skinMap = new Dictionary<Skin, Skin>();
             if (src is { IsPart: true, Parent: { IsGroup: true } group })
                 // 같은 그룹 안 부위 복제: 원래 부위 전용 스킨을 복사본 전용으로도 하나씩 만든다.
                 foreach (var s in src.OwnSkins)
                 {
-                    var dup = new Skin(UniqueSkinName(group, s.Name + " 복사"));
+                    var dup = new Skin(UniqueSkinName(group, DomainStrings.FormatProject_CopiedName(name: s.Name)));
                     skinMap[s] = dup;
                     group.SkinList.Add(dup);
                 }
@@ -818,8 +819,8 @@ public sealed partial class SpriteProject
         var layer = _layers[index];
         int start = layer.IsGroup ? BlockStart(index) : index;
         int count = index - start + 1;
-        if (_layers.Count - count < 1) throw new InvalidOperationException("마지막 레이어는 지울 수 없습니다.");
-        Edit("레이어 삭제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        if (_layers.Count - count < 1) throw new InvalidOperationException(DomainStrings.Project_CannotDeleteLastLayer);
+        Edit(DomainStrings.Project_DeleteLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             foreach (var l in _layers.GetRange(start, count))
                 foreach (var (key, _) in CelsOf(l)) _cels.Remove(key);
@@ -842,7 +843,7 @@ public sealed partial class SpriteProject
             int g = _layers.IndexOf(layer.Parent!);
             to = Math.Clamp(to, g - ChildCount(g), g - 1);
             if (from == to) return;
-            Edit("레이어 이동", ProjectChange.Layers, () =>
+            Edit(DomainStrings.Project_MoveLayer, ProjectChange.Layers, () =>
             {
                 _layers.RemoveAt(from);
                 _layers.Insert(to, layer);
@@ -864,7 +865,7 @@ public sealed partial class SpriteProject
         }
         if (at == start) return;
         var block = _layers.GetRange(start, count);
-        Edit("레이어 이동", ProjectChange.Layers, () =>
+        Edit(DomainStrings.Project_MoveLayer, ProjectChange.Layers, () =>
         {
             _layers.RemoveRange(start, count);
             _layers.InsertRange(at, block);
@@ -906,12 +907,12 @@ public sealed partial class SpriteProject
     /// </summary>
     public void MergeLayerDown(int index)
     {
-        if (index <= 0 || index >= _layers.Count) throw new ArgumentOutOfRangeException(nameof(index), "아래에 병합할 레이어가 없습니다.");
+        if (index <= 0 || index >= _layers.Count) throw new ArgumentOutOfRangeException(nameof(index), DomainStrings.Project_NoLayerBelow);
         var upper = _layers[index];
         var lower = _layers[index - 1];
         if (upper.Kind != LayerKind.Normal || lower.Kind != LayerKind.Normal)
-            throw new InvalidOperationException("부위·그룹 레이어는 아래로 병합할 수 없습니다.");
-        Edit("아래 레이어와 병합", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            throw new InvalidOperationException(DomainStrings.Project_CannotMergePartGroup);
+        Edit(DomainStrings.Project_MergeDown, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다.
             (PixelImage Image, int OffsetX, int OffsetY) RenderUpper(CelKey key, PixelImage cel)
@@ -946,7 +947,7 @@ public sealed partial class SpriteProject
     public void SetLayerProperties(int index, string? name = null, bool? visible = null, bool? locked = null, byte? opacity = null)
     {
         var layer = _layers[index];
-        Edit("레이어 속성", ProjectChange.Layers, () =>
+        Edit(DomainStrings.Project_LayerProperties, ProjectChange.Layers, () =>
         {
             if (!string.IsNullOrWhiteSpace(name)) layer.Name = name.Trim();
             if (visible is { } v) layer.Visible = v;
@@ -961,7 +962,7 @@ public sealed partial class SpriteProject
         var layer = _layers[index];
         var list = effects.ToArray();
         if (layer.Effects.SequenceEqual(list)) return;
-        Edit("레이어 효과", ProjectChange.Layers, () => layer.Effects = list);
+        Edit(DomainStrings.Project_LayerEffects, ProjectChange.Layers, () => layer.Effects = list);
     }
 
     /// <summary>
@@ -998,10 +999,10 @@ public sealed partial class SpriteProject
     public (IReadOnlyList<LayerEffect> Baked, FrameRange? Frames, int Cels, bool Grown) BakeLayerEffects(int layerIndex, IEnumerable<int> effectIndices)
     {
         var layer = _layers[layerIndex];
-        if (layer.IsGroup) throw new InvalidOperationException("그룹 효과는 영구 적용할 수 없습니다 — 부위에 적용하세요.");
-        if (layer.Locked || layer.Parent is { Locked: true }) throw new InvalidOperationException("잠긴 레이어에는 효과를 영구 적용할 수 없습니다.");
+        if (layer.IsGroup) throw new InvalidOperationException(DomainStrings.Project_CannotBakeGroupEffects);
+        if (layer.Locked || layer.Parent is { Locked: true }) throw new InvalidOperationException(DomainStrings.Project_CannotBakeLockedLayerEffects);
         var order = LayerEffects.BakeSet(layer.Effects, effectIndices);
-        if (order.Count == 0) throw new ArgumentException("영구 적용할 효과가 없습니다.", nameof(effectIndices));
+        if (order.Count == 0) throw new ArgumentException(DomainStrings.Project_NoEffectsToBake, nameof(effectIndices));
         LayerEffect[] baked = [.. order.Select(i => layer.Effects[i] with { Enabled = true })];
         LayerEffect[] rest = [.. layer.Effects.Where((_, i) => !order.Contains(i))];
         FrameRange? range = baked.Any(e => e.Frames is null) ? null
@@ -1025,7 +1026,7 @@ public sealed partial class SpriteProject
         }
         bool grow = area != keep;
         if (grow) ValidatePartSize(area.Width, area.Height);
-        Edit("효과 영구 적용", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_BakeEffects, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             if (grow)
             {
@@ -1056,15 +1057,15 @@ public sealed partial class SpriteProject
 
     private int RequireSkin(Layer group, Skin skin)
     {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("이 프로젝트의 그룹 레이어가 아닙니다.", nameof(group));
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
         int index = group.SkinList.IndexOf(skin);
-        return index >= 0 ? index : throw new ArgumentException("그룹에 없는 스킨입니다.", nameof(skin));
+        return index >= 0 ? index : throw new ArgumentException(DomainStrings.Project_SkinNotInGroup, nameof(skin));
     }
 
     private Layer RequireGroupPart(Layer part)
     {
         if (!part.IsPart || part.Parent is not { IsGroup: true } group || !_layers.Contains(part))
-            throw new ArgumentException("이 프로젝트의 그룹에 든 부위 레이어가 아닙니다.", nameof(part));
+            throw new ArgumentException(DomainStrings.Project_PartNotInProjectGroup, nameof(part));
         return group;
     }
 
@@ -1072,7 +1073,7 @@ public sealed partial class SpriteProject
     public string UniqueSkinName(Layer group, string baseName, Skin? self = null)
     {
         baseName = baseName.Trim();
-        if (baseName.Length == 0) baseName = "스킨";
+        if (baseName.Length == 0) baseName = DomainStrings.Project_DefaultSkinName;
         bool Taken(string n) => group.SkinList.Any(s => !ReferenceEquals(s, self) && s.Name == n);
         if (!Taken(baseName)) return baseName;
         for (int i = 2; ; i++)
@@ -1088,10 +1089,10 @@ public sealed partial class SpriteProject
     /// </summary>
     public Skin AddSkin(Layer group, string? name = null, Skin? copyFrom = null)
     {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("스킨은 이 프로젝트의 그룹 레이어에만 넣을 수 있습니다.", nameof(group));
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_AddSkinRequiresGroup, nameof(group));
         if (copyFrom is not null) RequireSkin(group, copyFrom);
-        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? "스킨" : copyFrom.Name + " 복사") : name));
-        Edit(copyFrom is null ? "스킨 추가" : "스킨 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? DomainStrings.Project_DefaultSkinName : DomainStrings.FormatProject_CopiedName(name: copyFrom.Name)) : name));
+        Edit(copyFrom is null ? DomainStrings.Project_AddSkin : DomainStrings.Project_DuplicateSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             group.SkinList.Insert(GroupSkinCount(group), skin);
             if (copyFrom is not null)
@@ -1119,9 +1120,9 @@ public sealed partial class SpriteProject
     {
         var group = RequireGroupPart(part);
         if (copyFrom is not null && (RequireSkin(group, copyFrom) < 0 || copyFrom.Owner is not null && !ReferenceEquals(copyFrom.Owner, part)))
-            throw new ArgumentException("이 부위가 고를 수 없는 스킨입니다.", nameof(copyFrom));
-        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? part.Name + " 스킨" : copyFrom.Name + " 복사") : name), part);
-        Edit(copyFrom is null ? "부위 스킨 추가" : "부위 스킨 복제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+            throw new ArgumentException(DomainStrings.Project_InvalidPartSkin, nameof(copyFrom));
+        var skin = new Skin(UniqueSkinName(group, string.IsNullOrWhiteSpace(name) ? (copyFrom is null ? DomainStrings.FormatProject_PartSkinName(part: part.Name) : DomainStrings.FormatProject_CopiedName(name: copyFrom.Name)) : name), part);
+        Edit(copyFrom is null ? DomainStrings.Project_AddPartSkin : DomainStrings.Project_DuplicatePartSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             group.SkinList.Add(skin);
             if (copyFrom is not null) CopySkinCels(part, copyFrom, skin);
@@ -1136,7 +1137,7 @@ public sealed partial class SpriteProject
     {
         RequireSkin(group, skin);
         if (skin.Owner is null) return;
-        Edit("전체 스킨으로 올리기", ProjectChange.Layers, () =>
+        Edit(DomainStrings.Project_PromoteSkin, ProjectChange.Layers, () =>
         {
             group.SkinList.Remove(skin);
             skin.Owner = null;
@@ -1151,10 +1152,10 @@ public sealed partial class SpriteProject
     public void DemoteSkin(Layer group, Skin skin, Layer part)
     {
         int index = RequireSkin(group, skin);
-        if (!ReferenceEquals(RequireGroupPart(part), group)) throw new ArgumentException("그룹의 부위가 아닙니다.", nameof(part));
+        if (!ReferenceEquals(RequireGroupPart(part), group)) throw new ArgumentException(DomainStrings.Project_PartNotInGroup, nameof(part));
         if (skin.Owner is not null) return;
-        if (index == 0 || GroupSkinCount(group) <= 1) throw new InvalidOperationException("첫 스킨(기본)은 부위 전용으로 내릴 수 없습니다.");
-        Edit("부위 전용으로 내리기", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        if (index == 0 || GroupSkinCount(group) <= 1) throw new InvalidOperationException(DomainStrings.Project_CannotDemoteBaseSkin);
+        Edit(DomainStrings.Project_DemoteSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             foreach (var other in ChildrenOf(group))
             {
@@ -1175,11 +1176,11 @@ public sealed partial class SpriteProject
     {
         RequireSkin(group, skin);
         name = name.Trim();
-        if (name.Length == 0) throw new ArgumentException("스킨 이름이 비어 있습니다.", nameof(name));
+        if (name.Length == 0) throw new ArgumentException(DomainStrings.Project_EmptySkinName, nameof(name));
         if (group.SkinList.Any(s => !ReferenceEquals(s, skin) && s.Name == name))
-            throw new ArgumentException($"그룹에 이미 같은 이름의 스킨이 있습니다: {name}", nameof(name));
+            throw new ArgumentException(DomainStrings.FormatProject_DuplicateSkinName(name: name), nameof(name));
         if (skin.Name == name) return;
-        Edit("스킨 이름", ProjectChange.Layers, () => skin.Name = name);
+        Edit(DomainStrings.Project_RenameSkin, ProjectChange.Layers, () => skin.Name = name);
     }
 
     /// <summary>
@@ -1190,9 +1191,9 @@ public sealed partial class SpriteProject
     public void DeleteSkin(Layer group, Skin skin)
     {
         int index = RequireSkin(group, skin);
-        if (skin.Owner is null && GroupSkinCount(group) <= 1) throw new InvalidOperationException("그룹의 마지막 스킨은 지울 수 없습니다.");
+        if (skin.Owner is null && GroupSkinCount(group) <= 1) throw new InvalidOperationException(DomainStrings.Project_CannotDeleteLastSkin);
         bool wasActive = ReferenceEquals(group.ActiveSkin, skin);
-        Edit("스킨 삭제", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_DeleteSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             var skins = group.SkinList;
             foreach (var part in ChildrenOf(group))
@@ -1217,13 +1218,13 @@ public sealed partial class SpriteProject
     /// </summary>
     public void MoveSkin(Layer group, int from, int to)
     {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("이 프로젝트의 그룹 레이어가 아닙니다.", nameof(group));
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
         var skins = group.SkinList;
         int count = GroupSkinCount(group);
         if (from < 0 || from >= count) throw new ArgumentOutOfRangeException(nameof(from));
         to = Math.Clamp(to, 0, count - 1);
         if (from == to) return;
-        Edit("스킨 순서", ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_ReorderSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             var oldBase = skins[0];
             var skin = skins[from];
@@ -1262,7 +1263,7 @@ public sealed partial class SpriteProject
         var own = group.SkinList.Where(s => ReferenceEquals(s.Owner, skin.Owner)).ToList();
         int at = own.IndexOf(skin), target = Math.Clamp(at + delta, 0, own.Count - 1);
         if (at == target) return;
-        Edit("스킨 순서", ProjectChange.Layers, () =>
+        Edit(DomainStrings.Project_ReorderSkin, ProjectChange.Layers, () =>
         {
             // 같은 부위 전용 스킨들이 차지한 자리는 그대로 두고, 그 자리 안에서 순서만 옮긴다.
             var skins = group.SkinList;
@@ -1280,9 +1281,9 @@ public sealed partial class SpriteProject
     public void SetActiveSkin(Layer group, Skin skin)
     {
         RequireSkin(group, skin);
-        if (skin.Owner is not null) throw new ArgumentException("부위 전용 스킨은 그룹 전체에 입힐 수 없습니다 — 그 부위에 입히세요.", nameof(skin));
+        if (skin.Owner is not null) throw new ArgumentException(DomainStrings.Project_PartSkinCannotApplyToGroup, nameof(skin));
         if (ReferenceEquals(group.ActiveSkin, skin)) return;
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         group.SetActiveSkinRaw(skin);
         NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
     }
@@ -1298,10 +1299,10 @@ public sealed partial class SpriteProject
         {
             RequireSkin(group, skin);
             if (skin.Owner is not null && !ReferenceEquals(skin.Owner, part))
-                throw new ArgumentException("다른 부위 전용 스킨입니다.", nameof(skin));
+                throw new ArgumentException(DomainStrings.Project_OtherPartSkin, nameof(skin));
         }
         if (ReferenceEquals(part.SkinOverride, skin)) return;
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         part.SetSkinOverrideRaw(skin);
         NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
     }
@@ -1309,10 +1310,10 @@ public sealed partial class SpriteProject
     /// <summary>그룹의 모든 부위 재정의를 지워 그룹 스킨을 따르게 한다(바뀐 것이 있으면 true, 실행취소 기록 없음).</summary>
     public bool ResetPartSkins(Layer group)
     {
-        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException("이 프로젝트의 그룹 레이어가 아닙니다.", nameof(group));
+        if (!group.IsGroup || !_layers.Contains(group)) throw new ArgumentException(DomainStrings.Project_GroupNotInProject, nameof(group));
         var parts = ChildrenOf(group).Where(p => p.SkinOverrideRaw is not null).ToList();
         if (parts.Count == 0) return false;
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         bool visible = parts.Any(p => p.SkinOverride is not null);
         foreach (var p in parts) p.SetSkinOverrideRaw(null);
         if (visible) NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
@@ -1341,14 +1342,14 @@ public sealed partial class SpriteProject
 
     private void RequireOutfit(Outfit outfit)
     {
-        if (!_outfits.Contains(outfit)) throw new ArgumentException("이 프로젝트의 착장이 아닙니다.", nameof(outfit));
+        if (!_outfits.Contains(outfit)) throw new ArgumentException(DomainStrings.Project_OutfitNotInProject, nameof(outfit));
     }
 
     /// <summary>겹치지 않는 착장 이름(겹치면 " 2", " 3" …). 비면 "착장".</summary>
     public string UniqueOutfitName(string baseName, Outfit? self = null)
     {
         baseName = baseName.Trim();
-        if (baseName.Length == 0) baseName = "착장";
+        if (baseName.Length == 0) baseName = DomainStrings.Project_DefaultOutfitName;
         bool Taken(string n) => _outfits.Any(o => !ReferenceEquals(o, self) && o.Name == n);
         if (!Taken(baseName)) return baseName;
         for (int i = 2; ; i++)
@@ -1374,7 +1375,7 @@ public sealed partial class SpriteProject
     {
         var (slots, parts) = CaptureOutfit();
         var outfit = new Outfit(UniqueOutfitName(name ?? ""), slots, parts);
-        Edit("착장 저장", ProjectChange.Layers | ProjectChange.Settings, () => _outfits.Add(outfit));
+        Edit(DomainStrings.Project_SaveOutfit, ProjectChange.Layers | ProjectChange.Settings, () => _outfits.Add(outfit));
         return outfit;
     }
 
@@ -1383,7 +1384,7 @@ public sealed partial class SpriteProject
     {
         RequireOutfit(outfit);
         var (slots, parts) = CaptureOutfit();
-        Edit("착장 덮어쓰기", ProjectChange.Layers | ProjectChange.Settings, () =>
+        Edit(DomainStrings.Project_OverwriteOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
         {
             outfit.Slots = slots;
             outfit.Parts = parts;
@@ -1395,18 +1396,18 @@ public sealed partial class SpriteProject
     {
         RequireOutfit(outfit);
         name = name.Trim();
-        if (name.Length == 0) throw new ArgumentException("착장 이름이 비어 있습니다.", nameof(name));
+        if (name.Length == 0) throw new ArgumentException(DomainStrings.Project_EmptyOutfitName, nameof(name));
         if (_outfits.Any(o => !ReferenceEquals(o, outfit) && o.Name == name))
-            throw new ArgumentException($"이미 같은 이름의 착장이 있습니다: {name}", nameof(name));
+            throw new ArgumentException(DomainStrings.FormatProject_DuplicateOutfitName(name: name), nameof(name));
         if (outfit.Name == name) return;
-        Edit("착장 이름", ProjectChange.Layers | ProjectChange.Settings, () => outfit.Name = name);
+        Edit(DomainStrings.Project_RenameOutfit, ProjectChange.Layers | ProjectChange.Settings, () => outfit.Name = name);
     }
 
     /// <summary>착장 삭제(프레임 시트 내보내기 착장 목록에서도 뺀다, 실행취소됨).</summary>
     public void DeleteOutfit(Outfit outfit)
     {
         RequireOutfit(outfit);
-        Edit("착장 삭제", ProjectChange.Layers | ProjectChange.Settings, () =>
+        Edit(DomainStrings.Project_DeleteOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
         {
             _outfits.Remove(outfit);
             foreach (var o in (SheetOptions?[])[Export.Common, Export.PartsOverride])
@@ -1420,7 +1421,7 @@ public sealed partial class SpriteProject
         var outfit = _outfits[from];
         to = Math.Clamp(to, 0, _outfits.Count - 1);
         if (from == to) return;
-        Edit("착장 순서", ProjectChange.Layers | ProjectChange.Settings, () =>
+        Edit(DomainStrings.Project_ReorderOutfit, ProjectChange.Layers | ProjectChange.Settings, () =>
         {
             _outfits.RemoveAt(from);
             _outfits.Insert(to, outfit);
@@ -1433,13 +1434,13 @@ public sealed partial class SpriteProject
         var missing = new List<string>();
         foreach (var (group, skin) in outfit.Slots)
         {
-            if (!_layers.Contains(group)) missing.Add($"\"{group.Name}\" 그룹이 없습니다");
-            else if (!group.SkinList.Contains(skin)) missing.Add($"\"{group.Name}\" 그룹에 \"{skin.Name}\" 스킨이 없습니다");
+            if (!_layers.Contains(group)) missing.Add(DomainStrings.FormatProject_MissingOutfitGroup(name: group.Name));
+            else if (!group.SkinList.Contains(skin)) missing.Add(DomainStrings.FormatProject_MissingOutfitGroupSkin(group: group.Name, skin: skin.Name));
         }
         foreach (var (part, skin) in outfit.Parts)
         {
-            if (!_layers.Contains(part) || part.Parent is not { IsGroup: true } g) missing.Add($"\"{part.Name}\" 부위가 없습니다");
-            else if (!g.SkinList.Contains(skin)) missing.Add($"\"{part.Name}\" 부위의 \"{skin.Name}\" 스킨이 없습니다");
+            if (!_layers.Contains(part) || part.Parent is not { IsGroup: true } g) missing.Add(DomainStrings.FormatProject_MissingOutfitPart(name: part.Name));
+            else if (!g.SkinList.Contains(skin)) missing.Add(DomainStrings.FormatProject_MissingOutfitPartSkin(part: part.Name, skin: skin.Name));
         }
         return missing;
     }
@@ -1452,7 +1453,7 @@ public sealed partial class SpriteProject
     public IReadOnlyList<string> ApplyOutfit(Outfit outfit)
     {
         RequireOutfit(outfit);
-        if (_stroke is not null) CommitCelStroke("편집");
+        if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         bool changed = false;
         foreach (var (group, skin) in outfit.Slots)
         {
@@ -1527,7 +1528,7 @@ public sealed partial class SpriteProject
         int at = Math.Clamp(index ?? _frames.Count, 0, _frames.Count);
         var frame = new Frame();
         if (_frames.Count > 0) frame.DurationMs = _frames[Math.Max(0, at - 1)].DurationMs;
-        Edit("프레임 추가", ProjectChange.Frames | ProjectChange.Tags, () =>
+        Edit(DomainStrings.Project_AddFrame, ProjectChange.Frames | ProjectChange.Tags, () =>
         {
             _frames.Insert(at, frame);
             foreach (var t in _tags)
@@ -1545,7 +1546,7 @@ public sealed partial class SpriteProject
     {
         var src = _frames[index];
         var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
-        Edit("프레임 복제", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_DuplicateFrame, ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             _frames.Insert(index + 1, copy);
             foreach (var (key, cel) in CelsOf(src)) _cels[key with { Frame = copy }] = cel.Clone();
@@ -1570,10 +1571,10 @@ public sealed partial class SpriteProject
     public void ExtendFrames(FrameExtension extension)
     {
         var x = extension;
-        if (x.To >= _frames.Count) throw new ArgumentOutOfRangeException(nameof(extension), $"프레임 범위가 잘못되었습니다: {x.From + 1}~{x.To + 1}");
+        if (x.To >= _frames.Count) throw new ArgumentOutOfRangeException(nameof(extension), DomainStrings.FormatFrames_InvalidRange(from: x.From + 1, to: x.To + 1));
         if (x.Added == 0) return;
         var sources = _frames.GetRange(x.From, x.Length);
-        Edit("프레임 늘리기", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_ExtendFrames, ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             var cels = new List<(CelKey Key, PixelImage Cel)>?[x.Length];
             var result = new Frame[x.Count];
@@ -1610,9 +1611,9 @@ public sealed partial class SpriteProject
     /// </summary>
     public void DeleteFrame(int index)
     {
-        if (_frames.Count <= 1) throw new InvalidOperationException("마지막 프레임은 삭제할 수 없습니다.");
+        if (_frames.Count <= 1) throw new InvalidOperationException(DomainStrings.Project_CannotDeleteLastFrame);
         var frame = _frames[index];
-        Edit("프레임 삭제", ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_DeleteFrame, ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             _frames.RemoveAt(index);
             foreach (var (key, _) in CelsOf(frame)) _cels.Remove(key);
@@ -1636,7 +1637,7 @@ public sealed partial class SpriteProject
         var frame = _frames[from];
         to = Math.Clamp(to, 0, _frames.Count - 1);
         if (from == to) return;
-        Edit("프레임 이동", ProjectChange.Frames, () =>
+        Edit(DomainStrings.Project_MoveFrame, ProjectChange.Frames, () =>
         {
             _frames.RemoveAt(from);
             _frames.Insert(to, frame);
@@ -1669,21 +1670,21 @@ public sealed partial class SpriteProject
     public void SetFrameDuration(int index, int durationMs)
     {
         var frame = _frames[index];
-        Edit("프레임 길이", ProjectChange.Frames, () => frame.DurationMs = durationMs);
+        Edit(DomainStrings.Project_FrameDuration, ProjectChange.Frames, () => frame.DurationMs = durationMs);
     }
 
     /// <summary>프레임 피벗 재정의(null = 기본 피벗 사용).</summary>
     public void SetFramePivot(int index, Pivot? pivot)
     {
         var frame = _frames[index];
-        Edit("프레임 피벗", ProjectChange.Frames, () => frame.Pivot = pivot);
+        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () => frame.Pivot = pivot);
     }
 
     /// <summary>내보낼 칸 이름 재정의(null/빈 문자열 = 이름 규칙 사용).</summary>
     public void SetFrameName(int index, string? name)
     {
         var frame = _frames[index];
-        Edit("프레임 이름", ProjectChange.Frames, () => frame.Name = string.IsNullOrWhiteSpace(name) ? null : name.Trim());
+        Edit(DomainStrings.Project_FrameName, ProjectChange.Frames, () => frame.Name = string.IsNullOrWhiteSpace(name) ? null : name.Trim());
     }
 
     // ───────────── 태그 ─────────────
@@ -1699,7 +1700,7 @@ public sealed partial class SpriteProject
             Loop = loop,
             Color = AnimationTag.DefaultColors[_tags.Count % AnimationTag.DefaultColors.Count],
         };
-        Edit("태그 추가", ProjectChange.Tags, () => _tags.Add(tag));
+        Edit(DomainStrings.Project_AddTag, ProjectChange.Tags, () => _tags.Add(tag));
         return tag;
     }
 
@@ -1711,7 +1712,7 @@ public sealed partial class SpriteProject
         var newName = string.IsNullOrWhiteSpace(name) ? tag.Name : name.Trim();
         int newFrom = from ?? tag.From, newTo = to ?? tag.To;
         ValidateTag(newName, newFrom, newTo, tag);
-        Edit("태그 편집", ProjectChange.Tags, () =>
+        Edit(DomainStrings.Project_EditTag, ProjectChange.Tags, () =>
         {
             tag.Name = newName;
             tag.From = newFrom;
@@ -1725,16 +1726,16 @@ public sealed partial class SpriteProject
     public void RemoveTag(int index)
     {
         var tag = _tags[index];
-        Edit("태그 삭제", ProjectChange.Tags, () => _tags.Remove(tag));
+        Edit(DomainStrings.Project_DeleteTag, ProjectChange.Tags, () => _tags.Remove(tag));
     }
 
     private void ValidateTag(string name, int from, int to, AnimationTag? self)
     {
-        if (name.Length == 0) throw new ArgumentException("태그 이름이 비어 있습니다.", nameof(name));
+        if (name.Length == 0) throw new ArgumentException(DomainStrings.Project_EmptyTagName, nameof(name));
         if (_tags.Any(t => !ReferenceEquals(t, self) && t.Name == name))
-            throw new ArgumentException($"이미 같은 이름의 태그가 있습니다: {name}", nameof(name));
+            throw new ArgumentException(DomainStrings.FormatProject_DuplicateTagName(name: name), nameof(name));
         if (from < 0 || to >= _frames.Count || from > to)
-            throw new ArgumentOutOfRangeException(nameof(from), $"태그 프레임 범위가 잘못되었습니다: {from}~{to}");
+            throw new ArgumentOutOfRangeException(nameof(from), DomainStrings.FormatProject_InvalidTagRange(from: from, to: to));
     }
 
     // ───────────── 캔버스 ─────────────
@@ -1759,7 +1760,7 @@ public sealed partial class SpriteProject
     {
         ValidateSize(width, height);
         if (image.Width < 1 || image.Height < 1 || image.Width > PixelImage.MaxSize || image.Height > PixelImage.MaxSize)
-            throw new ArgumentOutOfRangeException(nameof(image), $"그림 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {image.Width}x{image.Height}");
+            throw new ArgumentOutOfRangeException(nameof(image), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: image.Width, height: image.Height));
         int oldW = _width, oldH = _height;
         if (width == oldW && height == oldH && image == new Rectangle(0, 0, oldW, oldH)) return;
         float sx = (float)image.Width / oldW, sy = (float)image.Height / oldH;
@@ -1778,7 +1779,7 @@ public sealed partial class SpriteProject
             int w = Math.Clamp(MapX(r.Right) - left, 1, PixelImage.MaxSize), h = Math.Clamp(MapY(r.Bottom) - top, 1, PixelImage.MaxSize);
             return (Part: part, Rect: new Rectangle(left, top, w, h));
         }).ToList();
-        Edit("캔버스 크기", ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
+        Edit(DomainStrings.Project_CanvasSize, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
             foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).ToList())
                 _cels[key] = ImageTransform.ResizeCanvasScaled(_cels[key], width, height, image);
@@ -1815,7 +1816,7 @@ public sealed partial class SpriteProject
     public void FlipCanvasHorizontal()
     {
         int w = _width;
-        TransformCanvas("좌우 뒤집기", ImageTransform.FlipHorizontal, p => new Pivot(1f - p.X, p.Y),
+        TransformCanvas(DomainStrings.Project_FlipHorizontal, ImageTransform.FlipHorizontal, p => new Pivot(1f - p.X, p.Y),
             r => new Rectangle(w - r.Right, r.Y, r.Width, r.Height),
             b => new SpriteBorder(b.Right, b.Top, b.Left, b.Bottom));
     }
@@ -1824,7 +1825,7 @@ public sealed partial class SpriteProject
     public void FlipCanvasVertical()
     {
         int h = _height;
-        TransformCanvas("상하 뒤집기", ImageTransform.FlipVertical, p => new Pivot(p.X, 1f - p.Y),
+        TransformCanvas(DomainStrings.Project_FlipVertical, ImageTransform.FlipVertical, p => new Pivot(p.X, 1f - p.Y),
             r => new Rectangle(r.X, h - r.Bottom, r.Width, r.Height),
             b => new SpriteBorder(b.Left, b.Bottom, b.Right, b.Top));
     }
@@ -1834,11 +1835,11 @@ public sealed partial class SpriteProject
     {
         int w = _width, h = _height;
         if (clockwise)
-            TransformCanvas("시계 방향 회전", img => ImageTransform.Rotate90(img, true), p => new Pivot(p.Y, 1f - p.X),
+            TransformCanvas(DomainStrings.Project_RotateClockwise, img => ImageTransform.Rotate90(img, true), p => new Pivot(p.Y, 1f - p.X),
                 r => new Rectangle(h - r.Bottom, r.X, r.Height, r.Width),
                 b => new SpriteBorder(b.Bottom, b.Left, b.Top, b.Right));
         else
-            TransformCanvas("반시계 방향 회전", img => ImageTransform.Rotate90(img, false), p => new Pivot(1f - p.Y, p.X),
+            TransformCanvas(DomainStrings.Project_RotateCounterclockwise, img => ImageTransform.Rotate90(img, false), p => new Pivot(1f - p.Y, p.X),
                 r => new Rectangle(r.Y, w - r.Right, r.Height, r.Width),
                 b => new SpriteBorder(b.Top, b.Right, b.Bottom, b.Left));
     }
@@ -1922,7 +1923,10 @@ public sealed partial class SpriteProject
     public string NextLayerName()
     {
         for (int i = _layers.Count + 1; ; i++)
-            if (_layers.All(l => l.Name != $"레이어 {i}")) return $"레이어 {i}";
+        {
+            var candidate = DomainStrings.FormatProject_DefaultLayerName(number: i);
+            if (_layers.All(l => l.Name != candidate)) return candidate;
+        }
     }
 
     // ───────────── 파일 읽기·가져오기용 내부 구성 ─────────────
@@ -1983,13 +1987,13 @@ public sealed partial class SpriteProject
     private static void ValidateSize(int width, int height)
     {
         if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
-            throw new ArgumentOutOfRangeException(nameof(width), $"캔버스 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}x{height}");
+            throw new ArgumentOutOfRangeException(nameof(width), DomainStrings.FormatCanvas_InvalidSize(max: PixelImage.MaxSize, width: width, height: height));
     }
 
     private static void ValidatePartSize(int width, int height)
     {
         if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
-            throw new ArgumentException($"부위 크기는 1~{PixelImage.MaxSize} 사이여야 합니다: {width}x{height}", nameof(width));
+            throw new ArgumentException(DomainStrings.FormatProject_InvalidPartSize(max: PixelImage.MaxSize, width: width, height: height), nameof(width));
     }
 
     // ───────────── 실행취소 기록 ─────────────

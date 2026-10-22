@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -24,18 +25,18 @@ public sealed class SkinPickerWindow : DialogBase
     /// <param name="showBake">물려받은 칸 굽기를 보일지(부위 아틀라스가 이 설정을 쓰고 스킨이 둘 이상인 그룹이 있을 때).</param>
     /// <param name="frame">썸네일로 그릴 프레임 번호.</param>
     public SkinPickerWindow(SpriteProject project, SheetOptions options, bool partsOnly, bool showBake, int frame)
-        : base(partsOnly ? "부위 아틀라스 스킨 고르기" : "내보낼 스킨 고르기")
+        : base(partsOnly ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D : UiStrings.S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08)
     {
         frame = Math.Clamp(frame, 0, Math.Max(0, project.Frames.Count - 1));
         var content = new StackPanel { Spacing = 2, Width = 460 };
 
         var intro = Note(partsOnly
-            ? "체크한 스킨의 부위 스프라이트를 부위 아틀라스(와 Sprite Library)에 넣습니다."
-            : "체크한 스킨마다 프레임 시트 한 벌(그 그룹만 그 스킨, 나머지 그룹은 지금 착장)을 합성하고, 부위 아틀라스에는 그 스킨의 부위 스프라이트를 넣습니다.");
+            ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_5049C75A28
+            : UiStrings.S_SkinPickerWindow_SkinPickerWindow_09AC71786E);
         content.Children.Add(intro);
         if (options.Skins == SkinSource.Current)
         {
-            var current = Note("지금은 \"지금 착장\"으로 내보냅니다 — 스킨·착장 체크는 \"고른 스킨\"일 때 쓰이고, 레이어 체크는 늘 쓰입니다.");
+            var current = Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_A307A08B56);
             current.Foreground = AppTheme.WarningBrush;
             content.Children.Add(current);
         }
@@ -44,19 +45,19 @@ public sealed class SkinPickerWindow : DialogBase
         bool anyChoice = groups.Count > 0 || (!partsOnly && project.Outfits.Count > 0);
         if (anyChoice)
         {
-            var all = Ui.Button("모두 선택", (_, _) => SetAll(true));
-            var none = Ui.Button("모두 해제", (_, _) => SetAll(false));
-            all.Tip("모든 스킨과 착장 프리셋 체크");
-            none.Tip("모든 스킨과 착장 프리셋 체크 해제(아무것도 고르지 않으면 지금 착장으로 내보냄)");
+            var all = Ui.Button(UiStrings.S_SkinPickerWindow_SkinPickerWindow_EB479F1895, (_, _) => SetAll(true));
+            var none = Ui.Button(UiStrings.S_SkinPickerWindow_SkinPickerWindow_19FA73CDFF, (_, _) => SetAll(false));
+            all.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_6D5AE7FB88);
+            none.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FF0C503AFE);
             content.Children.Add(Ui.Row(all, none));
         }
 
         if (groups.Count > 0)
         {
-            content.Children.Add(Heading("스킨"));
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FFE48329B5));
             foreach (var group in groups)
             {
-                var name = Ui.Label(options.ExcludedLayers.Contains(group) ? $"{group.Name} (넣을 레이어에서 뺌)" : group.Name, bold: true);
+                var name = Ui.Label(options.ExcludedLayers.Contains(group) ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4,group.Name) : group.Name, bold: true);
                 name.TextWrapping = TextWrapping.Wrap;
                 content.Children.Add(name);
                 var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
@@ -64,11 +65,11 @@ public sealed class SkinPickerWindow : DialogBase
                 for (int i = 0; i < skins.Count; i++)
                 {
                     var skin = skins[i];
-                    var box = SkinBox(ImageUtil.MakeThumbnail(project.FlattenGroup(group, frame, skin), ThumbSize), i == 0 ? $"{skin.Name} (기본)" : skin.Name,
+                    var box = SkinBox(ImageUtil.MakeThumbnail(project.FlattenGroup(group, frame, skin), ThumbSize), i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_20A6248C03,skin.Name) : skin.Name,
                         options, skin, partOnly: false);
                     box.Tip(i == 0
-                        ? $"\"{group.Name}\"의 첫 스킨(기본) — 다른 스킨이 그리지 않은 칸은 이 그림을 물려받습니다"
-                        : $"\"{group.Name}\" 그룹을 \"{skin.Name}\"으로");
+                        ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_11E58C3A27,group.Name)
+                        : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55,group.Name,skin.Name));
                     wrap.Children.Add(box);
                 }
                 content.Children.Add(wrap);
@@ -77,7 +78,7 @@ public sealed class SkinPickerWindow : DialogBase
                 {
                     var own = part.OwnSkins;
                     if (own.Count == 0) continue;
-                    var partName = Ui.Label($"{part.Name} 전용");
+                    var partName = Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_4B4DDD65E9,part.Name));
                     partName.Foreground = AppTheme.DimTextBrush;
                     partName.Margin = new Thickness(20, 0, 0, 0);
                     content.Children.Add(partName);
@@ -88,7 +89,7 @@ public sealed class SkinPickerWindow : DialogBase
                         var cel = project.GetSkinCel(part, f, skin);
                         var thumb = ImageUtil.MakeThumbnail(cel ?? new PixelImage(Math.Max(1, part.PartSize.Width), Math.Max(1, part.PartSize.Height)), ThumbSize);
                         var box = SkinBox(thumb, skin.Name, options, skin, partOnly: true);
-                        box.Tip($"\"{part.Name}\" 부위 전용(개별) 스킨 — 그 부위만 \"{skin.Name}\", 나머지는 지금 착장(부위 아틀라스: {part.Name}@{skin.Name}, Sprite Library: 기본 + {skin.Name})");
+                        box.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_6068D0001B,part.Name,skin.Name,part.Name,skin.Name,skin.Name));
                         partWrap.Children.Add(box);
                     }
                     content.Children.Add(partWrap);
@@ -98,8 +99,8 @@ public sealed class SkinPickerWindow : DialogBase
 
         if (!partsOnly && project.Outfits.Count > 0)
         {
-            content.Children.Add(Heading("착장 프리셋"));
-            content.Children.Add(Note("프레임 시트만 — 체크한 착장마다 합성 한 벌(이름 뒤 @착장). 부위 아틀라스에는 쓰이지 않습니다."));
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA));
+            content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1));
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
             foreach (var outfit in project.Outfits)
             {
@@ -111,22 +112,22 @@ public sealed class SkinPickerWindow : DialogBase
             content.Children.Add(wrap);
         }
         else if (!partsOnly && groups.Count > 0)
-            content.Children.Add(Note("착장 프리셋은 스킨 관리 창에서 저장하면 여기에 나옵니다(프레임 시트만)."));
+            content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_FC0997D1E7));
 
         var tops = project.Layers.Where(l => !l.IsPart).Reverse().ToList();
         if (tops.Count > 0)
         {
-            content.Children.Add(Heading("합성에 넣을 레이어"));
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_76ACD5089E));
             content.Children.Add(Note(partsOnly
-                ? "끈 그룹의 부위는 부위 아틀라스에서 뺍니다."
-                : "끈 레이어는 프레임 시트 합성에서 빼고(그룹은 스킨 칸째), 그룹이면 그 부위를 부위 아틀라스에서도 뺍니다 — 예: 장비 그룹만 남기면 장비만의 시트."));
+                ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CB68D989C3
+                : UiStrings.S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A));
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
             foreach (var layer in tops)
             {
-                var text = (layer.IsGroup ? $"{layer.Name} (그룹)" : layer.Name) + (layer.Visible ? "" : " (숨김)");
+                var text = (layer.IsGroup ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_8923EA543C,layer.Name) : layer.Name) + (layer.Visible ? "" : UiStrings.S_SkinPickerWindow_SkinPickerWindow_5EBB32EC59);
                 var box = Ui.Check(text, !options.ExcludedLayers.Contains(layer));
                 box.Margin = new Thickness(0, 1, 10, 1);
-                if (!layer.Visible) box.Tip("숨긴 레이어는 켜 두어도 합성되지 않습니다");
+                if (!layer.Visible) box.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF);
                 _layers.Add((layer, box));
                 wrap.Children.Add(box);
             }
@@ -135,16 +136,16 @@ public sealed class SkinPickerWindow : DialogBase
 
         if (showBake)
         {
-            content.Children.Add(Heading("부위 아틀라스"));
-            _bake = Ui.Check("물려받은 칸도 이 스킨 스프라이트로", options.BakeInheritedSkins);
-            _bake.Tip("끄면(기본): 첫 스킨이 아닌 스킨이 직접 그리지 않아 첫 스킨 그림을 물려받는 칸은 첫 스킨 스프라이트를 같이 씁니다(Sprite Library도 그 스프라이트를 가리킴). " +
-                      "첫 스킨을 체크하지 않아도 남은 스킨이 물려받는 칸의 첫 스킨 스프라이트는 남깁니다.\n" +
-                      "켜면: 물려받는 칸도 스킨마다 {이름}@{스킨} 스프라이트로 따로 넣어 스킨마다 스스로 완결됩니다(스킨마다 따로 파일·.spriteLib 하나만 가져가도 됨, 시트가 커짐).");
+            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_275C0DD513));
+            _bake = Ui.Check(UiStrings.S_SkinPickerWindow_SkinPickerWindow_D6CC3CF8C8, options.BakeInheritedSkins);
+            _bake.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F0212A544D +
+                      UiStrings.S_SkinPickerWindow_SkinPickerWindow_7865C277F0 +
+                      UiStrings.S_SkinPickerWindow_SkinPickerWindow_945A308427);
             content.Children.Add(_bake);
         }
 
         if (!anyChoice && tops.Count == 0 && !showBake)
-            content.Children.Add(Note("고를 스킨·레이어가 없습니다(그룹에 부위를 넣으면 스킨이 생깁니다)."));
+            content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_3CDC91DE0A));
 
         Body.Children.Add(new ScrollViewer
         {
@@ -194,7 +195,7 @@ public sealed class SkinPickerWindow : DialogBase
         Padding = new Thickness(3, 0),
         Margin = new Thickness(4, 0, 0, 0),
         VerticalAlignment = VerticalAlignment.Center,
-        Child = new TextBlock { Text = "개별", FontSize = AppTheme.SmallFontSize - 1, Foreground = Brushes.White },
+        Child = new TextBlock { Text = UiStrings.S_SkinPickerWindow_Badge_42A5136FFC, FontSize = AppTheme.SmallFontSize - 1, Foreground = Brushes.White },
     };
 
     /// <summary>체크한 스킨 수(부위 전용 스킨 포함) + 체크한 착장 프리셋 수(<paramref name="countOutfits"/>면) — "스킨 고르기… (N개)"의 N.</summary>

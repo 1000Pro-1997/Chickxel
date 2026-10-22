@@ -1,5 +1,6 @@
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -25,13 +26,13 @@ public sealed class ExportPresetBar : StackPanel
         _ctx = ctx;
         _owner = owner;
         Spacing = 2;
-        var save = Ui.Button("지금 설정 저장…", (_, _) => Dispatcher.UIThread.Post(SaveCurrent))
-            .Tip("지금 내보내기 설정을 이름 붙여 저장합니다(파일 이름·폴더·고른 스킨·착장·뺀 레이어·Single 프레임·원래 위치 유지는 담지 않음)");
-        var load = Ui.Button(VectorIcon.ChevronDown, "불러오기", iconAfter: true);
-        load.Tip("프리셋을 지금 프로젝트에 적용(실행취소 1단계)");
+        var save = Ui.Button(UiStrings.S_ExportPresetBar_ExportPresetBar_9E8DD13E00, (_, _) => Dispatcher.UIThread.Post(SaveCurrent))
+            .Tip(UiStrings.S_ExportPresetBar_ExportPresetBar_72F5D68487);
+        var load = Ui.Button(VectorIcon.ChevronDown, UiStrings.S_ExportPresetBar_ExportPresetBar_BEC700FE09, iconAfter: true);
+        load.Tip(UiStrings.S_ExportPresetBar_ExportPresetBar_DDF907B1A3);
         load.Click += (_, _) => PopupMenus.Show(load, LoadMenu(), PlacementMode.BottomEdgeAlignedLeft);
-        var manage = Ui.Button(VectorIcon.ChevronDown, "관리", iconAfter: true);
-        manage.Tip("사용자 프리셋 이름 바꾸기·덮어쓰기·삭제, JSON 내보내기/가져오기");
+        var manage = Ui.Button(VectorIcon.ChevronDown, UiStrings.S_ExportPresetBar_ExportPresetBar_50C0B7CDEB, iconAfter: true);
+        manage.Tip(UiStrings.S_ExportPresetBar_ExportPresetBar_C683C9E2EF);
         manage.Click += (_, _) => PopupMenus.Show(manage, ManageMenu(), PlacementMode.BottomEdgeAlignedLeft);
         _status = new TextBlock
         {
@@ -40,9 +41,9 @@ public sealed class ExportPresetBar : StackPanel
             FontSize = AppTheme.SmallFontSize,
             Margin = new Thickness(3, 0),
         };
-        var reset = Ui.Button("기본 설정으로", (_, _) => Apply(ExportPreset.Capture(new ExportSettings(), "기본 설정")))
-            .Tip("내보내기 설정을 처음 값으로 되돌립니다(파일 이름·폴더는 그대로, 실행취소 1단계)");
-        Children.Add(new TextBlock { Text = "내보내기 설정 프리셋", FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(3, 0, 0, 2) });
+        var reset = Ui.Button(UiStrings.S_ExportPresetBar_ExportPresetBar_DE19EC40C8, (_, _) => Apply(ExportPreset.Capture(new ExportSettings(), UiStrings.S_ExportPresetBar_ExportPresetBar_E8C9321AD2)))
+            .Tip(UiStrings.S_ExportPresetBar_ExportPresetBar_6D9C82EDAC);
+        Children.Add(new TextBlock { Text = UiStrings.S_ExportPresetBar_ExportPresetBar_F85EC90A49, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(3, 0, 0, 2) });
         Children.Add(new WrapPanel { Orientation = Orientation.Horizontal, Children = { save, load, manage, reset } });
         Children.Add(_status);
         try
@@ -51,19 +52,19 @@ public sealed class ExportPresetBar : StackPanel
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            _loadError = $"내보내기 설정 프리셋 파일을 읽지 못했습니다 — 저장한 프리셋이 보이지 않습니다(새로 저장하면 이 파일을 덮어씁니다).\n{FilePath}\n{ex.Message}";
+            _loadError = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_ExportPresetBar_C497FB9B10,FilePath,ex.Message);
         }
         owner.Opened += (_, _) =>
         {
             if (_loadError is not { } error) return;
             _loadError = null;
-            Dispatcher.UIThread.Post(() => Ui.Error(_owner, error, "내보내기 설정 프리셋"));
+            Dispatcher.UIThread.Post(() => Ui.Error(_owner, error, UiStrings.S_ExportPresetBar_ExportPresetBar_F85EC90A49));
         };
         UpdateStatus();
     }
 
     private void UpdateStatus()
-        => _status.Text = _user.Count == 0 ? "저장한 프리셋 없음 — 기본 제공 프리셋 3개를 불러올 수 있습니다." : $"저장한 프리셋 {_user.Count}개";
+        => _status.Text = _user.Count == 0 ? UiStrings.S_ExportPresetBar_UpdateStatus_EFC93D73C4 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_UpdateStatus_93769D0977,_user.Count);
 
     private static TextBlock Plain(string text) => new() { Text = text };
 
@@ -78,23 +79,32 @@ public sealed class ExportPresetBar : StackPanel
 
     private static string Describe(ExportPreset p)
     {
-        string output = p.ExportFrames && p.ExportParts ? "프레임 시트 + 부위 아틀라스" : p.ExportParts ? "부위 아틀라스" : "프레임 시트";
-        var parts = new List<string> { output, p.Sheet.Layout == SheetLayout.Packed ? "자동 배치" : "격자", p.Sheet.Skins == SkinSource.Selected ? "고른 스킨" : "지금 착장" };
-        if (p.Sheet.SplitSkins) parts.Add("스킨마다 따로 파일");
+        string output = p.ExportFrames && p.ExportParts ? UiStrings.S_ExportPresetBar_Describe_70797FAAFD : p.ExportParts ? UiStrings.S_ExportPresetBar_Describe_D33CCA9022 : UiStrings.S_ExportPresetBar_Describe_CFA916E467;
+        var parts = new List<string> { output, p.Sheet.Layout == SheetLayout.Packed ? UiStrings.S_ExportPresetBar_Describe_447C8E9BD3 : UiStrings.S_ExportPresetBar_Describe_12A18F746C, p.Sheet.Skins == SkinSource.Selected ? UiStrings.S_ExportPresetBar_Describe_DB36FF4EB4 : UiStrings.S_ExportPresetBar_Describe_3967EC3179 };
+        if (p.Sheet.SplitSkins) parts.Add(UiStrings.S_ExportPresetBar_Describe_4D11265826);
         if (p.WriteSpriteLibrary) parts.Add("Sprite Library");
-        if (p.PartsSheet is not null) parts.Add("시트별 다르게");
+        if (p.PartsSheet is not null) parts.Add(UiStrings.S_ExportPresetBar_Describe_01183ED0E2);
         parts.Add(p.ImageFormat.ToString().ToUpperInvariant());
         return string.Join(" · ", parts);
     }
 
     // ───────────── 불러오기 ─────────────
 
+    private static string DisplayName(ExportPreset preset)
+    {
+        var builtIns = ExportPresets.BuiltIns;
+        return ReferenceEquals(preset, builtIns[0]) ? UiStrings.ExportPreset_BuiltInFrame
+            : ReferenceEquals(preset, builtIns[1]) ? UiStrings.ExportPreset_BuiltInParts
+            : ReferenceEquals(preset, builtIns[2]) ? UiStrings.ExportPreset_BuiltInSplitSkins
+            : preset.Name;
+    }
+
     private List<Control> LoadMenu()
     {
         var items = new List<Control>();
-        foreach (var b in ExportPresets.BuiltIns) items.Add(Item(b.Name + " (기본 제공)", () => Apply(b), tip: Describe(b)));
+        foreach (var b in ExportPresets.BuiltIns) items.Add(Item(DisplayName(b) + UiStrings.S_ExportPresetBar_LoadMenu_1E058AEC83, () => Apply(b), tip: Describe(b)));
         items.Add(new Separator());
-        if (_user.Count == 0) items.Add(Item("(저장한 프리셋 없음)", () => { }, enabled: false));
+        if (_user.Count == 0) items.Add(Item(UiStrings.S_ExportPresetBar_LoadMenu_29443BE920, () => { }, enabled: false));
         foreach (var u in _user) items.Add(Item(u.Name, () => Apply(u), tip: Describe(u)));
         return items;
     }
@@ -103,8 +113,9 @@ public sealed class ExportPresetBar : StackPanel
     private void Apply(ExportPreset preset)
     {
         if (_ctx.Project is not { } p) return;
-        _ctx.Structural(() => p.Edit($"내보내기 프리셋: {preset.Name}", ProjectChange.Settings, () => preset.ApplyTo(p.Export)));
-        _status.Text = $"\"{preset.Name}\" 프리셋을 적용했습니다(실행취소 Ctrl+Z).";
+        string displayName = DisplayName(preset);
+        _ctx.Structural(() => p.Edit(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ExportPresetBar_Apply_48C0CBCB6F, displayName), ProjectChange.Settings, () => preset.ApplyTo(p.Export)));
+        _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_ExportPresetBar_Apply_4F08B4EC31, displayName);
     }
 
     // ───────────── 저장 ─────────────
@@ -112,24 +123,24 @@ public sealed class ExportPresetBar : StackPanel
     private void SaveCurrent()
     {
         if (_ctx.Project is not { } p) return;
-        var name = InputDialog.Ask(_owner, "내보내기 설정 프리셋 저장",
-            "프리셋 이름(같은 이름이 있으면 덮어쓸지 묻습니다)", _user.Count == 0 ? "내 설정" : "", _user.Select(x => x.Name))?.Trim();
+        var name = InputDialog.Ask(_owner, UiStrings.S_ExportPresetBar_SaveCurrent_EB9337B412,
+            UiStrings.S_ExportPresetBar_SaveCurrent_7205E396E6, _user.Count == 0 ? UiStrings.S_ExportPresetBar_SaveCurrent_09D4C29E84 : "", _user.Select(x => x.Name))?.Trim();
         if (string.IsNullOrEmpty(name) || !ReferenceEquals(_ctx.Project, p)) return;
         if (ExportPresets.BuiltIns.Any(b => b.Name == name))
         {
-            Ui.Warn(_owner, $"\"{name}\"은(는) 기본 제공 프리셋 이름입니다 — 다른 이름을 쓰세요.", "내보내기 설정 프리셋");
+            Ui.Warn(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_SaveCurrent_34724D1873,name), UiStrings.S_ExportPresetBar_SaveCurrent_41CDF33021);
             return;
         }
         var preset = ExportPreset.Capture(p.Export, name);
         int at = _user.FindIndex(x => x.Name == name);
         if (at >= 0)
         {
-            if (Ui.Ask(_owner, $"\"{name}\" 프리셋이 이미 있습니다. 지금 설정으로 덮어쓸까요?", "내보내기 설정 프리셋", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
+            if (Ui.Ask(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_SaveCurrent_00B001C1F1,name), UiStrings.S_ExportPresetBar_SaveCurrent_41CDF33021, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
                 return;
             _user[at] = preset;
         }
         else _user.Add(preset);
-        if (Persist()) _status.Text = $"\"{name}\" 프리셋을 저장했습니다.";
+        if (Persist()) _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_SaveCurrent_7282BD96A5,name);
     }
 
     /// <summary>사용자 프리셋을 파일에 쓴다. 실패하면 알리고 false.</summary>
@@ -143,7 +154,7 @@ public sealed class ExportPresetBar : StackPanel
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(_owner, $"프리셋을 저장하지 못했습니다.\n{FilePath}\n{ex.Message}");
+            Ui.Error(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Persist_C1A8D2BB59,FilePath,ex.Message));
             return false;
         }
     }
@@ -161,24 +172,24 @@ public sealed class ExportPresetBar : StackPanel
         }
         return
         [
-            Sub("이름 바꾸기…", Rename),
-            Sub("지금 설정으로 덮어쓰기", Overwrite),
-            Sub("삭제", Delete),
+            Sub(UiStrings.S_ExportPresetBar_ManageMenu_DF594A3D0A, Rename),
+            Sub(UiStrings.S_ExportPresetBar_ManageMenu_0EF9F7D98F, Overwrite),
+            Sub(UiStrings.S_ExportPresetBar_ManageMenu_ECEE38B4C3, Delete),
             new Separator(),
-            Item("JSON 내보내기…", ExportJson, any, "저장한 프리셋을 JSON 파일로(다른 PC·팀과 나누기)"),
-            Item("JSON 가져오기…", ImportJson, tip: "JSON 파일의 프리셋을 더합니다(같은 이름은 덮어씀)"),
+            Item(UiStrings.S_ExportPresetBar_ManageMenu_8E68D5ADAC, ExportJson, any, UiStrings.S_ExportPresetBar_ManageMenu_65698FF933),
+            Item(UiStrings.S_ExportPresetBar_ManageMenu_84D223F154, ImportJson, tip: UiStrings.S_ExportPresetBar_ManageMenu_F1E8D20766),
             new Separator(),
-            Item("기본 제공 프리셋은 바꿀 수 없습니다", () => { }, enabled: false),
+            Item(UiStrings.S_ExportPresetBar_ManageMenu_1F33244D99, () => { }, enabled: false),
         ];
     }
 
     private void Rename(ExportPreset preset)
     {
-        var name = InputDialog.Ask(_owner, "프리셋 이름 바꾸기", "프리셋 이름", preset.Name)?.Trim();
+        var name = InputDialog.Ask(_owner, UiStrings.S_ExportPresetBar_Rename_43FB8EF9FF, UiStrings.S_ExportPresetBar_Rename_0D429B5902, preset.Name)?.Trim();
         if (string.IsNullOrEmpty(name) || name == preset.Name || !_user.Contains(preset)) return;
         if (ExportPresets.BuiltIns.Any(b => b.Name == name) || _user.Any(x => x.Name == name))
         {
-            Ui.Warn(_owner, $"같은 이름의 프리셋이 이미 있습니다: {name}", "내보내기 설정 프리셋");
+            Ui.Warn(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Rename_0F719FCE1B,name), UiStrings.S_ExportPresetBar_Rename_5E8BA0D2B6);
             return;
         }
         preset.Name = name;
@@ -188,40 +199,40 @@ public sealed class ExportPresetBar : StackPanel
     private void Overwrite(ExportPreset preset)
     {
         if (_ctx.Project is not { } p || !_user.Contains(preset)) return;
-        if (Ui.Ask(_owner, $"\"{preset.Name}\" 프리셋을 지금 내보내기 설정으로 덮어쓸까요?", "내보내기 설정 프리셋", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
+        if (Ui.Ask(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Overwrite_847DE141D4,preset.Name), UiStrings.S_ExportPresetBar_Overwrite_6EB3C78D24, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
             return;
         int at = _user.IndexOf(preset);
         if (at < 0) return;
         _user[at] = ExportPreset.Capture(p.Export, preset.Name);
-        if (Persist()) _status.Text = $"\"{preset.Name}\" 프리셋을 덮어썼습니다.";
+        if (Persist()) _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Overwrite_97D7EA03EC,preset.Name);
     }
 
     private void Delete(ExportPreset preset)
     {
         if (!_user.Contains(preset)) return;
-        if (Ui.Ask(_owner, $"\"{preset.Name}\" 프리셋을 지울까요?", "내보내기 설정 프리셋", MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+        if (Ui.Ask(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_Delete_E1E1A98A56,preset.Name), UiStrings.S_ExportPresetBar_Delete_126C54B154, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         _user.Remove(preset);
         Persist();
     }
 
     private void ExportJson()
     {
-        var path = Ui.SaveFile(_owner, "내보내기 설정 프리셋 내보내기", null, "gpixel-export-presets.json", ".json", new FileFilter("JSON", "*.json"));
+        var path = Ui.SaveFile(_owner, UiStrings.S_ExportPresetBar_ExportJson_0C3C461CF9, null, "gpixel-export-presets.json", ".json", new FileFilter("JSON", "*.json"));
         if (path is null) return;
         try
         {
             File.WriteAllText(path, ExportPresets.Serialize(_user), new System.Text.UTF8Encoding(false));
-            _status.Text = $"내보냄: {path}";
+            _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_ExportJson_E9BBE0ACD2,path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(_owner, $"내보내지 못했습니다.\n{ex.Message}");
+            Ui.Error(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_ExportJson_FE6C9A75DF,ex.Message));
         }
     }
 
     private void ImportJson()
     {
-        var path = Ui.OpenFile(_owner, "내보내기 설정 프리셋 가져오기", null, new FileFilter("JSON", "*.json"));
+        var path = Ui.OpenFile(_owner, UiStrings.S_ExportPresetBar_ImportJson_A66E4FE95C, null, new FileFilter("JSON", "*.json"));
         if (path is null) return;
         List<ExportPreset> imported;
         try
@@ -230,15 +241,15 @@ public sealed class ExportPresetBar : StackPanel
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            Ui.Error(_owner, $"가져오지 못했습니다.\n{ex.Message}");
+            Ui.Error(_owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_ImportJson_8910F1240F,ex.Message));
             return;
         }
         if (imported.Count == 0)
         {
-            Ui.Info(_owner, "파일에 프리셋이 없습니다.", "내보내기 설정 프리셋");
+            Ui.Info(_owner, UiStrings.S_ExportPresetBar_ImportJson_5848A12BAD, UiStrings.S_ExportPresetBar_ImportJson_D4756C4B02);
             return;
         }
         _user = ExportPresets.Merge(_user, imported);
-        if (Persist()) _status.Text = $"프리셋 {imported.Count}개를 가져왔습니다(같은 이름은 덮어씀).";
+        if (Persist()) _status.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ExportPresetBar_ImportJson_FF70FD1897,imported.Count);
     }
 }

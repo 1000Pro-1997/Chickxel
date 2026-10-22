@@ -7,6 +7,7 @@ using Avalonia.Input.Platform;
 using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -83,14 +84,14 @@ public sealed class ChatWindow : Window
         foreach (var p in AiProvider.All)
         {
             int i = _providerToggle.Add(p.Name, (g, r, b) => VectorIcons.Draw(g, VectorIcon.Dot, r, 8, b, filled: true),
-                $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음). 탭마다 대화가 따로 있습니다.", iconAfter: true);
+                string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ChatWindow_02EFD3D4E7,p.Name,p.ProductName,p.AccountText), iconAfter: true);
             _providerToggle.SetIconVisible(i, false);
         }
         _providerToggle.SelectedIndex = _visible.Index;
         _providerToggle.SelectionChanged += (_, _) => OnProviderToggled();
         _modelHost = new Border { VerticalAlignment = VerticalAlignment.Center };
-        _newChat = Ui.Button("새 대화", (_, _) => _visible.NewConversation());
-        _newChat.Tip("이 탭의 대화를 비우고 새로 시작");
+        _newChat = Ui.Button(UiStrings.S_ChatWindow_ChatWindow_ACBC4AE706, (_, _) => _visible.NewConversation());
+        _newChat.Tip(UiStrings.S_ChatWindow_ChatWindow_8A59B9F2A0);
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), Margin = new Thickness(4, 3) };
         header.Children.Add(_status);
         Grid.SetColumn(_providerToggle, 1);
@@ -289,7 +290,7 @@ public sealed class ChatWindow : Window
             if (key == "legend" || value is null) continue;
             string text = value switch
             {
-                JsonArray a when key == "rows" => $"{a.Count}줄",
+                JsonArray a when key == "rows" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Summarize_473D2F6697,a.Count),
                 JsonArray a => $"[{a.Count}]",
                 JsonObject => "{…}",
                 _ => Shorten(value.ToString(), 18),
@@ -383,7 +384,7 @@ public sealed class ChatWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             Child = new SelectableTextBlock { Text = command, FontFamily = MonoFont, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush },
         });
-        var copy = Ui.Button("복사", (_, _) => CopyText(command));
+        var copy = Ui.Button(UiStrings.S_ChatWindow_CommandBox_05C2558491, (_, _) => CopyText(command));
         Grid.SetColumn(copy, 1);
         grid.Children.Add(copy);
         return Ui.Group(title, grid);
@@ -415,10 +416,10 @@ public sealed class ChatWindow : Window
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
             {
-                Ui.Error(this, $"브라우저를 열지 못했습니다. 주소를 복사해 브라우저에 붙여 넣으세요.\n{ex.Message}");
+                Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_LinkRow_5865E61E9C,ex.Message));
             }
         };
-        var copy = Ui.Button("복사", (_, _) => CopyText(url));
+        var copy = Ui.Button(UiStrings.S_ChatWindow_LinkRow_E4434318F0, (_, _) => CopyText(url));
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         grid.Children.Add(link);
         Grid.SetColumn(copy, 1);
@@ -519,7 +520,7 @@ public sealed class ChatWindow : Window
             _scroll.ScrollChanged += OnScrollChanged;
             _thinking = new TextBlock
             {
-                Text = "생각 중…",
+                Text = UiStrings.S_ChatWindow_ChatTab_8F1426E012,
                 Foreground = AppTheme.DimTextBrush,
                 FontStyle = FontStyle.Italic,
                 Margin = new Thickness(2, 2),
@@ -533,24 +534,24 @@ public sealed class ChatWindow : Window
                 TextWrapping = TextWrapping.Wrap,
                 MinHeight = 54,
                 MaxHeight = 160,
-                Watermark = Ui.Shortcut("메시지 (Enter 보내기, Shift+Enter 줄바꿈)"),
+                Watermark = Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC),
             };
             ScrollViewer.SetVerticalScrollBarVisibility(_input, ScrollBarVisibility.Auto);
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
-            var imageButton = Ui.Button("이미지…", (_, _) => AttachFile()).Tip("PNG·JPG·GIF·WebP 이미지를 첨부");
-            var canvasButton = Ui.Button("캔버스 첨부", (_, _) => AttachCanvas()).Tip("지금 프레임 모습을 확대해 첨부(참고 그림 — 작업 대상은 바뀌지 않음)");
+            var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
+            var canvasButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_F9D4399092, (_, _) => AttachCanvas()).Tip(UiStrings.S_ChatWindow_ChatTab_B9C7852D0E);
             _scopeToggle = new ToggleButton
             {
-                Content = "지금 레이어만",
+                Content = UiStrings.S_ChatWindow_ChatTab_498E3C255E,
                 IsChecked = _w._settings.AiCurrentLayerOnly,
                 Margin = new Thickness(3, 0, 0, 0),
                 Padding = new Thickness(8, 3),
                 VerticalAlignment = VerticalAlignment.Center,
                 Focusable = false,
-            }.Tip("켜면 보낼 때 고른 레이어(그룹이면 그 부위들)만 AI가 고칩니다. 다른 레이어·다른 파일은 볼 수만 있고, 프레임·레이어·스킨 추가 같은 구조 변경도 막습니다.");
+            }.Tip(UiStrings.S_ChatWindow_ChatTab_1B00266AAA);
             _scopeToggle.IsCheckedChanged += (_, _) => _w.SetCurrentLayerOnly(_scopeToggle.IsChecked == true);
-            _sendButton = Ui.Button("보내기", (_, _) => Send()).Tip("Enter");
-            _stopButton = Ui.Button("정지", (_, _) => StopTurn());
+            _sendButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_CF5843D1B0, (_, _) => Send()).Tip("Enter");
+            _stopButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_1CB431966C, (_, _) => StopTurn());
             _stopButton.IsVisible = false;
             var buttons = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*,Auto,Auto"), Margin = new Thickness(0, 4, 0, 0) };
             buttons.Children.Add(imageButton);
@@ -636,10 +637,10 @@ public sealed class ChatWindow : Window
             try
             {
                 LeaveLogin();
-                SetHeader("확인 중…", inChat: false);
+                SetHeader(UiStrings.S_ChatWindow_CheckAsync_F75B2590E0, inChat: false);
                 SetBody(new TextBlock
                 {
-                    Text = $"{Provider.ProductName} 확인 중…",
+                    Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_CheckAsync_CA460A15B1,Provider.ProductName),
                     Foreground = AppTheme.DimTextBrush,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -694,11 +695,11 @@ public sealed class ChatWindow : Window
         private void StartInstall()
         {
             var steps = AiInstaller.Preview(Provider);
-            if (Ui.Ask(_w, $"{Provider.ProductName} 설치 및 로그인에 다음 명령을 사용합니다.\n\n{steps}\n\n공식 설치 프로그램과 계정 로그인은 터미널·브라우저에서 진행됩니다. 실행할까요?",
-                    "AI 설치", MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+            if (Ui.Ask(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_StartInstall_8776DA7BEF,Provider.ProductName,steps),
+                    UiStrings.S_ChatWindow_StartInstall_BD9FDFD3C7, MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
             if (!AiInstaller.OpenTerminal(Provider, out var error))
             {
-                Ui.Error(_w, $"터미널을 열지 못했습니다.\n{error}");
+                Ui.Error(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_StartInstall_4B456B142A,error));
                 return;
             }
             _installPoll.Start();
@@ -710,28 +711,28 @@ public sealed class ChatWindow : Window
         private void ShowNoCli()
         {
             var p = Provider;
-            SetHeader($"{p.ProductName} 없음", inChat: false);
+            SetHeader(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_C0F440A767,p.ProductName), inChat: false);
             var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
-            stack.Children.Add(TitleText($"{p.ProductName}를 찾지 못했습니다"));
-            stack.Children.Add(WrapText($"이 창은 컴퓨터에 설치된 {p.ProductName}({p.Command} 명령)와 사용자의 {p.AccountText}으로 동작합니다(API 키를 넣지 않음). " +
-                                        "MCP는 Gpixel에 들어 있으며 CLI만 따로 설치합니다."));
-            var install = Ui.Button("터미널에서 설치하고 로그인", (_, _) => StartInstall());
+            stack.Children.Add(TitleText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_EB50F0AD30,p.ProductName)));
+            stack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_A6A8288124,p.ProductName,p.Command,p.AccountText) +
+                                        UiStrings.S_ChatWindow_ShowNoCli_4D48263369));
+            var install = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_ED06427F94, (_, _) => StartInstall());
             install.HorizontalAlignment = HorizontalAlignment.Left;
             stack.Children.Add(install);
-            if (_installPoll.IsEnabled) stack.Children.Add(WrapText("터미널에서 설치·로그인을 진행하세요. 완료되면 채팅으로 자동 전환됩니다. 오류가 나면 아래 명령으로 직접 설치할 수 있습니다.", dim: true));
-            else stack.Children.Add(WrapText("명령을 확인하고 터미널에서 설치할 수 있습니다. 직접 설치하려면 아래 명령을 복사하세요.", dim: true));
+            if (_installPoll.IsEnabled) stack.Children.Add(WrapText(UiStrings.S_ChatWindow_ShowNoCli_37191A6276, dim: true));
+            else stack.Children.Add(WrapText(UiStrings.S_ChatWindow_ShowNoCli_3EA0647605, dim: true));
             foreach (var (title, command) in p.InstallCommands) stack.Children.Add(_w.CommandBox(title, command));
-            var recheck = Ui.Button("다시 확인", (_, _) => Recheck());
+            var recheck = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_2736EF27CC, (_, _) => Recheck());
             recheck.HorizontalAlignment = HorizontalAlignment.Left;
             stack.Children.Add(recheck);
 
             var overridePath = p.GetPathOverride(_w._settings);
             var pathBox = new TextBox { Text = overridePath ?? "", Watermark = p.PathExample, Margin = new Thickness(0, 2) };
-            var browse = Ui.Button("찾아보기…", (_, _) =>
+            var browse = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_F47FA9147B, (_, _) =>
             {
-                if (Ui.OpenFile(_w, $"{p.Command} 실행 파일", null) is { } picked) pathBox.Text = picked;
+                if (Ui.OpenFile(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_3F2EDB54CC,p.Command), null) is { } picked) pathBox.Text = picked;
             });
-            var apply = Ui.Button("적용", (_, _) =>
+            var apply = Ui.Button(UiStrings.S_ChatWindow_ShowNoCli_306897216F, (_, _) =>
             {
                 var text = (pathBox.Text ?? "").Trim();
                 p.SetPathOverride(_w._settings, text.Length == 0 ? null : text);
@@ -744,11 +745,11 @@ public sealed class ChatWindow : Window
             Grid.SetColumn(apply, 2);
             pathRow.Children.Add(apply);
             var pathStack = new StackPanel { Spacing = 4 };
-            pathStack.Children.Add(WrapText($"이미 설치했는데 못 찾으면 {p.Command} 실행 파일 경로를 직접 정하세요(터미널에서 \"which {p.Command}\" 또는 \"where {p.Command}\").", dim: true));
+            pathStack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_1CC476FE7A,p.Command,p.Command,p.Command), dim: true));
             pathStack.Children.Add(pathRow);
             if (!string.IsNullOrWhiteSpace(overridePath))
-                pathStack.Children.Add(WrapText($"지정한 경로에 {p.Command}가 없습니다: {overridePath}", error: true));
-            stack.Children.Add(Ui.Group($"{p.Command} 경로 직접 지정", pathStack));
+                pathStack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_F8C688F131,p.Command,overridePath), error: true));
+            stack.Children.Add(Ui.Group(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowNoCli_09620464D8,p.Command), pathStack));
             SetBody(Ui.ScrollHost(stack));
         }
 
@@ -756,16 +757,16 @@ public sealed class ChatWindow : Window
         private void ShowLogin(AuthStatus status)
         {
             var p = Provider;
-            SetHeader("로그인 필요", inChat: false);
+            SetHeader(UiStrings.S_ChatWindow_ShowLogin_3B08918AF3, inChat: false);
             var stack = new StackPanel { Spacing = 8, Margin = new Thickness(14, 12) };
-            stack.Children.Add(TitleText($"{p.Name} 계정으로 로그인하세요"));
-            stack.Children.Add(WrapText($"{p.AccountText}으로 로그인하면 {p.Name}가 이 편집기에서 그림을 보고 고칠 수 있습니다. " +
-                                        $"로그인 정보는 {p.ProductName}가 보관하며 Gpixel은 읽지 않습니다."));
-            if (status.Error is { } err) stack.Children.Add(WrapText($"로그인 상태를 확인하지 못했습니다: {err}", error: true));
+            stack.Children.Add(TitleText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_9B4E400681,p.Name)));
+            stack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_4B41926EA7,p.AccountText,p.Name) +
+                                        string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_7211786FF1,p.ProductName)));
+            if (status.Error is { } err) stack.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_BDF84EA2D9,err), error: true));
             var info = new StackPanel { Spacing = 6 };
-            var login = Ui.Button($"{p.Name}로 로그인", (_, _) => StartLogin(info));
-            var terminal = Ui.Button("터미널에서 로그인", (_, _) => StartTerminalLogin(info)).Tip($"터미널 창에서 {p.Command} {string.Join(' ', p.LoginArgs)} 실행");
-            var recheck = Ui.Button("다시 확인", (_, _) => Recheck());
+            var login = Ui.Button(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_86A2C2515E,p.Name), (_, _) => StartLogin(info));
+            var terminal = Ui.Button(UiStrings.S_ChatWindow_ShowLogin_F93C9FEC46, (_, _) => StartTerminalLogin(info)).Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ShowLogin_B35819C965,p.Command,string.Join(' ', p.LoginArgs)));
+            var recheck = Ui.Button(UiStrings.S_ChatWindow_ShowLogin_E9BFEE873E, (_, _) => Recheck());
             stack.Children.Add(new WrapPanel { Children = { login, terminal, recheck } });
             stack.Children.Add(info);
             SetBody(Ui.ScrollHost(stack));
@@ -776,15 +777,15 @@ public sealed class ChatWindow : Window
             if (_cliPath is not { } path) return;
             LeaveLogin();
             info.Children.Clear();
-            info.Children.Add(WrapText("브라우저가 열리면 로그인을 마치세요. 열리지 않으면 아래 주소를 누르세요.", dim: true));
+            info.Children.Add(WrapText(UiStrings.S_ChatWindow_StartLogin_BDD2BF6309, dim: true));
             var urls = new StackPanel { Spacing = 4 };
             var output = WrapText("", dim: true);
-            var codeBox = new TextBox { Watermark = "인증 코드", Margin = new Thickness(0, 2) };
+            var codeBox = new TextBox { Watermark = UiStrings.S_ChatWindow_StartLogin_B79F003D82, Margin = new Thickness(0, 2) };
             var codeRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
             codeRow.Children.Add(codeBox);
             var takesCode = Provider.LoginTakesCode;
             var login = new CliLogin(Provider, path);
-            var sendCode = Ui.Button("코드 보내기", (_, _) =>
+            var sendCode = Ui.Button(UiStrings.S_ChatWindow_StartLogin_B3F1AA5FE7, (_, _) =>
             {
                 if (string.IsNullOrWhiteSpace(codeBox.Text)) return;
                 login.SendCode(codeBox.Text);
@@ -793,7 +794,7 @@ public sealed class ChatWindow : Window
             Grid.SetColumn(sendCode, 1);
             codeRow.Children.Add(sendCode);
             var codePanel = new StackPanel { Spacing = 2, IsVisible = false };
-            codePanel.Children.Add(WrapText("브라우저가 인증 코드를 보여 주면 여기에 붙여 넣으세요:", dim: true));
+            codePanel.Children.Add(WrapText(UiStrings.S_ChatWindow_StartLogin_1F1673FEF2, dim: true));
             codePanel.Children.Add(codeRow);
             info.Children.AddRange([urls, codePanel, output]);
 
@@ -816,7 +817,7 @@ public sealed class ChatWindow : Window
                 _login = null;
                 login.Dispose();
                 codePanel.IsVisible = false;
-                info.Children.Add(WrapText($"로그인하지 못했습니다. \"터미널에서 로그인\"을 써 보세요.\n{message}", error: true));
+                info.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_StartLogin_6D8D76D688,message), error: true));
             };
             try
             {
@@ -826,7 +827,7 @@ public sealed class ChatWindow : Window
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
                 login.Dispose();
-                info.Children.Add(WrapText($"{Provider.Command}를 실행하지 못했습니다: {ex.Message}", error: true));
+                info.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_StartLogin_80640A2D7A,Provider.Command,ex.Message), error: true));
             }
         }
 
@@ -838,10 +839,10 @@ public sealed class ChatWindow : Window
             var command = $"{Provider.Command} {string.Join(' ', Provider.LoginArgs)}";
             if (!AiCli.OpenLoginTerminal(path, Provider.LoginArgs, out var error))
             {
-                info.Children.Add(WrapText($"터미널을 열지 못했습니다: {error}\n터미널에서 직접 \"{command}\"를 실행한 뒤 \"다시 확인\"을 누르세요.", error: true));
+                info.Children.Add(WrapText(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_StartTerminalLogin_B0C0F4D01D,error,command), error: true));
                 return;
             }
-            info.Children.Add(WrapText("터미널 창에서 로그인을 마치세요. 로그인되면 저절로 채팅으로 넘어갑니다(안 되면 \"다시 확인\").", dim: true));
+            info.Children.Add(WrapText(UiStrings.S_ChatWindow_StartTerminalLogin_067B1B838D, dim: true));
             _terminalPoll.Start();
         }
 
@@ -879,7 +880,7 @@ public sealed class ChatWindow : Window
             LeaveLogin();
             if (_cliPath is not { } path) return;
             var who = status.Describe();
-            SetHeader(who.Length > 0 ? who : "로그인됨", inChat: true);
+            SetHeader(who.Length > 0 ? who : UiStrings.S_ChatWindow_ShowChat_B46AD2AE0A, inChat: true);
             if (_session is null)
             {
                 _session = Provider.CreateSession(path, _w._mcp);
@@ -950,7 +951,7 @@ public sealed class ChatWindow : Window
             };
             s.TurnCompleted += r =>
             {
-                string? error = r.IsError ? $"오류: {(string.IsNullOrWhiteSpace(r.Text) ? r.Subtype ?? "알 수 없는 오류" : r.Text)}" : null;
+                string? error = r.IsError ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_HookSession_E1F3DD4697,(string.IsNullOrWhiteSpace(r.Text) ? r.Subtype ?? UiStrings.S_ChatWindow_HookSession_365CF8E859 : r.Text)) : null;
                 if (_turn is not null) EndTurn(error, r, cancelled: false);
                 else if (error is not null) AddSystemLine(error, error: true);
                 // 로그인이 풀렸으면 로그인 화면으로(대화 내용은 남아 있다가 다시 로그인하면 보인다).
@@ -958,7 +959,7 @@ public sealed class ChatWindow : Window
             };
             s.Exited += info =>
             {
-                var msg = $"{Provider.Name} 프로세스가 끝났습니다(코드 {info.ExitCode}).";
+                var msg = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_HookSession_5674519D81,Provider.Name,info.ExitCode);
                 if (info.StderrTail.Length > 0) msg += "\n" + info.StderrTail;
                 if (_turn is not null) EndTurn(msg, null, cancelled: false);
                 else AddSystemLine(msg, error: true);
@@ -992,7 +993,7 @@ public sealed class ChatWindow : Window
                 }
                 var saved = Provider.GetModel(_w._settings);
                 Model.SelectedIndex = Math.Max(0, _modelChoices.ToList().FindIndex(c => c.Value == saved));
-                Model.Tip($"{Provider.Name} 모델(기본 = {Provider.ProductName} 설정값). 바꾸면 다음 메시지부터 적용");
+                Model.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_FillModels_B806D71CEE,Provider.Name,Provider.ProductName));
             }
             finally
             {
@@ -1010,7 +1011,7 @@ public sealed class ChatWindow : Window
             if (_turn is not null) StopTurn();
             _session.Model = model;
             _session.Restart();
-            AddSystemLine($"모델: {_modelChoices[Model.SelectedIndex].Label} — 다음 메시지부터 적용됩니다.", error: false);
+            AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_OnModelChanged_C640BCC05A,_modelChoices[Model.SelectedIndex].Label), error: false);
         }
 
         public void NewConversation()
@@ -1031,7 +1032,7 @@ public sealed class ChatWindow : Window
             // 실행취소 묶음은 하나만 열 수 있으므로 다른 탭의 차례가 끝날 때까지 보내지 않는다.
             if (_w.RunningTab is { } other)
             {
-                AddSystemLine($"{other.Provider.Name}가 작업 중입니다 — 끝난 뒤 보내세요(같은 캔버스를 함께 고치지 않도록).", error: false);
+                AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_2A1D03CC20,other.Provider.Name), error: false);
                 return;
             }
             var attachments = _attachments.ToList();
@@ -1042,17 +1043,17 @@ public sealed class ChatWindow : Window
             var scope = _w._settings.AiCurrentLayerOnly && ctx.Project is { } sp && ctx.CurrentLayer >= 0 && ctx.CurrentLayer < sp.Layers.Count
                 ? new EditScope(sp, sp.Layers[ctx.CurrentLayer])
                 : null;
-            string scopeText = scope is null ? "" : $"\"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}";
+            string scopeText = scope is null ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_F50CA3E886,scope.Layer.Name,(scope.Layer.IsGroup ? UiStrings.S_ChatWindow_Send_D27CE54072 : ""));
             _w._mcp.Tools.Scope = scope;
             try
             {
-                session.Send(scope is null ? text : $"[편집 범위: {scopeText}만 고치세요. 다른 레이어·문서·구조는 볼 수만 있습니다.]\n{text}",
+                session.Send(scope is null ? text : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_7CDB2DE090,scopeText,text),
                     attachments.Select(a => a.Png).ToList());
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
                 _w._mcp.Tools.Scope = null;
-                AddSystemLine($"{Provider.Command}를 실행하지 못했습니다: {ex.Message}", error: true);
+                AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_E1ACACFBF7,Provider.Command,ex.Message), error: true);
                 return;
             }
             _input.Text = "";
@@ -1060,9 +1061,9 @@ public sealed class ChatWindow : Window
             RemoveHint();
             _follow = true;
             AddUserBubble(text, attachments);
-            if (scope is not null) AddSystemLine($"편집 범위: {scopeText}만 — 나머지는 보기만", error: false);
+            if (scope is not null) AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_7C61278ECA,scopeText), error: false);
 
-            var label = $"{Provider.Name}: {Shorten(text.Length > 0 ? text : "(이미지)", 24)}";
+            var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(text.Length > 0 ? text : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
             var turn = new Turn(label);
             if (_w._ctx.Project is { } p)
             {
@@ -1106,10 +1107,10 @@ public sealed class ChatWindow : Window
             if (group is not null && project is not null) AddSnapshot(project, group);
 
             var parts = new List<string>();
-            if (cancelled) parts.Add("정지됨");
+            if (cancelled) parts.Add(UiStrings.S_ChatWindow_EndTurn_D19A601695);
             if (result?.CostUsd is { } cost && cost > 0) parts.Add("$" + cost.ToString("0.000", CultureInfo.InvariantCulture));
             double ms = result?.DurationMs ?? turn.Clock.Elapsed.TotalMilliseconds;
-            parts.Add((ms / 1000).ToString("0.0", CultureInfo.InvariantCulture) + "초");
+            parts.Add((ms / 1000).ToString("0.0", CultureInfo.InvariantCulture) + UiStrings.S_ChatWindow_EndTurn_7EEAC40074);
             AddItem(new TextBlock
             {
                 Text = string.Join(" · ", parts),
@@ -1145,7 +1146,7 @@ public sealed class ChatWindow : Window
             var other = _w.RunningTab;
             _sendButton.Tip(other is null || ReferenceEquals(other, this)
                 ? "Enter"
-                : $"{other.Provider.Name}가 작업 중입니다 — 끝난 뒤 보내세요(같은 캔버스를 함께 고치지 않도록)");
+                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateInputState_25BD68A0C8,other.Provider.Name));
         }
 
         private void OnInputKeyDown(object? sender, KeyEventArgs e)
@@ -1183,17 +1184,17 @@ public sealed class ChatWindow : Window
         {
             if (_turn is null) return;
             var now = DateTime.UtcNow;
-            static string Time(TimeSpan t) => t.TotalMinutes >= 1 ? $"{(int)t.TotalMinutes}분 {t.Seconds}초" : $"{t.Seconds}초";
-            string Size(int chars) => chars >= 1024 ? $"{chars / 1024.0:0.0}K자" : $"{chars}자";
+            static string Time(TimeSpan t) => t.TotalMinutes >= 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_A70F7D76B8,(int)t.TotalMinutes,t.Seconds) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_ACBE1DF02D,t.Seconds);
+            string Size(int chars) => chars >= 1024 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_60CB2685BB,chars / 1024.0) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_97F1F78A01,chars);
             string what = _phase switch
             {
-                "thinking" => $"생각 중… ({Size(_phaseChars)})",
-                "tool_use" => $"도구 호출 작성 중: {_phaseTool ?? "?"} ({Size(_phaseChars)})",
-                "run" => $"편집기에서 실행 중: {_phaseTool ?? "?"}",
-                "text" => "답 쓰는 중…",
-                _ => "응답 기다리는 중…",
+                "thinking" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_B750FB67DF,Size(_phaseChars)),
+                "tool_use" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_4C23FA2A5B,_phaseTool ?? "?",Size(_phaseChars)),
+                "run" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_07B7C8BA45,_phaseTool ?? "?"),
+                "text" => UiStrings.S_ChatWindow_UpdateProgress_5CDDDE0C69,
+                _ => UiStrings.S_ChatWindow_UpdateProgress_46A1800CB1,
             };
-            _thinking.Text = $"{what} · {Time(now - _phaseStart)} (전체 {Time(now - _turnStart)})";
+            _thinking.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_A4C73F4DE5,what,Time(now - _phaseStart),Time(now - _turnStart));
         }
 
         /// <summary>메시지 목록 끝("생각 중…" 앞)에 붙인다.</summary>
@@ -1218,7 +1219,7 @@ public sealed class ChatWindow : Window
 
         private void AddHint()
         {
-            _hint = WrapText("그림에 대해 무엇이든 부탁하세요.\n예: \"16×16 슬라임 캐릭터를 그려 줘\", \"외곽선을 더 어둡게 해 줘\", \"걷기 애니메이션 4프레임 만들어 줘\"", dim: true);
+            _hint = WrapText(UiStrings.S_ChatWindow_AddHint_99795D658D, dim: true);
             _hint.Margin = new Thickness(2, 6);
             _messages.Children.Add(_hint);
         }
@@ -1312,7 +1313,7 @@ public sealed class ChatWindow : Window
                     Child = new CheckerBackground { Child = image },
                 });
             }
-            var button = Ui.Button("이 단계 되돌리기");
+            var button = Ui.Button(UiStrings.S_ChatWindow_AddSnapshot_C5F0084B6D);
             button.HorizontalAlignment = HorizontalAlignment.Left;
             var step = new UndoStep(project, group, button);
             button.Click += (_, _) => ToggleStep(step);
@@ -1331,7 +1332,7 @@ public sealed class ChatWindow : Window
             if (depth == 1) _w._ctx.UndoStep();
             else if (depth > 1)
             {
-                if (Ui.Ask(_w, $"이후 편집 {depth - 1}단계도 함께 되돌립니다. 계속할까요?", "되돌리기", MessageButtons.OKCancel, MessageIcon.Question)
+                if (Ui.Ask(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ToggleStep_3758F11139,depth - 1), UiStrings.S_ChatWindow_ToggleStep_579568A52F, MessageButtons.OKCancel, MessageIcon.Question)
                     != DialogResult.OK) return;
                 for (int i = 0; i < depth; i++)
                 {
@@ -1357,21 +1358,21 @@ public sealed class ChatWindow : Window
             var b = step.Button;
             if (undo > 0)
             {
-                b.Content = "이 단계 되돌리기";
+                b.Content = UiStrings.S_ChatWindow_RefreshStep_B7986869B0;
                 b.IsEnabled = idle;
-                b.Tip(undo > 1 ? $"이후 편집 {undo - 1}단계도 함께 되돌립니다" : null);
+                b.Tip(undo > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_RefreshStep_8F1EF61EAD,undo - 1) : null);
             }
             else if (redo > 0)
             {
-                b.Content = "다시 적용";
+                b.Content = UiStrings.S_ChatWindow_RefreshStep_E659C76CB0;
                 b.IsEnabled = idle && redo == 1;
-                b.Tip(redo > 1 ? "먼저 그 뒤 단계들을 다시 실행해야 합니다" : null);
+                b.Tip(redo > 1 ? UiStrings.S_ChatWindow_RefreshStep_B9AA5F8B5A : null);
             }
             else
             {
-                b.Content = "이 단계 되돌리기";
+                b.Content = UiStrings.S_ChatWindow_RefreshStep_B7986869B0;
                 b.IsEnabled = false;
-                b.Tip(same ? "실행취소 기록에 없습니다" : "다른 프로젝트의 단계입니다");
+                b.Tip(same ? UiStrings.S_ChatWindow_RefreshStep_1CA90CA5FE : UiStrings.S_ChatWindow_RefreshStep_842B2F53BC);
             }
         }
 
@@ -1379,7 +1380,7 @@ public sealed class ChatWindow : Window
 
         private void AttachFile()
         {
-            var path = Ui.OpenFile(_w, "이미지 첨부", null, new FileFilter("이미지", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"));
+            var path = Ui.OpenFile(_w, UiStrings.S_ChatWindow_AttachFile_A024695555, null, new FileFilter(UiStrings.S_ChatWindow_AttachFile_1565F6E888, "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"));
             if (path is null) return;
             byte[] bytes;
             try
@@ -1388,7 +1389,7 @@ public sealed class ChatWindow : Window
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Ui.Error(_w, $"파일을 읽지 못했습니다.\n{ex.Message}");
+                Ui.Error(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_AttachFile_FB523C7B58,ex.Message));
                 return;
             }
             Bitmap bmp;
@@ -1400,7 +1401,7 @@ public sealed class ChatWindow : Window
             catch (Exception)
             {
                 // 디코더가 던지는 예외 형식은 플랫폼마다 다르다.
-                Ui.Error(_w, "이 이미지를 읽을 수 없습니다(지원하지 않는 형식이거나 깨진 파일).");
+                Ui.Error(_w, UiStrings.S_ChatWindow_AttachFile_0469DC1AFF);
                 return;
             }
             bool isPng = bytes.Length > 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
@@ -1412,7 +1413,7 @@ public sealed class ChatWindow : Window
         {
             if (_w._ctx.Project is not { } p || _w.Composite(p) is not { } img)
             {
-                Ui.Warn(_w, "열린 그림이 없습니다.");
+                Ui.Warn(_w, UiStrings.S_ChatWindow_AttachCanvas_F7C294FC0C);
                 return;
             }
             int n = Math.Max(1, CanvasAttachSide / Math.Max(img.Width, img.Height));
@@ -1451,7 +1452,7 @@ public sealed class ChatWindow : Window
                 FontSize = AppTheme.SmallFontSize,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
-            }.Tip("첨부 빼기");
+            }.Tip(UiStrings.S_ChatWindow_AddAttachment_1F581E4392);
             var chip = new Border
             {
                 BorderBrush = AppTheme.BorderBrush,

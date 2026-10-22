@@ -111,7 +111,7 @@ public static class LospecPalettes
     {
         using var doc = Parse(json);
         var root = doc.RootElement;
-        if (root.ValueKind != JsonValueKind.Object) throw new FormatException("Lospec 응답이 객체가 아닙니다.");
+        if (root.ValueKind != JsonValueKind.Object) throw new FormatException(Gpixel.Core.Localization.DomainStrings.Lospec_InvalidObject);
         var list = new List<LospecPalette>();
         if (root.TryGetProperty("palettes", out var arr) && arr.ValueKind == JsonValueKind.Array)
         {
@@ -222,7 +222,7 @@ public static class LospecPalettes
         }
         catch (JsonException ex)
         {
-            throw new FormatException("Lospec 응답을 읽지 못했습니다: " + ex.Message, ex);
+            throw new FormatException(Gpixel.Core.Localization.DomainStrings.FormatLospec_ReadFailed(error: ex.Message), ex);
         }
     }
 

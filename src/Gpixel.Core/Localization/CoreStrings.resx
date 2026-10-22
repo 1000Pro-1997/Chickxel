@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Png_InvalidFile" xml:space="preserve">
+    <value>PNG 파일이 아닙니다.</value>
+  </data>
+  <data name="Png_InvalidChunkLength" xml:space="preserve">
+    <value>PNG 청크 길이가 잘못되었습니다.</value>
+  </data>
+  <data name="Png_InvalidHeader" xml:space="preserve"><value>IHDR가 잘못되었습니다.</value></data>
+  <data name="Png_HeaderMissing" xml:space="preserve"><value>PNG 헤더(IHDR)가 없습니다.</value></data>
+  <data name="Png_UnsupportedColorType" xml:space="preserve"><value>지원하지 않는 PNG 색 형식: {colorType}</value><comment>colorType = PNG 색 형식 번호.</comment></data>
+  <data name="Png_UnsupportedBitDepth" xml:space="preserve"><value>지원하지 않는 PNG 비트 깊이: {bitDepth}</value><comment>bitDepth = PNG 비트 깊이.</comment></data>
+  <data name="Png_PaletteMissing" xml:space="preserve"><value>팔레트(PLTE)가 없습니다.</value></data>
+  <data name="Png_ImageTooLarge" xml:space="preserve"><value>이미지 크기가 너무 큽니다: {width}x{height}</value><comment>width, height = PNG 원본 픽셀 크기.</comment></data>
+  <data name="Png_InvalidFilter" xml:space="preserve"><value>PNG 필터 값이 잘못되었습니다: {filter}</value><comment>filter = PNG 필터 번호.</comment></data>
+  <data name="Png_Truncated" xml:space="preserve"><value>PNG 데이터가 중간에 끝났습니다.</value></data>
+</root>

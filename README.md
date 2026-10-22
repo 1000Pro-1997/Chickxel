@@ -82,6 +82,7 @@ Gpixel은 계정·분석·광고 기능이 없고, 그림이나 파일을 어디
 - 빌드·테스트: `dotnet build Gpixel.sln`, `dotnet test Gpixel.sln`
 - 작업 규칙: [AGENTS.md](AGENTS.md) — UI에 이모지·기호 문자를 아이콘으로 쓰지 않고 벡터(SVG 경로) 아이콘으로 그립니다(`VectorIcons.cs`). 문서·커밋 메시지에도 이모지를 쓰지 않습니다.
 - 아이콘: 도구 아이콘은 `src/Gpixel.App/Assets/Tools/*.png`(16×16 단색 점 그림, 도구 막대에는 2배로 표시), 앱 아이콘은 `Assets/AppIcon/`(16×16 원본 `gpixel.png`에서 만든 `gpixel.ico`·`Gpixel.icns`·창/Dock 아이콘 `gpixel-256.png`). PNG는 Gpixel로 열어 바로 고칠 수 있습니다.
+- 번역: 기본 언어는 한국어이며 사용자에게 보이는 문구는 `src/Gpixel.App/Localization/{MainStrings,StartStrings,UiStrings}.resx`와 `src/Gpixel.Core/Localization/{CoreStrings,DomainStrings}.resx`에 있습니다. 새 언어를 만들 때 다섯 기본 파일과 같은 키의 `<이름>.<언어 코드>.resx` 파일을 각 폴더에 추가하고 값을 번역합니다(예: `UiStrings.en.resx`). `{0}`, `{1}`은 값 자리이며 어순에 맞게 순서를 바꿀 수 있습니다. `{name}`은 이름 그대로 보존합니다. `UiStrings`의 각 항목에는 원래 코드 위치와 문맥이 주석으로 적혀 있습니다. 단축키 명령 ID·프로젝트에 저장되는 기본 이름·내장 프리셋 이름처럼 데이터 식별자인 한국어는 코드에 남기며 번역 대상이 아닙니다. 설치용 배치 스크립트 본문은 번역하지 않고 그 안의 사용자 안내만 리소스에서 읽습니다. `Microsoft.CodeAnalysis.ResxSourceGenerator`가 빌드 중 접근 코드를 생성합니다. 현재 외국어 번역은 없으므로 OS 언어와 무관하게 한국어로 보입니다. `settings.json`의 `Language`에 `"en"` 같은 언어 코드를 넣으면 앱 시작 시 그 UI 언어를 쓰고, `null`은 OS 언어를 따릅니다. 설정 변경 후 재실행이 필요하며 숫자·날짜 형식은 바꾸지 않습니다.
 
 ## 화면 (Aseprite식 배치)
 

@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -111,7 +112,7 @@ public sealed class SortOrderList : Border
         units.RemoveAt(from);
         units.Insert(to, key);
         _selected = key;
-        Raise("정렬 순서", WithUnits(order, units));
+        Raise(UiStrings.S_SortOrderList_MoveUnit_026AE33041, WithUnits(order, units));
     }
 
     private void MoveBy(GridKey key, int delta)
@@ -131,10 +132,10 @@ public sealed class SortOrderList : Border
 
     private static string KeyName(GridKey k) => k switch
     {
-        GridKey.Part => "부위",
-        GridKey.Skin => "스킨",
-        GridKey.Tag => "태그",
-        _ => "프레임",
+        GridKey.Part => UiStrings.S_SortOrderList_KeyName_E8D6C14662,
+        GridKey.Skin => UiStrings.S_SortOrderList_KeyName_FA40090501,
+        GridKey.Tag => UiStrings.S_SortOrderList_KeyName_316B48B33A,
+        _ => UiStrings.S_SortOrderList_KeyName_34BCB19C9F,
     };
 
     private bool Shown(GridKey k) => _parts || k != GridKey.Part;
@@ -202,28 +203,28 @@ public sealed class SortOrderList : Border
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = Brushes.Transparent,
             Cursor = GrabCursor,
-        }.Tip("끌어서 순서 바꾸기 (Alt+↑/↓)");
+        }.Tip(UiStrings.S_SortOrderList_KeyRow_CD64A9EB33);
         string hint = key switch
         {
-            GridKey.Part when !shown => " (프레임 시트에는 없는 축 — 건너뜀)",
-            GridKey.Frame when keys.Contains(GridKey.Tag) => " (태그 안 번호)",
+            GridKey.Part when !shown => UiStrings.S_SortOrderList_KeyRow_F2E4CBD290,
+            GridKey.Frame when keys.Contains(GridKey.Tag) => UiStrings.S_SortOrderList_KeyRow_0C534D7F3A,
             _ => "",
         };
         return RowGrid(key, handle, ordinal, KeyName(key) + hint, shown,
-            ArrowButton(VectorIcon.ChevronUp, "앞으로(더 큰 기준) — Alt+↑", unit > 0, () => MoveBy(key, -1)),
-            ArrowButton(VectorIcon.ChevronDown, "뒤로 — Alt+↓", unit < units.Count - 1, () => MoveBy(key, 1)));
+            ArrowButton(VectorIcon.ChevronUp, UiStrings.S_SortOrderList_KeyRow_ACC65D3177, unit > 0, () => MoveBy(key, -1)),
+            ArrowButton(VectorIcon.ChevronDown, UiStrings.S_SortOrderList_KeyRow_FB3B8A96C8, unit < units.Count - 1, () => MoveBy(key, 1)));
     }
 
     /// <summary>태그 줄: 프레임에 붙어 다님(손잡이·앞뒤 단추 없음) + 끔/켬. 끄면 흐리게, 순번 없음.</summary>
     private Control TagRow(bool on, int ordinal)
     {
-        var toggle = new TabStrip(TabStripKind.Segmented, "끔", "켬") { SelectedIndex = on ? 1 : 0, Margin = new Thickness(2, 0) }
-            .SetTip(0, "프레임은 프레임 번호 순서.")
-            .SetTip(1, "프레임 앞에 태그 기준을 더합니다(태그 순서, 태그 없는 프레임은 끝 — 프레임은 태그 안 번호). 프레임 시트는 여러 태그에 든 프레임을 태그마다 넣습니다.");
+        var toggle = new TabStrip(TabStripKind.Segmented, UiStrings.S_SortOrderList_TagRow_AB5251C6C5, UiStrings.S_SortOrderList_TagRow_F4CF4B8904) { SelectedIndex = on ? 1 : 0, Margin = new Thickness(2, 0) }
+            .SetTip(0, UiStrings.S_SortOrderList_TagRow_80AC8B3183)
+            .SetTip(1, UiStrings.S_SortOrderList_TagRow_1C37B50880);
         toggle.SelectionChanged += (_, _) =>
         {
             if (_order is not { } order || toggle.SelectedIndex < 0) return;
-            Raise("태그 정렬", WithTag(order, toggle.SelectedIndex == 1));
+            Raise(UiStrings.S_SortOrderList_TagRow_CE61ED25B7, WithTag(order, toggle.SelectedIndex == 1));
         };
         var handle = new IconView(VectorIcon.CornerDownRight, AppTheme.DimTextBrush)
         {
@@ -231,8 +232,8 @@ public sealed class SortOrderList : Border
             Height = 12,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-        }.Tip("태그는 늘 프레임 바로 앞에 붙어 다닙니다(프레임을 옮기면 같이 옮겨짐)");
-        var row = RowGrid(GridKey.Tag, handle, ordinal, on ? "태그 (프레임 바로 앞)" : "태그 (꺼짐 — 켜면 여기)", on, toggle);
+        }.Tip(UiStrings.S_SortOrderList_TagRow_591636D73C);
+        var row = RowGrid(GridKey.Tag, handle, ordinal, on ? UiStrings.S_SortOrderList_TagRow_37B99B7C4F : UiStrings.S_SortOrderList_TagRow_5C343B6284, on, toggle);
         return row;
     }
 
@@ -313,7 +314,7 @@ public sealed class SortOrderList : Border
     private Control BreakSlot(int rowBreak, bool selected, IReadOnlyList<GridKey> keys)
     {
         var above = string.Join("·", keys.Take(rowBreak).Where(Shown).Select(KeyName));
-        var text = SlotLabel(selected, selected ? $"여기서 새 줄 — {above}마다 한 줄" : "여기서 새 줄", newLine: selected);
+        var text = SlotLabel(selected, selected ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SortOrderList_BreakSlot_BFEDE87016,above) : UiStrings.S_SortOrderList_BreakSlot_A5C18A4575, newLine: selected);
         var slot = new Border
         {
             Height = SlotHeight,
@@ -324,7 +325,7 @@ public sealed class SortOrderList : Border
             Opacity = selected ? 1 : 0.6,
             Cursor = HandCursor,
             Child = text,
-        }.Tip($"앞쪽 기준({above})이 같은 칸끼리 한 줄로 묶어 새 줄에서 시작");
+        }.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SortOrderList_BreakSlot_96A2217ADC,above));
         slot.PointerEntered += (_, _) => { if (!selected) slot.Opacity = 1; };
         slot.PointerExited += (_, _) => { if (!selected) slot.Opacity = 0.6; };
         slot.PointerPressed += (_, e) =>
@@ -332,7 +333,7 @@ public sealed class SortOrderList : Border
             if (!e.GetCurrentPoint(slot).Properties.IsLeftButtonPressed || _order is not { } order) return;
             e.Handled = true;
             if (selected) return;
-            Raise("줄바꿈", new GridOrder(order.Keys, rowBreak).Normalized());
+            Raise(UiStrings.S_SortOrderList_BreakSlot_99FFA471F9, new GridOrder(order.Keys, rowBreak).Normalized());
         };
         return slot;
     }
@@ -347,8 +348,8 @@ public sealed class SortOrderList : Border
             Margin = new Thickness(18, 2, 4, 0),
             Opacity = selected ? 1 : 0.6,
             Cursor = HandCursor,
-            Child = SlotLabel(selected, selected ? "줄바꿈 없음 (칸 수로만 줄을 바꿈)" : "줄바꿈 없음 (칸 수로만)", newLine: false),
-        }.Tip("모든 칸을 이어서 놓고 칸 수로만 줄을 바꿉니다");
+            Child = SlotLabel(selected, selected ? UiStrings.S_SortOrderList_NoBreakSlot_F5917045F7 : UiStrings.S_SortOrderList_NoBreakSlot_92FA97918C, newLine: false),
+        }.Tip(UiStrings.S_SortOrderList_NoBreakSlot_17555E8A90);
         slot.PointerEntered += (_, _) => { if (!selected) slot.Opacity = 1; };
         slot.PointerExited += (_, _) => { if (!selected) slot.Opacity = 0.6; };
         slot.PointerPressed += (_, e) =>
@@ -356,7 +357,7 @@ public sealed class SortOrderList : Border
             if (!e.GetCurrentPoint(slot).Properties.IsLeftButtonPressed || _order is not { } order) return;
             e.Handled = true;
             if (selected) return;
-            Raise("줄바꿈", new GridOrder(order.Keys, 0));
+            Raise(UiStrings.S_SortOrderList_NoBreakSlot_4C4041FC5D, new GridOrder(order.Keys, 0));
         };
         return slot;
     }

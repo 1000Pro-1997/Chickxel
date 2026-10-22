@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -87,10 +88,10 @@ internal sealed class ColorSourcePicker : ScrollViewer
             var picker = new ImagePicker(image, pick) { IsVisible = false };
             var dropper = new ToggleButton
             {
-                Content = "스포이드 — 그림에서 집기",
+                Content = UiStrings.S_ColorPickerModules_ColorSourcePicker_B498EFF5EB,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
-            }.Tip("현재 프레임 그림이 보이면 원하는 픽셀을 누르세요(투명한 곳은 집지 않음)");
+            }.Tip(UiStrings.S_ColorPickerModules_ColorSourcePicker_72F60739D7);
             dropper.IsCheckedChanged += (_, _) => picker.IsVisible = dropper.IsChecked == true;
             body.Children.Add(dropper);
             body.Children.Add(picker);
@@ -120,7 +121,7 @@ internal sealed class ColorSourcePicker : ScrollViewer
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Child = new SwatchCell(color),
             };
-            ToolTip.SetTip(button, color.A == 0 ? "투명" : color.ToHex());
+            ToolTip.SetTip(button, color.A == 0 ? UiStrings.S_ColorPickerModules_Swatches_3FF5B6C54B : color.ToHex());
             button.PointerPressed += (_, e) => { pick(color); e.Handled = true; };
             wrap.Children.Add(button);
         }

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
 
@@ -181,7 +182,7 @@ public static class AiCli
         try
         {
             p = Process.Start(CreateStartInfo(path, args, Home, false));
-            if (p is null) return new RunResult(-1, "", "", $"{name}를 실행하지 못했습니다.");
+            if (p is null) return new RunResult(-1, "", "", string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_F7AA02C025,name));
             var outTask = p.StandardOutput.ReadToEndAsync(CancellationToken.None);
             var errTask = p.StandardError.ReadToEndAsync(CancellationToken.None);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -193,13 +194,13 @@ public static class AiCli
             catch (OperationCanceledException)
             {
                 Kill(p);
-                return new RunResult(-1, "", "", cancellationToken.IsCancellationRequested ? "취소됨" : $"{name}가 응답하지 않습니다({timeoutSeconds}초).");
+                return new RunResult(-1, "", "", cancellationToken.IsCancellationRequested ? UiStrings.S_AiCli_RunAsync_865C58F1B9 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_3D25A30FE7,name,timeoutSeconds));
             }
             return new RunResult(p.ExitCode, await outTask.ConfigureAwait(false), await errTask.ConfigureAwait(false), null);
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
-            return new RunResult(-1, "", "", $"{name}를 실행하지 못했습니다: {ex.Message}");
+            return new RunResult(-1, "", "", string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_BD859E6CD5,name,ex.Message));
         }
         finally
         {
@@ -256,7 +257,7 @@ public static class AiCli
                 {
                 }
             }
-            error = $"터미널 프로그램을 찾지 못했습니다. 터미널에서 직접 \"{Path.GetFileNameWithoutExtension(path)} {string.Join(' ', args)}\"을 실행하세요.";
+            error = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_OpenLoginTerminal_25DFAA69B9,Path.GetFileNameWithoutExtension(path),string.Join(' ', args));
             return false;
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
@@ -282,7 +283,7 @@ public static class AiCli
             var script = Path.Combine(dir, Path.GetFileNameWithoutExtension(path) + "-login.command");
             var pathEnv = Quote(AugmentedPath(path));
             File.WriteAllText(script,
-                $"#!/bin/sh\nexport PATH={pathEnv}\n{command}\necho\necho \"로그인이 끝나면 이 창을 닫고 Gpixel에서 '다시 확인'을 누르세요.\"\n",
+                $"#!/bin/sh\nexport PATH={pathEnv}\n{command}\necho\nprintf '%s\\n' {Quote(UiStrings.AiCli_LoginDone)}\n",
                 new UTF8Encoding(false));
             if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             using var p = Process.Start(new ProcessStartInfo("open") { ArgumentList = { "-a", "Terminal", script }, UseShellExecute = false, CreateNoWindow = true });
@@ -306,7 +307,7 @@ public static class AiCli
             var err = p.StandardError.ReadToEnd();
             p.WaitForExit(10000);
             if (p.HasExited && p.ExitCode == 0) return true;
-            error = string.IsNullOrWhiteSpace(err) ? "터미널을 열지 못했습니다." : err.Trim();
+            error = string.IsNullOrWhiteSpace(err) ? UiStrings.S_AiCli_OpenMacTerminal_6A443C19FB : err.Trim();
             return false;
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
@@ -487,7 +488,7 @@ public sealed class CliLogin : IDisposable
             {
                 Finish();
                 var tail = AiCli.Tail(_output.ToString().Trim(), 600);
-                Failed?.Invoke(tail.Length > 0 ? tail : status.Error ?? "로그인이 끝나지 않았습니다.");
+                Failed?.Invoke(tail.Length > 0 ? tail : status.Error ?? UiStrings.S_AiCli_PollAsync_306BEB327B);
             }
         }
         finally

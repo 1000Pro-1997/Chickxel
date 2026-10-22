@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.PlayTest;
 
@@ -23,12 +24,12 @@ public sealed class PlayTestForm : Window
     private bool _scaleChosen;
 
     /// <summary>모드: 0 = 탑뷰, 1 = 플랫포머(고르면 아래 설정 묶음이 바뀜).</summary>
-    private readonly TabStrip _mode = new(TabStripKind.Segmented, "탑뷰", "플랫포머") { Margin = new Thickness(0, 0, 0, 6) };
+    private readonly TabStrip _mode = new(TabStripKind.Segmented, UiStrings.S_PlayTestForm__mode_E6FD209C5A, UiStrings.S_PlayTestForm__mode_C301A9DEA7) { Margin = new Thickness(0, 0, 0, 6) };
     private readonly NumericUpDown _scale = Number(1, 16, 4, 1).Presets(1, 2, 3, 4, 5, 6, 8, 10, 12, 16).Unit("×").RecentKey("playtest.scale");
-    private readonly CheckBox _showGrid = Check("격자 표시 (1칸 = PPU)", true);
-    private readonly CheckBox _showPivot = Check("피벗 표시", true);
-    private readonly CheckBox _showCollider = Check("충돌 상자 표시", false);
-    private readonly CheckBox _plainFacesRight = Check("방향 없는 그림은 오른쪽을 봄", true);
+    private readonly CheckBox _showGrid = Check(UiStrings.S_PlayTestForm__showGrid_8744E58387, true);
+    private readonly CheckBox _showPivot = Check(UiStrings.S_PlayTestForm__showPivot_C16F3DE272, true);
+    private readonly CheckBox _showCollider = Check(UiStrings.S_PlayTestForm__showCollider_96996CCC00, false);
+    private readonly CheckBox _plainFacesRight = Check(UiStrings.S_PlayTestForm__plainFacesRight_D2362E1EE6, true);
     private readonly NumericUpDown _topDownSpeed;
     private readonly NumericUpDown _moveSpeed;
     private readonly NumericUpDown _gravity;
@@ -48,7 +49,7 @@ public sealed class PlayTestForm : Window
     {
         _currentDocument = currentDocument ?? throw new ArgumentNullException(nameof(currentDocument));
 
-        Title = "움직임 테스트";
+        Title = UiStrings.S_PlayTestForm_PlayTestForm_B00519A8EF;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Width = 1060;
         Height = 680;
@@ -72,18 +73,18 @@ public sealed class PlayTestForm : Window
         _maxFall = Number(10, 10000, (decimal)ps.MaxFallSpeed, 10)
             .Presets(200, 300, 400, 500, 600, 800, 1000).Unit("px/s").RecentKey("playtest.fall");
 
-        _topDownGroup.Children.Add(Header("탑뷰"));
-        _topDownGroup.Children.Add(Row("이동 속도 (px/s)", _topDownSpeed));
+        _topDownGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_A24362C504));
+        _topDownGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _topDownSpeed));
 
-        _platformerGroup.Children.Add(Header("플랫포머"));
-        _platformerGroup.Children.Add(Row("이동 속도 (px/s)", _moveSpeed));
-        _platformerGroup.Children.Add(Row("중력 (px/s²)", _gravity));
-        _platformerGroup.Children.Add(Row("점프 힘 (px/s)", _jumpPower));
-        _platformerGroup.Children.Add(Row("최대 낙하 속도 (px/s)", _maxFall));
+        _platformerGroup.Children.Add(Header(UiStrings.S_PlayTestForm_PlayTestForm_50E363BD43));
+        _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_BC9D1F57FB, _moveSpeed));
+        _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_C1DC7F8923, _gravity));
+        _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_CA9B701E99, _jumpPower));
+        _platformerGroup.Children.Add(Row(UiStrings.S_PlayTestForm_PlayTestForm_CEDC62ED3F, _maxFall));
 
         var resetButton = new Button
         {
-            Content = "처음 위치로 (R)",
+            Content = UiStrings.S_PlayTestForm_PlayTestForm_E8671BED08,
             Width = RowWidth,
             Height = 28,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -103,12 +104,12 @@ public sealed class PlayTestForm : Window
         var sideStack = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(12, 10, 8, 10) };
         sideStack.Children.AddRange(new Control[]
         {
-            Header("모드"), _mode,
-            Header("보기"), Row("배율 (정수)", _scale),
+            Header(UiStrings.S_PlayTestForm_PlayTestForm_EB62D0B4C6), _mode,
+            Header(UiStrings.S_PlayTestForm_PlayTestForm_21F5816FA3), Row(UiStrings.S_PlayTestForm_PlayTestForm_B566CF8EC7, _scale),
             _showGrid, _showPivot, _showCollider, _plainFacesRight,
             _topDownGroup, _platformerGroup, resetButton,
-            Header("재생 중"), _playingLabel, _candidateList,
-            Header("애니메이션 이름 확인"), _expectedList, _hintLabel, _keysLabel,
+            Header(UiStrings.S_PlayTestForm_PlayTestForm_BCE64AD0E9), _playingLabel, _candidateList,
+            Header(UiStrings.S_PlayTestForm_PlayTestForm_2086878572), _expectedList, _hintLabel, _keysLabel,
         });
         var side = new ScrollViewer
         {
@@ -194,7 +195,7 @@ public sealed class PlayTestForm : Window
         _sim.Load(_sprites);
         old.Dispose();
 
-        Title = _sprites.HasDocument ? $"움직임 테스트 - {_sprites.DocumentName}" : "움직임 테스트";
+        Title = _sprites.HasDocument ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlayTestForm_ReloadDocument_2215BDB9EC,_sprites.DocumentName) : UiStrings.S_PlayTestForm_ReloadDocument_224FD48AD2;
         if (!_scaleChosen && _sprites.HasDocument)
         {
             // 처음 한 번만 캐릭터 크기에 맞춰 배율을 고른다(이후에는 사용자가 정한 값을 유지).
@@ -213,8 +214,8 @@ public sealed class PlayTestForm : Window
         _topDownGroup.IsVisible = mode == PlayMode.TopDown;
         _platformerGroup.IsVisible = mode == PlayMode.Platformer;
         _keysLabel.Text = mode == PlayMode.TopDown
-            ? "조작: WASD / 방향키로 8방향 이동, R 처음 위치"
-            : "조작: A·D / ←·→ 이동, 스페이스(또는 W·↑) 점프, R 처음 위치";
+            ? UiStrings.S_PlayTestForm_ApplyMode_47A35B1C1A
+            : UiStrings.S_PlayTestForm_ApplyMode_85EA432E50;
         RefreshExpected();
         RefreshPlaying();
         _view.InvalidateVisual();

@@ -4,6 +4,7 @@ using Gpixel.Core.Model;
 using Gpixel.Core.Play;
 using RectangleF = System.Drawing.RectangleF;
 using SizeF = System.Drawing.SizeF;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.PlayTest;
 
@@ -233,7 +234,7 @@ internal sealed class PlaySimulation
         g.FillRectangle(AppTheme.BackBrush, full);
         if (!_sprites.HasDocument)
         {
-            var ft = AppTheme.Text("열린 이미지가 없습니다.", AppTheme.DimTextBrush);
+            var ft = AppTheme.Text(UiStrings.S_PlaySimulation_Render_80BEB72BD9, AppTheme.DimTextBrush);
             g.DrawText(ft, new Avalonia.Point((viewSize.Width - ft.Width) / 2, (viewSize.Height - ft.Height) / 2));
             return;
         }
@@ -299,7 +300,7 @@ internal sealed class PlaySimulation
 
         if (!options.HasFocus)
         {
-            AppTheme.DrawText(g, "화면을 클릭하면 키보드로 조작합니다.", new Avalonia.Point(10, 10), AppTheme.WarningBrush);
+            AppTheme.DrawText(g, UiStrings.S_PlaySimulation_Render_EAEFC07141, new Avalonia.Point(10, 10), AppTheme.WarningBrush);
         }
     }
 
@@ -341,60 +342,60 @@ internal sealed class PlaySimulation
     /// <summary>재생 중인 애니메이션·상태 글과, 이름 후보 순서(위에서부터, 고른 것에서 멈춤).</summary>
     public (string Text, IReadOnlyList<MarkedName> Candidates) DescribePlaying()
     {
-        if (!_sprites.HasDocument) return ("열린 이미지가 없습니다.", []);
+        if (!_sprites.HasDocument) return (UiStrings.S_PlaySimulation_DescribePlaying_67892F24DE, []);
         var sb = new StringBuilder();
         if (Mode == PlayMode.TopDown)
         {
-            sb.Append("상태: ").Append(TopDown.IsMoving ? "이동" : "멈춤").Append(" · ").Append(FacingText(TopDown.Facing)).AppendLine();
+            sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_1AADC2BB1E).Append(TopDown.IsMoving ? UiStrings.S_PlaySimulation_DescribePlaying_E9319F8530 : UiStrings.S_PlaySimulation_DescribePlaying_D0769141F5).Append(" · ").Append(FacingText(TopDown.Facing)).AppendLine();
         }
         else
         {
-            sb.Append("상태: ").Append(Platformer.State switch
+            sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_1AADC2BB1E).Append(Platformer.State switch
             {
-                PlatformerState.Run => "달리기",
-                PlatformerState.Jump => "점프",
-                PlatformerState.Fall => "낙하",
-                _ => "멈춤",
-            }).Append(" · ").Append(Platformer.FacingRight ? "오른쪽" : "왼쪽")
-              .Append(" · ").Append(Platformer.IsGrounded ? "바닥" : "공중").AppendLine();
+                PlatformerState.Run => UiStrings.S_PlaySimulation_DescribePlaying_1F7AD1E3B5,
+                PlatformerState.Jump => UiStrings.S_PlaySimulation_DescribePlaying_ED1785452A,
+                PlatformerState.Fall => UiStrings.S_PlaySimulation_DescribePlaying_C6084A0A78,
+                _ => UiStrings.S_PlaySimulation_DescribePlaying_D0769141F5,
+            }).Append(" · ").Append(Platformer.FacingRight ? UiStrings.S_PlaySimulation_DescribePlaying_A5C08EDCE8 : UiStrings.S_PlaySimulation_DescribePlaying_D8DF5DEA2F)
+              .Append(" · ").Append(Platformer.IsGrounded ? UiStrings.S_PlaySimulation_DescribePlaying_CB2F37F752 : UiStrings.S_PlaySimulation_DescribePlaying_7D9FF03FF6).AppendLine();
         }
 
         var pos = PivotPosition;
-        sb.Append("위치: ").Append(MathF.Round(pos.X)).Append(", ").Append(MathF.Round(pos.Y)).AppendLine(" px");
+        sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_8DB794B5EA).Append(MathF.Round(pos.X)).Append(", ").Append(MathF.Round(pos.Y)).AppendLine(" px");
 
         if (_player.Clip is { } clip)
         {
-            sb.Append("재생: ").Append(clip.Name);
-            if (Choice is null) sb.Append(" (규칙에 맞는 이름이 없어 첫 애니메이션)");
-            if (FlipX) sb.Append(" · 좌우 반전");
+            sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_8813C12991).Append(clip.Name);
+            if (Choice is null) sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_23CB7FA7CD);
+            if (FlipX) sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_A526E5944C);
             sb.AppendLine();
             int index = _player.FrameIndex;
-            sb.Append("프레임: ").Append(index + 1).Append('/').Append(clip.Frames.Count);
+            sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_E13FAEC802).Append(index + 1).Append('/').Append(clip.Frames.Count);
             if (_player.CurrentFrame is { } f)
             {
-                sb.Append(" · 칸 '").Append(f.Slice).Append('\'');
-                if (_sprites.GetFrame(f.Slice, false) is null) sb.Append(" (칸 없음)");
+                sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_A913098D03).Append(f.Slice).Append('\'');
+                if (_sprites.GetFrame(f.Slice, false) is null) sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_2395CC8590);
             }
             sb.AppendLine();
         }
         else if (_sprites.StillFrame is not null)
         {
-            sb.Append("재생: 애니메이션 없음 → ").Append(_sprites.StillDescription).Append(" 정지 화면");
-            if (FlipX) sb.Append(" · 좌우 반전");
+            sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_51984A5112).Append(_sprites.StillDescription).Append(UiStrings.S_PlaySimulation_DescribePlaying_4236C67AF3);
+            if (FlipX) sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_A526E5944C);
             sb.AppendLine();
         }
         else
         {
-            sb.AppendLine("재생: 보여 줄 애니메이션·칸이 없습니다.");
+            sb.AppendLine(UiStrings.S_PlaySimulation_DescribePlaying_566000BF91);
         }
 
-        sb.Append("이름 후보(위에서부터):");
+        sb.Append(UiStrings.S_PlaySimulation_DescribePlaying_F84837ED42);
         var candidates = new List<MarkedName>();
         foreach (var (name, flip) in CurrentCandidates())
         {
             bool exists = _sprites.HasClip(name);
             bool chosen = exists && Choice is { } c && c.Name == name;
-            candidates.Add(new MarkedName(chosen ? NameMark.Chosen : exists ? NameMark.Found : NameMark.Missing, flip ? name + " (반전)" : name));
+            candidates.Add(new MarkedName(chosen ? NameMark.Chosen : exists ? NameMark.Found : NameMark.Missing, flip ? name + UiStrings.S_PlaySimulation_DescribePlaying_DC3EA22F20 : name));
             if (chosen) break;
         }
         return (sb.ToString(), candidates);
@@ -459,12 +460,12 @@ internal sealed class PlaySimulation
             if (choice is { } other)
             {
                 anySubstitute = true;
-                lines.Add(new MarkedName(NameMark.Substitute, $"{expected} → {other.Name}" + (other.FlipX ? " (반전)" : "")));
+                lines.Add(new MarkedName(NameMark.Substitute, $"{expected} → {other.Name}" + (other.FlipX ? UiStrings.S_PlaySimulation_DescribeExpected_D850BC602E : "")));
             }
             else
             {
                 anyMissing = true;
-                lines.Add(new MarkedName(NameMark.Missing, $"{expected} 없음"));
+                lines.Add(new MarkedName(NameMark.Missing, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlaySimulation_DescribeExpected_E3AA3E9D72,expected)));
             }
         }
 
@@ -498,15 +499,15 @@ internal sealed class PlaySimulation
         if (_sprites.ClipNames.Count == 0)
         {
             hint = _sprites.StillFrame is null
-                ? "애니메이션도 칸도 없어 보여 줄 그림이 없습니다."
-                : $"애니메이션이 없어 {_sprites.StillDescription}을(를) 정지 화면으로 보여 줍니다. 위 이름으로 애니메이션을 만들면 상태에 따라 자동으로 바뀝니다.";
+                ? UiStrings.S_PlaySimulation_DescribeExpected_669B0EA693
+                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlaySimulation_DescribeExpected_AAF31909FF,_sprites.StillDescription);
         }
         else if (anySubstitute || anyMissing)
         {
             var parts = new List<string>();
-            if (anySubstitute) parts.Add("세모 표시는 다른 애니메이션으로 대신합니다");
-            if (anyMissing) parts.Add($"X 표시는 대신할 것도 없어 첫 애니메이션 '{_sprites.ClipNames[0]}'을(를) 씁니다");
-            hint = string.Join(". ", parts) + ". 위 이름으로 애니메이션을 만들면 상태에 따라 자동으로 골라집니다.";
+            if (anySubstitute) parts.Add(UiStrings.S_PlaySimulation_DescribeExpected_4734C4A161);
+            if (anyMissing) parts.Add(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlaySimulation_DescribeExpected_172D55E96E,_sprites.ClipNames[0]));
+            hint = string.Join(". ", parts) + UiStrings.S_PlaySimulation_DescribeExpected_3D90F34B55;
         }
         return (lines, hint);
 
@@ -517,10 +518,10 @@ internal sealed class PlaySimulation
 
     private static string FacingText(Facing facing) => facing switch
     {
-        Facing.Up => "위",
-        Facing.Left => "왼쪽",
-        Facing.Right => "오른쪽",
-        _ => "아래",
+        Facing.Up => UiStrings.S_PlaySimulation_FacingText_5C117F45EA,
+        Facing.Left => UiStrings.S_PlaySimulation_FacingText_94139E69A3,
+        Facing.Right => UiStrings.S_PlaySimulation_FacingText_BAF1C45CD4,
+        _ => UiStrings.S_PlaySimulation_FacingText_63B60AAB9C,
     };
 
 }

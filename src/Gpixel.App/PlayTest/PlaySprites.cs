@@ -1,4 +1,5 @@
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App.PlayTest;
 
@@ -92,7 +93,7 @@ internal sealed class PlaySprites : IDisposable
         {
             sprites._slices[StillKey] = (bounds, doc.Sprite.DefaultPivot);
             sprites.StillFrame = StillKey;
-            sprites.StillDescription = "이미지 전체";
+            sprites.StillDescription = UiStrings.S_PlaySprites_Load_6D8B68F72A;
         }
         else if (doc.Slices.Count > 0)
         {
@@ -102,7 +103,7 @@ internal sealed class PlaySprites : IDisposable
             {
                 sprites._slices[StillKey] = (rect, first.Pivot);
                 sprites.StillFrame = StillKey;
-                sprites.StillDescription = $"첫 칸 '{first.Name}'";
+                sprites.StillDescription = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PlaySprites_Load_FD342AB3E1,first.Name);
             }
         }
         return sprites;

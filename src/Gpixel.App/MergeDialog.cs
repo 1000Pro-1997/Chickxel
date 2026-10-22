@@ -1,5 +1,6 @@
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -25,35 +26,35 @@ public sealed class MergeDialog : DialogBase
 
     /// <param name="items">합칠 파일(고른 순서)과 읽은 내용.</param>
     /// <param name="folder">결과 <c>.gpixel</c>을 만들 폴더.</param>
-    public MergeDialog(IReadOnlyList<(string Path, MergeSource Source)> items, string folder) : base($"파일 {items.Count}개 합치기", "합치기")
+    public MergeDialog(IReadOnlyList<(string Path, MergeSource Source)> items, string folder) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_MergeDialog_B96DE665FA,items.Count), UiStrings.S_MergeDialog_MergeDialog_FB647D2B95)
     {
         _items = items.ToList();
         _folder = folder;
 
         _order = new ListBox { Width = 220, Height = 150, Background = AppTheme.InputBrush, Foreground = AppTheme.TextBrush }
-            .Tip("줄을 끌어 순서를 바꿉니다(위 = 먼저).");
+            .Tip(UiStrings.S_MergeDialog_MergeDialog_34FC6D6063);
         _drag.Moved += (from, to) => MoveItem(from, to);
-        var up = Ui.IconButton(VectorIcon.ChevronUp, "위로(먼저)", (_, _) => MoveSelected(-1), 32);
-        var down = Ui.IconButton(VectorIcon.ChevronDown, "아래로(나중)", (_, _) => MoveSelected(1), 32);
-        _blankCover = Ui.Check("빈 대표 이미지");
+        var up = Ui.IconButton(VectorIcon.ChevronUp, UiStrings.S_MergeDialog_MergeDialog_23AA50B513, (_, _) => MoveSelected(-1), 32);
+        var down = Ui.IconButton(VectorIcon.ChevronDown, UiStrings.S_MergeDialog_MergeDialog_BDD18DAAB9, (_, _) => MoveSelected(1), 32);
+        _blankCover = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_40FF1DF2B5);
         _blankCover.IsEnabled = false;
         _blankCover.VerticalAlignment = VerticalAlignment.Center;
-        _blankCover.Tip("그룹 행(대표 이미지)과 프레임 시트를 비워 둡니다 — 부위를 모두 숨긴 채로 만들고, 부위 그림은 그대로라 부위 아틀라스에는 모두 나갑니다. "
-                        + "부위는 타임라인에서 눈을 켜면 보입니다. \"그룹으로\"를 고르면 켤 수 있습니다.");
+        _blankCover.Tip(UiStrings.S_MergeDialog_MergeDialog_7C6B20A094
+                        + UiStrings.S_MergeDialog_MergeDialog_BC8C862A07);
         RefreshOrder(0);
 
         var maxW = items.Max(i => i.Source.Size.Width);
         var maxH = items.Max(i => i.Source.Size.Height);
-        _layers = Radio("레이어로", "그림 파일마다 레이어 1개, 프로젝트(.gpixel)는 레이어·그룹·스킨을 통째로(첫 파일이 맨 위)", true);
-        _group = Radio("그룹으로", "그룹 하나에 그림 파일마다 부위 1개(파일 크기 그대로). 그룹이 있는 .gpixel이 있으면 그 첫 그룹에 부위를 더합니다(부위·스킨 유지)", false);
-        _skins = Radio("스킨으로", "그룹 하나에 그림 파일마다 스킨 1개(스킨 이름 = 파일 이름). 그룹이 있는 .gpixel이 있으면 그 그룹에 새 스킨으로 더합니다"
-                                  + "(원래 스킨·부위 전용 스킨 유지, 그림은 크기가 같은 부위 또는 가장 큰 부위에). 없으면 부위 1개, 첫 파일 = 기본 스킨, 부위 크기 = 가장 큰 파일", false);
-        _frames = Radio("프레임으로", "파일마다 프레임(차례로 이어 붙임, 칸 이름 = 파일 이름). .gpixel은 레이어 구조·태그를 그대로 가져옵니다", false);
+        _layers = Radio(UiStrings.S_MergeDialog_MergeDialog_B3BA45594D, UiStrings.S_MergeDialog_MergeDialog_9D32BDB124, true);
+        _group = Radio(UiStrings.S_MergeDialog_MergeDialog_2A89E3C4B6, UiStrings.S_MergeDialog_MergeDialog_7306C9C995, false);
+        _skins = Radio(UiStrings.S_MergeDialog_MergeDialog_0A7DC12A34, UiStrings.S_MergeDialog_MergeDialog_C9D3632FB9
+                                  + UiStrings.S_MergeDialog_MergeDialog_A54A1EF2B9, false);
+        _frames = Radio(UiStrings.S_MergeDialog_MergeDialog_6233362607, UiStrings.S_MergeDialog_MergeDialog_C112F96D7C, false);
         _name = Ui.Text(UniqueName(ProjectMerge.SuggestName(items.Select(i => i.Source.Name).ToList())), 200);
         _w = Ui.Num(1, PixelImage.MaxSize, maxW, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, maxH, 70).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
-        var fit = Ui.Button("가장 큰 크기", (_, _) => { _w.Value = maxW; _h.Value = maxH; });
-        _deleteOriginals = Ui.Check("원본 삭제(앱 휴지통에 보관, Ctrl+Z로 되살림) — 끄면 원본을 그대로 둡니다");
+        var fit = Ui.Button(UiStrings.S_MergeDialog_MergeDialog_FAF5E33EF9, (_, _) => { _w.Value = maxW; _h.Value = maxH; });
+        _deleteOriginals = Ui.Check(UiStrings.S_MergeDialog_MergeDialog_FBCED3F611);
         _info = Ui.Label("");
         _warning = Ui.Label("");
         _warning.Foreground = Brushes.OrangeRed;
@@ -65,21 +66,21 @@ public sealed class MergeDialog : DialogBase
         _notes.MaxWidth = 300;
 
         var left = Ui.Stack(
-            Ui.Label("순서(위 = 먼저)", bold: true),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_D350916435, bold: true),
             Ui.Row(_order, Ui.Stack(up, down)),
-            Ui.Row(Ui.Label("이름"), _name, Ui.Label(SpriteProject.FileExtension)),
-            Ui.Label("합치는 방식", bold: true),
+            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_C6EEBDB85A), _name, Ui.Label(SpriteProject.FileExtension)),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_0D1516342C, bold: true),
             _layers, GroupRow(), _skins, _frames,
-            Ui.Label("캔버스", bold: true),
-            Ui.Row(Ui.Label("가로"), _w, Ui.Label("세로"), _h, Ui.Label("px"), fit),
-            Ui.Label("기준점(파일 그림이 놓일 위치)"),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_6DB1865E38, bold: true),
+            Ui.Row(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_9EA164CE93), _w, Ui.Label(UiStrings.S_MergeDialog_MergeDialog_B655521669), _h, Ui.Label("px"), fit),
+            Ui.Label(UiStrings.S_MergeDialog_MergeDialog_58E4493C15),
             _anchor,
             _deleteOriginals,
             _warning);
-        var right = Ui.Stack(Ui.Label("미리보기", bold: true), _preview, _info, _notes);
+        var right = Ui.Stack(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_5A49C66873, bold: true), _preview, _info, _notes);
         Body.Children.Add(Ui.Row(left, right));
         // 합친 결과가 타임라인에서 어떻게 보이는지(행 = 레이어·그룹·부위, 열 = 프레임) — 방식을 바꾸면 바로 바뀐다.
-        Body.Children.Add(Ui.Label("타임라인에서는 이렇게 보입니다", bold: true));
+        Body.Children.Add(Ui.Label(UiStrings.S_MergeDialog_MergeDialog_E564B919E5, bold: true));
         Body.Children.Add(new ScrollViewer
         {
             Content = _timeline,
@@ -171,7 +172,7 @@ public sealed class MergeDialog : DialogBase
         _order.Items.Clear();
         foreach (var (path, s) in _items)
         {
-            var item = new ListBoxItem { Content = $"{Path.GetFileName(path)}  ({s.Size.Width}×{s.Size.Height}{(s.FrameCount > 1 ? $", {s.FrameCount}프레임" : "")})" };
+            var item = new ListBoxItem { Content = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_RefreshOrder_39B513567A,Path.GetFileName(path),s.Size.Width,s.Size.Height,(s.FrameCount > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_RefreshOrder_1AAB850EB8,s.FrameCount) : "")) };
             _order.Items.Add(item);
             _drag.Attach(item);
         }
@@ -200,8 +201,8 @@ public sealed class MergeDialog : DialogBase
     {
         var name = ResultName;
         if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-            return "이름이 비었거나 쓸 수 없는 문자가 있습니다.";
-        return Conflicts(name) is { Count: > 0 } c ? $"이미 같은 이름의 파일이 있습니다: {string.Join(", ", c.Select(Path.GetFileName))}" : null;
+            return UiStrings.S_MergeDialog_Validate_A78A5A134C;
+        return Conflicts(name) is { Count: > 0 } c ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_Validate_71684F8BF0,string.Join(", ", c.Select(Path.GetFileName))) : null;
     }
 
     /// <summary>덮어쓰게 되는 기존 파일(원본 삭제를 켰으면 지울 원본은 뺌).</summary>
@@ -215,9 +216,9 @@ public sealed class MergeDialog : DialogBase
     {
         var name = ResultName;
         _warning.Text = name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
-            ? "쓸 수 없는 이름입니다."
+            ? UiStrings.S_MergeDialog_UpdateWarning_0357CC4FEF
             : Conflicts(name) is { Count: > 0 } c
-                ? $"이미 있는 파일: {string.Join(", ", c.Select(Path.GetFileName))} — 이름을 바꾸세요."
+                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdateWarning_9F1C6A7600,string.Join(", ", c.Select(Path.GetFileName)))
                 : "";
     }
 
@@ -231,10 +232,10 @@ public sealed class MergeDialog : DialogBase
         _timeline.SetProject(p);
         int parts = p.Layers.Count(l => l.IsPart);
         int skins = p.Layers.Where(l => l.IsGroup).Sum(l => l.Skins.Count);
-        _info.Text = $"{p.Width}×{p.Height} · 레이어 {p.Layers.Count(l => !l.IsPart)}개" + (parts > 0 ? $"(부위 {parts}개)" : "")
-                     + (_skins.On() ? $" · 스킨 {skins}개(미리보기 = 지금 스킨)" : "")
-                     + (BlankCover ? " · 대표 이미지 비움(부위 숨김)" : "")
-                     + $" · 프레임 {p.Frames.Count}개" + (p.Tags.Count > 0 ? $" · 태그 {p.Tags.Count}개" : "");
+        _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_D7D7C6307A,p.Width,p.Height,p.Layers.Count(l => !l.IsPart)) + (parts > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_190EF86F30,parts) : "")
+                     + (_skins.On() ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_A64CA4F418,skins) : "")
+                     + (BlankCover ? UiStrings.S_MergeDialog_UpdatePreview_140D4F9E33 : "")
+                     + string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_2981429CE0,p.Frames.Count) + (p.Tags.Count > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_UpdatePreview_6CCB9AF0FE,p.Tags.Count) : "");
         _notes.Text = string.Join("\n", notes.Select(n => "• " + n));
         _notes.IsVisible = notes.Count > 0;
     }
@@ -315,7 +316,7 @@ public sealed class MergeDialog : DialogBase
             for (int li = p.Layers.Count - 1; li >= 0; li--)
             {
                 var layer = p.Layers[li];
-                string name = layer.IsPart ? $"{layer.Name}  {layer.PartSize.Width}×{layer.PartSize.Height}{(layer.Visible ? "" : "  (숨김)")}" : layer.Name;
+                string name = layer.IsPart ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_SetProject_AB9B2445C1,layer.Name,layer.PartSize.Width,layer.PartSize.Height,(layer.Visible ? "" : UiStrings.S_MergeDialog_SetProject_00D4A9DF3D)) : layer.Name;
                 int index = li;
                 _rows.Add((name, layer.IsGroup, layer.IsPart, false, false,
                     Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));
@@ -356,7 +357,7 @@ public sealed class MergeDialog : DialogBase
                 }
                 y0 = TagH;
             }
-            AppTheme.DrawTextIn(g, "레이어 ＼ 프레임", new Rect(4, y0, NameW - 4, HeadH), AppTheme.DimTextBrush, small);
+            AppTheme.DrawTextIn(g, UiStrings.S_MergeDialog_Render_B55FF80314, new Rect(4, y0, NameW - 4, HeadH), AppTheme.DimTextBrush, small);
             for (int f = 0; f < p.Frames.Count; f++)
             {
                 double x = NameW + f * CellW;

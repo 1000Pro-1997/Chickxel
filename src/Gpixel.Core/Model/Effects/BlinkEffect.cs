@@ -46,7 +46,7 @@ public sealed record BlinkEffect : AnimatedEffect
     /// <summary>반투명으로 숨길 때 남는 불투명도 0~100%.</summary>
     public int Opacity { get => _opacity; init => _opacity = Math.Clamp(value, 0, 100); }
 
-    public override string DisplayName => "깜빡이기";
+    public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Blink;
 
     /// <summary>지금 프레임에서 숨는지.</summary>
     public bool Hidden => Timing == BlinkTiming.Frames

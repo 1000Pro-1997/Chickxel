@@ -160,7 +160,7 @@ public sealed class Selection
     public void SetFloating(PixelImage floating, PixelMask region)
     {
         if (region.Bounds.Width != floating.Width || region.Bounds.Height != floating.Height)
-            throw new ArgumentException("떠 있는 픽셀 크기가 영역 사각형과 다릅니다.", nameof(floating));
+            throw new ArgumentException(Gpixel.Core.Localization.DomainStrings.Selection_RegionSizeMismatch, nameof(floating));
         Floating = floating;
         SetRegion(region);
         OnChanged();

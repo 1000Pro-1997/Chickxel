@@ -54,7 +54,7 @@ public sealed partial class SpriteProject
                     AddSnapshot(s.After);
                     break;
                 default:
-                    throw new InvalidOperationException($"저장할 수 없는 실행취소 단계: {c.GetType().Name}");
+                    throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.FormatHistory_UnsavableStep(type: c.GetType().Name));
             }
         }
         foreach (var c in undo) Visit(c);
@@ -97,7 +97,7 @@ public sealed partial class SpriteProject
                     Patch = Patch(s.Patch),
                 },
                 SnapshotCommand s => new HistoryStepDto { Label = s.Label, Type = "snapshot", Before = Snap(s.Before), After = Snap(s.After), Change = (int)s.Change },
-                _ => throw new InvalidOperationException($"저장할 수 없는 실행취소 단계: {c.GetType().Name}"),
+                _ => throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.FormatHistory_UnsavableStep(type: c.GetType().Name)),
             };
             return new HistoryManifestDto
             {
@@ -122,7 +122,7 @@ public sealed partial class SpriteProject
     /// </summary>
     internal int LoadHistory(HistoryManifestDto m, HistoryBlobs blobs)
     {
-        if (_stroke is not null) throw new InvalidOperationException("그리는 중에는 실행취소 기록을 읽을 수 없습니다.");
+        if (_stroke is not null) throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.History_CannotReadWhilePainting);
         var r = new HistoryResolver();
         var sizes = new Dictionary<int, HistoryImageDto>();
         foreach (var i in m.Images)
@@ -134,7 +134,7 @@ public sealed partial class SpriteProject
             if (hash is not null && snapshotDtos.TryGetValue(hash, out var known)) return known;
             HistorySnapshotDto dto;
             try { dto = JsonSerializer.Deserialize<HistorySnapshotDto>(blobs.Get(hash), UndoHistoryIO.Json) ?? throw Corrupt(); }
-            catch (JsonException ex) { throw new InvalidDataException($"실행취소 기록이 손상되었습니다: {ex.Message}", ex); }
+            catch (JsonException ex) { throw new InvalidDataException(Gpixel.Core.Localization.DomainStrings.FormatHistory_CorruptMessage(error: ex.Message), ex); }
             snapshotDtos[hash!] = dto;
             return dto;
         }
@@ -230,9 +230,9 @@ public sealed partial class SpriteProject
         return undo.Count + redo.Count;
     }
 
-    private static InvalidDataException Corrupt() => new("실행취소 기록이 손상되었습니다.");
+    private static InvalidDataException Corrupt() => new(Gpixel.Core.Localization.DomainStrings.History_Corrupt);
 
-    private static InvalidDataException Mismatch() => new("실행취소 기록이 프로젝트 파일과 맞지 않습니다.");
+    private static InvalidDataException Mismatch() => new(Gpixel.Core.Localization.DomainStrings.History_ProjectMismatch);
 
     private sealed partial class Snapshot
     {

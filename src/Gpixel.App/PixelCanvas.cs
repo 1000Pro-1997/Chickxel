@@ -2,6 +2,7 @@ using Avalonia.Media.Immutable;
 using Avalonia.Platform;
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -651,11 +652,11 @@ public sealed class PixelCanvas : Control
         if (_drag == DragMode.Gradient) DrawGradientGuide(g);
         DrawBrushCursor(g);
         if (_peekPrevious)
-            AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? $"이전 프레임 {_ctx.CurrentFrame} 보는 중 (H)" : "이전 프레임이 없습니다",
+            AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_Render_28FC63DF57,_ctx.CurrentFrame) : UiStrings.S_PixelCanvas_Render_5D74D360AD,
                 new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);
         // 캔버스 아래 안내는 그릴 수 없을 때(잠금) 경고만 — 사용법 설명은 도움말·상태 표시줄에.
         if (!_ctx.IsGroupSelected && !_ctx.IsTransforming && !_ctx.CanEdit)
-            AppTheme.DrawText(g, "현재 레이어가 잠겨 있어 그릴 수 없습니다", new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
+            AppTheme.DrawText(g, UiStrings.S_PixelCanvas_Render_77C8A3EDEF, new Avalonia.Point(8, Bounds.Height - 24), AppTheme.WarningBrush);
     }
 
     /// <summary>캔버스 크기의 그림을 (ox,oy) 이미지 좌표만큼 옮긴 위치에 체커 배경과 함께 보이는 부분만 그린다(그림이 없으면 체커만).</summary>
@@ -1158,7 +1159,7 @@ public sealed class PixelCanvas : Control
         if (Ui.HasCommand(e.KeyModifiers))
         {
             _ctx.BrushSize += step;
-            Message?.Invoke(this, $"브러시 크기 {_ctx.BrushSize}");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_OnPointerWheelChanged_D2CFBB82A7,_ctx.BrushSize));
             InvalidateVisual();
             return;
         }
@@ -1238,7 +1239,7 @@ public sealed class PixelCanvas : Control
         }
         if (IsPaintTool(tool) && !_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 잠겨 있어 그릴 수 없습니다.");
+            Message?.Invoke(this, UiStrings.S_PixelCanvas_OnPointerPressed_F29C349441);
             return;
         }
         e.Pointer.Capture(this);
@@ -1462,20 +1463,20 @@ public sealed class PixelCanvas : Control
                     // 끌지 않고 뗐으면 방향이 없으므로 아무것도 칠하지 않는다.
                     _ctx.CancelStroke();
                     _strokeBase = null;
-                    Message?.Invoke(this, "그라데이션: 시작점에서 끝점까지 끌어 칠합니다.");
+                    Message?.Invoke(this, UiStrings.S_PixelCanvas_EndDrag_E0D2C0AAD2);
                 }
                 else EndPixelStroke();
                 InvalidateVisual();
                 break;
             case DragMode.MoveLayer:
-                _ctx.CommitStroke("내용 이동");
+                _ctx.CommitStroke(UiStrings.S_PixelCanvas_EndDrag_685B820F08);
                 _strokeBase = null;
                 break;
             case DragMode.Marquee:
                 if (!_dragMoved)
                 {
                     _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
-                    Message?.Invoke(this, "선택 해제");
+                    Message?.Invoke(this, UiStrings.S_PixelCanvas_EndDrag_DB199DD98F);
                 }
                 break;
             case DragMode.Lasso:
@@ -1483,7 +1484,7 @@ public sealed class PixelCanvas : Control
                 else
                 {
                     _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
-                    Message?.Invoke(this, "선택 해제");
+                    Message?.Invoke(this, UiStrings.S_PixelCanvas_EndDrag_DB199DD98F);
                 }
                 _lassoPath.Clear();
                 _lassoPreview = null;
@@ -1577,16 +1578,16 @@ public sealed class PixelCanvas : Control
     {
         var label = _strokeTool switch
         {
-            ToolKind.Pencil => "연필",
-            ToolKind.Eraser => "지우개",
-            ToolKind.Fill => "채우기",
-            ToolKind.Gradient => "그라데이션",
-            ToolKind.Line => "선",
-            ToolKind.Rectangle => "사각형",
-            ToolKind.Ellipse => "원",
-            ToolKind.Dodge => _strokeLighten ? "밝게" : "어둡게",
-            ToolKind.Dither => "디더링",
-            _ => "색 바꾸기 브러시",
+            ToolKind.Pencil => UiStrings.S_PixelCanvas_EndPixelStroke_CF98AEC3ED,
+            ToolKind.Eraser => UiStrings.S_PixelCanvas_EndPixelStroke_8EFE7C05AE,
+            ToolKind.Fill => UiStrings.S_PixelCanvas_EndPixelStroke_94045434EF,
+            ToolKind.Gradient => UiStrings.S_PixelCanvas_EndPixelStroke_45906D38E1,
+            ToolKind.Line => UiStrings.S_PixelCanvas_EndPixelStroke_8D94C37E38,
+            ToolKind.Rectangle => UiStrings.S_PixelCanvas_EndPixelStroke_57B4E3E0E3,
+            ToolKind.Ellipse => UiStrings.S_PixelCanvas_EndPixelStroke_3A7C39EBF0,
+            ToolKind.Dodge => _strokeLighten ? UiStrings.S_PixelCanvas_EndPixelStroke_57BA62C92E : UiStrings.S_PixelCanvas_EndPixelStroke_D019BA28D7,
+            ToolKind.Dither => UiStrings.S_PixelCanvas_EndPixelStroke_1C14189718,
+            _ => UiStrings.S_PixelCanvas_EndPixelStroke_E40CB15E95,
         };
         _ctx.CommitStroke(label);
         if (_strokeTool is not (ToolKind.Eraser or ToolKind.Dodge or ToolKind.Gradient) && _strokeColor.A != 0) _ctx.PushRecentColor(_strokeColor);
@@ -1616,7 +1617,7 @@ public sealed class PixelCanvas : Control
         _strokeBase = null;
         _ppStroke = null;
         _visited = null;
-        Message?.Invoke(this, "그리기 취소");
+        Message?.Invoke(this, UiStrings.S_PixelCanvas_CancelPixelStroke_53972D288A);
         InvalidateVisual();
     }
 
@@ -1773,7 +1774,7 @@ public sealed class PixelCanvas : Control
         if (!_ctx.Selection.HasSelection) return;
         _ctx.CommitFloating();
         _ctx.Selection.Deselect(_ctx.EditImageOrEmpty);
-        Message?.Invoke(this, "선택 해제");
+        Message?.Invoke(this, UiStrings.S_PixelCanvas_DeselectByRightClick_1E4DB6CE1A);
     }
 
     /// <summary>스마트 선택: 클릭한 곳과 맞는 색 영역을 선택한다(채우기의 허용 오차·이어진 영역·대각선·기준 설정). 맞는 곳이 없으면 선택 해제.</summary>
@@ -1786,7 +1787,7 @@ public sealed class PixelCanvas : Control
         var region = Raster.FloodRegion(source, p.X, p.Y, _ctx.FillContiguous, null, _ctx.FillToleranceChannels, _ctx.FillDiagonal);
         _ctx.Selection.Select(_ctx.EditImageOrEmpty, region);
         var sel = _ctx.Selection;
-        Message?.Invoke(this, sel.HasSelection ? $"스마트 선택: {sel.Region.Count}픽셀 ({sel.Bounds.Width}×{sel.Bounds.Height})" : "선택 해제");
+        Message?.Invoke(this, sel.HasSelection ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_WandAt_2BA26AADD0,sel.Region.Count,sel.Bounds.Width,sel.Bounds.Height) : UiStrings.S_PixelCanvas_WandAt_7AF3F5F46E);
     }
 
     // ───────────── 선택 영역·이동 ─────────────
@@ -1795,7 +1796,7 @@ public sealed class PixelCanvas : Control
     {
         if (!_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 잠겨 있어 옮길 수 없습니다.");
+            Message?.Invoke(this, UiStrings.S_PixelCanvas_BeginMoveSelection_EE35204CAB);
             return;
         }
         _ctx.BeginSelectionEdit();
@@ -1807,7 +1808,7 @@ public sealed class PixelCanvas : Control
     {
         if (!_ctx.CanEdit)
         {
-            Message?.Invoke(this, "현재 레이어가 잠겨 있어 옮길 수 없습니다.");
+            Message?.Invoke(this, UiStrings.S_PixelCanvas_BeginMoveLayer_95920E31EA);
             return;
         }
         _ctx.CommitFloating();
@@ -1847,7 +1848,7 @@ public sealed class PixelCanvas : Control
         var copy = img.Clone();
         PixelOps.Shift(copy, img, new Rectangle(0, 0, W, H), dx, dy, _ctx.MoveWrap);
         _ctx.NotifyPixels();
-        _ctx.CommitStroke("내용 이동");
+        _ctx.CommitStroke(UiStrings.S_PixelCanvas_Nudge_A41E3BE80E);
         return true;
     }
 
@@ -1922,7 +1923,7 @@ public sealed class PixelCanvas : Control
             {
                 _selectedPart = null;
                 InvalidateVisual();
-                Message?.Invoke(this, "부위 선택 해제");
+                Message?.Invoke(this, UiStrings.S_PixelCanvas_BeginArrange_28B8E5E745);
             }
             return;
         }
@@ -1933,12 +1934,12 @@ public sealed class PixelCanvas : Control
         {
             _hoverPart = null;
             _ctx.SetCurrentLayer(index);
-            Message?.Invoke(this, $"부위 \"{part.Name}\" 고름");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_914451A106,part.Name));
             return;
         }
         if (p.IsLayerLocked(index))
         {
-            Message?.Invoke(this, $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다.");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_9D0F6205A8,part.Name));
             return;
         }
         if (part.IsAutoLaidOut)
@@ -1949,11 +1950,11 @@ public sealed class PixelCanvas : Control
             {
                 if (!GroupLayoutDialog.ConfirmManualMove(this, part))
                 {
-                    Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다");
+                    Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_B1F7BBC533,group.Name));
                     return;
                 }
                 _ctx.SetGroupLayout(group, null);
-                Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치를 껐습니다 — 이제 부위를 끌어 옮길 수 있습니다");
+                Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_BeginArrange_32D63E2C46,group.Name));
             });
             return;
         }
@@ -1972,7 +1973,7 @@ public sealed class PixelCanvas : Control
         if (part is null || _ctx.Project is not { } p || _arrangeOffset == _arrangeStart || p.IndexOf(part) < 0) return;
         var offset = _arrangeOffset;
         _ctx.MovePart(part, offset);
-        Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
+        Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_EndArrange_A643730044,part.Name,offset.X,offset.Y));
     }
 
     /// <summary>그룹 화면 방향키: 마지막으로 올리거나 끈 부위(없으면 그룹 맨 위 부위)를 옮긴다.</summary>
@@ -1981,23 +1982,23 @@ public sealed class PixelCanvas : Control
         if (_ctx.Project is not { } p || _ctx.CurrentGroup is not { } group || _drag != DragMode.None) return false;
         if (SelectedPartIn(p, group) is not { } part)
         {
-            Message?.Invoke(this, "부위를 클릭해 고른 뒤 방향키로 옮깁니다.");
+            Message?.Invoke(this, UiStrings.S_PixelCanvas_NudgePart_386C0383DB);
             return true;
         }
         int index = p.IndexOf(part);
         if (p.IsLayerLocked(index))
         {
-            Message?.Invoke(this, $"부위 \"{part.Name}\"이(가) 잠겨 있어 옮길 수 없습니다.");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_NudgePart_20E5A45EA7,part.Name));
             return true;
         }
         var offset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
         if (!GroupLayoutDialog.ConfirmManualMove(this, part))
         {
-            Message?.Invoke(this, $"그룹 \"{group.Name}\" 자동 배치 그대로 — 부위를 옮기지 않았습니다");
+            Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_NudgePart_61255F9462,group.Name));
             return true;
         }
         _ctx.MovePart(part, offset);
-        Message?.Invoke(this, $"부위 \"{part.Name}\" 위치 {offset.X}, {offset.Y}");
+        Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_NudgePart_4EE81EE408,part.Name,offset.X,offset.Y));
         return true;
     }
 
@@ -2132,7 +2133,7 @@ public sealed class PixelCanvas : Control
                 if (clickCount >= 2)
                 {
                     _ctx.ResetTransformPivot();
-                    Message?.Invoke(this, "회전 중심을 가운데로");
+                    Message?.Invoke(this, UiStrings.S_PixelCanvas_BeginTransformDrag_CDA1CFC252);
                     return false;
                 }
                 _drag = DragMode.TransformPivot;
@@ -2287,7 +2288,7 @@ public sealed class PixelCanvas : Control
         if (image == source) return text;
         double sx = Math.Round(image.Width * 100.0 / source.Width, 1), sy = Math.Round(image.Height * 100.0 / source.Height, 1);
         var percent = sx == sy ? $"{sx:0.#}%" : $"{sx:0.#}%×{sy:0.#}%";
-        return $"{text} · 그림 {image.Width}×{image.Height} ({percent})";
+        return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_CanvasResizeLabel_0D4B41243A,text,image.Width,image.Height,percent);
     }
 
     /// <summary>화면 위치가 가리키는 캔버스 크기 동작: 손잡이(가장 가까운 것, 가장자리) → 그림 안쪽(옮기기) 순. 없으면 <see cref="DragMode.None"/>.</summary>

@@ -27,4 +27,9 @@
     <None Include="..\fixtures\**\*" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- 앱·코어의 화면 문구(Localization/*.resx)를 출력 폴더의 localization/ 으로 복사한다(자리 표시자 검사용). -->
+  <ItemGroup>
+    <None Include="..\..\src\**\Localization\*.resx" LinkBase="localization" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
