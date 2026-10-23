@@ -120,6 +120,29 @@ public class AnimatedEffectTests
         Assert.Equal(transparent, last[0, 0]);
     }
 
+    [Theory]
+    [InlineData(180, 2, 1)]
+    [InlineData(-180, 2, 3)]
+    public void GradientChange_RadialSignedAngleControlsDirectionAndPartialTurn(int angle, int targetX, int targetY)
+    {
+        var source = new PixelImage(5, 5);
+        for (int y = 1; y <= 3; y++)
+            for (int x = 1; x <= 3; x++) source[x, y] = Color32.White;
+        var effect = new GradientOverlayEffect
+        {
+            Mode = GradientChangeMode.RadialRotation,
+            Angle = angle,
+            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, Color32.Black)] },
+        };
+        var start = At(source, effect, 0, 4).Image;
+        var middle = At(source, effect, 2, 4).Image;
+        var end = At(source, effect, 4, 4).Image;
+        Assert.Equal(start[3, 2], middle[targetX, targetY]);
+        Assert.NotEqual(start[3, 2], end[3, 2]);
+        Assert.True(start.ContentEquals(At(source, effect with { Angle = 0 }, 4, 4).Image));
+        Assert.True(start.ContentEquals(At(source, effect with { Angle = 720 }, 4, 4).Image));
+    }
+
     // ───────────── 터지기 ─────────────
 
     private static readonly ExplodeEffect Burst = new() { Distance = 8, Spread = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
@@ -344,13 +367,16 @@ public class AnimatedEffectTests
         Assert.Equal((35, 35), (legacy.WidthAmount, legacy.HeightAmount));
     }
 
-    [Fact]
-    public void SaveLoad_GradientChangeMode_RoundTripsAndMissingModeUsesColorTransition()
+    [Theory]
+    [InlineData(-180)]
+    [InlineData(0)]
+    public void SaveLoad_GradientChangeMode_RoundTripsAndMissingModeUsesColorTransition(int angle)
     {
         var p = new SpriteProject(4, 4);
         var radial = new GradientOverlayEffect
         {
             Mode = GradientChangeMode.RadialRotation,
+            Angle = angle,
             Gradient = new EffectColorGradient
             {
                 Stops = [new(0, Red), new(0.5, new Color32(0, 255, 0)), new(1, Color32.Black)],
@@ -372,13 +398,15 @@ public class AnimatedEffectTests
             using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
             var saved = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
             Assert.Equal("RadialRotation", saved["mode"]!.GetValue<string>());
+            Assert.Equal(angle, saved["angle"]!.GetValue<int>());
             saved.Remove("mode");
+            saved.Remove("angle");
             entry.Delete();
             using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        Assert.Equal(radial with { Mode = GradientChangeMode.ColorTransition }, ProjectIO.Load(stream).Layers[0].Effects[0]);
+        Assert.Equal(radial with { Mode = GradientChangeMode.ColorTransition, Angle = 360 }, ProjectIO.Load(stream).Layers[0].Effects[0]);
     }
 
     // ───────────── 영구 적용 ─────────────

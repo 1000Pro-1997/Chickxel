@@ -18,6 +18,10 @@ public sealed partial class LayerEffectsDialog
             set(effect => G(effect) with { Mode = (GradientChangeMode)index });
             ShowSettings();
         }));
+        if (g.Mode == GradientChangeMode.RadialRotation)
+            SettingsRow(UiStrings.GradientChange_RotationAngle,
+                NumEditor(-GradientOverlayEffect.MaxAngle, GradientOverlayEffect.MaxAngle, g.Angle, NumKinds.RadialRotation,
+                    value => set(effect => G(effect) with { Angle = value })), Ui.Label("°"));
         var editor = new GradientEditor(spatialAngle: false);
         editor.Load(g.Gradient.Stops, g.Gradient.AlphaStops, g.Gradient.Interpolation, g.Gradient.Dither);
         editor.Changed += () => set(effect => G(effect) with

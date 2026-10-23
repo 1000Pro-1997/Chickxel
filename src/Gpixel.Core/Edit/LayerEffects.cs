@@ -114,6 +114,7 @@ public static class LayerEffects
     /// 프레임 <paramref name="frameIndex"/>(프레임 <paramref name="frameCount"/>개 중)에 그릴 효과: 범위 밖 효과를 빼고(순서 그대로, 꺼진 효과도 남음 — 그리기가 건너뜀),
     /// 움직이는 효과(<see cref="AnimatedEffect"/>)는 그 프레임의 진행과 <paramref name="pivot"/>(효과 원본 왼쪽 위 기준 px), 다른 프레임 원본
     /// <paramref name="frameSource"/>(프레임 번호 → 그 프레임 효과 원본, 잔상용 — <see cref="AnimatedEffect.FrameSource"/>)를 채운 사본으로 바꾼다.
+    /// 움직이는 색 그라데이션이 있는 다른 효과도 범위 안 진행을 채운 사본으로 바꾼다.
     /// 바꿀 것이 없으면 <paramref name="effects"/> 그대로(복사 없음).
     /// </summary>
     public static IReadOnlyList<LayerEffect> At(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot = null,
@@ -156,6 +157,11 @@ public static class LayerEffects
                             : rendered,
                     }
                     : e is AnimatedEffect animated ? animated.AtFrame(frameIndex, frameCount, pivot) : e;
+            if (r is { Enabled: true } && r is not AnimatedEffect && r.HasAnimatedColorGradient())
+            {
+                var (from, to) = r.Frames is { } range ? (range.From, range.To) : (0, Math.Max(0, frameCount - 1));
+                r = r with { GradientTime = Math.Clamp((double)(frameIndex - from) / Math.Max(1, to - from), 0, 1) };
+            }
             if (list is null && !ReferenceEquals(r, e))
             {
                 list = new List<LayerEffect>(effects.Count);

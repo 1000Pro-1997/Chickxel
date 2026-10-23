@@ -696,6 +696,9 @@ public sealed class EditorContext
         public Rectangle Canvas { get; set; } = new(0, 0, source.Width, source.Height);
         /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기).</summary>
         public Rectangle Image { get; set; } = new(0, 0, source.Width, source.Height);
+        /// <summary>중심 기준 크기 조정의 고정된 캔버스 중심(픽셀 두 배 좌표).</summary>
+        public Point Center2 { get; set; }
+        public bool ResizeFromCenter { get; set; }
         /// <summary>결과 미리보기(새 캔버스 크기). 값이 바뀌면 버리고 그릴 때 다시 만든다.</summary>
         public WriteableBitmap? Preview { get; set; }
     }
@@ -719,6 +722,21 @@ public sealed class EditorContext
 
     /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표). 모드가 아니면 빈 사각형.</summary>
     public Rectangle CanvasResizeImage => _canvasResize?.Image ?? Rectangle.Empty;
+    /// <summary>크기 변경 시 캔버스 중심을 고정하고 양쪽 가장자리를 함께 움직이는지.</summary>
+    public bool CanvasResizeFromCenter
+    {
+        get => _canvasResize?.ResizeFromCenter ?? false;
+        set
+        {
+            if (_canvasResize is not { } s || s.ResizeFromCenter == value) return;
+            s.ResizeFromCenter = value;
+            if (value) s.Center2 = new Point(2 * s.Canvas.X + s.Canvas.Width, 2 * s.Canvas.Y + s.Canvas.Height);
+            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>중심 기준을 켠 순간의 캔버스 중심(픽셀 두 배 좌표).</summary>
+    public Point CanvasResizeCenter2 => _canvasResize?.Center2 ?? Point.Empty;
 
     /// <summary>적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접으로). 모드가 아니면 null. 호출자는 Dispose하지 않는다.</summary>
     public WriteableBitmap? CanvasResizeBitmap

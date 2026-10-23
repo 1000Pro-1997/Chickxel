@@ -17,12 +17,19 @@ public sealed class GradientEditor : StackPanel
     private readonly ComboBox _interpolation;
     private readonly ComboBox _dither;
     private readonly NumericUpDown? _angleEditor;
+    private readonly ComboBox? _spatialMode;
+    private readonly ComboBox? _direction;
+    private readonly NumericUpDown? _cyclesEditor;
     private bool _updating;
     private IReadOnlyList<GradientStop> _stops = EditorContext.DefaultGradientStops;
     private IReadOnlyList<GradientAlphaStop> _alphaStops = EditorContext.DefaultGradientAlphaStops;
     private GradientInterpolation _mode;
     private GradientDither _ditherMode;
     private int _angle;
+    private EffectGradientShape _shape;
+    private bool _animated;
+    private bool _reverse;
+    private int _cycles = 1;
 
     public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false)
     {
@@ -78,7 +85,39 @@ public sealed class GradientEditor : StackPanel
         Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_75C017194C), _dither));
         if (spatialAngle)
         {
+            _spatialMode = Ui.Combo(180,
+                UiStrings.EffectGradient_LinearStatic, UiStrings.EffectGradient_LinearAnimated,
+                UiStrings.EffectGradient_RadialStatic, UiStrings.EffectGradient_RadialAnimated,
+                UiStrings.EffectGradient_SquareStatic, UiStrings.EffectGradient_SquareAnimated,
+                UiStrings.EffectGradient_AngularStatic, UiStrings.EffectGradient_AngularAnimated);
+            _spatialMode.SelectionChanged += (_, _) =>
+            {
+                if (_updating || _spatialMode.SelectedIndex < 0) return;
+                _shape = (EffectGradientShape)(_spatialMode.SelectedIndex / 2);
+                _animated = _spatialMode.SelectedIndex % 2 != 0;
+                UpdateDirectionOptions();
+                Changed?.Invoke();
+            };
+            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Mode), _spatialMode));
+            _direction = Ui.Combo(140);
+            _direction.SelectionChanged += (_, _) =>
+            {
+                if (_updating || _direction.SelectedIndex < 0) return;
+                _reverse = _direction.SelectedIndex == 1;
+                Changed?.Invoke();
+            };
+            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Direction), _direction));
+            _cyclesEditor = Ui.Num(1, 16, 1, 56, 1, 1m).RecentKey("effect.gradient.cycles");
+            _cyclesEditor.FormatString = "0";
+            _cyclesEditor.ValueChanged += (_, _) =>
+            {
+                if (_updating) return;
+                _cycles = (int)_cyclesEditor.NumValue();
+                Changed?.Invoke();
+            };
+            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Cycles), _cyclesEditor));
             _angleEditor = Ui.Num(0, 359, 0, 56, 1, 1m).Unit("°").RecentKey("effect.gradient.angle");
+            _angleEditor.FormatString = "0";
             _angleEditor.ValueChanged += (_, _) =>
             {
                 if (_updating) return;
@@ -96,10 +135,16 @@ public sealed class GradientEditor : StackPanel
     public GradientInterpolation Interpolation => _mode;
     public GradientDither Dither => _ditherMode;
     public int Angle => _angle;
+    public EffectGradientShape Shape => _shape;
+    public bool Animated => _animated;
+    public bool Reverse => _reverse;
+    public int Cycles => _cycles;
 
     /// <summary>Synchronizes externally owned state without firing Changed.</summary>
     public void Load(IReadOnlyList<GradientStop> stops, IReadOnlyList<GradientAlphaStop> alphaStops,
-        GradientInterpolation interpolation, GradientDither dither, int angle = 0)
+        GradientInterpolation interpolation, GradientDither dither, int angle = 0,
+        EffectGradientShape shape = EffectGradientShape.Linear, bool animated = false,
+        bool reverse = false, int cycles = 1)
     {
         _updating = true;
         try
@@ -109,6 +154,13 @@ public sealed class GradientEditor : StackPanel
             _mode = interpolation;
             _ditherMode = dither;
             _angle = angle;
+            _shape = shape;
+            _animated = animated;
+            _reverse = reverse;
+            _cycles = Math.Clamp(cycles, 1, 16);
+            if (_spatialMode is not null) _spatialMode.SelectedIndex = (int)shape * 2 + (animated ? 1 : 0);
+            if (_direction is not null) UpdateDirectionOptions();
+            if (_cyclesEditor is not null) _cyclesEditor.Value = _cycles;
             if (_angleEditor is not null) _angleEditor.Value = angle;
             _bar.Stops = stops;
             _bar.AlphaStops = _alphaStops;
@@ -119,6 +171,34 @@ public sealed class GradientEditor : StackPanel
             RefreshSelected();
         }
         finally { _updating = false; }
+    }
+
+    private void UpdateDirectionOptions()
+    {
+        if (_direction is null) return;
+        bool previous = _updating;
+        _updating = true;
+        try
+        {
+            _direction.Items.Clear();
+            if (_shape == EffectGradientShape.Angular)
+            {
+                _direction.Items.Add(UiStrings.EffectGradient_Counterclockwise);
+                _direction.Items.Add(UiStrings.EffectGradient_Clockwise);
+            }
+            else if (_shape is EffectGradientShape.Radial or EffectGradientShape.Square)
+            {
+                _direction.Items.Add(UiStrings.EffectGradient_Outward);
+                _direction.Items.Add(UiStrings.EffectGradient_Inward);
+            }
+            else
+            {
+                _direction.Items.Add(UiStrings.EffectGradient_Forward);
+                _direction.Items.Add(UiStrings.EffectGradient_Backward);
+            }
+            _direction.SelectedIndex = _reverse ? 1 : 0;
+        }
+        finally { _updating = previous; }
     }
 
     private void ChangeColor(Func<GradientStop, GradientStop> change)

@@ -28,8 +28,26 @@ public abstract record LayerEffect
     public IReadOnlyDictionary<string, EffectColorGradient> ColorGradients { get; init; }
         = System.Collections.Immutable.ImmutableDictionary<string, EffectColorGradient>.Empty;
 
+    /// <summary>Render-only progress of an animated color gradient (0 at first frame, 1 at last); never saved.</summary>
+    internal double GradientTime { get; init; }
+
     /// <summary>프레임 <paramref name="frameIndex"/>가 범위 안인지(켜짐 여부와 무관).</summary>
     public bool AppliesTo(int frameIndex) => Frames is not { } r || r.Contains(frameIndex);
+
+    internal bool HasAnimatedColorGradient()
+    {
+        if (ColorGradients.Count == 0) return false;
+        // The editor's dictionaries are concrete; do not box their enumerator on every static render.
+        if (ColorGradients is Dictionary<string, EffectColorGradient> colors)
+        {
+            foreach (var entry in colors)
+                if (entry.Value.Animated) return true;
+            return false;
+        }
+        foreach (var entry in ColorGradients)
+            if (entry.Value.Animated) return true;
+        return false;
+    }
 
     /// <summary>화면에 보일 이름.</summary>
     public abstract string DisplayName { get; }

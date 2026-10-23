@@ -167,4 +167,228 @@ public class EffectColorGradientTests
         Assert.True(project.Flatten(0).ContentEquals(loaded.Flatten(0)));
     }
 
+    [Fact]
+    public void SpatialModesRoundTripAndMissingModeFieldsKeepOldLinearGradient()
+    {
+        const string slot = nameof(ColorOverlayEffect.Color);
+        var gradients = Enum.GetValues<EffectGradientShape>()
+            .SelectMany(shape => new[] { false, true }.Select(animated =>
+                Horizontal(Red, Blue) with { Shape = shape, Animated = animated, Reverse = true, Cycles = 3, Angle = 45 }))
+            .ToArray();
+        var project = new SpriteProject(5, 5);
+        project.SetLayerEffects(0, gradients.Select(gradient => new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient> { [slot] = gradient },
+        }).ToArray());
+        using var stream = new MemoryStream();
+        ProjectIO.Save(project, stream);
+        stream.Position = 0;
+        Assert.Equal(gradients, ProjectIO.Load(stream).Layers[0].Effects
+            .Select(effect => effect.ColorGradients[slot]));
+
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
+            var first = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!["colorGradients"]![slot]!.AsObject();
+            first.Remove("shape");
+            first.Remove("animated");
+            first.Remove("reverse");
+            first.Remove("cycles");
+            entry.Delete();
+            using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
+            root.WriteTo(writer);
+        }
+        stream.Position = 0;
+        Assert.Equal(gradients[0] with { Shape = EffectGradientShape.Linear, Animated = false, Reverse = false, Cycles = 1 },
+            ProjectIO.Load(stream).Layers[0].Effects[0].ColorGradients[slot]);
+    }
+
+    private static PixelImage Sample(EffectColorGradient gradient, int width = 5, int height = 5,
+        bool reverse = false)
+    {
+        var image = new PixelImage(width, height);
+        image.Clear(Color32.Black);
+        return LayerEffects.RenderClipped(image, [new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(ColorOverlayEffect.Color)] = reverse ? gradient with { Reverse = true } : gradient,
+            },
+        }]);
+    }
+
+    [Fact]
+    public void DefaultsPreserveOldLinearEndpointsAndAvoidNonanimatedCopies()
+    {
+        var gradient = Horizontal(Red, Blue);
+        Assert.Equal(EffectGradientShape.Linear, gradient.Shape);
+        Assert.False(gradient.Animated);
+        Assert.False(gradient.Reverse);
+        Assert.Equal(1, gradient.Cycles);
+        var image = Sample(gradient, 5, 1);
+        Assert.Equal(Red, image[0, 0]);
+        Assert.Equal(Blue, image[4, 0]);
+        Assert.Equal(image[0, 0], Sample(gradient, 5, 1, reverse: true)[4, 0]);
+        var effects = new LayerEffect[] { new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient> { [nameof(ColorOverlayEffect.Color)] = gradient },
+        } };
+        Assert.Same(effects, LayerEffects.At(effects, 2, 5));
+        Assert.Same(effects, LayerEffects.Animate(effects, 2, 5));
+    }
+
+    [Fact]
+    public void ShapesUseDistinctGeometryAndAngle()
+    {
+        var gradient = Horizontal(Red, Blue);
+        var radial = Sample(gradient with { Shape = EffectGradientShape.Radial });
+        var square = Sample(gradient with { Shape = EffectGradientShape.Square });
+        var angular = Sample(gradient with { Shape = EffectGradientShape.Angular });
+        Assert.Equal(Red, radial[2, 2]);
+        Assert.Equal(Blue, radial[0, 0]);
+        Assert.NotEqual(Blue, radial[4, 2]);
+        Assert.Equal(Red, square[2, 2]);
+        Assert.Equal(Blue, square[4, 2]);
+        Assert.Equal(Red, angular[4, 2]);
+        Assert.NotEqual(angular[2, 0], angular[2, 4]);
+        Assert.NotEqual(square[4, 2], Sample(gradient with { Shape = EffectGradientShape.Square, Angle = 45 })[4, 2]);
+        Assert.NotEqual(radial[2, 2], Sample(gradient with { Shape = EffectGradientShape.Radial, Angle = 90 })[2, 2]);
+        Assert.Equal(Red, Sample(gradient with { Shape = EffectGradientShape.Angular, Angle = 90 })[2, 0]);
+    }
+
+    [Theory]
+    [InlineData(EffectGradientShape.Linear, 0, 2)]
+    [InlineData(EffectGradientShape.Radial, 2, 2)]
+    [InlineData(EffectGradientShape.Square, 2, 2)]
+    [InlineData(EffectGradientShape.Angular, 4, 2)]
+    public void StaticCyclesRepeatAndReverseDirection(EffectGradientShape shape, int x, int y)
+    {
+        var gradient = Horizontal(Red, Blue) with { Shape = shape, Cycles = 2 };
+        var image = Sample(gradient);
+        var reversed = Sample(gradient, reverse: true);
+        Assert.Equal(Red, image[x, y]);
+        Assert.Equal(shape == EffectGradientShape.Angular ? Red : Blue, reversed[x, y]);
+        if (shape == EffectGradientShape.Linear)
+            Assert.Equal(Blue, image[4, 2]); // Static linear keeps its final endpoint.
+        else if (shape == EffectGradientShape.Radial || shape == EffectGradientShape.Square)
+        {
+            Assert.Equal(Blue, image[0, 0]);
+            Assert.Equal(Blue, reversed[2, 2]);
+        }
+    }
+
+    [Fact]
+    public void AngularReverseTraversesClockwise()
+    {
+        var gradient = Horizontal(Red, Blue) with { Shape = EffectGradientShape.Angular };
+        var forward = Sample(gradient);
+        var reverse = Sample(gradient, reverse: true);
+        Assert.Equal(forward[2, 0], reverse[2, 4]);
+        Assert.Equal(forward[2, 4], reverse[2, 0]);
+        Assert.Equal(Red, forward[4, 2]);
+    }
+
+    [Theory]
+    [InlineData(EffectGradientShape.Linear, 0, 2)]
+    [InlineData(EffectGradientShape.Radial, 2, 2)]
+    [InlineData(EffectGradientShape.Square, 2, 2)]
+    [InlineData(EffectGradientShape.Angular, 4, 2)]
+    public void AnimatedColorsMoveAndReturnAtFrameRangeEndpoints(EffectGradientShape shape, int x, int y)
+    {
+        var gradient = Horizontal(Red, Blue) with { Shape = shape, Animated = true, Cycles = 3 };
+        var effect = new ColorOverlayEffect
+        {
+            Frames = new FrameRange(2, 6),
+            ColorGradients = new Dictionary<string, EffectColorGradient> { [nameof(ColorOverlayEffect.Color)] = gradient },
+        };
+        LayerEffect[] effects = [effect];
+        PixelImage Render(int frame) => LayerEffects.RenderClipped(FilledBlack(),
+            LayerEffects.At(effects, frame, 9));
+        var first = Render(2);
+        var middle = Render(3);
+        var last = Render(6);
+        Assert.True(first.ContentEquals(last));
+        Assert.NotEqual(first[x, y], middle[x, y]);
+        Assert.Empty(LayerEffects.At(effects, 1, 9));
+        Assert.True(first.ContentEquals(LayerEffects.RenderClipped(FilledBlack(),
+            LayerEffects.Animate(effects, 0, 9))));
+        Assert.True(last.ContentEquals(LayerEffects.RenderClipped(FilledBlack(),
+            LayerEffects.Animate(effects, 8, 9))));
+
+        static PixelImage FilledBlack()
+        {
+            var image = new PixelImage(5, 5);
+            image.Clear(Color32.Black);
+            return image;
+        }
+    }
+
+    [Fact]
+    public void AnimatedColorsWithoutFrameRangeUseWholeProjectAndClampCycleCount()
+    {
+        var gradient = Horizontal(Red, Blue) with { Animated = true, Cycles = 40 };
+        Assert.Equal(16, gradient.Cycles);
+        Assert.Equal(1, (gradient with { Cycles = -3 }).Cycles);
+        var effect = new ColorOverlayEffect
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient> { [nameof(ColorOverlayEffect.Color)] = gradient },
+        };
+        LayerEffect[] effects = [effect];
+        Assert.NotSame(effects, LayerEffects.At(effects, 1, 6));
+        var image = new PixelImage(5, 1);
+        image.Clear(Color32.Black);
+        PixelImage At(int frame) => LayerEffects.RenderClipped(image, LayerEffects.At(effects, frame, 6));
+        Assert.True(At(0).ContentEquals(At(5)));
+        Assert.False(At(0).ContentEquals(At(1)));
+    }
+
+    [Fact]
+    public void ConcentricGradientsUseOpaqueBoundsRatherThanCanvasBounds()
+    {
+        var image = new PixelImage(9, 9);
+        for (int y = 2; y <= 6; y++)
+            for (int x = 2; x <= 6; x++)
+                image[x, y] = Color32.Black;
+        foreach (var shape in new[] { EffectGradientShape.Radial, EffectGradientShape.Square })
+        {
+            var effect = new ColorOverlayEffect
+            {
+                ColorGradients = new Dictionary<string, EffectColorGradient>
+                {
+                    [nameof(ColorOverlayEffect.Color)] = Horizontal(Red, Blue) with { Shape = shape },
+                },
+            };
+            var result = LayerEffects.RenderClipped(image, [effect]);
+            Assert.Equal(Red, result[4, 4]);
+            Assert.Equal(Blue, result[2, 2]);
+            Assert.Equal(Color32.Transparent, result[0, 0]);
+        }
+    }
+
+    [Fact]
+    public void AnimatedAngularDirectionMovesCounterclockwiseOrClockwise()
+    {
+        var source = new PixelImage(5, 5);
+        source.Clear(Color32.Black);
+        var gradient = Horizontal(Red, Blue) with { Shape = EffectGradientShape.Angular, Animated = true };
+        PixelImage At(int frame, bool reverse)
+        {
+            LayerEffect[] effects = [new ColorOverlayEffect
+            {
+                ColorGradients = new Dictionary<string, EffectColorGradient>
+                {
+                    [nameof(ColorOverlayEffect.Color)] = gradient with { Reverse = reverse },
+                },
+            }];
+            return LayerEffects.RenderClipped(source, LayerEffects.At(effects, frame, 5));
+        }
+        Assert.Equal(Red, At(0, false)[4, 2]);
+        Assert.Equal(Red, At(1, false)[2, 0]);
+        Assert.Equal(Red, At(1, true)[2, 4]);
+        Assert.True(At(0, false).ContentEquals(At(4, false)));
+        Assert.True(At(0, true).ContentEquals(At(4, true)));
+    }
+
 }

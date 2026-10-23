@@ -2770,6 +2770,57 @@ echo __LOGIN_FAILED__
     <value>프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다.</value>
     <comment>src/Gpixel.App\GifExportDialog.cs:211 · UpdateInfo · "프레임 시트와 같은 합성(레이어 효과·지금 착장, 숨긴·내보내기에서 뺀 레이어 제외). GIF 지연은 1/100초 단위(최소 0.02초)입니다."</comment>
   </data>
+  <data name="EffectGradient_AngularAnimated" xml:space="preserve">
+    <value>원형 (동적)</value>
+  </data>
+  <data name="EffectGradient_AngularStatic" xml:space="preserve">
+    <value>원형 (정적)</value>
+  </data>
+  <data name="EffectGradient_Backward" xml:space="preserve">
+    <value>역방향</value>
+  </data>
+  <data name="EffectGradient_Clockwise" xml:space="preserve">
+    <value>시계 방향</value>
+  </data>
+  <data name="EffectGradient_Counterclockwise" xml:space="preserve">
+    <value>반시계 방향</value>
+  </data>
+  <data name="EffectGradient_Cycles" xml:space="preserve">
+    <value>반복/회전 횟수</value>
+  </data>
+  <data name="EffectGradient_Direction" xml:space="preserve">
+    <value>방향</value>
+  </data>
+  <data name="EffectGradient_Forward" xml:space="preserve">
+    <value>정방향</value>
+  </data>
+  <data name="EffectGradient_Inward" xml:space="preserve">
+    <value>안쪽으로</value>
+  </data>
+  <data name="EffectGradient_LinearAnimated" xml:space="preserve">
+    <value>직선 (동적)</value>
+  </data>
+  <data name="EffectGradient_LinearStatic" xml:space="preserve">
+    <value>직선 (정적)</value>
+  </data>
+  <data name="EffectGradient_Mode" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="EffectGradient_Outward" xml:space="preserve">
+    <value>바깥쪽으로</value>
+  </data>
+  <data name="EffectGradient_RadialAnimated" xml:space="preserve">
+    <value>방사형 (동적)</value>
+  </data>
+  <data name="EffectGradient_RadialStatic" xml:space="preserve">
+    <value>방사형 (정적)</value>
+  </data>
+  <data name="EffectGradient_SquareAnimated" xml:space="preserve">
+    <value>사각형 (동적)</value>
+  </data>
+  <data name="EffectGradient_SquareStatic" xml:space="preserve">
+    <value>사각형 (정적)</value>
+  </data>
   <data name="S_GradientEditor_GradientEditor_01174C479B" xml:space="preserve">
     <value>삭제</value>
     <comment>src/Gpixel.App\GradientEditor.cs:55 · GradientEditor · "삭제"</comment>
@@ -2834,6 +2885,10 @@ echo __LOGIN_FAILED__
     <value>방사형 회전</value>
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientChangeModes · 중심 둘레 한 바퀴</comment>
   </data>
+  <data name="GradientChange_RotationAngle" xml:space="preserve">
+    <value>회전 각도</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · 방사형 효과 범위의 전체 회전 각도</comment>
+  </data>
   <data name="S_GradientPanel_GradientPanel_002A41B539" xml:space="preserve">
     <value> 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다.</value>
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:31 · GradientPanel · " 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다."</comment>
@@ -2859,7 +2914,7 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 효과 방식</comment>
   </data>
   <data name="S_GradientPanel_GradientPanel_RadialHint" xml:space="preserve">
-    <value>보이는 그림의 중심에서 오른쪽부터 색 정지점이 반시계 방향으로 펼쳐집니다. 효과 범위 동안 한 바퀴 회전하며 첫 프레임과 마지막 프레임은 같은 모습입니다. 디더는 이웃 색을 픽셀 무늬로 섞고 원래 픽셀의 투명도는 유지합니다.</value>
+    <value>보이는 그림의 중심에서 오른쪽부터 색 정지점이 반시계 방향으로 펼쳐집니다. 회전 각도는 효과 범위 동안 도는 전체 각도이며, 양수는 반시계 방향, 음수는 시계 방향입니다. 디더는 이웃 색을 픽셀 무늬로 섞고 원래 픽셀의 투명도는 유지합니다.</value>
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 방사형 회전 안내</comment>
   </data>
   <data name="S_GradientPanel_GradientPanel_BF99C1BE30" xml:space="preserve">
@@ -8001,7 +8056,7 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:270 · ToolOptionsPanel · "변형한 영역 중심의 X(픽셀, 크기가 홀수면 .5)"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_74D4C14CA4" xml:space="preserve">
-    <value>새 캔버스 가로(px) — 오른쪽 가장자리가 움직이고 그림은 제자리</value>
+    <value>새 캔버스 가로(px) — 기본은 오른쪽 가장자리, 중심 기준이면 양쪽 가장자리가 움직입니다</value>
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:298 · ToolOptionsPanel · "새 캔버스 가로(px) — 오른쪽 가장자리가 움직이고 그림은 제자리"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_7D99E90556" xml:space="preserve">
@@ -8024,8 +8079,16 @@ echo __LOGIN_FAILED__
     <value>좌우 대칭</value>
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:169 · ToolOptionsPanel · "좌우 대칭"</comment>
   </data>
+  <data name="CanvasResize_FromCenter" xml:space="preserve">
+    <value>캔버스 중심 기준</value>
+    <comment>src/Gpixel.App\ToolOptionsPanel.cs · 캔버스 크기 숫자·손잡이의 중심 기준</comment>
+  </data>
+  <data name="CanvasResize_FromCenterTip" xml:space="preserve">
+    <value>켜면 캔버스 크기를 바꿀 때 중심은 고정하고 양쪽 가장자리를 움직입니다. 그림은 제자리에 둡니다.</value>
+    <comment>src/Gpixel.App\ToolOptionsPanel.cs · 중심 기준 설명</comment>
+  </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6" xml:space="preserve">
-    <value>캔버스: 네모 손잡이 = 그 가장자리 옮기기(그림은 제자리, 여백이 늘거나 잘림), Ctrl+끌기 = 그림 가장자리도 함께(여백 그대로 그림 크기, 모서리 + Shift 비율 유지), 그림 안쪽 끌기 = 옮기기. 방향키 = 그림 1px 옮기기.</value>
+    <value>캔버스: 네모 손잡이 = 그 가장자리 옮기기(그림은 제자리, 여백이 늘거나 잘림). 캔버스 중심 기준을 켜면 숫자·손잡이로 크기를 바꿀 때 양쪽을 함께 움직입니다. Ctrl+끌기 = 그림 크기도 함께(모서리 + Shift 비율 유지), 그림 안쪽 끌기·방향키 = 그림 옮기기.</value>
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:328 · ToolOptionsPanel · "캔버스: 네모 손잡이 = 그 가장자리 옮기기(그림은 제자리, 여백이 늘거나 잘림), Ctrl+끌기 = 그림 가장자리도 함께(여백 그대로 그림 크기, 모서리 + Shift 비율 유지), 그림 안쪽 끌기 = 옮기기. 방향키 = 그림 1px 옮기기."</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5" xml:space="preserve">
@@ -8161,7 +8224,7 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:283 · ToolOptionsPanel · "변형 전으로 되돌립니다(Esc, Ctrl+Z)"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_F4AD01A341" xml:space="preserve">
-    <value>새 캔버스 세로(px) — 아래 가장자리가 움직이고 그림은 제자리</value>
+    <value>새 캔버스 세로(px) — 기본은 아래 가장자리, 중심 기준이면 양쪽 가장자리가 움직입니다</value>
     <comment>src/Gpixel.App\ToolOptionsPanel.cs:301 · ToolOptionsPanel · "새 캔버스 세로(px) — 아래 가장자리가 움직이고 그림은 제자리"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_F8FA881EE9" xml:space="preserve">

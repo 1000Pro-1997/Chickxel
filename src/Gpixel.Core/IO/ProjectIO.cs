@@ -1133,6 +1133,10 @@ public static partial class ProjectIO
     internal sealed class ColorGradientDto
     {
         public int Angle { get; set; }
+        public string? Shape { get; set; }
+        public bool Animated { get; set; }
+        public bool Reverse { get; set; }
+        public int Cycles { get; set; } = 1;
         public string? Interpolation { get; set; }
         public string? Dither { get; set; }
         public ColorStopDto[]? Stops { get; set; }
@@ -1142,6 +1146,10 @@ public static partial class ProjectIO
         public static ColorGradientDto From(EffectColorGradient gradient) => new()
         {
             Angle = gradient.Angle,
+            Shape = gradient.Shape.ToString(),
+            Animated = gradient.Animated,
+            Reverse = gradient.Reverse,
+            Cycles = gradient.Cycles,
             Interpolation = gradient.Interpolation.ToString(),
             Dither = gradient.Dither.ToString(),
             StraightRgba = gradient.StraightRgba,
@@ -1152,6 +1160,11 @@ public static partial class ProjectIO
         public EffectColorGradient ToGradient() => new()
         {
             Angle = Angle,
+            Shape = Enum.TryParse<EffectGradientShape>(Shape, true, out var shape) && Enum.IsDefined(shape)
+                ? shape : EffectGradientShape.Linear,
+            Animated = Animated,
+            Reverse = Reverse,
+            Cycles = Math.Clamp(Cycles, 1, 16),
             Interpolation = Enum.TryParse<Gpixel.Core.Edit.GradientInterpolation>(Interpolation, true, out var mode) && Enum.IsDefined(mode)
                 ? mode : Gpixel.Core.Edit.GradientInterpolation.Smooth,
             Dither = Enum.TryParse<Gpixel.Core.Edit.GradientDither>(Dither, true, out var dither) && Enum.IsDefined(dither)
@@ -1314,7 +1327,7 @@ public static partial class ProjectIO
                 SquashEffect q => new EffectDto { Type = "squash", WidthAmount = q.WidthAmount, HeightAmount = q.HeightAmount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
                 GradientOverlayEffect g => new EffectDto
                 {
-                    Type = "gradient", Gradient = ColorGradientDto.From(g.Gradient), Amount = g.Strength, Blend = g.Blend.ToString(), Mode = g.Mode.ToString(),
+                    Type = "gradient", Gradient = ColorGradientDto.From(g.Gradient), Amount = g.Strength, Blend = g.Blend.ToString(), Mode = g.Mode.ToString(), Angle = g.Angle,
                 },
                 InnerGlowEffect g => new EffectDto { Type = "innerglow", Color = g.Color.ToHex(), Thickness = g.Size, Amount = g.Strength, Fade = g.Fade, Blend = g.Blend.ToString() },
                 PaletteSwapEffect p => new EffectDto { Type = "swap", Pairs = p.Pairs.Select(q => new[] { q.From.ToHex(), q.To.ToHex() }).ToList(), Tolerance = p.Tolerance },
@@ -1447,7 +1460,7 @@ public static partial class ProjectIO
                         var g = new GradientOverlayEffect();
                         return Animated(g with
                         {
-                            Gradient = temporal.ToGradient(), Strength = Amount ?? g.Strength, Blend = EnumOr(Blend, g.Blend), Mode = EnumOr(Mode, g.Mode),
+                            Gradient = temporal.ToGradient(), Strength = Amount ?? g.Strength, Blend = EnumOr(Blend, g.Blend), Mode = EnumOr(Mode, g.Mode), Angle = Angle ?? g.Angle,
                         });
                     }
                     var legacy = new GradientOverlayEffect();

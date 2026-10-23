@@ -45,7 +45,7 @@ internal static class GradientOverlayRender
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
         double cx = bounds.Left + bounds.Width / 2.0, cy = bounds.Top + bounds.Height / 2.0;
-        double turn = g.Progress % 1.0;
+        double turn = (g.Progress * g.Angle / 360.0) % 1.0;
         const double fullTurn = 2 * Math.PI;
         var gradient = g.Gradient;
         var px = image.Pixels;
@@ -57,7 +57,7 @@ internal static class GradientOverlayRender
             {
                 int i = row + x;
                 if (px[i].A == 0) continue;
-                // 0 = right, 1/4 = up. Subtract progress to rotate the colors counterclockwise.
+                // 0 = right, 1/4 = up. Positive angle rotates colors counterclockwise.
                 double t = Math.Atan2(cy - y - 0.5, x + 0.5 - cx) / fullTurn - turn;
                 t -= Math.Floor(t);
                 var sampled = Gradient.Sample(gradient.Stops, gradient.AlphaStops, t,

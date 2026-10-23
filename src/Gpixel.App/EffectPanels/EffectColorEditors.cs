@@ -11,6 +11,8 @@ public sealed partial class LayerEffectsDialog
         Action<Func<LayerEffect, LayerEffect>> set)
     {
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
+        EffectColorGradient? savedGradient = effect.ColorGradients.TryGetValue(slot, out var currentGradient)
+            ? currentGradient : null;
         var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1);
         var editor = new GradientEditor(spatialAngle: true) { Width = 280 };
         var body = Ui.Stack(Ui.Row(field, mode), editor);
@@ -22,6 +24,20 @@ public sealed partial class LayerEffectsDialog
                 Stops = [new GradientStop(0, field.Color), new GradientStop(1, field.Color)],
                 AlphaStops = EditorContext.DefaultGradientAlphaStops
             };
+
+        EffectColorGradient EditedGradient() => new()
+        {
+            Stops = editor.Stops,
+            AlphaStops = editor.AlphaStops,
+            Angle = editor.Angle,
+            Shape = editor.Shape,
+            Animated = editor.Animated,
+            Reverse = editor.Reverse,
+            Cycles = editor.Cycles,
+            Interpolation = editor.Interpolation,
+            Dither = editor.Dither,
+            StraightRgba = savedGradient?.StraightRgba ?? false
+        };
 
         void ChangeGradient(EffectColorGradient? gradient)
         {
@@ -35,39 +51,32 @@ public sealed partial class LayerEffectsDialog
             });
         }
 
-        editor.Changed += () => ChangeGradient(new EffectColorGradient
+        editor.Changed += () =>
         {
-            Stops = editor.Stops,
-            AlphaStops = editor.AlphaStops,
-            Angle = editor.Angle,
-            Interpolation = editor.Interpolation,
-            Dither = editor.Dither
-        });
+            savedGradient = EditedGradient();
+            ChangeGradient(savedGradient);
+        };
 
         mode.SelectedIndex = gradientMode ? 1 : 0;
         field.IsVisible = !gradientMode;
         editor.IsVisible = gradientMode;
-        if (gradientMode && effect.ColorGradients.TryGetValue(slot, out var existing))
-            editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither, existing.Angle);
+        if (savedGradient is { } existing)
+            editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither,
+                existing.Angle, existing.Shape, existing.Animated, existing.Reverse, existing.Cycles);
         mode.SelectionChanged += (_, _) =>
         {
             if (mode.SelectedIndex < 0) return;
             bool enabled = mode.SelectedIndex == 1;
-            bool wasGradient = gradientMode;
+            if (enabled == gradientMode) return;
             field.IsVisible = !enabled;
             editor.IsVisible = enabled;
             if (enabled)
             {
-                var gradient = wasGradient
-                    ? new EffectColorGradient
-                    {
-                        Stops = editor.Stops, AlphaStops = editor.AlphaStops,
-                        Angle = editor.Angle, Interpolation = editor.Interpolation, Dither = editor.Dither
-                    }
-                    : InitialGradient();
-                editor.Load(gradient.Stops, gradient.AlphaStops, gradient.Interpolation, gradient.Dither, gradient.Angle);
+                savedGradient ??= InitialGradient();
+                editor.Load(savedGradient.Stops, savedGradient.AlphaStops, savedGradient.Interpolation, savedGradient.Dither,
+                    savedGradient.Angle, savedGradient.Shape, savedGradient.Animated, savedGradient.Reverse, savedGradient.Cycles);
                 gradientMode = true;
-                ChangeGradient(gradient);
+                ChangeGradient(savedGradient);
             }
             else
             {

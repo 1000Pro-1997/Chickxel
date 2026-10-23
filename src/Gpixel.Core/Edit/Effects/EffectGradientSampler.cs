@@ -9,20 +9,47 @@ internal readonly struct EffectGradientSampler
     private readonly EffectColorGradient? _gradient;
     private readonly Color32 _solid;
     private readonly double _dx, _dy, _first, _inverseSpan;
+    private readonly double _centerX, _centerY, _cos, _sin, _phase, _time;
     private readonly int _sourceX, _sourceY;
 
-    private EffectGradientSampler(EffectColorGradient? gradient, Rectangle bounds, Color32 solid, int sourceX, int sourceY)
+    private EffectGradientSampler(EffectColorGradient? gradient, Rectangle bounds, Color32 solid,
+        int sourceX, int sourceY, double time)
     {
         _gradient = gradient;
         _solid = solid;
         _sourceX = sourceX;
         _sourceY = sourceY;
-        _dx = _dy = _first = _inverseSpan = 0;
+        _dx = _dy = _first = _inverseSpan = _centerX = _centerY = _cos = _sin = _phase = _time = 0;
         if (gradient is null || bounds.IsEmpty) return;
 
+        _time = gradient.Animated ? Wrap(time * gradient.Cycles) : 0;
         double angle = gradient.Angle * Math.PI / 180;
-        _dx = Math.Cos(angle);
-        _dy = -Math.Sin(angle); // image y grows downward
+        _cos = Math.Cos(angle);
+        _sin = Math.Sin(angle);
+        _centerX = (bounds.Left + bounds.Right) * 0.5;
+        _centerY = (bounds.Top + bounds.Bottom) * 0.5;
+        if (gradient.Shape == EffectGradientShape.Radial)
+        {
+            double halfWidth = (bounds.Width - 1) * 0.5, halfHeight = (bounds.Height - 1) * 0.5;
+            double radius = Math.Sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
+            _inverseSpan = radius < 1e-9 ? 0 : 1 / radius;
+            _phase = gradient.Angle / 360.0;
+            return;
+        }
+        if (gradient.Shape == EffectGradientShape.Square)
+        {
+            double halfWidth = (bounds.Width - 1) * 0.5, halfHeight = (bounds.Height - 1) * 0.5;
+            double extentX = halfWidth * Math.Abs(_cos) + halfHeight * Math.Abs(_sin);
+            double extentY = halfWidth * Math.Abs(_sin) + halfHeight * Math.Abs(_cos);
+            double extent = Math.Max(extentX, extentY);
+            _inverseSpan = extent < 1e-9 ? 0 : 1 / extent;
+            return;
+        }
+        if (gradient.Shape == EffectGradientShape.Angular) return;
+
+        // Keep the original linear projection and rounding intact for old gradient files.
+        _dx = _cos;
+        _dy = -_sin; // image y grows downward
         double l = bounds.Left + 0.5, r = bounds.Right - 0.5;
         double t = bounds.Top + 0.5, b = bounds.Bottom - 0.5;
         double p0 = l * _dx + t * _dy, p1 = r * _dx + t * _dy;
@@ -35,20 +62,51 @@ internal readonly struct EffectGradientSampler
     public static EffectGradientSampler For(LayerEffect effect, string slot, Rectangle bounds, Color32 solid,
         int sourceX = 0, int sourceY = 0)
         => new(effect.ColorGradients.TryGetValue(slot, out var gradient) ? gradient : null,
-            bounds, solid, sourceX, sourceY);
+            bounds, solid, sourceX, sourceY,
+            effect is AnimatedEffect animated ? animated.Time : effect.GradientTime);
 
     public bool HasGradient => _gradient is not null;
 
     public Color32 Sample(int x, int y)
     {
         if (_gradient is not { } gradient) return _solid;
-        double position = _inverseSpan == 0 ? 0.5
-            : Math.Clamp(((x + 0.5) * _dx + (y + 0.5) * _dy - _first) * _inverseSpan, 0, 1);
+        double position;
+        if (gradient.Shape == EffectGradientShape.Radial)
+        {
+            double xOffset = x + 0.5 - _centerX, yOffset = y + 0.5 - _centerY;
+            position = Math.Clamp(Math.Sqrt(xOffset * xOffset + yOffset * yOffset) * _inverseSpan, 0, 1);
+        }
+        else if (gradient.Shape == EffectGradientShape.Square)
+        {
+            double xOffset = x + 0.5 - _centerX, yOffset = _centerY - y - 0.5;
+            position = Math.Clamp(Math.Max(Math.Abs(xOffset * _cos + yOffset * _sin),
+                Math.Abs(yOffset * _cos - xOffset * _sin)) * _inverseSpan, 0, 1);
+        }
+        else if (gradient.Shape == EffectGradientShape.Angular)
+        {
+            double angle = Math.Atan2(_centerY - y - 0.5, x + 0.5 - _centerX) / (2 * Math.PI);
+            position = Wrap(angle - gradient.Angle / 360.0);
+        }
+        else
+        {
+            position = _inverseSpan == 0 ? 0.5
+                : Math.Clamp(((x + 0.5) * _dx + (y + 0.5) * _dy - _first) * _inverseSpan, 0, 1);
+        }
+        if (gradient.Reverse) position = gradient.Shape == EffectGradientShape.Angular ? Wrap(-position) : 1 - position;
+        if (gradient.Animated)
+            position = Wrap(position * gradient.Cycles + _phase - _time);
+        else if (gradient.Cycles != 1 || _phase != 0)
+        {
+            double repeated = position * gradient.Cycles + _phase;
+            position = repeated == gradient.Cycles && _phase == 0 ? 1 : Wrap(repeated);
+        }
         if (gradient.StraightRgba && gradient.Interpolation == GradientInterpolation.Smooth && gradient.Dither == GradientDither.None)
             return SampleStraight(gradient, position);
         return Gradient.Sample(gradient.Stops, gradient.AlphaStops, position,
             gradient.Interpolation, gradient.Dither, x - _sourceX, y - _sourceY);
     }
+
+    private static double Wrap(double value) => value - Math.Floor(value);
 
     private static Color32 SampleStraight(EffectColorGradient gradient, double position)
     {

@@ -338,7 +338,7 @@ public sealed partial class LayerEffectsDialog
             Title = name;
             Effects = effects;
             Preset = preset;
-            _frames = new WriteableBitmap?[effects.Any(effect => effect is AnimatedEffect) ? ThumbSteps : 1];
+            _frames = new WriteableBitmap?[effects.Any(effect => effect is AnimatedEffect || effect.ColorGradients.Values.Any(gradient => gradient.Animated)) ? ThumbSteps : 1];
             Cursor = new Cursor(StandardCursorType.Hand);
         }
 

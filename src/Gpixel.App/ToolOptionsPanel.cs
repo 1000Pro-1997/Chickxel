@@ -8,7 +8,7 @@ namespace Gpixel.App;
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
 /// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
-/// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로, 그림 가로·세로(%)·위치, 기준점 9방향, 비율 유지, 확인/취소만 보인다(캔버스 손잡이와 함께 움직임).
+/// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지, 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
 /// </summary>
@@ -76,7 +76,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly Border _canvasResizeBox;
     private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
     private readonly TextBlock _crWidthPercent, _crHeightPercent;
-    private readonly CheckBox _crKeepRatio;
+    private readonly CheckBox _crKeepRatio, _crFromCenter;
     private readonly AnchorPicker _crAnchor = new();
 
     public ToolOptionsPanel(EditorContext ctx)
@@ -296,11 +296,14 @@ public sealed class ToolOptionsPanel : UserControl
         // ── 캔버스 크기 모드(Ctrl+Alt+C): 숫자는 캔버스 손잡이와 함께 움직인다.
         _crKeepRatio = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_93E9A22B2D, true).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2CD545CAF3);
         _crKeepRatio.Focusable = false;
+        _crFromCenter = Ui.Check(UiStrings.CanvasResize_FromCenter, false).Tip(UiStrings.CanvasResize_FromCenterTip);
+        _crFromCenter.Focusable = false;
+        _crFromCenter.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.CanvasResizeFromCenter = _crFromCenter.On(); };
         _crWidth = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_74D4C14CA4,
-            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Width = v }, _ctx.CanvasResizeImage))
+            v => SetCanvasResizeSize(v, null))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crHeight = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_F4AD01A341,
-            v => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas with { Height = v }, _ctx.CanvasResizeImage))
+            v => SetCanvasResizeSize(null, v))
             .Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _crImageWidth = CanvasResizeNum(1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FE3628272B,
             v => SetCanvasResizeImage(i => i with { Width = v, Height = _crKeepRatio.On() ? RatioHeight(v) : i.Height }))
@@ -330,6 +333,7 @@ public sealed class ToolOptionsPanel : UserControl
         crHelp.TextWrapping = TextWrapping.Wrap;
         _canvasResizeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight),
+            _crFromCenter,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715), _crImageHeight, _crHeightPercent),
             _crKeepRatio,
@@ -424,6 +428,17 @@ public sealed class ToolOptionsPanel : UserControl
     /// <summary>캔버스는 그대로 두고 그림 사각형(새 캔버스 좌표)만 바꾼다.</summary>
     private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
         => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
+
+    /// <summary>숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다.</summary>
+    private void SetCanvasResizeSize(int? width, int? height)
+    {
+        var c = _ctx.CanvasResizeCanvas;
+        var image = _ctx.CanvasResizeImage;
+        int x = _ctx.CanvasResizeFromCenter && width is not null ? (_ctx.CanvasResizeCenter2.X - width.Value) / 2 : c.X;
+        int y = _ctx.CanvasResizeFromCenter && height is not null ? (_ctx.CanvasResizeCenter2.Y - height.Value) / 2 : c.Y;
+        image.Offset(c.X - x, c.Y - y);
+        _ctx.SetCanvasResize(new Rectangle(x, y, width ?? c.Width, height ?? c.Height), image);
+    }
 
     /// <summary>원래 그림 비율로 그림 가로 <paramref name="width"/>에 맞는 세로(1 이상).</summary>
     private int RatioHeight(int width)
@@ -583,6 +598,7 @@ public sealed class ToolOptionsPanel : UserControl
         {
             _crWidth.Value = c.Width;
             _crHeight.Value = c.Height;
+            _crFromCenter.IsChecked = _ctx.CanvasResizeFromCenter;
             _crImageWidth.Value = i.Width;
             _crImageHeight.Value = i.Height;
             _crX.Value = Math.Clamp(i.X, _crX.Minimum, _crX.Maximum);

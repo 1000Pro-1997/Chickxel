@@ -2349,7 +2349,8 @@ public sealed class PixelCanvas : Control
             return;
         }
         bool scale = Ui.HasCommand(_mods);
-        int gx = _crHx * dx, gy = _crHy * dy;   // 잡은 쪽으로 늘어나는 양
+        int multiplier = _ctx.CanvasResizeFromCenter ? 2 : 1;
+        int gx = _crHx * dx * multiplier, gy = _crHy * dy * multiplier; // 중심 기준이면 맞은편도 같은 만큼 움직임
         if (scale && (_mods & KeyModifiers.Shift) != 0 && _crHx != 0 && _crHy != 0)
         {
             double kx = (i.Width + gx) / (double)i.Width, ky = (i.Height + gy) / (double)i.Height;
@@ -2360,6 +2361,17 @@ public sealed class PixelCanvas : Control
         // 캔버스(Ctrl이면 그림도)는 1px ~ 최대 크기
         gx = Math.Clamp(gx, 1 - (scale ? Math.Min(c.Width, i.Width) : c.Width), PixelImage.MaxSize - (scale ? Math.Max(c.Width, i.Width) : c.Width));
         gy = Math.Clamp(gy, 1 - (scale ? Math.Min(c.Height, i.Height) : c.Height), PixelImage.MaxSize - (scale ? Math.Max(c.Height, i.Height) : c.Height));
+        if (_ctx.CanvasResizeFromCenter)
+        {
+            var center = _ctx.CanvasResizeCenter2;
+            int centeredX = _crHx == 0 ? c.X : (center.X - c.Width - gx) / 2;
+            int centeredY = _crHy == 0 ? c.Y : (center.Y - c.Height - gy) / 2;
+            int centeredImageX = i.X + c.X - centeredX - (scale ? gx / 2 : 0);
+            int centeredImageY = i.Y + c.Y - centeredY - (scale ? gy / 2 : 0);
+            _ctx.SetCanvasResize(new Rectangle(centeredX, centeredY, c.Width + gx, c.Height + gy),
+                new Rectangle(centeredImageX, centeredImageY, i.Width + (scale ? gx : 0), i.Height + (scale ? gy : 0)));
+            return;
+        }
         var (cx, cw, ix, iw) = GrowAxis(_crHx, gx, c.X, c.Width, i.X, i.Width, scale);
         var (cy, ch, iy, ih) = GrowAxis(_crHy, gy, c.Y, c.Height, i.Y, i.Height, scale);
         _ctx.SetCanvasResize(new Rectangle(cx, cy, cw, ch), new Rectangle(ix, iy, iw, ih));
