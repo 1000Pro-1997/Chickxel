@@ -266,9 +266,9 @@ public sealed partial class LayerEffectsDialog
         _previewFrame = Math.Clamp(VirtualOf(original), 0, VirtualCount - 1);
         SyncExtendEditor();
         InvalidateStrip();
+        SyncCanvasExpansion();
         RefreshPreview();
         SyncPlayback();
-        SyncCanvasExpansion();
     }
 
     /// <summary>프레임 추가를 취소할 때 사본 칸 범위를 원래 프레임 범위로 되돌린다.</summary>

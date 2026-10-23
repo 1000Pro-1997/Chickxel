@@ -2826,6 +2826,14 @@ echo __LOGIN_FAILED__
     <value>부드럽게</value>
     <comment>src/Gpixel.App\GradientEditor.cs:56 · GradientEditor · "부드럽게"</comment>
   </data>
+  <data name="S_GradientPanel_GradientChangeModes_ColorTransition" xml:space="preserve">
+    <value>색 변환</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientChangeModes · 프레임마다 한 색</comment>
+  </data>
+  <data name="S_GradientPanel_GradientChangeModes_RadialRotation" xml:space="preserve">
+    <value>방사형 회전</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientChangeModes · 중심 둘레 한 바퀴</comment>
+  </data>
   <data name="S_GradientPanel_GradientPanel_002A41B539" xml:space="preserve">
     <value> 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다.</value>
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:31 · GradientPanel · " 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다."</comment>
@@ -2841,6 +2849,18 @@ echo __LOGIN_FAILED__
   <data name="S_GradientPanel_GradientPanel_B93B4EB88D" xml:space="preserve">
     <value>섞기</value>
     <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:27 · GradientPanel · "섞기"</comment>
+  </data>
+  <data name="S_GradientPanel_GradientPanel_AngularGradient" xml:space="preserve">
+    <value>각도 그라데이션</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 방사형 회전 색 정지점</comment>
+  </data>
+  <data name="S_GradientPanel_GradientPanel_Mode" xml:space="preserve">
+    <value>방식</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 효과 방식</comment>
+  </data>
+  <data name="S_GradientPanel_GradientPanel_RadialHint" xml:space="preserve">
+    <value>보이는 그림의 중심에서 오른쪽부터 색 정지점이 반시계 방향으로 펼쳐집니다. 효과 범위 동안 한 바퀴 회전하며 첫 프레임과 마지막 프레임은 같은 모습입니다. 디더는 이웃 색을 픽셀 무늬로 섞고 원래 픽셀의 투명도는 유지합니다.</value>
+    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 방사형 회전 안내</comment>
   </data>
   <data name="S_GradientPanel_GradientPanel_BF99C1BE30" xml:space="preserve">
     <value>시간 그라데이션</value>

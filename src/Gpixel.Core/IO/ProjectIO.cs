@@ -1242,7 +1242,7 @@ public static partial class ProjectIO
         /// <summary>색 바꾸기: [바꿀 색, 바뀐 색] 쌍들과 허용 차이.</summary>
         public List<string[]>? Pairs { get; set; }
         public int? Tolerance { get; set; }
-        /// <summary>색조 보정(<see cref="ColorAdjustMode"/> 이름과 방식별 값).</summary>
+        /// <summary>색조 보정 방식, 시간 그라데이션 방식, 움직이는 효과 일부의 방식.</summary>
         public string? Mode { get; set; }
         public int? Hue { get; set; }
         public int? Brightness { get; set; }
@@ -1314,7 +1314,7 @@ public static partial class ProjectIO
                 SquashEffect q => new EffectDto { Type = "squash", WidthAmount = q.WidthAmount, HeightAmount = q.HeightAmount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
                 GradientOverlayEffect g => new EffectDto
                 {
-                    Type = "gradient", Gradient = ColorGradientDto.From(g.Gradient), Amount = g.Strength, Blend = g.Blend.ToString(),
+                    Type = "gradient", Gradient = ColorGradientDto.From(g.Gradient), Amount = g.Strength, Blend = g.Blend.ToString(), Mode = g.Mode.ToString(),
                 },
                 InnerGlowEffect g => new EffectDto { Type = "innerglow", Color = g.Color.ToHex(), Thickness = g.Size, Amount = g.Strength, Fade = g.Fade, Blend = g.Blend.ToString() },
                 PaletteSwapEffect p => new EffectDto { Type = "swap", Pairs = p.Pairs.Select(q => new[] { q.From.ToHex(), q.To.ToHex() }).ToList(), Tolerance = p.Tolerance },
@@ -1447,7 +1447,7 @@ public static partial class ProjectIO
                         var g = new GradientOverlayEffect();
                         return Animated(g with
                         {
-                            Gradient = temporal.ToGradient(), Strength = Amount ?? g.Strength, Blend = EnumOr(Blend, g.Blend),
+                            Gradient = temporal.ToGradient(), Strength = Amount ?? g.Strength, Blend = EnumOr(Blend, g.Blend), Mode = EnumOr(Mode, g.Mode),
                         });
                     }
                     var legacy = new GradientOverlayEffect();

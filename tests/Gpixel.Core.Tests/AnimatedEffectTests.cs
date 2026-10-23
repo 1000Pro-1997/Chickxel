@@ -89,6 +89,37 @@ public class AnimatedEffectTests
         Assert.Equal(2, pixels.Count(pixel => pixel == blue));
     }
 
+    [Fact]
+    public void GradientChange_RadialRotatesAroundOpaqueBoundsAndLoopsWithoutTouchingTransparentPixels()
+    {
+        var blue = new Color32(0, 0, 255);
+        var src = new PixelImage(9, 7);
+        for (int y = 1; y <= 3; y++)
+            for (int x = 4; x <= 6; x++)
+                src[x, y] = Black.WithAlpha(77);
+        var transparent = new Color32(40, 50, 60, 0);
+        src[0, 0] = transparent;
+        var effect = new GradientOverlayEffect
+        {
+            Mode = GradientChangeMode.RadialRotation,
+            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, blue)] },
+        };
+
+        var first = At(src, effect, 0, 4).Image;
+        var quarter = At(src, effect, 1, 4).Image;
+        var last = At(src, effect, 4, 4).Image;
+        Assert.Equal(Red.WithAlpha(77), first[6, 2]); // right of opaque center (5.5, 2.5)
+        Assert.Equal(new Color32(191, 0, 64, 77), first[5, 1]); // above center
+        Assert.Equal(new Color32(128, 0, 128, 77), first[4, 2]); // left of center
+        Assert.Equal(new Color32(64, 0, 191, 77), first[5, 3]); // below center
+        Assert.Equal(first[6, 2], quarter[5, 1]); // one quarter-turn counterclockwise
+        Assert.NotEqual(first[6, 2], quarter[6, 2]);
+        Assert.True(first.ContentEquals(last));
+        Assert.Equal(transparent, first[0, 0]);
+        Assert.Equal(transparent, quarter[0, 0]);
+        Assert.Equal(transparent, last[0, 0]);
+    }
+
     // ───────────── 터지기 ─────────────
 
     private static readonly ExplodeEffect Burst = new() { Distance = 8, Spread = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
@@ -311,6 +342,43 @@ public class AnimatedEffectTests
         stream.Position = 0;
         var legacy = (SquashEffect)ProjectIO.Load(stream).Layers[0].Effects[2];
         Assert.Equal((35, 35), (legacy.WidthAmount, legacy.HeightAmount));
+    }
+
+    [Fact]
+    public void SaveLoad_GradientChangeMode_RoundTripsAndMissingModeUsesColorTransition()
+    {
+        var p = new SpriteProject(4, 4);
+        var radial = new GradientOverlayEffect
+        {
+            Mode = GradientChangeMode.RadialRotation,
+            Gradient = new EffectColorGradient
+            {
+                Stops = [new(0, Red), new(0.5, new Color32(0, 255, 0)), new(1, Color32.Black)],
+                Dither = GradientDither.Bayer4,
+            },
+            Strength = 65,
+            Blend = EffectBlend.Screen,
+        };
+        p.SetLayerEffects(0, [radial]);
+        using var stream = new MemoryStream();
+        ProjectIO.Save(p, stream);
+        stream.Position = 0;
+        Assert.Equal(radial, ProjectIO.Load(stream).Layers[0].Effects[0]);
+
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
+            var saved = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
+            Assert.Equal("RadialRotation", saved["mode"]!.GetValue<string>());
+            saved.Remove("mode");
+            entry.Delete();
+            using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
+            root.WriteTo(writer);
+        }
+        stream.Position = 0;
+        Assert.Equal(radial with { Mode = GradientChangeMode.ColorTransition }, ProjectIO.Load(stream).Layers[0].Effects[0]);
     }
 
     // ───────────── 영구 적용 ─────────────

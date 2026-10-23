@@ -32,21 +32,36 @@ public sealed partial class LayerEffectsDialog
     private EffectCanvasExpansion CanvasExpansion(IReadOnlyList<LayerEffect> all)
         => EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, EffectOutputBounds(all), s_canvasExpandMode);
 
-    /// <summary>캔버스 확대 체크 아래에 계산된 결과 크기를 표시한다.</summary>
+    /// <summary>모든 프레임에 공통인 전·후 미리보기 영역과 확인 후 캔버스(원래 캔버스 좌표).</summary>
+    private Rectangle _previewBounds, _previewCanvas;
+
+    /// <summary>모든 프레임의 결과로 확인 때 적용할 캔버스를 계산하고, 미리보기 배율·위치를 고정한다.</summary>
     private void SyncCanvasExpansion()
     {
-        if (!_expandCanvas.On()) return;
+        var currentCanvas = new Rectangle(0, 0, _project.Width, _project.Height);
+        _previewBounds = _previewCanvas = currentCanvas;
         try
         {
-            var plan = CanvasExpansion(VirtualEffects());
-            _expandNote.Foreground = AppTheme.DimTextBrush;
-            _expandNote.Text = plan.IsNone(_project.Width, _project.Height)
-                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_BDEB632BC8,_project.Width,_project.Height)
-                : $"{_project.Width}×{_project.Height} → {plan.Width}×{plan.Height}"
-                  + (s_canvasExpandMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_6BBDE7B81F : "");
-            ToolTip.SetTip(_expandNote, plan.IsNone(_project.Width, _project.Height)
-                ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_EFFF97903C
-                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_AA4018CCC5,plan.OffsetX,plan.OffsetY));
+            var output = EffectOutputBounds(VirtualEffects());
+            if (_expandCanvas.On())
+            {
+                var plan = EffectCanvasExpansion.FromBounds(_project.Width, _project.Height, output, s_canvasExpandMode);
+                _previewCanvas = new Rectangle(-plan.OffsetX, -plan.OffsetY, plan.Width, plan.Height);
+                _previewBounds = _previewCanvas;
+                _expandNote.Foreground = AppTheme.DimTextBrush;
+                _expandNote.Text = plan.IsNone(_project.Width, _project.Height)
+                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_BDEB632BC8, _project.Width, _project.Height)
+                    : $"{_project.Width}×{_project.Height} → {plan.Width}×{plan.Height}"
+                      + (s_canvasExpandMode == EffectCanvasExpandMode.KeepRatio && !plan.RatioPreserved ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_6BBDE7B81F : "");
+                ToolTip.SetTip(_expandNote, plan.IsNone(_project.Width, _project.Height)
+                    ? UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_EFFF97903C
+                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Canvas_SyncCanvasExpansion_AA4018CCC5, plan.OffsetX, plan.OffsetY));
+            }
+            else if (output.Width <= PixelImage.MaxSize && output.Height <= PixelImage.MaxSize)
+            {
+                // 확장을 끈 경우 잘릴 효과는 캔버스 바깥에 흐리게 남기되, 프레임마다 배율이 흔들리지 않는다.
+                _previewBounds = output;
+            }
         }
         catch (InvalidOperationException ex)
         {

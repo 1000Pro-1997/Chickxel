@@ -153,7 +153,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
     private static bool s_effectOnly = true;
     /// <summary>효과에 맞춘 캔버스 확대 방식. 앱을 켜 둔 동안 유지.</summary>
-    private static EffectCanvasExpandMode s_canvasExpandMode;
+    private static EffectCanvasExpandMode s_canvasExpandMode = EffectCanvasExpandMode.KeepCenter;
     /// <summary>확인 단추에서 검증·계산한 캔버스 확대(닫힌 뒤 같은 결과를 적용).</summary>
     private EffectCanvasExpansion? _confirmedCanvasExpansion;
     /// <summary>재생 반복: 끝 프레임 다음 바로 처음으로(끝에서 멈칫하지 않음). 앱을 켜 둔 동안 창을 다시 열어도 유지.</summary>
@@ -246,12 +246,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
             _expandMode.IsEnabled = _expandCanvas.On();
             _expandNote.IsVisible = _expandCanvas.On();
             SyncCanvasExpansion();
+            RefreshPreview();
         };
         _expandMode.SelectionChanged += (_, _) =>
         {
             if (_expandMode.SelectedIndex < 0) return;
             s_canvasExpandMode = (EffectCanvasExpandMode)_expandMode.SelectedIndex;
             SyncCanvasExpansion();
+            RefreshPreview();
         };
         OkButton.Click += (_, _) =>
         {
@@ -495,8 +497,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         UpdateButtons();
         int index = _project.IndexOf(_layer);
         if (index >= 0) _project.PreviewLayerEffects(index, _effects);
-        RefreshPreview();
         SyncCanvasExpansion();
+        RefreshPreview();
     }
 
     private string EffectSummary(LayerEffect e)
@@ -520,7 +522,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ExplodeEffect x => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DE0B23D063,x.Distance,Centers[(int)x.Center].Split(' ')[0]) + (x.KeepOriginal ? UiStrings.S_LayerEffectsDialog_Summary_30757AF9AF : ""),
         ShineEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F451DAAC0A,s.Angle,s.Width,s.Strength),
         SquashEffect q => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_963828451F,q.WidthAmount,q.HeightAmount,q.Bounces),
-        GradientOverlayEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_51DCB418AA,g.Gradient.Stops.Count,Blends[(int)g.Blend],g.Strength),
+        GradientOverlayEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_51DCB418AA,g.Gradient.Stops.Count,Blends[(int)g.Blend],g.Strength)
+                                   + (g.Mode == GradientChangeMode.RadialRotation ? $" · {UiStrings.S_GradientPanel_GradientChangeModes_RadialRotation}" : ""),
         InnerGlowEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_B8FE86B3A0,g.Size,g.Strength,g.Color.ToHex()),
         PaletteSwapEffect p => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_53B3F1206A,p.Pairs.Count) + (p.Tolerance > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E77A16477B,p.Tolerance) : ""),
         ColorAdjustEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_62017EE627,AdjustSummary(c)),
@@ -1076,8 +1079,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     /// <summary>
-    /// 미리보기 프레임의 전·후를 같은 캔버스 좌표의 실제 그림 범위로 잘라 그린다.
-    /// 캔버스 밖 효과 픽셀도 범위에는 넣되 미리보기에서는 잘린 부분으로 표시한다.
+    /// 전·후를 모든 프레임에 공통인 확인 후 캔버스 자리와 크기로 그린다.
+    /// 확장을 끈 경우 캔버스 밖 효과 픽셀은 흐리게 표시한다.
     /// </summary>
     private void RefreshPreview()
     {
@@ -1088,30 +1091,29 @@ public sealed partial class LayerEffectsDialog : DialogBase
         string where = _layer.IsGroup ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BDAFE80FE8 : _layer.IsPart ? UiStrings.S_LayerEffectsDialog_RefreshPreview_BD6BE5C32E : "";
         if (_extension is not null)
             where = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_6A782EF4D8,VirtualCount,where,OriginalOf(f) + 1,(IsCopyFrame(f) ? UiStrings.S_LayerEffectsDialog_RefreshPreview_E18A9F9C35 : ""));
+        var bounds = _previewBounds;
+        var canvas = new Rectangle(_previewCanvas.X - bounds.X, _previewCanvas.Y - bounds.Y, _previewCanvas.Width, _previewCanvas.Height);
         if (source is null)
         {
             _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_A0B1282CEF,f + 1,where);
-            _preview.SetImages(null, null, default);
+            var empty = new PixelImage(bounds.Width, bounds.Height);
+            _preview.SetImages(empty, empty, canvas);
             _largePreview?.InvalidateVisual();
             return;
         }
         var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height));
         int ox = _layer.IsPart ? _layer.PartOffset.X : 0;
         int oy = _layer.IsPart ? _layer.PartOffset.Y : 0;
-        var sourceBounds = source.GetOpaqueBounds();
-        var afterBounds = after.GetOpaqueBounds();
-        if (!sourceBounds.IsEmpty) sourceBounds.Offset(ox, oy);
-        if (!afterBounds.IsEmpty) afterBounds.Offset(ox + dx, oy + dy);
-        // A fully transparent frame still needs a small, stable area to preview.
-        var bounds = sourceBounds.IsEmpty ? afterBounds : afterBounds.IsEmpty ? sourceBounds : Rectangle.Union(sourceBounds, afterBounds);
-        if (bounds.IsEmpty) bounds = new Rectangle(ox, oy, 1, 1);
-        int marginX = Math.Min(2, Math.Max(0, (PixelImage.MaxSize - bounds.Width) / 2));
-        int marginY = Math.Min(2, Math.Max(0, (PixelImage.MaxSize - bounds.Height) / 2));
-        bounds.Inflate(marginX, marginY);
-        var before = new PixelImage(bounds.Width, bounds.Height);
-        before.Blit(source, new Rectangle(bounds.X - ox, bounds.Y - oy, bounds.Width, bounds.Height), 0, 0);
-        var croppedAfter = after.Crop(new Rectangle(bounds.X - ox - dx, bounds.Y - oy - dy, bounds.Width, bounds.Height));
-        var canvas = new Rectangle(-bounds.X, -bounds.Y, _project.Width, _project.Height);
+        PixelImage before;
+        if (bounds.X == ox && bounds.Y == oy && bounds.Width == source.Width && bounds.Height == source.Height)
+            before = source;
+        else
+        {
+            before = new PixelImage(bounds.Width, bounds.Height);
+            before.Blit(source, new Rectangle(bounds.X - ox, bounds.Y - oy, bounds.Width, bounds.Height), 0, 0);
+        }
+        var afterRegion = new Rectangle(bounds.X - ox - dx, bounds.Y - oy - dy, bounds.Width, bounds.Height);
+        var croppedAfter = afterRegion == after.Bounds ? after : after.Crop(afterRegion);
         _preview.SetImages(before, croppedAfter, canvas);
         _largePreview?.InvalidateVisual();
         string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)

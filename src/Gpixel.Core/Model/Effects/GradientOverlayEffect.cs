@@ -21,10 +21,19 @@ public enum EffectDither
     Bayer4,
 }
 
+/// <summary>시간 그라데이션의 적용 방식.</summary>
+public enum GradientChangeMode
+{
+    /// <summary>프레임마다 모든 보이는 픽셀에 같은 색을 적용한다.</summary>
+    ColorTransition,
+    /// <summary>보이는 그림 중심 둘레의 각도에 따라 색을 고르고 효과 진행 동안 한 바퀴 돌린다.</summary>
+    RadialRotation,
+}
+
 /// <summary>
-/// 시간 그라데이션: 효과 범위의 진행 0→1에 따라 <see cref="Gradient"/>의 색을 골라 보이는 픽셀에
-/// <see cref="Strength"/>%만큼 섞는다(픽셀 알파는 그대로). 부드러운 보간은 프레임마다 한 색으로 변하고,
-/// 디더를 켜면 전환 중인 두 색을 픽셀 무늬로 섞는다.
+/// 시간 그라데이션: <see cref="Mode"/>에 따라 진행 0→1의 한 색을 모든 보이는 픽셀에 섞거나,
+/// 보이는 그림 중심 둘레의 각도별 색을 한 바퀴 돌린다. 디더와 세기·섞기는 두 방식에 공통으로 적용한다.
+/// 픽셀 알파는 그대로 둔다.
 /// </summary>
 public sealed record GradientOverlayEffect : AnimatedEffect
 {
@@ -34,6 +43,8 @@ public sealed record GradientOverlayEffect : AnimatedEffect
     {
         Stops = [new(0, new Color32(255, 230, 120)), new(1, new Color32(200, 60, 40))],
     };
+
+    public GradientChangeMode Mode { get; init; } = GradientChangeMode.ColorTransition;
 
     /// <summary>0~100(%).</summary>
     public int Strength { get => _strength; init => _strength = Math.Clamp(value, 0, 100); }
