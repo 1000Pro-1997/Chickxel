@@ -40,6 +40,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         (UiStrings.S_LayerEffectsDialog_KindTable_2C5AB3754D, UiStrings.S_LayerEffectsDialog_KindTable_043CDEE3B8, () => new ShakeEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_F5A6D8375C, UiStrings.S_LayerEffectsDialog_KindTable_361470DFA9, () => new BobEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_F6C9786974, UiStrings.S_LayerEffectsDialog_KindTable_FFF387B9B9, () => new AppearEffect()),
+        (UiStrings.Fade_Name, UiStrings.Fade_Description, () => new FadeEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_4A3575A660, UiStrings.S_LayerEffectsDialog_KindTable_1B49B1765C, () => new MeltEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_B65A656A1B, UiStrings.S_LayerEffectsDialog_KindTable_34F6760645, () => new RotateEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_C41906B546, UiStrings.S_LayerEffectsDialog_KindTable_69C80DA119, () => new AfterimageEffect()),
@@ -170,6 +171,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
     public LayerEffectsDialog(EditorContext ctx, Layer layer, int focus = -1, FrameRange? newRange = null, FrameRange? motionRange = null) : base(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_7E8F1A60E2,layer.Name))
     {
+        // 숫자·색 값 입력에서 Enter는 입력만 확정한다. 효과 적용은 확인 단추로만 한다.
+        OkButton.IsDefault = false;
         _motionRange = motionRange ?? newRange;
         _project = ctx.Project ?? throw new InvalidOperationException(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_42089F3C1D);
         _layer = layer;
@@ -278,12 +281,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
         var canvasExpand = Ui.Stack(Ui.Row(_expandCanvas, _expandMode), _expandNote);
+        var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel));
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo),
             _list,
             Ui.Row(_remove, _up, _down, _bake),
-            canvasExpand,
-            Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, new ScrollViewer { Content = _settings, MaxHeight = 390, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
+            shared,
+            Ui.Group(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4D4CF63BB1, new ScrollViewer { Content = _settings, MaxHeight = 320, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled }));
         left.Width = SettingsWidth + 30;
 
         _preview.Width = PreviewBox * 2 + 12;
@@ -536,6 +540,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ShakeEffect shake => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_92D1EF3203,Axes[(int)shake.Axis],shake.Amount,shake.Count) + (shake.Decay ? UiStrings.S_LayerEffectsDialog_Summary_1D40117C02 : "") + (shake.Regular ? UiStrings.S_LayerEffectsDialog_Summary_4DA5BACD5A : ""),
         BobEffect bob => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_BBAD57A076,(bob.Axis == EffectAxis.Horizontal ? UiStrings.S_LayerEffectsDialog_Summary_3722634F0B : UiStrings.S_LayerEffectsDialog_Summary_EFCA029C51),bob.Height,bob.Cycles),
         AppearEffect appear => $"{appear.DisplayName} · {AppearStyles[(int)appear.Style]}" + (appear.Style == AppearStyle.Wipe ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_C36AC46BAE,WipeFroms[(int)appear.From]) : ""),
+        FadeEffect fade => $"{fade.DisplayName} · {(fade.FadeOut ? UiStrings.Fade_Out : UiStrings.Fade_In)}",
         MeltEffect melt => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DA48E085AF,melt.Distance,melt.Irregularity),
         RotateEffect rotate => string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Summary_4AD4C2E7D2, rotate.Angle, Anchors[(int)rotate.Anchor].Split(' ')[0]),
         AfterimageEffect after => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_4BF321B781,after.Count,after.Interval,after.Opacity) + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
@@ -626,8 +631,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _rangeRow = null;
         _extendCount = null;
         _extendModeBox = null;
+        _extendTarget = null;
         _extendFor = -1;
         FillSettings();
+        ShowSharedExtendSettings();
         var hints = _settings.Children.OfType<TextBlock>().Where(t => t.Classes.Contains(HintClass)).ToList();
         if (hints.Count == 0 || _rangeRow is null) return;
         foreach (var h in hints) _settings.Children.Remove(h);
@@ -698,8 +705,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
                     Set(o => X(o) with { Center = (ExplodeCenter)k });
                 }));
                 SettingsSubRow("X", cx, Ui.Label("Y"), cy, Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_A89FB839CA));
-                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_9E6E8E6EFE, NumEditor(0, 100, x.Spread, NumKinds.Random, v => Set(o => X(o) with { Spread = v })), Ui.Label("%"),
-                    Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_1C82F0E839), NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, NumKinds.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_9E6E8E6EFE,
+                    Ui.Label("X"), NumEditor(0, 100, x.SpreadX, NumKinds.Random, v => Set(o => X(o) with { SpreadX = v })), Ui.Label("%"),
+                    Ui.Label("Y"), NumEditor(0, 100, x.SpreadY, NumKinds.Random, v => Set(o => X(o) with { SpreadY = v })), Ui.Label("%"));
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_1C82F0E839,
+                    NumEditor(-ExplodeEffect.MaxGravity, ExplodeEffect.MaxGravity, x.Gravity, NumKinds.Gravity, v => Set(o => X(o) with { Gravity = v })), Ui.Label("px"));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E1CC351651, NumEditor(1, ExplodeEffect.MaxPieceSize, x.PieceSize, NumKinds.Piece, v => Set(o => X(o) with { PieceSize = v })), Ui.Label("px"),
                     CheckEditor(UiStrings.S_LayerEffectsDialog_FillSettings_880B57A4CE, x.Shrink, v => Set(o => X(o) with { Shrink = v })));
                 var fadeStart = NumEditor(0, 100, x.FadeStart, NumKinds.Progress, v => Set(o => X(o) with { FadeStart = v }));
@@ -752,6 +762,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case ShakeEffect shake: ShakePanel(shake, Set); break;
             case BobEffect bob: BobPanel(bob, Set); break;
             case AppearEffect appear: AppearPanel(appear, Set); break;
+            case FadeEffect fade:
+                SettingsRow(UiStrings.Fade_Direction, ChoiceEditor([UiStrings.Fade_In, UiStrings.Fade_Out], fade.FadeOut ? 1 : 0,
+                    k => Set(x => (FadeEffect)x with { FadeOut = k == 1 })));
+                AddMotionEditors(i, Set);
+                break;
             case MeltEffect melt: MeltPanel(melt, Set); break;
             case RotateEffect rotate: RotatePanel(rotate, Set); break;
             case AfterimageEffect after: AfterimagePanel(after, Set); break;
@@ -844,7 +859,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
         _rangeRow = SettingsRow(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
-        AddExtendEditor(i);
     }
 
     /// <summary>고른 효과를 앞의 비클리핑 효과가 만든 영역에만 적용한다.</summary>

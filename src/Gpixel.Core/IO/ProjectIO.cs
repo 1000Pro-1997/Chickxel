@@ -1191,7 +1191,7 @@ public static partial class ProjectIO
 
     /// <summary>
     /// 레이어 효과 하나. <see cref="Type"/>: outline · shadow · rim · overlay · innerglow · swap · adjust · reflection,
-    /// 움직이는 효과 explode · shine · squash · gradient (모르는 종류는 읽을 때 건너뜀).
+    /// 움직이는 효과 explode · shine · squash · gradient · fade (모르는 종류는 읽을 때 건너뜀).
     /// </summary>
     internal sealed class EffectDto
     {
@@ -1227,7 +1227,10 @@ public static partial class ProjectIO
         /// <summary>터지기.</summary>
         public int? Distance { get; set; }
         public string? Center { get; set; }
+        /// <summary>이전 터지기 프로젝트의 공통 흩어짐. 새 파일은 축별 값만 쓴다.</summary>
         public int? Spread { get; set; }
+        public int? SpreadX { get; set; }
+        public int? SpreadY { get; set; }
         public int? Gravity { get; set; }
         public int? PieceSize { get; set; }
         public bool? Fade { get; set; }
@@ -1319,7 +1322,7 @@ public static partial class ProjectIO
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount, Blend = c.Blend.ToString() },
                 ExplodeEffect x => new EffectDto
                 {
-                    Type = "explode", Distance = x.Distance, Center = x.Center.ToString(), X = x.CenterX, Y = x.CenterY, Spread = x.Spread, Gravity = x.Gravity,
+                    Type = "explode", Distance = x.Distance, Center = x.Center.ToString(), X = x.CenterX, Y = x.CenterY, SpreadX = x.SpreadX, SpreadY = x.SpreadY, Gravity = x.Gravity,
                     PieceSize = x.PieceSize, Fade = x.Fade, FadeStart = x.FadeStart, Shrink = x.Shrink, Seed = x.Seed, KeepOriginal = x.KeepOriginal,
                     FlashFrames = x.FlashFrames, FlashColor = x.FlashColor.ToHex(),
                 },
@@ -1355,6 +1358,7 @@ public static partial class ProjectIO
                 {
                     Type = "appear", Disappear = appear.Disappear, Style = appear.Style.ToString(), Direction = appear.From.ToString(), Edge = appear.Edge, Seed = appear.Seed,
                 },
+                FadeEffect fade => new EffectDto { Type = "fade", Disappear = fade.FadeOut },
                 MeltEffect melt => new EffectDto { Type = "melt", Distance = melt.Distance, Spread = melt.Irregularity, Stretch = melt.Stretch, Fade = melt.Fade, Seed = melt.Seed },
                 RotateEffect rotate => new EffectDto { Type = "rotate", Angle = rotate.Angle, Anchor = rotate.Anchor.ToString() },
                 AfterimageEffect after => new EffectDto
@@ -1437,7 +1441,7 @@ public static partial class ProjectIO
                     return Animated(x with
                     {
                         Distance = Distance ?? x.Distance, Center = EnumOr(Center, x.Center), CenterX = X ?? x.CenterX, CenterY = Y ?? x.CenterY,
-                        Spread = Spread ?? x.Spread, Gravity = Gravity ?? x.Gravity, PieceSize = PieceSize ?? x.PieceSize, Fade = Fade ?? x.Fade,
+                        SpreadX = SpreadX ?? Spread ?? x.SpreadX, SpreadY = SpreadY ?? Spread ?? x.SpreadY, Gravity = Gravity ?? x.Gravity, PieceSize = PieceSize ?? x.PieceSize, Fade = Fade ?? x.Fade,
                         FadeStart = FadeStart ?? x.FadeStart, Shrink = Shrink ?? x.Shrink, Seed = Seed ?? x.Seed, KeepOriginal = KeepOriginal ?? x.KeepOriginal,
                         FlashFrames = FlashFrames ?? x.FlashFrames, FlashColor = ColorOr(FlashColor, x.FlashColor),
                     });
@@ -1548,6 +1552,9 @@ public static partial class ProjectIO
                     {
                         Disappear = Disappear ?? ap.Disappear, Style = EnumOr(Style, ap.Style), From = EnumOr(Direction, ap.From), Edge = Edge ?? ap.Edge, Seed = Seed ?? ap.Seed,
                     });
+                case "fade":
+                    var fade = new FadeEffect();
+                    return Animated(fade with { FadeOut = Disappear ?? fade.FadeOut });
                 case "melt":
                     var me = new MeltEffect();
                     return Animated(me with

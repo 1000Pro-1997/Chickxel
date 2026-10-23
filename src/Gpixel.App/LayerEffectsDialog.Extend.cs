@@ -33,6 +33,8 @@ public sealed partial class LayerEffectsDialog
     private NumericUpDown? _extendCount;
     private ComboBox? _extendModeBox;
     private TextBlock? _extendNote;
+    private readonly StackPanel _extendPanel = new() { Spacing = 2 };
+    private TextBlock? _extendTarget;
     /// <summary>프레임 수 칸이 보이는 효과 번호.</summary>
     private int _extendFor = -1;
     private bool _extendSyncing;
@@ -83,8 +85,8 @@ public sealed partial class LayerEffectsDialog
     // ───────────── 설정 칸 ─────────────
 
     /// <summary>
-    /// 범위 줄 아래: 프레임 수와 늘리기 방법. "원래 프레임으로"면 프레임 수 = 범위 길이(범위 뒤에 이미 있는 프레임까지만 — 끝을 옮김, 프레임은 더하지 않음),
-    /// 다른 방법이면 범위 길이보다 크게 했을 때 확인할 때 그만큼 프레임을 더한다.
+    /// 공통 설정: 고른 효과의 범위를 기준으로 프레임 수와 늘리기 방법을 고른다.
+    /// "원래 프레임으로"면 범위 뒤의 기존 프레임만 쓰고, 다른 방법이면 확인할 때 프로젝트 전체에 프레임을 더한다.
     /// </summary>
     private bool UsesVirtualTimeline(LayerEffect e)
     {
@@ -97,6 +99,14 @@ public sealed partial class LayerEffectsDialog
     private (int From, int To) EditableRangeOf(LayerEffect e)
         => UsesVirtualTimeline(e) ? VRangeOf(e) : RangeOf(e);
 
+    private void ShowSharedExtendSettings()
+    {
+        _extendPanel.Children.Clear();
+        _extendPanel.Children.Add(new TextBlock { Text = UiStrings.EffectShared_FrameExtend, FontWeight = Avalonia.Media.FontWeight.Bold });
+        if (Selected >= 0 && Selected < _effects.Count) AddExtendEditor(Selected);
+        else _extendPanel.Children.Add(Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_12D0C7E74E));
+    }
+
     private void AddExtendEditor(int i)
     {
         var (from, to) = EditableRangeOf(_effects[i]);
@@ -105,6 +115,10 @@ public sealed partial class LayerEffectsDialog
         var mode = Ui.Combo(170, ExtendModes);
         var note = Ui.Label("");
         note.Foreground = AppTheme.DimTextBrush;
+        note.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
+        note.MaxWidth = SettingsWidth - 14;
+        _extendTarget = Ui.Label("");
+        _extendTarget.Foreground = AppTheme.DimTextBrush;
         _extendCount = count;
         _extendModeBox = mode;
         _extendNote = note;
@@ -149,8 +163,14 @@ public sealed partial class LayerEffectsDialog
                               + UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_62BCE2A82A);
         ToolTip.SetTip(mode, UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_13C7CE4286
                              + UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_F918A1A976);
-        SettingsRow(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_82FB7C16B7, count, Ui.Label(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_090E611E8C), note);
-        SettingsSubRow(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_9F00E1A6E8, mode);
+        var countLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_82FB7C16B7);
+        countLabel.Width = 72;
+        var modeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_9F00E1A6E8);
+        modeLabel.Width = 72;
+        _extendPanel.Children.Add(_extendTarget);
+        _extendPanel.Children.Add(Ui.Row(countLabel, count, Ui.Label(UiStrings.S_LayerEffectsDialog_Extend_AddExtendEditor_090E611E8C)));
+        _extendPanel.Children.Add(note);
+        _extendPanel.Children.Add(Ui.Row(modeLabel, mode));
     }
 
     /// <summary>늘리기가 이 효과에서 만들어졌고 아직 그 효과 범위에 걸려 있으면 그 늘리기.</summary>
@@ -200,7 +220,9 @@ public sealed partial class LayerEffectsDialog
         var e = _effects[_extendFor];
         bool virtualTimeline = UsesVirtualTimeline(e);
         var (from, to) = virtualTimeline ? VRangeOf(e) : RangeOf(e);
-        int n = to - from + 1, now = n;
+        if (_extendTarget is { } target)
+            target.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectShared_Target, e.DisplayName, from + 1, to + 1);
+        int n = to - from + 1, now = Anchored(e)?.Count ?? n;
         int frames = virtualTimeline ? VirtualCount : _project.Frames.Count;
         int after = frames - 1 - to;
         bool existing = UsesExisting(e);

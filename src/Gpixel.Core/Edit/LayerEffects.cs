@@ -419,6 +419,7 @@ public static class LayerEffects
             case ShakeEffect k: ShakeRender.Apply(image, k); break;
             case BobEffect k: ShakeRender.Apply(image, k); break;
             case AppearEffect a: AppearRender.Apply(image, a, source); break;
+            case FadeEffect f: FadeRender.Apply(image, f); break;
             case MeltEffect m: MeltRender.Apply(image, m, source); break;
             case RotateEffect q: RotateRender.Apply(image, q, source); break;
             case ColorCycleEffect c: ColorCycleRender.Apply(image, c, source); break;
@@ -572,7 +573,7 @@ public static class LayerEffects
                 _ => PivotIn(e.PivotPoint, source),
             };
             int size = e.Shrink ? Math.Max(1, (int)Math.Ceiling(n * (1 - u) - 1e-9)) : n, inset = (n - size) / 2;
-            double spread = e.Spread / 100.0, fall = e.Gravity * u * u;
+            double spreadX = e.SpreadX / 100.0, spreadY = e.SpreadY / 100.0, fall = e.Gravity * u * u;
             // 바깥 조각일수록 멀리(중심 조각은 거리의 40%) — 그림이 통째로 부풀며 흩어진다
             double reach = Math.Max(1, Math.Max(Math.Max(Math.Abs(bounds.Left - cx), Math.Abs(bounds.Right - cx)), Math.Max(Math.Abs(bounds.Top - cy), Math.Abs(bounds.Bottom - cy))));
             // 조각 격자는 원본 왼쪽 위 기준 — 여백이 달라도(캔버스·부위 아틀라스) 같은 조각·같은 무작위
@@ -584,11 +585,15 @@ public static class LayerEffects
                     int x0 = source.X + gx * n, y0 = source.Y + gy * n;
                     double vx = x0 + n / 2.0 - cx, vy = y0 + n / 2.0 - cy;
                     double angle = vx * vx + vy * vy < 1e-9 ? Random(e.Seed, gx, gy, 0) * 2 * Math.PI : Math.Atan2(vy, vx);
-                    angle += (Random(e.Seed, gx, gy, 1) * 2 - 1) * spread * Math.PI / 2;
+                    double jitter = Random(e.Seed, gx, gy, 1) * 2 - 1;
                     double radial = 0.4 + 0.6 * Math.Min(1, Math.Sqrt(vx * vx + vy * vy) / reach);
-                    double travel = e.Distance * radial * (1 - spread * 0.6 * Random(e.Seed, gx, gy, 2)) * t;
-                    int dx = (int)Math.Round(Math.Cos(angle) * travel, MidpointRounding.AwayFromZero);
-                    int dy = (int)Math.Round(Math.Sin(angle) * travel + fall, MidpointRounding.AwayFromZero);
+                    double speedRandom = Random(e.Seed, gx, gy, 2);
+                    double angleX = angle + jitter * spreadX * Math.PI / 2;
+                    double travelX = e.Distance * radial * (1 - spreadX * 0.6 * speedRandom) * t;
+                    int dx = (int)Math.Round(Math.Cos(angleX) * travelX, MidpointRounding.AwayFromZero);
+                    double angleY = spreadX == spreadY ? angleX : angle + jitter * spreadY * Math.PI / 2;
+                    double travelY = spreadX == spreadY ? travelX : e.Distance * radial * (1 - spreadY * 0.6 * speedRandom) * t;
+                    int dy = (int)Math.Round(Math.Sin(angleY) * travelY + fall, MidpointRounding.AwayFromZero);
                     for (int yy = y0 + inset; yy < y0 + inset + size; yy++)
                     {
                         int ty = yy + dy;

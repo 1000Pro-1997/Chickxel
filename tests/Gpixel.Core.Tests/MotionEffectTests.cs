@@ -122,6 +122,35 @@ public class MotionEffectTests
     // ───────────── 나타나기 / 사라지기 ─────────────
 
     [Theory]
+    [InlineData(false, 0, 51, 101)]
+    [InlineData(true, 101, 51, 0)]
+    public void Fade_ChangesAlphaAcrossRangeWithoutChangingSource(bool fadeOut, int start, int middle, int end)
+    {
+        var src = new PixelImage(2, 1);
+        src[0, 0] = new Color32(10, 20, 30, 101);
+        var fade = new FadeEffect { FadeOut = fadeOut };
+
+        Assert.Equal(start, Cropped(src, fade, 0, 4)[0, 0].A);
+        var mid = Cropped(src, fade, 2, 4);
+        Assert.Equal(middle, mid[0, 0].A);
+        Assert.Equal((10, 20, 30), (mid[0, 0].R, mid[0, 0].G, mid[0, 0].B));
+        Assert.Equal(Color32.Transparent, mid[1, 0]);
+        Assert.Equal(end, Cropped(src, fade, 4, 4)[0, 0].A);
+        Assert.Equal(101, src[0, 0].A);
+    }
+
+    [Fact]
+    public void Fade_RespectsRangeAndEasing()
+    {
+        var src = new PixelImage(1, 1);
+        src[0, 0] = Blue;
+        var fade = new FadeEffect { Frames = new FrameRange(1, 3), Easing = EffectEasing.EaseIn };
+        Assert.Empty(LayerEffects.At([fade], 0, 5));
+        Assert.Equal(64, LayerEffects.RenderClipped(src, LayerEffects.At([fade], 2, 5))[0, 0].A);
+        Assert.Empty(LayerEffects.At([fade], 4, 5));
+    }
+
+    [Theory]
     [InlineData(AppearStyle.Fade)]
     [InlineData(AppearStyle.Dither)]
     [InlineData(AppearStyle.Wipe)]
@@ -419,7 +448,7 @@ public class MotionEffectTests
         Assert.Equal(new EffectPadding(0, 0, 0, 9), LayerEffects.Padding([new MeltEffect { Distance = 9 }], 10, 10));
         Assert.Equal(new EffectPadding(12, 12, 12, 12), LayerEffects.Padding([new ShockwaveEffect { Radius = 12 }], 10, 10));
         Assert.Equal(new EffectPadding(4, 6, 4, 6), LayerEffects.Padding([new RotateEffect { Anchor = SquashAnchor.Middle }], 10, 6));
-        Assert.True(LayerEffects.Padding([new HitFlashEffect(), new BlinkEffect(), new AppearEffect(), new AfterimageEffect(), new ColorCycleEffect()], 10, 10).IsNone);
+        Assert.True(LayerEffects.Padding([new HitFlashEffect(), new BlinkEffect(), new AppearEffect(), new FadeEffect(), new AfterimageEffect(), new ColorCycleEffect()], 10, 10).IsNone);
         // 돌린 그림은 늘 여백 안
         var src = new PixelImage(10, 6);
         src.Clear(Blue);
@@ -444,6 +473,7 @@ public class MotionEffectTests
             new ShakeEffect { Axis = EffectAxis.Both, Amount = 5, Count = 7, Decay = false, Regular = true, Seed = 77, Easing = EffectEasing.EaseIn },
             new BobEffect { Height = 3, Cycles = 4, Axis = EffectAxis.Horizontal, Repeat = EffectRepeat.Loop, RepeatCount = 2 },
             new AppearEffect { Disappear = true, Style = AppearStyle.Wipe, From = WipeDirection.Right, Edge = 2, Seed = 12 },
+            new FadeEffect { FadeOut = true, Easing = EffectEasing.EaseInOut, Frames = new FrameRange(0, 1) },
             new MeltEffect { Distance = 20, Irregularity = 30, Stretch = false, Fade = false, Seed = 99 },
             new RotateEffect { Angle = -720, Anchor = SquashAnchor.Pivot },
             new AfterimageEffect { Count = 5, Interval = 2, Opacity = 80, Tint = true, TintColor = new Color32(10, 20, 30, 128) },

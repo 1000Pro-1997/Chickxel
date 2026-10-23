@@ -2282,6 +2282,7 @@ public sealed class TimelinePanel : UserControl
             ShakeEffect => Color.FromRgb(186, 84, 60),
             BobEffect => Color.FromRgb(160, 236, 214),
             AppearEffect => Color.FromRgb(206, 232, 86),
+            FadeEffect => Color.FromRgb(120, 194, 220),
             MeltEffect => Color.FromRgb(160, 112, 72),
             RotateEffect => Color.FromRgb(70, 96, 232),
             AfterimageEffect => Color.FromRgb(40, 190, 160),

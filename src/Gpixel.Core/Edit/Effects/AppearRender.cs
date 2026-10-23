@@ -20,12 +20,7 @@ internal static class AppearRender
         switch (e.Style)
         {
             case AppearStyle.Fade:
-                for (int i = 0; i < px.Length; i++)
-                {
-                    if (px[i].A == 0) continue;
-                    byte a = (byte)Math.Round(px[i].A * v, MidpointRounding.AwayFromZero);
-                    px[i] = a == 0 ? Color32.Transparent : px[i].WithAlpha(a);
-                }
+                FadeRender.Apply(image, v);
                 break;
             case AppearStyle.Dither:
                 for (int y = 0; y < h; y++)

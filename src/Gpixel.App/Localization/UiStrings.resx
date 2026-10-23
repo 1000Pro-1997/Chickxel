@@ -15,6 +15,14 @@
   <data name="ExportPreset_BuiltInFrame" xml:space="preserve"><value>프레임 시트 기본</value><comment>기본 제공 내보내기 프리셋의 표시 이름. ExportPresets.BuiltIns에 저장된 식별자는 번역하지 않음.</comment></data>
   <data name="ExportPreset_BuiltInParts" xml:space="preserve"><value>부위 아틀라스 + Sprite Library</value><comment>기본 제공 내보내기 프리셋의 표시 이름.</comment></data>
   <data name="ExportPreset_BuiltInSplitSkins" xml:space="preserve"><value>스킨마다 따로 파일</value><comment>기본 제공 내보내기 프리셋의 표시 이름.</comment></data>
+  <data name="EffectShared_Title" xml:space="preserve"><value>공통 설정</value></data>
+  <data name="EffectShared_FrameExtend" xml:space="preserve"><value>프레임 늘리기</value></data>
+  <data name="EffectShared_Target" xml:space="preserve"><value>기준: {0} · 프레임 {1}~{2}</value></data>
+  <data name="Fade_Name" xml:space="preserve"><value>페이드 인·아웃</value></data>
+  <data name="Fade_Description" xml:space="preserve"><value>프레임 범위 동안 그림 전체의 투명도를 점차 높이거나 낮춥니다.</value></data>
+  <data name="Fade_Direction" xml:space="preserve"><value>방향</value></data>
+  <data name="Fade_In" xml:space="preserve"><value>페이드 인</value></data>
+  <data name="Fade_Out" xml:space="preserve"><value>페이드 아웃</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Gpixel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>

@@ -22,6 +22,7 @@
   <data name="Effect_Afterimage" xml:space="preserve"><value>잔상</value></data>
   <data name="Effect_Disappear" xml:space="preserve"><value>사라지기</value></data>
   <data name="Effect_Appear" xml:space="preserve"><value>나타나기</value></data>
+  <data name="Effect_Fade" xml:space="preserve"><value>페이드 인·아웃</value></data>
   <data name="Effect_Blink" xml:space="preserve"><value>깜빡이기</value></data>
   <data name="Effect_Bob" xml:space="preserve"><value>둥실둥실</value></data>
   <data name="Effect_ColorAdjust" xml:space="preserve"><value>색조 보정</value></data>

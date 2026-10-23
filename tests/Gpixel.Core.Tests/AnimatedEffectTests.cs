@@ -145,13 +145,13 @@ public class AnimatedEffectTests
 
     // ───────────── 터지기 ─────────────
 
-    private static readonly ExplodeEffect Burst = new() { Distance = 8, Spread = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
+    private static readonly ExplodeEffect Burst = new() { Distance = 8, SpreadX = 0, SpreadY = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
 
     [Fact]
     public void Explode_FirstFrameIsOriginal()
     {
         var src = Filled(6, 6, Red);
-        Assert.True(SameAsSource(src, At(src, new ExplodeEffect { Spread = 100, Gravity = 9, PieceSize = 2 }, 0, 5)));
+        Assert.True(SameAsSource(src, At(src, new ExplodeEffect { SpreadX = 100, SpreadY = 100, Gravity = 9, PieceSize = 2 }, 0, 5)));
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class AnimatedEffectTests
         var src = Filled(6, 6, Red);
         var (img, _) = At(src, new ExplodeEffect { Fade = true, FadeStart = 50 }, 6, 6);
         Assert.Equal(0, Opaque(img));
-        var (mid, _) = At(src, new ExplodeEffect { Fade = true, FadeStart = 0, Easing = EffectEasing.Linear, Spread = 0 }, 3, 6);
+        var (mid, _) = At(src, new ExplodeEffect { Fade = true, FadeStart = 0, Easing = EffectEasing.Linear, SpreadX = 0, SpreadY = 0 }, 3, 6);
         Assert.All(mid.Pixels.Where(p => p.A != 0), p => Assert.InRange((int)p.A, 1, 254));
     }
 
@@ -192,9 +192,38 @@ public class AnimatedEffectTests
     public void Explode_IsDeterministicPerSeed()
     {
         var src = Filled(8, 8, Red);
-        var fx = new ExplodeEffect { Spread = 100, Seed = 7 };
+        var fx = new ExplodeEffect { SpreadX = 100, SpreadY = 100, Seed = 7 };
         Assert.True(At(src, fx, 2, 5).Image.ContentEquals(At(src, fx, 2, 5).Image));
         Assert.False(At(src, fx, 2, 5).Image.ContentEquals(At(src, fx with { Seed = 8 }, 2, 5).Image));
+    }
+
+    [Fact]
+    public void Explode_SpreadAxesAffectOnlyTheirOwnDisplacement()
+    {
+        var src = Filled(1, 1, Red);
+        bool changedX = false, changedY = false;
+        for (int seed = 1; seed <= 32; seed++)
+        {
+            (int X, int Y) Position(int horizontal, int vertical)
+            {
+                var image = At(src, new ExplodeEffect
+                {
+                    Distance = 32, SpreadX = horizontal, SpreadY = vertical, Seed = seed,
+                    Gravity = 0, Fade = false, Easing = EffectEasing.Linear,
+                }, 2, 2).Image;
+                int index = Array.FindIndex(image.Pixels, pixel => pixel.A != 0);
+                Assert.True(index >= 0);
+                return (index % image.Width, index / image.Width);
+            }
+            var baseline = Position(0, 0);
+            var horizontal = Position(100, 0);
+            var vertical = Position(0, 100);
+            Assert.Equal(baseline.Y, horizontal.Y);
+            Assert.Equal(baseline.X, vertical.X);
+            changedX |= baseline.X != horizontal.X;
+            changedY |= baseline.Y != vertical.Y;
+        }
+        Assert.True(changedX && changedY);
     }
 
     [Fact]
@@ -319,7 +348,7 @@ public class AnimatedEffectTests
         [
             new ExplodeEffect
             {
-                Distance = 30, Center = ExplodeCenter.Custom, CenterX = 3, CenterY = -2, Spread = 77, Gravity = -5, PieceSize = 3, Fade = false, FadeStart = 10,
+                Distance = 30, Center = ExplodeCenter.Custom, CenterX = 3, CenterY = -2, SpreadX = 77, SpreadY = 12, Gravity = -5, PieceSize = 3, Fade = false, FadeStart = 10,
                 Shrink = true, Seed = 1234, KeepOriginal = true, FlashFrames = 2, FlashColor = new Color32(1, 2, 3), Easing = EffectEasing.EaseInOut,
                 Repeat = EffectRepeat.PingPong, RepeatCount = 3, Frames = new FrameRange(0, 0),
             },
@@ -365,6 +394,36 @@ public class AnimatedEffectTests
         stream.Position = 0;
         var legacy = (SquashEffect)ProjectIO.Load(stream).Layers[0].Effects[2];
         Assert.Equal((35, 35), (legacy.WidthAmount, legacy.HeightAmount));
+    }
+
+    [Fact]
+    public void Explode_LegacyCommonSpreadLoadsIntoBothAxes()
+    {
+        var p = new SpriteProject(8, 8);
+        var expected = new ExplodeEffect { SpreadX = 73, SpreadY = 73, Fade = false, Seed = 9 };
+        p.SetLayerEffects(0, [expected]);
+        using var stream = new MemoryStream();
+        ProjectIO.Save(p, stream);
+
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
+            var explode = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
+            explode.Remove("spreadX");
+            explode.Remove("spreadY");
+            explode["spread"] = 73;
+            entry.Delete();
+            using var w = zip.CreateEntry(ProjectIO.ProjectEntryName).Open();
+            using var writer = new System.Text.Json.Utf8JsonWriter(w);
+            root.WriteTo(writer);
+        }
+        stream.Position = 0;
+        var loaded = (ExplodeEffect)ProjectIO.Load(stream).Layers[0].Effects[0];
+        Assert.Equal(expected, loaded);
+        var src = Filled(6, 6, Red);
+        Assert.True(At(src, expected, 2, 4).Image.ContentEquals(At(src, loaded, 2, 4).Image));
     }
 
     [Theory]

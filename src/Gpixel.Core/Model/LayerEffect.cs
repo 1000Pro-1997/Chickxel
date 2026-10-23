@@ -313,15 +313,15 @@ public enum ExplodeCenter
 
 /// <summary>
 /// 터지기: 보이는 픽셀(또는 <see cref="PieceSize"/>×<see cref="PieceSize"/> 조각)이 중심에서 바깥쪽으로 튀어 날아가며 사라진다.
-/// 조각마다 방향 = 중심 → 조각 + 흩어짐만큼의 무작위 각도, 거리 = <see cref="Distance"/> × (0.4 + 0.6 × 중심에서 떨어진 정도) × (1 − 흩어짐 × 0.6 × 무작위) × 진행,
-/// 아래로 <see cref="Gravity"/> × 시간²(끝에서 중력 px만큼 더 떨어짐). 무작위는 <see cref="Seed"/>와 조각 자리로 정해져 늘 같다.
+/// 두 축의 흩어짐은 각각 방향(±90° × %)과 거리(최대 60% 감소)를 무작위로 바꾼다. 두 값이 같으면 기존 흩어짐과 같은 모습이다.
+/// 거리는 <see cref="Distance"/> × (0.4 + 0.6 × 중심에서 떨어진 정도) × 진행, 아래로 <see cref="Gravity"/> × 시간²만큼 더 떨어진다.
 /// 진행 0(범위 첫 프레임)은 원래 그림 그대로. 조각은 정수 픽셀에 놓이고 알파만 흐려진다(번짐 없음).
 /// </summary>
 public sealed record ExplodeEffect : AnimatedEffect
 {
     public const int MaxDistance = 128, MaxGravity = 64, MaxPieceSize = 4, MaxFlashFrames = 8, MaxSeed = 9999;
 
-    private readonly int _distance = 16, _spread = 50, _gravity = 6, _piece = 1, _fadeStart = 40, _seed = 1, _flash;
+    private readonly int _distance = 16, _spreadX = 50, _spreadY = 50, _gravity = 6, _piece = 1, _fadeStart = 40, _seed = 1, _flash;
     private readonly int _cx, _cy;
 
     public ExplodeEffect() => Easing = EffectEasing.EaseOut;
@@ -335,8 +335,11 @@ public sealed record ExplodeEffect : AnimatedEffect
     public int CenterX { get => _cx; init => _cx = Math.Clamp(value, -PixelImage.MaxSize, PixelImage.MaxSize); }
     public int CenterY { get => _cy; init => _cy = Math.Clamp(value, -PixelImage.MaxSize, PixelImage.MaxSize); }
 
-    /// <summary>흩어짐 0~100%: 방향(±90° × %)과 빠르기(최대 60% 느리게)의 무작위.</summary>
-    public int Spread { get => _spread; init => _spread = Math.Clamp(value, 0, 100); }
+    /// <summary>수평 흩어짐 0~100%: X 이동의 방향·거리 무작위.</summary>
+    public int SpreadX { get => _spreadX; init => _spreadX = Math.Clamp(value, 0, 100); }
+
+    /// <summary>수직 흩어짐 0~100%: Y 이동의 방향·거리 무작위.</summary>
+    public int SpreadY { get => _spreadY; init => _spreadY = Math.Clamp(value, 0, 100); }
 
     /// <summary>중력: 끝에서 더 떨어지는 px(음수 = 떠오름), ±<see cref="MaxGravity"/>.</summary>
     public int Gravity { get => _gravity; init => _gravity = Math.Clamp(value, -MaxGravity, MaxGravity); }
