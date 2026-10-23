@@ -203,9 +203,22 @@ public class MotionEffectTests
     public void Rotate_OddAngleAddsNoNewColours()
     {
         var src = Sprite();
-        var (img, _) = At(src, new RotateEffect { Angle = 30, Clockwise = false }, 1, 1);
+        var (img, _) = At(src, new RotateEffect { Angle = -30 }, 1, 1);
         Assert.All(img.Pixels.Where(p => p.A != 0), p => Assert.True(p == Red || p == Blue));
         Assert.InRange(Opaque(img), Opaque(src) - 4, Opaque(src) + 4);
+    }
+
+    [Fact]
+    public void Rotate_SignedAngleUsesPivotByDefaultAndPadsBothDirections()
+    {
+        var clockwise = new RotateEffect { Angle = 90 };
+        var counterclockwise = clockwise with { Angle = -90 };
+
+        Assert.Equal(SquashAnchor.Pivot, clockwise.Anchor);
+        Assert.Equal(45, clockwise.DegreesAt(0.5));
+        Assert.Equal(-45, counterclockwise.DegreesAt(0.5));
+        Assert.Equal(LayerEffects.Padding([clockwise], 10, 6), LayerEffects.Padding([counterclockwise], 10, 6));
+        Assert.False(LayerEffects.Padding([counterclockwise], 10, 6).IsNone);
     }
 
     // ───────────── 잔상 ─────────────
@@ -255,6 +268,53 @@ public class MotionEffectTests
         Assert.InRange((int)frame[2, 1].A, 120, 135);
         Assert.Equal(0, frame[2, 2].A);
         Assert.Equal(0, frame[2, 5].A);
+    }
+
+    [Fact]
+    public void Afterimage_ClippedToOutlineUsesOnlyHistoricalOutlinePixels()
+    {
+        var p = new SpriteProject(8, 3);
+        p.DuplicateFrame(0);
+        for (int f = 0; f < 2; f++)
+        {
+            var cel = new PixelImage(8, 3);
+            cel[1 + f * 3, 1] = Red;
+            p.SetCel(0, f, cel);
+        }
+        p.SetLayerEffects(0,
+        [
+            new OutlineEffect { Color = Blue },
+            new AfterimageEffect { ClipToPrevious = true, Count = 1, Opacity = 100 },
+        ]);
+
+        var frame = p.Flatten(1);
+        Assert.Equal(Blue, frame[0, 1]);
+        Assert.Equal(Color32.Transparent, frame[1, 1]);
+        Assert.Equal(Blue, frame[2, 1]);
+        Assert.Equal(Red, frame[4, 1]);
+        Assert.Equal(Blue, frame[5, 1]);
+    }
+
+    [Fact]
+    public void Afterimage_ClippedToInactiveHistoricalAnchorDoesNotAlterSource()
+    {
+        var p = new SpriteProject(5, 3);
+        p.DuplicateFrame(0);
+        var previous = new PixelImage(5, 3);
+        previous[0, 1] = Red;
+        p.SetCel(0, 0, previous);
+        var current = new PixelImage(5, 3);
+        current[4, 1] = Red;
+        p.SetCel(0, 1, current);
+        p.SetLayerEffects(0,
+        [
+            new ColorOverlayEffect { Color = Blue, Frames = new FrameRange(1, 1) },
+            new AfterimageEffect { ClipToPrevious = true, Count = 1, Opacity = 100 },
+        ]);
+
+        Assert.Equal(Color32.Transparent, p.Flatten(1)[0, 1]);
+        Assert.Equal(Red, previous[0, 1]);
+        Assert.Equal(Red, p.Flatten(0)[0, 1]);
     }
 
     [Fact]
@@ -385,7 +445,7 @@ public class MotionEffectTests
             new BobEffect { Height = 3, Cycles = 4, Axis = EffectAxis.Horizontal, Repeat = EffectRepeat.Loop, RepeatCount = 2 },
             new AppearEffect { Disappear = true, Style = AppearStyle.Wipe, From = WipeDirection.Right, Edge = 2, Seed = 12 },
             new MeltEffect { Distance = 20, Irregularity = 30, Stretch = false, Fade = false, Seed = 99 },
-            new RotateEffect { Angle = 720, Anchor = SquashAnchor.Pivot, Clockwise = false },
+            new RotateEffect { Angle = -720, Anchor = SquashAnchor.Pivot },
             new AfterimageEffect { Count = 5, Interval = 2, Opacity = 80, Tint = true, TintColor = new Color32(10, 20, 30, 128) },
             new ColorCycleEffect { Colors = [Red, Blue, new Color32(0, 255, 0), Color32.White], Steps = 8, Reverse = true },
             new ShockwaveEffect { Center = ExplodeCenter.Custom, CenterX = -3, CenterY = 5, Radius = 30, Thickness = 3, Color = Blue, Fade = false, Behind = true },

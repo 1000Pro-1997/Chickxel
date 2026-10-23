@@ -201,6 +201,27 @@ public class LayerEffectTests
     }
 
     [Fact]
+    public void ClippedReflection_MirrorsOnlyOutlineBeyondOriginalShape()
+    {
+        var src = Filled(3, 2, White);
+        var outline = new OutlineEffect { Color = Black };
+        var reflection = new ReflectionEffect
+        {
+            ClipToPrevious = true, Gap = 1, Height = 100, OpacityStart = 100, OpacityEnd = 100,
+        };
+
+        var (image, x, y) = LayerEffects.Render(src, [outline, reflection]);
+
+        Assert.Equal((-1, -1), (x, y));
+        Assert.Equal(9, image.Height);
+        Assert.Equal(White, image[2, 2]);
+        Assert.Equal(Black, image[2, 0]);
+        Assert.Equal(Black, image[2, 5]);
+        Assert.Equal(Color32.Transparent, image[2, 6]);
+        Assert.Equal(Black, image[2, 8]);
+    }
+
+    [Fact]
     public void ClippedEffect_DoesNotAddPadding_AndBakesWithWholeGroup()
     {
         LayerEffect[] effects =
@@ -534,6 +555,24 @@ public class LayerEffectTests
 
         Assert.Equal(new EffectCanvasExpansion(22, 11, 3, 1, true), plan);
         Assert.Equal(2d, (double)plan.Width / plan.Height, 1);
+    }
+
+    [Fact]
+    public void EffectCanvasExpansion_KeepCenterPadsEverySideEqually()
+    {
+        var plan = EffectCanvasExpansion.FromBounds(16, 8, new Rectangle(-3, 2, 22, 7), EffectCanvasExpandMode.KeepCenter);
+
+        Assert.Equal(new EffectCanvasExpansion(22, 14, 3, 3, false), plan);
+        Assert.Equal(16, plan.Width - 2 * plan.OffsetX);
+        Assert.Equal(8, plan.Height - 2 * plan.OffsetY);
+    }
+
+    [Fact]
+    public void EffectCanvasExpansion_KeepCenterRejectsOversizedSymmetricCanvas()
+    {
+        int max = PixelImage.MaxSize;
+        Assert.Throws<InvalidOperationException>(() =>
+            EffectCanvasExpansion.FromBounds(max - 1, 4, new Rectangle(-1, 0, max, 4), EffectCanvasExpandMode.KeepCenter));
     }
 
     [Fact]

@@ -1343,7 +1343,7 @@ public static partial class ProjectIO
                     Type = "appear", Disappear = appear.Disappear, Style = appear.Style.ToString(), Direction = appear.From.ToString(), Edge = appear.Edge, Seed = appear.Seed,
                 },
                 MeltEffect melt => new EffectDto { Type = "melt", Distance = melt.Distance, Spread = melt.Irregularity, Stretch = melt.Stretch, Fade = melt.Fade, Seed = melt.Seed },
-                RotateEffect rotate => new EffectDto { Type = "rotate", Angle = rotate.Angle, Anchor = rotate.Anchor.ToString(), Clockwise = rotate.Clockwise },
+                RotateEffect rotate => new EffectDto { Type = "rotate", Angle = rotate.Angle, Anchor = rotate.Anchor.ToString() },
                 AfterimageEffect after => new EffectDto
                 {
                     Type = "afterimage", Count = after.Count, Interval = after.Interval, Opacity = after.Opacity, Tint = after.Tint, Color = after.TintColor.ToHex(),
@@ -1543,7 +1543,7 @@ public static partial class ProjectIO
                     });
                 case "rotate":
                     var ro = new RotateEffect();
-                    return Animated(ro with { Angle = Angle ?? ro.Angle, Anchor = EnumOr(Anchor, ro.Anchor), Clockwise = Clockwise ?? ro.Clockwise });
+                    return Animated(ro with { Angle = Clockwise == false ? -Math.Abs(Angle ?? ro.Angle) : Angle ?? ro.Angle, Anchor = EnumOr(Anchor, ro.Anchor) });
                 case "afterimage":
                     var ai = new AfterimageEffect();
                     return Animated(ai with

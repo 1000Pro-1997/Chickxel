@@ -132,16 +132,12 @@ public sealed partial class LayerEffectsDialog
 
     private void SavePresetGroup()
     {
-        if (Selected < 0 || Selected >= _effects.Count) return;
-        int first = Selected;
-        while (first > 0 && _effects[first].ClipToPrevious) first--;
-        int last = first;
-        while (last + 1 < _effects.Count && _effects[last + 1].ClipToPrevious) last++;
+        if (_effects.Count == 0) return;
         var name = InputDialog.Ask(this, UiStrings.EffectPreset_SaveTitle, UiStrings.EffectPreset_NamePrompt,
-            _effects[first].DisplayName, _presets.Select(preset => preset.Name))?.Trim();
+            _effects[0].DisplayName, _presets.Select(preset => preset.Name))?.Trim();
         if (string.IsNullOrEmpty(name)) return;
 
-        var preset = EffectPreset.Capture(name, _effects.GetRange(first, last - first + 1));
+        var preset = EffectPreset.Capture(name, _effects);
         var next = _presets.ToList();
         int duplicate = next.FindIndex(item => item.Name == name);
         if (duplicate >= 0)

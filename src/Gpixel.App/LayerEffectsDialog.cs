@@ -83,8 +83,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         /// <summary>지나가는·바뀌는 방향(0~359°).</summary>
         public static readonly NumKind Angle = new("effect.angle", "°", [0, 15, 30, 45, 60, 90, 120, 135, 180, 225, 270, 315]);
-        /// <summary>범위 동안 도는 전체 각도(360 = 한 바퀴).</summary>
-        public static readonly NumKind Rotation = new("effect.rotation", "°", [15, 30, 45, 90, 180, 270, 360, 540, 720, 1080, 1440]);
+        /// <summary>범위 동안 도는 전체 각도(양수 시계 방향, 음수 반시계 방향).</summary>
+        public static readonly NumKind Rotation = new("effect.rotation", "°", [-1440, -720, -540, -360, -270, -180, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180, 270, 360, 540, 720, 1080, 1440]);
         /// <summary>색상 돌리기(−180~180°).</summary>
         public static readonly NumKind Hue = new("effect.hue", "°", [-180, -120, -90, -60, -30, 0, 30, 60, 90, 120, 180]);
         /// <summary>세기·양(0~100%).</summary>
@@ -146,6 +146,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private readonly TextBlock _expandNote;
     private readonly TextBlock _caption;
     private readonly PreviewView _preview = new();
+    private Window? _previewWindow;
+    private PreviewView? _largePreview;
     private readonly DispatcherTimer _timer = new();
     private int _previewFrame;
     /// <summary>재생 범위: true = 고른 효과 범위, false = 늘린 뒤 전체 프레임. 앱을 켜 둔 동안 유지.</summary>
@@ -227,16 +229,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
 
-        _expandCanvas = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_420801482E, false);
-        _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F]);
+        _expandCanvas = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_420801482E, true);
+        _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
         _expandMode.SelectedIndex = (int)s_canvasExpandMode;
-        _expandMode.IsEnabled = false;
+        _expandMode.IsEnabled = true;
         _expandNote = Ui.Label("");
         _expandNote.Foreground = AppTheme.DimTextBrush;
         _expandNote.Margin = new Thickness(3, 0, 0, 2);
         _expandNote.TextWrapping = TextWrapping.Wrap;
         _expandNote.MaxWidth = SettingsWidth;
-        _expandNote.IsVisible = false;
+        _expandNote.IsVisible = true;
         ToolTip.SetTip(_expandCanvas, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_98461A52E4);
         ToolTip.SetTip(_expandMode, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4DF95CBC10);
         _expandCanvas.IsCheckedChanged += (_, _) =>
@@ -282,6 +284,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
         _preview.Width = PreviewBox * 2 + 12;
         _preview.Height = PreviewBox + 20;
+        _preview.Cursor = new Cursor(StandardCursorType.Hand);
+        ToolTip.SetTip(_preview, UiStrings.EffectPreview_OpenLarge);
+        _preview.PointerPressed += (_, e) =>
+        {
+            if (!_preview.HasImages || !e.GetCurrentPoint(_preview).Properties.IsLeftButtonPressed) return;
+            OpenLargePreview();
+            e.Handled = true;
+        };
         _caption = Ui.Label("");
         _caption.Foreground = AppTheme.DimTextBrush;
         _play = Ui.Button(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_3DC0585476, (_, _) => TogglePlay(), 80);
@@ -315,6 +325,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         RebuildList(_effects.Count == 0 ? -1 : focus >= 0 && focus < _effects.Count ? focus : 0);
         Closed += (_, _) =>
         {
+            _previewWindow?.Close();
             _timer.Stop();
             _stripTimer.Stop();
             DisposePalette();
@@ -521,7 +532,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         BobEffect bob => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_BBAD57A076,(bob.Axis == EffectAxis.Horizontal ? UiStrings.S_LayerEffectsDialog_Summary_3722634F0B : UiStrings.S_LayerEffectsDialog_Summary_EFCA029C51),bob.Height,bob.Cycles),
         AppearEffect appear => $"{appear.DisplayName} · {AppearStyles[(int)appear.Style]}" + (appear.Style == AppearStyle.Wipe ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_C36AC46BAE,WipeFroms[(int)appear.From]) : ""),
         MeltEffect melt => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DA48E085AF,melt.Distance,melt.Irregularity),
-        RotateEffect rotate => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_4AD4C2E7D2,rotate.Angle,(rotate.Clockwise ? UiStrings.S_LayerEffectsDialog_Summary_C95AC144BE : UiStrings.S_LayerEffectsDialog_Summary_32A77EF015),Anchors[(int)rotate.Anchor].Split(' ')[0]),
+        RotateEffect rotate => string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_LayerEffectsDialog_Summary_4AD4C2E7D2, rotate.Angle, Anchors[(int)rotate.Anchor].Split(' ')[0]),
         AfterimageEffect after => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_4BF321B781,after.Count,after.Interval,after.Opacity) + (after.Tint ? $" · {after.TintColor.ToHex()}" : ""),
         ColorCycleEffect cycle => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_055B04E8E0,cycle.Colors.Count,cycle.Steps) + (cycle.Reverse ? UiStrings.S_LayerEffectsDialog_Summary_D6E8941524 : ""),
         ShockwaveEffect wave => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_D07B4E5446,wave.Radius,wave.Thickness,(wave.Behind ? UiStrings.S_LayerEffectsDialog_Summary_E3B52B00EB : UiStrings.S_LayerEffectsDialog_Summary_BC26FFFDAA)),
@@ -837,7 +848,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var effect = _effects[i];
         int anchor = i - 1;
         while (anchor >= 0 && _effects[anchor].ClipToPrevious) anchor--;
-        bool canClip = anchor >= 0 && effect is not AfterimageEffect && _effects[anchor] is not AfterimageEffect;
+        bool canClip = anchor >= 0 && _effects[anchor] is not AfterimageEffect;
         var clip = Ui.Check(UiStrings.EffectPreset_ClipToPrevious, effect.ClipToPrevious);
         clip.IsEnabled = canClip;
         ToolTip.SetTip(clip, canClip ? UiStrings.EffectPreset_ClipTip : UiStrings.EffectPreset_ClipUnavailableTip);
@@ -1065,8 +1076,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     /// <summary>
-    /// 미리보기 프레임의 전(효과 없이)·후(그 프레임 범위 안의 효과만)를 그린다. 크기는 모든 프레임 같게(효과 여백 전체).
-    /// 프레임을 늘리는 중이면 늘린 뒤 차례의 프레임(<see cref="AnimateAt"/>).
+    /// 미리보기 프레임의 전·후를 같은 캔버스 좌표의 실제 그림 범위로 잘라 그린다.
+    /// 캔버스 밖 효과 픽셀도 범위에는 넣되 미리보기에서는 잘린 부분으로 표시한다.
     /// </summary>
     private void RefreshPreview()
     {
@@ -1080,30 +1091,97 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (source is null)
         {
             _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_A0B1282CEF,f + 1,where);
-            _preview.SetImages(null, null);
+            _preview.SetImages(null, null, default);
+            _largePreview?.InvalidateVisual();
             return;
         }
         var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height));
-        var before = new PixelImage(after.Width, after.Height);
-        before.Blit(source, -dx, -dy);
-        _preview.SetImages(before, after);
+        int ox = _layer.IsPart ? _layer.PartOffset.X : 0;
+        int oy = _layer.IsPart ? _layer.PartOffset.Y : 0;
+        var sourceBounds = source.GetOpaqueBounds();
+        var afterBounds = after.GetOpaqueBounds();
+        if (!sourceBounds.IsEmpty) sourceBounds.Offset(ox, oy);
+        if (!afterBounds.IsEmpty) afterBounds.Offset(ox + dx, oy + dy);
+        // A fully transparent frame still needs a small, stable area to preview.
+        var bounds = sourceBounds.IsEmpty ? afterBounds : afterBounds.IsEmpty ? sourceBounds : Rectangle.Union(sourceBounds, afterBounds);
+        if (bounds.IsEmpty) bounds = new Rectangle(ox, oy, 1, 1);
+        int marginX = Math.Min(2, Math.Max(0, (PixelImage.MaxSize - bounds.Width) / 2));
+        int marginY = Math.Min(2, Math.Max(0, (PixelImage.MaxSize - bounds.Height) / 2));
+        bounds.Inflate(marginX, marginY);
+        var before = new PixelImage(bounds.Width, bounds.Height);
+        before.Blit(source, new Rectangle(bounds.X - ox, bounds.Y - oy, bounds.Width, bounds.Height), 0, 0);
+        var croppedAfter = after.Crop(new Rectangle(bounds.X - ox - dx, bounds.Y - oy - dy, bounds.Width, bounds.Height));
+        var canvas = new Rectangle(-bounds.X, -bounds.Y, _project.Width, _project.Height);
+        _preview.SetImages(before, croppedAfter, canvas);
+        _largePreview?.InvalidateVisual();
         string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_19220A5382,a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100) : "";
         _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_64659703DD,f + 1,where,progress);
     }
 
-    /// <summary>전·후를 같은 크기·같은 정수 배율로 나란히 그린다(후 그림이 번진 만큼 둘 다 넓힘).</summary>
+    private void OpenLargePreview()
+    {
+        if (_previewWindow is { } window)
+        {
+            window.Activate();
+            return;
+        }
+        var view = new PreviewView(_preview) { Margin = new Thickness(12) };
+        var large = new Window
+        {
+            Title = Title,
+            Width = 900,
+            Height = 580,
+            MinWidth = 400,
+            MinHeight = 300,
+            CanResize = true,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Background = AppTheme.BackBrush,
+            Content = view,
+        };
+        large.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape) large.Close();
+        };
+        large.Closed += (_, _) =>
+        {
+            _previewWindow = null;
+            _largePreview = null;
+        };
+        _previewWindow = large;
+        _largePreview = view;
+        large.Show(this);
+    }
+
+    /// <summary>전·후를 같은 캔버스 위치와 배율로 표시하고, 잘려 나가는 픽셀은 흐리게 표시한다.</summary>
     private sealed class PreviewView : Control, IDisposable
     {
+        private readonly PreviewView? _source;
         private WriteableBitmap? _before, _after;
+        private Rectangle _canvas;
 
-        public void SetImages(PixelImage? before, PixelImage? after)
+        public PreviewView() { }
+        public PreviewView(PreviewView source) => _source = source;
+
+        public bool HasImages => (_source ?? this)._before is not null;
+
+        public void SetImages(PixelImage? before, PixelImage? after, Rectangle canvas)
         {
             Dispose();
+            _canvas = canvas;
             if (before is not null && after is not null)
             {
-                _before = ImageUtil.ToBitmap(before);
-                _after = ImageUtil.ToBitmap(after);
+                try
+                {
+                    _before = ImageUtil.ToBitmap(before);
+                    _after = ImageUtil.ToBitmap(after);
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
             }
             InvalidateVisual();
         }
@@ -1112,20 +1190,36 @@ public sealed partial class LayerEffectsDialog : DialogBase
         {
             var b = new Rect(Bounds.Size);
             g.FillRectangle(AppTheme.BackBrush, b);
-            if (_before is null || _after is null)
+            var data = _source ?? this;
+            if (data._before is not { } before || data._after is not { } after)
             {
                 AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_BF9D824663, b, AppTheme.DimTextBrush, center: true);
                 return;
             }
             double half = (b.Width - 12) / 2, top = 18;
-            var src = new Rectangle(0, 0, _before.PixelSize.Width, _before.PixelSize.Height);
+            var src = new Rectangle(0, 0, before.PixelSize.Width, before.PixelSize.Height);
             AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_71A8D08947, new Rect(0, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             AppTheme.DrawTextIn(g, UiStrings.S_LayerEffectsDialog_Render_894FF3899A, new Rect(half + 12, 0, half, 16), AppTheme.DimTextBrush, AppTheme.SmallFontSize, center: true);
             var area = new Rect(0, top, half, b.Height - top);
             double fit = Math.Min(area.Width / src.Width, area.Height / src.Height);
-            int scale = fit >= 1 ? (int)Math.Floor(fit) : 0; // 같은 배율로(작으면 맞춤 축소)
-            ImageUtil.DrawFitted(g, _before, src, area, scale, checker: true);
-            ImageUtil.DrawFitted(g, _after, src, new Rect(half + 12, top, half, b.Height - top), scale, checker: true);
+            int scale = fit >= 1 ? (int)Math.Floor(fit) : 0;
+            DrawImage(g, before, src, area, scale, data._canvas);
+            DrawImage(g, after, src, new Rect(half + 12, top, half, b.Height - top), scale, data._canvas);
+        }
+
+        private static void DrawImage(DrawingContext g, WriteableBitmap bitmap, Rectangle src, Rect area, int scale, Rectangle canvas)
+        {
+            // The faint spill shows where the effect continues beyond the actual project canvas.
+            Rect dest;
+            using (g.PushOpacity(0.25))
+                dest = ImageUtil.DrawFitted(g, bitmap, src, area, scale);
+            // DrawFitted returns the exact pixel-snapped destination, including downscaled images.
+            var canvasRect = new Rect(dest.X + canvas.X * dest.Width / src.Width, dest.Y + canvas.Y * dest.Height / src.Height,
+                canvas.Width * dest.Width / src.Width, canvas.Height * dest.Height / src.Height);
+            using (g.PushClip(canvasRect))
+                ImageUtil.DrawFitted(g, bitmap, src, area, scale, checker: true);
+            using (g.PushClip(dest))
+                g.DrawRectangle(null, AppTheme.Pen(AppTheme.BorderColor), canvasRect);
         }
 
         public void Dispose()

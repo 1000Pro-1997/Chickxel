@@ -16,6 +16,8 @@ public enum EffectCanvasExpandMode
     Minimum,
     /// <summary>필요한 크기를 담는 범위에서 원래 캔버스 가로세로 비율을 유지한다.</summary>
     KeepRatio,
+    /// <summary>원래 캔버스의 중심을 유지하며 사방에 같은 여백을 더한다.</summary>
+    KeepCenter,
 }
 
 /// <summary>효과를 담을 새 캔버스 크기와 그 안에서 원래 캔버스 왼쪽 위가 놓일 자리.</summary>
@@ -43,6 +45,16 @@ public readonly record struct EffectCanvasExpansion(int Width, int Height, int O
 
         int resultWidth = (int)minimumWidth, resultHeight = (int)minimumHeight;
         bool kept = mode == EffectCanvasExpandMode.KeepRatio;
+        if (mode == EffectCanvasExpandMode.KeepCenter)
+        {
+            long margin = Math.Max(Math.Max(left, right), Math.Max(top, bottom));
+            if (width + 2 * margin > PixelImage.MaxSize || height + 2 * margin > PixelImage.MaxSize)
+                throw new InvalidOperationException(Gpixel.Core.Localization.DomainStrings.FormatCanvas_EffectTooLarge(
+                    width: width + 2 * margin, height: height + 2 * margin, max: PixelImage.MaxSize));
+            left = top = margin;
+            resultWidth = width + (int)(2 * margin);
+            resultHeight = height + (int)(2 * margin);
+        }
         if (kept)
         {
             double scale = Math.Max((double)resultWidth / width, (double)resultHeight / height);
@@ -137,7 +149,12 @@ public static class LayerEffects
             LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex)
                 ? preservePositions ? e with { Enabled = false } : null
                 : e is AfterimageEffect a
-                    ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) with { RenderedFrameSource = rendered }
+                    ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) with
+                    {
+                        RenderedFrameSource = a.ClipToPrevious && rendered is not null
+                            ? ClippedGhostSource(effects, i, frameCount, framePivot, pivot)
+                            : rendered,
+                    }
                     : e is AnimatedEffect animated ? animated.AtFrame(frameIndex, frameCount, pivot) : e;
             if (list is null && !ReferenceEquals(r, e))
             {
@@ -147,6 +164,28 @@ public static class LayerEffects
             if (list is not null && r is not null) list.Add(r);
         }
         return list ?? effects;
+    }
+
+    private static Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? ClippedGhostSource(
+        IReadOnlyList<LayerEffect> effects, int index, int frameCount, Func<int, PointF?>? framePivot, PointF? pivot)
+    {
+        int anchor = index - 1;
+        while (anchor >= 0 && effects[anchor].ClipToPrevious) anchor--;
+        if (anchor < 0 || effects[anchor] is AfterimageEffect) return null;
+        var group = effects.Take(anchor + 1).Where(e => e is not AfterimageEffect).ToArray();
+        var before = group[..^1];
+        return (frame, raw) =>
+        {
+            var framePosition = framePivot?.Invoke(frame) ?? pivot;
+            var padding = Padding(group, raw.Width, raw.Height);
+            var (image, dx, dy) = Render(raw, At(group, frame, frameCount, framePosition), padding);
+            if (ReferenceEquals(image, raw))
+                return (new PixelImage(raw.Width, raw.Height), 0, 0);
+            var (prior, _, _) = Render(raw, At(before, frame, frameCount, framePosition), padding);
+            for (int i = 0; i < image.Pixels.Length; i++)
+                if (image.Pixels[i] == prior.Pixels[i]) image.Pixels[i] = Color32.Transparent;
+            return (image, dx, dy);
+        };
     }
 
     /// <summary>
@@ -183,7 +222,7 @@ public static class LayerEffects
         int l = 0, t = 0, r = 0, b = 0;
         foreach (var e in effects)
         {
-            if (e.ClipToPrevious) continue;
+            if (e.ClipToPrevious && e is not ReflectionEffect) continue;
             if (!e.Enabled) continue;
             switch (e)
             {
@@ -292,16 +331,19 @@ public static class LayerEffects
     /// <summary>
     /// 켜진 효과를 차례로 <paramref name="image"/>에 바로 입힌다(크기는 그대로 — 번질 자리는 부르는 쪽이 미리 넓혀 둔다).
     /// <paramref name="source"/> = 효과 원본(셀, 그룹이면 캔버스)이 이 이미지 안에 놓인 자리: 터지기의 조각 격자·무작위와 직접 중심·피벗의 기준이다.
-    /// 클리핑 효과는 바로 앞의 클리핑되지 않은 효과가 바꾼 픽셀만 남기며, 연속된 클리핑 효과는 같은 영역을 공유한다.
+    /// 클리핑된 반사는 기준 효과의 픽셀만 뒤집어 원본 그림 뒤에 놓는다(이동한 픽셀은 기준 영역 밖에도 남는다).
     /// </summary>
     public static void Apply(PixelImage image, IReadOnlyList<LayerEffect> effects, Rectangle source)
     {
+        List<AfterimageEffect>? clippedAfterimages = null;
         bool[]? clipMask = null;
         for (int index = 0; index < effects.Count; index++)
         {
             var effect = effects[index];
-            if (effect is AfterimageEffect)
+            if (effect is AfterimageEffect after)
             {
+                if (after.ClipToPrevious && effect.Enabled && clipMask is not null)
+                    (clippedAfterimages ??= []).Add(after);
                 if (!effect.ClipToPrevious) clipMask = null;
                 continue;
             }
@@ -313,6 +355,17 @@ public static class LayerEffects
             if (effect.ClipToPrevious)
             {
                 if (clipMask is null) continue;
+                if (effect is ReflectionEffect reflection)
+                {
+                    var reflected = new PixelImage(image.Width, image.Height);
+                    for (int i = 0; i < image.Pixels.Length; i++)
+                        if (clipMask[i]) reflected.Pixels[i] = image.Pixels[i];
+                    ReflectionRender.Apply(reflected, reflection, source);
+                    for (int i = 0; i < image.Pixels.Length; i++)
+                        if (!clipMask[i] && reflected.Pixels[i].A != 0)
+                            image.Pixels[i] = Color32.BlendOver(reflected.Pixels[i], image.Pixels[i]);
+                    continue;
+                }
                 var before = (Color32[])image.Pixels.Clone();
                 ApplyOne(image, effect, source);
                 for (int i = 0; i < before.Length; i++)
@@ -328,6 +381,8 @@ public static class LayerEffects
         // 잔상은 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
         foreach (var effect in effects)
             if (effect is AfterimageEffect { Enabled: true, ClipToPrevious: false } after) AfterimageRender.Apply(image, after, source);
+        if (clippedAfterimages is not null)
+            foreach (var after in clippedAfterimages) AfterimageRender.Apply(image, after, source);
     }
 
     private static bool[] ChangedPixels(Color32[] before, Color32[] after)

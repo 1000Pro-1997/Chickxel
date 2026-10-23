@@ -29,7 +29,7 @@ internal static class MotionPadding
                 int r = w.Radius + (w.Center is ExplodeCenter.Pivot or ExplodeCenter.Custom ? 1 : 0);
                 return (r, r, r, r);
             }
-            case RotateEffect q when q.Angle > 0:
+            case RotateEffect q when q.Angle != 0:
             {
                 double w2 = width / 2.0;
                 switch (q.Anchor)

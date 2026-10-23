@@ -4027,8 +4027,8 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:273 · LayerEffectsDialog · "설정"</comment>
   </data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_4DF95CBC10" xml:space="preserve">
-    <value>최소한으로: 효과가 나간 방향만 필요한 만큼 · 비율 유지: 효과를 모두 담으면서 원래 캔버스 가로세로 비율을 유지</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:234 · LayerEffectsDialog · "최소한으로: 효과가 나간 방향만 필요한 만큼 · 비율 유지: 효과를 모두 담으면서 원래 캔버스 가로세로 비율을 유지"</comment>
+    <value>최소한으로: 효과가 나간 방향만 필요한 만큼 · 비율 유지: 원래 가로세로 비율 유지 · 중심 유지 확대: 원래 캔버스를 중심에 두고 사방을 같은 크기로 확대</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · 캔버스 확대 방식 도움말</comment>
   </data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_4E920AEA13" xml:space="preserve">
     <value>위로</value>
@@ -4207,17 +4207,13 @@ echo __LOGIN_FAILED__
     <value> · 원본 남김</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:466 · Summary · " · 원본 남김"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_Summary_32A77EF015" xml:space="preserve">
-    <value>반시계</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:481 · Summary · "반시계"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_Summary_3722634F0B" xml:space="preserve">
     <value>좌우</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:478 · Summary · "좌우"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_4AD4C2E7D2" xml:space="preserve">
-    <value>회전 · {0}° · {1} 방향 · {2}</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:481 · Summary · $"회전 · {rotate.Angle}° · {(rotate.Clockwise ? "시계" : "반시계")} 방향 · {Anchors[(int)rotate.Anchor].Split(' ')[0]}"</comment>
+    <value>회전 · {0}° · {1}</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · Summary · 부호 있는 각도와 기준점</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_4BF321B781" xml:space="preserve">
     <value>잔상 · {0}개 · 간격 {1} · {2}%</value>
@@ -4302,10 +4298,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_Summary_C36AC46BAE" xml:space="preserve">
     <value> · {0}부터</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:479 · Summary · $" · {WipeFroms[(int)appear.From]}부터"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_C95AC144BE" xml:space="preserve">
-    <value>시계</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:481 · Summary · "시계"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_D07B4E5446" xml:space="preserve">
     <value>충격파 고리 · {0}px · 두께 {1} · {2}</value>
@@ -6203,8 +6195,8 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\EffectPanels\ReflectionPanel.cs:19 · ReflectionPanel · "물결"</comment>
   </data>
   <data name="S_RotatePanel_RotatePanel_32751BEF8A" xml:space="preserve">
-    <value>° (범위 동안 모두, 360 = 한 바퀴)</value>
-    <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:11 · RotatePanel · "° (범위 동안 모두, 360 = 한 바퀴)"</comment>
+    <value>° (음수 = 반시계 방향, 360 = 한 바퀴)</value>
+    <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs · 부호 있는 회전 각도 안내</comment>
   </data>
   <data name="S_RotatePanel_RotatePanel_BE26BAB163" xml:space="preserve">
     <value>각도</value>
@@ -6218,21 +6210,9 @@ echo __LOGIN_FAILED__
     <value> 돌린 그림이 닿을 수 있는 만큼 부위 스프라이트에 여백이 생깁니다.</value>
     <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:16 · RotatePanel · " 돌린 그림이 닿을 수 있는 만큼 부위 스프라이트에 여백이 생깁니다."</comment>
   </data>
-  <data name="S_RotatePanel_RotatePanel_C0A4488527" xml:space="preserve">
-    <value>반시계 방향</value>
-    <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:12 · RotatePanel · "반시계 방향"</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_CE92044AC2" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:12 · RotatePanel · "방향"</comment>
-  </data>
   <data name="S_RotatePanel_RotatePanel_CF8C27D904" xml:space="preserve">
     <value>RotSprite 방식으로 돌립니다(그림을 Scale2x로 8배 키워 돌린 뒤 원래 크기로 집음 — 새 색·반투명 없이 선이 덜 깨짐). 90°의 배수는 손실 없이, 한 바퀴 끝은 원래 그림과 같습니다.</value>
     <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:15 · RotatePanel · "RotSprite 방식으로 돌립니다(그림을 Scale2x로 8배 키워 돌린 뒤 원래 크기로 집음 — 새 색·반투명 없이 선이 덜 깨짐). 90°의 배수는 손실 없이, 한 바퀴 끝은 원래 그림과 같습니다."</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_EFD49131D2" xml:space="preserve">
-    <value>시계 방향</value>
-    <comment>src/Gpixel.App\EffectPanels\RotatePanel.cs:12 · RotatePanel · "시계 방향"</comment>
   </data>
   <data name="S_ShakePanel_Axes_0BA14E7C64" xml:space="preserve">
     <value>둘 다</value>
@@ -9581,10 +9561,11 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiInstaller_NodeHashFailed" xml:space="preserve"><value>Node.js 다운로드의 SHA-256 확인에 실패했습니다.</value></data>
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>로그인 완료. Gpixel로 돌아가세요.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.</value></data>
-  <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>기본 효과</value></data>
-  <data name="EffectPreset_CustomTab" xml:space="preserve"><value>사용자 정의</value></data>
-  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>고른 효과 묶음 저장</value></data>
-  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>고른 기준 효과와 그 아래의 클리핑 효과들을 사용자 정의 효과로 저장합니다.</value></data>
+  <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>중심 유지 확대</value></data>
+  <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>기본</value></data>
+  <data name="EffectPreset_CustomTab" xml:space="preserve"><value>커스텀</value></data>
+  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>전체 효과 저장</value></data>
+  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>현재 목록의 모든 효과와 클리핑 관계를 사용자 정의 효과로 저장합니다.</value></data>
   <data name="EffectPreset_CustomHelp" xml:space="preserve"><value>효과 목록에서 값과 클리핑 관계를 만든 뒤 묶음으로 저장하세요.</value></data>
   <data name="EffectPreset_Empty" xml:space="preserve"><value>저장한 사용자 정의 효과가 없습니다.</value></data>
   <data name="EffectPreset_TileTip" xml:space="preserve"><value>효과 {0}개 묶음입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 이름을 바꾸거나 삭제합니다.</value></data>
@@ -9600,7 +9581,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>사용자 정의 효과를 저장하지 못했습니다: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
-  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과가 바꾼 픽셀에만 이 효과를 적용합니다. 연속된 클리핑 효과는 같은 영역을 공유합니다.</value></data>
-  <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준이나 클리핑 효과로 사용할 수 없습니다.</value></data>
+  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과가 바꾼 픽셀을 기준으로 적용합니다. 반사와 잔상은 이동한 픽셀도 표시합니다.</value></data>
+  <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준으로 사용할 수 없습니다.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · 위 효과에 클리핑</value></data>
+  <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>클릭해서 전·후 미리보기 크게 보기</value></data>
 </root>
