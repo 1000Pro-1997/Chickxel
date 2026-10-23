@@ -18,6 +18,12 @@ public abstract record LayerEffect
     /// </summary>
     public FrameRange? Frames { get; init; }
 
+    /// <summary>
+    /// 바로 앞의 클리핑되지 않은 효과가 바꾼 픽셀에만 이 효과를 적용한다.
+    /// 연속된 클리핑 효과는 같은 기준 효과의 영역을 공유한다.
+    /// </summary>
+    public bool ClipToPrevious { get; init; }
+
     /// <summary>각 색 설정의 그라데이션. 키는 색 속성 이름(목록 색은 인덱스 포함); 없는 키는 단색 설정을 쓴다.</summary>
     public IReadOnlyDictionary<string, EffectColorGradient> ColorGradients { get; init; }
         = System.Collections.Immutable.ImmutableDictionary<string, EffectColorGradient>.Empty;

@@ -541,8 +541,10 @@ public sealed class TimelinePanel : UserControl
         {
             var layer = fp.Layers[_ctx.CurrentLayer];
             int first = layer.Effects.Count;
-            ChangeEffects(layer, list => list.AddRange(effects));
-            _grid.SelectEffects(Enumerable.Range(first, effects.Count).Select(i => (layer, i)));
+            var pasted = effects.Select((effect, index) => index == 0 && effect.ClipToPrevious
+                ? effect with { ClipToPrevious = false } : effect).ToArray();
+            ChangeEffects(layer, list => list.AddRange(pasted));
+            _grid.SelectEffects(Enumerable.Range(first, pasted.Length).Select(i => (layer, i)));
             Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_PasteSelection_C3B9B97345,effects.Count,layer.Name)));
             return true;
         }
@@ -1284,7 +1286,7 @@ public sealed class TimelinePanel : UserControl
             foreach (var group in chosen.GroupBy(x => x.Layer))
             {
                 var drop = group.Select(x => x.Index).ToHashSet();
-                p.SetLayerEffects(p.IndexOf(group.Key), group.Key.Effects.Where((_, i) => !drop.Contains(i)).ToList());
+                p.SetLayerEffects(p.IndexOf(group.Key), RemoveEffects(group.Key.Effects, drop));
             }
         }));
         _grid.ResetRange();
@@ -1298,12 +1300,16 @@ public sealed class TimelinePanel : UserControl
     private void MoveEffects(Layer source, int a, int b, Layer target, int at)
     {
         if (P is not { } p || p.IndexOf(source) < 0 || p.IndexOf(target) < 0 || b >= source.Effects.Count) return;
+        var moved = Enumerable.Range(a, b - a + 1).ToHashSet();
         var block = source.Effects.Skip(a).Take(b - a + 1).ToList();
-        var rest = source.Effects.Where((_, i) => i < a || i > b).ToList();
+        if (block[0].ClipToPrevious) block[0] = block[0] with { ClipToPrevious = false };
+        var rest = RemoveEffects(source.Effects, moved);
         bool same = ReferenceEquals(source, target);
         var dest = same ? rest : target.Effects.ToList();
         at = Math.Clamp(at, 0, dest.Count);
         if (same && at == a) return;
+        for (int i = at; i < dest.Count && dest[i].ClipToPrevious; i++)
+            dest[i] = dest[i] with { ClipToPrevious = false };
         dest.InsertRange(at, block);
         _ctx.Structural(() => p.Edit(same ? UiStrings.S_TimelinePanel_MoveEffects_42F6E813C8 : UiStrings.S_TimelinePanel_MoveEffects_678C3C2110, ProjectChange.Layers, () =>
         {
@@ -1314,6 +1320,26 @@ public sealed class TimelinePanel : UserControl
         if (target.EffectsCollapsed) p.SetLayerEffectsCollapsed(p.IndexOf(target), false);
         _grid.SelectEffects(Enumerable.Range(at, block.Count).Select(i => (target, i)));
         Say(Ui.Shortcut(same ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_0BC382FE0B) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_D2762F8B1A,block.Count,target.Name)));
+    }
+
+    /// <summary>효과를 빼면서, 기준 효과가 빠진 클리핑 효과는 다른 효과에 잘못 붙지 않게 클리핑을 해제한다.</summary>
+    private static List<LayerEffect> RemoveEffects(IReadOnlyList<LayerEffect> effects, IReadOnlySet<int> removed)
+    {
+        var result = new List<LayerEffect>(effects.Count - removed.Count);
+        for (int i = 0; i < effects.Count; i++)
+        {
+            if (removed.Contains(i)) continue;
+            var effect = effects[i];
+            if (effect.ClipToPrevious)
+            {
+                int anchor = i - 1;
+                while (anchor >= 0 && effects[anchor].ClipToPrevious) anchor--;
+                if (anchor < 0 || removed.Contains(anchor))
+                    effect = effect with { ClipToPrevious = false };
+            }
+            result.Add(effect);
+        }
+        return result;
     }
 
     /// <summary>효과 목록을 고쳐 넣는다(실행취소 한 단계, 그대로면 기록 없음).</summary>
@@ -2508,8 +2534,15 @@ public sealed class TimelinePanel : UserControl
                         g.FillRectangle(ink, new Rect(box.X + 2, box.Y + 3, 2, box.Height - 6));
                         g.FillRectangle(ink, new Rect(box.Right - 4, box.Y + 3, 2, box.Height - 6));
                     }
-                    if (box.Width - 14 >= AppTheme.MeasureText(effect.DisplayName, AppTheme.SmallFontSize).Width)
-                        Text(g, effect.DisplayName, box.Deflate(new Thickness(7, 0)), ink, small: true);
+                    double textX = box.X + 7;
+                    if (effect.ClipToPrevious && box.Width >= 28)
+                    {
+                        VectorIcons.Draw(g, VectorIcon.CornerDownRight, new Rect(textX, box.Y, 12, box.Height), 10, ink);
+                        textX += 13;
+                    }
+                    var textArea = new Rect(textX, box.Y, Math.Max(0, box.Right - textX - 7), box.Height);
+                    if (textArea.Width >= AppTheme.MeasureText(effect.DisplayName, AppTheme.SmallFontSize).Width)
+                        Text(g, effect.DisplayName, textArea, ink, small: true);
                 }
                 // 고른 효과: 상자 둘레에 파란 테두리
                 if (IsEffectSelected(layer, k)) g.DrawRectangle(null, AccentPen, box.Inflate(1.5), 4, 4);
@@ -2758,8 +2791,15 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 2, check.Y + 4.5), new Avalonia.Point(check.X + 4, check.Y + 6.5));
                     g.DrawLine(FxCheckPen, new Avalonia.Point(check.X + 4, check.Y + 6.5), new Avalonia.Point(check.X + 7.5, check.Y + 2.5));
                 }
+                double labelX = x + 15;
+                if (effect.ClipToPrevious)
+                {
+                    VectorIcons.Draw(g, VectorIcon.CornerDownRight, new Rect(labelX, ry, 12, FxH), 10,
+                        effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush);
+                    labelX += 14;
+                }
                 var label = effect.DisplayName + (effect.Frames is { } fr ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_Paint_5AB8DD426F,fr) : "");
-                Text(g, label, new Rect(x + 15, ry, Math.Max(1, NameW - x - 19), FxH), effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush, small: true);
+                Text(g, label, new Rect(labelX, ry, Math.Max(1, NameW - labelX - 4), FxH), effect.Enabled ? AppTheme.TextBrush : AppTheme.DimTextBrush, small: true);
                 if (selected) g.DrawRectangle(null, AccentPen, new Rect(1, ry + 1, NameW - 3, FxH - 2));
             }
 

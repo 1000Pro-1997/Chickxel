@@ -153,6 +153,69 @@ public class LayerEffectTests
         Assert.Equal(new EffectPadding(1, 1, 3, 1), pad);
     }
 
+    [Fact]
+    public void ClippedOverlay_ChangesOnlyPreviousEffectPixels()
+    {
+        var gradient = new EffectColorGradient
+        {
+            Stops = [new(0, Red), new(1, Blue)],
+            Angle = 270,
+        };
+        LayerEffect[] effects =
+        [
+            new OutlineEffect { Color = Black },
+            new ColorOverlayEffect
+            {
+                ClipToPrevious = true,
+                Color = Red,
+                ColorGradients = new Dictionary<string, EffectColorGradient>
+                {
+                    [nameof(ColorOverlayEffect.Color)] = gradient,
+                },
+            },
+        ];
+
+        var (image, _, _) = LayerEffects.Render(Filled(1, 1, White), effects);
+
+        Assert.Equal(White, image[1, 1]);
+        Assert.Equal(Red, image[1, 0]);
+        Assert.Equal(Blue, image[1, 2]);
+        Assert.Equal(Color32.Transparent, image[0, 0]);
+    }
+
+    [Fact]
+    public void ClippedEffects_ShareAnchorMask_AndDisabledAnchorProducesNothing()
+    {
+        var outline = new OutlineEffect { Color = Black };
+        var red = new ColorOverlayEffect { ClipToPrevious = true, Color = Red };
+        var blue = new ColorOverlayEffect { ClipToPrevious = true, Color = Blue, Amount = 50 };
+
+        var (image, _, _) = LayerEffects.Render(Filled(1, 1, White), [outline, red, blue]);
+        Assert.Equal(White, image[1, 1]);
+        Assert.Equal(new Color32(127, 0, 128), image[1, 0]);
+
+        var disabled = LayerEffects.Render(Filled(1, 1, White), [outline with { Enabled = false }, red]).Image;
+        Assert.Equal(new Size(1, 1), disabled.Size);
+        Assert.Equal(White, disabled[0, 0]);
+        Assert.Equal(0, disabled.Pixels.Count(pixel => pixel == Red));
+    }
+
+    [Fact]
+    public void ClippedEffect_DoesNotAddPadding_AndBakesWithWholeGroup()
+    {
+        LayerEffect[] effects =
+        [
+            new OutlineEffect(),
+            new ShadowEffect { ClipToPrevious = true, OffsetX = 8 },
+            new ColorOverlayEffect { ClipToPrevious = true },
+            new InnerGlowEffect(),
+        ];
+
+        Assert.Equal(new EffectPadding(1, 1, 1, 1), LayerEffects.Padding(effects, 2, 2));
+        Assert.Equal([0, 1, 2], LayerEffects.BakeSet(effects, [0]));
+        Assert.Equal([0, 1, 2], LayerEffects.BakeSet(effects, [1]));
+    }
+
     // ───────────── 합성 ─────────────
 
     /// <summary>8×8 캔버스, 그룹 안 부위 둘(2×2 빨강을 (2,2), 2×2 파랑을 (4,2) — 나란히 붙음).</summary>

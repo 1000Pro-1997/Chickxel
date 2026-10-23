@@ -1184,6 +1184,8 @@ public static partial class ProjectIO
     {
         public string? Type { get; set; }
         public bool Enabled { get; set; } = true;
+        /// <summary>바로 앞의 클리핑되지 않은 효과가 바꾼 픽셀에만 적용.</summary>
+        public bool ClipToPrevious { get; set; }
         /// <summary>외곽선·그림자·색 덮기·빛 지나가기 색, 가장자리 빛의 빛 색("#RRGGBBAA").</summary>
         public string? Color { get; set; }
         /// <summary>가장자리 빛의 그늘 색.</summary>
@@ -1362,6 +1364,7 @@ public static partial class ProjectIO
                 _ => throw new NotSupportedException(Gpixel.Core.Localization.DomainStrings.FormatProject_UnsavableEffect(type: effect.GetType().Name)),
             };
             dto.Enabled = effect.Enabled;
+            dto.ClipToPrevious = effect.ClipToPrevious;
             dto.Frames = effect.Frames is { } f ? [f.From, f.To] : null;
             if (effect.ColorGradients.Count > 0)
                 dto.ColorGradients = effect.ColorGradients.ToDictionary(
@@ -1386,6 +1389,7 @@ public static partial class ProjectIO
         {
             var effect = ToKind();
             if (effect is null) return null;
+            effect = effect with { ClipToPrevious = ClipToPrevious };
             if (ColorGradients is { Count: > 0 }
                 && !(Type?.Equals("gradient", StringComparison.OrdinalIgnoreCase) == true && Gradient is null))
                 effect = effect with { ColorGradients = ColorGradients

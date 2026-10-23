@@ -9581,4 +9581,26 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiInstaller_NodeHashFailed" xml:space="preserve"><value>Node.js 다운로드의 SHA-256 확인에 실패했습니다.</value></data>
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>로그인 완료. Gpixel로 돌아가세요.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.</value></data>
+  <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>기본 효과</value></data>
+  <data name="EffectPreset_CustomTab" xml:space="preserve"><value>사용자 정의</value></data>
+  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>고른 효과 묶음 저장</value></data>
+  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>고른 기준 효과와 그 아래의 클리핑 효과들을 사용자 정의 효과로 저장합니다.</value></data>
+  <data name="EffectPreset_CustomHelp" xml:space="preserve"><value>효과 목록에서 값과 클리핑 관계를 만든 뒤 묶음으로 저장하세요.</value></data>
+  <data name="EffectPreset_Empty" xml:space="preserve"><value>저장한 사용자 정의 효과가 없습니다.</value></data>
+  <data name="EffectPreset_TileTip" xml:space="preserve"><value>효과 {0}개 묶음입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 이름을 바꾸거나 삭제합니다.</value></data>
+  <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>사용자 정의 효과 저장</value></data>
+  <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>효과 이름</value></data>
+  <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>사용자 정의 효과 '{0}'이(가) 이미 있습니다. 덮어쓸까요?</value></data>
+  <data name="EffectPreset_Rename" xml:space="preserve"><value>이름 바꾸기</value></data>
+  <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>사용자 정의 효과 이름 바꾸기</value></data>
+  <data name="EffectPreset_Delete" xml:space="preserve"><value>삭제</value></data>
+  <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>사용자 정의 효과 '{0}'을(를) 삭제할까요?</value></data>
+  <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 사용자 정의 효과가 이미 있습니다.</value></data>
+  <data name="EffectPreset_LoadError" xml:space="preserve"><value>사용자 정의 효과를 읽지 못했습니다: {0}</value></data>
+  <data name="EffectPreset_SaveError" xml:space="preserve"><value>사용자 정의 효과를 저장하지 못했습니다: {0}</value></data>
+  <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
+  <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
+  <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과가 바꾼 픽셀에만 이 효과를 적용합니다. 연속된 클리핑 효과는 같은 영역을 공유합니다.</value></data>
+  <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준이나 클리핑 효과로 사용할 수 없습니다.</value></data>
+  <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · 위 효과에 클리핑</value></data>
 </root>

@@ -206,6 +206,12 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _drag.Moved += (from, to) =>
         {
             var effect = _effects[from];
+            if (!effect.ClipToPrevious) DetachClippedFollowers(from);
+            if (to == 0 && effect.ClipToPrevious)
+            {
+                ReplaceEffect(from, effect with { ClipToPrevious = false });
+                effect = _effects[from];
+            }
             _effects.RemoveAt(from);
             _effects.Insert(to, effect);
             RebuildList(to);
@@ -353,6 +359,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
             var text = new TextBlock { Text = EffectSummary(_effects[i]), VerticalAlignment = VerticalAlignment.Center };
             var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent };
             row.Children.Add(check);
+            if (_effects[i].ClipToPrevious)
+                row.Children.Add(Ui.Icon(VectorIcon.CornerDownRight, 12));
             row.Children.Add(text);
             var item = new ListBoxItem { Content = row };
             _list.Items.Add(item);
@@ -370,6 +378,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _remove.IsEnabled = Selected >= 0;
         _up.IsEnabled = Selected > 0;
         _down.IsEnabled = Selected >= 0 && Selected < _effects.Count - 1;
+        if (_savePreset is not null) _savePreset.IsEnabled = Selected >= 0;
         var (canBake, why) = CanBake(_project, _layer);
         _bake.IsEnabled = canBake && Selected >= 0;
         int extra = Selected >= 0 ? LayerEffects.BakeSet(_effects, [Selected]).Count - 1 : 0;
@@ -377,16 +386,21 @@ public sealed partial class LayerEffectsDialog : DialogBase
                                       + (extra > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_UpdateButtons_DFC3F498B4,extra) : "")));
     }
 
-    /// <summary>종류 <paramref name="kind"/>의 새 효과를 추가 범위로 목록 <paramref name="at"/>번째에 넣고 고른다.</summary>
-    private void Add(int kind, int at)
+    /// <summary>효과 하나 또는 사용자 정의 효과 묶음을 추가 범위로 목록 <paramref name="at"/>번째에 넣고 첫 효과를 고른다.</summary>
+    private void Add(IReadOnlyList<LayerEffect> templates, int at)
     {
-        var effect = Create(kind);
+        if (templates.Count == 0) return;
         int n = _project.Frames.Count;
-        var range = !_addRangeTouched && IsAnimated(kind) ? _motionRange
+        bool animated = templates.Any(effect => effect is AnimatedEffect);
+        var range = !_addRangeTouched && animated ? _motionRange
             : _addAll.On() ? null : FrameRange.Of((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1, n);
-        if (range is not null) effect = effect with { Frames = range };
+        var added = templates.Select((effect, index) => effect with
+        {
+            Frames = range,
+            ClipToPrevious = index > 0 && effect.ClipToPrevious,
+        }).ToArray();
         at = Math.Clamp(at, 0, _effects.Count);
-        _effects.Insert(at, effect);
+        _effects.InsertRange(at, added);
         RebuildList(at);
     }
 
@@ -401,7 +415,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
             _preferExistingFor = null;
             _preferExisting = null;
         }
+        int clippedFollowers = 0;
+        if (!removed.ClipToPrevious)
+            while (i + clippedFollowers + 1 < _effects.Count && _effects[i + clippedFollowers + 1].ClipToPrevious)
+                clippedFollowers++;
         _effects.RemoveAt(i);
+        for (int child = 0; child < clippedFollowers; child++)
+            ReplaceEffect(i + child, _effects[i + child] with { ClipToPrevious = false });
         RebuildList(Math.Min(i, _effects.Count - 1));
     }
 
@@ -409,27 +429,47 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         int i = Selected, j = i + delta;
         if (i < 0 || j < 0 || j >= _effects.Count) return;
-        (_effects[i], _effects[j]) = (_effects[j], _effects[i]);
+        var effect = _effects[i];
+        if (!effect.ClipToPrevious) DetachClippedFollowers(i);
+        if (j == 0 && effect.ClipToPrevious)
+        {
+            ReplaceEffect(i, effect with { ClipToPrevious = false });
+            effect = _effects[i];
+        }
+        _effects.RemoveAt(i);
+        _effects.Insert(j, effect);
         RebuildList(j);
     }
 
     private readonly DragReorder _drag = new();
 
-    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다. 늘리기 소유 효과도 새 불변 사본을 따라간다.</summary>
-    private void Update(int index, LayerEffect effect)
+    /// <summary>효과 참조를 새 불변 사본으로 바꾸고, 프레임 늘리기·가상 범위가 그 사본을 따라가게 한다.</summary>
+    private void ReplaceEffect(int index, LayerEffect effect)
     {
-        if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
         var old = _effects[index];
         _effects[index] = effect;
         if (_virtualRangeOverrides.Remove(old, out var virtualRange))
             _virtualRangeOverrides[effect] = virtualRange;
         if (ReferenceEquals(old, _extensionOwner)) _extensionOwner = effect;
         if (ReferenceEquals(old, _preferExistingFor)) _preferExistingFor = effect;
-        if (_list.Items[index] is ListBoxItem { Content: StackPanel { Children: [CheckBox check, TextBlock text] } })
+    }
+
+    private void DetachClippedFollowers(int anchor)
+    {
+        for (int i = anchor + 1; i < _effects.Count && _effects[i].ClipToPrevious; i++)
+            ReplaceEffect(i, _effects[i] with { ClipToPrevious = false });
+    }
+
+    /// <summary>효과 하나를 바꾸고(목록 글자 갱신) 캔버스·미리보기에 반영한다.</summary>
+    private void Update(int index, LayerEffect effect)
+    {
+        if (index < 0 || index >= _effects.Count || _effects[index] == effect) return;
+        ReplaceEffect(index, effect);
+        if (_list.Items[index] is ListBoxItem { Content: StackPanel row })
         {
             _syncing = true;
-            check.IsChecked = effect.Enabled;
-            text.Text = EffectSummary(effect);
+            if (row.Children.OfType<CheckBox>().FirstOrDefault() is { } check) check.IsChecked = effect.Enabled;
+            if (row.Children.OfType<TextBlock>().FirstOrDefault() is { } text) text.Text = EffectSummary(effect);
             _syncing = false;
         }
         Changed();
@@ -449,12 +489,14 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     private string EffectSummary(LayerEffect e)
-        => Summary(_virtualRangeOverrides.TryGetValue(e, out var range) ? e with { Frames = range } : e);
+        => Summary(_virtualRangeOverrides.TryGetValue(e, out var range) ? e with { Frames = range } : e)
+           + (e.ClipToPrevious ? UiStrings.EffectPreset_ClippedSuffix : "");
 
     private void RefreshEffectSummary(int index)
     {
         if (index >= 0 && index < _effects.Count
-            && _list.Items[index] is ListBoxItem { Content: StackPanel { Children: [_, TextBlock text] } })
+            && _list.Items[index] is ListBoxItem { Content: StackPanel row }
+            && row.Children.OfType<TextBlock>().FirstOrDefault() is { } text)
             text.Text = EffectSummary(_effects[index]);
     }
 
@@ -591,6 +633,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var e = _effects[i];
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
         AddRangeEditor(i);
+        AddClipEditor(i);
 
         switch (e)
         {
@@ -786,6 +829,25 @@ public sealed partial class LayerEffectsDialog : DialogBase
         to.ValueChanged += (_, _) => Apply();
         _rangeRow = SettingsRow(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
         AddExtendEditor(i);
+    }
+
+    /// <summary>고른 효과를 앞의 비클리핑 효과가 만든 영역에만 적용한다.</summary>
+    private void AddClipEditor(int i)
+    {
+        var effect = _effects[i];
+        int anchor = i - 1;
+        while (anchor >= 0 && _effects[anchor].ClipToPrevious) anchor--;
+        bool canClip = anchor >= 0 && effect is not AfterimageEffect && _effects[anchor] is not AfterimageEffect;
+        var clip = Ui.Check(UiStrings.EffectPreset_ClipToPrevious, effect.ClipToPrevious);
+        clip.IsEnabled = canClip;
+        ToolTip.SetTip(clip, canClip ? UiStrings.EffectPreset_ClipTip : UiStrings.EffectPreset_ClipUnavailableTip);
+        clip.IsCheckedChanged += (_, _) =>
+        {
+            if (Selected != i || !canClip || _effects[i].ClipToPrevious == clip.On()) return;
+            ReplaceEffect(i, _effects[i] with { ClipToPrevious = clip.On() });
+            RebuildList(i);
+        };
+        SettingsRow(UiStrings.EffectPreset_ApplyTarget, clip);
     }
 
     /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다.</summary>

@@ -118,6 +118,7 @@ public static class LayerEffects
     private static IReadOnlyList<LayerEffect> Resolve(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot,
         Func<int, PixelImage?>? frameSource, bool inRangeOnly, Func<int, PointF?>? framePivot = null)
     {
+        bool preservePositions = inRangeOnly && effects.Any(e => e.ClipToPrevious);
         Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? rendered = null;
         if (frameSource is not null && effects.Any(e => e is AfterimageEffect { Enabled: true } && (!inRangeOnly || e.AppliesTo(frameIndex)))
             && effects.Any(e => e.Enabled && e is not AfterimageEffect))
@@ -133,7 +134,8 @@ public static class LayerEffects
         for (int i = 0; i < effects.Count; i++)
         {
             var e = effects[i];
-            LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex) ? null
+            LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex)
+                ? preservePositions ? e with { Enabled = false } : null
                 : e is AfterimageEffect a
                     ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) with { RenderedFrameSource = rendered }
                     : e is AnimatedEffect animated ? animated.AtFrame(frameIndex, frameCount, pivot) : e;
@@ -155,8 +157,17 @@ public static class LayerEffects
     {
         var chosen = selected.Where(i => i >= 0 && i < effects.Count).ToHashSet();
         if (chosen.Count == 0) return [];
-        int last = chosen.Any(i => effects[i] is AfterimageEffect) ? effects.Count - 1 : chosen.Max();
-        return Enumerable.Range(0, last + 1).Where(i => chosen.Contains(i) || effects[i].Enabled).ToList();
+        var group = new HashSet<int>();
+        foreach (int selectedIndex in chosen)
+        {
+            int first = selectedIndex;
+            while (first > 0 && effects[first].ClipToPrevious) first--;
+            int lastInGroup = first;
+            while (lastInGroup + 1 < effects.Count && effects[lastInGroup + 1].ClipToPrevious) lastInGroup++;
+            for (int i = first; i <= lastInGroup; i++) group.Add(i);
+        }
+        int last = chosen.Any(i => effects[i] is AfterimageEffect) ? effects.Count - 1 : group.Max();
+        return Enumerable.Range(0, last + 1).Where(i => group.Contains(i) || effects[i].Enabled).ToList();
     }
 
     /// <summary>
@@ -172,6 +183,7 @@ public static class LayerEffects
         int l = 0, t = 0, r = 0, b = 0;
         foreach (var e in effects)
         {
+            if (e.ClipToPrevious) continue;
             if (!e.Enabled) continue;
             switch (e)
             {
@@ -280,41 +292,78 @@ public static class LayerEffects
     /// <summary>
     /// 켜진 효과를 차례로 <paramref name="image"/>에 바로 입힌다(크기는 그대로 — 번질 자리는 부르는 쪽이 미리 넓혀 둔다).
     /// <paramref name="source"/> = 효과 원본(셀, 그룹이면 캔버스)이 이 이미지 안에 놓인 자리: 터지기의 조각 격자·무작위와 직접 중심·피벗의 기준이다.
+    /// 클리핑 효과는 바로 앞의 클리핑되지 않은 효과가 바꾼 픽셀만 남기며, 연속된 클리핑 효과는 같은 영역을 공유한다.
     /// </summary>
     public static void Apply(PixelImage image, IReadOnlyList<LayerEffect> effects, Rectangle source)
     {
-        foreach (var e in effects)
+        bool[]? clipMask = null;
+        for (int index = 0; index < effects.Count; index++)
         {
-            if (!e.Enabled) continue;
-            switch (e)
+            var effect = effects[index];
+            if (effect is AfterimageEffect)
             {
-                case OutlineEffect o: Outline(image, o, source); break;
-                case ShadowEffect s: Shadow(image, s, source); break;
-                case RimLightEffect r: Rim(image, r, source); break;
-                case ColorOverlayEffect c: Overlay(image, c, source); break;
-                case ExplodeEffect x: Explode(image, x, source); break;
-                case ShineEffect s: Shine(image, s, source); break;
-                case SquashEffect q: Squash(image, q, source); break;
-                case GradientOverlayEffect g: GradientOverlayRender.Apply(image, g, source); break;
-                case InnerGlowEffect g: InnerGlowRender.Apply(image, g, source); break;
-                case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p, source); break;
-                case ColorAdjustEffect c: ColorAdjustRender.Apply(image, c); break;
-                case ReflectionEffect m: ReflectionRender.Apply(image, m, source); break;
-                case HitFlashEffect f: HitFlashRender.Apply(image, f, source); break;
-                case BlinkEffect k: BlinkRender.Apply(image, k, source); break;
-                case ShakeEffect k: ShakeRender.Apply(image, k); break;
-                case BobEffect k: ShakeRender.Apply(image, k); break;
-                case AppearEffect a: AppearRender.Apply(image, a, source); break;
-                case MeltEffect m: MeltRender.Apply(image, m, source); break;
-                case RotateEffect q: RotateRender.Apply(image, q, source); break;
-                case ColorCycleEffect c: ColorCycleRender.Apply(image, c, source); break;
-                case ShockwaveEffect w: ShockwaveRender.Apply(image, w, source); break;
-                case HologramEffect g: HologramRender.Apply(image, g, source); break;
+                if (!effect.ClipToPrevious) clipMask = null;
+                continue;
             }
+            if (!effect.Enabled)
+            {
+                if (!effect.ClipToPrevious) clipMask = null;
+                continue;
+            }
+            if (effect.ClipToPrevious)
+            {
+                if (clipMask is null) continue;
+                var before = (Color32[])image.Pixels.Clone();
+                ApplyOne(image, effect, source);
+                for (int i = 0; i < before.Length; i++)
+                    if (!clipMask[i]) image.Pixels[i] = before[i];
+                continue;
+            }
+
+            bool hasClippedFollower = index + 1 < effects.Count && effects[index + 1].ClipToPrevious;
+            Color32[]? anchorBefore = hasClippedFollower ? (Color32[])image.Pixels.Clone() : null;
+            ApplyOne(image, effect, source);
+            clipMask = anchorBefore is null ? null : ChangedPixels(anchorBefore, image.Pixels);
         }
         // 잔상은 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
-        foreach (var e in effects)
-            if (e is AfterimageEffect { Enabled: true } after) AfterimageRender.Apply(image, after, source);
+        foreach (var effect in effects)
+            if (effect is AfterimageEffect { Enabled: true, ClipToPrevious: false } after) AfterimageRender.Apply(image, after, source);
+    }
+
+    private static bool[] ChangedPixels(Color32[] before, Color32[] after)
+    {
+        var changed = new bool[before.Length];
+        for (int i = 0; i < before.Length; i++) changed[i] = before[i] != after[i];
+        return changed;
+    }
+
+    private static void ApplyOne(PixelImage image, LayerEffect effect, Rectangle source)
+    {
+        switch (effect)
+        {
+            case OutlineEffect o: Outline(image, o, source); break;
+            case ShadowEffect s: Shadow(image, s, source); break;
+            case RimLightEffect r: Rim(image, r, source); break;
+            case ColorOverlayEffect c: Overlay(image, c, source); break;
+            case ExplodeEffect x: Explode(image, x, source); break;
+            case ShineEffect s: Shine(image, s, source); break;
+            case SquashEffect q: Squash(image, q, source); break;
+            case GradientOverlayEffect g: GradientOverlayRender.Apply(image, g, source); break;
+            case InnerGlowEffect g: InnerGlowRender.Apply(image, g, source); break;
+            case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p, source); break;
+            case ColorAdjustEffect c: ColorAdjustRender.Apply(image, c); break;
+            case ReflectionEffect m: ReflectionRender.Apply(image, m, source); break;
+            case HitFlashEffect f: HitFlashRender.Apply(image, f, source); break;
+            case BlinkEffect k: BlinkRender.Apply(image, k, source); break;
+            case ShakeEffect k: ShakeRender.Apply(image, k); break;
+            case BobEffect k: ShakeRender.Apply(image, k); break;
+            case AppearEffect a: AppearRender.Apply(image, a, source); break;
+            case MeltEffect m: MeltRender.Apply(image, m, source); break;
+            case RotateEffect q: RotateRender.Apply(image, q, source); break;
+            case ColorCycleEffect c: ColorCycleRender.Apply(image, c, source); break;
+            case ShockwaveEffect w: ShockwaveRender.Apply(image, w, source); break;
+            case HologramEffect g: HologramRender.Apply(image, g, source); break;
+        }
     }
 
     // ───────────── 효과 ─────────────
