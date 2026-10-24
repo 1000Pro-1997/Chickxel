@@ -114,6 +114,9 @@ pre code { background: none; border: 0; padding: 0; }
 .core-steps span { display: block; margin-top: 3px; color: var(--body); font-size: 14px; line-height: 1.6; }
 .core-media { margin: 0; width: 300px; padding: 10px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 22px; box-shadow: var(--shadow) 0 18px 40px -10px; }
 .core-media img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.doc .core-steps { padding-left: 0; margin: 18px 0 0; }
+.doc .core-steps li { margin: 0; }
+.guide-media { margin: 24px 0 0; }
 
 footer { background: #08090b; border-top: 1px solid var(--line-soft); color: #8b8f9b; padding: 36px 0; font-size: 14px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
