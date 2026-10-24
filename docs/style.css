@@ -177,11 +177,9 @@ th { color: var(--muted); font-size: 12.5px; font-weight: 750; letter-spacing: .
 td { color: var(--body); }
 .note { background: var(--accent-soft); border: 1px solid rgba(255, 208, 47, .28); border-radius: 14px; padding: 14px 18px; margin: 18px 0; font-size: 15px; color: #efdfae; }
 .note p { margin: 0; color: inherit; }
-.chapter-contents { margin-top: 30px; padding: 20px 24px; background: var(--side); border: 1px solid var(--line-soft); border-radius: 18px; }
-.doc .chapter-contents h3 { margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
-.chapter-contents ol { margin: 0; columns: 2; column-gap: 36px; }
-.chapter-contents li { break-inside: avoid; }
-.chapter-contents a { color: var(--ink); font-weight: 600; }
+.chapter-intro { margin: 0 0 28px; padding-bottom: 22px; border-bottom: 1px solid var(--line-soft); }
+.chapter-intro > :first-child { margin-top: 0; }
+.chapter-intro > :last-child { margin-bottom: 0; }
 .pager { display: flex; justify-content: space-between; gap: 14px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line-soft); }
 .pager a { display: flex; flex-direction: column; gap: 2px; max-width: 48%; padding: 14px 18px; border: 1px solid var(--line-soft); border-radius: 16px; color: var(--ink-deep); font-weight: 700; letter-spacing: -.02em; transition: border-color .2s, box-shadow .2s; }
 .pager a:hover { text-decoration: none; border-color: var(--line); box-shadow: var(--shadow) 0 10px 24px -8px; }
@@ -217,5 +215,4 @@ td { color: var(--body); }
   .toc { display: none; border-right: 0; border-bottom: 1px solid var(--line-soft); padding: 14px 12px 18px; }
   .manual.toc-shown .toc { display: block; }
   .content { height: auto; overflow: visible; padding: 24px 16px 56px; }
-  .chapter-contents ol { columns: 1; }
 }

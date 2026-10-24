@@ -106,6 +106,10 @@ public sealed class AppSettings
     public string ChatProvider { get; set; } = "claude";
     /// <summary>채팅의 "지금 그림만": 보낼 때 열린 문서 하나만 AI가 고침(다른 파일은 열거나 만들지 않음). 두 탭이 같이 씀. 잠긴 레이어는 이 설정과 관계없이 늘 건드리지 않는다.</summary>
     public bool AiCurrentFileOnly { get; set; }
+    /// <summary>AI 참고 자료 폴더(null = 기본 <c>&lt;설정 폴더&gt;/Gpixel/References</c>, <see cref="AppReferences.FolderOf"/>).</summary>
+    public string? ReferencesFolder { get; set; }
+    /// <summary>AI 참고 자료에 기본 예시 그림을 보임(목록·AI 검색).</summary>
+    public bool ReferencesShowExamples { get; set; } = true;
     /// <summary>탭마다 마지막으로 보던 저장된 대화: AI id("claude"/"codex") → 대화 id. 없으면 대화 목록을 보던 것.</summary>
     public Dictionary<string, string>? ChatLastOpen { get; set; }
     /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>

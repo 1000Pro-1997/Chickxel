@@ -390,6 +390,20 @@ public static class Ui
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
+    /// <summary>파일 여러 개 열기. 취소하면 빈 목록.</summary>
+    public static IReadOnlyList<string> OpenFiles(Visual? owner, string title, string? initialDir, params FileFilter[] filters)
+    {
+        if (Storage(owner) is not { } sp) return [];
+        var files = Wait(sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = true,
+            FileTypeFilter = filters.Length > 0 ? Types(filters) : null,
+            SuggestedStartLocation = Folder(sp, initialDir),
+        }));
+        return [.. files.Select(f => f.TryGetLocalPath()).OfType<string>()];
+    }
+
     /// <summary>저장할 파일 고르기(덮어쓰기 확인은 OS 대화상자가 함). 취소하면 null.</summary>
     public static string? SaveFile(Visual? owner, string title, string? initialDir, string? suggestedName, string defaultExtension,
         params FileFilter[] filters)

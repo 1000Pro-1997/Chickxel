@@ -29,4 +29,7 @@ public interface IAiHost
 
     /// <summary>.gpixel/PNG를 연다. 저장한 적 없는 새 프로젝트에 수정이 있을 때만 실패한다(다른 문서는 메모리에 남음).</summary>
     bool OpenFile(string path, out string message);
+
+    /// <summary>AI 참고 자료 보관소(처음 부를 때 연다). 폴더를 열 수 없으면 IO 예외.</summary>
+    Gpixel.Core.References.ReferenceLibrary References { get; }
 }

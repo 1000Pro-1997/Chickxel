@@ -9627,7 +9627,6 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Help_OpenWebsite" xml:space="preserve"><value>홈페이지에서 열기</value></data>
   <data name="Help_WatchVideo" xml:space="preserve"><value>영상은 홈페이지에서 보기</value></data>
   <data name="Help_WatchLarger" xml:space="preserve"><value>홈페이지에서 크게 보기</value></data>
-  <data name="Help_ChapterContents" xml:space="preserve"><value>이 장의 내용</value></data>
   <data name="Help_Previous" xml:space="preserve"><value>이전</value></data>
   <data name="Help_Next" xml:space="preserve"><value>다음</value></data>
   <data name="Help_Guide" xml:space="preserve"><value>사용 가이드</value></data>
@@ -9721,4 +9720,66 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Chat_Turn_Removed" xml:space="preserve"><value>마지막 메시지를 지웠습니다. 다음 메시지는 새 세션으로 보내며, 남은 대화 내용을 함께 알려 줍니다.</value></data>
   <data name="Chat_History_Recap" xml:space="preserve"><value>지난 대화를 열었습니다. 마지막 메시지를 지운 대화라 다음 메시지는 새 세션으로 보내며, 남은 대화 내용을 함께 알려 줍니다.</value></data>
   <data name="Chat_Help_Tip7" xml:space="preserve"><value>마지막 메시지 아래의 연필(수정)·휴지통(삭제) 단추로 그 메시지와 답을 지우거나 고쳐 다시 보낼 수 있습니다. 여러 번 누르면 한 단계씩 거슬러 올라갑니다.</value></data>
+  <data name="Chat_Help_GroupReferences" xml:space="preserve"><value>참고 자료</value></data>
+  <data name="Chat_Help_GroupReferences_Text" xml:space="preserve"><value>참고 자료 폴더의 그림·메모·그림 규칙과 사용 가이드를 찾아보고, 지금 그림을 참고 자료로 넣거나 자료에 설명을 붙입니다.</value></data>
+  <data name="Chat_Help_Example10" xml:space="preserve"><value>참고 자료의 슬라임처럼 32px 박쥐 그려 줘.</value></data>
+  <data name="Chat_Help_Tip8" xml:space="preserve"><value>AI 메뉴 &gt; 참고 자료…에 내 그림·메모를 넣어 두면 AI가 그리기 전에 찾아보고 비율·팔레트·기법을 따라 합니다. rules.md(규칙 편집)에 적은 규칙도 지킵니다.</value></data>
+  <data name="Refs_Window_Title" xml:space="preserve"><value>AI 참고 자료</value></data>
+  <data name="Refs_AddFiles" xml:space="preserve"><value>파일 추가…</value></data>
+  <data name="Refs_AddFiles_Tip" xml:space="preserve"><value>그림(.png, .gif, .gpixel)과 메모(.md, .txt)를 참고 자료 폴더로 복사합니다. 창에 끌어다 놓아도 됩니다.</value></data>
+  <data name="Refs_AddCanvas" xml:space="preserve"><value>현재 캔버스 추가</value></data>
+  <data name="Refs_AddCanvas_Tip" xml:space="preserve"><value>지금 문서(보이는 레이어 합성)를 참고 자료로 넣습니다. 프레임이 여러 개면 애니메이션 그대로 넣습니다.</value></data>
+  <data name="Refs_OpenFolder" xml:space="preserve"><value>폴더 열기</value></data>
+  <data name="Refs_EditRules" xml:space="preserve"><value>규칙 편집</value></data>
+  <data name="Refs_EditRules_Tip" xml:space="preserve"><value>내 그림 규칙(rules.md)을 글 편집기로 엽니다. 없으면 틀로 만듭니다. AI는 그리기 전에 기본 규칙과 이 규칙을 읽습니다.</value></data>
+  <data name="Refs_CaptionWithAi" xml:space="preserve"><value>AI로 설명 붙이기</value></data>
+  <data name="Refs_CaptionWithAi_Tip" xml:space="preserve"><value>설명이 없는 자료(없으면 고른 자료)를 AI가 보고 설명·태그를 붙이도록 채팅 입력란에 부탁을 넣습니다. 보내기를 눌러야 시작합니다.</value></data>
+  <data name="Refs_Uncaptioned" xml:space="preserve"><value>참고 자료 {count}개에 설명이 없습니다. AI로 설명을 붙일까요?</value><comment>count = 설명이 없는 그림 수.</comment></data>
+  <data name="Refs_SearchWatermark" xml:space="preserve"><value>검색(제목·태그·설명·메모)</value></data>
+  <data name="Refs_KindAll" xml:space="preserve"><value>모든 종류</value></data>
+  <data name="Refs_Kind_Character" xml:space="preserve"><value>캐릭터</value></data>
+  <data name="Refs_Kind_Item" xml:space="preserve"><value>아이템</value></data>
+  <data name="Refs_Kind_Tile" xml:space="preserve"><value>타일</value></data>
+  <data name="Refs_Kind_Effect" xml:space="preserve"><value>이펙트</value></data>
+  <data name="Refs_Kind_Ui" xml:space="preserve"><value>UI</value></data>
+  <data name="Refs_Kind_Other" xml:space="preserve"><value>기타</value></data>
+  <data name="Refs_BuiltInChip" xml:space="preserve"><value>기본</value></data>
+  <data name="Refs_BuiltIn_Tip" xml:space="preserve"><value>앱에 들어 있는 예시입니다. 고치거나 지울 수 없고, 환경 설정 &gt; AI 참고 자료에서 숨길 수 있습니다.</value></data>
+  <data name="Refs_NoteChip" xml:space="preserve"><value>메모</value></data>
+  <data name="Refs_Field_Title" xml:space="preserve"><value>제목</value></data>
+  <data name="Refs_Field_Description" xml:space="preserve"><value>설명</value></data>
+  <data name="Refs_Field_Tags" xml:space="preserve"><value>태그(쉼표로 구분)</value></data>
+  <data name="Refs_Field_Kind" xml:space="preserve"><value>종류</value></data>
+  <data name="Refs_Field_Palette" xml:space="preserve"><value>팔레트</value></data>
+  <data name="Refs_Info" xml:space="preserve"><value>{width}×{height} · 프레임 {frames} · 색 {colors}개</value><comment>width, height = 픽셀 크기, frames = 프레임 수, colors = 서로 다른 색 수.</comment></data>
+  <data name="Refs_Empty" xml:space="preserve"><value>자료가 없습니다. 파일을 추가하거나 이 창에 끌어다 놓으세요.</value></data>
+  <data name="Refs_NoSelection" xml:space="preserve"><value>왼쪽에서 자료를 고르세요.</value></data>
+  <data name="Refs_Delete" xml:space="preserve"><value>삭제</value></data>
+  <data name="Refs_Delete_Tip" xml:space="preserve"><value>파일을 Gpixel 휴지통으로 옮깁니다. 되살리면 제목·설명·태그도 돌아옵니다.</value></data>
+  <data name="Refs_TrashLabel" xml:space="preserve"><value>참고 자료: {title}</value><comment>title = 지운 참고 자료 제목(휴지통 목록에 보임).</comment></data>
+  <data name="Refs_FileFilter" xml:space="preserve"><value>참고 자료(그림·메모)</value></data>
+  <data name="Refs_Status_Saved" xml:space="preserve"><value>저장했습니다.</value></data>
+  <data name="Refs_Status_Added" xml:space="preserve"><value>{count}개를 추가했습니다.</value><comment>count = 추가한 자료 수.</comment></data>
+  <data name="Refs_Status_NothingAdded" xml:space="preserve"><value>추가할 수 있는 파일이 없습니다(.png, .gif, .gpixel, .md, .txt).</value></data>
+  <data name="Refs_Status_Deleted" xml:space="preserve"><value>"{title}"을(를) Gpixel 휴지통으로 옮겼습니다.</value><comment>title = 지운 참고 자료 제목.</comment></data>
+  <data name="Refs_Status_NoProject" xml:space="preserve"><value>열린 문서가 없습니다.</value></data>
+  <data name="Refs_Status_NothingToCaption" xml:space="preserve"><value>설명을 붙일 자료가 없습니다.</value></data>
+  <data name="Refs_Status_CaptionPrefilled" xml:space="preserve"><value>채팅 입력란에 부탁을 넣었습니다. 내용을 확인하고 보내기를 누르세요.</value></data>
+  <data name="Refs_CaptionRequest" xml:space="preserve"><value>참고 자료 {count}개에 설명이 없어. 각각 get_reference로 그림을 보고 set_reference_info로 한국어 제목·설명·태그·종류를 붙여 줘. 설명에는 무엇인지와 따라 할 만한 기법(크기, 외곽선, 빛 방향, 명암, 비율, 애니메이션이면 동작과 프레임)을 한두 문장으로 적어 줘. 대상 id: {ids}</value><comment>count = 대상 자료 수, ids = 쉼표로 이은 자료 id. AI 채팅에 보낼 부탁(get_reference·set_reference_info는 도구 이름이라 번역하지 않음).</comment></data>
+  <data name="Refs_OpenFailed" xml:space="preserve"><value>참고 자료 폴더를 열 수 없습니다:
+{folder}
+
+{message}</value><comment>folder = 참고 자료 폴더 경로, message = 오류 내용.</comment></data>
+  <data name="Refs_Prefs_Tab" xml:space="preserve"><value>AI 참고 자료</value></data>
+  <data name="Refs_Prefs_Folder" xml:space="preserve"><value>참고 자료 폴더</value></data>
+  <data name="Refs_Prefs_ChangeFolder" xml:space="preserve"><value>바꾸기…</value></data>
+  <data name="Refs_Prefs_DefaultFolder" xml:space="preserve"><value>기본 폴더</value></data>
+  <data name="Refs_Prefs_ShowExamples" xml:space="preserve"><value>기본 예시 보이기(슬라임·칼·캐릭터·슬라임 점프·잔디 타일)</value></data>
+  <data name="Refs_Prefs_Note" xml:space="preserve"><value>AI는 그림을 그리기 전에 이 폴더의 그림·메모와 rules.md, Gpixel 기본 규칙을 찾아봅니다. 폴더에 직접 넣은 파일도 저절로 색인됩니다(index.json). 자료는 이 컴퓨터에만 있고 Gpixel은 아무것도 올리거나 내려받지 않습니다. AI 도구가 읽은 내용만 쓰고 있는 AI(Claude Code·Codex)에 전달됩니다.</value></data>
+  <data name="Refs_Tool_OpenFailed" xml:space="preserve"><value>참고 자료 폴더를 열거나 쓸 수 없습니다: {message}</value><comment>message = 오류 내용.</comment></data>
+  <data name="Refs_Tool_NotFound" xml:space="preserve"><value>참고 자료 "{id}"를 찾을 수 없습니다. search_references로 id를 확인하세요.</value><comment>id = AI가 준 참고 자료 id.</comment></data>
+  <data name="Refs_Tool_ReadFailed" xml:space="preserve"><value>참고 자료 "{id}"를 읽을 수 없습니다: {message}</value><comment>id = 참고 자료 id, message = 오류 내용.</comment></data>
+  <data name="Refs_Tool_TooLargeForPixels" xml:space="preserve"><value>{width}×{height}는 너무 커서 픽셀 글로 줄 수 없습니다(한 변 {max}까지). as="image"로 보세요.</value><comment>width, height = 그림 크기, max = 한 변 최대 픽셀.</comment></data>
+  <data name="Refs_Tool_BadFrameRange" xml:space="preserve"><value>frame_range "{text}"가 잘못되었습니다. "current", "all" 또는 0~{max} 사이의 "시작-끝"을 쓰세요.</value><comment>text = AI가 준 값, max = 마지막 프레임 번호.</comment></data>
+  <data name="Refs_Tool_ReadOnly" xml:space="preserve"><value>"{id}"는 기본 자료라 고칠 수 없습니다.</value><comment>id = 참고 자료 id.</comment></data>
 </root>

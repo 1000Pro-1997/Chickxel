@@ -39,6 +39,21 @@ public static class Platform
         else Start("xdg-open", folder);
     }
 
+    /// <summary>파일을 기본 앱으로 연다(예: rules.md를 글 편집기로, Windows에서 연결된 앱이 없으면 메모장). 실패하면 <see cref="IOException"/>.</summary>
+    public static void OpenFile(string path)
+    {
+        if (IsMac) Start("open", path);
+        else if (!OperatingSystem.IsWindows()) Start("xdg-open", path);
+        else
+        {
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true })?.Dispose(); }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                Start("notepad.exe", $"\"{path}\"");
+            }
+        }
+    }
+
     private static void Start(string file, params string[] args)
     {
         var psi = new ProcessStartInfo(file) { UseShellExecute = false };

@@ -150,6 +150,7 @@
   <data name="Menu_Test" xml:space="preserve"><value>Te_st</value></data>
   <data name="Menu_Test_ShowPlayTest_224" xml:space="preserve"><value>Movement test</value></data>
   <data name="Menu_Ai_ToggleChat_226" xml:space="preserve"><value>AI chat</value></data>
+  <data name="Menu_Ai_References" xml:space="preserve"><value>References…</value></data>
   <data name="Menu_Help" xml:space="preserve"><value>_Help</value></data>
   <data name="Menu_Help_ShowShortcuts_230" xml:space="preserve"><value>Shortcut list</value></data>
   <data name="Menu_Help_Command_232" xml:space="preserve"><value>Open settings file location</value></data>

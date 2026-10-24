@@ -450,6 +450,9 @@
   <data name="Menu_Ai_ToggleChat_226" xml:space="preserve">
     <value>AI 채팅</value>
   </data>
+  <data name="Menu_Ai_References" xml:space="preserve">
+    <value>참고 자료…</value>
+  </data>
   <data name="Menu_Help" xml:space="preserve">
     <value>도움말(_H)</value>
   </data>

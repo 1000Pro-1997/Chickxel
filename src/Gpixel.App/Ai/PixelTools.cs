@@ -53,8 +53,14 @@ public sealed partial class PixelTools
     /// </summary>
     public EditScope? Scope { get; set; }
 
-    /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음).</summary>
-    private static readonly HashSet<string> ReadTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects"];
+    /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음). 참고 자료 읽기 도구 포함.</summary>
+    private static readonly HashSet<string> ReadTools =
+    [
+        "get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects",
+        "search_references", "get_reference", "get_style_rules",
+    ];
+    /// <summary>참고 자료 보관소에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
+    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
 
@@ -386,7 +392,8 @@ public sealed partial class PixelTools
             "against the current folder.",
             new JsonObject { ["path"] = Str("File path.") },
             "path"),
-        .. EffectToolDefinitions()]);
+        .. EffectToolDefinitions(),
+        .. ReferenceToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
     {
@@ -429,7 +436,7 @@ public sealed partial class PixelTools
         try
         {
             var a = arguments;
-            if (Scope is { } scope && !ReadTools.Contains(name))
+            if (Scope is { } scope && !ReadTools.Contains(name) && !LibraryTools.Contains(name))
             {
                 if (FileSwitchTools.Contains(name)) throw new ToolError(UiStrings.Ai_Scope_FileOnly);
                 if (!ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
@@ -474,6 +481,11 @@ public sealed partial class PixelTools
                 "new_project" => NewProject(name, a),
                 "save_project" => SaveProject(name),
                 "open_file" => OpenFile(name, a),
+                "search_references" => SearchReferences(a),
+                "get_reference" => GetReference(a),
+                "get_style_rules" => GetStyleRules(),
+                "add_reference" => AddReference(a),
+                "set_reference_info" => SetReferenceInfo(a),
                 _ => TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_A9A0750467,name), isError: true),
             };
         }
@@ -601,8 +613,18 @@ public sealed partial class PixelTools
         int? layer = OptLayer(a);
         int? requested = OptInt(a, "scale", 1, 16);
         var (w, h) = SourceSize(p, layer);
-        var src = Source(p, frame, layer);
+        var (png, zoom) = Enlarge(Source(p, frame, layer), requested);
+        var text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetImage_19E8EA70BE,w,h,zoom,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetImage_D66933B71D));
+        return ImageResult(png, text);
+    }
 
+    /// <summary>
+    /// 그림을 보기 좋게 키운 PNG(base64)와 배율 글("×8" / "1/2 축소"). 배율 기본값 = 긴 변이 512px를 넘지 않는 가장 큰 정수(16까지),
+    /// 아주 크면 정수 배 축소. 투명한 곳은 연회색 체커 위에 그린다.
+    /// </summary>
+    private static (string Base64, string Zoom) Enlarge(PixelImage src, int? requested)
+    {
+        int w = src.Width, h = src.Height;
         int longSide = Math.Max(w, h), scale = 1, step = 1;
         if (longSide > MaxImageSide) step = (longSide + 1023) / 1024; // 너무 크면 정수 배 축소(가장 가까운 픽셀)
         else scale = Math.Max(1, Math.Min(requested ?? Math.Clamp(512 / longSide, 1, 16), MaxImageSide / longSide));
@@ -627,15 +649,16 @@ public sealed partial class PixelTools
         using var ms = new MemoryStream();
         PngIO.Save(output, ms);
         var zoom = step > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetImage_DA57EB7572,step) : $"×{scale}";
-        var text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetImage_19E8EA70BE,w,h,zoom,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetImage_D66933B71D));
-        return new JsonObject
-        {
-            ["content"] = new JsonArray(
-                new JsonObject { ["type"] = "image", ["data"] = Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Length), ["mimeType"] = "image/png" },
-                new JsonObject { ["type"] = "text", ["text"] = text }),
-            ["isError"] = false,
-        };
+        return (Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Length), zoom);
     }
+
+    private static JsonObject ImageResult(string base64Png, string text) => new()
+    {
+        ["content"] = new JsonArray(
+            new JsonObject { ["type"] = "image", ["data"] = base64Png, ["mimeType"] = "image/png" },
+            new JsonObject { ["type"] = "text", ["text"] = text }),
+        ["isError"] = false,
+    };
 
     private JsonObject GetPixels(JsonObject? a)
     {
@@ -647,7 +670,13 @@ public sealed partial class PixelTools
         if (r.Width > MaxPixelRegion || r.Height > MaxPixelRegion)
             throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_253D7F232C,r.Width,r.Height,MaxPixelRegion,MaxPixelRegion));
         var src = Source(p, frame, layer);
+        var header = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_E9751A4291,r.X,r.Y,r.Width,r.Height,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetPixels_B41D2BDA18));
+        return TextResult(header + PixelRows(src, r));
+    }
 
+    /// <summary>영역의 픽셀을 draw_pixels 모양 글로: "legend:" 줄들(<c>A = #RRGGBB</c>, 투명 = '.'), "rows:" 줄들. 색이 너무 많으면 도구 오류.</summary>
+    private static string PixelRows(PixelImage src, Rectangle r)
+    {
         var codes = new Dictionary<Color32, char>();
         var legend = new List<(char Code, Color32 Color)>();
         bool anyTransparent = false;
@@ -678,13 +707,12 @@ public sealed partial class PixelTools
         }
 
         var sb = new StringBuilder();
-        sb.Append(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_GetPixels_E9751A4291,r.X,r.Y,r.Width,r.Height,frame,(layer is { } l ? $"layer {l}" : UiStrings.S_PixelTools_GetPixels_B41D2BDA18)));
         sb.Append("legend:\n");
         foreach (var (code, color) in legend) sb.Append(code).Append(" = ").Append(color.ToHex()).Append('\n');
         if (anyTransparent) sb.Append(". = transparent\n");
         sb.Append("rows:\n");
         foreach (var row in rows) sb.Append(row).Append('\n');
-        return TextResult(sb.ToString().TrimEnd('\n'));
+        return sb.ToString().TrimEnd('\n');
     }
 
     // ───────────── 픽셀 도구 ─────────────

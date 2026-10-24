@@ -2654,7 +2654,6 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Help_OpenWebsite" xml:space="preserve"><value>Open on website</value></data>
   <data name="Help_WatchVideo" xml:space="preserve"><value>Watch the video on the website</value></data>
   <data name="Help_WatchLarger" xml:space="preserve"><value>Watch larger on the website</value></data>
-  <data name="Help_ChapterContents" xml:space="preserve"><value>In this chapter</value></data>
   <data name="Help_Previous" xml:space="preserve"><value>Previous</value></data>
   <data name="Help_Next" xml:space="preserve"><value>Next</value></data>
   <data name="Help_Guide" xml:space="preserve"><value>Guide</value></data>
@@ -2748,4 +2747,66 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Turn_Removed" xml:space="preserve"><value>Removed the last message. The next message starts a new session and includes a recap of the remaining conversation.</value></data>
   <data name="Chat_History_Recap" xml:space="preserve"><value>Opened a past chat. Its last message was removed, so the next message starts a new session and includes a recap of the remaining conversation.</value></data>
   <data name="Chat_Help_Tip7" xml:space="preserve"><value>Use the pencil (edit) and trash (delete) buttons under the last message to remove it and its reply, or change it and send again. Press again to step back one more message.</value></data>
+  <data name="Chat_Help_GroupReferences" xml:space="preserve"><value>References</value></data>
+  <data name="Chat_Help_GroupReferences_Text" xml:space="preserve"><value>Searches the images, notes and style rules in your reference folder and the user guide, saves the current drawing as a reference, and captions references.</value></data>
+  <data name="Chat_Help_Example10" xml:space="preserve"><value>Draw a 32px bat like the slime in the references.</value></data>
+  <data name="Chat_Help_Tip8" xml:space="preserve"><value>Put your own art and notes in AI menu &gt; References… and the AI looks them up before drawing, following their proportions, palette and technique. It also follows the rules you write in rules.md (Edit rules).</value></data>
+  <data name="Refs_Window_Title" xml:space="preserve"><value>AI references</value></data>
+  <data name="Refs_AddFiles" xml:space="preserve"><value>Add files…</value></data>
+  <data name="Refs_AddFiles_Tip" xml:space="preserve"><value>Copies images (.png, .gif, .gpixel) and notes (.md, .txt) into the reference folder. You can also drop files onto this window.</value></data>
+  <data name="Refs_AddCanvas" xml:space="preserve"><value>Add current canvas</value></data>
+  <data name="Refs_AddCanvas_Tip" xml:space="preserve"><value>Adds the open document (visible layers) as a reference. With several frames the animation is kept.</value></data>
+  <data name="Refs_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Refs_EditRules" xml:space="preserve"><value>Edit rules</value></data>
+  <data name="Refs_EditRules_Tip" xml:space="preserve"><value>Opens your art rules (rules.md) in a text editor, creating it from a template if needed. The AI reads the default rules and these rules before drawing.</value></data>
+  <data name="Refs_CaptionWithAi" xml:space="preserve"><value>Caption with AI</value></data>
+  <data name="Refs_CaptionWithAi_Tip" xml:space="preserve"><value>Puts a request into the chat input asking the AI to look at references without a description (or the selected one) and add descriptions and tags. Nothing starts until you press send.</value></data>
+  <data name="Refs_Uncaptioned" xml:space="preserve"><value>{count} references have no description. Caption them with AI?</value></data>
+  <data name="Refs_SearchWatermark" xml:space="preserve"><value>Search (title, tags, description, notes)</value></data>
+  <data name="Refs_KindAll" xml:space="preserve"><value>All kinds</value></data>
+  <data name="Refs_Kind_Character" xml:space="preserve"><value>Character</value></data>
+  <data name="Refs_Kind_Item" xml:space="preserve"><value>Item</value></data>
+  <data name="Refs_Kind_Tile" xml:space="preserve"><value>Tile</value></data>
+  <data name="Refs_Kind_Effect" xml:space="preserve"><value>Effect</value></data>
+  <data name="Refs_Kind_Ui" xml:space="preserve"><value>UI</value></data>
+  <data name="Refs_Kind_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Refs_BuiltInChip" xml:space="preserve"><value>Built-in</value></data>
+  <data name="Refs_BuiltIn_Tip" xml:space="preserve"><value>An example that ships with the app. It can't be changed or deleted; hide examples in Preferences &gt; AI references.</value></data>
+  <data name="Refs_NoteChip" xml:space="preserve"><value>Note</value></data>
+  <data name="Refs_Field_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Refs_Field_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Refs_Field_Tags" xml:space="preserve"><value>Tags (comma-separated)</value></data>
+  <data name="Refs_Field_Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Refs_Field_Palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="Refs_Info" xml:space="preserve"><value>{width}×{height} · {frames} frames · {colors} colors</value></data>
+  <data name="Refs_Empty" xml:space="preserve"><value>No references yet. Add files or drop them onto this window.</value></data>
+  <data name="Refs_NoSelection" xml:space="preserve"><value>Select a reference on the left.</value></data>
+  <data name="Refs_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Refs_Delete_Tip" xml:space="preserve"><value>Moves the file to the Gpixel trash. Restoring it also brings back its title, description and tags.</value></data>
+  <data name="Refs_TrashLabel" xml:space="preserve"><value>Reference: {title}</value></data>
+  <data name="Refs_FileFilter" xml:space="preserve"><value>References (images, notes)</value></data>
+  <data name="Refs_Status_Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Refs_Status_Added" xml:space="preserve"><value>Added {count}.</value></data>
+  <data name="Refs_Status_NothingAdded" xml:space="preserve"><value>No files that can be added (.png, .gif, .gpixel, .md, .txt).</value></data>
+  <data name="Refs_Status_Deleted" xml:space="preserve"><value>Moved "{title}" to the Gpixel trash.</value></data>
+  <data name="Refs_Status_NoProject" xml:space="preserve"><value>No document is open.</value></data>
+  <data name="Refs_Status_NothingToCaption" xml:space="preserve"><value>Nothing to caption.</value></data>
+  <data name="Refs_Status_CaptionPrefilled" xml:space="preserve"><value>Put the request into the chat input. Check it and press send.</value></data>
+  <data name="Refs_CaptionRequest" xml:space="preserve"><value>{count} references have no description. Look at each with get_reference and use set_reference_info to give it an English title, description, tags and kind. In the description, say in one or two sentences what it is and the technique worth imitating (size, outline, light direction, shading, proportions, and for animations the motion and frames). Ids: {ids}</value></data>
+  <data name="Refs_OpenFailed" xml:space="preserve"><value>Couldn't open the reference folder:
+{folder}
+
+{message}</value></data>
+  <data name="Refs_Prefs_Tab" xml:space="preserve"><value>AI references</value></data>
+  <data name="Refs_Prefs_Folder" xml:space="preserve"><value>Reference folder</value></data>
+  <data name="Refs_Prefs_ChangeFolder" xml:space="preserve"><value>Change…</value></data>
+  <data name="Refs_Prefs_DefaultFolder" xml:space="preserve"><value>Default</value></data>
+  <data name="Refs_Prefs_ShowExamples" xml:space="preserve"><value>Show built-in examples (slime, sword, character, slime bounce, grass tile)</value></data>
+  <data name="Refs_Prefs_Note" xml:space="preserve"><value>Before drawing, the AI looks up the images and notes in this folder, rules.md and the Gpixel default rules. Files you put into the folder yourself are indexed automatically (index.json). References stay on this computer; Gpixel uploads and downloads nothing. Only what the AI's tools read is passed to the AI you already use (Claude Code, Codex).</value></data>
+  <data name="Refs_Tool_OpenFailed" xml:space="preserve"><value>Couldn't open or write the reference folder: {message}</value></data>
+  <data name="Refs_Tool_NotFound" xml:space="preserve"><value>Reference "{id}" not found. Use search_references to find ids.</value></data>
+  <data name="Refs_Tool_ReadFailed" xml:space="preserve"><value>Couldn't read reference "{id}": {message}</value></data>
+  <data name="Refs_Tool_TooLargeForPixels" xml:space="preserve"><value>{width}×{height} is too large for pixel text (up to {max} per side). Use as="image".</value></data>
+  <data name="Refs_Tool_BadFrameRange" xml:space="preserve"><value>Invalid frame_range "{text}". Use "current", "all" or "start-end" between 0 and {max}.</value></data>
+  <data name="Refs_Tool_ReadOnly" xml:space="preserve"><value>"{id}" is built in and can't be changed.</value></data>
 </root>

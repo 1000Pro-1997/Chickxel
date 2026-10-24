@@ -23,4 +23,9 @@
     <EmbeddedResource Update="Localization\*.resx" Public="true" EmitFormatMethods="true" OmitGetResourceString="true" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- AI 참고 자료: 기본 그림 규칙과 사용자 rules.md 틀(언어별). 이름의 .ko/.en을 언어로 보지 않게 WithCulture=false. -->
+    <EmbeddedResource Include="References\Assets\*.md" LogicalName="Gpixel.References.%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+
 </Project>

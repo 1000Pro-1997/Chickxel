@@ -64,6 +64,14 @@ public enum VectorIcon
     QuestionMark,
     /// <summary>둥근 바탕·네모 테 안에 올리는 "i".</summary>
     InfoMark,
+    /// <summary>그림이 든 책(AI 참고 자료).</summary>
+    BookImage,
+    /// <summary>열린 폴더(폴더 열기).</summary>
+    FolderOpen,
+    /// <summary>그림(사진 틀 + 산).</summary>
+    Image,
+    /// <summary>반짝임(AI로 하기).</summary>
+    Sparkles,
 }
 
 public static class VectorIcons
@@ -195,6 +203,25 @@ public static class VectorIcons
         VectorIcon.ExclamationMark => ["M12 4v10", "M12 19.5h.01"],
         VectorIcon.QuestionMark => ["M8 8.5a4 4 0 1 1 5.5 3.7c-.9.4-1.5 1.2-1.5 2.2v.6", "M12 19.5h.01"],
         VectorIcon.InfoMark => ["M12 10.5v9", "M12 4.5h.01"],
+        VectorIcon.BookImage =>
+        [
+            "m20 13.7-2.1-2.1a2 2 0 0 0-2.8 0L9.7 17",
+            "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20",
+            Circle(10, 8, 2),
+        ],
+        VectorIcon.FolderOpen =>
+            ["m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"],
+        VectorIcon.Image =>
+        [
+            "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+            Circle(9, 9, 2),
+            "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+        ],
+        VectorIcon.Sparkles =>
+        [
+            "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
+            "M20 3v4", "M22 5h-4", "M4 17v2", "M5 18H3",
+        ],
         _ => [],
     };
 

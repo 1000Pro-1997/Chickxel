@@ -150,6 +150,9 @@ public sealed class MainForm : Window, Ai.IAiHost
     private PixelImage? _currentThumb;
     private Ai.McpServer? _mcp;
     private Ai.ChatWindow? _chat;
+    /// <summary>AI 참고 자료 보관소(처음 쓸 때 연다, 폴더 설정을 바꾸면 다시 연다).</summary>
+    private Gpixel.Core.References.ReferenceLibrary? _refs;
+    private ReferenceManagerWindow? _refsWindow;
     private readonly Updater _updater;
     /// <summary>최대화 전 일반 창 위치·크기(설정 저장용).</summary>
     private PixelPoint _normalPosition;
@@ -750,7 +753,9 @@ public sealed class MainForm : Window, Ai.IAiHost
 
         // AI
         var ai = TopMenu("AI(_A)", MainStrings.Menu_Category_Ai);
-        AddItems(ai, Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)));
+        var refs = Cmd("참고 자료", MainStrings.Menu_Ai_References, ShowReferences);
+        refs.Icon = Ui.Icon(VectorIcon.BookImage, 14);
+        AddItems(ai, Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)), refs);
 
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
@@ -1657,12 +1662,13 @@ public sealed class MainForm : Window, Ai.IAiHost
             Ui.Row(Ui.Label(MainStrings.Message_277), color, Ui.InfoBadge(MainStrings.Message_278)));
     }
 
-    /// <summary>환경 설정(화면 언어·실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
+    /// <summary>환경 설정(화면 언어·실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키·AI 참고 자료).</summary>
     private void ShowPreferences()
     {
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
-            _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
+            _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         // 화면 언어는 다시 시작해야 바뀐다(정적 필드에 담긴 문구도 있음).
         bool languageChanged = !string.Equals(dlg.Language, _settings.Language, StringComparison.OrdinalIgnoreCase);
@@ -1685,6 +1691,19 @@ public sealed class MainForm : Window, Ai.IAiHost
         if (!_settings.AutoSave) _autoSave.Stop();
         _ctx.UndoCapacity = dlg.UndoSteps;
         _browser.Trash.Purge(dlg.TrashPolicy);
+        // 참고 자료 폴더를 바꾸면 다음에 쓸 때 새 폴더를 연다(열린 자료 창은 닫음).
+        if (!string.Equals(dlg.ReferencesFolder ?? "", _settings.ReferencesFolder ?? "", StringComparison.Ordinal))
+        {
+            _settings.ReferencesFolder = dlg.ReferencesFolder;
+            _refs = null;
+            _refsWindow?.Close();
+        }
+        _settings.ReferencesShowExamples = dlg.ReferencesShowExamples;
+        if (_refs is { } refs && refs.ShowBuiltIns != dlg.ReferencesShowExamples)
+        {
+            refs.ShowBuiltIns = dlg.ReferencesShowExamples;
+            _refsWindow?.Reload();
+        }
         // 기본값과 다른 명령만 저장한다(나중에 기본 단축키가 바뀌어도 고치지 않은 명령은 따라감).
         var custom = _commands
             .Where(c => dlg.Keys.TryGetValue(c.Info.Id, out var k) && !k.SequenceEqual(c.Info.Defaults))
@@ -2785,6 +2804,35 @@ public sealed class MainForm : Window, Ai.IAiHost
         chat.Show(this);
     }
 
+    /// <summary>AI 참고 자료 창을 연다(이미 열려 있으면 앞으로). 자료 폴더를 열 수 없으면 알린다.</summary>
+    private void ShowReferences()
+    {
+        if (_refsWindow is { } open)
+        {
+            if (open.WindowState == WindowState.Minimized) open.WindowState = WindowState.Normal;
+            open.Activate();
+            return;
+        }
+        Gpixel.Core.References.ReferenceLibrary lib;
+        try { lib = ((Ai.IAiHost)this).References; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, UiStrings.FormatRefs_OpenFailed(folder: AppReferences.FolderOf(_settings), message: ex.Message));
+            return;
+        }
+        var window = new ReferenceManagerWindow(lib, _ctx, CaptionWithAi);
+        window.Closed += (_, _) => { if (ReferenceEquals(_refsWindow, window)) _refsWindow = null; };
+        _refsWindow = window;
+        window.Show(this);
+    }
+
+    /// <summary>"AI로 설명 붙이기": 채팅 창을 열고 보이는 탭의 입력란에 부탁을 넣는다(보내지는 않음).</summary>
+    private void CaptionWithAi(string request)
+    {
+        ToggleChat();
+        _chat?.PrefillInput(request);
+    }
+
     /// <summary>앱을 닫을 때: 채팅이 열려 있었는지 기억하고 AI 프로세스·MCP 서버를 끝낸다.</summary>
     private void ShutdownChat()
     {
@@ -2874,4 +2922,6 @@ public sealed class MainForm : Window, Ai.IAiHost
     }
 
     bool Ai.IAiHost.OpenFile(string path, out string message) => OpenFile(path, interactive: false, out message);
+
+    Gpixel.Core.References.ReferenceLibrary Ai.IAiHost.References => _refs ??= AppReferences.Open(_settings);
 }

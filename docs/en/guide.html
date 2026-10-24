@@ -12,7 +12,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../style.css?v=20261024c">
+<link rel="stylesheet" href="../style.css?v=20261024d">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -83,7 +83,7 @@
 <ol><li><a href="#parts-concept">Groups and parts</a></li><li><a href="#parts-create">Creating</a></li><li><a href="#parts-timeline">Viewing in the timeline</a></li><li><a href="#parts-arrange">Arranging (group selected)</a></li><li><a href="#parts-draw">Drawing (part selected)</a></li><li><a href="#parts-auto-layout">Auto layout</a></li><li><a href="#parts-export">Export: frame sheet and part atlas</a></li><li><a href="#parts-skins">Skins and slots</a></li><li><a href="#parts-per-part">Per-part choices and part-only skins</a></li><li><a href="#parts-skin-manager">Skin manager</a></li><li><a href="#parts-outfits">Changing outfits and outfit presets</a></li><li><a href="#parts-skin-export">Exporting skins</a></li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li><a href="#parts-import">Importing old files and PNGs</a></li></ol>
 </li>
 <li><a href="#ai">AI chat (Claude · Codex)</a>
-<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-history">Continuing past chats</a></li><li><a href="#ai-help">Help and example requests</a></li><li><a href="#ai-file-only">Limiting edits to the current file</a></li><li><a href="#ai-locked">Protecting locked layers</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-effects">Asking for layer effects</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-edit-last">Editing or deleting the last message</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
+<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-history">Continuing past chats</a></li><li><a href="#ai-help">Help and example requests</a></li><li><a href="#ai-file-only">Limiting edits to the current file</a></li><li><a href="#ai-locked">Protecting locked layers</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-effects">Asking for layer effects</a></li><li><a href="#ai-references">References: teach the AI your style</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-edit-last">Editing or deleting the last message</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
 </li>
 <li><a href="#shortcuts">Shortcuts</a>
 <ol><li><a href="#shortcuts-customize">Customizing shortcuts</a></li><li><a href="#shortcuts-file">Files and windows</a></li><li><a href="#shortcuts-edit">Editing and selection</a></li><li><a href="#shortcuts-transform">Transform and image</a></li><li><a href="#shortcuts-tools">Tools</a></li><li><a href="#shortcuts-view">View and canvas</a></li><li><a href="#shortcuts-timeline">Timeline · layers · groups</a></li></ol>
@@ -989,7 +989,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="ai-help">Help and example requests</h3>
 <p>Press the question mark button next to <strong>New chat</strong> to show help in the chat area. Press <strong>Back</strong> or the question mark button again to close it.</p>
 <ul>
-<li><strong>What the AI can do</strong>: the tools for looking at the drawing, drawing, frames and animation, layers, groups and parts, skins and outfits, layer effects, canvas and colors, and files, explained by group.</li>
+<li><strong>What the AI can do</strong>: the tools for looking at the drawing, drawing, frames and animation, layers, groups and parts, skins and outfits, layer effects, references, canvas and colors, and files, explained by group.</li>
 <li><strong>Example requests</strong>: click one to put it in the message box, then edit and send it.</li>
 <li><strong>Tips</strong>: in our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Be specific about size, palette, and style, attach a reference picture, and break big jobs into small steps. You can delete or edit the last message and send it again.</li>
 </ul>
@@ -1022,6 +1022,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Create and arrange frames, layers, tags, groups and parts</li>
 <li>Add and switch skins, save and apply outfit presets</li>
 <li>Add, change, and remove layer effects, apply them permanently, enlarge the canvas to fit them</li>
+<li>Search and view references (<code>search_references</code>, <code>get_reference</code>), read style rules (<code>get_style_rules</code>), save the canvas as a reference and caption it (<code>add_reference</code>, <code>set_reference_info</code>) — see <a href="#ai-references">References: teach the AI your style</a></li>
 <li>Canvas size, palette and colors, new project, open, save</li>
 </ul>
 <p>It saves only when asked. If a never-saved new project has changes, it asks whether to save before switching to another document.</p>
@@ -1036,6 +1037,33 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Applying effects permanently</strong> (baking them into the pixels) and <strong>enlarging the canvas</strong> to fit effects that spill outside it happen only when you ask.</li>
 </ul>
 <p>Effect changes are part of the AI's reply, so one undo step undoes them too. Effects on locked layers are never changed.</p>
+
+<h3 id="ai-references">References: teach the AI your style</h3>
+<p><strong>References</strong> are a library on your computer that the AI looks through before drawing. Put in art you like, your own style rules and technique notes, and the AI finds similar images, follows their proportions and palette, and checks its result against the rules when it's done. It searches this user guide too.</p>
+<ul>
+<li><strong>Folder</strong>: by default <code>&lt;settings folder&gt;/Gpixel/References</code> (<code>%AppData%\Gpixel\References</code> on Windows). Files you put into this folder outside the app are picked up automatically when the window opens.</li>
+<li><strong>Supported files</strong>: images (<code>.png</code>, <code>.gif</code> with frames, <code>.gpixel</code> projects — each frame composited, animations keep their frame count) and text notes (<code>.md</code>, <code>.txt</code>). Title, description, tags, kind (character, item, tile, effect, UI, other), size, frame count, palette and similar info are stored in <code>index.json</code> in the same folder.</li>
+<li><strong>Built-in references</strong> (marked <strong>Built-in</strong>, can't be deleted): the style rule set <strong>Gpixel default rules</strong> (1 px or selective outline, a single light direction, 3–4-shade hue-shifted ramps, no orphan or jaggy pixels, a limited palette, a readable silhouette, consistent proportions, and key poses, smears and walk-cycle contacts for animation) and example images — a 16×16 slime, a 16×16 sword, a 32×32 front-facing character, a 4-frame 16×16 slime bounce, and a 16×16 grass tile.</li>
+</ul>
+<p>Open the <strong>AI references</strong> window with <strong>AI &gt; References…</strong>. On the left are thumbnails (pixel-perfect on a checker background, with title and tags), a search box (the same search the AI uses) and a kind filter; on the right are a preview (animated when there are several frames), editable title, description, tags and kind, and the palette swatches.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Button</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><strong>Add files…</strong></td><td>Adds several image or note files at once. You can also drag files onto the window.</td></tr>
+<tr><td><strong>Add current canvas</strong></td><td>Adds the open image as a reference.</td></tr>
+<tr><td><strong>Delete</strong></td><td>Moves the selected reference file to the <a href="#screen-file-browser">app trash</a> (built-in references can't be deleted).</td></tr>
+<tr><td><strong>Open folder</strong></td><td>Opens the references folder in Explorer/Finder.</td></tr>
+<tr><td><strong>Edit rules</strong></td><td>Opens your own style rules, <code>rules.md</code> (created from a template if missing). The AI reads them together with the default rules.</td></tr>
+<tr><td><strong>Caption with AI</strong></td><td>Puts a request to add titles, descriptions and tags to uncaptioned references into the input box of the active AI tab and brings up the chat window. It's sent only <strong>when you press send</strong>, so nothing is spent automatically.</td></tr>
+</tbody>
+</table></div>
+<p>When some references have no description, the window shows "N references have no description". Descriptions and tags help the AI find them.</p>
+<ul>
+<li><strong>Asking</strong>: say something like "Draw a 32px bat like the slime in the references." and the AI looks up the references before drawing. The chat help (question-mark button) has a <strong>References</strong> tool group and this example.</li>
+<li><strong>Adding from the chat</strong>: say "save this to my references" and the AI adds the current canvas (or a layer or frame range) with a title, description and tags. Adding and captioning references only write to the library folder, so they work even with <a href="#ai-file-only">Current file only</a> on.</li>
+<li><strong>Preferences</strong>: in <strong>Edit &gt; Preferences… &gt; AI references</strong> you can <strong>Change…</strong> the folder, go back to the <strong>Default</strong> folder, <strong>Open folder</strong>, and hide the built-in example images with <strong>Show built-in examples</strong>.</li>
+</ul>
+<div class="note"><p>References stay on your computer. Gpixel uploads and downloads nothing; only the AI CLI you already use (Claude Code or Codex) sees what the AI fetches with its tools.</p></div>
 
 <h3 id="ai-undo">Undoing</h3>
 <p>Each AI reply is <strong>one</strong> undo step, so <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it all at once. Each reply also comes with a result image and <strong>Undo this step / Reapply</strong> buttons.</p>
@@ -1209,6 +1237,6 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
   location.href = ('../') + page + location.hash;
 });
 </script>
-<script src="../guide.js?v=20261024c"></script>
+<script src="../guide.js?v=20261024d"></script>
 </body>
 </html>

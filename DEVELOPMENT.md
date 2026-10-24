@@ -1,0 +1,33 @@
+# Gpixel 개발
+
+사용자용 기능 설명은 [FEATURES.md](FEATURES.md)에 있습니다.
+
+## 배포 파일 만들기
+
+- macOS: `./publish.sh 1.0.0` → `dist/`에 Windows zip + macOS(arm64·x64) zip 세 개(Mac 한 대에서 둘 다 만듦).
+- Windows: `publish.bat 1.0.0` → `dist\Gpixel-windows-x64.zip`(Windows용만).
+- GitHub: `git tag v1.0.0 && git push origin v1.0.0` 하면 Actions(`.github/workflows/release.yml`)가 테스트 후 세 zip과 `SHA256SUMS.txt`를 만들어 릴리스에 올립니다. 자동 업데이트가 이 파일 이름(`Gpixel-windows-x64.zip`, `Gpixel-macos-arm64.zip`, `Gpixel-macos-x64.zip`, `SHA256SUMS.txt`)과 `vX.Y.Z` 태그를 기대하므로 바꾸지 마세요.
+- 새 버전을 올리기 전에 [CHANGELOG.md](CHANGELOG.md) 맨 위에 `## vX.Y.Z (날짜)` 절을 쓰면, 그 절이 릴리스 설명이 되고 앱 업데이트 창에도 나옵니다(절이 없으면 GitHub 자동 노트).
+- 푸시·풀 리퀘스트마다 `.github/workflows/ci.yml`이 Windows·macOS·Linux에서 빌드하고 테스트합니다.
+- 결과물은 .NET 런타임을 품은 자체 포함 앱이라 받는 사람이 아무것도 설치하지 않아도 됩니다(zip 40MB 안팎).
+
+## 개발
+
+- 필요: .NET 10 SDK. UI는 Avalonia(Windows·macOS·Linux 공용 코드).
+- 소스에서 바로 실행: Windows `run.bat` · macOS/Linux `./run.sh` (인수는 그대로 앱에 넘어감)
+- 빌드·테스트: `dotnet build Gpixel.sln`, `dotnet test Gpixel.sln`
+- 작업 규칙: [AGENTS.md](AGENTS.md) — UI에 이모지·기호 문자를 아이콘으로 쓰지 않고 벡터(SVG 경로) 아이콘으로 그립니다(`VectorIcons.cs`). 문서·커밋 메시지에도 이모지를 쓰지 않습니다.
+- 아이콘: 도구 아이콘은 `src/Gpixel.App/Assets/Tools/*.png`(16×16 단색 점 그림, 도구 막대에는 2배로 표시), 앱 아이콘은 `Assets/AppIcon/`(16×16 원본 `gpixel.png`에서 만든 `gpixel.ico`·`Gpixel.icns`·창/Dock 아이콘 `gpixel-256.png`). PNG는 Gpixel로 열어 바로 고칠 수 있습니다.
+- 홈페이지: `docs/`(직접 쓴 HTML/CSS) — 첫 화면 `index.html`, 사용 가이드 `guide.html`(첫 화면에서 새 창으로 엶), 영어판 `en/index.html`·`en/guide.html`, 공용 `style.css`·`guide.js`·`assets/`(앱 아이콘, 한국어·영어 화면 캡처). 사용 가이드는 `guide.js`가 세부 항목(h3)마다 한 쪽으로 나눠 오른쪽 창에 하나씩 보여 주고(세부 항목이 없는 장(h2)은 장 하나가 한 쪽), 왼쪽 목차는 지금 장만 펼칩니다(주소 `#id`로 바로 열림, 좁은 화면에서는 목차를 위 단추로 엶). 장 머리말 쪽은 따로 없습니다: 목차의 장 이름을 누르면 그 장을 펼치고 첫 세부 쪽을 열며, h2와 첫 h3 사이의 머리말 글은 첫 세부 쪽 맨 위(장 이름 아래)에 붙고, 옛 `#장id` 주소는 첫 세부 쪽으로 열립니다. 오른쪽 위 언어 목록으로 바꾸며(고른 언어는 브라우저에 기억), 처음 온 사람은 브라우저 언어가 한국어가 아니면 영어 페이지로 갑니다. `main` 브랜치의 `docs/` 폴더를 GitHub Pages로 그대로 배포하므로 고쳐서 푸시하면 반영됩니다. `style.css`·`guide.js`를 고치면 브라우저가 옛 파일을 쓰지 않게 네 페이지(`index.html`·`guide.html`·`en/index.html`·`en/guide.html`)의 링크 뒤 `?v=` 값을 함께 올립니다. 기능을 바꾸면 [FEATURES.md](FEATURES.md)와 함께 두 언어 가이드의 해당 장도 고칩니다.
+- 홈페이지 대표 기능: 첫 화면 **대표 기능** 구역(`id="core"`)은 제목과 움직이는 화면만 담은 카드 격자(`<a class="core-card">`, 누르면 가이드의 그 쪽이 새 창으로 열림)이고, 자세한 설명은 사용 가이드에만 둡니다. 사용 가이드 목차 맨 위 **대표 기능** 묶음은 공통 기능 · AI로 그리기 · 애니메이션 효과 · 팔레트 사용 · 스킨 설정 · 유니티 연동 · 내보내기 장(h2)으로 나뉘고, 기능은 그 장의 짧은 소제목(h3) 쪽입니다. 새 기능은 맞는 장에 h3를 더하고(목차 줄도), 첫 화면에 카드를 하나 더합니다 — 한국어 `index.html`·`guide.html`과 영어 `en/index.html`·`en/guide.html` 모두. 움짤은 `docs/assets/`에 두고, 큰 GIF는 MP4로 바꿔 씁니다. 사이트는 어두운 테마입니다(`style.css` 맨 위 색 변수).
+- 앱 안 사용 가이드(F1, `HelpWindow`): `docs/guide.html`·`docs/en/guide.html`을 `tools/build-help.py`(Python 3 표준 라이브러리만)가 읽어 `src/Gpixel.App/Assets/Help/help.ko.json`·`help.en.json`(내장 리소스)을 만듭니다. 세부 항목(h3)마다 한 쪽으로 나누고 장 머리말 글을 첫 세부 쪽의 `intro`로 붙이는 방식(세부 항목이 없는 장은 장 id의 한 쪽, `ShowPage`·`#장id` 링크는 그 장의 첫 쪽으로)과 목차 묶음은 홈페이지 `guide.js`와 같고, 영상·그림은 같은 이름의 내장 움짤(`AnimatedImage`, 인터넷 없이 되풀이 재생 — 화면에 붙어 있는 동안만 한 프레임씩 풀어 그림)과 그 아래 "홈페이지에서 크게 보기" 링크로 바뀝니다(움짤이 없으면 "영상은 홈페이지에서 보기" 링크만). **두 가이드 HTML을 고치면 `python tools/build-help.py`를 다시 실행해 JSON도 함께 커밋합니다.** 검색은 `Gpixel.Core.Help.HelpSearch`가 창을 열 때 메모리에 색인합니다(모델·네트워크 없음): 소문자로 바꾼 낱말을 통째로 + 글자 두 개씩 색인해(한 글자 낱말은 그 글자) 조사가 붙은 한국어와 영어 낱말 일부도 찾고, BM25(제목 ×3)에 질의 낱말·문장이 제목·본문에 그대로 있으면 덤 점수를 더합니다.
+  - 가이드 움짤은 `src/Gpixel.App/Assets/Help/media/<이름>.webp`(홈페이지 `docs/assets/<이름>.mp4`·`.gif`와 같은 이름, 8fps 되풀이 WebP)입니다. 영상을 바꾸거나 더하면 ffmpeg로 다시 만들어 함께 커밋합니다: `ffmpeg -i docs/assets/<name>.mp4 -vf "fps=8,scale=800:-2:flags=lanczos" -c:v libwebp_anim -lossless 0 -q:v 60 -loop 0 -an src/Gpixel.App/Assets/Help/media/<name>.webp` (세로로 긴 `feature-number-field.gif`는 `scale=360:-2`).
+  - 같은 WebP를 저장소 [README](README.md)의 **대표 기능**에도 씁니다(움짤을 누르면 홈페이지 가이드의 그 쪽). 첫 화면에 대표 기능 카드를 더하면 README에도 `### 제목`과 움짤을 같은 순서로 더합니다. README에는 맨 위 홈페이지 링크, 대표 기능, 내려받기, 다른 문서 링크만 두고, 기능 설명은 [FEATURES.md](FEATURES.md), 개발 메모는 이 파일에 씁니다.
+- 번역: 기본 언어는 한국어이며 사용자에게 보이는 문구는 `src/Gpixel.App/Localization/{MainStrings,StartStrings,UiStrings}.resx`와 `src/Gpixel.Core/Localization/{CoreStrings,DomainStrings}.resx`에 있습니다. 영어는 같은 폴더의 `<이름>.en.resx`이며, 내장 언어를 더하려면 다섯 기본 파일과 같은 키의 `<이름>.<언어 코드>.resx` 파일을 각 폴더에 추가하고 `UiLanguage`의 내장 목록에 넣습니다. `{0}`, `{1}`은 값 자리이며 어순에 맞게 순서를 바꿀 수 있습니다. `{name}`은 이름 그대로 보존합니다(테스트가 번역마다 키와 자리 표시자가 기본 문구와 같은지 확인). `UiStrings`의 각 항목에는 원래 코드 위치와 문맥이 주석으로 적혀 있습니다. 단축키 명령 ID·프로젝트에 저장되는 기본 이름·내장 프리셋 이름처럼 데이터 식별자인 한국어는 코드에 남기며 번역 대상이 아닙니다. 설치용 배치 스크립트 본문은 번역하지 않고 그 안의 사용자 안내만 리소스에서 읽습니다. `Microsoft.CodeAnalysis.ResxSourceGenerator`가 빌드 중 접근 코드를 생성하며(`OmitGetResourceString`), 문구 찾기는 `Localization/<이름>.cs`의 부분 클래스가 `Translations`를 거쳐 CSV 번역을 먼저 봅니다.
+- 화면 언어: `settings.json`의 `Language`(언어 코드). 처음 켤 때(또는 고른 CSV 언어가 없어졌을 때) 컴퓨터 UI 언어에서 맞는 언어를 고르고(예: `pt-BR` → `pt-BR`, `pt` 순), 없으면 영어입니다. **편집 > 환경 설정…** 맨 위 **언어**에서 바꾸며 다시 시작해야 적용됩니다(숫자·날짜 형식은 바꾸지 않음). 바꾸고 확인하면 **지금 다시 시작**·**나중에**를 묻고, 지금 다시 시작은 평소 닫기(저장 안 한 문서 확인 포함)를 거친 뒤 같은 실행 파일을 새로 띄웁니다.
+- CSV 언어: **번역 CSV로 내보내기**는 첫 줄 `key,ko,en,…`, 둘째 줄 `#name,한국어,English,…`, 나머지는 `<표>.<키>`(예: `UiStrings.S_AboutDialog_…`)와 언어별 문구인 UTF-8 CSV를 씁니다. 언어 코드 열을 더해 번역한 뒤 **CSV로 언어 추가**로 넣으면 `<설정 폴더>/Gpixel/Languages/<언어 코드>.csv`에 저장됩니다(같은 코드면 덮어씀, 쉼표·세미콜론·탭 구분 모두 읽음). 빈 칸은 같은 내장 언어, 없으면 영어 문구를 씁니다. `ko`·`en` 열은 내장 문구와 다른 칸만 저장해 내장 문구 위에 덮어쓰며, 언어 폴더(**언어 폴더 열기**)에서 그 CSV를 지우면 내장 문구로 돌아갑니다.
+- AI 참고 자료: 보관소·검색은 `Gpixel.Core.References`(`ReferenceLibrary` — 폴더 하나 + `index.json`, `ReferenceSearch` — `HelpSearch`를 그대로 써서 제목·태그(제목 무게)·설명·파일 이름·종류·메모 본문을 BM25로 찾고, 팔레트 거리 + 16×16 실루엣 해밍 거리로 닮은 순, `ReferenceAnalysis` — 팔레트·색 수·실루엣)에, GIF 풀기·폴더 설정은 앱의 `AppReferences`, MCP 도구는 `Ai/PixelTools.References.cs`, 창은 `ReferenceManagerWindow`에 있습니다. 폴더 구조: `<설정 폴더>/Gpixel/References/`(환경 설정에서 바꿈) 아래 그림(`.png`·`.gif`·`.gpixel`, 하위 폴더도)·메모(`.md`·`.txt`), 사용자 규칙 `rules.md`, 색인 `index.json`(`{version, items[], removed[]}` — 항목 id = 폴더 기준 상대 경로, `hash` = SHA-256 앞 16자, 파일 크기·수정 시각이 같으면 다시 읽지 않음, `removed`는 없어진 항목 100개까지 기억해 같은 내용이 돌아오면 제목·설명을 되살림). 색인이 깨지면 파일에서 다시 만듭니다. 기본 규칙·`rules.md` 틀은 `src/Gpixel.Core/References/Assets/*.md`(내장 리소스 `Gpixel.References.<이름>.md`), 기본 예시 그림은 `BuiltInExampleArt.cs`의 글자 줄 + 범례(제목·설명·태그는 `CoreStrings`의 `Refs_Example_*`)입니다.
+
+## 기여
+
+버그 신고와 기능 제안은 [Issues](https://github.com/1000Pro-1997/GPixel/issues)에 남겨 주세요(신고 양식에 버전·OS를 적어 주세요 — 버전은 **도움말 > Gpixel 정보…**). 풀 리퀘스트는 `dotnet build Gpixel.sln`·`dotnet test Gpixel.sln`이 통과하는 상태로 보내 주세요.

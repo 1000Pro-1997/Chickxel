@@ -6,7 +6,8 @@ using Gpixel.App.Localization;
 namespace Gpixel.App;
 
 /// <summary>
-/// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
+/// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
+/// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
@@ -26,6 +27,10 @@ public sealed class PreferencesDialog : DialogBase
     private readonly TextBox _search;
     private readonly StackPanel _rows = new() { Spacing = 1 };
     private readonly TextBlock _status;
+    private readonly TextBox _refsFolderBox;
+    private readonly CheckBox _refsExamples;
+    /// <summary>고른 참고 자료 폴더(null = 기본 폴더).</summary>
+    private string? _refsFolder;
     /// <summary>키를 기다리는 명령과 방식(true = 바꾸기, false = 추가). 없으면 null.</summary>
     private (string Id, bool Replace)? _capture;
 
@@ -34,7 +39,8 @@ public sealed class PreferencesDialog : DialogBase
     /// <param name="language">지금 화면 언어 코드.</param>
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
-        IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
+        IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
+        string? referencesFolder, bool showReferenceExamples)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         _commands = commands;
@@ -136,9 +142,52 @@ public sealed class PreferencesDialog : DialogBase
         shortcuts.Children.Add(bottom);
         shortcuts.Children.Add(new ScrollViewer { Content = _rows, Height = 420, Width = 720, Background = AppTheme.InputBrush });
 
+        // AI 참고 자료
+        _refsFolder = string.IsNullOrWhiteSpace(referencesFolder) ? null : referencesFolder;
+        _refsFolderBox = new TextBox { IsReadOnly = true, Width = 460, Margin = new Thickness(2) };
+        void SyncFolder() => _refsFolderBox.Text = _refsFolder ?? AppReferences.DefaultFolder;
+        SyncFolder();
+        _refsExamples = Ui.Check(UiStrings.Refs_Prefs_ShowExamples, showReferenceExamples);
+        var refsNote = Ui.Label(UiStrings.Refs_Prefs_Note);
+        refsNote.Foreground = AppTheme.DimTextBrush;
+        refsNote.TextWrapping = TextWrapping.Wrap;
+        refsNote.MaxWidth = 640;
+        refsNote.HorizontalAlignment = HorizontalAlignment.Left;
+        var references = Ui.Stack(
+            Ui.Label(UiStrings.Refs_Prefs_Folder, bold: true),
+            _refsFolderBox,
+            Ui.Row(
+                Ui.Button(UiStrings.Refs_Prefs_ChangeFolder, (_, _) =>
+                {
+                    if (Ui.PickFolder(this, UiStrings.Refs_Prefs_ChangeFolder, _refsFolder ?? AppReferences.DefaultFolder) is not { } picked) return;
+                    _refsFolder = string.Equals(Path.GetFullPath(picked), Path.GetFullPath(AppReferences.DefaultFolder), StringComparison.OrdinalIgnoreCase) ? null : picked;
+                    SyncFolder();
+                }),
+                Ui.Button(UiStrings.Refs_Prefs_DefaultFolder, (_, _) =>
+                {
+                    _refsFolder = null;
+                    SyncFolder();
+                }),
+                Ui.Button(VectorIcon.FolderOpen, UiStrings.Refs_OpenFolder, (_, _) =>
+                {
+                    var dir = _refsFolder ?? AppReferences.DefaultFolder;
+                    try
+                    {
+                        Directory.CreateDirectory(dir);
+                        Platform.OpenFolder(dir);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        Ui.Error(this, ex.Message);
+                    }
+                })),
+            _refsExamples,
+            refsNote);
+
         var tabs = new TabView();
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
+        tabs.AddPage(UiStrings.Refs_Prefs_Tab, references);
         Body.Children.Add(tabs);
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
@@ -149,6 +198,12 @@ public sealed class PreferencesDialog : DialogBase
     public string Language => _language.SelectedIndex >= 0 && _language.SelectedIndex < _languages.Count
         ? _languages[_language.SelectedIndex].Code
         : UiLanguage.Current;
+
+    /// <summary>AI 참고 자료 폴더(null = 기본 폴더).</summary>
+    public string? ReferencesFolder => _refsFolder;
+
+    /// <summary>AI 참고 자료에 기본 예시를 보일지.</summary>
+    public bool ReferencesShowExamples => _refsExamples.On();
 
     /// <summary>지금 쓰는 언어의 CSV를 새로 넣었는지(같은 언어를 계속 써도 다시 시작해야 바뀜).</summary>
     public bool CurrentLanguageImported { get; private set; }

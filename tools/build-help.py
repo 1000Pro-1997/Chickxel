@@ -6,9 +6,10 @@ src/Gpixel.App/Assets/Help/help.<lang>.json. Re-run after editing either guide:
 
     python tools/build-help.py
 
-Python 3 standard library only. Pages are split like docs/guide.js does: each
-chapter (section.doc, h2) has an intro page (h2 + content before the first h3),
-and every h3 starts its own page.
+Python 3 standard library only. Pages are split like docs/guide.js does: every
+h3 starts its own page, and the chapter's text before its first h3 becomes the
+first page's "intro". A chapter (section.doc, h2) without h3 is a single page
+with the chapter id.
 """
 
 from __future__ import annotations
@@ -318,6 +319,8 @@ def build(path: Path, base: str) -> dict:
             continue
         cid = section.attrs["id"]
         chapter = {"id": cid, "title": "", "pages": []}
+        # 세부 항목(h3)이 있는 장은 머리말 쪽을 따로 두지 않고, h2 다음 글을 첫 세부 쪽의 "intro"로 붙인다.
+        intro: list[dict] | None = None
         page = None
         for c in section.children:
             if isinstance(c, str):
@@ -326,18 +329,24 @@ def build(path: Path, base: str) -> dict:
                 continue
             if c.tag == "h2":
                 chapter["title"] = runs_text(runs_of(c, base))
-                page = {"id": cid, "title": chapter["title"], "blocks": []}
-                chapter["pages"].append(page)
+                intro = []
                 continue
             if c.tag == "h3":
                 page = {"id": c.attrs["id"], "title": runs_text(runs_of(c, base)), "blocks": []}
+                if not chapter["pages"] and intro:
+                    page["intro"] = intro
                 chapter["pages"].append(page)
                 continue
-            if page is None:
+            if intro is None:
                 raise SystemExit(f"{path}: content before h2 in section {cid}")
-            page["blocks"].extend(block(c, base, page["id"]))
+            if page is None:
+                intro.extend(block(c, base, cid))
+            else:
+                page["blocks"].extend(block(c, base, page["id"]))
+        if not chapter["pages"]:
+            chapter["pages"].append({"id": cid, "title": chapter["title"], "blocks": intro or []})
         for p in chapter["pages"]:
-            p["text"] = "\n".join(t for b in p["blocks"] for t in block_texts(b) if t)
+            p["text"] = "\n".join(t for b in p.get("intro", []) + p["blocks"] for t in block_texts(b) if t)
         chapters[cid] = chapter
 
     groups: list[dict] = []
@@ -356,11 +365,13 @@ def build(path: Path, base: str) -> dict:
     if chapters:
         raise SystemExit(f"{path}: sections missing from TOC: {', '.join(chapters)}")
 
+    # 장 id(#장)는 그 장의 첫 쪽으로 열린다.
     ids = {p["id"] for g in groups for c in g["chapters"] for p in c["pages"]}
+    ids |= {c["id"] for g in groups for c in g["chapters"]}
     for g in groups:
         for c in g["chapters"]:
             for p in c["pages"]:
-                for href in re.findall(r'"href": "#([^"]+)"', json.dumps(p["blocks"])):
+                for href in re.findall(r'"href": "#([^"]+)"', json.dumps(p.get("intro", []) + p["blocks"])):
                     if href not in ids:
                         print(f"warning: {path.name} page {p['id']} links to unknown #{href}", file=sys.stderr)
     return {"groups": groups}

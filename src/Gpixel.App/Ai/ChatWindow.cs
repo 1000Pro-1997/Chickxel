@@ -156,6 +156,9 @@ public sealed class ChatWindow : Window
         RefreshHeader();
     }
 
+    /// <summary>보이는 탭의 입력란에 글을 넣는다(보내지 않음 — 사용자가 보내기를 눌러야 함). "AI로 설명 붙이기"가 부른다.</summary>
+    public void PrefillInput(string text) => _visible.Prefill(text);
+
     /// <summary>AI 프로세스를 모두 끝낸다(앱을 닫을 때 메인 창이 부름). 진행 중인 차례는 멈춘다.</summary>
     public void Shutdown()
     {
@@ -258,45 +261,15 @@ public sealed class ChatWindow : Window
 
     // ───────────── 메시지 그리기 도우미 ─────────────
 
-    private static SelectableTextBlock AnswerText(string text) => new()
-    {
-        Text = text,
-        TextWrapping = TextWrapping.Wrap,
-        Foreground = AppTheme.TextBrush,
-        Margin = new Thickness(2, 0),
-    };
+    /// <summary>답 글(마크다운) 보기. <see cref="MarkdownView.SetText"/>로 글을 넣는다.</summary>
+    private MarkdownView AnswerView() => new(MonoFont, OpenLink);
 
-    /// <summary>답 글을 그린다. ``` 로 둘러싼 부분은 고정폭 글꼴 상자.</summary>
-    private static void RenderText(StackPanel host, string text)
+    /// <summary>답 글 하나를 그린 보기.</summary>
+    private MarkdownView AnswerView(string text)
     {
-        host.Children.Clear();
-        var parts = text.Split("```");
-        for (int i = 0; i < parts.Length; i++)
-        {
-            var part = parts[i];
-            if (i % 2 == 0)
-            {
-                part = part.Trim('\n', '\r');
-                if (part.Trim().Length > 0) host.Children.Add(AnswerText(part));
-                continue;
-            }
-            // 코드 블록 첫 줄의 언어 이름은 뗀다.
-            int nl = part.IndexOf('\n');
-            if (nl >= 0 && part[..nl].Trim() is var lang && lang.Length < 20 && !lang.Contains(' ')) part = part[(nl + 1)..];
-            host.Children.Add(new Border
-            {
-                Background = AppTheme.InputBrush,
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(6, 4),
-                Child = new SelectableTextBlock
-                {
-                    Text = part.TrimEnd('\n', '\r'),
-                    FontFamily = MonoFont,
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = AppTheme.TextBrush,
-                },
-            });
-        }
+        var view = AnswerView();
+        view.SetText(text);
+        return view;
     }
 
     /// <summary>도구 인자 짧은 요약(legend 같은 긴 것은 뺌).</summary>
@@ -485,23 +458,26 @@ public sealed class ChatWindow : Window
                 TextWrapping = TextWrapping.Wrap,
             },
         };
-        link.Click += (_, _) =>
-        {
-            try
-            {
-                AiCli.OpenUrl(url);
-            }
-            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
-            {
-                Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_LinkRow_5865E61E9C,ex.Message));
-            }
-        };
+        link.Click += (_, _) => OpenLink(url);
         var copy = Ui.Button(UiStrings.S_ChatWindow_LinkRow_E4434318F0, (_, _) => CopyText(url));
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         grid.Children.Add(link);
         Grid.SetColumn(copy, 1);
         grid.Children.Add(copy);
         return grid;
+    }
+
+    /// <summary>주소를 기본 브라우저로 연다(실패하면 알림).</summary>
+    private void OpenLink(string url)
+    {
+        try
+        {
+            AiCli.OpenUrl(url);
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
+        {
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_LinkRow_5865E61E9C,ex.Message));
+        }
     }
 
     private void CopyText(string text)
@@ -524,6 +500,8 @@ public sealed class ChatWindow : Window
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_palette", "set_colors"]),
         (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "save_project", "open_file"]),
+        (UiStrings.Chat_Help_GroupReferences, UiStrings.Chat_Help_GroupReferences_Text,
+            ["search_references", "get_reference", "get_style_rules", "add_reference", "set_reference_info"]),
     ];
 
     /// <summary>
@@ -557,7 +535,7 @@ public sealed class ChatWindow : Window
         [
             UiStrings.Chat_Help_Example1, UiStrings.Chat_Help_Example2, UiStrings.Chat_Help_Example3, UiStrings.Chat_Help_Example4,
             UiStrings.Chat_Help_Example5, UiStrings.Chat_Help_Example6, UiStrings.Chat_Help_Example7, UiStrings.Chat_Help_Example8,
-            UiStrings.Chat_Help_Example9,
+            UiStrings.Chat_Help_Example9, UiStrings.Chat_Help_Example10,
         ];
         foreach (var example in examples)
         {
@@ -577,7 +555,7 @@ public sealed class ChatWindow : Window
         [
             UiStrings.Chat_Help_Tip1, UiStrings.Chat_Help_Tip2, UiStrings.Chat_Help_Tip3,
             UiStrings.Chat_Help_Tip4, UiStrings.Chat_Help_Tip5, UiStrings.Chat_Help_Tip6,
-            UiStrings.Chat_Help_Tip7,
+            UiStrings.Chat_Help_Tip7, UiStrings.Chat_Help_Tip8,
         ];
         foreach (var tip in tips)
         {
@@ -644,8 +622,9 @@ public sealed class ChatWindow : Window
         /// <summary>실행취소 묶음을 연 프로젝트.</summary>
         public SpriteProject? Project { get; set; }
         public Stopwatch Clock { get; } = Stopwatch.StartNew();
-        public StackPanel? StreamHost { get; set; }
-        public SelectableTextBlock? StreamText { get; set; }
+        public MarkdownView? StreamHost { get; set; }
+        /// <summary>스트리밍 글을 곧 다시 그리도록 걸어 둠(100ms에 한 번).</summary>
+        public bool RenderPending { get; set; }
         public StringBuilder Stream { get; } = new();
         /// <summary>도구 호출 id → 그 줄과 저장할 대화 줄(실패하면 둘 다 고침).</summary>
         public Dictionary<string, (TextBlock Line, ChatItem Item)> Tools { get; } = new();
@@ -1153,25 +1132,22 @@ public sealed class ChatWindow : Window
             s.TextDelta += delta =>
             {
                 if (_turn is not { } t) return;
-                if (t.StreamText is null) BeginText(t);
+                if (t.StreamHost is null) BeginText(t);
                 t.Stream.Append(delta);
-                t.StreamText!.Text = t.Stream.ToString();
+                ScheduleStreamRender(t);
             };
             s.AssistantText += text =>
             {
                 if (_turn is not { } t || text.Length == 0) return;
                 if (t.StreamHost is { } host)
                 {
-                    RenderText(host, text);
+                    host.SetText(text);
                     t.StreamHost = null;
-                    t.StreamText = null;
                     t.Stream.Clear();
                 }
                 else
                 {
-                    var block = new StackPanel { Spacing = 4 };
-                    RenderText(block, text);
-                    AddItem(block);
+                    AddItem(_w.AnswerView(text));
                 }
                 Record(new ChatItem { Kind = ChatItemKind.Assistant, Text = text });
             };
@@ -1541,9 +1517,7 @@ public sealed class ChatWindow : Window
                     AddUserBubble(item, thumbs, missing > 0 ? UiStrings.FormatChat_History_ImagesMarker(count: missing) : null, []);
                     break;
                 case ChatItemKind.Assistant:
-                    var block = new StackPanel { Spacing = 4 };
-                    RenderText(block, item.Text);
-                    AddItem(block);
+                    AddItem(_w.AnswerView(item.Text));
                     break;
                 case ChatItemKind.Tool:
                     AddItem(ToolLine(item.Text, item.Error));
@@ -1711,6 +1685,9 @@ public sealed class ChatWindow : Window
             CloseHelp();
             FocusInput();
         }
+
+        /// <summary>입력란에 글을 넣고(보내지 않음) 보던 화면으로 돌아가 입력란에 포커스.</summary>
+        public void Prefill(string text) => UseExample(text);
 
         /// <summary>차례 중에 다른 프로젝트가 열리면(new_project 등) 묶음을 새 프로젝트로 옮긴다.</summary>
         public void OnProjectReplaced()
@@ -1972,15 +1949,28 @@ public sealed class ChatWindow : Window
         private void BeginText(Turn t)
         {
             FinishStream(t);
-            var host = new StackPanel { Spacing = 4 };
-            var text = AnswerText("");
-            host.Children.Add(text);
+            var host = _w.AnswerView();
             t.StreamHost = host;
-            t.StreamText = text;
             AddItem(host);
         }
 
-        /// <summary>스트리밍 중이던 글을 마무리한다(코드 블록 꾸미기, 저장할 내용에 넣음).</summary>
+        /// <summary>
+        /// 스트리밍 글을 바로 그리고, 그 뒤 100ms 안에 더 온 글은 한 번에 모아 그린다(조각마다 마크다운을 다시 읽지 않게).
+        /// 바뀌지 않은 앞쪽 블록은 <see cref="MarkdownView.SetText"/>가 그대로 둔다.
+        /// </summary>
+        private static void ScheduleStreamRender(Turn t)
+        {
+            if (t.RenderPending) return;
+            t.StreamHost?.SetText(t.Stream.ToString());
+            t.RenderPending = true;
+            DispatcherTimer.RunOnce(() =>
+            {
+                t.RenderPending = false;
+                t.StreamHost?.SetText(t.Stream.ToString());
+            }, TimeSpan.FromMilliseconds(100));
+        }
+
+        /// <summary>스트리밍 중이던 글을 마무리한다(마지막 글까지 그림, 저장할 내용에 넣음).</summary>
         private void FinishStream(Turn t)
         {
             if (t.StreamHost is { } host)
@@ -1988,12 +1978,11 @@ public sealed class ChatWindow : Window
                 var text = t.Stream.ToString();
                 if (text.Length > 0)
                 {
-                    RenderText(host, text);
+                    host.SetText(text);
                     Record(new ChatItem { Kind = ChatItemKind.Assistant, Text = text });
                 }
             }
             t.StreamHost = null;
-            t.StreamText = null;
             t.Stream.Clear();
         }
 

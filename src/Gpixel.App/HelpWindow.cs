@@ -98,6 +98,8 @@ public sealed class HelpWindow : Window
                 _pages.Add(page);
                 _byId[page.Id] = page;
             }
+            // 장 id(#장 링크·ShowPage)는 그 장의 첫 쪽으로 연다.
+            _byId.TryAdd(chapter.Id, chapter.Pages[0]);
         }
         _search = new HelpSearch(_pages.Select(p => new HelpDocument(p.Id, p.Title, p.Text)));
         _page = _lastPageId is { } last && _byId.TryGetValue(last, out var lp) ? lp : _pages[0];
@@ -191,7 +193,7 @@ public sealed class HelpWindow : Window
         Show(_page);
     }
 
-    private static HelpBook LoadBook(string lang)
+    internal static HelpBook LoadBook(string lang)
     {
         var name = $"Gpixel.Help.help.{lang}.json";
         using var stream = typeof(HelpWindow).Assembly.GetManifestResourceStream(name)
@@ -311,7 +313,7 @@ public sealed class HelpWindow : Window
         bool mine = _page.Chapter == chapter;
         bool open = _expanded.Contains(chapter.Id);
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("20,*") };
-        if (chapter.Pages.Count > 1)
+        if (chapter.HasSubPages)
         {
             var chevron = new Border
             {
@@ -339,12 +341,13 @@ public sealed class HelpWindow : Window
         };
         Grid.SetColumn(title, 1);
         grid.Children.Add(title);
-        var intro = chapter.Pages[0];
-        var row = ClickRow(grid, intro == _page, () => Show(intro), new Thickness(4, 4, 8, 4));
-        if (intro == _page) _currentTocRow = row;
+        // 장 이름: 첫 쪽을 열고 펼친다. 세부 쪽을 보는 동안에도 장 줄을 칠해 둔다.
+        var first = chapter.Pages[0];
+        var row = ClickRow(grid, mine, () => Show(first), new Thickness(4, 4, 8, 4));
+        if (mine && !chapter.HasSubPages) _currentTocRow = row;
         _toc.Children.Add(row);
-        if (!open) return;
-        foreach (var page in chapter.Pages.Skip(1))
+        if (!open || !chapter.HasSubPages) return;
+        foreach (var page in chapter.Pages)
         {
             var p = page;
             var text = new TextBlock
@@ -407,7 +410,7 @@ public sealed class HelpWindow : Window
         _firstHit = null;
         _body.Children.Clear();
 
-        if (page.Chapter.Pages[0] != page)
+        if (page.Chapter.HasSubPages)
         {
             var crumb = Text(new[] { new HelpRun { T = page.Chapter.Title } }, Gold, AppTheme.SmallFontSize, bold: true);
             crumb.Cursor = HandCursor;
@@ -415,13 +418,26 @@ public sealed class HelpWindow : Window
             crumb.Margin = new Thickness(0, 0, 0, 4);
             _body.Children.Add(crumb);
         }
+        // 장 머리말 글은 첫 세부 쪽 맨 위에(홈페이지와 같음).
+        if (page.Intro is { Length: > 0 } intro)
+        {
+            var stack = new StackPanel();
+            foreach (var block in intro) stack.Children.Add(Block(block, BodyBrush));
+            _body.Children.Add(new Border
+            {
+                BorderBrush = AppTheme.BorderBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(0, 0, 0, 10),
+                Margin = new Thickness(0, 0, 0, 18),
+                Child = stack,
+            });
+        }
         var title = Text(new[] { new HelpRun { T = page.Title } }, AppTheme.TextBrush, 24, bold: true);
         title.Margin = new Thickness(0, 0, 0, 14);
         _body.Children.Add(title);
 
         foreach (var block in page.Blocks) _body.Children.Add(Block(block, BodyBrush));
 
-        if (page.Chapter.Pages[0] == page && page.Chapter.Pages.Count > 1) _body.Children.Add(ChapterContents(page.Chapter));
         _body.Children.Add(Pager(page));
 
         var hit = _firstHit;
@@ -670,30 +686,6 @@ public sealed class HelpWindow : Window
         };
     }
 
-    /// <summary>장 머리말 쪽 아래 "이 장의 내용" 목록(홈페이지와 같음).</summary>
-    private Control ChapterContents(HelpChapter chapter)
-    {
-        var stack = new StackPanel { Spacing = 4 };
-        stack.Children.Add(new TextBlock { Text = UiStrings.Help_ChapterContents, Foreground = Gold, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold, Margin = new Thickness(0, 0, 0, 4) });
-        foreach (var page in chapter.Pages.Skip(1))
-        {
-            var p = page;
-            var t = new TextBlock { Text = page.Title, Foreground = LinkBrush, Cursor = HandCursor, FontSize = BodySize };
-            t.PointerPressed += (_, e) => { e.Handled = true; Show(p); };
-            stack.Children.Add(t);
-        }
-        return new Border
-        {
-            Background = SoftBrush,
-            BorderBrush = AppTheme.BorderBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(16, 12),
-            Margin = new Thickness(0, 6, 0, 0),
-            Child = stack,
-        };
-    }
-
     private Control Pager(HelpPage page)
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*"), Margin = new Thickness(0, 24, 0, 0) };
@@ -863,6 +855,8 @@ internal sealed class HelpChapter
     public string Id { get; set; } = "";
     public string Title { get; set; } = "";
     public List<HelpPage> Pages { get; set; } = new();
+    /// <summary>세부 항목(h3) 쪽들이 있는 장인지(없으면 장 하나가 장 id의 한 쪽).</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public bool HasSubPages => Pages[0].Id != Id;
 }
 
 internal sealed class HelpPage
@@ -870,6 +864,8 @@ internal sealed class HelpPage
     public string Id { get; set; } = "";
     public string Title { get; set; } = "";
     public HelpBlock[] Blocks { get; set; } = [];
+    /// <summary>장 머리말 글(그 장 첫 세부 쪽에만, 제목 위에 보임).</summary>
+    public HelpBlock[]? Intro { get; set; }
     /// <summary>검색용 본문 글자.</summary>
     public string Text { get; set; } = "";
     [System.Text.Json.Serialization.JsonIgnore] public HelpChapter Chapter { get; set; } = null!;
