@@ -47,7 +47,7 @@
 <h2>Guide</h2>
 <ol>
 <li><a href="#featured">Key features</a>
-<ol><li><a href="#featured-number-field">One number field, three ways to change it</a></li><li><a href="#featured-ai-draw">Ask in words, and the AI draws on your canvas</a></li></ol>
+<ol><li><a href="#featured-number-field">One number field, three ways to change it</a></li><li><a href="#featured-ai-draw">Ask in words, and the AI draws on your canvas</a></li><li><a href="#featured-effects">Stack effects on one sprite and turn it into an animation</a></li><li><a href="#featured-clip">Apply effects to other effects only</a></li><li><a href="#featured-palette-web">Add palettes in a few clicks</a></li><li><a href="#featured-palette-convert">Restyle a sprite with a palette</a></li><li><a href="#featured-skins">Easy skin management</a></li><li><a href="#featured-skins-tiles">Skins in practice: blocks, tiles and items in one file</a></li><li><a href="#featured-pivot">Pivots carry straight into Unity</a></li><li><a href="#featured-export">Export skins your way, manage the files as one</a></li></ol>
 </li>
 <li><a href="#start">Getting started</a>
 <ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li></ol>
@@ -98,6 +98,82 @@
 </ol>
 <div class="note"><p>In our testing, <strong>Codex's Astra model</strong> (gpt-6-astra) drew the best results. See the <a href="#ai">AI chat</a> chapter for details.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
+
+<h3 id="featured-effects">Stack effects on one sprite and turn it into an animation</h3>
+<p>Stack as many effects as you like — outline, shadow, shine, shake, explosion, fade and more. They're layered on without changing your pixels, so you can toggle or reorder them anytime, and saving bakes the result into the sheet.</p>
+<ol class="core-steps">
+<li><strong>Open the effects window</strong><span>Right-click the layer name in the timeline and choose <strong>Effects…</strong>.</span></li>
+<li><strong>Pick and stack effects</strong><span>Double-click a live-preview effect card or drag it into the list. Effects stack from the top of the list down, with a before/after preview.</span></li>
+<li><strong>Set the frame range</strong><span>Drag in the frame strip under the preview to set each effect's range. Frame extension can add the animation frames for you.</span></li>
+</ol>
+<div class="note"><p>Effect types and settings are covered in <a href="#screen-layer-effects">Layer effects</a>.</p></div>
+<figure class="core-media wide guide-media"><video src="../assets/feature-effects.mp4" poster="../assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Adding several effects to a barrel sprite in the effects window, setting frame ranges, and playing the animation" width="1280" height="720"></video></figure>
+
+<h3 id="featured-clip">Apply effects to other effects only</h3>
+<p>Turn on <strong>Clip to effect above</strong> under <strong>Apply to</strong> in an effect's settings, and that effect applies only to the pixels the effect above it produced — not to the original sprite. For example, clip a color overlay under an outline to paint just the outline with a gradient while the sprite stays untouched.</p>
+<ol class="core-steps">
+<li><strong>Add a base effect</strong><span>Start with an effect that creates new pixels, such as outline or reflection.</span></li>
+<li><strong>Add an effect right below it</strong><span>Put the effect you want on top of it — color overlay, shine, afterimage and so on — directly below the base effect.</span></li>
+<li><strong>Turn on Clip to effect above</strong><span>In the lower effect's settings, turn on <strong>Apply to &gt; Clip to effect above</strong>. It shows indented in the list and the timeline.</span></li>
+</ol>
+<div class="note"><p>Save a base effect together with its clipped effects in the <strong>Custom</strong> tab of the effect types to reuse it later.</p></div>
+<figure class="core-media wide guide-media"><video src="../assets/feature-clip.mp4" poster="../assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Turning on Clip to effect above for the lower effect in the effects window, so it applies only to the pixels of the effect above" width="1280" height="688"></video></figure>
+
+<h3 id="featured-palette-web">Add palettes in a few clicks</h3>
+<p>Browse the <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">Lospec palette list</a> — palettes made by pixel artists around the world — right inside the app and import them. Each palette comes with example art drawn in its colors.</p>
+<ol class="core-steps">
+<li><strong>Open Palette web</strong><span>Choose <strong>Palette web (Lospec)…</strong> from the menu button on a palette header.</span></li>
+<li><strong>Browse</strong><span>Sort by popular or newest and filter by color count or tag (e.g. gameboy, pico8). Type a palette name to find it right away.</span></li>
+<li><strong>Import</strong><span><strong>Use as palette</strong> replaces it, or <strong>Add to current palette</strong> adds only the colors that are missing. You can keep several palettes stacked.</span></li>
+</ol>
+<div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required; palette copyrights belong to their authors)</p></div>
+<figure class="core-media wide guide-media"><video src="../assets/feature-palette.mp4" poster="../assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette" width="1280" height="688"></video></figure>
+
+<h3 id="featured-palette-convert">Restyle a sprite with a palette</h3>
+<p>Replace every color in a sprite with the nearest color in a chosen palette, in one step. Try the same sprite in a different mood, or bring a whole game onto one palette.</p>
+<ol class="core-steps">
+<li><strong>Pick a palette</strong><span>Open the palette with the colors you want — palettes imported from Lospec work too.</span></li>
+<li><strong>Open Convert to palette colors</strong><span>Choose <strong>Convert to palette colors…</strong> from that palette's menu button.</span></li>
+<li><strong>Choose a target and dithering, then OK</strong><span>Pick the current cel, all frames of the current layer, or all layers and frames, and optionally turn on dithering (Bayer 4×4). Check the before/after preview; one undo reverts it.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel" width="1280" height="688"></video></figure>
+
+<h3 id="featured-skins">Easy skin management</h3>
+<p>Split a character into parts like head, body and arms, draw several skins for each, and swap them with one click. Cells left empty in other skins inherit the first skin's art, so you only redraw the parts that change.</p>
+<ol class="core-steps">
+<li><strong>Create a group and parts</strong><span>Split the character with a new group (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>) and new parts (<kbd>Shift</kbd>+<kbd>P</kbd>).</span></li>
+<li><strong>Add skins and draw</strong><span>Add skins from the skin chip in the timeline or the <strong>Skin manager</strong>, and draw only the parts that change.</span></li>
+<li><strong>Swap</strong><span>Pick a skin from the outfit row under the preview or the skin chip, or jump with <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd>.</span></li>
+</ol>
+<div class="note"><p>Skins can be exported as separate files per skin or as a Unity Sprite Library. See <a href="#parts">Part (group) layers · skins</a> for details.</p></div>
+<figure class="core-media wide guide-media"><video src="../assets/feature-skins.mp4" poster="../assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Swapping a character's hair skin with the skin chip and the Skin manager" width="1280" height="688"></video></figure>
+
+<h3 id="featured-skins-tiles">Skins in practice: blocks, tiles and items in one file</h3>
+<p>Skins aren't only for outfits. Put a tile and the items that drop from it in one group as parts, and make each material — wood, dirt, ore — a skin. Every variant then lives in one file at the same size and position.</p>
+<ol class="core-steps">
+<li><strong>Group them as parts</strong><span>Put the block tile and its items in one group as parts (e.g. tile, item_1, item_2, item_3).</span></li>
+<li><strong>One skin per material</strong><span>Make a skin per material like plank, dirt or ore, and every part in the group switches together. The Skin manager shows each part's look at a glance.</span></li>
+<li><strong>Export in one go</strong><span>Saving exports per-skin sheets or a Unity Sprite Library, so the game only needs to switch the skin name.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-skins-tiles.mp4" poster="../assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins" width="1280" height="688"></video></figure>
+
+<h3 id="featured-pivot">Pivots carry straight into Unity</h3>
+<p>The pivot you set in Gpixel is written into the Unity <code>.meta</code> sprite pivot when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game.</p>
+<ol class="core-steps">
+<li><strong>Pick the Pivot tool (K)</strong><span>Drag the anchor on the canvas, or use the 9-direction buttons and X/Y fields in the tool settings.</span></li>
+<li><strong>Choose the target</strong><span>With a part selected, that part's pivot changes; otherwise the project default pivot (all frames). Turn on <strong>Current frame only</strong> to set it for one frame.</span></li>
+<li><strong>Save to update Unity</strong><span>Saving writes the pivot into the <code>.meta</code> alongside the PNG sheet. Transform (<kbd>Ctrl</kbd>+<kbd>T</kbd>) also starts rotating around this pivot.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
+
+<h3 id="featured-export">Export skins your way, manage the files as one</h3>
+<p>In the <kbd>Ctrl</kbd>+<kbd>E</kbd> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
+<ol class="core-steps">
+<li><strong>Open the export window</strong><span><kbd>Ctrl</kbd>+<kbd>E</kbd>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
+<li><strong>Set layout, skins and splitting</strong><span>Choose cell layout and spacing, whether to pack all skins in one image or one file per skin, and whether to split by tag, part or skin. Unity Sprite Library and import settings (<code>.meta</code>) are set here too, and you can save favorite settings as presets.</span></li>
+<li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The file browser hides the exported PNGs and shows the single <code>.gpixel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="../assets/feature-export.mp4" poster="../assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="start">

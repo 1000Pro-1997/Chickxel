@@ -110,8 +110,9 @@ pre code { background: none; border: 0; padding: 0; }
 .core-steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .core-steps li { counter-increment: step; position: relative; padding: 14px 16px 14px 56px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 16px; }
 .core-steps li::before { content: counter(step); position: absolute; left: 16px; top: 14px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--accent); color: #17140a; font-size: 13px; font-weight: 800; }
-.core-steps strong { display: block; color: var(--ink-deep); font-size: 15.5px; letter-spacing: -.02em; }
-.core-steps span { display: block; margin-top: 3px; color: var(--body); font-size: 14px; line-height: 1.6; }
+.core-steps li > strong { display: block; color: var(--ink-deep); font-size: 15.5px; letter-spacing: -.02em; }
+.core-steps li > span { display: block; margin-top: 3px; color: var(--body); font-size: 14px; line-height: 1.6; }
+.core-steps li > span strong { color: var(--ink); }
 .core-media { margin: 0; width: 300px; padding: 10px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 22px; box-shadow: var(--shadow) 0 18px 40px -10px; }
 .core-media img { display: block; width: 100%; height: auto; border-radius: 14px; }
 .core-media video { display: block; width: 100%; height: auto; border-radius: 14px; background: #000; }
