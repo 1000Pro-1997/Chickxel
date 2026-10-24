@@ -6,7 +6,7 @@ namespace Gpixel.App;
 /// <summary>
 /// Aseprite식 타임라인: 행 = 레이어(위가 맨 위 레이어), 열 = 프레임, 위쪽 띠 = 태그(애니메이션).
 /// 셀 썸네일은 실시간으로 갱신된다. 도구 단추 없이 우클릭 메뉴(프레임 머리글·셀·레이어 이름·빈 곳), 마지막 프레임 뒤
-/// "다음 프레임" 칸(⧉ 복사해서 추가 · ＋ 빈 프레임 추가)과 마지막 행 아래 "다음 레이어" 줄(＋ 빈 레이어 추가 · ⧉ 마지막 레이어 복사해서 추가)로
+/// "다음 프레임" 칸(⧉ 복사해서 추가 · ＋ 빈 프레임 추가)과 마지막 행 아래 "다음 레이어" 줄(이름 칸 전체 ＋ 빈 레이어 추가 · 프레임 칸 전체 ⧉ 마지막 레이어 복사해서 추가)로
 /// 편집한다. 셀·프레임 복사는 고른 뒤 Ctrl/⌘+C·V.
 /// 선택은 한 번에 한 종류다: 프레임(머리글), 레이어(이름 칸), 효과(효과 줄 이름·상자), 셀 묶음(행 × 프레임). 고르지 않은 칸을 누른 채 끌면 사각형으로 여러 개를 고르고,
 /// Delete(⌫)는 고른 종류대로 프레임 삭제 · 레이어 삭제 · 효과 삭제 · 셀 그림 지우기다. 효과 이름을 끌면 효과 순서를 바꾸거나 다른 레이어로 옮긴다.
@@ -2161,14 +2161,20 @@ public sealed class TimelinePanel : UserControl
             return LayerAt(pos.Y) >= 0 && FxRowAt(pos.Y) is null ? false : null;
         }
 
-        /// <summary>"다음 레이어" 줄의 단추: 이름 칸 왼쪽 ＋(맨 아래에 새 레이어) · 첫 프레임 칸 ⧉(마지막 레이어 복사해서 추가).</summary>
+        /// <summary>
+        /// "다음 레이어" 줄의 단추: 이름 칸 전체 ＋(맨 아래에 새 레이어) · 프레임 칸 전체(첫 프레임 ~ 마지막 프레임 열 끝) ⧉(마지막 레이어 복사해서 추가).
+        /// "다음 프레임" 열과 만나는 칸은 단추가 아니다.
+        /// </summary>
         private enum GhostRowButton { None, Add, Copy }
+
+        /// <summary>"다음 레이어" 줄 ⧉ 띠에서 아이콘을 되풀이해 그리는 프레임 간격(1·11·21… 번째 칸).</summary>
+        private const int GhostCopyIconEvery = 10;
 
         private GhostRowButton GhostRowButtonAt(Avalonia.Point pos)
         {
-            if (Ctx.Project is null || !IsGhostRow(pos.Y)) return GhostRowButton.None;
-            if (pos.X >= 0 && pos.X < CellW) return GhostRowButton.Add;
-            return FrameAt(pos.X) == 0 ? GhostRowButton.Copy : GhostRowButton.None;
+            if (Ctx.Project is null || !IsGhostRow(pos.Y) || pos.X < 0) return GhostRowButton.None;
+            if (pos.X < NameW) return GhostRowButton.Add;
+            return Ctx.FrameCount > 0 && ContentX(pos.X) < _colT.Total ? GhostRowButton.Copy : GhostRowButton.None;
         }
 
         /// <summary>가장 가까운 보이는 행 번호.</summary>
@@ -2647,14 +2653,30 @@ public sealed class TimelinePanel : UserControl
                                         DrawFxRow(cy + CellH + k * FxH + s, rowLayer, k);
                     }
                 }
-                // "다음 레이어" 줄(마지막 행 아래): 첫 프레임 칸 ⧉ = 마지막 레이어 복사해서 추가. 나머지 칸과 "다음 프레임" 칸과 만나는 칸은 비운다.
+                // "다음 레이어" 줄(마지막 행 아래): 프레임 칸 전체가 ⧉ 한 단추 = 마지막 레이어 복사해서 추가. 아이콘은 10칸마다(1·11·21… 번째 칸),
+                // 그중 보이는 것이 없으면(좁은 화면을 스크롤) 처음으로 다 보이는 칸에도. "다음 프레임" 열과 만나는 칸은 비운다.
                 {
-                    int gy = top + _rowT.Total, gx = FrameX(0);
-                    if (gy < cellsClip.Bottom && gx < cellsClip.Right)
+                    int gy = top + _rowT.Total, x0 = FrameX(0), x1 = left + _colT.Total;
+                    if (frames > 0 && gy < cellsClip.Bottom && x0 < cellsClip.Right && x1 > cellsClip.Left)
                     {
-                        var r = new Rect(gx + 1, gy + 1, CellW - 2, CellH - 2);
-                        g.FillRectangle(GhostBrush, r);
-                        DrawGhostButton(g, r, VectorIcon.Copy, _rowHover == GhostRowButton.Copy);
+                        bool hovered = _rowHover == GhostRowButton.Copy;
+                        g.FillRectangle(hovered ? GhostHoverBrush : GhostBrush, new Rect(x0 + 1, gy + 1, Math.Max(0, x1 - x0 - 2), CellH - 2));
+                        var ink = hovered ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+                        Rect IconCell(int f) => new(FrameX(f) + FrameW(f) - CellW + 1, gy + 1, CellW - 2, CellH - 2);
+                        bool anyShown = false;
+                        for (int f = 0; f < frames; f += GhostCopyIconEvery)
+                        {
+                            var r = IconCell(f);
+                            if (r.Right <= cellsClip.Left || r.Left >= cellsClip.Right) continue;
+                            VectorIcons.Draw(g, VectorIcon.Copy, r, 12, ink);
+                            anyShown |= r.Left >= cellsClip.Left && r.Right <= cellsClip.Right;
+                        }
+                        if (!anyShown)
+                        {
+                            int f = Math.Clamp(_colT.IndexAt(ContentX(cellsClip.Left), exact: false), 0, frames - 1);
+                            if (FrameX(f) < cellsClip.Left && f + 1 < frames) f++;
+                            if (f % GhostCopyIconEvery != 0) VectorIcons.Draw(g, VectorIcon.Copy, IconCell(f), 12, ink);
+                        }
                     }
                 }
                 // 셀 묶음(두 칸 이상) 둘레의 파란 테두리(한 칸이면 현재 칸 테두리가 그 표시)
@@ -2896,12 +2918,12 @@ public sealed class TimelinePanel : UserControl
                     }
                     else DrawNameBlock(y, row, l, layer);
                 }
-                // "다음 레이어" 줄: 이름 칸 왼쪽 ＋ = 맨 아래에 빈 레이어 추가
+                // "다음 레이어" 줄: 이름 칸 전체가 ＋ 단추 = 맨 아래에 빈 레이어 추가
                 {
                     int gy = top + _rowT.Total;
                     if (gy < namesClip.Bottom)
                     {
-                        var r = new Rect(1, gy + 1, CellW - 2, CellH - 2);
+                        var r = new Rect(1, gy + 1, NameW - 3, CellH - 2);
                         g.FillRectangle(GhostBrush, r);
                         DrawGhostButton(g, r, VectorIcon.Plus, _rowHover == GhostRowButton.Add);
                     }
