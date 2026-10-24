@@ -14,6 +14,7 @@ Gpixel itself is released under the MIT License (see `LICENSE`). Release builds 
 | [SQLitePCLRaw](https://github.com/ericsink/SQLitePCL.raw) | SQLite native bindings | Apache-2.0 |
 | [SQLite](https://sqlite.org) | Embedded database engine | Public domain |
 | [Lucide](https://lucide.dev) | Shapes of the line icons redrawn in `VectorIcons.cs` (eye, lock, copy, plus, minus, refresh, layers, file/folder plus, folder open, play, pause, dice, external link, arrows, move, chevrons, check, x, circle, square, diamond, triangle, grip, menu, star, heart, download, trash, pencil, corner arrows, book image, image, sparkles, messages square) | ISC |
+| [Simple Icons](https://simpleicons.org) | Discord logo path on the website's Discord buttons (the logo is a trademark of Discord Inc.) | CC0 1.0 |
 | DawnBringer 32 palette by DawnBringer | Default palette colors | Freely shared by the author |
 
 ## Online content
