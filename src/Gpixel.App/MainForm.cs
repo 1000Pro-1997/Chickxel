@@ -1255,7 +1255,11 @@ public sealed class MainForm : Window, Ai.IAiHost
         Dispatcher.UIThread.Post(() =>
         {
             _closePending = false;
-            if (!ConfirmCloseAll()) return;
+            if (!ConfirmCloseAll())
+            {
+                App.RestartOnExit = false;
+                return;
+            }
             _closeConfirmed = true;
             _play?.Close();
             ShutdownChat();
@@ -1280,6 +1284,13 @@ public sealed class MainForm : Window, Ai.IAiHost
         ShutdownChat();
         ShutdownHistory();
         SaveSettings();
+        Close();
+    }
+
+    /// <summary>앱을 다시 시작한다: 평소처럼 닫고(저장 안 한 문서는 묻고, 취소하면 그대로 둠) 끝난 뒤 새로 띄운다(<see cref="Program"/>).</summary>
+    private void RestartApp()
+    {
+        App.RestartOnExit = true;
         Close();
     }
 
@@ -1669,7 +1680,10 @@ public sealed class MainForm : Window, Ai.IAiHost
         _settings.Shortcuts = custom.Count > 0 ? custom : null;
         ApplyShortcuts();
         _settings.Save();
-        if (languageChanged) Ui.Info(this, UiStrings.Language_RestartNotice);
+        if ((languageChanged || dlg.CurrentLanguageImported)
+            && Ui.Ask(this, UiStrings.Language_RestartNotice, "Gpixel", MessageButtons.YesNo, MessageIcon.Question,
+                UiStrings.Language_RestartNow, UiStrings.Language_RestartLater) == DialogResult.Yes)
+            RestartApp();
     }
 
     /// <summary>시작 화면: 지금 문서를 닫는다(저장 안 한 변경은 메모리에 남김 — <see cref="CloseProject"/>).</summary>

@@ -30,7 +30,9 @@
   <data name="Language_ImportNone" xml:space="preserve"><value>No language columns to add. Put a language code (e.g. ja) in the first row, after the key cell.</value></data>
   <data name="Language_InvalidCodes" xml:space="preserve"><value>Skipped columns that are not valid language codes (letters, digits, - and _ only): {codes}</value></data>
   <data name="Language_UnknownKeys" xml:space="preserve"><value>Ignored {count} keys that Gpixel does not have.</value></data>
-  <data name="Language_RestartNotice" xml:space="preserve"><value>Display language changed. Restart Gpixel to apply it.</value></data>
+  <data name="Language_RestartNotice" xml:space="preserve"><value>Language settings changed. Restart Gpixel to apply them.</value></data>
+  <data name="Language_RestartNow" xml:space="preserve"><value>Restart now</value></data>
+  <data name="Language_RestartLater" xml:space="preserve"><value>Later</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve"><value>GitHub repository</value></data>
   <data name="S_AboutDialog_AboutDialog_2085099DF4" xml:space="preserve"><value>View open source notices</value></data>
   <data name="S_AboutDialog_AboutDialog_27606A6DB7" xml:space="preserve"><value> (development build)</value></data>

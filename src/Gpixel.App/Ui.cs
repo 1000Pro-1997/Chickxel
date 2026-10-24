@@ -351,9 +351,18 @@ public static class Ui
     public static void Warn(Visual? owner, string message, string? title = null)
         => Ask(owner, message, title ?? UiStrings.S_Ui_Warn_A8228BB7D9, MessageButtons.OK, MessageIcon.Warning);
 
-    /// <summary>메시지 상자(WinForms MessageBox.Show 대신). 창 닫기 단추는 취소(YesNo는 아니요)다.</summary>
-    public static DialogResult Ask(Visual? owner, string message, string title, MessageButtons buttons, MessageIcon icon = MessageIcon.None)
-        => new MessageDialog(message, title, buttons, icon).ShowDialog(owner);
+    /// <summary>
+    /// 메시지 상자(WinForms MessageBox.Show 대신). 창 닫기 단추는 취소(YesNo는 아니요)다.
+    /// <paramref name="okText"/>·<paramref name="cancelText"/> = 확인(예)·취소(아니요) 단추 글자를 바꿀 때.
+    /// </summary>
+    public static DialogResult Ask(Visual? owner, string message, string title, MessageButtons buttons, MessageIcon icon = MessageIcon.None,
+        string? okText = null, string? cancelText = null)
+    {
+        var dialog = new MessageDialog(message, title, buttons, icon);
+        if (okText is not null) dialog.SetOkText(okText);
+        if (cancelText is not null) dialog.SetCancelText(cancelText);
+        return dialog.ShowDialog(owner);
+    }
 
     // ───────────── 파일 대화상자 ─────────────
 
@@ -569,6 +578,10 @@ internal sealed class MessageDialog : DialogBase
         _noOnClose = buttons == MessageButtons.YesNo;
         Opened += (_, _) => (OkButton.IsVisible ? OkButton : CancelButtonControl).Focus();
     }
+
+    public void SetOkText(string text) => OkButton.Content = text;
+
+    public void SetCancelText(string text) => CancelButtonControl.Content = text;
 
     /// <summary>메시지 상자 본문: 왼쪽 아이콘 동그라미(아이콘 없으면 생략) + 고를 수 있는 메시지 글.</summary>
     internal static Control MessageRow(string message, MessageIcon icon)

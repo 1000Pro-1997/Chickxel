@@ -38,7 +38,9 @@
   <data name="Language_ImportNone" xml:space="preserve"><value>넣을 언어 열이 없습니다. 첫 줄의 key 다음 칸에 언어 코드(예: ja)를 적으세요.</value></data>
   <data name="Language_InvalidCodes" xml:space="preserve"><value>언어 코드로 쓸 수 없어 건너뛴 열(영문자·숫자·-·_만): {codes}</value></data>
   <data name="Language_UnknownKeys" xml:space="preserve"><value>Gpixel에 없는 키 {count}개는 무시했습니다.</value></data>
-  <data name="Language_RestartNotice" xml:space="preserve"><value>화면 언어를 바꿨습니다. Gpixel을 다시 시작하면 적용됩니다.</value></data>
+  <data name="Language_RestartNotice" xml:space="preserve"><value>화면 언어 설정을 바꿨습니다. Gpixel을 다시 시작해야 적용됩니다.</value></data>
+  <data name="Language_RestartNow" xml:space="preserve"><value>지금 다시 시작</value><comment>저장 안 한 문서가 있으면 닫을 때처럼 묻는다.</comment></data>
+  <data name="Language_RestartLater" xml:space="preserve"><value>나중에</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Gpixel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>

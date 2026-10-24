@@ -150,6 +150,9 @@ public sealed class PreferencesDialog : DialogBase
         ? _languages[_language.SelectedIndex].Code
         : UiLanguage.Current;
 
+    /// <summary>지금 쓰는 언어의 CSV를 새로 넣었는지(같은 언어를 계속 써도 다시 시작해야 바뀜).</summary>
+    public bool CurrentLanguageImported { get; private set; }
+
     private void FillLanguages(string select)
     {
         _languages = UiLanguage.Available();
@@ -195,6 +198,7 @@ public sealed class PreferencesDialog : DialogBase
         // 넣은 언어가 하나면 바로 고른다(내장 언어를 덮은 것이면 고른 것을 그대로 둠).
         var pick = result.Languages.Count == 1 && !UiLanguage.IsBuiltIn(result.Languages[0].Code) ? result.Languages[0].Code : Language;
         FillLanguages(pick);
+        CurrentLanguageImported |= result.Languages.Any(l => string.Equals(l.Code, UiLanguage.Current, StringComparison.OrdinalIgnoreCase));
         _languageStatus.Text = string.Join("\n", lines);
     }
 

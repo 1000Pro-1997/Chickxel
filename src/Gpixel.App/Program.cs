@@ -35,6 +35,8 @@ public sealed class App : Application
     public static StartupArgs Args { get; set; } = new(null, null);
     /// <summary>시작할 때 읽은 설정(화면 언어를 정하려고 창보다 먼저 읽음). 메인 창이 그대로 쓴다.</summary>
     public static AppSettings Settings { get; set; } = new();
+    /// <summary>창이 닫힌 뒤 앱을 새로 띄울지(화면 언어를 바꾸고 "지금 다시 시작"). 닫기를 취소하면 다시 false.</summary>
+    public static bool RestartOnExit { get; set; }
 
     public override void Initialize()
     {
@@ -77,7 +79,26 @@ static class Program
         if (App.Settings.Language is not { } language || !languages.Any(l => string.Equals(l.Code, language, StringComparison.OrdinalIgnoreCase)))
             App.Settings.Language = Localization.UiLanguage.Detect(System.Globalization.CultureInfo.CurrentUICulture, languages);
         Localization.UiLanguage.Apply(App.Settings.Language);
-        return CrashGuard.Run(BuildAvaloniaApp(), args);
+        int exitCode = CrashGuard.Run(BuildAvaloniaApp(), args);
+        if (App.RestartOnExit) Relaunch();
+        return exitCode;
+    }
+
+    /// <summary>같은 실행 파일로 새로 띄운다(빌드 출력을 <c>dotnet Gpixel.App.dll</c>로 돌렸으면 dll을 인수로).</summary>
+    private static void Relaunch()
+    {
+        if (Environment.ProcessPath is not { } exe) return;
+        var psi = new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false };
+        if (string.Equals(Path.GetFileNameWithoutExtension(exe), "dotnet", StringComparison.OrdinalIgnoreCase))
+            psi.ArgumentList.Add(typeof(Program).Assembly.Location);
+        try
+        {
+            System.Diagnostics.Process.Start(psi)?.Dispose();
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // 새로 띄우지 못하면 그냥 끝난다(설정은 이미 저장돼 다음 실행에 적용됨).
+        }
     }
 
     public static AppBuilder BuildAvaloniaApp()
