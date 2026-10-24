@@ -72,7 +72,7 @@
   });
 
   // 목차: 장마다 접기 단추를 붙이고 처음에는 모두 접는다.
-  var groups = Array.prototype.slice.call(toc.querySelectorAll(':scope > ol > li'));
+  var groups = Array.prototype.slice.call(toc.querySelectorAll(':scope > ol > li:not(.toc-label)'));
   groups.forEach(function (li) {
     var sub = li.querySelector('ol');
     var link = li.querySelector('a');
@@ -80,7 +80,13 @@
     row.className = 'toc-row';
     li.insertBefore(row, link);
     row.appendChild(link);
-    if (!sub) return;
+    if (!sub) {
+      // 세부 항목이 없는 장도 접기 단추 자리만큼 띄워 이름을 맞춘다.
+      var spacer = document.createElement('span');
+      spacer.className = 'toc-toggle toc-spacer';
+      row.insertBefore(spacer, link);
+      return;
+    }
     var button = document.createElement('button');
     button.type = 'button';
     button.className = 'toc-toggle';

@@ -29,7 +29,7 @@
 <a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="../assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
 <nav class="nav">
 <a href="index.html">Home</a>
-<a class="hide-sm" href="#featured">Key features</a>
+<a class="hide-sm" href="#featured-common">Key features</a>
 <a href="guide.html" aria-current="page">Guide</a>
 <a class="hide-sm" href="index.html#download">Download</a>
 <a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
@@ -46,9 +46,27 @@
 <aside class="toc">
 <h2>Guide</h2>
 <ol>
-<li><a href="#featured">Key features</a>
-<ol><li><a href="#featured-number-field">One number field, three ways to change it</a></li><li><a href="#featured-ai-draw">Ask in words, and the AI draws on your canvas</a></li><li><a href="#featured-effects">Stack effects on one sprite and turn it into an animation</a></li><li><a href="#featured-clip">Apply effects to other effects only</a></li><li><a href="#featured-palette-web">Add palettes in a few clicks</a></li><li><a href="#featured-palette-convert">Restyle a sprite with a palette</a></li><li><a href="#featured-skins">Easy skin management</a></li><li><a href="#featured-skins-tiles">Skins in practice: blocks, tiles and items in one file</a></li><li><a href="#featured-pivot">Pivots carry straight into Unity</a></li><li><a href="#featured-export">Export skins your way, manage the files as one</a></li></ol>
+<li class="toc-label">Key features</li>
+<li><a href="#featured-common">Common controls</a>
+<ol><li><a href="#featured-number-field">Changing number fields</a></li></ol>
 </li>
+<li><a href="#featured-ai-draw">Drawing with AI</a>
+</li>
+<li><a href="#featured-anim">Animation effects</a>
+<ol><li><a href="#featured-effects">Stacking effects</a></li><li><a href="#featured-clip">Effect clipping</a></li></ol>
+</li>
+<li><a href="#featured-palettes">Using palettes</a>
+<ol><li><a href="#featured-palette-web">Importing Lospec palettes</a></li><li><a href="#featured-palette-convert">Recoloring with a palette</a></li></ol>
+</li>
+<li><a href="#featured-skin-set">Skins</a>
+<ol><li><a href="#featured-skins">Managing skins</a></li><li><a href="#featured-skins-tiles">Tile and item skins</a></li></ol>
+</li>
+<li><a href="#featured-unity">Unity integration</a>
+<ol><li><a href="#featured-pivot">Pivot sync</a></li></ol>
+</li>
+<li><a href="#featured-export">Export</a>
+</li>
+<li class="toc-label">Manual</li>
 <li><a href="#start">Getting started</a>
 <ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li></ol>
 </li>
@@ -76,11 +94,11 @@
 </ol>
 </aside>
 <div class="content">
-<section class="doc" id="featured">
-<h2>Key features</h2>
-<p>The features you'll use most, shown in action.</p>
+<section class="doc" id="featured-common">
+<h2>Common controls</h2>
+<p>Basic controls that work the same everywhere in the app.</p>
 
-<h3 id="featured-number-field">One number field, three ways to change it</h3>
+<h3 id="featured-number-field">Changing number fields</h3>
 <p>Size, coordinates, FPS, zoom, effect strength — every number field in the app supports the same three methods. Use whichever fits the moment.</p>
 <ol class="core-steps">
 <li><strong>Click and type</strong><span>Click the field and type a number. Clicking elsewhere confirms it.</span></li>
@@ -88,8 +106,10 @@
 <li><strong>Right-click and pick</strong><span>Right-click the field for a list of common and recent values. The current value is marked with a dot.</span></li>
 </ol>
 <figure class="core-media guide-media"><img src="../assets/feature-number-field.gif" alt="Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list" width="512" height="1031" loading="lazy"></figure>
+</section>
 
-<h3 id="featured-ai-draw">Ask in words, and the AI draws on your canvas</h3>
+<section class="doc" id="featured-ai-draw">
+<h2>Drawing with AI</h2>
 <p>Claude Code or Codex on your own computer drives Gpixel with your own account (no API key). Say something like "draw a 32×32 wooden barrel" and it draws right into the open image.</p>
 <ol class="core-steps">
 <li><strong>Open AI chat</strong><span><kbd>Ctrl</kbd>+<kbd>L</kbd> or the AI button in the top bar. Pick the Claude or Codex tab and log in once.</span></li>
@@ -98,8 +118,13 @@
 </ol>
 <div class="note"><p>In our testing, <strong>Codex's Astra model</strong> (gpt-6-astra) drew the best results. See the <a href="#ai">AI chat</a> chapter for details.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
+</section>
 
-<h3 id="featured-effects">Stack effects on one sprite and turn it into an animation</h3>
+<section class="doc" id="featured-anim">
+<h2>Animation effects</h2>
+<p>Layer effects on without touching your pixels to create motion.</p>
+
+<h3 id="featured-effects">Stacking effects</h3>
 <p>Stack as many effects as you like — outline, shadow, shine, shake, explosion, fade and more. They're layered on without changing your pixels, so you can toggle or reorder them anytime, and saving bakes the result into the sheet.</p>
 <ol class="core-steps">
 <li><strong>Open the effects window</strong><span>Right-click the layer name in the timeline and choose <strong>Effects…</strong>.</span></li>
@@ -109,7 +134,7 @@
 <div class="note"><p>Effect types and settings are covered in <a href="#screen-layer-effects">Layer effects</a>.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-effects.mp4" poster="../assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Adding several effects to a barrel sprite in the effects window, setting frame ranges, and playing the animation" width="1280" height="720"></video></figure>
 
-<h3 id="featured-clip">Apply effects to other effects only</h3>
+<h3 id="featured-clip">Effect clipping</h3>
 <p>Turn on <strong>Clip to effect above</strong> under <strong>Apply to</strong> in an effect's settings, and that effect applies only to the pixels the effect above it produced — not to the original sprite. For example, clip a color overlay under an outline to paint just the outline with a gradient while the sprite stays untouched.</p>
 <ol class="core-steps">
 <li><strong>Add a base effect</strong><span>Start with an effect that creates new pixels, such as outline or reflection.</span></li>
@@ -118,8 +143,13 @@
 </ol>
 <div class="note"><p>Save a base effect together with its clipped effects in the <strong>Custom</strong> tab of the effect types to reuse it later.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-clip.mp4" poster="../assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Turning on Clip to effect above for the lower effect in the effects window, so it applies only to the pixels of the effect above" width="1280" height="688"></video></figure>
+</section>
 
-<h3 id="featured-palette-web">Add palettes in a few clicks</h3>
+<section class="doc" id="featured-palettes">
+<h2>Using palettes</h2>
+<p>Import palettes and fit your sprite's colors to them.</p>
+
+<h3 id="featured-palette-web">Importing Lospec palettes</h3>
 <p>Browse the <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">Lospec palette list</a> — palettes made by pixel artists around the world — right inside the app and import them. Each palette comes with example art drawn in its colors.</p>
 <ol class="core-steps">
 <li><strong>Open Palette web</strong><span>Choose <strong>Palette web (Lospec)…</strong> from the menu button on a palette header.</span></li>
@@ -129,7 +159,7 @@
 <div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required; palette copyrights belong to their authors)</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-palette.mp4" poster="../assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette" width="1280" height="688"></video></figure>
 
-<h3 id="featured-palette-convert">Restyle a sprite with a palette</h3>
+<h3 id="featured-palette-convert">Recoloring with a palette</h3>
 <p>Replace every color in a sprite with the nearest color in a chosen palette, in one step. Try the same sprite in a different mood, or bring a whole game onto one palette.</p>
 <ol class="core-steps">
 <li><strong>Pick a palette</strong><span>Open the palette with the colors you want — palettes imported from Lospec work too.</span></li>
@@ -137,8 +167,13 @@
 <li><strong>Choose a target and dithering, then OK</strong><span>Pick the current cel, all frames of the current layer, or all layers and frames, and optionally turn on dithering (Bayer 4×4). Check the before/after preview; one undo reverts it.</span></li>
 </ol>
 <figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel" width="1280" height="688"></video></figure>
+</section>
 
-<h3 id="featured-skins">Easy skin management</h3>
+<section class="doc" id="featured-skin-set">
+<h2>Skins</h2>
+<p>Draw several looks per part and swap them.</p>
+
+<h3 id="featured-skins">Managing skins</h3>
 <p>Split a character into parts like head, body and arms, draw several skins for each, and swap them with one click. Cells left empty in other skins inherit the first skin's art, so you only redraw the parts that change.</p>
 <ol class="core-steps">
 <li><strong>Create a group and parts</strong><span>Split the character with a new group (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>) and new parts (<kbd>Shift</kbd>+<kbd>P</kbd>).</span></li>
@@ -148,7 +183,7 @@
 <div class="note"><p>Skins can be exported as separate files per skin or as a Unity Sprite Library. See <a href="#parts">Part (group) layers · skins</a> for details.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-skins.mp4" poster="../assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Swapping a character's hair skin with the skin chip and the Skin manager" width="1280" height="688"></video></figure>
 
-<h3 id="featured-skins-tiles">Skins in practice: blocks, tiles and items in one file</h3>
+<h3 id="featured-skins-tiles">Tile and item skins</h3>
 <p>Skins aren't only for outfits. Put a tile and the items that drop from it in one group as parts, and make each material — wood, dirt, ore — a skin. Every variant then lives in one file at the same size and position.</p>
 <ol class="core-steps">
 <li><strong>Group them as parts</strong><span>Put the block tile and its items in one group as parts (e.g. tile, item_1, item_2, item_3).</span></li>
@@ -156,8 +191,13 @@
 <li><strong>Export in one go</strong><span>Saving exports per-skin sheets or a Unity Sprite Library, so the game only needs to switch the skin name.</span></li>
 </ol>
 <figure class="core-media wide guide-media"><video src="../assets/feature-skins-tiles.mp4" poster="../assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins" width="1280" height="688"></video></figure>
+</section>
 
-<h3 id="featured-pivot">Pivots carry straight into Unity</h3>
+<section class="doc" id="featured-unity">
+<h2>Unity integration</h2>
+<p>Values you set in Gpixel carry straight into Unity.</p>
+
+<h3 id="featured-pivot">Pivot sync</h3>
 <p>The pivot you set in Gpixel is written into the Unity <code>.meta</code> sprite pivot when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game.</p>
 <ol class="core-steps">
 <li><strong>Pick the Pivot tool (K)</strong><span>Drag the anchor on the canvas, or use the 9-direction buttons and X/Y fields in the tool settings.</span></li>
@@ -165,8 +205,10 @@
 <li><strong>Save to update Unity</strong><span>Saving writes the pivot into the <code>.meta</code> alongside the PNG sheet. Transform (<kbd>Ctrl</kbd>+<kbd>T</kbd>) also starts rotating around this pivot.</span></li>
 </ol>
 <figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
+</section>
 
-<h3 id="featured-export">Export skins your way, manage the files as one</h3>
+<section class="doc" id="featured-export">
+<h2>Export</h2>
 <p>In the <kbd>Ctrl</kbd>+<kbd>E</kbd> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
 <ol class="core-steps">
 <li><strong>Open the export window</strong><span><kbd>Ctrl</kbd>+<kbd>E</kbd>. A preview of the sheets and the list of files to be written appear on the right.</span></li>

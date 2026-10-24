@@ -98,15 +98,18 @@ pre code { background: none; border: 0; padding: 0; }
 .download .get { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13.5px; font-weight: 700; color: var(--blue); }
 .note-line { margin: 20px 0 0; color: var(--muted); font-size: 14px; }
 
-/* 핵심 기능: 글(왼쪽) + 움직이는 화면(오른쪽), 항목마다 좌우를 번갈아 둔다 */
+/* 대표 기능(첫 화면): 제목과 움직이는 화면만 담은 카드 격자. 누르면 사용 가이드의 그 쪽이 열린다 */
 .core { padding-top: 24px; }
-.core-list { display: flex; flex-direction: column; gap: 28px; }
-.core-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: center; padding: 36px 40px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 28px; }
-.core-item:nth-child(even) { grid-template-columns: auto minmax(0, 1fr); }
-.core-item:nth-child(even) .core-media { order: -1; }
-.core-tag { display: inline-block; margin-bottom: 14px; padding: 5px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--gold); font-size: 12px; font-weight: 750; }
-.core-text h3 { margin: 0 0 12px; font-size: clamp(24px, 2.6vw, 32px); font-weight: 650; line-height: 1.2; letter-spacing: -.045em; color: var(--ink-deep); }
-.core-text > p { margin: 0 0 22px; color: var(--lead); font-size: 16px; line-height: 1.7; max-width: 560px; }
+.core-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.core-card { display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 20px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 22px; color: inherit; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.core-card:hover { text-decoration: none; border-color: var(--line); box-shadow: var(--shadow) 0 14px 34px -10px; transform: translateY(-2px); }
+.core-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 4px; }
+.core-card-head h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.035em; color: var(--ink-deep); }
+.core-card-media { aspect-ratio: 16 / 9; overflow: hidden; border-radius: 14px; background: #08090b; border: 1px solid var(--line-soft); }
+.core-card-media video, .core-card-media img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.core-tag { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--gold); font-size: 12px; font-weight: 750; }
+.toc li.toc-label { margin: 18px 12px 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.toc li.toc-label:first-child { margin-top: 0; }
 .core-steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .core-steps li { counter-increment: step; position: relative; padding: 14px 16px 14px 56px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 16px; }
 .core-steps li::before { content: counter(step); position: absolute; left: 16px; top: 14px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--accent); color: #17140a; font-size: 13px; font-weight: 800; }
@@ -116,10 +119,7 @@ pre code { background: none; border: 0; padding: 0; }
 .core-media { margin: 0; width: 300px; padding: 10px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 22px; box-shadow: var(--shadow) 0 18px 40px -10px; }
 .core-media img { display: block; width: 100%; height: auto; border-radius: 14px; }
 .core-media video { display: block; width: 100%; height: auto; border-radius: 14px; background: #000; }
-.core-media.wide { width: 560px; }
 .guide-media.wide { width: 100%; max-width: 760px; }
-.core-note { margin: 16px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); border: 1px solid rgba(255, 208, 47, .25); color: #efdfae; font-size: 14px; }
-.core-note strong { color: var(--accent); }
 .doc .core-steps { padding-left: 0; margin: 18px 0 0; }
 .doc .core-steps li { margin: 0; }
 .guide-media { margin: 24px 0 0; }
@@ -191,10 +191,7 @@ td { color: var(--body); }
 @media (max-width: 960px) {
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .features, .downloads { grid-template-columns: 1fr 1fr; }
-  .core-item, .core-item:nth-child(even) { grid-template-columns: 1fr; gap: 28px; padding: 28px 24px; }
-  .core-item:nth-child(even) .core-media { order: 0; }
-  .core-media { width: min(300px, 100%); justify-self: center; }
-  .core-media.wide { width: 100%; }
+  .core-media { width: min(300px, 100%); }
   .manual { grid-template-columns: 240px minmax(0, 1fr); }
   .content { padding: 32px 28px 64px; }
 }
@@ -209,7 +206,7 @@ td { color: var(--body); }
   .nav .hide-sm { display: none; }
   .lang select { padding: 7px 26px 7px 30px; font-size: 13px; }
   .hero { padding: 48px 0 48px; }
-  .features, .downloads { grid-template-columns: 1fr; }
+  .features, .downloads, .core-grid { grid-template-columns: 1fr; }
   .section { padding: 52px 0; }
   .section-title h2 { font-size: 28px; }
   body.guide-page { overflow: auto; }
