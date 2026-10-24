@@ -77,17 +77,17 @@ jobs:
                   continue
               if fence:
                   continue
-              heading = re.match(r"^ {0,3}#{2,6}\\s+(.+?)\\s*$", line)
+              heading = re.match(r"^ {0,3}#{2,6}\s+(.+?)\s*$", line)
               if not heading:
                   continue
-              title = re.sub(r"\\s+#+\\s*$", "", heading.group(1)).strip()
+              title = re.sub(r"\s+#+\s*$", "", heading.group(1)).strip()
               if title.lower() in ("english", "한국어", "korean"):
-                  headings.append("\\n**" + title + "**")
+                  headings.append("\n**" + title + "**")
               elif title:
                   headings.append("- " + title)
-          body = "\\n".join(headings).strip() or "소제목이 없습니다. 전체 업데이트 내역에서 확인해 주세요."
+          body = "\n".join(headings).strip() or "소제목이 없습니다. 전체 업데이트 내역에서 확인해 주세요."
           if len(body) > 3800:
-              body = body[:3750].rsplit("\\n", 1)[0] + "\\n\\n나머지 소제목은 전체 업데이트 내역에서 확인해 주세요."
+              body = body[:3750].rsplit("\n", 1)[0] + "\n\n나머지 소제목은 전체 업데이트 내역에서 확인해 주세요."
           downloads = []
           labels = {"Gpixel-windows-x64.zip": "Windows",
                     "Gpixel-macos-arm64.zip": "macOS Apple Silicon",
