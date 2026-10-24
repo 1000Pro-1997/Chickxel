@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide — Gpixel</title>
+<meta name="description" content="Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
+<meta property="og:title" content="Guide — Gpixel">
+<meta property="og:description" content="Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
+<meta property="og:image" content="https://1000pro-1997.github.io/GPixel/assets/screenshot-en.png">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
+<link rel="icon" href="../assets/icon-256.png">
+<link rel="stylesheet" href="../style.css">
+<script>
+// 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
+  if (want !== 'en') location.replace('../' + 'guide.html' + location.hash);
+})();
+</script>
+</head>
+<body>
+<header class="top">
+<div class="wrap">
+<a class="brand" href="index.html"><img class="pixel" src="../assets/icon.png" alt="">Gpixel</a>
+<nav>
+<a class="hide-sm" href="index.html#features">Features</a>
+<a href="index.html#download">Download</a>
+<a href="guide.html">Guide</a>
+<a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
+</nav>
+<label class="lang" title="Language"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="Language">
+<option value="ko">한국어</option>
+<option value="en" selected>English</option>
+</select></label>
+</div>
+</header>
+
+<main>
+<div class="wrap manual" id="manual">
+<aside class="toc">
+<h2>Guide</h2>
+<ol>
+<li><a href="#start">Getting started</a>
+<ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li></ol>
+</li>
+<li><a href="#screen">Screen layout</a>
+<ol><li><a href="#screen-top-bar">Menu and top bar</a></li><li><a href="#screen-common-controls">Number fields and menus</a></li><li><a href="#screen-toolbar">Toolbar</a></li><li><a href="#screen-file-browser">File browser</a></li><li><a href="#screen-palette">Palette</a></li><li><a href="#screen-color-picker">Color picker</a></li><li><a href="#screen-canvas">Canvas</a></li><li><a href="#screen-timeline">Timeline</a></li><li><a href="#screen-timeline-select">Selecting in the timeline</a></li><li><a href="#screen-timeline-edit">Editing the timeline</a></li><li><a href="#screen-tags">Tags</a></li><li><a href="#screen-layer-effects">Layer effects</a></li><li><a href="#screen-preview">Preview</a></li><li><a href="#screen-export">Export dialog</a></li><li><a href="#screen-gif">Export as animated GIF</a></li><li><a href="#screen-tool-settings">Tool options</a></li><li><a href="#screen-status-bar">Status bar</a></li></ol>
+</li>
+<li><a href="#tools">Tools</a>
+<ol><li><a href="#tools-list">Tool list</a></li><li><a href="#tools-basics">Drawing basics</a></li><li><a href="#tools-groups">Tool groups</a></li><li><a href="#tools-brush">Brush settings</a></li><li><a href="#tools-select">Selection tools</a></li><li><a href="#tools-fill">Fill</a></li><li><a href="#tools-gradient">Gradient</a></li><li><a href="#tools-transform">Transform mode (rotate/size)</a></li><li><a href="#tools-canvas-size">Canvas size mode</a></li><li><a href="#tools-nine-slice">9-slice</a></li></ol>
+</li>
+<li><a href="#files">Files · saving · export</a>
+<ol><li><a href="#files-roles">File types</a></li><li><a href="#files-save">Saving</a></li><li><a href="#files-autosave">Autosave</a></li><li><a href="#files-revert">Revert to saved</a></li><li><a href="#files-history">Undo history that survives closing</a></li><li><a href="#files-png-import">Opening (importing) PNGs</a></li><li><a href="#files-cleanup">Cleaning up old outputs and renaming files</a></li><li><a href="#files-cell-names">Export cell names</a></li><li><a href="#files-quit">Save prompt on quit</a></li><li><a href="#files-settings">Preferences</a></li><li><a href="#files-crash-log">When errors occur</a></li></ol>
+</li>
+<li><a href="#parts">Part (group) layers · skins</a>
+<ol><li><a href="#parts-concept">Groups and parts</a></li><li><a href="#parts-create">Creating</a></li><li><a href="#parts-timeline">Viewing in the timeline</a></li><li><a href="#parts-arrange">Arranging (group selected)</a></li><li><a href="#parts-draw">Drawing (part selected)</a></li><li><a href="#parts-auto-layout">Auto layout</a></li><li><a href="#parts-export">Export: frame sheet and part atlas</a></li><li><a href="#parts-skins">Skins and slots</a></li><li><a href="#parts-per-part">Per-part choices and part-only skins</a></li><li><a href="#parts-skin-manager">Skin manager</a></li><li><a href="#parts-outfits">Changing outfits and outfit presets</a></li><li><a href="#parts-skin-export">Exporting skins</a></li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li><a href="#parts-import">Importing old files and PNGs</a></li></ol>
+</li>
+<li><a href="#ai">AI chat (Claude · Codex)</a>
+<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-layer-only">Limiting edits to the current layer</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
+</li>
+<li><a href="#shortcuts">Shortcuts</a>
+<ol><li><a href="#shortcuts-customize">Customizing shortcuts</a></li><li><a href="#shortcuts-file">Files and windows</a></li><li><a href="#shortcuts-edit">Editing and selection</a></li><li><a href="#shortcuts-transform">Transform and image</a></li><li><a href="#shortcuts-tools">Tools</a></li><li><a href="#shortcuts-view">View and canvas</a></li><li><a href="#shortcuts-timeline">Timeline · layers · groups</a></li></ol>
+</li>
+<li><a href="#language">Language</a>
+<ol><li><a href="#language-change">Changing the display language</a></li><li><a href="#language-make">Creating a new language</a></li><li><a href="#language-fix">Editing and removing built-in text</a></li></ol>
+</li>
+</ol>
+</aside>
+<div class="content">
+<section class="doc" id="start">
+<h2>Getting started</h2>
+<p>Gpixel is a pixel art editor for games (especially Unity 2D). Frames, layers and tags (animations) are stored in a <code>.gpixel</code> project, and saving also produces a PNG sprite sheet and a Unity <code>.meta</code>. You don't need to install .NET or anything else.</p>
+
+<h3 id="start-install">Installation</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>OS</th><th>Download (latest version)</th><th>Run</th></tr></thead>
+<tbody>
+<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Gpixel-windows-x64.zip</a></td><td>Unzip and double-click <code>Gpixel.exe</code></td></tr>
+<tr><td>macOS 12 or later, Apple Silicon (M1 and later)</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">Gpixel-macos-arm64.zip</a></td><td>Unzip, move <code>Gpixel.app</code> to the Applications folder, then double-click it</td></tr>
+<tr><td>macOS 12 or later, Intel</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">Gpixel-macos-x64.zip</a></td><td>Same as above</td></tr>
+</tbody>
+</table></div>
+<p>To see which chip your Mac has, open Apple menu → About This Mac. Changes from earlier versions are listed on the <a href="https://github.com/1000Pro-1997/GPixel/releases">releases page</a>.</p>
+
+<h4>Installing from the terminal</h4>
+<p><strong>macOS</strong> — paste this into Terminal to download the file for your chip, install it to <code>/Applications/Gpixel.app</code> and launch it.</p>
+<pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
+curl -fL -o /tmp/Gpixel.zip "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-$ARCH.zip" \
+  &amp;&amp; rm -rf /Applications/Gpixel.app &amp;&amp; ditto -x -k /tmp/Gpixel.zip /Applications \
+  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Gpixel.app; rm -f /tmp/Gpixel.zip; open /Applications/Gpixel.app</code></pre>
+<p><strong>Windows</strong> — paste this into PowerShell to install to <code>%LOCALAPPDATA%\Programs\Gpixel</code>, create a Start menu shortcut and launch it.</p>
+<pre><code>$d = "$env:LOCALAPPDATA\Programs\Gpixel"; $z = "$env:TEMP\Gpixel.zip"; $x = "$env:TEMP\Gpixel-x"
+Invoke-WebRequest "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip" -OutFile $z
+Expand-Archive $z $x -Force; New-Item -ItemType Directory -Force $d | Out-Null
+Copy-Item "$x\Gpixel-windows-x64\Gpixel.exe" $d -Force; Unblock-File "$d\Gpixel.exe"; Remove-Item $z, $x -Recurse -Force
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Gpixel.lnk"); $s.TargetPath = "$d\Gpixel.exe"; $s.Save()
+Start-Process "$d\Gpixel.exe"</code></pre>
+<p>Both methods install to a location your account can write to, so later updates happen automatically inside the app.</p>
+
+<h3 id="start-first-run">First launch</h3>
+<ul>
+<li>The app isn't developer-signed, so you'll see a warning the first time.
+<ul>
+<li>Windows "Windows protected your PC": <strong>More info → Run anyway</strong>.</li>
+<li>macOS "unidentified developer": <strong>right-click → Open</strong> on <code>Gpixel.app</code>. If that doesn't work, go to System Settings → Privacy &amp; Security → <strong>Open Anyway</strong>.</li>
+</ul></li>
+<li>Choose a folder or Unity project on the start screen and the file browser on the left shows that folder's images. Projects registered in Unity Hub can be opened directly from the list.</li>
+<li>On first launch the display language follows your computer's language (Korean or English; English if there's no match). See <a href="#language">Language</a> to change it.</li>
+</ul>
+<div class="note"><p>On macOS, read <kbd>Ctrl</kbd> in this guide as <kbd>⌘</kbd> (Command) (e.g. <kbd>⌘</kbd>+<kbd>S</kbd> to save). The eyedropper is <kbd>⌥</kbd>+click, and holding <kbd>⌘</kbd> switches temporarily to the Move tool. Menus and tooltips also show ⌘.</p></div>
+
+<h3 id="start-update">Updates</h3>
+<p>Gpixel checks for a new version every time it starts. If one is available, the <strong>update dialog</strong> opens and an <strong>Updates</strong> button appears in the top bar.</p>
+<ul>
+<li><strong>Update now</strong>: downloads and verifies the file for your OS, then closes the app, replaces it with the new version and restarts. You're asked about unsaved work first, and if anything fails the previous version stays as it is.</li>
+<li><strong>Later</strong> reminds you on the next launch; <strong>Don't show until the next update</strong> skips that version.</li>
+<li>The dialog lists the changes between your version and the new one.</li>
+<li>Check manually any time with <strong>Help &gt; Check for updates…</strong>, and turn off automatic checks in <strong>Edit &gt; Preferences… &gt; General</strong>.</li>
+</ul>
+
+<h3 id="start-privacy">Network and privacy</h3>
+<p>There are no accounts, analytics or ads, and your images and files are never sent anywhere. The network is used only in these cases:</p>
+<ul>
+<li><strong>Check for updates</strong>: asks GitHub for the latest version (can be turned off).</li>
+<li><strong>Palette web (Lospec)</strong>: downloads palette lists and sample images only when you open that window.</li>
+<li><strong>AI chat</strong>: only while you use that window, the Claude Code or Codex CLI installed on your computer connects to Anthropic or OpenAI with your login.</li>
+</ul>
+</section>
+
+<section class="doc" id="screen">
+<h2>Screen layout</h2>
+<p>Gpixel's layout is similar to Aseprite. The toolbar and file browser are on the far left, the palette and colors next to them, the canvas in the middle, the timeline below, the preview and tool options on the right, and the status bar at the very bottom.</p>
+
+<h3 id="screen-top-bar">Menu and top bar</h3>
+<p>The left side of the bar just below the menu shows the current tool's name and a one-line usage hint. The right side has view options, the zoom level and the AI chat button.</p>
+<ul>
+<li><strong>View options</strong>: grid, tile grid, tiled mode, pivot, onion (overlay previous/next frames). <strong>Right-click</strong> a button to open that view's settings popup; changes apply immediately (and turn the view on if it was off).</li>
+<li><strong>Zoom box</strong>: click to type a value, drag left/right to change one step at a time, right-click for Fit to window and a 100%–6400% list.</li>
+<li><strong>Fit</strong> toggle: when on, images are fitted to the window each time you open one. <kbd>Ctrl</kbd>+<kbd>0</kbd> fits the current view at any time.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>View</th><th>Right-click settings</th></tr></thead>
+<tbody>
+<tr><td>Grid</td><td>Color (alpha = intensity), zoom at which it appears (2–16×, default 6×)</td></tr>
+<tr><td>Tile grid</td><td>Tile width/height (quick picks 8, 16, 32, 64), color</td></tr>
+<tr><td>Tiled mode</td><td>Repeat size (auto, 3×3, 5×5, 7×7), dim around the center</td></tr>
+<tr><td>Onion</td><td>Number of previous/next frames (0–5), intensity (fainter with distance), tint (previous red, next blue)</td></tr>
+</tbody>
+</table></div>
+<p>Detailed tool settings are in <a href="#screen-tool-settings">Tool options</a> on the right.</p>
+
+<h3 id="screen-common-controls">Number fields and menus</h3>
+<ul>
+<li>Number fields have no up/down buttons; <strong>drag left/right</strong> to change the value. Hold <kbd>Shift</kbd> to go 10× slower, or <kbd>Ctrl</kbd> to change by 10. When you hit the edge of the screen while dragging, the cursor wraps to the other side so you can keep going.</li>
+<li>Click without dragging to type a value. Clicking elsewhere (such as the canvas) after typing confirms it.</li>
+<li>When not typing, <strong>right-click</strong> a number field to pick from a list of common values (the current value is marked with a dot).</li>
+<li>Only one right-click or button menu can be open at a time across the app. It closes when you click outside, scroll, press <kbd>Esc</kbd>, switch windows, or press the button that opened it again.</li>
+</ul>
+
+<h3 id="screen-toolbar">Toolbar</h3>
+<p>The vertical bar on the far left. Hover an icon to see its shortcut in the tooltip.</p>
+<ul>
+<li>The <strong>folder button</strong> at the top collapses and expands the file browser (<kbd>F8</kbd>).</li>
+<li>Similar tools share one slot, marked with a small triangle in the bottom-right corner. Long-press or right-click to expand it sideways and switch. See the <a href="#tools">Tools</a> chapter for each tool.</li>
+<li>At the bottom are <strong>Save</strong> (same as <kbd>Ctrl</kbd>+<kbd>S</kbd>) and <strong>Revert to saved</strong>. They're enabled only when there are unsaved changes, and revert is disabled for a new project that has never been saved (see <a href="#files">Files</a>).</li>
+</ul>
+
+<h3 id="screen-file-browser">File browser</h3>
+<p>It has a folder tree, a thumbnail list of <code>.gpixel</code> and PNG files, search, and an option to include subfolders; changes to files in the folder are picked up automatically. You can also open projects straight from the Unity Hub list. Open folder is <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>, Open Unity project is <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd>.</p>
+<ul>
+<li>Three icons on the right of the title row: <strong>New pixel file</strong> (creates and opens a <code>.gpixel</code> in the selected folder), <strong>New folder</strong>, <strong>Refresh</strong>.</li>
+<li><code>.gpixel</code> projects get a blue layer badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, frame sheet, part atlas) are hidden from the list so only the single <code>.gpixel</code> is shown. Hover it to see the exported file names; searching by those names also finds it.</li>
+<li>A plain click selects and opens one file. <kbd>Ctrl</kbd>+click (add/remove one at a time), <kbd>Shift</kbd>+click (range), or drag a rectangle over the list to select several (multiple selections don't open).</li>
+<li>Right-click menu: new project, merge, rename, show in Explorer/Finder, select image folder, delete, delete <code>.gpixel</code> files only, restore last deleted, view app trash.</li>
+</ul>
+
+<h4>Unsaved changes (red dot)</h4>
+<p>Opening another file doesn't ask you to save. An edited file stays in memory with its changes, undo history, current layer/frame, zoom and position, and its thumbnail gets a <strong>red dot in the top-left</strong>. Click it again to continue editing that document from memory; <kbd>Ctrl</kbd>+<kbd>Z</kbd> still undoes earlier edits. The status bar shows "N unsaved files".</p>
+<ul>
+<li>Renaming a dotted file keeps track of it; sending it to the trash discards the changes in memory.</li>
+<li>If the file changes outside the app, the in-memory version is kept and you're only notified (saving overwrites the file).</li>
+<li>Only a new project with no save location yet asks whether to save when you switch to another file.</li>
+</ul>
+
+<h4>Merge</h4>
+<p>Select two or more files and choose <strong>Merge…</strong> from the right-click menu to combine several images into one <code>.gpixel</code>. In the dialog you set:</p>
+<ul>
+<li><strong>Order</strong>: drag rows or use the up/down buttons (top = first).</li>
+<li><strong>Name</strong>: suggested automatically from words common to the file names (e.g. <code>potato_growing</code>, <code>potato_mature</code> → <code>potato</code>); you can edit it.</li>
+<li><strong>Mode</strong>: see the table below. With <strong>As a group</strong>, turn on <strong>Empty thumbnail</strong> to create it with the parts hidden.</li>
+<li><strong>Canvas size</strong> (default = largest file), <strong>anchor</strong> (9 directions), <strong>delete originals</strong> (to the app trash).</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Mode</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>As layers</td><td>One layer per file (first file on top)</td></tr>
+<tr><td>As a group</td><td>One group with a part per file (file sizes kept)</td></tr>
+<tr><td>As skins</td><td>One skin per file within a single group (skin name = file name). For tile or item variants swapped in the same spot</td></tr>
+<tr><td>As frames</td><td>Frames appended in file order</td></tr>
+</tbody>
+</table></div>
+<p>Along with a preview (played if there are several frames), <strong>"How it will look in the timeline"</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.gpixel</code> files such as layers, groups, skins, effects and tags is carried over in every mode. The result is saved as <code>&lt;name&gt;.gpixel</code> in the first file's folder and opened right away. If a file with that name already exists, nothing is merged and you're told.</p>
+
+<h4>Deleting and the app trash</h4>
+<ul>
+<li>Deleted files (<kbd>Delete</kbd>, multiple allowed) and originals removed by merging go to the app's own trash without asking (including their PNG and <code>.meta</code> files).</li>
+<li>Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list to restore the last deletion to its original place.</li>
+<li>In <strong>View app trash…</strong> on the right-click menu, browse previews and restore (double-click), delete permanently or empty the trash.</li>
+<li>Retention policy: <strong>Time limit</strong> (off by default; when on, items older than N days are permanently deleted) and <strong>Size limit</strong> (default 1 GB; oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>.</li>
+<li><strong>Delete <code>.gpixel</code> files only</strong>: sends only the project file to the trash and keeps the exported PNG and <code>.meta</code>.</li>
+<li><strong>Select image folder</strong>: when viewing with subfolders included, finds and shows the folder that actually contains the file in the tree.</li>
+</ul>
+
+<h3 id="screen-palette">Palette</h3>
+<p>The primary/secondary colors are at the top (the secondary defaults to transparent), and below them you can stack <strong>multiple palettes</strong> (DB32 to begin with). <strong>New palette</strong> at the bottom adds an empty one.</p>
+<ul>
+<li>Each palette's header has a collapse arrow, its name (double-click to rename), the color count and a menu button.</li>
+<li>Menu actions apply to that palette: add current color, remove primary color, sort by hue, load .hex/.gpl, palette web (Lospec), save .hex, create from image, convert to palette colors, rename, move up, move down, clear, delete.</li>
+<li>The palette you last clicked or edited is the <strong>active palette</strong> (blue line under the header). Palette features in the Edit menu and the AI palette tools use the active palette.</li>
+<li>The swatch matching the primary color has a white border, and the one matching the secondary color a blue border. The transparent swatch only appears at the start of the first palette.</li>
+<li>The palette list (names, colors, collapsed state, order) is saved in the settings and kept next time.</li>
+</ul>
+
+<h4>Convert to palette colors</h4>
+<p>Replaces the colors in the image with the nearest colors in the palette. Choose the target from <strong>current cel</strong> (only inside the selection, if any), <strong>all frames of the current layer</strong> or <strong>all layers and frames</strong> (locked layers are skipped), and dithering from <strong>none</strong> (default) or <strong>ordered dithering (Bayer 4×4)</strong>. A before/after preview and the change in color count are shown; alpha is kept and fully transparent pixels are left alone. It's a single undo step.</p>
+
+<h4>Palette web (Lospec)</h4>
+<p>Browse the <a href="https://lospec.com/palette-list">lospec.com palette list</a> inside the app (internet required).</p>
+<ul>
+<li>Filter by sort order (popular, downloads, newest, name), color count and tag (e.g. <code>gameboy</code>, <code>pico8</code>). Entering a palette name in the tag field shows that palette at the top.</li>
+<li>Selecting a palette shows its colors along with example art made with it.</li>
+<li><strong>Use as palette</strong> (replaces the current palette; same as double-click), <strong>Add to current palette</strong> (skips duplicate colors), <strong>Save as .hex</strong>, <strong>View on Lospec</strong>.</li>
+</ul>
+<p>Palette copyrights belong to their respective authors.</p>
+
+<h3 id="screen-color-picker">Color picker</h3>
+<p>The color picker sits below the palette. It has an alpha bar, RGBA/HSV/HEX inputs and the 16 most recent colors; switch modes with the tabs on the right of the "Color" header (remembered in settings).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Mode</th><th>Layout</th></tr></thead>
+<tbody>
+<tr><td>Square (default)</td><td>Saturation/value box + vertical hue bar</td></tr>
+<tr><td>Honeycomb</td><td>127 hexagonal cells. White in the center, getting more saturated and darker toward the edge, with 13 gray cells below</td></tr>
+<tr><td>Color wheel</td><td>Outer ring = hue, inner square = saturation/value</td></tr>
+<tr><td>Sliders</td><td>R, G, B, H, S, V bars</td></tr>
+</tbody>
+</table></div>
+<p>Every mode changes the color you're currently picking (primary or secondary).</p>
+
+<h3 id="screen-canvas">Canvas</h3>
+<p>Shows the current frame (all visible layers combined) and draws onto the current layer's cel.</p>
+<ul>
+<li>Selecting a part layer shows only that part at its own size, with the rest of the frame shown <strong>semi-transparently</strong> so you can line things up. Selecting a group layer lets you drag parts to arrange them (see <a href="#parts">Part (group) layers</a>).</li>
+<li>Supports 1–64× integer zoom, checkerboard background, pixel/tile grids, tiled mode (for seamless patterns), symmetry guides, pivot, selection and onion skin.</li>
+<li>Hold <kbd>H</kbd> to peek at the previous frame.</li>
+</ul>
+
+<h3 id="screen-timeline">Timeline</h3>
+<p>At the bottom of the screen: rows are layers, columns are frames and the strip at the top shows tags.</p>
+<ul>
+<li><strong>Layer rows</strong>: eye (visibility) and lock icons, opacity, name. Groups collapse and expand with a triangle, and their parts appear indented below.</li>
+<li><strong>Frame columns</strong>: number, duration, live thumbnail. Double-click the number to change the frame duration.</li>
+<li><strong>Tag strip</strong>: colored brackets show groups of frames.</li>
+<li>Column after the last frame: the plus icon in the header = add an empty frame; the copy icon below = add a copy of the last frame.</li>
+<li>While the preview plays, the frame column being shown gets a green outline.</li>
+</ul>
+<div class="note">You can't draw on a locked layer, but you can draw on a hidden one. A hidden normal layer appears semi-transparently on the canvas only while editing and doesn't appear in the preview or exports.</div>
+<p>There are no separate tool buttons; everything is in the <strong>right-click menu</strong>. The top of the menu shows what's selected (e.g. "Frames 1–3 selected").</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Where you right-click</th><th>Main menu items</th></tr></thead>
+<tbody>
+<tr><td>Frame header</td><td>Create tag; empty frame, duplicate, delete, move, duration; copy, cut, paste frames; pivot, cell name</td></tr>
+<tr><td>Cel</td><td>Clear cels, copy image from previous frame, copy, cut, paste cels, add effect, tag, empty frame, duplicate, duration, pivot, cell name</td></tr>
+<tr><td>Layer name</td><td>Name, opacity, effects, visibility, lock, part size, position; new layer, group, part; duplicate, order, merge, delete</td></tr>
+<tr><td>Empty area</td><td>Create new</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="screen-timeline-select">Selecting in the timeline</h3>
+<p>You select one kind of thing at a time (frames, layers or cels). What you click becomes the current frame/layer.</p>
+<ul>
+<li>Click a <strong>frame header</strong> to select that frame, a <strong>layer name</strong> for that layer, or a <strong>cel</strong> for that cell; the selection gets a blue border.</li>
+<li>Drag to select everything the rectangle touches. <kbd>Shift</kbd>+click = extend to a range, <kbd>Ctrl</kbd>+click = add/remove one at a time.</li>
+<li>Arrow keys (after clicking the timeline): <kbd>←</kbd><kbd>→</kbd> = adjacent frame, <kbd>↑</kbd><kbd>↓</kbd> = adjacent layer. <kbd>Shift</kbd>+arrow extends the selection.</li>
+<li>Icons such as the eye, lock, collapse triangle and fx only do their own job and don't select. Click an empty area to clear the selection.</li>
+<li>The status bar shows what's selected and what <kbd>Delete</kbd> will do.</li>
+</ul>
+
+<h3 id="screen-timeline-edit">Editing the timeline</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>To do this</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Delete</td><td>Select, then <kbd>Delete</kbd>. Frames → delete frames, layers → delete layers (groups include their parts), cels → clear the image only. You can't delete every frame or layer.</td></tr>
+<tr><td>Reorder</td><td>Drag an <strong>already selected</strong> frame header or layer name. Other columns/rows move aside to make room; <kbd>Esc</kbd> cancels. Parts move only within the same group.</td></tr>
+<tr><td>Move or copy a block of cels</td><td>Select several cells, then click inside and drag to move; hold <kbd>Alt</kbd> (or <kbd>Ctrl</kbd>) when dropping to copy. Cels can't move to rows of a different size or type.</td></tr>
+<tr><td>Copy and paste</td><td><kbd>Ctrl</kbd>+<kbd>C</kbd> (or <kbd>X</kbd>), then <kbd>Ctrl</kbd>+<kbd>V</kbd>. Cels overwrite the same shape with the clicked cell as top-left, frames are pasted as new frames after the selected frame, and layers as new layers above the original.</td></tr>
+<tr><td>Bring in the previous frame's image</td><td>Right-click a cel → "Copy image from previous frame"</td></tr>
+</tbody>
+</table></div>
+<p>New layers created by copying get their trailing number increased by 1 (<code>item_1</code> → <code>item_2</code>, <code>tile_009</code> → <code>tile_010</code>, or <code>_1</code> if there's no number). <strong>Duplicate</strong> in the layer menu follows the same rule. Every edit is a single undo step.</p>
+
+<h3 id="screen-tags">Tags</h3>
+<ul>
+<li>Select a range of frames and choose <strong>Create tag</strong> from the right-click menu.</li>
+<li>Hover near either inner end of a tag box until the cursor becomes <code>↔</code>, then drag to change the range.</li>
+<li>Select a tag and play the preview to loop within that tag.</li>
+</ul>
+
+<h3 id="screen-layer-effects">Layer effects</h3>
+<p>Layer effects are <strong>non-destructive</strong>: they're applied only when displayed, without changing cel pixels. They automatically apply to anything you draw later and are all rendered per pixel (no blur or anti-aliasing).</p>
+<ul>
+<li>Right-click a layer name and choose <strong>Effects…</strong> to open the effects dialog. Layers with effects show <strong>fx</strong> on the right of the name.</li>
+<li>Normal layers and parts apply effects to their cel; <strong>groups apply them to the combined shape of their parts</strong>. For example, a group outline is drawn as a single line around the whole character.</li>
+<li>Effects stack from the top of the list down (outline → shadow means the shadow includes the outline) and can be toggled individually.</li>
+<li>Each effect has a <strong>frame range</strong> ("All frames" or a start–end frame).</li>
+</ul>
+
+<h4>Effect types</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Outline</td><td>1–3px thick, 4 or 8 directions, outside or inside</td></tr>
+<tr><td>Shadow</td><td>Places a copy of the image's shape behind it, offset by X/Y. Dither (25%, 50%, 75%) gives pixel-art style shadows</td></tr>
+<tr><td>Edge light and shade</td><td>Light color on the edges facing the light (8 directions), shade color on the opposite side</td></tr>
+<tr><td>Color overlay</td><td>Blends a solid color or gradient with normal, multiply or screen</td></tr>
+<tr><td>Inner glow</td><td>Blends a color from the edge inward by 1–8px</td></tr>
+<tr><td>Color replace (palette swap)</td><td>A list of "from color → to color" pairs. For turning red clothes blue without changing the cel</td></tr>
+<tr><td>Hue adjust</td><td>Grayscale, sepia, hue shift, brightness/contrast, saturation</td></tr>
+<tr><td>Reflection</td><td>Places a vertically flipped copy below (floor/water) or above. Height, opacity, dither, tint, ripple</td></tr>
+</tbody>
+</table></div>
+<p>The following are <strong>animated effects</strong> that change over their frame range. A longer range makes them slower and a shorter one faster. They all share <strong>Speed</strong> (fast start, constant, slow start, slow start and end) and <strong>Loop</strong> (once, repeat N times, ping-pong N times).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Explode</td><td>Pixels burst outward in pieces and vanish. Distance, center, randomness, gravity, piece size, flash, seed</td></tr>
+<tr><td>Light sweep</td><td>A band of light sweeps diagonally across the image (the glint on coins or buttons)</td></tr>
+<tr><td>Squash and stretch</td><td>Wobbles like jelly, then returns to its original shape</td></tr>
+<tr><td>Gradient map</td><td>The whole image's colors change along a gradient (color shift) or rotate around it (radial rotation)</td></tr>
+<tr><td>Hit flash</td><td>Flashes a single color (white, red, etc.) 1–8 times</td></tr>
+<tr><td>Blink</td><td>Repeatedly shows and hides (invincibility frames). Fully transparent, semi-transparent or dither 50%</td></tr>
+<tr><td>Shake</td><td>Shakes horizontally, vertically or both by whole pixels</td></tr>
+<tr><td>Bob</td><td>Smoothly floats up and down (floating items). Start and end connect seamlessly</td></tr>
+<tr><td>Appear / disappear</td><td>Opacity, dither, wipe (from top, bottom, left or right), pixel scatter</td></tr>
+<tr><td>Fade in/out</td><td>Changes the whole image's opacity between 0 and the original</td></tr>
+<tr><td>Melt</td><td>Each column drips downward and disappears (stretch or vanish)</td></tr>
+<tr><td>Rotate</td><td>Rotates around an anchor (pivot, center, bottom center). Uses RotSprite so pixel lines break less</td></tr>
+<tr><td>Afterimage</td><td>Places previous frames' images behind, gradually fainter (count, spacing, tint)</td></tr>
+<tr><td>Color cycle</td><td>Rotates through the colors in a list (water, fire, neon)</td></tr>
+<tr><td>Shockwave ring</td><td>A pixel ring spreads out from the center</td></tr>
+<tr><td>Hologram</td><td>Single-color shaded image + scanlines, bright band, flicker, glitch, edge glow</td></tr>
+</tbody>
+</table></div>
+
+<h4>Effect colors and clipping</h4>
+<ul>
+<li>Clicking a color swatch opens a popup with the same square, honeycomb, color wheel and slider modes as the main color editor, plus the palette, recent colors and an eyedropper; the canvas updates as you pick.</li>
+<li>Each color setting can be a <strong>solid color / gradient</strong>. For gradients, choose <strong>static / animated</strong> (the band moves or rotates over the range) for each of <strong>linear, radial, square and angular</strong>, and set the direction, count and angle.</li>
+<li>Turn on <strong>Apply to → Clip to effect above</strong> to apply only to pixels changed by the previous effect. Example: clipping a <code>Color overlay</code> under an <code>Outline</code> gives a gradient outline.</li>
+</ul>
+
+<h4>Effects dialog</h4>
+<ul>
+<li>The <strong>Effect types</strong> list on the left shows previews of each effect applied to the current image. <strong>Double-click</strong> to add one at the end of the list, or <strong>drag it into the effect list</strong> to add it at that position. In the <strong>Built-in / Custom</strong> tabs, <strong>Save all effects</strong> saves a named effect bundle for reuse.</li>
+<li>Middle: <strong>Add range</strong>, the effect list (checkbox = on; delete, move up, move down, apply permanently) and the selected effect's settings.</li>
+<li>Right: a <strong>before/after preview</strong> of the current frame with play/pause. Click it to view it in a large window. In the <strong>frame strip</strong> below, click a cell to view that frame or drag to set the frame range.</li>
+<li><strong>Expand canvas to fit effects</strong> (on by default): enlarges the canvas when effects extend beyond it. Choose minimal, keep ratio, or keep center (default).</li>
+<li><strong>Extend frames</strong>: increases the number of frames in the effect's range (e.g. a 12-frame explosion on a 4-frame animation). Methods: with original frames, same ratio, first frame, last frame, repeat. Dragging the end of the range past the last cell in the frame strip also extends it.</li>
+<li>Hover the <strong>i</strong> marks for explanations in tooltips.</li>
+</ul>
+<div class="note">Pressing <kbd>Enter</kbd> while typing a setting doesn't close the effects dialog. Changes apply only when you click <strong>OK</strong> at the bottom, and everything you changed in the dialog is a single undo step. <strong>Cancel</strong> or closing the window restores the original.</div>
+
+<h4>Effect rows in the timeline</h4>
+<p>Like a video editor, each effect gets a thin row under its layer, and the effect appears as a rounded box spanning the frames it applies to. Click <strong>fx</strong> in the layer name cell to collapse or expand the effect rows.</p>
+<ul>
+<li><strong>Select cells to add an effect</strong>: select cels and choose <strong>Add effect…</strong> from the right-click menu to open the effects dialog with Add range filled in with that frame range.</li>
+<li>Drag either end of a box to change its range, or drag the body to move the whole range. Double-click a box to open the effects dialog.</li>
+<li>Drag an effect name up or down to reorder it, or drop it on another layer's row to move it to that layer. Select and press <kbd>Delete</kbd> to delete, <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> to copy.</li>
+<li>Right-click menu: effect settings, to all frames, this frame only, from this frame to end, from start to this frame, on/off, delete, apply effect permanently, copy, paste. Empty cells outside a box also offer <strong>Extend to here</strong> and <strong>Add copies from here</strong>.</li>
+<li>Effect ranges follow frame numbers just like tags. Inserting frames inside a range extends it, and deleting all frames in a range deletes the effect too.</li>
+</ul>
+
+<h4>Applying permanently and where effects show</h4>
+<ul>
+<li><strong>Apply effect permanently</strong> bakes the effect into the cel pixels and removes it from the list (you can then edit it like any drawing). Enabled effects above the selected one are baked too, so the result looks exactly as it did. Group effects and locked layers can't be applied permanently.</li>
+<li>Duplicating a layer also copies its effects, and <strong>Merge down</strong> bakes the upper layer's effects.</li>
+<li>Effects are shown on the canvas, preview, frame sheets and thumbnails. The drawing view for a selected part shows the plain image without effects.</li>
+<li>The part atlas includes only the part's own effects; spreading effects such as outlines or shadows make the sprite wider by that amount (the pivot is shifted so it points at the same spot).</li>
+</ul>
+
+<h3 id="screen-preview">Preview</h3>
+<p>In the top right; plays the current tag (or all frames if there's none) in real time.</p>
+<ul>
+<li>It has its own FPS.</li>
+<li>Zoom button: click to cycle fit → 1× → 2× → 4×; right-click to go in reverse.</li>
+<li>Background: checker, black, white, gray, green, custom color.</li>
+</ul>
+
+<h3 id="screen-export">Export dialog</h3>
+<p>Open it with <kbd>Ctrl</kbd>+<kbd>E</kbd> or <strong>File &gt; Export…</strong>. Settings apply as soon as you change them (one undo step per setting), and the blue <strong>Export</strong> button at the bottom closes the dialog and exports. If export on save is on, <kbd>Ctrl</kbd>+<kbd>S</kbd> alone exports too. There are two tabs: <strong>Export</strong> and <strong>Import Settings</strong>.</p>
+<ul>
+<li><strong>Left = settings</strong>, <strong>right = output preview</strong> (sheet and cell name list per file). Drag the divider to split the width; the dialog size and collapsed sections are remembered.</li>
+<li>The frame sheet and part atlas share the <strong>same sheet settings</strong>. Turn on <strong>Advanced &gt; Per sheet</strong> to keep separate settings for the part atlas.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Section</th><th>Main settings</th></tr></thead>
+<tbody>
+<tr><td>Common</td><td>Output (frame sheet, part atlas, both), skins (current outfit, chosen skins), skin packing, layout (grid, auto layout), sort order, cell count, separate files, cell names, spacing between cells, trim borders, power of two</td></tr>
+<tr><td>Files</td><td>Export on save, folder, file format (PNG/JPG/TGA/BMP), Unity .meta (off, auto, always)</td></tr>
+<tr><td>Frame sheet</td><td>Name, Single frame, path</td></tr>
+<tr><td>Part atlas</td><td>Name, keep original positions, Sprite Library, path</td></tr>
+<tr><td>Advanced</td><td>Per sheet</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Cell count</strong>: auto (smallest sheet), N columns, N rows.</li>
+<li><strong>Sort order</strong>: drag the part, skin, tag and frame rows or use <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> to reorder them, and use <strong>New row here</strong> between rows to set where lines break. Sorting changes only positions; cell names stay the same.</li>
+<li><strong>Separate files</strong>: split files per tag, per part or per skin (can be combined).</li>
+<li><strong>Cell names</strong>: <strong>Frame number</strong> or <strong>By tag</strong> (default for new projects). They're used as sprite names in Unity <code>.meta</code>, so changing them shows a warning.</li>
+<li><strong>Choose skins…</strong>: choose skins to export, outfit presets and layers to include in the composite.</li>
+<li><strong>Preset</strong> (far right of the tab row): saves the current settings under a name in the app settings so you can load them in other projects. Includes built-in presets ("Frame sheet (default)", "Part atlas + Sprite Library", "Separate file per skin"), reset to defaults, rename, overwrite, delete, and JSON export/import. Per-project values such as file names and folders aren't included.</li>
+<li><strong>Import Settings</strong> tab (shown only when writing <code>.meta</code>): sets the same names and values as Unity's Texture Importer (Sprite Mode, Pixels Per Unit, Mesh Type, Pivot, Filter Mode, Compression, etc.). Defaults suit pixel art (Point, no compression, mipmaps off, Clamp).</li>
+</ul>
+<p>See also the <a href="#files">Files</a> chapter for saving and Unity integration.</p>
+
+<h3 id="screen-gif">Export as animated GIF</h3>
+<p><strong>File &gt; Export as animated GIF…</strong> creates a single GIF for sharing. The project isn't changed.</p>
+<ul>
+<li><strong>Range</strong>: current tag, all frames, choose a tag.</li>
+<li><strong>Zoom</strong>: 1–10× (default = the zoom that makes the result about 256px).</li>
+<li><strong>Loop</strong>: loop forever or play N times.</li>
+<li><strong>Background</strong>: transparent (alpha below 50% becomes transparent) or composited over a background color.</li>
+</ul>
+<p>The preview on the right plays with the actual frame durations and shows the output size, frame count, duration and color count. With 255 colors or fewer it's saved losslessly. The default location is <code>&lt;project&gt;.gif</code> next to the project (<code>&lt;project&gt;_&lt;tag&gt;.gif</code> for a tag). You can assign a shortcut in Preferences &gt; Shortcuts.</p>
+
+<h3 id="screen-tool-settings">Tool options</h3>
+<p>Below the preview on the right. The title row shows the selected tool's name (e.g. <code>Tool settings · Pencil</code>) and only that tool's settings appear. Tool settings aren't part of undo and are kept for the next launch. Per-tool details are in the <a href="#tools">Tools</a> chapter.</p>
+<h4>Pivot (Pivot tool <kbd>K</kbd>)</h4>
+<ul>
+<li>Shows the pivot of the drawing target (the part if one is selected, otherwise the frame) in pixels.</li>
+<li>The <strong>5×5 buttons</strong> pick 0, 1/4, 1/2, 3/4 or end positions horizontally and vertically.</li>
+<li>Enter X (from the left) and Y (from the bottom, as in Unity) in 0.5px steps.</li>
+<li>Turn on "Current frame only" to use a per-frame pivot.</li>
+</ul>
+
+<h3 id="screen-status-bar">Status bar</h3>
+<p>The very bottom of the screen shows the cursor coordinates, color, canvas size (part size for parts), frame/layer, zoom and save state. Hints such as what's selected in the timeline or the number of unsaved files also appear here.</p>
+</section>
+
+<section class="doc" id="tools">
+<h2>Tools</h2>
+
+<h3 id="tools-list">Tool list</h3>
+<p>When you select a tool, its settings appear in <strong>Tool options</strong> in the right dock.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Tool</th><th>Shortcut</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Pencil</td><td><kbd>B</kbd></td><td>Paints pixels. Supports pixel perfect (<kbd>P</kbd>, at size 1) and symmetry</td></tr>
+<tr><td>Eraser</td><td><kbd>E</kbd></td><td>Erases pixels</td></tr>
+<tr><td>Fill</td><td><kbd>G</kbd></td><td>Fills an area of the same (or similar) color</td></tr>
+<tr><td>Gradient</td><td><kbd>F</kbd></td><td>Drag to paint a linear gradient</td></tr>
+<tr><td>Eyedropper</td><td><kbd>I</kbd>, <kbd>Alt</kbd>+click</td><td>Picks a color from the canvas</td></tr>
+<tr><td>Line / Rectangle / Circle</td><td><kbd>L</kbd> / <kbd>R</kbd> / <kbd>O</kbd></td><td>Draws shapes. Rectangles and circles can be <strong>filled</strong> (<kbd>U</kbd>)</td></tr>
+<tr><td>Rectangle select / Ellipse select</td><td><kbd>M</kbd></td><td>Drag to select an area</td></tr>
+<tr><td>Lasso select</td><td><kbd>Q</kbd></td><td>Draw an outline to select</td></tr>
+<tr><td>Magic wand</td><td><kbd>W</kbd></td><td>Selects an area of similar color</td></tr>
+<tr><td>Move</td><td><kbd>V</kbd></td><td>Moves the selection. With no selection it shifts the whole cel; has a <strong>wrap around</strong> option</td></tr>
+<tr><td>Lighten/darken</td><td><kbd>D</kbd></td><td>Changes the brightness where you brush</td></tr>
+<tr><td>Dithering</td><td><kbd>T</kbd></td><td>Paints by mixing primary and secondary colors in a pattern</td></tr>
+<tr><td>Color replace brush</td><td><kbd>C</kbd></td><td>Replaces colors where you brush</td></tr>
+<tr><td>Pivot</td><td><kbd>K</kbd></td><td>Sets the pivot</td></tr>
+<tr><td>9-slice</td><td><kbd>S</kbd></td><td>Sets the Unity sprite border</td></tr>
+</tbody>
+</table></div>
+<p>Whatever tool you're using, holding <kbd>Ctrl</kbd> over the canvas temporarily switches to the Move tool, and releasing it returns to the original tool. In drawing tools, holding <kbd>Alt</kbd> temporarily switches to the eyedropper.</p>
+
+<h3 id="tools-basics">Drawing basics</h3>
+<ul>
+<li>Left button = primary color, right button = secondary color (or eraser, depending on options).</li>
+<li>Pressing the other button mid-stroke cancels that stroke.</li>
+<li><kbd>Shift</kbd>+click = straight line from the last point. While drawing shapes, <kbd>Shift</kbd> = 45° steps, perfect squares and circles.</li>
+<li>The Edit menu has add outline, replace color, flip/rotate and canvas size.</li>
+</ul>
+
+<h3 id="tools-groups">Tool groups</h3>
+<p>Similar tools share one toolbar slot: Fill (fill, gradient), Shapes (line, rectangle, circle) and Select (rectangle, ellipse, lasso, magic wand). Group slots have a small triangle in the bottom-right corner.</p>
+<ul>
+<li>A plain click selects the tool shown in the slot.</li>
+<li><strong>Long-press or right-click</strong> to expand the list of tools in the group.</li>
+</ul>
+
+<h3 id="tools-brush">Brush settings</h3>
+<p>Shared by the pencil, eraser, lighten/darken, dithering and color replace brush.</p>
+<ul>
+<li>Shape: <strong>Square / Circle / Diamond</strong>. A preview of the actual pixel shape appears beside it.</li>
+<li>Size 1–32: drag the number field left/right or use <kbd>[</kbd> / <kbd>]</kbd>.</li>
+<li>Line thickness and pen shape for lines, rectangles and circles are set the same way.</li>
+<li><strong>Lighten/darken</strong> has <strong>Strength</strong> 1–50% (default 10%); <strong>Dithering</strong> has a <strong>Pattern</strong>: checker (50%) / sparse (25%) / dense (75%).</li>
+</ul>
+
+<h3 id="tools-select">Selection tools</h3>
+<p>All four selection tools create the same kind of selection. Once you have one, cut, copy, delete, flip, rotate, move, outline and replace color apply only inside it, and drawing is limited to it as well.</p>
+<ul>
+<li><strong>Rectangle / Ellipse select</strong>: drag to select (<kbd>Shift</kbd> = square/circle). Drag inside the selection to move its contents, and press <kbd>Enter</kbd> to drop.</li>
+<li><strong>Lasso select</strong>: draw an outline and release; it closes back to the starting point. The area to be selected is shown with a blue dotted line while dragging.</li>
+<li><strong>Magic wand</strong>: selects the area of similar color to where you click. Settings are the same as Fill. To move it, use Move (<kbd>V</kbd>) or the arrow keys.</li>
+<li><strong>Right-click</strong> the canvas with a selection tool or press <kbd>Ctrl</kbd>+<kbd>D</kbd> = deselect.</li>
+<li>Pressing <kbd>M</kbd> repeatedly cycles rectangle → ellipse → lasso → magic wand.</li>
+</ul>
+
+<h3 id="tools-fill">Fill</h3>
+<ul>
+<li><strong>Tolerance</strong> 0–100%: 0 fills only the exact same color; higher values include similar colors.</li>
+<li><strong>Contiguous only</strong>: when off, fills every matching color (<kbd>Shift</kbd>+<kbd>G</kbd>).</li>
+<li><strong>Connect diagonally too</strong>: connects areas in 8 directions.</li>
+<li><strong>Source</strong>: current layer / all visible layers (the area is determined from the composite, but paint goes on the current layer). The eyedropper has the same source setting.</li>
+</ul>
+
+<h3 id="tools-gradient">Gradient</h3>
+<p>Drag on the canvas from the start point to the end point to paint in that direction (<kbd>Shift</kbd> = 45° steps). With a selection it paints only inside it; otherwise the whole cel.</p>
+<ul>
+<li><strong>Gradient bar</strong>: opacity stops sit above the bar and color stops below. Click an empty spot to add a stop, drag to move it and press <kbd>Delete</kbd> to remove it.</li>
+<li>You can edit the selected stop's position % and color (or opacity %).</li>
+<li><strong>Interpolation</strong>: smooth / steps. <strong>Dithering</strong>: none / 2×2 Bayer / 4×4 Bayer (for pixel art that mixes with patterns instead of semi-transparency).</li>
+<li>Settings are kept for the next launch.</li>
+</ul>
+
+<h3 id="tools-transform">Transform mode (rotate/size)</h3>
+<p><kbd>Ctrl</kbd>+<kbd>T</kbd> or <strong>Transform (rotate/size)…</strong> in the Edit menu. Rotate, scale and move the selection (or, with none, all painted pixels in the current cel) using the handles on the orange dotted border.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Action</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Drag inside, arrow keys</td><td>Move (1-pixel steps)</td></tr>
+<tr><td>Drag one of the 8 square handles</td><td>Resize (<kbd>Shift</kbd> = keep ratio, <kbd>Alt</kbd> = from center; dragging past the opposite side flips)</td></tr>
+<tr><td>Drag just outside the border</td><td>Rotate (<kbd>Shift</kbd> = 15° steps)</td></tr>
+<tr><td>Drag / double-click the orange rotation center</td><td>Move the rotation center / reset to center</td></tr>
+<tr><td><kbd>Enter</kbd> or <strong>Apply</strong></td><td>Apply (one undo step)</td></tr>
+<tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <strong>Cancel</strong></td><td>Back to before the transform</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>You can also enter the angle, width/height % and center X/Y as numbers in Tool options.</li>
+<li><strong>Resampling</strong>: <strong>RotSprite</strong> (default; rotated lines break less and no new colors are created) / <strong>Nearest</strong>.</li>
+<li>Dragging repeatedly always redraws from the original, so it doesn't get mushy. Doing something else, such as switching tools or saving, applies it first.</li>
+</ul>
+
+<h3 id="tools-canvas-size">Canvas size mode</h3>
+<p><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> or <strong>Canvas size…</strong> in the Edit menu. Set the new size and image position right on the canvas instead of in a dialog. The canvas border is a light-blue dotted line and areas to be cropped are dimmed.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Action</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Drag a handle</td><td>Moves only that canvas edge (adds margin or crops the image)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+drag a handle</td><td>Also resizes the image (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = keep ratio)</td></tr>
+<tr><td>Drag inside the image, arrow keys</td><td>Move the image within the canvas</td></tr>
+<tr><td><kbd>Enter</kbd> or <strong>OK</strong></td><td>Apply (one undo step)</td></tr>
+<tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <strong>Cancel</strong></td><td>Exit without changes</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>Tool options: canvas width/height, <strong>Anchor at canvas center</strong>, image width/height %, <strong>Keep image ratio</strong>, image position X/Y, <strong>9-direction anchor</strong>.</li>
+<li>Applies to all frames and layers; parts and pivots are adjusted as well.</li>
+</ul>
+
+<h3 id="tools-nine-slice">9-slice</h3>
+<p>Sets the Unity Sprite Border. <strong>Four green lines</strong> appear on the canvas; drag them to change the L, T, R and B values. In Tool options you can enter numbers or reset with <strong>All 0</strong>.</p>
+<p>With a part selected it applies to that part; otherwise to every cell of the frame sheet. When scaled up, everything outside the lines (corners and edges) stays the same and only the center stretches, which suits UI buttons and panels used with Image Type = Sliced in Unity.</p>
+</section>
+
+<section class="doc" id="files">
+<h2>Files · saving · export</h2>
+
+<h3 id="files-roles">File types</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>File</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>.gpixel</code></td><td>The editable source. Layers, effects, frames, tags, parts, skins, outfit presets and export settings are all stored only here.</td></tr>
+<tr><td>Exported images (PNG)</td><td>The output, used in Unity or other programs.</td></tr>
+<tr><td><code>.meta</code></td><td>Unity settings (sprite cells, pivot, etc.).</td></tr>
+<tr><td><code>.spriteLib</code></td><td>Unity Sprite Library. Created only when turned on (see <a href="#parts">Parts · skins</a>).</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="files-save">Saving</h3>
+<p>Saving the <code>.gpixel</code> with <kbd>Ctrl</kbd>+<kbd>S</kbd> also exports the image and <code>.meta</code>, depending on your settings. A <code>.meta</code> is created when the file is inside a Unity project's <code>Assets</code> or already has a meta. Existing guids and spriteIDs are kept by name, so references on the Unity side don't break.</p>
+<p>If the <code>.gpixel</code> was saved but only the image export failed (for example because another program has the file open), you're told about it.</p>
+
+<h3 id="files-autosave">Autosave</h3>
+<p>On by default. After <strong>3 seconds</strong> without edits, it saves without asking, just like <kbd>Ctrl</kbd>+<kbd>S</kbd> (including export), and shows <code>Autosaved</code> in the status bar.</p>
+<ul>
+<li>It waits while you're drawing, dragging, transforming or while the AI is working.</li>
+<li>It only saves files that already have a <code>.gpixel</code> on disk. New projects and imported PNGs must be saved manually once.</li>
+<li>Turn it on/off and change the wait time (1–600 seconds) in <strong>Preferences &gt; General</strong>.</li>
+</ul>
+
+<h3 id="files-revert">Revert to saved</h3>
+<p>The button at the bottom of the toolbar or <strong>File &gt; Revert to saved</strong> discards unsaved changes after confirmation and reopens the file. The current layer, frame and zoom stay the same. The revert itself can't be undone.</p>
+
+<h3 id="files-history">Undo history that survives closing</h3>
+<p>On by default: even after closing a file or quitting the app, you can keep using undo and redo when you reopen it. History is kept <strong>only up to the saved state</strong>; changes discarded with "Don't save" aren't kept. The history is stored separately in the app settings folder, not in the <code>.gpixel</code>.</p>
+<p>Retention period (default 30 days), maximum size (default 500 MB) and <strong>Clear all history</strong> are in <strong>Preferences &gt; General</strong>.</p>
+
+<h3 id="files-png-import">Opening (importing) PNGs</h3>
+<p>Opening a PNG imports it as a project. If a <code>.gpixel</code> with the same name exists, or a project in the same folder exports that PNG, that project opens instead.</p>
+<ul>
+<li>If the meta contains cell information and the cells differ in size, it's imported as <strong>parts</strong> (one group + one part per cell).</li>
+<li>If all cells are the same size, you're asked to choose "As parts / As animation frames".</li>
+<li>Sheets without cell information can be split with <strong>Frame·Layer &gt; Split into frames by grid</strong> by cell size, cell count or automatically (by blobs).</li>
+</ul>
+
+<h3 id="files-cleanup">Cleaning up old outputs and renaming files</h3>
+<p>Old output files (and their <code>.meta</code>) that are no longer produced because you changed the export method or name are moved to the <strong>app trash</strong> on the next save, with a notice in the status bar. Restore them with <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list or View app trash.</p>
+<p>Renaming or deleting a <code>.gpixel</code> in the file browser also moves the outputs exported under the default name and their <code>.meta</code>, or sends them to the app trash. Unity guids are kept.</p>
+
+<p>Only files recorded as exported by Gpixel itself are cleaned up. Files you created yourself, or files with a custom export folder or name, are never touched.</p>
+
+<h3 id="files-cell-names">Export cell names</h3>
+<p>Right-click a frame in the timeline and set <strong>Export cell name…</strong>. If left empty, the <code>{Tag}_{Number}</code> or <code>{File}_{Number}</code> format is used. The overall rule is set under "Cell naming rule" in the export dialog.</p>
+
+<h3 id="files-quit">Save prompt on quit</h3>
+<p>When you close the window or quit the app, unsaved files are gathered in <strong>a single dialog</strong> with their thumbnails and names.</p>
+<ul>
+<li><strong>Save selected files</strong>: saves the checked files (including export) and quits. If any save fails, the app doesn't quit.</li>
+<li><strong>Don't save</strong>: quits without saving.</li>
+<li><strong>Cancel</strong>: doesn't quit.</li>
+</ul>
+
+<h3 id="files-settings">Preferences</h3>
+<p>Change settings in <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>).</p>
+<ul>
+<li><strong>General</strong>: undo steps (default 1000, max 10000), undo history retention, autosave, app trash retention, and more.</li>
+<li><strong>Shortcuts</strong>: change, add, clear or reset the key for any command or tool, with search. You're asked if a key conflicts with another command. Export and import as JSON (see <a href="#shortcuts">Shortcuts</a>).</li>
+</ul>
+<p>Settings file location:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>OS</th><th>Location</th></tr></thead>
+<tbody>
+<tr><td>Windows</td><td><code>%AppData%\Gpixel\settings.json</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/Gpixel/settings.json</code></td></tr>
+</tbody>
+</table></div>
+<p>Export setting presets are in <code>export-presets.json</code> in the same folder.</p>
+
+<h3 id="files-crash-log">When errors occur</h3>
+<p>Even when an unexpected error occurs, the app doesn't quit; it shows a "You can keep working" dialog. Details are logged in <code>Gpixel/Logs</code> in the settings folder (last 20).</p>
+<div class="note">Find the logs with <strong>Help &gt; Open error log folder</strong>. Please attach that file when reporting a bug. If the error forces the app to quit, modified documents are saved separately in <code>Gpixel/Recovery/</code>.</div>
+</section>
+
+<section class="doc" id="parts">
+<h2>Part (group) layers · skins</h2>
+<p>Draw parts of different sizes, like a character's head, body, arms and legs, for each frame, arrange them within a frame to use as an animation, and export them as per-part sprites too. You can also draw several sets (<strong>skins</strong>) of body types, outfits or gear with the same part setup and swap between them.</p>
+
+<h3 id="parts-concept">Groups and parts</h3>
+<ul>
+<li><strong>Part</strong> layers go under a <strong>group</strong> layer.</li>
+<li>Each part has <strong>its own canvas size</strong> (e.g. Head 8×5) and <strong>its own image in each frame</strong>.</li>
+<li>A part's <strong>position within the frame is shared by all frames</strong>.</li>
+</ul>
+
+<h3 id="parts-create">Creating</h3>
+<ul>
+<li>In a new project (<kbd>Ctrl</kbd>+<kbd>N</kbd>), choose "Start with parts" and set the first part's name and size.</li>
+<li><strong>Frame·Layer &gt; New group</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>)</li>
+<li><strong>Frame·Layer &gt; New part…</strong> (<kbd>Shift</kbd>+<kbd>P</kbd>) — adds to the current group, creating a group first if there isn't one.</li>
+<li>Right-click a layer name in the timeline → "New group / New part…", or right-click a group → "Add part…"</li>
+</ul>
+
+<h3 id="parts-timeline">Viewing in the timeline</h3>
+<p>Group rows collapse and expand with a triangle, and their cells show the group's composite thumbnail. Part rows are indented and show the name and size. The <strong>skin chip</strong> after the name is the skin currently worn; click it to open the skin manager.</p>
+<p>Hiding or locking a group also hides or locks its parts. Parts can be reordered only within their own group.</p>
+
+<h3 id="parts-arrange">Arranging (group selected)</h3>
+<p>Selecting a group shows the full frame composite on the canvas.</p>
+<ul>
+<li>Hover a part to see a dotted border and its name.</li>
+<li>Drag to move it and set its position (applies to all frames; one undo step).</li>
+<li>Click a part to select it, then use the arrow keys (<kbd>Shift</kbd>+arrow) to move it by 1/8px. Click an empty area or press <kbd>Esc</kbd> to deselect.</li>
+<li>Double-click a part to select its layer and switch to drawing.</li>
+<li>Part pivots are shown as blue dots and frame pivots as orange dots.</li>
+</ul>
+
+<h3 id="parts-draw">Drawing (part selected)</h3>
+<p>Selecting a part layer shows only that part at its own size, with the rest dimmed around it. Coordinates are relative to the part.</p>
+<ul>
+<li>Resize: <strong>Frame·Layer &gt; Part size…</strong> or right-click the part → "Size…" (9-direction anchor; drawn pixels stay in place).</li>
+<li>Set the position numerically: right-click the part → "Position…".</li>
+<li>The Pivot tool (<kbd>K</kbd>) and 9-slice tool (<kbd>S</kbd>) apply to the selected part.</li>
+</ul>
+
+<h3 id="parts-auto-layout">Auto layout</h3>
+<p>Right-click a group in the timeline and choose <strong>Auto layout…</strong> to lay its parts out automatically by size. Check the preview and click <strong>Apply</strong> for a single undo step. A group with auto layout on is re-laid out whenever you add or remove parts or change their size or order, and shows a diamond mark on its timeline row. If you try to move a part by hand in this state, you're asked whether to turn auto layout off.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Setting</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Direction</td><td>Horizontal · vertical · grid (set column count)</td></tr>
+<tr><td>Align</td><td>Top/center/bottom or left/center/right</td></tr>
+<tr><td>Distribution</td><td>Start · center · end · even</td></tr>
+<tr><td>Spacing · padding</td><td>In px</td></tr>
+<tr><td>Order</td><td>From top part · from bottom part</td></tr>
+<tr><td>Area</td><td>Whole canvas by default; X, Y, W, H can be set manually</td></tr>
+<tr><td>Hidden parts keep their space</td><td>On by default — toggling visibility doesn't move other parts</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="parts-export">Export: frame sheet and part atlas</h3>
+<p>On save, the following two outputs can each be turned on or off. Both are produced as an image + <code>.meta</code>.</p>
+<ol>
+<li><strong>Frame sheet</strong>: an animation sheet with each frame composited.</li>
+<li><strong>Part atlas</strong>: one cell per part × frame with content. If the name is empty, <code>&lt;frame sheet name&gt;_parts</code>.</li>
+</ol>
+<p>Layout, sort order and cell names follow the common sheet settings in the export dialog. Old files that are no longer produced are cleaned up into the app trash (see <a href="#files">Files</a>).</p>
+
+<h3 id="parts-skins">Skins and slots</h3>
+<p>Each group has a list of named <strong>skins</strong> (at least one, "Default" at first), and only one of them is shown.</p>
+<ul>
+<li>Skins in the same group <strong>replace each other</strong> (swap).</li>
+<li>Different groups <strong>stack</strong> in layer order (overlay).</li>
+</ul>
+<p>Example: a "base body" group at the bottom (skins: default, muscular, zombie), with "hair" and "armor" groups above it (the first skin, "none", is left empty and gear is drawn in the other skins).</p>
+<p>The <strong>only</strong> thing that differs between skins is the image. The part list, sizes, positions, pivots and 9-slice are shared by all skins. <strong>Empty cells in skins other than the first inherit the first skin's image</strong>, so you only need to redraw the parts that change. Inherited cells appear dimmed in the timeline, and once you start drawing on one it becomes that skin's own image.</p>
+
+<h3 id="parts-per-part">Per-part choices and part-only skins</h3>
+<p>Within a group, a single part can wear a different skin (e.g. the body in "default" and only the head in "knight"). The visible skin is decided in the order <strong>part override → group's current skin → first skin</strong>.</p>
+<p>You can also create a <strong>part-only skin</strong> that exists for just one part (e.g. a "hat" for Head). Create it with <strong>Skin for this part</strong> on the part row in the skin manager or from the part's right-click menu; it's marked "Individual" only in that part's list.</p>
+<p>Right-click a part-only skin card to <strong>Promote to full skin</strong>, or right-click a full skin to <strong>Demote to part-only</strong>.</p>
+<div class="note">If something like a hat, clothes or shoes will always be swapped separately, splitting it into its own group (slot) is also cleaner to work with in Unity.</div>
+
+<h3 id="parts-skin-manager">Skin manager</h3>
+<p>Open it by clicking a skin chip, from <strong>Frame·Layer &gt; Manage skins…</strong>, or with <strong>Manage…</strong> in the outfit row below the preview. You can keep it open beside you while editing.</p>
+<ul>
+<li>Full outfits are at the top, followed by skin <strong>cards</strong> for each group. Click a card to apply it immediately; double-click to apply and close the window.</li>
+<li><strong>New skin (empty)</strong>, <strong>Duplicate</strong>, <strong>Rename…</strong>, <strong>Delete</strong>, <strong>Move forward/back</strong>. You can also drag cards to reorder them; the first skin becomes the default skin. All of these can be undone.</li>
+<li>Expand <strong>Per part</strong> to see skin cards for each part; click one to put just that part in that skin. The leading <strong>None</strong> card follows the group skin.</li>
+<li>Use the <strong>All | Group skins | Individual skins</strong> toggle at the top to filter the cards shown.</li>
+</ul>
+
+<h3 id="parts-outfits">Changing outfits and outfit presets</h3>
+<p>Besides the skin manager, you can change outfits these ways:</p>
+<ul>
+<li>The <strong>Outfit</strong> row below the preview (a skin picker per group)</li>
+<li>Previous/next skin (current group): <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd></li>
+<li>Right-click a group → "Skin", or right-click a part → "Skin for this part"</li>
+</ul>
+<p>Changing outfits is a view switch, so it isn't recorded in undo history, but it is saved in the file.</p>
+<p><strong>Outfit presets</strong>: use <strong>Save current outfit…</strong> in the skin manager to save the current combination under a name, then click its card to switch to that outfit. Right-click to overwrite, rename, delete or reorder. Any deleted groups or skins are skipped and you're told.</p>
+
+<h3 id="parts-skin-export">Exporting skins</h3>
+<p>Choose under <strong>Skin</strong> in the common export settings.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Setting</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Current outfit (default)</td><td>Exports only the outfit currently shown.</td></tr>
+<tr><td>Chosen skins</td><td>Exports each skin and outfit preset checked in the <strong>Choose skins</strong> dialog. Combine them in <strong>one image</strong> (cell names <code>&lt;name&gt;@&lt;skin&gt;</code>) or split them into <strong>separate files</strong> (<code>&lt;sheet&gt;@&lt;skin&gt;.png</code>).</td></tr>
+</tbody>
+</table></div>
+<p>In the part atlas, the first skin keeps the original names (<code>Head</code>, <code>Head_1</code> …), and other skins add only the cells actually drawn, like <code>Head@knight</code>. To include inherited cells under that skin's name too, turn on <strong>Use this skin's sprites for inherited cells too</strong> in the Choose skins dialog.</p>
+
+<h3 id="parts-sprite-library">Unity Sprite Library</h3>
+<p>Turn on <strong>Sprite Library</strong> in the part atlas section of the Export tab to create a Sprite Library Asset for the Unity 2D Animation package <strong>per group × skin</strong>, named <code>&lt;part atlas name&gt;_&lt;group&gt;@&lt;skin&gt;.spriteLib</code>.</p>
+<ul>
+<li><strong>Category = part</strong>, <strong>Label = frame</strong> (<code>0</code>, <code>1</code> … or <code>idle_0</code> …).</li>
+<li>Libraries for the same group all share the same Categories and Labels; only the sprites differ. So one animation works for every skin.</li>
+</ul>
+<p>In Unity, put a <strong>Sprite Library</strong> component on the parent of each group's part objects, and keyframe the Label (frame) with a <strong>Sprite Resolver</strong> (Category = part) on each part. To switch skins, just swap the asset on that group's Sprite Library component.</p>
+
+<h3 id="parts-import">Importing old files and PNGs</h3>
+<ul>
+<li>Opening an atlas <code>.gpixel</code> from an older version converts it into a "parts" group with one part per sprite. Unity guids and spriteIDs carry over.</li>
+<li>PNG sheets with cells of different sizes are imported as one group + one part per cell. In this case frame sheet export starts turned off.</li>
+</ul>
+</section>
+
+<section class="doc" id="ai">
+<h2>AI chat (Claude · Codex)</h2>
+
+<h3 id="ai-overview">What it can do</h3>
+<p>Chat with an AI inside the editor to create and edit images. Ask in plain words, like "add a black outline" or "draw 4 walking frames", and the AI edits the open image directly.</p>
+<p>No API key is needed. It uses <strong>Claude Code</strong> (Claude subscription login) or <strong>Codex CLI</strong> (ChatGPT subscription login) installed on your computer. Usage counts against each subscription.</p>
+
+<h3 id="ai-open">Opening the chat window</h3>
+<ul>
+<li>The <strong>AI chat</strong> button on the right of the bar below the menu</li>
+<li>Menu <strong>AI &gt; AI chat</strong></li>
+<li><kbd>Ctrl</kbd>+<kbd>L</kbd></li>
+</ul>
+<p>The chat opens in its own small window and remembers its position and size. If it was open when you closed the app, it reopens next time.</p>
+
+<h3 id="ai-setup">One-time setup: install and log in</h3>
+<p>The Gpixel download doesn't include Claude Code or Codex CLI. The first time, follow these steps.</p>
+<ol>
+<li>If the CLI is missing, click <strong>Install and log in via terminal</strong>, then review and approve the command to run.</li>
+<li>The official install command runs in a terminal, followed by the login command if it succeeds. Finish the browser authentication yourself.</li>
+<li>Gpixel checks the install and login status and moves on to the chat screen.</li>
+</ol>
+<ul>
+<li>If Node.js, which Codex needs, is missing, it's installed too (winget or the official ZIP on Windows, Homebrew or nvm on macOS).</li>
+<li>If it's installed but not logged in, click <strong>Log in with Claude / Log in with Codex</strong> or <strong>Log in via terminal</strong>. The logged-in account is shown at the top of the window.</li>
+<li>If installation fails, check the error in the terminal and use the on-screen copy command, set path manually or <strong>Check again</strong> options.</li>
+<li>The Codex CLI bundled with the ChatGPT app on macOS is found automatically. Nothing else needs to be installed.</li>
+</ul>
+
+<h3 id="ai-tabs">Claude and Codex tabs</h3>
+<p><strong>[Claude | Codex]</strong> at the top of the window are tabs. Each tab has its own conversation, input box, attachments, model and undo buttons, and conversations continue when you switch tabs.</p>
+<ul>
+<li>Switching tabs while a reply is coming in doesn't stop the work; a dot appears after the tab name while it runs.</li>
+<li>To keep two AIs from editing the same image at once, <strong>only one tab works at a time</strong>. While one tab is busy, messages from the other tab aren't sent and stay in the input box.</li>
+</ul>
+
+<h3 id="ai-chat">Chatting</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>To do this</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Send / new line</td><td><kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd></td></tr>
+<tr><td>Attach a reference image</td><td><strong>Image…</strong></td></tr>
+<tr><td>Show the current frame</td><td><strong>Attach canvas</strong></td></tr>
+<tr><td>Change model</td><td>The <strong>Model</strong> list at the top (remembered per AI; applies from the next message)</td></tr>
+<tr><td>Start a new conversation</td><td><strong>New chat</strong></td></tr>
+<tr><td>Stop the reply</td><td><strong>Stop</strong></td></tr>
+</tbody>
+</table></div>
+<p>The first entry in the model list, <strong>Default</strong>, also shows the name of the model that will actually be used.</p>
+
+<h3 id="ai-layer-only">Limiting edits to the current layer</h3>
+<p>Turn on <strong>Current layer only</strong> next to <strong>Attach canvas</strong> below the input box before sending, and the AI edits only the layer that's current when you send (including its parts, if it's a group).</p>
+<ul>
+<li>It can draw on every frame of that layer; other layers and files are view-only.</li>
+<li>Changing frames, layers, skins, canvas or palette, and creating or opening projects are refused (saving still works).</li>
+<li>The chat shows the scope, like <code>Edit scope: layer "hair" only</code>. Turn it off to lift the limit from the next message.</li>
+</ul>
+
+<h3 id="ai-progress">Progress display</h3>
+<p>While a reply is coming in, the bottom line shows what's happening (waiting for response, thinking, writing tool call, running in editor, writing reply) and the elapsed time.</p>
+<div class="note">Large jobs that draw many frames at once can take over a minute to prepare. If the received character count keeps growing, it's working.</div>
+
+<h3 id="ai-edits">Edits the AI can make</h3>
+<p>The AI looks at the open image and edits it directly.</p>
+<ul>
+<li>View the image, read pixels</li>
+<li>Draw points, lines, rectangles and circles; fill, erase, replace colors</li>
+<li>Create and arrange frames, layers, tags, groups and parts</li>
+<li>Add and switch skins, save and apply outfit presets</li>
+<li>Canvas size, palette and colors, new project, open, save</li>
+</ul>
+<p>It saves only when asked. If a never-saved new project has changes, it asks whether to save before switching to another document.</p>
+
+<h3 id="ai-undo">Undoing</h3>
+<p>Each AI reply is <strong>one</strong> undo step, so <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it all at once. Each reply also comes with a result image and <strong>Undo this step / Reapply</strong> buttons.</p>
+
+<h3 id="ai-troubleshoot">Troubleshooting</h3>
+<ul>
+<li>If the AI can't connect to the editor, the chat shows a red line with the likely reason. Common causes are a proxy (<code>HTTP_PROXY</code>, <code>HTTPS_PROXY</code>), VPN or security software blocking connections to 127.0.0.1, or an outdated CLI.</li>
+<li>Codex replies appear all at once after they're fully written, and show only the time, not the cost (Claude shows the cost too).</li>
+</ul>
+<div class="note">If you distribute an app with this feature to others, check Anthropic's and OpenAI's usage policies (restrictions on using subscription logins in third-party apps).</div>
+</section>
+
+<section class="doc" id="shortcuts">
+<h2>Shortcuts</h2>
+<p>Common default shortcuts, grouped by category. Press <kbd>F1</kbd> in the app to see the list of default shortcuts right away. You can change shortcuts to any keys you like (<a href="#shortcuts-customize">Customizing shortcuts</a>).</p>
+
+<h3 id="shortcuts-customize">Customizing shortcuts</h3>
+<p>In the <strong>Shortcuts</strong> tab of <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>) you can change not only menu commands, tools and tool options but also keys that aren't in any menu (drop selection <kbd>Enter</kbd>, arrow-key nudging, peek previous frame <kbd>H</kbd>, selection slot <kbd>M</kbd>, etc.).</p>
+<ul>
+<li>For each row choose <strong>Change</strong> (use the key you press), <strong>Add</strong> (one more key), <strong>None</strong> or <strong>Default</strong>.</li>
+<li>Search by command, category or key, and reset everything at once with <strong>Reset all</strong>.</li>
+<li>If you assign a key used by another command, you're asked whether to remove it from that command.</li>
+<li><strong>Export (JSON)…</strong> saves the current shortcuts to a file, and <strong>Import (JSON)…</strong> applies them again. The same file works on both Windows and macOS.</li>
+<li>Changed keys are reflected immediately in menus and toolbar tooltips. The <kbd>F1</kbd> shortcut list shows the defaults.</li>
+</ul>
+
+<h3 id="shortcuts-file">Files and windows</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>New project</td><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td></tr>
+<tr><td>Open</td><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td></tr>
+<tr><td>Open folder</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td></tr>
+<tr><td>Open Unity project</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></td></tr>
+<tr><td>Save (including export)</td><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td></tr>
+<tr><td>Save as</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td></tr>
+<tr><td>Export dialog</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td></tr>
+<tr><td>Close</td><td><kbd>Ctrl</kbd>+<kbd>W</kbd></td></tr>
+<tr><td>Preferences</td><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td></tr>
+<tr><td>Next / previous tab (Preferences, export dialog)</td><td><kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></td></tr>
+<tr><td>File browser</td><td><kbd>F8</kbd></td></tr>
+<tr><td>AI chat (Claude · Codex)</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td></tr>
+<tr><td>Movement test</td><td><kbd>F5</kbd></td></tr>
+<tr><td>Shortcut list</td><td><kbd>F1</kbd></td></tr>
+</tbody></table></div>
+<p>When a tab row or an option group such as off/on has focus, you can also switch with <kbd>←</kbd>/<kbd>→</kbd> and <kbd>Home</kbd>/<kbd>End</kbd>.</p>
+
+<h3 id="shortcuts-edit">Editing and selection</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>Undo / redo</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td></tr>
+<tr><td>Cut / copy / paste</td><td><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd></td></tr>
+<tr><td>Delete</td><td><kbd>Delete</kbd></td></tr>
+<tr><td>Select all</td><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td></tr>
+<tr><td>Deselect</td><td><kbd>Ctrl</kbd>+<kbd>D</kbd> or <kbd>Esc</kbd></td></tr>
+<tr><td>Drop (floating selection)</td><td><kbd>Enter</kbd></td></tr>
+<tr><td>Move 1 pixel</td><td>Arrow keys</td></tr>
+<tr><td>Move 8 pixels</td><td><kbd>Shift</kbd>+arrow keys or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+arrow keys</td></tr>
+</tbody></table></div>
+<div class="note">Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list restores the last deleted file.</div>
+
+<h3 id="shortcuts-transform">Transform and image</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>Flip horizontal / vertical (selection, or current cel if none)</td><td><kbd>Shift</kbd>+<kbd>H</kbd> / <kbd>Shift</kbd>+<kbd>V</kbd></td></tr>
+<tr><td>Rotate 90° (selection, or whole canvas if none)</td><td><kbd>Ctrl</kbd>+<kbd>R</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td></tr>
+<tr><td>Transform mode (rotate, size, move)</td><td><kbd>Ctrl</kbd>+<kbd>T</kbd></td></tr>
+<tr><td>Outline</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd></td></tr>
+<tr><td>Replace color</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></td></tr>
+<tr><td>Canvas size mode</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></td></tr>
+<tr><td>Apply transform / canvas size mode</td><td><kbd>Enter</kbd></td></tr>
+<tr><td>Cancel transform / canvas size mode</td><td><kbd>Esc</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd></td></tr>
+</tbody></table></div>
+<p>In canvas size mode, dragging a handle changes that edge, <kbd>Ctrl</kbd>+drag also resizes the image, and dragging inside the image moves it.</p>
+
+<h3 id="shortcuts-tools">Tools</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>Selection slot tool / cycle selection shape</td><td><kbd>M</kbd></td></tr>
+<tr><td>Lasso select</td><td><kbd>Q</kbd></td></tr>
+<tr><td>Magic wand</td><td><kbd>W</kbd></td></tr>
+<tr><td>Gradient</td><td><kbd>F</kbd></td></tr>
+<tr><td>Decrease / increase brush size</td><td><kbd>[</kbd> / <kbd>]</kbd></td></tr>
+<tr><td>Pixel perfect</td><td><kbd>P</kbd></td></tr>
+<tr><td>Filled shapes</td><td><kbd>U</kbd></td></tr>
+<tr><td>Swap primary and secondary colors</td><td><kbd>X</kbd></td></tr>
+<tr><td>All matching colors</td><td><kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
+<tr><td>Horizontal / vertical symmetry</td><td><kbd>Shift</kbd>+<kbd>X</kbd> / <kbd>Shift</kbd>+<kbd>Y</kbd></td></tr>
+<tr><td>Expand and switch grouped tools (fill, shapes, select)</td><td>Long-press or right-click the tool slot</td></tr>
+</tbody></table></div>
+<p>Pressing <kbd>M</kbd> from another tool switches to the selection slot tool. While using a selection tool, each press within 10 seconds cycles rectangle → ellipse → lasso → magic wand (the first press after 10 seconds only shows a hint).</p>
+
+<h3 id="shortcuts-view">View and canvas</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>Zoom in/out</td><td>Wheel</td></tr>
+<tr><td>Brush (pen) size</td><td><kbd>Ctrl</kbd>+wheel</td></tr>
+<tr><td>Pan</td><td><kbd>Space</kbd>+drag or middle-button drag</td></tr>
+<tr><td>Fit to window / 1×</td><td><kbd>Ctrl</kbd>+<kbd>0</kbd> / <kbd>Ctrl</kbd>+<kbd>1</kbd></td></tr>
+<tr><td>Pixel grid</td><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td></tr>
+<tr><td>Tile grid</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
+<tr><td>Tiled mode</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></td></tr>
+<tr><td>Onion skin</td><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td></tr>
+<tr><td>Peek previous frame</td><td><kbd>H</kbd> (hold)</td></tr>
+</tbody></table></div>
+
+<h3 id="shortcuts-timeline">Timeline · layers · groups</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
+<tr><td>Play / stop</td><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td></tr>
+<tr><td>Previous / next frame</td><td><kbd>,</kbd> / <kbd>.</kbd></td></tr>
+<tr><td>First / last frame</td><td><kbd>Home</kbd> / <kbd>End</kbd></td></tr>
+<tr><td>New empty frame</td><td><kbd>Alt</kbd>+<kbd>N</kbd></td></tr>
+<tr><td>Duplicate frame</td><td><kbd>Alt</kbd>+<kbd>D</kbd></td></tr>
+<tr><td>New layer</td><td><kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
+<tr><td>Rename layer</td><td><kbd>F2</kbd></td></tr>
+<tr><td>New group</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
+<tr><td>New part</td><td><kbd>Shift</kbd>+<kbd>P</kbd></td></tr>
+<tr><td>Previous / next skin (change outfit)</td><td><kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd></td></tr>
+<tr><td>Scroll layers up/down (in the timeline)</td><td>Wheel</td></tr>
+<tr><td>Scroll frames left/right (in the timeline)</td><td><kbd>Ctrl</kbd>+wheel</td></tr>
+</tbody></table></div>
+<p>Skin switching applies to the current group (or the selected part's group) and isn't recorded in undo history. For groups, parts and skins, see the <a href="#parts">Parts and groups</a> chapter.</p>
+</section>
+
+<section class="doc" id="language">
+<h2>Language</h2>
+<p>Gpixel includes Korean and English. On first launch it picks the language that matches your computer, or starts in English if there's no match. You can add other languages yourself with a CSV file.</p>
+
+<h3 id="language-change">Changing the display language</h3>
+<ol>
+<li>Open <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>). <strong>Language</strong> is at the top.</li>
+<li>Choose from the <strong>Display language</strong> list and click <strong>OK</strong>.</li>
+<li>Click <strong>Restart now</strong> to close the app and reopen it in the new language. If there are unsaved documents, you're asked first, just like when closing. Choose <strong>Later</strong> to apply it the next time you launch.</li>
+</ol>
+
+<h3 id="language-make">Creating a new language</h3>
+<ol>
+<li>Save a CSV file with <strong>Export translation CSV…</strong> in Preferences. You can open it in Excel, Google Sheets and so on.</li>
+<li>The first row is <code>key,ko,en</code> and the second row is <code>#name,한국어,English</code>. Add a new column at the far right with the language code in the first row (e.g. <code>ja</code>) and the language name in the second row (e.g. <code>日本語</code>).</li>
+<li>Translate the text in that column. Braces such as <code>{0}</code> and <code>{name}</code> are placeholders for values, so keep them as they are (you may change their order).</li>
+<li>Choose the file with <strong>Add language from CSV…</strong> and it appears in the language list. Select it and restart to apply it.</li>
+</ol>
+<div class="note"><p>Empty cells show the English text, so you can add your translation bit by bit. Adding the same language code again overwrites it.</p></div>
+
+<h3 id="language-fix">Editing and removing built-in text</h3>
+<ul>
+<li>If you edit the <code>ko</code> or <code>en</code> column in an exported CSV and add it, only the edited cells override the built-in text.</li>
+<li><strong>Open language folder</strong> opens the folder containing the CSV files of added languages. Deleting a file removes that language from the list, or, for a file that edited a built-in language, restores the original text.</li>
+</ul>
+</section>
+</div>
+</div>
+</main>
+
+<footer>
+<div class="wrap">
+<span>Gpixel · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
+</div>
+</footer>
+<script>
+// 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
+document.getElementById('lang-select').addEventListener('change', function (e) {
+  var to = e.target.value;
+  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  var page = location.pathname.split('/').pop() || '';
+  location.href = ('../') + page + location.hash;
+});
+// 목차: 지금 읽는 장을 표시.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var heads = Array.prototype.slice.call(document.querySelectorAll('.doc h2, .doc h3'))
+    .map(function (h) { return h.tagName === 'H2' ? h.parentElement : h; })
+    .filter(function (el) { return byId[el.id]; });
+  function update() {
+    var current = null;
+    for (var i = 0; i < heads.length; i++) {
+      if (heads[i].getBoundingClientRect().top < 120) current = heads[i]; else break;
+    }
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (current) byId[current.id].classList.add('active');
+  }
+  document.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>
