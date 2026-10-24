@@ -66,6 +66,10 @@ jobs:
           url = release["html_url"]
           headings = []
           fence = None
+          english_section = False
+          section_level = None
+          saw_english = False
+          standalone_english = []
           for line in (release.get("body") or "").splitlines():
               marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
               if marker:
@@ -77,17 +81,29 @@ jobs:
                   continue
               if fence:
                   continue
-              heading = re.match(r"^ {0,3}#{2,6}\s+(.+?)\s*$", line)
+              heading = re.match(r"^ {0,3}(#{2,6})\s+(.+?)\s*$", line)
               if not heading:
                   continue
-              title = re.sub(r"\s+#+\s*$", "", heading.group(1)).strip()
-              if title.lower() in ("english", "한국어", "korean"):
-                  headings.append("\n**" + title + "**")
-              elif title:
-                  headings.append("- " + title)
-          body = "\n".join(headings).strip() or "소제목이 없습니다. 전체 업데이트 내역에서 확인해 주세요."
+              title = re.sub(r"\s+#+\s*$", "", heading.group(2)).strip()
+              level = len(heading.group(1))
+              if title.lower() == "english":
+                  english_section = True
+                  saw_english = True
+                  section_level = level
+                  continue
+              if section_level is not None and level <= section_level:
+                  english_section = False
+              if title.lower() in ("한국어", "korean"):
+                  continue
+              if title and not re.search(r"[가-힣]", title) and re.search(r"[A-Za-z]", title):
+                  standalone_english.append("- " + title)
+                  if english_section:
+                      headings.append("- " + title)
+          if not saw_english:
+              headings = standalone_english
+          body = "\n".join(headings).strip() or "See the full release notes for details."
           if len(body) > 3800:
-              body = body[:3750].rsplit("\n", 1)[0] + "\n\n나머지 소제목은 전체 업데이트 내역에서 확인해 주세요."
+              body = body[:3750].rsplit("\n", 1)[0] + "\n\nSee the full release notes for more."
           downloads = []
           labels = {"Gpixel-windows-x64.zip": "Windows",
                     "Gpixel-macos-arm64.zip": "macOS Apple Silicon",
@@ -96,10 +112,10 @@ jobs:
               label = labels.get(asset["name"])
               if label:
                   downloads.append("[" + label + "](" + asset["browser_download_url"] + ")")
-          embed = {"title": ("GPixel " + release["tag_name"] + " 업데이트")[:256],
+          embed = {"title": ("GPixel " + release["tag_name"] + " Update")[:256],
                    "url": url, "description": body, "color": 0x37CDBE,
-                   "fields": [{"name": "다운로드", "value": " · ".join(downloads) or "[릴리스 페이지](" + url + ")"},
-                              {"name": "전체 업데이트 내역", "value": "[GitHub에서 보기](" + url + ")"}],
+                   "fields": [{"name": "Downloads", "value": " · ".join(downloads) or "[Release page](" + url + ")"},
+                              {"name": "Full release notes", "value": "[View on GitHub](" + url + ")"}],
                    "footer": {"text": "GPixel Updates"}}
           payload = {"username": "GPixel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
           hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
