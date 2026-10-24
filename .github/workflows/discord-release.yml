@@ -11,6 +11,11 @@ on:
         required: true
   workflow_dispatch:
     inputs:
+      avatar_only:
+        description: "Update webhook profile icon without sending an announcement"
+        required: false
+        default: false
+        type: boolean
       tag:
         description: "Published release tag (empty = latest stable release)"
         required: false
@@ -32,11 +37,13 @@ jobs:
     steps:
       - name: Send release details to Discord
         env:
+          AVATAR_ONLY: ${{ inputs.avatar_only || false }}
           GH_TOKEN: ${{ github.token }}
           DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
           RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           python3 - <<'PY'
+          import base64
           import json
           import os
           import urllib.error
@@ -44,6 +51,23 @@ jobs:
           import urllib.request
           
           repo = os.environ["GITHUB_REPOSITORY"]
+          icon_url = "https://raw.githubusercontent.com/" + repo + "/main/docs/assets/icon-256.png"
+          if os.environ.get("AVATAR_ONLY") == "true":
+              with urllib.request.urlopen(icon_url, timeout=30) as response:
+                  icon = response.read()
+              hook = os.environ["DISCORD_RELEASE_WEBHOOK"].rstrip("/")
+              avatar = "data:image/png;base64," + base64.b64encode(icon).decode("ascii")
+              request = urllib.request.Request(hook,
+                  data=json.dumps({"avatar": avatar}).encode("utf-8"),
+                  headers={"Content-Type": "application/json", "User-Agent": "GPixel-release-notify"},
+                  method="PATCH")
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      result = json.load(response)
+              except urllib.error.HTTPError as error:
+                  raise SystemExit("Avatar update failed (HTTP " + str(error.code) + ")") from None
+              print("GPixel webhook profile icon updated")
+              raise SystemExit(0)
           tag = os.environ.get("RELEASE_TAG", "").strip()
           if not tag:
               event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
@@ -74,7 +98,7 @@ jobs:
                    "fields": [{"name": "다운로드", "value": " · ".join(downloads) or "[릴리스 페이지](" + url + ")"},
                               {"name": "전체 업데이트 내역", "value": "[GitHub에서 보기](" + url + ")"}],
                    "footer": {"text": "GPixel Updates"}}
-          payload = {"username": "GPixel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
+          payload = {"username": "GPixel Updates", "avatar_url": icon_url, "allowed_mentions": {"parse": []}, "embeds": [embed]}
           hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
           if not hook.startswith("https://discord.com/api/webhooks/"):
               raise SystemExit("DISCORD_RELEASE_WEBHOOK is missing or invalid")
