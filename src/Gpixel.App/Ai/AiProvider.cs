@@ -29,6 +29,12 @@ public interface IChatSession : IDisposable
     /// <summary>새 대화를 시작할 때의 작업 폴더(없으면 CLI마다 정한 곳).</summary>
     string? WorkingDirectory { get; set; }
 
+    /// <summary>CLI 세션 ID(이어 가기용, 아직 없으면 null). 대화를 저장할 때 남긴다.</summary>
+    string? SessionId { get; }
+
+    /// <summary>이 세션을 이어 갈 때 쓸 작업 폴더(세션 기록이 그 폴더에 묶이는 CLI만, 아니면 null).</summary>
+    string? SessionDirectory { get; }
+
     /// <summary>답을 기다리는 중.</summary>
     bool IsTurnActive { get; }
 
@@ -65,6 +71,9 @@ public interface IChatSession : IDisposable
 
     /// <summary>새 대화: 프로세스를 끝내고 대화를 잊는다.</summary>
     void Reset();
+
+    /// <summary>저장한 대화를 이어 간다: 프로세스를 끝내고 다음 <see cref="Send"/>가 <paramref name="sessionId"/> 세션을 <paramref name="directory"/>에서 이어 간다.</summary>
+    void Resume(string sessionId, string? directory);
 }
 
 /// <summary>

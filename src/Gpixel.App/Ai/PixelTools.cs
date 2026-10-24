@@ -15,8 +15,9 @@ namespace Gpixel.App.Ai;
 /// AI(Claude·Codex)가 MCP로 부르는 편집 도구 모음. 도구 설명·입력 스키마는 모델이 읽으므로 영어, 결과 요약·오류 문구는 한국어다.
 /// <para>
 /// <see cref="Call"/>은 UI 스레드에서 불린다(호출자가 넘겨 줌). 대화상자는 절대 띄우지 않는다.
-/// 바꾸는 도구는 떠 있는 선택을 먼저 내려놓고, 숨겨진·잠긴 레이어와 그룹 레이어는 거부하고, 캔버스 밖은 잘라 내며,
-/// 실행취소 기록을 정확히 하나("AI: 도구이름") 남기고, 고친 프레임·레이어를 현재로 만든다.
+/// 바꾸는 도구는 떠 있는 선택을 먼저 내려놓고, 잠긴 레이어(잠긴 그룹의 부위 포함)를 바꾸는 호출과 그룹 레이어에 그리기는 거부하고
+/// (<see cref="Scope"/>와 관계없이 항상), 캔버스 밖은 잘라 내며,
+/// 실행취소 기록을 정확히 하나("AI: 도구이름") 남기고, 고친 프레임·레이어를 현재로 만든다. <see cref="Scope"/>가 있으면 그 문서만 고친다.
 /// 픽셀은 셀 스트로크로, 구조(프레임·레이어·그룹·부위·태그·캔버스)는 프로젝트 메서드를 바깥 <see cref="SpriteProject.Edit(string, ProjectChange, Action)"/>로 감싸 한 단계로 기록한다.
 /// <c>frame</c>은 항상 프레임 번호다. <c>layer</c>가 부위면 좌표는 부위 안 좌표(부위 왼쪽 위 = 0,0)다.
 /// </para>
@@ -46,15 +47,16 @@ public sealed class PixelTools
     public PixelTools(IAiHost host) => _host = host;
 
     /// <summary>
-    /// 편집 범위(채팅의 "지금 레이어만" — 차례 동안). 있으면 그 문서의 그 레이어(그룹이면 그 부위들까지)만 픽셀 도구로 고치고,
-    /// 다른 레이어·문서·구조(프레임·레이어·스킨·캔버스·파일)는 읽기만 된다. null = 제한 없음.
+    /// 편집 범위(채팅의 "지금 그림만" — 차례 동안). 있으면 그 문서 안에서만 고치고(레이어·프레임·그룹·부위·스킨·태그 추가도 됨),
+    /// 다른 파일을 열거나 새로 만드는 도구(<see cref="FileSwitchTools"/>)는 거부한다. 차례 중에 사용자가 다른 문서로 바꿨으면
+    /// 읽기 도구(<see cref="ReadTools"/>) 말고는 모두 거부한다. 잠긴 레이어는 범위와 관계없이 고치지 않는다. null = 제한 없음.
     /// </summary>
     public EditScope? Scope { get; set; }
 
-    /// <summary>범위가 있어도 쓸 수 있는 도구(읽기·저장).</summary>
-    private static readonly HashSet<string> ScopeFreeTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "save_project"];
-    /// <summary>범위 안 레이어면 쓸 수 있는 픽셀 도구(<see cref="EditTarget"/>에서 검사).</summary>
-    private static readonly HashSet<string> ScopedPixelTools = ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"];
+    /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음).</summary>
+    private static readonly HashSet<string> ReadTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits"];
+    /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
+    private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
 
     private EditorContext Ctx => _host.Context;
 
@@ -64,10 +66,10 @@ public sealed class PixelTools
     public JsonArray ListTools() => new(
         Tool("get_document",
             "Describe the open document as JSON: file path, canvas (frame) width/height, frames [{index,durationMs,name}], " +
-            "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked,opacity," +
+            "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
             "collapsed,skins,activeSkin (groups only)}] (bottom to top; a group's parts are the layers " +
-            "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to one layer: edit only that layer, everything else is read-only), " +
+            "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
             "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
             new JsonObject()),
@@ -426,8 +428,11 @@ public sealed class PixelTools
         try
         {
             var a = arguments;
-            if (Scope is { } scope && !ScopeFreeTools.Contains(name) && !ScopedPixelTools.Contains(name))
-                throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_Call_641D76DC81,scope.Layer.Name,name));
+            if (Scope is { } scope && !ReadTools.Contains(name))
+            {
+                if (FileSwitchTools.Contains(name)) throw new ToolError(UiStrings.Ai_Scope_FileOnly);
+                if (!ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
+            }
             return name switch
             {
                 "get_document" => GetDocument(),
@@ -521,7 +526,7 @@ public sealed class PixelTools
                 var o = new JsonObject
                 {
                     ["index"] = i, ["name"] = l.Name, ["kind"] = KindName(l.Kind),
-                    ["visible"] = l.Visible, ["locked"] = l.Locked, ["opacity"] = (int)l.Opacity,
+                    ["visible"] = l.Visible, ["locked"] = p.IsLayerLocked(i), ["opacity"] = (int)l.Opacity,
                 };
                 if (l.IsPart)
                 {
@@ -557,8 +562,8 @@ public sealed class PixelTools
                 doc["editScope"] = ReferenceEquals(scope.Project, p)
                     ? new JsonObject
                     {
-                        ["layer"] = p.IndexOf(scope.Layer), ["name"] = scope.Layer.Name,
-                        ["note"] = "Only this layer" + (scope.Layer.IsGroup ? " and its parts" : "") + " may be changed (pixel tools, any frame). Everything else is read-only.",
+                        ["file"] = p.Path ?? p.DisplayName,
+                        ["note"] = "Only this open document may be changed; do not open or create other files. Locked layers are never changed.",
                     }
                     : new JsonObject { ["note"] = "Read-only: the document open when this turn started is no longer open." };
             doc["dirty"] = p.IsDirty;
@@ -819,6 +824,7 @@ public sealed class PixelTools
         int after = OptInt(a, "after", duplicate ? 0 : -1, p.Frames.Count - 1) ?? ctx.CurrentFrame;
         int? duration = OptInt(a, "duration_ms", 1, MaxDurationMs);
         int index = after + 1;
+        // 복제는 잠긴 레이어의 셀도 새 프레임에 복사한다 — 기존 그림은 그대로이고 새 프레임의 새 그림일 뿐이라 잠금과 부딪히지 않는다.
         p.Edit(Label(tool), ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             if (duplicate) p.DuplicateFrame(after);
@@ -836,6 +842,8 @@ public sealed class PixelTools
         var ctx = Ctx;
         int frame = ReqIndex(a, "frame", p.Frames.Count, UiStrings.S_PixelTools_DeleteFrame_EBFF79A82B);
         if (p.Frames.Count <= 1) throw new ToolError(UiStrings.S_PixelTools_DeleteFrame_26646ACB37);
+        if (p.LockedLayersWithContent(frame) is { Count: > 0 } locked)
+            throw new ToolError(UiStrings.FormatAi_Locked_DeleteFrame(frame: frame, layers: LayerList(p, locked)));
         p.Edit(Label(tool), ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () => p.DeleteFrame(frame));
         int current = Math.Min(frame, p.Frames.Count - 1);
         ctx.SetCurrent(ctx.CurrentLayer, current);
@@ -881,6 +889,10 @@ public sealed class PixelTools
             Ctx.SetCurrentLayer(index);
             return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_A108A37060,tool,index,layer.Name));
         }
+        RequireUnlocked(p, index);
+        // 숨긴 부위를 빼고 배치하는 그룹이면 보이기를 바꾸면 다른 부위가 옮겨진다.
+        if (visible is { } shown && shown != layer.Visible && layer.IsPart && layer.Parent is { AutoLayout.IncludeHidden: false } layoutGroup)
+            RequireLayoutKeepsLocked(p, layoutGroup);
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerProperties(index, name, visible, null, (byte?)opacity));
         Ctx.SetCurrentLayer(index);
         return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetLayer_6917D3B1D2,tool,index,layer.Name,(layer.Visible ? UiStrings.S_PixelTools_SetLayer_E13C63FCCD : UiStrings.S_PixelTools_SetLayer_2CB582875D),layer.Opacity));
@@ -939,6 +951,8 @@ public sealed class PixelTools
         else throw new ToolError(UiStrings.S_PixelTools_AddPart_25FD2C2EF3);
         var group = p.Layers[groupIndex];
         if (!group.IsGroup) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddPart_15F86D7485,groupIndex,group.Name));
+        RequireUnlocked(p, groupIndex);
+        RequireLayoutKeepsLocked(p, group);
         var name = ReqString(a, "name").Trim();
         if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_AddPart_09DD29C130);
         int width = ReqInt(a, "width", 1, PixelImage.MaxSize), height = ReqInt(a, "height", 1, PixelImage.MaxSize);
@@ -967,6 +981,7 @@ public sealed class PixelTools
         int index = ReqIndex(a, "layer", p.Layers.Count, UiStrings.S_PixelTools_SetPart_9A098737D8);
         var part = p.Layers[index];
         if (!part.IsPart) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPart_E4221AFE6B,index,part.Name));
+        RequireUnlocked(p, index);
         int? x = OptInt(a, "x", -CoordLimit, CoordLimit), y = OptInt(a, "y", -CoordLimit, CoordLimit);
         int? width = OptInt(a, "width", 1, PixelImage.MaxSize), height = OptInt(a, "height", 1, PixelImage.MaxSize);
         var anchor = ParseAnchor(a);
@@ -981,6 +996,7 @@ public sealed class PixelTools
         var size = part.PartSize;
         int newW = width ?? size.Width, newH = height ?? size.Height;
         bool resize = newW != size.Width || newH != size.Height;
+        if (resize && part.IsAutoLaidOut) RequireLayoutKeepsLocked(p, part.Parent!);
         p.Edit(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             if (resize) p.ResizePart(index, newW, newH, anchor);
@@ -1059,6 +1075,7 @@ public sealed class PixelTools
         if (!string.IsNullOrEmpty(OptString(a, "part")?.Trim()))
         {
             var part = FindPart(p, a);
+            RequireUnlocked(p, p.IndexOf(part));
             var owner = part.Parent!;
             var shown = (OptBool(a, "copy_shown") ?? false) ? part.ShownSkin : null;
             var partSkin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddPartSkin(part, name?.Trim(), shown));
@@ -1067,6 +1084,7 @@ public sealed class PixelTools
                               string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_AddSkin_393B167AD9,SkinNames(part.OwnSkins),owner.Name,SkinNames(owner)));
         }
         var group = SkinGroup(p, a);
+        RequireUnlocked(p, p.IndexOf(group));
         bool copy = OptBool(a, "copy_active") ?? false;
         var from = copy ? group.ActiveSkin : null;
         var skin = p.Edit<Skin>(Label(tool), ProjectChange.Layers | ProjectChange.Pixels, () => p.AddSkin(group, name?.Trim(), from));
@@ -1114,12 +1132,14 @@ public sealed class PixelTools
             if (follow) throw new ToolError(UiStrings.S_PixelTools_SetSkin_DD7C155818);
             if (name.Length == 0) throw new ToolError(UiStrings.S_PixelTools_SetSkin_5A7BD93C92);
             var group = SkinGroup(p, a);
+            RequireUnlocked(p, p.IndexOf(group));
             var skin = FindSkin(group, name);
             Ctx.SetActiveSkin(group, skin);
             return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetSkin_EF3CA69B88,tool,p.IndexOf(group),group.Name,skin.Name));
         }
 
         var part = FindPart(p, a);
+        RequireUnlocked(p, p.IndexOf(part));
         var owner = part.Parent!;
         // "그룹"은 그 이름의 스킨이 없을 때만 "그룹 따름"으로 본다.
         if (follow || name.Length == 0 || (name == "그룹" && part.SkinChoices.All(s => s.Name != name)))
@@ -1174,6 +1194,8 @@ public sealed class PixelTools
                      ?? throw new ToolError(p.Outfits.Count == 0
                          ? UiStrings.S_PixelTools_ApplyOutfit_F6B996D5D3
                          : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_2BAE4914BE,name,string.Join(", ", p.Outfits.Select(o => o.Name))));
+        if (p.LockedLayersChangedBy(outfit) is { Count: > 0 } locked)
+            throw new ToolError(UiStrings.FormatAi_Locked_Outfit(outfit: outfit.Name, layers: LayerList(p, locked)));
         IReadOnlyList<string> missing = [];
         Ctx.Structural(() => missing = p.ApplyOutfit(outfit));
         return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_F49A169E48,tool,outfit.Name) + (missing.Count == 0 ? "" : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ApplyOutfit_4168EF87C1,string.Join(", ", missing))));
@@ -1211,6 +1233,8 @@ public sealed class PixelTools
         var anchor = ParseAnchor(a);
         int oldW = p.Width, oldH = p.Height;
         if (oldW == width && oldH == height) return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ResizeCanvas_432D915165,tool,width,height));
+        var locked = p.Layers.Where((_, i) => p.IsLayerLocked(i)).ToList();
+        if (locked.Count > 0) throw new ToolError(UiStrings.FormatAi_Locked_ResizeCanvas(layers: LayerList(p, locked)));
         p.Edit(Label(tool), ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Layers | ProjectChange.Settings,
             () => p.ResizeCanvas(width, height, anchor));
         return TextResult(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_ResizeCanvas_B4587312A5,tool,oldW,oldH,width,height));
@@ -1301,17 +1325,34 @@ public sealed class PixelTools
     {
         var p = BeginMutation();
         int frame = Frame(a), layer = LayerIndex(a);
-        var l = p.Layers[layer];
-        if (Scope is { } scope && (!ReferenceEquals(p, scope.Project) || !scope.Allows(l)))
-            throw new ToolError(ReferenceEquals(p, scope.Project)
-                ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_EditTarget_7C911AF779,scope.Layer.Name,(scope.Layer.IsGroup ? UiStrings.S_PixelTools_EditTarget_7CA7F88A4A : ""),layer,l.Name)
-                : UiStrings.S_PixelTools_EditTarget_502F3C3D23);
-        if (l.IsGroup) throw new ToolError(UiStrings.S_PixelTools_EditTarget_1DEA54562E);
-        if (p.IsLayerLocked(layer))
-            throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_EditTarget_F0AFAA4B8B,layer,l.Name));
+        if (p.Layers[layer].IsGroup) throw new ToolError(UiStrings.S_PixelTools_EditTarget_1DEA54562E);
+        RequireUnlocked(p, layer);
         var (w, h) = SourceSize(p, layer);
         return new Target(p, frame, layer, w, h);
     }
+
+    /// <summary>잠긴 레이어(잠긴 그룹의 부위 포함)면 도구 오류 — 잠긴 레이어는 <see cref="Scope"/>와 관계없이 고치지 않는다.</summary>
+    private static void RequireUnlocked(SpriteProject p, int index)
+    {
+        if (p.IsLayerLocked(index))
+            throw new ToolError(UiStrings.FormatAi_Locked_Layer(index: index, name: p.Layers[index].Name));
+    }
+
+    /// <summary>
+    /// 자동 배치 그룹의 부위 배치를 다시 계산하게 될 변경이면, 그 그룹에 잠긴 부위가 있을 때 거부한다(다시 배치하면 잠긴 부위가 옮겨질 수 있음).
+    /// 자동 배치가 꺼진 그룹은 통과.
+    /// </summary>
+    private static void RequireLayoutKeepsLocked(SpriteProject p, Layer group)
+    {
+        if (group.AutoLayout is null) return;
+        foreach (var part in p.ChildrenOf(group))
+            if (part.Locked || group.Locked)
+                throw new ToolError(UiStrings.FormatAi_Locked_AutoLayout(group: group.Name, index: p.IndexOf(part), name: part.Name));
+    }
+
+    /// <summary>오류 문구용 레이어 목록: 3 "Head", 5 "Body".</summary>
+    private static string LayerList(SpriteProject p, IEnumerable<Layer> layers)
+        => string.Join(", ", layers.Select(l => $"{p.IndexOf(l)} \"{l.Name}\""));
 
     /// <summary>
     /// 대상 셀을 현재로 만들고 스트로크 하나로 <paramref name="edit"/>을 실행해 기록한다(바뀐 것이 없으면 기록 없음).
@@ -1490,8 +1531,5 @@ public sealed class PixelTools
     };
 }
 
-/// <summary>AI 편집 범위: 문서 하나의 레이어 하나(그룹이면 그 부위들까지).</summary>
-public sealed record EditScope(SpriteProject Project, Layer Layer)
-{
-    public bool Allows(Layer layer) => ReferenceEquals(layer, Layer) || ReferenceEquals(layer.Parent, Layer);
-}
+/// <summary>AI 편집 범위(채팅의 "지금 그림만"): 이 문서만 고칠 수 있다. 잠긴 레이어는 범위와 관계없이 고치지 않는다.</summary>
+public sealed record EditScope(SpriteProject Project);

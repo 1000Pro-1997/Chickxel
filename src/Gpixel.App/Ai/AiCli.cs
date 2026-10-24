@@ -45,8 +45,9 @@ public static class AiCli
         - Don't save (save_project) unless the user asks.
         - To start a new image use new_project (the previous document stays open in the file list, edits kept). It fails only when the open project is a never-saved new project with changes; then tell the user and ask whether to save it. Never save on your own to get around it.
         - Images the user attaches are references; the canvas itself changes only through the tools.
-        - If a tool refuses (hidden or locked layer, no open project, ...), tell the user instead of working around it.
-        - If get_document shows editScope, the user limited this turn to that layer: change only it (any frame) and treat every other layer, document and structure as read-only. Tools outside the scope are refused; tell the user instead of working around it.
+        - Locked layers (get_document `locked`; a locked group locks all its parts) are never changed: tools that would draw on, rename, hide, move, resize or re-skin a locked layer, delete a frame holding a locked layer's drawing, or resize the canvas while any layer is locked are refused.
+        - If a tool refuses (locked layer, no open project, ...), tell the user instead of working around it.
+        - If get_document shows editScope, the user limited this turn to the current file: change only that open document (adding layers, frames, groups, parts, skins and tags inside it is fine) and never open or create other files (open_file and new_project are refused). If another document is open now, everything is read-only. Tell the user instead of working around it.
         """;
 
     internal static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

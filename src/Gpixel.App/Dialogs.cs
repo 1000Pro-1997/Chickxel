@@ -496,6 +496,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_744D097883, UiStrings.S_Dialogs_Shortcuts_778F677E82),
         (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, "Ctrl+C / Ctrl+X / Ctrl+V", UiStrings.S_Dialogs_Shortcuts_DD21ABD0E2),
         (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_551C1C1477, UiStrings.S_Dialogs_Shortcuts_4433121F4C),
+        (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.Shortcuts_NextLayerRowButtons, UiStrings.Shortcuts_NextLayerRowActions),
         (UiStrings.S_Dialogs_Shortcuts_5BC0EB1C9D, UiStrings.S_Dialogs_Shortcuts_6FA30CF6A4, UiStrings.S_Dialogs_Shortcuts_3DBB46587D),
         (UiStrings.S_Dialogs_Shortcuts_BF8A231C98, UiStrings.S_Dialogs_Shortcuts_BA96D2C3EB, UiStrings.S_Dialogs_Shortcuts_699BE4B36E),
         (UiStrings.S_Dialogs_Shortcuts_BF8A231C98, UiStrings.S_Dialogs_Shortcuts_6AF34AD7B6, UiStrings.S_Dialogs_Shortcuts_1C2B1A1E5E),

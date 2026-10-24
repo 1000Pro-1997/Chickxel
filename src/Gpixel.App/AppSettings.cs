@@ -102,16 +102,25 @@ public sealed class AppSettings
     // AI 채팅(Claude Code·Codex)
     /// <summary>채팅에 쓰는 CLI("claude" / "codex", 모르는 값 = claude).</summary>
     public string ChatProvider { get; set; } = "claude";
-    /// <summary>채팅의 "지금 레이어만": 보낼 때의 문서·현재 레이어(그룹이면 그 부위들)만 AI가 고침(나머지는 보기만). 두 탭이 같이 씀.</summary>
-    public bool AiCurrentLayerOnly { get; set; }
+    /// <summary>채팅의 "지금 그림만": 보낼 때 열린 문서 하나만 AI가 고침(다른 파일은 열거나 만들지 않음). 두 탭이 같이 씀. 잠긴 레이어는 이 설정과 관계없이 늘 건드리지 않는다.</summary>
+    public bool AiCurrentFileOnly { get; set; }
+    /// <summary>탭마다 마지막으로 보던 저장된 대화: AI id("claude"/"codex") → 대화 id. 없으면 대화 목록을 보던 것.</summary>
+    public Dictionary<string, string>? ChatLastOpen { get; set; }
     /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>
     public string? AiModel { get; set; }
     /// <summary>claude 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
     public string? ClaudePath { get; set; }
     /// <summary>Claude Code가 알려 준 실제 모델 ID: 보낸 별칭(기본값은 "default:" + Claude Code 설정의 모델) → ID. 목록에 버전을 보이는 데 쓴다.</summary>
     public Dictionary<string, string>? ClaudeResolvedModels { get; set; }
-    /// <summary>Codex 모델(null = Codex 설정의 기본값, 예: "gpt-6-astra").</summary>
-    public string? CodexModel { get; set; }
+    /// <summary>추천 Codex 모델(목록에 "추천"으로 표시, 새 설정의 기본값).</summary>
+    public const string RecommendedCodexModel = "gpt-6-astra";
+    /// <summary>Codex 모델(null = Codex 설정의 기본값). 처음엔 <see cref="RecommendedCodexModel"/>.</summary>
+    public string? CodexModel { get; set; } = RecommendedCodexModel;
+    /// <summary>
+    /// Codex 기본 모델을 추천 모델로 옮겼는지. 예전 설정에서 고르지 않은 채(null) 남은 Codex 모델을 한 번만 추천 모델로 바꾸고,
+    /// 그 뒤에 사용자가 "기본값(Codex 설정)"을 고르면 그대로 둔다.
+    /// </summary>
+    public bool CodexRecommendedApplied { get; set; }
     /// <summary>codex 실행 파일 경로를 직접 정함(null = 자동으로 찾음).</summary>
     public string? CodexPath { get; set; }
     public int ChatX { get; set; } = -1;
@@ -230,6 +239,11 @@ public sealed class AppSettings
             s.Palette = null;
         }
         if (s.Shortcuts is { } keys && keys.Remove("AI/Claude 채팅", out var chat)) keys.TryAdd("AI/AI 채팅", chat);
+        if (!s.CodexRecommendedApplied)
+        {
+            s.CodexModel ??= RecommendedCodexModel;
+            s.CodexRecommendedApplied = true;
+        }
         return s;
     }
 

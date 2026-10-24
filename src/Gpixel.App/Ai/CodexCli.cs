@@ -92,7 +92,12 @@ public sealed partial class CodexProvider : AiProvider
             new(null, configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_7FE99F2479,Display(configured)) : UiStrings.S_CodexCli_Models_7DA9DF3E69,
                 configured is not null ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_CodexCli_Models_C805CAE060,configured) : UiStrings.S_CodexCli_Models_BB8E3AA96C),
         };
-        foreach (var (slug, name, description) in models) list.Add(new ModelChoice(slug, name, description));
+        // 추천 모델은 이름 옆에 "추천"을 붙이고, 받아 둔 모델 목록에 없어도 고를 수 있게 넣는다.
+        string Name(string slug, string name) => slug == AppSettings.RecommendedCodexModel
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Ai_ModelRecommended, name) : name;
+        foreach (var (slug, name, description) in models) list.Add(new ModelChoice(slug, Name(slug, name), description));
+        if (list.All(c => c.Value != AppSettings.RecommendedCodexModel))
+            list.Insert(1, new ModelChoice(AppSettings.RecommendedCodexModel, Name(AppSettings.RecommendedCodexModel, "GPT-6-Astra"), null));
         if (settings.CodexModel is { Length: > 0 } custom && list.All(c => c.Value != custom))
             list.Add(new ModelChoice(custom, custom, UiStrings.S_CodexCli_Models_58FF126F54));
         return list;
@@ -201,6 +206,9 @@ public sealed class CodexSession : IChatSession
     /// <summary>Codex 스레드 ID(이어 가기용).</summary>
     public string? SessionId { get; private set; }
 
+    /// <summary>Codex는 늘 같은 빈 폴더에서 돌므로 남길 폴더가 없다.</summary>
+    public string? SessionDirectory => null;
+
     public bool IsTurnActive { get; private set; }
 
     // Codex exec는 답 글을 조각으로 보내지 않고(다 쓴 글만 옴) 실제 모델 ID도 알려 주지 않는다.
@@ -261,6 +269,12 @@ public sealed class CodexSession : IChatSession
         SessionId = null;
         _shownNotices.Clear();
         _mcpProblemShown = false;
+    }
+
+    public void Resume(string sessionId, string? directory)
+    {
+        Reset();
+        SessionId = sessionId;
     }
 
     public void Dispose() => Cancel();

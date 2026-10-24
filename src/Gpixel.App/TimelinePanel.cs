@@ -5,8 +5,9 @@ namespace Gpixel.App;
 
 /// <summary>
 /// Aseprite식 타임라인: 행 = 레이어(위가 맨 위 레이어), 열 = 프레임, 위쪽 띠 = 태그(애니메이션).
-/// 셀 썸네일은 실시간으로 갱신된다. 도구 단추 없이 우클릭 메뉴(프레임 머리글·셀·레이어 이름·빈 곳)와 마지막 프레임 뒤
-/// "다음 프레임" 칸(⧉ 복사해서 추가 · ＋ 빈 프레임 추가)으로 편집한다. 셀·프레임 복사는 고른 뒤 Ctrl/⌘+C·V.
+/// 셀 썸네일은 실시간으로 갱신된다. 도구 단추 없이 우클릭 메뉴(프레임 머리글·셀·레이어 이름·빈 곳), 마지막 프레임 뒤
+/// "다음 프레임" 칸(⧉ 복사해서 추가 · ＋ 빈 프레임 추가)과 마지막 행 아래 "다음 레이어" 줄(＋ 빈 레이어 추가 · ⧉ 마지막 레이어 복사해서 추가)로
+/// 편집한다. 셀·프레임 복사는 고른 뒤 Ctrl/⌘+C·V.
 /// 선택은 한 번에 한 종류다: 프레임(머리글), 레이어(이름 칸), 효과(효과 줄 이름·상자), 셀 묶음(행 × 프레임). 고르지 않은 칸을 누른 채 끌면 사각형으로 여러 개를 고르고,
 /// Delete(⌫)는 고른 종류대로 프레임 삭제 · 레이어 삭제 · 효과 삭제 · 셀 그림 지우기다. 효과 이름을 끌면 효과 순서를 바꾸거나 다른 레이어로 옮긴다.
 /// 우클릭 "태그 만들기"로 태그(애니메이션)로 묶는다. 재생은 미리보기에서(태그 안에서 반복).
@@ -320,6 +321,30 @@ public sealed class TimelinePanel : UserControl
         else _ctx.Structural(() => p.AddFrame(last + 1));
         _grid.ResetRange();
         _ctx.SetCurrent(Math.Clamp(layer, 0, p.Layers.Count - 1), last + 1);
+    }
+
+    /// <summary>
+    /// 맨 아래 레이어 밑에 레이어를 하나 붙인다(실행취소 1단계): 빈 일반 레이어, 또는 <paramref name="copy"/>면 맨 아래 최상위 레이어의 복사본
+    /// (그룹은 부위까지, 이름은 끝 숫자 + 1). 새 레이어가 현재 레이어가 된다.
+    /// </summary>
+    private void AppendLayer(bool copy)
+    {
+        if (P is not { } p) return;
+        Layer? added = null;
+        if (copy)
+        {
+            int bottom = p.Layers[0].Parent is { } group ? p.IndexOf(group) : 0;
+            _ctx.Structural(() => added = p.Edit(UiStrings.Timeline_AppendLayerCopyTip, ProjectChange.Layers | ProjectChange.Pixels, () =>
+            {
+                var dup = p.DuplicateLayer(bottom);
+                p.MoveLayer(p.IndexOf(dup), 0);
+                return dup;
+            }));
+        }
+        else _ctx.Structural(() => added = p.AddLayer(0));
+        if (added is null) return;
+        _grid.ResetRange();
+        _ctx.SetCurrentLayer(p.IndexOf(added));
     }
 
     /// <summary>앞쪽에서 가장 가까운, 그림이 있는 같은 레이어의 프레임(없으면 -1).</summary>
@@ -1464,6 +1489,9 @@ public sealed class TimelinePanel : UserControl
         private static readonly IPen MarqueePen = AppTheme.Pen(AppTheme.AccentColor);
         /// <summary>마우스가 올라간 프레임 열(프레임 수면 "다음 프레임" 칸)과 머리글(＋ 빈 프레임) 위인지 — 아니면 셀 줄(⧉ 복사).</summary>
         private (int Frame, bool Header) _hover = (-1, false);
+        /// <summary>마우스가 올라간 "다음 레이어" 줄 단추(＋ 새 레이어 · ⧉ 마지막 레이어 복사)와 지금 띄운 도움말 풍선 글.</summary>
+        private GhostRowButton _rowHover;
+        private string? _tip;
         /// <summary>태그 범위 끌기: 대상 태그, 오른쪽 끝(true)/왼쪽 끝, 끄는 중인 범위.</summary>
         private AnimationTag? _tagEdit;
         private bool _tagEditRight;
@@ -2054,8 +2082,8 @@ public sealed class TimelinePanel : UserControl
 
         public void UpdateScrollSize()
         {
-            // 마지막 프레임 뒤 "다음 프레임" 칸까지. 애니메이션 중에는 지금·끝 배치 중 큰 쪽(줄어들 때 스크롤이 튀지 않게).
-            int contentW = Math.Max(_colT.Total, _colT.TargetTotal) + CellW, contentH = Math.Max(_rowT.Total, _rowT.TargetTotal);
+            // 마지막 프레임 뒤 "다음 프레임" 칸, 마지막 행 아래 "다음 레이어" 줄까지. 애니메이션 중에는 지금·끝 배치 중 큰 쪽(줄어들 때 스크롤이 튀지 않게).
+            int contentW = Math.Max(_colT.Total, _colT.TargetTotal) + CellW, contentH = Math.Max(_rowT.Total, _rowT.TargetTotal) + CellH;
             int viewW = Math.Max(1, ViewW), viewH = Math.Max(1, ViewH);
             _h.Maximum = Math.Max(0, contentW - viewW);
             _h.ViewportSize = viewW;
@@ -2117,6 +2145,31 @@ public sealed class TimelinePanel : UserControl
         /// <summary>"다음 프레임" 칸 위인지.</summary>
         private bool IsGhostColumn(double x)
             => x >= NameW && ContentX(x) >= _colT.Total && ContentX(x) < _colT.Total + CellW;
+
+        /// <summary>"다음 레이어" 줄(마지막 행 아래 한 줄) 위인지.</summary>
+        private bool IsGhostRow(double y)
+            => y >= TagH + HeadH && ContentY(y) >= _rowT.Total && ContentY(y) < _rowT.Total + CellH;
+
+        /// <summary>
+        /// "다음 프레임" 칸의 단추 위면 머리글(＋ 빈 프레임)인지 — false = 레이어 행 칸(⧉ 복사).
+        /// 단추가 없는 곳(효과 줄, 마지막 행 아래 — "다음 레이어" 줄과 만나는 칸 포함)이면 null.
+        /// </summary>
+        private bool? GhostColumnAt(Avalonia.Point pos)
+        {
+            if (Ctx.Project is null || pos.Y < TagH || !IsGhostColumn(pos.X)) return null;
+            if (pos.Y < TagH + HeadH) return true;
+            return LayerAt(pos.Y) >= 0 && FxRowAt(pos.Y) is null ? false : null;
+        }
+
+        /// <summary>"다음 레이어" 줄의 단추: 이름 칸 왼쪽 ＋(맨 아래에 새 레이어) · 첫 프레임 칸 ⧉(마지막 레이어 복사해서 추가).</summary>
+        private enum GhostRowButton { None, Add, Copy }
+
+        private GhostRowButton GhostRowButtonAt(Avalonia.Point pos)
+        {
+            if (Ctx.Project is null || !IsGhostRow(pos.Y)) return GhostRowButton.None;
+            if (pos.X >= 0 && pos.X < CellW) return GhostRowButton.Add;
+            return FrameAt(pos.X) == 0 ? GhostRowButton.Copy : GhostRowButton.None;
+        }
 
         /// <summary>가장 가까운 보이는 행 번호.</summary>
         private int RowAtClamped(double y)
@@ -2594,6 +2647,16 @@ public sealed class TimelinePanel : UserControl
                                         DrawFxRow(cy + CellH + k * FxH + s, rowLayer, k);
                     }
                 }
+                // "다음 레이어" 줄(마지막 행 아래): 첫 프레임 칸 ⧉ = 마지막 레이어 복사해서 추가. 나머지 칸과 "다음 프레임" 칸과 만나는 칸은 비운다.
+                {
+                    int gy = top + _rowT.Total, gx = FrameX(0);
+                    if (gy < cellsClip.Bottom && gx < cellsClip.Right)
+                    {
+                        var r = new Rect(gx + 1, gy + 1, CellW - 2, CellH - 2);
+                        g.FillRectangle(GhostBrush, r);
+                        DrawGhostButton(g, r, VectorIcon.Copy, _rowHover == GhostRowButton.Copy);
+                    }
+                }
                 // 셀 묶음(두 칸 이상) 둘레의 파란 테두리(한 칸이면 현재 칸 테두리가 그 표시)
                 if (multiCel && selRows.Count > 0)
                 {
@@ -2833,6 +2896,16 @@ public sealed class TimelinePanel : UserControl
                     }
                     else DrawNameBlock(y, row, l, layer);
                 }
+                // "다음 레이어" 줄: 이름 칸 왼쪽 ＋ = 맨 아래에 빈 레이어 추가
+                {
+                    int gy = top + _rowT.Total;
+                    if (gy < namesClip.Bottom)
+                    {
+                        var r = new Rect(1, gy + 1, CellW - 2, CellH - 2);
+                        g.FillRectangle(GhostBrush, r);
+                        DrawGhostButton(g, r, VectorIcon.Plus, _rowHover == GhostRowButton.Add);
+                    }
+                }
                 // 고른 레이어: 이어진 이름 칸마다 파란 테두리(효과 줄 포함)
                 if (_kind == SelKind.Layers && !_reordering)
                 {
@@ -2947,6 +3020,13 @@ public sealed class TimelinePanel : UserControl
                 PressFx(e, fxRow.Layer, fxRow.Effect, pos, left, right, shift, cmd);
                 return;
             }
+            if (GhostRowButtonAt(pos) is var ghostRow and not GhostRowButton.None)
+            {
+                // "다음 레이어" 줄 단추: ＋ 맨 아래에 새 레이어 · ⧉ 마지막 레이어 복사해서 추가
+                if (left) _owner.AppendLayer(copy: ghostRow == GhostRowButton.Copy);
+                else if (right) _owner.ShowEmptyMenu();
+                return;
+            }
             if (pos.X < NameW && l >= 0)
             {
                 // 레이어 이름 열: 눈/자물쇠/접기/이름
@@ -3023,9 +3103,9 @@ public sealed class TimelinePanel : UserControl
                 else if (left && l < 0 && pos.Y >= TagH + HeadH) ResetRange();
                 return;
             }
-            if (IsGhostColumn(pos.X) && pos.Y >= TagH)
+            if (GhostColumnAt(pos) is { } ghostHeader)
             {
-                if (left) _owner.AppendFrame(copy: pos.Y >= TagH + HeadH, l >= 0 ? l : Ctx.CurrentLayer);
+                if (left) _owner.AppendFrame(copy: !ghostHeader, l >= 0 ? l : Ctx.CurrentLayer);
                 else if (right) _owner.ShowEmptyMenu();
                 return;
             }
@@ -3437,11 +3517,12 @@ public sealed class TimelinePanel : UserControl
             return LayoutBadge(layer) is { W: > 0 } b && pos.X >= b.X && pos.X < b.X + b.W ? layer : null;
         }
 
-        /// <summary>누르면 바로 동작하는 작은 단추 위인지(손 모양 커서): 이름 칸의 눈·자물쇠·접기·fx·스킨 칩, 프레임 끝 열의 ⧉/＋.</summary>
+        /// <summary>누르면 바로 동작하는 작은 단추 위인지(손 모양 커서): 이름 칸의 눈·자물쇠·접기·fx·스킨 칩, 프레임 끝 열의 ⧉/＋, "다음 레이어" 줄의 ＋/⧉.</summary>
         private bool IsClickableAt(Avalonia.Point pos)
         {
             if (Ctx.Project is not { } p || pos.Y < TagH) return false;
-            if (pos.X >= NameW) return IsGhostColumn(pos.X) && FxRowAt(pos.Y) is null;
+            if (GhostColumnAt(pos) is not null || GhostRowButtonAt(pos) != GhostRowButton.None) return true;
+            if (pos.X >= NameW) return false;
             if (FxRowAt(pos.Y) is not null || LayerAt(pos.Y) is var l && l < 0) return false;
             var layer = p.Layers[l];
             if (pos.X < ToggleX || (layer.IsGroup && pos.X < NameX)) return true;
@@ -3449,15 +3530,28 @@ public sealed class TimelinePanel : UserControl
                 || SkinChip(layer) is { W: > 0 } chip && pos.X >= chip.X && pos.X < chip.X + chip.W;
         }
 
-        /// <summary>◆ 위에 마우스가 올라감/벗어남: 강조, 도움말 풍선, 상태 줄 안내.</summary>
+        /// <summary>◆ 위에 마우스가 올라감/벗어남: 강조, 상태 줄 안내(도움말 풍선은 <see cref="UpdateTip"/>).</summary>
         private void SetLayoutBadgeHover(Layer? group)
         {
             _layoutBadgeHover = group;
-            string tip = UiStrings.Timeline_LayoutBadgeTip;
-            ToolTip.SetTip(this, group is null ? null : tip);
-            ToolTip.SetIsOpen(this, group is not null);
-            if (group is not null) _owner.Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SetLayoutBadgeHover_309A0A0649,group.Name,tip));
+            if (group is not null) _owner.Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SetLayoutBadgeHover_309A0A0649,group.Name,UiStrings.Timeline_LayoutBadgeTip));
             InvalidateVisual();
+        }
+
+        /// <summary>도움말 풍선: ◆ 자동 배치 표시와 "다음 레이어" 줄 단추 위에서 바로 띄운다.</summary>
+        private void UpdateTip()
+        {
+            string? tip = _layoutBadgeHover is not null ? UiStrings.Timeline_LayoutBadgeTip : _rowHover switch
+            {
+                GhostRowButton.Add => UiStrings.Timeline_AddLayerTip,
+                GhostRowButton.Copy => UiStrings.Timeline_AppendLayerCopyTip,
+                _ => null,
+            };
+            if (tip == _tip) return;
+            _tip = tip;
+            ToolTip.SetIsOpen(this, false);
+            ToolTip.SetTip(this, tip);
+            if (tip is not null) ToolTip.SetIsOpen(this, true);
         }
 
         /// <summary>고른 셀 묶음에 그림이 하나라도 있는지(그룹 행은 그 부위들).</summary>
@@ -3636,6 +3730,7 @@ public sealed class TimelinePanel : UserControl
                 var badge = LayoutBadgeAt(pos);
                 if (badge is not null || IsClickableAt(pos)) Cursor = HandCursor;
                 if (!ReferenceEquals(badge, _layoutBadgeHover)) SetLayoutBadgeHover(badge);
+                UpdateTip();
                 return;
             }
             if (!_reordering)
@@ -3650,17 +3745,14 @@ public sealed class TimelinePanel : UserControl
 
         private static bool IsCopyModifier(KeyModifiers m) => (m & KeyModifiers.Alt) != 0 || Ui.HasCommand(m) || (m & KeyModifiers.Control) != 0;
 
-        /// <summary>마우스가 올라간 "다음 프레임" 칸(단추 강조용).</summary>
+        /// <summary>마우스가 올라간 "다음 프레임" 칸·"다음 레이어" 줄 단추(강조용).</summary>
         private void UpdateHover(Avalonia.Point pos)
         {
-            (int, bool) hover = (-1, false);
-            if (Ctx.Project is not null && pos.X >= NameW && pos.Y >= TagH && IsGhostColumn(pos.X))
-            {
-                bool header = pos.Y < TagH + HeadH;
-                if (header || FxRowAt(pos.Y) is null) hover = (Ctx.FrameCount, header);
-            }
-            if (hover == _hover) return;
+            (int, bool) hover = GhostColumnAt(pos) is { } header ? (Ctx.FrameCount, header) : (-1, false);
+            var rowHover = GhostRowButtonAt(pos);
+            if (hover == _hover && rowHover == _rowHover) return;
             _hover = hover;
+            _rowHover = rowHover;
             InvalidateVisual();
         }
 
@@ -3670,6 +3762,8 @@ public sealed class TimelinePanel : UserControl
             if (_tagHover is not null) { _tagHover = null; InvalidateVisual(); }
             if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
             if (_layoutBadgeHover is not null) SetLayoutBadgeHover(null);
+            if (_rowHover != GhostRowButton.None) { _rowHover = GhostRowButton.None; InvalidateVisual(); }
+            UpdateTip();
             if (_hover.Frame < 0) return;
             _hover = (-1, false);
             InvalidateVisual();

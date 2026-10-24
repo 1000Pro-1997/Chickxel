@@ -581,6 +581,17 @@ public sealed partial class SpriteProject
         return layer.Locked || (layer.Parent?.Locked ?? false);
     }
 
+    /// <summary>프레임에 그림(어느 스킨이든 내용 있는 셀)이 있는 잠긴 레이어(<see cref="IsLayerLocked"/>)들, 아래 → 위. 그 프레임을 지우면 이 그림이 사라진다.</summary>
+    public IReadOnlyList<Layer> LockedLayersWithContent(int frameIndex)
+    {
+        var frame = _frames[frameIndex];
+        var found = new HashSet<Layer>();
+        foreach (var (key, cel) in _cels)
+            if (ReferenceEquals(key.Frame, frame) && (key.Layer.Locked || (key.Layer.Parent?.Locked ?? false)) && HasContent(cel))
+                found.Add(key.Layer);
+        return found.Count == 0 ? [] : _layers.Where(found.Contains).ToList();
+    }
+
     /// <summary>최상위 레이어(일반·그룹) 덩어리의 시작 번호(그룹이면 맨 아래 부위).</summary>
     private int BlockStart(int topIndex) => topIndex - ChildCount(topIndex);
 
@@ -1465,9 +1476,7 @@ public sealed partial class SpriteProject
             }
             foreach (var part in ChildrenOf(group))
             {
-                Skin? over = null;
-                foreach (var e in outfit.Parts)
-                    if (ReferenceEquals(e.Part, part) && group.SkinList.Contains(e.Skin)) over = e.Skin;
+                var over = OutfitOverride(outfit, group, part);
                 if (ReferenceEquals(part.SkinOverride, over)) continue;
                 part.SetSkinOverrideRaw(over);
                 changed = true;
@@ -1475,6 +1484,34 @@ public sealed partial class SpriteProject
         }
         if (changed) NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
         return MissingOutfitEntries(outfit);
+    }
+
+    /// <summary>
+    /// 착장을 입히면(<see cref="ApplyOutfit"/>) 바뀔 잠긴 레이어들: 지금 스킨이 바뀔 잠긴 그룹, 재정의가 바뀔 잠긴 부위(그룹이 잠긴 부위 포함).
+    /// 비면 잠긴 레이어는 그대로다.
+    /// </summary>
+    public IReadOnlyList<Layer> LockedLayersChangedBy(Outfit outfit)
+    {
+        RequireOutfit(outfit);
+        var changed = new List<Layer>();
+        foreach (var (group, skin) in outfit.Slots)
+        {
+            if (!_layers.Contains(group)) continue;
+            if (group.Locked && group.SkinList.Contains(skin) && !ReferenceEquals(group.ActiveSkin, skin)) changed.Add(group);
+            foreach (var part in ChildrenOf(group))
+                if ((part.Locked || group.Locked) && !ReferenceEquals(part.SkinOverride, OutfitOverride(outfit, group, part)))
+                    changed.Add(part);
+        }
+        return changed;
+    }
+
+    /// <summary>착장을 입혔을 때 부위의 재정의: 착장의 부위 항목(그룹 스킨 목록에 있을 때), 없으면 null(그룹 따름).</summary>
+    private static Skin? OutfitOverride(Outfit outfit, Layer group, Layer part)
+    {
+        Skin? over = null;
+        foreach (var e in outfit.Parts)
+            if (ReferenceEquals(e.Part, part) && group.SkinList.Contains(e.Skin)) over = e.Skin;
+        return over;
     }
 
     /// <summary>

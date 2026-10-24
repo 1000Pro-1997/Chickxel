@@ -42,6 +42,7 @@
   <data name="Language_RestartNow" xml:space="preserve"><value>지금 다시 시작</value><comment>저장 안 한 문서가 있으면 닫을 때처럼 묻는다.</comment></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>나중에</value></data>
   <data name="Palette_UndoLabel" xml:space="preserve"><value>팔레트 변경</value><comment>실행취소·다시 실행 메뉴와 알림에 보이는 팔레트 변경 단계 이름.</comment></data>
+  <data name="Ai_ModelRecommended" xml:space="preserve"><value>{0} (추천)</value><comment>AI 모델 목록에서 추천 모델 이름 뒤에 붙임. 0 = 모델 이름.</comment></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Gpixel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>
@@ -442,11 +443,6 @@ echo __LOGIN_FAILED__
     <value>첨부 빼기</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1454 · AddAttachment · "첨부 빼기"</comment>
   </data>
-  <data name="S_ChatWindow_AddHint_99795D658D" xml:space="preserve">
-    <value>그림에 대해 무엇이든 부탁하세요.
-예: "16×16 슬라임 캐릭터를 그려 줘", "외곽선을 더 어둡게 해 줘", "걷기 애니메이션 4프레임 만들어 줘"</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:1221 · AddHint · "그림에 대해 무엇이든 부탁하세요.\n예: \"16×16 슬라임 캐릭터를 그려 줘\", \"외곽선을 더 어둡게 해 줘\", \"걷기 애니메이션 4프레임 만들어 줘\""</comment>
-  </data>
   <data name="S_ChatWindow_AddSnapshot_C5F0084B6D" xml:space="preserve">
     <value>이 단계 되돌리기</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1315 · AddSnapshot · "이 단계 되돌리기"</comment>
@@ -476,17 +472,9 @@ echo __LOGIN_FAILED__
     <value>PNG·JPG·GIF·WebP 이미지를 첨부</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:540 · ChatTab · "PNG·JPG·GIF·WebP 이미지를 첨부"</comment>
   </data>
-  <data name="S_ChatWindow_ChatTab_1B00266AAA" xml:space="preserve">
-    <value>켜면 보낼 때 고른 레이어(그룹이면 그 부위들)만 AI가 고칩니다. 다른 레이어·다른 파일은 볼 수만 있고, 프레임·레이어·스킨 추가 같은 구조 변경도 막습니다.</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:550 · ChatTab · "켜면 보낼 때 고른 레이어(그룹이면 그 부위들)만 AI가 고칩니다. 다른 레이어·다른 파일은 볼 수만 있고, 프레임·레이어·스킨 추가 같은 구조 변경도 막습니다."</comment>
-  </data>
   <data name="S_ChatWindow_ChatTab_1CB431966C" xml:space="preserve">
     <value>정지</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:553 · ChatTab · "정지"</comment>
-  </data>
-  <data name="S_ChatWindow_ChatTab_498E3C255E" xml:space="preserve">
-    <value>지금 레이어만</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:544 · ChatTab · "지금 레이어만"</comment>
   </data>
   <data name="S_ChatWindow_ChatTab_8F1426E012" xml:space="preserve">
     <value>생각 중…</value>
@@ -515,10 +503,6 @@ echo __LOGIN_FAILED__
   <data name="S_ChatWindow_ChatWindow_02EFD3D4E7" xml:space="preserve">
     <value>{0}: 이 컴퓨터의 {1}와 {2} 로그인으로 대화합니다(API 키 없음). 탭마다 대화가 따로 있습니다.</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:86 · ChatWindow · $"{p.Name}: 이 컴퓨터의 {p.ProductName}와 {p.AccountText} 로그인으로 대화합니다(API 키 없음). 탭마다 대화가 따로 있습니다."</comment>
-  </data>
-  <data name="S_ChatWindow_ChatWindow_8A59B9F2A0" xml:space="preserve">
-    <value>이 탭의 대화를 비우고 새로 시작</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:93 · ChatWindow · "이 탭의 대화를 비우고 새로 시작"</comment>
   </data>
   <data name="S_ChatWindow_ChatWindow_ACBC4AE706" xml:space="preserve">
     <value>새 대화</value>
@@ -601,15 +585,6 @@ echo __LOGIN_FAILED__
     <value>{0}가 작업 중입니다 — 끝난 뒤 보내세요(같은 캔버스를 함께 고치지 않도록).</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1034 · Send · $"{other.Provider.Name}가 작업 중입니다 — 끝난 뒤 보내세요(같은 캔버스를 함께 고치지 않도록)."</comment>
   </data>
-  <data name="S_ChatWindow_Send_7C61278ECA" xml:space="preserve">
-    <value>편집 범위: {0}만 — 나머지는 보기만</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:1063 · Send · $"편집 범위: {scopeText}만 — 나머지는 보기만"</comment>
-  </data>
-  <data name="S_ChatWindow_Send_7CDB2DE090" xml:space="preserve">
-    <value>[편집 범위: {0}만 고치세요. 다른 레이어·문서·구조는 볼 수만 있습니다.]
-{1}</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:1049 · Send · $"[편집 범위: {scopeText}만 고치세요. 다른 레이어·문서·구조는 볼 수만 있습니다.]\n{text}"</comment>
-  </data>
   <data name="S_ChatWindow_Send_9DB69B8394" xml:space="preserve">
     <value>{0}: {1}</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1065 · Send · $"{Provider.Name}: {Shorten(text.Length &gt; 0 ? text : "(이미지)", 24)}"</comment>
@@ -618,17 +593,9 @@ echo __LOGIN_FAILED__
     <value>(이미지)</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1065 · Send · "(이미지)"</comment>
   </data>
-  <data name="S_ChatWindow_Send_D27CE54072" xml:space="preserve">
-    <value>(와 그 부위)</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:1045 · Send · "(와 그 부위)"</comment>
-  </data>
   <data name="S_ChatWindow_Send_E1ACACFBF7" xml:space="preserve">
     <value>{0}를 실행하지 못했습니다: {1}</value>
     <comment>src/Gpixel.App\Ai\ChatWindow.cs:1055 · Send · $"{Provider.Command}를 실행하지 못했습니다: {ex.Message}"</comment>
-  </data>
-  <data name="S_ChatWindow_Send_F50CA3E886" xml:space="preserve">
-    <value>"{0}" 레이어{1}</value>
-    <comment>src/Gpixel.App\Ai\ChatWindow.cs:1045 · Send · $"\"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}"</comment>
   </data>
   <data name="S_ChatWindow_ShowChat_B46AD2AE0A" xml:space="preserve">
     <value>로그인됨</value>
@@ -5265,10 +5232,13 @@ echo __LOGIN_FAILED__
     <value>사용자가 지금 그리는 중입니다 — 잠시 뒤 다시 시도하세요</value>
     <comment>src/Gpixel.App\Ai\PixelTools.cs:1294 · BeginMutation · "사용자가 지금 그리는 중입니다 — 잠시 뒤 다시 시도하세요"</comment>
   </data>
-  <data name="S_PixelTools_Call_641D76DC81" xml:space="preserve">
-    <value>편집 범위가 "{0}" 레이어로 제한되어 있어 {1}은(는) 쓸 수 없습니다 — 그 레이어의 픽셀만 고칠 수 있고 나머지는 볼 수만 있습니다(사용자가 채팅의 "지금 레이어만"을 끄면 됨)</value>
-    <comment>src/Gpixel.App\Ai\PixelTools.cs:429 · Call · $"편집 범위가 \"{scope.Layer.Name}\" 레이어로 제한되어 있어 {name}은(는) 쓸 수 없습니다 — 그 레이어의 픽셀만 고칠 수 있고 나머지는 볼 수만 있습니다(사용자가 채팅의 \"지금 레이어만\"을 끄면 됨)"</comment>
-  </data>
+  <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>사용자가 AI를 지금 그림만 고치도록 제한해서 다른 파일을 열거나 새로 만들 수 없습니다(채팅에서 "지금 그림만"을 끄면 됨)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례에 open_file·new_project를 부름.</comment></data>
+  <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>사용자가 AI를 이 차례를 시작할 때 열려 있던 그림만 고치도록 제한했는데 지금은 다른 문서가 열려 있어 볼 수만 있습니다(그 그림으로 돌아가면 고칠 수 있음)</value><comment>AI 도구 오류: "지금 그림만"이 켜진 차례 중에 사용자가 다른 문서로 바꿈.</comment></data>
+  <data name="Ai_Locked_Layer" xml:space="preserve"><value>레이어 {index} "{name}"(또는 그 그룹)이(가) 잠겨 있어 바꿀 수 없습니다 — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. index = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>프레임 {frame}에 잠긴 레이어의 그림이 있어 지울 수 없습니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. frame = 프레임 번호, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
+  <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>잠긴 레이어가 있어 캔버스 크기를 바꿀 수 없습니다(모든 레이어가 잘리거나 옮겨짐): {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
+  <data name="Ai_Locked_Outfit" xml:space="preserve"><value>착장 "{outfit}"을(를) 입히면 잠긴 레이어가 바뀝니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. outfit = 착장 이름, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
+  <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>그룹 "{group}"은(는) 자동 배치 중이라 이 변경은 잠긴 부위 {index} "{name}"을(를) 옮길 수 있습니다 — 사용자에게 잠금 해제나 자동 배치 끄기를 부탁하세요</value><comment>AI 도구 오류. group = 그룹 이름, index = 부위 레이어 번호, name = 부위 이름.</comment></data>
   <data name="S_PixelTools_Call_A9A0750467" xml:space="preserve">
     <value>알 수 없는 도구입니다: {0}</value>
     <comment>src/Gpixel.App\Ai\PixelTools.cs:463 · Call · $"알 수 없는 도구입니다: {name}"</comment>
@@ -5324,22 +5294,6 @@ echo __LOGIN_FAILED__
   <data name="S_PixelTools_EditTarget_1DEA54562E" xml:space="preserve">
     <value>그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요</value>
     <comment>src/Gpixel.App\Ai\PixelTools.cs:1308 · EditTarget · "그룹 레이어에는 그릴 수 없습니다 — 부위 레이어를 고르세요"</comment>
-  </data>
-  <data name="S_PixelTools_EditTarget_502F3C3D23" xml:space="preserve">
-    <value>편집 범위 밖입니다 — 차례를 시작할 때 열려 있던 문서만 고칠 수 있습니다(지금은 다른 문서가 열려 있음)</value>
-    <comment>src/Gpixel.App\Ai\PixelTools.cs:1307 · EditTarget · "편집 범위 밖입니다 — 차례를 시작할 때 열려 있던 문서만 고칠 수 있습니다(지금은 다른 문서가 열려 있음)"</comment>
-  </data>
-  <data name="S_PixelTools_EditTarget_7C911AF779" xml:space="preserve">
-    <value>편집 범위 밖입니다 — "{0}" 레이어{1}만 고칠 수 있고 layer {2} "{3}"은(는) 볼 수만 있습니다</value>
-    <comment>src/Gpixel.App\Ai\PixelTools.cs:1306 · EditTarget · $"편집 범위 밖입니다 — \"{scope.Layer.Name}\" 레이어{(scope.Layer.IsGroup ? "(와 그 부위)" : "")}만 고칠 수 있고 layer {layer} \"{l.Name}\"은(는) 볼 수만 있습니다"</comment>
-  </data>
-  <data name="S_PixelTools_EditTarget_7CA7F88A4A" xml:space="preserve">
-    <value>(와 그 부위)</value>
-    <comment>src/Gpixel.App\Ai\PixelTools.cs:1306 · EditTarget · "(와 그 부위)"</comment>
-  </data>
-  <data name="S_PixelTools_EditTarget_F0AFAA4B8B" xml:space="preserve">
-    <value>layer {0} "{1}"(또는 그 그룹)이(가) 잠겨 있습니다 — 사용자에게 잠금 해제를 부탁하세요</value>
-    <comment>src/Gpixel.App\Ai\PixelTools.cs:1310 · EditTarget · $"layer {layer} \"{l.Name}\"(또는 그 그룹)이(가) 잠겨 있습니다 — 사용자에게 잠금 해제를 부탁하세요"</comment>
   </data>
   <data name="S_PixelTools_FindPart_3F27777CE1" xml:space="preserve">
     <value>part: "{0}" 부위가 여러 그룹에 있습니다 — group 번호를 함께 주세요</value>
@@ -9646,4 +9600,71 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Help_Next" xml:space="preserve"><value>다음</value></data>
   <data name="Help_Guide" xml:space="preserve"><value>사용 가이드</value></data>
   <data name="Help_ToggleChapter" xml:space="preserve"><value>펼치기·접기</value></data>
+  <data name="Timeline_AddLayerTip" xml:space="preserve"><value>새 레이어 추가</value></data>
+  <data name="Timeline_AppendLayerCopyTip" xml:space="preserve"><value>마지막 레이어 복사해 추가</value></data>
+  <data name="Shortcuts_NextLayerRowButtons" xml:space="preserve"><value>다음 레이어 줄의 더하기 / 복사 단추</value></data>
+  <data name="Shortcuts_NextLayerRowActions" xml:space="preserve"><value>빈 레이어 추가 / 마지막 레이어 복사해 추가</value></data>
+  <data name="Chat_NewChat_Tip" xml:space="preserve"><value>지난 대화 목록을 봅니다. 아래에 메시지를 쓰면 새 대화가 시작됩니다.</value></data>
+  <data name="Chat_FileOnly" xml:space="preserve"><value>지금 그림만</value></data>
+  <data name="Chat_FileOnly_Tip" xml:space="preserve"><value>켜면 AI가 지금 열린 그림에만 그립니다. 새 레이어·프레임을 만들고 레이어를 정리할 수 있지만, 잠긴 레이어는 건드리지 않고 다른 파일을 열거나 새로 만들지 않습니다.</value></data>
+  <data name="Chat_FileOnly_Prefix" xml:space="preserve"><value>[편집 범위: 지금 열린 그림 "{name}"만 고치세요. 다른 파일은 열거나 새로 만들지 마세요. 잠긴 레이어는 건드리지 않습니다.]
+{text}</value><comment>"지금 그림만"이 켜졌을 때 AI에게 보내는 메시지 앞에 붙임. name = 문서 이름, text = 사용자 메시지.</comment></data>
+  <data name="Chat_FileOnly_Notice" xml:space="preserve"><value>편집 범위: 지금 그림 "{name}"만 — 다른 파일은 열거나 만들지 않음</value><comment>name = 문서 이름. 보낸 메시지 아래 안내 줄.</comment></data>
+  <data name="Chat_History_Title" xml:space="preserve"><value>지난 대화</value></data>
+  <data name="Chat_History_Empty" xml:space="preserve"><value>그림에 대해 무엇이든 부탁하세요. 아래에 메시지를 쓰면 새 대화가 시작됩니다.
+예: "16×16 슬라임 캐릭터를 그려 줘", "외곽선을 더 어둡게 해 줘", "걷기 애니메이션 4프레임 만들어 줘"
+오른쪽 위 물음표 단추를 누르면 AI가 할 수 있는 일과 예시를 볼 수 있습니다.</value></data>
+  <data name="Chat_History_StartHint" xml:space="preserve"><value>아래에 메시지를 쓰면 새 대화가 시작됩니다. 지난 대화를 누르면 이어서 할 수 있습니다.</value></data>
+  <data name="Chat_History_Favorite" xml:space="preserve"><value>즐겨찾기(맨 위에 고정, 자동으로 지우지 않음)</value></data>
+  <data name="Chat_History_Unfavorite" xml:space="preserve"><value>즐겨찾기 빼기</value></data>
+  <data name="Chat_History_Delete" xml:space="preserve"><value>대화 지우기</value></data>
+  <data name="Chat_History_DeleteTitle" xml:space="preserve"><value>대화 지우기</value></data>
+  <data name="Chat_History_DeleteAsk" xml:space="preserve"><value>이 대화를 지울까요? 되돌릴 수 없습니다.
+{title}</value><comment>title = 대화 제목(첫 메시지).</comment></data>
+  <data name="Chat_History_Open" xml:space="preserve"><value>이 대화 열기(이어서 보내면 같은 대화로 이어 감)</value></data>
+  <data name="Chat_History_Meta" xml:space="preserve"><value>{date} · {model}</value><comment>목록 한 줄의 둘째 줄. date = 마지막으로 고친 날짜·시각, model = 모델 이름.</comment></data>
+  <data name="Chat_History_ImageTitle" xml:space="preserve"><value>(이미지)</value><comment>그림만 보낸 대화의 제목.</comment></data>
+  <data name="Chat_History_ImagesMarker" xml:space="preserve"><value>(이미지 {count}장)</value><comment>지난 대화를 다시 그릴 때 미리보기를 남기지 못한 첨부 그림 수.</comment></data>
+  <data name="Chat_History_SaveFailed" xml:space="preserve"><value>대화를 저장하지 못했습니다: {message}</value></data>
+  <data name="Chat_History_Opened" xml:space="preserve"><value>지난 대화를 열었습니다. 이어서 보내면 같은 대화로 이어 갑니다(그때의 되돌리기 단추는 다시 만들지 않음).</value></data>
+  <data name="Chat_History_NoSession" xml:space="preserve"><value>지난 대화를 열었지만 이어 갈 세션 정보가 없어, 다음 메시지는 새 대화로 시작합니다.</value></data>
+  <data name="Chat_Help_Tip" xml:space="preserve"><value>AI가 할 수 있는 일·예시·요령</value></data>
+  <data name="Chat_Help_Back" xml:space="preserve"><value>돌아가기</value></data>
+  <data name="Chat_Help_ToolsTitle" xml:space="preserve"><value>AI가 할 수 있는 일</value></data>
+  <data name="Chat_Help_ToolsIntro" xml:space="preserve"><value>AI는 Gpixel이 열어 준 도구로만 그림을 읽고 고칩니다(셸·웹·다른 프로그램은 쓰지 않음). 잠긴 레이어는 언제나 건드리지 않습니다.</value></data>
+  <data name="Chat_Help_GroupView" xml:space="preserve"><value>그림 보기</value></data>
+  <data name="Chat_Help_GroupView_Text" xml:space="preserve"><value>열린 문서의 크기·프레임·레이어를 읽고, 그림을 이미지로 보거나 픽셀 색을 정확히 읽습니다.</value></data>
+  <data name="Chat_Help_GroupDraw" xml:space="preserve"><value>그리기</value></data>
+  <data name="Chat_Help_GroupDraw_Text" xml:space="preserve"><value>픽셀 블록 칠하기, 점 찍기, 선·사각형·원, 채우기, 지우기, 색 바꾸기.</value></data>
+  <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>프레임·애니메이션</value></data>
+  <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>프레임을 더하거나(복사 포함) 지우고, 프레임 시간과 애니메이션 태그를 정합니다.</value></data>
+  <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>레이어</value></data>
+  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>레이어를 더하고 이름·보이기·불투명도를 바꾸며, 편집기에서 보는 프레임·레이어를 고릅니다.</value></data>
+  <data name="Chat_Help_GroupParts" xml:space="preserve"><value>그룹·부위</value></data>
+  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>캐릭터를 머리·몸·팔 같은 부위로 나누고, 부위의 위치·크기·피벗을 정합니다.</value></data>
+  <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>스킨·의상</value></data>
+  <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>같은 부위의 다른 그림(옷 등)을 만들어 바꿔 입히고, 의상 프리셋을 저장·적용합니다.</value></data>
+  <data name="Chat_Help_GroupCanvas" xml:space="preserve"><value>캔버스·색</value></data>
+  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>캔버스 크기, 팔레트 색, 주·보조 색을 바꿉니다.</value></data>
+  <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>파일</value></data>
+  <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>새 그림 만들기, 저장, 파일 열기("지금 그림만"이 켜져 있으면 열기·만들기는 막힘).</value></data>
+  <data name="Chat_Help_GroupOther" xml:space="preserve"><value>그 밖의 도구</value></data>
+  <data name="Chat_Help_ExamplesTitle" xml:space="preserve"><value>예시 부탁</value></data>
+  <data name="Chat_Help_ExamplesIntro" xml:space="preserve"><value>누르면 입력란에 들어갑니다. 고쳐서 보내세요.</value></data>
+  <data name="Chat_Help_ExampleTip" xml:space="preserve"><value>입력란에 넣기</value></data>
+  <data name="Chat_Help_Example1" xml:space="preserve"><value>16×16 슬라임 캐릭터를 그려 줘. 투명 배경, 초록 계열 4색, 어두운 외곽선.</value></data>
+  <data name="Chat_Help_Example2" xml:space="preserve"><value>외곽선을 지금보다 한 단계 더 어둡게 해 줘.</value></data>
+  <data name="Chat_Help_Example3" xml:space="preserve"><value>이 캐릭터로 4프레임 걷기 애니메이션을 만들고 walk 태그를 달아 줘(프레임마다 120ms).</value></data>
+  <data name="Chat_Help_Example4" xml:space="preserve"><value>지금 팔레트에 있는 색만 써서 다시 칠해 줘.</value></data>
+  <data name="Chat_Help_Example5" xml:space="preserve"><value>머리·몸·팔·다리를 부위로 나눈 캐릭터 그룹을 만들어 줘.</value></data>
+  <data name="Chat_Help_Example6" xml:space="preserve"><value>캐릭터 그룹에 winter 스킨을 더해서 겨울옷을 입혀 줘.</value></data>
+  <data name="Chat_Help_Example7" xml:space="preserve"><value>빛이 왼쪽 위에서 오는 것처럼 명암을 두 단계 더해 줘.</value></data>
+  <data name="Chat_Help_Example8" xml:space="preserve"><value>캔버스를 32×32로 늘리고 캐릭터를 가운데로 옮겨 줘.</value></data>
+  <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>잘 쓰는 요령</value></data>
+  <data name="Chat_Help_Tip1" xml:space="preserve"><value>모델을 골라 보세요. 시험해 보니 Codex의 GPT-6-Astra가 가장 잘 그렸고, Codex는 기본으로 GPT-6-Astra(추천)를 씁니다. 구조가 복잡한 작업에는 Claude Opus도 좋습니다.</value></data>
+  <data name="Chat_Help_Tip2" xml:space="preserve"><value>"지금 그림만"을 켜면 AI가 지금 열린 그림만 고칩니다. 잠긴 레이어는 언제나 건드리지 않으니, 지킬 레이어는 잠가 두세요.</value></data>
+  <data name="Chat_Help_Tip3" xml:space="preserve"><value>"캔버스 첨부"나 "이미지…"로 참고할 그림을 함께 보내세요.</value></data>
+  <data name="Chat_Help_Tip4" xml:space="preserve"><value>크기·팔레트·스타일을 분명히 적으세요. 예: "16×16, 팔레트 색만, 1픽셀 검은 외곽선, 안티에일리어싱 없이".</value></data>
+  <data name="Chat_Help_Tip5" xml:space="preserve"><value>답 하나가 실행취소 한 단계입니다. 마음에 들지 않으면 "이 단계 되돌리기"나 Ctrl+Z로 되돌리세요.</value></data>
+  <data name="Chat_Help_Tip6" xml:space="preserve"><value>큰 일은 작게 나눠 부탁하세요. 먼저 실루엣, 다음 색, 그다음 명암과 애니메이션.</value></data>
 </root>

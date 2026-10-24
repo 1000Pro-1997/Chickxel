@@ -83,7 +83,7 @@
 <ol><li><a href="#parts-concept">Groups and parts</a></li><li><a href="#parts-create">Creating</a></li><li><a href="#parts-timeline">Viewing in the timeline</a></li><li><a href="#parts-arrange">Arranging (group selected)</a></li><li><a href="#parts-draw">Drawing (part selected)</a></li><li><a href="#parts-auto-layout">Auto layout</a></li><li><a href="#parts-export">Export: frame sheet and part atlas</a></li><li><a href="#parts-skins">Skins and slots</a></li><li><a href="#parts-per-part">Per-part choices and part-only skins</a></li><li><a href="#parts-skin-manager">Skin manager</a></li><li><a href="#parts-outfits">Changing outfits and outfit presets</a></li><li><a href="#parts-skin-export">Exporting skins</a></li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li><a href="#parts-import">Importing old files and PNGs</a></li></ol>
 </li>
 <li><a href="#ai">AI chat (Claude · Codex)</a>
-<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-layer-only">Limiting edits to the current layer</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
+<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-history">Continuing past chats</a></li><li><a href="#ai-help">Help and example requests</a></li><li><a href="#ai-file-only">Limiting edits to the current file</a></li><li><a href="#ai-locked">Protecting locked layers</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
 </li>
 <li><a href="#shortcuts">Shortcuts</a>
 <ol><li><a href="#shortcuts-customize">Customizing shortcuts</a></li><li><a href="#shortcuts-file">Files and windows</a></li><li><a href="#shortcuts-edit">Editing and selection</a></li><li><a href="#shortcuts-transform">Transform and image</a></li><li><a href="#shortcuts-tools">Tools</a></li><li><a href="#shortcuts-view">View and canvas</a></li><li><a href="#shortcuts-timeline">Timeline · layers · groups</a></li></ol>
@@ -412,6 +412,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Frame columns</strong>: number, duration, live thumbnail. Double-click the number to change the frame duration.</li>
 <li><strong>Tag strip</strong>: colored brackets show groups of frames.</li>
 <li>Column after the last frame: the plus icon in the header = add an empty frame; the copy icon below = add a copy of the last frame.</li>
+<li>Row below the last layer: the plus icon in the name column = add an empty layer at the bottom; the copy icon in the first frame cell = add a copy of the bottom layer at the bottom (a group comes with its parts).</li>
 <li>While the preview plays, the frame column being shown gets a green outline.</li>
 </ul>
 <div class="note">You can't draw on a locked layer, but you can draw on a hidden one. A hidden normal layer appears semi-transparently on the canvas only while editing and doesn't appear in the preview or exports.</div>
@@ -962,18 +963,46 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>Attach a reference image</td><td><strong>Image…</strong></td></tr>
 <tr><td>Show the current frame</td><td><strong>Attach canvas</strong></td></tr>
 <tr><td>Change model</td><td>The <strong>Model</strong> list at the top (remembered per AI; applies from the next message)</td></tr>
-<tr><td>Start a new conversation</td><td><strong>New chat</strong></td></tr>
+<tr><td>See past chats / start a new one</td><td><strong>New chat</strong> (shows the list; type below to start a new chat)</td></tr>
+<tr><td>See what the AI can do, examples, and tips</td><td>The question mark button next to <strong>New chat</strong></td></tr>
 <tr><td>Stop the reply</td><td><strong>Stop</strong></td></tr>
 </tbody>
 </table></div>
 <p>The first entry in the model list, <strong>Default</strong>, also shows the name of the model that will actually be used.</p>
 
-<h3 id="ai-layer-only">Limiting edits to the current layer</h3>
-<p>Turn on <strong>Current layer only</strong> next to <strong>Attach canvas</strong> below the input box before sending, and the AI edits only the layer that's current when you send (including its parts, if it's a group).</p>
+<h3 id="ai-history">Continuing past chats</h3>
+<p>Chats are saved automatically each time a reply finishes. Claude and Codex keep separate lists.</p>
 <ul>
-<li>It can draw on every frame of that layer; other layers and files are view-only.</li>
-<li>Changing frames, layers, skins, canvas or palette, and creating or opening projects are refused (saving still works).</li>
-<li>The chat shows the scope, like <code>Edit scope: layer "hair" only</code>. Turn it off to lift the limit from the next message.</li>
+<li>Press <strong>New chat</strong> to show the <strong>past chats list</strong> in the chat area. Each row shows the title (first message), date, and model.</li>
+<li>Click a row to see that chat again; messages you send continue the same conversation. The <strong>Undo this step</strong> buttons of earlier turns aren't recreated.</li>
+<li>The star icon makes a chat a <strong>favorite</strong>: it's pinned to the top and never deleted automatically. The trash icon deletes a chat after asking.</li>
+<li>Type a message in the box below the list and send it to start a new chat.</li>
+<li>Up to 20 chats are kept per AI; beyond that, the oldest non-favorite chat is deleted.</li>
+<li>When you reopen the chat window or restart the app, each tab opens the chat (or the list) you were last on.</li>
+</ul>
+
+<h3 id="ai-help">Help and example requests</h3>
+<p>Press the question mark button next to <strong>New chat</strong> to show help in the chat area. Press <strong>Back</strong> or the question mark button again to close it.</p>
+<ul>
+<li><strong>What the AI can do</strong>: the tools for looking at the drawing, drawing, frames and animation, layers, groups and parts, skins and outfits, canvas and colors, and files, explained by group.</li>
+<li><strong>Example requests</strong>: click one to put it in the message box, then edit and send it.</li>
+<li><strong>Tips</strong>: in our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Be specific about size, palette, and style, attach a reference picture, and break big jobs into small steps.</li>
+</ul>
+
+<h3 id="ai-file-only">Limiting edits to the current file</h3>
+<p>Turn on <strong>Current file only</strong> next to <strong>Attach canvas</strong> below the input box before sending, and the AI edits only the file that's open when you send.</p>
+<ul>
+<li>Inside that file it can draw, add layers, frames, groups, parts, and skins, and tidy up layers.</li>
+<li>Opening or creating other files, such as new projects or opening files, is refused (saving still works).</li>
+<li>The chat shows the scope, like <code>Edit scope: current file "slime.gpixel" only</code>. Turn it off to lift the limit from the next message.</li>
+</ul>
+
+<h3 id="ai-locked">Protecting locked layers</h3>
+<p>The AI never touches <strong>locked layers</strong> (or the parts of a locked group), whether or not Current file only is on.</p>
+<ul>
+<li>Changing their pixels, name, visibility, opacity, part position or size, or the group's skin or outfit is refused with a "locked" reason.</li>
+<li>Deleting a frame where a locked layer has pixels, and resizing the canvas while any layer is locked, are refused too. Reading still works.</li>
+<li>Lock layers the AI must not change with the lock icon in the timeline.</li>
 </ul>
 
 <h3 id="ai-progress">Progress display</h3>

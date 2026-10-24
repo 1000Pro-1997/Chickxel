@@ -34,6 +34,7 @@
   <data name="Language_RestartNow" xml:space="preserve"><value>Restart now</value></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>Later</value></data>
   <data name="Palette_UndoLabel" xml:space="preserve"><value>Palette change</value></data>
+  <data name="Ai_ModelRecommended" xml:space="preserve"><value>{0} (recommended)</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve"><value>GitHub repository</value></data>
   <data name="S_AboutDialog_AboutDialog_2085099DF4" xml:space="preserve"><value>View open source notices</value></data>
   <data name="S_AboutDialog_AboutDialog_27606A6DB7" xml:space="preserve"><value> (development build)</value></data>
@@ -170,8 +171,6 @@ echo __LOGIN_FAILED__
   <data name="S_BobPanel_BobPanel_A229A39E90" xml:space="preserve"><value>Rises and falls smoothly on a sine curve (height px up and down from center, whole pixels). The range starts and ends the same, so it loops seamlessly — the last frame of the range looks the same as the first.</value></data>
   <data name="S_BobPanel_BobPanel_EC9342821C" xml:space="preserve"><value>Left/right</value></data>
   <data name="S_ChatWindow_AddAttachment_1F581E4392" xml:space="preserve"><value>Remove attachment</value></data>
-  <data name="S_ChatWindow_AddHint_99795D658D" xml:space="preserve"><value>Ask anything about your drawing.
-Examples: "Draw a 16×16 slime character", "Make the outline darker", "Make a 4-frame walk animation"</value></data>
   <data name="S_ChatWindow_AddSnapshot_C5F0084B6D" xml:space="preserve"><value>Undo this step</value></data>
   <data name="S_ChatWindow_AttachCanvas_F7C294FC0C" xml:space="preserve"><value>No drawing is open.</value></data>
   <data name="S_ChatWindow_AttachFile_0469DC1AFF" xml:space="preserve"><value>Can't read this image (unsupported format or corrupted file).</value></data>
@@ -180,9 +179,7 @@ Examples: "Draw a 16×16 slime character", "Make the outline darker", "Make a 4-
   <data name="S_ChatWindow_AttachFile_FB523C7B58" xml:space="preserve"><value>Couldn't read the file.
 {0}</value></data>
   <data name="S_ChatWindow_ChatTab_046C36A571" xml:space="preserve"><value>Attach a PNG, JPG, GIF, or WebP image</value></data>
-  <data name="S_ChatWindow_ChatTab_1B00266AAA" xml:space="preserve"><value>When on, the AI edits only the layer selected when sending (for a group, its parts). Other layers and files are view-only, and structural changes such as adding frames, layers, or skins are blocked.</value></data>
   <data name="S_ChatWindow_ChatTab_1CB431966C" xml:space="preserve"><value>Stop</value></data>
-  <data name="S_ChatWindow_ChatTab_498E3C255E" xml:space="preserve"><value>Current layer only</value></data>
   <data name="S_ChatWindow_ChatTab_8F1426E012" xml:space="preserve"><value>Thinking…</value></data>
   <data name="S_ChatWindow_ChatTab_95FEEA4ADC" xml:space="preserve"><value>Message (Enter to send, Shift+Enter for new line)</value></data>
   <data name="S_ChatWindow_ChatTab_B428204BA3" xml:space="preserve"><value>Image…</value></data>
@@ -190,7 +187,6 @@ Examples: "Draw a 16×16 slime character", "Make the outline darker", "Make a 4-
   <data name="S_ChatWindow_ChatTab_CF5843D1B0" xml:space="preserve"><value>Send</value></data>
   <data name="S_ChatWindow_ChatTab_F9D4399092" xml:space="preserve"><value>Attach canvas</value></data>
   <data name="S_ChatWindow_ChatWindow_02EFD3D4E7" xml:space="preserve"><value>{0}: chats using {1} on this computer and your {2} login (no API key). Each tab has its own conversation.</value></data>
-  <data name="S_ChatWindow_ChatWindow_8A59B9F2A0" xml:space="preserve"><value>Clear this tab's conversation and start over</value></data>
   <data name="S_ChatWindow_ChatWindow_ACBC4AE706" xml:space="preserve"><value>New chat</value></data>
   <data name="S_ChatWindow_CheckAsync_CA460A15B1" xml:space="preserve"><value>Checking {0}…</value></data>
   <data name="S_ChatWindow_CheckAsync_F75B2590E0" xml:space="preserve"><value>Checking…</value></data>
@@ -212,14 +208,9 @@ Examples: "Draw a 16×16 slime character", "Make the outline darker", "Make a 4-
   <data name="S_ChatWindow_RefreshStep_B9AA5F8B5A" xml:space="preserve"><value>Later steps must be redone first</value></data>
   <data name="S_ChatWindow_RefreshStep_E659C76CB0" xml:space="preserve"><value>Reapply</value></data>
   <data name="S_ChatWindow_Send_2A1D03CC20" xml:space="preserve"><value>{0} is working — send after it finishes (so you don't edit the same canvas at once).</value></data>
-  <data name="S_ChatWindow_Send_7C61278ECA" xml:space="preserve"><value>Edit scope: {0} only — the rest is view-only</value></data>
-  <data name="S_ChatWindow_Send_7CDB2DE090" xml:space="preserve"><value>[Edit scope: modify only {0}. Other layers, documents, and structure are view-only.]
-{1}</value></data>
   <data name="S_ChatWindow_Send_9DB69B8394" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="S_ChatWindow_Send_A2D9AB8F67" xml:space="preserve"><value>(image)</value></data>
-  <data name="S_ChatWindow_Send_D27CE54072" xml:space="preserve"><value>(+ its parts)</value></data>
   <data name="S_ChatWindow_Send_E1ACACFBF7" xml:space="preserve"><value>Couldn't run {0}: {1}</value></data>
-  <data name="S_ChatWindow_Send_F50CA3E886" xml:space="preserve"><value>layer "{0}"{1}</value></data>
   <data name="S_ChatWindow_ShowChat_B46AD2AE0A" xml:space="preserve"><value>Logged in</value></data>
   <data name="S_ChatWindow_ShowLogin_3B08918AF3" xml:space="preserve"><value>Login required</value></data>
   <data name="S_ChatWindow_ShowLogin_4B41926EA7" xml:space="preserve"><value>Log in with {0} so {1} can view and edit drawings in this editor. </value></data>
@@ -1417,7 +1408,13 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PixelTools_ApplyOutfit_F49A169E48" xml:space="preserve"><value>{0}: applied outfit "{1}"</value></data>
   <data name="S_PixelTools_ApplyOutfit_F6B996D5D3" xml:space="preserve"><value>No outfit presets — save one with save_outfit</value></data>
   <data name="S_PixelTools_BeginMutation_F25614FB73" xml:space="preserve"><value>The user is drawing right now — try again shortly</value></data>
-  <data name="S_PixelTools_Call_641D76DC81" xml:space="preserve"><value>Editing is limited to layer "{0}", so {1} can't be used — only that layer's pixels can be changed; everything else is read-only (the user can turn off "Current layer only" in the chat)</value></data>
+  <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>The user limited the AI to the current file, so other files can't be opened or created (the user can turn this off in the chat)</value></data>
+  <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>The user limited the AI to the file that was open when this turn started, and another document is open now — everything is read-only (switch back to that file to edit it)</value></data>
+  <data name="Ai_Locked_Layer" xml:space="preserve"><value>Layer {index} "{name}" (or its group) is locked and can't be changed — ask the user to unlock it</value></data>
+  <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>Frame {frame} can't be deleted because locked layers have drawings in it: {layers} — ask the user to unlock them</value></data>
+  <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>The canvas can't be resized while layers are locked (resizing crops or shifts every layer): {layers} — ask the user to unlock them</value></data>
+  <data name="Ai_Locked_Outfit" xml:space="preserve"><value>Wearing outfit "{outfit}" would change locked layers: {layers} — ask the user to unlock them</value></data>
+  <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>Group "{group}" uses auto layout, so this change could move locked part {index} "{name}" — ask the user to unlock it or turn off auto layout</value></data>
   <data name="S_PixelTools_Call_A9A0750467" xml:space="preserve"><value>Unknown tool: {0}</value></data>
   <data name="S_PixelTools_Call_B686C7AE84" xml:space="preserve"><value>{0} failed: {1}</value></data>
   <data name="S_PixelTools_DeleteFrame_26646ACB37" xml:space="preserve"><value>Can't delete the last frame</value></data>
@@ -1432,10 +1429,6 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PixelTools_DrawPixels_E040619801" xml:space="preserve"><value> — ignored {0} px outside the canvas</value></data>
   <data name="S_PixelTools_DrawPixels_F2344C45D2" xml:space="preserve"><value>rows[{0}]: string required</value></data>
   <data name="S_PixelTools_EditTarget_1DEA54562E" xml:space="preserve"><value>Can't draw on a group layer — pick a part layer</value></data>
-  <data name="S_PixelTools_EditTarget_502F3C3D23" xml:space="preserve"><value>Out of edit scope — only the document open when the turn started can be edited (another document is open now)</value></data>
-  <data name="S_PixelTools_EditTarget_7C911AF779" xml:space="preserve"><value>Out of edit scope — only layer "{0}"{1} can be edited; layer {2} "{3}" is read-only</value></data>
-  <data name="S_PixelTools_EditTarget_7CA7F88A4A" xml:space="preserve"><value>(and its parts)</value></data>
-  <data name="S_PixelTools_EditTarget_F0AFAA4B8B" xml:space="preserve"><value>layer {0} "{1}" (or its group) is locked — ask the user to unlock it</value></data>
   <data name="S_PixelTools_FindPart_3F27777CE1" xml:space="preserve"><value>part: part "{0}" exists in multiple groups — also pass a group number</value></data>
   <data name="S_PixelTools_FindPart_77F7827042" xml:space="preserve"><value>part: no part "{0}"{1} — check part names with get_document</value></data>
   <data name="S_PixelTools_FindPart_F1C0C05B87" xml:space="preserve"><value>(in group "{0}")</value></data>
@@ -2634,4 +2627,71 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Help_Next" xml:space="preserve"><value>Next</value></data>
   <data name="Help_Guide" xml:space="preserve"><value>Guide</value></data>
   <data name="Help_ToggleChapter" xml:space="preserve"><value>Expand or collapse</value></data>
+  <data name="Timeline_AddLayerTip" xml:space="preserve"><value>Add new layer</value></data>
+  <data name="Timeline_AppendLayerCopyTip" xml:space="preserve"><value>Add a copy of the last layer</value></data>
+  <data name="Shortcuts_NextLayerRowButtons" xml:space="preserve"><value>Plus / copy button in next layer row</value></data>
+  <data name="Shortcuts_NextLayerRowActions" xml:space="preserve"><value>Add empty layer / add a copy of the last layer</value></data>
+  <data name="Chat_NewChat_Tip" xml:space="preserve"><value>Show past chats. Type a message below to start a new chat.</value></data>
+  <data name="Chat_FileOnly" xml:space="preserve"><value>Current file only</value></data>
+  <data name="Chat_FileOnly_Tip" xml:space="preserve"><value>When on, the AI draws only in the file that is open now. It can add layers and frames and tidy up layers, but it never touches locked layers and doesn't open or create other files.</value></data>
+  <data name="Chat_FileOnly_Prefix" xml:space="preserve"><value>[Edit scope: change only the open file "{name}". Don't open or create other files. Locked layers are never changed.]
+{text}</value></data>
+  <data name="Chat_FileOnly_Notice" xml:space="preserve"><value>Edit scope: current file "{name}" only — no other files opened or created</value></data>
+  <data name="Chat_History_Title" xml:space="preserve"><value>Past chats</value></data>
+  <data name="Chat_History_Empty" xml:space="preserve"><value>Ask anything about your drawing. Type a message below to start a new chat.
+Examples: "Draw a 16×16 slime character", "Make the outline darker", "Make a 4-frame walk animation"
+Press the question mark button at the top right to see what the AI can do, with examples.</value></data>
+  <data name="Chat_History_StartHint" xml:space="preserve"><value>Type a message below to start a new chat, or click a past chat to continue it.</value></data>
+  <data name="Chat_History_Favorite" xml:space="preserve"><value>Favorite (pinned to the top, never deleted automatically)</value></data>
+  <data name="Chat_History_Unfavorite" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="Chat_History_Delete" xml:space="preserve"><value>Delete chat</value></data>
+  <data name="Chat_History_DeleteTitle" xml:space="preserve"><value>Delete chat</value></data>
+  <data name="Chat_History_DeleteAsk" xml:space="preserve"><value>Delete this chat? This can't be undone.
+{title}</value></data>
+  <data name="Chat_History_Open" xml:space="preserve"><value>Open this chat (messages you send continue the same conversation)</value></data>
+  <data name="Chat_History_Meta" xml:space="preserve"><value>{date} · {model}</value></data>
+  <data name="Chat_History_ImageTitle" xml:space="preserve"><value>(image)</value></data>
+  <data name="Chat_History_ImagesMarker" xml:space="preserve"><value>({count} images)</value></data>
+  <data name="Chat_History_SaveFailed" xml:space="preserve"><value>Couldn't save the chat: {message}</value></data>
+  <data name="Chat_History_Opened" xml:space="preserve"><value>Opened a past chat. Messages you send continue the same conversation (undo buttons from back then aren't restored).</value></data>
+  <data name="Chat_History_NoSession" xml:space="preserve"><value>Opened a past chat, but it has no session to continue, so the next message starts a new conversation.</value></data>
+  <data name="Chat_Help_Tip" xml:space="preserve"><value>What the AI can do, examples, and tips</value></data>
+  <data name="Chat_Help_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Chat_Help_ToolsTitle" xml:space="preserve"><value>What the AI can do</value></data>
+  <data name="Chat_Help_ToolsIntro" xml:space="preserve"><value>The AI reads and edits your drawing only through the tools Gpixel provides (no shell, web, or other programs). It never touches locked layers.</value></data>
+  <data name="Chat_Help_GroupView" xml:space="preserve"><value>Look at the drawing</value></data>
+  <data name="Chat_Help_GroupView_Text" xml:space="preserve"><value>Reads the open document's size, frames, and layers, views it as an image, or reads exact pixel colors.</value></data>
+  <data name="Chat_Help_GroupDraw" xml:space="preserve"><value>Draw</value></data>
+  <data name="Chat_Help_GroupDraw_Text" xml:space="preserve"><value>Paints blocks of pixels or single pixels, lines, rectangles, ellipses, fills, clears, and replaces colors.</value></data>
+  <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>Frames and animation</value></data>
+  <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>Adds frames (optionally as copies) or deletes them, and sets frame durations and animation tags.</value></data>
+  <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>Layers</value></data>
+  <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>Adds layers, changes their name, visibility, and opacity, and picks the frame and layer shown in the editor.</value></data>
+  <data name="Chat_Help_GroupParts" xml:space="preserve"><value>Groups and parts</value></data>
+  <data name="Chat_Help_GroupParts_Text" xml:space="preserve"><value>Splits a character into parts such as head, body, and arms, and sets each part's position, size, and pivot.</value></data>
+  <data name="Chat_Help_GroupSkins" xml:space="preserve"><value>Skins and outfits</value></data>
+  <data name="Chat_Help_GroupSkins_Text" xml:space="preserve"><value>Creates alternative drawings of the same parts (such as clothes), switches between them, and saves or applies outfit presets.</value></data>
+  <data name="Chat_Help_GroupCanvas" xml:space="preserve"><value>Canvas and colors</value></data>
+  <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>Changes the canvas size, the palette colors, and the primary and secondary colors.</value></data>
+  <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>Files</value></data>
+  <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>Creates a new drawing, saves, and opens files (opening and creating are blocked while "Current file only" is on).</value></data>
+  <data name="Chat_Help_GroupOther" xml:space="preserve"><value>Other tools</value></data>
+  <data name="Chat_Help_ExamplesTitle" xml:space="preserve"><value>Example requests</value></data>
+  <data name="Chat_Help_ExamplesIntro" xml:space="preserve"><value>Click one to put it in the message box, then edit and send it.</value></data>
+  <data name="Chat_Help_ExampleTip" xml:space="preserve"><value>Put in the message box</value></data>
+  <data name="Chat_Help_Example1" xml:space="preserve"><value>Draw a 16×16 slime character. Transparent background, 4 shades of green, dark outline.</value></data>
+  <data name="Chat_Help_Example2" xml:space="preserve"><value>Make the outline one step darker than it is now.</value></data>
+  <data name="Chat_Help_Example3" xml:space="preserve"><value>Make a 4-frame walk animation of this character and tag it walk (120 ms per frame).</value></data>
+  <data name="Chat_Help_Example4" xml:space="preserve"><value>Recolor it using only the colors in the current palette.</value></data>
+  <data name="Chat_Help_Example5" xml:space="preserve"><value>Make a character group split into head, body, arm, and leg parts.</value></data>
+  <data name="Chat_Help_Example6" xml:space="preserve"><value>Add a winter skin to the character group and dress it in winter clothes.</value></data>
+  <data name="Chat_Help_Example7" xml:space="preserve"><value>Add two levels of shading as if the light comes from the top left.</value></data>
+  <data name="Chat_Help_Example8" xml:space="preserve"><value>Enlarge the canvas to 32×32 and move the character to the center.</value></data>
+  <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>Tips</value></data>
+  <data name="Chat_Help_Tip1" xml:space="preserve"><value>Pick a model. In our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Claude Opus is also good for complex, structural work.</value></data>
+  <data name="Chat_Help_Tip2" xml:space="preserve"><value>Turn on "Current file only" to keep the AI in the open file. It never touches locked layers, so lock the layers you want to protect.</value></data>
+  <data name="Chat_Help_Tip3" xml:space="preserve"><value>Use "Attach canvas" or "Image…" to send a reference picture along.</value></data>
+  <data name="Chat_Help_Tip4" xml:space="preserve"><value>Be specific about size, palette, and style. For example: "16×16, palette colors only, 1-pixel black outline, no anti-aliasing".</value></data>
+  <data name="Chat_Help_Tip5" xml:space="preserve"><value>Each reply is one undo step. If you don't like it, use "Undo this step" or Ctrl+Z.</value></data>
+  <data name="Chat_Help_Tip6" xml:space="preserve"><value>Break big jobs into small steps: first the silhouette, then colors, then shading and animation.</value></data>
 </root>

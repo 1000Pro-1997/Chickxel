@@ -275,6 +275,9 @@ public sealed class ClaudeSession : IChatSession
 
     public string? SessionId { get; private set; }
 
+    /// <summary>세션을 시작한 작업 폴더(Claude Code의 세션 기록이 그 폴더에 묶임 — 이어 갈 때 같은 폴더여야 함).</summary>
+    public string? SessionDirectory => SessionId is null ? null : _sessionCwd;
+
     /// <summary>답을 기다리는 중.</summary>
     public bool IsTurnActive { get; private set; }
 
@@ -344,6 +347,13 @@ public sealed class ClaudeSession : IChatSession
         Cancel();
         SessionId = null;
         _sessionCwd = null;
+    }
+
+    public void Resume(string sessionId, string? directory)
+    {
+        Cancel();
+        SessionId = sessionId;
+        _sessionCwd = directory;
     }
 
     public void Dispose() => Cancel();

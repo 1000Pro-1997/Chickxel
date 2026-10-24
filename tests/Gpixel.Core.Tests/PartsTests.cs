@@ -139,6 +139,34 @@ public class PartsTests
         Assert.NotSame(p.GetCel(1, 1), p.GetCel(1, 0));
     }
 
+    [Fact]
+    public void LockedLayersWithContent_ListsLockedLayersDrawnInFrame_InAnySkin()
+    {
+        var p = new SpriteProject(4, 4);
+        p.AddFrame();
+        var plain = p.AddLayer(name: "Plain");
+        var g = p.AddGroup("G");
+        var part = p.AddPart(g, "Arm", 2, 2);
+        Paint(p, p.IndexOf(plain), 0, 0, 0, Red);
+        p.AddSkin(g, "alt"); // 지금 스킨이 됨
+        Paint(p, p.IndexOf(part), 1, 0, 0, Blue);
+        p.SetActiveSkin(g, g.BaseSkin!);
+
+        // 잠긴 레이어가 없으면 비어 있다
+        Assert.Empty(p.LockedLayersWithContent(0));
+        Assert.Empty(p.LockedLayersWithContent(1));
+
+        // 잠긴 일반 레이어, 그룹이 잠긴 부위(지금 보이지 않는 스킨의 그림도 프레임을 지우면 사라짐)
+        p.SetLayerProperties(p.IndexOf(plain), locked: true);
+        p.SetLayerProperties(p.IndexOf(g), locked: true);
+        Assert.Equal([plain], p.LockedLayersWithContent(0));
+        Assert.Equal([part], p.LockedLayersWithContent(1));
+
+        // 잠겨 있어도 그림이 없는 프레임이면 없음
+        p.SetLayerProperties(p.IndexOf(plain), locked: false);
+        Assert.Empty(p.LockedLayersWithContent(0));
+    }
+
     // ───────────── 구조 ─────────────
 
     [Fact]

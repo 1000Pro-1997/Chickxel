@@ -83,7 +83,7 @@
 <ol><li><a href="#parts-concept">그룹과 부위</a></li><li><a href="#parts-create">만들기</a></li><li><a href="#parts-timeline">타임라인에서 보기</a></li><li><a href="#parts-arrange">배치하기(그룹 선택)</a></li><li><a href="#parts-draw">그리기(부위 선택)</a></li><li><a href="#parts-auto-layout">자동 배치</a></li><li><a href="#parts-export">내보내기: 프레임 시트와 부위 아틀라스</a></li><li><a href="#parts-skins">스킨과 슬롯</a></li><li><a href="#parts-per-part">부위마다 따로 고르기와 부위 전용 스킨</a></li><li><a href="#parts-skin-manager">스킨 관리 창</a></li><li><a href="#parts-outfits">착장 바꾸기와 착장 프리셋</a></li><li><a href="#parts-skin-export">스킨 내보내기</a></li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li><a href="#parts-import">예전 파일과 PNG 가져오기</a></li></ol>
 </li>
 <li><a href="#ai">AI 채팅 (Claude · Codex)</a>
-<ol><li><a href="#ai-overview">무엇을 할 수 있나요</a></li><li><a href="#ai-open">채팅 창 열기</a></li><li><a href="#ai-setup">처음 한 번: 설치와 로그인</a></li><li><a href="#ai-tabs">Claude 탭과 Codex 탭</a></li><li><a href="#ai-chat">대화하기</a></li><li><a href="#ai-layer-only">지금 레이어만 고치게 하기</a></li><li><a href="#ai-progress">진행 표시</a></li><li><a href="#ai-edits">AI가 할 수 있는 편집</a></li><li><a href="#ai-undo">되돌리기</a></li><li><a href="#ai-troubleshoot">문제가 생기면</a></li></ol>
+<ol><li><a href="#ai-overview">무엇을 할 수 있나요</a></li><li><a href="#ai-open">채팅 창 열기</a></li><li><a href="#ai-setup">처음 한 번: 설치와 로그인</a></li><li><a href="#ai-tabs">Claude 탭과 Codex 탭</a></li><li><a href="#ai-chat">대화하기</a></li><li><a href="#ai-history">지난 대화 이어 하기</a></li><li><a href="#ai-help">도움말과 예시 부탁</a></li><li><a href="#ai-file-only">지금 그림만 고치게 하기</a></li><li><a href="#ai-locked">잠긴 레이어 지키기</a></li><li><a href="#ai-progress">진행 표시</a></li><li><a href="#ai-edits">AI가 할 수 있는 편집</a></li><li><a href="#ai-undo">되돌리기</a></li><li><a href="#ai-troubleshoot">문제가 생기면</a></li></ol>
 </li>
 <li><a href="#shortcuts">단축키</a>
 <ol><li><a href="#shortcuts-customize">단축키 바꾸기</a></li><li><a href="#shortcuts-file">파일과 창</a></li><li><a href="#shortcuts-edit">편집과 선택</a></li><li><a href="#shortcuts-transform">변형과 이미지</a></li><li><a href="#shortcuts-tools">도구</a></li><li><a href="#shortcuts-view">보기와 캔버스</a></li><li><a href="#shortcuts-timeline">타임라인·레이어·그룹</a></li></ol>
@@ -412,6 +412,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>프레임 열</strong>: 번호, 길이, 실시간 썸네일. 번호를 더블클릭하면 프레임 길이를 바꿉니다.</li>
 <li><strong>태그 띠</strong>: 색 괄호로 프레임 묶음을 보여 줍니다.</li>
 <li>마지막 프레임 뒤 칸: 머리글의 더하기 아이콘 = 빈 프레임 추가, 그 아래 복사 아이콘 = 마지막 프레임을 복사해 추가.</li>
+<li>마지막 레이어 아래 줄: 이름 칸의 더하기 아이콘 = 맨 아래에 빈 레이어 추가, 첫 프레임 칸의 복사 아이콘 = 맨 아래 레이어를 복사해 맨 아래에 추가(그룹은 부위까지).</li>
 <li>미리보기를 재생하면 지금 보이는 프레임 열이 초록 외곽선으로 표시됩니다.</li>
 </ul>
 <div class="note">잠근 레이어에는 그릴 수 없지만, 숨긴 레이어에는 그릴 수 있습니다. 숨긴 일반 레이어는 편집하는 동안 캔버스에만 반투명하게 보이고 미리보기·내보내기에는 나오지 않습니다.</div>
@@ -962,18 +963,46 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>참고 그림 붙이기</td><td><strong>이미지…</strong></td></tr>
 <tr><td>지금 프레임 보여 주기</td><td><strong>캔버스 첨부</strong></td></tr>
 <tr><td>모델 바꾸기</td><td>위쪽 <strong>모델</strong> 목록(AI마다 따로 기억, 다음 메시지부터 적용)</td></tr>
-<tr><td>대화 새로 시작</td><td><strong>새 대화</strong></td></tr>
+<tr><td>지난 대화 보기·새 대화 시작</td><td><strong>새 대화</strong>(목록이 뜨고, 아래 입력란에 쓰면 새 대화)</td></tr>
+<tr><td>할 수 있는 일·예시·요령 보기</td><td><strong>새 대화</strong> 옆 물음표 단추</td></tr>
 <tr><td>답 멈추기</td><td><strong>정지</strong></td></tr>
 </tbody>
 </table></div>
 <p>모델 목록 첫 칸 <strong>기본</strong>에는 실제로 쓰일 모델 이름이 함께 보입니다.</p>
 
-<h3 id="ai-layer-only">지금 레이어만 고치게 하기</h3>
-<p>입력란 아래 <strong>캔버스 첨부</strong> 옆의 <strong>지금 레이어만</strong>을 켜고 보내면, AI는 보내는 순간의 현재 레이어(그룹이면 그 부위들까지)만 고칩니다.</p>
+<h3 id="ai-history">지난 대화 이어 하기</h3>
+<p>대화는 답이 끝날 때마다 자동으로 저장됩니다. Claude와 Codex는 대화 목록이 따로 있습니다.</p>
 <ul>
-<li>그 레이어의 모든 프레임에 그릴 수 있고, 다른 레이어·파일은 보기만 합니다.</li>
-<li>프레임·레이어·스킨·캔버스·팔레트 바꾸기, 새 프로젝트·열기는 거절됩니다(저장은 됨).</li>
-<li>채팅에 <code>편집 범위: "hair" 레이어만</code>처럼 범위가 표시됩니다. 끄면 다음 메시지부터 제한이 풀립니다.</li>
+<li><strong>새 대화</strong>를 누르면 대화 칸에 <strong>지난 대화 목록</strong>이 뜹니다. 줄마다 제목(첫 메시지), 날짜, 모델이 보입니다.</li>
+<li>줄을 누르면 그 대화가 다시 보이고, 이어서 보내면 같은 대화로 이어집니다. 예전 차례의 <strong>이 단계 되돌리기</strong> 단추는 다시 생기지 않습니다.</li>
+<li>별 아이콘으로 <strong>즐겨찾기</strong>하면 맨 위에 고정되고 자동으로 지워지지 않습니다. 휴지통 아이콘은 물어본 뒤 지웁니다.</li>
+<li>목록에서 아래 입력란에 쓰고 보내면 새 대화가 시작됩니다.</li>
+<li>AI마다 20개까지 남기고, 넘치면 즐겨찾기가 아닌 가장 오래된 대화부터 지웁니다.</li>
+<li>채팅 창을 다시 열거나 앱을 다시 켜면 탭마다 마지막으로 보던 대화(또는 목록)가 그대로 열립니다.</li>
+</ul>
+
+<h3 id="ai-help">도움말과 예시 부탁</h3>
+<p><strong>새 대화</strong> 옆 물음표 단추를 누르면 대화 칸에 도움말이 뜹니다. <strong>돌아가기</strong>나 물음표 단추를 다시 누르면 닫힙니다.</p>
+<ul>
+<li><strong>AI가 할 수 있는 일</strong>: 그림 보기, 그리기, 프레임·애니메이션, 레이어, 그룹·부위, 스킨·의상, 캔버스·색, 파일 도구를 묶음별로 설명합니다.</li>
+<li><strong>예시 부탁</strong>: 누르면 입력란에 들어갑니다. 고쳐서 보내세요.</li>
+<li><strong>잘 쓰는 요령</strong>: 직접 써 본 결과 Codex의 GPT-6-Astra가 가장 잘 그렸고, Codex는 기본으로 GPT-6-Astra(추천)를 씁니다. 크기·팔레트·스타일을 분명히 적고, 참고 그림을 첨부하고, 큰 일은 작게 나눠 부탁하세요.</li>
+</ul>
+
+<h3 id="ai-file-only">지금 그림만 고치게 하기</h3>
+<p>입력란 아래 <strong>캔버스 첨부</strong> 옆의 <strong>지금 그림만</strong>을 켜고 보내면, AI는 보내는 순간 열려 있는 그림 하나만 고칩니다.</p>
+<ul>
+<li>그 그림 안에서는 그리기는 물론 새 레이어·프레임·그룹·부위·스킨을 만들고 레이어를 정리할 수 있습니다.</li>
+<li>새 프로젝트·열기처럼 다른 파일을 열거나 만드는 일은 거절됩니다(저장은 됨).</li>
+<li>채팅에 <code>편집 범위: 지금 그림 "slime.gpixel"만</code>처럼 범위가 표시됩니다. 끄면 다음 메시지부터 제한이 풀립니다.</li>
+</ul>
+
+<h3 id="ai-locked">잠긴 레이어 지키기</h3>
+<p>AI는 <strong>잠긴 레이어</strong>(그룹이 잠겼으면 그 부위도)를 언제나 건드리지 않습니다. 지금 그림만을 켜지 않아도 마찬가지입니다.</p>
+<ul>
+<li>픽셀, 이름·보이기·불투명도, 부위 위치·크기, 그 그룹의 스킨·착장 바꾸기는 "잠겨 있어 바꿀 수 없습니다"라는 이유와 함께 거절됩니다.</li>
+<li>잠긴 레이어에 그림이 있는 프레임 지우기와, 잠긴 레이어가 있을 때 캔버스 크기 바꾸기도 거절됩니다. 읽기는 됩니다.</li>
+<li>AI가 바꾸면 안 되는 레이어는 타임라인의 자물쇠로 잠가 두세요.</li>
 </ul>
 
 <h3 id="ai-progress">진행 표시</h3>

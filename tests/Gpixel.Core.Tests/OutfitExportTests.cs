@@ -117,6 +117,38 @@ public class OutfitExportTests
     }
 
     [Fact]
+    public void Outfit_LockedLayersChangedBy_ListsLockedGroupsAndPartsItWouldChange()
+    {
+        var (p, body, armor, bodyPart, plate, zombie, iron) = Rig();
+        p.SetActiveSkin(body, zombie);
+        p.SetActiveSkin(armor, iron);
+        p.SetPartSkin(plate, armor.BaseSkin!);
+        var knight = p.SaveOutfit("기사"); // body = zombie, armor = iron, Plate 재정의 = 없음
+        p.SetActiveSkin(body, body.BaseSkin!);
+        p.SetActiveSkin(armor, armor.BaseSkin!);
+        p.SetPartSkin(plate, null);
+
+        // 잠긴 레이어가 없으면 비어 있다
+        Assert.Empty(p.LockedLayersChangedBy(knight));
+
+        // 잠긴 그룹: 스킨이 바뀔 그룹과 재정의가 바뀔 부위
+        p.SetLayerProperties(p.IndexOf(armor), locked: true);
+        Assert.Equal([armor, plate], p.LockedLayersChangedBy(knight));
+
+        // 부위만 잠김: 재정의가 바뀔 때만
+        p.SetLayerProperties(p.IndexOf(armor), locked: false);
+        p.SetLayerProperties(p.IndexOf(plate), locked: true);
+        Assert.Equal([plate], p.LockedLayersChangedBy(knight));
+        p.SetPartSkin(plate, armor.BaseSkin!);
+        Assert.Empty(p.LockedLayersChangedBy(knight));
+
+        // 잠긴 그룹이라도 바뀌지 않는 부위는 빠진다
+        p.SetLayerProperties(p.IndexOf(body), locked: true);
+        Assert.Equal([body], p.LockedLayersChangedBy(knight));
+        Assert.DoesNotContain(bodyPart, p.LockedLayersChangedBy(knight));
+    }
+
+    [Fact]
     public void FrameSheets_PerOutfitFiles_SameSpriteNames_AndExcludedLayers()
     {
         var (p, body, armor, _, _, zombie, iron) = Rig();
