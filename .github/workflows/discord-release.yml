@@ -1,0 +1,93 @@
+name: Discord release announcement
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+    secrets:
+      DISCORD_RELEASE_WEBHOOK:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published release tag (empty = latest stable release)"
+        required: false
+        type: string
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: discord-release-${{ inputs.tag || github.event.release.tag_name || 'latest' }}
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send release details to Discord
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          
+          repo = os.environ["GITHUB_REPOSITORY"]
+          tag = os.environ.get("RELEASE_TAG", "").strip()
+          if not tag:
+              event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
+              tag = event.get("release", {}).get("tag_name", "")
+          endpoint = ("tags/" + urllib.parse.quote(tag, safe="")) if tag else "latest"
+          request = urllib.request.Request(
+              "https://api.github.com/repos/" + repo + "/releases/" + endpoint,
+              headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                       "Accept": "application/vnd.github+json", "User-Agent": "GPixel-release-notify"})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              release = json.load(response)
+          if release.get("draft"):
+              raise SystemExit("Refusing to announce a draft release")
+          url = release["html_url"]
+          body = (release.get("body") or "업데이트 설명은 릴리스 페이지에서 확인해 주세요.").strip()
+          if len(body) > 3800:
+              body = body[:3750].rsplit("\n", 1)[0] + "\n\n나머지 내용은 전체 업데이트 내역에서 확인해 주세요."
+          downloads = []
+          labels = {"Gpixel-windows-x64.zip": "Windows",
+                    "Gpixel-macos-arm64.zip": "macOS Apple Silicon",
+                    "Gpixel-macos-x64.zip": "macOS Intel"}
+          for asset in release.get("assets", []):
+              label = labels.get(asset["name"])
+              if label:
+                  downloads.append("[" + label + "](" + asset["browser_download_url"] + ")")
+          embed = {"title": ("GPixel " + release["tag_name"] + " 업데이트")[:256],
+                   "url": url, "description": body, "color": 0x37CDBE,
+                   "fields": [{"name": "다운로드", "value": " · ".join(downloads) or "[릴리스 페이지](" + url + ")"},
+                              {"name": "전체 업데이트 내역", "value": "[GitHub에서 보기](" + url + ")"}],
+                   "footer": {"text": "GPixel Updates"}}
+          payload = {"username": "GPixel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
+          hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
+          if not hook.startswith("https://discord.com/api/webhooks/"):
+              raise SystemExit("DISCORD_RELEASE_WEBHOOK is missing or invalid")
+          request = urllib.request.Request(hook + "?wait=true",
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers={"Content-Type": "application/json", "User-Agent": "GPixel-release-notify"},
+              method="POST")
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  message = json.load(response)
+          except urllib.error.HTTPError as error:
+              raise SystemExit("Discord delivery failed (HTTP " + str(error.code) + ")") from None
+          except urllib.error.URLError:
+              raise SystemExit("Discord delivery connection failed; inspect channel before retrying") from None
+          print("Discord announcement sent for " + release["tag_name"] + "; message ID " + message["id"])
+          PY
