@@ -47,7 +47,7 @@
 <h2>사용 가이드</h2>
 <ol>
 <li><a href="#featured">대표 기능</a>
-<ol><li><a href="#featured-number-field">숫자 칸 하나, 바꾸는 방법은 세 가지</a></li></ol>
+<ol><li><a href="#featured-number-field">숫자 칸 하나, 바꾸는 방법은 세 가지</a></li><li><a href="#featured-ai-draw">말로 부탁하면 AI가 캔버스에 직접 그립니다</a></li></ol>
 </li>
 <li><a href="#start">시작하기</a>
 <ol><li><a href="#start-install">설치</a></li><li><a href="#start-first-run">처음 실행할 때</a></li><li><a href="#start-update">업데이트</a></li><li><a href="#start-privacy">네트워크와 개인정보</a></li></ol>
@@ -88,6 +88,16 @@
 <li><strong>우클릭 후 목록에서 고르기</strong><span>칸을 우클릭하면 자주 쓰는 값과 최근 값 목록이 뜹니다. 지금 값은 점으로 표시됩니다.</span></li>
 </ol>
 <figure class="core-media guide-media"><img src="assets/feature-number-field.gif" alt="피벗 X·Y 숫자 칸을 클릭해 입력하고, 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르는 모습" width="512" height="1031" loading="lazy"></figure>
+
+<h3 id="featured-ai-draw">말로 부탁하면 AI가 캔버스에 직접 그립니다</h3>
+<p>내 컴퓨터의 Claude Code·Codex가 내 계정으로 Gpixel을 직접 다룹니다(API 키 없음). "32×32 나무 통 그려 줘"처럼 말하면 열린 그림에 바로 그려 줍니다.</p>
+<ol class="core-steps">
+<li><strong>AI 채팅 열기</strong><span><kbd>Ctrl</kbd>+<kbd>L</kbd> 또는 위 막대의 AI 단추. Claude·Codex 탭 중 하나를 고르고 처음 한 번 로그인합니다.</span></li>
+<li><strong>그리고 싶은 것을 말하기</strong><span>크기·소재·색을 함께 적으면 좋습니다. 그리는 동안 진행 상황이 보입니다.</span></li>
+<li><strong>마음에 안 들면 되돌리기</strong><span>답 하나가 실행취소 한 단계입니다. <kbd>Ctrl</kbd>+<kbd>Z</kbd>나 답 아래 "이 단계 되돌리기"로 되돌립니다.</span></li>
+</ol>
+<div class="note"><p>직접 써 본 결과 <strong>Codex의 Astra 모델</strong>(gpt-6-astra)이 가장 잘 그렸습니다. 자세한 사용법은 <a href="#ai">AI 채팅</a> 장에 있습니다.</p></div>
+<figure class="core-media wide guide-media"><video src="assets/feature-ai-draw.mp4" poster="assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습" width="1280" height="720"></video></figure>
 </section>
 
 <section class="doc" id="start">

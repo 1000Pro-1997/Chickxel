@@ -114,6 +114,11 @@ pre code { background: none; border: 0; padding: 0; }
 .core-steps span { display: block; margin-top: 3px; color: var(--body); font-size: 14px; line-height: 1.6; }
 .core-media { margin: 0; width: 300px; padding: 10px; background: var(--soft); border: 1px solid var(--line-soft); border-radius: 22px; box-shadow: var(--shadow) 0 18px 40px -10px; }
 .core-media img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.core-media video { display: block; width: 100%; height: auto; border-radius: 14px; background: #000; }
+.core-media.wide { width: 560px; }
+.guide-media.wide { width: 100%; max-width: 760px; }
+.core-note { margin: 16px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); border: 1px solid rgba(255, 208, 47, .25); color: #efdfae; font-size: 14px; }
+.core-note strong { color: var(--accent); }
 .doc .core-steps { padding-left: 0; margin: 18px 0 0; }
 .doc .core-steps li { margin: 0; }
 .guide-media { margin: 24px 0 0; }
@@ -188,6 +193,7 @@ td { color: var(--body); }
   .core-item, .core-item:nth-child(even) { grid-template-columns: 1fr; gap: 28px; padding: 28px 24px; }
   .core-item:nth-child(even) .core-media { order: 0; }
   .core-media { width: min(300px, 100%); justify-self: center; }
+  .core-media.wide { width: 100%; }
   .manual { grid-template-columns: 240px minmax(0, 1fr); }
   .content { padding: 32px 28px 64px; }
 }
