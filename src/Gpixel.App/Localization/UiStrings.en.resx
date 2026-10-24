@@ -2687,7 +2687,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_History_Opened" xml:space="preserve"><value>Opened a past chat. Messages you send continue the same conversation (undo buttons from back then aren't restored).</value></data>
   <data name="Chat_History_NoSession" xml:space="preserve"><value>Opened a past chat, but it has no session to continue, so the next message starts a new conversation.</value></data>
   <data name="Chat_Help_Tip" xml:space="preserve"><value>What the AI can do, examples, and tips</value></data>
-  <data name="Chat_Help_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Chat_Help_Title" xml:space="preserve"><value>Help</value></data>
+  <data name="Chat_Help_Close" xml:space="preserve"><value>Close help</value></data>
   <data name="Chat_Help_ToolsTitle" xml:space="preserve"><value>What the AI can do</value></data>
   <data name="Chat_Help_ToolsIntro" xml:space="preserve"><value>The AI reads and edits your drawing only through the tools Gpixel provides (no shell, web, or other programs). It never touches locked layers.</value></data>
   <data name="Chat_Help_GroupView" xml:space="preserve"><value>Look at the drawing</value></data>

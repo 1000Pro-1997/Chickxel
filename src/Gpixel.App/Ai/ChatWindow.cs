@@ -19,7 +19,8 @@ namespace Gpixel.App.Ai;
 /// 탭을 처음 볼 때 CLI 찾기 → 로그인 → 채팅 순서로 화면이 바뀐다. AI의 한 차례(turn)는 실행취소 한 단계로 묶이고,
 /// 차례마다 캔버스 모습과 "이 단계 되돌리기/다시 적용" 단추가 붙는다.
 /// 대화는 차례가 끝날 때마다 AI별로 저장되고(<see cref="ChatHistoryStore"/>), "새 대화"는 지난 대화 목록을 보여 주며(누르면 이어 감,
-/// 입력란에 쓰면 새 대화), 탭마다 마지막으로 보던 대화(또는 목록)를 다시 열 때 되살린다. "?" 단추는 AI가 할 수 있는 일·예시·요령을 보여 준다.
+/// 입력란에 쓰면 새 대화), 탭마다 마지막으로 보던 대화(또는 목록)를 다시 열 때 되살린다. "?" 단추는 대화 오른쪽에 도움말 칸
+/// (AI가 할 수 있는 일·예시·요령)을 연다 — 창이 그만큼 오른쪽으로 부드럽게 넓어지고(최대화면 대화 칸이 좁아짐) 대화는 그대로 쓸 수 있다.
 /// </summary>
 public sealed class ChatWindow : Window
 {
@@ -38,6 +39,10 @@ public sealed class ChatWindow : Window
     private const int ModelMinWidth = 100, ModelMaxWidth = 190;
     /// <summary>창 최소 너비: 머리줄(AI 탭·가장 좁은 모델 칸·새 대화·?)이 어느 화면 언어에서도 잘리지 않는 너비.</summary>
     private const int WindowMinWidth = 360;
+    /// <summary>도움말 칸 너비(왼쪽 테두리 포함).</summary>
+    private const double HelpPanelWidth = 340;
+    /// <summary>도움말 칸을 끝까지 열고 닫는 시간(ms). 가던 중에 되돌리면 남은 거리만큼만 걸린다.</summary>
+    private const double HelpAnimationMs = 220;
 
     private readonly EditorContext _ctx;
     private readonly McpServer _mcp;
@@ -47,10 +52,34 @@ public sealed class ChatWindow : Window
     private readonly TabStrip _providerToggle;
     /// <summary>보이는 탭의 모델 칸을 담는 자리.</summary>
     private readonly Border _modelHost;
-    private readonly Button _newChat, _help;
+    private readonly Button _newChat;
+    /// <summary>"?" 단추: 눌려 있으면(켜짐) 도움말 칸이 열려 있다.</summary>
+    private readonly ToggleButton _help;
     /// <summary>저장한 대화(<c>&lt;설정 폴더&gt;/Gpixel/Chats/&lt;AI id&gt;</c>).</summary>
     private readonly ChatHistoryStore _store = new(Path.Combine(Platform.AppDataDirectory, "Gpixel", "Chats"));
     private readonly Border _body;
+
+    // ── 도움말 칸(창 오른쪽)
+    /// <summary>대화 칸 | 도움말 칸 두 열.</summary>
+    private readonly Grid _root;
+    /// <summary>도움말 칸 자리: 너비가 0~<see cref="HelpPanelWidth"/>로 늘고 줄며, 안의 칸은 늘 같은 너비라 잘려 드러난다.</summary>
+    private readonly Border _helpHost;
+    private readonly ScrollViewer _helpScroll = new();
+    private readonly DispatcherTimer _helpTimer = new() { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
+    private readonly Stopwatch _helpClock = new();
+    /// <summary>도움말 칸이 드러난 정도(0 = 닫힘, 1 = 다 열림)와, 움직이는 중이면 출발·도착 값과 걸리는 시간.</summary>
+    private double _helpShown, _helpFrom, _helpTo, _helpMs;
+    /// <summary>창 너비를 바꿔 열고 닫음(보통 창). false면 창은 그대로 두고 대화 칸이 좁아진다(최대화·전체 화면).</summary>
+    private bool _helpResizes;
+    /// <summary>도움말 칸 때문에 창이 넓어진 너비(DIP). 최대화 중에 열고 닫으면 보통 창으로 돌아올 때 맞춘다.</summary>
+    private double _helpGrowth;
+    /// <summary>창 너비를 바꾸는 동안 고정하는 대화 칸 너비(DIP).</summary>
+    private double _chatWidth;
+    /// <summary>
+    /// 다 열렸을 때 화면 오른쪽 밖으로 나가지 않게 창을 왼쪽으로 옮기는 거리, 지금 옮겨 둔 거리(물리 픽셀),
+    /// 닫힌 상태(옮기기 전)의 창 X.
+    /// </summary>
+    private int _helpShiftPx, _helpShiftNow, _helpClosedX;
 
     /// <summary>AI마다 탭 하나(<see cref="AiProvider.All"/> 순서).</summary>
     private readonly List<ChatTab> _tabs;
@@ -104,8 +133,17 @@ public sealed class ChatWindow : Window
         _modelHost = new Border { VerticalAlignment = VerticalAlignment.Center };
         _newChat = Ui.Button(UiStrings.S_ChatWindow_ChatWindow_ACBC4AE706, (_, _) => _visible.NewConversation());
         _newChat.Tip(UiStrings.Chat_NewChat_Tip);
-        _help = Ui.IconButton(VectorIcon.QuestionMark, UiStrings.Chat_Help_Tip, (_, _) => _visible.ToggleHelp(), 28);
-        _help.Margin = new Thickness(0, 0, 2, 0);
+        var helpIcon = Ui.Icon(VectorIcon.QuestionMark, 14);
+        helpIcon.Margin = new Thickness(0, 1);
+        _help = new ToggleButton
+        {
+            Content = helpIcon,
+            Width = 28,
+            Margin = new Thickness(0, 0, 2, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(UiStrings.Chat_Help_Tip);
+        _help.IsCheckedChanged += (_, _) => AnimateHelp(_help.IsChecked == true);
         // 모델 칸은 상태 글보다 훨씬 큰 몫의 별 너비라, 넉넉하면 최대 너비이고 좁아지면 최소 너비까지 줄어든다.
         var header = new Grid { Margin = new Thickness(4, 3) };
         header.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
@@ -132,7 +170,23 @@ public sealed class ChatWindow : Window
         DockPanel.SetDock(headerBorder, Dock.Top);
 
         _body = new Border { Background = AppTheme.PanelBrush };
-        Content = new DockPanel { Children = { headerBorder, _body } };
+        var chatColumn = new DockPanel { Children = { headerBorder, _body } };
+
+        _helpHost = new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1, 0, 0, 0),
+            ClipToBounds = true,
+            IsVisible = false,
+            Child = BuildHelpPanel(),
+        };
+        Grid.SetColumn(_helpHost, 1);
+        _root = new Grid { Children = { chatColumn, _helpHost } };
+        _root.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
+        _root.ColumnDefinitions.Add(new ColumnDefinition(0, GridUnitType.Pixel));
+        Content = _root;
+        _helpTimer.Tick += (_, _) => StepHelp();
 
         _ctx.UndoChanged += OnUndoChanged;
         _ctx.ProjectReplaced += OnProjectReplaced;
@@ -141,6 +195,8 @@ public sealed class ChatWindow : Window
         {
             _opened = true;
             _visible.Activate();
+            // 도움말 내용은 처음 그릴 때(글자 배치) 오래 걸려, 미리 만들어 두어야 처음 "?"를 눌렀을 때도 칸이 끊김 없이 열린다.
+            Dispatcher.UIThread.Post(PrepareHelp, DispatcherPriority.Background);
         };
         ShowTab(_visible);
         _ready = true;
@@ -166,6 +222,7 @@ public sealed class ChatWindow : Window
         SaveBounds();
         foreach (var t in _tabs) t.StopTurn();
         _shutdown = true;
+        _helpTimer.Stop();
         foreach (var t in _tabs) t.Close();
         _ctx.UndoChanged -= OnUndoChanged;
         _ctx.ProjectReplaced -= OnProjectReplaced;
@@ -181,16 +238,22 @@ public sealed class ChatWindow : Window
     {
         base.OnPropertyChanged(change);
         if (change.Property == ClientSizeProperty) SaveBounds();
+        else if (change.Property == WindowStateProperty) OnWindowStateChanged();
     }
 
     // ───────────── 창 위치 ─────────────
 
+    /// <summary>
+    /// 창 위치·크기를 설정에 넣는다. 도움말 칸이 창을 넓혔으면 그 몫을 빼고, 화면 안에 두려고 왼쪽으로 옮겼으면 그만큼 되돌린
+    /// 값(= 대화만 있는 창)을 넣는다 — 다시 열면 도움말 칸은 닫힌 채로 시작한다.
+    /// </summary>
     private void SaveBounds()
     {
         if (!_ready || _shutdown || WindowState != WindowState.Normal || !IsVisible) return;
-        _settings.ChatX = Math.Max(0, Position.X);
+        _settings.ChatX = Math.Max(0, Position.X + _helpShiftNow);
         _settings.ChatY = Math.Max(0, Position.Y);
-        if (ClientSize.Width > 0) _settings.ChatWidth = (int)Math.Round(ClientSize.Width);
+        double chatWidth = _helpResizes && _helpTimer.IsEnabled ? _chatWidth : ClientSize.Width - _helpGrowth;
+        if (chatWidth > 0) _settings.ChatWidth = (int)Math.Round(chatWidth);
         if (ClientSize.Height > 0) _settings.ChatHeight = (int)Math.Round(ClientSize.Height);
     }
 
@@ -217,11 +280,11 @@ public sealed class ChatWindow : Window
         if (_opened) tab.Activate();
     }
 
-    /// <summary>머리줄 상태 글·새 대화 단추를 보이는 탭에 맞춘다.</summary>
+    /// <summary>머리줄 상태 글·새 대화 단추를 보이는 탭에 맞춘다(도움말 칸은 탭과 상관없이 늘 열 수 있다).</summary>
     private void RefreshHeader()
     {
         _status.Text = _visible.StatusText;
-        _newChat.IsEnabled = _help.IsEnabled = _visible.InChat;
+        _newChat.IsEnabled = _visible.InChat;
     }
 
     /// <summary>차례가 도는 탭(없으면 null). 차례는 모든 탭을 통틀어 하나만 돈다.</summary>
@@ -485,7 +548,159 @@ public sealed class ChatWindow : Window
         if (Clipboard is { } clipboard) _ = clipboard.SetTextAsync(text);
     }
 
-    // ───────────── 도움말("?") ─────────────
+    // ───────────── 도움말 칸("?") ─────────────
+
+    /// <summary>도움말 칸: 머리줄(제목 + 닫기) 아래 내용 스크롤. 내용은 처음 열 때 만든다(MCP 도구 목록을 읽음).</summary>
+    private Control BuildHelpPanel()
+    {
+        var title = new TextBlock
+        {
+            Text = UiStrings.Chat_Help_Title,
+            FontWeight = FontWeight.Bold,
+            Foreground = AppTheme.TextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(6, 0),
+        };
+        var close = Ui.IconButton(VectorIcon.X, UiStrings.Chat_Help_Close, (_, _) => _help.IsChecked = false, 28, 12);
+        close.Margin = new Thickness(0, 0, 2, 0);
+        Grid.SetColumn(close, 1);
+        var header = new Border
+        {
+            Background = AppTheme.BackBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = new Grid { Margin = new Thickness(4, 3), ColumnDefinitions = new ColumnDefinitions("*,Auto"), Children = { title, close } },
+        };
+        DockPanel.SetDock(header, Dock.Top);
+        _helpScroll.Background = AppTheme.PanelBrush;
+        _helpScroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        _helpScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        // 칸 자리(_helpHost)가 늘고 주는 동안에도 내용은 늘 같은 너비라 다시 배치되지 않고 잘려 드러난다.
+        return new DockPanel
+        {
+            Width = HelpPanelWidth - 1,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Children = { header, _helpScroll },
+        };
+    }
+
+    /// <summary>
+    /// 도움말 내용을 만들고 미리 배치해 둔다(한 번만). 칸 자리는 닫혀 있어도 내용은 늘 같은 너비라, 열 때 다시 배치하지 않는다.
+    /// 예시를 누르면 보이는 탭의 입력란에 들어간다(칸은 열린 채).
+    /// </summary>
+    private void PrepareHelp()
+    {
+        if (_shutdown || _helpScroll.Content is not null) return;
+        _helpScroll.Content = BuildHelp(text => _visible.Prefill(text));
+        _helpHost.Child!.Measure(new Avalonia.Size(HelpPanelWidth - 1, Math.Max(1, ClientSize.Height)));
+    }
+
+    /// <summary>
+    /// "?" 단추가 켜지고 꺼짐: 도움말 칸을 <see cref="HelpAnimationMs"/>에 걸쳐 열거나 닫는다(빠르게 시작해 천천히 멈춤).
+    /// 보통 창이면 대화 칸 너비는 그대로 두고 창을 오른쪽으로 넓히며, 다 열린 창이 화면 오른쪽 밖으로 나가면 그만큼 함께 왼쪽으로
+    /// 옮긴다(닫으면 되돌림). 최대화·전체 화면이면 창은 두고 대화 칸을 좁힌다. 움직이는 중에 다시 누르면 지금 자리에서 되돌아간다.
+    /// </summary>
+    private void AnimateHelp(bool open)
+    {
+        if (_shutdown) return;
+        if (open && _helpShown == 0)
+        {
+            PrepareHelp();
+            _helpScroll.Offset = default;
+        }
+        bool wasResizing = _helpResizes && _helpTimer.IsEnabled;
+        _helpResizes = WindowState == WindowState.Normal && IsVisible;
+        if (_helpResizes)
+        {
+            // 움직이던 중이면 대화 칸 너비는 그대로(창 크기가 아직 따라오지 않았을 수 있음).
+            if (!wasResizing) _chatWidth = ClientSize.Width - _helpGrowth;
+            _helpClosedX = Position.X + _helpShiftNow;
+            if (open) _helpShiftPx = HelpShift();
+            MinWidth = WindowMinWidth;
+        }
+        _helpFrom = _helpShown;
+        _helpTo = open ? 1 : 0;
+        _helpMs = HelpAnimationMs * Math.Abs(_helpTo - _helpFrom);
+        _helpClock.Restart();
+        _helpTimer.Start();
+    }
+
+    /// <summary>움직임 한 걸음(초당 60번): 걸린 시간으로 드러난 정도를 정하고(ease-out), 끝나면 멈춘다.</summary>
+    private void StepHelp()
+    {
+        double t = _helpMs <= 0 ? 1 : Math.Min(1, _helpClock.Elapsed.TotalMilliseconds / _helpMs);
+        _helpShown = t >= 1 ? _helpTo : _helpFrom + (_helpTo - _helpFrom) * (1 - Math.Pow(1 - t, 3));
+        if (t >= 1) _helpTimer.Stop();
+        ApplyHelp();
+        if (t < 1) return;
+        if (_helpResizes) MinWidth = WindowMinWidth + _helpGrowth;
+        if (_helpShown == 0) _helpShiftPx = 0;
+        SaveBounds();
+    }
+
+    /// <summary>
+    /// 드러난 정도(<see cref="_helpShown"/>)를 화면에 옮긴다. 창 너비를 바꾸는 동안은 대화 칸을 고정 너비로 두고 도움말 칸이 남는 자리를
+    /// 차지하며(대화가 눌리지 않음), 멈춰 있으면 대화 칸이 남는 자리를 차지한다(사용자가 창 크기를 바꾸면 대화 칸이 늘고 줆).
+    /// </summary>
+    private void ApplyHelp()
+    {
+        double panel = HelpPanelWidth * _helpShown;
+        _helpHost.IsVisible = _helpShown > 0;
+        var columns = _root.ColumnDefinitions;
+        bool moving = _helpResizes && _helpTimer.IsEnabled;
+        columns[0].Width = moving ? new GridLength(_chatWidth) : new GridLength(1, GridUnitType.Star);
+        columns[1].Width = moving ? new GridLength(1, GridUnitType.Star) : new GridLength(panel);
+        if (!_helpResizes) return;
+        _helpShiftNow = (int)Math.Round(_helpShiftPx * _helpShown);
+        var position = new PixelPoint(_helpClosedX - _helpShiftNow, Position.Y);
+        // 넓힐 때는 먼저 왼쪽으로 옮기고, 좁힐 때는 줄인 뒤 옮긴다(오른쪽 끝이 화면 밖으로 튀지 않게).
+        bool growing = panel > _helpGrowth;
+        if (growing && position != Position) Position = position;
+        _helpGrowth = panel;
+        Width = _chatWidth + panel;
+        if (position != Position) Position = position;
+    }
+
+    /// <summary>
+    /// 도움말 칸을 다 열었을 때 창 오른쪽 끝이 지금 화면 작업 영역 오른쪽을 넘는 만큼(물리 픽셀) — 그만큼 창을 왼쪽으로 옮긴다.
+    /// 창 왼쪽 끝은 작업 영역 밖으로 밀지 않는다.
+    /// </summary>
+    private int HelpShift()
+    {
+        if ((Screens.ScreenFromWindow(this) ?? Screens.Primary) is not { } screen) return 0;
+        double frame = Math.Max(0, (FrameSize?.Width ?? ClientSize.Width) - ClientSize.Width);
+        int right = _helpClosedX + (int)Math.Ceiling((_chatWidth + HelpPanelWidth + frame) * DesktopScaling);
+        var area = screen.WorkingArea;
+        return Math.Clamp(right - area.Right, 0, Math.Max(0, _helpClosedX - area.X));
+    }
+
+    /// <summary>
+    /// 최대화·전체 화면이 되거나 풀림: 움직이던 도움말 칸은 끝 상태로 바로 맞추고, 최대화 중에는 창 대신 대화 칸을 좁힌다.
+    /// 보통 창으로 돌아오면 창 너비(와 화면 안에 두려고 옮긴 위치)를 지금 도움말 칸에 맞춘다(대화 칸 너비는 그대로).
+    /// </summary>
+    private void OnWindowStateChanged()
+    {
+        if (!_ready || _shutdown) return;
+        if (_helpTimer.IsEnabled)
+        {
+            _helpTimer.Stop();
+            _helpShown = _helpTo;
+        }
+        _helpResizes = false;
+        ApplyHelp();
+        if (WindowState == WindowState.Normal)
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_shutdown || WindowState != WindowState.Normal || _helpTimer.IsEnabled) return;
+                _helpResizes = true;
+                _chatWidth = ClientSize.Width - _helpGrowth;
+                _helpClosedX = Position.X + _helpShiftNow;
+                _helpShiftPx = _helpShown > 0 ? HelpShift() : 0;
+                ApplyHelp();
+                MinWidth = WindowMinWidth + _helpGrowth;
+            }, DispatcherPriority.Background);
+    }
 
     /// <summary>도움말의 도구 묶음: 이름·쉬운 설명(지금 언어)과 그 묶음의 MCP 도구 이름.</summary>
     private static (string Name, string Text, string[] Tools)[] HelpGroups() =>
@@ -506,14 +721,11 @@ public sealed class ChatWindow : Window
 
     /// <summary>
     /// 도움말 내용: AI가 할 수 있는 일(MCP 서버가 실제로 내놓는 도구를 묶음별로 — 묶음에 없는 도구는 "그 밖의 도구"),
-    /// 예시 부탁(누르면 <paramref name="useExample"/>), 잘 쓰는 요령, Discord 제보 단추. 맨 위 단추는 <paramref name="close"/>.
+    /// 예시 부탁(누르면 <paramref name="useExample"/>), 잘 쓰는 요령, Discord 제보 단추.
     /// </summary>
-    private Control BuildHelp(Action close, Action<string> useExample)
+    private Control BuildHelp(Action<string> useExample)
     {
         var stack = new StackPanel { Spacing = 8, Margin = new Thickness(12, 10) };
-        var back = Ui.Button(UiStrings.Chat_Help_Back, (_, _) => close());
-        back.HorizontalAlignment = HorizontalAlignment.Left;
-        stack.Children.Add(back);
 
         stack.Children.Add(TitleText(UiStrings.Chat_Help_ToolsTitle));
         stack.Children.Add(WrapText(UiStrings.Chat_Help_ToolsIntro, dim: true));
@@ -640,26 +852,25 @@ public sealed class ChatWindow : Window
         public override void Render(DrawingContext g) => AppTheme.DrawChecker(g, new Rect(Bounds.Size), 6);
     }
 
-    /// <summary>탭 가운데에 보이는 것: 지금 대화 / 지난 대화 목록 / 도움말.</summary>
-    private enum TabView { Chat, List, Help }
+    /// <summary>탭 가운데에 보이는 것: 지금 대화 / 지난 대화 목록.</summary>
+    private enum TabView { Chat, List }
 
     /// <summary>
     /// AI 하나(Claude/Codex)의 탭: CLI 경로·로그인·세션·대화 글·입력란·첨부·모델 칸·실행취소 단계를 따로 가진다.
     /// 가려져 있어도 세션은 살아 있어, 도는 차례의 글은 계속 이 탭에 붙는다. 머리줄 상태는 보일 때만 창에 반영된다.
-    /// 채팅 화면 가운데는 지금 대화·지난 대화 목록·도움말 중 하나이고 입력란은 늘 아래에 있다. 대화는 차례가 끝날 때마다 저장한다.
+    /// 채팅 화면 가운데는 지금 대화 또는 지난 대화 목록이고 입력란은 늘 아래에 있다. 대화는 차례가 끝날 때마다 저장한다.
     /// </summary>
     private sealed class ChatTab
     {
         private readonly ChatWindow _w;
 
         private readonly DockPanel _chatPanel;
-        /// <summary>채팅 화면 가운데(대화·목록·도움말 중 하나).</summary>
+        /// <summary>채팅 화면 가운데(대화 또는 목록).</summary>
         private readonly Border _center = new();
         private readonly ScrollViewer _scroll;
         private readonly StackPanel _messages;
         private readonly ScrollViewer _listScroll;
         private readonly StackPanel _list;
-        private ScrollViewer? _helpScroll;
         private readonly TextBlock _thinking;
         private readonly WrapPanel _chips;
         private readonly TextBox _input;
@@ -692,8 +903,8 @@ public sealed class ChatWindow : Window
         /// <summary>모델 목록 칸(<see cref="Model"/>의 항목 순서).</summary>
         private IReadOnlyList<ModelChoice> _modelChoices = [];
         private Turn? _turn;
-        /// <summary>가운데에 보이는 것과, 도움말을 열기 전에 보던 것(도움말을 닫으면 돌아감).</summary>
-        private TabView _view = TabView.List, _viewBeforeHelp = TabView.List;
+        /// <summary>가운데에 보이는 것.</summary>
+        private TabView _view = TabView.List;
         /// <summary>지금 대화(저장한 적이 있거나 첫 메시지를 보낸 대화). null = 목록에서 아직 시작하지 않음.</summary>
         private SavedChat? _chat;
         /// <summary>지금 대화에 그린 줄(저장할 내용).</summary>
@@ -1258,8 +1469,7 @@ public sealed class ChatWindow : Window
             if (_session is not { } session || _turn is not null || _w._shutdown) return;
             var text = (_input.Text ?? "").Trim();
             if (text.Length == 0 && _attachments.Count == 0) return;
-            // 도움말에서 보내면 도움말을 열기 전 화면에서 보낸 것으로, 목록에서 보내면 새 대화로.
-            if (_view == TabView.Help) CloseHelp();
+            // 목록에서 보내면 새 대화로.
             if (_view == TabView.List)
             {
                 session.Reset();
@@ -1427,7 +1637,7 @@ public sealed class ChatWindow : Window
             else ShowView(TabView.List);
         }
 
-        /// <summary>가운데를 바꾼다(목록이면 다시 읽어 그림). 도움말은 <see cref="ToggleHelp"/>로만 연다.</summary>
+        /// <summary>가운데를 바꾼다(목록이면 다시 읽어 그림).</summary>
         private void ShowView(TabView view)
         {
             _view = view;
@@ -1659,39 +1869,13 @@ public sealed class ChatWindow : Window
         private string ModelLabel(string? model)
             => _modelChoices.FirstOrDefault(m => m.Value == model)?.Label ?? model ?? _modelChoices.FirstOrDefault()?.Label ?? "";
 
-        // ───────────── 도움말 ─────────────
-
-        /// <summary>"?" 단추: 도움말을 열거나(가운데를 바꿈) 닫는다(보던 화면으로).</summary>
-        public void ToggleHelp()
-        {
-            if (_view == TabView.Help)
-            {
-                CloseHelp();
-                return;
-            }
-            _viewBeforeHelp = _view;
-            _helpScroll ??= Ui.ScrollHost(_w.BuildHelp(CloseHelp, UseExample));
-            _helpScroll.Offset = default;
-            _view = TabView.Help;
-            _center.Child = _helpScroll;
-        }
-
-        private void CloseHelp()
-        {
-            if (_view == TabView.Help) ShowView(_viewBeforeHelp);
-        }
-
-        /// <summary>도움말의 예시를 누름: 입력란에 넣고 보던 화면으로 돌아간다.</summary>
-        private void UseExample(string text)
+        /// <summary>입력란에 글을 넣고(보내지 않음) 입력란에 포커스. 도움말의 예시 부탁과 "AI로 설명 붙이기"가 부른다.</summary>
+        public void Prefill(string text)
         {
             _input.Text = text;
             _input.CaretIndex = text.Length;
-            CloseHelp();
             FocusInput();
         }
-
-        /// <summary>입력란에 글을 넣고(보내지 않음) 보던 화면으로 돌아가 입력란에 포커스.</summary>
-        public void Prefill(string text) => UseExample(text);
 
         /// <summary>차례 중에 다른 프로젝트가 열리면(new_project 등) 묶음을 새 프로젝트로 옮긴다.</summary>
         public void OnProjectReplaced()
@@ -1793,18 +1977,27 @@ public sealed class ChatWindow : Window
         /// <summary>
         /// 사용자 메시지 말풍선: 첨부 미리보기, (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글. 아래에 수정·삭제 단추 줄
         /// (마지막 메시지에만 보임, <see cref="RefreshTurnActions"/>). <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
+        /// 글은 AI 답처럼 끌어서 골라 Ctrl+C로 복사한다. 말풍선 안쪽 여백은 글 칸의 여백이라, 글자 바로 옆 여백에서 끌기 시작해도 골라진다.
         /// </summary>
         private void AddUserBubble(ChatItem item, IReadOnlyList<Control> thumbs, string? imageMarker, IReadOnlyList<Attachment> attachments)
         {
-            var stack = new StackPanel { Spacing = 4 };
+            var stack = new StackPanel();
             if (thumbs.Count > 0)
             {
-                var wrap = new WrapPanel();
+                var wrap = new WrapPanel { Margin = new Thickness(8, 6, 8, 0) };
                 foreach (var t in thumbs) wrap.Children.Add(t);
                 stack.Children.Add(wrap);
             }
             if (imageMarker is not null)
-                stack.Children.Add(new TextBlock { Text = imageMarker, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize });
+            {
+                stack.Children.Add(new TextBlock
+                {
+                    Text = imageMarker,
+                    Foreground = AppTheme.DimTextBrush,
+                    FontSize = AppTheme.SmallFontSize,
+                    Margin = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 0),
+                });
+            }
             if (item.Text.Length > 0)
             {
                 stack.Children.Add(new SelectableTextBlock
@@ -1812,13 +2005,20 @@ public sealed class ChatWindow : Window
                     Text = item.Text,
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = AppTheme.TextBrush,
+                    Padding = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 6),
+                    // 투명 바탕이 있어야 글자 사이·여백에서도 눌린다(바탕이 없으면 글자 위에서만 끌기가 시작됨).
+                    Background = Brushes.Transparent,
                 });
+            }
+            else if (stack.Children.Count > 0)
+            {
+                var last = stack.Children[^1];
+                last.Margin = new Thickness(last.Margin.Left, last.Margin.Top, last.Margin.Right, 6);
             }
             var bubble = new Border
             {
                 Background = UserBubbleBrush,
                 CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(8, 6),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Child = stack,
             };

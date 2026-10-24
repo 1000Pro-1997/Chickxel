@@ -2,6 +2,21 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.33 (2026-10-24)
+### Selected frames outlined as a whole column
+- Clicking a frame header now draws a blue outline around the whole column, from the header down to the last layer row, like the green outline during playback.
+- Adjacent selected frames share one outline.
+
+### AI chat help opens in a side panel
+- The question mark button next to **New chat** now widens the chat window smoothly to the right and shows the help in a panel beside the chat, so the conversation stays visible and usable.
+- The button stays pressed while the panel is open; press it again or the **X** on the panel to close it, and the window returns to its original width.
+- If the wider window would go past the right edge of the screen, it moves left and moves back when you close the panel. A maximized window keeps its size and the chat area gets narrower instead.
+- Clicking an example request fills the message box and keeps the panel open. The remembered window size excludes the panel, and the panel starts closed next time.
+
+### Select and copy text in your own messages
+- You can drag to select text in your own message bubbles and copy it with Ctrl/⌘+C, like AI replies.
+- Dragging can start anywhere inside the bubble, including its padding, and it works in reopened past chats too.
+
 ## v1.14.32 (2026-10-24)
 ### Discord link is now a public invite
 - The Discord link for bug reports and ideas is now a public invite anyone can join (<https://discord.gg/Avw7aUVxqr>).

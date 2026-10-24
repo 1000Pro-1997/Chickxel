@@ -2686,6 +2686,19 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(PlayPen, new Avalonia.Point(r, cellsClip.Top - 2), new Avalonia.Point(r, b));
                     g.DrawLine(PlayPen, new Avalonia.Point(l - 1, b), new Avalonia.Point(r + 1, b));
                 }
+                // 고른 프레임: 이어진 열마다 머리글부터 마지막 행까지 파란 외곽선 네모(재생 중 초록 네모와 같은 모양, 위쪽은 머리글 쪽에서 그린다).
+                if (_kind == SelKind.Frames && !_reordering && Rows() is { Count: > 0 } selRowsAll)
+                {
+                    int last = selRowsAll[^1];
+                    double b = Math.Min(cellsClip.Bottom, LayerY(last) + _rowT.Px(RowItem(last))) - 1;
+                    foreach (var (fa, fb) in Runs(_selFrames))
+                    {
+                        double l = FrameX(fa) + 1, r = FrameX(fb) + FrameW(fb) - 1;
+                        g.DrawLine(AccentPen, new Avalonia.Point(l, cellsClip.Top - 2), new Avalonia.Point(l, b));
+                        g.DrawLine(AccentPen, new Avalonia.Point(r, cellsClip.Top - 2), new Avalonia.Point(r, b));
+                        g.DrawLine(AccentPen, new Avalonia.Point(l - 1, b), new Avalonia.Point(r + 1, b));
+                    }
+                }
             }
 
             // 프레임 머리글 한 칸(지워져 줄어드는 열은 비움)
@@ -2768,12 +2781,14 @@ public sealed class TimelinePanel : UserControl
                     g.DrawLine(pen, new Avalonia.Point(x0, bottom), new Avalonia.Point(x0 + 5, bottom));
                     g.DrawLine(pen, new Avalonia.Point(x1 - 5, bottom), new Avalonia.Point(x1, bottom));
                 }
-                // 고른 프레임: 이어진 머리글마다 파란 테두리
+                // 고른 프레임: 이어진 머리글마다 파란 테두리의 윗부분(아래쪽은 셀 쪽에서 마지막 행까지 이어 그린다)
                 if (_kind == SelKind.Frames && !_reordering)
                     foreach (var (a, b) in Runs(_selFrames))
                     {
-                        double x0 = FrameX(a) + 1, x1 = FrameX(b) + FrameW(b) - 1;
-                        g.DrawRectangle(null, AccentPen, new Rect(x0, TagH + 1, Math.Max(0, x1 - x0), HeadH - 2));
+                        double x0 = FrameX(a) + 1, x1 = FrameX(b) + FrameW(b) - 1, y0 = TagH + 1;
+                        g.DrawLine(AccentPen, new Avalonia.Point(x0 - 1, y0), new Avalonia.Point(x1 + 1, y0));
+                        g.DrawLine(AccentPen, new Avalonia.Point(x0, y0), new Avalonia.Point(x0, TagH + HeadH + 2));
+                        g.DrawLine(AccentPen, new Avalonia.Point(x1, y0), new Avalonia.Point(x1, TagH + HeadH + 2));
                     }
             }
 
