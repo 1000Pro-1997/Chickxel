@@ -1415,6 +1415,35 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>The canvas can't be resized while layers are locked (resizing crops or shifts every layer): {layers} — ask the user to unlock them</value></data>
   <data name="Ai_Locked_Outfit" xml:space="preserve"><value>Wearing outfit "{outfit}" would change locked layers: {layers} — ask the user to unlock them</value></data>
   <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>Group "{group}" uses auto layout, so this change could move locked part {index} "{name}" — ask the user to unlock it or turn off auto layout</value></data>
+  <data name="Ai_Effect_What" xml:space="preserve"><value>effect</value></data>
+  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>Pass either type (an effect type from list_effect_types) or preset (a saved custom effect preset name), not both</value></data>
+  <data name="Ai_Effect_ClipFirst" xml:space="preserve"><value>clip_to_above: the first effect (index 0) has no effect above it to clip to</value></data>
+  <data name="Ai_Effect_UnknownType" xml:space="preserve"><value>type: unknown effect type "{type}" — types: {types}</value></data>
+  <data name="Ai_Effect_PresetSettings" xml:space="preserve"><value>settings can't be combined with preset — add the preset, then change its effects with set_effect</value></data>
+  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: couldn't read the saved effect presets: {error}</value></data>
+  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: there are no saved custom effect presets — add an effect type instead (see list_effect_types)</value></data>
+  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: no saved effect preset "{name}" — presets: {presets}</value></data>
+  <data name="Ai_Effect_Added" xml:space="preserve"><value>{tool}: added {effects} to layer {layer} "{name}" as effect {indices}</value></data>
+  <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>Pass at least one of settings, from_frame/to_frame/all_frames, enabled, clip_to_above or move_to</value></data>
+  <data name="Ai_Effect_Unchanged" xml:space="preserve"><value>{tool}: effect {effect} of layer {layer} is already like that — nothing changed</value></data>
+  <data name="Ai_Effect_Changed" xml:space="preserve"><value>{tool}: changed effect {effect} ({type}) of layer {layer} "{name}"</value></data>
+  <data name="Ai_Effect_Removed" xml:space="preserve"><value>{tool}: removed effect {effect} ({type}) from layer {layer} "{name}"</value></data>
+  <data name="Ai_Effect_NoEffects" xml:space="preserve"><value>Layer {layer} "{name}" has no effects — check with get_effects</value></data>
+  <data name="Ai_Effect_NoneToBake" xml:space="preserve"><value>Layer {layer} "{name}" has no enabled effects to apply</value></data>
+  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: no enabled effects to fit — nothing changed</value></data>
+  <data name="Ai_Effect_ExpandNone" xml:space="preserve"><value>{tool}: the effects already fit in the {width}x{height} canvas — nothing changed</value></data>
+  <data name="Ai_Effect_Expanded" xml:space="preserve"><value>{tool}: canvas {oldWidth}x{oldHeight} → {width}x{height} (the drawing moved by {x},{y})</value></data>
+  <data name="Ai_Effect_SettingsObject" xml:space="preserve"><value>settings: must be a JSON object of setting keys and values (see list_effect_types)</value></data>
+  <data name="Ai_Effect_RangeConflict" xml:space="preserve"><value>Pass either all_frames or from_frame/to_frame, not both</value></data>
+  <data name="Ai_Effect_FrameOrder" xml:space="preserve"><value>from_frame {from} is after to_frame {to}</value></data>
+  <data name="Ai_Effect_SettingUnknown" xml:space="preserve"><value>settings.{key}: not a setting of {type} — settings: {keys}</value></data>
+  <data name="Ai_Effect_SettingReserved" xml:space="preserve"><value>settings.{key}: set this with the tool's own parameters (type, enabled, from_frame/to_frame, clip_to_above), not in settings</value></data>
+  <data name="Ai_Effect_SettingWrongType" xml:space="preserve"><value>settings.{key}: wrong value type — use a value like {example}</value></data>
+  <data name="Ai_Effect_SettingChoice" xml:space="preserve"><value>settings.{key}: must be one of {choices}</value></data>
+  <data name="Ai_Effect_SettingColor" xml:space="preserve"><value>settings.{key}: "{value}" is not a color — use "#RRGGBB" or "#RRGGBBAA"</value></data>
+  <data name="Ai_Effect_SettingEntries" xml:space="preserve"><value>settings.{key}: only {count} entries are valid — use "#RRGGBB"/"#RRGGBBAA" colors (pairs as ["#from", "#to"]) within the allowed count</value></data>
+  <data name="Ai_Effect_SettingInvalid" xml:space="preserve"><value>settings.{key}: invalid value ({reason})</value></data>
+  <data name="Ai_Effect_Clamped" xml:space="preserve"><value> — adjusted to the allowed range: {values}</value></data>
   <data name="S_PixelTools_Call_A9A0750467" xml:space="preserve"><value>Unknown tool: {0}</value></data>
   <data name="S_PixelTools_Call_B686C7AE84" xml:space="preserve"><value>{0} failed: {1}</value></data>
   <data name="S_PixelTools_DeleteFrame_26646ACB37" xml:space="preserve"><value>Can't delete the last frame</value></data>
@@ -2592,6 +2621,9 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>Login complete. Return to Gpixel.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>Installation or login failed. Check the error above.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>Expand keeping center</value></data>
+  <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>Hide original (outline only)</value></data>
+  <data name="EffectOutline_HideOriginalTip" xml:space="preserve"><value>Erases the picture the outline is drawn around so only the line remains (inside: only the edge ring). Effects clipped to this outline apply to the line only.</value></data>
+  <data name="EffectOutline_HideOriginalSummary" xml:space="preserve"><value> · outline only</value></data>
   <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>Built-in</value></data>
   <data name="EffectPreset_CustomTab" xml:space="preserve"><value>Custom</value></data>
   <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>Save all effects</value></data>
@@ -2675,6 +2707,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>Changes the canvas size, the palette colors, and the primary and secondary colors.</value></data>
   <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>Files</value></data>
   <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>Creates a new drawing, saves, and opens files (opening and creating are blocked while "Current file only" is on).</value></data>
+  <data name="Chat_Help_GroupEffects" xml:space="preserve"><value>Layer effects</value></data>
+  <data name="Chat_Help_GroupEffects_Text" xml:space="preserve"><value>Adds, changes, and removes layer effects that leave the drawing untouched, such as outlines, shadows, glow, hit flashes, shaking, and appear/disappear. When asked, it also applies them permanently or enlarges the canvas to fit them.</value></data>
   <data name="Chat_Help_GroupOther" xml:space="preserve"><value>Other tools</value></data>
   <data name="Chat_Help_ExamplesTitle" xml:space="preserve"><value>Example requests</value></data>
   <data name="Chat_Help_ExamplesIntro" xml:space="preserve"><value>Click one to put it in the message box, then edit and send it.</value></data>
@@ -2687,6 +2721,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_Example6" xml:space="preserve"><value>Add a winter skin to the character group and dress it in winter clothes.</value></data>
   <data name="Chat_Help_Example7" xml:space="preserve"><value>Add two levels of shading as if the light comes from the top left.</value></data>
   <data name="Chat_Help_Example8" xml:space="preserve"><value>Enlarge the canvas to 32×32 and move the character to the center.</value></data>
+  <data name="Chat_Help_Example9" xml:space="preserve"><value>Add a 1 px black outline to the character and a white hit flash on frames 3–4.</value></data>
   <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>Tips</value></data>
   <data name="Chat_Help_Tip1" xml:space="preserve"><value>Pick a model. In our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Claude Opus is also good for complex, structural work.</value></data>
   <data name="Chat_Help_Tip2" xml:space="preserve"><value>Turn on "Current file only" to keep the AI in the open file. It never touches locked layers, so lock the layers you want to protect.</value></data>
@@ -2694,4 +2729,23 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_Tip4" xml:space="preserve"><value>Be specific about size, palette, and style. For example: "16×16, palette colors only, 1-pixel black outline, no anti-aliasing".</value></data>
   <data name="Chat_Help_Tip5" xml:space="preserve"><value>Each reply is one undo step. If you don't like it, use "Undo this step" or Ctrl+Z.</value></data>
   <data name="Chat_Help_Tip6" xml:space="preserve"><value>Break big jobs into small steps: first the silhouette, then colors, then shading and animation.</value></data>
+  <data name="Lospec_Sort_Favorites" xml:space="preserve"><value>Favorites</value></data>
+  <data name="Lospec_Favorites_Add" xml:space="preserve"><value>Add to favorites (available offline)</value></data>
+  <data name="Lospec_Favorites_Remove" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="Lospec_Favorites_Empty" xml:space="preserve"><value>No favorite palettes yet. Click the star on a palette in the list to add it.</value></data>
+  <data name="Lospec_Favorites_NoMatch" xml:space="preserve"><value>No favorites match these filters.</value></data>
+  <data name="Lospec_Favorites_Count" xml:space="preserve"><value>{shown} / {total} favorites</value></data>
+  <data name="Lospec_Favorites_View" xml:space="preserve"><value>View favorites</value></data>
+  <data name="Lospec_Favorites_OfflineHint" xml:space="preserve"><value>Favorite palettes are available offline.</value></data>
+  <data name="Lospec_Favorites_SaveFailed" xml:space="preserve"><value>Couldn't save favorites: {message}</value></data>
+  <data name="Chat_Turn_Edit_Tip" xml:space="preserve"><value>Edit — remove this message and the replies after it, and put its text back in the input box</value></data>
+  <data name="Chat_Turn_Delete_Tip" xml:space="preserve"><value>Delete — remove this message and the replies after it from the chat</value></data>
+  <data name="Chat_Turn_Edit_Title" xml:space="preserve"><value>Edit message</value></data>
+  <data name="Chat_Turn_Delete_Title" xml:space="preserve"><value>Delete message</value></data>
+  <data name="Chat_Turn_UndoAsk" xml:space="preserve"><value>Also undo the drawing changes made in this exchange?</value></data>
+  <data name="Chat_Turn_UndoAsk_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="Chat_Turn_UndoAsk_Keep" xml:space="preserve"><value>Keep drawing</value></data>
+  <data name="Chat_Turn_Removed" xml:space="preserve"><value>Removed the last message. The next message starts a new session and includes a recap of the remaining conversation.</value></data>
+  <data name="Chat_History_Recap" xml:space="preserve"><value>Opened a past chat. Its last message was removed, so the next message starts a new session and includes a recap of the remaining conversation.</value></data>
+  <data name="Chat_Help_Tip7" xml:space="preserve"><value>Use the pencil (edit) and trash (delete) buttons under the last message to remove it and its reply, or change it and send again. Press again to step back one more message.</value></data>
 </root>

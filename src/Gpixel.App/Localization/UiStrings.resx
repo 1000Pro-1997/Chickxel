@@ -5239,6 +5239,35 @@ echo __LOGIN_FAILED__
   <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>잠긴 레이어가 있어 캔버스 크기를 바꿀 수 없습니다(모든 레이어가 잘리거나 옮겨짐): {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
   <data name="Ai_Locked_Outfit" xml:space="preserve"><value>착장 "{outfit}"을(를) 입히면 잠긴 레이어가 바뀝니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. outfit = 착장 이름, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
   <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>그룹 "{group}"은(는) 자동 배치 중이라 이 변경은 잠긴 부위 {index} "{name}"을(를) 옮길 수 있습니다 — 사용자에게 잠금 해제나 자동 배치 끄기를 부탁하세요</value><comment>AI 도구 오류. group = 그룹 이름, index = 부위 레이어 번호, name = 부위 이름.</comment></data>
+  <data name="Ai_Effect_What" xml:space="preserve"><value>효과</value><comment>AI 도구 오류의 번호 종류("effect 3: 효과 번호는 0~1 범위여야 합니다").</comment></data>
+  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>type(list_effect_types의 효과 종류)과 preset(저장한 사용자 정의 효과 이름) 중 하나만 주세요</value><comment>AI 도구 오류: add_effect에 둘 다 주거나 둘 다 빠짐.</comment></data>
+  <data name="Ai_Effect_ClipFirst" xml:space="preserve"><value>clip_to_above: 첫 효과(번호 0)는 위에 클리핑할 효과가 없습니다</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_UnknownType" xml:space="preserve"><value>type: 알 수 없는 효과 종류 "{type}" — 종류: {types}</value><comment>AI 도구 오류. type = 받은 이름, types = 효과 종류 이름 목록.</comment></data>
+  <data name="Ai_Effect_PresetSettings" xml:space="preserve"><value>settings는 preset과 함께 쓸 수 없습니다 — 프리셋을 넣은 뒤 set_effect로 효과를 고치세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: 저장한 사용자 정의 효과를 읽지 못했습니다: {error}</value><comment>AI 도구 오류. error = 원인.</comment></data>
+  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: 저장한 사용자 정의 효과가 없습니다 — 대신 효과 종류를 넣으세요(list_effect_types 참고)</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: 저장한 사용자 정의 효과 "{name}"이(가) 없습니다 — 있는 것: {presets}</value><comment>AI 도구 오류. name = 받은 이름, presets = 저장한 사용자 정의 효과 이름 목록.</comment></data>
+  <data name="Ai_Effect_Added" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"에 {effects} 추가(효과 번호 {indices})</value><comment>AI 도구 결과. tool = 도구 이름, effects = 넣은 효과 종류 이름들, layer = 레이어 번호, name = 레이어 이름, indices = 효과 번호(또는 범위).</comment></data>
+  <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>settings, from_frame/to_frame/all_frames, enabled, clip_to_above, move_to 중 하나는 주세요</value><comment>AI 도구 오류: set_effect에 바꿀 것이 없음.</comment></data>
+  <data name="Ai_Effect_Unchanged" xml:space="preserve"><value>{tool}: 레이어 {layer}의 효과 {effect}은(는) 이미 그렇습니다 — 바뀐 것 없음</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, layer = 레이어 번호.</comment></data>
+  <data name="Ai_Effect_Changed" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"의 효과 {effect}({type}) 바꿈</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, type = 효과 종류 이름, layer = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Effect_Removed" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"에서 효과 {effect}({type}) 지움</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, type = 효과 종류 이름, layer = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Effect_NoEffects" xml:space="preserve"><value>레이어 {layer} "{name}"에 효과가 없습니다 — get_effects로 확인하세요</value><comment>AI 도구 오류. layer = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Effect_NoneToBake" xml:space="preserve"><value>레이어 {layer} "{name}"에 영구 적용할 켜진 효과가 없습니다</value><comment>AI 도구 오류. layer = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: 맞출 켜진 효과가 없습니다 — 바뀐 것 없음</value><comment>AI 도구 결과. tool = 도구 이름.</comment></data>
+  <data name="Ai_Effect_ExpandNone" xml:space="preserve"><value>{tool}: 효과가 이미 {width}x{height} 캔버스 안에 들어갑니다 — 바뀐 것 없음</value><comment>AI 도구 결과. tool = 도구 이름, width·height = 캔버스 크기.</comment></data>
+  <data name="Ai_Effect_Expanded" xml:space="preserve"><value>{tool}: 캔버스 {oldWidth}x{oldHeight} → {width}x{height} (그림을 {x},{y}만큼 옮김)</value><comment>AI 도구 결과. tool = 도구 이름, oldWidth·oldHeight = 전 크기, width·height = 새 크기, x·y = 원래 그림이 놓인 자리.</comment></data>
+  <data name="Ai_Effect_SettingsObject" xml:space="preserve"><value>settings: 설정 키와 값으로 된 JSON 객체여야 합니다(list_effect_types 참고)</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_RangeConflict" xml:space="preserve"><value>all_frames와 from_frame/to_frame 중 하나만 주세요</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_FrameOrder" xml:space="preserve"><value>from_frame {from}이(가) to_frame {to}보다 뒤입니다</value><comment>AI 도구 오류. from·to = 받은 프레임 번호.</comment></data>
+  <data name="Ai_Effect_SettingUnknown" xml:space="preserve"><value>settings.{key}: {type}에 없는 설정입니다 — 설정: {keys}</value><comment>AI 도구 오류. key = 받은 키, type = 효과 종류 이름, keys = 그 종류의 설정 키 목록.</comment></data>
+  <data name="Ai_Effect_SettingReserved" xml:space="preserve"><value>settings.{key}: 이 값은 settings가 아니라 도구 인자(type, enabled, from_frame/to_frame, clip_to_above)로 정하세요</value><comment>AI 도구 오류. key = 받은 키.</comment></data>
+  <data name="Ai_Effect_SettingWrongType" xml:space="preserve"><value>settings.{key}: 값 종류가 맞지 않습니다 — {example} 같은 값을 쓰세요</value><comment>AI 도구 오류. key = 설정 키, example = 그 설정의 기본값(JSON).</comment></data>
+  <data name="Ai_Effect_SettingChoice" xml:space="preserve"><value>settings.{key}: {choices} 중 하나여야 합니다</value><comment>AI 도구 오류. key = 설정 키, choices = 고를 수 있는 이름 목록.</comment></data>
+  <data name="Ai_Effect_SettingColor" xml:space="preserve"><value>settings.{key}: "{value}"은(는) 색이 아닙니다 — "#RRGGBB" 또는 "#RRGGBBAA"를 쓰세요</value><comment>AI 도구 오류. key = 설정 키, value = 받은 값.</comment></data>
+  <data name="Ai_Effect_SettingEntries" xml:space="preserve"><value>settings.{key}: 올바른 항목이 {count}개뿐입니다 — "#RRGGBB"/"#RRGGBBAA" 색(쌍은 ["#바꿀색", "#바뀐색"])을 허용 개수 안에서 쓰세요</value><comment>AI 도구 오류. key = 설정 키, count = 남은 항목 수/받은 항목 수.</comment></data>
+  <data name="Ai_Effect_SettingInvalid" xml:space="preserve"><value>settings.{key}: 잘못된 값입니다({reason})</value><comment>AI 도구 오류. key = 설정 키, reason = 원인.</comment></data>
+  <data name="Ai_Effect_Clamped" xml:space="preserve"><value> — 허용 범위로 맞춤: {values}</value><comment>AI 도구 결과 꼬리. values = "키 = 값" 목록.</comment></data>
   <data name="S_PixelTools_Call_A9A0750467" xml:space="preserve">
     <value>알 수 없는 도구입니다: {0}</value>
     <comment>src/Gpixel.App\Ai\PixelTools.cs:463 · Call · $"알 수 없는 도구입니다: {name}"</comment>
@@ -9565,6 +9594,9 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>로그인 완료. Gpixel로 돌아가세요.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>중심 유지 확대</value></data>
+  <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>원본 지우기 (외곽선만 보기)</value></data>
+  <data name="EffectOutline_HideOriginalTip" xml:space="preserve"><value>선을 따라 그린 그림을 지워 선만 남깁니다(안쪽이면 가장자리 고리만). 이 외곽선에 클리핑한 효과는 선에만 입혀집니다.</value></data>
+  <data name="EffectOutline_HideOriginalSummary" xml:space="preserve"><value> · 선만</value></data>
   <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>기본</value></data>
   <data name="EffectPreset_CustomTab" xml:space="preserve"><value>커스텀</value></data>
   <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>전체 효과 저장</value></data>
@@ -9648,6 +9680,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Chat_Help_GroupCanvas_Text" xml:space="preserve"><value>캔버스 크기, 팔레트 색, 주·보조 색을 바꿉니다.</value></data>
   <data name="Chat_Help_GroupFiles" xml:space="preserve"><value>파일</value></data>
   <data name="Chat_Help_GroupFiles_Text" xml:space="preserve"><value>새 그림 만들기, 저장, 파일 열기("지금 그림만"이 켜져 있으면 열기·만들기는 막힘).</value></data>
+  <data name="Chat_Help_GroupEffects" xml:space="preserve"><value>레이어 효과</value></data>
+  <data name="Chat_Help_GroupEffects_Text" xml:space="preserve"><value>외곽선·그림자·빛·피격 번쩍임·흔들기·나타나기/사라지기 같은 레이어 효과(그림은 그대로 둠)를 넣고 고치고 지웁니다. 부탁하면 영구 적용하거나 효과에 맞춰 캔버스를 늘립니다.</value></data>
   <data name="Chat_Help_GroupOther" xml:space="preserve"><value>그 밖의 도구</value></data>
   <data name="Chat_Help_ExamplesTitle" xml:space="preserve"><value>예시 부탁</value></data>
   <data name="Chat_Help_ExamplesIntro" xml:space="preserve"><value>누르면 입력란에 들어갑니다. 고쳐서 보내세요.</value></data>
@@ -9660,6 +9694,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Chat_Help_Example6" xml:space="preserve"><value>캐릭터 그룹에 winter 스킨을 더해서 겨울옷을 입혀 줘.</value></data>
   <data name="Chat_Help_Example7" xml:space="preserve"><value>빛이 왼쪽 위에서 오는 것처럼 명암을 두 단계 더해 줘.</value></data>
   <data name="Chat_Help_Example8" xml:space="preserve"><value>캔버스를 32×32로 늘리고 캐릭터를 가운데로 옮겨 줘.</value></data>
+  <data name="Chat_Help_Example9" xml:space="preserve"><value>캐릭터에 1px 검은 외곽선을 넣고, 프레임 3~4에 흰 피격 번쩍임 효과를 넣어 줘.</value></data>
   <data name="Chat_Help_TipsTitle" xml:space="preserve"><value>잘 쓰는 요령</value></data>
   <data name="Chat_Help_Tip1" xml:space="preserve"><value>모델을 골라 보세요. 시험해 보니 Codex의 GPT-6-Astra가 가장 잘 그렸고, Codex는 기본으로 GPT-6-Astra(추천)를 씁니다. 구조가 복잡한 작업에는 Claude Opus도 좋습니다.</value></data>
   <data name="Chat_Help_Tip2" xml:space="preserve"><value>"지금 그림만"을 켜면 AI가 지금 열린 그림만 고칩니다. 잠긴 레이어는 언제나 건드리지 않으니, 지킬 레이어는 잠가 두세요.</value></data>
@@ -9667,4 +9702,23 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Chat_Help_Tip4" xml:space="preserve"><value>크기·팔레트·스타일을 분명히 적으세요. 예: "16×16, 팔레트 색만, 1픽셀 검은 외곽선, 안티에일리어싱 없이".</value></data>
   <data name="Chat_Help_Tip5" xml:space="preserve"><value>답 하나가 실행취소 한 단계입니다. 마음에 들지 않으면 "이 단계 되돌리기"나 Ctrl+Z로 되돌리세요.</value></data>
   <data name="Chat_Help_Tip6" xml:space="preserve"><value>큰 일은 작게 나눠 부탁하세요. 먼저 실루엣, 다음 색, 그다음 명암과 애니메이션.</value></data>
+  <data name="Lospec_Sort_Favorites" xml:space="preserve"><value>즐겨찾기</value><comment>팔레트 웹(Lospec) 창 정렬 칸의 마지막 항목: 이 컴퓨터에 남긴 즐겨찾기만 보임.</comment></data>
+  <data name="Lospec_Favorites_Add" xml:space="preserve"><value>즐겨찾기에 추가(인터넷 없이도 보고 쓸 수 있음)</value></data>
+  <data name="Lospec_Favorites_Remove" xml:space="preserve"><value>즐겨찾기에서 빼기</value></data>
+  <data name="Lospec_Favorites_Empty" xml:space="preserve"><value>즐겨찾기한 팔레트가 없습니다. 목록의 별을 눌러 추가하세요.</value></data>
+  <data name="Lospec_Favorites_NoMatch" xml:space="preserve"><value>조건에 맞는 즐겨찾기가 없습니다.</value></data>
+  <data name="Lospec_Favorites_Count" xml:space="preserve"><value>{shown} / {total} 즐겨찾기</value><comment>shown = 거른 뒤 보이는 수; total = 즐겨찾기 전체 수.</comment></data>
+  <data name="Lospec_Favorites_View" xml:space="preserve"><value>즐겨찾기 보기</value></data>
+  <data name="Lospec_Favorites_OfflineHint" xml:space="preserve"><value>즐겨찾기한 팔레트는 인터넷 없이도 볼 수 있습니다.</value></data>
+  <data name="Lospec_Favorites_SaveFailed" xml:space="preserve"><value>즐겨찾기를 저장하지 못했습니다: {message}</value><comment>message = 파일 오류 메시지.</comment></data>
+  <data name="Chat_Turn_Edit_Tip" xml:space="preserve"><value>수정 — 이 메시지와 그 뒤 답을 지우고 글을 입력란에 다시 넣습니다</value></data>
+  <data name="Chat_Turn_Delete_Tip" xml:space="preserve"><value>삭제 — 이 메시지와 그 뒤 답을 대화에서 지웁니다</value></data>
+  <data name="Chat_Turn_Edit_Title" xml:space="preserve"><value>메시지 수정</value></data>
+  <data name="Chat_Turn_Delete_Title" xml:space="preserve"><value>메시지 삭제</value></data>
+  <data name="Chat_Turn_UndoAsk" xml:space="preserve"><value>이 대화에서 바뀐 그림도 되돌릴까요?</value></data>
+  <data name="Chat_Turn_UndoAsk_Undo" xml:space="preserve"><value>되돌리기</value></data>
+  <data name="Chat_Turn_UndoAsk_Keep" xml:space="preserve"><value>그림은 두기</value></data>
+  <data name="Chat_Turn_Removed" xml:space="preserve"><value>마지막 메시지를 지웠습니다. 다음 메시지는 새 세션으로 보내며, 남은 대화 내용을 함께 알려 줍니다.</value></data>
+  <data name="Chat_History_Recap" xml:space="preserve"><value>지난 대화를 열었습니다. 마지막 메시지를 지운 대화라 다음 메시지는 새 세션으로 보내며, 남은 대화 내용을 함께 알려 줍니다.</value></data>
+  <data name="Chat_Help_Tip7" xml:space="preserve"><value>마지막 메시지 아래의 연필(수정)·휴지통(삭제) 단추로 그 메시지와 답을 지우거나 고쳐 다시 보낼 수 있습니다. 여러 번 누르면 한 단계씩 거슬러 올라갑니다.</value></data>
 </root>

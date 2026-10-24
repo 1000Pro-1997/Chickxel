@@ -44,6 +44,8 @@ public enum VectorIcon
     Heart,
     Download,
     Trash,
+    /// <summary>연필(고치기).</summary>
+    Pencil,
     ArrowUpLeft,
     ArrowUp,
     ArrowUpRight,
@@ -174,6 +176,11 @@ public static class VectorIcons
             "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
             "M10 11v6",
             "M14 11v6",
+        ],
+        VectorIcon.Pencil =>
+        [
+            "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+            "m15 5 4 4",
         ],
         VectorIcon.ArrowUpLeft => ["M7 17V7h10", "M17 17 7 7"],
         VectorIcon.ArrowUp => ["m5 12 7-7 7 7", "M12 19V5"],

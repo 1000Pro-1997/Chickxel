@@ -49,6 +49,11 @@ public sealed class SavedChat
     public DateTime UpdatedUtc { get; set; }
     public string? SessionId { get; set; }
     public string? SessionDirectory { get; set; }
+    /// <summary>
+    /// 마지막 차례를 지우거나 고쳐서 CLI 세션을 버렸음: 다음 메시지는 새 CLI 세션으로 보내고 남은 대화 정리(<see cref="ChatRecap"/>)를 앞에 붙인다.
+    /// 그 메시지로 새 세션 ID를 얻으면 꺼진다.
+    /// </summary>
+    public bool NeedsRecap { get; set; }
     public bool Favorite { get; set; }
     public List<ChatItem> Items { get; set; } = new();
 

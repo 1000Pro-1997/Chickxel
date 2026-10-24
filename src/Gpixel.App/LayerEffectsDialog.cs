@@ -49,7 +49,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     ];
 
     /// <summary>효과 종류의 한 줄 설명(번호 = <see cref="Create"/>의 kind).</summary>
-    private static string DescriptionOf(int kind) => KindTable[kind].Description;
+    internal static string DescriptionOf(int kind) => KindTable[kind].Description;
 
     /// <summary>효과 종류 이름(번호 = <see cref="Create"/>의 kind).</summary>
     internal static readonly string[] Kinds = KindTable.Select(k => k.Name).ToArray();
@@ -518,7 +518,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static string Summary(LayerEffect e) => (e switch
     {
-        OutlineEffect o => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E7A8C83171,(o.Inside ? UiStrings.S_LayerEffectsDialog_Summary_192DBA1F7C : UiStrings.S_LayerEffectsDialog_Summary_78B20FF1F4),o.Thickness,(o.Diagonal ? UiStrings.S_LayerEffectsDialog_Summary_009BCE5A4C : UiStrings.S_LayerEffectsDialog_Summary_2629FC9A9D),o.Color.ToHex()),
+        OutlineEffect o => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E7A8C83171,(o.Inside ? UiStrings.S_LayerEffectsDialog_Summary_192DBA1F7C : UiStrings.S_LayerEffectsDialog_Summary_78B20FF1F4),o.Thickness,(o.Diagonal ? UiStrings.S_LayerEffectsDialog_Summary_009BCE5A4C : UiStrings.S_LayerEffectsDialog_Summary_2629FC9A9D),o.Color.ToHex()) + (o.HideOriginal ? UiStrings.EffectOutline_HideOriginalSummary : ""),
         ShadowEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E233F2401C,s.OffsetX,s.OffsetY,s.Color.ToHex()) + (s.Dither != ShadowDither.None ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_FDDC95CFEA,ShadowDithers[(int)s.Dither]) : ""),
         RimLightEffect r => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0B62ABBEE2,Directions.First(d => d.Dir == r.Direction).Name,r.Size),
         ColorOverlayEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F824955A0D,Blends[(int)c.Blend],c.Amount,c.Color.ToHex()),
@@ -660,6 +660,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_A81FAFD1EE, NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_7AEF607F6B, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_85BBD645E0, UiStrings.S_LayerEffectsDialog_FillSettings_D2ECBA6FD8], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E78408846D, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_62FD728E7C, UiStrings.S_LayerEffectsDialog_FillSettings_4331838592], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));
+                SettingsRow("", CheckEditor(UiStrings.EffectOutline_HideOriginal, o.HideOriginal, v => Set(x => (OutlineEffect)x with { HideOriginal = v })).Tip(UiStrings.EffectOutline_HideOriginalTip));
                 break;
             case ShadowEffect s:
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(s, nameof(ShadowEffect.Color), ColorEditor(s.Color, c => Set(x => (ShadowEffect)x with { Color = c })), Set));

@@ -54,6 +54,75 @@ public class LayerEffectTests
     }
 
     [Fact]
+    public void Outline_HideOriginal_OutsideLeavesOnlyOuterRing()
+    {
+        var src = Filled(2, 2, Red);
+        var (shown, _, _) = LayerEffects.Render(src, [new OutlineEffect { Color = Blue }]);
+        Assert.Equal((8, 4), (Count(shown, Blue), Count(shown, Red)));
+
+        var (img, x, y) = LayerEffects.Render(src, [new OutlineEffect { Color = Blue, HideOriginal = true }]);
+        Assert.Equal((-1, -1, new Size(4, 4)), (x, y, img.Size));
+        Assert.Equal(8, Count(img, Blue));
+        Assert.Equal(0, Count(img, Red));
+        Assert.Equal(8, Count(img, Color32.Transparent));
+        foreach (var (px, py) in new[] { (1, 1), (2, 1), (1, 2), (2, 2) })
+            Assert.Equal(Color32.Transparent, img.Get(px, py));
+    }
+
+    [Fact]
+    public void Outline_HideOriginal_InsideLeavesOnlyEdgeRing()
+    {
+        var src = Filled(4, 4, Red.WithAlpha(200));
+        var (img, x, y) = LayerEffects.Render(src, [new OutlineEffect { Color = Blue, Inside = true, HideOriginal = true }]);
+        Assert.Equal((0, 0, src.Size), (x, y, img.Size));
+        Assert.Equal(12, Count(img, Blue.WithAlpha(200)));
+        Assert.Equal(0, Count(img, Red.WithAlpha(200)));
+        Assert.Equal(4, Count(img, Color32.Transparent));
+        Assert.Equal(Color32.Transparent, img.Get(1, 1));
+    }
+
+    [Fact]
+    public void Outline_HideOriginal_ClippedEffectsSeeOnlyTheLine_LaterEffectsSeeNoOriginal()
+    {
+        var src = Filled(3, 3, Red);
+        var (img, _, _) = LayerEffects.Render(src,
+        [
+            new OutlineEffect { Color = Blue, HideOriginal = true },
+            new ColorOverlayEffect { Color = White, Amount = 100, ClipToPrevious = true },
+            // 지워진 원본 자리는 기준 영역이 아니라 클리핑된 그림자가 그 구멍을 채우지 못한다.
+            new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 0, ClipToPrevious = true },
+        ]);
+        Assert.Equal(new Size(5, 5), img.Size);
+        Assert.Equal(12, Count(img, White));
+        Assert.Equal(0, Count(img, Black));
+        Assert.Equal(0, Count(img, Red));
+        for (int py = 1; py <= 3; py++)
+            for (int px = 1; px <= 3; px++)
+                Assert.Equal(Color32.Transparent, img.Get(px, py));
+
+        // 뒤따르는 클리핑되지 않은 효과는 원본이 지워진 결과를 받는다: 선 고리의 그림자가 비워진 안쪽 자리에도 보인다.
+        var (stacked, _, _) = LayerEffects.Render(src,
+        [
+            new OutlineEffect { Color = Blue, HideOriginal = true },
+            new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 0 },
+        ]);
+        Assert.Equal(0, Count(stacked, Red));
+        for (int py = 1; py <= 3; py++)
+            Assert.Equal(Black, stacked.Get(1, py));
+    }
+
+    [Fact]
+    public void Outline_HideOriginal_OnlyInsideFrameRange()
+    {
+        var effects = new LayerEffect[] { new OutlineEffect { Color = Blue, HideOriginal = true, Frames = new FrameRange(1, 1) } };
+        var src = Filled(2, 2, Red);
+        var outside = LayerEffects.At(effects, 0, 3);
+        Assert.True(LayerEffects.RenderClipped(src, outside).ContentEquals(src));
+        var inside = LayerEffects.RenderClipped(src, LayerEffects.At(effects, 1, 3));
+        Assert.Equal(0, Count(inside, Red));
+    }
+
+    [Fact]
     public void Shadow_OffsetsShapeBehindAndPadsTowardOffset()
     {
         var (img, x, y) = LayerEffects.Render(Filled(2, 1, Red), [new ShadowEffect { Color = Black, OffsetX = 1, OffsetY = 1 }]);
@@ -387,7 +456,7 @@ public class LayerEffectTests
         var (p, g, left, _) = TwoParts();
         LayerEffect[] groupFx =
         [
-            new OutlineEffect { Color = new Color32(1, 2, 3, 200), Thickness = 3, Diagonal = true, Inside = true },
+            new OutlineEffect { Color = new Color32(1, 2, 3, 200), Thickness = 3, Diagonal = true, Inside = true, HideOriginal = true },
             new ShadowEffect { Color = new Color32(9, 8, 7, 100), OffsetX = -4, OffsetY = 5, Enabled = false },
             new RimLightEffect { Light = new Color32(250, 240, 10, 90), Shade = Color32.Transparent, Direction = LightDirection.BottomRight, Size = 3 },
             new ColorOverlayEffect { Color = Blue, Amount = 37 },

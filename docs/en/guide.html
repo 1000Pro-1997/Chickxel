@@ -83,7 +83,7 @@
 <ol><li><a href="#parts-concept">Groups and parts</a></li><li><a href="#parts-create">Creating</a></li><li><a href="#parts-timeline">Viewing in the timeline</a></li><li><a href="#parts-arrange">Arranging (group selected)</a></li><li><a href="#parts-draw">Drawing (part selected)</a></li><li><a href="#parts-auto-layout">Auto layout</a></li><li><a href="#parts-export">Export: frame sheet and part atlas</a></li><li><a href="#parts-skins">Skins and slots</a></li><li><a href="#parts-per-part">Per-part choices and part-only skins</a></li><li><a href="#parts-skin-manager">Skin manager</a></li><li><a href="#parts-outfits">Changing outfits and outfit presets</a></li><li><a href="#parts-skin-export">Exporting skins</a></li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li><a href="#parts-import">Importing old files and PNGs</a></li></ol>
 </li>
 <li><a href="#ai">AI chat (Claude · Codex)</a>
-<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-history">Continuing past chats</a></li><li><a href="#ai-help">Help and example requests</a></li><li><a href="#ai-file-only">Limiting edits to the current file</a></li><li><a href="#ai-locked">Protecting locked layers</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
+<ol><li><a href="#ai-overview">What it can do</a></li><li><a href="#ai-open">Opening the chat window</a></li><li><a href="#ai-setup">One-time setup: install and log in</a></li><li><a href="#ai-tabs">Claude and Codex tabs</a></li><li><a href="#ai-chat">Chatting</a></li><li><a href="#ai-history">Continuing past chats</a></li><li><a href="#ai-help">Help and example requests</a></li><li><a href="#ai-file-only">Limiting edits to the current file</a></li><li><a href="#ai-locked">Protecting locked layers</a></li><li><a href="#ai-progress">Progress display</a></li><li><a href="#ai-edits">Edits the AI can make</a></li><li><a href="#ai-effects">Asking for layer effects</a></li><li><a href="#ai-undo">Undoing</a></li><li><a href="#ai-edit-last">Editing or deleting the last message</a></li><li><a href="#ai-troubleshoot">Troubleshooting</a></li></ol>
 </li>
 <li><a href="#shortcuts">Shortcuts</a>
 <ol><li><a href="#shortcuts-customize">Customizing shortcuts</a></li><li><a href="#shortcuts-file">Files and windows</a></li><li><a href="#shortcuts-edit">Editing and selection</a></li><li><a href="#shortcuts-transform">Transform and image</a></li><li><a href="#shortcuts-tools">Tools</a></li><li><a href="#shortcuts-view">View and canvas</a></li><li><a href="#shortcuts-timeline">Timeline · layers · groups</a></li></ol>
@@ -155,8 +155,9 @@
 <li><strong>Open Palette web</strong><span>Choose <strong>Palette web (Lospec)…</strong> from the menu button on a palette header.</span></li>
 <li><strong>Browse</strong><span>Sort by popular or newest and filter by color count or tag (e.g. gameboy, pico8). Type a palette name to find it right away.</span></li>
 <li><strong>Import</strong><span><strong>Use as palette</strong> replaces it, or <strong>Add to current palette</strong> adds only the colors that are missing. You can keep several palettes stacked.</span></li>
+<li><strong>Favorites</strong><span>Click the star on a palette you like to add it to your favorites. Choose <strong>Favorites</strong> in the sort box to browse and import them — example art included — even without internet.</span></li>
 </ol>
-<div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required; palette copyrights belong to their authors)</p></div>
+<div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required — favorites work offline; palette copyrights belong to their authors)</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-palette.mp4" poster="../assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette" width="1280" height="688"></video></figure>
 
 <h3 id="featured-palette-convert">Recoloring with a palette</h3>
@@ -273,7 +274,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>There are no accounts, analytics or ads, and your images and files are never sent anywhere. The network is used only in these cases:</p>
 <ul>
 <li><strong>Check for updates</strong>: asks GitHub for the latest version (can be turned off).</li>
-<li><strong>Palette web (Lospec)</strong>: downloads palette lists and sample images only when you open that window.</li>
+<li><strong>Palette web (Lospec)</strong>: downloads palette lists and sample images only when you open that window. Favorite palettes are stored only on your computer.</li>
 <li><strong>AI chat</strong>: only while you use that window, the Claude Code or Codex CLI installed on your computer connects to Anthropic or OpenAI with your login.</li>
 </ul>
 </section>
@@ -381,6 +382,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Filter by sort order (popular, downloads, newest, name), color count and tag (e.g. <code>gameboy</code>, <code>pico8</code>). Entering a palette name in the tag field shows that palette at the top.</li>
 <li>Selecting a palette shows its colors along with example art made with it.</li>
 <li><strong>Use as palette</strong> (replaces the current palette; same as double-click), <strong>Add to current palette</strong> (skips duplicate colors), <strong>Save as .hex</strong>, <strong>View on Lospec</strong>.</li>
+<li><strong>Favorites</strong>: click the star at the right of a list row or next to the selected palette's name to add or remove it. Favorite palettes, including their example art, are kept on your computer (<code>&lt;settings folder&gt;/Gpixel/Lospec</code>).</li>
+<li>Choose <strong>Favorites</strong> in the sort box to show only your favorites, most recently added first (no internet needed). The color count and tag/name fields still filter them. If Lospec can't be reached, use <strong>View favorites</strong> next to the error.</li>
+<li>The last sort you chose is kept the next time you open the window.</li>
 </ul>
 <p>Palette copyrights belong to their respective authors.</p>
 
@@ -470,7 +474,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>Effect</th><th>What it does</th></tr></thead>
 <tbody>
-<tr><td>Outline</td><td>1–3px thick, 4 or 8 directions, outside or inside</td></tr>
+<tr><td>Outline</td><td>1–3px thick, 4 or 8 directions, outside or inside. Turn on <strong>Hide original (outline only)</strong> to erase the sprite and keep just the line (inside: only the edge ring). Effects clipped to this outline apply to the line only</td></tr>
 <tr><td>Shadow</td><td>Places a copy of the image's shape behind it, offset by X/Y. Dither (25%, 50%, 75%) gives pixel-art style shadows</td></tr>
 <tr><td>Edge light and shade</td><td>Light color on the edges facing the light (8 directions), shade color on the opposite side</td></tr>
 <tr><td>Color overlay</td><td>Blends a solid color or gradient with normal, multiply or screen. The gradient's "Whole sprite, one color (over time)" mode shifts the whole image through the stop colors over the effect range, with speed and ping-pong settings (formerly the gradient map effect)</td></tr>
@@ -965,6 +969,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>Change model</td><td>The <strong>Model</strong> list at the top (remembered per AI; applies from the next message)</td></tr>
 <tr><td>See past chats / start a new one</td><td><strong>New chat</strong> (shows the list; type below to start a new chat)</td></tr>
 <tr><td>See what the AI can do, examples, and tips</td><td>The question mark button next to <strong>New chat</strong></td></tr>
+<tr><td>Edit or delete the last message</td><td>The pencil (edit) and trash (delete) icons under the last message — see <a href="#ai-edit-last">Editing or deleting the last message</a></td></tr>
 <tr><td>Stop the reply</td><td><strong>Stop</strong></td></tr>
 </tbody>
 </table></div>
@@ -984,15 +989,15 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="ai-help">Help and example requests</h3>
 <p>Press the question mark button next to <strong>New chat</strong> to show help in the chat area. Press <strong>Back</strong> or the question mark button again to close it.</p>
 <ul>
-<li><strong>What the AI can do</strong>: the tools for looking at the drawing, drawing, frames and animation, layers, groups and parts, skins and outfits, canvas and colors, and files, explained by group.</li>
+<li><strong>What the AI can do</strong>: the tools for looking at the drawing, drawing, frames and animation, layers, groups and parts, skins and outfits, layer effects, canvas and colors, and files, explained by group.</li>
 <li><strong>Example requests</strong>: click one to put it in the message box, then edit and send it.</li>
-<li><strong>Tips</strong>: in our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Be specific about size, palette, and style, attach a reference picture, and break big jobs into small steps.</li>
+<li><strong>Tips</strong>: in our tests Codex's GPT-6-Astra drew best, and Codex uses GPT-6-Astra (recommended) by default. Be specific about size, palette, and style, attach a reference picture, and break big jobs into small steps. You can delete or edit the last message and send it again.</li>
 </ul>
 
 <h3 id="ai-file-only">Limiting edits to the current file</h3>
 <p>Turn on <strong>Current file only</strong> next to <strong>Attach canvas</strong> below the input box before sending, and the AI edits only the file that's open when you send.</p>
 <ul>
-<li>Inside that file it can draw, add layers, frames, groups, parts, and skins, and tidy up layers.</li>
+<li>Inside that file it can draw, add layers, frames, groups, parts, skins, and layer effects, and tidy up layers.</li>
 <li>Opening or creating other files, such as new projects or opening files, is refused (saving still works).</li>
 <li>The chat shows the scope, like <code>Edit scope: current file "slime.gpixel" only</code>. Turn it off to lift the limit from the next message.</li>
 </ul>
@@ -1000,8 +1005,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="ai-locked">Protecting locked layers</h3>
 <p>The AI never touches <strong>locked layers</strong> (or the parts of a locked group), whether or not Current file only is on.</p>
 <ul>
-<li>Changing their pixels, name, visibility, opacity, part position or size, or the group's skin or outfit is refused with a "locked" reason.</li>
-<li>Deleting a frame where a locked layer has pixels, and resizing the canvas while any layer is locked, are refused too. Reading still works.</li>
+<li>Changing their pixels, name, visibility, opacity, part position or size, adding, changing, removing, or permanently applying their layer effects, or changing the group's skin or outfit is refused with a "locked" reason.</li>
+<li>Deleting a frame where a locked layer has pixels, and resizing the canvas (including enlarging it to fit effects) while any layer is locked, are refused too. Reading still works.</li>
 <li>Lock layers the AI must not change with the lock icon in the timeline.</li>
 </ul>
 
@@ -1016,12 +1021,34 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Draw points, lines, rectangles and circles; fill, erase, replace colors</li>
 <li>Create and arrange frames, layers, tags, groups and parts</li>
 <li>Add and switch skins, save and apply outfit presets</li>
+<li>Add, change, and remove layer effects, apply them permanently, enlarge the canvas to fit them</li>
 <li>Canvas size, palette and colors, new project, open, save</li>
 </ul>
 <p>It saves only when asked. If a never-saved new project has changes, it asks whether to save before switching to another document.</p>
 
+<h3 id="ai-effects">Asking for layer effects</h3>
+<p>The AI can use the same <a href="#screen-layer-effects">layer effects</a> as the Effects dialog. Effects don't change the drawing's pixels, so you can still change or remove them later in the Effects dialog or the timeline.</p>
+<ul>
+<li>Ask things like "add a 1 px black outline to the character", "add a white hit flash on frames 3–4", "make it appear over the first 4 frames", or "put a shadow 2 px to the lower right".</li>
+<li>Animated effects (hit flash, blink, shake, appear, and so on) play over the frame range you give. Without a range they cover the whole animation, as in the Effects dialog.</li>
+<li>Your saved <strong>custom effects</strong> can be added by name.</li>
+<li>It can also change the settings, frame range, on/off state, order, and clipping of existing effects.</li>
+<li><strong>Applying effects permanently</strong> (baking them into the pixels) and <strong>enlarging the canvas</strong> to fit effects that spill outside it happen only when you ask.</li>
+</ul>
+<p>Effect changes are part of the AI's reply, so one undo step undoes them too. Effects on locked layers are never changed.</p>
+
 <h3 id="ai-undo">Undoing</h3>
 <p>Each AI reply is <strong>one</strong> undo step, so <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it all at once. Each reply also comes with a result image and <strong>Undo this step / Reapply</strong> buttons.</p>
+
+<h3 id="ai-edit-last">Editing or deleting the last message</h3>
+<p>Small <strong>pencil (edit)</strong> and <strong>trash (delete)</strong> icons sit under the last message you sent. They're disabled while a reply is coming in; a turn you stopped with <strong>Stop</strong> can be deleted.</p>
+<ul>
+<li><strong>Delete</strong>: removes that message and the reply, tool lines and result image after it. The previous message then gets the icons, so you can press again to step back one message at a time, all the way to the start.</li>
+<li><strong>Edit</strong>: removes it the same way, then puts its text (and the attached pictures, if they're still available) back in the message box so you can change it and send.</li>
+<li>If that reply changed the drawing and the step can still be undone, you're asked <strong>Also undo the drawing changes made in this exchange?</strong> — <strong>Undo</strong> (same as Undo this step), <strong>Keep drawing</strong>, or <strong>Cancel</strong> (nothing is removed).</li>
+<li>You can also delete or edit the last message of a reopened past chat (the drawing question isn't asked there).</li>
+</ul>
+<div class="note"><p>The AI doesn't remember what you removed: after a delete or edit, the next message starts a new AI session and includes a recap of the remaining conversation.</p></div>
 
 <h3 id="ai-troubleshoot">Troubleshooting</h3>
 <ul>

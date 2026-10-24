@@ -25,7 +25,8 @@ public sealed partial class LayerEffectsDialog
     private bool _tileDragging;
     private Button? _savePreset;
 
-    private static string PresetPath => Path.Combine(Platform.AppDataDirectory, "Gpixel", EffectPresets.FileName);
+    /// <summary>사용자 정의 효과 파일(효과 창과 AI 도구가 같이 읽음).</summary>
+    internal static string PresetPath => Path.Combine(Platform.AppDataDirectory, "Gpixel", EffectPresets.FileName);
 
     private Control BuildPalette(string? motionTip)
     {

@@ -354,13 +354,15 @@ public static class Ui
     /// <summary>
     /// 메시지 상자(WinForms MessageBox.Show 대신). 창 닫기 단추는 취소(YesNo는 아니요)다.
     /// <paramref name="okText"/>·<paramref name="cancelText"/> = 확인(예)·취소(아니요) 단추 글자를 바꿀 때.
+    /// <paramref name="noText"/> = <see cref="MessageButtons.YesNoCancel"/>의 아니요 단추 글자를 바꿀 때.
     /// </summary>
     public static DialogResult Ask(Visual? owner, string message, string title, MessageButtons buttons, MessageIcon icon = MessageIcon.None,
-        string? okText = null, string? cancelText = null)
+        string? okText = null, string? cancelText = null, string? noText = null)
     {
         var dialog = new MessageDialog(message, title, buttons, icon);
         if (okText is not null) dialog.SetOkText(okText);
         if (cancelText is not null) dialog.SetCancelText(cancelText);
+        if (noText is not null) dialog.SetNoText(noText);
         return dialog.ShowDialog(owner);
     }
 
@@ -572,7 +574,7 @@ internal sealed class MessageDialog : DialogBase
             case MessageButtons.YesNoCancel:
                 OkButton.Content = UiStrings.S_Ui_MessageDialog_76C4BD0F9B;
                 SetButtonResult(OkButton, DialogResult.Yes);
-                AddButton(UiStrings.S_Ui_MessageDialog_6922C2357A, DialogResult.No);
+                _noButton = AddButton(UiStrings.S_Ui_MessageDialog_6922C2357A, DialogResult.No);
                 break;
         }
         _noOnClose = buttons == MessageButtons.YesNo;
@@ -582,6 +584,14 @@ internal sealed class MessageDialog : DialogBase
     public void SetOkText(string text) => OkButton.Content = text;
 
     public void SetCancelText(string text) => CancelButtonControl.Content = text;
+
+    /// <summary><see cref="MessageButtons.YesNoCancel"/>의 아니요 단추 글자(다른 단추 구성에서는 아무것도 하지 않음).</summary>
+    public void SetNoText(string text)
+    {
+        if (_noButton is not null) _noButton.Content = text;
+    }
+
+    private Button? _noButton;
 
     /// <summary>메시지 상자 본문: 왼쪽 아이콘 동그라미(아이콘 없으면 생략) + 고를 수 있는 메시지 글.</summary>
     internal static Control MessageRow(string message, MessageIcon icon)

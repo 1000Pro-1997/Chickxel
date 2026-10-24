@@ -28,6 +28,8 @@ public sealed class ColorPanel : UserControl
     private LospecPaletteDialog? _lospec;
     /// <summary>열린 Lospec 창이 색을 넣을 팔레트(그 창을 마지막으로 연 팔레트).</summary>
     private PaletteSection? _lospecTarget;
+    /// <summary>Lospec 창에서 마지막으로 고른 정렬(설정 저장용, <see cref="LospecPaletteDialog.SortKey"/>).</summary>
+    public string LospecSort { get; set; } = LospecPaletteDialog.DefaultSortKey;
 
     /// <summary>팔레트 목록·이름·색·접힘·순서가 바뀜(설정 저장용).</summary>
     public event EventHandler? PalettesChanged;
@@ -458,6 +460,8 @@ public sealed class ColorPanel : UserControl
                 if (added > 0) t.Grid.Commit();
                 return added;
             });
+        dlg.SortKey = LospecSort;
+        dlg.SortChanged += key => LospecSort = key;
         dlg.Closed += (_, _) => _lospec = null;
         _lospec = dlg;
         if (Ui.Owner(this) is { } owner) dlg.Show(owner);

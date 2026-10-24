@@ -84,7 +84,7 @@ public readonly record struct FrameRange
     public override string ToString() => From == To ? $"{From + 1}" : $"{From + 1}–{To + 1}";
 }
 
-/// <summary>외곽선: 그림 둘레에 한 색 선(바깥 = 그림 밖 투명 자리, 안쪽 = 그림 가장자리 픽셀).</summary>
+/// <summary>외곽선: 그림 둘레에 한 색 선(바깥 = 그림 밖 투명 자리, 안쪽 = 그림 가장자리 픽셀). <see cref="HideOriginal"/>이면 선만 남는다.</summary>
 public sealed record OutlineEffect : LayerEffect
 {
     public const int MaxThickness = 3;
@@ -101,6 +101,12 @@ public sealed record OutlineEffect : LayerEffect
 
     /// <summary>true = 안쪽(그림 가장자리 픽셀을 칠함, 크기 그대로), false = 바깥(그림 밖으로 두께만큼 커짐).</summary>
     public bool Inside { get; init; }
+
+    /// <summary>
+    /// true = 원본 지우기: 선을 따라 그린 모양(레이어 그림과 앞선 효과 결과)을 투명하게 지워 선만 남긴다.
+    /// 바깥이면 바깥 고리만, 안쪽이면 가장자리 고리만 남는다(안쪽 칸은 투명).
+    /// </summary>
+    public bool HideOriginal { get; init; }
 
     public override string DisplayName => Gpixel.Core.Localization.DomainStrings.Effect_Outline;
 }

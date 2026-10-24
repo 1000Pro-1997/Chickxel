@@ -1102,6 +1102,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
         _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
         _colors.PickerMode = s.ColorPickerMode;
+        _colors.LospecSort = s.LospecSort ?? LospecPaletteDialog.DefaultSortKey;
         _browser.IncludeSubfolders = s.IncludeSubfolders;
         _canvas.AutoFit = s.AutoFit;
         _preview.ZoomSetting = s.PreviewZoom;
@@ -1230,6 +1231,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         s.RecentColors = _ctx.RecentColors.Select(c => c.ToHex()).ToList();
         s.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
         s.ColorPickerMode = _colors.PickerMode;
+        s.LospecSort = _colors.LospecSort;
         s.IncludeSubfolders = _browser.IncludeSubfolders;
         s.LastFolder = _browser.RootFolder ?? s.LastFolder;
         s.AutoFit = _canvas.AutoFit;

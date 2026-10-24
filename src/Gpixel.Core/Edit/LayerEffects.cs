@@ -383,6 +383,11 @@ public static class LayerEffects
             Color32[]? anchorBefore = hasClippedFollower ? (Color32[])image.Pixels.Clone() : null;
             ApplyOne(image, effect, source);
             clipMask = anchorBefore is null ? null : ChangedPixels(anchorBefore, image.Pixels);
+            // 원본 지우기 외곽선: 지워진(투명해진) 원본 자리는 기준 영역이 아니다 — 클리핑된 효과는 선 픽셀만 보고,
+            // 뒤따르는 클리핑되지 않은 효과는 원본이 지워진 결과(선만)를 그대로 받는다.
+            if (clipMask is not null && effect is OutlineEffect { HideOriginal: true })
+                for (int i = 0; i < clipMask.Length; i++)
+                    if (image.Pixels[i].A == 0) clipMask[i] = false;
         }
         // 잔상은 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
         foreach (var effect in effects)
@@ -441,18 +446,28 @@ public static class LayerEffects
         {
             for (int k = 0; k < o.Thickness; k++) grown = Erode(grown, w, h, o.Diagonal);
             for (int i = 0; i < px.Length; i++)
-                if (shape[i] && !grown[i])
+            {
+                if (!shape[i]) continue;
+                if (grown[i])
                 {
-                    var c = color.Sample(i % image.Width, i / image.Width);
-                    px[i] = Mix(px[i], c, c.A);
+                    if (o.HideOriginal) px[i] = Color32.Transparent;
+                    continue;
                 }
+                var c = color.Sample(i % image.Width, i / image.Width);
+                px[i] = Mix(px[i], c, c.A);
+            }
         }
         else
         {
             for (int k = 0; k < o.Thickness; k++) grown = Dilate(grown, w, h, o.Diagonal);
             for (int i = 0; i < px.Length; i++)
-                if (grown[i] && !shape[i])
-                    px[i] = color.Sample(i % image.Width, i / image.Width);
+            {
+                if (shape[i])
+                {
+                    if (o.HideOriginal) px[i] = Color32.Transparent;
+                }
+                else if (grown[i]) px[i] = color.Sample(i % image.Width, i / image.Width);
+            }
         }
     }
 

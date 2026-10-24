@@ -1219,6 +1219,8 @@ public static partial class ProjectIO
         public int? Thickness { get; set; }
         public bool? Diagonal { get; set; }
         public bool? Inside { get; set; }
+        /// <summary>외곽선 원본 지우기(켜졌을 때만 씀 — 없으면 끔, 예전 파일).</summary>
+        public bool? HideOriginal { get; set; }
         /// <summary>그림자 X·Y, 터지기 직접 중심 X·Y.</summary>
         public int? X { get; set; }
         public int? Y { get; set; }
@@ -1327,7 +1329,10 @@ public static partial class ProjectIO
         {
             var dto = effect switch
             {
-                OutlineEffect o => new EffectDto { Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside },
+                OutlineEffect o => new EffectDto
+                {
+                    Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside, HideOriginal = o.HideOriginal ? true : null,
+                },
                 ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY, Dither = s.Dither == ShadowDither.None ? null : s.Dither.ToString() },
                 RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString(), Thickness = r.Size },
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount, Blend = c.Blend.ToString() },
@@ -1430,7 +1435,11 @@ public static partial class ProjectIO
             {
                 case "outline":
                     var o = new OutlineEffect();
-                    return o with { Enabled = Enabled, Color = ColorOr(Color, o.Color), Thickness = Thickness ?? o.Thickness, Diagonal = Diagonal ?? o.Diagonal, Inside = Inside ?? o.Inside };
+                    return o with
+                    {
+                        Enabled = Enabled, Color = ColorOr(Color, o.Color), Thickness = Thickness ?? o.Thickness, Diagonal = Diagonal ?? o.Diagonal, Inside = Inside ?? o.Inside,
+                        HideOriginal = HideOriginal ?? o.HideOriginal,
+                    };
                 case "shadow":
                     var s = new ShadowEffect();
                     return s with { Enabled = Enabled, Color = ColorOr(Color, s.Color), OffsetX = X ?? s.OffsetX, OffsetY = Y ?? s.OffsetY, Dither = EnumOr(Dither, s.Dither) };

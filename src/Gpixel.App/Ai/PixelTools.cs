@@ -22,7 +22,7 @@ namespace Gpixel.App.Ai;
 /// <c>frame</c>은 항상 프레임 번호다. <c>layer</c>가 부위면 좌표는 부위 안 좌표(부위 왼쪽 위 = 0,0)다.
 /// </para>
 /// </summary>
-public sealed class PixelTools
+public sealed partial class PixelTools
 {
     /// <summary>JSON 직렬화 옵션(한글을 \u 이스케이프하지 않음).</summary>
     internal static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -54,7 +54,7 @@ public sealed class PixelTools
     public EditScope? Scope { get; set; }
 
     /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음).</summary>
-    private static readonly HashSet<string> ReadTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits"];
+    private static readonly HashSet<string> ReadTools = ["get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
 
@@ -63,12 +63,12 @@ public sealed class PixelTools
     // ───────────── 도구 목록 ─────────────
 
     /// <summary>tools/list용 도구 설명: { name, description, inputSchema }. 부를 때마다 새 배열을 만든다(노드는 부모가 하나뿐).</summary>
-    public JsonArray ListTools() => new(
+    public JsonArray ListTools() => new([
         Tool("get_document",
             "Describe the open document as JSON: file path, canvas (frame) width/height, frames [{index,durationMs,name}], " +
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
-            "collapsed,skins,activeSkin (groups only)}] (bottom to top; a group's parts are the layers " +
+            "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)}] (bottom to top; a group's parts are the layers " +
             "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
             "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
@@ -385,7 +385,8 @@ public sealed class PixelTools
             "Open a .gpixel project or a .png image (fails only if the open project is a never-saved new project with changes). Relative paths are resolved " +
             "against the current folder.",
             new JsonObject { ["path"] = Str("File path.") },
-            "path"));
+            "path"),
+        .. EffectToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
     {
@@ -460,6 +461,13 @@ public sealed class PixelTools
                 "apply_outfit" => ApplyOutfit(name, a),
                 "add_skin" => AddSkin(name, a),
                 "set_skin" => SetSkin(name, a),
+                "list_effect_types" => ListEffectTypes(),
+                "get_effects" => GetEffects(a),
+                "add_effect" => AddEffect(name, a),
+                "set_effect" => SetEffect(name, a),
+                "remove_effect" => RemoveEffect(name, a),
+                "apply_effects" => ApplyEffects(name, a),
+                "expand_canvas_for_effects" => ExpandCanvasForEffects(name, a),
                 "resize_canvas" => ResizeCanvas(name, a),
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),
@@ -545,6 +553,7 @@ public sealed class PixelTools
                     o["activeSkin"] = l.ActiveSkin?.Name;
                     if (l.AutoLayout is { } al) o["autoLayout"] = LayoutText(al);
                 }
+                if (l.Effects.Count > 0) o["effects"] = Strings(l.Effects.Select(EffectSettings.TypeId).ToArray());
                 layers.Add(o);
             }
             doc["layers"] = layers;

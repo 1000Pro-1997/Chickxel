@@ -12,12 +12,31 @@ namespace Gpixel.App;
 /// <summary>
 /// lospec.com 팔레트 목록 둘러보기(모달 아님). 정렬·색 수·태그로 거르고, 고른 팔레트를 현재 팔레트로 쓰거나 덧붙이거나
 /// .hex로 저장한다. 태그 칸의 글자는 팔레트 이름(슬러그)으로도 찾아 맞으면 맨 위에 고정해 보여 준다.
+/// 별을 누른 팔레트는 즐겨찾기(<see cref="LospecFavoriteStore"/>, 예시 그림까지 내려받아 둠)로 남아, 정렬의 "즐겨찾기"에서 인터넷 없이 보고 쓴다.
 /// 네트워크는 모두 비동기이고, 조건이 바뀌거나 창을 닫으면 진행 중인 요청을 취소한다.
 /// </summary>
 public sealed class LospecPaletteDialog : DialogBase
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
     private static readonly HttpClient Http = new() { Timeout = Timeout.InfiniteTimeSpan };
+    /// <summary>정렬 칸 항목의 설정 이름(<see cref="SortKey"/>, 칸 순서). 마지막이 즐겨찾기.</summary>
+    private static readonly string[] SortKeys = ["default", "downloads", "newest", "alphabetical", "favorites"];
+    public const string DefaultSortKey = "default";
+    private const int FavoritesSortIndex = 4;
+
+    /// <summary>즐겨찾기 폴더(<c>&lt;설정 폴더&gt;/Gpixel/Lospec</c>).</summary>
+    public static string FavoritesRoot => Path.Combine(Platform.AppDataDirectory, "Gpixel", "Lospec");
+
+    private readonly LospecFavoriteStore _favorites = LospecFavoriteStore.Load(FavoritesRoot);
+    /// <summary>창이 닫히면 취소(즐겨찾기 예시 그림 내려받기).</summary>
+    private readonly CancellationTokenSource _lifetime = new();
+    /// <summary>목록 줄마다의 즐겨찾기 별(<see cref="Control.Tag"/> = 슬러그).</summary>
+    private readonly List<Button> _rowStars = new();
+    private readonly Button _detailStar, _viewFavorites;
+    private bool _opened;
+
+    /// <summary>정렬을 바꿈(설정 이름, <see cref="SortKey"/>).</summary>
+    public event Action<string>? SortChanged;
 
     private readonly Func<IReadOnlyList<Color32>> _current;
     private readonly Action<IReadOnlyList<Color32>> _replace;
@@ -56,6 +75,13 @@ public sealed class LospecPaletteDialog : DialogBase
         _append = append;
         CloseOnly();
         CancelButtonControl.IsDefault = false; // Enter는 태그 검색에 쓴다.
+        // 확인 = 고른 팔레트를 팔레트로 쓰고 닫기(덮어쓰기 확인에서 취소하면 닫지 않음).
+        OkButton.IsVisible = true;
+        OkButton.IsEnabled = false;
+        OkButton.Click += (_, _) =>
+        {
+            if (Selected is not { } p || !UsePalette(p)) DialogResult = DialogResult.None;
+        };
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
         Width = 720;
@@ -64,7 +90,7 @@ public sealed class LospecPaletteDialog : DialogBase
         MinHeight = 440;
 
         // ── 거르기 줄
-        _sort = Ui.Combo(100, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C6B4CAD5AA, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_02A80D18D3, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_1C3280FE06, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_6859F79425);
+        _sort = Ui.Combo(100, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C6B4CAD5AA, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_02A80D18D3, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_1C3280FE06, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_6859F79425, UiStrings.Lospec_Sort_Favorites);
         _filter = Ui.Combo(84, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_07EB862B40, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_06F3644153, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_E2D53DCDA5, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_A394BB00BB);
         _count = Ui.Num(1, 256, 8, 64).Presets(2, 3, 4, 5, 6, 8, 12, 16, 24, 32, 64, 256).Unit(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C4911E03B6).RecentKey("palette.count");
         _count.IsEnabled = false;
@@ -72,7 +98,13 @@ public sealed class LospecPaletteDialog : DialogBase
         _tag.Watermark = UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_2308C983F0;
         ToolTip.SetTip(_tag, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_3CF9E5D276);
         _tag.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Search(); } };
-        _sort.SelectionChanged += (_, _) => Search();
+        // 즐겨찾기는 이 컴퓨터에서 거르므로 글자를 칠 때마다 바로 거른다.
+        _tag.TextChanged += (_, _) => { if (_opened && FavoritesView) Search(); };
+        _sort.SelectionChanged += (_, _) =>
+        {
+            if (_opened) Search();
+            SortChanged?.Invoke(SortKey);
+        };
         _filter.SelectionChanged += (_, _) => { _count.IsEnabled = _filter.SelectedIndex > 0; Search(); };
         _count.ValueChanged += (_, _) => { if (_filter.SelectedIndex > 0) { _debounce.Stop(); _debounce.Start(); } };
         _debounce.Tick += (_, _) => { _debounce.Stop(); Search(); };
@@ -88,8 +120,14 @@ public sealed class LospecPaletteDialog : DialogBase
         _status = new TextBlock { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         _retry = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_530A8326D1, (_, _) => Retry());
         _retry.IsVisible = false;
+        // 연결하지 못했을 때: 인터넷 없이 볼 수 있는 즐겨찾기로.
+        _viewFavorites = Ui.Button(VectorIcon.Star, UiStrings.Lospec_Favorites_View, (_, _) => _sort.SelectedIndex = FavoritesSortIndex)
+            .Tip(UiStrings.Lospec_Favorites_OfflineHint);
+        _viewFavorites.IsVisible = false;
         var statusRow = new DockPanel { Margin = new Thickness(2, 2, 2, 4) };
+        DockPanel.SetDock(_viewFavorites, Dock.Right);
         DockPanel.SetDock(_retry, Dock.Right);
+        statusRow.Children.Add(_viewFavorites);
         statusRow.Children.Add(_retry);
         statusRow.Children.Add(_status);
 
@@ -106,7 +144,9 @@ public sealed class LospecPaletteDialog : DialogBase
         _list.SelectionChanged += (_, _) => ShowDetail(Selected);
         _list.DoubleTapped += (_, e) =>
         {
-            if (e.Source is Visual v && v.FindAncestorOfType<ListBoxItem>(includeSelf: true) is { Tag: LospecPalette p }) UsePalette(p);
+            // 별 단추를 빠르게 두 번 눌러도 팔레트를 쓰지 않는다.
+            if (e.Source is Visual v && v.FindAncestorOfType<Button>(includeSelf: true) is null
+                && v.FindAncestorOfType<ListBoxItem>(includeSelf: true) is { Tag: LospecPalette p }) UsePalette(p);
         };
         // 끝 가까이 스크롤하면 다음 쪽을 불러온다.
         _list.AddHandler(ScrollViewer.ScrollChangedEvent, (_, e) =>
@@ -160,9 +200,13 @@ public sealed class LospecPaletteDialog : DialogBase
         _note = new TextBlock { Foreground = AppTheme.AccentBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var b in new Control[] { _use, _add, _save, _web, _note }) actions.Children.Add(b);
+        _detailStar = MakeStar(() => Selected);
+        _detailStar.Margin = new Thickness(0, 0, 4, 0);
         var hexRow = new DockPanel();
         DockPanel.SetDock(_hoverHex, Dock.Right);
+        DockPanel.SetDock(_detailStar, Dock.Left);
         hexRow.Children.Add(_hoverHex);
+        hexRow.Children.Add(_detailStar);
         hexRow.Children.Add(_detailTitle);
         var detail = new Border
         {
@@ -198,8 +242,22 @@ public sealed class LospecPaletteDialog : DialogBase
         root.Children.Add(grid);
 
         ShowDetail(null);
-        Opened += (_, _) => { _tag.Focus(); Search(); };
+        Opened += (_, _) => { _opened = true; _tag.Focus(); Search(); };
     }
+
+    /// <summary>정렬(설정 이름: default·downloads·newest·alphabetical·favorites). 모르는 이름은 기본 정렬.</summary>
+    public string SortKey
+    {
+        get => SortKeys[Math.Clamp(_sort.SelectedIndex, 0, SortKeys.Length - 1)];
+        set
+        {
+            int i = Array.IndexOf(SortKeys, value);
+            _sort.SelectedIndex = i < 0 ? 0 : i;
+        }
+    }
+
+    /// <summary>정렬이 "즐겨찾기"(이 컴퓨터에 남긴 팔레트만, 네트워크 없음).</summary>
+    private bool FavoritesView => _sort.SelectedIndex == FavoritesSortIndex;
 
     /// <summary>고른 팔레트 칸(색 칸·예시 그림)의 높이.</summary>
     private const double ExampleHeight = 140;
@@ -215,6 +273,7 @@ public sealed class LospecPaletteDialog : DialogBase
         _cts?.Dispose();
         _cts = null;
         _examplesCts?.Cancel();
+        _lifetime.Cancel();
         _examples.Clear();
         foreach (var bmp in _exampleCache.Values) bmp?.Dispose();
         _exampleCache.Clear();
@@ -224,7 +283,7 @@ public sealed class LospecPaletteDialog : DialogBase
     // ───────────── 불러오기 ─────────────
 
     private LospecQuery ReadQuery() => new(
-        (LospecSort)Math.Max(0, _sort.SelectedIndex),
+        FavoritesView ? LospecSort.Default : (LospecSort)Math.Max(0, _sort.SelectedIndex),
         (LospecColorFilter)Math.Max(0, _filter.SelectedIndex),
         (int)_count.NumValue(),
         (_tag.Text ?? "").Trim());
@@ -242,15 +301,39 @@ public sealed class LospecPaletteDialog : DialogBase
         _total = 0;
         _pinned = null;
         _list.Items.Clear();
+        _rowStars.Clear();
         ShowDetail(null);
+        if (FavoritesView)
+        {
+            ShowFavorites();
+            return;
+        }
         var token = _cts.Token;
         _ = LoadPageAsync(token);
         if (LospecPalettes.ToSlug(_query.Tag) is { Length: > 0 } slug) _ = LoadPinnedAsync(slug, token);
     }
 
+    /// <summary>즐겨찾기를 목록에 채운다(이 컴퓨터에서 색 수·제목/태그로 거름, 최근에 더한 것부터, 네트워크 없음).</summary>
+    private void ShowFavorites()
+    {
+        foreach (var f in LospecFavoriteStore.Filter(_favorites.Items, _query.ColorFilter, _query.ColorCount, _query.Tag))
+            _list.Items.Add(MakeItem(f.ToPalette(), pinned: false));
+        _loaded = _total = _list.Items.Count;
+        _more.IsVisible = false;
+        UpdateFavoritesStatus();
+    }
+
+    private void UpdateFavoritesStatus()
+    {
+        int total = _favorites.Items.Count, shown = _list.Items.Count;
+        SetStatus(total == 0 ? UiStrings.Lospec_Favorites_Empty
+            : shown == 0 ? UiStrings.Lospec_Favorites_NoMatch
+            : UiStrings.FormatLospec_Favorites_Count(shown: shown, total: total), error: false);
+    }
+
     private void Retry()
     {
-        if (_nextPage == 0) Search();
+        if (_nextPage == 0 || FavoritesView) Search();
         else if (_cts is { } cts) _ = LoadPageAsync(cts.Token);
     }
 
@@ -293,12 +376,13 @@ public sealed class LospecPaletteDialog : DialogBase
             if (token.IsCancellationRequested) return;
             _loading = false;
             _failed = true;
+            // 인터넷이 없어도 즐겨찾기는 볼 수 있다고 알린다(상태 줄의 "즐겨찾기 보기" 단추).
             SetStatus(ex switch
             {
                 OperationCanceledException => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_LoadPageAsync_8947DCE5D3,RequestTimeout.TotalSeconds),
                 FormatException => UiStrings.S_LospecPaletteDialog_LoadPageAsync_7E7F70A765,
                 _ => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_LoadPageAsync_018F29C1E9,ex.Message),
-            }, error: true);
+            } + "\n" + UiStrings.Lospec_Favorites_OfflineHint, error: true);
         }
     }
 
@@ -340,9 +424,97 @@ public sealed class LospecPaletteDialog : DialogBase
         _status.Text = text;
         _status.Foreground = error ? AppTheme.WarningBrush : AppTheme.DimTextBrush;
         _retry.IsVisible = error;
+        _viewFavorites.IsVisible = error && !FavoritesView;
     }
 
-    private static ListBoxItem MakeItem(LospecPalette p, bool pinned)
+    // ───────────── 즐겨찾기 ─────────────
+
+    /// <summary>즐겨찾기 별 단추(누르면 <paramref name="palette"/>를 켜고 끔). 모양은 <see cref="SetStar"/>.</summary>
+    private Button MakeStar(Func<LospecPalette?> palette)
+    {
+        var b = new Button
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(3, 1),
+            VerticalAlignment = VerticalAlignment.Center,
+            Focusable = false,
+        };
+        b.Click += (_, e) =>
+        {
+            e.Handled = true;
+            if (palette() is { } p) ToggleFavorite(p);
+        };
+        return b;
+    }
+
+    /// <summary>즐겨찾기면 채운 별(강조색), 아니면 빈 별.</summary>
+    private static void SetStar(Button b, bool favorite)
+    {
+        b.Content = new IconView(VectorIcon.Star, favorite ? AppTheme.FavoriteBrush : AppTheme.DimTextBrush, 1.8) { Filled = favorite, Width = 14, Height = 14 };
+        b.Tip(favorite ? UiStrings.Lospec_Favorites_Remove : UiStrings.Lospec_Favorites_Add);
+    }
+
+    private void RefreshStars()
+    {
+        foreach (var b in _rowStars) SetStar(b, b.Tag is string slug && _favorites.Contains(slug));
+        if (Selected is { } p) SetStar(_detailStar, _favorites.Contains(p.Slug));
+    }
+
+    /// <summary>
+    /// 즐겨찾기를 켜고 끈다(고른 팔레트는 그대로). 켜면 예시 그림을 뒤에서 내려받아 두고, 즐겨찾기 보기에서 끄면 목록에서 뺀다.
+    /// </summary>
+    private void ToggleFavorite(LospecPalette p)
+    {
+        bool favorite;
+        try
+        {
+            favorite = _favorites.Toggle(p, DateTime.UtcNow);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, UiStrings.FormatLospec_Favorites_SaveFailed(message: ex.Message));
+            return;
+        }
+        if (favorite) _ = DownloadExamplesAsync(p);
+        else if (FavoritesView)
+        {
+            foreach (var item in _list.Items.OfType<ListBoxItem>().Where(i => i.Tag is LospecPalette q && q.Slug == p.Slug).ToList())
+                _list.Items.Remove(item);
+            _rowStars.RemoveAll(b => b.Tag as string == p.Slug);
+            _loaded = _total = _list.Items.Count;
+            UpdateFavoritesStatus();
+        }
+        RefreshStars();
+    }
+
+    /// <summary>
+    /// 즐겨찾기한 팔레트의 예시 그림을 아직 없는 것만 내려받아 둔다. 인터넷이 안 되면 그만두고, 나중에 인터넷이 될 때 그 팔레트를 보이면
+    /// <see cref="ShowExamples"/>가 채운다.
+    /// </summary>
+    private async Task DownloadExamplesAsync(LospecPalette p)
+    {
+        var token = _lifetime.Token;
+        foreach (int i in _favorites.MissingExamples(p.Slug).ToList())
+        {
+            if (i >= p.Examples.Count) continue;
+            byte[] bytes;
+            try
+            {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+                timeout.CancelAfter(RequestTimeout);
+                bytes = await LospecPalettes.FetchImageAsync(Http, p.Examples[i], timeout.Token);
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException or IOException)
+            {
+                return;
+            }
+            if (token.IsCancellationRequested) return;
+            _favorites.WriteExample(p.Slug, i, bytes);
+        }
+    }
+
+    private ListBoxItem MakeItem(LospecPalette p, bool pinned)
     {
         var title = new TextBlock
         {
@@ -363,8 +535,14 @@ public sealed class LospecPaletteDialog : DialogBase
             Margin = new Thickness(10, 0, 0, 0),
         };
         FillInfo(info, p);
+        var star = MakeStar(() => p);
+        star.Tag = p.Slug;
+        SetStar(star, _favorites.Contains(p.Slug));
+        _rowStars.Add(star);
         var head = new DockPanel();
         DockPanel.SetDock(title, Dock.Left);
+        DockPanel.SetDock(star, Dock.Right);
+        head.Children.Add(star);
         head.Children.Add(title);
         head.Children.Add(info);
         var strip = new SwatchStrip(p.Colors) { Margin = new Thickness(0, 3, 0, 0) };
@@ -409,10 +587,15 @@ public sealed class LospecPaletteDialog : DialogBase
         ShowExamples(p);
         _hoverHex.Text = "";
         _note.Text = "";
-        foreach (var b in new[] { _use, _add, _save, _web }) b.IsEnabled = p is not null;
+        foreach (var b in new[] { _use, _add, _save, _web, OkButton }) b.IsEnabled = p is not null;
+        _detailStar.IsVisible = p is not null;
+        if (p is not null) SetStar(_detailStar, _favorites.Contains(p.Slug));
     }
 
-    /// <summary>고른 팔레트의 예시 그림을 오른쪽에 내려받아 보인다(픽셀이 그대로 보이게 정수 배율, 고르는 팔레트가 바뀌면 받던 것은 취소).</summary>
+    /// <summary>
+    /// 고른 팔레트의 예시 그림을 오른쪽에 보인다(픽셀이 그대로 보이게 정수 배율, 고르는 팔레트가 바뀌면 받던 것은 취소).
+    /// 즐겨찾기는 남겨 둔 그림을 먼저 쓰고(인터넷 없이도 보임), 없는 그림은 내려받아 남긴다. 내려받지 못한 그림은 다음에 다시 시도한다.
+    /// </summary>
     private async void ShowExamples(LospecPalette? p)
     {
         _examplesCts?.Cancel();
@@ -425,27 +608,31 @@ public sealed class LospecPaletteDialog : DialogBase
         var cts = _examplesCts = new CancellationTokenSource();
         _examplesNote.Text = UiStrings.S_LospecPaletteDialog_ShowExamples_05EE4FBC6D;
         int shown = 0;
-        foreach (var url in p.Examples.Take(6))
+        for (int i = 0; i < Math.Min(p.Examples.Count, LospecFavoriteStore.MaxExamples); i++)
         {
+            var url = p.Examples[i];
             if (!_exampleCache.TryGetValue(url, out var bmp))
             {
-                try
+                var bytes = _favorites.ReadExample(p.Slug, i);
+                if (bytes is null)
                 {
-                    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-                    timeout.CancelAfter(TimeSpan.FromSeconds(15));
-                    var bytes = await LospecPalettes.FetchImageAsync(Http, url, timeout.Token);
-                    using var ms = new MemoryStream(bytes);
-                    bmp = new Bitmap(ms);
+                    try
+                    {
+                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                        timeout.CancelAfter(RequestTimeout);
+                        bytes = await LospecPalettes.FetchImageAsync(Http, url, timeout.Token);
+                    }
+                    catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or IOException)
+                    {
+                        continue;
+                    }
+                    _favorites.WriteExample(p.Slug, i, bytes);
                 }
-                catch (OperationCanceledException) when (cts.IsCancellationRequested)
-                {
-                    return;
-                }
-                catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or ArgumentException or InvalidOperationException
-                                               or IOException or NotSupportedException)
-                {
-                    bmp = null;
-                }
+                bmp = DecodeImage(bytes);
                 _exampleCache[url] = bmp;
             }
             if (cts.IsCancellationRequested) return;
@@ -453,16 +640,33 @@ public sealed class LospecPaletteDialog : DialogBase
             _examples.Add(bmp, $"{bmp.PixelSize.Width}×{bmp.PixelSize.Height}px · {Path.GetFileName(url.LocalPath)}");
             shown++;
         }
+        if (cts.IsCancellationRequested) return;
         _examplesNote.Text = shown == 0 ? UiStrings.S_LospecPaletteDialog_ShowExamples_7293A60341 : "";
     }
 
-    private void UsePalette(LospecPalette p)
+    /// <summary>그림 바이트를 비트맵으로. 그림이 아니면 null.</summary>
+    private static Bitmap? DecodeImage(byte[] bytes)
+    {
+        try
+        {
+            using var ms = new MemoryStream(bytes);
+            return new Bitmap(ms);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>팔레트를 이 색들로 바꾼다. 덮어쓰기 확인에서 취소하면 false.</summary>
+    private bool UsePalette(LospecPalette p)
     {
         int n = _current().Count;
         if (n > 0 && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UsePalette_61DD05834E,n,p.Title,p.Colors.Count),
-                UiStrings.S_LospecPaletteDialog_UsePalette_D1481F9E4E, MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
+                UiStrings.S_LospecPaletteDialog_UsePalette_D1481F9E4E, MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return false;
         _replace(p.Colors);
         Note(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LospecPaletteDialog_UsePalette_DDD1C3B449,p.Title));
+        return true;
     }
 
     private void AppendPalette(LospecPalette p)

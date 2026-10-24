@@ -43,4 +43,23 @@ public class EffectPresetTests
         var shadow = Assert.IsType<ShadowEffect>(Assert.Single(preset.Effects));
         Assert.Equal(3, shadow.OffsetX);
     }
+
+    [Fact]
+    public void OutlineHideOriginal_RoundTrips_WrittenOnlyWhenOn_OldJsonLoadsOff()
+    {
+        var on = EffectPreset.Capture("선만", [new OutlineEffect { Color = new Color32(10, 20, 30), Inside = true, HideOriginal = true }]);
+        var json = EffectPresets.Serialize([on]);
+        Assert.Contains("\"hideOriginal\": true", json);
+        Assert.Equal(on.Effects, Assert.Single(EffectPresets.Parse(json)).Effects);
+
+        var off = EffectPresets.Serialize([EffectPreset.Capture("기본", [new OutlineEffect()])]);
+        Assert.DoesNotContain("hideOriginal", off);
+
+        const string old = """
+            { "version": 1, "presets": [ { "name": "예전", "effects": [ { "type": "outline", "thickness": 2, "inside": false } ] } ] }
+            """;
+        var outline = Assert.IsType<OutlineEffect>(Assert.Single(Assert.Single(EffectPresets.Parse(old)).Effects));
+        Assert.False(outline.HideOriginal);
+        Assert.Equal(2, outline.Thickness);
+    }
 }

@@ -25,8 +25,6 @@ public sealed class ChatWindow : Window
 {
     private static readonly IBrush ErrorBrush = AppTheme.Brush(Color.FromRgb(240, 110, 110));
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
-    /// <summary>즐겨찾기 별(채운 별) 색.</summary>
-    private static readonly IBrush FavoriteBrush = AppTheme.Brush(Color.FromRgb(240, 196, 70));
     private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
     private const int SnapshotMax = 240;
     private const int CanvasAttachSide = 512;
@@ -36,6 +34,10 @@ public sealed class ChatWindow : Window
     private const int SavedThumbSide = 64;
     /// <summary>저장하는 캔버스 모습의 긴 변 최대(이보다 큰 그림은 모습을 남기지 않음 — 큰 그림을 저장하지 않도록).</summary>
     private const int SavedSnapshotSide = 256;
+    /// <summary>머리줄 모델 칸 너비: 자리가 넉넉하면 최대, 좁으면 최소까지 줄어든다(상태 글이 먼저 줄어듦).</summary>
+    private const int ModelMinWidth = 100, ModelMaxWidth = 190;
+    /// <summary>창 최소 너비: 머리줄(AI 탭·가장 좁은 모델 칸·새 대화·?)이 어느 화면 언어에서도 잘리지 않는 너비.</summary>
+    private const int WindowMinWidth = 360;
 
     private readonly EditorContext _ctx;
     private readonly McpServer _mcp;
@@ -62,9 +64,9 @@ public sealed class ChatWindow : Window
         _settings = settings;
 
         ShowInTaskbar = false;
-        MinWidth = 300;
+        MinWidth = WindowMinWidth;
         MinHeight = 360;
-        Width = Math.Clamp(settings.ChatWidth, 300, 3000);
+        Width = Math.Clamp(settings.ChatWidth, WindowMinWidth, 3000);
         Height = Math.Clamp(settings.ChatHeight, 360, 3000);
         // 기억한 위치가 지금 어느 화면에도 걸치지 않으면(모니터 분리 등) 메인 창 가운데로.
         var bounds = new PixelRect(settings.ChatX, settings.ChatY, (int)Width, (int)Height);
@@ -104,7 +106,13 @@ public sealed class ChatWindow : Window
         _newChat.Tip(UiStrings.Chat_NewChat_Tip);
         _help = Ui.IconButton(VectorIcon.QuestionMark, UiStrings.Chat_Help_Tip, (_, _) => _visible.ToggleHelp(), 28);
         _help.Margin = new Thickness(0, 0, 2, 0);
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto,Auto"), Margin = new Thickness(4, 3) };
+        // 모델 칸은 상태 글보다 훨씬 큰 몫의 별 너비라, 넉넉하면 최대 너비이고 좁아지면 최소 너비까지 줄어든다.
+        var header = new Grid { Margin = new Thickness(4, 3) };
+        header.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
+        header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        header.ColumnDefinitions.Add(new ColumnDefinition(20, GridUnitType.Star) { MinWidth = ModelMinWidth + 6, MaxWidth = ModelMaxWidth + 6 });
+        header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         header.Children.Add(_status);
         Grid.SetColumn(_providerToggle, 1);
         header.Children.Add(_providerToggle);
@@ -512,6 +520,8 @@ public sealed class ChatWindow : Window
         (UiStrings.Chat_Help_GroupLayers, UiStrings.Chat_Help_GroupLayers_Text, ["add_layer", "set_layer", "set_current"]),
         (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_group", "add_part", "set_part"]),
         (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "list_outfits", "save_outfit", "apply_outfit"]),
+        (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
+            ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_palette", "set_colors"]),
         (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "save_project", "open_file"]),
     ];
@@ -547,6 +557,7 @@ public sealed class ChatWindow : Window
         [
             UiStrings.Chat_Help_Example1, UiStrings.Chat_Help_Example2, UiStrings.Chat_Help_Example3, UiStrings.Chat_Help_Example4,
             UiStrings.Chat_Help_Example5, UiStrings.Chat_Help_Example6, UiStrings.Chat_Help_Example7, UiStrings.Chat_Help_Example8,
+            UiStrings.Chat_Help_Example9,
         ];
         foreach (var example in examples)
         {
@@ -566,6 +577,7 @@ public sealed class ChatWindow : Window
         [
             UiStrings.Chat_Help_Tip1, UiStrings.Chat_Help_Tip2, UiStrings.Chat_Help_Tip3,
             UiStrings.Chat_Help_Tip4, UiStrings.Chat_Help_Tip5, UiStrings.Chat_Help_Tip6,
+            UiStrings.Chat_Help_Tip7,
         ];
         foreach (var tip in tips)
         {
@@ -611,6 +623,19 @@ public sealed class ChatWindow : Window
 
     /// <summary>끝난 차례 하나의 실행취소 묶음과 그 단추.</summary>
     private sealed record UndoStep(SpriteProject Project, IUndoCommand Command, Button Button);
+
+    /// <summary>
+    /// 대화에 보이는 사용자 메시지 하나(= 차례 하나): 말풍선 줄(지울 때 여기부터 끝까지 뺌), 저장할 줄, 고치기·지우기 단추 줄,
+    /// 다시 보낼 수 있는 첨부(이번 실행 중 보낸 것만, 저장한 대화는 없음), 그 차례의 실행취소 묶음(있으면).
+    /// </summary>
+    private sealed class UserTurn(Control row, ChatItem item, Control actions, IReadOnlyList<Attachment> attachments)
+    {
+        public Control Row { get; } = row;
+        public ChatItem Item { get; } = item;
+        public Control Actions { get; } = actions;
+        public IReadOnlyList<Attachment> Attachments { get; } = attachments;
+        public UndoStep? Step { get; set; }
+    }
 
     /// <summary>진행 중인 차례.</summary>
     private sealed class Turn(string label)
@@ -666,6 +691,8 @@ public sealed class ChatWindow : Window
 
         private readonly List<Attachment> _attachments = new();
         private readonly List<UndoStep> _steps = new();
+        /// <summary>지금 대화의 사용자 메시지(차례) 순서대로. 마지막 것에만 고치기·지우기 단추가 보인다.</summary>
+        private readonly List<UserTurn> _userTurns = new();
         private readonly DispatcherTimer _terminalPoll = new() { Interval = TimeSpan.FromSeconds(2) };
         private readonly DispatcherTimer _installPoll = new() { Interval = TimeSpan.FromSeconds(2) };
         /// <summary>차례 중 "생각 중…" 줄을 진행 상황(단계·받은 양·걸린 시간)으로 고쳐 쓴다.</summary>
@@ -697,7 +724,15 @@ public sealed class ChatWindow : Window
             Provider = provider;
             Index = index;
 
-            Model = new ComboBox { Width = 190, Margin = new Thickness(3), VerticalAlignment = VerticalAlignment.Center };
+            Model = new ComboBox
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(3),
+                VerticalAlignment = VerticalAlignment.Center,
+                // 좁아지면 고른 모델 이름은 말줄임(머리줄 단추가 밀려 잘리지 않게).
+                SelectionBoxItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>(
+                    (label, _) => new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis }, supportsRecycling: false),
+            };
             Model.SelectionChanged += (_, _) => OnModelChanged();
             FillModels();
 
@@ -1265,10 +1300,16 @@ public sealed class ChatWindow : Window
             var ctx = _w._ctx;
             var scope = _w._settings.AiCurrentFileOnly && ctx.Project is { } sp ? new EditScope(sp) : null;
             _w._mcp.Tools.Scope = scope;
+            // 마지막 차례를 지운 대화: CLI 세션에서는 차례를 뺄 수 없으므로 새 세션으로 보내고, 남은 대화 정리를 앞에 붙인다.
+            var message = scope is null ? text : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: text);
+            if (_chat is { NeedsRecap: true })
+            {
+                session.Reset();
+                if (ChatRecap.Build(_items) is { } recap) message = ChatRecap.Compose(recap, message);
+            }
             try
             {
-                session.Send(scope is null ? text : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: text),
-                    attachments.Select(a => a.Png).ToList());
+                session.Send(message, attachments.Select(a => a.Png).ToList());
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
@@ -1292,14 +1333,17 @@ public sealed class ChatWindow : Window
                 };
                 RememberOpen(_chat.Id);
             }
-            AddUserBubble(text, [.. attachments.Select(a => Thumb(a.Thumb, a.PixelArt, 72))], null);
-            Record(new ChatItem
+            // 차례를 모두 지운 대화에 다시 쓰면 제목도 이 메시지로.
+            else if (!ChatRecap.HasTurns(_items)) _chat.Title = text.Length > 0 ? ChatHistoryStore.MakeTitle(text) : UiStrings.Chat_History_ImageTitle;
+            var userItem = new ChatItem
             {
                 Kind = ChatItemKind.User,
                 Text = text,
                 ImageCount = attachments.Count,
                 Images = attachments.Count == 0 ? null : [.. attachments.Select(SavedThumb).OfType<string>()],
-            });
+            };
+            AddUserBubble(userItem, [.. attachments.Select(a => Thumb(a.Thumb, a.PixelArt, 72))], null, attachments);
+            Record(userItem);
             if (scope is not null) AddSystemLine(UiStrings.FormatChat_FileOnly_Notice(name: scope.Project.DisplayName), error: false);
 
             var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(text.Length > 0 ? text : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
@@ -1362,7 +1406,10 @@ public sealed class ChatWindow : Window
         /// <summary>대화 줄을 저장할 내용에 더한다(다음 저장 때 파일에 들어감).</summary>
         private void Record(ChatItem item) => _items.Add(item);
 
-        /// <summary>지금 대화를 저장한다(세션 ID·작업 폴더·모델·고친 시각 포함). 넘친 옛 대화는 보관소가 지운다.</summary>
+        /// <summary>
+        /// 지금 대화를 저장한다(세션 ID·작업 폴더·모델·고친 시각 포함). 넘친 옛 대화는 보관소가 지운다.
+        /// 새 세션 ID를 얻었으면 남은 대화 정리는 더 붙이지 않는다(<see cref="SavedChat.NeedsRecap"/>).
+        /// </summary>
         private void SaveChat()
         {
             if (_chat is not { } chat) return;
@@ -1372,6 +1419,7 @@ public sealed class ChatWindow : Window
                 chat.SessionId = s.SessionId;
                 chat.SessionDirectory = s.SessionDirectory;
             }
+            if (chat.SessionId is not null) chat.NeedsRecap = false;
             chat.UpdatedUtc = DateTime.UtcNow;
             chat.Items = _items;
             try
@@ -1417,6 +1465,7 @@ public sealed class ChatWindow : Window
         {
             _messages.Children.Clear();
             _steps.Clear();
+            _userTurns.Clear();
             _items = new List<ChatItem>();
             _follow = true;
         }
@@ -1446,7 +1495,8 @@ public sealed class ChatWindow : Window
                 if (chat.SessionId is { } sid) s.Resume(sid, chat.SessionDirectory);
                 else s.Reset();
             }
-            AddSystemLine(chat.SessionId is null ? UiStrings.Chat_History_NoSession : UiStrings.Chat_History_Opened, error: false, record: false);
+            AddSystemLine(chat.NeedsRecap ? UiStrings.Chat_History_Recap
+                : chat.SessionId is null ? UiStrings.Chat_History_NoSession : UiStrings.Chat_History_Opened, error: false, record: false);
             RememberOpen(chat.Id);
             ShowView(TabView.Chat);
             Dispatcher.UIThread.Post(() => _scroll.ScrollToEnd(), DispatcherPriority.Background);
@@ -1488,7 +1538,7 @@ public sealed class ChatWindow : Window
                     foreach (var data in item.Images ?? [])
                         if (DecodeImage(data) is { } bmp) thumbs.Add(Thumb(bmp, pixelArt: true, 72));
                     int missing = item.ImageCount - thumbs.Count;
-                    AddUserBubble(item.Text, thumbs, missing > 0 ? UiStrings.FormatChat_History_ImagesMarker(count: missing) : null);
+                    AddUserBubble(item, thumbs, missing > 0 ? UiStrings.FormatChat_History_ImagesMarker(count: missing) : null, []);
                     break;
                 case ChatItemKind.Assistant:
                     var block = new StackPanel { Spacing = 4 };
@@ -1544,7 +1594,7 @@ public sealed class ChatWindow : Window
         {
             var star = new Button
             {
-                Content = new IconView(VectorIcon.Star, c.Favorite ? FavoriteBrush : AppTheme.DimTextBrush, 1.8) { Filled = c.Favorite, Width = 15, Height = 15 },
+                Content = new IconView(VectorIcon.Star, c.Favorite ? AppTheme.FavoriteBrush : AppTheme.DimTextBrush, 1.8) { Filled = c.Favorite, Width = 15, Height = 15 },
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(5),
@@ -1688,6 +1738,7 @@ public sealed class ChatWindow : Window
             _sendButton.Tip(other is null || ReferenceEquals(other, this)
                 ? "Enter"
                 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateInputState_25BD68A0C8,other.Provider.Name));
+            RefreshTurnActions();
         }
 
         private void OnInputKeyDown(object? sender, KeyEventArgs e)
@@ -1758,8 +1809,11 @@ public sealed class ChatWindow : Window
             }
         }
 
-        /// <summary>사용자 메시지 말풍선: 첨부 미리보기, (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글.</summary>
-        private void AddUserBubble(string text, IReadOnlyList<Control> thumbs, string? imageMarker)
+        /// <summary>
+        /// 사용자 메시지 말풍선: 첨부 미리보기, (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글. 아래에 수정·삭제 단추 줄
+        /// (마지막 메시지에만 보임, <see cref="RefreshTurnActions"/>). <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
+        /// </summary>
+        private void AddUserBubble(ChatItem item, IReadOnlyList<Control> thumbs, string? imageMarker, IReadOnlyList<Attachment> attachments)
         {
             var stack = new StackPanel { Spacing = 4 };
             if (thumbs.Count > 0)
@@ -1770,24 +1824,113 @@ public sealed class ChatWindow : Window
             }
             if (imageMarker is not null)
                 stack.Children.Add(new TextBlock { Text = imageMarker, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize });
-            if (text.Length > 0)
+            if (item.Text.Length > 0)
             {
                 stack.Children.Add(new SelectableTextBlock
                 {
-                    Text = text,
+                    Text = item.Text,
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = AppTheme.TextBrush,
                 });
             }
-            AddItem(new Border
+            var bubble = new Border
             {
                 Background = UserBubbleBrush,
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(8, 6),
-                Margin = new Thickness(40, 4, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Child = stack,
-            });
+            };
+            var actions = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                IsVisible = false,
+                Children =
+                {
+                    TurnButton(VectorIcon.Pencil, UiStrings.Chat_Turn_Edit_Tip, () => RemoveLastTurn(edit: true)),
+                    TurnButton(VectorIcon.Trash, UiStrings.Chat_Turn_Delete_Tip, () => RemoveLastTurn(edit: false)),
+                },
+            };
+            var row = new StackPanel { Margin = new Thickness(40, 4, 0, 0), Children = { bubble, actions } };
+            AddItem(row);
+            _userTurns.Add(new UserTurn(row, item, actions, attachments));
+            RefreshTurnActions();
+        }
+
+        /// <summary>말풍선 아래 작은 아이콘 단추(테 없음, 흐린 색).</summary>
+        private static Button TurnButton(VectorIcon icon, string tip, Action click)
+        {
+            var b = Ui.IconButton(icon, tip, (_, _) => click(), size: 13);
+            b.Background = Brushes.Transparent;
+            b.BorderThickness = new Thickness(0);
+            b.Foreground = AppTheme.DimTextBrush;
+            b.Padding = new Thickness(5, 2);
+            b.MinHeight = 0;
+            b.Focusable = false;
+            return b;
+        }
+
+        /// <summary>수정·삭제 단추: 마지막 메시지에만 보이고, 어느 탭이든 차례가 도는 동안은 꺼진다(실행취소 묶음이 열려 있음).</summary>
+        private void RefreshTurnActions()
+        {
+            bool idle = _w.RunningTab is null;
+            for (int i = 0; i < _userTurns.Count; i++)
+            {
+                var actions = _userTurns[i].Actions;
+                actions.IsVisible = i == _userTurns.Count - 1;
+                actions.IsEnabled = idle;
+            }
+        }
+
+        /// <summary>
+        /// 마지막 메시지 삭제(<paramref name="edit"/>면 수정): 그 메시지부터 끝까지(답·도구 줄·캔버스 모습·끝 줄)를 화면과 저장한 대화에서 뺀다.
+        /// 그 차례가 바꾼 그림을 아직 되돌릴 수 있으면 함께 되돌릴지 묻는다(취소하면 아무것도 하지 않음).
+        /// CLI 세션 기록에서는 차례를 뺄 수 없으므로 세션을 버리고, 다음 메시지는 새 세션 + 남은 대화 정리로 보낸다(<see cref="SavedChat.NeedsRecap"/>).
+        /// 차례가 하나도 남지 않으면 저장한 대화 파일을 지운다(다음 메시지가 같은 대화로 다시 저장). 수정은 지운 글(과 이번 실행 중 보낸 첨부)을 입력란에 다시 넣는다.
+        /// </summary>
+        private void RemoveLastTurn(bool edit)
+        {
+            if (_turn is not null || _w.RunningTab is not null || _userTurns.Count == 0) return;
+            var last = _userTurns[^1];
+            if (last.Step is { } step && ReferenceEquals(_w._ctx.Project, step.Project) && step.Project.History.UndoDepthOf(step.Command) > 0)
+            {
+                var answer = Ui.Ask(_w, UiStrings.Chat_Turn_UndoAsk, edit ? UiStrings.Chat_Turn_Edit_Title : UiStrings.Chat_Turn_Delete_Title,
+                    MessageButtons.YesNoCancel, MessageIcon.Question, okText: UiStrings.Chat_Turn_UndoAsk_Undo, noText: UiStrings.Chat_Turn_UndoAsk_Keep);
+                if (answer is not (DialogResult.Yes or DialogResult.No)) return;
+                if (answer == DialogResult.Yes && !UndoTurn(step)) return;
+            }
+
+            int at = _messages.Children.IndexOf(last.Row);
+            if (at >= 0) _messages.Children.RemoveRange(at, _messages.Children.Count - at);
+            _userTurns.RemoveAt(_userTurns.Count - 1);
+            if (last.Step is { } removed) _steps.Remove(removed);
+            ChatRecap.RemoveLastTurn(_items);
+            _session?.Reset();
+            bool hasTurns = ChatRecap.HasTurns(_items);
+            if (_chat is { } chat)
+            {
+                chat.SessionId = null;
+                chat.SessionDirectory = null;
+                chat.NeedsRecap = hasTurns;
+                if (hasTurns) SaveChat();
+                else
+                {
+                    chat.Items = _items;
+                    _w._store.Delete(Provider.Id, chat.Id);
+                }
+            }
+            if (hasTurns) AddSystemLine(UiStrings.Chat_Turn_Removed, error: false, record: false);
+            RefreshTurnActions();
+
+            if (edit)
+            {
+                ClearAttachments();
+                foreach (var a in last.Attachments) AddAttachment(a.Png, a.Thumb, a.PixelArt);
+                _input.Text = last.Item.Text;
+                _input.CaretIndex = last.Item.Text.Length;
+            }
+            FocusInput();
         }
 
         /// <summary>안내·오류 한 줄을 붙이고, <paramref name="record"/>면 저장할 내용에도 넣는다.</summary>
@@ -1875,6 +2018,7 @@ public sealed class ChatWindow : Window
             var step = new UndoStep(project, group, button);
             button.Click += (_, _) => ToggleStep(step);
             _steps.Add(step);
+            if (_userTurns.Count > 0) _userTurns[^1].Step = step;
             panel.Children.Add(button);
             AddItem(panel);
             RefreshStep(step);
@@ -1885,19 +2029,25 @@ public sealed class ChatWindow : Window
             // 어느 탭이든 차례가 돌면 실행취소 묶음이 열려 있으므로 건드리지 않는다.
             if (_w.RunningTab is not null || !ReferenceEquals(_w._ctx.Project, step.Project)) return;
             var history = step.Project.History;
-            int depth = history.UndoDepthOf(step.Command);
-            if (depth == 1) _w._ctx.UndoStep();
-            else if (depth > 1)
+            if (history.UndoDepthOf(step.Command) > 0)
             {
-                if (Ui.Ask(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ToggleStep_3758F11139,depth - 1), UiStrings.S_ChatWindow_ToggleStep_579568A52F, MessageButtons.OKCancel, MessageIcon.Question)
-                    != DialogResult.OK) return;
-                for (int i = 0; i < depth; i++)
-                {
-                    if (!_w._ctx.UndoStep()) break;
-                }
+                if (!UndoTurn(step)) return;
             }
             else if (history.RedoDepthOf(step.Command) == 1) _w._ctx.RedoStep();
             RefreshSteps();
+        }
+
+        /// <summary>차례의 실행취소 묶음을 되돌린다. 그 뒤에 다른 편집이 있으면 함께 되돌릴지 묻고, 거기서 취소하면 false.</summary>
+        private bool UndoTurn(UndoStep step)
+        {
+            int depth = step.Project.History.UndoDepthOf(step.Command);
+            if (depth > 1 && Ui.Ask(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_ToggleStep_3758F11139,depth - 1), UiStrings.S_ChatWindow_ToggleStep_579568A52F, MessageButtons.OKCancel, MessageIcon.Question)
+                != DialogResult.OK) return false;
+            for (int i = 0; i < depth; i++)
+            {
+                if (!_w._ctx.UndoStep()) break;
+            }
+            return true;
         }
 
         public void RefreshSteps()

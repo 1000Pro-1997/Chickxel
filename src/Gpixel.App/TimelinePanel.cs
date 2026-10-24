@@ -1311,7 +1311,7 @@ public sealed class TimelinePanel : UserControl
             foreach (var group in chosen.GroupBy(x => x.Layer))
             {
                 var drop = group.Select(x => x.Index).ToHashSet();
-                p.SetLayerEffects(p.IndexOf(group.Key), RemoveEffects(group.Key.Effects, drop));
+                p.SetLayerEffects(p.IndexOf(group.Key), Gpixel.Core.Edit.EffectStack.Remove(group.Key.Effects, drop));
             }
         }));
         _grid.ResetRange();
@@ -1327,15 +1327,12 @@ public sealed class TimelinePanel : UserControl
         if (P is not { } p || p.IndexOf(source) < 0 || p.IndexOf(target) < 0 || b >= source.Effects.Count) return;
         var moved = Enumerable.Range(a, b - a + 1).ToHashSet();
         var block = source.Effects.Skip(a).Take(b - a + 1).ToList();
-        if (block[0].ClipToPrevious) block[0] = block[0] with { ClipToPrevious = false };
-        var rest = RemoveEffects(source.Effects, moved);
+        var rest = Gpixel.Core.Edit.EffectStack.Remove(source.Effects, moved);
         bool same = ReferenceEquals(source, target);
         var dest = same ? rest : target.Effects.ToList();
         at = Math.Clamp(at, 0, dest.Count);
         if (same && at == a) return;
-        for (int i = at; i < dest.Count && dest[i].ClipToPrevious; i++)
-            dest[i] = dest[i] with { ClipToPrevious = false };
-        dest.InsertRange(at, block);
+        Gpixel.Core.Edit.EffectStack.InsertBlock(dest, at, block);
         _ctx.Structural(() => p.Edit(same ? UiStrings.S_TimelinePanel_MoveEffects_42F6E813C8 : UiStrings.S_TimelinePanel_MoveEffects_678C3C2110, ProjectChange.Layers, () =>
         {
             if (!same) p.SetLayerEffects(p.IndexOf(source), rest);
@@ -1345,26 +1342,6 @@ public sealed class TimelinePanel : UserControl
         if (target.EffectsCollapsed) p.SetLayerEffectsCollapsed(p.IndexOf(target), false);
         _grid.SelectEffects(Enumerable.Range(at, block.Count).Select(i => (target, i)));
         Say(Ui.Shortcut(same ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_0BC382FE0B) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_MoveEffects_D2762F8B1A,block.Count,target.Name)));
-    }
-
-    /// <summary>효과를 빼면서, 기준 효과가 빠진 클리핑 효과는 다른 효과에 잘못 붙지 않게 클리핑을 해제한다.</summary>
-    private static List<LayerEffect> RemoveEffects(IReadOnlyList<LayerEffect> effects, IReadOnlySet<int> removed)
-    {
-        var result = new List<LayerEffect>(effects.Count - removed.Count);
-        for (int i = 0; i < effects.Count; i++)
-        {
-            if (removed.Contains(i)) continue;
-            var effect = effects[i];
-            if (effect.ClipToPrevious)
-            {
-                int anchor = i - 1;
-                while (anchor >= 0 && effects[anchor].ClipToPrevious) anchor--;
-                if (anchor < 0 || removed.Contains(anchor))
-                    effect = effect with { ClipToPrevious = false };
-            }
-            result.Add(effect);
-        }
-        return result;
     }
 
     /// <summary>효과 목록을 고쳐 넣는다(실행취소 한 단계, 그대로면 기록 없음).</summary>

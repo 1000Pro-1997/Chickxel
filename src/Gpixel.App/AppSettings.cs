@@ -92,6 +92,8 @@ public sealed class AppSettings
     /// <summary>예전 버전의 팔레트 하나(읽기만 — <see cref="Load"/>가 <see cref="Palettes"/> 첫 항목으로 옮기고 다시 쓰지 않음).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Palette { get; set; }
+    /// <summary>팔레트 웹(Lospec) 창에서 마지막으로 고른 정렬(default·downloads·newest·alphabetical·favorites, <see cref="LospecPaletteDialog.SortKey"/>).</summary>
+    public string LospecSort { get; set; } = LospecPaletteDialog.DefaultSortKey;
 
     // 프로젝트·미리보기
     public float LastPpu { get; set; } = 16f;
