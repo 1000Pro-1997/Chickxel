@@ -506,7 +506,7 @@ public sealed class ChatWindow : Window
 
     /// <summary>
     /// 도움말 내용: AI가 할 수 있는 일(MCP 서버가 실제로 내놓는 도구를 묶음별로 — 묶음에 없는 도구는 "그 밖의 도구"),
-    /// 예시 부탁(누르면 <paramref name="useExample"/>), 잘 쓰는 요령. 맨 위 단추는 <paramref name="close"/>.
+    /// 예시 부탁(누르면 <paramref name="useExample"/>), 잘 쓰는 요령, Discord 제보 단추. 맨 위 단추는 <paramref name="close"/>.
     /// </summary>
     private Control BuildHelp(Action close, Action<string> useExample)
     {
@@ -566,6 +566,10 @@ public sealed class ChatWindow : Window
             row.Children.Add(text);
             stack.Children.Add(row);
         }
+        var feedback = Ui.Button(VectorIcon.MessagesSquare, UiStrings.Chat_Help_Feedback, (_, _) => OpenLink(AppInfo.DiscordUrl)).Tip(AppInfo.DiscordUrl);
+        feedback.HorizontalAlignment = HorizontalAlignment.Left;
+        feedback.Margin = new Thickness(0, 6, 0, 0);
+        stack.Children.Add(feedback);
         return stack;
     }
 

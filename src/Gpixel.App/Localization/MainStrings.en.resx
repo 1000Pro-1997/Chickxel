@@ -347,4 +347,5 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Edit_AddOutline" xml:space="preserve"><value>Add outline</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>Replace color</value></data>
   <data name="Menu_Help_Guide" xml:space="preserve"><value>Guide…</value></data>
+  <data name="Menu_Help_Discord" xml:space="preserve"><value>Report a bug or idea (Discord)…</value></data>
 </root>

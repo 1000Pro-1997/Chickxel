@@ -30,4 +30,4 @@
 
 ## 기여
 
-버그 신고와 기능 제안은 [Issues](https://github.com/1000Pro-1997/GPixel/issues)에 남겨 주세요(신고 양식에 버전·OS를 적어 주세요 — 버전은 **도움말 > Gpixel 정보…**). 풀 리퀘스트는 `dotnet build Gpixel.sln`·`dotnet test Gpixel.sln`이 통과하는 상태로 보내 주세요.
+버그 제보·불편한 점·기능 제안은 [Discord](https://discord.com/channels/1563526135827144895/1563527912735510539)에 남겨 주세요(앱의 **도움말 > 제보·아이디어 (Discord)…**). GitHub 계정이 있으면 [Issues](https://github.com/1000Pro-1997/GPixel/issues)도 받습니다(신고 양식에 버전·OS를 적어 주세요 — 버전은 **도움말 > Gpixel 정보…**). 풀 리퀘스트는 `dotnet build Gpixel.sln`·`dotnet test Gpixel.sln`이 통과하는 상태로 보내 주세요. Discord 주소는 앱에서 `AppInfo.DiscordUrl` 한 곳에 있습니다.

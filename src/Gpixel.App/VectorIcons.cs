@@ -72,6 +72,8 @@ public enum VectorIcon
     Image,
     /// <summary>반짝임(AI로 하기).</summary>
     Sparkles,
+    /// <summary>겹친 말풍선 두 개(Discord 제보·아이디어).</summary>
+    MessagesSquare,
 }
 
 public static class VectorIcons
@@ -221,6 +223,11 @@ public static class VectorIcons
         [
             "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
             "M20 3v4", "M22 5h-4", "M4 17v2", "M5 18H3",
+        ],
+        VectorIcon.MessagesSquare =>
+        [
+            "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
+            "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1",
         ],
         _ => [],
     };

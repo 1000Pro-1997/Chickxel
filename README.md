@@ -1,6 +1,6 @@
 # Gpixel
 
-**홈페이지·사용 설명서: <https://1000pro-1997.github.io/GPixel/>**
+**홈페이지·사용 설명서: <https://1000pro-1997.github.io/GPixel/>** · **제보·아이디어: [Discord](https://discord.com/channels/1563526135827144895/1563527912735510539)**
 
 게임(특히 Unity 2D)용 픽셀 아트 편집기입니다(Windows·macOS). 저장하면 PNG 스프라이트 시트와 Unity `.meta`가 함께 나옵니다. 앱 안에서는 **F1**로 같은 사용 가이드를 엽니다.
 
@@ -63,7 +63,7 @@
 - [FEATURES.md](FEATURES.md): 화면·도구·파일·스킨·AI 채팅·단축키 등 모든 기능 설명
 - [DEVELOPMENT.md](DEVELOPMENT.md): 빌드·배포·홈페이지·번역·기여 방법
 - [CHANGELOG.md](CHANGELOG.md): 버전별 바뀐 점
-- 버그 신고·기능 제안: [Issues](https://github.com/1000Pro-1997/GPixel/issues)
+- 버그 제보·불편한 점·기능 제안: [Discord](https://discord.com/channels/1563526135827144895/1563527912735510539) (또는 GitHub [Issues](https://github.com/1000Pro-1997/GPixel/issues))
 
 ## 라이선스
 

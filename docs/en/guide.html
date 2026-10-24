@@ -33,6 +33,7 @@
 <a href="guide.html" aria-current="page">Guide</a>
 <a class="hide-sm" href="index.html#download">Download</a>
 <a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
+<a class="hide-sm" href="https://discord.com/channels/1563526135827144895/1563527912735510539" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><path d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><path d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"/></svg> Discord</a>
 </nav>
 <label class="lang" title="Language"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="Language">
 <option value="ko">한국어</option>
@@ -68,7 +69,7 @@
 </li>
 <li class="toc-label">Manual</li>
 <li><a href="#start">Getting started</a>
-<ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li></ol>
+<ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li><li><a href="#start-feedback">Feedback</a></li></ol>
 </li>
 <li><a href="#screen">Screen layout</a>
 <ol><li><a href="#screen-top-bar">Menu and top bar</a></li><li><a href="#screen-common-controls">Number fields and menus</a></li><li><a href="#screen-toolbar">Toolbar</a></li><li><a href="#screen-file-browser">File browser</a></li><li><a href="#screen-palette">Palette</a></li><li><a href="#screen-color-picker">Color picker</a></li><li><a href="#screen-canvas">Canvas</a></li><li><a href="#screen-timeline">Timeline</a></li><li><a href="#screen-timeline-select">Selecting in the timeline</a></li><li><a href="#screen-timeline-edit">Editing the timeline</a></li><li><a href="#screen-tags">Tags</a></li><li><a href="#screen-layer-effects">Layer effects</a></li><li><a href="#screen-preview">Preview</a></li><li><a href="#screen-export">Export dialog</a></li><li><a href="#screen-gif">Export as animated GIF</a></li><li><a href="#screen-tool-settings">Tool options</a></li><li><a href="#screen-status-bar">Status bar</a></li></ol>
@@ -276,6 +277,16 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Check for updates</strong>: asks GitHub for the latest version (can be turned off).</li>
 <li><strong>Palette web (Lospec)</strong>: downloads palette lists and sample images only when you open that window. Favorite palettes are stored only on your computer.</li>
 <li><strong>AI chat</strong>: only while you use that window, the Claude Code or Codex CLI installed on your computer connects to Anthropic or OpenAI with your login.</li>
+</ul>
+
+<h3 id="start-feedback">Feedback</h3>
+<p>Please post bugs, annoyances and feature ideas on the <a href="https://discord.com/channels/1563526135827144895/1563527912735510539" target="_blank" rel="noopener">Gpixel Discord</a>. In the app, <strong>Help &gt; Report a bug or idea (Discord)…</strong> opens it directly. If you have a GitHub account, you can also use <a href="https://github.com/1000Pro-1997/GPixel/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+<p>When reporting a bug, including the following helps get it fixed quickly:</p>
+<ul>
+<li><strong>Version</strong>: shown in <strong>Help &gt; About Gpixel…</strong>.</li>
+<li><strong>OS</strong>: Windows 10/11, or your macOS version (Apple Silicon or Intel).</li>
+<li><strong>Steps</strong>: what you did, what happened, and what you expected.</li>
+<li><strong>Error log</strong>: if an error dialog appeared, its log file (<a href="#files-crash-log">When errors occur</a>). A screenshot helps too.</li>
 </ul>
 </section>
 
@@ -796,7 +807,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="files-crash-log">When errors occur</h3>
 <p>Even when an unexpected error occurs, the app doesn't quit; it shows a "You can keep working" dialog. Details are logged in <code>Gpixel/Logs</code> in the settings folder (last 20).</p>
-<div class="note">Find the logs with <strong>Help &gt; Open error log folder</strong>. Please attach that file when reporting a bug. If the error forces the app to quit, modified documents are saved separately in <code>Gpixel/Recovery/</code>.</div>
+<div class="note">Find the logs with <strong>Help &gt; Open error log folder</strong>. Report right away with <strong>Report on Discord</strong> in the error dialog or see <a href="#start-feedback">Feedback</a>, and please attach that file. If the error forces the app to quit, modified documents are saved separately in <code>Gpixel/Recovery/</code>.</div>
 </section>
 
 <section class="doc" id="parts">
@@ -1225,7 +1236,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <footer>
 <div class="wrap">
 <span><strong>Gpixel</strong> · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
-<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
+<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> · <a href="https://discord.com/channels/1563526135827144895/1563527912735510539" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
 </div>
 </footer>
 <script>

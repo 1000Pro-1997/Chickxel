@@ -2809,4 +2809,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Refs_Tool_TooLargeForPixels" xml:space="preserve"><value>{width}×{height} is too large for pixel text (up to {max} per side). Use as="image".</value></data>
   <data name="Refs_Tool_BadFrameRange" xml:space="preserve"><value>Invalid frame_range "{text}". Use "current", "all" or "start-end" between 0 and {max}.</value></data>
   <data name="Refs_Tool_ReadOnly" xml:space="preserve"><value>"{id}" is built in and can't be changed.</value></data>
+  <data name="About_Discord" xml:space="preserve"><value>Discord (bugs and ideas)</value></data>
+  <data name="Crash_ReportOnDiscord" xml:space="preserve"><value>Report on Discord</value></data>
+  <data name="Crash_ReportOnDiscord_Hint" xml:space="preserve"><value>When reporting on Discord, please attach the log file above.</value></data>
+  <data name="Chat_Help_Feedback" xml:space="preserve"><value>Bugs or ideas? Tell us on Discord</value></data>
 </root>
