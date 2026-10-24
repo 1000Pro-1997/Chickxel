@@ -11,6 +11,7 @@
 <link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
@@ -22,14 +23,14 @@
 })();
 </script>
 </head>
-<body>
+<body class="guide-page">
 <header class="top">
-<div class="wrap">
-<a class="brand" href="index.html"><img class="pixel" src="assets/icon.png" alt="">Gpixel</a>
-<nav>
-<a class="hide-sm" href="index.html#features">기능</a>
-<a href="index.html#download">내려받기</a>
-<a href="guide.html">사용 가이드</a>
+<div class="bar">
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<nav class="nav">
+<a href="index.html">홈</a>
+<a href="guide.html" aria-current="page">사용 가이드</a>
+<a class="hide-sm" href="index.html#download">내려받기</a>
 <a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
 </nav>
 <label class="lang" title="언어"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="언어">
@@ -40,7 +41,7 @@
 </header>
 
 <main>
-<div class="wrap manual" id="manual">
+<div class="manual" id="manual">
 <aside class="toc">
 <h2>사용 가이드</h2>
 <ol>
@@ -994,7 +995,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <footer>
 <div class="wrap">
-<span>Gpixel · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
+<span><strong>Gpixel</strong> · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
 <span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
 </div>
 </footer>
@@ -1006,25 +1007,7 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
   var page = location.pathname.split('/').pop() || '';
   location.href = ('en/') + page + location.hash;
 });
-// 목차: 지금 읽는 장을 표시.
-(function () {
-  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
-  var byId = {};
-  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
-  var heads = Array.prototype.slice.call(document.querySelectorAll('.doc h2, .doc h3'))
-    .map(function (h) { return h.tagName === 'H2' ? h.parentElement : h; })
-    .filter(function (el) { return byId[el.id]; });
-  function update() {
-    var current = null;
-    for (var i = 0; i < heads.length; i++) {
-      if (heads[i].getBoundingClientRect().top < 120) current = heads[i]; else break;
-    }
-    links.forEach(function (a) { a.classList.remove('active'); });
-    if (current) byId[current.id].classList.add('active');
-  }
-  document.addEventListener('scroll', update, { passive: true });
-  update();
-})();
 </script>
+<script src="guide.js"></script>
 </body>
 </html>

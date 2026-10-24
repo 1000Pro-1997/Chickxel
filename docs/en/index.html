@@ -11,6 +11,7 @@
 <link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/">
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/">
 <link rel="icon" href="../assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../style.css">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
@@ -24,12 +25,12 @@
 </head>
 <body>
 <header class="top">
-<div class="wrap">
-<a class="brand" href="index.html"><img class="pixel" src="../assets/icon.png" alt="">Gpixel</a>
-<nav>
-<a class="hide-sm" href="index.html#features">Features</a>
-<a href="index.html#download">Download</a>
+<div class="bar">
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="../assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<nav class="nav">
+<a href="index.html" aria-current="page">Home</a>
 <a href="guide.html" target="_blank" rel="noopener">Guide</a>
+<a class="hide-sm" href="index.html#download">Download</a>
 <a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
 </nav>
 <label class="lang" title="Language"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="Language">
@@ -41,43 +42,43 @@
 
 <main>
 <section class="hero">
-<div class="wrap">
-<h1><img class="pixel" src="../assets/icon.png" alt="">Gpixel</h1>
-<p class="lead">A pixel art editor for Unity 2D games. Draw frames, layers, parts and skins — saving writes a PNG sprite sheet and Unity <code>.meta</code> alongside.</p>
+<div class="wrap hero-grid">
+<div class="hero-copy">
+<span class="eyebrow">Pixel art editor for Unity 2D</span>
+<h1>A pixel art editor<br><span class="highlight">built for Unity 2D.</span></h1>
+<p class="lead">Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside.</p>
 <div class="buttons">
 <a class="btn primary" id="main-download" href="#download"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Download</span></a>
 <a class="btn" href="guide.html" target="_blank" rel="noopener">Guide</a>
-<a class="btn" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
 </div>
-<p class="small os-links">Direct download: <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Windows</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">macOS (Apple Silicon)</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">macOS (Intel)</a></p>
-<p class="small">Free · Open source (MIT) · Windows 10/11 · macOS 12+ · Nothing else to install</p>
-<div class="shot"><img src="../assets/screenshot-en.png" alt="Gpixel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right" width="1440" height="860"></div>
+<p class="os-links">Direct download: <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Windows</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">macOS (Apple Silicon)</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">macOS (Intel)</a></p>
+<div class="facts"><span class="fact">Free</span><span class="fact">Open source (MIT)</span><span class="fact">Windows 10/11</span><span class="fact">macOS 12+</span><span class="fact">Nothing to install</span></div>
+</div>
+<div class="hero-board"><img src="../assets/screenshot-en.png" alt="Gpixel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right" width="1440" height="860"></div>
 </div>
 </section>
 
-<section class="section" id="features">
+<section class="section alt" id="features">
 <div class="wrap">
-<h2>What it does</h2>
-<p class="sub">Everything you need to draw sprites that go straight into your game.</p>
+<div class="section-title"><span class="eyebrow">Features</span><h2>What it does</h2><p>Everything you need to draw sprites that go straight into your game.</p></div>
 <div class="features">
-<div class="card"><h3>Save straight to Unity</h3><p>Every save writes a PNG sprite sheet and Unity <code>.meta</code> (slices and pivots included). Work right inside your Unity project folder.</p></div>
-<div class="card"><h3>Frames · Layers · Tags</h3><p>Manage frames and layers on the timeline and split animations with tags. Check motion with onion skin and the live preview.</p></div>
-<div class="card"><h3>Parts and skins</h3><p>Draw characters as parts like head, body and arms, and swap outfits and gear with skins. Exports Unity Sprite Libraries too.</p></div>
-<div class="card"><h3>Layer effects</h3><p>From outline, shadow and glow to animated shake, explosion and fade — layered on without touching your pixels.</p></div>
-<div class="card"><h3>AI chat</h3><p>Draw and edit by talking to Claude Code or Codex on your own computer. Uses your own account, no API key, and every step can be undone.</p></div>
-<div class="card"><h3>Palettes and languages</h3><p>Import Lospec palettes and convert to a palette in one step. Korean and English built in; add any language yourself with a CSV.</p></div>
+<div class="card"><span class="num">01</span><h3>Save straight to Unity</h3><p>Every save writes a PNG sprite sheet and Unity <code>.meta</code> (slices and pivots included). Work right inside your Unity project folder.</p></div>
+<div class="card"><span class="num">02</span><h3>Frames · Layers · Tags</h3><p>Manage frames and layers on the timeline and split animations with tags. Check motion with onion skin and the live preview.</p></div>
+<div class="card"><span class="num">03</span><h3>Parts and skins</h3><p>Draw characters as parts like head, body and arms, and swap outfits and gear with skins. Exports Unity Sprite Libraries too.</p></div>
+<div class="card"><span class="num">04</span><h3>Layer effects</h3><p>From outline, shadow and glow to animated shake, explosion and fade — layered on without touching your pixels.</p></div>
+<div class="card"><span class="num">05</span><h3>AI chat</h3><p>Draw and edit by talking to Claude Code or Codex on your own computer. Uses your own account, no API key, and every step can be undone.</p></div>
+<div class="card"><span class="num">06</span><h3>Palettes and languages</h3><p>Import Lospec palettes and convert to a palette in one step. Korean and English built in; add any language yourself with a CSV.</p></div>
 </div>
 </div>
 </section>
 
-<section class="section alt" id="download">
+<section class="section" id="download">
 <div class="wrap">
-<h2>Download</h2>
-<p class="sub">Unzip and run. The app tells you about new versions and updates itself.</p>
-<div class="buttons left">
-<a class="btn primary" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Windows</a>
-<a class="btn" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>macOS (Apple Silicon)</a>
-<a class="btn" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>macOS (Intel)</a>
+<div class="section-title"><span class="eyebrow">Download</span><h2>Download</h2><p>Unzip and run. The app tells you about new versions and updates itself.</p></div>
+<div class="downloads">
+<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"><strong>Windows</strong><span>Windows 10/11 · x64</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Download zip</span></a>
+<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"><strong>macOS · Apple Silicon</strong><span>M1 or later · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Download zip</span></a>
+<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Download zip</span></a>
 </div>
 <p class="note-line">If you see a signing warning on first launch, see <a href="guide.html#start-first-run" target="_blank" rel="noopener">First launch</a> in the guide. What changed in each version is on the <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> page.</p>
 </div>
@@ -86,7 +87,7 @@
 
 <footer>
 <div class="wrap">
-<span>Gpixel · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
+<span><strong>Gpixel</strong> · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
 <span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
 </div>
 </footer>
