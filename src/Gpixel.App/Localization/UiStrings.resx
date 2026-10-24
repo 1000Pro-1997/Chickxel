@@ -9640,6 +9640,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Help_NoResults" xml:space="preserve"><value>검색 결과 없음</value></data>
   <data name="Help_OpenWebsite" xml:space="preserve"><value>홈페이지에서 열기</value></data>
   <data name="Help_WatchVideo" xml:space="preserve"><value>영상은 홈페이지에서 보기</value></data>
+  <data name="Help_WatchLarger" xml:space="preserve"><value>홈페이지에서 크게 보기</value></data>
   <data name="Help_ChapterContents" xml:space="preserve"><value>이 장의 내용</value></data>
   <data name="Help_Previous" xml:space="preserve"><value>이전</value></data>
   <data name="Help_Next" xml:space="preserve"><value>다음</value></data>

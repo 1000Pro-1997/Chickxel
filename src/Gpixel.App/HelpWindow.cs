@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Avalonia.Automation;
 using Avalonia.Controls.Documents;
 using Gpixel.App.Localization;
 using Gpixel.Core.Help;
@@ -604,9 +605,46 @@ public sealed class HelpWindow : Window
         };
     }
 
+    /// <summary>움짤(내장 WebP, 없으면 홈페이지 영상 링크만). 대체 글은 풍선 도움말·접근성 이름이고, 찾은 말이 있으면 노란 테두리로 칠하고 그리로 스크롤한다.</summary>
     private Control Media(HelpBlock b)
     {
         var url = PageUrl(b.Page ?? _page.Id);
+        var altText = b.Alt ?? "";
+        var anim = string.IsNullOrEmpty(b.Src) ? null : AnimatedImage.TryCreate(MediaOpener(Path.GetFileNameWithoutExtension(b.Src)));
+        if (anim is null) return MediaLink(url, altText);
+
+        anim.Tip(altText);
+        AutomationProperties.SetName(anim, altText);
+        bool hit = _terms.Count > 0 && HelpSearch.Matches(altText, _terms).Count > 0;
+        var frame = new Border
+        {
+            BorderBrush = hit ? Yellow : AppTheme.BorderBrush,
+            BorderThickness = new Thickness(hit ? 2 : 1),
+            CornerRadius = new CornerRadius(8),
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = anim,
+        };
+        if (hit) _firstHit ??= frame;
+        var link = new TextBlock
+        {
+            Text = UiStrings.Help_WatchLarger,
+            Foreground = LinkBrush,
+            FontSize = AppTheme.SmallFontSize,
+            Cursor = HandCursor,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        }.Tip(url);
+        link.PointerPressed += (_, e) => { e.Handled = true; Updater.OpenUrl(this, url); };
+        return new StackPanel { Spacing = 4, Margin = new Thickness(0, 2, 0, 14), Children = { frame, link } };
+    }
+
+    /// <summary>내장 움짤 <c>Gpixel.Help.media.&lt;이름&gt;.webp</c>를 여는 함수(붙을 때마다 새로 연다).</summary>
+    private static Func<Stream?> MediaOpener(string name) =>
+        () => typeof(HelpWindow).Assembly.GetManifestResourceStream($"Gpixel.Help.media.{name}.webp");
+
+    /// <summary>움짤이 없을 때: 홈페이지 영상 링크 + 대체 글.</summary>
+    private Control MediaLink(string url, string altText)
+    {
         var link = new TextBlock
         {
             Text = UiStrings.Help_WatchVideo,
@@ -615,7 +653,7 @@ public sealed class HelpWindow : Window
             Cursor = HandCursor,
         }.Tip(url);
         link.PointerPressed += (_, e) => { e.Handled = true; Updater.OpenUrl(this, url); };
-        var alt = Text(new[] { new HelpRun { T = b.Alt ?? "" } }, AppTheme.DimTextBrush, 12.5);
+        var alt = Text(new[] { new HelpRun { T = altText } }, AppTheme.DimTextBrush, 12.5);
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("26,*") };
         grid.Children.Add(new IconView(VectorIcon.Play, Gold) { Width = 15, Height = 15, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 2, 0, 0) });
         var stack = new StackPanel { Spacing = 2, Children = { link, alt } };
