@@ -11,11 +11,10 @@ on:
         required: true
   workflow_dispatch:
     inputs:
-      avatar_only:
-        description: "Update webhook profile icon without sending an announcement"
+      message_id:
+        description: "Existing webhook message to update (empty = new announcement)"
         required: false
-        default: false
-        type: boolean
+        type: string
       tag:
         description: "Published release tag (empty = latest stable release)"
         required: false
@@ -37,37 +36,20 @@ jobs:
     steps:
       - name: Send release details to Discord
         env:
-          AVATAR_ONLY: ${{ inputs.avatar_only || false }}
+          MESSAGE_ID: ${{ inputs.message_id }}
           GH_TOKEN: ${{ github.token }}
           DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
           RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           python3 - <<'PY'
-          import base64
           import json
           import os
+          import re
           import urllib.error
           import urllib.parse
           import urllib.request
           
           repo = os.environ["GITHUB_REPOSITORY"]
-          icon_url = "https://raw.githubusercontent.com/" + repo + "/main/docs/assets/icon-256.png"
-          if os.environ.get("AVATAR_ONLY") == "true":
-              with urllib.request.urlopen(icon_url, timeout=30) as response:
-                  icon = response.read()
-              hook = os.environ["DISCORD_RELEASE_WEBHOOK"].rstrip("/")
-              avatar = "data:image/png;base64," + base64.b64encode(icon).decode("ascii")
-              request = urllib.request.Request(hook,
-                  data=json.dumps({"avatar": avatar}).encode("utf-8"),
-                  headers={"Content-Type": "application/json", "User-Agent": "GPixel-release-notify"},
-                  method="PATCH")
-              try:
-                  with urllib.request.urlopen(request, timeout=30) as response:
-                      result = json.load(response)
-              except urllib.error.HTTPError as error:
-                  raise SystemExit("Avatar update failed (HTTP " + str(error.code) + ")") from None
-              print("GPixel webhook profile icon updated")
-              raise SystemExit(0)
           tag = os.environ.get("RELEASE_TAG", "").strip()
           if not tag:
               event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
@@ -82,9 +64,30 @@ jobs:
           if release.get("draft"):
               raise SystemExit("Refusing to announce a draft release")
           url = release["html_url"]
-          body = (release.get("body") or "업데이트 설명은 릴리스 페이지에서 확인해 주세요.").strip()
+          headings = []
+          fence = None
+          for line in (release.get("body") or "").splitlines():
+              marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+              if marker:
+                  token = marker.group(1)
+                  if fence is None:
+                      fence = token
+                  elif token[0] == fence[0] and len(token) >= len(fence):
+                      fence = None
+                  continue
+              if fence:
+                  continue
+              heading = re.match(r"^ {0,3}#{2,6}\\s+(.+?)\\s*$", line)
+              if not heading:
+                  continue
+              title = re.sub(r"\\s+#+\\s*$", "", heading.group(1)).strip()
+              if title.lower() in ("english", "한국어", "korean"):
+                  headings.append("\\n**" + title + "**")
+              elif title:
+                  headings.append("- " + title)
+          body = "\\n".join(headings).strip() or "소제목이 없습니다. 전체 업데이트 내역에서 확인해 주세요."
           if len(body) > 3800:
-              body = body[:3750].rsplit("\n", 1)[0] + "\n\n나머지 내용은 전체 업데이트 내역에서 확인해 주세요."
+              body = body[:3750].rsplit("\\n", 1)[0] + "\\n\\n나머지 소제목은 전체 업데이트 내역에서 확인해 주세요."
           downloads = []
           labels = {"Gpixel-windows-x64.zip": "Windows",
                     "Gpixel-macos-arm64.zip": "macOS Apple Silicon",
@@ -98,14 +101,18 @@ jobs:
                    "fields": [{"name": "다운로드", "value": " · ".join(downloads) or "[릴리스 페이지](" + url + ")"},
                               {"name": "전체 업데이트 내역", "value": "[GitHub에서 보기](" + url + ")"}],
                    "footer": {"text": "GPixel Updates"}}
-          payload = {"username": "GPixel Updates", "avatar_url": icon_url, "allowed_mentions": {"parse": []}, "embeds": [embed]}
+          payload = {"username": "GPixel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
           hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
           if not hook.startswith("https://discord.com/api/webhooks/"):
               raise SystemExit("DISCORD_RELEASE_WEBHOOK is missing or invalid")
-          request = urllib.request.Request(hook + "?wait=true",
+          message_id = os.environ.get("MESSAGE_ID", "").strip()
+          if message_id and not message_id.isdigit():
+              raise SystemExit("MESSAGE_ID must contain digits only")
+          delivery_url = hook + ("/messages/" + message_id if message_id else "?wait=true")
+          request = urllib.request.Request(delivery_url,
               data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
               headers={"Content-Type": "application/json", "User-Agent": "GPixel-release-notify"},
-              method="POST")
+              method="PATCH" if message_id else "POST")
           try:
               with urllib.request.urlopen(request, timeout=30) as response:
                   message = json.load(response)
