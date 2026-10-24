@@ -218,7 +218,7 @@ public static class LayerEffects
     /// <summary>
     /// <paramref name="width"/>×<paramref name="height"/> 그림에 켜진 효과들이 그림 밖으로 넓힐 수 있는 최대 여백(차례대로 쌓임: 외곽선 뒤 그림자면 외곽선까지 그림자가 진다).
     /// 프레임 범위·진행은 보지 않으므로 어느 프레임의 효과 묶음 여백보다도 작지 않다(효과를 빼면 여백은 줄기만 함) — 모든 프레임 같은 크기로 넓힐 때 쓴다.
-    /// 터지기는 거리(+ 중력 쪽), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이 × 높이%(+ 물결 폭만큼 양옆) 넓힌다.
+    /// 터지기는 가로·세로 거리(세로는 중력 방향만큼 추가), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이%(+ 물결 폭만큼 양옆) 넓힌다.
     /// 흔들기·둥실둥실·녹아내리기·회전·충격파 고리는 <see cref="MotionPadding.Of"/>(세기·높이·거리·돌린 그림·반지름)만큼 넓힌다. 홀로그램은 좌우로 글리치 최대 밀림,
     /// 테두리 빛이면 사방으로 1px 더.
     /// 넓힌 크기가 <see cref="PixelImage.MaxSize"/>를 넘는 축은 여백 없이(그 축은 이미지 끝에서 잘림).
@@ -245,10 +245,10 @@ public static class LayerEffects
                     b = Math.Max(b, b + s.OffsetY);
                     break;
                 case ExplodeEffect x:
-                    l += x.Distance;
-                    r += x.Distance;
-                    t += x.Distance + Math.Max(0, -x.Gravity);
-                    b += x.Distance + Math.Max(0, x.Gravity);
+                    l += x.DistanceX;
+                    r += x.DistanceX;
+                    t += x.DistanceY + Math.Max(0, -x.Gravity);
+                    b += x.DistanceY + Math.Max(0, x.Gravity);
                     break;
                 case SquashEffect q:
                 {
@@ -552,6 +552,9 @@ public static class LayerEffects
         int f = e.FlashFrames, step = e.FrameStep;
         int flash = f > 0 && step >= 1 && step <= f ? (255 * (f - step + 1) + f / 2) / f : 0;
         if (u <= 0 && flash == 0) return; // 시작 = 원래 그림 그대로
+        double fade = !e.Fade ? 1 : e.FadeStart >= 100 ? (u >= 1 ? 0 : 1) : Math.Clamp((1 - u) / (1 - e.FadeStart / 100.0), 0, 1);
+        if (e.DistanceX == 0 && e.DistanceY == 0 && e.Gravity == 0 && flash == 0 && fade == 1 && (!e.Shrink || e.PieceSize == 1))
+            return; // 움직임·시각 변화가 없으면 픽셀 배열을 복사하지 않는다
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
         var flashColor = flash > 0
@@ -562,7 +565,6 @@ public static class LayerEffects
         var src = (Color32[])px.Clone();
         Array.Clear(px);
 
-        double fade = !e.Fade ? 1 : e.FadeStart >= 100 ? (u >= 1 ? 0 : 1) : Math.Clamp((1 - u) / (1 - e.FadeStart / 100.0), 0, 1);
         if (fade > 0)
         {
             var (cx, cy) = e.Center switch
@@ -589,11 +591,13 @@ public static class LayerEffects
                     double radial = 0.4 + 0.6 * Math.Min(1, Math.Sqrt(vx * vx + vy * vy) / reach);
                     double speedRandom = Random(e.Seed, gx, gy, 2);
                     double angleX = angle + jitter * spreadX * Math.PI / 2;
-                    double travelX = e.Distance * radial * (1 - spreadX * 0.6 * speedRandom) * t;
-                    int dx = (int)Math.Round(Math.Cos(angleX) * travelX, MidpointRounding.AwayFromZero);
+                    double travelX = e.DistanceX * radial * (1 - spreadX * 0.6 * speedRandom) * t;
+                    int dx = e.DistanceX == 0 ? 0 : (int)Math.Round(Math.Cos(angleX) * travelX, MidpointRounding.AwayFromZero);
                     double angleY = spreadX == spreadY ? angleX : angle + jitter * spreadY * Math.PI / 2;
-                    double travelY = spreadX == spreadY ? travelX : e.Distance * radial * (1 - spreadY * 0.6 * speedRandom) * t;
-                    int dy = (int)Math.Round(Math.Sin(angleY) * travelY + fall, MidpointRounding.AwayFromZero);
+                    double travelY = spreadX == spreadY && e.DistanceX == e.DistanceY ? travelX
+                        : e.DistanceY * radial * (1 - spreadY * 0.6 * speedRandom) * t;
+                    int dy = e.DistanceY == 0 ? (int)Math.Round(fall, MidpointRounding.AwayFromZero)
+                        : (int)Math.Round(Math.Sin(angleY) * travelY + fall, MidpointRounding.AwayFromZero);
                     for (int yy = y0 + inset; yy < y0 + inset + size; yy++)
                     {
                         int ty = yy + dy;

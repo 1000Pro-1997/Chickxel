@@ -6,11 +6,14 @@ using Gpixel.App.Localization;
 namespace Gpixel.App;
 
 /// <summary>
-/// 환경 설정: 일반(실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
+/// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
 {
+    private readonly ComboBox _language;
+    private IReadOnlyList<UiLanguageInfo> _languages = [];
+    private readonly TextBlock _languageStatus;
     private readonly NumericUpDown _undo;
     private readonly CheckBox _historyOn;
     private readonly NumericUpDown _historyDays, _historyMb;
@@ -28,13 +31,24 @@ public sealed class PreferencesDialog : DialogBase
 
     /// <param name="keys">명령 Id → 지금 단축키.</param>
     /// <param name="history">남긴 실행취소 기록(지금 용량 표시·모두 지우기).</param>
-    public PreferencesDialog(int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
+    /// <param name="language">지금 화면 언어 코드.</param>
+    public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         _commands = commands;
         _keys = commands.ToDictionary(c => c.Id, c => keys.TryGetValue(c.Id, out var k) ? k.ToList() : c.Defaults.ToList());
+        _language = Ui.Combo(220);
+        FillLanguages(language);
+        _languageStatus = Ui.Label("");
+        _languageStatus.Foreground = AppTheme.DimTextBrush;
+        _languageStatus.TextWrapping = TextWrapping.Wrap;
+        var languageNote = Ui.Label(UiStrings.Language_Note);
+        languageNote.Foreground = AppTheme.DimTextBrush;
+        languageNote.TextWrapping = TextWrapping.Wrap;
+        languageNote.MaxWidth = 640;
+        languageNote.HorizontalAlignment = HorizontalAlignment.Left;
 
         _undo = Ui.Num(1, UndoStack.MaxCapacity, Math.Clamp(undoSteps, 1, UndoStack.MaxCapacity), 90)
             .Presets(50, 100, 200, 500, 1000, 2000, 5000, 10000).Unit(UiStrings.S_PreferencesDialog_PreferencesDialog_B8D956911B).RecentKey("undo.steps");
@@ -72,6 +86,19 @@ public sealed class PreferencesDialog : DialogBase
             : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_80B1F80264,AppInfo.VersionText));
         updateNote.Foreground = AppTheme.DimTextBrush;
         var general = Ui.Stack(
+            Ui.Label(UiStrings.Language_Title, bold: true),
+            Ui.Row(Ui.Label(UiStrings.Language_Label), _language),
+            Ui.Row(
+                Ui.Button(UiStrings.Language_Export, (_, _) => ExportLanguages()),
+                Ui.Button(UiStrings.Language_Import, (_, _) => ImportLanguages()),
+                Ui.Button(UiStrings.Language_OpenFolder, (_, _) =>
+                {
+                    Directory.CreateDirectory(UiLanguage.Folder);
+                    Platform.OpenFolder(UiLanguage.Folder);
+                })),
+            languageNote,
+            _languageStatus,
+            Ui.Label(UiStrings.Language_UndoTitle, bold: true),
             Ui.Row(Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_1F7416F7D9), _undo, Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PreferencesDialog_PreferencesDialog_20DF2ED64F,UndoStack.DefaultCapacity,UndoStack.MaxCapacity))),
             Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_D87D2E02E0),
             Ui.Label(UiStrings.S_PreferencesDialog_PreferencesDialog_02113E25F5, bold: true),
@@ -116,6 +143,59 @@ public sealed class PreferencesDialog : DialogBase
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
         AddHandler(KeyDownEvent, OnCaptureKeyDown, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>고른 화면 언어 코드(다시 시작하면 적용).</summary>
+    public string Language => _language.SelectedIndex >= 0 && _language.SelectedIndex < _languages.Count
+        ? _languages[_language.SelectedIndex].Code
+        : UiLanguage.Current;
+
+    private void FillLanguages(string select)
+    {
+        _languages = UiLanguage.Available();
+        _language.Items.Clear();
+        foreach (var l in _languages) _language.Items.Add(l.Label);
+        int index = _languages.ToList().FindIndex(l => string.Equals(l.Code, select, StringComparison.OrdinalIgnoreCase));
+        _language.SelectedIndex = index >= 0 ? index : _languages.ToList().FindIndex(l => l.Code == UiLanguage.English);
+    }
+
+    private void ExportLanguages()
+    {
+        var path = Ui.SaveFile(this, UiStrings.Language_Export, null, "gpixel-translations.csv", ".csv", new FileFilter("CSV", "*.csv"));
+        if (path is null) return;
+        try
+        {
+            UiLanguage.ExportCsv(path);
+            _languageStatus.Text = UiStrings.FormatLanguage_Exported(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(this, UiStrings.FormatLanguage_Failed(ex.Message));
+        }
+    }
+
+    private void ImportLanguages()
+    {
+        var path = Ui.OpenFile(this, UiStrings.Language_Import, null, new FileFilter("CSV", "*.csv"));
+        if (path is null) return;
+        UiLanguage.ImportResult result;
+        try
+        {
+            result = UiLanguage.ImportCsv(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            Ui.Error(this, UiStrings.FormatLanguage_Failed(ex.Message));
+            return;
+        }
+        var lines = result.Languages.Select(l => UiStrings.FormatLanguage_Imported(l.Name, l.Code, l.Count)).ToList();
+        if (result.Languages.Count == 0) lines.Add(UiStrings.Language_ImportNone);
+        if (result.InvalidCodes.Count > 0) lines.Add(UiStrings.FormatLanguage_InvalidCodes(string.Join(", ", result.InvalidCodes)));
+        if (result.UnknownKeys > 0) lines.Add(UiStrings.FormatLanguage_UnknownKeys(result.UnknownKeys));
+        // 넣은 언어가 하나면 바로 고른다(내장 언어를 덮은 것이면 고른 것을 그대로 둠).
+        var pick = result.Languages.Count == 1 && !UiLanguage.IsBuiltIn(result.Languages[0].Code) ? result.Languages[0].Code : Language;
+        FillLanguages(pick);
+        _languageStatus.Text = string.Join("\n", lines);
     }
 
     public int UndoSteps => (int)_undo.NumValue();

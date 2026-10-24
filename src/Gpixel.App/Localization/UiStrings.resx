@@ -23,6 +23,22 @@
   <data name="Fade_Direction" xml:space="preserve"><value>방향</value></data>
   <data name="Fade_In" xml:space="preserve"><value>페이드 인</value></data>
   <data name="Fade_Out" xml:space="preserve"><value>페이드 아웃</value></data>
+  <data name="Explode_DistanceYTip" xml:space="preserve"><value>Y 거리가 0이어도 중력이 0이 아니면 위아래로 움직입니다. 수직 이동을 멈추려면 중력도 0으로 설정하세요.</value></data>
+  <data name="Language_Title" xml:space="preserve"><value>언어 (Language)</value><comment>환경 설정 맨 위 묶음 제목. 다른 언어 사용자도 찾도록 영어 단어를 함께 적음.</comment></data>
+  <data name="Language_Label" xml:space="preserve"><value>화면 언어</value></data>
+  <data name="Language_WithCsv" xml:space="preserve"><value>{name} (CSV로 고침)</value><comment>name = 내장 언어 이름. 언어 폴더의 CSV가 내장 문구 위에 덮어쓸 때 목록에 보이는 이름.</comment></data>
+  <data name="Language_Export" xml:space="preserve"><value>번역 CSV로 내보내기…</value></data>
+  <data name="Language_Import" xml:space="preserve"><value>CSV로 언어 추가…</value></data>
+  <data name="Language_OpenFolder" xml:space="preserve"><value>언어 폴더 열기</value></data>
+  <data name="Language_Note" xml:space="preserve"><value>바꾼 언어는 Gpixel을 다시 시작하면 적용됩니다. 새 언어: 내보낸 CSV의 첫 줄에 언어 코드 열(예: ja)을 더하고 #name 줄에 언어 이름을 적어 번역한 뒤 "CSV로 언어 추가"로 넣으세요. 같은 언어 코드면 덮어쓰고, 빈 칸은 내장 문구(없으면 영어)로 보입니다. 넣은 언어는 언어 폴더의 CSV 파일을 지우면 없어지고, 내장 언어를 고친 것이면 원래 문구로 돌아갑니다.</value></data>
+  <data name="Language_UndoTitle" xml:space="preserve"><value>실행취소</value></data>
+  <data name="Language_Exported" xml:space="preserve"><value>번역 CSV를 내보냈습니다: {path}</value></data>
+  <data name="Language_Failed" xml:space="preserve"><value>번역 CSV를 처리하지 못했습니다: {error}</value></data>
+  <data name="Language_Imported" xml:space="preserve"><value>{name} ({code}): 문구 {count}개를 넣었습니다.</value><comment>내장 언어(ko·en)는 내장 문구와 다른 문구 수.</comment></data>
+  <data name="Language_ImportNone" xml:space="preserve"><value>넣을 언어 열이 없습니다. 첫 줄의 key 다음 칸에 언어 코드(예: ja)를 적으세요.</value></data>
+  <data name="Language_InvalidCodes" xml:space="preserve"><value>언어 코드로 쓸 수 없어 건너뛴 열(영문자·숫자·-·_만): {codes}</value></data>
+  <data name="Language_UnknownKeys" xml:space="preserve"><value>Gpixel에 없는 키 {count}개는 무시했습니다.</value></data>
+  <data name="Language_RestartNotice" xml:space="preserve"><value>화면 언어를 바꿨습니다. Gpixel을 다시 시작하면 적용됩니다.</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Gpixel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>
@@ -3681,10 +3697,6 @@ echo __LOGIN_FAILED__
     <value>순서</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:680 · FillSettings · "순서"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_FillSettings_534E0855BE" xml:space="preserve">
-    <value>px (끝까지 날아가는 거리)</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:631 · FillSettings · "px (끝까지 날아가는 거리)"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_FillSettings_541ACE652F" xml:space="preserve">
     <value>가장자리 2px</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:668 · FillSettings · "가장자리 2px"</comment>
@@ -3754,16 +3766,16 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:682 · FillSettings · "가로·세로 세기를 따로 정해 출렁입니다. 0%인 축은 고정되고 픽셀은 늘이거나 줄여도 또렷합니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_98D374602B" xml:space="preserve">
-    <value>거리</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:631 · FillSettings · "거리"</comment>
+    <value>날아가는 거리</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · FillSettings · "날아가는 거리"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_9926E8F548" xml:space="preserve">
     <value>번</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:678 · FillSettings · "번"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_9E6E8E6EFE" xml:space="preserve">
-    <value>흩어짐</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:641 · FillSettings · "흩어짐"</comment>
+    <value>무작위 변화</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · FillSettings · "무작위 변화"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_A81FAFD1EE" xml:space="preserve">
     <value>두께</value>
@@ -3786,8 +3798,8 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:626 · FillSettings · "보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_BE76D99E55" xml:space="preserve">
-    <value>다른 흩어짐(시드를 무작위로)</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:654 · FillSettings · "다른 흩어짐(시드를 무작위로)"</comment>
+    <value>다른 무작위 변화(시드를 무작위로)</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · FillSettings · "다른 무작위 변화(시드를 무작위로)"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_C4DC26AC14" xml:space="preserve">
     <value>° (지나가는 방향, 45 = ↗)</value>
@@ -4395,8 +4407,8 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:480 · Summary · $"녹아내리기 · {melt.Distance}px · 불규칙 {melt.Irregularity}%"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_DE0B23D063" xml:space="preserve">
-    <value>터지기 · {0}px · {1}</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:466 · Summary · $"터지기 · {x.Distance}px · {Centers[(int)x.Center].Split(' ')[0]}"</comment>
+    <value>터지기 · X {0}px Y {1}px · {2}</value>
+    <comment>src/Gpixel.App\LayerEffectsDialog.cs · Summary · "터지기 · X {0}px Y {1}px · {2}"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_E233F2401C" xml:space="preserve">
     <value>그림자 · ({0}, {1}) · {2}</value>

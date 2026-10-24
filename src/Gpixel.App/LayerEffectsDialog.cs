@@ -98,7 +98,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         public static readonly NumKind Adjust = new("effect.adjust", "%", [-100, -75, -50, -25, -10, 0, 10, 25, 50, 75, 100]);
         /// <summary>빈도(프레임 중 몇 %).</summary>
         public static readonly NumKind Rate = new("effect.rate", "%", [0, 5, 10, 15, 20, 25, 33, 50, 75, 100]);
-        /// <summary>흩어짐·불규칙함(0~100%).</summary>
+        /// <summary>무작위 변화·불규칙함(0~100%).</summary>
         public static readonly NumKind Random = new("effect.random", "%", [0, 10, 20, 25, 33, 50, 66, 75, 90, 100]);
         /// <summary>진행 중 시작 시점(0~100%).</summary>
         public static readonly NumKind Progress = new("effect.progress", "%", [0, 10, 20, 25, 33, 40, 50, 60, 66, 75, 90]);
@@ -113,7 +113,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         /// <summary>그림자 X·Y 옮김(음수 = 왼쪽·위).</summary>
         public static readonly NumKind Offset = new("effect.offset", "px", [-8, -4, -3, -2, -1, 0, 1, 2, 3, 4, 8]);
         /// <summary>날아가는·흘러내리는 거리, 고리 반지름.</summary>
-        public static readonly NumKind Distance = new("effect.distance", "px", [4, 8, 12, 16, 24, 32, 48, 64, 96, 128]);
+        public static readonly NumKind Distance = new("effect.distance", "px", [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]);
         /// <summary>중력(음수 = 위로).</summary>
         public static readonly NumKind Gravity = new("effect.gravity", "px", [-16, -8, -4, -2, 0, 2, 4, 6, 8, 16, 32]);
         /// <summary>터지기 조각 크기(1~4px).</summary>
@@ -525,7 +525,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ShadowEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E233F2401C,s.OffsetX,s.OffsetY,s.Color.ToHex()) + (s.Dither != ShadowDither.None ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_FDDC95CFEA,ShadowDithers[(int)s.Dither]) : ""),
         RimLightEffect r => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0B62ABBEE2,Directions.First(d => d.Dir == r.Direction).Name,r.Size),
         ColorOverlayEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F824955A0D,Blends[(int)c.Blend],c.Amount,c.Color.ToHex()),
-        ExplodeEffect x => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DE0B23D063,x.Distance,Centers[(int)x.Center].Split(' ')[0]) + (x.KeepOriginal ? UiStrings.S_LayerEffectsDialog_Summary_30757AF9AF : ""),
+        ExplodeEffect x => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DE0B23D063,x.DistanceX,x.DistanceY,Centers[(int)x.Center].Split(' ')[0]) + (x.KeepOriginal ? UiStrings.S_LayerEffectsDialog_Summary_30757AF9AF : ""),
         ShineEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F451DAAC0A,s.Angle,s.Width,s.Strength),
         SquashEffect q => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_963828451F,q.WidthAmount,q.HeightAmount,q.Bounces),
         GradientOverlayEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_51DCB418AA,g.Gradient.Stops.Count,Blends[(int)g.Blend],g.Strength)
@@ -695,7 +695,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
             case ExplodeEffect x:
             {
                 ExplodeEffect X(LayerEffect v) => (ExplodeEffect)v;
-                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_98D374602B, NumEditor(1, ExplodeEffect.MaxDistance, x.Distance, NumKinds.Distance, v => Set(o => X(o) with { Distance = v })), Ui.Label(UiStrings.S_LayerEffectsDialog_FillSettings_534E0855BE));
+                var distanceY = NumEditor(0, ExplodeEffect.MaxDistance, x.DistanceY, NumKinds.Distance, v => Set(o => X(o) with { DistanceY = v }));
+                ToolTip.SetTip(distanceY, UiStrings.Explode_DistanceYTip);
+                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_98D374602B,
+                    Ui.Label("X"), NumEditor(0, ExplodeEffect.MaxDistance, x.DistanceX, NumKinds.Distance, v => Set(o => X(o) with { DistanceX = v })), Ui.Label("px"),
+                    Ui.Label("Y"), distanceY, Ui.Label("px"));
                 var cx = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterX, CenterKind(vertical: false), v => Set(o => X(o) with { CenterX = v }));
                 var cy = NumEditor(-PixelImage.MaxSize, PixelImage.MaxSize, x.CenterY, CenterKind(vertical: true), v => Set(o => X(o) with { CenterY = v }));
                 cx.IsEnabled = cy.IsEnabled = x.Center == ExplodeCenter.Custom;

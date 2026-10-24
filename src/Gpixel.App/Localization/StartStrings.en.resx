@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Subtitle" xml:space="preserve"><value>Pixel art editor for games — choose a folder or a Unity project.</value></data>
+  <data name="OpenFolder" xml:space="preserve"><value>Open folder…</value></data>
+  <data name="NewProject" xml:space="preserve"><value>New project…</value></data>
+  <data name="RefreshHub" xml:space="preserve"><value>Refresh Hub list</value></data>
+  <data name="RecentFolders" xml:space="preserve"><value>Recent folders (double-click)</value></data>
+  <data name="RecentFiles" xml:space="preserve"><value>Recent files (double-click)</value></data>
+  <data name="HubProjects" xml:space="preserve"><value>Unity Hub projects (double-click to open the Assets folder)</value></data>
+  <data name="HubLoadFailed" xml:space="preserve"><value>Couldn't read the Unity Hub list ({error}). Use "Open folder" to choose one yourself.</value></data>
+  <data name="HubEmpty" xml:space="preserve"><value>No projects are registered. Use "Open folder" to choose one yourself.</value></data>
+  <data name="HubFolderMissing" xml:space="preserve"><value>Project folder not found:
+{path}</value></data>
+</root>

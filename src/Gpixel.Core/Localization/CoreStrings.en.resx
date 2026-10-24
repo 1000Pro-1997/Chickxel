@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Png_InvalidFile" xml:space="preserve"><value>Not a PNG file.</value></data>
+  <data name="Png_InvalidChunkLength" xml:space="preserve"><value>Invalid PNG chunk length.</value></data>
+  <data name="Png_InvalidHeader" xml:space="preserve"><value>Invalid IHDR.</value></data>
+  <data name="Png_HeaderMissing" xml:space="preserve"><value>PNG header (IHDR) is missing.</value></data>
+  <data name="Png_UnsupportedColorType" xml:space="preserve"><value>Unsupported PNG color type: {colorType}</value></data>
+  <data name="Png_UnsupportedBitDepth" xml:space="preserve"><value>Unsupported PNG bit depth: {bitDepth}</value></data>
+  <data name="Png_PaletteMissing" xml:space="preserve"><value>Palette (PLTE) is missing.</value></data>
+  <data name="Png_ImageTooLarge" xml:space="preserve"><value>Image is too large: {width}x{height}</value></data>
+  <data name="Png_InvalidFilter" xml:space="preserve"><value>Invalid PNG filter value: {filter}</value></data>
+  <data name="Png_Truncated" xml:space="preserve"><value>PNG data ended unexpectedly.</value></data>
+  <data name="TranslationCsv_NoKeyHeader" xml:space="preserve"><value>Not a translation CSV. The first cell of the first row must be "key".</value></data>
+  <data name="TranslationCsv_DuplicateLanguage" xml:space="preserve"><value>Two columns have the same language code: {code}</value></data>
+</root>

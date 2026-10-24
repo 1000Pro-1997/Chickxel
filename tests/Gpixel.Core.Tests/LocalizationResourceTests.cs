@@ -2,8 +2,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Gpixel.Core.IO;
-using Gpixel.Core.Localization;
 
 namespace Gpixel.Core.Tests;
 
@@ -29,12 +27,27 @@ internal static class TestCulture
 public class LocalizationResourceTests
 {
     [Fact]
-    public void Neutral_korean_resource_is_used_when_english_is_untranslated()
+    public void Translations_have_every_key_and_the_same_placeholders_as_korean()
     {
-        var message = CoreStrings.ResourceManager.GetString("Png_InvalidFile", CultureInfo.GetCultureInfo("en-US"));
-        Assert.Equal("PNG 파일이 아닙니다.", message);
-        using var invalidPng = new MemoryStream(new byte[8]);
-        Assert.Equal(message, Assert.Throws<InvalidDataException>(() => PngIO.Load(invalidPng)).Message);
+        var files = Files();
+        var neutral = files.Where(f => f.Culture is null).ToDictionary(f => f.BaseName);
+        var problems = new List<string>();
+        foreach (var file in files.Where(f => f.Culture is not null))
+        {
+            var source = neutral[file.BaseName];
+            var name = $"{file.BaseName}.{file.Culture}";
+            problems.AddRange(source.Values.Keys.Except(file.Values.Keys).Select(k => $"{name}: 빠진 키 {k}"));
+            problems.AddRange(file.Values.Keys.Except(source.Values.Keys).Select(k => $"{name}: 모르는 키 {k}"));
+            foreach (var (key, value) in file.Values)
+            {
+                if (!source.Values.TryGetValue(key, out var ko)) continue;
+                var errors = new List<string>();
+                var expected = string.Join(",", Placeholders(ko, errors));
+                var actual = string.Join(",", Placeholders(value, errors));
+                if (expected != actual) problems.Add($"{name}:{key}: 자리 표시자 {{{expected}}} ≠ {{{actual}}}");
+            }
+        }
+        Assert.Empty(problems);
     }
 
     private static readonly string Root = Path.Combine(AppContext.BaseDirectory, "localization");

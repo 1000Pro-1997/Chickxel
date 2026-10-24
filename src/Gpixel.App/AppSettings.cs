@@ -15,7 +15,7 @@ public sealed class AppSettings
     public List<string> RecentFiles { get; set; } = new();
     public string? LastFolder { get; set; }
     public bool IncludeSubfolders { get; set; } = true;
-    /// <summary>화면 언어(문화권 이름, 예: "ko"). null = OS 언어. 그 언어 번역이 없으면 기본(한국어) 문구.</summary>
+    /// <summary>화면 언어 코드(예: "ko", "en", CSV로 더한 "ja"). 처음 켤 때 컴퓨터 언어로 정함(맞는 언어가 없으면 영어) — <see cref="Localization.UiLanguage"/>.</summary>
     public string? Language { get; set; }
 
     // 창 배치

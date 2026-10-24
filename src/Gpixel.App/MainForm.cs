@@ -1634,13 +1634,16 @@ public sealed class MainForm : Window, Ai.IAiHost
             Ui.Row(Ui.Label(MainStrings.Message_277), color, Ui.InfoBadge(MainStrings.Message_278)));
     }
 
-    /// <summary>환경 설정(실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
+    /// <summary>환경 설정(화면 언어·실행취소 횟수·실행취소 기록 남기기·자동 저장·앱 휴지통 보관 기간·업데이트 자동 확인·단축키).</summary>
     private void ShowPreferences()
     {
-        var dlg = new PreferencesDialog(_settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
+        var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        // 화면 언어는 다시 시작해야 바뀐다(정적 필드에 담긴 문구도 있음).
+        bool languageChanged = !string.Equals(dlg.Language, _settings.Language, StringComparison.OrdinalIgnoreCase);
+        _settings.Language = dlg.Language;
         _settings.UndoSteps = dlg.UndoSteps;
         bool turnedOff = _settings.UndoHistoryEnabled && !dlg.UndoHistoryEnabled;
         _settings.UndoHistoryEnabled = dlg.UndoHistoryEnabled;
@@ -1666,6 +1669,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         _settings.Shortcuts = custom.Count > 0 ? custom : null;
         ApplyShortcuts();
         _settings.Save();
+        if (languageChanged) Ui.Info(this, UiStrings.Language_RestartNotice);
     }
 
     /// <summary>시작 화면: 지금 문서를 닫는다(저장 안 한 변경은 메모리에 남김 — <see cref="CloseProject"/>).</summary>

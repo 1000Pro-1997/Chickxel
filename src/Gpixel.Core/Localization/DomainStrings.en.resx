@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Effect_Outline" xml:space="preserve"><value>Outline</value></data>
+  <data name="Effect_Shadow" xml:space="preserve"><value>Shadow</value></data>
+  <data name="Effect_EdgeLightShade" xml:space="preserve"><value>Edge light · shade</value></data>
+  <data name="Effect_ColorOverlay" xml:space="preserve"><value>Color overlay</value></data>
+  <data name="Effect_Explode" xml:space="preserve"><value>Explode</value></data>
+  <data name="Effect_LightSweep" xml:space="preserve"><value>Light sweep</value></data>
+  <data name="Effect_SquashStretch" xml:space="preserve"><value>Squash &amp; stretch</value></data>
+  <data name="Effect_Afterimage" xml:space="preserve"><value>Afterimage</value></data>
+  <data name="Effect_Disappear" xml:space="preserve"><value>Disappear</value></data>
+  <data name="Effect_Appear" xml:space="preserve"><value>Appear</value></data>
+  <data name="Effect_Fade" xml:space="preserve"><value>Fade in · out</value></data>
+  <data name="Effect_Blink" xml:space="preserve"><value>Blink</value></data>
+  <data name="Effect_Bob" xml:space="preserve"><value>Bob</value></data>
+  <data name="Effect_ColorAdjust" xml:space="preserve"><value>Color adjustment</value></data>
+  <data name="Effect_ColorCycle" xml:space="preserve"><value>Color cycle</value></data>
+  <data name="Effect_GradientChange" xml:space="preserve"><value>Gradient shift</value></data>
+  <data name="Effect_HitFlash" xml:space="preserve"><value>Hit flash</value></data>
+  <data name="Effect_Hologram" xml:space="preserve"><value>Hologram</value></data>
+  <data name="Effect_InnerGlow" xml:space="preserve"><value>Inner glow</value></data>
+  <data name="Effect_Melt" xml:space="preserve"><value>Melt</value></data>
+  <data name="Effect_PaletteSwap" xml:space="preserve"><value>Palette swap</value></data>
+  <data name="Effect_Reflection" xml:space="preserve"><value>Reflection</value></data>
+  <data name="Effect_Rotate" xml:space="preserve"><value>Rotate</value></data>
+  <data name="Effect_Shake" xml:space="preserve"><value>Shake</value></data>
+  <data name="Effect_Shockwave" xml:space="preserve"><value>Shockwave ring</value></data>
+  <data name="Frames_InvalidRange" xml:space="preserve"><value>Invalid frame range: {from}–{to}</value></data>
+  <data name="Frames_TooFew" xml:space="preserve"><value>Frame count ({count}) is less than the range length ({length}) — shrinking isn't supported.</value></data>
+  <data name="Frames_TooMany" xml:space="preserve"><value>Up to {max} frames are allowed.</value></data>
+  <data name="Frames_Stretch" xml:space="preserve"><value>Stretch evenly</value></data>
+  <data name="Frames_HoldFirst" xml:space="preserve"><value>Hold first frame</value></data>
+  <data name="Frames_HoldLast" xml:space="preserve"><value>Hold last frame</value></data>
+  <data name="Frames_Repeat" xml:space="preserve"><value>Repeat</value></data>
+  <data name="Image_InvalidPixelArray" xml:space="preserve"><value>Pixel array length doesn't match the size.</value></data>
+  <data name="Image_InvalidSize" xml:space="preserve"><value>Image size must be between 1 and {max}: {width}x{height}</value></data>
+  <data name="Image_DifferentCopySize" xml:space="preserve"><value>Only images of the same size can be copied.</value></data>
+  <data name="Image_DifferentComparisonSize" xml:space="preserve"><value>Only images of the same size can be compared.</value></data>
+  <data name="Transform_RegionSizeMismatch" xml:space="preserve"><value>Lifted pixel size differs from the region rectangle.</value></data>
+  <data name="Gradient_EmptyStops" xml:space="preserve"><value>At least one stop is required.</value></data>
+  <data name="Canvas_InvalidSize" xml:space="preserve"><value>Canvas size must be between 1 and {max}: {width}×{height}</value></data>
+  <data name="Canvas_EffectTooLarge" xml:space="preserve"><value>To fit the effect without clipping, the canvas must be {width}×{height}px (max {max}×{max}px).</value></data>
+  <data name="Palette_NoOpaqueColors" xml:space="preserve"><value>The palette has no opaque colors.</value></data>
+  <data name="Mask_NegativeSize" xml:space="preserve"><value>Region size can't be negative.</value></data>
+  <data name="Mask_BitSizeMismatch" xml:space="preserve"><value>Region bit count differs from the rectangle size.</value></data>
+  <data name="Fill_SourceSizeMismatch" xml:space="preserve"><value>Fill source image size differs from the target.</value></data>
+  <data name="Selection_RegionSizeMismatch" xml:space="preserve"><value>Floating pixel size differs from the region rectangle.</value></data>
+  <data name="History_CorruptPixelPatch" xml:space="preserve"><value>A pixel patch in the undo history is corrupted.</value></data>
+  <data name="History_PatchSizeMismatch" xml:space="preserve"><value>Patch size differs from the image size.</value></data>
+  <data name="Atlas_InvalidSpriteSize" xml:space="preserve"><value>Invalid sprite size: {size}</value></data>
+  <data name="Document_UntitledName" xml:space="preserve"><value>New image</value></data>
+  <data name="Document_IgnoreSidecar" xml:space="preserve"><value>Couldn't read the edit info file (.gpixel.json), so it was ignored: {error}</value></data>
+  <data name="Document_NoSavePath" xml:space="preserve"><value>No save path.</value></data>
+  <data name="File_NameExists" xml:space="preserve"><value>A file with the same name already exists: {name}</value></data>
+  <data name="Preset_ReadFailed" xml:space="preserve"><value>Couldn't read the export preset file: {error}</value></data>
+  <data name="Preset_NewerVersion" xml:space="preserve"><value>This preset file is from a newer Gpixel (format version {version}).</value></data>
+  <data name="Gif_NoFrames" xml:space="preserve"><value>No frames to write to GIF.</value></data>
+  <data name="Gif_FrameSizeMismatch" xml:space="preserve"><value>GIF frames have different sizes.</value></data>
+  <data name="Gif_SizeTooLarge" xml:space="preserve"><value>GIF size is limited to {max}px ({width}×{height}).</value></data>
+  <data name="Lospec_InvalidObject" xml:space="preserve"><value>The Lospec response is not an object.</value></data>
+  <data name="Lospec_ReadFailed" xml:space="preserve"><value>Couldn't read the Lospec response: {error}</value></data>
+  <data name="Export_CurrentOutfit" xml:space="preserve"><value>Current outfit</value></data>
+  <data name="Export_SaveProjectFirst" xml:space="preserve"><value>Save the project before exporting.</value></data>
+  <data name="Export_DuplicateFile" xml:space="preserve"><value>Export file names collide ({name}). Rename the frame sheet, part atlas, tag, part, or skin.</value></data>
+  <data name="Sidecar_Empty" xml:space="preserve"><value>The sidecar is empty.</value></data>
+  <data name="UnityHub_ListReadFailed" xml:space="preserve"><value>Can't read the Unity Hub list: {error}</value></data>
+  <data name="UnityHub_ListNotFound" xml:space="preserve"><value>Unity Hub project list file not found.</value></data>
+  <data name="UnityHub_DatabaseReadFailed" xml:space="preserve"><value>Can't read the Unity Hub list (hub.db): {error}</value></data>
+  <data name="UnityHub_CorruptList" xml:space="preserve"><value>The Unity Hub list file is corrupted: {error}</value></data>
+  <data name="UnityHub_UnknownListFormat" xml:space="preserve"><value>Unknown Unity Hub list format.</value></data>
+  <data name="Update_ReadFailed" xml:space="preserve"><value>Couldn't read release info: {error}</value></data>
+  <data name="Update_InvalidObject" xml:space="preserve"><value>Release info is not an object.</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>The undo history is empty.</value></data>
+  <data name="History_Corrupt" xml:space="preserve"><value>The undo history is corrupted.</value></data>
+  <data name="History_CorruptMessage" xml:space="preserve"><value>The undo history is corrupted: {error}</value></data>
+  <data name="History_UnsupportedVersion" xml:space="preserve"><value>Can't read undo history format version ({version}).</value></data>
+  <data name="History_CorruptChunkMessage" xml:space="preserve"><value>An undo history chunk is corrupted: {error}</value></data>
+  <data name="History_CorruptCellImage" xml:space="preserve"><value>A cell image in the undo history is corrupted.</value></data>
+  <data name="History_CorruptChunkName" xml:space="preserve"><value>The undo history is corrupted (chunk name).</value></data>
+  <data name="History_MissingChunkFile" xml:space="preserve"><value>An undo history chunk file is missing.</value></data>
+  <data name="History_CorruptChunk" xml:space="preserve"><value>An undo history chunk is corrupted.</value></data>
+  <data name="History_UnsavableStep" xml:space="preserve"><value>Undo step can't be saved: {type}</value></data>
+  <data name="History_CannotReadWhilePainting" xml:space="preserve"><value>Can't read the undo history while drawing.</value></data>
+  <data name="History_ProjectMismatch" xml:space="preserve"><value>The undo history doesn't match the project file.</value></data>
+  <data name="Project_RenameRestoreFailed" xml:space="preserve"><value>Renaming failed, and the previous file name couldn't be restored.</value></data>
+  <data name="Project_InvalidFile" xml:space="preserve"><value>Not a Gpixel project file, or it is corrupted: {error}</value></data>
+  <data name="Project_InvalidCanvas" xml:space="preserve"><value>Invalid canvas size: {width}x{height}</value></data>
+  <data name="Project_UnusedCell" xml:space="preserve"><value>Ignored an unused cell file: {name}</value></data>
+  <data name="Project_MissingInfo" xml:space="preserve"><value>Project info (project.json) is missing.</value></data>
+  <data name="Project_EmptyInfo" xml:space="preserve"><value>Project info is empty.</value></data>
+  <data name="Project_CorruptInfo" xml:space="preserve"><value>Project info (project.json) is corrupted: {error}</value></data>
+  <data name="Project_NewerVersion" xml:space="preserve"><value>This file was made with a newer Gpixel (format version {version}). This version can read up to {current}.</value></data>
+  <data name="Project_CellReadFailed" xml:space="preserve"><value>Couldn't read a cell, so it was cleared ({name}): {error}</value></data>
+  <data name="Project_CellResized" xml:space="preserve"><value>Cell size didn't match, so it was aligned to the top-left: {name}</value></data>
+  <data name="Project_CombinedLayers" xml:space="preserve"><value>Combined {count} layers of the old atlas into one image per part (visible layers only).</value></data>
+  <data name="Project_UnknownEffect" xml:space="preserve"><value>Skipped an unknown effect ({type}) on layer "{layer}".</value></data>
+  <data name="Project_RepairedHierarchy" xml:space="preserve"><value>The layer group structure was invalid and has been repaired.</value></data>
+  <data name="Project_MigratedLegacyOutfit" xml:space="preserve"><value>Moved the old "current outfit + outfit presets" frame sheet setting to "selected skins" — the current outfit file (unsuffixed name) is no longer created. If needed, save the current outfit as an outfit and select it.</value></data>
+  <data name="Merge_NoFrames" xml:space="preserve"><value>No frames.</value></data>
+  <data name="Merge_DurationCountMismatch" xml:space="preserve"><value>Number of frame durations differs from the frame count.</value></data>
+  <data name="Merge_FrameSizeMismatch" xml:space="preserve"><value>Frame images have different sizes.</value></data>
+  <data name="Merge_NoSources" xml:space="preserve"><value>No files to merge.</value></data>
+  <data name="Merge_Keep" xml:space="preserve"><value>Keeping {kept} of {name}.</value></data>
+  <data name="Merge_KeepGroupAsParts" xml:space="preserve"><value>Keeping {kept} of {name} — images are added as new parts of group "{group}".</value></data>
+  <data name="Merge_KeepAside" xml:space="preserve"><value>Adding {kept} of {name} alongside as is.</value></data>
+  <data name="Merge_LayersToParts" xml:space="preserve"><value>Adding {count} layers of {name} as {count} parts.</value></data>
+  <data name="Merge_BlankCover" xml:space="preserve"><value>Blank cover image: hides all parts of group "{group}" (including the original parts).</value></data>
+  <data name="Merge_KeepGroupAsSkins" xml:space="preserve"><value>Keeping {kept} of {name} — images are added as new skins of group "{group}".</value></data>
+  <data name="Merge_AppendSkins" xml:space="preserve"><value>Adding {count} skins from group "{source}" of {name} to group "{target}".</value></data>
+  <data name="Merge_GroupAside" xml:space="preserve"><value>Group "{source}" of {name} has different parts from group "{target}", so it is added separately.</value></data>
+  <data name="Merge_GrewPart" xml:space="preserve"><value>, part enlarged to {width}×{height}</value></data>
+  <data name="Merge_NewSkin" xml:space="preserve"><value>{name} → new skin "{skin}" in group "{group}" (part "{part}"{grown}).</value></data>
+  <data name="Merge_KeepFrameStructure" xml:space="preserve"><value>Keeping {kept} of {name} (layers with the same name and settings are joined).</value></data>
+  <data name="Merge_RenameTag" xml:space="preserve"><value>Tag "{name}" conflicts, so it is renamed to "{renamed}".</value></data>
+  <data name="Merge_KeepLayerStructure" xml:space="preserve"><value>the layer structure</value></data>
+  <data name="Merge_KeepGroupsAndSkins" xml:space="preserve"><value>the groups and skins</value></data>
+  <data name="Merge_KeepGroups" xml:space="preserve"><value>the groups</value></data>
+  <data name="Naming_Rows" xml:space="preserve"><value>{keys} / row {row}</value></data>
+  <data name="Project_UntitledName" xml:space="preserve"><value>New project</value></data>
+  <data name="Project_PartCelSizeMismatch" xml:space="preserve"><value>Cel size must match the part size.</value></data>
+  <data name="Project_CanvasCelSizeMismatch" xml:space="preserve"><value>Cel size must match the canvas size.</value></data>
+  <data name="Project_ChangeCel" xml:space="preserve"><value>Change cel</value></data>
+  <data name="Project_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Project_ChangedCelSizeMismatch" xml:space="preserve"><value>The changed cel image size differs from the original cel.</value></data>
+  <data name="Project_TargetCanvasSizeMismatch" xml:space="preserve"><value>Target image size differs from the canvas.</value></data>
+  <data name="Project_NotGroupLayer" xml:space="preserve"><value>Not a group layer.</value></data>
+  <data name="Project_LockedLayerCannotDraw" xml:space="preserve"><value>Can't draw on a locked layer.</value></data>
+  <data name="Project_GroupCannotDraw" xml:space="preserve"><value>Can't draw on a group layer — select a part layer.</value></data>
+  <data name="Project_NotPartLayer" xml:space="preserve"><value>Not a part layer.</value></data>
+  <data name="Project_AddLayer" xml:space="preserve"><value>Add layer</value></data>
+  <data name="Project_AddGroup" xml:space="preserve"><value>Add group</value></data>
+  <data name="Project_AddPartRequiresGroup" xml:space="preserve"><value>Parts can only be added to a group layer in this project.</value></data>
+  <data name="Project_AddPart" xml:space="preserve"><value>Add part</value></data>
+  <data name="Project_AutoLayoutBlocksMove" xml:space="preserve"><value>Group "{name}" uses auto layout, so its parts can't be moved — turn off auto layout first.</value></data>
+  <data name="Project_MovePart" xml:space="preserve"><value>Part position</value></data>
+  <data name="Project_GroupNotInProject" xml:space="preserve"><value>Not a group layer in this project.</value></data>
+  <data name="Project_DisableAutoLayout" xml:space="preserve"><value>Turn off auto layout</value></data>
+  <data name="Project_AutoLayout" xml:space="preserve"><value>Auto layout</value></data>
+  <data name="Project_AutoLayoutSettings" xml:space="preserve"><value>Auto layout settings</value></data>
+  <data name="Project_ResizePart" xml:space="preserve"><value>Part size</value></data>
+  <data name="Project_PartPivot" xml:space="preserve"><value>Part pivot</value></data>
+  <data name="Project_PartBorder" xml:space="preserve"><value>Part border</value></data>
+  <data name="Project_DefaultLayerName" xml:space="preserve"><value>Layer {number}</value></data>
+  <data name="Project_DefaultGroupName" xml:space="preserve"><value>Group</value></data>
+  <data name="Project_DefaultPartName" xml:space="preserve"><value>Part</value></data>
+  <data name="Project_DefaultSkinName" xml:space="preserve"><value>Skin</value></data>
+  <data name="Project_DefaultOutfitName" xml:space="preserve"><value>Outfit</value></data>
+  <data name="ExportPreset_ImportedSuffix" xml:space="preserve"><value> (imported)</value></data>
+  <data name="Project_CopiedName" xml:space="preserve"><value>{name} copy</value></data>
+  <data name="Project_PartSkinName" xml:space="preserve"><value>{part} skin</value></data>
+  <data name="Project_DuplicateLayer" xml:space="preserve"><value>Duplicate layer</value></data>
+  <data name="Project_CannotDeleteLastLayer" xml:space="preserve"><value>The last layer can't be deleted.</value></data>
+  <data name="Project_DeleteLayer" xml:space="preserve"><value>Delete layer</value></data>
+  <data name="Project_MoveLayer" xml:space="preserve"><value>Move layer</value></data>
+  <data name="Project_NoLayerBelow" xml:space="preserve"><value>No layer below to merge with.</value></data>
+  <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>Part and group layers can't be merged down.</value></data>
+  <data name="Project_MergeDown" xml:space="preserve"><value>Merge down</value></data>
+  <data name="Project_LayerProperties" xml:space="preserve"><value>Layer properties</value></data>
+  <data name="Project_LayerEffects" xml:space="preserve"><value>Layer effects</value></data>
+  <data name="Project_CannotBakeGroupEffects" xml:space="preserve"><value>Group effects can't be applied permanently — apply them to parts.</value></data>
+  <data name="Project_CannotBakeLockedLayerEffects" xml:space="preserve"><value>Effects can't be applied permanently to a locked layer.</value></data>
+  <data name="Project_NoEffectsToBake" xml:space="preserve"><value>No effects to apply permanently.</value></data>
+  <data name="Project_BakeEffects" xml:space="preserve"><value>Apply effects permanently</value></data>
+  <data name="Project_SkinNotInGroup" xml:space="preserve"><value>The skin isn't in the group.</value></data>
+  <data name="Project_PartNotInProjectGroup" xml:space="preserve"><value>Not a part layer in a group of this project.</value></data>
+  <data name="Project_AddSkinRequiresGroup" xml:space="preserve"><value>Skins can only be added to a group layer in this project.</value></data>
+  <data name="Project_AddSkin" xml:space="preserve"><value>Add skin</value></data>
+  <data name="Project_DuplicateSkin" xml:space="preserve"><value>Duplicate skin</value></data>
+  <data name="Project_InvalidPartSkin" xml:space="preserve"><value>This skin can't be selected for this part.</value></data>
+  <data name="Project_AddPartSkin" xml:space="preserve"><value>Add part skin</value></data>
+  <data name="Project_DuplicatePartSkin" xml:space="preserve"><value>Duplicate part skin</value></data>
+  <data name="Project_PromoteSkin" xml:space="preserve"><value>Promote to group skin</value></data>
+  <data name="Project_PartNotInGroup" xml:space="preserve"><value>Not a part of the group.</value></data>
+  <data name="Project_CannotDemoteBaseSkin" xml:space="preserve"><value>The first (base) skin can't be made part-only.</value></data>
+  <data name="Project_DemoteSkin" xml:space="preserve"><value>Make part-only</value></data>
+  <data name="Project_EmptySkinName" xml:space="preserve"><value>Skin name is empty.</value></data>
+  <data name="Project_DuplicateSkinName" xml:space="preserve"><value>The group already has a skin with this name: {name}</value></data>
+  <data name="Project_RenameSkin" xml:space="preserve"><value>Skin name</value></data>
+  <data name="Project_CannotDeleteLastSkin" xml:space="preserve"><value>The group's last skin can't be deleted.</value></data>
+  <data name="Project_DeleteSkin" xml:space="preserve"><value>Delete skin</value></data>
+  <data name="Project_ReorderSkin" xml:space="preserve"><value>Skin order</value></data>
+  <data name="Project_PartSkinCannotApplyToGroup" xml:space="preserve"><value>A part-only skin can't be applied to the whole group — apply it to that part.</value></data>
+  <data name="Project_OtherPartSkin" xml:space="preserve"><value>This skin belongs to another part.</value></data>
+  <data name="Project_OutfitNotInProject" xml:space="preserve"><value>Not an outfit in this project.</value></data>
+  <data name="Project_SaveOutfit" xml:space="preserve"><value>Save outfit</value></data>
+  <data name="Project_OverwriteOutfit" xml:space="preserve"><value>Overwrite outfit</value></data>
+  <data name="Project_EmptyOutfitName" xml:space="preserve"><value>Outfit name is empty.</value></data>
+  <data name="Project_DuplicateOutfitName" xml:space="preserve"><value>An outfit with this name already exists: {name}</value></data>
+  <data name="Project_RenameOutfit" xml:space="preserve"><value>Outfit name</value></data>
+  <data name="Project_DeleteOutfit" xml:space="preserve"><value>Delete outfit</value></data>
+  <data name="Project_ReorderOutfit" xml:space="preserve"><value>Outfit order</value></data>
+  <data name="Project_MissingOutfitGroup" xml:space="preserve"><value>Group "{name}" is missing</value></data>
+  <data name="Project_MissingOutfitGroupSkin" xml:space="preserve"><value>Group "{group}" has no skin "{skin}"</value></data>
+  <data name="Project_MissingOutfitPart" xml:space="preserve"><value>Part "{name}" is missing</value></data>
+  <data name="Project_MissingOutfitPartSkin" xml:space="preserve"><value>Part "{part}" has no skin "{skin}"</value></data>
+  <data name="Project_AddFrame" xml:space="preserve"><value>Add frame</value></data>
+  <data name="Project_DuplicateFrame" xml:space="preserve"><value>Duplicate frame</value></data>
+  <data name="Project_ExtendFrames" xml:space="preserve"><value>Extend frames</value></data>
+  <data name="Project_CannotDeleteLastFrame" xml:space="preserve"><value>The last frame can't be deleted.</value></data>
+  <data name="Project_DeleteFrame" xml:space="preserve"><value>Delete frame</value></data>
+  <data name="Project_MoveFrame" xml:space="preserve"><value>Move frame</value></data>
+  <data name="Project_FrameDuration" xml:space="preserve"><value>Frame duration</value></data>
+  <data name="Project_FramePivot" xml:space="preserve"><value>Frame pivot</value></data>
+  <data name="Project_FrameName" xml:space="preserve"><value>Frame name</value></data>
+  <data name="Project_AddTag" xml:space="preserve"><value>Add tag</value></data>
+  <data name="Project_EditTag" xml:space="preserve"><value>Edit tag</value></data>
+  <data name="Project_DeleteTag" xml:space="preserve"><value>Delete tag</value></data>
+  <data name="Project_EmptyTagName" xml:space="preserve"><value>Tag name is empty.</value></data>
+  <data name="Project_DuplicateTagName" xml:space="preserve"><value>A tag with this name already exists: {name}</value></data>
+  <data name="Project_InvalidTagRange" xml:space="preserve"><value>Invalid tag frame range: {from}–{to}</value></data>
+  <data name="Project_InvalidImageSize" xml:space="preserve"><value>Image size must be between 1 and {max}: {width}x{height}</value></data>
+  <data name="Project_CanvasSize" xml:space="preserve"><value>Canvas size</value></data>
+  <data name="Project_FlipHorizontal" xml:space="preserve"><value>Flip horizontal</value></data>
+  <data name="Project_FlipVertical" xml:space="preserve"><value>Flip vertical</value></data>
+  <data name="Project_RotateClockwise" xml:space="preserve"><value>Rotate clockwise</value></data>
+  <data name="Project_RotateCounterclockwise" xml:space="preserve"><value>Rotate counterclockwise</value></data>
+  <data name="Project_InvalidPartSize" xml:space="preserve"><value>Part size must be between 1 and {max}: {width}x{height}</value></data>
+  <data name="Project_UnsavableEffect" xml:space="preserve"><value>Effect can't be saved: {type}</value></data>
+  <data name="Import_NoDocument" xml:space="preserve"><value>No document to import.</value></data>
+</root>

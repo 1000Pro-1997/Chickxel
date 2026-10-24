@@ -71,8 +71,11 @@ static class Program
     static int Main(string[] args)
     {
         App.Args = StartupArgs.Parse(args);
-        // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다.
+        // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.
         App.Settings = AppSettings.Load();
+        var languages = Localization.UiLanguage.Available();
+        if (App.Settings.Language is not { } language || !languages.Any(l => string.Equals(l.Code, language, StringComparison.OrdinalIgnoreCase)))
+            App.Settings.Language = Localization.UiLanguage.Detect(System.Globalization.CultureInfo.CurrentUICulture, languages);
         Localization.UiLanguage.Apply(App.Settings.Language);
         return CrashGuard.Run(BuildAvaloniaApp(), args);
     }

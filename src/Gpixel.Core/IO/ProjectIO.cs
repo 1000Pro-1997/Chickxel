@@ -1224,8 +1224,10 @@ public static partial class ProjectIO
         public string? Easing { get; set; }
         public string? Repeat { get; set; }
         public int? RepeatCount { get; set; }
-        /// <summary>터지기.</summary>
+        /// <summary>이전 터지기 프로젝트의 공통 이동 거리(녹아내리기·충격파 고리는 계속 사용).</summary>
         public int? Distance { get; set; }
+        public int? DistanceX { get; set; }
+        public int? DistanceY { get; set; }
         public string? Center { get; set; }
         /// <summary>이전 터지기 프로젝트의 공통 흩어짐. 새 파일은 축별 값만 쓴다.</summary>
         public int? Spread { get; set; }
@@ -1322,7 +1324,7 @@ public static partial class ProjectIO
                 ColorOverlayEffect c => new EffectDto { Type = "overlay", Color = c.Color.ToHex(), Amount = c.Amount, Blend = c.Blend.ToString() },
                 ExplodeEffect x => new EffectDto
                 {
-                    Type = "explode", Distance = x.Distance, Center = x.Center.ToString(), X = x.CenterX, Y = x.CenterY, SpreadX = x.SpreadX, SpreadY = x.SpreadY, Gravity = x.Gravity,
+                    Type = "explode", DistanceX = x.DistanceX, DistanceY = x.DistanceY, Center = x.Center.ToString(), X = x.CenterX, Y = x.CenterY, SpreadX = x.SpreadX, SpreadY = x.SpreadY, Gravity = x.Gravity,
                     PieceSize = x.PieceSize, Fade = x.Fade, FadeStart = x.FadeStart, Shrink = x.Shrink, Seed = x.Seed, KeepOriginal = x.KeepOriginal,
                     FlashFrames = x.FlashFrames, FlashColor = x.FlashColor.ToHex(),
                 },
@@ -1440,7 +1442,7 @@ public static partial class ProjectIO
                     var x = new ExplodeEffect();
                     return Animated(x with
                     {
-                        Distance = Distance ?? x.Distance, Center = EnumOr(Center, x.Center), CenterX = X ?? x.CenterX, CenterY = Y ?? x.CenterY,
+                        DistanceX = DistanceX ?? Distance ?? x.DistanceX, DistanceY = DistanceY ?? Distance ?? x.DistanceY, Center = EnumOr(Center, x.Center), CenterX = X ?? x.CenterX, CenterY = Y ?? x.CenterY,
                         SpreadX = SpreadX ?? Spread ?? x.SpreadX, SpreadY = SpreadY ?? Spread ?? x.SpreadY, Gravity = Gravity ?? x.Gravity, PieceSize = PieceSize ?? x.PieceSize, Fade = Fade ?? x.Fade,
                         FadeStart = FadeStart ?? x.FadeStart, Shrink = Shrink ?? x.Shrink, Seed = Seed ?? x.Seed, KeepOriginal = KeepOriginal ?? x.KeepOriginal,
                         FlashFrames = FlashFrames ?? x.FlashFrames, FlashColor = ColorOr(FlashColor, x.FlashColor),

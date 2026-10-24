@@ -313,21 +313,24 @@ public enum ExplodeCenter
 
 /// <summary>
 /// 터지기: 보이는 픽셀(또는 <see cref="PieceSize"/>×<see cref="PieceSize"/> 조각)이 중심에서 바깥쪽으로 튀어 날아가며 사라진다.
-/// 두 축의 흩어짐은 각각 방향(±90° × %)과 거리(최대 60% 감소)를 무작위로 바꾼다. 두 값이 같으면 기존 흩어짐과 같은 모습이다.
-/// 거리는 <see cref="Distance"/> × (0.4 + 0.6 × 중심에서 떨어진 정도) × 진행, 아래로 <see cref="Gravity"/> × 시간²만큼 더 떨어진다.
+/// 각 축의 이동 = 해당 축의 <see cref="DistanceX"/>·<see cref="DistanceY"/> × (0.4 + 0.6 × 중심에서 떨어진 정도) × 진행 × 방향 성분.
+/// <see cref="SpreadX"/>·<see cref="SpreadY"/>는 방향·거리를 무작위로 바꾸며, Y에는 <see cref="Gravity"/> × 시간²가 별도로 더해진다.
 /// 진행 0(범위 첫 프레임)은 원래 그림 그대로. 조각은 정수 픽셀에 놓이고 알파만 흐려진다(번짐 없음).
 /// </summary>
 public sealed record ExplodeEffect : AnimatedEffect
 {
     public const int MaxDistance = 128, MaxGravity = 64, MaxPieceSize = 4, MaxFlashFrames = 8, MaxSeed = 9999;
 
-    private readonly int _distance = 16, _spreadX = 50, _spreadY = 50, _gravity = 6, _piece = 1, _fadeStart = 40, _seed = 1, _flash;
+    private readonly int _distanceX = 16, _distanceY = 16, _spreadX = 50, _spreadY = 50, _gravity = 6, _piece = 1, _fadeStart = 40, _seed = 1, _flash;
     private readonly int _cx, _cy;
 
     public ExplodeEffect() => Easing = EffectEasing.EaseOut;
 
-    /// <summary>거리: 끝까지 날아가는 최대 px(1~<see cref="MaxDistance"/>).</summary>
-    public int Distance { get => _distance; init => _distance = Math.Clamp(value, 1, MaxDistance); }
+    /// <summary>수평으로 날아가는 최대 거리 0~<see cref="MaxDistance"/>px. 0이면 수평 이동 없음.</summary>
+    public int DistanceX { get => _distanceX; init => _distanceX = Math.Clamp(value, 0, MaxDistance); }
+
+    /// <summary>수직으로 날아가는 최대 거리 0~<see cref="MaxDistance"/>px. 0이어도 중력은 별도로 적용된다.</summary>
+    public int DistanceY { get => _distanceY; init => _distanceY = Math.Clamp(value, 0, MaxDistance); }
 
     public ExplodeCenter Center { get; init; } = ExplodeCenter.Middle;
 
@@ -335,10 +338,10 @@ public sealed record ExplodeEffect : AnimatedEffect
     public int CenterX { get => _cx; init => _cx = Math.Clamp(value, -PixelImage.MaxSize, PixelImage.MaxSize); }
     public int CenterY { get => _cy; init => _cy = Math.Clamp(value, -PixelImage.MaxSize, PixelImage.MaxSize); }
 
-    /// <summary>수평 흩어짐 0~100%: X 이동의 방향·거리 무작위.</summary>
+    /// <summary>수평 무작위 변화 0~100%: X 이동의 방향·거리를 변형한다. 0이어도 기본 이동은 남는다.</summary>
     public int SpreadX { get => _spreadX; init => _spreadX = Math.Clamp(value, 0, 100); }
 
-    /// <summary>수직 흩어짐 0~100%: Y 이동의 방향·거리 무작위.</summary>
+    /// <summary>수직 무작위 변화 0~100%: Y 이동의 방향·거리를 변형한다. 0이어도 기본 이동은 남는다.</summary>
     public int SpreadY { get => _spreadY; init => _spreadY = Math.Clamp(value, 0, 100); }
 
     /// <summary>중력: 끝에서 더 떨어지는 px(음수 = 떠오름), ±<see cref="MaxGravity"/>.</summary>

@@ -26,4 +26,6 @@
   <data name="Png_ImageTooLarge" xml:space="preserve"><value>이미지 크기가 너무 큽니다: {width}x{height}</value><comment>width, height = PNG 원본 픽셀 크기.</comment></data>
   <data name="Png_InvalidFilter" xml:space="preserve"><value>PNG 필터 값이 잘못되었습니다: {filter}</value><comment>filter = PNG 필터 번호.</comment></data>
   <data name="Png_Truncated" xml:space="preserve"><value>PNG 데이터가 중간에 끝났습니다.</value></data>
+  <data name="TranslationCsv_NoKeyHeader" xml:space="preserve"><value>번역 CSV가 아닙니다. 첫 줄 첫 칸이 "key"여야 합니다.</value></data>
+  <data name="TranslationCsv_DuplicateLanguage" xml:space="preserve"><value>같은 언어 코드의 열이 두 개 있습니다: {code}</value><comment>code = 겹친 언어 코드(예: ja).</comment></data>
 </root>

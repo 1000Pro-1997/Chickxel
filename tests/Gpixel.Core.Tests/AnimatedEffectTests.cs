@@ -145,7 +145,7 @@ public class AnimatedEffectTests
 
     // ───────────── 터지기 ─────────────
 
-    private static readonly ExplodeEffect Burst = new() { Distance = 8, SpreadX = 0, SpreadY = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
+    private static readonly ExplodeEffect Burst = new() { DistanceX = 8, DistanceY = 8, SpreadX = 0, SpreadY = 0, Gravity = 0, Fade = false, Easing = EffectEasing.Linear };
 
     [Fact]
     public void Explode_FirstFrameIsOriginal()
@@ -208,7 +208,7 @@ public class AnimatedEffectTests
             {
                 var image = At(src, new ExplodeEffect
                 {
-                    Distance = 32, SpreadX = horizontal, SpreadY = vertical, Seed = seed,
+                    DistanceX = 32, DistanceY = 32, SpreadX = horizontal, SpreadY = vertical, Seed = seed,
                     Gravity = 0, Fade = false, Easing = EffectEasing.Linear,
                 }, 2, 2).Image;
                 int index = Array.FindIndex(image.Pixels, pixel => pixel.A != 0);
@@ -224,6 +224,49 @@ public class AnimatedEffectTests
             changedY |= baseline.Y != vertical.Y;
         }
         Assert.True(changedX && changedY);
+    }
+
+    [Fact]
+    public void Explode_ZeroDistanceAxisStaysPut_AndGravityRemainsIndependent()
+    {
+        var src = Filled(1, 1, Red);
+        bool movedX = false, movedY = false;
+        for (int seed = 1; seed <= 32; seed++)
+        {
+            foreach (bool horizontal in new[] { true, false })
+            {
+                var effect = new ExplodeEffect
+                {
+                    DistanceX = horizontal ? 32 : 0, DistanceY = horizontal ? 0 : 32,
+                    SpreadX = 100, SpreadY = 100, Gravity = 0, Fade = false,
+                    Seed = seed, Easing = EffectEasing.Linear,
+                };
+                var (image, source) = At(src, effect, 2, 2);
+                int index = Array.FindIndex(image.Pixels, pixel => pixel.A != 0);
+                Assert.True(index >= 0);
+                int x = index % image.Width, y = index / image.Width;
+                if (horizontal)
+                {
+                    Assert.Equal(source.Y, y);
+                    movedX |= x != source.X;
+                    Assert.Equal(new EffectPadding(32, 0, 32, 0), LayerEffects.Padding([effect], 1, 1));
+                }
+                else
+                {
+                    Assert.Equal(source.X, x);
+                    movedY |= y != source.Y;
+                    Assert.Equal(new EffectPadding(0, 32, 0, 32), LayerEffects.Padding([effect], 1, 1));
+                }
+            }
+        }
+        Assert.True(movedX && movedY);
+        var gravityOnly = new ExplodeEffect { DistanceX = 0, DistanceY = 0, Gravity = 6, Fade = false, Easing = EffectEasing.Linear };
+        Assert.Equal(new EffectPadding(0, 0, 0, 6), LayerEffects.Padding([gravityOnly], 1, 1));
+        var (falling, start) = At(src, gravityOnly, 2, 2);
+        Assert.Equal(Red, falling.Get(start.X, start.Y + 6));
+        var still = gravityOnly with { Gravity = 0 };
+        Assert.Equal(new EffectPadding(0, 0, 0, 0), LayerEffects.Padding([still], 1, 1));
+        Assert.True(SameAsSource(src, At(src, still, 2, 2)));
     }
 
     [Fact]
@@ -246,7 +289,7 @@ public class AnimatedEffectTests
         var g = p.AddGroup("몸");
         var part = p.AddPart(g, "머리", 2, 2, new Point(3, 3));
         p.SetCel(p.IndexOf(part), 0, Filled(2, 2, Red));
-        p.SetLayerEffects(p.IndexOf(part), [new ExplodeEffect { Distance = 5, Gravity = 3 }]);
+        p.SetLayerEffects(p.IndexOf(part), [new ExplodeEffect { DistanceX = 5, DistanceY = 5, Gravity = 3 }]);
         Assert.Equal(new EffectPadding(5, 5, 5, 8), LayerEffects.Padding(part.Effects, 2, 2));
         var parts = ProjectExport.BuildPartsSheet(p, "p");
         Assert.Equal(new Size(12, 15), parts.Entries.Single(e => ReferenceEquals(e.Part, part)).Rect.Size);
@@ -348,7 +391,7 @@ public class AnimatedEffectTests
         [
             new ExplodeEffect
             {
-                Distance = 30, Center = ExplodeCenter.Custom, CenterX = 3, CenterY = -2, SpreadX = 77, SpreadY = 12, Gravity = -5, PieceSize = 3, Fade = false, FadeStart = 10,
+                DistanceX = 30, DistanceY = 0, Center = ExplodeCenter.Custom, CenterX = 3, CenterY = -2, SpreadX = 77, SpreadY = 12, Gravity = -5, PieceSize = 3, Fade = false, FadeStart = 10,
                 Shrink = true, Seed = 1234, KeepOriginal = true, FlashFrames = 2, FlashColor = new Color32(1, 2, 3), Easing = EffectEasing.EaseInOut,
                 Repeat = EffectRepeat.PingPong, RepeatCount = 3, Frames = new FrameRange(0, 0),
             },
@@ -397,10 +440,10 @@ public class AnimatedEffectTests
     }
 
     [Fact]
-    public void Explode_LegacyCommonSpreadLoadsIntoBothAxes()
+    public void Explode_LegacyCommonDistanceAndSpreadLoadIntoBothAxes()
     {
         var p = new SpriteProject(8, 8);
-        var expected = new ExplodeEffect { SpreadX = 73, SpreadY = 73, Fade = false, Seed = 9 };
+        var expected = new ExplodeEffect { DistanceX = 27, DistanceY = 27, SpreadX = 73, SpreadY = 73, Fade = false, Seed = 9 };
         p.SetLayerEffects(0, [expected]);
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
@@ -411,6 +454,10 @@ public class AnimatedEffectTests
             System.Text.Json.Nodes.JsonNode root;
             using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
             var explode = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
+            Assert.False(explode.ContainsKey("distance"));
+            explode.Remove("distanceX");
+            explode.Remove("distanceY");
+            explode["distance"] = 27;
             explode.Remove("spreadX");
             explode.Remove("spreadY");
             explode["spread"] = 73;

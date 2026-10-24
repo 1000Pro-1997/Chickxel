@@ -37,7 +37,7 @@
 
   <ItemGroup>
     <!-- Localization/<클래스>.resx → 같은 이름의 정적 클래스(속성 = 문구, Format… = 자리 표시자 채우기) -->
-    <EmbeddedResource Update="Localization\*.resx" Public="true" EmitFormatMethods="true" />
+    <EmbeddedResource Update="Localization\*.resx" Public="true" EmitFormatMethods="true" OmitGetResourceString="true" />
   </ItemGroup>
 
 </Project>
