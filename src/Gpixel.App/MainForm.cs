@@ -755,7 +755,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
         AddItems(help,
-            Cmd("단축키 목록", MainStrings.Menu_Help_ShowShortcuts_230, ShowShortcuts, "F1", KeyScope.Global, (Key.F1, NoMods)),
+            Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this), "F1", KeyScope.Global, (Key.F1, NoMods)),
+            Cmd("단축키 목록", MainStrings.Menu_Help_ShowShortcuts_230, ShowShortcuts),
             Cmd("설정 파일 위치 열기", MainStrings.Menu_Help_Command_232, OpenSettingsFolder),
             Cmd("오류 로그 폴더 열기", MainStrings.Menu_Help_Command_234, OpenLogFolder),
             new Separator(),

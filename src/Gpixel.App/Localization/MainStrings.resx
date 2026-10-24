@@ -1062,4 +1062,5 @@
   <data name="Export_TrashMany" xml:space="preserve"><value>내보내기 정리: {name} 외 {count}개</value><comment>name = 첫 파일 이름; count = 그 밖의 파일 수.</comment></data>
   <data name="Edit_AddOutline" xml:space="preserve"><value>외곽선 추가</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>색 바꾸기</value></data>
+  <data name="Menu_Help_Guide" xml:space="preserve"><value>사용 가이드…</value></data>
 </root>

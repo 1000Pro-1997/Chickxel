@@ -520,7 +520,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_6759557E42" xml:space="preserve"><value>Swap primary ↔ secondary color</value></data>
   <data name="S_Dialogs_Shortcuts_6760ED067E" xml:space="preserve"><value>Open (.gpixel / import PNG)</value></data>
   <data name="S_Dialogs_Shortcuts_699BE4B36E" xml:space="preserve"><value>Place part (arrow keys 1px · Shift 8px)</value></data>
-  <data name="S_Dialogs_Shortcuts_6A1571C5A3" xml:space="preserve"><value>Shortcut list</value></data>
   <data name="S_Dialogs_Shortcuts_6AF34AD7B6" xml:space="preserve"><value>Double-click a part in the group</value></data>
   <data name="S_Dialogs_Shortcuts_6DB7F163BF" xml:space="preserve"><value>Wheel</value></data>
   <data name="S_Dialogs_Shortcuts_6FA30CF6A4" xml:space="preserve"><value>Delete / double-click header</value></data>
@@ -2623,4 +2622,15 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>Requires a base effect before it. Afterimage can't be used as a clipping base.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · clipped to effect above</value></data>
   <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>Click to enlarge the before/after preview</value></data>
+  <data name="Help_Title" xml:space="preserve"><value>Gpixel Guide</value></data>
+  <data name="Help_SearchWatermark" xml:space="preserve"><value>Search the guide</value></data>
+  <data name="Help_ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="Help_NoResults" xml:space="preserve"><value>No results</value></data>
+  <data name="Help_OpenWebsite" xml:space="preserve"><value>Open on website</value></data>
+  <data name="Help_WatchVideo" xml:space="preserve"><value>Watch the video on the website</value></data>
+  <data name="Help_ChapterContents" xml:space="preserve"><value>In this chapter</value></data>
+  <data name="Help_Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Help_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Help_Guide" xml:space="preserve"><value>Guide</value></data>
+  <data name="Help_ToggleChapter" xml:space="preserve"><value>Expand or collapse</value></data>
 </root>
