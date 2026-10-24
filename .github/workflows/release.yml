@@ -48,3 +48,14 @@ jobs:
           ' CHANGELOG.md > dist/RELEASE_NOTES.md
           if [ -s dist/RELEASE_NOTES.md ]; then NOTES=(--notes-file dist/RELEASE_NOTES.md); else NOTES=(--generate-notes); fi
           gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md --title "Gpixel $GITHUB_REF_NAME" "${NOTES[@]}"
+
+  announce:
+    needs: build
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/discord-release.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
