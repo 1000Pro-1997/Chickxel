@@ -20,9 +20,20 @@ internal readonly struct EffectGradientSampler
         _sourceX = sourceX;
         _sourceY = sourceY;
         _dx = _dy = _first = _inverseSpan = _centerX = _centerY = _cos = _sin = _phase = _time = 0;
-        if (gradient is null || bounds.IsEmpty) return;
+        if (gradient is null) return;
+        if (gradient.Shape == EffectGradientShape.Uniform)
+        {
+            // One color for every pixel: the time position itself, not wrapped, so a single pass ends on the last stop.
+            double progress = Progress(gradient, time);
+            _time = gradient.Reverse ? 1 - progress : progress;
+            return;
+        }
+        if (bounds.IsEmpty) return;
 
-        _time = gradient.Animated ? Wrap(time * gradient.Cycles) : 0;
+        // Linear easing without ping-pong keeps the original wrap so existing animated gradients render unchanged.
+        _time = !gradient.Animated ? 0
+            : gradient.Easing == EffectEasing.Linear && !gradient.PingPong ? Wrap(time * gradient.Cycles)
+            : Progress(gradient, time);
         double angle = gradient.Angle * Math.PI / 180;
         _cos = Math.Cos(angle);
         _sin = Math.Sin(angle);
@@ -71,7 +82,9 @@ internal readonly struct EffectGradientSampler
     {
         if (_gradient is not { } gradient) return _solid;
         double position;
-        if (gradient.Shape == EffectGradientShape.Radial)
+        if (gradient.Shape == EffectGradientShape.Uniform)
+            position = _time;
+        else if (gradient.Shape == EffectGradientShape.Radial)
         {
             double xOffset = x + 0.5 - _centerX, yOffset = y + 0.5 - _centerY;
             position = Math.Clamp(Math.Sqrt(xOffset * xOffset + yOffset * yOffset) * _inverseSpan, 0, 1);
@@ -92,13 +105,16 @@ internal readonly struct EffectGradientSampler
             position = _inverseSpan == 0 ? 0.5
                 : Math.Clamp(((x + 0.5) * _dx + (y + 0.5) * _dy - _first) * _inverseSpan, 0, 1);
         }
-        if (gradient.Reverse) position = gradient.Shape == EffectGradientShape.Angular ? Wrap(-position) : 1 - position;
-        if (gradient.Animated)
-            position = Wrap(position * gradient.Cycles + _phase - _time);
-        else if (gradient.Cycles != 1 || _phase != 0)
+        if (gradient.Shape != EffectGradientShape.Uniform)
         {
-            double repeated = position * gradient.Cycles + _phase;
-            position = repeated == gradient.Cycles && _phase == 0 ? 1 : Wrap(repeated);
+            if (gradient.Reverse) position = gradient.Shape == EffectGradientShape.Angular ? Wrap(-position) : 1 - position;
+            if (gradient.Animated)
+                position = Wrap(position * gradient.Cycles + _phase - _time);
+            else if (gradient.Cycles != 1 || _phase != 0)
+            {
+                double repeated = position * gradient.Cycles + _phase;
+                position = repeated == gradient.Cycles && _phase == 0 ? 1 : Wrap(repeated);
+            }
         }
         if (gradient.StraightRgba && gradient.Interpolation == GradientInterpolation.Smooth && gradient.Dither == GradientDither.None)
             return SampleStraight(gradient, position);
@@ -107,6 +123,12 @@ internal readonly struct EffectGradientSampler
     }
 
     private static double Wrap(double value) => value - Math.Floor(value);
+
+    /// <summary>Eased, repeated time position; a single forward pass is the plain clamped time (same as a one-shot animated effect).</summary>
+    private static double Progress(EffectColorGradient gradient, double time)
+        => AnimatedEffect.Ease(AnimatedEffect.Cycle(time,
+            gradient.PingPong ? EffectRepeat.PingPong : gradient.Cycles == 1 ? EffectRepeat.Once : EffectRepeat.Loop,
+            gradient.Cycles), gradient.Easing);
 
     private static Color32 SampleStraight(EffectColorGradient gradient, double position)
     {

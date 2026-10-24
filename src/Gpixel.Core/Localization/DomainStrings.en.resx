@@ -19,7 +19,6 @@
   <data name="Effect_Bob" xml:space="preserve"><value>Bob</value></data>
   <data name="Effect_ColorAdjust" xml:space="preserve"><value>Color adjustment</value></data>
   <data name="Effect_ColorCycle" xml:space="preserve"><value>Color cycle</value></data>
-  <data name="Effect_GradientChange" xml:space="preserve"><value>Gradient shift</value></data>
   <data name="Effect_HitFlash" xml:space="preserve"><value>Hit flash</value></data>
   <data name="Effect_Hologram" xml:space="preserve"><value>Hologram</value></data>
   <data name="Effect_InnerGlow" xml:space="preserve"><value>Inner glow</value></data>

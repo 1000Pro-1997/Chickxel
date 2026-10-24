@@ -34,6 +34,8 @@ public sealed partial class LayerEffectsDialog
             Animated = editor.Animated,
             Reverse = editor.Reverse,
             Cycles = editor.Cycles,
+            Easing = editor.Easing,
+            PingPong = editor.PingPong,
             Interpolation = editor.Interpolation,
             Dither = editor.Dither,
             StraightRgba = savedGradient?.StraightRgba ?? false
@@ -62,7 +64,7 @@ public sealed partial class LayerEffectsDialog
         editor.IsVisible = gradientMode;
         if (savedGradient is { } existing)
             editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither,
-                existing.Angle, existing.Shape, existing.Animated, existing.Reverse, existing.Cycles);
+                existing.Angle, existing.Shape, existing.Animated, existing.Reverse, existing.Cycles, existing.Easing, existing.PingPong);
         mode.SelectionChanged += (_, _) =>
         {
             if (mode.SelectedIndex < 0) return;
@@ -74,7 +76,8 @@ public sealed partial class LayerEffectsDialog
             {
                 savedGradient ??= InitialGradient();
                 editor.Load(savedGradient.Stops, savedGradient.AlphaStops, savedGradient.Interpolation, savedGradient.Dither,
-                    savedGradient.Angle, savedGradient.Shape, savedGradient.Animated, savedGradient.Reverse, savedGradient.Cycles);
+                    savedGradient.Angle, savedGradient.Shape, savedGradient.Animated, savedGradient.Reverse, savedGradient.Cycles,
+                    savedGradient.Easing, savedGradient.PingPong);
                 gradientMode = true;
                 ChangeGradient(savedGradient);
             }

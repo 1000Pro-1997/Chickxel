@@ -206,14 +206,18 @@ public class StaticEffectTests
         p.DuplicateFrame(0); // 범위(프레임 1만)가 "모든 프레임"으로 바뀌지 않게
         LayerEffect[] fx =
         [
-            new GradientOverlayEffect
+            new ColorOverlayEffect
             {
-                Gradient = new EffectColorGradient
+                ColorGradients = new Dictionary<string, EffectColorGradient>
                 {
-                    Stops = [new(0, new Color32(1, 2, 3)), new(1, new Color32(4, 5, 6, 7))],
-                    Dither = GradientDither.Bayer2,
+                    [nameof(ColorOverlayEffect.Color)] = new EffectColorGradient
+                    {
+                        Stops = [new(0, new Color32(1, 2, 3)), new(1, new Color32(4, 5, 6, 7))],
+                        Dither = GradientDither.Bayer2, Shape = EffectGradientShape.Uniform, Cycles = 3,
+                        Easing = EffectEasing.EaseIn, PingPong = true, Reverse = true,
+                    },
                 },
-                Strength = 60, Blend = EffectBlend.Multiply, Easing = EffectEasing.EaseIn,
+                Amount = 60, Blend = EffectBlend.Multiply,
             },
             new InnerGlowEffect { Color = new(9, 8, 7), Size = 5, Strength = 33, Fade = false, Blend = EffectBlend.Normal, Enabled = false },
             new PaletteSwapEffect { Pairs = [new(Red, Blue), new(Green, Color32.Transparent)], Tolerance = 12, Frames = new FrameRange(0, 0) },
@@ -225,7 +229,12 @@ public class StaticEffectTests
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
         stream.Position = 0;
-        Assert.Equal(fx, ProjectIO.Load(stream).Layers[0].Effects);
+        var roundTrip = ProjectIO.Load(stream).Layers[0].Effects;
+        Assert.Equal(fx.Skip(1), roundTrip.Skip(1));
+        var overlay = Assert.IsType<ColorOverlayEffect>(roundTrip[0]);
+        var savedOverlay = (ColorOverlayEffect)fx[0];
+        Assert.Equal((savedOverlay.Amount, savedOverlay.Blend), (overlay.Amount, overlay.Blend));
+        Assert.Equal(savedOverlay.ColorGradients[nameof(ColorOverlayEffect.Color)], Assert.Single(overlay.ColorGradients).Value);
 
         // 예전 파일: 디더 칸이 없는 그림자 = 반투명 그림자, 다른 새 효과도 설정이 빠지면 기본값
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))

@@ -84,6 +84,8 @@ public sealed class MainForm : Window, Ai.IAiHost
     private readonly AppSettings _settings;
     /// <summary>파일을 닫아도 남는 실행취소 기록.</summary>
     private readonly UndoHistoryKeeper _history;
+    /// <summary>그림 편집과 팔레트 변경을 한 줄로 세운 실행취소 순서.</summary>
+    private readonly UndoTimeline _undoOrder = new();
     private readonly StartupArgs _args;
     private readonly EditorContext _ctx = new();
 
@@ -935,6 +937,7 @@ public sealed class MainForm : Window, Ai.IAiHost
     {
         _ctx.ProjectReplaced += (_, _) =>
         {
+            _undoOrder.Track(_ctx.Project?.History);
             _docStamp = _ctx.Project?.Path is { } p ? SafeStamp(p) : default;
             _currentSource = null;
             _currentThumb = null;
@@ -1006,6 +1009,8 @@ public sealed class MainForm : Window, Ai.IAiHost
         _start.NewImageRequested += (_, _) => NewProject(null);
 
         _colors.PalettesChanged += (_, _) => _settings.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
+        _colors.PaletteEdited += (before, after) => _undoOrder.PushPalette(before, after);
+        _undoOrder.Changed += (_, _) => UpdateUndoItems();
         _colors.Message += (_, m) => ShowMessage(m);
 
         // 모든 색 고르기 창: 팔레트·최근 색·스포이드(현재 프레임 합성).
@@ -1416,10 +1421,14 @@ public sealed class MainForm : Window, Ai.IAiHost
     private void UpdateUndoItems()
     {
         var h = _ctx.Project?.History;
-        _miUndo.IsEnabled = h?.CanUndo == true;
-        _miRedo.IsEnabled = h?.CanRedo == true;
-        SetMenuText(_miUndo, h?.UndoLabel is { } u ? MainStrings.FormatMessage_340(u: u) : MainStrings.Menu_Edit_Undo_089);
-        SetMenuText(_miRedo, h?.RedoLabel is { } r ? MainStrings.FormatMessage_341(r: r) : MainStrings.Menu_Edit_Redo_091);
+        var undo = _undoOrder.NextUndo;
+        var redo = _undoOrder.NextRedo;
+        string? undoLabel = undo == UndoTimeline.Side.Palette ? UiStrings.Palette_UndoLabel : undo == UndoTimeline.Side.Document ? h?.UndoLabel : null;
+        string? redoLabel = redo == UndoTimeline.Side.Palette ? UiStrings.Palette_UndoLabel : redo == UndoTimeline.Side.Document ? h?.RedoLabel : null;
+        _miUndo.IsEnabled = undo != UndoTimeline.Side.None;
+        _miRedo.IsEnabled = redo != UndoTimeline.Side.None;
+        SetMenuText(_miUndo, undoLabel is { } u ? MainStrings.FormatMessage_340(u: u) : MainStrings.Menu_Edit_Undo_089);
+        SetMenuText(_miRedo, redoLabel is { } r ? MainStrings.FormatMessage_341(r: r) : MainStrings.Menu_Edit_Redo_091);
     }
 
     /// <summary>M을 이만큼 안에 다시 눌러야 선택 칸의 다음 도구로 넘어간다.</summary>
@@ -2433,8 +2442,17 @@ public sealed class MainForm : Window, Ai.IAiHost
         }
         // 변형·캔버스 크기 모드면 시작 전으로 되돌린다(Esc와 같음).
         if (CancelMode()) return;
-        var label = _ctx.Project?.History.UndoLabel;
-        if (_ctx.UndoStep()) ShowMessage(MainStrings.FormatMessage_381(label: label));
+        switch (_undoOrder.NextUndo)
+        {
+            case UndoTimeline.Side.Palette:
+                _colors.RestorePalettes(_undoOrder.UndoPalette().Before);
+                ShowMessage(MainStrings.FormatMessage_381(label: UiStrings.Palette_UndoLabel));
+                break;
+            case UndoTimeline.Side.Document:
+                var label = _ctx.Project?.History.UndoLabel;
+                if (_ctx.UndoStep()) ShowMessage(MainStrings.FormatMessage_381(label: label));
+                break;
+        }
     }
 
     /// <summary>변형·캔버스 크기 모드면 취소하고 알린다(Esc·Ctrl+Z). 모드가 아니었으면 false.</summary>
@@ -2454,8 +2472,17 @@ public sealed class MainForm : Window, Ai.IAiHost
 
     private void Redo()
     {
-        var label = _ctx.Project?.History.RedoLabel;
-        if (_ctx.RedoStep()) ShowMessage(MainStrings.FormatMessage_382(label: label));
+        switch (_undoOrder.NextRedo)
+        {
+            case UndoTimeline.Side.Palette:
+                _colors.RestorePalettes(_undoOrder.RedoPalette().After);
+                ShowMessage(MainStrings.FormatMessage_382(label: UiStrings.Palette_UndoLabel));
+                break;
+            case UndoTimeline.Side.Document:
+                var label = _ctx.Project?.History.RedoLabel;
+                if (_ctx.RedoStep()) ShowMessage(MainStrings.FormatMessage_382(label: label));
+                break;
+        }
     }
 
     private void Copy()

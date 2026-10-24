@@ -2,8 +2,11 @@ using Gpixel.Core.Edit;
 
 namespace Gpixel.Core.Model;
 
-/// <summary>Spatial gradient geometry for effect color slots.</summary>
-public enum EffectGradientShape { Linear, Radial, Square, Angular }
+/// <summary>
+/// Gradient geometry for effect color slots. <see cref="Uniform"/> gives every pixel the one color at the
+/// current time position (always animated). Append new values at the end; saved files use the names.
+/// </summary>
+public enum EffectGradientShape { Linear, Radial, Square, Angular, Uniform }
 
 /// <summary>
 /// Spatial color stops for an effect. Shape selects the geometry inside the opaque bounds;
@@ -18,6 +21,7 @@ public sealed record EffectColorGradient
     private readonly IReadOnlyList<GradientAlphaStop> _alphaStops = [];
     private readonly int _angle;
     private readonly int _cycles = 1;
+    private readonly bool _animated;
 
     public IReadOnlyList<GradientStop> Stops
     {
@@ -37,11 +41,16 @@ public sealed record EffectColorGradient
     public int Angle { get => _angle; init => _angle = ((value % 360) + 360) % 360; }
 
     public EffectGradientShape Shape { get; init; }
-    public bool Animated { get; init; }
+    /// <summary>Moves over the frame range; <see cref="EffectGradientShape.Uniform"/> is always animated.</summary>
+    public bool Animated { get => _animated || Shape == EffectGradientShape.Uniform; init => _animated = value; }
     /// <summary>Reverse spatial direction (radial and square inward, angular clockwise).</summary>
     public bool Reverse { get; init; }
-    /// <summary>Number of spatial repeats and, if animated, turns over the frame range (1–16).</summary>
+    /// <summary>Number of spatial repeats and, if animated, turns (or Uniform passes) over the frame range (1–16).</summary>
     public int Cycles { get => _cycles; init => _cycles = Math.Clamp(value, 1, 16); }
+    /// <summary>Speed curve of the animated time position.</summary>
+    public EffectEasing Easing { get; init; } = EffectEasing.Linear;
+    /// <summary>Animated time goes forward and back in each cycle instead of restarting.</summary>
+    public bool PingPong { get; init; }
 
     public GradientInterpolation Interpolation { get; init; } = GradientInterpolation.Smooth;
     public GradientDither Dither { get; init; } = GradientDither.None;
@@ -55,6 +64,7 @@ public sealed record EffectColorGradient
     public bool Equals(EffectColorGradient? other)
         => other is not null && _angle == other._angle && Shape == other.Shape &&
            Animated == other.Animated && Reverse == other.Reverse && Cycles == other.Cycles &&
+           Easing == other.Easing && PingPong == other.PingPong &&
            Interpolation == other.Interpolation && Dither == other.Dither && StraightRgba == other.StraightRgba &&
            _stops.SequenceEqual(other._stops) && _alphaStops.SequenceEqual(other._alphaStops);
 
@@ -66,6 +76,8 @@ public sealed record EffectColorGradient
         hash.Add(Animated);
         hash.Add(Reverse);
         hash.Add(Cycles);
+        hash.Add(Easing);
+        hash.Add(PingPong);
         hash.Add(Interpolation);
         hash.Add(Dither);
         hash.Add(StraightRgba);

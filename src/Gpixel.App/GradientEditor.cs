@@ -20,6 +20,10 @@ public sealed class GradientEditor : StackPanel
     private readonly ComboBox? _spatialMode;
     private readonly ComboBox? _direction;
     private readonly NumericUpDown? _cyclesEditor;
+    private readonly ComboBox? _easingEditor;
+    private readonly CheckBox? _pingPongEditor;
+    private readonly Control? _angleRow;
+    private readonly Control? _timingRow;
     private bool _updating;
     private IReadOnlyList<GradientStop> _stops = EditorContext.DefaultGradientStops;
     private IReadOnlyList<GradientAlphaStop> _alphaStops = EditorContext.DefaultGradientAlphaStops;
@@ -30,6 +34,11 @@ public sealed class GradientEditor : StackPanel
     private bool _animated;
     private bool _reverse;
     private int _cycles = 1;
+    private EffectEasing _easing = EffectEasing.Linear;
+    private bool _pingPong;
+
+    /// <summary>Spatial mode combo index of <see cref="EffectGradientShape.Uniform"/> (after the static/animated pairs).</summary>
+    private const int UniformModeIndex = 8;
 
     public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false)
     {
@@ -89,13 +98,16 @@ public sealed class GradientEditor : StackPanel
                 UiStrings.EffectGradient_LinearStatic, UiStrings.EffectGradient_LinearAnimated,
                 UiStrings.EffectGradient_RadialStatic, UiStrings.EffectGradient_RadialAnimated,
                 UiStrings.EffectGradient_SquareStatic, UiStrings.EffectGradient_SquareAnimated,
-                UiStrings.EffectGradient_AngularStatic, UiStrings.EffectGradient_AngularAnimated);
+                UiStrings.EffectGradient_AngularStatic, UiStrings.EffectGradient_AngularAnimated,
+                UiStrings.EffectGradient_Uniform);
             _spatialMode.SelectionChanged += (_, _) =>
             {
                 if (_updating || _spatialMode.SelectedIndex < 0) return;
-                _shape = (EffectGradientShape)(_spatialMode.SelectedIndex / 2);
-                _animated = _spatialMode.SelectedIndex % 2 != 0;
+                int index = _spatialMode.SelectedIndex;
+                _shape = index == UniformModeIndex ? EffectGradientShape.Uniform : (EffectGradientShape)(index / 2);
+                _animated = index == UniformModeIndex || index % 2 != 0;
                 UpdateDirectionOptions();
+                UpdateRows();
                 Changed?.Invoke();
             };
             Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Mode), _spatialMode));
@@ -124,7 +136,25 @@ public sealed class GradientEditor : StackPanel
                 _angle = (int)_angleEditor.NumValue();
                 Changed?.Invoke();
             };
-            Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D5C20D5832), _angleEditor, Ui.Label(UiStrings.S_GradientEditor_GradientEditor_DEFF285651)));
+            _angleRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D5C20D5832), _angleEditor, Ui.Label(UiStrings.S_GradientEditor_GradientEditor_DEFF285651));
+            Children.Add(_angleRow);
+            _easingEditor = Ui.Combo(140, UiStrings.S_LayerEffectsDialog_Easings_4FA414FBAC, UiStrings.S_LayerEffectsDialog_Easings_BDEEAEDE46,
+                UiStrings.S_LayerEffectsDialog_Easings_503369007B, UiStrings.S_LayerEffectsDialog_Easings_7665ED231C);
+            _easingEditor.SelectionChanged += (_, _) =>
+            {
+                if (_updating || _easingEditor.SelectedIndex < 0) return;
+                _easing = (EffectEasing)_easingEditor.SelectedIndex;
+                Changed?.Invoke();
+            };
+            _pingPongEditor = Ui.Check(UiStrings.S_LayerEffectsDialog_Repeats_466235A991);
+            _pingPongEditor.IsCheckedChanged += (_, _) =>
+            {
+                if (_updating) return;
+                _pingPong = _pingPongEditor.IsChecked == true;
+                Changed?.Invoke();
+            };
+            _timingRow = Ui.Row(Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF), _easingEditor, _pingPongEditor);
+            Children.Add(_timingRow);
         }
         Load(_stops, _alphaStops, _mode, _ditherMode);
     }
@@ -139,12 +169,14 @@ public sealed class GradientEditor : StackPanel
     public bool Animated => _animated;
     public bool Reverse => _reverse;
     public int Cycles => _cycles;
+    public EffectEasing Easing => _easing;
+    public bool PingPong => _pingPong;
 
     /// <summary>Synchronizes externally owned state without firing Changed.</summary>
     public void Load(IReadOnlyList<GradientStop> stops, IReadOnlyList<GradientAlphaStop> alphaStops,
         GradientInterpolation interpolation, GradientDither dither, int angle = 0,
         EffectGradientShape shape = EffectGradientShape.Linear, bool animated = false,
-        bool reverse = false, int cycles = 1)
+        bool reverse = false, int cycles = 1, EffectEasing easing = EffectEasing.Linear, bool pingPong = false)
     {
         _updating = true;
         try
@@ -155,13 +187,19 @@ public sealed class GradientEditor : StackPanel
             _ditherMode = dither;
             _angle = angle;
             _shape = shape;
-            _animated = animated;
+            _animated = animated || shape == EffectGradientShape.Uniform;
             _reverse = reverse;
             _cycles = Math.Clamp(cycles, 1, 16);
-            if (_spatialMode is not null) _spatialMode.SelectedIndex = (int)shape * 2 + (animated ? 1 : 0);
+            _easing = easing;
+            _pingPong = pingPong;
+            if (_spatialMode is not null)
+                _spatialMode.SelectedIndex = shape == EffectGradientShape.Uniform ? UniformModeIndex : (int)shape * 2 + (animated ? 1 : 0);
             if (_direction is not null) UpdateDirectionOptions();
             if (_cyclesEditor is not null) _cyclesEditor.Value = _cycles;
             if (_angleEditor is not null) _angleEditor.Value = angle;
+            if (_easingEditor is not null) _easingEditor.SelectedIndex = (int)easing;
+            if (_pingPongEditor is not null) _pingPongEditor.IsChecked = pingPong;
+            UpdateRows();
             _bar.Stops = stops;
             _bar.AlphaStops = _alphaStops;
             _bar.Mode = interpolation;
@@ -171,6 +209,13 @@ public sealed class GradientEditor : StackPanel
             RefreshSelected();
         }
         finally { _updating = false; }
+    }
+
+    /// <summary>Uniform has no spatial angle; speed curve and ping-pong only apply to moving gradients.</summary>
+    private void UpdateRows()
+    {
+        if (_angleRow is not null) _angleRow.IsVisible = _shape != EffectGradientShape.Uniform;
+        if (_timingRow is not null) _timingRow.IsVisible = _animated;
     }
 
     private void UpdateDirectionOptions()

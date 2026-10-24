@@ -27,7 +27,6 @@
   <data name="Effect_Bob" xml:space="preserve"><value>둥실둥실</value></data>
   <data name="Effect_ColorAdjust" xml:space="preserve"><value>색조 보정</value></data>
   <data name="Effect_ColorCycle" xml:space="preserve"><value>색 순환</value></data>
-  <data name="Effect_GradientChange" xml:space="preserve"><value>그라데이션 변화</value></data>
   <data name="Effect_HitFlash" xml:space="preserve"><value>피격 번쩍임</value></data>
   <data name="Effect_Hologram" xml:space="preserve"><value>홀로그램</value></data>
   <data name="Effect_InnerGlow" xml:space="preserve"><value>안쪽 빛</value></data>

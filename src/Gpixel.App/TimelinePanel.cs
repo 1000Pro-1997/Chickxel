@@ -2269,7 +2269,6 @@ public sealed class TimelinePanel : UserControl
             ShadowEffect => Color.FromRgb(118, 124, 196),
             RimLightEffect => Color.FromRgb(226, 210, 110),
             ColorOverlayEffect => Color.FromRgb(196, 96, 170),
-            GradientOverlayEffect => Color.FromRgb(240, 120, 150),
             InnerGlowEffect => Color.FromRgb(250, 236, 170),
             PaletteSwapEffect => Color.FromRgb(150, 110, 230),
             ColorAdjustEffect => Color.FromRgb(160, 160, 160),

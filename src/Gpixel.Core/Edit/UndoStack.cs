@@ -63,6 +63,12 @@ public sealed class UndoStack
     public string? UndoLabel => GroupHasItems ? _groupLabel ?? _group![0].Label : _undo.Count > 0 ? _undo[^1].Label : null;
     public string? RedoLabel => _redo.Count > 0 ? _redo[^1].Label : null;
 
+    /// <summary>다음에 되돌릴 단계(열린 묶음은 제외 — 묶음이 열려 있으면 <see cref="IsGrouping"/>을 볼 것). 없으면 null.</summary>
+    public IUndoCommand? UndoTop => _undo.Count > 0 ? _undo[^1] : null;
+
+    /// <summary>다음에 다시 실행할 단계. 없으면 null.</summary>
+    public IUndoCommand? RedoTop => _redo.Count > 0 ? _redo[^1] : null;
+
     /// <summary>묶음이 열려 있는지.</summary>
     public bool IsGrouping => _group is not null;
 
@@ -149,6 +155,14 @@ public sealed class UndoStack
         _undo.Clear();
         _redo.Clear();
         _group = null;
+        OnChanged();
+    }
+
+    /// <summary>다시 실행 목록만 비운다(문서 밖에서 새 편집을 했을 때 — 실행취소 순서를 한 줄로 맞춤). 비어 있으면 아무것도 안 함.</summary>
+    public void ClearRedo()
+    {
+        if (_redo.Count == 0) return;
+        _redo.Clear();
         OnChanged();
     }
 

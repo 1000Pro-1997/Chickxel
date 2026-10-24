@@ -33,6 +33,7 @@
   <data name="Language_RestartNotice" xml:space="preserve"><value>Language settings changed. Restart Gpixel to apply them.</value></data>
   <data name="Language_RestartNow" xml:space="preserve"><value>Restart now</value></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>Later</value></data>
+  <data name="Palette_UndoLabel" xml:space="preserve"><value>Palette change</value></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve"><value>GitHub repository</value></data>
   <data name="S_AboutDialog_AboutDialog_2085099DF4" xml:space="preserve"><value>View open source notices</value></data>
   <data name="S_AboutDialog_AboutDialog_27606A6DB7" xml:space="preserve"><value> (development build)</value></data>
@@ -804,6 +805,7 @@ Export: </value></data>
   <data name="EffectGradient_RadialStatic" xml:space="preserve"><value>Radial (static)</value></data>
   <data name="EffectGradient_SquareAnimated" xml:space="preserve"><value>Square (animated)</value></data>
   <data name="EffectGradient_SquareStatic" xml:space="preserve"><value>Square (static)</value></data>
+  <data name="EffectGradient_Uniform" xml:space="preserve"><value>Whole sprite, one color (over time)</value></data>
   <data name="S_GradientEditor_GradientEditor_01174C479B" xml:space="preserve"><value>Delete</value></data>
   <data name="S_GradientEditor_GradientEditor_07C7B1752B" xml:space="preserve"><value>Steps (bands)</value></data>
   <data name="S_GradientEditor_GradientEditor_303D5EC437" xml:space="preserve"><value>Delete selected stop (min. 2 of each type)</value></data>
@@ -818,17 +820,6 @@ Export: </value></data>
   <data name="S_GradientEditor_GradientEditor_D945F5766C" xml:space="preserve"><value>Opacity</value></data>
   <data name="S_GradientEditor_GradientEditor_DEFF285651" xml:space="preserve"><value>° (0 = right, 90 = up)</value></data>
   <data name="S_GradientEditor_GradientEditor_E0FC6F50AE" xml:space="preserve"><value>Smooth</value></data>
-  <data name="S_GradientPanel_GradientChangeModes_ColorTransition" xml:space="preserve"><value>Color transition</value></data>
-  <data name="S_GradientPanel_GradientChangeModes_RadialRotation" xml:space="preserve"><value>Radial rotation</value></data>
-  <data name="GradientChange_RotationAngle" xml:space="preserve"><value>Rotation angle</value></data>
-  <data name="S_GradientPanel_GradientPanel_002A41B539" xml:space="preserve"><value> Smooth changes to a single color per frame; dither mixes the two transitioning colors in a pixel pattern. Original pixel opacity is preserved.</value></data>
-  <data name="S_GradientPanel_GradientPanel_07BCE35122" xml:space="preserve"><value>The first frame of the range gets the gradient's left-end color, the last frame the right-end color, and frames in between follow the stop positions.</value></data>
-  <data name="S_GradientPanel_GradientPanel_A91464E1CE" xml:space="preserve"><value>Strength</value></data>
-  <data name="S_GradientPanel_GradientPanel_B93B4EB88D" xml:space="preserve"><value>Blend</value></data>
-  <data name="S_GradientPanel_GradientPanel_AngularGradient" xml:space="preserve"><value>Angular gradient</value></data>
-  <data name="S_GradientPanel_GradientPanel_Mode" xml:space="preserve"><value>Method</value></data>
-  <data name="S_GradientPanel_GradientPanel_RadialHint" xml:space="preserve"><value>Color stops spread counterclockwise from the right, around the center of the visible image. Rotation angle is the total angle turned over the effect range; positive is counterclockwise, negative is clockwise. Dither mixes neighboring colors in a pixel pattern and preserves original pixel opacity.</value></data>
-  <data name="S_GradientPanel_GradientPanel_BF99C1BE30" xml:space="preserve"><value>Time gradient</value></data>
   <data name="S_GroupLayoutDialog__align_2EA62D4A63" xml:space="preserve"><value>End</value></data>
   <data name="S_GroupLayoutDialog__align_485FD29A3F" xml:space="preserve"><value>Start</value></data>
   <data name="S_GroupLayoutDialog__align_5ABA2EF80F" xml:space="preserve"><value>Center</value></data>
@@ -1041,7 +1032,7 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_FillSettings_A89FB839CA" xml:space="preserve"><value>px (from original top-left)</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_AB233EA745" xml:space="preserve"><value>Edge 1px</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_B8F02D5B5D" xml:space="preserve"><value>Upward first (tall → flat)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_BD67E1B5C4" xml:space="preserve"><value>Tints visible pixels toward a single color or a spatial gradient (100% = silhouette, opacity unchanged).</value></data>
+  <data name="S_LayerEffectsDialog_FillSettings_BD67E1B5C4" xml:space="preserve"><value>Tints visible pixels toward a single color or a gradient (100% = silhouette, opacity unchanged). The gradient's "Whole sprite, one color" mode shifts the whole image through the stop colors over the effect's time range.</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_BE76D99E55" xml:space="preserve"><value>Different random variation (randomize seed)</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_C4DC26AC14" xml:space="preserve"><value>° (travel direction, 45 = ↗)</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_CD2E150E76" xml:space="preserve"><value> Each frame in the range shatters its own image (frames with no image have nothing to burst).</value></data>
@@ -1081,7 +1072,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_KindTable_174D9850CC" xml:space="preserve"><value>Light sweep</value></data>
   <data name="S_LayerEffectsDialog_KindTable_1ABE2A05EE" xml:space="preserve"><value>Cycles through chosen colors in turn (flowing colors like water, fire, neon).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_1B49B1765C" xml:space="preserve"><value>Pixels drip down with each column at a different speed.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_20186332CF" xml:space="preserve"><value>Gradient map</value></data>
   <data name="S_LayerEffectsDialog_KindTable_20C2A2DCF6" xml:space="preserve"><value>Color replace</value></data>
   <data name="S_LayerEffectsDialog_KindTable_23A9E57A2F" xml:space="preserve"><value>Color cycle</value></data>
   <data name="S_LayerEffectsDialog_KindTable_2576225185" xml:space="preserve"><value>Casts a copy of the image shape diagonally behind it as a shadow.</value></data>
@@ -1104,7 +1094,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_KindTable_71D60FCC7E" xml:space="preserve"><value>Shockwave ring</value></data>
   <data name="S_LayerEffectsDialog_KindTable_792E7BADCE" xml:space="preserve"><value>Squash and stretch</value></data>
   <data name="S_LayerEffectsDialog_KindTable_7C6C1B6117" xml:space="preserve"><value>Wobbles horizontally and vertically like jelly, then returns to its original shape.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_8153DDED55" xml:space="preserve"><value>The whole image shifts through the gradient stop colors over the effect's time range.</value></data>
   <data name="S_LayerEffectsDialog_KindTable_91F153F61A" xml:space="preserve"><value>Pixels shatter and fly outward as they disappear.</value></data>
   <data name="S_LayerEffectsDialog_KindTable_993BDE3846" xml:space="preserve"><value>The image flashes a single color, as if hit.</value></data>
   <data name="S_LayerEffectsDialog_KindTable_AC8A98B707" xml:space="preserve"><value>Explode</value></data>
@@ -1176,7 +1165,6 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_LayerEffectsDialog_Summary_4AD4C2E7D2" xml:space="preserve"><value>Rotate · {0}° · {1}</value></data>
   <data name="S_LayerEffectsDialog_Summary_4BF321B781" xml:space="preserve"><value>Afterimage · {0} · spacing {1} · {2}%</value></data>
   <data name="S_LayerEffectsDialog_Summary_4DA5BACD5A" xml:space="preserve"><value> · regular</value></data>
-  <data name="S_LayerEffectsDialog_Summary_51DCB418AA" xml:space="preserve"><value>Gradient shift · {0} colors · {1} · {2}%</value></data>
   <data name="S_LayerEffectsDialog_Summary_53B3F1206A" xml:space="preserve"><value>Color swap · {0} pairs</value></data>
   <data name="S_LayerEffectsDialog_Summary_54368CD4DD" xml:space="preserve"><value>Reflection · {0} · gap {1}px · {2}% · {3}→{4}%</value></data>
   <data name="S_LayerEffectsDialog_Summary_58CF9C9156" xml:space="preserve"><value> · frame {0}</value></data>

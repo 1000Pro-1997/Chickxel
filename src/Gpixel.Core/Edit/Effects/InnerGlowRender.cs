@@ -28,7 +28,7 @@ internal static class InnerGlowRender
                 {
                     var sampled = color.Sample(i % w, i / w);
                     int strength = color.HasGradient ? (a * sampled.A + 127) / 255 : a;
-                    px[i] = GradientOverlayRender.Blend(px[i], sampled, strength, g.Blend);
+                    px[i] = LayerEffects.Blend(px[i], sampled, strength, g.Blend);
                 }
             }
             if (!any) break;

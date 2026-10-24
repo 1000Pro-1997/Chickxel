@@ -1142,6 +1142,10 @@ public static partial class ProjectIO
         public ColorStopDto[]? Stops { get; set; }
         public AlphaStopDto[]? AlphaStops { get; set; }
         public bool StraightRgba { get; set; }
+        /// <summary>Animated speed curve; null = linear.</summary>
+        public string? Easing { get; set; }
+        /// <summary>Animated forward-and-back; null = restart each cycle.</summary>
+        public bool? PingPong { get; set; }
 
         public static ColorGradientDto From(EffectColorGradient gradient) => new()
         {
@@ -1153,6 +1157,8 @@ public static partial class ProjectIO
             Interpolation = gradient.Interpolation.ToString(),
             Dither = gradient.Dither.ToString(),
             StraightRgba = gradient.StraightRgba,
+            Easing = gradient.Easing == EffectEasing.Linear ? null : gradient.Easing.ToString(),
+            PingPong = gradient.PingPong ? true : null,
             Stops = gradient.Stops.Select(s => new ColorStopDto { Position = s.Position, Color = s.Color.ToHex() }).ToArray(),
             AlphaStops = gradient.AlphaStops.Select(s => new AlphaStopDto { Position = s.Position, Alpha = s.Alpha }).ToArray(),
         };
@@ -1170,6 +1176,9 @@ public static partial class ProjectIO
             Dither = Enum.TryParse<Gpixel.Core.Edit.GradientDither>(Dither, true, out var dither) && Enum.IsDefined(dither)
                 ? dither : Gpixel.Core.Edit.GradientDither.None,
             StraightRgba = StraightRgba,
+            Easing = Enum.TryParse<EffectEasing>(Easing, true, out var easing) && Enum.IsDefined(easing)
+                ? easing : EffectEasing.Linear,
+            PingPong = PingPong ?? false,
             Stops = Stops?.Where(s => s is not null && Color32.TryParseHex(s.Color, out _))
                 .Select(s => new Gpixel.Core.Edit.GradientStop(s.Position, Color32.TryParseHex(s.Color, out var c) ? c : Color32.White)).ToArray()
                 ?? [],
@@ -1205,7 +1214,7 @@ public static partial class ProjectIO
         public string? Shade { get; set; }
         /// <summary>색 설정별 그라데이션(키 = 속성 이름, 없으면 단색).</summary>
         public Dictionary<string, ColorGradientDto>? ColorGradients { get; set; }
-        /// <summary>시간 그라데이션 효과의 정지점. 없으면 예전 공간 그라데이션 형식이다.</summary>
+        /// <summary>예전 시간 그라데이션(그라데이션 변화) 효과의 정지점 — 읽을 때 색 덮기로 바꾼다. 없으면 예전 공간 그라데이션 형식이다.</summary>
         public ColorGradientDto? Gradient { get; set; }
         public int? Thickness { get; set; }
         public bool? Diagonal { get; set; }
@@ -1215,7 +1224,7 @@ public static partial class ProjectIO
         public int? Y { get; set; }
         /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
         public string? Direction { get; set; }
-        /// <summary>색 덮기 양, 시간 그라데이션·빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%).</summary>
+        /// <summary>색 덮기 양, 예전 시간 그라데이션·빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%).</summary>
         public int? Amount { get; set; }
         /// <summary>늘었다 줄기의 축별 세기(%).</summary>
         public int? WidthAmount { get; set; }
@@ -1253,14 +1262,14 @@ public static partial class ProjectIO
         // 정적 효과와 예전 공간 그라데이션 형식
         /// <summary>예전 공간 그라데이션 덮기의 색 B(색 A = <see cref="Color"/>).</summary>
         public string? Color2 { get; set; }
-        /// <summary>색 덮기·시간 그라데이션·안쪽 빛의 섞기(<see cref="EffectBlend"/> 이름).</summary>
+        /// <summary>색 덮기·안쪽 빛의 섞기(<see cref="EffectBlend"/> 이름).</summary>
         public string? Blend { get; set; }
         /// <summary>예전 공간 그라데이션의 디더(<see cref="EffectDither"/> 이름), 그림자의 디더 밀도(<see cref="ShadowDither"/> 이름, 없으면 반투명 — 예전 파일).</summary>
         public string? Dither { get; set; }
         /// <summary>색 바꾸기: [바꿀 색, 바뀐 색] 쌍들과 허용 차이.</summary>
         public List<string[]>? Pairs { get; set; }
         public int? Tolerance { get; set; }
-        /// <summary>색조 보정 방식, 시간 그라데이션 방식, 움직이는 효과 일부의 방식.</summary>
+        /// <summary>색조 보정 방식, 예전 시간 그라데이션 방식, 움직이는 효과 일부의 방식.</summary>
         public string? Mode { get; set; }
         public int? Hue { get; set; }
         public int? Brightness { get; set; }
@@ -1330,10 +1339,6 @@ public static partial class ProjectIO
                 },
                 ShineEffect s => new EffectDto { Type = "shine", Angle = s.Angle, Width = s.Width, Color = s.Color.ToHex(), Amount = s.Strength, Softness = s.Softness },
                 SquashEffect q => new EffectDto { Type = "squash", WidthAmount = q.WidthAmount, HeightAmount = q.HeightAmount, Anchor = q.Anchor.ToString(), StretchFirst = q.StretchFirst, Bounces = q.Bounces },
-                GradientOverlayEffect g => new EffectDto
-                {
-                    Type = "gradient", Gradient = ColorGradientDto.From(g.Gradient), Amount = g.Strength, Blend = g.Blend.ToString(), Mode = g.Mode.ToString(), Angle = g.Angle,
-                },
                 InnerGlowEffect g => new EffectDto { Type = "innerglow", Color = g.Color.ToHex(), Thickness = g.Size, Amount = g.Strength, Fade = g.Fade, Blend = g.Blend.ToString() },
                 PaletteSwapEffect p => new EffectDto { Type = "swap", Pairs = p.Pairs.Select(q => new[] { q.From.ToHex(), q.To.ToHex() }).ToList(), Tolerance = p.Tolerance },
                 ColorAdjustEffect c => new EffectDto
@@ -1409,8 +1414,9 @@ public static partial class ProjectIO
             var effect = ToKind();
             if (effect is null) return null;
             effect = effect with { ClipToPrevious = ClipToPrevious };
+            // The "gradient" type builds its color gradients itself (legacy spatial A/B or the removed gradient map).
             if (ColorGradients is { Count: > 0 }
-                && !(Type?.Equals("gradient", StringComparison.OrdinalIgnoreCase) == true && Gradient is null))
+                && Type?.Trim().Equals("gradient", StringComparison.OrdinalIgnoreCase) != true)
                 effect = effect with { ColorGradients = ColorGradients
                     .Where(entry => !string.IsNullOrWhiteSpace(entry.Key) && entry.Value is not null)
                     .ToDictionary(entry => entry.Key, entry => entry.Value.ToGradient()) };
@@ -1462,18 +1468,12 @@ public static partial class ProjectIO
                     });
                 case "gradient":
                     if (Gradient is { } temporal)
-                    {
-                        var g = new GradientOverlayEffect();
-                        return Animated(g with
-                        {
-                            Gradient = temporal.ToGradient(), Strength = Amount ?? g.Strength, Blend = EnumOr(Blend, g.Blend), Mode = EnumOr(Mode, g.Mode), Angle = Angle ?? g.Angle,
-                        });
-                    }
-                    var legacy = new GradientOverlayEffect();
-                    var colorA = ColorOr(Color, legacy.Gradient.Stops[0].Color);
-                    var colorB = ColorOr(Color2, legacy.Gradient.Stops[^1].Color);
+                        return GradientMap(temporal);
+                    var legacyStops = LegacyGradientMapStops;
+                    var colorA = ColorOr(Color, legacyStops[0].Color);
+                    var colorB = ColorOr(Color2, legacyStops[^1].Color);
                     var oldDither = EnumOr(Dither, EffectDither.None);
-                    var spatial = ColorGradients is { } oldGradients && oldGradients.TryGetValue("Gradient", out var saved)
+                    var spatial = ColorGradients is { } oldGradients && oldGradients.TryGetValue("Gradient", out var saved) && saved is not null
                         ? saved.ToGradient()
                         : new EffectColorGradient
                         {
@@ -1492,8 +1492,8 @@ public static partial class ProjectIO
                     {
                         Enabled = Enabled,
                         Color = colorA,
-                        Amount = Amount ?? legacy.Strength,
-                        Blend = EnumOr(Blend, legacy.Blend),
+                        Amount = Amount ?? 100,
+                        Blend = EnumOr(Blend, EffectBlend.Normal),
                         ColorGradients = new Dictionary<string, EffectColorGradient>
                         {
                             [nameof(ColorOverlayEffect.Color)] = spatial,
@@ -1599,6 +1599,51 @@ public static partial class ProjectIO
                 default:
                     return null;
             }
+        }
+
+        /// <summary>Default stops of the removed gradient map effect ("그라데이션 변화").</summary>
+        private static readonly GradientStop[] LegacyGradientMapStops =
+            [new(0, new Color32(255, 230, 120)), new(1, new Color32(200, 60, 40))];
+
+        /// <summary>
+        /// The removed gradient map effect (type "gradient" with a temporal gradient) becomes a color overlay whose color slot
+        /// holds an animated gradient. Color transition maps exactly to the Uniform shape (same eased, repeated progress).
+        /// Radial rotation maps to the animated Angular shape, which always makes one geometric turn per cycle:
+        /// the old total angle only keeps its direction (negative = clockwise), so angles other than ±360° and the old
+        /// repeat count are approximated by a single turn over the range.
+        /// </summary>
+        private ColorOverlayEffect GradientMap(ColorGradientDto temporal)
+        {
+            var gradient = temporal.ToGradient();
+            if (temporal.Stops is not { Length: > 0 }) gradient = gradient with { Stops = LegacyGradientMapStops };
+            var repeat = EnumOr(Repeat, EffectRepeat.Once);
+            int repeatCount = Math.Clamp(RepeatCount ?? 1, 1, AnimatedEffect.MaxRepeatCount);
+            var easing = EnumOr(Easing, EffectEasing.Linear);
+            bool radial = Mode?.Trim().Equals("RadialRotation", StringComparison.OrdinalIgnoreCase) == true;
+            int angle = Math.Clamp(Angle ?? 360, -1440, 1440);
+            gradient = radial
+                ? gradient with
+                {
+                    Shape = EffectGradientShape.Angular, Animated = true, Angle = 0, Reverse = angle < 0, Cycles = 1,
+                    Easing = easing, PingPong = repeat == EffectRepeat.PingPong,
+                }
+                : gradient with
+                {
+                    Shape = EffectGradientShape.Uniform, Animated = true, Reverse = false,
+                    Cycles = repeat == EffectRepeat.Once ? 1 : repeatCount,
+                    Easing = easing, PingPong = repeat == EffectRepeat.PingPong,
+                };
+            return new ColorOverlayEffect
+            {
+                Enabled = Enabled,
+                Color = gradient.Stops[0].Color,
+                Amount = Amount ?? 100,
+                Blend = EnumOr(Blend, EffectBlend.Normal),
+                ColorGradients = new Dictionary<string, EffectColorGradient>
+                {
+                    [nameof(ColorOverlayEffect.Color)] = gradient,
+                },
+            };
         }
 
         /// <summary>움직이는 효과 공통 설정(없으면 그 종류의 기본값).</summary>

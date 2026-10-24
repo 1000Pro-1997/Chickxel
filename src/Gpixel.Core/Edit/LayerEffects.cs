@@ -409,7 +409,6 @@ public static class LayerEffects
             case ExplodeEffect x: Explode(image, x, source); break;
             case ShineEffect s: Shine(image, s, source); break;
             case SquashEffect q: Squash(image, q, source); break;
-            case GradientOverlayEffect g: GradientOverlayRender.Apply(image, g, source); break;
             case InnerGlowEffect g: InnerGlowRender.Apply(image, g, source); break;
             case PaletteSwapEffect p: PaletteSwapRender.Apply(image, p, source); break;
             case ColorAdjustEffect c: ColorAdjustRender.Apply(image, c); break;
@@ -540,7 +539,7 @@ public static class LayerEffects
             if (px[i].A == 0) continue;
             var sampled = color.Sample(i % w, i / w);
             int strength = (amount * sampled.A + 127) / 255;
-            if (strength != 0) px[i] = GradientOverlayRender.Blend(px[i], sampled, strength, c.Blend);
+            if (strength != 0) px[i] = Blend(px[i], sampled, strength, c.Blend);
         }
     }
 
@@ -782,6 +781,21 @@ public static class LayerEffects
             if ((uint)nx >= (uint)w || (uint)ny >= (uint)h || !m[ny * w + nx]) return false;
         }
         return true;
+    }
+
+    /// <summary><paramref name="dst"/>의 RGB를 섞기 방법대로 <paramref name="color"/>와 섞은 결과 쪽으로 <paramref name="amount"/>/255만큼(알파는 그대로).</summary>
+    internal static Color32 Blend(Color32 dst, Color32 color, int amount, EffectBlend blend)
+    {
+        switch (blend)
+        {
+            case EffectBlend.Screen:
+                return Screen(dst, color, amount);
+            case EffectBlend.Multiply:
+                var m = new Color32((byte)((dst.R * color.R + 127) / 255), (byte)((dst.G * color.G + 127) / 255), (byte)((dst.B * color.B + 127) / 255));
+                return Mix(dst, m, amount);
+            default:
+                return Mix(dst, color, amount);
+        }
     }
 
     /// <summary><paramref name="dst"/>의 RGB를 <paramref name="color"/> 쪽으로 <paramref name="amount"/>/255만큼(알파는 그대로).</summary>

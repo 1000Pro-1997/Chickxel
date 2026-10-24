@@ -32,6 +32,12 @@ public sealed class ColorPanel : UserControl
     /// <summary>팔레트 목록·이름·색·접힘·순서가 바뀜(설정 저장용).</summary>
     public event EventHandler? PalettesChanged;
 
+    /// <summary>팔레트 내용(이름·색·순서·개수)이 바뀜: 바꾸기 전과 후(실행취소용). 접기만 바꾼 것은 알리지 않는다.</summary>
+    public event Action<IReadOnlyList<NamedPalette>, IReadOnlyList<NamedPalette>>? PaletteEdited;
+
+    /// <summary>마지막으로 알린(또는 들여온) 팔레트 목록.</summary>
+    private IReadOnlyList<NamedPalette> _committed = [];
+
     /// <summary>상태 표시줄에 보일 알림.</summary>
     public event EventHandler<string>? Message;
 
@@ -148,7 +154,25 @@ public sealed class ColorPanel : UserControl
         _active = _sections[0];
         _lospecTarget = null;
         LayoutSections();
+        _committed = Palettes;
     }
+
+    /// <summary>
+    /// 실행취소·다시 실행: 팔레트 목록을 <paramref name="palettes"/>로 되돌린다. 접힘은 지금 상태(같은 자리의 팔레트)를 따르고,
+    /// 활성 팔레트는 같은 자리를 유지한다. 설정 저장 알림(<see cref="PalettesChanged"/>)만 내고 실행취소 기록은 남기지 않는다.
+    /// </summary>
+    public void RestorePalettes(IReadOnlyList<NamedPalette> palettes)
+    {
+        int active = Math.Max(0, _sections.IndexOf(Active));
+        var collapsed = _sections.Select(s => s.Collapsed).ToArray();
+        SetPalettes(palettes.Select((p, i) => p with { Collapsed = i < collapsed.Length ? collapsed[i] : p.Collapsed }));
+        _active = _sections[Math.Min(active, _sections.Count - 1)];
+        RefreshSections();
+        PalettesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static bool SameContent(IReadOnlyList<NamedPalette> a, IReadOnlyList<NamedPalette> b)
+        => a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Colors.SequenceEqual(p.Second.Colors));
 
     /// <summary>활성 팔레트(마지막으로 누르거나 고친 팔레트)의 색.</summary>
     public IReadOnlyList<Color32> ActivePalette => Active.Grid.Colors;
@@ -275,7 +299,14 @@ public sealed class ColorPanel : UserControl
         RefreshSections();
     }
 
-    private void RaisePalettesChanged() => PalettesChanged?.Invoke(this, EventArgs.Empty);
+    private void RaisePalettesChanged()
+    {
+        var now = Palettes;
+        var before = _committed;
+        _committed = now;
+        if (!SameContent(before, now)) PaletteEdited?.Invoke(before, now);
+        PalettesChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>쓰이지 않은 "팔레트 N"(N은 팔레트 수 + 1부터).</summary>
     private string NextPaletteName()

@@ -34,7 +34,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         (UiStrings.S_LayerEffectsDialog_KindTable_AC8A98B707, UiStrings.S_LayerEffectsDialog_KindTable_91F153F61A, () => new ExplodeEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_174D9850CC, UiStrings.S_LayerEffectsDialog_KindTable_E97AB47F1D, () => new ShineEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_792E7BADCE, UiStrings.S_LayerEffectsDialog_KindTable_7C6C1B6117, () => new SquashEffect()),
-        (UiStrings.S_LayerEffectsDialog_KindTable_20186332CF, UiStrings.S_LayerEffectsDialog_KindTable_8153DDED55, () => new GradientOverlayEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_1725C3F28A, UiStrings.S_LayerEffectsDialog_KindTable_993BDE3846, () => new HitFlashEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_510993AD9E, UiStrings.S_LayerEffectsDialog_KindTable_4E942C831D, () => new BlinkEffect()),
         (UiStrings.S_LayerEffectsDialog_KindTable_2C5AB3754D, UiStrings.S_LayerEffectsDialog_KindTable_043CDEE3B8, () => new ShakeEffect()),
@@ -86,8 +85,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         public static readonly NumKind Angle = new("effect.angle", "°", [0, 15, 30, 45, 60, 90, 120, 135, 180, 225, 270, 315]);
         /// <summary>범위 동안 도는 전체 각도(양수 시계 방향, 음수 반시계 방향).</summary>
         public static readonly NumKind Rotation = new("effect.rotation", "°", [-1440, -720, -540, -360, -270, -180, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180, 270, 360, 540, 720, 1080, 1440]);
-        /// <summary>방사형 그라데이션 회전(양수 반시계 방향, 음수 시계 방향). 예시 각도는 회전과 공유한다.</summary>
-        public static readonly NumKind RadialRotation = Rotation with { Key = "effect.gradient.rotation" };
         /// <summary>색상 돌리기(−180~180°).</summary>
         public static readonly NumKind Hue = new("effect.hue", "°", [-180, -120, -90, -60, -30, 0, 30, 60, 90, 120, 180]);
         /// <summary>세기·양(0~100%).</summary>
@@ -528,8 +525,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         ExplodeEffect x => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_DE0B23D063,x.DistanceX,x.DistanceY,Centers[(int)x.Center].Split(' ')[0]) + (x.KeepOriginal ? UiStrings.S_LayerEffectsDialog_Summary_30757AF9AF : ""),
         ShineEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F451DAAC0A,s.Angle,s.Width,s.Strength),
         SquashEffect q => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_963828451F,q.WidthAmount,q.HeightAmount,q.Bounces),
-        GradientOverlayEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_51DCB418AA,g.Gradient.Stops.Count,Blends[(int)g.Blend],g.Strength)
-                                   + (g.Mode == GradientChangeMode.RadialRotation ? $" · {UiStrings.S_GradientPanel_GradientChangeModes_RadialRotation} {g.Angle}°" : ""),
         InnerGlowEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_B8FE86B3A0,g.Size,g.Strength,g.Color.ToHex()),
         PaletteSwapEffect p => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_53B3F1206A,p.Pairs.Count) + (p.Tolerance > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E77A16477B,p.Tolerance) : ""),
         ColorAdjustEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_62017EE627,AdjustSummary(c)),
@@ -756,7 +751,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
                 _settings.Children.Add(Hint(UiStrings.S_LayerEffectsDialog_FillSettings_9691881EA3));
                 break;
             }
-            case GradientOverlayEffect g: GradientPanel(g, Set); break;
             case InnerGlowEffect g: InnerGlowPanel(g, Set); break;
             case PaletteSwapEffect p: PaletteSwapPanel(p, Set); break;
             case ColorAdjustEffect c: ColorAdjustPanel(c, Set); break;

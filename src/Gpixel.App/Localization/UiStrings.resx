@@ -41,6 +41,7 @@
   <data name="Language_RestartNotice" xml:space="preserve"><value>화면 언어 설정을 바꿨습니다. Gpixel을 다시 시작해야 적용됩니다.</value></data>
   <data name="Language_RestartNow" xml:space="preserve"><value>지금 다시 시작</value><comment>저장 안 한 문서가 있으면 닫을 때처럼 묻는다.</comment></data>
   <data name="Language_RestartLater" xml:space="preserve"><value>나중에</value></data>
+  <data name="Palette_UndoLabel" xml:space="preserve"><value>팔레트 변경</value><comment>실행취소·다시 실행 메뉴와 알림에 보이는 팔레트 변경 단계 이름.</comment></data>
   <data name="S_AboutDialog_AboutDialog_1BCE018BCE" xml:space="preserve">
     <value>GitHub 저장소</value>
     <comment>src/Gpixel.App\AboutDialog.cs:28 · AboutDialog · "GitHub 저장소"</comment>
@@ -2847,6 +2848,9 @@ echo __LOGIN_FAILED__
   <data name="EffectGradient_SquareStatic" xml:space="preserve">
     <value>사각형 (정적)</value>
   </data>
+  <data name="EffectGradient_Uniform" xml:space="preserve">
+    <value>전체 한 색 (시간에 따라)</value>
+  </data>
   <data name="S_GradientEditor_GradientEditor_01174C479B" xml:space="preserve">
     <value>삭제</value>
     <comment>src/Gpixel.App\GradientEditor.cs:55 · GradientEditor · "삭제"</comment>
@@ -2902,50 +2906,6 @@ echo __LOGIN_FAILED__
   <data name="S_GradientEditor_GradientEditor_E0FC6F50AE" xml:space="preserve">
     <value>부드럽게</value>
     <comment>src/Gpixel.App\GradientEditor.cs:56 · GradientEditor · "부드럽게"</comment>
-  </data>
-  <data name="S_GradientPanel_GradientChangeModes_ColorTransition" xml:space="preserve">
-    <value>색 변환</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientChangeModes · 프레임마다 한 색</comment>
-  </data>
-  <data name="S_GradientPanel_GradientChangeModes_RadialRotation" xml:space="preserve">
-    <value>방사형 회전</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientChangeModes · 중심 둘레 한 바퀴</comment>
-  </data>
-  <data name="GradientChange_RotationAngle" xml:space="preserve">
-    <value>회전 각도</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · 방사형 효과 범위의 전체 회전 각도</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_002A41B539" xml:space="preserve">
-    <value> 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다.</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:31 · GradientPanel · " 부드럽게는 프레임마다 한 색으로 바뀌고, 디더는 전환 중인 두 색을 픽셀 무늬로 섞습니다. 원래 픽셀의 투명도는 유지합니다."</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_07BCE35122" xml:space="preserve">
-    <value>범위 첫 프레임에는 그라데이션 왼쪽 끝 색, 마지막 프레임에는 오른쪽 끝 색이 적용되고 중간 프레임은 정지점 위치대로 변합니다.</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:30 · GradientPanel · "범위 첫 프레임에는 그라데이션 왼쪽 끝 색, 마지막 프레임에는 오른쪽 끝 색이 적용되고 중간 프레임은 정지점 위치대로 변합니다."</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_A91464E1CE" xml:space="preserve">
-    <value>세기</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:25 · GradientPanel · "세기"</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_B93B4EB88D" xml:space="preserve">
-    <value>섞기</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:27 · GradientPanel · "섞기"</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_AngularGradient" xml:space="preserve">
-    <value>각도 그라데이션</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 방사형 회전 색 정지점</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_Mode" xml:space="preserve">
-    <value>방식</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 효과 방식</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_RadialHint" xml:space="preserve">
-    <value>보이는 그림의 중심에서 오른쪽부터 색 정지점이 반시계 방향으로 펼쳐집니다. 회전 각도는 효과 범위 동안 도는 전체 각도이며, 양수는 반시계 방향, 음수는 시계 방향입니다. 디더는 이웃 색을 픽셀 무늬로 섞고 원래 픽셀의 투명도는 유지합니다.</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs · GradientPanel · 방사형 회전 안내</comment>
-  </data>
-  <data name="S_GradientPanel_GradientPanel_BF99C1BE30" xml:space="preserve">
-    <value>시간 그라데이션</value>
-    <comment>src/Gpixel.App\EffectPanels\GradientPanel.cs:24 · GradientPanel · "시간 그라데이션"</comment>
   </data>
   <data name="S_GroupLayoutDialog__align_2EA62D4A63" xml:space="preserve">
     <value>끝</value>
@@ -3796,7 +3756,7 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:680 · FillSettings · "위로 먼저 (길쭉 → 납작)"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_BD67E1B5C4" xml:space="preserve">
-    <value>보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로).</value>
+    <value>보이는 픽셀을 한 색이나 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로). 그라데이션의 "전체 한 색" 모드는 효과 범위의 시간에 따라 그림 전체를 정지점 색으로 바꿉니다.</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:626 · FillSettings · "보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_BE76D99E55" xml:space="preserve">
@@ -3943,10 +3903,6 @@ echo __LOGIN_FAILED__
     <value>픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다.</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:42 · KindTable · "픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다."</comment>
   </data>
-  <data name="S_LayerEffectsDialog_KindTable_20186332CF" xml:space="preserve">
-    <value>그라데이션 변화</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:36 · KindTable · "그라데이션 변화"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_KindTable_20C2A2DCF6" xml:space="preserve">
     <value>색 바꾸기</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:30 · KindTable · "색 바꾸기"</comment>
@@ -4034,10 +3990,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_KindTable_7C6C1B6117" xml:space="preserve">
     <value>젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:35 · KindTable · "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_8153DDED55" xml:space="preserve">
-    <value>효과 범위의 시간에 따라 그라데이션 정지점 색으로 그림 전체가 변합니다.</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:36 · KindTable · "효과 범위의 시간에 따라 그라데이션 정지점 색으로 그림 전체가 변합니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_KindTable_91F153F61A" xml:space="preserve">
     <value>픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.</value>
@@ -4319,10 +4271,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_Summary_4DA5BACD5A" xml:space="preserve">
     <value> · 규칙적</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:477 · Summary · " · 규칙적"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_51DCB418AA" xml:space="preserve">
-    <value>그라데이션 변화 · {0}색 · {1} · {2}%</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:469 · Summary · $"그라데이션 변화 · {g.Gradient.Stops.Count}색 · {Blends[(int)g.Blend]} · {g.Strength}%"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Summary_53B3F1206A" xml:space="preserve">
     <value>색 바꾸기 · {0}쌍</value>

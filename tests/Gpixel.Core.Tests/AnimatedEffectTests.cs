@@ -52,95 +52,192 @@ public class AnimatedEffectTests
         Assert.Equal(0.0, ((AnimatedEffect)LayerEffects.At([new ShineEffect { Frames = new FrameRange(3, 3) }], 3, 5)[0]).Time);
     }
 
-    // ───────────── 시간 그라데이션 ─────────────
+    // ───────────── 색 덮기 그라데이션: 전체 한 색(시간) ─────────────
+
+    private static readonly Color32 Blue = new(0, 0, 255);
+    private static readonly Color32 Green = new(0, 255, 0);
+
+    /// <summary>정지 효과를 범위 0~<paramref name="span"/>의 <paramref name="step"/>번째 프레임으로 그린 그림.</summary>
+    private static PixelImage OverlayAt(PixelImage src, ColorOverlayEffect effect, int step, int span)
+        => LayerEffects.RenderClipped(src, LayerEffects.At([effect with { Frames = new FrameRange(0, span) }], step, span + 1));
+
+    private static ColorOverlayEffect TimeOverlay(EffectColorGradient gradient) => new()
+    {
+        ColorGradients = new Dictionary<string, EffectColorGradient> { [nameof(ColorOverlayEffect.Color)] = gradient },
+    };
 
     [Fact]
-    public void GradientChange_SamplesStopsFromFirstToLastFrame()
+    public void ColorOverlayUniform_SamplesStopsFromFirstToLastFrame()
     {
-        var blue = new Color32(0, 0, 255);
-        var effect = new GradientOverlayEffect
-        {
-            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, blue)] },
-            Easing = EffectEasing.Linear,
-        };
+        var effect = TimeOverlay(new EffectColorGradient { Stops = [new(0, Red), new(1, Blue)], Shape = EffectGradientShape.Uniform });
         var src = Filled(2, 2, Black.WithAlpha(77));
 
-        Assert.All(At(src, effect, 0, 4).Image.Pixels, pixel => Assert.Equal(Red.WithAlpha(77), pixel));
-        Assert.All(At(src, effect, 2, 4).Image.Pixels, pixel => Assert.Equal(new Color32(128, 0, 128, 77), pixel));
-        Assert.All(At(src, effect, 4, 4).Image.Pixels, pixel => Assert.Equal(blue.WithAlpha(77), pixel));
-    }
-
-    [Fact]
-    public void GradientChange_DitherUsesOnlyAdjacentStopColorsDuringTransition()
-    {
-        var blue = new Color32(0, 0, 255);
-        var effect = new GradientOverlayEffect
-        {
-            Gradient = new EffectColorGradient
-            {
-                Stops = [new(0, Red), new(1, blue)],
-                Dither = GradientDither.Bayer2,
-            },
-        };
-        var pixels = At(Filled(2, 2, Color32.White), effect, 1, 2).Image.Pixels;
-
-        Assert.All(pixels, pixel => Assert.True(pixel == Red || pixel == blue, pixel.ToHex()));
-        Assert.Equal(2, pixels.Count(pixel => pixel == Red));
-        Assert.Equal(2, pixels.Count(pixel => pixel == blue));
-    }
-
-    [Fact]
-    public void GradientChange_RadialRotatesAroundOpaqueBoundsAndLoopsWithoutTouchingTransparentPixels()
-    {
-        var blue = new Color32(0, 0, 255);
-        var src = new PixelImage(9, 7);
-        for (int y = 1; y <= 3; y++)
-            for (int x = 4; x <= 6; x++)
-                src[x, y] = Black.WithAlpha(77);
-        var transparent = new Color32(40, 50, 60, 0);
-        src[0, 0] = transparent;
-        var effect = new GradientOverlayEffect
-        {
-            Mode = GradientChangeMode.RadialRotation,
-            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, blue)] },
-        };
-
-        var first = At(src, effect, 0, 4).Image;
-        var quarter = At(src, effect, 1, 4).Image;
-        var last = At(src, effect, 4, 4).Image;
-        Assert.Equal(Red.WithAlpha(77), first[6, 2]); // right of opaque center (5.5, 2.5)
-        Assert.Equal(new Color32(191, 0, 64, 77), first[5, 1]); // above center
-        Assert.Equal(new Color32(128, 0, 128, 77), first[4, 2]); // left of center
-        Assert.Equal(new Color32(64, 0, 191, 77), first[5, 3]); // below center
-        Assert.Equal(first[6, 2], quarter[5, 1]); // one quarter-turn counterclockwise
-        Assert.NotEqual(first[6, 2], quarter[6, 2]);
-        Assert.True(first.ContentEquals(last));
-        Assert.Equal(transparent, first[0, 0]);
-        Assert.Equal(transparent, quarter[0, 0]);
-        Assert.Equal(transparent, last[0, 0]);
+        Assert.True(effect.ColorGradients[nameof(ColorOverlayEffect.Color)].Animated);
+        Assert.All(OverlayAt(src, effect, 0, 4).Pixels, pixel => Assert.Equal(Red.WithAlpha(77), pixel));
+        Assert.All(OverlayAt(src, effect, 2, 4).Pixels, pixel => Assert.Equal(new Color32(128, 0, 128, 77), pixel));
+        Assert.All(OverlayAt(src, effect, 4, 4).Pixels, pixel => Assert.Equal(Blue.WithAlpha(77), pixel));
     }
 
     [Theory]
-    [InlineData(180, 2, 1)]
-    [InlineData(-180, 2, 3)]
-    public void GradientChange_RadialSignedAngleControlsDirectionAndPartialTurn(int angle, int targetX, int targetY)
+    [InlineData(1, false, EffectEasing.Linear, false, 4)] // 한 번: 마지막 정지점에서 끝남
+    [InlineData(1, false, EffectEasing.Linear, false, 3)]
+    [InlineData(2, false, EffectEasing.Linear, false, 4)] // 반복: 바퀴 경계는 끝 색
+    [InlineData(2, false, EffectEasing.Linear, false, 6)]
+    [InlineData(1, true, EffectEasing.Linear, false, 4)] // 왕복: 가운데가 끝 색
+    [InlineData(1, true, EffectEasing.Linear, false, 8)] // 왕복: 처음 색으로 끝남
+    [InlineData(3, true, EffectEasing.EaseInOut, false, 5)]
+    [InlineData(1, false, EffectEasing.EaseIn, false, 4)]
+    [InlineData(1, false, EffectEasing.EaseOut, false, 2)]
+    [InlineData(1, false, EffectEasing.Linear, true, 2)] // 역방향
+    [InlineData(2, false, EffectEasing.EaseIn, true, 3)]
+    public void ColorOverlayUniform_OneColorPerFrameAtEasedRepeatedProgress(int cycles, bool pingPong, EffectEasing easing, bool reverse, int step)
     {
-        var source = new PixelImage(5, 5);
-        for (int y = 1; y <= 3; y++)
-            for (int x = 1; x <= 3; x++) source[x, y] = Color32.White;
-        var effect = new GradientOverlayEffect
+        const int span = 8;
+        var gradient = new EffectColorGradient
         {
-            Mode = GradientChangeMode.RadialRotation,
-            Angle = angle,
-            Gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, Color32.Black)] },
+            Stops = [new(0, Red), new(0.4, Green), new(1, Blue)],
+            Shape = EffectGradientShape.Uniform, Cycles = cycles, PingPong = pingPong, Easing = easing, Reverse = reverse,
         };
-        var start = At(source, effect, 0, 4).Image;
-        var middle = At(source, effect, 2, 4).Image;
-        var end = At(source, effect, 4, 4).Image;
-        Assert.Equal(start[3, 2], middle[targetX, targetY]);
-        Assert.NotEqual(start[3, 2], end[3, 2]);
-        Assert.True(start.ContentEquals(At(source, effect with { Angle = 0 }, 4, 4).Image));
-        Assert.True(start.ContentEquals(At(source, effect with { Angle = 720 }, 4, 4).Image));
+        var repeat = pingPong ? EffectRepeat.PingPong : cycles == 1 ? EffectRepeat.Once : EffectRepeat.Loop;
+        double progress = AnimatedEffect.Ease(AnimatedEffect.Cycle((double)step / span, repeat, cycles), easing);
+        var expected = Gradient.Sample(gradient.Stops, gradient.AlphaStops, reverse ? 1 - progress : progress, gradient.Interpolation);
+
+        var pixels = OverlayAt(Filled(3, 2, Color32.White), TimeOverlay(gradient), step, span).Pixels;
+
+        Assert.All(pixels, pixel => Assert.Equal(expected, pixel));
+        if (!pingPong && cycles == 1 && step == span && !reverse) Assert.Equal(Blue, expected);
+    }
+
+    [Fact]
+    public void ColorOverlayUniform_DitherUsesOnlyAdjacentStopColorsDuringTransition()
+    {
+        var effect = TimeOverlay(new EffectColorGradient
+        {
+            Stops = [new(0, Red), new(1, Blue)],
+            Dither = GradientDither.Bayer2,
+            Shape = EffectGradientShape.Uniform,
+        });
+        var pixels = OverlayAt(Filled(2, 2, Color32.White), effect, 1, 2).Pixels;
+
+        Assert.All(pixels, pixel => Assert.True(pixel == Red || pixel == Blue, pixel.ToHex()));
+        Assert.Equal(2, pixels.Count(pixel => pixel == Red));
+        Assert.Equal(2, pixels.Count(pixel => pixel == Blue));
+    }
+
+    [Fact]
+    public void ColorOverlayAngular_PingPongAndEasingReshapeTimeOnly()
+    {
+        var src = new PixelImage(5, 5);
+        for (int y = 1; y <= 3; y++)
+            for (int x = 1; x <= 3; x++) src[x, y] = Color32.White;
+        var angular = new EffectColorGradient
+        {
+            Stops = [new(0, Red), new(0.5, Green), new(1, Blue)], Shape = EffectGradientShape.Angular, Animated = true,
+        };
+
+        // Linear without ping-pong keeps the original rotation (half a turn at the middle frame).
+        Assert.True(OverlayAt(src, TimeOverlay(angular), 2, 4).ContentEquals(OverlayAt(src, TimeOverlay(angular), 1, 2)));
+        Assert.True(OverlayAt(src, TimeOverlay(angular), 0, 4).ContentEquals(OverlayAt(src, TimeOverlay(angular), 4, 4)));
+        // Ping-pong reaches the full turn at the middle and comes back.
+        var pingPong = angular with { PingPong = true };
+        Assert.True(OverlayAt(src, TimeOverlay(pingPong), 1, 4).ContentEquals(OverlayAt(src, TimeOverlay(angular), 2, 4)));
+        Assert.True(OverlayAt(src, TimeOverlay(pingPong), 3, 4).ContentEquals(OverlayAt(src, TimeOverlay(angular), 2, 4)));
+        // Ease-in at the middle frame is a quarter turn.
+        Assert.True(OverlayAt(src, TimeOverlay(angular with { Easing = EffectEasing.EaseIn }), 2, 4)
+            .ContentEquals(OverlayAt(src, TimeOverlay(angular), 1, 4)));
+    }
+
+    [Fact]
+    public void Load_OldGradientMap_MigratesToColorOverlayAndRendersSamePixels()
+    {
+        var p = new SpriteProject(3, 2);
+        for (int i = 0; i < 4; i++) p.DuplicateFrame(0);
+        p.SetLayerEffects(0, [new ShadowEffect()]);
+        using var stream = new MemoryStream();
+        ProjectIO.Save(p, stream);
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
+            var effects = root["layers"]!.AsArray()[0]!["effects"]!.AsArray();
+            effects.Clear();
+            const string stops = """[{ "position": 0, "color": "#FF0000" }, { "position": 0.3, "color": "#00FF00" }, { "position": 1, "color": "#0000FF80" }]""";
+            effects.Add(System.Text.Json.Nodes.JsonNode.Parse($$"""
+                { "type": "gradient", "enabled": true, "frames": [1, 4], "amount": 65, "blend": "Screen",
+                  "easing": "EaseIn", "repeat": "Loop", "repeatCount": 2, "mode": "ColorTransition",
+                  "gradient": { "interpolation": "Smooth", "dither": "None", "stops": {{stops}} } }
+                """));
+            effects.Add(System.Text.Json.Nodes.JsonNode.Parse($$"""
+                { "type": "gradient", "enabled": false, "clipToPrevious": true, "amount": 40, "blend": "Multiply",
+                  "easing": "EaseOut", "repeat": "PingPong", "repeatCount": 3, "mode": "RadialRotation", "angle": -720,
+                  "gradient": { "dither": "Bayer2", "stops": {{stops}} } }
+                """));
+            entry.Delete();
+            using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
+            root.WriteTo(writer);
+        }
+        stream.Position = 0;
+        var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+
+        var transition = Assert.IsType<ColorOverlayEffect>(loaded[0]);
+        Assert.Equal((true, new FrameRange(1, 4), 65, EffectBlend.Screen, Red),
+            (transition.Enabled, transition.Frames!.Value, transition.Amount, transition.Blend, transition.Color));
+        var uniform = Assert.Single(transition.ColorGradients).Value;
+        Assert.Equal((EffectGradientShape.Uniform, true, 2, EffectEasing.EaseIn, false, false),
+            (uniform.Shape, uniform.Animated, uniform.Cycles, uniform.Easing, uniform.PingPong, uniform.Reverse));
+
+        var src = new PixelImage(3, 2);
+        src.Clear(new Color32(30, 120, 200));
+        src[1, 0] = new Color32(90, 10, 60, 77);
+        src[2, 1] = new Color32(40, 50, 60, 0);
+        int amount = (65 * 255 + 50) / 100;
+        for (int frame = 1; frame <= 4; frame++)
+        {
+            // Old gradient map: progress = Ease(Cycle(Time, Repeat, RepeatCount), Easing), one color for every visible pixel.
+            double progress = AnimatedEffect.Ease(AnimatedEffect.Cycle((frame - 1) / 3.0, EffectRepeat.Loop, 2), EffectEasing.EaseIn);
+            var sampled = Gradient.Sample(uniform.Stops, uniform.AlphaStops, progress, GradientInterpolation.Smooth);
+            int strength = (amount * sampled.A + 127) / 255;
+            var rendered = LayerEffects.RenderClipped(src, LayerEffects.At([transition], frame, 5));
+            for (int i = 0; i < src.Pixels.Length; i++)
+            {
+                var expected = src.Pixels[i].A == 0 ? src.Pixels[i] : LayerEffects.Blend(src.Pixels[i], sampled, strength, EffectBlend.Screen);
+                Assert.Equal(expected, rendered.Pixels[i]);
+            }
+        }
+
+        var radial = Assert.IsType<ColorOverlayEffect>(loaded[1]);
+        Assert.Equal((false, true, (FrameRange?)null, 40, EffectBlend.Multiply),
+            (radial.Enabled, radial.ClipToPrevious, radial.Frames, radial.Amount, radial.Blend));
+        var angular = Assert.Single(radial.ColorGradients).Value;
+        Assert.Equal((EffectGradientShape.Angular, true, 0, true, 1, EffectEasing.EaseOut, true, GradientDither.Bayer2),
+            (angular.Shape, angular.Animated, angular.Angle, angular.Reverse, angular.Cycles, angular.Easing, angular.PingPong, angular.Dither));
+        Assert.Equal(3, angular.Stops.Count);
+    }
+
+    [Fact]
+    public void SaveLoad_ColorGradientEasingAndPingPong_OmittedWhenDefault()
+    {
+        var p = new SpriteProject(4, 4);
+        var gradient = new EffectColorGradient { Stops = [new(0, Red), new(1, Blue)], Shape = EffectGradientShape.Uniform };
+        p.SetLayerEffects(0, [TimeOverlay(gradient), TimeOverlay(gradient with { Easing = EffectEasing.EaseInOut, PingPong = true })]);
+        using var stream = new MemoryStream();
+        ProjectIO.Save(p, stream);
+        stream.Position = 0;
+        var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+        Assert.Equal(gradient, loaded[0].ColorGradients[nameof(ColorOverlayEffect.Color)]);
+        Assert.Equal(gradient with { Easing = EffectEasing.EaseInOut, PingPong = true }, loaded[1].ColorGradients[nameof(ColorOverlayEffect.Color)]);
+
+        using var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read, leaveOpen: true);
+        using var reader = zip.GetEntry(ProjectIO.ProjectEntryName)!.Open();
+        var effects = System.Text.Json.Nodes.JsonNode.Parse(reader)!["layers"]!.AsArray()[0]!["effects"]!.AsArray();
+        var plain = effects[0]!["colorGradients"]!["Color"]!.AsObject();
+        Assert.False(plain.ContainsKey("easing"));
+        Assert.False(plain.ContainsKey("pingPong"));
+        Assert.Equal("Uniform", plain["shape"]!.GetValue<string>());
+        var timed = effects[1]!["colorGradients"]!["Color"]!.AsObject();
+        Assert.Equal("EaseInOut", timed["easing"]!.GetValue<string>());
+        Assert.True(timed["pingPong"]!.GetValue<bool>());
     }
 
     // ───────────── 터지기 ─────────────
@@ -471,48 +568,6 @@ public class AnimatedEffectTests
         Assert.Equal(expected, loaded);
         var src = Filled(6, 6, Red);
         Assert.True(At(src, expected, 2, 4).Image.ContentEquals(At(src, loaded, 2, 4).Image));
-    }
-
-    [Theory]
-    [InlineData(-180)]
-    [InlineData(0)]
-    public void SaveLoad_GradientChangeMode_RoundTripsAndMissingModeUsesColorTransition(int angle)
-    {
-        var p = new SpriteProject(4, 4);
-        var radial = new GradientOverlayEffect
-        {
-            Mode = GradientChangeMode.RadialRotation,
-            Angle = angle,
-            Gradient = new EffectColorGradient
-            {
-                Stops = [new(0, Red), new(0.5, new Color32(0, 255, 0)), new(1, Color32.Black)],
-                Dither = GradientDither.Bayer4,
-            },
-            Strength = 65,
-            Blend = EffectBlend.Screen,
-        };
-        p.SetLayerEffects(0, [radial]);
-        using var stream = new MemoryStream();
-        ProjectIO.Save(p, stream);
-        stream.Position = 0;
-        Assert.Equal(radial, ProjectIO.Load(stream).Layers[0].Effects[0]);
-
-        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
-        {
-            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
-            System.Text.Json.Nodes.JsonNode root;
-            using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
-            var saved = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
-            Assert.Equal("RadialRotation", saved["mode"]!.GetValue<string>());
-            Assert.Equal(angle, saved["angle"]!.GetValue<int>());
-            saved.Remove("mode");
-            saved.Remove("angle");
-            entry.Delete();
-            using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
-            root.WriteTo(writer);
-        }
-        stream.Position = 0;
-        Assert.Equal(radial with { Mode = GradientChangeMode.ColorTransition, Angle = 360 }, ProjectIO.Load(stream).Layers[0].Effects[0]);
     }
 
     // ───────────── 영구 적용 ─────────────
