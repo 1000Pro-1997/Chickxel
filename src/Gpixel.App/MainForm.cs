@@ -12,7 +12,7 @@ namespace Gpixel.App;
 /// 캔버스(가운데), 타임라인(아래), 미리보기·Unity/내보내기 독(오른쪽), 접을 수 있는 파일 브라우저(맨 왼쪽), 상태 표시줄.
 /// .gpixel 프로젝트 열기/저장(+시트 내보내기), 단축키, 설정 저장을 맡는다.
 /// </summary>
-public sealed class MainForm : Window, Ai.IAiHost
+public sealed partial class MainForm : Window, Ai.IAiHost
 {
     private enum KeyScope
     {
@@ -188,6 +188,7 @@ public sealed class MainForm : Window, Ai.IAiHost
         var canvasHost = new Panel { Background = AppTheme.BackBrush };
         canvasHost.Children.Add(_canvas);
         canvasHost.Children.Add(_start);
+        AttachCanvasDrop(canvasHost);
 
         var s0 = _settings;
         (_splitRightDock, _rowPreview, _) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);

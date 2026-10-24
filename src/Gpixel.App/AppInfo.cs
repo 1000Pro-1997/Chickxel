@@ -19,8 +19,8 @@ public static class AppInfo
 {
     public const string Name = "Gpixel";
     public const string ThirdPartyNoticesUrl = AppUpdate.RepoUrl + "/blob/main/THIRD-PARTY-NOTICES.md";
-    /// <summary>버그 제보·불편한 점·아이디어를 받는 Discord 채널.</summary>
-    public const string DiscordUrl = "https://discord.com/channels/1563526135827144895/1563527912735510539";
+    /// <summary>버그 제보·불편한 점·아이디어를 받는 Discord 서버의 공개 초대 링크.</summary>
+    public const string DiscordUrl = "https://discord.gg/Avw7aUVxqr";
 
     /// <summary>
     /// 앱 버전(어셈블리 InformationalVersion에서 "+커밋"을 뺀 것, publish의 <c>-p:Version</c>). 읽지 못하면 0.0.0.

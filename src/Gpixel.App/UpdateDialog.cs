@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Gpixel.App.Ai;
 using Gpixel.Core.IO;
 using Gpixel.App.Localization;
 
@@ -13,12 +14,15 @@ public enum UpdateChoice
 }
 
 /// <summary>
-/// 새 버전 알림: 버전, 릴리스 설명(원문 그대로), 지금 업데이트 / 다음 업데이트까지 띄우지 않기 / 릴리스 페이지 열기 / 나중에.
+/// 새 버전 알림: 버전, 바뀐 점(마크다운 — 버전 머리 <c>##</c>, 항목 소제목 <c>###</c>, 세부 <c>-</c> 목록을 꾸며 보임),
+/// 지금 업데이트 / 다음 업데이트까지 띄우지 않기 / 릴리스 페이지 열기 / 나중에.
 /// "지금 업데이트"는 창 안에서 내려받고(진행 막대·취소) 검증·압축 해제까지 마치면 <see cref="UpdateChoice.Install"/>로 닫힌다.
 /// 자동 설치를 할 수 없으면(<paramref name="reason"/>) 그 이유를 보이고 릴리스 페이지를 권한다.
 /// </summary>
 public sealed class UpdateDialog : DialogBase
 {
+    private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
+
     private readonly ReleaseInfo _release;
     private readonly InstallPlan? _plan;
     private readonly Updater _updater;
@@ -46,17 +50,24 @@ public sealed class UpdateDialog : DialogBase
         });
         Body.Children.Add(Ui.Label(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_7B9D65167A,release.Version,AppInfo.VersionText,published)));
         string pageUrl = release.PageUrl.ToString();
-        Body.Children.Add(new TextBox
+        var notes = new MarkdownView(MonoFont, url => Updater.OpenUrl(this, url)) { ListIndent = 10, HeadingGap = 6, Margin = new Thickness(10, 8, 10, 10) };
+        notes.SetText(release.Notes.Trim().Length > 0
+            ? release.Notes.Trim()
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_BC1BC0ABAE,release.Version,pageUrl));
+        Body.Children.Add(new Border
         {
-            Text = release.Notes.Trim().Length > 0
-                ? release.Notes.Trim()
-                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_BC1BC0ABAE,release.Version,pageUrl),
-            IsReadOnly = true,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
             Width = 580,
             Height = 280,
             Margin = new Thickness(3, 6, 3, 3),
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Child = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = notes,
+            },
         });
         // 버전별 릴리스 페이지 링크(설명을 읽었든 못 읽었든 늘 보임)
         var linkLabel = Ui.IconLabel(VectorIcon.ExternalLink, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_UpdateDialog_UpdateDialog_D7A2B2A2F5,release.Version), iconAfter: true);

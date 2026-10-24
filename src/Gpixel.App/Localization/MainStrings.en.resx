@@ -348,4 +348,9 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>Replace color</value></data>
   <data name="Menu_Help_Guide" xml:space="preserve"><value>Guide…</value></data>
   <data name="Menu_Help_Discord" xml:space="preserve"><value>Report a bug or idea (Discord)…</value></data>
+  <data name="Drop_UndoLabel" xml:space="preserve"><value>Drop image</value></data>
+  <data name="Drop_Added" xml:space="preserve"><value>Added as new layer: {names}</value></data>
+  <data name="Drop_FramesAdded" xml:space="preserve"><value> · {count} frames added</value></data>
+  <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered and the parts outside the canvas were cut. To keep everything, enlarge the canvas first in Canvas size mode (Edit > Canvas size…).</value></data>
+  <data name="Drop_Unreadable" xml:space="preserve"><value>Could not read image: {names}</value></data>
 </root>

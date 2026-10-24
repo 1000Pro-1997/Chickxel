@@ -229,7 +229,7 @@ public class UpdateTests
     public void Changelog_Between_PicksSectionsAboveCurrentUpToLatest_NewestFirst()
     {
         var notes = ChangelogNotes.Between(Changelog, new SemVersion(1, 11, 0), new SemVersion(1, 13, 0));
-        Assert.Equal("v1.13.0 (2026-10-21)\n- 홀로그램\n\nv1.12.0 (2026-10-21)\n- 실행취소 기록", notes);
+        Assert.Equal("## v1.13.0 (2026-10-21)\n- 홀로그램\n\n## v1.12.0 (2026-10-21)\n- 실행취소 기록", notes);
         Assert.DoesNotContain("설명 문단", notes);
     }
 
@@ -240,5 +240,58 @@ public class UpdateTests
         Assert.Equal(new SemVersion(1, 5, int.MaxValue), ChangelogNotes.HeaderVersion("v1.0.0 ~ v1.5.x (2026-10-20)"));
         Assert.Equal("", ChangelogNotes.Between(Changelog, new SemVersion(1, 13, 0), new SemVersion(1, 13, 0)));
         Assert.Equal("", ChangelogNotes.Between(null, new SemVersion(1, 0, 0), new SemVersion(2, 0, 0)));
+    }
+
+    private const string EnglishChangelog = """
+        # Changes
+
+        Intro.
+
+        ## 미배포
+        ### Unreleased
+        - Not yet
+
+        ## v1.13.0 (2026-10-21)
+        ### New **Hologram** effect
+        - Tint and scanlines.
+        - Glitch.
+
+        ### Faster saving
+        - Saves in the background.
+        """;
+
+    [Fact]
+    public void Changelog_SubheadingsStayInsideTheirVersionSection_MarkdownKept()
+    {
+        var notes = ChangelogNotes.Between(EnglishChangelog, new SemVersion(1, 12, 0), new SemVersion(1, 13, 0));
+        Assert.Equal("## v1.13.0 (2026-10-21)\n### New **Hologram** effect\n- Tint and scanlines.\n- Glitch.\n\n### Faster saving\n- Saves in the background.", notes);
+        Assert.Equal("", ChangelogNotes.Between(EnglishChangelog, new SemVersion(1, 13, 0), new SemVersion(2, 0, 0)));
+    }
+
+    [Fact]
+    public void Changelog_Between_WithFallback_UsesPreferredPerVersion_ElseFallback_NewestFirst()
+    {
+        var notes = ChangelogNotes.Between(EnglishChangelog, new SemVersion(1, 10, 3), new SemVersion(1, 13, 0), Changelog);
+        Assert.StartsWith("## v1.13.0 (2026-10-21)\n### New **Hologram** effect\n", notes);
+        Assert.EndsWith("- Saves in the background.\n\n## v1.12.0 (2026-10-21)\n- 실행취소 기록\n\n## v1.10.x (2026-10-20)\n- 저장 단추", notes);
+        Assert.DoesNotContain("홀로그램", notes);
+        Assert.DoesNotContain("Unreleased", notes);
+    }
+
+    [Fact]
+    public void Changelog_Between_WithFallback_MissingPreferredFile_UsesFallbackOnly()
+    {
+        Assert.Equal(ChangelogNotes.Between(Changelog, new SemVersion(1, 11, 0), new SemVersion(1, 13, 0)),
+            ChangelogNotes.Between(null, new SemVersion(1, 11, 0), new SemVersion(1, 13, 0), Changelog));
+        Assert.Equal(ChangelogNotes.Between(EnglishChangelog, new SemVersion(1, 12, 0), new SemVersion(1, 13, 0)),
+            ChangelogNotes.Between(EnglishChangelog, new SemVersion(1, 12, 0), new SemVersion(1, 13, 0), null));
+    }
+
+    [Fact]
+    public void Changelog_AssetNames_EnglishIsMainFile_KoreanIsKoFile()
+    {
+        // 릴리스 워크플로가 올리는 파일 이름과 같아야 한다(.github/workflows/release.yml).
+        Assert.Equal("CHANGELOG.md", ChangelogNotes.EnglishAssetName);
+        Assert.Equal("CHANGELOG.ko.md", ChangelogNotes.KoreanAssetName);
     }
 }

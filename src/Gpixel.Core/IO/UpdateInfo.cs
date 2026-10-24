@@ -257,48 +257,67 @@ public static class AppUpdate
 }
 
 /// <summary>
-/// 저장소의 <c>CHANGELOG.md</c>(한국어 "바뀐 점")에서 버전 절을 고른다. 절 머리는 <c>## v1.2.3 (날짜)</c>이고, 범위로 쓴 절
-/// (<c>## v1.10.x</c>, <c>## v1.0.0 ~ v1.5.x</c>)은 머리의 가장 높은 버전으로 본다(<c>x</c> = 그 부 버전의 끝).
-/// 릴리스마다 파일로 함께 올려 업데이트 창이 API 한도 없이 읽는다.
+/// 저장소의 바뀐 점에서 버전 절을 고른다: <c>CHANGELOG.md</c>(영어, 원본 — v1.14.23부터)와 <c>CHANGELOG.ko.md</c>(한국어, 모든 버전 — 머리는 영어와 같음).
+/// 절 머리는 <c>## v1.2.3 (날짜)</c>이고, 범위로 쓴 절(<c>## v1.10.x</c>, <c>## v1.0.0 ~ v1.5.x</c>)은 머리의 가장 높은 버전으로 본다
+/// (<c>x</c> = 그 부 버전의 끝). 두 파일 모두 릴리스마다 함께 올려 업데이트 창이 API 한도 없이 읽는다. 어느 파일을 쓸지는 앱이 정한다.
 /// </summary>
 public static class ChangelogNotes
 {
-    /// <summary>릴리스에 함께 올리는 파일 이름.</summary>
-    public const string AssetName = "CHANGELOG.md";
+    /// <summary>릴리스에 함께 올리는 영어 바뀐 점 파일 이름(<see cref="KoreanAssetName"/>이 생기기 전 예전 릴리스에서는 이 이름이 한국어 파일).</summary>
+    public const string EnglishAssetName = "CHANGELOG.md";
+
+    /// <summary>릴리스에 함께 올리는 한국어 바뀐 점 파일 이름.</summary>
+    public const string KoreanAssetName = "CHANGELOG.ko.md";
 
     private static readonly System.Text.RegularExpressions.Regex VersionToken =
         new(@"v?(\d+)\.(\d+)(?:\.(\d+|x))?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     /// <summary>
-    /// <paramref name="current"/>보다 높고 <paramref name="latest"/> 이하인 절들(새 버전부터, 머리는 "v1.2.3 (날짜)" 줄로, 강조 기호 **·` 뺌).
-    /// 맞는 절이 없거나 글이 비었으면 빈 문자열.
+    /// <paramref name="current"/>보다 높고 <paramref name="latest"/> 이하인 절들을 마크다운 원문 그대로 이어 붙인다(새 버전부터, 머리는
+    /// <c>## v1.2.3 (날짜)</c> 줄 그대로, 절 안의 <c>###</c> 소제목과 <c>-</c> 세부 목록도 그대로 — 업데이트 창이 꾸며 보인다).
+    /// <paramref name="fallback"/>을 주면 버전마다 <paramref name="markdown"/>의 절을 먼저 쓰고, 거기 없는 버전만 <paramref name="fallback"/>의
+    /// 절로 채운다(영어 절이 없는 옛 버전을 한국어로). 맞는 절이 없거나 글이 비었으면 빈 문자열.
     /// </summary>
-    public static string Between(string? markdown, SemVersion current, SemVersion latest)
+    public static string Between(string? markdown, SemVersion current, SemVersion latest, string? fallback = null)
     {
-        if (string.IsNullOrWhiteSpace(markdown)) return "";
-        var picked = new List<string>();
+        var picked = Sections(markdown, current, latest);
+        if (fallback is not null)
+        {
+            foreach (var section in Sections(fallback, current, latest))
+                if (!picked.Exists(p => p.Version == section.Version)) picked.Add(section);
+            picked = picked.OrderByDescending(p => p.Version).ToList();
+        }
+        return string.Join("\n\n", picked.Select(p => p.Text));
+    }
+
+    /// <summary><paramref name="current"/>보다 높고 <paramref name="latest"/> 이하인 절들(글 순서대로, 머리 버전과 글).</summary>
+    private static List<(SemVersion Version, string Text)> Sections(string? markdown, SemVersion current, SemVersion latest)
+    {
+        var picked = new List<(SemVersion, string)>();
+        if (string.IsNullOrWhiteSpace(markdown)) return picked;
+        SemVersion? version = null;
         List<string>? section = null;
         foreach (var raw in markdown.Replace("\r\n", "\n").Split('\n'))
         {
+            // "## "만 버전 절 머리다. 절 안의 "### 소제목"은 "##" 뒤가 "#"라 여기 걸리지 않고 절에 그대로 들어간다.
             if (raw.StartsWith("## ", StringComparison.Ordinal))
             {
                 Flush();
-                var v = HeaderVersion(raw[3..]);
-                section = v is not null && v > current && v <= latest ? [raw[3..].Trim()] : null;
+                version = HeaderVersion(raw[3..]);
+                section = version is not null && version > current && version <= latest ? [raw.TrimEnd()] : null;
                 continue;
             }
             if (raw.StartsWith("# ", StringComparison.Ordinal)) { Flush(); section = null; continue; }
             section?.Add(raw);
         }
         Flush();
-        return string.Join("\n\n", picked);
+        return picked;
 
         void Flush()
         {
             if (section is null) return;
             while (section.Count > 1 && string.IsNullOrWhiteSpace(section[^1])) section.RemoveAt(section.Count - 1);
-            // 앱에서는 글자로만 보이므로 마크다운 강조(**·`)는 뺀다.
-            picked.Add(string.Join("\n", section).Replace("**", "").Replace("`", ""));
+            picked.Add((version!, string.Join("\n", section)));
             section = null;
         }
     }

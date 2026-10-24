@@ -1,4 +1,5 @@
 using Avalonia.Controls.Templates;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
@@ -8,7 +9,8 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 파일 브라우저: 루트 폴더 아래 폴더 트리 + 선택 폴더의 .gpixel 프로젝트와 PNG 썸네일 목록(하위 포함 토글,
-/// 프로젝트가 내보내는 이미지는 프로젝트 하나로 묶어 보여 줌), 이름 검색, 파일 변경 감시, 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제).
+/// 프로젝트가 내보내는 이미지는 프로젝트 하나로 묶어 보여 줌), 이름 검색, 파일 변경 감시, 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제),
+/// 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
 /// </summary>
 public sealed class FileBrowserPanel : UserControl
 {
@@ -39,12 +41,16 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>목록 한 칸: 경로, 그 칸의 컨트롤들(Dot = 저장 안 한 변경 빨간 점), 기본 도움말.</summary>
     private sealed record FileItem(string Path, ListBoxItem Container, Image Thumb, TextBlock Label, StackPanel Content, Control Dot, string Tip);
 
-    /// <summary>왼쪽 버튼을 누른 상태: 누른 곳(항목 패널 좌표, 스크롤과 함께 움직임), 그때의 선택(Ctrl이면 유지), 끌기 시작 여부.</summary>
-    private sealed class PressState(Avalonia.Point start, IReadOnlyList<object> baseSelection, bool modifier)
+    /// <summary>
+    /// 왼쪽 버튼을 누른 상태: 누른 곳(항목 패널 좌표, 스크롤과 함께 움직임), 그때의 선택(Ctrl이면 유지), 끌기 시작 여부,
+    /// 목록 밖으로 끌어 내면 끌어 놓을 파일(항목을 눌렀을 때 — 고른 항목이면 고른 파일 모두, 아니면 그 파일 하나).
+    /// </summary>
+    private sealed class PressState(Avalonia.Point start, IReadOnlyList<object> baseSelection, bool modifier, IReadOnlyList<string> dragPaths)
     {
         public Avalonia.Point Start { get; } = start;
         public IReadOnlyList<object> BaseSelection { get; } = baseSelection;
         public bool Modifier { get; } = modifier;
+        public IReadOnlyList<string> DragPaths { get; } = dragPaths;
         public bool Dragging { get; set; }
         public bool SelectionChanged { get; set; }
     }
@@ -798,7 +804,11 @@ public sealed class FileBrowserPanel : UserControl
         bool modifier = command || (e.KeyModifiers & KeyModifiers.Shift) != 0;
         // Ctrl/⌘를 누르고 끌면 지금 선택에 더한다.
         var baseSelection = command ? (_list.SelectedItems?.Cast<object>().ToList() ?? []) : [];
-        _press = new PressState(e.GetPosition(panel), baseSelection, modifier);
+        // 누른 항목(아직 목록이 고르기 전): 이미 고른 항목이면 고른 파일 모두를, 아니면 그 파일만 밖으로 끌어 낼 수 있다.
+        IReadOnlyList<string> dragPaths = source?.FindAncestorOfType<ListBoxItem>(includeSelf: true) is { Tag: FileItem pressed } container
+            ? !modifier && _list.SelectedItems?.Contains(container) == true ? SelectedPaths : [pressed.Path]
+            : [];
+        _press = new PressState(e.GetPosition(panel), baseSelection, modifier, dragPaths);
     }
 
     private void OnListPointerMoved(object? sender, PointerEventArgs e)
@@ -816,6 +826,13 @@ public sealed class FileBrowserPanel : UserControl
             press.Dragging = true;
             e.Pointer.Capture(_list);
         }
+        // 항목을 눌러 목록 왼쪽·오른쪽 밖(캔버스 쪽)으로 끌면 사각형 고르기 대신 파일 끌어 놓기(캔버스에 놓으면 새 레이어).
+        double listX = e.GetPosition(_list).X;
+        if (press.DragPaths.Count > 0 && (listX < 0 || listX > _list.Bounds.Width))
+        {
+            StartFileDrag(e, press.DragPaths);
+            return;
+        }
         // 목록 위·아래 밖으로 끌면 그쪽으로 스크롤한다.
         if (_list.FindDescendantOfType<ScrollViewer>() is { } sv)
         {
@@ -827,25 +844,7 @@ public sealed class FileBrowserPanel : UserControl
         var wanted = new HashSet<object>(press.BaseSelection);
         foreach (var item in _items.Values)
             if (item.Container.Bounds.Intersects(rect)) wanted.Add(item.Container);
-        _suppressActivate = true;
-        try
-        {
-            _list.Selection.BeginBatchUpdate();
-            for (int i = 0; i < _list.Items.Count; i++)
-            {
-                bool want = wanted.Contains(_list.Items[i]!);
-                if (want != _list.Selection.IsSelected(i))
-                {
-                    if (want) _list.Selection.Select(i);
-                    else _list.Selection.Deselect(i);
-                }
-            }
-            _list.Selection.EndBatchUpdate();
-        }
-        finally
-        {
-            _suppressActivate = false;
-        }
+        SetSelection(wanted.Contains);
         if (_marquee.Parent is Visual overlay && panel.TranslatePoint(rect.TopLeft, overlay) is { } topLeft)
         {
             Canvas.SetLeft(_marquee, topLeft.X);
@@ -876,6 +875,48 @@ public sealed class FileBrowserPanel : UserControl
     {
         if (_press is { Dragging: true }) _press = null;
         _marquee.IsVisible = false;
+    }
+
+    /// <summary>목록 칸(<see cref="ListBoxItem"/>) 중 <paramref name="wanted"/>인 것만 고른다(고른 파일을 열지는 않음).</summary>
+    private void SetSelection(Func<object, bool> wanted)
+    {
+        _suppressActivate = true;
+        try
+        {
+            _list.Selection.BeginBatchUpdate();
+            for (int i = 0; i < _list.Items.Count; i++)
+            {
+                bool want = wanted(_list.Items[i]!);
+                if (want != _list.Selection.IsSelected(i))
+                {
+                    if (want) _list.Selection.Select(i);
+                    else _list.Selection.Deselect(i);
+                }
+            }
+            _list.Selection.EndBatchUpdate();
+        }
+        finally
+        {
+            _suppressActivate = false;
+        }
+    }
+
+    /// <summary>
+    /// 목록 밖으로 끌어 낸 파일을 끌어 놓기로 넘긴다(앱 캔버스에 놓으면 새 레이어, 다른 프로그램에는 파일 복사).
+    /// 사각형 고르기는 끝내고 끄는 파일만 고른 상태로 둔다(열지는 않음).
+    /// </summary>
+    private async void StartFileDrag(PointerEventArgs e, IReadOnlyList<string> paths)
+    {
+        _press = null;
+        _marquee.IsVisible = false;
+        e.Pointer.Capture(null);
+        var set = paths.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        SetSelection(item => item is ListBoxItem { Tag: FileItem f } && set.Contains(f.Path));
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage) return;
+        var data = new DataTransfer();
+        foreach (var path in paths)
+            if (await storage.TryGetFileFromPathAsync(path) is { } file) data.Add(DataTransferItem.CreateFile(file));
+        if (data.Items.Count > 0) await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
     }
 
     private static bool IsDeleteKey(KeyEventArgs e)

@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices;
 using Avalonia.Platform;
 using Gpixel.Core.Model;
+using SkiaSharp;
 
 namespace Gpixel.App;
 
@@ -85,6 +87,56 @@ public static class ImageUtil
         var bmp = NewBitmap(size, size);
         CopyToBitmap(px, size, size, bmp);
         return bmp;
+    }
+
+    /// <summary>
+    /// 그림 파일(PNG·JPG·BMP·GIF·WebP — 움직이는 것 포함)을 프레임마다 완성된 그림(RGBA 그대로)과 길이(ms)로 푼다.
+    /// 풀 수 없거나 크기가 <see cref="PixelImage.MaxSize"/>를 넘으면 null. 파일을 열 수 없으면 IO 예외.
+    /// </summary>
+    public static (IReadOnlyList<PixelImage> Images, IReadOnlyList<int> DurationsMs)? DecodeFrames(string path)
+    {
+        using var codec = SKCodec.Create(path);
+        if (codec is null) return null;
+        int w = codec.Info.Width, h = codec.Info.Height;
+        if (w <= 0 || h <= 0 || w > PixelImage.MaxSize || h > PixelImage.MaxSize) return null;
+        var infos = codec.FrameInfo;
+        int count = Math.Max(1, infos.Length);
+        var info = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+        using var bitmap = new SKBitmap(info);
+        var images = new List<PixelImage>(count);
+        var durations = new List<int>(count);
+        for (int i = 0; i < count; i++)
+        {
+            // 앞 프레임 위에 이어 푼다(코덱이 그 프레임을 바탕으로 쓸 수 없다고 하면 처음부터).
+            var result = codec.GetPixels(info, bitmap.GetPixels(), new SKCodecOptions(i, i > 0 ? i - 1 : -1));
+            if (result == SKCodecResult.InvalidParameters && i > 0) result = codec.GetPixels(info, bitmap.GetPixels(), new SKCodecOptions(i, -1));
+            if (result is not (SKCodecResult.Success or SKCodecResult.IncompleteInput)) return images.Count > 0 ? (images, durations) : null;
+            var pixels = new Color32[w * h];
+            MemoryMarshal.Cast<byte, Color32>(bitmap.GetPixelSpan()).Slice(0, pixels.Length).CopyTo(pixels);
+            images.Add(new PixelImage(w, h, pixels));
+            int ms = i < infos.Length ? infos[i].Duration : Frame.DefaultDurationMs;
+            durations.Add(ms > 10 ? ms : Frame.DefaultDurationMs);
+        }
+        return (images, durations);
+    }
+
+    /// <summary>그림 파일의 크기만 읽는다(픽셀은 풀지 않음). 읽을 수 없으면 null.</summary>
+    public static Size? ReadImageSize(string path)
+    {
+        try
+        {
+            if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                var (w, h) = Gpixel.Core.IO.PngIO.ReadSize(path);
+                return new Size(w, h);
+            }
+            using var codec = SKCodec.Create(path);
+            return codec is null ? null : new Size(codec.Info.Width, codec.Info.Height);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return null;
+        }
     }
 
     /// <summary>불투명 바탕 위에 색을 덮는다.</summary>

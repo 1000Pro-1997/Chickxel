@@ -1,176 +1,183 @@
-# 바뀐 점
+# Changes
 
-새 버전을 올릴 때 맨 위에 `## vX.Y.Z (날짜)` 절을 더합니다. 릴리스 설명과 앱의 업데이트 창이 이 파일에서 그 버전 절을 읽어 보여 줍니다.
+When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
+
+## v1.14.32 (2026-10-24)
+### Discord link is now a public invite
+- The Discord link for bug reports and ideas is now a public invite anyone can join (<https://discord.gg/Avw7aUVxqr>).
+- The app's **Help > Report a bug or idea (Discord)…** menu and the Discord buttons in the error window and AI chat help open this link.
+- The links on the website, in the guide and in the README changed too.
+
+### Changes and release notes also in Korean and English
+- Changes are written in both English (`CHANGELOG.md`) and Korean (`CHANGELOG.ko.md`).
+- Release notes show English first, then Korean.
+- The update window shows the changes in Korean for the Korean UI and in English for every other UI language (English and languages added from CSV).
+- Only older versions without an English section (v1.14.22 and earlier) appear in Korean.
+
+### English is now the main changelog
+- `CHANGELOG.md` is now the English changelog, and the Korean one moved to `CHANGELOG.ko.md`.
+
+### Cleaner changes in the update window
+- Each version's changes appear as bold item titles with indented bullet lists.
+- Bold, code and links are formatted too, and clicking a link opens the browser.
+
+### Drop images onto the canvas to add them as new layers
+- Drag PNG, JPG, BMP, GIF or WebP files from Explorer/Finder or the file browser onto the canvas and each file becomes a new layer (named after the file) above the current layer. With a part or group selected, it goes above that group, like Add layer.
+- The image is placed with the pixel you dropped on at its center, in the current frame, with its colors unchanged. An image larger than the canvas is centered on the canvas and you're told it was cut.
+- An animated GIF goes into one layer starting at the current frame, and missing frames are added at the end with the GIF's frame durations. The whole drop is a single undo step.
+- While dragging, the canvas edge lights up and a dashed outline shows where the image will go. You can also drag a file out of the file browser list and drop it on the canvas.
+- Dropping a `.gpixel` opens it, and with no document open a `.gpixel` or PNG opens like File > Open.
 
 ## v1.14.31 (2026-10-24)
-- AI 채팅의 답이 **마크다운으로 보입니다**. `**굵게**`·`*기울임*`·`` `코드` ``·제목(`#`~`###`)·글머리/번호 목록(들여쓰기로 겹침)·`>` 인용·코드 블록(고정폭 상자, 그대로 복사)·링크(`[글](주소)`와 맨 주소, http·https만 — 누르면 브라우저로 엶)를 꾸며 보이고, 표시 기호는 숨깁니다. **'숲의 모험가'**는처럼 한글이 바로 붙어도 굵게 되고, `snake_case`나 `2*3*4` 같은 글, 짝이 없는 표시는 글자 그대로 둡니다. 답을 받는 동안에도 꾸며 보이며(닫히지 않은 `**`는 닫힐 때까지 그대로), 저장한 지난 대화를 다시 열어도 같습니다. 글은 전처럼 골라 복사할 수 있고(표시 기호 없이), 내 메시지는 그대로 보입니다.
-- AI가 그리기 전에 찾아보는 **참고 자료**가 생겼습니다. 메뉴 **AI > 참고 자료…**의 **AI 참고 자료** 창에서 그림(`.png`, 프레임이 있는 `.gif`, `.gpixel`)과 메모(`.md`·`.txt`)를 **파일 추가…**(끌어 놓기도 됨)나 **현재 캔버스 추가**로 넣고, 제목·설명·태그·종류를 붙이고, 검색·종류로 거르며 미리보기(애니메이션은 움직임)와 팔레트를 봅니다. **규칙 편집**으로 내 스타일 규칙(`rules.md`)을 쓰고, 지울 수 없는 **Gpixel 기본 규칙**과 기본 예시(슬라임·검·캐릭터·슬라임 튀기기·풀 타일)가 함께 들어 있습니다. AI는 대화마다 규칙을 읽고 새 그림을 그리기 전에 참고 자료를 찾아 비율·팔레트를 따르며, 다 그린 뒤 규칙에 맞는지 확인합니다 — "참고 자료의 슬라임처럼 32px 박쥐 그려 줘"처럼 부탁하세요. "이거 참고 자료에 넣어 둘래"라고 하면 AI가 지금 캔버스를 넣어 두고, **AI로 설명 붙이기**는 설명이 없는 자료에 설명을 붙여 달라는 부탁을 입력란에 넣어 둘 뿐 보내기를 눌러야 보냅니다. 자료는 `<설정 폴더>/Gpixel/References`에 있고(**편집 > 환경 설정… > AI 참고 자료**에서 폴더를 바꾸고 기본 예시를 숨김), 앱 밖에서 폴더에 넣은 파일도 들어오며, 어디로도 올리지 않습니다. 채팅 도움말에 **참고 자료** 묶음과 예시 부탁이 생겼습니다.
-- **사용 가이드**(홈페이지와 F1 창)에서 장마다 있던 머리말 쪽("이 장의 내용" 목록)을 없앴습니다. 목차의 장 이름을 누르면 그 장을 펼치고 첫 세부 항목을 바로 열며, 장의 소개 글은 그 첫 쪽 맨 위에 보입니다. 이전·다음 단추도 세부 항목끼리 이어지고, 예전 장 주소(`guide.html#장`)는 첫 세부 항목으로 열립니다.
-- 저장소 README를 홈페이지 링크·대표 기능 움짤·내려받기만 남기고 줄였습니다. 자세한 기능 설명은 `FEATURES.md`, 빌드·배포·번역 같은 개발 메모는 `DEVELOPMENT.md`로 옮겼습니다.
-- 버그 제보·불편한 점·아이디어를 받는 **Discord**가 생겼습니다. 앱의 **도움말 > 제보·아이디어 (Discord)…**, **Gpixel 정보**의 Discord 단추, 오류 창의 **Discord에 제보**(로그 파일을 함께 올려 주세요), AI 채팅 도움말 맨 아래 단추로 열고, 홈페이지 위·아래 메뉴와 사용 가이드 **시작하기 > 제보·아이디어**, README에도 링크가 있습니다. GitHub Issues도 그대로 받습니다.
+### AI chat replies rendered as Markdown
+- `**bold**`, `*italic*`, `` `code` ``, headings (`#` to `###`), bulleted and numbered lists (nested by indentation) and `>` quotes are formatted, and the markup characters are hidden.
+- Code blocks appear in a monospace box and copy as is. Links (`[text](url)` and bare URLs, http and https only) open in the browser when clicked.
+- Bold works even when Korean text follows right after it (as in `**'숲의 모험가'**는`), while text such as `snake_case` or `2*3*4` and unpaired markers stay as plain text.
+- Replies are formatted while they stream in (an unclosed `**` stays as is until it closes), and the same applies when you reopen a saved chat.
+- You can still select and copy text as before (without markup), and your own messages are shown as typed.
+
+### References the AI looks up before drawing
+- In the **AI references** window (menu **AI > References…**), add images (`.png`, animated `.gif`, `.gpixel`) and notes (`.md`, `.txt`) with **Add files…** (drag and drop also works) or **Add current canvas**, and give them a title, description, tags and kind. Filter by search or kind, and view the preview (animations play) and palette.
+- Write your own style rules (`rules.md`) with **Edit rules**. The built-in **Gpixel default rules**, which can't be deleted, and default examples (slime, sword, character, slime bounce, grass tile) are included.
+- In every chat the AI reads the rules, looks up references before drawing something new to follow their proportions and palette, and checks the result against the rules when done. Ask things like "draw a 32px bat like the slime in my references". The chat help has a new **References** group with example requests.
+- Saying "add this to my references" makes the AI add the current canvas. **Caption with AI** only puts a request to describe references without a description into the input box; nothing is sent until you press send.
+- References live in `<settings folder>/Gpixel/References` (change the folder or hide the default examples in **Edit > Preferences… > AI references**). Files you put in the folder outside the app are picked up too, and nothing is uploaded anywhere.
+
+### Guide chapters no longer have a cover page
+- The **Guide** (website and F1 window) no longer has a cover page for each chapter (the "In this chapter" list).
+- Clicking a chapter name in the contents expands it and opens its first page directly. The chapter's introduction appears at the top of that first page.
+- The previous and next buttons move between pages, and old chapter addresses (`guide.html#chapter`) open the chapter's first page.
+
+### Shorter README
+- The repository README is trimmed down to the website link, feature GIFs and downloads.
+- Detailed feature descriptions moved to `FEATURES.md`, and development notes such as building, releasing and translating moved to `DEVELOPMENT.md`.
+
+### Discord for bug reports and ideas
+- There is now a **Discord** for bug reports, annoyances and ideas. GitHub Issues are still welcome.
+- Open it from the app's **Help > Report a bug or idea (Discord)…**, the Discord button in **About Gpixel**, or the button at the bottom of the AI chat help.
+- **Report on Discord** in the error window opens it too (please attach the log file).
+- The website's top and bottom menus, the guide's **Getting started > Feedback** and the README link to it as well.
 
 ## v1.14.30 (2026-10-24)
-- **팔레트 웹(Lospec)** 창 아래 **닫기** 옆에 **확인**이 생겼습니다. 고른 팔레트를 **팔레트로 쓰기**처럼 적용하고 창을 닫습니다(지금 팔레트를 덮어쓰는 확인에서 취소하면 창은 그대로).
-- **외곽선** 효과에 **원본 지우기 (외곽선만 보기)**가 생겼습니다. 켜면 선을 따라 그린 그림을 투명하게 지워 선만 남깁니다(바깥이면 바깥 고리, 안쪽이면 가장자리 고리만). 효과의 프레임 범위 밖에서는 그림이 그대로이고, 이 외곽선에 클리핑한 효과(예: 그라데이션 색 덮기)는 선에만 입혀지며, 아래의 다른 효과는 원본이 지워진 결과에 입혀집니다. 예전 파일과 효과 프리셋은 꺼진 채로 열립니다.
-- **팔레트 웹(Lospec)**에 **즐겨찾기**가 생겼습니다. 목록 줄과 고른 팔레트 이름 옆의 별로 넣고 빼며, 즐겨찾기한 팔레트는 정보와 예시 그림까지 이 컴퓨터(`<설정 폴더>/Gpixel/Lospec`)에 남아 **인터넷 없이** 보고 팔레트로 쓰기·추가·.hex 저장·확인을 할 수 있습니다. 정렬 칸의 **즐겨찾기**를 고르면 즐겨찾기만 최근에 넣은 것부터 보이고 색 수·태그/이름으로 거릅니다. Lospec에 연결하지 못하면 오류 옆 **즐겨찾기 보기** 단추로 바로 넘어갑니다. 마지막으로 고른 정렬은 다음에 창을 열 때도 그대로입니다.
-- AI 채팅이 **레이어 효과**를 다룰 수 있습니다. "캐릭터에 검은 외곽선 넣어 줘", "프레임 3~4에 흰 피격 번쩍임", "나타나기 효과로 등장시켜 줘"처럼 부탁하면 효과 창과 같은 효과를 넣고, 설정·프레임 범위·켜고 끄기·순서·클리핑을 고치거나 지웁니다(그림 픽셀은 그대로). 저장한 **사용자 정의 효과**도 이름으로 넣을 수 있고, 부탁하면 효과를 영구 적용하거나 캔버스 밖으로 나간 효과에 맞춰 캔버스를 늘립니다. 바꿀 때마다 실행취소 한 단계로 남고(답 하나로 묶임), 잠긴 레이어의 효과는 건드리지 않습니다. 채팅 도움말(물음표 단추)에 **레이어 효과** 묶음과 예시 부탁이 생겼습니다.
-- AI 채팅에서 **마지막 메시지를 삭제하거나 수정**할 수 있습니다. 마지막 메시지 아래 연필(수정)·휴지통(삭제) 아이콘을 누르면 그 메시지와 그 뒤의 답·도구 줄·결과 그림이 대화에서 빠지고, 수정은 지운 글(이번에 붙인 그림이 남아 있으면 그것도)을 입력란에 다시 넣어 고쳐 보낼 수 있게 합니다. 여러 번 누르면 한 단계씩 처음까지 거슬러 올라가며, 저장한 지난 대화를 다시 열어도 됩니다. 그 차례가 그림을 바꿨고 아직 되돌릴 수 있으면 **이 대화에서 바뀐 그림도 되돌릴까요?**(되돌리기 / 그림은 두기 / 취소)를 묻습니다. 지운 뒤 다음 메시지는 새 AI 세션으로 보내며 남은 대화 내용을 요약해 함께 알려 주므로, AI는 지운 내용을 기억하지 않습니다. 답을 받는 중에는 누를 수 없고, 멈춘 차례는 지울 수 있습니다.
-- 채팅 창이 좁을 때 위쪽 **새 대화**·**물음표** 단추가 잘리던 문제를 고쳤습니다. 모델 칸이 좁아지며(이름은 말줄임) 단추가 늘 보이고, 창은 그보다 좁아지지 않습니다.
+### OK button in Palette web (Lospec)
+- The **Palette web (Lospec)** window has an **OK** button next to **Close** at the bottom.
+- It applies the selected palette like **Use as palette** and closes the window.
+- If you cancel the confirmation to overwrite the current palette, the window stays open.
+
+### Hide original option for the Outline effect
+- The **Outline** effect has a new **Hide original (outline only)** setting. When on, the image the outline traces is erased to transparent, leaving only the line (the outer ring for outside outlines, the edge ring for inside outlines).
+- Outside the effect's frame range the image stays as is.
+- Effects clipped to this outline (such as a gradient color overlay) apply only to the line, and other effects below apply to the result with the original erased.
+- Older files and effect presets open with it off.
+
+### Favorites in Palette web (Lospec)
+- The **Palette web (Lospec)** window has **Favorites**. Add and remove them with the star on list rows and next to the selected palette's name.
+- Favorite palettes, including their details and example images, are kept on this computer (`<settings folder>/Gpixel/Lospec`), so you can view them, use them as a palette, add them, save them as .hex and press OK **offline**.
+- Choosing **Favorites** in the sort box shows only favorites, most recently added first, filtered by color count and tag or name.
+- If Lospec can't be reached, the **View favorites** button next to the error takes you straight there. The last sort you chose is kept the next time you open the window.
+
+### Layer effects through AI chat
+- AI chat can add **layer effects** and change or remove their settings, frame ranges, on/off state, order and clipping (image pixels stay untouched). Ask things like "give the character a black outline", "white hit flash on frames 3-4" or "make it enter with an appear effect".
+- Saved **custom effects** can be added by name too.
+- On request it bakes effects in or expands the canvas to fit effects that go beyond it.
+- Each change is one undo step (grouped per reply), and effects on locked layers are left alone. The chat help (question mark button) has a new **Layer effects** group with example requests.
+
+### Delete or edit the last AI chat message
+- Clicking the pencil (edit) or trash (delete) icon under the last message removes it and the replies, tool lines and result images after it from the chat.
+- Edit puts the removed text (and the images attached that time, if still there) back into the input box so you can fix and resend it. Clicking repeatedly steps back one turn at a time to the beginning, and it works in reopened saved chats too.
+- If that turn changed the drawing and it can still be undone, it asks **Also undo the drawing changes made in this exchange?** (Undo / Keep drawing / Cancel).
+- After deleting, the next message goes to a new AI session along with a summary of the remaining chat, so the AI doesn't remember what was deleted.
+- It's unavailable while a reply is coming in; stopped turns can be deleted.
+
+### Top buttons no longer cut off in a narrow chat window
+- Fixed the **New chat** and **question mark** buttons at the top being cut off when the chat window is narrow.
+- The model box shrinks instead (long names are shortened) so the buttons are always visible, and the window can't get narrower than that.
 
 ## v1.14.29 (2026-10-24)
-- 타임라인 **다음 레이어 줄**의 단추가 넓어졌습니다. 더하기 단추는 레이어 이름 칸 전체, 복사 단추는 프레임 칸 전체(첫 프레임 ~ 마지막 프레임)를 덮고 띠 어디를 눌러도 됩니다. 복사 아이콘은 10프레임마다 되풀이해 보입니다.
+### Wider next layer row buttons
+- In the timeline's **next layer row**, the plus button covers the whole layer name cell and the copy button covers the whole frame area (first to last frame).
+- You can click anywhere on the strip, and the copy icon repeats every 10 frames.
 
 ## v1.14.28 (2026-10-24)
-- 타임라인 마지막 레이어 행 아래에 **다음 레이어 줄**이 생겼습니다(다음 프레임 칸처럼). 이름 칸의 더하기 아이콘은 맨 아래에 빈 레이어를, 첫 프레임 칸의 복사 아이콘은 맨 아래 레이어(그룹은 부위까지)의 복사본을 맨 아래에 더합니다(실행취소 1단계, 새 레이어가 골라짐). 다음 프레임 칸의 복사 아이콘은 이제 레이어 행에서만 동작하고, 마지막 행 아래 빈 곳을 눌러도 프레임이 늘지 않습니다.
-- AI 채팅의 대화가 **저장**됩니다(Claude·Codex 따로, 답이 끝날 때마다). **새 대화**를 누르면 **지난 대화 목록**이 뜨고, 누르면 그 대화를 다시 보여 주며 이어서 보내면 같은 대화로 이어 갑니다. 별 아이콘으로 즐겨찾기(맨 위 고정, 자동으로 지우지 않음), 휴지통 아이콘으로 지우기. 목록에서 입력란에 쓰고 보내면 새 대화가 시작됩니다. AI마다 20개까지 남기고 넘치면 즐겨찾기가 아닌 가장 오래된 대화부터 지웁니다. 채팅 창을 다시 열거나 앱을 다시 켜면 탭마다 마지막으로 보던 대화(또는 목록)가 열립니다.
-- **새 대화** 옆 **물음표 단추**로 AI가 할 수 있는 일(도구 묶음별 설명), 누르면 입력란에 들어가는 예시 부탁, 잘 쓰는 요령을 볼 수 있습니다.
-- 채팅의 **지금 레이어만**이 **지금 그림만**으로 바뀌었습니다. 켜면 AI가 지금 열린 그림 하나만 고치고(다른 파일을 열거나 새로 만들지 않음), 그 안에서는 새 레이어·프레임·그룹·부위·스킨을 만들고 레이어를 정리할 수 있습니다.
-- AI는 이제 **잠긴 레이어**(잠긴 그룹의 부위 포함)를 언제나 건드리지 않습니다 — 픽셀뿐 아니라 이름·보이기·불투명도·부위 위치와 크기, 스킨·착장 바꾸기, 그 레이어에 그림이 있는 프레임 지우기, 캔버스 크기 바꾸기도 이유와 함께 거절합니다.
-- Codex 모델 목록에서 **GPT-6-Astra**에 **(추천)**이 붙고, 처음 쓸 때 기본 모델이 GPT-6-Astra입니다. 예전에 모델을 따로 고르지 않았던 설정도 한 번 GPT-6-Astra로 바뀌고, 그 뒤 "기본값(Codex 설정)"을 고르면 그대로 둡니다.
+### Next layer row in the timeline
+- The timeline has a **next layer row** below the last layer row (like the next frame cell).
+- The plus icon in the name cell adds an empty layer at the bottom, and the copy icon in the first frame cell adds a copy of the bottom layer (including parts, for groups) at the bottom (one undo step; the new layer is selected).
+- The copy icon in the next frame cell now works only on layer rows, and clicking the empty area below the last row no longer adds a frame.
+
+### Saved AI chats and past chats list
+- AI chats are now **saved** (separately for Claude and Codex, after each reply).
+- Pressing **New chat** shows the **past chats list**. Click a chat to show it again, and sending continues that chat. Typing in the input box and sending from the list starts a new chat.
+- Use the star icon to favorite a chat (pinned to the top, never deleted automatically) and the trash icon to delete it.
+- Up to 20 chats are kept per AI; beyond that, the oldest non-favorite chats are deleted first.
+- When you reopen the chat window or restart the app, each tab opens the chat (or list) you last viewed.
+
+### AI chat help (question mark button)
+- The **question mark button** next to **New chat** shows what the AI can do (by tool group).
+- It also has example requests that go into the input box when clicked, and tips.
+
+### Current layer only is now Current file only
+- **Current layer only** in chat is now **Current file only**.
+- When on, the AI edits only the currently open image (it doesn't open or create other files).
+- Within it, the AI can create new layers, frames, groups, parts and skins and organize layers.
+
+### AI leaves locked layers alone
+- The AI now always leaves **locked layers** alone (including parts of locked groups).
+- Besides pixels, it refuses with a reason to change their name, visibility, opacity, part position and size, switch skins or outfits, delete frames that have drawing on that layer, or resize the canvas.
+
+### GPT-6-Astra as the default Codex model
+- In the Codex model list, **GPT-6-Astra** is marked **(recommended)** and is the default model on first use.
+- Settings that never picked a model also switch to GPT-6-Astra once. If you then choose "Default (Codex settings)", it stays that way.
 
 ## v1.14.27 (2026-10-24)
-- **사용 가이드** 창에서 대표 기능 움짤이 바로 재생됩니다(인터넷 없이). 크게 보려면 아래 **홈페이지에서 크게 보기**를 누릅니다. 검색어가 움짤 설명에 있으면 움짤 테두리를 노랗게 칠하고 그리로 스크롤합니다.
+### Feature GIFs play in the Guide window
+- Feature GIFs play right away in the **Guide** window (offline).
+- To see them larger, click **Watch larger on the website** below.
+- When the search term appears in a GIF's description, the GIF gets a yellow border and is scrolled into view.
 
 ## v1.14.26 (2026-10-24)
-- **F1**(**도움말 > 사용 가이드…**)로 앱 안에서 홈페이지와 같은 **사용 가이드** 창을 엽니다. 왼쪽 목차에서 장과 쪽을 고르고, 위 검색 칸에 입력하면 인터넷 없이 바로 찾아 결과 목록과 본문의 찾은 말을 노랗게 칠해 보여 줍니다(↑↓로 결과를 옮기고 Enter로 엶). 영상은 홈페이지에서 볼 수 있게 링크를 둡니다.
-- **단축키 목록**은 이제 **도움말** 메뉴에서 엽니다(기본 단축키 없음). 환경 설정의 단축키 탭에서 단축키 목록에 직접 정해 둔 키는 그대로 동작합니다.
+### In-app Guide window (F1)
+- **F1** (**Help > Guide…**) opens the same **Guide** as the website inside the app.
+- Pick chapters and pages in the contents on the left.
+- Typing in the search box at the top finds results instantly offline, with a result list and matches highlighted in yellow in the text (move between results with Up/Down and open with Enter).
+- Videos link to the website.
+
+### Shortcut list moved to the Help menu
+- The **Shortcut list** now opens from the **Help** menu (no default shortcut).
+- Any key you assigned to the shortcut list in the Shortcuts tab of Preferences still works.
 
 ## v1.14.25 (2026-10-24)
-- **그라데이션 변화** 효과를 없애고 그 기능을 **색 덮기**의 그라데이션으로 옮겼습니다. 그라데이션 모드에 **전체 한 색 (시간에 따라)** 를 더해 효과 범위 동안 그림 전체가 정지점 색으로 바뀌고, 움직이는 그라데이션에는 **빠르기**와 **왕복**을 정할 수 있습니다.
-- 예전 프로젝트와 효과 프리셋의 그라데이션 변화는 불러올 때 색 덮기로 바뀝니다. 색 변환은 똑같이 보이고, 방사형 회전은 원형(동적) 그라데이션으로 바뀌어 회전 방향은 유지하되 효과 범위 동안 한 바퀴만 돕니다(360° 이외의 각도와 반복 횟수는 근사).
-- 팔레트 변경(색 추가·삭제·정렬·불러오기, 이름·순서 바꾸기, 팔레트 추가·삭제 등)도 **실행취소·다시 실행**됩니다. 그림 편집과 한 줄로 섞여 Ctrl+Z가 마지막에 한 것부터 되돌리고, 앱을 켜 둔 동안만 남습니다(접기·펼치기는 기록하지 않음).
+### Gradient change merged into Color overlay
+- Removed the **Gradient change** effect and moved its features into the gradient of **Color overlay**.
+- The new gradient mode **Whole sprite, one color (over time)** changes the whole image through the stop colors over the effect range.
+- Moving gradients can set **Speed** and **Ping-pong**.
+- Gradient change in older projects and effect presets becomes Color overlay when loaded. Color shifts look the same; radial rotation becomes a circular (dynamic) gradient that keeps the rotation direction but turns only once over the effect range (angles other than 360° and repeat counts are approximated).
+
+### Undo for palette changes
+- Palette changes (adding, deleting, sorting and loading colors, renaming and reordering, adding and deleting palettes, and so on) can now be **undone and redone**.
+- They share one history with drawing edits, so Ctrl+Z undoes whatever you did last.
+- They are kept only while the app is open (collapsing and expanding are not recorded).
 
 ## v1.14.24 (2026-10-24)
-- 화면 언어를 바꾸거나 지금 언어의 CSV를 넣고 환경 설정을 확인하면 **지금 다시 시작** 단추가 함께 나옵니다. 누르면 평소처럼 닫은 뒤(저장 안 한 문서는 묻고, 취소하면 그대로 둠) 새 언어로 다시 켭니다.
+### Restart right after changing the language
+- Changing the display language, or importing a CSV for the current language and confirming Preferences, now also shows a **Restart now** button.
+- It closes the app as usual (asking about unsaved documents; canceling leaves everything open) and starts it again in the new language.
 
 ## v1.14.23 (2026-10-24)
-- 터지기의 **흩어짐** 설정을 **무작위 변화**로 바꾸고, **날아가는 거리**를 X·Y 각각 0~128px로 조절할 수 있게 했습니다. 이전 프로젝트의 단일 거리는 두 축에 적용되며 Y 거리가 0이어도 중력은 별도로 적용됩니다.
-- **영어** 화면을 추가했습니다. 처음 켤 때 컴퓨터 언어에 맞는 언어를 고르고, 맞는 언어가 없으면 영어로 시작합니다.
-- **편집 > 환경 설정…** 맨 위에 **언어**를 두었습니다. 화면 언어를 고르면 다시 시작한 뒤 적용됩니다.
-- **번역 CSV로 내보내기**와 **CSV로 언어 추가**로 언어를 직접 만들 수 있습니다. 내보낸 CSV에 언어 코드 열(예: `ja`)과 `#name` 줄의 언어 이름을 더해 번역하고 넣으면 목록에 나타나며, 같은 언어 코드면 덮어씁니다. 빈 칸은 영어로 보입니다. `ko`·`en` 열을 고쳐 넣으면 내장 문구 위에 덮어쓰고, **언어 폴더 열기**로 연 폴더에서 CSV를 지우면 원래 문구로 돌아갑니다.
+### Random variation and fly distance for Explode
+- The Explode effect's **Scatter** setting is now **Random variation**.
+- **Fly distance** can be set separately for X and Y from 0 to 128px.
+- A single distance from older projects applies to both axes, and gravity still applies even when the Y distance is 0.
 
-## v1.14.22 (2026-10-24)
-- 레이어 효과 창에서는 Enter로 확인되지 않습니다. 숫자·색 입력을 확정해도 창이 닫히지 않으며 확인 단추를 눌러야 적용됩니다.
-- 레이어 효과에 **페이드 인·아웃**을 추가했습니다. 효과 범위 동안 그림 전체의 투명도를 높이거나 낮춥니다.
-- 터지기 효과의 **흩어짐**을 수평(X)·수직(Y)으로 따로 조절할 수 있습니다. 이전 프로젝트의 단일 값은 양쪽에 그대로 적용됩니다.
-- 효과 창의 **프레임 늘리기**와 **효과만큼 캔버스 확대**를 한 **공통 설정** 영역에 묶고, 프레임 늘리기의 기준 효과·범위를 표시합니다.
+### English UI
+- Added an **English** UI.
+- On first launch the app picks the language that matches your computer, or starts in English if none matches.
+- **Language** is now at the top of **Edit > Preferences…**. A newly chosen display language applies after restarting.
 
-## v1.14.21 (2026-10-24)
-- 캔버스 크기 모드에 **캔버스 중심 기준**을 추가했습니다. 숫자나 손잡이로 크기를 바꿀 때 중심을 유지하며 양쪽 가장자리를 함께 움직일 수 있습니다.
-- 그라데이션 변화의 **방사형 회전**에 전체 회전 각도를 더했습니다. 음수 각도는 반대 방향으로 돌고 이전 프로젝트의 한 바퀴 기본값은 유지합니다.
-- 효과 색의 그라데이션에 **직선·방사형·사각형·원형** 각각의 정적·동적 방식을 추가했습니다. 방향, 횟수, 각도를 조절하고 효과 범위의 프레임을 따라 움직일 수 있습니다.
+### Make your own language with CSV
+- You can make your own language with **Export translation CSV…** and **Add language from CSV…**.
+- Add a language code column (for example `ja`) and the language name in the `#name` row to the exported CSV, translate it and import it, and it appears in the list; importing the same language code overwrites it. Empty cells show in English.
+- Editing and importing the `ko` or `en` columns overrides the built-in text.
+- Deleting the CSV from the folder opened by **Open language folder** restores the original text.
 
-## v1.14.20 (2026-10-23)
-- 효과 창의 전·후 미리보기는 확인 후 적용될 캔버스 크기를 기준으로 표시하고, 모든 프레임에 같은 배율과 위치를 사용합니다. 자동 확대 기본 방식은 **중심 유지 확대**입니다.
-- 그라데이션 변화에 기존 **색 변환**과 새 **방사형 회전** 방식을 추가했습니다. 방사형 방식은 그림 중심 둘레의 색을 효과 범위 동안 한 바퀴 돌립니다.
-
-## v1.14.19 (2026-10-23)
-- 효과 종류 탭을 한 줄의 **기본 / 커스텀**으로 줄이고, **전체 효과 저장**으로 현재 효과 목록과 클리핑 관계를 한꺼번에 저장합니다.
-- 외곽선의 클리핑된 반사·잔상도 원본 대신 외곽선 픽셀만 사용합니다. 캔버스 자동 확대를 기본으로 켜고 **중심 유지 확대**를 추가했습니다.
-- 전·후 미리보기는 실제 그림에 맞춰 표시하고 클릭하면 큰 창으로 열립니다. 회전은 음수 각도로 반대 방향을 지정하고 기본 기준점은 피벗입니다.
-
-## v1.14.18 (2026-10-23)
-- 효과를 앞의 비클리핑 효과가 바꾼 픽셀에만 적용하는 **바로 위 효과에 클리핑**을 추가했습니다. 외곽선 아래의 색 덮기를 클리핑해 원본을 건드리지 않는 그라데이션 외곽선처럼 조합할 수 있습니다.
-- 효과 종류에 **기본 효과 / 사용자 정의** 탭을 추가했습니다. 설정한 기준 효과와 연속된 클리핑 효과를 이름 붙여 저장하고, 미리보기 카드에서 다시 추가하며, 이름 변경·삭제할 수 있습니다.
-
-## v1.14.17 (2026-10-23)
-- 앱과 코어의 사용자 표시 문구를 한국어 리소스 파일로 옮겼습니다. 나중에 언어별 `.resx` 파일을 추가해 번역할 수 있으며, 번역이 없는 문구는 한국어로 표시됩니다.
-- 단축키 명령 ID와 저장된 이름·내장 프리셋 식별자는 기존 파일 및 설정과 호환되도록 유지하고, 표시 이름만 분리했습니다.
-
-## v1.14.16 (2026-10-22)
-- AI가 Gpixel 내부 MCP 도구를 찾지 못하면 채팅에 연결 진단을 표시합니다. 서버에 요청이 오지 않은 경우, 인증 토큰이 틀린 경우, 도구 목록을 받기 전에 끊긴 경우를 구분하고 Claude Code가 알려 준 연결 상태도 함께 보입니다.
-
-## v1.14.15 (2026-10-22)
-- AI 채팅에서 Claude Code·Codex CLI가 없으면 설치 명령을 확인한 뒤 보이는 터미널에서 설치하고 로그인할 수 있습니다. Codex용 npm이 없으면 Windows는 winget 또는 SHA-256을 검증한 공식 Node.js LTS 다운로드, macOS는 Homebrew 또는 nvm으로 Node.js를 설치합니다. 설치·로그인이 끝나면 채팅으로 넘어갑니다.
-
-## v1.14.14 (2026-10-22)
-- 공간 그라데이션은 이제 `색 덮기`가 담당하고, 기존 `그라데이션 덮기`는 **그라데이션 변화**로 바뀌었습니다. 공용 색·불투명도 정지점을 설정하면 효과 범위의 첫 프레임부터 마지막 프레임까지 시간에 따라 그림 전체 색이 변합니다. 보간·디더·빠르기·반복·왕복을 지원하며, 예전 공간 그라데이션은 같은 모습의 `색 덮기`로 자동 변환됩니다.
-
-## v1.14.13 (2026-10-22)
-- 효과 색 칸의 팝업이 메인 색 편집기와 **완전히 같은 사각형·벌집·색상환·슬라이더**를 사용합니다. `그라데이션`을 고르면 별도 팝업이나 `정지점 편집` 단추 없이 그 효과 설정 안에 공용 그라데이션 편집기가 바로 펼쳐집니다.
-
-## v1.14.12 (2026-10-22)
-- 효과 색 칸을 누르면 별도 대화상자 대신 색 편집기와 메인 팔레트·최근 색·스포이드를 나란히 둔 팝업이 바로 열립니다. `그라데이션`을 고르면 `정지점 편집` 단추를 거치지 않고 공용 그라데이션 편집기가 즉시 열립니다.
-
-## v1.14.11 (2026-10-22)
-- 잔상이 흔들기·둥실둥실·회전 등 다른 효과의 과거 프레임 모습을 따라가며 남습니다. 가장자리 빛·그늘의 칠할 범위를 1~16px로 정하고, 늘었다 줄기의 가로·세로 세기를 각각 조절할 수 있습니다.
-- 효과 색 선택 창 오른쪽에 메인 팔레트를 함께 보여 주고 고르는 동안 캔버스를 미리 봅니다. 효과 색은 단색·그라데이션을 고를 수 있으며 메인 그라데이션 정지점 편집기를 공유합니다. 색 덮기·그라데이션 덮기의 색 알파도 세기에 반영합니다.
-
-## v1.14.10 (2026-10-21)
-- 먼저 안쪽 빛을 `1~10`으로 잡은 뒤 다른 효과를 `1~15` 또는 `2~14`처럼 기존 끝 너머까지 끌어도 취소되지 않게 고쳤습니다. 공용 타임라인은 각각 15·14프레임으로 더 늘어나고, 안쪽 빛 `1~10`과 새 효과 범위는 서로 독립적으로 유지됩니다.
-
-## v1.14.9 (2026-10-21)
-- 한 효과를 `1~10`으로 끌어 프레임 추가를 잡은 뒤 다른 효과를 사본 칸 `1~2`로 끌면 전체가 2프레임으로 줄던 문제를 고쳤습니다. 먼저 잡은 `1~10`과 프레임 추가는 유지하고, 나중 효과만 `1~2` 범위로 저장합니다.
-
-## v1.14.8 (2026-10-21)
-- 한 효과에서 잡아 둔 프레임 추가가 다른 효과의 **범위 숫자 칸**을 바꿀 때 사라지던 경우를 고쳤습니다. 효과를 바꿀 때 뒤늦게 들어오는 설정 이벤트도 무시해 먼저 정한 프레임 추가와 소유 효과를 그대로 유지합니다.
-
-## v1.14.7 (2026-10-21)
-- 효과 창에 **효과만큼 캔버스 확대**를 추가했습니다. 현재 레이어의 켜진 효과가 모든 적용 프레임에서 잘리지 않도록 **최소한으로** 또는 원래 **비율 유지**로 캔버스를 늘립니다.
-- 확대할 때 그림 크기는 바꾸지 않고 모든 레이어·부위·스킨·피벗을 함께 옮기며, 효과·프레임 늘리기와 한 번에 되돌릴 수 있습니다. 이미 효과가 캔버스 안에 들어가면 다시 늘리지 않습니다.
-
-## v1.14.6 (2026-10-21)
-- 한 효과에서 프레임 추가를 걸어 둔 뒤, 같은 범위를 쓰는 다른 효과에서 추가 부분이 아닌 범위를 골라도 먼저 걸어 둔 프레임 추가가 사라지지 않게 고쳤습니다.
-
-## v1.14.5 (2026-10-21)
-- 효과 창 재생에 **고른 효과 범위만**을 추가했습니다(기본 켬). 끄면 프레임 늘리기로 생길 사본까지 포함한 전체 프레임을 재생합니다.
-- 목록에서 다른 효과를 고르면 정지 상태여도 그 효과 범위 처음부터 바로 재생합니다. 정적인 효과도 프레임 범위를 확인할 수 있게 재생됩니다.
-
-## v1.14.4 (2026-10-21)
-- 효과마다 프레임 범위를 따로 정하는 방식과 각 효과 설정의 **프레임 수·늘리기**를 복구했습니다. `v1.14.3`의 공통 범위 방식은 되돌렸습니다.
-- 효과 창의 전·후 미리보기와 아래 프레임 그림은 계속 고친 방식대로, 고른 프레임이 각 효과의 범위 안일 때만 그 효과를 보입니다.
-
-## v1.14.3 (2026-10-21)
-- 효과 창에서 한 번에 추가한 효과에 공통 프레임 범위를 쓰도록 바꿨으나, `v1.14.4`에서 효과마다 범위를 정하는 방식으로 되돌렸습니다.
-- 효과 창의 전·후 미리보기와 아래 프레임 그림이 범위 밖 효과까지 계속 보여 주던 문제를 고쳤습니다.
-
-## v1.14.2 (2026-10-21)
-- 효과 창 프레임 줄: 칸이 가로로 꽉 차면 다음 줄로 줄바꿈(가로 스크롤 대신, 3줄이 넘으면 세로 스크롤). 범위 표시·끌기·마지막 칸 너머로 늘리기도 줄을 따라 이어짐.
-
-## v1.14.1 (2026-10-21)
-- 효과 창 프레임 줄에서 범위를 끌다 놓을 때(마지막 칸 너머로 늘렸다가 원래 칸 쪽으로 되돌린 경우 등) 앱이 갑자기 꺼지던 문제를 고침 — 놓을 때 끄는 동안의 칸 수로 다시 그리며 없는 프레임을 읽었습니다. 칸을 다시 그리기 직전에 없어진 칸을 누를 때, "원래 프레임으로"로 늘리기를 없앨 때 프레임 줄이 늘어난 칸 그대로 남던 것도 고침.
-- **오류 로그**: 예상하지 못한 오류가 생기면 앱을 끝내지 않고 알림 창("로그 폴더 열기"·"확인")을 띄우며, 내용을 `<설정 폴더>/Gpixel/Logs/crash-*.log`에 남깁니다(최근 20개). 도움말 > **오류 로그 폴더 열기**. 앱이 끝날 수밖에 없는 오류면 수정된 문서를 `Gpixel/Recovery/`에 비상 저장합니다.
-
-## v1.14.0 (2026-10-21)
-- 효과 창 **프레임 늘리기**: 효과 범위의 프레임 수를 늘리고(원래 프레임으로 / 같은 비율로 / 첫 프레임으로 / 마지막 프레임으로 / 반복) 확인하면 애니메이션에 프레임이 더해집니다(실행취소 한 단계). 미리보기·프레임 줄은 늘린 뒤 모습, 프레임 줄에서 범위 끝을 마지막 칸 너머로 끌어도 늘어납니다.
-- 단추·메뉴·목록·타임라인에 쓰던 기호 문자·이모지 아이콘(재생/멈춤, 주사위, 바깥 링크, 화살표, 별, 하트 등)을 모두 선 아이콘(벡터)으로 바꿈 — 글꼴에 따라 색 이모지로 보이지 않고, 꺼짐·마우스 올림 색을 따릅니다.
-
-## v1.13.0 (2026-10-21)
-- 새 효과 **홀로그램**: 색 물들이기, 주사선(흐르기), 밝은 띠, 깜빡임, 글리치, 테두리 빛.
-- 업데이트 창에 바뀐 점을 보여 줍니다(이 파일에서 읽음). 못 읽으면 버전별 릴리스 페이지 링크를 보여 줍니다.
-- 숫자 상자 우클릭 목록을 칸마다 맞춤 값으로(각도 0·15·30·45·90°…, 세기 %, px, ms, FPS 등)·단위 표시·맨 위에 최근 값.
-- 효과 설정 칸의 이름과 입력란을 한 줄로 맞춰 정렬.
-- 입력란 밖을 누르면 입력이 끝나는 동작을 모든 창(효과 창 등 대화상자 포함)에 공통으로 적용.
-
-## v1.12.0 (2026-10-21)
-- 파일을 닫았다 열어도 **실행취소 기록이 남습니다**(앱 데이터 폴더에 저장, 지운·옮긴·밖에서 바뀐 파일과 오래된 기록은 자동 정리). 환경 설정에서 켜기·보관 기간·최대 용량.
-- 숫자 상자 **우클릭 = 예시 값 목록**(모든 숫자 상자 공통). 확대율도 숫자 상자로(클릭 = 직접 입력, 우클릭 = 화면에 맞추기·배율 목록).
-- 파일 우클릭 **이미지 폴더 선택**: 그 파일이 든 폴더를 트리에서 찾아 깜빡여 표시.
-
-## v1.11.0 (2026-10-21)
-- 캔버스 크기 모드(Ctrl+Alt+C): 캔버스 손잡이로 크기 바꾸기, Ctrl+끌기로 그림 확대·축소, 안쪽 끌기로 옮기기.
-
-## v1.10.x (2026-10-20)
-- 도구 막대에 저장·되돌리기 단추, 잠시 쉬면 자동 저장(시간 설정), 저장한 파일로 되돌리기.
-- AI 채팅: Claude/Codex 탭 따로(뒤에서 계속 실행), "현재 레이어만" 고치기.
-- 효과 창: 실시간 썸네일 효과 팔레트(두 번 누르기·끌어 넣기), 미리보기 아래 프레임 띠로 범위 정하기.
-- 파일 브라우저 머리에 새 파일·새 폴더 단추, 타일 격자 우클릭 팝업.
-
-## v1.9.x (2026-10-20 ~ 21)
-- 효과 15가지 추가: 피격 번쩍임, 깜빡이기, 흔들기, 둥실둥실, 나타나기·사라지기, 녹아내리기, 회전, 잔상, 색 순환, 충격파 고리, 그라데이션 덮기, 안쪽 빛, 색 바꾸기, 색조 보정, 반사(+ 디더 그림자).
-- 격자·타일 모드·양파 단추 우클릭 = 설정 팝업(양파 앞·뒤 프레임 수·진하기 등).
-- 숫자·글자 입력란 밖을 누르면 입력이 끝납니다.
-
-## v1.8.0 (2026-10-20)
-- 움직이는 효과(터지기, 빛 지나가기, 늘었다 줄기), 효과 영구 적용.
-
-## v1.7.0 (2026-10-20)
-- 저장 안 한 파일은 메모리에 남고 파일 아이콘에 빨간 점, 끌 때 한 번에 저장할지 묻기.
-- 합치기가 .gpixel의 그룹·스킨·레이어를 그대로 유지.
-
-## v1.6.x (2026-10-20)
-- 타임라인 선택(프레임·레이어·칸·효과), 드래그 사각형 선택, 방향키로 선택 이동, 복사·붙여넣기로 새 레이어.
-- Ctrl(⌘)을 누르는 동안 임시 이동 도구, 숨긴 레이어에도 그리기, 스킨 카드 끌어서 순서 바꾸기.
-
-## v1.0.0 ~ v1.5.x (2026-10-20)
-- 첫 공개: 자동 업데이트, GIF 내보내기, 레이어 효과, 여러 팔레트, 그룹 자동 배치, 공통 탭·메뉴·끌어서 순서 바꾸기.
+## Older versions
+Versions before v1.14.23 are described in Korean only, in [CHANGELOG.ko.md](CHANGELOG.ko.md).

@@ -7,7 +7,10 @@
 - macOS: `./publish.sh 1.0.0` → `dist/`에 Windows zip + macOS(arm64·x64) zip 세 개(Mac 한 대에서 둘 다 만듦).
 - Windows: `publish.bat 1.0.0` → `dist\Gpixel-windows-x64.zip`(Windows용만).
 - GitHub: `git tag v1.0.0 && git push origin v1.0.0` 하면 Actions(`.github/workflows/release.yml`)가 테스트 후 세 zip과 `SHA256SUMS.txt`를 만들어 릴리스에 올립니다. 자동 업데이트가 이 파일 이름(`Gpixel-windows-x64.zip`, `Gpixel-macos-arm64.zip`, `Gpixel-macos-x64.zip`, `SHA256SUMS.txt`)과 `vX.Y.Z` 태그를 기대하므로 바꾸지 마세요.
-- 새 버전을 올리기 전에 [CHANGELOG.md](CHANGELOG.md) 맨 위에 `## vX.Y.Z (날짜)` 절을 쓰면, 그 절이 릴리스 설명이 되고 앱 업데이트 창에도 나옵니다(절이 없으면 GitHub 자동 노트).
+- 새 버전을 올리기 전에 [CHANGELOG.md](CHANGELOG.md)(영어, 원본)와 [CHANGELOG.ko.md](CHANGELOG.ko.md)(한국어) 맨 위에 같은 머리 `## vX.Y.Z (날짜)`로 그 버전 절을 씁니다(아직 올리지 않은 것은 두 파일 모두 `## 미배포` 아래에 모았다가 릴리스 때 둘 다 버전 머리로 바꿈). 릴리스 설명은 영어 절, 구분선, `## 한국어` 아래 한국어 절 순서로 만들어지고(영어 절이 없으면 한국어만, 둘 다 없으면 GitHub 자동 노트), 두 파일 모두 릴리스 파일로도 올라갑니다.
+- 절 안의 형식: 바뀐 것마다 한 줄로 요약한 소제목 `### 소제목`을 쓰고, 바로 아래에 세부 내역을 짧은 문장 2~5개의 글머리 `- 문장`으로 답니다(소제목 사이는 빈 줄). 업데이트 창은 버전 머리(`##`)·소제목(굵게)·세부(들여 쓴 점 목록)로 꾸며 보이고, `###`는 버전 절 머리(`## `)로 읽히지 않습니다.
+- 앱 업데이트 창의 바뀐 점은 "화면 언어가 한국어(`ko`)인가" 하나로 고릅니다. 한국어 화면은 `CHANGELOG.ko.md`(그 파일이 없는 예전 릴리스면 그때 한국어였던 `CHANGELOG.md`), 그 밖의 모든 화면 언어(영어, CSV로 더한 일본어 등)는 영어 `CHANGELOG.md`를 쓰고, 영어 절이 없는 버전(v1.14.22 이하)만 버전마다 `CHANGELOG.ko.md`의 한국어 절로 채웁니다. 둘 다 못 읽으면 릴리스 설명, 그것도 못 읽으면 버전별 릴리스 페이지 링크를 보여 줍니다.
+- 바뀐 점의 굵게(`**…**`)는 닫는 `**` 앞이 문장 부호(`'`·`)`·`…` 등)이고 바로 뒤에 글자(조사 등)가 붙으면 GitHub에서 굵게 보이지 않습니다. `**AI > 참고 자료…**의` 대신 `**AI > 참고 자료…** 메뉴의`처럼 띄어 쓰거나 고쳐 씁니다.
 - 푸시·풀 리퀘스트마다 `.github/workflows/ci.yml`이 Windows·macOS·Linux에서 빌드하고 테스트합니다.
 - 결과물은 .NET 런타임을 품은 자체 포함 앱이라 받는 사람이 아무것도 설치하지 않아도 됩니다(zip 40MB 안팎).
 
@@ -30,4 +33,4 @@
 
 ## 기여
 
-버그 제보·불편한 점·기능 제안은 [Discord](https://discord.com/channels/1563526135827144895/1563527912735510539)에 남겨 주세요(앱의 **도움말 > 제보·아이디어 (Discord)…**). GitHub 계정이 있으면 [Issues](https://github.com/1000Pro-1997/GPixel/issues)도 받습니다(신고 양식에 버전·OS를 적어 주세요 — 버전은 **도움말 > Gpixel 정보…**). 풀 리퀘스트는 `dotnet build Gpixel.sln`·`dotnet test Gpixel.sln`이 통과하는 상태로 보내 주세요. Discord 주소는 앱에서 `AppInfo.DiscordUrl` 한 곳에 있습니다.
+버그 제보·불편한 점·기능 제안은 [Discord](https://discord.gg/Avw7aUVxqr)에 남겨 주세요(앱의 **도움말 > 제보·아이디어 (Discord)…**). GitHub 계정이 있으면 [Issues](https://github.com/1000Pro-1997/GPixel/issues)도 받습니다(신고 양식에 버전·OS를 적어 주세요 — 버전은 **도움말 > Gpixel 정보…**). 풀 리퀘스트는 `dotnet build Gpixel.sln`·`dotnet test Gpixel.sln`이 통과하는 상태로 보내 주세요. Discord 주소는 앱에서 `AppInfo.DiscordUrl` 한 곳에 있습니다.

@@ -181,8 +181,8 @@ public sealed class Updater
         => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_Updater_NoReleaseText_EB9E89C82C,why,AppInfo.VersionText,AppUpdate.ReleasesUrl);
 
     /// <summary>
-    /// 바뀐 점을 붙인다. 먼저 릴리스에 함께 올린 <c>CHANGELOG.md</c>(웹 내려받기 주소라 API 한도 없음)에서 지금 버전 다음 ~ 새 버전 절을 고르고,
-    /// 없으면 API의 릴리스 설명을 쓴다. 둘 다 못 읽으면 웹 주소로 얻은 정보를 그대로(업데이트 창이 버전별 링크를 보여 줌).
+    /// 바뀐 점을 붙인다. 먼저 릴리스에 함께 올린 바뀐 점 파일(웹 내려받기 주소라 API 한도 없음)에서 지금 버전 다음 ~ 새 버전 절을 고르고
+    /// (언어는 <see cref="ChangelogNotesAsync"/>), 없으면 API의 릴리스 설명을 쓴다. 둘 다 못 읽으면 웹 주소로 얻은 정보를 그대로(업데이트 창이 버전별 링크를 보여 줌).
     /// </summary>
     private async Task<ReleaseInfo> WithNotesAsync(ReleaseInfo fromPage)
     {
@@ -205,19 +205,36 @@ public sealed class Updater
         }
     }
 
-    /// <summary>새 버전 릴리스의 <c>CHANGELOG.md</c>에서 지금 버전보다 높은 절들(없거나 못 읽으면 null).</summary>
+    /// <summary>
+    /// 새 버전 릴리스의 바뀐 점 파일에서 지금 버전보다 높은 절들(없거나 못 읽으면 null). 언어 규칙은 "화면 언어가 한국어(ko)인가" 하나:
+    /// 한국어 화면은 <c>CHANGELOG.ko.md</c>를 쓰고(그 파일이 없는 예전 릴리스면 그때 한국어였던 <c>CHANGELOG.md</c>), 그 밖의 모든 화면 언어
+    /// (영어, CSV로 더한 일본어 등)는 영어 <c>CHANGELOG.md</c>를 쓰며 영어 절이 없는 버전(v1.14.22 이하의 옛 버전)만 <c>CHANGELOG.ko.md</c>의 한국어 절로 채운다.
+    /// </summary>
     private async Task<string?> ChangelogNotesAsync(ReleaseInfo release)
+    {
+        if (UiLanguage.Current == UiLanguage.Korean)
+            return (await ChangelogFileAsync(release, ChangelogNotes.KoreanAssetName) ?? await ChangelogFileAsync(release, ChangelogNotes.EnglishAssetName)) is { } korean
+                ? ChangelogNotes.Between(korean, AppInfo.Version, release.Version)
+                : null;
+        var englishTask = ChangelogFileAsync(release, ChangelogNotes.EnglishAssetName);
+        var koreanTask = ChangelogFileAsync(release, ChangelogNotes.KoreanAssetName);
+        string? english = await englishTask, fallback = await koreanTask;
+        if (english is null && fallback is null) return null;
+        return ChangelogNotes.Between(english, AppInfo.Version, release.Version, fallback);
+    }
+
+    /// <summary>새 버전 릴리스에 함께 올린 파일 <paramref name="assetName"/>의 글(없거나 못 읽으면 null).</summary>
+    private async Task<string?> ChangelogFileAsync(ReleaseInfo release, string assetName)
     {
         try
         {
             using var timeout = new CancellationTokenSource(ApiTimeout);
-            var url = new Uri($"{AppUpdate.ReleasesUrl}/download/{Uri.EscapeDataString(release.Tag)}/{ChangelogNotes.AssetName}");
+            var url = new Uri($"{AppUpdate.ReleasesUrl}/download/{Uri.EscapeDataString(release.Tag)}/{assetName}");
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             AddHeaders(request);
             using var response = await _http.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode) return null;
-            var text = await response.Content.ReadAsStringAsync(timeout.Token);
-            return ChangelogNotes.Between(text, AppInfo.Version, release.Version);
+            return await response.Content.ReadAsStringAsync(timeout.Token);
         }
         catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException or IOException)
         {

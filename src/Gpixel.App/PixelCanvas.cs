@@ -46,6 +46,10 @@ public sealed class PixelCanvas : Control
     /// <summary>자유 선택: 지금 놓으면 선택될 영역 테두리(파란 점선, 어두운 바탕선 위).</summary>
     private static readonly IPen LassoPreviewPen = AppTheme.Pen(Color.FromRgb(90, 170, 255), 1.5, Dash);
     private static readonly IPen LassoPreviewBackPen = AppTheme.Pen(Color.FromArgb(150, 0, 0, 0), 2.5);
+    /// <summary>파일 끌어 오기: 캔버스 둘레 강조(강조색)와 그림이 들어갈 자리(강조색 점선, 옅게 채움).</summary>
+    private static readonly IPen DropHighlightPen = AppTheme.Pen(Color.FromArgb(200, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B), 2);
+    private static readonly IPen DropGhostPen = AppTheme.Pen(AppTheme.AccentColor, 1.5, Dash);
+    private static readonly IBrush DropGhostBrush = AppTheme.Brush(Color.FromArgb(40, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
     /// <summary>변형 모드: 변형한 사각형 테두리(주황 점선, 어두운 바탕선 위) — 선택 개미 줄·올가미 미리보기(파랑)와 구별된다.</summary>
     private static readonly IPen TransformPen = AppTheme.Pen(Color.FromRgb(255, 168, 0), 1.5, new ImmutableDashStyle([5.0, 3.0], 0));
     private static readonly IPen TransformBackPen = AppTheme.Pen(Color.FromArgb(170, 0, 0, 0), 3);
@@ -553,6 +557,40 @@ public sealed class PixelCanvas : Control
     /// <summary>설정에서 읽은 확대율을 그대로 적용한다(이벤트 없음).</summary>
     public void InitZoom(int zoom) => _zoom = Math.Clamp(zoom, 1, 64);
 
+    /// <summary>화면 위치(이 컨트롤 좌표) 아래 픽셀의 프레임 좌표(부위 화면이면 부위 위치만큼 옮김, 타일 모드면 가운데 칸으로 감음).</summary>
+    public Point FramePixelAt(Avalonia.Point screen)
+    {
+        var px = Wrap(ScreenToPixel(ToInt(screen)));
+        var origin = ShownOrigin;
+        return new Point(px.X + origin.X, px.Y + origin.Y);
+    }
+
+    private IReadOnlyList<Rectangle>? _dropHint;
+
+    /// <summary>
+    /// 파일을 끌어 오는 중의 표시: 캔버스 둘레 강조 + 놓으면 그림이 들어갈 사각형(프레임 좌표, 비어 있어도 됨). null = 끔.
+    /// </summary>
+    public void SetDropHint(IReadOnlyList<Rectangle>? ghosts)
+    {
+        if (_dropHint is null && ghosts is null) return;
+        _dropHint = ghosts;
+        InvalidateVisual();
+    }
+
+    private void DrawDropHint(DrawingContext g)
+    {
+        if (_dropHint is not { } ghosts) return;
+        var origin = ShownOrigin;
+        foreach (var r in ghosts)
+        {
+            var s = ImageToScreen(new Rectangle(r.X - origin.X, r.Y - origin.Y, r.Width, r.Height));
+            var rect = new Rect(s.X + 0.5, s.Y + 0.5, Math.Max(0, s.Width - 1), Math.Max(0, s.Height - 1));
+            g.DrawRectangle(DropGhostBrush, LassoPreviewBackPen, rect);
+            g.DrawRectangle(null, DropGhostPen, rect);
+        }
+        g.DrawRectangle(null, DropHighlightPen, new Rect(1, 1, Math.Max(0, Bounds.Width - 2), Math.Max(0, Bounds.Height - 2)));
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -651,6 +689,7 @@ public sealed class PixelCanvas : Control
         if (_drag == DragMode.Lasso) DrawLasso(g);
         if (_drag == DragMode.Gradient) DrawGradientGuide(g);
         DrawBrushCursor(g);
+        DrawDropHint(g);
         if (_peekPrevious)
             AppTheme.DrawText(g, _ctx.CurrentFrame > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_Render_28FC63DF57,_ctx.CurrentFrame) : UiStrings.S_PixelCanvas_Render_5D74D360AD,
                 new Avalonia.Point(8, 8), AppTheme.WarningBrush, bold: true);

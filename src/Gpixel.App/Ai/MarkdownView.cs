@@ -26,6 +26,12 @@ internal sealed class MarkdownView : StackPanel
         Margin = new Thickness(2, 0);
     }
 
+    /// <summary>목록 항목을 더 들여 쓸 너비(깊이마다 들여 쓰는 16에 더함). 업데이트 창은 소제목 아래 세부 목록을 들여 쓴다.</summary>
+    public double ListIndent { get; init; }
+
+    /// <summary>맨 처음이 아닌 제목 위에 더 띄울 높이(<c>#</c>·<c>##</c>는 두 배). 업데이트 창이 버전·소제목 덩어리를 나눠 보이게 쓴다.</summary>
+    public double HeadingGap { get; init; }
+
     public void SetText(string text)
     {
         if (text == _text) return;
@@ -38,7 +44,10 @@ internal sealed class MarkdownView : StackPanel
         for (int i = same; i < blocks.Count; i++)
         {
             _shown.Add(blocks[i]);
-            Children.Add(Build(blocks[i], AppTheme.TextBrush));
+            var control = Build(blocks[i], AppTheme.TextBrush);
+            if (i > 0 && HeadingGap > 0 && blocks[i].Kind == MdBlockKind.Heading)
+                control.Margin = new Thickness(0, blocks[i].Level <= 2 ? HeadingGap * 2 : HeadingGap, 0, 0);
+            Children.Add(control);
         }
     }
 
@@ -52,7 +61,7 @@ internal sealed class MarkdownView : StackPanel
                 heading.FontSize = HeadingSizes[Math.Clamp(block.Level, 1, 3) - 1];
                 return heading;
             case MdBlockKind.ListItem:
-                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(block.Level * 16, 0, 0, 0) };
+                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(ListIndent + block.Level * 16, 0, 0, 0) };
                 Control marker = block.Number is { } number
                     ? new TextBlock { Text = number, Foreground = foreground, Margin = new Thickness(0, 0, 6, 0) }
                     : new IconView(VectorIcon.Dot, AppTheme.AccentBrush) { Filled = true, Width = 8, Height = 8, Margin = new Thickness(2, 5, 8, 0), VerticalAlignment = VerticalAlignment.Top };
