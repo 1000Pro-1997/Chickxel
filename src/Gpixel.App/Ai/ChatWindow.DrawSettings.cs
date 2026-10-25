@@ -4,7 +4,8 @@ using Gpixel.App.Localization;
 namespace Gpixel.App.Ai;
 
 // 그리기 설정 칸(머리줄 "?" 옆 슬라이더 단추): 도움말 칸과 같은 오른쪽 자리·움직임을 쓰고, 둘 중 하나만 열린다.
-// 그리는 방식(그림 생성 → 픽셀 변환 / 직접 찍기)과 생성 옵션(결과 크기·배경 지우기·자동 최적화·넣는 곳·스타일 참고·동작별 프레임 수)을 고친다.
+// 그리는 방식(그림 생성 → 픽셀 변환 / 직접 찍기)과 고른 방식의 하위 옵션(그림 생성: 결과 크기·배경 지우기·자동 최적화·넣는 곳·스타일 참고·애니메이션,
+// 직접 찍기: 팔레트 색만 사용)을 고친다. 선택지마다 한 줄 이름과 흐린 정보 아이콘만 보이고 설명은 마우스를 올리면 풍선으로 뜬다.
 // 그림 생성은 Codex만 하므로 Claude 탭을 보고 있으면 생성 선택지 옆에 빨간 경고 아이콘(마우스를 올리면 까닭)이 보인다.
 public sealed partial class ChatWindow
 {
@@ -16,12 +17,14 @@ public sealed partial class ChatWindow
     private TextBlock? _codexStatus;
     private Control? _generateOptions;
     private ComboBox? _sizeCombo, _styleCombo, _styleRefCombo, _insertCombo, _animCombo;
-    /// <summary>"프레임마다 따로"를 고르면 보이는 일관성 경고.</summary>
+    /// <summary>"프레임마다 따로"를 고르면 보이는 일관성 경고 아이콘.</summary>
     private Control? _animWarning;
     private NumericUpDown? _sizeCustom;
     private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult;
     /// <summary>결과 크기 칸(결과 크기 보정이 켜졌을 때만 쓸 수 있음).</summary>
     private Control? _sizeRow;
+    /// <summary>팔레트 색만 사용 줄(직접 찍기를 골랐을 때만 보임).</summary>
+    private Control? _paletteRow;
     private readonly Dictionary<string, NumericUpDown> _frameBoxes = new();
     /// <summary>스타일 참고 "지정" 목록의 자료 id(목록 순서).</summary>
     private List<string> _styleRefIds = [];
@@ -95,37 +98,27 @@ public sealed partial class ChatWindow
         stack.Children.Add(TitleText(UiStrings.AiDraw_Mode_Title));
         _modeGenerate = new RadioButton { Content = UiStrings.AiDraw_Mode_Generate, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
         _modeDirect = new RadioButton { Content = UiStrings.AiDraw_Mode_Direct, GroupName = "aidraw-mode", Foreground = AppTheme.TextBrush };
-        _modeWarning = new Border
-        {
-            Width = 18,
-            Height = 18,
-            Margin = new Thickness(6, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Cursor = new Cursor(StandardCursorType.Help),
-            Background = Brushes.Transparent,
-            Child = new IconView(VectorIcon.CircleAlert, AppTheme.UnsavedBrush, 2.2) { Width = 16, Height = 16 },
-        };
-        ToolTip.SetTip(_modeWarning, UiStrings.AiDraw_Mode_ClaudeWarning);
+        _modeWarning = AlertIcon(UiStrings.AiDraw_Mode_ClaudeWarning);
         _modeGenerate.IsCheckedChanged += (_, _) => OnDrawModeChanged();
-        stack.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _modeGenerate, _modeWarning } });
-        stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_Mode_Generate_Text, dim: true)));
-        stack.Children.Add(_modeDirect);
-        stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_Mode_Direct_Text, dim: true)));
-        // 직접 찍기 아래: 팔레트 색만 사용(직접 찍기는 두 탭 모두 — 생성 방식과 관계없이 늘 고칠 수 있음).
-        _paletteOnly = Ui.Check(UiStrings.AiDraw_PaletteOnly).Tip(UiStrings.AiDraw_PaletteOnly_Tip);
+        stack.Children.Add(WithInfo(_modeGenerate, UiStrings.AiDraw_Mode_Generate_Text, _modeWarning));
+        stack.Children.Add(WithInfo(_modeDirect, UiStrings.AiDraw_Mode_Direct_Text));
+        // 직접 찍기를 골랐을 때만: 팔레트 색만 사용.
+        _paletteOnly = Ui.Check(UiStrings.AiDraw_PaletteOnly);
         _paletteOnly.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        _paletteOnly.Margin = new Thickness(22, 0, 0, 0);
-        stack.Children.Add(_paletteOnly);
-        stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_PaletteOnly_Text, dim: true)));
+        _paletteRow = WithInfo(_paletteOnly, UiStrings.AiDraw_PaletteOnly_Text);
+        _paletteRow.Margin = new Thickness(22, 0, 0, 0);
+        stack.Children.Add(_paletteRow);
         _codexStatus = WrapText("", dim: true);
         stack.Children.Add(_codexStatus);
 
+        // 그림 생성을 골랐을 때만: 생성 옵션.
         var options = new StackPanel { Spacing = 6 };
+        options.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
         options.Children.Add(TitleText(UiStrings.AiDraw_Options_Title));
 
-        _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult).Tip(UiStrings.AiDraw_ResizeResult_Tip);
+        _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult);
         _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(_resizeResult);
+        options.Children.Add(WithInfo(_resizeResult, UiStrings.AiDraw_ResizeResult_Text));
         _sizeCombo = Ui.Combo(120, "32", "48", "64", UiStrings.AiDraw_Size_Custom);
         _sizeCustom = Ui.Num(AiDrawSettings.MinSize, AiDrawSettings.MaxSize, 32, 64);
         _sizeCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
@@ -133,14 +126,13 @@ public sealed partial class ChatWindow
         _sizeRow = OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom));
         _sizeRow.Margin = new Thickness(22, 0, 0, 0);
         options.Children.Add(_sizeRow);
-        options.Children.Add(Indented(WrapText(UiStrings.AiDraw_ResizeResult_Text, dim: true)));
 
-        _removeBackground = Ui.Check(UiStrings.AiDraw_RemoveBackground).Tip(UiStrings.AiDraw_RemoveBackground_Tip);
+        _removeBackground = Ui.Check(UiStrings.AiDraw_RemoveBackground);
         _removeBackground.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(_removeBackground);
-        _autoOptimize = Ui.Check(UiStrings.AiDraw_AutoOptimize).Tip(UiStrings.AiDraw_AutoOptimize_Tip);
+        options.Children.Add(WithInfo(_removeBackground, UiStrings.AiDraw_RemoveBackground_Tip));
+        _autoOptimize = Ui.Check(UiStrings.AiDraw_AutoOptimize);
         _autoOptimize.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(_autoOptimize);
+        options.Children.Add(WithInfo(_autoOptimize, UiStrings.AiDraw_AutoOptimize_Tip));
 
         _insertCombo = Ui.Combo(150, UiStrings.AiDraw_Insert_Layer, UiStrings.AiDraw_Insert_Document);
         _insertCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
@@ -148,25 +140,20 @@ public sealed partial class ChatWindow
 
         _styleCombo = Ui.Combo(150, UiStrings.AiDraw_Style_Auto, UiStrings.AiDraw_Style_None, UiStrings.AiDraw_Style_Specific);
         _styleCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Style, null, _styleCombo));
+        options.Children.Add(OptionRow(UiStrings.AiDraw_Style, UiStrings.AiDraw_Style_Text, _styleCombo));
         _styleRefCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3) };
         _styleRefCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         options.Children.Add(_styleRefCombo);
-        options.Children.Add(WrapText(UiStrings.AiDraw_Style_Text, dim: true));
 
-        options.Children.Add(new TextBlock { Text = UiStrings.AiDraw_Frames, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, Margin = new Thickness(0, 4, 0, 0) });
+        var framesTitle = new TextBlock { Text = UiStrings.AiDraw_Frames, FontWeight = FontWeight.Bold, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
+        var framesHeader = WithInfo(framesTitle, UiStrings.AiDraw_Frames_Text);
+        framesHeader.Margin = new Thickness(0, 4, 0, 0);
+        options.Children.Add(framesHeader);
         _animCombo = Ui.Combo(170, UiStrings.AiDraw_Anim_Sheet, UiStrings.AiDraw_Anim_PerFrame);
         _animCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, _animCombo));
-        var animWarningText = WrapText(UiStrings.AiDraw_Anim_PerFrame_Warning, error: true);
-        animWarningText.VerticalAlignment = VerticalAlignment.Center;
-        var animWarning = new DockPanel { Margin = new Thickness(0, 0, 0, 2) };
-        var animWarningIcon = new IconView(VectorIcon.CircleAlert, AppTheme.UnsavedBrush, 2.2) { Width = 14, Height = 14, Margin = new Thickness(0, 1, 6, 0), VerticalAlignment = VerticalAlignment.Top };
-        DockPanel.SetDock(animWarningIcon, Dock.Left);
-        animWarning.Children.Add(animWarningIcon);
-        animWarning.Children.Add(animWarningText);
-        _animWarning = animWarning;
-        options.Children.Add(animWarning);
+        // "프레임마다 따로"를 고르면 콤보 옆에 빨간 경고 아이콘(마우스를 올리면 까닭).
+        _animWarning = AlertIcon(UiStrings.AiDraw_Anim_PerFrame_Warning);
+        options.Children.Add(OptionRow(UiStrings.AiDraw_Anim, UiStrings.AiDraw_Anim_Tip, Ui.Row(_animCombo, _animWarning)));
         var frames = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*,Auto") };
         int row = 0, col = 0;
         foreach (var action in AiDrawActions.All)
@@ -185,9 +172,7 @@ public sealed partial class ChatWindow
             if (++col == 2) { col = 0; row++; }
         }
         options.Children.Add(frames);
-        options.Children.Add(WrapText(UiStrings.AiDraw_Frames_Text, dim: true));
         _generateOptions = options;
-        stack.Children.Add(new Border { Height = 1, Background = AppTheme.BorderBrush, Margin = new Thickness(0, 4) });
         stack.Children.Add(options);
 
         var scroll = new ScrollViewer
@@ -206,18 +191,51 @@ public sealed partial class ChatWindow
         };
     }
 
-    private static Control Indented(Control c)
+    /// <summary>
+    /// 선택지 한 줄: 컨트롤, 덧붙일 것(경고 아이콘 등), 흐린 정보 아이콘. 설명(<paramref name="tip"/>)은 정보 아이콘과 컨트롤 모두의 풍선 — 패널에는 한 줄 이름만 보인다.
+    /// </summary>
+    private static StackPanel WithInfo(Control control, string tip, params Control[] extra)
     {
-        c.Margin = new Thickness(26, -4, 0, 2);
-        return c;
+        control.Tip(tip);
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(control);
+        row.Children.Add(InfoIcon(tip));
+        foreach (var c in extra) row.Children.Add(c);
+        return row;
     }
 
-    /// <summary>이름 + 컨트롤 한 줄(이름 쪽에 풍선).</summary>
+    /// <summary>설명 풍선을 띄우는 흐린 정보 아이콘(Lucide info).</summary>
+    private static Border InfoIcon(string tip) => new Border
+    {
+        Width = 18,
+        Height = 18,
+        Margin = new Thickness(4, 0, 0, 0),
+        VerticalAlignment = VerticalAlignment.Center,
+        Cursor = new Cursor(StandardCursorType.Help),
+        Background = Brushes.Transparent,
+        Child = new IconView(VectorIcon.Info, AppTheme.DimTextBrush, 2) { Width = 14, Height = 14 },
+    }.Tip(tip);
+
+    /// <summary>경고 풍선을 띄우는 빨간 경고 아이콘(Lucide circle-alert).</summary>
+    private static Border AlertIcon(string tip) => new Border
+    {
+        Width = 18,
+        Height = 18,
+        Margin = new Thickness(4, 0, 0, 0),
+        VerticalAlignment = VerticalAlignment.Center,
+        Cursor = new Cursor(StandardCursorType.Help),
+        Background = Brushes.Transparent,
+        Child = new IconView(VectorIcon.CircleAlert, AppTheme.UnsavedBrush, 2.2) { Width = 16, Height = 16 },
+    }.Tip(tip);
+
+    /// <summary>이름 + 컨트롤 한 줄. 설명이 있으면 이름 옆에 정보 아이콘, 이름에도 같은 풍선.</summary>
     private static Control OptionRow(string name, string? tip, Control control)
     {
-        var label = new TextBlock { Text = name, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, MinWidth = 90 };
-        if (tip is not null) label.Tip(tip);
-        return new StackPanel { Orientation = Orientation.Horizontal, Children = { label, control } };
+        var label = new TextBlock { Text = name, Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center };
+        var head = tip is null ? (Control)label : WithInfo(label, tip);
+        head.MinWidth = 100;
+        head.VerticalAlignment = VerticalAlignment.Center;
+        return new StackPanel { Orientation = Orientation.Horizontal, Children = { head, control } };
     }
 
     private static string ActionName(string action) => action switch
@@ -290,7 +308,10 @@ public sealed partial class ChatWindow
     private void UpdateDrawOptionsEnabled()
     {
         if (_generateOptions is null) return;
-        _generateOptions.IsEnabled = _settings.AiDraw.Mode == AiDrawMode.Generate;
+        // 고른 방식의 하위 옵션만 보인다: 그림 생성 → 생성 옵션, 직접 찍기 → 팔레트 색만 사용.
+        bool generate = _settings.AiDraw.Mode == AiDrawMode.Generate;
+        _generateOptions.IsVisible = generate;
+        _paletteRow!.IsVisible = !generate;
         _sizeCustom!.IsVisible = _sizeCombo!.SelectedIndex == SizeChoices.Length;
         _sizeRow!.IsEnabled = _resizeResult!.On();
         _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;

@@ -54,6 +54,8 @@ internal sealed class DocumentTabStrip : Border
         }, RoutingStrategies.Tunnel);
         _newButton = FlatIcon(VectorIcon.Plus, () => NewRequested?.Invoke());
         _newButton.Margin = new Thickness(3, 0);
+        // 탭이 없어도(시작 화면) "+"는 보인다.
+        _row.Children.Add(_newButton);
         _splitButton = FlatIcon(VectorIcon.Columns2, () => SplitRequested?.Invoke());
         _splitButton.Margin = new Thickness(3, 0, 4, 0);
         DockPanel.SetDock(_splitButton, Dock.Right);
@@ -84,6 +86,13 @@ internal sealed class DocumentTabStrip : Border
 
     /// <summary>탭 우클릭 메뉴 항목(번호 → 항목, null = 메뉴 없음).</summary>
     public Func<int, IEnumerable<object>?>? MenuFor { get; set; }
+
+    /// <summary>오른쪽 끝 다른 쪽으로 옮기기 단추를 보일지(탭이 없으면 — 시작 화면 — 숨김).</summary>
+    public bool SplitButtonVisible
+    {
+        get => _splitButton.IsVisible;
+        set => _splitButton.IsVisible = value;
+    }
 
     /// <summary>풍선 도움말: 닫기 X, "+", 나눠 열기 단추.</summary>
     public void SetTips(string close, string newTab, string split)

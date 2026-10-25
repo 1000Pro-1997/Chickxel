@@ -3,6 +3,10 @@
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
 ## 미배포
+### Movement test moved into View
+- The F5 movement test remains available for testing top-down movement and platformer jumps with the current animation.
+- Its single-command Test menu is removed; open it from View instead.
+
 ### Transform and move several cels at once
 - With several cels selected in the timeline (a cel range, frame headers = those frames on the current layer, layer names = all frames of those layers), Ctrl+T now transforms all of them with the same rotation, scale and move. The handle box surrounds the drawings of every selected cel, the current cel moves on the canvas, and the others change when you apply.
 - Applying is one undo step for all cels and Esc cancels them all. Empty cels are skipped, cels on locked layers are skipped with a note in the status bar, part cels are transformed in their own space around the same canvas point, and pixels moved outside the canvas are cut on apply.

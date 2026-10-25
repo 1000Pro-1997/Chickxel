@@ -684,7 +684,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("이전 탭", MainStrings.Tabs_Previous, () => CycleTab(-1), "Ctrl+Shift+Tab", KeyScope.Global, (Key.Tab, Ctrl | Shift)),
             WithIcon(DocCmd("다른 쪽으로 옮기기", MainStrings.Tabs_MoveToOther, () => { if (_activeTab is { } t) MoveTabToOtherPane(t); }), VectorIcon.Columns2),
             new Separator(),
-            _miFiles);
+            _miFiles,
+            new Separator(),
+            _miPlayTest = DocCmd("움직임 테스트", MainStrings.Menu_Test_ShowPlayTest_224, ShowPlayTest, "F5", KeyScope.Global, (Key.F5, NoMods)));
         // 누르고 있는 동안 이전 프레임 보기(키를 떼면 캔버스가 끈다 — PixelCanvas.PeekKey)
         Bind("보기", "이전 프레임 보기(누르고 있기)", MainStrings.ShortcutCategory_View, MainStrings.Shortcut_PeekPrevious, KeyScope.NotInText, () => { if (_ctx.HasProject) _canvas.PeekPrevious = true; return true; }, (Key.H, NoMods));
 
@@ -743,10 +745,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("브러시 작게", MainStrings.Menu_Tools_BrushSize_218, () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
             Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
 
-        // 테스트
-        var test = TopMenu("테스트(_S)", MainStrings.Menu_Test);
-        _miPlayTest = Cmd("움직임 테스트", MainStrings.Menu_Test_ShowPlayTest_224, ShowPlayTest, "F5", KeyScope.Global, (Key.F5, NoMods));
-        test.Items.Add(_miPlayTest);
 
         // AI
         var ai = TopMenu("AI(_A)", MainStrings.Menu_Category_Ai);
@@ -777,7 +775,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("업데이트 확인…", MainStrings.Menu_Help_CheckAsync_236, () => _ = _updater.CheckAsync(manual: true)),
             Cmd("Gpixel 정보…", MainStrings.Menu_Help_AboutDialog_238, () => new AboutDialog().ShowDialog(this)));
 
-        foreach (var top in new[] { file, edit, view, frame, tools, test, ai, help }) menu.Items.Add(top);
+        foreach (var top in new[] { file, edit, view, frame, tools, ai, help }) menu.Items.Add(top);
         return menu;
     }
 

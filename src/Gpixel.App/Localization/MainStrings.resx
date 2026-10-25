@@ -441,9 +441,6 @@
   <data name="Menu_Tools_SwapColors_220" xml:space="preserve">
     <value>기본색 ↔ 보조색</value>
   </data>
-  <data name="Menu_Test" xml:space="preserve">
-    <value>테스트(_S)</value>
-  </data>
   <data name="Menu_Test_ShowPlayTest_224" xml:space="preserve">
     <value>움직임 테스트</value>
   </data>

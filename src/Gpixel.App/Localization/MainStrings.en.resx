@@ -147,7 +147,6 @@
   <data name="Menu_Tools_BrushSize_216" xml:space="preserve"><value>Larger brush</value></data>
   <data name="Menu_Tools_BrushSize_218" xml:space="preserve"><value>Smaller brush</value></data>
   <data name="Menu_Tools_SwapColors_220" xml:space="preserve"><value>Primary ↔ secondary color</value></data>
-  <data name="Menu_Test" xml:space="preserve"><value>Te_st</value></data>
   <data name="Menu_Test_ShowPlayTest_224" xml:space="preserve"><value>Movement test</value></data>
   <data name="Menu_Ai_ToggleChat_226" xml:space="preserve"><value>AI chat</value></data>
   <data name="Menu_Ai_References" xml:space="preserve"><value>References…</value></data>

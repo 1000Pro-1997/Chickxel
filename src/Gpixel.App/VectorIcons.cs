@@ -95,6 +95,8 @@ public enum VectorIcon
     Link,
     /// <summary>세로로 둘로 나뉜 사각형(좌우로 나눠 열기 — Lucide columns-2).</summary>
     Columns2,
+    /// <summary>원 안의 "i"(설명 — Lucide info).</summary>
+    Info,
 }
 
 public static class VectorIcons
@@ -278,6 +280,7 @@ public static class VectorIcons
         VectorIcon.CircleAlert => [Circle(12, 12, 10), "M12 8v4", "M12 16h.01"],
         VectorIcon.Link => ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
         VectorIcon.Columns2 => ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M12 3v18"],
+        VectorIcon.Info => [Circle(12, 12, 10), "M12 16v-4", "M12 8h.01"],
         _ => [],
     };
 

@@ -3261,10 +3261,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Transform_NoPixelsInCels" xml:space="preserve"><value>No pixels to transform in the selected cels (empty cels and locked layers are skipped).</value></data>
   <data name="Move_OtherCels" xml:space="preserve"><value>Also moved {count} other cels selected in the timeline</value></data>
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>Use palette colors only</value></data>
-  <data name="AiDraw_PaletteOnly_Tip" xml:space="preserve"><value>Limits the colors the AI paints with the pixel tools to the active palette.</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
-  <data name="AiDraw_ResizeResult_Tip" xml:space="preserve"><value>Fits the converted result to the size below (or a size given in the chat).</value></data>
   <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): the generated image is converted at the pixel grid found in it, with automatic size and auto-optimize. A size you mention in the chat (e.g. "64×64") is only used as a rough scale for the drawing. On: the result is fitted to the size below (or the size from the chat).</value></data>
 </root>

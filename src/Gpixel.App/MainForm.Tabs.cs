@@ -101,9 +101,11 @@ public sealed partial class MainForm
         };
         Grid.SetColumnSpan(_tabDropHint, 3);
         _paneArea.Children.Add(_tabDropHint);
-        Grid.SetColumnSpan(_start, 3);
+        // 시작 화면은 왼쪽 묶음 칸의 그림 자리(탭 줄 아래)를 덮는다 — 탭이 없어도 탭 줄의 "+"로 새 문서를 만들 수 있게.
         _start.ZIndex = 100;
-        _paneArea.Children.Add(_start);
+        _panes[0].Content.Children.Add(_start);
+        // 처음에는 탭이 없다(시작 화면) — 옮기기 단추는 탭이 생기면 보인다(RefreshPanes).
+        _panes[0].Strip.SplitButtonVisible = false;
         AttachCanvasDrop(_paneArea);
         return _paneArea;
     }
@@ -256,8 +258,8 @@ public sealed partial class MainForm
     private void RefreshPanes()
     {
         bool split = _tabs.IsSplit;
-        // 탭이 없으면(시작 화면) 탭 줄도 숨긴다 — 시작 화면이 캔버스 자리 전체를 덮는다.
-        _panes[0].Strip.IsVisible = !_tabs.IsEmpty;
+        // 탭이 없으면(시작 화면) 탭 줄은 "+"만 보인다 — 옮길 탭이 없으니 옮기기 단추는 숨긴다.
+        _panes[0].Strip.SplitButtonVisible = !_tabs.IsEmpty;
         if (_panes[1].IsVisible != split)
         {
             _panes[1].IsVisible = split;

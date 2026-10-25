@@ -10234,10 +10234,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Transform_NoPixelsInCels" xml:space="preserve"><value>고른 셀들에 변형할 픽셀이 없습니다(빈 셀·잠긴 레이어는 건너뜀).</value></data>
   <data name="Move_OtherCels" xml:space="preserve"><value>타임라인에서 고른 다른 셀 {count}칸도 함께 옮김</value><comment>count = 지금 셀과 함께 옮긴 다른 셀 수.</comment></data>
   <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>팔레트 색만 사용</value></data>
-  <data name="AiDraw_PaletteOnly_Tip" xml:space="preserve"><value>AI가 픽셀 도구로 칠하는 색을 활성 팔레트의 색으로 제한합니다.</value></data>
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>AI가 직접 칠하는 색(점·선·채우기·색 바꾸기)을 활성 팔레트에서 가장 가까운 색으로 바꿉니다. 지우기(완전 투명)는 되고 반투명은 불투명이 됩니다. 그림 생성 결과(변환기의 팔레트 설정)와 레이어 효과에는 영향이 없습니다.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
-  <data name="AiDraw_ResizeResult_Tip" xml:space="preserve"><value>변환 결과를 아래 크기(또는 채팅에서 말한 크기)에 맞춥니다.</value></data>
   <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 생성한 그림의 픽셀 칸 크기대로 자동 크기 + 자동 최적화로 변환합니다. 채팅에서 "64×64"처럼 말한 크기는 그림을 그릴 때 대략적인 크기로만 참고합니다. 켜면 아래 크기(또는 채팅에서 말한 크기)로 맞춥니다.</value></data>
 </root>
