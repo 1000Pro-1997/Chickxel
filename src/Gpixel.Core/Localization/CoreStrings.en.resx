@@ -32,4 +32,6 @@
   <data name="Refs_Example_grass_Title" xml:space="preserve"><value>Grass tile</value></data>
   <data name="Refs_Example_grass_Description" xml:space="preserve"><value>16×16 grass-topped dirt ground tile. A 3-shade green grass top, a jagged dark border, then 3-shade brown dirt with scattered pebble specks; the left and right edges match so it repeats horizontally without seams.</value></data>
   <data name="Refs_Example_grass_Tags" xml:space="preserve"><value>grass, dirt, ground, tile, repeat, 16px</value></data>
+  <data name="Gif_InvalidFile" xml:space="preserve"><value>Not a GIF file, or its header is damaged.</value></data>
+  <data name="Gif_NoFrames" xml:space="preserve"><value>The GIF has no readable frames.</value></data>
 </root>

@@ -47,16 +47,52 @@ public static class OkLab
     /// <summary>불투명 sRGB 색(범위 밖은 자름).</summary>
     public static Color32 ToColor(in Lab lab)
     {
+        var (r, g, b) = LinearRgb(lab);
+        return new Color32(ToByte(r), ToByte(g), ToByte(b));
+    }
+
+    /// <summary>
+    /// 밝기만 옮긴 색(알파 그대로): <paramref name="amount"/> −1~1, 음수 = 검정 쪽(L × (1 + amount)), 양수 = 흰색 쪽(L + (1 − L) × amount).
+    /// 색상(a·b 방향)은 그대로 두고, 새 밝기에서 sRGB 밖이면 채도만 범위 안까지 줄인다.
+    /// </summary>
+    public static Color32 ShiftLightness(Color32 c, float amount)
+    {
+        if (amount == 0) return c;
+        var lab = FromColor(c);
+        float l = Math.Clamp(amount < 0 ? lab.L * (1 + amount) : lab.L + (1 - lab.L) * amount, 0f, 1f);
+        float keep = 1;
+        if (!InGamut(new Lab(l, lab.A, lab.B)))
+        {
+            float lo = 0, hi = 1;
+            for (int k = 0; k < 16; k++)
+            {
+                float mid = (lo + hi) / 2;
+                if (InGamut(new Lab(l, lab.A * mid, lab.B * mid))) lo = mid;
+                else hi = mid;
+            }
+            keep = lo;
+        }
+        return ToColor(new Lab(l, lab.A * keep, lab.B * keep)).WithAlpha(c.A);
+    }
+
+    private static bool InGamut(in Lab lab)
+    {
+        const float eps = 1e-4f;
+        var (r, g, b) = LinearRgb(lab);
+        return r is >= -eps and <= 1 + eps && g is >= -eps and <= 1 + eps && b is >= -eps and <= 1 + eps;
+    }
+
+    private static (float R, float G, float B) LinearRgb(in Lab lab)
+    {
         float l = lab.L + 0.3963377774f * lab.A + 0.2158037573f * lab.B;
         float m = lab.L - 0.1055613458f * lab.A - 0.0638541728f * lab.B;
         float s = lab.L - 0.0894841775f * lab.A - 1.2914855480f * lab.B;
         l = l * l * l;
         m = m * m * m;
         s = s * s * s;
-        float r = 4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s;
-        float g = -1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s;
-        float b = -0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s;
-        return new Color32(ToByte(r), ToByte(g), ToByte(b));
+        return (4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
+            -1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
+            -0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s);
     }
 
     private static byte ToByte(float linear)

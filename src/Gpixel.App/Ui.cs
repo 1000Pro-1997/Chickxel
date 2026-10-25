@@ -162,6 +162,16 @@ public static class Ui
         return b;
     }
 
+    /// <summary>Discord 로고(브랜드색) + 글자 단추. 풍선 도움말은 초대 링크.</summary>
+    public static Button DiscordButton(string text, EventHandler<RoutedEventArgs> onClick)
+    {
+        var b = Button(text, onClick);
+        var row = IconLabel(VectorIcon.Discord, text);
+        ((IconView)row.Children[0]).Foreground = AppTheme.DiscordBrush;
+        b.Content = row;
+        return b.Tip(AppInfo.DiscordUrl);
+    }
+
     /// <summary>아이콘만 있는 단추(뜻은 풍선 <paramref name="tip"/>으로).</summary>
     public static Button IconButton(VectorIcon icon, string? tip, EventHandler<RoutedEventArgs>? onClick = null, int width = 0, double size = 14)
     {
@@ -542,12 +552,14 @@ public class DialogBase : Window
         CancelButtonControl.IsDefault = true;
     }
 
-    /// <summary>확인·취소 사이에 결과 단추를 하나 더 둔다(누르면 그 결과로 닫힘).</summary>
-    protected Button AddButton(string text, DialogResult result)
+    /// <summary>
+    /// 결과 단추를 하나 더 둔다(누르면 그 결과로 닫힘): 기본은 확인·취소 사이, <paramref name="beforeOk"/>면 확인 앞.
+    /// </summary>
+    protected Button AddButton(string text, DialogResult result, bool beforeOk = false)
     {
         var b = Ui.Button(text, width: 90);
         _results[b] = result;
-        _buttons.Children.Insert(_buttons.Children.IndexOf(CancelButtonControl), b);
+        _buttons.Children.Insert(_buttons.Children.IndexOf(beforeOk ? OkButton : CancelButtonControl), b);
         return b;
     }
 

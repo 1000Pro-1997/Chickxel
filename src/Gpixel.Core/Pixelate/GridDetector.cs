@@ -37,6 +37,11 @@ public readonly record struct ScaleEstimate(double Scale, bool Exact, double Out
     public double BlocksMatch { get; init; }
     /// <summary>쓴 방식(<see cref="ScaleSource.Auto"/> = 정확한 정수 배이거나 못 찾음).</summary>
     public ScaleSource Used { get; init; }
+    /// <summary>
+    /// 이번 어림의 칸 크기 상한(원본 px, <see cref="GridDetector.MaxCellFor"/> — 스프라이트 짧은 변의 1/<see cref="GridDetector.MinSpriteCells"/>):
+    /// 세 방식 값·정확한 배수 모두 이 안에서만 잰다(0 = 어림 없음).
+    /// </summary>
+    public double MaxScale { get; init; }
     /// <summary>쓴 크기의 경계 일치(0~1).</summary>
     public double Match => Used switch
     {
@@ -240,13 +245,14 @@ public static class GridDetector
     /// 덩어리 경계 간격마다 경계 자리가 모이는 정도(−1~1, 0 = 우연 수준). 한 줄의 경계 자리 xᵢ를 간격 s로 접은(나머지) 원 위 평균 벡터 길이의 제곱은
     /// 두 경계 사이 거리 d의 cos(2πd/s) 평균이므로, 줄마다 2.5칸 안 경계 쌍 거리 막대그림(<see cref="BlockEdgeMap.Pairs"/>)에서 cos 평균을 잰다
     /// — 줄마다·가까운 쌍만 보므로 줄마다 덩어리가 조금씩 어긋나거나 칸 크기가 흔들려 위치가 밀려도(누적) 모인다. 우연히 모이는 정도(같은 막대그림을
-    /// 칸 크기 폭으로 고르게 편 것의 cos 평균)를 빼고 나눈다(<see cref="ScaleFits"/>와 같은 보정). 후보는 <see cref="CandidateScales"/>(3~<see cref="MaxScale"/>px, 범위의 ¼까지).
+    /// 칸 크기 폭으로 고르게 편 것의 cos 평균)를 빼고 나눈다(<see cref="ScaleFits"/>와 같은 보정). 후보는 <see cref="CandidateScales"/>(3~<see cref="MaxScale"/>px, 범위의 ¼까지,
+    /// <paramref name="maxScale"/> 이하 — <see cref="MaxCellFor"/>).
     /// </summary>
-    public static List<(double Scale, double Fit)> BlockScaleFits(BlockEdgeMap edges, Rectangle bounds)
+    public static List<(double Scale, double Fit)> BlockScaleFits(BlockEdgeMap edges, Rectangle bounds, double maxScale = MaxScale)
     {
         var h = edges.Pairs;
         var result = new List<(double, double)>();
-        double max = Math.Min(MaxScale, Math.Max(bounds.Width, bounds.Height) / 4.0);
+        double max = Math.Min(maxScale, Math.Min(MaxScale, Math.Max(bounds.Width, bounds.Height) / 4.0));
         var prefix = new double[h.Length + 1];
         for (int d = 0; d < h.Length; d++) prefix[d + 1] = prefix[d] + h[d];
         foreach (double s in CandidateScales(max))
@@ -276,11 +282,11 @@ public static class GridDetector
     /// 덩어리 경계 방식 칸 크기(<see cref="BlockEdges"/>의 뚜렷한 경계에서): <see cref="BlockScaleFits"/>의 가장 높은 봉우리 —
     /// 경계가 s 간격이면 s/2·s/3 간격에도 모두 모이고(칸 하나 = 반 칸 둘), 반 칸 덩어리가 섞이면 s/2가 더 높을 수 있으므로,
     /// 2배·3배 자리 봉우리가 가장 높은 값에서 0.15 안이면 그쪽으로(되풀이 — 색 경계 방식의 '절반도 거의 그만큼이면 절반'과 같은 꼴, 방향만 반대).
-    /// 진짜 칸 크기의 2배는 한 칸 거리 쌍이 반 바퀴(cos = −1)로 접혀 크게 떨어지므로 배수로는 가지 않는다. 경계가 없으면 (0, 0).
+    /// 진짜 칸 크기의 2배는 한 칸 거리 쌍이 반 바퀴(cos = −1)로 접혀 크게 떨어지므로 배수로는 가지 않는다. 경계가 없으면 (0, 0). 후보는 <paramref name="maxScale"/> 이하.
     /// </summary>
-    public static (double Scale, double Fit) BlockScale(BlockEdgeMap edges, Rectangle bounds)
+    public static (double Scale, double Fit) BlockScale(BlockEdgeMap edges, Rectangle bounds, double maxScale = MaxScale)
     {
-        var fits = BlockScaleFits(edges, bounds);
+        var fits = BlockScaleFits(edges, bounds, maxScale);
         var peaks = new List<int>();
         for (int i = 0; i < fits.Count; i++)
             if ((i == 0 || fits[i].Fit >= fits[i - 1].Fit) && (i + 1 == fits.Count || fits[i].Fit >= fits[i + 1].Fit) && fits[i].Fit > 0) peaks.Add(i);
@@ -524,6 +530,18 @@ public static class GridDetector
     public const double ClearBlockFit = 0.3;
 
     /// <summary>
+    /// 칸 크기 상한을 정할 스프라이트 짧은 변의 칸 수: 자동 칸 크기는 스프라이트(프레임 범위) 짧은 변의 1/이 수를 넘지 않는다(<see cref="MaxCellFor"/>).
+    /// 큰 덩어리 시험 그림(8×6칸, 칸 64~200px)은 짧은 변이 6칸이라 1칸 여유(흔들림·반올림으로 어림이 칸보다 조금 클 때)를 두고 5.
+    /// 이보다 큰 값은 칸이 아니라 프레임 간격·덩어리 크기다(표본 엘프 걷기 시트 1086×362: 그림 전체 덩어리 경계 183px = 프레임 간격 181px →
+    /// 결과 3×3 투명).
+    /// </summary>
+    public const int MinSpriteCells = 5;
+
+    /// <summary>스프라이트 범위 <paramref name="sprite"/>의 칸 크기 상한: 짧은 변 / <see cref="MinSpriteCells"/>(<see cref="MaxScale"/> 이하, 1 이상).</summary>
+    public static double MaxCellFor(Rectangle sprite)
+        => Math.Clamp(Math.Min(sprite.Width, sprite.Height) / (double)MinSpriteCells, 1, MaxScale);
+
+    /// <summary>
     /// 칸 크기 어림. 세 값(바깥 외곽선 두께 <see cref="OutlineThickness"/>, 색 경계 <see cref="EdgeScale"/>, 덩어리 경계 <see cref="BlockScale"/>)과
     /// 값마다 경계 일치(그 크기·흔들림으로 뚜렷한 경계 세기에서 고른 경계열의 우연 수준을 뺀 일치, <see cref="AlignmentMatch"/>)를 늘 같이 재서 돌려준다(화면 표시·검증).
     /// 색 경계를 직접 고른 게 아니면, 색이 적은(이미 깨끗한) 그림은 <see cref="ExactScale"/>(정수 배 확대 그대로면 그 배수, 1배면 1 — <c>Exact</c>).
@@ -537,16 +555,18 @@ public static class GridDetector
     /// 고른 값의 정수배인 값이 거의 같게 맞으면(<see cref="DivisorTie"/>) 큰 쪽.
     /// 덩어리 경계 값을 쓸 때만 경계열을 뚜렷한 경계 세기로 고른다(<see cref="ScaleEstimate.BlockCuts"/> — 다른 값은 예전처럼 색 차이 세기로:
     /// 표본에서 그쪽이 충실도·격자 맞음이 조금 더 좋았다).
-    /// <paramref name="blocks"/>(<see cref="BlockEdges"/>)가 없으면 여기서 찾는다.
+    /// <paramref name="blocks"/>(<see cref="BlockEdges"/>)가 없으면 여기서 찾는다. 모든 값(정확한 배수 포함)은 <paramref name="maxScale"/>(<see cref="MaxCellFor"/>,
+    /// <see cref="ScaleEstimate.MaxScale"/>) 이하에서만 잰다 — 넘는 외곽선 두께는 못 잰 것(0)으로.
     /// </summary>
     public static ScaleEstimate EstimateScale(PixelImage cleaned, int[]? labels, int label, Rectangle bounds, double jitter,
-        ScaleSource source = ScaleSource.Auto, double darkness = 0.24, BlockEdgeMap? blocks = null)
+        ScaleSource source = ScaleSource.Auto, double darkness = 0.24, BlockEdgeMap? blocks = null, double maxScale = MaxScale)
     {
+        maxScale = Math.Clamp(maxScale, 1, MaxScale);
         var (outline, samples) = OutlineThickness(cleaned, labels, label, bounds, darkness);
-        if (samples < MinOutlineSamples) outline = 0;
-        double edges = EdgeScale(cleaned, labels, label, bounds, jitter);
+        if (samples < MinOutlineSamples || outline > maxScale) outline = 0;
+        double edges = EdgeScale(cleaned, labels, label, bounds, jitter, maxScale);
         blocks ??= BlockEdges(cleaned, LabOf(cleaned), bounds, labels, label);
-        var (block, blockFit) = BlockScale(blocks, bounds);
+        var (block, blockFit) = BlockScale(blocks, bounds, maxScale);
         var match = new AlignmentMatch(blocks, bounds, jitter);
         var est = new ScaleEstimate(0, false, outline, edges)
         {
@@ -555,8 +575,9 @@ public static class GridDetector
             OutlineMatch = match.Of(outline),
             EdgesMatch = match.Of(edges),
             BlocksMatch = match.Of(block),
+            MaxScale = maxScale,
         };
-        if (source != ScaleSource.ColorEdges && ExactScale(cleaned, labels, label, bounds) is { } exact)
+        if (source != ScaleSource.ColorEdges && ExactScale(cleaned, labels, label, bounds, maxScale) is { } exact)
             return est with { Scale = exact, Exact = true };
 
         // 순서 = 비슷하면 먼저 고를 쪽.
@@ -660,10 +681,11 @@ public static class GridDetector
 
     /// <summary>
     /// 색 경계 방식 칸 크기: <see cref="ScaleFits"/>의 가장 높은 봉우리 — 그 절반 자리 봉우리도 가장 높은 값에서 0.15 안이면 절반으로(되풀이). 구간이 없으면 0.
+    /// 후보는 <paramref name="maxScale"/>(<see cref="MaxCellFor"/>) 이하.
     /// </summary>
-    public static double EdgeScale(PixelImage cleaned, int[]? labels, int label, Rectangle bounds, double jitter)
+    public static double EdgeScale(PixelImage cleaned, int[]? labels, int label, Rectangle bounds, double jitter, double maxScale = MaxScale)
     {
-        double max = Math.Max(MaxRun / 2.0, Math.Min(MaxScale, Math.Max(bounds.Width, bounds.Height) / 4.0));
+        double max = Math.Min(maxScale, Math.Max(MaxRun / 2.0, Math.Min(MaxScale, Math.Max(bounds.Width, bounds.Height) / 4.0)));
         var fits = ScaleFits(RunLengths(cleaned, labels, label, bounds), jitter, max);
         var peaks = new List<int>();
         for (int i = 1; i + 1 < fits.Count; i++)
@@ -686,13 +708,13 @@ public static class GridDetector
 
     /// <summary>
     /// 색이 <see cref="CleanColorLimit"/>개 이하일 때: 색이 조금이라도 바뀌는 자리 사이 길이(두 줄마다, <see cref="MaxSpan"/>px까지)의 90% 이상을 나누는
-    /// 가장 큰 정수(2~<see cref="MaxScale"/>) — 정수 배 확대 그대로(100px 넘는 칸도).
+    /// 가장 큰 정수(2~<see cref="MaxScale"/>, <paramref name="maxScale"/> 이하) — 정수 배 확대 그대로(100px 넘는 칸도).
     /// 그런 정수가 없으면 1-px 단위 그림일 때만 1, 아니면 null — 색만 적은 AI 그림처럼 칸이 2px 이상이지만 위치가 흔들리면(정수배가 아님)
     /// 흔들림을 따라가는 일반 어림(색 경계·외곽선 두께)으로. 색 수만으로는 1배로 정하지 않는다. 1-px 단위 그림 = 1~2px 구간이 픽셀의
     /// <see cref="FinePixelShare"/> 이상이거나, 넓은 칠 사이 1px 외곽선처럼 1px 구간이 구간 수의 <see cref="FineRunShare"/> 이상이면서 그중 두 이웃 색의
     /// 중간 색(번진 경계 — 색을 줄인 AI 그림)이 <see cref="BlendRunShare"/> 이하.
     /// </summary>
-    private static double? ExactScale(PixelImage img, int[]? labels, int label, Rectangle bounds)
+    private static double? ExactScale(PixelImage img, int[]? labels, int label, Rectangle bounds, double maxScale)
     {
         var px = img.Pixels;
         int w = img.Width;
@@ -734,7 +756,7 @@ public static class GridDetector
         for (int x = bounds.Left; x < bounds.Right; x += 2) Line(y0 * w + x, w, y1 - y0);
         double total = hist.Sum();
         if (total == 0) return null;
-        for (int s = MaxScale; s >= 2; s--)
+        for (int s = (int)Math.Min(MaxScale, maxScale); s >= 2; s--)
         {
             double on = 0;
             for (int r = s; r <= MaxSpan; r += s) on += hist[r];

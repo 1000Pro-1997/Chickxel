@@ -440,8 +440,15 @@ public static class LayerEffects
         var px = image.Pixels;
         var shape = Mask(px);
         var grown = shape;
-        var bounds = o.ColorGradients.ContainsKey(nameof(OutlineEffect.Color)) ? image.GetOpaqueBounds() : default;
+        bool shade = o.ColorMode == OutlineColorMode.Shade;
+        var bounds = !shade && o.ColorGradients.ContainsKey(nameof(OutlineEffect.Color)) ? image.GetOpaqueBounds() : default;
         var color = EffectGradientSampler.For(o, nameof(OutlineEffect.Color), bounds, o.Color, source.X, source.Y);
+        var shaded = shade ? new Dictionary<Color32, Color32>() : null;
+        Color32 Shade(Color32 c)
+        {
+            if (!shaded!.TryGetValue(c, out var s)) shaded[c] = s = Gpixel.Core.Pixelate.OkLab.ShiftLightness(c, o.ShadeAmount / 100f);
+            return s;
+        }
         if (o.Inside)
         {
             for (int k = 0; k < o.Thickness; k++) grown = Erode(grown, w, h, o.Diagonal);
@@ -453,22 +460,62 @@ public static class LayerEffects
                     if (o.HideOriginal) px[i] = Color32.Transparent;
                     continue;
                 }
+                if (shade)
+                {
+                    px[i] = Shade(px[i]);
+                    continue;
+                }
                 var c = color.Sample(i % image.Width, i / image.Width);
                 px[i] = Mix(px[i], c, c.A);
             }
         }
         else
         {
-            for (int k = 0; k < o.Thickness; k++) grown = Dilate(grown, w, h, o.Diagonal);
+            // 명암: 고리마다 바로 안쪽(이전 고리 또는 그림) 이웃의 기준 색을 이어받아, 두꺼운 선도 맞닿은 부분의 색을 따른다.
+            var baseColor = shade ? (Color32[])px.Clone() : null;
+            for (int k = 0; k < o.Thickness; k++)
+            {
+                var next = Dilate(grown, w, h, o.Diagonal);
+                if (baseColor is not null)
+                    for (int i = 0; i < next.Length; i++)
+                        if (next[i] && !grown[i]) baseColor[i] = NeighborColor(baseColor, grown, w, h, i % w, i / w);
+                grown = next;
+            }
             for (int i = 0; i < px.Length; i++)
             {
                 if (shape[i])
                 {
                     if (o.HideOriginal) px[i] = Color32.Transparent;
                 }
-                else if (grown[i]) px[i] = color.Sample(i % image.Width, i / image.Width);
+                else if (grown[i]) px[i] = baseColor is null ? color.Sample(i % image.Width, i / image.Width) : Shade(baseColor[i]);
             }
         }
+    }
+
+    /// <summary>
+    /// 바깥 명암 외곽선 픽셀 (x, y)가 따를 안쪽 이웃 색: 가로·세로 이웃(왼·오른·위·아래 순)이 있으면 그중에서, 없으면 대각 이웃 중에서
+    /// 가장 많은 색(같으면 먼저 본 이웃).
+    /// </summary>
+    private static Color32 NeighborColor(Color32[] colors, bool[] filled, int w, int h, int x, int y)
+    {
+        Span<Color32> found = stackalloc Color32[4];
+        int count = 0;
+        for (int pass = 0; pass < 2 && count == 0; pass++)
+            for (int d = pass * 4; d < pass * 4 + 4; d++)
+            {
+                var (dx, dy) = Square[d];
+                int nx = x + dx, ny = y + dy;
+                if ((uint)nx < (uint)w && (uint)ny < (uint)h && filled[ny * w + nx]) found[count++] = colors[ny * w + nx];
+            }
+        int best = 0, bestVotes = 0;
+        for (int a = 0; a < count; a++)
+        {
+            int votes = 0;
+            for (int b = 0; b < count; b++)
+                if (found[b] == found[a]) votes++;
+            if (votes > bestVotes) (best, bestVotes) = (a, votes);
+        }
+        return found[best];
     }
 
     /// <summary>그림자. 디더면 반투명 대신 색(불투명)을 밀도 무늬(4×4 Bayer, 효과 원본 왼쪽 위 기준)의 칸에만 깐다.</summary>

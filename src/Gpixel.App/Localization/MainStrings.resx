@@ -199,7 +199,7 @@
     <value>새 프로젝트…</value>
   </data>
   <data name="Menu_File_OpenFileDialogCmd_065" xml:space="preserve">
-    <value>열기(.gpixel / PNG 가져오기)…</value>
+    <value>열기(.gpixel · 이미지 · GIF · 영상)…</value>
   </data>
   <data name="Menu_File_OpenFolder_067" xml:space="preserve">
     <value>폴더 열기…</value>
@@ -603,14 +603,8 @@
   <data name="Message_290" xml:space="preserve">
     <value>열기</value>
   </data>
-  <data name="Ui_291" xml:space="preserve">
-    <value>Gpixel 프로젝트·PNG</value>
-  </data>
   <data name="Ui_292" xml:space="preserve">
     <value>Gpixel 프로젝트</value>
-  </data>
-  <data name="Ui_293" xml:space="preserve">
-    <value>PNG 이미지</value>
   </data>
   <data name="Message_294" xml:space="preserve">
     <value>새 프로젝트 — Ctrl+S로 저장할 위치를 고르세요.</value>
@@ -1066,6 +1060,7 @@
   <data name="Edit_AddOutline" xml:space="preserve"><value>외곽선 추가</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>색 바꾸기</value></data>
   <data name="Menu_Help_Guide" xml:space="preserve"><value>사용 가이드…</value></data>
+  <data name="Menu_Help_Website" xml:space="preserve"><value>홈페이지</value></data>
   <data name="Menu_Help_Discord" xml:space="preserve"><value>제보·아이디어 (Discord)…</value></data>
   <data name="Drop_UndoLabel" xml:space="preserve"><value>이미지 끌어 넣기</value></data>
   <data name="Drop_Added" xml:space="preserve">
@@ -1081,7 +1076,7 @@
     <value>읽을 수 없는 그림: {names}</value>
     <comment>names = 풀지 못한 파일 이름들(쉼표로 이음).</comment>
   </data>
-  <data name="Menu_File_Pixelate" xml:space="preserve"><value>AI 그림 픽셀로 정리…</value></data>
+  <data name="Menu_Ai_Pixelate" xml:space="preserve"><value>AI 그림 픽셀로 정리…</value></data>
   <data name="Menu_Edit_Pixelate" xml:space="preserve"><value>현재 레이어를 픽셀로 정리…</value></data>
   <data name="Pixelate_UndoLabel" xml:space="preserve"><value>AI 그림 픽셀로 정리</value></data>
   <data name="Pixelate_EmptyLayer" xml:space="preserve"><value>현재 레이어에 정리할 그림이 없습니다.</value></data>
@@ -1090,4 +1085,36 @@
   <data name="Pixelate_PaletteName" xml:space="preserve"><value>{name} 팔레트</value></data>
   <data name="Pixelate_ReferenceAdded" xml:space="preserve"><value> · 원본을 AI 참고 자료에 더함</value></data>
   <data name="Pixelate_ReferenceFailed" xml:space="preserve"><value> · 참고 자료에 더하지 못함: {message}</value></data>
+  <data name="Tabs_Close" xml:space="preserve"><value>닫기</value></data>
+  <data name="Tabs_CloseOthers" xml:space="preserve"><value>다른 탭 닫기</value></data>
+  <data name="Tabs_New" xml:space="preserve"><value>새 프로젝트(새 탭)</value></data>
+  <data name="Tabs_SplitRight" xml:space="preserve"><value>오른쪽으로 분할</value></data>
+  <data name="Tabs_OpenInOther" xml:space="preserve"><value>다른 쪽에도 열기</value></data>
+  <data name="Tabs_MoveToOther" xml:space="preserve"><value>다른 쪽으로 옮기기</value></data>
+  <data name="Tabs_SplitTip" xml:space="preserve"><value>이 탭을 다른 쪽에도 열기(오른쪽으로 분할) — 탭을 캔버스 오른쪽 끝으로 끌어 놓아도 됩니다</value></data>
+  <data name="Tabs_UnsavedTip" xml:space="preserve"><value>저장하지 않은 변경 있음</value></data>
+  <data name="Tabs_Next" xml:space="preserve"><value>다음 탭</value></data>
+  <data name="Tabs_Previous" xml:space="preserve"><value>이전 탭</value></data>
+  <data name="Tabs_DropSplit" xml:space="preserve"><value>놓으면 오른쪽으로 분할</value></data>
+  <data name="Tabs_DropMove" xml:space="preserve"><value>놓으면 이쪽으로 옮김</value></data>
+  <data name="Tabs_Reloaded" xml:space="preserve"><value>밖에서 바뀐 파일을 다시 읽었습니다: {name}</value></data>
+  <data name="Tabs_Restored" xml:space="preserve"><value>지난번 탭 {count}개를 다시 열었습니다</value></data>
+  <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · 열 수 없는 파일 {count}개는 건너뜀</value></data>
+  <data name="Place_TransformHint" xml:space="preserve"><value> — 변형 모드: 안쪽 끌기 = 옮기기, 손잡이 = 크기, 바깥 = 회전, Enter = 적용(그때 캔버스 밖이 잘림), Esc = 넣은 그대로</value></data>
+  <data name="Place_MultiFrameHint" xml:space="preserve"><value> — 여러 프레임 그림이라 변형 모드 없이 넣었습니다(프레임마다 Ctrl+T로 옮길 수 있음)</value></data>
+  <data name="Open_FilterSupported" xml:space="preserve"><value>열 수 있는 모든 파일</value></data>
+  <data name="Open_FilterImages" xml:space="preserve"><value>그림(PNG·JPG·BMP·GIF·WebP·ICO·AVIF·HEIC)</value></data>
+  <data name="Open_FilterAnimations" xml:space="preserve"><value>움직이는 그림(GIF·WebP·APNG)</value></data>
+  <data name="Open_FilterVideos" xml:space="preserve"><value>영상(MP4·WebM·MOV·MKV·AVI)</value></data>
+  <data name="Open_FilterAllFiles" xml:space="preserve"><value>모든 파일</value></data>
+  <data name="Open_ManyFiles" xml:space="preserve"><value>파일 {count}개를 각각 새 탭으로 열까요?</value><comment>count = 고른·끌어 놓은 파일 수.</comment></data>
+  <data name="Open_ManyFrames" xml:space="preserve"><value>{name}에는 프레임이 {count}개 있습니다. 모두 열면 메모리를 많이 쓰고 시간이 걸릴 수 있습니다.
+
+모두 열까요, 앞의 {limit}개만 열까요?</value><comment>name = 파일 이름, count = 프레임 수, limit = 앞쪽만 열 때의 프레임 수.</comment></data>
+  <data name="Open_AllFrames" xml:space="preserve"><value>모두 열기</value></data>
+  <data name="Open_FirstFrames" xml:space="preserve"><value>앞 {limit}개만</value><comment>limit = 열 프레임 수.</comment></data>
+  <data name="Open_DecodingTitle" xml:space="preserve"><value>그림 푸는 중</value></data>
+  <data name="Open_Decoding" xml:space="preserve"><value>{name} 프레임 푸는 중…</value><comment>name = 파일 이름.</comment></data>
+  <data name="Open_Unreadable" xml:space="preserve"><value>{name}을(를) 열 수 없습니다(지원하지 않는 형식이거나 파일이 손상되었습니다).</value><comment>name = 파일 이름.</comment></data>
+  <data name="Open_Opened" xml:space="preserve"><value>{name} 열기 — 프레임 {frames}개, {width}×{height}, 전체 {ms}ms · 아직 저장 안 함(저장하면 .gpixel 위치를 묻습니다)</value><comment>name = 파일 이름, frames = 프레임 수, width·height = 캔버스 크기(px), ms = 전체 길이(ms).</comment></data>
 </root>

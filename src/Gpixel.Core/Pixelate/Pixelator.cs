@@ -61,7 +61,7 @@ public sealed class PixelateSource
 
     /// <summary>
     /// 자동 칸 크기(<paramref name="frame"/> = −1이면 그림 전체, 기억해 둠 — 후보마다 다시 재지 않음). 외곽선 두께는 <see cref="PaletteSettings.MeasureDarkness"/>로 잰다
-    /// (밝기를 낮춰도 검은 외곽선은 외곽선 — 표본 마법사: 0.2로 재면 번진 가장자리만 세어 5.7px, 진짜 띠는 14px).
+    /// (밝기를 낮춰도 검은 외곽선은 외곽선 — 표본 마법사: 0.2로 재면 번진 가장자리만 세어 5.7px, 진짜 띠는 14px). 칸 크기 상한은 <see cref="MaxCell"/>.
     /// </summary>
     public ScaleEstimate EstimatedScale(int frame, double jitter, ScaleSource source, double darkness)
     {
@@ -70,9 +70,40 @@ public sealed class PixelateSource
         return _scales.GetOrAdd((frame, jitter, source, darkness), key => new Lazy<ScaleEstimate>(() =>
         {
             if (key.Frame < 0)
-                return ContentBounds.IsEmpty ? default : GridDetector.EstimateScale(Cleaned, null, -1, ContentBounds, key.Jitter, key.Source, key.Darkness, BlockEdges(-1));
-            return GridDetector.EstimateScale(Cleaned, Split.Labels, key.Frame, Split.Frames[key.Frame].Bounds, key.Jitter, key.Source, key.Darkness, BlockEdges(key.Frame));
+                return ContentBounds.IsEmpty ? default : GridDetector.EstimateScale(Cleaned, null, -1, ContentBounds, key.Jitter, key.Source, key.Darkness, BlockEdges(-1), MaxCell(-1));
+            return GridDetector.EstimateScale(Cleaned, Split.Labels, key.Frame, Split.Frames[key.Frame].Bounds, key.Jitter, key.Source, key.Darkness, BlockEdges(key.Frame), MaxCell(key.Frame));
         })).Value;
+    }
+
+    /// <summary>
+    /// 자동 칸 크기 상한(원본 px, <see cref="GridDetector.MaxCellFor"/>): 프레임 하나면 그 스프라이트 범위의 짧은 변 / <see cref="GridDetector.MinSpriteCells"/>,
+    /// −1(그림 전체)이면 프레임마다 잰 상한의 중앙값 — 여러 프레임을 한 범위로 재면 프레임 간격이 칸처럼 보이므로 프레임 범위로 정한다(작은 조각 프레임 하나에 끌려가지 않게 중앙값).
+    /// 프레임이 없으면 0.
+    /// </summary>
+    public double MaxCell(int frame)
+    {
+        var frames = Split.Frames;
+        if (frames.Count == 0) return 0;
+        if (frame >= 0) return GridDetector.MaxCellFor(frames[frame].Bounds);
+        var caps = frames.Select(f => GridDetector.MaxCellFor(f.Bounds)).Order().ToList();
+        return caps[caps.Count / 2];
+    }
+
+    private int[]? _framePixels;
+
+    /// <summary>프레임마다 배경을 지운 원본의 그림 픽셀 수(기억해 둠) — 결과가 그림을 얼마나 덮는지(<see cref="Pixelator.CheckFailure"/>).</summary>
+    public IReadOnlyList<int> FramePixels
+    {
+        get
+        {
+            if (_framePixels is { } done) return done;
+            var counts = new int[Split.Frames.Count];
+            var labels = Split.Labels;
+            var px = Cleaned.Pixels;
+            for (int i = 0; i < px.Length; i++)
+                if (labels[i] >= 0 && labels[i] < counts.Length && px[i].A != 0) counts[labels[i]]++;
+            return _framePixels = counts;
+        }
     }
 
     public static PixelateSource Prepare(PixelImage image, PixelateSettings s)
@@ -127,6 +158,23 @@ public sealed record PixelateMetrics(
     double ColorShift = 0,
     double BlockRepetition = 0);
 
+/// <summary>
+/// 실패한 결과(칸 크기 감지가 잘못됨 — <see cref="Pixelator.CheckFailure"/>): 점수 0(<see cref="PixelateScoring.Score"/>), 후보·최적화가 스스로 고르지 않고,
+/// AI 그리기는 문서에 넣지 않는다.
+/// </summary>
+public enum PixelateFailure
+{
+    None,
+    /// <summary>결과가 모두 투명.</summary>
+    Empty,
+    /// <summary>결과가 원본 그림의 일부만 덮음(<see cref="Pixelator.MinCoverage"/> 미만).</summary>
+    NearlyEmpty,
+    /// <summary>쓴 색이 한 가지(실루엣 덩어리).</summary>
+    OneColor,
+    /// <summary>모든 프레임이 <see cref="Pixelator.MinResultSide"/>×<see cref="Pixelator.MinResultSide"/>보다 작음.</summary>
+    TooSmall,
+}
+
 /// <summary>정리 결과: 프레임(캔버스 크기 그림), 쓴 색, 격자, 측정값.</summary>
 public sealed class PixelateResult
 {
@@ -157,6 +205,11 @@ public sealed class PixelateResult
     /// 바뀐 픽셀이 없으면 빈 목록.
     /// </summary>
     public IReadOnlyList<PixelImage> ExcludedFrames { get; init; } = [];
+    /// <summary>실패한 결과인지와 까닭(색 빼기 전 결과로 정함 — <see cref="Pixelator.CheckFailure"/>).</summary>
+    public PixelateFailure Failure { get; init; }
+    public bool Failed => Failure != PixelateFailure.None;
+    /// <summary>처음 자동 칸 크기의 결과가 실패해 다른 어림으로 다시 돌린 결과면 그 처음 칸 크기(원본 px), 아니면 0.</summary>
+    public double RetriedFrom { get; init; }
 
     /// <summary>가장 큰 프레임 크기(같은 캔버스면 모두 이 크기).</summary>
     public Size Size => Frames.Count == 0 ? Size.Empty : new Size(Frames.Max(f => f.Width), Frames.Max(f => f.Height));
@@ -186,13 +239,102 @@ public static class Pixelator
 
     public static PixelateResult Run(PixelateSource src, PixelateSettings s, CancellationToken ct = default) => Run(src, s, null, ct);
 
+    /// <summary>
+    /// 결과가 실패하면(<see cref="CheckFailure"/> — 칸 크기 감지가 잘못됨) 자동 격자는 다른 어림(<see cref="RetryEstimates"/>)으로 차례로 다시 돌려 처음 실패하지 않은 결과를
+    /// 쓴다(<see cref="PixelateResult.RetriedFrom"/>). 모두 실패하면 처음 결과(실패 표시 그대로).
+    /// </summary>
     /// <param name="scoreMetric">'주요 색 변화' 측정에 쓸 색 거리(null = 이 설정의 <see cref="PaletteSettings.ColorDistance"/>) — 자동 최적화는 시작 설정의 거리로
     /// 모든 시도를 재서, 색 거리를 바꿔 본 시도가 자기 자로 잰 점수로 이기지 않게 한다.</param>
     internal static PixelateResult Run(PixelateSource src, PixelateSettings s, ColorMetric? scoreMetric, CancellationToken ct)
     {
+        var first = RunOnce(src, s, scoreMetric, null, 0, ct);
+        return first.Failed ? Retry(src, s, scoreMetric, first, ct) : first;
+    }
+
+    /// <summary>다시 돌려 볼 어림 수 상한(실패한 결과에서만).</summary>
+    private const int MaxRetries = 4;
+
+    /// <summary>실패한 결과 <paramref name="failed"/>를 다른 어림으로 다시 돌린다(자동 격자·배율 크기 아님일 때만 — 아니면 그대로).</summary>
+    internal static PixelateResult Retry(PixelateSource src, PixelateSettings s, ColorMetric? scoreMetric, PixelateResult failed, CancellationToken ct)
+    {
+        if (s.Grid.Mode != GridMode.Auto || s.Size.Mode == OutputSizeMode.ScaleFactor || src.Split.Frames.Count == 0) return failed;
+        foreach (var est in RetryEstimates(src, s, failed.DetectedScale))
+        {
+            ct.ThrowIfCancellationRequested();
+            var r = RunOnce(src, s, scoreMetric, est, failed.DetectedScale, ct);
+            if (!r.Failed) return r;
+        }
+        return failed;
+    }
+
+    /// <summary>
+    /// 실패한 칸 크기 <paramref name="from"/> 다음으로 해 볼 어림(최대 <see cref="MaxRetries"/>개): 그림 전체 어림의 세 방식 값(외곽선 두께·덩어리 경계·색 경계 —
+    /// 경계 일치가 높은 순, 덩어리 경계 값이면 경계열도 뚜렷한 경계로), 그다음 실패한 크기의 ½·⅓. 칸 크기 상한(<see cref="PixelateSource.MaxCell"/>)을 넘거나
+    /// 1px 아래거나 이미 해 본 크기(±5%)는 뺀다.
+    /// </summary>
+    internal static List<ScaleEstimate> RetryEstimates(PixelateSource src, PixelateSettings s, double from)
+    {
+        var e = src.EstimatedScale(-1, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness);
+        double cap = src.MaxCell(-1);
+        var list = new List<ScaleEstimate>();
+        void Add(double v, ScaleSource used, bool exact)
+        {
+            if (v < 1 || v > cap || (from > 0 && Math.Abs(v / from - 1) <= 0.05) || list.Any(x => Math.Abs(x.Scale / v - 1) <= 0.05)) return;
+            list.Add(e with { Scale = v, Used = used, Exact = exact, ClearBlocks = false, ThinOutline = false });
+        }
+        (double Value, ScaleSource Used, double Match)[] sources = [(e.Outline, ScaleSource.Outline, e.OutlineMatch), (e.Blocks, ScaleSource.EdgeLines, e.BlocksMatch), (e.Edges, ScaleSource.ColorEdges, e.EdgesMatch)];
+        foreach (var o in sources.OrderByDescending(o => o.Match)) Add(o.Value, o.Used, false);
+        if (from > 0)
+            foreach (int k in new[] { 2, 3 }) Add(from / k, e.Used, e.Exact);
+        return list.Count > MaxRetries ? list.GetRange(0, MaxRetries) : list;
+    }
+
+    /// <summary>
+    /// 결과가 원본 그림을 이 비율보다 덜 덮으면(결과 불투명 픽셀 수 ÷ 프레임마다 원본 그림 픽셀 수 / 칸 넓이의 합) 실패(<see cref="PixelateFailure.NearlyEmpty"/>).
+    /// 맞는 칸 크기면 0.8~1.1(가는 머리카락처럼 칸의 일부만 덮는 곳이 빠지는 만큼 작음) — 칸이 프레임만 하면 칸마다 그림이 알파 문턱에 못 미쳐 거의 0.
+    /// 캔버스 넓이에 대한 비율이 아닌 까닭: 고정 크기·원래 위치 유지 캔버스는 사용자가 정한 크기라 작은 스프라이트도 정상이다.
+    /// </summary>
+    public const double MinCoverage = 0.25;
+
+    /// <summary>
+    /// 모든 결과 프레임의 불투명 범위가 가로·세로 모두 이보다 작으면 실패(<see cref="PixelateFailure.TooSmall"/>) — 그런 결과는 칸이 프레임 간격·덩어리 크기로 잡힌 것.
+    /// 큰 덩어리 시험 그림(8×6칸)은 긴 변이 8이라 통과한다.
+    /// </summary>
+    public const int MinResultSide = 8;
+
+    /// <summary>
+    /// 실패한 결과인지(<see cref="PixelateFailure"/>): 불투명 픽셀이 없음, 원본 그림을 <see cref="MinCoverage"/>보다 덜 덮음(<paramref name="scales"/> = 프레임마다 평균 칸 크기),
+    /// 쓴 색이 한 가지 이하(<paramref name="colors"/>), 모든 프레임이 <see cref="MinResultSide"/>×<see cref="MinResultSide"/>보다 작음 — 이 순서로 처음 맞는 까닭.
+    /// 점수 항목은 결과에 있는 픽셀로만 재므로(외톨이·외곽선·색 바뀜·블록 반복도는 픽셀이 없으면 나쁠 것도 없음) 빈 결과도 충실도 하나만 나빠 점수가 60점대로 나온다 —
+    /// 그래서 점수가 아니라 이 검사로 거른다(<see cref="PixelateScoring.Score"/>는 실패한 결과를 0점으로).
+    /// </summary>
+    public static PixelateFailure CheckFailure(PixelateSource src, IReadOnlyList<PixelImage> frames, IReadOnlyList<double> scales, int colors)
+    {
+        long opaque = 0;
+        bool big = false;
+        foreach (var f in frames)
+        {
+            foreach (var c in f.Pixels) if (c.A != 0) opaque++;
+            var b = f.GetOpaqueBounds();
+            if (Math.Max(b.Width, b.Height) >= MinResultSide) big = true;
+        }
+        if (opaque == 0) return PixelateFailure.Empty;
+        double expected = 0;
+        var pixels = src.FramePixels;
+        for (int f = 0; f < frames.Count && f < pixels.Count && f < scales.Count; f++)
+            if (scales[f] > 0) expected += pixels[f] / (scales[f] * scales[f]);
+        if (expected > 0 && opaque < expected * MinCoverage) return PixelateFailure.NearlyEmpty;
+        if (colors <= 1) return PixelateFailure.OneColor;
+        return big ? PixelateFailure.None : PixelateFailure.TooSmall;
+    }
+
+    /// <param name="forced">자동 칸 크기 대신 쓸 어림(다시 돌릴 때 — <see cref="Retry"/>), null이면 보통대로.</param>
+    /// <param name="retriedFrom">다시 돌린 결과면 처음 칸 크기(<see cref="PixelateResult.RetriedFrom"/>).</param>
+    internal static PixelateResult RunOnce(PixelateSource src, PixelateSettings s, ColorMetric? scoreMetric, ScaleEstimate? forced, double retriedFrom, CancellationToken ct)
+    {
         var split = src.Split;
         int nf = split.Frames.Count;
-        var grids = FitGrids(src, s);
+        var grids = FitGrids(src, s, forced);
         ct.ThrowIfCancellationRequested();
 
         // 1) 칸마다 색(지역 보정이면 띠마다 다시 고른 칸 경계 안에서).
@@ -268,6 +410,8 @@ public static class Pixelator
             Offset = grids.Length == 0 ? (0, 0) : grids[0].Offset,
             ResolvedColors = resolved,
             Metrics = metrics,
+            Failure = CheckFailure(src, frames, [.. grids.Select(g => g.Scale)], palette.Count),
+            RetriedFrom = retriedFrom,
         };
         // 5) 색 빼기 — 다 만든 결과의 뒤처리(다른 픽셀·색은 그대로).
         return s.Palette.ExcludedColors.Count == 0 ? result : WithExclusions(result, s.Palette.ExcludedColors);
@@ -307,6 +451,8 @@ public static class Pixelator
             ResolvedColors = r.ResolvedColors,
             Metrics = r.Metrics,
             ExcludedFrames = excludedFrames,
+            Failure = r.Failure,
+            RetriedFrom = r.RetriedFrom,
         };
     }
 
@@ -325,7 +471,8 @@ public static class Pixelator
         return GridDetector.Fit(src.ProfileX, src.ProfileY, bounds, g, est, est.BlockCuts ? src.BlockEdges(-1) : null);
     }
 
-    private static GridFit[] FitGrids(PixelateSource src, PixelateSettings s)
+    /// <param name="estimate">자동 격자에서 프레임마다·그림 전체 어림 대신 쓸 어림(<see cref="Retry"/>), null이면 보통대로.</param>
+    private static GridFit[] FitGrids(PixelateSource src, PixelateSettings s, ScaleEstimate? estimate = null)
     {
         var split = src.Split;
         int nf = split.Frames.Count;
@@ -340,7 +487,9 @@ public static class Pixelator
             var bounds = src.ContentBounds;
             shared = forced > 0
                 ? new GridFit(GridDetector.UniformCuts(bounds.Left, bounds.Right, forced, 0), GridDetector.UniformCuts(bounds.Top, bounds.Bottom, forced, 0), forced, forced, 0)
-                : DetectGrid(src, s.Grid with { Source = ScaleSourceFor(s) }, s.Palette.OutlineDarkness);
+                : estimate is { } e && s.Grid.Mode == GridMode.Auto
+                    ? GridDetector.Fit(src.ProfileX, src.ProfileY, bounds, s.Grid, e, e.BlockCuts ? src.BlockEdges(-1) : null)
+                    : DetectGrid(src, s.Grid with { Source = ScaleSourceFor(s) }, s.Palette.OutlineDarkness);
             if (forced > 0)
                 shared = shared with { Confidence = 0.5 * (GridDetector.Confidence(src.ProfileX, shared.XCuts, bounds.Left, bounds.Right) + GridDetector.Confidence(src.ProfileY, shared.YCuts, bounds.Top, bounds.Bottom)) };
         }
@@ -349,7 +498,7 @@ public static class Pixelator
             if (shared is not null) { result[f] = shared; continue; }
             var b = split.Frames[f].Bounds;
             var (ex, ey) = src.FrameProfiles(f);
-            var est = s.Grid.Mode == GridMode.Auto ? src.EstimatedScale(f, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness) : default;
+            var est = s.Grid.Mode == GridMode.Auto ? estimate ?? src.EstimatedScale(f, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness) : default;
             result[f] = GridDetector.Fit(ex, ey, b, s.Grid, est, est.BlockCuts ? src.BlockEdges(f) : null);
         }
 
@@ -704,6 +853,14 @@ public static class Pixelator
             int left = layouts[f].XCuts[trims[f].Left], top = layouts[f].YCuts[trims[f].Top];
             slotOffset[f] = new Point((int)Math.Round((left - slot.Left) / sc), (int)Math.Round((top - slot.Top) / sc));
             slotSize[f] = new Size((int)Math.Ceiling(slot.Width / sc), (int)Math.Ceiling(slot.Height / sc));
+        }
+        // 범위가 자리 왼쪽·위로 나간 프레임(격자 칸 선을 넘은 손끝 — FrameRegion): 자리째 그만큼 밀어(공통 캔버스면 모든 프레임을 함께) 잘리지 않게.
+        var common = nf == 0 ? Point.Empty : new Point(Math.Max(0, -slotOffset.Min(o => o.X)), Math.Max(0, -slotOffset.Min(o => o.Y)));
+        for (int f = 0; f < nf; f++)
+        {
+            var d = s.Frames.CommonCanvas ? common : new Point(Math.Max(0, -slotOffset[f].X), Math.Max(0, -slotOffset[f].Y));
+            slotOffset[f].Offset(d);
+            slotSize[f] += new Size(d);
         }
 
         Size Canvas(int f)

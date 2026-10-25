@@ -9,8 +9,11 @@ public sealed record DroppedImage(string Name, IReadOnlyList<PixelImage> Frames,
     public Size Size => Frames[0].Size;
 }
 
-/// <summary>끌어 넣기 결과: 새 레이어들(넣은 순서 — 마지막이 맨 위), 맨 끝에 더한 프레임 수, 캔버스보다 커서 가운데 놓고 잘린 그림이 있었는지.</summary>
-public sealed record ImageDropResult(IReadOnlyList<Layer> Layers, int AddedFrames, bool Oversized);
+/// <summary>
+/// 끌어 넣기 결과: 새 레이어들(넣은 순서 — 마지막이 맨 위), 레이어마다 그림 왼쪽 위 위치(프레임 좌표 — 잘리기 전 그림 자리),
+/// 맨 끝에 더한 프레임 수, 캔버스보다 커서 가운데 놓고 잘린 그림이 있었는지.
+/// </summary>
+public sealed record ImageDropResult(IReadOnlyList<Layer> Layers, IReadOnlyList<Point> Locations, int AddedFrames, bool Oversized);
 
 /// <summary>
 /// 파일 끌어 넣기: 그림마다 새 일반 레이어를 현재 레이어(부위면 그 그룹, 그룹이면 그 그룹) 위에 넣고, 현재 프레임부터 그림 프레임을 차례로 넣는다.
@@ -40,8 +43,9 @@ public static class ImageDrop
     /// </summary>
     public static ImageDropResult Apply(SpriteProject p, IReadOnlyList<DroppedImage> images, int currentLayer, int currentFrame, Point drop, string label)
     {
-        if (images.Count == 0) return new ImageDropResult([], 0, false);
+        if (images.Count == 0) return new ImageDropResult([], [], 0, false);
         var layers = new List<Layer>(images.Count);
+        var locations = new List<Point>(images.Count);
         int added = 0;
         bool oversized = false;
         p.Edit(label, ProjectChange.Layers | ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
@@ -55,6 +59,7 @@ public static class ImageDrop
                 int index = p.IndexOf(layer);
                 at = index + 1;
                 var (loc, over) = Place(p.Size, image.Size, drop);
+                locations.Add(loc);
                 oversized |= over;
                 for (int i = 0; i < image.Frames.Count; i++)
                 {
@@ -72,6 +77,6 @@ public static class ImageDrop
                 }
             }
         });
-        return new ImageDropResult(layers, added, oversized);
+        return new ImageDropResult(layers, locations, added, oversized);
     }
 }

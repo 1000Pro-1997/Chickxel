@@ -157,6 +157,11 @@ public sealed record FrameSettings
     public double MergeSmallFraction { get; init; } = 0.12;
     /// <summary>자동 나누기: 합칠 조각이 프레임에서 이만큼(원본 px) 넘게 떨어져 있으면 버린다(잡티).</summary>
     public int MergeDistance { get; init; } = 48;
+    /// <summary>
+    /// 자동 나누기: 기대 프레임 수(0 = 모름). 나온 프레임이 이보다 적으면 너무 넓은 조각(맞닿은 스프라이트)을 가장 얇은 세로 줄에서 가른다 —
+    /// 모르면 다른 조각 너비 중앙값으로 판단(<see cref="FrameSplitter"/>). AI 그리기 시트 나누기가 프레임 수를 넣는다.
+    /// </summary>
+    public int ExpectedFrames { get; init; }
     public FrameAlign Align { get; init; } = FrameAlign.BottomCenter;
     /// <summary>모든 프레임을 같은 캔버스 크기(가장 큰 프레임 + 여백)로.</summary>
     public bool CommonCanvas { get; init; } = true;

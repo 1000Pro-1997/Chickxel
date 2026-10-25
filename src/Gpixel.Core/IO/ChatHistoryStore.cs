@@ -20,6 +20,8 @@ public enum ChatItemKind
     Snapshot,
     /// <summary>차례 끝 비용·시간 줄.</summary>
     Footer,
+    /// <summary>AI 그리기(그림 생성 → 픽셀 변환) 결과: 결과 그림, 결과 글, 다시 열 기록(<see cref="ChatItem.Job"/>).</summary>
+    AiDraw,
 }
 
 /// <summary>저장한 대화의 한 줄.</summary>
@@ -33,6 +35,8 @@ public sealed class ChatItem
     public int ImageCount { get; set; }
     /// <summary><see cref="ChatItemKind.Tool"/>: 도구가 실패함.</summary>
     public bool Error { get; set; }
+    /// <summary><see cref="ChatItemKind.AiDraw"/>: 생성 기록 id(<c>Gpixel.Core.AiDraw.AiDrawJobStore</c> — "변환 설정 보기"로 다시 엶). 없으면 null.</summary>
+    public string? Job { get; set; }
 }
 
 /// <summary>

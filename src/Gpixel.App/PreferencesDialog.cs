@@ -7,7 +7,7 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
-/// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기).
+/// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
@@ -31,6 +31,7 @@ public sealed class PreferencesDialog : DialogBase
     private readonly CheckBox _refsExamples;
     /// <summary>고른 참고 자료 폴더(null = 기본 폴더).</summary>
     private string? _refsFolder;
+    private readonly TextBox _ffmpegBox;
     /// <summary>키를 기다리는 명령과 방식(true = 바꾸기, false = 추가). 없으면 null.</summary>
     private (string Id, bool Replace)? _capture;
 
@@ -40,7 +41,7 @@ public sealed class PreferencesDialog : DialogBase
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
-        string? referencesFolder, bool showReferenceExamples)
+        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         _commands = commands;
@@ -184,10 +185,54 @@ public sealed class PreferencesDialog : DialogBase
             _refsExamples,
             refsNote);
 
+        // 영상(ffmpeg)
+        _ffmpegBox = new TextBox { Text = ffmpegPath ?? "", Watermark = UiStrings.Ffmpeg_Prefs_Auto, Width = 460, Margin = new Thickness(2) };
+        var ffmpegStatus = Ui.Label("");
+        ffmpegStatus.TextWrapping = TextWrapping.Wrap;
+        ffmpegStatus.MaxWidth = 640;
+        ffmpegStatus.HorizontalAlignment = HorizontalAlignment.Left;
+        void SyncFfmpeg()
+        {
+            var custom = FfmpegPath;
+            var found = FfmpegTool.Locate(custom);
+            bool customMissing = custom is not null && !string.Equals(found, custom, StringComparison.OrdinalIgnoreCase);
+            ffmpegStatus.Text = found is null ? UiStrings.Ffmpeg_Prefs_NotFound
+                : customMissing ? UiStrings.FormatFfmpeg_Prefs_CustomMissing(path: found)
+                : UiStrings.FormatFfmpeg_Prefs_Found(path: found);
+            ffmpegStatus.Foreground = found is null || customMissing ? AppTheme.WarningBrush : AppTheme.DimTextBrush;
+        }
+        _ffmpegBox.LostFocus += (_, _) => SyncFfmpeg();
+        SyncFfmpeg();
+        var ffmpegNote = Ui.Label(UiStrings.Ffmpeg_Prefs_Note);
+        ffmpegNote.Foreground = AppTheme.DimTextBrush;
+        ffmpegNote.TextWrapping = TextWrapping.Wrap;
+        ffmpegNote.MaxWidth = 640;
+        ffmpegNote.HorizontalAlignment = HorizontalAlignment.Left;
+        var video = Ui.Stack(
+            Ui.Label(UiStrings.Ffmpeg_Prefs_Location, bold: true),
+            _ffmpegBox,
+            Ui.Row(
+                Ui.Button(UiStrings.Ffmpeg_Prefs_Browse, (_, _) =>
+                {
+                    if (Ui.OpenFile(this, UiStrings.Ffmpeg_Prefs_Browse, FfmpegPath is { } cur ? Path.GetDirectoryName(cur) : null,
+                            new FileFilter("ffmpeg", OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg"), new FileFilter(UiStrings.Ffmpeg_Prefs_AllFiles, "*.*")) is not { } picked) return;
+                    _ffmpegBox.Text = picked;
+                    SyncFfmpeg();
+                }),
+                Ui.Button(UiStrings.Ffmpeg_Prefs_UseAuto, (_, _) =>
+                {
+                    _ffmpegBox.Text = "";
+                    SyncFfmpeg();
+                }),
+                Ui.Button(UiStrings.Ffmpeg_OpenDownload, (_, _) => Updater.OpenUrl(this, FfmpegTool.DownloadUrl))),
+            ffmpegStatus,
+            ffmpegNote);
+
         var tabs = new TabView();
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
         tabs.AddPage(UiStrings.Refs_Prefs_Tab, references);
+        tabs.AddPage(UiStrings.Ffmpeg_Prefs_Tab, video);
         Body.Children.Add(tabs);
         RebuildRows();
         // 키를 기다리는 중이면 어떤 키든(Enter·Tab 포함) 단축키로 받는다.
@@ -204,6 +249,9 @@ public sealed class PreferencesDialog : DialogBase
 
     /// <summary>AI 참고 자료에 기본 예시를 보일지.</summary>
     public bool ReferencesShowExamples => _refsExamples.On();
+
+    /// <summary>직접 정한 ffmpeg 경로(null = 자동으로 찾음).</summary>
+    public string? FfmpegPath => (_ffmpegBox.Text ?? "").Trim().Trim('"') is { Length: > 0 } p ? p : null;
 
     /// <summary>지금 쓰는 언어의 CSV를 새로 넣었는지(같은 언어를 계속 써도 다시 시작해야 바뀜).</summary>
     public bool CurrentLanguageImported { get; private set; }

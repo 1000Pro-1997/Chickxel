@@ -51,8 +51,8 @@ public static class ChatRecap
                 case ChatItemKind.User:
                     FlushTools();
                     any = true;
-                    var text = item.Text.Trim();
-                    if (item.ImageCount > 0) text = (text + $" [{item.ImageCount} image(s) attached]").Trim();
+                    var text = ChatImageTokens.ToModel(item.Text).Trim();
+                    if (item.ImageCount > 0 && !ChatImageTokens.HasTokens(item.Text)) text = (text + $" [{item.ImageCount} image(s) attached]").Trim();
                     parts.Add("User: " + text);
                     break;
                 case ChatItemKind.Assistant when item.Text.Trim().Length > 0:

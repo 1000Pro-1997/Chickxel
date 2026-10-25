@@ -388,12 +388,13 @@ public sealed partial class PixelTools
             "Save the open project to its file (and export the sheet if the project is set up to). Fails if it has never been saved.",
             new JsonObject()),
         Tool("open_file",
-            "Open a .gpixel project or a .png image (fails only if the open project is a never-saved new project with changes). Relative paths are resolved " +
-            "against the current folder.",
+            "Open a file in a new tab: a .gpixel project, a .png image, or another image/animation (JPG, BMP, GIF, WebP, APNG, ICO — one frame per image frame) " +
+            "or video (MP4, WebM, MOV, MKV, AVI; needs ffmpeg, default import settings) as a new unsaved document. Relative paths are resolved against the current folder.",
             new JsonObject { ["path"] = Str("File path.") },
             "path"),
         .. EffectToolDefinitions(),
-        .. ReferenceToolDefinitions()]);
+        .. ReferenceToolDefinitions(),
+        .. GenerateToolDefinitions()]);
 
     private static JsonObject Tool(string name, string description, JsonObject properties, params string[] required)
     {

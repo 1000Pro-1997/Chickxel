@@ -12,8 +12,8 @@ namespace Gpixel.App.Ai;
 /// 앱 안에서 도는 최소 MCP 서버(Streamable HTTP, <see cref="HttpListener"/>). 127.0.0.1의 빈 포트에서
 /// <c>POST /mcp</c>로 JSON-RPC 2.0 메시지(하나 또는 묶음)를 받고, Bearer 토큰이 맞아야 응답한다.
 /// <para>
-/// 요청마다 백그라운드 작업에서 처리하고, <c>tools/call</c>만 UI 스레드로 넘겨 <see cref="PixelTools.Call"/>을 부른다.
-/// 어떤 예외도 받기 루프 밖으로 나가지 않는다. 응답이 필요 없는 메시지(알림·응답)는 202, GET은 405, DELETE는 200.
+/// 요청마다 백그라운드 작업에서 처리하고, <c>tools/call</c>만 UI 스레드로 넘겨 <see cref="PixelTools.CallAsync"/>를 부른다. 오래 걸리는 도구(그림 생성)는
+/// 클라이언트가 받으면 SSE로 답해 기다리는 동안 신호·진행을 보낸다. 어떤 예외도 받기 루프 밖으로 나가지 않는다. 응답이 필요 없는 메시지(알림·응답)는 202, GET은 405, DELETE는 200.
 /// </para>
 /// </summary>
 public sealed class McpServer : IDisposable
@@ -303,12 +303,82 @@ public sealed class McpServer : IDisposable
             if (replies.Count == 0) response.StatusCode = 202;
             else await WriteJsonAsync(response, 200, replies).ConfigureAwait(false);
         }
+        else if (root is JsonObject single && IsLongToolCall(single) && AcceptsEventStream(request))
+        {
+            await StreamToolCallAsync(single, response).ConfigureAwait(false);
+        }
         else
         {
             if (IsInitialize(root)) response.AddHeader("Mcp-Session-Id", _sessionId);
             if (await ProcessAsync(root).ConfigureAwait(false) is { } reply) await WriteJsonAsync(response, 200, reply).ConfigureAwait(false);
             else response.StatusCode = 202;
         }
+    }
+
+    /// <summary>오래 걸리는 도구(<see cref="PixelTools.IsLongRunning"/>)를 부르는 <c>tools/call</c> 요청인지.</summary>
+    private static bool IsLongToolCall(JsonObject message)
+        => AsString(message["method"]) == "tools/call" && message.ContainsKey("id")
+           && AsString((message["params"] as JsonObject)?["name"]) is { } name && PixelTools.IsLongRunning(name);
+
+    private static bool AcceptsEventStream(HttpListenerRequest request)
+        => request.Headers["Accept"]?.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>
+    /// 오래 걸리는 도구 호출을 SSE(<c>text/event-stream</c>)로 답한다: 머리를 바로 보내고, 도는 동안 15초마다 빈 줄 신호(클라이언트의 HTTP 시간 제한 방지)와
+    /// 요청에 progressToken이 있으면 <c>notifications/progress</c>(진행 글)를 보내고, 끝나면 결과 메시지 하나로 닫는다.
+    /// 클라이언트가 끊으면(쓰기 실패) 도구를 취소한다.
+    /// </summary>
+    private async Task StreamToolCallAsync(JsonObject message, HttpListenerResponse response)
+    {
+        var id = message["id"];
+        var parameters = message["params"] as JsonObject;
+        var name = AsString(parameters?["name"])!;
+        var arguments = parameters?["arguments"] as JsonObject;
+        var progressToken = (parameters?["_meta"] as JsonObject)?["progressToken"]?.DeepClone();
+        response.StatusCode = 200;
+        response.ContentType = "text/event-stream";
+        response.SendChunked = true;
+        response.AddHeader("Cache-Control", "no-cache");
+        var output = response.OutputStream;
+        using var gate = new SemaphoreSlim(1, 1);
+        using var cts = new CancellationTokenSource();
+        async Task Send(string text)
+        {
+            await gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (cts.IsCancellationRequested) return;
+                var bytes = Encoding.UTF8.GetBytes(text);
+                await output.WriteAsync(bytes).ConfigureAwait(false);
+                await output.FlushAsync().ConfigureAwait(false);
+            }
+            catch (Exception e) when (e is HttpListenerException or IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                cts.Cancel();
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+        await Send(": started\n\n").ConfigureAwait(false);
+        int step = 0;
+        Action<string> progress = text =>
+        {
+            if (progressToken is null) return;
+            var note = new JsonObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["method"] = "notifications/progress",
+                ["params"] = new JsonObject { ["progressToken"] = progressToken.DeepClone(), ["progress"] = Interlocked.Increment(ref step), ["message"] = text },
+            };
+            _ = Send("event: message\ndata: " + note.ToJsonString(PixelTools.JsonOptions) + "\n\n");
+        };
+        var call = CallToolAsync(name, arguments, progress, cts.Token);
+        while (await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(15))).ConfigureAwait(false) != call)
+            await Send(": keepalive\n\n").ConfigureAwait(false);
+        var reply = Result(id, await call.ConfigureAwait(false));
+        await Send("event: message\ndata: " + reply.ToJsonString(PixelTools.JsonOptions) + "\n\n").ConfigureAwait(false);
     }
 
     private static bool IsInitialize(JsonNode? node)
@@ -370,7 +440,7 @@ public sealed class McpServer : IDisposable
                     if (parameters!["arguments"] is { } argNode && argNode is not JsonObject)
                         return ErrorResponse(id, -32602, "Invalid params: arguments must be an object");
                     var arguments = parameters["arguments"] as JsonObject;
-                    return Result(id, await CallToolAsync(name, arguments).ConfigureAwait(false));
+                    return Result(id, await CallToolAsync(name, arguments, null, CancellationToken.None).ConfigureAwait(false));
                 default:
                     return ErrorResponse(id, -32601, $"Method not found: {method}");
             }
@@ -381,12 +451,12 @@ public sealed class McpServer : IDisposable
         }
     }
 
-    /// <summary>도구를 UI 스레드에서 실행한다. 예외는 isError 결과로 바꾼다.</summary>
-    private async Task<JsonObject> CallToolAsync(string name, JsonObject? arguments)
+    /// <summary>도구를 UI 스레드에서 실행한다(오래 걸리는 도구는 UI 스레드에서 기다리며 진행을 알림). 예외는 isError 결과로 바꾼다.</summary>
+    private async Task<JsonObject> CallToolAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct)
     {
         try
         {
-            return await Dispatcher.UIThread.InvokeAsync<JsonObject>(() => _tools.Call(name, arguments));
+            return await Dispatcher.UIThread.InvokeAsync(() => _tools.CallAsync(name, arguments, progress, ct));
         }
         catch (Exception e)
         {

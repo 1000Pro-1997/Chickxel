@@ -68,7 +68,7 @@ public sealed partial class CodexProvider : AiProvider
     }
 
     /// <summary>그 실행 파일이 아는 기능 이름을 읽어 둔다(실패하면 비워 둠 — 세션은 오래된 기본 기능만 끈다).</summary>
-    private static async Task LoadFeaturesAsync(string path, CancellationToken cancellationToken)
+    internal static async Task LoadFeaturesAsync(string path, CancellationToken cancellationToken)
     {
         if (FeaturesByPath.ContainsKey(path)) return;
         var run = await AiCli.RunAsync(path, ["features", "list"], cancellationToken, timeoutSeconds: 10).ConfigureAwait(false);
@@ -106,7 +106,7 @@ public sealed partial class CodexProvider : AiProvider
     public override IChatSession CreateSession(string path, McpServer mcp) => new CodexSession(path, mcp);
 
     /// <summary>Codex 설정 폴더(<c>$CODEX_HOME</c> 또는 <c>~/.codex</c>).</summary>
-    private static string CodexHome
+    internal static string CodexHome
         => Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } custom ? AiCli.ExpandHome(custom) : Path.Combine(AiCli.Home, ".codex");
 
     /// <summary>
@@ -178,6 +178,21 @@ public sealed class CodexSession : IChatSession
 
     /// <summary>기능 목록을 못 읽었을 때 끌 기능(오래전부터 있는 것).</summary>
     private static readonly string[] BaselineFeatures = ["shell_tool", "unified_exec"];
+
+    /// <summary>
+    /// 끌 기능의 <c>-c features.…=false</c> 값. <paramref name="imageGeneration"/>이면(그림 생성 프로세스 — <see cref="CodexImageGenerator"/>)
+    /// 이미지 생성만 켜 두고 하위 에이전트도 끈다.
+    /// </summary>
+    internal static IEnumerable<string> FeatureOverrides(string codexPath, bool imageGeneration)
+    {
+        var known = CodexProvider.KnownFeatures(codexPath);
+        var features = known is null ? BaselineFeatures : DisabledFeatures.Append("multi_agent").Where(f => known.Contains(f) && (imageGeneration || f != "multi_agent"));
+        foreach (var feature in features)
+            if (!imageGeneration || feature != "image_generation") yield return $"features.{feature}=false";
+    }
+
+    /// <summary>gpixel MCP 도구 한 번의 시간 제한(초): 그림 생성 도구는 프레임마다 이미지를 만들어 몇 분 걸릴 수 있다.</summary>
+    internal const int ToolTimeoutSeconds = 3600;
 
     private readonly string _codexPath;
     private readonly McpServer _mcp;
@@ -331,20 +346,18 @@ public sealed class CodexSession : IChatSession
         reader.Start();
     }
 
-    /// <summary><c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용, 읽기 전용, 웹 검색·알림·AGENTS.md 끔, 시스템 프롬프트.</summary>
+    /// <summary><c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용(그림 생성처럼 오래 걸리는 도구도 기다림), 읽기 전용, 웹 검색·알림·AGENTS.md 끔, 시스템 프롬프트.</summary>
     private IEnumerable<string> ConfigOverrides()
     {
         _mcp.Start();
-        yield return $"mcp_servers={{{McpServer.ServerName}={{url={TomlString(_mcp.Url)},bearer_token_env_var={TomlString(TokenVariable)},default_tools_approval_mode=\"approve\"}}}}";
+        yield return $"mcp_servers={{{McpServer.ServerName}={{url={TomlString(_mcp.Url)},bearer_token_env_var={TomlString(TokenVariable)},default_tools_approval_mode=\"approve\",tool_timeout_sec={ToolTimeoutSeconds}}}}}";
         yield return "approval_policy=\"never\"";
         yield return "sandbox_mode=\"read-only\"";
         yield return "web_search=\"disabled\"";
         yield return "notify=[]";
         yield return "project_doc_max_bytes=0";
         yield return "developer_instructions=" + TomlString(AiCli.SystemPrompt);
-        var known = CodexProvider.KnownFeatures(_codexPath);
-        foreach (var feature in known is null ? BaselineFeatures : DisabledFeatures.Where(known.Contains))
-            yield return $"features.{feature}=false";
+        foreach (var feature in FeatureOverrides(_codexPath, imageGeneration: false)) yield return feature;
     }
 
     /// <summary>TOML 기본 문자열(큰따옴표, 제어 문자·따옴표·역슬래시 이스케이프).</summary>

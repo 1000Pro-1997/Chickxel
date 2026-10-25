@@ -3,7 +3,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
+using Avalonia.Controls.Documents;
 using Avalonia.Input.Platform;
+using Avalonia.Platform.Storage;
+using Gpixel.Core.AiDraw;
 using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
@@ -21,8 +24,10 @@ namespace Gpixel.App.Ai;
 /// 대화는 차례가 끝날 때마다 AI별로 저장되고(<see cref="ChatHistoryStore"/>), "새 대화"는 지난 대화 목록을 보여 주며(누르면 이어 감,
 /// 입력란에 쓰면 새 대화), 탭마다 마지막으로 보던 대화(또는 목록)를 다시 열 때 되살린다. "?" 단추는 대화 오른쪽에 도움말 칸
 /// (AI가 할 수 있는 일·예시·요령)을 연다 — 창이 그만큼 오른쪽으로 부드럽게 넓어지고(최대화면 대화 칸이 좁아짐) 대화는 그대로 쓸 수 있다.
+/// 그 옆 설정 단추는 같은 자리에 그리기 설정 칸(그리는 방식·생성 옵션 — <c>ChatWindow.DrawSettings.cs</c>)을 열며, 둘 중 하나만 열린다.
+/// 그림 생성 도구(<see cref="PixelTools.CallAsync"/>)의 진행은 진행 줄에, 결과는 결과 칸("변환 설정 보기" 단추)으로 붙는다.
 /// </summary>
-public sealed class ChatWindow : Window
+public sealed partial class ChatWindow : Window
 {
     private static readonly IBrush ErrorBrush = AppTheme.Brush(Color.FromRgb(240, 110, 110));
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
@@ -35,10 +40,12 @@ public sealed class ChatWindow : Window
     private const int SavedThumbSide = 64;
     /// <summary>저장하는 캔버스 모습의 긴 변 최대(이보다 큰 그림은 모습을 남기지 않음 — 큰 그림을 저장하지 않도록).</summary>
     private const int SavedSnapshotSide = 256;
+    /// <summary>저장하는 AI 그리기 결과 그림(프레임을 나란히)의 긴 변 최대.</summary>
+    private const int SavedAiDrawSide = 1024;
     /// <summary>머리줄 모델 칸 너비: 자리가 넉넉하면 최대, 좁으면 최소까지 줄어든다(상태 글이 먼저 줄어듦).</summary>
     private const int ModelMinWidth = 100, ModelMaxWidth = 190;
-    /// <summary>창 최소 너비: 머리줄(AI 탭·가장 좁은 모델 칸·새 대화·?)이 어느 화면 언어에서도 잘리지 않는 너비.</summary>
-    private const int WindowMinWidth = 360;
+    /// <summary>창 최소 너비: 머리줄(AI 탭·가장 좁은 모델 칸·새 대화·설정·?)이 어느 화면 언어에서도 잘리지 않는 너비.</summary>
+    private const int WindowMinWidth = 390;
     /// <summary>도움말 칸 너비(왼쪽 테두리 포함).</summary>
     private const double HelpPanelWidth = 340;
     /// <summary>도움말 칸을 끝까지 열고 닫는 시간(ms). 가던 중에 되돌리면 남은 거리만큼만 걸린다.</summary>
@@ -55,6 +62,13 @@ public sealed class ChatWindow : Window
     private readonly Button _newChat;
     /// <summary>"?" 단추: 눌려 있으면(켜짐) 도움말 칸이 열려 있다.</summary>
     private readonly ToggleButton _help;
+    /// <summary>그리기 설정 단추: 눌려 있으면 설정 칸이 열려 있다(도움말 칸과 같은 자리 — 둘 중 하나만).</summary>
+    private readonly ToggleButton _drawSettings;
+    private readonly IconView _drawSettingsIcon;
+    /// <summary>오른쪽 칸 안의 도움말·설정(보이는 하나만).</summary>
+    private readonly Control _helpPanel, _drawPanel;
+    /// <summary>한 단추를 켜며 다른 단추를 끄는 중(그 끔으로 칸을 닫지 않게).</summary>
+    private bool _panelSyncing;
     /// <summary>저장한 대화(<c>&lt;설정 폴더&gt;/Gpixel/Chats/&lt;AI id&gt;</c>).</summary>
     private readonly ChatHistoryStore _store = new(Path.Combine(Platform.AppDataDirectory, "Gpixel", "Chats"));
     private readonly Border _body;
@@ -143,12 +157,24 @@ public sealed class ChatWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
         }.Tip(UiStrings.Chat_Help_Tip);
-        _help.IsCheckedChanged += (_, _) => AnimateHelp(_help.IsChecked == true);
+        _help.IsCheckedChanged += (_, _) => OnSidePanelToggled(_help);
+        _drawSettingsIcon = Ui.Icon(VectorIcon.SlidersHorizontal, 14);
+        _drawSettingsIcon.Margin = new Thickness(0, 1);
+        _drawSettings = new ToggleButton
+        {
+            Content = _drawSettingsIcon,
+            Width = 28,
+            Margin = new Thickness(0, 0, 2, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(UiStrings.AiDraw_Settings_Tip);
+        _drawSettings.IsCheckedChanged += (_, _) => OnSidePanelToggled(_drawSettings);
         // 모델 칸은 상태 글보다 훨씬 큰 몫의 별 너비라, 넉넉하면 최대 너비이고 좁아지면 최소 너비까지 줄어든다.
         var header = new Grid { Margin = new Thickness(4, 3) };
         header.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
         header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         header.ColumnDefinitions.Add(new ColumnDefinition(20, GridUnitType.Star) { MinWidth = ModelMinWidth + 6, MaxWidth = ModelMaxWidth + 6 });
+        header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         header.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         header.Children.Add(_status);
@@ -158,7 +184,9 @@ public sealed class ChatWindow : Window
         header.Children.Add(_modelHost);
         Grid.SetColumn(_newChat, 3);
         header.Children.Add(_newChat);
-        Grid.SetColumn(_help, 4);
+        Grid.SetColumn(_drawSettings, 4);
+        header.Children.Add(_drawSettings);
+        Grid.SetColumn(_help, 5);
         header.Children.Add(_help);
         var headerBorder = new Border
         {
@@ -172,6 +200,8 @@ public sealed class ChatWindow : Window
         _body = new Border { Background = AppTheme.PanelBrush };
         var chatColumn = new DockPanel { Children = { headerBorder, _body } };
 
+        _helpPanel = BuildHelpPanel();
+        _drawPanel = BuildDrawSettingsPanel();
         _helpHost = new Border
         {
             Background = AppTheme.PanelBrush,
@@ -179,7 +209,7 @@ public sealed class ChatWindow : Window
             BorderThickness = new Thickness(1, 0, 0, 0),
             ClipToBounds = true,
             IsVisible = false,
-            Child = BuildHelpPanel(),
+            Child = new Panel { Children = { _helpPanel, _drawPanel } },
         };
         Grid.SetColumn(_helpHost, 1);
         _root = new Grid { Children = { chatColumn, _helpHost } };
@@ -189,6 +219,8 @@ public sealed class ChatWindow : Window
         _helpTimer.Tick += (_, _) => StepHelp();
 
         _ctx.UndoChanged += OnUndoChanged;
+        _mcp.Tools.AiDrawProgress += OnAiDrawProgress;
+        _mcp.Tools.AiDrawCompleted += OnAiDrawCompleted;
         _ctx.ProjectReplaced += OnProjectReplaced;
         PositionChanged += (_, _) => SaveBounds();
         Opened += (_, _) =>
@@ -235,6 +267,8 @@ public sealed class ChatWindow : Window
         _helpTimer.Stop();
         foreach (var t in _tabs) t.Close();
         _ctx.UndoChanged -= OnUndoChanged;
+        _mcp.Tools.AiDrawProgress -= OnAiDrawProgress;
+        _mcp.Tools.AiDrawCompleted -= OnAiDrawCompleted;
         _ctx.ProjectReplaced -= OnProjectReplaced;
     }
 
@@ -287,6 +321,7 @@ public sealed class ChatWindow : Window
         _modelHost.Child = tab.Model;
         _body.Child = tab.Root;
         RefreshHeader();
+        RefreshDrawSettings();
         if (_opened) tab.Activate();
     }
 
@@ -715,6 +750,7 @@ public sealed class ChatWindow : Window
     /// <summary>도움말의 도구 묶음: 이름·쉬운 설명(지금 언어)과 그 묶음의 MCP 도구 이름.</summary>
     private static (string Name, string Text, string[] Tools)[] HelpGroups() =>
     [
+        (UiStrings.Chat_Help_GroupGenerate, UiStrings.Chat_Help_GroupGenerate_Text, ["generate_pixel_art"]),
         (UiStrings.Chat_Help_GroupView, UiStrings.Chat_Help_GroupView_Text, ["get_document", "get_image", "get_pixels"]),
         (UiStrings.Chat_Help_GroupDraw, UiStrings.Chat_Help_GroupDraw_Text, ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"]),
         (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag"]),
@@ -788,7 +824,7 @@ public sealed class ChatWindow : Window
             row.Children.Add(text);
             stack.Children.Add(row);
         }
-        var feedback = Ui.Button(VectorIcon.MessagesSquare, UiStrings.Chat_Help_Feedback, (_, _) => OpenLink(AppInfo.DiscordUrl)).Tip(AppInfo.DiscordUrl);
+        var feedback = Ui.DiscordButton(UiStrings.Chat_Help_Feedback, (_, _) => OpenLink(AppInfo.DiscordUrl));
         feedback.HorizontalAlignment = HorizontalAlignment.Left;
         feedback.Margin = new Thickness(0, 6, 0, 0);
         stack.Children.Add(feedback);
@@ -870,7 +906,7 @@ public sealed class ChatWindow : Window
     /// 가려져 있어도 세션은 살아 있어, 도는 차례의 글은 계속 이 탭에 붙는다. 머리줄 상태는 보일 때만 창에 반영된다.
     /// 채팅 화면 가운데는 지금 대화 또는 지난 대화 목록이고 입력란은 늘 아래에 있다. 대화는 차례가 끝날 때마다 저장한다.
     /// </summary>
-    private sealed class ChatTab
+    private sealed partial class ChatTab
     {
         private readonly ChatWindow _w;
 
@@ -882,7 +918,8 @@ public sealed class ChatWindow : Window
         private readonly ScrollViewer _listScroll;
         private readonly StackPanel _list;
         private readonly TextBlock _thinking;
-        private readonly WrapPanel _chips;
+        /// <summary>입력란 위에 그림 칩을 그리는 층(칩 글자 자리를 덮음 — <c>ChatWindow.ImageChips.cs</c>).</summary>
+        private readonly Canvas _chipLayer;
         private readonly TextBox _input;
         private readonly Button _sendButton, _stopButton;
         private readonly ToggleButton _scopeToggle;
@@ -893,6 +930,7 @@ public sealed class ChatWindow : Window
             if (_scopeToggle.IsChecked != on) _scopeToggle.IsChecked = on;
         }
 
+        /// <summary>입력란의 그림(칩 번호 순서 — <see cref="ChatImageTokens"/>).</summary>
         private readonly List<Attachment> _attachments = new();
         private readonly List<UndoStep> _steps = new();
         /// <summary>지금 대화의 사용자 메시지(차례) 순서대로. 마지막 것에만 고치기·지우기 단추가 보인다.</summary>
@@ -906,6 +944,8 @@ public sealed class ChatWindow : Window
         private string _phase = "wait";
         private string? _phaseTool;
         private int _phaseChars;
+        /// <summary>그림 생성 도구가 알린 진행("프레임 2/6 생성 중") — 도구 실행 단계의 진행 줄에 보인다.</summary>
+        private string? _aiDrawStatus;
 
         private string? _cliPath;
         private IChatSession? _session;
@@ -953,7 +993,6 @@ public sealed class ChatWindow : Window
                 TextWrapping = TextWrapping.Wrap,
             };
 
-            _chips = new WrapPanel { IsVisible = false, Margin = new Thickness(0, 0, 0, 4) };
             _input = new TextBox
             {
                 AcceptsReturn = true,
@@ -964,6 +1003,8 @@ public sealed class ChatWindow : Window
             };
             ScrollViewer.SetVerticalScrollBarVisibility(_input, ScrollBarVisibility.Auto);
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
+            _chipLayer = new Canvas { ClipToBounds = false };
+            SetupInlineImages();
             var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
             var canvasButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_F9D4399092, (_, _) => AttachCanvas()).Tip(UiStrings.S_ChatWindow_ChatTab_B9C7852D0E);
             _scopeToggle = new ToggleButton
@@ -995,7 +1036,7 @@ public sealed class ChatWindow : Window
                 BorderBrush = AppTheme.BorderBrush,
                 BorderThickness = new Thickness(0, 1, 0, 0),
                 Padding = new Thickness(8, 6),
-                Child = new StackPanel { Children = { _chips, _input, buttons } },
+                Child = new StackPanel { Children = { new Panel { Children = { _input, _chipLayer } }, buttons } },
             };
             DockPanel.SetDock(inputArea, Dock.Bottom);
             _list = new StackPanel { Spacing = 4, Margin = new Thickness(10, 8) };
@@ -1477,8 +1518,12 @@ public sealed class ChatWindow : Window
         private void Send()
         {
             if (_session is not { } session || _turn is not null || _w._shutdown) return;
-            var text = (_input.Text ?? "").Trim();
+            SyncInlineImages();
+            // 입력란 글(칩 = 화면 언어 이름)을 저장할 모양(칩 이름 "Image")으로. 칩 번호 = 첨부 순서.
+            var text = ChatImageTokens.Relabel((_input.Text ?? "").Trim(), ChatImageTokens.StoredLabel);
             if (text.Length == 0 && _attachments.Count == 0) return;
+            // 제목·차례 이름에 쓸 보이는 글.
+            var plain = ChatImageTokens.Plain(text, UiStrings.Chat_Image_Label).Trim();
             // 목록에서 보내면 새 대화로.
             if (_view == TabView.List)
             {
@@ -1501,7 +1546,10 @@ public sealed class ChatWindow : Window
             var scope = _w._settings.AiCurrentFileOnly && ctx.Project is { } sp ? new EditScope(sp) : null;
             _w._mcp.Tools.Scope = scope;
             // 마지막 차례를 지운 대화: CLI 세션에서는 차례를 뺄 수 없으므로 새 세션으로 보내고, 남은 대화 정리를 앞에 붙인다.
-            var message = scope is null ? text : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: text);
+            var modelText = ChatImageTokens.ToModel(text);
+            var message = scope is null ? modelText : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: modelText);
+            // 그리는 방식(모델에게만 — 화면·저장에는 남기지 않음). Claude 탭은 늘 직접 찍기(사용자가 Codex에 맡기라고 할 때만 생성 도구).
+            message = AiCli.DrawingModeLine(_w._settings.AiDraw.EffectiveMode(Provider.Id), Provider.Id == AiDrawSettings.GeneratingProvider) + "\n" + message;
             if (_chat is { NeedsRecap: true })
             {
                 session.Reset();
@@ -1509,11 +1557,13 @@ public sealed class ChatWindow : Window
             }
             try
             {
+                _w._mcp.Tools.TurnImages = [.. attachments.Select(a => (a.Png, a.PixelArt))];
                 session.Send(message, attachments.Select(a => a.Png).ToList());
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
             {
                 _w._mcp.Tools.Scope = null;
+                _w._mcp.Tools.TurnImages = [];
                 AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_E1ACACFBF7,Provider.Command,ex.Message), error: true, record: false);
                 return;
             }
@@ -1527,26 +1577,27 @@ public sealed class ChatWindow : Window
                 {
                     Id = ChatHistoryStore.NewId(),
                     Provider = Provider.Id,
-                    Title = text.Length > 0 ? ChatHistoryStore.MakeTitle(text) : UiStrings.Chat_History_ImageTitle,
+                    Title = ChatImageTokens.WithoutTokens(text).Length > 0 ? ChatHistoryStore.MakeTitle(plain) : UiStrings.Chat_History_ImageTitle,
                     CreatedUtc = now,
                     UpdatedUtc = now,
                 };
                 RememberOpen(_chat.Id);
             }
             // 차례를 모두 지운 대화에 다시 쓰면 제목도 이 메시지로.
-            else if (!ChatRecap.HasTurns(_items)) _chat.Title = text.Length > 0 ? ChatHistoryStore.MakeTitle(text) : UiStrings.Chat_History_ImageTitle;
+            else if (!ChatRecap.HasTurns(_items)) _chat.Title = ChatImageTokens.WithoutTokens(text).Length > 0 ? ChatHistoryStore.MakeTitle(plain) : UiStrings.Chat_History_ImageTitle;
             var userItem = new ChatItem
             {
                 Kind = ChatItemKind.User,
                 Text = text,
                 ImageCount = attachments.Count,
-                Images = attachments.Count == 0 ? null : [.. attachments.Select(SavedThumb).OfType<string>()],
+                // 칩 번호와 맞도록 미리보기를 만들지 못한 그림은 빈 글로 자리를 지킨다.
+                Images = attachments.Count == 0 ? null : [.. attachments.Select(a => SavedThumb(a) ?? "")],
             };
-            AddUserBubble(userItem, [.. attachments.Select(a => Thumb(a.Thumb, a.PixelArt, 72))], null, attachments);
+            AddUserBubble(userItem, [.. attachments.Select(a => (Bitmap?)a.Thumb)], attachments);
             Record(userItem);
             if (scope is not null) AddSystemLine(UiStrings.FormatChat_FileOnly_Notice(name: scope.Project.DisplayName), error: false);
 
-            var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(text.Length > 0 ? text : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
+            var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(plain.Length > 0 ? plain : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
             var turn = new Turn(label);
             if (_w._ctx.Project is { } p)
             {
@@ -1566,6 +1617,7 @@ public sealed class ChatWindow : Window
         public void StopTurn()
         {
             if (_turn is null) return;
+            _w._mcp.Tools.CancelAiDraw();
             _session?.Cancel();
             EndTurn(null, null, cancelled: true);
         }
@@ -1578,6 +1630,8 @@ public sealed class ChatWindow : Window
             if (_turn is not { } turn) return;
             _turn = null;
             _w._mcp.Tools.Scope = null;
+            _w._mcp.Tools.TurnImages = [];
+            _aiDrawStatus = null;
             FinishStream(turn);
             _messages.Children.Remove(_thinking);
             _progressTimer.Stop();
@@ -1734,11 +1788,9 @@ public sealed class ChatWindow : Window
             switch (item.Kind)
             {
                 case ChatItemKind.User:
-                    var thumbs = new List<Control>();
-                    foreach (var data in item.Images ?? [])
-                        if (DecodeImage(data) is { } bmp) thumbs.Add(Thumb(bmp, pixelArt: true, 72));
-                    int missing = item.ImageCount - thumbs.Count;
-                    AddUserBubble(item, thumbs, missing > 0 ? UiStrings.FormatChat_History_ImagesMarker(count: missing) : null, []);
+                    var images = new List<Bitmap?>();
+                    foreach (var data in item.Images ?? []) images.Add(data.Length > 0 ? DecodeImage(data) : null);
+                    AddUserBubble(item, images, []);
                     break;
                 case ChatItemKind.Assistant:
                     AddItem(_w.AnswerView(item.Text));
@@ -1753,6 +1805,10 @@ public sealed class ChatWindow : Window
                 case ChatItemKind.Snapshot:
                     if (item.Images is [var png, ..] && DecodeImage(png) is { } shot)
                         AddItem(new Border { Margin = new Thickness(2, 2, 0, 0), Child = SnapshotView(shot) });
+                    break;
+                case ChatItemKind.AiDraw:
+                    AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? DecodeImage(drawn) : null, item.Text,
+                        item.Job is { } job && _w._mcp.Tools.Jobs.Exists(job) ? job : null));
                     break;
                 case ChatItemKind.Footer:
                     AddItem(FooterLine(item.Text));
@@ -1879,11 +1935,18 @@ public sealed class ChatWindow : Window
         private string ModelLabel(string? model)
             => _modelChoices.FirstOrDefault(m => m.Value == model)?.Label ?? model ?? _modelChoices.FirstOrDefault()?.Label ?? "";
 
-        /// <summary>입력란에 글을 넣고(보내지 않음) 입력란에 포커스. 도움말의 예시 부탁과 "AI로 설명 붙이기"가 부른다.</summary>
+        /// <summary>
+        /// 입력란에 글을 넣고(보내지 않음) 입력란에 포커스. 이미 넣은 그림 칩은 앞에 그대로 둔다(정리 창이 그림을 붙인 뒤 부탁 글을 채움).
+        /// 도움말의 예시 부탁과 "AI로 설명 붙이기"가 부른다.
+        /// </summary>
         public void Prefill(string text)
         {
-            _input.Text = text;
-            _input.CaretIndex = text.Length;
+            SyncInlineImages();
+            var current = _input.Text ?? "";
+            var chips = string.Join(" ", ChatImageTokens.Find(current).Select(t => current.Substring(t.Start, t.Length)));
+            var full = chips.Length > 0 ? chips + " " + text : text;
+            SetInputText(full, full.Length);
+            SyncInlineImages();
             FocusInput();
         }
 
@@ -1936,6 +1999,7 @@ public sealed class ChatWindow : Window
 
         private void OnInputKeyDown(object? sender, KeyEventArgs e)
         {
+            if (HandleChipKey(e)) return;
             if (e.Key == Key.Enter)
             {
                 if ((e.KeyModifiers & KeyModifiers.Shift) != 0) return; // 줄바꿈(TextBox가 처리)
@@ -1951,6 +2015,34 @@ public sealed class ChatWindow : Window
 
         // ───────────── 메시지 목록 ─────────────
 
+        /// <summary>그림 생성 진행: 진행 줄을 그 글로(도구 실행 단계).</summary>
+        public void OnAiDrawProgress(string text)
+        {
+            if (_turn is null) return;
+            _aiDrawStatus = text;
+            if (_phase != "run")
+            {
+                _phase = "run";
+                _phaseTool = "generate_pixel_art";
+                _phaseStart = DateTime.UtcNow;
+            }
+            UpdateProgress();
+        }
+
+        /// <summary>그림 생성 결과 칸(결과 그림·결과 글·"변환 설정 보기")을 붙이고 저장할 내용에 넣는다(그림이 너무 크면 그림은 남기지 않음).</summary>
+        public void OnAiDrawCompleted(AiDrawOutcome o)
+        {
+            string? png = null;
+            if (Math.Max(o.Preview.Width, o.Preview.Height) <= SavedAiDrawSide)
+            {
+                using var ms = new MemoryStream();
+                PngIO.Save(o.Preview, ms);
+                png = Convert.ToBase64String(ms.ToArray());
+            }
+            AddItem(_w.AiDrawCard(ImageUtil.ToBitmap(o.Preview), o.Message, o.Job.Id));
+            Record(new ChatItem { Kind = ChatItemKind.AiDraw, Text = o.Message, Images = png is null ? null : [png], Job = o.Job.Id });
+        }
+
         /// <summary>진행 단계를 바꾼다(받은 양·단계 시간은 0부터).</summary>
         private void SetPhase(string phase, string? tool)
         {
@@ -1958,6 +2050,7 @@ public sealed class ChatWindow : Window
             _phaseTool = tool;
             _phaseChars = 0;
             _phaseStart = DateTime.UtcNow;
+            if (phase != "run") _aiDrawStatus = null;
             UpdateProgress();
         }
 
@@ -1975,6 +2068,7 @@ public sealed class ChatWindow : Window
             {
                 "thinking" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_B750FB67DF,Size(_phaseChars)),
                 "tool_use" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_4C23FA2A5B,_phaseTool ?? "?",Size(_phaseChars)),
+                "run" when _aiDrawStatus is { } drawing => drawing,
                 "run" => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateProgress_07B7C8BA45,_phaseTool ?? "?"),
                 "text" => UiStrings.S_ChatWindow_UpdateProgress_5CDDDE0C69,
                 _ => UiStrings.S_ChatWindow_UpdateProgress_46A1800CB1,
@@ -2003,45 +2097,68 @@ public sealed class ChatWindow : Window
         }
 
         /// <summary>
-        /// 사용자 메시지 말풍선: 첨부 미리보기, (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글. 아래에 수정·삭제 단추 줄
-        /// (마지막 메시지에만 보임, <see cref="RefreshTurnActions"/>). <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
+        /// 사용자 메시지 말풍선. 글에 그림 칩이 있으면 글 사이 그 자리에 칩(작은 미리보기 + 번호)을 넣고, 칩이 없는 예전 대화는 미리보기 줄,
+        /// (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글 순서. 아래에 수정·삭제 단추 줄(마지막 메시지에만 보임, <see cref="RefreshTurnActions"/>).
+        /// <paramref name="images"/> = 첨부 순서(칩 번호 − 1)의 미리보기(없으면 null), <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
         /// 글은 AI 답처럼 끌어서 골라 Ctrl+C로 복사한다. 말풍선 안쪽 여백은 글 칸의 여백이라, 글자 바로 옆 여백에서 끌기 시작해도 골라진다.
         /// </summary>
-        private void AddUserBubble(ChatItem item, IReadOnlyList<Control> thumbs, string? imageMarker, IReadOnlyList<Attachment> attachments)
+        private void AddUserBubble(ChatItem item, IReadOnlyList<Bitmap?> images, IReadOnlyList<Attachment> attachments)
         {
             var stack = new StackPanel();
-            if (thumbs.Count > 0)
+            var segments = ChatImageTokens.Split(item.Text);
+            if (segments.Any(s => s.IsImage))
             {
-                var wrap = new WrapPanel { Margin = new Thickness(8, 6, 8, 0) };
-                foreach (var t in thumbs) wrap.Children.Add(t);
-                stack.Children.Add(wrap);
-            }
-            if (imageMarker is not null)
-            {
-                stack.Children.Add(new TextBlock
+                var text = new SelectableTextBlock
                 {
-                    Text = imageMarker,
-                    Foreground = AppTheme.DimTextBrush,
-                    FontSize = AppTheme.SmallFontSize,
-                    Margin = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 0),
-                });
-            }
-            if (item.Text.Length > 0)
-            {
-                stack.Children.Add(new SelectableTextBlock
-                {
-                    Text = item.Text,
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = AppTheme.TextBrush,
-                    Padding = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 6),
-                    // 투명 바탕이 있어야 글자 사이·여백에서도 눌린다(바탕이 없으면 글자 위에서만 끌기가 시작됨).
+                    Padding = new Thickness(8, 6),
                     Background = Brushes.Transparent,
-                });
+                };
+                foreach (var s in segments)
+                {
+                    if (!s.IsImage) text.Inlines!.Add(new Run(s.Text));
+                    else text.Inlines!.Add(new InlineUIContainer(_w.BubbleChip(s.Image, s.Image <= images.Count ? images[s.Image - 1] : null)) { BaselineAlignment = BaselineAlignment.Center });
+                }
+                stack.Children.Add(text);
             }
-            else if (stack.Children.Count > 0)
+            else
             {
-                var last = stack.Children[^1];
-                last.Margin = new Thickness(last.Margin.Left, last.Margin.Top, last.Margin.Right, 6);
+                var thumbs = images.OfType<Bitmap>().Select(b => Thumb(b, pixelArt: true, 72)).ToList();
+                if (thumbs.Count > 0)
+                {
+                    var wrap = new WrapPanel { Margin = new Thickness(8, 6, 8, 0) };
+                    foreach (var t in thumbs) wrap.Children.Add(t);
+                    stack.Children.Add(wrap);
+                }
+                int missing = item.ImageCount - thumbs.Count;
+                if (missing > 0)
+                {
+                    stack.Children.Add(new TextBlock
+                    {
+                        Text = UiStrings.FormatChat_History_ImagesMarker(count: missing),
+                        Foreground = AppTheme.DimTextBrush,
+                        FontSize = AppTheme.SmallFontSize,
+                        Margin = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 0),
+                    });
+                }
+                if (item.Text.Length > 0)
+                {
+                    stack.Children.Add(new SelectableTextBlock
+                    {
+                        Text = item.Text,
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = AppTheme.TextBrush,
+                        Padding = new Thickness(8, stack.Children.Count > 0 ? 4 : 6, 8, 6),
+                        // 투명 바탕이 있어야 글자 사이·여백에서도 눌린다(바탕이 없으면 글자 위에서만 끌기가 시작됨).
+                        Background = Brushes.Transparent,
+                    });
+                }
+                else if (stack.Children.Count > 0)
+                {
+                    var last = stack.Children[^1];
+                    last.Margin = new Thickness(last.Margin.Left, last.Margin.Top, last.Margin.Right, 6);
+                }
             }
             var bubble = new Border
             {
@@ -2132,13 +2249,7 @@ public sealed class ChatWindow : Window
             if (hasTurns) AddSystemLine(UiStrings.Chat_Turn_Removed, error: false, record: false);
             RefreshTurnActions();
 
-            if (edit)
-            {
-                ClearAttachments();
-                foreach (var a in last.Attachments) AddAttachment(a.Png, a.Thumb, a.PixelArt);
-                _input.Text = last.Item.Text;
-                _input.CaretIndex = last.Item.Text.Length;
-            }
+            if (edit) RestoreInput(last.Item.Text, last.Attachments);
             FocusInput();
         }
 
@@ -2309,32 +2420,7 @@ public sealed class ChatWindow : Window
         private void AttachFile()
         {
             var path = Ui.OpenFile(_w, UiStrings.S_ChatWindow_AttachFile_A024695555, null, new FileFilter(UiStrings.S_ChatWindow_AttachFile_1565F6E888, "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"));
-            if (path is null) return;
-            byte[] bytes;
-            try
-            {
-                bytes = File.ReadAllBytes(path);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                Ui.Error(_w, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_AttachFile_FB523C7B58,ex.Message));
-                return;
-            }
-            Bitmap bmp;
-            try
-            {
-                using var ms = new MemoryStream(bytes);
-                bmp = new Bitmap(ms);
-            }
-            catch (Exception)
-            {
-                // 디코더가 던지는 예외 형식은 플랫폼마다 다르다.
-                Ui.Error(_w, UiStrings.S_ChatWindow_AttachFile_0469DC1AFF);
-                return;
-            }
-            bool isPng = bytes.Length > 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
-            bool small = Math.Max(bmp.PixelSize.Width, bmp.PixelSize.Height) <= AttachMaxSide;
-            AddAttachment(isPng && small ? bytes : ToPng(bmp), bmp, pixelArt: false);
+            if (path is not null) AttachPath(path);
         }
 
         private void AttachCanvas()
@@ -2347,60 +2433,26 @@ public sealed class ChatWindow : Window
             AttachImage(img, pixelArt: true);
         }
 
-        /// <summary>⌘/Ctrl+V: 클립보드에 그림이 있으면 첨부(글자 붙여넣기는 입력란이 그대로 함).</summary>
+        /// <summary>⌘/Ctrl+V: 클립보드에 그림(또는 복사한 그림 파일)이 있으면 커서 자리에 칩으로 넣는다(글자 붙여넣기는 입력란이 그대로 함).</summary>
         private async Task PasteImageAsync()
         {
             if (_w.Clipboard is not { } clipboard) return;
             Bitmap? bmp;
+            List<string> files = [];
             try
             {
                 bmp = await clipboard.TryGetBitmapAsync();
+                if (bmp is null && await clipboard.TryGetFilesAsync() is { } items)
+                    files = [.. items.Select(f => f.TryGetLocalPath()).OfType<string>().Where(IsAttachable)];
             }
             catch (Exception)
             {
                 // 플랫폼 클립보드가 그림 형식을 못 주면 무시(글자 붙여넣기만).
                 return;
             }
-            if (bmp is null || _w._shutdown) return;
-            AddAttachment(ToPng(bmp), bmp, pixelArt: false);
-        }
-
-        private void AddAttachment(byte[] png, Bitmap thumb, bool pixelArt)
-        {
-            var a = new Attachment(png, thumb, pixelArt);
-            _attachments.Add(a);
-            var remove = new Button
-            {
-                Content = new IconView(VectorIcon.X) { Width = 10, Height = 10, Margin = new Thickness(0, 2) },
-                Padding = new Thickness(3, 0),
-                MinHeight = 0,
-                FontSize = AppTheme.SmallFontSize,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Top,
-            }.Tip(UiStrings.S_ChatWindow_AddAttachment_1F581E4392);
-            var chip = new Border
-            {
-                BorderBrush = AppTheme.BorderBrush,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(3),
-                Margin = new Thickness(0, 0, 4, 4),
-                Child = new Grid { Children = { Thumb(a.Thumb, a.PixelArt, 48), remove } },
-            };
-            remove.Click += (_, _) =>
-            {
-                _attachments.Remove(a);
-                _chips.Children.Remove(chip);
-                _chips.IsVisible = _attachments.Count > 0;
-            };
-            _chips.Children.Add(chip);
-            _chips.IsVisible = true;
-        }
-
-        private void ClearAttachments()
-        {
-            _attachments.Clear();
-            _chips.Children.Clear();
-            _chips.IsVisible = false;
+            if (_w._shutdown) return;
+            if (bmp is not null) AddAttachment(ToPng(bmp), bmp, pixelArt: false);
+            foreach (var f in files) AttachPath(f);
         }
     }
 }

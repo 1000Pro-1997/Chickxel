@@ -139,15 +139,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private readonly DispatcherTimer _playRefresh = new() { Interval = TimeSpan.FromMilliseconds(400) };
     /// <summary>자동 저장: 편집할 때마다 다시 재는 한 번짜리 타이머(<see cref="RestartAutoSave"/>, <see cref="AutoSaveTick"/>).</summary>
     private readonly DispatcherTimer _autoSave = new();
-    private DateTime _docStamp;
     private bool _settingsApplied;
     private bool _closeConfirmed, _closePending;
-    /// <summary>다른 파일로 바꿀 때 메모리에 남겨 둔 저장 안 한 문서들(지금 문서는 빼고).</summary>
-    private readonly OpenDocuments _docs = new();
-    /// <summary>지금 문서를 연 파일이 프로젝트 파일과 다르면 그 파일(아직 .gpixel이 없는 PNG 가져오기), 아니면 null.</summary>
-    private string? _currentSource;
-    /// <summary>지금 문서를 메모리에서 다시 꺼냈으면 그때의 목록 썸네일 그림(저장하면 버림).</summary>
-    private PixelImage? _currentThumb;
     private Ai.McpServer? _mcp;
     private Ai.ChatWindow? _chat;
     /// <summary>AI 참고 자료 보관소(처음 쓸 때 연다, 폴더 설정을 바꾸면 다시 연다).</summary>
@@ -185,10 +178,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _preview = new PreviewPanel(_ctx);
         _timeline = new TimelinePanel(_ctx, _preview);
 
-        var canvasHost = new Panel { Background = AppTheme.BackBrush };
-        canvasHost.Children.Add(_canvas);
-        canvasHost.Children.Add(_start);
-        AttachCanvasDrop(canvasHost);
+        var canvasHost = BuildPaneArea();
+        AttachWindowDrop();
 
         var s0 = _settings;
         (_splitRightDock, _rowPreview, _) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
@@ -603,7 +594,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(file,
             Cmd("새 프로젝트…", MainStrings.Menu_File_NewProject_063, () => NewProject(null), "Ctrl+N", KeyScope.Global, (Key.N, Ctrl)),
             Cmd("열기(.gpixel / PNG 가져오기)…", MainStrings.Menu_File_OpenFileDialogCmd_065, OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, (Key.O, Ctrl)),
-            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_File_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3),
             Cmd("폴더 열기…", MainStrings.Menu_File_OpenFolder_067, OpenFolder, "Ctrl+Shift+O", KeyScope.Global, (Key.O, Ctrl | Shift)),
             Cmd("Unity 프로젝트 열기…", MainStrings.Menu_File_OpenUnityProject_069, OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, (Key.U, Ctrl | Shift)),
             _miRecentFolders,
@@ -614,7 +604,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _miRevert = Cmd("저장한 내용으로 되돌리기", MainStrings.Menu_File_Command_075, RevertToSaved),
             DocCmd("내보내기…", MainStrings.Menu_File_OpenExportDialog_077, OpenExportDialog, "Ctrl+E", KeyScope.Global, (Key.E, Ctrl)),
             DocCmd("GIF 애니메이션으로 내보내기…", MainStrings.Menu_File_Command_079, ExportGif),
-            DocCmd("닫기", MainStrings.Menu_File_CloseProject_081, () => CloseProject(), "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
+            DocCmd("닫기", MainStrings.Menu_File_CloseProject_081, CloseActiveTab, "Ctrl+W", KeyScope.Global, (Key.W, Ctrl)),
             new Separator(),
             Cmd("시작 화면", MainStrings.Menu_File_Command_083, ShowStart),
             // 끝내기 단축키는 OS가 처리한다(Windows Alt+F4, macOS 앱 메뉴의 ⌘Q).
@@ -690,6 +680,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _miGrid, _miTiles, _miTiled, _miPivot, _miOnion,
             Cmd("격자 설정…", MainStrings.Menu_View_Command_160, GridSettings),
             new Separator(),
+            DocCmd("다음 탭", MainStrings.Tabs_Next, () => CycleTab(1), "Ctrl+Tab", KeyScope.Global, (Key.Tab, Ctrl)),
+            DocCmd("이전 탭", MainStrings.Tabs_Previous, () => CycleTab(-1), "Ctrl+Shift+Tab", KeyScope.Global, (Key.Tab, Ctrl | Shift)),
+            WithIcon(DocCmd("오른쪽으로 분할", MainStrings.Tabs_SplitRight, () => { if (_activeTab is { } t) SplitTab(t, move: false); }), VectorIcon.Columns2),
+            new Separator(),
             _miFiles);
         // 누르고 있는 동안 이전 프레임 보기(키를 떼면 캔버스가 끈다 — PixelCanvas.PeekKey)
         Bind("보기", "이전 프레임 보기(누르고 있기)", MainStrings.ShortcutCategory_View, MainStrings.Shortcut_PeekPrevious, KeyScope.NotInText, () => { if (_ctx.HasProject) _canvas.PeekPrevious = true; return true; }, (Key.H, NoMods));
@@ -758,14 +752,23 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var ai = TopMenu("AI(_A)", MainStrings.Menu_Category_Ai);
         var refs = Cmd("참고 자료", MainStrings.Menu_Ai_References, ShowReferences);
         refs.Icon = Ui.Icon(VectorIcon.BookImage, 14);
-        AddItems(ai, Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)), refs);
+        AddItems(ai,
+            Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)),
+            refs,
+            new Separator(),
+            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3));
 
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
+        var website = Cmd("홈페이지", MainStrings.Menu_Help_Website, () => Updater.OpenUrl(this, AppInfo.LocalizedWebsiteUrl));
+        website.Icon = Ui.Icon(VectorIcon.Globe, 14);
         var discord = Cmd("Discord에 제보·아이디어", MainStrings.Menu_Help_Discord, () => Updater.OpenUrl(this, AppInfo.DiscordUrl));
-        discord.Icon = Ui.Icon(VectorIcon.MessagesSquare, 14);
+        // 로고와 글자를 Discord 색으로(머리글은 단축키를 바꿀 때 다시 만들어지므로 항목 글자색으로 물려준다)
+        discord.Foreground = AppTheme.DiscordBrush;
+        discord.Icon = new IconView(VectorIcon.Discord, AppTheme.DiscordBrush) { Width = 14, Height = 14, VerticalAlignment = VerticalAlignment.Center };
         AddItems(help,
             Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this), "F1", KeyScope.Global, (Key.F1, NoMods)),
+            website,
             Cmd("단축키 목록", MainStrings.Menu_Help_ShowShortcuts_230, ShowShortcuts),
             Cmd("설정 파일 위치 열기", MainStrings.Menu_Help_Command_232, OpenSettingsFolder),
             Cmd("오류 로그 폴더 열기", MainStrings.Menu_Help_Command_234, OpenLogFolder),
@@ -899,6 +902,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.PeekKey = Command("보기/이전 프레임 보기(누르고 있기)").Keys.Select(k => (Key?)k.Key).FirstOrDefault();
         foreach (var slot in _toolSlots) slot.RefreshTip();
         if (_tbFiles is not null) _tbFiles.Tip(KeyHint(MainStrings.Ui_241, "보기/파일 브라우저"));
+        ApplyTabTips();
         UpdateToolUi();
     }
 
@@ -950,25 +954,20 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.ProjectReplaced += (_, _) =>
         {
             _undoOrder.Track(_ctx.Project?.History);
-            _docStamp = _ctx.Project?.Path is { } p ? SafeStamp(p) : default;
-            _currentSource = null;
-            _currentThumb = null;
             _play?.DocumentChanged();
             UpdateAll();
             SyncUnsaved();
         };
         _ctx.DirtyChanged += (_, _) =>
         {
-            if (_ctx.Project is not { IsDirty: true }) _currentThumb = null;
             UpdateTitle();
             UpdateStatus();
-            SyncUnsaved();
         };
-        _docs.Changed += (_, _) => SyncUnsaved();
         _ctx.ProjectChanged += (_, e) =>
         {
             if ((e.Change & (ProjectChange.Canvas | ProjectChange.Path | ProjectChange.Frames | ProjectChange.Layers)) != 0) { UpdateTitle(); UpdateStatus(); }
-            if ((e.Change & ProjectChange.Path) != 0) SyncUnsaved();
+            // 이름·경로가 바뀌면(다른 이름으로 저장 등) 탭 제목과 파일 목록 점도.
+            if ((e.Change & ProjectChange.Path) != 0) { RefreshPanes(); SyncUnsaved(); }
             // 움직임 테스트 창은 편집이 잠시 멈추면 다시 읽는다(스트로크 중에는 미룸).
             if (_play is not null && !_ctx.Project!.IsStrokeActive)
             {
@@ -1040,9 +1039,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null,
             _colors.PickerMode, mode => _colors.PickerMode = mode);
 
-        // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(지금 문서 + 메모리에 남겨 둔 문서).
-        CrashGuard.UnsavedProjects = () => (_ctx.Project is { IsDirty: true } p ? [p] : Array.Empty<SpriteProject>())
-            .Concat(_docs.Items.Select(d => d.Project));
+        // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(열린 모든 탭의 문서).
+        CrashGuard.UnsavedProjects = () => OpenDocs.Where(d => d.Project.IsDirty).Select(d => d.Project);
 
         // 숫자 상자를 끄는 동안의 값 변화(프로젝트 설정 등)는 실행취소 한 단계로 묶는다. Claude 차례처럼 이미 열린 묶음이 있으면 그 안에 둔다.
         SpriteProject? scrubProject = null;
@@ -1155,6 +1153,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var folder = _args.OpenFolder ?? s.LastFolder;
         if (folder is not null && Directory.Exists(folder)) SetRootFolder(folder);
         else if (_args.OpenFolder is not null) Ui.Error(this, MainStrings.FormatMessage_337(openFolder: _args.OpenFolder));
+        RestoreSession();
         if (_args.OpenFile is not null) OpenFile(_args.OpenFile);
         if (s.ChatOpen) Dispatcher.UIThread.Post(ToggleChat);
         _canvas.Focus();
@@ -1258,6 +1257,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.PreviewZoom = _preview.ZoomSetting;
         s.PreviewFps = _preview.FpsSetting;
         s.PreviewBackground = _preview.BackgroundSetting;
+        // 다음에 켤 때 다시 열 탭(프로젝트 경로가 없는 문서 — 저장한 적 없는 새 문서·영상 등에서 만든 문서 — 는 빼고).
+        s.OpenTabs = _tabs.ToSession(t => t.Doc.Project.Path is null ? null : t.Doc.DiskPath);
         s.Save();
     }
 
@@ -1322,10 +1323,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Close();
     }
 
-    /// <summary>끝내기 전에: 저장한 그대로인 지금 문서의 실행취소 기록을 남기고, 기다리던 기록 쓰기가 끝나기를 잠깐 기다린다.</summary>
+    /// <summary>끝내기 전에: 열린 문서 중 저장한 그대로인 것의 실행취소 기록을 남기고, 기다리던 기록 쓰기가 끝나기를 잠깐 기다린다.</summary>
     private void ShutdownHistory()
     {
-        if (_ctx.Project is { } p) _history.Leaving(p);
+        foreach (var p in OpenProjects) _history.Leaving(p);
         _history.Flush(TimeSpan.FromSeconds(10));
     }
 
@@ -1683,7 +1684,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
-            _settings.ReferencesFolder, _settings.ReferencesShowExamples);
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         // 화면 언어는 다시 시작해야 바뀐다(정적 필드에 담긴 문구도 있음).
         bool languageChanged = !string.Equals(dlg.Language, _settings.Language, StringComparison.OrdinalIgnoreCase);
@@ -1700,6 +1701,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _history.Cleanup();
         _settings.TrashPolicy = dlg.TrashPolicy;
         _settings.UpdateCheck = dlg.UpdateCheck;
+        _settings.FfmpegPath = dlg.FfmpegPath;
         // 끄면 기다리던 자동 저장도 바로 멈춘다. 바꾼 시간은 다음 편집부터.
         _settings.AutoSave = dlg.AutoSave;
         _settings.AutoSaveIdleSeconds = dlg.AutoSaveIdleSeconds;
@@ -1732,10 +1734,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             RestartApp();
     }
 
-    /// <summary>시작 화면: 지금 문서를 닫는다(저장 안 한 변경은 메모리에 남김 — <see cref="CloseProject"/>).</summary>
+    /// <summary>시작 화면: 모든 탭을 닫는다(저장 안 한 문서는 한 창에 모아 묻는다 — <see cref="CloseAllTabs"/>).</summary>
     private void ShowStart()
     {
-        if (!CloseProject()) return;
+        if (!CloseAllTabs()) return;
         _start.LoadHub();
     }
 
@@ -1768,20 +1770,19 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return default; }
     }
 
-    // ───────────── 열린 문서(저장 안 한 변경은 메모리에) ─────────────
+    // ───────────── 열린 문서(탭) ─────────────
 
-    /// <summary>저장 안 한 변경이 있는 문서 수(지금 문서 + 메모리에 남겨 둔 문서).</summary>
-    private int UnsavedCount => _docs.Count + (_ctx.Project is { IsDirty: true } ? 1 : 0);
+    /// <summary>저장 안 한 변경이 있는 열린 문서 수.</summary>
+    private int UnsavedCount => OpenDocs.Count(d => d.Project.IsDirty);
 
     /// <summary>상태 표시줄 문구에 덧붙일 " · 저장 안 한 파일 N개"(없으면 빈 문자열).</summary>
     private string UnsavedSuffix => UnsavedCount is var n and > 0 ? MainStrings.FormatMessage_344(n: n) : "";
 
     /// <summary>파일 목록에서 지금 문서를 가리키는 칸: 프로젝트 파일이 있으면 그것, 아니면 연 PNG.</summary>
-    private string? CurrentTilePath
-        => _ctx.Project is not { } p ? null : p.Path is { } path && File.Exists(path) ? path : _currentSource ?? p.Path;
+    private string? CurrentTilePath => CurrentDoc?.DiskPath;
 
     /// <summary>
-    /// 경로의 열린 문서: 지금 문서(프로젝트 경로나 가져온 PNG가 같으면), 아니면 메모리에 남겨 둔 저장 안 한 문서. 없으면 false.
+    /// 경로(프로젝트 경로나 가져온 PNG)의 열린 문서. 없으면 false.
     /// 돌려준 인스턴스는 편집 중인 문서다(합치기 등은 읽기만).
     /// </summary>
     internal bool TryGetOpenDocument(string path, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out SpriteProject? project)
@@ -1790,81 +1791,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         string full;
         try { full = Path.GetFullPath(path); }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return false; }
-        if (_ctx.Project is { } cur && OpenDocument.PathsOf(cur, _currentSource).Any(p => string.Equals(p, full, StringComparison.OrdinalIgnoreCase)))
-            project = cur;
-        else project = _docs.Find(full)?.Project;
+        project = FindDoc(full)?.Project;
         return project is not null;
-    }
-
-    /// <summary>
-    /// 다른 문서로 바꿔도 되는지. 저장 위치가 있는 문서는 수정돼 있어도 묻지 않고 메모리에 남긴다(<see cref="SwitchTo"/>).
-    /// 저장한 적 없는 새 프로젝트에 수정이 있을 때만 저장 여부를 묻는다. 계속해도 되면 true.
-    /// <paramref name="interactive"/>가 false면(AI 도구) 묻지 않으므로, 바꾸면 버려지는 수정(저장한 적 없는 새 프로젝트)이 있을 때만 실패한다.
-    /// </summary>
-    private bool ConfirmLeave(bool interactive, out string message)
-    {
-        message = "";
-        var p = _ctx.Project;
-        if (p is null) return true;
-        _ctx.CommitFloating();
-        if (!p.IsDirty || p.Path is not null) return true;
-        if (!interactive)
-        {
-            message = MainStrings.FormatMessage_345(displayName: p.DisplayName);
-            return false;
-        }
-        var answer = Ui.Ask(this, MainStrings.FormatMessage_346(displayName: p.DisplayName), "Gpixel",
-            MessageButtons.YesNoCancel, MessageIcon.Question);
-        return answer switch
-        {
-            DialogResult.Yes => Save(),
-            DialogResult.No => true,
-            _ => false,
-        };
-    }
-
-    private bool ConfirmLeave() => ConfirmLeave(interactive: true, out _);
-
-    /// <summary>
-    /// 문서를 바꾼다. 지금 문서가 수정돼 있고 저장 위치가 있으면 메모리에 남긴다(실행취소 기록·보기 상태 그대로, 파일 목록에 빨간 점).
-    /// <paramref name="restore"/>가 있으면 그 메모리 문서를 꺼내 레이어·프레임·확대율·위치까지 되돌린다.
-    /// 저장 위치가 없는 수정된 새 프로젝트는 버린다(먼저 <see cref="ConfirmLeave(bool, out string)"/>로 묻는다).
-    /// </summary>
-    private void SwitchTo(SpriteProject? next, string? source = null, OpenDocument? restore = null)
-    {
-        if (_ctx.Project is { } cur && !ReferenceEquals(cur, next))
-        {
-            _ctx.CommitFloating();
-            // 저장한 그대로인 문서는 버리기 전에 실행취소 기록을 남긴다(수정된 문서는 메모리에 남고, 기록은 저장할 때 씀).
-            _history.Leaving(cur);
-            if (cur is { IsDirty: true, Path: not null })
-            {
-                var (zoom, offset) = _canvas.View;
-                var doc = new OpenDocument(cur, _currentSource, new DocumentView(_ctx.CurrentLayer, _ctx.CurrentFrame, zoom, offset), cur.Flatten(0));
-                doc.DiskStamp = doc.DiskPath is { } disk ? SafeStamp(disk) : default;
-                _docs.Add(doc);
-            }
-        }
-        if (restore is not null) _docs.Remove(restore);
-        _ctx.SetProject(next);
-        _currentSource = restore?.SourcePath ?? source;
-        if (restore is not null)
-        {
-            _currentThumb = restore.Thumbnail;
-            _ctx.SetCurrent(restore.View.Layer, restore.View.Frame);
-            _canvas.RestoreView((restore.View.Zoom, restore.View.Offset));
-        }
-        SyncUnsaved();
     }
 
     /// <summary>파일 목록의 빨간 점(저장 안 한 변경)과 메모리 썸네일, 도구 막대의 저장·되돌리기 단추를 맞춘다.</summary>
     private void SyncUnsaved()
     {
         var files = new Dictionary<string, PixelImage?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var doc in _docs.Items)
-            foreach (var path in doc.Paths) files[path] = doc.Thumbnail;
-        if (_ctx.Project is { IsDirty: true } p)
-            foreach (var path in OpenDocument.PathsOf(p, _currentSource)) files[path] = _currentThumb;
+        foreach (var doc in OpenDocs)
+            if (doc.Project.IsDirty)
+                foreach (var path in doc.Paths) files[path] = doc.Thumbnail;
         _browser.SetUnsaved(files);
         UpdateSaveButtons();
     }
@@ -1882,52 +1819,40 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private string? RevertPath
         => _ctx.Project is not { IsDirty: true } p ? null
             : p.Path is { } path && File.Exists(path) ? path
-            : _currentSource is { } source && File.Exists(source) ? source
+            : CurrentDoc?.SourcePath is { } source && source.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && File.Exists(source) ? source
             : null;
 
     /// <summary>
-    /// 저장한 내용으로 되돌리기: 확인한 뒤 지금 문서의 수정·실행취소 기록을 버리고 파일을 다시 연다(<see cref="OpenFile(string)"/>).
-    /// 레이어·프레임·확대율·위치는 그대로 둔다. 다시 열지 못하면(가져오기 취소·읽기 오류) 수정한 문서를 버리지 않고 되돌려 놓는다.
+    /// 저장한 내용으로 되돌리기: 확인한 뒤 지금 문서의 수정·실행취소 기록을 버리고 파일을 다시 읽는다(<see cref="ReloadDocument"/>).
+    /// 레이어·프레임·확대율·위치는 그대로 둔다. 다시 읽지 못하면(가져오기 취소·읽기 오류) 수정한 문서를 그대로 둔다.
     /// </summary>
     private void RevertToSaved()
     {
-        if (_ctx.Project is not { } p || RevertPath is not { } path) return;
+        if (CurrentDoc is not { } doc || RevertPath is not { } path) return;
         var name = Path.GetFileName(path);
         // 묻는 동안 자동 저장이 버릴 수정을 파일에 써 버리지 않게 멈춘다.
         _autoSave.Stop();
         if (Ui.Ask(this, MainStrings.FormatMessage_347(name: name),
-                MainStrings.Ui_284, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes)
+                MainStrings.Ui_284, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes
+            || !ReloadDocument(doc, path, interactive: true, out _))
         {
             RestartAutoSave();
             return;
         }
-        var (source, layer, frame, view) = (_currentSource, _ctx.CurrentLayer, _ctx.CurrentFrame, _canvas.View);
-        p.IsDirty = false;
-        _ctx.SetProject(null);
-        // 같은 파일의 메모리 사본이 남아 있으면 디스크 대신 그것을 꺼내므로 먼저 버린다.
-        if (_docs.Find(path) is { } stale) _docs.Remove(stale);
-        bool reopened = OpenFile(path);
-        if (!reopened)
-        {
-            p.IsDirty = true;
-            SwitchTo(p, source);
-            _browser.SelectFile(CurrentTilePath);
-        }
-        _ctx.SetCurrent(layer, frame);
-        _canvas.RestoreView(view);
-        if (reopened) ShowMessage(MainStrings.FormatMessage_348(name: name, unsavedSuffix: UnsavedSuffix));
+        _browser.SelectFile(CurrentTilePath);
+        ShowMessage(MainStrings.FormatMessage_348(name: name, unsavedSuffix: UnsavedSuffix));
     }
 
     /// <summary>
-    /// 끝내기 전에: 저장 안 한 변경이 있는 문서(지금 문서 + 메모리)를 한 창에 모아 묻는다(<see cref="UnsavedChangesDialog"/>).
-    /// "선택한 파일 저장"은 체크한 문서를 Ctrl+S와 같이 저장하고, 하나라도 저장하지 못하면 알리고 끝내지 않는다. 끝내도 되면 true.
+    /// 끝내기·모든 탭 닫기 전에: 저장 안 한 변경이 있는 열린 문서를 한 창에 모아 묻는다(<see cref="UnsavedChangesDialog"/>).
+    /// "선택한 파일 저장"은 체크한 문서를 Ctrl+S와 같이 저장하고(저장한 적 없는 새 문서는 저장 위치를 물음), 하나라도 저장하지 못하면 알리고 멈춘다.
+    /// 계속해도 되면 true.
     /// </summary>
     private bool ConfirmCloseAll()
     {
         _ctx.CommitFloating();
-        var files = new List<UnsavedFile>();
-        if (_ctx.Project is { IsDirty: true } cur) files.Add(DescribeUnsaved(cur, _currentSource, _currentThumb ?? cur.Flatten(0)));
-        foreach (var doc in _docs.Items) files.Add(DescribeUnsaved(doc.Project, doc.SourcePath, doc.Thumbnail));
+        var files = OpenDocs.Where(d => d.Project.IsDirty)
+            .Select(d => DescribeUnsaved(d.Project, d.SourcePath, d.Thumbnail ?? d.Project.Flatten(0))).ToList();
         if (files.Count == 0) return true;
         var dlg = new UnsavedChangesDialog(files);
         // 묻는 동안 자동 저장이 "저장 안 함"으로 고를 문서를 써 버리지 않게 멈춘다(취소하면 다시 잰다).
@@ -1944,7 +1869,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         foreach (var p in dlg.Checked)
         {
-            bool saved = ReferenceEquals(p, _ctx.Project) ? Save() : SaveDocument(p, p.Path!, interactive: true, out _);
+            bool saved = Save(p);
             if (saved) continue;
             ShowMessage(MainStrings.FormatMessage_349(displayName: p.DisplayName, unsavedSuffix: UnsavedSuffix));
             return false;
@@ -1992,22 +1917,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedFolder is { } folder) SetRootFolder(folder);
     }
 
-    private void OpenFileDialogCmd()
-    {
-        var path = Ui.OpenFile(this, MainStrings.Message_290, _browser.CurrentFolder ?? _settings.LastFolder,
-            new FileFilter(MainStrings.Ui_291, "*.gpixel", "*.png"),
-            new FileFilter(MainStrings.Ui_292, "*.gpixel"),
-            new FileFilter(MainStrings.Ui_293, "*.png"));
-        if (path is not null) OpenFile(path);
-    }
-
-    /// <summary>.gpixel을 열거나 PNG를 가져온다(같은 이름 .gpixel이 있으면 그것). 취소·실패하면 false.</summary>
+    /// <summary>.gpixel을 열거나 PNG를 가져온다(같은 이름 .gpixel이 있으면 그것). 다른 그림·움직이는 그림·영상은 프레임으로 푼 새 문서. 취소·실패하면 false.</summary>
     private bool OpenFile(string path) => OpenFile(path, interactive: true, out _);
 
     /// <summary>
-    /// 파일 열기. 지금 문서에 저장 안 한 변경이 있으면 묻지 않고 메모리에 남기고(<see cref="SwitchTo"/>), 메모리에 남겨 둔 문서를 다시 열면
-    /// 디스크 대신 그 문서(수정 내용·실행취소 기록)를 꺼낸다. <paramref name="interactive"/>가 false면(Claude 도구) 대화상자를 띄우지 않는다:
-    /// 저장 위치가 없는 새 프로젝트에 수정이 있으면 실패하고, 칸 크기가 모두 같은 시트는 애니메이션으로 가져오며, 결과·오류는 <paramref name="message"/>로 돌려준다.
+    /// 파일 열기: 새 탭으로 연다. 이미 열린 문서면(프로젝트 파일이나 가져온 PNG가 같으면) 그 탭을 고른다 — 저장 안 한 수정·실행취소 기록 그대로.
+    /// <paramref name="interactive"/>가 false면(AI 도구) 대화상자를 띄우지 않는다: 칸 크기가 모두 같은 시트는 애니메이션으로 가져오며,
+    /// 결과·오류는 <paramref name="message"/>로 돌려준다.
     /// </summary>
     private bool OpenFile(string path, bool interactive, out string message)
     {
@@ -2023,18 +1939,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var target = !full.EndsWith(SpriteProject.FileExtension, StringComparison.OrdinalIgnoreCase) && ProjectImport.FindProjectForImage(full) is { } owner
             ? owner
             : full;
-        if (_ctx.Project is { } current && OpenDocument.PathsOf(current, _currentSource).Any(x => string.Equals(x, target, StringComparison.OrdinalIgnoreCase)))
+        // 그림(PNG 아닌 것·움직이는 PNG)·영상은 프레임으로 풀어 새 문서로(MainForm.OpenFormats.cs). 프로젝트가 내보낸 파일이면 위에서 그 프로젝트를 고름.
+        if (ReferenceEquals(target, full) && IsMediaFile(full)) return OpenMediaFile(full, interactive, out message);
+        if (FindDoc(target) is { } open)
         {
-            message = MainStrings.FormatMessage_355(value: Path.GetFileName(target));
-            return true;
-        }
-        if (_docs.Find(target) is { } doc)
-        {
-            if (!ConfirmLeave(interactive, out message)) return false;
-            SwitchTo(doc.Project, restore: doc);
-            AppSettings.PushRecent(_settings.RecentFiles, doc.SourcePath ?? doc.Project.Path ?? target);
-            _browser.SelectFile(CurrentTilePath);
-            message = MainStrings.FormatMessage_356(value: Path.GetFileName(CurrentTilePath), unsavedSuffix: UnsavedSuffix);
+            ShowDocument(open);
+            AppSettings.PushRecent(_settings.RecentFiles, open.DiskPath ?? target);
+            message = MainStrings.FormatMessage_355(value: Path.GetFileName(open.DiskPath ?? target)) + UnsavedSuffix;
             ShowMessage(message);
             return true;
         }
@@ -2045,37 +1956,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _settings.RecentFiles.Remove(path);
             return false;
         }
-        if (!ConfirmLeave(interactive, out message)) return false;
-        ProjectOpenResult result;
-        try
-        {
-            var analysis = ProjectImport.Analyze(full, new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple });
-            ImportMode? mode = null;
-            if (analysis.NeedsModeChoice)
-            {
-                if (interactive)
-                {
-                    var size = analysis.Document!.Slices.Select(s => Rectangle.Intersect(s.Rect, analysis.Document.Image.Bounds).Size)
-                        .FirstOrDefault(s => s.Width > 0 && s.Height > 0);
-                    mode = ImportKindDialog.Ask(this, Path.GetFileName(full), analysis.SliceCount, size);
-                    if (mode is null) return false;
-                }
-                else mode = ImportMode.Frames;
-            }
-            result = ProjectImport.Import(analysis, mode);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or NotSupportedException
-                                       or System.Text.Json.JsonException)
-        {
-            message = MainStrings.FormatMessage_358(full: full, message: ex.Message);
-            if (interactive) Ui.Error(this, message);
-            return false;
-        }
-        // 디스크에서 연 프로젝트 파일이면 남겨 둔 실행취소 기록을 이어 받는다(화면에 띄우기 전에).
-        var historyNote = result.Imported ? null : _history.Restore(result.Project);
-        SwitchTo(result.Project, result.Imported ? result.SourcePngPath : null);
-        var p = result.Project;
-        AppSettings.PushRecent(_settings.RecentFiles, result.Imported ? full : p.Path ?? full);
+        if (LoadDocument(full, interactive, out var result, out message, out var historyNote) is not { } doc) return false;
+        OpenInNewTab(doc);
+        var p = doc.Project;
+        AppSettings.PushRecent(_settings.RecentFiles, result!.Imported ? full : p.Path ?? full);
         _browser.SelectFile(p.Path is { } pp && File.Exists(pp) ? pp : full);
         int parts = p.Layers.Count(l => l.IsPart);
         var contents = MainStrings.FormatMessage_359(count: p.Frames.Count, count2: p.Tags.Count) + (parts > 0 ? MainStrings.FormatMessage_360(parts: parts) : "");
@@ -2092,10 +1976,58 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return true;
     }
 
+    /// <summary>
+    /// .gpixel을 읽거나 PNG를 가져온다(가져오기 방식을 물을 수 있음 — <paramref name="interactive"/>가 false면 프레임으로). 취소·실패하면 null
+    /// (실패 문구는 <paramref name="message"/>, 대화형이면 오류 창도).
+    /// </summary>
+    private ProjectOpenResult? ReadProject(string full, bool interactive, out string message)
+    {
+        message = "";
+        try
+        {
+            var analysis = ProjectImport.Analyze(full, new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple });
+            ImportMode? mode = null;
+            if (analysis.NeedsModeChoice)
+            {
+                if (interactive)
+                {
+                    var size = analysis.Document!.Slices.Select(s => Rectangle.Intersect(s.Rect, analysis.Document.Image.Bounds).Size)
+                        .FirstOrDefault(s => s.Width > 0 && s.Height > 0);
+                    mode = ImportKindDialog.Ask(this, Path.GetFileName(full), analysis.SliceCount, size);
+                    if (mode is null) return null;
+                }
+                else mode = ImportMode.Frames;
+            }
+            return ProjectImport.Import(analysis, mode);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or NotSupportedException
+                                       or System.Text.Json.JsonException)
+        {
+            message = MainStrings.FormatMessage_358(full: full, message: ex.Message);
+            if (interactive) Ui.Error(this, message);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 파일을 읽어 열린 문서를 만든다(탭은 열지 않음 — <see cref="OpenInNewTab"/>). 디스크에서 연 프로젝트 파일이면 남겨 둔 실행취소 기록을 이어 받는다
+    /// (<paramref name="historyNote"/> = 알림 글). 취소·실패하면 null.
+    /// </summary>
+    private OpenDocument? LoadDocument(string full, bool interactive, out ProjectOpenResult? result, out string message, out string? historyNote)
+    {
+        historyNote = null;
+        result = ReadProject(full, interactive, out message);
+        if (result is null) return null;
+        historyNote = result.Imported ? null : _history.Restore(result.Project);
+        var doc = new OpenDocument(result.Project, result.Imported ? result.SourcePngPath : null);
+        doc.DiskStamp = doc.DiskPath is { } disk ? SafeStamp(disk) : default;
+        return doc;
+    }
+
+    /// <summary>새 프로젝트(새 이미지 창)를 새 탭으로 만든다. <paramref name="folder"/>가 있으면 그 폴더에 바로 저장한다(파일 브라우저).</summary>
     private void NewProject(string? folder)
     {
         var defaults = _ctx.HasProject ? (_ctx.CanvasWidth, _ctx.CanvasHeight) : (32, 32);
-        if (folder is null && !ConfirmLeave()) return;
         var dlg = new NewImageDialog(defaults.Item1, defaults.Item2, folder is null ? null : "new_sprite");
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         string? path = null;
@@ -2108,11 +2040,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 Ui.Error(this, MainStrings.FormatMessage_363(path: path));
                 return;
             }
-            if (!ConfirmLeave()) return;
         }
         var p = BuildProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Transparent ? null : _ctx.Secondary,
             dlg.StartWithParts, dlg.PartName, dlg.PartWidth, dlg.PartHeight);
-        SwitchTo(p);
+        OpenInNewTab(new OpenDocument(p, null));
         SelectFirstPart(p);
         if (path is null)
         {
@@ -2159,28 +2090,15 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (p.Layers[i].IsPart) { _ctx.SetCurrentLayer(i); return; }
     }
 
-    /// <summary>
-    /// 지금 문서를 닫는다(Ctrl+W·시작 화면). 저장 위치가 있는 문서의 저장 안 한 변경은 묻지 않고 메모리에 남긴다(파일 목록의 빨간 점, 끝낼 때 한 번에 물음).
-    /// 닫았으면 true.
-    /// </summary>
-    private bool CloseProject()
-    {
-        if (!ConfirmLeave()) return false;
-        bool kept = _ctx.Project is { IsDirty: true, Path: not null };
-        SwitchTo(null);
-        _browser.SelectFile(null);
-        if (kept) ShowMessage(MainStrings.FormatMessage_364(unsavedSuffix: UnsavedSuffix));
-        return true;
-    }
+    /// <summary>Ctrl+S: 지금 문서 저장.</summary>
+    private bool Save() => _ctx.Project is { } p && Save(p);
 
-    /// <summary>Ctrl+S: .gpixel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장했으면 true.</summary>
-    private bool Save()
+    /// <summary>.gpixel 저장 + (켜져 있으면) 시트·메타 내보내기. 저장한 적 없는 문서는 저장 위치를 묻는다. 저장했으면 true.</summary>
+    private bool Save(SpriteProject p)
     {
-        var p = _ctx.Project;
-        if (p is null) return false;
-        if (p.Path is null) return SaveAs();
+        if (p.Path is null) return SaveAs(p);
         // PNG를 가져온 프로젝트는 아직 .gpixel 파일이 없다 — 제안된 경로에 그대로 저장한다.
-        return SaveTo(p.Path);
+        return SaveDocument(p, p.Path, interactive: true, out _);
     }
 
     /// <summary>자동 저장 타이머를 처음부터 다시 잰다(편집할 때마다 — 편집이 멈춘 지 정한 시간이 지나야 저장). 꺼져 있으면 멈춘다.</summary>
@@ -2212,9 +2130,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             : MainStrings.FormatMessage_366(name: name) + string.Join(" ", message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)));
     }
 
-    private bool SaveAs()
+    /// <summary>다른 이름으로 저장(<paramref name="p"/>가 없으면 지금 문서). 저장했으면 true.</summary>
+    private bool SaveAs(SpriteProject? p = null)
     {
-        var p = _ctx.Project;
+        p ??= _ctx.Project;
         if (p is null) return false;
         var path = Ui.SaveFile(this, MainStrings.Message_296,
             p.Path is null ? _browser.CurrentFolder ?? _settings.LastFolder : Path.GetDirectoryName(p.Path),
@@ -2222,7 +2141,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             SpriteProject.FileExtension,
             new FileFilter(MainStrings.Ui_297, "*.gpixel"));
         if (path is null) return false;
-        return SaveTo(path);
+        return SaveDocument(p, path, interactive: true, out _);
     }
 
     private bool SaveTo(string path) => SaveTo(path, interactive: true, out _);
@@ -2231,12 +2150,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private bool SaveTo(string path, bool interactive, out string message) => SaveDocument(_ctx.Project!, path, interactive, out message);
 
     /// <summary>
-    /// 문서 저장(+내보내기, Ctrl+S와 같음). 지금 문서가 아니어도(메모리에 남겨 둔 문서) 화면을 바꾸지 않고 저장한다 —
+    /// 문서 저장(+내보내기, Ctrl+S와 같음). 지금 문서가 아니어도(다른 탭) 화면을 바꾸지 않고 저장한다 —
     /// 내보내기 설정·경로는 프로젝트에 들어 있다. <paramref name="interactive"/>가 false면 실패를 대화상자 대신 <paramref name="message"/>로 돌려준다.
     /// </summary>
     private bool SaveDocument(SpriteProject p, string path, bool interactive, out string message)
     {
         bool current = ReferenceEquals(p, _ctx.Project);
+        var doc = OpenDocs.Find(d => ReferenceEquals(d.Project, p));
         if (current) _ctx.CommitFloating();
         ProjectSaveResult result;
         var stampBefore = SafeStamp(path);
@@ -2252,9 +2172,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             if (projectSaved)
             {
                 _history.Saved(p);
+                if (doc is not null) doc.DiskStamp = SafeStamp(p.Path!);
                 if (current)
                 {
-                    _docStamp = SafeStamp(p.Path!);
                     UpdateTitle();
                     UpdateStatus();
                 }
@@ -2270,16 +2190,22 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _history.Saved(p);
         message = MainStrings.FormatMessage_369(projectPath: Path.GetFileName(result.ProjectPath)) + ExportSummary(result.Export) + TrashStale(result.Export);
         _browser.RefreshFile(result.ProjectPath);
-        if (current)
+        if (doc is not null)
         {
             // 가져온 PNG는 이제 프로젝트의 내보내기 결과다 — 문서는 프로젝트 파일로 가리킨다.
-            _currentSource = null;
-            _docStamp = SafeStamp(result.ProjectPath);
+            doc.SourcePath = null;
+            doc.Thumbnail = null;
+            doc.DiskStamp = SafeStamp(result.ProjectPath);
+        }
+        if (current)
+        {
             _browser.SelectFile(result.ProjectPath);
             _play?.DocumentChanged();
             UpdateTitle();
             UpdateStatus();
         }
+        RefreshPanes();
+        SyncUnsaved();
         ShowMessage(message + UnsavedSuffix);
         return true;
     }
@@ -2358,38 +2284,26 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
     }
 
-    /// <summary>파일 목록에서 이름을 바꿈: 지금 문서와 메모리에 남겨 둔 문서의 경로(프로젝트 파일 또는 가져온 PNG)를 따라 바꾼다.</summary>
+    /// <summary>파일 목록에서 이름을 바꿈: 열린 문서들의 경로(프로젝트 파일 또는 가져온 PNG)를 따라 바꾼다.</summary>
     private void OnFileRenamed(string oldPath, string newPath)
     {
         int i = _settings.RecentFiles.FindIndex(p => string.Equals(p, oldPath, StringComparison.OrdinalIgnoreCase));
         if (i >= 0) _settings.RecentFiles[i] = newPath;
-        if (_ctx.Project is { } proj && RemapDocument(proj, ref _currentSource, oldPath, newPath))
-        {
-            _docStamp = proj.Path is { } pp ? SafeStamp(pp) : default;
-            ShowMessage(MainStrings.FormatMessage_375(value: Path.GetFileName(newPath)));
-        }
-        bool stored = false;
-        foreach (var doc in _docs.Items)
+        foreach (var doc in OpenDocs)
         {
             var source = doc.SourcePath;
             if (!RemapDocument(doc.Project, ref source, oldPath, newPath)) continue;
             doc.SourcePath = source;
-            stored = true;
+            doc.DiskStamp = doc.DiskPath is { } disk ? SafeStamp(disk) : default;
+            if (ReferenceEquals(doc, CurrentDoc)) ShowMessage(MainStrings.FormatMessage_375(value: Path.GetFileName(newPath)));
         }
-        if (stored) _docs.NotifyChanged();
-        else SyncUnsaved();
+        RefreshPanes();
+        SyncUnsaved();
         _history.Renamed(oldPath, newPath, OpenProjects);
     }
 
-    /// <summary>열린 프로젝트: 지금 문서 + 메모리에 남겨 둔 문서.</summary>
-    private IEnumerable<SpriteProject> OpenProjects
-    {
-        get
-        {
-            if (_ctx.Project is { } p) yield return p;
-            foreach (var doc in _docs.Items) yield return doc.Project;
-        }
-    }
+    /// <summary>열린 프로젝트(모든 탭의 문서).</summary>
+    private IEnumerable<SpriteProject> OpenProjects => OpenDocs.Select(d => d.Project);
 
     /// <summary>
     /// 이름이 바뀐 파일이 문서의 프로젝트 파일이면 프로젝트 경로(+내보내기 기록)를, 가져온 PNG면 그 경로와 제안된 프로젝트 경로를 바꾼다. 바꿨으면 true.
@@ -2409,48 +2323,44 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return true;
     }
 
-    /// <summary>
-    /// 파일 목록에서 휴지통으로 보냄: 열린 프로젝트 파일이면 수정됨으로 둔다(저장하면 다시 만듦).
-    /// 메모리에 남겨 둔 저장 안 한 문서면 메모리에서 버린다(디스크 내용은 앱 휴지통에 있다).
-    /// </summary>
+    /// <summary>파일 목록에서 휴지통으로 보냄: 열린 문서의 파일이면 수정됨으로 둔다(탭은 그대로 — 저장하면 다시 만듦).</summary>
     private void OnFileDeleted(string path)
     {
         _settings.RecentFiles.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
         _history.Deleted(path);
-        if (_ctx.Project?.Path is { } p && string.Equals(p, path, StringComparison.OrdinalIgnoreCase))
+        foreach (var doc in OpenDocs.Where(d => d.Matches(path)))
         {
-            _ctx.Project.IsDirty = true;
-            UpdateSaveButtons();
+            doc.Project.IsDirty = true;
             ShowMessage(MainStrings.FormatMessage_376(value: Path.GetFileName(path)));
         }
-        if (_docs.Find(path) is { } doc)
-        {
-            _docs.Remove(doc);
-            ShowMessage(MainStrings.FormatMessage_377(value: Path.GetFileName(path), unsavedSuffix: UnsavedSuffix));
-        }
+        UpdateSaveButtons();
     }
 
     /// <summary>
-    /// 파일 감시: 열린 프로젝트가 밖에서 바뀌었으면 다시 불러올지 묻는다.
-    /// 메모리에 남겨 둔 저장 안 한 문서의 파일이 바뀌면 메모리 쪽을 그대로 두고 알리기만 한다(저장하면 덮어씀).
+    /// 파일 감시: 지금 문서의 프로젝트 파일이 밖에서 바뀌었으면 다시 불러올지 묻는다.
+    /// 다른 탭의 문서는 저장 안 한 변경이 있으면 그대로 두고 알리기만 하고(저장하면 덮어씀), 없으면 다음에 고를 때 다시 읽는다.
     /// </summary>
     private void OnFilesChanged(IReadOnlyCollection<string> paths)
     {
-        foreach (var doc in _docs.Items)
+        var current = CurrentDoc;
+        foreach (var doc in OpenDocs)
         {
+            if (ReferenceEquals(doc, current)) continue;
             if (doc.DiskPath is not { } disk || !paths.Any(x => string.Equals(x, disk, StringComparison.OrdinalIgnoreCase)) || !File.Exists(disk)) continue;
             var diskStamp = SafeStamp(disk);
             if (diskStamp == doc.DiskStamp) continue;
             doc.DiskStamp = diskStamp;
-            ShowMessage(MainStrings.FormatMessage_378(value: Path.GetFileName(disk)));
+            if (doc.Project.IsDirty) ShowMessage(MainStrings.FormatMessage_378(value: Path.GetFileName(disk)));
+            else doc.ChangedOnDisk = true;
         }
-        var p = _ctx.Project;
-        if (p?.Path is not { } path || !paths.Any(x => string.Equals(x, path, StringComparison.OrdinalIgnoreCase))) return;
+        if (current is null) return;
+        var p = current.Project;
+        if (p.Path is not { } path || !paths.Any(x => string.Equals(x, path, StringComparison.OrdinalIgnoreCase))) return;
         // 파일이 없어졌으면 되돌릴 것도 없다(되돌리기 단추를 끈다).
         if (!File.Exists(path)) { UpdateSaveButtons(); return; }
         var stamp = SafeStamp(path);
-        if (stamp == _docStamp) return;
-        _docStamp = stamp;
+        if (stamp == current.DiskStamp) return;
+        current.DiskStamp = stamp;
         var message = p.IsDirty
             ? MainStrings.FormatMessage_379(displayName: p.DisplayName)
             : MainStrings.FormatMessage_380(displayName: p.DisplayName);
@@ -2462,9 +2372,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             RestartAutoSave();
             return;
         }
-        p.IsDirty = false;
-        _ctx.SetProject(null);
-        OpenFile(path);
+        ReloadDocument(current, path, interactive: true, out _);
     }
 
     // ───────────── 편집 ─────────────
@@ -2768,10 +2676,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         split.Path = p.Path;
         split.History.Clear();
         split.IsDirty = true;
-        var (source, thumb) = (_currentSource, _currentThumb);
-        _ctx.SetProject(split);
-        (_currentSource, _currentThumb) = (source, thumb);
-        SyncUnsaved();
+        if (CurrentDoc is { } current) ReplaceProject(current, split, keepView: false);
         ShowMessage(MainStrings.FormatMessage_393(count: split.Frames.Count, width: split.Width, height: split.Height));
     }
 
@@ -2900,9 +2805,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 return false;
             }
         }
-        if (!ConfirmLeave(interactive: false, out message)) return false;
         var p = BuildProject(width, height, background);
-        SwitchTo(p);
+        OpenInNewTab(new OpenDocument(p, null));
         if (path is null)
         {
             p.IsDirty = true;
@@ -2939,4 +2843,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     bool Ai.IAiHost.OpenFile(string path, out string message) => OpenFile(path, interactive: false, out message);
 
     Gpixel.Core.References.ReferenceLibrary Ai.IAiHost.References => _refs ??= AppReferences.Open(_settings);
+
+    AppSettings Ai.IAiHost.Settings => _settings;
 }

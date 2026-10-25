@@ -28,7 +28,7 @@ public sealed class AboutDialog : DialogBase
         Body.Children.Add(Ui.Row(
             Link(UiStrings.S_AboutDialog_AboutDialog_1BCE018BCE, AppUpdate.RepoUrl),
             Link(UiStrings.S_AboutDialog_AboutDialog_617FEF961D, AppUpdate.ReleasesUrl),
-            Ui.Button(VectorIcon.MessagesSquare, UiStrings.About_Discord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)).Tip(AppInfo.DiscordUrl),
+            Ui.DiscordButton(UiStrings.About_Discord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)),
             Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)));
         Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_E3F28341F4));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_BE04412652));

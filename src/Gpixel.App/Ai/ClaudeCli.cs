@@ -382,6 +382,9 @@ public sealed class ClaudeSession : IChatSession
         if (SessionId is not null) args.AddRange(["--resume", SessionId]);
 
         var psi = AiCli.CreateStartInfo(_claudePath, args, cwd, true);
+        // 그림 생성 도구(Codex에 맡김)는 몇 분 걸릴 수 있다 — 사용자가 따로 정하지 않았으면 MCP 도구 시간 제한을 늘린다.
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MCP_TOOL_TIMEOUT")))
+            psi.Environment["MCP_TOOL_TIMEOUT"] = (CodexSession.ToolTimeoutSeconds * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var p = new Process { StartInfo = psi };
         var stderr = new StringBuilder();
         p.ErrorDataReceived += (_, e) =>

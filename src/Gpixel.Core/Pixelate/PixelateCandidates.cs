@@ -113,7 +113,7 @@ public static class PixelateCandidates
 
     /// <summary>
     /// 후보를 모두 돌린다: 지금 설정을 먼저(번호 0), 그다음 바꾼 설정들을 여러 스레드로. 하나 끝날 때마다 <paramref name="onResult"/>(아무 스레드).
-    /// 점수의 목표 색 수는 지금 설정의 색 수(자동이면 찾은 수). 취소하면 <see cref="OperationCanceledException"/>.
+    /// 점수의 목표 색 수는 지금 설정의 색 수(자동이면 찾은 수). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
     /// </summary>
     public static List<PixelateCandidate> Run(PixelateSource src, PixelateSettings b, CandidateVary vary, int count, ScoreWeights weights,
         Action<PixelateCandidate>? onResult = null, CancellationToken ct = default)
@@ -132,6 +132,6 @@ public static class PixelateCandidates
             onResult?.Invoke(cand);
         });
         all.AddRange(done.OfType<PixelateCandidate>());
-        return [.. all.OrderByDescending(c => c.Score.Total).ThenBy(c => c.Index)];
+        return [.. all.OrderBy(c => c.Result.Failed).ThenByDescending(c => c.Score.Total).ThenBy(c => c.Index)];
     }
 }

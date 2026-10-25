@@ -66,7 +66,7 @@
   <data name="Ui_061" xml:space="preserve"><value>Recent folders</value></data>
   <data name="Ui_062" xml:space="preserve"><value>Recent files</value></data>
   <data name="Menu_File_NewProject_063" xml:space="preserve"><value>New project…</value></data>
-  <data name="Menu_File_OpenFileDialogCmd_065" xml:space="preserve"><value>Open (.gpixel / import PNG)…</value></data>
+  <data name="Menu_File_OpenFileDialogCmd_065" xml:space="preserve"><value>Open (.gpixel · image · GIF · video)…</value></data>
   <data name="Menu_File_OpenFolder_067" xml:space="preserve"><value>Open folder…</value></data>
   <data name="Menu_File_OpenUnityProject_069" xml:space="preserve"><value>Open Unity project…</value></data>
   <data name="Menu_File_Save_071" xml:space="preserve"><value>Save (+ export sheets)</value></data>
@@ -201,9 +201,7 @@
   <data name="Ui_287" xml:space="preserve"><value>Choose a save location</value></data>
   <data name="Message_289" xml:space="preserve"><value>Choose the root folder containing the images to edit.</value></data>
   <data name="Message_290" xml:space="preserve"><value>Open</value></data>
-  <data name="Ui_291" xml:space="preserve"><value>Gpixel project·PNG</value></data>
   <data name="Ui_292" xml:space="preserve"><value>Gpixel project</value></data>
-  <data name="Ui_293" xml:space="preserve"><value>PNG image</value></data>
   <data name="Message_294" xml:space="preserve"><value>New project — press Ctrl+S to choose where to save.</value></data>
   <data name="Ui_295" xml:space="preserve"><value>New project</value></data>
   <data name="Message_296" xml:space="preserve"><value>Save as</value></data>
@@ -347,13 +345,14 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Edit_AddOutline" xml:space="preserve"><value>Add outline</value></data>
   <data name="Edit_ReplaceColor" xml:space="preserve"><value>Replace color</value></data>
   <data name="Menu_Help_Guide" xml:space="preserve"><value>Guide…</value></data>
+  <data name="Menu_Help_Website" xml:space="preserve"><value>Website</value></data>
   <data name="Menu_Help_Discord" xml:space="preserve"><value>Report a bug or idea (Discord)…</value></data>
   <data name="Drop_UndoLabel" xml:space="preserve"><value>Drop image</value></data>
   <data name="Drop_Added" xml:space="preserve"><value>Added as new layer: {names}</value></data>
   <data name="Drop_FramesAdded" xml:space="preserve"><value> · {count} frames added</value></data>
   <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered and the parts outside the canvas were cut. To keep everything, enlarge the canvas first in Canvas size mode (Edit > Canvas size…).</value></data>
   <data name="Drop_Unreadable" xml:space="preserve"><value>Could not read image: {names}</value></data>
-  <data name="Menu_File_Pixelate" xml:space="preserve"><value>Pixelate AI image…</value></data>
+  <data name="Menu_Ai_Pixelate" xml:space="preserve"><value>Pixelate AI image…</value></data>
   <data name="Menu_Edit_Pixelate" xml:space="preserve"><value>Pixelate current layer…</value></data>
   <data name="Pixelate_UndoLabel" xml:space="preserve"><value>Pixelate AI image</value></data>
   <data name="Pixelate_EmptyLayer" xml:space="preserve"><value>The current layer has nothing to pixelate.</value></data>
@@ -362,4 +361,36 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Pixelate_PaletteName" xml:space="preserve"><value>{name} palette</value></data>
   <data name="Pixelate_ReferenceAdded" xml:space="preserve"><value> · source added to AI references</value></data>
   <data name="Pixelate_ReferenceFailed" xml:space="preserve"><value> · couldn't add to references: {message}</value></data>
+  <data name="Tabs_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Tabs_CloseOthers" xml:space="preserve"><value>Close other tabs</value></data>
+  <data name="Tabs_New" xml:space="preserve"><value>New project (new tab)</value></data>
+  <data name="Tabs_SplitRight" xml:space="preserve"><value>Split right</value></data>
+  <data name="Tabs_OpenInOther" xml:space="preserve"><value>Open in the other pane</value></data>
+  <data name="Tabs_MoveToOther" xml:space="preserve"><value>Move to the other pane</value></data>
+  <data name="Tabs_SplitTip" xml:space="preserve"><value>Open this tab in the other pane too (split right) — you can also drag a tab to the right edge of the canvas</value></data>
+  <data name="Tabs_UnsavedTip" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Tabs_Next" xml:space="preserve"><value>Next tab</value></data>
+  <data name="Tabs_Previous" xml:space="preserve"><value>Previous tab</value></data>
+  <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to split right</value></data>
+  <data name="Tabs_DropMove" xml:space="preserve"><value>Drop to move here</value></data>
+  <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
+  <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
+  <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
+  <data name="Place_TransformHint" xml:space="preserve"><value> — Transform mode: drag inside = move, handles = size, outside = rotate, Enter = apply (parts outside the canvas are cut then), Esc = keep as inserted</value></data>
+  <data name="Place_MultiFrameHint" xml:space="preserve"><value> — inserted without transform mode because the image has several frames (move each frame with Ctrl+T)</value></data>
+  <data name="Open_FilterSupported" xml:space="preserve"><value>All supported files</value></data>
+  <data name="Open_FilterImages" xml:space="preserve"><value>Images (PNG, JPG, BMP, GIF, WebP, ICO, AVIF, HEIC)</value></data>
+  <data name="Open_FilterAnimations" xml:space="preserve"><value>Animations (GIF, WebP, APNG)</value></data>
+  <data name="Open_FilterVideos" xml:space="preserve"><value>Videos (MP4, WebM, MOV, MKV, AVI)</value></data>
+  <data name="Open_FilterAllFiles" xml:space="preserve"><value>All files</value></data>
+  <data name="Open_ManyFiles" xml:space="preserve"><value>Open {count} files, each in its own tab?</value></data>
+  <data name="Open_ManyFrames" xml:space="preserve"><value>{name} has {count} frames. Opening all of them can use a lot of memory and take a while.
+
+Open all frames, or only the first {limit}?</value></data>
+  <data name="Open_AllFrames" xml:space="preserve"><value>Open all</value></data>
+  <data name="Open_FirstFrames" xml:space="preserve"><value>First {limit} only</value></data>
+  <data name="Open_DecodingTitle" xml:space="preserve"><value>Decoding image</value></data>
+  <data name="Open_Decoding" xml:space="preserve"><value>Decoding frames of {name}…</value></data>
+  <data name="Open_Unreadable" xml:space="preserve"><value>Can't open {name} (unsupported format or damaged file).</value></data>
+  <data name="Open_Opened" xml:space="preserve"><value>Opened {name} — {frames} frames, {width}×{height}, {ms} ms total · not saved yet (saving asks where to put the .gpixel)</value></data>
 </root>

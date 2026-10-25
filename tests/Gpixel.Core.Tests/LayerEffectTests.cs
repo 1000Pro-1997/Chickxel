@@ -53,6 +53,95 @@ public class LayerEffectTests
         Assert.All(src.Pixels, p => Assert.Equal(Red.WithAlpha(200), p));
     }
 
+    private static Color32 Shaded(Color32 c, int amount) => Gpixel.Core.Pixelate.OkLab.ShiftLightness(c, amount / 100f);
+
+    private static float Lightness(Color32 c) => Gpixel.Core.Pixelate.OkLab.FromColor(c).L;
+
+    [Fact]
+    public void Outline_Shade_OutsideNextToBlueIsDarkerBlueNotBlack()
+    {
+        var (img, x, y) = LayerEffects.Render(Filled(1, 1, Blue), [new OutlineEffect { ColorMode = OutlineColorMode.Shade }]);
+        Assert.Equal((-1, -1), (x, y));
+        var line = img.Get(2, 1);
+        Assert.Equal(Shaded(Blue, OutlineEffect.DefaultShadeAmount), line);
+        Assert.Equal(4, Count(img, line));
+        Assert.Equal(Blue, img.Get(1, 1));
+        Assert.True(Lightness(line) < Lightness(Blue) - 0.1f);
+        // 검정이 아니라 진한 파랑(색상 유지)
+        Assert.True(line.B > 60 && line.B > line.R + 40 && line.B > line.G + 40, line.ToHex());
+        Assert.Equal(255, line.A);
+    }
+
+    [Fact]
+    public void Outline_Shade_InsideIsDarkerThanTheOverlaidPixel_KeepsAlpha()
+    {
+        var grey = new Color32(128, 128, 128, 200);
+        var (img, _, _) = LayerEffects.Render(Filled(3, 3, grey), [new OutlineEffect { ColorMode = OutlineColorMode.Shade, Inside = true }]);
+        var edge = img.Get(0, 0);
+        Assert.Equal(Shaded(grey, -40), edge);
+        Assert.Equal(200, edge.A);
+        Assert.True(Lightness(edge) < Lightness(grey) - 0.1f);
+        Assert.Equal(8, Count(img, edge));
+        Assert.Equal(grey, img.Get(1, 1));
+    }
+
+    [Fact]
+    public void Outline_Shade_PositiveAmountIsLighter()
+    {
+        var (outside, _, _) = LayerEffects.Render(Filled(1, 1, Blue), [new OutlineEffect { ColorMode = OutlineColorMode.Shade, ShadeAmount = 40 }]);
+        var line = outside.Get(2, 1);
+        Assert.Equal(Shaded(Blue, 40), line);
+        Assert.True(Lightness(line) > Lightness(Blue) + 0.1f);
+        Assert.True(line.B > line.R && line.B > line.G, line.ToHex());
+
+        var (inside, _, _) = LayerEffects.Render(Filled(1, 1, Red), [new OutlineEffect { ColorMode = OutlineColorMode.Shade, ShadeAmount = 40, Inside = true }]);
+        Assert.True(Lightness(inside.Get(0, 0)) > Lightness(Red) + 0.1f);
+    }
+
+    [Fact]
+    public void Outline_Shade_PicksOrthogonalNeighborsFirst_ThenMajority_ThenDiagonalOnCorners()
+    {
+        // R B .
+        // B . .
+        var src = new PixelImage(2, 2);
+        src.Set(0, 0, Red);
+        src.Set(1, 0, Blue);
+        src.Set(0, 1, Blue);
+        var (img, x, y) = LayerEffects.Render(src, [new OutlineEffect { ColorMode = OutlineColorMode.Shade, Diagonal = true }]);
+        Assert.Equal((-1, -1), (x, y));
+        Color32 At(int px, int py) => img.Get(px - x, py - y);
+        Assert.Equal(Shaded(Red, -40), At(-1, -1)); // 모서리: 대각 이웃(빨강)뿐
+        Assert.Equal(Shaded(Blue, -40), At(2, -1)); // 모서리: 대각 이웃(파랑)뿐
+        Assert.Equal(Shaded(Blue, -40), At(1, 1)); // 오목한 자리: 가로·세로 이웃(파랑 둘)이 대각(빨강)보다 먼저
+        Assert.Equal(Shaded(Red, -40), At(-1, 0)); // 가로 이웃(빨강)이 대각 이웃(파랑)보다 먼저
+        Assert.Equal(Shaded(Blue, -40), At(2, 1)); // 가로·세로 이웃이 없으면 대각
+
+        // 구멍 한 칸: 왼쪽만 빨강, 나머지 셋은 파랑 → 가장 많은 파랑
+        var hole = Filled(3, 3, Blue);
+        hole.Set(1, 1, Color32.Transparent);
+        hole.Set(0, 1, Red);
+        var (filled, hx, hy) = LayerEffects.Render(hole, [new OutlineEffect { ColorMode = OutlineColorMode.Shade }]);
+        Assert.Equal(Shaded(Blue, -40), filled.Get(1 - hx, 1 - hy));
+    }
+
+    [Fact]
+    public void Outline_Shade_ThickRingsFollowTheInnerRingsBase_AndHideOriginalWorks()
+    {
+        var src = new PixelImage(2, 1);
+        src.Set(0, 0, Red);
+        src.Set(1, 0, Blue);
+        var (img, x, y) = LayerEffects.Render(src, [new OutlineEffect { ColorMode = OutlineColorMode.Shade, Thickness = 2, HideOriginal = true }]);
+        Assert.Equal((-2, -2), (x, y));
+        Color32 At(int px, int py) => img.Get(px - x, py - y);
+        Assert.Equal(Shaded(Red, -40), At(-1, 0));
+        Assert.Equal(Shaded(Red, -40), At(-2, 0));
+        Assert.Equal(Shaded(Blue, -40), At(2, 0));
+        Assert.Equal(Shaded(Blue, -40), At(3, 0));
+        Assert.Equal(Shaded(Blue, -40), At(1, -2));
+        Assert.Equal(Color32.Transparent, At(0, 0));
+        Assert.Equal(Color32.Transparent, At(1, 0));
+    }
+
     [Fact]
     public void Outline_HideOriginal_OutsideLeavesOnlyOuterRing()
     {

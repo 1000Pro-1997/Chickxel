@@ -1226,7 +1226,7 @@ public static partial class ProjectIO
         public int? Y { get; set; }
         /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
         public string? Direction { get; set; }
-        /// <summary>색 덮기 양, 예전 시간 그라데이션·빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%).</summary>
+        /// <summary>색 덮기 양, 예전 시간 그라데이션·빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%), 외곽선 명암 양(−100~100, 기본 −40이면 안 씀).</summary>
         public int? Amount { get; set; }
         /// <summary>늘었다 줄기의 축별 세기(%).</summary>
         public int? WidthAmount { get; set; }
@@ -1271,7 +1271,7 @@ public static partial class ProjectIO
         /// <summary>색 바꾸기: [바꿀 색, 바뀐 색] 쌍들과 허용 차이.</summary>
         public List<string[]>? Pairs { get; set; }
         public int? Tolerance { get; set; }
-        /// <summary>색조 보정 방식, 예전 시간 그라데이션 방식, 움직이는 효과 일부의 방식.</summary>
+        /// <summary>색조 보정 방식, 예전 시간 그라데이션 방식, 움직이는 효과 일부의 방식, 외곽선 색 방식(<see cref="OutlineColorMode"/> 이름, 지정 색이면 안 씀).</summary>
         public string? Mode { get; set; }
         public int? Hue { get; set; }
         public int? Brightness { get; set; }
@@ -1332,6 +1332,8 @@ public static partial class ProjectIO
                 OutlineEffect o => new EffectDto
                 {
                     Type = "outline", Color = o.Color.ToHex(), Thickness = o.Thickness, Diagonal = o.Diagonal, Inside = o.Inside, HideOriginal = o.HideOriginal ? true : null,
+                    Mode = o.ColorMode == OutlineColorMode.Fixed ? null : o.ColorMode.ToString(),
+                    Amount = o.ShadeAmount == OutlineEffect.DefaultShadeAmount ? null : o.ShadeAmount,
                 },
                 ShadowEffect s => new EffectDto { Type = "shadow", Color = s.Color.ToHex(), X = s.OffsetX, Y = s.OffsetY, Dither = s.Dither == ShadowDither.None ? null : s.Dither.ToString() },
                 RimLightEffect r => new EffectDto { Type = "rim", Color = r.Light.ToHex(), Shade = r.Shade.ToHex(), Direction = r.Direction.ToString(), Thickness = r.Size },
@@ -1438,7 +1440,7 @@ public static partial class ProjectIO
                     return o with
                     {
                         Enabled = Enabled, Color = ColorOr(Color, o.Color), Thickness = Thickness ?? o.Thickness, Diagonal = Diagonal ?? o.Diagonal, Inside = Inside ?? o.Inside,
-                        HideOriginal = HideOriginal ?? o.HideOriginal,
+                        HideOriginal = HideOriginal ?? o.HideOriginal, ColorMode = EnumOr(Mode, o.ColorMode), ShadeAmount = Amount ?? o.ShadeAmount,
                     };
                 case "shadow":
                     var s = new ShadowEffect();

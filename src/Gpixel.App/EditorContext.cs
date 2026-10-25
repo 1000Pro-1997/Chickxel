@@ -609,6 +609,37 @@ public sealed class EditorContext
         return null;
     }
 
+    /// <summary>
+    /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 잘려 들어감)을 잘리기 전 그대로 떠 있는 상태로 들고
+    /// 변형 모드에 들어간다: 셀에서 넣은 픽셀을 지우고 원본 전체(투명 테두리는 뺌)를 띄운다. 적용(Enter)하면 그때 자리에서 캔버스 밖이 잘려
+    /// 내려앉고(실행취소 한 단계 — 넣기와 따로), 취소(Esc)하면 넣은 그대로(잘린 그림)로 돌아간다.
+    /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면 null.
+    /// </summary>
+    public string? BeginPlacedTransform(PixelImage image, Point location)
+    {
+        if (Project is null) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
+        CommitFloating();
+        if (IsGroupSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
+        if (!CanEdit) return UiStrings.S_EditorContext_BeginTransform_C545365EE1;
+        var content = image.GetOpaqueBounds();
+        if (content.IsEmpty) return UiStrings.S_EditorContext_BeginTransform_433795A813;
+        var floating = image.Crop(content);
+        var region = new PixelMask(new Rectangle(location.X + content.X, location.Y + content.Y, content.Width, content.Height));
+        var before = Selection.Save();
+        BeginSelectionEdit();
+        var cel = EditImage!;
+        // 넣으며 셀에 그려진(잘린) 픽셀을 지운다 — 떠 있는 원본이 그 자리를 대신한다.
+        var r = region.Bounds;
+        for (int y = 0; y < floating.Height; y++)
+            for (int x = 0; x < floating.Width; x++)
+                if (floating.Pixels[y * floating.Width + x].A != 0) cel.Set(r.X + x, r.Y + y, Color32.Transparent);
+        Selection.SetFloating(floating, region);
+        _transform = new TransformSession(new FreeTransform(floating, region), before, null);
+        NotifyPixels();
+        TransformChanged?.Invoke(this, EventArgs.Empty);
+        return null;
+    }
+
     /// <summary>변형 값을 바꾸고 원본에서 다시 그린다(끄는 동안의 미리보기도 이것). 배율 0은 막는다.</summary>
     public void SetTransformParams(TransformParams p)
     {

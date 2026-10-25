@@ -62,4 +62,31 @@ public class EffectPresetTests
         Assert.False(outline.HideOriginal);
         Assert.Equal(2, outline.Thickness);
     }
+
+    [Fact]
+    public void OutlineShadeMode_RoundTrips_WrittenOnlyWhenNonDefault_OldJsonLoadsFixedColor()
+    {
+        var shade = EffectPreset.Capture("명암", [new OutlineEffect { ColorMode = OutlineColorMode.Shade, ShadeAmount = 25, Thickness = 2 }]);
+        var json = EffectPresets.Serialize([shade]);
+        Assert.Contains("\"mode\": \"Shade\"", json);
+        Assert.Contains("\"amount\": 25", json);
+        Assert.Equal(shade.Effects, Assert.Single(EffectPresets.Parse(json)).Effects);
+
+        var darker = EffectPreset.Capture("기본 명암", [new OutlineEffect { ColorMode = OutlineColorMode.Shade }]);
+        var darkerJson = EffectPresets.Serialize([darker]);
+        Assert.DoesNotContain("amount", darkerJson);
+        Assert.Equal(darker.Effects, Assert.Single(EffectPresets.Parse(darkerJson)).Effects);
+
+        var plain = EffectPresets.Serialize([EffectPreset.Capture("기본", [new OutlineEffect()])]);
+        Assert.DoesNotContain("\"mode\"", plain);
+        Assert.DoesNotContain("amount", plain);
+
+        const string old = """
+            { "version": 1, "presets": [ { "name": "예전", "effects": [ { "type": "outline", "color": "#102030", "thickness": 1 } ] } ] }
+            """;
+        var outline = Assert.IsType<OutlineEffect>(Assert.Single(Assert.Single(EffectPresets.Parse(old)).Effects));
+        Assert.Equal(OutlineColorMode.Fixed, outline.ColorMode);
+        Assert.Equal(OutlineEffect.DefaultShadeAmount, outline.ShadeAmount);
+        Assert.Equal(new Color32(16, 32, 48), outline.Color);
+    }
 }

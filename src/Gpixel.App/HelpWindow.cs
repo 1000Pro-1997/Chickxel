@@ -14,8 +14,6 @@ namespace Gpixel.App;
 /// </summary>
 public sealed class HelpWindow : Window
 {
-    private const string SiteBase = "https://1000pro-1997.github.io/GPixel/";
-
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
     private static readonly FontFamily MonoFont = new("Consolas, Menlo, DejaVu Sans Mono, monospace");
     // 홈페이지(style.css)와 같은 색: 금색 제목, 노란 강조, 파란 링크, 노란 빛 알림 상자.
@@ -202,7 +200,7 @@ public sealed class HelpWindow : Window
             ?? throw new InvalidDataException(name);
     }
 
-    private string PageUrl(string pageId) => $"{SiteBase}{(_korean ? "" : "en/")}guide.html#{pageId}";
+    private string PageUrl(string pageId) => $"{AppInfo.WebsiteUrl}{(_korean ? "" : "en/")}guide.html#{pageId}";
 
     // ───────────── 검색 ─────────────
 

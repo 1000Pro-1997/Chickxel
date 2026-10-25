@@ -8,7 +8,7 @@ using Gpixel.App.Localization;
 namespace Gpixel.App;
 
 /// <summary>
-/// 파일 브라우저: 루트 폴더 아래 폴더 트리 + 선택 폴더의 .gpixel 프로젝트와 PNG 썸네일 목록(하위 포함 토글,
+/// 파일 브라우저: 루트 폴더 아래 폴더 트리 + 선택 폴더의 .gpixel 프로젝트와 그림(PNG·GIF·WebP·JPG …)·영상 썸네일 목록(하위 포함 토글,
 /// 프로젝트가 내보내는 이미지는 프로젝트 하나로 묶어 보여 줌), 이름 검색, 파일 변경 감시, 우클릭 메뉴(새 프로젝트·이름 바꾸기·탐색기에서 열기·휴지통으로 삭제),
 /// 항목을 목록 밖으로 끌어 내기(캔버스에 놓으면 새 레이어).
 /// </summary>
@@ -483,8 +483,10 @@ public sealed class FileBrowserPanel : UserControl
                 exported.UnionWith(outputs);
             }
             files = projects
-                .Concat(Directory.EnumerateFiles(folder, "*.png", options)
-                    .Where(p => !projectKeys.Contains(Path.ChangeExtension(p, null)) && !exported.Contains(Path.GetFullPath(p))))
+                .Concat(Directory.EnumerateFiles(folder, "*", options)
+                    .Where(p => MediaFormats.KindOf(p) is MediaKind.Image or MediaKind.Video
+                                && !(p.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && projectKeys.Contains(Path.ChangeExtension(p, null)))
+                                && !exported.Contains(Path.GetFullPath(p))))
                 .Order(StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
@@ -589,6 +591,12 @@ public sealed class FileBrowserPanel : UserControl
         var dot = UnsavedDot();
         var tile = new Grid { Width = ThumbSize, Height = ThumbSize, HorizontalAlignment = HorizontalAlignment.Center, Children = { thumb } };
         if (IsProject(path)) tile.Children.Add(ProjectBadge());
+        else if (MediaFormats.KindOf(path) == MediaKind.Video)
+        {
+            // 썸네일(ffmpeg로 뽑은 첫 프레임)이 오기 전·ffmpeg가 없을 때 보이는 필름 그림 + 오른쪽 아래 배지.
+            tile.Children.Insert(0, new IconView(VectorIcon.Film, AppTheme.DimTextBrush, 1.6) { Width = 30, Height = 30, IsHitTestVisible = false });
+            tile.Children.Add(VideoBadge());
+        }
         tile.Children.Add(dot);
         content.Children.Add(tile);
         content.Children.Add(label);
@@ -619,6 +627,7 @@ public sealed class FileBrowserPanel : UserControl
         var cts = new CancellationTokenSource();
         _thumbCts = cts;
         var token = cts.Token;
+        var ffmpeg = new Lazy<string?>(() => FfmpegTool.Locate(App.Settings));
         Task.Run(() =>
         {
             foreach (var (path, stamp) in files)
@@ -627,7 +636,8 @@ public sealed class FileBrowserPanel : UserControl
                 WriteableBitmap thumb;
                 try
                 {
-                    var img = IsProject(path) ? ProjectIO.LoadThumbnail(path) : PngIO.Load(path);
+                    var img = IsProject(path) ? ProjectIO.LoadThumbnail(path) : LoadPreview(path, ffmpeg, token);
+                    if (img is null) continue;
                     thumb = ImageUtil.MakeThumbnail(img, ThumbSize);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
@@ -643,6 +653,38 @@ public sealed class FileBrowserPanel : UserControl
                 });
             }
         }, token);
+    }
+
+    /// <summary>
+    /// 그림·영상 썸네일 원본: 그림은 첫 프레임(PNG·GIF는 직접, 나머지는 SkiaSharp), 영상·AVIF·HEIC는 ffmpeg가 있으면 뽑은 첫 프레임.
+    /// 못 만들면 null(영상은 필름 그림이 남음).
+    /// </summary>
+    private static PixelImage? LoadPreview(string path, Lazy<string?> ffmpeg, CancellationToken token)
+    {
+        if (!MediaFormats.NeedsFfmpeg(path) || ImageUtil.CountFrames(path) > 0)
+            return ImageUtil.DecodeAnimation(path, maxFrames: 1)?.Images[0];
+        return ffmpeg.Value is { } exe ? FfmpegTool.FirstFrame(exe, path, ThumbSize * 2, token) : null;
+    }
+
+    /// <summary>영상 표시: 썸네일 오른쪽 아래 필름 배지.</summary>
+    private static Border VideoBadge()
+    {
+        var badge = new Border
+        {
+            Width = 18,
+            Height = 18,
+            CornerRadius = new CornerRadius(4),
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(2),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, -4, -2),
+            Child = new IconView(VectorIcon.Film, AppTheme.TextBrush, 2.0),
+        };
+        ToolTip.SetTip(badge, UiStrings.FileBrowser_VideoBadge);
+        return badge;
     }
 
     /// <summary>파일 하나의 썸네일을 다시 만들고(저장 후) 목록을 갱신한다.</summary>
@@ -778,7 +820,8 @@ public sealed class FileBrowserPanel : UserControl
             Item(UiStrings.S_FileBrowserPanel_ListMenu_1299ADE057, () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
             .. image ? [Item(UiStrings.Pixelate_MenuItem, () => PixelateRequested?.Invoke(this, paths[0]), true)] : Array.Empty<Control>(),
             new Separator(),
-            Item(count >= 2 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_1C7165B3A5,count) : UiStrings.S_FileBrowserPanel_ListMenu_06B813FF5F, MergeSelected, count >= 2),
+            Item(count >= 2 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_1C7165B3A5,count) : UiStrings.S_FileBrowserPanel_ListMenu_06B813FF5F, MergeSelected,
+                count >= 2 && paths.All(p => IsProject(p) || p.EndsWith(".png", StringComparison.OrdinalIgnoreCase))),
             new Separator(),
             Item(UiStrings.S_FileBrowserPanel_ListMenu_9C29BBC4F7, () => { if (SelectedItem is { } item) BeginRename(item); }, count == 1, new KeyGesture(Key.F2), DispatcherPriority.Background),
             Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_B1C1369643,Platform.FileManagerName), ShowInExplorer, count > 0 || CurrentFolder is not null),
@@ -1260,9 +1303,9 @@ public sealed class FileBrowserPanel : UserControl
     /// <summary>감시 스레드에서 불린다.</summary>
     private void OnFsEvent(object sender, FileSystemEventArgs e)
     {
-        bool isPng = e.FullPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || IsProject(e.FullPath);
+        bool isListed = MediaFormats.KindOf(e.FullPath) != MediaKind.None;
         bool isDir = e.ChangeType != WatcherChangeTypes.Changed && !Path.HasExtension(e.FullPath);
-        if (!isPng && !isDir && !e.FullPath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)
+        if (!isListed && !isDir && !e.FullPath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)
             && !e.FullPath.EndsWith(SidecarIO.Extension, StringComparison.OrdinalIgnoreCase)) return;
         Queue(e.FullPath, isDir);
     }

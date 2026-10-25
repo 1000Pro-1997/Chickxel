@@ -44,4 +44,6 @@
   <data name="Refs_Example_grass_Title" xml:space="preserve"><value>풀 타일</value></data>
   <data name="Refs_Example_grass_Description" xml:space="preserve"><value>16×16 풀 덮인 흙 지면 타일. 위쪽은 3단 녹색 풀, 들쭉날쭉한 어두운 경계선 아래는 3단 갈색 흙에 흩뿌린 돌 점이며, 좌우 끝이 이어져 가로로 반복해도 이음매가 보이지 않습니다.</value></data>
   <data name="Refs_Example_grass_Tags" xml:space="preserve"><value>풀, 흙, 지면, 타일, 반복, 16px</value></data>
+  <data name="Gif_InvalidFile" xml:space="preserve"><value>GIF 파일이 아니거나 머리글이 잘못되었습니다.</value></data>
+  <data name="Gif_NoFrames" xml:space="preserve"><value>GIF에 읽을 수 있는 프레임이 없습니다.</value></data>
 </root>

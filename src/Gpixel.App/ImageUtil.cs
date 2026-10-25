@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Avalonia.Platform;
+using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using SkiaSharp;
 
@@ -90,34 +91,118 @@ public static class ImageUtil
     }
 
     /// <summary>
-    /// 그림 파일(PNG·JPG·BMP·GIF·WebP — 움직이는 것 포함)을 프레임마다 완성된 그림(RGBA 그대로)과 길이(ms)로 푼다.
+    /// 그림 파일(PNG·APNG·JPG·BMP·GIF·WebP·ICO·WBMP — 움직이는 것 포함)을 프레임마다 완성된 그림(RGBA 그대로)과 길이(ms)로 푼다.
+    /// GIF는 <see cref="GifReader"/>(처리 방법·투명 직접 합성), PNG는 <see cref="PngIO"/>(움직이는 PNG면 <see cref="ApngReader"/>),
+    /// 나머지는 SkiaSharp(움직이는 WebP는 코덱이 앞 프레임 위에 합성). <paramref name="maxFrames"/>까지만 푼다.
     /// 풀 수 없거나 크기가 <see cref="PixelImage.MaxSize"/>를 넘으면 null. 파일을 열 수 없으면 IO 예외.
     /// </summary>
-    public static (IReadOnlyList<PixelImage> Images, IReadOnlyList<int> DurationsMs)? DecodeFrames(string path)
+    public static (IReadOnlyList<PixelImage> Images, IReadOnlyList<int> DurationsMs)? DecodeFrames(string path, int maxFrames = int.MaxValue)
+    {
+        if (DecodeAnimation(path, maxFrames) is not { } a) return null;
+        return (a.Images, a.DurationsMs);
+    }
+
+    /// <summary><see cref="DecodeFrames"/>와 같고 결과를 <see cref="DecodedAnimation"/>으로.</summary>
+    public static DecodedAnimation? DecodeAnimation(string path, int maxFrames = int.MaxValue)
+    {
+        try
+        {
+            var header = ReadHeader(path);
+            if (GifReader.IsGif(header)) return GifReader.Load(path, maxFrames);
+            if (IsPng(header))
+            {
+                if (ApngReader.Load(path, maxFrames) is { } apng) return apng;
+                var png = PngIO.Load(path);
+                return new DecodedAnimation(png.Width, png.Height, [png], [Frame.DefaultDurationMs]);
+            }
+        }
+        catch (InvalidDataException)
+        {
+            // 직접 읽기가 못 읽는 파일은 SkiaSharp에 맡긴다.
+        }
+        return DecodeWithSkia(path, maxFrames);
+    }
+
+    /// <summary>프레임 수만 센다(픽셀은 풀지 않음 — 많은 프레임을 열기 전에 묻기용). 읽을 수 없으면 0.</summary>
+    public static int CountFrames(string path)
+    {
+        try
+        {
+            var header = ReadHeader(path);
+            if (GifReader.IsGif(header)) return GifReader.Count(path).Frames;
+            if (IsPng(header)) return Math.Max(1, ApngReader.CountFrames(path));
+            using var codec = SKCodec.Create(path);
+            return codec is null ? 0 : Math.Max(1, codec.FrameCount);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return 0;
+        }
+    }
+
+    private static byte[] ReadHeader(string path)
+    {
+        using var fs = File.OpenRead(path);
+        var buf = new byte[8];
+        int n = fs.ReadAtLeast(buf, buf.Length, throwOnEndOfStream: false);
+        return buf[..n];
+    }
+
+    private static bool IsPng(ReadOnlySpan<byte> header) => header.Length >= 8 && header[..8].SequenceEqual((ReadOnlySpan<byte>)[137, 80, 78, 71, 13, 10, 26, 10]);
+
+    private static DecodedAnimation? DecodeWithSkia(string path, int maxFrames)
     {
         using var codec = SKCodec.Create(path);
         if (codec is null) return null;
         int w = codec.Info.Width, h = codec.Info.Height;
         if (w <= 0 || h <= 0 || w > PixelImage.MaxSize || h > PixelImage.MaxSize) return null;
         var infos = codec.FrameInfo;
-        int count = Math.Max(1, infos.Length);
+        int count = Math.Clamp(infos.Length, 1, Math.Max(1, maxFrames));
         var info = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Unpremul);
         using var bitmap = new SKBitmap(info);
         var images = new List<PixelImage>(count);
         var durations = new List<int>(count);
         for (int i = 0; i < count; i++)
         {
-            // 앞 프레임 위에 이어 푼다(코덱이 그 프레임을 바탕으로 쓸 수 없다고 하면 처음부터).
+            // 앞 프레임 위에 이어 푼다(코덱이 그 프레임을 바탕으로 쓸 수 없다고 하면 — 앞 프레임이 "이전으로"면 — 처음부터: 코덱이 필요한 프레임을 스스로 푼다).
             var result = codec.GetPixels(info, bitmap.GetPixels(), new SKCodecOptions(i, i > 0 ? i - 1 : -1));
             if (result == SKCodecResult.InvalidParameters && i > 0) result = codec.GetPixels(info, bitmap.GetPixels(), new SKCodecOptions(i, -1));
-            if (result is not (SKCodecResult.Success or SKCodecResult.IncompleteInput)) return images.Count > 0 ? (images, durations) : null;
+            if (result is not (SKCodecResult.Success or SKCodecResult.IncompleteInput)) break;
             var pixels = new Color32[w * h];
             MemoryMarshal.Cast<byte, Color32>(bitmap.GetPixelSpan()).Slice(0, pixels.Length).CopyTo(pixels);
             images.Add(new PixelImage(w, h, pixels));
-            int ms = i < infos.Length ? infos[i].Duration : Frame.DefaultDurationMs;
-            durations.Add(ms > 10 ? ms : Frame.DefaultDurationMs);
+            durations.Add(FrameDurations.FromFile(i < infos.Length ? infos[i].Duration : 0));
         }
-        return (images, durations);
+        if (images.Count == 0) return null;
+        if (codec.EncodedOrigin != SKEncodedOrigin.TopLeft)
+            for (int i = 0; i < images.Count; i++) images[i] = Orient(images[i], codec.EncodedOrigin);
+        return new DecodedAnimation(images[0].Width, images[0].Height, images, durations);
+    }
+
+    /// <summary>EXIF 방향(사진의 회전·뒤집기)을 픽셀에 적용한다.</summary>
+    private static PixelImage Orient(PixelImage src, SKEncodedOrigin origin)
+    {
+        int w = src.Width, h = src.Height;
+        bool swap = origin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
+        int ow = swap ? h : w, oh = swap ? w : h;
+        var dst = new PixelImage(ow, oh);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var (dx, dy) = origin switch
+                {
+                    SKEncodedOrigin.TopRight => (w - 1 - x, y),
+                    SKEncodedOrigin.BottomRight => (w - 1 - x, h - 1 - y),
+                    SKEncodedOrigin.BottomLeft => (x, h - 1 - y),
+                    SKEncodedOrigin.LeftTop => (y, x),
+                    SKEncodedOrigin.RightTop => (h - 1 - y, x),
+                    SKEncodedOrigin.RightBottom => (h - 1 - y, w - 1 - x),
+                    SKEncodedOrigin.LeftBottom => (y, w - 1 - x),
+                    _ => (x, y),
+                };
+                dst.Pixels[dy * ow + dx] = src.Pixels[y * w + x];
+            }
+        return dst;
     }
 
     /// <summary>그림 파일의 크기만 읽는다(픽셀은 풀지 않음). 읽을 수 없으면 null.</summary>
@@ -131,7 +216,9 @@ public static class ImageUtil
                 return new Size(w, h);
             }
             using var codec = SKCodec.Create(path);
-            return codec is null ? null : new Size(codec.Info.Width, codec.Info.Height);
+            if (codec is null) return null;
+            bool swap = codec.EncodedOrigin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
+            return swap ? new Size(codec.Info.Height, codec.Info.Width) : new Size(codec.Info.Width, codec.Info.Height);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {

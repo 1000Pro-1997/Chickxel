@@ -196,6 +196,9 @@ public sealed class PixelCanvas : Control
         };
     }
 
+    /// <summary>키·창 비활성 처리기를 단 창(캔버스를 다른 칸으로 옮기면 떼었다 다시 단다 — 탭 묶음 나누기).</summary>
+    private TopLevel? _keyTop;
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -203,11 +206,14 @@ public sealed class PixelCanvas : Control
         // Alt를 누르고 떼면(캔버스에 포커스가 없어도) 커서를 스포이드로 바꾸거나 되돌린다. Ctrl(⌘)은 누르는 동안 임시 이동 도구.
         if (TopLevel.GetTopLevel(this) is { } top)
         {
+            _keyTop = top;
             top.AddHandler(KeyDownEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
             top.AddHandler(KeyUpEvent, OnWindowKey, RoutingStrategies.Tunnel, handledEventsToo: true);
-            if (top is Window window) window.Deactivated += (_, _) => EndTempMove();
+            if (top is Window window) window.Deactivated += OnWindowDeactivated;
         }
     }
+
+    private void OnWindowDeactivated(object? sender, EventArgs e) => EndTempMove();
 
     private void OnWindowKey(object? sender, KeyEventArgs e)
     {
@@ -355,6 +361,13 @@ public sealed class PixelCanvas : Control
         base.OnDetachedFromVisualTree(e);
         _antsTimer.Stop();
         _peekTimer.Stop();
+        if (_keyTop is { } top)
+        {
+            _keyTop = null;
+            top.RemoveHandler(KeyDownEvent, OnWindowKey);
+            top.RemoveHandler(KeyUpEvent, OnWindowKey);
+            if (top is Window window) window.Deactivated -= OnWindowDeactivated;
+        }
     }
 
     // ───────────── 보기 옵션 ─────────────

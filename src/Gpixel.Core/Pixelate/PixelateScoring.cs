@@ -62,6 +62,8 @@ public sealed record PixelateScore(double Total, IReadOnlyList<ScorePart> Parts)
 /// CIEDE2000은 ΔE00/200 — <see cref="ColorMetric.CiedeScale"/>)로 0.02(겨우 보이는 차이)까지는 0, 0.10에서 가장 나쁨.
 /// 블록 반복도는 0.65(제대로 줄인 표본 결과 0.17~0.34, 두 칸 두께 외곽선·눈인 걷기 표본의 맞는 크기 0.64)까지는 0, 0.95에서 가장 나쁨(칸을 진짜 칸의
 /// ½~⅓로 고른 표본 결과 0.52~1.0, 깨끗한 그림을 키운 것은 1.0) — 칸이 작을수록 충실도는 늘 좋아지므로 이것이 없으면 점수가 그림을 덜 줄이는 쪽으로 끌린다.
+/// 실패한 결과(<see cref="PixelateResult.Failed"/> — 비었거나 거의 비었음·한 색·너무 작음, <see cref="Pixelator.CheckFailure"/>)는 항목과 상관없이 0점: 항목은 결과에 있는
+/// 픽셀로만 재서, 다 투명한 결과는 충실도(가중치 4/17)·프레임 사이 일관성만 가장 나쁘고 나머지는 나쁠 것이 없어 66점쯤 나왔다(표본 엘프 걷기 시트 1086×362).
 /// </summary>
 public static class PixelateScoring
 {
@@ -84,6 +86,6 @@ public static class PixelateScoring
         };
         double tw = parts.Sum(p => Math.Max(0, p.Weight));
         double bad = tw <= 0 ? 0 : parts.Sum(p => Math.Max(0, p.Weight) * p.Badness) / tw;
-        return new PixelateScore(100 * (1 - bad), parts);
+        return new PixelateScore(r.Failed ? 0 : 100 * (1 - bad), parts);
     }
 }

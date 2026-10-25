@@ -14,6 +14,8 @@ public sealed class AppSettings
     public List<string> RecentFolders { get; set; } = new();
     public List<string> RecentFiles { get; set; } = new();
     public string? LastFolder { get; set; }
+    /// <summary>끌 때 열려 있던 문서 탭(좌우 묶음·순서·고른 탭·포커스) — 켤 때 다시 연다(없어진 파일은 건너뜀). null = 없음.</summary>
+    public TabSession? OpenTabs { get; set; }
     public bool IncludeSubfolders { get; set; } = true;
     /// <summary>화면 언어 코드(예: "ko", "en", CSV로 더한 "ja"). 처음 켤 때 컴퓨터 언어로 정함(맞는 언어가 없으면 영어) — <see cref="Localization.UiLanguage"/>.</summary>
     public string? Language { get; set; }
@@ -108,8 +110,13 @@ public sealed class AppSettings
     public bool AiCurrentFileOnly { get; set; }
     /// <summary>AI 참고 자료 폴더(null = 기본 <c>&lt;설정 폴더&gt;/Gpixel/References</c>, <see cref="AppReferences.FolderOf"/>).</summary>
     public string? ReferencesFolder { get; set; }
-    /// <summary>AI 참고 자료에 기본 예시 그림을 보임(목록·AI 검색).</summary>
-    public bool ReferencesShowExamples { get; set; } = true;
+    /// <summary>
+    /// AI 참고 자료에 기본 예시 그림을 보임(목록·AI 검색·그림 생성의 스타일 참고). 기본 예시의 그림 품질이 낮아 지금은 기본으로 끈다
+    /// (환경 설정에서 다시 켤 수 있음).
+    /// </summary>
+    public bool ReferencesShowExamples { get; set; }
+    /// <summary>기본 예시 끄기를 예전 설정에도 한 번 적용했는지.</summary>
+    public bool ReferencesExamplesOffApplied { get; set; }
     /// <summary>탭마다 마지막으로 보던 저장된 대화: AI id("claude"/"codex") → 대화 id. 없으면 대화 목록을 보던 것.</summary>
     public Dictionary<string, string>? ChatLastOpen { get; set; }
     /// <summary>Claude 모델 별칭(null = Claude Code 기본값, "opus"/"sonnet"/"haiku").</summary>
@@ -118,6 +125,8 @@ public sealed class AppSettings
     public string? ClaudePath { get; set; }
     /// <summary>Claude Code가 알려 준 실제 모델 ID: 보낸 별칭(기본값은 "default:" + Claude Code 설정의 모델) → ID. 목록에 버전을 보이는 데 쓴다.</summary>
     public Dictionary<string, string>? ClaudeResolvedModels { get; set; }
+    /// <summary>ffmpeg 실행 파일 경로를 직접 정함(null = PATH·흔한 설치 위치에서 찾음). 영상·AVIF·HEIC 열기에 쓴다.</summary>
+    public string? FfmpegPath { get; set; }
     /// <summary>추천 Codex 모델(목록에 "추천"으로 표시, 새 설정의 기본값).</summary>
     public const string RecommendedCodexModel = "gpt-6-astra";
     /// <summary>Codex 모델(null = Codex 설정의 기본값). 처음엔 <see cref="RecommendedCodexModel"/>.</summary>
@@ -134,6 +143,8 @@ public sealed class AppSettings
     public int ChatWidth { get; set; } = 420;
     public int ChatHeight { get; set; } = 640;
     public bool ChatOpen { get; set; }
+    /// <summary>AI 그리기 설정(채팅의 설정 칸 — 그리는 방식, 생성·변환 옵션).</summary>
+    public Gpixel.Core.AiDraw.AiDrawSettings AiDraw { get; set; } = new();
 
     // AI 그림 픽셀로 정리
     /// <summary>마지막 단계 설정(JSON — <see cref="Gpixel.Core.Pixelate.PixelatePresets.SerializeSettings"/>). null = 기본.</summary>
@@ -256,6 +267,13 @@ public sealed class AppSettings
             s.CodexModel ??= RecommendedCodexModel;
             s.CodexRecommendedApplied = true;
         }
+        if (!s.ReferencesExamplesOffApplied)
+        {
+            s.ReferencesShowExamples = false;
+            s.ReferencesExamplesOffApplied = true;
+        }
+        s.AiDraw ??= new();
+        s.AiDraw.FrameCounts ??= Gpixel.Core.AiDraw.AiDrawActions.DefaultFrameCounts();
         return s;
     }
 

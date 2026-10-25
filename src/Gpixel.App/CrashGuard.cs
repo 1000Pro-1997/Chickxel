@@ -295,7 +295,7 @@ internal sealed class CrashDialog : DialogBase
     public CrashDialog(string message) : base(UiStrings.S_CrashGuard_CrashDialog_E9BDC482E3)
     {
         Body.Children.Add(MessageDialog.MessageRow(message, MessageIcon.Error));
-        var report = Ui.Button(VectorIcon.MessagesSquare, UiStrings.Crash_ReportOnDiscord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)).Tip(AppInfo.DiscordUrl);
+        var report = Ui.DiscordButton(UiStrings.Crash_ReportOnDiscord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl));
         report.HorizontalAlignment = HorizontalAlignment.Left;
         var feedback = new StackPanel { Spacing = 4, Margin = new Thickness(42, 12, 0, 0) }; // 메시지 글과 왼쪽을 맞춘다(아이콘 30 + 간격 12).
         feedback.Children.Add(new TextBlock { Text = UiStrings.Crash_ReportOnDiscord_Hint, TextWrapping = TextWrapping.Wrap, MaxWidth = 520, HorizontalAlignment = HorizontalAlignment.Left, Foreground = AppTheme.DimTextBrush });

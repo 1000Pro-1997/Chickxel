@@ -131,4 +131,27 @@ public class ImageDropTests
         Assert.Equal(p.IndexOf(group) + 1, p.IndexOf(layer));
         Assert.False(layer.IsPart);
     }
+
+    [Fact]
+    public void Apply_ReportsUncroppedLocation_AndFloatingCopyCropsOnlyWhereAnchored()
+    {
+        // 64×64 그림을 16×16 캔버스에: 캔버스 가운데에 놓여 잘려 들어가고, 위치는 잘리기 전 자리.
+        var p = new SpriteProject(16, 16);
+        var image = Solid(64, 64, Red);
+        image.Set(0, 0, Blue); // 왼쪽 위 모서리 표시
+        var result = ImageDrop.Apply(p, [One("big", image)], 0, 0, new Point(8, 8), "drop");
+        Assert.True(result.Oversized);
+        Assert.Equal(new Point(-24, -24), Assert.Single(result.Locations));
+        var cel = p.GetCel(p.IndexOf(result.Layers[0]), 0)!;
+        Assert.Equal(Red, cel.Get(0, 0));
+
+        // 잘리기 전 원본을 그 자리에 띄워 두면 캔버스 밖 픽셀도 남아 있다가, 옮긴 뒤 내려놓을 때 그 자리 기준으로 잘린다.
+        var sel = new Selection();
+        cel.Clear(Color32.Transparent);
+        sel.SetFloating(image.Clone(), new PixelMask(new Rectangle(result.Locations[0], image.Size)));
+        sel.MoveBy(cel, 24, 24);
+        sel.Anchor(cel);
+        Assert.Equal(Blue, cel.Get(0, 0));
+        Assert.Equal(Red, cel.Get(15, 15));
+    }
 }

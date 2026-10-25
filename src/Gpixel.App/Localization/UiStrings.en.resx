@@ -509,7 +509,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_6657ADE48E" xml:space="preserve"><value>Tools</value></data>
   <data name="S_Dialogs_Shortcuts_669BA7D949" xml:space="preserve"><value>Add outline (primary color)</value></data>
   <data name="S_Dialogs_Shortcuts_6759557E42" xml:space="preserve"><value>Swap primary ↔ secondary color</value></data>
-  <data name="S_Dialogs_Shortcuts_6760ED067E" xml:space="preserve"><value>Open (.gpixel / import PNG)</value></data>
+  <data name="S_Dialogs_Shortcuts_6760ED067E" xml:space="preserve"><value>Open (.gpixel · image · GIF · video)</value></data>
   <data name="S_Dialogs_Shortcuts_699BE4B36E" xml:space="preserve"><value>Place part (arrow keys 1px · Shift 8px)</value></data>
   <data name="S_Dialogs_Shortcuts_6AF34AD7B6" xml:space="preserve"><value>Double-click a part in the group</value></data>
   <data name="S_Dialogs_Shortcuts_6DB7F163BF" xml:space="preserve"><value>Wheel</value></data>
@@ -1071,7 +1071,7 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_KindTable_34F6760645" xml:space="preserve"><value>Rotates the image (RotSprite — no new colors or translucency).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_361470DFA9" xml:space="preserve"><value>Gently floats up and down (idle motion).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_4230F44F0C" xml:space="preserve"><value>Adds depth by brightening the edge facing the light and darkening the opposite side.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_45261BC59C" xml:space="preserve"><value>Draws an outline around the image (outside = beyond the image, inside = on edge pixels).</value></data>
+  <data name="S_LayerEffectsDialog_KindTable_45261BC59C" xml:space="preserve"><value>Draws an outline around the image (outside = beyond the image, inside = on edge pixels). The line is a fixed color or the touching pixels' color made darker or lighter (shade from neighbors).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_4A3575A660" xml:space="preserve"><value>Melt</value></data>
   <data name="S_LayerEffectsDialog_KindTable_4E3A3D50CE" xml:space="preserve"><value>Swaps chosen colors for other colors (palette swap — the same image in different colors).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_4E942C831D" xml:space="preserve"><value>Repeatedly shows and hides (e.g. to indicate invincibility frames).</value></data>
@@ -2633,6 +2633,13 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>Hide original (outline only)</value></data>
   <data name="EffectOutline_HideOriginalTip" xml:space="preserve"><value>Erases the picture the outline is drawn around so only the line remains (inside: only the edge ring). Effects clipped to this outline apply to the line only.</value></data>
   <data name="EffectOutline_HideOriginalSummary" xml:space="preserve"><value> · outline only</value></data>
+  <data name="EffectOutline_ColorMode" xml:space="preserve"><value>Color mode</value></data>
+  <data name="EffectOutline_ModeFixed" xml:space="preserve"><value>Fixed color</value></data>
+  <data name="EffectOutline_ModeShade" xml:space="preserve"><value>Shade from neighbors</value></data>
+  <data name="EffectOutline_ModeTip" xml:space="preserve"><value>Fixed color: paints the whole line one color (or a gradient). Shade from neighbors: paints each line pixel with the color of the sprite pixel it touches, made darker or lighter, so the line next to blue is dark blue and next to grey is dark grey.</value></data>
+  <data name="EffectOutline_ShadeAmount" xml:space="preserve"><value>Shade</value></data>
+  <data name="EffectOutline_ShadeAmountTip" xml:space="preserve"><value>Negative = darker than the neighboring pixel (−100 = black), positive = lighter (100 = white). Hue is kept; only lightness changes.</value></data>
+  <data name="EffectOutline_ShadeSummary" xml:space="preserve"><value>shade {0}%</value></data>
   <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>Built-in</value></data>
   <data name="EffectPreset_CustomTab" xml:space="preserve"><value>Custom</value></data>
   <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>Save all effects</value></data>
@@ -2702,6 +2709,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_ToolsIntro" xml:space="preserve"><value>The AI reads and edits your drawing only through the tools Gpixel provides (no shell, web, or other programs). It never touches locked layers.</value></data>
   <data name="Chat_Help_GroupView" xml:space="preserve"><value>Look at the drawing</value></data>
   <data name="Chat_Help_GroupView_Text" xml:space="preserve"><value>Reads the open document's size, frames, and layers, views it as an image, or reads exact pixel colors.</value></data>
+  <data name="Chat_Help_GroupGenerate" xml:space="preserve"><value>Generate image → pixelate</value></data>
+  <data name="Chat_Help_GroupGenerate_Text" xml:space="preserve"><value>Draws characters, items and animations (all frames on one sheet) with Codex image generation and converts them to pixel art. Choose the mode and options in Drawing settings in the header.</value></data>
   <data name="Chat_Help_GroupDraw" xml:space="preserve"><value>Draw</value></data>
   <data name="Chat_Help_GroupDraw_Text" xml:space="preserve"><value>Paints blocks of pixels or single pixels, lines, rectangles, ellipses, fills, clears, and replaces colors.</value></data>
   <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>Frames and animation</value></data>
@@ -2987,6 +2996,9 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Source" xml:space="preserve"><value>Source (wheel: zoom, drag: pan, double-click: fit)</value></data>
   <data name="Pixelate_ShowGrid" xml:space="preserve"><value>Show grid</value></data>
   <data name="Pixelate_ShowMask" xml:space="preserve"><value>Show background removed</value></data>
+  <data name="Pixelate_Bar_Size" xml:space="preserve"><value>Output size</value></data>
+  <data name="Pixelate_Bar_AutoTip" xml:space="preserve"><value>On: the output size follows the pixel size (or the factor set in 4. Output size) — the grey numbers are the selected result's size. Off: fit to the width×height you enter (same setting as 4. Output size).</value></data>
+  <data name="Pixelate_Bar_KeepAspectTip" xml:space="preserve"><value>Keep aspect: changing the width updates the height (and vice versa) by the current result's ratio, and the sprite keeps its ratio when fitted.</value></data>
   <data name="Pixelate_Fps" xml:space="preserve"><value>FPS</value></data>
   <data name="Pixelate_Play" xml:space="preserve"><value>Play/pause</value></data>
   <data name="Pixelate_Status_Running" xml:space="preserve"><value>Building candidates… {done}/{total}</value></data>
@@ -3020,19 +3032,28 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Score_BlockRepetition" xml:space="preserve"><value>Block repetition</value></data>
   <data name="Pixelate_Score_BlockRepetition_Tip" xml:space="preserve"><value>How much the result is still an enlarged image: the share of edge cells (judged by each cell's average source color) that sit in a same-color 2×2 block. High means the pixel size is a fraction of the real pixel, so the result is needlessly large; dithering can't hide it. Up to 65% is fine; 95% is the worst.</value></data>
   <data name="Pixelate_Result_Large" xml:space="preserve"><value>Large result ({width}×{height}) — check the pixel size</value></data>
+  <data name="Pixelate_Result_Failed" xml:space="preserve"><value>{reason} — the pixel size was detected wrong ({scale}px). Set the pixel size manually or pick another candidate</value></data>
+  <data name="Pixelate_Result_Retried" xml:space="preserve"><value>The first detected pixel size ({from}px) gave an empty or broken result, so it was redone with another estimate ({scale}px)</value></data>
+  <data name="Pixelate_Failure_Empty" xml:space="preserve"><value>The result is empty (all transparent)</value></data>
+  <data name="Pixelate_Failure_NearlyEmpty" xml:space="preserve"><value>The result is nearly empty (only part of the sprite is left)</value></data>
+  <data name="Pixelate_Failure_OneColor" xml:space="preserve"><value>The result has only one color</value></data>
+  <data name="Pixelate_Failure_TooSmall" xml:space="preserve"><value>The result is too small (under 8×8)</value></data>
+  <data name="Pixelate_Grid_Cap" xml:space="preserve"><value>Pixel size limit {cap}px (1/{cells} of the frame's shorter side — so frame spacing or blob size isn't taken as a pixel)</value></data>
   <data name="Pixelate_Preview_Result" xml:space="preserve"><value>Result {index}/{count}</value></data>
   <data name="Pixelate_Preview_Source" xml:space="preserve"><value>Source</value></data>
   <data name="Pixelate_Grid_DoubleOutline" xml:space="preserve"><value>The outline is drawn {thickness} pixels thick, so 'Thin outline to 1 px' brings it down to 1 px.</value></data>
   <data name="Pixelate_PrevFrame" xml:space="preserve"><value>Previous frame (←)</value></data>
   <data name="Pixelate_NextFrame" xml:space="preserve"><value>Next frame (→)</value></data>
   <data name="Pixelate_ColorTip" xml:space="preserve"><value>{hex} · {count} pixels</value></data>
-  <data name="Pixelate_ColorTip_Excluded" xml:space="preserve"><value>{hex} · excluded (click to restore)</value></data>
-  <data name="Pixelate_Colors_Tip" xml:space="preserve"><value>Left-click: exclude or restore this color (in the current result only — its pixels become the remaining color nearest to their source cell) · Pinned colors: left-click to unpin · Right-click: highlight this color in the result · +: add a color from the source</value></data>
+  <data name="Pixelate_ColorTip_Excluded" xml:space="preserve"><value>{hex} · excluded</value></data>
+  <data name="Pixelate_Colors_Tip" xml:space="preserve"><value>Left-click: show where used · Right-click: exclude/restore this color (in the current result only — its pixels become the remaining color nearest to their source cell) · Pinned colors: right-click to unpin · +: add a color from the source</value></data>
+  <data name="Pixelate_ColorClick" xml:space="preserve"><value>Left-click: show where used · Right-click: exclude/restore</value></data>
+  <data name="Pixelate_ColorClick_Pinned" xml:space="preserve"><value>Left-click: show where used · Right-click: unpin</value></data>
   <data name="Pixelate_Exclude_Notice" xml:space="preserve"><value>{count} colors excluded</value></data>
   <data name="Pixelate_Exclude_RestoreAll" xml:space="preserve"><value>Restore all</value></data>
   <data name="Pixelate_Exclude_LastColor" xml:space="preserve"><value>The last remaining color can't be excluded.</value></data>
-  <data name="Pixelate_ColorTip_Pinned" xml:space="preserve"><value>{hex} · {count} pixels · pinned (click to unpin)</value></data>
-  <data name="Pixelate_ColorTip_PinnedUnused" xml:space="preserve"><value>{hex} · pinned · not used in the result (click to unpin)</value></data>
+  <data name="Pixelate_ColorTip_Pinned" xml:space="preserve"><value>{hex} · {count} pixels · pinned</value></data>
+  <data name="Pixelate_ColorTip_PinnedUnused" xml:space="preserve"><value>{hex} · pinned · not used in the result</value></data>
   <data name="Pixelate_Pin_Add" xml:space="preserve"><value>Add color from source</value></data>
   <data name="Pixelate_Pin_PickHint" xml:space="preserve"><value>Click a source cell to add its color as a pinned color · Shift+click: keep adding · Esc, right-click or +: stop</value></data>
   <data name="Pixelate_Pin_EmptyCell" xml:space="preserve"><value>That cell is empty (transparent) — click a cell with color.</value></data>
@@ -3084,9 +3105,9 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Optimizer settings (items to try, budget, trial history)</value></data>
   <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
-  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>Trial {done}/{total} · best {score}</value></data>
+  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>Pass {pass} · trial {done}/{total} · best {score}</value></data>
   <data name="Pixelate_Opt_Note" xml:space="preserve"><value>The score weights (Advanced) are what the optimizer maximizes.</value></data>
-  <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial</value></data>
+  <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial (faint vertical lines = a new pass starts)</value></data>
   <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>Optimized</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>Trial history</value></data>
   <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>Rank</value></data>
@@ -3094,7 +3115,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_ColSettings" xml:space="preserve"><value>Settings</value></data>
   <data name="Pixelate_Opt_StartRow" xml:space="preserve"><value>(start settings)</value></data>
   <data name="Pixelate_Opt_Preparing" xml:space="preserve"><value>Preparing optimizer…</value></data>
-  <data name="Pixelate_Opt_Done" xml:space="preserve"><value>Optimized: {start} → {best} · {trials} trials · {seconds}s · {reason}</value></data>
+  <data name="Pixelate_Opt_Done" xml:space="preserve"><value>{passes} passes · {start} → {best} · {trials} trials · {seconds}s · {reason}</value></data>
   <data name="Pixelate_Opt_Stop_Done" xml:space="preserve"><value>no further improvement</value></data>
   <data name="Pixelate_Opt_Stop_Trials" xml:space="preserve"><value>trial budget used</value></data>
   <data name="Pixelate_Opt_Stop_Time" xml:space="preserve"><value>time budget used</value></data>
@@ -3108,9 +3129,9 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_SumJaggies" xml:space="preserve"><value>jaggies</value></data>
   <data name="Pixelate_Grid_Adjust" xml:space="preserve"><value>Add to auto pixel size (px)</value></data>
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>Added to the pixel size the auto grid finds (the auto optimizer changes the pixel size with this).</value></data>
-  <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Click the result or the source image: enlarge — in the enlarged view, clicking a result pixel or a source cell highlights its color (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
+  <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Left-click the result or the source image: enlarge · Right-click the result image: exclude/restore that pixel's color — in the enlarged view, Left-click: show where used · Right-click: exclude/restore (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>Enlarged view</value></data>
-  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Click a result pixel: highlight its color · Click a source cell: highlight the result color it became · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Result pixel Left-click: show where used · Right-click: exclude/restore · Source cell Left-click: show the result color it became · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
   <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>Close (Esc)</value></data>
   <data name="Pixelate_Grid_Local" xml:space="preserve"><value>Local cell correction</value></data>
   <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>Re-fits the image-wide cell boundaries per band (a few cell rows/columns) to the block edges found there — for AI images drawn half a cell off in places. The cell overlay shows the bent boundaries as they are (skipped for cells under 5 px).</value></data>
@@ -3119,4 +3140,114 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Grid_LocalBand" xml:space="preserve"><value>Band (cells)</value></data>
   <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>Width of each band whose boundaries are fitted separately (cells). Smaller follows more closely (1 = every row), larger is smoother.</value></data>
   <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>Close settings</value></data>
+  <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>Drawing settings (generate image → pixelate / draw pixels directly)</value></data>
+  <data name="AiDraw_Settings_Close" xml:space="preserve"><value>Close drawing settings</value></data>
+  <data name="AiDraw_Settings_Title" xml:space="preserve"><value>Drawing settings</value></data>
+  <data name="AiDraw_Mode_Title" xml:space="preserve"><value>Drawing mode</value></data>
+  <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>Generate image → pixelate</value></data>
+  <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates a high-quality image and Gpixel converts it to pixel art (background removal, grid and palette are automatic). Animations are drawn with all frames on one sprite sheet, then split and converted. Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
+  <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>Draw pixels directly</value></data>
+  <data name="AiDraw_Mode_Direct_Text" xml:space="preserve"><value>The AI places pixels one by one with the pixel tools. Best for small fixes and exact pixel-level edits.</value></data>
+  <data name="AiDraw_Mode_ClaudeWarning" xml:space="preserve"><value>Claude can't create images, so it draws pixels directly. Image generation is available in the Codex tab.</value></data>
+  <data name="AiDraw_Codex_Checking" xml:space="preserve"><value>Checking Codex CLI…</value></data>
+  <data name="AiDraw_Codex_Ready" xml:space="preserve"><value>Codex CLI: logged in — image generation is ready.</value></data>
+  <data name="AiDraw_Codex_NotInstalled" xml:space="preserve"><value>Codex CLI was not found, so images can't be generated (pixels are drawn directly). You can install it from the Codex tab.</value></data>
+  <data name="AiDraw_Codex_NotLoggedIn" xml:space="preserve"><value>Codex CLI is not logged in. Log in from the Codex tab to generate images.</value></data>
+  <data name="AiDraw_Codex_Unknown" xml:space="preserve"><value>Couldn't check Codex CLI: {message}</value></data>
+  <data name="AiDraw_Options_Title" xml:space="preserve"><value>Generation options</value></data>
+  <data name="AiDraw_Size" xml:space="preserve"><value>Result size</value></data>
+  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>Long side of the converted pixel art (px). Auto keeps the pixel grid found in the image.</value></data>
+  <data name="AiDraw_Size_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="AiDraw_Size_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>Remove background</value></data>
+  <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>Removes the background when converting. Unless you ask for a background, images are also generated on a plain transparent background.</value></data>
+  <data name="AiDraw_AutoOptimize" xml:space="preserve"><value>Auto-optimize the conversion</value></data>
+  <data name="AiDraw_AutoOptimize_Tip" xml:space="preserve"><value>Auto-optimizes like the Pixelate window (its chosen items, trials and time — by default everything except the outline-fit mode, 2000 trials / 120 s) and inserts the top-scoring result. If the top result is a failed one (empty or too small), nothing is inserted.</value></data>
+  <data name="AiDraw_Insert" xml:space="preserve"><value>Insert as</value></data>
+  <data name="AiDraw_Insert_Layer" xml:space="preserve"><value>New layer</value></data>
+  <data name="AiDraw_Insert_Document" xml:space="preserve"><value>New document</value></data>
+  <data name="AiDraw_Style" xml:space="preserve"><value>Style reference</value></data>
+  <data name="AiDraw_Style_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="AiDraw_Style_None" xml:space="preserve"><value>None</value></data>
+  <data name="AiDraw_Style_Specific" xml:space="preserve"><value>Specific reference</value></data>
+  <data name="AiDraw_Style_Text" xml:space="preserve"><value>A pixel-art example sent along with the generation. Auto picks a suitable one from your references (built-in examples and your own) when you attach a non-pixel character picture to redraw as pixel art, and also when a reference matches what is being drawn.</value></data>
+  <data name="AiDraw_Frames" xml:space="preserve"><value>Animation</value></data>
+  <data name="AiDraw_Frames_Text" xml:space="preserve"><value>Asking for e.g. "make a walking animation" draws this many frames for that action (a count you give in the chat wins).</value></data>
+  <data name="AiDraw_Action_Idle" xml:space="preserve"><value>Idle</value></data>
+  <data name="AiDraw_Action_Walk" xml:space="preserve"><value>Walk</value></data>
+  <data name="AiDraw_Action_Run" xml:space="preserve"><value>Run</value></data>
+  <data name="AiDraw_Action_Attack" xml:space="preserve"><value>Attack</value></data>
+  <data name="AiDraw_Action_Jump" xml:space="preserve"><value>Jump</value></data>
+  <data name="AiDraw_Action_Hurt" xml:space="preserve"><value>Hurt</value></data>
+  <data name="AiDraw_Action_Death" xml:space="preserve"><value>Death</value></data>
+  <data name="AiDraw_Progress_Image" xml:space="preserve"><value>Generating image (Codex)…</value></data>
+  <data name="AiDraw_Progress_Frame" xml:space="preserve"><value>Generating frame {index}/{count} (Codex)…</value></data>
+  <data name="AiDraw_Progress_Converting" xml:space="preserve"><value>Converting to pixel art…</value></data>
+  <data name="AiDraw_Progress_Optimizing" xml:space="preserve"><value>Converting to pixel art and auto-optimizing…</value></data>
+  <data name="AiDraw_Progress_OptimizeTrial" xml:space="preserve"><value>Optimizing conversion… pass {pass} · trial {done}/{total} · best {score}</value></data>
+  <data name="AiDraw_Cancelled" xml:space="preserve"><value>Image generation stopped.</value></data>
+  <data name="AiDraw_Error_Busy" xml:space="preserve"><value>An image is already being generated.</value></data>
+  <data name="AiDraw_Error_NoSubject" xml:space="preserve"><value>The subject to draw is empty.</value></data>
+  <data name="AiDraw_Error_CustomPoses" xml:space="preserve"><value>A custom animation needs a pose per frame (poses).</value></data>
+  <data name="AiDraw_Error_NoCodex" xml:space="preserve"><value>Image generation needs Codex CLI, which was not found. Draw pixels directly, or install Codex CLI and log in from the Codex tab.</value></data>
+  <data name="AiDraw_Error_Login" xml:space="preserve"><value>Codex CLI is not logged in, so the image couldn't be generated. Log in from the Codex tab.</value></data>
+  <data name="AiDraw_Error_Start" xml:space="preserve"><value>Couldn't run Codex CLI: {message}</value></data>
+  <data name="AiDraw_Error_Timeout" xml:space="preserve"><value>Image generation didn't finish within {minutes} minutes.</value></data>
+  <data name="AiDraw_Error_NoImage" xml:space="preserve"><value>Codex didn't produce an image: {reason}</value></data>
+  <data name="AiDraw_Error_Read" xml:space="preserve"><value>Couldn't read the generated image file.</value></data>
+  <data name="AiDraw_Error_NoSprite" xml:space="preserve"><value>No sprite was found in the generated image (only background).</value></data>
+  <data name="AiDraw_Error_ConversionFailed" xml:space="preserve"><value>Couldn't convert the generated image to pixel art, so nothing was inserted: {reason} — the pixel size was detected wrong ({scale}px). Try generating again.</value></data>
+  <data name="AiDraw_Error_NoImageAttached" xml:space="preserve"><value>No image is attached to this message.</value></data>
+  <data name="AiDraw_Job_Missing" xml:space="preserve"><value>The generation record for this result was deleted, so its conversion settings can't be opened.</value></data>
+  <data name="AiDraw_ViewSettings" xml:space="preserve"><value>View conversion settings</value></data>
+  <data name="AiDraw_ViewSettings_Tip" xml:space="preserve"><value>Opens the 'Pixelate AI image' window with the generated source image and the conversion settings used. Tweak them and insert again.</value></data>
+  <data name="AiDraw_Error_NoPrevious" xml:space="preserve"><value>There is no previously generated image to attach as the reference.</value></data>
+  <data name="Chat_Image_Label" xml:space="preserve"><value>Image</value></data>
+  <data name="AiDraw_Anim" xml:space="preserve"><value>Generation</value></data>
+  <data name="AiDraw_Anim_Tip" xml:space="preserve"><value>How animation frames are generated.</value></data>
+  <data name="AiDraw_Anim_Sheet" xml:space="preserve"><value>All on one sheet (recommended)</value></data>
+  <data name="AiDraw_Anim_PerFrame" xml:space="preserve"><value>One image per frame</value></data>
+  <data name="AiDraw_Anim_PerFrame_Warning" xml:space="preserve"><value>Generating each frame separately often changes the character's look and size between frames, and takes as long as the number of frames.</value></data>
+  <data name="AiDraw_Progress_Sheet" xml:space="preserve"><value>Generating sprite sheet ({count} frames, Codex)…</value></data>
+  <data name="Pixelate_AddToNewTab" xml:space="preserve"><value>Add to new tab</value></data>
+  <data name="Pixelate_AddToNewTabTip" xml:space="preserve"><value>Create a new document exactly the size of the selected result and open it in a new tab (frames and durations kept, regardless of the output setting)</value></data>
+  <data name="Ffmpeg_StartFailed" xml:space="preserve"><value>Can't start ffmpeg.</value></data>
+  <data name="Ffmpeg_NoFrames" xml:space="preserve"><value>ffmpeg produced no frames (the range is outside the video, or the video can't be read).</value></data>
+  <data name="Ffmpeg_MissingTitle" xml:space="preserve"><value>ffmpeg needed</value></data>
+  <data name="Ffmpeg_Missing" xml:space="preserve"><value>Opening videos (MP4, WebM, MOV, MKV, AVI) and AVIF/HEIC images needs the free program ffmpeg. Gpixel doesn't download or bundle it.
+
+1. Download and install it from ffmpeg.org (Windows: winget install Gyan.FFmpeg · macOS: brew install ffmpeg · Linux: your distribution's package).
+2. It's found automatically on PATH or in common install locations. If you put it elsewhere, set the ffmpeg executable in Edit > Preferences > Video (ffmpeg).</value></data>
+  <data name="Ffmpeg_MissingShort" xml:space="preserve"><value>ffmpeg not found (you can set its location in Edit > Preferences > Video (ffmpeg)).</value></data>
+  <data name="Ffmpeg_OpenDownload" xml:space="preserve"><value>Open ffmpeg download page</value></data>
+  <data name="Ffmpeg_Prefs_Tab" xml:space="preserve"><value>Video (ffmpeg)</value></data>
+  <data name="Ffmpeg_Prefs_Location" xml:space="preserve"><value>ffmpeg executable</value></data>
+  <data name="Ffmpeg_Prefs_Auto" xml:space="preserve"><value>Leave empty to find it automatically (PATH, common install locations)</value></data>
+  <data name="Ffmpeg_Prefs_Browse" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Ffmpeg_Prefs_UseAuto" xml:space="preserve"><value>Find automatically</value></data>
+  <data name="Ffmpeg_Prefs_AllFiles" xml:space="preserve"><value>All files</value></data>
+  <data name="Ffmpeg_Prefs_NotFound" xml:space="preserve"><value>ffmpeg not found. Install it or set its location to open videos and AVIF/HEIC images.</value></data>
+  <data name="Ffmpeg_Prefs_Found" xml:space="preserve"><value>Using ffmpeg: {path}</value></data>
+  <data name="Ffmpeg_Prefs_CustomMissing" xml:space="preserve"><value>No ffmpeg at the path you set, using the one found automatically: {path}</value></data>
+  <data name="Ffmpeg_Prefs_Note" xml:space="preserve"><value>ffmpeg is used to extract frames from videos (File > Open, drag and drop) and to make video thumbnails in the file list. It isn't included with Gpixel and is never downloaded automatically.</value></data>
+  <data name="Video_Title" xml:space="preserve"><value>Import video</value></data>
+  <data name="Video_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Video_Summary" xml:space="preserve"><value>{name} — {width}×{height}, {fps} fps, {seconds} s</value></data>
+  <data name="Video_SummaryNoDuration" xml:space="preserve"><value>{name} — {width}×{height}, {fps} fps</value></data>
+  <data name="Video_SecondsUnit" xml:space="preserve"><value>s</value></data>
+  <data name="Video_Range" xml:space="preserve"><value>Range</value></data>
+  <data name="Video_WholeClip" xml:space="preserve"><value>Whole clip</value></data>
+  <data name="Video_Fps" xml:space="preserve"><value>Frames per second</value></data>
+  <data name="Video_FpsNote" xml:space="preserve"><value>(video: {fps} fps)</value></data>
+  <data name="Video_MaxFrames" xml:space="preserve"><value>Max frames</value></data>
+  <data name="Video_Scale" xml:space="preserve"><value>Size</value></data>
+  <data name="Video_ScaleKeep" xml:space="preserve"><value>Original size</value></data>
+  <data name="Video_ScaleFit" xml:space="preserve"><value>Fit long side</value></data>
+  <data name="Video_Smooth" xml:space="preserve"><value>Smooth</value></data>
+  <data name="Video_SmoothTip" xml:space="preserve"><value>On: average pixels when resizing (live-action or ordinary video). Off: keep the nearest pixel (pixel-art recordings).</value></data>
+  <data name="Video_Estimate" xml:space="preserve"><value>About {frames} frames · {width}×{height} · {ms} ms per frame · about {mb} MB of memory</value></data>
+  <data name="Video_MemoryWarning" xml:space="preserve"><value>This uses a lot of memory. Reduce the size, or lower the frames per second or max frames.</value></data>
+  <data name="Video_DecodingTitle" xml:space="preserve"><value>Extracting video frames</value></data>
+  <data name="Video_Progress" xml:space="preserve"><value>{done} / {total} frames</value></data>
+  <data name="FileBrowser_VideoBadge" xml:space="preserve"><value>Video — opening imports it as frames (needs ffmpeg)</value></data>
 </root>

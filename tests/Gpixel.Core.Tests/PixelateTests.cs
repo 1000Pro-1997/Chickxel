@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using Gpixel.Core.AiDraw;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using Gpixel.Core.Pixelate;
@@ -706,6 +707,118 @@ public class PixelateTests
         Assert.Equal(2, src.Split.Frames.Count);
     }
 
+    /// <summary>
+    /// 4칸(각 40px) 시트 마스크: 0번은 팔이 칸 선(40)을 넘고 떨어진 발끝(3×8)이 다음 칸에 더 많이 걸침, 1번은 몸통만, 2번은 팔 끝 1px이 3번 몸통에 닿음.
+    /// </summary>
+    private static (bool[] Mask, int W, int H) CrossingSheet()
+    {
+        const int w = 160, h = 40;
+        var m = new bool[w * h];
+        void Fill(int x0, int y0, int x1, int y1)
+        {
+            for (int y = y0; y < y1; y++)
+                for (int x = x0; x < x1; x++) m[y * w + x] = true;
+        }
+        Fill(14, 5, 34, 35); // 0: 몸통
+        Fill(34, 15, 46, 18); // 0: 팔(칸 선 40을 6px 넘음)
+        Fill(37, 36, 45, 39); // 0: 떨어진 발끝(1칸에 5열, 0칸에 3열)
+        Fill(54, 5, 74, 35); // 1
+        Fill(94, 5, 114, 35); // 2: 몸통
+        Fill(114, 18, 126, 23); // 2: 팔(칸 선 120을 넘음)
+        Fill(126, 20, 127, 21); // 2: 손끝 1px — 3번 몸통(127~)에 닿음
+        Fill(127, 5, 147, 35); // 3
+        return (m, w, h);
+    }
+
+    /// <summary>
+    /// 프레임마다 그 라벨 픽셀의 8방향 덩어리 중 가장 큰 것이 아니면서 작고(가장 큰 것의 ¼ 미만) 프레임 범위 왼쪽·오른쪽 끝에 닿은 것의 수 —
+    /// 칸 선을 넘어온 이웃 스프라이트 조각.
+    /// </summary>
+    private static int StrayEdgePieces(FrameSplit split, int w, int h)
+    {
+        int stray = 0;
+        for (int f = 0; f < split.Frames.Count; f++)
+        {
+            var b = split.Frames[f].Bounds;
+            var seen = new bool[w * h];
+            var pieces = new List<(int Count, int Left, int Right)>();
+            for (int y = b.Top; y < b.Bottom; y++)
+                for (int x = b.Left; x < b.Right; x++)
+                {
+                    if (seen[y * w + x] || split.Labels[y * w + x] != f) continue;
+                    int n = 0, left = x, right = x;
+                    var stack = new Stack<int>();
+                    stack.Push(y * w + x);
+                    seen[y * w + x] = true;
+                    while (stack.TryPop(out int i))
+                    {
+                        n++;
+                        int px = i % w, py = i / w;
+                        left = Math.Min(left, px);
+                        right = Math.Max(right, px);
+                        for (int ny = Math.Max(0, py - 1); ny <= Math.Min(h - 1, py + 1); ny++)
+                            for (int nx = Math.Max(0, px - 1); nx <= Math.Min(w - 1, px + 1); nx++)
+                                if (!seen[ny * w + nx] && split.Labels[ny * w + nx] == f) { seen[ny * w + nx] = true; stack.Push(ny * w + nx); }
+                    }
+                    pieces.Add((n, left, right));
+                }
+            int largest = pieces.Max(p => p.Count);
+            stray += pieces.Count(p => p.Count < largest / 4 && (p.Left == b.Left || p.Right == b.Right - 1));
+        }
+        return stray;
+    }
+
+    /// <summary>
+    /// 격자 나누기는 덩어리째: 칸 선을 넘은 팔·떨어진 발끝은 제 스프라이트(0번)에, 손끝으로 맞닿은 2·3번은 가장 얇은 열(손끝)에서 갈린다.
+    /// 자리는 칸 그대로, 범위는 칸 밖으로 나갈 수 있다.
+    /// </summary>
+    [Fact]
+    public void GridSplitKeepsCrossingPiecesWithTheirSprite()
+    {
+        var (m, w, h) = CrossingSheet();
+        var split = FrameSplitter.Run(m, w, h, new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 4, Rows = 1 });
+        Assert.Equal(4, split.Frames.Count);
+        Assert.Equal(new Rectangle(0, 0, 40, 40), split.Frames[0].Slot);
+        Assert.Equal(Rectangle.FromLTRB(14, 5, 46, 39), split.Frames[0].Bounds);
+        Assert.Equal(Rectangle.FromLTRB(54, 5, 74, 35), split.Frames[1].Bounds);
+        Assert.Equal(Rectangle.FromLTRB(94, 5, 126, 35), split.Frames[2].Bounds);
+        Assert.Equal(Rectangle.FromLTRB(126, 5, 147, 35), split.Frames[3].Bounds);
+        Assert.Equal(0, split.Labels[16 * w + 45]); // 팔 끝
+        Assert.Equal(0, split.Labels[37 * w + 44]); // 발끝
+        Assert.Equal(2, split.Labels[20 * w + 125]);
+        Assert.Equal(0, StrayEdgePieces(split, w, h));
+    }
+
+    /// <summary>
+    /// 자동 나누기: 맞닿은 2·3번은 빈 열이 없어 한 조각 → 기대 프레임 수(4)가 있으면, 없으면 다른 조각 너비 중앙값의 1.8배 규칙으로 손끝 열에서 가른다.
+    /// 기대 수만큼 이미 나왔거나(3) 넓은 조각이 한 스프라이트 몸통이면(얇은 열 없음) 가르지 않는다.
+    /// </summary>
+    [Fact]
+    public void AutoSplitSeparatesTouchingSprites()
+    {
+        var (m, w, h) = CrossingSheet();
+        foreach (var expected in new[] { 0, 4 })
+        {
+            var split = FrameSplitter.Run(m, w, h, new FrameSettings { Mode = FrameSplitMode.Auto, ExpectedFrames = expected });
+            Assert.Equal(4, split.Frames.Count);
+            Assert.Equal(Rectangle.FromLTRB(14, 5, 46, 39), split.Frames[0].Bounds);
+            Assert.Equal(Rectangle.FromLTRB(94, 5, 126, 35), split.Frames[2].Bounds);
+            Assert.Equal(Rectangle.FromLTRB(126, 5, 147, 35), split.Frames[3].Bounds);
+            Assert.Equal(2, split.Labels[20 * w + 125]);
+            Assert.Equal(3, split.Labels[20 * w + 127]);
+            Assert.Equal(0, StrayEdgePieces(split, w, h));
+        }
+        Assert.Equal(3, FrameSplitter.Run(m, w, h, new FrameSettings { Mode = FrameSplitMode.Auto, ExpectedFrames = 3 }).Frames.Count);
+
+        // 넓은 스프라이트 하나(60px 통몸통)는 중앙값(20px)의 3배여도 얇은 열이 없어 그대로.
+        const int ww = 160;
+        var solid = new bool[ww * h];
+        foreach (var (x0, x1) in new[] { (5, 25), (35, 55), (70, 130) })
+            for (int y = 5; y < 35; y++)
+                for (int x = x0; x < x1; x++) solid[y * ww + x] = true;
+        Assert.Equal(3, FrameSplitter.Run(solid, ww, h, new FrameSettings { Mode = FrameSplitMode.Auto }).Frames.Count);
+    }
+
     [Fact]
     public void ScoringPrefersDetectedScaleOverPlusMinusOne()
     {
@@ -1109,6 +1222,89 @@ public class PixelateTests
         Assert.Equal(4, r.Top(10).Count);
         Assert.InRange(r.Top(10, distinctOutput: true).Count, 1, 4);
         Assert.Equal(r.Top(1)[0].Settings.Key(), r.Top(1, distinctOutput: true)[0].Settings.Key());
+    }
+
+    private static readonly PixelateSettings WrongStart = new()
+    {
+        Grid = new PixelGridSettings { ScaleAdjust = -2 },
+        Palette = new PaletteSettings { Colors = 4, ColorSource = PaletteColorSource.Mean },
+    };
+
+    /// <summary>
+    /// 다시 돌리기: 첫 돌림이 '더 나아지지 않음'으로 끝나고 MinPassGain 넘게 나아졌으면 1위에서 다시 돈다. 같은 예산에서 한 번만 돈 결과 이상이고,
+    /// 첫 돌림은 한 번만 돈 실행과 같으며, 돌림은 앞 돌림의 끝 점수에서 시작하고, 돌림별 시도 수의 합 = 전체 시도 수, 마지막 돌림은 MinPassGain 미만 나아짐.
+    /// 진행 알림의 돌림 번호는 1부터 돌림 수까지.
+    /// </summary>
+    [Fact]
+    public void OptimizerRestartsFromBestAndBeatsSinglePass()
+    {
+        var source = Render([Sprite()]);
+        var src = PixelateSource.Prepare(source, WrongStart);
+        var options = new PixelateOptimizeOptions { Params = OptimizeParam.Scale | OptimizeParam.Colors | OptimizeParam.DownsampleMode, MaxTrials = 1000, MaxTime = TimeSpan.FromMinutes(5) };
+        var single = PixelateOptimizer.Run(src, WrongStart, options with { MaxPasses = 1 });
+        var passes = new System.Collections.Concurrent.ConcurrentBag<int>();
+        var multi = PixelateOptimizer.Run(src, WrongStart, options, p => passes.Add(p.Pass));
+
+        Assert.Single(single.Passes);
+        Assert.Equal(OptimizeStop.Done, single.StoppedReason);
+        Assert.Equal(OptimizeStop.Done, multi.StoppedReason);
+        Assert.True(multi.Passes.Count >= 2, multi.Passes.Count.ToString());
+        Assert.True(multi.Best.Score.Total >= single.Best.Score.Total, $"{single.Best.Score.Total} → {multi.Best.Score.Total}");
+        Assert.Equal(single.Passes[0], multi.Passes[0]);
+        Assert.Equal(multi.Start.Score.Total, multi.Passes[0].StartScore);
+        for (int i = 1; i < multi.Passes.Count; i++)
+        {
+            Assert.Equal(i + 1, multi.Passes[i].Number);
+            Assert.Equal(multi.Passes[i - 1].EndScore, multi.Passes[i].StartScore);
+            Assert.True(multi.Passes[i - 1].EndScore - multi.Passes[i - 1].StartScore >= PixelateOptimizer.MinPassGain);
+        }
+        Assert.True(multi.Passes[^1].EndScore - multi.Passes[^1].StartScore < PixelateOptimizer.MinPassGain);
+        Assert.Equal(multi.Best.Score.Total, multi.Passes[^1].EndScore);
+        Assert.Equal(multi.Trials.Count, multi.Passes.Sum(p => p.Trials));
+        Assert.Equal(multi.Trials.Count, passes.Count);
+        Assert.Contains(1, passes);
+        Assert.All(passes, p => Assert.InRange(p, 1, multi.Passes.Count));
+    }
+
+    /// <summary>시도 수 예산은 모든 돌림을 합친 것: 한 번만 돈 시도 수 + 5로 묶으면 둘째 돌림에서 정확히 예산만큼 쓰고 멈춘다.</summary>
+    [Fact]
+    public void OptimizerTrialBudgetCoversAllPasses()
+    {
+        var source = Render([Sprite()]);
+        var src = PixelateSource.Prepare(source, WrongStart);
+        var options = new PixelateOptimizeOptions { Params = OptimizeParam.Scale | OptimizeParam.Colors | OptimizeParam.DownsampleMode, MaxTrials = 1000, MaxTime = TimeSpan.FromMinutes(5) };
+        int first = PixelateOptimizer.Run(src, WrongStart, options with { MaxPasses = 1 }).Trials.Count;
+        var r = PixelateOptimizer.Run(src, WrongStart, options with { MaxTrials = first + 5 });
+        Assert.Equal(OptimizeStop.Trials, r.StoppedReason);
+        Assert.Equal(first + 5, r.Trials.Count);
+        Assert.Equal(2, r.Passes.Count);
+        Assert.Equal(first, r.Passes[0].Trials);
+        Assert.Equal(5, r.Passes[1].Trials);
+    }
+
+    /// <summary>
+    /// 결정성: 같은 입력·설정이면 스레드 수(1 또는 여러)와 실행 순서에 상관없이 시도 목록(순서·번호·점수)·1위·돌림이 같다.
+    /// 시도 수 예산으로 끝나게 하고 시간은 넉넉히(시간 예산으로 끝나면 끊기는 곳이 정해지지 않음).
+    /// </summary>
+    [Fact]
+    public void OptimizerIsDeterministic()
+    {
+        var source = Render([Sprite()]);
+        var src = PixelateSource.Prepare(source, WrongStart);
+        var options = new PixelateOptimizeOptions { Params = OptimizeParam.SelectAll, MaxTrials = 160, MaxTime = TimeSpan.FromMinutes(5) };
+        var a = PixelateOptimizer.Run(src, WrongStart, options);
+        var b = PixelateOptimizer.Run(src, WrongStart, options);
+        var c = PixelateOptimizer.Run(PixelateSource.Prepare(source, WrongStart), WrongStart, options with { MaxDegreeOfParallelism = 1 });
+        Assert.NotEqual(OptimizeStop.Time, a.StoppedReason);
+        foreach (var r in new[] { b, c })
+        {
+            Assert.Equal(a.StoppedReason, r.StoppedReason);
+            Assert.Equal(a.Best.Settings.Key(), r.Best.Settings.Key());
+            Assert.Equal(a.Best.Score.Total, r.Best.Score.Total);
+            Assert.Equal(a.Passes, r.Passes);
+            Assert.Equal(a.Trials.Select(t => (t.Candidate.Index, t.Settings.Key(), t.Score.Total)), r.Trials.Select(t => (t.Candidate.Index, t.Settings.Key(), t.Score.Total)));
+            Assert.Equal(a.Top(10, distinctOutput: true).Select(t => t.Settings.Key()), r.Top(10, distinctOutput: true).Select(t => t.Settings.Key()));
+        }
     }
 
     /// <summary>팔레트 색·팔레트 방식·가장자리 칸 가중·외곽선 색 모으기를 바꿔 본다(팔레트 색은 기본으로 켜짐, 기존 팔레트·원래 색 유지면 팔레트 항목은 건너뜀).</summary>
@@ -1659,6 +1855,177 @@ public class PixelateTests
 
         var dim = Pixelator.Run(src, SixColors with { Palette = SixColors.Palette with { OutlineDarkness = 0.15 } });
         Assert.Equal(OnePixelShare(dim.Frames), dim.Metrics.OutlineThin, 3);
+    }
+
+    /// <summary>
+    /// AI 엘프 걷기 시트(2172×724, 투명 배경, 6프레임)를 AI 그리기 도구와 같은 길로(시트 긴 변 1600 이하로 ×½ 줄임 → 1086×362, 6프레임 시트 나누기):
+    /// 예전에는 그림 전체 덩어리 경계가 프레임 간격(183px)을 칸으로 잡아 '크기를 줄여서'의 '더 큰 값이 확실히 더 잘 맞음' 규칙(일치 0.083 > 외곽선 0 + 0.05)으로
+    /// 그 값을 골라 결과가 3×3 투명이었다(점수 66). 칸 크기 상한(프레임 짧은 변의 1/5 — 이 시트 32px)으로 막는다. 원본 칸은 눈으로 보면 약 3.5px
+    /// (외곽선 두께 3.5px)이라 줄인 그림에서 약 1.75~2px.
+    /// </summary>
+    [Fact]
+    public void ElfSheetOnAiDrawPathIsNotEmpty()
+    {
+        var sheet = AiDrawConversion.Downscale(PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png")), AiDrawConversion.MaxSheetSide);
+        Assert.Equal(new Size(1086, 362), sheet.Size);
+        var settings = AiDrawConversion.Settings(new PixelateSettings(), 6, 0, true, false);
+        var (src, split) = AiDrawConversion.PrepareSheet(sheet, settings, 6, AiDrawSheetLayout.For(6), false);
+        // 2·3번(×½ 시트 207px에서 맞닿음)과 4·5번(가로로 겹침)도 기대 프레임 수(6)로 가른 자동 나누기 — 칸 선을 넘은 손끝·발끝 조각 없음.
+        Assert.Equal(FrameSplitMode.Auto, split.Frames.Mode);
+        Assert.Equal(6, src.Split.Frames.Count);
+        Assert.Equal(0, StrayEdgePieces(src.Split, sheet.Width, sheet.Height));
+        var est = src.EstimatedScale(-1, split.Grid.Jitter, ScaleSource.Outline, split.Palette.OutlineDarkness);
+        Assert.InRange(est.MaxScale, 25, 40);
+        Assert.True(est.Blocks <= est.MaxScale && est.Edges <= est.MaxScale, $"blocks {est.Blocks} edges {est.Edges} cap {est.MaxScale}");
+
+        var r = Pixelator.Run(src, split);
+        Assert.False(r.Failed, r.Failure.ToString());
+        Assert.Equal(6, r.Frames.Count);
+        Assert.InRange(r.Scale, 1.5, 3);
+        Assert.All(r.Frames, f => Assert.True(f.GetOpaqueBounds().Height >= 80, f.GetOpaqueBounds().ToString()));
+        Assert.True(r.Palette.Count > 4, r.Palette.Count.ToString());
+        Assert.True(OnePixelShare(r.Frames) >= 0.9, OnePixelShare(r.Frames).ToString());
+        Assert.True(PixelateScoring.Score(r, new ScoreWeights(), r.ResolvedColors).Total > 0);
+    }
+
+    /// <summary>같은 시트를 원래 크기(2172×724)로 6칸 격자로 나누면 칸 약 3.5px(외곽선 두께), 외곽선 1px, 여러 색.</summary>
+    [Fact]
+    public void ElfSheetAtFullSizeKeepsOutlineCell()
+    {
+        var image = PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png"));
+        var s = new PixelateSettings { Frames = new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 6, Rows = 1 } };
+        var r = Pixelator.Run(image, s);
+        Assert.False(r.Failed, r.Failure.ToString());
+        Assert.Equal(6, r.Frames.Count);
+        Assert.InRange(r.Scale, 3, 4.5);
+        Assert.True(r.Palette.Count > 4, r.Palette.Count.ToString());
+        Assert.True(OnePixelShare(r.Frames) >= 0.9, OnePixelShare(r.Frames).ToString());
+    }
+
+    /// <summary>
+    /// 원래 크기 엘프 시트를 6칸 격자·자동(기대 수 없이 중앙값 규칙, 기대 수 6)으로 나누면 모두 스프라이트 6개 통째: 0번의 앞손(칸 선 362를 52px 넘음)과
+    /// 3번의 앞발(1448을 넘음)이 제 프레임에 남고, 4·5번(가로로 겹쳐 빈 열이 없음)이 갈리며, 프레임 가장자리에 이웃 조각이 없다.
+    /// </summary>
+    [Fact]
+    public void ElfSheetSplitsIntoWholeSprites()
+    {
+        var image = PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png"));
+        foreach (var frames in new[]
+                 {
+                     new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 6, Rows = 1 },
+                     new FrameSettings { Mode = FrameSplitMode.Auto },
+                     new FrameSettings { Mode = FrameSplitMode.Auto, ExpectedFrames = 6 },
+                 })
+        {
+            var split = PixelateSource.Prepare(image, new PixelateSettings { Frames = frames }).Split;
+            Assert.Equal(6, split.Frames.Count);
+            Assert.Equal(0, StrayEdgePieces(split, image.Width, image.Height));
+            Assert.All(split.Frames, f => Assert.InRange(f.Bounds.Width, 280, 380));
+            Assert.True(split.Frames[0].Bounds.Right > 400, split.Frames[0].Bounds.ToString());
+            Assert.True(split.Frames[3].Bounds.Right > 1490, split.Frames[3].Bounds.ToString());
+        }
+
+        // AI 그리기 길(×½ 시트)의 격자 6칸(자동이 프레임 수를 못 맞출 때 쓰는 나누기)도 같다: 0번 앞손이 칸 선 181을 넘어 207까지.
+        var sheet = AiDrawConversion.Downscale(image, AiDrawConversion.MaxSheetSide);
+        var settings = AiDrawConversion.Settings(new PixelateSettings(), 6, 0, true, false);
+        var half = PixelateSource.Prepare(sheet, settings).Split;
+        Assert.Equal(6, half.Frames.Count);
+        Assert.Equal(0, StrayEdgePieces(half, sheet.Width, sheet.Height));
+        Assert.Equal(new Rectangle(0, 0, 181, 362), half.Frames[0].Slot);
+        Assert.True(half.Frames[0].Bounds.Right > 200, half.Frames[0].Bounds.ToString());
+    }
+
+    /// <summary>
+    /// 원래 위치 유지 + 격자: 1번 칸의 팔이 칸 선(40)을 왼쪽으로 4px 넘어 범위가 자리 밖이면 모든 프레임을 그만큼(2칸) 밀어 팔이 잘리지 않는다 — 서로 위치는 그대로.
+    /// </summary>
+    [Fact]
+    public void KeepOffsetsShiftsFramesWhoseBoundsLeaveTheirCell()
+    {
+        var image = new PixelImage(80, 40);
+        image.FillRect(Rectangle.FromLTRB(10, 6, 30, 34), new Color32(200, 40, 40));
+        image.FillRect(Rectangle.FromLTRB(50, 6, 70, 34), new Color32(60, 80, 200));
+        image.FillRect(Rectangle.FromLTRB(36, 16, 50, 20), new Color32(60, 80, 200));
+        var s = new PixelateSettings
+        {
+            Frames = new FrameSettings { Mode = FrameSplitMode.Grid, Columns = 2, Rows = 1, Align = FrameAlign.KeepOffsets },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 2, LocalCorrection = false },
+            Cleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false, OutlineFit = OutlineFit.Off },
+        };
+        var r = Pixelator.Run(image, s);
+        Assert.Equal(2, r.Frames.Count);
+        Assert.Equal(Rectangle.FromLTRB(36, 6, 70, 34), r.Maps[1].SourceBounds);
+        var a = r.Frames[0].GetOpaqueBounds();
+        var b = r.Frames[1].GetOpaqueBounds();
+        Assert.Equal(17, b.Width);
+        Assert.Equal(10, a.Width);
+        Assert.Equal(5 + 2, a.Left - b.Left);
+    }
+
+    /// <summary>
+    /// AI 그리기 도구의 변환 전체(<see cref="AiDrawConversion.Convert"/> — 정리 창 기본 자동 최적화 항목: 외곽선 맞추기 방식만 빼고 모두)로 엘프 시트를 바꾸면
+    /// 1위는 실패하지 않은 6프레임 결과이고 진행(돌림 번호 포함)이 알려진다. 시험 시간을 줄이려고 예산은 700번(기본 2000번이면 다시 돌리기까지 약 1300번) —
+    /// 첫 돌림(약 650번)이 끝나 둘째 돌림이 시작된다.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Slow")]
+    public void ElfSheetAiDrawConversionWithDefaultOptimizer()
+    {
+        var sheet = AiDrawConversion.Downscale(PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png")), AiDrawConversion.MaxSheetSide);
+        var settings = AiDrawConversion.Settings(new PixelateSettings(), 6, 0, true, false);
+        int reports = 0, maxPass = 0;
+        var options = new PixelateOptimizeOptions { Params = OptimizeParam.SelectAll, MaxTrials = 700, MaxTime = TimeSpan.FromSeconds(120) };
+        var (r, used) = AiDrawConversion.Convert(sheet, settings, 6, sheet: true, keepOffsets: false, optimize: true, options, p =>
+        {
+            Interlocked.Increment(ref reports);
+            int seen;
+            while ((seen = Volatile.Read(ref maxPass)) < p.Pass && Interlocked.CompareExchange(ref maxPass, p.Pass, seen) != seen) { }
+        });
+        Assert.True(maxPass >= 2, maxPass.ToString());
+        Assert.False(r.Failed, r.Failure.ToString());
+        Assert.Equal(6, r.CommonFrames().Count);
+        Assert.Equal(OutlineFit.Shrink, used.Cleanup.OutlineFit);
+        Assert.InRange(r.Scale, 1.5, 3);
+        Assert.True(r.Palette.Count > 4, r.Palette.Count.ToString());
+        Assert.True(OnePixelShare(r.Frames) >= 0.9, OnePixelShare(r.Frames).ToString());
+        Assert.True(reports > 1, reports.ToString());
+    }
+
+    /// <summary>
+    /// 실패한 결과 막기: 예전 엘프 시트 어림(그림 전체 183px = 프레임 간격)을 억지로 쓰면 결과가 모두 투명 → 실패(점수 0, 항목 점수로는 66점이었음),
+    /// 다시 돌리기(<see cref="Pixelator.Retry"/>)는 다른 어림(외곽선 두께 등)으로 실패하지 않은 결과를 내고 처음 크기를 기록한다.
+    /// 비었거나 한 색·너무 작은 프레임도 실패(<see cref="Pixelator.CheckFailure"/>).
+    /// </summary>
+    [Fact]
+    public void FailedResultScoresZeroAndRetries()
+    {
+        var sheet = AiDrawConversion.Downscale(PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png")), AiDrawConversion.MaxSheetSide);
+        var settings = AiDrawConversion.Settings(new PixelateSettings(), 6, 0, true, false);
+        var (src, split) = AiDrawConversion.PrepareSheet(sheet, settings, 6, AiDrawSheetLayout.For(6), false);
+        var est = src.EstimatedScale(-1, split.Grid.Jitter, ScaleSource.Outline, split.Palette.OutlineDarkness);
+        var bad = Pixelator.RunOnce(src, split, null, est with { Scale = 183, Used = ScaleSource.EdgeLines }, 0, default);
+        Assert.Equal(PixelateFailure.Empty, bad.Failure);
+        Assert.Empty(bad.Palette);
+        var score = PixelateScoring.Score(bad, new ScoreWeights(), null);
+        Assert.Equal(0, score.Total);
+        // 항목만으로 매기면 빈 결과도 60점이 넘는다(그래서 점수가 아니라 실패 검사로 거름).
+        Assert.True(100 * (1 - score.Parts.Sum(p => p.Weight * p.Badness) / score.Parts.Sum(p => p.Weight)) > 60);
+
+        var retried = Pixelator.Retry(src, split, null, bad, default);
+        Assert.False(retried.Failed, retried.Failure.ToString());
+        Assert.Equal(183, retried.RetriedFrom, 1);
+        Assert.True(retried.Scale <= src.MaxCell(-1), retried.Scale.ToString());
+
+        // 결과 그림만으로 정하는 실패: 비었음·한 색·모든 프레임이 8×8 미만.
+        var blank = new PixelImage(20, 20);
+        Assert.Equal(PixelateFailure.Empty, Pixelator.CheckFailure(src, [blank], [2.0], 0));
+        var one = new PixelImage(60, 140);
+        one.FillRect(new Rectangle(0, 0, 60, 140), new Color32(200, 40, 40));
+        Assert.Equal(PixelateFailure.OneColor, Pixelator.CheckFailure(src, [one], [2.0], 1));
+        var tiny = new PixelImage(7, 7);
+        tiny.FillRect(new Rectangle(0, 0, 7, 7), new Color32(200, 40, 40));
+        tiny[3, 3] = Outline;
+        Assert.Equal(PixelateFailure.TooSmall, Pixelator.CheckFailure(src, [tiny], [60.0], 2));
+        Assert.Equal(PixelateFailure.NearlyEmpty, Pixelator.CheckFailure(src, [tiny], [2.0], 2));
     }
 
     /// <summary>

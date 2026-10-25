@@ -1,5 +1,6 @@
 using System.Reflection;
 using Gpixel.Core.IO;
+using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
@@ -21,6 +22,11 @@ public static class AppInfo
     public const string ThirdPartyNoticesUrl = AppUpdate.RepoUrl + "/blob/main/THIRD-PARTY-NOTICES.md";
     /// <summary>버그 제보·불편한 점·아이디어를 받는 Discord 서버의 공개 초대 링크.</summary>
     public const string DiscordUrl = "https://discord.gg/Avw7aUVxqr";
+    /// <summary>홈페이지(한국어 쪽; 영어 쪽은 뒤에 "en/").</summary>
+    public const string WebsiteUrl = "https://1000pro-1997.github.io/GPixel/";
+
+    /// <summary>지금 UI 언어의 홈페이지 주소(한국어가 아니면 영어 쪽).</summary>
+    public static string LocalizedWebsiteUrl => UiLanguage.Current == UiLanguage.Korean ? WebsiteUrl : WebsiteUrl + "en/";
 
     /// <summary>
     /// 앱 버전(어셈블리 InformationalVersion에서 "+커밋"을 뺀 것, publish의 <c>-p:Version</c>). 읽지 못하면 0.0.0.

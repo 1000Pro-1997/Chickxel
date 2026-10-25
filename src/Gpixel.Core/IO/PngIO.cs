@@ -143,7 +143,7 @@ public static class PngIO
 
     // ───────────── 읽기 ─────────────
 
-    private sealed class PngData
+    internal sealed class PngData
     {
         public int Width, Height, BitDepth, ColorType, Interlace;
         public byte[]? Palette;      // RGB 3바이트씩
@@ -195,16 +195,7 @@ public static class PngIO
                     d.Palette = data;
                     break;
                 case "tRNS":
-                    if (d.ColorType == 3) d.PaletteAlpha = data;
-                    else if (d.ColorType == 0 && length >= 2)
-                        d.TransparentKey = [BinaryPrimitives.ReadUInt16BigEndian(data)];
-                    else if (d.ColorType == 2 && length >= 6)
-                        d.TransparentKey =
-                        [
-                            BinaryPrimitives.ReadUInt16BigEndian(data),
-                            BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(2)),
-                            BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(4)),
-                        ];
+                    ReadTransparency(d, data);
                     break;
                 case "IDAT":
                     d.Idat.Write(data);
@@ -215,7 +206,22 @@ public static class PngIO
         return d;
     }
 
-    private static PixelImage Decode(PngData d)
+    /// <summary>tRNS 내용을 색 형식에 맞게 담는다(IHDR 다음에).</summary>
+    internal static void ReadTransparency(PngData d, byte[] data)
+    {
+        if (d.ColorType == 3) d.PaletteAlpha = data;
+        else if (d.ColorType == 0 && data.Length >= 2)
+            d.TransparentKey = [BinaryPrimitives.ReadUInt16BigEndian(data)];
+        else if (d.ColorType == 2 && data.Length >= 6)
+            d.TransparentKey =
+            [
+                BinaryPrimitives.ReadUInt16BigEndian(data),
+                BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(2)),
+                BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(4)),
+            ];
+    }
+
+    internal static PixelImage Decode(PngData d)
     {
         int channels = d.ColorType switch
         {

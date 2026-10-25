@@ -74,6 +74,28 @@ public sealed partial class SpriteProject
         return p;
     }
 
+    /// <summary>
+    /// 같은 크기 그림 여러 장(움직이는 GIF·영상 프레임)으로 새 프로젝트를 만든다: 레이어 1개, 그림마다 프레임 하나(길이 = <paramref name="durationsMs"/>).
+    /// 그림이 없거나 크기가 다르면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public static SpriteProject FromFrames(IReadOnlyList<PixelImage> images, IReadOnlyList<int> durationsMs, string? layerName = null)
+    {
+        if (images.Count == 0) throw new ArgumentException(null, nameof(images));
+        int w = images[0].Width, h = images[0].Height;
+        var p = CreateBlank(w, h);
+        var layer = new Layer(layerName ?? p.NextLayerName());
+        p._layers.Add(layer);
+        for (int i = 0; i < images.Count; i++)
+        {
+            var image = images[i];
+            if (image.Width != w || image.Height != h) throw new ArgumentException(null, nameof(images));
+            var frame = new Frame { DurationMs = i < durationsMs.Count ? durationsMs[i] : Frame.DefaultDurationMs };
+            p._frames.Add(frame);
+            if (!image.IsRegionEmpty(image.Bounds)) p._cels[new(layer, frame, null)] = image;
+        }
+        return p;
+    }
+
     // ───────────── 상태 ─────────────
 
     public int Width => _width;

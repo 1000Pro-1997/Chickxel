@@ -518,7 +518,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private static string Summary(LayerEffect e) => (e switch
     {
-        OutlineEffect o => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E7A8C83171,(o.Inside ? UiStrings.S_LayerEffectsDialog_Summary_192DBA1F7C : UiStrings.S_LayerEffectsDialog_Summary_78B20FF1F4),o.Thickness,(o.Diagonal ? UiStrings.S_LayerEffectsDialog_Summary_009BCE5A4C : UiStrings.S_LayerEffectsDialog_Summary_2629FC9A9D),o.Color.ToHex()) + (o.HideOriginal ? UiStrings.EffectOutline_HideOriginalSummary : ""),
+        OutlineEffect o => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E7A8C83171,(o.Inside ? UiStrings.S_LayerEffectsDialog_Summary_192DBA1F7C : UiStrings.S_LayerEffectsDialog_Summary_78B20FF1F4),o.Thickness,(o.Diagonal ? UiStrings.S_LayerEffectsDialog_Summary_009BCE5A4C : UiStrings.S_LayerEffectsDialog_Summary_2629FC9A9D),
+                               o.ColorMode == OutlineColorMode.Shade ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectOutline_ShadeSummary, o.ShadeAmount.ToString("+0;−0;0", global::System.Globalization.CultureInfo.CurrentCulture)) : o.Color.ToHex())
+                             + (o.HideOriginal ? UiStrings.EffectOutline_HideOriginalSummary : ""),
         ShadowEffect s => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E233F2401C,s.OffsetX,s.OffsetY,s.Color.ToHex()) + (s.Dither != ShadowDither.None ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_FDDC95CFEA,ShadowDithers[(int)s.Dither]) : ""),
         RimLightEffect r => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0B62ABBEE2,Directions.First(d => d.Dir == r.Direction).Name,r.Size),
         ColorOverlayEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_F824955A0D,Blends[(int)c.Blend],c.Amount,c.Color.ToHex()),
@@ -656,7 +658,15 @@ public sealed partial class LayerEffectsDialog : DialogBase
         switch (e)
         {
             case OutlineEffect o:
-                SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(o, nameof(OutlineEffect.Color), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })), Set));
+                SettingsRow(UiStrings.EffectOutline_ColorMode, ChoiceEditor([UiStrings.EffectOutline_ModeFixed, UiStrings.EffectOutline_ModeShade], (int)o.ColorMode, k =>
+                {
+                    Set(x => (OutlineEffect)x with { ColorMode = (OutlineColorMode)k });
+                    ShowSettings(); // 그 방식의 색·명암 칸으로
+                }).Tip(UiStrings.EffectOutline_ModeTip));
+                if (o.ColorMode == OutlineColorMode.Shade)
+                    SettingsSubRow(UiStrings.EffectOutline_ShadeAmount, NumEditor(-100, 100, o.ShadeAmount, NumKinds.Adjust, v => Set(x => (OutlineEffect)x with { ShadeAmount = v })).Tip(UiStrings.EffectOutline_ShadeAmountTip), Ui.Label("%"));
+                else
+                    SettingsSubRow(UiStrings.S_LayerEffectsDialog_FillSettings_F6DB7C3B67, EffectColorEditor(o, nameof(OutlineEffect.Color), ColorEditor(o.Color, c => Set(x => (OutlineEffect)x with { Color = c })), Set));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_A81FAFD1EE, NumEditor(1, OutlineEffect.MaxThickness, o.Thickness, NumKinds.Thickness, v => Set(x => (OutlineEffect)x with { Thickness = v })), Ui.Label("px"));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_7AEF607F6B, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_85BBD645E0, UiStrings.S_LayerEffectsDialog_FillSettings_D2ECBA6FD8], o.Diagonal ? 1 : 0, k => Set(x => (OutlineEffect)x with { Diagonal = k == 1 })));
                 SettingsRow(UiStrings.S_LayerEffectsDialog_FillSettings_E78408846D, ChoiceEditor([UiStrings.S_LayerEffectsDialog_FillSettings_62FD728E7C, UiStrings.S_LayerEffectsDialog_FillSettings_4331838592], o.Inside ? 1 : 0, k => Set(x => (OutlineEffect)x with { Inside = k == 1 })));

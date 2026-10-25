@@ -80,7 +80,9 @@ public enum OptimizeStop
     Cancelled,
 }
 
-/// <summary>자동 최적화 설정: 바꿔 볼 항목, 예산(시도 수·시간 중 먼저 닿는 쪽), 점수 가중치.</summary>
+/// <summary>
+/// 자동 최적화 설정: 바꿔 볼 항목, 예산(시도 수·시간 중 먼저 닿는 쪽 — 모든 돌림을 합친 예산), 점수 가중치, 돌림 수 상한(1 = 다시 돌리지 않음).
+/// </summary>
 public sealed record PixelateOptimizeOptions
 {
     public OptimizeParam Params { get; init; } = OptimizeParam.Default;
@@ -88,6 +90,8 @@ public sealed record PixelateOptimizeOptions
     public TimeSpan MaxTime { get; init; } = TimeSpan.FromSeconds(60);
     public ScoreWeights Weights { get; init; } = new();
     public int MaxDegreeOfParallelism { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
+    /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 돌림이 <see cref="PixelateOptimizer.MinPassGain"/>점 넘게 나아지는 동안 다시 돌림, 1 = 한 번만).</summary>
+    public int MaxPasses { get; init; } = int.MaxValue;
 }
 
 /// <summary>
@@ -101,16 +105,21 @@ public sealed record PixelateTrial(PixelateCandidate Candidate, string Summary, 
     public PixelateScore Score => Candidate.Score;
 }
 
-/// <summary>진행: 끝난 시도 수, 예산(시도 수), 지금까지 최고 점수, 방금 끝난 시도.</summary>
-public sealed record PixelateOptimizeProgress(int Done, int Budget, double BestScore, PixelateTrial Latest);
+/// <summary>진행: 끝난 시도 수, 예산(시도 수), 지금까지 최고 점수, 지금 돌림 번호(1부터), 방금 끝난 시도.</summary>
+public sealed record PixelateOptimizeProgress(int Done, int Budget, double BestScore, int Pass, PixelateTrial Latest);
+
+/// <summary>찾기 돌림 하나: 번호(1부터), 돌림 시작·끝의 최고 점수, 이 돌림에서 새로 돌린 시도 수(첫 돌림은 시작 설정 포함).</summary>
+public sealed record PixelateOptimizePass(int Number, double StartScore, double EndScore, int Trials);
 
 /// <summary>최적화 결과.</summary>
 public sealed class PixelateOptimizeResult
 {
     public required PixelateCandidate Start { get; init; }
     public required PixelateCandidate Best { get; init; }
-    /// <summary>실제로 돌린 시도 모두(설정이 같은 시도는 한 번만 — 끝난 순서).</summary>
+    /// <summary>실제로 돌린 시도 모두(설정이 같은 시도는 한 번만 — 번호 순: 묶음마다 만든 순서, 스레드 순서와 무관).</summary>
     public required IReadOnlyList<PixelateTrial> Trials { get; init; }
+    /// <summary>찾기 돌림마다 시작·끝 점수(첫 돌림은 늘 있음).</summary>
+    public required IReadOnlyList<PixelateOptimizePass> Passes { get; init; }
     /// <summary>이미 돌린 설정이라 다시 돌리지 않은 횟수.</summary>
     public required int CacheHits { get; init; }
     public required TimeSpan Elapsed { get; init; }
@@ -122,7 +131,7 @@ public sealed class PixelateOptimizeResult
     /// </summary>
     public IReadOnlyList<PixelateTrial> Top(int n, bool distinctOutput = false)
     {
-        var sorted = Trials.Where(t => t.InScale).DistinctBy(t => t.Settings.Key()).OrderByDescending(t => t.Score.Total).ThenBy(t => t.Candidate.Index);
+        var sorted = Trials.Where(t => t.InScale).DistinctBy(t => t.Settings.Key()).OrderBy(t => t.Result.Failed).ThenByDescending(t => t.Score.Total).ThenBy(t => t.Candidate.Index);
         return [.. (distinctOutput ? sorted.DistinctBy(t => OutputHash(t.Result)) : sorted).Take(n)];
     }
 
@@ -143,10 +152,15 @@ public sealed class PixelateOptimizeResult
 
 /// <summary>
 /// 자동 최적화: 지금 설정에서 시작해 고른 항목을 바꿔 가며 점수(<see cref="PixelateScoring"/>, 가중치 = 점수 비중)가 가장 높은 설정을 찾는다.
-/// 1단계(거칠게): 항목마다 하나씩, 숫자는 범위를 고르게 7곳, 고르기·켜고 끄기는 모든 값. 2단계(다듬기): 항목별 최고 값을 합친 점과
-/// 점수 상위 3곳에서 좌표 언덕 오르기 — 숫자는 ±걸음, 둘 다 나아지지 않으면 걸음을 반으로(최소 걸음 아래면 멈춤), 고르기는 모든 값.
-/// 같은 설정(<see cref="PixelateSettings.Key"/>)은 다시 돌리지 않고, 준비 결과(<see cref="PixelateSource"/>)는 모든 시도가 같이 쓴다.
-/// 예산(시도 수·시간) 중 먼저 닿는 쪽에서 멈추고, 취소하면 그때까지의 결과를 돌려준다(시작 설정을 돌리기 전에 취소하면 <see cref="OperationCanceledException"/>).
+/// 돌림 하나 = 1단계(거칠게): 기준점에서 항목마다 하나씩, 숫자는 범위를 고르게 7곳, 고르기·켜고 끄기는 모든 값. 2단계(다듬기): 항목별 최고 값을 합친 점과
+/// 씨앗 몇 곳에서 좌표 언덕 오르기 — 숫자는 ±걸음, 둘 다 나아지지 않으면 걸음을 반으로(최소 걸음 아래면 멈춤), 고르기는 모든 값.
+/// 첫 돌림은 시작 설정이 기준점이고 씨앗은 점수 상위 3곳. 돌림이 '더 나아지지 않음'으로 끝나고 그 돌림이 최고 점수를 <see cref="MinPassGain"/>점 이상 올렸으면
+/// 그때의 1위에서 다시 돌린다 — 씨앗은 1위, 상위 <see cref="DiverseTop"/>개 중 설정이 1위와 가장 다른 시도(지역 최적 벗어나기), 1위를 정해진 씨앗으로
+/// 조금 흔든 점(<see cref="PerturbFraction"/>). 같은 설정(<see cref="PixelateSettings.Key"/>)은 모든 돌림에 걸쳐 다시 돌리지 않고, 준비 결과(<see cref="PixelateSource"/>)는 모든 시도가 같이 쓴다.
+/// 예산(시도 수·시간)은 모든 돌림을 합친 것이며 먼저 닿는 쪽에서 멈추고, 취소하면 그때까지의 결과를 돌려준다(시작 설정을 돌리기 전에 취소하면 <see cref="OperationCanceledException"/>).
+/// 결정성: 묶음마다 만든 순서로 번호를 미리 매기고(시도 수 예산은 묶음을 그 순서로 자름), 결과는 묶음이 끝난 뒤 번호 순으로 반영하며, 같은 점수는 번호가 작은 쪽 —
+/// 같은 입력·설정이면 스레드 순서와 상관없이 같은 결과(진행 알림 순서는 고르기에 영향 없음). 시간 예산·취소로 끝난 실행은 어디서 끊길지가 정해지지 않으므로
+/// 결정성은 시도 수 예산이나 '더 나아지지 않음'으로 끝날 때만 보장된다.
 /// 점수의 목표 색 수는 시작 설정 결과의 색 수(원래 색 유지면 없음) — 후보 만들기와 같다.
 /// </summary>
 public static class PixelateOptimizer
@@ -154,6 +168,12 @@ public static class PixelateOptimizer
     private const int CoarseSamples = 7;
     private const int Seeds = 3;
     private const double Epsilon = 1e-9;
+    /// <summary>다시 돌릴 최소 나아짐(점): 한 돌림이 최고 점수를 이만큼도 올리지 못하면 더 돌리지 않는다(점수 표시 단위 0.1점 — 그보다 작은 나아짐은 보이지 않음).</summary>
+    public const double MinPassGain = 0.1;
+    /// <summary>다시 돌릴 때 '1위와 가장 다른 시도'를 고르는 점수 상위 범위.</summary>
+    public const int DiverseTop = 10;
+    /// <summary>다시 돌릴 때 1위를 흔드는 폭: 숫자 항목마다 찾기 범위의 ±이 비율 안에서(씨앗 = 1위 설정 키 해시와 돌림 번호 — 정해짐).</summary>
+    public const double PerturbFraction = 0.1;
     /// <summary>'크기를 줄여서'에서 칸 크기로 받아들일 외곽선 두께와의 비율 차(±15%, <c>ShrinkBand</c>).</summary>
     public const double ShrinkTolerance = 0.15;
 
@@ -222,15 +242,17 @@ public static class PixelateOptimizer
         private readonly PixelateOptimizeOptions _opt;
         private readonly Action<PixelateOptimizeProgress>? _onProgress;
         private readonly CancellationToken _ct;
-        private readonly ConcurrentDictionary<string, PixelateTrial> _cache = new();
+        // 캐시·시도 목록·1위는 찾기를 이끄는 스레드에서만 바꾼다(묶음이 끝난 뒤 번호 순으로) — 작업 스레드는 결과 칸과 진행 알림만.
+        private readonly Dictionary<string, PixelateTrial> _cache = new();
         private readonly List<PixelateTrial> _trials = new();
         private readonly object _gate = new();
         private readonly Stopwatch _clock = new();
         private CancellationTokenSource _deadline = null!;
         private List<Axis> _axes = [];
         private int? _target;
-        private int _reserved, _index, _hits, _stop = -1;
-        private PixelateTrial? _best;
+        private int _reserved, _index, _hits, _completed, _stop = -1;
+        private volatile int _pass = 1;
+        private PixelateTrial? _best, _shown;
         private (double Lo, double Hi) _band = (0, double.PositiveInfinity);
         private (double Lo, double Hi)? _shrink;
 
@@ -260,51 +282,132 @@ public static class PixelateOptimizer
             _shrink = ShrinkBand();
             _band = ScaleBand(first);
             _reserved = 1;
-            var startTrial = Record(_start.Key(), _start, first);
+            _index = 1;
+            var startTrial = Make(0, _start, first);
+            Report(startTrial);
+            Commit(_start.Key(), startTrial);
 
             _axes = BuildAxes(first);
             if (_opt.MaxTrials <= 1) StopWith(OptimizeStop.Trials);
-            if (_axes.Count > 0 && !Stopped)
+            var passes = new List<PixelateOptimizePass>();
+            for (int pass = 1; ; pass++)
             {
-                // 1단계: 항목 하나씩 거칠게.
-                var coarse = _axes.Where(a => a.IsActive(_start)).SelectMany(a => a.Coarse().Select(v => (Axis: a, Value: v, Settings: a.Set(_start, v)))).ToList();
-                Evaluate(coarse.Select(c => c.Settings));
-
-                // 항목마다 가장 좋은 값을 합친 점.
-                var combined = _start;
-                foreach (var a in _axes)
-                {
-                    double bestValue = 0, bestScore = Rank(startTrial) + Epsilon;
-                    bool better = false;
-                    foreach (var c in coarse.Where(c => c.Axis == a))
-                        if (Lookup(c.Settings) is { } t && Rank(t) > bestScore) (bestValue, bestScore, better) = (c.Value, Rank(t), true);
-                    if (better) combined = a.Set(combined, bestValue);
-                }
-                Evaluate([combined]);
-
-                // 2단계: 상위 몇 곳에서 언덕 오르기.
-                List<PixelateTrial> seeds;
-                lock (_gate) seeds = [.. _trials.Where(t => t.InScale).OrderByDescending(t => t.Score.Total).ThenBy(t => t.Candidate.Index).Take(Seeds)];
-                foreach (var seed in seeds)
-                {
-                    if (Stopped) break;
-                    Climb(seed);
-                }
+                var from = _best!;
+                int before = pass == 1 ? 0 : _trials.Count;
+                _pass = pass;
+                if (_axes.Count > 0 && !Stopped) Search(pass);
+                passes.Add(new PixelateOptimizePass(pass, from.Score.Total, _best!.Score.Total, _trials.Count - before));
+                // 다시 돌림: 이 돌림이 '더 나아지지 않음'으로 끝났고(예산 남음) 최고 점수를 MinPassGain 이상 올렸을 때만.
+                double gain = Rank(_best) - Rank(from);
+                if (Stopped || pass >= _opt.MaxPasses || !(Rank(_best) > Rank(from) && gain >= MinPassGain)) break;
             }
 
             _clock.Stop();
             int stop = Volatile.Read(ref _stop);
-            List<PixelateTrial> trials;
-            lock (_gate) trials = [.. _trials];
             return new PixelateOptimizeResult
             {
                 Start = startTrial.Candidate,
                 Best = _best!.Candidate,
-                Trials = trials,
+                Trials = [.. _trials],
+                Passes = passes,
                 CacheHits = _hits,
                 Elapsed = _clock.Elapsed,
                 StoppedReason = stop < 0 ? OptimizeStop.Done : (OptimizeStop)stop,
             };
+        }
+
+        /// <summary>
+        /// 돌림 하나: 지금 1위를 기준점으로 항목마다 거칠게 훑고 항목별 최고 값을 합친 점을 돌린 뒤, 씨앗마다 언덕 오르기.
+        /// 첫 돌림의 씨앗은 점수 상위 <see cref="Seeds"/>곳, 다시 돌릴 때는 <see cref="EscapeSeeds"/>.
+        /// </summary>
+        private void Search(int pass)
+        {
+            var origin = _best!;
+            var o = origin.Settings;
+            // 1단계: 항목 하나씩 거칠게.
+            var coarse = _axes.Where(a => a.IsActive(o)).SelectMany(a => a.Coarse().Select(v => (Axis: a, Value: v, Settings: a.Set(o, v)))).ToList();
+            Evaluate(coarse.Select(c => c.Settings));
+
+            // 항목마다 가장 좋은 값을 합친 점.
+            var combined = o;
+            foreach (var a in _axes)
+            {
+                double bestValue = 0, bestScore = Rank(origin) + Epsilon;
+                bool better = false;
+                foreach (var c in coarse.Where(c => c.Axis == a))
+                    if (Lookup(c.Settings) is { } t && Rank(t) > bestScore) (bestValue, bestScore, better) = (c.Value, Rank(t), true);
+                if (better) combined = a.Set(combined, bestValue);
+            }
+            Evaluate([combined]);
+
+            // 2단계: 씨앗마다 언덕 오르기.
+            List<PixelateTrial> seeds = pass == 1 ? [.. Ranked().Take(Seeds)] : EscapeSeeds(pass);
+            foreach (var seed in seeds)
+            {
+                if (Stopped) break;
+                Climb(seed);
+            }
+        }
+
+        /// <summary>고를 수 있는 시도(칸 크기 범위 안, 실패 아님)를 점수 순으로(같은 점수는 번호 순).</summary>
+        private IEnumerable<PixelateTrial> Ranked()
+            => _trials.Where(t => !double.IsNegativeInfinity(Rank(t))).OrderByDescending(Rank).ThenBy(t => t.Candidate.Index);
+
+        /// <summary>
+        /// 다시 돌릴 때의 씨앗: 1위, 상위 <see cref="DiverseTop"/>개 중 설정이 1위와 가장 다른 시도(<see cref="Distance"/> — 같으면 점수가 높은 쪽),
+        /// 1위를 <see cref="Perturb"/>로 조금 흔든 점(고를 수 있는 결과일 때만).
+        /// </summary>
+        private List<PixelateTrial> EscapeSeeds(int pass)
+        {
+            var ranked = Ranked().Take(DiverseTop).ToList();
+            if (ranked.Count == 0) return [];
+            var top = ranked[0];
+            var seeds = new List<PixelateTrial> { top };
+            PixelateTrial? far = null;
+            double farDistance = Epsilon;
+            foreach (var t in ranked.Skip(1))
+            {
+                double d = Distance(top.Settings, t.Settings);
+                if (d > farDistance + Epsilon) (far, farDistance) = (t, d);
+            }
+            if (far is not null) seeds.Add(far);
+            var nudged = Perturb(top.Settings, pass);
+            Evaluate([nudged]);
+            if (Lookup(nudged) is { } n && !double.IsNegativeInfinity(Rank(n)) && seeds.All(s => s.Settings.Key() != n.Settings.Key())) seeds.Add(n);
+            return seeds;
+        }
+
+        /// <summary>두 설정의 거리: 항목마다 고르기는 다르면 1, 숫자는 찾기 범위로 나눈 차(최대 1)를 더한다(두 설정 모두에서 쉬는 항목은 뺌).</summary>
+        private double Distance(PixelateSettings a, PixelateSettings b)
+        {
+            double d = 0;
+            foreach (var axis in _axes)
+            {
+                if (!axis.IsActive(a) && !axis.IsActive(b)) continue;
+                double va = axis.Get(a), vb = axis.Get(b);
+                if (axis.IsChoice) d += Math.Round(va) != Math.Round(vb) ? 1 : 0;
+                else if (axis.Max > axis.Min) d += Math.Min(1, Math.Abs(va - vb) / (axis.Max - axis.Min));
+            }
+            return d;
+        }
+
+        /// <summary>
+        /// <paramref name="s"/>의 숫자 항목(그 점에서 쓰는 것)마다 찾기 범위의 ±<see cref="PerturbFraction"/> 안에서 흔든 설정. 난수 씨앗은 설정 키의 FNV-1a 해시와
+        /// 돌림 번호 — 같은 입력이면 늘 같은 점(<see cref="string.GetHashCode()"/>는 실행마다 달라서 쓰지 않음).
+        /// </summary>
+        private PixelateSettings Perturb(PixelateSettings s, int pass)
+        {
+            uint h = 2166136261;
+            foreach (char c in s.Key()) h = (h ^ c) * 16777619;
+            var rng = new Random((int)(h ^ (uint)pass * 0x9E3779B9u));
+            var p = s;
+            foreach (var a in _axes)
+            {
+                if (a.IsChoice || !a.IsActive(p) || a.Max <= a.Min) continue;
+                double d = (rng.NextDouble() * 2 - 1) * PerturbFraction * (a.Max - a.Min);
+                p = a.Set(p, a.Normalize(a.Get(p) + d));
+            }
+            return p;
         }
 
         private PixelateTrial? Lookup(PixelateSettings s) => _cache.TryGetValue(s.Key(), out var t) ? t : null;
@@ -358,7 +461,10 @@ public static class PixelateOptimizer
             }
         }
 
-        /// <summary>설정들을 여러 스레드로 돌린다(이미 돌린 설정·같은 설정은 한 번). 예산이 다하면 남은 것은 건너뛴다.</summary>
+        /// <summary>
+        /// 설정들을 여러 스레드로 돌린다(이미 돌린 설정·같은 설정은 한 번). 번호는 묶음 순서대로 미리 매기고, 시도 수 예산이 모자라면 묶음을 그 순서로 자른다.
+        /// 끝난 결과는 묶음이 다 끝난 뒤 번호 순으로 캐시·목록·1위에 반영한다(스레드 순서와 무관). 시간이 다하거나 취소하면 남은 것은 건너뛴다.
+        /// </summary>
         private void Evaluate(IEnumerable<PixelateSettings> batch)
         {
             var todo = new List<(string Key, PixelateSettings Settings)>();
@@ -366,12 +472,27 @@ public static class PixelateOptimizer
             foreach (var s in batch)
             {
                 var key = s.Key();
-                if (_cache.ContainsKey(key) || !seen.Add(key)) { Interlocked.Increment(ref _hits); continue; }
+                if (_cache.ContainsKey(key) || !seen.Add(key)) { _hits++; continue; }
                 todo.Add((key, s));
             }
             if (todo.Count == 0 || Stopped) return;
+            int room = _opt.MaxTrials - _reserved;
+            bool cut = todo.Count > room;
+            if (cut)
+            {
+                if (room <= 0)
+                {
+                    StopWith(OptimizeStop.Trials);
+                    return;
+                }
+                todo.RemoveRange(room, todo.Count - room);
+            }
+            _reserved += todo.Count;
+            int first = _index;
+            _index += todo.Count;
+            var done = new PixelateTrial?[todo.Count];
             var po = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, _opt.MaxDegreeOfParallelism) };
-            Parallel.ForEach(todo, po, (item, state) =>
+            Parallel.For(0, todo.Count, po, (i, state) =>
             {
                 if (Stopped) { state.Stop(); return; }
                 if (_deadline.IsCancellationRequested)
@@ -380,16 +501,11 @@ public static class PixelateOptimizer
                     state.Stop();
                     return;
                 }
-                if (Interlocked.Increment(ref _reserved) > _opt.MaxTrials)
-                {
-                    StopWith(OptimizeStop.Trials);
-                    state.Stop();
-                    return;
-                }
+                var s = todo[i].Settings;
                 PixelateResult r;
                 try
                 {
-                    r = Pixelator.Run(SourceFor(item.Settings), item.Settings, ColorMetric.For(_start.Palette), _deadline.Token);
+                    r = Pixelator.Run(SourceFor(s), s, ColorMetric.For(_start.Palette), _deadline.Token);
                 }
                 catch (OperationCanceledException) when (_deadline.IsCancellationRequested)
                 {
@@ -397,33 +513,48 @@ public static class PixelateOptimizer
                     state.Stop();
                     return;
                 }
-                Record(item.Key, item.Settings, r);
+                var trial = Make(first + i, s, r);
+                done[i] = trial;
+                Report(trial);
             });
+            for (int i = 0; i < todo.Count; i++)
+                if (done[i] is { } t) Commit(todo[i].Key, t);
+            if (cut) StopWith(OptimizeStop.Trials);
         }
 
-        private PixelateTrial Record(string key, PixelateSettings s, PixelateResult r)
+        /// <summary>결과에 점수를 매겨 시도로 만든다(번호 <paramref name="index"/>, 0 = 시작 설정 — 시작은 늘 칸 크기 범위 안으로 침).</summary>
+        private PixelateTrial Make(int index, PixelateSettings s, PixelateResult r)
         {
             var score = PixelateScoring.Score(r, _opt.Weights, _target);
-            int index = Interlocked.Increment(ref _index) - 1;
             bool inScale = index == 0 || (r.Scale >= _band.Lo && r.Scale <= _band.Hi
                 && !(s.Cleanup.OutlineFit == OutlineFit.Shrink && _shrink is { } sb && (r.Scale < sb.Lo * 0.98 || r.Scale > sb.Hi * 1.02)));
-            var trial = new PixelateTrial(new PixelateCandidate(index, s, r, score), Summary(s, r, _opt.Params), inScale);
-            _cache[key] = trial;
+            return new PixelateTrial(new PixelateCandidate(index, s, r, score), Summary(s, r, _opt.Params), inScale);
+        }
+
+        /// <summary>진행 알림(끝나는 대로 — 보여 주는 최고 점수만 여기서 셈, 고르기는 <see cref="Commit"/>).</summary>
+        private void Report(PixelateTrial trial)
+        {
             int done;
             double best;
             lock (_gate)
             {
-                _trials.Add(trial);
-                if (_best is null || Rank(trial) > Rank(_best)) _best = trial;
-                done = _trials.Count;
-                best = _best.Score.Total;
+                done = ++_completed;
+                if (_shown is null || Rank(trial) > Rank(_shown)) _shown = trial;
+                best = _shown.Score.Total;
             }
-            _onProgress?.Invoke(new PixelateOptimizeProgress(done, _opt.MaxTrials, best, trial));
-            return trial;
+            _onProgress?.Invoke(new PixelateOptimizeProgress(done, _opt.MaxTrials, best, _pass, trial));
         }
 
-        /// <summary>고를 때 쓰는 점수: 칸 크기가 범위 밖인 시도는 −∞.</summary>
-        private static double Rank(PixelateTrial t) => t.InScale ? t.Score.Total : double.NegativeInfinity;
+        /// <summary>시도를 캐시·목록에 넣고 1위를 고친다(번호 순으로 불림 — 같은 점수면 먼저 넣은 쪽, 곧 번호가 작은 쪽이 남음).</summary>
+        private void Commit(string key, PixelateTrial trial)
+        {
+            _cache[key] = trial;
+            _trials.Add(trial);
+            if (_best is null || Rank(trial) > Rank(_best)) _best = trial;
+        }
+
+        /// <summary>고를 때 쓰는 점수: 칸 크기가 범위 밖이거나 실패한 결과(<see cref="PixelateResult.Failed"/>)인 시도는 −∞.</summary>
+        private static double Rank(PixelateTrial t) => t.InScale && !t.Result.Failed ? t.Score.Total : double.NegativeInfinity;
 
         /// <summary>
         /// 깨끗한 그림의 정확한 정수 배(<see cref="ScaleEstimate.Exact"/> — 자동 격자·배율 크기 아님)면 그 칸 크기, 아니면 null.
@@ -502,9 +633,11 @@ public static class PixelateOptimizer
             double low = floor.Min();
             double min = Math.Max(Math.Min(1.5, low), low * 0.75);
             var all = baseValues.Where(v => v > 0).Distinct().ToList();
+            // 배수·약수 후보도 칸 크기 상한(스프라이트 짧은 변의 1/5 — PixelateSource.MaxCell) 안에서만.
+            double cap = _src.MaxCell(-1);
             if (wide)
                 foreach (double v in all.ToList())
-                    all.AddRange([v * 2, v * 3, v / 2, v / 3]);
+                    all.AddRange(new[] { v * 2, v * 3, v / 2, v / 3 }.Where(x => cap <= 0 || x <= cap));
             var candidates = Clean(all, min, double.PositiveInfinity);
             return (min, candidates.Count > 0 ? candidates.Max() * 1.25 : min, candidates);
         }

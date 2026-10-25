@@ -113,7 +113,7 @@ public sealed record PixelateOutcome(
 /// AI 그림 픽셀로 정리: 왼쪽은 단계별 설정(배경 → 프레임 → 격자 → 크기 → 칸 색 → 팔레트 → 정리 → 프레임 맞추기, 바꾸면 0.3초 뒤 다시 돌림 —
 /// 기본은 얇은 막대로 접혀 있고 눌러 펼침), 오른쪽은 원본(확대·이동, 찾은 격자·배경 지운 모습), 고른 후보의 큰 미리보기(프레임 재생 + 같은 프레임 원본), 점수 순 후보 목록.
 /// 후보는 배경에서 여러 스레드로 만들고 끝나는 대로 보이며, 가장 높은 점수를 미리 고른다. 창은 모달이 아니다(채팅에 후보 평가를 부탁하며 열어 둘 수 있음).
-/// 원본 없이 열 수 있고(파일 메뉴), 창에 그림 파일 끌어 놓기·Ctrl+V 붙여 넣기·파일 찾기로 원본을 넣거나 바꾼다(<see cref="SetSource"/>).
+/// 원본 없이 열 수 있고(AI 메뉴), 창에 그림 파일 끌어 놓기·Ctrl+V 붙여 넣기·파일 찾기로 원본을 넣거나 바꾼다(<see cref="SetSource"/>).
 /// </summary>
 public sealed class PixelateDialog : DialogBase
 {
@@ -125,6 +125,8 @@ public sealed class PixelateDialog : DialogBase
     private PixelateInput? _input;
     private readonly bool _canInsertLayer;
     private readonly Action<PixelateOutcome> _apply;
+    /// <summary>"새 탭에 추가": 고른 결과 크기의 새 문서를 새 탭에(넣기 설정과 관계없이) 만들고 닫는다.</summary>
+    private readonly Button _newTab;
     private readonly Action<string, string, IReadOnlyList<PixelImage>> _askAi;
     /// <summary>파일 찾기의 처음 폴더(주 창 파일 브라우저의 폴더, 없으면 마지막 폴더).</summary>
     private readonly Func<string?> _browseFolder;
@@ -132,6 +134,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly Func<PixelImage?> _readClipboardImage;
     /// <summary>레이어 여러 프레임을 이은 원본이면 기억한 프레임 나누기 설정(닫거나 원본을 바꿀 때 되돌림).</summary>
     private FrameSettings? _restoreFrames;
+    /// <summary>처음 설정을 받아 열었음(채팅의 "변환 설정 보기"): 닫을 때 단계 설정을 기억하지 않는다(사용자가 기억한 설정 그대로).</summary>
+    private readonly bool _presetGiven;
     private readonly List<(string Name, IReadOnlyList<Color32> Colors)> _palettes;
     private readonly string _presetsPath;
     private List<PixelatePreset> _userPresets;
@@ -155,6 +159,17 @@ public sealed class PixelateDialog : DialogBase
     private readonly WrapPanel _tiles;
     private readonly TextBlock _status, _selectedInfo, _breakdown, _largeWarning;
     private readonly CheckBox _showGrid, _showMask;
+    /// <summary>
+    /// 원본 아래 막대의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
+    /// 4단계 칸과 같은 설정을 함께 쓴다 — 막대를 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarSize"/>가 막대를 맞춘다.
+    /// </summary>
+    private readonly CheckBox _barAuto;
+    private readonly NumericUpDown _barW, _barH;
+    private readonly ToggleButton _barAspect;
+    /// <summary>막대를 설정에 맞추는 중(막대 쪽 이벤트 무시).</summary>
+    private bool _barSyncing;
+    /// <summary>자동을 다시 켤 때 돌아갈 방식(마지막으로 쓴, 고정 크기가 아닌 방식).</summary>
+    private OutputSizeMode _barAutoMode = OutputSizeMode.FromScale;
     private readonly NumericUpDown _fps;
     /// <summary>프레임 띠(큰 미리보기·크게 보기 — 썸네일 <see cref="_thumbs"/>를 함께 씀).</summary>
     private readonly FrameStrip _strip, _zoomStrip;
@@ -255,7 +270,7 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>켤 수 있는 항목 모두 선택 ↔ 모두 해제(글자는 지금 상태를 따라감).</summary>
     private readonly Button _optAll;
     private bool _optSyncing;
-    /// <summary>그래프 옆 한 줄: 도는 동안 진행, 끝나면 "최적화: a점 → b점 · 시도 n번 · t초 · 까닭"(풍선에 같은 글).</summary>
+    /// <summary>그래프 옆 한 줄: 도는 동안 진행(돌림 번호 포함), 끝나면 "돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭"(풍선에 같은 글).</summary>
     private readonly TextBlock _optText;
     private readonly OptimizeGraph _optGraph;
     private readonly Grid _optTable;
@@ -290,9 +305,10 @@ public sealed class PixelateDialog : DialogBase
     /// <param name="input">원본(null = 빈 창 — 끌어 놓기·붙여 넣기·파일 찾기로 넣음).</param>
     /// <param name="browseFolder">파일 찾기의 처음 폴더.</param>
     /// <param name="readClipboardImage">클립보드 그림(없으면 null).</param>
+    /// <param name="preset">처음 단계 설정(AI 그리기 결과를 다시 조정 — 그 설정으로 후보를 만들고 자동 최적화는 다시 돌리지 않음). null = 기억한 설정.</param>
     public PixelateDialog(AppSettings settings, PixelateInput? input, IEnumerable<NamedPalette> palettes, bool canInsertLayer,
         Action<PixelateOutcome> apply, Action<string, string, IReadOnlyList<PixelImage>> askAi,
-        Func<string?> browseFolder, Func<PixelImage?> readClipboardImage, int sourceFrames = 1)
+        Func<string?> browseFolder, Func<PixelImage?> readClipboardImage, int sourceFrames = 1, PixelateSettings? preset = null)
         : base(TitleFor(input), UiStrings.Pixelate_Apply)
     {
         _settings = settings;
@@ -316,8 +332,9 @@ public sealed class PixelateDialog : DialogBase
         MinHeight = 600;
         ShowInTaskbar = true;
 
-        var initial = PixelatePresets.ParseSettings(settings.PixelateSettings) ?? new PixelateSettings();
-        if (sourceFrames > 1)
+        var initial = preset ?? PixelatePresets.ParseSettings(settings.PixelateSettings) ?? new PixelateSettings();
+        _presetGiven = preset is not null;
+        if (sourceFrames > 1 && preset is null)
         {
             // 레이어의 여러 프레임을 가로로 이은 그림: 칸마다 한 프레임(기억한 나누기 설정은 닫을 때 되돌림).
             _restoreFrames = initial.Frames;
@@ -623,8 +640,11 @@ public sealed class PixelateDialog : DialogBase
         _showGrid.IsCheckedChanged += (_, _) => _zoom.GridButton.IsChecked = _showGrid.IsChecked;
         _zoom.GridButton.IsCheckedChanged += (_, _) => _showGrid.IsChecked = _zoom.GridButton.IsChecked;
         _preview.OpenRequested += OpenZoom;
-        // 큰 미리보기(결과·원본) 누르기 = 크게 보기. 크게 보기의 결과 픽셀 누르기 = 그 색 강조, 원본 칸 누르기 = 그 칸이 된 결과 색 강조(스포이드 중이면 색 추가).
+        // 큰 미리보기(결과·원본) 좌클릭 = 크게 보기, 결과 우클릭 = 그 픽셀 색 빼기/되살리기. 크게 보기의 결과 픽셀 좌클릭 = 쓰인 곳 보기, 우클릭 = 빼기/되살리기,
+        // 원본 칸 좌클릭 = 그 칸이 된 결과 색 보기(스포이드 중이면 색 추가). 색 칸도 같다(좌클릭 = 쓰인 곳, 우클릭 = 빼기/되살리기·고정 해제).
         _zoom.View.ResultPixelClicked += OnResultPixel;
+        _zoom.View.ResultPixelRightClicked += OnResultPixelRight;
+        _preview.ResultPixelRightClicked += OnResultPixelRight;
         _zoom.View.SourceCellClicked += OnSourceCell;
         _pickPulse.Tick += OnPickPulse;
         // 원본에서 색 추가(스포이드): 왼쪽 큰 원본·큰 미리보기의 원본 칸·크게 보기의 원본 칸에서 칸을 누르면 고정 색으로.
@@ -677,7 +697,26 @@ public sealed class PixelateDialog : DialogBase
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
         _replaceSource = Ui.Button(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource, (_, _) => BrowseSource()).Tip(UiStrings.Pixelate_ReplaceSourceTip);
-        var toolbar = Ui.Row(_replaceSource, _showGrid, _showMask);
+        // 결과 크기(4단계와 같은 설정): 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
+        _barAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Bar_AutoTip);
+        _barW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
+        _barH = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
+        var linkIcon = Ui.Icon(VectorIcon.Link, 14);
+        linkIcon.Margin = new Thickness(0, 1);
+        _barAspect = new ToggleButton
+        {
+            Content = linkIcon,
+            Margin = new Thickness(2, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(UiStrings.Pixelate_Bar_KeepAspectTip);
+        _barAuto.IsCheckedChanged += (_, _) => BarAutoChanged();
+        _barW.ValueChanged += (_, _) => BarSizeChanged(width: true);
+        _barH.ValueChanged += (_, _) => BarSizeChanged(width: false);
+        _barAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _barAspect.On(); };
+        var barLabel = Ui.Label(UiStrings.Pixelate_Bar_Size);
+        barLabel.Margin = new Thickness(10, 3, 3, 3);
+        var toolbar = Ui.Row(_replaceSource, _showGrid, _showMask, barLabel, _barAuto, _barW, Ui.Label(UiStrings.Pixelate_Size_By), _barH, _barAspect);
         var statusRow = new DockPanel { Margin = new Thickness(0, 2) };
         DockPanel.SetDock(toolbar, Dock.Left);
         statusRow.Children.Add(toolbar);
@@ -870,12 +909,20 @@ public sealed class PixelateDialog : DialogBase
         OkButton.Click += (_, _) =>
         {
             if (_selected is null) { DialogResult = DialogResult.None; return; }
-            Apply(_selected);
+            Apply(_selected, newDocument: false);
+        };
+        _newTab = AddButton(UiStrings.Pixelate_AddToNewTab, DialogResult.OK, beforeOk: true);
+        _newTab.Width = double.NaN;
+        _newTab.Tip(UiStrings.Pixelate_AddToNewTabTip);
+        _newTab.Click += (_, _) =>
+        {
+            if (_selected is null) { DialogResult = DialogResult.None; return; }
+            Apply(_selected, newDocument: true);
         };
 
         LoadSettings(initial);
         UpdateSourceState();
-        _autoOptimizePending = input is not null && _optAuto.On();
+        _autoOptimizePending = input is not null && _optAuto.On() && !_presetGiven;
         Opened += (_, _) =>
         {
             Dispatcher.UIThread.Post(() => { if (!_settingsAnim.IsEnabled) _settingsHost.IsVisible = _settingsExpanded; }, DispatcherPriority.Background);
@@ -898,6 +945,7 @@ public sealed class PixelateDialog : DialogBase
         _emptyState.IsVisible = !has;
         _replaceSource.IsVisible = has;
         OkButton.IsEnabled = has;
+        _newTab.IsEnabled = has;
         UpdateOptimizeButtons();
     }
 
@@ -946,6 +994,7 @@ public sealed class PixelateDialog : DialogBase
         _selectedInfo.Text = _breakdown.Text = "";
         _largeWarning.IsVisible = false;
         _bgInfo.Text = _frInfo.Text = _grInfo.Text = _szInfo.Text = _palInfo.Text = "";
+        SyncBarSize();
         _preview.SetFrames([], [], null, [], true);
         var oldThumbs = _thumbs;
         _thumbs = [];
@@ -1401,6 +1450,86 @@ public sealed class PixelateDialog : DialogBase
         _clVecTol.IsEnabled = _clVecBlob.IsEnabled = At<OutlineFit>(_clFit) == OutlineFit.Vector;
         _coContrast.IsEnabled = _coTemporal.On();
         UpdateOptimizeChecks();
+        SyncBarSize();
+    }
+
+    /// <summary>원본 아래 막대의 결과 크기를 4단계 칸(설정)과 고른 결과에 맞춘다(막대 이벤트는 무시).</summary>
+    private void SyncBarSize()
+    {
+        var mode = At<OutputSizeMode>(_szMode);
+        bool auto = mode != OutputSizeMode.FixedSize;
+        if (auto) _barAutoMode = mode;
+        _barSyncing = true;
+        try
+        {
+            _barAuto.IsChecked = auto;
+            _barAspect.IsChecked = _szAspect.On();
+            _barW.IsEnabled = _barH.IsEnabled = _barAspect.IsEnabled = !auto;
+            if (auto)
+            {
+                // 자동: 고른 결과의 실제 크기(4~1024 밖일 수도 있어 범위를 넓힘), 결과가 없으면 비움.
+                var size = _selected?.Result.Size;
+                _barW.Minimum = _barH.Minimum = 0;
+                _barW.Maximum = _barH.Maximum = int.MaxValue;
+                _barW.Value = size is { Width: > 0 } s ? s.Width : null;
+                _barH.Value = size is { Height: > 0 } t ? t.Height : null;
+            }
+            else
+            {
+                _barW.Minimum = _barH.Minimum = _szW.Minimum;
+                _barW.Maximum = _barH.Maximum = _szW.Maximum;
+                _barW.Value = _szW.Value;
+                _barH.Value = _szH.Value;
+            }
+        }
+        finally
+        {
+            _barSyncing = false;
+        }
+    }
+
+    /// <summary>막대의 "자동"을 바꿈: 켜면 마지막 자동 방식(칸 크기대로·배율), 끄면 지금 보이는 결과 크기에서 시작하는 고정 크기.</summary>
+    private void BarAutoChanged()
+    {
+        if (_barSyncing) return;
+        if (_barAuto.On())
+        {
+            _szMode.SelectedIndex = Index(_barAutoMode);
+            return;
+        }
+        if (_selected?.Result.Size is { Width: > 0, Height: > 0 } size)
+        {
+            _loading = true;
+            _szW.Value = Math.Clamp(size.Width, 4, 1024);
+            _szH.Value = Math.Clamp(size.Height, 4, 1024);
+            _loading = false;
+        }
+        _szMode.SelectedIndex = Index(OutputSizeMode.FixedSize);
+    }
+
+    /// <summary>막대의 가로·세로를 바꿈(고정 크기일 때): 4단계 칸에 적고, 비율 묶기면 다른 쪽을 지금 결과(없으면 원본) 비율대로 맞춘다.</summary>
+    private void BarSizeChanged(bool width)
+    {
+        if (_barSyncing || _barAuto.On()) return;
+        var (edited, target, other) = width ? (_barW, _szW, _szH) : (_barH, _szH, _szW);
+        if (edited.Value is not { } v) return;
+        _loading = true;
+        target.Value = Math.Clamp(v, target.Minimum, target.Maximum);
+        if (_barAspect.On() && AspectBasis() is { } a)
+        {
+            double ratio = width ? a.Height / (double)a.Width : a.Width / (double)a.Height;
+            other.Value = Math.Clamp(Math.Round(v * (decimal)ratio), other.Minimum, other.Maximum);
+        }
+        _loading = false;
+        Changed();
+    }
+
+    /// <summary>비율 묶기의 기준 비율: 고른 결과 크기, 없으면 원본 그림 크기.</summary>
+    private (int Width, int Height)? AspectBasis()
+    {
+        if (_selected?.Result.Size is { Width: > 0, Height: > 0 } s) return (s.Width, s.Height);
+        if (_input is { Image: { Width: > 0, Height: > 0 } img }) return (img.Width, img.Height);
+        return null;
     }
 
     private void Changed()
@@ -1524,7 +1653,27 @@ public sealed class PixelateDialog : DialogBase
             edges: Px(e.Edges), edgesMatch: Pct(e.EdgesMatch, e.Edges),
             outline: Px(e.Outline), outlineMatch: Pct(e.OutlineMatch, e.Outline),
             blocks: Px(e.Blocks), blocksMatch: Pct(e.BlocksMatch, e.Blocks),
-            reason: reason);
+            reason: reason)
+            + (e.MaxScale > 0 ? "\n" + UiStrings.FormatPixelate_Grid_Cap(cap: Px(e.MaxScale), cells: GridDetector.MinSpriteCells) : "");
+    }
+
+    /// <summary>실패한 결과의 까닭(<see cref="PixelateFailure"/>) — 대화상자와 AI 그리기 도구가 함께 쓴다.</summary>
+    internal static string FailureReason(PixelateFailure f) => f switch
+    {
+        PixelateFailure.Empty => UiStrings.Pixelate_Failure_Empty,
+        PixelateFailure.NearlyEmpty => UiStrings.Pixelate_Failure_NearlyEmpty,
+        PixelateFailure.OneColor => UiStrings.Pixelate_Failure_OneColor,
+        _ => UiStrings.Pixelate_Failure_TooSmall,
+    };
+
+    /// <summary>실패한 결과면 까닭과 칸 크기, 다른 어림으로 다시 정리한 결과면 그 안내, 아니면 null.</summary>
+    private static string? FailureNote(PixelateResult r)
+    {
+        var ci = CultureInfo.CurrentCulture;
+        if (r.Failed) return UiStrings.FormatPixelate_Result_Failed(reason: FailureReason(r.Failure), scale: r.DetectedScale.ToString("0.##", ci));
+        return r.RetriedFrom > 0
+            ? UiStrings.FormatPixelate_Result_Retried(from: r.RetriedFrom.ToString("0.##", ci), scale: r.DetectedScale.ToString("0.##", ci))
+            : null;
     }
 
     /// <summary>외곽선 두께가 쓴 칸 크기의 2배 이상(정수배 근처)이면 "외곽선이 n픽셀 두께" 안내(앞에 줄바꿈), 아니면 빈 글.</summary>
@@ -1539,7 +1688,8 @@ public sealed class PixelateDialog : DialogBase
     private void AddCandidate(PixelateCandidate c, int total)
     {
         _candidates.Add(WithExcluded(c));
-        _candidates.Sort((a, b) => b.Score.Total.CompareTo(a.Score.Total) is var r && r != 0 ? r : a.Index.CompareTo(b.Index));
+        _candidates.Sort((a, b) => a.Result.Failed.CompareTo(b.Result.Failed) is var f && f != 0 ? f
+            : b.Score.Total.CompareTo(a.Score.Total) is var r && r != 0 ? r : a.Index.CompareTo(b.Index));
         _status.Text = UiStrings.FormatPixelate_Status_Running(done: _candidates.Count, total: Math.Max(total, _candidates.Count));
         RebuildTiles();
         if (!_userPicked) Select(Preferred());
@@ -1549,6 +1699,8 @@ public sealed class PixelateDialog : DialogBase
     {
         _status.Text = UiStrings.FormatPixelate_Status_Done(count: _candidates.Count, ms: _runClock.ElapsedMilliseconds);
         if (!_userPicked && _candidates.Count > 0) Select(Preferred());
+        // 모든 후보가 실패했으면(칸 크기 감지가 잘못됨) 상태 줄에 까닭을.
+        if (_candidates.Count > 0 && _candidates.All(c => c.Result.Failed)) _status.Text = FailureNote(_candidates[0].Result);
         // 원본을 넣은 뒤 첫 후보가 끝나면 자동 최적화를 한 번(설정을 바꿔 다시 돌린 것은 아님 — 넣을 때만 켜짐).
         if (_autoOptimizePending && _candidates.Count > 0)
         {
@@ -1557,9 +1709,10 @@ public sealed class PixelateDialog : DialogBase
         }
     }
 
-    /// <summary>미리 고를 후보: 지금 설정의 외곽선 맞추기 방식인 후보 중 점수가 가장 높은 것(없으면 1위).</summary>
+    /// <summary>미리 고를 후보: 실패하지 않은 후보 중 지금 설정의 외곽선 맞추기 방식인 것의 점수 1위(없으면 실패하지 않은 1위, 모두 실패면 1위).</summary>
     private PixelateCandidate Preferred()
-        => _candidates.FirstOrDefault(c => c.Settings.Cleanup.OutlineFit == _runFit) ?? _candidates[0];
+        => _candidates.FirstOrDefault(c => !c.Result.Failed && c.Settings.Cleanup.OutlineFit == _runFit)
+           ?? _candidates.FirstOrDefault(c => !c.Result.Failed) ?? _candidates[0];
 
     private static string FitName(OutlineFit f) => f switch
     {
@@ -1585,7 +1738,7 @@ public sealed class PixelateDialog : DialogBase
             tile.DoubleTapped += (_, _) =>
             {
                 Select(c);
-                Apply(c);
+                Apply(c, newDocument: false);
                 Close(DialogResult.OK);
             };
             _tiles.Children.Add(tile);
@@ -1615,9 +1768,11 @@ public sealed class PixelateDialog : DialogBase
             bad: Math.Round(p.Badness * 100),
             weight: p.Weight.ToString("0.#", CultureInfo.CurrentCulture))));
         _szInfo.Text = UiStrings.FormatPixelate_Size_Info(width: r.Size.Width, height: r.Size.Height);
-        // 결과의 긴 쪽이 크면 칸 크기가 진짜 칸의 몇 분의 1일 수 있다(아직 확대된 그림).
-        _largeWarning.IsVisible = Math.Max(r.Size.Width, r.Size.Height) > LargeResultSide;
-        _largeWarning.Text = _largeWarning.IsVisible ? UiStrings.FormatPixelate_Result_Large(width: r.Size.Width, height: r.Size.Height) : "";
+        SyncBarSize();
+        // 실패한 결과(칸 크기 감지가 잘못됨)·다시 정리한 결과면 그 안내, 아니면 결과의 긴 쪽이 클 때 칸 크기가 진짜 칸의 몇 분의 1일 수 있다(아직 확대된 그림).
+        var note = FailureNote(r);
+        _largeWarning.IsVisible = note is not null || Math.Max(r.Size.Width, r.Size.Height) > LargeResultSide;
+        _largeWarning.Text = note ?? (_largeWarning.IsVisible ? UiStrings.FormatPixelate_Result_Large(width: r.Size.Width, height: r.Size.Height) : "");
         _palInfo.Text = UiStrings.FormatPixelate_Pal_Info(count: r.Palette.Count);
         var frames = r.CommonFrames();
         _preview.SetFrames(frames, r.CommonExcludedFrames(), _prepared?.Cleaned, r.Maps, r.Frames.All(f => f.Size == r.Size));
@@ -1854,12 +2009,40 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 크게 보기의 결과 픽셀을 누름: 그 색의 색 칸을 두 색 칸 묶음에서 강조(굵은 테두리·맥박·보이게 굴림), 누른 픽셀 표시와
-    /// 같은 색 영역 둘레(오른쪽 클릭 강조와 같음)를 1.2초, 상태 줄에 HEX와 결과 좌표. 투명 픽셀이면 아무것도 하지 않는다.
+    /// 결과 픽셀을 좌클릭(크게 보기): 쓰인 곳 보기 — 그 색의 색 칸을 두 색 칸 묶음에서 강조(굵은 테두리·맥박·보이게 굴림), 누른 픽셀 표시와
+    /// 같은 색 영역 둘레(색 칸 좌클릭과 같음)를 1.2초, 상태 줄에 HEX와 결과 좌표. 투명 픽셀이면 아무것도 하지 않는다.
     /// </summary>
     private void OnResultPixel(int frame, int x, int y)
     {
         if (ShowResultColor(frame, x, y) is { } c) _status.Text = $"{c.WithAlpha(255).ToHex()} · ({x}, {y})";
+    }
+
+    /// <summary>
+    /// 결과 픽셀을 우클릭(큰 미리보기·크게 보기): 지금 그 자리에 보이는 색(뺀 색 대신 들어간 색이면 그 색)을 색 칸 우클릭처럼 <see cref="ToggleColor"/>.
+    /// 투명 픽셀이거나 보이는 프레임이 아니면 아무것도 하지 않는다.
+    /// </summary>
+    private void OnResultPixelRight(int frame, int x, int y)
+    {
+        if (_preview.Index != frame || _preview.FrameImage is not { } img || !img.Contains(x, y)) return;
+        var c = img[x, y];
+        if (c.A == 0) return;
+        _status.Text = $"{c.WithAlpha(255).ToHex()} · ({x}, {y})";
+        ToggleColor(c);
+    }
+
+    /// <summary>색 칸 좌클릭: 쓰인 곳 보기 — 결과에서 그 색 픽셀(뺀 색이면 그 색이 있던 자리)을 잠깐 강조하고 두 색 칸 묶음에서 그 칸을 강조.</summary>
+    private void ShowColorUse(Color32 color)
+    {
+        _preview.Flash(color);
+        _colors.Highlight(color);
+        _zoomColors.Highlight(color);
+    }
+
+    /// <summary>색 칸·결과 픽셀 우클릭: 고정 색이면 고정 해제, 아니면 이 색 빼기/되살리기(<see cref="ToggleExcluded"/> — 마지막 남은 색은 빼지 않음).</summary>
+    private void ToggleColor(Color32 color)
+    {
+        if (PaletteEdits.MatchesAny(_pinned, color)) Unpin(color);
+        else ToggleExcluded(color);
     }
 
     /// <summary>
@@ -2101,8 +2284,9 @@ public sealed class PixelateDialog : DialogBase
     private void OnOptimizeProgress(PixelateOptimizeProgress p)
     {
         _optDone = Math.Max(_optDone, p.Done);
-        _optGraph.Add(p.BestScore);
+        _optGraph.Add(p.BestScore, p.Pass);
         var text = UiStrings.FormatPixelate_Opt_Progress(
+            pass: _optGraph.Pass,
             done: _optDone,
             total: p.Budget,
             score: _optGraph.Best.ToString("0.0", CultureInfo.CurrentCulture));
@@ -2146,13 +2330,14 @@ public sealed class PixelateDialog : DialogBase
             _ => UiStrings.Pixelate_Opt_Stop_Done,
         };
         var done = UiStrings.FormatPixelate_Opt_Done(
+            passes: result.Passes.Count,
             start: result.Start.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
             best: result.Best.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
             trials: result.Trials.Count,
             seconds: result.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture),
             reason: reason);
         EndOptimize(done);
-        _status.Text = done;
+        _status.Text = best.Result.Failed ? done + " · " + FailureNote(best.Result) : done;
         FillOptimizeHistory(result);
     }
 
@@ -2272,11 +2457,12 @@ public sealed class PixelateDialog : DialogBase
 
     // ───────────── 적용·AI ─────────────
 
-    private void Apply(PixelateCandidate c)
+    /// <summary>고른 후보를 넣는다. <paramref name="newDocument"/>면 넣기 설정과 관계없이 새 탭의 새 문서로(결과 크기·프레임·길이 그대로).</summary>
+    private void Apply(PixelateCandidate c, bool newDocument)
     {
         if (_input is not { } input) return;
         SaveOptions();
-        _apply(new PixelateOutcome(input, c.Result, _outDoc.On() || !_canInsertLayer, (int)_outDuration.NumValue(), _outPalette.On(),
+        _apply(new PixelateOutcome(input, c.Result, newDocument || _outDoc.On() || !_canInsertLayer, (int)_outDuration.NumValue(), _outPalette.On(),
             _aiTouch.On(), _aiPrompt.Text ?? "", ProviderId, _aiReference.On()));
     }
 
@@ -2424,9 +2610,12 @@ public sealed class PixelateDialog : DialogBase
             _opt.Width = (int)Width;
             _opt.Height = (int)Height;
         }
-        var s = ReadSettings();
-        if (_restoreFrames is { } frames) s = s with { Frames = frames };
-        _settings.PixelateSettings = PixelatePresets.SerializeSettings(s, indented: false);
+        if (!_presetGiven)
+        {
+            var s = ReadSettings();
+            if (_restoreFrames is { } frames) s = s with { Frames = frames };
+            _settings.PixelateSettings = PixelatePresets.SerializeSettings(s, indented: false);
+        }
         _settings.Save();
     }
 
@@ -2871,7 +3060,7 @@ public sealed class PixelateDialog : DialogBase
     /// 색 칸 묶음: "색 N개"(결과가 실제로 쓴 색 수) + 고른 후보가 쓴 색 칸(많이 쓴 색부터), 결과에 없는 고정 색(흐리게), 결과에 없는 뺀 색(되살릴 수 있게 끝에 —
     /// 빗금·빨간 테두리, 흐리게)과 줄 끝의 '+' 칸(<see cref="PinAddCell"/> — 원본에서 색 추가). 풍선 = HEX·픽셀 수.
     /// 아래에 뺀 색이 있으면 "색 빼기 N개 적용 중 · 모두 되살리기", 고정 색이 있으면 "고정 색 N개 · 모두 해제".
-    /// 왼쪽 클릭 = 고정 색이면 고정 해제, 아니면 이 색 빼기/되살리기, 오른쪽 클릭 = 결과에서 그 색을 잠깐 강조.
+    /// 좌클릭 = 쓰인 곳 보기(<see cref="PixelateDialog.ShowColorUse"/> — 뺀 색이면 있던 자리), 우클릭 = 고정 색이면 고정 해제, 아니면 이 색 빼기/되살리기(<see cref="PixelateDialog.ToggleColor"/>).
     /// 큰 미리보기와 크게 보기가 하나씩 두고, 대화상자가 같은 색·뺀 색·고정 색으로 함께 채운다(<see cref="PixelateDialog.ShowColors"/>).
     /// </summary>
     private sealed class ColorsBlock : StackPanel
@@ -3020,16 +3209,12 @@ public sealed class PixelateDialog : DialogBase
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Opacity = absent ? AbsentOpacity : 1,
             };
-            ToolTip.SetTip(swatch, tip);
+            ToolTip.SetTip(swatch, tip + "\n" + (pinned ? UiStrings.Pixelate_ColorClick_Pinned : UiStrings.Pixelate_ColorClick));
             swatch.PointerPressed += (_, e) =>
             {
                 var props = e.GetCurrentPoint(swatch).Properties;
-                if (props.IsLeftButtonPressed)
-                {
-                    if (pinned) _owner.Unpin(color);
-                    else _owner.ToggleExcluded(color);
-                }
-                else if (props.IsRightButtonPressed) _owner._preview.Flash(color);
+                if (props.IsLeftButtonPressed) _owner.ShowColorUse(color);
+                else if (props.IsRightButtonPressed) _owner.ToggleColor(color);
                 else return;
                 e.Handled = true;
             };
@@ -3145,7 +3330,8 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 크게 보기의 두 칸: 왼쪽 = 지금 프레임 결과(처음엔 칸에 들어가는 가장 큰 정수 배율, 체커), 오른쪽 = 같은 프레임의 원본(배경 지운 모습)을 결과와 같은 화면 크기로
-    /// — 결과 픽셀 하나 자리에 그 칸의 원본이 온다. 격자 보기면 결과엔 픽셀마다 한 칸인 격자, 원본엔 실제 칸 경계. 색 칸을 오른쪽 클릭하면 결과 칸에도 그 색을 강조.
+    /// — 결과 픽셀 하나 자리에 그 칸의 원본이 온다. 격자 보기면 결과엔 픽셀마다 한 칸인 격자, 원본엔 실제 칸 경계. 색 칸을 좌클릭하면 결과 칸에도 그 색이 쓰인 곳을 강조.
+    /// 결과 픽셀 좌클릭 = 쓰인 곳 보기(<see cref="ResultPixelClicked"/>), 우클릭 = 그 색 빼기/되살리기(<see cref="ResultPixelRightClicked"/>), 원본 칸 좌클릭 = <see cref="SourceCellClicked"/>.
     /// 휠 = 포인터 자리를 축으로 확대·축소(1배 이상은 정수 배율), 끌기 = 이동, 두 번 누르기 = 다시 맞춤 — 두 칸이 함께 움직인다.
     /// 스포이드 중(<see cref="Picking"/>)이면 오른쪽 원본 칸이 스포이드 커서·올린 칸 강조, 왼쪽 클릭 = 그 칸 고르기(<see cref="CellPicked"/>), 오른쪽 클릭 = 그만.
     /// </summary>
@@ -3173,11 +3359,15 @@ public sealed class PixelateDialog : DialogBase
         /// <summary>스포이드 중 원본 둘레 강조 밝기(0~1, null = 그리지 않음).</summary>
         public double? PickPulse { get => field; set { field = value; InvalidateVisual(); } }
 
-        /// <summary>왼쪽 결과 칸의 픽셀을 끌지 않고 눌렀다 뗌(프레임, 결과 x, y).</summary>
+        /// <summary>왼쪽 결과 칸의 픽셀을 끌지 않고 좌클릭(프레임, 결과 x, y).</summary>
         public event Action<int, int, int>? ResultPixelClicked;
-        /// <summary>오른쪽 원본 칸의 칸을 끌지 않고 눌렀다 뗌(스포이드가 아닐 때 — 스포이드 중에는 <see cref="CellPicked"/>).</summary>
+        /// <summary>왼쪽 결과 칸의 픽셀을 끌지 않고 우클릭(프레임, 결과 x, y — 스포이드 중에는 <see cref="PickCancelled"/>).</summary>
+        public event Action<int, int, int>? ResultPixelRightClicked;
+        /// <summary>오른쪽 원본 칸의 칸을 끌지 않고 좌클릭(스포이드가 아닐 때 — 스포이드 중에는 <see cref="CellPicked"/>). 원본 칸 우클릭은 아무것도 하지 않는다.</summary>
         public event Action<CellHover>? SourceCellClicked;
         private Avalonia.Point? _click;
+        /// <summary>누른 단추가 오른쪽인지(<see cref="_click"/>).</summary>
+        private bool _clickRight;
 
         /// <summary>스포이드 중 오른쪽 원본 칸에서 칸을 왼쪽 클릭(두 번째 값 = Shift — 스포이드를 계속).</summary>
         public event Action<CellHover, bool>? CellPicked;
@@ -3286,7 +3476,11 @@ public sealed class PixelateDialog : DialogBase
                 return;
             }
             _drag = e.GetPosition(this);
-            _click = point.Properties.IsLeftButtonPressed && e.ClickCount == 1 && (LeftPane.Contains(point.Position) || RightPane.Contains(point.Position)) ? point.Position : null;
+            bool left = point.Properties.IsLeftButtonPressed, right = point.Properties.IsRightButtonPressed;
+            _clickRight = right;
+            // 좌클릭은 결과 칸·원본 칸, 우클릭은 결과 칸에서만(원본 칸 우클릭은 아무것도 하지 않음).
+            _click = e.ClickCount == 1 && ((left && (LeftPane.Contains(point.Position) || RightPane.Contains(point.Position))) || (right && LeftPane.Contains(point.Position)))
+                ? point.Position : null;
             e.Pointer.Capture(this);
             if (e.ClickCount == 2) Refit();
         }
@@ -3325,9 +3519,10 @@ public sealed class PixelateDialog : DialogBase
                 if (left.Contains(start))
                 {
                     int x = (int)Math.Floor((start.X - left.X - _offset.X) / _zoom), y = (int)Math.Floor((start.Y - left.Y - _offset.Y) / _zoom);
-                    if (x >= 0 && y >= 0 && x < bmp.PixelSize.Width && y < bmp.PixelSize.Height) ResultPixelClicked?.Invoke(_preview.Index, x, y);
+                    if (x >= 0 && y >= 0 && x < bmp.PixelSize.Width && y < bmp.PixelSize.Height)
+                        (_clickRight ? ResultPixelRightClicked : ResultPixelClicked)?.Invoke(_preview.Index, x, y);
                 }
-                else if (SourceCellAt(start) is { } h) SourceCellClicked?.Invoke(h);
+                else if (!_clickRight && SourceCellAt(start) is { } h) SourceCellClicked?.Invoke(h);
             }
             _click = null;
         }
@@ -3396,7 +3591,8 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>
     /// 고른 후보 크게 보기: 왼쪽은 지금 프레임(정수 배율, 체커), 오른쪽은 같은 프레임의 원본(배경 지운 모습, 칸 선은 왼쪽 큰 원본 보기에만).
     /// 원본 보기에서 칸에 마우스를 올리면 그 프레임에 멈추고 결과의 같은 픽셀을 강조한다. 프레임은 <see cref="Index"/>로 바꾼다.
-    /// 누르면 키보드 초점(Space·←→)을 받고, 결과·원본 그림을 끌지 않고 누르면 <see cref="OpenRequested"/>(크게 보기 — <see cref="ZoomOverlay"/>).
+    /// 누르면 키보드 초점(Space·←→)을 받고, 결과·원본 그림을 끌지 않고 좌클릭하면 <see cref="OpenRequested"/>(크게 보기 — <see cref="ZoomOverlay"/>),
+    /// 결과 그림을 우클릭하면 <see cref="ResultPixelRightClicked"/>(그 픽셀 색 빼기/되살리기).
     /// 스포이드 중(<see cref="Picking"/>)이면 원본 그림이 스포이드 커서·올린 칸 강조(재생 멈춤), 왼쪽 클릭 = 그 칸 고르기(<see cref="CellPicked"/>), 오른쪽 클릭 = 그만.
     /// </summary>
     private sealed class FramePreview : Control
@@ -3547,15 +3743,17 @@ public sealed class PixelateDialog : DialogBase
         /// <summary>결과 프레임이 칸 대응과 같은 캔버스인지.</summary>
         public bool SameCanvas => _sameCanvas;
 
-        /// <summary>결과·원본 그림을 (끌지 않고) 눌렀다 뗌 — 크게 보기를 연다(색 강조·원본 칸 대응은 크게 보기에서).</summary>
+        /// <summary>결과·원본 그림을 (끌지 않고) 좌클릭 — 크게 보기를 연다(쓰인 곳 보기·원본 칸 대응은 크게 보기에서).</summary>
         public event Action? OpenRequested;
+        /// <summary>결과 그림의 픽셀을 (끌지 않고) 우클릭(프레임, 결과 x, y — 스포이드 중에는 <see cref="PickCancelled"/>).</summary>
+        public event Action<int, int, int>? ResultPixelRightClicked;
         /// <summary>스포이드 중 원본 그림의 칸을 왼쪽 클릭(두 번째 값 = Shift — 스포이드를 계속).</summary>
         public event Action<CellHover, bool>? CellPicked;
         /// <summary>스포이드 중 오른쪽 클릭.</summary>
         public event Action? PickCancelled;
 
         private Rect _resultRect, _sourceRect;
-        private Avalonia.Point? _press;
+        private Avalonia.Point? _press, _pressRight;
         /// <summary>스포이드 중 원본 그림에서 마우스를 올린 칸.</summary>
         private CellHover? _pickHover;
 
@@ -3583,7 +3781,10 @@ public sealed class PixelateDialog : DialogBase
             return CutOverlay.HitFrame(m, _index, b.X + (p.X - _sourceRect.X) / k, b.Y + (p.Y - _sourceRect.Y) / k);
         }
 
-        /// <summary>누르면 늘 키보드 초점(Space·←→)을 받는다. 결과나 원본 그림을 누르고 제자리에서 떼면 크게 보기(스포이드 중 원본 칸 누르기는 색 추가).</summary>
+        /// <summary>
+        /// 누르면 늘 키보드 초점(Space·←→)을 받는다. 결과나 원본 그림을 좌클릭하고 제자리에서 떼면 크게 보기(스포이드 중 원본 칸 누르기는 색 추가),
+        /// 결과 그림을 우클릭하고 제자리에서 떼면 그 픽셀 색 빼기/되살리기(<see cref="ResultPixelRightClicked"/>).
+        /// </summary>
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             Focus();
@@ -3592,12 +3793,13 @@ public sealed class PixelateDialog : DialogBase
             if (Picking && (point.Properties.IsRightButtonPressed || (point.Properties.IsLeftButtonPressed && _sourceRect.Contains(p))))
             {
                 e.Handled = true;
-                _press = null;
+                _press = _pressRight = null;
                 if (point.Properties.IsRightButtonPressed) PickCancelled?.Invoke();
                 else if (SourceCellAt(p) is { } h) CellPicked?.Invoke(h, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
                 return;
             }
             _press = point.Properties.IsLeftButtonPressed && OnImage(p) ? p : null;
+            _pressRight = point.Properties.IsRightButtonPressed && _resultRect.Contains(p) ? p : null;
             base.OnPointerPressed(e);
         }
 
@@ -3606,7 +3808,13 @@ public sealed class PixelateDialog : DialogBase
             base.OnPointerReleased(e);
             var p = e.GetPosition(this);
             if (_press is { } start && Math.Abs(p.X - start.X) <= 4 && Math.Abs(p.Y - start.Y) <= 4 && _frames.Count > 0) OpenRequested?.Invoke();
-            _press = null;
+            if (_pressRight is { } r && Math.Abs(p.X - r.X) <= 4 && Math.Abs(p.Y - r.Y) <= 4 && FrameBitmap is { } bmp && _resultRect.Width > 0 && _resultRect.Height > 0)
+            {
+                var size = bmp.PixelSize;
+                int x = (int)Math.Floor((r.X - _resultRect.X) * size.Width / _resultRect.Width), y = (int)Math.Floor((r.Y - _resultRect.Y) * size.Height / _resultRect.Height);
+                if (x >= 0 && y >= 0 && x < size.Width && y < size.Height) ResultPixelRightClicked?.Invoke(_index, x, y);
+            }
+            _press = _pressRight = null;
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
@@ -3756,23 +3964,38 @@ public sealed class PixelateDialog : DialogBase
         }
     }
 
-    /// <summary>최적화 진행 그래프: 시도마다 지금까지의 최고 점수를 꺾은선으로(오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음).</summary>
+    /// <summary>
+    /// 최적화 진행 그래프: 시도마다 지금까지의 최고 점수를 꺾은선으로(오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음). 새 찾기 돌림이 시작된 곳에 옅은 세로 선.
+    /// </summary>
     private sealed class OptimizeGraph : Control
     {
+        private static readonly IPen PassPen = AppTheme.Pen(Color.FromArgb(110, AppTheme.DimTextColor.R, AppTheme.DimTextColor.G, AppTheme.DimTextColor.B));
         private readonly List<double> _best = [];
+        /// <summary>새 돌림의 첫 점 번호(<see cref="_best"/> 안 — 첫 돌림은 빼고).</summary>
+        private readonly List<int> _passStarts = [];
 
         public double Best => _best.Count == 0 ? 0 : _best[^1];
+
+        /// <summary>지금까지 본 가장 큰 돌림 번호.</summary>
+        public int Pass { get; private set; } = 1;
 
         public bool HasData => _best.Count > 0;
 
         public void Clear()
         {
             _best.Clear();
+            _passStarts.Clear();
+            Pass = 1;
             InvalidateVisual();
         }
 
-        public void Add(double score)
+        public void Add(double score, int pass)
         {
+            if (pass > Pass)
+            {
+                if (_best.Count > 0) _passStarts.Add(_best.Count);
+                Pass = pass;
+            }
             _best.Add(_best.Count == 0 ? score : Math.Max(_best[^1], score));
             InvalidateVisual();
         }
@@ -3792,6 +4015,11 @@ public sealed class PixelateDialog : DialogBase
             }
             if (hi - lo < 0.5) lo = hi - 0.5;
             double w = bounds.Width - 6, h = bounds.Height - 6;
+            foreach (int start in _passStarts)
+            {
+                double x = Math.Round(3 + w * start / (_best.Count - 1)) + 0.5;
+                g.DrawLine(PassPen, new Avalonia.Point(x, 1), new Avalonia.Point(x, bounds.Height - 1));
+            }
             var geo = new StreamGeometry();
             using (var ctx = geo.Open())
             {

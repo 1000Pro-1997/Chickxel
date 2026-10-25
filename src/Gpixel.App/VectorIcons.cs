@@ -1,6 +1,6 @@
 namespace Gpixel.App;
 
-/// <summary>선으로 그리는 작은 아이콘(24×24 격자 SVG 경로, Lucide 아이콘 모양 — ISC 라이선스).</summary>
+/// <summary>작은 아이콘(24×24 격자 SVG 경로). 선 아이콘은 Lucide 모양(ISC 라이선스), <see cref="VectorIcon.Discord"/>는 Simple Icons의 채운 로고(CC0).</summary>
 public enum VectorIcon
 {
     Eye,
@@ -73,8 +73,10 @@ public enum VectorIcon
     Image,
     /// <summary>반짝임(AI로 하기).</summary>
     Sparkles,
-    /// <summary>겹친 말풍선 두 개(Discord 제보·아이디어).</summary>
-    MessagesSquare,
+    /// <summary>Discord 로고(채운 도형, Simple Icons — 제보·아이디어 단추).</summary>
+    Discord,
+    /// <summary>지구본(홈페이지 — Lucide globe).</summary>
+    Globe,
     /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
     Grid3x3,
     /// <summary>필름(GIF로 저장).</summary>
@@ -87,6 +89,12 @@ public enum VectorIcon
     SlidersHorizontal,
     /// <summary>왼쪽으로 돌아가는 화살표(되돌리기).</summary>
     Undo2,
+    /// <summary>원 안의 느낌표(경고 — Lucide circle-alert).</summary>
+    CircleAlert,
+    /// <summary>사슬 고리(비율 묶기 — Lucide link).</summary>
+    Link,
+    /// <summary>세로로 둘로 나뉜 사각형(좌우로 나눠 열기 — Lucide columns-2).</summary>
+    Columns2,
 }
 
 public static class VectorIcons
@@ -238,11 +246,11 @@ public static class VectorIcons
             "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
             "M20 3v4", "M22 5h-4", "M4 17v2", "M5 18H3",
         ],
-        VectorIcon.MessagesSquare =>
+        VectorIcon.Discord =>
         [
-            "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
-            "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1",
+            "M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z",
         ],
+        VectorIcon.Globe => [Circle(12, 12, 10), "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", "M2 12h20"],
         VectorIcon.Grid3x3 =>
         [
             "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
@@ -267,6 +275,9 @@ public static class VectorIcons
             "M14 2v4", "M8 10v4", "M16 18v4",
         ],
         VectorIcon.Undo2 => ["M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"],
+        VectorIcon.CircleAlert => [Circle(12, 12, 10), "M12 8v4", "M12 16h.01"],
+        VectorIcon.Link => ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+        VectorIcon.Columns2 => ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M12 3v18"],
         _ => [],
     };
 
@@ -278,9 +289,12 @@ public static class VectorIcons
         return g;
     }
 
+    /// <summary>선 없이 채우기만 하는 로고 아이콘(선 굵기를 더하면 모양이 뭉개진다).</summary>
+    private static bool Solid(VectorIcon icon) => icon is VectorIcon.Discord;
+
     /// <summary>
     /// <paramref name="area"/> 가운데에 <paramref name="size"/> 크기로 아이콘을 그린다.
-    /// <paramref name="filled"/>면 닫힌 도형 안을 같은 색으로 채운다(●·◆·★처럼).
+    /// <paramref name="filled"/>면 닫힌 도형 안을 같은 색으로 채운다(●·◆·★처럼). 로고 아이콘은 늘 채우기만 한다.
     /// </summary>
     public static void Draw(DrawingContext g, VectorIcon icon, Rect area, double size, IBrush brush, double strokeWidth = 2, bool filled = false)
     {
@@ -288,9 +302,10 @@ public static class VectorIcons
         double x = Math.Round(area.X + (area.Width - size) / 2), y = Math.Round(area.Y + (area.Height - size) / 2);
         using (g.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(x, y)))
         {
-            var pen = Pen(brush, strokeWidth);
+            bool solid = Solid(icon);
+            var pen = solid ? null : Pen(brush, strokeWidth);
             foreach (var geo in Geometries(icon))
-                g.DrawGeometry(filled ? brush : null, pen, geo);
+                g.DrawGeometry(filled || solid ? brush : null, pen, geo);
         }
     }
 

@@ -81,6 +81,25 @@ public class EffectSettingsTests
     }
 
     [Fact]
+    public void Describe_OutlineShowsShadeModeAndAmount_AndMergeSetsThem()
+    {
+        var info = EffectSettings.Describe(new OutlineEffect());
+        var mode = info.Single(s => s.Key == "mode");
+        Assert.Equal(EffectSettingKind.Choice, mode.Kind);
+        Assert.Equal("Fixed", mode.Default!.GetValue<string>());
+        Assert.Equal(Enum.GetNames<OutlineColorMode>(), mode.Choices);
+        var amount = info.Single(s => s.Key == "amount");
+        Assert.Equal(EffectSettingKind.Number, amount.Kind);
+        Assert.Equal(OutlineEffect.DefaultShadeAmount, amount.Default!.GetValue<int>());
+        Assert.Equal((-100, 100), (amount.Min, amount.Max));
+
+        var (merged, clamped) = EffectSettings.Merge(new OutlineEffect(), new JsonObject { ["mode"] = "shade", ["amount"] = 150 });
+        var outline = Assert.IsType<OutlineEffect>(merged);
+        Assert.Equal((OutlineColorMode.Shade, 100), (outline.ColorMode, outline.ShadeAmount));
+        Assert.Equal(["amount = 100"], clamped);
+    }
+
+    [Fact]
     public void Merge_NullResetsAKeyToTheTypeDefault()
     {
         var (moved, _) = EffectSettings.Merge(new ShadowEffect(), new JsonObject { ["x"] = 5 });
