@@ -1081,4 +1081,13 @@
     <value>읽을 수 없는 그림: {names}</value>
     <comment>names = 풀지 못한 파일 이름들(쉼표로 이음).</comment>
   </data>
+  <data name="Menu_File_Pixelate" xml:space="preserve"><value>AI 그림 픽셀로 정리…</value></data>
+  <data name="Menu_Edit_Pixelate" xml:space="preserve"><value>현재 레이어를 픽셀로 정리…</value></data>
+  <data name="Pixelate_UndoLabel" xml:space="preserve"><value>AI 그림 픽셀로 정리</value></data>
+  <data name="Pixelate_EmptyLayer" xml:space="preserve"><value>현재 레이어에 정리할 그림이 없습니다.</value></data>
+  <data name="Pixelate_AddedLayer" xml:space="preserve"><value>‘{name}’ 레이어로 넣었습니다({frames}프레임, {width}×{height})</value></data>
+  <data name="Pixelate_NewDocument" xml:space="preserve"><value>새 문서로 만들었습니다({frames}프레임, {width}×{height})</value></data>
+  <data name="Pixelate_PaletteName" xml:space="preserve"><value>{name} 팔레트</value></data>
+  <data name="Pixelate_ReferenceAdded" xml:space="preserve"><value> · 원본을 AI 참고 자료에 더함</value></data>
+  <data name="Pixelate_ReferenceFailed" xml:space="preserve"><value> · 참고 자료에 더하지 못함: {message}</value></data>
 </root>

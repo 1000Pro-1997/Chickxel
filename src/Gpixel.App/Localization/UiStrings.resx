@@ -9582,6 +9582,15 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
     <comment>src/Gpixel.App\Updater.cs:247 · ShowUpdateDialog · $"Gpixel {release.Version}은(는) 다시 띄우지 않습니다(더 새 버전이 나오면 알림). 도움말 &gt; 업데이트 확인으로 언제든 볼 수 있습니다."</comment>
   </data>
   <data name="GifExport_Title" xml:space="preserve"><value>GIF 애니메이션으로 내보내기</value></data>
+  <data name="Preview_Menu_CopyImage" xml:space="preserve"><value>이미지 복사</value></data>
+  <data name="Preview_Menu_CopyEnlarged" xml:space="preserve"><value>크게 복사 (×4)</value></data>
+  <data name="Preview_Menu_SaveFrame" xml:space="preserve"><value>프레임 저장…</value></data>
+  <data name="Preview_Menu_SaveGif" xml:space="preserve"><value>GIF로 저장…</value></data>
+  <data name="Preview_Copied" xml:space="preserve"><value>미리보기 {0}프레임을 복사했습니다({1}×{2}).</value></data>
+  <data name="Preview_SaveFrame_Title" xml:space="preserve"><value>프레임을 PNG로 저장</value></data>
+  <data name="Preview_PngFilter" xml:space="preserve"><value>PNG 그림</value></data>
+  <data name="Preview_Saved" xml:space="preserve"><value>{0} 저장함({1}×{2})</value></data>
+  <data name="Preview_SaveFailed" xml:space="preserve"><value>프레임을 저장하지 못했습니다.&#10;{0}</value></data>
   <data name="PaletteConvert_Title" xml:space="preserve"><value>팔레트 색으로 변환</value></data>
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>자동 배치 켜짐 — 눌러 설정</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>&#10;릴리스 페이지에서 받아 직접 바꿔 주세요.</value></data>
@@ -9787,4 +9796,300 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Crash_ReportOnDiscord" xml:space="preserve"><value>Discord에 제보</value></data>
   <data name="Crash_ReportOnDiscord_Hint" xml:space="preserve"><value>Discord에 제보할 때 위 로그 파일을 함께 올려 주세요.</value></data>
   <data name="Chat_Help_Feedback" xml:space="preserve"><value>버그·아이디어는 Discord로 알려 주세요</value></data>
+  <data name="Pixelate_Title" xml:space="preserve"><value>AI 그림 픽셀로 정리</value></data>
+  <data name="Pixelate_MenuItem" xml:space="preserve"><value>AI 그림 픽셀로 정리…</value></data>
+  <data name="Pixelate_Apply" xml:space="preserve"><value>적용</value></data>
+  <data name="Pixelate_OpenTitle" xml:space="preserve"><value>정리할 그림 고르기</value></data>
+  <data name="Pixelate_ImageFilter" xml:space="preserve"><value>그림</value></data>
+  <data name="Pixelate_Unreadable" xml:space="preserve"><value>그림을 읽을 수 없습니다: {name}</value></data>
+  <data name="Pixelate_Empty" xml:space="preserve"><value>그림을 끌어 놓거나, Ctrl+V로 붙여 넣거나, 파일을 찾아 여세요</value></data>
+  <data name="Pixelate_Browse" xml:space="preserve"><value>파일 찾기…</value></data>
+  <data name="Pixelate_ReplaceSource" xml:space="preserve"><value>원본 바꾸기</value></data>
+  <data name="Pixelate_ReplaceSourceTip" xml:space="preserve"><value>다른 그림 파일을 고릅니다(창에 그림을 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀝니다).</value></data>
+  <data name="Pixelate_PastedName" xml:space="preserve"><value>붙여 넣은 그림</value></data>
+  <data name="Pixelate_Paste_Nothing" xml:space="preserve"><value>클립보드에 그림이나 그림 파일 경로가 없습니다.</value></data>
+  <data name="Pixelate_Settings_Show" xml:space="preserve"><value>설정 펼치기</value></data>
+  <data name="Pixelate_Settings_Hide" xml:space="preserve"><value>설정 접기</value></data>
+  <data name="Pixelate_Preset" xml:space="preserve"><value>프리셋</value></data>
+  <data name="Pixelate_Preset_Default" xml:space="preserve"><value>기본</value></data>
+  <data name="Pixelate_Preset_Small32" xml:space="preserve"><value>작은 스프라이트(32px)</value></data>
+  <data name="Pixelate_Preset_Colors16" xml:space="preserve"><value>색 적게(16색)</value></data>
+  <data name="Pixelate_Preset_KeepColors" xml:space="preserve"><value>원본 색 유지</value></data>
+  <data name="Pixelate_Preset_Save" xml:space="preserve"><value>지금 설정을 프리셋으로 저장</value></data>
+  <data name="Pixelate_Preset_SavePrompt" xml:space="preserve"><value>프리셋 이름</value></data>
+  <data name="Pixelate_Preset_Delete" xml:space="preserve"><value>고른 프리셋 지우기(기본 프리셋은 지울 수 없음)</value></data>
+  <data name="Pixelate_Preset_SaveFailed" xml:space="preserve"><value>프리셋을 저장하지 못했습니다: {message}</value></data>
+  <data name="Pixelate_Section_Background" xml:space="preserve"><value>1. 배경 지우기</value></data>
+  <data name="Pixelate_Section_Frames" xml:space="preserve"><value>2. 프레임 나누기</value></data>
+  <data name="Pixelate_Section_Grid" xml:space="preserve"><value>3. 픽셀 격자</value></data>
+  <data name="Pixelate_Section_Size" xml:space="preserve"><value>4. 결과 크기</value></data>
+  <data name="Pixelate_Section_Downsample" xml:space="preserve"><value>5. 칸 색 고르기</value></data>
+  <data name="Pixelate_Section_Palette" xml:space="preserve"><value>6. 팔레트</value></data>
+  <data name="Pixelate_Section_Cleanup" xml:space="preserve"><value>7. 정리</value></data>
+  <data name="Pixelate_Section_Consistency" xml:space="preserve"><value>8. 프레임 맞추기</value></data>
+  <data name="Pixelate_Section_Candidates" xml:space="preserve"><value>후보</value></data>
+  <data name="Pixelate_Section_Advanced" xml:space="preserve"><value>고급(점수 가중치)</value></data>
+  <data name="Pixelate_Section_Output" xml:space="preserve"><value>넣기</value></data>
+  <data name="Pixelate_Section_Ai" xml:space="preserve"><value>AI(실험)</value></data>
+  <data name="Pixelate_Mode" xml:space="preserve"><value>방식</value></data>
+  <data name="Pixelate_Auto" xml:space="preserve"><value>자동</value></data>
+  <data name="Pixelate_Bg_None" xml:space="preserve"><value>지우지 않음</value></data>
+  <data name="Pixelate_Bg_Auto" xml:space="preserve"><value>자동(테두리 색)</value></data>
+  <data name="Pixelate_Bg_Pick" xml:space="preserve"><value>색 고르기</value></data>
+  <data name="Pixelate_Bg_Color" xml:space="preserve"><value>배경색</value></data>
+  <data name="Pixelate_Bg_Tolerance" xml:space="preserve"><value>허용 거리</value></data>
+  <data name="Pixelate_Bg_Connected" xml:space="preserve"><value>테두리와 이어진 배경만</value></data>
+  <data name="Pixelate_Bg_Connected_Tip" xml:space="preserve"><value>켜면 스프라이트 안쪽의 같은 색(눈·배경에 닿은 거의 검은 외곽선)은 남깁니다.</value></data>
+  <data name="Pixelate_Bg_KeepAlpha" xml:space="preserve"><value>이미 투명하면 그 투명도 쓰기</value></data>
+  <data name="Pixelate_Bg_AlphaThreshold" xml:space="preserve"><value>알파 문턱</value></data>
+  <data name="Pixelate_Bg_Specks" xml:space="preserve"><value>잡티(px)</value></data>
+  <data name="Pixelate_Bg_InfoAlpha" xml:space="preserve"><value>그림에 있던 투명 배경을 씁니다.</value></data>
+  <data name="Pixelate_Bg_InfoColor" xml:space="preserve"><value>배경색 {color}, 허용 거리 {tolerance}</value></data>
+  <data name="Pixelate_Frames_Single" xml:space="preserve"><value>한 장</value></data>
+  <data name="Pixelate_Frames_Auto" xml:space="preserve"><value>자동(빈 줄로 나눔)</value></data>
+  <data name="Pixelate_Frames_Grid" xml:space="preserve"><value>격자</value></data>
+  <data name="Pixelate_Frames_Columns" xml:space="preserve"><value>가로</value></data>
+  <data name="Pixelate_Frames_Rows" xml:space="preserve"><value>세로</value></data>
+  <data name="Pixelate_Frames_Merge" xml:space="preserve"><value>작은 조각 합치기(%)</value></data>
+  <data name="Pixelate_Frames_MergeDistance" xml:space="preserve"><value>거리(px)</value></data>
+  <data name="Pixelate_Frames_Align" xml:space="preserve"><value>맞추기</value></data>
+  <data name="Pixelate_Align_BottomCenter" xml:space="preserve"><value>아래 가운데</value></data>
+  <data name="Pixelate_Align_Center" xml:space="preserve"><value>가운데</value></data>
+  <data name="Pixelate_Align_Keep" xml:space="preserve"><value>원래 위치</value></data>
+  <data name="Pixelate_Frames_Common" xml:space="preserve"><value>모든 프레임 같은 캔버스 크기</value></data>
+  <data name="Pixelate_Frames_Info" xml:space="preserve"><value>프레임 {count}개</value></data>
+  <data name="Pixelate_Grid_Auto" xml:space="preserve"><value>자동(경계 분석)</value></data>
+  <data name="Pixelate_Grid_Manual" xml:space="preserve"><value>수동</value></data>
+  <data name="Pixelate_Grid_Scale" xml:space="preserve"><value>칸 크기(px)</value></data>
+  <data name="Pixelate_Grid_Offset" xml:space="preserve"><value>시작 X·Y</value></data>
+  <data name="Pixelate_Grid_Jitter" xml:space="preserve"><value>칸 크기 흔들림 허용(%)</value></data>
+  <data name="Pixelate_Grid_PerFrame" xml:space="preserve"><value>프레임마다 따로 찾기</value></data>
+  <data name="Pixelate_Grid_UseDetected" xml:space="preserve"><value>찾은 값을 수동으로</value></data>
+  <data name="Pixelate_Grid_Info" xml:space="preserve"><value>찾은 칸 크기 {scale}px · 시작 ({x}, {y}) · 경계 맞음 {confidence}%</value></data>
+  <data name="Pixelate_Size_FromScale" xml:space="preserve"><value>칸 크기대로</value></data>
+  <data name="Pixelate_Size_Fixed" xml:space="preserve"><value>고정 크기에 맞추기</value></data>
+  <data name="Pixelate_Size_Factor" xml:space="preserve"><value>배율</value></data>
+  <data name="Pixelate_Size_WH" xml:space="preserve"><value>가로×세로</value></data>
+  <data name="Pixelate_Size_KeepAspect" xml:space="preserve"><value>비율 유지</value></data>
+  <data name="Pixelate_Size_Padding" xml:space="preserve"><value>여백(px)</value></data>
+  <data name="Pixelate_Size_FactorLabel" xml:space="preserve"><value>배율</value></data>
+  <data name="Pixelate_Size_Info" xml:space="preserve"><value>결과 {width}×{height}</value></data>
+  <data name="Pixelate_Ds_Mode" xml:space="preserve"><value>가장 많은 색</value></data>
+  <data name="Pixelate_Ds_Median" xml:space="preserve"><value>중앙값</value></data>
+  <data name="Pixelate_Ds_Center" xml:space="preserve"><value>가운데 픽셀</value></data>
+  <data name="Pixelate_Ds_Mean" xml:space="preserve"><value>평균</value></data>
+  <data name="Pixelate_Ds_Border" xml:space="preserve"><value>칸 가장자리 무시(%)</value></data>
+  <data name="Pixelate_Ds_Alpha" xml:space="preserve"><value>투명으로 볼 문턱(%)</value></data>
+  <data name="Pixelate_Ds_Snap" xml:space="preserve"><value>색 묶기 간격</value></data>
+  <data name="Pixelate_Pal_KMeans" xml:space="preserve"><value>k-평균(OKLab)</value></data>
+  <data name="Pixelate_Pal_MedianCut" xml:space="preserve"><value>중앙 분할</value></data>
+  <data name="Pixelate_Pal_Existing" xml:space="preserve"><value>기존 팔레트</value></data>
+  <data name="Pixelate_Pal_Keep" xml:space="preserve"><value>원래 색 유지</value></data>
+  <data name="Pixelate_Pal_Colors" xml:space="preserve"><value>색 수</value></data>
+  <data name="Pixelate_Pal_Which" xml:space="preserve"><value>팔레트</value></data>
+  <data name="Pixelate_Pal_NoPalettes" xml:space="preserve"><value>(팔레트 없음)</value></data>
+  <data name="Pixelate_Pal_Lospec" xml:space="preserve"><value>Lospec: {name}</value></data>
+  <data name="Pixelate_Pal_Shared" xml:space="preserve"><value>모든 프레임이 한 팔레트</value></data>
+  <data name="Pixelate_Pal_Dither" xml:space="preserve"><value>디더링</value></data>
+  <data name="Pixelate_Dither_None" xml:space="preserve"><value>없음</value></data>
+  <data name="Pixelate_Pal_SnapOutline" xml:space="preserve"><value>거의 검은 색을 외곽선 색 하나로</value></data>
+  <data name="Pixelate_Pal_Source" xml:space="preserve"><value>팔레트 색</value></data>
+  <data name="Pixelate_Pal_Source_Original" xml:space="preserve"><value>원본 색</value></data>
+  <data name="Pixelate_Pal_Source_Mean" xml:space="preserve"><value>평균 색</value></data>
+  <data name="Pixelate_Pal_Source_Tip" xml:space="preserve"><value>원본 색: 비슷한 색끼리 묶은 뒤 묶음마다 그림에 실제로 가장 많이 쓰인 색을 씁니다(번진 가장자리 색에 끌려 흰 옷이 회색이 되지 않음). 평균 색: 묶음의 평균 색을 씁니다(예전 방식, 색이 조금 흐려질 수 있음).</value></data>
+  <data name="Pixelate_Pal_EdgeWeight" xml:space="preserve"><value>가장자리 칸 가중</value></data>
+  <data name="Pixelate_Pal_EdgeWeight_Tip" xml:space="preserve"><value>원본 색에서 색을 묶을 때 투명과 맞닿은 가장자리 칸과 두 이웃 색 사이의 번진 칸(외곽선과 칠 사이 포함)을 이만큼만 셉니다(0 = 빼기, 1 = 다른 칸과 같게).</value></data>
+  <data name="Pixelate_Pal_Distance" xml:space="preserve"><value>색 거리</value></data>
+  <data name="Pixelate_Pal_Distance_OkLab" xml:space="preserve"><value>OKLab</value></data>
+  <data name="Pixelate_Pal_Distance_Ciede2000" xml:space="preserve"><value>CIEDE2000</value></data>
+  <data name="Pixelate_Pal_Distance_OkLchHue" xml:space="preserve"><value>OKLCh 색상 가중</value></data>
+  <data name="Pixelate_Pal_Distance_Tip" xml:space="preserve"><value>칸이 팔레트 색을 고를 때(디더 없음), 고정 색, 색 빼기의 바꿀 색, 원본 색 고르기, '주요 색 변화' 점수에서 색이 얼마나 가까운지 재는 방법입니다. OKLCh 색상 가중(기본)과 CIEDE2000은 색상이 바뀌는 것(살구색 → 금색)을 가깝다고 보지 않고, OKLab는 곧은 거리입니다. 색 묶기는 OKLab 그대로입니다.</value></data>
+  <data name="Pixelate_Pal_HueWeight_Tip" xml:space="preserve"><value>OKLCh 색상 가중의 색상 무게(1 = OKLab와 같음, 클수록 색상 차를 더 크게 봄).</value></data>
+  <data name="Pixelate_Pal_ShadeFamily" xml:space="preserve"><value>명암 계열 우선</value></data>
+  <data name="Pixelate_Pal_ShadeFamily_Tip" xml:space="preserve"><value>칸 색과 색상·채도가 비슷한 팔레트 색(같은 색의 밝고 어두운 칠)이 있으면, 밝기가 비슷한 다른 색상의 색보다 그 계열에서 밝기가 가장 가까운 색으로 바꿉니다. 디더링도 색상이 다른 유채색과는 섞지 않습니다(예: 진한 살구색 그늘이 금색이나 금색 점 무늬가 되지 않음).</value></data>
+  <data name="Pixelate_Pal_Distinct" xml:space="preserve"><value>다른 색상 지키기</value></data>
+  <data name="Pixelate_Pal_Distinct_Tip" xml:space="preserve"><value>원본에서 채도와 넓이가 충분한 색 무리가 색상이 뚜렷이 다른 팔레트 색으로 바뀌게 되면(예: 작은 살구색 귀 그늘 → 금색) 그 색을 팔레트에 넣습니다. 색 수 자동이면 더하고, 고른 색 수면 가장 덜 중요한 색과 바꿉니다(고정 색은 바꾸지 않음).</value></data>
+  <data name="Pixelate_Pal_DistinctChroma" xml:space="preserve"><value>최소 채도</value></data>
+  <data name="Pixelate_Pal_DistinctChroma_Tip" xml:space="preserve"><value>이 채도(OKLCh) 이상인 색만 봅니다 — 회색·흰색에 가까운 색은 건너뜁니다.</value></data>
+  <data name="Pixelate_Pal_DistinctHue" xml:space="preserve"><value>색상 차(°)</value></data>
+  <data name="Pixelate_Pal_DistinctHue_Tip" xml:space="preserve"><value>바뀔 팔레트 색과 색상이 이 각도 이상 다르면 그 색을 잃은 것으로 봅니다.</value></data>
+  <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>최소 넓이</value></data>
+  <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>색 무리의 최소 크기(칸 — 원본 색이면 가장자리 칸은 가장자리 칸 가중만큼 셉니다).</value></data>
+  <data name="Pixelate_Opt_ColorDistanceTip" xml:space="preserve"><value>OKLab·CIEDE2000·OKLCh 색상 가중(색상 무게 1~3)을 바꿔 봅니다. 시도끼리 견줄 수 있게 모든 시도의 '주요 색 변화' 점수는 시작 설정의 색 거리로 잽니다.</value></data>
+  <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>불러오면 자동 최적화</value></data>
+  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>원본을 넣으면(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌립니다. 설정을 바꿔 다시 돌릴 때는 돌리지 않고, 도는 동안 취소할 수 있습니다.</value></data>
+  <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>원본 칸 {source} → 결과 {result}</value></data>
+  <data name="Pixelate_Pal_Info" xml:space="preserve"><value>색 {count}개</value></data>
+  <data name="Pixelate_Clean_Orphans" xml:space="preserve"><value>외톨이 픽셀 지우기</value></data>
+  <data name="Pixelate_Clean_Contrast" xml:space="preserve"><value>최대 대비</value></data>
+  <data name="Pixelate_Clean_Orphans_Tip" xml:space="preserve"><value>이웃과 대비가 이보다 큰 점(눈동자 등)은 남깁니다(OKLab 거리, 1 = 모두 지움).</value></data>
+  <data name="Pixelate_Clean_Holes" xml:space="preserve"><value>1px 구멍 메우기</value></data>
+  <data name="Pixelate_Clean_Outline" xml:space="preserve"><value>외곽선</value></data>
+  <data name="Pixelate_Outline_None" xml:space="preserve"><value>그대로</value></data>
+  <data name="Pixelate_Outline_Unify" xml:space="preserve"><value>가장 어두운 색으로 통일</value></data>
+  <data name="Pixelate_Outline_Closed" xml:space="preserve"><value>닫힌 1px 외곽선 만들기</value></data>
+  <data name="Pixelate_Clean_Jaggies" xml:space="preserve"><value>외곽선 L자 겹 픽셀 줄이기</value></data>
+  <data name="Pixelate_Cons_Temporal" xml:space="preserve"><value>앞뒤 프레임과 같게(떨림 줄이기)</value></data>
+  <data name="Pixelate_Cand_Count" xml:space="preserve"><value>후보 수</value></data>
+  <data name="Pixelate_Cand_Vary" xml:space="preserve"><value>바꿔 볼 항목</value></data>
+  <data name="Pixelate_Vary_Scale" xml:space="preserve"><value>칸 크기 ±</value></data>
+  <data name="Pixelate_Vary_Palette" xml:space="preserve"><value>색 수 ±</value></data>
+  <data name="Pixelate_Vary_Downsample" xml:space="preserve"><value>칸 색 방식</value></data>
+  <data name="Pixelate_Vary_Cleanup" xml:space="preserve"><value>정리 켜기·끄기</value></data>
+  <data name="Pixelate_Vary_Dither" xml:space="preserve"><value>디더링</value></data>
+  <data name="Pixelate_Score_Fidelity" xml:space="preserve"><value>원본과 닮음</value></data>
+  <data name="Pixelate_Score_Orphans" xml:space="preserve"><value>외톨이 픽셀</value></data>
+  <data name="Pixelate_Score_OutlineGaps" xml:space="preserve"><value>외곽선 빈틈</value></data>
+  <data name="Pixelate_Score_Colors" xml:space="preserve"><value>색 수</value></data>
+  <data name="Pixelate_Score_Consistency" xml:space="preserve"><value>프레임 일관성</value></data>
+  <data name="Pixelate_Score_Grid" xml:space="preserve"><value>격자 맞음</value></data>
+  <data name="Pixelate_Out_NewLayer" xml:space="preserve"><value>현재 문서에 새 레이어로(현재 프레임부터)</value></data>
+  <data name="Pixelate_Out_NewDocument" xml:space="preserve"><value>새 문서로</value></data>
+  <data name="Pixelate_Out_Duration" xml:space="preserve"><value>프레임 길이(ms)</value></data>
+  <data name="Pixelate_Out_SavePalette" xml:space="preserve"><value>쓴 색을 새 팔레트로도 저장</value></data>
+  <data name="Pixelate_Ai_TouchUp" xml:space="preserve"><value>적용 후 AI로 다듬기</value></data>
+  <data name="Pixelate_Ai_Model" xml:space="preserve"><value>AI</value></data>
+  <data name="Pixelate_Ai_Prompt" xml:space="preserve"><value>부탁 글(채팅 입력란에 채움, 보내기는 직접)</value></data>
+  <data name="Pixelate_Ai_ResetPrompt" xml:space="preserve"><value>기본 부탁 글로</value></data>
+  <data name="Pixelate_Ai_DefaultPrompt" xml:space="preserve"><value>지금 문서의 픽셀 아트는 첨부한 AI 그림(원본)을 픽셀로 정리한 결과입니다. 원본과 견주어 끊긴 외곽선을 잇고, 눈·얼굴처럼 작은 부분을 또렷하게 고치고, 떠도는 잡티 픽셀을 지워 주세요. 팔레트(쓰인 색)와 캔버스 크기·프레임 수는 그대로 두고, 모든 프레임을 같은 방식으로 고쳐 주세요.</value></data>
+  <data name="Pixelate_Ai_AddReference" xml:space="preserve"><value>원본을 AI 참고 자료에 더하기</value></data>
+  <data name="Pixelate_Ai_Rank" xml:space="preserve"><value>AI에게 후보 평가 부탁</value></data>
+  <data name="Pixelate_Ai_RankCount" xml:space="preserve"><value>보낼 후보 수</value></data>
+  <data name="Pixelate_Ai_RankItem" xml:space="preserve"><value>{index}번 후보(점수 {score}, {colors}색, {width}×{height})</value></data>
+  <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>첨부한 첫 그림은 원본(AI가 만든 픽셀풍 그림)이고, 그다음 {count}장은 그것을 픽셀 아트로 정리한 후보입니다(차례대로 {list} — 한 장에 프레임을 가로로 이었음). 외곽선이 끊기지 않았는지, 눈·얼굴이 읽히는지, 잡티가 없는지, 프레임끼리 색과 모양이 고른지 보고 가장 좋은 것부터 순위를 매겨 이유와 함께 알려 주세요. 더 좋게 만들 설정(칸 크기·색 수·정리)이 있으면 제안해 주세요.</value></data>
+  <data name="Pixelate_Source" xml:space="preserve"><value>원본(휠: 확대·축소, 끌기: 이동, 두 번 누르기: 맞추기)</value></data>
+  <data name="Pixelate_ShowGrid" xml:space="preserve"><value>격자 보기</value></data>
+  <data name="Pixelate_ShowMask" xml:space="preserve"><value>배경 지운 모습</value></data>
+  <data name="Pixelate_Fps" xml:space="preserve"><value>FPS</value></data>
+  <data name="Pixelate_Play" xml:space="preserve"><value>재생·정지</value></data>
+  <data name="Pixelate_Status_Running" xml:space="preserve"><value>후보 만드는 중… {done}/{total}</value></data>
+  <data name="Pixelate_Status_Done" xml:space="preserve"><value>후보 {count}개 · {ms}ms · 두 번 누르면 적용</value></data>
+  <data name="Pixelate_Status_NoSprite" xml:space="preserve"><value>배경을 지우니 남는 그림이 없습니다. 배경 설정을 바꿔 보세요.</value></data>
+  <data name="Pixelate_Status_Error" xml:space="preserve"><value>만들지 못했습니다: {message}</value></data>
+  <data name="Pixelate_Tile" xml:space="preserve"><value>{rank}위 · {score}점</value></data>
+  <data name="Pixelate_TileInfo" xml:space="preserve"><value>{colors}색 · {width}×{height} · {frames}프레임</value></data>
+  <data name="Pixelate_Breakdown" xml:space="preserve"><value>{name} {value}(나쁨 {bad}% × {weight})</value></data>
+  <data name="Pixelate_Selected" xml:space="preserve"><value>{rank}위 · {score}점 · 칸 {scale}px · {colors}색 · {width}×{height} · {frames}프레임</value></data>
+  <data name="Pixelate_Dither_Bayer2" xml:space="preserve"><value>Bayer 2×2</value></data>
+  <data name="Pixelate_Dither_Bayer4" xml:space="preserve"><value>Bayer 4×4</value></data>
+  <data name="Pixelate_Size_By" xml:space="preserve"><value>×</value></data>
+  <data name="Pixelate_Grid_Source" xml:space="preserve"><value>칸 크기 기준</value></data>
+  <data name="Pixelate_Grid_SourceAuto" xml:space="preserve"><value>자동(경계가 가장 잘 맞는 쪽)</value></data>
+  <data name="Pixelate_Grid_SourceOutline" xml:space="preserve"><value>외곽선 두께</value></data>
+  <data name="Pixelate_Grid_SourceEdges" xml:space="preserve"><value>색 경계</value></data>
+  <data name="Pixelate_Grid_SourceBlocks" xml:space="preserve"><value>덩어리 경계</value></data>
+  <data name="Pixelate_Grid_Source_Tip" xml:space="preserve"><value>외곽선 두께: 바깥 외곽선 두께. 색 경계: 색이 바뀌는 자리 사이 길이. 덩어리 경계: 종이 결 같은 약한 무늬를 빼고 뚜렷한 색 경계가 한 줄 안에서 일정한 간격으로 모이는 크기(칸 경계도 그 경계를 따라감). 자동: 덩어리 간격이 뚜렷하면 덩어리 경계, 아니면 세 값마다 칸 경계를 골라 원본의 뚜렷한 경계와 가장 잘 맞는 쪽을 고릅니다.</value></data>
+  <data name="Pixelate_Grid_Sources" xml:space="preserve"><value>색 경계 {edges}px({edgesMatch}%) · 외곽선 {outline}px({outlineMatch}%) · 덩어리 경계 {blocks}px({blocksMatch}%) → {reason}</value></data>
+  <data name="Pixelate_Grid_ReasonMatch" xml:space="preserve"><value>{chosen}(경계 일치 {match}%)</value></data>
+  <data name="Pixelate_Grid_ReasonClear" xml:space="preserve"><value>{chosen}(덩어리 간격이 뚜렷함 {fit}%)</value></data>
+  <data name="Pixelate_Grid_ChosenExact" xml:space="preserve"><value>깨끗한 그림의 정확한 배수 {scale}px</value></data>
+  <data name="Pixelate_Score_OutlineThin" xml:space="preserve"><value>외곽선 1px</value></data>
+  <data name="Pixelate_Score_ColorShift" xml:space="preserve"><value>큰 면 색 바뀜</value></data>
+  <data name="Pixelate_Bg_Sticker" xml:space="preserve"><value>스티커 테두리 지우기</value></data>
+  <data name="Pixelate_Bg_Sticker_Tip" xml:space="preserve"><value>외곽선 바깥을 두른 흰 띠(스티커 테두리)를 저절로 찾아 배경과 함께 지웁니다. 가장자리 대부분이 밝은 무채색일 때만 지우고, 지운 뒤 가장자리가 어둡지 않으면 되돌립니다.</value></data>
+  <data name="Pixelate_Bg_Keep" xml:space="preserve"><value>배경 남기기(한 색으로)</value></data>
+  <data name="Pixelate_Bg_Keep_Tip" xml:space="preserve"><value>찾은 배경을 지우지 않고 배경색 한 색으로 고르게 남깁니다(결과도 그 색 바탕, 그림 전체가 한 프레임). 색으로 찾은 배경일 때만 뜻이 있습니다.</value></data>
+  <data name="Pixelate_Score_ColorShift_Tip" xml:space="preserve"><value>넓게 쓰인 원본 색(불투명 픽셀의 1% 이상)이 결과에서 통째로 다른 색이 된 정도(예: 신발 갈색이 금색 쪽으로 밀림). OKLab 거리 0.02까지는 괜찮음, 0.10에서 가장 나쁨.</value></data>
+  <data name="Pixelate_Score_BlockRepetition" xml:space="preserve"><value>결과 블록 반복도</value></data>
+  <data name="Pixelate_Score_BlockRepetition_Tip" xml:space="preserve"><value>결과가 아직 확대된 그림인 정도: 가장자리 칸(칸마다 원본 평균 색으로 봄) 중 같은 색 2×2 묶음에 든 비율. 높으면 칸 크기가 진짜 칸의 몇 분의 1이라 결과가 쓸데없이 큽니다(디더링으로는 줄지 않음). 65%까지는 괜찮음, 95%에서 가장 나쁨.</value></data>
+  <data name="Pixelate_Result_Large" xml:space="preserve"><value>결과가 큽니다({width}×{height}) — 칸 크기를 확인하세요</value></data>
+  <data name="Pixelate_Preview_Result" xml:space="preserve"><value>결과 {index}/{count}</value></data>
+  <data name="Pixelate_Preview_Source" xml:space="preserve"><value>원본</value></data>
+  <data name="Pixelate_Grid_DoubleOutline" xml:space="preserve"><value>외곽선이 {thickness}픽셀 두께로 그려져 있어 '외곽선 1px로 얇게'로 1px로 맞춥니다.</value></data>
+  <data name="Pixelate_PrevFrame" xml:space="preserve"><value>이전 프레임(←)</value></data>
+  <data name="Pixelate_NextFrame" xml:space="preserve"><value>다음 프레임(→)</value></data>
+  <data name="Pixelate_ColorTip" xml:space="preserve"><value>{hex} · {count}픽셀</value></data>
+  <data name="Pixelate_ColorTip_Excluded" xml:space="preserve"><value>{hex} · 뺀 색(누르면 되살리기)</value></data>
+  <data name="Pixelate_Colors_Tip" xml:space="preserve"><value>왼쪽 클릭: 이 색 빼기·되살리기(지금 결과에서만 — 뺀 색의 픽셀은 원본 칸 색에 가장 가까운 남은 색으로) · 고정 색은 왼쪽 클릭으로 고정 해제 · 오른쪽 클릭: 결과에서 이 색 강조 · +: 원본에서 색 추가</value></data>
+  <data name="Pixelate_Exclude_Notice" xml:space="preserve"><value>색 빼기 {count}개 적용 중</value></data>
+  <data name="Pixelate_Exclude_RestoreAll" xml:space="preserve"><value>모두 되살리기</value></data>
+  <data name="Pixelate_Exclude_LastColor" xml:space="preserve"><value>마지막 남은 색은 뺄 수 없습니다.</value></data>
+  <data name="Pixelate_ColorTip_Pinned" xml:space="preserve"><value>{hex} · {count}픽셀 · 고정 색(누르면 해제)</value></data>
+  <data name="Pixelate_ColorTip_PinnedUnused" xml:space="preserve"><value>{hex} · 고정 색 · 결과에 쓰이지 않음(누르면 해제)</value></data>
+  <data name="Pixelate_Pin_Add" xml:space="preserve"><value>원본에서 색 추가</value></data>
+  <data name="Pixelate_Pin_PickHint" xml:space="preserve"><value>원본 칸을 누르면 그 색을 고정 색으로 넣습니다 · Shift+클릭: 계속 넣기 · Esc·오른쪽 클릭·+: 그만</value></data>
+  <data name="Pixelate_Pin_EmptyCell" xml:space="preserve"><value>빈(투명한) 칸입니다 — 색이 있는 칸을 누르세요.</value></data>
+  <data name="Pixelate_Pin_Already" xml:space="preserve"><value>이미 고정한 색입니다.</value></data>
+  <data name="Pixelate_Pin_Notice" xml:space="preserve"><value>고정 색 {count}개</value></data>
+  <data name="Pixelate_Pin_ClearAll" xml:space="preserve"><value>모두 해제</value></data>
+  <data name="Pixelate_Opt_SelectAll" xml:space="preserve"><value>모두 선택</value></data>
+  <data name="Pixelate_Opt_ClearAll" xml:space="preserve"><value>모두 해제</value></data>
+  <data name="Pixelate_Opt_SelectAllTip" xml:space="preserve"><value>지금 설정에서 쓸 수 있는 항목을 모두 켜거나 끕니다(흐린 항목과 외곽선 맞추기 방식은 그대로 — 고른 방식을 지킴).</value></data>
+  <data name="Pixelate_Opt_Defaults" xml:space="preserve"><value>기본값</value></data>
+  <data name="Pixelate_Opt_DefaultsTip" xml:space="preserve"><value>처음 고른 항목(외곽선 맞추기 방식만 빼고 모두)으로 되돌립니다(외곽선 맞추기 방식 체크는 그대로 — 고른 방식의 1px 외곽선을 지킴).</value></data>
+  <data name="Pixelate_Fit" xml:space="preserve"><value>외곽선 1px 맞추기</value></data>
+  <data name="Pixelate_Fit_Shrink" xml:space="preserve"><value>크기를 줄여서</value></data>
+  <data name="Pixelate_Fit_Thin" xml:space="preserve"><value>외곽선만 얇게</value></data>
+  <data name="Pixelate_Fit_Off" xml:space="preserve"><value>끔</value></data>
+  <data name="Pixelate_Fit_Vector" xml:space="preserve"><value>벡터로 다시 그리기</value></data>
+  <data name="Pixelate_Fit_Tip" xml:space="preserve"><value>크기를 줄여서: 칸 크기를 바깥 외곽선 두께로 정해 전체를 줄입니다(줄이면 외곽선이 1px, 격자를 수동으로 고르면 수동이 이김). 외곽선만 얇게: 칸 크기는 격자 설정대로 두고 안쪽으로 겹친 외곽선만 벗겨 냅니다(끊김 없이, 눈 같은 안쪽 어두운 덩어리는 그대로). 벡터로 다시 그리기: 칸 크기는 격자 설정대로 두고, 원본의 외곽선 띠를 가운데 선으로 따서 1px 픽셀 퍼펙트 선으로 다시 그립니다(옛 두꺼운 외곽선은 안쪽 색으로, 눈 같은 작은 안쪽 덩어리는 그대로).</value></data>
+  <data name="Pixelate_Grid_ShrinkInfo" xml:space="preserve"><value>크기를 줄여서: 외곽선 두께 {outline}px와 같은 칸(±12%)인 값만 골라 칸 크기 {scale}px로 줄입니다(외곽선이 1px).</value></data>
+  <data name="Pixelate_Grid_ShrinkThinOutline" xml:space="preserve"><value>크기를 줄여서: 외곽선 두께 {outline}px가 칸보다 가늘어(칸 크기 {scale}px가 원본 경계와 확실히 더 잘 맞음) 칸 크기 {scale}px로 줄입니다(외곽선은 1px 이하).</value></data>
+  <data name="Pixelate_Clean_VectorTolerance" xml:space="preserve"><value>벡터 단순화(px)</value></data>
+  <data name="Pixelate_Clean_VectorTolerance_Tip" xml:space="preserve"><value>벡터로 다시 그릴 때 외곽선을 곧게 펼 허용 오차(결과 픽셀). 크면 매끈하지만 모양이 덜 따라가고, 0이면 원본 외곽선 가운데 선을 그대로 따라갑니다.</value></data>
+  <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>남길 작은 덩어리(칸)</value></data>
+  <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>바깥 외곽선과 닿지 않은 어두운 덩어리는 넓이가 이 칸 수보다 작으면(눈 등) 다시 그리지 않고 그대로 둡니다.</value></data>
+  <data name="Pixelate_Vary_OutlineFit" xml:space="preserve"><value>외곽선 맞추기 방식</value></data>
+  <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>자동 최적화</value></data>
+  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>누르면 바로 시작합니다: 고른 항목을 조금씩 바꿔 가며 점수가 가장 높은 설정을 찾습니다(지금 설정에서 시작). 항목·예산은 옆의 설정 단추에서.</value></data>
+  <data name="Pixelate_Opt_Scale" xml:space="preserve"><value>칸 크기</value></data>
+  <data name="Pixelate_Opt_OffsetX" xml:space="preserve"><value>격자 시작 X</value></data>
+  <data name="Pixelate_Opt_OffsetY" xml:space="preserve"><value>격자 시작 Y</value></data>
+  <data name="Pixelate_Opt_OffsetTip" xml:space="preserve"><value>격자가 수동일 때만 바꿉니다(자동 격자는 색 경계를 따라가므로 건너뜀).</value></data>
+  <data name="Pixelate_Opt_Colors" xml:space="preserve"><value>색 수</value></data>
+  <data name="Pixelate_Opt_Downsample" xml:space="preserve"><value>칸 색 방식</value></data>
+  <data name="Pixelate_Opt_Border" xml:space="preserve"><value>칸 가장자리 무시</value></data>
+  <data name="Pixelate_Opt_Alpha" xml:space="preserve"><value>투명 문턱</value></data>
+  <data name="Pixelate_Opt_Snap" xml:space="preserve"><value>색 묶기 간격</value></data>
+  <data name="Pixelate_Opt_Darkness" xml:space="preserve"><value>외곽선 밝기</value></data>
+  <data name="Pixelate_Opt_Cleanup" xml:space="preserve"><value>정리 켜기·끄기</value></data>
+  <data name="Pixelate_Opt_Dither" xml:space="preserve"><value>디더링</value></data>
+  <data name="Pixelate_Opt_OutlineFit" xml:space="preserve"><value>외곽선 맞추기 방식</value></data>
+  <data name="Pixelate_Opt_FitTip" xml:space="preserve"><value>끄면(기본) 지금 고른 외곽선 1px 맞추기 방식을 그대로 둡니다. '모두 선택'도 켜지 않으니 다른 방식도 시도하려면 직접 켜세요. 켜도 '크기를 줄여서'인 시도의 칸 크기는 외곽선 두께 ±15% 안입니다.</value></data>
+  <data name="Pixelate_Opt_VectorTip" xml:space="preserve"><value>외곽선 맞추기가 벡터로 다시 그리기이거나 외곽선 맞추기 방식도 바꿔 볼 때 고를 수 있고, 벡터로 다시 그리기인 시도에서만 바꿔 봅니다.</value></data>
+  <data name="Pixelate_Opt_ColorSource" xml:space="preserve"><value>팔레트 색(원본·평균)</value></data>
+  <data name="Pixelate_Opt_PaletteMethod" xml:space="preserve"><value>팔레트 방식(k-평균·중앙 분할)</value></data>
+  <data name="Pixelate_Opt_EdgeWeight" xml:space="preserve"><value>가장자리 칸 가중</value></data>
+  <data name="Pixelate_Opt_SnapOutline" xml:space="preserve"><value>외곽선 색 모으기</value></data>
+  <data name="Pixelate_Opt_PaletteTip" xml:space="preserve"><value>팔레트 방식이 k-평균이나 중앙 분할일 때만 바꿔 봅니다.</value></data>
+  <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>시도</value></data>
+  <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>초</value></data>
+  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>최적화 설정(바꿔 볼 항목·예산·시도 기록)</value></data>
+  <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>최적화 전 설정으로 되돌립니다.</value></data>
+  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>시도 {done}/{total} · 최고 점수 {score}</value></data>
+  <data name="Pixelate_Opt_Note" xml:space="preserve"><value>점수 비중(고급)이 최적화 목표입니다.</value></data>
+  <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>시도마다 지금까지의 최고 점수</value></data>
+  <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>최적화</value></data>
+  <data name="Pixelate_Opt_History" xml:space="preserve"><value>시도 기록</value></data>
+  <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>순위</value></data>
+  <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>점수</value></data>
+  <data name="Pixelate_Opt_ColSettings" xml:space="preserve"><value>설정</value></data>
+  <data name="Pixelate_Opt_StartRow" xml:space="preserve"><value>(시작 설정)</value></data>
+  <data name="Pixelate_Opt_Preparing" xml:space="preserve"><value>최적화 준비 중…</value></data>
+  <data name="Pixelate_Opt_Done" xml:space="preserve"><value>최적화: {start}점 → {best}점 · 시도 {trials}번 · {seconds}초 · {reason}</value></data>
+  <data name="Pixelate_Opt_Stop_Done" xml:space="preserve"><value>더 나아지지 않음</value></data>
+  <data name="Pixelate_Opt_Stop_Trials" xml:space="preserve"><value>시도 수를 다 씀</value></data>
+  <data name="Pixelate_Opt_Stop_Time" xml:space="preserve"><value>시간을 다 씀</value></data>
+  <data name="Pixelate_Opt_Stop_Cancelled" xml:space="preserve"><value>취소함</value></data>
+  <data name="Pixelate_Opt_On" xml:space="preserve"><value>켬</value></data>
+  <data name="Pixelate_Opt_Off" xml:space="preserve"><value>끔</value></data>
+  <data name="Pixelate_Opt_SumScale" xml:space="preserve"><value>칸 {scale}px</value></data>
+  <data name="Pixelate_Opt_SumColors" xml:space="preserve"><value>{count}색</value></data>
+  <data name="Pixelate_Opt_SumOrphans" xml:space="preserve"><value>외톨이</value></data>
+  <data name="Pixelate_Opt_SumHoles" xml:space="preserve"><value>구멍</value></data>
+  <data name="Pixelate_Opt_SumJaggies" xml:space="preserve"><value>계단</value></data>
+  <data name="Pixelate_Grid_Adjust" xml:space="preserve"><value>자동 칸 크기에 더하기(px)</value></data>
+  <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>자동 격자가 찾은 칸 크기에 더할 값입니다(자동 최적화는 이 값으로 칸 크기를 바꿉니다).</value></data>
+  <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>결과나 원본 그림을 누르면 크게 봅니다 — 크게 보기에서 결과 픽셀·원본 칸을 누르면 그 색을 강조합니다(눌러도 키보드 초점은 여기 — Space 재생/멈춤, ←→ 프레임).</value></data>
+  <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>크게 보기</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>휠: 확대·축소 · 끌기: 이동(두 칸 함께) · 결과 픽셀 누르기: 그 색 강조 · 원본 칸 누르기: 그 칸이 된 결과 색 강조 · 두 번 누르기: 맞춤 · Space: 재생/멈춤 · ←→: 프레임 · Esc·바깥 누르기: 닫기</value></data>
+  <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>닫기 (Esc)</value></data>
+  <data name="Pixelate_Grid_Local" xml:space="preserve"><value>칸 경계 지역 보정</value></data>
+  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>그림 전체에 한 줄로 고른 칸 경계를 띠(칸 몇 줄)마다 그 자리의 덩어리 경계에 맞춰 다시 고릅니다 — 한쪽이 반 칸쯤 어긋나 그려진 AI 그림. 칸 경계 보기에 꺾인 경계가 그대로 보입니다(칸 5px 미만은 하지 않음).</value></data>
+  <data name="Pixelate_Grid_LocalShift" xml:space="preserve"><value>최대 이동(칸 %)</value></data>
+  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>칸 경계가 전체 자리에서 움직일 수 있는 거리(칸 크기의 %). 칸 너비는 원래의 70~130% 안.</value></data>
+  <data name="Pixelate_Grid_LocalBand" xml:space="preserve"><value>띠(칸)</value></data>
+  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>경계를 따로 맞출 띠의 너비(칸). 작을수록 촘촘히 따라가고(1 = 줄마다), 클수록 매끄럽습니다.</value></data>
+  <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>설정 닫기</value></data>
 </root>

@@ -338,6 +338,8 @@ public sealed class FileBrowserPanel : UserControl
     public event EventHandler<string>? FileActivated;
     /// <summary>새 프로젝트를 만들 폴더.</summary>
     public event EventHandler<string>? NewImageRequested;
+    /// <summary>"AI 그림 픽셀로 정리"할 그림 파일.</summary>
+    public event EventHandler<string>? PixelateRequested;
     /// <summary>이름이 바뀐 파일(이전, 새 경로).</summary>
     public event EventHandler<(string OldPath, string NewPath)>? FileRenamed;
     /// <summary>휴지통으로 보낸 파일.</summary>
@@ -770,9 +772,11 @@ public sealed class FileBrowserPanel : UserControl
             ToolTip.SetTip(projectsOnlyItem, UiStrings.S_FileBrowserPanel_ListMenu_F72A938B51
                                              + UiStrings.S_FileBrowserPanel_ListMenu_1BFD2CD3AE);
         }
+        bool image = count == 1 && PixelateDialog.IsImageFile(paths[0]);
         return
         [
             Item(UiStrings.S_FileBrowserPanel_ListMenu_1299ADE057, () => NewImageRequested?.Invoke(this, CurrentFolder ?? RootFolder ?? ""), RootFolder is not null),
+            .. image ? [Item(UiStrings.Pixelate_MenuItem, () => PixelateRequested?.Invoke(this, paths[0]), true)] : Array.Empty<Control>(),
             new Separator(),
             Item(count >= 2 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_FileBrowserPanel_ListMenu_1C7165B3A5,count) : UiStrings.S_FileBrowserPanel_ListMenu_06B813FF5F, MergeSelected, count >= 2),
             new Separator(),

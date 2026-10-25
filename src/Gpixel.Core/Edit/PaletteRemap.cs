@@ -13,6 +13,8 @@ public enum PaletteDither
     /// 그래서 같은 색은 늘 같은 두 색의 같은 무늬가 되고, 팔레트에 있는 색은 그대로다.
     /// </summary>
     Bayer4,
+    /// <summary>순서 디더링(Bayer 2×2): <see cref="Bayer4"/>와 같고 무늬만 2×2(5단계).</summary>
+    Bayer2,
 }
 
 /// <summary>
@@ -29,10 +31,16 @@ public sealed class PaletteRemap
     private readonly HashSet<int> _exact;
     private readonly Dictionary<int, int> _cache = new();
     private readonly Dictionary<int, (int A, int B, float T)> _mixCache = new();
+    private readonly Func<Color32, Color32>? _nearest;
+    private readonly Func<Color32, Color32, bool>? _canMix;
 
     /// <param name="palette">팔레트(투명 색은 무시, 같은 RGB는 한 번만). 투명이 아닌 색이 없으면 <see cref="ArgumentException"/>.</param>
-    public PaletteRemap(IEnumerable<Color32> palette)
+    /// <param name="nearest">가장 가까운 색 고르기(불투명 색 → 팔레트 색 — 예: 정리의 색 거리·명암 계열 우선). null이면 redmean RGB 거리.</param>
+    /// <param name="canMix">디더 짝 거르기(원래 색, 짝 후보 → 섞어도 되는지 — 예: 명암 계열 우선은 색상이 다른 유채색과 섞지 않음). null이면 모두.</param>
+    public PaletteRemap(IEnumerable<Color32> palette, Func<Color32, Color32>? nearest = null, Func<Color32, Color32, bool>? canMix = null)
     {
+        _nearest = nearest;
+        _canMix = canMix;
         var seen = new HashSet<int>();
         var list = new List<int>();
         foreach (var c in palette)
@@ -69,7 +77,7 @@ public sealed class PaletteRemap
                 var c = px[i];
                 if (c.A == 0) continue;
                 int rgb = (int)(c.Argb & 0xFFFFFF);
-                int to = dither == PaletteDither.Bayer4 && !_exact.Contains(rgb) ? Dithered(rgb, x, y) : NearestRgb(rgb);
+                int to = dither != PaletteDither.None && !_exact.Contains(rgb) ? Dithered(rgb, x, y, dither) : NearestRgb(rgb);
                 if (to == rgb) continue;
                 px[i] = new Color32((c.Argb & 0xFF000000u) | (uint)to);
                 changed++;
@@ -107,10 +115,12 @@ public sealed class PaletteRemap
     }
 
     /// <summary>두 색 섞기 비율 <c>T</c>(0 = A만, 1 = B만)와 칸의 Bayer 문턱을 견줘 A 또는 B.</summary>
-    private int Dithered(int rgb, int x, int y)
+    private int Dithered(int rgb, int x, int y, PaletteDither dither)
     {
         var (a, b, t) = Mix(rgb);
-        float threshold = (Bayer4x4[(y & 3) * 4 + (x & 3)] + 0.5f) / 16f;
+        float threshold = dither == PaletteDither.Bayer2
+            ? (Bayer.Threshold2(x, y) + 0.5f) / 4f
+            : (Bayer4x4[(y & 3) * 4 + (x & 3)] + 0.5f) / 16f;
         return t > threshold ? b : a;
     }
 
@@ -134,7 +144,7 @@ public sealed class PaletteRemap
         var near = _rgb.OrderBy(p => Distance(r, g, bl, p >> 16 & 0xFF, p >> 8 & 0xFF, p & 0xFF)).Take(MixCandidates);
         foreach (int p in near)
         {
-            if (p == a) continue;
+            if (p == a || (_canMix is not null && !_canMix(new Color32(0xFF000000u | (uint)rgb), new Color32(0xFF000000u | (uint)p)))) continue;
             int pr = p >> 16 & 0xFF, pg = p >> 8 & 0xFF, pb = p & 0xFF;
             float dx = pr - ar, dy = pg - ag, dz = pb - ab;
             float len = dx * dx + dy * dy + dz * dz;
@@ -153,6 +163,7 @@ public sealed class PaletteRemap
     private int NearestRgb(int rgb)
     {
         if (_cache.TryGetValue(rgb, out int hit)) return hit;
+        if (_nearest is not null) return _cache[rgb] = (int)(_nearest(new Color32(0xFF000000u | (uint)rgb)).Argb & 0xFFFFFF);
         int r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
         int best = _rgb[0];
         long bestD = long.MaxValue;

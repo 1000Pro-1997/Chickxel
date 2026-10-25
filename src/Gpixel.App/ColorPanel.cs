@@ -320,9 +320,10 @@ public sealed class ColorPanel : UserControl
         }
     }
 
-    private void AddPalette()
+    /// <summary>새 팔레트를 맨 아래에 더하고 활성 팔레트로(이름이 없으면 "팔레트 N"). 실행취소·설정 저장 알림을 낸다.</summary>
+    public void AddPalette(string? name = null, IEnumerable<Color32>? colors = null)
     {
-        var s = CreateSection(NextPaletteName(), [], false);
+        var s = CreateSection(string.IsNullOrWhiteSpace(name) ? NextPaletteName() : name.Trim(), colors ?? [], false);
         _sections.Add(s);
         _active = s;
         LayoutSections();

@@ -135,6 +135,12 @@ public sealed class AppSettings
     public int ChatHeight { get; set; } = 640;
     public bool ChatOpen { get; set; }
 
+    // AI 그림 픽셀로 정리
+    /// <summary>마지막 단계 설정(JSON — <see cref="Gpixel.Core.Pixelate.PixelatePresets.SerializeSettings"/>). null = 기본.</summary>
+    public string? PixelateSettings { get; set; }
+    /// <summary>창 설정(후보 수·가중치·넣기·AI 다듬기 등).</summary>
+    public PixelateOptions? Pixelate { get; set; }
+
     // 내보내기 설정 창(Ctrl+E)
     public int ExportX { get; set; } = -1;
     public int ExportY { get; set; } = -1;

@@ -82,7 +82,8 @@ public sealed class PixelCanvas : Control
     private static readonly Cursor SizeNwseCursor = new(StandardCursorType.TopLeftCorner);
     private static readonly Cursor SizeNeswCursor = new(StandardCursorType.TopRightCorner);
     private static readonly Lazy<Cursor> RotateCursor = new(BuildRotateCursor);
-    private static readonly Lazy<Cursor> PickerCursor = new(BuildPickerCursor);
+    /// <summary>스포이드 커서(<see cref="BuildPickerCursor"/>) — 픽셀로 정리 창의 "원본에서 색 추가"도 쓴다.</summary>
+    internal static readonly Lazy<Cursor> PickerCursor = new(BuildPickerCursor);
 
     private readonly EditorContext _ctx;
     private WriteableBitmap? _floatingBmp;

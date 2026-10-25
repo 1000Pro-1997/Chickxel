@@ -603,6 +603,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AddItems(file,
             Cmd("새 프로젝트…", MainStrings.Menu_File_NewProject_063, () => NewProject(null), "Ctrl+N", KeyScope.Global, (Key.N, Ctrl)),
             Cmd("열기(.gpixel / PNG 가져오기)…", MainStrings.Menu_File_OpenFileDialogCmd_065, OpenFileDialogCmd, "Ctrl+O", KeyScope.Global, (Key.O, Ctrl)),
+            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_File_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3),
             Cmd("폴더 열기…", MainStrings.Menu_File_OpenFolder_067, OpenFolder, "Ctrl+Shift+O", KeyScope.Global, (Key.O, Ctrl | Shift)),
             Cmd("Unity 프로젝트 열기…", MainStrings.Menu_File_OpenUnityProject_069, OpenUnityProject, "Ctrl+Shift+U", KeyScope.Global, (Key.U, Ctrl | Shift)),
             _miRecentFolders,
@@ -651,6 +652,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
             DocCmd("팔레트 색으로 변환…", MainStrings.Menu_Edit_Command_129, _colors.ConvertImageToActivePalette),
+            WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Edit_Pixelate, PixelateCurrentLayer), VectorIcon.Grid3x3),
             new Separator(),
             Cmd("환경 설정…", MainStrings.Menu_Edit_ShowPreferences_131, ShowPreferences, "Ctrl+,", KeyScope.Global, (Key.OemComma, Ctrl)));
         Bind("편집", "선택 내려놓기", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_CommitSelection, KeyScope.Canvas, () =>
@@ -993,6 +995,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
         _canvas.Message += (_, m) => ShowMessage(m);
         _timeline.Message += (_, m) => ShowMessage(m);
+        _preview.Message += (_, m) => ShowMessage(m);
+        _preview.CopyRequested += (_, img) =>
+        {
+            _ctx.Clipboard = img;
+            PutOnSystemClipboard(img);
+        };
+        _preview.GifExportRequested += (_, _) => ExportGif();
+        _preview.FileSaved += (_, path) => _browser.RefreshFile(path);
 
         _browser.SpriteDefaults = () => new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple };
         _browser.FindOpenDocument = path => TryGetOpenDocument(path, out var doc) ? doc : null;
@@ -1009,6 +1019,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Dispatcher.UIThread.Post(() => { if (!OpenFile(path)) _browser.SelectFile(CurrentTilePath); });
         };
         _browser.NewImageRequested += (_, folder) => NewProject(folder);
+        _browser.PixelateRequested += (_, path) => PixelateFile(path);
         _browser.FileRenamed += (_, r) => OnFileRenamed(r.OldPath, r.NewPath);
         _browser.FileDeleted += (_, path) => OnFileDeleted(path);
         _browser.FilesChanged += (_, paths) => OnFilesChanged(paths);

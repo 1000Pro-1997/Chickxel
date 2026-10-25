@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Avalonia.Controls.Templates;
+using Gpixel.Core.Edit;
+using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using Gpixel.App.Localization;
 
@@ -9,6 +11,7 @@ namespace Gpixel.App;
 /// Piskel식 미리보기(오른쪽 위): 현재 태그(없으면 전체 프레임)를 실시간으로 재생한다.
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
 /// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
+/// 그림을 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
 /// </summary>
 public sealed class PreviewPanel : UserControl
 {
@@ -42,6 +45,18 @@ public sealed class PreviewPanel : UserControl
 
     /// <summary>재생 중 보이는 프레임이 바뀜(-1 = 재생 멈춤).</summary>
     public event EventHandler<int>? PlayingFrameChanged;
+
+    /// <summary>상태 표시줄에 보일 알림.</summary>
+    public event EventHandler<string>? Message;
+    /// <summary>"이미지 복사": 보이는 프레임 그림을 클립보드(시스템·앱)에 올려 달라.</summary>
+    public event EventHandler<PixelImage>? CopyRequested;
+    /// <summary>"GIF로 저장…": GIF 내보내기 창을 열어 달라.</summary>
+    public event EventHandler? GifExportRequested;
+    /// <summary>파일을 저장함(파일 목록 새로 고침용).</summary>
+    public event EventHandler<string>? FileSaved;
+
+    /// <summary>"크게 복사"의 최근접 확대 배율.</summary>
+    private const int EnlargedCopyScale = 4;
 
     public PreviewPanel(EditorContext ctx)
     {
@@ -112,6 +127,7 @@ public sealed class PreviewPanel : UserControl
         root.Children.Add(bar);
         root.Children.Add(_outfitHost);
         root.Children.Add(_view);
+        PopupMenus.Attach(_view, ViewMenu);
         Content = root;
         SetScale(0);
 
@@ -329,6 +345,76 @@ public sealed class PreviewPanel : UserControl
             if (color is { } c) g.FillRectangle(new SolidColorBrush(c), r);
             else AppTheme.DrawChecker(g, r, 4);
         }
+    }
+
+    // ───────────── 우클릭 메뉴 ─────────────
+
+    /// <summary>그림 우클릭 메뉴: 연 순간 보이던 프레임(재생 중이어도)을 대상으로 한다. 문서가 없으면 모두 끔.</summary>
+    private IEnumerable<object> ViewMenu()
+    {
+        bool has = _ctx.HasProject && _ctx.FrameCount > 0;
+        int frame = has ? Math.Clamp(ShownFrame, 0, _ctx.FrameCount - 1) : 0;
+        return
+        [
+            Item(UiStrings.Preview_Menu_CopyImage, VectorIcon.Copy, () => CopyFrame(frame, 1), has),
+            Item(UiStrings.Preview_Menu_CopyEnlarged, VectorIcon.Maximize2, () => CopyFrame(frame, EnlargedCopyScale), has),
+            new Separator(),
+            Item(UiStrings.Preview_Menu_SaveFrame, VectorIcon.ImageDown, () => SaveFrame(frame), has),
+            Item(UiStrings.Preview_Menu_SaveGif, VectorIcon.Film, () => GifExportRequested?.Invoke(this, EventArgs.Empty), has),
+        ];
+    }
+
+    private static MenuItem Item(string text, VectorIcon icon, Action action, bool enabled)
+    {
+        var item = new MenuItem { Header = text, Icon = Ui.Icon(icon, 14), IsEnabled = enabled };
+        // 메뉴가 닫힌 뒤에 한다(파일 대화상자가 메뉴 위에 뜨지 않게).
+        item.Click += (_, _) => Dispatcher.UIThread.Post(action);
+        return item;
+    }
+
+    /// <summary>
+    /// 미리보기가 그리는 그대로의 프레임 그림(보이는 레이어·효과·지금 착장, 투명 유지, 미리보기 배경 없음)을
+    /// <paramref name="scale"/>배 최근접 확대한 새 그림. 프레임이 없으면 null.
+    /// </summary>
+    private PixelImage? FrameImage(int frame, int scale)
+    {
+        if (_ctx.FrameImage(frame) is not { } img) return null;
+        return scale > 1 ? ImageTransform.ScaleNearest(img, img.Width * scale, img.Height * scale) : img.Clone();
+    }
+
+    private void CopyFrame(int frame, int scale)
+    {
+        if (FrameImage(frame, scale) is not { } img) return;
+        CopyRequested?.Invoke(this, img);
+        Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Preview_Copied, frame + 1, img.Width, img.Height));
+    }
+
+    /// <summary>"프레임 저장…": 기본 이름 <c>{문서}_{프레임 번호}.png</c>(번호는 미리보기 표시처럼 1부터), 1×.</summary>
+    private void SaveFrame(int frame)
+    {
+        if (_ctx.Project is not { } p) return;
+        var name = p.Path is { } pp ? Path.GetFileNameWithoutExtension(pp) : ProjectExport.CleanFileName(p.DisplayName);
+        var path = Ui.SaveFile(this, UiStrings.Preview_SaveFrame_Title, p.Path is { } dir ? Path.GetDirectoryName(dir) : null,
+            $"{name}_{frame + 1}.png", ".png", new FileFilter(UiStrings.Preview_PngFilter, "*.png"));
+        if (path is null) return;
+        SaveFrameTo(frame, path);
+    }
+
+    /// <summary>프레임 그림을 <paramref name="path"/>에 PNG(1×)로 쓴다. 실패하면 알린다.</summary>
+    private void SaveFrameTo(int frame, string path)
+    {
+        if (FrameImage(frame, 1) is not { } img) return;
+        try
+        {
+            PngIO.Save(img, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Ui.Error(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Preview_SaveFailed, ex.Message), UiStrings.Preview_SaveFrame_Title);
+            return;
+        }
+        Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Preview_Saved, Path.GetFileName(path), img.Width, img.Height));
+        FileSaved?.Invoke(this, path);
     }
 
     // ───────────── 재생 ─────────────

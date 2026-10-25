@@ -353,4 +353,13 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Drop_FramesAdded" xml:space="preserve"><value> · {count} frames added</value></data>
   <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered and the parts outside the canvas were cut. To keep everything, enlarge the canvas first in Canvas size mode (Edit > Canvas size…).</value></data>
   <data name="Drop_Unreadable" xml:space="preserve"><value>Could not read image: {names}</value></data>
+  <data name="Menu_File_Pixelate" xml:space="preserve"><value>Pixelate AI image…</value></data>
+  <data name="Menu_Edit_Pixelate" xml:space="preserve"><value>Pixelate current layer…</value></data>
+  <data name="Pixelate_UndoLabel" xml:space="preserve"><value>Pixelate AI image</value></data>
+  <data name="Pixelate_EmptyLayer" xml:space="preserve"><value>The current layer has nothing to pixelate.</value></data>
+  <data name="Pixelate_AddedLayer" xml:space="preserve"><value>Added as layer ‘{name}’ ({frames} frames, {width}×{height})</value></data>
+  <data name="Pixelate_NewDocument" xml:space="preserve"><value>Created a new document ({frames} frames, {width}×{height})</value></data>
+  <data name="Pixelate_PaletteName" xml:space="preserve"><value>{name} palette</value></data>
+  <data name="Pixelate_ReferenceAdded" xml:space="preserve"><value> · source added to AI references</value></data>
+  <data name="Pixelate_ReferenceFailed" xml:space="preserve"><value> · couldn't add to references: {message}</value></data>
 </root>

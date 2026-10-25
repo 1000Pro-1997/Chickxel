@@ -2608,6 +2608,15 @@ Move Gpixel.app to the Applications folder or similar and relaunch it to use aut
   <data name="S_Updater_PlanInstall_FA52471F79" xml:space="preserve"><value>Test builds ({0}) can't be installed automatically.</value></data>
   <data name="S_Updater_ShowUpdateDialog_A63ECF4271" xml:space="preserve"><value>Gpixel {0} won't be shown again (you'll be notified of newer versions). You can always check via Help &gt; Check for updates.</value></data>
   <data name="GifExport_Title" xml:space="preserve"><value>Export as animated GIF</value></data>
+  <data name="Preview_Menu_CopyImage" xml:space="preserve"><value>Copy image</value></data>
+  <data name="Preview_Menu_CopyEnlarged" xml:space="preserve"><value>Copy enlarged (×4)</value></data>
+  <data name="Preview_Menu_SaveFrame" xml:space="preserve"><value>Save frame…</value></data>
+  <data name="Preview_Menu_SaveGif" xml:space="preserve"><value>Save as GIF…</value></data>
+  <data name="Preview_Copied" xml:space="preserve"><value>Copied preview frame {0} ({1}×{2}).</value></data>
+  <data name="Preview_SaveFrame_Title" xml:space="preserve"><value>Save frame as PNG</value></data>
+  <data name="Preview_PngFilter" xml:space="preserve"><value>PNG image</value></data>
+  <data name="Preview_Saved" xml:space="preserve"><value>Saved {0} ({1}×{2})</value></data>
+  <data name="Preview_SaveFailed" xml:space="preserve"><value>Couldn't save the frame.&#10;{0}</value></data>
   <data name="PaletteConvert_Title" xml:space="preserve"><value>Convert to palette colors</value></data>
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>Auto layout on — click to configure</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>
@@ -2814,4 +2823,300 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Crash_ReportOnDiscord" xml:space="preserve"><value>Report on Discord</value></data>
   <data name="Crash_ReportOnDiscord_Hint" xml:space="preserve"><value>When reporting on Discord, please attach the log file above.</value></data>
   <data name="Chat_Help_Feedback" xml:space="preserve"><value>Bugs or ideas? Tell us on Discord</value></data>
+  <data name="Pixelate_Title" xml:space="preserve"><value>Pixelate AI image</value></data>
+  <data name="Pixelate_MenuItem" xml:space="preserve"><value>Pixelate AI image…</value></data>
+  <data name="Pixelate_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Pixelate_OpenTitle" xml:space="preserve"><value>Choose an image to pixelate</value></data>
+  <data name="Pixelate_ImageFilter" xml:space="preserve"><value>Images</value></data>
+  <data name="Pixelate_Unreadable" xml:space="preserve"><value>Couldn't read the image: {name}</value></data>
+  <data name="Pixelate_Empty" xml:space="preserve"><value>Drop an image, paste with Ctrl+V, or browse for a file</value></data>
+  <data name="Pixelate_Browse" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Pixelate_ReplaceSource" xml:space="preserve"><value>Replace source</value></data>
+  <data name="Pixelate_ReplaceSourceTip" xml:space="preserve"><value>Pick another image file (dropping an image on the window or pasting with Ctrl+V also replaces it).</value></data>
+  <data name="Pixelate_PastedName" xml:space="preserve"><value>Pasted image</value></data>
+  <data name="Pixelate_Paste_Nothing" xml:space="preserve"><value>The clipboard has no image or image file path.</value></data>
+  <data name="Pixelate_Settings_Show" xml:space="preserve"><value>Show settings</value></data>
+  <data name="Pixelate_Settings_Hide" xml:space="preserve"><value>Hide settings</value></data>
+  <data name="Pixelate_Preset" xml:space="preserve"><value>Preset</value></data>
+  <data name="Pixelate_Preset_Default" xml:space="preserve"><value>Default</value></data>
+  <data name="Pixelate_Preset_Small32" xml:space="preserve"><value>Small sprite (32px)</value></data>
+  <data name="Pixelate_Preset_Colors16" xml:space="preserve"><value>Fewer colors (16)</value></data>
+  <data name="Pixelate_Preset_KeepColors" xml:space="preserve"><value>Keep original colors</value></data>
+  <data name="Pixelate_Preset_Save" xml:space="preserve"><value>Save current settings as a preset</value></data>
+  <data name="Pixelate_Preset_SavePrompt" xml:space="preserve"><value>Preset name</value></data>
+  <data name="Pixelate_Preset_Delete" xml:space="preserve"><value>Delete the chosen preset (built-in presets can't be deleted)</value></data>
+  <data name="Pixelate_Preset_SaveFailed" xml:space="preserve"><value>Couldn't save presets: {message}</value></data>
+  <data name="Pixelate_Section_Background" xml:space="preserve"><value>1. Background</value></data>
+  <data name="Pixelate_Section_Frames" xml:space="preserve"><value>2. Frames</value></data>
+  <data name="Pixelate_Section_Grid" xml:space="preserve"><value>3. Pixel grid</value></data>
+  <data name="Pixelate_Section_Size" xml:space="preserve"><value>4. Output size</value></data>
+  <data name="Pixelate_Section_Downsample" xml:space="preserve"><value>5. Cell color</value></data>
+  <data name="Pixelate_Section_Palette" xml:space="preserve"><value>6. Palette</value></data>
+  <data name="Pixelate_Section_Cleanup" xml:space="preserve"><value>7. Cleanup</value></data>
+  <data name="Pixelate_Section_Consistency" xml:space="preserve"><value>8. Frame consistency</value></data>
+  <data name="Pixelate_Section_Candidates" xml:space="preserve"><value>Candidates</value></data>
+  <data name="Pixelate_Section_Advanced" xml:space="preserve"><value>Advanced (score weights)</value></data>
+  <data name="Pixelate_Section_Output" xml:space="preserve"><value>Output</value></data>
+  <data name="Pixelate_Section_Ai" xml:space="preserve"><value>AI (experimental)</value></data>
+  <data name="Pixelate_Mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="Pixelate_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="Pixelate_Bg_None" xml:space="preserve"><value>Keep background</value></data>
+  <data name="Pixelate_Bg_Auto" xml:space="preserve"><value>Auto (border color)</value></data>
+  <data name="Pixelate_Bg_Pick" xml:space="preserve"><value>Pick color</value></data>
+  <data name="Pixelate_Bg_Color" xml:space="preserve"><value>Background color</value></data>
+  <data name="Pixelate_Bg_Tolerance" xml:space="preserve"><value>Tolerance</value></data>
+  <data name="Pixelate_Bg_Connected" xml:space="preserve"><value>Only background connected to the border</value></data>
+  <data name="Pixelate_Bg_Connected_Tip" xml:space="preserve"><value>When on, the same color inside the sprite (eyes, near-black outlines touching the background) is kept.</value></data>
+  <data name="Pixelate_Bg_KeepAlpha" xml:space="preserve"><value>Use existing transparency</value></data>
+  <data name="Pixelate_Bg_AlphaThreshold" xml:space="preserve"><value>Alpha threshold</value></data>
+  <data name="Pixelate_Bg_Specks" xml:space="preserve"><value>Specks (px)</value></data>
+  <data name="Pixelate_Bg_InfoAlpha" xml:space="preserve"><value>Using the image's existing transparency.</value></data>
+  <data name="Pixelate_Bg_InfoColor" xml:space="preserve"><value>Background {color}, tolerance {tolerance}</value></data>
+  <data name="Pixelate_Frames_Single" xml:space="preserve"><value>Single image</value></data>
+  <data name="Pixelate_Frames_Auto" xml:space="preserve"><value>Auto (split by empty space)</value></data>
+  <data name="Pixelate_Frames_Grid" xml:space="preserve"><value>Grid</value></data>
+  <data name="Pixelate_Frames_Columns" xml:space="preserve"><value>Columns</value></data>
+  <data name="Pixelate_Frames_Rows" xml:space="preserve"><value>Rows</value></data>
+  <data name="Pixelate_Frames_Merge" xml:space="preserve"><value>Merge small pieces (%)</value></data>
+  <data name="Pixelate_Frames_MergeDistance" xml:space="preserve"><value>Distance (px)</value></data>
+  <data name="Pixelate_Frames_Align" xml:space="preserve"><value>Align</value></data>
+  <data name="Pixelate_Align_BottomCenter" xml:space="preserve"><value>Bottom center</value></data>
+  <data name="Pixelate_Align_Center" xml:space="preserve"><value>Center</value></data>
+  <data name="Pixelate_Align_Keep" xml:space="preserve"><value>Keep offsets</value></data>
+  <data name="Pixelate_Frames_Common" xml:space="preserve"><value>Same canvas size for all frames</value></data>
+  <data name="Pixelate_Frames_Info" xml:space="preserve"><value>{count} frames</value></data>
+  <data name="Pixelate_Grid_Auto" xml:space="preserve"><value>Auto (edge analysis)</value></data>
+  <data name="Pixelate_Grid_Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Pixelate_Grid_Scale" xml:space="preserve"><value>Pixel size (px)</value></data>
+  <data name="Pixelate_Grid_Offset" xml:space="preserve"><value>Offset X·Y</value></data>
+  <data name="Pixelate_Grid_Jitter" xml:space="preserve"><value>Allowed size jitter (%)</value></data>
+  <data name="Pixelate_Grid_PerFrame" xml:space="preserve"><value>Detect per frame</value></data>
+  <data name="Pixelate_Grid_UseDetected" xml:space="preserve"><value>Use detected as manual</value></data>
+  <data name="Pixelate_Grid_Info" xml:space="preserve"><value>Detected pixel size {scale}px · offset ({x}, {y}) · edge fit {confidence}%</value></data>
+  <data name="Pixelate_Size_FromScale" xml:space="preserve"><value>From pixel size</value></data>
+  <data name="Pixelate_Size_Fixed" xml:space="preserve"><value>Fit a fixed size</value></data>
+  <data name="Pixelate_Size_Factor" xml:space="preserve"><value>Scale factor</value></data>
+  <data name="Pixelate_Size_WH" xml:space="preserve"><value>Width×Height</value></data>
+  <data name="Pixelate_Size_KeepAspect" xml:space="preserve"><value>Keep aspect</value></data>
+  <data name="Pixelate_Size_Padding" xml:space="preserve"><value>Padding (px)</value></data>
+  <data name="Pixelate_Size_FactorLabel" xml:space="preserve"><value>Factor</value></data>
+  <data name="Pixelate_Size_Info" xml:space="preserve"><value>Output {width}×{height}</value></data>
+  <data name="Pixelate_Ds_Mode" xml:space="preserve"><value>Most frequent color</value></data>
+  <data name="Pixelate_Ds_Median" xml:space="preserve"><value>Median</value></data>
+  <data name="Pixelate_Ds_Center" xml:space="preserve"><value>Center pixel</value></data>
+  <data name="Pixelate_Ds_Mean" xml:space="preserve"><value>Mean</value></data>
+  <data name="Pixelate_Ds_Border" xml:space="preserve"><value>Ignore cell border (%)</value></data>
+  <data name="Pixelate_Ds_Alpha" xml:space="preserve"><value>Transparency threshold (%)</value></data>
+  <data name="Pixelate_Ds_Snap" xml:space="preserve"><value>Color snap step</value></data>
+  <data name="Pixelate_Pal_KMeans" xml:space="preserve"><value>k-means (OKLab)</value></data>
+  <data name="Pixelate_Pal_MedianCut" xml:space="preserve"><value>Median cut</value></data>
+  <data name="Pixelate_Pal_Existing" xml:space="preserve"><value>Existing palette</value></data>
+  <data name="Pixelate_Pal_Keep" xml:space="preserve"><value>Keep original colors</value></data>
+  <data name="Pixelate_Pal_Colors" xml:space="preserve"><value>Colors</value></data>
+  <data name="Pixelate_Pal_Which" xml:space="preserve"><value>Palette</value></data>
+  <data name="Pixelate_Pal_NoPalettes" xml:space="preserve"><value>(no palettes)</value></data>
+  <data name="Pixelate_Pal_Lospec" xml:space="preserve"><value>Lospec: {name}</value></data>
+  <data name="Pixelate_Pal_Shared" xml:space="preserve"><value>One palette for all frames</value></data>
+  <data name="Pixelate_Pal_Dither" xml:space="preserve"><value>Dither</value></data>
+  <data name="Pixelate_Dither_None" xml:space="preserve"><value>None</value></data>
+  <data name="Pixelate_Pal_SnapOutline" xml:space="preserve"><value>Snap near-black to one outline color</value></data>
+  <data name="Pixelate_Pal_Source" xml:space="preserve"><value>Palette colors</value></data>
+  <data name="Pixelate_Pal_Source_Original" xml:space="preserve"><value>Original colors</value></data>
+  <data name="Pixelate_Pal_Source_Mean" xml:space="preserve"><value>Average colors</value></data>
+  <data name="Pixelate_Pal_Source_Tip" xml:space="preserve"><value>Original colors: after grouping similar colors, each group uses the color actually used most in the image (blurred edge colors cannot pull a white robe toward grey). Average colors: each group uses its average color (the old behavior; colors can come out slightly muddy).</value></data>
+  <data name="Pixelate_Pal_EdgeWeight" xml:space="preserve"><value>Edge cell weight</value></data>
+  <data name="Pixelate_Pal_EdgeWeight_Tip" xml:space="preserve"><value>With original colors, edge cells touching transparency and blurred cells between two neighbor colors (including between the outline and a fill) count only this much when grouping colors (0 = ignore, 1 = same as other cells).</value></data>
+  <data name="Pixelate_Pal_Distance" xml:space="preserve"><value>Color distance</value></data>
+  <data name="Pixelate_Pal_Distance_OkLab" xml:space="preserve"><value>OKLab</value></data>
+  <data name="Pixelate_Pal_Distance_Ciede2000" xml:space="preserve"><value>CIEDE2000</value></data>
+  <data name="Pixelate_Pal_Distance_OkLchHue" xml:space="preserve"><value>OKLCh hue-weighted</value></data>
+  <data name="Pixelate_Pal_Distance_Tip" xml:space="preserve"><value>How color closeness is measured when cells take a palette color (without dithering), for pinned colors, excluded-color replacement, the original-color pick and the "Major color shift" score. OKLCh hue-weighted (default) and CIEDE2000 keep a hue change (apricot → gold) from looking "close"; OKLab is a straight distance. Color grouping itself stays in OKLab.</value></data>
+  <data name="Pixelate_Pal_HueWeight_Tip" xml:space="preserve"><value>Hue weight for OKLCh hue-weighted (1 = same as OKLab; higher = hue differences count more).</value></data>
+  <data name="Pixelate_Pal_ShadeFamily" xml:space="preserve"><value>Prefer shade family</value></data>
+  <data name="Pixelate_Pal_ShadeFamily_Tip" xml:space="preserve"><value>If a palette color has a similar hue and chroma to the cell color (a lighter or darker shade of the same color), the cell takes the family member with the nearest lightness instead of a different-hue color of similar lightness. Dithering also never mixes in a chromatic color of a different hue (e.g. deep apricot shading does not become gold or gold dots).</value></data>
+  <data name="Pixelate_Pal_Distinct" xml:space="preserve"><value>Keep distinct hues</value></data>
+  <data name="Pixelate_Pal_Distinct_Tip" xml:space="preserve"><value>If a color group in the source with enough chroma and area would turn into a palette color of a clearly different hue (e.g. small apricot ear shading → gold), that color is put in the palette: added with automatic count, or swapped for the least important color with a fixed count (pinned colors are never swapped).</value></data>
+  <data name="Pixelate_Pal_DistinctChroma" xml:space="preserve"><value>Min chroma</value></data>
+  <data name="Pixelate_Pal_DistinctChroma_Tip" xml:space="preserve"><value>Only colors at least this saturated (OKLCh chroma) are checked — greys and near-whites are skipped.</value></data>
+  <data name="Pixelate_Pal_DistinctHue" xml:space="preserve"><value>Hue diff (°)</value></data>
+  <data name="Pixelate_Pal_DistinctHue_Tip" xml:space="preserve"><value>A color counts as "lost" when the palette color it would become differs in hue by at least this many degrees.</value></data>
+  <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>Min area</value></data>
+  <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>Minimum size of the color group in cells (with original colors, edge cells count with the edge cell weight).</value></data>
+  <data name="Pixelate_Opt_ColorDistanceTip" xml:space="preserve"><value>Tries OKLab, CIEDE2000 and OKLCh hue-weighted (with hue weight 1–3). The "Major color shift" score of every trial is measured with the starting color distance so trials stay comparable.</value></data>
+  <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>Auto optimize on load</value></data>
+  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>When a source is loaded (open, drop, paste, browse, replace), the auto optimizer runs once after the first candidates finish. It does not run again when settings change, and you can cancel it while it runs.</value></data>
+  <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>Source cell {source} → result {result}</value></data>
+  <data name="Pixelate_Pal_Info" xml:space="preserve"><value>{count} colors</value></data>
+  <data name="Pixelate_Clean_Orphans" xml:space="preserve"><value>Remove orphan pixels</value></data>
+  <data name="Pixelate_Clean_Contrast" xml:space="preserve"><value>Max contrast</value></data>
+  <data name="Pixelate_Clean_Orphans_Tip" xml:space="preserve"><value>Dots that contrast more than this with their neighbors (pupils etc.) are kept (OKLab distance, 1 = remove all).</value></data>
+  <data name="Pixelate_Clean_Holes" xml:space="preserve"><value>Fill 1-px holes</value></data>
+  <data name="Pixelate_Clean_Outline" xml:space="preserve"><value>Outline</value></data>
+  <data name="Pixelate_Outline_None" xml:space="preserve"><value>As is</value></data>
+  <data name="Pixelate_Outline_Unify" xml:space="preserve"><value>Unify to the darkest color</value></data>
+  <data name="Pixelate_Outline_Closed" xml:space="preserve"><value>Ensure a closed 1-px outline</value></data>
+  <data name="Pixelate_Clean_Jaggies" xml:space="preserve"><value>Reduce L-corner doubles on outlines</value></data>
+  <data name="Pixelate_Cons_Temporal" xml:space="preserve"><value>Match neighbor frames (reduce flicker)</value></data>
+  <data name="Pixelate_Cand_Count" xml:space="preserve"><value>Candidates</value></data>
+  <data name="Pixelate_Cand_Vary" xml:space="preserve"><value>Vary</value></data>
+  <data name="Pixelate_Vary_Scale" xml:space="preserve"><value>Pixel size ±</value></data>
+  <data name="Pixelate_Vary_Palette" xml:space="preserve"><value>Color count ±</value></data>
+  <data name="Pixelate_Vary_Downsample" xml:space="preserve"><value>Cell color mode</value></data>
+  <data name="Pixelate_Vary_Cleanup" xml:space="preserve"><value>Cleanup on/off</value></data>
+  <data name="Pixelate_Vary_Dither" xml:space="preserve"><value>Dither</value></data>
+  <data name="Pixelate_Score_Fidelity" xml:space="preserve"><value>Fidelity</value></data>
+  <data name="Pixelate_Score_Orphans" xml:space="preserve"><value>Orphan pixels</value></data>
+  <data name="Pixelate_Score_OutlineGaps" xml:space="preserve"><value>Outline gaps</value></data>
+  <data name="Pixelate_Score_Colors" xml:space="preserve"><value>Color count</value></data>
+  <data name="Pixelate_Score_Consistency" xml:space="preserve"><value>Frame consistency</value></data>
+  <data name="Pixelate_Score_Grid" xml:space="preserve"><value>Grid fit</value></data>
+  <data name="Pixelate_Out_NewLayer" xml:space="preserve"><value>New layer in the current document (from the current frame)</value></data>
+  <data name="Pixelate_Out_NewDocument" xml:space="preserve"><value>New document</value></data>
+  <data name="Pixelate_Out_Duration" xml:space="preserve"><value>Frame duration (ms)</value></data>
+  <data name="Pixelate_Out_SavePalette" xml:space="preserve"><value>Also save the colors as a new palette</value></data>
+  <data name="Pixelate_Ai_TouchUp" xml:space="preserve"><value>Touch up with AI after applying</value></data>
+  <data name="Pixelate_Ai_Model" xml:space="preserve"><value>AI</value></data>
+  <data name="Pixelate_Ai_Prompt" xml:space="preserve"><value>Prompt (filled into the chat input; you press send)</value></data>
+  <data name="Pixelate_Ai_ResetPrompt" xml:space="preserve"><value>Reset to the default prompt</value></data>
+  <data name="Pixelate_Ai_DefaultPrompt" xml:space="preserve"><value>The pixel art in the current document was pixelated from the attached AI image (the original). Compared with the original, please reconnect broken outlines, clean up small details such as the eyes and face, and remove stray pixels. Keep the palette (the colors used), the canvas size and the frame count, and fix every frame the same way.</value></data>
+  <data name="Pixelate_Ai_AddReference" xml:space="preserve"><value>Add the source to AI references</value></data>
+  <data name="Pixelate_Ai_Rank" xml:space="preserve"><value>Ask AI to rank candidates</value></data>
+  <data name="Pixelate_Ai_RankCount" xml:space="preserve"><value>Candidates to send</value></data>
+  <data name="Pixelate_Ai_RankItem" xml:space="preserve"><value>candidate {index} (score {score}, {colors} colors, {width}×{height})</value></data>
+  <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>The first attached image is the original (pixel-look art made by AI); the next {count} are candidates that pixelate it ({list}, in order — each image shows the frames side by side). Check whether outlines are unbroken, the eyes and face are readable, there are no stray pixels, and colors and shapes are consistent between frames, then rank them from best with reasons. Suggest settings (pixel size, color count, cleanup) that would improve them.</value></data>
+  <data name="Pixelate_Source" xml:space="preserve"><value>Source (wheel: zoom, drag: pan, double-click: fit)</value></data>
+  <data name="Pixelate_ShowGrid" xml:space="preserve"><value>Show grid</value></data>
+  <data name="Pixelate_ShowMask" xml:space="preserve"><value>Show background removed</value></data>
+  <data name="Pixelate_Fps" xml:space="preserve"><value>FPS</value></data>
+  <data name="Pixelate_Play" xml:space="preserve"><value>Play/pause</value></data>
+  <data name="Pixelate_Status_Running" xml:space="preserve"><value>Building candidates… {done}/{total}</value></data>
+  <data name="Pixelate_Status_Done" xml:space="preserve"><value>{count} candidates · {ms} ms · double-click to apply</value></data>
+  <data name="Pixelate_Status_NoSprite" xml:space="preserve"><value>Nothing is left after removing the background. Try other background settings.</value></data>
+  <data name="Pixelate_Status_Error" xml:space="preserve"><value>Couldn't build candidates: {message}</value></data>
+  <data name="Pixelate_Tile" xml:space="preserve"><value>#{rank} · {score}</value></data>
+  <data name="Pixelate_TileInfo" xml:space="preserve"><value>{colors} colors · {width}×{height} · {frames} frames</value></data>
+  <data name="Pixelate_Breakdown" xml:space="preserve"><value>{name} {value} (bad {bad}% × {weight})</value></data>
+  <data name="Pixelate_Selected" xml:space="preserve"><value>#{rank} · {score} · pixel {scale}px · {colors} colors · {width}×{height} · {frames} frames</value></data>
+  <data name="Pixelate_Dither_Bayer2" xml:space="preserve"><value>Bayer 2×2</value></data>
+  <data name="Pixelate_Dither_Bayer4" xml:space="preserve"><value>Bayer 4×4</value></data>
+  <data name="Pixelate_Size_By" xml:space="preserve"><value>×</value></data>
+  <data name="Pixelate_Grid_Source" xml:space="preserve"><value>Pixel size from</value></data>
+  <data name="Pixelate_Grid_SourceAuto" xml:space="preserve"><value>Auto (best edge match)</value></data>
+  <data name="Pixelate_Grid_SourceOutline" xml:space="preserve"><value>Outline thickness</value></data>
+  <data name="Pixelate_Grid_SourceEdges" xml:space="preserve"><value>Color edges</value></data>
+  <data name="Pixelate_Grid_SourceBlocks" xml:space="preserve"><value>Block edges</value></data>
+  <data name="Pixelate_Grid_Source_Tip" xml:space="preserve"><value>Outline thickness: the outer outline's thickness. Color edges: the length between color changes. Block edges: ignoring weak texture such as paper grain, the spacing at which strong color edges line up within a row (cell lines then follow those edges too). Auto: block edges when the block spacing is clear, otherwise fits cell lines for each of the three values and picks the one that best matches the source's strong edges.</value></data>
+  <data name="Pixelate_Grid_Sources" xml:space="preserve"><value>Color edges {edges}px ({edgesMatch}%) · outline {outline}px ({outlineMatch}%) · block edges {blocks}px ({blocksMatch}%) → {reason}</value></data>
+  <data name="Pixelate_Grid_ReasonMatch" xml:space="preserve"><value>{chosen} (edge match {match}%)</value></data>
+  <data name="Pixelate_Grid_ReasonClear" xml:space="preserve"><value>{chosen} (clear block spacing {fit}%)</value></data>
+  <data name="Pixelate_Grid_ChosenExact" xml:space="preserve"><value>exact multiple of a clean image {scale}px</value></data>
+  <data name="Pixelate_Score_OutlineThin" xml:space="preserve"><value>1-px outline</value></data>
+  <data name="Pixelate_Score_ColorShift" xml:space="preserve"><value>Major color shift</value></data>
+  <data name="Pixelate_Bg_Sticker" xml:space="preserve"><value>Remove sticker border</value></data>
+  <data name="Pixelate_Bg_Sticker_Tip" xml:space="preserve"><value>Finds the white band around the outline (a sticker border) and removes it with the background. It only acts when most of the edge is light and colorless, and undoes itself if the new edge isn't dark.</value></data>
+  <data name="Pixelate_Bg_Keep" xml:space="preserve"><value>Keep background (one color)</value></data>
+  <data name="Pixelate_Bg_Keep_Tip" xml:space="preserve"><value>Keeps the detected background instead of removing it, flattened to the single background color (the result has that background too, and the whole image is one frame). Only matters for a background found by color.</value></data>
+  <data name="Pixelate_Score_ColorShift_Tip" xml:space="preserve"><value>How much a widely used source color (at least 1% of opaque pixels) turned into a different color as a whole (e.g. brown boots pulled toward gold). Up to 0.02 OKLab distance is fine; 0.10 is the worst.</value></data>
+  <data name="Pixelate_Score_BlockRepetition" xml:space="preserve"><value>Block repetition</value></data>
+  <data name="Pixelate_Score_BlockRepetition_Tip" xml:space="preserve"><value>How much the result is still an enlarged image: the share of edge cells (judged by each cell's average source color) that sit in a same-color 2×2 block. High means the pixel size is a fraction of the real pixel, so the result is needlessly large; dithering can't hide it. Up to 65% is fine; 95% is the worst.</value></data>
+  <data name="Pixelate_Result_Large" xml:space="preserve"><value>Large result ({width}×{height}) — check the pixel size</value></data>
+  <data name="Pixelate_Preview_Result" xml:space="preserve"><value>Result {index}/{count}</value></data>
+  <data name="Pixelate_Preview_Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Pixelate_Grid_DoubleOutline" xml:space="preserve"><value>The outline is drawn {thickness} pixels thick, so 'Thin outline to 1 px' brings it down to 1 px.</value></data>
+  <data name="Pixelate_PrevFrame" xml:space="preserve"><value>Previous frame (←)</value></data>
+  <data name="Pixelate_NextFrame" xml:space="preserve"><value>Next frame (→)</value></data>
+  <data name="Pixelate_ColorTip" xml:space="preserve"><value>{hex} · {count} pixels</value></data>
+  <data name="Pixelate_ColorTip_Excluded" xml:space="preserve"><value>{hex} · excluded (click to restore)</value></data>
+  <data name="Pixelate_Colors_Tip" xml:space="preserve"><value>Left-click: exclude or restore this color (in the current result only — its pixels become the remaining color nearest to their source cell) · Pinned colors: left-click to unpin · Right-click: highlight this color in the result · +: add a color from the source</value></data>
+  <data name="Pixelate_Exclude_Notice" xml:space="preserve"><value>{count} colors excluded</value></data>
+  <data name="Pixelate_Exclude_RestoreAll" xml:space="preserve"><value>Restore all</value></data>
+  <data name="Pixelate_Exclude_LastColor" xml:space="preserve"><value>The last remaining color can't be excluded.</value></data>
+  <data name="Pixelate_ColorTip_Pinned" xml:space="preserve"><value>{hex} · {count} pixels · pinned (click to unpin)</value></data>
+  <data name="Pixelate_ColorTip_PinnedUnused" xml:space="preserve"><value>{hex} · pinned · not used in the result (click to unpin)</value></data>
+  <data name="Pixelate_Pin_Add" xml:space="preserve"><value>Add color from source</value></data>
+  <data name="Pixelate_Pin_PickHint" xml:space="preserve"><value>Click a source cell to add its color as a pinned color · Shift+click: keep adding · Esc, right-click or +: stop</value></data>
+  <data name="Pixelate_Pin_EmptyCell" xml:space="preserve"><value>That cell is empty (transparent) — click a cell with color.</value></data>
+  <data name="Pixelate_Pin_Already" xml:space="preserve"><value>That color is already pinned.</value></data>
+  <data name="Pixelate_Pin_Notice" xml:space="preserve"><value>{count} pinned colors</value></data>
+  <data name="Pixelate_Pin_ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="Pixelate_Opt_SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Pixelate_Opt_ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="Pixelate_Opt_SelectAllTip" xml:space="preserve"><value>Checks or unchecks every item that applies to the current settings (greyed-out items and the outline fit mode are left as they are, so your chosen mode is kept).</value></data>
+  <data name="Pixelate_Opt_Defaults" xml:space="preserve"><value>Defaults</value></data>
+  <data name="Pixelate_Opt_DefaultsTip" xml:space="preserve"><value>Restores the default selection (everything except the outline fit mode; the outline fit mode check is left as it is so your chosen mode keeps its 1 px outline).</value></data>
+  <data name="Pixelate_Fit" xml:space="preserve"><value>Fit outline to 1 px</value></data>
+  <data name="Pixelate_Fit_Shrink" xml:space="preserve"><value>By shrinking</value></data>
+  <data name="Pixelate_Fit_Thin" xml:space="preserve"><value>Thin outline only</value></data>
+  <data name="Pixelate_Fit_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Pixelate_Fit_Vector" xml:space="preserve"><value>Redraw as vector</value></data>
+  <data name="Pixelate_Fit_Tip" xml:space="preserve"><value>By shrinking: sets the pixel size to the outer outline thickness and scales everything down so the outline becomes 1 px (a manual grid wins). Thin outline only: keeps the grid's pixel size and peels only the outline layers doubled inward (without breaking the line; inner dark shapes such as eyes are left alone). Redraw as vector: keeps the grid's pixel size, traces the center line of the source's outline band and redraws it as a 1-px pixel-perfect line (the old thick outline takes the inner color; small inner dark shapes such as eyes are left alone).</value></data>
+  <data name="Pixelate_Grid_ShrinkInfo" xml:space="preserve"><value>By shrinking: only values within ±12% of the {outline}px outline are used, shrinking to a {scale}px pixel size (the outline becomes 1 px).</value></data>
+  <data name="Pixelate_Grid_ShrinkThinOutline" xml:space="preserve"><value>By shrinking: the {outline}px outline is thinner than a pixel (the {scale}px pixel size matches the source's edges clearly better), so it shrinks to {scale}px (the outline stays at most 1 px).</value></data>
+  <data name="Pixelate_Clean_VectorTolerance" xml:space="preserve"><value>Vector simplify (px)</value></data>
+  <data name="Pixelate_Clean_VectorTolerance_Tip" xml:space="preserve"><value>How far (in result pixels) the redrawn outline may be straightened. Larger is smoother but follows the shape less; 0 follows the center line of the source outline exactly.</value></data>
+  <data name="Pixelate_Clean_VectorBlob" xml:space="preserve"><value>Keep small blobs (cells)</value></data>
+  <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
+  <data name="Pixelate_Vary_OutlineFit" xml:space="preserve"><value>Outline fit mode</value></data>
+  <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>Auto optimize</value></data>
+  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: tries the checked settings step by step and keeps the highest-scoring result (starts from the current settings). Items and budget are under the settings button next to it.</value></data>
+  <data name="Pixelate_Opt_Scale" xml:space="preserve"><value>Pixel size</value></data>
+  <data name="Pixelate_Opt_OffsetX" xml:space="preserve"><value>Grid offset X</value></data>
+  <data name="Pixelate_Opt_OffsetY" xml:space="preserve"><value>Grid offset Y</value></data>
+  <data name="Pixelate_Opt_OffsetTip" xml:space="preserve"><value>Only changed when the grid is manual (the auto grid follows the color edges, so it is skipped).</value></data>
+  <data name="Pixelate_Opt_Colors" xml:space="preserve"><value>Color count</value></data>
+  <data name="Pixelate_Opt_Downsample" xml:space="preserve"><value>Cell color method</value></data>
+  <data name="Pixelate_Opt_Border" xml:space="preserve"><value>Ignored cell border</value></data>
+  <data name="Pixelate_Opt_Alpha" xml:space="preserve"><value>Transparency threshold</value></data>
+  <data name="Pixelate_Opt_Snap" xml:space="preserve"><value>Color snap step</value></data>
+  <data name="Pixelate_Opt_Darkness" xml:space="preserve"><value>Outline darkness</value></data>
+  <data name="Pixelate_Opt_Cleanup" xml:space="preserve"><value>Cleanup on/off</value></data>
+  <data name="Pixelate_Opt_Dither" xml:space="preserve"><value>Dithering</value></data>
+  <data name="Pixelate_Opt_OutlineFit" xml:space="preserve"><value>Outline fit mode</value></data>
+  <data name="Pixelate_Opt_FitTip" xml:space="preserve"><value>When unchecked (default), the outline fit mode you chose is kept as is. 'Select all' does not check it either — tick it yourself to try other modes. Even then, trials using 'By shrinking' keep the cell within ±15% of the outline thickness.</value></data>
+  <data name="Pixelate_Opt_VectorTip" xml:space="preserve"><value>Available when the outline fit is 'Redraw as vector' or the outline fit mode is also being tried; only varied in trials that use 'Redraw as vector'.</value></data>
+  <data name="Pixelate_Opt_ColorSource" xml:space="preserve"><value>Palette colors (original/average)</value></data>
+  <data name="Pixelate_Opt_PaletteMethod" xml:space="preserve"><value>Palette method (k-means/median cut)</value></data>
+  <data name="Pixelate_Opt_EdgeWeight" xml:space="preserve"><value>Edge cell weight</value></data>
+  <data name="Pixelate_Opt_SnapOutline" xml:space="preserve"><value>Snap outline color</value></data>
+  <data name="Pixelate_Opt_PaletteTip" xml:space="preserve"><value>Only tried when the palette method is k-means or median cut.</value></data>
+  <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>Trials</value></data>
+  <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
+  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Optimizer settings (items to try, budget, trial history)</value></data>
+  <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
+  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>Trial {done}/{total} · best {score}</value></data>
+  <data name="Pixelate_Opt_Note" xml:space="preserve"><value>The score weights (Advanced) are what the optimizer maximizes.</value></data>
+  <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial</value></data>
+  <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>Optimized</value></data>
+  <data name="Pixelate_Opt_History" xml:space="preserve"><value>Trial history</value></data>
+  <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>Rank</value></data>
+  <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>Score</value></data>
+  <data name="Pixelate_Opt_ColSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Pixelate_Opt_StartRow" xml:space="preserve"><value>(start settings)</value></data>
+  <data name="Pixelate_Opt_Preparing" xml:space="preserve"><value>Preparing optimizer…</value></data>
+  <data name="Pixelate_Opt_Done" xml:space="preserve"><value>Optimized: {start} → {best} · {trials} trials · {seconds}s · {reason}</value></data>
+  <data name="Pixelate_Opt_Stop_Done" xml:space="preserve"><value>no further improvement</value></data>
+  <data name="Pixelate_Opt_Stop_Trials" xml:space="preserve"><value>trial budget used</value></data>
+  <data name="Pixelate_Opt_Stop_Time" xml:space="preserve"><value>time budget used</value></data>
+  <data name="Pixelate_Opt_Stop_Cancelled" xml:space="preserve"><value>cancelled</value></data>
+  <data name="Pixelate_Opt_On" xml:space="preserve"><value>on</value></data>
+  <data name="Pixelate_Opt_Off" xml:space="preserve"><value>off</value></data>
+  <data name="Pixelate_Opt_SumScale" xml:space="preserve"><value>cell {scale}px</value></data>
+  <data name="Pixelate_Opt_SumColors" xml:space="preserve"><value>{count} colors</value></data>
+  <data name="Pixelate_Opt_SumOrphans" xml:space="preserve"><value>orphans</value></data>
+  <data name="Pixelate_Opt_SumHoles" xml:space="preserve"><value>holes</value></data>
+  <data name="Pixelate_Opt_SumJaggies" xml:space="preserve"><value>jaggies</value></data>
+  <data name="Pixelate_Grid_Adjust" xml:space="preserve"><value>Add to auto pixel size (px)</value></data>
+  <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>Added to the pixel size the auto grid finds (the auto optimizer changes the pixel size with this).</value></data>
+  <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Click the result or the source image: enlarge — in the enlarged view, clicking a result pixel or a source cell highlights its color (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
+  <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>Enlarged view</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Click a result pixel: highlight its color · Click a source cell: highlight the result color it became · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
+  <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>Close (Esc)</value></data>
+  <data name="Pixelate_Grid_Local" xml:space="preserve"><value>Local cell correction</value></data>
+  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>Re-fits the image-wide cell boundaries per band (a few cell rows/columns) to the block edges found there — for AI images drawn half a cell off in places. The cell overlay shows the bent boundaries as they are (skipped for cells under 5 px).</value></data>
+  <data name="Pixelate_Grid_LocalShift" xml:space="preserve"><value>Max shift (% of cell)</value></data>
+  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>How far a boundary may move from its image-wide position (% of a cell). Cell widths stay within 70–130% of the original.</value></data>
+  <data name="Pixelate_Grid_LocalBand" xml:space="preserve"><value>Band (cells)</value></data>
+  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>Width of each band whose boundaries are fitted separately (cells). Smaller follows more closely (1 = every row), larger is smoother.</value></data>
+  <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>Close settings</value></data>
 </root>

@@ -38,6 +38,7 @@ public enum VectorIcon
     Grip,
     ChevronDown,
     ChevronRight,
+    ChevronLeft,
     ChevronUp,
     Menu,
     Star,
@@ -74,6 +75,18 @@ public enum VectorIcon
     Sparkles,
     /// <summary>겹친 말풍선 두 개(Discord 제보·아이디어).</summary>
     MessagesSquare,
+    /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
+    Grid3x3,
+    /// <summary>필름(GIF로 저장).</summary>
+    Film,
+    /// <summary>아래 화살표가 붙은 그림(그림 파일로 저장).</summary>
+    ImageDown,
+    /// <summary>대각선 양쪽 화살표(크게).</summary>
+    Maximize2,
+    /// <summary>가로 슬라이더 세 줄(설정).</summary>
+    SlidersHorizontal,
+    /// <summary>왼쪽으로 돌아가는 화살표(되돌리기).</summary>
+    Undo2,
 }
 
 public static class VectorIcons
@@ -171,6 +184,7 @@ public static class VectorIcons
         VectorIcon.Grip => [Circle(9, 5, 1), Circle(9, 12, 1), Circle(9, 19, 1), Circle(15, 5, 1), Circle(15, 12, 1), Circle(15, 19, 1)],
         VectorIcon.ChevronDown => ["m6 9 6 6 6-6"],
         VectorIcon.ChevronRight => ["m9 18 6-6-6-6"],
+        VectorIcon.ChevronLeft => ["m15 18-6-6 6-6"],
         VectorIcon.ChevronUp => ["m18 15-6-6-6 6"],
         VectorIcon.Menu => ["M4 6h16", "M4 12h16", "M4 18h16"],
         VectorIcon.Star => ["M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"],
@@ -229,6 +243,30 @@ public static class VectorIcons
             "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
             "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1",
         ],
+        VectorIcon.Grid3x3 =>
+        [
+            "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+            "M3 9h18", "M3 15h18", "M9 3v18", "M15 3v18",
+        ],
+        VectorIcon.Film =>
+        [
+            "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+            "M7 3v18", "M3 7.5h4", "M3 12h18", "M3 16.5h4", "M17 3v18", "M17 7.5h4", "M17 16.5h4",
+        ],
+        VectorIcon.ImageDown =>
+        [
+            "M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21",
+            "m14 19 3 3v-5.5",
+            "m17 22 3-3",
+            Circle(9, 9, 2),
+        ],
+        VectorIcon.Maximize2 => ["M15 3h6v6", "m21 3-7 7", "m3 21 7-7", "M9 21H3v-6"],
+        VectorIcon.SlidersHorizontal =>
+        [
+            "M21 4h-7", "M10 4H3", "M21 12h-9", "M8 12H3", "M21 20h-5", "M12 20H3",
+            "M14 2v4", "M8 10v4", "M16 18v4",
+        ],
+        VectorIcon.Undo2 => ["M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"],
         _ => [],
     };
 

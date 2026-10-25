@@ -994,6 +994,9 @@ public sealed class EditorContext
     /// <summary>프레임 전체 합성(보이는 레이어·그룹) 비트맵. 호출자는 Dispose하지 않는다.</summary>
     public WriteableBitmap? FrameBitmap(int frame) => CompositeEntry(frame)?.Bitmap;
 
+    /// <summary>프레임 전체 합성 그림(미리보기가 그리는 그대로). 캐시라서 호출자는 고치지 않는다.</summary>
+    public PixelImage? FrameImage(int frame) => CompositeEntry(frame)?.Image;
+
     /// <summary>
     /// 캔버스에 보이는 그림: 부위를 골랐으면 그 부위의 셀(부위 크기, 빈 셀이면 null), 아니면 프레임 전체 합성.
     /// 이전 프레임 보기·양파 껍질에 쓴다. 호출자는 Dispose하지 않는다.

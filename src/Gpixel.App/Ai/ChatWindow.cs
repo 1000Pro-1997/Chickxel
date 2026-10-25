@@ -215,6 +215,16 @@ public sealed class ChatWindow : Window
     /// <summary>보이는 탭의 입력란에 글을 넣는다(보내지 않음 — 사용자가 보내기를 눌러야 함). "AI로 설명 붙이기"가 부른다.</summary>
     public void PrefillInput(string text) => _visible.Prefill(text);
 
+    /// <summary>보이는 탭을 그 AI(설정 이름 <c>claude</c>·<c>codex</c>)로 바꾼다.</summary>
+    public void SelectProvider(string providerId)
+    {
+        int i = AiProvider.All.ToList().IndexOf(AiProvider.FromId(providerId));
+        if (i >= 0 && !ReferenceEquals(_tabs[i], _visible)) _providerToggle.SelectedIndex = i;
+    }
+
+    /// <summary>보이는 탭에 그림을 첨부한다(보내지 않음). 픽셀 아트면 정수 배로 키워 보낸다.</summary>
+    public void AttachImage(PixelImage image, bool pixelArt) => _visible.AttachImage(image, pixelArt);
+
     /// <summary>AI 프로세스를 모두 끝낸다(앱을 닫을 때 메인 창이 부름). 진행 중인 차례는 멈춘다.</summary>
     public void Shutdown()
     {
@@ -1877,6 +1887,24 @@ public sealed class ChatWindow : Window
             FocusInput();
         }
 
+        /// <summary>
+        /// 그림을 첨부한다(보내지 않음). 픽셀 아트면 작은 그림을 정수 배 최근접으로 키워(긴 변 <see cref="CanvasAttachSide"/> 안팎) 보내고,
+        /// 아니면 긴 변이 <see cref="AttachMaxSide"/>를 넘을 때 줄여 보낸다.
+        /// </summary>
+        public void AttachImage(PixelImage img, bool pixelArt)
+        {
+            var bmp = ImageUtil.ToBitmap(img);
+            if (!pixelArt && Math.Max(img.Width, img.Height) > AttachMaxSide)
+            {
+                AddAttachment(ToPng(bmp), bmp, pixelArt);
+                return;
+            }
+            int n = pixelArt ? Math.Max(1, CanvasAttachSide / Math.Max(img.Width, img.Height)) : 1;
+            using var ms = new MemoryStream();
+            PngIO.Save(n > 1 ? ScaleUp(img, n) : img, ms);
+            AddAttachment(ms.ToArray(), bmp, pixelArt);
+        }
+
         /// <summary>차례 중에 다른 프로젝트가 열리면(new_project 등) 묶음을 새 프로젝트로 옮긴다.</summary>
         public void OnProjectReplaced()
         {
@@ -2316,10 +2344,7 @@ public sealed class ChatWindow : Window
                 Ui.Warn(_w, UiStrings.S_ChatWindow_AttachCanvas_F7C294FC0C);
                 return;
             }
-            int n = Math.Max(1, CanvasAttachSide / Math.Max(img.Width, img.Height));
-            using var ms = new MemoryStream();
-            PngIO.Save(n > 1 ? ScaleUp(img, n) : img, ms);
-            AddAttachment(ms.ToArray(), ImageUtil.ToBitmap(img), pixelArt: true);
+            AttachImage(img, pixelArt: true);
         }
 
         /// <summary>⌘/Ctrl+V: 클립보드에 그림이 있으면 첨부(글자 붙여넣기는 입력란이 그대로 함).</summary>
