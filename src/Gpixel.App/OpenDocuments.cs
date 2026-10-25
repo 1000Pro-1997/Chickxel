@@ -3,8 +3,8 @@ using Gpixel.Core.Model;
 
 namespace Gpixel.App;
 
-/// <summary>탭을 다시 보일 때 되돌릴 보기 상태: 현재 레이어·프레임, 캔버스 확대율·위치.</summary>
-internal readonly record struct DocumentView(int Layer, int Frame, int Zoom, Point Offset);
+/// <summary>탭을 다시 보일 때 되돌릴 보기 상태: 현재 레이어·프레임, 캔버스 보기(확대율·화면 가운데의 그림 좌표 — 화면 크기와 무관).</summary>
+internal readonly record struct DocumentView(int Layer, int Frame, CanvasView Canvas);
 
 /// <summary>
 /// 열린 문서 하나(탭 하나가 보여 줌 — 한 문서는 한 탭에서만 연다): 프로젝트 인스턴스(수정 내용과 실행취소 기록 그대로), 연 파일, 디스크 파일 시각, 목록 썸네일 그림.

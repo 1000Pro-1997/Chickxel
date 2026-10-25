@@ -202,8 +202,7 @@ public sealed partial class MainForm
     {
         if (_activeTab is not { } tab || !ReferenceEquals(_ctx.Project, tab.Doc.Project)) return;
         _ctx.CommitFloating();
-        var (zoom, offset) = _canvas.View;
-        tab.View = new DocumentView(_ctx.CurrentLayer, _ctx.CurrentFrame, zoom, offset);
+        tab.View = new DocumentView(_ctx.CurrentLayer, _ctx.CurrentFrame, _canvas.View);
         tab.Selection = _ctx.Selection.HasSelection ? _ctx.Selection.Save() : null;
         // 저장 안 한 문서는 파일 목록에 메모리 속 그림을 보인다.
         if (tab.Doc.Project.IsDirty) tab.Doc.Thumbnail = tab.Doc.Project.Flatten(0);
@@ -227,7 +226,7 @@ public sealed partial class MainForm
         if (tab.View is { } v)
         {
             _ctx.SetCurrent(v.Layer, v.Frame);
-            _canvas.RestoreView((v.Zoom, v.Offset));
+            _canvas.RestoreView(v.Canvas);
         }
         if (tab.Selection is { } s && new Rectangle(0, 0, doc.Project.Width, doc.Project.Height).Contains(s.Bounds))
             _ctx.Selection.Restore(s);
@@ -259,6 +258,14 @@ public sealed partial class MainForm
             _paneCol1.Width = split ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
             _paneCol0.Width = new GridLength(1, GridUnitType.Star);
             _paneCol1.MinWidth = split ? 120 : 0;
+            // 맞추기가 켜져 있으면 나누고 풀 때 칸마다 다시 맞춘다(그리기만 하는 칸은 저장한 보기를 "전체가 보임"으로, 캔버스는 배치가 끝난 뒤 맞춤).
+            // 꺼져 있으면 캔버스는 크기가 바뀔 때 보던 자리를 새 칸 가운데에 둔다(PixelCanvas.ApplyView).
+            if (_canvas.AutoFit)
+            {
+                foreach (var tab in _tabs.All)
+                    if (tab.View is { } v) tab.View = v with { Canvas = v.Canvas with { WholeVisible = true } };
+                Dispatcher.UIThread.Post(_canvas.FitToWindow, DispatcherPriority.Loaded);
+            }
         }
         for (int g = 0; g < _panes.Length; g++)
         {
@@ -269,6 +276,7 @@ public sealed partial class MainForm
             bool focused = g == _tabs.Focused;
             pane.Strip.SetFocus(focused, split && focused);
             pane.Passive.IsVisible = !focused;
+            pane.Passive.AutoFit = _canvas.AutoFit;
             pane.Passive.Tab = focused || !exists ? null : _tabs.Active(g);
             if (!focused) pane.Passive.Refresh();
         }

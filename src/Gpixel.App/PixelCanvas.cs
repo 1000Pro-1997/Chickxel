@@ -7,6 +7,11 @@ using Gpixel.App.Localization;
 namespace Gpixel.App;
 
 /// <summary>
+/// 캔버스 보기 상태(화면 크기와 무관): 확대율, 화면 가운데가 가리키는 그림 좌표(캔버스 좌표 — 부위 화면이면 부위 기준), 그림 전체가 화면 안에 보였는지.
+/// </summary>
+public readonly record struct CanvasView(int Zoom, double CenterX, double CenterY, bool WholeVisible);
+
+/// <summary>
 /// 픽셀 캔버스: 현재 프레임 한 장(보이는 레이어 합성)을 정수 배율(1~64)로 보여 주고, 현재 레이어의 셀에 그린다.
 /// 체커 배경, 픽셀/타일 격자, 타일 모드(5×5, 큰 그림은 3×3 반복), 대칭 안내선, 피벗, 9-slice 안내선(부위), 선택 영역, 양파 껍질,
 /// H 누르는 동안 이전 프레임 보기, 변형 모드(Ctrl+T)의 주황 테두리·손잡이(옮기기·크기·회전·회전 중심 끌기),
@@ -502,6 +507,7 @@ public sealed class PixelCanvas : Control
         if (!_ctx.HasProject) return;
         _shownFrameSize = _ctx.Project!.Size;
         _shownOrigin = ShownOrigin;
+        _pendingView = null;
         if (ClientWidth <= 0 || ClientHeight <= 0)
         {
             // 아직 배치 전: 크기가 정해지면 가운데 놓는다.
@@ -545,25 +551,76 @@ public sealed class PixelCanvas : Control
     private void PostCenterImage()
     {
         int version = ++_centerVersion;
-        Dispatcher.UIThread.Post(() => { if (version == _centerVersion) CenterImage(); }, DispatcherPriority.Loaded);
+        _centerQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (version != _centerVersion) return;
+            _centerQueued = false;
+            CenterImage();
+        }, DispatcherPriority.Loaded);
     }
 
-    /// <summary>지금 확대율과 그림 위치(메모리에 남긴 문서를 다시 열 때 <see cref="RestoreView"/>로 되돌림).</summary>
-    public (int Zoom, Point Offset) View => (_zoom, _offset);
+    /// <summary>가운데 놓기를 미뤄 둔 중(<see cref="PostCenterImage"/>) — 그동안의 보기 상태는 "전체가 보임"으로 본다.</summary>
+    private bool _centerQueued;
+
+    /// <summary>
+    /// 지금 보기 상태(화면 크기와 무관 — 탭에 기억했다가 <see cref="RestoreView"/>로 되돌림): 확대율, 화면 가운데가 가리키는 그림 좌표, 그림 전체가 보이는지.
+    /// 아직 가운데 놓기·보기 되돌리기를 미뤄 둔 중이면 그 결과(가운데 놓기 = 전체가 보임, 되돌릴 보기 = 그 보기)를 돌려준다.
+    /// </summary>
+    public CanvasView View
+        => _pendingView ?? (_pendingCenter || _centerQueued ? new CanvasView(_zoom, W / 2.0, H / 2.0, true) : ViewFor(ClientWidth, ClientHeight));
+
+    private CanvasView ViewFor(double width, double height)
+    {
+        var r = ImageScreenRect;
+        bool whole = width > 0 && height > 0 && r.X >= 0 && r.Y >= 0 && r.Right <= width && r.Bottom <= height;
+        return new CanvasView(_zoom, (width / 2 - _offset.X) / _zoom, (height / 2 - _offset.Y) / _zoom, whole);
+    }
 
     /// <summary>마우스로 끄는 중인지(그리기·선택·이동·화면 이동 등 — 자동 저장은 끝날 때까지 미룬다).</summary>
     public bool IsDragging => _drag != DragMode.None;
 
-    /// <summary>확대율·그림 위치를 되돌린다(프로젝트를 바꾸고 현재 레이어·프레임을 정한 뒤 부른다). 미뤄 둔 가운데 놓기는 취소한다.</summary>
-    public void RestoreView((int Zoom, Point Offset) view)
+    /// <summary>아직 크기가 정해지지 않아 미뤄 둔 보기 상태(크기가 정해지면 <see cref="ApplyView"/>).</summary>
+    private CanvasView? _pendingView;
+
+    /// <summary>
+    /// 보기 상태를 되돌린다(프로젝트를 바꾸고 현재 레이어·프레임을 정한 뒤 부른다). 미뤄 둔 가운데 놓기는 취소한다.
+    /// 화면 크기가 달라도 맞게 놓는다(<see cref="ApplyView"/>).
+    /// </summary>
+    public void RestoreView(CanvasView view)
     {
         if (!_ctx.HasProject) return;
         _centerVersion++;
         _pendingCenter = false;
+        _centerQueued = false;
         _shownFrameSize = _ctx.Project!.Size;
         _shownOrigin = ShownOrigin;
+        ApplyView(view);
+    }
+
+    /// <summary>
+    /// 보기 상태를 지금 화면 크기에 맞춰 놓는다: 그림 전체가 보이던 보기면 다시 화면에 맞추고(<see cref="AutoFit"/>가 꺼져 있으면 확대율을 두고
+    /// 가운데 놓되 화면보다 크면 맞춤), 아니면 확대율을 두고 가리키던 그림 좌표를 화면 가운데에 둔다. 크기가 아직 없으면 미룬다.
+    /// </summary>
+    private void ApplyView(CanvasView view)
+    {
         _zoom = Math.Clamp(view.Zoom, 1, 64);
-        _offset = view.Offset;
+        if (ClientWidth <= 0 || ClientHeight <= 0)
+        {
+            _pendingView = view;
+            return;
+        }
+        _pendingView = null;
+        if (view.WholeVisible)
+        {
+            if (AutoFit || W * _zoom > ClientWidth - 24 || H * _zoom > ClientHeight - 24)
+            {
+                FitToWindow();
+                return;
+            }
+            CenterOffset();
+        }
+        else _offset = new Point((int)Math.Round(ClientWidth / 2.0 - view.CenterX * _zoom), (int)Math.Round(ClientHeight / 2.0 - view.CenterY * _zoom));
         ZoomChanged?.Invoke(this, EventArgs.Empty);
         InvalidateVisual();
     }
@@ -616,6 +673,10 @@ public sealed class PixelCanvas : Control
     {
         base.OnSizeChanged(e);
         if (_pendingCenter) CenterImage();
+        else if (_pendingView is { } pending) ApplyView(pending);
+        // 화면 크기가 바뀌면(창 크기, 좌우 나누기·풀기, 다른 칸으로 옮김) 보던 그림 자리를 새 화면 가운데 기준으로 다시 놓는다.
+        else if (_ctx.HasProject && e.PreviousSize.Width > 0 && e.PreviousSize.Height > 0 && _drag == DragMode.None)
+            ApplyView(ViewFor(e.PreviousSize.Width, e.PreviousSize.Height));
     }
 
     // ───────────── 그리기 ─────────────

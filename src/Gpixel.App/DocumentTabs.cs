@@ -306,6 +306,15 @@ internal sealed class DocumentPaneView : Control
         ClipToBounds = true;
     }
 
+    /// <summary>위 막대 "맞추기"가 켜져 있는지(그림 전체가 보이던 탭은 이 칸에 맞춰 그림).</summary>
+    public bool AutoFit { get; set; } = true;
+
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        InvalidateVisual();
+    }
+
     /// <summary>보여 줄 탭(null = 빈 화면).</summary>
     public DocumentTab? Tab
     {
@@ -371,21 +380,25 @@ internal sealed class DocumentPaneView : Control
         if (_tab is null || _project is not { Frames.Count: > 0 } p) return;
         var view = _tab.View;
         int frame = Math.Clamp(view?.Frame ?? 0, 0, p.Frames.Count - 1);
+        double w = Bounds.Width, h = Bounds.Height;
+        int fitZoom = Math.Clamp((int)Math.Floor(Math.Min((w - 24) / p.Width, (h - 24) / p.Height)), 1, 64);
         int zoom;
         double ox, oy;
-        if (view is { } v)
+        // 캔버스와 같은 규칙(PixelCanvas.ApplyView): 그림 전체가 보이던 보기(처음 보이는 탭 포함)면 이 칸에 맞추고(맞추기가 꺼져 있으면 확대율을 두고 가운데),
+        // 아니면 확대율을 두고 가리키던 그림 좌표를 이 칸 가운데에.
+        if (view is not { Canvas: var v } || v.WholeVisible)
         {
-            zoom = Math.Clamp(v.Zoom, 1, 64);
-            // 부위 화면이면 캔버스는 부위를 (0,0)에 그린다 — 프레임 전체를 그 부위 위치만큼 당겨 같은 자리에 보이게.
-            var origin = v.Layer >= 0 && v.Layer < p.Layers.Count && p.Layers[v.Layer] is { IsPart: true } part ? part.PartOffset : Point.Empty;
-            ox = v.Offset.X - origin.X * zoom;
-            oy = v.Offset.Y - origin.Y * zoom;
+            zoom = view is { Canvas: var c } && !AutoFit && p.Width * c.Zoom <= w - 24 && p.Height * c.Zoom <= h - 24 ? Math.Clamp(c.Zoom, 1, 64) : fitZoom;
+            ox = Math.Floor((w - p.Width * zoom) / 2);
+            oy = Math.Floor((h - p.Height * zoom) / 2);
         }
         else
         {
-            zoom = Math.Clamp((int)Math.Floor(Math.Min((Bounds.Width - 24) / p.Width, (Bounds.Height - 24) / p.Height)), 1, 64);
-            ox = Math.Floor((Bounds.Width - p.Width * zoom) / 2);
-            oy = Math.Floor((Bounds.Height - p.Height * zoom) / 2);
+            zoom = Math.Clamp(v.Zoom, 1, 64);
+            // 부위 화면이면 캔버스 좌표는 부위 기준 — 프레임 좌표로 옮겨 같은 자리를 가운데에.
+            var origin = view.Value.Layer >= 0 && view.Value.Layer < p.Layers.Count && p.Layers[view.Value.Layer] is { IsPart: true } part ? part.PartOffset : Point.Empty;
+            ox = Math.Round(w / 2 - (v.CenterX + origin.X) * zoom);
+            oy = Math.Round(h / 2 - (v.CenterY + origin.Y) * zoom);
         }
         if (_bitmap is null || _bitmapFrame != frame)
         {
