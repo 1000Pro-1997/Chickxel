@@ -91,20 +91,20 @@ public class TabGroupsTests
     public void Split_NewGroupFocusesAndClosingLastTabUnsplits()
     {
         var (g, a, b, _) = ThreeTabs();
-        var dup = new Tab("a");
+        var d = new Tab("d");
         Assert.Equal(1, g.OtherGroup(0));
-        g.Add(dup, g.OtherGroup(0));
+        g.Add(d, g.OtherGroup(0));
         Assert.True(g.IsSplit);
         Assert.Equal(1, g.Focused);
-        Assert.Same(dup, g.FocusedActive);
+        Assert.Same(d, g.FocusedActive);
         Assert.Equal(0, g.OtherGroup(1));
 
         g.Focus(0);
         g.Activate(b);
         Assert.Equal(0, g.Focused);
-        Assert.Same(dup, g.Active(1));
+        Assert.Same(d, g.Active(1));
 
-        Assert.True(g.Remove(dup));
+        Assert.True(g.Remove(d));
         Assert.False(g.IsSplit);
         Assert.Equal(0, g.Focused);
         Assert.Same(b, g.FocusedActive);

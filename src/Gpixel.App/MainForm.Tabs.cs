@@ -7,8 +7,8 @@ using Gpixel.Core.Model;
 namespace Gpixel.App;
 
 // 문서 탭과 좌우 나눔(VS Code 편집기 묶음처럼 최대 2개).
-// 열린 문서(OpenDocument)마다 프로젝트 인스턴스 하나, 탭(DocumentTab)은 문서를 보는 창 하나 — 같은 문서를 두 묶음에서 보면 탭 두 개가
-// 프로젝트(내용·실행취소 기록)를 같이 쓰고 보기 상태(확대율·위치·프레임·레이어·선택)는 탭마다 따로다.
+// 열린 문서(OpenDocument)마다 프로젝트 인스턴스 하나와 탭(DocumentTab) 하나 — 한 문서는 한 탭에서만 연다(이미 열린 문서를 다시 열면 그 탭으로).
+// 탭은 보기 상태(확대율·위치·프레임·레이어·선택)를 기억한다.
 // 편집기(EditorContext·캔버스·타임라인·미리보기·패널)는 하나: 포커스된 묶음이 고른 탭의 문서를 싣고, 캔버스는 그 묶음 칸으로 옮겨 간다.
 // 다른 묶음 칸은 그 묶음이 고른 탭을 그리기만 한다(DocumentPaneView) — 누르면 그 묶음에 포커스가 간다.
 public sealed partial class MainForm
@@ -39,8 +39,8 @@ public sealed partial class MainForm
     /// <summary>지금 문서(편집기에 실린 탭의 문서).</summary>
     private OpenDocument? CurrentDoc => _activeTab?.Doc;
 
-    /// <summary>열린 문서들(탭 순서, 같은 문서는 한 번).</summary>
-    private List<OpenDocument> OpenDocs => _tabs.All.Select(t => t.Doc).Distinct().ToList();
+    /// <summary>열린 문서들(탭 순서 — 한 문서는 탭 하나에서만 연다).</summary>
+    private List<OpenDocument> OpenDocs => _tabs.All.Select(t => t.Doc).ToList();
 
     /// <summary>캔버스 자리: 묶음 칸 둘(나누지 않으면 하나)과 사이 나눔 막대, 시작 화면, 탭 끌기 강조.</summary>
     private Control BuildPaneArea()
@@ -60,7 +60,7 @@ public sealed partial class MainForm
                 FocusGroup(g);
                 Dispatcher.UIThread.Post(() => NewProject(null));
             };
-            strip.SplitRequested += () => { if (_tabs.Active(g) is { } t) SplitTab(t, move: false); };
+            strip.SplitRequested += () => { if (_tabs.Active(g) is { } t) MoveTabToOtherPane(t); };
             strip.Reordered += (from, to) =>
             {
                 if (g >= _tabs.GroupCount) return;
@@ -123,21 +123,29 @@ public sealed partial class MainForm
     /// <summary>경로(프로젝트 파일 또는 연 PNG)의 열린 문서(없으면 null).</summary>
     private OpenDocument? FindDoc(string path) => OpenDocs.Find(d => d.Matches(path));
 
-    /// <summary>문서를 포커스된 묶음의 새 탭으로 연다(고른 탭 바로 뒤).</summary>
+    /// <summary>
+    /// 문서를 포커스된 묶음의 새 탭으로 연다(고른 탭 바로 뒤). 한 문서는 탭 하나에서만 열므로 이미 탭이 있으면 그 탭을 고른다(<see cref="ShowDocument"/>).
+    /// </summary>
     private void OpenInNewTab(OpenDocument doc)
     {
-        if (!_tabs.All.Any(t => ReferenceEquals(t.Doc, doc))) doc.Project.DirtyChanged += OnDocumentDirtyChanged;
+        if (TabOf(doc) is { } open)
+        {
+            ActivateTab(open);
+            return;
+        }
+        doc.Project.DirtyChanged += OnDocumentDirtyChanged;
         _tabs.Add(new DocumentTab(doc), _tabs.Focused);
         ShowActiveTab();
     }
 
-    /// <summary>열린 문서의 탭을 고른다(포커스된 묶음에 있으면 그것, 아니면 다른 묶음의 탭).</summary>
+    /// <summary>문서의 탭(어느 묶음이든, 없으면 null).</summary>
+    private DocumentTab? TabOf(OpenDocument doc) => _tabs.All.FirstOrDefault(t => ReferenceEquals(t.Doc, doc));
+
+    /// <summary>열린 문서의 탭을 고르고 그 묶음에 포커스를 준다(탭이 없으면 새 탭으로 엶).</summary>
     private void ShowDocument(OpenDocument doc)
     {
-        var tab = _tabs.Tabs(_tabs.Focused).FirstOrDefault(t => ReferenceEquals(t.Doc, doc))
-                  ?? _tabs.All.FirstOrDefault(t => ReferenceEquals(t.Doc, doc));
-        if (tab is null) OpenInNewTab(doc);
-        else ActivateTab(tab);
+        if (TabOf(doc) is { } tab) ActivateTab(tab);
+        else OpenInNewTab(doc);
     }
 
     private void ActivateTab(DocumentTab tab)
@@ -327,19 +335,18 @@ public sealed partial class MainForm
     // ───────────── 닫기 ─────────────
 
     /// <summary>
-    /// 탭을 닫는다. 그 문서를 보는 마지막 탭이고 저장 안 한 변경이 있으면 저장·저장 안 함·취소를 묻는다(<see cref="UnsavedChangesDialog"/>).
+    /// 탭을 닫는다(그 문서도 닫음). 저장 안 한 변경이 있으면 저장·저장 안 함·취소를 묻는다(<see cref="UnsavedChangesDialog"/>).
     /// 닫았으면 true.
     /// </summary>
     private bool CloseTab(DocumentTab tab)
     {
         if (_tabs.GroupOf(tab) < 0) return false;
         var doc = tab.Doc;
-        bool lastView = !_tabs.All.Any(t => !ReferenceEquals(t, tab) && ReferenceEquals(t.Doc, doc));
         if (ReferenceEquals(tab, _activeTab)) _ctx.CommitFloating();
-        if (lastView && doc.Project.IsDirty && !ConfirmCloseDocument(doc)) return false;
+        if (doc.Project.IsDirty && !ConfirmCloseDocument(doc)) return false;
         if (ReferenceEquals(tab, _activeTab)) _activeTab = null;
         _tabs.Remove(tab);
-        if (lastView) ForgetDocument(doc);
+        ForgetDocument(doc);
         ShowActiveTab();
         if (_activeTab is null) _browser.SelectFile(null);
         return true;
@@ -406,42 +413,30 @@ public sealed partial class MainForm
     // ───────────── 나누기 ─────────────
 
     /// <summary>
-    /// 탭을 다른 묶음에서도 연다(나누지 않았으면 오른쪽에 새 묶음). <paramref name="move"/>면 옮기고(원래 묶음에 탭이 하나뿐이고 나누지 않았으면 복제),
-    /// 아니면 같은 문서의 탭을 하나 더 만든다(보기 상태를 이어 받음). 다른 묶음에 이미 그 문서의 탭이 있으면 그 탭을 고른다.
+    /// 탭을 다른 쪽 묶음 끝으로 옮긴다(나누지 않았으면 오른쪽에 새 묶음을 만들어 나눔). 한 문서는 탭 하나에서만 연다.
+    /// 원래 묶음에 탭이 하나뿐이면(옮기면 그 칸이 빔) 옮기지 않는다 — <see cref="CanMoveTab"/>.
     /// </summary>
-    private void SplitTab(DocumentTab tab, bool move)
+    private void MoveTabToOtherPane(DocumentTab tab)
     {
-        int from = _tabs.GroupOf(tab);
-        if (from < 0) return;
+        if (!CanMoveTab(tab)) return;
         StoreActiveView();
-        int target = _tabs.OtherGroup(from);
-        var existing = target < _tabs.GroupCount ? _tabs.Tabs(target).FirstOrDefault(t => ReferenceEquals(t.Doc, tab.Doc)) : null;
-        bool canMove = move && (_tabs.IsSplit || _tabs.Tabs(from).Count > 1);
-        if (existing is not null)
-        {
-            if (canMove)
-            {
-                if (ReferenceEquals(tab, _activeTab)) _activeTab = null;
-                _tabs.Remove(tab);
-            }
-            _tabs.Activate(existing);
-        }
-        else if (canMove) _tabs.MoveToGroup(tab, target);
-        else _tabs.Add(new DocumentTab(tab.Doc) { View = tab.View }, target);
+        _tabs.MoveToGroup(tab, _tabs.OtherGroup(_tabs.GroupOf(tab)));
         ShowActiveTab();
     }
 
-    /// <summary>탭 우클릭 메뉴: 닫기·다른 탭 닫기·오른쪽으로 분할(다른 쪽에도 열기)·다른 쪽으로 옮기기.</summary>
+    /// <summary>탭을 다른 쪽으로 옮길 수 있는지: 그 묶음에 다른 탭도 있어야 한다.</summary>
+    private bool CanMoveTab(DocumentTab tab) => _tabs.GroupOf(tab) is var g and >= 0 && _tabs.Tabs(g).Count > 1;
+
+    /// <summary>탭 우클릭 메뉴: 닫기·다른 탭 닫기·다른 쪽으로 옮기기.</summary>
     private IEnumerable<object> TabMenu(DocumentTab tab)
     {
         int g = _tabs.GroupOf(tab);
         var close = MenuAction(KeyHint(MainStrings.Tabs_Close, "파일/닫기"), () => CloseTab(tab), VectorIcon.X);
         var others = MenuAction(MainStrings.Tabs_CloseOthers, () => CloseOtherTabs(tab));
         others.IsEnabled = g >= 0 && _tabs.Tabs(g).Count > 1;
-        var split = MenuAction(_tabs.IsSplit && g == 1 ? MainStrings.Tabs_OpenInOther : MainStrings.Tabs_SplitRight, () => SplitTab(tab, move: false), VectorIcon.Columns2);
-        var moveItem = MenuAction(MainStrings.Tabs_MoveToOther, () => SplitTab(tab, move: true));
-        moveItem.IsEnabled = _tabs.IsSplit || (g >= 0 && _tabs.Tabs(g).Count > 1);
-        return [close, others, new Separator(), split, moveItem];
+        var moveItem = MenuAction(MainStrings.Tabs_MoveToOther, () => MoveTabToOtherPane(tab), VectorIcon.Columns2);
+        moveItem.IsEnabled = CanMoveTab(tab);
+        return [close, others, new Separator(), moveItem];
     }
 
     private static MenuItem MenuAction(string text, Action action, VectorIcon? icon = null)
@@ -455,7 +450,7 @@ public sealed partial class MainForm
 
     // ───────────── 탭을 캔버스 쪽으로 끌어 놓기 ─────────────
 
-    /// <summary>끄는 탭이 놓일 자리: 나누지 않았으면 캔버스 오른쪽 끝(탭 줄 아래) = 오른쪽으로 분할, 나눴으면 다른 묶음 칸 = 그리로 옮기기.</summary>
+    /// <summary>끄는 탭이 놓일 자리: 나누지 않았으면 캔버스 오른쪽 끝(탭 줄 아래) = 오른쪽으로 옮겨 나누기, 나눴으면 다른 묶음 칸 = 그리로 옮기기.</summary>
     private TabDrop TabDropAt(int group, Avalonia.Point p, out Rect area)
     {
         area = default;
@@ -479,7 +474,9 @@ public sealed partial class MainForm
     {
         _draggedTab ??= TabAt(group, index);
         if (_draggedTab is null) return;
-        var drop = TabDropAt(group, e.GetPosition(_paneArea), out var area);
+        // 묶음의 하나뿐인 탭은 옮기지 않으므로 놓을 자리도 보이지 않는다.
+        Rect area = default;
+        var drop = CanMoveTab(_draggedTab) ? TabDropAt(group, e.GetPosition(_paneArea), out area) : TabDrop.None;
         _tabDropHint.IsVisible = drop != TabDrop.None;
         if (drop == TabDrop.None) return;
         _tabDropHint.Margin = new Thickness(area.X, area.Y, 0, 0);
@@ -496,7 +493,7 @@ public sealed partial class MainForm
         if (tab is null || e is null || _tabs.GroupOf(tab) is var g && g < 0) return;
         if (TabDropAt(g, e.GetPosition(_paneArea), out _) == TabDrop.None) return;
         // 끌기(순서 바꾸기 취소 애니메이션 포함)가 끝난 뒤에 옮긴다.
-        Dispatcher.UIThread.Post(() => SplitTab(tab, move: true));
+        Dispatcher.UIThread.Post(() => MoveTabToOtherPane(tab));
     }
 
     // ───────────── 다시 열기(세션) ─────────────
@@ -517,10 +514,11 @@ public sealed partial class MainForm
                 try { full = Path.GetFullPath(paths[i]); }
                 catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { missing++; continue; }
                 if (!File.Exists(full)) { missing++; continue; }
-                var doc = FindDoc(full) ?? LoadDocument(full, interactive: false, out _, out _, out _);
+                // 한 문서는 탭 하나에서만 연다(세션에 같은 파일이 두 번 있으면 앞의 것만).
+                if (FindDoc(full) is not null) continue;
+                var doc = LoadDocument(full, interactive: false, out _, out _, out _);
                 if (doc is null) { missing++; continue; }
-                if (group < _tabs.GroupCount && _tabs.Tabs(group).Any(t => ReferenceEquals(t.Doc, doc))) continue;
-                if (!_tabs.All.Any(t => ReferenceEquals(t.Doc, doc))) doc.Project.DirtyChanged += OnDocumentDirtyChanged;
+                doc.Project.DirtyChanged += OnDocumentDirtyChanged;
                 var tab = new DocumentTab(doc);
                 _tabs.Add(tab, group, index: group < _tabs.GroupCount ? _tabs.Tabs(group).Count : 0);
                 opened++;

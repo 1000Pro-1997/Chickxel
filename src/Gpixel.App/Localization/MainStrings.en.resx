@@ -364,14 +364,12 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Tabs_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Tabs_CloseOthers" xml:space="preserve"><value>Close other tabs</value></data>
   <data name="Tabs_New" xml:space="preserve"><value>New project (new tab)</value></data>
-  <data name="Tabs_SplitRight" xml:space="preserve"><value>Split right</value></data>
-  <data name="Tabs_OpenInOther" xml:space="preserve"><value>Open in the other pane</value></data>
   <data name="Tabs_MoveToOther" xml:space="preserve"><value>Move to the other pane</value></data>
-  <data name="Tabs_SplitTip" xml:space="preserve"><value>Open this tab in the other pane too (split right) — you can also drag a tab to the right edge of the canvas</value></data>
+  <data name="Tabs_SplitTip" xml:space="preserve"><value>Move this tab to the other pane (you can also drag the tab to the right edge of the canvas)</value></data>
   <data name="Tabs_UnsavedTip" xml:space="preserve"><value>Unsaved changes</value></data>
   <data name="Tabs_Next" xml:space="preserve"><value>Next tab</value></data>
   <data name="Tabs_Previous" xml:space="preserve"><value>Previous tab</value></data>
-  <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to split right</value></data>
+  <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to move to a right pane</value></data>
   <data name="Tabs_DropMove" xml:space="preserve"><value>Drop to move here</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>

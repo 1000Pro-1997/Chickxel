@@ -682,7 +682,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             DocCmd("다음 탭", MainStrings.Tabs_Next, () => CycleTab(1), "Ctrl+Tab", KeyScope.Global, (Key.Tab, Ctrl)),
             DocCmd("이전 탭", MainStrings.Tabs_Previous, () => CycleTab(-1), "Ctrl+Shift+Tab", KeyScope.Global, (Key.Tab, Ctrl | Shift)),
-            WithIcon(DocCmd("오른쪽으로 분할", MainStrings.Tabs_SplitRight, () => { if (_activeTab is { } t) SplitTab(t, move: false); }), VectorIcon.Columns2),
+            WithIcon(DocCmd("다른 쪽으로 옮기기", MainStrings.Tabs_MoveToOther, () => { if (_activeTab is { } t) MoveTabToOtherPane(t); }), VectorIcon.Columns2),
             new Separator(),
             _miFiles);
         // 누르고 있는 동안 이전 프레임 보기(키를 떼면 캔버스가 끈다 — PixelCanvas.PeekKey)

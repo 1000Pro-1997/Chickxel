@@ -7,8 +7,7 @@ namespace Gpixel.App;
 internal readonly record struct DocumentView(int Layer, int Frame, int Zoom, Point Offset);
 
 /// <summary>
-/// 열린 문서 하나(탭 하나 이상이 보여 줌): 프로젝트 인스턴스(수정 내용과 실행취소 기록 그대로), 연 파일, 디스크 파일 시각, 목록 썸네일 그림.
-/// 같은 문서를 두 묶음(좌우 나눔)에서 함께 보면 탭 두 개가 이 인스턴스 하나를 같이 쓴다.
+/// 열린 문서 하나(탭 하나가 보여 줌 — 한 문서는 한 탭에서만 연다): 프로젝트 인스턴스(수정 내용과 실행취소 기록 그대로), 연 파일, 디스크 파일 시각, 목록 썸네일 그림.
 /// </summary>
 internal sealed class OpenDocument(SpriteProject project, string? sourcePath)
 {

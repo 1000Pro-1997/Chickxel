@@ -347,7 +347,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>Renaming a dotted file keeps track of it; sending it to the trash keeps the tab and marks it modified (saving recreates the file).</li>
 <li>If the file changes outside the app, the current tab asks whether to reload; another tab only notifies you when it has unsaved changes (otherwise it reloads when you select it).</li>
-<li>Only closing the last tab of a document with unsaved changes asks Save / Don't save / Cancel.</li>
+<li>Only closing the tab of a document with unsaved changes asks Save / Don't save / Cancel.</li>
 </ul>
 
 <h4>Merge</h4>
@@ -426,12 +426,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="screen-tabs">Document tabs and split view</h3>
-<p>The tab strip above the canvas has one tab per open document (title = file name, a red dot for unsaved changes, full path on hover). Clicking a file in the file browser opens it in a <strong>new tab</strong>, or selects its tab if it's already open. Open, recent files, New project and AI tools also open new tabs.</p>
+<p>The tab strip above the canvas has one tab per open document (title = file name, a red dot for unsaved changes, full path on hover). Clicking a file in the file browser opens it in a <strong>new tab</strong>; if it's already open (even in the other pane), it isn't opened again — its tab is selected and that pane gets focus. A document is open in only one tab. Open, recent files, New project and AI tools also open new tabs.</p>
 <ul>
 <li>Clicking a tab switches documents; the timeline, preview, layers, undo history (per document), window title and status bar follow. Zoom, position, current frame, layer and selection are remembered <strong>per tab</strong>.</li>
 <li>Close with the tab's <strong>X</strong>, a middle click or <kbd>Ctrl</kbd>+<kbd>W</kbd>. The <strong>+</strong> at the end of the strip creates a new project in a new tab.</li>
-<li>Drag tabs left and right to reorder them; <kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> cycle through them. Right-click = Close, Close other tabs, Split right, Move to the other pane.</li>
-<li><strong>Split right</strong> (tab right-click, the split button at the right end of the strip, the View menu) or dragging a tab to the right edge of the canvas splits the canvas into left and right panes, each with its own tab strip. The same document can be open on both sides: content and undo are shared, zoom and position are separate.</li>
+<li>Drag tabs left and right to reorder them; <kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> cycle through them. Right-click = Close, Close other tabs, Move to the other pane.</li>
+<li><strong>Move to the other pane</strong> (tab right-click, the move button at the right end of the strip, the View menu) or dragging a tab to the right edge of the canvas moves that tab into a right pane, splitting the canvas into left and right panes, each with its own tab strip. Once split, the same actions move tabs between panes. A pane's only tab isn't moved.</li>
 <li>The <strong>focused pane</strong> (accent line under its tab strip) is the one the timeline, preview and panels work on; clicking the other pane focuses it. Closing the last tab of a pane removes the split.</li>
 <li>Tabs open when you quit (including the split and order) are reopened next time; missing files and never-saved new documents are skipped.</li>
 </ul>

@@ -4,9 +4,9 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ## 미배포
 ### Document tabs and split view
-- Every open document now has a tab above the canvas (file name, red dot for unsaved changes, full path on hover). Clicking a file in the file browser opens it in a new tab or selects its tab; Open, recent files, New project and AI tools open new tabs too.
+- Every open document now has a tab above the canvas (file name, red dot for unsaved changes, full path on hover). Clicking a file in the file browser opens it in a new tab; a document that's already open (even in the other pane) isn't opened twice — its tab is selected and focused. Open, recent files, New project and AI tools open new tabs too.
 - Switching tabs keeps each tab's zoom, position, frame, layer and selection; the timeline, preview, panels, undo history, title and status bar follow. Close with X, middle click or Ctrl+W (unsaved documents ask Save / Don't save / Cancel), **+** creates a new project, drag tabs to reorder, Ctrl+Tab / Ctrl+Shift+Tab cycle.
-- **Split right** (tab right-click, the split button on the strip, View menu, or dragging a tab to the right edge of the canvas) shows two panes with their own tab strips; the same document can be open on both sides with separate zoom. The focused pane drives the timeline and panels, and closing a pane's last tab removes the split.
+- **Move to the other pane** (tab right-click, the button at the right end of the strip, View menu, or dragging a tab to the right edge of the canvas) moves the tab into a second pane with its own tab strip; a pane's only tab isn't moved. The focused pane drives the timeline and panels, and closing a pane's last tab removes the split.
 - Open tabs, the split and the active tabs are restored on the next start (missing files and never-saved documents are skipped).
 
 ### Inserted images start in transform mode

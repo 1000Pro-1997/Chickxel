@@ -1088,14 +1088,12 @@
   <data name="Tabs_Close" xml:space="preserve"><value>닫기</value></data>
   <data name="Tabs_CloseOthers" xml:space="preserve"><value>다른 탭 닫기</value></data>
   <data name="Tabs_New" xml:space="preserve"><value>새 프로젝트(새 탭)</value></data>
-  <data name="Tabs_SplitRight" xml:space="preserve"><value>오른쪽으로 분할</value></data>
-  <data name="Tabs_OpenInOther" xml:space="preserve"><value>다른 쪽에도 열기</value></data>
   <data name="Tabs_MoveToOther" xml:space="preserve"><value>다른 쪽으로 옮기기</value></data>
-  <data name="Tabs_SplitTip" xml:space="preserve"><value>이 탭을 다른 쪽에도 열기(오른쪽으로 분할) — 탭을 캔버스 오른쪽 끝으로 끌어 놓아도 됩니다</value></data>
+  <data name="Tabs_SplitTip" xml:space="preserve"><value>이 탭을 다른 쪽 화면으로 옮기기(탭을 캔버스 오른쪽 끝으로 끌어 놓아도 됩니다)</value></data>
   <data name="Tabs_UnsavedTip" xml:space="preserve"><value>저장하지 않은 변경 있음</value></data>
   <data name="Tabs_Next" xml:space="preserve"><value>다음 탭</value></data>
   <data name="Tabs_Previous" xml:space="preserve"><value>이전 탭</value></data>
-  <data name="Tabs_DropSplit" xml:space="preserve"><value>놓으면 오른쪽으로 분할</value></data>
+  <data name="Tabs_DropSplit" xml:space="preserve"><value>놓으면 오른쪽 화면으로 옮김</value></data>
   <data name="Tabs_DropMove" xml:space="preserve"><value>놓으면 이쪽으로 옮김</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>밖에서 바뀐 파일을 다시 읽었습니다: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>지난번 탭 {count}개를 다시 열었습니다</value></data>
