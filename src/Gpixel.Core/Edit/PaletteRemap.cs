@@ -1,5 +1,6 @@
 using System.Drawing;
 using Gpixel.Core.Model;
+using Gpixel.Core.Pixelate;
 
 namespace Gpixel.Core.Edit;
 
@@ -125,40 +126,60 @@ public sealed class PaletteRemap
     }
 
     /// <summary>
-    /// 색을 가장 잘 만드는 두 팔레트 색: A = 가장 가까운 색, B = 원래 색에 가까운 몇 색(<see cref="MixCandidates"/>) 중
-    /// A와 섞었을 때(선분 위 가장 가까운 점) 원래 색과 가장 가까워지는 색. 먼 색(예: 크림에 노랑)은 섞지 않는다.
-    /// 섞어도 A 하나보다 나아지지 않으면 B = A(디더 없음).
+    /// 색을 가장 잘 만드는 두 팔레트 색과 비율: A = 가장 가까운 색, B = OKLab로 가까운 몇 색(<see cref="MixCandidates"/>) 중 하나.
+    /// 사람 눈은 이웃 픽셀을 빛의 세기(선형광)로 섞어 보므로, 비율 t마다 A·B를 선형광으로 섞은 색을 OKLab로 원래 색과 견준다.
+    /// 거기에 무늬가 눈에 띄는 정도(<see cref="PatternWeight"/> × 2√(t(1−t)) × 밝기 차와 그보다 덜 보이는 색조·채도 차)를 더한 값이
+    /// A 하나만 쓸 때의 오차보다 작을 때만 섞는다. A가 원래 색과 겨우 알아볼 차이(<see cref="JustNoticeable"/>) 안이면 섞어도 더 비슷해 보이지 않으므로
+    /// 무늬를 만들지 않는다 — 거의 같은 색이 팔레트에 있으면 먼 색 점을 찍지 않는다.
     /// </summary>
-    /// <summary>섞을 짝으로 볼 가까운 색 수(A 포함).</summary>
-    private const int MixCandidates = 4;
-
     private (int A, int B, float T) Mix(int rgb)
     {
         if (_mixCache.TryGetValue(rgb, out var hit)) return hit;
         int a = NearestRgb(rgb);
-        int r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, bl = rgb & 0xFF;
-        int ar = a >> 16 & 0xFF, ag = a >> 8 & 0xFF, ab = a & 0xFF;
-        long bestD = Distance(r, g, bl, ar, ag, ab);
+        var src = OkLab.FromRgb(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF);
+        var (ar, ag, ab) = LinearOf(a);
+        var aLab = OkLab.FromLinear(ar, ag, ab);
+        float bestCost = Lab.Distance(src, aLab);
         int best = a;
         float bestT = 0;
-        var near = _rgb.OrderBy(p => Distance(r, g, bl, p >> 16 & 0xFF, p >> 8 & 0xFF, p & 0xFF)).Take(MixCandidates);
+        if (bestCost <= JustNoticeable) return _mixCache[rgb] = (a, a, 0);
+        var near = _rgb.OrderBy(p => Lab.DistanceSquared(src, OkLab.FromRgb(p >> 16 & 0xFF, p >> 8 & 0xFF, p & 0xFF))).Take(MixCandidates);
         foreach (int p in near)
         {
             if (p == a || (_canMix is not null && !_canMix(new Color32(0xFF000000u | (uint)rgb), new Color32(0xFF000000u | (uint)p)))) continue;
-            int pr = p >> 16 & 0xFF, pg = p >> 8 & 0xFF, pb = p & 0xFF;
-            float dx = pr - ar, dy = pg - ag, dz = pb - ab;
-            float len = dx * dx + dy * dy + dz * dz;
-            if (len <= 0) continue;
-            float t = Math.Clamp(((r - ar) * dx + (g - ag) * dy + (bl - ab) * dz) / len, 0f, 1f);
-            if (t <= 0) continue;
-            long d = Distance(r, g, bl, (int)MathF.Round(ar + dx * t), (int)MathF.Round(ag + dy * t), (int)MathF.Round(ab + dz * t));
-            if (d >= bestD) continue;
-            bestD = d;
-            best = p;
-            bestT = t;
+            var (pr, pg, pb) = LinearOf(p);
+            var pLab = OkLab.FromLinear(pr, pg, pb);
+            float dl = aLab.L - pLab.L, da = aLab.A - pLab.A, db = aLab.B - pLab.B;
+            float pattern = PatternWeight * MathF.Sqrt(dl * dl + ChromaVisibility * ChromaVisibility * (da * da + db * db));
+            for (int k = 1; k < MixSteps; k++)
+            {
+                float t = k / (float)MixSteps;
+                var mixed = OkLab.FromLinear(ar + (pr - ar) * t, ag + (pg - ag) * t, ab + (pb - ab) * t);
+                float cost = Lab.Distance(src, mixed) + 2 * MathF.Sqrt(t * (1 - t)) * pattern;
+                if (cost >= bestCost) continue;
+                bestCost = cost;
+                best = p;
+                bestT = t;
+            }
         }
         return _mixCache[rgb] = (a, best, bestT);
     }
+
+    /// <summary>섞을 짝으로 볼 OKLab로 가까운 색 수(A 포함).</summary>
+    private const int MixCandidates = 6;
+    /// <summary>섞는 비율을 볼 단계(Bayer 4×4의 16단계 — 2×2는 그중 가까운 단계로 찍힌다).</summary>
+    private const int MixSteps = 16;
+    /// <summary>원래 색과 겨우 알아볼 OKLab 차이 — 이 안이면 디더로 더 맞출 것이 없다(점수의 큰 면 색 바뀜과 같은 기준).</summary>
+    private const float JustNoticeable = 0.02f;
+    /// <summary>디더 무늬가 눈에 띄는 정도의 벌점 무게(무늬 두 색의 OKLab 차에 곱함).</summary>
+    private const float PatternWeight = 0.2f;
+    /// <summary>
+    /// 무늬에서 색조·채도 차가 밝기 차보다 덜 보이는 정도 — 사람 눈은 색 변화를 밝기 변화보다 거칠게 본다(S-CIELAB, Zhang &amp; Wandell 1996).
+    /// </summary>
+    private const float ChromaVisibility = 0.5f;
+
+    private static (float R, float G, float B) LinearOf(int rgb)
+        => (OkLab.ToLinear(rgb >> 16 & 0xFF), OkLab.ToLinear(rgb >> 8 & 0xFF), OkLab.ToLinear(rgb & 0xFF));
 
     private int NearestRgb(int rgb)
     {

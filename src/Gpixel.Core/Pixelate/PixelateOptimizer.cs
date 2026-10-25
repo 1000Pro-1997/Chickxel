@@ -51,7 +51,7 @@ public enum OptimizeParam
     VectorTolerance = 131072,
     /// <summary>벡터로 다시 그리기에서 그대로 둘 작은 안쪽 덩어리 넓이 1~24칸(외곽선 맞추기가 벡터로 다시 그리기인 시도에서만).</summary>
     VectorBlob = 262144,
-    /// <summary>칸 경계 지역 보정(<see cref="PixelGridSettings.LocalCorrection"/>) 켜기·끄기와, 켠 시도에서 최대 이동 0.1~0.5칸·띠 너비 1~8칸.</summary>
+    /// <summary>칸 경계 지역 보정 켜기·끄기와, 켠 시도에서 최대 이동·띠 너비·최소 평균 칸 크기.</summary>
     LocalGrid = 524288,
     /// <summary>색 거리(OKLab·CIEDE2000·OKLCh 색상 가중)와, OKLCh 색상 가중인 시도에서 색상 무게 1~3. 점수의 '주요 색 변화'는 모든 시도를 시작 설정의 거리로 잰다.</summary>
     ColorDistance = 1048576,
@@ -211,6 +211,8 @@ public static class PixelateOptimizer
         else if (s.Palette.ColorSource != PaletteColorSource.Original && !chosen.HasFlag(OptimizeParam.PaletteColorSource))
             p &= ~OptimizeParam.EdgeWeight;
         if (s.Palette.Method == PaletteMethod.KeepOriginal) p &= ~(OptimizeParam.Dither | OptimizeParam.ColorDistance | OptimizeParam.ShadeFamily);
+        if (s.Downsample.Mode is not (DownsampleMode.Mode or DownsampleMode.ClusterWeighted)
+            && !chosen.HasFlag(OptimizeParam.DownsampleMode)) p &= ~OptimizeParam.SnapStep;
         if (s.Background.Mode == BackgroundMode.None) p &= ~OptimizeParam.StickerBorder;
         if (s.Cleanup.OutlineFit != OutlineFit.Vector && !chosen.HasFlag(OptimizeParam.OutlineFit)) p &= ~(OptimizeParam.VectorTolerance | OptimizeParam.VectorBlob);
         return p;
@@ -716,7 +718,8 @@ public static class PixelateOptimizer
                     s => s.Downsample.AlphaThreshold, (s, v) => s with { Downsample = s.Downsample with { AlphaThreshold = v } }));
             if (p.HasFlag(OptimizeParam.SnapStep))
                 axes.Add(Num(OptimizeParam.SnapStep, PixelateRanges.SnapStep, 8, 40, 1, 0,
-                    s => s.Downsample.SnapStep, (s, v) => s with { Downsample = s.Downsample with { SnapStep = (int)v } }));
+                    s => s.Downsample.SnapStep, (s, v) => s with { Downsample = s.Downsample with { SnapStep = (int)v } })
+                    with { Active = s => s.Downsample.Mode is DownsampleMode.Mode or DownsampleMode.ClusterWeighted });
             if (p.HasFlag(OptimizeParam.OutlineDarkness))
                 axes.Add(Num(OptimizeParam.OutlineDarkness, PixelateRanges.OutlineDarkness, 0.15, 0.35, 0.01, 2,
                     s => s.Palette.OutlineDarkness, (s, v) => s with { Palette = s.Palette with { OutlineDarkness = v } }));
@@ -760,16 +763,18 @@ public static class PixelateOptimizer
             if (p.HasFlag(OptimizeParam.StickerBorder))
                 axes.Add(new Axis(OptimizeParam.StickerBorder, 0, 1, 1, 0, 2,
                     s => s.Background.RemoveStickerBorder ? 1 : 0, (s, v) => s with { Background = s.Background with { RemoveStickerBorder = v >= 0.5 } }));
-            // 칸 경계 지역 보정: 켜기·끄기, 최대 이동·띠 너비는 켠 점에서만(꺼진 점에서는 결과가 같음).
+            // 칸 경계 지역 보정: 켜기·끄기, 최대 이동·띠 너비·최소 칸 크기는 켠 점에서만(꺼진 점에서는 결과가 같음).
             if (p.HasFlag(OptimizeParam.LocalGrid))
             {
                 static bool IsLocal(PixelateSettings s) => s.Grid.LocalCorrection;
                 axes.Add(new Axis(OptimizeParam.LocalGrid, 0, 1, 1, 0, 2,
                     s => s.Grid.LocalCorrection ? 1 : 0, (s, v) => s with { Grid = s.Grid with { LocalCorrection = v >= 0.5 } }));
-                axes.Add(Num(OptimizeParam.LocalGrid, PixelateRanges.LocalShift, 0.1, 0.5, 0.05, 2,
+                axes.Add(Num(OptimizeParam.LocalGrid, PixelateRanges.LocalShift, 0.05, 0.99, 0.05, 2,
                     s => s.Grid.LocalShift, (s, v) => s with { Grid = s.Grid with { LocalShift = v } }) with { Active = IsLocal });
-                axes.Add(Num(OptimizeParam.LocalGrid, PixelateRanges.LocalBand, 1, 8, 1, 0,
+                axes.Add(Num(OptimizeParam.LocalGrid, PixelateRanges.LocalBand, 1, 32, 1, 0,
                     s => s.Grid.LocalBand, (s, v) => s with { Grid = s.Grid with { LocalBand = (int)v } }) with { Active = IsLocal });
+                axes.Add(Num(OptimizeParam.LocalGrid, PixelateRanges.LocalMinCell, 1, 16, 0.5, 2,
+                    s => s.Grid.LocalMinCell, (s, v) => s with { Grid = s.Grid with { LocalMinCell = v } }) with { Active = IsLocal });
             }
             if (p.HasFlag(OptimizeParam.ColorDistance))
             {
@@ -880,7 +885,7 @@ public static class PixelateOptimizer
         if (p.HasFlag(OptimizeParam.StickerBorder)) parts.Add("sticker border " + OnOff(s.Background.RemoveStickerBorder));
         if (p.HasFlag(OptimizeParam.LocalGrid))
             parts.Add(s.Grid.LocalCorrection
-                ? "local grid on " + s.Grid.LocalShift.ToString("0.##", ci) + "/" + s.Grid.LocalBand.ToString(ci)
+                ? "local grid on " + s.Grid.LocalShift.ToString("0.##", ci) + "/" + s.Grid.LocalBand.ToString(ci) + ", min " + s.Grid.LocalMinCell.ToString("0.##", ci) + "px"
                 : "local grid off");
         if (p.HasFlag(OptimizeParam.ColorDistance))
             parts.Add("distance " + s.Palette.ColorDistance + (s.Palette.ColorDistance == ColorDistanceMode.OkLchHue ? " " + s.Palette.HueWeight.ToString("0.##", ci) : ""));

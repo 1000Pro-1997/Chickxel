@@ -30,9 +30,15 @@ public static class OkLab
         return t;
     }
 
-    public static Lab FromRgb(int r, int g, int b)
+    /// <summary>sRGB 채널 값(0~255) → 선형광(0~1). 화면에서 이웃 픽셀이 섞여 보이는 것은 이 값의 평균이다.</summary>
+    public static float ToLinear(int channel) => Linear[channel];
+
+    public static Lab FromRgb(int r, int g, int b) => FromLinear(Linear[r], Linear[g], Linear[b]);
+
+    /// <summary>선형광 RGB(0~1) → OKLab.</summary>
+    public static Lab FromLinear(float lr, float lg, float lb)
     {
-        float lr = Linear[r], lg = Linear[g], lb = Linear[b];
+        lr = Math.Max(0, lr); lg = Math.Max(0, lg); lb = Math.Max(0, lb);
         float l = MathF.Cbrt(0.4122214708f * lr + 0.5363325363f * lg + 0.0514459929f * lb);
         float m = MathF.Cbrt(0.2119034982f * lr + 0.6806995451f * lg + 0.1073969566f * lb);
         float s = MathF.Cbrt(0.0883024619f * lr + 0.2817188376f * lg + 0.6299787005f * lb);

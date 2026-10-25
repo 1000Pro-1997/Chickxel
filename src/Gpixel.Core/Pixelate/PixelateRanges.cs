@@ -30,9 +30,11 @@ public static class PixelateRanges
     /// <summary>배율 크기의 배율.</summary>
     public static readonly PixelateRange Factor = new(0.01, 1);
     /// <summary>칸 경계 지역 보정: 경계가 전체 자리에서 움직일 수 있는 거리(칸 크기 비율).</summary>
-    public static readonly PixelateRange LocalShift = new(0.05, 0.5);
+    public static readonly PixelateRange LocalShift = new(0.05, 0.99);
     /// <summary>칸 경계 지역 보정: 띠 너비(칸).</summary>
-    public static readonly PixelateRange LocalBand = new(1, 16);
+    public static readonly PixelateRange LocalBand = new(1, 32);
+    /// <summary>지역 보정을 적용할 최소 평균 칸 크기(원본 px).</summary>
+    public static readonly PixelateRange LocalMinCell = new(1, 16);
     /// <summary>팔레트 색 수(0 = 자동은 따로).</summary>
     public static readonly PixelateRange Colors = new(2, PaletteBuilder.MaxColors);
     /// <summary>칸 가장자리에서 뺄 비율.</summary>

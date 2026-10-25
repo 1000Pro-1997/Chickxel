@@ -97,6 +97,31 @@ public class PaletteRemapTests
     }
 
     [Fact]
+    public void Bayer_MixesInLinearLight_SoHalfLinearGrayIsHalfBlackHalfWhite()
+    {
+        // sRGB 188 ≈ 선형광 0.5: 눈에는 검정·흰색 반반 무늬가 이 회색으로 보인다(sRGB 값으로 섞으면 흰색이 3/4쯤 됨).
+        var img = new PixelImage(4, 4);
+        img.Clear(new Color32(188, 188, 188));
+        new PaletteRemap([Black, White]).Apply(img, PaletteDither.Bayer4);
+        Assert.Equal(8, img.Pixels.Count(c => c == White));
+        Assert.Equal(8, img.Pixels.Count(c => c == Black));
+    }
+
+    [Fact]
+    public void Bayer_DoesNotScatterCoolPixelsIntoNearlyExactSkinColor()
+    {
+        var source = new Color32(253, 231, 200);
+        var skin = new Color32(253, 230, 197);
+        var blueGray = new Color32(217, 216, 226);
+        var img = new PixelImage(4, 4);
+        img.Clear(source);
+
+        new PaletteRemap([skin, blueGray]).Apply(img, PaletteDither.Bayer4);
+
+        Assert.All(img.Pixels, c => Assert.Equal(skin, c));
+    }
+
+    [Fact]
     public void Bayer_FlatColorUsesAtMostTwoPaletteColors_RepeatingEvery4px()
     {
         // 팔레트에 없는 한 가지 색(크림)은 많은 팔레트 색 중에서도 두 색의 고정 무늬로만 바뀐다.

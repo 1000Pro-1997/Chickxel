@@ -120,9 +120,10 @@ public sealed class CellIndex
 
 /// <summary>
 /// 칸 경계 지역 보정: 축 전체에 한 줄로 고른 칸 경계(<see cref="GridDetector.Fit"/>)는 그림 한쪽이 반 칸쯤 어긋나 그려진 AI 그림에 맞지 않는다.
-/// 그림을 가로 띠(칸 몇 줄)로 나눠 띠마다 그 띠의 뚜렷한 경계(<see cref="GridDetector.BlockEdges"/>)만 세어 세로 칸 경계를 동적 계획법으로 다시 고르고
-/// (경계마다 전체 자리에서 칸 크기의 ±최대 이동 안, 칸 너비는 원래 너비의 <see cref="MinWidth"/>~<see cref="MaxWidth"/>배, 경계가 없으면 전체 자리로
-/// 끌리고 바로 앞 띠와 다르면 벌점 — 띠 사이가 매끄럽게), 가로 칸 경계도 세로 띠마다 같은 방법으로 고른다(<see cref="LocalCuts"/>).
+/// 그림을 가로 띠(칸 몇 줄)로 나눠 띠마다 그 띠의 뚜렷한 경계(<see cref="GridDetector.BlockEdges"/>) 중 여러 줄에 이어지는 경계에
+/// 가중치를 주어 세로 칸 경계를 동적 계획법으로 다시 고르고(짧은 잡음 경계는 제외, 경계마다 전체 자리에서 칸 크기의 ±최대 이동 안,
+/// 칸 너비는 원래 너비의 <see cref="MinWidth"/>~<see cref="MaxWidth"/>배, 경계가 없으면 전체 자리로 끌리고 바로 앞 띠와 다르면 벌점),
+/// 가로 칸 경계도 세로 띠마다 같은 방법으로 고른다(<see cref="LocalCuts"/>).
 /// 같은 문제를 푸는 '교차점을 가까운 경계로 끌어당기는 탄성 격자'보다 띠마다 곧은 경계(칸 = 사각형)가 단순하고 결과가 안정적이며, 칸마다 엇갈린
 /// 벽돌 무늬(띠 = 1칸)도 그대로 따라간다.
 /// </summary>
@@ -134,36 +135,35 @@ public static class LocalGrid
     private const double Pull = 0.2;
     /// <summary>바로 앞 띠의 자리와 다른 만큼의 벌점(같은 꼴) — 띠 사이 매끄럽게.</summary>
     private const double Smooth = 0.2;
-    /// <summary>
-    /// 지역 보정을 할 가장 작은 평균 칸 크기(원본 px): 이보다 작으면 최대 이동(±35%)이 1px 남짓이라 흐리게 키운 그림의 경계 자리 흔들림(±1px)과 가릴 수 없다
-    /// (표본 물 기계 3.9px 칸: 켜면 충실도 0.026 → 0.038, 점수 69.7 → 66.9로 나빠짐). 3px로 낮추면 ×½로 줄인 마법사 꼬마 시트(3.6px)는 57.4 → 60.5이지만
-    /// 원래 크기(7px, 보정 켬)는 66.5 — 문턱을 낮추는 대신 AI 그리기 시트를 줄이지 않는다(<see cref="AiDraw.AiDrawConversion.MaxSheetSide"/>).
-    /// </summary>
-    public const double MinCell = 5;
+    /// <summary>작은 칸에서 흐린 경계의 ±1px 잡음을 따라가지 않는 기본 최소 평균 칸 크기(원본 px).</summary>
+    public const double DefaultMinCell = 4;
+    /// <summary>경계 하나가 다른 축을 따라 이어져야 하는 최소 길이(1~2px 고립된 잡음은 격자를 끌지 않음).</summary>
+    private const int MinEdgeRun = 3;
 
     /// <summary>
     /// 지역 보정한 칸 경계. <paramref name="edges"/> = 이 프레임의 뚜렷한 경계(<see cref="GridDetector.BlockEdgeMap.Rows"/>·<see cref="GridDetector.BlockEdgeMap.Cols"/>),
-    /// <paramref name="maxShift"/> = 전체 자리에서 움직일 수 있는 거리(칸 크기 비율), <paramref name="band"/> = 띠 너비(칸). 어느 띠도 바뀌지 않거나
-    /// 칸이 <see cref="MinCell"/>보다 작으면 null(곧은 격자).
+    /// <paramref name="maxShift"/> = 전체 자리에서 움직일 수 있는 거리(칸 크기 비율), <paramref name="band"/> = 띠 너비(칸).
+    /// 평균 칸 크기가 <paramref name="minCell"/>보다 작거나 어느 띠도 바뀌지 않으면 null(곧은 격자).
     /// </summary>
-    public static LocalCuts? Correct(GridDetector.BlockEdgeMap edges, int[] xc, int[] yc, double maxShift, int band)
+    public static LocalCuts? Correct(GridDetector.BlockEdgeMap edges, int[] xc, int[] yc, double maxShift, int band, double minCell)
     {
         band = (int)PixelateRanges.LocalBand.Clamp(band);
         maxShift = PixelateRanges.LocalShift.Clamp(maxShift);
         if (xc.Length < 2 || yc.Length < 2 || edges.Rows.Length == 0 || edges.Cols.Length == 0) return null;
         double cell = ((xc[^1] - xc[0]) + (yc[^1] - yc[0])) / (double)(xc.Length - 1 + yc.Length - 1);
-        if (cell < MinCell) return null;
-        var xb = FitAxis(xc, yc, band, maxShift, edges.Rows, edges.Area.Top);
-        var yb = FitAxis(yc, xc, band, maxShift, edges.Cols, edges.Area.Left);
+        if (cell < PixelateRanges.LocalMinCell.Clamp(minCell)) return null;
+        var xb = FitAxis(xc, yc, band, maxShift, edges.Rows, edges.RowStrengths, edges.Area.Top);
+        var yb = FitAxis(yc, xc, band, maxShift, edges.Cols, edges.ColStrengths, edges.Area.Left);
         bool changed = xb.Any(b => !b.AsSpan().SequenceEqual(xc)) || yb.Any(b => !b.AsSpan().SequenceEqual(yc));
         return changed ? new LocalCuts(band, xb, yb) : null;
     }
 
     /// <summary>
     /// 한 축의 띠별 경계. <paramref name="cuts"/> = 고를 축의 전체 경계, <paramref name="across"/> = 다른 축 경계(띠를 나눔),
-    /// <paramref name="lines"/>[k] = 다른 축 자리 <paramref name="origin"/> + k 줄의 경계 자리.
+    /// <paramref name="lines"/>[k] = 다른 축 자리 <paramref name="origin"/> + k 줄의 경계 자리,
+    /// <paramref name="strengths"/>[k]는 그 줄의 경계마다 대응하는 대비 가중치(없으면 각 경계 1).
     /// </summary>
-    private static int[][] FitAxis(int[] cuts, int[] across, int band, double maxShift, int[][] lines, int origin)
+    private static int[][] FitAxis(int[] cuts, int[] across, int band, double maxShift, int[][] lines, float[][] strengths, int origin)
     {
         int n = across.Length - 1;
         int bands = (n + band - 1) / band;
@@ -171,28 +171,59 @@ public static class LocalGrid
         int reach = (int)Math.Ceiling(maxShift * MaxGap(cuts)) + 2;
         int lo = cuts[0] - reach, hi = cuts[^1] + reach;
         var profile = new double[hi - lo + 1];
+        var run = new int[profile.Length];
+        var last = new int[profile.Length];
+        var runWeight = new double[profile.Length];
         var g = new double[profile.Length];
+        double runScale = MaxGap(cuts);
         int[]? prev = null;
         for (int k = 0; k < bands; k++)
         {
             int a = Math.Max(across[k * band], origin), b = Math.Min(across[Math.Min(n, (k + 1) * band)], origin + lines.Length);
             Array.Clear(profile);
-            int count = 0;
-            for (int y = a; y < b; y++, count++)
-                foreach (int x in lines[y - origin])
-                    if (x >= lo && x <= hi) profile[x - lo]++;
+            Array.Clear(run);
+            Array.Clear(runWeight);
+            int count = Math.Max(0, b - a);
+            // 세기와 경계 연속성 둘 다 사용한다. 짧은 잡음은 격자를 끌지 않고,
+            // 긴 경계의 가중치는 칸 크기에서 포화하므로 큰 덩어리 하나가 전체 띠를 독점하지 않는다.
+            for (int y = a; y < b; y++)
+            {
+                int[] positions = lines[y - origin];
+                float[]? weights = strengths.Length == lines.Length ? strengths[y - origin] : null;
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    int x = positions[i];
+                    if (x < lo || x > hi) continue;
+                    int p = x - lo;
+                    if (run[p] != 0 && last[p] != y - 1)
+                    {
+                        FinishRun(profile, run, runWeight, p, runScale);
+                        run[p] = 0;
+                        runWeight[p] = 0;
+                    }
+                    run[p]++;
+                    runWeight[p] += weights is not null && i < weights.Length ? weights[i] : 1;
+                    last[p] = y;
+                }
+            }
+            for (int p = 0; p < run.Length; p++) FinishRun(profile, run, runWeight, p, runScale);
             if (count == 0)
             {
                 result[k] = prev ?? (int[])cuts.Clone();
                 continue;
             }
-            // 줄 수로 나누고(그 자리에 경계가 있는 줄 비율) [0.25, 0.5, 0.25]로 부드럽게(번진 경계 ±1px).
+            // 줄 수로 나누고(이어지는 경계의 가중 비율) [0.25, 0.5, 0.25]로 부드럽게(번진 경계 ±1px).
             for (int i = 0; i < g.Length; i++)
                 g[i] = (0.5 * profile[i] + 0.25 * (i > 0 ? profile[i - 1] : 0) + 0.25 * (i + 1 < g.Length ? profile[i + 1] : 0)) / count;
             result[k] = Fit(cuts, g, lo, maxShift, prev);
             prev = result[k];
         }
         return result;
+    }
+    private static void FinishRun(double[] profile, int[] run, double[] weight, int p, double scale)
+    {
+        if (run[p] >= MinEdgeRun)
+            profile[p] += weight[p] * (1 + Math.Min(1, run[p] / scale));
     }
 
     private static int MaxGap(int[] cuts)

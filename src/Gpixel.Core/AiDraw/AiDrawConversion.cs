@@ -15,7 +15,7 @@ public static class AiDrawConversion
     public const int MaxFrameSide = 640;
     /// <summary>
     /// 스프라이트 시트 긴 변 상한(넘으면 정수 배로 평균 내 줄임). 생성 시트는 2000px 남짓(표본 2172×724)이라 웬만하면 원래 크기 그대로 쓴다: 예전 상한 1600은
-    /// 이런 시트를 ×½로 줄여 칸도 반이 되고(마법사 꼬마 시트 7px → 3.5px) 칸 경계 지역 보정(칸 <see cref="LocalGrid.MinCell"/>px 이상)이 꺼지며
+    /// 이런 시트를 ×½로 줄여 칸도 반이 되고(마법사 꼬마 시트 7px → 3.5px) 기본 지역 보정(최소 평균 칸 <see cref="LocalGrid.DefaultMinCell"/>px)이 꺼지며
     /// 외곽선 두께 재기도 거칠어져, 원본 보기의 칸 선이 덩어리를 비껴갔다(기본 변환 점수 57.4 → 원래 크기 66.5). 원래 크기는 한 번 돌리는 데 ×½의 약 1.6배.
     /// </summary>
     public const int MaxSheetSide = 4096;

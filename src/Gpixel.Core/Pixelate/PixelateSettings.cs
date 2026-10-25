@@ -65,6 +65,10 @@ public enum DownsampleMode
     Center,
     /// <summary>평균.</summary>
     Mean,
+    /// <summary>칸 가운데에 가까운 전경 픽셀을 더 세는 공간 가중 평균.</summary>
+    CenterWeighted,
+    /// <summary>칸 안의 비슷한 색을 묶고 가운데 지지가 큰 묶음만 공간 가중 평균.</summary>
+    ClusterWeighted,
 }
 
 /// <summary>팔레트(색 줄이기) 방식.</summary>
@@ -183,11 +187,13 @@ public sealed record PixelGridSettings
     /// <summary>자동 칸 크기를 무엇으로 정할지(기본: 색 경계). 정리의 외곽선 맞추기가 "크기를 줄여서"면 그쪽이 이겨 외곽선 두께를 쓴다(<see cref="Pixelator.ScaleSourceFor"/>).</summary>
     public ScaleSource Source { get; init; } = ScaleSource.Auto;
     /// <summary>
-    /// 칸 경계 지역 보정(<see cref="LocalGrid"/>, 기본 켬): 축 전체에 한 줄로 고른 칸 경계를 띠(<see cref="LocalBand"/>칸)마다 그 띠의 뚜렷한 경계에 맞춰
-    /// ±<see cref="LocalShift"/>칸 안에서 다시 고른다 — 그림 한쪽이 반 칸쯤 어긋난 AI 그림. 표본 6개 중 4개가 나아지고(점수 +2~+9) 2개는 그대로·조금 낮아
-    /// (−0.1, 칸 5px 미만은 하지 않음 — <see cref="LocalGrid.MinCell"/>) 기본으로 켠다.
+    /// 칸 경계 지역 보정(<see cref="LocalGrid"/>, 기본 켬): 축 전체에 한 줄로 고른 칸 경계를 띠(<see cref="LocalBand"/>칸)마다
+    /// 그 띠의 뚜렷한 경계에 맞춰 ±<see cref="LocalShift"/>칸 안에서 다시 고른다. 평균 칸 크기가
+    /// <see cref="LocalMinCell"/>px 미만이면 건너뛴다.
     /// </summary>
     public bool LocalCorrection { get; init; } = true;
+    /// <summary>지역 보정을 적용할 최소 평균 칸 크기(원본 px, <see cref="PixelateRanges.LocalMinCell"/>). 기본 4px.</summary>
+    public double LocalMinCell { get; init; } = LocalGrid.DefaultMinCell;
     /// <summary>지역 보정: 경계가 움직일 수 있는 거리(칸 크기 비율, <see cref="PixelateRanges.LocalShift"/>).</summary>
     public double LocalShift { get; init; } = 0.35;
     /// <summary>지역 보정: 띠 너비(칸, <see cref="PixelateRanges.LocalBand"/>) — 표본에서 2칸이 4·8칸보다 나음.</summary>

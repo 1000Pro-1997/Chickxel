@@ -2,6 +2,31 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.35 (2026-10-26)
+### Local cell boundaries on small sprites
+- Local correction now adjusts cell boundaries at 4–5 px, which previously fell below its 5 px cutoff; the source overlay shows the resulting per-band bends.
+- The minimum average cell size is adjustable from 1 to 16 source pixels (default 4); lower settings may fit blurred-edge noise. The selected result shows whether correction was applied, skipped, unchanged or off.
+- The optimizer's “Try local correction” checkbox now searches this threshold along with on/off, shift and band width; it is distinct from the actual Pixel grid setting.
+
+### Wider correction search and matched source-cell mark
+- Local boundary shift now reaches 99% of a cell, band width reaches 32 cells, and the optimizer tries these limits alongside the 1–16 px minimum cell size.
+- Clicking a source cell in the enlarged view outlines that exact cell in blue as well as the matching result pixel; the source is not recolored.
+
+### Dither chosen by how colors blend to the eye
+- Bayer dithering mixes the two palette colors in linear light, as neighboring pixels blend on screen, and judges the blended color in OKLab; a half-and-half black and white pattern now stands for the gray it actually looks like.
+- A pattern is used only when the blend looks closer to the source than the nearest single color by more than the pattern's visibility (lightness differences count more than hue differences); colors within a just-noticeable difference of a palette color are not dithered.
+- Distant colors are no longer scattered into nearly identical skin colors.
+
+### Better cell-color search and sharp-boundary scoring
+- Cell sampling adds center-weighted mean and dominant-color weighted mean; the latter averages within one similar-color group instead of blending skin and dark clothing.
+- Candidate generation and auto optimization can compare both modes alongside the four existing modes, without changing saved mode numbers.
+- Fidelity now adds the structure lost inside each cell (how much its source pixels spread) to the color difference seen after blurring source and result the way the eye does (S-CIELAB style), so averaging across a sharp boundary is penalized while a dither that blends into the source color counts as a match.
+- The optimizer skips color-snap-step trials for methods that do not use that setting, reserving its trial budget for relevant combinations.
+
+### Local grid follows stronger continuous color boundaries
+- Within each stripe, local correction weighs sharp OKLab edges and continuous runs more than faint parallel texture or isolated short noise, without changing global scale detection.
+- Cell boundaries still obey maximum shift and 70–130% cell width; two sharp boundaries inside one cell cannot both be represented.
+
 ## v1.14.34 (2026-10-26)
 ### Movement test moved into View
 - The F5 movement test remains available for testing top-down movement and platformer jumps with the current animation.

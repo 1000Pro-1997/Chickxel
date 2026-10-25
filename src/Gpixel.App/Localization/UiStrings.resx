@@ -9895,6 +9895,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Ds_Median" xml:space="preserve"><value>중앙값</value></data>
   <data name="Pixelate_Ds_Center" xml:space="preserve"><value>가운데 픽셀</value></data>
   <data name="Pixelate_Ds_Mean" xml:space="preserve"><value>평균</value></data>
+  <data name="Pixelate_Ds_CenterWeighted" xml:space="preserve"><value>중심 가중 평균</value></data>
+  <data name="Pixelate_Ds_ClusterWeighted" xml:space="preserve"><value>우세 색 묶음 가중 평균</value></data>
   <data name="Pixelate_Ds_Border" xml:space="preserve"><value>칸 가장자리 무시(%)</value></data>
   <data name="Pixelate_Ds_Alpha" xml:space="preserve"><value>투명으로 볼 문턱(%)</value></data>
   <data name="Pixelate_Ds_Snap" xml:space="preserve"><value>색 묶기 간격</value></data>
@@ -10088,6 +10090,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>최적화 전 설정으로 되돌립니다.</value></data>
   <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>돌림 {pass} · 시도 {done}/{total} · 최고 점수 {score}</value></data>
   <data name="Pixelate_Opt_Note" xml:space="preserve"><value>점수 비중(고급)이 최적화 목표입니다.</value></data>
+  <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>지역 보정도 탐색</value></data>
+  <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>최적화가 지역 보정의 켬·끔, 최대 이동·띠 너비·최소 칸 크기를 시험합니다. 체크만 해서는 현재 결과에 적용되지 않습니다. 실제 설정은 왼쪽의 픽셀 격자에서 고릅니다.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>시도마다 지금까지의 최고 점수(옅은 세로 선 = 새 돌림 시작)</value></data>
   <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>최적화</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>시도 기록</value></data>
@@ -10112,14 +10116,20 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>자동 격자가 찾은 칸 크기에 더할 값입니다(자동 최적화는 이 값으로 칸 크기를 바꿉니다).</value></data>
   <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>결과나 원본 그림을 좌클릭하면 크게 봅니다 · 결과 그림 우클릭: 그 픽셀 색 빼기/되살리기 — 크게 보기에서는 좌클릭: 쓰인 곳 보기 · 우클릭: 이 색 빼기/되살리기(눌러도 키보드 초점은 여기 — Space 재생/멈춤, ←→ 프레임).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>크게 보기</value></data>
-  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>휠: 확대·축소 · 끌기: 이동(두 칸 함께) · 결과 픽셀 좌클릭: 쓰인 곳 보기 · 우클릭: 이 색 빼기/되살리기 · 원본 칸 좌클릭: 그 칸이 된 결과 색 보기 · 두 번 누르기: 맞춤 · Space: 재생/멈춤 · ←→: 프레임 · Esc·바깥 누르기: 닫기</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>휠: 확대·축소 · 끌기: 이동(두 칸 함께) · 결과 픽셀 좌클릭: 쓰인 곳 보기 · 우클릭: 이 색 빼기/되살리기 · 원본 칸 좌클릭: 두 칸에 파란 표시 · 두 번 누르기: 맞춤 · Space: 재생/멈춤 · ←→: 프레임 · Esc·바깥 누르기: 닫기</value></data>
   <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>닫기 (Esc)</value></data>
   <data name="Pixelate_Grid_Local" xml:space="preserve"><value>칸 경계 지역 보정</value></data>
-  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>그림 전체에 한 줄로 고른 칸 경계를 띠(칸 몇 줄)마다 그 자리의 덩어리 경계에 맞춰 다시 고릅니다 — 한쪽이 반 칸쯤 어긋나 그려진 AI 그림. 칸 경계 보기에 꺾인 경계가 그대로 보입니다(칸 5px 미만은 하지 않음).</value></data>
+  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>그림 전체에 한 줄로 고른 칸 경계를 띠마다 덩어리 경계에 맞춰 다시 고릅니다. 원본 보기에 꺾인 경계가 보입니다. 평균 칸 크기가 설정한 최소값보다 작거나 움직일 경계가 없으면 곧은 선입니다.</value></data>
+  <data name="Pixelate_Grid_LocalApplied" xml:space="preserve"><value>지역 보정 적용 {applied}/{total}프레임</value></data>
+  <data name="Pixelate_Grid_LocalTooSmall" xml:space="preserve"><value>지역 보정 생략(칸 {min}px 미만)</value></data>
+  <data name="Pixelate_Grid_LocalUnchanged" xml:space="preserve"><value>지역 보정: 움직인 경계 없음</value></data>
+  <data name="Pixelate_Grid_LocalOff" xml:space="preserve"><value>지역 보정 꺼짐</value></data>
   <data name="Pixelate_Grid_LocalShift" xml:space="preserve"><value>최대 이동(칸 %)</value></data>
-  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>칸 경계가 전체 자리에서 움직일 수 있는 거리(칸 크기의 %). 칸 너비는 원래의 70~130% 안.</value></data>
+  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>칸 경계가 전체 자리에서 움직일 수 있는 최대 거리(칸 크기의 5~99%). 이웃 칸 너비는 원래의 70~130%를 지켜 실제 이동은 더 작을 수 있습니다.</value></data>
   <data name="Pixelate_Grid_LocalBand" xml:space="preserve"><value>띠(칸)</value></data>
-  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>경계를 따로 맞출 띠의 너비(칸). 작을수록 촘촘히 따라가고(1 = 줄마다), 클수록 매끄럽습니다.</value></data>
+  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>경계를 따로 맞출 띠의 너비(1~32칸). 작을수록 촘촘히 따라가고(1 = 줄마다), 클수록 매끄럽습니다.</value></data>
+  <data name="Pixelate_Grid_LocalMinCell" xml:space="preserve"><value>최소 칸 크기(px)</value></data>
+  <data name="Pixelate_Grid_LocalMinCell_Tip" xml:space="preserve"><value>지역 보정을 적용할 최소 평균 칸 크기(원본 픽셀, 1~16px, 기본 4px). 낮추면 작은 칸도 보정하지만 흐린 경계의 잡음을 따라갈 수 있습니다. 자동 최적화의 '지역 보정도 탐색'에서도 이 값을 시험합니다.</value></data>
   <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>설정 닫기</value></data>
   <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>그리기 설정(그림 생성 → 픽셀 변환 / 직접 찍기)</value></data>
   <data name="AiDraw_Settings_Close" xml:space="preserve"><value>그리기 설정 닫기</value></data>

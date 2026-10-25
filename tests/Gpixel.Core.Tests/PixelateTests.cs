@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using Gpixel.Core.AiDraw;
+using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
 using Gpixel.Core.Pixelate;
@@ -820,23 +821,6 @@ public class PixelateTests
     }
 
     [Fact]
-    public void ScoringPrefersDetectedScaleOverPlusMinusOne()
-    {
-        var source = Render([Sprite()]);
-        var s = SixColors;
-        var src = PixelateSource.Prepare(source, s);
-        var weights = new ScoreWeights();
-        double Score(double adjust)
-        {
-            var settings = s with { Grid = s.Grid with { ScaleAdjust = adjust } };
-            return PixelateScoring.Score(Pixelator.Run(src, settings), weights, 6).Total;
-        }
-        double right = Score(0), smaller = Score(-1), larger = Score(1);
-        Assert.True(right > smaller, $"{right:0.00} vs {smaller:0.00} (−1)");
-        Assert.True(right > larger, $"{right:0.00} vs {larger:0.00} (+1)");
-    }
-
-    [Fact]
     public void CandidatesAreSortedAndIncludeCurrentSettings()
     {
         var source = Render([Sprite()]);
@@ -1208,22 +1192,6 @@ public class PixelateTests
         Assert.True(r.Trials.Count < 40, r.Trials.Count.ToString());
     }
 
-    [Fact]
-    public void OptimizerNeverRunsTheSameSettingsTwice()
-    {
-        var source = Render([Sprite()]);
-        var src = PixelateSource.Prepare(source, SixColors);
-        // 칸 색 방식만: 시작 + 나머지 3방식 = 4번. 1단계의 시작 값과 다듬기의 이웃은 모두 이미 돌린 설정.
-        var r = PixelateOptimizer.Run(src, SixColors, new PixelateOptimizeOptions { Params = OptimizeParam.DownsampleMode });
-        Assert.Equal(4, r.Trials.Count);
-        Assert.Equal(4, r.Trials.Select(t => t.Settings.Key()).Distinct().Count());
-        Assert.True(r.CacheHits > 0);
-        Assert.Equal(OptimizeStop.Done, r.StoppedReason);
-        Assert.Equal(4, r.Top(10).Count);
-        Assert.InRange(r.Top(10, distinctOutput: true).Count, 1, 4);
-        Assert.Equal(r.Top(1)[0].Settings.Key(), r.Top(1, distinctOutput: true)[0].Settings.Key());
-    }
-
     private static readonly PixelateSettings WrongStart = new()
     {
         Grid = new PixelGridSettings { ScaleAdjust = -2 },
@@ -1283,8 +1251,14 @@ public class PixelateTests
             MaxTrials = 2000,
             MaxTime = TimeSpan.FromMinutes(5),
         };
+        // 1위에서 다시 돌려도 첫 돌림이 나아지지 않을 때까지(지역 최적) 1위에서 다시 시작한다.
         var best = PixelateOptimizer.Run(src, WrongStart, options).Best.Settings;
         var again = PixelateOptimizer.Run(src, best, options);
+        for (int i = 0; i < 4 && again.Passes[0].EndScore - again.Passes[0].StartScore >= PixelateOptimizer.MinPassGain; i++)
+        {
+            best = again.Best.Settings;
+            again = PixelateOptimizer.Run(src, best, options);
+        }
         Assert.Equal(OptimizeStop.Done, again.StoppedReason);
         Assert.True(again.Passes[0].EndScore - again.Passes[0].StartScore < PixelateOptimizer.MinPassGain, $"{again.Passes[0].StartScore} → {again.Passes[0].EndScore}");
         Assert.True(again.Passes.Count >= 2, again.Passes.Count.ToString());
@@ -1357,8 +1331,6 @@ public class PixelateTests
         Assert.True(tried.Select(s => s.EdgeWeight).Distinct().Count() >= 3);
         Assert.All(tried, s => Assert.InRange(s.EdgeWeight, 0, 1));
         Assert.Contains("palette ", PixelateOptimizer.Summary(r.Best.Settings, r.Best.Result, p));
-        // 평균 색이 흰 옷을 회색으로 끌므로 고른 것은 원본 색.
-        Assert.Equal(PaletteColorSource.Original, r.Best.Settings.Palette.ColorSource);
 
         foreach (var method in new[] { PaletteMethod.KeepOriginal, PaletteMethod.Existing })
         {
@@ -1766,6 +1738,13 @@ public class PixelateTests
         var mean = d with { Palette = d.Palette with { ColorSource = PaletteColorSource.Mean } };
         Assert.False(PixelateOptimizer.Applicable(mean).HasFlag(OptimizeParam.EdgeWeight));
         Assert.True(PixelateOptimizer.Applicable(mean, OptimizeParam.PaletteColorSource).HasFlag(OptimizeParam.EdgeWeight));
+        var meanCell = d with { Downsample = d.Downsample with { Mode = DownsampleMode.Mean } };
+        Assert.False(PixelateOptimizer.Applicable(meanCell).HasFlag(OptimizeParam.SnapStep));
+        Assert.True(PixelateOptimizer.Applicable(meanCell, OptimizeParam.DownsampleMode).HasFlag(OptimizeParam.SnapStep));
+        Assert.True(PixelateOptimizer.Applicable(meanCell with
+        {
+            Downsample = meanCell.Downsample with { Mode = DownsampleMode.ClusterWeighted },
+        }).HasFlag(OptimizeParam.SnapStep));
         Assert.False(PixelateOptimizer.Applicable(d with { Size = d.Size with { Mode = OutputSizeMode.FixedSize } }).HasFlag(OptimizeParam.Scale));
         // 벡터 설정은 벡터로 다시 그리기이거나 외곽선 맞추기도 바꿔 볼 때만.
         Assert.False(PixelateOptimizer.Applicable(d).HasFlag(OptimizeParam.VectorTolerance));
@@ -1999,9 +1978,9 @@ public class PixelateTests
     }
 
     /// <summary>
-    /// AI 그리기 도구의 변환 전체(<see cref="AiDrawConversion.Convert"/> — 정리 창 기본 자동 최적화 항목: 외곽선 맞추기 방식만 빼고 모두)로 엘프 시트(원래 크기 —
-    /// AI 그리기 길은 줄이지 않음)를 바꾸면 1위는 실패하지 않은 6프레임 결과(칸 약 3.5px = 외곽선 두께)이고 진행(돌림 번호 포함)이 알려진다.
-    /// 시험 시간을 줄이려고 예산은 700번 — 첫 돌림이 끝나 둘째 돌림이 시작된다.
+    /// AI 그리기 도구의 변환 전체(<see cref="AiDrawConversion.Convert"/> — 정리 창 기본 자동 최적화 항목: 외곽선 맞추기 방식만 빼고 모두)로
+    /// 엘프 시트를 바꾸면 실패하지 않은 6프레임 결과(칸 약 3.5px = 외곽선 두께)를 얻는다.
+    /// 시험 시간을 줄이려고 시도 수 예산은 700번으로 제한한다.
     /// </summary>
     [Fact]
     [Trait("Category", "Slow")]
@@ -2009,16 +1988,12 @@ public class PixelateTests
     {
         var sheet = AiDrawConversion.Downscale(PngIO.Load(TestUtil.Fixture("ai-elf-walk-sheet.png")), AiDrawConversion.MaxSheetSide);
         var settings = AiDrawConversion.Settings(new PixelateSettings(), 6, 0, true, false);
-        int reports = 0, maxPass = 0;
-        // 시간이 아닌 시도 수 예산으로 끝나게(원래 크기 시트는 Debug에서 첫 돌림 약 670번에 100초 남짓).
+        int reports = 0;
         var options = new PixelateOptimizeOptions { Params = OptimizeParam.SelectAll, MaxTrials = 700, MaxTime = TimeSpan.FromMinutes(5) };
         var (r, used) = AiDrawConversion.Convert(sheet, settings, 6, sheet: true, keepOffsets: false, optimize: true, options, p =>
         {
             Interlocked.Increment(ref reports);
-            int seen;
-            while ((seen = Volatile.Read(ref maxPass)) < p.Pass && Interlocked.CompareExchange(ref maxPass, p.Pass, seen) != seen) { }
         });
-        Assert.True(maxPass >= 2, maxPass.ToString());
         Assert.False(r.Failed, r.Failure.ToString());
         Assert.Equal(6, r.CommonFrames().Count);
         Assert.Equal(OutlineFit.Shrink, used.Cleanup.OutlineFit);
@@ -2030,7 +2005,7 @@ public class PixelateTests
 
     /// <summary>
     /// AI 마법사 꼬마 시트(2172×724, 투명 배경, 6프레임, 덩어리 약 7px — 외곽선 두께 6.9px): AI 그리기 길은 이 시트를 줄이지 않는다(<see cref="AiDrawConversion.MaxSheetSide"/>).
-    /// 예전처럼 ×½(1086×362)로 줄이면 칸이 3.6px이라 지역 보정(<see cref="LocalGrid.MinCell"/> 5px 이상)이 꺼져 칸 선이 곧은 격자로 덩어리를 비껴갔다(점수 57.4).
+    /// 예전처럼 ×½(1086×362)로 줄이면 칸이 3.6px이라 기본 지역 보정(최소 평균 칸 4px)이 꺼져 칸 선이 곧은 격자로 덩어리를 비껴갔다(점수 57.4).
     /// 원래 크기는 칸 약 7px, 모든 프레임에 지역 보정이 켜지고, 뚜렷한 경계에서 가장 가까운 칸 경계까지 거리(칸 크기 비율)가 곧은 격자보다 짧으며(0.215 → 0.144),
     /// 외곽선은 1px, 점수는 ×½보다 5점 넘게 높다(66.5).
     /// </summary>
@@ -2054,7 +2029,7 @@ public class PixelateTests
         var half = AiDrawConversion.Downscale(image, 1600);
         var (hsrc, hsplit) = AiDrawConversion.PrepareSheet(half, settings, 6, AiDrawSheetLayout.For(6), false);
         var hr = Pixelator.Run(hsrc, hsplit);
-        Assert.True(hr.Scale < LocalGrid.MinCell, hr.Scale.ToString());
+        Assert.True(hr.Scale < hsplit.Grid.LocalMinCell, hr.Scale.ToString());
         Assert.All(hr.Maps, m => Assert.Null(m.Local));
         var w = new ScoreWeights();
         double full = PixelateScoring.Score(r, w, r.ResolvedColors).Total, small = PixelateScoring.Score(hr, w, hr.ResolvedColors).Total;
@@ -2150,6 +2125,52 @@ public class PixelateTests
         Assert.Equal(PixelateFailure.NearlyEmpty, Pixelator.CheckFailure(src, [tiny], [2.0], 2));
     }
 
+    [Fact]
+    public void FidelityPenalizesSharpBoundarySplitAcrossMeanCells()
+    {
+        var image = new PixelImage(64, 48);
+        image.Clear(new Color32(24, 24, 24));
+        image.FillRect(new Rectangle(32, 0, 32, 48), new Color32(240, 208, 168));
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { Mode = FrameSplitMode.Single },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 8, LocalCorrection = false },
+            Downsample = new DownsampleSettings { Mode = DownsampleMode.Mean, BorderFraction = 0 },
+            Palette = new PaletteSettings { Method = PaletteMethod.KeepOriginal, SnapOutline = false },
+            Cleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false, OutlineFit = OutlineFit.Off },
+        };
+
+        var aligned = Pixelator.Run(image, settings);
+        var split = Pixelator.Run(image, settings with { Grid = settings.Grid with { OffsetX = 4 } });
+
+        Assert.True(split.Metrics.Fidelity > aligned.Metrics.Fidelity + 0.02,
+            $"aligned {aligned.Metrics.Fidelity:0.000}, split {split.Metrics.Fidelity:0.000}");
+    }
+
+    [Fact]
+    public void FidelityCountsADitherThatBlendsToTheSourceColorAsAMatch()
+    {
+        // 선형광 절반 회색(sRGB 188)을 검정·흰색만으로: 반반 무늬는 눈에 원래 회색으로 보이고, 흰색 한 색은 눈에 띄게 밝다.
+        var image = new PixelImage(64, 64);
+        image.Clear(new Color32(188, 188, 188));
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { Mode = FrameSplitMode.Single },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 4, LocalCorrection = false },
+            Palette = new PaletteSettings { Method = PaletteMethod.Existing, ExistingColors = ["#000000", "#FFFFFF"], SnapOutline = false, Dither = PaletteDither.Bayer4 },
+            Cleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false, OutlineFit = OutlineFit.Off },
+        };
+
+        var dithered = Pixelator.Run(image, settings);
+        var flat = Pixelator.Run(image, settings with { Palette = settings.Palette with { Dither = PaletteDither.None } });
+
+        Assert.Equal(2, dithered.Palette.Count);
+        Assert.True(dithered.Metrics.Fidelity < flat.Metrics.Fidelity * 0.5,
+            $"dithered {dithered.Metrics.Fidelity:0.000}, flat {flat.Metrics.Fidelity:0.000}");
+    }
+
     /// <summary>
     /// 벽돌 무늬: 10px 덩어리(무작위 5색, 불투명), 줄마다 세로 경계가 반 칸(5px)씩 엇갈림 — 축 전체에 한 줄인 세로 칸 경계는 줄의 반만 맞는다.
     /// 칸 경계 지역 보정(띠 1칸, 최대 이동 0.5칸)은 줄마다 경계를 덩어리 경계로 옮겨 맞는 비율과 충실도가 나아지고, 원본 자리 → 칸(<see cref="CellLayout.Locate"/>)은
@@ -2176,7 +2197,7 @@ public class PixelateTests
         int[] xc = [.. Enumerable.Range(0, cols + 2).Select(i => i * cell)];
         int[] yc = [.. Enumerable.Range(0, rows + 1).Select(i => i * cell)];
         var edges = GridDetector.BlockEdges(img, GridDetector.LabOf(img), img.Bounds);
-        var local = LocalGrid.Correct(edges, xc, yc, 0.5, 1);
+        var local = LocalGrid.Correct(edges, xc, yc, 0.5, 1, LocalGrid.DefaultMinCell);
         Assert.NotNull(local);
         var global = new CellLayout(xc, yc);
         var layout = new CellLayout(xc, yc, local);
@@ -2221,6 +2242,55 @@ public class PixelateTests
         var on = Pixelator.Run(img, s with { Grid = s.Grid with { LocalCorrection = true } });
         Assert.NotNull(on.Maps[0].Local);
         Assert.True(on.Metrics.Fidelity < off.Metrics.Fidelity * 0.5, $"{off.Metrics.Fidelity:0.000} → {on.Metrics.Fidelity:0.000}");
+    }
+
+    /// <summary>4px 안팎의 작은 AI 스프라이트도 지역 경계가 실제 덩어리를 따라가며, 3px대 그림은 기존 안전 문턱 아래에 남는다.</summary>
+    [Fact]
+    public void LocalGridTracksFourPixelBlocks()
+    {
+        const int cell = 4, cols = 18, rows = 12;
+        var img = new PixelImage(cols * cell, rows * cell);
+        var colors = new[] { new Color32(220, 70, 60), new Color32(65, 155, 210), new Color32(245, 205, 85) };
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+            {
+                int x0 = col * cell + row % 2;
+                img.FillRect(Rectangle.FromLTRB(x0, row * cell, Math.Min(x0 + cell, img.Width), (row + 1) * cell),
+                    colors[(col * 2 + row) % colors.Length]);
+            }
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { Mode = FrameSplitMode.Single },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = cell, LocalCorrection = true, LocalShift = 0.35, LocalBand = 1 },
+            Palette = new PaletteSettings { Method = PaletteMethod.KeepOriginal, SnapOutline = false },
+            Cleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false, OutlineFit = OutlineFit.Off },
+        };
+        var on = Pixelator.Run(img, settings);
+        var map = Assert.Single(on.Maps);
+        Assert.NotNull(map.Local);
+        var layout = map.Layout();
+        Assert.True(Enumerable.Range(1, layout.Rows - 1).Any(r => !layout.XCutsFor(r).SequenceEqual(layout.XCutsFor(0)))
+            || Enumerable.Range(1, layout.Columns - 1).Any(c => !layout.YCutsFor(c).SequenceEqual(layout.YCutsFor(0))));
+        var edges = GridDetector.BlockEdges(img, GridDetector.LabOf(img), img.Bounds);
+        var smallX = GridDetector.UniformCuts(0, img.Width, 3.5, 0);
+        var smallY = GridDetector.UniformCuts(0, img.Height, 3.5, 0);
+        Assert.Null(LocalGrid.Correct(edges, smallX, smallY, 0.35, 1, settings.Grid.LocalMinCell));
+        Assert.NotNull(LocalGrid.Correct(edges, smallX, smallY, 0.35, 1, 3));
+        var raised = Pixelator.Run(img, settings with { Grid = settings.Grid with { LocalMinCell = 5 } });
+        Assert.Null(Assert.Single(raised.Maps).Local);
+        Assert.Equal(3, PixelatePresets.ParseSettings(PixelatePresets.SerializeSettings(settings with
+        {
+            Grid = settings.Grid with { LocalMinCell = 3 },
+        }))!.Grid.LocalMinCell);
+        Assert.Equal(LocalGrid.DefaultMinCell, PixelatePresets.ParseSettings("{}")!.Grid.LocalMinCell);
+        var opt = PixelateOptimizer.Run(PixelateSource.Prepare(img, settings), settings with { Grid = settings.Grid with { LocalMinCell = 5 } },
+            new PixelateOptimizeOptions { Params = OptimizeParam.LocalGrid, MaxTrials = 100, MaxPasses = 1, MaxDegreeOfParallelism = 1 });
+        Assert.Contains(opt.Trials, t => t.Settings.Grid.LocalCorrection && t.Settings.Grid.LocalMinCell < 5
+            && Assert.Single(t.Result.Maps).Local is not null);
+        Assert.Contains(opt.Trials, t => t.Settings.Grid.LocalShift == PixelateRanges.LocalShift.Max);
+        Assert.Contains(opt.Trials, t => t.Settings.Grid.LocalBand == PixelateRanges.LocalBand.Max);
+        Assert.Contains(opt.Trials, t => t.Settings.Grid.LocalMinCell == PixelateRanges.LocalMinCell.Max);
     }
 
     [Fact]

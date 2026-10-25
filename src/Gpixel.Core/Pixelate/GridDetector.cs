@@ -194,13 +194,16 @@ public static class GridDetector
     /// <summary>
     /// 뚜렷한 경계(<see cref="GridDetector.BlockEdges"/>): 열·행 경계마다 센 수(가로: x 열 왼쪽 경계, 세로: y 행 위 경계 — <see cref="Profiles"/>와 같은 자리)와
     /// 한 줄 안 두 경계 사이 거리(1~<see cref="MaxPair"/>px)의 막대그림(가로·세로 합). <see cref="Rows"/>[y − 범위 위] = 그 행의 경계 x 자리(오름차순),
-    /// <see cref="Cols"/>[x − 범위 왼쪽] = 그 열의 경계 y 자리 — 칸 경계 지역 보정(<see cref="LocalGrid.Correct"/>)이 띠마다 경계 세기를 다시 셀 때 쓴다.
+    /// <see cref="Cols"/>[x − 범위 왼쪽] = 그 열의 경계 y 자리. <see cref="RowStrengths"/>·<see cref="ColStrengths"/>는 각각의 경계에 대응하는
+    /// 제한된 OKLab 대비 가중치(지역 격자에만 사용, 전체 개수와 경계 쌍은 기존대로 1회씩 센다).
     /// </summary>
     public sealed record BlockEdgeMap(double[] X, double[] Y, double[] Pairs)
     {
         public Rectangle Area { get; init; }
         public int[][] Rows { get; init; } = [];
         public int[][] Cols { get; init; } = [];
+        public float[][] RowStrengths { get; init; } = [];
+        public float[][] ColStrengths { get; init; } = [];
     }
 
     /// <summary>덩어리 경계 간격을 잴 때 볼 한 줄 안 두 경계의 최대 거리(가장 큰 후보 칸 크기의 2.5배).</summary>
@@ -261,12 +264,14 @@ public static class GridDetector
 
         var line = new float[Math.Max(area.Width, area.Height) + 1];
         var found = new List<int>();
+        var foundStrengths = new List<float>();
         var rows = new int[area.Height][];
         var cols = new int[area.Width][];
-        int[] Line(int start, int step, int count, double[] profile, int origin)
+        int[] Line(int start, int step, int count, double[] profile, int origin, out float[] weights)
         {
             for (int t = 1; t < count; t++) line[t] = Strength(start, step, count, t);
             found.Clear();
+            foundStrengths.Clear();
             for (int t = 1; t < count; t++)
             {
                 float d = line[t];
@@ -275,17 +280,23 @@ public static class GridDetector
                 if (t + 1 < count && line[t + 1] >= d && !float.IsPositiveInfinity(d)) continue;
                 profile[origin + t] += 1;
                 found.Add(t);
+                // 한 픽셀의 대비가 일반적인 큰 색차(~0.5 OKLab)의 2배 이상이어도 가중치는 2에서 포화한다.
+                // 문턱 바로 위의 흐린 경계는 0.25~0.5로 낮추되 알파 외곽은 강한 경계로 취급한다.
+                foundStrengths.Add(float.IsPositiveInfinity(d) ? 2 : (float)Math.Clamp(d / Math.Max(0.25, 2 * threshold), 0.25, 2));
             }
             for (int a = 0; a < found.Count; a++)
                 for (int b = a + 1; b < found.Count && found[b] - found[a] <= MaxPair; b++)
                     pairs[found[b] - found[a]]++;
+            weights = foundStrengths.ToArray();
             var at = new int[found.Count];
             for (int k = 0; k < at.Length; k++) at[k] = origin + found[k];
             return at;
         }
-        for (int y = area.Top; y < area.Bottom; y++) rows[y - area.Top] = Line(y * w + area.Left, 1, area.Width, ex, area.Left);
-        for (int x = area.Left; x < area.Right; x++) cols[x - area.Left] = Line(area.Top * w + x, w, area.Height, ey, area.Top);
-        return new BlockEdgeMap(ex, ey, pairs) { Area = area, Rows = rows, Cols = cols };
+        var rowStrengths = new float[area.Height][];
+        var colStrengths = new float[area.Width][];
+        for (int y = area.Top; y < area.Bottom; y++) rows[y - area.Top] = Line(y * w + area.Left, 1, area.Width, ex, area.Left, out rowStrengths[y - area.Top]);
+        for (int x = area.Left; x < area.Right; x++) cols[x - area.Left] = Line(area.Top * w + x, w, area.Height, ey, area.Top, out colStrengths[x - area.Left]);
+        return new BlockEdgeMap(ex, ey, pairs) { Area = area, Rows = rows, Cols = cols, RowStrengths = rowStrengths, ColStrengths = colStrengths };
     }
 
     private static int Quantile(long[] hist, long total, double q)

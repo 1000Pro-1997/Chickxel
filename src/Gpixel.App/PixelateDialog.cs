@@ -210,8 +210,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly ComboBox _grMode;
     private readonly NumericUpDown _grScale, _grOffX, _grOffY, _grJitter, _grAdjust;
     private readonly CheckBox _grPerFrame, _grLocal;
-    /// <summary>칸 경계 지역 보정: 최대 이동(칸 %)·띠 너비(칸).</summary>
-    private readonly NumericUpDown _grLocalShift, _grLocalBand;
+    /// <summary>칸 경계 지역 보정: 최대 이동(칸 %)·띠 너비(칸)·최소 평균 칸 크기(px).</summary>
+    private readonly NumericUpDown _grLocalShift, _grLocalBand, _grLocalMinCell;
     private readonly ComboBox _grSource;
     private readonly TextBlock _grInfo;
     private GridFit? _detected;
@@ -398,6 +398,7 @@ public sealed class PixelateDialog : DialogBase
         _grLocal = Ui.Check(UiStrings.Pixelate_Grid_Local, true).Tip(UiStrings.Pixelate_Grid_Local_Tip);
         _grLocalShift = Num(PixelateRanges.LocalShift, 35, 0, 5, unit: 100).Tip(UiStrings.Pixelate_Grid_LocalShift_Tip);
         _grLocalBand = Num(PixelateRanges.LocalBand, 2, 0).Tip(UiStrings.Pixelate_Grid_LocalBand_Tip);
+        _grLocalMinCell = Num(PixelateRanges.LocalMinCell, 4, 2, 0.25m).Tip(UiStrings.Pixelate_Grid_LocalMinCell_Tip);
         _grSource = Ui.Combo(190, UiStrings.Pixelate_Grid_SourceAuto, UiStrings.Pixelate_Grid_SourceOutline, UiStrings.Pixelate_Grid_SourceEdges, UiStrings.Pixelate_Grid_SourceBlocks)
             .Tip(UiStrings.Pixelate_Grid_Source_Tip);
         _grInfo = Info();
@@ -411,6 +412,7 @@ public sealed class PixelateDialog : DialogBase
             _grPerFrame,
             _grLocal,
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalShift), _grLocalShift, Ui.Label(UiStrings.Pixelate_Grid_LocalBand), _grLocalBand),
+            Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalMinCell), _grLocalMinCell),
             _grInfo);
 
         // ── 4. 크기
@@ -428,7 +430,8 @@ public sealed class PixelateDialog : DialogBase
             _szInfo);
 
         // ── 5. 칸 색
-        _dsMode = Ui.Combo(170, UiStrings.Pixelate_Ds_Mode, UiStrings.Pixelate_Ds_Median, UiStrings.Pixelate_Ds_Center, UiStrings.Pixelate_Ds_Mean);
+        _dsMode = Ui.Combo(170, UiStrings.Pixelate_Ds_Mode, UiStrings.Pixelate_Ds_Median, UiStrings.Pixelate_Ds_Center,
+            UiStrings.Pixelate_Ds_Mean, UiStrings.Pixelate_Ds_CenterWeighted, UiStrings.Pixelate_Ds_ClusterWeighted);
         _dsBorder = Num(PixelateRanges.BorderFraction, 20, 0, unit: 100);
         _dsAlpha = Num(PixelateRanges.AlphaThreshold, 50, 0, unit: 100);
         _dsSnap = Num(PixelateRanges.SnapStep, 20, 0);
@@ -768,6 +771,7 @@ public sealed class PixelateDialog : DialogBase
         {
             if (p is OptimizeParam.OffsetX or OptimizeParam.OffsetY) box.Tip(UiStrings.Pixelate_Opt_OffsetTip);
             else if (p == OptimizeParam.OutlineFit) box.Tip(UiStrings.Pixelate_Opt_FitTip);
+            else if (p == OptimizeParam.LocalGrid) box.Tip(UiStrings.Pixelate_Opt_LocalGridTip);
             else if (p is OptimizeParam.VectorTolerance or OptimizeParam.VectorBlob) box.Tip(UiStrings.Pixelate_Opt_VectorTip);
             else if (p is OptimizeParam.PaletteColorSource or OptimizeParam.PaletteMethod or OptimizeParam.EdgeWeight) box.Tip(UiStrings.Pixelate_Opt_PaletteTip);
             else if (p == OptimizeParam.ColorDistance) box.Tip(UiStrings.Pixelate_Opt_ColorDistanceTip);
@@ -896,7 +900,7 @@ public sealed class PixelateDialog : DialogBase
         // 값이 바뀌면(불러오는 중이 아니면) 잠시 뒤 다시 돌린다.
         foreach (var c in new Control[] { _bgMode, _frMode, _frAlign, _grMode, _grSource, _szMode, _dsMode, _palMethod, _palWhich, _palSource, _palDither, _palDistance, _clOutline, _clFit })
             ((ComboBox)c).SelectionChanged += (_, _) => Changed();
-        foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand,
+        foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand, _grLocalMinCell,
                      _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea,
                      _clContrast, _clVecTol, _clVecBlob, _coContrast, _candCount,
                      _wFid, _wOrph, _wGap, _wCol, _wCons, _wGrid, _wThin, _wShift, _wRep })
@@ -1227,6 +1231,7 @@ public sealed class PixelateDialog : DialogBase
             _grLocal.IsChecked = gr.LocalCorrection;
             _grLocalShift.Value = In(PixelateRanges.LocalShift, gr.LocalShift, 100, 0);
             _grLocalBand.Value = In(PixelateRanges.LocalBand, gr.LocalBand, decimals: 0);
+            _grLocalMinCell.Value = In(PixelateRanges.LocalMinCell, gr.LocalMinCell, decimals: 2);
             _grSource.SelectedIndex = Index(gr.Source);
 
             var sz = s.Size;
@@ -1331,6 +1336,7 @@ public sealed class PixelateDialog : DialogBase
                 LocalCorrection = _grLocal.On(),
                 LocalShift = D(_grLocalShift) / 100,
                 LocalBand = (int)D(_grLocalBand),
+                LocalMinCell = D(_grLocalMinCell),
                 Source = At<ScaleSource>(_grSource),
             },
             Size = new SizeSettings
@@ -1426,7 +1432,7 @@ public sealed class PixelateDialog : DialogBase
         bool manual = At<GridMode>(_grMode) == GridMode.Manual;
         _grScale.IsEnabled = _grOffX.IsEnabled = _grOffY.IsEnabled = manual;
         _grJitter.IsEnabled = _grAdjust.IsEnabled = !manual;
-        _grLocalShift.IsEnabled = _grLocalBand.IsEnabled = _grLocal.On();
+        _grLocalShift.IsEnabled = _grLocalBand.IsEnabled = _grLocalMinCell.IsEnabled = _grLocal.On();
         // 외곽선 맞추기가 "크기를 줄여서"면 칸 크기 기준은 외곽선 두께로 정해진다.
         _grSource.IsEnabled = !manual && At<OutlineFit>(_clFit) != OutlineFit.Shrink;
         var sz = At<OutputSizeMode>(_szMode);
@@ -1762,6 +1768,14 @@ public sealed class PixelateDialog : DialogBase
             width: r.Size.Width,
             height: r.Size.Height,
             frames: r.Frames.Count);
+        int locallyAdjusted = r.Maps.Count(m => m.Local is not null);
+        string localState = !c.Settings.Grid.LocalCorrection ? UiStrings.Pixelate_Grid_LocalOff
+            : locallyAdjusted > 0 ? UiStrings.FormatPixelate_Grid_LocalApplied(applied: locallyAdjusted, total: r.Maps.Count)
+            : r.Maps.All(m => (m.XCuts[^1] - m.XCuts[0] + m.YCuts[^1] - m.YCuts[0]) /
+                (double)(m.XCuts.Length + m.YCuts.Length - 2) < PixelateRanges.LocalMinCell.Clamp(c.Settings.Grid.LocalMinCell))
+                ? UiStrings.FormatPixelate_Grid_LocalTooSmall(min: PixelateRanges.LocalMinCell.Clamp(c.Settings.Grid.LocalMinCell).ToString("0.##", CultureInfo.CurrentCulture))
+            : UiStrings.Pixelate_Grid_LocalUnchanged;
+        _selectedInfo.Text += " · " + localState;
         _breakdown.Text = string.Join("   ", c.Score.Parts.Select(p => UiStrings.FormatPixelate_Breakdown(
             name: TermName(p.Term),
             value: FormatValue(p),
@@ -2132,7 +2146,7 @@ public sealed class PixelateDialog : DialogBase
         OptimizeParam.EdgeWeight => UiStrings.Pixelate_Opt_EdgeWeight,
         OptimizeParam.SnapOutline => UiStrings.Pixelate_Opt_SnapOutline,
         OptimizeParam.StickerBorder => UiStrings.Pixelate_Bg_Sticker,
-        OptimizeParam.LocalGrid => UiStrings.Pixelate_Grid_Local,
+        OptimizeParam.LocalGrid => UiStrings.Pixelate_Opt_LocalGrid,
         OptimizeParam.VectorTolerance => UiStrings.Pixelate_Clean_VectorTolerance,
         OptimizeParam.VectorBlob => UiStrings.Pixelate_Clean_VectorBlob,
         _ => UiStrings.Pixelate_Opt_OutlineFit,
@@ -2394,6 +2408,8 @@ public sealed class PixelateDialog : DialogBase
                 DownsampleMode.Median => UiStrings.Pixelate_Ds_Median,
                 DownsampleMode.Center => UiStrings.Pixelate_Ds_Center,
                 DownsampleMode.Mean => UiStrings.Pixelate_Ds_Mean,
+                DownsampleMode.CenterWeighted => UiStrings.Pixelate_Ds_CenterWeighted,
+                DownsampleMode.ClusterWeighted => UiStrings.Pixelate_Ds_ClusterWeighted,
                 _ => UiStrings.Pixelate_Ds_Mode,
             });
         if (p.HasFlag(OptimizeParam.BorderFraction)) parts.Add($"{UiStrings.Pixelate_Opt_Border} {(s.Downsample.BorderFraction * 100).ToString("0", ci)}%");
@@ -3574,6 +3590,16 @@ public sealed class PixelateDialog : DialogBase
                         g.DrawImage(src, srcRect, to);
                 }
                 if (ShowGrid) CutOverlay.Draw(g, map, ScreenX, ScreenY, kx, right);
+                if (_preview.Marked is { } marked && marked.Frame == _preview.Index)
+                {
+                    int column = marked.X - map.OffsetX, row = marked.Y - map.OffsetY;
+                    var layout = map.Layout();
+                    if (column >= 0 && column < layout.Columns && row >= 0 && row < layout.Rows)
+                    {
+                        var (x0, y0, x1, y1) = layout.Cell(column, row);
+                        CutOverlay.DrawMark(g, new Rect(ScreenX(x0), ScreenY(y0), (x1 - x0) * kx, (y1 - y0) * ky));
+                    }
+                }
                 if (Picking && _pickHover is { } h && h.Frame == _preview.Index)
                 {
                     var (x0, y0, x1, y1) = CutOverlay.CellRect(map, h.Column, h.Row);

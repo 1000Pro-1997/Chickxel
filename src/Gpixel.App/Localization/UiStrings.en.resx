@@ -2922,6 +2922,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Ds_Median" xml:space="preserve"><value>Median</value></data>
   <data name="Pixelate_Ds_Center" xml:space="preserve"><value>Center pixel</value></data>
   <data name="Pixelate_Ds_Mean" xml:space="preserve"><value>Mean</value></data>
+  <data name="Pixelate_Ds_CenterWeighted" xml:space="preserve"><value>Center-weighted mean</value></data>
+  <data name="Pixelate_Ds_ClusterWeighted" xml:space="preserve"><value>Dominant-color weighted mean</value></data>
   <data name="Pixelate_Ds_Border" xml:space="preserve"><value>Ignore cell border (%)</value></data>
   <data name="Pixelate_Ds_Alpha" xml:space="preserve"><value>Transparency threshold (%)</value></data>
   <data name="Pixelate_Ds_Snap" xml:space="preserve"><value>Color snap step</value></data>
@@ -3115,6 +3117,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
   <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>Pass {pass} · trial {done}/{total} · best {score}</value></data>
   <data name="Pixelate_Opt_Note" xml:space="preserve"><value>The score weights (Advanced) are what the optimizer maximizes.</value></data>
+  <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>Try local correction</value></data>
+  <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>Lets the optimizer try local correction on/off, maximum shift, band width and minimum cell size. Checking this does not apply it to the current result. The actual setting is under Pixel grid on the left.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial (faint vertical lines = a new pass starts)</value></data>
   <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>Optimized</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>Trial history</value></data>
@@ -3139,14 +3143,20 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>Added to the pixel size the auto grid finds (the auto optimizer changes the pixel size with this).</value></data>
   <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Left-click the result or the source image: enlarge · Right-click the result image: exclude/restore that pixel's color — in the enlarged view, Left-click: show where used · Right-click: exclude/restore (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>Enlarged view</value></data>
-  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Result pixel Left-click: show where used · Right-click: exclude/restore · Source cell Left-click: show the result color it became · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Result pixel Left-click: show where used · Right-click: exclude/restore · Source cell Left-click: mark the cell in both panes · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
   <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>Close (Esc)</value></data>
   <data name="Pixelate_Grid_Local" xml:space="preserve"><value>Local cell correction</value></data>
-  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>Re-fits the image-wide cell boundaries per band (a few cell rows/columns) to the block edges found there — for AI images drawn half a cell off in places. The cell overlay shows the bent boundaries as they are (skipped for cells under 5 px).</value></data>
+  <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>Re-fits image-wide cell boundaries per band to block edges. Bent boundaries appear on the source overlay. If the average cell is smaller than the chosen minimum or no boundary moves, the lines stay straight.</value></data>
+  <data name="Pixelate_Grid_LocalApplied" xml:space="preserve"><value>Local correction applied to {applied}/{total} frames</value></data>
+  <data name="Pixelate_Grid_LocalTooSmall" xml:space="preserve"><value>Local correction skipped (cells under {min} px)</value></data>
+  <data name="Pixelate_Grid_LocalUnchanged" xml:space="preserve"><value>Local correction: no boundaries moved</value></data>
+  <data name="Pixelate_Grid_LocalOff" xml:space="preserve"><value>Local correction off</value></data>
   <data name="Pixelate_Grid_LocalShift" xml:space="preserve"><value>Max shift (% of cell)</value></data>
-  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>How far a boundary may move from its image-wide position (% of a cell). Cell widths stay within 70–130% of the original.</value></data>
+  <data name="Pixelate_Grid_LocalShift_Tip" xml:space="preserve"><value>Maximum distance a boundary may move from its image-wide position (5–99% of a cell). Neighboring cell widths still stay within 70–130% of the original, so actual movement may be smaller.</value></data>
   <data name="Pixelate_Grid_LocalBand" xml:space="preserve"><value>Band (cells)</value></data>
-  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>Width of each band whose boundaries are fitted separately (cells). Smaller follows more closely (1 = every row), larger is smoother.</value></data>
+  <data name="Pixelate_Grid_LocalBand_Tip" xml:space="preserve"><value>Width of each band whose boundaries are fitted separately (1–32 cells). Smaller follows more closely (1 = every row), larger is smoother.</value></data>
+  <data name="Pixelate_Grid_LocalMinCell" xml:space="preserve"><value>Minimum cell size (px)</value></data>
+  <data name="Pixelate_Grid_LocalMinCell_Tip" xml:space="preserve"><value>Minimum average cell size for local correction (source pixels, 1–16 px, default 4 px). Lower values allow small cells to adjust but may follow blurred-edge noise. The optimizer's 'Try local correction' also explores this value.</value></data>
   <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>Close settings</value></data>
   <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>Drawing settings (generate image → pixelate / draw pixels directly)</value></data>
   <data name="AiDraw_Settings_Close" xml:space="preserve"><value>Close drawing settings</value></data>

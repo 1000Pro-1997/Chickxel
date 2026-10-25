@@ -351,7 +351,7 @@ public static class Pixelator
             var b = split.Frames[f].Bounds;
             var xc = Margin(Slice(grids[f].XCuts, b.Left, b.Right));
             var yc = Margin(Slice(grids[f].YCuts, b.Top, b.Bottom));
-            var local = s.Grid.LocalCorrection ? LocalGrid.Correct(src.BlockEdges(f), xc, yc, s.Grid.LocalShift, s.Grid.LocalBand) : null;
+            var local = s.Grid.LocalCorrection ? LocalGrid.Correct(src.BlockEdges(f), xc, yc, s.Grid.LocalShift, s.Grid.LocalBand, s.Grid.LocalMinCell) : null;
             layouts[f] = new CellLayout(xc, yc, local);
             if (local is not null)
                 grids[f] = grids[f] with { Confidence = LocalGrid.Confidence(src.EdgeSums(f), layouts[f]) };
@@ -580,6 +580,15 @@ public static class Pixelator
         private readonly double _alphaMin = PixelateRanges.AlphaThreshold.Clamp(s.AlphaThreshold);
         private readonly int _step = (int)PixelateRanges.SnapStep.Clamp(s.SnapStep);
         private readonly List<Color32> _members = new(256);
+        private readonly List<WeightedCluster> _clusters = new(16);
+
+        private struct WeightedCluster
+        {
+            public Color32 Seed;
+            public long Weight, R, G, B;
+            public int Count;
+            public bool Center;
+        }
 
         /// <summary>칸 사각형(지역 보정이면 그 칸의 띠 경계)에서 둘레 <see cref="DownsampleSettings.BorderFraction"/>를 뺀 안쪽 픽셀로 고른 색(비면 투명).</summary>
         public Color32 Sample(CellLayout layout, int cx, int cy)
@@ -597,22 +606,86 @@ public static class Pixelator
             int xa = Math.Max(0, x0 + ix), xb = Math.Min(w, x1 - ix);
             if (xa >= xb || ya >= yb) return Color32.Transparent;
             var members = _members;
-            members.Clear();
+            bool weighted = s.Mode is DownsampleMode.CenterWeighted or DownsampleMode.ClusterWeighted;
+            if (!weighted) members.Clear();
+            bool clustered = s.Mode == DownsampleMode.ClusterWeighted;
+            if (clustered) _clusters.Clear();
+            int clusterDistanceSquared = clustered ? Math.Clamp(_step * 2, 24, 48) : 0;
+            clusterDistanceSquared *= clusterDistanceSquared;
+            long weightSum = 0, red = 0, green = 0, blue = 0;
+            int memberCount = 0;
             int total = (xb - xa) * (yb - ya);
             for (int y = ya; y < yb; y++)
                 for (int x = xa; x < xb; x++)
                 {
                     int i = y * w + x;
-                    if (labels[i] == frame && px[i].A != 0) members.Add(px[i]);
+                    if (labels[i] != frame || px[i].A == 0) continue;
+                    var color = px[i];
+                    memberCount++;
+                    if (!weighted) { members.Add(color); continue; }
+                    // Integer tent weights work for both odd and even 4–5px cells, including cropped cells.
+                    int weight = (xb - xa - Math.Abs(2 * x - xa - xb + 1))
+                               * (yb - ya - Math.Abs(2 * y - ya - yb + 1));
+                    if (clustered)
+                        AddCluster(color, weight, clusterDistanceSquared, x == (x0 + x1) / 2 && y == (y0 + y1) / 2);
+                    else
+                    {
+                        weightSum += weight;
+                        red += (long)color.R * weight;
+                        green += (long)color.G * weight;
+                        blue += (long)color.B * weight;
+                    }
                 }
-            if (members.Count == 0 || members.Count < total * _alphaMin) return Color32.Transparent;
+            if (memberCount == 0 || memberCount < total * _alphaMin) return Color32.Transparent;
             return s.Mode switch
             {
                 DownsampleMode.Mean => Mean(members),
                 DownsampleMode.Median => Median(members),
                 DownsampleMode.Center => CenterSample(cleaned, labels, frame, (x0 + x1) / 2, (y0 + y1) / 2, members),
+                DownsampleMode.CenterWeighted => new Color32((byte)(red / weightSum), (byte)(green / weightSum), (byte)(blue / weightSum)),
+                DownsampleMode.ClusterWeighted => DominantCluster(),
                 _ => ModeColor(members, _step),
             };
+        }
+
+        private void AddCluster(Color32 color, int weight, int distanceLimitSquared, bool center)
+        {
+            // Bounded RGB distance keeps separate materials separate even at a large SnapStep.
+            int best = -1, bestDistance = distanceLimitSquared + 1;
+            for (int i = 0; i < _clusters.Count; i++)
+            {
+                var seed = _clusters[i].Seed;
+                int dr = color.R - seed.R, dg = color.G - seed.G, db = color.B - seed.B;
+                int distance = dr * dr + dg * dg + db * db;
+                if (distance > distanceLimitSquared || distance >= bestDistance) continue;
+                best = i;
+                bestDistance = distance;
+            }
+            var cluster = best < 0 ? new WeightedCluster { Seed = color } : _clusters[best];
+            cluster.Count++;
+            cluster.Weight += weight;
+            cluster.R += (long)color.R * weight;
+            cluster.G += (long)color.G * weight;
+            cluster.B += (long)color.B * weight;
+            cluster.Center |= center;
+            if (best < 0) _clusters.Add(cluster);
+            else _clusters[best] = cluster;
+        }
+
+        private Color32 DominantCluster()
+        {
+            int best = 0;
+            for (int i = 1; i < _clusters.Count; i++)
+            {
+                var candidate = _clusters[i];
+                var current = _clusters[best];
+                if (candidate.Weight > current.Weight
+                    || candidate.Weight == current.Weight && (candidate.Center && !current.Center
+                        || candidate.Center == current.Center && candidate.Count > current.Count))
+                    best = i;
+            }
+            var winner = _clusters[best];
+            return new Color32((byte)(winner.R / winner.Weight), (byte)(winner.G / winner.Weight), (byte)(winner.B / winner.Weight));
         }
     }
 
@@ -925,9 +998,10 @@ public static class Pixelator
     private static PixelateMetrics Measure(PixelateSource src, List<PixelImage> frames, List<PixelateFrameMap> maps, GridFit[] grids, double darkness, int colors,
         ColorMetric metric)
     {
-        // 충실도: 결과를 칸 크기로 다시 키워 배경 지운 원본과 OKLab로 견준다(투명/불투명이 어긋나면 1). 칸 안쪽(가장자리 1/8씩 뺌)만 보고,
-        // 색은 칸마다 안쪽 평균과 견준다 — 칸 경계의 번진 색·반투명 가장자리와 종이 결 같은 잡음은 어떤 픽셀 그림도 맞출 수 없는 것이고,
-        // 칸 안에 두 색이 섞였으면(잃은 무늬) 평균도 결과 색에서 그만큼 멀어진다(픽셀마다 잰 평균과 같은 크기).
+        // 충실도 = (투명/불투명이 어긋난 표본 수 + 칸 안 구조 손실 + 사람 눈으로 본 색 차이) / 표본 수.
+        // 구조 손실: 칸 안쪽 표본이 그 칸 평균에서 흩어진 정도(OKLab 표준편차 × 표본 수) — 검정·살색 경계를 반으로 가른 칸은 크고, 결과 색과는 상관없다.
+        // 색 차이(<see cref="PerceivedError"/>): S-CIELAB처럼 원본 칸 평균과 결과를 선형광 반대색 채널에서 흐린 뒤 OKLab로 견준다 —
+        // 1px씩 번갈아 놓인 디더 무늬가 섞여 원래 색으로 보이면 맞는 것으로 본다. 칸 테두리는 번짐을 피하려고 제외한다.
         var lab = src.Lab;
         var cleaned = src.Cleaned;
         var labels = src.Split.Labels;
@@ -937,6 +1011,7 @@ public static class Pixelator
         var labCache = new Dictionary<uint, Lab>();
         var buckets = new Dictionary<int, double[]>();
         long matched = 0;
+        double perceivedSum = 0;
         var cells = new Dictionary<long, double[]>();
         for (int f = 0; f < frames.Count; f++)
         {
@@ -946,6 +1021,10 @@ public static class Pixelator
             int stride = Math.Max(1, (int)Math.Round(grids[f].Scale / 6));
             var layout = m.Layout();
             var index = layout.Index(b);
+            int cols = layout.Columns, rows = layout.Rows;
+            var srcLinear = new float[cols * rows * 3];
+            var outLinear = new float[cols * rows * 3];
+            var counts = new int[cols * rows];
             for (int y = b.Top; y < b.Bottom; y += stride)
                 for (int x = b.Left; x < b.Right; x += stride)
                 {
@@ -962,8 +1041,17 @@ public static class Pixelator
                     if (!labCache.TryGetValue(outC.Argb, out var ol)) labCache[outC.Argb] = ol = OkLab.FromColor(outC);
                     var sl = lab[i];
                     long ck = ((long)f << 40) | ((long)row << 20) | (uint)col;
-                    if (!cells.TryGetValue(ck, out var cell)) cells[ck] = cell = [0, 0, 0, 0, ol.L, ol.A, ol.B];
+                    if (!cells.TryGetValue(ck, out var cell)) cells[ck] = cell = new double[7];
                     cell[0] += sl.L; cell[1] += sl.A; cell[2] += sl.B; cell[3]++;
+                    cell[4] += sl.L * sl.L; cell[5] += sl.A * sl.A; cell[6] += sl.B * sl.B;
+                    int ci = row * cols + col;
+                    if ((uint)ci < (uint)counts.Length)
+                    {
+                        var sc = cleaned.Pixels[i];
+                        srcLinear[ci * 3] += OkLab.ToLinear(sc.R); srcLinear[ci * 3 + 1] += OkLab.ToLinear(sc.G); srcLinear[ci * 3 + 2] += OkLab.ToLinear(sc.B);
+                        outLinear[ci * 3] = OkLab.ToLinear(outC.R); outLinear[ci * 3 + 1] = OkLab.ToLinear(outC.G); outLinear[ci * 3 + 2] = OkLab.ToLinear(outC.B);
+                        counts[ci]++;
+                    }
                     int key = ((int)MathF.Floor(sl.L / 0.05f) * 64 + (int)MathF.Floor((sl.A + 0.5f) / 0.03f)) * 64 + (int)MathF.Floor((sl.B + 0.5f) / 0.03f);
                     if (!buckets.TryGetValue(key, out var acc)) buckets[key] = acc = new double[7];
                     acc[0] += sl.L; acc[1] += sl.A; acc[2] += sl.B;
@@ -971,9 +1059,15 @@ public static class Pixelator
                     acc[6]++;
                     matched++;
                 }
+            perceivedSum += PerceivedError(srcLinear, outLinear, counts, cols, rows);
         }
+        double structureSum = 0;
         foreach (var c in cells.Values)
-            errSum += c[3] * Lab.Distance(new Lab((float)(c[0] / c[3]), (float)(c[1] / c[3]), (float)(c[2] / c[3])), new Lab((float)c[4], (float)c[5], (float)c[6]));
+        {
+            double n = c[3], mL = c[0] / n, mA = c[1] / n, mB = c[2] / n;
+            double variance = c[4] / n - mL * mL + c[5] / n - mA * mA + c[6] / n - mB * mB;
+            structureSum += n * Math.Sqrt(Math.Max(0, variance));
+        }
 
         // 칸 경계 둘레(칸 크기의 1/8, 적어도 1px — 작은 칸은 1/4까지)는 번지거나 흔들린 자리로 보고 뺀다.
         static bool Inner(int p, int lo, int hi)
@@ -1013,7 +1107,7 @@ public static class Pixelator
         }
 
         return new PixelateMetrics(
-            errN == 0 ? 1 : errSum / errN,
+            errN == 0 ? 1 : (errSum + structureSum + perceivedSum) / errN,
             orphans,
             opaque,
             edges == 0 ? 0 : gaps / (double)edges,
@@ -1022,6 +1116,102 @@ public static class Pixelator
             grids.Length == 0 ? 0 : grids.Average(g => g.Confidence),
             ColorShift: shift,
             BlockRepetition: CellRepetition(cells));
+    }
+
+    /// <summary>
+    /// 사람 눈으로 본 색 차이의 합(칸마다 표본 수만큼 셈): 원본 칸 평균과 결과 픽셀을 선형광 반대색 채널(밝기 · 빨강−초록 · 파랑−노랑)로 바꿔,
+    /// 밝기는 [1 2 1], 색조는 [1 4 6 4 1]로 이웃 칸과 흐린 뒤(눈은 색 변화를 밝기 변화보다 거칠게 봄 — S-CIELAB, Zhang &amp; Wandell 1996)
+    /// OKLab 거리로 잰다. 흐릴 때는 원본·결과가 함께 불투명한 칸만 쓴다(투명은 섞지 않음).
+    /// </summary>
+    private static double PerceivedError(float[] src, float[] output, int[] counts, int cols, int rows)
+    {
+        int n = cols * rows;
+        var valid = new float[n];
+        var s = new float[3][];
+        var o = new float[3][];
+        for (int c = 0; c < 3; c++) { s[c] = new float[n]; o[c] = new float[n]; }
+        for (int i = 0; i < n; i++)
+        {
+            if (counts[i] == 0) continue;
+            valid[i] = 1;
+            float inv = 1f / counts[i];
+            Opponent(src[i * 3] * inv, src[i * 3 + 1] * inv, src[i * 3 + 2] * inv, s, i);
+            Opponent(output[i * 3], output[i * 3 + 1], output[i * 3 + 2], o, i);
+        }
+        float[] lum = [1, 2, 1], chroma = [1, 4, 6, 4, 1];
+        var tmp = new float[n];
+        var weight = Blur(valid, valid, lum, cols, rows, tmp);
+        var weightC = Blur(valid, valid, chroma, cols, rows, tmp);
+        for (int c = 0; c < 3; c++)
+        {
+            var kernel = c == 0 ? lum : chroma;
+            var w = c == 0 ? weight : weightC;
+            s[c] = Normalize(Blur(s[c], valid, kernel, cols, rows, tmp), w);
+            o[c] = Normalize(Blur(o[c], valid, kernel, cols, rows, tmp), w);
+        }
+        double sum = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (counts[i] == 0) continue;
+            sum += counts[i] * Lab.Distance(FromOpponent(s, i), FromOpponent(o, i));
+        }
+        return sum;
+
+        static void Opponent(float r, float g, float b, float[][] into, int i)
+        {
+            into[0][i] = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+            into[1][i] = r - g;
+            into[2][i] = b - 0.5f * (r + g);
+        }
+
+        static Lab FromOpponent(float[][] ch, int i)
+        {
+            float y = ch[0][i], rg = ch[1][i], by = ch[2][i];
+            float g = y - 0.24865f * rg - 0.0722f * by;
+            float r = g + rg;
+            float b = by + 0.5f * (r + g);
+            return OkLab.FromLinear(r, g, b);
+        }
+
+        static float[] Normalize(float[] v, float[] w)
+        {
+            for (int i = 0; i < v.Length; i++) v[i] = w[i] > 0 ? v[i] / w[i] : 0;
+            return v;
+        }
+    }
+
+    /// <summary>값 × 유효 표시를 가로·세로로 같은 낟알(<paramref name="kernel"/>, 홀수 길이)로 흐린 새 배열(가장자리 밖은 0).</summary>
+    private static float[] Blur(float[] values, float[] valid, float[] kernel, int cols, int rows, float[] tmp)
+    {
+        int r = kernel.Length / 2;
+        Array.Clear(tmp);
+        for (int y = 0; y < rows; y++)
+            for (int x = 0; x < cols; x++)
+            {
+                float acc = 0;
+                for (int k = -r; k <= r; k++)
+                {
+                    int xx = x + k;
+                    if (xx < 0 || xx >= cols) continue;
+                    int j = y * cols + xx;
+                    acc += kernel[k + r] * values[j] * valid[j];
+                }
+                tmp[y * cols + x] = acc;
+            }
+        var result = new float[values.Length];
+        for (int y = 0; y < rows; y++)
+            for (int x = 0; x < cols; x++)
+            {
+                float acc = 0;
+                for (int k = -r; k <= r; k++)
+                {
+                    int yy = y + k;
+                    if (yy < 0 || yy >= rows) continue;
+                    acc += kernel[k + r] * tmp[yy * cols + x];
+                }
+                result[y * cols + x] = acc;
+            }
+        return result;
     }
 
     /// <summary>블록 반복도에서 두 칸의 원본 평균 색을 같은 색으로 볼 OKLab 거리(AI 그림 칸 안 결·잡음은 넘지 않고 칠 사이 경계는 넘는 크기).</summary>
