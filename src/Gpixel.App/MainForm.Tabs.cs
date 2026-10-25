@@ -179,7 +179,8 @@ public sealed partial class MainForm
     private void ShowActiveTab()
     {
         var target = _tabs.FocusedActive;
-        bool changed = !ReferenceEquals(target, _activeTab);
+        // 실린 탭을 닫으면 _activeTab은 이미 null이라 같아 보여도, 편집기에 그 문서가 남아 있으면 바꾼다(마지막 탭을 닫으면 문서 없음 → 시작 화면).
+        bool changed = !ReferenceEquals(target, _activeTab) || !ReferenceEquals(_ctx.Project, target?.Doc.Project);
         if (changed)
         {
             StoreActiveView();
@@ -188,7 +189,12 @@ public sealed partial class MainForm
         MoveCanvasTo(_tabs.Focused);
         if (changed)
         {
-            if (target is null) { if (_ctx.Project is not null) _ctx.SetProject(null); }
+            if (target is null)
+            {
+                // 마지막 탭을 닫음: 문서 없음 → 시작 화면(앱을 처음 켤 때와 같음, Unity 프로젝트 목록도 새로).
+                if (_ctx.Project is not null) _ctx.SetProject(null);
+                _start.LoadHub();
+            }
             else LoadTab(target);
             _browser.SelectFile(CurrentTilePath);
         }
@@ -250,6 +256,8 @@ public sealed partial class MainForm
     private void RefreshPanes()
     {
         bool split = _tabs.IsSplit;
+        // 탭이 없으면(시작 화면) 탭 줄도 숨긴다 — 시작 화면이 캔버스 자리 전체를 덮는다.
+        _panes[0].Strip.IsVisible = !_tabs.IsEmpty;
         if (_panes[1].IsVisible != split)
         {
             _panes[1].IsVisible = split;

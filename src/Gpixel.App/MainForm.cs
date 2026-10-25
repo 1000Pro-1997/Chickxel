@@ -1736,11 +1736,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             RestartApp();
     }
 
-    /// <summary>시작 화면: 모든 탭을 닫는다(저장 안 한 문서는 한 창에 모아 묻는다 — <see cref="CloseAllTabs"/>).</summary>
+    /// <summary>시작 화면: 모든 탭을 닫는다(저장 안 한 문서는 한 창에 모아 묻는다 — <see cref="CloseAllTabs"/>). 마지막 탭이 닫히면 시작 화면이 Unity 목록을 새로 읽는다.</summary>
     private void ShowStart()
     {
+        bool hadTabs = !_tabs.IsEmpty;
         if (!CloseAllTabs()) return;
-        _start.LoadHub();
+        if (!hadTabs) _start.LoadHub();
     }
 
     private void ShowShortcuts()
