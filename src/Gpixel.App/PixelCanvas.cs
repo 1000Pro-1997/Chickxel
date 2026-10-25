@@ -1583,7 +1583,7 @@ public sealed class PixelCanvas : Control
                 InvalidateVisual();
                 break;
             case DragMode.MoveLayer:
-                _ctx.CommitStroke(UiStrings.S_PixelCanvas_EndDrag_685B820F08);
+                ShowCelShift(_ctx.CommitCelShift(UiStrings.S_PixelCanvas_EndDrag_685B820F08, _lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y, _ctx.MoveWrap));
                 _strokeBase = null;
                 break;
             case DragMode.Marquee:
@@ -1962,8 +1962,14 @@ public sealed class PixelCanvas : Control
         var copy = img.Clone();
         PixelOps.Shift(copy, img, new Rectangle(0, 0, W, H), dx, dy, _ctx.MoveWrap);
         _ctx.NotifyPixels();
-        _ctx.CommitStroke(UiStrings.S_PixelCanvas_Nudge_A41E3BE80E);
+        ShowCelShift(_ctx.CommitCelShift(UiStrings.S_PixelCanvas_Nudge_A41E3BE80E, dx, dy, _ctx.MoveWrap));
         return true;
+    }
+
+    /// <summary>이동 도구가 타임라인에서 함께 고른 다른 셀도 옮겼으면 상태 표시줄에 알린다.</summary>
+    private void ShowCelShift(int others)
+    {
+        if (others > 0) Message?.Invoke(this, UiStrings.FormatMove_OtherCels(count: others));
     }
 
     /// <summary>붙여넣을 위치: 선택이 있으면 그 자리, 없으면 화면에 보이는 영역의 왼쪽 위.</summary>

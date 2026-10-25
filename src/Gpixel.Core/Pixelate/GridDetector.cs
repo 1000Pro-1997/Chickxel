@@ -105,6 +105,64 @@ public static class GridDetector
         return (ex, ey);
     }
 
+    /// <summary>
+    /// 한 범위의 경계 세기 누적(<see cref="Sums"/>): 가로 경계 세기(<see cref="Profiles"/>의 X)를 행마다 위에서부터, 세로 경계 세기(Y)를 열마다 왼쪽에서부터
+    /// 더해 둔 표 — 행 띠·열 띠마다의 경계 세기를 픽셀을 다시 보지 않고 바로 낸다(값은 그 띠로 <see cref="Profiles"/>를 잰 것과 같음).
+    /// </summary>
+    public sealed class EdgeSums
+    {
+        // _x[r * W + (x − Left)] = 행 Top..Top+r−1의 x 경계 세기 합, _y[c * H + (y − Top)] = 열 Left..Left+c−1의 y 경계 세기 합(세기는 정수).
+        private readonly int[] _x, _y;
+
+        internal EdgeSums(Rectangle area, int[] x, int[] y)
+        {
+            Area = area;
+            _x = x;
+            _y = y;
+        }
+
+        public Rectangle Area { get; }
+
+        /// <summary>행 [<paramref name="top"/>, <paramref name="bottom"/>)(범위 안으로 자름)의 가로 경계 세기: <paramref name="dst"/>[x − (Left − 1)] (길이 = 범위 너비 + 2, 양 끝 0).</summary>
+        public void X(int top, int bottom, double[] dst) => Band(_x, Area.Width, top - Area.Top, bottom - Area.Top, Area.Height, dst);
+
+        /// <summary>열 [<paramref name="left"/>, <paramref name="right"/>)의 세로 경계 세기: <paramref name="dst"/>[y − (Top − 1)] (길이 = 범위 높이 + 2, 양 끝 0).</summary>
+        public void Y(int left, int right, double[] dst) => Band(_y, Area.Height, left - Area.Left, right - Area.Left, Area.Width, dst);
+
+        private static void Band(int[] sums, int n, int a, int b, int count, double[] dst)
+        {
+            a = Math.Clamp(a, 0, count);
+            b = Math.Clamp(b, a, count);
+            dst[0] = 0;
+            dst[n + 1] = 0;
+            for (int i = 0; i < n; i++) dst[i + 1] = sums[b * n + i] - sums[a * n + i];
+        }
+    }
+
+    /// <summary>범위 <paramref name="area"/>의 경계 세기 누적(<see cref="EdgeSums"/> — <see cref="Profiles"/>와 같은 세기·같은 픽셀 규칙).</summary>
+    public static EdgeSums Sums(PixelImage cleaned, Rectangle area, int[]? labels = null, int label = -1)
+    {
+        int w = cleaned.Width, aw = Math.Max(0, area.Width), ah = Math.Max(0, area.Height);
+        var px = cleaned.Pixels;
+        var xs = new int[(ah + 1) * aw];
+        var ys = new int[(aw + 1) * ah];
+        bool In(int i) => px[i].A != 0 && (labels is null || labels[i] == label);
+        for (int r = 0; r < ah; r++)
+        {
+            int y = area.Top + r;
+            for (int c = 0; c < aw; c++)
+            {
+                int x = area.Left + c, i = y * w + x;
+                bool a = In(i);
+                int dx = c > 0 ? (int)Diff(a, px[i], In(i - 1), px[i - 1]) : 0;
+                int dy = r > 0 ? (int)Diff(a, px[i], In(i - w), px[i - w]) : 0;
+                xs[(r + 1) * aw + c] = xs[r * aw + c] + dx;
+                ys[(c + 1) * ah + r] = ys[c * ah + r] + dy;
+            }
+        }
+        return new EdgeSums(area, xs, ys);
+    }
+
     private static double Diff(bool a, Color32 ca, bool b, Color32 cb)
     {
         if (!a && !b) return 0;
@@ -883,20 +941,24 @@ public static class GridDetector
     }
 
     /// <summary>경계가 실제 색 바뀜에 놓인 정도: (경계 자리 평균 세기 − 전체 평균) / 경계 자리 평균(0~1).</summary>
-    public static double Confidence(double[] e, int[] cuts, int lo, int hi)
+    public static double Confidence(double[] e, int[] cuts, int lo, int hi) => Confidence(e, 0, cuts, lo, hi);
+
+    /// <inheritdoc cref="Confidence(double[], int[], int, int)"/>
+    /// <param name="origin"><paramref name="e"/>[0]의 자리(<paramref name="e"/>[i] = 자리 origin + i의 세기, 밖은 0).</param>
+    public static double Confidence(double[] e, int origin, int[] cuts, int lo, int hi)
     {
         var g = Smooth(e);
         double all = 0;
         int n = 0;
-        for (int i = lo; i <= hi && i < g.Length; i++) { all += g[i]; n++; }
+        for (int i = Math.Max(lo, origin); i <= hi && i - origin < g.Length; i++) { all += g[i - origin]; n++; }
         if (n == 0) return 0;
         all /= n;
         double at = 0;
         int m = 0;
         foreach (int c in cuts)
         {
-            if (c < lo || c > hi || c >= g.Length) continue;
-            at += g[c];
+            if (c < lo || c > hi || c < origin || c - origin >= g.Length) continue;
+            at += g[c - origin];
             m++;
         }
         if (m == 0 || at <= 0) return 0;

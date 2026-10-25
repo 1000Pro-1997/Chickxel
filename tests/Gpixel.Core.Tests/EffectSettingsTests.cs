@@ -7,6 +7,19 @@ namespace Gpixel.Core.Tests;
 
 public class EffectSettingsTests
 {
+    [Fact]
+    public void ReflectionDirection_IsChoiceWithAllFourNames()
+    {
+        var direction = EffectSettings.Describe(new ReflectionEffect()).Single(s => s.Key == "direction");
+        Assert.Equal(EffectSettingKind.Choice, direction.Kind);
+        Assert.Equal("Down", direction.Default!.GetValue<string>());
+        Assert.Equal(["Down", "Up", "Left", "Right"], direction.Choices);
+        Assert.DoesNotContain(EffectSettings.Describe(new ReflectionEffect()), s => s.Key == "above");
+
+        var (merged, _) = EffectSettings.Merge(new ReflectionEffect(), new JsonObject { ["direction"] = "right" });
+        Assert.Equal(ReflectionDirection.Right, ((ReflectionEffect)merged).Direction);
+    }
+
     private static IEnumerable<LayerEffect> AllDefaults()
         => typeof(LayerEffect).Assembly.GetTypes()
             .Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(LayerEffect)))

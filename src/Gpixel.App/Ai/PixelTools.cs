@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Gpixel.Core.AiDraw;
 using Gpixel.Core.Edit;
 using Gpixel.Core.IO;
 using Gpixel.Core.Model;
@@ -431,8 +432,31 @@ public sealed partial class PixelTools
     /// <summary>
     /// 도구 하나를 실행한다(UI 스레드). 결과는 MCP CallToolResult:
     /// { content:[{type:"text",text} | {type:"image",data,mimeType}], isError }. 예외는 밖으로 내보내지 않는다.
+    /// "팔레트 색만 사용"이 켜져 있으면 칠하는 도구의 색을 활성 팔레트 색으로 바꾸고(<see cref="Paint"/>), 바꾼 색을 결과 글에 덧붙인다.
     /// </summary>
     public JsonObject Call(string name, JsonObject? arguments)
+    {
+        _paint = _host.Settings.AiDraw.PaletteOnly && new PaletteLock(_host.Palette) is { IsEmpty: false } paletteLock ? paletteLock : null;
+        try
+        {
+            var result = CallTool(name, arguments);
+            if (_paint is { Changes.Count: > 0 } used && result["isError"]?.GetValue<bool>() != true && result["content"] is JsonArray content)
+                content.Add(new JsonObject { ["type"] = "text", ["text"] = UiStrings.FormatAiDraw_PaletteSnapped(changes: used.DescribeChanges()) });
+            return result;
+        }
+        finally
+        {
+            _paint = null;
+        }
+    }
+
+    /// <summary>이번 도구 호출의 팔레트 제한(꺼져 있거나 팔레트가 비었으면 null).</summary>
+    private PaletteLock? _paint;
+
+    /// <summary>칠할 색: 팔레트 제한이 있으면 가장 가까운 팔레트 색(완전 투명은 그대로), 없으면 그대로.</summary>
+    private Color32 Paint(Color32 c) => _paint?.Map(c) ?? c;
+
+    private JsonObject CallTool(string name, JsonObject? arguments)
     {
         try
         {
@@ -733,7 +757,7 @@ public sealed partial class PixelTools
             if (key.Length != 1) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_6BDAD1B426,key));
             if (key[0] == ' ') continue; // 공백은 항상 "그대로 둠"
             var text = AsString(value) ?? throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_DrawPixels_0668E3491C,key));
-            legend[key[0]] = ParseColor(text, $"legend[\"{key}\"]");
+            legend[key[0]] = Paint(ParseColor(text, $"legend[\"{key}\"]"));
         }
         if (legend.Count == 0) throw new ToolError(UiStrings.S_PixelTools_DrawPixels_CFA63047A0);
 
@@ -768,7 +792,7 @@ public sealed partial class PixelTools
             if (nodes[i] is not JsonObject o) throw new ToolError(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelTools_SetPixels_92568A434D,i));
             try
             {
-                pixels.Add((ReqInt(o, "x", -CoordLimit, CoordLimit), ReqInt(o, "y", -CoordLimit, CoordLimit), ReqColor(o, "color")));
+                pixels.Add((ReqInt(o, "x", -CoordLimit, CoordLimit), ReqInt(o, "y", -CoordLimit, CoordLimit), Paint(ReqColor(o, "color"))));
             }
             catch (ToolError e)
             {
@@ -796,7 +820,7 @@ public sealed partial class PixelTools
         var shape = ReqEnum(a, "shape", "line", "rect", "ellipse");
         int x1 = Coord(a, "x1", t.Width), y1 = Coord(a, "y1", t.Height);
         int x2 = Coord(a, "x2", t.Width), y2 = Coord(a, "y2", t.Height);
-        var color = ReqColor(a, "color");
+        var color = Paint(ReqColor(a, "color"));
         bool filled = OptBool(a, "filled") ?? false;
 
         Point p1 = new(x1, y1), p2 = new(x2, y2);
@@ -822,7 +846,7 @@ public sealed partial class PixelTools
     {
         var t = EditTarget(a);
         int x = ReqInt(a, "x", 0, t.Width - 1), y = ReqInt(a, "y", 0, t.Height - 1);
-        var color = ReqColor(a, "color");
+        var color = Paint(ReqColor(a, "color"));
         bool contiguous = OptBool(a, "contiguous") ?? true;
         int changed = Stroke(tool, t, img => Raster.FloodFill(img, x, y, color, contiguous));
         return Done(tool, changed, t);
@@ -847,7 +871,7 @@ public sealed partial class PixelTools
     {
         var t = EditTarget(a);
         var from = ReqColor(a, "from");
-        var to = ReqColor(a, "to");
+        var to = Paint(ReqColor(a, "to"));
         int changed = Stroke(tool, t, img => Raster.ReplaceColor(img, from, to));
         return Done(tool, changed, t);
     }
@@ -1315,7 +1339,7 @@ public sealed partial class PixelTools
         int width = ReqInt(a, "width", 1, PixelImage.MaxSize), height = ReqInt(a, "height", 1, PixelImage.MaxSize);
         var fileName = OptString(a, "file_name");
         if (string.IsNullOrWhiteSpace(fileName)) fileName = null;
-        Color32? background = OptColor(a, "background") is { A: > 0 } bg ? bg : null;
+        Color32? background = OptColor(a, "background") is { A: > 0 } bg ? Paint(bg) : null;
         bool ok = _host.CreateProject(width, height, fileName?.Trim(), background, out var message);
         return TextResult($"{tool}: {message}", isError: !ok);
     }

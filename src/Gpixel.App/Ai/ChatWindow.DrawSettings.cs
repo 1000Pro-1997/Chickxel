@@ -9,7 +9,7 @@ namespace Gpixel.App.Ai;
 public sealed partial class ChatWindow
 {
     /// <summary>결과 크기 칸의 고정 값(0 = 자동, 마지막 칸은 직접 입력).</summary>
-    private static readonly int[] SizeChoices = [0, 32, 48, 64];
+    private static readonly int[] SizeChoices = [32, 48, 64];
 
     private RadioButton? _modeGenerate, _modeDirect;
     private Border? _modeWarning;
@@ -19,7 +19,9 @@ public sealed partial class ChatWindow
     /// <summary>"프레임마다 따로"를 고르면 보이는 일관성 경고.</summary>
     private Control? _animWarning;
     private NumericUpDown? _sizeCustom;
-    private CheckBox? _removeBackground, _autoOptimize;
+    private CheckBox? _removeBackground, _autoOptimize, _paletteOnly, _resizeResult;
+    /// <summary>결과 크기 칸(결과 크기 보정이 켜졌을 때만 쓸 수 있음).</summary>
+    private Control? _sizeRow;
     private readonly Dictionary<string, NumericUpDown> _frameBoxes = new();
     /// <summary>스타일 참고 "지정" 목록의 자료 id(목록 순서).</summary>
     private List<string> _styleRefIds = [];
@@ -109,17 +111,29 @@ public sealed partial class ChatWindow
         stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_Mode_Generate_Text, dim: true)));
         stack.Children.Add(_modeDirect);
         stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_Mode_Direct_Text, dim: true)));
+        // 직접 찍기 아래: 팔레트 색만 사용(직접 찍기는 두 탭 모두 — 생성 방식과 관계없이 늘 고칠 수 있음).
+        _paletteOnly = Ui.Check(UiStrings.AiDraw_PaletteOnly).Tip(UiStrings.AiDraw_PaletteOnly_Tip);
+        _paletteOnly.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
+        _paletteOnly.Margin = new Thickness(22, 0, 0, 0);
+        stack.Children.Add(_paletteOnly);
+        stack.Children.Add(Indented(WrapText(UiStrings.AiDraw_PaletteOnly_Text, dim: true)));
         _codexStatus = WrapText("", dim: true);
         stack.Children.Add(_codexStatus);
 
         var options = new StackPanel { Spacing = 6 };
         options.Children.Add(TitleText(UiStrings.AiDraw_Options_Title));
 
-        _sizeCombo = Ui.Combo(120, UiStrings.AiDraw_Size_Auto, "32", "48", "64", UiStrings.AiDraw_Size_Custom);
+        _resizeResult = Ui.Check(UiStrings.AiDraw_ResizeResult).Tip(UiStrings.AiDraw_ResizeResult_Tip);
+        _resizeResult.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
+        options.Children.Add(_resizeResult);
+        _sizeCombo = Ui.Combo(120, "32", "48", "64", UiStrings.AiDraw_Size_Custom);
         _sizeCustom = Ui.Num(AiDrawSettings.MinSize, AiDrawSettings.MaxSize, 32, 64);
         _sizeCombo.SelectionChanged += (_, _) => OnDrawOptionChanged();
         _sizeCustom.ValueChanged += (_, _) => OnDrawOptionChanged();
-        options.Children.Add(OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom)));
+        _sizeRow = OptionRow(UiStrings.AiDraw_Size, UiStrings.AiDraw_Size_Tip, Ui.Row(_sizeCombo, _sizeCustom));
+        _sizeRow.Margin = new Thickness(22, 0, 0, 0);
+        options.Children.Add(_sizeRow);
+        options.Children.Add(Indented(WrapText(UiStrings.AiDraw_ResizeResult_Text, dim: true)));
 
         _removeBackground = Ui.Check(UiStrings.AiDraw_RemoveBackground).Tip(UiStrings.AiDraw_RemoveBackground_Tip);
         _removeBackground.IsCheckedChanged += (_, _) => OnDrawOptionChanged();
@@ -234,8 +248,10 @@ public sealed partial class ChatWindow
             int size = o.SizeTargetClamped;
             int index = Array.IndexOf(SizeChoices, size);
             _sizeCombo!.SelectedIndex = index >= 0 ? index : SizeChoices.Length;
-            _sizeCustom!.Value = size > 0 ? size : 32;
+            _sizeCustom!.Value = size;
+            _resizeResult!.IsChecked = o.ResizeResult;
             _removeBackground!.IsChecked = o.RemoveBackground;
+            _paletteOnly!.IsChecked = o.PaletteOnly;
             _autoOptimize!.IsChecked = o.AutoOptimize;
             _insertCombo!.SelectedIndex = o.Insert == AiDrawInsert.NewDocument ? 1 : 0;
             _styleCombo!.SelectedIndex = (int)o.StyleReference;
@@ -276,6 +292,7 @@ public sealed partial class ChatWindow
         if (_generateOptions is null) return;
         _generateOptions.IsEnabled = _settings.AiDraw.Mode == AiDrawMode.Generate;
         _sizeCustom!.IsVisible = _sizeCombo!.SelectedIndex == SizeChoices.Length;
+        _sizeRow!.IsEnabled = _resizeResult!.On();
         _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
         _animWarning!.IsVisible = _animCombo!.SelectedIndex == 1;
     }
@@ -293,7 +310,9 @@ public sealed partial class ChatWindow
         var o = _settings.AiDraw;
         int si = _sizeCombo.SelectedIndex;
         o.SizeTarget = si >= 0 && si < SizeChoices.Length ? SizeChoices[si] : (int)_sizeCustom!.NumValue();
+        o.ResizeResult = _resizeResult!.On();
         o.RemoveBackground = _removeBackground!.On();
+        o.PaletteOnly = _paletteOnly!.On();
         o.AutoOptimize = _autoOptimize!.On();
         o.Insert = _insertCombo!.SelectedIndex == 1 ? AiDrawInsert.NewDocument : AiDrawInsert.NewLayer;
         o.StyleReference = (AiDrawStyleReference)Math.Max(0, _styleCombo!.SelectedIndex);

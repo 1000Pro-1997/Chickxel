@@ -6,10 +6,10 @@ namespace Gpixel.Core.Edit;
 /// <summary>반사(<see cref="ReflectionEffect"/>) 그리기.</summary>
 internal static class ReflectionRender
 {
-    /// <summary>높이 <paramref name="height"/>px 그림에서 비칠 줄 수(<paramref name="percent"/>%, 올림, 1줄 이상).</summary>
+    /// <summary>길이 <paramref name="height"/>px(아래·위면 높이, 왼쪽·오른쪽이면 너비) 그림에서 비칠 줄 수(<paramref name="percent"/>%, 올림, 1줄 이상).</summary>
     public static int RowsFor(int height, int percent) => height <= 0 ? 0 : Math.Max(1, (height * percent + 99) / 100);
 
-    /// <summary>그림 쪽부터 <paramref name="row"/>번째 줄의 가로 흔들림(px).</summary>
+    /// <summary>그림 쪽부터 <paramref name="row"/>번째 줄(왼쪽·오른쪽이면 열)의 흔들림(px) — 줄은 가로로, 열은 세로로 민다.</summary>
     public static int WaveAt(int wave, int row)
         => wave == 0 ? 0 : (int)Math.Round(wave * Math.Sin(2 * Math.PI * row / ReflectionEffect.WavePeriod), MidpointRounding.AwayFromZero);
 
@@ -17,27 +17,39 @@ internal static class ReflectionRender
     {
         var bounds = image.GetOpaqueBounds();
         if (bounds.IsEmpty) return;
-        int w = image.Width, h = image.Height, rows = RowsFor(bounds.Height, m.Height);
-        var tintBounds = m.Above
-            ? Rectangle.FromLTRB(bounds.Left, bounds.Top - m.Gap - rows, bounds.Right, bounds.Bottom)
-            : Rectangle.FromLTRB(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom + m.Gap + rows);
+        bool horizontal = m.Horizontal;
+        int w = image.Width, h = image.Height, rows = RowsFor(horizontal ? bounds.Width : bounds.Height, m.Height);
+        var tintBounds = m.Direction switch
+        {
+            ReflectionDirection.Up => Rectangle.FromLTRB(bounds.Left, bounds.Top - m.Gap - rows, bounds.Right, bounds.Bottom),
+            ReflectionDirection.Left => Rectangle.FromLTRB(bounds.Left - m.Gap - rows, bounds.Top, bounds.Right, bounds.Bottom),
+            ReflectionDirection.Right => Rectangle.FromLTRB(bounds.Left, bounds.Top, bounds.Right + m.Gap + rows, bounds.Bottom),
+            _ => Rectangle.FromLTRB(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom + m.Gap + rows),
+        };
         var tintColor = EffectGradientSampler.For(m, nameof(m.Tint), tintBounds, m.Tint, source.X, source.Y);
         var px = image.Pixels;
-        // 비친 줄은 모두 보이는 영역 밖(위 또는 아래)이라 읽는 줄과 겹치지 않는다
+        // 줄(왼쪽·오른쪽이면 열) j: 그림 끝에서 j번째 줄을 간격 너머 j번째 줄에 비춘다 — 비친 줄은 모두 보이는 영역 밖이라 읽는 줄과 겹치지 않는다.
+        // 줄을 따라가는 k는 아래·위면 x, 왼쪽·오른쪽이면 y이고 물결은 k 방향으로 민다.
+        int alongStart = horizontal ? bounds.Top : bounds.Left, alongEnd = horizontal ? bounds.Bottom : bounds.Right;
         for (int j = 0; j < rows; j++)
         {
-            int sy = m.Above ? bounds.Top + j : bounds.Bottom - 1 - j;
-            int ty = m.Above ? bounds.Top - 1 - m.Gap - j : bounds.Bottom + m.Gap + j;
-            if ((uint)ty >= (uint)h) continue;
+            var (from, to) = m.Direction switch
+            {
+                ReflectionDirection.Up => (bounds.Top + j, bounds.Top - 1 - m.Gap - j),
+                ReflectionDirection.Left => (bounds.Left + j, bounds.Left - 1 - m.Gap - j),
+                ReflectionDirection.Right => (bounds.Right - 1 - j, bounds.Right + m.Gap + j),
+                _ => (bounds.Bottom - 1 - j, bounds.Bottom + m.Gap + j),
+            };
+            if ((uint)to >= (uint)(horizontal ? w : h)) continue;
             double opacity = (rows == 1 ? m.OpacityStart : m.OpacityStart + (m.OpacityEnd - m.OpacityStart) * (double)j / (rows - 1)) / 100;
             if (opacity <= 0) continue;
-            int dx = WaveAt(m.Wave, j);
-            for (int x = bounds.Left; x < bounds.Right; x++)
+            int shift = WaveAt(m.Wave, j);
+            for (int k = alongStart; k < alongEnd; k++)
             {
-                var c = px[sy * w + x];
+                var c = horizontal ? px[k * w + from] : px[from * w + k];
                 if (c.A == 0) continue;
-                int tx = x + dx;
-                if ((uint)tx >= (uint)w) continue;
+                int tx = horizontal ? to : k + shift, ty = horizontal ? k + shift : to;
+                if ((uint)tx >= (uint)w || (uint)ty >= (uint)h) continue;
                 if (m.DitherFade)
                 {
                     if (!Bayer.On(EffectDither.Bayer4, opacity, tx - source.X, ty - source.Y)) continue;

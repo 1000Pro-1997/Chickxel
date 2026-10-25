@@ -89,4 +89,29 @@ public class EffectPresetTests
         Assert.Equal(OutlineEffect.DefaultShadeAmount, outline.ShadeAmount);
         Assert.Equal(new Color32(16, 32, 48), outline.Color);
     }
+
+    [Fact]
+    public void ReflectionDirection_RoundTripsAsName_OldAboveFlagKeepsMeaning()
+    {
+        var walls = EffectPreset.Capture("벽", [
+            new ReflectionEffect { Direction = ReflectionDirection.Left, Gap = 2, Wave = 1 },
+            new ReflectionEffect { Direction = ReflectionDirection.Right, Height = 30 },
+        ]);
+        var json = EffectPresets.Serialize([walls]);
+        Assert.Contains("\"direction\": \"Left\"", json);
+        Assert.Contains("\"direction\": \"Right\"", json);
+        Assert.DoesNotContain("above", json);
+        Assert.Equal(walls.Effects, Assert.Single(EffectPresets.Parse(json)).Effects);
+
+        const string old = """
+            { "version": 1, "presets": [ { "name": "예전", "effects": [
+              { "type": "reflection", "above": true },
+              { "type": "reflection", "above": false },
+              { "type": "reflection" },
+              { "type": "reflection", "direction": "nowhere", "above": true }
+            ] } ] }
+            """;
+        var loaded = Assert.Single(EffectPresets.Parse(old)).Effects.Cast<ReflectionEffect>().Select(r => r.Direction);
+        Assert.Equal([ReflectionDirection.Up, ReflectionDirection.Down, ReflectionDirection.Down, ReflectionDirection.Up], loaded.ToArray());
+    }
 }

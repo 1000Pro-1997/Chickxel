@@ -127,6 +127,18 @@ public sealed class FreeTransform
         return (sx0 + lx / p.ScaleX, sy0 + ly / p.ScaleY);
     }
 
+    /// <summary>
+    /// 다른 원본 <paramref name="other"/>을 이 변형의 값 <paramref name="p"/>와 똑같은 행렬(같은 각도·배율, 같은 자리로 옮김)로 그리는 값.
+    /// <paramref name="other"/>의 좌표 + (<paramref name="dx"/>, <paramref name="dy"/>) = 이 변형의 좌표(다른 레이어·부위의 셀을 기준 공간에 맞출 때).
+    /// 원본 중심이 달라도 결과는 같은 자리를 기준으로 돌고 커진다. <paramref name="other"/>가 자신이고 차이가 0이면 <paramref name="p"/> 그대로.
+    /// </summary>
+    public TransformParams ParamsFor(FreeTransform other, TransformParams p, double dx = 0, double dy = 0)
+    {
+        var (ox, oy) = other.SourceCenter;
+        var (cx, cy) = Map(p, ox + dx, oy + dy);
+        return p with { CenterX = cx - dx, CenterY = cy - dy };
+    }
+
     /// <summary>변형한 원본 사각형의 네 꼭짓점(캔버스 좌표): 원본의 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순.</summary>
     public (double X, double Y)[] Corners(TransformParams p)
     {

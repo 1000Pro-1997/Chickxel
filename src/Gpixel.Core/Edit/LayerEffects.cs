@@ -218,7 +218,8 @@ public static class LayerEffects
     /// <summary>
     /// <paramref name="width"/>×<paramref name="height"/> 그림에 켜진 효과들이 그림 밖으로 넓힐 수 있는 최대 여백(차례대로 쌓임: 외곽선 뒤 그림자면 외곽선까지 그림자가 진다).
     /// 프레임 범위·진행은 보지 않으므로 어느 프레임의 효과 묶음 여백보다도 작지 않다(효과를 빼면 여백은 줄기만 함) — 모든 프레임 같은 크기로 넓힐 때 쓴다.
-    /// 터지기는 가로·세로 거리(세로는 중력 방향만큼 추가), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이%(+ 물결 폭만큼 양옆) 넓힌다.
+    /// 터지기는 가로·세로 거리(세로는 중력 방향만큼 추가), 늘었다 줄기는 그때까지 넓힌 크기 × 세기만큼, 반사는 비치는 쪽으로 간격 + 그때까지 넓힌 높이%(왼쪽·오른쪽이면 너비%)
+    /// (+ 물결 폭만큼 양옆, 왼쪽·오른쪽이면 위아래) 넓힌다.
     /// 흔들기·둥실둥실·녹아내리기·회전·충격파 고리는 <see cref="MotionPadding.Of"/>(세기·높이·거리·돌린 그림·반지름)만큼 넓힌다. 홀로그램은 좌우로 글리치 최대 밀림,
     /// 테두리 빛이면 사방으로 1px 더.
     /// 넓힌 크기가 <see cref="PixelImage.MaxSize"/>를 넘는 축은 여백 없이(그 축은 이미지 끝에서 잘림).
@@ -271,12 +272,25 @@ public static class LayerEffects
                 }
                 case ReflectionEffect m:
                 {
-                    // 그림(지금까지 넓힌 크기)의 높이 × 높이%만큼 간격 너머에 비친다 — 보이는 영역이 아무리 커도 그 안
-                    int reach = m.Gap + ReflectionRender.RowsFor(height + t + b, m.Height);
-                    if (m.Above) t += reach;
-                    else b += reach;
-                    l += m.Wave;
-                    r += m.Wave;
+                    // 그림(지금까지 넓힌 크기)의 높이(벽이면 너비) × 길이%만큼 간격 너머에 비친다 — 보이는 영역이 아무리 커도 그 안
+                    int reach = m.Gap + ReflectionRender.RowsFor(m.Horizontal ? width + l + r : height + t + b, m.Height);
+                    switch (m.Direction)
+                    {
+                        case ReflectionDirection.Up: t += reach; break;
+                        case ReflectionDirection.Left: l += reach; break;
+                        case ReflectionDirection.Right: r += reach; break;
+                        default: b += reach; break;
+                    }
+                    if (m.Horizontal)
+                    {
+                        t += m.Wave;
+                        b += m.Wave;
+                    }
+                    else
+                    {
+                        l += m.Wave;
+                        r += m.Wave;
+                    }
                     break;
                 }
                 case HologramEffect g:

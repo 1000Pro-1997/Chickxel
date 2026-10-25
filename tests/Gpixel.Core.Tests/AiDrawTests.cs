@@ -35,7 +35,24 @@ public class AiDrawTests
         s.SizeTarget = 3;
         Assert.Equal(AiDrawSettings.MinSize, s.SizeTargetClamped);
         s.SizeTarget = 0;
-        Assert.Equal(0, s.SizeTargetClamped);
+        Assert.Equal(AiDrawSettings.DefaultSize, s.SizeTargetClamped);
+    }
+
+    [Fact]
+    public void Sizes_are_hints_unless_result_size_correction_is_on()
+    {
+        var s = new AiDrawSettings { SizeTarget = 48 };
+        Assert.False(s.ResizeResult);
+        // 끔: 채팅 크기는 프롬프트 힌트만, 변환은 자동(0). 설정 크기는 쓰지 않음.
+        Assert.Equal((64, 0), s.SizesFor(64));
+        Assert.Equal((0, 0), s.SizesFor(null));
+        Assert.Equal((AiDrawSettings.MaxSize, 0), s.SizesFor(999));
+        // 켬: 채팅 크기, 없으면 설정 크기로 고정.
+        s.ResizeResult = true;
+        Assert.Equal((64, 64), s.SizesFor(64));
+        Assert.Equal((48, 48), s.SizesFor(null));
+        s.SizeTarget = 0;
+        Assert.Equal((AiDrawSettings.DefaultSize, AiDrawSettings.DefaultSize), s.SizesFor(null));
     }
 
     // ───────────── 프레임 계획 ─────────────

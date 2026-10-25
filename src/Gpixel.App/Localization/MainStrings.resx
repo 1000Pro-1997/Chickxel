@@ -1115,4 +1115,6 @@
   <data name="Open_Decoding" xml:space="preserve"><value>{name} 프레임 푸는 중…</value><comment>name = 파일 이름.</comment></data>
   <data name="Open_Unreadable" xml:space="preserve"><value>{name}을(를) 열 수 없습니다(지원하지 않는 형식이거나 파일이 손상되었습니다).</value><comment>name = 파일 이름.</comment></data>
   <data name="Open_Opened" xml:space="preserve"><value>{name} 열기 — 프레임 {frames}개, {width}×{height}, 전체 {ms}ms · 아직 저장 안 함(저장하면 .gpixel 위치를 묻습니다)</value><comment>name = 파일 이름, frames = 프레임 수, width·height = 캔버스 크기(px), ms = 전체 길이(ms).</comment></data>
+  <data name="Transform_Cels" xml:space="preserve"><value>셀 {count}칸 함께 변형 · </value><comment>count = 함께 변형하는 셀 수(타임라인에서 고른 셀).</comment></data>
+  <data name="Transform_LockedSkipped" xml:space="preserve"><value>잠긴 레이어의 셀 {count}칸은 건너뜀 · </value><comment>count = 레이어가 잠겨 변형에서 뺀 셀 수.</comment></data>
 </root>

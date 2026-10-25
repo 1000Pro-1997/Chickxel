@@ -90,7 +90,7 @@ public sealed record PixelateOptimizeOptions
     public TimeSpan MaxTime { get; init; } = TimeSpan.FromSeconds(60);
     public ScoreWeights Weights { get; init; } = new();
     public int MaxDegreeOfParallelism { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
-    /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 돌림이 <see cref="PixelateOptimizer.MinPassGain"/>점 넘게 나아지는 동안 다시 돌림, 1 = 한 번만).</summary>
+    /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 나아지지 않은 돌림이 <see cref="PixelateOptimizer.StalePasses"/>번 넘게 이어질 때까지 다시 돌림, 1 = 한 번만).</summary>
     public int MaxPasses { get; init; } = int.MaxValue;
 }
 
@@ -154,9 +154,11 @@ public sealed class PixelateOptimizeResult
 /// 자동 최적화: 지금 설정에서 시작해 고른 항목을 바꿔 가며 점수(<see cref="PixelateScoring"/>, 가중치 = 점수 비중)가 가장 높은 설정을 찾는다.
 /// 돌림 하나 = 1단계(거칠게): 기준점에서 항목마다 하나씩, 숫자는 범위를 고르게 7곳, 고르기·켜고 끄기는 모든 값. 2단계(다듬기): 항목별 최고 값을 합친 점과
 /// 씨앗 몇 곳에서 좌표 언덕 오르기 — 숫자는 ±걸음, 둘 다 나아지지 않으면 걸음을 반으로(최소 걸음 아래면 멈춤), 고르기는 모든 값.
-/// 첫 돌림은 시작 설정이 기준점이고 씨앗은 점수 상위 3곳. 돌림이 '더 나아지지 않음'으로 끝나고 그 돌림이 최고 점수를 <see cref="MinPassGain"/>점 이상 올렸으면
-/// 그때의 1위에서 다시 돌린다 — 씨앗은 1위, 상위 <see cref="DiverseTop"/>개 중 설정이 1위와 가장 다른 시도(지역 최적 벗어나기), 1위를 정해진 씨앗으로
-/// 조금 흔든 점(<see cref="PerturbFraction"/>). 같은 설정(<see cref="PixelateSettings.Key"/>)은 모든 돌림에 걸쳐 다시 돌리지 않고, 준비 결과(<see cref="PixelateSource"/>)는 모든 시도가 같이 쓴다.
+/// 첫 돌림은 시작 설정이 기준점이고 씨앗은 점수 상위 3곳. 돌림이 '더 나아지지 않음'으로 끝나면(예산 남음) 그때의 1위에서 다시 돌린다 — 씨앗은 1위,
+/// 상위 <see cref="DiverseTop"/>개 중 아직 씨앗이 아니었던 시도 중 설정이 1위와 가장 다른 것(지역 최적 벗어나기), 1위를 정해진 씨앗으로 조금 흔든 점(<see cref="PerturbFraction"/>).
+/// 돌림이 최고 점수를 <see cref="MinPassGain"/>점 이상 올리지 못하면(시작 설정이 이미 최적화 1위일 때의 첫 돌림 등) 바로 멈추지 않고 <see cref="StalePasses"/>번까지
+/// 잇달아 더 돈다 — 그런 돌림은 아직 씨앗이 아니었던 가장 높은 시도도 씨앗으로 더하고 흔드는 폭을 넓힌다. 같은 설정(<see cref="PixelateSettings.Key"/>)은
+/// 모든 돌림에 걸쳐 다시 돌리지 않고(새 시도가 없는 돌림이면 멈춤), 준비 결과(<see cref="PixelateSource"/>)는 모든 시도가 같이 쓴다.
 /// 예산(시도 수·시간)은 모든 돌림을 합친 것이며 먼저 닿는 쪽에서 멈추고, 취소하면 그때까지의 결과를 돌려준다(시작 설정을 돌리기 전에 취소하면 <see cref="OperationCanceledException"/>).
 /// 결정성: 묶음마다 만든 순서로 번호를 미리 매기고(시도 수 예산은 묶음을 그 순서로 자름), 결과는 묶음이 끝난 뒤 번호 순으로 반영하며, 같은 점수는 번호가 작은 쪽 —
 /// 같은 입력·설정이면 스레드 순서와 상관없이 같은 결과(진행 알림 순서는 고르기에 영향 없음). 시간 예산·취소로 끝난 실행은 어디서 끊길지가 정해지지 않으므로
@@ -168,11 +170,19 @@ public static class PixelateOptimizer
     private const int CoarseSamples = 7;
     private const int Seeds = 3;
     private const double Epsilon = 1e-9;
-    /// <summary>다시 돌릴 최소 나아짐(점): 한 돌림이 최고 점수를 이만큼도 올리지 못하면 더 돌리지 않는다(점수 표시 단위 0.1점 — 그보다 작은 나아짐은 보이지 않음).</summary>
+    /// <summary>나아진 돌림으로 칠 최소 나아짐(점 — 점수 표시 단위 0.1점, 그보다 작은 나아짐은 보이지 않음). 못 미치는 돌림이 <see cref="StalePasses"/>번 넘게 이어지면 멈춘다.</summary>
     public const double MinPassGain = 0.1;
+    /// <summary>
+    /// 나아지지 않은 돌림(<see cref="MinPassGain"/> 미만) 뒤에 잇달아 더 돌 돌림 수. 예전에는 나아지지 않은 첫 돌림에서 멈춰, 최적화 1위에서 다시 시작하면
+    /// 첫 돌림(이미 지역 최적이라 0점 나아짐)만 돌고 예산을 거의 쓰지 않았다(마법사 꼬마 시트: 2000번 예산에 216번, 1.4초).
+    /// </summary>
+    public const int StalePasses = 3;
     /// <summary>다시 돌릴 때 '1위와 가장 다른 시도'를 고르는 점수 상위 범위.</summary>
     public const int DiverseTop = 10;
-    /// <summary>다시 돌릴 때 1위를 흔드는 폭: 숫자 항목마다 찾기 범위의 ±이 비율 안에서(씨앗 = 1위 설정 키 해시와 돌림 번호 — 정해짐).</summary>
+    /// <summary>
+    /// 다시 돌릴 때 1위를 흔드는 폭: 숫자 항목마다 찾기 범위의 ±이 비율 안에서(씨앗 = 1위 설정 키 해시와 돌림 번호 — 정해짐). 나아지지 않은 돌림이 이어지면
+    /// 이어진 수 + 1배로 넓힌다(×2, ×3, ×4).
+    /// </summary>
     public const double PerturbFraction = 0.1;
     /// <summary>'크기를 줄여서'에서 칸 크기로 받아들일 외곽선 두께와의 비율 차(±15%, <c>ShrinkBand</c>).</summary>
     public const double ShrinkTolerance = 0.15;
@@ -249,6 +259,8 @@ public static class PixelateOptimizer
         private readonly Stopwatch _clock = new();
         private CancellationTokenSource _deadline = null!;
         private List<Axis> _axes = [];
+        // 언덕 오르기를 이미 시작한 씨앗(설정 키) — 다시 돌 때 같은 곳에서 다시 오르지 않게.
+        private readonly HashSet<string> _seeded = new();
         private int? _target;
         private int _reserved, _index, _hits, _completed, _stop = -1;
         private volatile int _pass = 1;
@@ -290,16 +302,20 @@ public static class PixelateOptimizer
             _axes = BuildAxes(first);
             if (_opt.MaxTrials <= 1) StopWith(OptimizeStop.Trials);
             var passes = new List<PixelateOptimizePass>();
+            int stale = 0;
             for (int pass = 1; ; pass++)
             {
                 var from = _best!;
                 int before = pass == 1 ? 0 : _trials.Count;
                 _pass = pass;
-                if (_axes.Count > 0 && !Stopped) Search(pass);
-                passes.Add(new PixelateOptimizePass(pass, from.Score.Total, _best!.Score.Total, _trials.Count - before));
-                // 다시 돌림: 이 돌림이 '더 나아지지 않음'으로 끝났고(예산 남음) 최고 점수를 MinPassGain 이상 올렸을 때만.
-                double gain = Rank(_best) - Rank(from);
-                if (Stopped || pass >= _opt.MaxPasses || !(Rank(_best) > Rank(from) && gain >= MinPassGain)) break;
+                if (_axes.Count > 0 && !Stopped) Search(pass, stale);
+                int ran = _trials.Count - before;
+                passes.Add(new PixelateOptimizePass(pass, from.Score.Total, _best!.Score.Total, ran));
+                // 다시 돌림: 이 돌림이 '더 나아지지 않음'으로 끝났으면(예산 남음). MinPassGain 미만 나아진 돌림이 StalePasses번 넘게 이어지거나,
+                // 돌림이 새 시도를 하나도 돌리지 못했으면(거칠게 훑기·합친 점·씨앗·흔든 점이 모두 이미 돌린 설정) 멈춘다.
+                bool gained = Rank(_best) > Rank(from) && Rank(_best) - Rank(from) >= MinPassGain;
+                stale = gained ? 0 : stale + 1;
+                if (Stopped || _axes.Count == 0 || pass >= _opt.MaxPasses || stale > StalePasses || ran == 0) break;
             }
 
             _clock.Stop();
@@ -318,9 +334,9 @@ public static class PixelateOptimizer
 
         /// <summary>
         /// 돌림 하나: 지금 1위를 기준점으로 항목마다 거칠게 훑고 항목별 최고 값을 합친 점을 돌린 뒤, 씨앗마다 언덕 오르기.
-        /// 첫 돌림의 씨앗은 점수 상위 <see cref="Seeds"/>곳, 다시 돌릴 때는 <see cref="EscapeSeeds"/>.
+        /// 첫 돌림의 씨앗은 점수 상위 <see cref="Seeds"/>곳, 다시 돌릴 때는 <see cref="EscapeSeeds"/>(<paramref name="stale"/> = 바로 앞까지 이어진 나아지지 않은 돌림 수).
         /// </summary>
-        private void Search(int pass)
+        private void Search(int pass, int stale)
         {
             var origin = _best!;
             var o = origin.Settings;
@@ -341,10 +357,11 @@ public static class PixelateOptimizer
             Evaluate([combined]);
 
             // 2단계: 씨앗마다 언덕 오르기.
-            List<PixelateTrial> seeds = pass == 1 ? [.. Ranked().Take(Seeds)] : EscapeSeeds(pass);
+            List<PixelateTrial> seeds = pass == 1 ? [.. Ranked().Take(Seeds)] : EscapeSeeds(pass, stale);
             foreach (var seed in seeds)
             {
                 if (Stopped) break;
+                _seeded.Add(seed.Settings.Key());
                 Climb(seed);
             }
         }
@@ -354,26 +371,28 @@ public static class PixelateOptimizer
             => _trials.Where(t => !double.IsNegativeInfinity(Rank(t))).OrderByDescending(Rank).ThenBy(t => t.Candidate.Index);
 
         /// <summary>
-        /// 다시 돌릴 때의 씨앗: 1위, 상위 <see cref="DiverseTop"/>개 중 설정이 1위와 가장 다른 시도(<see cref="Distance"/> — 같으면 점수가 높은 쪽),
-        /// 1위를 <see cref="Perturb"/>로 조금 흔든 점(고를 수 있는 결과일 때만).
+        /// 다시 돌릴 때의 씨앗: 1위, 상위 <see cref="DiverseTop"/>개 중 아직 씨앗이 아니었던 시도에서 설정이 1위와 가장 다른 것(<see cref="Distance"/> — 같으면 점수가 높은 쪽),
+        /// 나아지지 않은 돌림 뒤(<paramref name="stale"/> &gt; 0)면 아직 씨앗이 아니었던 가장 높은 시도, 1위를 <see cref="Perturb"/>로 흔든 점(고를 수 있는 결과일 때만).
         /// </summary>
-        private List<PixelateTrial> EscapeSeeds(int pass)
+        private List<PixelateTrial> EscapeSeeds(int pass, int stale)
         {
             var ranked = Ranked().Take(DiverseTop).ToList();
             if (ranked.Count == 0) return [];
             var top = ranked[0];
             var seeds = new List<PixelateTrial> { top };
+            bool Fresh(PixelateTrial t) => !_seeded.Contains(t.Settings.Key()) && seeds.All(s => s.Settings.Key() != t.Settings.Key());
             PixelateTrial? far = null;
             double farDistance = Epsilon;
-            foreach (var t in ranked.Skip(1))
+            foreach (var t in ranked.Skip(1).Where(Fresh))
             {
                 double d = Distance(top.Settings, t.Settings);
                 if (d > farDistance + Epsilon) (far, farDistance) = (t, d);
             }
             if (far is not null) seeds.Add(far);
-            var nudged = Perturb(top.Settings, pass);
+            if (stale > 0 && Ranked().FirstOrDefault(Fresh) is { } next) seeds.Add(next);
+            var nudged = Perturb(top.Settings, pass, PerturbFraction * (1 + stale));
             Evaluate([nudged]);
-            if (Lookup(nudged) is { } n && !double.IsNegativeInfinity(Rank(n)) && seeds.All(s => s.Settings.Key() != n.Settings.Key())) seeds.Add(n);
+            if (Lookup(nudged) is { } n && !double.IsNegativeInfinity(Rank(n)) && Fresh(n)) seeds.Add(n);
             return seeds;
         }
 
@@ -392,10 +411,10 @@ public static class PixelateOptimizer
         }
 
         /// <summary>
-        /// <paramref name="s"/>의 숫자 항목(그 점에서 쓰는 것)마다 찾기 범위의 ±<see cref="PerturbFraction"/> 안에서 흔든 설정. 난수 씨앗은 설정 키의 FNV-1a 해시와
+        /// <paramref name="s"/>의 숫자 항목(그 점에서 쓰는 것)마다 찾기 범위의 ±<paramref name="fraction"/> 안에서 흔든 설정. 난수 씨앗은 설정 키의 FNV-1a 해시와
         /// 돌림 번호 — 같은 입력이면 늘 같은 점(<see cref="string.GetHashCode()"/>는 실행마다 달라서 쓰지 않음).
         /// </summary>
-        private PixelateSettings Perturb(PixelateSettings s, int pass)
+        private PixelateSettings Perturb(PixelateSettings s, int pass, double fraction)
         {
             uint h = 2166136261;
             foreach (char c in s.Key()) h = (h ^ c) * 16777619;
@@ -404,7 +423,7 @@ public static class PixelateOptimizer
             foreach (var a in _axes)
             {
                 if (a.IsChoice || !a.IsActive(p) || a.Max <= a.Min) continue;
-                double d = (rng.NextDouble() * 2 - 1) * PerturbFraction * (a.Max - a.Min);
+                double d = (rng.NextDouble() * 2 - 1) * fraction * (a.Max - a.Min);
                 p = a.Set(p, a.Normalize(a.Get(p) + d));
             }
             return p;
@@ -571,13 +590,16 @@ public static class PixelateOptimizer
         /// <summary>
         /// 외곽선 맞추기 '크기를 줄여서'에서 받아들일 칸 크기(원본 px): 원본 외곽선 두께(<see cref="ScaleEstimate.Outline"/>, 외곽선이 칸보다 가늘어 더 큰 값을 고른
         /// 어림이면 <see cref="ScaleEstimate.ThinOutline"/> — 그 값)의 ±<see cref="ShrinkTolerance"/> — 외곽선 띠가 정확히 한 칸(칸이 두께의 ½이면 외곽선이 2칸).
+        /// 두께는 기본 외곽선 밝기(<see cref="PaletteSettings.DefaultOutlineDarkness"/>)로 잰다(그 밝기로 못 재면 시작 설정의 밝기로): 시작 설정의 밝기로 재면
+        /// 최적화 1위(밝기 0.35 — 어두운 명암까지 외곽선으로 셈)에서 다시 시작할 때 띠가 위로 밀린다(마법사 꼬마 시트 ×½: 3.48 → 3.75px, 1위 칸 3.98px이 띠 안쪽 끝).
         /// 자동 격자·칸 크기로 결과 크기가 아니면(수동 격자·배율·고정 크기), 깨끗한 그림의 정확한 배수이면, 외곽선을 못 쟀으면 null.
         /// </summary>
         private (double Lo, double Hi)? ShrinkBand()
         {
             var s0 = _start;
             if (s0.Grid.Mode != GridMode.Auto || s0.Size.Mode != OutputSizeMode.FromScale || _src.Split.Frames.Count == 0 || ExactScale() is not null) return null;
-            var est = _src.EstimatedScale(-1, s0.Grid.Jitter, ScaleSource.Outline, s0.Palette.OutlineDarkness);
+            var est = _src.EstimatedScale(-1, s0.Grid.Jitter, ScaleSource.Outline, PaletteSettings.DefaultOutlineDarkness);
+            if (est.Outline <= 0) est = _src.EstimatedScale(-1, s0.Grid.Jitter, ScaleSource.Outline, s0.Palette.OutlineDarkness);
             if (est.Outline <= 0 || est.Exact) return null;
             double center = est.ThinOutline ? est.Scale : est.Outline;
             return (center * (1 - ShrinkTolerance), center * (1 + ShrinkTolerance));

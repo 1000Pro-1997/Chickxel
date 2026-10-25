@@ -1550,6 +1550,9 @@ public sealed partial class ChatWindow : Window
             var message = scope is null ? modelText : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: modelText);
             // 그리는 방식(모델에게만 — 화면·저장에는 남기지 않음). Claude 탭은 늘 직접 찍기(사용자가 Codex에 맡기라고 할 때만 생성 도구).
             message = AiCli.DrawingModeLine(_w._settings.AiDraw.EffectiveMode(Provider.Id), Provider.Id == AiDrawSettings.GeneratingProvider) + "\n" + message;
+            // "팔레트 색만 사용": 처음부터 팔레트 색으로 그리게 활성 팔레트 색을 알린다(도구도 다른 색은 가장 가까운 팔레트 색으로 바꿈).
+            if (_w._settings.AiDraw.PaletteOnly && new PaletteLock(_w._mcp.Tools.Host.Palette) is { IsEmpty: false } palette)
+                message = AiCli.PaletteLine(palette) + "\n" + message;
             if (_chat is { NeedsRecap: true })
             {
                 session.Reset();

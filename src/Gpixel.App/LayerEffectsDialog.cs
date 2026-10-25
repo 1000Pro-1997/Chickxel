@@ -530,7 +530,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
         InnerGlowEffect g => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_B8FE86B3A0,g.Size,g.Strength,g.Color.ToHex()),
         PaletteSwapEffect p => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_53B3F1206A,p.Pairs.Count) + (p.Tolerance > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_E77A16477B,p.Tolerance) : ""),
         ColorAdjustEffect c => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_62017EE627,AdjustSummary(c)),
-        ReflectionEffect m => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_54368CD4DD,(m.Above ? UiStrings.S_LayerEffectsDialog_Summary_99CAC4A07E : UiStrings.S_LayerEffectsDialog_Summary_F724879C11),m.Gap,m.Height,m.OpacityStart,m.OpacityEnd) + (m.DitherFade ? UiStrings.S_LayerEffectsDialog_Summary_823544BC03 : ""),
+        ReflectionEffect m => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_54368CD4DD,m.Direction switch
+        {
+            ReflectionDirection.Up => UiStrings.S_LayerEffectsDialog_Summary_99CAC4A07E,
+            ReflectionDirection.Left => UiStrings.Reflection_SummaryLeft,
+            ReflectionDirection.Right => UiStrings.Reflection_SummaryRight,
+            _ => UiStrings.S_LayerEffectsDialog_Summary_F724879C11,
+        },m.Gap,m.Height,m.OpacityStart,m.OpacityEnd) + (m.DitherFade ? UiStrings.S_LayerEffectsDialog_Summary_823544BC03 : ""),
         HitFlashEffect hit => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_A9AB403D93,hit.Count,hit.Strength,hit.Color.ToHex()) + (hit.Shape == HitFlashShape.Fade ? UiStrings.S_LayerEffectsDialog_Summary_1BF53EA7E5 : ""),
         BlinkEffect blink => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_0080B38202) + (blink.Timing == BlinkTiming.Frames ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_855D00FD34,blink.OnFrames,blink.OffFrames) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_Summary_7D1229802B,blink.Count))
                              + $" · {BlinkHides[(int)blink.Hide]}",

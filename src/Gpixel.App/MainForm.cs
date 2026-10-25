@@ -994,6 +994,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
         _canvas.Message += (_, m) => ShowMessage(m);
         _timeline.Message += (_, m) => ShowMessage(m);
+        // 변형(Ctrl+T)·이동 도구는 타임라인에서 고른 셀들을 함께 바꾼다.
+        _ctx.SelectedCels = _timeline.SelectedCelTargets;
         _preview.Message += (_, m) => ShowMessage(m);
         _preview.CopyRequested += (_, img) =>
         {
@@ -2602,6 +2604,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>
     /// 변형 모드(Ctrl+T): 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 손잡이로 회전·크기·옮기기. Enter 적용, Esc·Ctrl+Z 취소.
+    /// 타임라인에서 셀 여러 칸(프레임·레이어 선택 포함)을 골라 두었으면 그 셀들을 모두 같은 변형으로 함께 바꾼다.
     /// </summary>
     private void BeginTransform()
     {
@@ -2610,7 +2613,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             ShowMessage(error);
             return;
         }
-        ShowMessage(MainStrings.Message_325);
+        int cels = _ctx.TransformCelCount, locked = _ctx.TransformLockedSkipped;
+        string prefix = cels > 1 ? MainStrings.FormatTransform_Cels(count: cels) : "";
+        if (locked > 0) prefix += MainStrings.FormatTransform_LockedSkipped(count: locked);
+        ShowMessage(prefix + MainStrings.Message_325);
         _canvas.Focus();
     }
 

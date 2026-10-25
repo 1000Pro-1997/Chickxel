@@ -124,6 +124,18 @@ public sealed class TimelinePanel : UserControl
             ? (_grid.SelectedLayerList(), Enumerable.Range(0, _ctx.FrameCount).ToList())
             : (_grid.SelectedRowLayers(), SelectedFrames());
 
+    /// <summary>
+    /// 변형(Ctrl+T)·이동 도구가 함께 바꿀 셀들(레이어 번호, 프레임 번호): 셀 묶음이면 그 칸들, 프레임 선택이면 현재 레이어의 그 프레임들,
+    /// 레이어 선택이면 그 레이어들의 모든 프레임(그룹 행은 그 부위들). 효과 선택이면 현재 칸 하나.
+    /// </summary>
+    public List<(int Layer, int Frame)> SelectedCelTargets()
+    {
+        if (P is not { } p) return [];
+        if (_grid.Kind == SelKind.Effects) return [(_ctx.CurrentLayer, _ctx.CurrentFrame)];
+        var (rows, frames) = CelBlock();
+        return [.. CelLayers(p, rows).SelectMany(l => frames.Select(f => (l, f)))];
+    }
+
     /// <summary>Delete 키 이름(macOS = ⌫).</summary>
     private static string DeleteKeyName => Platform.IsMac ? "⌫" : "Delete";
 

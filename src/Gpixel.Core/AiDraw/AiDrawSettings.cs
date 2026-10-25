@@ -52,8 +52,34 @@ public sealed class AiDrawSettings
 
     public AiDrawMode Mode { get; set; } = AiDrawMode.Generate;
 
-    /// <summary>결과 크기(긴 변 px): 0 = 자동(그림의 픽셀 격자 그대로).</summary>
-    public int SizeTarget { get; set; }
+    /// <summary>
+    /// 팔레트 색만 사용(직접 찍기): AI가 픽셀 도구로 칠하는 색을 활성 팔레트의 가장 가까운 색으로 바꾼다(<see cref="PaletteLock"/>). 그림 생성 결과(변환기)와 레이어 효과는 그대로.
+    /// </summary>
+    public bool PaletteOnly { get; set; }
+
+    /// <summary>
+    /// 결과 크기 보정(기본 끔): 켜면 변환 결과를 <see cref="SizeTarget"/>(또는 채팅에서 정한 크기)에 맞춘 고정 크기로, 끄면 그림에서 찾은 칸 크기대로(자동 크기 + 자동 최적화) 변환한다.
+    /// 꺼져 있어도 채팅에서 말한 크기는 생성 프롬프트에 대략적인 크기 힌트로 들어간다. 이 설정이 없던 예전 설정 파일은 읽을 때 끔이 된다.
+    /// </summary>
+    public bool ResizeResult { get; set; }
+
+    /// <summary>결과 크기 보정을 켰을 때 쓸 크기의 기본값(px).</summary>
+    public const int DefaultSize = 32;
+
+    /// <summary>결과 크기(긴 변 px, <see cref="ResizeResult"/>일 때만 쓰임). 0 이하(예전 "자동" 값)는 <see cref="DefaultSize"/>로 본다.</summary>
+    public int SizeTarget { get; set; } = DefaultSize;
+
+    /// <summary>
+    /// 생성 프롬프트에 넣을 크기 힌트와 변환 고정 크기(0 = 없음·자동): <paramref name="requested"/> = 채팅에서 정한 크기(없으면 null).
+    /// 보정이 꺼져 있으면 힌트는 채팅에서 정한 크기뿐이고 변환은 자동, 켜져 있으면 둘 다 채팅 크기 또는 설정 크기.
+    /// </summary>
+    public (int Hint, int Convert) SizesFor(int? requested)
+    {
+        int clamped = requested is { } r ? Math.Clamp(r, MinSize, MaxSize) : 0;
+        if (!ResizeResult) return (clamped, 0);
+        int size = requested is not null ? clamped : SizeTargetClamped;
+        return (size, size);
+    }
 
     /// <summary>변환할 때 배경을 지운다(기본 켬).</summary>
     public bool RemoveBackground { get; set; } = true;
@@ -80,6 +106,6 @@ public sealed class AiDrawSettings
     public int FramesFor(string action)
         => Math.Clamp(FrameCounts.TryGetValue(action, out var n) ? n : AiDrawActions.DefaultFrames(action), MinFrames, MaxFrames);
 
-    /// <summary>결과 크기 목표(0 = 자동, 아니면 <see cref="MinSize"/>~<see cref="MaxSize"/>).</summary>
-    public int SizeTargetClamped => SizeTarget <= 0 ? 0 : Math.Clamp(SizeTarget, MinSize, MaxSize);
+    /// <summary>결과 크기 보정 크기(<see cref="MinSize"/>~<see cref="MaxSize"/>, 0 이하는 <see cref="DefaultSize"/>).</summary>
+    public int SizeTargetClamped => SizeTarget <= 0 ? DefaultSize : Math.Clamp(SizeTarget, MinSize, MaxSize);
 }

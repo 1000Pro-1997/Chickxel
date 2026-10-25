@@ -52,6 +52,12 @@ public sealed class PixelateSource
             ? GridDetector.BlockEdges(Cleaned, Lab, ContentBounds.IsEmpty ? Cleaned.Bounds : ContentBounds)
             : GridDetector.BlockEdges(Cleaned, Lab, Split.Frames[f].Bounds, Split.Labels, f))).Value;
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<int, Lazy<GridDetector.EdgeSums>> _sums = new();
+
+    /// <summary>프레임 하나의 경계 세기 누적(<see cref="GridDetector.Sums"/> — 칸 경계 지역 보정의 띠별 맞는 정도, 기억해 둠).</summary>
+    public GridDetector.EdgeSums EdgeSums(int frame)
+        => _sums.GetOrAdd(frame, f => new Lazy<GridDetector.EdgeSums>(() => GridDetector.Sums(Cleaned, Split.Frames[f].Bounds, Split.Labels, f))).Value;
+
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(int Frame, double Darkness), Lazy<VectorOutline.Tracing>> _vectors = new();
 
     /// <summary>프레임 하나의 어두운 덩어리와 뼈대 선(<see cref="VectorOutline.Trace"/>, 외곽선 밝기마다 기억해 둠).</summary>
@@ -348,7 +354,7 @@ public static class Pixelator
             var local = s.Grid.LocalCorrection ? LocalGrid.Correct(src.BlockEdges(f), xc, yc, s.Grid.LocalShift, s.Grid.LocalBand) : null;
             layouts[f] = new CellLayout(xc, yc, local);
             if (local is not null)
-                grids[f] = grids[f] with { Confidence = LocalGrid.Confidence(src.Cleaned, split.Labels, f, b, layouts[f]) };
+                grids[f] = grids[f] with { Confidence = LocalGrid.Confidence(src.EdgeSums(f), layouts[f]) };
             cells[f] = Downsample(src, f, layouts[f], s.Downsample);
             ct.ThrowIfCancellationRequested();
         }
@@ -939,16 +945,13 @@ public static class Pixelator
             var b = m.SourceBounds;
             int stride = Math.Max(1, (int)Math.Round(grids[f].Scale / 6));
             var layout = m.Layout();
-            var colOf = m.Local is null ? GridDetector.Lookup(m.XCuts, b.Left, b.Right) : null;
-            var rowOf = m.Local is null ? GridDetector.Lookup(m.YCuts, b.Top, b.Bottom) : null;
+            var index = layout.Index(b);
             for (int y = b.Top; y < b.Bottom; y += stride)
                 for (int x = b.Left; x < b.Right; x += stride)
                 {
                     int i = y * w + x;
                     bool srcOn = labels[i] == f && cleaned.Pixels[i].A != 0;
-                    int col, row;
-                    if (colOf is not null) { col = colOf[x - b.Left]; row = rowOf![y - b.Top]; }
-                    else layout.Locate(x, y, out col, out row);
+                    index.Locate(x, y, out int col, out int row);
                     var (x0, y0, x1, y1) = layout.Cell(col, row);
                     if (!Inner(x, x0, x1) || !Inner(y, y0, y1)) continue;
                     var outC = frame.Get(col + m.OffsetX, row + m.OffsetY);

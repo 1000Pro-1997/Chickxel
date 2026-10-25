@@ -197,6 +197,67 @@ public class StaticEffectTests
         Assert.Equal(rows[0], img[0, 0]); // 원래 그림은 그대로
     }
 
+    [Fact]
+    public void Reflection_LeftRight_MirroredBesideAfterGap_OpacityDecreasesAwayFromImage_PadsGapPlusWidth()
+    {
+        var src = new PixelImage(4, 3);
+        Color32[] cols = [Red, Green, Blue, new Color32(200, 200, 0)];
+        for (int x = 0; x < 4; x++)
+            for (int y = 0; y < 3; y++)
+                src[x, y] = cols[x];
+
+        var right = new ReflectionEffect { Direction = ReflectionDirection.Right, Gap = 2, Height = 100, OpacityStart = 100, OpacityEnd = 25 };
+        Assert.Equal(new EffectPadding(0, 0, 6, 0), LayerEffects.Padding([right], 4, 3));
+        var (img, ox, oy) = LayerEffects.Render(src, [right]);
+        Assert.Equal((0, 0, 10, 3), (ox, oy, img.Width, img.Height));
+        for (int x = 4; x < 6; x++)
+            Assert.All(Enumerable.Range(0, 3), y => Assert.Equal(Color32.Transparent, img[x, y])); // 간격
+        int lastAlpha = 256;
+        for (int j = 0; j < 4; j++)
+        {
+            var c = img[6 + j, 1];
+            var mirrored = cols[3 - j]; // 그림 쪽 열부터 거꾸로
+            Assert.Equal((mirrored.R, mirrored.G, mirrored.B), (c.R, c.G, c.B));
+            Assert.True(c.A < lastAlpha, $"column {j}: {c.A}");
+            lastAlpha = c.A;
+        }
+        Assert.Equal((255, 64), (img[6, 1].A, img[9, 1].A));
+        Assert.Equal(cols[0], img[0, 0]);
+
+        var left = right with { Direction = ReflectionDirection.Left };
+        Assert.Equal(new EffectPadding(6, 0, 0, 0), LayerEffects.Padding([left], 4, 3));
+        (img, ox, oy) = LayerEffects.Render(src, [left]);
+        Assert.Equal((-6, 0, 10, 3), (ox, oy, img.Width, img.Height));
+        for (int x = 4; x < 6; x++)
+            Assert.All(Enumerable.Range(0, 3), y => Assert.Equal(Color32.Transparent, img[x, y])); // 간격
+        for (int j = 0; j < 4; j++)
+        {
+            var c = img[3 - j, 1];
+            Assert.Equal((cols[j].R, cols[j].G, cols[j].B), (c.R, c.G, c.B)); // 왼쪽 끝 열이 바로 옆에
+        }
+        Assert.Equal((255, 64), (img[3, 1].A, img[0, 1].A));
+        Assert.Equal(cols[0], img[6, 0]); // 원래 그림은 넓힌 만큼 오른쪽으로
+
+        // 길이 %는 너비 기준(높이 3이 아니라 너비 4의 50% = 2열)
+        Assert.Equal(new EffectPadding(0, 0, 3, 0), LayerEffects.Padding([right with { Gap = 1, Height = 50 }], 4, 3));
+    }
+
+    [Fact]
+    public void Reflection_Wall_WaveShiftsEachColumnVertically_PadsTopAndBottom()
+    {
+        var src = Filled(2, 3, Red);
+        var m = new ReflectionEffect { Direction = ReflectionDirection.Right, Height = 100, OpacityStart = 100, OpacityEnd = 100, Wave = 1 };
+        Assert.Equal(new EffectPadding(0, 1, 2, 1), LayerEffects.Padding([m], 2, 3));
+        var (img, _, _) = LayerEffects.Render(src, [m]);
+        Assert.Equal((4, 5), (img.Width, img.Height));
+        // 그림은 x 0~1, y 1~3. 첫 열(물결 0)은 제자리, 둘째 열은 아래로 1px
+        Assert.Equal(new[] { 0, 255, 255, 255, 0 }, Enumerable.Range(0, 5).Select(y => (int)img[2, y].A).ToArray());
+        Assert.Equal(new[] { 0, 0, 255, 255, 255 }, Enumerable.Range(0, 5).Select(y => (int)img[3, y].A).ToArray());
+
+        var floor = m with { Direction = ReflectionDirection.Down };
+        Assert.Equal(new EffectPadding(1, 0, 1, 3), LayerEffects.Padding([floor], 2, 3));
+    }
+
     // ───────────── 저장 ─────────────
 
     [Fact]
@@ -222,7 +283,9 @@ public class StaticEffectTests
             new InnerGlowEffect { Color = new(9, 8, 7), Size = 5, Strength = 33, Fade = false, Blend = EffectBlend.Normal, Enabled = false },
             new PaletteSwapEffect { Pairs = [new(Red, Blue), new(Green, Color32.Transparent)], Tolerance = 12, Frames = new FrameRange(0, 0) },
             new ColorAdjustEffect { Mode = ColorAdjustMode.BrightnessContrast, Amount = 40, Hue = -90, Brightness = 20, Contrast = -30, Saturation = 70 },
-            new ReflectionEffect { Gap = 3, Height = 80, OpacityStart = 90, OpacityEnd = 10, DitherFade = true, Tint = new(0, 100, 200, 90), Wave = 2, Above = true },
+            new ReflectionEffect { Gap = 3, Height = 80, OpacityStart = 90, OpacityEnd = 10, DitherFade = true, Tint = new(0, 100, 200, 90), Wave = 2, Direction = ReflectionDirection.Up },
+            new ReflectionEffect { Gap = 1, Height = 60, Wave = 1, Direction = ReflectionDirection.Left },
+            new ReflectionEffect { Direction = ReflectionDirection.Right, DitherFade = true },
             new ShadowEffect { Color = new(10, 20, 30), OffsetX = -2, OffsetY = 3, Dither = ShadowDither.Dense75 },
         ];
         p.SetLayerEffects(0, fx);

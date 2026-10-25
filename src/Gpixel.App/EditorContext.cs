@@ -476,6 +476,45 @@ public sealed class EditorContext
         InvalidateCurrent();
     }
 
+    /// <summary>
+    /// 타임라인에서 고른 셀들(레이어·프레임 번호) — 변형(Ctrl+T)·이동 도구가 지금 셀과 함께 바꿀 셀. 창이 타임라인 선택에 잇는다(null이면 지금 셀만).
+    /// </summary>
+    public Func<IReadOnlyList<(int Layer, int Frame)>>? SelectedCels { get; set; }
+
+    /// <summary>
+    /// 이동 도구로 지금 셀 전체를 (<paramref name="dx"/>, <paramref name="dy"/>) 민 스트로크를 확정한다. 타임라인에서 다른 셀도 함께 골라 두었으면
+    /// 그 셀들도 같은 만큼 밀어 실행취소 한 단계로 묶는다(<paramref name="wrap"/>이면 밖으로 나간 픽셀이 반대쪽으로; 그룹·빈 셀·잠긴 레이어는 건너뜀).
+    /// 함께 민 다른 셀 수를 돌려준다.
+    /// </summary>
+    public int CommitCelShift(string label, int dx, int dy, bool wrap)
+    {
+        if (Project is not { } p) return 0;
+        var others = (SelectedCels?.Invoke() ?? []).Where(c => c.Layer != _layer || c.Frame != _frame).Distinct().ToList();
+        if (others.Count == 0 || (dx == 0 && dy == 0))
+        {
+            CommitStroke(label);
+            return 0;
+        }
+        int layer = _layer, frame = _frame;
+        var after = TakeStrokeResult(p);
+        var moved = new List<(int Layer, int Frame, PixelImage Image)>();
+        foreach (var (l, f) in others)
+        {
+            if (l < 0 || l >= p.Layers.Count || f < 0 || f >= p.Frames.Count || p.Layers[l].IsGroup || p.IsLayerLocked(l) || p.IsCelEmpty(l, f)) continue;
+            var cel = p.GetCel(l, f)!;
+            var image = new PixelImage(cel.Width, cel.Height);
+            PixelOps.Shift(cel, image, cel.Bounds, dx, dy, wrap);
+            moved.Add((l, f, image));
+        }
+        if (after is null && moved.Count == 0) return 0;
+        p.Edit(label, ProjectChange.Pixels, () =>
+        {
+            if (after is not null) p.SetCel(layer, frame, after);
+            foreach (var (l, f, image) in moved) p.SetCel(l, f, image);
+        });
+        return moved.Count;
+    }
+
     /// <summary>스트로크 중 픽셀이 바뀌었음을 알린다(다시 그리기).</summary>
     public void NotifyPixels()
     {
@@ -505,25 +544,65 @@ public sealed class EditorContext
     /// </summary>
     public void CommitFloating()
     {
-        if (Project is null) return;
+        if (Project is not { } p) return;
         ApplyCanvasResize();
-        bool transformed = _transform is not null;
+        var transform = _transform;
         _transform = null;
         if (Selection.IsFloating && _strokeImage is { } img) Selection.Anchor(img);
+        if (transform?.Multi is { } multi) CommitMultiTransform(p, transform, multi);
+        else if (_selectionStrokeOpen)
+        {
+            _selectionStrokeOpen = false;
+            CommitStroke(transform is not null ? UiStrings.S_EditorContext_CommitFloating_19E799222E : UiStrings.S_EditorContext_CommitFloating_9E9E894C6C);
+        }
+        if (transform is not null) TransformChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 여러 셀 변형 적용: 지금 셀(선택 편집 기록 안에서 내려놓은 결과)과 다른 셀들을 실행취소 한 단계로 — 열린 기록은 되돌리고
+    /// 지금 셀의 결과 그림을 다른 셀들과 같은 편집 안에서 넣는다.
+    /// </summary>
+    private void CommitMultiTransform(SpriteProject p, TransformSession t, MultiCelTransform multi)
+    {
+        int layer = _layer, frame = _frame;
+        PixelImage? after = null;
         if (_selectionStrokeOpen)
         {
             _selectionStrokeOpen = false;
-            CommitStroke(transformed ? UiStrings.S_EditorContext_CommitFloating_19E799222E : UiStrings.S_EditorContext_CommitFloating_9E9E894C6C);
+            after = TakeStrokeResult(p);
         }
-        if (transformed) TransformChanged?.Invoke(this, EventArgs.Empty);
+        multi.Commit(UiStrings.S_EditorContext_CommitFloating_19E799222E, t.Source, t.Params, _transformResample,
+            after is null ? null : () => p.SetCel(layer, frame, after));
+    }
+
+    /// <summary>
+    /// 열린 스트로크를 기록 없이 되돌리고 지금 셀이 스트로크로 바뀐 그림(바뀐 것이 없으면 null)을 돌려준다 — 다른 셀들과 한 편집(실행취소 한 단계)으로
+    /// 묶어 <see cref="SpriteProject.SetCel"/>로 다시 넣을 때.
+    /// </summary>
+    private PixelImage? TakeStrokeResult(SpriteProject p)
+    {
+        var after = _strokeImage?.Clone();
+        _strokeImage = null;
+        p.CancelCelStroke();
+        if (after is null) return null;
+        var before = p.GetCel(_layer, _frame);
+        return (before is null ? after.GetOpaqueBounds().IsEmpty : after.ContentEquals(before)) ? null : after;
     }
 
     // ───────────── 자유 변형 ─────────────
 
-    /// <summary>변형 중인 상태: 원본(떼어 낸 픽셀), 지금 값, 시작 전 선택 상태(취소용).</summary>
-    private sealed class TransformSession(FreeTransform source, SelectionState before, PixelImage? celBefore)
+    /// <summary>
+    /// 변형 중인 상태: 손잡이 기준 원본(<paramref name="source"/>), 지금 셀에서 떼어 낸 원본(<paramref name="lifted"/> — 여러 셀이 아니면 손잡이 기준과 같음,
+    /// 지금 셀이 비었으면 null), 함께 변형할 다른 셀들(<paramref name="multi"/>), 지금 값, 시작 전 선택 상태(취소용).
+    /// </summary>
+    private sealed class TransformSession(FreeTransform source, FreeTransform? lifted, MultiCelTransform? multi, SelectionState before, PixelImage? celBefore)
     {
+        /// <summary>손잡이·값의 기준 원본: 한 셀이면 떼어 낸 픽셀, 여러 셀이면 모든 셀의 원본을 감싸는 사각형.</summary>
         public FreeTransform Source { get; } = source;
+        /// <summary>지금 셀에서 떼어 낸 원본(캔버스에 떠 있는 그림). 지금 셀에 뗄 것이 없으면 null.</summary>
+        public FreeTransform? Lifted { get; } = lifted;
+        /// <summary>타임라인에서 함께 고른 다른 셀들(같은 행렬로 적용 때 한꺼번에 바뀜). 한 셀이면 null.</summary>
+        public MultiCelTransform? Multi { get; } = multi;
         /// <summary>시작 전 선택 상태(영역·모양·떠 있는 픽셀).</summary>
         public SelectionState Before { get; } = before;
         /// <summary>이미 열린 선택 편집 기록 안에서 시작했으면 그때의 셀 픽셀(취소 때 되돌림). 변형이 기록을 열었으면 null(기록째 취소).</summary>
@@ -568,11 +647,14 @@ public sealed class EditorContext
 
     /// <summary>
     /// 변형 모드에 들어간다: 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 떼어 원본으로 삼는다. 회전 중심은 처음에 대상의 피벗 자리.
+    /// <paramref name="cels"/>(함께 바꿀 셀들, 레이어·프레임 번호 — null이면 <see cref="SelectedCels"/>)에 지금 셀 말고 다른 셀이 있으면 그 셀들도 같은 영역(선택이 없으면 셀마다 칠한 픽셀 전체)을
+    /// 떼어 함께 변형한다: 손잡이는 모든 원본을 감싸는 사각형, 캔버스에는 지금 셀이 떠서 움직이고, 적용하면 모든 셀이 같은 행렬로 바뀐다(실행취소 한 단계).
+    /// 빈 셀·잠긴 레이어·그룹은 건너뛴다(<see cref="TransformLockedSkipped"/>).
     /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 변형 중이어도) null.
     /// </summary>
-    public string? BeginTransform()
+    public string? BeginTransform(IReadOnlyList<(int Layer, int Frame)>? cels = null)
     {
-        if (Project is null) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
+        if (Project is not { } p) return UiStrings.S_EditorContext_BeginTransform_E708BAFBC9;
         if (_transform is not null) return null;
         if (IsGroupSelected) return UiStrings.S_EditorContext_BeginTransform_10405489AE;
         // 캔버스 크기 모드면 먼저 적용한다(캔버스가 바뀌면 선택이 풀리므로 시작 전 선택 상태를 저장하기 전에).
@@ -583,31 +665,48 @@ public sealed class EditorContext
         var before = Selection.Save();
         BeginSelectionEdit();
         var img = EditImage!;
-        if (!Selection.HasSelection)
+        // 함께 고른 다른 셀들: 지금 셀의 선택 영역(없으면 셀마다 칠한 픽셀 전체)을 같은 자리에서 뗀다(셀은 적용할 때까지 그대로).
+        var others = (cels ?? SelectedCels?.Invoke())?.Where(c => c.Layer != _layer || c.Frame != _frame).ToList();
+        var multi = others is { Count: > 0 } ? MultiCelTransform.Create(p, _layer, others, Selection.HasSelection ? Selection.Region : null) : null;
+        if (!Selection.HasSelection && img.GetOpaqueBounds() is { IsEmpty: false } content) Selection.Select(img, content);
+        FreeTransform? lifted = null;
+        if (Selection.HasSelection)
         {
-            var content = img.GetOpaqueBounds();
-            if (content.IsEmpty)
-            {
-                if (!hadStroke)
-                {
-                    _selectionStrokeOpen = false;
-                    CancelStroke();
-                }
-                return UiStrings.S_EditorContext_BeginTransform_433795A813;
-            }
-            Selection.Select(img, content);
+            Selection.Lift(img);
+            lifted = new FreeTransform(Selection.Floating!, Selection.Region);
         }
-        Selection.Lift(img);
-        var source = new FreeTransform(Selection.Floating!, Selection.Region);
-        _transform = new TransformSession(source, before, celBefore);
+        var othersBounds = multi?.Bounds ?? Rectangle.Empty;
+        if (lifted is null && othersBounds.IsEmpty)
+        {
+            if (!hadStroke)
+            {
+                _selectionStrokeOpen = false;
+                CancelStroke();
+            }
+            return multi is null ? UiStrings.S_EditorContext_BeginTransform_433795A813 : UiStrings.Transform_NoPixelsInCels;
+        }
+        var source = lifted;
+        if (!othersBounds.IsEmpty)
+        {
+            // 손잡이는 모든 셀의 원본을 감싸는 사각형(움직임 전체가 보이게).
+            var union = lifted is null ? othersBounds : Rectangle.Union(othersBounds, lifted.SourceBounds);
+            source = new FreeTransform(new PixelImage(union.Width, union.Height), new PixelMask(union));
+        }
+        _transform = new TransformSession(source!, lifted, multi, before, celBefore);
         // 회전 중심은 처음에 지금 대상의 피벗(부위면 부위 피벗, 아니면 프레임/기본 피벗 — 캔버스의 피벗 표시) 자리.
         var (px, py) = Pivot.ToLocalPixel(CanvasWidth, CanvasHeight);
-        var pivotSource = source.Unmap(_transform.Params, px, py);
+        var pivotSource = source!.Unmap(_transform.Params, px, py);
         if (double.IsFinite(pivotSource.X) && double.IsFinite(pivotSource.Y)) _transform.PivotSource = pivotSource;
         NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
         return null;
     }
+
+    /// <summary>변형 중인 셀 수(지금 셀에 뗄 것이 있으면 그것 포함, 함께 고른 다른 셀들). 변형 중이 아니면 0.</summary>
+    public int TransformCelCount => _transform is { } t ? (t.Lifted is null ? 0 : 1) + (t.Multi?.Targets.Count ?? 0) : 0;
+
+    /// <summary>함께 고른 셀 중 레이어가 잠겨 건너뛴 셀 수(그림이 있는 것만). 변형 중이 아니면 0.</summary>
+    public int TransformLockedSkipped => _transform?.Multi?.LockedSkipped ?? 0;
 
     /// <summary>
     /// 방금 지금 셀에 넣은 그림(<paramref name="image"/>를 <paramref name="location"/>에 — 캔버스 밖은 잘려 들어감)을 잘리기 전 그대로 떠 있는 상태로 들고
@@ -634,7 +733,8 @@ public sealed class EditorContext
             for (int x = 0; x < floating.Width; x++)
                 if (floating.Pixels[y * floating.Width + x].A != 0) cel.Set(r.X + x, r.Y + y, Color32.Transparent);
         Selection.SetFloating(floating, region);
-        _transform = new TransformSession(new FreeTransform(floating, region), before, null);
+        var placed = new FreeTransform(floating, region);
+        _transform = new TransformSession(placed, placed, null, before, null);
         NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
         return null;
@@ -710,8 +810,12 @@ public sealed class EditorContext
     private void RenderTransform()
     {
         if (_transform is not { } t) return;
-        var r = t.Source.Render(t.Params, _transformResample);
-        Selection.SetFloating(r.Image, r.Region);
+        if (t.Lifted is { } lifted)
+        {
+            // 여러 셀이면 손잡이 기준(모든 원본을 감싸는 사각형)과 같은 행렬로 지금 셀 원본을 그린다.
+            var r = lifted.Render(t.Source.ParamsFor(lifted, t.Params), _transformResample);
+            Selection.SetFloating(r.Image, r.Region);
+        }
         NotifyPixels();
         TransformChanged?.Invoke(this, EventArgs.Empty);
     }

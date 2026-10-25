@@ -1224,7 +1224,7 @@ public static partial class ProjectIO
         /// <summary>그림자 X·Y, 터지기 직접 중심 X·Y.</summary>
         public int? X { get; set; }
         public int? Y { get; set; }
-        /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게).</summary>
+        /// <summary>가장자리 빛 방향(<see cref="LightDirection"/> 이름, 모르면 기본값 — 글자로 두어 읽기가 실패하지 않게), 반사 방향(<see cref="ReflectionDirection"/> 이름) 등.</summary>
         public string? Direction { get; set; }
         /// <summary>색 덮기 양, 예전 시간 그라데이션·빛 지나가기 세기, 이전 파일의 늘었다 줄기 양쪽 공통 세기(%), 외곽선 명암 양(−100~100, 기본 −40이면 안 씀).</summary>
         public int? Amount { get; set; }
@@ -1284,6 +1284,7 @@ public static partial class ProjectIO
         public int? OpacityEnd { get; set; }
         public bool? DitherFade { get; set; }
         public int? Wave { get; set; }
+        /// <summary>예전 파일의 반사 방향(true = 위, false = 아래) — 이제는 <see cref="Direction"/>에 쓰고 읽기만 한다.</summary>
         public bool? Above { get; set; }
         /// <summary>적용할 프레임 범위 [시작, 끝](0부터, 양 끝 포함). 없으면 모든 프레임(예전 파일).</summary>
         public int[]? Frames { get; set; }
@@ -1355,7 +1356,7 @@ public static partial class ProjectIO
                 ReflectionEffect m => new EffectDto
                 {
                     Type = "reflection", Gap = m.Gap, Height = m.Height, OpacityStart = m.OpacityStart, OpacityEnd = m.OpacityEnd, DitherFade = m.DitherFade,
-                    Color = m.Tint.ToHex(), Wave = m.Wave, Above = m.Above,
+                    Color = m.Tint.ToHex(), Wave = m.Wave, Direction = m.Direction.ToString(),
                 },
                 HitFlashEffect hit => new EffectDto { Type = "hitflash", Color = hit.Color.ToHex(), Amount = hit.Strength, Count = hit.Count, Mode = hit.Shape.ToString() },
                 BlinkEffect blink => new EffectDto
@@ -1537,7 +1538,8 @@ public static partial class ProjectIO
                     return m with
                     {
                         Enabled = Enabled, Gap = Gap ?? m.Gap, Height = Height ?? m.Height, OpacityStart = OpacityStart ?? m.OpacityStart, OpacityEnd = OpacityEnd ?? m.OpacityEnd,
-                        DitherFade = DitherFade ?? m.DitherFade, Tint = ColorOr(Color, m.Tint), Wave = Wave ?? m.Wave, Above = Above ?? m.Above,
+                        DitherFade = DitherFade ?? m.DitherFade, Tint = ColorOr(Color, m.Tint), Wave = Wave ?? m.Wave,
+                        Direction = EnumOr(Direction, Above == true ? ReflectionDirection.Up : m.Direction),
                     };
                 case "hitflash":
                     var hf = new HitFlashEffect();

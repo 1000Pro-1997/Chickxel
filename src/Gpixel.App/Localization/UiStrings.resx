@@ -23,6 +23,14 @@
   <data name="Fade_Direction" xml:space="preserve"><value>방향</value></data>
   <data name="Fade_In" xml:space="preserve"><value>페이드 인</value></data>
   <data name="Fade_Out" xml:space="preserve"><value>페이드 아웃</value></data>
+  <data name="Reflection_Left" xml:space="preserve"><value>왼쪽 (벽)</value></data>
+  <data name="Reflection_Right" xml:space="preserve"><value>오른쪽 (벽)</value></data>
+  <data name="Reflection_Width" xml:space="preserve"><value>  너비</value></data>
+  <data name="Reflection_WaveColumns" xml:space="preserve"><value>px (열마다 세로로 흔듦, 0 = 끔)</value></data>
+  <data name="Reflection_HintHorizontal" xml:space="preserve"><value>그 프레임 그림을 좌우로 뒤집어 간격만큼 띄워 뒤에 깝니다(너비 = 그림 너비의 몇 %가 비칠지).</value></data>
+  <data name="Reflection_OpacityHintHorizontal" xml:space="preserve"><value> 그림 쪽 열이 시작 불투명도, 끝 열이 끝 불투명도입니다. 색 입히기의 투명도 = 물드는 세기(0 = 안 물들임).</value></data>
+  <data name="Reflection_SummaryLeft" xml:space="preserve"><value>왼쪽</value><comment>효과 목록 요약 "반사 · 왼쪽 · 간격 …"의 방향.</comment></data>
+  <data name="Reflection_SummaryRight" xml:space="preserve"><value>오른쪽</value><comment>효과 목록 요약 "반사 · 오른쪽 · 간격 …"의 방향.</comment></data>
   <data name="Explode_DistanceYTip" xml:space="preserve"><value>Y 거리가 0이어도 중력이 0이 아니면 위아래로 움직입니다. 수직 이동을 멈추려면 중력도 0으로 설정하세요.</value></data>
   <data name="Language_Title" xml:space="preserve"><value>언어 (Language)</value><comment>환경 설정 맨 위 묶음 제목. 다른 언어 사용자도 찾도록 영어 단어를 함께 적음.</comment></data>
   <data name="Language_Label" xml:space="preserve"><value>화면 언어</value></data>
@@ -3939,7 +3947,7 @@ echo __LOGIN_FAILED__
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:44 · KindTable · "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_KindTable_6A331276D8" xml:space="preserve">
-    <value>그림을 위아래로 뒤집어 아래에 점점 옅게 비춥니다(물·바닥 반사).</value>
+    <value>그림을 뒤집어 아래·위·옆에 점점 옅게 비춥니다(물·바닥·벽 반사).</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:32 · KindTable · "그림을 위아래로 뒤집어 아래에 점점 옅게 비춥니다(물·바닥 반사)."</comment>
   </data>
   <data name="S_LayerEffectsDialog_KindTable_71D60FCC7E" xml:space="preserve">
@@ -10129,8 +10137,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiDraw_Codex_Unknown" xml:space="preserve"><value>Codex CLI 상태를 알 수 없습니다: {message}</value></data>
   <data name="AiDraw_Options_Title" xml:space="preserve"><value>생성 옵션</value></data>
   <data name="AiDraw_Size" xml:space="preserve"><value>결과 크기</value></data>
-  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>변환한 픽셀 아트의 긴 변(px). 자동은 그림에서 찾은 픽셀 격자 그대로입니다.</value></data>
-  <data name="AiDraw_Size_Auto" xml:space="preserve"><value>자동</value></data>
+  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>결과 크기 보정을 켰을 때 변환 결과를 맞출 크기(긴 변, px).</value></data>
   <data name="AiDraw_Size_Custom" xml:space="preserve"><value>직접 입력</value></data>
   <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>배경 지우기</value></data>
   <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>변환할 때 배경을 지웁니다. 배경을 말하지 않으면 생성할 때부터 투명한 빈 배경으로 만듭니다.</value></data>
@@ -10224,4 +10231,13 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Video_Progress" xml:space="preserve"><value>{done} / {total} 프레임</value><comment>done = 받은 프레임 수, total = 예상 프레임 수.</comment></data>
   <data name="FileBrowser_VideoBadge" xml:space="preserve"><value>영상 — 열면 프레임으로 가져옵니다(ffmpeg 필요)</value></data>
   <data name="Ai_Error_CommandLineTooLong" xml:space="preserve"><value>명령줄이 너무 깁니다({length}자, 한도 {limit}자). AI CLI를 실행하지 않았습니다.</value></data>
+  <data name="Transform_NoPixelsInCels" xml:space="preserve"><value>고른 셀들에 변형할 픽셀이 없습니다(빈 셀·잠긴 레이어는 건너뜀).</value></data>
+  <data name="Move_OtherCels" xml:space="preserve"><value>타임라인에서 고른 다른 셀 {count}칸도 함께 옮김</value><comment>count = 지금 셀과 함께 옮긴 다른 셀 수.</comment></data>
+  <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>팔레트 색만 사용</value></data>
+  <data name="AiDraw_PaletteOnly_Tip" xml:space="preserve"><value>AI가 픽셀 도구로 칠하는 색을 활성 팔레트의 색으로 제한합니다.</value></data>
+  <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>AI가 직접 칠하는 색(점·선·채우기·색 바꾸기)을 활성 팔레트에서 가장 가까운 색으로 바꿉니다. 지우기(완전 투명)는 되고 반투명은 불투명이 됩니다. 그림 생성 결과(변환기의 팔레트 설정)와 레이어 효과에는 영향이 없습니다.</value></data>
+  <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
+  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
+  <data name="AiDraw_ResizeResult_Tip" xml:space="preserve"><value>변환 결과를 아래 크기(또는 채팅에서 말한 크기)에 맞춥니다.</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 생성한 그림의 픽셀 칸 크기대로 자동 크기 + 자동 최적화로 변환합니다. 채팅에서 "64×64"처럼 말한 크기는 그림을 그릴 때 대략적인 크기로만 참고합니다. 켜면 아래 크기(또는 채팅에서 말한 크기)로 맞춥니다.</value></data>
 </root>

@@ -391,4 +391,6 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Open_Decoding" xml:space="preserve"><value>Decoding frames of {name}…</value></data>
   <data name="Open_Unreadable" xml:space="preserve"><value>Can't open {name} (unsupported format or damaged file).</value></data>
   <data name="Open_Opened" xml:space="preserve"><value>Opened {name} — {frames} frames, {width}×{height}, {ms} ms total · not saved yet (saving asks where to put the .gpixel)</value></data>
+  <data name="Transform_Cels" xml:space="preserve"><value>Transforming {count} cels together · </value></data>
+  <data name="Transform_LockedSkipped" xml:space="preserve"><value>Skipped {count} cels on locked layers · </value></data>
 </root>

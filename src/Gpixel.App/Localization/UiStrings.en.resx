@@ -15,6 +15,14 @@
   <data name="Fade_Direction" xml:space="preserve"><value>Direction</value></data>
   <data name="Fade_In" xml:space="preserve"><value>Fade in</value></data>
   <data name="Fade_Out" xml:space="preserve"><value>Fade out</value></data>
+  <data name="Reflection_Left" xml:space="preserve"><value>Left (wall)</value></data>
+  <data name="Reflection_Right" xml:space="preserve"><value>Right (wall)</value></data>
+  <data name="Reflection_Width" xml:space="preserve"><value>  Width</value></data>
+  <data name="Reflection_WaveColumns" xml:space="preserve"><value>px (shifts each column vertically, 0 = off)</value></data>
+  <data name="Reflection_HintHorizontal" xml:space="preserve"><value>Flips the frame image horizontally and places it behind, offset by the gap (width = what % of the image width is reflected).</value></data>
+  <data name="Reflection_OpacityHintHorizontal" xml:space="preserve"><value> The column nearest the image uses the start opacity, the far column the end opacity. Tint opacity = tint strength (0 = no tint).</value></data>
+  <data name="Reflection_SummaryLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="Reflection_SummaryRight" xml:space="preserve"><value>Right</value></data>
   <data name="Explode_DistanceYTip" xml:space="preserve"><value>Even with Y distance 0, nonzero gravity still moves pixels up and down. To stop vertical movement, set gravity to 0 too.</value></data>
   <data name="Language_Title" xml:space="preserve"><value>Language</value></data>
   <data name="Language_Label" xml:space="preserve"><value>Display language</value></data>
@@ -1080,7 +1088,7 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_KindTable_5C190C1C74" xml:space="preserve"><value>Outline</value></data>
   <data name="S_LayerEffectsDialog_KindTable_6134E7833F" xml:space="preserve"><value>Makes a glowing edge by blending color inward from the edges.</value></data>
   <data name="S_LayerEffectsDialog_KindTable_69C80DA119" xml:space="preserve"><value>Leaves fading copies of previous frames behind for a sense of fast motion.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_6A331276D8" xml:space="preserve"><value>Flips the image upside down and reflects it below, fading gradually (water/floor reflection).</value></data>
+  <data name="S_LayerEffectsDialog_KindTable_6A331276D8" xml:space="preserve"><value>Flips the image and reflects it below, above or to a side, fading gradually (water/floor/wall reflection).</value></data>
   <data name="S_LayerEffectsDialog_KindTable_71D60FCC7E" xml:space="preserve"><value>Shockwave ring</value></data>
   <data name="S_LayerEffectsDialog_KindTable_792E7BADCE" xml:space="preserve"><value>Squash and stretch</value></data>
   <data name="S_LayerEffectsDialog_KindTable_7C6C1B6117" xml:space="preserve"><value>Wobbles horizontally and vertically like jelly, then returns to its original shape.</value></data>
@@ -3156,8 +3164,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiDraw_Codex_Unknown" xml:space="preserve"><value>Couldn't check Codex CLI: {message}</value></data>
   <data name="AiDraw_Options_Title" xml:space="preserve"><value>Generation options</value></data>
   <data name="AiDraw_Size" xml:space="preserve"><value>Result size</value></data>
-  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>Long side of the converted pixel art (px). Auto keeps the pixel grid found in the image.</value></data>
-  <data name="AiDraw_Size_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="AiDraw_Size_Tip" xml:space="preserve"><value>Size (long side, px) to fit the converted result to when result-size correction is on.</value></data>
   <data name="AiDraw_Size_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="AiDraw_RemoveBackground" xml:space="preserve"><value>Remove background</value></data>
   <data name="AiDraw_RemoveBackground_Tip" xml:space="preserve"><value>Removes the background when converting. Unless you ask for a background, images are also generated on a plain transparent background.</value></data>
@@ -3251,4 +3258,13 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Video_Progress" xml:space="preserve"><value>{done} / {total} frames</value></data>
   <data name="FileBrowser_VideoBadge" xml:space="preserve"><value>Video — opening imports it as frames (needs ffmpeg)</value></data>
   <data name="Ai_Error_CommandLineTooLong" xml:space="preserve"><value>The command line is too long ({length} characters, limit {limit}). The AI CLI was not started.</value></data>
+  <data name="Transform_NoPixelsInCels" xml:space="preserve"><value>No pixels to transform in the selected cels (empty cels and locked layers are skipped).</value></data>
+  <data name="Move_OtherCels" xml:space="preserve"><value>Also moved {count} other cels selected in the timeline</value></data>
+  <data name="AiDraw_PaletteOnly" xml:space="preserve"><value>Use palette colors only</value></data>
+  <data name="AiDraw_PaletteOnly_Tip" xml:space="preserve"><value>Limits the colors the AI paints with the pixel tools to the active palette.</value></data>
+  <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
+  <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
+  <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
+  <data name="AiDraw_ResizeResult_Tip" xml:space="preserve"><value>Fits the converted result to the size below (or a size given in the chat).</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): the generated image is converted at the pixel grid found in it, with automatic size and auto-optimize. A size you mention in the chat (e.g. "64×64") is only used as a rough scale for the drawing. On: the result is fitted to the size below (or the size from the chat).</value></data>
 </root>

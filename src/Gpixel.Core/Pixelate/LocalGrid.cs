@@ -69,12 +69,52 @@ public sealed class CellLayout
         return (c + (x - x0) / Math.Max(1, x1 - x0), r + (y - y0) / Math.Max(1, y1 - y0));
     }
 
+    /// <summary>범위 <paramref name="area"/> 안 정수 자리 → 칸 표(<see cref="CellIndex"/> — 픽셀마다 칸을 찾는 반복에서 <see cref="Locate"/> 대신).</summary>
+    public CellIndex Index(Rectangle area) => new(this, area);
+
     /// <summary>cuts[c] ≤ p &lt; cuts[c + 1]인 c(밖이면 끝 칸으로 자름).</summary>
     private static int Find(int[] cuts, double p)
     {
         int c = Array.BinarySearch(cuts, (int)Math.Floor(p));
         if (c < 0) c = ~c - 1;
         return Math.Clamp(c, 0, cuts.Length - 2);
+    }
+}
+
+/// <summary>
+/// 정수 자리 → 칸(<see cref="CellLayout.Index"/>): <see cref="CellLayout.Locate"/>와 같은 칸을 미리 만든 표(전체 경계, 지역 보정이면 띠마다의 경계)로 찾는다 —
+/// 이분 탐색을 되풀이하지 않는다. 범위 밖 자리는 쓰지 않는다.
+/// </summary>
+public sealed class CellIndex
+{
+    private readonly int _left, _top, _band;
+    private readonly int[] _col, _row;
+    private readonly int[][]? _colByBand, _rowByBand;
+
+    internal CellIndex(CellLayout layout, Rectangle area)
+    {
+        _left = area.Left;
+        _top = area.Top;
+        _col = GridDetector.Lookup(layout.XCuts, area.Left, area.Right);
+        _row = GridDetector.Lookup(layout.YCuts, area.Top, area.Bottom);
+        if (layout.Local is not { } local) return;
+        _band = local.Band;
+        _colByBand = [.. local.XByBand.Select(c => GridDetector.Lookup(c, area.Left, area.Right))];
+        _rowByBand = [.. local.YByBand.Select(c => GridDetector.Lookup(c, area.Top, area.Bottom))];
+    }
+
+    /// <summary>자리 (x, y)가 든 칸(<see cref="CellLayout.Locate"/>와 같은 차례: 전체 경계로 어림한 뒤 열의 가로 경계로 행, 행의 세로 경계로 열을 두 번).</summary>
+    public void Locate(int x, int y, out int col, out int row)
+    {
+        int px = x - _left, py = y - _top;
+        col = _col[px];
+        row = _row[py];
+        if (_colByBand is null) return;
+        for (int k = 0; k < 2; k++)
+        {
+            row = _rowByBand![Math.Clamp(col / _band, 0, _rowByBand.Length - 1)][py];
+            col = _colByBand[Math.Clamp(row / _band, 0, _colByBand.Length - 1)][px];
+        }
     }
 }
 
@@ -96,7 +136,8 @@ public static class LocalGrid
     private const double Smooth = 0.2;
     /// <summary>
     /// 지역 보정을 할 가장 작은 평균 칸 크기(원본 px): 이보다 작으면 최대 이동(±35%)이 1px 남짓이라 흐리게 키운 그림의 경계 자리 흔들림(±1px)과 가릴 수 없다
-    /// (표본 물 기계 3.9px 칸: 켜면 충실도 0.026 → 0.038로 나빠짐).
+    /// (표본 물 기계 3.9px 칸: 켜면 충실도 0.026 → 0.038, 점수 69.7 → 66.9로 나빠짐). 3px로 낮추면 ×½로 줄인 마법사 꼬마 시트(3.6px)는 57.4 → 60.5이지만
+    /// 원래 크기(7px, 보정 켬)는 66.5 — 문턱을 낮추는 대신 AI 그리기 시트를 줄이지 않는다(<see cref="AiDraw.AiDrawConversion.MaxSheetSide"/>).
     /// </summary>
     public const double MinCell = 5;
 
@@ -232,19 +273,23 @@ public static class LocalGrid
     }
 
     /// <summary>
-    /// 지역 보정한 격자가 색 바뀜과 맞는 정도(<see cref="GridDetector.Confidence"/>를 띠마다 그 띠의 색 차이 세기와 그 띠의 경계로 재서 띠 크기로 평균).
+    /// 지역 보정한 격자가 색 바뀜과 맞는 정도(<see cref="GridDetector.Confidence(double[], int[], int, int)"/>를 띠마다 그 띠의 색 차이 세기와 그 띠의 경계로 재서 띠 크기로 평균).
+    /// 띠의 세기는 프레임 범위의 누적 표(<paramref name="sums"/> — <see cref="PixelateSource.EdgeSums"/>)에서 바로 낸다.
     /// </summary>
-    public static double Confidence(PixelImage cleaned, int[]? labels, int label, Rectangle bounds, CellLayout layout)
+    public static double Confidence(GridDetector.EdgeSums sums, CellLayout layout)
     {
         var local = layout.Local!;
+        var bounds = sums.Area;
+        var ex = new double[bounds.Width + 2];
+        var ey = new double[bounds.Height + 2];
         double sx = 0, wx = 0, sy = 0, wy = 0;
         for (int k = 0; k < local.XByBand.Length; k++)
         {
             int a = Math.Max(bounds.Top, layout.YCuts[Math.Min(layout.Rows, k * local.Band)]);
             int b = Math.Min(bounds.Bottom, layout.YCuts[Math.Min(layout.Rows, (k + 1) * local.Band)]);
             if (b <= a) continue;
-            var (ex, _) = GridDetector.Profiles(cleaned, new Rectangle(bounds.Left, a, bounds.Width, b - a), labels, label);
-            sx += (b - a) * GridDetector.Confidence(ex, local.XByBand[k], bounds.Left, bounds.Right);
+            sums.X(a, b, ex);
+            sx += (b - a) * GridDetector.Confidence(ex, bounds.Left - 1, local.XByBand[k], bounds.Left, bounds.Right);
             wx += b - a;
         }
         for (int k = 0; k < local.YByBand.Length; k++)
@@ -252,8 +297,8 @@ public static class LocalGrid
             int a = Math.Max(bounds.Left, layout.XCuts[Math.Min(layout.Columns, k * local.Band)]);
             int b = Math.Min(bounds.Right, layout.XCuts[Math.Min(layout.Columns, (k + 1) * local.Band)]);
             if (b <= a) continue;
-            var (_, ey) = GridDetector.Profiles(cleaned, new Rectangle(a, bounds.Top, b - a, bounds.Height), labels, label);
-            sy += (b - a) * GridDetector.Confidence(ey, local.YByBand[k], bounds.Top, bounds.Bottom);
+            sums.Y(a, b, ey);
+            sy += (b - a) * GridDetector.Confidence(ey, bounds.Top - 1, local.YByBand[k], bounds.Top, bounds.Bottom);
             wy += b - a;
         }
         return 0.5 * ((wx > 0 ? sx / wx : 0) + (wy > 0 ? sy / wy : 0));

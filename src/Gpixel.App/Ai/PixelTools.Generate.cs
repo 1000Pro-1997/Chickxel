@@ -108,7 +108,8 @@ public sealed partial class PixelTools
                 },
                 ["view"] = Str("Camera/facing, in English (default: side view facing right for animations, front three-quarter view for a still character)."),
                 ["background"] = Str("Only if the user explicitly asked for a background or scene: describe it in English. Omit otherwise; a plain transparent background is used."),
-                ["size"] = Int($"Target size of the result in pixels (long side, {AiDrawSettings.MinSize}-{AiDrawSettings.MaxSize}). Omit to use the user's setting (usually automatic).",
+                ["size"] = Int($"Rough size of the sprite in pixels (long side, {AiDrawSettings.MinSize}-{AiDrawSettings.MaxSize}) when the user mentions one (e.g. \"64x64\"). It is a scale hint for the " +
+                    "generated drawing; the conversion keeps the pixel grid found in the image unless the user turned on result-size correction in the settings. Omit otherwise.",
                     AiDrawSettings.MinSize, AiDrawSettings.MaxSize),
                 ["subject_image"] = Int("Number N of an image the user attached to this message (written as [Image #N] in the message) that shows the character/item to draw " +
                     "(e.g. \"make this character as pixel art\"). A suitable pixel-art style reference is then added automatically.", 1),
@@ -131,7 +132,8 @@ public sealed partial class PixelTools
         var poses = OptStringList(a, "poses");
         if (animation == AiDrawActions.Custom && poses.Count == 0) throw new ToolError(UiStrings.AiDraw_Error_CustomPoses);
         int? frames = OptInt(a, "frames", AiDrawSettings.MinFrames, AiDrawSettings.MaxFrames);
-        int size = OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize) ?? options.SizeTargetClamped;
+        // 크기: 생성 프롬프트에는 대략적인 크기 힌트로, 변환은 "결과 크기 보정"이 켜졌을 때만 그 크기로 고정(꺼지면 자동 크기 + 자동 최적화).
+        var (size, convertSize) = options.SizesFor(OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize));
         int? subjectIndex = OptInt(a, "subject_image", 1, Math.Max(1, TurnImages.Count)) is { } number ? number - 1 : null;
         if (subjectIndex >= TurnImages.Count) throw new ToolError(UiStrings.AiDraw_Error_NoImageAttached);
         var styleId = OptString(a, "style_reference")?.Trim();
@@ -194,7 +196,7 @@ public sealed partial class PixelTools
             if (styleFile is not null) { firstRoles.Add(AiDrawImageRole.Style); firstFiles.Add(styleFile); }
             bool sheet = count > 1 && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
             bool keepOffsets = animation == AiDrawActions.Jump;
-            var settings = AiDrawConversion.Settings(new PixelateSettings(), count, size, options.RemoveBackground, keepOffsets);
+            var settings = AiDrawConversion.Settings(new PixelateSettings(), count, convertSize, options.RemoveBackground, keepOffsets);
             PixelImage source;
             string firstImage;
             var layout = AiDrawSheetLayout.For(count);
