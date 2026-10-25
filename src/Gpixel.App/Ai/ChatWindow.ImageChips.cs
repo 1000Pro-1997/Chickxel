@@ -9,34 +9,61 @@ using Gpixel.App.Localization;
 namespace Gpixel.App.Ai;
 
 // 입력란의 그림 칩([이미지 #1]): 붙여 넣기·끌어 놓기·"이미지…"·"캔버스 첨부"로 넣은 그림은 커서 자리에 칩 글자(ChatImageTokens — 보이지 않는
-// 표시 글자로 감싼 [이미지 #N])로 들어가고, 입력란 위 층(_chipLayer)이 그 글자 자리를 칩(그림 아이콘 + 강조색 #N)으로 덮는다. 칩은 한 덩어리라
+// 표시 글자로 감싼 [이미지 #N])로 들어가고, 입력란 위 층(_chipLayer)이 그 글자 자리를 칩(체커 위 작은 정사각 미리보기 + 강조색 #N)으로 덮는다. 칩은 한 덩어리라
 // Backspace·Delete 한 번에 지워지고(그 첨부도 빠짐) 커서가 칩 안에 들어가지 않으며, 지우거나 옮기면 번호를 글 순서대로 다시 매긴다.
 // 마우스를 올리면 미리보기, 누르면 크게 보기(빼기 단추). 보낸 말풍선에도 글 사이에 같은 칩(작은 미리보기 + 번호)이 들어간다.
 public sealed partial class ChatWindow
 {
     /// <summary>칩 미리보기 풍선의 긴 변, 크게 보기의 긴 변 최대.</summary>
     private const int ChipTipSide = 160, ChipViewSide = 420;
-    /// <summary>말풍선 칩 안 미리보기의 높이.</summary>
+    /// <summary>말풍선 칩 안 미리보기 한 변.</summary>
     private const int BubbleChipThumb = 18;
+    /// <summary>입력란 칩 미리보기의 최소 한 변, 칩이 글자 줄 위아래로 넘치는 거리(줄 사이 여백 안).</summary>
+    private const int MinChipThumb = 10, ChipBleed = 1;
 
     private static readonly IBrush ChipBrush = AppTheme.Brush(Color.FromRgb(40, 54, 76));
     private static readonly IBrush ChipSelectedBrush = AppTheme.Brush(Color.FromRgb(46, 86, 140));
 
-    /// <summary>칩 안 내용: 미리보기(있고 <paramref name="thumbHeight"/> &gt; 0이면) 또는 그림 아이콘, 강조색 굵은 "#N".</summary>
-    private static StackPanel ChipContent(int number, Bitmap? thumb, double thumbHeight, double fontSize)
+    /// <summary>
+    /// 칩 안 내용(입력란·말풍선 같은 모양): 정사각 미리보기(<paramref name="side"/>, 체커 바탕 위 비율 그대로 — 픽셀 아트·작은 그림은 최근접으로 픽셀 그대로,
+    /// 큰 사진은 부드럽게 줄임; 그림이 없으면 그림 아이콘)와 강조색 굵은 "#N".
+    /// </summary>
+    private static StackPanel ChipContent(int number, Bitmap? thumb, double side, double fontSize, bool pixelArt)
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
-        if (thumb is not null && thumbHeight > 0)
+        if (thumb is not null && side > 0)
         {
             var px = thumb.PixelSize;
-            double k = thumbHeight / Math.Max(1, px.Height);
-            var image = new Image { Source = thumb, Height = thumbHeight, Width = Math.Max(1, Math.Min(thumbHeight * 2, px.Width * k)), Stretch = Stretch.Uniform };
-            if (k > 1) RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.None);
-            panel.Children.Add(image);
+            double k = Math.Min(side / Math.Max(1, px.Width), side / Math.Max(1, px.Height));
+            var image = new Image
+            {
+                Source = thumb,
+                Width = Math.Max(1, px.Width * k),
+                Height = Math.Max(1, px.Height * k),
+                Stretch = Stretch.Fill,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            RenderOptions.SetBitmapInterpolationMode(image, pixelArt || k >= 1 ? BitmapInterpolationMode.None : BitmapInterpolationMode.HighQuality);
+            panel.Children.Add(new Border
+            {
+                Width = side,
+                Height = side,
+                CornerRadius = new CornerRadius(2),
+                ClipToBounds = true,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new SmallCheckerBackground { Child = image },
+            });
         }
         else panel.Children.Add(new IconView(VectorIcon.Image) { Width = 12, Height = 12, Foreground = AppTheme.AccentBrush, VerticalAlignment = VerticalAlignment.Center });
         panel.Children.Add(new TextBlock { Text = "#" + number, Foreground = AppTheme.AccentBrush, FontWeight = FontWeight.Bold, FontSize = fontSize, VerticalAlignment = VerticalAlignment.Center });
         return panel;
+    }
+
+    /// <summary>작은 칩 미리보기 바탕의 잔 체커(칸 3px — 투명한 곳이 보이게).</summary>
+    private sealed class SmallCheckerBackground : Decorator
+    {
+        public override void Render(DrawingContext g) => AppTheme.DrawChecker(g, new Rect(Bounds.Size), 3);
     }
 
     /// <summary>미리보기 풍선 내용(긴 변 <see cref="ChipTipSide"/>, 작은 그림은 정수 배 최근접).</summary>
@@ -85,7 +112,7 @@ public sealed partial class ChatWindow
             Padding = new Thickness(3, 1, 4, 1),
             Margin = new Thickness(1, 0),
             Cursor = new Cursor(StandardCursorType.Hand),
-            Child = ChipContent(number, thumb, BubbleChipThumb, AppTheme.FontSize),
+            Child = ChipContent(number, thumb, BubbleChipThumb, AppTheme.FontSize, pixelArt: true),
         };
         if (thumb is not null)
         {
@@ -364,17 +391,22 @@ public sealed partial class ChatWindow
                     continue;
                 }
                 chip.IsVisible = true;
-                SetIfChanged(chip, Canvas.LeftProperty, Math.Round(p.X));
-                SetIfChanged(chip, Canvas.TopProperty, Math.Round(p.Y));
-                SetIfChanged(chip, Layoutable.WidthProperty, Math.Max(1, Math.Round(line.Width)));
-                SetIfChanged(chip, Layoutable.HeightProperty, Math.Max(1, Math.Round(line.Height)));
+                // 칩은 칩 글자 범위를 덮는다: 가로는 글자 가장자리의 부드럽게 그린 픽셀까지(양쪽 1px 더), 세로는 위아래로 한 픽셀씩 더 커서
+                // 미리보기가 줄 높이만큼 보인다(줄 사이 여백 안).
+                double left = Math.Floor(p.X) - ChipBleed, right = Math.Ceiling(p.X + line.Width) + ChipBleed;
+                SetIfChanged(chip, Canvas.LeftProperty, left);
+                SetIfChanged(chip, Canvas.TopProperty, Math.Round(p.Y) - ChipBleed);
+                SetIfChanged(chip, Layoutable.WidthProperty, Math.Max(1, right - left));
+                SetIfChanged(chip, Layoutable.HeightProperty, Math.Max(1, Math.Round(line.Height) + 2 * ChipBleed));
                 var brush = selLo < selHi && selLo <= t.Start && selHi >= t.End ? ChipSelectedBrush : ChipBrush;
                 if (!ReferenceEquals(chip.Background, brush)) chip.Background = brush;
                 var a = _attachments[t.Number - 1];
-                if (chip.Tag is not (int n, Attachment shown) || n != t.Number || !ReferenceEquals(shown, a))
+                // 미리보기 한 변 = 칩 안쪽 높이(테두리 1px씩) − 위아래 1px.
+                double side = Math.Max(MinChipThumb, Math.Round(line.Height) + 2 * ChipBleed - 4);
+                if (chip.Tag is not (int n, Attachment shown, double shownSide) || n != t.Number || !ReferenceEquals(shown, a) || shownSide != side)
                 {
-                    chip.Tag = (t.Number, a);
-                    chip.Child = ChipContent(t.Number, null, 0, _input.FontSize);
+                    chip.Tag = (t.Number, a, side);
+                    chip.Child = ChipContent(t.Number, a.Thumb, side, _input.FontSize, a.PixelArt);
                     ToolTip.SetTip(chip, ChipTip(a.Thumb));
                 }
             }
@@ -401,12 +433,13 @@ public sealed partial class ChatWindow
                 BorderBrush = AppTheme.AccentBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(2, 0),
                 Cursor = new Cursor(StandardCursorType.Hand),
             };
             chip.PointerPressed += (_, e) => e.Handled = true;
             chip.PointerReleased += (_, e) =>
             {
-                if (e.InitialPressMouseButton != MouseButton.Left || chip.Tag is not (int number, Attachment a)) return;
+                if (e.InitialPressMouseButton != MouseButton.Left || chip.Tag is not (int number, Attachment a, double _)) return;
                 e.Handled = true;
                 ShowChipFlyout(chip, a.Thumb, () => RemoveChip(number));
             };

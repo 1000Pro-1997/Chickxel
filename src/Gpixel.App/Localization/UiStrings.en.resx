@@ -3250,4 +3250,5 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Video_DecodingTitle" xml:space="preserve"><value>Extracting video frames</value></data>
   <data name="Video_Progress" xml:space="preserve"><value>{done} / {total} frames</value></data>
   <data name="FileBrowser_VideoBadge" xml:space="preserve"><value>Video — opening imports it as frames (needs ffmpeg)</value></data>
+  <data name="Ai_Error_CommandLineTooLong" xml:space="preserve"><value>The command line is too long ({length} characters, limit {limit}). The AI CLI was not started.</value></data>
 </root>

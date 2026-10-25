@@ -40,18 +40,17 @@ public sealed class CodexImageGenerator(string codexPath, string? model)
         foreach (var setting in ConfigOverrides()) args.AddRange(["-c", setting]);
         args.Add("-");
 
-        var psi = AiCli.CreateStartInfo(codexPath, args, work, true);
+        ProcessStartInfo psi;
+        try
+        {
+            psi = AiCli.CreateStartInfo(codexPath, args, work, true);
+        }
+        catch (CommandLineTooLongException ex)
+        {
+            throw new AiDrawException(UiStrings.FormatAiDraw_Error_Start(message: ex.Message));
+        }
         using var p = new Process { StartInfo = psi };
         var stderr = new StringBuilder();
-        p.ErrorDataReceived += (_, e) =>
-        {
-            if (e.Data is null) return;
-            lock (stderr)
-            {
-                stderr.AppendLine(e.Data);
-                if (stderr.Length > 8000) stderr.Remove(0, stderr.Length - 4000);
-            }
-        };
         try
         {
             p.Start();
@@ -60,7 +59,7 @@ public sealed class CodexImageGenerator(string codexPath, string? model)
         {
             throw new AiDrawException(UiStrings.FormatAiDraw_Error_Start(message: ex.Message));
         }
-        p.BeginErrorReadLine();
+        var stderrDone = AiCli.CollectErrorTail(p, stderr);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(Timeout);
         using var kill = timeout.Token.Register(() => AiCli.Kill(p));
@@ -109,6 +108,7 @@ public sealed class CodexImageGenerator(string codexPath, string? model)
         var saved = threadId is null ? null : NewestImage(Path.Combine(CodexProvider.CodexHome, "generated_images", threadId));
         if (saved is null)
         {
+            await Task.WhenAny(stderrDone, Task.Delay(2000)).ConfigureAwait(false);
             string tail;
             lock (stderr) tail = AiCli.Tail(AiCli.StripAnsi(stderr.ToString()).Trim(), 600);
             var reason = error ?? lastMessage ?? tail;

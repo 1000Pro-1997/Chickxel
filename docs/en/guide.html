@@ -1085,6 +1085,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>If it's installed but not logged in, click <strong>Log in with Claude / Log in with Codex</strong> or <strong>Log in via terminal</strong>. The logged-in account is shown at the top of the window.</li>
 <li>If installation fails, check the error in the terminal and use the on-screen copy command, set path manually or <strong>Check again</strong> options.</li>
 <li>The Codex CLI bundled with the ChatGPT app on macOS is found automatically. Nothing else needs to be installed.</li>
+<li>On Windows, a Codex CLI installed with npm is started from the package's <code>codex.exe</code> directly instead of through <code>codex.cmd</code>, so long chats and attached images don't hit the cmd.exe command-line limit (8191 characters). If a command is still over the limit (about 32,000 characters), it isn't started and a "command line is too long" error is shown.</li>
 </ul>
 
 <h3 id="ai-tabs">Claude and Codex tabs</h3>
@@ -1109,11 +1110,11 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </tbody>
 </table></div>
 <p>The first entry in the model list, <strong>Default</strong>, also shows the name of the model that will actually be used.</p>
-<p>Attached images no longer line up above the input box: each one goes into the text at the cursor as an <strong>image chip</strong> (a small image icon and an accent-colored <strong>#1</strong>, <strong>#2</strong>…). You can type before and after chips, and they're numbered from 1 in text order within the message.</p>
+<p>Attached images no longer line up above the input box: each one goes into the text at the cursor as an <strong>image chip</strong> (a small square thumbnail on a checkerboard and an accent-colored <strong>#1</strong>, <strong>#2</strong>… in a rounded accent border, sized to the text line). Pixel-art thumbnails are scaled pixel-exact so they stay sharp. You can type before and after chips, and they're numbered from 1 in text order within the message.</p>
 <ul>
 <li>A chip is one unit. <kbd>Backspace</kbd> right after it or <kbd>Delete</kbd> right before it removes the chip and its attachment, and arrow keys skip over it. When chips are removed or reordered, the remaining ones are renumbered.</li>
 <li>Hover a chip for a thumbnail preview; click it to see the image large with a <strong>Remove attachment</strong> button.</li>
-<li>The sent message shows the same chips (small thumbnail and #number) in the same places; hover to preview, click to view large. The AI receives the images as attachments in chip order, and the text says <code>[Image #1]</code> where each chip was, so it knows which image you mean.</li>
+<li>The sent message shows chips with the same look (square checkerboard thumbnail and #number) in the same places; hover to preview, click to view large. The AI receives the images as attachments in chip order, and the text says <code>[Image #1]</code> where each chip was, so it knows which image you mean.</li>
 <li>Reopened past chats show the chips in the same places (from the saved 64 px thumbnails). Chats saved before this feature still show their thumbnails above the text.</li>
 </ul>
 

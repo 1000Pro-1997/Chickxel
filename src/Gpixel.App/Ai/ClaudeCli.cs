@@ -387,27 +387,18 @@ public sealed class ClaudeSession : IChatSession
             psi.Environment["MCP_TOOL_TIMEOUT"] = (CodexSession.ToolTimeoutSeconds * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var p = new Process { StartInfo = psi };
         var stderr = new StringBuilder();
-        p.ErrorDataReceived += (_, e) =>
-        {
-            if (e.Data is null) return;
-            lock (stderr)
-            {
-                stderr.AppendLine(e.Data);
-                if (stderr.Length > 8000) stderr.Remove(0, stderr.Length - 4000);
-            }
-        };
         _mcpSince = _mcp.Counters;
         _mcpChecked = false;
         _mcpStatus = null;
         p.Start();
-        p.BeginErrorReadLine();
+        var stderrDone = AiCli.CollectErrorTail(p, stderr);
         int gen = ++_generation;
         _process = p;
         _stdin = p.StandardInput;
         _resuming = SessionId is not null;
         _sawInit = false;
         if (SessionId is null) _sessionCwd = cwd;
-        var reader = new Thread(() => ReadLoop(p, gen, stderr)) { IsBackground = true, Name = "claude-stdout" };
+        var reader = new Thread(() => ReadLoop(p, gen, stderr, stderrDone)) { IsBackground = true, Name = "claude-stdout" };
         reader.Start();
     }
 
@@ -448,7 +439,7 @@ public sealed class ClaudeSession : IChatSession
     }
 
     /// <summary>표준 출력 JSONL을 읽는 스레드. 한 줄씩 파싱해 UI 스레드로 넘긴다.</summary>
-    private void ReadLoop(Process p, int gen, StringBuilder stderr)
+    private void ReadLoop(Process p, int gen, StringBuilder stderr, Task stderrDone)
     {
         try
         {
@@ -482,6 +473,8 @@ public sealed class ClaudeSession : IChatSession
         {
             code = -1;
         }
+        // 표준 오류를 끝까지 읽을 때까지(잠깐만) 기다린 뒤 끝부분을 이유로.
+        stderrDone.Wait(TimeSpan.FromSeconds(2));
         string tail;
         lock (stderr) tail = AiCli.Tail(stderr.ToString().Trim(), 1500);
         Dispatcher.UIThread.Post(() =>

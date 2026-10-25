@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Gpixel.Core.IO;
 using Gpixel.App.Localization;
 
 namespace Gpixel.App.Ai;
@@ -158,10 +159,17 @@ public static class AiCli
         return string.Join(Path.PathSeparator, dirs.Distinct(cmp));
     }
 
-    /// <summary>CLI를 창 없이 띄우는 시작 정보(표준 출력·오류는 UTF-8로 받음, PATH 보강).</summary>
+    /// <summary>
+    /// CLI를 창 없이 띄우는 시작 정보(표준 출력·오류는 UTF-8로 받음, PATH 보강). npm의 Codex 셰임(<c>codex.cmd</c>)이면 cmd.exe를 거치지 않고 그 안의
+    /// 네이티브 <c>codex.exe</c>를 바로 띄운다(<see cref="CliProcess.ResolveCodexShim"/> — cmd.exe 명령줄 8191자 한도와 인자 다시 해석을 피함).
+    /// 명령줄이 한도(<see cref="CliProcess.CmdLimit"/>·<see cref="CliProcess.ProcessLimit"/>)를 넘으면 띄우지 않고 <see cref="CommandLineTooLongException"/>.
+    /// </summary>
     public static ProcessStartInfo CreateStartInfo(string cliPath, IEnumerable<string> args, string? workingDirectory, bool redirectInput)
     {
-        var psi = new ProcessStartInfo(cliPath)
+        var target = OperatingSystem.IsWindows()
+            ? CliProcess.ResolveCodexShim(cliPath, System.Runtime.InteropServices.RuntimeInformation.OSArchitecture, Locate("node", null, []))
+            : null;
+        var psi = new ProcessStartInfo(target?.FileName ?? cliPath)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -172,13 +180,81 @@ public static class AiCli
             StandardErrorEncoding = Encoding.UTF8,
         };
         if (redirectInput) psi.StandardInputEncoding = new UTF8Encoding(false);
+        foreach (var a in target?.PrefixArgs ?? []) psi.ArgumentList.Add(a);
         foreach (var a in args) psi.ArgumentList.Add(a);
+        if (OperatingSystem.IsWindows())
+        {
+            int limit = CliProcess.IsBatch(psi.FileName) ? CliProcess.CmdLimit : CliProcess.ProcessLimit;
+            int length = CliProcess.CommandLineLength(psi.FileName, psi.ArgumentList);
+            if (length > limit) throw new CommandLineTooLongException(UiStrings.FormatAi_Error_CommandLineTooLong(length: length, limit: limit));
+        }
         if (workingDirectory is not null && Directory.Exists(workingDirectory)) psi.WorkingDirectory = workingDirectory;
         psi.Environment["PATH"] = AugmentedPath(cliPath);
+        foreach (var (key, value) in target?.Environment ?? new Dictionary<string, string>()) psi.Environment[key] = value;
         // Claude Code 안에서 Gpixel을 띄웠어도 자식 claude가 "중첩 실행"으로 여기지 않게.
         psi.Environment.Remove("CLAUDECODE");
         return psi;
     }
+
+    /// <summary>
+    /// 자식 프로세스의 표준 오류를 줄 단위로 읽는 작업(<see cref="Process.Start()"/> 뒤에 부름 — <c>BeginErrorReadLine</c> 대신). 줄마다
+    /// <see cref="CliProcess.Decode"/>로 UTF-8이 아니면 콘솔 코드 페이지로 읽는다(cmd.exe 오류처럼 CP949로 나온 글이 깨지지 않게).
+    /// 표준 오류가 닫히면 끝난다.
+    /// </summary>
+    public static Task ReadErrorLines(Process p, Action<string> onLine)
+    {
+        var stream = p.StandardError.BaseStream;
+        return Task.Factory.StartNew(() =>
+        {
+            var pending = new List<byte>();
+            var buffer = new byte[4096];
+            var fallback = ConsoleEncoding;
+            try
+            {
+                int n;
+                while ((n = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    CliProcess.SplitLines(buffer.AsSpan(0, n), pending, final: false, fallback, onLine);
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                // 프로세스를 끝냈거나 스트림이 닫힘.
+            }
+            CliProcess.SplitLines([], pending, final: true, fallback, onLine);
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+    }
+
+    /// <summary>
+    /// 자식 프로세스가 UTF-8이 아닌 글을 낼 때 쓰는 인코딩: Windows는 OEM 코드 페이지(콘솔 기본 — cmd.exe 메시지), 다른 OS는 없음(UTF-8).
+    /// </summary>
+    private static Encoding? ConsoleEncoding
+    {
+        get
+        {
+            if (!OperatingSystem.IsWindows()) return null;
+            try
+            {
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                return Encoding.GetEncoding((int)GetOEMCP());
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or DllNotFoundException or EntryPointNotFoundException)
+            {
+                return null;
+            }
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern uint GetOEMCP();
+
+    /// <summary>표준 오류를 <paramref name="tail"/>에 모은다(끝부분 수천 자만 남김 — 끝났을 때 이유로 보임). <see cref="ReadErrorLines"/>와 같이 Start 뒤에 부른다.</summary>
+    public static Task CollectErrorTail(Process p, StringBuilder tail) => ReadErrorLines(p, line =>
+    {
+        lock (tail)
+        {
+            tail.AppendLine(line);
+            if (tail.Length > 8000) tail.Remove(0, tail.Length - 4000);
+        }
+    });
 
     /// <summary>창 없이 한 번 실행한 결과(<see cref="Error"/>: 실행 실패·시간 초과).</summary>
     public sealed record RunResult(int ExitCode, string Stdout, string Stderr, string? Error);
@@ -195,7 +271,8 @@ public static class AiCli
             p = Process.Start(CreateStartInfo(path, args, Home, false));
             if (p is null) return new RunResult(-1, "", "", string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_F7AA02C025,name));
             var outTask = p.StandardOutput.ReadToEndAsync(CancellationToken.None);
-            var errTask = p.StandardError.ReadToEndAsync(CancellationToken.None);
+            var errLines = new List<string>();
+            var errTask = ReadErrorLines(p, line => { lock (errLines) errLines.Add(line); });
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
             try
@@ -207,7 +284,10 @@ public static class AiCli
                 Kill(p);
                 return new RunResult(-1, "", "", cancellationToken.IsCancellationRequested ? UiStrings.S_AiCli_RunAsync_865C58F1B9 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_3D25A30FE7,name,timeoutSeconds));
             }
-            return new RunResult(p.ExitCode, await outTask.ConfigureAwait(false), await errTask.ConfigureAwait(false), null);
+            await errTask.ConfigureAwait(false);
+            string stderr;
+            lock (errLines) stderr = string.Join('\n', errLines);
+            return new RunResult(p.ExitCode, await outTask.ConfigureAwait(false), stderr, null);
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
@@ -534,3 +614,6 @@ public sealed class CliLogin : IDisposable
         _process = null;
     }
 }
+
+/// <summary>명령줄이 OS 한도를 넘어 CLI를 띄우지 않음(문구는 사용자에게 그대로 보임).</summary>
+public sealed class CommandLineTooLongException(string message) : InvalidOperationException(message);
