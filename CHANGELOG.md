@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.37 (2026-10-26)
+### Pixelate added to key features
+- The guide's Key features now include a Pixelate chapter with two pages: turning AI-generated art or any image into pixel art, and removing or adding colors in the result.
+- The homepage, the in-app guide (F1) and the README show both pages with new demo videos.
+
 ## v1.14.36 (2026-10-26)
 ### AI preflight status and account controls
 - Opening AI first checks the Gpixel MCP server directly with `initialize` and `tools/list`, plus Claude Code and Codex CLI paths, versions and sign-in states, without sending a model request.

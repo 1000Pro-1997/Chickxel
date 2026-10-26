@@ -53,6 +53,9 @@
 </li>
 <li><a href="#featured-ai-draw">AI로 그리기</a>
 </li>
+<li><a href="#featured-pixelate">픽셀로 정리</a>
+<ol><li><a href="#featured-pixelate-convert">이미지를 픽셀 아트로</a></li><li><a href="#featured-pixelate-colors">색 빼기·더하기</a></li></ol>
+</li>
 <li><a href="#featured-anim">애니메이션 효과</a>
 <ol><li><a href="#featured-effects">효과 겹치기</a></li><li><a href="#featured-clip">효과 클리핑</a></li></ol>
 </li>
@@ -122,6 +125,30 @@
 </ol>
 <div class="note"><p>직접 써 본 결과 <strong>Codex의 Astra 모델</strong>(gpt-6-astra)이 가장 잘 그렸습니다. 자세한 사용법은 <a href="#ai">AI 채팅</a> 장에 있습니다.</p></div>
 <figure class="core-media wide guide-media"><video src="assets/feature-ai-draw.mp4" poster="assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습" width="1280" height="720"></video></figure>
+</section>
+
+<section class="doc" id="featured-pixelate">
+<h2>픽셀로 정리</h2>
+<p>AI로 만든 그림이나 일반 이미지를 깨끗한 픽셀 아트로 바꿉니다.</p>
+
+<h3 id="featured-pixelate-convert">이미지를 픽셀 아트로</h3>
+<p>그림을 넣으면 픽셀 크기를 찾아 칸을 맞추고, 배경을 지우고, 색을 줄여 픽셀 아트로 바꿉니다. 설정을 바꿔 가며 만든 후보를 점수 순으로 보여 주니 마음에 드는 것을 고르면 됩니다.</p>
+<ol class="core-steps">
+<li><strong>그림 넣기</strong><span><strong>AI &gt; AI 그림 픽셀로 정리…</strong>를 열고 그림을 끌어 놓거나 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣습니다.</span></li>
+<li><strong>후보 고르기</strong><span>자동 최적화가 후보를 만들어 점수 순으로 보여 줍니다. 크게 보기에서 결과와 원본을 칸 단위로 나란히 비교합니다.</span></li>
+<li><strong>넣기</strong><span>현재 문서의 새 레이어나 새 탭으로 넣습니다.</span></li>
+</ol>
+<div class="note"><p>설정과 점수는 <a href="#pixelate">AI 그림 픽셀로 정리</a> 장에 자세히 있습니다.</p></div>
+<figure class="core-media wide guide-media"><video src="assets/feature-pixelate.mp4" poster="assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="AI로 그린 캐릭터 그림을 픽셀로 정리 창에 붙여 넣자 후보가 만들어지고, 크게 보기에서 결과와 원본을 칸 단위로 비교하는 모습" width="1512" height="914"></video></figure>
+
+<h3 id="featured-pixelate-colors">색 빼기·더하기</h3>
+<p>결과에 쓰인 색을 하나씩 확인하며 필요 없는 색은 빼고, 빠진 색은 원본에서 집어 더합니다.</p>
+<ol class="core-steps">
+<li><strong>쓰인 곳 보기</strong><span>색 견본이나 결과 픽셀을 누르면 그 색이 쓰인 곳이 강조됩니다.</span></li>
+<li><strong>색 빼기</strong><span>우클릭하면 그 색이 빠지고, 그 자리는 가장 가까운 남은 색으로 바뀝니다. 다시 우클릭하거나 <strong>모두 되살리기</strong>로 되돌립니다.</span></li>
+<li><strong>색 더하기</strong><span>견본 줄 끝의 <strong>+</strong>를 누르고 원본 칸을 누르면 그 색이 고정 색으로 결과에 들어갑니다.</span></li>
+</ol>
+<figure class="core-media wide guide-media"><video src="assets/feature-pixelate-colors.mp4" poster="assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="픽셀로 정리 크게 보기에서 색 견본을 눌러 쓰인 곳을 보고, 우클릭으로 색을 빼고, 원본에서 색을 집어 고정 색으로 더하는 모습" width="1512" height="914"></video></figure>
 </section>
 
 <section class="doc" id="featured-anim">

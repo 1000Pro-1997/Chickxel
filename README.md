@@ -16,6 +16,14 @@
 
 <a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-ai-draw"><img src="src/Gpixel.App/Assets/Help/media/feature-ai-draw.webp" alt="Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습" width="640"></a>
 
+### 이미지를 픽셀 아트로
+
+<a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-pixelate-convert"><img src="src/Gpixel.App/Assets/Help/media/feature-pixelate.webp" alt="AI로 그린 캐릭터 그림을 픽셀로 정리 창에 붙여 넣자 후보가 만들어지고, 크게 보기에서 결과와 원본을 칸 단위로 비교하는 모습" width="640"></a>
+
+### 색 빼기·더하기
+
+<a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-pixelate-colors"><img src="src/Gpixel.App/Assets/Help/media/feature-pixelate-colors.webp" alt="픽셀로 정리 크게 보기에서 색 견본을 눌러 쓰인 곳을 보고, 우클릭으로 색을 빼고, 원본에서 색을 집어 고정 색으로 더하는 모습" width="640"></a>
+
 ### 효과 겹치기
 
 <a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-effects"><img src="src/Gpixel.App/Assets/Help/media/feature-effects.webp" alt="나무 통 그림에 효과 창에서 여러 효과를 차례로 추가하고 프레임 범위를 정해 애니메이션으로 재생하는 모습" width="640"></a>
