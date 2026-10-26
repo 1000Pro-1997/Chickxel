@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.36 (2026-10-26)
+### AI preflight status and account controls
+- Opening AI first checks the Gpixel MCP server directly with `initialize` and `tools/list`, plus Claude Code and Codex CLI paths, versions and sign-in states, without sending a model request.
+- The CLI MCP row reports what a usage-free check can prove: Claude's chat MCP settings are created, and Codex reads the Gpixel MCP entry. The live CLI connection is still verified on the first message; real CLI failures show the exit code and error output.
+- The status window can install or update a CLI, sign in or out, select an executable, and recheck everything. AI > Open AI Status and Preferences > AI Status open it directly.
+- "Don't show again" hides the preflight only until the app version, detected CLI file, or custom CLI path changes.
+
 ## v1.14.35 (2026-10-26)
 ### Local cell boundaries on small sprites
 - Local correction now adjusts cell boundaries at 4–5 px, which previously fell below its 5 px cutoff; the source overlay shows the resulting per-band bends.

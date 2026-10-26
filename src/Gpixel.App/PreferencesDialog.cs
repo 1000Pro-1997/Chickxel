@@ -41,7 +41,7 @@ public sealed class PreferencesDialog : DialogBase
     public PreferencesDialog(string language, int undoSteps, bool historyEnabled, UndoHistoryPolicy historyPolicy, UndoHistoryKeeper history,
         bool autoSave, int autoSaveDelay, TrashPolicy trashPolicy, bool updateCheck,
         IReadOnlyList<ShortcutCommand> commands, IReadOnlyDictionary<string, List<KeyChord>> keys,
-        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath)
+        string? referencesFolder, bool showReferenceExamples, string? ffmpegPath, Action<Window> showAiStatus)
         : base(UiStrings.S_PreferencesDialog_PreferencesDialog_0B1C3F663F)
     {
         _commands = commands;
@@ -228,9 +228,20 @@ public sealed class PreferencesDialog : DialogBase
             ffmpegStatus,
             ffmpegNote);
 
+        var aiStatusNote = Ui.Label(UiStrings.AiStatus_SettingsNote);
+        aiStatusNote.TextWrapping = TextWrapping.Wrap;
+        aiStatusNote.Foreground = AppTheme.DimTextBrush;
+        aiStatusNote.MaxWidth = 640;
+        aiStatusNote.HorizontalAlignment = HorizontalAlignment.Left;
+        var ai = Ui.Stack(
+            Ui.Label(UiStrings.AiStatus_SettingsTitle, bold: true),
+            aiStatusNote,
+            Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)));
+
         var tabs = new TabView();
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
+        tabs.AddPage(UiStrings.AiStatus_SettingsTab, ai);
         tabs.AddPage(UiStrings.Refs_Prefs_Tab, references);
         tabs.AddPage(UiStrings.Ffmpeg_Prefs_Tab, video);
         Body.Children.Add(tabs);

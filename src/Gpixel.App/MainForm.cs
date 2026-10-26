@@ -752,6 +752,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         refs.Icon = Ui.Icon(VectorIcon.BookImage, 14);
         AddItems(ai,
             Cmd("AI 채팅", MainStrings.Menu_Ai_ToggleChat_226, ToggleChat, "Ctrl+L", KeyScope.Global, (Key.L, Ctrl)),
+            WithIcon(Cmd("AI 상태 열기…", UiStrings.AiStatus_OpenMenu, () => ShowAiStatus(this)), VectorIcon.Info),
             refs,
             new Separator(),
             WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3));
@@ -1684,7 +1685,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var dlg = new PreferencesDialog(_settings.Language ?? UiLanguage.Current, _settings.UndoSteps, _settings.UndoHistoryEnabled, _settings.UndoHistoryPolicy, _history,
             _settings.AutoSave, _settings.AutoSaveIdleSeconds, _settings.TrashPolicy, _settings.UpdateCheck,
             _commands.Select(c => c.Info).ToList(), _commands.ToDictionary(c => c.Info.Id, c => c.Keys.ToList()),
-            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath);
+            _settings.ReferencesFolder, _settings.ReferencesShowExamples, _settings.FfmpegPath, owner => ShowAiStatus(owner));
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         // 화면 언어는 다시 시작해야 바뀐다(정적 필드에 담긴 문구도 있음).
         bool languageChanged = !string.Equals(dlg.Language, _settings.Language, StringComparison.OrdinalIgnoreCase);
@@ -2702,7 +2703,32 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────
 
-    /// <summary>AI 채팅 창을 연다(이미 열려 있으면 앞으로). 처음 열 때 편집기 안 MCP 서버를 띄운다.</summary>
+    /// <summary>편집기 안 MCP 서버를 처음 만들고 시작한다. 실패하면 사용자에게 알리고 false.</summary>
+    private bool EnsureMcp(Visual owner)
+    {
+        if (_mcp is not null) return true;
+        var server = new Ai.McpServer(new Ai.PixelTools(this));
+        try { server.Start(); }
+        catch (Exception ex) when (ex is System.Net.HttpListenerException or System.Net.Sockets.SocketException or InvalidOperationException)
+        {
+            server.Dispose();
+            Ui.Error(owner, MainStrings.FormatMessage_394(message: ex.Message));
+            return false;
+        }
+        _mcp = server;
+        return true;
+    }
+
+    /// <summary>AI 설치·버전·로그인·MCP 연결 상태 창을 연다. 채팅 진입이면 확인 단추가 채팅을 이어 열겠다고 표시한다.</summary>
+    private DialogResult ShowAiStatus(Window owner, bool continueToAi = false)
+    {
+        if (!EnsureMcp(owner)) return DialogResult.Cancel;
+        var result = new Ai.AiStatusDialog(_mcp!, _settings, continueToAi).ShowDialog(owner);
+        SaveSettings();
+        return result;
+    }
+
+    /// <summary>AI 채팅 창을 연다(이미 열려 있으면 앞으로). 첫 사용·앱/CLI 변경 뒤에는 상태 점검 창을 먼저 보인다.</summary>
     private void ToggleChat()
     {
         if (_chat is not null)
@@ -2711,19 +2737,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _chat.Activate();
             return;
         }
-        if (_mcp is null)
-        {
-            var server = new Ai.McpServer(new Ai.PixelTools(this));
-            try { server.Start(); }
-            catch (Exception ex) when (ex is System.Net.HttpListenerException or System.Net.Sockets.SocketException or InvalidOperationException)
-            {
-                server.Dispose();
-                Ui.Error(this, MainStrings.FormatMessage_394(message: ex.Message));
-                return;
-            }
-            _mcp = server;
-        }
-        var chat = new Ai.ChatWindow(_ctx, _mcp, _settings);
+        if (!EnsureMcp(this)) return;
+        if (Ai.AiStatusProbe.ShouldShow(_settings) && ShowAiStatus(this, continueToAi: true) != DialogResult.OK) return;
+        var chat = new Ai.ChatWindow(_ctx, _mcp!, _settings);
         chat.Closed += (_, _) => { if (ReferenceEquals(_chat, chat)) _chat = null; };
         _chat = chat;
         chat.Show(this);

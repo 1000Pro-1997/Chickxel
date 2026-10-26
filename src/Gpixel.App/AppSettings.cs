@@ -145,6 +145,10 @@ public sealed class AppSettings
     public bool ChatOpen { get; set; }
     /// <summary>AI 그리기 설정(채팅의 설정 칸 — 그리는 방식, 생성·변환 옵션).</summary>
     public Gpixel.Core.AiDraw.AiDrawSettings AiDraw { get; set; } = new();
+    /// <summary>
+    /// AI 상태 창을 다시 보지 않기로 한 앱·CLI 구성 지문. 앱 버전, 찾은 CLI 파일 또는 직접 지정 경로가 바뀌면 지문이 달라져 다시 보인다.
+    /// </summary>
+    public string? AiStatusDismissedFingerprint { get; set; }
 
     // AI 그림 픽셀로 정리
     /// <summary>마지막 단계 설정(JSON — <see cref="Gpixel.Core.Pixelate.PixelatePresets.SerializeSettings"/>). null = 기본.</summary>

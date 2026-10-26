@@ -266,14 +266,19 @@ public static class AiCli
 
     /// <summary>
     /// CLI를 홈 폴더에서 창 없이 실행해 끝날 때까지 출력을 모은다(<paramref name="timeoutSeconds"/>초가 지나면 끝내고 오류).
+    /// <paramref name="environment"/>는 이 실행에만 더할 환경 변수다.
     /// </summary>
-    public static async Task<RunResult> RunAsync(string path, IReadOnlyList<string> args, CancellationToken cancellationToken, int timeoutSeconds = 20)
+    public static async Task<RunResult> RunAsync(string path, IReadOnlyList<string> args, CancellationToken cancellationToken, int timeoutSeconds = 20,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         var name = Path.GetFileNameWithoutExtension(path);
         Process? p = null;
         try
         {
-            p = Process.Start(CreateStartInfo(path, args, Home, false));
+            var start = CreateStartInfo(path, args, Home, false);
+            if (environment is not null)
+                foreach (var (key, value) in environment) start.Environment[key] = value;
+            p = Process.Start(start);
             if (p is null) return new RunResult(-1, "", "", string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_AiCli_RunAsync_F7AA02C025,name));
             var outTask = p.StandardOutput.ReadToEndAsync(CancellationToken.None);
             var errLines = new List<string>();
