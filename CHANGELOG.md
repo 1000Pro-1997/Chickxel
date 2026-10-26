@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.39 (2026-10-27)
+### Guide screenshots
+- Prepared screenshots of the real app for nearly every page of the user guide: 148 images each in Korean and English, using the wolf-ear adventurer as the example art. They will be placed into the homepage and in-app (F1) guide next.
+- The images are produced by a script that runs the actual UI without a screen, so they can be refreshed whenever the UI changes. Pages that need motion are listed as recording requests.
+
 ## v1.14.38 (2026-10-27)
 ### Wider hue-weight search for Pixelate
 - OKLCh hue weight now accepts 0–1000 in Pixelate settings; the default remains 2. Very large values make same-hue palette colors win almost regardless of lightness or chroma.
@@ -32,6 +37,11 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Auto Optimize runs every checked preset in turn and shows one result per preset, titled with the preset name, so you can pick the one you like. Ordinary candidates are scored with the first checked preset; older settings migrate into one Default preset.
 - Built-in presets: OKLCH1000, OKLab, Quick check, Faithful to source, Clean pixels, and Same hue family (OKLCH 20). Existing preset lists gain the missing ones once. Built-in preset names follow the UI language (English when there is no translation).
 - Gradient presets add Fire, Forest, and Grayscale. Preferences > Presets restores deleted or edited built-in presets for auto optimize and gradients, keeping presets you made; the built-in defaults live in the app, so deleting presets never loses them.
+
+### Save or copy Pixelate and AI chat images
+- Right-click the source image or a candidate tile in Pixelate to save it as PNG or copy it to the clipboard.
+- The source saves as currently shown (with or without the background removed); a candidate saves its first frame.
+- Images in the AI chat (drawn results, canvas snapshots, attached images) offer the same menu, and a single click opens a larger view.
 
 ## v1.14.37 (2026-10-26)
 ### Pixelate added to key features

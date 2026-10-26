@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 사용 가이드 스크린샷: 실제 Gpixel UI를 화면 없이(Avalonia Headless + Skia) 띄워 PNG로 찍는다. tools/GuideShots/README.md 참고. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <StartupObject>GuideShots.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 장별로 나눠 찍는 동안 쓰는 따로 빌드 프로젝트(agents/)는 넣지 않는다. -->
+    <Compile Remove="agents/**" />
+    <None Remove="agents/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Gpixel.App\Gpixel.App.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Skia" Version="11.3.22" />
+  </ItemGroup>
+
+</Project>
