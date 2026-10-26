@@ -7,7 +7,7 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 환경 설정: 일반(화면 언어·번역 CSV 내보내기/언어 추가, 실행취소 횟수, 실행취소 기록 남기기·보관 기간·용량, 자동 저장, 앱 휴지통 보관 기간·용량, 업데이트 자동 확인) + 단축키(명령마다 바꾸기·추가·없음·기본값, 모두 기본값, JSON 내보내기·불러오기)
-/// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
+/// + AI 참고 자료(폴더 위치·열기, 기본 예시 보이기) + 프리셋(지운 기본 프리셋 되돌리기 — 자동 최적화·그라데이션) + 영상(ffmpeg 위치 — 영상·AVIF·HEIC 열기).
 /// 단축키는 서로 겹치지 않게 한다(이미 쓰는 키를 지정하면 그 명령에서 빼도 되는지 묻는다).
 /// </summary>
 public sealed class PreferencesDialog : DialogBase
@@ -238,11 +238,43 @@ public sealed class PreferencesDialog : DialogBase
             aiStatusNote,
             Ui.Button(VectorIcon.Info, UiStrings.AiStatus_Open, (_, _) => showAiStatus(this)));
 
+        // 프리셋: 지운 기본 프리셋 되살리기(누르면 바로 저장 — 확인·취소와 무관).
+        var presetsNote = Ui.Label(UiStrings.Presets_Prefs_Note);
+        presetsNote.TextWrapping = TextWrapping.Wrap;
+        presetsNote.Foreground = AppTheme.DimTextBrush;
+        presetsNote.MaxWidth = 640;
+        presetsNote.HorizontalAlignment = HorizontalAlignment.Left;
+        var presetsStatus = Ui.Label("");
+        presetsStatus.Foreground = AppTheme.DimTextBrush;
+        var presets = Ui.Stack(
+            Ui.Label(UiStrings.Presets_Prefs_Title, bold: true),
+            presetsNote,
+            Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreOptimizer, (_, _) =>
+            {
+                if (Ui.Ask(this, UiStrings.Presets_RestoreOptimizerQuestion, UiStrings.Presets_RestoreOptimizer,
+                        MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+                var options = App.Settings.Pixelate ??= new PixelateOptions();
+                options.Migrate();
+                OptimizePreset.RestoreBuiltIns(options.OptimizePresets);
+                App.Settings.Save();
+                presetsStatus.Text = UiStrings.Presets_Restored;
+            }),
+            Ui.Button(VectorIcon.Undo2, UiStrings.Presets_RestoreGradients, (_, _) =>
+            {
+                if (Ui.Ask(this, UiStrings.Presets_RestoreGradientsQuestion, UiStrings.Presets_RestoreGradients,
+                        MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+                if (GradientPresetUi.Load(this) is not { } gradients) return;
+                GradientPresets.RestoreBuiltIns(gradients);
+                if (GradientPresetUi.Save(this, gradients)) presetsStatus.Text = UiStrings.Presets_Restored;
+            }),
+            presetsStatus);
+
         var tabs = new TabView();
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_2626F2C3C7, general);
         tabs.AddPage(UiStrings.S_PreferencesDialog_PreferencesDialog_DA9395C360, shortcuts);
         tabs.AddPage(UiStrings.AiStatus_SettingsTab, ai);
         tabs.AddPage(UiStrings.Refs_Prefs_Tab, references);
+        tabs.AddPage(UiStrings.Presets_Prefs_Tab, presets);
         tabs.AddPage(UiStrings.Ffmpeg_Prefs_Tab, video);
         Body.Children.Add(tabs);
         RebuildRows();

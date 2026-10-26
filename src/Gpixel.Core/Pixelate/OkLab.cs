@@ -66,22 +66,24 @@ public static class OkLab
         if (amount == 0) return c;
         var lab = FromColor(c);
         float l = Math.Clamp(amount < 0 ? lab.L * (1 + amount) : lab.L + (1 - lab.L) * amount, 0f, 1f);
-        float keep = 1;
-        if (!InGamut(new Lab(l, lab.A, lab.B)))
-        {
-            float lo = 0, hi = 1;
-            for (int k = 0; k < 16; k++)
-            {
-                float mid = (lo + hi) / 2;
-                if (InGamut(new Lab(l, lab.A * mid, lab.B * mid))) lo = mid;
-                else hi = mid;
-            }
-            keep = lo;
-        }
-        return ToColor(new Lab(l, lab.A * keep, lab.B * keep)).WithAlpha(c.A);
+        return ToGamutColor(new Lab(l, lab.A, lab.B)).WithAlpha(c.A);
     }
 
-    private static bool InGamut(in Lab lab)
+    /// <summary>Keep OKLab lightness and hue; reduce chroma only when sRGB cannot represent the color.</summary>
+    internal static Color32 ToGamutColor(in Lab lab)
+    {
+        if (InGamut(lab)) return ToColor(lab);
+        float lo = 0, hi = 1;
+        for (int k = 0; k < 16; k++)
+        {
+            float mid = (lo + hi) / 2;
+            if (InGamut(new Lab(lab.L, lab.A * mid, lab.B * mid))) lo = mid;
+            else hi = mid;
+        }
+        return ToColor(new Lab(lab.L, lab.A * lo, lab.B * lo));
+    }
+
+    internal static bool InGamut(in Lab lab)
     {
         const float eps = 1e-4f;
         var (r, g, b) = LinearRgb(lab);

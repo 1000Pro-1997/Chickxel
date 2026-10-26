@@ -26,6 +26,7 @@ public sealed class GradientBar : Control
     private IReadOnlyList<GradientStop> _stops = EditorContext.DefaultGradientStops;
     private IReadOnlyList<GradientAlphaStop> _alphaStops = EditorContext.DefaultGradientAlphaStops;
     private GradientInterpolation _mode;
+    private GradientColorSpace _colorSpace = GradientColorSpace.OkLch;
     private bool _selectedAlpha;
     private int _selected;
     private bool _dragging;
@@ -74,6 +75,13 @@ public sealed class GradientBar : Control
     {
         get => _mode;
         set { _mode = value; InvalidateVisual(); }
+    }
+
+    /// <summary>미리보기 띠와 새 색 정지점의 색 공간.</summary>
+    public GradientColorSpace ColorSpace
+    {
+        get => _colorSpace;
+        set { _colorSpace = value; InvalidateVisual(); }
     }
 
     /// <summary>고른 정지점이 불투명도 정지점인지(아니면 색 정지점).</summary>
@@ -146,7 +154,7 @@ public sealed class GradientBar : Control
         for (int i = 0; i < cols; i++)
         {
             double t = cols <= 1 ? 0 : i / (double)(cols - 1);
-            var c = Gradient.Sample(sorted, sortedAlpha, t, _mode);
+            var c = Gradient.Sample(sorted, sortedAlpha, t, _mode, colorSpace: _colorSpace);
             if (c.A == 0) continue;
             g.FillRectangle(new SolidColorBrush(c.ToColor()), new Rect(band.X + i, BandTop, Math.Min(1, band.Width - i) + 0.01, BandHeight));
         }
@@ -223,7 +231,7 @@ public sealed class GradientBar : Control
             else
             {
                 var list = _stops.ToList();
-                list.Add(new GradientStop(pos, Gradient.ColorAt(Gradient.Sorted(_stops), pos)));
+                list.Add(new GradientStop(pos, Gradient.ColorAt(Gradient.Sorted(_stops), pos, _mode, colorSpace: _colorSpace)));
                 _selectedAlpha = false;
                 _selected = list.Count - 1;
                 Commit(list);

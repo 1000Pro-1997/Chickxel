@@ -152,6 +152,7 @@ public sealed class ToolOptionsPanel : UserControl
                 _ctx.GradientAlphaStops = _gradientEditor.AlphaStops;
                 _ctx.GradientInterpolation = _gradientEditor.Interpolation;
                 _ctx.GradientDither = _gradientEditor.Dither;
+                _ctx.GradientColorSpace = _gradientEditor.ColorSpace;
             }
             finally { _gradientSyncing = false; }
         };
@@ -539,7 +540,7 @@ public sealed class ToolOptionsPanel : UserControl
             _mirrorY.IsChecked = _ctx.MirrorY;
             if (!_gradientSyncing)
                 _gradientEditor.Load(_ctx.GradientStops, _ctx.GradientAlphaStops,
-                    _ctx.GradientInterpolation, _ctx.GradientDither);
+                    _ctx.GradientInterpolation, _ctx.GradientDither, colorSpace: _ctx.GradientColorSpace);
         }
         finally
         {

@@ -47,8 +47,8 @@ public static class PixelateRanges
     public static readonly PixelateRange OutlineDarkness = new(0, 1);
     /// <summary>원본 색에서 가장자리·섞인 칸 무게.</summary>
     public static readonly PixelateRange EdgeWeight = new(0, 1);
-    /// <summary>OKLCh 색상 가중 거리의 색상 무게.</summary>
-    public static readonly PixelateRange HueWeight = new(1, 4);
+    /// <summary>OKLCh 색상 가중 거리의 색상 무게(최대값이면 색상 차가 밝기·채도 차를 사실상 압도해 같은 색상 계열을 먼저 고름).</summary>
+    public static readonly PixelateRange HueWeight = new(0, 1000);
     /// <summary>다른 색상 지키기: 최소 채도(OKLCh C).</summary>
     public static readonly PixelateRange DistinctMinChroma = new(0.01, 0.2);
     /// <summary>다른 색상 지키기: 최소 색상 차(도).</summary>

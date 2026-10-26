@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Gpixel.App.Localization;
@@ -16,15 +18,6 @@ public sealed class PixelateOptions
     public int CandidateCount { get; set; } = 8;
     /// <summary>바꿔 볼 항목(<see cref="CandidateVary"/> 비트).</summary>
     public int Vary { get; set; } = (int)CandidateVary.Default;
-    public double WeightFidelity { get; set; } = new ScoreWeights().Fidelity;
-    public double WeightOrphans { get; set; } = new ScoreWeights().Orphans;
-    public double WeightOutlineGaps { get; set; } = new ScoreWeights().OutlineGaps;
-    public double WeightColors { get; set; } = new ScoreWeights().Colors;
-    public double WeightConsistency { get; set; } = new ScoreWeights().Consistency;
-    public double WeightGrid { get; set; } = new ScoreWeights().Grid;
-    public double WeightOutlineThin { get; set; } = new ScoreWeights().OutlineThin;
-    public double WeightColorShift { get; set; } = new ScoreWeights().ColorShift;
-    public double WeightBlockRepetition { get; set; } = new ScoreWeights().BlockRepetition;
     public bool NewDocument { get; set; }
     public int FrameDurationMs { get; set; } = 100;
     public int Fps { get; set; } = 8;
@@ -36,13 +29,11 @@ public sealed class PixelateOptions
     public bool AddReference { get; set; }
     public int AiRankCount { get; set; } = 4;
     /// <summary>
-    /// 자동 최적화가 바꿔 볼 항목(<see cref="OptimizeParam"/> 비트)과 예산. 기본은 외곽선 맞추기 방식만 빼고 모두(<see cref="OptimizeParam.SelectAll"/> —
-    /// 고른 방식이 1px 외곽선을 지키도록 그 체크는 사용자가 직접 켤 때만), 2000번·120초.
+    /// 자동 최적화 프리셋(목록 순서 = 도는 순서·후보 순서, 즐겨찾기가 앞). 자동 최적화는 체크한(<see cref="OptimizePreset.Enabled"/>) 프리셋을 모두 차례로 돌린다.
+    /// <see cref="Migrate"/> 뒤에는 비어 있지 않다.
     /// </summary>
-    public int OptimizeParams { get; set; } = (int)DefaultOptimizeParams;
-    public int OptimizeTrials { get; set; } = DefaultOptimizeTrials;
-    public int OptimizeSeconds { get; set; } = DefaultOptimizeSeconds;
-    /// <summary>원본을 넣으면(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌린다(기본 켬).</summary>
+    public List<OptimizePreset> OptimizePresets { get; set; } = [];
+    /// <summary>원본을 넣으면(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌린다(기본 켬, 모든 프리셋 공통).</summary>
     public bool AutoOptimizeOnLoad { get; set; } = true;
     /// <summary>왼쪽 설정 칸을 펼쳐 두었는지(기본 접힘 — 미리보기·후보가 넓게).</summary>
     public bool SettingsExpanded { get; set; }
@@ -53,44 +44,218 @@ public sealed class PixelateOptions
     public int Width { get; set; } = 1320;
     public int Height { get; set; } = 860;
 
-    public ScoreWeights Weights => new()
-    {
-        Fidelity = WeightFidelity,
-        Orphans = WeightOrphans,
-        OutlineGaps = WeightOutlineGaps,
-        Colors = WeightColors,
-        Consistency = WeightConsistency,
-        Grid = WeightGrid,
-        OutlineThin = WeightOutlineThin,
-        ColorShift = WeightColorShift,
-        BlockRepetition = WeightBlockRepetition,
-    };
+    /// <summary>
+    /// 판 4 전에 저장한 설정 파일에만 있는 낱개 자동 최적화 값(OptimizeParams·OptimizeTrials·OptimizeSeconds·Weight*·ScoreColorDistance·ScoreHueWeight)을
+    /// 읽어 두는 자리. <see cref="Migrate"/>가 첫 프리셋으로 옮긴 뒤 비우므로 다시 저장되지 않는다(그 밖의 모르는 값도 함께 버림).
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Legacy { get; set; }
 
-    public const OptimizeParam DefaultOptimizeParams = OptimizeParam.SelectAll;
-    public const int DefaultOptimizeTrials = 2000;
-    public const int DefaultOptimizeSeconds = 120;
+    /// <summary>보통 후보를 잴 점수 기준·AI 그리기의 자동 최적화: 체크한 첫 프리셋(없으면 첫 프리셋). <see cref="Migrate"/> 뒤에만 쓴다.</summary>
+    [JsonIgnore]
+    public OptimizePreset PrimaryPreset => OptimizePresets.FirstOrDefault(p => p.Enabled) ?? OptimizePresets[0];
+
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 5;
 
     /// <summary>
-    /// 예전 판에서 저장한 값을 한 번만 옮긴다: 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
+    /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
     /// 판 2 = 새 자동 최적화 항목(색 거리·다른 색상 지키기)을 켠다. 판 3 = 명암 계열 우선 항목을 켜고 '불러오면 자동 최적화'를 켠다.
+    /// 판 4 = 낱개로 저장하던 항목·예산·점수 기준(<see cref="Legacy"/>)을 '기본' 프리셋 하나로 옮긴다.
+    /// 판 5 = 기본 프리셋(<see cref="OptimizePreset.BuiltIns"/>) 중 같은 이름이 없는 것을 뒤에 더한다(한 번만 — 그 뒤 지운 기본 프리셋은 되살리지 않음).
     /// 단계 설정 JSON(마지막 설정·프리셋)은 빠진 값이 기본값이라 예전에 저장한 설정도 새 기본값(OKLCh 색상 가중·다른 색상 지키기·명암 계열 우선 켬)으로 읽힌다.
-    /// 새로 만든 옵션도 처음 쓸 때 거쳐 판이 맞춰진다(같은 기본값이라 바뀌는 것 없음).
+    /// 새로 만든 옵션은 기본 프리셋 전부로 시작한다.
     /// </summary>
     public void Migrate()
     {
-        if (Version >= CurrentVersion) return;
-        if (Version < 1)
+        if (Version < CurrentVersion)
         {
-            OptimizeParams = (int)DefaultOptimizeParams;
-            OptimizeTrials = DefaultOptimizeTrials;
-            OptimizeSeconds = DefaultOptimizeSeconds;
+            bool fresh = OptimizePresets.Count == 0 && Legacy is null && Version == 0;
+            if (OptimizePresets.Count == 0 && !fresh) OptimizePresets.Add(LegacyPreset());
+            if (Version < 3) AutoOptimizeOnLoad = true;
+            OptimizePreset.LocalizeBuiltIns(OptimizePresets);
+            foreach (var builtIn in OptimizePreset.BuiltIns())
+                if (!OptimizePresets.Any(p => p.BuiltIn == builtIn.BuiltIn || string.Equals(p.Name, builtIn.Name, StringComparison.OrdinalIgnoreCase)))
+                    OptimizePresets.Add(builtIn);
+            Version = CurrentVersion;
         }
-        if (Version < 2) OptimizeParams |= (int)(OptimizeParam.ColorDistance | OptimizeParam.DistinctHues);
-        OptimizeParams |= (int)OptimizeParam.ShadeFamily;
-        AutoOptimizeOnLoad = true;
-        Version = CurrentVersion;
+        Legacy = null;
+        OptimizePresets.RemoveAll(p => p is null);
+        if (OptimizePresets.Count == 0) OptimizePresets.AddRange(OptimizePreset.BuiltIns());
+        OptimizePreset.LocalizeBuiltIns(OptimizePresets);
+    }
+
+    /// <summary>판 4 전의 낱개 값으로 만든 '기본' 프리셋(판 1 전이면 항목·예산은 기본값, 판 2·3에서 더한 항목은 켬).</summary>
+    private OptimizePreset LegacyPreset()
+    {
+        var preset = new OptimizePreset { Name = UiStrings.OptimizePreset_DefaultName };
+        if (Legacy is not { } old) return preset;
+        double Real(string key, double fallback)
+            => old.TryGetValue(key, out var e) && e.ValueKind == JsonValueKind.Number && e.TryGetDouble(out var v) ? v : fallback;
+        int Whole(string key, int fallback)
+            => old.TryGetValue(key, out var e) && e.ValueKind == JsonValueKind.Number && e.TryGetInt32(out var v) ? v : fallback;
+        var w = preset.Weights;
+        preset.Weights = new ScoreWeights
+        {
+            Fidelity = Real("WeightFidelity", w.Fidelity),
+            Orphans = Real("WeightOrphans", w.Orphans),
+            OutlineGaps = Real("WeightOutlineGaps", w.OutlineGaps),
+            Colors = Real("WeightColors", w.Colors),
+            Consistency = Real("WeightConsistency", w.Consistency),
+            Grid = Real("WeightGrid", w.Grid),
+            OutlineThin = Real("WeightOutlineThin", w.OutlineThin),
+            ColorShift = Real("WeightColorShift", w.ColorShift),
+            BlockRepetition = Real("WeightBlockRepetition", w.BlockRepetition),
+        };
+        int distance = Whole("ScoreColorDistance", (int)preset.ScoreColorDistance);
+        if (Enum.IsDefined((ColorDistanceMode)distance)) preset.ScoreColorDistance = (ColorDistanceMode)distance;
+        preset.ScoreHueWeight = PixelateRanges.HueWeight.Clamp(Real("ScoreHueWeight", preset.ScoreHueWeight));
+        if (Version >= 1)
+        {
+            preset.Params = Whole("OptimizeParams", preset.Params) & (int)OptimizeParam.All;
+            preset.Trials = Whole("OptimizeTrials", preset.Trials);
+            preset.Seconds = Whole("OptimizeSeconds", preset.Seconds);
+        }
+        if (Version < 2) preset.Params |= (int)(OptimizeParam.ColorDistance | OptimizeParam.DistinctHues);
+        if (Version < 3) preset.Params |= (int)OptimizeParam.ShadeFamily;
+        return preset;
+    }
+}
+
+/// <summary>
+/// 자동 최적화 프리셋: 이름, 체크(자동 최적화를 누르면 함께 돌림), 즐겨찾기, 바꿔 볼 항목(<see cref="OptimizeParam"/> 비트)·예산과 고정 점수 기준
+/// (점수용 주요 색 변화 거리·항목별 비중). 기본은 외곽선 맞추기 방식만 빼고 모두(<see cref="OptimizeParam.SelectAll"/> — 고른 방식이 1px 외곽선을 지키도록
+/// 그 체크는 사용자가 직접 켤 때만), 2000번·120초, 기본 비중, OKLCh 색상 가중 2.
+/// </summary>
+public sealed class OptimizePreset
+{
+    public const OptimizeParam DefaultParams = OptimizeParam.SelectAll;
+    public const int DefaultTrials = 2000;
+    public const int DefaultSeconds = 120;
+    /// <summary>시도 수·초 칸의 최소.</summary>
+    public const int MinBudget = 5;
+    public const int MaxTrials = 10000;
+    public const int MaxSeconds = 600;
+
+    public string Name { get; set; } = "";
+    /// <summary>
+    /// 기본 프리셋의 고정 id(<see cref="BuiltIns"/>) — 있으면 <see cref="Name"/>은 화면 언어의 이름으로 바뀐다(번역이 없는 언어는 영어).
+    /// 이름을 바꾸거나 복제하면 null(사용자 프리셋)이 된다.
+    /// </summary>
+    public string? BuiltIn { get; set; }
+    public bool Enabled { get; set; } = true;
+    public bool Favorite { get; set; }
+    public int Params { get; set; } = (int)DefaultParams;
+    public int Trials { get; set; } = DefaultTrials;
+    public int Seconds { get; set; } = DefaultSeconds;
+    /// <summary>후보 설정과 별도로 고정하는 점수용 주요 색 변화 거리.</summary>
+    public ColorDistanceMode ScoreColorDistance { get; set; } = ColorDistanceMode.OkLchHue;
+    public double ScoreHueWeight { get; set; } = 2;
+    public ScoreWeights Weights { get; set; } = new();
+
+    /// <summary>최적화가 팔레트 색 거리를 바꿔도 모든 후보를 재는 '주요 색 변화'의 고정 기준.</summary>
+    [JsonIgnore]
+    public ColorMetric ScoreMetric => new(ScoreColorDistance, ScoreHueWeight);
+
+    /// <summary>이 프리셋으로 돌릴 자동 최적화 설정(예산은 칸 범위 안으로).</summary>
+    public PixelateOptimizeOptions Options() => new()
+    {
+        Params = (OptimizeParam)Params,
+        MaxTrials = Math.Clamp(Trials, MinBudget, MaxTrials),
+        MaxTime = TimeSpan.FromSeconds(Math.Clamp(Seconds, MinBudget, MaxSeconds)),
+        Weights = Weights,
+        ScoreMetric = ScoreMetric,
+    };
+
+    /// <summary>이름만 <paramref name="name"/>인 사본(사용자 프리셋 — 기본 프리셋 id 없음).</summary>
+    public OptimizePreset Clone(string name)
+    {
+        var copy = (OptimizePreset)MemberwiseClone();
+        copy.Name = name;
+        copy.BuiltIn = null;
+        return copy;
+    }
+
+    /// <summary>기본 프리셋 id → 이름 문구 키(null = 언어와 무관한 이름 그대로).</summary>
+    private static readonly (string Id, string? Key, string Fixed)[] BuiltInIds =
+    [
+        ("oklch1000", null, "OKLCH1000"),
+        ("oklab", null, "OKLab"),
+        ("quick", nameof(UiStrings.OptimizePreset_BuiltInQuick), ""),
+        ("faithful", nameof(UiStrings.OptimizePreset_BuiltInFaithful), ""),
+        ("clean", nameof(UiStrings.OptimizePreset_BuiltInClean), ""),
+        ("shade", nameof(UiStrings.OptimizePreset_BuiltInShade), ""),
+    ];
+
+    /// <summary>화면 언어의 기본 프리셋 이름(번역이 없으면 영어 — <see cref="UiStrings"/>의 대체 규칙).</summary>
+    private static string BuiltInName(string id)
+    {
+        var entry = BuiltInIds.First(e => e.Id == id);
+        return entry.Key is null ? entry.Fixed : UiStrings.GetResourceString(entry.Key) ?? entry.Fixed;
+    }
+
+    /// <summary>내장 언어(한국어·영어)와 지금 화면 언어에서 그 기본 프리셋이 가질 수 있는 이름들.</summary>
+    private static IEnumerable<string> KnownNames(string id)
+    {
+        var entry = BuiltInIds.First(e => e.Id == id);
+        if (entry.Key is null) return [entry.Fixed];
+        return new[] { CultureInfo.InvariantCulture, CultureInfo.GetCultureInfo("en") }
+            .Select(c => UiStrings.ResourceManager.GetString(entry.Key, c))
+            .Append(BuiltInName(id))
+            .OfType<string>();
+    }
+
+    /// <summary>
+    /// id가 없는 예전 기본 프리셋을 이름으로 찾아 id를 붙이고(같은 id는 하나에만), id가 있는 프리셋의 이름을 지금 화면 언어로 바꾼다.
+    /// </summary>
+    public static void LocalizeBuiltIns(List<OptimizePreset> presets)
+    {
+        foreach (var (id, _, _) in BuiltInIds)
+        {
+            if (presets.Any(p => p.BuiltIn == id)) continue;
+            var names = KnownNames(id).ToList();
+            if (presets.FirstOrDefault(p => p.BuiltIn is null && names.Contains(p.Name, StringComparer.OrdinalIgnoreCase)) is { } match)
+                match.BuiltIn = id;
+        }
+        foreach (var preset in presets)
+            if (preset.BuiltIn is { } id && BuiltInIds.Any(e => e.Id == id)) preset.Name = BuiltInName(id);
+    }
+
+    /// <summary>
+    /// 기본 자동 최적화 프리셋(코드에 고정 — 목록에서 지워도 '기본값으로 초기화'로 되돌림). 빠른 확인만 체크 없이 넣어 두고 나머지는 체크해 함께 돈다.
+    /// 빠른 확인 외에는 10000번·120초.
+    /// </summary>
+    public static List<OptimizePreset> BuiltIns()
+    {
+        List<OptimizePreset> presets =
+        [
+            new() { BuiltIn = "oklch1000", Params = (int)OptimizeParam.All, Trials = 10000, ScoreColorDistance = ColorDistanceMode.OkLchHue, ScoreHueWeight = 1000 },
+            new() { BuiltIn = "oklab", Trials = 10000, ScoreColorDistance = ColorDistanceMode.OkLab },
+            new() { BuiltIn = "quick", Enabled = false, Params = (int)OptimizeParam.Default, Trials = 1000, Seconds = 30 },
+            new() { BuiltIn = "faithful", Trials = 10000, Weights = new ScoreWeights { Fidelity = 8, ColorShift = 4 } },
+            new() { BuiltIn = "clean", Trials = 10000, Weights = new ScoreWeights { Fidelity = 3, Orphans = 3, OutlineGaps = 2, OutlineThin = 6 } },
+            new() { BuiltIn = "shade", Trials = 10000, ScoreColorDistance = ColorDistanceMode.OkLchHue, ScoreHueWeight = 20 },
+        ];
+        foreach (var preset in presets) preset.Name = BuiltInName(preset.BuiltIn!);
+        return presets;
+    }
+
+    /// <summary>
+    /// 기본 프리셋을 처음 값(체크 포함)으로 되돌리고 지운 것은 뒤에 다시 넣는다. 직접 만든 프리셋과 즐겨찾기 표시는 그대로 둔다.
+    /// </summary>
+    public static void RestoreBuiltIns(List<OptimizePreset> presets)
+    {
+        LocalizeBuiltIns(presets);
+        foreach (var builtIn in BuiltIns())
+        {
+            int index = presets.FindIndex(p => p.BuiltIn == builtIn.BuiltIn);
+            if (index < 0) presets.Add(builtIn);
+            else
+            {
+                builtIn.Favorite = presets[index].Favorite;
+                presets[index] = builtIn;
+            }
+        }
     }
 }
 
@@ -241,7 +406,6 @@ public sealed class PixelateDialog : DialogBase
     // 후보·고급
     private readonly NumericUpDown _candCount;
     private readonly CheckBox _vScale, _vPalette, _vDownsample, _vCleanup, _vDither, _vFit;
-    private readonly NumericUpDown _wFid, _wOrph, _wGap, _wCol, _wCons, _wGrid, _wThin, _wShift, _wRep;
     // 넣기·AI
     private readonly RadioButton _outLayer, _outDoc;
     private readonly NumericUpDown _outDuration;
@@ -251,41 +415,38 @@ public sealed class PixelateDialog : DialogBase
     private readonly TextBox _aiPrompt;
     private readonly NumericUpDown _aiRankCount;
     // 자동 최적화
-    private static readonly OptimizeParam[] OptimizeOrder =
-    [
-        OptimizeParam.Scale, OptimizeParam.OffsetX, OptimizeParam.OffsetY, OptimizeParam.Colors, OptimizeParam.DownsampleMode,
-        OptimizeParam.BorderFraction, OptimizeParam.AlphaThreshold, OptimizeParam.SnapStep, OptimizeParam.OutlineDarkness,
-        OptimizeParam.Cleanup, OptimizeParam.Dither, OptimizeParam.OutlineFit, OptimizeParam.VectorTolerance, OptimizeParam.VectorBlob,
-        OptimizeParam.PaletteColorSource, OptimizeParam.PaletteMethod, OptimizeParam.EdgeWeight, OptimizeParam.ColorDistance, OptimizeParam.ShadeFamily, OptimizeParam.DistinctHues,
-        OptimizeParam.SnapOutline, OptimizeParam.StickerBorder, OptimizeParam.LocalGrid,
-    ];
-    /// <summary>최적화 설정 판(항목·예산·시도 기록 — 설정 단추로 펼침).</summary>
-    private readonly Border _optPanel;
-    private readonly (OptimizeParam Param, CheckBox Box)[] _optChecks;
-    private readonly NumericUpDown _optTrials, _optSeconds;
-    /// <summary>"자동 최적화"(누르면 바로 시작) ↔ 도는 동안 "취소".</summary>
+    /// <summary>최적화 설정 창(프리셋 목록·편집, '불러오면 자동 최적화', 시도 기록 — 열려 있을 때만).</summary>
+    private Window? _optSettingsWindow;
+    /// <summary>설정 창의 프리셋 목록·편집(창이 열려 있을 때만).</summary>
+    private OptimizePresetsPanel? _optPresets;
+    /// <summary>"자동 최적화"(누르면 체크한 프리셋을 모두 차례로 돌림) ↔ 도는 동안 "취소".</summary>
     private readonly Button _optRun;
     /// <summary>최적화 전 설정으로 되돌리기(한 번 돌린 뒤 그래프 옆).</summary>
     private readonly Button _optRevert;
-    /// <summary>켤 수 있는 항목 모두 선택 ↔ 모두 해제(글자는 지금 상태를 따라감).</summary>
-    private readonly Button _optAll;
-    private bool _optSyncing;
-    /// <summary>그래프 옆 한 줄: 도는 동안 진행(돌림 번호 포함), 끝나면 "돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭"(풍선에 같은 글).</summary>
+    /// <summary>그래프 옆 한 줄: 도는 동안 진행(프리셋 이름·k/n·돌림 번호), 끝나면 "프리셋 k/n개 · t초"(풍선에 프리셋마다 결과 한 줄).</summary>
     private readonly TextBlock _optText;
+    /// <summary>지금 도는 프리셋의 시도마다 최고 점수(프리셋이 바뀌면 새로).</summary>
     private readonly OptimizeGraph _optGraph;
+    /// <summary>설정 창에서 고른 프리셋의 마지막 시도 기록 표.</summary>
     private readonly Grid _optTable;
     private CancellationTokenSource? _optCts;
     private int _optGeneration;
-    /// <summary>이번 최적화에서 끝난 시도 수(진행 알림은 순서가 섞일 수 있어 가장 큰 값).</summary>
+    /// <summary>지금 도는 프리셋의 끝난 시도 수(진행 알림은 순서가 섞일 수 있어 가장 큰 값).</summary>
     private int _optDone;
-    /// <summary>'불러오면 자동 최적화'(<see cref="PixelateOptions.AutoOptimizeOnLoad"/>).</summary>
+    /// <summary>지금 도는 프리셋: 이름, 번호(1부터), 돌리는 프리셋 수.</summary>
+    private (string Name, int Index, int Count) _optRunning;
+    /// <summary>마지막 최적화에서 프리셋마다 결과와 그때 바꿔 본 항목(시도 기록 표).</summary>
+    private readonly Dictionary<OptimizePreset, (PixelateOptimizeResult Result, OptimizeParam Params)> _optResults = new(ReferenceEqualityComparer.Instance);
+    /// <summary>'불러오면 자동 최적화'(<see cref="PixelateOptions.AutoOptimizeOnLoad"/> — 설정 창에 올림).</summary>
     private readonly CheckBox _optAuto;
     /// <summary>원본을 넣었고 첫 후보가 끝나면 자동 최적화를 돌릴 차례(<see cref="OnFinished"/>에서 한 번만).</summary>
     private bool _autoOptimizePending;
     /// <summary>최적화 전 설정(되돌리기).</summary>
     private PixelateSettings? _optRevertTo;
-    /// <summary>최적화가 넣은 후보(칸에 "최적화" 표시).</summary>
-    private readonly HashSet<PixelateCandidate> _optimized = new(ReferenceEqualityComparer.Instance);
+    /// <summary>최적화가 넣은 후보와 그 프리셋 이름(칸 제목 = 프리셋 이름, "최적화" 표시).</summary>
+    private readonly Dictionary<PixelateCandidate, string> _optimized = new(ReferenceEqualityComparer.Instance);
+    /// <summary>마지막으로 보통 후보를 잰 점수 기준(설정 창에서 바뀌면 다시 돌림).</summary>
+    private (ScoreWeights Weights, ColorDistanceMode Distance, double HueWeight) _scoredWith;
 
     // 원본 넣기·설정 칸 접기
     /// <summary>원본이 없을 때 가운데 안내(끌어 놓기·붙여 넣기·파일 찾기).</summary>
@@ -516,38 +677,6 @@ public sealed class PixelateDialog : DialogBase
             Ui.Label(UiStrings.Pixelate_Cand_Vary),
             new WrapPanel { Children = { _vScale, _vPalette, _vDownsample, _vCleanup, _vDither, _vFit } });
 
-        // ── 고급(가중치)
-        _wFid = Num(0, 10, (decimal)_opt.WeightFidelity, 1, 0.5m);
-        _wOrph = Num(0, 10, (decimal)_opt.WeightOrphans, 1, 0.5m);
-        _wGap = Num(0, 10, (decimal)_opt.WeightOutlineGaps, 1, 0.5m);
-        _wCol = Num(0, 10, (decimal)_opt.WeightColors, 1, 0.5m);
-        _wCons = Num(0, 10, (decimal)_opt.WeightConsistency, 1, 0.5m);
-        _wGrid = Num(0, 10, (decimal)_opt.WeightGrid, 1, 0.5m);
-        _wThin = Num(0, 10, (decimal)_opt.WeightOutlineThin, 1, 0.5m);
-        _wShift = Num(0, 10, (decimal)_opt.WeightColorShift, 1, 0.5m).Tip(UiStrings.Pixelate_Score_ColorShift_Tip);
-        _wRep = Num(0, 10, (decimal)_opt.WeightBlockRepetition, 1, 0.5m).Tip(UiStrings.Pixelate_Score_BlockRepetition_Tip);
-        var advBody = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto"), Margin = new Thickness(4) };
-        void Weight(int i, string label, NumericUpDown box)
-        {
-            var l = Ui.Label(label);
-            Grid.SetRow(l, i / 2);
-            Grid.SetColumn(l, i % 2 * 2);
-            Grid.SetRow(box, i / 2);
-            Grid.SetColumn(box, i % 2 * 2 + 1);
-            advBody.Children.Add(l);
-            advBody.Children.Add(box);
-        }
-        advBody.RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto");
-        Weight(0, UiStrings.Pixelate_Score_Fidelity, _wFid);
-        Weight(1, UiStrings.Pixelate_Score_Orphans, _wOrph);
-        Weight(2, UiStrings.Pixelate_Score_OutlineGaps, _wGap);
-        Weight(3, UiStrings.Pixelate_Score_Colors, _wCol);
-        Weight(4, UiStrings.Pixelate_Score_Consistency, _wCons);
-        Weight(5, UiStrings.Pixelate_Score_Grid, _wGrid);
-        Weight(6, UiStrings.Pixelate_Score_OutlineThin, _wThin);
-        Weight(7, UiStrings.Pixelate_Score_ColorShift, _wShift);
-        Weight(8, UiStrings.Pixelate_Score_BlockRepetition, _wRep);
-
         // ── 넣기
         _outLayer = new RadioButton { GroupName = "pixelate-out", Content = UiStrings.Pixelate_Out_NewLayer, Foreground = AppTheme.TextBrush, IsEnabled = canInsertLayer };
         _outDoc = new RadioButton { GroupName = "pixelate-out", Content = UiStrings.Pixelate_Out_NewDocument, Foreground = AppTheme.TextBrush };
@@ -590,7 +719,6 @@ public sealed class PixelateDialog : DialogBase
         left.Children.Add(Section(UiStrings.Pixelate_Section_Cleanup, clBody, true));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Consistency, coBody, false));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Candidates, candBody, true));
-        left.Children.Add(Section(UiStrings.Pixelate_Section_Advanced, advBody, false));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Output, outBody, true));
         left.Children.Add(Section(UiStrings.Pixelate_Section_Ai, aiBody, false));
         // 너비를 묶어 두어 접고 펼치는 동안 내용이 다시 줄 바꿈되지 않고 잘려 보이게 한다.
@@ -623,7 +751,7 @@ public sealed class PixelateDialog : DialogBase
         settingsColumn.Children.Add(_settingsHost);
 
         // ── 오른쪽: 원본 | 고른 후보(재생 + 같은 프레임 원본, 아래에 프레임 띠·재생 조절)
-        _sourceView = new ZoomImageView(UiStrings.Pixelate_Source);
+        _sourceView = new ZoomImageView();
         _preview = new FramePreview();
         _strip = new FrameStrip();
         _zoomStrip = new FrameStrip();
@@ -763,80 +891,16 @@ public sealed class PixelateDialog : DialogBase
             Background = AppTheme.InputBrush,
         };
 
-        // ── 자동 최적화(후보 위): 누르면 바로 지금 설정에서 점수가 가장 높은 설정을 찾는다. 옆에는 점수 그래프·결과 한 줄·되돌리기만,
-        // 항목·예산·시도 기록은 설정 단추로 펼친다.
-        var optSelected = (OptimizeParam)_opt.OptimizeParams;
-        _optChecks = [.. OptimizeOrder.Select(p => (p, Ui.Check(OptimizeParamName(p), optSelected.HasFlag(p))))];
-        foreach (var (p, box) in _optChecks)
-        {
-            if (p is OptimizeParam.OffsetX or OptimizeParam.OffsetY) box.Tip(UiStrings.Pixelate_Opt_OffsetTip);
-            else if (p == OptimizeParam.OutlineFit) box.Tip(UiStrings.Pixelate_Opt_FitTip);
-            else if (p == OptimizeParam.LocalGrid) box.Tip(UiStrings.Pixelate_Opt_LocalGridTip);
-            else if (p is OptimizeParam.VectorTolerance or OptimizeParam.VectorBlob) box.Tip(UiStrings.Pixelate_Opt_VectorTip);
-            else if (p is OptimizeParam.PaletteColorSource or OptimizeParam.PaletteMethod or OptimizeParam.EdgeWeight) box.Tip(UiStrings.Pixelate_Opt_PaletteTip);
-            else if (p == OptimizeParam.ColorDistance) box.Tip(UiStrings.Pixelate_Opt_ColorDistanceTip);
-            else if (p == OptimizeParam.ShadeFamily) box.Tip(UiStrings.Pixelate_Pal_ShadeFamily_Tip);
-            else if (p == OptimizeParam.DistinctHues) box.Tip(UiStrings.Pixelate_Pal_Distinct_Tip);
-        }
-        _optTrials = Num(5, MaxOptimizeTrials, Math.Clamp(_opt.OptimizeTrials, 5, MaxOptimizeTrials), 0, 10).Presets(100, 200, 500, 1000, 2000, 5000);
-        _optSeconds = Num(5, 600, Math.Clamp(_opt.OptimizeSeconds, 5, 600), 0, 5).Presets(15, 30, 60, 120, 300, 600);
+        // ── 자동 최적화(후보 위): 실행·진행만 남기고 프리셋(항목·예산·점수 기준)·시도 기록은 별도 창에서 편집한다.
         _optAuto = Ui.Check(UiStrings.Pixelate_Opt_AutoOnLoad, _opt.AutoOptimizeOnLoad).Tip(UiStrings.Pixelate_Opt_AutoOnLoadTip);
         _optRun = Ui.Button(VectorIcon.Sparkles, UiStrings.Pixelate_Opt_Toggle, (_, _) => OnOptimizeClicked()).Tip(UiStrings.Pixelate_Opt_ToggleTip);
-        Button optSettings = null!;
-        // 설정 칸이 열려 있는 동안은 빨간 X(닫기 단추처럼), 닫히면 슬라이더 아이콘.
-        void UpdateOptSettingsButton()
-        {
-            bool open = _optPanel?.IsVisible == true;
-            var icon = (IconView)optSettings.Content!;
-            icon.Icon = open ? VectorIcon.X : VectorIcon.SlidersHorizontal;
-            if (open) icon.Foreground = AppTheme.UnsavedBrush;
-            else icon.ClearValue(IconView.ForegroundProperty);
-            optSettings.Tip(open ? UiStrings.Pixelate_Opt_SettingsClose : UiStrings.Pixelate_Opt_Settings);
-        }
-        optSettings = Ui.IconButton(VectorIcon.SlidersHorizontal, UiStrings.Pixelate_Opt_Settings, (_, _) =>
-        {
-            _optPanel!.IsVisible = !_optPanel.IsVisible;
-            UpdateOptSettingsButton();
-        });
+        ToolTip.SetShowOnDisabled(_optRun, true);
+        var optSettings = Ui.IconButton(VectorIcon.SlidersHorizontal, UiStrings.Pixelate_Opt_Settings, (_, _) => OpenOptimizeSettings());
         _optRevert = Ui.IconButton(VectorIcon.Undo2, UiStrings.Pixelate_Opt_RevertTip, (_, _) => RevertOptimize());
         _optText = new TextBlock { Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0), TextTrimming = TextTrimming.CharacterEllipsis };
         _optGraph = new OptimizeGraph { Width = 180, Height = 26, Margin = new Thickness(3), VerticalAlignment = VerticalAlignment.Center };
         ToolTip.SetTip(_optGraph, UiStrings.Pixelate_Opt_GraphTip);
-        var optNote = new TextBlock { Text = UiStrings.Pixelate_Opt_Note, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 0), TextWrapping = TextWrapping.Wrap };
         _optTable = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), Margin = new Thickness(2) };
-        var optHistory = new Expander
-        {
-            Header = new TextBlock { Text = UiStrings.Pixelate_Opt_History, Foreground = AppTheme.TextBrush },
-            Content = new ScrollViewer { Content = _optTable, MaxHeight = 110, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        _optAll = Ui.Button(UiStrings.Pixelate_Opt_SelectAll, (_, _) => ToggleAllOptimizeParams()).Tip(UiStrings.Pixelate_Opt_SelectAllTip);
-        var optDefaults = Ui.Button(UiStrings.Pixelate_Opt_Defaults, (_, _) => SetOptimizeParams(PixelateOptions.DefaultOptimizeParams)).Tip(UiStrings.Pixelate_Opt_DefaultsTip);
-        foreach (var (_, box) in _optChecks)
-            box.IsCheckedChanged += (_, _) => { if (!_optSyncing) UpdateOptimizeChecks(); };
-        var optChecks = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var (_, box) in _optChecks) optChecks.Children.Add(box);
-        _optPanel = new Border
-        {
-            // 시도 기록을 펼쳐도 미리보기·후보가 밀려나지 않게 높이를 묶고 넘치면 스크롤.
-            Child = new ScrollViewer
-            {
-                MaxHeight = 220,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = Ui.Stack(
-                    Ui.Row(_optAll, optDefaults, Ui.Label(UiStrings.Pixelate_Opt_Trials), _optTrials, Ui.Label(UiStrings.Pixelate_Opt_Seconds), _optSeconds),
-                    _optAuto,
-                    optChecks,
-                    optNote,
-                    optHistory),
-            },
-            Background = AppTheme.PanelBrush,
-            BorderBrush = AppTheme.BorderBrush,
-            BorderThickness = new Thickness(1),
-            Margin = new Thickness(0, 2),
-            IsVisible = false,
-        };
         var optBar = new DockPanel { LastChildFill = true };
         foreach (var c in new Control[] { _optRun, optSettings, _optGraph, _optRevert })
         {
@@ -845,10 +909,10 @@ public sealed class PixelateDialog : DialogBase
             optBar.Children.Add(c);
         }
         optBar.Children.Add(_optText);
-        var optBlock = new StackPanel { Children = { optBar, _optPanel } };
+        var optBlock = optBar;
 
         var right = new Grid { RowDefinitions = new RowDefinitions("*,Auto,Auto,Auto,Auto,200") };
-        right.RowDefinitions[0].MinHeight = 200; // 최적화 판을 펼쳐도 미리보기가 남게
+        right.RowDefinitions[0].MinHeight = 200;
         void Put(Control c, int row) { Grid.SetRow(c, row); right.Children.Add(c); }
         Put(views, 0);
         Put(_emptyState, 0);
@@ -902,14 +966,15 @@ public sealed class PixelateDialog : DialogBase
             ((ComboBox)c).SelectionChanged += (_, _) => Changed();
         foreach (var n in new[] { _bgTol, _bgAlpha, _bgSpecks, _frCols, _frRows, _frMerge, _frMergeDist, _grScale, _grOffX, _grOffY, _grJitter, _grAdjust, _grLocalShift, _grLocalBand, _grLocalMinCell,
                      _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea,
-                     _clContrast, _clVecTol, _clVecBlob, _coContrast, _candCount,
-                     _wFid, _wOrph, _wGap, _wCol, _wCons, _wGrid, _wThin, _wShift, _wRep })
+                     _clContrast, _clVecTol, _clVecBlob, _coContrast, _candCount })
             n.ValueChanged += (_, _) => Changed();
         foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grPerFrame, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade,
                      _clOrphans, _clHoles, _clJaggies, _coTemporal, _vScale, _vPalette, _vDownsample, _vCleanup, _vDither, _vFit })
             c.IsCheckedChanged += (_, _) => Changed();
         _debounce.Tick += (_, _) => { _debounce.Stop(); Rerun(); };
 
+        // 숫자·설정 입력의 Enter가 결과 적용으로 이어지지 않게 한다. 적용은 단추로만 한다.
+        OkButton.IsDefault = false;
         OkButton.Click += (_, _) =>
         {
             if (_selected is null) { DialogResult = DialogResult.None; return; }
@@ -934,9 +999,6 @@ public sealed class PixelateDialog : DialogBase
         };
         Closed += (_, _) => OnClosedSave();
     }
-
-    /// <summary>자동 최적화 시도 수 칸의 최대.</summary>
-    private const int MaxOptimizeTrials = 10000;
 
     private static string TitleFor(PixelateInput? input) => input is null ? UiStrings.Pixelate_Title : $"{UiStrings.Pixelate_Title} — {input.Name}";
 
@@ -975,8 +1037,8 @@ public sealed class PixelateDialog : DialogBase
         _pinned = [];
         _optRevertTo = null;
         _optGraph.Clear();
-        _optTable.Children.Clear();
-        _optTable.RowDefinitions.Clear();
+        _optResults.Clear();
+        FillOptimizeHistory();
         SetOptText("");
         CloseZoom();
         ClearResults();
@@ -1404,18 +1466,12 @@ public sealed class PixelateDialog : DialogBase
         return v;
     }
 
-    private ScoreWeights ReadWeights() => new()
+    /// <summary>보통 후보를 잴 점수 기준: 체크한 첫 최적화 프리셋(<see cref="PixelateOptions.PrimaryPreset"/>)의 항목별 비중·점수용 색 거리.</summary>
+    private (ScoreWeights Weights, ColorDistanceMode Distance, double HueWeight) ScoringCriteria()
     {
-        Fidelity = (double)_wFid.NumValue(),
-        Orphans = (double)_wOrph.NumValue(),
-        OutlineGaps = (double)_wGap.NumValue(),
-        Colors = (double)_wCol.NumValue(),
-        Consistency = (double)_wCons.NumValue(),
-        Grid = (double)_wGrid.NumValue(),
-        OutlineThin = (double)_wThin.NumValue(),
-        ColorShift = (double)_wShift.NumValue(),
-        BlockRepetition = (double)_wRep.NumValue(),
-    };
+        var p = _opt.PrimaryPreset;
+        return (p.Weights, p.ScoreColorDistance, p.ScoreHueWeight);
+    }
 
     /// <summary>방식에 따라 쓰지 않는 칸을 끈다.</summary>
     private void UpdateEnabled()
@@ -1455,7 +1511,7 @@ public sealed class PixelateDialog : DialogBase
         _clContrast.IsEnabled = _clOrphans.On();
         _clVecTol.IsEnabled = _clVecBlob.IsEnabled = At<OutlineFit>(_clFit) == OutlineFit.Vector;
         _coContrast.IsEnabled = _coTemporal.On();
-        UpdateOptimizeChecks();
+        _optPresets?.RefreshApplicable();
         SyncBarSize();
     }
 
@@ -1565,7 +1621,9 @@ public sealed class PixelateDialog : DialogBase
         _runFit = settings.Cleanup.OutlineFit;
         var vary = ReadVary();
         int count = (int)_candCount.NumValue();
-        var weights = ReadWeights();
+        _scoredWith = ScoringCriteria();
+        var weights = _scoredWith.Weights;
+        var scoreMetric = new ColorMetric(_scoredWith.Distance, _scoredWith.HueWeight);
         var prepared = _prepared;
         StopOptimize();
         _candidates.Clear();
@@ -1592,7 +1650,7 @@ public sealed class PixelateDialog : DialogBase
                     return;
                 }
                 PixelateCandidates.Run(src, settings, vary, count, weights,
-                    c => Dispatcher.UIThread.Post(() => { if (gen == _generation) AddCandidate(c, count); }), cts.Token);
+                    c => Dispatcher.UIThread.Post(() => { if (gen == _generation) AddCandidate(c, count); }), cts.Token, scoreMetric);
                 Dispatcher.UIThread.Post(() => { if (gen == _generation) OnFinished(); });
             }
             catch (OperationCanceledException)
@@ -1734,7 +1792,7 @@ public sealed class PixelateDialog : DialogBase
         for (int i = 0; i < _candidates.Count; i++)
         {
             var c = _candidates[i];
-            var tile = new CandidateTile(c, i + 1, ReferenceEquals(c, _selected), _optimized.Contains(c));
+            var tile = new CandidateTile(c, i + 1, ReferenceEquals(c, _selected), _optimized.GetValueOrDefault(c));
             tile.PointerPressed += (_, e) =>
             {
                 if (!e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) return;
@@ -1863,7 +1921,7 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 크게 보기를 연다(큰 미리보기의 그림을 누름). 열린 동안은 Esc가 대화상자 취소·Enter가 확인으로 가지 않게 두 단추의 키를 끈다
+    /// 크게 보기를 연다(큰 미리보기의 그림을 누름). 열린 동안은 Esc가 대화상자 취소로 가지 않게 취소 키를 끈다
     /// (Esc·바탕 누르기·닫기 단추 = 크게 보기만 닫기, Space·←→ = 재생·프레임 — 큰 미리보기와 같음).
     /// </summary>
     private void OpenZoom()
@@ -1880,7 +1938,7 @@ public sealed class PixelateDialog : DialogBase
         if (!_zoom.IsVisible) return;
         _zoom.IsVisible = false;
         CancelButtonControl.IsCancel = true;
-        OkButton.IsDefault = true;
+        OkButton.IsDefault = false;
         _preview.Focus();
     }
 
@@ -1952,7 +2010,7 @@ public sealed class PixelateDialog : DialogBase
             var n = WithExcluded(c);
             if (ReferenceEquals(n, c)) continue;
             _candidates[i] = n;
-            if (_optimized.Remove(c)) _optimized.Add(n);
+            if (_optimized.Remove(c, out var preset)) _optimized[n] = preset;
             if (ReferenceEquals(_selected, c)) _selected = n;
         }
         RebuildTiles();
@@ -2125,84 +2183,95 @@ public sealed class PixelateDialog : DialogBase
 
     // ───────────── 자동 최적화 ─────────────
 
-    private static string OptimizeParamName(OptimizeParam p) => p switch
-    {
-        OptimizeParam.Scale => UiStrings.Pixelate_Opt_Scale,
-        OptimizeParam.OffsetX => UiStrings.Pixelate_Opt_OffsetX,
-        OptimizeParam.OffsetY => UiStrings.Pixelate_Opt_OffsetY,
-        OptimizeParam.Colors => UiStrings.Pixelate_Opt_Colors,
-        OptimizeParam.ColorDistance => UiStrings.Pixelate_Pal_Distance,
-        OptimizeParam.DistinctHues => UiStrings.Pixelate_Pal_Distinct,
-        OptimizeParam.ShadeFamily => UiStrings.Pixelate_Pal_ShadeFamily,
-        OptimizeParam.DownsampleMode => UiStrings.Pixelate_Opt_Downsample,
-        OptimizeParam.BorderFraction => UiStrings.Pixelate_Opt_Border,
-        OptimizeParam.AlphaThreshold => UiStrings.Pixelate_Opt_Alpha,
-        OptimizeParam.SnapStep => UiStrings.Pixelate_Opt_Snap,
-        OptimizeParam.OutlineDarkness => UiStrings.Pixelate_Opt_Darkness,
-        OptimizeParam.Cleanup => UiStrings.Pixelate_Opt_Cleanup,
-        OptimizeParam.Dither => UiStrings.Pixelate_Opt_Dither,
-        OptimizeParam.PaletteColorSource => UiStrings.Pixelate_Opt_ColorSource,
-        OptimizeParam.PaletteMethod => UiStrings.Pixelate_Opt_PaletteMethod,
-        OptimizeParam.EdgeWeight => UiStrings.Pixelate_Opt_EdgeWeight,
-        OptimizeParam.SnapOutline => UiStrings.Pixelate_Opt_SnapOutline,
-        OptimizeParam.StickerBorder => UiStrings.Pixelate_Bg_Sticker,
-        OptimizeParam.LocalGrid => UiStrings.Pixelate_Opt_LocalGrid,
-        OptimizeParam.VectorTolerance => UiStrings.Pixelate_Clean_VectorTolerance,
-        OptimizeParam.VectorBlob => UiStrings.Pixelate_Clean_VectorBlob,
-        _ => UiStrings.Pixelate_Opt_OutlineFit,
-    };
-
-    private OptimizeParam ReadOptimizeParams()
-        => _optChecks.Where(c => c.Box.On()).Aggregate(OptimizeParam.None, (a, c) => a | c.Param);
+    /// <summary>끝난(취소면 그때까지 돈) 프리셋 하나의 최적화: 프리셋, 돌릴 때의 이름, 바꿔 본 항목, 결과.</summary>
+    private sealed record OptimizeRun(OptimizePreset Preset, string Name, OptimizeParam Params, PixelateOptimizeResult Result);
 
     /// <summary>
-    /// 지금 설정에서 쓰지 않는 항목(<see cref="PixelateOptimizer.Applicable"/>)은 끄고(체크는 그대로), "모두 선택/모두 해제" 글자를 맞춘다
-    /// (외곽선 맞추기 방식은 '모두 선택'이 건드리지 않으므로 셈에서 뺀다).
+    /// 최적화 설정 창: 왼쪽은 프리셋 목록(체크 = 함께 돌림), 오른쪽은 고른 프리셋의 항목·예산·점수 기준(<see cref="OptimizePresetsPanel"/> — 지금 설정에서
+    /// 쓰지 않는 항목은 흐림), 아래는 고른 프리셋의 마지막 시도 기록과 '불러오면 자동 최적화'. 도는 동안은 편집할 수 없다. 닫으면 설정 파일에 저장한다.
     /// </summary>
-    private void UpdateOptimizeChecks()
+    private void OpenOptimizeSettings()
     {
-        var applicable = PixelateOptimizer.Applicable(ReadSettings(), ReadOptimizeParams());
-        foreach (var (p, box) in _optChecks) box.IsEnabled = applicable.HasFlag(p);
-        var enabled = _optChecks.Where(c => c.Box.IsEnabled && OptimizeParam.SelectAll.HasFlag(c.Param)).ToList();
-        bool all = enabled.Count > 0 && enabled.All(c => c.Box.On());
-        _optAll.Content = all ? UiStrings.Pixelate_Opt_ClearAll : UiStrings.Pixelate_Opt_SelectAll;
+        if (_optSettingsWindow is { } open)
+        {
+            open.Activate();
+            return;
+        }
+        var popup = new Window
+        {
+            Title = UiStrings.Pixelate_Opt_SettingsTitle,
+            Width = 1000,
+            Height = 680,
+            MinWidth = 700,
+            MinHeight = 420,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false,
+            Background = AppTheme.BackBrush,
+        };
+        var panel = new OptimizePresetsPanel(_opt, ReadSettings);
+        panel.Changed += (_, _) => OnOptimizePresetsChanged();
+        panel.SelectionChanged += (_, _) => FillOptimizeHistory();
+        var historyScroll = new ScrollViewer { Content = _optTable, MaxHeight = 170, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        var history = new Expander
+        {
+            Header = new TextBlock { Text = UiStrings.Pixelate_Opt_History, Foreground = AppTheme.TextBrush },
+            Content = historyScroll,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(8, 0),
+        };
+        var close = Ui.Button(UiStrings.Pixelate_Opt_SettingsClose, (_, _) => popup.Close());
+        var bottom = new DockPanel { LastChildFill = true, Margin = new Thickness(8, 4, 8, 8) };
+        DockPanel.SetDock(close, Dock.Right);
+        bottom.Children.Add(close);
+        _optAuto.VerticalAlignment = VerticalAlignment.Center;
+        bottom.Children.Add(_optAuto);
+        var content = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(bottom, Dock.Bottom);
+        DockPanel.SetDock(history, Dock.Bottom);
+        content.Children.Add(bottom);
+        content.Children.Add(history);
+        content.Children.Add(panel);
+        popup.Content = content;
+        popup.Closed += (_, _) =>
+        {
+            popup.Content = null;
+            bottom.Children.Remove(_optAuto);
+            historyScroll.Content = null;
+            _optPresets = null;
+            _optSettingsWindow = null;
+            _settings.Save();
+        };
+        _optPresets = panel;
+        _optSettingsWindow = popup;
+        UpdateOptimizeButtons();
+        FillOptimizeHistory();
+        popup.Show(this);
+    }
+
+    /// <summary>설정 창에서 프리셋을 바꾸면: 자동 최적화 단추를 맞추고, 보통 후보를 잰 점수 기준(체크한 첫 프리셋)이 바뀌었으면 잠시 뒤 다시 돌린다.</summary>
+    private void OnOptimizePresetsChanged()
+    {
+        UpdateOptimizeButtons();
+        if (_input is null || ScoringCriteria() == _scoredWith) return;
+        _debounce.Stop();
+        _debounce.Start();
     }
 
     /// <summary>
-    /// 켤 수 있는 항목(<see cref="OptimizeParam.SelectAll"/> — 외곽선 맞추기 방식은 빼고)이 모두 켜져 있으면 모두 끄고, 아니면 모두 켠다(꺼진 항목은 그대로 —
-    /// 단, 팔레트 색을 켜면 켤 수 있게 되는 가장자리 칸 가중은 함께 켠다). 외곽선 맞추기 방식은 사용자가 고른 방식을 지키도록 사용자가 직접 켜고 끌 때만 바뀐다.
+    /// 자동 최적화 단추: 도는 동안 "취소", 아니면 "자동 최적화"(원본이 없거나 체크한 프리셋이 없으면 꺼짐 — 풍선에 까닭). 그래프·결과 한 줄은 한 번 돌린 뒤부터,
+    /// 되돌리기는 끝난 뒤에만. 도는 동안 설정 창의 프리셋 편집은 끈다.
     /// </summary>
-    private void ToggleAllOptimizeParams()
-    {
-        var enabled = _optChecks.Where(c => c.Box.IsEnabled && OptimizeParam.SelectAll.HasFlag(c.Param)).ToList();
-        bool on = !(enabled.Count > 0 && enabled.All(c => c.Box.On()));
-        var chosen = ReadOptimizeParams();
-        var reachable = on ? PixelateOptimizer.Applicable(ReadSettings(), OptimizeParam.SelectAll | (chosen & OptimizeParam.OutlineFit)) : OptimizeParam.None;
-        _optSyncing = true;
-        foreach (var (p, box) in _optChecks)
-            if (OptimizeParam.SelectAll.HasFlag(p) && (box.IsEnabled || reachable.HasFlag(p))) box.IsChecked = on;
-        _optSyncing = false;
-        UpdateOptimizeChecks();
-    }
-
-    /// <summary>항목을 <paramref name="p"/>대로(외곽선 맞추기 방식 체크는 그대로 — 사용자가 직접 바꿀 때만).</summary>
-    private void SetOptimizeParams(OptimizeParam p)
-    {
-        _optSyncing = true;
-        foreach (var (param, box) in _optChecks)
-            if (param != OptimizeParam.OutlineFit) box.IsChecked = p.HasFlag(param);
-        _optSyncing = false;
-        UpdateOptimizeChecks();
-    }
-
-    /// <summary>자동 최적화 단추: 도는 동안 "취소", 아니면 "자동 최적화"(원본이 없으면 꺼짐). 그래프·결과 한 줄은 한 번 돌린 뒤부터, 되돌리기는 끝난 뒤에만.</summary>
     private void UpdateOptimizeButtons()
     {
         bool running = _optCts is not null;
+        bool any = _opt.OptimizePresets.Any(p => p.Enabled);
         _optRun.Content = Ui.IconLabel(running ? VectorIcon.X : VectorIcon.Sparkles, running ? UiStrings.Pixelate_Opt_Cancel : UiStrings.Pixelate_Opt_Toggle);
-        _optRun.IsEnabled = _input is not null;
+        _optRun.IsEnabled = _input is not null && (running || any);
+        _optRun.Tip(running || any ? UiStrings.Pixelate_Opt_ToggleTip : UiStrings.Pixelate_Opt_NoPresetTip);
         _optGraph.IsVisible = running || _optGraph.HasData;
         _optRevert.IsVisible = !running && _optRevertTo is not null;
+        if (_optPresets is not null) _optPresets.IsEnabled = !running;
+        _optAuto.IsEnabled = !running;
     }
 
     private void OnOptimizeClicked()
@@ -2212,35 +2281,32 @@ public sealed class PixelateDialog : DialogBase
             StartOptimize();
             return;
         }
-        // 취소해도 그때까지 찾은 결과를 보인다(끝나면 단추가 다시 켜짐).
+        // 취소해도 그때까지 돈 프리셋의 결과를 보인다(끝나면 단추가 다시 켜짐).
         _optCts.Cancel();
         _optRun.IsEnabled = false;
     }
 
-    private void SetOptText(string text)
+    /// <summary>그래프 옆 한 줄과 그 풍선(<paramref name="tip"/>이 없으면 같은 글).</summary>
+    private void SetOptText(string text, string? tip = null)
     {
         _optText.Text = text;
-        ToolTip.SetTip(_optText, string.IsNullOrEmpty(text) ? null : text);
+        ToolTip.SetTip(_optText, string.IsNullOrEmpty(text) ? null : tip ?? text);
     }
 
     /// <summary>
-    /// 지금 설정(왼쪽)에서 자동 최적화를 배경에서 돌린다. 돌던 후보 만들기는 멈추고(결과가 섞이지 않게), 끝나면 상위 10개를 후보로 넣고
-    /// 1위의 설정을 왼쪽에 불러온다(다시 돌리지 않음). 취소하면 그때까지 찾은 결과를 같은 방법으로 보인다.
+    /// 지금 설정(왼쪽)에서 체크한 최적화 프리셋을 목록 순서대로 배경에서 하나씩 돌린다(모두 같은 준비된 원본·시작 설정, 프리셋마다 자기 항목·예산·점수 기준).
+    /// 돌던 후보 만들기는 멈추고(결과가 섞이지 않게), 끝나면 프리셋마다 1위 하나를 후보로 넣고(칸 제목 = 프리셋 이름) 첫 후보의 설정을 왼쪽에 불러온다(다시 돌리지 않음).
+    /// 취소하면 남은 프리셋은 건너뛰고 그때까지 돈 프리셋(도는 중이던 프리셋은 그때까지 찾은 1위)을 같은 방법으로 보인다.
     /// </summary>
     private void StartOptimize()
     {
         if (_optCts is not null || _input is not { } input) return;
+        var runs = _opt.OptimizePresets.Where(p => p.Enabled).Select(p => (Preset: p, p.Name, Options: p.Options())).ToList();
+        if (runs.Count == 0) return;
         _debounce.Stop();
         _cts?.Cancel();
         _generation++;
         var settings = ReadSettings();
-        var options = new PixelateOptimizeOptions
-        {
-            Params = ReadOptimizeParams(),
-            MaxTrials = (int)_optTrials.NumValue(),
-            MaxTime = TimeSpan.FromSeconds((double)_optSeconds.NumValue()),
-            Weights = ReadWeights(),
-        };
         var prepared = _prepared;
         var image = input.Image;
         var cts = _optCts = new CancellationTokenSource();
@@ -2248,27 +2314,46 @@ public sealed class PixelateDialog : DialogBase
         _optRevertTo = settings;
         _optGraph.Clear();
         _optDone = 0;
+        _optResults.Clear();
+        FillOptimizeHistory();
         SetOptText(UiStrings.Pixelate_Opt_Preparing);
         _status.Text = UiStrings.Pixelate_Opt_Preparing;
         UpdateOptimizeButtons();
+        var clock = Stopwatch.StartNew();
         Task.Run(() =>
         {
+            var done = new List<OptimizeRun>();
+            PixelateSource? src = null;
             try
             {
-                var src = prepared is not null && prepared.Matches(settings) ? prepared : PixelateSource.Prepare(image, settings);
+                src = prepared is not null && prepared.Matches(settings) ? prepared : PixelateSource.Prepare(image, settings);
                 cts.Token.ThrowIfCancellationRequested();
                 if (src.Split.Frames.Count == 0)
                 {
                     Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) EndOptimize(UiStrings.Pixelate_Status_NoSprite); });
                     return;
                 }
-                var result = PixelateOptimizer.Run(src, settings, options,
-                    p => Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeProgress(p); }), cts.Token);
-                Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeFinished(src, result); });
+                for (int k = 0; k < runs.Count && !cts.IsCancellationRequested; k++)
+                {
+                    var run = runs[k];
+                    var running = (run.Name, k + 1, runs.Count);
+                    Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizePresetStarted(running); });
+                    var result = PixelateOptimizer.Run(src, settings, run.Options,
+                        p => Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeProgress(p); }), cts.Token);
+                    done.Add(new OptimizeRun(run.Preset, run.Name, run.Options.Params, result));
+                }
+                PixelateSource finished = src;
+                Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed); });
             }
             catch (OperationCanceledException)
             {
-                Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) EndOptimize(UiStrings.Pixelate_Opt_Stop_Cancelled); });
+                var finished = src;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (gen != _optGeneration) return;
+                    if (finished is not null) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed);
+                    else EndOptimize(UiStrings.Pixelate_Opt_Stop_Cancelled);
+                });
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException or AggregateException)
             {
@@ -2287,12 +2372,23 @@ public sealed class PixelateDialog : DialogBase
         EndOptimize(UiStrings.Pixelate_Opt_Stop_Cancelled);
     }
 
-    private void EndOptimize(string message)
+    private void EndOptimize(string message, string? tip = null)
     {
         _optCts?.Dispose();
         _optCts = null;
-        SetOptText(message);
+        SetOptText(message, tip);
         UpdateOptimizeButtons();
+    }
+
+    /// <summary>프리셋 하나를 돌리기 시작함: 그래프·시도 수를 새로(프리셋마다 점수 기준이 달라 이어 그리지 않음).</summary>
+    private void OnOptimizePresetStarted((string Name, int Index, int Count) running)
+    {
+        _optRunning = running;
+        _optDone = 0;
+        _optGraph.Clear();
+        var text = UiStrings.FormatPixelate_Opt_PresetLine(name: running.Name, summary: UiStrings.Pixelate_Opt_Preparing);
+        SetOptText(text);
+        _status.Text = text;
     }
 
     private void OnOptimizeProgress(PixelateOptimizeProgress p)
@@ -2300,6 +2396,9 @@ public sealed class PixelateDialog : DialogBase
         _optDone = Math.Max(_optDone, p.Done);
         _optGraph.Add(p.BestScore, p.Pass);
         var text = UiStrings.FormatPixelate_Opt_Progress(
+            name: _optRunning.Name,
+            index: _optRunning.Index,
+            count: _optRunning.Count,
             pass: _optGraph.Pass,
             done: _optDone,
             total: p.Budget,
@@ -2308,26 +2407,38 @@ public sealed class PixelateDialog : DialogBase
         _status.Text = text;
     }
 
-    private void OnOptimizeFinished(PixelateSource src, PixelateOptimizeResult result)
+    /// <summary>
+    /// 끝난 프리셋마다 1위 하나를 프리셋 순서대로 후보로 넣고(칸 제목 = 프리셋 이름), 첫 후보의 설정을 왼쪽에 불러와 고른다. 결과 한 줄 = 돈 프리셋 수·걸린 시간
+    /// (풍선에 프리셋마다 결과), 시도 기록은 프리셋마다 기억한다(설정 창에서 고른 프리셋의 것을 보임).
+    /// </summary>
+    private void OnOptimizeFinished(PixelateSource src, IReadOnlyList<OptimizeRun> runs, int count, TimeSpan elapsed)
     {
+        if (runs.Count == 0)
+        {
+            EndOptimize(UiStrings.Pixelate_Opt_Stop_Cancelled);
+            return;
+        }
         if (!ReferenceEquals(_prepared, src))
         {
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
         }
-        var top = result.Top(10, distinctOutput: true);
         _candidates.Clear();
         _optimized.Clear();
-        foreach (var t in top)
+        _optResults.Clear();
+        var lines = new List<string>();
+        foreach (var run in runs)
         {
-            var c = WithExcluded(t.Candidate);
+            var c = WithExcluded(run.Result.Best);
             _candidates.Add(c);
-            _optimized.Add(c);
+            _optimized[c] = run.Name;
+            _optResults[run.Preset] = (run.Result, run.Params);
+            lines.Add(UiStrings.FormatPixelate_Opt_PresetLine(name: run.Name, summary: OptimizeDone(run.Result)));
         }
         var best = _candidates[0];
         _userPicked = false;
         _runFit = best.Settings.Cleanup.OutlineFit;
-        // 1위 설정을 왼쪽에 불러온다 — 불러오는 중에는 다시 돌리지 않으므로 최적화 후보가 그대로 남는다.
+        // 첫 후보의 설정을 왼쪽에 불러온다 — 불러오는 중에는 다시 돌리지 않으므로 최적화 후보가 그대로 남는다.
         LoadSettings(best.Settings);
         _presetSilent = true;
         _preset.SelectedIndex = -1;
@@ -2336,6 +2447,19 @@ public sealed class PixelateDialog : DialogBase
         RebuildTiles();
         Select(best);
 
+        var summary = UiStrings.FormatPixelate_Opt_PresetsDone(
+            done: runs.Count,
+            count: count,
+            seconds: elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture));
+        if (runs.Count < count || runs[^1].Result.StoppedReason == OptimizeStop.Cancelled) summary += " · " + UiStrings.Pixelate_Opt_Stop_Cancelled;
+        EndOptimize(summary, string.Join("\n", lines));
+        _status.Text = best.Result.Failed ? summary + " · " + FailureNote(best.Result) : summary;
+        FillOptimizeHistory();
+    }
+
+    /// <summary>프리셋 하나의 결과 한 줄: "돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭".</summary>
+    private static string OptimizeDone(PixelateOptimizeResult result)
+    {
         string reason = result.StoppedReason switch
         {
             OptimizeStop.Trials => UiStrings.Pixelate_Opt_Stop_Trials,
@@ -2343,26 +2467,24 @@ public sealed class PixelateDialog : DialogBase
             OptimizeStop.Cancelled => UiStrings.Pixelate_Opt_Stop_Cancelled,
             _ => UiStrings.Pixelate_Opt_Stop_Done,
         };
-        var done = UiStrings.FormatPixelate_Opt_Done(
+        return UiStrings.FormatPixelate_Opt_Done(
             passes: result.Passes.Count,
             start: result.Start.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
             best: result.Best.Score.Total.ToString("0.0", CultureInfo.CurrentCulture),
             trials: result.Trials.Count,
             seconds: result.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture),
             reason: reason);
-        EndOptimize(done);
-        _status.Text = best.Result.Failed ? done + " · " + FailureNote(best.Result) : done;
-        FillOptimizeHistory(result);
     }
 
-    /// <summary>시도 기록 표: 점수 순 상위 50개(순위·점수·바꾼 값).</summary>
-    private void FillOptimizeHistory(PixelateOptimizeResult result)
+    /// <summary>
+    /// 시도 기록 표: 설정 창에서 고른 프리셋의 마지막 결과 한 줄과 점수 순 상위 50개(순위·점수·바꾼 값). 그 프리셋을 이번에 돌리지 않았으면 그 안내만.
+    /// </summary>
+    private void FillOptimizeHistory()
     {
         _optTable.Children.Clear();
         _optTable.RowDefinitions.Clear();
-        var rows = result.Top(50);
-        var p = ReadOptimizeParams();
-        void Cell(string text, int row, int col, bool bold)
+        if (_optPresets?.SelectedPreset is not { } preset || _optResults.Count == 0) return;
+        void Cell(string text, int row, int col, bool bold, int span = 1)
         {
             var t = new TextBlock
             {
@@ -2375,19 +2497,29 @@ public sealed class PixelateDialog : DialogBase
             };
             Grid.SetRow(t, row);
             Grid.SetColumn(t, col);
+            Grid.SetColumnSpan(t, span);
             _optTable.Children.Add(t);
         }
         _optTable.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-        Cell(UiStrings.Pixelate_Opt_ColRank, 0, 0, true);
-        Cell(UiStrings.Pixelate_Opt_ColScore, 0, 1, true);
-        Cell(UiStrings.Pixelate_Opt_ColSettings, 0, 2, true);
+        if (!_optResults.TryGetValue(preset, out var last))
+        {
+            Cell(UiStrings.Pixelate_Opt_HistoryEmpty, 0, 0, false, 3);
+            return;
+        }
+        Cell(OptimizeDone(last.Result), 0, 0, false, 3);
+        _optTable.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        Cell(UiStrings.Pixelate_Opt_ColRank, 1, 0, true);
+        Cell(UiStrings.Pixelate_Opt_ColScore, 1, 1, true);
+        Cell(UiStrings.Pixelate_Opt_ColSettings, 1, 2, true);
+        var rows = last.Result.Top(50);
         for (int i = 0; i < rows.Count; i++)
         {
             var t = rows[i];
+            int row = i + 2;
             _optTable.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            Cell((i + 1).ToString(CultureInfo.CurrentCulture), i + 1, 0, false);
-            Cell(t.Score.Total.ToString("0.0", CultureInfo.CurrentCulture), i + 1, 1, false);
-            Cell(OptimizeSummary(t, p) + (t.Candidate.Index == 0 ? " · " + UiStrings.Pixelate_Opt_StartRow : ""), i + 1, 2, false);
+            Cell((i + 1).ToString(CultureInfo.CurrentCulture), row, 0, false);
+            Cell(t.Score.Total.ToString("0.0", CultureInfo.CurrentCulture), row, 1, false);
+            Cell(OptimizeSummary(t, last.Params) + (t.Candidate.Index == 0 ? " · " + UiStrings.Pixelate_Opt_StartRow : ""), row, 2, false);
         }
     }
 
@@ -2595,16 +2727,6 @@ public sealed class PixelateDialog : DialogBase
     {
         _opt.CandidateCount = (int)_candCount.NumValue();
         _opt.Vary = (int)ReadVary();
-        var w = ReadWeights();
-        _opt.WeightFidelity = w.Fidelity;
-        _opt.WeightOrphans = w.Orphans;
-        _opt.WeightOutlineGaps = w.OutlineGaps;
-        _opt.WeightColors = w.Colors;
-        _opt.WeightConsistency = w.Consistency;
-        _opt.WeightGrid = w.Grid;
-        _opt.WeightOutlineThin = w.OutlineThin;
-        _opt.WeightColorShift = w.ColorShift;
-        _opt.WeightBlockRepetition = w.BlockRepetition;
         if (_canInsertLayer) _opt.NewDocument = _outDoc.On();
         _opt.FrameDurationMs = (int)_outDuration.NumValue();
         _opt.Fps = (int)_fps.NumValue();
@@ -2614,9 +2736,6 @@ public sealed class PixelateDialog : DialogBase
         _opt.AiProvider = ProviderId;
         _opt.AddReference = _aiReference.On();
         _opt.AiRankCount = (int)_aiRankCount.NumValue();
-        _opt.OptimizeParams = (int)ReadOptimizeParams();
-        _opt.OptimizeTrials = (int)_optTrials.NumValue();
-        _opt.OptimizeSeconds = (int)_optSeconds.NumValue();
         _opt.AutoOptimizeOnLoad = _optAuto.On();
         _opt.ShowGrid = _showGrid.On();
         _opt.ShowMask = _showMask.On();
@@ -2811,7 +2930,8 @@ public sealed class PixelateDialog : DialogBase
     /// </summary>
     private sealed class ZoomImageView : Control
     {
-        private readonly string _caption;
+        /// <summary>제목에 붙이는 그림 크기(원본 px 또는 결과 px).</summary>
+        public static string SizeText(double width, double height) => $"{width:0}×{height:0}px";
         private WriteableBitmap? _image, _alt;
         private Size _size;
         private IReadOnlyList<PixelateFrameMap> _maps = [];
@@ -2821,9 +2941,8 @@ public sealed class PixelateDialog : DialogBase
         private Avalonia.Point? _drag;
         private CellHover? _hover;
 
-        public ZoomImageView(string caption)
+        public ZoomImageView()
         {
-            _caption = caption;
             ClipToBounds = true;
             Focusable = true;
         }
@@ -2955,7 +3074,8 @@ public sealed class PixelateDialog : DialogBase
             }
             var caption = new Rect(0, 0, bounds.Width, 18);
             g.FillRectangle(AppTheme.BackBrush, caption);
-            AppTheme.DrawTextIn(g, _caption, new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+            var text = UiStrings.FormatPixelate_Source(size: _image is null ? "" : SizeText(_size.Width, _size.Height));
+            AppTheme.DrawTextIn(g, text, new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
         }
 
         private void DrawGrid(DrawingContext g, Rect bounds)
@@ -3554,9 +3674,13 @@ public sealed class PixelateDialog : DialogBase
             var left = LeftPane;
             var right = RightPane;
             string zoom = _zoom >= 1 ? "×" + _zoom.ToString("0", CultureInfo.CurrentCulture) : "×" + _zoom.ToString("0.##", CultureInfo.CurrentCulture);
-            AppTheme.DrawTextIn(g, UiStrings.FormatPixelate_Preview_Result(index: _preview.Index + 1, count: _preview.FrameCount) + "  " + zoom,
+            AppTheme.DrawTextIn(g, UiStrings.FormatPixelate_Preview_Result(index: _preview.Index + 1, count: _preview.FrameCount)
+                + " · " + ZoomImageView.SizeText(size.Width, size.Height) + "  " + zoom,
                 new Rect(4, 0, left.Width - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
-            AppTheme.DrawTextIn(g, UiStrings.Pixelate_Preview_Source, new Rect(right.X + 4, 0, right.Width - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
+            var sourceLabel = _preview.Map is { } labelMap
+                ? UiStrings.Pixelate_Preview_Source + " · " + ZoomImageView.SizeText(labelMap.SourceBounds.Width, labelMap.SourceBounds.Height)
+                : UiStrings.Pixelate_Preview_Source;
+            AppTheme.DrawTextIn(g, sourceLabel, new Rect(right.X + 4, 0, right.Width - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
 
             var dest = new Rect(left.X + _offset.X, left.Y + _offset.Y, size.Width * _zoom, size.Height * _zoom);
             using (g.PushClip(left))
@@ -3872,9 +3996,9 @@ public sealed class PixelateDialog : DialogBase
             if (_frames.Count == 0) return;
             var bmp = _frames[_index];
             double half = Math.Floor(bounds.Width / 2);
-            var label = UiStrings.FormatPixelate_Preview_Result(index: _index + 1, count: _frames.Count);
-            AppTheme.DrawTextIn(g, label, new Rect(4, 0, half - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
             var size = bmp.PixelSize;
+            var label = UiStrings.FormatPixelate_Preview_Result(index: _index + 1, count: _frames.Count) + " · " + ZoomImageView.SizeText(size.Width, size.Height);
+            AppTheme.DrawTextIn(g, label, new Rect(4, 0, half - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
             var dest = ImageUtil.DrawFitted(g, bmp, new Rectangle(0, 0, size.Width, size.Height), new Rect(4, 20, half - 8, bounds.Height - 24), checker: true);
             _resultRect = dest;
             _sourceRect = default;
@@ -3893,7 +4017,9 @@ public sealed class PixelateDialog : DialogBase
                 CutOverlay.DrawMark(g, new Rect(dest.X + mk.X * z, dest.Y + mk.Y * z, z, z));
             }
             if (_source is null || _index >= _maps.Count) return;
-            AppTheme.DrawTextIn(g, UiStrings.Pixelate_Preview_Source, new Rect(half + 4, 0, bounds.Width - half - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
+            var sourceBounds = _maps[_index].SourceBounds;
+            AppTheme.DrawTextIn(g, UiStrings.Pixelate_Preview_Source + " · " + ZoomImageView.SizeText(sourceBounds.Width, sourceBounds.Height),
+                new Rect(half + 4, 0, bounds.Width - half - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
             _sourceRect = ImageUtil.DrawFitted(g, _source, _maps[_index].SourceBounds, new Rect(half + 4, 20, bounds.Width - half - 8, bounds.Height - 24), checker: true);
             if (_pickHover is { } ph && ph.Frame == _index && _sourceRect.Width > 0)
             {
@@ -4062,10 +4188,13 @@ public sealed class PixelateDialog : DialogBase
         }
     }
 
-    /// <summary>후보 칸: 첫 프레임 썸네일(체커, 정수 배율), 순위·점수, 색 수·크기. 누르면 고르고, 두 번 누르면 적용.</summary>
+    /// <summary>
+    /// 후보 칸: 첫 프레임 썸네일(체커, 정수 배율), 제목(보통 후보 = 순위·점수, 최적화 후보 = 프리셋 이름과 "최적화" 표시), 색 수·크기,
+    /// 외곽선 맞추기 방식. 풍선은 점수 항목별 내역. 누르면 고르고, 두 번 누르면 적용.
+    /// </summary>
     private sealed class CandidateTile : Border
     {
-        public CandidateTile(PixelateCandidate c, int rank, bool selected, bool optimized)
+        public CandidateTile(PixelateCandidate c, int rank, bool selected, string? presetName)
         {
             Candidate = c;
             var r = c.Result;
@@ -4073,7 +4202,9 @@ public sealed class PixelateDialog : DialogBase
             RenderOptions.SetBitmapInterpolationMode(thumb, BitmapInterpolationMode.None);
             var title = new TextBlock
             {
-                Text = UiStrings.FormatPixelate_Tile(rank: rank, score: c.Score.Total.ToString("0.0", CultureInfo.CurrentCulture)),
+                Text = presetName ?? UiStrings.FormatPixelate_Tile(rank: rank, score: c.Score.Total.ToString("0.0", CultureInfo.CurrentCulture)),
+                MaxWidth = 112,
+                TextTrimming = TextTrimming.CharacterEllipsis,
                 Foreground = AppTheme.TextBrush,
                 FontWeight = FontWeight.Bold,
             };
@@ -4085,7 +4216,7 @@ public sealed class PixelateDialog : DialogBase
             };
             var fit = new TextBlock { Text = FitName(c.Settings.Cleanup.OutlineFit), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize };
             var lines = new StackPanel { Spacing = 2, Children = { thumb, title, info, fit } };
-            if (optimized)
+            if (presetName is not null)
                 lines.Children.Add(new TextBlock { Text = UiStrings.Pixelate_Opt_Marker, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold });
             Child = lines;
             Padding = new Thickness(4);

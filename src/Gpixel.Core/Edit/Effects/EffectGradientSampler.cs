@@ -119,7 +119,7 @@ internal readonly struct EffectGradientSampler
         if (gradient.StraightRgba && gradient.Interpolation == GradientInterpolation.Smooth && gradient.Dither == GradientDither.None)
             return SampleStraight(gradient, position);
         return Gradient.Sample(gradient.Stops, gradient.AlphaStops, position,
-            gradient.Interpolation, gradient.Dither, x - _sourceX, y - _sourceY);
+            gradient.Interpolation, gradient.Dither, x - _sourceX, y - _sourceY, gradient.ColorSpace);
     }
 
     private static double Wrap(double value) => value - Math.Floor(value);

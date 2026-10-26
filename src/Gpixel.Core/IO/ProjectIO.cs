@@ -1139,6 +1139,7 @@ public static partial class ProjectIO
         public int Cycles { get; set; } = 1;
         public string? Interpolation { get; set; }
         public string? Dither { get; set; }
+        public string? ColorSpace { get; set; }
         public ColorStopDto[]? Stops { get; set; }
         public AlphaStopDto[]? AlphaStops { get; set; }
         public bool StraightRgba { get; set; }
@@ -1156,6 +1157,7 @@ public static partial class ProjectIO
             Cycles = gradient.Cycles,
             Interpolation = gradient.Interpolation.ToString(),
             Dither = gradient.Dither.ToString(),
+            ColorSpace = gradient.ColorSpace.ToString(),
             StraightRgba = gradient.StraightRgba,
             Easing = gradient.Easing == EffectEasing.Linear ? null : gradient.Easing.ToString(),
             PingPong = gradient.PingPong ? true : null,
@@ -1175,6 +1177,8 @@ public static partial class ProjectIO
                 ? mode : Gpixel.Core.Edit.GradientInterpolation.Smooth,
             Dither = Enum.TryParse<Gpixel.Core.Edit.GradientDither>(Dither, true, out var dither) && Enum.IsDefined(dither)
                 ? dither : Gpixel.Core.Edit.GradientDither.None,
+            ColorSpace = Enum.TryParse<GradientColorSpace>(ColorSpace, true, out var colorSpace) && Enum.IsDefined(colorSpace)
+                ? colorSpace : GradientColorSpace.Rgb,
             StraightRgba = StraightRgba,
             Easing = Enum.TryParse<EffectEasing>(Easing, true, out var easing) && Enum.IsDefined(easing)
                 ? easing : EffectEasing.Linear,
@@ -1492,6 +1496,7 @@ public static partial class ProjectIO
                             // 예전 A/B의 직선 RGBA 보간·반올림을 그대로 유지한다.
                             Stops = [new(0, colorA), new(1, colorB)],
                             StraightRgba = true,
+                            ColorSpace = GradientColorSpace.Rgb,
                             Angle = Angle ?? 270,
                             Dither = oldDither switch
                             {

@@ -2,6 +2,37 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.38 (2026-10-27)
+### Wider hue-weight search for Pixelate
+- OKLCh hue weight now accepts 0–1000 in Pixelate settings; the default remains 2. Very large values make same-hue palette colors win almost regardless of lightness or chroma.
+- Auto Optimize's Color Distance option tests both endpoints and common low and high values such as 1, 2, 5, 20, and 100 when using OKLCh.
+
+### Enter no longer applies Pixelate
+- Pressing Enter in the Pixelate dialog does not apply the selected result; use Apply or Add to New Tab explicitly.
+- Closing the enlarged preview does not restore Enter as an Apply shortcut.
+
+### Fixed scoring in a separate optimizer window
+- The slider button opens a separate Auto Optimize Settings window for search parameters, budget, trial history, and score weights.
+- Choose a persistent scoring color distance independently of the palette conversion distance. Every candidate uses that same scoring distance for major color shift, even while optimization changes conversion settings.
+
+### Pixel sizes in Pixelate preview headers
+- The source view, result preview, and enlarged preview headers now show image sizes in pixels, such as "Result 1/1 · 49×98px" and "Source · 389×771px".
+- The source side of each preview shows the size of that frame's area in the original image.
+
+### Gradient color-space selection
+- Tool and effect gradients now offer RGB, HSL, OKLab, and OKLCH interpolation; new gradients default to OKLCH.
+- Existing settings and projects without a saved color space keep their RGB appearance. Steps and Bayer dithering still use the original stop colors.
+
+### Reusable gradient presets
+- Right-click the gradient bar in tool or effect settings to save or apply a preset. Starter gradients include Rainbow, Repeating Rainbow, Sunset, Ocean, and Transparent Fade.
+- Tools > Presets… opens a tabbed Presets window where you can preview, edit, rename, favorite, or delete gradient presets; each preset shows its gradient under its name there and in the right-click menu. Favorites appear first; the catalog persists separately from projects.
+
+### Auto Optimize presets
+- Save several named Auto Optimize presets, each with its own search items, budget, and fixed scoring criteria. Check the ones to run, favorite, duplicate, rename, or delete them from the optimizer settings window or the Optimizer tab of Tools > Presets….
+- Auto Optimize runs every checked preset in turn and shows one result per preset, titled with the preset name, so you can pick the one you like. Ordinary candidates are scored with the first checked preset; older settings migrate into one Default preset.
+- Built-in presets: OKLCH1000, OKLab, Quick check, Faithful to source, Clean pixels, and Same hue family (OKLCH 20). Existing preset lists gain the missing ones once. Built-in preset names follow the UI language (English when there is no translation).
+- Gradient presets add Fire, Forest, and Grayscale. Preferences > Presets restores deleted or edited built-in presets for auto optimize and gradients, keeping presets you made; the built-in defaults live in the app, so deleting presets never loses them.
+
 ## v1.14.37 (2026-10-26)
 ### Pixelate added to key features
 - The guide's Key features now include a Pixelate chapter with two pages: turning AI-generated art or any image into pixel art, and removing or adding colors in the result.

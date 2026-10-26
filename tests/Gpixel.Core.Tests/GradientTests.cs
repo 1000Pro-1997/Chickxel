@@ -32,7 +32,7 @@ public class GradientTests
         Assert.Equal(Red, Gradient.ColorAt(stops, 0.25));
         Assert.Equal(Green, Gradient.ColorAt(stops, 0.5));       // 정지점 위는 그 색
         Assert.Equal(Blue, Gradient.ColorAt(stops, 1));
-        Assert.Equal(new Color32(128, 128, 0), Gradient.ColorAt(stops, 0.375)); // 빨강↔초록 가운데
+        Assert.Equal(new Color32(128, 128, 0), Gradient.ColorAt(stops, 0.375, colorSpace: GradientColorSpace.Rgb)); // 빨강↔초록 가운데
         // 같은 위치 두 정지점은 딱 끊긴다
         var hard = Gradient.Sorted([new GradientStop(0, Red), new GradientStop(0.5, Red), new GradientStop(0.5, Blue), new GradientStop(1, Blue)]);
         Assert.Equal(Red, Gradient.ColorAt(hard, 0.49));
@@ -47,7 +47,7 @@ public class GradientTests
         Assert.Equal(Red, Gradient.Sample(colors, alpha, 0));
         Assert.Equal(Color32.Transparent, Gradient.Sample(colors, alpha, 1));
         // 가운데: 색은 빨강↔파랑 가운데, 불투명도 50%
-        var mid = Gradient.Sample(colors, alpha, 0.5);
+        var mid = Gradient.Sample(colors, alpha, 0.5, colorSpace: GradientColorSpace.Rgb);
         Assert.Equal((128, 0, 128, 128), (mid.R, mid.G, mid.B, mid.A));
         // 반투명 색 정지점 × 불투명도 정지점
         var halfRed = new Color32(255, 0, 0, 128);
@@ -87,6 +87,79 @@ public class GradientTests
         Assert.Equal(128, mid.A);
         Assert.Equal(255, mid.R);   // 투명(검정 RGB) 쪽으로 가도 어두워지지 않는다
         Assert.Equal(Color32.Transparent, Gradient.ColorAt(stops, 1));
+    }
+
+    [Fact]
+    public void ColorSpaces_InterpolateHueOnShortestArcAndBorrowAchromaticHue()
+    {
+        GradientStop[] stops = [new(0, Red), new(1, Green)];
+        Assert.Equal(GradientColorSpace.Rgb, (GradientColorSpace)0);
+        Assert.Equal(new Color32(128, 128, 0), Gradient.ColorAt(stops, 0.5, colorSpace: GradientColorSpace.Rgb));
+        Assert.Equal(new Color32(255, 255, 0), Gradient.ColorAt(stops, 0.5, colorSpace: GradientColorSpace.Hsl));
+        var perceptual = Gradient.ColorAt(stops, 0.5);
+        Assert.Equal(perceptual, Gradient.ColorAt(stops, 0.5, colorSpace: GradientColorSpace.OkLch));
+        Assert.True(perceptual.R > 120 && perceptual.G > 100 && perceptual.B < 80);
+        var lab = Gradient.ColorAt(stops, 0.5, colorSpace: GradientColorSpace.OkLab);
+        Assert.NotEqual(perceptual, lab);
+
+        GradientStop[] wrap = [new(0, Red), new(1, Blue)];
+        Assert.Equal(new Color32(255, 0, 255), Gradient.ColorAt(wrap, 0.5, colorSpace: GradientColorSpace.Hsl));
+        GradientStop[] achromatic = [new(0, Color32.White), new(1, Blue)];
+        foreach (var space in new[] { GradientColorSpace.Hsl, GradientColorSpace.OkLch })
+        {
+            var tinted = Gradient.ColorAt(achromatic, 0.5, colorSpace: space);
+            Assert.True(tinted.B > tinted.R && tinted.B > tinted.G);
+        }
+    }
+
+    [Fact]
+    public void ColorSpaces_MapOutOfGamutChromaWithoutChangingHueOrLightness()
+    {
+        GradientStop[] stops = [new(0, Red), new(1, Green)];
+        var a = Gpixel.Core.Pixelate.OkLab.FromColor(Red);
+        var b = Gpixel.Core.Pixelate.OkLab.FromColor(Green);
+        double firstHue = Math.Atan2(a.B, a.A), lastHue = Math.Atan2(b.B, b.A);
+        double wantedHue = (firstHue + lastHue) / 2;
+        double wantedChroma = (Math.Sqrt(a.A * a.A + a.B * a.B) + Math.Sqrt(b.A * b.A + b.B * b.B)) / 2;
+        var unmapped = new Gpixel.Core.Pixelate.Lab((a.L + b.L) / 2,
+            (float)(wantedChroma * Math.Cos(wantedHue)), (float)(wantedChroma * Math.Sin(wantedHue)));
+        Assert.False(Gpixel.Core.Pixelate.OkLab.InGamut(unmapped));
+        var mapped = Gpixel.Core.Pixelate.OkLab.FromColor(Gradient.ColorAt(stops, 0.5));
+        Assert.InRange(Math.Abs(mapped.L - unmapped.L), 0, 0.01);
+        Assert.InRange(Math.Abs(Math.Atan2(mapped.B, mapped.A) - wantedHue), 0, 0.035);
+        Assert.True(Math.Sqrt(mapped.A * mapped.A + mapped.B * mapped.B) < wantedChroma);
+    }
+
+    [Theory]
+    [InlineData(GradientColorSpace.Rgb)]
+    [InlineData(GradientColorSpace.Hsl)]
+    [InlineData(GradientColorSpace.OkLab)]
+    [InlineData(GradientColorSpace.OkLch)]
+    public void ColorSpaces_WeightByAlphaAndKeepStepsAndDitherIndependent(GradientColorSpace space)
+    {
+        GradientStop[] stops = [new(0, Red), new(1, Blue.WithAlpha(0))];
+        var mid = Gradient.ColorAt(stops, 0.5, colorSpace: space);
+        Assert.Equal(Red.WithAlpha(128), mid);
+        var weighted = Gradient.ColorAt([new(0, Red.WithAlpha(64)), new(1, Blue)], 0.5, colorSpace: space);
+        var balanced = Gradient.ColorAt([new(0, Red), new(1, Blue)], 0.5, colorSpace: space);
+        Assert.Equal((byte)160, weighted.A);
+        Assert.True(weighted.R < balanced.R, $"Expected transparent red to contribute less in {space}");
+        Assert.Equal(Color32.Transparent, Gradient.Sample(stops, [new(0, 0)], 0.5, colorSpace: space));
+        Assert.Equal(Blue.WithAlpha(0), Gradient.ColorAt(stops, 0.5,
+            GradientInterpolation.Steps, colorSpace: space));
+        Assert.Equal(Red, Gradient.ColorAt(stops, 0.5,
+            dither: GradientDither.Bayer2, x: 1, y: 0, colorSpace: space));
+        Assert.Equal(Color32.Transparent, Gradient.ColorAt(
+            [new(0, Red.WithAlpha(0)), new(1, Blue.WithAlpha(0))], 0.5, colorSpace: space));
+    }
+
+    [Fact]
+    public void Apply_UsesSelectedColorSpace()
+    {
+        var image = new PixelImage(3, 1);
+        Gradient.Apply(image, new Point(0, 0), new Point(2, 0),
+            [new(0, Red), new(1, Green)], colorSpace: GradientColorSpace.Hsl);
+        Assert.Equal(new Color32(255, 255, 0), image[1, 0]);
     }
 
     [Fact]

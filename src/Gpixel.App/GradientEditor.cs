@@ -1,5 +1,6 @@
 using Gpixel.Core.Edit;
 using Gpixel.Core.Model;
+using Gpixel.Core.IO;
 using Gpixel.App.Localization;
 
 namespace Gpixel.App;
@@ -15,6 +16,7 @@ public sealed class GradientEditor : StackPanel
     private readonly StackPanel _alphaRow;
     private readonly Button _delete;
     private readonly ComboBox _interpolation;
+    private readonly ComboBox _colorSpaceEditor;
     private readonly ComboBox _dither;
     private readonly NumericUpDown? _angleEditor;
     private readonly ComboBox? _spatialMode;
@@ -29,6 +31,7 @@ public sealed class GradientEditor : StackPanel
     private IReadOnlyList<GradientAlphaStop> _alphaStops = EditorContext.DefaultGradientAlphaStops;
     private GradientInterpolation _mode;
     private GradientDither _ditherMode;
+    private GradientColorSpace _colorSpace = GradientColorSpace.OkLch;
     private int _angle;
     private EffectGradientShape _shape;
     private bool _animated;
@@ -40,13 +43,15 @@ public sealed class GradientEditor : StackPanel
     /// <summary>Spatial mode combo index of <see cref="EffectGradientShape.Uniform"/> (after the static/animated pairs).</summary>
     private const int UniformModeIndex = 8;
 
-    public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false)
+    /// <param name="presetMenu">False hides the right-click preset menu (the presets window edits the catalog itself).</param>
+    public GradientEditor(Func<Color32>? primaryColor = null, bool spatialAngle = false, bool presetMenu = true)
     {
         Spacing = 4;
         _bar.Tip(UiStrings.S_GradientEditor_GradientEditor_5D23258D24);
         _bar.StopsChanged += value => { _stops = value; Changed?.Invoke(); RefreshSelected(); };
         _bar.AlphaStopsChanged += value => { _alphaStops = value; Changed?.Invoke(); RefreshSelected(); };
         _bar.SelectionChanged += (_, _) => RefreshSelected();
+        if (presetMenu) PopupMenus.Attach(_bar, BuildPresetMenu);
 
         _position = Ui.Num(0, 100, 0, 56, 1, 1m).Presets(0, 10, 25, 33.3m, 50, 66.7m, 75, 90, 100).Unit("%").RecentKey("gradient.position");
         _position.FormatString = "0.#";
@@ -72,12 +77,20 @@ public sealed class GradientEditor : StackPanel
         _delete = Ui.Button(UiStrings.S_GradientEditor_GradientEditor_01174C479B, (_, _) => _bar.DeleteSelected()).Tip(UiStrings.S_GradientEditor_GradientEditor_303D5EC437);
         _interpolation = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_E0FC6F50AE, UiStrings.S_GradientEditor_GradientEditor_07C7B1752B);
         _dither = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_C103727A20, "2×2 Bayer", "4×4 Bayer");
+        _colorSpaceEditor = Ui.Combo(150, "RGB", "HSL", "OKLab", "OKLCH");
         _interpolation.SelectionChanged += (_, _) =>
         {
             if (_updating || _interpolation.SelectedIndex < 0) return;
             _mode = (GradientInterpolation)_interpolation.SelectedIndex;
             _bar.Mode = _mode;
             _dither.IsEnabled = _mode == GradientInterpolation.Smooth;
+            Changed?.Invoke();
+        };
+        _colorSpaceEditor.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _colorSpaceEditor.SelectedIndex < 0) return;
+            _colorSpace = (GradientColorSpace)_colorSpaceEditor.SelectedIndex;
+            _bar.ColorSpace = _colorSpace;
             Changed?.Invoke();
         };
         _dither.SelectionChanged += (_, _) =>
@@ -91,6 +104,7 @@ public sealed class GradientEditor : StackPanel
         Children.Add(_colorRow);
         Children.Add(_alphaRow);
         Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_554C6D3CFC), _interpolation));
+        Children.Add(Ui.Row(Ui.Label(UiStrings.GradientColorSpace_Label), _colorSpaceEditor));
         Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_75C017194C), _dither));
         if (spatialAngle)
         {
@@ -159,11 +173,129 @@ public sealed class GradientEditor : StackPanel
         Load(_stops, _alphaStops, _mode, _ditherMode);
     }
 
+    private IEnumerable<object> BuildPresetMenu()
+    {
+        var items = new List<object>();
+        var owner = Ui.Owner(this);
+        var presets = owner is null ? null : GradientPresetUi.Load(owner);
+
+        static MenuItem Item(string text, Action action)
+        {
+            var item = new MenuItem { Header = text };
+            // Open dialogs only after the context menu has closed.
+            item.Click += (_, _) => Dispatcher.UIThread.Post(action);
+            return item;
+        }
+
+        static Control Header(GradientPreset preset)
+        {
+            Control name = preset.Favorite ? Ui.IconLabel(VectorIcon.Star, preset.Name) : new TextBlock { Text = preset.Name };
+            var swatch = new GradientSwatch
+            {
+                Preset = preset,
+                Width = 180,
+                Height = 12,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 3, 0, 1),
+            };
+            return new StackPanel { Orientation = Orientation.Vertical, Children = { name, swatch } };
+        }
+
+        MenuItem PresetItem(GradientPreset preset)
+        {
+            var entry = Item(preset.Name, () => ApplyPreset(preset));
+            entry.Header = Header(preset);
+            return entry;
+        }
+
+        items.Add(Item(UiStrings.GradientPreset_SaveCurrent, SaveCurrentPreset));
+        if (presets is not null)
+        {
+            var favorites = presets.Where(preset => preset.Favorite).ToList();
+            if (favorites.Count > 0)
+            {
+                items.Add(new Separator());
+                items.Add(new MenuItem { Header = UiStrings.GradientPreset_Favorites, IsEnabled = false });
+                foreach (var preset in favorites) items.Add(PresetItem(preset));
+            }
+            var others = presets.Where(preset => !preset.Favorite).ToList();
+            if (others.Count > 0)
+            {
+                items.Add(new Separator());
+                foreach (var preset in others) items.Add(PresetItem(preset));
+            }
+            if (presets.Count == 0)
+            {
+                items.Add(new Separator());
+                items.Add(new MenuItem { Header = UiStrings.GradientPreset_Empty, IsEnabled = false });
+            }
+        }
+        items.Add(new Separator());
+        items.Add(Item(UiStrings.GradientPreset_ManageMenu, () =>
+        {
+            if (Ui.Owner(this) is { } window) PresetsWindow.Open(window, PresetsTab.Gradients);
+        }));
+        return items;
+    }
+
+    private void SaveCurrentPreset()
+    {
+        if (Ui.Owner(this) is not { } owner || GradientPresetUi.Load(owner) is not { } presets) return;
+        string? name = InputDialog.Ask(owner, UiStrings.GradientPreset_SaveCurrent,
+            UiStrings.GradientPreset_NamePrompt, "", presets.Select(preset => preset.Name))?.Trim();
+        if (string.IsNullOrEmpty(name)) return;
+        int index = presets.FindIndex(preset => string.Equals(preset.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0 && Ui.Ask(owner, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,
+                UiStrings.GradientPreset_OverwriteQuestion, name), UiStrings.GradientPreset_SaveCurrent,
+                MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
+        var current = ToPreset(name, index >= 0 && presets[index].Favorite);
+        if (index >= 0) presets[index] = current;
+        else presets.Add(current);
+        GradientPresetUi.Save(owner, presets);
+    }
+
+    /// <summary>Snapshot of every edited setting, including the spatial state hidden in the tool's editor.</summary>
+    public GradientPreset ToPreset(string name, bool favorite) => new()
+    {
+        Name = name,
+        Stops = _stops.ToArray(),
+        AlphaStops = _alphaStops.ToArray(),
+        Interpolation = _mode,
+        Dither = _ditherMode,
+        ColorSpace = _colorSpace,
+        Angle = _angle,
+        Shape = _shape,
+        Animated = _animated,
+        Reverse = _reverse,
+        Cycles = _cycles,
+        Easing = _easing,
+        PingPong = _pingPong,
+        Favorite = favorite,
+    };
+
+    /// <summary>Shows every setting of <paramref name="preset"/> without firing Changed.</summary>
+    public void LoadPreset(GradientPreset preset)
+        => Load(preset.Stops, preset.AlphaStops, preset.Interpolation, preset.Dither, preset.Angle, preset.Shape,
+            preset.Animated, preset.Reverse, preset.Cycles, preset.Easing, preset.PingPong, preset.ColorSpace);
+
+    private void ApplyPreset(GradientPreset preset)
+    {
+        // Spatial controls are absent in the tool's editor; keep its hidden spatial state intact.
+        bool spatial = _spatialMode is not null;
+        Load(preset.Stops, preset.AlphaStops, preset.Interpolation, preset.Dither,
+            spatial ? preset.Angle : _angle, spatial ? preset.Shape : _shape,
+            spatial ? preset.Animated : _animated, spatial ? preset.Reverse : _reverse,
+            spatial ? preset.Cycles : _cycles, spatial ? preset.Easing : _easing,
+            spatial ? preset.PingPong : _pingPong, preset.ColorSpace);
+        Changed?.Invoke();
+    }
+
     public event Action? Changed;
     public IReadOnlyList<GradientStop> Stops => _stops;
     public IReadOnlyList<GradientAlphaStop> AlphaStops => _alphaStops;
     public GradientInterpolation Interpolation => _mode;
     public GradientDither Dither => _ditherMode;
+    public GradientColorSpace ColorSpace => _colorSpace;
     public int Angle => _angle;
     public EffectGradientShape Shape => _shape;
     public bool Animated => _animated;
@@ -176,7 +308,8 @@ public sealed class GradientEditor : StackPanel
     public void Load(IReadOnlyList<GradientStop> stops, IReadOnlyList<GradientAlphaStop> alphaStops,
         GradientInterpolation interpolation, GradientDither dither, int angle = 0,
         EffectGradientShape shape = EffectGradientShape.Linear, bool animated = false,
-        bool reverse = false, int cycles = 1, EffectEasing easing = EffectEasing.Linear, bool pingPong = false)
+        bool reverse = false, int cycles = 1, EffectEasing easing = EffectEasing.Linear, bool pingPong = false,
+        GradientColorSpace colorSpace = GradientColorSpace.OkLch)
     {
         _updating = true;
         try
@@ -185,6 +318,7 @@ public sealed class GradientEditor : StackPanel
             _alphaStops = alphaStops.Count < 2 ? EditorContext.DefaultGradientAlphaStops : alphaStops;
             _mode = interpolation;
             _ditherMode = dither;
+            _colorSpace = Enum.IsDefined(colorSpace) ? colorSpace : GradientColorSpace.OkLch;
             _angle = angle;
             _shape = shape;
             _animated = animated || shape == EffectGradientShape.Uniform;
@@ -203,7 +337,9 @@ public sealed class GradientEditor : StackPanel
             _bar.Stops = stops;
             _bar.AlphaStops = _alphaStops;
             _bar.Mode = interpolation;
+            _bar.ColorSpace = _colorSpace;
             _interpolation.SelectedIndex = (int)interpolation;
+            _colorSpaceEditor.SelectedIndex = (int)_colorSpace;
             _dither.SelectedIndex = (int)dither;
             _dither.IsEnabled = interpolation == GradientInterpolation.Smooth;
             RefreshSelected();

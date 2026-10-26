@@ -18,6 +18,8 @@
 
 - 필요: .NET 10 SDK. UI는 Avalonia(Windows·macOS·Linux 공용 코드).
 - 소스에서 바로 실행: Windows `run.bat` · macOS/Linux `./run.sh` (인수는 그대로 앱에 넘어감)
+- Windows 개발 창 관리(저장소 루트에서): `dev.bat start`(Debug 빌드 후 실행), `dev.bat restart`(창을 정상 종료한 뒤 다시 빌드·실행), `dev.bat stop`, `dev.bat status`. PowerShell에서도 `.\dev.bat restart`처럼 씁니다. `start`는 이미 떠 있으면 중복 실행하지 않습니다. 이 명령은 이 저장소의 Debug 실행 파일만 찾으며 배포판은 건드리지 않습니다. 저장하지 않은 문서 때문에 종료 확인 창이 뜨면 앱에서 처리해야 재시작됩니다. 강제 종료하지 않습니다.
+- 어디서든 `gpixel start`, `gpixel restart`, `gpixel stop`, `gpixel status`를 쓰려면 Windows에서 저장소 루트의 `powershell -NoProfile -ExecutionPolicy Bypass -File tools/install-dev-command.ps1`을 한 번 실행합니다. 사용자 `~/.local/bin/gpixel.cmd`를 만들어 이 저장소의 `dev.bat`에 연결하며 필요하면 사용자 PATH에 그 폴더를 더합니다(새 터미널에서 적용). 저장소를 옮기면 설치 명령을 다시 실행합니다. 같은 이름의 기존 명령 파일은 덮어쓰지 않습니다.
 - 빌드·테스트: `dotnet build Gpixel.sln`, `dotnet test Gpixel.sln`
 - 작업 규칙: [AGENTS.md](AGENTS.md) — UI에 이모지·기호 문자를 아이콘으로 쓰지 않고 벡터(SVG 경로) 아이콘으로 그립니다(`VectorIcons.cs`). 문서·커밋 메시지에도 이모지를 쓰지 않습니다.
 - 아이콘: 도구 아이콘은 `src/Gpixel.App/Assets/Tools/*.png`(16×16 단색 점 그림, 도구 막대에는 2배로 표시), 앱 아이콘은 `Assets/AppIcon/`(16×16 원본 `gpixel.png`에서 만든 `gpixel.ico`·`Gpixel.icns`·창/Dock 아이콘 `gpixel-256.png`). PNG는 Gpixel로 열어 바로 고칠 수 있습니다.

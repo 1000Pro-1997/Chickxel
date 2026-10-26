@@ -54,6 +54,7 @@ public sealed record EffectColorGradient
 
     public GradientInterpolation Interpolation { get; init; } = GradientInterpolation.Smooth;
     public GradientDither Dither { get; init; } = GradientDither.None;
+    public GradientColorSpace ColorSpace { get; init; } = GradientColorSpace.OkLch;
 
     /// <summary>
     /// 예전 A/B 공간 그라데이션 호환: RGB와 알파를 각각 직선 보간하고 .5는 위로 반올림한다.
@@ -65,7 +66,8 @@ public sealed record EffectColorGradient
         => other is not null && _angle == other._angle && Shape == other.Shape &&
            Animated == other.Animated && Reverse == other.Reverse && Cycles == other.Cycles &&
            Easing == other.Easing && PingPong == other.PingPong &&
-           Interpolation == other.Interpolation && Dither == other.Dither && StraightRgba == other.StraightRgba &&
+           Interpolation == other.Interpolation && Dither == other.Dither &&
+           ColorSpace == other.ColorSpace && StraightRgba == other.StraightRgba &&
            _stops.SequenceEqual(other._stops) && _alphaStops.SequenceEqual(other._alphaStops);
 
     public override int GetHashCode()
@@ -80,6 +82,7 @@ public sealed record EffectColorGradient
         hash.Add(PingPong);
         hash.Add(Interpolation);
         hash.Add(Dither);
+        hash.Add(ColorSpace);
         hash.Add(StraightRgba);
         foreach (var stop in _stops) hash.Add(stop);
         foreach (var stop in _alphaStops) hash.Add(stop);

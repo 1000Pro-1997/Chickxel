@@ -350,6 +350,7 @@ public class StaticEffectTests
         Assert.Equal(45, spatial.Angle);
         Assert.Equal(GradientDither.Bayer2, spatial.Dither);
         Assert.True(spatial.StraightRgba);
+        Assert.Equal(GradientColorSpace.Rgb, spatial.ColorSpace);
         Assert.Equal([new GradientStop(0, new Color32(1, 2, 3)), new GradientStop(1, new Color32(4, 5, 6, 7))], spatial.Stops);
         Assert.Empty(spatial.AlphaStops);
         var migrationProbe = migrated with
@@ -367,6 +368,7 @@ public class StaticEffectTests
         var customSpatial = Assert.Single(custom.ColorGradients).Value;
         Assert.Equal((90, GradientInterpolation.Steps, GradientDither.Bayer4),
             (customSpatial.Angle, customSpatial.Interpolation, customSpatial.Dither));
+        Assert.Equal(GradientColorSpace.Rgb, customSpatial.ColorSpace);
         Assert.Equal([new GradientStop(0, Green), new GradientStop(1, Blue)], customSpatial.Stops);
         Assert.Equal([new GradientAlphaStop(0, 255), new GradientAlphaStop(1, 64)], customSpatial.AlphaStops);
         Assert.Equal(

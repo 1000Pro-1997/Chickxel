@@ -27,6 +27,7 @@ public class EffectColorGradientTests
         var gradient = Horizontal(Red, Blue) with
         {
             AlphaStops = [new(1, 255), new(0, 0)],
+            ColorSpace = GradientColorSpace.Rgb,
         };
         var effect = new ColorOverlayEffect
         {
@@ -39,6 +40,18 @@ public class EffectColorGradientTests
         Assert.InRange(result[1, 0].R, (byte)60, (byte)68);
         Assert.InRange(result[1, 0].B, (byte)60, (byte)68);
         Assert.Equal(Blue.WithAlpha(77), result[2, 0]);
+    }
+
+    [Fact]
+    public void ColorOverlayGradient_UsesSelectedColorSpaceForPreviewAndRender()
+    {
+        var gradient = Horizontal(Red, Green);
+        Assert.Equal(GradientColorSpace.OkLch, gradient.ColorSpace);
+        var perceptual = Sample(gradient, 3, 1);
+        var rgb = Sample(gradient with { ColorSpace = GradientColorSpace.Rgb }, 3, 1);
+        Assert.Equal(new Color32(128, 128, 0), rgb[1, 0]);
+        Assert.NotEqual(rgb[1, 0], perceptual[1, 0]);
+        Assert.Equal(Gradient.ColorAt(gradient.Stops, 0.5), perceptual[1, 0]);
     }
 
     [Fact]
@@ -150,6 +163,7 @@ public class EffectColorGradientTests
         var gradient = Horizontal(Red, Blue) with
         {
             Angle = 180,
+            ColorSpace = GradientColorSpace.Hsl,
             Dither = GradientDither.Bayer4,
             AlphaStops = [new(0, 255), new(1, 0)],
         };
@@ -163,6 +177,7 @@ public class EffectColorGradientTests
         stream.Position = 0;
         var loaded = ProjectIO.Load(stream);
         var stored = loaded.Layers[0].Effects[0].ColorGradients[nameof(ColorOverlayEffect.Color)];
+        Assert.Equal(GradientColorSpace.Hsl, stored.ColorSpace);
         Assert.Equal(gradient, stored);
         Assert.True(project.Flatten(0).ContentEquals(loaded.Flatten(0)));
     }
@@ -173,7 +188,8 @@ public class EffectColorGradientTests
         const string slot = nameof(ColorOverlayEffect.Color);
         var gradients = Enum.GetValues<EffectGradientShape>()
             .SelectMany(shape => new[] { false, true }.Select(animated =>
-                Horizontal(Red, Blue) with { Shape = shape, Animated = animated, Reverse = true, Cycles = 3, Angle = 45 }))
+                Horizontal(Red, Blue) with { Shape = shape, Animated = animated, Reverse = true, Cycles = 3,
+                    Angle = 45, ColorSpace = animated ? GradientColorSpace.OkLab : GradientColorSpace.OkLch }))
             .ToArray();
         var project = new SpriteProject(5, 5);
         project.SetLayerEffects(0, gradients.Select(gradient => new ColorOverlayEffect
@@ -196,13 +212,25 @@ public class EffectColorGradientTests
             first.Remove("animated");
             first.Remove("reverse");
             first.Remove("cycles");
+            first.Remove("colorSpace");
             entry.Delete();
             using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        Assert.Equal(gradients[0] with { Shape = EffectGradientShape.Linear, Animated = false, Reverse = false, Cycles = 1 },
-            ProjectIO.Load(stream).Layers[0].Effects[0].ColorGradients[slot]);
+        var legacyProject = ProjectIO.Load(stream);
+        var legacy = legacyProject.Layers[0].Effects[0].ColorGradients[slot];
+        Assert.Equal(gradients[0] with { Shape = EffectGradientShape.Linear, Animated = false, Reverse = false, Cycles = 1,
+            ColorSpace = GradientColorSpace.Rgb }, legacy);
+        var legacyMiddle = Sample(legacy, 3, 1)[1, 0];
+        Assert.InRange(legacyMiddle.R, 127, 128);
+        Assert.Equal((byte)0, legacyMiddle.G);
+        Assert.InRange(legacyMiddle.B, 127, 128);
+        using var savedAgain = new MemoryStream();
+        ProjectIO.Save(legacyProject, savedAgain);
+        savedAgain.Position = 0;
+        Assert.Equal(GradientColorSpace.Rgb,
+            ProjectIO.Load(savedAgain).Layers[0].Effects[0].ColorGradients[slot].ColorSpace);
     }
 
     private static PixelImage Sample(EffectColorGradient gradient, int width = 5, int height = 5,

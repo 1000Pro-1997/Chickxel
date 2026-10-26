@@ -69,7 +69,8 @@ public class AnimatedEffectTests
     [Fact]
     public void ColorOverlayUniform_SamplesStopsFromFirstToLastFrame()
     {
-        var effect = TimeOverlay(new EffectColorGradient { Stops = [new(0, Red), new(1, Blue)], Shape = EffectGradientShape.Uniform });
+        var effect = TimeOverlay(new EffectColorGradient { Stops = [new(0, Red), new(1, Blue)],
+            Shape = EffectGradientShape.Uniform, ColorSpace = GradientColorSpace.Rgb });
         var src = Filled(2, 2, Black.WithAlpha(77));
 
         Assert.True(effect.ColorGradients[nameof(ColorOverlayEffect.Color)].Animated);
@@ -100,7 +101,8 @@ public class AnimatedEffectTests
         };
         var repeat = pingPong ? EffectRepeat.PingPong : cycles == 1 ? EffectRepeat.Once : EffectRepeat.Loop;
         double progress = AnimatedEffect.Ease(AnimatedEffect.Cycle((double)step / span, repeat, cycles), easing);
-        var expected = Gradient.Sample(gradient.Stops, gradient.AlphaStops, reverse ? 1 - progress : progress, gradient.Interpolation);
+        var expected = Gradient.Sample(gradient.Stops, gradient.AlphaStops, reverse ? 1 - progress : progress,
+            gradient.Interpolation, colorSpace: gradient.ColorSpace);
 
         var pixels = OverlayAt(Filled(3, 2, Color32.White), TimeOverlay(gradient), step, span).Pixels;
 
@@ -196,7 +198,8 @@ public class AnimatedEffectTests
         {
             // Old gradient map: progress = Ease(Cycle(Time, Repeat, RepeatCount), Easing), one color for every visible pixel.
             double progress = AnimatedEffect.Ease(AnimatedEffect.Cycle((frame - 1) / 3.0, EffectRepeat.Loop, 2), EffectEasing.EaseIn);
-            var sampled = Gradient.Sample(uniform.Stops, uniform.AlphaStops, progress, GradientInterpolation.Smooth);
+            var sampled = Gradient.Sample(uniform.Stops, uniform.AlphaStops, progress,
+                GradientInterpolation.Smooth, colorSpace: uniform.ColorSpace);
             int strength = (amount * sampled.A + 127) / 255;
             var rendered = LayerEffects.RenderClipped(src, LayerEffects.At([transition], frame, 5));
             for (int i = 0; i < src.Pixels.Length; i++)

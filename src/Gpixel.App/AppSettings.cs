@@ -82,6 +82,7 @@ public sealed class AppSettings
     public List<string>? GradientAlphaStops { get; set; }
     public GradientInterpolation GradientInterpolation { get; set; } = GradientInterpolation.Smooth;
     public GradientDither GradientDither { get; set; } = GradientDither.None;
+    public GradientColorSpace? GradientColorSpace { get; set; } = Gpixel.Core.Edit.GradientColorSpace.OkLch;
     public string PrimaryColor { get; set; } = "#000000";
     /// <summary>이미지를 열 때마다 캔버스를 화면에 맞춘다(위 막대 "맞추기" 토글).</summary>
     public bool AutoFit { get; set; } = true;
@@ -246,7 +247,15 @@ public sealed class AppSettings
         try
         {
             if (File.Exists(FilePath))
-                return Migrate(JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), Options) ?? new AppSettings());
+            {
+                string json = File.ReadAllText(FilePath);
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, Options) ?? new AppSettings();
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                    !document.RootElement.TryGetProperty(nameof(GradientColorSpace), out _))
+                    settings.GradientColorSpace = null;
+                return Migrate(settings);
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

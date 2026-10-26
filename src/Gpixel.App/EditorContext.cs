@@ -217,6 +217,7 @@ public sealed class EditorContext
     private IReadOnlyList<GradientStop> _gradientStops = DefaultGradientStops;
     private GradientInterpolation _gradientInterpolation = GradientInterpolation.Smooth;
     private GradientDither _gradientDither = GradientDither.None;
+    private GradientColorSpace _gradientColorSpace = GradientColorSpace.OkLch;
 
     /// <summary>그라데이션 색 정지점(2개 이상, 위치 0~1). 편집 순서를 그대로 두고 칠할 때 위치 순으로 쓴다.</summary>
     public IReadOnlyList<GradientStop> GradientStops
@@ -245,11 +246,17 @@ public sealed class EditorContext
             OptionsChanged();
         }
     }
-    /// <summary>그라데이션 보간: 부드럽게(RGBA 선형) / 단계(정지점 색 띠).</summary>
+    /// <summary>그라데이션 보간: 부드럽게 / 단계(정지점 색 띠).</summary>
     public GradientInterpolation GradientInterpolation
     {
         get => _gradientInterpolation;
         set { if (!Enum.IsDefined(value)) value = GradientInterpolation.Smooth; if (_gradientInterpolation == value) return; _gradientInterpolation = value; OptionsChanged(); }
+    }
+    /// <summary>그라데이션 색 정지점 사이의 보간 색 공간.</summary>
+    public GradientColorSpace GradientColorSpace
+    {
+        get => _gradientColorSpace;
+        set { if (!Enum.IsDefined(value)) value = GradientColorSpace.OkLch; if (_gradientColorSpace == value) return; _gradientColorSpace = value; OptionsChanged(); }
     }
     /// <summary>그라데이션 순서 디더링(부드럽게일 때만 씀).</summary>
     public GradientDither GradientDither

@@ -796,6 +796,7 @@ Export: </value></data>
   <data name="EffectGradient_Forward" xml:space="preserve"><value>Forward</value></data>
   <data name="EffectGradient_Inward" xml:space="preserve"><value>Inward</value></data>
   <data name="EffectGradient_LinearAnimated" xml:space="preserve"><value>Linear (animated)</value></data>
+  <data name="GradientColorSpace_Label" xml:space="preserve"><value>Color space</value></data>
   <data name="EffectGradient_LinearStatic" xml:space="preserve"><value>Linear (static)</value></data>
   <data name="EffectGradient_Mode" xml:space="preserve"><value>Mode</value></data>
   <data name="EffectGradient_Outward" xml:space="preserve"><value>Outward</value></data>
@@ -2648,6 +2649,36 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectOutline_ShadeAmount" xml:space="preserve"><value>Shade</value></data>
   <data name="EffectOutline_ShadeAmountTip" xml:space="preserve"><value>Negative = darker than the neighboring pixel (−100 = black), positive = lighter (100 = white). Hue is kept; only lightness changes.</value></data>
   <data name="EffectOutline_ShadeSummary" xml:space="preserve"><value>shade {0}%</value></data>
+  <data name="GradientPreset_ManageMenu" xml:space="preserve"><value>Manage Gradient Presets…</value></data>
+  <data name="GradientPreset_Category" xml:space="preserve"><value>Gradients</value></data>
+  <data name="GradientPreset_SaveCurrent" xml:space="preserve"><value>Save current gradient…</value></data>
+  <data name="GradientPreset_NamePrompt" xml:space="preserve"><value>Gradient preset name</value></data>
+  <data name="GradientPreset_OverwriteQuestion" xml:space="preserve"><value>Gradient preset '{0}' already exists. Overwrite it?</value></data>
+  <data name="GradientPreset_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="GradientPreset_RenameTitle" xml:space="preserve"><value>Rename gradient preset</value></data>
+  <data name="GradientPreset_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="GradientPreset_DeleteQuestion" xml:space="preserve"><value>Delete gradient preset '{0}'?</value></data>
+  <data name="GradientPreset_DuplicateName" xml:space="preserve"><value>A gradient preset named '{0}' already exists.</value></data>
+  <data name="GradientPreset_LoadError" xml:space="preserve"><value>Couldn't read gradient presets: {0}</value></data>
+  <data name="GradientPreset_SaveError" xml:space="preserve"><value>Couldn't save gradient presets: {0}</value></data>
+  <data name="GradientPreset_Empty" xml:space="preserve"><value>No saved gradient presets.</value></data>
+  <data name="GradientPreset_Favorites" xml:space="preserve"><value>Favorites</value></data>
+  <data name="GradientPreset_AddFavorite" xml:space="preserve"><value>Add to favorites</value></data>
+  <data name="GradientPreset_RemoveFavorite" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="GradientPreset_SaveChanges" xml:space="preserve"><value>Save changes</value></data>
+  <data name="GradientPreset_SaveChangesQuestion" xml:space="preserve"><value>Save changes to gradient preset '{0}'?</value></data>
+  <data name="GradientPreset_SelectHint" xml:space="preserve"><value>Select a preset from the list.</value></data>
+  <data name="Presets_Title" xml:space="preserve"><value>Presets</value></data>
+  <data name="Presets_Menu" xml:space="preserve"><value>Presets…</value></data>
+  <data name="Presets_OptimizerTab" xml:space="preserve"><value>Auto optimize (Pixelate)</value></data>
+  <data name="Presets_Prefs_Tab" xml:space="preserve"><value>Presets</value></data>
+  <data name="Presets_Prefs_Title" xml:space="preserve"><value>Restore built-in presets</value></data>
+  <data name="Presets_Prefs_Note" xml:space="preserve"><value>Adds back built-in presets you deleted and resets edited built-in presets to their original values. Presets you made and favorites stay. Changes are saved immediately.</value></data>
+  <data name="Presets_RestoreOptimizer" xml:space="preserve"><value>Restore auto optimize presets</value></data>
+  <data name="Presets_RestoreOptimizerQuestion" xml:space="preserve"><value>Restore the built-in auto optimize presets? Deleted built-in presets come back, and presets you made stay.</value></data>
+  <data name="Presets_RestoreGradients" xml:space="preserve"><value>Restore gradient presets</value></data>
+  <data name="Presets_RestoreGradientsQuestion" xml:space="preserve"><value>Restore the built-in gradient presets? Deleted built-in presets come back, and presets you made stay.</value></data>
+  <data name="Presets_Restored" xml:space="preserve"><value>Built-in presets restored.</value></data>
   <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>Built-in</value></data>
   <data name="EffectPreset_CustomTab" xml:space="preserve"><value>Custom</value></data>
   <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>Save all effects</value></data>
@@ -2872,7 +2903,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Section_Cleanup" xml:space="preserve"><value>7. Cleanup</value></data>
   <data name="Pixelate_Section_Consistency" xml:space="preserve"><value>8. Frame consistency</value></data>
   <data name="Pixelate_Section_Candidates" xml:space="preserve"><value>Candidates</value></data>
-  <data name="Pixelate_Section_Advanced" xml:space="preserve"><value>Advanced (score weights)</value></data>
   <data name="Pixelate_Section_Output" xml:space="preserve"><value>Output</value></data>
   <data name="Pixelate_Section_Ai" xml:space="preserve"><value>AI (experimental)</value></data>
   <data name="Pixelate_Mode" xml:space="preserve"><value>Mode</value></data>
@@ -2961,7 +2991,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Pal_DistinctHue_Tip" xml:space="preserve"><value>A color counts as "lost" when the palette color it would become differs in hue by at least this many degrees.</value></data>
   <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>Min area</value></data>
   <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>Minimum size of the color group in cells (with original colors, edge cells count with the edge cell weight).</value></data>
-  <data name="Pixelate_Opt_ColorDistanceTip" xml:space="preserve"><value>Tries OKLab, CIEDE2000 and OKLCh hue-weighted (with hue weight 1–3). The "Major color shift" score of every trial is measured with the starting color distance so trials stay comparable.</value></data>
+  <data name="Pixelate_Opt_ColorDistanceTip" xml:space="preserve"><value>Tries OKLab, CIEDE2000 and OKLCh hue-weighted (weight 0–1000) for palette conversion. Set the fixed scoring distance separately in Optimizer Settings.</value></data>
   <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>Auto optimize on load</value></data>
   <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>When a source is loaded (open, drop, paste, browse, replace), the auto optimizer runs once after the first candidates finish. It does not run again when settings change, and you can cancel it while it runs.</value></data>
   <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>Source cell {source} → result {result}</value></data>
@@ -3003,7 +3033,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Ai_RankCount" xml:space="preserve"><value>Candidates to send</value></data>
   <data name="Pixelate_Ai_RankItem" xml:space="preserve"><value>candidate {index} (score {score}, {colors} colors, {width}×{height})</value></data>
   <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>The first attached image is the original (pixel-look art made by AI); the next {count} are candidates that pixelate it ({list}, in order — each image shows the frames side by side). Check whether outlines are unbroken, the eyes and face are readable, there are no stray pixels, and colors and shapes are consistent between frames, then rank them from best with reasons. Suggest settings (pixel size, color count, cleanup) that would improve them.</value></data>
-  <data name="Pixelate_Source" xml:space="preserve"><value>Source (wheel: zoom, drag: pan, double-click: fit)</value></data>
+  <data name="Pixelate_Source" xml:space="preserve"><value>Source {size} (wheel: zoom, drag: pan, double-click: fit)</value></data>
   <data name="Pixelate_ShowGrid" xml:space="preserve"><value>Show grid</value></data>
   <data name="Pixelate_ShowMask" xml:space="preserve"><value>Show background removed</value></data>
   <data name="Pixelate_Bar_Size" xml:space="preserve"><value>Output size</value></data>
@@ -3073,8 +3103,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Pixelate_Opt_ClearAll" xml:space="preserve"><value>Clear all</value></data>
   <data name="Pixelate_Opt_SelectAllTip" xml:space="preserve"><value>Checks or unchecks every item that applies to the current settings (greyed-out items and the outline fit mode are left as they are, so your chosen mode is kept).</value></data>
-  <data name="Pixelate_Opt_Defaults" xml:space="preserve"><value>Defaults</value></data>
-  <data name="Pixelate_Opt_DefaultsTip" xml:space="preserve"><value>Restores the default selection (everything except the outline fit mode; the outline fit mode check is left as it is so your chosen mode keeps its 1 px outline).</value></data>
   <data name="Pixelate_Fit" xml:space="preserve"><value>Fit outline to 1 px</value></data>
   <data name="Pixelate_Fit_Shrink" xml:space="preserve"><value>By shrinking</value></data>
   <data name="Pixelate_Fit_Thin" xml:space="preserve"><value>Thin outline only</value></data>
@@ -3089,7 +3117,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
   <data name="Pixelate_Vary_OutlineFit" xml:space="preserve"><value>Outline fit mode</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>Auto optimize</value></data>
-  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: tries the checked settings step by step and keeps the highest-scoring result (starts from the current settings). Items and budget are under the settings button next to it.</value></data>
+  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: each checked optimizer preset tries its chosen settings step by step and keeps its highest-scoring result, shown as one candidate per preset (starts from the current settings). Presets, items and budget are under the settings button next to it.</value></data>
   <data name="Pixelate_Opt_Scale" xml:space="preserve"><value>Pixel size</value></data>
   <data name="Pixelate_Opt_OffsetX" xml:space="preserve"><value>Grid offset X</value></data>
   <data name="Pixelate_Opt_OffsetY" xml:space="preserve"><value>Grid offset Y</value></data>
@@ -3112,11 +3140,37 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_PaletteTip" xml:space="preserve"><value>Only tried when the palette method is k-means or median cut.</value></data>
   <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>Trials</value></data>
   <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
-  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Optimizer settings (items to try, budget, trial history)</value></data>
+  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Optimizer settings (presets, search parameters, budget, scoring, history)</value></data>
   <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
-  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>Pass {pass} · trial {done}/{total} · best {score}</value></data>
-  <data name="Pixelate_Opt_Note" xml:space="preserve"><value>The score weights (Advanced) are what the optimizer maximizes.</value></data>
+  <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>{name} ({index}/{count}) · pass {pass} · trial {done}/{total} · best {score}</value></data>
+  <data name="Pixelate_Opt_Note" xml:space="preserve"><value>All candidates use the same scoring rules. Scoring color distance affects only Major color shift, not palette conversion.</value></data>
+  <data name="Pixelate_Opt_SettingsTitle" xml:space="preserve"><value>Auto Optimize Settings</value></data>
+  <data name="Pixelate_Opt_ScoreCriteria" xml:space="preserve"><value>Fixed scoring criteria</value></data>
+  <data name="Pixelate_Opt_ScoreDistance" xml:space="preserve"><value>Major color shift distance</value></data>
+  <data name="Pixelate_Opt_ScoreWeights" xml:space="preserve"><value>Score weights (0 = ignore)</value></data>
+  <data name="Pixelate_Opt_NoPresetTip" xml:space="preserve"><value>No optimizer preset is checked. Check at least one preset under the settings button next to it.</value></data>
+  <data name="Pixelate_Opt_HistoryEmpty" xml:space="preserve"><value>The selected preset was not run this time.</value></data>
+  <data name="Pixelate_Opt_PresetsDone" xml:space="preserve"><value>{done}/{count} presets · {seconds}s</value></data>
+  <data name="Pixelate_Opt_PresetLine" xml:space="preserve"><value>{name}: {summary}</value></data>
+  <data name="OptimizePreset_DefaultName" xml:space="preserve"><value>Default</value></data>
+  <data name="OptimizePreset_NewName" xml:space="preserve"><value>New preset</value></data>
+  <data name="OptimizePreset_CopyName" xml:space="preserve"><value>{name} copy</value></data>
+  <data name="OptimizePreset_List" xml:space="preserve"><value>Optimizer presets (all checked ones run)</value></data>
+  <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>When checked, Auto optimize also runs this preset (one best candidate per preset, named after the preset). Regular candidates are scored with the first checked preset's criteria.</value></data>
+  <data name="OptimizePreset_Add" xml:space="preserve"><value>Add preset</value></data>
+  <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>Duplicate preset</value></data>
+  <data name="OptimizePreset_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="OptimizePreset_AddFavorite" xml:space="preserve"><value>Add to favorites (moves to the top)</value></data>
+  <data name="OptimizePreset_RemoveFavorite" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="OptimizePreset_Delete" xml:space="preserve"><value>Delete preset (the last one can't be deleted)</value></data>
+  <data name="OptimizePreset_DeleteQuestion" xml:space="preserve"><value>Delete the preset '{name}'?</value></data>
+  <data name="OptimizePreset_NamePrompt" xml:space="preserve"><value>Preset name:</value></data>
+  <data name="OptimizePreset_DuplicateName" xml:space="preserve"><value>A preset named '{name}' already exists. Use a different name.</value></data>
+  <data name="OptimizePreset_BuiltInQuick" xml:space="preserve"><value>Quick check</value></data>
+  <data name="OptimizePreset_BuiltInFaithful" xml:space="preserve"><value>Faithful to source</value></data>
+  <data name="OptimizePreset_BuiltInClean" xml:space="preserve"><value>Clean pixels</value></data>
+  <data name="OptimizePreset_BuiltInShade" xml:space="preserve"><value>Same hue family (OKLCH 20)</value></data>
   <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>Try local correction</value></data>
   <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>Lets the optimizer try local correction on/off, maximum shift, band width and minimum cell size. Checking this does not apply it to the current result. The actual setting is under Pixel grid on the left.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial (faint vertical lines = a new pass starts)</value></data>

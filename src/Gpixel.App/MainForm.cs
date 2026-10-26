@@ -744,6 +744,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("브러시 크게", MainStrings.Menu_Tools_BrushSize_216, () => _ctx.BrushSize++, "]", KeyScope.NotInText, (Key.OemCloseBrackets, NoMods)),
             Cmd("브러시 작게", MainStrings.Menu_Tools_BrushSize_218, () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
             Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
+        // 프리셋 종류가 늘어도 한 창의 탭으로 모은다.
+        AddItems(tools, new Separator(), Cmd("프리셋", UiStrings.Presets_Menu, () => PresetsWindow.Open(this)));
 
 
         // AI
@@ -1113,6 +1115,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (ParseGradientAlphaStops(s.GradientAlphaStops) is { } alphaStops) _ctx.GradientAlphaStops = alphaStops;
         _ctx.GradientInterpolation = s.GradientInterpolation;
         _ctx.GradientDither = s.GradientDither;
+        _ctx.GradientColorSpace = s.GradientColorSpace ?? GradientColorSpace.Rgb;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
         foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
@@ -1246,6 +1249,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.GradientAlphaStops = _ctx.GradientAlphaStops.Select(g => FormattableString.Invariant($"{g.Position:0.####}:{g.Alpha}")).ToList();
         s.GradientInterpolation = _ctx.GradientInterpolation;
         s.GradientDither = _ctx.GradientDither;
+        s.GradientColorSpace = _ctx.GradientColorSpace;
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();
         s.RecentColors = _ctx.RecentColors.Select(c => c.ToHex()).ToList();

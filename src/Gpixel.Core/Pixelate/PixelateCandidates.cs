@@ -115,10 +115,11 @@ public static class PixelateCandidates
     /// 후보를 모두 돌린다: 지금 설정을 먼저(번호 0), 그다음 바꾼 설정들을 여러 스레드로. 하나 끝날 때마다 <paramref name="onResult"/>(아무 스레드).
     /// 점수의 목표 색 수는 지금 설정의 색 수(자동이면 찾은 수). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
     /// </summary>
+    /// <param name="scoreMetric">모든 후보의 주요 색 변화에 쓸 거리(null = 각 후보의 팔레트 거리). 색 변환은 후보 설정대로 한다.</param>
     public static List<PixelateCandidate> Run(PixelateSource src, PixelateSettings b, CandidateVary vary, int count, ScoreWeights weights,
-        Action<PixelateCandidate>? onResult = null, CancellationToken ct = default)
+        Action<PixelateCandidate>? onResult = null, CancellationToken ct = default, ColorMetric? scoreMetric = null)
     {
-        var first = Pixelator.Run(src, b, ct);
+        var first = Pixelator.Run(src, b, scoreMetric, ct);
         int? target = b.Palette.Method == PaletteMethod.KeepOriginal ? null : first.ResolvedColors;
         var all = new List<PixelateCandidate> { new(0, b, first, PixelateScoring.Score(first, weights, target)) };
         onResult?.Invoke(all[0]);
@@ -126,7 +127,7 @@ public static class PixelateCandidates
         var done = new PixelateCandidate?[variants.Count];
         Parallel.For(0, variants.Count, new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) }, i =>
         {
-            var r = Pixelator.Run(src, variants[i], ct);
+            var r = Pixelator.Run(src, variants[i], scoreMetric, ct);
             var cand = new PixelateCandidate(i + 1, variants[i], r, PixelateScoring.Score(r, weights, target));
             done[i] = cand;
             onResult?.Invoke(cand);

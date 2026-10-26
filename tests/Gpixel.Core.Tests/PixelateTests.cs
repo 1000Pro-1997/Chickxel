@@ -300,6 +300,8 @@ public class PixelateTests
         var g = OkLab.FromColor(Gold);
         Assert.Equal(Lab.Distance(a, g), ColorDistance.OkLchHue(a, g, 1), 4);
         Assert.True(ColorDistance.OkLchHue(a, g, 2) > Lab.Distance(a, g) * 1.5);
+        Assert.Equal(Math.Sqrt(Math.Pow(a.L - g.L, 2) + Math.Pow(ColorDistance.Chroma(a) - ColorDistance.Chroma(g), 2)), new ColorMetric(ColorDistanceMode.OkLchHue, 0).Distance(new ColorPoint(a, default), new ColorPoint(g, default)), 5);
+        Assert.True(new ColorMetric(ColorDistanceMode.OkLchHue, 20).Distance(new ColorPoint(a, default), new ColorPoint(g, default)) > ColorDistance.OkLchHue(a, g, 2));
         var light = OkLab.FromColor(new Color32(0xF0, 0xF0, 0xF0));
         var dark = OkLab.FromColor(new Color32(0x80, 0x80, 0x80));
         Assert.Equal(ColorDistance.OkLchHue(light, dark, 1), ColorDistance.OkLchHue(light, dark, 3), 3);
@@ -836,6 +838,32 @@ public class PixelateTests
     }
 
     [Fact]
+    public void CandidatesUseExplicitScoreMetricForFirstAndVariants()
+    {
+        var s = new PixelateSettings
+        {
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 4 },
+            Palette = new PaletteSettings { Method = PaletteMethod.Existing, ExistingColors = ["#1E140C", "#C82828"], ColorDistance = ColorDistanceMode.OkLab },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+        var src = PixelateSource.Prepare(Upscale(Sprite(), 4), s);
+        var metric = new ColorMetric(ColorDistanceMode.OkLchHue, 20);
+        var all = PixelateCandidates.Run(src, s, CandidateVary.Scale, 3, new ScoreWeights(), scoreMetric: metric);
+
+        Assert.Equal(3, all.Count);
+        Assert.Contains(all, c => c.Index == 0);
+        foreach (var c in all)
+        {
+            var expected = Pixelator.Run(src, c.Settings, metric, default);
+            Assert.Equal(expected.Metrics.ColorShift, c.Result.Metrics.ColorShift, 10);
+            Assert.Equal(expected.Frames[0].Pixels, c.Result.Frames[0].Pixels);
+            Assert.Equal(PixelateScoring.Score(expected, new ScoreWeights(), all.Single(x => x.Index == 0).Result.ResolvedColors).Total, c.Score.Total, 10);
+        }
+        var start = all.Single(c => c.Index == 0);
+        Assert.NotEqual(Pixelator.Run(src, s).Metrics.ColorShift, start.Result.Metrics.ColorShift);
+    }
+
+    [Fact]
     public void CandidatesHonorCancellation()
     {
         var source = Render([Sprite()]);
@@ -1159,6 +1187,40 @@ public class PixelateTests
     }
 
     [Fact]
+    public void OptimizerScoresEveryDistanceModeWithTheSameMetric()
+    {
+        var start = new PixelateSettings
+        {
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 4 },
+            Palette = new PaletteSettings { Method = PaletteMethod.Existing, ExistingColors = ["#1E140C", "#C82828"], ColorDistance = ColorDistanceMode.OkLab },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+        var src = PixelateSource.Prepare(Upscale(Sprite(), 4), start);
+        var metric = new ColorMetric(ColorDistanceMode.OkLchHue, 20);
+        var options = new PixelateOptimizeOptions { Params = OptimizeParam.ColorDistance, MaxTrials = 3, MaxPasses = 1 };
+
+        var fixedResult = PixelateOptimizer.Run(src, start, options with { ScoreMetric = metric });
+        var fallbackResult = PixelateOptimizer.Run(src, start, options);
+        foreach (var (result, scoringMetric) in new[]
+        {
+            (fixedResult, metric),
+            (fallbackResult, ColorMetric.For(start.Palette)),
+        })
+        {
+            Assert.Equal(3, result.Trials.Count);
+            Assert.Equal(Enum.GetValues<ColorDistanceMode>().Order(), result.Trials.Select(t => t.Settings.Palette.ColorDistance).Order());
+            foreach (var trial in result.Trials)
+            {
+                var expected = Pixelator.Run(src, trial.Settings, scoringMetric, default);
+                Assert.Equal(expected.Metrics.ColorShift, trial.Result.Metrics.ColorShift, 10);
+                Assert.Equal(expected.Frames[0].Pixels, trial.Result.Frames[0].Pixels);
+                Assert.Equal(PixelateScoring.Score(expected, options.Weights, result.Start.Result.ResolvedColors).Total, trial.Score.Total, 10);
+            }
+        }
+        Assert.NotEqual(fallbackResult.Start.Result.Metrics.ColorShift, fixedResult.Start.Result.Metrics.ColorShift);
+    }
+
+    [Fact]
     public void OptimizerRespectsTrialAndTimeBudgets()
     {
         var source = Render([Sprite()]);
@@ -1338,6 +1400,22 @@ public class PixelateTests
             var none = PixelateOptimizer.Run(src, other, new PixelateOptimizeOptions { Params = p & ~OptimizeParam.SnapOutline });
             Assert.Single(none.Trials);
         }
+    }
+
+    [Fact]
+    public void OptimizerSearchesFullHueWeightRange()
+    {
+        var source = Render([RobeSprite()]);
+        var start = new PixelateSettings { Palette = new PaletteSettings { Colors = 4 } };
+        var src = PixelateSource.Prepare(source, start);
+        var r = PixelateOptimizer.Run(src, start, new PixelateOptimizeOptions
+        {
+            Params = OptimizeParam.ColorDistance, MaxTrials = 40, MaxPasses = 1, MaxTime = TimeSpan.FromMinutes(1)
+        });
+        Assert.Equal(2, start.Palette.HueWeight);
+        Assert.Contains(r.Trials, t => t.Settings.Palette.ColorDistance == ColorDistanceMode.OkLchHue && t.Settings.Palette.HueWeight == 0);
+        Assert.Contains(r.Trials, t => t.Settings.Palette.ColorDistance == ColorDistanceMode.OkLchHue && t.Settings.Palette.HueWeight == PixelateRanges.HueWeight.Max);
+        Assert.Contains(r.Trials, t => t.Settings.Palette.ColorDistance == ColorDistanceMode.OkLchHue && t.Settings.Palette.HueWeight == 5);
     }
 
     private static readonly Color32 SpriteRed = new(200, 40, 40);

@@ -37,8 +37,8 @@ public sealed partial class LayerEffectsDialog
             Easing = editor.Easing,
             PingPong = editor.PingPong,
             Interpolation = editor.Interpolation,
+            ColorSpace = editor.ColorSpace,
             Dither = editor.Dither,
-            StraightRgba = savedGradient?.StraightRgba ?? false
         };
 
         void ChangeGradient(EffectColorGradient? gradient)
@@ -64,7 +64,8 @@ public sealed partial class LayerEffectsDialog
         editor.IsVisible = gradientMode;
         if (savedGradient is { } existing)
             editor.Load(existing.Stops, existing.AlphaStops, existing.Interpolation, existing.Dither,
-                existing.Angle, existing.Shape, existing.Animated, existing.Reverse, existing.Cycles, existing.Easing, existing.PingPong);
+                existing.Angle, existing.Shape, existing.Animated, existing.Reverse, existing.Cycles, existing.Easing, existing.PingPong,
+                existing.ColorSpace);
         mode.SelectionChanged += (_, _) =>
         {
             if (mode.SelectedIndex < 0) return;
@@ -77,7 +78,7 @@ public sealed partial class LayerEffectsDialog
                 savedGradient ??= InitialGradient();
                 editor.Load(savedGradient.Stops, savedGradient.AlphaStops, savedGradient.Interpolation, savedGradient.Dither,
                     savedGradient.Angle, savedGradient.Shape, savedGradient.Animated, savedGradient.Reverse, savedGradient.Cycles,
-                    savedGradient.Easing, savedGradient.PingPong);
+                    savedGradient.Easing, savedGradient.PingPong, savedGradient.ColorSpace);
                 gradientMode = true;
                 ChangeGradient(savedGradient);
             }

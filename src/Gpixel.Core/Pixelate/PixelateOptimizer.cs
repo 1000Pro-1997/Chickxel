@@ -53,7 +53,7 @@ public enum OptimizeParam
     VectorBlob = 262144,
     /// <summary>칸 경계 지역 보정 켜기·끄기와, 켠 시도에서 최대 이동·띠 너비·최소 평균 칸 크기.</summary>
     LocalGrid = 524288,
-    /// <summary>색 거리(OKLab·CIEDE2000·OKLCh 색상 가중)와, OKLCh 색상 가중인 시도에서 색상 무게 1~3. 점수의 '주요 색 변화'는 모든 시도를 시작 설정의 거리로 잰다.</summary>
+    /// <summary>색 거리(OKLab·CIEDE2000·OKLCh 색상 가중)와, OKLCh 색상 가중인 시도에서 색상 무게 0~1000(작은 값 쪽 후보도 꼭 시험). 점수의 '주요 색 변화'는 모든 시도를 <see cref="PixelateOptimizeOptions.ScoreMetric"/> 또는 시작 팔레트의 거리로 잰다.</summary>
     ColorDistance = 1048576,
     /// <summary>다른 색상 지키기 켜기·끄기와, 켠 시도에서 최소 색상 차 10~40도(k-평균·중앙 분할일 때만).</summary>
     DistinctHues = 2097152,
@@ -89,6 +89,8 @@ public sealed record PixelateOptimizeOptions
     public int MaxTrials { get; init; } = 200;
     public TimeSpan MaxTime { get; init; } = TimeSpan.FromSeconds(60);
     public ScoreWeights Weights { get; init; } = new();
+    /// <summary>모든 시도의 주요 색 변화를 재는 고정 색 거리(null = 시작 팔레트의 색 거리). 후보 팔레트의 색 변환 설정은 그대로 적용한다.</summary>
+    public ColorMetric? ScoreMetric { get; init; }
     public int MaxDegreeOfParallelism { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
     /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 나아지지 않은 돌림이 <see cref="PixelateOptimizer.StalePasses"/>번 넘게 이어질 때까지 다시 돌림, 1 = 한 번만).</summary>
     public int MaxPasses { get; init; } = int.MaxValue;
@@ -252,6 +254,7 @@ public static class PixelateOptimizer
         private readonly PixelateSource _src;
         private readonly PixelateSettings _start;
         private readonly PixelateOptimizeOptions _opt;
+        private readonly ColorMetric _scoreMetric;
         private readonly Action<PixelateOptimizeProgress>? _onProgress;
         private readonly CancellationToken _ct;
         // 캐시·시도 목록·1위는 찾기를 이끄는 스레드에서만 바꾼다(묶음이 끝난 뒤 번호 순으로) — 작업 스레드는 결과 칸과 진행 알림만.
@@ -275,6 +278,7 @@ public static class PixelateOptimizer
             _src = src;
             _start = start;
             _opt = opt;
+            _scoreMetric = opt.ScoreMetric ?? ColorMetric.For(start.Palette);
             _onProgress = onProgress;
             _ct = ct;
         }
@@ -291,7 +295,7 @@ public static class PixelateOptimizer
             if (_opt.MaxTime > TimeSpan.Zero && _opt.MaxTime < TimeSpan.FromDays(1)) deadline.CancelAfter(_opt.MaxTime);
 
             // 시작 설정은 꼭 돌린다(취소만 멈춤 — 시간이 지나도 시작점은 있어야 함).
-            var first = Pixelator.Run(_src, _start, _ct);
+            var first = Pixelator.Run(_src, _start, _scoreMetric, _ct);
             _target = _start.Palette.Method == PaletteMethod.KeepOriginal ? null : first.ResolvedColors;
             _shrink = ShrinkBand();
             _band = ScaleBand(first);
@@ -526,7 +530,7 @@ public static class PixelateOptimizer
                 PixelateResult r;
                 try
                 {
-                    r = Pixelator.Run(SourceFor(s), s, ColorMetric.For(_start.Palette), _deadline.Token);
+                    r = Pixelator.Run(SourceFor(s), s, _scoreMetric, _deadline.Token);
                 }
                 catch (OperationCanceledException) when (_deadline.IsCancellationRequested)
                 {
@@ -781,9 +785,10 @@ public static class PixelateOptimizer
                 var modes = Enum.GetValues<ColorDistanceMode>();
                 axes.Add(new Axis(OptimizeParam.ColorDistance, 0, modes.Length - 1, 1, 0, modes.Length,
                     s => Array.IndexOf(modes, s.Palette.ColorDistance), (s, v) => s with { Palette = s.Palette with { ColorDistance = modes[(int)v] } }));
-                axes.Add(Num(OptimizeParam.ColorDistance, PixelateRanges.HueWeight, 1, 3, 0.25, 2,
+                var hue = PixelateRanges.HueWeight;
+                axes.Add(Num(OptimizeParam.ColorDistance, hue, hue.Min, hue.Max, 0.25, 2,
                     s => s.Palette.HueWeight, (s, v) => s with { Palette = s.Palette with { HueWeight = v } })
-                    with { Active = s => s.Palette.ColorDistance == ColorDistanceMode.OkLchHue });
+                    with { Active = s => s.Palette.ColorDistance == ColorDistanceMode.OkLchHue, Seeds = [1, 2, 3, 5, 10, 20, 50, 100, 200, 500] });
             }
             if (p.HasFlag(OptimizeParam.DistinctHues))
             {

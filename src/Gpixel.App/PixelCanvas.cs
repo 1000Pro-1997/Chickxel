@@ -1825,7 +1825,7 @@ public sealed class PixelCanvas : Control
         _gradientEnd = end;
         var img = _ctx.EditImage!;
         img.CopyFrom(_strokeBase!);
-        Gradient.Apply(img, _startPx, end, _ctx.GradientStops, _ctx.GradientInterpolation, _ctx.GradientDither, _ctx.Selection.Clip, _ctx.GradientAlphaStops);
+        Gradient.Apply(img, _startPx, end, _ctx.GradientStops, _ctx.GradientInterpolation, _ctx.GradientDither, _ctx.Selection.Clip, _ctx.GradientAlphaStops, _ctx.GradientColorSpace);
         _ctx.NotifyPixels();
         InvalidateVisual();
     }
