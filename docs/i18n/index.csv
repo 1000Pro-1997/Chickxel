@@ -28,6 +28,7 @@ lang-select.4,"<span>내려받기</span></a>
 <a class=""btn discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","<span>Download</span></a>
 <a class=""btn"" href=""guide.html"">Guide</a>
 <a class=""btn discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
+hero.support,후원하기,Support
 lang-select.5,"바로 받기: <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"">macOS (Intel)</a>","Direct download: <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"">macOS (Intel)</a>"
 lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">오픈 소스 (MIT)</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Open source (MIT)</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Nothing to install</span>"
 lang-select.7.src,assets/screenshot.png,../assets/screenshot-en.png
