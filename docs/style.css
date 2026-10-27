@@ -192,6 +192,9 @@ body.guide-page { overflow: hidden; }
 .doc p, .doc li { color: var(--body); line-height: 1.75; }
 .doc ul, .doc ol { padding-left: 1.3em; }
 .doc li { margin: 5px 0; }
+/* 칸마다 그림 번호(①…)로 시작하는 목록: 번호가 머리표(점·숫자 없이), 둘째 줄부터는 번호 뒤에 맞춤 */
+.doc ul.marks { list-style: none; padding-left: 0; }
+.doc ul.marks > li { padding-left: 1.35em; text-indent: -1.35em; }
 .doc strong { color: var(--ink); }
 .table-wrap { overflow-x: auto; margin: 16px 0 22px; border: 1px solid var(--line-soft); border-radius: 14px; }
 table { border-collapse: collapse; width: 100%; font-size: 14.5px; }

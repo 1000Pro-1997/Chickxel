@@ -21,7 +21,9 @@ Output: docs/<page>.html for Korean and docs/<lang>/<page>.html for every other 
 then `tools/build-help.py` regenerates src/Gpixel.App/Assets/Help/help.<lang>.json.
 
     python tools/build-docs.py           # write pages + in-app guide
-    python tools/build-docs.py --check   # exit 1 if a page is out of date or a key is unknown/unused
+    python tools/build-docs.py --check   # exit 1 if a page is out of date, a key is unknown/unused,
+                                         # or a guide page breaks the writing rules (AGENTS.md: figures first,
+                                         # ①… defined in the caption, no 1. ② double numbering)
 
 Python 3 standard library only.
 """
@@ -140,6 +142,80 @@ def render(template: str, strings: dict[str, dict[str, str]], lang: str, page: s
     return expand(template, 0)
 
 
+CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚"
+
+
+def lint_guide(html_text: str, page: str) -> list[str]:
+    """
+    가이드 쓰기 규칙(AGENTS.md "사용 가이드 쓰기")을 지켰는지. 어긴 곳의 설명 목록(없으면 빈 목록).
+    쪽(h3) 안에서: 그림 번호(①…)는 그 그림 설명(figcaption)에 있어야 하고 글에서 써야 하며, 그 번호를 쓰는 글은 그림 뒤에 온다.
+    번호로 시작하는 칸이 있는 목록은 <ol>이 아니고, 모든 칸이 번호로 시작하면 <ul class="marks">다.
+    """
+    bh = runpy.run_path(str(ROOT / "tools" / "build-help.py"), run_name="build_help")
+    builder = bh["TreeBuilder"]()
+    builder.feed(html_text)
+    builder.close()
+
+    def text(n) -> str:
+        return n if isinstance(n, str) else "".join(text(c) for c in n.children)
+
+    def nums(s: str) -> list[int]:
+        return [CIRCLED.index(c) + 1 for c in s if c in CIRCLED]
+
+    def starts_with_number(n) -> bool:
+        return text(n).lstrip()[:1] in CIRCLED and text(n).strip() != ""
+
+    sections = []
+
+    def walk(n):
+        if isinstance(n, str):
+            return
+        if n.tag == "section" and "doc" in n.classes():
+            sections.append(n)
+            return
+        for c in n.children:
+            walk(c)
+
+    walk(builder.root)
+    problems: list[str] = []
+    for sec in sections:
+        pages, cur, blocks = [], sec.attrs.get("id", "?"), []
+        for c in sec.elements():
+            if c.tag == "h3":
+                pages.append((cur, blocks))
+                cur, blocks = c.attrs.get("id", "?"), []
+            elif c.tag != "h2":
+                blocks.append(c)
+        pages.append((cur, blocks))
+        for pid, blocks in pages:
+            defined_at: dict[int, int] = {}
+            used: set[int] = set()
+            for i, b in enumerate(blocks):
+                if b.tag == "figure":
+                    cap = b.find(lambda x: x.tag == "figcaption")
+                    for k in nums(text(cap) if cap else ""):
+                        defined_at.setdefault(k, i)
+            for i, b in enumerate(blocks):
+                if b.tag == "figure":
+                    continue
+                for k in nums(text(b)):
+                    used.add(k)
+                    if k in defined_at and defined_at[k] > i:
+                        problems.append(f"{page}#{pid}: {CIRCLED[k - 1]}을 쓰는 글이 그 그림보다 앞에 있음(그림을 먼저)")
+                for lst in [b] if b.tag in ("ul", "ol") else []:
+                    items = list(lst.elements("li"))
+                    marked = [starts_with_number(li) for li in items]
+                    if lst.tag == "ol" and any(marked):
+                        problems.append(f"{page}#{pid}: 번호(①…)로 시작하는 칸이 있는 <ol> — 1. ② 겹 번호(<ul class=\"marks\">로)")
+                    elif items and all(marked) and "marks" not in lst.classes():
+                        problems.append(f"{page}#{pid}: 모든 칸이 번호로 시작하는 목록은 <ul class=\"marks\">")
+            for k in sorted(used - set(defined_at)):
+                problems.append(f"{page}#{pid}: 글의 {CIRCLED[k - 1]}이 이 쪽 그림 설명에 없음")
+            for k in sorted(set(defined_at) - used):
+                problems.append(f"{page}#{pid}: 그림 설명의 {CIRCLED[k - 1]}을 글에서 쓰지 않음")
+    return list(dict.fromkeys(problems))
+
+
 def output_path(page: str, lang: str) -> Path:
     return DOCS / f"{page}.html" if lang == BASE_LANG else DOCS / lang / f"{page}.html"
 
@@ -154,6 +230,9 @@ def main() -> int:
         used: set[str] = set()
         for lang in langs:
             text = render(template, strings, lang, page, used)
+            if lang == BASE_LANG and (problems := lint_guide(text, page)):
+                print("\n".join(problems), file=sys.stderr)
+                return 1
             out = output_path(page, lang)
             if out.exists() and out.read_text(encoding="utf-8") == text:
                 continue

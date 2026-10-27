@@ -206,7 +206,11 @@ def list_items(node: Node, base: str) -> list[dict]:
 
 
 def list_block(node: Node, base: str) -> dict:
-    return {"type": node.tag, "items": list_items(node, base)}
+    b = {"type": node.tag, "items": list_items(node, base)}
+    # class="marks": 칸마다 그림 번호(①…)로 시작해 따로 머리표를 그리지 않는 목록
+    if "marks" in node.classes():
+        b["marks"] = True
+    return b
 
 
 def table_block(node: Node, base: str) -> dict:

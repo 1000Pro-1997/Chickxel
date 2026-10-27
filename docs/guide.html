@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=20261027a">
+<link rel="stylesheet" href="style.css?v=20261027b">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -265,7 +265,6 @@
 </tbody>
 </table></div>
 <p>내 Mac의 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다. 지난 버전과 바뀐 점은 <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스 페이지</a>에 있습니다.</p>
-
 <h4>터미널로 설치</h4>
 <p><strong>macOS</strong> — 터미널에 붙여 넣으면 칩에 맞는 파일을 받아 <code>/Applications/Gpixel.app</code>에 설치하고 실행합니다.</p>
 <pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
@@ -288,37 +287,42 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Windows "PC 보호" 창: <strong>추가 정보 → 실행</strong>.</li>
 <li>macOS "확인되지 않은 개발자": <code>Gpixel.app</code>을 <strong>우클릭 → 열기</strong>. 안 되면 시스템 설정 → 개인정보 보호 및 보안 → <strong>그래도 열기</strong>.</li>
 </ul></li>
+</ul>
+<figure class="shot"><img src="assets/guide/start-first-run.png" alt="문서 없이 켠 Gpixel 첫 화면: 가운데 시작 화면에 폴더 열기 단추, 최근 폴더·최근 파일 목록, Unity Hub 프로젝트 목록이 있고 왼쪽에 파일 브라우저가 있는 모습" width="1600" height="932" loading="lazy"><figcaption>① 폴더 열기(Open folder…) · ② 최근 폴더 · ③ 파일 브라우저(폴더를 고르면 그림이 보이는 곳) · ④ Unity Hub 프로젝트 목록</figcaption></figure>
+<ul>
 <li>시작 화면에서 폴더(① <strong>폴더 열기…</strong>, ② 최근 폴더)나 Unity 프로젝트를 고르면 왼쪽 ③ 파일 브라우저에 그 폴더의 그림이 보입니다. ④ Unity Hub에 등록된 프로젝트는 목록에서 바로 열 수 있습니다.</li>
 <li>화면 언어는 처음 켤 때 컴퓨터 언어에 맞춰 고릅니다(한국어·영어, 맞는 언어가 없으면 영어). 바꾸는 방법은 <a href="#language">언어</a>에 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/start-first-run.png" alt="문서 없이 켠 Gpixel 첫 화면: 가운데 시작 화면에 폴더 열기 단추, 최근 폴더·최근 파일 목록, Unity Hub 프로젝트 목록이 있고 왼쪽에 파일 브라우저가 있는 모습" width="1600" height="932" loading="lazy"><figcaption>① 폴더 열기(Open folder…) · ② 최근 폴더 · ③ 파일 브라우저(폴더를 고르면 그림이 보이는 곳) · ④ Unity Hub 프로젝트 목록</figcaption></figure>
 <div class="note"><p>macOS에서는 이 설명서의 <kbd class="os-keep">Ctrl</kbd>을 <kbd>⌘</kbd>(Command)로 읽으세요(예: <kbd>⌘</kbd>+<kbd>S</kbd> 저장). 스포이드는 <kbd>⌥</kbd>+클릭, <kbd>⌘</kbd>를 누르는 동안은 임시 이동 도구입니다. 메뉴와 도움말에도 ⌘로 표시됩니다.</p></div>
 
 <h3 id="start-update">업데이트</h3>
-<p>Gpixel은 시작할 때마다 새 버전을 확인합니다. 새 버전이 있으면 <strong>업데이트 창</strong>이 뜨고 위 막대에 ① <strong>업데이트</strong> 단추가 나타납니다.</p>
 <figure class="shot"><img src="assets/guide/start-update.png" alt="위 막대 오른쪽, 격자 단추 왼쪽에 나타난 업데이트 단추(새 버전 번호 표시)" width="986" height="67" loading="lazy"><figcaption>① 업데이트 단추(누르면 업데이트 창이 다시 열림)</figcaption></figure>
+<p>Gpixel은 시작할 때마다 새 버전을 확인합니다. 새 버전이 있으면 <strong>업데이트 창</strong>이 뜨고 위 막대에 ① <strong>업데이트</strong> 단추가 나타납니다.</p>
+<figure class="shot"><img src="assets/guide/start-update-2.png" alt="업데이트 창: 새 버전과 지금 버전, CHANGELOG의 바뀐 점 목록, 아래에 지금 업데이트·다음 업데이트까지 띄우지 않기·릴리스 페이지 열기·나중에 단추" width="610" height="458" loading="lazy"><figcaption>② 지금 업데이트(Update now) · ③ 나중에(Later) · ④ 다음 업데이트까지 띄우지 않기 · ⑤ 새 버전·지금 버전·나온 날 · ⑥ 바뀐 점</figcaption></figure>
 <ul>
 <li>② <strong>지금 업데이트</strong>: 내 OS용 파일을 내려받아 검증한 뒤, 앱을 닫고 새 버전으로 바꿔 다시 실행합니다. 저장하지 않은 작업은 먼저 묻고, 실패하면 이전 버전을 그대로 둡니다.</li>
 <li>③ <strong>나중에</strong>는 다음 실행 때 다시 알리고, ④ <strong>다음 업데이트까지 띄우지 않기</strong>는 그 버전을 건너뜁니다.</li>
 <li>창에는 ⑤ 새 버전과 지금 버전, ⑥ 지금 버전 다음부터 새 버전까지의 바뀐 점이 보입니다.</li>
-<li>⑦ <strong>도움말 &gt; 업데이트 확인…</strong>으로 언제든 직접 확인하고, <strong>편집 &gt; 환경 설정… &gt; 일반</strong>에서 ⑧ 자동 확인을 끌 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/start-update-2.png" alt="업데이트 창: 새 버전과 지금 버전, CHANGELOG의 바뀐 점 목록, 아래에 지금 업데이트·다음 업데이트까지 띄우지 않기·릴리스 페이지 열기·나중에 단추" width="610" height="458" loading="lazy"><figcaption>② 지금 업데이트(Update now) · ③ 나중에(Later) · ④ 다음 업데이트까지 띄우지 않기 · ⑤ 새 버전·지금 버전·나온 날 · ⑥ 바뀐 점</figcaption></figure>
 <figure class="shot"><img src="assets/guide/start-update-3.png" alt="도움말 메뉴를 펼쳐 업데이트 확인… 항목을 표시한 모습" width="271" height="234" loading="lazy"><figcaption>⑦ 도움말 &gt; 업데이트 확인…(Check for updates…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/start-update-4.png" alt="환경 설정 일반 탭의 업데이트 부분: 시작할 때 새 버전 확인 체크 상자와 지금 버전 안내" width="958" height="82" loading="lazy"><figcaption>⑧ 시작할 때 새 버전 확인(끄면 자동 확인 안 함)</figcaption></figure>
+<ul class="marks">
+<li>⑦ <strong>도움말 &gt; 업데이트 확인…</strong>으로 언제든 직접 확인하고, <strong>편집 &gt; 환경 설정… &gt; 일반</strong>에서 ⑧ 자동 확인을 끌 수 있습니다.</li>
+</ul>
 
 <h3 id="start-privacy">네트워크와 개인정보</h3>
 <p>계정·분석·광고 기능이 없고, 그림이나 파일을 어디로도 보내지 않습니다. 네트워크는 다음 경우에만 씁니다.</p>
+<figure class="shot"><img src="assets/guide/start-privacy.png" alt="편집 &gt; 환경 설정… 일반 탭: 맨 아래 업데이트 부분의 시작할 때 새 버전 확인 체크 상자를 표시한 모습" width="965" height="799" loading="lazy"><figcaption>① 시작할 때 새 버전 확인 — 끄면 업데이트 확인으로 인터넷에 접속하지 않음</figcaption></figure>
 <ul>
 <li>① <strong>업데이트 확인</strong>: GitHub에 최신 버전을 묻습니다(끌 수 있음).</li>
 <li><strong>팔레트 웹(Lospec)</strong>: 그 창을 열었을 때만 팔레트 목록과 예시 그림을 받습니다. 즐겨찾기한 팔레트는 이 컴퓨터에만 저장됩니다.</li>
 <li><strong>AI 채팅</strong>: 그 창을 쓸 때만, 컴퓨터에 설치된 Claude Code·Codex CLI가 내 로그인으로 Anthropic·OpenAI에 접속합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/start-privacy.png" alt="편집 &gt; 환경 설정… 일반 탭: 맨 아래 업데이트 부분의 시작할 때 새 버전 확인 체크 상자를 표시한 모습" width="965" height="799" loading="lazy"><figcaption>① 시작할 때 새 버전 확인 — 끄면 업데이트 확인으로 인터넷에 접속하지 않음</figcaption></figure>
 
 <h3 id="start-feedback">제보·아이디어</h3>
-<p>버그, 불편한 점, 바라는 기능은 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Gpixel Discord</a>에 남겨 주세요. 앱에서는 ① <strong>도움말</strong> &gt; ② <strong>제보·아이디어 (Discord)…</strong>로 바로 열 수 있고, ③ <strong>도움말 &gt; Gpixel 정보…</strong> 창의 ④ <strong>Discord</strong> 단추로도 열 수 있습니다. GitHub 계정이 있다면 <a href="https://github.com/1000Pro-1997/GPixel/issues" target="_blank" rel="noopener">GitHub Issues</a>(정보 창의 ⑤ <strong>문제 신고</strong>)에 올려도 됩니다.</p>
 <figure class="shot"><img src="assets/guide/start-feedback.png" alt="도움말 메뉴를 펼쳐 제보·아이디어 (Discord)…와 Gpixel 정보… 항목을 표시한 모습" width="271" height="234" loading="lazy"><figcaption>① 도움말(Help) 메뉴 · ② 제보·아이디어 (Discord)… · ③ Gpixel 정보…(About Gpixel…)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/start-feedback-2.png" alt="Gpixel 정보 창: 버전, GitHub 저장소·릴리스·Discord·문제 신고 단추, 라이선스와 AI 채팅 안내" width="568" height="449" loading="lazy"><figcaption>④ Discord(버그·아이디어) · ⑤ 문제 신고(Report an issue, GitHub Issues) · ⑥ 버전</figcaption></figure>
+<p>버그, 불편한 점, 바라는 기능은 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Gpixel Discord</a>에 남겨 주세요. 앱에서는 ① <strong>도움말</strong> &gt; ② <strong>제보·아이디어 (Discord)…</strong>로 바로 열 수 있고, ③ <strong>도움말 &gt; Gpixel 정보…</strong> 창의 ④ <strong>Discord</strong> 단추로도 열 수 있습니다. GitHub 계정이 있다면 <a href="https://github.com/1000Pro-1997/GPixel/issues" target="_blank" rel="noopener">GitHub Issues</a>(정보 창의 ⑤ <strong>문제 신고</strong>)에 올려도 됩니다.</p>
 <p>버그를 알릴 때 다음을 함께 적어 주면 빨리 고칠 수 있습니다.</p>
 <ul>
 <li><strong>버전</strong>: ③ <strong>도움말 &gt; Gpixel 정보…</strong>의 ⑥에 보입니다.</li>
@@ -326,23 +330,28 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>재현 순서</strong>: 무엇을 했을 때 어떻게 되었는지, 원래 기대한 결과.</li>
 <li><strong>오류 로그</strong>: 오류 창이 떴다면 그 로그 파일(<a href="#files-crash-log">오류가 생겼을 때</a>). 화면 캡처도 도움이 됩니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/start-feedback-2.png" alt="Gpixel 정보 창: 버전, GitHub 저장소·릴리스·Discord·문제 신고 단추, 라이선스와 AI 채팅 안내" width="568" height="449" loading="lazy"><figcaption>④ Discord(버그·아이디어) · ⑤ 문제 신고(Report an issue, GitHub Issues) · ⑥ 버전</figcaption></figure>
 </section>
 
 <section class="doc" id="screen">
 <h2>화면 구성</h2>
-<p>Gpixel의 화면은 Aseprite와 비슷하게 배치되어 있습니다. 맨 위에 ① 메뉴와 위 막대가 있고, 왼쪽 끝에 ② 도구 막대와 ③ 파일 브라우저, 그 옆에 ④ 팔레트와 ⑤ 색, 가운데에 ⑥ 문서 탭과 ⑦ 캔버스, 아래에 ⑧ 타임라인, 오른쪽에 ⑨ 미리보기와 ⑩ 도구 설정이 있고, 맨 아래에 ⑪ 상태 표시줄이 있습니다.</p>
 <figure class="shot"><img src="assets/guide/screen-overview.png" alt="전체 Gpixel 창: 위 막대, 도구 막대, 파일 브라우저, 팔레트, 색, 문서 탭, 캔버스, 타임라인, 미리보기, 도구 설정, 상태 표시줄" width="1622" height="919" loading="lazy"><figcaption>① 메뉴와 위 막대 · ② 도구 막대 · ③ 파일 브라우저 · ④ 팔레트 · ⑤ 색 · ⑥ 문서 탭 · ⑦ 캔버스 · ⑧ 타임라인 · ⑨ 미리보기 · ⑩ 도구 설정 · ⑪ 상태 표시줄</figcaption></figure>
+<p>Gpixel의 화면은 Aseprite와 비슷하게 배치되어 있습니다. 맨 위에 ① 메뉴와 위 막대가 있고, 왼쪽 끝에 ② 도구 막대와 ③ 파일 브라우저, 그 옆에 ④ 팔레트와 ⑤ 색, 가운데에 ⑥ 문서 탭과 ⑦ 캔버스, 아래에 ⑧ 타임라인, 오른쪽에 ⑨ 미리보기와 ⑩ 도구 설정이 있고, 맨 아래에 ⑪ 상태 표시줄이 있습니다.</p>
 
 <h3 id="screen-top-bar">메뉴와 위 막대</h3>
+<figure class="shot"><img src="assets/guide/screen-top-bar.png" alt="메뉴 아래 위 막대: 도구 이름과 사용법, 보기 옵션, 확대율, 맞추기, AI 채팅 단추" width="1613" height="64" loading="lazy"><figcaption>① 도구 이름 · ② 사용법 · ③ 보기 옵션 · ④ 확대율 상자 · ⑤ 맞추기(Fit) · ⑥ AI 채팅</figcaption></figure>
 <p>메뉴 바로 아래 막대 왼쪽에는 지금 고른 도구의 ① 이름과 ② 사용법 한 줄이 보입니다. 오른쪽에는 ③ 보기 옵션과 ④ 확대율, ⑥ AI 채팅 단추가 있습니다.</p>
-<ul>
+<ul class="marks">
 <li>③ <strong>보기 옵션</strong>: 격자, 타일 격자, 타일 모드, 피벗, 양파(앞뒤 프레임 겹쳐 보기). 단추를 <strong>우클릭</strong>하면 그 보기의 설정 팝업이 뜨고, 바꾸는 즉시 적용됩니다(꺼져 있었으면 켜짐).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-top-bar-2.png" alt="확대율 상자를 우클릭한 목록: 화면에 맞추기와 100%~6400%" width="478" height="219" loading="lazy"><figcaption>⑦ 확대율 상자 우클릭 목록(Fit to screen, 100%~6400%)</figcaption></figure>
+<ul class="marks">
 <li>④ <strong>확대율 상자</strong>: 클릭하면 직접 입력, 좌우로 끌면 한 배씩, 우클릭하면 ⑦ 화면에 맞추기와 100%~6400% 목록.</li>
 <li>⑤ <strong>맞추기</strong>(Fit) 토글: 켜 두면 이미지를 열 때마다 화면에 맞춥니다. <span class="key" data-cmd="보기/화면에 맞추기"><kbd>Ctrl</kbd>+<kbd>0</kbd></span>은 언제든 지금 화면에 맞춥니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-top-bar.png" alt="메뉴 아래 위 막대: 도구 이름과 사용법, 보기 옵션, 확대율, 맞추기, AI 채팅 단추" width="1613" height="64" loading="lazy"><figcaption>① 도구 이름 · ② 사용법 · ③ 보기 옵션 · ④ 확대율 상자 · ⑤ 맞추기(Fit) · ⑥ AI 채팅</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-top-bar-2.png" alt="확대율 상자를 우클릭한 목록: 화면에 맞추기와 100%~6400%" width="478" height="219" loading="lazy"><figcaption>⑦ 확대율 상자 우클릭 목록(Fit to screen, 100%~6400%)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-top-bar-3.png" alt="격자 단추를 우클릭한 설정 팝업: 색, 보이기 시작하는 배율" width="702" height="141" loading="lazy"><figcaption>⑧ 격자(Grid) 설정 팝업</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-top-bar-4.png" alt="타일 격자 단추를 우클릭한 설정 팝업: 가로·세로, 8×8~64×64, 색" width="684" height="179" loading="lazy"><figcaption>⑨ 타일 격자(Tile grid) 설정 팝업</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-top-bar-5.png" alt="타일 모드 단추를 우클릭한 설정 팝업: 반복 크기, 가운데 둘레 어둡게" width="596" height="143" loading="lazy"><figcaption>⑩ 타일 모드(Tile mode) 설정 팝업</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-top-bar-6.png" alt="양파 단추를 우클릭한 설정 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기" width="552" height="177" loading="lazy"><figcaption>⑪ 양파(Onion) 설정 팝업</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>보기</th><th>우클릭 설정</th></tr></thead>
 <tbody>
@@ -352,44 +361,41 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑪ 양파</td><td>앞·뒤 프레임 수(0~5), 진하기(멀수록 옅게), 색 물들이기(앞 빨강, 뒤 파랑)</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/screen-top-bar-3.png" alt="격자 단추를 우클릭한 설정 팝업: 색, 보이기 시작하는 배율" width="702" height="141" loading="lazy"><figcaption>⑧ 격자(Grid) 설정 팝업</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-top-bar-4.png" alt="타일 격자 단추를 우클릭한 설정 팝업: 가로·세로, 8×8~64×64, 색" width="684" height="179" loading="lazy"><figcaption>⑨ 타일 격자(Tile grid) 설정 팝업</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-top-bar-5.png" alt="타일 모드 단추를 우클릭한 설정 팝업: 반복 크기, 가운데 둘레 어둡게" width="596" height="143" loading="lazy"><figcaption>⑩ 타일 모드(Tile mode) 설정 팝업</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-top-bar-6.png" alt="양파 단추를 우클릭한 설정 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기" width="552" height="177" loading="lazy"><figcaption>⑪ 양파(Onion) 설정 팝업</figcaption></figure>
 <p>도구의 세부 설정은 오른쪽의 <a href="#screen-tool-settings">도구 설정</a>에 있습니다.</p>
 
 <h3 id="screen-common-controls">숫자 칸과 메뉴 다루기</h3>
+<figure class="shot"><img src="assets/guide/screen-common-controls.png" alt="도구 설정의 크기 숫자 칸을 우클릭해 연 자주 쓰는 값 목록(지금 값 4 px에 점)" width="312" height="375" loading="lazy"><figcaption>① 숫자 칸(크기) · ② 우클릭 값 목록</figcaption></figure>
 <ul>
 <li>① 숫자 칸은 위/아래 단추 없이 <strong>좌우로 끌어</strong> 값을 바꿉니다. <kbd>Shift</kbd>를 누르면 10배 느리게, <kbd>Ctrl</kbd>을 누르면 10칸씩 바뀝니다. 끌다가 화면 끝에 닿으면 커서가 반대편으로 넘어가 계속 끌 수 있습니다.</li>
 <li>끌지 않고 클릭하면 글자로 입력합니다. 입력한 뒤 캔버스 등 다른 곳을 누르면 값이 확정됩니다.</li>
 <li>입력 중이 아닐 때 숫자 칸을 <strong>우클릭</strong>하면 ② 자주 쓰는 값 목록이 떠서 바로 고를 수 있습니다(지금 값은 점으로 표시).</li>
 <li>우클릭·단추 메뉴는 앱 전체에서 한 번에 하나만 열립니다. 바깥 클릭, 휠, <kbd>Esc</kbd>, 창 전환으로 닫히고, 연 단추를 다시 눌러도 닫힙니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-common-controls.png" alt="도구 설정의 크기 숫자 칸을 우클릭해 연 자주 쓰는 값 목록(지금 값 4 px에 점)" width="312" height="375" loading="lazy"><figcaption>① 숫자 칸(크기) · ② 우클릭 값 목록</figcaption></figure>
 <figure class="clip"><img src="assets/guide/screen-common-controls.webp" alt="도구 설정의 크기 숫자 칸을 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르고, 클릭해 숫자를 입력하는 모습" width="432" height="442" loading="lazy"></figure>
 
 <h3 id="screen-toolbar">도구 막대</h3>
 <p>왼쪽 끝 세로 막대입니다. 아이콘에 마우스를 올리면 도움말에 단축키가 보입니다.</p>
+<figure class="shot"><img src="assets/guide/screen-toolbar.png" alt="왼쪽 도구 막대: 폴더 단추, 도형 묶음 칸을 우클릭해 펼친 목록, 저장·되돌리기 단추" width="244" height="698" loading="lazy"><figcaption>① 폴더 단추 · ② 묶음 칸 · ③ 펼친 도구 목록 · ④ 저장 · ⑤ 저장한 내용으로 되돌리기</figcaption></figure>
 <ul>
 <li>맨 위 ① <strong>폴더 단추</strong>는 파일 브라우저를 접고 펼칩니다(<span class="key" data-cmd="보기/파일 브라우저"><kbd>F8</kbd></span>).</li>
 <li>비슷한 도구는 ② 한 칸에 묶여 있고 오른쪽 아래에 작은 삼각형이 붙습니다. 길게 누르거나 우클릭하면 ③ 옆으로 펼쳐져 바꿀 수 있습니다. 각 도구는 <a href="#tools">도구</a> 장을 보세요.</li>
 <li>맨 아래에는 ④ <strong>저장</strong>(<span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>와 같음)과 ⑤ <strong>저장한 내용으로 되돌리기</strong> 단추가 있습니다. 저장하지 않은 수정이 있을 때만 켜지며, 되돌리기는 한 번도 저장하지 않은 새 프로젝트에서는 꺼져 있습니다(<a href="#files">파일</a> 참고).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-toolbar.png" alt="왼쪽 도구 막대: 폴더 단추, 도형 묶음 칸을 우클릭해 펼친 목록, 저장·되돌리기 단추" width="244" height="698" loading="lazy"><figcaption>① 폴더 단추 · ② 묶음 칸 · ③ 펼친 도구 목록 · ④ 저장 · ⑤ 저장한 내용으로 되돌리기</figcaption></figure>
 
 <h3 id="screen-file-browser">파일 브라우저</h3>
+<figure class="shot"><img src="assets/guide/screen-file-browser.png" alt="파일 브라우저: 폴더 트리, 검색, 하위 폴더 포함, 썸네일 목록과 .gpixel 배지·빨간 점" width="252" height="593" loading="lazy"><figcaption>① 폴더 트리 · ② 썸네일 목록 · ③ 검색 · ④ 하위 폴더 포함 · ⑤ 새 픽셀 파일·새 폴더·새로 고침 · ⑥ .gpixel 배지 · ⑦ 저장 안 한 변경(빨간 점)</figcaption></figure>
 <p>① 폴더 트리와 ② <code>.gpixel</code>·PNG 썸네일 목록, ③ 검색, ④ 하위 폴더 포함 옵션이 있고, 폴더 안 파일이 바뀌면 자동으로 반영됩니다. Unity Hub에 등록된 프로젝트 목록에서 바로 열 수도 있습니다. 폴더 열기는 <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Unity 프로젝트 열기는 <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>입니다.</p>
 <ul>
 <li>⑤ 제목 줄 오른쪽 아이콘 셋: <strong>새 픽셀 파일</strong>(고른 폴더에 <code>.gpixel</code>을 만들어 엶), <strong>새 폴더</strong>, <strong>새로 고침</strong>.</li>
 <li><code>.gpixel</code> 프로젝트는 썸네일 오른쪽 아래에 ⑥ 파란 레이어 배지가 붙습니다. 프로젝트가 내보낸 PNG(같은 이름 PNG, 프레임 시트, 부위 아틀라스)는 목록에서 빼고 <code>.gpixel</code> 하나로만 보여 줍니다. 마우스를 올리면 내보내는 파일 이름이 보이고, 그 이름으로 검색해도 찾아집니다.</li>
 <li>JPG·BMP·GIF·WebP·APNG·ICO·AVIF·HEIC 그림과 영상(MP4·WebM·MOV·MKV·AVI 등)도 나열합니다(썸네일 = 첫 프레임). 영상은 필름 배지가 붙고 ffmpeg가 있으면 첫 프레임 썸네일을 만듭니다. 누르면 <a href="#files-open-media">그림·영상 열기</a>와 같이 새 탭으로 엽니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-file-browser-2.png" alt="파일 두 개를 고르고 우클릭한 메뉴" width="336" height="740" loading="lazy"><figcaption>⑧ 여러 개 고름 · ⑨ 우클릭 메뉴</figcaption></figure>
+<ul>
 <li>그냥 클릭하면 하나만 골라 엽니다. <kbd>Ctrl</kbd>+클릭(하나씩 더하고 빼기), <kbd>Shift</kbd>+클릭(범위), 목록 위를 끌어 사각형으로 ⑧ 여러 개를 고를 수 있습니다(여럿을 고를 때는 열지 않음).</li>
 <li>파일 칸을 눌러 목록 왼쪽·오른쪽 밖(캔버스 쪽)으로 끌면 파일 끌어 놓기가 됩니다(이미 고른 칸이면 고른 파일 모두). 캔버스에 놓으면 <a href="#files-drop-layer">새 레이어</a>로 들어갑니다.</li>
 <li>⑨ 우클릭 메뉴: 새 프로젝트, 합치기, 이름 바꾸기, 탐색기/Finder에서 보기, 이미지 폴더 선택, 삭제, <code>.gpixel</code> 파일만 삭제, 마지막 삭제 되살리기, 앱 휴지통 보기.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-file-browser.png" alt="파일 브라우저: 폴더 트리, 검색, 하위 폴더 포함, 썸네일 목록과 .gpixel 배지·빨간 점" width="252" height="593" loading="lazy"><figcaption>① 폴더 트리 · ② 썸네일 목록 · ③ 검색 · ④ 하위 폴더 포함 · ⑤ 새 픽셀 파일·새 폴더·새로 고침 · ⑥ .gpixel 배지 · ⑦ 저장 안 한 변경(빨간 점)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-file-browser-2.png" alt="파일 두 개를 고르고 우클릭한 메뉴" width="336" height="740" loading="lazy"><figcaption>⑧ 여러 개 고름 · ⑨ 우클릭 메뉴</figcaption></figure>
-
 <h4>저장하지 않은 변경(빨간 점)</h4>
 <p>열린 문서는 모두 캔버스 위 <a href="#screen-tabs">문서 탭</a>에 있고, 다른 탭으로 바꿔도 저장할지 묻지 않습니다. 저장 안 한 변경이 있는 문서는 목록의 썸네일 <strong>왼쪽 위에 ⑦ 빨간 점</strong>이 붙고(탭 제목 옆에도), 이미 열린 파일을 다시 누르면 그 탭으로 갑니다. 상태 표시줄에는 "저장 안 한 파일 N개"가 보입니다.</p>
 <ul>
@@ -397,10 +403,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>밖에서 그 파일이 바뀌면 지금 탭이면 다시 불러올지 묻고, 다른 탭이면 저장 안 한 변경이 있을 때 알리기만 합니다(없으면 그 탭을 고를 때 다시 읽음).</li>
 <li>저장 안 한 문서의 탭을 닫을 때만 저장·저장 안 함·취소를 묻습니다.</li>
 </ul>
-
 <h4>합치기</h4>
 <p>파일을 2개 이상 고르고 우클릭 <strong>합치기…</strong>를 고르면 여러 그림을 하나의 <code>.gpixel</code>로 묶습니다. 창에서 정하는 것:</p>
-<ul>
+<figure class="shot"><img src="assets/guide/screen-file-browser-3.png" alt="합치기 창: 순서, 이름, 방식, 캔버스, 미리보기, 타임라인 모양" width="759" height="908" loading="lazy"><figcaption>⑩ 순서 · ⑪ 이름 · ⑫ 방식 · ⑬ 캔버스 크기·기준점·원본 삭제 · ⑭ 미리보기 · ⑮ 타임라인에서는 이렇게 보입니다</figcaption></figure>
+<ul class="marks">
 <li>⑩ <strong>순서</strong>: 줄을 끌거나 위/아래 단추로 바꿈(위 = 먼저).</li>
 <li>⑪ <strong>이름</strong>: 파일 이름에 공통인 단어로 자동 제안(예: <code>potato_growing</code>·<code>potato_mature</code> → <code>potato</code>), 고칠 수 있음.</li>
 <li>⑫ <strong>방식</strong>: 아래 표 참고. <strong>그룹으로</strong>일 때는 <strong>빈 대표 이미지</strong>를 켜서 부위를 숨긴 채 만들 수 있습니다.</li>
@@ -416,35 +422,35 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </tbody>
 </table></div>
 <p>⑭ 미리보기(여러 프레임이면 재생)와 함께 ⑮ <strong>"타임라인에서는 이렇게 보입니다"</strong>에 결과의 타임라인 모양이 나오고, 무엇을 어떻게 유지하는지 안내도 보입니다. <code>.gpixel</code>의 레이어·그룹·스킨·효과·태그 같은 구조는 어느 방식이든 버리지 않고 옮깁니다. 결과는 첫 파일 폴더에 <code>&lt;이름&gt;.gpixel</code>로 저장되고 바로 열립니다. 같은 이름 파일이 이미 있으면 합치지 않고 알려 줍니다.</p>
-<figure class="shot"><img src="assets/guide/screen-file-browser-3.png" alt="합치기 창: 순서, 이름, 방식, 캔버스, 미리보기, 타임라인 모양" width="759" height="908" loading="lazy"><figcaption>⑩ 순서 · ⑪ 이름 · ⑫ 방식 · ⑬ 캔버스 크기·기준점·원본 삭제 · ⑭ 미리보기 · ⑮ 타임라인에서는 이렇게 보입니다</figcaption></figure>
-
 <h4>삭제와 앱 휴지통</h4>
 <ul>
 <li>삭제(<kbd>Delete</kbd>, 여러 개 가능)와 합치기로 지운 원본은 묻지 않고 앱 자체 휴지통에 보관됩니다(딸린 PNG·<code>.meta</code> 포함).</li>
 <li>파일 목록에서 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>를 누르면 마지막 삭제를 원래 자리에 되살립니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-file-browser-4.png" alt="앱 휴지통 창: 보관 정책, 지운 파일 목록과 미리보기, 되살리기·영구 삭제·비우기" width="774" height="556" loading="lazy"><figcaption>⑯ 목록과 미리보기 · ⑰ 되살리기·영구 삭제·비우기 · ⑱ 보관 정책</figcaption></figure>
+<ul>
 <li>우클릭 <strong>앱 휴지통 보기…</strong>에서 ⑯ 미리보기를 보며 ⑰ 되살리기(더블클릭)·영구 삭제·비우기를 합니다.</li>
 <li>⑱ 보관 정책: <strong>기간 제한</strong>(기본 꺼짐, 켜면 N일 지난 항목 영구 삭제), <strong>용량 제한</strong>(기본 1GB, 넘치면 오래된 것부터 삭제). 휴지통 창이나 <strong>편집 &gt; 환경 설정…</strong>에서 바꿉니다.</li>
 <li><strong><code>.gpixel</code> 파일만 삭제</strong>: 프로젝트 파일만 휴지통으로 보내고 내보낸 PNG·<code>.meta</code>는 남깁니다.</li>
 <li><strong>이미지 폴더 선택</strong>: 하위 폴더 포함으로 보던 파일이 실제로 든 폴더를 트리에서 찾아 보여 줍니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-file-browser-4.png" alt="앱 휴지통 창: 보관 정책, 지운 파일 목록과 미리보기, 되살리기·영구 삭제·비우기" width="774" height="556" loading="lazy"><figcaption>⑯ 목록과 미리보기 · ⑰ 되살리기·영구 삭제·비우기 · ⑱ 보관 정책</figcaption></figure>
 
 <h3 id="screen-palette">팔레트</h3>
+<figure class="shot"><img src="assets/guide/screen-palette.png" alt="팔레트 패널: 기본색/보조색, DB32와 그림에서 만든 팔레트, 새 팔레트 단추" width="248" height="499" loading="lazy"><figcaption>① 기본색/보조색 · ② 쌓인 팔레트 · ③ 새 팔레트 · ④ 머리글 · ⑤ 활성 팔레트 파란 줄 · ⑥ 기본색 칸(흰 테두리) · ⑦ 보조색 칸(파란 테두리)</figcaption></figure>
 <p>맨 위에 ① 기본색/보조색(보조색 기본값은 투명)이 있고, 그 아래로 ② <strong>팔레트를 여러 개</strong> 쌓아 둘 수 있습니다(처음에는 DB32 하나). 맨 아래 ③ <strong>새 팔레트</strong>로 빈 팔레트를 더합니다.</p>
-<ul>
+<ul class="marks">
 <li>④ 팔레트마다 머리글에 접기 화살표, 이름(두 번 눌러 바꾸기), 색 수, 메뉴 단추가 있습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-palette-2.png" alt="팔레트 머리글의 메뉴 단추로 연 메뉴" width="454" height="507" loading="lazy"><figcaption>⑧ 팔레트 메뉴</figcaption></figure>
+<ul>
 <li>⑧ 메뉴의 동작은 그 팔레트에 적용됩니다: 현재 색 추가, 기본색 삭제, 색상 순 정렬, .hex/.gpl 불러오기, 팔레트 웹(Lospec), .hex 저장, 이미지에서 만들기, 팔레트 색으로 변환, 이름 바꾸기·위로·아래로·비우기·삭제.</li>
 <li>마지막으로 누르거나 고친 팔레트가 <strong>활성 팔레트</strong>(⑤ 머리글 아래 파란 줄)입니다. 편집 메뉴의 팔레트 기능과 AI 팔레트 도구는 활성 팔레트를 씁니다.</li>
 <li>기본색과 같은 칸은 ⑥ 흰 테두리, 보조색과 같은 칸은 ⑦ 파란 테두리로 표시됩니다. 투명 칸은 첫 팔레트 맨 앞에만 있습니다.</li>
 <li>팔레트 목록(이름·색·접힘·순서)은 설정에 저장되어 다음에도 그대로입니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-palette.png" alt="팔레트 패널: 기본색/보조색, DB32와 그림에서 만든 팔레트, 새 팔레트 단추" width="248" height="499" loading="lazy"><figcaption>① 기본색/보조색 · ② 쌓인 팔레트 · ③ 새 팔레트 · ④ 머리글 · ⑤ 활성 팔레트 파란 줄 · ⑥ 기본색 칸(흰 테두리) · ⑦ 보조색 칸(파란 테두리)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-palette-2.png" alt="팔레트 머리글의 메뉴 단추로 연 메뉴" width="454" height="507" loading="lazy"><figcaption>⑧ 팔레트 메뉴</figcaption></figure>
-
 <h4>팔레트 색으로 변환</h4>
-<p>그림의 색을 팔레트에서 가장 가까운 색으로 바꿉니다. ⑨ 대상은 <strong>현재 셀</strong>(선택 영역이 있으면 그 안만), <strong>현재 레이어의 모든 프레임</strong>, <strong>모든 레이어·프레임</strong>(잠긴 레이어는 건너뜀) 중에서 고르고, ⑩ 디더링은 <strong>없음</strong>(기본) 또는 <strong>순서 디더링(Bayer 4×4)</strong>입니다. 디더는 두 팔레트 색을 빛의 세기(선형광)로 섞은 색을 OKLab로 원본과 견줘 비율을 정하고(예: 검정·흰색 반반 무늬는 sRGB 188 회색), 섞은 색이 가장 가까운 한 색보다 무늬가 눈에 띄는 정도(밝기 차는 크게, 색조·채도 차는 절반만 셈)를 더해도 원본에 가까울 때만 씁니다. 팔레트 색과 겨우 알아볼 차이(OKLab 0.02) 안인 색은 디더하지 않습니다. ⑪ 전·후 미리보기와 ⑫ 색 수 변화를 보여 주며, 알파는 그대로 두고 완전 투명 픽셀은 건드리지 않습니다. 실행취소 한 단계입니다.</p>
 <figure class="shot"><img src="assets/guide/screen-palette-3.png" alt="팔레트 색으로 변환 창: 대상, 디더링, 전·후 미리보기, 색 수" width="522" height="599" loading="lazy"><figcaption>⑨ 대상 · ⑩ 디더링 · ⑪ 전·후 미리보기 · ⑫ 색 수</figcaption></figure>
-
+<p>그림의 색을 팔레트에서 가장 가까운 색으로 바꿉니다. ⑨ 대상은 <strong>현재 셀</strong>(선택 영역이 있으면 그 안만), <strong>현재 레이어의 모든 프레임</strong>, <strong>모든 레이어·프레임</strong>(잠긴 레이어는 건너뜀) 중에서 고르고, ⑩ 디더링은 <strong>없음</strong>(기본) 또는 <strong>순서 디더링(Bayer 4×4)</strong>입니다. 디더는 두 팔레트 색을 빛의 세기(선형광)로 섞은 색을 OKLab로 원본과 견줘 비율을 정하고(예: 검정·흰색 반반 무늬는 sRGB 188 회색), 섞은 색이 가장 가까운 한 색보다 무늬가 눈에 띄는 정도(밝기 차는 크게, 색조·채도 차는 절반만 셈)를 더해도 원본에 가까울 때만 씁니다. 팔레트 색과 겨우 알아볼 차이(OKLab 0.02) 안인 색은 디더하지 않습니다. ⑪ 전·후 미리보기와 ⑫ 색 수 변화를 보여 주며, 알파는 그대로 두고 완전 투명 픽셀은 건드리지 않습니다. 실행취소 한 단계입니다.</p>
 <h4>팔레트 웹(Lospec)</h4>
 <p><a href="https://lospec.com/palette-list">lospec.com 팔레트 목록</a>을 앱 안에서 둘러봅니다(인터넷 필요).</p>
 <ul>
@@ -458,7 +464,11 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>팔레트 저작권은 각 작성자에게 있습니다.</p>
 
 <h3 id="screen-color-picker">색 고르기</h3>
+<figure class="shot"><img src="assets/guide/screen-color-picker.png" alt="색 고르기 사각형 방식: 채도·명도 상자와 색상 막대, 알파 막대, 입력 칸, 최근 색" width="249" height="332" loading="lazy"><figcaption>① 알파 막대 · ② RGB · ③ HSV · ④ 알파(A)·HEX · ⑤ 최근 색 · ⑥ 방식 탭 · ⑦ 사각형</figcaption></figure>
 <p>팔레트 아래에 색 고르기가 있습니다. ① 알파 막대, ② RGB·③ HSV·④ 알파(A)·HEX 입력, ⑤ 최근 색 16개가 있고, "색" 머리글 오른쪽 ⑥ 탭으로 방식을 바꿉니다(설정에 기억).</p>
+<figure class="shot"><img src="assets/guide/screen-color-picker-2.png" alt="색 고르기 벌집 방식" width="242" height="371" loading="lazy"><figcaption>⑧ 벌집</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-color-picker-3.png" alt="색 고르기 색상환 방식" width="242" height="359" loading="lazy"><figcaption>⑨ 색상환</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-color-picker-4.png" alt="색 고르기 슬라이더 방식" width="242" height="319" loading="lazy"><figcaption>⑩ 슬라이더</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>방식</th><th>모양</th></tr></thead>
 <tbody>
@@ -468,41 +478,44 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑩ 슬라이더</td><td>R·G·B·H·S·V 막대</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/screen-color-picker.png" alt="색 고르기 사각형 방식: 채도·명도 상자와 색상 막대, 알파 막대, 입력 칸, 최근 색" width="249" height="332" loading="lazy"><figcaption>① 알파 막대 · ② RGB · ③ HSV · ④ 알파(A)·HEX · ⑤ 최근 색 · ⑥ 방식 탭 · ⑦ 사각형</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-color-picker-2.png" alt="색 고르기 벌집 방식" width="242" height="371" loading="lazy"><figcaption>⑧ 벌집</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-color-picker-3.png" alt="색 고르기 색상환 방식" width="242" height="359" loading="lazy"><figcaption>⑨ 색상환</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-color-picker-4.png" alt="색 고르기 슬라이더 방식" width="242" height="319" loading="lazy"><figcaption>⑩ 슬라이더</figcaption></figure>
 <p>어느 방식이든 지금 고르는 색(기본색 또는 보조색)을 바꿉니다.</p>
 
 <h3 id="screen-canvas">캔버스</h3>
 <p>현재 프레임 한 장(보이는 레이어를 합친 모습)을 보여 주고, 현재 레이어의 셀에 그립니다.</p>
+<figure class="shot"><img src="assets/guide/screen-canvas.png" alt="보석 부위 레이어를 고른 캔버스: 부위만 자기 크기, 나머지는 반투명" width="801" height="731" loading="lazy"><figcaption>① 고른 부위 · ② 반투명하게 비치는 나머지</figcaption></figure>
 <ul>
 <li>부위 레이어를 고르면 ① 그 부위만 자기 크기로 보이고, ② 프레임의 나머지는 <strong>반투명하게</strong> 비쳐 위치를 맞춰 그릴 수 있습니다. 그룹 레이어를 고르면 부위를 끌어 배치합니다(<a href="#parts">부위(그룹) 레이어</a> 참고).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-canvas-2.png" alt="캔버스 보기 기능: 체커, 픽셀·타일 격자, 대칭 안내선, 피벗, 선택 영역, 양파 껍질" width="801" height="731" loading="lazy"><figcaption>③ 체커 배경 · ④ 픽셀 격자 · ⑤ 타일 격자 · ⑥ 대칭 안내선 · ⑦ 피벗 · ⑧ 선택 영역 · ⑨ 양파 껍질</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-canvas-3.png" alt="타일 모드로 그림을 반복해 보여 주는 캔버스" width="801" height="731" loading="lazy"><figcaption>⑩ 타일 모드(가운데가 편집하는 칸)</figcaption></figure>
+<ul>
 <li>1~64배 정수 확대, ③ 체커 배경, ④ 픽셀/⑤ 타일 격자, ⑩ 타일 모드(이어지는 무늬 그리기), ⑥ 대칭 안내선, ⑦ 피벗, ⑧ 선택 영역, ⑨ 양파 껍질을 지원합니다.</li>
 <li><span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span>를 누르고 있는 동안 이전 프레임을 볼 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-canvas.png" alt="보석 부위 레이어를 고른 캔버스: 부위만 자기 크기, 나머지는 반투명" width="801" height="731" loading="lazy"><figcaption>① 고른 부위 · ② 반투명하게 비치는 나머지</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-canvas-2.png" alt="캔버스 보기 기능: 체커, 픽셀·타일 격자, 대칭 안내선, 피벗, 선택 영역, 양파 껍질" width="801" height="731" loading="lazy"><figcaption>③ 체커 배경 · ④ 픽셀 격자 · ⑤ 타일 격자 · ⑥ 대칭 안내선 · ⑦ 피벗 · ⑧ 선택 영역 · ⑨ 양파 껍질</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-canvas-3.png" alt="타일 모드로 그림을 반복해 보여 주는 캔버스" width="801" height="731" loading="lazy"><figcaption>⑩ 타일 모드(가운데가 편집하는 칸)</figcaption></figure>
 
 <h3 id="screen-tabs">문서 탭과 나누기</h3>
+<figure class="shot"><img src="assets/guide/screen-tabs.png" alt="문서 탭 줄: 탭 제목, 빨간 점, 전체 경로 도움말, 닫기 X, 새 탭" width="1096" height="160" loading="lazy"><figcaption>① 탭 제목 · ② 빨간 점 · ③ 전체 경로 · ④ 닫기(X) · ⑤ 새 프로젝트(+)</figcaption></figure>
 <p>캔버스 위 탭 줄에 열린 문서마다 탭이 하나씩 있습니다(① 제목 = 파일 이름, 저장 안 한 변경이면 ② 빨간 점, 마우스를 올리면 ③ 전체 경로). 파일 브라우저에서 파일을 누르면 <strong>새 탭</strong>으로 열리고, 이미 열려 있으면(다른 칸에 있어도) 새로 열지 않고 그 탭으로 가며 그 칸에 포커스가 갑니다 — 한 문서는 한 탭에서만 엽니다. 열기·최근 파일·새 프로젝트·AI 도구도 새 탭으로 엽니다.</p>
 <ul>
 <li>탭을 누르면 그 문서로 바뀌고 타임라인·미리보기·레이어·실행취소(문서마다 따로)·창 제목·상태 표시줄이 따라갑니다. 확대율·위치·현재 프레임·레이어·선택 영역은 <strong>탭마다</strong> 기억합니다.</li>
 <li>닫기: 탭의 ④ <strong>X</strong>, 가운데 클릭, <span class="key" data-cmd="파일/닫기"><kbd>Ctrl</kbd>+<kbd>W</kbd></span>. 줄 끝 ⑤ <strong>+</strong>는 새 프로젝트를 새 탭에 만듭니다.</li>
 <li>모든 탭을 닫으면 탭 줄 아래에 시작 화면이 뜹니다. 탭 줄에는 <strong>+</strong>만 남아 새 프로젝트를 새 탭으로 만들 수 있습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-tabs-2.png" alt="탭을 우클릭한 메뉴: 닫기, 다른 탭 닫기, 다른 쪽으로 옮기기" width="809" height="114" loading="lazy"><figcaption>⑥ 탭 우클릭 메뉴</figcaption></figure>
+<ul>
 <li>탭을 좌우로 끌면 순서가 바뀌고, <span class="key" data-cmd="보기/다음 탭"><kbd>Ctrl</kbd>+<kbd>Tab</kbd></span> / <span class="key" data-cmd="보기/이전 탭"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></span>으로 돌아가며 고릅니다. ⑥ 우클릭 = 닫기·다른 탭 닫기·다른 쪽으로 옮기기.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-tabs-3.png" alt="좌우 두 칸으로 나눈 캔버스" width="802" height="551" loading="lazy"><figcaption>⑦ 다른 쪽으로 옮기기 단추 · ⑧ 오른쪽 칸 · ⑨ 포커스된 칸의 강조색 선</figcaption></figure>
+<ul>
 <li><strong>다른 쪽으로 옮기기</strong>(탭 우클릭, ⑦ 탭 줄 오른쪽 끝 옮기기 단추, 보기 메뉴) 또는 탭을 캔버스 오른쪽 끝으로 끌어 놓으면 그 탭이 ⑧ 오른쪽 칸으로 옮겨 가며 캔버스가 좌우 두 칸으로 나뉩니다. 칸마다 탭 줄이 따로 있고, 나눈 뒤에는 같은 방법으로 탭을 다른 칸으로 옮깁니다. 칸에 탭이 하나뿐이면 옮기지 않습니다.</li>
 <li><strong>포커스된 칸</strong>(⑨ 탭 줄 아래 강조색 선)의 문서가 타임라인·미리보기·패널의 대상입니다. 다른 칸을 누르면 그쪽으로 포커스가 옮겨 갑니다. 한쪽의 마지막 탭을 닫으면 나눔이 풀립니다.</li>
 <li>앱을 끝낼 때 열려 있던 탭(나눔·순서 포함)을 다음에 켤 때 다시 엽니다. 없어진 파일과 저장한 적 없는 새 문서는 빼고 엽니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-tabs.png" alt="문서 탭 줄: 탭 제목, 빨간 점, 전체 경로 도움말, 닫기 X, 새 탭" width="1096" height="160" loading="lazy"><figcaption>① 탭 제목 · ② 빨간 점 · ③ 전체 경로 · ④ 닫기(X) · ⑤ 새 프로젝트(+)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-tabs-2.png" alt="탭을 우클릭한 메뉴: 닫기, 다른 탭 닫기, 다른 쪽으로 옮기기" width="809" height="114" loading="lazy"><figcaption>⑥ 탭 우클릭 메뉴</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-tabs-3.png" alt="좌우 두 칸으로 나눈 캔버스" width="802" height="551" loading="lazy"><figcaption>⑦ 다른 쪽으로 옮기기 단추 · ⑧ 오른쪽 칸 · ⑨ 포커스된 칸의 강조색 선</figcaption></figure>
 <figure class="clip"><img src="assets/guide/screen-tabs.webp" alt="탭을 끌어 순서를 바꾸고, 탭 하나를 캔버스 오른쪽 끝에 놓아 두 칸으로 나눈 뒤, 탭을 닫아 나눔을 푸는 모습" width="788" height="474" loading="lazy"></figure>
 
 <h3 id="screen-timeline">타임라인</h3>
 <p>화면 아래에 있으며, 행은 레이어, 열은 프레임, 위쪽 띠는 태그입니다.</p>
+<figure class="shot"><img src="assets/guide/screen-timeline.png" alt="타임라인: 레이어 행(그룹·부위, 잠근 그림자 레이어), 프레임 6개, 태그 idle·hit, 재생 중인 4번 프레임" width="640" height="330" loading="lazy"><figcaption>① 눈 · ② 자물쇠(잠근 레이어) · ③ 불투명도 · ④ 그룹 접기 삼각형 · ⑤ 부위(들여쓰기) · ⑥ 프레임 번호·길이 · ⑦ 썸네일 · ⑧ 태그 띠 · ⑨ 빈 프레임 추가 · ⑩ 마지막 프레임 복사 · ⑪ 빈 레이어 추가 · ⑫ 맨 아래 레이어 복사 · ⑬ 재생 중인 프레임</figcaption></figure>
 <ul>
 <li><strong>레이어 행</strong>: ① 눈(보이기)·② 자물쇠(잠금) 아이콘, ③ 불투명도, 이름. 그룹은 ④ 삼각형으로 접고 펼치며, ⑤ 부위는 그 아래 들여쓰기로 보입니다.</li>
 <li><strong>프레임 열</strong>: ⑥ 번호, 길이, ⑦ 실시간 썸네일. 번호를 더블클릭하면 프레임 길이를 바꿉니다.</li>
@@ -511,9 +524,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>마지막 레이어 아래 줄: 이름 칸 전체가 ⑪ 더하기 단추 = 맨 아래에 빈 레이어 추가, 프레임 칸 전체가 ⑫ 복사 단추(10프레임마다 아이콘) = 맨 아래 레이어를 복사해 맨 아래에 추가(그룹은 부위까지).</li>
 <li>미리보기를 재생하면 지금 보이는 프레임 열이 ⑬ 초록 외곽선으로 표시됩니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-timeline.png" alt="타임라인: 레이어 행(그룹·부위, 잠근 그림자 레이어), 프레임 6개, 태그 idle·hit, 재생 중인 4번 프레임" width="640" height="330" loading="lazy"><figcaption>① 눈 · ② 자물쇠(잠근 레이어) · ③ 불투명도 · ④ 그룹 접기 삼각형 · ⑤ 부위(들여쓰기) · ⑥ 프레임 번호·길이 · ⑦ 썸네일 · ⑧ 태그 띠 · ⑨ 빈 프레임 추가 · ⑩ 마지막 프레임 복사 · ⑪ 빈 레이어 추가 · ⑫ 맨 아래 레이어 복사 · ⑬ 재생 중인 프레임</figcaption></figure>
 <div class="note">잠근 레이어에는 그릴 수 없지만, 숨긴 레이어에는 그릴 수 있습니다. 숨긴 일반 레이어는 편집하는 동안 캔버스에만 반투명하게 보이고 미리보기·내보내기에는 나오지 않습니다.</div>
+<figure class="shot"><img src="assets/guide/screen-timeline-2.png" alt="프레임 1~3을 고르고 3번 프레임 머리글을 우클릭한 메뉴" width="702" height="389" loading="lazy"><figcaption>⑭ 메뉴 맨 위의 선택 표시 · ⑮ 우클릭한 프레임 머리글</figcaption></figure>
 <p>별도 도구 단추 없이 <strong>우클릭 메뉴</strong>로 다룹니다. 메뉴 맨 위에 ⑭ 고른 것(예: "프레임 1~3 선택됨")이 보입니다.</p>
+<figure class="shot"><img src="assets/guide/screen-timeline-3.png" alt="그림이 있는 셀(몸 레이어 4번 프레임)을 우클릭한 메뉴" width="744" height="362" loading="lazy"><figcaption>⑯ 우클릭한 셀</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-timeline-4.png" alt="레이어 이름(몸)을 우클릭한 메뉴" width="324" height="349" loading="lazy"><figcaption>⑰ 우클릭한 레이어 이름</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-timeline-6.png" alt="타임라인 왼쪽 위 빈 칸을 우클릭한 새로 만들기 메뉴" width="473" height="213" loading="lazy"><figcaption>⑱ 우클릭한 빈 곳(왼쪽 위 칸)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>우클릭한 곳</th><th>주요 메뉴</th></tr></thead>
 <tbody>
@@ -523,14 +539,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑱ 빈 곳(왼쪽 위 칸 등)</td><td>새로 만들기</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/screen-timeline-2.png" alt="프레임 1~3을 고르고 3번 프레임 머리글을 우클릭한 메뉴" width="702" height="389" loading="lazy"><figcaption>⑭ 메뉴 맨 위의 선택 표시 · ⑮ 우클릭한 프레임 머리글</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-timeline-3.png" alt="그림이 있는 셀(몸 레이어 4번 프레임)을 우클릭한 메뉴" width="744" height="362" loading="lazy"><figcaption>⑯ 우클릭한 셀</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-timeline-4.png" alt="레이어 이름(몸)을 우클릭한 메뉴" width="324" height="349" loading="lazy"><figcaption>⑰ 우클릭한 레이어 이름</figcaption></figure>
 <figure class="shot"><img src="assets/guide/screen-timeline-5.png" alt="레이어 메뉴의 불투명도… 창(0~255)" width="304" height="143" loading="lazy"></figure>
-<figure class="shot"><img src="assets/guide/screen-timeline-6.png" alt="타임라인 왼쪽 위 빈 칸을 우클릭한 새로 만들기 메뉴" width="473" height="213" loading="lazy"><figcaption>⑱ 우클릭한 빈 곳(왼쪽 위 칸)</figcaption></figure>
 
 <h3 id="screen-timeline-select">타임라인에서 고르기</h3>
 <p>한 번에 한 종류(프레임, 레이어, 셀)만 고릅니다. 누른 것이 현재 프레임·레이어가 됩니다.</p>
+<figure class="shot"><img src="assets/guide/screen-timeline-select.png" alt="프레임 2~4를 고른 타임라인과 상태 표시줄" width="801" height="352" loading="lazy"><figcaption>① 고른 프레임 2~4</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-timeline-select-2.png" alt="몸·그림자 레이어 × 프레임 2~3 셀 묶음을 고른 모습과 상태 표시줄 안내" width="801" height="352" loading="lazy"><figcaption>② 고른 셀 묶음 · ③ 상태 표시줄 안내</figcaption></figure>
 <ul>
 <li>① <strong>프레임 머리글</strong>을 누르면 그 프레임, <strong>레이어 이름</strong>을 누르면 그 레이어, ② <strong>셀</strong>을 누르면 그 칸이 파란 테두리로 골라집니다.</li>
 <li>누른 채 끌면 사각형에 닿는 것이 모두 골라집니다. <kbd>Shift</kbd>+클릭 = 범위로 넓히기, <kbd>Ctrl</kbd>+클릭 = 하나씩 더하고 빼기.</li>
@@ -538,11 +552,11 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>눈·자물쇠·접기 삼각형·fx 같은 아이콘은 고르지 않고 제 동작만 합니다. 빈 곳을 누르면 선택이 풀립니다.</li>
 <li>③ 상태 표시줄에 고른 것과 <kbd>Delete</kbd>가 할 일이 나옵니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-timeline-select.png" alt="프레임 2~4를 고른 타임라인과 상태 표시줄" width="801" height="352" loading="lazy"><figcaption>① 고른 프레임 2~4</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-timeline-select-2.png" alt="몸·그림자 레이어 × 프레임 2~3 셀 묶음을 고른 모습과 상태 표시줄 안내" width="801" height="352" loading="lazy"><figcaption>② 고른 셀 묶음 · ③ 상태 표시줄 안내</figcaption></figure>
 <figure class="clip"><img src="assets/guide/screen-timeline-select.webp" alt="셀 위를 끌어 사각형으로 여러 칸을 고르고, Shift+클릭으로 넓히고, 빈 곳을 눌러 선택을 푸는 모습" width="686" height="278" loading="lazy"></figure>
 
 <h3 id="screen-timeline-edit">타임라인 편집</h3>
+<figure class="shot"><img src="assets/guide/screen-timeline-edit.png" alt="셀 묶음(몸·그림자 × 프레임 2~3)을 우클릭한 메뉴" width="704" height="342" loading="lazy"><figcaption>① 고른 셀 묶음 · ② 셀 복사·잘라내기·붙여넣기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-timeline-edit-2.png" alt="빈 셀(그림자 3번 프레임)을 우클릭한 메뉴" width="702" height="362" loading="lazy"><figcaption>③ 우클릭한 빈 셀 · ④ 이전 프레임 그림 복사(Copy image from previous frame)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>하고 싶은 일</th><th>방법</th></tr></thead>
 <tbody>
@@ -553,33 +567,32 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>앞 프레임 그림 가져오기</td><td>③ 빈 셀 우클릭 ④ "이전 프레임 그림 복사"</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/screen-timeline-edit.png" alt="셀 묶음(몸·그림자 × 프레임 2~3)을 우클릭한 메뉴" width="704" height="342" loading="lazy"><figcaption>① 고른 셀 묶음 · ② 셀 복사·잘라내기·붙여넣기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-timeline-edit-2.png" alt="빈 셀(그림자 3번 프레임)을 우클릭한 메뉴" width="702" height="362" loading="lazy"><figcaption>③ 우클릭한 빈 셀 · ④ 이전 프레임 그림 복사(Copy image from previous frame)</figcaption></figure>
 <p>복사로 만든 새 레이어 이름은 끝 숫자를 1 올립니다(<code>item_1</code> → <code>item_2</code>, <code>tile_009</code> → <code>tile_010</code>, 숫자가 없으면 <code>_1</code>). 레이어 메뉴의 <strong>복제</strong>도 같은 규칙입니다. 편집은 모두 실행취소 한 단계입니다.</p>
 <figure class="clip"><img src="assets/guide/screen-timeline-edit.webp" alt="고른 프레임 머리글을 끌어 다른 자리로 옮기고, 셀 묶음을 끌어 옮기고, Ctrl을 누른 채 놓아 복사하는 모습" width="734" height="416" loading="lazy"></figure>
 
 <h3 id="screen-tags">태그</h3>
-<ul>
+<figure class="shot"><img src="assets/guide/screen-tags.png" alt="프레임 5~6을 고르고 머리글을 우클릭한 메뉴의 태그 만들기" width="828" height="533" loading="lazy"><figcaption>① 고른 프레임 5~6 · ② 태그 만들기…(Create tag…)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-tags-2.png" alt="새 태그 창: 이름 hit, 프레임 5~6, 방향 정방향, 반복, 색" width="344" height="245" loading="lazy"><figcaption>③ 이름 · ④ 프레임 범위 · ⑤ 재생 방향·반복 · ⑥ 색</figcaption></figure>
+<ul class="marks">
 <li>① 프레임 범위를 고르고 우클릭 ② <strong>태그 만들기</strong>로 묶습니다. 뜨는 창에서 ③ 이름, ④ 프레임 범위, ⑤ 재생 방향·반복, ⑥ 색을 정합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-tags-3.png" alt="idle 태그를 우클릭한 메뉴" width="603" height="134" loading="lazy"><figcaption>⑦ 태그 상자 · ⑧ 태그 우클릭 메뉴(태그 속성…·이 태그 재생·삭제)</figcaption></figure>
+<ul>
 <li>⑦ 태그 상자 안쪽 양 끝에 마우스를 대면 <code>↔</code> 모양이 되고, 끌어서 범위를 바꿉니다.</li>
 <li>태그를 우클릭하면 나오는 ⑧ 메뉴에서 <strong>태그 속성…</strong>(만들 때와 같은 창, 태그를 두 번 눌러도 열림), <strong>이 태그 재생</strong>, <strong>삭제</strong>를 고릅니다.</li>
 <li>태그를 고르고 미리보기에서 재생하면 그 태그 안에서 반복합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-tags.png" alt="프레임 5~6을 고르고 머리글을 우클릭한 메뉴의 태그 만들기" width="828" height="533" loading="lazy"><figcaption>① 고른 프레임 5~6 · ② 태그 만들기…(Create tag…)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-tags-2.png" alt="새 태그 창: 이름 hit, 프레임 5~6, 방향 정방향, 반복, 색" width="344" height="245" loading="lazy"><figcaption>③ 이름 · ④ 프레임 범위 · ⑤ 재생 방향·반복 · ⑥ 색</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-tags-3.png" alt="idle 태그를 우클릭한 메뉴" width="603" height="134" loading="lazy"><figcaption>⑦ 태그 상자 · ⑧ 태그 우클릭 메뉴(태그 속성…·이 태그 재생·삭제)</figcaption></figure>
 <figure class="clip"><img src="assets/guide/screen-tags.webp" alt="프레임 1~4를 고르고 우클릭 태그 만들기로 태그를 만든 뒤, 태그 상자 끝을 끌어 범위를 바꾸고 재생하는 모습" width="1028" height="760" loading="lazy"></figure>
 
 <h3 id="screen-layer-effects">레이어 효과</h3>
 <p>레이어 효과는 셀 픽셀을 고치지 않고 보일 때만 입히는 <strong>비파괴</strong> 효과입니다. 나중에 그린 그림에도 자동으로 붙고, 모두 픽셀 단위로 그려집니다(번짐·안티에일리어싱 없음).</p>
+<figure class="shot"><img src="assets/guide/screen-layer-effects.png" alt="몸 레이어 이름을 우클릭한 메뉴의 효과…(2)와 이름 칸의 fx 표시" width="324" height="361" loading="lazy"><figcaption>① 효과…(Effects…) · ② fx 표시</figcaption></figure>
 <ul>
 <li>레이어 이름 우클릭 ① <strong>효과…</strong>로 효과 창을 엽니다. 효과가 있는 레이어는 이름 칸 오른쪽에 ② <strong>fx</strong>가 표시됩니다.</li>
 <li>일반 레이어·부위는 그 셀에, <strong>그룹은 부위들을 합친 모양</strong>에 입힙니다. 예를 들어 그룹 외곽선은 캐릭터 전체 둘레에 한 줄로 그려집니다.</li>
 <li>효과는 목록 위에서부터 차례로 쌓이고(외곽선 → 그림자면 외곽선까지 그림자) 하나씩 켜고 끌 수 있습니다.</li>
 <li>효과마다 <strong>프레임 범위</strong>("모든 프레임" 또는 시작~끝 프레임)를 정합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-layer-effects.png" alt="몸 레이어 이름을 우클릭한 메뉴의 효과…(2)와 이름 칸의 fx 표시" width="324" height="361" loading="lazy"><figcaption>① 효과…(Effects…) · ② fx 표시</figcaption></figure>
-
 <h4>효과 종류</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>효과</th><th>하는 일</th></tr></thead>
@@ -615,17 +628,17 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>홀로그램</td><td>한 색 명암 그림 + 주사선·밝은 띠·깜빡임·글리치·테두리 빛</td></tr>
 </tbody>
 </table></div>
-
 <h4>효과 색과 클리핑</h4>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-2.png" alt="피격 번쩍임 효과의 설정: 색 칸, 일반색/그라데이션 목록을 펼친 모습, 바로 위 효과에 클리핑" width="396" height="301" loading="lazy"><figcaption>③ 색 칸 · ④ 일반색 / 그라데이션(Solid color / Gradient) · ⑤ 바로 위 효과에 클리핑(Clip to effect above)</figcaption></figure>
 <ul>
 <li>③ 색 칸을 누르면 메인 색 편집기와 같은 사각형·벌집·색상환·슬라이더, 팔레트, 최근 색, 스포이드가 있는 팝업이 열리고, 고르는 동안 캔버스에 바로 반영됩니다.</li>
 <li>색 설정마다 ④ <strong>일반색 / 그라데이션</strong>을 고를 수 있습니다. 그라데이션은 <strong>직선·방사형·사각형·원형</strong>마다 <strong>정적 / 동적</strong>(범위 동안 띠가 움직이거나 회전)을 고르고 방향·횟수·각도를 정합니다. 정지점 편집과 <strong>색 공간</strong>(RGB / HSL / OKLab / OKLCH, 새 그라데이션은 OKLCH), 바 오른쪽 클릭 프리셋은 <a href="#tools-gradient">그라데이션 도구</a>와 같고, 효과에서 프리셋을 고르면 형태·각도·방향·반복·애니메이션도 함께 바뀝니다.</li>
 <li>⑤ <strong>적용 대상 → 바로 위 효과에 클리핑</strong>을 켜면 앞 효과가 바꾼 픽셀에만 적용합니다. 예: <code>외곽선</code> 아래 <code>색 덮기</code>를 클리핑하면 그라데이션 외곽선이 됩니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-2.png" alt="피격 번쩍임 효과의 설정: 색 칸, 일반색/그라데이션 목록을 펼친 모습, 바로 위 효과에 클리핑" width="396" height="301" loading="lazy"><figcaption>③ 색 칸 · ④ 일반색 / 그라데이션(Solid color / Gradient) · ⑤ 바로 위 효과에 클리핑(Clip to effect above)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/screen-layer-effects-3.png" alt="색 칸을 누르면 열리는 색 팝업: 사각형 색 고르기, 방식 탭, 팔레트, 스포이드" width="508" height="397" loading="lazy"></figure>
-
 <h4>효과 창</h4>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-4.png" alt="몸 레이어의 효과 창: 효과 종류, 외곽선·피격 번쩍임 목록, 공통 설정, 외곽선 설정, 전·후 미리보기와 프레임 줄" width="1158" height="862" loading="lazy"><figcaption>⑥ 효과 종류 · ⑦ 커스텀(Custom) 탭 · ⑧ 추가 범위 · ⑨ 효과 목록과 삭제·위로·아래로·영구 적용 · ⑩ 고른 효과의 설정 · ⑪ 전·후 미리보기와 재생/멈춤 · ⑫ 프레임 줄 · ⑬ 효과만큼 캔버스 확대 · ⑭ 프레임 늘리기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-5.png" alt="커스텀 탭: 전체 효과 저장 단추와 저장한 효과 묶음 두 개" width="222" height="225" loading="lazy"><figcaption>⑮ 전체 효과 저장(Save all effects)</figcaption></figure>
 <ul>
 <li>왼쪽 ⑥ <strong>효과 종류</strong> 목록에는 지금 그림에 그 효과를 입힌 미리보기가 보입니다. <strong>두 번 누르면</strong> 목록 끝에, <strong>효과 목록으로 끌어 놓으면</strong> 그 자리에 추가합니다. <strong>기본 / ⑦ 커스텀</strong> 탭에서 ⑮ <strong>전체 효과 저장</strong>으로 효과 묶음을 이름 붙여 다시 쓸 수 있습니다.</li>
 <li>가운데: ⑧ <strong>추가 범위</strong>, ⑨ 효과 목록(체크 = 켜기, 삭제·위로·아래로·영구 적용), ⑩ 고른 효과의 설정.</li>
@@ -634,24 +647,22 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>⑭ <strong>프레임 늘리기</strong>: 효과의 범위 프레임 수를 늘립니다(예: 4프레임 애니메이션에 12프레임짜리 터지기). 방법은 원래 프레임으로, 같은 비율로, 첫 프레임으로, 마지막 프레임으로, 반복. 프레임 줄에서 범위 끝을 마지막 칸 너머로 끌어도 늘어납니다.</li>
 <li>설명은 <strong>i</strong> 표시에 마우스를 올리면 풍선으로 보입니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-4.png" alt="몸 레이어의 효과 창: 효과 종류, 외곽선·피격 번쩍임 목록, 공통 설정, 외곽선 설정, 전·후 미리보기와 프레임 줄" width="1158" height="862" loading="lazy"><figcaption>⑥ 효과 종류 · ⑦ 커스텀(Custom) 탭 · ⑧ 추가 범위 · ⑨ 효과 목록과 삭제·위로·아래로·영구 적용 · ⑩ 고른 효과의 설정 · ⑪ 전·후 미리보기와 재생/멈춤 · ⑫ 프레임 줄 · ⑬ 효과만큼 캔버스 확대 · ⑭ 프레임 늘리기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-5.png" alt="커스텀 탭: 전체 효과 저장 단추와 저장한 효과 묶음 두 개" width="222" height="225" loading="lazy"><figcaption>⑮ 전체 효과 저장(Save all effects)</figcaption></figure>
 <div class="note">설정 입력 중 <kbd>Enter</kbd>를 눌러도 효과 창은 닫히지 않습니다. 창 아래 <strong>확인</strong>을 눌러야 적용되며, 창에서 고친 것 전체가 실행취소 한 단계입니다. <strong>취소</strong>하거나 창을 닫으면 원래대로 돌아갑니다.</div>
-
 <h4>타임라인의 효과 줄</h4>
-<p>효과가 있는 레이어 아래에는 영상 편집기처럼 ⑯ 효과마다 얇은 줄이 생기고, 효과는 입혀지는 프레임에 걸친 ⑰ 둥근 상자로 보입니다. 레이어 이름 칸의 <strong>fx</strong>(②)를 누르면 효과 줄을 접고 펼칩니다.</p>
 <figure class="shot"><img src="assets/guide/screen-layer-effects-6.png" alt="몸 레이어 아래 효과 줄 두 개: 외곽선(모든 프레임)과 피격 번쩍임(프레임 5~6) 상자" width="640" height="370" loading="lazy"><figcaption>⑯ 효과 줄(켜기 체크 상자와 이름) · ⑰ 효과 상자(피격 번쩍임, 프레임 5~6)</figcaption></figure>
+<p>효과가 있는 레이어 아래에는 영상 편집기처럼 ⑯ 효과마다 얇은 줄이 생기고, 효과는 입혀지는 프레임에 걸친 ⑰ 둥근 상자로 보입니다. 레이어 이름 칸의 <strong>fx</strong>(②)를 누르면 효과 줄을 접고 펼칩니다.</p>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-7.png" alt="몸 레이어 셀 5~6을 고르고 우클릭한 메뉴의 효과 추가…" width="830" height="342" loading="lazy"><figcaption>⑱ 효과 추가…(Add effect…)</figcaption></figure>
 <ul>
 <li><strong>칸을 골라 효과 추가</strong>: 셀을 고르고 우클릭 ⑱ <strong>효과 추가…</strong>를 고르면 그 프레임 범위로 추가 범위가 채워진 채 효과 창이 열립니다.</li>
 <li>상자 양 끝을 끌면 범위가 바뀌고, 몸통을 끌면 범위를 통째로 옮깁니다. 상자를 두 번 누르면 효과 창이 열립니다.</li>
 <li>효과 이름을 위아래로 끌면 순서가 바뀌고, 다른 레이어 줄에 놓으면 그 레이어로 옮겨집니다. 고르고 <kbd>Delete</kbd>로 삭제, <kbd>Ctrl</kbd>+<kbd>C</kbd>·<kbd>V</kbd>로 복사합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-8.png" alt="피격 번쩍임 효과 상자를 우클릭한 메뉴" width="902" height="296" loading="lazy"><figcaption>⑲ 우클릭한 효과 상자</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-layer-effects-9.png" alt="효과 줄의 상자 밖 빈 칸(2번 프레임)을 우클릭한 메뉴" width="734" height="345" loading="lazy"><figcaption>⑳ 여기까지 늘리기·여기부터 복사본 추가(상자 밖 빈 칸에서만)</figcaption></figure>
+<ul>
 <li>⑲ 상자 우클릭 메뉴: 효과 설정, 모든 프레임으로, 이 프레임만, 이 프레임부터 끝까지, 처음부터 이 프레임까지, 켜기/끄기, 삭제, 효과 영구 적용, 복사·붙여넣기. 상자 밖 빈 칸에서는 ⑳ <strong>여기까지 늘리기</strong>, <strong>여기부터 복사본 추가</strong>도 있습니다.</li>
 <li>효과 범위는 태그처럼 프레임 번호를 따라갑니다. 범위 안에 프레임을 넣으면 늘어나고, 범위의 프레임을 모두 지우면 효과도 지워집니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-7.png" alt="몸 레이어 셀 5~6을 고르고 우클릭한 메뉴의 효과 추가…" width="830" height="342" loading="lazy"><figcaption>⑱ 효과 추가…(Add effect…)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-8.png" alt="피격 번쩍임 효과 상자를 우클릭한 메뉴" width="902" height="296" loading="lazy"><figcaption>⑲ 우클릭한 효과 상자</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-layer-effects-9.png" alt="효과 줄의 상자 밖 빈 칸(2번 프레임)을 우클릭한 메뉴" width="734" height="345" loading="lazy"><figcaption>⑳ 여기까지 늘리기·여기부터 복사본 추가(상자 밖 빈 칸에서만)</figcaption></figure>
-
 <h4>영구 적용과 보이는 곳</h4>
 <ul>
 <li><strong>효과 영구 적용</strong>은 효과를 셀 픽셀에 구워 넣고 목록에서 뺍니다(이후 그림처럼 고칠 수 있음). 고른 효과보다 위의 켜진 효과도 함께 구워 보이던 그대로가 됩니다. 그룹 효과와 잠긴 레이어는 영구 적용할 수 없습니다.</li>
@@ -662,24 +673,31 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="clip"><img src="assets/guide/screen-layer-effects.webp" alt="타임라인 효과 줄에서 효과 상자 끝을 끌어 프레임 범위를 바꾸고, 몸통을 끌어 범위를 통째로 옮기는 모습" width="686" height="618" loading="lazy"></figure>
 
 <h3 id="screen-preview">미리보기</h3>
+<figure class="shot"><img src="assets/guide/screen-preview.png" alt="미리보기 패널: 재생 화면, FPS, 배율 단추, 배경" width="339" height="234" loading="lazy"><figcaption>① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경</figcaption></figure>
 <p>오른쪽 위에 있으며, 현재 태그(없으면 모든 프레임)를 ① 실시간으로 재생합니다.</p>
-<ul>
+<ul class="marks">
 <li>② 자체 FPS를 가집니다.</li>
 <li>③ 배율 단추: 클릭하면 맞춤 → 1× → 2× → 4× 차례로, 우클릭하면 거꾸로 바뀝니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-preview-3.png" alt="미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색" width="308" height="415" loading="lazy"><figcaption>⑥ 배경 목록</figcaption></figure>
+<ul class="marks">
 <li>④ 배경: 체커·검정·흰색·회색·초록·사용자 색(⑥ 목록).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-preview-2.png" alt="미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장" width="308" height="238" loading="lazy"><figcaption>⑤ 우클릭 메뉴</figcaption></figure>
+<ul class="marks">
 <li>⑤ <strong>우클릭 메뉴</strong>(그림 위): <strong>이미지 복사</strong>는 보이는 프레임을 미리보기 배경 없이 투명 그대로 클립보드에 PNG로 올리고, <strong>크게 복사 (×4)</strong>는 픽셀을 또렷하게 4배로 키워 올립니다(Discord 같은 채팅에 붙여넣기 좋음). <strong>프레임 저장…</strong>은 그 프레임을 PNG(<code>&lt;문서&gt;_&lt;프레임 번호&gt;.png</code>)로 저장하고, <strong>GIF로 저장…</strong>은 <a href="#screen-gif">GIF 애니메이션으로 내보내기</a> 창을 엽니다. 재생 중이면 우클릭할 때 보이던 프레임을 쓰므로 멈추지 않아도 됩니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-preview.png" alt="미리보기 패널: 재생 화면, FPS, 배율 단추, 배경" width="339" height="234" loading="lazy"><figcaption>① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-preview-2.png" alt="미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장" width="308" height="238" loading="lazy"><figcaption>⑤ 우클릭 메뉴</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-preview-3.png" alt="미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색" width="308" height="415" loading="lazy"><figcaption>⑥ 배경 목록</figcaption></figure>
 
 <h3 id="screen-export">내보내기 창</h3>
+<figure class="shot"><img src="assets/guide/screen-export.png" alt="내보내기 창: 왼쪽 설정, 오른쪽 결과 미리보기, 탭 두 개, 내보내기 단추" width="1100" height="792" loading="lazy"><figcaption>① 내보내기(Export) 단추 · ② 내보내기 탭 · ③ Import Settings 탭 · ④ 설정 · ⑤ 결과 미리보기 · ⑥ 나눔줄</figcaption></figure>
 <p><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> 또는 <strong>파일 &gt; 내보내기…</strong>로 엽니다. 설정은 바꾸는 즉시 적용되며(설정 하나마다 실행취소 한 단계), 아래 파란 ① <strong>내보내기</strong>(Export)를 누르면 창을 닫고 내보냅니다. 저장할 때 내보내기가 켜져 있으면 <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>만으로도 내보냅니다. 탭은 ② <strong>내보내기</strong>와 ③ <strong>Import Settings</strong> 두 개입니다.</p>
-<ul>
+<ul class="marks">
 <li>④ <strong>왼쪽 = 설정</strong>, ⑤ <strong>오른쪽 = 결과 미리보기</strong>(파일마다 시트와 칸 이름 목록). ⑥ 가운데 경계를 끌어 폭을 나누고, 창 크기와 접은 묶음은 다음에도 그대로입니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-export-2.png" alt="내보내기 창의 설정 묶음을 모두 접은 모습" width="507" height="305" loading="lazy"><figcaption>⑦ 공통 · ⑧ 파일 · ⑨ 프레임 시트 · ⑩ 부위 아틀라스 · ⑪ 고급</figcaption></figure>
+<ul>
 <li>프레임 시트와 부위 아틀라스는 <strong>같은 시트 설정</strong>을 함께 씁니다. ⑪ <strong>고급 &gt; 시트별 다르게</strong>를 켜면 부위 아틀라스용 설정을 따로 둘 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-export.png" alt="내보내기 창: 왼쪽 설정, 오른쪽 결과 미리보기, 탭 두 개, 내보내기 단추" width="1100" height="792" loading="lazy"><figcaption>① 내보내기(Export) 단추 · ② 내보내기 탭 · ③ Import Settings 탭 · ④ 설정 · ⑤ 결과 미리보기 · ⑥ 나눔줄</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>묶음</th><th>주요 설정</th></tr></thead>
 <tbody>
@@ -690,56 +708,60 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑪ 고급</td><td>시트별 다르게</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/screen-export-2.png" alt="내보내기 창의 설정 묶음을 모두 접은 모습" width="507" height="305" loading="lazy"><figcaption>⑦ 공통 · ⑧ 파일 · ⑨ 프레임 시트 · ⑩ 부위 아틀라스 · ⑪ 고급</figcaption></figure>
-<ul>
+<figure class="shot"><img src="assets/guide/screen-export-3.png" alt="내보내기 창의 공통 묶음" width="492" height="529" loading="lazy"><figcaption>⑫ 칸 수 · ⑬ 정렬 · ⑭ 따로 파일 · ⑮ 칸 이름 · ⑯ 스킨과 스킨 고르기</figcaption></figure>
+<ul class="marks">
 <li>⑫ <strong>칸 수</strong>: 자동(시트가 가장 작아지게), 가로 N칸, 세로 N칸.</li>
 <li>⑬ <strong>정렬</strong>: 부위·스킨·태그·프레임 줄을 끌거나 <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>로 순서를 바꾸고, 줄 사이 <strong>여기서 새 줄</strong>로 줄바꿈 위치를 정합니다. 정렬은 위치만 바꾸고 칸 이름은 그대로입니다.</li>
 <li>⑭ <strong>따로 파일</strong>: 태그마다, 부위마다, 스킨마다 파일을 나눌 수 있습니다(조합 가능).</li>
 <li>⑮ <strong>칸 이름</strong>: <strong>프레임 번호</strong> 또는 <strong>태그 기준</strong>(새 프로젝트 기본값). Unity <code>.meta</code>의 스프라이트 이름으로 쓰이므로 바꾸면 경고가 나옵니다.</li>
 <li>⑯ <strong>스킨 고르기…</strong>: 내보낼 스킨, 착장 프리셋, 합성에 넣을 레이어를 고릅니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-export-4.png" alt="프리셋 단추로 연 팝업: 지금 설정 저장, 불러오기, 관리, 기본 설정으로" width="432" height="157" loading="lazy"><figcaption>⑰ 프리셋(Preset) 팝업</figcaption></figure>
+<ul class="marks">
 <li>⑰ <strong>프리셋</strong>(탭 줄 오른쪽 끝): 지금 설정을 이름 붙여 앱 설정에 저장하고 다른 프로젝트에서 불러옵니다. 기본 제공 프리셋("프레임 시트 기본", "부위 아틀라스 + Sprite Library", "스킨마다 따로 파일"), 기본 설정으로, 이름 바꾸기·덮어쓰기·삭제, JSON 내보내기/가져오기가 있습니다. 파일 이름·폴더 같은 프로젝트마다 다른 값은 담지 않습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/screen-export-5.png" alt="내보내기 창의 Import Settings 탭" width="1100" height="792" loading="lazy"><figcaption>⑱ Import Settings 탭 설정</figcaption></figure>
+<ul class="marks">
 <li>⑱ <strong>Import Settings</strong> 탭(<code>.meta</code>를 쓸 때만 보임): Unity Texture Importer와 같은 이름·값(Sprite Mode, Pixels Per Unit, Mesh Type, Pivot, Filter Mode, Compression 등)을 정합니다. 기본값은 픽셀 아트용(Point, 압축 없음, 밉맵 끔, Clamp)입니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-export-3.png" alt="내보내기 창의 공통 묶음" width="492" height="529" loading="lazy"><figcaption>⑫ 칸 수 · ⑬ 정렬 · ⑭ 따로 파일 · ⑮ 칸 이름 · ⑯ 스킨과 스킨 고르기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-export-4.png" alt="프리셋 단추로 연 팝업: 지금 설정 저장, 불러오기, 관리, 기본 설정으로" width="432" height="157" loading="lazy"><figcaption>⑰ 프리셋(Preset) 팝업</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-export-5.png" alt="내보내기 창의 Import Settings 탭" width="1100" height="792" loading="lazy"><figcaption>⑱ Import Settings 탭 설정</figcaption></figure>
 <p>파일 저장과 Unity 연동은 <a href="#files">파일</a> 장도 보세요.</p>
 
 <h3 id="screen-gif">GIF 애니메이션으로 내보내기</h3>
 <p><strong>파일 &gt; GIF 애니메이션으로 내보내기…</strong>로 공유용 GIF 한 파일을 만듭니다. 프로젝트는 바뀌지 않습니다.</p>
-<ul>
+<figure class="shot"><img src="assets/guide/screen-gif.png" alt="GIF 애니메이션으로 내보내기 창: 범위, 배율, 반복, 배경, 미리보기, 결과 정보" width="736" height="562" loading="lazy"><figcaption>① 범위 · ② 배율(Zoom) · ③ 반복 · ④ 배경 · ⑤ 미리보기 · ⑥ 결과 크기·프레임 수·길이·색 수</figcaption></figure>
+<figure class="shot"><img src="assets/guide/screen-gif-2.png" alt="태그 고르기 목록을 연 모습" width="308" height="183" loading="lazy"><figcaption>⑦ 태그 목록</figcaption></figure>
+<ul class="marks">
 <li>① <strong>범위</strong>: 현재 태그, 모든 프레임, ⑦ 태그 고르기.</li>
 <li>② <strong>배율</strong>(Zoom): 1~10×(기본 = 결과가 256px쯤 되는 배율).</li>
 <li>③ <strong>반복</strong>: 무한 반복 또는 N번 재생.</li>
 <li>④ <strong>배경</strong>: 투명(알파 50% 미만은 투명) 또는 배경색 위에 합성.</li>
 </ul>
 <p>오른쪽 ⑤ 미리보기가 실제 프레임 길이대로 재생되고 ⑥ 결과 크기·프레임 수·길이·색 수가 보입니다. 색이 255개 이하면 무손실로 저장됩니다. 기본 저장 위치는 프로젝트 옆 <code>&lt;프로젝트&gt;.gif</code>(태그면 <code>&lt;프로젝트&gt;_&lt;태그&gt;.gif</code>)입니다. 단축키는 환경 설정 &gt; 단축키에서 정할 수 있습니다.</p>
-<figure class="shot"><img src="assets/guide/screen-gif.png" alt="GIF 애니메이션으로 내보내기 창: 범위, 배율, 반복, 배경, 미리보기, 결과 정보" width="736" height="562" loading="lazy"><figcaption>① 범위 · ② 배율(Zoom) · ③ 반복 · ④ 배경 · ⑤ 미리보기 · ⑥ 결과 크기·프레임 수·길이·색 수</figcaption></figure>
-<figure class="shot"><img src="assets/guide/screen-gif-2.png" alt="태그 고르기 목록을 연 모습" width="308" height="183" loading="lazy"><figcaption>⑦ 태그 목록</figcaption></figure>
 
 <h3 id="screen-tool-settings">도구 설정</h3>
-<p>오른쪽 미리보기 아래에 있습니다. ① 제목 줄에 고른 도구 이름(예: <code>도구 설정 · 연필</code>)이 보이고 ② 그 도구의 세부 설정만 나옵니다. 도구 설정은 실행취소 대상이 아니며 다음 실행 때도 그대로입니다. 도구별 내용은 <a href="#tools">도구</a> 장에 있습니다.</p>
 <figure class="shot"><img src="assets/guide/screen-tool-settings.png" alt="도구 설정 패널: 연필" width="321" height="380" loading="lazy"><figcaption>① 제목 줄 · ② 그 도구의 설정</figcaption></figure>
+<p>오른쪽 미리보기 아래에 있습니다. ① 제목 줄에 고른 도구 이름(예: <code>도구 설정 · 연필</code>)이 보이고 ② 그 도구의 세부 설정만 나옵니다. 도구 설정은 실행취소 대상이 아니며 다음 실행 때도 그대로입니다. 도구별 내용은 <a href="#tools">도구</a> 장에 있습니다.</p>
 <h4>피벗(피벗 도구 <span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>)</h4>
-<ul>
+<figure class="shot"><img src="assets/guide/screen-tool-settings-2.png" alt="피벗 도구의 도구 설정: 5×5 단추, X·Y, 현재 프레임만 따로, 대상" width="311" height="325" loading="lazy"><figcaption>③ 대상 · ④ 5×5 단추 · ⑤ X·Y · ⑥ 현재 프레임만 따로(Current frame only)</figcaption></figure>
+<ul class="marks">
 <li>③ 그리는 대상(부위를 고르면 그 부위, 아니면 프레임)의 피벗을 픽셀 단위로 보여 줍니다.</li>
 <li>④ <strong>5×5 단추</strong>로 가로·세로 0, 1/4, 1/2, 3/4, 끝 위치를 바로 고릅니다.</li>
 <li>⑤ X(왼쪽에서)·Y(아래에서, Unity와 같음)를 0.5px 단위로 입력합니다.</li>
 <li>⑥ "현재 프레임만 따로"를 켜면 프레임별 피벗을 씁니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/screen-tool-settings-2.png" alt="피벗 도구의 도구 설정: 5×5 단추, X·Y, 현재 프레임만 따로, 대상" width="311" height="325" loading="lazy"><figcaption>③ 대상 · ④ 5×5 단추 · ⑤ X·Y · ⑥ 현재 프레임만 따로(Current frame only)</figcaption></figure>
 
 <h3 id="screen-status-bar">상태 표시줄</h3>
-<p>화면 맨 아래에 ① 커서 좌표, ② 색, ③ 캔버스(부위면 부위) 크기, ④ 프레임/레이어, ⑤ 확대율, ⑥ 저장 상태가 보입니다. ⑦ 타임라인에서 고른 것이나 저장하지 않은 파일 수 같은 안내도 여기에 나옵니다.</p>
 <figure class="shot"><img src="assets/guide/screen-status-bar.png" alt="상태 표시줄: 좌표, 색, 크기, 프레임/레이어, 확대율, 저장 상태, 안내" width="999" height="56" loading="lazy"><figcaption>① 커서 좌표 · ② 색 · ③ 크기 · ④ 프레임/레이어 · ⑤ 확대율 · ⑥ 저장 상태 · ⑦ 안내</figcaption></figure>
+<p>화면 맨 아래에 ① 커서 좌표, ② 색, ③ 캔버스(부위면 부위) 크기, ④ 프레임/레이어, ⑤ 확대율, ⑥ 저장 상태가 보입니다. ⑦ 타임라인에서 고른 것이나 저장하지 않은 파일 수 같은 안내도 여기에 나옵니다.</p>
 </section>
 
 <section class="doc" id="tools">
 <h2>도구</h2>
 
 <h3 id="tools-list">도구 목록</h3>
-<p>① 도구 막대에서 도구를 고르면 오른쪽 독의 ② <strong>도구 설정</strong>에 그 도구의 설정이 나옵니다. 긴 설명은 화면을 차지하지 않도록 <strong>i</strong> 아이콘 풍선에 들어 있습니다. 사각 선택·원 선택·자유 선택·스마트 선택·이동·그라데이션 도구의 사용 안내는 <strong>도구 설정 · …</strong> 제목 옆, 캔버스 크기·변형·그라데이션·9-slice·스포이드 묶음의 설명은 묶음 제목 옆의 <strong>i</strong>에 마우스를 올리면 보입니다.</p>
 <figure class="shot"><img src="assets/guide/tools-list.png" alt="연필을 고른 Gpixel 창: 왼쪽 도구 막대와 오른쪽 도구 설정" width="1600" height="932" loading="lazy"><figcaption>① 도구 막대 · ② 도구 설정(Tool settings)</figcaption></figure>
+<p>① 도구 막대에서 도구를 고르면 오른쪽 독의 ② <strong>도구 설정</strong>에 그 도구의 설정이 나옵니다. 긴 설명은 화면을 차지하지 않도록 <strong>i</strong> 아이콘 풍선에 들어 있습니다. 사각 선택·원 선택·자유 선택·스마트 선택·이동·그라데이션 도구의 사용 안내는 <strong>도구 설정 · …</strong> 제목 옆, 캔버스 크기·변형·그라데이션·9-slice·스포이드 묶음의 설명은 묶음 제목 옆의 <strong>i</strong>에 마우스를 올리면 보입니다.</p>
+<figure class="shot"><img src="assets/guide/tools-list-2.png" alt="도구 막대의 도구 칸들" width="104" height="515" loading="lazy"><figcaption>③ 연필 · ④ 지우개 · ⑤ 채우기·그라데이션 묶음 · ⑥ 스포이드 · ⑦ 도형 묶음(선·사각형·원) · ⑧ 선택 묶음(사각·원·자유·스마트) · ⑨ 이동 · ⑩ 밝게/어둡게 · ⑪ 디더링 · ⑫ 색 바꾸기 브러시 · ⑬ 피벗 · ⑭ 9-slice</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>도구</th><th>단축키</th><th>하는 일</th></tr></thead>
 <tbody>
@@ -760,80 +782,96 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑭ 9-slice</td><td><span class="key" data-cmd="도구/9-slice"><kbd>S</kbd></span></td><td>Unity 스프라이트 테두리를 정합니다</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/tools-list-2.png" alt="도구 막대의 도구 칸들" width="104" height="515" loading="lazy"><figcaption>③ 연필 · ④ 지우개 · ⑤ 채우기·그라데이션 묶음 · ⑥ 스포이드 · ⑦ 도형 묶음(선·사각형·원) · ⑧ 선택 묶음(사각·원·자유·스마트) · ⑨ 이동 · ⑩ 밝게/어둡게 · ⑪ 디더링 · ⑫ 색 바꾸기 브러시 · ⑬ 피벗 · ⑭ 9-slice</figcaption></figure>
 <p>다른 도구를 쓰는 중에도 캔버스 위에서 <kbd>Ctrl</kbd>을 누르고 있는 동안은 잠깐 이동 도구가 되고, 떼면 원래 도구로 돌아옵니다. 그리기 도구에서 <kbd>Alt</kbd>를 누르면 잠깐 스포이드가 됩니다.</p>
 
 <h3 id="tools-basics">그리기 기본</h3>
+<figure class="shot"><img src="assets/guide/tools-basics.png" alt="연필 도구를 고른 창: 기본색·보조색 칸, 도구 설정의 오른쪽 버튼 = 지우개, 위 막대의 도구 안내" width="1180" height="659" loading="lazy"><figcaption>① 기본색(Primary) · ② 보조색(Secondary) · ③ 오른쪽 버튼 = 지우개(Right button = eraser) · ④ 위 막대의 도구 안내(Shift+클릭 직선 등)</figcaption></figure>
 <ul>
 <li>왼쪽 버튼 = ① 기본색, 오른쪽 버튼 = ② 보조색(③ 옵션에 따라 지우개).</li>
 <li>획을 그리는 중에 반대쪽 버튼을 누르면 그 획이 취소됩니다.</li>
 <li>④ <kbd>Shift</kbd>+클릭 = 마지막 점에서 직선. 도형을 그릴 때 <kbd>Shift</kbd> = 45° 단위·정사각형·정원.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-basics-2.png" alt="펼친 편집 메뉴" width="359" height="592" loading="lazy"><figcaption>⑤ 외곽선 추가(Add outline) · ⑥ 색 바꾸기(Replace color) · ⑦ 뒤집기·회전(Flip·Rotate) · ⑧ 캔버스 크기(Canvas size)</figcaption></figure>
+<ul>
 <li>편집 메뉴에는 ⑤ 외곽선 추가, ⑥ 색 바꾸기, ⑦ 뒤집기·회전, ⑧ 캔버스 크기가 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-basics.png" alt="연필 도구를 고른 창: 기본색·보조색 칸, 도구 설정의 오른쪽 버튼 = 지우개, 위 막대의 도구 안내" width="1180" height="659" loading="lazy"><figcaption>① 기본색(Primary) · ② 보조색(Secondary) · ③ 오른쪽 버튼 = 지우개(Right button = eraser) · ④ 위 막대의 도구 안내(Shift+클릭 직선 등)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-basics-2.png" alt="펼친 편집 메뉴" width="359" height="592" loading="lazy"><figcaption>⑤ 외곽선 추가(Add outline) · ⑥ 색 바꾸기(Replace color) · ⑦ 뒤집기·회전(Flip·Rotate) · ⑧ 캔버스 크기(Canvas size)</figcaption></figure>
 
 <h3 id="tools-groups">도구 묶음</h3>
+<figure class="shot"><img src="assets/guide/tools-groups.png" alt="선택 묶음 칸을 오른쪽 클릭해 펼친 도구 목록" width="319" height="333" loading="lazy"><figcaption>① 채우기 묶음 · ② 도형 묶음 · ③ 선택 묶음(오른쪽 아래 작은 삼각형) · ④ 펼친 묶음 도구 목록(이름·단축키)</figcaption></figure>
 <p>비슷한 도구는 도구 막대의 한 칸에 묶여 있습니다: ① 채우기(채우기·그라데이션), ② 도형(선·사각형·원), ③ 선택(사각·원·자유·스마트). 묶음 칸은 오른쪽 아래에 작은 삼각형이 있습니다.</p>
 <ul>
 <li>그냥 누르면 칸에 보이는 도구를 고릅니다.</li>
 <li><strong>길게 누르거나 오른쪽 클릭</strong>하면 ④ 묶음 도구 목록이 펼쳐집니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-groups.png" alt="선택 묶음 칸을 오른쪽 클릭해 펼친 도구 목록" width="319" height="333" loading="lazy"><figcaption>① 채우기 묶음 · ② 도형 묶음 · ③ 선택 묶음(오른쪽 아래 작은 삼각형) · ④ 펼친 묶음 도구 목록(이름·단축키)</figcaption></figure>
 
 <h3 id="tools-brush">브러시 설정</h3>
 <p>연필·지우개·밝게/어둡게·디더링·색 바꾸기 브러시에 공통입니다.</p>
+<figure class="shot"><img src="assets/guide/tools-brush.png" alt="연필 도구의 브러시 설정(원, 크기 7)" width="338" height="155" loading="lazy"><figcaption>① 브러시 모양(Square·Circle·Diamond) · ② 픽셀 모양 미리보기 · ③ 크기(Size)</figcaption></figure>
 <ul>
 <li>모양: ① <strong>사각 / 원 / 마름모</strong>. 옆에 ② 실제 픽셀 모양 미리보기가 보입니다.</li>
 <li>③ 크기 1~32: 숫자 칸을 좌우로 끌거나 <span class="key" data-cmd="도구/브러시 작게"><kbd>[</kbd></span> / <span class="key" data-cmd="도구/브러시 크게"><kbd>]</kbd></span>.</li>
-<li>선·사각형·원의 ④ 선 두께와 펜 모양도 같은 방식으로 정합니다.</li>
-<li><strong>밝게/어둡게</strong>는 ⑤ <strong>세기</strong> 1~50%(기본 10%), <strong>디더링</strong>은 ⑥ <strong>무늬</strong> 체커(50%) / 성기게(25%) / 촘촘하게(75%)를 고릅니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-brush.png" alt="연필 도구의 브러시 설정(원, 크기 7)" width="338" height="155" loading="lazy"><figcaption>① 브러시 모양(Square·Circle·Diamond) · ② 픽셀 모양 미리보기 · ③ 크기(Size)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/tools-brush-2.png" alt="사각형 도구의 선 두께·펜 모양 설정" width="338" height="155" loading="lazy"><figcaption>④ 사각형 도구의 선 두께·펜 모양(Line width · pen shape)</figcaption></figure>
+<ul>
+<li>선·사각형·원의 ④ 선 두께와 펜 모양도 같은 방식으로 정합니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/tools-brush-3.png" alt="밝게/어둡게 도구 설정" width="338" height="232" loading="lazy"><figcaption>⑤ 밝게/어둡게의 세기(Strength)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/tools-brush-4.png" alt="디더링 도구의 무늬 목록을 펼친 모습" width="338" height="307" loading="lazy"><figcaption>⑥ 디더링의 무늬(Pattern): 체커 / 성기게 / 촘촘하게</figcaption></figure>
+<ul>
+<li><strong>밝게/어둡게</strong>는 ⑤ <strong>세기</strong> 1~50%(기본 10%), <strong>디더링</strong>은 ⑥ <strong>무늬</strong> 체커(50%) / 성기게(25%) / 촘촘하게(75%)를 고릅니다.</li>
+</ul>
 
 <h3 id="tools-select">선택 도구</h3>
 <p>네 선택 도구는 모두 같은 선택 영역을 만듭니다. 선택한 뒤에는 잘라내기·복사·지우기·뒤집기·회전·이동·외곽선·색 바꾸기가 그 안에만 적용되고, 그리기도 그 안으로 제한됩니다.</p>
-<ul>
+<figure class="shot"><img src="assets/guide/tools-select.png" alt="사각 선택으로 캐릭터 머리를 고른 캔버스" width="374" height="668" loading="lazy"><figcaption>① 사각 선택으로 고른 영역(점선 테두리)</figcaption></figure>
+<ul class="marks">
 <li>① <strong>사각 / 원 선택</strong>: 끌어서 선택(<kbd>Shift</kbd> = 정사각형·정원). 선택 안쪽을 끌면 내용을 옮기고 <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>로 내려놓습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-select-2.png" alt="자유 선택으로 테두리를 그리는 중인 캔버스" width="374" height="668" loading="lazy"><figcaption>② 자유 선택을 끄는 중: 선택될 영역(파란 점선)</figcaption></figure>
+<ul class="marks">
 <li>② <strong>자유 선택</strong>: 테두리를 그리고 놓으면 처음 점과 이어져 닫힙니다. 끄는 동안 선택될 영역이 파란 점선으로 보입니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-select-3.png" alt="스마트 선택으로 머리카락 영역을 고른 캔버스와 도구 설정" width="906" height="668" loading="lazy"><figcaption>③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같음)</figcaption></figure>
+<ul>
 <li>③ <strong>스마트 선택</strong>: 클릭한 곳과 비슷한 색 영역을 선택합니다. ④ 설정은 채우기와 같습니다. 옮기려면 이동(<span class="key" data-cmd="도구/이동"><kbd>V</kbd></span>)이나 방향키를 씁니다.</li>
 <li>선택 도구로 캔버스를 <strong>오른쪽 클릭</strong>하거나 <span class="key" data-cmd="편집/선택 해제"><kbd>Ctrl</kbd>+<kbd>D</kbd></span> = 선택 해제.</li>
 <li><span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span>을 반복해 누르면 사각 → 원 → 자유 → 스마트 순으로 바뀝니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-select.png" alt="사각 선택으로 캐릭터 머리를 고른 캔버스" width="374" height="668" loading="lazy"><figcaption>① 사각 선택으로 고른 영역(점선 테두리)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-select-2.png" alt="자유 선택으로 테두리를 그리는 중인 캔버스" width="374" height="668" loading="lazy"><figcaption>② 자유 선택을 끄는 중: 선택될 영역(파란 점선)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-select-3.png" alt="스마트 선택으로 머리카락 영역을 고른 캔버스와 도구 설정" width="906" height="668" loading="lazy"><figcaption>③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같음)</figcaption></figure>
 
 <h3 id="tools-fill">채우기</h3>
-<ul>
+<figure class="shot"><img src="assets/guide/tools-fill.png" alt="채우기 도구 설정, 기준 목록을 펼친 모습" width="338" height="259" loading="lazy"><figcaption>① 허용 오차(Tolerance) · ② 이어진 영역만(Contiguous only) · ③ 대각선으로도 잇기 · ④ 기준(영어 화면은 Anchor) 목록: 현재 레이어 / 보이는 레이어 전체</figcaption></figure>
+<ul class="marks">
 <li>① <strong>허용 오차</strong> 0~100%: 0이면 정확히 같은 색만, 높일수록 비슷한 색까지 채웁니다.</li>
 <li>② <strong>이어진 영역만</strong>: 끄면 맞는 색 전체를 칠합니다(<span class="key" data-cmd="도구/채우기: 같은 색 전체"><kbd>Shift</kbd>+<kbd>G</kbd></span>).</li>
 <li>③ <strong>대각선으로도 잇기</strong>: 8방향으로 영역을 잇습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-fill-2.png" alt="스포이드 도구 설정" width="338" height="141" loading="lazy"><figcaption>⑤ 스포이드의 기준</figcaption></figure>
+<ul class="marks">
 <li>④ <strong>기준</strong>: 현재 레이어 / 보이는 레이어 전체(합성된 모습으로 영역을 정하고, 칠은 현재 레이어에). ⑤ 스포이드에도 같은 기준 설정이 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-fill.png" alt="채우기 도구 설정, 기준 목록을 펼친 모습" width="338" height="259" loading="lazy"><figcaption>① 허용 오차(Tolerance) · ② 이어진 영역만(Contiguous only) · ③ 대각선으로도 잇기 · ④ 기준(영어 화면은 Anchor) 목록: 현재 레이어 / 보이는 레이어 전체</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-fill-2.png" alt="스포이드 도구 설정" width="338" height="141" loading="lazy"><figcaption>⑤ 스포이드의 기준</figcaption></figure>
 
 <h3 id="tools-gradient">그라데이션</h3>
+<figure class="shot"><img src="assets/guide/tools-gradient.png" alt="캐릭터 아래 새 레이어에 그라데이션을 끌어 칠하는 중인 캔버스와 그라데이션 도구 설정" width="906" height="668" loading="lazy"><figcaption>① 시작점 · ② 끝점(끄는 동안 두 점을 잇는 안내선) · ③ 그라데이션 바(위 = 불투명도 정지점, 아래 = 색 정지점) · ④ 위치(Position)와 삭제 · ⑤ 색(Color) · ⑥ 보간(Interpolation) · ⑦ 색 공간(Color space) · ⑧ 디더링(Dithering) · ⑨ 사용 안내 i 아이콘</figcaption></figure>
 <p>캔버스에서 ① 시작점 → ② 끝점으로 끌면 그 방향으로 칠합니다(<kbd>Shift</kbd> = 45° 단위). 선택 영역이 있으면 그 안만, 없으면 셀 전체를 칠합니다.</p>
 <ul>
 <li>③ <strong>그라데이션 바</strong>: 띠 위에는 불투명도 정지점, 띠 아래에는 색 정지점이 있습니다. 빈 곳을 누르면 정지점이 생기고, 끌어서 위치를 바꾸며, <kbd>Delete</kbd>로 지웁니다.</li>
 <li>고른 정지점의 ④ 위치 %와 ⑤ 색(또는 불투명도 %)을 고칠 수 있습니다.</li>
 <li>⑥ <strong>보간</strong>: 부드럽게 / 단계. ⑦ <strong>색 공간</strong>: 부드럽게 섞을 때 쓸 색 공간을 RGB / HSL / OKLab / OKLCH에서 고릅니다. 새 그라데이션은 OKLCH가 기본이고, 색 공간 항목이 없는 예전 설정과 프로젝트는 RGB로 불러옵니다. 미리보기와 칠하기에 함께 적용되며, 단계와 Bayer 디더링은 정지점 색만 씁니다. ⑧ <strong>디더링</strong>: 없음 / 2×2 Bayer / 4×4 Bayer(반투명 대신 무늬로 섞는 픽셀 아트용).</li>
 <li>설정은 다음 실행 때도 그대로입니다. 끌어 칠하는 법 같은 사용 안내는 ⑨ 도구 설정 제목 옆 <strong>i</strong> 아이콘에 마우스를 올리면 보입니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-gradient-2.png" alt="그라데이션 바를 오른쪽 클릭해 연 프리셋 메뉴" width="396" height="463" loading="lazy"><figcaption>⑩ 현재 그라데이션 저장(Save current gradient) · ⑪ 저장된 프리셋(이름 아래 색 띠) · ⑫ 그라데이션 프리셋 관리(Manage Gradient Presets)</figcaption></figure>
+<ul>
 <li>바를 <strong>오른쪽 클릭</strong>하면 프리셋 메뉴가 열립니다: ⑩ <strong>현재 그라데이션 저장…</strong>으로 지금 설정을 이름 붙여 저장하고, ⑪ 저장된 프리셋(이름 아래 그라데이션 미리보기, 즐겨찾기가 먼저)을 고르면 바로 적용됩니다. 프리셋에는 색·불투명도 정지점, 보간, 색 공간, 디더링이 저장되고, 레이어 효과의 색 그라데이션 편집기에서 고르면 형태·각도·방향·반복·애니메이션도 함께 적용됩니다.</li>
 <li>기본 프리셋은 Rainbow, Repeating Rainbow(양쪽 끝 빨강), Sunset, Ocean, Transparent Fade, Fire, Forest, Grayscale입니다. 지우거나 고친 기본 프리셋은 <a href="#files-settings">환경 설정</a>의 <strong>프리셋</strong> 탭에서 되돌릴 수 있습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/tools-gradient-3.png" alt="프리셋 창의 그라데이션 탭" width="1000" height="712" loading="lazy"><figcaption>⑬ 프리셋 목록 · ⑭ 즐겨찾기에 추가·이름 바꾸기·삭제 · ⑮ 고른 프리셋의 미리보기와 편집 · ⑯ 변경 내용 저장(Save changes)</figcaption></figure>
+<ul class="marks">
 <li>⑫ <strong>그라데이션 프리셋 관리…</strong>(또는 <strong>도구 &gt; 프리셋…</strong>)를 누르면 <strong>프리셋</strong> 창의 <strong>그라데이션</strong> 탭이 열립니다. ⑬ 목록에서 프리셋을 고르고 ⑭ 즐겨찾기에 추가·이름 바꾸기·삭제를 하거나, ⑮ 오른쪽에서 미리보기를 보며 정지점과 설정을 고친 뒤 ⑯ <strong>변경 내용 저장</strong>을 누릅니다. 같은 창의 <strong>자동 최적화(픽셀로 정리)</strong> 탭에서는 <a href="#pixelate-optimize">자동 최적화</a> 프리셋을 관리합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-gradient.png" alt="캐릭터 아래 새 레이어에 그라데이션을 끌어 칠하는 중인 캔버스와 그라데이션 도구 설정" width="906" height="668" loading="lazy"><figcaption>① 시작점 · ② 끝점(끄는 동안 두 점을 잇는 안내선) · ③ 그라데이션 바(위 = 불투명도 정지점, 아래 = 색 정지점) · ④ 위치(Position)와 삭제 · ⑤ 색(Color) · ⑥ 보간(Interpolation) · ⑦ 색 공간(Color space) · ⑧ 디더링(Dithering) · ⑨ 사용 안내 i 아이콘</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-gradient-2.png" alt="그라데이션 바를 오른쪽 클릭해 연 프리셋 메뉴" width="396" height="463" loading="lazy"><figcaption>⑩ 현재 그라데이션 저장(Save current gradient) · ⑪ 저장된 프리셋(이름 아래 색 띠) · ⑫ 그라데이션 프리셋 관리(Manage Gradient Presets)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/tools-gradient-3.png" alt="프리셋 창의 그라데이션 탭" width="1000" height="712" loading="lazy"><figcaption>⑬ 프리셋 목록 · ⑭ 즐겨찾기에 추가·이름 바꾸기·삭제 · ⑮ 고른 프리셋의 미리보기와 편집 · ⑯ 변경 내용 저장(Save changes)</figcaption></figure>
 
 <h3 id="tools-transform">변형 모드 (회전·크기)</h3>
 <p><span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> 또는 편집 메뉴 <strong>변형(회전·크기)…</strong>. 선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 주황 점선 테두리의 손잡이로 돌리고, 늘리고, 옮깁니다.</p>
+<figure class="shot"><img src="assets/guide/tools-transform.png" alt="머리를 선택해 18도 돌린 변형 모드의 캔버스와 도구 설정" width="936" height="671" loading="lazy"><figcaption>① 안쪽(옮기기) · ② 네모 손잡이(크기) · ③ 테두리 바로 바깥(회전) · ④ 회전 중심 · ⑤ 적용(Apply) · ⑥ 취소(Cancel) · ⑦ 각도·가로/세로 %·중심 X/Y · ⑧ 리샘플링(Resampling)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>조작</th><th>결과</th></tr></thead>
 <tbody>
@@ -845,17 +883,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td><span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>, <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> 또는 ⑥ <strong>취소</strong></td><td>변형 전으로</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/tools-transform.png" alt="머리를 선택해 18도 돌린 변형 모드의 캔버스와 도구 설정" width="936" height="671" loading="lazy"><figcaption>① 안쪽(옮기기) · ② 네모 손잡이(크기) · ③ 테두리 바로 바깥(회전) · ④ 회전 중심 · ⑤ 적용(Apply) · ⑥ 취소(Cancel) · ⑦ 각도·가로/세로 %·중심 X/Y · ⑧ 리샘플링(Resampling)</figcaption></figure>
 <ul>
 <li>도구 설정에서 ⑦ 각도·가로/세로 %·중심 X/Y를 숫자로 넣을 수도 있습니다.</li>
 <li>⑧ <strong>리샘플링</strong>: <strong>RotSprite</strong>(기본, 회전한 선이 덜 깨지고 새 색이 생기지 않음) / <strong>최근접</strong>.</li>
 <li>여러 번 끌어도 원본에서 다시 그리므로 뭉개지지 않습니다. 도구를 바꾸거나 저장하는 등 다른 작업을 하면 먼저 적용됩니다.</li>
-<li><strong>여러 셀 함께 변형</strong>: 타임라인에서 ⑨ 셀 여러 칸(예: 한 레이어의 프레임 1~6, 프레임 머리글·레이어 이름 칸 선택도 됨)을 골라 두고 <span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>를 누르면 고른 셀이 모두 같은 회전·크기·옮김으로 바뀝니다. ⑩ 손잡이 사각형은 모든 셀의 그림을 감싸고, 캔버스에는 현재 셀이 움직이며, 다른 셀은 적용할 때 함께 바뀝니다(실행취소 한 단계, <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>는 모두 취소). 빈 셀과 잠긴 레이어의 셀은 건너뜁니다. 이동 도구로 끌거나 방향키로 밀 때도 고른 셀이 함께 움직입니다. ⑪ 상태 표시줄에 함께 변형하는 셀 수가 나옵니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/tools-transform-2.png" alt="프레임 4개를 머리글로 고르고 Ctrl+T를 누른 창" width="1600" height="932" loading="lazy"><figcaption>⑨ 프레임 머리글로 고른 셀 4칸 · ⑩ 모든 셀의 그림을 감싸는 손잡이 사각형 · ⑪ 상태 표시줄의 함께 변형하는 셀 수</figcaption></figure>
+<ul>
+<li><strong>여러 셀 함께 변형</strong>: 타임라인에서 ⑨ 셀 여러 칸(예: 한 레이어의 프레임 1~6, 프레임 머리글·레이어 이름 칸 선택도 됨)을 골라 두고 <span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>를 누르면 고른 셀이 모두 같은 회전·크기·옮김으로 바뀝니다. ⑩ 손잡이 사각형은 모든 셀의 그림을 감싸고, 캔버스에는 현재 셀이 움직이며, 다른 셀은 적용할 때 함께 바뀝니다(실행취소 한 단계, <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>는 모두 취소). 빈 셀과 잠긴 레이어의 셀은 건너뜁니다. 이동 도구로 끌거나 방향키로 밀 때도 고른 셀이 함께 움직입니다. ⑪ 상태 표시줄에 함께 변형하는 셀 수가 나옵니다.</li>
+</ul>
 <figure class="clip"><img src="assets/guide/tools-transform.webp" alt="Ctrl+T로 변형 모드에 들어가 테두리 바깥을 끌어 돌리고, 손잡이를 끌어 크기를 바꾸고, 안쪽을 끌어 옮기는 모습" width="314" height="342" loading="lazy"></figure>
 
 <h3 id="tools-canvas-size">캔버스 크기 모드</h3>
+<figure class="shot"><img src="assets/guide/tools-canvas-size.png" alt="캔버스를 69×88로 넓히고 아래를 잘라 내는 캔버스 크기 모드" width="956" height="674" loading="lazy"><figcaption>① 새 캔버스 테두리(하늘색 점선) · ② 잘릴 부분(흐리게) · ③ 손잡이 · ④ 그림 안쪽 · ⑤ 확인(OK) · ⑥ 취소(Cancel) · ⑦ 캔버스 가로/세로 · ⑧ 캔버스 중심 기준 · ⑨ 9-slice로 늘리기·가운데 채우기(예시 그림은 9-slice 테두리가 없어 꺼져 있음) · ⑩ 그림 가로/세로 · ⑪ 그림 비율 유지 · ⑫ 그림 위치 X/Y · ⑬ 기준점 9방향(Anchor)</figcaption></figure>
 <p><span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span> 또는 편집 메뉴 <strong>캔버스 크기…</strong>. 창 대신 캔버스 위에서 새 크기와 그림 자리를 정합니다. 캔버스 테두리는 ① 하늘색 점선, ② 잘릴 부분은 흐리게 보입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>조작</th><th>결과</th></tr></thead>
@@ -871,7 +911,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>도구 설정: ⑦ 캔버스 가로/세로, ⑧ <strong>캔버스 중심 기준</strong>, ⑨ <strong>9-slice로 늘리기</strong>와 가운데 채우기(<strong>늘이기 / 되풀이</strong>), ⑩ 그림 가로/세로 %, ⑪ <strong>그림 비율 유지</strong>, ⑫ 그림 위치 X/Y, ⑬ <strong>기준점 9방향</strong>.</li>
 <li>모든 프레임·레이어에 적용되고, 부위와 피벗도 함께 맞춰집니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-canvas-size.png" alt="캔버스를 69×88로 넓히고 아래를 잘라 내는 캔버스 크기 모드" width="956" height="674" loading="lazy"><figcaption>① 새 캔버스 테두리(하늘색 점선) · ② 잘릴 부분(흐리게) · ③ 손잡이 · ④ 그림 안쪽 · ⑤ 확인(OK) · ⑥ 취소(Cancel) · ⑦ 캔버스 가로/세로 · ⑧ 캔버스 중심 기준 · ⑨ 9-slice로 늘리기·가운데 채우기(예시 그림은 9-slice 테두리가 없어 꺼져 있음) · ⑩ 그림 가로/세로 · ⑪ 그림 비율 유지 · ⑫ 그림 위치 X/Y · ⑬ 기준점 9방향(Anchor)</figcaption></figure>
 <figure class="clip"><img src="assets/guide/tools-canvas-size.webp" alt="캔버스 크기 모드에서 손잡이를 끌어 캔버스를 넓히거나 줄여 자르고, 그림 안쪽을 끌어 옮기는 모습" width="690" height="340" loading="lazy"></figure>
 <h4>9-slice로 늘리기</h4>
 <ul>
@@ -883,9 +922,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="clip"><img src="assets/guide/tools-canvas-size-slice.webp" alt="9-slice 도구로 초록 선을 정한 뒤 캔버스 크기 모드에서 손잡이를 끌어 9-slice로 늘이고 줄이며, 가운데 채우기를 되풀이로 바꿔 가운데 무늬가 반복되는 모습" width="1000" height="706" loading="lazy"></figure>
 
 <h3 id="tools-nine-slice">9-slice</h3>
+<figure class="shot"><img src="assets/guide/tools-nine-slice.png" alt="예시 UI 단추(32×20)에 9-slice 초록 선 4개를 둔 캔버스와 도구 설정" width="1003" height="400" loading="lazy"><figcaption>① 초록 선 4개(L5·T5·R5·B6) · ② L·T·R·B 값 · ③ 모두 0(All 0) · ④ 적용 대상(프레임 시트 모든 칸)</figcaption></figure>
 <p>Unity Sprite Border를 정합니다. 캔버스에 ① <strong>초록 선 4개</strong>가 나오고, 끌면 ② L·T·R·B 값이 바뀝니다. 도구 설정에서 숫자로 넣거나 ③ <strong>모두 0</strong>으로 되돌릴 수 있습니다.</p>
 <p>부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용됩니다(④ 도구 설정에 대상이 나옵니다). 크기를 늘려도 선 바깥(모서리·가장자리)은 그대로이고 가운데만 늘어나서, Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널에 알맞습니다. Gpixel 안에서도 <a href="#tools-canvas-size">캔버스 크기 모드</a>의 <strong>9-slice로 늘리기</strong>로 같은 방식으로 그림 크기를 바꿀 수 있습니다.</p>
-<figure class="shot"><img src="assets/guide/tools-nine-slice.png" alt="예시 UI 단추(32×20)에 9-slice 초록 선 4개를 둔 캔버스와 도구 설정" width="1003" height="400" loading="lazy"><figcaption>① 초록 선 4개(L5·T5·R5·B6) · ② L·T·R·B 값 · ③ 모두 0(All 0) · ④ 적용 대상(프레임 시트 모든 칸)</figcaption></figure>
 </section>
 
 <section class="doc" id="files">
@@ -903,63 +942,76 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </table></div>
 
 <h3 id="files-save">저장하기</h3>
-<p><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>(① <strong>파일 &gt; 저장(+ 시트 내보내기)</strong>)로 <code>.gpixel</code>을 저장하면, 설정에 따라 이미지와 <code>.meta</code>도 함께 내보내고 ② 상태 표시줄에 결과를 보여 줍니다. <code>.meta</code>는 파일이 Unity 프로젝트의 <code>Assets</code> 안에 있거나 이미 메타가 있을 때 만듭니다. 기존 메타의 guid·spriteID는 이름 기준으로 유지되므로 Unity 쪽 참조가 끊기지 않습니다.</p>
 <figure class="shot"><img src="assets/guide/files-save.png" alt="파일 메뉴를 펼친 모습. 저장(+ 시트 내보내기) 항목에 1번 표시" width="345" height="368" loading="lazy"><figcaption>① 파일 메뉴의 저장(+ 시트 내보내기) — Ctrl+S</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-save-2.png" alt="저장한 뒤 상태 표시줄. 저장한 파일과 내보낸 시트를 알리는 글에 2번 표시" width="969" height="113" loading="lazy"><figcaption>② 저장한 뒤 상태 표시줄: 저장한 .gpixel과 내보낸 시트·칸 수</figcaption></figure>
-<p><code>.gpixel</code>은 저장됐지만 이미지 내보내기만 실패하면(다른 프로그램이 파일을 잡고 있는 등) ③ 그 사실을 알려 줍니다.</p>
+<p><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>(① <strong>파일 &gt; 저장(+ 시트 내보내기)</strong>)로 <code>.gpixel</code>을 저장하면, 설정에 따라 이미지와 <code>.meta</code>도 함께 내보내고 ② 상태 표시줄에 결과를 보여 줍니다. <code>.meta</code>는 파일이 Unity 프로젝트의 <code>Assets</code> 안에 있거나 이미 메타가 있을 때 만듭니다. 기존 메타의 guid·spriteID는 이름 기준으로 유지되므로 Unity 쪽 참조가 끊기지 않습니다.</p>
 <figure class="shot"><img src="assets/guide/files-save-3.png" alt="저장 실패 창. 프로젝트는 저장됐지만 시트 내보내기가 실패했다는 글에 3번 표시" width="597" height="168" loading="lazy"><figcaption>③ 프로젝트는 저장됐지만 시트·.meta 내보내기가 실패했다는 알림(Save failed)</figcaption></figure>
+<p><code>.gpixel</code>은 저장됐지만 이미지 내보내기만 실패하면(다른 프로그램이 파일을 잡고 있는 등) ③ 그 사실을 알려 줍니다.</p>
 
 <h3 id="files-autosave">자동 저장</h3>
-<p>기본으로 켜져 있습니다. 편집이 <strong>3초</strong> 동안 없으면 <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>와 같이(내보내기 포함) 묻지 않고 저장하고, ① 상태 표시줄에 <code>자동 저장됨</code>을 보여 줍니다.</p>
 <figure class="shot"><img src="assets/guide/files-autosave.png" alt="상태 표시줄의 자동 저장됨 알림에 1번 표시" width="809" height="113" loading="lazy"><figcaption>① 자동 저장이 돈 뒤 상태 표시줄의 자동 저장됨(Autosaved) 알림</figcaption></figure>
+<p>기본으로 켜져 있습니다. 편집이 <strong>3초</strong> 동안 없으면 <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>와 같이(내보내기 포함) 묻지 않고 저장하고, ① 상태 표시줄에 <code>자동 저장됨</code>을 보여 줍니다.</p>
 <ul>
 <li>그리는 중이나 끌기·변형·AI 작업 중에는 끝날 때까지 미룹니다.</li>
 <li>디스크에 <code>.gpixel</code>이 이미 있는 파일만 저장합니다. 새 프로젝트나 가져온 PNG는 처음 한 번 직접 저장해야 합니다.</li>
-<li>② 켜고 끄기와 ③ 기다리는 시간(1~600초)은 <strong>환경 설정 &gt; 일반</strong>에서 바꿉니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-autosave-2.png" alt="환경 설정 일반 탭의 저장 묶음. 자동 저장 체크에 2번, 기다리는 시간 칸에 3번 표시" width="987" height="82" loading="lazy"><figcaption>② 자동 저장(Autosave) 켜기 · ③ 기다리는 시간(초)</figcaption></figure>
+<ul class="marks">
+<li>② 켜고 끄기와 ③ 기다리는 시간(1~600초)은 <strong>환경 설정 &gt; 일반</strong>에서 바꿉니다.</li>
+</ul>
 
 <h3 id="files-revert">저장한 내용으로 되돌리기</h3>
-<p>① 도구 막대 맨 아래 단추나 ② <strong>파일 &gt; 저장한 내용으로 되돌리기</strong>를 쓰면, ③ 확인한 뒤 저장하지 않은 수정을 버리고 파일을 다시 엽니다. 현재 레이어·프레임·확대율은 그대로입니다. 되돌리기 자체는 실행취소할 수 없습니다.</p>
 <figure class="shot"><img src="assets/guide/files-revert.png" alt="수정한 뒤 도구 막대 맨 아래의 되돌리기 단추에 1번 표시" width="991" height="113" loading="lazy"><figcaption>① 수정하면 켜지는 도구 막대 맨 아래 되돌리기 단추(상태 표시줄은 수정됨)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-revert-2.png" alt="파일 메뉴를 펼친 모습. 저장한 내용으로 되돌리기 항목에 2번 표시" width="345" height="368" loading="lazy"><figcaption>② 파일 메뉴의 저장한 내용으로 되돌리기(Revert to saved)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-revert-3.png" alt="저장한 내용으로 되돌리기 확인 창. 예 단추에 3번 표시" width="576" height="126" loading="lazy"><figcaption>③ 저장하지 않은 수정을 버릴지 묻는 창 — 예(Yes)를 누르면 되돌립니다</figcaption></figure>
+<p>① 도구 막대 맨 아래 단추나 ② <strong>파일 &gt; 저장한 내용으로 되돌리기</strong>를 쓰면, ③ 확인한 뒤 저장하지 않은 수정을 버리고 파일을 다시 엽니다. 현재 레이어·프레임·확대율은 그대로입니다. 되돌리기 자체는 실행취소할 수 없습니다.</p>
 
 <h3 id="files-history">닫아도 남는 실행취소 기록</h3>
 <p>기본으로 켜져 있어, 파일을 닫거나 앱을 끝낸 뒤 다시 열어도 실행취소·다시 실행을 이어서 쓸 수 있습니다. 기록은 <strong>저장한 상태까지만</strong> 남으며, "저장 안 함"으로 버린 수정은 남지 않습니다. 기록은 <code>.gpixel</code>이 아니라 앱 설정 폴더에 따로 보관됩니다.</p>
-<p>① 켜고 끄기, ② 보관 기간(기본 30일)·③ 최대 용량(기본 500MB)·④ <strong>기록 모두 지우기</strong>는 <strong>환경 설정 &gt; 일반</strong>에 있습니다.</p>
 <figure class="shot"><img src="assets/guide/files-history.png" alt="환경 설정 일반 탭의 실행취소 기록 묶음. 기록 남기기 체크, 보관 기간, 최대 용량, 기록 모두 지우기 단추에 1~4번 표시" width="987" height="174" loading="lazy"><figcaption>① 닫은 뒤에도 실행취소 기록 남기기 · ② 보관 기간(Retention period) · ③ 최대 용량(Max size) · ④ 기록 모두 지우기(Clear all history)</figcaption></figure>
+<p>① 켜고 끄기, ② 보관 기간(기본 30일)·③ 최대 용량(기본 500MB)·④ <strong>기록 모두 지우기</strong>는 <strong>환경 설정 &gt; 일반</strong>에 있습니다.</p>
 
 <h3 id="files-png-import">PNG 열기(가져오기)</h3>
 <p>PNG를 열면 프로젝트로 가져옵니다. 같은 이름의 <code>.gpixel</code>이 있거나 같은 폴더의 프로젝트가 그 PNG를 내보내고 있으면 그 프로젝트를 엽니다.</p>
 <ul>
 <li>메타에 칸 정보가 있고 칸 크기가 서로 다르면 <strong>부위</strong>(그룹 하나 + 칸마다 부위 하나)로 가져옵니다.</li>
-<li>칸 크기가 모두 같으면 "① 부위로 / ② 애니메이션 프레임으로" 중 고르게 묻습니다.</li>
-<li>칸 정보가 없는 시트는 ③ <strong>프레임·레이어 &gt; 격자로 나눠 프레임 만들기</strong>로 ④ 나누는 방법을 골라 ⑤ 칸 크기·⑥ 칸 수·⑦ 자동(덩어리) 기준으로 나눌 수 있습니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-png-import.png" alt="PNG 가져오기 창. 부위로 단추에 1번, 애니메이션 프레임으로 단추에 2번 표시" width="579" height="186" loading="lazy"><figcaption>① 부위로(As parts) · ② 애니메이션 프레임으로(As animation frames)</figcaption></figure>
+<ul>
+<li>칸 크기가 모두 같으면 "① 부위로 / ② 애니메이션 프레임으로" 중 고르게 묻습니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/files-png-import-2.png" alt="프레임·레이어 메뉴를 펼친 모습. 격자로 나눠 프레임 만들기 항목에 3번 표시" width="301" height="468" loading="lazy"><figcaption>③ 프레임·레이어 메뉴의 격자로 나눠 프레임 만들기(Split into frames by grid)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-png-import-3.png" alt="격자로 나눠 프레임 만들기 창에서 나누는 방법 목록을 펼친 모습에 4번 표시" width="369" height="362" loading="lazy"><figcaption>④ 나누는 방법: 격자 - 칸 크기 / 격자 - 칸 수 / 자동(덩어리)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-png-import-4.png" alt="격자로 나눠 프레임 만들기 창. 칸 크기, 칸 수, 자동 기준 최소 크기 줄에 5~7번 표시" width="369" height="362" loading="lazy"><figcaption>⑤ 칸 크기(Cell width·Vertical) · ⑥ 칸 수(Columns·Rows) · ⑦ 자동(덩어리) 기준 최소 크기(Auto: minimum size)</figcaption></figure>
+<ul>
+<li>칸 정보가 없는 시트는 ③ <strong>프레임·레이어 &gt; 격자로 나눠 프레임 만들기</strong>로 ④ 나누는 방법을 골라 ⑤ 칸 크기·⑥ 칸 수·⑦ 자동(덩어리) 기준으로 나눌 수 있습니다.</li>
+</ul>
 
 <h3 id="files-open-media">그림·움직이는 그림·영상 열기</h3>
-<p>① <strong>파일 &gt; 열기(.gpixel · 이미지 · GIF · 영상)…</strong>(<span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>)는 여러 파일을 한 번에 고를 수 있고 파일마다 ② 새 탭으로 엽니다. PNG가 아닌 그림(JPG·BMP·GIF·WebP·ICO·움직이는 PNG)은 <strong>새 문서</strong>가 됩니다 — 캔버스 = 그림 크기, ③ 레이어 하나(파일 이름), ④ 그림 프레임마다 프레임 하나.</p>
 <figure class="shot"><img src="assets/guide/files-open-media.png" alt="파일 메뉴를 펼친 모습. 열기 항목에 1번 표시" width="345" height="368" loading="lazy"><figcaption>① 파일 메뉴의 열기(.gpixel · 이미지 · GIF · 영상)… — Ctrl+O</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-open-media-2.png" alt="움직이는 GIF를 연 새 문서. 새 탭, 파일 이름의 레이어, 네 프레임에 2~4번 표시" width="1036" height="814" loading="lazy"><figcaption>움직이는 GIF(slime_bounce.gif, 4프레임)를 연 새 문서: ② 새 탭 · ③ 파일 이름의 레이어 하나 · ④ 그림 프레임마다 프레임(길이 120ms 그대로)</figcaption></figure>
+<p>① <strong>파일 &gt; 열기(.gpixel · 이미지 · GIF · 영상)…</strong>(<span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>)는 여러 파일을 한 번에 고를 수 있고 파일마다 ② 새 탭으로 엽니다. PNG가 아닌 그림(JPG·BMP·GIF·WebP·ICO·움직이는 PNG)은 <strong>새 문서</strong>가 됩니다 — 캔버스 = 그림 크기, ③ 레이어 하나(파일 이름), ④ 그림 프레임마다 프레임 하나.</p>
 <ul>
 <li>프레임 길이는 파일에 적힌 그대로입니다(0~10ms는 브라우저처럼 100ms). 투명은 그대로이고, GIF·APNG의 부분 프레임과 처리 방법(배경으로·이전으로)을 합성해 프레임마다 완성된 그림이 됩니다. 사진은 EXIF 회전을 따릅니다.</li>
-<li>프레임이 300개를 넘으면 ⑤ "모두 열기 / 앞 300개만 / 취소"를 묻습니다.</li>
-<li>아직 <code>.gpixel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. 파일 브라우저에서 누르기, 최근 파일, 창에 끌어 놓기도 같은 길로 엽니다.</li>
-<li><strong>영상</strong>(MP4·WebM·MOV·MKV·AVI 등)과 AVIF·HEIC 그림은 <strong>ffmpeg</strong>가 있어야 엽니다(Gpixel에 들어 있지 않고 자동으로 내려받지 않음 — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, Windows는 <code>winget install Gyan.FFmpeg</code>). PATH나 흔한 설치 위치에 있으면 저절로 찾고, 아니면 ⑥ <strong>편집 &gt; 환경 설정… &gt; 영상(ffmpeg)</strong>에서 ⑦ 실행 파일을 ⑧ 찾아보기로 고릅니다.</li>
-<li>영상을 열면 먼저 <strong>영상 가져오기</strong> 창이 뜹니다: ⑨ 구간(시작~끝 초), ⑩ 초당 프레임(기본 = 영상 fps, 최대 12), ⑪ 최대 프레임 수(기본 120), ⑫ 크기(원래 크기 / 긴 변 맞춤 — ⑬ <strong>부드럽게</strong>를 끄면 픽셀 그대로)와 ⑭ 나올 프레임 수·크기·메모리 예상치. ⑮ <strong>가져오기</strong>를 누르면 진행 창(취소 가능)이 뜨고, 프레임 길이는 1000 ÷ 초당 프레임입니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-open-media-3.png" alt="프레임이 300개를 넘는 그림을 열 때 묻는 창. 세 단추에 5번 표시" width="528" height="140" loading="lazy"><figcaption>⑤ 프레임이 300개를 넘는 그림을 열 때 묻는 창(모두 열기 / 앞 300개만 / 취소)</figcaption></figure>
+<ul>
+<li>프레임이 300개를 넘으면 ⑤ "모두 열기 / 앞 300개만 / 취소"를 묻습니다.</li>
+<li>아직 <code>.gpixel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. 파일 브라우저에서 누르기, 최근 파일, 창에 끌어 놓기도 같은 길로 엽니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/files-open-media-4.png" alt="환경 설정의 영상(ffmpeg) 탭. 탭, ffmpeg 실행 파일 칸, 찾아보기 단추에 6~8번 표시" width="696" height="279" loading="lazy"><figcaption>⑥ 환경 설정의 영상(ffmpeg) 탭 · ⑦ ffmpeg 실행 파일 위치(비우면 자동으로 찾음) · ⑧ 찾아보기(Browse…)</figcaption></figure>
+<ul>
+<li><strong>영상</strong>(MP4·WebM·MOV·MKV·AVI 등)과 AVIF·HEIC 그림은 <strong>ffmpeg</strong>가 있어야 엽니다(Gpixel에 들어 있지 않고 자동으로 내려받지 않음 — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, Windows는 <code>winget install Gyan.FFmpeg</code>). PATH나 흔한 설치 위치에 있으면 저절로 찾고, 아니면 ⑥ <strong>편집 &gt; 환경 설정… &gt; 영상(ffmpeg)</strong>에서 ⑦ 실행 파일을 ⑧ 찾아보기로 고릅니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/files-open-media-5.png" alt="영상 가져오기 창. 구간, 초당 프레임, 최대 프레임 수, 크기, 부드럽게, 예상치, 가져오기 단추에 9~15번 표시" width="478" height="262" loading="lazy"><figcaption>영상 가져오기 창(예시 영상 8.4초, 1280×720, 30fps): ⑨ 구간(Range) · ⑩ 초당 프레임 · ⑪ 최대 프레임 수 · ⑫ 크기(Size) · ⑬ 부드럽게(Smooth) · ⑭ 예상치 · ⑮ 가져오기(Import)</figcaption></figure>
+<ul>
+<li>영상을 열면 먼저 <strong>영상 가져오기</strong> 창이 뜹니다: ⑨ 구간(시작~끝 초), ⑩ 초당 프레임(기본 = 영상 fps, 최대 12), ⑪ 최대 프레임 수(기본 120), ⑫ 크기(원래 크기 / 긴 변 맞춤 — ⑬ <strong>부드럽게</strong>를 끄면 픽셀 그대로)와 ⑭ 나올 프레임 수·크기·메모리 예상치. ⑮ <strong>가져오기</strong>를 누르면 진행 창(취소 가능)이 뜨고, 프레임 길이는 1000 ÷ 초당 프레임입니다.</li>
+</ul>
 
 <h3 id="files-drop-layer">캔버스에 그림 끌어 놓기</h3>
-<p>탐색기·Finder나 파일 브라우저에서 그림(PNG·JPG·BMP·GIF·WebP·APNG 등)이나 영상을 캔버스에 끌어 놓으면 파일마다 <strong>새 레이어</strong>로 들어갑니다. 끄는 동안 캔버스 둘레가 빛나고, ① 그림이 들어갈 자리가 점선 사각형으로 보입니다.</p>
 <figure class="shot"><img src="assets/guide/files-drop-layer.png" alt="그림을 끄는 중인 캔버스. 둘레가 빛나고 하트 그림이 들어갈 점선 사각형에 1번 표시" width="1034" height="531" loading="lazy"><figcaption>끄는 중: 캔버스 둘레가 빛나고 ① 그림이 들어갈 자리가 점선 사각형</figcaption></figure>
+<p>탐색기·Finder나 파일 브라우저에서 그림(PNG·JPG·BMP·GIF·WebP·APNG 등)이나 영상을 캔버스에 끌어 놓으면 파일마다 <strong>새 레이어</strong>로 들어갑니다. 끄는 동안 캔버스 둘레가 빛나고, ① 그림이 들어갈 자리가 점선 사각형으로 보입니다.</p>
+<figure class="shot"><img src="assets/guide/files-drop-layer-2.png" alt="하트 그림을 놓은 뒤의 창 전체. 타임라인의 새 레이어 heart, 캔버스의 변형 손잡이, 상태 표시줄 안내에 2~4번 표시" width="1600" height="932" loading="lazy"><figcaption>놓은 뒤: ② 파일 이름의 새 레이어(heart) · ③ 바로 들린 변형 모드 · ④ 상태 표시줄 안내(Enter 적용, Esc 넣은 그대로)</figcaption></figure>
 <ul>
 <li>② 새 레이어는 현재 레이어 위에 생기고 이름은 파일 이름(확장자 빼고)입니다. 여러 파일을 놓으면 놓은 순서대로 쌓이고 마지막 파일이 맨 위·현재 레이어가 됩니다. 부위·그룹을 고른 중이면 레이어 추가처럼 그 그룹 위에 넣습니다.</li>
 <li>그림은 <strong>놓은 픽셀이 가운데</strong>가 되게 현재 프레임에 색 그대로 들어가고, 캔버스 밖으로 나간 부분은 잘립니다. 캔버스보다 큰 그림은 캔버스 가운데에 놓고 잘렸다고 알려 줍니다 — 다 넣으려면 먼저 <a href="#tools-canvas-size">캔버스 크기 모드</a>로 캔버스를 키우세요.</li>
@@ -968,42 +1020,42 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>캔버스 <strong>밖</strong>(파일 목록·시작 화면·탭 줄·패널)에 놓으면 레이어로 넣지 않고 파일마다 새 탭으로 엽니다. 그림 없이 <code>.gpixel</code>만 놓아도 새 탭으로 엽니다.</li>
 <li>그림 한 장(한 프레임)을 넣으면 마지막 그림이 바로 ③ <a href="#tools-transform">변형 모드</a>로 들립니다(④ 상태 표시줄에 안내): 잘리기 전 그림 전체를 들고 있으니 옮기거나 크기를 맞춘 뒤 <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>로 적용하면 그때 캔버스 밖이 잘리고, <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>면 넣은 그대로 둡니다(넣기·변형은 실행취소 두 단계). 여러 프레임 그림은 변형 모드 없이 넣습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/files-drop-layer-2.png" alt="하트 그림을 놓은 뒤의 창 전체. 타임라인의 새 레이어 heart, 캔버스의 변형 손잡이, 상태 표시줄 안내에 2~4번 표시" width="1600" height="932" loading="lazy"><figcaption>놓은 뒤: ② 파일 이름의 새 레이어(heart) · ③ 바로 들린 변형 모드 · ④ 상태 표시줄 안내(Enter 적용, Esc 넣은 그대로)</figcaption></figure>
 
 <h3 id="files-cleanup">옛 결과 정리와 파일 이름 바꾸기</h3>
-<p>내보내기 방식이나 이름을 바꿔 더 이상 만들지 않게 된 옛 결과 파일(그리고 그 <code>.meta</code>)은 다음 저장 때 <strong>앱 휴지통</strong>으로 옮기고 ① 상태 표시줄에 알려 줍니다. 파일 목록에서 ② <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>나 ③ 앱 휴지통 보기로 되살릴 수 있습니다(앱 휴지통 창에서 ④ 항목을 골라 ⑤ 되살리기).</p>
 <figure class="shot"><img src="assets/guide/files-cleanup.png" alt="내보낼 이름을 바꾸고 저장한 뒤 상태 표시줄. 옛 결과를 앱 휴지통으로 옮겼다는 글에 1번 표시" width="1133" height="113" loading="lazy"><figcaption>① 내보낼 이름을 바꾸고 저장: 옛 결과를 앱 휴지통으로 옮겼다는 상태 표시줄 알림</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-cleanup-2.png" alt="파일 목록 우클릭 메뉴. 마지막 삭제 되살리기에 2번, 앱 휴지통 보기에 3번 표시" width="263" height="221" loading="lazy"><figcaption>파일 목록 우클릭 메뉴: ② 마지막 삭제 되살리기(Restore last deleted, Ctrl+Z) · ③ 앱 휴지통 보기(View app trash…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-cleanup-3.png" alt="앱 휴지통 창. 저장 때 옮겨진 옛 결과 항목에 4번, 되살리기 단추에 5번 표시" width="796" height="556" loading="lazy"><figcaption>앱 휴지통 창: ④ 저장 때 옮겨진 옛 결과(Export cleanup) · ⑤ 되살리기(Restore)</figcaption></figure>
+<p>내보내기 방식이나 이름을 바꿔 더 이상 만들지 않게 된 옛 결과 파일(그리고 그 <code>.meta</code>)은 다음 저장 때 <strong>앱 휴지통</strong>으로 옮기고 ① 상태 표시줄에 알려 줍니다. 파일 목록에서 ② <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>나 ③ 앱 휴지통 보기로 되살릴 수 있습니다(앱 휴지통 창에서 ④ 항목을 골라 ⑤ 되살리기).</p>
 <p>파일 브라우저에서 <code>.gpixel</code>의 이름을 바꾸거나 지우면, 기본 이름으로 내보낸 결과물과 <code>.meta</code>도 함께 옮기거나 앱 휴지통으로 보냅니다. Unity guid는 유지됩니다.</p>
-
 <p>정리 대상은 Gpixel이 직접 내보냈던 기록에 있는 파일뿐입니다. 사용자가 따로 만든 파일이나 내보내기 폴더·이름을 따로 지정한 파일은 건드리지 않습니다.</p>
 
 <h3 id="files-cell-names">내보낼 칸 이름</h3>
-<p>타임라인 프레임을 우클릭해 ① <strong>내보낼 칸 이름…</strong>을 정합니다. ② 비우면 <code>{태그}_{번호}</code> 또는 <code>{파일}_{번호}</code> 형식이 쓰입니다. 전체 규칙은 내보내기 창의 "칸(스프라이트) 이름 규칙"에서 정합니다.</p>
 <figure class="shot"><img src="assets/guide/files-cell-names.png" alt="타임라인 프레임 우클릭 메뉴. 내보낼 칸 이름 항목에 1번 표시" width="1034" height="558" loading="lazy"><figcaption>① 프레임 머리 우클릭 메뉴의 내보낼 칸 이름…(Export cell name…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-cell-names-2.png" alt="칸 이름 입력 창. 이름 칸에 2번 표시" width="326" height="143" loading="lazy"><figcaption>② 칸 이름 입력란 — 비우면 규칙({Tag}_{Number})대로</figcaption></figure>
+<p>타임라인 프레임을 우클릭해 ① <strong>내보낼 칸 이름…</strong>을 정합니다. ② 비우면 <code>{태그}_{번호}</code> 또는 <code>{파일}_{번호}</code> 형식이 쓰입니다. 전체 규칙은 내보내기 창의 "칸(스프라이트) 이름 규칙"에서 정합니다.</p>
 
 <h3 id="files-quit">끝낼 때 저장 묻기</h3>
+<figure class="shot"><img src="assets/guide/files-quit.png" alt="저장하지 않은 파일 두 개를 모은 창. 파일 목록과 세 단추에 1~4번 표시" width="426" height="225" loading="lazy"><figcaption>① 저장하지 않은 파일(체크해 고름) · ② 선택한 파일 저장(Save selected files) · ③ 저장 안 함(Don't save) · ④ 취소(Cancel)</figcaption></figure>
 <p>창을 닫거나 앱을 끝내면, ① 저장하지 않은 파일을 <strong>한 창</strong>에 모아 썸네일·이름과 함께 보여 줍니다.</p>
-<ul>
+<ul class="marks">
 <li>② <strong>선택한 파일 저장</strong>: 체크한 파일을 저장(내보내기 포함)하고 끝냅니다. 하나라도 실패하면 끝내지 않습니다.</li>
 <li>③ <strong>저장 안 함</strong>: 저장하지 않고 끝냅니다.</li>
 <li>④ <strong>취소</strong>: 끝내지 않습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/files-quit.png" alt="저장하지 않은 파일 두 개를 모은 창. 파일 목록과 세 단추에 1~4번 표시" width="426" height="225" loading="lazy"><figcaption>① 저장하지 않은 파일(체크해 고름) · ② 선택한 파일 저장(Save selected files) · ③ 저장 안 함(Don't save) · ④ 취소(Cancel)</figcaption></figure>
 
 <h3 id="files-settings">환경 설정</h3>
-<p>① <strong>편집 &gt; 환경 설정…</strong>(<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>)에서 바꿉니다.</p>
 <figure class="shot"><img src="assets/guide/files-settings.png" alt="편집 메뉴를 펼친 모습. 환경 설정 항목에 1번 표시" width="349" height="592" loading="lazy"><figcaption>① 편집 메뉴의 환경 설정…(Preferences…) — Ctrl+,</figcaption></figure>
-<ul>
+<p>① <strong>편집 &gt; 환경 설정…</strong>(<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>)에서 바꿉니다.</p>
+<figure class="shot"><img src="assets/guide/files-settings-2.png" alt="환경 설정 창의 일반 탭. 탭, 실행취소 횟수, 실행취소 기록, 자동 저장, 앱 휴지통 보관에 2~6번 표시" width="987" height="799" loading="lazy"><figcaption>② 일반(General) 탭 · ③ 실행취소 횟수(Undo steps) · ④ 실행취소 기록 · ⑤ 자동 저장 · ⑥ 앱 휴지통 보관</figcaption></figure>
+<ul class="marks">
 <li>② <strong>일반</strong>: ③ 실행취소 횟수(기본 1000, 최대 10000), ④ 실행취소 기록 보관, ⑤ 자동 저장, ⑥ 앱 휴지통 보관 등.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/files-settings-3.png" alt="환경 설정 창의 단축키 탭에서 save를 검색한 모습. 탭, 바꾸기·추가·없음·기본값 단추, 검색 칸, JSON 단추에 7~10번 표시" width="766" height="637" loading="lazy"><figcaption>⑦ 단축키(Shortcuts) 탭 · ⑧ 바꾸기·추가·없음·기본값(Change·Add·None·Default) · ⑨ 검색(예: save) · ⑩ JSON 내보내기·불러오기</figcaption></figure>
+<figure class="shot"><img src="assets/guide/files-settings-4.png" alt="단축키가 겹칠 때 묻는 창. 예 단추에 11번 표시" width="318" height="154" loading="lazy"><figcaption>⑪ 다른 명령이 쓰는 키(Ctrl+S)를 주면 묻는 창 — 예(Yes)면 그 명령에서 빼고 여기에 줍니다</figcaption></figure>
+<ul>
 <li>⑦ <strong>단축키</strong>: 모든 명령·도구의 키를 ⑧ 바꾸기·추가·없음·기본값으로 고치고 ⑨ 검색할 수 있습니다. 다른 명령과 겹치면 ⑪ 물어 봅니다. ⑩ JSON으로 내보내고 불러올 수 있습니다(<a href="#shortcuts">단축키</a> 참고).</li>
 <li><strong>프리셋</strong>: <strong>자동 최적화 기본 프리셋 되돌리기</strong>·<strong>그라데이션 기본 프리셋 되돌리기</strong>는 지운 기본 프리셋을 다시 넣고 고친 기본 프리셋을 처음 값으로 되돌립니다. 직접 만든 프리셋과 즐겨찾기는 그대로입니다. 프리셋 자체는 <strong>도구 &gt; 프리셋…</strong> 창에서 그라데이션·자동 최적화 탭으로 관리합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/files-settings-2.png" alt="환경 설정 창의 일반 탭. 탭, 실행취소 횟수, 실행취소 기록, 자동 저장, 앱 휴지통 보관에 2~6번 표시" width="987" height="799" loading="lazy"><figcaption>② 일반(General) 탭 · ③ 실행취소 횟수(Undo steps) · ④ 실행취소 기록 · ⑤ 자동 저장 · ⑥ 앱 휴지통 보관</figcaption></figure>
-<figure class="shot"><img src="assets/guide/files-settings-3.png" alt="환경 설정 창의 단축키 탭에서 save를 검색한 모습. 탭, 바꾸기·추가·없음·기본값 단추, 검색 칸, JSON 단추에 7~10번 표시" width="766" height="637" loading="lazy"><figcaption>⑦ 단축키(Shortcuts) 탭 · ⑧ 바꾸기·추가·없음·기본값(Change·Add·None·Default) · ⑨ 검색(예: save) · ⑩ JSON 내보내기·불러오기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/files-settings-4.png" alt="단축키가 겹칠 때 묻는 창. 예 단추에 11번 표시" width="318" height="154" loading="lazy"><figcaption>⑪ 다른 명령이 쓰는 키(Ctrl+S)를 주면 묻는 창 — 예(Yes)면 그 명령에서 빼고 여기에 줍니다</figcaption></figure>
 <p>설정 파일 위치:</p>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>위치</th></tr></thead>
@@ -1015,10 +1067,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>내보내기 설정 프리셋은 같은 폴더의 <code>export-presets.json</code>에 있습니다.</p>
 
 <h3 id="files-crash-log">오류가 생겼을 때</h3>
-<p>예상하지 못한 오류가 생겨도 앱은 끝나지 않고 ① "작업은 계속할 수 있습니다" 창을 띄웁니다. 내용은 설정 폴더의 <code>Gpixel/Logs</code>에 로그로 남습니다(최근 20개).</p>
-<div class="note">④ <strong>도움말 &gt; 오류 로그 폴더 열기</strong>(오류 창에서는 ② 로그 폴더 열기)로 로그를 찾을 수 있습니다. 오류 창의 ③ <strong>Discord에 제보</strong>로 바로 알리거나 <a href="#start-feedback">제보·아이디어</a>를 보고, 알릴 때 이 파일을 붙여 주세요. 앱이 끝날 수밖에 없는 오류라면 수정된 문서는 <code>Gpixel/Recovery/</code>에 따로 저장됩니다.</div>
 <figure class="shot"><img src="assets/guide/files-crash-log.png" alt="예상하지 못한 오류 창. 안내와 로그 파일 이름, 로그 폴더 열기 단추, Discord에 제보 단추에 1~3번 표시" width="436" height="244" loading="lazy"><figcaption>① 예상하지 못한 오류 창(예시 오류, 로그 파일 이름 포함) · ② 로그 폴더 열기(Open log folder) · ③ Discord에 제보(Report on Discord)</figcaption></figure>
+<p>예상하지 못한 오류가 생겨도 앱은 끝나지 않고 ① "작업은 계속할 수 있습니다" 창을 띄웁니다. 내용은 설정 폴더의 <code>Gpixel/Logs</code>에 로그로 남습니다(최근 20개).</p>
 <figure class="shot"><img src="assets/guide/files-crash-log-2.png" alt="도움말 메뉴를 펼친 모습. 오류 로그 폴더 열기 항목에 4번 표시" width="273" height="233" loading="lazy"><figcaption>④ 도움말 메뉴의 오류 로그 폴더 열기(Open error log folder)</figcaption></figure>
+<div class="note">④ <strong>도움말 &gt; 오류 로그 폴더 열기</strong>(오류 창에서는 ② 로그 폴더 열기)로 로그를 찾을 수 있습니다. 오류 창의 ③ <strong>Discord에 제보</strong>로 바로 알리거나 <a href="#start-feedback">제보·아이디어</a>를 보고, 알릴 때 이 파일을 붙여 주세요. 앱이 끝날 수밖에 없는 오류라면 수정된 문서는 <code>Gpixel/Recovery/</code>에 따로 저장됩니다.</div>
 </section>
 
 <section class="doc" id="pixelate">
@@ -1026,56 +1078,70 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>AI가 만든 "픽셀 느낌" 그림은 픽셀 크기가 들쭉날쭉하고(예: 7~9px), 가장자리가 번지고, JPEG 잡티가 있고, 색이 수백 개입니다. 이 창은 그런 그림(배경이 단색이든 투명이든, 여러 프레임이 든 스프라이트 시트든)을 깨끗한 픽셀 아트로 바꿉니다.</p>
 
 <h3 id="pixelate-open">여는 방법</h3>
-<ul>
-<li>① <strong>AI &gt; AI 그림 픽셀로 정리…</strong>: 빈 창이 열립니다. ② 가운데 안내대로 그림을 끌어 놓거나, <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣거나, ③ <strong>파일 찾기…</strong>로 여세요(PNG·JPG·BMP·GIF·WebP). 원본이 들어오기 전에는 ④ <strong>적용</strong>과 ⑤ 자동 최적화가 꺼져 있습니다.</li>
-<li>⑥ <strong>편집 &gt; 현재 레이어를 픽셀로 정리…</strong>: 현재 레이어를 원본으로 씁니다. 여러 프레임에 그림이 있으면 옆으로 이어 붙이고 격자로 나눠 프레임마다 한 칸이 됩니다.</li>
-<li>파일 브라우저에서 ⑦ 이미지 파일을 우클릭 &gt; ⑧ <strong>AI 그림 픽셀로 정리…</strong>: 그 파일을 원본으로 엽니다.</li>
-</ul>
 <figure class="shot"><img src="assets/guide/pixelate-open.png" alt="AI 메뉴를 연 모습" width="560" height="273" loading="lazy"><figcaption>① AI 그림 픽셀로 정리…(Pixelate AI image…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-open-2.png" alt="원본 없이 연 빈 픽셀로 정리 창" width="1000" height="672" loading="lazy"><figcaption>② 가운데 안내 · ③ 파일 찾기…(Browse…) · ④ 적용(Apply, 꺼짐) · ⑤ 자동 최적화(Auto optimize, 꺼짐)</figcaption></figure>
+<ul class="marks">
+<li>① <strong>AI &gt; AI 그림 픽셀로 정리…</strong>: 빈 창이 열립니다. ② 가운데 안내대로 그림을 끌어 놓거나, <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣거나, ③ <strong>파일 찾기…</strong>로 여세요(PNG·JPG·BMP·GIF·WebP). 원본이 들어오기 전에는 ④ <strong>적용</strong>과 ⑤ 자동 최적화가 꺼져 있습니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/pixelate-open-3.png" alt="편집 메뉴를 연 모습" width="403" height="592" loading="lazy"><figcaption>⑥ 현재 레이어를 픽셀로 정리…(Pixelate current layer…)</figcaption></figure>
+<ul class="marks">
+<li>⑥ <strong>편집 &gt; 현재 레이어를 픽셀로 정리…</strong>: 현재 레이어를 원본으로 씁니다. 여러 프레임에 그림이 있으면 옆으로 이어 붙이고 격자로 나눠 프레임마다 한 칸이 됩니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/pixelate-open-4.png" alt="파일 브라우저에서 그림 파일을 우클릭한 메뉴" width="298" height="351" loading="lazy"><figcaption>⑦ 그림 파일 · ⑧ AI 그림 픽셀로 정리…(Pixelate AI image…)</figcaption></figure>
-<p>원본 넣기·바꾸기: 창 어디에나 그림 파일을 끌어 놓거나(여럿이면 첫 그림), 글 입력 칸 밖에서 <kbd>Ctrl</kbd>+<kbd>V</kbd>(탐색기에서 복사한 그림 파일이나 그림 파일 경로 글, 아니면 클립보드 그림), <strong>파일 찾기…</strong>(주 창 파일 브라우저에서 고른 폴더에서 시작). 원본이 있으면 상태 줄의 ⑨ <strong>원본 바꾸기</strong>나 다시 끌어 놓기·붙여 넣기로 바꿀 수 있고, 후보·미리보기·최적화 결과를 비우고 처음부터 다시 만듭니다. 창은 열어 둔 채로 다른 작업(AI 채팅 등)을 할 수 있습니다.</p>
+<ul>
+<li>파일 브라우저에서 ⑦ 이미지 파일을 우클릭 &gt; ⑧ <strong>AI 그림 픽셀로 정리…</strong>: 그 파일을 원본으로 엽니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/pixelate-open-5.png" alt="원본이 들어온 창의 원본 아래 막대" width="640" height="134" loading="lazy"><figcaption>⑨ 원본 바꾸기(Replace source)</figcaption></figure>
+<p>원본 넣기·바꾸기: 창 어디에나 그림 파일을 끌어 놓거나(여럿이면 첫 그림), 글 입력 칸 밖에서 <kbd>Ctrl</kbd>+<kbd>V</kbd>(탐색기에서 복사한 그림 파일이나 그림 파일 경로 글, 아니면 클립보드 그림), <strong>파일 찾기…</strong>(주 창 파일 브라우저에서 고른 폴더에서 시작). 원본이 있으면 상태 줄의 ⑨ <strong>원본 바꾸기</strong>나 다시 끌어 놓기·붙여 넣기로 바꿀 수 있고, 후보·미리보기·최적화 결과를 비우고 처음부터 다시 만듭니다. 창은 열어 둔 채로 다른 작업(AI 채팅 등)을 할 수 있습니다.</p>
 
 <h3 id="pixelate-settings">설정 단계</h3>
-<p>단계별 설정은 왼쪽 칸에 있고, 처음에는 얇은 세로 막대로 접혀 있어 미리보기와 후보가 넓게 보입니다. ① 막대(설정 아이콘·화살표)를 누르면 부드럽게 펼쳐지고 다시 누르면 접히며, 펼친 상태는 기억합니다. 단계마다 접고 펼 수 있고, 값을 바꾸면 약 0.3초 뒤 다시 만듭니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-settings.png" alt="설정 칸이 접힌 정리 창의 왼쪽" width="640" height="560" loading="lazy"><figcaption>① 설정 칸 접기 막대</figcaption></figure>
-<ol>
+<p>단계별 설정은 왼쪽 칸에 있고, 처음에는 얇은 세로 막대로 접혀 있어 미리보기와 후보가 넓게 보입니다. ① 막대(설정 아이콘·화살표)를 누르면 부드럽게 펼쳐지고 다시 누르면 접히며, 펼친 상태는 기억합니다. 단계마다 접고 펼 수 있고, 값을 바꾸면 약 0.3초 뒤 다시 만듭니다.</p>
+<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="616" loading="lazy"><figcaption>② 1. 배경 지우기(Background) · ③ 2. 프레임 나누기(Frames)</figcaption></figure>
+<ul class="marks">
 <li>② <strong>배경 지우기</strong>: 지우지 않음 · 자동(테두리에서 가장 많은 색, 테두리가 거의 투명하면 원래 투명도 사용) · 색 고르기. 허용 오차(RGB 거리, 자동이면 테두리 잡티로 정함), <strong>테두리와 이어진 배경만</strong>(테두리에서 채우듯 지워 검은 배경에 닿은 검은 외곽선·눈은 남김), 원래 투명도 쓰기, 알파 기준, 작은 티 크기(떨어진 작은 티를 지움).</li>
 <li>③ <strong>프레임 나누기</strong>: 한 장 · 자동(완전히 빈 행·열로 나누고, 이펙트처럼 떨어진 작은 조각은 정한 거리 안의 가장 가까운 프레임에 합침. 맞닿거나 가로로 겹쳐 빈 열이 없는 스프라이트가 한 조각으로 잡혀 다른 조각보다 훨씬 넓으면 가장 얇은 세로 줄에서 가름) · 격자(가로×세로 칸 수 — 칸 선으로 픽셀을 자르지 않고 이어진 덩어리째 나눠, 칸 선을 넘은 손끝·발끝이 이웃 프레임 가장자리에 조각으로 남지 않음. 맞닿은 두 스프라이트는 칸 선 근처의 가장 얇은 곳에서 가름). 맞춤은 아래 가운데(기본) · 가운데 · 원래 위치이고, 모든 프레임이 같은 캔버스 크기가 됩니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="3. 픽셀 격자·4. 결과 크기 단계를 펼친 설정 칸" width="396" height="674" loading="lazy"><figcaption>④ 3. 픽셀 격자(Pixel grid) · ⑤ 4. 결과 크기(Output size)</figcaption></figure>
+<ul class="marks">
 <li>④ <strong>픽셀 격자</strong>: <strong>칸 크기 기준</strong>은 자동(경계가 가장 잘 맞는 쪽) · 외곽선 두께 · 색 경계 · <strong>덩어리 경계</strong>입니다(정리의 <strong>외곽선 1px 맞추기</strong>가 <strong>외곽선만 얇게</strong>·<strong>벡터로 다시 그리기</strong>·<strong>끔</strong>일 때 쓰이고, <strong>크기를 줄여서</strong>일 때는 꺼집니다). 칸 크기는 3~256px까지 재므로 100px 넘게 키운 큰 덩어리도 그 크기로 잡습니다. <strong>색 경계</strong>는 색이 바뀌는 곳 사이 길이로 픽셀 크기를 소수로 어림하며, 흔들림에 강하고 두 배수 중 더 작은 쪽을 고릅니다. <strong>외곽선 두께</strong>는 투명한 곳에 닿은 어두운 띠를 가로·세로 여러 곳에서 재어 외곽선이 1px가 되는 크기를 고릅니다. <strong>덩어리 경계</strong>는 종이 결 같은 약한 무늬를 빼고(이웃 픽셀의 OKLab 차이가 그림 안 잡음 크기를 넘는 곳만) 뚜렷한 색 경계가 한 줄 안에서 일정한 간격으로 모이는 크기를 고르고(반 칸 덩어리가 섞여도 큰 칸을 고름), 칸 경계도 그 뚜렷한 경계를 따라 놓습니다. <strong>자동</strong>은 덩어리 간격이 뚜렷하면 덩어리 경계를, 아니면 세 값마다 칸 경계를 골라 원본의 뚜렷한 경계와 가장 잘 맞는 쪽을 고릅니다(맞는 정도는 같은 경계를 자리만 섞었을 때 우연히 맞는 만큼을 뺀 값 — 칸이 클수록 경계를 고를 자리가 넓어 우연히 더 맞기 때문; 비슷하면 외곽선 → 덩어리 경계 → 색 경계 순, 고른 값의 2·3배인 값이 거의 같게 맞으면 큰 쪽). <strong>크기를 줄여서</strong>는 외곽선 두께와 같은 칸(±12%)인 값 중에서만 고릅니다(반 칸 값을 고르면 외곽선이 2px이 되므로) — 다만 외곽선이 칸보다 가늘어(번진 1px 테두리 등) 더 큰 값이 확실히 더 잘 맞으면 그 크기로 줄입니다. 색이 256개 이하인 깨끗한 그림은 정수 배로 키운 그대로의 배수(2~256)를, 1px 단위 그림(넓은 칠에 1px 외곽선만 있는 그림 포함)은 1을 그대로 씁니다. 그다음 칸 크기가 7~9px로 달라도 칸 경계가 실제 경계에 놓이게 맞춥니다. 모든 프레임이 같이 쓰기(기본) 또는 프레임마다, 흔들림 허용 %. 수동은 픽셀 크기와 X·Y 오프셋을 직접 넣고, <strong>찾은 값을 수동으로</strong>로 자동 결과를 옮깁니다. 찾은 크기·오프셋·경계 맞음 %와 "색 경계 5.75px(3%) · 외곽선 24.75px(9%) · 덩어리 경계 19px(8%) → 외곽선 두께(경계 일치 9%)"처럼 세 값과 경계 일치, 고른 쪽과 까닭이 보입니다. 크기를 줄여서일 때는 "외곽선 두께 {o}px와 같은 칸(±12%)인 값만 골라 칸 크기 {s}px로 줄입니다"(외곽선이 칸보다 가늘면 "외곽선 두께 {o}px가 칸보다 가늘어 … 칸 크기 {s}px로 줄입니다")가 보이고, 외곽선만 얇게·벡터로 다시 그리기일 때 외곽선이 칸 크기의 거의 정수 배(2배 이상)이면 "외곽선이 {n}픽셀 두께로 그려져 있어…" 안내가 붙습니다. <strong>칸 경계 지역 보정</strong>(기본 켬)은 그림 전체에 한 줄로 고른 칸 경계를 띠(기본 2칸)마다 그 띠의 뚜렷한 덩어리 경계에 맞춰 다시 고릅니다(경계는 <strong>최대 이동</strong>(기본 칸의 35%) 안, 칸 너비는 원래의 70~130%, 이웃 띠와 매끄럽게) — 군데군데 반 칸쯤 어긋나 그려진 그림도 따라가고, 띠 안에서는 곧은 경계라 칸은 사각형, 띠가 바뀌는 자리에서 경계가 꺾입니다. 띠마다 여러 줄로 이어진 색 경계를 세고 1~2px 짧은 잡음은 버리며, 색 차이가 큰 경계에 더 큰 가중치를 주므로 선명하고 이어진 경계를 먼저 맞춥니다. 한 칸 간격 안에 선명한 경계가 둘 있으면(예: 검정→살색 경계 두 줄이 5px 간격) 칸 선 하나로 둘 다 맞출 수는 없습니다. 평균 칸 크기가 <strong>최소 칸 크기(px)</strong>(기본 4px, 1~16px)보다 작으면 건너뜁니다.</li>
 <li>⑤ <strong>결과 크기</strong>: 칸 크기대로 · 고정 크기에 맞추기(가로×세로, 예: 32·48·64, 비율 유지, 여백) · 배율.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-settings-4.png" alt="5. 칸 색 고르기·6. 팔레트 단계를 펼친 설정 칸" width="396" height="728" loading="lazy"><figcaption>⑥ 5. 칸 색 고르기(Cell color) · ⑦ 6. 팔레트(Palette) · ⑧ 색 거리(Color distance) · ⑨ 명암 계열 우선(Prefer shade family)</figcaption></figure>
+<ul class="marks">
 <li>⑥ <strong>칸 색 고르기</strong>: 살짝 모은 뒤 가장 많은 색(기본) · 중앙값 · 가운데 픽셀 · 평균 · <strong>중심 가중 평균</strong>(칸 가운데 색을 더 셈) · <strong>우세 색 묶음 가중 평균</strong>(비슷한 색끼리 묶어 우세한 묶음 안에서만 평균 — 살색과 검은 옷처럼 다른 칠은 섞지 않음). 칸 테두리 무시 %, 투명 기준 %. <strong>색 묶기 간격</strong>은 가장 많은 색과 우세 색 묶음 가중 평균에서만 씁니다.</li>
 <li>⑦ <strong>팔레트</strong>: OKLab k-means(기본) · median cut · 있는 팔레트(팔레트 칸의 팔레트와 Lospec 즐겨찾기) · 원래 색 유지. 색 수 2~64 또는 자동(오차 곡선의 꺾이는 곳에서, 빨간 목도리처럼 작지만 눈에 띄는 색이 남을 때까지 늘림). <strong>팔레트 색</strong>(k-means·median cut일 때): <strong>원본 색</strong>(기본 — 비슷한 색끼리 묶은 뒤 묶음마다 칸 색 중 실제로 가장 많이 쓰인 색을 그대로 써서, 번진 가장자리 색에 끌려 흰 옷이 회색이 되지 않음) · <strong>평균 색</strong>(묶음 평균, 예전 방식). <strong>가장자리 칸 가중</strong> 0~1(기본 0.25, 원본 색일 때): 색을 묶고 자동 색 수를 정할 때 투명과 맞닿은 칸과 두 이웃 색 사이의 번진 칸(외곽선과 칠 사이 포함)을 이만큼만 셉니다. 모든 프레임에 팔레트 하나(기본), 디더링 없음·Bayer 2×2·Bayer 4×4(<a href="#featured-palette-convert">팔레트로 색 바꾸기</a>와 같음), 검정에 가까운 색을 외곽선 색 하나로 모으기(외곽선 밝기 이하 색 중 가장 많이 쓰인 팔레트 색 — 원본 색이면 실제 칸 색). 디더는 두 팔레트 색을 빛의 세기(선형광)로 섞은 색을 OKLab로 원본과 견줘 섞는 비율을 정합니다(예: 검정·흰색 반반 무늬는 sRGB 188 회색). 섞은 색이 가장 가까운 한 색보다, 무늬가 눈에 띄는 정도(두 색의 밝기 차는 크게, 색조·채도 차는 절반만 셈)를 더해도 원본에 가까울 때만 무늬를 쓰고, 팔레트 색과 겨우 알아볼 차이(OKLab 0.02) 안인 색은 디더하지 않습니다.</li>
 <li>⑧ <strong>색 거리</strong>(팔레트): 칸이 팔레트 색을 고를 때(디더 없음), 고정 색 맞추기, 색 빼기의 바꿀 색, 원본 색 고르기, 점수의 <strong>큰 면 색 바뀜</strong>에 쓰는 거리입니다. <strong>OKLCh 색상 가중</strong>(기본 — 색상 차를 색상 무게만큼 더 크게 봄. 색상 무게는 0~1000, 기본 2: 0이면 색상 차를 무시하고, 1이면 OKLab 거리와 같으며, 아주 크게 하면 밝기·채도보다 색상이 같은 계열의 색을 거의 무조건 먼저 고름) · <strong>CIEDE2000</strong> · <strong>OKLab</strong>(예전 곧은 거리). 색 묶기(k-means)는 OKLab 그대로이고, 디더(Bayer)는 빛의 세기로 섞은 색을 OKLab로 견줍니다(⑦ 팔레트). <strong>다른 색상 지키기</strong>(기본 켬): 채도(기본 0.04)와 넓이(기본 4칸)가 충분한 원본 색 무리가 색상이 20° 이상 다른 팔레트 색으로 바뀌게 되면(예: 작은 살구색 귀 그늘 → 금색) 그 색을 넣습니다 — 색 수 자동이면 더하고, 고른 색 수면 가장 덜 중요한 색(팔레트의 ¼까지, 고정 색은 그대로)과 바꿉니다. 두 팔레트 색 사이에 번진 중간 색은 넣지 않습니다. 둘 다 자동 최적화 항목이고 끌 수 있습니다. 예전에 저장한 설정·프리셋도 새 기본값으로 읽습니다.</li>
 <li>⑨ <strong>명암 계열 우선</strong>(기본 켬, 색 거리 아래): 칸 색과 색상·채도가 비슷한 팔레트 색(같은 색의 밝고 어두운 칠)이 있으면, 밝기가 비슷한 다른 색상의 색보다 그 계열에서 밝기가 가장 가까운 색으로 바꿉니다. 디더링도 색상이 다른 유채색과는 섞지 않습니다 — 진한 살구색 손 그늘이 금색이나 금색 점 무늬가 되지 않습니다. 자동 최적화 항목이고 끌 수 있습니다.</li>
-<li>⑩ <strong>정리</strong>: 외톨이 픽셀 지우기(최대 대비를 정해 눈동자는 남김), 1px 구멍 메우기, 외곽선(그대로 · 가장 어두운 색으로 통일 · 닫힌 1px 외곽선 만들기), 외곽선의 L자 모서리 겹침 줄이기, ⑪ <strong>외곽선 1px 맞추기</strong>: <strong>크기를 줄여서</strong>(기본 — 칸 크기를 바깥 외곽선 두께로 정해 그림 전체를 줄이므로 외곽선이 1px가 되고, 남은 겹친 픽셀은 한 번 가볍게 얇게 함. 격자를 수동으로 정하면 수동이 이김. 칸 크기는 먼저 잰 외곽선 두께라 외곽선 띠가 정확히 한 칸이고, 경계가 확실히 더 잘 맞는 더 큰 값으로만 옮겨 갈 뿐 두께의 ½ 같은 작은 값(외곽선 2칸)으로는 가지 않음. 외곽선 밝기를 기본 0.24보다 낮춰도 두께는 0.24로 잼) · <strong>외곽선만 얇게</strong>(칸 크기는 격자 설정대로 두고 안쪽으로 겹친 외곽선을 3겹까지 벗김. 선은 끊지 않고 눈처럼 안쪽의 어두운 모양은 그대로) · <strong>벡터로 다시 그리기</strong>(칸 크기는 외곽선만 얇게처럼 격자 설정대로 두고, 배경 지운 원본에서 투명에 닿은 외곽선 띠의 가운데 선을 따서 단순하게 한 뒤 실제 칸 경계에 맞춰 1px 픽셀 퍼펙트 선으로 다시 그림. 새 선에 놓이지 않은 옛 외곽선 칸은 바깥이면 투명, 안쪽이면 가까운 안쪽 색이 되어 외곽선이 두 겹 남지 않고, 바깥과 닿지 않은 작은 어두운 덩어리(눈)는 그대로. <strong>벡터 단순화(px)</strong>와 <strong>남길 작은 덩어리(칸)</strong>로 조절) · <strong>끔</strong>.</li>
-<li>⑫ <strong>프레임 맞추기</strong>: 이웃 프레임에 맞추기 — 앞·뒤 프레임이 같은데 조금만 다른 픽셀은 그 색을 따릅니다.</li>
-</ol>
-<figure class="shot"><img src="assets/guide/pixelate-settings-2.png" alt="1. 배경 지우기·2. 프레임 나누기 단계를 펼친 설정 칸" width="396" height="616" loading="lazy"><figcaption>② 1. 배경 지우기(Background) · ③ 2. 프레임 나누기(Frames)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-settings-3.png" alt="3. 픽셀 격자·4. 결과 크기 단계를 펼친 설정 칸" width="396" height="674" loading="lazy"><figcaption>④ 3. 픽셀 격자(Pixel grid) · ⑤ 4. 결과 크기(Output size)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-settings-4.png" alt="5. 칸 색 고르기·6. 팔레트 단계를 펼친 설정 칸" width="396" height="728" loading="lazy"><figcaption>⑥ 5. 칸 색 고르기(Cell color) · ⑦ 6. 팔레트(Palette) · ⑧ 색 거리(Color distance) · ⑨ 명암 계열 우선(Prefer shade family)</figcaption></figure>
+</ul>
 <figure class="shot"><img src="assets/guide/pixelate-settings-5.png" alt="7. 정리 단계와 외곽선 1px 맞추기 목록" width="396" height="299" loading="lazy"><figcaption>⑩ 7. 정리(Cleanup) · ⑪ 외곽선 1px 맞추기 목록(Fit outline to 1 px)</figcaption></figure>
+<ul class="marks">
+<li>⑩ <strong>정리</strong>: 외톨이 픽셀 지우기(최대 대비를 정해 눈동자는 남김), 1px 구멍 메우기, 외곽선(그대로 · 가장 어두운 색으로 통일 · 닫힌 1px 외곽선 만들기), 외곽선의 L자 모서리 겹침 줄이기, ⑪ <strong>외곽선 1px 맞추기</strong>: <strong>크기를 줄여서</strong>(기본 — 칸 크기를 바깥 외곽선 두께로 정해 그림 전체를 줄이므로 외곽선이 1px가 되고, 남은 겹친 픽셀은 한 번 가볍게 얇게 함. 격자를 수동으로 정하면 수동이 이김. 칸 크기는 먼저 잰 외곽선 두께라 외곽선 띠가 정확히 한 칸이고, 경계가 확실히 더 잘 맞는 더 큰 값으로만 옮겨 갈 뿐 두께의 ½ 같은 작은 값(외곽선 2칸)으로는 가지 않음. 외곽선 밝기를 기본 0.24보다 낮춰도 두께는 0.24로 잼) · <strong>외곽선만 얇게</strong>(칸 크기는 격자 설정대로 두고 안쪽으로 겹친 외곽선을 3겹까지 벗김. 선은 끊지 않고 눈처럼 안쪽의 어두운 모양은 그대로) · <strong>벡터로 다시 그리기</strong>(칸 크기는 외곽선만 얇게처럼 격자 설정대로 두고, 배경 지운 원본에서 투명에 닿은 외곽선 띠의 가운데 선을 따서 단순하게 한 뒤 실제 칸 경계에 맞춰 1px 픽셀 퍼펙트 선으로 다시 그림. 새 선에 놓이지 않은 옛 외곽선 칸은 바깥이면 투명, 안쪽이면 가까운 안쪽 색이 되어 외곽선이 두 겹 남지 않고, 바깥과 닿지 않은 작은 어두운 덩어리(눈)는 그대로. <strong>벡터 단순화(px)</strong>와 <strong>남길 작은 덩어리(칸)</strong>로 조절) · <strong>끔</strong>.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/pixelate-settings-6.png" alt="8. 프레임 맞추기 단계" width="396" height="143" loading="lazy"><figcaption>⑫ 8. 프레임 맞추기(Frame consistency)</figcaption></figure>
+<ul class="marks">
+<li>⑫ <strong>프레임 맞추기</strong>: 이웃 프레임에 맞추기 — 앞·뒤 프레임이 같은데 조금만 다른 픽셀은 그 색을 따릅니다.</li>
+</ul>
 
 <h3 id="pixelate-candidates">후보와 점수</h3>
+<figure class="shot"><img src="assets/guide/pixelate-candidates.png" alt="설정 칸의 후보 단계" width="398" height="228" loading="lazy"><figcaption>① 후보 수(Candidates) · ② 바꿔 볼 항목(Vary)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-candidates-2.png" alt="고른 후보 줄·점수 내역과 후보 칸들" width="1396" height="286" loading="lazy"><figcaption>③ 후보 칸 · ④ 외곽선 맞추기 방식 이름 · ⑤ 순위·점수 · ⑥ 점수 내역</figcaption></figure>
 <ul>
 <li>지금 설정에서 ② 체크한 항목(찾은 값 기준 픽셀 크기 ±1, 색 수 ±, 칸 색 방식, 정리 켜고 끄기, 디더링, <strong>외곽선 맞추기 방식</strong>(기본 체크 — 크기를 줄여서와 외곽선만 얇게 후보가 나란히 나옴))을 바꿔 가며 ③ 후보 N개(① 기본 8개)를 뒤에서 만들고, 끝나는 대로 보여 줍니다. 후보 칸에는 ④ 방식 이름이 보입니다. ⑤ 점수 순으로 정렬하고, 지금 설정의 방식을 쓴 후보 중 점수가 가장 높은 것을 미리 고릅니다.</li>
 <li>점수(0~100, AI 없이 계산)는 충실도(배경을 지운 원본의 칸과 결과를 견줌 — 계산은 아래 <a href="#pixelate-view">원본과 미리보기</a>의 배경 항목), 외톨이 픽셀, 외곽선 틈, <strong>외곽선 1px</strong>(바깥 외곽선 픽셀 중 두께가 1px뿐인 비율, 2px 이상 겹친 띠는 깎임, 기본 가중치 4로 충실도 다음으로 큼 — 캔버스에 놓은 마지막 결과 픽셀에서 재고, 외곽선 밝기를 0.24보다 낮춰도 0.24로 재어 검은 외곽선을 빼고 점수를 얻을 수 없음; 외곽선에서 안쪽으로 뻗은 1px 선은 겹침이 아님), 목표 대비 색 수, 프레임 일관성, 격자 맞음, <strong>결과 블록 반복도</strong>(칸마다 원본 평균 색으로 본 가장자리 칸 중 같은 색 2×2 묶음에 든 비율 — 칸이 진짜 칸의 ½ 이하라 결과가 아직 확대된 그림이면 1에 가까움, 디더링으로는 줄지 않음, 65%까지는 괜찮고 95%에서 가장 나쁨, 기본 가중치 2)의 가중 합입니다. 가중치는 자동 최적화 설정 창의 <strong>점수 항목별 비중(0 = 제외)</strong>에서 프리셋마다 바꾸며, 보통 후보는 체크한 첫 최적화 프리셋의 기준으로 잽니다. 고른 결과의 긴 쪽이 256px를 넘으면 미리보기 아래에 "결과가 큽니다({w}×{h}) — 칸 크기를 확인하세요"가 보입니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-candidates-3.png" alt="후보 칸에 마우스를 올린 툴팁" width="330" height="260" loading="lazy"><figcaption>⑦ 툴팁의 점수 내역</figcaption></figure>
+<ul>
 <li>후보마다 점수 내역을 ⑦ 툴팁과 ⑥ 미리보기 아래에 보여 줍니다.</li>
 <li>후보 칸을 우클릭하면 <strong>이미지 복사</strong>·<strong>크게 복사 (×4)</strong>·<strong>PNG로 저장…</strong>이 있습니다(여러 프레임 결과는 첫 프레임, 파일 이름은 원본 이름_순위 또는 _프리셋 이름). 복사한 그림은 Gpixel 안 클립보드와 시스템 클립보드에 함께 올라가 캔버스나 다른 프로그램에 붙여 넣을 수 있습니다. 최적화 후보는 같은 메뉴 아래에 <strong>이 설정만 다시 돌리기</strong>가 있습니다(<a href="#pixelate-optimize">자동 최적화</a>).</li>
 <li><strong>실패한 결과</strong>: 결과가 비었거나(모두 투명) 거의 비었거나(원본 그림의 ¼도 못 덮음) 한 색뿐이거나 모든 프레임이 8×8보다 작으면 칸 크기 감지가 잘못된 것으로 보고 0점으로 맨 뒤에 두며, 미리 고르거나 자동 최적화가 1위로 고르지 않습니다. 고르면 미리보기 아래에 "결과가 비었습니다 — 칸 크기 감지가 잘못됨(183px)"처럼 까닭이 보입니다. 자동 격자는 이런 결과가 나오면 다른 어림(다른 칸 크기 기준 값, 찾은 값의 ½·⅓)으로 저절로 다시 정리하고 그렇다고 알립니다. 자동 칸 크기는 프레임(스프라이트) 짧은 변의 1/5을 넘지 않습니다(격자 정보에 상한이 보임) — 시트에서 프레임 간격이나 큰 덩어리를 칸으로 잡지 않게.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/pixelate-candidates.png" alt="설정 칸의 후보 단계" width="398" height="228" loading="lazy"><figcaption>① 후보 수(Candidates) · ② 바꿔 볼 항목(Vary)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-candidates-2.png" alt="고른 후보 줄·점수 내역과 후보 칸들" width="1396" height="286" loading="lazy"><figcaption>③ 후보 칸 · ④ 외곽선 맞추기 방식 이름 · ⑤ 순위·점수 · ⑥ 점수 내역</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-candidates-3.png" alt="후보 칸에 마우스를 올린 툴팁" width="330" height="260" loading="lazy"><figcaption>⑦ 툴팁의 점수 내역</figcaption></figure>
 
 <h3 id="pixelate-optimize">자동 최적화</h3>
-<p>후보 위의 ① <strong>자동 최적화</strong> 단추를 누르면 바로 시작합니다(도는 동안 단추가 ⑦ <strong>취소</strong>로 바뀌고, 끝나면 돌아옵니다). 설정 창의 ⑭ <strong>불러오면 자동 최적화</strong>(기본 켬)가 켜져 있으면 원본을 넣을 때마다(열기·끌어 놓기·붙여 넣기·파일 찾기·원본 바꾸기) 첫 후보가 끝난 뒤 한 번 저절로 시작합니다 — 설정을 바꿔 다시 만들 때는 시작하지 않고, <strong>취소</strong>로 멈출 수 있습니다. 지금 설정에서 시작해 체크한 항목을 바꿔 가며 점수가 가장 높은 설정을 찾습니다. 단추 옆에는 ③ 최고 점수 그래프(시도마다 그때까지의 최고 점수, 새 돌림이 시작된 곳에 옅은 세로 선, 오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음)와 ④ 한 줄 결과("프리셋 n/m개 · t초", 한 프리셋만 다시 돌렸으면 "프리셋 이름: 돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭"), 끝난 뒤 작은 ⑤ <strong>되돌리기</strong> 단추만 보입니다. 그 옆 ② 설정 단추(슬라이더 아이콘)를 누르면 별도 창 <strong>자동 최적화 설정</strong>이 열립니다. 왼쪽 ⑮ <strong>최적화 프리셋(체크한 것을 모두 돌림)</strong> 목록에서 프리셋을 고르고, 오른쪽에서 그 프리셋의 ⑨ 항목 체크·⑩ <strong>모두 선택 / 모두 해제</strong>·⑪ 예산(<strong>시도</strong>·<strong>초</strong>)·⑯ <strong>주요 색 변화의 점수용 색 거리</strong>·⑫ <strong>점수 항목별 비중(0 = 제외)</strong>을 정합니다. 창 아래에서 ⑬ <strong>시도 기록</strong>을 펼칠 수 있습니다. 목표는 프리셋마다 그 프리셋의 점수 기준입니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-optimize.png" alt="자동 최적화가 끝난 뒤의 막대와 최적화 후보" width="1382" height="270" loading="lazy"><figcaption>① 자동 최적화(Auto optimize) · ② 설정 단추 · ③ 최고 점수 그래프 · ④ 한 줄 결과 · ⑤ 되돌리기(Revert) · ⑥ 멈춘 까닭과 점수 표시: 최적화(Optimized) · 시간초과(Time limit) · 횟수초과(Trial limit) · 취소(Cancelled)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-optimize-2.png" alt="자동 최적화가 도는 중인 막대" width="582" height="72" loading="lazy"><figcaption>⑦ 취소(Cancel) · ⑧ 진행 한 줄(돌림·시도·최고 점수)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-optimize-3.png" alt="자동 최적화 설정 창" width="1000" height="932" loading="lazy"><figcaption>⑨ 항목 체크 · ⑩ 모두 선택 / 모두 해제(Clear all) · ⑪ 예산: 시도·초(Trials·Seconds) · ⑫ 점수 항목별 비중(Score weights) · ⑬ 시도 기록(Trial history) · ⑭ 불러오면 자동 최적화(Auto optimize on load) · ⑮ 최적화 프리셋 목록(Optimizer presets) · ⑯ 점수용 색 거리(Major color shift distance)</figcaption></figure>
+<p>후보 위의 ① <strong>자동 최적화</strong> 단추를 누르면 바로 시작합니다(도는 동안 단추가 ⑦ <strong>취소</strong>로 바뀌고, 끝나면 돌아옵니다). 설정 창의 ⑭ <strong>불러오면 자동 최적화</strong>(기본 켬)가 켜져 있으면 원본을 넣을 때마다(열기·끌어 놓기·붙여 넣기·파일 찾기·원본 바꾸기) 첫 후보가 끝난 뒤 한 번 저절로 시작합니다 — 설정을 바꿔 다시 만들 때는 시작하지 않고, <strong>취소</strong>로 멈출 수 있습니다. 지금 설정에서 시작해 체크한 항목을 바꿔 가며 점수가 가장 높은 설정을 찾습니다. 단추 옆에는 ③ 최고 점수 그래프(시도마다 그때까지의 최고 점수, 새 돌림이 시작된 곳에 옅은 세로 선, 오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음)와 ④ 한 줄 결과("프리셋 n/m개 · t초", 한 프리셋만 다시 돌렸으면 "프리셋 이름: 돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭"), 끝난 뒤 작은 ⑤ <strong>되돌리기</strong> 단추만 보입니다. 그 옆 ② 설정 단추(슬라이더 아이콘)를 누르면 별도 창 <strong>자동 최적화 설정</strong>이 열립니다. 왼쪽 ⑮ <strong>최적화 프리셋(체크한 것을 모두 돌림)</strong> 목록에서 프리셋을 고르고, 오른쪽에서 그 프리셋의 ⑨ 항목 체크·⑩ <strong>모두 선택 / 모두 해제</strong>·⑪ 예산(<strong>시도</strong>·<strong>초</strong>)·⑯ <strong>주요 색 변화의 점수용 색 거리</strong>·⑫ <strong>점수 항목별 비중(0 = 제외)</strong>을 정합니다. 창 아래에서 ⑬ <strong>시도 기록</strong>을 펼칠 수 있습니다. 목표는 프리셋마다 그 프리셋의 점수 기준입니다.</p>
 <ul>
 <li>항목(기본은 외곽선 맞추기 방식만 빼고 지금 설정에서 쓸 수 있는 항목 모두 체크 — 고른 방식의 1px 외곽선을 지킴): <strong>칸 크기</strong>(크기를 줄여서로 시작하고 외곽선 맞추기 방식을 바꿔 보지 않으면 원본 외곽선 두께 ±15% 안에서만 — 외곽선 띠가 한 칸, 두께는 기본 외곽선 밝기로 재서 외곽선 밝기를 올린 최적화 결과에서 다시 시작해도 범위가 그대로; 아니면 세 방식 어림(외곽선 두께·색 경계·덩어리 경계)·시작 칸 크기와 그 2·3배·½·⅓을 하나하나 돌려 보고 그 사이를 고르게 훑음 — 아래쪽은 시작 칸 크기·자동 어림의 0.75배까지만(외곽선 맞추기도 바꿔 볼 때는 다른 방식이 어림의 ½·⅓을 따로 쟀으면 그 크기까지), 칸이 작을수록 충실도는 늘 좋아져 근거 없이 열면 결과가 커지기 때문; 깨끗한 그림의 정확한 배수면 바꾸지 않음. 자동 격자는 격자의 <strong>자동 칸 크기에 더하기(px)</strong>를, 수동 격자는 칸 크기를, 배율 크기는 배율을 바꾸고 고정 크기면 건너뜀) · 격자 시작 X·Y(수동 격자일 때만) · <strong>색 수</strong>(4~48) · <strong>칸 색 방식</strong>(여섯 방식 모두) · 칸 가장자리 무시 · 투명 문턱 · 색 묶기 간격(가장 많은 색·우세 색 묶음 가중 평균인 시도에서만) · 외곽선 밝기 · <strong>정리 켜기·끄기</strong>(외톨이·구멍·계단 각각) · 디더링 · 외곽선 맞추기 방식(벡터로 다시 그리기 포함, 기본 꺼짐 — 끄면 지금 고른 방식을 그대로 둠, '모두 선택'도 켜지 않음; 켜도 크기를 줄여서인 시도는 외곽선 두께 ±15% 안이어야 고름) · 벡터 단순화·남길 작은 덩어리(벡터로 다시 그리기인 시도에서만 바꿈) · <strong>팔레트 색</strong>(원본·평균) · 팔레트 방식(k-평균·중앙 분할) · 가장자리 칸 가중(0~1) — 이 셋은 k-평균·중앙 분할일 때만 · 외곽선 색 모으기(켜기·끄기) · <strong>칸 경계 지역 보정</strong>(켜기·끄기, 켠 시도에서 최대 이동 10~50%·띠 1~8칸) · <strong>색 거리</strong>(변환용 OKLab·CIEDE2000·OKLCh 색상 가중 — OKLCh면 색상 무게도 0~1000에서 작은 값 쪽 대표 값과 함께 탐색. 점수용 색 거리는 바꾸지 않음).</li>
 <li>먼저 항목을 하나씩 거칠게(숫자는 범위의 7곳, 고르기는 모든 값) 바꿔 본 뒤, 점수가 높은 몇 곳에서 조금씩 바꿔 가며 더 오릅니다(나아지지 않으면 걸음을 줄임). 같은 설정은 다시 돌리지 않고, 배경 지우기·프레임 나누기는 한 번만 해 여러 스레드로 빠르게 돕니다.</li>
@@ -1088,55 +1154,65 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="note"><p>함께 든 예시(기본 설정, 예전 기본 항목·예산 — 칸 크기·색 수·칸 색 방식·정리·팔레트 색, 200번·60초)는 약 3초, 시도 162번에 70.3점 → 80.8점(칸 약 16.1 → 14.9px, 26색, 구멍 메우기 끔, 팔레트 색은 원본 색 그대로, 외곽선 1px 비율 99%)입니다.</p></div>
 
 <h3 id="pixelate-view">원본과 미리보기</h3>
+<figure class="shot"><img src="assets/guide/pixelate-view.png" alt="원본과 후보가 들어온 픽셀로 정리 창 전체" width="1400" height="892" loading="lazy"><figcaption>① 원본 보기 · ② 큰 미리보기(결과·원본) · ③ 색 견본(N colors) · ④ 재생 조절과 프레임 줄 · ⑤ 후보 칸</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-view-2.png" alt="원본 아래 막대" width="713" height="76" loading="lazy"><figcaption>⑥ 배경 지운 모습(Show background removed) · ⑦ 결과 크기 자동(Auto) · ⑧ 가로×세로 · ⑨ 사슬 단추 · ⑩ 격자 보기(Show grid)</figcaption></figure>
 <ul>
 <li>① 원본 보기: 휠로 확대, 끌어서 이동, 두 번 눌러 맞추기. ⑥ <strong>배경 지운 모습</strong>으로 배경을 지운 원본을 봅니다. 원본을 우클릭하면 <strong>이미지 복사</strong>·<strong>PNG로 저장…</strong>이 있습니다(배경 지운 모습을 켰으면 배경을 지운 원본, 파일 이름 끝에 "배경지움"). 스포이드 중에는 우클릭이 스포이드 취소라 메뉴가 뜨지 않습니다.</li>
 <li>원본 아래 막대의 <strong>결과 크기</strong>: ⑦ <strong>자동</strong>(기본 켬)이면 칸 크기대로 정해지고 ⑧ 가로×세로 칸에 고른 결과의 크기가 회색으로 보입니다. 끄면 적은 가로×세로에 맞추고(바꾸면 다시 만듦), ⑨ 사슬 단추를 켜면 가로를 바꿀 때 세로가(세로를 바꿀 때 가로가) 지금 결과 비율대로 따라 바뀝니다. 왼쪽 <strong>4. 결과 크기</strong>와 같은 설정이라 어느 쪽을 바꿔도 다른 쪽이 따라갑니다.</li>
 <li>⑩ <strong>격자 보기</strong>(기본 켬): 고른 후보가 실제로 쓴 칸 경계(실제로 쓴 칸 크기, 프레임마다 들쭉날쭉한 경계 그대로 — 그래서 선이 색 덩어리와 맞음)를 왼쪽 원본 보기에 그립니다(큰 미리보기의 <strong>원본</strong> 그림에는 그리지 않고 크게 보기의 원본 칸에는 그림, 지역 보정이면 띠마다 꺾인 경계 그대로). 어두운 테두리가 있는 얇고 밝은 선이고, 확대·이동을 따라가며, 칸이 화면에서 약 3px보다 작으면 흐려지거나 숨습니다. 원본의 칸에 마우스를 올리면 그 칸과 맞는 결과 픽셀이 강조되고 미리보기가 그 프레임으로 넘어갑니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-view-3.png" alt="3. 픽셀 격자 단계의 칸 경계 지역 보정" width="398" height="471" loading="lazy"><figcaption>⑪ 칸 경계 지역 보정(Local cell correction)·최대 이동·띠·최소 칸 크기</figcaption></figure>
+<ul class="marks">
 <li>⑪ <strong>칸 경계 지역 보정</strong>은 왼쪽 픽셀 격자 설정에서 켭니다. <strong>최소 칸 크기(px)</strong>는 보정을 시작할 평균 칸 크기로, 원본 픽셀 기준 1~16px에서 바꿀 수 있습니다(기본 4px). 낮추면 작은 칸도 보정하지만 흐린 경계 잡음을 따라갈 수 있습니다. <strong>최대 이동</strong>은 칸 크기의 5~99%, <strong>띠</strong>는 1~32칸이며 이웃 칸 너비 제한 때문에 이동값을 높여도 실제로는 덜 움직일 수 있습니다. 켜도 설정한 크기에 못 미치거나 움직인 경계가 없으면 격자는 곧게 보입니다. 고른 결과 줄에 적용 여부가 표시됩니다. 자동 최적화의 <strong>지역 보정도 탐색</strong> 체크는 켬·끔, 이동 거리, 띠 너비와 최소 칸 크기를 함께 시험할지 고르는 항목일 뿐, 현재 결과에 보정을 켜는 단추가 아닙니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-view-4.png" alt="색 하나를 뺀 색 견본 줄" width="466" height="203" loading="lazy"><figcaption>⑫ 뺀 색 견본(끝에 흐리게) · ⑬ 색 빼기 안내와 모두 되살리기(Restore all) · ⑭ 원본에서 색 추가(+)</figcaption></figure>
+<ul>
 <li>색 견본·결과 픽셀은 <strong>좌클릭: 쓰인 곳 보기 · 우클릭: 이 색 빼기/되살리기</strong>로 같습니다. 견본을 <strong>우클릭</strong>하면 다시 만들지 않고 <strong>지금 결과에서만</strong> 그 색을 빼고(그 색 픽셀만 그 자리 원본 칸 색에 가장 가까운 남은 색으로 바뀌고 다른 픽셀은 그대로라 <strong>색 N개</strong>가 꼭 뺀 만큼 줆, ⑫ 견본은 끝에 빨간 테두리·빗금으로 흐리게 남음) 다시 우클릭하면 처음 결과로 되살립니다. 큰 미리보기의 결과 그림이나 크게 보기의 결과 칸에서 픽셀을 우클릭해도 그 자리에 지금 보이는 색(이미 뺀 색 대신 들어간 색이면 그 색)을 뺍니다. 마지막 남은 색은 뺄 수 없고(상태 줄에 알림), 고정 색은 우클릭하면 고정이 풀립니다. <strong>좌클릭</strong>은 결과에서 그 색 픽셀을 잠깐 강조하고(다른 색은 어둡게, 같은 색으로 이어진 덩어리마다 바깥 테두리만 노란 선으로) 그 견본도 강조합니다 — 뺀 색 견본이면 그 색이 있던 자리. 뺀 색이 있으면 ⑬ "색 빼기 N개 적용 중 · <strong>모두 되살리기</strong>"가 보이고, 뺀 색은 새로 만드는 후보·자동 최적화 결과에도 같은 뒤처리로 들어가며 넣기·프리셋·마지막 설정에 그대로 따라갑니다(설정이 조금 달라 색이 살짝 바뀌어도 OKLab 0.03 안이면 같은 색으로 봄).</li>
 <li><strong>고정 색</strong>: 색 견본 줄 끝의 ⑭ <strong>+</strong>(원본에서 색 추가)를 누르면 스포이드가 됩니다(+가 눌린 모양). 왼쪽 원본 보기, 큰 미리보기의 원본 그림, 크게 보기의 원본 칸이 스포이드 커서가 되어 올린 칸을 강조하고, 보이는 원본 그림 둘레가 강조색으로 천천히(약 1.2초 주기) 밝아졌다 어두워지며 "여기서 고르기"를 알립니다(스포이드가 끝나면 바로 사라짐). 칸을 누르면 그 칸의 대표 색(고른 후보의 칸 경계·칸 색 방식 그대로)이 고정 색으로 들어가 다시 만듭니다. 한 번 넣으면 스포이드가 끝나고(<kbd>Shift</kbd>+클릭이면 계속), <kbd>Esc</kbd>·오른쪽 클릭·+를 다시 누르면 그만둡니다. 고정 색은 팔레트에 그대로 들어가 색 수에 들고(나머지는 색 수 − 고정 색 수, 적어도 1개로 만듦), 원본 칸 색이 다른 색보다 그 색에 가까운 칸은 모두 그 색이 되며, 색 빼기에서 빠지지 않습니다. 고정 색 견본에는 파란 테두리와 오른쪽 위 파란 삼각형이 붙고(결과에 쓰이지 않아도 흐리게 보임) 우클릭하면 해제되며, "고정 색 N개 · 모두 해제"가 보입니다. 고정 색은 후보·자동 최적화(바꾸지 않음)·프리셋·마지막 설정에 따라갑니다.</li>
 <li>자동 최적화 설정 창의 <strong>모두 선택 / 모두 해제</strong>(지금 설정에서 쓸 수 있는 항목만 — 쓸 수 없는 항목은 흐리게 꺼짐) 단추는 <strong>외곽선 맞추기 방식</strong> 체크를 건드리지 않습니다(고른 방식을 지키고, 직접 켤 때만 다른 방식을 시도). 최적화는 칸 크기가 찾는 범위(위 <strong>칸 크기</strong>) 밖인 시도(예: 외곽선 밝기를 바꿔 1px이 된 경우)는 고르지 않습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-view-5.png" alt="1. 배경 지우기 단계" width="398" height="351" loading="lazy"><figcaption>⑮ 스티커 테두리 지우기(Remove sticker border) · ⑯ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
+<ul>
 <li>배경: ⑮ <strong>스티커 테두리 지우기</strong>(기본 켬)가 외곽선 바깥을 두른 흰 띠를 저절로 찾아 지우고(자동 최적화 항목으로도 켜고 끔), ⑯ <strong>배경 남기기(한 색으로)</strong>는 찾은 배경을 배경색 한 색으로 고르게 남깁니다. 단색 배경과 그림 사이에 번진 한 겹도 지웁니다. 점수에 <strong>큰 면 색 바뀜</strong>(넓게 쓰인 색이 통째로 바뀐 정도)이 더해졌고, 충실도는 (투명·불투명이 어긋난 자리 + 칸 안 구조 손실 + 눈으로 본 색 차이) ÷ 표본 수입니다. 구조 손실은 칸 안쪽 원본 픽셀이 칸 평균에서 흩어진 정도로, 선명한 경계를 반으로 가른 칸에서 크고 결과 색과는 상관없습니다. 눈으로 본 색 차이는 원본 칸 평균과 결과를 빛의 세기(선형광)의 밝기·빨강-초록·파랑-노랑 채널로 바꿔, 밝기는 조금, 색조는 더 많이 이웃 칸과 흐린 뒤 OKLab로 견줍니다(S-CIELAB 방식). 1px씩 번갈아 놓인 디더 무늬가 섞여 원래 색으로 보이면 맞는 것으로 셉니다.</li>
 <li>② 고른 후보를 크게 FPS대로 움직여 보여 주고, 옆에 같은 원본 프레임을 둡니다. 두 그림에는 <strong>결과</strong>·<strong>원본</strong> 이름이 붙습니다.</li>
 <li><strong>결과 픽셀 좌클릭</strong>: 크게 보기의 결과 그림에서 픽셀을 끌지 않고 좌클릭하면 쓰인 곳을 보여 줍니다 — 그 색의 견본이 두 색 견본 줄에서 굵은 강조색 테두리와 잠깐 커졌다 돌아오는 움직임으로 강조되고(줄이 넘치면 보이게 굴림), 누른 픽셀 표시와 같은 색 영역 둘레(견본 좌클릭과 같은 강조)가 1.2초 보이며, 상태 줄에 HEX와 결과 좌표가 나옵니다. <strong>우클릭</strong>은 그 색 빼기/되살리기입니다(위 색 견본).</li>
 <li><strong>원본 칸 좌클릭</strong>: 크게 보기의 원본 칸을 끌지 않고 좌클릭하면 누른 원본 칸과 그 칸이 된 결과 픽셀에 파란 사각형을 표시하고, 결과의 색 견본·같은 색 영역을 강조합니다. 원본 그림은 색으로 강조하지 않습니다. 상태 줄에는 "원본 칸 #대표색 → 결과 #결과색"이 나옵니다(대표색 = 그 칸의 팔레트 전 색). 원본 칸 우클릭은 아무것도 하지 않습니다. 스포이드 중에는 고정 색 추가가 먼저입니다.</li>
 <li>대표색이 검정인데 결과가 노란색이 될 수도 있습니다. <strong>외곽선 1px 맞추기</strong>의 얇게·크기를 줄여서 방식은 안쪽의 어두운 외곽선 칸을 주변의 밝은 색으로 칠해 외곽선을 1px로 줄입니다. 해당 검정 칸을 유지하려면 외곽선 1px 맞추기를 <strong>끔</strong>으로 바꿔 비교해 보세요. 지역 보정은 이 색 채우기가 아니라 칸 경계의 위치를 조절합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-view-6.png" alt="크게 보기 판" width="1400" height="892" loading="lazy"><figcaption>⑰ 결과 칸 · ⑱ 원본 칸 · ⑲ 격자 보기 단추 · ⑳ 색 견본</figcaption></figure>
+<ul>
 <li><strong>크게 보기</strong>: 큰 미리보기의 결과나 원본 그림을 한 번 좌클릭하면(끌지 않고) 대화상자를 덮는 판이 열립니다(쓰인 곳 보기는 크게 보기에서 — 위 좌클릭; 큰 미리보기 결과 그림의 우클릭은 그 픽셀 색 빼기/되살리기). ⑰ 왼쪽은 지금 프레임 결과(처음엔 들어가는 가장 큰 정수 배율, 체커), ⑱ 오른쪽은 같은 프레임의 원본을 같은 화면 크기로 보여 주고(<strong>격자 보기</strong>면 칸 경계도), 휠로 확대·축소, 끌어서 이동, 두 번 눌러 맞추기를 하면 두 칸이 함께 움직입니다. 위 줄의 이전·재생/정지·다음과 <kbd>Space</kbd>·<kbd>←</kbd>/<kbd>→</kbd>는 큰 미리보기와 같은 프레임·FPS를 쓰고, 고른 후보·색 빼기가 바뀌면 함께 바뀝니다. <kbd>Esc</kbd>, 판 밖 누르기, ✕ 단추로 닫습니다. 그림 밖을 누르면 키보드 포커스만 받고, 그림을 눌러도 포커스는 미리보기에 남아 닫은 뒤 바로 키를 쓸 수 있습니다.</li>
 <li>크게 보기 위 줄의 재생 단추 옆 ⑲ <strong>격자 보기</strong> 단추(눌리면 켬, 대화상자의 <strong>격자 보기</strong> 체크와 같이 바뀜)는 원본 칸에 실제 칸 경계를, 결과 칸에 픽셀마다 한 칸인 격자를 같은 모양의 선으로 그립니다(픽셀이 화면에서 4px보다 작으면 숨김). 그림 아래에는 큰 미리보기와 같은 ⑳ <strong>색 N개</strong> 견본(좌클릭 = 쓰인 곳 보기 — 크게 보기 결과 칸에도 강조, 뺀 색이면 그 색이 있던 자리(지금은 다른 색), 우클릭 = 색 빼기·되살리기 또는 고정 해제, 끝의 <strong>+</strong> = 원본에서 색 추가)과 프레임 줄(프레임이 하나면 숨김)이 있고, 어느 쪽에서 바꿔도 둘 다 바뀝니다.</li>
 <li>④ 큰 미리보기 아래쪽에 이전·다음 프레임, 재생·정지, FPS 칸과 프레임 줄(번호가 붙은 썸네일, 지금 프레임은 파란 테두리, 누르면 그 프레임으로 가고 멈춤)이 있습니다. 미리보기에 포커스가 있으면 <kbd>Space</kbd>로 재생·정지, <kbd>←</kbd>/<kbd>→</kbd>로 프레임을 옮깁니다.</li>
 <li>③ 그 위에 고른 후보가 쓰는 색이 <strong>색 N개</strong>와 14px 견본으로 많이 쓴 색부터 보입니다. 툴팁은 HEX와 모든 프레임의 픽셀 수(둘째 줄에 클릭 안내)이고, 견본을 좌클릭하면 결과 미리보기에서 그 색 픽셀이 잠깐 강조됩니다(나머지는 흐리게).</li>
 <li>⑤ 후보 칸: 누르면 고르고, 두 번 누르면 바로 넣습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/pixelate-view.png" alt="원본과 후보가 들어온 픽셀로 정리 창 전체" width="1400" height="892" loading="lazy"><figcaption>① 원본 보기 · ② 큰 미리보기(결과·원본) · ③ 색 견본(N colors) · ④ 재생 조절과 프레임 줄 · ⑤ 후보 칸</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-view-2.png" alt="원본 아래 막대" width="713" height="76" loading="lazy"><figcaption>⑥ 배경 지운 모습(Show background removed) · ⑦ 결과 크기 자동(Auto) · ⑧ 가로×세로 · ⑨ 사슬 단추 · ⑩ 격자 보기(Show grid)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-view-3.png" alt="3. 픽셀 격자 단계의 칸 경계 지역 보정" width="398" height="471" loading="lazy"><figcaption>⑪ 칸 경계 지역 보정(Local cell correction)·최대 이동·띠·최소 칸 크기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-view-4.png" alt="색 하나를 뺀 색 견본 줄" width="466" height="203" loading="lazy"><figcaption>⑫ 뺀 색 견본(끝에 흐리게) · ⑬ 색 빼기 안내와 모두 되살리기(Restore all) · ⑭ 원본에서 색 추가(+)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-view-5.png" alt="1. 배경 지우기 단계" width="398" height="351" loading="lazy"><figcaption>⑮ 스티커 테두리 지우기(Remove sticker border) · ⑯ 배경 남기기(한 색으로)(Keep background (one color))</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-view-6.png" alt="크게 보기 판" width="1400" height="892" loading="lazy"><figcaption>⑰ 결과 칸 · ⑱ 원본 칸 · ⑲ 격자 보기 단추 · ⑳ 색 견본</figcaption></figure>
 
 <h3 id="pixelate-output">넣기</h3>
-<ul>
+<figure class="shot"><img src="assets/guide/pixelate-output.png" alt="설정 칸의 넣기 단계" width="398" height="229" loading="lazy"><figcaption>① 현재 문서에 새 레이어 · ② 새 문서 · ③ 프레임 길이(Frame duration) · ④ 새 팔레트로도 저장</figcaption></figure>
+<ul class="marks">
 <li>① <strong>현재 문서에 새 레이어</strong>: 현재 프레임부터 넣고, 모자라면 프레임을 더합니다. 실행취소 한 단계입니다. 한 프레임 결과는 넣자마자 <a href="#tools-transform">변형 모드</a>로 들어가 잘리기 전 결과 전체를 들고 있으므로, 옮기거나 크기를 맞춘 뒤 <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>(그때 캔버스 밖이 잘림), 그대로 두려면 <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>.</li>
 <li>② <strong>새 문서</strong>: 캔버스 = 결과 크기, 스프라이트 프레임마다 프레임 하나, ③ 프레임 길이를 정합니다. 새 탭으로 열립니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/pixelate-output-2.png" alt="창 아래 단추" width="520" height="80" loading="lazy"><figcaption>⑤ 새 탭에 추가(Add to new tab) · ⑥ 적용(Apply)</figcaption></figure>
+<ul class="marks">
 <li>⑤ <strong>새 탭에 추가</strong>(창 아래 ⑥ <strong>적용</strong> 앞 단추): 넣기 설정과 관계없이 고른 결과 크기 그대로 새 문서를 새 탭에 만들고 창을 닫습니다. <kbd>Enter</kbd>는 적용 단축키가 아니므로 <strong>적용</strong>이나 <strong>새 탭에 추가</strong>를 직접 누릅니다.</li>
 <li>④ 색을 새 팔레트로도 저장할 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/pixelate-output.png" alt="설정 칸의 넣기 단계" width="398" height="229" loading="lazy"><figcaption>① 현재 문서에 새 레이어 · ② 새 문서 · ③ 프레임 길이(Frame duration) · ④ 새 팔레트로도 저장</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-output-2.png" alt="창 아래 단추" width="520" height="80" loading="lazy"><figcaption>⑤ 새 탭에 추가(Add to new tab) · ⑥ 적용(Apply)</figcaption></figure>
 
 <h3 id="pixelate-ai">AI로 다듬기 (실험)</h3>
-<ul>
+<figure class="shot"><img src="assets/guide/pixelate-ai.png" alt="AI(실험) 단계" width="398" height="343" loading="lazy"><figcaption>① 적용 후 AI로 다듬기 · ② 부탁 글(Prompt) · ③ 모델(Claude·Codex) · ④ AI 참고 자료에 더하기 · ⑤ AI에게 후보 평가 부탁 · ⑥ 보낼 후보 수(Candidates to send)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/pixelate-ai-2.png" alt="모델 목록을 펼친 모습" width="398" height="189" loading="lazy"><figcaption>⑦ 모델 목록(Claude·Codex)</figcaption></figure>
+<ul class="marks">
 <li>① <strong>적용 후 AI로 다듬기</strong>를 켜면 ② 프롬프트(기본: 끊긴 외곽선·눈과 얼굴·흩어진 픽셀을 고치고 팔레트·크기·프레임은 유지)를 고치고 ③ Claude·Codex(⑦)를 고를 수 있습니다. 넣은 뒤 채팅이 열리고 원본 그림이 붙고 프롬프트가 채워집니다. 보내지는 않으니 직접 보내기를 누르세요.</li>
 <li>④ 원본을 <a href="#ai-references">AI 참고 자료</a>에 넣는 선택도 있습니다.</li>
 <li>⑤ <strong>AI에게 후보 평가 부탁</strong>: 원본과 상위 ⑥ K개 후보를 붙이고 순위를 묻는 글을 채웁니다(보내지 않음).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/pixelate-ai.png" alt="AI(실험) 단계" width="398" height="343" loading="lazy"><figcaption>① 적용 후 AI로 다듬기 · ② 부탁 글(Prompt) · ③ 모델(Claude·Codex) · ④ AI 참고 자료에 더하기 · ⑤ AI에게 후보 평가 부탁 · ⑥ 보낼 후보 수(Candidates to send)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/pixelate-ai-2.png" alt="모델 목록을 펼친 모습" width="398" height="189" loading="lazy"><figcaption>⑦ 모델 목록(Claude·Codex)</figcaption></figure>
 
 <h3 id="pixelate-presets">프리셋</h3>
-<p>① 기본 프리셋은 <strong>기본</strong> · <strong>작은 스프라이트(32px)</strong> · <strong>색 적게(16색)</strong> · <strong>원본 색 유지</strong>입니다. ④ 이름을 붙여 ② 저장·③ 삭제할 수 있고(<code>&lt;앱 데이터&gt;/Gpixel/Pixelate/presets.json</code>), 마지막 설정은 기억합니다.</p>
 <figure class="shot"><img src="assets/guide/pixelate-presets.png" alt="프리셋 목록을 펼친 모습" width="424" height="185" loading="lazy"><figcaption>① 프리셋 목록(Preset) · ② 저장(+) · ③ 삭제</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-presets-2.png" alt="프리셋 이름을 묻는 창" width="304" height="143" loading="lazy"><figcaption>④ 프리셋 이름(Preset name)</figcaption></figure>
+<p>① 기본 프리셋은 <strong>기본</strong> · <strong>작은 스프라이트(32px)</strong> · <strong>색 적게(16색)</strong> · <strong>원본 색 유지</strong>입니다. ④ 이름을 붙여 ② 저장·③ 삭제할 수 있고(<code>&lt;앱 데이터&gt;/Gpixel/Pixelate/presets.json</code>), 마지막 설정은 기억합니다.</p>
 <div class="note"><p>함께 든 예시(4프레임 걷기, 2172×724px)는 외곽선 두께 16.3px(색 경계 8.25px, 덩어리 경계 15.5px)로 나옵니다. 기본인 크기를 줄여서는 칸 약 16px, 프레임마다 약 29×35, 약 24색, 바깥 외곽선 픽셀의 약 99%가 1px(칸 경계 지역 보정 켬, 끄면 약 96%)이고, 외곽선만 얇게에 칸 크기 기준을 색 경계로 하면 칸 약 8px, 약 99%가 1px입니다(자동이면 외곽선 두께와 경계 일치가 같아 16px). 원본에서 가장 많이 쓰인 10색과 가장 가까운 팔레트 색의 차이(OKLab, 지역 보정 끔 기준)는 원본 색이 평균 0.011·최대 0.025, 평균 색이 평균 0.013·최대 0.026입니다.</p></div>
 </section>
 
@@ -1145,32 +1221,39 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>캐릭터의 머리·몸·팔·다리처럼 크기가 서로 다른 부위를 프레임마다 그리고, 한 프레임 안에 배치해 애니메이션으로 쓰면서 부위별 스프라이트로도 내보내는 기능입니다. 같은 부위 구성으로 체형·의상·장비를 여러 벌(<strong>스킨</strong>) 그려 바꿔 낄 수도 있습니다.</p>
 
 <h3 id="parts-concept">그룹과 부위</h3>
+<figure class="shot"><img src="assets/guide/parts-concept.png" alt="그룹 Character를 고른 캔버스와 타임라인: Character 그룹 행 아래에 들여 쓴 Head·Body·Legs 부위 행이 있고, 부위마다 크기 글자와 프레임 칸, 캔버스에는 부위마다 점선 테두리가 보이는 모습" width="1038" height="788" loading="lazy"><figcaption>① 그룹 행(Character) · ② 부위 행(Head·Body·Legs) · ③ 부위 캔버스 크기(47×40) · ④ 프레임마다 다른 부위 그림 · ⑤ 프레임 안 부위 위치(Head, 모든 프레임 공통)</figcaption></figure>
 <ul>
 <li>① <strong>그룹</strong> 레이어 아래에 ② <strong>부위</strong> 레이어들이 들어갑니다.</li>
 <li>부위마다 ③ <strong>자기 캔버스 크기</strong>(예: Head 8×5)와 ④ <strong>프레임마다 자기 그림</strong>이 있습니다.</li>
 <li>⑤ 프레임 안에서의 부위 <strong>위치는 모든 프레임에 공통</strong>입니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/parts-concept.png" alt="그룹 Character를 고른 캔버스와 타임라인: Character 그룹 행 아래에 들여 쓴 Head·Body·Legs 부위 행이 있고, 부위마다 크기 글자와 프레임 칸, 캔버스에는 부위마다 점선 테두리가 보이는 모습" width="1038" height="788" loading="lazy"><figcaption>① 그룹 행(Character) · ② 부위 행(Head·Body·Legs) · ③ 부위 캔버스 크기(47×40) · ④ 프레임마다 다른 부위 그림 · ⑤ 프레임 안 부위 위치(Head, 모든 프레임 공통)</figcaption></figure>
 
 <h3 id="parts-create">만들기</h3>
+<figure class="shot"><img src="assets/guide/parts-create.png" alt="새 프로젝트 창: 시작 방식에서 부위로 시작을 고르고, 그 아래 첫 부위 이름·너비·높이 칸이 켜진 모습" width="452" height="316" loading="lazy"><figcaption>① 부위로 시작(Start with parts) · ② 첫 부위 이름·크기(First part)</figcaption></figure>
 <ul>
 <li>새 프로젝트(<span class="key" data-cmd="파일/새 프로젝트…"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>)에서 ① "부위로 시작"을 고르고 ② 첫 부위 이름·크기를 정합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/parts-create-2.png" alt="프레임·레이어 메뉴를 연 모습: 새 그룹(Ctrl+Shift+N)과 새 부위…(Shift+P) 항목" width="388" height="468" loading="lazy"><figcaption>③ 새 그룹(New group) · ④ 새 부위…(New part…)</figcaption></figure>
+<ul>
 <li><strong>프레임·레이어 &gt; ③ 새 그룹</strong>(<span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span>)</li>
+</ul>
+<figure class="shot"><img src="assets/guide/parts-create-3.png" alt="새 부위 창: 이름 칸(Arm)과 이름 빠른 단추, 너비·높이 칸과 빠른 크기 단추" width="609" height="211" loading="lazy"><figcaption>⑤ 부위 이름(Name) · ⑥ 부위 크기(Width·Height)</figcaption></figure>
+<ul>
 <li><strong>프레임·레이어 &gt; ④ 새 부위…</strong>(<span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span>) — 현재 그룹에 추가하고, 그룹이 없으면 먼저 만듭니다. 뜨는 창에서 ⑤ 이름과 ⑥ 크기를 정합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/parts-create-4.png" alt="타임라인에서 그룹 Character를 우클릭한 메뉴: 부위 추가…와 새 그룹 항목" width="384" height="416" loading="lazy"><figcaption>⑦ 새 그룹(New group, 부위·일반 레이어 메뉴에는 새 부위…도 있음) · ⑧ 부위 추가…(Add part…)</figcaption></figure>
+<ul>
 <li>타임라인 레이어 이름 우클릭 ⑦ "새 그룹·새 부위…", 그룹 우클릭 ⑧ "부위 추가…"</li>
 </ul>
-<figure class="shot"><img src="assets/guide/parts-create.png" alt="새 프로젝트 창: 시작 방식에서 부위로 시작을 고르고, 그 아래 첫 부위 이름·너비·높이 칸이 켜진 모습" width="452" height="316" loading="lazy"><figcaption>① 부위로 시작(Start with parts) · ② 첫 부위 이름·크기(First part)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/parts-create-2.png" alt="프레임·레이어 메뉴를 연 모습: 새 그룹(Ctrl+Shift+N)과 새 부위…(Shift+P) 항목" width="388" height="468" loading="lazy"><figcaption>③ 새 그룹(New group) · ④ 새 부위…(New part…)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/parts-create-3.png" alt="새 부위 창: 이름 칸(Arm)과 이름 빠른 단추, 너비·높이 칸과 빠른 크기 단추" width="609" height="211" loading="lazy"><figcaption>⑤ 부위 이름(Name) · ⑥ 부위 크기(Width·Height)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/parts-create-4.png" alt="타임라인에서 그룹 Character를 우클릭한 메뉴: 부위 추가…와 새 그룹 항목" width="384" height="416" loading="lazy"><figcaption>⑦ 새 그룹(New group, 부위·일반 레이어 메뉴에는 새 부위…도 있음) · ⑧ 부위 추가…(Add part…)</figcaption></figure>
 
 <h3 id="parts-timeline">타임라인에서 보기</h3>
+<figure class="shot"><img src="assets/guide/parts-timeline.png" alt="타임라인: Gear·Character 그룹 행과 그 아래 들여 쓴 부위 행(크기 글자·스킨 칩), 그룹 칸의 합성 썸네일" width="520" height="330" loading="lazy"><figcaption>① 접기·펴기 삼각형 · ② 그룹 합성 썸네일 · ③ 들여 쓴 부위 행(이름·크기) · ④ 스킨 칩(지금 스킨 knight, 누르면 스킨 관리 창) · ⑤ 보이기·잠금(그룹에 하면 부위도 함께)</figcaption></figure>
 <p>그룹 행은 ① 삼각형으로 접고 펼 수 있고, ② 칸에 그룹 합성 썸네일이 보입니다. ③ 부위 행은 들여쓰기되어 이름과 크기를 보여 줍니다. 이름 뒤의 ④ <strong>스킨 칩</strong>은 지금 입은 스킨이며, 누르면 스킨 관리 창이 열립니다.</p>
 <p>그룹을 ⑤ 숨기거나 잠그면 부위도 함께 숨김·잠금됩니다. 부위는 자기 그룹 안에서만 순서를 바꿀 수 있습니다.</p>
-<figure class="shot"><img src="assets/guide/parts-timeline.png" alt="타임라인: Gear·Character 그룹 행과 그 아래 들여 쓴 부위 행(크기 글자·스킨 칩), 그룹 칸의 합성 썸네일" width="520" height="330" loading="lazy"><figcaption>① 접기·펴기 삼각형 · ② 그룹 합성 썸네일 · ③ 들여 쓴 부위 행(이름·크기) · ④ 스킨 칩(지금 스킨 knight, 누르면 스킨 관리 창) · ⑤ 보이기·잠금(그룹에 하면 부위도 함께)</figcaption></figure>
 
 <h3 id="parts-arrange">배치하기(그룹 선택)</h3>
 <p>그룹을 고르면 캔버스에 프레임 전체 합성이 보입니다.</p>
+<figure class="shot"><img src="assets/guide/parts-arrange.png" alt="그룹을 고른 캔버스: Head를 클릭해 파란 실선으로 고른 상태, Legs 위에 마우스를 올려 점선 테두리와 Legs 34×25 이름표가 보이고, 몸에 파란 부위 피벗과 주황 프레임 피벗이 있는 모습" width="768" height="788" loading="lazy"><figcaption>① 마우스를 올린 부위(점선 테두리 + 이름표) · ② 클릭해 고른 부위(파란 실선) · ③ 부위 피벗(파란 점) · ④ 프레임 피벗(주황 점)</figcaption></figure>
 <ul>
 <li>① 부위 위에 마우스를 올리면 점선 테두리와 이름이 보입니다.</li>
 <li>끌어서 옮기면 위치가 정해집니다(모든 프레임에 적용, 실행취소 1단계).</li>
@@ -1178,24 +1261,27 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>부위를 더블클릭하면 그 부위 레이어를 골라 그리기로 넘어갑니다.</li>
 <li>③ 부위 피벗은 파란 점, ④ 프레임 피벗은 주황 점으로 표시됩니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/parts-arrange.png" alt="그룹을 고른 캔버스: Head를 클릭해 파란 실선으로 고른 상태, Legs 위에 마우스를 올려 점선 테두리와 Legs 34×25 이름표가 보이고, 몸에 파란 부위 피벗과 주황 프레임 피벗이 있는 모습" width="768" height="788" loading="lazy"><figcaption>① 마우스를 올린 부위(점선 테두리 + 이름표) · ② 클릭해 고른 부위(파란 실선) · ③ 부위 피벗(파란 점) · ④ 프레임 피벗(주황 점)</figcaption></figure>
 
 <h3 id="parts-draw">그리기(부위 선택)</h3>
-<p>① 부위 레이어를 고르면 ② 그 부위만 자기 크기로 보이고, 나머지는 흐리게 둘레에 보입니다. 좌표는 부위 안 기준입니다.</p>
 <figure class="shot"><img src="assets/guide/parts-draw.png" alt="Head 부위를 고른 화면: 캔버스에 Head만 자기 크기로 밝게 보이고 나머지 몸은 아래에 흐리게 보이며, 타임라인에 Head 행이 골라져 있는 모습" width="1034" height="784" loading="lazy"><figcaption>① 고른 부위 행(Head) · ② 자기 크기(47×40)로 보이는 부위(나머지는 흐리게)</figcaption></figure>
-<ul>
-<li>크기 바꾸기: <strong>프레임·레이어 &gt; ③ 부위 크기…</strong> 또는 부위 우클릭 ④ "크기…"(⑥ 기준점 9방향, 그린 픽셀은 제자리에 남음).</li>
-<li>위치를 숫자로: 부위 우클릭 ⑤ "위치…".</li>
-<li>⑦ 피벗 도구(<span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>)와 9-slice 도구(<span class="key" data-cmd="도구/9-slice"><kbd>S</kbd></span>)는 고른 부위에 적용됩니다.</li>
-</ul>
+<p>① 부위 레이어를 고르면 ② 그 부위만 자기 크기로 보이고, 나머지는 흐리게 둘레에 보입니다. 좌표는 부위 안 기준입니다.</p>
 <figure class="shot"><img src="assets/guide/parts-draw-2.png" alt="프레임·레이어 메뉴를 연 모습: 부위 크기… 항목" width="388" height="468" loading="lazy"><figcaption>③ 부위 크기…(Part size…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-draw-3.png" alt="타임라인에서 Head 부위를 우클릭한 메뉴: 부위 크기…(47×40)와 위치…(7, 4) 항목" width="511" height="438" loading="lazy"><figcaption>④ 크기…(Part size… (47×40)) · ⑤ 위치…(Position… (7, 4))</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-draw-4.png" alt="부위 크기 창: 지금 크기, 너비·높이 칸, 아래에 3×3 화살표 단추로 된 기준점" width="300" height="264" loading="lazy"><figcaption>⑥ 기준점 9방향(Anchor — 그린 그림이 놓일 자리)</figcaption></figure>
+<ul>
+<li>크기 바꾸기: <strong>프레임·레이어 &gt; ③ 부위 크기…</strong> 또는 부위 우클릭 ④ "크기…"(⑥ 기준점 9방향, 그린 픽셀은 제자리에 남음).</li>
+<li>위치를 숫자로: 부위 우클릭 ⑤ "위치…".</li>
+</ul>
 <figure class="shot"><img src="assets/guide/parts-draw-5.png" alt="왼쪽 도구 막대 아래쪽: 피벗 도구와 9-slice 도구 단추" width="52" height="211" loading="lazy"><figcaption>⑦ 피벗 도구(K) · 9-slice 도구(S)</figcaption></figure>
+<ul class="marks">
+<li>⑦ 피벗 도구(<span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>)와 9-slice 도구(<span class="key" data-cmd="도구/9-slice"><kbd>S</kbd></span>)는 고른 부위에 적용됩니다.</li>
+</ul>
 
 <h3 id="parts-auto-layout">자동 배치</h3>
-<p>타임라인 그룹 우클릭 ① <strong>자동 배치…</strong>로 부위들을 크기대로 자동으로 늘어놓습니다. ② 미리 보기를 보며 ③ <strong>적용</strong>하면 실행취소 한 단계입니다. 자동 배치를 켜 둔 그룹은 부위를 더하거나 지우거나 크기·순서를 바꿀 때마다 다시 배치되고, 타임라인 그룹 행에 ⑪ 마름모 표시가 보입니다. 이 상태에서 부위를 손으로 옮기려 하면 자동 배치를 끌지 묻습니다.</p>
 <figure class="shot"><img src="assets/guide/parts-auto-layout.png" alt="타임라인에서 그룹 Character를 우클릭한 메뉴: 자동 배치… 항목" width="384" height="416" loading="lazy"><figcaption>① 자동 배치…(Auto layout…)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/parts-auto-layout-2.png" alt="자동 배치 창: 방향·맞춤·배치·간격과 여백·순서·영역·숨긴 부위도 자리 차지 설정, 아래에 부위 셋이 가로로 늘어선 미리 보기와 적용 단추" width="547" height="568" loading="lazy"><figcaption>② 미리 보기 · ③ 적용(Apply) · ④ 방향(Direction) · ⑤ 맞춤 · ⑥ 배치 · ⑦ 간격·여백(Spacing·Padding) · ⑧ 순서(Order) · ⑨ 영역(Area) · ⑩ 숨긴 부위도 자리 차지(Hidden parts keep their place)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/parts-auto-layout-3.png" alt="자동 배치를 적용한 뒤: 캔버스에 Head·Body·Legs가 가로로 늘어서고, 타임라인 Character 그룹 행의 스킨 칩 왼쪽에 마름모 표시가 보이는 모습" width="1034" height="784" loading="lazy"><figcaption>⑪ 자동 배치 표시(마름모, 누르면 설정 창)</figcaption></figure>
+<p>타임라인 그룹 우클릭 ① <strong>자동 배치…</strong>로 부위들을 크기대로 자동으로 늘어놓습니다. ② 미리 보기를 보며 ③ <strong>적용</strong>하면 실행취소 한 단계입니다. 자동 배치를 켜 둔 그룹은 부위를 더하거나 지우거나 크기·순서를 바꿀 때마다 다시 배치되고, 타임라인 그룹 행에 ⑪ 마름모 표시가 보입니다. 이 상태에서 부위를 손으로 옮기려 하면 자동 배치를 끌지 묻습니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>설정</th><th>내용</th></tr></thead>
 <tbody>
@@ -1208,19 +1294,18 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑩ 숨긴 부위도 자리 차지</td><td>기본 켬 — 보이기를 바꿔도 다른 부위가 움직이지 않음</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/parts-auto-layout-2.png" alt="자동 배치 창: 방향·맞춤·배치·간격과 여백·순서·영역·숨긴 부위도 자리 차지 설정, 아래에 부위 셋이 가로로 늘어선 미리 보기와 적용 단추" width="547" height="568" loading="lazy"><figcaption>② 미리 보기 · ③ 적용(Apply) · ④ 방향(Direction) · ⑤ 맞춤 · ⑥ 배치 · ⑦ 간격·여백(Spacing·Padding) · ⑧ 순서(Order) · ⑨ 영역(Area) · ⑩ 숨긴 부위도 자리 차지(Hidden parts keep their place)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/parts-auto-layout-3.png" alt="자동 배치를 적용한 뒤: 캔버스에 Head·Body·Legs가 가로로 늘어서고, 타임라인 Character 그룹 행의 스킨 칩 왼쪽에 마름모 표시가 보이는 모습" width="1034" height="784" loading="lazy"><figcaption>⑪ 자동 배치 표시(마름모, 누르면 설정 창)</figcaption></figure>
 
 <h3 id="parts-export">내보내기: 프레임 시트와 부위 아틀라스</h3>
+<figure class="shot"><img src="assets/guide/parts-export.png" alt="내보내기 창: 왼쪽에 공통 설정(내보낼 결과 = 둘 다), 파일, 프레임 시트, 부위 아틀라스 묶음이 차례로 있고, 오른쪽에 프레임 시트와 부위 아틀라스 미리 보기" width="1100" height="1552" loading="lazy"><figcaption>① 프레임 시트(Frame sheet) 묶음 · ② 부위 아틀라스(Part atlas) 묶음 · ③ 내보낼 결과(Output: 프레임 시트·부위 아틀라스·둘 다) · ④ 부위 아틀라스 이름(비우면 &lt;프레임 시트 이름&gt;_parts) · ⑤ 공통 설정(Common)</figcaption></figure>
 <p>저장하면 다음 두 가지를 각각 켜고 끌 수 있습니다(③ 내보낼 결과). 둘 다 이미지 + <code>.meta</code>로 나옵니다.</p>
-<ol>
+<ul class="marks">
 <li>① <strong>프레임 시트</strong>: 프레임마다 합성한 애니메이션 시트.</li>
 <li>② <strong>부위 아틀라스</strong>: 부위 × 내용 있는 프레임마다 칸 하나. ④ 이름을 비우면 <code>&lt;프레임 시트 이름&gt;_parts</code>.</li>
-</ol>
+</ul>
 <p>배치·정렬·칸 이름은 내보내기 창의 ⑤ 공통 시트 설정을 따릅니다. 더 이상 만들지 않는 옛 파일은 앱 휴지통으로 정리됩니다(<a href="#files">파일</a> 참고).</p>
-<figure class="shot"><img src="assets/guide/parts-export.png" alt="내보내기 창: 왼쪽에 공통 설정(내보낼 결과 = 둘 다), 파일, 프레임 시트, 부위 아틀라스 묶음이 차례로 있고, 오른쪽에 프레임 시트와 부위 아틀라스 미리 보기" width="1100" height="1552" loading="lazy"><figcaption>① 프레임 시트(Frame sheet) 묶음 · ② 부위 아틀라스(Part atlas) 묶음 · ③ 내보낼 결과(Output: 프레임 시트·부위 아틀라스·둘 다) · ④ 부위 아틀라스 이름(비우면 &lt;프레임 시트 이름&gt;_parts) · ⑤ 공통 설정(Common)</figcaption></figure>
 
 <h3 id="parts-skins">스킨과 슬롯</h3>
+<figure class="shot"><img src="assets/guide/parts-skins.png" alt="스킨 knight를 입은 화면: 캔버스에 붉은 갑옷의 캐릭터와 위에 겹친 검, 타임라인에 Character 그룹 스킨 칩 knight와 흐리게 보이는 Head 칸" width="1038" height="788" loading="lazy"><figcaption>① 그룹의 지금 스킨(knight) · ② 위에 겹치는 다른 그룹(Gear, 스킨 Sword) · ③ 첫 스킨에서 물려받아 흐린 칸(Head)</figcaption></figure>
 <p>그룹마다 이름 붙은 <strong>스킨</strong> 목록이 있고(적어도 하나, 처음엔 "기본"), 그중 ① 하나만 보입니다.</p>
 <ul>
 <li>같은 그룹의 스킨끼리는 <strong>서로 바뀝니다</strong>(교체형).</li>
@@ -1228,47 +1313,52 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <p>예: 맨 아래 "기본 체형" 그룹(스킨: 기본·근육·좀비), 그 위 "헤어"·"갑옷" 그룹(첫 스킨 "없음"은 비워 두고 다른 스킨에 장비를 그림).</p>
 <p>스킨마다 다른 것은 <strong>그림뿐</strong>입니다. 부위 목록·크기·위치·피벗·9-slice는 모든 스킨이 같이 씁니다. 첫 스킨이 아닌 스킨의 <strong>빈 칸은 첫 스킨 그림을 물려받아</strong> 보이므로, 달라지는 부위만 다시 그리면 됩니다. ③ 물려받은 칸은 타임라인에 흐리게 보이고, 그 위에 그리기 시작하면 그 스킨 자신의 그림이 됩니다.</p>
-<figure class="shot"><img src="assets/guide/parts-skins.png" alt="스킨 knight를 입은 화면: 캔버스에 붉은 갑옷의 캐릭터와 위에 겹친 검, 타임라인에 Character 그룹 스킨 칩 knight와 흐리게 보이는 Head 칸" width="1038" height="788" loading="lazy"><figcaption>① 그룹의 지금 스킨(knight) · ② 위에 겹치는 다른 그룹(Gear, 스킨 Sword) · ③ 첫 스킨에서 물려받아 흐린 칸(Head)</figcaption></figure>
 
 <h3 id="parts-per-part">부위마다 따로 고르기와 부위 전용 스킨</h3>
-<p>한 그룹 안에서 부위 하나만 다른 스킨을 입힐 수 있습니다(예: 몸은 ① 그룹 스킨 "knight" 그대로, 머리만 ② "zombie"). 보이는 스킨은 <strong>부위 재정의 → ③ 그룹의 지금 스킨 → 첫 스킨</strong> 순서로 정해집니다.</p>
 <figure class="shot"><img src="assets/guide/parts-per-part.png" alt="Head만 zombie 스킨을 입은 화면: 캔버스의 얼굴이 초록색이고, 타임라인 Head 스킨 칩은 파랗게 zombie, Body 칩은 흐리게 knight, 그룹 칩은 knight" width="1034" height="784" loading="lazy"><figcaption>① 그룹을 따르는 부위(Body: knight, 흐린 칩) · ② 따로 고른 부위(Head: zombie, 파란 칩) · ③ 그룹의 지금 스킨(knight)</figcaption></figure>
-<p>부위 하나에만 있는 <strong>부위 전용 스킨</strong>(예: Head의 "모자")도 만들 수 있습니다. 스킨 관리 창 부위 줄의 ④ <strong>이 부위 스킨</strong>이나 부위 우클릭 메뉴(⑥ → ⑦)로 만들며, 그 부위의 목록에만 "개별"로 표시됩니다(⑤, ⑧).</p>
+<p>한 그룹 안에서 부위 하나만 다른 스킨을 입힐 수 있습니다(예: 몸은 ① 그룹 스킨 "knight" 그대로, 머리만 ② "zombie"). 보이는 스킨은 <strong>부위 재정의 → ③ 그룹의 지금 스킨 → 첫 스킨</strong> 순서로 정해집니다.</p>
 <figure class="shot"><img src="assets/guide/parts-per-part-2.png" alt="스킨 관리 창의 Character 그룹: 부위별을 펼친 Head·Body·Legs 줄, Head 줄 끝에 개별 표시가 붙은 Hat 카드와 이 부위 스킨 단추" width="992" height="432" loading="lazy"><figcaption>④ 이 부위 스킨(This part's skins) 단추 · ⑤ 부위 전용 스킨 카드(Hat, 개별 표시)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-per-part-3.png" alt="Head 부위 우클릭 메뉴에서 이 부위 스킨 하위 메뉴를 연 모습: 그룹 따름, 기본·knight·zombie, Hat (individual), 이 부위 스킨…, 스킨 관리…" width="720" height="438" loading="lazy"><figcaption>⑥ 이 부위 스킨(Skin for this part) 하위 메뉴 · ⑦ 이 부위 스킨…(새 부위 전용 스킨 만들기) · ⑧ 부위 전용 스킨(Hat (individual))</figcaption></figure>
-<p>부위 전용 스킨 카드를 우클릭해 ⑨ <strong>전체 스킨으로 올리기</strong>, 전체 스킨을 ⑩ <strong>이 부위 전용으로 내리기</strong>를 할 수 있습니다.</p>
+<p>부위 하나에만 있는 <strong>부위 전용 스킨</strong>(예: Head의 "모자")도 만들 수 있습니다. 스킨 관리 창 부위 줄의 ④ <strong>이 부위 스킨</strong>이나 부위 우클릭 메뉴(⑥ → ⑦)로 만들며, 그 부위의 목록에만 "개별"로 표시됩니다(⑤, ⑧).</p>
 <figure class="shot"><img src="assets/guide/parts-per-part-4.png" alt="스킨 관리 창에서 Head 줄의 Hat 카드를 우클릭한 메뉴: 맨 아래 전체 스킨으로 올리기" width="996" height="436" loading="lazy"><figcaption>⑨ 전체 스킨으로 올리기(Promote to full skin)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-per-part-5.png" alt="스킨 관리 창에서 Head 줄의 knight 카드를 우클릭한 메뉴: 맨 아래 Head 전용으로 내리기…" width="996" height="436" loading="lazy"><figcaption>⑩ 이 부위 전용으로 내리기(Demote to "Head" only…)</figcaption></figure>
+<p>부위 전용 스킨 카드를 우클릭해 ⑨ <strong>전체 스킨으로 올리기</strong>, 전체 스킨을 ⑩ <strong>이 부위 전용으로 내리기</strong>를 할 수 있습니다.</p>
 <div class="note">모자·옷·신발처럼 늘 따로 바꿀 것이라면 그룹(슬롯)을 나누는 편이 Unity에서 다루기에도 깔끔합니다.</div>
 
 <h3 id="parts-skin-manager">스킨 관리 창</h3>
-<p>① 스킨 칩 클릭, ② <strong>프레임·레이어 &gt; 스킨 관리…</strong>, 미리보기 아래 착장 줄의 ③ <strong>관리…</strong>로 엽니다. 편집하면서 옆에 띄워 둘 수 있습니다.</p>
 <figure class="shot"><img src="assets/guide/parts-skin-manager.png" alt="메인 창에서 프레임·레이어 메뉴를 연 모습: 스킨 관리… 항목, 타임라인 Character 그룹의 스킨 칩, 오른쪽 미리보기 아래 착장 줄의 관리… 단추" width="1600" height="932" loading="lazy"><figcaption>① 스킨 칩 · ② 프레임·레이어 &gt; 스킨 관리…(Manage skins…) · ③ 착장 줄의 관리…(Manage…)</figcaption></figure>
+<p>① 스킨 칩 클릭, ② <strong>프레임·레이어 &gt; 스킨 관리…</strong>, 미리보기 아래 착장 줄의 ③ <strong>관리…</strong>로 엽니다. 편집하면서 옆에 띄워 둘 수 있습니다.</p>
+<figure class="shot"><img src="assets/guide/parts-skin-manager-2.png" alt="스킨 관리 창 위쪽: 전체 착장 미리 보기, 착장 프리셋, Gear 그룹 카드, Character 그룹의 Default·knight·zombie 카드와 새 스킨·복제 단추" width="1000" height="777" loading="lazy"><figcaption>④ 전체 착장(Full outfit) · ⑤ 그룹의 스킨 카드 · ⑥ 새 스킨(New skin) · ⑦ 복제(Duplicate)</figcaption></figure>
 <ul>
 <li>맨 위에 ④ 전체 착장, 그 아래 그룹마다 ⑤ 스킨 <strong>카드</strong>가 나열됩니다. 카드를 누르면 바로 적용되고, 두 번 누르면 적용하고 창을 닫습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/parts-skin-manager-3.png" alt="스킨 관리 창 전체: zombie 카드 우클릭 메뉴(적용·복제·이름 바꾸기…·삭제·앞으로·뒤로), 펼친 부위별 줄의 없음 카드, 맨 위 보기 거르기 토글" width="1000" height="1152" loading="lazy"><figcaption>⑧ 카드 우클릭 메뉴(이름 바꾸기…·삭제·앞으로/뒤로) · ⑨ 부위별(Per part) · ⑩ 없음(None) 카드 · ⑪ 보기 거르기(All | Group skins | Individual skins)</figcaption></figure>
+<ul>
 <li>⑥ <strong>새 스킨(빈)</strong>, ⑦ <strong>복제</strong>, 카드 우클릭 메뉴(⑧)의 <strong>이름 바꾸기…</strong>, <strong>삭제</strong>, <strong>앞으로/뒤로</strong>. 카드를 끌어서 순서를 바꿀 수도 있고, 맨 앞의 스킨이 기본 스킨이 됩니다. 모두 실행취소됩니다.</li>
 <li>⑨ <strong>부위별</strong>을 펼치면 부위마다 스킨 카드가 나오고, 누르면 그 부위만 그 스킨이 됩니다. 맨 앞 ⑩ <strong>없음</strong> 카드는 그룹 스킨을 그대로 따릅니다.</li>
 <li>맨 위 ⑪ <strong>전체 | 그룹 스킨 | 개별 스킨</strong> 토글로 보이는 카드를 거를 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/parts-skin-manager-2.png" alt="스킨 관리 창 위쪽: 전체 착장 미리 보기, 착장 프리셋, Gear 그룹 카드, Character 그룹의 Default·knight·zombie 카드와 새 스킨·복제 단추" width="1000" height="777" loading="lazy"><figcaption>④ 전체 착장(Full outfit) · ⑤ 그룹의 스킨 카드 · ⑥ 새 스킨(New skin) · ⑦ 복제(Duplicate)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/parts-skin-manager-3.png" alt="스킨 관리 창 전체: zombie 카드 우클릭 메뉴(적용·복제·이름 바꾸기…·삭제·앞으로·뒤로), 펼친 부위별 줄의 없음 카드, 맨 위 보기 거르기 토글" width="1000" height="1152" loading="lazy"><figcaption>⑧ 카드 우클릭 메뉴(이름 바꾸기…·삭제·앞으로/뒤로) · ⑨ 부위별(Per part) · ⑩ 없음(None) 카드 · ⑪ 보기 거르기(All | Group skins | Individual skins)</figcaption></figure>
 
 <h3 id="parts-outfits">착장 바꾸기와 착장 프리셋</h3>
 <p>창 말고도 다음 방법으로 착장을 바꿉니다.</p>
+<figure class="shot"><img src="assets/guide/parts-outfits.png" alt="미리보기 패널 아래 착장 줄: Gear 스킨 상자 Sword, Character 스킨 상자 knight, 관리… 단추" width="302" height="234" loading="lazy"><figcaption>① 착장 줄(Outfit — 그룹마다 스킨 상자)</figcaption></figure>
 <ul>
 <li>미리보기 아래 ① <strong>착장</strong> 줄(그룹마다 스킨 선택)</li>
 <li>이전/다음 스킨(현재 그룹): <span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span></li>
-<li>그룹 우클릭 ② "스킨", 부위 우클릭 ③ "이 부위 스킨" 메뉴</li>
 </ul>
-<figure class="shot"><img src="assets/guide/parts-outfits.png" alt="미리보기 패널 아래 착장 줄: Gear 스킨 상자 Sword, Character 스킨 상자 knight, 관리… 단추" width="302" height="234" loading="lazy"><figcaption>① 착장 줄(Outfit — 그룹마다 스킨 상자)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-outfits-2.png" alt="그룹 Character 우클릭 메뉴에서 스킨: knight 하위 메뉴를 연 모습: 스킨 목록과 새 스킨·복제·이름 바꾸기·삭제·순서 항목" width="592" height="473" loading="lazy"><figcaption>② 그룹 우클릭 스킨(Skin: knight) 하위 메뉴</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-outfits-3.png" alt="Head 부위 우클릭 메뉴에서 이 부위 스킨 하위 메뉴를 연 모습" width="776" height="438" loading="lazy"><figcaption>③ 부위 우클릭 이 부위 스킨(Skin for this part) 하위 메뉴</figcaption></figure>
+<ul>
+<li>그룹 우클릭 ② "스킨", 부위 우클릭 ③ "이 부위 스킨" 메뉴</li>
+</ul>
 <p>착장 바꾸기는 보기 전환이라 실행취소 기록에는 남지 않지만 파일에 저장됩니다.</p>
-<p><strong>착장 프리셋</strong>: 스킨 관리 창의 ④ <strong>지금 착장 저장…</strong>으로 지금 조합을 이름 붙여 저장하고, ⑤ 카드를 누르면 그 착장으로 바뀝니다. ⑥ 우클릭으로 덮어쓰기·이름 바꾸기·삭제·순서 바꾸기를 합니다. 지워진 그룹·스킨이 있으면 건너뛰고 알려 줍니다.</p>
 <figure class="shot"><img src="assets/guide/parts-outfits-4.png" alt="스킨 관리 창의 착장 프리셋: Knight set·Zombie 카드와 지금 착장 저장… 단추, Zombie 카드 우클릭 메뉴(적용·지금 착장으로 덮어쓰기·이름 바꾸기…·삭제·앞으로·뒤로)" width="556" height="276" loading="lazy"><figcaption>④ 지금 착장 저장…(Save current outfit…) · ⑤ 착장 프리셋 카드 · ⑥ 카드 우클릭 메뉴(덮어쓰기·이름 바꾸기·삭제·순서)</figcaption></figure>
+<p><strong>착장 프리셋</strong>: 스킨 관리 창의 ④ <strong>지금 착장 저장…</strong>으로 지금 조합을 이름 붙여 저장하고, ⑤ 카드를 누르면 그 착장으로 바뀝니다. ⑥ 우클릭으로 덮어쓰기·이름 바꾸기·삭제·순서 바꾸기를 합니다. 지워진 그룹·스킨이 있으면 건너뛰고 알려 줍니다.</p>
 
 <h3 id="parts-skin-export">스킨 내보내기</h3>
 <p>내보내기 공통 설정의 <strong>스킨</strong>에서 고릅니다.</p>
+<figure class="shot"><img src="assets/guide/parts-skin-export.png" alt="내보내기 창: 공통 설정의 스킨 줄(지금 착장·고른 스킨·스킨 고르기… (6))과 스킨 담기 줄(한 이미지·따로 파일), 오른쪽에 스킨마다 한 줄씩 늘어난 프레임 시트 미리 보기" width="1100" height="792" loading="lazy"><figcaption>① 지금 착장(Current outfit) · ② 고른 스킨(Selected skins) · ③ 스킨 고르기…(Choose skins…) · ④ 한 이미지(One image) · ⑤ 따로 파일(Separate files)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/parts-skin-export-2.png" alt="스킨 고르기 창: 그룹마다 스킨 체크(Head 전용 Hat 포함), 착장 프리셋 체크, 합성할 레이어, 맨 아래 부위 아틀라스의 물려받은 칸도 이 스킨 스프라이트로 체크 상자" width="484" height="637" loading="lazy"><figcaption>⑥ 스킨(그룹별·부위 전용) · ⑦ 착장 프리셋(Outfit presets) · ⑧ 물려받은 칸도 이 스킨 스프라이트로(Use this skin's sprites for inherited cells too)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>설정</th><th>결과</th></tr></thead>
 <tbody>
@@ -1276,13 +1366,11 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>② 고른 스킨</td><td>③ <strong>스킨 고르기</strong> 창에서 체크한 ⑥ 스킨·⑦ 착장 프리셋을 각각 내보냅니다. ④ <strong>한 이미지</strong>에 모으거나(칸 이름 <code>&lt;이름&gt;@&lt;스킨&gt;</code>) ⑤ <strong>따로 파일</strong>(<code>&lt;시트&gt;@&lt;스킨&gt;.png</code>)로 나눌 수 있습니다.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/parts-skin-export.png" alt="내보내기 창: 공통 설정의 스킨 줄(지금 착장·고른 스킨·스킨 고르기… (6))과 스킨 담기 줄(한 이미지·따로 파일), 오른쪽에 스킨마다 한 줄씩 늘어난 프레임 시트 미리 보기" width="1100" height="792" loading="lazy"><figcaption>① 지금 착장(Current outfit) · ② 고른 스킨(Selected skins) · ③ 스킨 고르기…(Choose skins…) · ④ 한 이미지(One image) · ⑤ 따로 파일(Separate files)</figcaption></figure>
 <p>부위 아틀라스에서 첫 스킨은 원래 이름(<code>Head</code>, <code>Head_1</code> …)을 그대로 쓰고, 다른 스킨은 직접 그린 칸만 <code>Head@knight</code>처럼 들어갑니다. 물려받은 칸까지 그 스킨 이름으로 넣으려면 스킨 고르기 창의 ⑧ <strong>물려받은 칸도 이 스킨 스프라이트로</strong>를 켭니다.</p>
-<figure class="shot"><img src="assets/guide/parts-skin-export-2.png" alt="스킨 고르기 창: 그룹마다 스킨 체크(Head 전용 Hat 포함), 착장 프리셋 체크, 합성할 레이어, 맨 아래 부위 아틀라스의 물려받은 칸도 이 스킨 스프라이트로 체크 상자" width="484" height="637" loading="lazy"><figcaption>⑥ 스킨(그룹별·부위 전용) · ⑦ 착장 프리셋(Outfit presets) · ⑧ 물려받은 칸도 이 스킨 스프라이트로(Use this skin's sprites for inherited cells too)</figcaption></figure>
 
 <h3 id="parts-sprite-library">Unity Sprite Library</h3>
-<p>내보내기 탭 부위 아틀라스 묶음의 ① <strong>Sprite Library</strong>를 켜면, Unity 2D Animation 패키지용 Sprite Library Asset을 <strong>그룹 × 스킨마다</strong> ② <code>&lt;부위 아틀라스 이름&gt;_&lt;그룹&gt;@&lt;스킨&gt;.spriteLib</code>로 만듭니다.</p>
 <figure class="shot"><img src="assets/guide/parts-sprite-library.png" alt="내보내기 창의 부위 아틀라스 묶음: Sprite Library 켬, 그 설명, 아래에 부위 아틀라스 PNG와 .spriteLib 결과 경로" width="492" height="273" loading="lazy"><figcaption>① Sprite Library 켜기 · ② 만들어지는 .spriteLib 파일(그룹 × 스킨마다)</figcaption></figure>
+<p>내보내기 탭 부위 아틀라스 묶음의 ① <strong>Sprite Library</strong>를 켜면, Unity 2D Animation 패키지용 Sprite Library Asset을 <strong>그룹 × 스킨마다</strong> ② <code>&lt;부위 아틀라스 이름&gt;_&lt;그룹&gt;@&lt;스킨&gt;.spriteLib</code>로 만듭니다.</p>
 <ul>
 <li><strong>Category = 부위</strong>, <strong>Label = 프레임</strong>(<code>0</code>, <code>1</code> … 또는 <code>idle_0</code> …).</li>
 <li>같은 그룹의 라이브러리는 Category·Label이 모두 같고 스프라이트만 다릅니다. 그래서 애니메이션 하나로 모든 스킨을 씁니다.</li>
@@ -1292,58 +1380,66 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="parts-import">예전 파일과 PNG 가져오기</h3>
 <ul>
 <li>예전 버전의 아틀라스 <code>.gpixel</code>을 열면 그룹 "부위" + 스프라이트마다 부위 하나로 바뀝니다. Unity의 guid·spriteID는 그대로 이어집니다.</li>
-<li>칸 크기가 서로 다른 PNG 시트는 ① 그룹 하나 + ② 칸마다 부위 하나로 가져옵니다. 이때 ③ 프레임 시트 내보내기는 꺼진 채로 시작합니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/parts-import.png" alt="칸 크기가 서로 다른 부위 아틀라스 PNG를 연 화면: 타임라인에 그룹 wolf_parts 하나와 그 아래 Head·Body·Legs 부위, 프레임 1개" width="1034" height="784" loading="lazy"><figcaption>① 시트 이름의 그룹 하나(wolf_parts) · ② 칸마다 부위 하나(Head·Body·Legs)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-import-2.png" alt="가져온 그림의 내보내기 창 공통 설정: 내보낼 결과가 부위 아틀라스만 켜진 상태" width="488" height="519" loading="lazy"><figcaption>③ 내보낼 결과 = 부위 아틀라스(Part atlas, 프레임 시트는 꺼짐)</figcaption></figure>
+<ul>
+<li>칸 크기가 서로 다른 PNG 시트는 ① 그룹 하나 + ② 칸마다 부위 하나로 가져옵니다. 이때 ③ 프레임 시트 내보내기는 꺼진 채로 시작합니다.</li>
+</ul>
 </section>
 
 <section class="doc" id="ai">
 <h2>AI 채팅 (Claude · Codex)</h2>
 
 <h3 id="ai-overview">무엇을 할 수 있나요</h3>
+<figure class="shot"><img src="assets/guide/ai-overview.png" alt="AI 채팅 창에 &quot;캐릭터에 1px 흰 외곽선을 넣어 줘&quot;를 부탁해 캔버스의 캐릭터에 외곽선이 들어간 모습" width="1280" height="812" loading="lazy"><figcaption>① 말로 한 부탁 · ② AI가 직접 고친 열린 그림 · ③ Claude·Codex 탭</figcaption></figure>
 <p>편집기 안에서 AI와 대화하며 그림을 만들고 고칠 수 있습니다. "검은 테두리를 넣어 줘", "걷는 프레임 4장을 그려 줘"처럼 말로 부탁하면(①) AI가 열린 그림을 직접 고칩니다(②).</p>
 <p>API 키는 필요 없습니다. 컴퓨터에 설치된 <strong>Claude Code</strong>(Claude 구독 로그인) 또는 <strong>Codex CLI</strong>(ChatGPT 구독 로그인)를 그대로 씁니다. 사용량은 각 구독에서 차감됩니다. 둘 중 무엇을 쓸지는 채팅 창 위쪽 ③ 탭에서 고릅니다.</p>
-<figure class="shot"><img src="assets/guide/ai-overview.png" alt="AI 채팅 창에 &quot;캐릭터에 1px 흰 외곽선을 넣어 줘&quot;를 부탁해 캔버스의 캐릭터에 외곽선이 들어간 모습" width="1280" height="812" loading="lazy"><figcaption>① 말로 한 부탁 · ② AI가 직접 고친 열린 그림 · ③ Claude·Codex 탭</figcaption></figure>
 
 <h3 id="ai-open">채팅 창 열기</h3>
+<figure class="shot"><img src="assets/guide/ai-open.png" alt="AI 메뉴를 펼친 위 막대: AI 채팅 단추, AI 메뉴, AI 채팅(Ctrl+L) 항목" width="1280" height="140" loading="lazy"><figcaption>① 위 막대 오른쪽의 AI 채팅 단추 · ② AI 메뉴 · ③ AI 채팅(AI chat, Ctrl+L)</figcaption></figure>
 <ul>
 <li>① 메뉴 아래 막대 오른쪽의 <strong>AI 채팅</strong> 단추</li>
 <li>메뉴 ② <strong>AI</strong> &gt; ③ <strong>AI 채팅</strong></li>
 <li><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span>(③ 항목 오른쪽에 적혀 있음)</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-open.png" alt="AI 메뉴를 펼친 위 막대: AI 채팅 단추, AI 메뉴, AI 채팅(Ctrl+L) 항목" width="1280" height="140" loading="lazy"><figcaption>① 위 막대 오른쪽의 AI 채팅 단추 · ② AI 메뉴 · ③ AI 채팅(AI chat, Ctrl+L)</figcaption></figure>
 <p>채팅은 작은 창으로 따로 뜨며 위치와 크기를 기억합니다. 앱을 닫을 때 열려 있었다면 다음에 다시 열립니다.</p>
 
 <h3 id="ai-setup">처음 한 번: 설치와 로그인</h3>
 <p>Gpixel 설치 파일에는 Claude Code와 Codex CLI가 들어 있지 않습니다. 처음 쓸 때 다음 순서를 따르세요.</p>
+<figure class="shot"><img src="assets/guide/ai-setup.png" alt="Claude Code를 찾지 못했을 때의 채팅 창: 설치 단추, 설치 명령과 복사 단추, 직접 경로 지정, 다시 확인" width="520" height="672" loading="lazy"><figcaption>① 터미널에서 설치하고 로그인(Install and log in via terminal) · ② 명령 복사(Copy) · ③ 직접 경로 지정 · ④ 다시 확인(Check again)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/ai-setup-2.png" alt="설치 단추를 누르면 뜨는 AI 설치 확인 창: 실행할 명령과 확인 단추" width="476" height="183" loading="lazy"><figcaption>⑤ 실행할 명령 · ⑥ 승인(OK)</figcaption></figure>
 <ol>
 <li>CLI가 없으면 ① <strong>터미널에서 설치하고 로그인</strong>을 누르고, ⑤ 실행할 명령을 확인해 ⑥ 승인합니다.</li>
 <li>터미널에서 공식 설치 명령이 실행되고, 성공하면 로그인 명령이 이어집니다. 브라우저 인증은 직접 마칩니다.</li>
+</ol>
+<figure class="shot"><img src="assets/guide/ai-setup-3.png" alt="처음 쓸 때 뜨는 AI 상태 창: Claude Code는 설치·로그인됨, Codex CLI는 설치 안 됨" width="724" height="571" loading="lazy"><figcaption>⑦ Claude Code 설치·로그인 확인됨 · ⑧ Codex CLI 설치 안 됨 · ⑨ AI로 계속(Continue to AI)</figcaption></figure>
+<ol>
 <li>Gpixel이 설치·로그인 상태를 확인하고(⑦ 준비됨, ⑧ 설치 안 됨처럼 보임) ⑨ 채팅 화면으로 넘어갑니다.</li>
 </ol>
-<figure class="shot"><img src="assets/guide/ai-setup.png" alt="Claude Code를 찾지 못했을 때의 채팅 창: 설치 단추, 설치 명령과 복사 단추, 직접 경로 지정, 다시 확인" width="520" height="672" loading="lazy"><figcaption>① 터미널에서 설치하고 로그인(Install and log in via terminal) · ② 명령 복사(Copy) · ③ 직접 경로 지정 · ④ 다시 확인(Check again)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-setup-2.png" alt="설치 단추를 누르면 뜨는 AI 설치 확인 창: 실행할 명령과 확인 단추" width="476" height="183" loading="lazy"><figcaption>⑤ 실행할 명령 · ⑥ 승인(OK)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-setup-3.png" alt="처음 쓸 때 뜨는 AI 상태 창: Claude Code는 설치·로그인됨, Codex CLI는 설치 안 됨" width="724" height="571" loading="lazy"><figcaption>⑦ Claude Code 설치·로그인 확인됨 · ⑧ Codex CLI 설치 안 됨 · ⑨ AI로 계속(Continue to AI)</figcaption></figure>
 <ul>
 <li>Codex에 필요한 Node.js가 없으면 함께 설치합니다(Windows는 winget 또는 공식 ZIP, macOS는 Homebrew 또는 nvm).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-setup-4.png" alt="설치는 됐지만 로그인하지 않은 Codex 탭: Codex로 로그인, 터미널에서 로그인 단추" width="520" height="200" loading="lazy"><figcaption>⑩ Codex로 로그인(Log in with Codex) · ⑪ 터미널에서 로그인(Log in via terminal)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/ai-setup-5.png" alt="채팅 창 위쪽 머리줄에 보이는 로그인한 계정" width="760" height="37" loading="lazy"><figcaption>⑫ 로그인한 계정</figcaption></figure>
+<ul>
 <li>이미 설치했지만 로그인이 안 되어 있으면 ⑩ <strong>Claude로 로그인 / Codex로 로그인</strong> 또는 ⑪ <strong>터미널에서 로그인</strong>을 누릅니다. 로그인한 계정은 창 위쪽(⑫)에 보입니다.</li>
 <li>설치가 실패하면 터미널의 오류를 확인하고, 화면의 ② 명령 복사·③ 직접 경로 지정·④ <strong>다시 확인</strong>을 쓰세요.</li>
 <li>macOS의 ChatGPT 앱에 들어 있는 Codex CLI는 저절로 찾습니다. 그 밖에 따로 설치할 것은 없습니다.</li>
 <li>Windows에서 npm으로 설치한 Codex CLI는 <code>codex.cmd</code>를 거치지 않고 패키지 안의 <code>codex.exe</code>를 바로 실행하므로, 긴 대화나 그림 첨부도 명령줄 길이 한도(cmd.exe 8191자)에 걸리지 않습니다. 그래도 한도(약 32,000자)를 넘으면 실행하지 않고 "명령줄이 너무 깁니다" 오류를 보여 줍니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-setup-4.png" alt="설치는 됐지만 로그인하지 않은 Codex 탭: Codex로 로그인, 터미널에서 로그인 단추" width="520" height="200" loading="lazy"><figcaption>⑩ Codex로 로그인(Log in with Codex) · ⑪ 터미널에서 로그인(Log in via terminal)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-setup-5.png" alt="채팅 창 위쪽 머리줄에 보이는 로그인한 계정" width="760" height="37" loading="lazy"><figcaption>⑫ 로그인한 계정</figcaption></figure>
 
 <h3 id="ai-tabs">Claude 탭과 Codex 탭</h3>
+<figure class="shot"><img src="assets/guide/ai-tabs.png" alt="Codex 탭이 작업 중일 때 Claude 탭에서 보내자 안내가 뜨고 글이 입력란에 남은 모습" width="520" height="672" loading="lazy"><figcaption>① Claude·Codex 탭(작업 중인 Codex 뒤에 점) · ② 다른 탭이 작업 중이라는 안내 · ③ 보내지 않고 남은 글</figcaption></figure>
 <p>창 위쪽의 ① <strong>[Claude | Codex]</strong>는 탭입니다. 탭마다 대화, 입력란, 첨부, 모델, 되돌리기 단추가 따로 있고, 탭을 바꿔도 대화는 이어집니다.</p>
 <ul>
 <li>답을 받는 중에 다른 탭으로 가도 작업은 계속되고, 도는 동안 탭 이름 뒤에 점이 붙습니다(①의 Codex 뒤).</li>
 <li>두 AI가 같은 그림을 동시에 고치지 않도록 <strong>한 번에 한 탭만</strong> 일합니다. 한 탭이 작업 중이면 다른 탭에서 보낸 글은 보내지지 않고(② 안내 줄) ③ 입력란에 그대로 남습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-tabs.png" alt="Codex 탭이 작업 중일 때 Claude 탭에서 보내자 안내가 뜨고 글이 입력란에 남은 모습" width="520" height="672" loading="lazy"><figcaption>① Claude·Codex 탭(작업 중인 Codex 뒤에 점) · ② 다른 탭이 작업 중이라는 안내 · ③ 보내지 않고 남은 글</figcaption></figure>
 
 <h3 id="ai-chat">대화하기</h3>
+<figure class="shot"><img src="assets/guide/ai-chat.png" alt="대화 중인 채팅 창: 보내기, 이미지…, 캔버스 첨부, 모델, 새 대화, 물음표, 마지막 메시지의 연필·휴지통" width="520" height="752" loading="lazy"><figcaption>① 보내기(Send) · ② 이미지…(Image…) · ③ 캔버스 첨부(Attach canvas) · ④ 모델 · ⑤ 새 대화(New chat) · ⑥ 물음표 단추 · ⑦ 연필(수정)·휴지통(삭제)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/ai-chat-2.png" alt="답을 받는 동안 보내기 자리에 나오는 정지 단추" width="520" height="213" loading="lazy"><figcaption>⑧ 정지(Stop)</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>할 일</th><th>방법</th></tr></thead>
 <tbody>
@@ -1357,55 +1453,64 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>답 멈추기</td><td>⑧ <strong>정지</strong>(답을 받는 동안 보내기 자리에 나옴)</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/ai-chat.png" alt="대화 중인 채팅 창: 보내기, 이미지…, 캔버스 첨부, 모델, 새 대화, 물음표, 마지막 메시지의 연필·휴지통" width="520" height="752" loading="lazy"><figcaption>① 보내기(Send) · ② 이미지…(Image…) · ③ 캔버스 첨부(Attach canvas) · ④ 모델 · ⑤ 새 대화(New chat) · ⑥ 물음표 단추 · ⑦ 연필(수정)·휴지통(삭제)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-chat-2.png" alt="답을 받는 동안 보내기 자리에 나오는 정지 단추" width="520" height="213" loading="lazy"><figcaption>⑧ 정지(Stop)</figcaption></figure>
-<p>모델 목록 첫 칸 ⑨ <strong>기본</strong>에는 실제로 쓰일 모델 이름이 함께 보입니다.</p>
 <figure class="shot"><img src="assets/guide/ai-chat-3.png" alt="모델 목록을 펼친 모습: 첫 칸은 기본과 실제로 쓰일 모델" width="520" height="182" loading="lazy"><figcaption>⑨ 기본(Default) · 실제로 쓰일 모델</figcaption></figure>
+<p>모델 목록 첫 칸 ⑨ <strong>기본</strong>에는 실제로 쓰일 모델 이름이 함께 보입니다.</p>
+<figure class="shot"><img src="assets/guide/ai-chat-4.png" alt="입력란의 그림 칩(#1)에 마우스를 올려 작은 미리보기가 뜬 모습" width="520" height="256" loading="lazy"><figcaption>⑩ 입력란의 그림 칩(#1) · ⑪ 마우스를 올린 미리보기</figcaption></figure>
 <p>붙인 그림은 입력란 위에 따로 늘어서지 않고, 커서 자리에 ⑩ <strong>그림 칩</strong>(체크무늬 위의 작은 정사각형 썸네일과 강조색 <strong>#1</strong>, <strong>#2</strong>…를 둥근 강조색 테두리로 감싼 것, 글줄 높이에 맞춤)으로 글 사이에 들어갑니다. 픽셀 아트 썸네일은 흐려지지 않게 픽셀 그대로 키웁니다. 칩 앞뒤로 글을 이어 쓸 수 있고, 번호는 메시지 안에서 글 순서대로 1부터 붙습니다.</p>
 <ul>
 <li>칩은 한 덩어리입니다. 칩 바로 뒤에서 <kbd>Backspace</kbd>, 바로 앞에서 <kbd>Delete</kbd>를 누르면 칩과 그 첨부가 함께 빠지고, 방향키는 칩을 건너뜁니다. 칩을 빼거나 순서가 바뀌면 남은 칩의 번호가 다시 매겨집니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-chat-5.png" alt="그림 칩을 누르면 뜨는 큰 그림과 첨부 빼기 단추" width="520" height="527" loading="lazy"><figcaption>⑫ 크게 보인 그림 · ⑬ 첨부 빼기(Remove attachment)</figcaption></figure>
+<ul>
 <li>칩에 마우스를 올리면 ⑪ 작은 미리보기가, 누르면 ⑫ 큰 그림과 ⑬ <strong>첨부 빼기</strong> 단추가 보입니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-chat-6.png" alt="보낸 메시지 안의 그림 칩" width="322" height="98" loading="lazy"><figcaption>⑭ 보낸 메시지의 그림 칩</figcaption></figure>
+<ul>
 <li>보낸 메시지에도 같은 자리에 같은 모양의 ⑭ 칩(체크무늬 정사각형 썸네일과 #번호)이 보이고, 올리면 미리보기, 누르면 크게 봅니다. AI에는 그림이 칩 순서대로 첨부되고 글의 칩 자리는 <code>[Image #1]</code>처럼 적혀, 어느 그림을 말하는지 알 수 있습니다.</li>
 <li>다시 연 지난 대화에도 칩이 같은 자리에 보입니다(저장된 64px 미리보기). 이 기능 전에 저장한 대화는 예전처럼 글 위에 썸네일이 보입니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-chat-4.png" alt="입력란의 그림 칩(#1)에 마우스를 올려 작은 미리보기가 뜬 모습" width="520" height="256" loading="lazy"><figcaption>⑩ 입력란의 그림 칩(#1) · ⑪ 마우스를 올린 미리보기</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-chat-5.png" alt="그림 칩을 누르면 뜨는 큰 그림과 첨부 빼기 단추" width="520" height="527" loading="lazy"><figcaption>⑫ 크게 보인 그림 · ⑬ 첨부 빼기(Remove attachment)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-chat-6.png" alt="보낸 메시지 안의 그림 칩" width="322" height="98" loading="lazy"><figcaption>⑭ 보낸 메시지의 그림 칩</figcaption></figure>
 
 <h3 id="ai-history">지난 대화 이어 하기</h3>
 <p>대화는 답이 끝날 때마다 자동으로 저장됩니다. Claude와 Codex는 대화 목록이 따로 있습니다.</p>
+<figure class="shot"><img src="assets/guide/ai-history.png" alt="새 대화를 누른 지난 대화 목록: 즐겨찾기 별이 맨 위, 줄마다 제목·날짜·모델과 휴지통" width="470" height="592" loading="lazy"><figcaption>① 새 대화(New chat) · ② 지난 대화 목록 · ③ 즐겨찾기 별 · ④ 휴지통 · ⑤ 새 대화를 시작하는 입력란</figcaption></figure>
 <ul>
 <li>① <strong>새 대화</strong>를 누르면 대화 칸에 ② <strong>지난 대화 목록</strong>이 뜹니다. 줄마다 제목(첫 메시지), 날짜, 모델이 보입니다.</li>
 <li>줄을 누르면 그 대화가 다시 보이고, 이어서 보내면 같은 대화로 이어집니다. 예전 차례의 <strong>이 단계 되돌리기</strong> 단추는 다시 생기지 않습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-history-2.png" alt="휴지통을 누르면 묻는 대화 지우기 창" width="304" height="126" loading="lazy"><figcaption>⑥ 지우기(Yes)</figcaption></figure>
+<ul>
 <li>③ 별 아이콘으로 <strong>즐겨찾기</strong>하면 맨 위에 고정되고 자동으로 지워지지 않습니다. ④ 휴지통 아이콘은 물어본 뒤(⑥) 지웁니다.</li>
 <li>목록에서 ⑤ 아래 입력란에 쓰고 보내면 새 대화가 시작됩니다.</li>
 <li>AI마다 20개까지 남기고, 넘치면 즐겨찾기가 아닌 가장 오래된 대화부터 지웁니다.</li>
 <li>채팅 창을 다시 열거나 앱을 다시 켜면 탭마다 마지막으로 보던 대화(또는 목록)가 그대로 열립니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-history.png" alt="새 대화를 누른 지난 대화 목록: 즐겨찾기 별이 맨 위, 줄마다 제목·날짜·모델과 휴지통" width="470" height="592" loading="lazy"><figcaption>① 새 대화(New chat) · ② 지난 대화 목록 · ③ 즐겨찾기 별 · ④ 휴지통 · ⑤ 새 대화를 시작하는 입력란</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-history-2.png" alt="휴지통을 누르면 묻는 대화 지우기 창" width="304" height="126" loading="lazy"><figcaption>⑥ 지우기(Yes)</figcaption></figure>
 
 <h3 id="ai-help">도움말과 예시 부탁</h3>
+<figure class="shot"><img src="assets/guide/ai-help.png" alt="물음표 단추로 오른쪽에 도움말 칸을 연 채팅 창" width="810" height="752" loading="lazy"><figcaption>① 물음표 단추 · ② 닫기(X) · ③ AI가 할 수 있는 일(What the AI can do)</figcaption></figure>
 <p><strong>새 대화</strong> 옆 ① 물음표 단추를 누르면 창이 오른쪽으로 넓어지며 대화 옆에 도움말 칸이 열립니다. 대화는 그대로 보이고 계속 쓸 수 있습니다. 물음표 단추를 다시 누르거나 칸 위의 ② <strong>X</strong>를 누르면 닫히고 창이 원래 너비로 돌아갑니다. 창이 화면 오른쪽 끝에 있으면 칸이 보이도록 창이 왼쪽으로 옮겨졌다가 닫을 때 돌아오고, 최대화한 창에서는 대화 칸이 좁아집니다.</p>
-<ul>
+<ul class="marks">
 <li>③ <strong>AI가 할 수 있는 일</strong>: 그림 보기, 그림 생성 → 픽셀 변환, 그리기, 프레임·애니메이션, 레이어, 그룹·부위, 스킨·의상, 레이어 효과, 참고 자료, 캔버스·색, 파일 도구를 묶음별로 설명합니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-help-2.png" alt="도움말 칸을 내린 예시 부탁과 잘 쓰는 요령" width="368" height="720" loading="lazy"><figcaption>④ 예시 부탁(누르면 입력란에 들어감) · ⑤ 잘 쓰는 요령(Tips)</figcaption></figure>
+<ul class="marks">
 <li>④ <strong>예시 부탁</strong>: 누르면 입력란에 들어갑니다(도움말 칸은 열린 채). 고쳐서 보내세요.</li>
 <li>⑤ <strong>잘 쓰는 요령</strong>: 직접 써 본 결과 Codex의 GPT-6-Astra가 가장 잘 그렸고, Codex는 기본으로 GPT-6-Astra(추천)를 씁니다. 크기·팔레트·스타일을 분명히 적고, 참고 그림을 첨부하고, 큰 일은 작게 나눠 부탁하세요. 마지막 메시지는 지우거나 고쳐 다시 보낼 수 있습니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-help.png" alt="물음표 단추로 오른쪽에 도움말 칸을 연 채팅 창" width="810" height="752" loading="lazy"><figcaption>① 물음표 단추 · ② 닫기(X) · ③ AI가 할 수 있는 일(What the AI can do)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-help-2.png" alt="도움말 칸을 내린 예시 부탁과 잘 쓰는 요령" width="368" height="720" loading="lazy"><figcaption>④ 예시 부탁(누르면 입력란에 들어감) · ⑤ 잘 쓰는 요령(Tips)</figcaption></figure>
 
 <h3 id="ai-generate">그림 생성 → 픽셀 변환</h3>
 <p>Codex 탭에서 "검을 든 기사 그려 줘"처럼 부탁하면 AI가 점을 하나씩 찍는 대신 <code>generate_pixel_art</code> 도구를 부릅니다. Gpixel은 내 컴퓨터의 Codex CLI(<code>codex exec</code>, Codex 이미지 생성)를 내 ChatGPT 로그인으로 실행해 고품질 그림을 만들고(API 키 없음), 그 그림을 <a href="#pixelate">AI 그림 픽셀로 정리</a>와 같은 방식(배경 지우기, 자동 최적화, 공유 팔레트, 1px 외곽선)으로 픽셀 아트로 바꿔 넣습니다. 그림 한 장에 30~90초쯤 걸립니다.</p>
+<figure class="shot"><img src="assets/guide/ai-generate.png" alt="Codex 탭에서 그리기 설정 칸을 연 모습(직접 찍기를 고름)" width="810" height="229" loading="lazy"><figcaption>① 그리기 설정 단추(열려 있으면 빨간 X) · ② Codex CLI 상태 · ③ 정보 아이콘 · ④ 그림 생성 → 픽셀 변환 · ⑤ 직접 찍기 · ⑥ 팔레트 색만 사용</figcaption></figure>
 <ul>
 <li><strong>그리기 설정</strong>: 채팅 창 위쪽 물음표 단추 옆의 ① <strong>그리기 설정</strong> 단추(슬라이더 아이콘)를 누르면 도움말 칸처럼 오른쪽에 설정 칸이 열립니다. 도움말과 그리기 설정은 한 번에 하나만 열리고, 열려 있는 동안 단추가 빨간 X로 바뀝니다. 칸에는 ② Codex CLI 상태(로그인됨 / 설치 안 됨 / 로그인 안 됨)도 보입니다.</li>
 <li>선택지의 긴 설명은 이름이나 옆의 ③ 정보 아이콘에 마우스를 올리면 보입니다. 그림 생성을 고르면 생성 옵션만, 직접 찍기를 고르면 <strong>팔레트 색만 사용</strong>만 보입니다.</li>
 <li><strong>그리는 방식</strong>: ④ <strong>그림 생성 → 픽셀 변환</strong>(기본)은 위처럼 그림을 생성해 변환합니다. ⑤ <strong>직접 찍기</strong>는 예전처럼 AI가 픽셀 도구로 한 점씩 그립니다(작은 수정이나 점 단위로 정확히 고칠 때 알맞음).
 <ul><li>⑥ <strong>팔레트 색만 사용</strong>(직접 찍기 아래, 기본 끔, 설정에 기억): 켜면 AI가 픽셀 도구로 칠하는 색(draw_pixels의 색 표, set_pixels, draw_shape, fill, replace_color의 바꿀 색, new_project 배경)을 <strong>지금 팔레트</strong>에서 가장 가까운 색으로 바꿉니다(픽셀로 정리와 같은 색 거리). 완전 투명(지우기)은 그대로 되고, 반투명 색은 가장 가까운 불투명 팔레트 색이 됩니다. 도구 결과에 "팔레트 색으로 맞춤: #E63228→#C81E1E"처럼 알리고, 메시지마다 팔레트 색(64개까지)을 함께 보내 처음부터 그 색으로 그리게 합니다. Claude·Codex 탭 모두 적용되며, 생성한 그림(변환의 팔레트 설정)과 레이어 효과에는 영향이 없습니다. 끄면 예전처럼 모든 색과 알파를 씁니다.</li></ul></li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-generate-2.png" alt="그림 생성을 고르면 보이는 생성 옵션" width="810" height="625" loading="lazy"><figcaption>⑦ 결과 크기 보정 · ⑧ 결과 크기 · ⑨ 배경 지우기 · ⑩ 변환 자동 최적화 · ⑪ 넣는 곳 · ⑫ 스타일 참고 · ⑬ 애니메이션 기본 프레임 수 · ⑭ 생성 방식</figcaption></figure>
+<ul>
 <li><strong>넣기</strong>(⑪): 현재 문서의 <strong>새 레이어</strong>(AI 차례와 함께 실행취소 한 단계) 또는 <strong>새 문서</strong>로 넣습니다.</li>
 <li><strong>배경</strong>: 배경을 말하지 않으면 풍경 없이 투명한 빈 배경으로 그리게 합니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-generate.png" alt="Codex 탭에서 그리기 설정 칸을 연 모습(직접 찍기를 고름)" width="810" height="229" loading="lazy"><figcaption>① 그리기 설정 단추(열려 있으면 빨간 X) · ② Codex CLI 상태 · ③ 정보 아이콘 · ④ 그림 생성 → 픽셀 변환 · ⑤ 직접 찍기 · ⑥ 팔레트 색만 사용</figcaption></figure>
 <div class="table-wrap"><table>
 <thead><tr><th>생성 옵션</th><th>내용</th></tr></thead>
 <tbody>
@@ -1419,43 +1524,47 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>⑭ <strong>생성 방식</strong>(애니메이션 묶음)</td><td><strong>한 장에 모두(권장)</strong>(기본) · <strong>프레임마다 따로</strong>(예전 방식: 1프레임과 바로 앞 프레임을 참고로 붙여 한 프레임씩 생성). 프레임마다 따로를 고르면 프레임 사이에 캐릭터 모습·크기가 자주 바뀌고 프레임 수만큼 오래 걸린다는 빨간 경고가 보입니다.</td></tr>
 </tbody>
 </table></div>
-<figure class="shot"><img src="assets/guide/ai-generate-2.png" alt="그림 생성을 고르면 보이는 생성 옵션" width="810" height="625" loading="lazy"><figcaption>⑦ 결과 크기 보정 · ⑧ 결과 크기 · ⑨ 배경 지우기 · ⑩ 변환 자동 최적화 · ⑪ 넣는 곳 · ⑫ 스타일 참고 · ⑬ 애니메이션 기본 프레임 수 · ⑭ 생성 방식</figcaption></figure>
 <p>옵션은 설정에 기억됩니다.</p>
+<figure class="shot"><img src="assets/guide/ai-generate-3.png" alt="걷는 애니메이션을 부탁해 스프라이트 시트를 생성 중인 진행 줄" width="470" height="220" loading="lazy"><figcaption>⑮ 스프라이트 시트 생성 중 진행 줄 · ⑯ 정지(Stop)</figcaption></figure>
 <ul>
 <li><strong>애니메이션</strong>: "걷는 애니메이션 만들어줘"처럼 부탁하면 동작마다 들어 있는 키 포즈(또는 AI가 정한 자세)로 프레임을 계획하고, 기본으로 <strong>스프라이트 시트 한 장으로 한 번에</strong> 생성합니다. Codex 이미지 생성 한 번이 같은 캐릭터의 모든 프레임을 한 줄로 나란히(7프레임부터 2줄 격자, 예: 4×2) 같은 크기·카메라·바닥선, 투명 배경, 글자·격자선 없이 가로로 넓은 그림 한 장에 그립니다(프롬프트에 프레임별 자세 목록). ⑮ 채팅 진행 줄에 "스프라이트 시트 생성 중(4프레임, Codex)…"처럼 보입니다. 시트는 먼저 빈 열·행으로 자동으로 나누고, 프레임 수가 맞지 않으면 격자(N×1 또는 열×행)로 다시 나눕니다. 프레임은 아래 가운데에 맞추고(점프는 원래 위치 그대로) 한 캔버스·공유 팔레트·1px 외곽선(기본)으로 함께 변환합니다. 시트는 줄이지 않고 원래 크기(긴 변 4096px까지)로 변환해 픽셀 덩어리가 작아지지 않고 칸 경계 지역 보정이 그대로 켜집니다. <strong>프레임마다 따로</strong>면 "프레임 2/6 생성 중(Codex)…"처럼 한 프레임씩 만듭니다. ⑯ <strong>정지</strong>로 멈출 수 있습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-generate-4.png" alt="그림 생성이 끝난 결과 카드: 썸네일, 넣은 결과, 변환 설정 보기 단추" width="468" height="347" loading="lazy"><figcaption>⑰ 결과 카드 · ⑱ 변환 설정 보기(View conversion settings)</figcaption></figure>
+<ul class="marks">
 <li>⑰ <strong>결과 카드</strong>: 끝나면 채팅에 썸네일(프레임은 옆으로 나란히), 넣은 결과 안내, ⑱ <strong>변환 설정 보기</strong> 단추가 붙습니다. 단추를 누르면 생성한 시트와 쓴 나누기·변환 설정(프레임마다 따로면 프레임 그림들)을 불러온 <strong>AI 그림 픽셀로 정리</strong> 창이 열려, 설정을 바꿔 다시 넣을 수 있습니다. 생성 기록은 <code>&lt;설정 폴더&gt;/Gpixel/AiDraw/</code>에 최근 40개까지 남습니다(시트는 <code>sheet.png</code>, 프레임마다 따로면 <code>frame-01.png</code>…).</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-generate-5.png" alt="Claude 탭의 그리기 설정: 그림 생성 옆 빨간 경고 아이콘과 그 풍선" width="438" height="155" loading="lazy"><figcaption>⑲ 빨간 경고 아이콘과 풍선</figcaption></figure>
+<ul>
 <li><strong>Claude 탭</strong>: Claude는 그림을 만들 수 없어 늘 직접 찍기로 그립니다. 그리기 설정의 그림 생성 옆에 ⑲ 빨간 경고 아이콘이 보이고, 마우스를 올리면 "Claude는 그림을 만들 수 없어 직접 찍기로 그립니다. 그림 생성은 Codex 탭에서 쓸 수 있습니다."가 나옵니다. "Codex에 맡겨"처럼 분명히 부탁하면 Claude도 <code>generate_pixel_art</code>를 불러 그 그림만 Codex로 생성합니다(Codex CLI 설치와 로그인 필요).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-generate-3.png" alt="걷는 애니메이션을 부탁해 스프라이트 시트를 생성 중인 진행 줄" width="470" height="220" loading="lazy"><figcaption>⑮ 스프라이트 시트 생성 중 진행 줄 · ⑯ 정지(Stop)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-generate-4.png" alt="그림 생성이 끝난 결과 카드: 썸네일, 넣은 결과, 변환 설정 보기 단추" width="468" height="347" loading="lazy"><figcaption>⑰ 결과 카드 · ⑱ 변환 설정 보기(View conversion settings)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/ai-generate-5.png" alt="Claude 탭의 그리기 설정: 그림 생성 옆 빨간 경고 아이콘과 그 풍선" width="438" height="155" loading="lazy"><figcaption>⑲ 빨간 경고 아이콘과 풍선</figcaption></figure>
 <div class="note"><p>채팅 도움말(물음표 단추)의 AI가 할 수 있는 일에 <strong>그림 생성 → 픽셀 변환</strong> 묶음(<code>generate_pixel_art</code>)이 있습니다.</p></div>
 
 <h3 id="ai-file-only">지금 그림만 고치게 하기</h3>
+<figure class="shot"><img src="assets/guide/ai-file-only.png" alt="지금 그림만을 켜고 새 그림을 만들어 달라고 하자 거절된 대화" width="470" height="592" loading="lazy"><figcaption>① 지금 그림만(Current file only) · ② 편집 범위 안내 · ③ 거절된 새 그림 만들기(new_project)</figcaption></figure>
 <p>입력란 아래 <strong>캔버스 첨부</strong> 옆의 ① <strong>지금 그림만</strong>을 켜고 보내면, AI는 보내는 순간 열려 있는 그림 하나만 고칩니다.</p>
 <ul>
 <li>그 그림 안에서는 그리기는 물론 새 레이어·프레임·그룹·부위·스킨을 만들고, 레이어 효과를 넣고, 레이어를 정리할 수 있습니다.</li>
 <li>새 프로젝트·열기처럼 다른 파일을 열거나 만드는 일은 거절됩니다(③ 빨간 줄, 저장은 됨).</li>
 <li>채팅에 ② <code>편집 범위: 지금 그림 "slime.gpixel"만</code>처럼 범위가 표시됩니다. 끄면 다음 메시지부터 제한이 풀립니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-file-only.png" alt="지금 그림만을 켜고 새 그림을 만들어 달라고 하자 거절된 대화" width="470" height="592" loading="lazy"><figcaption>① 지금 그림만(Current file only) · ② 편집 범위 안내 · ③ 거절된 새 그림 만들기(new_project)</figcaption></figure>
 
 <h3 id="ai-locked">잠긴 레이어 지키기</h3>
 <p>AI는 <strong>잠긴 레이어</strong>(그룹이 잠겼으면 그 부위도)를 언제나 건드리지 않습니다. 지금 그림만을 켜지 않아도 마찬가지입니다.</p>
+<figure class="shot"><img src="assets/guide/ai-locked.png" alt="타임라인에서 잠근 레이어를 바꾸려다 거절된 도구 줄" width="1280" height="812" loading="lazy"><figcaption>① 잠긴 레이어라 거절된 도구 줄 · ② 타임라인의 자물쇠(잠김)</figcaption></figure>
 <ul>
 <li>픽셀, 이름·보이기·불투명도, 부위 위치·크기, 레이어 효과 넣기·고치기·지우기·영구 적용, 그 그룹의 스킨·착장 바꾸기는 "잠겨 있어 바꿀 수 없습니다"라는 이유와 함께 거절됩니다(①).</li>
 <li>잠긴 레이어에 그림이 있는 프레임 지우기와, 잠긴 레이어가 있을 때 캔버스 크기 바꾸기(효과에 맞춰 늘리기 포함)도 거절됩니다. 읽기는 됩니다.</li>
 <li>AI가 바꾸면 안 되는 레이어는 타임라인의 ② 자물쇠로 잠가 두세요.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-locked.png" alt="타임라인에서 잠근 레이어를 바꾸려다 거절된 도구 줄" width="1280" height="812" loading="lazy"><figcaption>① 잠긴 레이어라 거절된 도구 줄 · ② 타임라인의 자물쇠(잠김)</figcaption></figure>
 
 <h3 id="ai-progress">진행 표시</h3>
-<p>답이 오는 동안 맨 아래 줄(①)에 지금 하는 일(응답 기다리는 중, 생각 중, 도구 호출 작성 중, 편집기에서 실행 중, 답 쓰는 중)과 걸린 시간이 보입니다.</p>
 <figure class="shot"><img src="assets/guide/ai-progress.png" alt="답을 받는 동안 맨 아래 진행 줄: 도구 호출 작성 중, 받은 글자 수, 걸린 시간" width="470" height="752" loading="lazy"><figcaption>① 진행 줄: 지금 하는 일 · 받은 글자 수 · 걸린 시간</figcaption></figure>
+<p>답이 오는 동안 맨 아래 줄(①)에 지금 하는 일(응답 기다리는 중, 생각 중, 도구 호출 작성 중, 편집기에서 실행 중, 답 쓰는 중)과 걸린 시간이 보입니다.</p>
 <div class="note">여러 프레임을 한 번에 그리는 큰 작업은 준비에 1분 넘게 걸릴 수 있습니다. 받은 글자 수가 늘고 있으면 일하는 중입니다.</div>
 
 <h3 id="ai-edits">AI가 할 수 있는 편집</h3>
 <p>AI는 열린 그림을 직접 보고 고칩니다.</p>
+<figure class="shot"><img src="assets/guide/ai-edits.png" alt="&quot;지팡이 그려 줘&quot; 한 차례: AI가 그림을 보고 새 레이어에 선·타원을 그린 모습" width="1280" height="812" loading="lazy"><figcaption>① 그림 보기(get_image) · ② 그리기 도구(draw_shape · set_pixels) · ③ AI가 만든 새 레이어(Staff)</figcaption></figure>
 <ul>
 <li>① 그림 보기, 픽셀 읽기</li>
 <li>② 점·선·사각형·원 그리기, 채우기, 지우기, 색 바꾸기</li>
@@ -1465,10 +1574,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>참고 자료 찾기·보기(<code>search_references</code>·<code>get_reference</code>), 스타일 규칙 읽기(<code>get_style_rules</code>), 캔버스를 참고 자료로 넣기·설명 붙이기(<code>add_reference</code>·<code>set_reference_info</code>) — <a href="#ai-references">참고 자료로 그림 실력 높이기</a></li>
 <li>캔버스 크기, 팔레트·색, 새 프로젝트, 열기, 저장</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-edits.png" alt="&quot;지팡이 그려 줘&quot; 한 차례: AI가 그림을 보고 새 레이어에 선·타원을 그린 모습" width="1280" height="812" loading="lazy"><figcaption>① 그림 보기(get_image) · ② 그리기 도구(draw_shape · set_pixels) · ③ AI가 만든 새 레이어(Staff)</figcaption></figure>
 <p>저장은 부탁할 때만 합니다. 저장한 적 없는 새 프로젝트에 수정이 있으면 다른 문서로 바꾸기 전에 저장할지 물어봅니다.</p>
 
 <h3 id="ai-effects">레이어 효과 부탁하기</h3>
+<figure class="shot"><img src="assets/guide/ai-effects.png" alt="AI가 외곽선 효과를 넣은 차례와 타임라인의 효과 줄" width="1280" height="812" loading="lazy"><figcaption>① 타임라인의 효과 줄(Outline) · ② 부탁 · ③ 효과를 넣은 도구 줄(add_effect) · ④ 이 단계 되돌리기(Undo this step)</figcaption></figure>
 <p>AI도 효과 창의 <a href="#screen-layer-effects">레이어 효과</a>를 씁니다. 효과는 그림 픽셀을 바꾸지 않으므로 나중에 효과 창이나 ① 타임라인에서 마음대로 고치거나 지울 수 있습니다.</p>
 <ul>
 <li>② "캐릭터에 1px 검은 외곽선을 넣어 줘", "프레임 3~4에 흰 피격 번쩍임을 넣어 줘", "처음 4프레임 동안 나타나게 해 줘", "그림자를 오른쪽 아래로 2px"처럼 부탁합니다.</li>
@@ -1478,15 +1587,16 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>효과 영구 적용</strong>(그림에 구워 넣기)과 캔버스 밖으로 나간 효과에 맞춰 <strong>캔버스 늘리기</strong>는 부탁할 때만 합니다.</li>
 </ul>
 <p>효과 변경(③)도 AI의 답 하나에 묶여 실행취소 한 단계(④)로 되돌릴 수 있습니다. 잠긴 레이어의 효과는 바꾸지 않습니다.</p>
-<figure class="shot"><img src="assets/guide/ai-effects.png" alt="AI가 외곽선 효과를 넣은 차례와 타임라인의 효과 줄" width="1280" height="812" loading="lazy"><figcaption>① 타임라인의 효과 줄(Outline) · ② 부탁 · ③ 효과를 넣은 도구 줄(add_effect) · ④ 이 단계 되돌리기(Undo this step)</figcaption></figure>
 
 <h3 id="ai-references">참고 자료로 그림 실력 높이기</h3>
 <p><strong>참고 자료</strong>는 AI가 그리기 전에 찾아보는 이 컴퓨터 안의 자료 모음입니다. 내가 좋아하는 그림, 내 스타일 규칙, 기법 메모를 넣어 두면 AI가 비슷한 그림을 찾아 비율·팔레트를 따라 그리고, 다 그린 뒤 규칙에 맞는지 스스로 확인합니다. 사용 가이드도 함께 찾아봅니다.</p>
+<figure class="shot"><img src="assets/guide/ai-references-3.png" alt="환경 설정의 AI 참고 자료 탭" width="678" height="301" loading="lazy"><figcaption>⑭ 참고 자료 폴더 · ⑮ 바꾸기…(Change…) · ⑯ 기본 폴더(Default) · ⑰ 폴더 열기(Open folder) · ⑱ 기본 예시 보이기</figcaption></figure>
 <ul>
 <li><strong>폴더</strong>(⑭): 기본은 <code>&lt;설정 폴더&gt;/Gpixel/References</code>(Windows는 <code>%AppData%\Gpixel\References</code>)입니다. 앱 밖에서 이 폴더에 넣은 파일도 창을 열 때 다시 읽어 자동으로 목록에 들어갑니다.</li>
 <li><strong>넣을 수 있는 파일</strong>: 그림(<code>.png</code>, 프레임이 있는 <code>.gif</code>, <code>.gpixel</code> 프로젝트 — 프레임마다 합친 그림, 애니메이션은 프레임 수 그대로)과 글 메모(<code>.md</code>·<code>.txt</code>). 제목·설명·태그·종류(캐릭터·아이템·타일·효과·UI·기타)·크기·프레임 수·팔레트 같은 정보는 같은 폴더의 <code>index.json</code>에 저장됩니다.</li>
 <li><strong>기본 자료</strong>(<strong>기본</strong> 표시, 지울 수 없음): 스타일 규칙 <strong>Gpixel 기본 규칙</strong>(1px·선택적 외곽선, 빛 방향 하나, 색조를 옮긴 3~4단 명암, 외톨이·계단 픽셀 없애기, 적은 팔레트, 읽기 쉬운 실루엣, 일정한 비율, 애니메이션의 키 포즈·잔상·걷기 접지)과 예시 그림 — 16×16 슬라임, 16×16 검, 32×32 정면 캐릭터, 4프레임 16×16 슬라임 튀기기, 16×16 풀 타일.</li>
 </ul>
+<figure class="shot"><img src="assets/guide/ai-references.png" alt="AI 참고 자료 창: 썸네일 목록, 검색·종류 거르기, 미리보기와 정보, 단추 줄, 설명 없음 알림" width="1000" height="912" loading="lazy"><figcaption>① 썸네일 목록 · ② 검색 칸 · ③ 종류 거르기 · ④ 미리보기 · ⑤ 제목·설명·태그·종류 · ⑥ 팔레트 색 · ⑦ 파일 추가… · ⑧ 현재 캔버스 추가 · ⑨ 삭제 · ⑩ 폴더 열기 · ⑪ 규칙 편집 · ⑫ AI로 설명 붙이기 · ⑬ 설명 없는 자료 알림</figcaption></figure>
 <p>메뉴 <strong>AI &gt; 참고 자료…</strong>로 <strong>AI 참고 자료</strong> 창을 엽니다. 왼쪽은 ① 썸네일 목록(체크무늬 바탕에 픽셀 그대로, 제목·태그)과 ② 검색 칸(AI가 쓰는 검색과 같음)·③ 종류 거르기, 오른쪽은 ④ 미리보기(프레임이 여럿이면 움직임)와 ⑤ 제목·설명·태그·종류 고치기, ⑥ 팔레트 색입니다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>단추</th><th>하는 일</th></tr></thead>
@@ -1500,39 +1610,39 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </tbody>
 </table></div>
 <p>설명이 없는 자료가 있으면 창에 ⑬ "참고 자료 N개에 설명이 없습니다"가 보입니다. 설명과 태그가 있어야 AI가 잘 찾습니다.</p>
-<figure class="shot"><img src="assets/guide/ai-references.png" alt="AI 참고 자료 창: 썸네일 목록, 검색·종류 거르기, 미리보기와 정보, 단추 줄, 설명 없음 알림" width="1000" height="912" loading="lazy"><figcaption>① 썸네일 목록 · ② 검색 칸 · ③ 종류 거르기 · ④ 미리보기 · ⑤ 제목·설명·태그·종류 · ⑥ 팔레트 색 · ⑦ 파일 추가… · ⑧ 현재 캔버스 추가 · ⑨ 삭제 · ⑩ 폴더 열기 · ⑪ 규칙 편집 · ⑫ AI로 설명 붙이기 · ⑬ 설명 없는 자료 알림</figcaption></figure>
 <figure class="shot"><img src="assets/guide/ai-references-2.png" alt="종류 거르기 목록을 펼친 모습" width="328" height="304" loading="lazy"><figcaption>③ 종류 거르기(전체 · 캐릭터 · 아이템 · 타일 · 효과 · UI · 기타)</figcaption></figure>
 <ul>
 <li><strong>부탁하기</strong>: "참고 자료의 슬라임처럼 32px 박쥐 그려 줘"처럼 말하면 AI가 참고 자료를 찾아 보고 그립니다. 채팅 도움말(물음표 단추)에 <strong>참고 자료</strong> 도구 묶음과 이 예시가 있습니다.</li>
 <li><strong>채팅에서 넣기</strong>: "이거 참고 자료에 넣어 둘래"라고 하면 AI가 지금 캔버스(또는 레이어, 프레임 범위)를 제목·설명·태그와 함께 넣습니다. 참고 자료에 넣기·설명 붙이기는 자료 폴더에만 쓰므로 <a href="#ai-file-only">지금 그림만</a>을 켜도 됩니다.</li>
 <li><strong>환경 설정</strong>: <strong>편집 &gt; 환경 설정… &gt; AI 참고 자료</strong>에서 ⑭ 폴더를 ⑮ <strong>바꾸기…</strong>·⑯ <strong>기본 폴더</strong>로 되돌리기·⑰ <strong>폴더 열기</strong>를 하고, ⑱ <strong>기본 예시 보이기</strong>로 기본 예시 그림을 다시 켤 수 있습니다(그림 품질이 낮아 지금은 기본으로 꺼져 있고, 꺼져 있으면 검색과 그림 생성의 스타일 참고에도 쓰지 않음).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-references-3.png" alt="환경 설정의 AI 참고 자료 탭" width="678" height="301" loading="lazy"><figcaption>⑭ 참고 자료 폴더 · ⑮ 바꾸기…(Change…) · ⑯ 기본 폴더(Default) · ⑰ 폴더 열기(Open folder) · ⑱ 기본 예시 보이기</figcaption></figure>
 <div class="note"><p>참고 자료는 이 컴퓨터에만 있습니다. Gpixel은 아무것도 올리거나 내려받지 않으며, AI가 도구로 가져간 자료만 사용자가 쓰는 AI CLI(Claude Code·Codex)가 봅니다.</p></div>
 
 <h3 id="ai-undo">되돌리기</h3>
-<p>AI의 답 한 번이 실행취소 <strong>한 단계</strong>라서 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>로 통째로 되돌릴 수 있습니다. 답마다 ① 결과 그림과 ② <strong>이 단계 되돌리기</strong> / ③ <strong>다시 적용</strong> 단추도 붙습니다.</p>
 <figure class="shot"><img src="assets/guide/ai-undo.png" alt="AI 답 아래의 결과 그림과 이 단계 되돌리기 단추" width="428" height="400" loading="lazy"><figcaption>① 답의 결과 그림 · ② 이 단계 되돌리기(Undo this step)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/ai-undo-2.png" alt="이 단계 되돌리기를 누른 뒤: 캔버스의 외곽선이 사라지고 단추가 다시 적용으로 바뀜" width="1280" height="812" loading="lazy"><figcaption>③ 다시 적용(Reapply)</figcaption></figure>
+<p>AI의 답 한 번이 실행취소 <strong>한 단계</strong>라서 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>로 통째로 되돌릴 수 있습니다. 답마다 ① 결과 그림과 ② <strong>이 단계 되돌리기</strong> / ③ <strong>다시 적용</strong> 단추도 붙습니다.</p>
 
 <h3 id="ai-edit-last">마지막 메시지 수정·삭제</h3>
-<p>마지막으로 보낸 메시지 아래에 작은 ① <strong>연필(수정)</strong>·② <strong>휴지통(삭제)</strong> 아이콘이 있습니다. 답을 받는 동안은 누를 수 없고, <strong>정지</strong>로 멈춘 차례는 지울 수 있습니다.</p>
 <figure class="shot"><img src="assets/guide/ai-edit-last.png" alt="마지막으로 보낸 메시지 아래의 연필·휴지통 아이콘" width="468" height="156" loading="lazy"><figcaption>① 연필(수정) · ② 휴지통(삭제)</figcaption></figure>
+<p>마지막으로 보낸 메시지 아래에 작은 ① <strong>연필(수정)</strong>·② <strong>휴지통(삭제)</strong> 아이콘이 있습니다. 답을 받는 동안은 누를 수 없고, <strong>정지</strong>로 멈춘 차례는 지울 수 있습니다.</p>
 <ul>
 <li><strong>삭제</strong>: 그 메시지와 그 뒤의 답·도구 줄·결과 그림을 대화에서 지웁니다. 그러면 앞 메시지에 아이콘이 생겨, 여러 번 누르며 처음까지 한 단계씩 거슬러 올라갈 수 있습니다.</li>
 <li><strong>수정</strong>: 똑같이 지운 뒤 그 글과 그림 칩(이번에 붙인 그림이 남아 있으면 그것도)을 입력란에 다시 넣습니다. 고쳐서 보내세요. 디스크에서 다시 연 대화의 그림은 다시 보내지 않습니다.</li>
+</ul>
+<figure class="shot"><img src="assets/guide/ai-edit-last-2.png" alt="그림을 바꾼 차례를 지울 때 묻는 창" width="345" height="126" loading="lazy"><figcaption>③ 되돌리기(Undo) · ④ 그림은 두기(Keep drawing) · ⑤ 취소(Cancel)</figcaption></figure>
+<ul>
 <li>그 답이 그림을 바꿨고 아직 되돌릴 수 있으면 <strong>이 대화에서 바뀐 그림도 되돌릴까요?</strong>라고 묻습니다 — ③ <strong>되돌리기</strong>(이 단계 되돌리기와 같음), ④ <strong>그림은 두기</strong>, ⑤ <strong>취소</strong>(지우지 않음).</li>
 <li>다시 연 지난 대화에서도 마지막 메시지를 지우거나 고칠 수 있습니다(이때는 그림을 묻지 않습니다).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-edit-last-2.png" alt="그림을 바꾼 차례를 지울 때 묻는 창" width="345" height="126" loading="lazy"><figcaption>③ 되돌리기(Undo) · ④ 그림은 두기(Keep drawing) · ⑤ 취소(Cancel)</figcaption></figure>
 <div class="note"><p>AI는 지운 내용을 기억하지 않습니다. 지운 뒤 다음 메시지는 새 AI 세션으로 보내고, 남은 대화 내용을 요약해 함께 알려 줍니다.</p></div>
 
 <h3 id="ai-troubleshoot">문제가 생기면</h3>
+<figure class="shot"><img src="assets/guide/ai-troubleshoot.png" alt="Codex 탭: 편집기 도구에 연결하지 못한 이유를 알리는 빨간 줄과 시간만 보이는 끝 줄" width="470" height="552" loading="lazy"><figcaption>① 연결하지 못한 이유를 알리는 빨간 줄 · ② 시간만 보이는 끝 줄(Codex)</figcaption></figure>
 <ul>
 <li>AI가 편집기에 연결하지 못하면 채팅에 ① 빨간 줄로 짐작되는 이유가 나옵니다. 프록시(<code>HTTP_PROXY</code>·<code>HTTPS_PROXY</code>), VPN, 보안 프로그램이 127.0.0.1 연결을 막거나 CLI가 오래된 경우가 흔합니다.</li>
 <li>Codex는 답 글이 다 쓰인 뒤 한꺼번에 보이고, 비용 대신 ② 시간만 표시됩니다(Claude는 비용도 표시).</li>
 </ul>
-<figure class="shot"><img src="assets/guide/ai-troubleshoot.png" alt="Codex 탭: 편집기 도구에 연결하지 못한 이유를 알리는 빨간 줄과 시간만 보이는 끝 줄" width="470" height="552" loading="lazy"><figcaption>① 연결하지 못한 이유를 알리는 빨간 줄 · ② 시간만 보이는 끝 줄(Codex)</figcaption></figure>
 <div class="note">이 기능을 넣은 앱을 다른 사람에게 배포한다면 Anthropic·OpenAI의 이용 정책(제3자 앱에서 구독 로그인 사용 제한)을 확인하세요.</div>
 </section>
 
@@ -1541,18 +1651,22 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>자주 쓰는 기본 단축키를 범주별로 모았습니다. 프로그램 안에서 <span class="key" data-cmd="도움말/사용 가이드"><kbd>F1</kbd></span>을 누르면 이 사용 가이드가 열리고(목차와 검색), 기본 단축키 목록은 <strong>도움말 &gt; 단축키 목록</strong>에서 볼 수 있습니다. 단축키는 원하는 키로 바꿀 수 있습니다(<a href="#shortcuts-customize">단축키 바꾸기</a>).</p>
 
 <h3 id="shortcuts-customize">단축키 바꾸기</h3>
+<figure class="shot"><img src="assets/guide/shortcuts-customize.png" alt="환경 설정 단축키 탭: 검색 칸에 export를 넣어 거른 목록, GIF 애니메이션으로 내보내기 줄이 키를 기다리는 상태, 줄마다 바꾸기·추가·없음·기본값 단추, 아래 모두 기본값·내보내기(JSON)·불러오기(JSON) 단추" width="744" height="637" loading="lazy"><figcaption>① 단축키(Shortcuts) 탭 · ② 바꾸기(Change) · ③ 추가(Add) · ④ 없음(None) · ⑤ 기본값(Default) · ⑥ 키를 기다리는 줄(Press a key…) · ⑦ 검색 칸 · ⑧ 모두 기본값(Reset all) · ⑨ 내보내기(JSON)… · ⑩ 불러오기(JSON)…</figcaption></figure>
 <p><strong>편집 &gt; 환경 설정…</strong>(<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>)의 ① <strong>단축키</strong> 탭에서 메뉴 명령·도구·도구 옵션은 물론, 메뉴에 없는 키(선택 내려놓기 <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>, 방향키 옮기기, 이전 프레임 보기 <span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span>, 선택 칸 <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span> 등)까지 모두 바꿀 수 있습니다.</p>
 <ul>
 <li>줄마다 ② <strong>바꾸기</strong>(누른 키로 바꿈), ③ <strong>추가</strong>(키 하나 더), ④ <strong>없음</strong>, ⑤ <strong>기본값</strong>을 고릅니다. 바꾸기·추가를 누르면 그 줄이 ⑥ 키를 기다립니다(<kbd>Esc</kbd>는 취소).</li>
 <li>⑦ 명령·분류·키로 검색할 수 있고, ⑧ <strong>모두 기본값</strong>으로 한꺼번에 되돌립니다.</li>
 <li>⑨ <strong>내보내기(JSON)…</strong>로 지금 단축키를 파일로 저장하고, ⑩ <strong>불러오기(JSON)…</strong>로 다시 적용합니다. 같은 파일을 Windows와 macOS에서 함께 쓸 수 있습니다.</li>
-<li>다른 명령이 쓰는 키를 지정하면 ⑪ 그 명령에서 빼도 되는지 묻습니다.</li>
-<li>바꾼 키는 ⑫처럼 메뉴와 도구 막대 도움말에 바로 반영됩니다. ⑬ <strong>도움말 &gt; 단축키 목록</strong>은 기본값을 보여 줍니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/shortcuts-customize.png" alt="환경 설정 단축키 탭: 검색 칸에 export를 넣어 거른 목록, GIF 애니메이션으로 내보내기 줄이 키를 기다리는 상태, 줄마다 바꾸기·추가·없음·기본값 단추, 아래 모두 기본값·내보내기(JSON)·불러오기(JSON) 단추" width="744" height="637" loading="lazy"><figcaption>① 단축키(Shortcuts) 탭 · ② 바꾸기(Change) · ③ 추가(Add) · ④ 없음(None) · ⑤ 기본값(Default) · ⑥ 키를 기다리는 줄(Press a key…) · ⑦ 검색 칸 · ⑧ 모두 기본값(Reset all) · ⑨ 내보내기(JSON)… · ⑩ 불러오기(JSON)…</figcaption></figure>
 <figure class="shot"><img src="assets/guide/shortcuts-customize-2.png" alt="GIF 애니메이션으로 내보내기에 Ctrl+E를 누르자 그 키를 쓰는 파일/내보내기…에서 빼고 여기에 지정할지 묻는 단축키 겹침 창(예·아니요)" width="318" height="154" loading="lazy"><figcaption>⑪ 겹치는 키 물음 — 예(Yes)면 그 명령에서 빼고 여기에 지정, 아니요(No)면 그대로</figcaption></figure>
+<ul>
+<li>다른 명령이 쓰는 키를 지정하면 ⑪ 그 명령에서 빼도 되는지 묻습니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/shortcuts-customize-3.png" alt="파일 메뉴를 펼친 모습: GIF 애니메이션으로 내보내기 오른쪽에 바꾼 키 Ctrl+Alt+G가 보임" width="326" height="369" loading="lazy"><figcaption>⑫ 바꾼 키(GIF 애니메이션으로 내보내기 = Ctrl+Alt+G)가 메뉴에 바로 보임</figcaption></figure>
 <figure class="shot"><img src="assets/guide/shortcuts-customize-4.png" alt="도움말 메뉴를 펼쳐 단축키 목록 항목을 표시한 모습" width="271" height="234" loading="lazy"><figcaption>⑬ 도움말 &gt; 단축키 목록(Shortcut list)</figcaption></figure>
+<ul>
+<li>바꾼 키는 ⑫처럼 메뉴와 도구 막대 도움말에 바로 반영됩니다. ⑬ <strong>도움말 &gt; 단축키 목록</strong>은 기본값을 보여 줍니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/shortcuts-customize-5.png" alt="단축키 목록 창: 분류·키·동작 세 열로 기본 단축키를 모두 보여 주는 표" width="810" height="639" loading="lazy"></figure>
 
 <h3 id="shortcuts-file">파일과 창</h3>
@@ -1573,9 +1687,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>사용 가이드</td><td><span class="key" data-cmd="도움말/사용 가이드"><kbd>F1</kbd></span></td></tr>
 </tbody></table></div>
 <p>탭 줄이나 끔/켬 같은 선택 묶음에 포커스가 있으면 <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Home</kbd>/<kbd>End</kbd>로도 바꿀 수 있습니다.</p>
-
-<p><strong>파일</strong> 메뉴를 펼치면 명령 오른쪽 ①에 지금 쓰는 키가 보입니다(바꾼 키도 바로 보임).</p>
 <figure class="shot"><img src="assets/guide/shortcuts-file.png" alt="파일 메뉴를 펼친 모습: 새 프로젝트…부터 닫기까지 명령 오른쪽에 Ctrl+N·Ctrl+O·Ctrl+Shift+O·Ctrl+Shift+U·Ctrl+S·Ctrl+Shift+S·Ctrl+E·Ctrl+W 키" width="326" height="369" loading="lazy"><figcaption>① 파일(File) 메뉴의 단축키</figcaption></figure>
+<p><strong>파일</strong> 메뉴를 펼치면 명령 오른쪽 ①에 지금 쓰는 키가 보입니다(바꾼 키도 바로 보임).</p>
 
 <h3 id="shortcuts-edit">편집과 선택</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
@@ -1589,9 +1702,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>8픽셀 옮기기</td><td><kbd>Shift</kbd>+방향키 또는 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+방향키</td></tr>
 </tbody></table></div>
 <div class="note">실행취소는 획 단위로 기본 1000단계이며, 환경 설정에서 최대 10000단계까지 늘릴 수 있습니다. 파일 목록에서 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>를 누르면 마지막으로 삭제한 파일을 되살립니다.</div>
-
-<p><strong>편집</strong> 메뉴를 펼치면 ① 실행취소부터 선택 해제까지의 키가 보입니다.</p>
 <figure class="shot"><img src="assets/guide/shortcuts-edit.png" alt="편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키" width="347" height="593" loading="lazy"><figcaption>① 편집(Edit) 메뉴의 실행취소~선택 해제 키</figcaption></figure>
+<p><strong>편집</strong> 메뉴를 펼치면 ① 실행취소부터 선택 해제까지의 키가 보입니다.</p>
 
 <h3 id="shortcuts-transform">변형과 이미지</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
@@ -1605,9 +1717,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>변형·캔버스 크기 모드 취소</td><td><span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> 또는 <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></td></tr>
 </tbody></table></div>
 <p>캔버스 크기 모드에서는 손잡이를 끌면 가장자리가 바뀌고, <kbd>Ctrl</kbd>+끌기는 그림 크기도 함께 바꾸며, 그림 안을 끌면 그림을 옮깁니다.</p>
-
-<p><strong>편집</strong> 메뉴의 ① 뒤집기부터 캔버스 크기까지 오른쪽에도 같은 키가 보입니다.</p>
 <figure class="shot"><img src="assets/guide/shortcuts-transform.png" alt="편집 메뉴를 펼친 모습: 좌우·상하 뒤집기, 90° 회전, 변형, 외곽선, 색 바꾸기, 캔버스 크기 오른쪽의 키" width="347" height="593" loading="lazy"><figcaption>① 편집(Edit) 메뉴의 뒤집기~캔버스 크기 키</figcaption></figure>
+<p><strong>편집</strong> 메뉴의 ① 뒤집기부터 캔버스 크기까지 오른쪽에도 같은 키가 보입니다.</p>
 
 <h3 id="shortcuts-tools">도구</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
@@ -1624,9 +1735,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>묶음 도구(채우기·도형·선택) 펼쳐 바꾸기</td><td>도구 칸 길게 누르기 또는 오른쪽 클릭</td></tr>
 </tbody></table></div>
 <p><span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span>을 다른 도구에서 누르면 선택 칸 도구로 바뀝니다. 선택 도구를 쓰는 중에 10초 안에 다시 누를 때마다 사각 → 원 → 자유 → 스마트 선택 순으로 바뀝니다(10초가 지난 뒤 처음 누르면 안내만 나옵니다).</p>
-
-<p><strong>도구</strong> 메뉴를 펼치면 ① 도구와 ② 도구 옵션·브러시 크기·색 교환의 키가 보입니다.</p>
 <figure class="shot"><img src="assets/guide/shortcuts-tools.png" alt="도구 메뉴를 펼친 모습: 연필 B부터 9-slice S까지 도구 키, 도형 채움 U·같은 색 전체 Shift+G·픽셀 퍼펙트 P·대칭 Shift+X/Y·브러시 크기 ] [·색 교환 X" width="313" height="710" loading="lazy"><figcaption>① 도구 키 · ② 도구 옵션·브러시 크기·기본색↔보조색 키</figcaption></figure>
+<p><strong>도구</strong> 메뉴를 펼치면 ① 도구와 ② 도구 옵션·브러시 크기·색 교환의 키가 보입니다.</p>
 
 <h3 id="shortcuts-view">보기와 캔버스</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
@@ -1640,9 +1750,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>양파 껍질</td><td><span class="key" data-cmd="보기/양파 껍질"><kbd>Ctrl</kbd>+<kbd>J</kbd></span></td></tr>
 <tr><td>이전 프레임 보기</td><td><span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span>(누르고 있기)</td></tr>
 </tbody></table></div>
-
-<p><strong>보기</strong> 메뉴를 펼치면 ① 확대·축소부터 양파 껍질까지의 키가 보입니다.</p>
 <figure class="shot"><img src="assets/guide/shortcuts-view.png" alt="보기 메뉴를 펼친 모습: 확대·축소·화면에 맞추기·실제 크기·픽셀 격자·타일 격자·타일 모드·양파 껍질 오른쪽의 키" width="348" height="410" loading="lazy"><figcaption>① 보기(View) 메뉴의 확대~양파 껍질 키</figcaption></figure>
+<p><strong>보기</strong> 메뉴를 펼치면 ① 확대·축소부터 양파 껍질까지의 키가 보입니다.</p>
 
 <h3 id="shortcuts-timeline">타임라인·레이어·그룹</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
@@ -1660,8 +1769,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>프레임 좌우 스크롤(타임라인에서)</td><td><kbd>Ctrl</kbd>+휠</td></tr>
 </tbody></table></div>
 <p>스킨 바꾸기는 현재 그룹(부위를 골랐으면 그 부위의 그룹)에 적용되며 실행취소 기록에 남지 않습니다. 그룹·부위·스킨은 <a href="#parts">부위와 그룹</a> 장을 참고하세요.</p>
-<p><strong>프레임·레이어</strong> 메뉴를 펼치면 ① 재생·정지부터 다음 스킨까지의 키가 보입니다.</p>
 <figure class="shot"><img src="assets/guide/shortcuts-timeline.png" alt="프레임·레이어 메뉴를 펼친 모습: 재생/정지 Shift+Enter부터 이전·다음 스킨 Alt+[ Alt+]까지 오른쪽의 키" width="299" height="469" loading="lazy"><figcaption>① 프레임·레이어(Frame·Layer) 메뉴의 단축키</figcaption></figure>
+<p><strong>프레임·레이어</strong> 메뉴를 펼치면 ① 재생·정지부터 다음 스킨까지의 키가 보입니다.</p>
 </section>
 
 <section class="doc" id="language">
@@ -1669,32 +1778,38 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>Gpixel에는 한국어와 영어가 들어 있습니다. 처음 켤 때 컴퓨터 언어에 맞는 언어를 고르고, 맞는 언어가 없으면 영어로 시작합니다. 다른 언어는 CSV 파일로 직접 만들어 넣을 수 있습니다.</p>
 
 <h3 id="language-change">화면 언어 바꾸기</h3>
-<ol>
-<li>① <strong>편집 &gt; 환경 설정…</strong>(<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>)을 엽니다. 맨 위에 ② <strong>언어</strong>가 있습니다.</li>
-<li>③ <strong>화면 언어</strong> 목록에서 고르고 ④ <strong>확인</strong>을 누릅니다.</li>
-<li>⑤ <strong>지금 다시 시작</strong>을 누르면 앱을 닫았다가 새 언어로 다시 켭니다. 저장하지 않은 문서가 있으면 닫을 때처럼 먼저 묻습니다. ⑥ <strong>나중에</strong>를 고르면 다음에 켤 때 적용됩니다.</li>
-</ol>
 <figure class="shot"><img src="assets/guide/language-change.png" alt="편집 메뉴를 펼쳐 맨 아래 환경 설정… 항목을 표시한 모습" width="347" height="593" loading="lazy"><figcaption>① 편집 &gt; 환경 설정…(Preferences…, Ctrl+,)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/language-change-2.png" alt="환경 설정 일반 탭: 맨 위 언어 부분에서 화면 언어 목록을 펼쳐 한국어·English가 보이고, 오른쪽 아래에 확인 단추" width="965" height="799" loading="lazy"><figcaption>② 언어(Language) 부분 · ③ 화면 언어(Display language) 목록 · ④ 확인(OK)</figcaption></figure>
+<ul class="marks">
+<li>① <strong>편집 &gt; 환경 설정…</strong>(<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>)을 엽니다. 맨 위에 ② <strong>언어</strong>가 있습니다.</li>
+<li>③ <strong>화면 언어</strong> 목록에서 고르고 ④ <strong>확인</strong>을 누릅니다.</li>
+</ul>
 <figure class="shot"><img src="assets/guide/language-change-3.png" alt="확인을 누른 뒤 뜨는 창: 화면 언어 설정을 바꿨으니 다시 시작해야 적용된다는 안내와 지금 다시 시작·나중에 단추" width="356" height="126" loading="lazy"><figcaption>⑤ 지금 다시 시작(Restart now) · ⑥ 나중에(Later)</figcaption></figure>
+<ul class="marks">
+<li>⑤ <strong>지금 다시 시작</strong>을 누르면 앱을 닫았다가 새 언어로 다시 켭니다. 저장하지 않은 문서가 있으면 닫을 때처럼 먼저 묻습니다. ⑥ <strong>나중에</strong>를 고르면 다음에 켤 때 적용됩니다.</li>
+</ul>
 
 <h3 id="language-make">새 언어 만들기</h3>
+<figure class="shot"><img src="assets/guide/language-make.png" alt="환경 설정 일반 탭의 언어 부분: 화면 언어 목록, 번역 CSV로 내보내기…·CSV로 언어 추가…·언어 폴더 열기 단추와 안내 글" width="947" height="163" loading="lazy"><figcaption>① 번역 CSV로 내보내기…(Export translation CSV…) · ② CSV로 언어 추가…(Add language from CSV…)</figcaption></figure>
 <ol>
 <li>환경 설정의 ① <strong>번역 CSV로 내보내기…</strong>로 CSV 파일을 저장합니다. 엑셀·구글 시트 등에서 열 수 있습니다.</li>
 <li>첫 줄은 <code>key,ko,en</code>, 둘째 줄은 <code>#name,한국어,English</code>입니다. 맨 오른쪽에 새 열을 더해 첫 줄에 언어 코드(예: <code>ja</code>), 둘째 줄에 언어 이름(예: <code>日本語</code>)을 적습니다.</li>
 <li>그 열에 문구를 번역합니다. <code>{0}</code>, <code>{name}</code> 같은 중괄호는 값이 들어갈 자리이니 그대로 두세요(순서는 바꿔도 됨).</li>
-<li>② <strong>CSV로 언어 추가…</strong>로 그 파일을 고르면 ③ 언어 목록에 나타납니다. 고르고 다시 시작하면 적용됩니다.</li>
 </ol>
-<figure class="shot"><img src="assets/guide/language-make.png" alt="환경 설정 일반 탭의 언어 부분: 화면 언어 목록, 번역 CSV로 내보내기…·CSV로 언어 추가…·언어 폴더 열기 단추와 안내 글" width="947" height="163" loading="lazy"><figcaption>① 번역 CSV로 내보내기…(Export translation CSV…) · ② CSV로 언어 추가…(Add language from CSV…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/language-make-2.png" alt="일본어 열을 더한 CSV를 넣은 뒤 화면 언어 목록을 펼친 모습: 한국어·English 아래에 日本語 (ja)가 생기고 아래에 넣은 결과 글이 보임" width="947" height="186" loading="lazy"><figcaption>③ CSV로 넣은 언어(예: 日本語 (ja)) — 목록 아래에 넣은 문구 수가 보임</figcaption></figure>
+<ul class="marks">
+<li>② <strong>CSV로 언어 추가…</strong>로 그 파일을 고르면 ③ 언어 목록에 나타납니다. 고르고 다시 시작하면 적용됩니다.</li>
+</ul>
 <div class="note"><p>빈 칸은 영어 문구로 보이므로 조금씩 번역해 가며 넣어도 됩니다. 같은 언어 코드를 다시 넣으면 덮어씁니다.</p></div>
 
 <h3 id="language-fix">내장 문구 고치기와 지우기</h3>
 <ul>
 <li>내보낸 CSV에서 <code>ko</code>나 <code>en</code> 열을 고쳐 넣으면, 내장 문구 위에 고친 칸만 덮어씁니다.</li>
-<li>① <strong>언어 폴더 열기</strong>를 누르면 넣은 언어의 CSV 파일이 있는 폴더가 열립니다. 파일을 지우면 그 언어가 목록에서 없어지고, 내장 언어를 고친 파일이면 원래 문구로 돌아갑니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/language-fix.png" alt="환경 설정 일반 탭의 언어 부분에서 언어 폴더 열기 단추를 표시한 모습" width="947" height="163" loading="lazy"><figcaption>① 언어 폴더 열기(Open language folder)</figcaption></figure>
+<ul class="marks">
+<li>① <strong>언어 폴더 열기</strong>를 누르면 넣은 언어의 CSV 파일이 있는 폴더가 열립니다. 파일을 지우면 그 언어가 목록에서 없어지고, 내장 언어를 고친 파일이면 원래 문구로 돌아갑니다.</li>
+</ul>
 </section>
 </div>
 </div>

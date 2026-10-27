@@ -533,11 +533,12 @@ public sealed class HelpWindow : Window
         foreach (var item in b.Items ?? [])
         {
             n++;
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("22,*") };
+            // 그림 번호(①…)로 시작하는 목록(marks)은 따로 머리표를 그리지 않는다.
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(b.Marks ? "0,*" : "22,*") };
             Control marker = b.Type == "ol"
                 ? new TextBlock { Text = $"{n}.", Foreground = AppTheme.DimTextBrush, FontSize = BodySize, LineHeight = BodyLineHeight }
                 : new IconView(VectorIcon.Dot, Gold) { Width = 8, Height = 8, Filled = true, Margin = new Thickness(4, 7, 0, 0), VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
-            grid.Children.Add(marker);
+            if (!b.Marks) grid.Children.Add(marker);
             var content = new StackPanel();
             content.Children.Add(Text(item.Runs ?? [], fg));
             foreach (var sub in item.Sub ?? [])
@@ -964,12 +965,13 @@ internal sealed class HelpPage
     [System.Text.Json.Serialization.JsonIgnore] public int Index { get; set; }
 }
 
-/// <summary>블록: p·h4(Runs), ul·ol·steps(Items), table(Head·Rows), note(Blocks), pre(Text), media(Alt·Page·Src), shot(Src·Alt, Runs = 번호 설명).</summary>
+/// <summary>블록: p·h4(Runs), ul·ol·steps(Items, Marks = 칸이 그림 번호로 시작해 머리표 없음), table(Head·Rows), note(Blocks), pre(Text), media(Alt·Page·Src), shot(Src·Alt, Runs = 번호 설명).</summary>
 internal sealed class HelpBlock
 {
     public string Type { get; set; } = "";
     public HelpRun[]? Runs { get; set; }
     public HelpItem[]? Items { get; set; }
+    public bool Marks { get; set; }
     public HelpRun[][]? Head { get; set; }
     public HelpRun[][][]? Rows { get; set; }
     public HelpBlock[]? Blocks { get; set; }

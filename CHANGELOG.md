@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.47 (2026-10-27)
+### Guide (F1): figures first, explanations below
+- Every page now shows the screenshot first with the explanation of its numbers (①…) right below it. Pages with several screenshots put each one's explanation under it.
+- Lists that start with figure numbers no longer show a second number such as "1. ②"; the figure number is the bullet.
+
 ## v1.14.46 (2026-10-27)
 ### Shape tool: line, curve, rectangle, ellipse, triangles, polygons, stars, spiral, cylinder, cube
 - The toolbar's line group slot is now a single **Shape** (R) slot, and you pick the shape with the **Shape** buttons in Tool options. The old Line, Rectangle and Ellipse tools are now shapes of this tool; L picks the Shape tool's line (Shift snaps to 15° steps) and the Ellipse (O) shortcut is gone.
