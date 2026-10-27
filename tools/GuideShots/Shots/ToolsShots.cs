@@ -582,6 +582,7 @@ internal static class ToolsShots
             cancel,
             Lead(Row(m, Opt<Control>(m, "_crWidth"))),
             Lead(m, Opt<Control>(m, "_crFromCenter")),
+            Lead(Row(m, Opt<Control>(m, "_crSlice"))),
             Lead(Union(Row(m, Opt<Control>(m, "_crImageWidth")), Row(m, Opt<Control>(m, "_crImageHeight")))),
             Lead(m, Opt<Control>(m, "_crKeepRatio")),
             Lead(Row(m, Opt<Control>(m, "_crX"))),

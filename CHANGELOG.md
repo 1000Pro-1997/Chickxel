@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.42 (2026-10-27)
+### Guide: stretching with 9-slice in canvas size mode
+- The Canvas size mode page of the homepage and in-app (F1) guide now explains **Stretch with 9-slice** and the Stretch / Tile middle fill, with a looping recording of stretching, shrinking and tiling a 9-slice sprite.
+- The page's screenshot was retaken with the new checkbox marked, and the 9-slice page links to it.
+
+### Terminating Gpixel on macOS and Linux closes it like the window
+- A SIGTERM (for example `kill`, or the new `gpixel stop` / `restart` developer command) no longer ends Gpixel immediately: it closes the main window as if you clicked close, so unsaved documents are asked about and settings are saved. Cancelling keeps Gpixel running.
+- Developers on macOS and Linux get `./dev.sh start | restart | stop | status` and `tools/install-dev-command.sh`, which installs a `gpixel` command for them (Windows already had `dev.bat`; `close` now works as an alias for `stop` on both).
+
 ## v1.14.41 (2026-10-27)
 ### Canvas size mode stretches with 9-slice
 - Canvas size mode (Ctrl+Alt+C) has a new **Stretch with 9-slice** option, on by default. When the frame or a part has 9-slice borders, the handles and canvas size numbers resize the image too: corners stay as they are, edges stretch in one direction only, and only the middle grows, like a Unity UI image with Image Type = Sliced.

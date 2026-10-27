@@ -857,23 +857,31 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>Action</th><th>Result</th></tr></thead>
 <tbody>
-<tr><td>③ Drag a handle</td><td>Moves only that canvas edge (adds margin or crops the image)</td></tr>
-<tr><td><kbd>Ctrl</kbd>+drag a handle</td><td>Also resizes the image (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = keep ratio)</td></tr>
+<tr><td>③ Drag a handle</td><td>Moves only that canvas edge (adds margin or crops the image). With <strong>Stretch with 9-slice</strong> on, the image is stretched or shrunk with 9-slice too</td></tr>
+<tr><td><kbd>Ctrl</kbd>+drag a handle</td><td>Also resizes the image (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = keep ratio). With Stretch with 9-slice on, it does the opposite and moves only the canvas edge</td></tr>
 <tr><td>④ Drag inside the image, arrow keys</td><td>Move the image within the canvas</td></tr>
 <tr><td><kbd>Enter</kbd> or ⑤ <strong>OK</strong></td><td>Apply (one undo step)</td></tr>
 <tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> or ⑥ <strong>Cancel</strong></td><td>Exit without changes</td></tr>
 </tbody>
 </table></div>
 <ul>
-<li>Tool options: ⑦ canvas width/height, ⑧ <strong>Anchor at canvas center</strong>, ⑨ image width/height %, ⑩ <strong>Keep image ratio</strong>, ⑪ image position X/Y, ⑫ <strong>9-direction anchor</strong>.</li>
+<li>Tool options: ⑦ canvas width/height, ⑧ <strong>Anchor at canvas center</strong>, ⑨ <strong>Stretch with 9-slice</strong> and the middle fill (<strong>Stretch / Tile</strong>), ⑩ image width/height %, ⑪ <strong>Keep image ratio</strong>, ⑫ image position X/Y, ⑬ <strong>9-direction anchor</strong>.</li>
 <li>Applies to all frames and layers; parts and pivots are adjusted as well.</li>
 </ul>
-<figure class="shot"><img src="../assets/guide/tools-canvas-size.png" alt="Canvas size mode widening the canvas to 69×88 and cropping the bottom" width="956" height="674" loading="lazy"><figcaption>① New canvas border (light-blue dotted line) · ② Area to be cropped (dimmed) · ③ Handle · ④ Inside the image · ⑤ OK · ⑥ Cancel · ⑦ Canvas width/height · ⑧ Anchor at canvas center · ⑨ Image width/height · ⑩ Keep image ratio · ⑪ Image position X/Y · ⑫ 9-direction anchor</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/tools-canvas-size.png" alt="Canvas size mode widening the canvas to 69×88 and cropping the bottom" width="956" height="674" loading="lazy"><figcaption>① New canvas border (light-blue dotted line) · ② Area to be cropped (dimmed) · ③ Handle · ④ Inside the image · ⑤ OK · ⑥ Cancel · ⑦ Canvas width/height · ⑧ Anchor at canvas center · ⑨ Stretch with 9-slice and middle fill (off here because the sample has no 9-slice borders) · ⑩ Image width/height · ⑪ Keep image ratio · ⑫ Image position X/Y · ⑬ 9-direction anchor</figcaption></figure>
 <figure class="clip"><img src="../assets/guide/tools-canvas-size.webp" alt="In canvas size mode, dragging the handles to widen the canvas or shrink it to crop, and dragging inside the image to move it" width="690" height="340" loading="lazy"></figure>
+<h4>Stretch with 9-slice</h4>
+<ul>
+<li>When the frame (or a part) has <a href="#tools-nine-slice">9-slice</a> borders, ⑨ <strong>Stretch with 9-slice</strong> is on by default and the handles and canvas size numbers resize the image too. Corners stay as they are, edges stretch in one direction only and only the middle grows, like a Unity UI image with Image Type = Sliced. Without borders the checkbox is off and the mode works as in the table above.</li>
+<li>Middle fill: <strong>Stretch</strong> = nearest-neighbor stretch or shrink (Unity Sliced), <strong>Tile</strong> = repeat the original pattern at its size (Unity Tiled — good for patterned middles).</li>
+<li>While dragging, the borders are shown as green dotted lines, and the image can't get smaller than both borders plus one pixel.</li>
+<li>After applying, the L, T, R and B values stay the same number of pixels from the image edges (plus any margin you left), so the Unity Sprite Border still matches. Parts with their own borders are stretched with those, and pivots follow the same mapping.</li>
+</ul>
+<figure class="clip"><img src="../assets/guide/tools-canvas-size-slice.webp" alt="Setting the green lines with the 9-slice tool, then stretching and shrinking with 9-slice in canvas size mode, and switching the middle fill to Tile so the middle pattern repeats" width="1000" height="706" loading="lazy"></figure>
 
 <h3 id="tools-nine-slice">9-slice</h3>
 <p>Sets the Unity Sprite Border. ① <strong>Four green lines</strong> appear on the canvas; drag them to change ② the L, T, R and B values. In Tool options you can enter numbers or reset with ③ <strong>All 0</strong>.</p>
-<p>With a part selected it applies to that part; otherwise to every cell of the frame sheet (④ Tool options shows the target). When scaled up, everything outside the lines (corners and edges) stays the same and only the center stretches, which suits UI buttons and panels used with Image Type = Sliced in Unity.</p>
+<p>With a part selected it applies to that part; otherwise to every cell of the frame sheet (④ Tool options shows the target). When scaled up, everything outside the lines (corners and edges) stays the same and only the center stretches, which suits UI buttons and panels used with Image Type = Sliced in Unity. You can resize the image the same way inside Gpixel with <strong>Stretch with 9-slice</strong> in <a href="#tools-canvas-size">canvas size mode</a>.</p>
 <figure class="shot"><img src="../assets/guide/tools-nine-slice.png" alt="Sample UI button (32×20) with the four green 9-slice lines, and the tool options" width="1003" height="400" loading="lazy"><figcaption>① Four green lines (L5, T5, R5, B6) · ② L, T, R, B values · ③ All 0 · ④ Target (every cell of the frame sheet)</figcaption></figure>
 </section>
 

@@ -52,6 +52,9 @@ public sealed class App : Application
         TextFocusRelease.Install();
     }
 
+    /// <summary>SIGTERM을 창 닫기로 바꾸는 등록(살아 있는 동안만 유효해 필드에 둔다).</summary>
+    private System.Runtime.InteropServices.PosixSignalRegistration? _sigterm;
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -60,6 +63,14 @@ public sealed class App : Application
             var main = new MainForm(Args, Settings);
             // 창이 뜬 뒤에 넣어야 Avalonia의 앱 초기화가 덮어쓰지 않는다.
             if (OperatingSystem.IsMacOS()) main.Opened += (_, _) => Platform.SetMacDockIcon(Icons.AppIconPng());
+            // macOS·Linux: SIGTERM(예: 개발용 gpixel stop·restart, kill)은 바로 끝내지 않고 창 닫기와 같이 처리한다
+            // (저장하지 않은 문서는 저장할지 묻고, 취소하면 계속 돈다).
+            if (!OperatingSystem.IsWindows())
+                _sigterm = System.Runtime.InteropServices.PosixSignalRegistration.Create(System.Runtime.InteropServices.PosixSignal.SIGTERM, ctx =>
+                {
+                    ctx.Cancel = true;
+                    Dispatcher.UIThread.Post(main.Close);
+                });
             desktop.MainWindow = main;
         }
         base.OnFrameworkInitializationCompleted();

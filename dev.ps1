@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('start', 'restart', 'stop', 'status')]
+    [ValidateSet('start', 'restart', 'stop', 'close', 'status')]
     [string]$Action = 'start'
 )
 
@@ -31,7 +31,7 @@ try {
             if ($running.Count -eq 0) { Write-Host 'Local Debug Gpixel is not running.' }
             else { $running | ForEach-Object { Write-Host "Local Debug Gpixel PID $($_.Id) is running." } }
         }
-        'stop' { Stop-DevProcesses }
+        { $_ -in 'stop', 'close' } { Stop-DevProcesses }
         default {
             if ($Action -eq 'restart') { Stop-DevProcesses }
             elseif ((Get-DevProcesses).Count -gt 0) {

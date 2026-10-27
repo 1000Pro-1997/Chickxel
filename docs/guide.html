@@ -857,23 +857,31 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>조작</th><th>결과</th></tr></thead>
 <tbody>
-<tr><td>③ 손잡이 끌기</td><td>그쪽 캔버스 가장자리만 옮김(여백이 늘거나 그림이 잘림)</td></tr>
-<tr><td><kbd>Ctrl</kbd>+손잡이 끌기</td><td>그림 크기도 함께 바꿈(<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = 비율 유지)</td></tr>
+<tr><td>③ 손잡이 끌기</td><td>그쪽 캔버스 가장자리만 옮김(여백이 늘거나 그림이 잘림). <strong>9-slice로 늘리기</strong>가 켜져 있으면 그림도 9-slice로 함께 늘이고 줄임</td></tr>
+<tr><td><kbd>Ctrl</kbd>+손잡이 끌기</td><td>그림 크기도 함께 바꿈(<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = 비율 유지). 9-slice로 늘리기가 켜져 있으면 반대로 캔버스 가장자리만 옮김</td></tr>
 <tr><td>④ 그림 안쪽 끌기, 방향키</td><td>캔버스 안에서 그림 옮기기</td></tr>
 <tr><td><kbd>Enter</kbd> 또는 ⑤ <strong>확인</strong></td><td>적용(실행취소 한 단계)</td></tr>
 <tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> 또는 ⑥ <strong>취소</strong></td><td>바꾸지 않고 끝</td></tr>
 </tbody>
 </table></div>
 <ul>
-<li>도구 설정: ⑦ 캔버스 가로/세로, ⑧ <strong>캔버스 중심 기준</strong>, ⑨ 그림 가로/세로 %, ⑩ <strong>그림 비율 유지</strong>, ⑪ 그림 위치 X/Y, ⑫ <strong>기준점 9방향</strong>.</li>
+<li>도구 설정: ⑦ 캔버스 가로/세로, ⑧ <strong>캔버스 중심 기준</strong>, ⑨ <strong>9-slice로 늘리기</strong>와 가운데 채우기(<strong>늘이기 / 되풀이</strong>), ⑩ 그림 가로/세로 %, ⑪ <strong>그림 비율 유지</strong>, ⑫ 그림 위치 X/Y, ⑬ <strong>기준점 9방향</strong>.</li>
 <li>모든 프레임·레이어에 적용되고, 부위와 피벗도 함께 맞춰집니다.</li>
 </ul>
-<figure class="shot"><img src="assets/guide/tools-canvas-size.png" alt="캔버스를 69×88로 넓히고 아래를 잘라 내는 캔버스 크기 모드" width="956" height="674" loading="lazy"><figcaption>① 새 캔버스 테두리(하늘색 점선) · ② 잘릴 부분(흐리게) · ③ 손잡이 · ④ 그림 안쪽 · ⑤ 확인(OK) · ⑥ 취소(Cancel) · ⑦ 캔버스 가로/세로 · ⑧ 캔버스 중심 기준 · ⑨ 그림 가로/세로 · ⑩ 그림 비율 유지 · ⑪ 그림 위치 X/Y · ⑫ 기준점 9방향(Anchor)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-canvas-size.png" alt="캔버스를 69×88로 넓히고 아래를 잘라 내는 캔버스 크기 모드" width="956" height="674" loading="lazy"><figcaption>① 새 캔버스 테두리(하늘색 점선) · ② 잘릴 부분(흐리게) · ③ 손잡이 · ④ 그림 안쪽 · ⑤ 확인(OK) · ⑥ 취소(Cancel) · ⑦ 캔버스 가로/세로 · ⑧ 캔버스 중심 기준 · ⑨ 9-slice로 늘리기·가운데 채우기(예시 그림은 9-slice 테두리가 없어 꺼져 있음) · ⑩ 그림 가로/세로 · ⑪ 그림 비율 유지 · ⑫ 그림 위치 X/Y · ⑬ 기준점 9방향(Anchor)</figcaption></figure>
 <figure class="clip"><img src="assets/guide/tools-canvas-size.webp" alt="캔버스 크기 모드에서 손잡이를 끌어 캔버스를 넓히거나 줄여 자르고, 그림 안쪽을 끌어 옮기는 모습" width="690" height="340" loading="lazy"></figure>
+<h4>9-slice로 늘리기</h4>
+<ul>
+<li>프레임(또는 부위)에 <a href="#tools-nine-slice">9-slice</a> 테두리가 있으면 ⑨ <strong>9-slice로 늘리기</strong>가 기본으로 켜져 있고, 손잡이와 캔버스 크기 숫자가 그림도 함께 늘입니다. 모서리는 그대로, 가장자리는 한 방향으로만, 가운데만 늘어나 Unity UI의 Image Type = Sliced처럼 됩니다. 테두리가 없으면 체크가 꺼져 있고 위 표대로 움직입니다.</li>
+<li>가운데 채우기: <strong>늘이기</strong> = 최근접으로 늘이거나 줄임(Unity Sliced), <strong>되풀이</strong> = 원래 무늬를 크기 그대로 반복(Unity Tiled — 무늬가 있는 가운데에 알맞음).</li>
+<li>끄는 동안 테두리 자리가 초록 점선으로 보이고, 그림은 두 테두리 + 1px보다 작아지지 않습니다.</li>
+<li>적용하면 L·T·R·B 값은 그림 가장자리에서 같은 픽셀 수로 남아(여백을 두었으면 그만큼 더함) Unity Sprite Border도 그대로 맞습니다. 자기 테두리가 있는 부위는 그 테두리로 늘어나고, 피벗도 같은 방식으로 따라갑니다.</li>
+</ul>
+<figure class="clip"><img src="assets/guide/tools-canvas-size-slice.webp" alt="9-slice 도구로 초록 선을 정한 뒤 캔버스 크기 모드에서 손잡이를 끌어 9-slice로 늘이고 줄이며, 가운데 채우기를 되풀이로 바꿔 가운데 무늬가 반복되는 모습" width="1000" height="706" loading="lazy"></figure>
 
 <h3 id="tools-nine-slice">9-slice</h3>
 <p>Unity Sprite Border를 정합니다. 캔버스에 ① <strong>초록 선 4개</strong>가 나오고, 끌면 ② L·T·R·B 값이 바뀝니다. 도구 설정에서 숫자로 넣거나 ③ <strong>모두 0</strong>으로 되돌릴 수 있습니다.</p>
-<p>부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용됩니다(④ 도구 설정에 대상이 나옵니다). 크기를 늘려도 선 바깥(모서리·가장자리)은 그대로이고 가운데만 늘어나서, Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널에 알맞습니다.</p>
+<p>부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용됩니다(④ 도구 설정에 대상이 나옵니다). 크기를 늘려도 선 바깥(모서리·가장자리)은 그대로이고 가운데만 늘어나서, Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널에 알맞습니다. Gpixel 안에서도 <a href="#tools-canvas-size">캔버스 크기 모드</a>의 <strong>9-slice로 늘리기</strong>로 같은 방식으로 그림 크기를 바꿀 수 있습니다.</p>
 <figure class="shot"><img src="assets/guide/tools-nine-slice.png" alt="예시 UI 단추(32×20)에 9-slice 초록 선 4개를 둔 캔버스와 도구 설정" width="1003" height="400" loading="lazy"><figcaption>① 초록 선 4개(L5·T5·R5·B6) · ② L·T·R·B 값 · ③ 모두 0(All 0) · ④ 적용 대상(프레임 시트 모든 칸)</figcaption></figure>
 </section>
 
