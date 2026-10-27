@@ -40,6 +40,9 @@ core.4,숫자 칸 바꾸는 법,Changing number fields
 core.5.alt,"피벗 X·Y 숫자 칸을 클릭해 입력하고, 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르는 모습","Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list"
 core.6,AI로 그리기,Drawing with AI
 core.7.aria-label,Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습,"Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas"
+core.zoom.tag,"<span class=""core-tag"">픽셀로 정리</span>","<span class=""core-tag"">Pixelate</span>"
+core.zoom.title,크게 보기로 칸 단위 비교,Comparing cell by cell in the enlarged view
+core.zoom.aria-label,"픽셀로 정리 창에서 원본 위 칸 격자를 보고, 크게 보기를 열어 결과와 원본을 칸 단위로 비교하며 색이 쓰인 곳을 강조하는 모습","In the Pixelate window, viewing the cell grid on the source, opening the enlarged view and comparing the result with the source cell by cell while highlighting where colors are used"
 core.8,"<span class=""core-tag"">픽셀로 정리</span>","<span class=""core-tag"">Pixelate</span>"
 core.9,이미지를 픽셀 아트로,Turning images into pixel art
 core.10.aria-label,"AI로 그린 캐릭터 그림을 픽셀로 정리 창에 붙여 넣자 후보가 만들어지고, 크게 보기에서 결과와 원본을 칸 단위로 비교하는 모습","Pasting an AI-drawn character into the Pixelate window, candidates being built, and comparing the result with the source cell by cell in the enlarged view"

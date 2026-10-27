@@ -3805,10 +3805,6 @@ echo __LOGIN_FAILED__
     <value>프레임</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:122 · Frames · "프레임"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_Frames_BuildFrameStrip_9111DBA210" xml:space="preserve">
-    <value>재생</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.Frames.cs:24 · BuildFrameStrip · "재생"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70" xml:space="preserve">
     <value>누르면 그 프레임을 보고, 끌면 프레임 범위를 정합니다. 효과를 고른 채 마지막 칸 너머로 끌면 프레임을 늘립니다(점선 칸).</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.Frames.cs:135 · FrameStrip · "누르면 그 프레임을 보고, 끌면 프레임 범위를 정합니다. 효과를 고른 채 마지막 칸 너머로 끌면 프레임을 늘립니다(점선 칸)."</comment>
@@ -4373,14 +4369,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0" xml:space="preserve">
     <value>멈춤</value>
     <comment>src/Gpixel.App\LayerEffectsDialog.cs:962 · SyncPlayback · "멈춤"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_TogglePlay_BB46370149" xml:space="preserve">
-    <value>멈춤</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:974 · TogglePlay · "멈춤"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_TogglePlay_BF65C1C421" xml:space="preserve">
-    <value>재생</value>
-    <comment>src/Gpixel.App\LayerEffectsDialog.cs:974 · TogglePlay · "재생"</comment>
   </data>
   <data name="S_LayerEffectsDialog_UpdateButtons_ADC8E0220B" xml:space="preserve">
     <value>고른 효과를 셀 픽셀에 구워 넣고 효과에서 뺍니다(실행취소 한 단계, 창이 닫힘).</value>
@@ -9672,6 +9660,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>앞에 기준 효과가 있어야 합니다. 잔상은 클리핑 기준으로 사용할 수 없습니다.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · 위 효과에 클리핑</value></data>
   <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>클릭해서 전·후 미리보기 크게 보기</value></data>
+  <data name="EffectPreview_PrevFrame" xml:space="preserve"><value>이전 프레임 (←)</value><comment>효과 크게 보기 창: 이전 프레임 단추 풍선.</comment></data>
+  <data name="EffectPreview_NextFrame" xml:space="preserve"><value>다음 프레임 (→)</value><comment>효과 크게 보기 창: 다음 프레임 단추 풍선.</comment></data>
   <data name="Help_Title" xml:space="preserve"><value>Gpixel 사용 가이드</value></data>
   <data name="Help_SearchWatermark" xml:space="preserve"><value>가이드 검색</value></data>
   <data name="Help_ClearSearch" xml:space="preserve"><value>검색어 지우기</value></data>

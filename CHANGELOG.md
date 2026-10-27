@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.53 (2026-10-28)
+### New key feature video: comparing cell by cell in the enlarged view
+- The website's key features, the guide's Quick tasks > Pixelate and the in-app guide (F1) open with a new video showing the cell grid on the source and the enlarged view comparing result and source cell by cell.
+- The README lists the same video among the key features.
+
+### Effects window: four effect types per row, full scrolling and playback in the enlarged preview
+- The effect type list shows four types per row, and scrolling now reaches the last row (the bottom tiles used to be cut off).
+- The enlarged before/after preview (click the preview) has Play, previous/next frame buttons and the current frame, plus **Selected effect range only** and **Loop end to start**, which stay in sync with the effects window.
+- In the enlarged preview, Space plays or pauses and ←/→ step frames.
+
 ## v1.14.52 (2026-10-27)
 ### New app icon: a chick holding a paint palette
 - The app, window, Dock and taskbar icon is now a pixel chick holding a paint palette on a purple background, drawn at 32×32.

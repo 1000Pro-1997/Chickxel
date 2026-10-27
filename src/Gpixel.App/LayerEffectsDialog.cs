@@ -141,7 +141,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private readonly ListBox _list;
     private readonly StackPanel _settings;
     private readonly Button _remove, _up, _down, _bake, _play;
-    private readonly CheckBox _effectOnly, _expandCanvas;
+    private readonly CheckBox _effectOnly, _expandCanvas, _loop;
+    /// <summary>크게 보기 창의 재생 단추·프레임 설명·재생 범위 체크(창이 닫혀 있으면 null).</summary>
+    private Button? _largePlay;
+    private TextBlock? _largeCaption;
+    private CheckBox? _largeEffectOnly, _largeLoop;
     private readonly ComboBox _expandMode;
     private readonly TextBlock _expandNote;
     private readonly TextBlock _caption;
@@ -306,16 +310,21 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _effectOnly.IsCheckedChanged += (_, _) =>
         {
             s_effectOnly = _effectOnly.On();
+            if (_largeEffectOnly is { } large) large.IsChecked = s_effectOnly;
             SyncPlayback(restart: true);
         };
         ToolTip.SetTip(_effectOnly, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_2138B1E743);
-        var loop = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_96BC2CE00E, s_seamlessLoop);
-        loop.VerticalAlignment = VerticalAlignment.Center;
-        loop.IsCheckedChanged += (_, _) => s_seamlessLoop = loop.On();
-        ToolTip.SetTip(loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
+        _loop = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_96BC2CE00E, s_seamlessLoop);
+        _loop.VerticalAlignment = VerticalAlignment.Center;
+        _loop.IsCheckedChanged += (_, _) =>
+        {
+            s_seamlessLoop = _loop.On();
+            if (_largeLoop is { } large) large.IsChecked = s_seamlessLoop;
+        };
+        ToolTip.SetTip(_loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
         _timer.Tick += (_, _) => NextPreviewFrame();
         var right = Ui.Stack(
-            Ui.Row(_play, _effectOnly, loop, Ui.InfoBadge(Intro(layer))),
+            Ui.Row(_play, _effectOnly, _loop, Ui.InfoBadge(Intro(layer))),
             _caption,
             _preview,
             BuildFrameStrip());
@@ -1047,6 +1056,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         var range = PlayRange();
         _play.IsEnabled = range is not null;
+        if (_largePlay is { } largePlay) largePlay.IsEnabled = _play.IsEnabled;
         if (range is null)
         {
             _timer.Stop();
@@ -1067,7 +1077,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             }
             if (restart) StartTimer();
         }
-        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, UiStrings.S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0) : Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_SyncPlayback_1100994439);
+        UpdatePlayButtons();
     }
 
     private void TogglePlay()
@@ -1079,7 +1089,27 @@ public sealed partial class LayerEffectsDialog : DialogBase
             StartTimer();
             RefreshPreview();
         }
-        _play.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, UiStrings.S_LayerEffectsDialog_TogglePlay_BB46370149) : Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_TogglePlay_BF65C1C421);
+        UpdatePlayButtons();
+    }
+
+    /// <summary>창과 크게 보기 창의 재생 단추 글을 재생 상태에 맞춘다.</summary>
+    private void UpdatePlayButtons()
+    {
+        foreach (var button in new[] { _play, _largePlay })
+            if (button is not null)
+                button.Content = _timer.IsEnabled ? Ui.IconLabel(VectorIcon.Pause, UiStrings.S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0) : Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_SyncPlayback_1100994439);
+    }
+
+    /// <summary>재생을 멈추고 한 프레임 앞(+1)이나 뒤(−1)로 옮긴다(재생 범위 안에서 돌아감, 범위가 없으면 모든 프레임).</summary>
+    private void StepPreview(int delta)
+    {
+        _timer.Stop();
+        var (from, to) = PlayRange() ?? (0, VirtualCount - 1);
+        if (to < from) return;
+        int f = _previewFrame < from || _previewFrame > to ? from : _previewFrame + delta;
+        _previewFrame = f > to ? from : f < from ? to : f;
+        RefreshPreview();
+        UpdatePlayButtons();
     }
 
     private void StartTimer()
@@ -1130,6 +1160,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             var empty = new PixelImage(bounds.Width, bounds.Height);
             _preview.SetImages(empty, empty, canvas);
             _largePreview?.InvalidateVisual();
+            if (_largeCaption is not null) _largeCaption.Text = _caption.Text;
             return;
         }
         var (after, dx, dy) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height));
@@ -1150,6 +1181,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         string progress = Selected >= 0 && Selected < all.Count && all[Selected] is AnimatedEffect a && a.AppliesTo(f)
             ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_19220A5382,a.AtFrame(f, VirtualCount, _project.EffectPivot(_layer, OriginalOf(f))).Time * 100) : "";
         _caption.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_RefreshPreview_64659703DD,f + 1,where,progress);
+        if (_largeCaption is not null) _largeCaption.Text = _caption.Text;
     }
 
     private void OpenLargePreview()
@@ -1159,31 +1191,70 @@ public sealed partial class LayerEffectsDialog : DialogBase
             window.Activate();
             return;
         }
-        var view = new PreviewView(_preview) { Margin = new Thickness(12) };
+        var view = new PreviewView(_preview) { Margin = new Thickness(12, 12, 12, 4) };
+        // 아래 줄: 재생·이전·다음 프레임, 지금 프레임 설명, 재생 범위 체크 두 개(창의 체크와 같이 바뀜).
+        var play = Ui.Button(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_3DC0585476, (_, _) => TogglePlay(), 80);
+        ToolTip.SetTip(play, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_46C6465E13);
+        var prev = Ui.IconButton(VectorIcon.ChevronLeft, UiStrings.EffectPreview_PrevFrame, (_, _) => StepPreview(-1));
+        var next = Ui.IconButton(VectorIcon.ChevronRight, UiStrings.EffectPreview_NextFrame, (_, _) => StepPreview(1));
+        var effectOnly = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_BEC5ADB6D1, _effectOnly.On());
+        effectOnly.VerticalAlignment = VerticalAlignment.Center;
+        effectOnly.IsCheckedChanged += (_, _) => _effectOnly.IsChecked = effectOnly.On();
+        ToolTip.SetTip(effectOnly, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_2138B1E743);
+        var loop = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_96BC2CE00E, _loop.On());
+        loop.VerticalAlignment = VerticalAlignment.Center;
+        loop.IsCheckedChanged += (_, _) => _loop.IsChecked = loop.On();
+        ToolTip.SetTip(loop, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_0500474F59);
+        var caption = Ui.Label(_caption.Text ?? "");
+        caption.Foreground = AppTheme.DimTextBrush;
+        caption.VerticalAlignment = VerticalAlignment.Center;
+        var bar = Ui.Row(play, prev, next, effectOnly, loop, caption);
+        bar.Margin = new Thickness(12, 0, 12, 10);
+        DockPanel.SetDock(bar, Dock.Bottom);
         var large = new Window
         {
             Title = Title,
             Width = 900,
-            Height = 580,
-            MinWidth = 400,
+            Height = 620,
+            MinWidth = 520,
             MinHeight = 300,
             CanResize = true,
             ShowInTaskbar = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Background = AppTheme.BackBrush,
-            Content = view,
+            Content = new DockPanel { Children = { bar, view } },
         };
         large.KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape) large.Close();
+            // 단추·체크에 포커스가 있으면 Space는 그 단추를 누른다 — 창에서 또 재생을 바꾸지 않는다.
+            if (e.Key == Key.Space && e.Source is Avalonia.Controls.Primitives.ToggleButton or Button) return;
+            switch (e.Key)
+            {
+                case Key.Escape: large.Close(); break;
+                case Key.Space: TogglePlay(); break;
+                case Key.Left: StepPreview(-1); break;
+                case Key.Right: StepPreview(1); break;
+                default: return;
+            }
+            e.Handled = true;
         };
         large.Closed += (_, _) =>
         {
             _previewWindow = null;
             _largePreview = null;
+            _largePlay = null;
+            _largeCaption = null;
+            _largeEffectOnly = null;
+            _largeLoop = null;
         };
         _previewWindow = large;
         _largePreview = view;
+        _largePlay = play;
+        _largeCaption = caption;
+        _largeEffectOnly = effectOnly;
+        _largeLoop = loop;
+        play.IsEnabled = _play.IsEnabled;
+        UpdatePlayButtons();
         large.Show(this);
     }
 

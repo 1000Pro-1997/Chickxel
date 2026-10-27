@@ -22,9 +22,9 @@ public sealed partial class LayerEffectsDialog
             // 칸 그림은 잠깐 모았다가 그리므로(_stripTimer) 줄이 아직 이전 칸 수일 수 있다 — 지금 없는 프레임 칸은 무시
             if (f >= VirtualCount) return;
             _timer.Stop();
-            _play.Content = Ui.IconLabel(VectorIcon.Play, UiStrings.S_LayerEffectsDialog_Frames_BuildFrameStrip_9111DBA210);
             _previewFrame = f;
             RefreshPreview();
+            UpdatePlayButtons();
         };
         _strip.DragStarted += () => _dragBase = (_extension, VirtualCount);
         _strip.RangeDragged += DragRange;

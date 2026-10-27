@@ -1050,7 +1050,6 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_F07F8BC693" xml:space="preserve"><value>Current · {0}</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_FC90F137FF" xml:space="preserve"><value>End</value></data>
   <data name="S_LayerEffectsDialog_Frames_656538CC7F" xml:space="preserve"><value>Frames</value></data>
-  <data name="S_LayerEffectsDialog_Frames_BuildFrameStrip_9111DBA210" xml:space="preserve"><value>Play</value></data>
   <data name="S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70" xml:space="preserve"><value>Click to view a frame, drag to set the frame range. With an effect selected, drag past the last cell to extend frames (dashed cells).</value></data>
   <data name="S_LayerEffectsDialog_Intro_03C1A71EB9" xml:space="preserve"><value>
 In part atlases, the sprite grows by the spread amount and the pivot points to the same spot.</value></data>
@@ -1196,8 +1195,6 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_LayerEffectsDialog_Summary_FDDC95CFEA" xml:space="preserve"><value> · dither {0}</value></data>
   <data name="S_LayerEffectsDialog_SyncPlayback_1100994439" xml:space="preserve"><value>Play</value></data>
   <data name="S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0" xml:space="preserve"><value>Pause</value></data>
-  <data name="S_LayerEffectsDialog_TogglePlay_BB46370149" xml:space="preserve"><value>Pause</value></data>
-  <data name="S_LayerEffectsDialog_TogglePlay_BF65C1C421" xml:space="preserve"><value>Play</value></data>
   <data name="S_LayerEffectsDialog_UpdateButtons_ADC8E0220B" xml:space="preserve"><value>Bakes the selected effect into the cel pixels and removes it from the effects (one undo step; closes the window).</value></data>
   <data name="S_LayerEffectsDialog_UpdateButtons_DFC3F498B4" xml:space="preserve"><value> The {0} enabled effects above it are baked too (so it looks the same as before).</value></data>
   <data name="S_LospecPaletteDialog_AppendPalette_0829A17CC4" xml:space="preserve"><value>No new colors to append (all already present).</value></data>
@@ -2709,6 +2706,8 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectPreset_ClipUnavailableTip" xml:space="preserve"><value>Requires a base effect before it. Afterimage can't be used as a clipping base.</value></data>
   <data name="EffectPreset_ClippedSuffix" xml:space="preserve"><value> · clipped to effect above</value></data>
   <data name="EffectPreview_OpenLarge" xml:space="preserve"><value>Click to enlarge the before/after preview</value></data>
+  <data name="EffectPreview_PrevFrame" xml:space="preserve"><value>Previous frame (←)</value></data>
+  <data name="EffectPreview_NextFrame" xml:space="preserve"><value>Next frame (→)</value></data>
   <data name="Help_Title" xml:space="preserve"><value>Gpixel Guide</value></data>
   <data name="Help_SearchWatermark" xml:space="preserve"><value>Search the guide</value></data>
   <data name="Help_ClearSearch" xml:space="preserve"><value>Clear search</value></data>

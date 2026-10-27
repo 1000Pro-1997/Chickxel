@@ -12,6 +12,8 @@ namespace Gpixel.App;
 public sealed partial class LayerEffectsDialog
 {
     private const int TileWidth = 88, TileHeight = 96, ThumbSteps = 12, ThumbHold = 4, ThumbMaxSize = 128;
+    /// <summary>효과 종류 칸의 한 줄 상자 수.</summary>
+    private const int PaletteColumns = 4;
 
     private readonly List<EffectTile> _tiles = new();
     private readonly List<EffectPreset> _presets = new();
@@ -56,7 +58,7 @@ public sealed partial class LayerEffectsDialog
         ToolTip.SetTip(_savePreset, UiStrings.EffectPreset_SaveGroupTip);
         _customEmpty.Text = loadError ?? UiStrings.EffectPreset_Empty;
         _customEmpty.TextWrapping = TextWrapping.Wrap;
-        _customEmpty.MaxWidth = (TileWidth + 4) * 2;
+        _customEmpty.MaxWidth = (TileWidth + 4) * PaletteColumns;
         RebuildCustomPalette();
 
         _thumbTimer.Tick += (_, _) =>
@@ -69,18 +71,19 @@ public sealed partial class LayerEffectsDialog
         };
         _thumbTimer.Start();
 
-        int width = (TileWidth + 4) * 2 + 18;
-        ScrollViewer Scroll(Control content, double height) => new()
+        int width = (TileWidth + 4) * PaletteColumns + 40; // + 탭 안쪽 여백과 세로 스크롤 막대
+        // 스크롤 칸은 높이를 정하지 않고 탭 안 남은 자리를 채운다 — 정한 높이가 탭 내용 칸보다 크면 맨 아래 상자가 잘려 스크롤로도 닿지 않았다.
+        ScrollViewer Scroll(Control content) => new()
         {
             Content = content,
-            Width = width,
-            Height = height,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         };
-        var custom = Ui.Stack(_savePreset, Ui.Label(UiStrings.EffectPreset_CustomHelp), _customEmpty, Scroll(_customWrap, 470));
-        custom.Margin = new Thickness(0);
+        var customHead = Ui.Stack(_savePreset, Ui.Label(UiStrings.EffectPreset_CustomHelp), _customEmpty);
+        customHead.Margin = new Thickness(0);
+        DockPanel.SetDock(customHead, Dock.Top);
+        var custom = new DockPanel { Children = { customHead, Scroll(_customWrap) } };
         var tabs = new TabControl { Width = width, Height = 590 };
-        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_BuiltInTab, Content = Scroll(builtInWrap, 540) });
+        tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_BuiltInTab, Content = Scroll(builtInWrap) });
         tabs.Items.Add(new TabItem { Header = UiStrings.EffectPreset_CustomTab, Content = custom });
         return Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_LayerEffectsDialog_Palette_BuildPalette_F3EEB77504, bold: true), Ui.InfoBadge(UiStrings.S_LayerEffectsDialog_Palette_BuildPalette_938E8B22DD)), tabs);
     }

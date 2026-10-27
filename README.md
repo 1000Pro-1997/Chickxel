@@ -16,6 +16,10 @@
 
 <a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-ai-draw"><img src="src/Gpixel.App/Assets/Help/media/feature-ai-draw.webp" alt="Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습" width="640"></a>
 
+### 크게 보기로 칸 단위 비교
+
+<a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-pixelate-zoom"><img src="src/Gpixel.App/Assets/Help/media/feature-pixelate-grid.webp" alt="픽셀로 정리 창에서 원본 위 칸 격자를 보고, 크게 보기를 열어 결과와 원본을 칸 단위로 비교하며 색이 쓰인 곳을 강조하는 모습" width="640"></a>
+
 ### 이미지를 픽셀 아트로
 
 <a href="https://1000pro-1997.github.io/GPixel/guide.html#featured-pixelate-convert"><img src="src/Gpixel.App/Assets/Help/media/feature-pixelate.webp" alt="AI로 그린 캐릭터 그림을 픽셀로 정리 창에 붙여 넣자 후보가 만들어지고, 크게 보기에서 결과와 원본을 칸 단위로 비교하는 모습" width="640"></a>

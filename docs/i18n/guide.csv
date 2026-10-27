@@ -34,6 +34,7 @@ manual.5,"<a href=""#featured-ai-draw"">AI로 그리기</a>
 manual.6,"<a href=""#featured-pixelate"">픽셀로 정리</a>
 ","<a href=""#featured-pixelate"">Pixelate</a>
 "
+manual.pixelate-zoom,"<a href=""#featured-pixelate-zoom"">크게 보기로 칸 단위 비교</a>","<a href=""#featured-pixelate-zoom"">Comparing cell by cell in the enlarged view</a>"
 manual.7,"<a href=""#featured-pixelate-convert"">이미지를 픽셀 아트로</a>","<a href=""#featured-pixelate-convert"">Turning images into pixel art</a>"
 manual.8,"<a href=""#featured-pixelate-colors"">색 빼기·더하기</a>","<a href=""#featured-pixelate-colors"">Removing and adding colors</a>"
 manual.9,"<a href=""#featured-anim"">애니메이션 효과</a>
@@ -208,6 +209,12 @@ featured-ai-draw.6,"직접 써 본 결과 <strong>Codex의 Astra 모델</strong>
 featured-ai-draw.7.aria-label,Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습,"Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas"
 featured-pixelate.1,픽셀로 정리,Pixelate
 featured-pixelate.2,AI로 만든 그림이나 일반 이미지를 깨끗한 픽셀 아트로 바꿉니다.,Turn AI-generated art or any image into clean pixel art.
+featured-pixelate-zoom.1,크게 보기로 칸 단위 비교,Comparing cell by cell in the enlarged view
+featured-pixelate-zoom.2,"원본 위에 실제로 쓴 칸 격자를 겹쳐 보고, 결과와 원본을 같은 크기로 나란히 놓고 한 칸씩 확인합니다.","See the cell grid Gpixel actually used laid over the source, then check the result and the source side by side at the same size, one cell at a time."
+featured-pixelate-zoom.3,<strong>격자 보기</strong><span>원본 보기에 고른 후보가 쓴 칸 경계가 그려져 칸이 색 덩어리와 맞는지 바로 보입니다.</span>,<strong>Show grid</strong><span>The source view draws the cell borders the selected candidate used, so you can see right away whether the cells line up with the color blocks.</span>
+featured-pixelate-zoom.4,<strong>크게 보기</strong><span>큰 미리보기의 결과나 원본을 누르면 두 그림이 같은 크기로 크게 열립니다.</span>,<strong>Enlarge</strong><span>Click the result or the source in the large preview to open both at the same size.</span>
+featured-pixelate-zoom.5,<strong>칸 짚어 보기</strong><span>결과 픽셀이나 원본 칸을 누르면 그 색이 쓰인 곳과 원본 칸이 어느 결과 픽셀이 되었는지 강조됩니다.</span>,<strong>Inspect a cell</strong><span>Click a result pixel or a source cell to highlight where that color is used and which result pixel the source cell became.</span>
+featured-pixelate-zoom.6.aria-label,"픽셀로 정리 창에서 원본 위 칸 격자를 보고, 크게 보기를 열어 결과와 원본을 칸 단위로 비교하며 색이 쓰인 곳을 강조하는 모습","In the Pixelate window, viewing the cell grid on the source, opening the enlarged view and comparing the result with the source cell by cell while highlighting where colors are used"
 featured-pixelate-convert.1,이미지를 픽셀 아트로,Turning images into pixel art
 featured-pixelate-convert.2,"그림을 넣으면 픽셀 크기를 찾아 칸을 맞추고, 배경을 지우고, 색을 줄여 픽셀 아트로 바꿉니다. 설정을 바꿔 가며 만든 후보를 점수 순으로 보여 주니 마음에 드는 것을 고르면 됩니다.","Drop in an image and Gpixel finds the pixel size, snaps to the grid, removes the background and reduces the colors. It builds candidates with different settings and ranks them by score, so you just pick the one you like."
 featured-pixelate-convert.3,<strong>그림 넣기</strong><span><strong>AI &gt; AI 그림 픽셀로 정리…</strong>를 열고 그림을 끌어 놓거나 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣습니다.</span>,<strong>Add an image</strong><span>Open <strong>AI &gt; Pixelate AI image…</strong> and drag an image in or paste it with <kbd>Ctrl</kbd>+<kbd>V</kbd>.</span>
