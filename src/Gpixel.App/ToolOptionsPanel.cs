@@ -447,22 +447,15 @@ public sealed class ToolOptionsPanel : UserControl
     private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
         => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
 
-    /// <summary>
-    /// 숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다.
-    /// 9-slice로 늘이면 그림도 같은 만큼 늘인다(여백은 그대로).
-    /// </summary>
+    /// <summary>숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다.</summary>
     private void SetCanvasResizeSize(int? width, int? height)
     {
         var c = _ctx.CanvasResizeCanvas;
         var image = _ctx.CanvasResizeImage;
         int x = _ctx.CanvasResizeFromCenter && width is not null ? (_ctx.CanvasResizeCenter2.X - width.Value) / 2 : c.X;
         int y = _ctx.CanvasResizeFromCenter && height is not null ? (_ctx.CanvasResizeCenter2.Y - height.Value) / 2 : c.Y;
-        int w = width ?? c.Width, h = height ?? c.Height;
-        if (_ctx.CanvasResizeUsesSlice)
-            image = image with { Width = image.Width + w - c.Width, Height = image.Height + h - c.Height };
-        else
-            image.Offset(c.X - x, c.Y - y);
-        _ctx.SetCanvasResize(new Rectangle(x, y, w, h), image);
+        image.Offset(c.X - x, c.Y - y);
+        _ctx.SetCanvasResize(new Rectangle(x, y, width ?? c.Width, height ?? c.Height), image);
     }
 
     /// <summary>원래 그림 비율로 그림 가로 <paramref name="width"/>에 맞는 세로(1 이상).</summary>

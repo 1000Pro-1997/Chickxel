@@ -389,7 +389,7 @@ internal static class PixelateShots
         ToolTip.SetIsOpen(tip, false);
     }
 
-    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중(⑦⑧), 최적화 설정 창(⑨~⑭).
+    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중(⑦⑧), 최적화 설정 창(⑨~⑯).
     [Shot("pixelate-optimize")]
     public static void Optimize(ShotKit k)
     {
@@ -432,7 +432,7 @@ internal static class PixelateShots
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
-        // 최적화 설정 창: 항목 체크·모두 선택/해제·예산·점수 가중치·시도 기록(펼침)·불러오면 자동 최적화.
+        // 최적화 설정 창: 항목 체크·모두 선택/해제·예산·점수 가중치·시도 기록(펼침)·불러오면 자동 최적화·프리셋 목록·점수용 색 거리.
         ShotKit.Call(dlg, "OpenOptimizeSettings");
         k.Settle(800);
         var win = ShotKit.Get<Window>(dlg, "_optSettingsWindow");
@@ -449,6 +449,8 @@ internal static class PixelateShots
         var seconds = ShotKit.Get<NumericUpDown>(panel, "_seconds");
         var weightsLabel = ShotKit.FindText(panel, UiStrings.Pixelate_Opt_ScoreWeights);
         var weights = ShotKit.Get<NumericUpDown[]>(panel, "_weights");
+        var presetList = (Control)ShotKit.Get<ListBox>(panel, "_list").Parent!;
+        var scoreDistance = (Control)ShotKit.Get<ComboBox>(panel, "_distance").Parent!;
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
         k.Save(win, "pixelate-optimize-3", marks:
         [
@@ -458,6 +460,8 @@ internal static class PixelateShots
             PixelateKit.Union(win, [weightsLabel, .. weights]).Inflate(new Thickness(12, 3, 4, 4)),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
+            PixelateKit.Box(presetList, win, 2),
+            PixelateKit.Box(scoreDistance, win, 2),
         ], firstNumber: 9);
     }
 

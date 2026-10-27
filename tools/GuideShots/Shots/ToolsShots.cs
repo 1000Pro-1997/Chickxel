@@ -453,7 +453,9 @@ internal static class ToolsShots
             Lead(Row(m, ShotKit.Get<Control>(editor, "_position"))),
             Lead(m, ShotKit.Get<Control>(editor, "_colorRow")),
             Lead(Row(m, ShotKit.Get<Control>(editor, "_interpolation"))),
+            Lead(Row(m, ShotKit.Get<Control>(editor, "_colorSpaceEditor"))),
             Lead(Row(m, ShotKit.Get<Control>(editor, "_dither"))),
+            Lead(m, ShotKit.Get<Control>(options, "_hint")),
         ]);
         m.MouseUp(end, MouseButton.Left);
         k.Settle(300);
@@ -470,10 +472,10 @@ internal static class ToolsShots
         List<Mark> menuMarks = [Pick(save)];
         if (presets.Count > 0) menuMarks.Add(Lead(Union([.. presets]), 14, 1));
         menuMarks.Add(Pick(manage));
-        k.Save(m, "tools-gradient-2", crop: ToolFileHelp.Clamp(crop, m), marks: menuMarks, firstNumber: 8);
+        k.Save(m, "tools-gradient-2", crop: ToolFileHelp.Clamp(crop, m), marks: menuMarks, firstNumber: 10);
 
         // 3: 그라데이션 프리셋 관리 창.
-        int next = 8 + menuMarks.Count;
+        int next = 10 + menuMarks.Count;
         k.Dialog(() => manage.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent)), w =>
         {
             var list = ShotKit.Get<Control>(w, "_list");

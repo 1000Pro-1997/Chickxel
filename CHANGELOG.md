@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.43 (2026-10-27)
+### Ctrl does the same thing in canvas size mode with or without 9-slice
+- A plain handle drag now always moves only the canvas edge (adds margin or crops), and Ctrl+drag always resizes the image too, whether or not **Stretch with 9-slice** is on. The checkbox only decides how the image is resized: with 9-slice (corners and edges kept) or nearest-neighbor.
+- The canvas width/height numbers no longer resize the image when 9-slice is on; use Ctrl+drag or the image width/height fields.
+
+### User guide brought up to date
+- The homepage and in-app (F1) guide now cover recent changes: the six cell color modes, the new fidelity score, local grid correction and dither behavior, the 0–1000 OKLCh hue weight, the separate Auto Optimize Settings window with optimizer presets, stop-reason markers and **Rerun only this preset**, gradient color spaces and presets, the Presets window and the Presets tab in Preferences, and the "i" info icons in Tool settings.
+- The affected screenshots (auto optimize, gradient, tool settings and tool pages) were retaken.
+
 ## v1.14.42 (2026-10-27)
 ### Guide: stretching with 9-slice in canvas size mode
 - The Canvas size mode page of the homepage and in-app (F1) guide now explains **Stretch with 9-slice** and the Stretch / Tile middle fill, with a looping recording of stretching, shrinking and tiling a 9-slice sprite.

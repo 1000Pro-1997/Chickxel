@@ -2473,8 +2473,7 @@ public sealed class PixelCanvas : Control
     /// <summary>
     /// 캔버스 크기 끌기(1px 단위): 그림 안쪽이면 그림을 옮기고, 손잡이면 그 캔버스 가장자리만 옮긴다(그림은 제자리 → 여백이 늘거나 잘림).
     /// Ctrl(⌘)이면 그림 가장자리도 함께 움직여 여백은 그대로 두고 그림 크기를 바꾼다(모서리 + Shift = 시작 때 그림 비율 유지). 크기는 1px 이상.
-    /// 9-slice로 늘이면(<see cref="EditorContext.CanvasResizeUsesSlice"/>) 반대로 그냥 끌기가 그림도 함께 늘이고 Ctrl(⌘)+끌기가 캔버스만 옮기며,
-    /// 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
+    /// 9-slice로 늘리기가 켜져 있어도 조작은 같고(<see cref="EditorContext.CanvasResizeUsesSlice"/>는 그림을 늘리는 방법만 바꿈), 그때 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
     /// </summary>
     private void DragCanvasResize(Point screen)
     {
@@ -2486,7 +2485,7 @@ public sealed class PixelCanvas : Control
             _ctx.SetCanvasResize(c, new Rectangle(i.X + dx, i.Y + dy, i.Width, i.Height));
             return;
         }
-        bool scale = Ui.HasCommand(_mods) != _ctx.CanvasResizeUsesSlice;
+        bool scale = Ui.HasCommand(_mods);
         var min = scale ? _ctx.CanvasResizeMinImage : new System.Drawing.Size(1, 1);
         int multiplier = _ctx.CanvasResizeFromCenter ? 2 : 1;
         int gx = _crHx * dx * multiplier, gy = _crHy * dy * multiplier; // 중심 기준이면 맞은편도 같은 만큼 움직임

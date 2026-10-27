@@ -915,7 +915,7 @@ public sealed class EditorContext
     public bool CanvasResizeSliceAvailable
         => Project is { } p && (!CanvasResizeBorder.IsNone || p.Layers.Any(l => l.IsPart && NineSlice.Applies(l.PartBorder, l.PartSize.Width, l.PartSize.Height)));
 
-    /// <summary>캔버스 크기 모드가 9-slice로 늘이는지(켰고 쓸 테두리가 있음): 손잡이·캔버스 크기 숫자가 그림도 함께 늘인다.</summary>
+    /// <summary>캔버스 크기 모드가 그림 크기를 9-slice로 바꾸는지(켰고 쓸 테두리가 있음). 조작(Ctrl+끌기·그림 가로/세로)은 같고 늘리는 방법만 바뀐다.</summary>
     public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && CanvasResizeSliceAvailable;
 
     /// <summary>9-slice로 늘릴 때 그림의 가장 작은 크기: 프레임 칸 테두리 두 쪽 + 가운데 1px(테두리가 없으면 1).</summary>
