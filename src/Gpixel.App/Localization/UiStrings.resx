@@ -10149,7 +10149,11 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>지역 보정도 탐색</value></data>
   <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>최적화가 지역 보정의 켬·끔, 최대 이동·띠 너비·최소 칸 크기를 시험합니다. 체크만 해서는 현재 결과에 적용되지 않습니다. 실제 설정은 왼쪽의 픽셀 격자에서 고릅니다.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>시도마다 지금까지의 최고 점수(옅은 세로 선 = 새 돌림 시작)</value></data>
-  <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>최적화</value></data>
+  <data name="Pixelate_Opt_Marker_Done" xml:space="preserve"><value>최적화({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Time" xml:space="preserve"><value>시간초과({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>횟수초과({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>취소({score})</value></data>
+  <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>이 설정만 다시 돌리기</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>시도 기록</value></data>
   <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>순위</value></data>
   <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>점수</value></data>

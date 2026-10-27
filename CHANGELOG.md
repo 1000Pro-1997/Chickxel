@@ -9,6 +9,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - One set of English screenshots is used for both the Korean and English guides. Click an image on the homepage to open it at full size.
 - Eight pages also show a looping recording of the action (number fields, document tabs, selecting and editing in the timeline, tags, layer effects, transform mode and canvas size mode).
 
+### Optimized candidates show why they stopped, and can be rerun alone
+- The blue line under each optimized candidate in Pixelate now shows why that preset stopped, with its score: "Optimized (87.6)" when it stopped improving, "Time limit (60.4)" or "Trial limit (…)" when the budget ran out, and "Cancelled (…)".
+- Right-click an optimized candidate and choose **Rerun only this preset** to run that preset again from the same starting settings. Only that tile is replaced in place; the other candidates stay.
+
 ## v1.14.39 (2026-10-27)
 ### Guide screenshots
 - Prepared screenshots of the real app for nearly every page of the user guide: 148 images each in Korean and English, using the wolf-ear adventurer as the example art. They will be placed into the homepage and in-app (F1) guide next.

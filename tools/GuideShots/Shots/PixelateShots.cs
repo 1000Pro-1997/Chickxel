@@ -407,7 +407,7 @@ internal static class PixelateShots
         breakdown.Opacity = 0; // 바로 위 점수 내역 줄 끝이 잘려 보이지 않게.
 
         // 도는 중: 취소 단추와 진행 한 줄.
-        ShotKit.Call(dlg, "StartOptimize");
+        ShotKit.Call(dlg, "StartOptimize", (object?)null);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 20000 && ShotKit.Get<int>(dlg, "_optDone") < 40 && ShotKit.Get<object?>(dlg, "_optCts") is not null) k.Settle(50);
         if (ShotKit.Get<object?>(dlg, "_optCts") is null) throw new InvalidOperationException("optimize finished before the running shot");
@@ -417,7 +417,7 @@ internal static class PixelateShots
             marks: [PixelateKit.UpBox(run, dlg), PixelateKit.UpBox(graph, dlg), new Rect(progress.X, progress.Y - 12, progress.Width, progress.Height + 12)], firstNumber: 7);
 
         PixelateKit.WaitOptimize(k, dlg);
-        var optimized = tiles.Children.OfType<Border>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Text == UiStrings.Pixelate_Opt_Marker))
+        var optimized = tiles.Children.OfType<Border>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Foreground == AppTheme.AccentBrush))
                         ?? throw new InvalidOperationException("no optimized tile");
         var marker = ((StackPanel)optimized.Child!).Children.OfType<TextBlock>().Last();
         var area = ShotKit.Bounds(bar, dlg).Union(ShotKit.Bounds(scroll, dlg));

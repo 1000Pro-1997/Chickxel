@@ -443,8 +443,8 @@ public sealed class PixelateDialog : DialogBase
     private bool _autoOptimizePending;
     /// <summary>최적화 전 설정(되돌리기).</summary>
     private PixelateSettings? _optRevertTo;
-    /// <summary>최적화가 넣은 후보와 그 프리셋 이름(칸 제목 = 프리셋 이름, "최적화" 표시).</summary>
-    private readonly Dictionary<PixelateCandidate, string> _optimized = new(ReferenceEqualityComparer.Instance);
+    /// <summary>최적화가 넣은 후보와 그 프리셋·이름·멈춘 까닭(칸 제목 = 프리셋 이름, 아래에 "최적화(점수)"·"시간초과(점수)" 같은 표시, 우클릭 = 이 설정만 다시 돌리기).</summary>
+    private readonly Dictionary<PixelateCandidate, OptimizedTile> _optimized = new(ReferenceEqualityComparer.Instance);
     /// <summary>마지막으로 보통 후보를 잰 점수 기준(설정 창에서 바뀌면 다시 돌림).</summary>
     private (ScoreWeights Weights, ColorDistanceMode Distance, double HueWeight) _scoredWith;
 
@@ -1792,7 +1792,9 @@ public sealed class PixelateDialog : DialogBase
         for (int i = 0; i < _candidates.Count; i++)
         {
             var c = _candidates[i];
-            var tile = new CandidateTile(c, i + 1, ReferenceEquals(c, _selected), _optimized.GetValueOrDefault(c));
+            var optimized = _optimized.GetValueOrDefault(c);
+            var tile = new CandidateTile(c, i + 1, ReferenceEquals(c, _selected), optimized?.Name, optimized is null ? null : OptimizeMarker(optimized.Reason, c.Score.Total));
+            if (optimized is not null) PopupMenus.Attach(tile, () => OptimizedTileMenu(optimized.Preset));
             tile.PointerPressed += (_, e) =>
             {
                 if (!e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) return;
@@ -1807,6 +1809,32 @@ public sealed class PixelateDialog : DialogBase
             };
             _tiles.Children.Add(tile);
         }
+    }
+
+    /// <summary>최적화 후보 칸 우클릭 메뉴: 그 프리셋만 같은 시작 설정에서 다시 돌린다(도는 중이거나 프리셋을 지웠으면 끔).</summary>
+    private IEnumerable<object> OptimizedTileMenu(OptimizePreset preset)
+    {
+        var item = new MenuItem
+        {
+            Header = UiStrings.Pixelate_Opt_RerunPreset,
+            Icon = Ui.Icon(VectorIcon.Sparkles, 14),
+            IsEnabled = _optCts is null && _input is not null && _opt.OptimizePresets.Contains(preset),
+        };
+        item.Click += (_, _) => Dispatcher.UIThread.Post(() => StartOptimize(preset));
+        return [item];
+    }
+
+    /// <summary>최적화 후보 칸의 표시: 멈춘 까닭(나아지지 않아 끝남 = 최적화, 시간·시도 수를 다 씀, 취소)과 괄호 안 점수.</summary>
+    private static string OptimizeMarker(OptimizeStop reason, double score)
+    {
+        var s = score.ToString("0.0", CultureInfo.CurrentCulture);
+        return reason switch
+        {
+            OptimizeStop.Time => UiStrings.FormatPixelate_Opt_Marker_Time(score: s),
+            OptimizeStop.Trials => UiStrings.FormatPixelate_Opt_Marker_Trials(score: s),
+            OptimizeStop.Cancelled => UiStrings.FormatPixelate_Opt_Marker_Cancelled(score: s),
+            _ => UiStrings.FormatPixelate_Opt_Marker_Done(score: s),
+        };
     }
 
     /// <summary>결과의 긴 쪽이 이보다 크면 "결과가 큽니다" 경고(보통 픽셀 그림 스프라이트는 이보다 작다).</summary>
@@ -2186,6 +2214,9 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>끝난(취소면 그때까지 돈) 프리셋 하나의 최적화: 프리셋, 돌릴 때의 이름, 바꿔 본 항목, 결과.</summary>
     private sealed record OptimizeRun(OptimizePreset Preset, string Name, OptimizeParam Params, PixelateOptimizeResult Result);
 
+    /// <summary>최적화 후보 칸이 가리키는 프리셋, 돌릴 때의 이름, 멈춘 까닭.</summary>
+    private sealed record OptimizedTile(OptimizePreset Preset, string Name, OptimizeStop Reason);
+
     /// <summary>
     /// 최적화 설정 창: 왼쪽은 프리셋 목록(체크 = 함께 돌림), 오른쪽은 고른 프리셋의 항목·예산·점수 기준(<see cref="OptimizePresetsPanel"/> — 지금 설정에서
     /// 쓰지 않는 항목은 흐림), 아래는 고른 프리셋의 마지막 시도 기록과 '불러오면 자동 최적화'. 도는 동안은 편집할 수 없다. 닫으면 설정 파일에 저장한다.
@@ -2297,16 +2328,18 @@ public sealed class PixelateDialog : DialogBase
     /// 지금 설정(왼쪽)에서 체크한 최적화 프리셋을 목록 순서대로 배경에서 하나씩 돌린다(모두 같은 준비된 원본·시작 설정, 프리셋마다 자기 항목·예산·점수 기준).
     /// 돌던 후보 만들기는 멈추고(결과가 섞이지 않게), 끝나면 프리셋마다 1위 하나를 후보로 넣고(칸 제목 = 프리셋 이름) 첫 후보의 설정을 왼쪽에 불러온다(다시 돌리지 않음).
     /// 취소하면 남은 프리셋은 건너뛰고 그때까지 돈 프리셋(도는 중이던 프리셋은 그때까지 찾은 1위)을 같은 방법으로 보인다.
+    /// <paramref name="only"/>면(최적화 후보 칸 우클릭) 그 프리셋 하나만 지난 최적화와 같은 시작 설정에서 다시 돌려 그 칸만 바꾼다.
     /// </summary>
-    private void StartOptimize()
+    private void StartOptimize(OptimizePreset? only = null)
     {
         if (_optCts is not null || _input is not { } input) return;
-        var runs = _opt.OptimizePresets.Where(p => p.Enabled).Select(p => (Preset: p, p.Name, Options: p.Options())).ToList();
+        var runs = (only is null ? _opt.OptimizePresets.Where(p => p.Enabled) : _opt.OptimizePresets.Where(p => ReferenceEquals(p, only)))
+            .Select(p => (Preset: p, p.Name, Options: p.Options())).ToList();
         if (runs.Count == 0) return;
         _debounce.Stop();
         _cts?.Cancel();
         _generation++;
-        var settings = ReadSettings();
+        var settings = only is not null && _optRevertTo is { } start ? start : ReadSettings();
         var prepared = _prepared;
         var image = input.Image;
         var cts = _optCts = new CancellationTokenSource();
@@ -2314,7 +2347,8 @@ public sealed class PixelateDialog : DialogBase
         _optRevertTo = settings;
         _optGraph.Clear();
         _optDone = 0;
-        _optResults.Clear();
+        if (only is null) _optResults.Clear();
+        else _optResults.Remove(only);
         FillOptimizeHistory();
         SetOptText(UiStrings.Pixelate_Opt_Preparing);
         _status.Text = UiStrings.Pixelate_Opt_Preparing;
@@ -2343,7 +2377,7 @@ public sealed class PixelateDialog : DialogBase
                     done.Add(new OptimizeRun(run.Preset, run.Name, run.Options.Params, result));
                 }
                 PixelateSource finished = src;
-                Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed); });
+                Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed, only is not null); });
             }
             catch (OperationCanceledException)
             {
@@ -2351,7 +2385,7 @@ public sealed class PixelateDialog : DialogBase
                 Dispatcher.UIThread.Post(() =>
                 {
                     if (gen != _optGeneration) return;
-                    if (finished is not null) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed);
+                    if (finished is not null) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed, only is not null);
                     else EndOptimize(UiStrings.Pixelate_Opt_Stop_Cancelled);
                 });
             }
@@ -2410,8 +2444,9 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>
     /// 끝난 프리셋마다 1위 하나를 프리셋 순서대로 후보로 넣고(칸 제목 = 프리셋 이름), 첫 후보의 설정을 왼쪽에 불러와 고른다. 결과 한 줄 = 돈 프리셋 수·걸린 시간
     /// (풍선에 프리셋마다 결과), 시도 기록은 프리셋마다 기억한다(설정 창에서 고른 프리셋의 것을 보임).
+    /// <paramref name="rerun"/>(프리셋 하나만 다시 돌림)이면 다른 후보는 두고 그 프리셋의 칸만 같은 자리에서 바꾼다(칸이 없어졌으면 맨 뒤에 더함).
     /// </summary>
-    private void OnOptimizeFinished(PixelateSource src, IReadOnlyList<OptimizeRun> runs, int count, TimeSpan elapsed)
+    private void OnOptimizeFinished(PixelateSource src, IReadOnlyList<OptimizeRun> runs, int count, TimeSpan elapsed, bool rerun = false)
     {
         if (runs.Count == 0)
         {
@@ -2423,19 +2458,30 @@ public sealed class PixelateDialog : DialogBase
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
         }
-        _candidates.Clear();
-        _optimized.Clear();
-        _optResults.Clear();
+        if (!rerun)
+        {
+            _candidates.Clear();
+            _optimized.Clear();
+            _optResults.Clear();
+        }
         var lines = new List<string>();
+        PixelateCandidate? first = null;
         foreach (var run in runs)
         {
             var c = WithExcluded(run.Result.Best);
-            _candidates.Add(c);
-            _optimized[c] = run.Name;
+            int at = rerun ? _candidates.FindIndex(x => _optimized.TryGetValue(x, out var o) && ReferenceEquals(o.Preset, run.Preset)) : -1;
+            if (at >= 0)
+            {
+                _optimized.Remove(_candidates[at]);
+                _candidates[at] = c;
+            }
+            else _candidates.Add(c);
+            first ??= c;
+            _optimized[c] = new OptimizedTile(run.Preset, run.Name, run.Result.StoppedReason);
             _optResults[run.Preset] = (run.Result, run.Params);
             lines.Add(UiStrings.FormatPixelate_Opt_PresetLine(name: run.Name, summary: OptimizeDone(run.Result)));
         }
-        var best = _candidates[0];
+        var best = first!;
         _userPicked = false;
         _runFit = best.Settings.Cleanup.OutlineFit;
         // 첫 후보의 설정을 왼쪽에 불러온다 — 불러오는 중에는 다시 돌리지 않으므로 최적화 후보가 그대로 남는다.
@@ -2447,7 +2493,8 @@ public sealed class PixelateDialog : DialogBase
         RebuildTiles();
         Select(best);
 
-        var summary = UiStrings.FormatPixelate_Opt_PresetsDone(
+        // 프리셋 하나만 다시 돌렸으면 그 프리셋의 결과 한 줄, 아니면 돈 프리셋 수·걸린 시간.
+        var summary = rerun ? lines[0] : UiStrings.FormatPixelate_Opt_PresetsDone(
             done: runs.Count,
             count: count,
             seconds: elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture));
@@ -4189,12 +4236,12 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 후보 칸: 첫 프레임 썸네일(체커, 정수 배율), 제목(보통 후보 = 순위·점수, 최적화 후보 = 프리셋 이름과 "최적화" 표시), 색 수·크기,
-    /// 외곽선 맞추기 방식. 풍선은 점수 항목별 내역. 누르면 고르고, 두 번 누르면 적용.
+    /// 후보 칸: 첫 프레임 썸네일(체커, 정수 배율), 제목(보통 후보 = 순위·점수, 최적화 후보 = 프리셋 이름), 색 수·크기, 외곽선 맞추기 방식,
+    /// 최적화 후보면 아래에 <paramref name="marker"/>("최적화(87.6)"·"시간초과(60.4)" 같은 멈춘 까닭과 점수). 풍선은 점수 항목별 내역. 누르면 고르고, 두 번 누르면 적용.
     /// </summary>
     private sealed class CandidateTile : Border
     {
-        public CandidateTile(PixelateCandidate c, int rank, bool selected, string? presetName)
+        public CandidateTile(PixelateCandidate c, int rank, bool selected, string? presetName, string? marker)
         {
             Candidate = c;
             var r = c.Result;
@@ -4216,8 +4263,8 @@ public sealed class PixelateDialog : DialogBase
             };
             var fit = new TextBlock { Text = FitName(c.Settings.Cleanup.OutlineFit), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize };
             var lines = new StackPanel { Spacing = 2, Children = { thumb, title, info, fit } };
-            if (presetName is not null)
-                lines.Children.Add(new TextBlock { Text = UiStrings.Pixelate_Opt_Marker, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold });
+            if (marker is not null)
+                lines.Children.Add(new TextBlock { Text = marker, Foreground = AppTheme.AccentBrush, FontSize = AppTheme.SmallFontSize, FontWeight = FontWeight.Bold });
             Child = lines;
             Padding = new Thickness(4);
             Margin = new Thickness(3);

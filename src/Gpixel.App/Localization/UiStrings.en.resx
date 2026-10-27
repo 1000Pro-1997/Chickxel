@@ -3174,7 +3174,11 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>Try local correction</value></data>
   <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>Lets the optimizer try local correction on/off, maximum shift, band width and minimum cell size. Checking this does not apply it to the current result. The actual setting is under Pixel grid on the left.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial (faint vertical lines = a new pass starts)</value></data>
-  <data name="Pixelate_Opt_Marker" xml:space="preserve"><value>Optimized</value></data>
+  <data name="Pixelate_Opt_Marker_Done" xml:space="preserve"><value>Optimized ({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Time" xml:space="preserve"><value>Time limit ({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>Trial limit ({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>Cancelled ({score})</value></data>
+  <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>Rerun only this preset</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>Trial history</value></data>
   <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>Rank</value></data>
   <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>Score</value></data>
