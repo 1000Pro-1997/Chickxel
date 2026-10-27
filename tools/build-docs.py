@@ -107,7 +107,9 @@ def read_strings(path: Path) -> tuple[list[str], dict[str, dict[str, str]]]:
             continue
         if row[0] in strings:
             raise SystemExit(f"{path}: duplicate key {row[0]}")
-        strings[row[0]] = {lang: row[i + 1] if i + 1 < len(row) else "" for i, lang in enumerate(langs)}
+        # Windows 체크아웃의 CSV 따옴표 안 줄바꿈도 LF로 맞춰 OS마다 생성 결과가 같게 한다.
+        strings[row[0]] = {lang: row[i + 1].replace("\r\n", "\n").replace("\r", "\n") if i + 1 < len(row) else ""
+                           for i, lang in enumerate(langs)}
     return langs, strings
 
 

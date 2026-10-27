@@ -22,6 +22,8 @@ public static class AppInfo
     public const string ThirdPartyNoticesUrl = AppUpdate.RepoUrl + "/blob/main/THIRD-PARTY-NOTICES.md";
     /// <summary>버그 제보·불편한 점·아이디어를 받는 Discord 서버의 공개 초대 링크.</summary>
     public const string DiscordUrl = "https://discord.gg/Avw7aUVxqr";
+    /// <summary>Gpixel 개발 후원 페이지.</summary>
+    public const string SupportUrl = "https://buymeacoffee.com/gpixel";
     /// <summary>홈페이지(한국어 쪽; 영어 쪽은 뒤에 "en/").</summary>
     public const string WebsiteUrl = "https://1000pro-1997.github.io/GPixel/";
 

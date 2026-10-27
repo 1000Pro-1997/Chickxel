@@ -2714,6 +2714,7 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Help_ClearSearch" xml:space="preserve"><value>Clear search</value></data>
   <data name="Help_NoResults" xml:space="preserve"><value>No results</value></data>
   <data name="Help_OpenWebsite" xml:space="preserve"><value>Open on website</value></data>
+  <data name="Help_Support" xml:space="preserve"><value>Support development</value></data>
   <data name="Help_WatchVideo" xml:space="preserve"><value>Watch the video on the website</value></data>
   <data name="Help_WatchLarger" xml:space="preserve"><value>Watch larger on the website</value></data>
   <data name="Help_Previous" xml:space="preserve"><value>Previous</value></data>

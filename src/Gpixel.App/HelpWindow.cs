@@ -159,12 +159,14 @@ public sealed class HelpWindow : Window
         // 오른쪽: 위 막대(홈페이지에서 열기) + 쪽
         var website = Ui.Button(VectorIcon.ExternalLink, UiStrings.Help_OpenWebsite, (_, _) => Updater.OpenUrl(this, PageUrl(_page.Id)));
         website.Tip(UiStrings.Help_OpenWebsite);
+        var support = Ui.Button(VectorIcon.Heart, UiStrings.Help_Support, (_, _) => Updater.OpenUrl(this, AppInfo.SupportUrl));
+        support.Tip(UiStrings.Help_Support);
         var header = new Border
         {
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(8, 4),
-            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { website } },
+            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { support, website } },
         };
         _pageScroll = new ScrollViewer
         {
