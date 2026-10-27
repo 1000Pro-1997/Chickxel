@@ -437,6 +437,82 @@ public class PartsTests
         Assert.Equal(new SpriteBorder(1, 1, 0, 1), part.PartBorder);
     }
 
+    [Fact]
+    public void ResizeCanvasAndScale_NineSlice_KeepsCornersAndEdgeThickness_MovesBorderWithMargin()
+    {
+        var p = new SpriteProject(4, 4);
+        foreach (var (x, y) in new[] { (0, 0), (3, 0), (0, 3), (3, 3) }) Paint(p, 0, 0, x, y, Red);
+        Paint(p, 0, 0, 0, 1, Green);
+        Paint(p, 0, 0, 0, 2, Green);
+        foreach (var (x, y) in new[] { (1, 1), (2, 1), (1, 2), (2, 2) }) Paint(p, 0, 0, x, y, Blue);
+        p.Edit("테두리", ProjectChange.Settings, () =>
+        {
+            p.Sprite.Border = new SpriteBorder(1, 1, 1, 1);
+            p.Sprite.DefaultPivot = Pivot.BottomCenter; // 픽셀 (2,4)
+        });
+
+        p.ResizeCanvasAndScale(8, 6, new Rectangle(0, 0, 8, 6), NineSliceFill.Stretch);
+        var cel = p.GetCel(0, 0)!;
+        foreach (var (x, y) in new[] { (0, 0), (7, 0), (0, 5), (7, 5) }) Assert.Equal(Red, cel.Get(x, y));
+        for (int y = 1; y <= 4; y++)
+        {
+            Assert.Equal(Green, cel.Get(0, y)); // 왼쪽 가장자리는 1px 두께 그대로 세로로만
+            for (int x = 1; x <= 6; x++) Assert.Equal(Blue, cel.Get(x, y));
+        }
+        Assert.Equal(Color32.Transparent, cel.Get(3, 0));
+        Assert.Equal(new SpriteBorder(1, 1, 1, 1), p.Sprite.Border);
+        AssertPivotAt(p.Sprite.DefaultPivot, 8, 6, 4, 6);
+        p.Undo();
+        Assert.Equal((4, 4), (p.Width, p.Height));
+
+        // 여백 (1,1)을 두고 늘이면 테두리도 그림 가장자리를 따라 여백만큼 안쪽으로
+        p.ResizeCanvasAndScale(10, 8, new Rectangle(1, 1, 8, 6), NineSliceFill.Stretch);
+        Assert.Equal(new SpriteBorder(2, 2, 2, 2), p.Sprite.Border);
+        Assert.Equal(Red, p.GetCel(0, 0)!.Get(1, 1));
+        Assert.Equal(Red, p.GetCel(0, 0)!.Get(8, 6));
+    }
+
+    [Fact]
+    public void ResizeCanvasAndScale_NineSliceTile_RepeatsMiddlePattern()
+    {
+        var p = new SpriteProject(5, 3);
+        Color32[] row = [Red, Green, Blue];
+        for (int i = 0; i < 3; i++) Paint(p, 0, 0, 1 + i, 1, row[i]);
+        p.Edit("테두리", ProjectChange.Settings, () => p.Sprite.Border = new SpriteBorder(1, 1, 1, 1));
+
+        p.ResizeCanvasAndScale(11, 3, new Rectangle(0, 0, 11, 3), NineSliceFill.Tile);
+        var cel = p.GetCel(0, 0)!;
+        for (int x = 1; x <= 9; x++) Assert.Equal(row[(x - 1) % 3], cel.Get(x, 1));
+    }
+
+    [Fact]
+    public void ResizeCanvasAndScale_NineSlice_StretchesPartWithItsOwnBorder_AndKeepsIt()
+    {
+        var p = new SpriteProject(8, 8);
+        var g = p.AddGroup("UI");
+        var part = p.AddPart(g, "단추", 4, 4, new Point(2, 2));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 0, 0, Red);
+        Paint(p, pi, 0, 3, 3, Red);
+        p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 1));
+
+        p.ResizeCanvasAndScale(16, 16, new Rectangle(0, 0, 16, 16), NineSliceFill.Stretch);
+        Assert.Equal(new Rectangle(4, 4, 8, 8), part.PartRect);
+        Assert.Equal(new SpriteBorder(1, 1, 1, 1), part.PartBorder);
+        var cel = p.GetCel(pi, 0)!;
+        Assert.Equal(Red, cel.Get(0, 0));
+        Assert.Equal(Red, cel.Get(7, 7));
+        Assert.Equal(Color32.Transparent, cel.Get(1, 1)); // 모서리는 늘어나지 않음(최근접 2배면 빨강)
+    }
+
+    [Fact]
+    public void NineSlice_SmallerThanBothBorders_ShrinksBordersProportionally()
+    {
+        // 길이 6(앞 2·뒤 2) → 3: 테두리를 비율대로(앞 1칸·뒤 2칸) 줄이고 가운데는 없음
+        Assert.Equal([0, 4, 5], NineSlice.SourceIndices(3, 6, 2, 2, NineSliceFill.Stretch, sliced: true));
+        Assert.False(NineSlice.Applies(new SpriteBorder(2, 0, 2, 0), 4, 4)); // 가운데가 남지 않으면 9-slice 아님
+    }
+
     // ───────────── 실행취소 ─────────────
 
     [Fact]

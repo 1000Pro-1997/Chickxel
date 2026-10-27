@@ -1814,23 +1814,33 @@ public sealed partial class SpriteProject
     /// <paramref name="image"/>(새 캔버스 좌표) 자리에 그 크기로 놓인다. 일반 레이어 셀은 최근접으로 늘이거나 줄여 놓고(캔버스 밖은 잘림),
     /// 부위는 위치·크기를 같은 비율로(가장자리마다 반올림, 최소 1) 바꿔 옮기며 모든 스킨의 셀을 새 부위 크기로 최근접, 9-slice 테두리도 비율대로 바꾼다.
     /// 기본·프레임 피벗은 같은 그림 지점을 가리키도록 옮긴다(부위 피벗은 부위 기준이라 그대로). 그림 크기가 같으면 부위는 위치만 옮긴다.
+    /// <para>
+    /// <paramref name="slice"/>가 있으면 9-slice로 늘인다(Unity Sliced·Tiled처럼): 프레임 칸 테두리(<see cref="SpriteSettings.Border"/>)를 쓸 수 있으면
+    /// 일반 레이어 셀을 그 테두리로 늘이고 부위 가장자리·피벗도 같은 대응으로 옮기며, 테두리는 그림 가장자리에서 같은 픽셀 수로 남긴다(여백만큼 더함).
+    /// 자기 테두리(<see cref="Layer.PartBorder"/>)가 있는 부위는 그 테두리로 늘이고 테두리 값을 그대로 둔다(새 크기에 다 안 들어가면 비율대로).
+    /// </para>
     /// </summary>
-    public void ResizeCanvasAndScale(int width, int height, Rectangle image)
+    public void ResizeCanvasAndScale(int width, int height, Rectangle image, NineSliceFill? slice = null)
     {
         ValidateSize(width, height);
         if (image.Width < 1 || image.Height < 1 || image.Width > PixelImage.MaxSize || image.Height > PixelImage.MaxSize)
             throw new ArgumentOutOfRangeException(nameof(image), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: image.Width, height: image.Height));
         int oldW = _width, oldH = _height;
         if (width == oldW && height == oldH && image == new Rectangle(0, 0, oldW, oldH)) return;
-        float sx = (float)image.Width / oldW, sy = (float)image.Height / oldH;
+        var fill = slice ?? NineSliceFill.Stretch;
+        var border = slice is not null && NineSlice.Applies(Sprite.Border, oldW, oldH) ? Sprite.Border : SpriteBorder.None;
+        bool sliced = !border.IsNone;
+        // 원래 캔버스 좌표(연속) → 새 캔버스 좌표: 9-slice면 테두리 안은 그대로·가운데만 비율대로, 아니면 전체를 비율대로.
+        double MapXF(double x) => image.X + (sliced ? NineSlice.MapCoordinate(x, oldW, border.Left, border.Right, image.Width) : x * image.Width / oldW);
+        double MapYF(double y) => image.Y + (sliced ? NineSlice.MapCoordinate(y, oldH, border.Top, border.Bottom, image.Height) : y * image.Height / oldH);
         Pivot Map(Pivot p)
         {
             var (px, py) = p.ToLocalPixel(oldW, oldH);
-            return new Pivot((px * sx + image.X) / width, 1f - (py * sy + image.Y) / height);
+            return new Pivot((float)(MapXF(px) / width), 1f - (float)(MapYF(py) / height));
         }
         // 원래 캔버스 좌표 → 새 캔버스 좌표(반올림). 부위 가장자리를 따로 옮겨 맞닿은 부위는 계속 맞닿는다.
-        int MapX(int x) => image.X + (int)Math.Floor((double)x * image.Width / oldW + 0.5);
-        int MapY(int y) => image.Y + (int)Math.Floor((double)y * image.Height / oldH + 0.5);
+        int MapX(int x) => (int)Math.Floor(MapXF(x) + 0.5);
+        int MapY(int y) => (int)Math.Floor(MapYF(y) + 0.5);
         var parts = _layers.Where(l => l.IsPart).Select(part =>
         {
             var r = part.PartRect;
@@ -1841,21 +1851,29 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Project_CanvasSize, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
             foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).ToList())
-                _cels[key] = ImageTransform.ResizeCanvasScaled(_cels[key], width, height, image);
+                _cels[key] = ImageTransform.ResizeCanvasScaled(_cels[key], width, height, image, border, fill);
             foreach (var (part, rect) in parts)
             {
                 var old = part.PartSize;
                 part.PartOffset = rect.Location;
                 if (rect.Size == old) continue;
-                foreach (var (key, cel) in CelsOf(part)) _cels[key] = ImageTransform.ScaleNearest(cel, rect.Width, rect.Height);
+                bool partSliced = slice is not null && NineSlice.Applies(part.PartBorder, old.Width, old.Height);
+                foreach (var (key, cel) in CelsOf(part))
+                    _cels[key] = partSliced ? NineSlice.Scale(cel, rect.Width, rect.Height, part.PartBorder, fill) : ImageTransform.ScaleNearest(cel, rect.Width, rect.Height);
                 part.PartSize = rect.Size;
-                part.PartBorder = ScaleBorder(part.PartBorder, old, rect.Size);
+                if (!partSliced || !NineSlice.Applies(part.PartBorder, rect.Width, rect.Height))
+                    part.PartBorder = ScaleBorder(part.PartBorder, old, rect.Size);
             }
             _width = width;
             _height = height;
             Sprite.DefaultPivot = Map(Sprite.DefaultPivot);
             foreach (var f in _frames)
                 if (f.Pivot is { } fp) f.Pivot = Map(fp);
+            // 프레임 칸 테두리: 그림 가장자리에서 같은 픽셀 수(그림 바깥 여백만큼 더하고, 캔버스 밖으로 잘린 만큼 뺌).
+            if (sliced)
+                Sprite.Border = new SpriteBorder(
+                    Math.Max(0, border.Left + image.X), Math.Max(0, border.Top + image.Y),
+                    Math.Max(0, border.Right + width - image.Right), Math.Max(0, border.Bottom + height - image.Bottom));
         });
     }
 

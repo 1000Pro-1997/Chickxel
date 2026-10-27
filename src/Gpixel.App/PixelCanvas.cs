@@ -2385,6 +2385,14 @@ public sealed class PixelCanvas : Control
         if (_showPixelGrid && _zoom >= _pixelGridMinZoom && !visible.IsEmpty)
             DrawPixelGrid(g, new Rectangle(visible.X + canvas.X, visible.Y + canvas.Y, visible.Width, visible.Height));
         g.DrawRectangle(null, FrameBoundsPen, new Rect(imageScreen.X + 0.5, imageScreen.Y + 0.5, Math.Max(0, imageScreen.Width - 1), Math.Max(0, imageScreen.Height - 1)));
+        // 9-slice로 늘이면 늘어나지 않는 테두리 자리(그림 가장자리에서 같은 픽셀 수)를 초록 점선으로.
+        if (_ctx.CanvasResizeUsesSlice && _ctx.CanvasResizeBorder is { IsNone: false } b)
+        {
+            if (b.Left > 0) DrawSliceGuide(g, image.X + b.Left, image.Y, image.X + b.Left, image.Bottom);
+            if (b.Right > 0) DrawSliceGuide(g, image.Right - b.Right, image.Y, image.Right - b.Right, image.Bottom);
+            if (b.Top > 0) DrawSliceGuide(g, image.X, image.Y + b.Top, image.Right, image.Y + b.Top);
+            if (b.Bottom > 0) DrawSliceGuide(g, image.X, image.Bottom - b.Bottom, image.Right, image.Bottom - b.Bottom);
+        }
         var c = ImageToScreen(canvas);
         var border = new Rect(c.X - 0.5, c.Y - 0.5, c.Width + 1, c.Height + 1);
         g.DrawRectangle(null, TransformBackPen, border);
@@ -2399,6 +2407,14 @@ public sealed class PixelCanvas : Control
         double ly = c.Y - size.Height - 10 >= 0 ? c.Y - size.Height - 10 : c.Bottom + 8;
         g.FillRectangle(LabelBrush, new Rect(c.X, ly, size.Width + 6, size.Height + 2));
         AppTheme.DrawText(g, label, new Avalonia.Point(c.X + 3, ly + 1), Brushes.White, AppTheme.SmallFontSize);
+    }
+
+    /// <summary>캔버스 크기 모드의 9-slice 선 하나(이미지 좌표 픽셀 경계).</summary>
+    private void DrawSliceGuide(DrawingContext g, int x0, int y0, int x1, int y1)
+    {
+        var a = ImageToScreen(x0, y0);
+        var b = ImageToScreen(x1, y1);
+        g.DrawLine(SliceBorderPen, new Avalonia.Point(Math.Round(a.X) + 0.5, Math.Round(a.Y) + 0.5), new Avalonia.Point(Math.Round(b.X) + 0.5, Math.Round(b.Y) + 0.5));
     }
 
     /// <summary>크기 글: <c>24×24 · 그림 32×32 (133%)</c>(가로·세로 배율이 다르면 <c>(133%×50%)</c>, 그림 크기가 그대로면 캔버스 크기만).</summary>
@@ -2457,6 +2473,8 @@ public sealed class PixelCanvas : Control
     /// <summary>
     /// 캔버스 크기 끌기(1px 단위): 그림 안쪽이면 그림을 옮기고, 손잡이면 그 캔버스 가장자리만 옮긴다(그림은 제자리 → 여백이 늘거나 잘림).
     /// Ctrl(⌘)이면 그림 가장자리도 함께 움직여 여백은 그대로 두고 그림 크기를 바꾼다(모서리 + Shift = 시작 때 그림 비율 유지). 크기는 1px 이상.
+    /// 9-slice로 늘이면(<see cref="EditorContext.CanvasResizeUsesSlice"/>) 반대로 그냥 끌기가 그림도 함께 늘이고 Ctrl(⌘)+끌기가 캔버스만 옮기며,
+    /// 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
     /// </summary>
     private void DragCanvasResize(Point screen)
     {
@@ -2468,7 +2486,8 @@ public sealed class PixelCanvas : Control
             _ctx.SetCanvasResize(c, new Rectangle(i.X + dx, i.Y + dy, i.Width, i.Height));
             return;
         }
-        bool scale = Ui.HasCommand(_mods);
+        bool scale = Ui.HasCommand(_mods) != _ctx.CanvasResizeUsesSlice;
+        var min = scale ? _ctx.CanvasResizeMinImage : new System.Drawing.Size(1, 1);
         int multiplier = _ctx.CanvasResizeFromCenter ? 2 : 1;
         int gx = _crHx * dx * multiplier, gy = _crHy * dy * multiplier; // 중심 기준이면 맞은편도 같은 만큼 움직임
         if (scale && (_mods & KeyModifiers.Shift) != 0 && _crHx != 0 && _crHy != 0)
@@ -2478,9 +2497,9 @@ public sealed class PixelCanvas : Control
             gx = (int)Math.Round(i.Width * k) - i.Width;
             gy = (int)Math.Round(i.Height * k) - i.Height;
         }
-        // 캔버스(Ctrl이면 그림도)는 1px ~ 최대 크기
-        gx = Math.Clamp(gx, 1 - (scale ? Math.Min(c.Width, i.Width) : c.Width), PixelImage.MaxSize - (scale ? Math.Max(c.Width, i.Width) : c.Width));
-        gy = Math.Clamp(gy, 1 - (scale ? Math.Min(c.Height, i.Height) : c.Height), PixelImage.MaxSize - (scale ? Math.Max(c.Height, i.Height) : c.Height));
+        // 캔버스는 1px ~ 최대 크기, 함께 늘이는 그림은 가장 작은 크기 ~ 최대 크기
+        gx = Math.Clamp(gx, scale ? Math.Max(1 - c.Width, min.Width - i.Width) : 1 - c.Width, PixelImage.MaxSize - (scale ? Math.Max(c.Width, i.Width) : c.Width));
+        gy = Math.Clamp(gy, scale ? Math.Max(1 - c.Height, min.Height - i.Height) : 1 - c.Height, PixelImage.MaxSize - (scale ? Math.Max(c.Height, i.Height) : c.Height));
         if (_ctx.CanvasResizeFromCenter)
         {
             var center = _ctx.CanvasResizeCenter2;

@@ -60,8 +60,10 @@ public static class ImageTransform
     /// <summary>
     /// 캔버스 크기 바꾸기 + 크기 바꾸기(최근접): <paramref name="width"/>×<paramref name="height"/> 새 이미지의 <paramref name="rect"/> 자리에
     /// 원본을 rect 크기로 늘이거나 줄여 놓는다(새 이미지 밖은 잘리고 나머지는 투명). 집는 픽셀은 <see cref="ScaleNearest"/>와 같고, 보이는 부분만 계산한다.
+    /// <paramref name="slice"/>를 쓸 수 있으면(<see cref="NineSlice.Applies"/>) 최근접 대신 9-slice로 늘인다(<see cref="NineSlice.Scale"/>와 같음).
     /// </summary>
-    public static PixelImage ResizeCanvasScaled(PixelImage src, int width, int height, Rectangle rect)
+    public static PixelImage ResizeCanvasScaled(PixelImage src, int width, int height, Rectangle rect,
+        SpriteBorder slice = default, NineSliceFill fill = NineSliceFill.Stretch)
     {
         var dst = new PixelImage(width, height);
         if (rect.Width == src.Width && rect.Height == src.Height)
@@ -70,11 +72,15 @@ public static class ImageTransform
             return dst;
         }
         var r = Rectangle.Intersect(rect, dst.Bounds);
+        if (r.IsEmpty) return dst;
+        bool sliced = NineSlice.Applies(slice, src.Width, src.Height);
+        var xs = NineSlice.SourceIndices(rect.Width, src.Width, slice.Left, slice.Right, fill, sliced);
+        var ys = NineSlice.SourceIndices(rect.Height, src.Height, slice.Top, slice.Bottom, fill, sliced);
         for (int y = r.Top; y < r.Bottom; y++)
         {
-            int row = (int)((long)(y - rect.Y) * src.Height / rect.Height) * src.Width;
+            int row = ys[y - rect.Y] * src.Width;
             for (int x = r.Left; x < r.Right; x++)
-                dst.Pixels[y * width + x] = src.Pixels[row + (int)((long)(x - rect.X) * src.Width / rect.Width)];
+                dst.Pixels[y * width + x] = src.Pixels[row + xs[x - rect.X]];
         }
         return dst;
     }

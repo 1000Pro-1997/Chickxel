@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.41 (2026-10-27)
+### Canvas size mode stretches with 9-slice
+- Canvas size mode (Ctrl+Alt+C) has a new **Stretch with 9-slice** option, on by default. When the frame or a part has 9-slice borders, the handles and canvas size numbers resize the image too: corners stay as they are, edges stretch in one direction only, and only the middle grows, like a Unity UI image with Image Type = Sliced.
+- Choose **Stretch** (nearest neighbor, Unity Sliced) or **Tile** (repeat the original middle pattern, Unity Tiled). The borders are shown as green dotted lines while dragging, and the image can't get smaller than both borders plus one pixel.
+- After applying, the 9-slice borders keep the same pixel counts from the image edges (plus any margin), so the Unity Sprite Border still matches. Parts with their own borders are stretched with those, and pivots follow the same mapping.
+- With 9-slice on, Ctrl+drag moves only the canvas edge (the old default); without borders, the mode works as before.
+
+### Long explanations in tool settings moved behind an info icon
+- The long help texts in Tool settings (canvas size, transform, gradient, 9-slice, eyedropper) and the usage hints for selection, move and gradient tools now appear when you hover the small "i" icon next to the title instead of taking up space under the controls.
+
 ## v1.14.40 (2026-10-27)
 ### Screenshots in the user guide
 - The homepage guide and the in-app guide (F1) now show screenshots of the real app on nearly every page, including right-click menus, dropdowns and settings popups.

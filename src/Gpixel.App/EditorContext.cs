@@ -880,10 +880,68 @@ public sealed class EditorContext
     /// <summary>중심 기준을 켠 순간의 캔버스 중심(픽셀 두 배 좌표).</summary>
     public Point CanvasResizeCenter2 => _canvasResize?.Center2 ?? Point.Empty;
 
-    /// <summary>적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접으로). 모드가 아니면 null. 호출자는 Dispose하지 않는다.</summary>
+    private bool _canvasResizeNineSlice = true;
+    private NineSliceFill _canvasResizeSliceFill = NineSliceFill.Stretch;
+
+    /// <summary>캔버스 크기 모드에서 9-slice로 늘릴지(기본 켬, 앱을 켜 둔 동안 기억). 쓸 테두리가 없으면 켜 있어도 쓰지 않는다(<see cref="CanvasResizeUsesSlice"/>).</summary>
+    public bool CanvasResizeNineSlice
+    {
+        get => _canvasResizeNineSlice;
+        set
+        {
+            if (_canvasResizeNineSlice == value) return;
+            _canvasResizeNineSlice = value;
+            OnCanvasResizeSliceChanged();
+        }
+    }
+
+    /// <summary>9-slice로 늘릴 때 가운데를 채우는 방법(늘이기·되풀이).</summary>
+    public NineSliceFill CanvasResizeSliceFill
+    {
+        get => _canvasResizeSliceFill;
+        set
+        {
+            if (_canvasResizeSliceFill == value) return;
+            _canvasResizeSliceFill = value;
+            OnCanvasResizeSliceChanged();
+        }
+    }
+
+    /// <summary>프레임 칸 9-slice 테두리(캔버스 크기 모드가 늘일 테두리 — 쓸 수 없으면 없음).</summary>
+    public SpriteBorder CanvasResizeBorder
+        => Project is { } p && NineSlice.Applies(p.Sprite.Border, p.Width, p.Height) ? p.Sprite.Border : SpriteBorder.None;
+
+    /// <summary>9-slice로 늘릴 테두리가 있는지: 프레임 칸 테두리 또는 자기 테두리가 있는 부위.</summary>
+    public bool CanvasResizeSliceAvailable
+        => Project is { } p && (!CanvasResizeBorder.IsNone || p.Layers.Any(l => l.IsPart && NineSlice.Applies(l.PartBorder, l.PartSize.Width, l.PartSize.Height)));
+
+    /// <summary>캔버스 크기 모드가 9-slice로 늘이는지(켰고 쓸 테두리가 있음): 손잡이·캔버스 크기 숫자가 그림도 함께 늘인다.</summary>
+    public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && CanvasResizeSliceAvailable;
+
+    /// <summary>9-slice로 늘릴 때 그림의 가장 작은 크기: 프레임 칸 테두리 두 쪽 + 가운데 1px(테두리가 없으면 1).</summary>
+    public Size CanvasResizeMinImage
+    {
+        get
+        {
+            var b = CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None;
+            return b.IsNone ? new Size(1, 1) : new Size(b.Left + b.Right + 1, b.Top + b.Bottom + 1);
+        }
+    }
+
+    private void OnCanvasResizeSliceChanged()
+    {
+        if (_canvasResize is not { } s) return;
+        var min = CanvasResizeMinImage;
+        s.Image = s.Image with { Width = Math.Max(s.Image.Width, min.Width), Height = Math.Max(s.Image.Height, min.Height) };
+        DropCanvasResizePreview(s);
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접 — 9-slice면 프레임 칸 테두리로). 모드가 아니면 null. 호출자는 Dispose하지 않는다.</summary>
     public WriteableBitmap? CanvasResizeBitmap
         => _canvasResize is not { } s ? null
-            : s.Preview ??= ImageUtil.ToBitmap(ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image));
+            : s.Preview ??= ImageUtil.ToBitmap(ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image,
+                CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill));
 
     /// <summary>
     /// 캔버스 크기 모드에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 프레임 합성 전체(부위를 골랐어도)를 미리보기로 보인다.
@@ -900,13 +958,17 @@ public sealed class EditorContext
         return null;
     }
 
-    /// <summary>새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞춘다.</summary>
+    /// <summary>
+    /// 새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞추고,
+    /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>).
+    /// </summary>
     public void SetCanvasResize(Rectangle canvas, Rectangle image)
     {
         if (_canvasResize is not { } s) return;
-        static int Clamp(int v) => Math.Clamp(v, 1, PixelImage.MaxSize);
+        static int Clamp(int v, int min = 1) => Math.Clamp(v, min, PixelImage.MaxSize);
+        var min = CanvasResizeMinImage;
         canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
-        image.Size = new Size(Clamp(image.Width), Clamp(image.Height));
+        image.Size = new Size(Clamp(image.Width, min.Width), Clamp(image.Height, min.Height));
         if (canvas == s.Canvas && image == s.Image) return;
         s.Canvas = canvas;
         s.Image = image;
@@ -933,7 +995,7 @@ public sealed class EditorContext
         DropCanvasResizePreview(s);
         var (canvas, image) = (s.Canvas.Size, s.Image);
         bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size);
-        if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image);
+        if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null);
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
         if (!changed) return;
         bool scaled = image.Size != s.Source.Size;
