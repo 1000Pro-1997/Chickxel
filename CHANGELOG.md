@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.44 (2026-10-27)
+### Save or copy images from the Pixelate window
+- Right-click the source image on the left to **Copy image** or **Save as PNG…**. With **Show background removed** on, the background-removed source is used.
+- Right-click any candidate tile to copy its result (1× or enlarged ×4) or save it as PNG; optimized candidates also keep **Rerun only this preset** in the same menu.
+- Copies go to both Gpixel's clipboard and the system clipboard, so you can paste into the canvas or other apps. Multi-frame results use their first frame.
+
 ## v1.14.43 (2026-10-27)
 ### Ctrl does the same thing in canvas size mode with or without 9-slice
 - A plain handle drag now always moves only the canvas edge (adds margin or crops), and Ctrl+drag always resizes the image too, whether or not **Stretch with 9-slice** is on. The checkbox only decides how the image is resized: with 9-slice (corners and edges kept) or nearest-neighbor.

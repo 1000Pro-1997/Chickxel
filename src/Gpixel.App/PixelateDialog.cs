@@ -297,6 +297,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly Func<string?> _browseFolder;
     /// <summary>클립보드 그림 읽기(주 창의 붙여넣기와 같은 길 — PNG·비트맵, 없으면 앱 안 클립보드).</summary>
     private readonly Func<PixelImage?> _readClipboardImage;
+    /// <summary>그림 복사(주 창의 복사와 같은 길 — 앱 안 클립보드와 시스템 클립보드에 PNG로).</summary>
+    private readonly Action<PixelImage> _copyImage;
     /// <summary>레이어 여러 프레임을 이은 원본이면 기억한 프레임 나누기 설정(닫거나 원본을 바꿀 때 되돌림).</summary>
     private FrameSettings? _restoreFrames;
     /// <summary>처음 설정을 받아 열었음(채팅의 "변환 설정 보기"): 닫을 때 단계 설정을 기억하지 않는다(사용자가 기억한 설정 그대로).</summary>
@@ -469,7 +471,7 @@ public sealed class PixelateDialog : DialogBase
     /// <param name="preset">처음 단계 설정(AI 그리기 결과를 다시 조정 — 그 설정으로 후보를 만들고 자동 최적화는 다시 돌리지 않음). null = 기억한 설정.</param>
     public PixelateDialog(AppSettings settings, PixelateInput? input, IEnumerable<NamedPalette> palettes, bool canInsertLayer,
         Action<PixelateOutcome> apply, Action<string, string, IReadOnlyList<PixelImage>> askAi,
-        Func<string?> browseFolder, Func<PixelImage?> readClipboardImage, int sourceFrames = 1, PixelateSettings? preset = null)
+        Func<string?> browseFolder, Func<PixelImage?> readClipboardImage, Action<PixelImage> copyImage, int sourceFrames = 1, PixelateSettings? preset = null)
         : base(TitleFor(input), UiStrings.Pixelate_Apply)
     {
         _settings = settings;
@@ -481,6 +483,7 @@ public sealed class PixelateDialog : DialogBase
         _askAi = askAi;
         _browseFolder = browseFolder;
         _readClipboardImage = readClipboardImage;
+        _copyImage = copyImage;
         _palettes = BuildPalettes(palettes);
         _presetsPath = Path.Combine(Platform.AppDataDirectory, "Gpixel", "Pixelate", PixelatePresets.FileName);
         _userPresets = LoadUserPresets();
@@ -780,6 +783,8 @@ public sealed class PixelateDialog : DialogBase
         _pickPulse.Tick += OnPickPulse;
         // 원본에서 색 추가(스포이드): 왼쪽 큰 원본·큰 미리보기의 원본 칸·크게 보기의 원본 칸에서 칸을 누르면 고정 색으로.
         _sourceView.CellPicked += PickCell;
+        // 원본 우클릭: 보이는 모습(배경 지운 모습이면 그것) 복사·PNG로 저장. 스포이드 중에는 우클릭이 스포이드 취소라 메뉴 없음.
+        PopupMenus.Attach(_sourceView, SourceMenu);
         _preview.CellPicked += PickCell;
         _zoom.View.CellPicked += PickCell;
         _sourceView.PickCancelled += () => SetPicking(false);
@@ -1794,7 +1799,8 @@ public sealed class PixelateDialog : DialogBase
             var c = _candidates[i];
             var optimized = _optimized.GetValueOrDefault(c);
             var tile = new CandidateTile(c, i + 1, ReferenceEquals(c, _selected), optimized?.Name, optimized is null ? null : OptimizeMarker(optimized.Reason, c.Score.Total));
-            if (optimized is not null) PopupMenus.Attach(tile, () => OptimizedTileMenu(optimized.Preset));
+            int rank = i + 1;
+            PopupMenus.Attach(tile, () => CandidateMenu(c, rank, optimized));
             tile.PointerPressed += (_, e) =>
             {
                 if (!e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) return;
@@ -1811,17 +1817,77 @@ public sealed class PixelateDialog : DialogBase
         }
     }
 
-    /// <summary>최적화 후보 칸 우클릭 메뉴: 그 프리셋만 같은 시작 설정에서 다시 돌린다(도는 중이거나 프리셋을 지웠으면 끔).</summary>
-    private IEnumerable<object> OptimizedTileMenu(OptimizePreset preset)
+    /// <summary>
+    /// 후보 칸 우클릭 메뉴: 결과 첫 프레임 복사(1×·×4)·PNG로 저장, 최적화 후보면 그 프리셋만 같은 시작 설정에서 다시 돌리기
+    /// (도는 중이거나 프리셋을 지웠으면 끔).
+    /// </summary>
+    private IEnumerable<object> CandidateMenu(PixelateCandidate c, int rank, OptimizedTile? optimized)
     {
-        var item = new MenuItem
+        var image = c.Result.Frames[0];
+        var name = ProjectExport.CleanFileName($"{SaveBaseName()}_{optimized?.Name ?? rank.ToString(CultureInfo.InvariantCulture)}");
+        var items = new List<object>
         {
-            Header = UiStrings.Pixelate_Opt_RerunPreset,
-            Icon = Ui.Icon(VectorIcon.Sparkles, 14),
-            IsEnabled = _optCts is null && _input is not null && _opt.OptimizePresets.Contains(preset),
+            MenuCommand(UiStrings.Preview_Menu_CopyImage, VectorIcon.Copy, () => CopyImage(image)),
+            MenuCommand(UiStrings.Preview_Menu_CopyEnlarged, VectorIcon.Maximize2, () => CopyImage(ImageTransform.ScaleNearest(image, image.Width * 4, image.Height * 4))),
+            MenuCommand(UiStrings.Pixelate_Menu_SavePng, VectorIcon.ImageDown, () => SaveImage(image, name)),
         };
-        item.Click += (_, _) => Dispatcher.UIThread.Post(() => StartOptimize(preset));
-        return [item];
+        if (optimized is not null)
+        {
+            items.Add(new Separator());
+            items.Add(MenuCommand(UiStrings.Pixelate_Opt_RerunPreset, VectorIcon.Sparkles, () => StartOptimize(optimized.Preset),
+                _optCts is null && _input is not null && _opt.OptimizePresets.Contains(optimized.Preset)));
+        }
+        return items;
+    }
+
+    /// <summary>원본 우클릭 메뉴: 보이는 모습(배경 지운 모습을 켰으면 배경을 지운 원본) 복사·PNG로 저장. 원본이 없거나 스포이드 중이면 없음.</summary>
+    private IEnumerable<object>? SourceMenu()
+    {
+        if (_input is not { } input || _picking) return null;
+        bool cleaned = _showMask.On() && _prepared?.Cleaned is not null;
+        var image = cleaned ? _prepared!.Cleaned! : input.Image;
+        var name = ProjectExport.CleanFileName(cleaned ? $"{SaveBaseName()}_{UiStrings.Pixelate_Save_CleanedSuffix}" : SaveBaseName());
+        return
+        [
+            MenuCommand(UiStrings.Preview_Menu_CopyImage, VectorIcon.Copy, () => CopyImage(image)),
+            MenuCommand(UiStrings.Pixelate_Menu_SavePng, VectorIcon.ImageDown, () => SaveImage(image, name)),
+        ];
+    }
+
+    /// <summary>메뉴 항목: 누르면 메뉴가 닫힌 뒤에 한다(파일 대화상자가 메뉴 위에 뜨지 않게).</summary>
+    private static MenuItem MenuCommand(string text, VectorIcon icon, Action action, bool enabled = true)
+    {
+        var item = new MenuItem { Header = text, Icon = Ui.Icon(icon, 14), IsEnabled = enabled };
+        item.Click += (_, _) => Dispatcher.UIThread.Post(action);
+        return item;
+    }
+
+    /// <summary>저장할 파일 이름의 앞부분: 원본 파일 이름(없으면 원본 이름).</summary>
+    private string SaveBaseName()
+        => _input?.Path is { } path ? Path.GetFileNameWithoutExtension(path) : _input?.Name ?? UiStrings.Pixelate_PastedName;
+
+    private void CopyImage(PixelImage image)
+    {
+        _copyImage(image.Clone());
+        _status.Text = UiStrings.FormatPixelate_Copied(width: image.Width, height: image.Height);
+    }
+
+    /// <summary>그림을 PNG로 저장(처음 폴더 = 원본 파일 폴더, 없으면 파일 브라우저 폴더). 실패하면 알린다.</summary>
+    private void SaveImage(PixelImage image, string name)
+    {
+        var folder = _input?.Path is { } p ? Path.GetDirectoryName(p) : _browseFolder();
+        var path = Ui.SaveFile(this, UiStrings.Pixelate_Save_Title, folder, name + ".png", ".png", new FileFilter(UiStrings.Preview_PngFilter, "*.png"));
+        if (path is null) return;
+        try
+        {
+            PngIO.Save(image, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Ui.Error(this, UiStrings.FormatPixelate_SaveFailed(message: ex.Message), UiStrings.Pixelate_Save_Title);
+            return;
+        }
+        _status.Text = UiStrings.FormatPixelate_Saved(name: Path.GetFileName(path), width: image.Width, height: image.Height);
     }
 
     /// <summary>최적화 후보 칸의 표시: 멈춘 까닭(나아지지 않아 끝남 = 최적화, 시간·시도 수를 다 씀, 취소)과 괄호 안 점수.</summary>

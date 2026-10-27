@@ -3185,6 +3185,12 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>Trial limit ({score})</value></data>
   <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>Cancelled ({score})</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>Rerun only this preset</value></data>
+  <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>Save as PNG…</value></data>
+  <data name="Pixelate_Save_Title" xml:space="preserve"><value>Save image as PNG</value></data>
+  <data name="Pixelate_Save_CleanedSuffix" xml:space="preserve"><value>nobg</value></data>
+  <data name="Pixelate_Saved" xml:space="preserve"><value>Saved {name} ({width}×{height})</value></data>
+  <data name="Pixelate_SaveFailed" xml:space="preserve"><value>Couldn't save the image.&#10;{message}</value></data>
+  <data name="Pixelate_Copied" xml:space="preserve"><value>Copied the image ({width}×{height}).</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>Trial history</value></data>
   <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>Rank</value></data>
   <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>Score</value></data>

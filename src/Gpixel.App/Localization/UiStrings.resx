@@ -10160,6 +10160,12 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>횟수초과({score})</value></data>
   <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>취소({score})</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>이 설정만 다시 돌리기</value></data>
+  <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>PNG로 저장…</value></data>
+  <data name="Pixelate_Save_Title" xml:space="preserve"><value>그림을 PNG로 저장</value></data>
+  <data name="Pixelate_Save_CleanedSuffix" xml:space="preserve"><value>배경지움</value><comment>배경 지운 원본을 저장할 때 파일 이름 끝에 붙는 말</comment></data>
+  <data name="Pixelate_Saved" xml:space="preserve"><value>{name} 저장함({width}×{height})</value></data>
+  <data name="Pixelate_SaveFailed" xml:space="preserve"><value>그림을 저장하지 못했습니다.&#10;{message}</value></data>
+  <data name="Pixelate_Copied" xml:space="preserve"><value>그림을 복사했습니다({width}×{height}).</value></data>
   <data name="Pixelate_Opt_History" xml:space="preserve"><value>시도 기록</value></data>
   <data name="Pixelate_Opt_ColRank" xml:space="preserve"><value>순위</value></data>
   <data name="Pixelate_Opt_ColScore" xml:space="preserve"><value>점수</value></data>

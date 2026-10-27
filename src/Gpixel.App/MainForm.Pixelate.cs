@@ -65,7 +65,8 @@ public sealed partial class MainForm
     {
         _pixelate?.Close();
         var dlg = new PixelateDialog(_settings, input, _colors.Palettes, _ctx.Project is not null && !_ctx.IsCanvasResizing,
-            ApplyPixelate, AskAiAboutCandidates, () => _browser.CurrentFolder ?? _settings.LastFolder, ReadClipboard, sourceFrames, preset);
+            ApplyPixelate, AskAiAboutCandidates, () => _browser.CurrentFolder ?? _settings.LastFolder, ReadClipboard,
+            img => { _ctx.Clipboard = img; PutOnSystemClipboard(img); }, sourceFrames, preset);
         dlg.Closed += (_, _) => { if (ReferenceEquals(_pixelate, dlg)) _pixelate = null; };
         _pixelate = dlg;
         dlg.Show(this);
