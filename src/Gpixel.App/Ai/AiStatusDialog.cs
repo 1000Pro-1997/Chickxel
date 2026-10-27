@@ -20,6 +20,9 @@ internal sealed class AiStatusDialog : DialogBase
     private readonly Button _recheck;
     private readonly CancellationTokenSource _closed = new();
     private readonly DispatcherTimer _loginPoll;
+    private readonly DispatcherTimer _installPoll;
+    private readonly Dictionary<AiProvider, (string? Path, DateTime WriteTime, string? Override)> _installPending = new();
+    private bool _installChecking;
     private AiProvider? _pollProvider;
     private bool _checking, _polling;
 
@@ -75,11 +78,14 @@ internal sealed class AiStatusDialog : DialogBase
 
         _loginPoll = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _loginPoll.Tick += async (_, _) => await PollLoginAsync();
+        _installPoll = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _installPoll.Tick += async (_, _) => await PollInstallAsync();
     }
 
     protected override void OnClosed(EventArgs e)
     {
         _loginPoll.Stop();
+        _installPoll.Stop();
         _closed.Cancel();
         _closed.Dispose();
         base.OnClosed(e);
@@ -128,6 +134,9 @@ internal sealed class AiStatusDialog : DialogBase
 
     private void StartInstall(AiProvider provider)
     {
+        var automaticPath = provider.LocateAutomatically();
+        var initialWriteTime = automaticPath is null ? DateTime.MinValue : File.GetLastWriteTimeUtc(automaticPath);
+        var originalOverride = provider.GetPathOverride(_settings);
         var steps = AiInstaller.Preview(provider);
         if (Ui.Ask(this, UiStrings.FormatAiStatus_InstallConfirm(product: provider.ProductName, steps: steps), UiStrings.AiStatus_InstallUpdate,
                 MessageButtons.OKCancel, MessageIcon.Question) != DialogResult.OK) return;
@@ -137,6 +146,37 @@ internal sealed class AiStatusDialog : DialogBase
             return;
         }
         SetMessage(UiStrings.FormatAiStatus_InstallerOpened(product: provider.ProductName));
+        _installPending[provider] = (automaticPath, initialWriteTime, originalOverride);
+        _installPoll.Start();
+    }
+
+    private async Task PollInstallAsync()
+    {
+        if (_installChecking || _checking || _installPending.Count == 0 || _closed.IsCancellationRequested) return;
+        _installChecking = true;
+        try
+        {
+            foreach (var (provider, initial) in _installPending)
+            {
+                var path = provider.LocateAutomatically();
+                if (path is null || (path == initial.Path && File.GetLastWriteTimeUtc(path) == initial.WriteTime)) continue;
+                var version = await AiCli.RunAsync(path, ["--version"], _closed.Token, timeoutSeconds: 10);
+                if (_closed.IsCancellationRequested || version.Error is not null || version.ExitCode != 0 || string.IsNullOrWhiteSpace(version.Stdout)) continue;
+                if (provider.GetPathOverride(_settings) == initial.Override) provider.SetPathOverride(_settings, null);
+                _installPending.Remove(provider);
+                if (_installPending.Count == 0) _installPoll.Stop();
+                await CheckAllAsync();
+                if (!_closed.IsCancellationRequested) StartLoginPoll(provider);
+                break;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            _installChecking = false;
+        }
     }
 
     private void StartLogin(AiProvider provider)
@@ -319,10 +359,14 @@ internal sealed class AiStatusDialog : DialogBase
             }
             else
             {
-                var cliLevel = health.CliError is null ? AiHealthLevel.Ok : AiHealthLevel.Error;
-                SetStatus(_cliIcon, _cliText, cliLevel, health.CliError is null
-                    ? UiStrings.FormatAiStatus_VersionPath(version: health.Version ?? UiStrings.AiStatus_Unknown, path: health.Path)
-                    : UiStrings.FormatAiStatus_Failed(reason: health.CliError));
+                var shellPath = AiCli.LocateOnPath(_provider.Command);
+                var samePath = shellPath is not null && string.Equals(System.IO.Path.GetFullPath(shellPath), System.IO.Path.GetFullPath(health.Path), OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+                var cliLevel = health.CliError is not null ? AiHealthLevel.Error : samePath ? AiHealthLevel.Ok : AiHealthLevel.Warning;
+                var versionPath = UiStrings.FormatAiStatus_VersionPath(version: health.Version ?? UiStrings.AiStatus_Unknown, path: health.Path);
+                SetStatus(_cliIcon, _cliText, cliLevel, health.CliError is not null
+                    ? UiStrings.FormatAiStatus_Failed(reason: health.CliError)
+                    : samePath ? versionPath
+                    : versionPath + " · " + (shellPath is null ? UiStrings.AiStatus_NotOnPath : UiStrings.FormatAiStatus_DifferentPath(path: shellPath)));
                 var auth = health.Auth;
                 var loginLevel = auth?.LoggedIn == true ? AiHealthLevel.Ok : auth?.Error is null ? AiHealthLevel.Warning : AiHealthLevel.Error;
                 var loginText = auth?.LoggedIn == true

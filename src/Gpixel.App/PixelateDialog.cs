@@ -3046,6 +3046,7 @@ public sealed class PixelateDialog : DialogBase
         /// <summary>제목에 붙이는 그림 크기(원본 px 또는 결과 px).</summary>
         public static string SizeText(double width, double height) => $"{width:0}×{height:0}px";
         private WriteableBitmap? _image, _alt;
+        private PixelImage? _imageData, _altData;
         private Size _size;
         private IReadOnlyList<PixelateFrameMap> _maps = [];
         private double _zoom = 1;
@@ -3083,8 +3084,13 @@ public sealed class PixelateDialog : DialogBase
         /// <summary>스포이드 중 원본 둘레 강조 밝기(0~1, null = 그리지 않음 — <see cref="CutOverlay.DrawPickPulse"/>).</summary>
         public double? PickPulse { get => field; set { field = value; InvalidateVisual(); } }
 
+        /// <summary>지금 보이는 그림(배경 지운 모습을 켰으면 그것, 아니면 원본). 비었으면 null.</summary>
+        public PixelImage? ShownImage => ShowAlt && _altData is not null ? _altData : _imageData;
+
         public void SetImage(PixelImage image, PixelImage? alt)
         {
+            _imageData = image;
+            _altData = alt;
             if (_image is null || _size != image.Size)
             {
                 _image?.Dispose();
@@ -3143,6 +3149,8 @@ public sealed class PixelateDialog : DialogBase
                     CellPicked?.Invoke(h, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
                 return;
             }
+            // 오른쪽 버튼은 끌기가 아니라 우클릭 메뉴(이미지 저장·복사).
+            if (!point.Properties.IsLeftButtonPressed && !point.Properties.IsMiddleButtonPressed) return;
             _drag = e.GetPosition(this);
             e.Pointer.Capture(this);
             if (e.ClickCount == 2) { Fit(); InvalidateVisual(); }

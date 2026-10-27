@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.49 (2026-10-27)
+### Clearer AI CLI and MCP connection status
+- AI Status distinguishes the executable Gpixel can run from the CLI found on Gpixel's current PATH; it warns when they are missing or different.
+- MCP configuration is labeled as unverified until a chat message tests the live connection. If that connection fails, chat shows the exact CLI path it used.
+- After opening the install/update terminal, keep AI Status open: it detects a new or updated CLI, switches from an unchanged manual override to automatic discovery, and checks sign-in again. Chat also refreshes its session when the selected path changes.
+
+### Save and copy images from AI chat
+- Right-click generated images, conversation snapshots, and attachments to save them as PNG or copy them. Click an image once to open its larger preview, which also offers the image menu.
+- Image saving and system clipboard copying share the same actions used by the main window.
+
 ## v1.14.48 (2026-10-27)
 ### Clear starting paths and scannable long explanations in the guide
 - The guide home now links directly to a first-time path and to image conversion, AI drawing, animation, skins, and export tasks.

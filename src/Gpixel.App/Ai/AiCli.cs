@@ -92,6 +92,33 @@ public static class AiCli
         return null;
     }
 
+    /// <summary>현재 프로세스 PATH에서 셸이 실행할 CLI(.exe/.cmd)를 찾는다. 앱의 설치 위치 추측과는 별개다.</summary>
+    public static string? LocateOnPath(string command)
+    {
+        foreach (var dir in PathEntries())
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    var exe = Path.Combine(dir, command + ".exe");
+                    if (File.Exists(exe)) return exe;
+                    var cmd = Path.Combine(dir, command + ".cmd");
+                    if (File.Exists(cmd)) return cmd;
+                }
+                else
+                {
+                    var path = Path.Combine(dir, command);
+                    if (File.Exists(path)) return path;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+            {
+            }
+        }
+        return null;
+    }
+
     /// <summary>"~/"로 시작하면 홈 폴더로 바꾼다.</summary>
     public static string ExpandHome(string path)
         => path == "~" ? Home : path.StartsWith("~/", StringComparison.Ordinal) ? Path.Combine(Home, path[2..]) : path;

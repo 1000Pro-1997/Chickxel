@@ -118,6 +118,9 @@ public abstract class AiProvider
     /// <summary>실행 파일을 찾는다(설정에서 정한 경로 → PATH·흔한 설치 위치). 못 찾으면 null.</summary>
     public string? Locate(AppSettings settings) => AiCli.Locate(Command, GetPathOverride(settings), ExtraCandidates());
 
+    /// <summary>직접 지정한 경로를 제외하고 자동 탐색한다(설치 후 새 경로 확인용).</summary>
+    public string? LocateAutomatically() => AiCli.Locate(Command, null, ExtraCandidates());
+
     /// <summary>PATH·흔한 설치 폴더 다음에 살필 곳(앱에 들어 있는 CLI 등).</summary>
     protected virtual IEnumerable<string> ExtraCandidates() => [];
 

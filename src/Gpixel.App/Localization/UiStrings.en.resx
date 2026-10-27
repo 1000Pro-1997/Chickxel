@@ -2628,6 +2628,11 @@ Move Gpixel.app to the Applications folder or similar and relaunch it to use aut
   <data name="Preview_PngFilter" xml:space="preserve"><value>PNG image</value></data>
   <data name="Preview_Saved" xml:space="preserve"><value>Saved {0} ({1}×{2})</value></data>
   <data name="Preview_SaveFailed" xml:space="preserve"><value>Couldn't save the frame.&#10;{0}</value></data>
+  <data name="Image_SaveMenu" xml:space="preserve"><value>Save image…</value></data>
+  <data name="Image_SaveTitle" xml:space="preserve"><value>Save image as PNG</value></data>
+  <data name="Image_SaveFailed" xml:space="preserve"><value>Couldn't save the image.&#10;{0}</value></data>
+  <data name="Image_Copied" xml:space="preserve"><value>Copied the image ({0}×{1}).</value></data>
+  <data name="Image_CopyFailed" xml:space="preserve"><value>Couldn't copy the image to the clipboard.</value></data>
   <data name="PaletteConvert_Title" xml:space="preserve"><value>Convert to palette colors</value></data>
   <data name="Timeline_LayoutBadgeTip" xml:space="preserve"><value>Auto layout on — click to configure</value></data>
   <data name="Updater_ManualInstall" xml:space="preserve"><value>
@@ -3367,7 +3372,7 @@ Press the question mark button at the top right to see what the AI can do, with 
 
 {steps}</value><comment>product = Claude Code or Codex CLI, steps = description of commands.</comment></data>
   <data name="AiStatus_ActionFailed" xml:space="preserve"><value>Could not run: {reason}</value><comment>reason = failure reason.</comment></data>
-  <data name="AiStatus_InstallerOpened" xml:space="preserve"><value>Opened the {product} install/update terminal. When it finishes, click “Check all again.”</value><comment>product = CLI name.</comment></data>
+  <data name="AiStatus_InstallerOpened" xml:space="preserve"><value>Opened the {product} install/update terminal. Keep this status window open to automatically recheck the CLI path and sign-in.</value><comment>product = CLI name.</comment></data>
   <data name="AiStatus_LoginOpened" xml:space="preserve"><value>Opened the {product} sign-in terminal. Status is checked automatically when sign-in finishes.</value><comment>product = CLI name.</comment></data>
   <data name="AiStatus_Login" xml:space="preserve"><value>Sign in</value></data>
   <data name="AiStatus_Logout" xml:space="preserve"><value>Sign out</value></data>
@@ -3377,17 +3382,21 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiStatus_ChangePath" xml:space="preserve"><value>Change executable</value></data>
   <data name="AiStatus_AutomaticPath" xml:space="preserve"><value>Find automatically</value></data>
   <data name="AiStatus_ChooseExecutable" xml:space="preserve"><value>Select {product} executable</value><comment>product = CLI name.</comment></data>
-  <data name="AiStatus_CliVersion" xml:space="preserve"><value>Install/version</value></data>
+  <data name="AiStatus_CliVersion" xml:space="preserve"><value>CLI/version</value></data>
   <data name="AiStatus_LoginState" xml:space="preserve"><value>Sign-in</value></data>
   <data name="AiStatus_McpConnection" xml:space="preserve"><value>MCP connection</value></data>
   <data name="AiStatus_NotInstalled" xml:space="preserve"><value>{product} was not found.</value><comment>product = CLI name.</comment></data>
   <data name="AiStatus_LoginUnavailable" xml:space="preserve"><value>Install the CLI before checking sign-in.</value></data>
   <data name="AiStatus_McpUnavailable" xml:space="preserve"><value>Install the CLI before connecting.</value></data>
   <data name="AiStatus_VersionPath" xml:space="preserve"><value>{version} · {path}</value><comment>version = CLI version, path = executable path.</comment></data>
+  <data name="AiStatus_NotOnPath" xml:space="preserve"><value>Not found on Gpixel's current PATH. Check the terminal's PATH too.</value></data>
+  <data name="AiStatus_DifferentPath" xml:space="preserve"><value>Gpixel's current PATH points to a different executable: {path}</value><comment>path = CLI executable on PATH.</comment></data>
   <data name="AiStatus_LoggedIn" xml:space="preserve"><value>Signed in · {account}</value><comment>account = account or sign-in method.</comment></data>
   <data name="AiStatus_NotLoggedIn" xml:space="preserve"><value>Not signed in</value></data>
-  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>No error · Gpixel MCP settings created for chat · live Claude connection is checked on the first message</value></data>
-  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>No error · Codex read the Gpixel MCP settings · live tool delivery is checked on the first message</value></data>
+  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>Configuration created only · live Claude connection not yet verified (checked on the first message)</value></data>
+  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>Configuration read only · live tool connection not yet verified (checked on the first message)</value></data>
+  <data name="Chat_McpCliPath" xml:space="preserve"><value>CLI used for this connection: {path}. Compare this path with the terminal path in AI Status.</value><comment>path = CLI executable used for the MCP connection.</comment></data>
+  <data name="Chat_CliPathChanged" xml:space="preserve"><value>The CLI path changed. Reconnecting the session; send your message again after the check.</value></data>
   <data name="AiStatus_SettingsTab" xml:space="preserve"><value>AI Status</value></data>
   <data name="AiStatus_SettingsTitle" xml:space="preserve"><value>AI installation, account, and connection</value></data>
   <data name="AiStatus_SettingsNote" xml:space="preserve"><value>Check Claude Code and Codex CLI paths, versions, sign-in, and Gpixel MCP connections. You can also install, update, sign in, sign out, or change an executable.</value></data>

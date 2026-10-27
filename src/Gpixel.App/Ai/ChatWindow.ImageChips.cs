@@ -86,6 +86,7 @@ public sealed partial class ChatWindow
         var view = new Image { Source = image, Width = Math.Max(1, px.Width * k), Height = Math.Max(1, px.Height * k), Stretch = Stretch.Fill };
         if (k > 1) RenderOptions.SetBitmapInterpolationMode(view, BitmapInterpolationMode.None);
         var stack = new StackPanel { Spacing = 6, Children = { new CheckerBackground { Child = view, HorizontalAlignment = HorizontalAlignment.Left } } };
+        AttachImageMenu(view, image);
         var flyout = new Flyout { Placement = PlacementMode.Top, Content = stack };
         if (remove is not null)
         {

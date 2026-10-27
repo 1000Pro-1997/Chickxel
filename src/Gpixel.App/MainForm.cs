@@ -72,10 +72,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private const KeyModifiers Alt = KeyModifiers.Alt;
     private const KeyModifiers NoMods = KeyModifiers.None;
 
-    /// <summary>시스템 클립보드의 PNG 형식(Windows "PNG", macOS "public.png", 그 밖 "image/png").</summary>
-    private static readonly DataFormat<byte[]> PngClipboardFormat = DataFormat.CreateBytesPlatformFormat(
-        OperatingSystem.IsWindows() ? "PNG" : Platform.IsMac ? "public.png" : "image/png");
-
     private const int SplitterSize = 3;
     private const int MinPanelSize = 25;
 
@@ -2488,26 +2484,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     }
 
     /// <summary>시스템 클립보드에 PNG로 올린다(다른 그림 프로그램에 붙여넣기용). 실패하면 앱 내부 클립보드만 쓴다.</summary>
-    private void PutOnSystemClipboard(PixelImage clip)
-    {
-        if (Clipboard is not { } cb) return;
-        try
-        {
-            using var png = new MemoryStream();
-            PngIO.Save(clip, png);
-            var item = new DataTransferItem();
-            item.Set(PngClipboardFormat, png.ToArray());
-            // Windows 프로그램 대부분은 PNG 대신 비트맵(DIB)을 읽는다.
-            if (OperatingSystem.IsWindows()) item.SetBitmap(ImageUtil.ToBitmap(clip));
-            var data = new DataTransfer();
-            data.Add(item);
-            Ui.Wait(cb.SetDataAsync(data));
-        }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        {
-            // 다른 프로그램이 클립보드를 잡고 있으면 앱 내부 클립보드만 쓴다.
-        }
-    }
+    private void PutOnSystemClipboard(PixelImage clip) => ImageActions.Copy(this, clip);
 
     private PixelImage? ReadClipboard()
     {
@@ -2515,7 +2492,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         {
             try
             {
-                if (Ui.Wait(cb.TryGetValueAsync(PngClipboardFormat)) is { Length: > 0 } bytes)
+                if (Ui.Wait(cb.TryGetValueAsync(ImageActions.PngClipboardFormat)) is { Length: > 0 } bytes)
                 {
                     using var png = new MemoryStream(bytes, writable: false);
                     return PngIO.Load(png);
