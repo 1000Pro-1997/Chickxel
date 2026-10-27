@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../style.css?v=20261027b">
+<link rel="stylesheet" href="../style.css?v=20261027c">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -30,7 +30,7 @@
 <a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="../assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
 <nav class="nav">
 <a href="index.html">Home</a>
-<a class="hide-sm" href="#featured-common">Key features</a>
+<a class="hide-sm" href="#featured-common">Quick tasks</a>
 <a href="guide.html" aria-current="page">Guide</a>
 <a class="hide-sm" href="index.html#download">Download</a>
 <a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
@@ -48,7 +48,8 @@
 <aside class="toc">
 <h2>Guide</h2>
 <ol>
-<li class="toc-label">Key features</li>
+<li><a href="#guide-home">Guide home</a></li>
+<li class="toc-label">Quick tasks</li>
 <li><a href="#featured-common">Common controls</a>
 <ol><li><a href="#featured-number-field">Changing number fields</a></li></ol>
 </li>
@@ -71,7 +72,7 @@
 </li>
 <li><a href="#featured-export">Export</a>
 </li>
-<li class="toc-label">Manual</li>
+<li class="toc-label">Feature reference</li>
 <li><a href="#start">Getting started</a>
 <ol><li><a href="#start-install">Installation</a></li><li><a href="#start-first-run">First launch</a></li><li><a href="#start-update">Updates</a></li><li><a href="#start-privacy">Network and privacy</a></li><li><a href="#start-feedback">Feedback</a></li></ol>
 </li>
@@ -102,22 +103,50 @@
 </ol>
 </aside>
 <div class="content">
+<section class="doc guide-home" id="guide-home">
+<h2>Gpixel guide</h2>
+<p class="guide-home-lead">You don't need to read from start to finish. Follow the first-time path, or choose the task you want to do and read only what you need.</p>
+<div class="guide-paths">
+<div class="guide-path">
+<h4>First-time path</h4>
+<ol class="guide-route">
+<li><a href="#start-install"><strong>Install and launch</strong></a><span>Choose the right download for your operating system and handle the first-launch warning.</span></li>
+<li><a href="#screen"><strong>Learn the screen</strong></a><span>Find the canvas, toolbar, timeline, and other main areas.</span></li>
+<li><a href="#tools-basics"><strong>Draw an image</strong></a><span>Learn the basic controls for colors, brushes, and selections.</span></li>
+<li><a href="#files-save"><strong>Save and export</strong></a><span>See how projects, PNG files, and Unity files are saved.</span></li>
+</ol>
+</div>
+<div class="guide-path">
+<h4>Find a task</h4>
+<ul class="guide-route">
+<li><a href="#featured-pixelate-convert"><strong>Turn an image into pixel art</strong></a></li>
+<li><a href="#featured-ai-draw"><strong>Draw with AI</strong></a></li>
+<li><a href="#featured-effects"><strong>Animate with layer effects</strong></a></li>
+<li><a href="#featured-skins"><strong>Switch skins</strong></a></li>
+<li><a href="#featured-export"><strong>Export a sprite sheet</strong></a></li>
+</ul>
+</div>
+</div>
+<div class="note"><p>If you know the feature name, enter it in the search box on the left. The table of contents separates common tasks from feature reference.</p></div>
+</section>
+
 <section class="doc" id="featured-common">
 <h2>Common controls</h2>
 <p>Basic controls that work the same everywhere in the app.</p>
 
 <h3 id="featured-number-field">Changing number fields</h3>
+<figure class="core-media guide-media"><img src="../assets/feature-number-field.gif" alt="Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list" width="512" height="1031" loading="lazy"></figure>
 <p>Size, coordinates, FPS, zoom, effect strength — every number field in the app supports the same three methods. Use whichever fits the moment.</p>
 <ol class="core-steps">
 <li><strong>Click and type</strong><span>Click the field and type a number. Clicking elsewhere confirms it.</span></li>
 <li><strong>Drag left or right</strong><span>Grab the field and drag sideways to change the value. <kbd>Shift</kbd> is 10× slower, <kbd>Ctrl</kbd> steps by 10. When you hit the edge of the screen, the cursor wraps around so you can keep dragging.</span></li>
 <li><strong>Right-click and pick</strong><span>Right-click the field for a list of common and recent values. The current value is marked with a dot.</span></li>
 </ol>
-<figure class="core-media guide-media"><img src="../assets/feature-number-field.gif" alt="Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list" width="512" height="1031" loading="lazy"></figure>
 </section>
 
 <section class="doc" id="featured-ai-draw">
 <h2>Drawing with AI</h2>
+<figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
 <p>Claude Code or Codex on your own computer drives Gpixel with your own account (no API key). Say something like "draw a 32×32 wooden barrel" and it draws right into the open image.</p>
 <ol class="core-steps">
 <li><strong>Open AI chat</strong><span><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span> or the AI button in the top bar. Pick the Claude or Codex tab and log in once.</span></li>
@@ -125,7 +154,6 @@
 <li><strong>Undo if you don't like it</strong><span>Each reply is one undo step. Use <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> or "Undo this step" under the reply.</span></li>
 </ol>
 <div class="note"><p>In our testing, <strong>Codex's Astra model</strong> (gpt-6-astra) drew the best results. See the <a href="#ai">AI chat</a> chapter for details.</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
 </section>
 
 <section class="doc" id="featured-pixelate">
@@ -133,6 +161,7 @@
 <p>Turn AI-generated art or any image into clean pixel art.</p>
 
 <h3 id="featured-pixelate-convert">Turning images into pixel art</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-pixelate.mp4" poster="../assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Pasting an AI-drawn character into the Pixelate window, candidates being built, and comparing the result with the source cell by cell in the enlarged view" width="1512" height="914"></video></figure>
 <p>Drop in an image and Gpixel finds the pixel size, snaps to the grid, removes the background and reduces the colors. It builds candidates with different settings and ranks them by score, so you just pick the one you like.</p>
 <ol class="core-steps">
 <li><strong>Add an image</strong><span>Open <strong>AI &gt; Pixelate AI image…</strong> and drag an image in or paste it with <kbd>Ctrl</kbd>+<kbd>V</kbd>.</span></li>
@@ -140,16 +169,15 @@
 <li><strong>Insert</strong><span>Insert it as a new layer in the current document or in a new tab.</span></li>
 </ol>
 <div class="note"><p>Settings and scoring are covered in the <a href="#pixelate">Pixelate AI images</a> chapter.</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-pixelate.mp4" poster="../assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Pasting an AI-drawn character into the Pixelate window, candidates being built, and comparing the result with the source cell by cell in the enlarged view" width="1512" height="914"></video></figure>
 
 <h3 id="featured-pixelate-colors">Removing and adding colors</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-pixelate-colors.mp4" poster="../assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="In the Pixelate enlarged view, clicking color swatches to see where they are used, right-clicking to remove colors, and picking a color from the source as a pinned color" width="1512" height="914"></video></figure>
 <p>Check each color in the result, remove the ones you don't need, and pick missing ones from the source.</p>
 <ol class="core-steps">
 <li><strong>Show where a color is used</strong><span>Click a color swatch or a result pixel to highlight where that color is used.</span></li>
 <li><strong>Remove a color</strong><span>Right-click to remove it; its pixels take the nearest remaining color. Right-click again or use <strong>Restore all</strong> to bring it back.</span></li>
 <li><strong>Add a color</strong><span>Click the <strong>+</strong> at the end of the swatches, then click a source cell to add that color to the result as a pinned color.</span></li>
 </ol>
-<figure class="core-media wide guide-media"><video src="../assets/feature-pixelate-colors.mp4" poster="../assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="In the Pixelate enlarged view, clicking color swatches to see where they are used, right-clicking to remove colors, and picking a color from the source as a pinned color" width="1512" height="914"></video></figure>
 </section>
 
 <section class="doc" id="featured-anim">
@@ -157,6 +185,7 @@
 <p>Layer effects on without touching your pixels to create motion.</p>
 
 <h3 id="featured-effects">Stacking effects</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-effects.mp4" poster="../assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Adding several effects to a barrel sprite in the effects window, setting frame ranges, and playing the animation" width="1280" height="720"></video></figure>
 <p>Stack as many effects as you like — outline, shadow, shine, shake, explosion, fade and more. They're layered on without changing your pixels, so you can toggle or reorder them anytime, and saving bakes the result into the sheet.</p>
 <ol class="core-steps">
 <li><strong>Open the effects window</strong><span>Right-click the layer name in the timeline and choose <strong>Effects…</strong>.</span></li>
@@ -164,9 +193,9 @@
 <li><strong>Set the frame range</strong><span>Drag in the frame strip under the preview to set each effect's range. Frame extension can add the animation frames for you.</span></li>
 </ol>
 <div class="note"><p>Effect types and settings are covered in <a href="#screen-layer-effects">Layer effects</a>.</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-effects.mp4" poster="../assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Adding several effects to a barrel sprite in the effects window, setting frame ranges, and playing the animation" width="1280" height="720"></video></figure>
 
 <h3 id="featured-clip">Effect clipping</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-clip.mp4" poster="../assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Turning on Clip to effect above for the lower effect in the effects window, so it applies only to the pixels of the effect above" width="1280" height="688"></video></figure>
 <p>Turn on <strong>Clip to effect above</strong> under <strong>Apply to</strong> in an effect's settings, and that effect applies only to the pixels the effect above it produced — not to the original sprite. For example, clip a color overlay under an outline to paint just the outline with a gradient while the sprite stays untouched.</p>
 <ol class="core-steps">
 <li><strong>Add a base effect</strong><span>Start with an effect that creates new pixels, such as outline or reflection.</span></li>
@@ -174,7 +203,6 @@
 <li><strong>Turn on Clip to effect above</strong><span>In the lower effect's settings, turn on <strong>Apply to &gt; Clip to effect above</strong>. It shows indented in the list and the timeline.</span></li>
 </ol>
 <div class="note"><p>Save a base effect together with its clipped effects in the <strong>Custom</strong> tab of the effect types to reuse it later.</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-clip.mp4" poster="../assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Turning on Clip to effect above for the lower effect in the effects window, so it applies only to the pixels of the effect above" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-palettes">
@@ -182,6 +210,7 @@
 <p>Import palettes and fit your sprite's colors to them.</p>
 
 <h3 id="featured-palette-web">Importing Lospec palettes</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-palette.mp4" poster="../assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette" width="1280" height="688"></video></figure>
 <p>Browse the <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">Lospec palette list</a> — palettes made by pixel artists around the world — right inside the app and import them. Each palette comes with example art drawn in its colors.</p>
 <ol class="core-steps">
 <li><strong>Open Palette web</strong><span>Choose <strong>Palette web (Lospec)…</strong> from the menu button on a palette header.</span></li>
@@ -190,16 +219,15 @@
 <li><strong>Favorites</strong><span>Click the star on a palette you like to add it to your favorites. Choose <strong>Favorites</strong> in the sort box to browse and import them — example art included — even without internet.</span></li>
 </ol>
 <div class="note"><p>Reference site: <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">lospec.com/palette-list</a> (internet required — favorites work offline; palette copyrights belong to their authors)</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-palette.mp4" poster="../assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette" width="1280" height="688"></video></figure>
 
 <h3 id="featured-palette-convert">Recoloring with a palette</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel" width="1280" height="688"></video></figure>
 <p>Replace every color in a sprite with the nearest color in a chosen palette, in one step. Try the same sprite in a different mood, or bring a whole game onto one palette.</p>
 <ol class="core-steps">
 <li><strong>Pick a palette</strong><span>Open the palette with the colors you want — palettes imported from Lospec work too.</span></li>
 <li><strong>Open Convert to palette colors</strong><span>Choose <strong>Convert to palette colors…</strong> from that palette's menu button.</span></li>
 <li><strong>Choose a target and dithering, then OK</strong><span>Pick the current cel, all frames of the current layer, or all layers and frames, and optionally turn on dithering (Bayer 4×4). Dithering is used only where the blend the eye sees of two palette colors is closer to the source. Check the before/after preview; one undo reverts it.</span></li>
 </ol>
-<figure class="core-media wide guide-media"><video src="../assets/feature-convert.mp4" poster="../assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-skin-set">
@@ -207,6 +235,7 @@
 <p>Draw several looks per part and swap them.</p>
 
 <h3 id="featured-skins">Managing skins</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-skins.mp4" poster="../assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Swapping a character's hair skin with the skin chip and the Skin manager" width="1280" height="688"></video></figure>
 <p>Split a character into parts like head, body and arms, draw several skins for each, and swap them with one click. Cells left empty in other skins inherit the first skin's art, so you only redraw the parts that change.</p>
 <ol class="core-steps">
 <li><strong>Create a group and parts</strong><span>Split the character with a new group (<span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span>) and new parts (<span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span>).</span></li>
@@ -214,16 +243,15 @@
 <li><strong>Swap</strong><span>Pick a skin from the outfit row under the preview or the skin chip, or jump with <span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span>.</span></li>
 </ol>
 <div class="note"><p>Skins can be exported as separate files per skin or as a Unity Sprite Library. See <a href="#parts">Part (group) layers · skins</a> for details.</p></div>
-<figure class="core-media wide guide-media"><video src="../assets/feature-skins.mp4" poster="../assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Swapping a character's hair skin with the skin chip and the Skin manager" width="1280" height="688"></video></figure>
 
 <h3 id="featured-skins-tiles">Tile and item skins</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-skins-tiles.mp4" poster="../assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins" width="1280" height="688"></video></figure>
 <p>Skins aren't only for outfits. Put a tile and the items that drop from it in one group as parts, and make each material — wood, dirt, ore — a skin. Every variant then lives in one file at the same size and position.</p>
 <ol class="core-steps">
 <li><strong>Group them as parts</strong><span>Put the block tile and its items in one group as parts (e.g. tile, item_1, item_2, item_3).</span></li>
 <li><strong>One skin per material</strong><span>Make a skin per material like plank, dirt or ore, and every part in the group switches together. The Skin manager shows each part's look at a glance.</span></li>
 <li><strong>Export in one go</strong><span>Saving exports per-skin sheets or a Unity Sprite Library, so the game only needs to switch the skin name.</span></li>
 </ol>
-<figure class="core-media wide guide-media"><video src="../assets/feature-skins-tiles.mp4" poster="../assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-unity">
@@ -231,24 +259,24 @@
 <p>Values you set in Gpixel carry straight into Unity.</p>
 
 <h3 id="featured-pivot">Pivot sync</h3>
+<figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
 <p>The pivot you set in Gpixel is written into the Unity <code>.meta</code> sprite pivot when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game.</p>
 <ol class="core-steps">
 <li><strong>Pick the Pivot tool (K)</strong><span>Drag the anchor on the canvas, or use the 9-direction buttons and X/Y fields in the tool settings.</span></li>
 <li><strong>Choose the target</strong><span>With a part selected, that part's pivot changes; otherwise the project default pivot (all frames). Turn on <strong>Current frame only</strong> to set it for one frame.</span></li>
 <li><strong>Save to update Unity</strong><span>Saving writes the pivot into the <code>.meta</code> alongside the PNG sheet. Transform (<span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>) also starts rotating around this pivot.</span></li>
 </ol>
-<figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-export">
 <h2>Export</h2>
+<figure class="core-media wide guide-media"><video src="../assets/feature-export.mp4" poster="../assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating" width="1280" height="688"></video></figure>
 <p>In the <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
 <ol class="core-steps">
 <li><strong>Open the export window</strong><span><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
 <li><strong>Set layout, skins and splitting</strong><span>Choose cell layout and spacing, whether to pack all skins in one image or one file per skin, and whether to split by tag, part or skin. Unity Sprite Library and import settings (<code>.meta</code>) are set here too, and you can save favorite settings as presets.</span></li>
 <li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The file browser hides the exported PNGs and shows the single <code>.gpixel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
 </ol>
-<figure class="core-media wide guide-media"><video src="../assets/feature-export.mp4" poster="../assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="start">
@@ -364,6 +392,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>Detailed tool settings are in <a href="#screen-tool-settings">Tool options</a> on the right.</p>
 
 <h3 id="screen-common-controls">Number fields and menus</h3>
+<figure class="clip"><img src="../assets/guide/screen-common-controls.webp" alt="Dragging the Size number field in Tool options left and right, picking a value from the right-click list, and clicking to type a number" width="432" height="442" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/screen-common-controls.png" alt="Common values list opened by right-clicking the Size field in tool options (dot at the current 4 px)" width="312" height="375" loading="lazy"><figcaption>① Number field (Size) · ② Right-click value list</figcaption></figure>
 <ul>
 <li>① Number fields have no up/down buttons; <strong>drag left/right</strong> to change the value. Hold <kbd>Shift</kbd> to go 10× slower, or <kbd>Ctrl</kbd> to change by 10. When you hit the edge of the screen while dragging, the cursor wraps to the other side so you can keep going.</li>
@@ -371,7 +400,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>When not typing, <strong>right-click</strong> a number field to pick from ② a list of common values (the current value is marked with a dot).</li>
 <li>Only one right-click or button menu can be open at a time across the app. It closes when you click outside, scroll, press <kbd>Esc</kbd>, switch windows, or press the button that opened it again.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/screen-common-controls.webp" alt="Dragging the Size number field in Tool options left and right, picking a value from the right-click list, and clicking to type a number" width="432" height="442" loading="lazy"></figure>
 
 <h3 id="screen-toolbar">Toolbar</h3>
 <p>The vertical bar on the far left. Hover an icon to see its shortcut in the tooltip.</p>
@@ -494,6 +522,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="screen-tabs">Document tabs and split view</h3>
+<figure class="clip"><img src="../assets/guide/screen-tabs.webp" alt="Dragging tabs to reorder them, dropping a tab on the right edge of the canvas to split it into two panes, and closing a tab to remove the split" width="788" height="474" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/screen-tabs.png" alt="Document tab strip: tab title, red dot, full path tooltip, close X, new tab" width="1096" height="160" loading="lazy"><figcaption>① Tab title · ② Red dot · ③ Full path · ④ Close (X) · ⑤ New project (+)</figcaption></figure>
 <p>The tab strip above the canvas has one tab per open document (① title = file name, ② a red dot for unsaved changes, ③ full path on hover). Clicking a file in the file browser opens it in a <strong>new tab</strong>; if it's already open (even in the other pane), it isn't opened again — its tab is selected and that pane gets focus. A document is open in only one tab. Open, recent files, New project and AI tools also open new tabs.</p>
 <ul>
@@ -511,7 +540,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>The <strong>focused pane</strong> (⑨ accent line under its tab strip) is the one the timeline, preview and panels work on; clicking the other pane focuses it. Closing the last tab of a pane removes the split.</li>
 <li>Tabs open when you quit (including the split and order) are reopened next time; missing files and never-saved new documents are skipped.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/screen-tabs.webp" alt="Dragging tabs to reorder them, dropping a tab on the right edge of the canvas to split it into two panes, and closing a tab to remove the split" width="788" height="474" loading="lazy"></figure>
 
 <h3 id="screen-timeline">Timeline</h3>
 <p>At the bottom of the screen: rows are layers, columns are frames and the strip at the top shows tags.</p>
@@ -542,6 +570,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/screen-timeline-5.png" alt="Layer opacity dialog from the layer menu (0-255)" width="304" height="143" loading="lazy"></figure>
 
 <h3 id="screen-timeline-select">Selecting in the timeline</h3>
+<figure class="clip"><img src="../assets/guide/screen-timeline-select.webp" alt="Dragging over cels to select a rectangle, extending it with Shift+click, and clicking an empty area to clear the selection" width="686" height="278" loading="lazy"></figure>
 <p>You select one kind of thing at a time (frames, layers or cels). What you click becomes the current frame/layer.</p>
 <figure class="shot"><img src="../assets/guide/screen-timeline-select.png" alt="Timeline with frames 2 to 4 selected, and the status bar" width="801" height="352" loading="lazy"><figcaption>① Selected frames 2–4</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/screen-timeline-select-2.png" alt="A block of cels selected (Body and Shadow × frames 2–3) with the status bar hint" width="801" height="352" loading="lazy"><figcaption>② Selected block of cels · ③ Status bar hint</figcaption></figure>
@@ -552,9 +581,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Icons such as the eye, lock, collapse triangle and fx only do their own job and don't select. Click an empty area to clear the selection.</li>
 <li>The ③ status bar shows what's selected and what <kbd>Delete</kbd> will do.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/screen-timeline-select.webp" alt="Dragging over cels to select a rectangle, extending it with Shift+click, and clicking an empty area to clear the selection" width="686" height="278" loading="lazy"></figure>
 
 <h3 id="screen-timeline-edit">Editing the timeline</h3>
+<figure class="clip"><img src="../assets/guide/screen-timeline-edit.webp" alt="Dragging selected frame headers to a new position, dragging a block of cels to move it, and holding Ctrl while dropping to copy it" width="734" height="416" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/screen-timeline-edit.png" alt="Right-click menu of a block of cels (Body and Shadow × frames 2–3)" width="704" height="342" loading="lazy"><figcaption>① Selected block of cels · ② Copy, cut, paste cels</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/screen-timeline-edit-2.png" alt="Right-click menu of an empty cel (Shadow, frame 3)" width="702" height="362" loading="lazy"><figcaption>③ Right-clicked empty cel · ④ Copy image from previous frame</figcaption></figure>
 <div class="table-wrap"><table>
@@ -568,9 +597,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </tbody>
 </table></div>
 <p>New layers created by copying get their trailing number increased by 1 (<code>item_1</code> → <code>item_2</code>, <code>tile_009</code> → <code>tile_010</code>, or <code>_1</code> if there's no number). <strong>Duplicate</strong> in the layer menu follows the same rule. Every edit is a single undo step.</p>
-<figure class="clip"><img src="../assets/guide/screen-timeline-edit.webp" alt="Dragging selected frame headers to a new position, dragging a block of cels to move it, and holding Ctrl while dropping to copy it" width="734" height="416" loading="lazy"></figure>
 
 <h3 id="screen-tags">Tags</h3>
+<figure class="clip"><img src="../assets/guide/screen-tags.webp" alt="Selecting frames 1–4 and creating a tag from the right-click menu, then dragging the end of the tag box to change its range and playing it" width="1028" height="760" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/screen-tags.png" alt="Frames 5 and 6 selected, Create tag in the frame header menu" width="828" height="533" loading="lazy"><figcaption>① Selected frames 5–6 · ② Create tag…</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/screen-tags-2.png" alt="New tag dialog: name hit, frames 5–6, direction Forward, Loop, color" width="344" height="245" loading="lazy"><figcaption>③ Name · ④ Frame range · ⑤ Direction and loop · ⑥ Color</figcaption></figure>
 <ul class="marks">
@@ -582,9 +611,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Right-click a tag for the ⑧ menu with <strong>Tag properties…</strong> (the same dialog as when creating; double-clicking the tag also opens it), <strong>Play this tag</strong> and <strong>Delete</strong>.</li>
 <li>Select a tag and play the preview to loop within that tag.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/screen-tags.webp" alt="Selecting frames 1–4 and creating a tag from the right-click menu, then dragging the end of the tag box to change its range and playing it" width="1028" height="760" loading="lazy"></figure>
 
 <h3 id="screen-layer-effects">Layer effects</h3>
+<figure class="clip"><img src="../assets/guide/screen-layer-effects.webp" alt="Dragging the end of an effect box in the timeline's effect row to change its frame range, and dragging its body to move the whole range" width="686" height="618" loading="lazy"></figure>
 <p>Layer effects are <strong>non-destructive</strong>: they're applied only when displayed, without changing cel pixels. They automatically apply to anything you draw later and are all rendered per pixel (no blur or anti-aliasing).</p>
 <figure class="shot"><img src="../assets/guide/screen-layer-effects.png" alt="Right-click menu of the Body layer name with Effects… (2), and the fx mark in the name cell" width="324" height="361" loading="lazy"><figcaption>① Effects… · ② fx mark</figcaption></figure>
 <ul>
@@ -670,23 +699,32 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Effects are shown on the canvas, preview, frame sheets and thumbnails. The drawing view for a selected part shows the plain image without effects.</li>
 <li>The part atlas includes only the part's own effects; spreading effects such as outlines or shadows make the sprite wider by that amount (the pivot is shifted so it points at the same spot).</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/screen-layer-effects.webp" alt="Dragging the end of an effect box in the timeline's effect row to change its frame range, and dragging its body to move the whole range" width="686" height="618" loading="lazy"></figure>
 
 <h3 id="screen-preview">Preview</h3>
 <figure class="shot"><img src="../assets/guide/screen-preview.png" alt="Preview panel: playback, FPS, zoom button, background" width="339" height="234" loading="lazy"><figcaption>① Playback · ② FPS · ③ Zoom button (Fit) · ④ Background</figcaption></figure>
-<p>In the top right; ① plays the current tag (or all frames if there's none) in real time.</p>
-<ul class="marks">
-<li>② It has its own FPS.</li>
-<li>③ Zoom button: click to cycle fit → 1× → 2× → 4×; right-click to go in reverse.</li>
-</ul>
-<figure class="shot"><img src="../assets/guide/screen-preview-3.png" alt="Preview background list: checker, black, white, gray, green, custom color" width="308" height="415" loading="lazy"><figcaption>⑥ Background list</figcaption></figure>
-<ul class="marks">
-<li>④ Background: checker, black, white, gray, green, custom color (⑥ list).</li>
-</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Number</th><th>Item and use</th></tr></thead>
+<tbody>
+<tr><td>①</td><td>Plays the current tag in real time; if there is no tag it plays all frames.</td></tr>
+<tr><td>②</td><td>Sets a separate FPS for the preview.</td></tr>
+<tr><td>③</td><td>Click to cycle fit → 1× → 2× → 4×; right-click to go in reverse.</td></tr>
+<tr><td>④</td><td>The background button. Click it to open the background list.</td></tr>
+</tbody>
+</table></div>
 <figure class="shot"><img src="../assets/guide/screen-preview-2.png" alt="Preview right-click menu: Copy image, Copy enlarged, Save frame, Save as GIF" width="308" height="238" loading="lazy"><figcaption>⑤ Right-click menu</figcaption></figure>
-<ul class="marks">
-<li>⑤ <strong>Right-click menu</strong> (on the image): <strong>Copy image</strong> puts the shown frame on the clipboard as a PNG with transparency and without the preview background, and <strong>Copy enlarged (×4)</strong> copies it four times larger with sharp pixels (handy for pasting into chats such as Discord). <strong>Save frame…</strong> saves that frame as a PNG (<code>&lt;document&gt;_&lt;frame number&gt;.png</code>), and <strong>Save as GIF…</strong> opens the <a href="#screen-gif">Export as animated GIF</a> window. While playing, the frame shown when you right-click is used, so you don't need to pause.</li>
-</ul>
+<p>⑤ Right-click the preview image to open copy and save commands.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><strong>Copy image</strong></td><td>Copies the shown frame to the clipboard as a transparent PNG without the preview background.</td></tr>
+<tr><td><strong>Copy enlarged (×4)</strong></td><td>Copies a PNG enlarged 4× with crisp pixels. This is useful for pasting into chats such as Discord.</td></tr>
+<tr><td><strong>Save frame…</strong></td><td>Saves the shown frame as <code>&lt;document&gt;_&lt;frame number&gt;.png</code>.</td></tr>
+<tr><td><strong>Save as GIF…</strong></td><td>Opens the <a href="#screen-gif">Export as animated GIF</a> dialog.</td></tr>
+</tbody>
+</table></div>
+<p>During playback it copies or saves the frame that was visible when you right-clicked; you do not need to stop playback.</p>
+<figure class="shot"><img src="../assets/guide/screen-preview-3.png" alt="Preview background list: checker, black, white, gray, green, custom color" width="308" height="415" loading="lazy"><figcaption>⑥ Background list</figcaption></figure>
+<p>⑥ Choose checkerboard, black, white, gray, green, or a custom color from the background list.</p>
 
 <h3 id="screen-export">Export dialog</h3>
 <figure class="shot"><img src="../assets/guide/screen-export.png" alt="Export dialog: settings on the left, output preview on the right, two tabs and the Export button" width="1100" height="792" loading="lazy"><figcaption>① Export button · ② Export tab · ③ Import Settings tab · ④ Settings · ⑤ Output preview · ⑥ Divider</figcaption></figure>
@@ -870,6 +908,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="tools-transform">Transform mode (rotate/size)</h3>
+<figure class="clip"><img src="../assets/guide/tools-transform.webp" alt="Entering transform mode with Ctrl+T, dragging just outside the border to rotate, dragging the handles to resize, and dragging inside to move" width="314" height="342" loading="lazy"></figure>
 <p><span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> or <strong>Transform (rotate/size)…</strong> in the Edit menu. Rotate, scale and move the selection (or, with none, all painted pixels in the current cel) using the handles on the orange dotted border.</p>
 <figure class="shot"><img src="../assets/guide/tools-transform.png" alt="Transform mode with the head selected and rotated 18 degrees, and its tool options" width="936" height="671" loading="lazy"><figcaption>① Inside (move) · ② Square handle (size) · ③ Just outside the border (rotate) · ④ Rotation center · ⑤ Apply · ⑥ Cancel · ⑦ Angle, width/height %, center X/Y · ⑧ Resampling</figcaption></figure>
 <div class="table-wrap"><table>
@@ -892,9 +931,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li><strong>Transforming several cels at once</strong>: select ⑨ several cels in the timeline (for example frames 1–6 of one layer; frame-header and layer-name selections work too) and press <span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> — every selected cel gets the same rotation, scale and move. ⑩ The handle box surrounds the drawings of all those cels, the canvas shows the current cel moving, and the other cels change when you apply (one undo step; <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> cancels them all). Empty cels and cels on locked layers are skipped. Dragging with the Move tool or nudging with the arrow keys also moves all selected cels together. ⑪ The status bar shows how many cels are transforming together.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/tools-transform.webp" alt="Entering transform mode with Ctrl+T, dragging just outside the border to rotate, dragging the handles to resize, and dragging inside to move" width="314" height="342" loading="lazy"></figure>
 
 <h3 id="tools-canvas-size">Canvas size mode</h3>
+<figure class="clip"><img src="../assets/guide/tools-canvas-size.webp" alt="In canvas size mode, dragging the handles to widen the canvas or shrink it to crop, and dragging inside the image to move it" width="690" height="340" loading="lazy"></figure>
 <figure class="shot"><img src="../assets/guide/tools-canvas-size.png" alt="Canvas size mode widening the canvas to 69×88 and cropping the bottom" width="956" height="674" loading="lazy"><figcaption>① New canvas border (light-blue dotted line) · ② Area to be cropped (dimmed) · ③ Handle · ④ Inside the image · ⑤ OK · ⑥ Cancel · ⑦ Canvas width/height · ⑧ Anchor at canvas center · ⑨ Stretch with 9-slice and middle fill (off here because the sample has no 9-slice borders) · ⑩ Image width/height · ⑪ Keep image ratio · ⑫ Image position X/Y · ⑬ 9-direction anchor</figcaption></figure>
 <p><span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span> or <strong>Canvas size…</strong> in the Edit menu. Set the new size and image position right on the canvas instead of in a dialog. The canvas border is a ① light-blue dotted line and ② areas to be cropped are dimmed.</p>
 <div class="table-wrap"><table>
@@ -911,15 +950,14 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Tool options: ⑦ canvas width/height, ⑧ <strong>Anchor at canvas center</strong>, ⑨ <strong>Stretch with 9-slice</strong> and the middle fill (<strong>Stretch / Tile</strong>), ⑩ image width/height %, ⑪ <strong>Keep image ratio</strong>, ⑫ image position X/Y, ⑬ <strong>9-direction anchor</strong>.</li>
 <li>Applies to all frames and layers; parts and pivots are adjusted as well.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/tools-canvas-size.webp" alt="In canvas size mode, dragging the handles to widen the canvas or shrink it to crop, and dragging inside the image to move it" width="690" height="340" loading="lazy"></figure>
 <h4>Stretch with 9-slice</h4>
+<figure class="clip"><img src="../assets/guide/tools-canvas-size-slice.webp" alt="Setting the green lines with the 9-slice tool, then stretching and shrinking with 9-slice in canvas size mode, and switching the middle fill to Tile so the middle pattern repeats" width="1000" height="706" loading="lazy"></figure>
 <ul>
 <li>When the frame (or a part) has <a href="#tools-nine-slice">9-slice</a> borders, ⑨ <strong>Stretch with 9-slice</strong> is on by default. The controls are the same as in the table above (plain drag = margin, <kbd>Ctrl</kbd>+drag or image width/height = image size); when the image is resized, corners stay as they are, edges stretch in one direction only and only the middle grows, like a Unity UI image with Image Type = Sliced. When it's off or there are no borders, the whole image is scaled nearest-neighbor.</li>
 <li>Middle fill: <strong>Stretch</strong> = nearest-neighbor stretch or shrink (Unity Sliced), <strong>Tile</strong> = repeat the original pattern at its size (Unity Tiled — good for patterned middles).</li>
 <li>While dragging, the borders are shown as green dotted lines, and the image can't get smaller than both borders plus one pixel.</li>
 <li>After applying, the L, T, R and B values stay the same number of pixels from the image edges (plus any margin you left), so the Unity Sprite Border still matches. Parts with their own borders are stretched with those, and pivots follow the same mapping.</li>
 </ul>
-<figure class="clip"><img src="../assets/guide/tools-canvas-size-slice.webp" alt="Setting the green lines with the 9-slice tool, then stretching and shrinking with 9-slice in canvas size mode, and switching the middle fill to Tile so the middle pattern repeats" width="1000" height="706" loading="lazy"></figure>
 
 <h3 id="tools-nine-slice">9-slice</h3>
 <figure class="shot"><img src="../assets/guide/tools-nine-slice.png" alt="Sample UI button (32×20) with the four green 9-slice lines, and the tool options" width="1003" height="400" loading="lazy"><figcaption>① Four green lines (L5, T5, R5, B6) · ② L, T, R, B values · ③ All 0 · ④ Target (every cell of the frame sheet)</figcaption></figure>
@@ -1097,16 +1135,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="pixelate-settings">Pipeline settings</h3>
 <figure class="shot"><img src="../assets/guide/pixelate-settings.png" alt="Left side of the window with the settings column collapsed" width="640" height="560" loading="lazy"><figcaption>① Settings column bar</figcaption></figure>
 <p>The settings are in a left column that starts collapsed to a thin vertical bar, so the preview and candidates get the room. Click ① the bar (settings icon and arrow) to slide it open, and again to collapse it; the state is remembered. Each step is a collapsible section, and changing any value re-runs after about 0.3 s.</p>
+<h4>Background and frames</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-settings-2.png" alt="Settings column with 1. Background and 2. Frames expanded" width="396" height="616" loading="lazy"><figcaption>② 1. Background · ③ 2. Frames</figcaption></figure>
 <ul class="marks">
 <li>② <strong>Background</strong>: Keep · Auto (the most common border color; if the border is mostly transparent, the existing alpha is used) · Pick color. Tolerance (RGB distance, Auto from border noise), <strong>Only background connected to the border</strong> (flood fill from the border, so near-black outlines touching a black background and eyes are kept), use existing transparency, alpha threshold, speck size (small detached specks are removed).</li>
 <li>③ <strong>Frames</strong>: Single · Auto (split by fully empty rows/columns; small detached pieces such as effects are merged into the nearest frame within a distance; sprites that touch or overlap sideways, so no empty column separates them, end up as one piece much wider than the others and are parted at the thinnest vertical line) · Grid (columns × rows — pixels aren't cut along the cell lines but assigned by connected blob, so hands and feet crossing a cell line don't leave fragments at the edge of the neighbouring frame; two touching sprites are parted at the thinnest spot near the cell line). Align bottom-center (default) · center · keep offsets; all frames get the same canvas size.</li>
 </ul>
+<h4>Pixel grid and output size</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-settings-3.png" alt="Settings column with 3. Pixel grid and 4. Output size expanded" width="396" height="674" loading="lazy"><figcaption>④ 3. Pixel grid · ⑤ 4. Output size</figcaption></figure>
 <ul class="marks">
 <li>④ <strong>Pixel grid</strong>: <strong>Pixel size from</strong> chooses Auto (best edge match) · Outline thickness · Color edges · <strong>Block edges</strong> (used when cleanup's <strong>Fit outline to 1 px</strong> is <strong>Thin outline only</strong>, <strong>Redraw as vector</strong> or <strong>Off</strong>; disabled with <strong>By shrinking</strong>). Pixel sizes from 3 to 256 px are measured, so blocks enlarged past 100 px are found at their real size too. <strong>Color edges</strong> estimates the pixel size as a decimal from run lengths between color changes, tolerant to jitter and preferring the finer of two harmonics. <strong>Outline thickness</strong> measures the dark band touching transparency across many horizontal and vertical sections and picks the size at which the outline becomes 1 px. <strong>Block edges</strong> ignores weak texture such as paper grain (only neighbor OKLab differences above the image's noise level count) and picks the spacing at which strong color edges line up within a row (preferring the full block even when half blocks are mixed in), and the cell lines follow those strong edges too. <strong>Auto</strong> uses block edges when the block spacing is clear, otherwise fits cell lines for each of the three values and picks the one that best matches the source's strong edges (the match has the chance level removed — what the same edges give after shuffling their positions — because larger cells have more room to land on an edge by chance; on a near tie: outline, then block edges, then color edges, and a value that is 2× or 3× the chosen one and matches about as well wins). <strong>By shrinking</strong> only picks among values within ±12% of the outline thickness (a half-block value would make the outline 2 px) — unless the outline is thinner than a pixel (e.g. a blurred 1-px rim) and a larger value matches clearly better, then it shrinks to that. Clean images with at most 256 colors use the exact integer factor they were enlarged by (2–256), and 1-px pixel art (including flat fills with 1-px outlines) uses 1. Cell boundaries are then fitted onto real edges even when cells vary 7–9 px. Shared across frames (default) or per frame; jitter allowance %. Manual takes a pixel size and X/Y offset; <strong>Use detected as manual</strong> copies the auto result. The detected size, offset and edge fit % are shown, along with the three values, their edge match, the chosen one and why, e.g. "Color edges 5.75px (3%) · outline 24.75px (9%) · block edges 19px (8%) → Outline thickness (edge match 9%)". With By shrinking it shows "By shrinking: only values within ±12% of the {o}px outline are used, shrinking to a {s}px pixel size" (or "the {o}px outline is thinner than a pixel … so it shrinks to {s}px"); with Thin outline only or Redraw as vector, when the outline is about an integer multiple (2× or more) of the pixel size, an "outline is drawn {n} pixels thick…" note is added. <strong>Local cell correction</strong> (on by default) re-fits the image-wide cell boundaries per band (2 cells by default) to the strong block edges in that band (each boundary within <strong>Max shift</strong>, 35% of a cell by default; cell widths 70–130% of the original; smooth between neighboring bands) — so images drawn half a cell off in places are followed too. Boundaries are straight inside a band, so cells stay rectangles and the boundaries bend where bands change. Each band counts color edges that continue over several rows, drops short 1–2 px noise and weights high-contrast edges more, so sharp, continuous edges are matched first. When two sharp edges fall within one cell spacing (e.g. two black→skin edges 5 px apart), one cell line can't fit both. It is skipped when the average cell size is below <strong>Minimum cell size (px)</strong> (default 4 px, 1–16 px).</li>
 <li>⑤ <strong>Output size</strong>: From pixel size · Fit a fixed size (W × H, e.g. 32/48/64, keep aspect, padding) · Scale factor.</li>
 </ul>
+<h4>Cell color and palette</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-settings-4.png" alt="Settings column with 5. Cell color and 6. Palette expanded" width="396" height="728" loading="lazy"><figcaption>⑥ 5. Cell color · ⑦ 6. Palette · ⑧ Color distance · ⑨ Prefer shade family</figcaption></figure>
 <ul class="marks">
 <li>⑥ <strong>Cell color</strong>: most frequent color after light snapping (default) · median · center pixel · mean · <strong>Center-weighted mean</strong> (the cell's center counts more) · <strong>Dominant-color weighted mean</strong> (groups similar colors and averages only inside the dominant group, so different fills such as skin and black clothing aren't mixed). Ignore cell border %, transparency threshold %. <strong>Color snap step</strong> is used only by most frequent color and dominant-color weighted mean.</li>
@@ -1114,10 +1155,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>⑧ <strong>Color distance</strong> (palette): the distance used when cells take a palette color (without dithering), for pinned-color matching, excluded-color replacement, the original-color pick and the score's <strong>Major color shift</strong>. <strong>OKLCh hue-weighted</strong> (default — hue differences count more by the hue weight. The hue weight is 0–1000, default 2: 0 ignores hue differences, 1 equals OKLab distance, and very large values almost always pick a color of the same hue family first, before lightness and chroma) · <strong>CIEDE2000</strong> · <strong>OKLab</strong> (the old straight distance). Color grouping (k-means) stays in OKLab, and dithering (Bayer) compares the light-blended mix in OKLab (see ⑦ Palette). <strong>Keep distinct hues</strong> (on by default): if a source color group with enough chroma (default 0.04) and area (default 4 cells) would turn into a palette color whose hue differs by 20° or more (e.g. small apricot ear shading → gold), that color is put in the palette — added with an automatic count, or swapped for the least important color with a fixed count (at most a quarter of the palette; pinned colors are never swapped). In-between colors blurred between two palette colors are not added. Both are auto-optimize items and can be turned off. Settings and presets saved earlier load with the new defaults.</li>
 <li>⑨ <strong>Prefer shade family</strong> (on by default, under the color distance): if a palette color has a similar hue and chroma to the cell color (a lighter or darker shade of the same color), the cell takes the family member with the nearest lightness instead of a different-hue color of similar lightness. Dithering also never mixes in a chromatic color of a different hue — deep apricot hand shading no longer turns gold or gets gold dots. It's an auto-optimize item and can be turned off.</li>
 </ul>
+<h4>Cleanup and outlines</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-settings-5.png" alt="7. Cleanup with the Fit outline to 1 px list open" width="396" height="299" loading="lazy"><figcaption>⑩ 7. Cleanup · ⑪ Fit outline to 1 px list</figcaption></figure>
 <ul class="marks">
 <li>⑩ <strong>Cleanup</strong>: remove orphan pixels (with a max contrast so pupils survive), fill 1-px holes, outline (as is · unify to the darkest color · ensure a closed 1-px outline), reduce L-corner doubles on outlines, ⑪ <strong>Fit outline to 1 px</strong>: <strong>By shrinking</strong> (default — the pixel size becomes the outer outline thickness, so the whole sprite scales down and the outline becomes 1 px; leftover double pixels get one light thinning pass; a manual grid size wins; the pixel size starts from the measured outline thickness so the outline band is exactly one cell, and may only move to a larger value that clearly fits the edges better, never to a smaller one such as half the thickness (a 2-cell outline); the thickness is measured at outline darkness 0.24 even if you lower it) · <strong>Thin outline only</strong> (keeps the grid's pixel size and peels up to 3 outline layers doubled inward, never breaking the line and leaving inner dark shapes such as eyes alone) · <strong>Redraw as vector</strong> (keeps the grid's pixel size like Thin outline only, traces the center line of the outline band touching transparency in the background-removed source, simplifies it and redraws it through the actual cell boundaries as a 1-px pixel-perfect line; old outline cells off the new line become transparent outside and the nearest inner color inside, so no double outline remains, and small dark shapes not touching the outline such as eyes stay; adjust with <strong>Vector simplify (px)</strong> and <strong>Keep small blobs (cells)</strong>) · <strong>Off</strong>.</li>
 </ul>
+<h4>Frame consistency</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-settings-6.png" alt="8. Frame consistency" width="396" height="143" loading="lazy"><figcaption>⑫ 8. Frame consistency</figcaption></figure>
 <ul class="marks">
 <li>⑫ <strong>Frame consistency</strong>: match neighbor frames — pixels that differ slightly from identical previous and next frames take that color.</li>
@@ -1138,22 +1181,32 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="pixelate-optimize">Auto optimize</h3>
+<h4>Start and review results</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-optimize.png" alt="The bar after an auto-optimize run and the optimized candidates" width="1382" height="270" loading="lazy"><figcaption>① Auto optimize · ② Settings button · ③ Best-score graph · ④ One-line result · ⑤ Revert · ⑥ Stop reason and score marker: Optimized · Time limit · Trial limit · Cancelled</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/pixelate-optimize-2.png" alt="The bar while auto optimize runs" width="582" height="72" loading="lazy"><figcaption>⑦ Cancel · ⑧ Progress line (pass, trial, best score)</figcaption></figure>
+<p>Click ① <strong>Auto optimize</strong> above the candidates to start right away (the button turns into ⑦ <strong>Cancel</strong> while it runs and back when it's done). Starting from the current settings, it varies the checked items to find the highest-scoring settings. Next to the button you see only ③ a best-score graph (the best score so far after each trial, a faint vertical line where a new pass starts, and the best score at the bottom right — it stays after the run), ④ a one-line result ("n/m presets · t s", or after rerunning one preset "preset name: k passes · a → b · n trials · t s · reason") and, after a run, a small ⑤ <strong>Revert</strong> button. ② The settings button beside it (sliders icon) opens the separate <strong>Auto Optimize Settings</strong> window.</p>
+<h4>Settings to vary</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-optimize-3.png" alt="The Auto Optimize Settings window" width="1000" height="932" loading="lazy"><figcaption>⑨ Item checks · ⑩ Select all / Clear all · ⑪ Budget: Trials and Seconds · ⑫ Score weights · ⑬ Trial history · ⑭ Auto optimize on load · ⑮ Optimizer presets list · ⑯ Major color shift distance</figcaption></figure>
-<p>Click ① <strong>Auto optimize</strong> above the candidates to start right away (the button turns into ⑦ <strong>Cancel</strong> while it runs and back when it's done). With ⑭ <strong>Auto optimize on load</strong> (on by default) in its settings window, it also starts once by itself after the first candidates whenever a source is loaded (open, drop, paste, browse, replace source) — not when settings change and candidates are rebuilt, and <strong>Cancel</strong> stops it. Starting from the current settings, it varies the checked items to find the highest-scoring settings. Next to the button you see only ③ a best-score graph (the best score so far after each trial, a faint vertical line where a new pass starts, and the best score at the bottom right — it stays after the run), ④ a one-line result ("n/m presets · t s", or after rerunning one preset "preset name: k passes · a → b · n trials · t s · reason") and, after a run, a small ⑤ <strong>Revert</strong> button. ② The settings button beside it (sliders icon) opens the separate <strong>Auto Optimize Settings</strong> window. Pick a preset in the ⑮ <strong>Optimizer presets (all checked ones run)</strong> list on the left, and on the right set that preset's ⑨ item checks, ⑩ <strong>Select all / Clear all</strong>, ⑪ budget (<strong>Trials</strong> and <strong>Seconds</strong>), ⑯ <strong>Major color shift distance</strong> and ⑫ <strong>Score weights (0 = ignore)</strong>. ⑬ <strong>Trial history</strong> can be expanded at the bottom of the window. Each preset maximizes its own scoring criteria.</p>
+<p>With ⑭ <strong>Auto optimize on load</strong> on (the default), optimization starts once by itself after the first candidates whenever a source is loaded (open, drop, paste, browse, or replace source). It does not start when settings change and candidates are rebuilt, and <strong>Cancel</strong> stops it. Pick a preset in the ⑮ <strong>Optimizer presets (all checked ones run)</strong> on the left, and on the right set its ⑨ item checks, ⑩ <strong>Select all / Clear all</strong>, ⑪ budget (<strong>Trials</strong> and <strong>Seconds</strong>), ⑯ <strong>Major color shift distance</strong> and ⑫ <strong>Score weights (0 = ignore)</strong>. Expand ⑬ <strong>Trial history</strong> at the bottom. Each preset maximizes its own scoring criteria.</p>
 <ul>
 <li>Items (by default everything that applies to the current settings is checked except the outline fit mode, so your chosen mode keeps its 1-px outline): <strong>Pixel size</strong> (when starting from By shrinking without varying the outline fit mode, only within ±15% of the source outline thickness — the outline band is one cell, and the thickness is measured at the default outline darkness, so restarting from an optimized result with a brighter outline darkness keeps the same range; otherwise tries each of the three estimates (outline thickness, color edges, block edges), the starting size and their 2×, 3×, ½ and ⅓, and sweeps the range between them — downward only to 0.75× of the starting size and the auto estimate (when the outline fit mode is varied too, down to another estimate that independently measured ½ or ⅓ of it), because smaller cells always improve fidelity and an open lower end makes results needlessly large; left alone for an exact multiple of a clean image. Changes the grid's <strong>Add to auto pixel size (px)</strong> for an auto grid, the pixel size for a manual grid and the factor for scale-factor output; skipped for a fixed size) · grid offset X/Y (manual grid only) · <strong>Color count</strong> (4–48) · <strong>Cell color method</strong> (all six methods) · ignored cell border · transparency threshold · color snap step (only in trials using most frequent color or dominant-color weighted mean) · outline darkness · <strong>Cleanup on/off</strong> (orphans, holes and jaggies each) · dithering · outline fit mode (including Redraw as vector; off by default — when unchecked, the mode you chose is kept; 'Select all' doesn't check it either, and even when checked, trials using By shrinking must stay within ±15% of the outline thickness) · vector simplify and keep small blobs (only varied in trials that redraw as vector) · <strong>Palette colors</strong> (original/average) · palette method (k-means/median cut) · edge cell weight (0–1) — these three only with k-means or median cut · snap outline color (on/off) · <strong>Local cell correction</strong> (on/off; in trials with it on, max shift 10–50% and band 1–8 cells) · <strong>Color distance</strong> (the conversion distance: OKLab, CIEDE2000, OKLCh hue-weighted — with OKLCh the hue weight is also searched over 0–1000, including representative small values; the scoring distance is never changed).</li>
+</ul>
+<h4>Search method and stopping conditions</h4>
+<ul>
 <li>It first tries each item on its own (7 spread-out values for numbers, every value for choices), then climbs from the best few points with small steps (shrinking the step when nothing improves). Identical settings are never run twice, and background removal and frame splitting are done once, so the trials run quickly on several threads.</li>
 <li>When one search (a <strong>pass</strong>) ends with no further improvement, the same search runs again from the best result. A new pass also climbs from the top result not yet used as a start whose settings differ most from the best and from a small fixed nudge of the best, so it doesn't get stuck in one spot. A pass that raises the best score by less than 0.1 points doesn't stop the search right away: up to three more passes start from other top results and wider nudges before it stops, so optimizing an already optimized result doesn't give up after its first pass. Settings already tried are never run again. The same image and settings always give the same result when the run ends on the trial budget rather than the time limit.</li>
 <li>It stops at <strong>Trials</strong> (2000 by default) or <strong>Seconds</strong> (120 by default), whichever comes first (one budget shared by all passes of that preset). Each preset has its own budget (2000 trials and 120 seconds for a new preset). While it runs, ⑧ "preset name (i/n) · pass {p} · trial {n}/{budget} · best {s}" shows next to the graph. <strong>Cancel</strong> shows what was found so far; changing a setting, replacing the source or closing the window discards the run.</li>
 <li>When it finishes, each checked preset contributes its single best result as a candidate titled with the preset name, and the settings of the first preset's result are loaded into the left panel (without re-running). The blue text ⑥ at the bottom of an optimized tile shows why it stopped and that candidate's score: <strong>Optimized (87.6)</strong> when it stopped improving, <strong>Time limit (60.4)</strong> when the time budget ran out, <strong>Trial limit (…)</strong> when the trial budget ran out, and <strong>Cancelled (…)</strong> when cancelled. Right-click an optimized tile &gt; <strong>Rerun only this preset</strong> to rerun just that preset from the same start settings as the last run; only that tile is replaced in place and the others stay. It is disabled while a run is in progress or if the preset was deleted. <strong>Revert</strong> next to the graph restores the settings from before the run. Expand <strong>Trial history</strong> in the settings window to see the top 50 trials by score, with their changed values, for the preset selected in the list.</li>
+</ul>
+<h4>Optimizer presets</h4>
+<ul>
 <li>Optimizer presets: the buttons under the list on the left of the settings window <strong>Add preset</strong>, <strong>Duplicate preset</strong>, <strong>Rename</strong>, favorite (moves to the top) and <strong>Delete preset</strong> (the last one can't be deleted); only checked presets run. Each preset has its own search items, trials and seconds, scoring color distance and score weights. The scoring color distance (OKLab · CIEDE2000 · OKLCh hue-weighted, hue weight 0–1000) is stored separately from the palette's conversion distance: every candidate's <strong>Major color shift</strong> is compared with this fixed criterion, while conversion uses each candidate's own palette settings. The built-in presets are <strong>OKLCH1000</strong> (all items, scoring distance OKLCh with hue weight 1000) · <strong>OKLab</strong> (scoring distance OKLab) · <strong>Quick check</strong> (default items, 1000 trials and 30 seconds, unchecked at first) · <strong>Faithful to source</strong> (higher fidelity and major color shift weights) · <strong>Clean pixels</strong> (higher orphan, outline gap and 1-px outline weights) · <strong>Same hue family (OKLCH 20)</strong> (OKLCh hue weight 20); all but Quick check use 10000 trials and 120 seconds. Their names follow the display language.</li>
 <li>The preset list and each preset's values are remembered. The <strong>Auto optimize (Pixelate)</strong> tab of <strong>Tools &gt; Presets…</strong> shows and edits the same presets.</li>
 </ul>
 <div class="note"><p>On the bundled sample (default settings, the earlier default items and budget — pixel size, color count, cell color method, cleanup and palette colors; 200 trials, 60 s) it took about 3 s and 162 trials to go from 70.3 to 80.8 (cells about 16.1 → 14.9 px, 26 colors, fill holes off, palette colors kept as original colors, 99% of outline pixels 1 px).</p></div>
 
 <h3 id="pixelate-view">Source and preview</h3>
+<h4>Source view and output size</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view.png" alt="The whole Pixelate window with a source and candidates" width="1400" height="892" loading="lazy"><figcaption>① Source view · ② Large preview (Result and Source) · ③ Color swatches (N colors) · ④ Playback controls and frame strip · ⑤ Candidate tiles</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/pixelate-view-2.png" alt="The bar under the source" width="713" height="76" loading="lazy"><figcaption>⑥ Show background removed · ⑦ Output size Auto · ⑧ Width × height · ⑨ Link button · ⑩ Show grid</figcaption></figure>
 <ul>
@@ -1161,16 +1214,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Output size</strong> in the bar under the source: with ⑦ <strong>Auto</strong> on (the default) the size follows the pixel size and ⑧ the width × height boxes show the selected result's size in grey. Turn it off to fit the result to the width × height you enter (changing them rebuilds); with ⑨ the link button on, changing the width updates the height (and vice versa) by the current result's ratio. It's the same setting as <strong>4. Output size</strong> on the left, so changing either updates the other.</li>
 <li>⑩ <strong>Show grid</strong> (on by default) draws the cell boundaries the selected candidate actually used (its actual pixel size and each frame's own uneven boundaries, so the lines match the color blocks) on the source view on the left (not on the <strong>Source</strong> image of the large preview, but they are in the enlarged view's source pane; with local correction the bent boundaries are drawn as they are). They're thin light lines with a dark edge that follow zoom and pan, and they fade or hide when cells are smaller than about 3 screen pixels. Hovering a source cell highlights that cell and the matching result pixel, and the preview jumps to that frame.</li>
 </ul>
+<h4>Local cell correction</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view-3.png" alt="Local cell correction in the 3. Pixel grid step" width="398" height="471" loading="lazy"><figcaption>⑪ Local cell correction, Max shift, Band, Minimum cell size</figcaption></figure>
 <ul class="marks">
 <li>⑪ <strong>Local cell correction</strong> is enabled under Pixel grid on the left. <strong>Minimum cell size (px)</strong> is the average source-pixel size required to adjust boundaries; set it from 1 to 16 px (default 4 px). Lower values can correct small cells but may follow blurred-edge noise. <strong>Maximum shift</strong> is 5–99% of a cell and <strong>Band</strong> spans 1–32 cells; neighboring cell-width limits may constrain the actual shift. The grid stays straight when cells are below the selected threshold or no boundaries move. The selected result shows whether correction took effect. The optimizer's <strong>Try local correction</strong> checkbox searches on/off, shift, band width and minimum cell size; it does not enable correction for the current result.</li>
 </ul>
+<h4>Excluded and pinned colors</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view-4.png" alt="Color swatches with one color excluded" width="466" height="203" loading="lazy"><figcaption>⑫ Excluded swatch (dimmed at the end) · ⑬ Exclusion notice and Restore all · ⑭ Add color from source (+)</figcaption></figure>
 <ul>
 <li>Color swatches and result pixels work the same way — <strong>Left-click: show where used · Right-click: exclude/restore</strong>. <strong>Right-click</strong> a swatch to exclude that color from <strong>the current result only</strong>, without rebuilding (only its pixels change, to the remaining color nearest their source cell's color, so <strong>N colors</strong> drops by exactly the number excluded; ⑫ the swatch stays at the end, dimmed, with a red border and a diagonal line), and right-click again to bring back the original result. Right-clicking a pixel in the large preview's result image or the enlarged view's result pane excludes the color currently shown there (if it's already a replacement for an excluded color, that replacement color). The last remaining color can't be excluded (the status line says so), and right-clicking a pinned color unpins it. <strong>Left-click</strong> briefly highlights that color's pixels in the result (other colors dimmed, each connected patch of that color outlined in yellow around its edge only) and the swatch itself — for an excluded swatch, where the color used to be. While colors are excluded, ⑬ "N colors excluded · <strong>Restore all</strong>" is shown; newly built candidates and auto-optimize results get the same exclusion, and it follows applying, presets and the remembered settings (a color within OKLab 0.03 counts as the same color, so slightly different settings still match).</li>
 <li><strong>Pinned colors</strong>: the ⑭ <strong>+</strong> at the end of the swatches (Add color from source) starts an eyedropper (the + stays pressed). The source view on the left, the large preview's source image and the enlarged view's source pane show the eyedropper cursor and highlight the cell under it, and the border of every visible source image slowly brightens and dims in the accent color (about a 1.2 s cycle) to say "pick here" (it disappears as soon as the eyedropper ends); clicking a cell adds its representative color (using the selected candidate's cells and cell color mode) as a pinned color and rebuilds. The eyedropper ends after one color (<kbd>Shift</kbd>+click keeps it on); <kbd>Esc</kbd>, right-click or pressing <strong>+</strong> again stops it. A pinned color goes into the palette as is and counts toward the color count (the rest are built with the count minus the pins, at least one), every cell whose source color is nearer to it than to the other colors takes it, and it's never excluded. Pinned swatches get a blue border and a blue corner triangle (shown dimmed when unused); right-click one to unpin, and "N pinned colors · <strong>Clear all</strong>" is shown. Pinned colors follow candidates, auto optimize (never changed), presets and the remembered settings.</li>
 <li>In the auto-optimize settings window, <strong>Select all / Clear all</strong> (only items that apply to the current settings — the others are greyed out) doesn't touch the <strong>outline fit mode</strong> check (your chosen mode is kept; other modes are tried only when you check it yourself). Optimizing never picks a trial whose pixel size is outside the searched range (see <strong>Pixel size</strong> above; e.g. 1 px after changing the outline darkness).</li>
 </ul>
+<h4>Background and color comparison</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view-5.png" alt="The 1. Background step" width="398" height="351" loading="lazy"><figcaption>⑮ Remove sticker border · ⑯ Keep background (one color)</figcaption></figure>
 <ul>
 <li>Background: ⑮ <strong>Remove sticker border</strong> (on by default) finds the white band around the outline and removes it (also an auto-optimize item), and ⑯ <strong>Keep background (one color)</strong> keeps the detected background flattened to the background color. The one-pixel blended fringe between a solid background and the sprite is removed too. The score adds <strong>Major color shift</strong> (how much a widely used color changed as a whole), and fidelity is (opacity mismatches + structure loss inside cells + perceived color difference) ÷ number of samples. Structure loss is how far the source pixels inside a cell scatter from the cell average; it is large for a cell that splits a sharp edge in half and doesn't depend on the result color. The perceived color difference converts the source cell averages and the result into lightness, red-green and blue-yellow channels in light intensity (linear light), blurs them with neighboring cells (lightness a little, hue more), then compares them in OKLab (the S-CIELAB approach). A 1 px alternating dither pattern that blends into the original color counts as a match.</li>
@@ -1179,6 +1235,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Left-clicking a source cell</strong>: press and release (without dragging) on a cell in the enlarged view's source pane to outline that cell and its matching result pixel in blue; the result's swatch and same-color regions are also highlighted. The source image is not recolored. The status line shows "Source cell #representative → result #result" (the representative is the cell's color before the palette). Right-clicking a source cell does nothing. While the eyedropper is on, the click adds a pinned color instead.</li>
 <li>A source cell whose representative color is black can still produce a yellow result: <strong>Fit outline to 1 px</strong> in Thin outline only or By shrinking mode replaces inner dark outline cells with nearby light colors to make the outline one pixel thick. Try switching outline fit <strong>Off</strong> to keep that dark cell. Local correction adjusts boundary positions instead of performing this recoloring.</li>
 </ul>
+<h4>Enlarged view</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-view-6.png" alt="The enlarged view" width="1400" height="892" loading="lazy"><figcaption>⑰ Result pane · ⑱ Source pane · ⑲ Show grid button · ⑳ Color swatches</figcaption></figure>
 <ul>
 <li><strong>Enlarged view</strong>: left-click the result or the source image in the large preview once (without dragging) to open a panel covering the dialog (showing where a color is used happens in the enlarged view — the left-clicks above; right-clicking the large preview's result image excludes or restores that pixel's color). ⑰ The left pane shows the current frame's result (at the largest integer zoom that fits, on a checker), ⑱ the right pane the same frame's source at the same on-screen size (with cell boundaries when <strong>Show grid</strong> is on); wheel to zoom, drag to pan and double-click to fit — both panes move together. The previous, play/pause and next buttons and <kbd>Space</kbd>/<kbd>Left</kbd>/<kbd>Right</kbd> share the large preview's frame and FPS, and it follows the selected candidate and color exclusions. Close with <kbd>Esc</kbd>, a click outside the panel or the ✕ button. Clicking outside the images only gives the preview keyboard focus, and clicking an image keeps that focus, so the keys work right after closing.</li>
@@ -1590,12 +1647,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="ai-references">References: teach the AI your style</h3>
 <p><strong>References</strong> are a library on your computer that the AI looks through before drawing. Put in art you like, your own style rules and technique notes, and the AI finds similar images, follows their proportions and palette, and checks its result against the rules when it's done. It searches this user guide too.</p>
-<figure class="shot"><img src="../assets/guide/ai-references-3.png" alt="The AI references tab in Preferences" width="678" height="301" loading="lazy"><figcaption>⑭ References folder · ⑮ Change… · ⑯ Default · ⑰ Open folder · ⑱ Show built-in examples</figcaption></figure>
-<ul>
-<li><strong>Folder</strong> (⑭): by default <code>&lt;settings folder&gt;/Gpixel/References</code> (<code>%AppData%\Gpixel\References</code> on Windows). Files you put into this folder outside the app are picked up automatically when the window opens.</li>
-<li><strong>Supported files</strong>: images (<code>.png</code>, <code>.gif</code> with frames, <code>.gpixel</code> projects — each frame composited, animations keep their frame count) and text notes (<code>.md</code>, <code>.txt</code>). Title, description, tags, kind (character, item, tile, effect, UI, other), size, frame count, palette and similar info are stored in <code>index.json</code> in the same folder.</li>
-<li><strong>Built-in references</strong> (marked <strong>Built-in</strong>, can't be deleted): the style rule set <strong>Gpixel default rules</strong> (1 px or selective outline, a single light direction, 3–4-shade hue-shifted ramps, no orphan or jaggy pixels, a limited palette, a readable silhouette, consistent proportions, and key poses, smears and walk-cycle contacts for animation) and example images — a 16×16 slime, a 16×16 sword, a 32×32 front-facing character, a 4-frame 16×16 slime bounce, and a 16×16 grass tile.</li>
-</ul>
 <figure class="shot"><img src="../assets/guide/ai-references.png" alt="The AI references window: thumbnails, search and kind filter, preview and details, buttons and the missing-description notice" width="1000" height="912" loading="lazy"><figcaption>① Thumbnails · ② Search box · ③ Kind filter · ④ Preview · ⑤ Title, description, tags and kind · ⑥ Palette swatches · ⑦ Add files… · ⑧ Add current canvas · ⑨ Delete · ⑩ Open folder · ⑪ Edit rules · ⑫ Caption with AI · ⑬ Missing-description notice</figcaption></figure>
 <p>Open the <strong>AI references</strong> window with <strong>AI &gt; References…</strong>. On the left are ① thumbnails (pixel-perfect on a checker background, with title and tags), a ② search box (the same search the AI uses) and a ③ kind filter; on the right are a ④ preview (animated when there are several frames), ⑤ editable title, description, tags and kind, and the ⑥ palette swatches.</p>
 <div class="table-wrap"><table>
@@ -1614,6 +1665,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li><strong>Asking</strong>: say something like "Draw a 32px bat like the slime in the references." and the AI looks up the references before drawing. The chat help (question-mark button) has a <strong>References</strong> tool group and this example.</li>
 <li><strong>Adding from the chat</strong>: say "save this to my references" and the AI adds the current canvas (or a layer or frame range) with a title, description and tags. Adding and captioning references only write to the library folder, so they work even with <a href="#ai-file-only">Current file only</a> on.</li>
+</ul>
+<figure class="shot"><img src="../assets/guide/ai-references-3.png" alt="The AI references tab in Preferences" width="678" height="301" loading="lazy"><figcaption>⑭ References folder · ⑮ Change… · ⑯ Default · ⑰ Open folder · ⑱ Show built-in examples</figcaption></figure>
+<ul>
+<li><strong>Folder</strong> (⑭): by default <code>&lt;settings folder&gt;/Gpixel/References</code> (<code>%AppData%\Gpixel\References</code> on Windows). Files you put into this folder outside the app are picked up automatically when the window opens.</li>
+<li><strong>Supported files</strong>: images (<code>.png</code>, <code>.gif</code> with frames, <code>.gpixel</code> projects — each frame composited, animations keep their frame count) and text notes (<code>.md</code>, <code>.txt</code>). Title, description, tags, kind (character, item, tile, effect, UI, other), size, frame count, palette and similar info are stored in <code>index.json</code> in the same folder.</li>
+<li><strong>Built-in references</strong> (marked <strong>Built-in</strong>, can't be deleted): the style rule set <strong>Gpixel default rules</strong> (1 px or selective outline, a single light direction, 3–4-shade hue-shifted ramps, no orphan or jaggy pixels, a limited palette, a readable silhouette, consistent proportions, and key poses, smears and walk-cycle contacts for animation) and example images — a 16×16 slime, a 16×16 sword, a 32×32 front-facing character, a 4-frame 16×16 slime bounce, and a 16×16 grass tile.</li>
 <li><strong>Preferences</strong>: in <strong>Edit &gt; Preferences… &gt; AI references</strong> you can ⑮ <strong>Change…</strong> the ⑭ folder, go back to the ⑯ <strong>Default</strong> folder, ⑰ <strong>Open folder</strong>, and turn the built-in example images back on with ⑱ <strong>Show built-in examples</strong> (they are off by default for now because of their low quality; while off they are not used for search or as image-generation style references).</li>
 </ul>
 <div class="note"><p>References stay on your computer. Gpixel uploads and downloads nothing; only the AI CLI you already use (Claude Code or Codex) sees what the AI fetches with its tools.</p></div>
@@ -1830,6 +1887,6 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
   location.href = ('../') + page + location.hash;
 });
 </script>
-<script src="../guide.js?v=20261027a"></script>
+<script src="../guide.js?v=20261027b"></script>
 </body>
 </html>

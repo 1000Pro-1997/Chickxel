@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="{{root}}assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="{{root}}style.css?v=20261027b">
+<link rel="stylesheet" href="{{root}}style.css?v=20261027c">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -42,6 +42,7 @@
 <aside class="toc">
 <h2>{{manual.1}}</h2>
 <ol>
+<li>{{manual.0}}</li>
 <li class="toc-label">{{manual.2}}</li>
 <li>{{manual.3}}<ol><li>{{manual.4}}</li></ol>
 </li>
@@ -79,22 +80,50 @@
 </ol>
 </aside>
 <div class="content">
+<section class="doc guide-home" id="guide-home">
+<h2>{{guide-home.1}}</h2>
+<p class="guide-home-lead">{{guide-home.2}}</p>
+<div class="guide-paths">
+<div class="guide-path">
+<h4>{{guide-home.3}}</h4>
+<ol class="guide-route">
+<li>{{guide-home.4}}</li>
+<li>{{guide-home.5}}</li>
+<li>{{guide-home.6}}</li>
+<li>{{guide-home.7}}</li>
+</ol>
+</div>
+<div class="guide-path">
+<h4>{{guide-home.8}}</h4>
+<ul class="guide-route">
+<li>{{guide-home.9}}</li>
+<li>{{guide-home.10}}</li>
+<li>{{guide-home.11}}</li>
+<li>{{guide-home.12}}</li>
+<li>{{guide-home.13}}</li>
+</ul>
+</div>
+</div>
+<div class="note"><p>{{guide-home.14}}</p></div>
+</section>
+
 <section class="doc" id="featured-common">
 <h2>{{featured-common.1}}</h2>
 <p>{{featured-common.2}}</p>
 
 <h3 id="featured-number-field">{{featured-number-field.1}}</h3>
+<figure class="core-media guide-media"><img src="{{root}}assets/feature-number-field.gif" alt="{{featured-number-field.6.alt}}" width="512" height="1031" loading="lazy"></figure>
 <p>{{featured-number-field.2}}</p>
 <ol class="core-steps">
 <li>{{featured-number-field.3}}</li>
 <li>{{featured-number-field.4}}</li>
 <li>{{featured-number-field.5}}</li>
 </ol>
-<figure class="core-media guide-media"><img src="{{root}}assets/feature-number-field.gif" alt="{{featured-number-field.6.alt}}" width="512" height="1031" loading="lazy"></figure>
 </section>
 
 <section class="doc" id="featured-ai-draw">
 <h2>{{featured-ai-draw.1}}</h2>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-ai-draw.mp4" poster="{{root}}assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-ai-draw.7.aria-label}}" width="1280" height="720"></video></figure>
 <p>{{featured-ai-draw.2}}</p>
 <ol class="core-steps">
 <li>{{featured-ai-draw.3}}</li>
@@ -102,7 +131,6 @@
 <li>{{featured-ai-draw.5}}</li>
 </ol>
 <div class="note"><p>{{featured-ai-draw.6}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-ai-draw.mp4" poster="{{root}}assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-ai-draw.7.aria-label}}" width="1280" height="720"></video></figure>
 </section>
 
 <section class="doc" id="featured-pixelate">
@@ -110,6 +138,7 @@
 <p>{{featured-pixelate.2}}</p>
 
 <h3 id="featured-pixelate-convert">{{featured-pixelate-convert.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate.mp4" poster="{{root}}assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-convert.7.aria-label}}" width="1512" height="914"></video></figure>
 <p>{{featured-pixelate-convert.2}}</p>
 <ol class="core-steps">
 <li>{{featured-pixelate-convert.3}}</li>
@@ -117,16 +146,15 @@
 <li>{{featured-pixelate-convert.5}}</li>
 </ol>
 <div class="note"><p>{{featured-pixelate-convert.6}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate.mp4" poster="{{root}}assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-convert.7.aria-label}}" width="1512" height="914"></video></figure>
 
 <h3 id="featured-pixelate-colors">{{featured-pixelate-colors.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate-colors.mp4" poster="{{root}}assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-colors.6.aria-label}}" width="1512" height="914"></video></figure>
 <p>{{featured-pixelate-colors.2}}</p>
 <ol class="core-steps">
 <li>{{featured-pixelate-colors.3}}</li>
 <li>{{featured-pixelate-colors.4}}</li>
 <li>{{featured-pixelate-colors.5}}</li>
 </ol>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate-colors.mp4" poster="{{root}}assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-colors.6.aria-label}}" width="1512" height="914"></video></figure>
 </section>
 
 <section class="doc" id="featured-anim">
@@ -134,6 +162,7 @@
 <p>{{featured-anim.2}}</p>
 
 <h3 id="featured-effects">{{featured-effects.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-effects.mp4" poster="{{root}}assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-effects.7.aria-label}}" width="1280" height="720"></video></figure>
 <p>{{featured-effects.2}}</p>
 <ol class="core-steps">
 <li>{{featured-effects.3}}</li>
@@ -141,9 +170,9 @@
 <li>{{featured-effects.5}}</li>
 </ol>
 <div class="note"><p>{{featured-effects.6}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-effects.mp4" poster="{{root}}assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-effects.7.aria-label}}" width="1280" height="720"></video></figure>
 
 <h3 id="featured-clip">{{featured-clip.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-clip.mp4" poster="{{root}}assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-clip.7.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-clip.2}}</p>
 <ol class="core-steps">
 <li>{{featured-clip.3}}</li>
@@ -151,7 +180,6 @@
 <li>{{featured-clip.5}}</li>
 </ol>
 <div class="note"><p>{{featured-clip.6}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-clip.mp4" poster="{{root}}assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-clip.7.aria-label}}" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-palettes">
@@ -159,6 +187,7 @@
 <p>{{featured-palettes.2}}</p>
 
 <h3 id="featured-palette-web">{{featured-palette-web.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-palette.mp4" poster="{{root}}assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-web.8.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-palette-web.2}}</p>
 <ol class="core-steps">
 <li>{{featured-palette-web.3}}</li>
@@ -167,16 +196,15 @@
 <li>{{featured-palette-web.6}}</li>
 </ol>
 <div class="note"><p>{{featured-palette-web.7}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-palette.mp4" poster="{{root}}assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-web.8.aria-label}}" width="1280" height="688"></video></figure>
 
 <h3 id="featured-palette-convert">{{featured-palette-convert.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-convert.mp4" poster="{{root}}assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-convert.6.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-palette-convert.2}}</p>
 <ol class="core-steps">
 <li>{{featured-palette-convert.3}}</li>
 <li>{{featured-palette-convert.4}}</li>
 <li>{{featured-palette-convert.5}}</li>
 </ol>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-convert.mp4" poster="{{root}}assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-convert.6.aria-label}}" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-skin-set">
@@ -184,6 +212,7 @@
 <p>{{featured-skin-set.2}}</p>
 
 <h3 id="featured-skins">{{featured-skins.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins.mp4" poster="{{root}}assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins.7.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-skins.2}}</p>
 <ol class="core-steps">
 <li>{{featured-skins.3}}</li>
@@ -191,16 +220,15 @@
 <li>{{featured-skins.5}}</li>
 </ol>
 <div class="note"><p>{{featured-skins.6}}</p></div>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins.mp4" poster="{{root}}assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins.7.aria-label}}" width="1280" height="688"></video></figure>
 
 <h3 id="featured-skins-tiles">{{featured-skins-tiles.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins-tiles.mp4" poster="{{root}}assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins-tiles.6.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-skins-tiles.2}}</p>
 <ol class="core-steps">
 <li>{{featured-skins-tiles.3}}</li>
 <li>{{featured-skins-tiles.4}}</li>
 <li>{{featured-skins-tiles.5}}</li>
 </ol>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins-tiles.mp4" poster="{{root}}assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins-tiles.6.aria-label}}" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-unity">
@@ -208,24 +236,24 @@
 <p>{{featured-unity.2}}</p>
 
 <h3 id="featured-pivot">{{featured-pivot.1}}</h3>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pivot.mp4" poster="{{root}}assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pivot.6.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-pivot.2}}</p>
 <ol class="core-steps">
 <li>{{featured-pivot.3}}</li>
 <li>{{featured-pivot.4}}</li>
 <li>{{featured-pivot.5}}</li>
 </ol>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pivot.mp4" poster="{{root}}assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pivot.6.aria-label}}" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-export">
 <h2>{{featured-export.1}}</h2>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-export.mp4" poster="{{root}}assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-export.6.aria-label}}" width="1280" height="688"></video></figure>
 <p>{{featured-export.2}}</p>
 <ol class="core-steps">
 <li>{{featured-export.3}}</li>
 <li>{{featured-export.4}}</li>
 <li>{{featured-export.5}}</li>
 </ol>
-<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-export.mp4" poster="{{root}}assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-export.6.aria-label}}" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="start">
@@ -340,6 +368,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>{{screen-top-bar.28}}</p>
 
 <h3 id="screen-common-controls">{{screen-common-controls.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-common-controls.webp" alt="{{screen-common-controls.8.alt}}" width="432" height="442" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-common-controls.png" alt="{{screen-common-controls.6.alt}}" width="312" height="375" loading="lazy"><figcaption>{{screen-common-controls.7}}</figcaption></figure>
 <ul>
 <li>{{screen-common-controls.2}}</li>
@@ -347,7 +376,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{screen-common-controls.4}}</li>
 <li>{{screen-common-controls.5}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/screen-common-controls.webp" alt="{{screen-common-controls.8.alt}}" width="432" height="442" loading="lazy"></figure>
 
 <h3 id="screen-toolbar">{{screen-toolbar.1}}</h3>
 <p>{{screen-toolbar.2}}</p>
@@ -470,6 +498,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="screen-tabs">{{screen-tabs.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-tabs.webp" alt="{{screen-tabs.16.alt}}" width="788" height="474" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-tabs.png" alt="{{screen-tabs.10.alt}}" width="1096" height="160" loading="lazy"><figcaption>{{screen-tabs.11}}</figcaption></figure>
 <p>{{screen-tabs.2}}</p>
 <ul>
@@ -487,7 +516,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{screen-tabs.8}}</li>
 <li>{{screen-tabs.9}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/screen-tabs.webp" alt="{{screen-tabs.16.alt}}" width="788" height="474" loading="lazy"></figure>
 
 <h3 id="screen-timeline">{{screen-timeline.1}}</h3>
 <p>{{screen-timeline.2}}</p>
@@ -518,6 +546,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-5.png" alt="{{screen-timeline.29.alt}}" width="304" height="143" loading="lazy"></figure>
 
 <h3 id="screen-timeline-select">{{screen-timeline-select.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-select.webp" alt="{{screen-timeline-select.12.alt}}" width="686" height="278" loading="lazy"></figure>
 <p>{{screen-timeline-select.2}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-select.png" alt="{{screen-timeline-select.8.alt}}" width="801" height="352" loading="lazy"><figcaption>{{screen-timeline-select.9}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-select-2.png" alt="{{screen-timeline-select.10.alt}}" width="801" height="352" loading="lazy"><figcaption>{{screen-timeline-select.11}}</figcaption></figure>
@@ -528,9 +557,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{screen-timeline-select.6}}</li>
 <li>{{screen-timeline-select.7}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-select.webp" alt="{{screen-timeline-select.12.alt}}" width="686" height="278" loading="lazy"></figure>
 
 <h3 id="screen-timeline-edit">{{screen-timeline-edit.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-edit.webp" alt="{{screen-timeline-edit.19.alt}}" width="734" height="416" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-edit.png" alt="{{screen-timeline-edit.14.alt}}" width="704" height="342" loading="lazy"><figcaption>{{screen-timeline-edit.15}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-timeline-edit-2.png" alt="{{screen-timeline-edit.16.alt}}" width="702" height="362" loading="lazy"><figcaption>{{screen-timeline-edit.17}}</figcaption></figure>
 <div class="table-wrap"><table>
@@ -544,9 +573,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </tbody>
 </table></div>
 <p>{{screen-timeline-edit.18}}</p>
-<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-edit.webp" alt="{{screen-timeline-edit.19.alt}}" width="734" height="416" loading="lazy"></figure>
 
 <h3 id="screen-tags">{{screen-tags.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-tags.webp" alt="{{screen-tags.12.alt}}" width="1028" height="760" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-tags.png" alt="{{screen-tags.6.alt}}" width="828" height="533" loading="lazy"><figcaption>{{screen-tags.7}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/screen-tags-2.png" alt="{{screen-tags.8.alt}}" width="344" height="245" loading="lazy"><figcaption>{{screen-tags.9}}</figcaption></figure>
 <ul class="marks">
@@ -558,9 +587,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{screen-tags.4}}</li>
 <li>{{screen-tags.5}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/screen-tags.webp" alt="{{screen-tags.12.alt}}" width="1028" height="760" loading="lazy"></figure>
 
 <h3 id="screen-layer-effects">{{screen-layer-effects.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/screen-layer-effects.webp" alt="{{screen-layer-effects.100.alt}}" width="686" height="618" loading="lazy"></figure>
 <p>{{screen-layer-effects.2}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects.png" alt="{{screen-layer-effects.7.alt}}" width="324" height="361" loading="lazy"><figcaption>{{screen-layer-effects.8}}</figcaption></figure>
 <ul>
@@ -646,23 +675,32 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{screen-layer-effects.98}}</li>
 <li>{{screen-layer-effects.99}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/screen-layer-effects.webp" alt="{{screen-layer-effects.100.alt}}" width="686" height="618" loading="lazy"></figure>
 
 <h3 id="screen-preview">{{screen-preview.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-preview.png" alt="{{screen-preview.7.alt}}" width="339" height="234" loading="lazy"><figcaption>{{screen-preview.8}}</figcaption></figure>
-<p>{{screen-preview.2}}</p>
-<ul class="marks">
-<li>{{screen-preview.3}}</li>
-<li>{{screen-preview.4}}</li>
-</ul>
-<figure class="shot"><img src="{{root}}assets/guide/screen-preview-3.png" alt="{{screen-preview.11.alt}}" width="308" height="415" loading="lazy"><figcaption>{{screen-preview.12}}</figcaption></figure>
-<ul class="marks">
-<li>{{screen-preview.5}}</li>
-</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-preview.14}}</th><th>{{screen-preview.15}}</th></tr></thead>
+<tbody>
+<tr><td>①</td><td>{{screen-preview.2}}</td></tr>
+<tr><td>②</td><td>{{screen-preview.3}}</td></tr>
+<tr><td>③</td><td>{{screen-preview.4}}</td></tr>
+<tr><td>④</td><td>{{screen-preview.13}}</td></tr>
+</tbody>
+</table></div>
 <figure class="shot"><img src="{{root}}assets/guide/screen-preview-2.png" alt="{{screen-preview.9.alt}}" width="308" height="238" loading="lazy"><figcaption>{{screen-preview.10}}</figcaption></figure>
-<ul class="marks">
-<li>{{screen-preview.6}}</li>
-</ul>
+<p>{{screen-preview.6}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-preview.16}}</th><th>{{screen-preview.17}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.Preview_Menu_CopyImage}}</strong></td><td>{{screen-preview.18}}</td></tr>
+<tr><td><strong>{{UiStrings.Preview_Menu_CopyEnlarged}}</strong></td><td>{{screen-preview.19}}</td></tr>
+<tr><td><strong>{{UiStrings.Preview_Menu_SaveFrame}}</strong></td><td>{{screen-preview.20}}</td></tr>
+<tr><td><strong>{{UiStrings.Preview_Menu_SaveGif}}</strong></td><td>{{screen-preview.21}}</td></tr>
+</tbody>
+</table></div>
+<p>{{screen-preview.22}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-preview-3.png" alt="{{screen-preview.11.alt}}" width="308" height="415" loading="lazy"><figcaption>{{screen-preview.12}}</figcaption></figure>
+<p>{{screen-preview.5}}</p>
 
 <h3 id="screen-export">{{screen-export.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/screen-export.png" alt="{{screen-export.5.alt}}" width="1100" height="792" loading="lazy"><figcaption>{{screen-export.6}}</figcaption></figure>
@@ -846,6 +884,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="tools-transform">{{tools-transform.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-transform.webp" alt="{{tools-transform.25.alt}}" width="314" height="342" loading="lazy"></figure>
 <p>{{tools-transform.2}}</p>
 <figure class="shot"><img src="{{root}}assets/guide/tools-transform.png" alt="{{tools-transform.17.alt}}" width="936" height="671" loading="lazy"><figcaption>{{tools-transform.18}}</figcaption></figure>
 <div class="table-wrap"><table>
@@ -868,9 +907,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>{{tools-transform.22}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/tools-transform.webp" alt="{{tools-transform.25.alt}}" width="314" height="342" loading="lazy"></figure>
 
 <h3 id="tools-canvas-size">{{tools-canvas-size.1}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size.webp" alt="{{tools-canvas-size.19.alt}}" width="690" height="340" loading="lazy"></figure>
 <figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size.png" alt="{{tools-canvas-size.17.alt}}" width="956" height="674" loading="lazy"><figcaption>{{tools-canvas-size.18}}</figcaption></figure>
 <p>{{tools-canvas-size.2}}</p>
 <div class="table-wrap"><table>
@@ -887,15 +926,14 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{tools-canvas-size.15}}</li>
 <li>{{tools-canvas-size.16}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size.webp" alt="{{tools-canvas-size.19.alt}}" width="690" height="340" loading="lazy"></figure>
 <h4>{{tools-canvas-size.20}}</h4>
+<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size-slice.webp" alt="{{tools-canvas-size.25.alt}}" width="1000" height="706" loading="lazy"></figure>
 <ul>
 <li>{{tools-canvas-size.21}}</li>
 <li>{{tools-canvas-size.22}}</li>
 <li>{{tools-canvas-size.23}}</li>
 <li>{{tools-canvas-size.24}}</li>
 </ul>
-<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size-slice.webp" alt="{{tools-canvas-size.25.alt}}" width="1000" height="706" loading="lazy"></figure>
 
 <h3 id="tools-nine-slice">9-slice</h3>
 <figure class="shot"><img src="{{root}}assets/guide/tools-nine-slice.png" alt="{{tools-nine-slice.3.alt}}" width="1003" height="400" loading="lazy"><figcaption>{{tools-nine-slice.4}}</figcaption></figure>
@@ -1073,16 +1111,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="pixelate-settings">{{pixelate-settings.1}}</h3>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings.png" alt="{{pixelate-settings.3.alt}}" width="640" height="560" loading="lazy"><figcaption>{{pixelate-settings.4}}</figcaption></figure>
 <p>{{pixelate-settings.2}}</p>
+<h4>{{pixelate-settings.25}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-2.png" alt="{{pixelate-settings.15.alt}}" width="396" height="616" loading="lazy"><figcaption>{{pixelate-settings.16}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-settings.5}}</li>
 <li>{{pixelate-settings.6}}</li>
 </ul>
+<h4>{{pixelate-settings.26}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-3.png" alt="{{pixelate-settings.17.alt}}" width="396" height="674" loading="lazy"><figcaption>{{pixelate-settings.18}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-settings.7}}</li>
 <li>{{pixelate-settings.8}}</li>
 </ul>
+<h4>{{pixelate-settings.27}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-4.png" alt="{{pixelate-settings.19.alt}}" width="396" height="728" loading="lazy"><figcaption>{{pixelate-settings.20}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-settings.9}}</li>
@@ -1090,10 +1131,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{pixelate-settings.11}}</li>
 <li>{{pixelate-settings.12}}</li>
 </ul>
+<h4>{{pixelate-settings.28}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-5.png" alt="{{pixelate-settings.21.alt}}" width="396" height="299" loading="lazy"><figcaption>{{pixelate-settings.22}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-settings.13}}</li>
 </ul>
+<h4>{{pixelate-settings.29}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-6.png" alt="{{pixelate-settings.23.alt}}" width="396" height="143" loading="lazy"><figcaption>{{pixelate-settings.24}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-settings.14}}</li>
@@ -1114,22 +1157,32 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="pixelate-optimize">{{pixelate-optimize.1}}</h3>
+<h4>{{pixelate-optimize.17}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize.png" alt="{{pixelate-optimize.3.alt}}" width="1382" height="270" loading="lazy"><figcaption>{{pixelate-optimize.4}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize-2.png" alt="{{pixelate-optimize.5.alt}}" width="582" height="72" loading="lazy"><figcaption>{{pixelate-optimize.6}}</figcaption></figure>
-<figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize-3.png" alt="{{pixelate-optimize.7.alt}}" width="1000" height="932" loading="lazy"><figcaption>{{pixelate-optimize.8}}</figcaption></figure>
 <p>{{pixelate-optimize.2}}</p>
+<h4>{{pixelate-optimize.18}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize-3.png" alt="{{pixelate-optimize.7.alt}}" width="1000" height="932" loading="lazy"><figcaption>{{pixelate-optimize.8}}</figcaption></figure>
+<p>{{pixelate-optimize.21}}</p>
 <ul>
 <li>{{pixelate-optimize.9}}</li>
+</ul>
+<h4>{{pixelate-optimize.19}}</h4>
+<ul>
 <li>{{pixelate-optimize.10}}</li>
 <li>{{pixelate-optimize.11}}</li>
 <li>{{pixelate-optimize.12}}</li>
 <li>{{pixelate-optimize.13}}</li>
+</ul>
+<h4>{{pixelate-optimize.20}}</h4>
+<ul>
 <li>{{pixelate-optimize.14}}</li>
 <li>{{pixelate-optimize.15}}</li>
 </ul>
 <div class="note"><p>{{pixelate-optimize.16}}</p></div>
 
 <h3 id="pixelate-view">{{pixelate-view.1}}</h3>
+<h4>{{pixelate-view.31}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view.png" alt="{{pixelate-view.19.alt}}" width="1400" height="892" loading="lazy"><figcaption>{{pixelate-view.20}}</figcaption></figure>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view-2.png" alt="{{pixelate-view.21.alt}}" width="713" height="76" loading="lazy"><figcaption>{{pixelate-view.22}}</figcaption></figure>
 <ul>
@@ -1137,16 +1190,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{pixelate-view.3}}</li>
 <li>{{pixelate-view.4}}</li>
 </ul>
+<h4>{{pixelate-view.32}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view-3.png" alt="{{pixelate-view.23.alt}}" width="398" height="471" loading="lazy"><figcaption>{{pixelate-view.24}}</figcaption></figure>
 <ul class="marks">
 <li>{{pixelate-view.5}}</li>
 </ul>
+<h4>{{pixelate-view.33}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view-4.png" alt="{{pixelate-view.25.alt}}" width="466" height="203" loading="lazy"><figcaption>{{pixelate-view.26}}</figcaption></figure>
 <ul>
 <li>{{pixelate-view.6}}</li>
 <li>{{pixelate-view.7}}</li>
 <li>{{pixelate-view.8}}</li>
 </ul>
+<h4>{{pixelate-view.34}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view-5.png" alt="{{pixelate-view.27.alt}}" width="398" height="351" loading="lazy"><figcaption>{{pixelate-view.28}}</figcaption></figure>
 <ul>
 <li>{{pixelate-view.9}}</li>
@@ -1155,6 +1211,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>{{pixelate-view.12}}</li>
 <li>{{pixelate-view.13}}</li>
 </ul>
+<h4>{{pixelate-view.35}}</h4>
 <figure class="shot"><img src="{{root}}assets/guide/pixelate-view-6.png" alt="{{pixelate-view.29.alt}}" width="1400" height="892" loading="lazy"><figcaption>{{pixelate-view.30}}</figcaption></figure>
 <ul>
 <li>{{pixelate-view.14}}</li>
@@ -1565,12 +1622,6 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="ai-references">{{ai-references.1}}</h3>
 <p>{{ai-references.2}}</p>
-<figure class="shot"><img src="{{root}}assets/guide/ai-references-3.png" alt="{{ai-references.29.alt}}" width="678" height="301" loading="lazy"><figcaption>{{ai-references.30}}</figcaption></figure>
-<ul>
-<li>{{ai-references.3}}</li>
-<li>{{ai-references.4}}</li>
-<li>{{ai-references.5}}</li>
-</ul>
 <figure class="shot"><img src="{{root}}assets/guide/ai-references.png" alt="{{ai-references.22.alt}}" width="1000" height="912" loading="lazy"><figcaption>{{ai-references.23}}</figcaption></figure>
 <p>{{ai-references.6}}</p>
 <div class="table-wrap"><table>
@@ -1589,6 +1640,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>{{ai-references.26}}</li>
 <li>{{ai-references.27}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references-3.png" alt="{{ai-references.29.alt}}" width="678" height="301" loading="lazy"><figcaption>{{ai-references.30}}</figcaption></figure>
+<ul>
+<li>{{ai-references.3}}</li>
+<li>{{ai-references.4}}</li>
+<li>{{ai-references.5}}</li>
 <li>{{ai-references.28}}</li>
 </ul>
 <div class="note"><p>{{ai-references.31}}</p></div>
@@ -1802,6 +1859,6 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
 {{language-fix.7.script}}
 });
 </script>
-<script src="{{root}}guide.js?v=20261027a"></script>
+<script src="{{root}}guide.js?v=20261027b"></script>
 </body>
 </html>

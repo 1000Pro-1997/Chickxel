@@ -148,8 +148,8 @@ CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓
 def lint_guide(html_text: str, page: str) -> list[str]:
     """
     가이드 쓰기 규칙(AGENTS.md "사용 가이드 쓰기")을 지켰는지. 어긴 곳의 설명 목록(없으면 빈 목록).
-    쪽(h3) 안에서: 그림 번호(①…)는 그 그림 설명(figcaption)에 있어야 하고 글에서 써야 하며, 그 번호를 쓰는 글은 그림 뒤에 온다.
-    번호로 시작하는 칸이 있는 목록은 <ol>이 아니고, 모든 칸이 번호로 시작하면 <ul class="marks">다.
+    쪽(h3) 안에서: 그림 번호(①…)는 첫 등장 기준으로 작은 번호부터 나오고, 그 그림 설명(figcaption)에 있어야 하며 글에서 써야 한다.
+    번호를 쓰는 글은 그림 뒤에 온다. 번호로 시작하는 칸이 있는 목록은 <ol>이 아니고, 모든 칸이 번호로 시작하면 <ul class="marks">다.
     """
     bh = runpy.run_path(str(ROOT / "tools" / "build-help.py"), run_name="build_help")
     builder = bh["TreeBuilder"]()
@@ -189,12 +189,18 @@ def lint_guide(html_text: str, page: str) -> list[str]:
         pages.append((cur, blocks))
         for pid, blocks in pages:
             defined_at: dict[int, int] = {}
+            caption_order: list[int] = []
             used: set[int] = set()
             for i, b in enumerate(blocks):
                 if b.tag == "figure":
                     cap = b.find(lambda x: x.tag == "figcaption")
                     for k in nums(text(cap) if cap else ""):
+                        if k not in defined_at:
+                            caption_order.append(k)
                         defined_at.setdefault(k, i)
+            for before, after in zip(caption_order, caption_order[1:]):
+                if after < before:
+                    problems.append(f"{page}#{pid}: 그림 번호가 {CIRCLED[before - 1]} 다음 {CIRCLED[after - 1]} 순서임(작은 번호부터)")
             for i, b in enumerate(blocks):
                 if b.tag == "figure":
                     continue

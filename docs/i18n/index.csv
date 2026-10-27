@@ -33,7 +33,7 @@ lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">오픈 소
 lang-select.7.src,assets/screenshot.png,../assets/screenshot-en.png
 lang-select.8.alt,"Gpixel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정","Gpixel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right"
 core.1,대표 기능,Key features
-core.2,"Gpixel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href=""guide.html#featured-common"">대표 기능</a>에서도 볼 수 있습니다.","The features you'll use most, shown in action. Also in the guide under <a href=""guide.html#featured-common"">Key features</a>."
+core.2,"Gpixel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href=""guide.html#featured-common"">빠른 작업</a>에서도 볼 수 있습니다.","The features you'll use most, shown in action. Also in the guide under <a href=""guide.html#featured-common"">Quick tasks</a>."
 core.3,"<span class=""core-tag"">공통 기능</span>","<span class=""core-tag"">Common controls</span>"
 core.4,숫자 칸 바꾸는 법,Changing number fields
 core.5.alt,"피벗 X·Y 숫자 칸을 클릭해 입력하고, 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르는 모습","Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list"

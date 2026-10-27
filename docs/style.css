@@ -207,6 +207,16 @@ td { color: var(--body); }
 .chapter-intro { margin: 0 0 28px; padding-bottom: 22px; border-bottom: 1px solid var(--line-soft); }
 .chapter-intro > :first-child { margin-top: 0; }
 .chapter-intro > :last-child { margin-bottom: 0; }
+.guide-home-lead { max-width: 700px; margin: 0 0 24px; color: var(--lead); font-size: 17px; }
+.guide-paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.guide-path { padding: 22px 22px 18px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 18px; }
+.doc .guide-path h4 { margin: 0 0 12px; font-size: 18px; }
+.doc .guide-route { margin: 0; padding-left: 1.3em; }
+.doc .guide-route li { margin: 10px 0; }
+.guide-route a { color: var(--ink-deep); }
+.guide-route a:hover { color: var(--blue); }
+.guide-route span { display: block; margin-top: 2px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.guide-home .note { margin-top: 14px; }
 .pager { display: flex; justify-content: space-between; gap: 14px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line-soft); }
 .pager a { display: flex; flex-direction: column; gap: 2px; max-width: 48%; padding: 14px 18px; border: 1px solid var(--line-soft); border-radius: 16px; color: var(--ink-deep); font-weight: 700; letter-spacing: -.02em; transition: border-color .2s, box-shadow .2s; }
 .pager a:hover { text-decoration: none; border-color: var(--line); box-shadow: var(--shadow) 0 10px 24px -8px; }
@@ -217,6 +227,7 @@ td { color: var(--body); }
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .features, .downloads { grid-template-columns: 1fr 1fr; }
   .core-media { width: min(300px, 100%); }
+  .guide-paths { grid-template-columns: 1fr; }
   .manual { grid-template-columns: 240px minmax(0, 1fr); }
   .content { padding: 32px 28px 64px; }
 }

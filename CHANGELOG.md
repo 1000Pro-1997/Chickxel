@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.48 (2026-10-27)
+### Clear starting paths and scannable long explanations in the guide
+- The guide home now links directly to a first-time path and to image conversion, AI drawing, animation, skins, and export tasks.
+- The table of contents separates **Quick tasks** from **Feature reference**, and long Pixelate settings, optimization, and preview explanations are split under topic headings.
+- The development guide now defines consistent rules for headings, procedures, UI terms, figures, translation, and reviewing the rendered result.
+- Preview figures now run from ① through ⑥, and control and context-menu descriptions use tables. The documentation check also rejects out-of-order first appearances of figure numbers.
+- Videos and animations without numbered callouts now appear directly below their page heading.
+
 ## v1.14.47 (2026-10-27)
 ### Guide (F1): figures first, explanations below
 - Every page now shows the screenshot first with the explanation of its numbers (①…) right below it. Pages with several screenshots put each one's explanation under it.

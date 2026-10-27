@@ -163,7 +163,8 @@
         content.scrollTop = 0;
       }
     }
-    document.title = target.title + (en ? ' — Gpixel guide' : ' — Gpixel 사용 가이드');
+    var siteTitle = en ? 'Gpixel guide' : 'Gpixel 사용 가이드';
+    document.title = target.id === 'guide-home' ? siteTitle : target.title + ' — ' + siteTitle;
     return target;
   }
 
