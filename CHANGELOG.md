@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.51 (2026-10-27)
+### Support Gpixel development from the website and in-app guide
+- The website download section now links to the Gpixel Buy Me a Coffee page.
+- The in-app guide (F1) has a support button beside Open on website, with Korean and English labels.
+- The guide's feedback section explains both ways to reach the support page.
+
 ## v1.14.50 (2026-10-27)
 ### Remember the AI Status dismissal when closing the window
 - The "Don't show again" choice now saves when AI Status is closed with the window close button or Cancel, not only with Continue or Close.
