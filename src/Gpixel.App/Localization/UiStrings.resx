@@ -9839,6 +9839,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Refs_Tool_BadFrameRange" xml:space="preserve"><value>frame_range "{text}"가 잘못되었습니다. "current", "all" 또는 0~{max} 사이의 "시작-끝"을 쓰세요.</value><comment>text = AI가 준 값, max = 마지막 프레임 번호.</comment></data>
   <data name="Refs_Tool_ReadOnly" xml:space="preserve"><value>"{id}"는 기본 자료라 고칠 수 없습니다.</value><comment>id = 참고 자료 id.</comment></data>
   <data name="About_Discord" xml:space="preserve"><value>Discord (제보·아이디어)</value></data>
+  <data name="About_Website" xml:space="preserve"><value>홈페이지</value></data>
+  <data name="About_BuyCoffee" xml:space="preserve"><value>개발자에게 커피 사주기</value></data>
   <data name="Crash_ReportOnDiscord" xml:space="preserve"><value>Discord에 제보</value></data>
   <data name="Crash_ReportOnDiscord_Hint" xml:space="preserve"><value>Discord에 제보할 때 위 로그 파일을 함께 올려 주세요.</value></data>
   <data name="Chat_Help_Feedback" xml:space="preserve"><value>버그·아이디어는 Discord로 알려 주세요</value></data>

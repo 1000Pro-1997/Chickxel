@@ -3,7 +3,7 @@ using Gpixel.App.Localization;
 
 namespace Gpixel.App;
 
-/// <summary>Gpixel 정보: 이름·버전·한 줄 설명, 저장소·릴리스·Discord(제보·아이디어)·문제 신고 링크, 라이선스, 오픈 소스 고지, AI CLI(Claude·Codex) 안내, 설정 파일 위치.</summary>
+/// <summary>Gpixel 정보: 이름·버전·한 줄 설명, 저장소·릴리스·Discord(제보·아이디어)·문제 신고·홈페이지·후원(커피) 링크, 라이선스, 오픈 소스 고지, AI CLI(Claude·Codex) 안내, 설정 파일 위치.</summary>
 public sealed class AboutDialog : DialogBase
 {
     private const double TextWidth = 470;
@@ -30,6 +30,9 @@ public sealed class AboutDialog : DialogBase
             Link(UiStrings.S_AboutDialog_AboutDialog_617FEF961D, AppUpdate.ReleasesUrl),
             Ui.DiscordButton(UiStrings.About_Discord, (_, _) => Updater.OpenUrl(this, AppInfo.DiscordUrl)),
             Link(UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, AppUpdate.IssuesUrl)));
+        Body.Children.Add(Ui.Row(
+            Link(VectorIcon.Globe, UiStrings.About_Website, AppInfo.LocalizedWebsiteUrl),
+            Link(VectorIcon.Coffee, UiStrings.About_BuyCoffee, AppInfo.SupportUrl)));
         Body.Children.Add(Section(UiStrings.S_AboutDialog_AboutDialog_E3F28341F4));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_BE04412652));
         Body.Children.Add(Text(UiStrings.S_AboutDialog_AboutDialog_38A0479DD2));
@@ -62,4 +65,7 @@ public sealed class AboutDialog : DialogBase
 
     private Button Link(string text, string url)
         => Ui.Button(text, (_, _) => Updater.OpenUrl(this, url)).Tip(url);
+
+    private Button Link(VectorIcon icon, string text, string url)
+        => Ui.Button(icon, text, (_, _) => Updater.OpenUrl(this, url)).Tip(url);
 }

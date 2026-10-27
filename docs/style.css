@@ -43,8 +43,8 @@ pre code { background: none; border: 0; padding: 0; }
 .top .bar { height: 100%; display: flex; align-items: center; gap: 16px; padding: 0 20px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink-deep); font-size: 16px; font-weight: 800; letter-spacing: -.025em; white-space: nowrap; }
 .brand:hover { text-decoration: none; }
-.brand-mark { display: inline-grid; place-items: center; width: 42px; height: 32px; border-radius: 9px; background: var(--accent); }
-.brand-mark img { width: 20px; height: 20px; }
+.brand-mark { display: inline-grid; place-items: center; width: 32px; height: 32px; }
+.brand-mark img { width: 32px; height: 32px; }
 .nav { display: flex; gap: 6px; margin-left: auto; font-size: 13.5px; font-weight: 650; }
 .nav a { padding: 9px 14px; border-radius: 999px; color: var(--muted); white-space: nowrap; transition: background-color .2s, color .2s; }
 .nav a:hover { background: var(--soft); color: var(--ink); text-decoration: none; }
@@ -66,8 +66,10 @@ pre code { background: none; border: 0; padding: 0; }
 .btn.discord { background: #5865f2; border-color: #5865f2; color: #fff; }
 .btn.discord:hover { background: #4752c4; border-color: #4752c4; }
 .btn.discord .icon { fill: currentColor; stroke: none; }
-.btn.support .icon { color: #f2b45c; }
-.btn.support:hover { border-color: #f2b45c; }
+.btn.icon-only { padding: 13px 16px; }
+.btn.icon-only .icon { width: 22px; height: 22px; }
+.btn.support { background: #ff813f; border-color: #ff813f; color: #fff; }
+.btn.support:hover { background: #e96f2f; border-color: #e96f2f; }
 
 /* 첫 화면 */
 .hero { padding: 84px 0 72px; background: radial-gradient(60% 70% at 78% 30%, rgba(255, 208, 47, .07), transparent 70%), radial-gradient(50% 60% at 10% 0%, rgba(138, 160, 255, .08), transparent 70%); }

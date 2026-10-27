@@ -58,7 +58,7 @@ public static class Icons
 
     private static readonly Uri AppIconUri = new("avares://Gpixel.App/Assets/AppIcon/gpixel-256.png");
 
-    /// <summary>창 아이콘(앱 아이콘 16×16 점 그림을 16배 키운 256×256).</summary>
+    /// <summary>창 아이콘(앱 아이콘 32×32 점 그림을 8배 키운 256×256).</summary>
     public static WindowIcon AppIcon()
     {
         using var stream = AssetLoader.Open(AppIconUri);
