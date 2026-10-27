@@ -7,7 +7,8 @@ namespace Gpixel.App;
 /// <summary>운영체제마다 다른 일: 설정 폴더, 파일 관리자 열기, 휴지통, 단축키 수정자.</summary>
 public static class Platform
 {
-    public static bool IsMac => OperatingSystem.IsMacOS();
+    /// <summary>macOS인지(단축키 ⌘ 표시·키 처리). 가이드 촬영 도구(tools/GuideShots)는 macOS에서도 Windows 모습으로 찍으려고 리플렉션으로 끈다.</summary>
+    public static bool IsMac { get; private set; } = OperatingSystem.IsMacOS();
 
     /// <summary>설정 바탕 폴더를 바꾸는 환경 변수(시험용) — 설정·휴지통·기록·오류 로그가 모두 그 아래 Gpixel 폴더로 간다.</summary>
     public const string DataDirVariable = "GPIXEL_DATA_DIR";

@@ -11,11 +11,8 @@ namespace GuideShots;
 /// </summary>
 internal static class ScreenDemo
 {
-    public static bool En => ShotKit.Language == "en";
-    public static string L(string ko, string en) => En ? en : ko;
-
-    public static string FolderName => L("스프라이트", "Sprites");
-    public static string SampleName => L("늑대귀 모험가", "Wolf Adventurer");
+    public static string FolderName => "Sprites";
+    public static string SampleName => "Wolf Adventurer";
 
     public static EditorContext Ctx(MainForm main) => ShotKit.Get<EditorContext>(main, "_ctx");
     public static SpriteProject Project(MainForm main) => Ctx(main).Project ?? throw new InvalidOperationException("no project");
@@ -37,15 +34,15 @@ internal static class ScreenDemo
         var src = Gpixel.Core.IO.PngIO.Load(ShotKit.SamplePng);
         var dir = Path.Combine(k.WorkDir, FolderName);
         Directory.CreateDirectory(dir);
-        var icons = Path.Combine(dir, L("아이콘", "Icons"));
-        var tiles = Path.Combine(dir, L("타일", "Tiles"));
+        var icons = Path.Combine(dir, "Icons");
+        var tiles = Path.Combine(dir, "Tiles");
         Directory.CreateDirectory(icons);
         Directory.CreateDirectory(tiles);
-        Gpixel.Core.IO.PngIO.Save(Tint(src, 0.55, 0.65, 1.0), Path.Combine(dir, SampleName + L("_밤", "_night") + ".png"));
-        Gpixel.Core.IO.PngIO.Save(Tint(src, 1.0, 0.75, 0.75), Path.Combine(dir, SampleName + L("_피격", "_hurt") + ".png"));
+        Gpixel.Core.IO.PngIO.Save(Tint(src, 0.55, 0.65, 1.0), Path.Combine(dir, SampleName + "_night" + ".png"));
+        Gpixel.Core.IO.PngIO.Save(Tint(src, 1.0, 0.75, 0.75), Path.Combine(dir, SampleName + "_hurt" + ".png"));
         var face = src.Crop(new System.Drawing.Rectangle(6, 4, 36, 36));
-        Gpixel.Core.IO.PngIO.Save(face, Path.Combine(icons, L("얼굴", "face") + ".png"));
-        Gpixel.Core.IO.PngIO.Save(Tint(face, 0.6, 0.6, 0.6), Path.Combine(icons, L("얼굴_회색", "face_gray") + ".png"));
+        Gpixel.Core.IO.PngIO.Save(face, Path.Combine(icons, "face" + ".png"));
+        Gpixel.Core.IO.PngIO.Save(Tint(face, 0.6, 0.6, 0.6), Path.Combine(icons, "face_gray" + ".png"));
         var main = Open(k, browserFolder: true, width, height);
         PrettyRoot(main);
         return main;
@@ -92,7 +89,7 @@ internal static class ScreenDemo
         ctx.Structural(() =>
         {
             var body = p.Layers[0];
-            p.SetLayerProperties(0, name: L("몸", "Body"));
+            p.SetLayerProperties(0, name: "Body");
             for (int i = 0; i < 5; i++) p.DuplicateFrame(0);
             // 1~4: 숨쉬기 들썩임(2·4 프레임 1px 위), 5~6: 피격 흔들림(좌우 1px).
             Shift(p, 0, 1, 0, -1);
@@ -101,7 +98,7 @@ internal static class ScreenDemo
             Shift(p, 0, 5, 1, 0);
             for (int f = 4; f < 6; f++) p.SetFrameDuration(f, 80);
 
-            var shadow = p.AddLayer(0, L("그림자", "Shadow"));
+            var shadow = p.AddLayer(0, "Shadow");
             int si = p.IndexOf(shadow);
             for (int f = 0; f < p.Frames.Count; f++)
             {
@@ -113,16 +110,16 @@ internal static class ScreenDemo
 
             if (group)
             {
-                var g = p.AddGroup(L("소품", "Props"));
-                var star = p.AddPart(g, L("반짝이", "Sparkle"), 7, 7, new System.Drawing.Point(38, 6));
-                var gem = p.AddPart(g, L("보석", "Gem"), 5, 5, new System.Drawing.Point(4, 40));
+                var g = p.AddGroup("Props");
+                var star = p.AddPart(g, "Sparkle", 7, 7, new System.Drawing.Point(38, 6));
+                var gem = p.AddPart(g, "Gem", 5, 5, new System.Drawing.Point(4, 40));
                 for (int f = 0; f < p.Frames.Count; f++)
                 {
                     p.SetCel(p.IndexOf(star), f, Sparkle(f % 2 == 0));
                     p.SetCel(p.IndexOf(gem), f, Gem());
                 }
                 // 기본 스킨 이름은 앱에 한국어("기본")로 고정되어 있어 영어 화면 그림에서는 영어 이름으로 바꿔 둔다.
-                if (En) foreach (var skin in g.Skins) if (skin.Name == "기본") p.RenameSkin(g, skin, "Default");
+                foreach (var skin in g.Skins) if (skin.Name == "기본") p.RenameSkin(g, skin, "Default");
             }
 
             p.AddTag("idle", 0, 3);
@@ -138,7 +135,7 @@ internal static class ScreenDemo
                 ]);
             }
         });
-        ctx.SetCurrent(p.IndexOf(p.Layers.First(l => l.Name == L("몸", "Body"))), 0);
+        ctx.SetCurrent(p.IndexOf(p.Layers.First(l => l.Name == "Body")), 0);
         k.Settle(200);
         if (save)
         {

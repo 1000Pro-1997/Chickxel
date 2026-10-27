@@ -34,9 +34,6 @@ internal sealed class AiChat
         Mcp = mcp;
     }
 
-    /// <summary>화면 언어에 맞는 글(대본·예시 대화는 샷이 정한 글이라 두 언어로 적는다).</summary>
-    public static string L(string ko, string en) => ShotKit.Language == "ko" ? ko : en;
-
     /// <summary>편집기 MCP 서버를 만들어(메인 창의 EnsureMcp) 채팅 창을 대본 세션으로 띄운다. <paramref name="before"/>는 창을 만들기 전 설정·보관소 준비.</summary>
     public static AiChat Open(ShotKit k, MainForm main, string provider = Claude, int width = 470, int height = 720, Action<AppSettings>? before = null)
     {
@@ -124,9 +121,10 @@ internal sealed class AiChat
 
     /// <summary>
     /// 창 여러 개를 화면에 놓인 모습처럼 한 장으로 저장한다: 첫 창이 바탕(제목 줄 포함), 나머지는 <paramref name="placed"/> 위치에 그림자와 함께.
-    /// <paramref name="marks"/>는 바탕 창 좌표 기준이 아니라 각 창의 컨트롤(어느 창이든)을 받아 그 자리에 강조 테두리를 그린다.
+    /// <paramref name="marks"/>는 어느 창의 컨트롤이든(그 창이 놓인 자리로 옮김) 또는 바탕 창 좌표 사각형(<see cref="InBack"/>으로 다른 창 좌표를 바꿀 수 있음)이고,
+    /// 그 자리에 빨간 번호 테두리를 그린다(<paramref name="firstNumber"/>부터).
     /// </summary>
-    public static string Composite(ShotKit k, string name, Window back, IReadOnlyList<(Window Window, Point At)> placed, IEnumerable<Control>? marks = null)
+    public static string Composite(ShotKit k, string name, Window back, IReadOnlyList<(Window Window, Point At)> placed, IEnumerable<Mark>? marks = null, int firstNumber = 1)
     {
         var bar = ShotKit.TitleHeight;
         using var backImg = k.Capture(back);
@@ -148,20 +146,19 @@ internal sealed class AiChat
                 ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(90, 90, 100)), 1), outer.Deflate(0.5));
                 origins[w] = new Point(at.X, at.Y + bar);
             }
-            var pen = new Pen(new SolidColorBrush(Color.FromRgb(255, 140, 40)), 3);
-            foreach (var c in marks ?? [])
+            var rects = (marks ?? []).Select(m =>
             {
+                if (m.Control is not { } c) return m.Rect.Translate((Vector)origins[back]);
                 var top = (Window)TopLevel.GetTopLevel(c)!;
-                var r = ShotKit.Bounds(c, top).Translate((Vector)origins[top]);
-                ctx.DrawRectangle(null, pen, r.Inflate(3), 4, 4);
-            }
+                return ShotKit.Bounds(c, top).Translate((Vector)origins[top]);
+            });
+            ShotKit.DrawMarks(ctx, rects, firstNumber, new Rect(0, 0, size.Width, size.Height));
         }
-        var file = Path.Combine(ShotKit.OutDir, name + ".png");
-        Directory.CreateDirectory(ShotKit.OutDir);
-        target.Save(file);
-        k.Saved.Add(Path.GetRelativePath(ShotKit.Root, file));
-        return file;
+        return k.Write(target, name);
     }
+
+    /// <summary><paramref name="at"/>에 놓인 창의 창 좌표 사각형을 <see cref="Composite"/>의 바탕 창 좌표로 바꾼다.</summary>
+    public static Rect InBack(Rect r, Point at) => r.Translate(new Vector(at.X, at.Y));
 
     private static void DrawTitleBar(DrawingContext ctx, string title, Rect r)
     {

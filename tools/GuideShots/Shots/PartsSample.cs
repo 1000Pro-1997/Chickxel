@@ -15,15 +15,13 @@ internal static class PartsSample
 {
     public const int CanvasW = 64, CanvasH = 104, CharX = 6, CharY = 3;
 
-    public static string L(string ko, string en) => ShotKit.Language == "ko" ? ko : en;
-
-    public static string GroupName => L("캐릭터", "Character");
-    public static string GearName => L("장비", "Gear");
-    public static string BaseSkin => L("기본", "Default");
-    public static string HatSkin => L("모자", "Hat");
-    public static string NoneSkin => L("없음", "None");
-    public static string SwordSkin => L("검", "Sword");
-    public static string OutfitName => L("기사 세트", "Knight set");
+    public const string GroupName = "Character";
+    public const string GearName = "Gear";
+    public const string BaseSkin = "Default";
+    public const string HatSkin = "Hat";
+    public const string NoneSkin = "None";
+    public const string SwordSkin = "Sword";
+    public const string OutfitName = "Knight set";
 
     /// <summary>예시 프로젝트를 만들어 저장하고 그 경로를 돌려준다.</summary>
     public static string Build(ShotKit k, Action<SpriteProject>? tweak = null)
@@ -77,7 +75,7 @@ internal static class PartsSample
         p.SaveOutfit(OutfitName);
         p.SetActiveSkin(group, zombie);
         p.SetActiveSkin(gear, gear.Skins[0]);
-        p.SaveOutfit(L("좀비", "Zombie"));
+        p.SaveOutfit("Zombie");
         p.SetActiveSkin(group, knight);
         p.SetActiveSkin(gear, sword);
 
@@ -87,7 +85,7 @@ internal static class PartsSample
             p.Export.ExportParts = true;
         });
         tweak?.Invoke(p);
-        var path = Path.Combine(k.WorkDir, L("늑대귀 모험가", "wolf adventurer") + SpriteProject.FileExtension);
+        var path = Path.Combine(k.WorkDir, "wolf adventurer" + SpriteProject.FileExtension);
         ProjectIO.Save(p, path);
         return path;
     }

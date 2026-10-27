@@ -6,22 +6,32 @@ src/Gpixel.App/Assets/Help/help.<lang>.json. Re-run after editing either guide:
 
     python tools/build-help.py
 
-Python 3 standard library only. Pages are split like docs/guide.js does: every
+Python 3 standard library, plus `cwebp` (libwebp) on PATH when a guide
+screenshot changed. Pages are split like docs/guide.js does: every
 h3 starts its own page, and the chapter's text before its first h3 becomes the
 first page's "intro". A chapter (section.doc, h2) without h3 is a single page
 with the chapter id.
+
+Screenshots (<figure class="shot"> with docs/assets/guide/<name>.png) become
+"shot" blocks; their lossless WebP copies are kept in
+src/Gpixel.App/Assets/Help/shots/ (embedded in the app), re-encoded when the PNG
+is newer, and unused ones are deleted.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "src" / "Gpixel.App" / "Assets" / "Help"
+SHOTS_SRC = ROOT / "docs" / "assets" / "guide"
+SHOTS_OUT = OUT_DIR / "shots"
 SITE = "https://1000pro-1997.github.io/GPixel/"
 SOURCES = {
     "ko": (ROOT / "docs" / "guide.html", SITE),
@@ -216,6 +226,22 @@ def media_block(node: Node, page_id: str) -> dict | None:
     return {"type": "media", "alt": WS.sub(" ", alt).strip(), "page": page_id, "src": src.rsplit("/", 1)[-1]}
 
 
+def shot_block(node: Node, base: str, page_id: str) -> dict:
+    """Guide screenshot: name (docs/assets/guide/<name>.png), alt and the numbered legend (figcaption)."""
+    img = node.find(lambda n: n.tag == "img")
+    if img is None:
+        raise SystemExit(f"figure.shot without img on page {page_id}")
+    src = img.attrs.get("src", "")
+    m = re.fullmatch(r"(?:\.\./)?assets/guide/([\w.-]+)\.png", src)
+    if m is None:
+        raise SystemExit(f"figure.shot src {src!r} is not assets/guide/<name>.png on page {page_id}")
+    cap = node.find(lambda n: n.tag == "figcaption")
+    out = {"type": "shot", "src": m.group(1), "alt": WS.sub(" ", img.attrs.get("alt", "")).strip()}
+    if cap is not None:
+        out["runs"] = runs_of(cap, base)
+    return out
+
+
 def blocks_of(container: Node, base: str, page_id: str) -> list[dict]:
     """Block children of a container; stray inline content becomes a paragraph."""
     out: list[dict] = []
@@ -263,6 +289,8 @@ def block(n: Node, base: str, page_id: str) -> list[dict]:
         return [{"type": "note", "blocks": blocks_of(n, base, page_id)}]
     if n.tag == "pre":
         return [{"type": "pre", "text": n.raw_text().strip("\n")}]
+    if n.tag == "figure" and "shot" in cls:
+        return [shot_block(n, base, page_id)]
     if n.tag == "figure":
         m = media_block(n, page_id)
         return [m] if m else []
@@ -301,6 +329,9 @@ def block_texts(b: dict):
         yield b["text"]
     elif t == "media":
         yield b["alt"]
+    elif t == "shot":
+        yield b["alt"]
+        yield runs_text(b.get("runs", []))
 
 
 # ───────────── document ─────────────
@@ -377,15 +408,54 @@ def build(path: Path, base: str) -> dict:
     return {"groups": groups}
 
 
+def shot_names(blocks: list[dict]):
+    for b in blocks:
+        if b["type"] == "shot":
+            yield b["src"]
+        elif b["type"] == "note":
+            yield from shot_names(b["blocks"])
+
+
+def sync_shots(names: set[str]) -> None:
+    """Lossless WebP copies of the screenshots the guides use (re-encoded when the PNG is newer); unused copies are deleted."""
+    SHOTS_OUT.mkdir(parents=True, exist_ok=True)
+    cwebp = shutil.which("cwebp")
+    made = 0
+    for name in sorted(names):
+        png = SHOTS_SRC / f"{name}.png"
+        if not png.exists():
+            raise SystemExit(f"screenshot {png.relative_to(ROOT)} not found (run tools/GuideShots)")
+        webp = SHOTS_OUT / f"{name}.webp"
+        if webp.exists() and webp.stat().st_mtime >= png.stat().st_mtime:
+            continue
+        if cwebp is None:
+            raise SystemExit("cwebp not found: install libwebp (brew install webp / winget install Google.Libwebp) to encode guide screenshots")
+        subprocess.run([cwebp, "-quiet", "-lossless", "-z", "6", str(png), "-o", str(webp)], check=True)
+        made += 1
+    removed = 0
+    for old in SHOTS_OUT.glob("*.webp"):
+        if old.stem not in names:
+            old.unlink()
+            removed += 1
+    size = sum(f.stat().st_size for f in SHOTS_OUT.glob("*.webp"))
+    print(f"{SHOTS_OUT.relative_to(ROOT)}: {len(names)} screenshots ({made} encoded, {removed} removed), {size:,} bytes")
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    shots: set[str] = set()
     for lang, (path, base) in SOURCES.items():
         doc = build(path, base)
+        for g in doc["groups"]:
+            for c in g["chapters"]:
+                for p in c["pages"]:
+                    shots.update(shot_names(p.get("intro", []) + p["blocks"]))
         out = OUT_DIR / f"help.{lang}.json"
         text = json.dumps(doc, ensure_ascii=False, separators=(",", ":"))
         out.write_text(text + "\n", encoding="utf-8", newline="\n")
         pages = sum(len(c["pages"]) for g in doc["groups"] for c in g["chapters"])
         print(f"{out.relative_to(ROOT)}: {pages} pages, {out.stat().st_size:,} bytes")
+    sync_shots(shots)
 
 
 if __name__ == "__main__":

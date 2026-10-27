@@ -162,6 +162,12 @@
     }
   }
 
+  // 화면 그림은 내용 폭에 맞춰 줄어 보이므로 누르면 원래 크기로 새 탭에 연다.
+  content.addEventListener('click', function (e) {
+    var img = e.target.closest('.shot img');
+    if (img) window.open(img.currentSrc || img.src, '_blank', 'noopener');
+  });
+
   window.addEventListener('hashchange', function () {
     show(location.hash.slice(1), true);
     resetPane();

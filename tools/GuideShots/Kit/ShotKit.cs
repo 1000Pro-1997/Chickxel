@@ -16,8 +16,9 @@ using Gpixel.App;
 namespace GuideShots;
 
 /// <summary>
-/// 샷 하나의 도구 상자: 깨끗한 설정 폴더로 메인 창 띄우기, 창·대화상자·팝업(메뉴) 찍기, 영역 자르기, 강조 테두리, 키·마우스 입력, 비공개 멤버 접근.
+/// 샷 하나의 도구 상자: 깨끗한 설정 폴더로 메인 창 띄우기, 창·대화상자·팝업(메뉴) 찍기, 영역 자르기, 빨간 번호 테두리, 키·마우스 입력, 비공개 멤버 접근.
 /// 화면 없이 그리므로 OS 제목 표시줄이 없다 — 창을 찍을 때 제목 줄을 그려 넣는다(<c>titleBar</c>).
+/// 그림은 영어 화면 한 벌만 찍어 한국어·영어 가이드가 같이 쓴다. macOS에서 돌려도 Windows 모습(Ctrl 단축키)으로 찍는다(<see cref="UseWindowsLook"/>).
 /// </summary>
 public sealed class ShotKit
 {
@@ -25,19 +26,17 @@ public sealed class ShotKit
     private static readonly List<Popup> s_popups = [];
 
     public static string Root { get; } = FindRoot();
-    /// <summary>화면 언어("ko" 기본, <c>--lang en</c>이면 영어 — 그림은 docs/assets/guide/en/).</summary>
-    public static string Language { get; set; } = "ko";
-    /// <summary>찍은 그림이 가는 곳(홈페이지·F1 가이드 그림, 영어는 en 하위 폴더).</summary>
-    public static string OutDir => Language == "ko"
-        ? Path.Combine(Root, "docs", "assets", "guide")
-        : Path.Combine(Root, "docs", "assets", "guide", Language);
+    /// <summary>화면 언어(영어 한 벌 — 한국어·영어 가이드가 같은 그림을 씀).</summary>
+    private const string Language = "en";
+    /// <summary>찍은 그림이 가는 곳(홈페이지·F1 가이드 그림).</summary>
+    public static string OutDir => Path.Combine(Root, "docs", "assets", "guide");
     /// <summary>예시 그림(늑대귀 모험가, 200×400 — 열면 49×98 픽셀 그림으로 가져와짐).</summary>
     public static string SamplePng => Path.Combine(Root, "tools", "GuideShots", "Sample", "wolf.png");
 
     public string Id { get; }
     /// <summary>
-    /// 이 샷의 예시 파일 폴더(<c>C:\GpixelGuide\MyGame</c> — 그림에 보이는 경로에 사용자 이름이 나오지 않게, 샷마다 비우고 다시 만듦). 설정 폴더는
-    /// 그 옆 appdata라 파일 브라우저에 보이지 않는다. 샷은 한 프로세스에서 차례로 돌므로 폴더 하나를 같이 쓴다.
+    /// 이 샷의 예시 파일 폴더(<c>C:\GpixelGuide\MyGame</c>, macOS·Linux는 <c>/tmp/GpixelGuide/MyGame</c> — 그림에 보이는 경로에 사용자 이름이 나오지 않게,
+    /// 샷마다 비우고 다시 만듦). 설정 폴더는 그 옆 appdata라 파일 브라우저에 보이지 않는다.
     /// </summary>
     public string WorkDir { get; }
     public List<string> Saved { get; } = [];
@@ -46,7 +45,9 @@ public sealed class ShotKit
     public ShotKit(string id)
     {
         Id = id;
-        var shotRoot = OperatingSystem.IsWindows() ? @"C:\GpixelGuide" : Path.Combine(Path.GetTempPath(), "GpixelGuide");
+        // 예시 파일 폴더는 그림에 보이므로 짧고 사용자 이름 없는 경로. GUIDESHOTS_ROOT로 바꿀 수 있다(여러 프로세스를 같이 돌릴 때 — 샷마다 지우고 다시 만들므로).
+        var shotRoot = Environment.GetEnvironmentVariable("GUIDESHOTS_ROOT") is { Length: > 0 } env ? env
+            : OperatingSystem.IsWindows() ? @"C:\GpixelGuide" : "/tmp/GpixelGuide";
         if (Directory.Exists(shotRoot)) Directory.Delete(shotRoot, recursive: true);
         WorkDir = Path.Combine(shotRoot, "MyGame");
         Directory.CreateDirectory(WorkDir);
@@ -68,6 +69,10 @@ public sealed class ShotKit
             if (p.IsOpen) s_popups.Add(p);
         });
     }
+
+    /// <summary>macOS에서도 Windows 모습(Ctrl 단축키·Delete 키 이름)으로 찍는다 — 가이드 글이 Ctrl 기준이라서.</summary>
+    public static void UseWindowsLook()
+        => typeof(Platform).GetProperty(nameof(Platform.IsMac))!.SetValue(null, false);
 
     /// <summary>열려 있는 창(연 순서).</summary>
     public IReadOnlyList<Window> Windows => s_windows.Where(w => w.IsVisible).ToList();
@@ -193,13 +198,13 @@ public sealed class ShotKit
 
     /// <summary>
     /// 창(또는 팝업 포함 화면)을 찍어 <paramref name="name"/>.png로 저장한다(없으면 샷 id). <paramref name="crop"/>은 창 좌표(제목 줄 빼고),
-    /// <paramref name="marks"/>는 강조 테두리를 그릴 컨트롤, <paramref name="titleBar"/>는 창 제목 줄을 그려 넣을지(기본: 자르지 않을 때).
+    /// <paramref name="marks"/>는 빨간 번호 테두리를 그릴 컨트롤·창 좌표 사각형(적은 순서대로 <paramref name="firstNumber"/>부터 번호),
+    /// <paramref name="titleBar"/>는 창 제목 줄을 그려 넣을지(기본: 자르지 않을 때).
     /// </summary>
-    public string Save(TopLevel top, string? name = null, Rect? crop = null, IEnumerable<Control>? marks = null, bool? titleBar = null,
-        IEnumerable<Rect>? markRects = null)
+    public string Save(TopLevel top, string? name = null, Rect? crop = null, IEnumerable<Mark>? marks = null, bool? titleBar = null, int firstNumber = 1)
     {
         var frame = Capture(top);
-        var rects = (marks ?? []).Select(c => Bounds(c, top)).Concat(markRects ?? []).ToList();
+        var rects = (marks ?? []).Select(m => m.In(top)).ToList();
         bool title = titleBar ?? crop is null;
         var src = crop ?? new Rect(0, 0, frame.PixelSize.Width, frame.PixelSize.Height);
         src = src.Intersect(new Rect(0, 0, frame.PixelSize.Width, frame.PixelSize.Height));
@@ -210,35 +215,65 @@ public sealed class ShotKit
         {
             if (bar > 0) DrawTitleBar(ctx, ((Window)top).Title ?? "Gpixel", size.Width);
             ctx.DrawImage(frame, src, new Rect(0, bar, src.Width, src.Height));
-            var pen = new Pen(new SolidColorBrush(Color.FromRgb(255, 140, 40)), 3);
-            foreach (var r in rects)
-            {
-                var shifted = new Rect(r.X - src.X - 3, r.Y - src.Y + bar - 3, r.Width + 6, r.Height + 6);
-                ctx.DrawRectangle(null, pen, shifted, 4, 4);
-            }
+            DrawMarks(ctx, rects.Select(r => r.Translate(new Vector(-src.X, bar - src.Y))), firstNumber, new Rect(0, 0, size.Width, size.Height));
         }
-        var file = Path.Combine(OutDir, (name ?? Id) + ".png");
+        return Write(target, name ?? Id);
+    }
+
+    /// <summary>그린 그림을 <see cref="OutDir"/>/<paramref name="name"/>.png로 저장하고 <see cref="Saved"/>에 적는다.</summary>
+    public string Write(RenderTargetBitmap image, string name)
+    {
+        var file = Path.Combine(OutDir, name + ".png");
         Directory.CreateDirectory(OutDir);
-        target.Save(file);
+        image.Save(file);
         Saved.Add(Path.GetRelativePath(Root, file));
         return file;
     }
 
+    private static readonly Color MarkRed = Color.FromRgb(229, 57, 53);
+    private const double BadgeRadius = 12;
+
+    /// <summary>
+    /// 빨간 테두리와 그 왼쪽 위 모서리의 빨간 동그라미 번호(<paramref name="firstNumber"/>부터 차례로)를 그린다. 사각형은 그림 좌표,
+    /// 번호 동그라미는 <paramref name="image"/> 밖으로 나가지 않게 안쪽으로 당긴다. 가이드 글의 ①②…가 이 번호를 가리킨다.
+    /// </summary>
+    public static void DrawMarks(DrawingContext ctx, IEnumerable<Rect> rects, int firstNumber, Rect image)
+    {
+        var list = rects.Select(r => r.Inflate(3)).ToList();
+        var pen = new Pen(new SolidColorBrush(MarkRed), 3);
+        foreach (var r in list) ctx.DrawRectangle(null, pen, r, 4, 4);
+        // 번호는 테두리를 다 그린 뒤에(다른 테두리에 가리지 않게).
+        var fill = new SolidColorBrush(MarkRed);
+        var ring = new Pen(Brushes.White, 2);
+        var typeface = new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
+        for (int i = 0; i < list.Count; i++)
+        {
+            var r = list[i];
+            double cx = Math.Clamp(r.X, image.X + BadgeRadius + 1, image.Right - BadgeRadius - 1);
+            double cy = Math.Clamp(r.Y, image.Y + BadgeRadius + 1, image.Bottom - BadgeRadius - 1);
+            var center = new Point(cx, cy);
+            ctx.DrawEllipse(fill, ring, center, BadgeRadius, BadgeRadius);
+            var text = new FormattedText((firstNumber + i).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight, typeface, firstNumber + i >= 10 ? 12 : 14, Brushes.White);
+            ctx.DrawText(text, new Point(cx - text.Width / 2, cy - text.Height / 2));
+        }
+    }
+
     /// <summary>컨트롤 둘레(+<paramref name="pad"/>)만 잘라 저장한다.</summary>
-    public string SaveControl(Control control, string? name = null, double pad = 8, IEnumerable<Control>? marks = null)
+    public string SaveControl(Control control, string? name = null, double pad = 8, IEnumerable<Mark>? marks = null, int firstNumber = 1)
     {
         var top = TopLevel.GetTopLevel(control) ?? throw new InvalidOperationException("control is not in a window");
         var b = Bounds(control, top).Inflate(pad);
-        return Save(top, name, b, marks, titleBar: false);
+        return Save(top, name, b, marks, titleBar: false, firstNumber: firstNumber);
     }
 
     /// <summary>여러 컨트롤을 모두 담는 영역을 저장한다.</summary>
-    public string SaveArea(IEnumerable<Control> controls, string? name = null, double pad = 8, IEnumerable<Control>? marks = null)
+    public string SaveArea(IEnumerable<Control> controls, string? name = null, double pad = 8, IEnumerable<Mark>? marks = null, int firstNumber = 1)
     {
         var list = controls.ToList();
         var top = TopLevel.GetTopLevel(list[0]) ?? throw new InvalidOperationException("control is not in a window");
         var b = list.Select(c => Bounds(c, top)).Aggregate((a, c) => a.Union(c)).Inflate(pad);
-        return Save(top, name, b, marks, titleBar: false);
+        return Save(top, name, b, marks, titleBar: false, firstNumber: firstNumber);
     }
 
     /// <summary>창 화면 + 그 창에서 열린 팝업(메뉴·우클릭 메뉴·툴팁 등)을 제자리에 합친 그림.</summary>
@@ -442,10 +477,22 @@ public sealed class ShotKit
         throw new MissingMethodException(target.GetType().Name, name);
     }
 
+    /// <summary>저장소 루트: 실행 파일 위쪽, 없으면 지금 폴더 위쪽에서 Gpixel.sln을 찾는다(빌드 결과를 다른 곳에 둔 경우 — --artifacts-path).</summary>
     private static string FindRoot()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-            if (File.Exists(Path.Combine(dir.FullName, "Gpixel.sln"))) return dir.FullName;
-        throw new InvalidOperationException("Gpixel.sln not found above " + AppContext.BaseDirectory);
+        foreach (var start in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
+            for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
+                if (File.Exists(Path.Combine(dir.FullName, "Gpixel.sln"))) return dir.FullName;
+        throw new InvalidOperationException("Gpixel.sln not found above " + AppContext.BaseDirectory + " or " + Environment.CurrentDirectory);
     }
+}
+
+/// <summary>그림에 그릴 빨간 번호 테두리 하나: 컨트롤(찍는 창 좌표로 바뀜) 또는 창 좌표 사각형. <c>marks: [button, rect]</c>처럼 섞어 쓴다.</summary>
+public readonly record struct Mark(Control? Control, Rect Rect)
+{
+    public static implicit operator Mark(Control control) => new(control, default);
+    public static implicit operator Mark(Rect rect) => new(null, rect);
+
+    /// <summary><paramref name="top"/> 창 좌표의 사각형.</summary>
+    public Rect In(TopLevel top) => Control is null ? Rect : ShotKit.Bounds(Control, top);
 }

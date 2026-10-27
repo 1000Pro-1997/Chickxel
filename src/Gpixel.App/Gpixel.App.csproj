@@ -31,8 +31,10 @@
     <!-- F1 사용 가이드: docs/guide.html·docs/en/guide.html에서 tools/build-help.py로 만든 쪽 데이터.
          이름의 .ko/.en을 언어로 보고 위성 어셈블리로 빼지 않게 WithCulture=false. -->
     <EmbeddedResource Include="Assets\Help\help.*.json" LogicalName="Gpixel.Help.%(Filename)%(Extension)" WithCulture="false" />
-    <!-- 가이드 움짤(홈페이지 영상을 8fps 움직이는 WebP로 줄인 것, DEVELOPMENT.md 참고). README 대표 기능 움짤로도 씀. -->
+    <!-- 가이드 움짤(홈페이지 대표 기능 영상을 8fps로 줄인 것과 가이드 쪽 화면 녹화 30fps, 움직이는 WebP, DEVELOPMENT.md 참고). README 대표 기능 움짤로도 씀. -->
     <EmbeddedResource Include="Assets\Help\media\*.webp" LogicalName="Gpixel.Help.media.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 가이드 화면 그림(docs/assets/guide/*.png를 build-help.py가 무손실 WebP로 옮긴 것, 빨간 번호 표시 포함). -->
+    <EmbeddedResource Include="Assets\Help\shots\*.webp" LogicalName="Gpixel.Help.shots.%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
   <ItemGroup>

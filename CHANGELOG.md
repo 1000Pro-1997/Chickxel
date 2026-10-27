@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.40 (2026-10-27)
+### Screenshots in the user guide
+- The homepage guide and the in-app guide (F1) now show screenshots of the real app on nearly every page, including right-click menus, dropdowns and settings popups.
+- What each page explains is marked on the image with a red box and a red number, and the text and the list under each image refer to the same numbers (①②…).
+- One set of English screenshots is used for both the Korean and English guides. Click an image on the homepage to open it at full size.
+- Eight pages also show a looping recording of the action (number fields, document tabs, selecting and editing in the timeline, tags, layer effects, transform mode and canvas size mode).
+
 ## v1.14.39 (2026-10-27)
 ### Guide screenshots
 - Prepared screenshots of the real app for nearly every page of the user guide: 148 images each in Korean and English, using the wolf-ear adventurer as the example art. They will be placed into the homepage and in-app (F1) guide next.

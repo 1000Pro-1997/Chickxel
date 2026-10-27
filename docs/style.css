@@ -129,6 +129,11 @@ pre code { background: none; border: 0; padding: 0; }
 .doc .core-steps { padding-left: 0; margin: 18px 0 0; }
 .doc .core-steps li { margin: 0; }
 .guide-media { margin: 24px 0 0; }
+/* 사용 가이드 화면 그림·움짤(clip, 움직이는 WebP): 실제 크기까지만(작게 자른 그림은 키우지 않음), 빨간 번호 설명은 그림 아래. 화면 그림은 누르면 원래 크기로 연다(guide.js) */
+.shot, .clip { margin: 20px 0 24px; }
+.shot img, .clip img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line-soft); border-radius: 10px; background: #1b1c20; }
+.shot img { cursor: zoom-in; }
+.shot figcaption { margin-top: 8px; color: var(--muted); font-size: 13.5px; line-height: 1.65; }
 
 footer { background: #08090b; border-top: 1px solid var(--line-soft); color: #8b8f9b; padding: 36px 0; font-size: 14px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }

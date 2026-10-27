@@ -510,6 +510,8 @@ public sealed class HelpWindow : Window
             }
             case "media":
                 return Media(b);
+            case "shot":
+                return Shot(b);
             default:
                 return new Control();
         }
@@ -655,6 +657,43 @@ public sealed class HelpWindow : Window
     /// <summary>내장 움짤 <c>Gpixel.Help.media.&lt;이름&gt;.webp</c>를 여는 함수(붙을 때마다 새로 연다).</summary>
     private static Func<Stream?> MediaOpener(string name) =>
         () => typeof(HelpWindow).Assembly.GetManifestResourceStream($"Gpixel.Help.media.{name}.webp");
+
+    /// <summary>
+    /// 화면 그림(내장 <c>Gpixel.Help.shots.&lt;이름&gt;.webp</c>): 원래 크기까지만 보이고 창이 좁으면 줄어든다. 아래에 빨간 번호 설명(Runs)을 단다.
+    /// 대체 글·번호 설명에 찾은 말이 있으면 노란 테두리로 칠하고 그리로 스크롤한다.
+    /// </summary>
+    private Control Shot(HelpBlock b)
+    {
+        var altText = b.Alt ?? "";
+        using var stream = typeof(HelpWindow).Assembly.GetManifestResourceStream($"Gpixel.Help.shots.{b.Src}.webp");
+        if (stream is null) return Text(new[] { new HelpRun { T = altText } }, AppTheme.DimTextBrush, 12.5);
+        var bitmap = new Bitmap(stream);
+        var image = new Image
+        {
+            Source = bitmap,
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.DownOnly,
+            MaxWidth = bitmap.Size.Width,
+        }.Tip(altText);
+        RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
+        image.DetachedFromVisualTree += (_, _) => bitmap.Dispose();
+        AutomationProperties.SetName(image, altText);
+        var caption = b.Runs ?? [];
+        bool hit = _terms.Count > 0 && HelpSearch.Matches(altText + "\n" + string.Concat(caption.Select(r => r.T)), _terms).Count > 0;
+        var frame = new Border
+        {
+            BorderBrush = hit ? Yellow : AppTheme.BorderBrush,
+            BorderThickness = new Thickness(hit ? 2 : 1),
+            CornerRadius = new CornerRadius(8),
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = image,
+        };
+        if (hit) _firstHit ??= frame;
+        var stack = new StackPanel { Spacing = 6, Margin = new Thickness(0, 4, 0, 16), Children = { frame } };
+        if (caption.Length > 0) stack.Children.Add(Text(caption, AppTheme.DimTextBrush, 12.5));
+        return stack;
+    }
 
     /// <summary>움짤이 없을 때: 홈페이지 영상 링크 + 대체 글.</summary>
     private Control MediaLink(string url, string altText)
@@ -870,7 +909,7 @@ internal sealed class HelpPage
     [System.Text.Json.Serialization.JsonIgnore] public int Index { get; set; }
 }
 
-/// <summary>블록: p·h4(Runs), ul·ol·steps(Items), table(Head·Rows), note(Blocks), pre(Text), media(Alt·Page·Src).</summary>
+/// <summary>블록: p·h4(Runs), ul·ol·steps(Items), table(Head·Rows), note(Blocks), pre(Text), media(Alt·Page·Src), shot(Src·Alt, Runs = 번호 설명).</summary>
 internal sealed class HelpBlock
 {
     public string Type { get; set; } = "";
