@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.50 (2026-10-27)
+### Remember the AI Status dismissal when closing the window
+- The "Don't show again" choice now saves when AI Status is closed with the window close button or Cancel, not only with Continue or Close.
+- A new Gpixel version or a changed CLI file or path still shows AI Status again, as indicated below the checkbox.
+
 ## v1.14.49 (2026-10-27)
 ### Clearer AI CLI and MCP connection status
 - AI Status distinguishes the executable Gpixel can run from the CLI found on Gpixel's current PATH; it warns when they are missing or different.

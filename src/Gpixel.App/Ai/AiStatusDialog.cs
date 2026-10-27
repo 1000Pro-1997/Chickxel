@@ -69,12 +69,12 @@ internal sealed class AiStatusDialog : DialogBase
         Body.Children.AddRange([intro, _progress, serverGroup, Ui.ScrollHost(cards), _message, _hideUntilChange, note, _recheck]);
 
         OkButton.IsEnabled = false;
-        OkButton.Click += (_, _) =>
+        Opened += async (_, _) => await CheckAllAsync();
+        Closing += (_, _) =>
         {
             _settings.AiStatusDismissedFingerprint = _hideUntilChange.On() ? AiStatusProbe.Fingerprint(_settings) : null;
+            _closed.Cancel();
         };
-        Opened += async (_, _) => await CheckAllAsync();
-        Closing += (_, _) => _closed.Cancel();
 
         _loginPoll = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _loginPoll.Tick += async (_, _) => await PollLoginAsync();
