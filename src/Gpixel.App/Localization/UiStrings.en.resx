@@ -502,7 +502,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_45DD7D9C62" xml:space="preserve"><value>Zoom in / out (1–64x)</value></data>
   <data name="S_Dialogs_Shortcuts_45F476C257" xml:space="preserve"><value>Save (.gpixel) + export PNG sheet and .meta</value></data>
   <data name="S_Dialogs_Shortcuts_48AD2BB98E" xml:space="preserve"><value>Zoom in / out</value></data>
-  <data name="S_Dialogs_Shortcuts_495263DD23" xml:space="preserve"><value>Ellipse (Shift: circle)</value></data>
   <data name="S_Dialogs_Shortcuts_4A05EA78E2" xml:space="preserve"><value>Move (whole cell if no selection, wrap option)</value></data>
   <data name="S_Dialogs_Shortcuts_50CAA43D24" xml:space="preserve"><value>V (or Ctrl+drag — while held)</value></data>
   <data name="S_Dialogs_Shortcuts_52A2CB03ED" xml:space="preserve"><value>Apply transform (one undo step) / cancel transform</value></data>
@@ -512,7 +511,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_5DB5D4EBD4" xml:space="preserve"><value>Fit to screen / actual size</value></data>
   <data name="S_Dialogs_Shortcuts_5F294C19DF" xml:space="preserve"><value>Replace color</value></data>
   <data name="S_Dialogs_Shortcuts_5FC87736AC" xml:space="preserve"><value>Select all / deselect</value></data>
-  <data name="S_Dialogs_Shortcuts_63ADB1FB8F" xml:space="preserve"><value>Line (Shift: 45° steps)</value></data>
+  <data name="S_Dialogs_Shortcuts_63ADB1FB8F" xml:space="preserve"><value>Shape: line (Shift: 15° steps)</value></data>
   <data name="S_Dialogs_Shortcuts_662DA22B3A" xml:space="preserve"><value>Rotate 90° (selection, or whole canvas if none)</value></data>
   <data name="S_Dialogs_Shortcuts_6657ADE48E" xml:space="preserve"><value>Tools</value></data>
   <data name="S_Dialogs_Shortcuts_669BA7D949" xml:space="preserve"><value>Add outline (primary color)</value></data>
@@ -562,7 +561,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_D663A4CCA6" xml:space="preserve"><value>Scroll layers up/down / frames left/right</value></data>
   <data name="S_Dialogs_Shortcuts_D8744C6D64" xml:space="preserve"><value>AI chat — Claude, Codex (draw and edit by talking)</value></data>
   <data name="S_Dialogs_Shortcuts_D9CD891666" xml:space="preserve"><value>Drag header</value></data>
-  <data name="S_Dialogs_Shortcuts_DAEB4ED541" xml:space="preserve"><value>Rectangle (Shift: square)</value></data>
+  <data name="S_Dialogs_Shortcuts_DAEB4ED541" xml:space="preserve"><value>Shape (Shift: keep proportions; pick the shape in Tool options)</value></data>
   <data name="S_Dialogs_Shortcuts_DB4E346999" xml:space="preserve"><value>Open Unity project (Unity Hub)</value></data>
   <data name="S_Dialogs_Shortcuts_DD21ABD0E2" xml:space="preserve"><value>Copy / cut / paste cells and frames (after clicking the timeline)</value></data>
   <data name="S_Dialogs_Shortcuts_E014D4B8B3" xml:space="preserve"><value>Move 8 pixels</value></data>
@@ -1368,11 +1367,8 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PixelCanvas_EndDrag_DB199DD98F" xml:space="preserve"><value>Deselect</value></data>
   <data name="S_PixelCanvas_EndDrag_E0D2C0AAD2" xml:space="preserve"><value>Gradient: drag from start point to end point to fill.</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_1C14189718" xml:space="preserve"><value>Dithering</value></data>
-  <data name="S_PixelCanvas_EndPixelStroke_3A7C39EBF0" xml:space="preserve"><value>Ellipse</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_45906D38E1" xml:space="preserve"><value>Gradient</value></data>
-  <data name="S_PixelCanvas_EndPixelStroke_57B4E3E0E3" xml:space="preserve"><value>Rectangle</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_57BA62C92E" xml:space="preserve"><value>Lighten</value></data>
-  <data name="S_PixelCanvas_EndPixelStroke_8D94C37E38" xml:space="preserve"><value>Line</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_8EFE7C05AE" xml:space="preserve"><value>Eraser</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_94045434EF" xml:space="preserve"><value>Fill</value></data>
   <data name="S_PixelCanvas_EndPixelStroke_CF98AEC3ED" xml:space="preserve"><value>Pencil</value></data>
@@ -2166,7 +2162,7 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_98ABAB10EB" xml:space="preserve"><value>Clear borders (turn off 9-slice)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A181F0EEA8" xml:space="preserve"><value>Dense (75%)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A41D1B8B02" xml:space="preserve"><value>Tolerance</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA" xml:space="preserve"><value>Draw filled rectangles/ellipses (U)</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA" xml:space="preserve"><value>Draw shapes filled (U)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A527F1585C" xml:space="preserve"><value>When resized, the area outside the green lines (corners and edges) does not stretch; only the middle does. For UI buttons/panels used with Image Type = Sliced in Unity; 0 means off.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A5622FB876" xml:space="preserve"><value>9-slice borders (px) — drag the green lines</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291" xml:space="preserve"><value>Height</value></data>
@@ -3397,4 +3393,40 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiStatus_SettingsNote" xml:space="preserve"><value>Check Claude Code and Codex CLI paths, versions, sign-in, and Gpixel MCP connections. You can also install, update, sign in, sign out, or change an executable.</value></data>
   <data name="AiStatus_Open" xml:space="preserve"><value>Open AI status and settings</value></data>
   <data name="AiStatus_OpenMenu" xml:space="preserve"><value>Open AI Status…</value></data>
+  <data name="Shape_Group" xml:space="preserve"><value>Shape</value></data>
+  <data name="Shape_Rectangle" xml:space="preserve"><value>Rectangle</value></data>
+  <data name="Shape_Rectangle_Hint" xml:space="preserve"><value>Rectangle: draws the dragged box. Shift: square</value></data>
+  <data name="Shape_Ellipse" xml:space="preserve"><value>Ellipse</value></data>
+  <data name="Shape_Ellipse_Hint" xml:space="preserve"><value>Ellipse: fits the dragged box. Shift: circle</value></data>
+  <data name="Shape_Triangle" xml:space="preserve"><value>Equilateral triangle</value></data>
+  <data name="Shape_Triangle_Hint" xml:space="preserve"><value>Equilateral triangle: the dragged line becomes one side (drag right to point up, left to point down). Shift: 30° steps</value></data>
+  <data name="Shape_Isosceles" xml:space="preserve"><value>Isosceles triangle</value></data>
+  <data name="Shape_Isosceles_Hint" xml:space="preserve"><value>Isosceles triangle: fits the dragged box. Drag down for the tip on top, up for the tip at the bottom. Shift: equilateral proportions</value></data>
+  <data name="Shape_Polygon" xml:space="preserve"><value>Regular polygon</value></data>
+  <data name="Shape_Polygon_Hint" xml:space="preserve"><value>Regular polygon: with the set number of corners (5 = pentagon, 6 = hexagon), fitted to the dragged box. Shift: keep it regular</value></data>
+  <data name="Shape_Star" xml:space="preserve"><value>Star</value></data>
+  <data name="Shape_Star_Hint" xml:space="preserve"><value>Star: with the set number of points, fitted to the dragged box. Shift: keep it regular</value></data>
+  <data name="Shape_Spiral" xml:space="preserve"><value>Spiral</value></data>
+  <data name="Shape_Spiral_Hint" xml:space="preserve"><value>Spiral: winds outward from the center to fill the dragged box. Drag left to wind the other way. Never filled. Shift: square</value></data>
+  <data name="Shape_Cylinder" xml:space="preserve"><value>Cylinder</value></data>
+  <data name="Shape_Cylinder_Hint" xml:space="preserve"><value>Cylinder: top ellipse, both sides and the front half of the bottom. Shift: square</value></data>
+  <data name="Shape_Cube" xml:space="preserve"><value>Cube</value></data>
+  <data name="Shape_Cube_Hint" xml:space="preserve"><value>Cube (dice): three faces in 2:1 isometric lines. Shift: square</value></data>
+  <data name="Shape_Sides" xml:space="preserve"><value>Corners</value></data>
+  <data name="Shape_SidesTip" xml:space="preserve"><value>Number of polygon corners (3–32): 5 = pentagon, 6 = hexagon</value></data>
+  <data name="Shape_Points" xml:space="preserve"><value>Points</value></data>
+  <data name="Shape_PointsTip" xml:space="preserve"><value>Number of star points (3–32)</value></data>
+  <data name="Shape_Turns" xml:space="preserve"><value>Turns</value></data>
+  <data name="Shape_TurnsTip" xml:space="preserve"><value>How many times the spiral winds (1–10)</value></data>
+  <data name="Shape_Line" xml:space="preserve"><value>Line</value></data>
+  <data name="Shape_Line_Hint" xml:space="preserve"><value>Line: from where you press to where you release. Shift: 15° steps</value></data>
+  <data name="Shape_Curve" xml:space="preserve"><value>Curve</value></data>
+  <data name="Shape_Curve_Hint" xml:space="preserve"><value>Curve: drag to set both ends, release, move the mouse to bend it, then click to confirm (the middle of the curve passes through the mouse). Shift: circular arc through both ends and the mouse. Other button or Esc cancels</value></data>
+  <data name="Shape_CurveBend" xml:space="preserve"><value>Curve: move the mouse to bend, click to confirm · Shift = circular arc · Enter confirms · other button or Esc cancels</value></data>
+  <data name="Shape_Steps" xml:space="preserve"><value>Pixel steps</value></data>
+  <data name="Shape_StepsDiagonal" xml:space="preserve"><value>Diagonal</value></data>
+  <data name="Shape_StepsDiagonalTip" xml:space="preserve"><value>Joins pixels diagonally too, for the thinnest line (default).</value></data>
+  <data name="Shape_StepsOrthogonal" xml:space="preserve"><value>Orthogonal</value></data>
+  <data name="Shape_StepsOrthogonalTip" xml:space="preserve"><value>Steps only sideways or up/down so every pixel touches the next by an edge (an L-shaped corner at each step).</value></data>
+  <data name="Help_NoShortcut" xml:space="preserve"><value>no shortcut</value></data>
 </root>

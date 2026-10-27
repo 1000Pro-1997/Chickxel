@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- tools/build-docs.py가 docs/i18n/guide.html(틀)·guide.csv(언어별 문구)로 만든 파일입니다. 이 파일을 직접 고치지 말고 docs/i18n을 고친 뒤 다시 만드세요. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -12,7 +13,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../style.css?v=20261025b">
+<link rel="stylesheet" href="../style.css?v=20261027a">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -119,9 +120,9 @@
 <h2>Drawing with AI</h2>
 <p>Claude Code or Codex on your own computer drives Gpixel with your own account (no API key). Say something like "draw a 32×32 wooden barrel" and it draws right into the open image.</p>
 <ol class="core-steps">
-<li><strong>Open AI chat</strong><span><kbd>Ctrl</kbd>+<kbd>L</kbd> or the AI button in the top bar. Pick the Claude or Codex tab and log in once.</span></li>
+<li><strong>Open AI chat</strong><span><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span> or the AI button in the top bar. Pick the Claude or Codex tab and log in once.</span></li>
 <li><strong>Describe what you want</strong><span>Include size, subject and colors for the best results. Progress shows while it draws.</span></li>
-<li><strong>Undo if you don't like it</strong><span>Each reply is one undo step. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> or "Undo this step" under the reply.</span></li>
+<li><strong>Undo if you don't like it</strong><span>Each reply is one undo step. Use <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> or "Undo this step" under the reply.</span></li>
 </ol>
 <div class="note"><p>In our testing, <strong>Codex's Astra model</strong> (gpt-6-astra) drew the best results. See the <a href="#ai">AI chat</a> chapter for details.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
@@ -208,9 +209,9 @@
 <h3 id="featured-skins">Managing skins</h3>
 <p>Split a character into parts like head, body and arms, draw several skins for each, and swap them with one click. Cells left empty in other skins inherit the first skin's art, so you only redraw the parts that change.</p>
 <ol class="core-steps">
-<li><strong>Create a group and parts</strong><span>Split the character with a new group (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>) and new parts (<kbd>Shift</kbd>+<kbd>P</kbd>).</span></li>
+<li><strong>Create a group and parts</strong><span>Split the character with a new group (<span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span>) and new parts (<span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span>).</span></li>
 <li><strong>Add skins and draw</strong><span>Add skins from the skin chip in the timeline or the <strong>Skin manager</strong>, and draw only the parts that change.</span></li>
-<li><strong>Swap</strong><span>Pick a skin from the outfit row under the preview or the skin chip, or jump with <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd>.</span></li>
+<li><strong>Swap</strong><span>Pick a skin from the outfit row under the preview or the skin chip, or jump with <span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span>.</span></li>
 </ol>
 <div class="note"><p>Skins can be exported as separate files per skin or as a Unity Sprite Library. See <a href="#parts">Part (group) layers · skins</a> for details.</p></div>
 <figure class="core-media wide guide-media"><video src="../assets/feature-skins.mp4" poster="../assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Swapping a character's hair skin with the skin chip and the Skin manager" width="1280" height="688"></video></figure>
@@ -234,16 +235,16 @@
 <ol class="core-steps">
 <li><strong>Pick the Pivot tool (K)</strong><span>Drag the anchor on the canvas, or use the 9-direction buttons and X/Y fields in the tool settings.</span></li>
 <li><strong>Choose the target</strong><span>With a part selected, that part's pivot changes; otherwise the project default pivot (all frames). Turn on <strong>Current frame only</strong> to set it for one frame.</span></li>
-<li><strong>Save to update Unity</strong><span>Saving writes the pivot into the <code>.meta</code> alongside the PNG sheet. Transform (<kbd>Ctrl</kbd>+<kbd>T</kbd>) also starts rotating around this pivot.</span></li>
+<li><strong>Save to update Unity</strong><span>Saving writes the pivot into the <code>.meta</code> alongside the PNG sheet. Transform (<span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>) also starts rotating around this pivot.</span></li>
 </ol>
 <figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
 </section>
 
 <section class="doc" id="featured-export">
 <h2>Export</h2>
-<p>In the <kbd>Ctrl</kbd>+<kbd>E</kbd> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
+<p>In the <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
 <ol class="core-steps">
-<li><strong>Open the export window</strong><span><kbd>Ctrl</kbd>+<kbd>E</kbd>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
+<li><strong>Open the export window</strong><span><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
 <li><strong>Set layout, skins and splitting</strong><span>Choose cell layout and spacing, whether to pack all skins in one image or one file per skin, and whether to split by tag, part or skin. Unity Sprite Library and import settings (<code>.meta</code>) are set here too, and you can save favorite settings as presets.</span></li>
 <li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The file browser hides the exported PNGs and shows the single <code>.gpixel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
 </ol>
@@ -291,7 +292,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>On first launch the display language follows your computer's language (Korean or English; English if there's no match). See <a href="#language">Language</a> to change it.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/start-first-run.png" alt="Gpixel's first screen with no document: the start screen in the middle with the Open folder button, recent folders and recent files lists and the Unity Hub project list, and the file browser on the left" width="1600" height="932" loading="lazy"><figcaption>① Open folder… · ② Recent folders · ③ File browser (shows the images once you choose a folder) · ④ Unity Hub project list</figcaption></figure>
-<div class="note"><p>On macOS, read <kbd>Ctrl</kbd> in this guide as <kbd>⌘</kbd> (Command) (e.g. <kbd>⌘</kbd>+<kbd>S</kbd> to save). The eyedropper is <kbd>⌥</kbd>+click, and holding <kbd>⌘</kbd> switches temporarily to the Move tool. Menus and tooltips also show ⌘.</p></div>
+<div class="note"><p>On macOS, read <kbd class="os-keep">Ctrl</kbd> in this guide as <kbd>⌘</kbd> (Command) (e.g. <kbd>⌘</kbd>+<kbd>S</kbd> to save). The eyedropper is <kbd>⌥</kbd>+click, and holding <kbd>⌘</kbd> switches temporarily to the Move tool. Menus and tooltips also show ⌘.</p></div>
 
 <h3 id="start-update">Updates</h3>
 <p>Gpixel checks for a new version every time it starts. If one is available, the <strong>update dialog</strong> opens and an ① <strong>Update</strong> button appears in the top bar.</p>
@@ -338,7 +339,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>③ <strong>View options</strong>: grid, tile grid, tiled mode, pivot, onion (overlay previous/next frames). <strong>Right-click</strong> a button to open that view's settings popup; changes apply immediately (and turn the view on if it was off).</li>
 <li>④ <strong>Zoom box</strong>: click to type a value, drag left/right to change one step at a time, right-click for ⑦ Fit to window and a 100%–6400% list.</li>
-<li>⑤ <strong>Fit</strong> toggle: when on, images are fitted to the window each time you open one. <kbd>Ctrl</kbd>+<kbd>0</kbd> fits the current view at any time.</li>
+<li>⑤ <strong>Fit</strong> toggle: when on, images are fitted to the window each time you open one. <span class="key" data-cmd="보기/화면에 맞추기"><kbd>Ctrl</kbd>+<kbd>0</kbd></span> fits the current view at any time.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/screen-top-bar.png" alt="Top bar below the menu: tool name and hint, view options, zoom, Fit and the AI chat button" width="1613" height="64" loading="lazy"><figcaption>① Tool name · ② Usage hint · ③ View options · ④ Zoom box · ⑤ Fit · ⑥ AI chat</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/screen-top-bar-2.png" alt="Zoom box right-click list: Fit to screen and 100%–6400%" width="478" height="219" loading="lazy"><figcaption>⑦ Zoom box right-click list</figcaption></figure>
@@ -370,14 +371,14 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="screen-toolbar">Toolbar</h3>
 <p>The vertical bar on the far left. Hover an icon to see its shortcut in the tooltip.</p>
 <ul>
-<li>The ① <strong>folder button</strong> at the top collapses and expands the file browser (<kbd>F8</kbd>).</li>
+<li>The ① <strong>folder button</strong> at the top collapses and expands the file browser (<span class="key" data-cmd="보기/파일 브라우저"><kbd>F8</kbd></span>).</li>
 <li>Similar tools ② share one slot, marked with a small triangle in the bottom-right corner. Long-press or right-click to ③ expand it sideways and switch. See the <a href="#tools">Tools</a> chapter for each tool.</li>
-<li>At the bottom are ④ <strong>Save</strong> (same as <kbd>Ctrl</kbd>+<kbd>S</kbd>) and ⑤ <strong>Revert to saved</strong>. They're enabled only when there are unsaved changes, and revert is disabled for a new project that has never been saved (see <a href="#files">Files</a>).</li>
+<li>At the bottom are ④ <strong>Save</strong> (same as <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>) and ⑤ <strong>Revert to saved</strong>. They're enabled only when there are unsaved changes, and revert is disabled for a new project that has never been saved (see <a href="#files">Files</a>).</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/screen-toolbar.png" alt="Toolbar: folder button, the shape slot expanded by right-click, Save and Revert buttons" width="244" height="698" loading="lazy"><figcaption>① Folder button · ② Grouped slot · ③ Expanded tool list · ④ Save · ⑤ Revert to saved</figcaption></figure>
 
 <h3 id="screen-file-browser">File browser</h3>
-<p>It has ① a folder tree, ② a thumbnail list of <code>.gpixel</code> and PNG files, ③ search, and ④ an option to include subfolders; changes to files in the folder are picked up automatically. You can also open projects straight from the Unity Hub list. Open folder is <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>, Open Unity project is <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd>.</p>
+<p>It has ① a folder tree, ② a thumbnail list of <code>.gpixel</code> and PNG files, ③ search, and ④ an option to include subfolders; changes to files in the folder are picked up automatically. You can also open projects straight from the Unity Hub list. Open folder is <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Open Unity project is <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>.</p>
 <ul>
 <li>⑤ Three icons on the right of the title row: <strong>New pixel file</strong> (creates and opens a <code>.gpixel</code> in the selected folder), <strong>New folder</strong>, <strong>Refresh</strong>.</li>
 <li><code>.gpixel</code> projects get ⑥ a blue layer badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, frame sheet, part atlas) are hidden from the list so only the single <code>.gpixel</code> is shown. Hover it to see the exported file names; searching by those names also finds it.</li>
@@ -420,7 +421,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h4>Deleting and the app trash</h4>
 <ul>
 <li>Deleted files (<kbd>Delete</kbd>, multiple allowed) and originals removed by merging go to the app's own trash without asking (including their PNG and <code>.meta</code> files).</li>
-<li>Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list to restore the last deletion to its original place.</li>
+<li>Press <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> in the file list to restore the last deletion to its original place.</li>
 <li>In <strong>View app trash…</strong> on the right-click menu, browse ⑯ previews and ⑰ restore (double-click), delete permanently or empty the trash.</li>
 <li>⑱ Retention policy: <strong>Time limit</strong> (off by default; when on, items older than N days are permanently deleted) and <strong>Size limit</strong> (default 1 GB; oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>.</li>
 <li><strong>Delete <code>.gpixel</code> files only</strong>: sends only the project file to the trash and keeps the exported PNG and <code>.meta</code>.</li>
@@ -478,7 +479,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>Selecting a part layer shows ① only that part at its own size, with ② the rest of the frame shown <strong>semi-transparently</strong> so you can line things up. Selecting a group layer lets you drag parts to arrange them (see <a href="#parts">Part (group) layers</a>).</li>
 <li>Supports 1–64× integer zoom, ③ checkerboard background, ④ pixel/⑤ tile grids, ⑩ tiled mode (for seamless patterns), ⑥ symmetry guides, ⑦ pivot, ⑧ selection and ⑨ onion skin.</li>
-<li>Hold <kbd>H</kbd> to peek at the previous frame.</li>
+<li>Hold <span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span> to peek at the previous frame.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/screen-canvas.png" alt="Canvas with the Gem part layer selected: the part at its own size, the rest semi-transparent" width="801" height="731" loading="lazy"><figcaption>① Selected part · ② Rest of the frame, semi-transparent</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/screen-canvas-2.png" alt="Canvas view features: checkerboard, pixel and tile grids, symmetry guide, pivot, selection, onion skin" width="801" height="731" loading="lazy"><figcaption>③ Checkerboard · ④ Pixel grid · ⑤ Tile grid · ⑥ Symmetry guide · ⑦ Pivot · ⑧ Selection · ⑨ Onion skin</figcaption></figure>
@@ -488,9 +489,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>The tab strip above the canvas has one tab per open document (① title = file name, ② a red dot for unsaved changes, ③ full path on hover). Clicking a file in the file browser opens it in a <strong>new tab</strong>; if it's already open (even in the other pane), it isn't opened again — its tab is selected and that pane gets focus. A document is open in only one tab. Open, recent files, New project and AI tools also open new tabs.</p>
 <ul>
 <li>Clicking a tab switches documents; the timeline, preview, layers, undo history (per document), window title and status bar follow. Zoom, position, current frame, layer and selection are remembered <strong>per tab</strong>.</li>
-<li>Close with the tab's ④ <strong>X</strong>, a middle click or <kbd>Ctrl</kbd>+<kbd>W</kbd>. The ⑤ <strong>+</strong> at the end of the strip creates a new project in a new tab.</li>
+<li>Close with the tab's ④ <strong>X</strong>, a middle click or <span class="key" data-cmd="파일/닫기"><kbd>Ctrl</kbd>+<kbd>W</kbd></span>. The ⑤ <strong>+</strong> at the end of the strip creates a new project in a new tab.</li>
 <li>Closing every tab shows the start screen below the tab strip. Only <strong>+</strong> remains on the strip, so you can create a new project in a new tab.</li>
-<li>Drag tabs left and right to reorder them; <kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> cycle through them. ⑥ Right-click = Close, Close other tabs, Move to the other pane.</li>
+<li>Drag tabs left and right to reorder them; <span class="key" data-cmd="보기/다음 탭"><kbd>Ctrl</kbd>+<kbd>Tab</kbd></span> / <span class="key" data-cmd="보기/이전 탭"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></span> cycle through them. ⑥ Right-click = Close, Close other tabs, Move to the other pane.</li>
 <li><strong>Move to the other pane</strong> (tab right-click, ⑦ the move button at the right end of the strip, the View menu) or dragging a tab to the right edge of the canvas moves that tab into ⑧ a right pane, splitting the canvas into left and right panes, each with its own tab strip. Once split, the same actions move tabs between panes. A pane's only tab isn't moved.</li>
 <li>The <strong>focused pane</strong> (⑨ accent line under its tab strip) is the one the timeline, preview and panels work on; clicking the other pane focuses it. Closing the last tab of a pane removes the split.</li>
 <li>Tabs open when you quit (including the split and order) are reopened next time; missing files and never-saved new documents are skipped.</li>
@@ -548,7 +549,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>Delete</td><td>Select, then <kbd>Delete</kbd>. Frames → delete frames, layers → delete layers (groups include their parts), cels → clear the image only. You can't delete every frame or layer.</td></tr>
 <tr><td>Reorder</td><td>Drag an <strong>already selected</strong> frame header or layer name. Other columns/rows move aside to make room; <kbd>Esc</kbd> cancels. Parts move only within the same group.</td></tr>
 <tr><td>Move or copy a block of cels</td><td>① Select several cells, then click inside and drag to move; hold <kbd>Ctrl</kbd> (or <kbd>Alt</kbd>) when dropping to copy. Cels can't move to rows of a different size or type.</td></tr>
-<tr><td>Copy and paste</td><td><kbd>Ctrl</kbd>+<kbd>C</kbd> (or <kbd>X</kbd>), then <kbd>Ctrl</kbd>+<kbd>V</kbd> (or ② copy, cut, paste in the right-click menu). Cels overwrite the same shape with the clicked cell as top-left, frames are pasted as new frames after the selected frame, and layers as new layers above the original.</td></tr>
+<tr><td>Copy and paste</td><td><span class="key" data-cmd="편집/복사"><kbd>Ctrl</kbd>+<kbd>C</kbd></span> (or <kbd>X</kbd>), then <span class="key" data-cmd="편집/붙여넣기"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> (or ② copy, cut, paste in the right-click menu). Cels overwrite the same shape with the clicked cell as top-left, frames are pasted as new frames after the selected frame, and layers as new layers above the original.</td></tr>
 <tr><td>Bring in the previous frame's image</td><td>Right-click an ③ empty cel → ④ "Copy image from previous frame"</td></tr>
 </tbody>
 </table></div>
@@ -673,7 +674,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/screen-preview-3.png" alt="Preview background list: checker, black, white, gray, green, custom color" width="308" height="415" loading="lazy"><figcaption>⑥ Background list</figcaption></figure>
 
 <h3 id="screen-export">Export dialog</h3>
-<p>Open it with <kbd>Ctrl</kbd>+<kbd>E</kbd> or <strong>File &gt; Export…</strong>. Settings apply as soon as you change them (one undo step per setting), and the blue ① <strong>Export</strong> button at the bottom closes the dialog and exports. If export on save is on, <kbd>Ctrl</kbd>+<kbd>S</kbd> alone exports too. There are two tabs: ② <strong>Export</strong> and ③ <strong>Import Settings</strong>.</p>
+<p>Open it with <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> or <strong>File &gt; Export…</strong>. Settings apply as soon as you change them (one undo step per setting), and the blue ① <strong>Export</strong> button at the bottom closes the dialog and exports. If export on save is on, <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> alone exports too. There are two tabs: ② <strong>Export</strong> and ③ <strong>Import Settings</strong>.</p>
 <ul>
 <li>④ <strong>Left = settings</strong>, ⑤ <strong>right = output preview</strong> (sheet and cell name list per file). Drag ⑥ the divider to split the width; the dialog size and collapsed sections are remembered.</li>
 <li>The frame sheet and part atlas share the <strong>same sheet settings</strong>. Turn on ⑪ <strong>Advanced &gt; Per sheet</strong> to keep separate settings for the part atlas.</li>
@@ -719,7 +720,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="screen-tool-settings">Tool options</h3>
 <p>Below the preview on the right. ① The title row shows the selected tool's name (e.g. <code>Tool settings · Pencil</code>) and ② only that tool's settings appear. Tool settings aren't part of undo and are kept for the next launch. Per-tool details are in the <a href="#tools">Tools</a> chapter.</p>
 <figure class="shot"><img src="../assets/guide/screen-tool-settings.png" alt="Tool options panel for the Pencil" width="321" height="380" loading="lazy"><figcaption>① Title row · ② Settings of that tool</figcaption></figure>
-<h4>Pivot (Pivot tool <kbd>K</kbd>)</h4>
+<h4>Pivot (Pivot tool <span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>)</h4>
 <ul>
 <li>③ Shows the pivot of the drawing target (the part if one is selected, otherwise the frame) in pixels.</li>
 <li>The ④ <strong>5×5 buttons</strong> pick 0, 1/4, 1/2, 3/4 or end positions horizontally and vertically.</li>
@@ -742,21 +743,21 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>Tool</th><th>Shortcut</th><th>What it does</th></tr></thead>
 <tbody>
-<tr><td>③ Pencil</td><td><kbd>B</kbd></td><td>Paints pixels. Supports pixel perfect (<kbd>P</kbd>, at size 1) and symmetry</td></tr>
-<tr><td>④ Eraser</td><td><kbd>E</kbd></td><td>Erases pixels</td></tr>
-<tr><td>⑤ Fill</td><td><kbd>G</kbd></td><td>Fills an area of the same (or similar) color</td></tr>
-<tr><td>⑤ Gradient</td><td><kbd>F</kbd></td><td>Drag to paint a linear gradient</td></tr>
-<tr><td>⑥ Eyedropper</td><td><kbd>I</kbd>, <kbd>Alt</kbd>+click</td><td>Picks a color from the canvas</td></tr>
-<tr><td>⑦ Line / Rectangle / Circle</td><td><kbd>L</kbd> / <kbd>R</kbd> / <kbd>O</kbd></td><td>Draws shapes. Rectangles and circles can be <strong>filled</strong> (<kbd>U</kbd>)</td></tr>
-<tr><td>⑧ Rectangle select / Ellipse select</td><td><kbd>M</kbd></td><td>Drag to select an area</td></tr>
-<tr><td>⑧ Lasso select</td><td><kbd>Q</kbd></td><td>Draw an outline to select</td></tr>
-<tr><td>⑧ Magic wand</td><td><kbd>W</kbd></td><td>Selects an area of similar color</td></tr>
-<tr><td>⑨ Move</td><td><kbd>V</kbd></td><td>Moves the selection. With no selection it shifts the whole cel; has a <strong>wrap around</strong> option</td></tr>
-<tr><td>⑩ Lighten/darken</td><td><kbd>D</kbd></td><td>Changes the brightness where you brush</td></tr>
-<tr><td>⑪ Dithering</td><td><kbd>T</kbd></td><td>Paints by mixing primary and secondary colors in a pattern</td></tr>
-<tr><td>⑫ Color replace brush</td><td><kbd>C</kbd></td><td>Replaces colors where you brush</td></tr>
-<tr><td>⑬ Pivot</td><td><kbd>K</kbd></td><td>Sets the pivot</td></tr>
-<tr><td>⑭ 9-slice</td><td><kbd>S</kbd></td><td>Sets the Unity sprite border</td></tr>
+<tr><td>③ Pencil</td><td><span class="key" data-cmd="도구/연필"><kbd>B</kbd></span></td><td>Paints pixels. Supports pixel perfect (<span class="key" data-cmd="도구/픽셀 퍼펙트"><kbd>P</kbd></span>, at size 1) and symmetry</td></tr>
+<tr><td>④ Eraser</td><td><span class="key" data-cmd="도구/지우개"><kbd>E</kbd></span></td><td>Erases pixels</td></tr>
+<tr><td>⑤ Fill</td><td><span class="key" data-cmd="도구/채우기"><kbd>G</kbd></span></td><td>Fills an area of the same (or similar) color</td></tr>
+<tr><td>⑤ Gradient</td><td><span class="key" data-cmd="도구/그라데이션"><kbd>F</kbd></span></td><td>Drag to paint a linear gradient</td></tr>
+<tr><td>⑥ Eyedropper</td><td><span class="key" data-cmd="도구/스포이드"><kbd>I</kbd></span>, <kbd>Alt</kbd>+click</td><td>Picks a color from the canvas</td></tr>
+<tr><td>⑦ Line / Rectangle / Circle</td><td><span class="key" data-cmd="도구/선"><kbd>L</kbd></span> / <span class="key" data-cmd="도구/도형"><kbd>R</kbd></span> / <kbd>O</kbd></td><td>Draws shapes. Rectangles and circles can be <strong>filled</strong> (<span class="key" data-cmd="도구/도형 채움"><kbd>U</kbd></span>)</td></tr>
+<tr><td>⑧ Rectangle select / Ellipse select</td><td><span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span></td><td>Drag to select an area</td></tr>
+<tr><td>⑧ Lasso select</td><td><span class="key" data-cmd="도구/자유 선택"><kbd>Q</kbd></span></td><td>Draw an outline to select</td></tr>
+<tr><td>⑧ Magic wand</td><td><span class="key" data-cmd="도구/스마트 선택"><kbd>W</kbd></span></td><td>Selects an area of similar color</td></tr>
+<tr><td>⑨ Move</td><td><span class="key" data-cmd="도구/이동"><kbd>V</kbd></span></td><td>Moves the selection. With no selection it shifts the whole cel; has a <strong>wrap around</strong> option</td></tr>
+<tr><td>⑩ Lighten/darken</td><td><span class="key" data-cmd="도구/밝게/어둡게"><kbd>D</kbd></span></td><td>Changes the brightness where you brush</td></tr>
+<tr><td>⑪ Dithering</td><td><span class="key" data-cmd="도구/디더링"><kbd>T</kbd></span></td><td>Paints by mixing primary and secondary colors in a pattern</td></tr>
+<tr><td>⑫ Color replace brush</td><td><span class="key" data-cmd="도구/색 바꾸기 브러시"><kbd>C</kbd></span></td><td>Replaces colors where you brush</td></tr>
+<tr><td>⑬ Pivot</td><td><span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span></td><td>Sets the pivot</td></tr>
+<tr><td>⑭ 9-slice</td><td><span class="key" data-cmd="도구/9-slice"><kbd>S</kbd></span></td><td>Sets the Unity sprite border</td></tr>
 </tbody>
 </table></div>
 <figure class="shot"><img src="../assets/guide/tools-list-2.png" alt="The tool slots of the toolbar" width="104" height="515" loading="lazy"><figcaption>③ Pencil · ④ Eraser · ⑤ Fill/gradient group · ⑥ Eyedropper · ⑦ Shapes group (line, rectangle, circle) · ⑧ Select group (rectangle, ellipse, lasso, magic wand) · ⑨ Move · ⑩ Lighten/darken · ⑪ Dithering · ⑫ Color replace brush · ⑬ Pivot · ⑭ 9-slice</figcaption></figure>
@@ -784,7 +785,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>Shared by the pencil, eraser, lighten/darken, dithering and color replace brush.</p>
 <ul>
 <li>Shape: ① <strong>Square / Circle / Diamond</strong>. ② A preview of the actual pixel shape appears beside it.</li>
-<li>③ Size 1–32: drag the number field left/right or use <kbd>[</kbd> / <kbd>]</kbd>.</li>
+<li>③ Size 1–32: drag the number field left/right or use <span class="key" data-cmd="도구/브러시 작게"><kbd>[</kbd></span> / <span class="key" data-cmd="도구/브러시 크게"><kbd>]</kbd></span>.</li>
 <li>④ Line thickness and pen shape for lines, rectangles and circles are set the same way.</li>
 <li><strong>Lighten/darken</strong> has ⑤ <strong>Strength</strong> 1–50% (default 10%); <strong>Dithering</strong> has a ⑥ <strong>Pattern</strong>: checker (50%) / sparse (25%) / dense (75%).</li>
 </ul>
@@ -796,11 +797,11 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="tools-select">Selection tools</h3>
 <p>All four selection tools create the same kind of selection. Once you have one, cut, copy, delete, flip, rotate, move, outline and replace color apply only inside it, and drawing is limited to it as well.</p>
 <ul>
-<li>① <strong>Rectangle / Ellipse select</strong>: drag to select (<kbd>Shift</kbd> = square/circle). Drag inside the selection to move its contents, and press <kbd>Enter</kbd> to drop.</li>
+<li>① <strong>Rectangle / Ellipse select</strong>: drag to select (<kbd>Shift</kbd> = square/circle). Drag inside the selection to move its contents, and press <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> to drop.</li>
 <li>② <strong>Lasso select</strong>: draw an outline and release; it closes back to the starting point. The area to be selected is shown with a blue dotted line while dragging.</li>
-<li>③ <strong>Magic wand</strong>: selects the area of similar color to where you click. ④ Settings are the same as Fill. To move it, use Move (<kbd>V</kbd>) or the arrow keys.</li>
-<li><strong>Right-click</strong> the canvas with a selection tool or press <kbd>Ctrl</kbd>+<kbd>D</kbd> = deselect.</li>
-<li>Pressing <kbd>M</kbd> repeatedly cycles rectangle → ellipse → lasso → magic wand.</li>
+<li>③ <strong>Magic wand</strong>: selects the area of similar color to where you click. ④ Settings are the same as Fill. To move it, use Move (<span class="key" data-cmd="도구/이동"><kbd>V</kbd></span>) or the arrow keys.</li>
+<li><strong>Right-click</strong> the canvas with a selection tool or press <span class="key" data-cmd="편집/선택 해제"><kbd>Ctrl</kbd>+<kbd>D</kbd></span> = deselect.</li>
+<li>Pressing <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span> repeatedly cycles rectangle → ellipse → lasso → magic wand.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/tools-select.png" alt="Canvas with the character's head selected by rectangle select" width="374" height="668" loading="lazy"><figcaption>① Area selected with rectangle select (dotted border)</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/tools-select-2.png" alt="Canvas while drawing an outline with lasso select" width="374" height="668" loading="lazy"><figcaption>② Lasso select while dragging: the area to be selected (blue dotted line)</figcaption></figure>
@@ -809,7 +810,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="tools-fill">Fill</h3>
 <ul>
 <li>① <strong>Tolerance</strong> 0–100%: 0 fills only the exact same color; higher values include similar colors.</li>
-<li>② <strong>Contiguous only</strong>: when off, fills every matching color (<kbd>Shift</kbd>+<kbd>G</kbd>).</li>
+<li>② <strong>Contiguous only</strong>: when off, fills every matching color (<span class="key" data-cmd="도구/채우기: 같은 색 전체"><kbd>Shift</kbd>+<kbd>G</kbd></span>).</li>
 <li>③ <strong>Connect diagonally too</strong>: connects areas in 8 directions.</li>
 <li>④ <strong>Source</strong>: current layer / all visible layers (the area is determined from the composite, but paint goes on the current layer). ⑤ The eyedropper has the same source setting.</li>
 </ul>
@@ -832,7 +833,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/tools-gradient-3.png" alt="Gradients tab of the Presets window" width="1000" height="712" loading="lazy"><figcaption>⑬ Preset list · ⑭ Add to favorites, Rename, Delete · ⑮ Preview and editor of the selected preset · ⑯ Save changes</figcaption></figure>
 
 <h3 id="tools-transform">Transform mode (rotate/size)</h3>
-<p><kbd>Ctrl</kbd>+<kbd>T</kbd> or <strong>Transform (rotate/size)…</strong> in the Edit menu. Rotate, scale and move the selection (or, with none, all painted pixels in the current cel) using the handles on the orange dotted border.</p>
+<p><span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> or <strong>Transform (rotate/size)…</strong> in the Edit menu. Rotate, scale and move the selection (or, with none, all painted pixels in the current cel) using the handles on the orange dotted border.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Action</th><th>Result</th></tr></thead>
 <tbody>
@@ -840,8 +841,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>② Drag one of the 8 square handles</td><td>Resize (<kbd>Shift</kbd> = keep ratio, <kbd>Alt</kbd> = from center; dragging past the opposite side flips)</td></tr>
 <tr><td>③ Drag just outside the border</td><td>Rotate (<kbd>Shift</kbd> = 15° steps)</td></tr>
 <tr><td>④ Drag / double-click the orange rotation center</td><td>Move the rotation center / reset to center</td></tr>
-<tr><td><kbd>Enter</kbd> or ⑤ <strong>Apply</strong></td><td>Apply (one undo step)</td></tr>
-<tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> or ⑥ <strong>Cancel</strong></td><td>Back to before the transform</td></tr>
+<tr><td><span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> or ⑤ <strong>Apply</strong></td><td>Apply (one undo step)</td></tr>
+<tr><td><span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>, <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> or ⑥ <strong>Cancel</strong></td><td>Back to before the transform</td></tr>
 </tbody>
 </table></div>
 <figure class="shot"><img src="../assets/guide/tools-transform.png" alt="Transform mode with the head selected and rotated 18 degrees, and its tool options" width="936" height="671" loading="lazy"><figcaption>① Inside (move) · ② Square handle (size) · ③ Just outside the border (rotate) · ④ Rotation center · ⑤ Apply · ⑥ Cancel · ⑦ Angle, width/height %, center X/Y · ⑧ Resampling</figcaption></figure>
@@ -849,21 +850,21 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>You can also enter ⑦ the angle, width/height % and center X/Y as numbers in Tool options.</li>
 <li>⑧ <strong>Resampling</strong>: <strong>RotSprite</strong> (default; rotated lines break less and no new colors are created) / <strong>Nearest</strong>.</li>
 <li>Dragging repeatedly always redraws from the original, so it doesn't get mushy. Doing something else, such as switching tools or saving, applies it first.</li>
-<li><strong>Transforming several cels at once</strong>: select ⑨ several cels in the timeline (for example frames 1–6 of one layer; frame-header and layer-name selections work too) and press <kbd>Ctrl</kbd>+<kbd>T</kbd> — every selected cel gets the same rotation, scale and move. ⑩ The handle box surrounds the drawings of all those cels, the canvas shows the current cel moving, and the other cels change when you apply (one undo step; <kbd>Esc</kbd> cancels them all). Empty cels and cels on locked layers are skipped. Dragging with the Move tool or nudging with the arrow keys also moves all selected cels together. ⑪ The status bar shows how many cels are transforming together.</li>
+<li><strong>Transforming several cels at once</strong>: select ⑨ several cels in the timeline (for example frames 1–6 of one layer; frame-header and layer-name selections work too) and press <span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> — every selected cel gets the same rotation, scale and move. ⑩ The handle box surrounds the drawings of all those cels, the canvas shows the current cel moving, and the other cels change when you apply (one undo step; <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> cancels them all). Empty cels and cels on locked layers are skipped. Dragging with the Move tool or nudging with the arrow keys also moves all selected cels together. ⑪ The status bar shows how many cels are transforming together.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/tools-transform-2.png" alt="Window after selecting four frames by their headers and pressing Ctrl+T" width="1600" height="932" loading="lazy"><figcaption>⑨ Four cels selected by frame header · ⑩ Handle box around the drawings of all cels · ⑪ Number of cels transforming together in the status bar</figcaption></figure>
 <figure class="clip"><img src="../assets/guide/tools-transform.webp" alt="Entering transform mode with Ctrl+T, dragging just outside the border to rotate, dragging the handles to resize, and dragging inside to move" width="314" height="342" loading="lazy"></figure>
 
 <h3 id="tools-canvas-size">Canvas size mode</h3>
-<p><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> or <strong>Canvas size…</strong> in the Edit menu. Set the new size and image position right on the canvas instead of in a dialog. The canvas border is a ① light-blue dotted line and ② areas to be cropped are dimmed.</p>
+<p><span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span> or <strong>Canvas size…</strong> in the Edit menu. Set the new size and image position right on the canvas instead of in a dialog. The canvas border is a ① light-blue dotted line and ② areas to be cropped are dimmed.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Action</th><th>Result</th></tr></thead>
 <tbody>
 <tr><td>③ Drag a handle</td><td>Moves only that canvas edge (adds margin or crops the image)</td></tr>
 <tr><td><kbd>Ctrl</kbd>+drag a handle</td><td>Also resizes the image (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = keep ratio). With <strong>Stretch with 9-slice</strong> on, the image is stretched or shrunk with 9-slice</td></tr>
 <tr><td>④ Drag inside the image, arrow keys</td><td>Move the image within the canvas</td></tr>
-<tr><td><kbd>Enter</kbd> or ⑤ <strong>OK</strong></td><td>Apply (one undo step)</td></tr>
-<tr><td><kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>Z</kbd> or ⑥ <strong>Cancel</strong></td><td>Exit without changes</td></tr>
+<tr><td><span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> or ⑤ <strong>OK</strong></td><td>Apply (one undo step)</td></tr>
+<tr><td><span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>, <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> or ⑥ <strong>Cancel</strong></td><td>Exit without changes</td></tr>
 </tbody>
 </table></div>
 <ul>
@@ -902,14 +903,14 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </table></div>
 
 <h3 id="files-save">Saving</h3>
-<p>Saving the <code>.gpixel</code> with <kbd>Ctrl</kbd>+<kbd>S</kbd> (① <strong>File &gt; Save (+ export sheets)</strong>) also exports the image and <code>.meta</code>, depending on your settings, and ② the status bar shows the result. A <code>.meta</code> is created when the file is inside a Unity project's <code>Assets</code> or already has a meta. Existing guids and spriteIDs are kept by name, so references on the Unity side don't break.</p>
+<p>Saving the <code>.gpixel</code> with <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> (① <strong>File &gt; Save (+ export sheets)</strong>) also exports the image and <code>.meta</code>, depending on your settings, and ② the status bar shows the result. A <code>.meta</code> is created when the file is inside a Unity project's <code>Assets</code> or already has a meta. Existing guids and spriteIDs are kept by name, so references on the Unity side don't break.</p>
 <figure class="shot"><img src="../assets/guide/files-save.png" alt="The File menu opened, with Save (+ export sheets) marked 1" width="345" height="368" loading="lazy"><figcaption>① Save (+ export sheets) in the File menu — Ctrl+S</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-save-2.png" alt="The status bar after saving, with the message about the saved file and exported sheet marked 2" width="969" height="113" loading="lazy"><figcaption>② The status bar after saving: the saved .gpixel and the exported sheet and cell count</figcaption></figure>
 <p>If the <code>.gpixel</code> was saved but only the image export failed (for example because another program has the file open), ③ you're told about it.</p>
 <figure class="shot"><img src="../assets/guide/files-save-3.png" alt="The Save failed dialog, with the message that the project was saved but the sheet export failed marked 3" width="597" height="168" loading="lazy"><figcaption>③ The project was saved but exporting the sheet/.meta failed (Save failed)</figcaption></figure>
 
 <h3 id="files-autosave">Autosave</h3>
-<p>On by default. After <strong>3 seconds</strong> without edits, it saves without asking, just like <kbd>Ctrl</kbd>+<kbd>S</kbd> (including export), and shows <code>Autosaved</code> in ① the status bar.</p>
+<p>On by default. After <strong>3 seconds</strong> without edits, it saves without asking, just like <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> (including export), and shows <code>Autosaved</code> in ① the status bar.</p>
 <figure class="shot"><img src="../assets/guide/files-autosave.png" alt="The status bar with the Autosaved message marked 1" width="809" height="113" loading="lazy"><figcaption>① The Autosaved message in the status bar after an autosave</figcaption></figure>
 <ul>
 <li>It waits while you're drawing, dragging, transforming or while the AI is working.</li>
@@ -942,7 +943,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/files-png-import-4.png" alt="The Split into frames by grid dialog, with the cell size, cell count and auto minimum size rows marked 5 to 7" width="369" height="362" loading="lazy"><figcaption>⑤ Cell size (Cell width · Vertical) · ⑥ Cell count (Columns · Rows) · ⑦ Auto: minimum size</figcaption></figure>
 
 <h3 id="files-open-media">Opening images, animations and videos</h3>
-<p>① <strong>File &gt; Open (.gpixel · image · GIF · video)…</strong> (<kbd>Ctrl</kbd>+<kbd>O</kbd>) lets you pick several files at once and opens each in ② its own tab. Images other than PNG (JPG, BMP, GIF, WebP, ICO, animated PNG) become a <strong>new document</strong>: canvas = image size, ③ one layer named after the file, ④ one frame per image frame.</p>
+<p>① <strong>File &gt; Open (.gpixel · image · GIF · video)…</strong> (<span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>) lets you pick several files at once and opens each in ② its own tab. Images other than PNG (JPG, BMP, GIF, WebP, ICO, animated PNG) become a <strong>new document</strong>: canvas = image size, ③ one layer named after the file, ④ one frame per image frame.</p>
 <figure class="shot"><img src="../assets/guide/files-open-media.png" alt="The File menu opened, with Open marked 1" width="345" height="368" loading="lazy"><figcaption>① Open (.gpixel · image · GIF · video)… in the File menu — Ctrl+O</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-open-media-2.png" alt="A new document from an animated GIF, with the new tab, the layer named after the file and the four frames marked 2 to 4" width="1036" height="814" loading="lazy"><figcaption>A new document from an animated GIF (slime_bounce.gif, 4 frames): ② new tab · ③ one layer named after the file · ④ one frame per image frame (120 ms kept)</figcaption></figure>
 <ul>
@@ -965,12 +966,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li><strong>Animated GIF, WebP and APNG</strong> files and <strong>videos</strong> (after the Import video window) go into one layer starting at the current frame; if there aren't enough frames, new ones are added at the end (with the image's or video's frame durations).</li>
 <li>The whole drop is a single undo step (<code>Drop image</code>).</li>
 <li>Dropping <strong>outside</strong> the canvas (file list, start screen, tab strip, panels) doesn't add layers — each file opens in its own tab. Dropping only a <code>.gpixel</code> on the canvas opens it in a new tab too.</li>
-<li>A single-frame image goes straight into ③ <a href="#tools-transform">transform mode</a> (the last one if you drop several; ④ the status bar explains the keys): the whole uncropped image is held, so move or resize it and press <kbd>Enter</kbd> to apply — parts outside the canvas are cut only then — or <kbd>Esc</kbd> to keep it as inserted (insert and transform are two undo steps). Multi-frame images are inserted without transform mode.</li>
+<li>A single-frame image goes straight into ③ <a href="#tools-transform">transform mode</a> (the last one if you drop several; ④ the status bar explains the keys): the whole uncropped image is held, so move or resize it and press <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> to apply — parts outside the canvas are cut only then — or <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> to keep it as inserted (insert and transform are two undo steps). Multi-frame images are inserted without transform mode.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/files-drop-layer-2.png" alt="The whole window after dropping a heart image, with the new heart layer, the transform handles and the status bar hint marked 2 to 4" width="1600" height="932" loading="lazy"><figcaption>After the drop: ② new layer named after the file (heart) · ③ transform mode right away · ④ status bar hint (Enter applies, Esc keeps it as inserted)</figcaption></figure>
 
 <h3 id="files-cleanup">Cleaning up old outputs and renaming files</h3>
-<p>Old output files (and their <code>.meta</code>) that are no longer produced because you changed the export method or name are moved to the <strong>app trash</strong> on the next save, with ① a notice in the status bar. Restore them with ② <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list or ③ View app trash (in the app trash window, pick ④ the entry and press ⑤ Restore).</p>
+<p>Old output files (and their <code>.meta</code>) that are no longer produced because you changed the export method or name are moved to the <strong>app trash</strong> on the next save, with ① a notice in the status bar. Restore them with ② <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> in the file list or ③ View app trash (in the app trash window, pick ④ the entry and press ⑤ Restore).</p>
 <figure class="shot"><img src="../assets/guide/files-cleanup.png" alt="The status bar after saving with a new export name, with the notice about moving the old output to the app trash marked 1" width="1133" height="113" loading="lazy"><figcaption>① Saved with a new export name: the status bar notes the old output moved to the app trash</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-cleanup-2.png" alt="The file list context menu, with Restore last deleted marked 2 and View app trash marked 3" width="263" height="221" loading="lazy"><figcaption>File list context menu: ② Restore last deleted (Ctrl+Z) · ③ View app trash…</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-cleanup-3.png" alt="The App trash window, with the old output moved on save marked 4 and Restore marked 5" width="796" height="556" loading="lazy"><figcaption>App trash: ④ the old output moved on save (Export cleanup) · ⑤ Restore</figcaption></figure>
@@ -993,7 +994,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/files-quit.png" alt="The Unsaved changes dialog with two files, with the file list and the three buttons marked 1 to 4" width="426" height="225" loading="lazy"><figcaption>① Unsaved files (check the ones to save) · ② Save selected files · ③ Don't save · ④ Cancel</figcaption></figure>
 
 <h3 id="files-settings">Preferences</h3>
-<p>Change settings in ① <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>).</p>
+<p>Change settings in ① <strong>Edit &gt; Preferences…</strong> (<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>).</p>
 <figure class="shot"><img src="../assets/guide/files-settings.png" alt="The Edit menu opened, with Preferences marked 1" width="349" height="592" loading="lazy"><figcaption>① Preferences… in the Edit menu — Ctrl+,</figcaption></figure>
 <ul>
 <li>② <strong>General</strong>: ③ undo steps (default 1000, max 10000), ④ undo history retention, ⑤ autosave, ⑥ app trash retention, and more.</li>
@@ -1115,7 +1116,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="pixelate-output">Output</h3>
 <ul>
-<li>① <strong>New layer in the current document</strong>: starts at the current frame and adds frames if needed. One undo step. A single-frame result goes straight into <a href="#tools-transform">transform mode</a> holding the whole uncropped result: move or resize it and press <kbd>Enter</kbd> (parts outside the canvas are cut then), or <kbd>Esc</kbd> to keep it as inserted.</li>
+<li>① <strong>New layer in the current document</strong>: starts at the current frame and adds frames if needed. One undo step. A single-frame result goes straight into <a href="#tools-transform">transform mode</a> holding the whole uncropped result: move or resize it and press <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> (parts outside the canvas are cut then), or <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> to keep it as inserted.</li>
 <li>② <strong>New document</strong>: canvas = output size, one frame per sprite frame, with ③ a frame duration setting. Opens in a new tab.</li>
 <li>⑤ <strong>Add to new tab</strong> (the button before ⑥ <strong>Apply</strong>): creates a new document exactly the size of the selected result in a new tab regardless of the output setting, and closes the window. <kbd>Enter</kbd> is not a shortcut for applying; click <strong>Apply</strong> or <strong>Add to new tab</strong> yourself.</li>
 <li>④ You can also save the colors as a new palette.</li>
@@ -1153,9 +1154,9 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="parts-create">Creating</h3>
 <ul>
-<li>In a new project (<kbd>Ctrl</kbd>+<kbd>N</kbd>), choose ① "Start with parts" and set ② the first part's name and size.</li>
-<li><strong>Frame·Layer &gt; ③ New group</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>)</li>
-<li><strong>Frame·Layer &gt; ④ New part…</strong> (<kbd>Shift</kbd>+<kbd>P</kbd>) — adds to the current group, creating a group first if there isn't one. In the dialog, set ⑤ the name and ⑥ the size.</li>
+<li>In a new project (<span class="key" data-cmd="파일/새 프로젝트…"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>), choose ① "Start with parts" and set ② the first part's name and size.</li>
+<li><strong>Frame·Layer &gt; ③ New group</strong> (<span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span>)</li>
+<li><strong>Frame·Layer &gt; ④ New part…</strong> (<span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span>) — adds to the current group, creating a group first if there isn't one. In the dialog, set ⑤ the name and ⑥ the size.</li>
 <li>Right-click a layer name in the timeline → ⑦ "New group / New part…", or right-click a group → ⑧ "Add part…"</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/parts-create.png" alt="New project dialog: Start with parts chosen, with the first part's name, width and height fields enabled below it" width="452" height="316" loading="lazy"><figcaption>① Start with parts · ② First part name and size</figcaption></figure>
@@ -1173,7 +1174,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>① Hover a part to see a dotted border and its name.</li>
 <li>Drag to move it and set its position (applies to all frames; one undo step).</li>
-<li>Click a part to ② select it, then use the arrow keys (<kbd>Shift</kbd>+arrow) to move it by 1/8px. Click an empty area or press <kbd>Esc</kbd> to deselect.</li>
+<li>Click a part to ② select it, then use the arrow keys (<kbd>Shift</kbd>+arrow) to move it by 1/8px. Click an empty area or press <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> to deselect.</li>
 <li>Double-click a part to select its layer and switch to drawing.</li>
 <li>③ Part pivots are shown as blue dots and ④ frame pivots as orange dots.</li>
 </ul>
@@ -1185,7 +1186,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>Resize: <strong>Frame·Layer &gt; ③ Part size…</strong> or right-click the part → ④ "Size…" (⑥ 9-direction anchor; drawn pixels stay in place).</li>
 <li>Set the position numerically: right-click the part → ⑤ "Position…".</li>
-<li>⑦ The Pivot tool (<kbd>K</kbd>) and 9-slice tool (<kbd>S</kbd>) apply to the selected part.</li>
+<li>⑦ The Pivot tool (<span class="key" data-cmd="도구/피벗"><kbd>K</kbd></span>) and 9-slice tool (<span class="key" data-cmd="도구/9-slice"><kbd>S</kbd></span>) apply to the selected part.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/parts-draw-2.png" alt="Frame·Layer menu open, showing Part size…" width="388" height="468" loading="lazy"><figcaption>③ Part size…</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/parts-draw-3.png" alt="Right-click menu of the Head part in the timeline: Part size… (47×40) and Position… (7, 4)" width="511" height="438" loading="lazy"><figcaption>④ Part size… (47×40) · ⑤ Position… (7, 4)</figcaption></figure>
@@ -1256,7 +1257,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>Besides the skin manager, you can change outfits these ways:</p>
 <ul>
 <li>① The <strong>Outfit</strong> row below the preview (a skin picker per group)</li>
-<li>Previous/next skin (current group): <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd></li>
+<li>Previous/next skin (current group): <span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span></li>
 <li>Right-click a group → ② "Skin", or right-click a part → ③ "Skin for this part"</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/parts-outfits.png" alt="Outfit row below the preview panel: Gear skin box Sword, Character skin box knight, and the Manage… button" width="302" height="234" loading="lazy"><figcaption>① Outfit row (one skin box per group)</figcaption></figure>
@@ -1309,7 +1310,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>① The <strong>AI chat</strong> button on the right of the bar below the menu</li>
 <li>Menu ② <strong>AI</strong> &gt; ③ <strong>AI chat</strong></li>
-<li><kbd>Ctrl</kbd>+<kbd>L</kbd> (shown next to ③)</li>
+<li><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span> (shown next to ③)</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/ai-open.png" alt="The top bar with the AI menu open: AI chat button, AI menu and the AI chat (Ctrl+L) item" width="1280" height="140" loading="lazy"><figcaption>① AI chat button on the right of the top bar · ② AI menu · ③ AI chat (Ctrl+L)</figcaption></figure>
 <p>The chat opens in its own small window and remembers its position and size. If it was open when you closed the app, it reopens next time.</p>
@@ -1347,7 +1348,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <thead><tr><th>To do this</th><th>How</th></tr></thead>
 <tbody>
 <tr><td>Send / new line</td><td><kbd>Enter</kbd> (or ① <strong>Send</strong>) / <kbd>Shift</kbd>+<kbd>Enter</kbd></td></tr>
-<tr><td>Attach a reference image</td><td>② <strong>Image…</strong>, paste a picture (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>), or drop image files on the input box</td></tr>
+<tr><td>Attach a reference image</td><td>② <strong>Image…</strong>, paste a picture (<kbd class="os-keep">Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>), or drop image files on the input box</td></tr>
 <tr><td>Show the current frame</td><td>③ <strong>Attach canvas</strong></td></tr>
 <tr><td>Change model</td><td>The ④ <strong>Model</strong> list at the top (remembered per AI; applies from the next message)</td></tr>
 <tr><td>See past chats / start a new one</td><td>⑤ <strong>New chat</strong> (shows the list; type below to start a new chat)</td></tr>
@@ -1510,7 +1511,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="note"><p>References stay on your computer. Gpixel uploads and downloads nothing; only the AI CLI you already use (Claude Code or Codex) sees what the AI fetches with its tools.</p></div>
 
 <h3 id="ai-undo">Undoing</h3>
-<p>Each AI reply is <strong>one</strong> undo step, so <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it all at once. Each reply also comes with a ① result image and ② <strong>Undo this step</strong> / ③ <strong>Reapply</strong> buttons.</p>
+<p>Each AI reply is <strong>one</strong> undo step, so <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> undoes it all at once. Each reply also comes with a ① result image and ② <strong>Undo this step</strong> / ③ <strong>Reapply</strong> buttons.</p>
 <figure class="shot"><img src="../assets/guide/ai-undo.png" alt="The result image and Undo this step button under an AI reply" width="428" height="400" loading="lazy"><figcaption>① Result image of the reply · ② Undo this step</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/ai-undo-2.png" alt="After pressing Undo this step: the outline is gone from the canvas and the button reads Reapply" width="1280" height="812" loading="lazy"><figcaption>③ Reapply</figcaption></figure>
 
@@ -1537,10 +1538,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <section class="doc" id="shortcuts">
 <h2>Shortcuts</h2>
-<p>Common default shortcuts, grouped by category. Press <kbd>F1</kbd> in the app to open this guide (contents and search); the list of default shortcuts is under <strong>Help &gt; Shortcut list</strong>. You can change shortcuts to any keys you like (<a href="#shortcuts-customize">Customizing shortcuts</a>).</p>
+<p>Common default shortcuts, grouped by category. Press <span class="key" data-cmd="도움말/사용 가이드"><kbd>F1</kbd></span> in the app to open this guide (contents and search); the list of default shortcuts is under <strong>Help &gt; Shortcut list</strong>. You can change shortcuts to any keys you like (<a href="#shortcuts-customize">Customizing shortcuts</a>).</p>
 
 <h3 id="shortcuts-customize">Customizing shortcuts</h3>
-<p>In the ① <strong>Shortcuts</strong> tab of <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>) you can change not only menu commands, tools and tool options but also keys that aren't in any menu (drop selection <kbd>Enter</kbd>, arrow-key nudging, peek previous frame <kbd>H</kbd>, selection slot <kbd>M</kbd>, etc.).</p>
+<p>In the ① <strong>Shortcuts</strong> tab of <strong>Edit &gt; Preferences…</strong> (<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>) you can change not only menu commands, tools and tool options but also keys that aren't in any menu (drop selection <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>, arrow-key nudging, peek previous frame <span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span>, selection slot <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span>, etc.).</p>
 <ul>
 <li>For each row choose ② <strong>Change</strong> (use the key you press), ③ <strong>Add</strong> (one more key), ④ <strong>None</strong> or ⑤ <strong>Default</strong>. After Change or Add, the row ⑥ waits for a key (<kbd>Esc</kbd> cancels).</li>
 <li>⑦ Search by command, category or key, and reset everything at once with ⑧ <strong>Reset all</strong>.</li>
@@ -1556,20 +1557,20 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="shortcuts-file">Files and windows</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
-<tr><td>New project</td><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td></tr>
-<tr><td>Open</td><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td></tr>
-<tr><td>Open folder</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td></tr>
-<tr><td>Open Unity project</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></td></tr>
-<tr><td>Save (including export)</td><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td></tr>
-<tr><td>Save as</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td></tr>
-<tr><td>Export dialog</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td></tr>
-<tr><td>Close the current tab</td><td><kbd>Ctrl</kbd>+<kbd>W</kbd></td></tr>
-<tr><td>Preferences</td><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td></tr>
-<tr><td>Next / previous document tab (main window), next / previous tab (Preferences, export dialog)</td><td><kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></td></tr>
-<tr><td>File browser</td><td><kbd>F8</kbd></td></tr>
-<tr><td>AI chat (Claude · Codex)</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td></tr>
-<tr><td>Movement test</td><td><kbd>F5</kbd></td></tr>
-<tr><td>Guide</td><td><kbd>F1</kbd></td></tr>
+<tr><td>New project</td><td><span class="key" data-cmd="파일/새 프로젝트…"><kbd>Ctrl</kbd>+<kbd>N</kbd></span></td></tr>
+<tr><td>Open</td><td><span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td></tr>
+<tr><td>Open folder</td><td><span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span></td></tr>
+<tr><td>Open Unity project</td><td><span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span></td></tr>
+<tr><td>Save (including export)</td><td><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span></td></tr>
+<tr><td>Save as</td><td><span class="key" data-cmd="파일/다른 이름으로 저장…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></td></tr>
+<tr><td>Export dialog</td><td><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span></td></tr>
+<tr><td>Close the current tab</td><td><span class="key" data-cmd="파일/닫기"><kbd>Ctrl</kbd>+<kbd>W</kbd></span></td></tr>
+<tr><td>Preferences</td><td><span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span></td></tr>
+<tr><td>Next / previous document tab (main window), next / previous tab (Preferences, export dialog)</td><td><span class="key" data-cmd="보기/다음 탭"><kbd>Ctrl</kbd>+<kbd>Tab</kbd></span> / <span class="key" data-cmd="보기/이전 탭"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></span></td></tr>
+<tr><td>File browser</td><td><span class="key" data-cmd="보기/파일 브라우저"><kbd>F8</kbd></span></td></tr>
+<tr><td>AI chat (Claude · Codex)</td><td><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span></td></tr>
+<tr><td>Movement test</td><td><span class="key" data-cmd="보기/움직임 테스트"><kbd>F5</kbd></span></td></tr>
+<tr><td>Guide</td><td><span class="key" data-cmd="도움말/사용 가이드"><kbd>F1</kbd></span></td></tr>
 </tbody></table></div>
 <p>When a tab row or an option group such as off/on has focus, you can also switch with <kbd>←</kbd>/<kbd>→</kbd> and <kbd>Home</kbd>/<kbd>End</kbd>.</p>
 
@@ -1578,30 +1579,30 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="shortcuts-edit">Editing and selection</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
-<tr><td>Undo / redo</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td></tr>
-<tr><td>Cut / copy / paste</td><td><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd></td></tr>
-<tr><td>Delete</td><td><kbd>Delete</kbd></td></tr>
-<tr><td>Select all</td><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td></tr>
-<tr><td>Deselect</td><td><kbd>Ctrl</kbd>+<kbd>D</kbd> or <kbd>Esc</kbd></td></tr>
-<tr><td>Drop (floating selection)</td><td><kbd>Enter</kbd></td></tr>
+<tr><td>Undo / redo</td><td><span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> / <span class="key" data-cmd="편집/다시 실행"><kbd>Ctrl</kbd>+<kbd>Y</kbd></span></td></tr>
+<tr><td>Cut / copy / paste</td><td><span class="key" data-cmd="편집/잘라내기"><kbd>Ctrl</kbd>+<kbd>X</kbd></span> / <span class="key" data-cmd="편집/복사"><kbd>Ctrl</kbd>+<kbd>C</kbd></span> / <span class="key" data-cmd="편집/붙여넣기"><kbd>Ctrl</kbd>+<kbd>V</kbd></span></td></tr>
+<tr><td>Delete</td><td><span class="key" data-cmd="편집/지우기"><kbd>Delete</kbd></span></td></tr>
+<tr><td>Select all</td><td><span class="key" data-cmd="편집/모두 선택"><kbd>Ctrl</kbd>+<kbd>A</kbd></span></td></tr>
+<tr><td>Deselect</td><td><span class="key" data-cmd="편집/선택 해제"><kbd>Ctrl</kbd>+<kbd>D</kbd></span> or <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span></td></tr>
+<tr><td>Drop (floating selection)</td><td><span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span></td></tr>
 <tr><td>Move 1 pixel</td><td>Arrow keys</td></tr>
 <tr><td>Move 8 pixels</td><td><kbd>Shift</kbd>+arrow keys or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+arrow keys</td></tr>
 </tbody></table></div>
-<div class="note">Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd> in the file list restores the last deleted file.</div>
+<div class="note">Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> in the file list restores the last deleted file.</div>
 
 <p>The <strong>Edit</strong> menu shows the keys from Undo to Deselect at ①.</p>
 <figure class="shot"><img src="../assets/guide/shortcuts-edit.png" alt="The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Paste, Delete, Select all and Deselect" width="347" height="593" loading="lazy"><figcaption>① Edit menu keys, Undo to Deselect</figcaption></figure>
 
 <h3 id="shortcuts-transform">Transform and image</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
-<tr><td>Flip horizontal / vertical (selection, or current cel if none)</td><td><kbd>Shift</kbd>+<kbd>H</kbd> / <kbd>Shift</kbd>+<kbd>V</kbd></td></tr>
-<tr><td>Rotate 90° (selection, or whole canvas if none)</td><td><kbd>Ctrl</kbd>+<kbd>R</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td></tr>
-<tr><td>Transform mode (rotate, size, move)</td><td><kbd>Ctrl</kbd>+<kbd>T</kbd></td></tr>
-<tr><td>Outline</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd></td></tr>
-<tr><td>Replace color</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></td></tr>
-<tr><td>Canvas size mode</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></td></tr>
-<tr><td>Apply transform / canvas size mode</td><td><kbd>Enter</kbd></td></tr>
-<tr><td>Cancel transform / canvas size mode</td><td><kbd>Esc</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd></td></tr>
+<tr><td>Flip horizontal / vertical (selection, or current cel if none)</td><td><span class="key" data-cmd="편집/좌우 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>H</kbd></span> / <span class="key" data-cmd="편집/상하 뒤집기(선택/셀)"><kbd>Shift</kbd>+<kbd>V</kbd></span></td></tr>
+<tr><td>Rotate 90° (selection, or whole canvas if none)</td><td><span class="key" data-cmd="편집/90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>R</kbd></span> / <span class="key" data-cmd="편집/-90° 회전(선택/캔버스)"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></span></td></tr>
+<tr><td>Transform mode (rotate, size, move)</td><td><span class="key" data-cmd="편집/변형(회전·크기)…"><kbd>Ctrl</kbd>+<kbd>T</kbd></span></td></tr>
+<tr><td>Outline</td><td><span class="key" data-cmd="편집/외곽선 추가(기본색)"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd></span></td></tr>
+<tr><td>Replace color</td><td><span class="key" data-cmd="편집/색 바꾸기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></span></td></tr>
+<tr><td>Canvas size mode</td><td><span class="key" data-cmd="편집/캔버스 크기…"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd></span></td></tr>
+<tr><td>Apply transform / canvas size mode</td><td><span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span></td></tr>
+<tr><td>Cancel transform / canvas size mode</td><td><span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> or <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></td></tr>
 </tbody></table></div>
 <p>In canvas size mode, dragging a handle changes that edge, <kbd>Ctrl</kbd>+drag also resizes the image, and dragging inside the image moves it.</p>
 
@@ -1610,19 +1611,19 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="shortcuts-tools">Tools</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
-<tr><td>Selection slot tool / cycle selection shape</td><td><kbd>M</kbd></td></tr>
-<tr><td>Lasso select</td><td><kbd>Q</kbd></td></tr>
-<tr><td>Magic wand</td><td><kbd>W</kbd></td></tr>
-<tr><td>Gradient</td><td><kbd>F</kbd></td></tr>
-<tr><td>Decrease / increase brush size</td><td><kbd>[</kbd> / <kbd>]</kbd></td></tr>
-<tr><td>Pixel perfect</td><td><kbd>P</kbd></td></tr>
-<tr><td>Filled shapes</td><td><kbd>U</kbd></td></tr>
-<tr><td>Swap primary and secondary colors</td><td><kbd>X</kbd></td></tr>
-<tr><td>All matching colors</td><td><kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
-<tr><td>Horizontal / vertical symmetry</td><td><kbd>Shift</kbd>+<kbd>X</kbd> / <kbd>Shift</kbd>+<kbd>Y</kbd></td></tr>
+<tr><td>Selection slot tool / cycle selection shape</td><td><span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span></td></tr>
+<tr><td>Lasso select</td><td><span class="key" data-cmd="도구/자유 선택"><kbd>Q</kbd></span></td></tr>
+<tr><td>Magic wand</td><td><span class="key" data-cmd="도구/스마트 선택"><kbd>W</kbd></span></td></tr>
+<tr><td>Gradient</td><td><span class="key" data-cmd="도구/그라데이션"><kbd>F</kbd></span></td></tr>
+<tr><td>Decrease / increase brush size</td><td><span class="key" data-cmd="도구/브러시 작게"><kbd>[</kbd></span> / <span class="key" data-cmd="도구/브러시 크게"><kbd>]</kbd></span></td></tr>
+<tr><td>Pixel perfect</td><td><span class="key" data-cmd="도구/픽셀 퍼펙트"><kbd>P</kbd></span></td></tr>
+<tr><td>Filled shapes</td><td><span class="key" data-cmd="도구/도형 채움"><kbd>U</kbd></span></td></tr>
+<tr><td>Swap primary and secondary colors</td><td><span class="key" data-cmd="도구/기본색 ↔ 보조색"><kbd>X</kbd></span></td></tr>
+<tr><td>All matching colors</td><td><span class="key" data-cmd="도구/채우기: 같은 색 전체"><kbd>Shift</kbd>+<kbd>G</kbd></span></td></tr>
+<tr><td>Horizontal / vertical symmetry</td><td><span class="key" data-cmd="도구/좌우 대칭 그리기"><kbd>Shift</kbd>+<kbd>X</kbd></span> / <span class="key" data-cmd="도구/상하 대칭 그리기"><kbd>Shift</kbd>+<kbd>Y</kbd></span></td></tr>
 <tr><td>Expand and switch grouped tools (fill, shapes, select)</td><td>Long-press or right-click the tool slot</td></tr>
 </tbody></table></div>
-<p>Pressing <kbd>M</kbd> from another tool switches to the selection slot tool. While using a selection tool, each press within 10 seconds cycles rectangle → ellipse → lasso → magic wand (the first press after 10 seconds only shows a hint).</p>
+<p>Pressing <span class="key" data-cmd="도구/선택 칸(다음 선택 도구)"><kbd>M</kbd></span> from another tool switches to the selection slot tool. While using a selection tool, each press within 10 seconds cycles rectangle → ellipse → lasso → magic wand (the first press after 10 seconds only shows a hint).</p>
 
 <p>The <strong>Tools</strong> menu shows the keys of ① the tools and ② the tool options, brush size and color swap.</p>
 <figure class="shot"><img src="../assets/guide/shortcuts-tools.png" alt="The Tools menu open: tool keys from Pencil B to 9-slice S, then Filled shapes U, Fill all matching colors Shift+G, Pixel perfect P, mirror Shift+X and Shift+Y, brush size ] and [, and color swap X" width="313" height="710" loading="lazy"><figcaption>① Tool keys · ② Tool option, brush size and primary/secondary swap keys</figcaption></figure>
@@ -1632,12 +1633,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>Zoom in/out</td><td>Wheel</td></tr>
 <tr><td>Brush (pen) size</td><td><kbd>Ctrl</kbd>+wheel</td></tr>
 <tr><td>Pan</td><td><kbd>Space</kbd>+drag or middle-button drag</td></tr>
-<tr><td>Fit to window / 1×</td><td><kbd>Ctrl</kbd>+<kbd>0</kbd> / <kbd>Ctrl</kbd>+<kbd>1</kbd></td></tr>
-<tr><td>Pixel grid</td><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td></tr>
-<tr><td>Tile grid</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
-<tr><td>Tiled mode</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></td></tr>
-<tr><td>Onion skin</td><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td></tr>
-<tr><td>Peek previous frame</td><td><kbd>H</kbd> (hold)</td></tr>
+<tr><td>Fit to window / 1×</td><td><span class="key" data-cmd="보기/화면에 맞추기"><kbd>Ctrl</kbd>+<kbd>0</kbd></span> / <span class="key" data-cmd="보기/실제 크기(1배)"><kbd>Ctrl</kbd>+<kbd>1</kbd></span></td></tr>
+<tr><td>Pixel grid</td><td><span class="key" data-cmd="보기/픽셀 격자"><kbd>Ctrl</kbd>+<kbd>G</kbd></span></td></tr>
+<tr><td>Tile grid</td><td><span class="key" data-cmd="보기/타일 격자"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></span></td></tr>
+<tr><td>Tiled mode</td><td><span class="key" data-cmd="보기/타일 모드(반복해 보기)"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></span></td></tr>
+<tr><td>Onion skin</td><td><span class="key" data-cmd="보기/양파 껍질"><kbd>Ctrl</kbd>+<kbd>J</kbd></span></td></tr>
+<tr><td>Peek previous frame</td><td><span class="key" data-cmd="보기/이전 프레임 보기(누르고 있기)"><kbd>H</kbd></span> (hold)</td></tr>
 </tbody></table></div>
 
 <p>The <strong>View</strong> menu shows the keys from Zoom in to Onion skin at ①.</p>
@@ -1645,16 +1646,16 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="shortcuts-timeline">Timeline · layers · groups</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
-<tr><td>Play / stop</td><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td></tr>
-<tr><td>Previous / next frame</td><td><kbd>,</kbd> / <kbd>.</kbd></td></tr>
-<tr><td>First / last frame</td><td><kbd>Home</kbd> / <kbd>End</kbd></td></tr>
-<tr><td>New empty frame</td><td><kbd>Alt</kbd>+<kbd>N</kbd></td></tr>
-<tr><td>Duplicate frame</td><td><kbd>Alt</kbd>+<kbd>D</kbd></td></tr>
-<tr><td>New layer</td><td><kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
-<tr><td>Rename layer</td><td><kbd>F2</kbd></td></tr>
-<tr><td>New group</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
-<tr><td>New part</td><td><kbd>Shift</kbd>+<kbd>P</kbd></td></tr>
-<tr><td>Previous / next skin (change outfit)</td><td><kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd></td></tr>
+<tr><td>Play / stop</td><td><span class="key" data-cmd="프레임·레이어/재생 / 정지"><kbd>Shift</kbd>+<kbd>Enter</kbd></span></td></tr>
+<tr><td>Previous / next frame</td><td><span class="key" data-cmd="프레임·레이어/이전 프레임"><kbd>,</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 프레임"><kbd>.</kbd></span></td></tr>
+<tr><td>First / last frame</td><td><span class="key" data-cmd="프레임·레이어/첫 프레임"><kbd>Home</kbd></span> / <span class="key" data-cmd="프레임·레이어/마지막 프레임"><kbd>End</kbd></span></td></tr>
+<tr><td>New empty frame</td><td><span class="key" data-cmd="프레임·레이어/새 빈 프레임"><kbd>Alt</kbd>+<kbd>N</kbd></span></td></tr>
+<tr><td>Duplicate frame</td><td><span class="key" data-cmd="프레임·레이어/프레임 복제"><kbd>Alt</kbd>+<kbd>D</kbd></span></td></tr>
+<tr><td>New layer</td><td><span class="key" data-cmd="프레임·레이어/새 레이어"><kbd>Shift</kbd>+<kbd>N</kbd></span></td></tr>
+<tr><td>Rename layer</td><td><span class="key" data-cmd="프레임·레이어/레이어 이름 바꾸기"><kbd>F2</kbd></span></td></tr>
+<tr><td>New group</td><td><span class="key" data-cmd="프레임·레이어/새 그룹"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></span></td></tr>
+<tr><td>New part</td><td><span class="key" data-cmd="프레임·레이어/새 부위…"><kbd>Shift</kbd>+<kbd>P</kbd></span></td></tr>
+<tr><td>Previous / next skin (change outfit)</td><td><span class="key" data-cmd="프레임·레이어/이전 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>[</kbd></span> / <span class="key" data-cmd="프레임·레이어/다음 스킨(현재 그룹)"><kbd>Alt</kbd>+<kbd>]</kbd></span></td></tr>
 <tr><td>Scroll layers up/down (in the timeline)</td><td>Wheel</td></tr>
 <tr><td>Scroll frames left/right (in the timeline)</td><td><kbd>Ctrl</kbd>+wheel</td></tr>
 </tbody></table></div>
@@ -1669,7 +1670,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="language-change">Changing the display language</h3>
 <ol>
-<li>Open ① <strong>Edit &gt; Preferences…</strong> (<kbd>Ctrl</kbd>+<kbd>,</kbd>). ② <strong>Language</strong> is at the top.</li>
+<li>Open ① <strong>Edit &gt; Preferences…</strong> (<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>). ② <strong>Language</strong> is at the top.</li>
 <li>Choose from the ③ <strong>Display language</strong> list and click ④ <strong>OK</strong>.</li>
 <li>Click ⑤ <strong>Restart now</strong> to close the app and reopen it in the new language. If there are unsaved documents, you're asked first, just like when closing. Choose ⑥ <strong>Later</strong> to apply it the next time you launch.</li>
 </ol>
@@ -1714,6 +1715,6 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
   location.href = ('../') + page + location.hash;
 });
 </script>
-<script src="../guide.js?v=20261024d"></script>
+<script src="../guide.js?v=20261027a"></script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+key,ko,en
+#name,한국어,English
+head.2,Gpixel — 게임용 픽셀 아트 편집기,Gpixel — Pixel art editor for games
+head.3.content,Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.4.content,Gpixel — 게임용 픽셀 아트 편집기,Gpixel — Pixel art editor for games
+head.5.content,Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
+head.6.content,https://1000pro-1997.github.io/GPixel/assets/screenshot.png,https://1000pro-1997.github.io/GPixel/assets/screenshot-en.png
+head.7.script,  if (want !== 'ko') location.replace('en/' + '' + location.hash);,  if (want !== 'en') location.replace('../' + '' + location.hash);
+head.8,"
+<a href=""index.html"" aria-current=""page"">홈</a>
+<a class=""hide-sm"" href=""index.html#core"">대표 기능</a>
+<a href=""guide.html"">사용 가이드</a>
+<a class=""hide-sm"" href=""index.html#download"">내려받기</a>
+<a class=""hide-sm"" href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a>
+<a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","
+<a href=""index.html"" aria-current=""page"">Home</a>
+<a class=""hide-sm"" href=""index.html#core"">Key features</a>
+<a href=""guide.html"">Guide</a>
+<a class=""hide-sm"" href=""index.html#download"">Download</a>
+<a class=""hide-sm"" href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a>
+<a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
+head.9.title,언어,Language
+lang-select.1.aria-label,언어,Language
+lang-select.2,"Unity 2D 게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for Unity 2D.</span>"
+lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다.","Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside."
+lang-select.4,"<span>내려받기</span></a>
+<a class=""btn"" href=""guide.html"">사용 가이드</a>
+<a class=""btn discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","<span>Download</span></a>
+<a class=""btn"" href=""guide.html"">Guide</a>
+<a class=""btn discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
+lang-select.5,"바로 받기: <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"">macOS (Intel)</a>","Direct download: <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"">macOS (Intel)</a>"
+lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">오픈 소스 (MIT)</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Open source (MIT)</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Nothing to install</span>"
+lang-select.7.src,assets/screenshot.png,../assets/screenshot-en.png
+lang-select.8.alt,"Gpixel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정","Gpixel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right"
+core.1,대표 기능,Key features
+core.2,"Gpixel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href=""guide.html#featured-common"">대표 기능</a>에서도 볼 수 있습니다.","The features you'll use most, shown in action. Also in the guide under <a href=""guide.html#featured-common"">Key features</a>."
+core.3,"<span class=""core-tag"">공통 기능</span>","<span class=""core-tag"">Common controls</span>"
+core.4,숫자 칸 바꾸는 법,Changing number fields
+core.5.alt,"피벗 X·Y 숫자 칸을 클릭해 입력하고, 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르는 모습","Clicking the pivot X/Y number fields to type, dragging them left and right, and picking a value from the right-click list"
+core.6,AI로 그리기,Drawing with AI
+core.7.aria-label,Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습,"Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas"
+core.8,"<span class=""core-tag"">픽셀로 정리</span>","<span class=""core-tag"">Pixelate</span>"
+core.9,이미지를 픽셀 아트로,Turning images into pixel art
+core.10.aria-label,"AI로 그린 캐릭터 그림을 픽셀로 정리 창에 붙여 넣자 후보가 만들어지고, 크게 보기에서 결과와 원본을 칸 단위로 비교하는 모습","Pasting an AI-drawn character into the Pixelate window, candidates being built, and comparing the result with the source cell by cell in the enlarged view"
+core.11,"<span class=""core-tag"">픽셀로 정리</span>","<span class=""core-tag"">Pixelate</span>"
+core.12,색 빼기·더하기,Removing and adding colors
+core.13.aria-label,"픽셀로 정리 크게 보기에서 색 견본을 눌러 쓰인 곳을 보고, 우클릭으로 색을 빼고, 원본에서 색을 집어 고정 색으로 더하는 모습","In the Pixelate enlarged view, clicking color swatches to see where they are used, right-clicking to remove colors, and picking a color from the source as a pinned color"
+core.14,"<span class=""core-tag"">애니메이션 효과</span>","<span class=""core-tag"">Animation effects</span>"
+core.15,효과 겹치기,Stacking effects
+core.16.aria-label,나무 통 그림에 효과 창에서 여러 효과를 차례로 추가하고 프레임 범위를 정해 애니메이션으로 재생하는 모습,"Adding several effects to a barrel sprite in the effects window, setting frame ranges, and playing the animation"
+core.17,"<span class=""core-tag"">애니메이션 효과</span>","<span class=""core-tag"">Animation effects</span>"
+core.18,효과 클리핑,Effect clipping
+core.19.aria-label,효과 창에서 아래 효과에 바로 위 효과에 클리핑을 켜자 그 효과가 위 효과의 픽셀에만 적용되는 모습,"Turning on Clip to effect above for the lower effect in the effects window, so it applies only to the pixels of the effect above"
+core.20,"<span class=""core-tag"">팔레트 사용</span>","<span class=""core-tag"">Using palettes</span>"
+core.21,Lospec 팔레트 가져오기,Importing Lospec palettes
+core.22.aria-label,팔레트 웹 창에서 Lospec 팔레트를 둘러보고 예시 그림을 확인한 뒤 새 팔레트로 가져오는 모습,"Browsing Lospec palettes in the Palette web window, checking the example art, and importing one as a new palette"
+core.23,"<span class=""core-tag"">팔레트 사용</span>","<span class=""core-tag"">Using palettes</span>"
+core.24,팔레트로 색 바꾸기,Recoloring with a palette
+core.25.aria-label,나무 통 그림을 팔레트 색으로 변환 창에서 다른 팔레트로 바꾸자 푸른 색 통으로 바뀌는 모습,"Converting the barrel sprite to another palette in the Convert to palette colors window, turning it into a blue barrel"
+core.26,"<span class=""core-tag"">스킨 설정</span>","<span class=""core-tag"">Skins</span>"
+core.27,스킨 관리,Managing skins
+core.28.aria-label,캐릭터의 머리카락 스킨을 스킨 칩과 스킨 관리 창에서 바꿔 끼우는 모습,Swapping a character's hair skin with the skin chip and the Skin manager
+core.29,"<span class=""core-tag"">스킨 설정</span>","<span class=""core-tag"">Skins</span>"
+core.30,타일·아이템 스킨,Tile and item skins
+core.31.aria-label,블록 타일과 아이템 부위를 한 그룹에 두고 나무판·흙·광석 스킨으로 바꿔 보는 모습,"Keeping a block tile and its item parts in one group and switching between plank, dirt and ore skins"
+core.32,"<span class=""core-tag"">유니티 연동</span>","<span class=""core-tag"">Unity integration</span>"
+core.33,피벗 연동,Pivot sync
+core.34.aria-label,피벗 도구로 캐릭터의 기준점을 옮기고 그 피벗을 중심으로 회전시키는 모습,Moving a character's anchor with the Pivot tool and rotating around that pivot
+core.35,내보내기,Export
+core.36.aria-label,내보내기 창에서 스킨을 따로 내보내거나 한 장에 모으도록 바꾸며 미리보기와 파일 목록이 바뀌는 모습,"Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating"
+features.1,무엇을 할 수 있나요,What it does
+features.2,게임에 바로 넣을 스프라이트를 그리는 데 필요한 것을 한 곳에.,Everything you need to draw sprites that go straight into your game.
+features.3,저장하면 Unity로 바로,Save straight to Unity
+features.4,저장할 때 PNG 스프라이트 시트와 Unity <code>.meta</code>(칸 나누기·피벗 포함)를 함께 씁니다. Unity 프로젝트 폴더에서 바로 작업하세요.,Every save writes a PNG sprite sheet and Unity <code>.meta</code> (slices and pivots included). Work right inside your Unity project folder.
+features.5,프레임 · 레이어 · 태그,Frames · Layers · Tags
+features.6,타임라인에서 프레임과 레이어를 다루고 태그로 애니메이션을 나눕니다. 양파 껍질과 미리보기로 움직임을 확인합니다.,Manage frames and layers on the timeline and split animations with tags. Check motion with onion skin and the live preview.
+features.7,부위와 스킨,Parts and skins
+features.8,"머리·몸·팔처럼 부위로 나눠 그리고, 스킨으로 옷·장비를 바꿔 끼웁니다. Unity Sprite Library까지 내보냅니다.","Draw characters as parts like head, body and arms, and swap outfits and gear with skins. Exports Unity Sprite Libraries too."
+features.9,레이어 효과,Layer effects
+features.10,"외곽선·그림자·광선부터 흔들림·폭발·페이드 같은 움직이는 효과까지, 원본을 건드리지 않고 덧입힙니다.","From outline, shadow and glow to animated shake, explosion and fade — layered on without touching your pixels."
+features.11,AI 채팅,AI chat
+features.12,"내 컴퓨터의 Claude Code·Codex로 말로 그리고 고칩니다. API 키 없이 내 계정으로, 한 단계씩 되돌릴 수 있습니다.","Draw and edit by talking to Claude Code or Codex on your own computer. Uses your own account, no API key, and every step can be undone."
+features.13,팔레트와 언어,Palettes and languages
+features.14,Lospec 팔레트를 바로 가져오고 팔레트 변환을 합니다. 한국어·영어를 지원하고 CSV로 다른 언어를 직접 만들 수 있습니다.,Import Lospec palettes and convert to a palette in one step. Korean and English built in; add any language yourself with a CSV.
+download.1,내려받기,Download
+download.2,압축을 풀고 바로 실행합니다. 새 버전은 앱이 알려 주고 스스로 업데이트합니다.,Unzip and run. The app tells you about new versions and updates itself.
+download.3,"zip 내려받기</span></a>
+<a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
+<a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 or later · macOS 12+</span><span class=""get"">"
+download.4,"zip 내려받기</span></a>
+<a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
+<a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">"
+download.5,"zip 내려받기</span></a>
+","Download zip</span></a>
+"
+download.6,"처음 실행할 때 서명 경고가 뜨면 사용 가이드의 <a href=""guide.html#start-first-run"">처음 실행할 때</a>를 보세요. 지난 버전과 바뀐 점은 <a href=""https://github.com/1000Pro-1997/GPixel/releases"">릴리스</a>에 있습니다.","If you see a signing warning on first launch, see <a href=""guide.html#start-first-run"">First launch</a> in the guide. What changed in each version is on the <a href=""https://github.com/1000Pro-1997/GPixel/releases"">Releases</a> page."
+download.7,<span>제보·아이디어는 Discord로</span></a>,<span>Bugs and ideas: join us on Discord</span></a>
+download.8,"
+<span><strong>Gpixel</strong> · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases"">릴리스</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/GPixel/issues"">문제 신고</a> · <a href=""https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md"">오픈 소스 고지</a></span>
+","
+<span><strong>Gpixel</strong> · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/GPixel/releases"">Releases</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/GPixel/issues"">Report an issue</a> · <a href=""https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md"">Open source notices</a></span>
+"
+download.9.script,  location.href = ('en/') + page + location.hash;,  location.href = ('../') + page + location.hash;
+download.10.script,    main.querySelector('span').textContent = mac ? 'macOS용 내려받기' : 'Windows용 내려받기';,    main.querySelector('span').textContent = mac ? 'Download for macOS' : 'Download for Windows';

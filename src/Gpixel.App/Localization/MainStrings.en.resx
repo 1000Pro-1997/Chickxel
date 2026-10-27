@@ -14,12 +14,6 @@
   <data name="Tool_Gradient_Hint" xml:space="preserve"><value>Drag to paint from start point to end point (only inside the selection, if any) · Shift: 45° steps · Color stops, interpolation, and dithering are in tool settings</value></data>
   <data name="Tool_Picker_Name" xml:space="preserve"><value>Eyedropper</value></data>
   <data name="Tool_Picker_Hint" xml:space="preserve"><value>Left: pick as primary color · Right: pick as secondary color</value></data>
-  <data name="Tool_Line_Name" xml:space="preserve"><value>Line</value></data>
-  <data name="Tool_Line_Hint" xml:space="preserve"><value>Shift: 45° steps</value></data>
-  <data name="Tool_Rectangle_Name" xml:space="preserve"><value>Rectangle</value></data>
-  <data name="Tool_Rectangle_Hint" xml:space="preserve"><value>Shift: square · U: outline/filled</value></data>
-  <data name="Tool_Ellipse_Name" xml:space="preserve"><value>Ellipse</value></data>
-  <data name="Tool_Ellipse_Hint" xml:space="preserve"><value>Shift: circle · U: outline/filled</value></data>
   <data name="Tool_Select_Name" xml:space="preserve"><value>Rectangle select</value></data>
   <data name="Tool_Select_Hint" xml:space="preserve"><value>Drag to select (Shift: square), drag inside to move · Enter: drop · M: next selection tool</value></data>
   <data name="Tool_EllipseSelect_Name" xml:space="preserve"><value>Ellipse select</value></data>
@@ -392,4 +386,7 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Open_Opened" xml:space="preserve"><value>Opened {name} — {frames} frames, {width}×{height}, {ms} ms total · not saved yet (saving asks where to put the .gpixel)</value></data>
   <data name="Transform_Cels" xml:space="preserve"><value>Transforming {count} cels together · </value></data>
   <data name="Transform_LockedSkipped" xml:space="preserve"><value>Skipped {count} cels on locked layers · </value></data>
+  <data name="Tool_Shape_Name" xml:space="preserve"><value>Shape</value></data>
+  <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: keep proportions · U: outline/filled · pick the shape in Tool options</value></data>
+  <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
 </root>

@@ -97,6 +97,22 @@ public enum VectorIcon
     Columns2,
     /// <summary>원 안의 "i"(설명 — Lucide info).</summary>
     Info,
+    /// <summary>가로로 긴 타원(도형 도구 — 직접 그린 경로).</summary>
+    Oval,
+    /// <summary>위가 뾰족한 이등변 삼각형(도형 도구 — 직접 그린 경로).</summary>
+    TriangleTall,
+    /// <summary>정오각형(도형 도구 정다각형 — 직접 그린 경로).</summary>
+    Pentagon,
+    /// <summary>안에서 밖으로 감기는 나선(도형 도구 달팽이 — 직접 그린 경로).</summary>
+    Spiral,
+    /// <summary>원기둥(도형 도구 — 직접 그린 경로).</summary>
+    Cylinder,
+    /// <summary>등각 정육면체(도형 도구 주사위 — 직접 그린 경로).</summary>
+    Cube,
+    /// <summary>대각선 직선(도형 도구 선 — 직접 그린 경로).</summary>
+    LineDiagonal,
+    /// <summary>위로 휜 곡선(도형 도구 곡선 — 직접 그린 경로).</summary>
+    Curve,
 }
 
 public static class VectorIcons
@@ -281,6 +297,14 @@ public static class VectorIcons
         VectorIcon.Link => ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
         VectorIcon.Columns2 => ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M12 3v18"],
         VectorIcon.Info => [Circle(12, 12, 10), "M12 16v-4", "M12 8h.01"],
+        VectorIcon.Oval => ["M2 12a10 7 0 1 0 20 0a10 7 0 1 0-20 0z"],
+        VectorIcon.TriangleTall => ["M12 2 19 22H5Z"],
+        VectorIcon.Pentagon => ["M12 2.5 21.51 9.41 17.88 20.59H6.12L2.49 9.41Z"],
+        VectorIcon.Spiral => ["M10.5 12a1.5 1.5 0 0 1 3 0a3 3 0 0 1-6 0a4.5 4.5 0 0 1 9 0a6 6 0 0 1-12 0a7.5 7.5 0 0 1 15 0"],
+        VectorIcon.Cylinder => ["M4 6a8 3 0 1 0 16 0a8 3 0 1 0-16 0z", "M4 6v12a8 3 0 0 0 16 0V6"],
+        VectorIcon.Cube => ["M12 2 21 7v10l-9 5-9-5V7Z", "m3 7 9 5 9-5", "M12 12v10"],
+        VectorIcon.LineDiagonal => ["M4 20 20 4"],
+        VectorIcon.Curve => ["M3 19Q12 1 21 19"],
         _ => [],
     };
 

@@ -288,7 +288,6 @@ internal static class ToolsShots
         ToolFileHelp.Tool(k, "사각 선택");
         var slots = Slots(m);
         var fill = slots.First(s => s.Contains(ToolKind.Fill));
-        var shapes = slots.First(s => s.Contains(ToolKind.Rectangle));
         var select = slots.First(s => s.Contains(ToolKind.Select));
         ShotKit.Call(select, "ShowGroup");
         k.Settle(400);
@@ -297,7 +296,7 @@ internal static class ToolsShots
         var s = R(m, select);
         double left = f.X - 44, top = f.Y - 22;
         var crop = new Rect(left, top, list.Right + 14 - left, Math.Max(s.Bottom, list.Bottom) + 14 - top);
-        k.Save(m, crop: crop, marks: [Lead(m, fill, 16, 3), Lead(m, shapes, 16, 3), Lead(m, select, 16, 3), list]);
+        k.Save(m, crop: crop, marks: [Lead(m, fill, 16, 3), Lead(m, select, 16, 3), list]);
     }
 
     [Shot("tools-brush")]
@@ -313,8 +312,8 @@ internal static class ToolsShots
         k.Save(m, crop: OptionsUpTo(m, brushBox),
             marks: [Lead(m, Opt<Control>(m, "_shapes"), 4, 0), Opt<Control>(m, "_brushPreview"), Lead(Row(m, Opt<Control>(m, "_sizeNum")), 4, 0)]);
 
-        // 2: 사각형 도구 — 선 두께·펜 모양(같은 브러시 칸).
-        ToolFileHelp.Tool(k, "사각형");
+        // 2: 도형 도구 — 선 두께·펜 모양(같은 브러시 칸).
+        ToolFileHelp.Tool(k, "도형");
         k.Save(m, "tools-brush-2", crop: OptionsUpTo(m, brushBox), marks: [brushBox], firstNumber: 4);
 
         // 3: 밝게/어둡게 — 세기.

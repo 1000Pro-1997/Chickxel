@@ -31,9 +31,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         (ToolKind.Fill, "채우기", MainStrings.Tool_Fill_Name, "G", MainStrings.Tool_Fill_Hint),
         (ToolKind.Gradient, "그라데이션", MainStrings.Tool_Gradient_Name, "F", MainStrings.Tool_Gradient_Hint),
         (ToolKind.Picker, "스포이드", MainStrings.Tool_Picker_Name, "I", MainStrings.Tool_Picker_Hint),
-        (ToolKind.Line, "선", MainStrings.Tool_Line_Name, "L", MainStrings.Tool_Line_Hint),
-        (ToolKind.Rectangle, "사각형", MainStrings.Tool_Rectangle_Name, "R", MainStrings.Tool_Rectangle_Hint),
-        (ToolKind.Ellipse, "원", MainStrings.Tool_Ellipse_Name, "O", MainStrings.Tool_Ellipse_Hint),
+        (ToolKind.Shape, "도형", MainStrings.Tool_Shape_Name, "R", MainStrings.Tool_Shape_Hint),
         (ToolKind.Select, "사각 선택", MainStrings.Tool_Select_Name, "", MainStrings.Tool_Select_Hint),
         (ToolKind.EllipseSelect, "원 선택", MainStrings.Tool_EllipseSelect_Name, "", MainStrings.Tool_EllipseSelect_Hint),
         (ToolKind.Lasso, "자유 선택", MainStrings.Tool_Lasso_Name, "Q", MainStrings.Tool_Lasso_Hint),
@@ -47,13 +45,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     ];
 
     /// <summary>
-    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 채우기(채우기·그라데이션), 도형(선·사각형·원), 선택(사각·원·자유·스마트).
+    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
     /// 칸은 마지막으로 고른 도구를 보이고, 길게 누르거나 오른쪽 클릭하면 옆에 펼쳐 바꾼다(<see cref="ToolSlotButton"/>).
     /// </summary>
     private static readonly ToolKind[][] ToolSlots =
     [
         [ToolKind.Pencil], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
-        [ToolKind.Line, ToolKind.Rectangle, ToolKind.Ellipse],
+        [ToolKind.Shape],
         [ToolKind.Select, ToolKind.EllipseSelect, ToolKind.Lasso, ToolKind.MagicWand],
         [ToolKind.Move], [ToolKind.Dodge], [ToolKind.Dither], [ToolKind.ReplaceBrush], [ToolKind.Pivot], [ToolKind.Slice],
     ];
@@ -648,12 +646,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         Bind("편집", "선택 내려놓기", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_CommitSelection, KeyScope.Canvas, () =>
         {
             bool transforming = _ctx.IsTransforming;
+            if (_canvas.CommitCurve()) return true;
             _ctx.CommitFloating();
             if (transforming) ShowMessage(MainStrings.Message_133);
             return true;
         }, (Key.Enter, NoMods));
         Bind("편집", "선택 해제(캔버스)", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_DeselectCanvas, KeyScope.Canvas, () =>
         {
+            if (_canvas.CancelCurve()) return true;
             if (!CancelMode()) Deselect();
             return true;
         }, (Key.Escape, NoMods));
@@ -730,6 +730,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         // M = 선택 칸: 칸의 지금 선택 도구, 이미 선택 도구면 다음 선택 도구.
         Bind("도구", SelectCycleName, MainStrings.ShortcutCategory_Tools, MainStrings.Shortcut_CycleSelection, KeyScope.NotInText, () => { CycleSelectionTool(); return true; }, (Key.M, NoMods));
+        // L = 도형 도구의 선(예전 선 도구 자리, 같은 명령 이름이라 바꾼 키도 이어짐).
+        Bind("도구", "선", MainStrings.ShortcutCategory_Tools, MainStrings.Shortcut_ShapeLine, KeyScope.NotInText,
+            () => { _ctx.Tool = ToolKind.Shape; _ctx.ShapeKind = ShapeKind.Line; UpdateToolUi(); return true; }, (Key.L, NoMods));
         _miFilled = Checkable(Cmd("도형 채움", MainStrings.Menu_Tools_ShapeFilled_202, () => _ctx.ShapeFilled = !_ctx.ShapeFilled, "U", KeyScope.NotInText, (Key.U, NoMods)));
         _miGlobalFill = Checkable(Cmd("채우기: 같은 색 전체", MainStrings.Menu_Tools_FillContiguous_204, () => _ctx.FillContiguous = !_ctx.FillContiguous, "Shift+G", KeyScope.NotInText, (Key.G, Shift)));
         _miPixelPerfect = Checkable(Cmd("픽셀 퍼펙트", MainStrings.Menu_Tools_PixelPerfect_206, () => _ctx.PixelPerfect = !_ctx.PixelPerfect, "P", KeyScope.NotInText, (Key.P, NoMods)));
@@ -901,6 +904,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 mi.Header = MenuHeader(MenuText(mi), c.Keys.Count > 0 ? Shortcuts.Format(c.Keys[0]) : c.FixedKeyText);
         }
         _canvas.PeekKey = Command("보기/이전 프레임 보기(누르고 있기)").Keys.Select(k => (Key?)k.Key).FirstOrDefault();
+        HelpWindow.Shortcuts = id => _commands.FirstOrDefault(c => c.Info.Id == id)?.Keys;
+        HelpWindow.RefreshShortcuts();
         foreach (var slot in _toolSlots) slot.RefreshTip();
         if (_tbFiles is not null) _tbFiles.Tip(KeyHint(MainStrings.Ui_241, "보기/파일 브라우저"));
         ApplyTabTips();
@@ -1108,6 +1113,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.PixelPerfect = s.PixelPerfect;
         _ctx.FillContiguous = s.FillContiguous;
         _ctx.ShapeFilled = s.ShapeFilled;
+        _ctx.ShapeKind = s.ShapeKind;
+        _ctx.ShapeSides = s.ShapeSides;
+        _ctx.StarPoints = s.StarPoints;
+        _ctx.SpiralTurns = s.SpiralTurns;
+        _ctx.ShapeOrthogonal = s.ShapeOrthogonal;
         _ctx.RightButtonErases = s.RightButtonErases;
         _ctx.MoveWrap = s.MoveWrap;
         _ctx.TransformResample = s.TransformResample;
@@ -1242,6 +1252,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.PixelPerfect = _ctx.PixelPerfect;
         s.FillContiguous = _ctx.FillContiguous;
         s.ShapeFilled = _ctx.ShapeFilled;
+        s.ShapeKind = _ctx.ShapeKind;
+        s.ShapeSides = _ctx.ShapeSides;
+        s.StarPoints = _ctx.StarPoints;
+        s.SpiralTurns = _ctx.SpiralTurns;
+        s.ShapeOrthogonal = _ctx.ShapeOrthogonal;
         s.RightButtonErases = _ctx.RightButtonErases;
         s.MoveWrap = _ctx.MoveWrap;
         s.TransformResample = _ctx.TransformResample;
@@ -2391,8 +2406,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _browser.RestoreLastDeleted();
             return;
         }
-        // 변형·캔버스 크기 모드면 시작 전으로 되돌린다(Esc와 같음).
-        if (CancelMode()) return;
+        // 휘던 곡선은 버리고, 변형·캔버스 크기 모드면 시작 전으로 되돌린다(Esc와 같음).
+        if (_canvas.CancelCurve() || CancelMode()) return;
         switch (_undoOrder.NextUndo)
         {
             case UndoTimeline.Side.Palette:

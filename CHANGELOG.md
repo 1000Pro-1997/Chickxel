@@ -2,6 +2,21 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.46 (2026-10-27)
+### Shape tool: line, curve, rectangle, ellipse, triangles, polygons, stars, spiral, cylinder, cube
+- The toolbar's line group slot is now a single **Shape** (R) slot, and you pick the shape with the **Shape** buttons in Tool options. The old Line, Rectangle and Ellipse tools are now shapes of this tool; L picks the Shape tool's line (Shift snaps to 15° steps) and the Ellipse (O) shortcut is gone.
+- **Equilateral triangle** uses the dragged line as one side; **Isosceles triangle**, **Regular polygon** (3–32 corners) and **Star** (3–32 points) fit the dragged box. Shift keeps the proportions undistorted.
+- **Curve**: drag to set both ends, then move the mouse to bend it and click to confirm (Shift makes a circular arc, Esc cancels). **Spiral** (1–10 turns), **Cylinder** and **Cube** (2:1 isometric) are also available.
+- Lines and curves let you choose **Pixel steps**: **Diagonal** (thinnest line) or **Orthogonal** (every pixel touches the next by an edge).
+- Fill (U), line width, symmetry and right button = eraser work as they did for rectangles and ellipses, and the shape and counts are remembered.
+
+### Shortcuts in the guide (F1) follow your settings and OS
+- Command shortcuts in the guide show the keys you set in **Preferences > Shortcuts** ("no shortcut" if you removed them).
+- On macOS, Ctrl, Alt and Shift in the guide appear as ⌘, ⌥ and ⇧, matching the menus.
+
+### Shift line preview for brush tools
+- After drawing with the pencil, eraser or another brush tool, holding Shift previews the straight line a click would draw from the last point (with brush size and symmetry).
+
 ## v1.14.45 (2026-10-27)
 ### Guide: saving and copying in the Pixelate window
 - The homepage and in-app (F1) guide now explain right-clicking the source image and candidate tiles in the Pixelate window to copy (1× or ×4) or save as PNG, and where **Rerun only this preset** appears.

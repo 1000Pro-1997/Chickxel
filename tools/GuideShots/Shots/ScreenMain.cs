@@ -121,19 +121,19 @@ internal static class ScreenMainShots
         var main = Open(k, height: 760);
         Build(k, main);
         var slots = ShotKit.Get<List<ToolSlotButton>>(main, "_toolSlots");
-        var shapes = slots.First(s => s.IsGroup && s.Contains(ToolKind.Rectangle));
+        var group = slots.First(s => s.IsGroup && s.Contains(ToolKind.Fill));
         var files = ShotKit.Get<Control>(main, "_tbFiles");
         var save = ShotKit.Get<Control>(main, "_tbSave");
         var revert = ShotKit.Get<Control>(main, "_tbRevert");
         // 저장·되돌리기 단추가 켜지게 한 번 고친다(수정됨 상태).
         Ctx(main).Structural(() => Project(main).SetFrameDuration(0, 110));
         k.Settle(200);
-        k.Click(shapes, MouseButton.Right, settleMs: 500);
+        k.Click(group, MouseButton.Right, settleMs: 500);
         var list = PopupArea(k, main) ?? throw new InvalidOperationException("no tool list");
         var column = ToolbarColumn(main);
         static Rect Corner(Rect r) => r.Inflate(new Thickness(8, 8, 1, 1));
         Shot(k, main, null, column.Union(list).Inflate(8),
-            [Corner(ShotKit.Bounds(files, main)), Corner(ShotKit.Bounds(shapes, main)), Pop(list), Corner(ShotKit.Bounds(save, main)), Corner(ShotKit.Bounds(revert, main))],
+            [Corner(ShotKit.Bounds(files, main)), Corner(ShotKit.Bounds(group, main)), Pop(list), Corner(ShotKit.Bounds(save, main)), Corner(ShotKit.Bounds(revert, main))],
             only: [column, list]);
     }
 

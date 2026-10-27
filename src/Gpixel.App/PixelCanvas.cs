@@ -114,6 +114,14 @@ public sealed class PixelCanvas : Control
     private bool _strokeLighten;
     private HashSet<Point>? _visited;
     private ToolKind _strokeTool;
+    /// <summary>도형 도구 획의 모양(누를 때 정해 끝까지 씀).</summary>
+    private ShapeStyle _strokeShape;
+    /// <summary>
+    /// 곡선: 끌어서 양 끝(A·B)을 정한 뒤 휘는 중(버튼은 떼어 있음, 그림에는 아직 안 칠하고 미리보기만).
+    /// 처음 버튼으로 클릭(또는 Enter) = 확정, 반대 버튼·Esc·Ctrl+Z = 취소. 휘는 점 = <see cref="_curveThrough"/>(곡선 가운데가 지남).
+    /// </summary>
+    private (Point A, Point B, MouseButton Button)? _curve;
+    private Point _curveThrough;
     private Pivot _pivotBefore;
     private SliceEdge _sliceEdge;
     /// <summary>9-slice 도구로 끄는 동안의 테두리(놓을 때 실행취소 한 단계로 반영).</summary>
@@ -174,6 +182,7 @@ public sealed class PixelCanvas : Control
         {
             UpdateFloatingBitmap();
             _lastStrokeEnd = null;
+            _curve = null;
             // 프로젝트가 열리며 캔버스가 막 보이게 된 경우 배치가 끝난 뒤 가운데 놓는다.
             CenterImage();
             PostCenterImage();
@@ -187,8 +196,15 @@ public sealed class PixelCanvas : Control
         };
         ctx.Selection.Changed += (_, _) => { _selectionOutline = null; UpdateFloatingBitmap(); InvalidateVisual(); };
         ctx.OnionSkinChanged += (_, _) => InvalidateVisual();
-        ctx.ToolChanged += (_, _) => { UpdateCursor(); InvalidateVisual(); };
-        ctx.ToolOptionsChanged += (_, _) => InvalidateVisual();
+        ctx.ToolChanged += (_, _) => { CommitCurve(); UpdateCursor(); InvalidateVisual(); };
+        ctx.ToolOptionsChanged += (_, _) =>
+        {
+            // 휘는 중에 다른 모양을 고르면 지금 곡선을 확정한다.
+            if (_ctx.ShapeKind != ShapeKind.Curve) CommitCurve();
+            InvalidateVisual();
+        };
+        // 다른 셀로 가면 휘던 곡선은 버린다(그릴 셀이 바뀜).
+        ctx.CurrentChanged += (_, _) => { if (_curve is null) return; _curve = null; InvalidateVisual(); };
         ctx.TransformChanged += (_, _) =>
         {
             if (_drag == DragMode.None) UpdateCursor();
@@ -224,6 +240,9 @@ public sealed class PixelCanvas : Control
     {
         if (e.Key is Key.LeftAlt or Key.RightAlt && IsPointerOver)
             Dispatcher.UIThread.Post(UpdateCursor); // KeyState가 먼저 갱신된 뒤에
+        // Shift+클릭 직선 미리보기·곡선의 원호(Shift)를 켜고 끈다.
+        if (e.Key is Key.LeftShift or Key.RightShift && IsPointerOver && _drag == DragMode.None && (_lastStrokeEnd is not null || _curve is not null))
+            Dispatcher.UIThread.Post(InvalidateVisual);
         if (IsCommandKey(e.Key))
         {
             if (e.RoutedEvent == KeyDownEvent) { if (IsPointerOver) BeginTempMove(); }
@@ -763,6 +782,8 @@ public sealed class PixelCanvas : Control
         else if (_ctx.Selection.HasSelection) DrawSelection(g);
         if (_drag == DragMode.Lasso) DrawLasso(g);
         if (_drag == DragMode.Gradient) DrawGradientGuide(g);
+        DrawStrokeLinePreview(g);
+        DrawCurvePreview(g);
         DrawBrushCursor(g);
         DrawDropHint(g);
         if (_peekPrevious)
@@ -1151,8 +1172,56 @@ public sealed class PixelCanvas : Control
     }
 
     private static bool UsesBrush(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse
+        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Shape
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
+
+    /// <summary>Shift+클릭이 마지막 점에서 직선을 긋는 브러시 도구(연필·지우개·밝게/어둡게·디더링·색 바꾸기).</summary>
+    private static bool IsStrokeTool(ToolKind t)
+        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
+
+    /// <summary>
+    /// 브러시 도구에서 Shift를 누르고 있으면 클릭했을 때 그어질 직선(마지막 획 끝 → 포인터, 브러시 두께·대칭 포함)을
+    /// 반투명하게 미리 보인다. 연필은 기본색, 그 밖의 도구는 흰색.
+    /// </summary>
+    private void DrawStrokeLinePreview(DrawingContext g)
+    {
+        if (_drag != DragMode.None || _hoverPx is null || _lastStrokeEnd is not { } from || !IsStrokeTool(_ctx.Tool)
+            || !(KeyState.IsDown(Key.LeftShift) || KeyState.IsDown(Key.RightShift))
+            || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing || !_ctx.CanEdit) return;
+        var to = ScreenToPixel(_mouseScreen);
+        var cells = new HashSet<Point>();
+        foreach (var p in Raster.Line(from, to))
+            cells.UnionWith(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape));
+        var c = _ctx.Tool == ToolKind.Pencil && _ctx.Primary.A != 0 ? _ctx.Primary : Color32.White;
+        FillCells(g, Targets(cells), new SolidColorBrush(Color.FromArgb(150, c.R, c.G, c.B)));
+    }
+
+    private static bool ShiftDown => KeyState.IsDown(Key.LeftShift) || KeyState.IsDown(Key.RightShift);
+
+    /// <summary>휘는 중인 곡선의 점(Shift = 원호, 선 잇기 설정 따름).</summary>
+    private List<Point> CurvePoints((Point A, Point B, MouseButton Button) curve)
+        => Shapes.Curve(curve.A, curve.B, _curveThrough, arc: ShiftDown, orthogonal: _ctx.ShapeOrthogonal);
+
+    /// <summary>휘는 중인 곡선을 칠할 색으로 미리 보인다(지우는 색이면 반투명 흰색). 브러시 두께·대칭·선택 영역 포함.</summary>
+    private void DrawCurvePreview(DrawingContext g)
+    {
+        if (_curve is not { } curve) return;
+        var c = curve.Button == MouseButton.Right ? _ctx.RightButtonErases ? Color32.Transparent : _ctx.Secondary : _ctx.Primary;
+        var brush = new SolidColorBrush(c.A == 0 ? Color.FromArgb(150, 255, 255, 255) : Color.FromArgb(c.A, c.R, c.G, c.B));
+        var clip = _ctx.Selection.Clip;
+        FillCells(g, Targets(WithBrush(CurvePoints(curve))).Where(m => clip is null || clip.Value.Contains(m)), brush);
+    }
+
+    /// <summary>캔버스 안의 픽셀 칸들을 한 색으로 칠한다(미리보기).</summary>
+    private void FillCells(DrawingContext g, IEnumerable<Point> cells, IBrush brush)
+    {
+        foreach (var m in cells)
+        {
+            if (m.X < 0 || m.Y < 0 || m.X >= W || m.Y >= H) continue;
+            var r = ImageToScreen(new Rectangle(m.X, m.Y, 1, 1));
+            g.FillRectangle(brush, new Rect(r.X, r.Y, r.Width, r.Height));
+        }
+    }
 
     private void DrawBrushCursor(DrawingContext g)
     {
@@ -1281,7 +1350,7 @@ public sealed class PixelCanvas : Control
     }
 
     private static bool IsPaintTool(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse
+        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Shape
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -1293,6 +1362,16 @@ public sealed class PixelCanvas : Control
         if (_drag != DragMode.None)
         {
             if (TryCancelByOtherButton(pt, e.Pointer)) e.Handled = true;
+            return;
+        }
+        // 곡선을 휘는 중: 처음 버튼 = 확정, 반대 버튼 = 취소(가운데 버튼·Space 끌기는 화면 이동).
+        if (_curve is { } curve && pt.Properties.PointerUpdateKind is PointerUpdateKind.LeftButtonPressed or PointerUpdateKind.RightButtonPressed
+            && !(pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && KeyState.IsDown(Key.Space)))
+        {
+            bool same = (curve.Button == MouseButton.Left) == (pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed);
+            if (same) CommitCurve();
+            else CancelCurve();
+            e.Handled = true;
             return;
         }
         var button = pt.Properties.PointerUpdateKind switch
@@ -1371,9 +1450,7 @@ public sealed class PixelCanvas : Control
                 _ctx.NotifyPixels();
                 _drag = DragMode.Stroke;
                 break;
-            case ToolKind.Line:
-            case ToolKind.Rectangle:
-            case ToolKind.Ellipse:
+            case ToolKind.Shape:
                 BeginPixelStroke(tool, button, px);
                 DrawShape(px);
                 _drag = DragMode.Shape;
@@ -1457,6 +1534,11 @@ public sealed class PixelCanvas : Control
             _hoverPx = hover;
             HoverChanged?.Invoke(this, hover);
             if (_drag == DragMode.None) InvalidateVisual();
+        }
+        if (_curve is not null && _drag == DragMode.None && px != _curveThrough)
+        {
+            _curveThrough = px;
+            InvalidateVisual();
         }
         if (Math.Abs(loc.X - _dragStartScreen.X) + Math.Abs(loc.Y - _dragStartScreen.Y) > 3) _dragMoved = true;
 
@@ -1568,6 +1650,14 @@ public sealed class PixelCanvas : Control
                 EndPixelStroke();
                 break;
             case DragMode.Shape:
+                // 곡선: 양 끝을 정했으면 놓은 뒤 휘기로(끌지 않고 뗐으면 점 하나로 확정).
+                if (_strokeTool == ToolKind.Shape && _strokeShape.Kind == ShapeKind.Curve && _lastPx != _startPx)
+                {
+                    BeginCurveBend();
+                    break;
+                }
+                EndPixelStroke();
+                break;
             case DragMode.Fill:
                 EndPixelStroke();
                 break;
@@ -1673,11 +1763,12 @@ public sealed class PixelCanvas : Control
         var img = _ctx.EditImage!;
         _strokeBase = img.Clone();
         _strokeTool = tool;
+        _strokeShape = _ctx.ShapeStyle;
         bool right = button == MouseButton.Right;
         _strokeColor = tool switch
         {
             ToolKind.Eraser => Color32.Transparent,
-            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse or ToolKind.Fill
+            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.Shape or ToolKind.Fill
                 => Color32.Transparent,
             _ => right ? _ctx.Secondary : _ctx.Primary,
         };
@@ -1696,9 +1787,7 @@ public sealed class PixelCanvas : Control
             ToolKind.Eraser => UiStrings.S_PixelCanvas_EndPixelStroke_8EFE7C05AE,
             ToolKind.Fill => UiStrings.S_PixelCanvas_EndPixelStroke_94045434EF,
             ToolKind.Gradient => UiStrings.S_PixelCanvas_EndPixelStroke_45906D38E1,
-            ToolKind.Line => UiStrings.S_PixelCanvas_EndPixelStroke_8D94C37E38,
-            ToolKind.Rectangle => UiStrings.S_PixelCanvas_EndPixelStroke_57B4E3E0E3,
-            ToolKind.Ellipse => UiStrings.S_PixelCanvas_EndPixelStroke_3A7C39EBF0,
+            ToolKind.Shape => ToolOptionsPanel.ShapeName(_strokeShape.Kind),
             ToolKind.Dodge => _strokeLighten ? UiStrings.S_PixelCanvas_EndPixelStroke_57BA62C92E : UiStrings.S_PixelCanvas_EndPixelStroke_D019BA28D7,
             ToolKind.Dither => UiStrings.S_PixelCanvas_EndPixelStroke_1C14189718,
             _ => UiStrings.S_PixelCanvas_EndPixelStroke_E40CB15E95,
@@ -1710,7 +1799,7 @@ public sealed class PixelCanvas : Control
         _visited = null;
     }
 
-    /// <summary>선·사각형·원(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
+    /// <summary>도형(또는 브러시 획)을 그리는 중에 반대쪽 버튼을 누르면 그 획을 취소한다. 취소했으면 true.</summary>
     private bool TryCancelByOtherButton(PointerPoint pt, IPointer pointer)
     {
         if (_drag is not (DragMode.Shape or DragMode.Stroke or DragMode.Gradient)) return false;
@@ -1782,28 +1871,54 @@ public sealed class PixelCanvas : Control
         var img = _ctx.EditImage!;
         img.CopyFrom(_strokeBase!);
         bool shift = (_mods & KeyModifiers.Shift) != 0;
-        List<Point> pts;
-        switch (_strokeTool)
-        {
-            case ToolKind.Line:
-                if (shift) end = SnapAngle(_startPx, end);
-                pts = WithBrush(Raster.Line(_startPx, end));
-                break;
-            case ToolKind.Rectangle:
-            {
-                var r = Raster.RectFromPoints(_startPx, end, shift);
-                pts = _ctx.ShapeFilled ? Raster.RectFill(r) : WithBrush(Raster.RectOutline(r));
-                break;
-            }
-            default:
-            {
-                var r = Raster.RectFromPoints(_startPx, end, shift);
-                pts = _ctx.ShapeFilled ? Raster.EllipseFill(r) : WithBrush(Raster.EllipseOutline(r));
-                break;
-            }
-        }
+        var pts = _ctx.ShapeFilled && Shapes.CanFill(_strokeShape.Kind)
+            ? Shapes.Fill(_strokeShape, _startPx, end, shift)
+            : WithBrush(Shapes.Outline(_strokeShape, _startPx, end, shift));
         Raster.Plot(img, Targets(pts), _strokeColor, _ctx.Selection.Clip);
         _ctx.NotifyPixels();
+    }
+
+    /// <summary>선·곡선의 끝점(놓은 곳, Shift면 15° 단위로 맞춘 곳).</summary>
+    private Point ShapeEnd() => (_mods & KeyModifiers.Shift) != 0 ? Shapes.SnapLineEnd(_startPx, _lastPx) : _lastPx;
+
+    /// <summary>곡선의 양 끝을 정한 획을 거두고(셀은 그대로) 휘기를 시작한다. 휘는 점은 처음에 두 끝의 가운데(직선).</summary>
+    private void BeginCurveBend()
+    {
+        var a = _startPx;
+        var b = ShapeEnd();
+        _ctx.CancelStroke();
+        _strokeBase = null;
+        _curve = (a, b, _dragButton);
+        _curveThrough = new Point((a.X + b.X) / 2, (a.Y + b.Y) / 2);
+        Message?.Invoke(this, UiStrings.Shape_CurveBend);
+        InvalidateVisual();
+    }
+
+    /// <summary>휘던 곡선을 칠한다(실행취소 한 단계). 휘는 중이 아니었으면 false.</summary>
+    public bool CommitCurve()
+    {
+        if (_curve is not { } curve) return false;
+        _curve = null;
+        if (_ctx.CanEdit && _ctx.EditImage is not null)
+        {
+            BeginPixelStroke(ToolKind.Shape, curve.Button, curve.A);
+            _strokeShape = _strokeShape with { Kind = ShapeKind.Curve };
+            Raster.Plot(_ctx.EditImage!, Targets(WithBrush(CurvePoints(curve))), _strokeColor, _ctx.Selection.Clip);
+            _ctx.NotifyPixels();
+            EndPixelStroke();
+        }
+        InvalidateVisual();
+        return true;
+    }
+
+    /// <summary>휘던 곡선을 버린다(Esc·Ctrl+Z·반대 버튼). 휘는 중이 아니었으면 false.</summary>
+    public bool CancelCurve()
+    {
+        if (_curve is null) return false;
+        _curve = null;
+        Message?.Invoke(this, UiStrings.S_PixelCanvas_CancelPixelStroke_53972D288A);
+        InvalidateVisual();
+        return true;
     }
 
     /// <summary>선 점들에 브러시(크기·모양)를 입힌다.</summary>
@@ -1821,7 +1936,7 @@ public sealed class PixelCanvas : Control
     /// <summary>그라데이션을 시작점 → <paramref name="end"/>(Shift: 45° 단위)로 다시 칠한다(획 시작 전 그림 위에).</summary>
     private void DrawGradient(Point end)
     {
-        if ((_mods & KeyModifiers.Shift) != 0) end = SnapAngle(_startPx, end);
+        if ((_mods & KeyModifiers.Shift) != 0) end = Raster.SnapAngle(_startPx, end);
         _gradientEnd = end;
         var img = _ctx.EditImage!;
         img.CopyFrom(_strokeBase!);
@@ -1840,17 +1955,6 @@ public sealed class PixelCanvas : Control
         const double r = 3.5;
         g.DrawEllipse(Brushes.White, CursorBlackPen, a, r, r);
         g.DrawEllipse(Brushes.Black, CursorWhitePen, b, r, r);
-    }
-
-    /// <summary>Shift: 0°/45°/90° 방향으로 맞춘다.</summary>
-    private static Point SnapAngle(Point a, Point b)
-    {
-        int dx = b.X - a.X, dy = b.Y - a.Y;
-        int adx = Math.Abs(dx), ady = Math.Abs(dy);
-        if (adx > ady * 2) return new Point(b.X, a.Y);
-        if (ady > adx * 2) return new Point(a.X, b.Y);
-        int d = Math.Max(adx, ady);
-        return new Point(a.X + Math.Sign(dx) * d, a.Y + Math.Sign(dy) * d);
     }
 
     private void FillAt(Point p)

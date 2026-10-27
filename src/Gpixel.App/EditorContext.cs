@@ -13,9 +13,8 @@ public enum ToolKind
     /// <summary>선형 그라데이션: 끌어서 시작점 → 끝점(색 정지점·보간·디더링은 도구 설정).</summary>
     Gradient,
     Picker,
-    Line,
-    Rectangle,
-    Ellipse,
+    /// <summary>도형: 선·사각형·원·삼각형·정다각형·별·나선·원기둥·주사위(모양과 개수는 도구 설정, <see cref="EditorContext.ShapeStyle"/>).</summary>
+    Shape,
     /// <summary>사각 선택.</summary>
     Select,
     /// <summary>원 선택(Shift = 정원).</summary>
@@ -201,8 +200,41 @@ public sealed class EditorContext
         get => _ditherPattern;
         set { if (!Enum.IsDefined(value)) value = DitherPattern.Checker; if (_ditherPattern == value) return; _ditherPattern = value; OptionsChanged(); }
     }
-    /// <summary>사각형·원: 채움(true) / 외곽(false).</summary>
+    /// <summary>도형: 채움(true) / 외곽(false). 나선은 늘 선(<see cref="Shapes.CanFill"/>).</summary>
     public bool ShapeFilled { get => _shapeFilled; set { _shapeFilled = value; OptionsChanged(); } }
+
+    private ShapeKind _shapeKind = ShapeKind.Rectangle;
+    private int _shapeSides = 5, _starPoints = 5, _spiralTurns = 3;
+
+    /// <summary>도형 도구가 그리는 모양.</summary>
+    public ShapeKind ShapeKind
+    {
+        get => _shapeKind;
+        set { if (!Enum.IsDefined(value)) value = ShapeKind.Rectangle; if (_shapeKind == value) return; _shapeKind = value; OptionsChanged(); }
+    }
+    /// <summary>정다각형 꼭짓점 수(<see cref="Shapes.MinSides"/>~<see cref="Shapes.MaxSides"/>).</summary>
+    public int ShapeSides
+    {
+        get => _shapeSides;
+        set { value = Math.Clamp(value, Shapes.MinSides, Shapes.MaxSides); if (_shapeSides == value) return; _shapeSides = value; OptionsChanged(); }
+    }
+    /// <summary>별 뿔 수(<see cref="Shapes.MinSides"/>~<see cref="Shapes.MaxSides"/>).</summary>
+    public int StarPoints
+    {
+        get => _starPoints;
+        set { value = Math.Clamp(value, Shapes.MinSides, Shapes.MaxSides); if (_starPoints == value) return; _starPoints = value; OptionsChanged(); }
+    }
+    /// <summary>나선 감은 수(<see cref="Shapes.MinTurns"/>~<see cref="Shapes.MaxTurns"/>).</summary>
+    public int SpiralTurns
+    {
+        get => _spiralTurns;
+        set { value = Math.Clamp(value, Shapes.MinTurns, Shapes.MaxTurns); if (_spiralTurns == value) return; _spiralTurns = value; OptionsChanged(); }
+    }
+    private bool _shapeOrthogonal;
+    /// <summary>선·곡선 픽셀 잇기: true = ㄱ자(4방향, 모든 픽셀이 변으로 붙음), false = 대각선으로도 이음.</summary>
+    public bool ShapeOrthogonal { get => _shapeOrthogonal; set { if (_shapeOrthogonal == value) return; _shapeOrthogonal = value; OptionsChanged(); } }
+    /// <summary>지금 도형 설정(모양·개수·선 잇기).</summary>
+    public ShapeStyle ShapeStyle => new(_shapeKind, _shapeSides, _starPoints, _spiralTurns, _shapeOrthogonal);
     /// <summary>대칭 그리기: 좌우(세로 축 기준 반전).</summary>
     public bool MirrorX { get => _mirrorX; set { _mirrorX = value; OptionsChanged(); } }
     /// <summary>대칭 그리기: 상하.</summary>

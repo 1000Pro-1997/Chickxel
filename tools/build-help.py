@@ -150,6 +150,12 @@ class Runs:
                 s["code"] = True
             elif c.tag == "kbd":
                 s["kbd"] = True
+                # class="os-keep": macOS에서도 ⌘로 바꾸지 않는 키(“Ctrl을 ⌘로 읽으세요” 같은 글)
+                if "os-keep" in c.attrs.get("class", "").split():
+                    s["keep"] = True
+            elif c.tag == "span" and (cmd := c.attrs.get("data-cmd")):
+                # 앱 명령의 단축키({{key:명령}}): 앱은 사용자가 바꾼 키로 그린다.
+                s["cmd"] = cmd
             elif c.tag == "a" and (href := self.href(c.attrs.get("href", ""))):
                 s["href"] = href
             elif c.tag == "br":

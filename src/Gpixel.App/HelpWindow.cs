@@ -7,8 +7,8 @@ using Gpixel.Core.Help;
 namespace Gpixel.App;
 
 /// <summary>
-/// 사용 가이드 창(F1, 모드리스, 하나만). 홈페이지 사용 가이드(docs/guide.html·docs/en/guide.html)를
-/// <c>tools/build-help.py</c>로 미리 만든 쪽 데이터(내장 리소스 help.&lt;언어&gt;.json)로 보여 준다.
+/// 사용 가이드 창(F1, 모드리스, 하나만). 홈페이지 사용 가이드(docs/guide.html·docs/en/guide.html — 원본은 docs/i18n)를
+/// <c>tools/build-docs.py</c>(→ <c>tools/build-help.py</c>)로 미리 만든 쪽 데이터(내장 리소스 help.&lt;언어&gt;.json)로 보여 준다.
 /// 왼쪽 = 검색 칸 + 목차(검색 중이면 결과 목록), 오른쪽 = 고른 쪽. 검색은 <see cref="HelpSearch"/>(로컬 BM25)이고
 /// 검색 중에는 보이는 쪽의 찾은 말을 모두 노랗게 칠하고 첫 곳으로 스크롤한다. 마지막에 본 쪽은 앱을 켜 둔 동안만 기억한다.
 /// </summary>
@@ -59,6 +59,15 @@ public sealed class HelpWindow : Window
     /// <summary>지금 쪽을 그리며 처음 칠한 글 줄(그리로 스크롤).</summary>
     private Control? _firstHit;
     private Control? _currentTocRow;
+
+    /// <summary>
+    /// 앱 명령 id(예: "편집/실행취소")의 지금 단축키(사용자가 바꾼 것 우선, 지웠으면 빈 목록, 모르는 명령이면 null).
+    /// 메인 창이 정하고, 가이드의 명령 단축키 칸을 이것으로 그린다.
+    /// </summary>
+    public static Func<string, IReadOnlyList<KeyChord>?>? Shortcuts { get; set; }
+
+    /// <summary>단축키가 바뀌었으면 열려 있는 가이드의 지금 쪽을 다시 그린다.</summary>
+    public static void RefreshShortcuts() => _instance?.RenderPage();
 
     /// <summary>가이드 창을 연다(이미 열려 있으면 앞으로).</summary>
     public static HelpWindow Open(Window? owner)
@@ -782,10 +791,19 @@ public sealed class HelpWindow : Window
         var inlines = NewInlines(tb);
         List<(int Start, int End, string Href)>? links = null;
         int pos = 0;
-        foreach (var r in runs)
+        var list = runs as IReadOnlyList<HelpRun> ?? runs.ToList();
+        for (int i = 0; i < list.Count; i++)
         {
+            var r = list[i];
             int start = pos;
-            if (r.Kbd) pos += AddKey(inlines, r.T, tb);
+            // 앱 명령의 단축키(가이드의 {{key:명령}}): 사용자가 바꾼 키를 보인다(같은 명령 조각들을 한 번에).
+            if (r.Cmd is { } cmd && Shortcuts?.Invoke(cmd) is { } keys)
+            {
+                while (i + 1 < list.Count && list[i + 1].Cmd == cmd) i++;
+                pos += AddShortcut(inlines, keys, tb);
+                continue;
+            }
+            if (r.Kbd) pos += AddKey(inlines, r.Keep ? r.T : OsKey(r.T), tb);
             else pos += AddHighlighted(inlines, r.T, _terms, tb, r.B, r.Code, r.Href is null ? null : LinkBrush);
             if (r.Href is { } href) (links ??= new()).Add((start, pos, href));
         }
@@ -846,6 +864,43 @@ public sealed class HelpWindow : Window
         inlines.Add(MakeRun(KeyPad, false, true, false));
         return text.Length + 2 * KeyPad.Length;
     }
+
+    /// <summary>
+    /// 명령 단축키를 이 OS 표기로: Windows·Linux는 수정자마다 키 칸(<c>Ctrl</c>+<c>Z</c>), macOS는 메뉴처럼 한 칸(<c>⌘Z</c>).
+    /// 단축키를 모두 지웠으면 "단축키 없음". 글자 수를 돌려준다.
+    /// </summary>
+    private int AddShortcut(InlineCollection inlines, IReadOnlyList<KeyChord> keys, Control owner)
+    {
+        if (keys.Count == 0) return AddHighlighted(inlines, UiStrings.Help_NoShortcut, _terms, owner);
+        var text = Gpixel.App.Shortcuts.Format(keys[0]);
+        if (Platform.IsMac) return AddKey(inlines, Ui.Shortcut(text), owner);
+        // 키 이름에 '+'가 들어갈 수 있으므로(Num+) 알려진 수정자만 앞에서 떼어 낸다.
+        var parts = new List<string>();
+        string[] modifiers = ["Ctrl", "Control", "Meta", "Alt", "Shift"];
+        int plus;
+        while ((plus = text.IndexOf('+')) > 0 && plus < text.Length - 1 && modifiers.Contains(text[..plus]))
+        {
+            parts.Add(text[..plus]);
+            text = text[(plus + 1)..];
+        }
+        parts.Add(text);
+        int length = 0;
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (i > 0) length += AddHighlighted(inlines, "+", _terms, owner);
+            length += AddKey(inlines, parts[i], owner);
+        }
+        return length;
+    }
+
+    /// <summary>키 하나(가이드의 &lt;kbd&gt;)를 이 OS 표기로: macOS는 Ctrl·Alt·Shift를 ⌘·⌥·⇧로.</summary>
+    private static string OsKey(string key) => !Platform.IsMac ? key : key switch
+    {
+        "Ctrl" => "⌘",
+        "Alt" => "⌥",
+        "Shift" => "⇧",
+        _ => key,
+    };
 
     /// <summary>키 글자 양옆 여백(좁은 빈칸).</summary>
     private const string KeyPad = "\u2009";
@@ -932,12 +987,17 @@ internal sealed class HelpItem
     public HelpBlock[]? Sub { get; set; }
 }
 
-/// <summary>글 조각: T = 글자, B = 굵게, Code·Kbd = 코드·키, Href = <c>#쪽id</c> 또는 바깥 주소.</summary>
+/// <summary>
+/// 글 조각: T = 글자, B = 굵게, Code·Kbd = 코드·키, Href = <c>#쪽id</c> 또는 바깥 주소,
+/// Cmd = 앱 명령 id(그 명령의 지금 단축키로 바꿔 그림), Keep = macOS에서도 키 이름을 그대로(⌘로 바꾸지 않음).
+/// </summary>
 internal sealed class HelpRun
 {
     public string T { get; set; } = "";
     public bool B { get; set; }
     public bool Code { get; set; }
     public bool Kbd { get; set; }
+    public string? Cmd { get; set; }
+    public bool Keep { get; set; }
     public string? Href { get; set; }
 }

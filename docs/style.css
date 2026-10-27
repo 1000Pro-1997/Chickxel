@@ -166,6 +166,19 @@ body.guide-page { overflow: hidden; }
 .toc ol ol a.active { color: var(--ink); font-weight: 750; }
 .toc ol ol a.active::before { content: ""; position: absolute; left: -14px; top: 50%; width: 10px; height: 2px; background: var(--blue); }
 .toc-open { display: none; }
+.guide-search { position: relative; margin: 0 4px 18px; }
+.guide-search .icon { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.guide-search input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); color: var(--ink); font: inherit; font-size: 14px; }
+.guide-search input:focus { outline: none; border-color: var(--blue); }
+.toc.searching > h2, .toc.searching > ol:not(.search-results) { display: none; }
+.search-results { list-style: none; margin: 0; padding: 0; }
+.search-results a { display: block; padding: 10px 12px; border-radius: 12px; color: var(--ink); }
+.search-results a:hover, .search-results a.selected { background: var(--hover); text-decoration: none; }
+.search-results b { display: block; font-weight: 700; letter-spacing: -.02em; }
+.search-results .where { display: block; font-size: 12px; font-weight: 700; color: var(--gold); }
+.search-results .snip { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.search-results .empty { padding: 10px 12px; color: var(--muted); }
+.search-results mark, mark.hit { background: var(--accent); color: #17140a; border-radius: 3px; padding: 0 1px; }
 
 .content { min-width: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 44px 56px 80px; }
 .doc { max-width: 860px; }

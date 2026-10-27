@@ -8,6 +8,8 @@ namespace GuideShots;
 
 /// <summary>
 /// 진입점: <c>dotnet run --project tools/GuideShots -- [id 앞부분 …] [--list]</c>. 인수가 없으면 모든 샷을 찍는다.
+/// <c>--shortcuts &lt;파일&gt;</c>은 샷 대신 앱의 기본 단축키(설정 창 "내보내기(JSON)"와 같은 모양)를 써서 홈페이지 가이드가 쓰게 한다
+/// (<c>docs/i18n/shortcuts.json</c>, <c>tools/build-docs.py</c>의 <c>{{key:명령}}</c>).
 /// 샷마다 설정 폴더를 새로 만들어(GPIXEL_DATA_DIR) 사용자 설정을 건드리지 않고, 결과는 docs/assets/guide/&lt;이름&gt;.png.
 /// 샷은 하나씩 따로 된 프로세스(<c>--only &lt;id&gt;</c>)에서 찍는다 — 앞 샷이 남긴 창·타이머·폴더 감시가 다음 샷을 멈추게 하지 않게.
 /// </summary>
@@ -29,6 +31,8 @@ public static class Program
             foreach (var s in shots) Console.WriteLine(s.Attr!.Id);
             return 0;
         }
+        if (Array.IndexOf(args, "--shortcuts") is var si and >= 0 && si + 1 < args.Length)
+            return ExportShortcuts(args[si + 1]);
         if (Array.IndexOf(args, "--only") is var oi and >= 0 && oi + 1 < args.Length)
         {
             var shot = shots.FirstOrDefault(s => s.Attr!.Id == args[oi + 1]);
@@ -74,6 +78,37 @@ public static class Program
             var inner = ex is TargetInvocationException { InnerException: { } i } ? i : ex;
             Console.WriteLine($"FAIL {id}: {inner.GetType().Name}: {inner.Message}\n{inner.StackTrace}");
             return false;
+        }
+        finally
+        {
+            kit.CloseAll();
+        }
+    }
+
+    /// <summary>메인 창을 화면 없이 만들어 등록된 모든 명령의 기본 단축키를 JSON으로 쓴다(바뀌었을 때만).</summary>
+    private static int ExportShortcuts(string path)
+    {
+        AppBuilder.Configure<App>()
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            .SetupWithoutStarting();
+        ShotKit.UseWindowsLook();
+        var kit = new ShotKit("shortcuts");
+        try
+        {
+            var main = kit.Main();
+            var commands = ShotKit.Get<System.Collections.IEnumerable>(main, "_commands").Cast<object>()
+                .Select(c => ShotKit.Get<ShortcutCommand>(c, "Info"));
+            var json = Shortcuts.ToJson(commands, new Dictionary<string, List<KeyChord>>()) + "\n";
+            var full = Path.GetFullPath(path);
+            if (File.Exists(full) && File.ReadAllText(full) == json)
+            {
+                Console.WriteLine($"unchanged {path}");
+                return 0;
+            }
+            File.WriteAllText(full, json);
+            Console.WriteLine($"wrote {path}");
+            return 0;
         }
         finally
         {

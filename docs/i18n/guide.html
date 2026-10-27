@@ -1,0 +1,1692 @@
+<!doctype html>
+<!-- tools/build-docs.py가 docs/i18n/guide.html(틀)·guide.csv(언어별 문구)로 만든 파일입니다. 이 파일을 직접 고치지 말고 docs/i18n을 고친 뒤 다시 만드세요. -->
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{head.2}}</title>
+<meta name="description" content="{{head.3.content}}">
+<meta property="og:title" content="{{head.4.content}}">
+<meta property="og:description" content="{{head.5.content}}">
+<meta property="og:image" content="{{head.6.content}}">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
+<link rel="icon" href="{{root}}assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="{{root}}style.css?v=20261027a">
+<script>
+// 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
+{{head.7.script}}
+})();
+</script>
+</head>
+<body class="guide-page">
+<header class="top">
+<div class="bar">
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="{{root}}assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<nav class="nav">{{head.8}}<svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
+</nav>
+<label class="lang" title="{{head.9.title}}"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="{{lang-select.1.aria-label}}">
+<option value="ko"{{selected:ko}}>한국어</option>
+<option value="en"{{selected:en}}>English</option>
+</select></label>
+</div>
+</header>
+
+<main>
+<div class="manual" id="manual">
+<aside class="toc">
+<h2>{{manual.1}}</h2>
+<ol>
+<li class="toc-label">{{manual.2}}</li>
+<li>{{manual.3}}<ol><li>{{manual.4}}</li></ol>
+</li>
+<li>{{manual.5}}</li>
+<li>{{manual.6}}<ol><li>{{manual.7}}</li><li>{{manual.8}}</li></ol>
+</li>
+<li>{{manual.9}}<ol><li>{{manual.10}}</li><li>{{manual.11}}</li></ol>
+</li>
+<li>{{manual.12}}<ol><li>{{manual.13}}</li><li>{{manual.14}}</li></ol>
+</li>
+<li>{{manual.15}}<ol><li>{{manual.16}}</li><li>{{manual.17}}</li></ol>
+</li>
+<li>{{manual.18}}<ol><li>{{manual.19}}</li></ol>
+</li>
+<li>{{manual.20}}</li>
+<li class="toc-label">{{manual.21}}</li>
+<li>{{manual.22}}<ol><li>{{manual.23}}</li><li>{{manual.24}}</li><li>{{manual.25}}</li><li>{{manual.26}}</li><li>{{manual.27}}</li></ol>
+</li>
+<li>{{manual.28}}<ol><li>{{manual.29}}</li><li>{{manual.30}}</li><li>{{manual.31}}</li><li>{{manual.32}}</li><li>{{manual.33}}</li><li>{{manual.34}}</li><li>{{manual.35}}</li><li>{{manual.36}}</li><li>{{manual.37}}</li><li>{{manual.38}}</li><li>{{manual.39}}</li><li>{{manual.40}}</li><li>{{manual.41}}</li><li>{{manual.42}}</li><li>{{manual.43}}</li><li>{{manual.44}}</li><li>{{manual.45}}</li><li>{{manual.46}}</li></ol>
+</li>
+<li>{{manual.47}}<ol><li>{{manual.48}}</li><li>{{manual.49}}</li><li>{{manual.50}}</li><li>{{manual.51}}</li><li>{{manual.52}}</li><li><a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a></li><li><a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a></li><li>{{manual.55}}</li><li>{{manual.56}}</li><li><a href="#tools-nine-slice">9-slice</a></li></ol>
+</li>
+<li>{{manual.57}}<ol><li>{{manual.58}}</li><li>{{manual.59}}</li><li>{{manual.60}}</li><li>{{manual.61}}</li><li>{{manual.62}}</li><li>{{manual.63}}</li><li>{{manual.64}}</li><li>{{manual.65}}</li><li>{{manual.66}}</li><li>{{manual.67}}</li><li>{{manual.68}}</li><li>{{manual.69}}</li><li>{{manual.70}}</li></ol>
+</li>
+<li>{{manual.71}}<ol><li>{{manual.72}}</li><li>{{manual.73}}</li><li>{{manual.74}}</li><li>{{manual.75}}</li><li>{{manual.76}}</li><li>{{manual.77}}</li><li>{{manual.78}}</li><li>{{manual.79}}</li></ol>
+</li>
+<li>{{manual.80}}<ol><li>{{manual.81}}</li><li>{{manual.82}}</li><li>{{manual.83}}</li><li>{{manual.84}}</li><li>{{manual.85}}</li><li>{{manual.86}}</li><li>{{manual.87}}</li><li>{{manual.88}}</li><li>{{manual.89}}</li><li>{{manual.90}}</li><li>{{manual.91}}</li><li>{{manual.92}}</li><li><a href="#parts-sprite-library">Unity Sprite Library</a></li><li>{{manual.93}}</li></ol>
+</li>
+<li>{{manual.94}}<ol><li>{{manual.95}}</li><li>{{manual.96}}</li><li>{{manual.97}}</li><li>{{manual.98}}</li><li>{{manual.99}}</li><li>{{manual.100}}</li><li>{{manual.101}}</li><li>{{manual.102}}</li><li>{{manual.103}}</li><li>{{manual.104}}</li><li>{{manual.105}}</li><li>{{manual.106}}</li><li>{{manual.107}}</li><li>{{manual.108}}</li><li>{{manual.109}}</li><li>{{manual.110}}</li><li>{{manual.111}}</li></ol>
+</li>
+<li>{{manual.112}}<ol><li>{{manual.113}}</li><li>{{manual.114}}</li><li>{{manual.115}}</li><li>{{manual.116}}</li><li>{{manual.117}}</li><li>{{manual.118}}</li><li>{{manual.119}}</li></ol>
+</li>
+<li>{{manual.120}}<ol><li>{{manual.121}}</li><li>{{manual.122}}</li><li>{{manual.123}}</li></ol>
+</li>
+</ol>
+</aside>
+<div class="content">
+<section class="doc" id="featured-common">
+<h2>{{featured-common.1}}</h2>
+<p>{{featured-common.2}}</p>
+
+<h3 id="featured-number-field">{{featured-number-field.1}}</h3>
+<p>{{featured-number-field.2}}</p>
+<ol class="core-steps">
+<li>{{featured-number-field.3}}</li>
+<li>{{featured-number-field.4}}</li>
+<li>{{featured-number-field.5}}</li>
+</ol>
+<figure class="core-media guide-media"><img src="{{root}}assets/feature-number-field.gif" alt="{{featured-number-field.6.alt}}" width="512" height="1031" loading="lazy"></figure>
+</section>
+
+<section class="doc" id="featured-ai-draw">
+<h2>{{featured-ai-draw.1}}</h2>
+<p>{{featured-ai-draw.2}}</p>
+<ol class="core-steps">
+<li>{{featured-ai-draw.3}}</li>
+<li>{{featured-ai-draw.4}}</li>
+<li>{{featured-ai-draw.5}}</li>
+</ol>
+<div class="note"><p>{{featured-ai-draw.6}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-ai-draw.mp4" poster="{{root}}assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-ai-draw.7.aria-label}}" width="1280" height="720"></video></figure>
+</section>
+
+<section class="doc" id="featured-pixelate">
+<h2>{{featured-pixelate.1}}</h2>
+<p>{{featured-pixelate.2}}</p>
+
+<h3 id="featured-pixelate-convert">{{featured-pixelate-convert.1}}</h3>
+<p>{{featured-pixelate-convert.2}}</p>
+<ol class="core-steps">
+<li>{{featured-pixelate-convert.3}}</li>
+<li>{{featured-pixelate-convert.4}}</li>
+<li>{{featured-pixelate-convert.5}}</li>
+</ol>
+<div class="note"><p>{{featured-pixelate-convert.6}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate.mp4" poster="{{root}}assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-convert.7.aria-label}}" width="1512" height="914"></video></figure>
+
+<h3 id="featured-pixelate-colors">{{featured-pixelate-colors.1}}</h3>
+<p>{{featured-pixelate-colors.2}}</p>
+<ol class="core-steps">
+<li>{{featured-pixelate-colors.3}}</li>
+<li>{{featured-pixelate-colors.4}}</li>
+<li>{{featured-pixelate-colors.5}}</li>
+</ol>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pixelate-colors.mp4" poster="{{root}}assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pixelate-colors.6.aria-label}}" width="1512" height="914"></video></figure>
+</section>
+
+<section class="doc" id="featured-anim">
+<h2>{{featured-anim.1}}</h2>
+<p>{{featured-anim.2}}</p>
+
+<h3 id="featured-effects">{{featured-effects.1}}</h3>
+<p>{{featured-effects.2}}</p>
+<ol class="core-steps">
+<li>{{featured-effects.3}}</li>
+<li>{{featured-effects.4}}</li>
+<li>{{featured-effects.5}}</li>
+</ol>
+<div class="note"><p>{{featured-effects.6}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-effects.mp4" poster="{{root}}assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-effects.7.aria-label}}" width="1280" height="720"></video></figure>
+
+<h3 id="featured-clip">{{featured-clip.1}}</h3>
+<p>{{featured-clip.2}}</p>
+<ol class="core-steps">
+<li>{{featured-clip.3}}</li>
+<li>{{featured-clip.4}}</li>
+<li>{{featured-clip.5}}</li>
+</ol>
+<div class="note"><p>{{featured-clip.6}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-clip.mp4" poster="{{root}}assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-clip.7.aria-label}}" width="1280" height="688"></video></figure>
+</section>
+
+<section class="doc" id="featured-palettes">
+<h2>{{featured-palettes.1}}</h2>
+<p>{{featured-palettes.2}}</p>
+
+<h3 id="featured-palette-web">{{featured-palette-web.1}}</h3>
+<p>{{featured-palette-web.2}}</p>
+<ol class="core-steps">
+<li>{{featured-palette-web.3}}</li>
+<li>{{featured-palette-web.4}}</li>
+<li>{{featured-palette-web.5}}</li>
+<li>{{featured-palette-web.6}}</li>
+</ol>
+<div class="note"><p>{{featured-palette-web.7}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-palette.mp4" poster="{{root}}assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-web.8.aria-label}}" width="1280" height="688"></video></figure>
+
+<h3 id="featured-palette-convert">{{featured-palette-convert.1}}</h3>
+<p>{{featured-palette-convert.2}}</p>
+<ol class="core-steps">
+<li>{{featured-palette-convert.3}}</li>
+<li>{{featured-palette-convert.4}}</li>
+<li>{{featured-palette-convert.5}}</li>
+</ol>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-convert.mp4" poster="{{root}}assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-palette-convert.6.aria-label}}" width="1280" height="688"></video></figure>
+</section>
+
+<section class="doc" id="featured-skin-set">
+<h2>{{featured-skin-set.1}}</h2>
+<p>{{featured-skin-set.2}}</p>
+
+<h3 id="featured-skins">{{featured-skins.1}}</h3>
+<p>{{featured-skins.2}}</p>
+<ol class="core-steps">
+<li>{{featured-skins.3}}</li>
+<li>{{featured-skins.4}}</li>
+<li>{{featured-skins.5}}</li>
+</ol>
+<div class="note"><p>{{featured-skins.6}}</p></div>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins.mp4" poster="{{root}}assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins.7.aria-label}}" width="1280" height="688"></video></figure>
+
+<h3 id="featured-skins-tiles">{{featured-skins-tiles.1}}</h3>
+<p>{{featured-skins-tiles.2}}</p>
+<ol class="core-steps">
+<li>{{featured-skins-tiles.3}}</li>
+<li>{{featured-skins-tiles.4}}</li>
+<li>{{featured-skins-tiles.5}}</li>
+</ol>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-skins-tiles.mp4" poster="{{root}}assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-skins-tiles.6.aria-label}}" width="1280" height="688"></video></figure>
+</section>
+
+<section class="doc" id="featured-unity">
+<h2>{{featured-unity.1}}</h2>
+<p>{{featured-unity.2}}</p>
+
+<h3 id="featured-pivot">{{featured-pivot.1}}</h3>
+<p>{{featured-pivot.2}}</p>
+<ol class="core-steps">
+<li>{{featured-pivot.3}}</li>
+<li>{{featured-pivot.4}}</li>
+<li>{{featured-pivot.5}}</li>
+</ol>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-pivot.mp4" poster="{{root}}assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-pivot.6.aria-label}}" width="1280" height="688"></video></figure>
+</section>
+
+<section class="doc" id="featured-export">
+<h2>{{featured-export.1}}</h2>
+<p>{{featured-export.2}}</p>
+<ol class="core-steps">
+<li>{{featured-export.3}}</li>
+<li>{{featured-export.4}}</li>
+<li>{{featured-export.5}}</li>
+</ol>
+<figure class="core-media wide guide-media"><video src="{{root}}assets/feature-export.mp4" poster="{{root}}assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{featured-export.6.aria-label}}" width="1280" height="688"></video></figure>
+</section>
+
+<section class="doc" id="start">
+<h2>{{start.1}}</h2>
+<p>{{start.2}}</p>
+
+<h3 id="start-install">{{start-install.1}}</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>OS</th><th>{{start-install.2}}</th><th>{{start-install.3}}</th></tr></thead>
+<tbody>
+<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Gpixel-windows-x64.zip</a></td><td>{{start-install.4}}</td></tr>
+<tr><td>{{start-install.5}}</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">Gpixel-macos-arm64.zip</a></td><td>{{start-install.6}}</td></tr>
+<tr><td>{{start-install.7}}</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">Gpixel-macos-x64.zip</a></td><td>{{start-install.8}}</td></tr>
+</tbody>
+</table></div>
+<p>{{start-install.9}}</p>
+
+<h4>{{start-install.10}}</h4>
+<p>{{start-install.11}}</p>
+<pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
+curl -fL -o /tmp/Gpixel.zip "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-$ARCH.zip" \
+  &amp;&amp; rm -rf /Applications/Gpixel.app &amp;&amp; ditto -x -k /tmp/Gpixel.zip /Applications \
+  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Gpixel.app; rm -f /tmp/Gpixel.zip; open /Applications/Gpixel.app</code></pre>
+<p>{{start-install.12}}</p>
+<pre><code>$d = "$env:LOCALAPPDATA\Programs\Gpixel"; $z = "$env:TEMP\Gpixel.zip"; $x = "$env:TEMP\Gpixel-x"
+Invoke-WebRequest "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip" -OutFile $z
+Expand-Archive $z $x -Force; New-Item -ItemType Directory -Force $d | Out-Null
+Copy-Item "$x\Gpixel-windows-x64\Gpixel.exe" $d -Force; Unblock-File "$d\Gpixel.exe"; Remove-Item $z, $x -Recurse -Force
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Gpixel.lnk"); $s.TargetPath = "$d\Gpixel.exe"; $s.Save()
+Start-Process "$d\Gpixel.exe"</code></pre>
+<p>{{start-install.13}}</p>
+
+<h3 id="start-first-run">{{start-first-run.1}}</h3>
+<ul>
+<li>{{start-first-run.2}}<ul>
+<li>{{start-first-run.3}}</li>
+<li>{{start-first-run.4}}</li>
+</ul></li>
+<li>{{start-first-run.5}}</li>
+<li>{{start-first-run.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/start-first-run.png" alt="{{start-first-run.7.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{start-first-run.8}}</figcaption></figure>
+<div class="note"><p>{{start-first-run.9}}</p></div>
+
+<h3 id="start-update">{{start-update.1}}</h3>
+<p>{{start-update.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/start-update.png" alt="{{start-update.3.alt}}" width="986" height="67" loading="lazy"><figcaption>{{start-update.4}}</figcaption></figure>
+<ul>
+<li>{{start-update.5}}</li>
+<li>{{start-update.6}}</li>
+<li>{{start-update.7}}</li>
+<li>{{start-update.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/start-update-2.png" alt="{{start-update.9.alt}}" width="610" height="458" loading="lazy"><figcaption>{{start-update.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/start-update-3.png" alt="{{start-update.11.alt}}" width="271" height="234" loading="lazy"><figcaption>{{start-update.12}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/start-update-4.png" alt="{{start-update.13.alt}}" width="958" height="82" loading="lazy"><figcaption>{{start-update.14}}</figcaption></figure>
+
+<h3 id="start-privacy">{{start-privacy.1}}</h3>
+<p>{{start-privacy.2}}</p>
+<ul>
+<li>{{start-privacy.3}}</li>
+<li>{{start-privacy.4}}</li>
+<li>{{start-privacy.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/start-privacy.png" alt="{{start-privacy.6.alt}}" width="965" height="799" loading="lazy"><figcaption>{{start-privacy.7}}</figcaption></figure>
+
+<h3 id="start-feedback">{{start-feedback.1}}</h3>
+<p>{{start-feedback.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/start-feedback.png" alt="{{start-feedback.3.alt}}" width="271" height="234" loading="lazy"><figcaption>{{start-feedback.4}}</figcaption></figure>
+<p>{{start-feedback.5}}</p>
+<ul>
+<li>{{start-feedback.6}}</li>
+<li>{{start-feedback.7}}</li>
+<li>{{start-feedback.8}}</li>
+<li>{{start-feedback.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/start-feedback-2.png" alt="{{start-feedback.10.alt}}" width="568" height="449" loading="lazy"><figcaption>{{start-feedback.11}}</figcaption></figure>
+</section>
+
+<section class="doc" id="screen">
+<h2>{{screen.1}}</h2>
+<p>{{screen.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-overview.png" alt="{{screen.3.alt}}" width="1622" height="919" loading="lazy"><figcaption>{{screen.4}}</figcaption></figure>
+
+<h3 id="screen-top-bar">{{screen-top-bar.1}}</h3>
+<p>{{screen-top-bar.2}}</p>
+<ul>
+<li>{{screen-top-bar.3}}</li>
+<li>{{screen-top-bar.4}}</li>
+<li>{{screen-top-bar.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar.png" alt="{{screen-top-bar.6.alt}}" width="1613" height="64" loading="lazy"><figcaption>{{screen-top-bar.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-2.png" alt="{{screen-top-bar.8.alt}}" width="478" height="219" loading="lazy"><figcaption>{{screen-top-bar.9}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-top-bar.10}}</th><th>{{screen-top-bar.11}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-top-bar.12}}</td><td>{{screen-top-bar.13}}</td></tr>
+<tr><td>{{screen-top-bar.14}}</td><td>{{screen-top-bar.15}}</td></tr>
+<tr><td>{{screen-top-bar.16}}</td><td>{{screen-top-bar.17}}</td></tr>
+<tr><td>{{screen-top-bar.18}}</td><td>{{screen-top-bar.19}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-3.png" alt="{{screen-top-bar.20.alt}}" width="702" height="141" loading="lazy"><figcaption>{{screen-top-bar.21}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-4.png" alt="{{screen-top-bar.22.alt}}" width="684" height="179" loading="lazy"><figcaption>{{screen-top-bar.23}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-5.png" alt="{{screen-top-bar.24.alt}}" width="596" height="143" loading="lazy"><figcaption>{{screen-top-bar.25}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-top-bar-6.png" alt="{{screen-top-bar.26.alt}}" width="552" height="177" loading="lazy"><figcaption>{{screen-top-bar.27}}</figcaption></figure>
+<p>{{screen-top-bar.28}}</p>
+
+<h3 id="screen-common-controls">{{screen-common-controls.1}}</h3>
+<ul>
+<li>{{screen-common-controls.2}}</li>
+<li>{{screen-common-controls.3}}</li>
+<li>{{screen-common-controls.4}}</li>
+<li>{{screen-common-controls.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-common-controls.png" alt="{{screen-common-controls.6.alt}}" width="312" height="375" loading="lazy"><figcaption>{{screen-common-controls.7}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/screen-common-controls.webp" alt="{{screen-common-controls.8.alt}}" width="432" height="442" loading="lazy"></figure>
+
+<h3 id="screen-toolbar">{{screen-toolbar.1}}</h3>
+<p>{{screen-toolbar.2}}</p>
+<ul>
+<li>{{screen-toolbar.3}}</li>
+<li>{{screen-toolbar.4}}</li>
+<li>{{screen-toolbar.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-toolbar.png" alt="{{screen-toolbar.6.alt}}" width="244" height="698" loading="lazy"><figcaption>{{screen-toolbar.7}}</figcaption></figure>
+
+<h3 id="screen-file-browser">{{screen-file-browser.1}}</h3>
+<p>{{screen-file-browser.2}}</p>
+<ul>
+<li>{{screen-file-browser.3}}</li>
+<li>{{screen-file-browser.4}}</li>
+<li>{{screen-file-browser.5}}</li>
+<li>{{screen-file-browser.6}}</li>
+<li>{{screen-file-browser.7}}</li>
+<li>{{screen-file-browser.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser.png" alt="{{screen-file-browser.9.alt}}" width="252" height="593" loading="lazy"><figcaption>{{screen-file-browser.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-2.png" alt="{{screen-file-browser.11.alt}}" width="336" height="740" loading="lazy"><figcaption>{{screen-file-browser.12}}</figcaption></figure>
+
+<h4>{{screen-file-browser.13}}</h4>
+<p>{{screen-file-browser.14}}</p>
+<ul>
+<li>{{screen-file-browser.15}}</li>
+<li>{{screen-file-browser.16}}</li>
+<li>{{screen-file-browser.17}}</li>
+</ul>
+
+<h4>{{screen-file-browser.18}}</h4>
+<p>{{screen-file-browser.19}}</p>
+<ul>
+<li>{{screen-file-browser.20}}</li>
+<li>{{screen-file-browser.21}}</li>
+<li>{{screen-file-browser.22}}</li>
+<li>{{screen-file-browser.23}}</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-file-browser.24}}</th><th>{{screen-file-browser.25}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-file-browser.26}}</td><td>{{screen-file-browser.27}}</td></tr>
+<tr><td>{{screen-file-browser.28}}</td><td>{{screen-file-browser.29}}</td></tr>
+<tr><td>{{screen-file-browser.30}}</td><td>{{screen-file-browser.31}}</td></tr>
+<tr><td>{{screen-file-browser.32}}</td><td>{{screen-file-browser.33}}</td></tr>
+</tbody>
+</table></div>
+<p>{{screen-file-browser.34}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-3.png" alt="{{screen-file-browser.35.alt}}" width="759" height="908" loading="lazy"><figcaption>{{screen-file-browser.36}}</figcaption></figure>
+
+<h4>{{screen-file-browser.37}}</h4>
+<ul>
+<li>{{screen-file-browser.38}}</li>
+<li>{{screen-file-browser.39}}</li>
+<li>{{screen-file-browser.40}}</li>
+<li>{{screen-file-browser.41}}</li>
+<li>{{screen-file-browser.42}}</li>
+<li>{{screen-file-browser.43}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-file-browser-4.png" alt="{{screen-file-browser.44.alt}}" width="774" height="556" loading="lazy"><figcaption>{{screen-file-browser.45}}</figcaption></figure>
+
+<h3 id="screen-palette">{{screen-palette.1}}</h3>
+<p>{{screen-palette.2}}</p>
+<ul>
+<li>{{screen-palette.3}}</li>
+<li>{{screen-palette.4}}</li>
+<li>{{screen-palette.5}}</li>
+<li>{{screen-palette.6}}</li>
+<li>{{screen-palette.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-palette.png" alt="{{screen-palette.8.alt}}" width="248" height="499" loading="lazy"><figcaption>{{screen-palette.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-palette-2.png" alt="{{screen-palette.10.alt}}" width="454" height="507" loading="lazy"><figcaption>{{screen-palette.11}}</figcaption></figure>
+
+<h4>{{screen-palette.12}}</h4>
+<p>{{screen-palette.13}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-palette-3.png" alt="{{screen-palette.14.alt}}" width="522" height="599" loading="lazy"><figcaption>{{screen-palette.15}}</figcaption></figure>
+
+<h4>{{screen-palette.16}}</h4>
+<p>{{screen-palette.17}}</p>
+<ul>
+<li>{{screen-palette.18}}</li>
+<li>{{screen-palette.19}}</li>
+<li>{{screen-palette.20}}</li>
+<li>{{screen-palette.21}}</li>
+<li>{{screen-palette.22}}</li>
+<li>{{screen-palette.23}}</li>
+</ul>
+<p>{{screen-palette.24}}</p>
+
+<h3 id="screen-color-picker">{{screen-color-picker.1}}</h3>
+<p>{{screen-color-picker.2}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-color-picker.3}}</th><th>{{screen-color-picker.4}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-color-picker.5}}</td><td>{{screen-color-picker.6}}</td></tr>
+<tr><td>{{screen-color-picker.7}}</td><td>{{screen-color-picker.8}}</td></tr>
+<tr><td>{{screen-color-picker.9}}</td><td>{{screen-color-picker.10}}</td></tr>
+<tr><td>{{screen-color-picker.11}}</td><td>{{screen-color-picker.12}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/screen-color-picker.png" alt="{{screen-color-picker.13.alt}}" width="249" height="332" loading="lazy"><figcaption>{{screen-color-picker.14}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-color-picker-2.png" alt="{{screen-color-picker.15.alt}}" width="242" height="371" loading="lazy"><figcaption>{{screen-color-picker.16}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-color-picker-3.png" alt="{{screen-color-picker.17.alt}}" width="242" height="359" loading="lazy"><figcaption>{{screen-color-picker.18}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-color-picker-4.png" alt="{{screen-color-picker.19.alt}}" width="242" height="319" loading="lazy"><figcaption>{{screen-color-picker.20}}</figcaption></figure>
+<p>{{screen-color-picker.21}}</p>
+
+<h3 id="screen-canvas">{{screen-canvas.1}}</h3>
+<p>{{screen-canvas.2}}</p>
+<ul>
+<li>{{screen-canvas.3}}</li>
+<li>{{screen-canvas.4}}</li>
+<li>{{screen-canvas.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-canvas.png" alt="{{screen-canvas.6.alt}}" width="801" height="731" loading="lazy"><figcaption>{{screen-canvas.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-canvas-2.png" alt="{{screen-canvas.8.alt}}" width="801" height="731" loading="lazy"><figcaption>{{screen-canvas.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-canvas-3.png" alt="{{screen-canvas.10.alt}}" width="801" height="731" loading="lazy"><figcaption>{{screen-canvas.11}}</figcaption></figure>
+
+<h3 id="screen-tabs">{{screen-tabs.1}}</h3>
+<p>{{screen-tabs.2}}</p>
+<ul>
+<li>{{screen-tabs.3}}</li>
+<li>{{screen-tabs.4}}</li>
+<li>{{screen-tabs.5}}</li>
+<li>{{screen-tabs.6}}</li>
+<li>{{screen-tabs.7}}</li>
+<li>{{screen-tabs.8}}</li>
+<li>{{screen-tabs.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tabs.png" alt="{{screen-tabs.10.alt}}" width="1096" height="160" loading="lazy"><figcaption>{{screen-tabs.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tabs-2.png" alt="{{screen-tabs.12.alt}}" width="809" height="114" loading="lazy"><figcaption>{{screen-tabs.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tabs-3.png" alt="{{screen-tabs.14.alt}}" width="802" height="551" loading="lazy"><figcaption>{{screen-tabs.15}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/screen-tabs.webp" alt="{{screen-tabs.16.alt}}" width="788" height="474" loading="lazy"></figure>
+
+<h3 id="screen-timeline">{{screen-timeline.1}}</h3>
+<p>{{screen-timeline.2}}</p>
+<ul>
+<li>{{screen-timeline.3}}</li>
+<li>{{screen-timeline.4}}</li>
+<li>{{screen-timeline.5}}</li>
+<li>{{screen-timeline.6}}</li>
+<li>{{screen-timeline.7}}</li>
+<li>{{screen-timeline.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline.png" alt="{{screen-timeline.9.alt}}" width="640" height="330" loading="lazy"><figcaption>{{screen-timeline.10}}</figcaption></figure>
+<div class="note">{{screen-timeline.11}}</div>
+<p>{{screen-timeline.12}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-timeline.13}}</th><th>{{screen-timeline.14}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-timeline.15}}</td><td>{{screen-timeline.16}}</td></tr>
+<tr><td>{{screen-timeline.17}}</td><td>{{screen-timeline.18}}</td></tr>
+<tr><td>{{screen-timeline.19}}</td><td>{{screen-timeline.20}}</td></tr>
+<tr><td>{{screen-timeline.21}}</td><td>{{screen-timeline.22}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-2.png" alt="{{screen-timeline.23.alt}}" width="702" height="389" loading="lazy"><figcaption>{{screen-timeline.24}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-3.png" alt="{{screen-timeline.25.alt}}" width="744" height="362" loading="lazy"><figcaption>{{screen-timeline.26}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-4.png" alt="{{screen-timeline.27.alt}}" width="324" height="349" loading="lazy"><figcaption>{{screen-timeline.28}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-5.png" alt="{{screen-timeline.29.alt}}" width="304" height="143" loading="lazy"></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-6.png" alt="{{screen-timeline.30.alt}}" width="473" height="213" loading="lazy"><figcaption>{{screen-timeline.31}}</figcaption></figure>
+
+<h3 id="screen-timeline-select">{{screen-timeline-select.1}}</h3>
+<p>{{screen-timeline-select.2}}</p>
+<ul>
+<li>{{screen-timeline-select.3}}</li>
+<li>{{screen-timeline-select.4}}</li>
+<li>{{screen-timeline-select.5}}</li>
+<li>{{screen-timeline-select.6}}</li>
+<li>{{screen-timeline-select.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-select.png" alt="{{screen-timeline-select.8.alt}}" width="801" height="352" loading="lazy"><figcaption>{{screen-timeline-select.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-select-2.png" alt="{{screen-timeline-select.10.alt}}" width="801" height="352" loading="lazy"><figcaption>{{screen-timeline-select.11}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-select.webp" alt="{{screen-timeline-select.12.alt}}" width="686" height="278" loading="lazy"></figure>
+
+<h3 id="screen-timeline-edit">{{screen-timeline-edit.1}}</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-timeline-edit.2}}</th><th>{{screen-timeline-edit.3}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-timeline-edit.4}}</td><td>{{screen-timeline-edit.5}}</td></tr>
+<tr><td>{{screen-timeline-edit.6}}</td><td>{{screen-timeline-edit.7}}</td></tr>
+<tr><td>{{screen-timeline-edit.8}}</td><td>{{screen-timeline-edit.9}}</td></tr>
+<tr><td>{{screen-timeline-edit.10}}</td><td>{{screen-timeline-edit.11}}</td></tr>
+<tr><td>{{screen-timeline-edit.12}}</td><td>{{screen-timeline-edit.13}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-edit.png" alt="{{screen-timeline-edit.14.alt}}" width="704" height="342" loading="lazy"><figcaption>{{screen-timeline-edit.15}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-timeline-edit-2.png" alt="{{screen-timeline-edit.16.alt}}" width="702" height="362" loading="lazy"><figcaption>{{screen-timeline-edit.17}}</figcaption></figure>
+<p>{{screen-timeline-edit.18}}</p>
+<figure class="clip"><img src="{{root}}assets/guide/screen-timeline-edit.webp" alt="{{screen-timeline-edit.19.alt}}" width="734" height="416" loading="lazy"></figure>
+
+<h3 id="screen-tags">{{screen-tags.1}}</h3>
+<ul>
+<li>{{screen-tags.2}}</li>
+<li>{{screen-tags.3}}</li>
+<li>{{screen-tags.4}}</li>
+<li>{{screen-tags.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tags.png" alt="{{screen-tags.6.alt}}" width="828" height="533" loading="lazy"><figcaption>{{screen-tags.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tags-2.png" alt="{{screen-tags.8.alt}}" width="344" height="245" loading="lazy"><figcaption>{{screen-tags.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tags-3.png" alt="{{screen-tags.10.alt}}" width="603" height="134" loading="lazy"><figcaption>{{screen-tags.11}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/screen-tags.webp" alt="{{screen-tags.12.alt}}" width="1028" height="760" loading="lazy"></figure>
+
+<h3 id="screen-layer-effects">{{screen-layer-effects.1}}</h3>
+<p>{{screen-layer-effects.2}}</p>
+<ul>
+<li>{{screen-layer-effects.3}}</li>
+<li>{{screen-layer-effects.4}}</li>
+<li>{{screen-layer-effects.5}}</li>
+<li>{{screen-layer-effects.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects.png" alt="{{screen-layer-effects.7.alt}}" width="324" height="361" loading="lazy"><figcaption>{{screen-layer-effects.8}}</figcaption></figure>
+
+<h4>{{screen-layer-effects.9}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-layer-effects.10}}</th><th>{{screen-layer-effects.11}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-layer-effects.12}}</td><td>{{screen-layer-effects.13}}</td></tr>
+<tr><td>{{screen-layer-effects.14}}</td><td>{{screen-layer-effects.15}}</td></tr>
+<tr><td>{{screen-layer-effects.16}}</td><td>{{screen-layer-effects.17}}</td></tr>
+<tr><td>{{screen-layer-effects.18}}</td><td>{{screen-layer-effects.19}}</td></tr>
+<tr><td>{{screen-layer-effects.20}}</td><td>{{screen-layer-effects.21}}</td></tr>
+<tr><td>{{screen-layer-effects.22}}</td><td>{{screen-layer-effects.23}}</td></tr>
+<tr><td>{{screen-layer-effects.24}}</td><td>{{screen-layer-effects.25}}</td></tr>
+<tr><td>{{screen-layer-effects.26}}</td><td>{{screen-layer-effects.27}}</td></tr>
+</tbody>
+</table></div>
+<p>{{screen-layer-effects.28}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-layer-effects.29}}</th><th>{{screen-layer-effects.30}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-layer-effects.31}}</td><td>{{screen-layer-effects.32}}</td></tr>
+<tr><td>{{screen-layer-effects.33}}</td><td>{{screen-layer-effects.34}}</td></tr>
+<tr><td>{{screen-layer-effects.35}}</td><td>{{screen-layer-effects.36}}</td></tr>
+<tr><td>{{screen-layer-effects.37}}</td><td>{{screen-layer-effects.38}}</td></tr>
+<tr><td>{{screen-layer-effects.39}}</td><td>{{screen-layer-effects.40}}</td></tr>
+<tr><td>{{screen-layer-effects.41}}</td><td>{{screen-layer-effects.42}}</td></tr>
+<tr><td>{{screen-layer-effects.43}}</td><td>{{screen-layer-effects.44}}</td></tr>
+<tr><td>{{screen-layer-effects.45}}</td><td>{{screen-layer-effects.46}}</td></tr>
+<tr><td>{{screen-layer-effects.47}}</td><td>{{screen-layer-effects.48}}</td></tr>
+<tr><td>{{screen-layer-effects.49}}</td><td>{{screen-layer-effects.50}}</td></tr>
+<tr><td>{{screen-layer-effects.51}}</td><td>{{screen-layer-effects.52}}</td></tr>
+<tr><td>{{screen-layer-effects.53}}</td><td>{{screen-layer-effects.54}}</td></tr>
+<tr><td>{{screen-layer-effects.55}}</td><td>{{screen-layer-effects.56}}</td></tr>
+<tr><td>{{screen-layer-effects.57}}</td><td>{{screen-layer-effects.58}}</td></tr>
+<tr><td>{{screen-layer-effects.59}}</td><td>{{screen-layer-effects.60}}</td></tr>
+</tbody>
+</table></div>
+
+<h4>{{screen-layer-effects.61}}</h4>
+<ul>
+<li>{{screen-layer-effects.62}}</li>
+<li>{{screen-layer-effects.63}}</li>
+<li>{{screen-layer-effects.64}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-2.png" alt="{{screen-layer-effects.65.alt}}" width="396" height="301" loading="lazy"><figcaption>{{screen-layer-effects.66}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-3.png" alt="{{screen-layer-effects.67.alt}}" width="508" height="397" loading="lazy"></figure>
+
+<h4>{{screen-layer-effects.68}}</h4>
+<ul>
+<li>{{screen-layer-effects.69}}</li>
+<li>{{screen-layer-effects.70}}</li>
+<li>{{screen-layer-effects.71}}</li>
+<li>{{screen-layer-effects.72}}</li>
+<li>{{screen-layer-effects.73}}</li>
+<li>{{screen-layer-effects.74}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-4.png" alt="{{screen-layer-effects.75.alt}}" width="1158" height="862" loading="lazy"><figcaption>{{screen-layer-effects.76}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-5.png" alt="{{screen-layer-effects.77.alt}}" width="222" height="225" loading="lazy"><figcaption>{{screen-layer-effects.78}}</figcaption></figure>
+<div class="note">{{screen-layer-effects.79}}</div>
+
+<h4>{{screen-layer-effects.80}}</h4>
+<p>{{screen-layer-effects.81}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-6.png" alt="{{screen-layer-effects.82.alt}}" width="640" height="370" loading="lazy"><figcaption>{{screen-layer-effects.83}}</figcaption></figure>
+<ul>
+<li>{{screen-layer-effects.84}}</li>
+<li>{{screen-layer-effects.85}}</li>
+<li>{{screen-layer-effects.86}}</li>
+<li>{{screen-layer-effects.87}}</li>
+<li>{{screen-layer-effects.88}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-7.png" alt="{{screen-layer-effects.89.alt}}" width="830" height="342" loading="lazy"><figcaption>{{screen-layer-effects.90}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-8.png" alt="{{screen-layer-effects.91.alt}}" width="902" height="296" loading="lazy"><figcaption>{{screen-layer-effects.92}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-layer-effects-9.png" alt="{{screen-layer-effects.93.alt}}" width="734" height="345" loading="lazy"><figcaption>{{screen-layer-effects.94}}</figcaption></figure>
+
+<h4>{{screen-layer-effects.95}}</h4>
+<ul>
+<li>{{screen-layer-effects.96}}</li>
+<li>{{screen-layer-effects.97}}</li>
+<li>{{screen-layer-effects.98}}</li>
+<li>{{screen-layer-effects.99}}</li>
+</ul>
+<figure class="clip"><img src="{{root}}assets/guide/screen-layer-effects.webp" alt="{{screen-layer-effects.100.alt}}" width="686" height="618" loading="lazy"></figure>
+
+<h3 id="screen-preview">{{screen-preview.1}}</h3>
+<p>{{screen-preview.2}}</p>
+<ul>
+<li>{{screen-preview.3}}</li>
+<li>{{screen-preview.4}}</li>
+<li>{{screen-preview.5}}</li>
+<li>{{screen-preview.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-preview.png" alt="{{screen-preview.7.alt}}" width="339" height="234" loading="lazy"><figcaption>{{screen-preview.8}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-preview-2.png" alt="{{screen-preview.9.alt}}" width="308" height="238" loading="lazy"><figcaption>{{screen-preview.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-preview-3.png" alt="{{screen-preview.11.alt}}" width="308" height="415" loading="lazy"><figcaption>{{screen-preview.12}}</figcaption></figure>
+
+<h3 id="screen-export">{{screen-export.1}}</h3>
+<p>{{screen-export.2}}</p>
+<ul>
+<li>{{screen-export.3}}</li>
+<li>{{screen-export.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-export.png" alt="{{screen-export.5.alt}}" width="1100" height="792" loading="lazy"><figcaption>{{screen-export.6}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{screen-export.7}}</th><th>{{screen-export.8}}</th></tr></thead>
+<tbody>
+<tr><td>{{screen-export.9}}</td><td>{{screen-export.10}}</td></tr>
+<tr><td>{{screen-export.11}}</td><td>{{screen-export.12}}</td></tr>
+<tr><td>{{screen-export.13}}</td><td>{{screen-export.14}}</td></tr>
+<tr><td>{{screen-export.15}}</td><td>{{screen-export.16}}</td></tr>
+<tr><td>{{screen-export.17}}</td><td>{{screen-export.18}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/screen-export-2.png" alt="{{screen-export.19.alt}}" width="507" height="305" loading="lazy"><figcaption>{{screen-export.20}}</figcaption></figure>
+<ul>
+<li>{{screen-export.21}}</li>
+<li>{{screen-export.22}}</li>
+<li>{{screen-export.23}}</li>
+<li>{{screen-export.24}}</li>
+<li>{{screen-export.25}}</li>
+<li>{{screen-export.26}}</li>
+<li>{{screen-export.27}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-export-3.png" alt="{{screen-export.28.alt}}" width="492" height="529" loading="lazy"><figcaption>{{screen-export.29}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-export-4.png" alt="{{screen-export.30.alt}}" width="432" height="157" loading="lazy"><figcaption>{{screen-export.31}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-export-5.png" alt="{{screen-export.32.alt}}" width="1100" height="792" loading="lazy"><figcaption>{{screen-export.33}}</figcaption></figure>
+<p>{{screen-export.34}}</p>
+
+<h3 id="screen-gif">{{screen-gif.1}}</h3>
+<p>{{screen-gif.2}}</p>
+<ul>
+<li>{{screen-gif.3}}</li>
+<li>{{screen-gif.4}}</li>
+<li>{{screen-gif.5}}</li>
+<li>{{screen-gif.6}}</li>
+</ul>
+<p>{{screen-gif.7}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-gif.png" alt="{{screen-gif.8.alt}}" width="736" height="562" loading="lazy"><figcaption>{{screen-gif.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/screen-gif-2.png" alt="{{screen-gif.10.alt}}" width="308" height="183" loading="lazy"><figcaption>{{screen-gif.11}}</figcaption></figure>
+
+<h3 id="screen-tool-settings">{{screen-tool-settings.1}}</h3>
+<p>{{screen-tool-settings.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tool-settings.png" alt="{{screen-tool-settings.3.alt}}" width="321" height="380" loading="lazy"><figcaption>{{screen-tool-settings.4}}</figcaption></figure>
+<h4>{{screen-tool-settings.5}}</h4>
+<ul>
+<li>{{screen-tool-settings.6}}</li>
+<li>{{screen-tool-settings.7}}</li>
+<li>{{screen-tool-settings.8}}</li>
+<li>{{screen-tool-settings.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/screen-tool-settings-2.png" alt="{{screen-tool-settings.10.alt}}" width="311" height="325" loading="lazy"><figcaption>{{screen-tool-settings.11}}</figcaption></figure>
+
+<h3 id="screen-status-bar">{{screen-status-bar.1}}</h3>
+<p>{{screen-status-bar.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/screen-status-bar.png" alt="{{screen-status-bar.3.alt}}" width="999" height="56" loading="lazy"><figcaption>{{screen-status-bar.4}}</figcaption></figure>
+</section>
+
+<section class="doc" id="tools">
+<h2>{{tools.1}}</h2>
+
+<h3 id="tools-list">{{tools-list.1}}</h3>
+<p>{{tools-list.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-list.png" alt="{{tools-list.3.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{tools-list.4}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-list.5}}</th><th>{{tools-list.6}}</th><th>{{tools-list.7}}</th></tr></thead>
+<tbody>
+<tr><td>③ {{MainStrings.Tool_Pencil_Name}}</td><td>{{key:도구/연필}}</td><td>{{tools-list.9}}</td></tr>
+<tr><td>④ {{MainStrings.Tool_Eraser_Name}}</td><td>{{key:도구/지우개}}</td><td>{{tools-list.11}}</td></tr>
+<tr><td>⑤ {{MainStrings.Tool_Fill_Name}}</td><td>{{key:도구/채우기}}</td><td>{{tools-list.13}}</td></tr>
+<tr><td>⑤ {{MainStrings.Tool_Gradient_Name}}</td><td>{{key:도구/그라데이션}}</td><td>{{tools-list.15}}</td></tr>
+<tr><td>⑥ {{MainStrings.Tool_Picker_Name}}</td><td>{{tools-list.17}}</td><td>{{tools-list.18}}</td></tr>
+<tr><td>{{tools-list.19}}</td><td>{{key:도구/선}} / {{key:도구/도형}} / <kbd>O</kbd></td><td>{{tools-list.20}}</td></tr>
+<tr><td>{{tools-list.21}}</td><td>{{key:도구/선택 칸(다음 선택 도구)}}</td><td>{{tools-list.22}}</td></tr>
+<tr><td>⑧ {{MainStrings.Tool_Lasso_Name}}</td><td>{{key:도구/자유 선택}}</td><td>{{tools-list.24}}</td></tr>
+<tr><td>⑧ {{MainStrings.Tool_MagicWand_Name}}</td><td>{{key:도구/스마트 선택}}</td><td>{{tools-list.26}}</td></tr>
+<tr><td>⑨ {{MainStrings.Tool_Move_Name}}</td><td>{{key:도구/이동}}</td><td>{{tools-list.28}}</td></tr>
+<tr><td>{{tools-list.29}}</td><td>{{key:도구/밝게/어둡게}}</td><td>{{tools-list.30}}</td></tr>
+<tr><td>{{tools-list.31}}</td><td>{{key:도구/디더링}}</td><td>{{tools-list.32}}</td></tr>
+<tr><td>{{tools-list.33}}</td><td>{{key:도구/색 바꾸기 브러시}}</td><td>{{tools-list.34}}</td></tr>
+<tr><td>⑬ {{MainStrings.Tool_Pivot_Name}}</td><td>{{key:도구/피벗}}</td><td>{{tools-list.36}}</td></tr>
+<tr><td>⑭ 9-slice</td><td>{{key:도구/9-slice}}</td><td>{{tools-list.37}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/tools-list-2.png" alt="{{tools-list.38.alt}}" width="104" height="515" loading="lazy"><figcaption>{{tools-list.39}}</figcaption></figure>
+<p>{{tools-list.40}}</p>
+
+<h3 id="tools-basics">{{tools-basics.1}}</h3>
+<ul>
+<li>{{tools-basics.2}}</li>
+<li>{{tools-basics.3}}</li>
+<li>{{tools-basics.4}}</li>
+<li>{{tools-basics.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-basics.png" alt="{{tools-basics.6.alt}}" width="1180" height="659" loading="lazy"><figcaption>{{tools-basics.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-basics-2.png" alt="{{tools-basics.8.alt}}" width="359" height="592" loading="lazy"><figcaption>{{tools-basics.9}}</figcaption></figure>
+
+<h3 id="tools-groups">{{tools-groups.1}}</h3>
+<p>{{tools-groups.2}}</p>
+<ul>
+<li>{{tools-groups.3}}</li>
+<li>{{tools-groups.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-groups.png" alt="{{tools-groups.5.alt}}" width="319" height="333" loading="lazy"><figcaption>{{tools-groups.6}}</figcaption></figure>
+
+<h3 id="tools-brush">{{tools-brush.1}}</h3>
+<p>{{tools-brush.2}}</p>
+<ul>
+<li>{{tools-brush.3}}</li>
+<li>{{tools-brush.4}}</li>
+<li>{{tools-brush.5}}</li>
+<li>{{tools-brush.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush.png" alt="{{tools-brush.7.alt}}" width="338" height="155" loading="lazy"><figcaption>{{tools-brush.8}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-2.png" alt="{{tools-brush.9.alt}}" width="338" height="155" loading="lazy"><figcaption>{{tools-brush.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-3.png" alt="{{tools-brush.11.alt}}" width="338" height="232" loading="lazy"><figcaption>{{tools-brush.12}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-4.png" alt="{{tools-brush.13.alt}}" width="338" height="307" loading="lazy"><figcaption>{{tools-brush.14}}</figcaption></figure>
+
+<h3 id="tools-select">{{tools-select.1}}</h3>
+<p>{{tools-select.2}}</p>
+<ul>
+<li>{{tools-select.3}}</li>
+<li>{{tools-select.4}}</li>
+<li>{{tools-select.5}}</li>
+<li>{{tools-select.6}}</li>
+<li>{{tools-select.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-select.png" alt="{{tools-select.8.alt}}" width="374" height="668" loading="lazy"><figcaption>{{tools-select.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-select-2.png" alt="{{tools-select.10.alt}}" width="374" height="668" loading="lazy"><figcaption>{{tools-select.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-select-3.png" alt="{{tools-select.12.alt}}" width="906" height="668" loading="lazy"><figcaption>{{tools-select.13}}</figcaption></figure>
+
+<h3 id="tools-fill">{{MainStrings.Tool_Fill_Name}}</h3>
+<ul>
+<li>{{tools-fill.2}}</li>
+<li>{{tools-fill.3}}</li>
+<li>{{tools-fill.4}}</li>
+<li>{{tools-fill.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill.png" alt="{{tools-fill.6.alt}}" width="338" height="259" loading="lazy"><figcaption>{{tools-fill.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-2.png" alt="{{tools-fill.8.alt}}" width="338" height="141" loading="lazy"><figcaption>{{tools-fill.9}}</figcaption></figure>
+
+<h3 id="tools-gradient">{{MainStrings.Tool_Gradient_Name}}</h3>
+<p>{{tools-gradient.2}}</p>
+<ul>
+<li>{{tools-gradient.3}}</li>
+<li>{{tools-gradient.4}}</li>
+<li>{{tools-gradient.5}}</li>
+<li>{{tools-gradient.6}}</li>
+<li>{{tools-gradient.7}}</li>
+<li>{{tools-gradient.8}}</li>
+<li>{{tools-gradient.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient.png" alt="{{tools-gradient.10.alt}}" width="906" height="668" loading="lazy"><figcaption>{{tools-gradient.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-2.png" alt="{{tools-gradient.12.alt}}" width="396" height="463" loading="lazy"><figcaption>{{tools-gradient.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-3.png" alt="{{tools-gradient.14.alt}}" width="1000" height="712" loading="lazy"><figcaption>{{tools-gradient.15}}</figcaption></figure>
+
+<h3 id="tools-transform">{{tools-transform.1}}</h3>
+<p>{{tools-transform.2}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-transform.3}}</th><th>{{tools-transform.4}}</th></tr></thead>
+<tbody>
+<tr><td>{{tools-transform.5}}</td><td>{{tools-transform.6}}</td></tr>
+<tr><td>{{tools-transform.7}}</td><td>{{tools-transform.8}}</td></tr>
+<tr><td>{{tools-transform.9}}</td><td>{{tools-transform.10}}</td></tr>
+<tr><td>{{tools-transform.11}}</td><td>{{tools-transform.12}}</td></tr>
+<tr><td>{{tools-transform.13}}</td><td>{{tools-transform.14}}</td></tr>
+<tr><td>{{tools-transform.15}}</td><td>{{tools-transform.16}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/tools-transform.png" alt="{{tools-transform.17.alt}}" width="936" height="671" loading="lazy"><figcaption>{{tools-transform.18}}</figcaption></figure>
+<ul>
+<li>{{tools-transform.19}}</li>
+<li>{{tools-transform.20}}</li>
+<li>{{tools-transform.21}}</li>
+<li>{{tools-transform.22}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-transform-2.png" alt="{{tools-transform.23.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{tools-transform.24}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/tools-transform.webp" alt="{{tools-transform.25.alt}}" width="314" height="342" loading="lazy"></figure>
+
+<h3 id="tools-canvas-size">{{tools-canvas-size.1}}</h3>
+<p>{{tools-canvas-size.2}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-canvas-size.3}}</th><th>{{tools-canvas-size.4}}</th></tr></thead>
+<tbody>
+<tr><td>{{tools-canvas-size.5}}</td><td>{{tools-canvas-size.6}}</td></tr>
+<tr><td>{{tools-canvas-size.7}}</td><td>{{tools-canvas-size.8}}</td></tr>
+<tr><td>{{tools-canvas-size.9}}</td><td>{{tools-canvas-size.10}}</td></tr>
+<tr><td>{{tools-canvas-size.11}}</td><td>{{tools-canvas-size.12}}</td></tr>
+<tr><td>{{tools-canvas-size.13}}</td><td>{{tools-canvas-size.14}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{tools-canvas-size.15}}</li>
+<li>{{tools-canvas-size.16}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-canvas-size.png" alt="{{tools-canvas-size.17.alt}}" width="956" height="674" loading="lazy"><figcaption>{{tools-canvas-size.18}}</figcaption></figure>
+<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size.webp" alt="{{tools-canvas-size.19.alt}}" width="690" height="340" loading="lazy"></figure>
+<h4>{{tools-canvas-size.20}}</h4>
+<ul>
+<li>{{tools-canvas-size.21}}</li>
+<li>{{tools-canvas-size.22}}</li>
+<li>{{tools-canvas-size.23}}</li>
+<li>{{tools-canvas-size.24}}</li>
+</ul>
+<figure class="clip"><img src="{{root}}assets/guide/tools-canvas-size-slice.webp" alt="{{tools-canvas-size.25.alt}}" width="1000" height="706" loading="lazy"></figure>
+
+<h3 id="tools-nine-slice">9-slice</h3>
+<p>{{tools-nine-slice.1}}</p>
+<p>{{tools-nine-slice.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-nine-slice.png" alt="{{tools-nine-slice.3.alt}}" width="1003" height="400" loading="lazy"><figcaption>{{tools-nine-slice.4}}</figcaption></figure>
+</section>
+
+<section class="doc" id="files">
+<h2>{{files.1}}</h2>
+
+<h3 id="files-roles">{{files-roles.1}}</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>{{files-roles.2}}</th><th>{{files-roles.3}}</th></tr></thead>
+<tbody>
+<tr><td><code>.gpixel</code></td><td>{{files-roles.4}}</td></tr>
+<tr><td>{{files-roles.5}}</td><td>{{files-roles.6}}</td></tr>
+<tr><td><code>.meta</code></td><td>{{files-roles.7}}</td></tr>
+<tr><td><code>.spriteLib</code></td><td>{{files-roles.8}}</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="files-save">{{files-save.1}}</h3>
+<p>{{files-save.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-save.png" alt="{{files-save.3.alt}}" width="345" height="368" loading="lazy"><figcaption>{{files-save.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-save-2.png" alt="{{files-save.5.alt}}" width="969" height="113" loading="lazy"><figcaption>{{files-save.6}}</figcaption></figure>
+<p>{{files-save.7}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-save-3.png" alt="{{files-save.8.alt}}" width="597" height="168" loading="lazy"><figcaption>{{files-save.9}}</figcaption></figure>
+
+<h3 id="files-autosave">{{files-autosave.1}}</h3>
+<p>{{files-autosave.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-autosave.png" alt="{{files-autosave.3.alt}}" width="809" height="113" loading="lazy"><figcaption>{{files-autosave.4}}</figcaption></figure>
+<ul>
+<li>{{files-autosave.5}}</li>
+<li>{{files-autosave.6}}</li>
+<li>{{files-autosave.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-autosave-2.png" alt="{{files-autosave.8.alt}}" width="987" height="82" loading="lazy"><figcaption>{{files-autosave.9}}</figcaption></figure>
+
+<h3 id="files-revert">{{files-revert.1}}</h3>
+<p>{{files-revert.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-revert.png" alt="{{files-revert.3.alt}}" width="991" height="113" loading="lazy"><figcaption>{{files-revert.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-revert-2.png" alt="{{files-revert.5.alt}}" width="345" height="368" loading="lazy"><figcaption>{{files-revert.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-revert-3.png" alt="{{files-revert.7.alt}}" width="576" height="126" loading="lazy"><figcaption>{{files-revert.8}}</figcaption></figure>
+
+<h3 id="files-history">{{files-history.1}}</h3>
+<p>{{files-history.2}}</p>
+<p>{{files-history.3}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-history.png" alt="{{files-history.4.alt}}" width="987" height="174" loading="lazy"><figcaption>{{files-history.5}}</figcaption></figure>
+
+<h3 id="files-png-import">{{files-png-import.1}}</h3>
+<p>{{files-png-import.2}}</p>
+<ul>
+<li>{{files-png-import.3}}</li>
+<li>{{files-png-import.4}}</li>
+<li>{{files-png-import.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-png-import.png" alt="{{files-png-import.6.alt}}" width="579" height="186" loading="lazy"><figcaption>{{files-png-import.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-png-import-2.png" alt="{{files-png-import.8.alt}}" width="301" height="468" loading="lazy"><figcaption>{{files-png-import.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-png-import-3.png" alt="{{files-png-import.10.alt}}" width="369" height="362" loading="lazy"><figcaption>{{files-png-import.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-png-import-4.png" alt="{{files-png-import.12.alt}}" width="369" height="362" loading="lazy"><figcaption>{{files-png-import.13}}</figcaption></figure>
+
+<h3 id="files-open-media">{{files-open-media.1}}</h3>
+<p>{{files-open-media.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-open-media.png" alt="{{files-open-media.3.alt}}" width="345" height="368" loading="lazy"><figcaption>{{files-open-media.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-open-media-2.png" alt="{{files-open-media.5.alt}}" width="1036" height="814" loading="lazy"><figcaption>{{files-open-media.6}}</figcaption></figure>
+<ul>
+<li>{{files-open-media.7}}</li>
+<li>{{files-open-media.8}}</li>
+<li>{{files-open-media.9}}</li>
+<li>{{files-open-media.10}}</li>
+<li>{{files-open-media.11}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-open-media-3.png" alt="{{files-open-media.12.alt}}" width="528" height="140" loading="lazy"><figcaption>{{files-open-media.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-open-media-4.png" alt="{{files-open-media.14.alt}}" width="696" height="279" loading="lazy"><figcaption>{{files-open-media.15}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-open-media-5.png" alt="{{files-open-media.16.alt}}" width="478" height="262" loading="lazy"><figcaption>{{files-open-media.17}}</figcaption></figure>
+
+<h3 id="files-drop-layer">{{files-drop-layer.1}}</h3>
+<p>{{files-drop-layer.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-drop-layer.png" alt="{{files-drop-layer.3.alt}}" width="1034" height="531" loading="lazy"><figcaption>{{files-drop-layer.4}}</figcaption></figure>
+<ul>
+<li>{{files-drop-layer.5}}</li>
+<li>{{files-drop-layer.6}}</li>
+<li>{{files-drop-layer.7}}</li>
+<li>{{files-drop-layer.8}}</li>
+<li>{{files-drop-layer.9}}</li>
+<li>{{files-drop-layer.10}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-drop-layer-2.png" alt="{{files-drop-layer.11.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{files-drop-layer.12}}</figcaption></figure>
+
+<h3 id="files-cleanup">{{files-cleanup.1}}</h3>
+<p>{{files-cleanup.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-cleanup.png" alt="{{files-cleanup.3.alt}}" width="1133" height="113" loading="lazy"><figcaption>{{files-cleanup.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-cleanup-2.png" alt="{{files-cleanup.5.alt}}" width="263" height="221" loading="lazy"><figcaption>{{files-cleanup.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-cleanup-3.png" alt="{{files-cleanup.7.alt}}" width="796" height="556" loading="lazy"><figcaption>{{files-cleanup.8}}</figcaption></figure>
+<p>{{files-cleanup.9}}</p>
+
+<p>{{files-cleanup.10}}</p>
+
+<h3 id="files-cell-names">{{files-cell-names.1}}</h3>
+<p>{{files-cell-names.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-cell-names.png" alt="{{files-cell-names.3.alt}}" width="1034" height="558" loading="lazy"><figcaption>{{files-cell-names.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-cell-names-2.png" alt="{{files-cell-names.5.alt}}" width="326" height="143" loading="lazy"><figcaption>{{files-cell-names.6}}</figcaption></figure>
+
+<h3 id="files-quit">{{files-quit.1}}</h3>
+<p>{{files-quit.2}}</p>
+<ul>
+<li>{{files-quit.3}}</li>
+<li>{{files-quit.4}}</li>
+<li>{{files-quit.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-quit.png" alt="{{files-quit.6.alt}}" width="426" height="225" loading="lazy"><figcaption>{{files-quit.7}}</figcaption></figure>
+
+<h3 id="files-settings">{{files-settings.1}}</h3>
+<p>{{files-settings.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/files-settings.png" alt="{{files-settings.3.alt}}" width="349" height="592" loading="lazy"><figcaption>{{files-settings.4}}</figcaption></figure>
+<ul>
+<li>{{files-settings.5}}</li>
+<li>{{files-settings.6}}</li>
+<li>{{files-settings.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/files-settings-2.png" alt="{{files-settings.8.alt}}" width="987" height="799" loading="lazy"><figcaption>{{files-settings.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-settings-3.png" alt="{{files-settings.10.alt}}" width="766" height="637" loading="lazy"><figcaption>{{files-settings.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-settings-4.png" alt="{{files-settings.12.alt}}" width="318" height="154" loading="lazy"><figcaption>{{files-settings.13}}</figcaption></figure>
+<p>{{files-settings.14}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>OS</th><th>{{files-settings.15}}</th></tr></thead>
+<tbody>
+<tr><td>Windows</td><td><code>%AppData%\Gpixel\settings.json</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/Gpixel/settings.json</code></td></tr>
+</tbody>
+</table></div>
+<p>{{files-settings.16}}</p>
+
+<h3 id="files-crash-log">{{files-crash-log.1}}</h3>
+<p>{{files-crash-log.2}}</p>
+<div class="note">{{files-crash-log.3}}</div>
+<figure class="shot"><img src="{{root}}assets/guide/files-crash-log.png" alt="{{files-crash-log.4.alt}}" width="436" height="244" loading="lazy"><figcaption>{{files-crash-log.5}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/files-crash-log-2.png" alt="{{files-crash-log.6.alt}}" width="273" height="233" loading="lazy"><figcaption>{{files-crash-log.7}}</figcaption></figure>
+</section>
+
+<section class="doc" id="pixelate">
+<h2>{{pixelate.1}}</h2>
+<p>{{pixelate.2}}</p>
+
+<h3 id="pixelate-open">{{pixelate-open.1}}</h3>
+<ul>
+<li>{{pixelate-open.2}}</li>
+<li>{{pixelate-open.3}}</li>
+<li>{{pixelate-open.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-open.png" alt="{{pixelate-open.5.alt}}" width="560" height="273" loading="lazy"><figcaption>{{pixelate-open.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-open-2.png" alt="{{pixelate-open.7.alt}}" width="1000" height="672" loading="lazy"><figcaption>{{pixelate-open.8}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-open-3.png" alt="{{pixelate-open.9.alt}}" width="403" height="592" loading="lazy"><figcaption>{{pixelate-open.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-open-4.png" alt="{{pixelate-open.11.alt}}" width="298" height="351" loading="lazy"><figcaption>{{pixelate-open.12}}</figcaption></figure>
+<p>{{pixelate-open.13}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-open-5.png" alt="{{pixelate-open.14.alt}}" width="640" height="134" loading="lazy"><figcaption>{{pixelate-open.15}}</figcaption></figure>
+
+<h3 id="pixelate-settings">{{pixelate-settings.1}}</h3>
+<p>{{pixelate-settings.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings.png" alt="{{pixelate-settings.3.alt}}" width="640" height="560" loading="lazy"><figcaption>{{pixelate-settings.4}}</figcaption></figure>
+<ol>
+<li>{{pixelate-settings.5}}</li>
+<li>{{pixelate-settings.6}}</li>
+<li>{{pixelate-settings.7}}</li>
+<li>{{pixelate-settings.8}}</li>
+<li>{{pixelate-settings.9}}</li>
+<li>{{pixelate-settings.10}}</li>
+<li>{{pixelate-settings.11}}</li>
+<li>{{pixelate-settings.12}}</li>
+<li>{{pixelate-settings.13}}</li>
+<li>{{pixelate-settings.14}}</li>
+</ol>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-2.png" alt="{{pixelate-settings.15.alt}}" width="396" height="616" loading="lazy"><figcaption>{{pixelate-settings.16}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-3.png" alt="{{pixelate-settings.17.alt}}" width="396" height="674" loading="lazy"><figcaption>{{pixelate-settings.18}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-4.png" alt="{{pixelate-settings.19.alt}}" width="396" height="728" loading="lazy"><figcaption>{{pixelate-settings.20}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-5.png" alt="{{pixelate-settings.21.alt}}" width="396" height="299" loading="lazy"><figcaption>{{pixelate-settings.22}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-settings-6.png" alt="{{pixelate-settings.23.alt}}" width="396" height="143" loading="lazy"><figcaption>{{pixelate-settings.24}}</figcaption></figure>
+
+<h3 id="pixelate-candidates">{{pixelate-candidates.1}}</h3>
+<ul>
+<li>{{pixelate-candidates.2}}</li>
+<li>{{pixelate-candidates.3}}</li>
+<li>{{pixelate-candidates.4}}</li>
+<li>{{pixelate-candidates.5}}</li>
+<li>{{pixelate-candidates.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-candidates.png" alt="{{pixelate-candidates.7.alt}}" width="398" height="228" loading="lazy"><figcaption>{{pixelate-candidates.8}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-candidates-2.png" alt="{{pixelate-candidates.9.alt}}" width="1396" height="286" loading="lazy"><figcaption>{{pixelate-candidates.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-candidates-3.png" alt="{{pixelate-candidates.11.alt}}" width="330" height="260" loading="lazy"><figcaption>{{pixelate-candidates.12}}</figcaption></figure>
+
+<h3 id="pixelate-optimize">{{pixelate-optimize.1}}</h3>
+<p>{{pixelate-optimize.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize.png" alt="{{pixelate-optimize.3.alt}}" width="1382" height="270" loading="lazy"><figcaption>{{pixelate-optimize.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize-2.png" alt="{{pixelate-optimize.5.alt}}" width="582" height="72" loading="lazy"><figcaption>{{pixelate-optimize.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-optimize-3.png" alt="{{pixelate-optimize.7.alt}}" width="1000" height="932" loading="lazy"><figcaption>{{pixelate-optimize.8}}</figcaption></figure>
+<ul>
+<li>{{pixelate-optimize.9}}</li>
+<li>{{pixelate-optimize.10}}</li>
+<li>{{pixelate-optimize.11}}</li>
+<li>{{pixelate-optimize.12}}</li>
+<li>{{pixelate-optimize.13}}</li>
+<li>{{pixelate-optimize.14}}</li>
+<li>{{pixelate-optimize.15}}</li>
+</ul>
+<div class="note"><p>{{pixelate-optimize.16}}</p></div>
+
+<h3 id="pixelate-view">{{pixelate-view.1}}</h3>
+<ul>
+<li>{{pixelate-view.2}}</li>
+<li>{{pixelate-view.3}}</li>
+<li>{{pixelate-view.4}}</li>
+<li>{{pixelate-view.5}}</li>
+<li>{{pixelate-view.6}}</li>
+<li>{{pixelate-view.7}}</li>
+<li>{{pixelate-view.8}}</li>
+<li>{{pixelate-view.9}}</li>
+<li>{{pixelate-view.10}}</li>
+<li>{{pixelate-view.11}}</li>
+<li>{{pixelate-view.12}}</li>
+<li>{{pixelate-view.13}}</li>
+<li>{{pixelate-view.14}}</li>
+<li>{{pixelate-view.15}}</li>
+<li>{{pixelate-view.16}}</li>
+<li>{{pixelate-view.17}}</li>
+<li>{{pixelate-view.18}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view.png" alt="{{pixelate-view.19.alt}}" width="1400" height="892" loading="lazy"><figcaption>{{pixelate-view.20}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view-2.png" alt="{{pixelate-view.21.alt}}" width="713" height="76" loading="lazy"><figcaption>{{pixelate-view.22}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view-3.png" alt="{{pixelate-view.23.alt}}" width="398" height="471" loading="lazy"><figcaption>{{pixelate-view.24}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view-4.png" alt="{{pixelate-view.25.alt}}" width="466" height="203" loading="lazy"><figcaption>{{pixelate-view.26}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view-5.png" alt="{{pixelate-view.27.alt}}" width="398" height="351" loading="lazy"><figcaption>{{pixelate-view.28}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-view-6.png" alt="{{pixelate-view.29.alt}}" width="1400" height="892" loading="lazy"><figcaption>{{pixelate-view.30}}</figcaption></figure>
+
+<h3 id="pixelate-output">{{pixelate-output.1}}</h3>
+<ul>
+<li>{{pixelate-output.2}}</li>
+<li>{{pixelate-output.3}}</li>
+<li>{{pixelate-output.4}}</li>
+<li>{{pixelate-output.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-output.png" alt="{{pixelate-output.6.alt}}" width="398" height="229" loading="lazy"><figcaption>{{pixelate-output.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-output-2.png" alt="{{pixelate-output.8.alt}}" width="520" height="80" loading="lazy"><figcaption>{{pixelate-output.9}}</figcaption></figure>
+
+<h3 id="pixelate-ai">{{pixelate-ai.1}}</h3>
+<ul>
+<li>{{pixelate-ai.2}}</li>
+<li>{{pixelate-ai.3}}</li>
+<li>{{pixelate-ai.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-ai.png" alt="{{pixelate-ai.5.alt}}" width="398" height="343" loading="lazy"><figcaption>{{pixelate-ai.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-ai-2.png" alt="{{pixelate-ai.7.alt}}" width="398" height="189" loading="lazy"><figcaption>{{pixelate-ai.8}}</figcaption></figure>
+
+<h3 id="pixelate-presets">{{pixelate-presets.1}}</h3>
+<p>{{pixelate-presets.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-presets.png" alt="{{pixelate-presets.3.alt}}" width="424" height="185" loading="lazy"><figcaption>{{pixelate-presets.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/pixelate-presets-2.png" alt="{{pixelate-presets.5.alt}}" width="304" height="143" loading="lazy"><figcaption>{{pixelate-presets.6}}</figcaption></figure>
+<div class="note"><p>{{pixelate-presets.7}}</p></div>
+</section>
+
+<section class="doc" id="parts">
+<h2>{{parts.1}}</h2>
+<p>{{parts.2}}</p>
+
+<h3 id="parts-concept">{{parts-concept.1}}</h3>
+<ul>
+<li>{{parts-concept.2}}</li>
+<li>{{parts-concept.3}}</li>
+<li>{{parts-concept.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-concept.png" alt="{{parts-concept.5.alt}}" width="1038" height="788" loading="lazy"><figcaption>{{parts-concept.6}}</figcaption></figure>
+
+<h3 id="parts-create">{{parts-create.1}}</h3>
+<ul>
+<li>{{parts-create.2}}</li>
+<li>{{parts-create.3}}</li>
+<li>{{parts-create.4}}</li>
+<li>{{parts-create.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-create.png" alt="{{parts-create.6.alt}}" width="452" height="316" loading="lazy"><figcaption>{{parts-create.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-create-2.png" alt="{{parts-create.8.alt}}" width="388" height="468" loading="lazy"><figcaption>{{parts-create.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-create-3.png" alt="{{parts-create.10.alt}}" width="609" height="211" loading="lazy"><figcaption>{{parts-create.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-create-4.png" alt="{{parts-create.12.alt}}" width="384" height="416" loading="lazy"><figcaption>{{parts-create.13}}</figcaption></figure>
+
+<h3 id="parts-timeline">{{parts-timeline.1}}</h3>
+<p>{{parts-timeline.2}}</p>
+<p>{{parts-timeline.3}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-timeline.png" alt="{{parts-timeline.4.alt}}" width="520" height="330" loading="lazy"><figcaption>{{parts-timeline.5}}</figcaption></figure>
+
+<h3 id="parts-arrange">{{parts-arrange.1}}</h3>
+<p>{{parts-arrange.2}}</p>
+<ul>
+<li>{{parts-arrange.3}}</li>
+<li>{{parts-arrange.4}}</li>
+<li>{{parts-arrange.5}}</li>
+<li>{{parts-arrange.6}}</li>
+<li>{{parts-arrange.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-arrange.png" alt="{{parts-arrange.8.alt}}" width="768" height="788" loading="lazy"><figcaption>{{parts-arrange.9}}</figcaption></figure>
+
+<h3 id="parts-draw">{{parts-draw.1}}</h3>
+<p>{{parts-draw.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-draw.png" alt="{{parts-draw.3.alt}}" width="1034" height="784" loading="lazy"><figcaption>{{parts-draw.4}}</figcaption></figure>
+<ul>
+<li>{{parts-draw.5}}</li>
+<li>{{parts-draw.6}}</li>
+<li>{{parts-draw.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-draw-2.png" alt="{{parts-draw.8.alt}}" width="388" height="468" loading="lazy"><figcaption>{{parts-draw.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-draw-3.png" alt="{{parts-draw.10.alt}}" width="511" height="438" loading="lazy"><figcaption>{{parts-draw.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-draw-4.png" alt="{{parts-draw.12.alt}}" width="300" height="264" loading="lazy"><figcaption>{{parts-draw.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-draw-5.png" alt="{{parts-draw.14.alt}}" width="52" height="211" loading="lazy"><figcaption>{{parts-draw.15}}</figcaption></figure>
+
+<h3 id="parts-auto-layout">{{parts-auto-layout.1}}</h3>
+<p>{{parts-auto-layout.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-auto-layout.png" alt="{{parts-auto-layout.3.alt}}" width="384" height="416" loading="lazy"><figcaption>{{parts-auto-layout.4}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{parts-auto-layout.5}}</th><th>{{parts-auto-layout.6}}</th></tr></thead>
+<tbody>
+<tr><td>{{parts-auto-layout.7}}</td><td>{{parts-auto-layout.8}}</td></tr>
+<tr><td>{{parts-auto-layout.9}}</td><td>{{parts-auto-layout.10}}</td></tr>
+<tr><td>{{parts-auto-layout.11}}</td><td>{{parts-auto-layout.12}}</td></tr>
+<tr><td>{{parts-auto-layout.13}}</td><td>{{parts-auto-layout.14}}</td></tr>
+<tr><td>{{parts-auto-layout.15}}</td><td>{{parts-auto-layout.16}}</td></tr>
+<tr><td>{{parts-auto-layout.17}}</td><td>{{parts-auto-layout.18}}</td></tr>
+<tr><td>{{parts-auto-layout.19}}</td><td>{{parts-auto-layout.20}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/parts-auto-layout-2.png" alt="{{parts-auto-layout.21.alt}}" width="547" height="568" loading="lazy"><figcaption>{{parts-auto-layout.22}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-auto-layout-3.png" alt="{{parts-auto-layout.23.alt}}" width="1034" height="784" loading="lazy"><figcaption>{{parts-auto-layout.24}}</figcaption></figure>
+
+<h3 id="parts-export">{{parts-export.1}}</h3>
+<p>{{parts-export.2}}</p>
+<ol>
+<li>{{parts-export.3}}</li>
+<li>{{parts-export.4}}</li>
+</ol>
+<p>{{parts-export.5}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-export.png" alt="{{parts-export.6.alt}}" width="1100" height="1552" loading="lazy"><figcaption>{{parts-export.7}}</figcaption></figure>
+
+<h3 id="parts-skins">{{parts-skins.1}}</h3>
+<p>{{parts-skins.2}}</p>
+<ul>
+<li>{{parts-skins.3}}</li>
+<li>{{parts-skins.4}}</li>
+</ul>
+<p>{{parts-skins.5}}</p>
+<p>{{parts-skins.6}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skins.png" alt="{{parts-skins.7.alt}}" width="1038" height="788" loading="lazy"><figcaption>{{parts-skins.8}}</figcaption></figure>
+
+<h3 id="parts-per-part">{{parts-per-part.1}}</h3>
+<p>{{parts-per-part.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-per-part.png" alt="{{parts-per-part.3.alt}}" width="1034" height="784" loading="lazy"><figcaption>{{parts-per-part.4}}</figcaption></figure>
+<p>{{parts-per-part.5}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-per-part-2.png" alt="{{parts-per-part.6.alt}}" width="992" height="432" loading="lazy"><figcaption>{{parts-per-part.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-per-part-3.png" alt="{{parts-per-part.8.alt}}" width="720" height="438" loading="lazy"><figcaption>{{parts-per-part.9}}</figcaption></figure>
+<p>{{parts-per-part.10}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-per-part-4.png" alt="{{parts-per-part.11.alt}}" width="996" height="436" loading="lazy"><figcaption>{{parts-per-part.12}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-per-part-5.png" alt="{{parts-per-part.13.alt}}" width="996" height="436" loading="lazy"><figcaption>{{parts-per-part.14}}</figcaption></figure>
+<div class="note">{{parts-per-part.15}}</div>
+
+<h3 id="parts-skin-manager">{{parts-skin-manager.1}}</h3>
+<p>{{parts-skin-manager.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skin-manager.png" alt="{{parts-skin-manager.3.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{parts-skin-manager.4}}</figcaption></figure>
+<ul>
+<li>{{parts-skin-manager.5}}</li>
+<li>{{parts-skin-manager.6}}</li>
+<li>{{parts-skin-manager.7}}</li>
+<li>{{parts-skin-manager.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skin-manager-2.png" alt="{{parts-skin-manager.9.alt}}" width="1000" height="777" loading="lazy"><figcaption>{{parts-skin-manager.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skin-manager-3.png" alt="{{parts-skin-manager.11.alt}}" width="1000" height="1152" loading="lazy"><figcaption>{{parts-skin-manager.12}}</figcaption></figure>
+
+<h3 id="parts-outfits">{{parts-outfits.1}}</h3>
+<p>{{parts-outfits.2}}</p>
+<ul>
+<li>{{parts-outfits.3}}</li>
+<li>{{parts-outfits.4}}</li>
+<li>{{parts-outfits.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-outfits.png" alt="{{parts-outfits.6.alt}}" width="302" height="234" loading="lazy"><figcaption>{{parts-outfits.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-outfits-2.png" alt="{{parts-outfits.8.alt}}" width="592" height="473" loading="lazy"><figcaption>{{parts-outfits.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-outfits-3.png" alt="{{parts-outfits.10.alt}}" width="776" height="438" loading="lazy"><figcaption>{{parts-outfits.11}}</figcaption></figure>
+<p>{{parts-outfits.12}}</p>
+<p>{{parts-outfits.13}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-outfits-4.png" alt="{{parts-outfits.14.alt}}" width="556" height="276" loading="lazy"><figcaption>{{parts-outfits.15}}</figcaption></figure>
+
+<h3 id="parts-skin-export">{{parts-skin-export.1}}</h3>
+<p>{{parts-skin-export.2}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{parts-skin-export.3}}</th><th>{{parts-skin-export.4}}</th></tr></thead>
+<tbody>
+<tr><td>{{parts-skin-export.5}}</td><td>{{parts-skin-export.6}}</td></tr>
+<tr><td>{{parts-skin-export.7}}</td><td>{{parts-skin-export.8}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skin-export.png" alt="{{parts-skin-export.9.alt}}" width="1100" height="792" loading="lazy"><figcaption>{{parts-skin-export.10}}</figcaption></figure>
+<p>{{parts-skin-export.11}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-skin-export-2.png" alt="{{parts-skin-export.12.alt}}" width="484" height="637" loading="lazy"><figcaption>{{parts-skin-export.13}}</figcaption></figure>
+
+<h3 id="parts-sprite-library">Unity Sprite Library</h3>
+<p>{{parts-sprite-library.1}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/parts-sprite-library.png" alt="{{parts-sprite-library.2.alt}}" width="492" height="273" loading="lazy"><figcaption>{{parts-sprite-library.3}}</figcaption></figure>
+<ul>
+<li>{{parts-sprite-library.4}}</li>
+<li>{{parts-sprite-library.5}}</li>
+</ul>
+<p>{{parts-sprite-library.6}}</p>
+
+<h3 id="parts-import">{{parts-import.1}}</h3>
+<ul>
+<li>{{parts-import.2}}</li>
+<li>{{parts-import.3}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/parts-import.png" alt="{{parts-import.4.alt}}" width="1034" height="784" loading="lazy"><figcaption>{{parts-import.5}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/parts-import-2.png" alt="{{parts-import.6.alt}}" width="488" height="519" loading="lazy"><figcaption>{{parts-import.7}}</figcaption></figure>
+</section>
+
+<section class="doc" id="ai">
+<h2>{{ai.1}}</h2>
+
+<h3 id="ai-overview">{{ai-overview.1}}</h3>
+<p>{{ai-overview.2}}</p>
+<p>{{ai-overview.3}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-overview.png" alt="{{ai-overview.4.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-overview.5}}</figcaption></figure>
+
+<h3 id="ai-open">{{ai-open.1}}</h3>
+<ul>
+<li>{{ai-open.2}}</li>
+<li>{{ai-open.3}}</li>
+<li>{{ai-open.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-open.png" alt="{{ai-open.5.alt}}" width="1280" height="140" loading="lazy"><figcaption>{{ai-open.6}}</figcaption></figure>
+<p>{{ai-open.7}}</p>
+
+<h3 id="ai-setup">{{ai-setup.1}}</h3>
+<p>{{ai-setup.2}}</p>
+<ol>
+<li>{{ai-setup.3}}</li>
+<li>{{ai-setup.4}}</li>
+<li>{{ai-setup.5}}</li>
+</ol>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup.png" alt="{{ai-setup.6.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-setup.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-2.png" alt="{{ai-setup.8.alt}}" width="476" height="183" loading="lazy"><figcaption>{{ai-setup.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-3.png" alt="{{ai-setup.10.alt}}" width="724" height="571" loading="lazy"><figcaption>{{ai-setup.11}}</figcaption></figure>
+<ul>
+<li>{{ai-setup.12}}</li>
+<li>{{ai-setup.13}}</li>
+<li>{{ai-setup.14}}</li>
+<li>{{ai-setup.15}}</li>
+<li>{{ai-setup.16}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-4.png" alt="{{ai-setup.17.alt}}" width="520" height="200" loading="lazy"><figcaption>{{ai-setup.18}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-5.png" alt="{{ai-setup.19.alt}}" width="760" height="37" loading="lazy"><figcaption>{{ai-setup.20}}</figcaption></figure>
+
+<h3 id="ai-tabs">{{ai-tabs.1}}</h3>
+<p>{{ai-tabs.2}}</p>
+<ul>
+<li>{{ai-tabs.3}}</li>
+<li>{{ai-tabs.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-tabs.png" alt="{{ai-tabs.5.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-tabs.6}}</figcaption></figure>
+
+<h3 id="ai-chat">{{ai-chat.1}}</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-chat.2}}</th><th>{{ai-chat.3}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-chat.4}}</td><td>{{ai-chat.5}}</td></tr>
+<tr><td>{{ai-chat.6}}</td><td>{{ai-chat.7}}</td></tr>
+<tr><td>{{ai-chat.8}}</td><td>{{ai-chat.9}}</td></tr>
+<tr><td>{{ai-chat.10}}</td><td>{{ai-chat.11}}</td></tr>
+<tr><td>{{ai-chat.12}}</td><td>{{ai-chat.13}}</td></tr>
+<tr><td>{{ai-chat.14}}</td><td>{{ai-chat.15}}</td></tr>
+<tr><td>{{ai-chat.16}}</td><td>{{ai-chat.17}}</td></tr>
+<tr><td>{{ai-chat.18}}</td><td>{{ai-chat.19}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat.png" alt="{{ai-chat.20.alt}}" width="520" height="752" loading="lazy"><figcaption>{{ai-chat.21}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-2.png" alt="{{ai-chat.22.alt}}" width="520" height="213" loading="lazy"><figcaption>{{ai-chat.23}}</figcaption></figure>
+<p>{{ai-chat.24}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-3.png" alt="{{ai-chat.25.alt}}" width="520" height="182" loading="lazy"><figcaption>{{ai-chat.26}}</figcaption></figure>
+<p>{{ai-chat.27}}</p>
+<ul>
+<li>{{ai-chat.28}}</li>
+<li>{{ai-chat.29}}</li>
+<li>{{ai-chat.30}}</li>
+<li>{{ai-chat.31}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-4.png" alt="{{ai-chat.32.alt}}" width="520" height="256" loading="lazy"><figcaption>{{ai-chat.33}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-5.png" alt="{{ai-chat.34.alt}}" width="520" height="527" loading="lazy"><figcaption>{{ai-chat.35}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-6.png" alt="{{ai-chat.36.alt}}" width="322" height="98" loading="lazy"><figcaption>{{ai-chat.37}}</figcaption></figure>
+
+<h3 id="ai-history">{{ai-history.1}}</h3>
+<p>{{ai-history.2}}</p>
+<ul>
+<li>{{ai-history.3}}</li>
+<li>{{ai-history.4}}</li>
+<li>{{ai-history.5}}</li>
+<li>{{ai-history.6}}</li>
+<li>{{ai-history.7}}</li>
+<li>{{ai-history.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-history.png" alt="{{ai-history.9.alt}}" width="470" height="592" loading="lazy"><figcaption>{{ai-history.10}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-history-2.png" alt="{{ai-history.11.alt}}" width="304" height="126" loading="lazy"><figcaption>{{ai-history.12}}</figcaption></figure>
+
+<h3 id="ai-help">{{ai-help.1}}</h3>
+<p>{{ai-help.2}}</p>
+<ul>
+<li>{{ai-help.3}}</li>
+<li>{{ai-help.4}}</li>
+<li>{{ai-help.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-help.png" alt="{{ai-help.6.alt}}" width="810" height="752" loading="lazy"><figcaption>{{ai-help.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-help-2.png" alt="{{ai-help.8.alt}}" width="368" height="720" loading="lazy"><figcaption>{{ai-help.9}}</figcaption></figure>
+
+<h3 id="ai-generate">{{ai-generate.1}}</h3>
+<p>{{ai-generate.2}}</p>
+<ul>
+<li>{{ai-generate.3}}</li>
+<li>{{ai-generate.4}}</li>
+<li>{{ai-generate.5}}<ul><li>{{ai-generate.6}}</li></ul></li>
+<li>{{ai-generate.7}}</li>
+<li>{{ai-generate.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="229" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-generate.11}}</th><th>{{ai-generate.12}}</th></tr></thead>
+<tbody>
+<tr><td>⑦ <strong>{{UiStrings.AiDraw_ResizeResult}}</strong></td><td>{{ai-generate.14}}</td></tr>
+<tr><td>⑧ <strong>{{UiStrings.AiDraw_Size}}</strong></td><td>{{ai-generate.16}}</td></tr>
+<tr><td>⑨ <strong>{{UiStrings.AiDraw_RemoveBackground}}</strong></td><td>{{ai-generate.18}}</td></tr>
+<tr><td>⑩ <strong>{{UiStrings.AiDraw_AutoOptimize}}</strong></td><td>{{ai-generate.20}}</td></tr>
+<tr><td>{{ai-generate.21}}</td><td>{{ai-generate.22}}</td></tr>
+<tr><td>⑫ <strong>{{UiStrings.AiDraw_Style}}</strong></td><td>{{ai-generate.24}}</td></tr>
+<tr><td>{{ai-generate.25}}</td><td>{{ai-generate.26}}</td></tr>
+<tr><td>{{ai-generate.27}}</td><td>{{ai-generate.28}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="625" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
+<p>{{ai-generate.31}}</p>
+<ul>
+<li>{{ai-generate.32}}</li>
+<li>{{ai-generate.33}}</li>
+<li>{{ai-generate.34}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-3.png" alt="{{ai-generate.35.alt}}" width="470" height="220" loading="lazy"><figcaption>{{ai-generate.36}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-4.png" alt="{{ai-generate.37.alt}}" width="468" height="347" loading="lazy"><figcaption>{{ai-generate.38}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-5.png" alt="{{ai-generate.39.alt}}" width="438" height="155" loading="lazy"><figcaption>{{ai-generate.40}}</figcaption></figure>
+<div class="note"><p>{{ai-generate.41}}</p></div>
+
+<h3 id="ai-file-only">{{ai-file-only.1}}</h3>
+<p>{{ai-file-only.2}}</p>
+<ul>
+<li>{{ai-file-only.3}}</li>
+<li>{{ai-file-only.4}}</li>
+<li>{{ai-file-only.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-file-only.png" alt="{{ai-file-only.6.alt}}" width="470" height="592" loading="lazy"><figcaption>{{ai-file-only.7}}</figcaption></figure>
+
+<h3 id="ai-locked">{{ai-locked.1}}</h3>
+<p>{{ai-locked.2}}</p>
+<ul>
+<li>{{ai-locked.3}}</li>
+<li>{{ai-locked.4}}</li>
+<li>{{ai-locked.5}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-locked.png" alt="{{ai-locked.6.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-locked.7}}</figcaption></figure>
+
+<h3 id="ai-progress">{{ai-progress.1}}</h3>
+<p>{{ai-progress.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-progress.png" alt="{{ai-progress.3.alt}}" width="470" height="752" loading="lazy"><figcaption>{{ai-progress.4}}</figcaption></figure>
+<div class="note">{{ai-progress.5}}</div>
+
+<h3 id="ai-edits">{{ai-edits.1}}</h3>
+<p>{{ai-edits.2}}</p>
+<ul>
+<li>{{ai-edits.3}}</li>
+<li>{{ai-edits.4}}</li>
+<li>{{ai-edits.5}}</li>
+<li>{{ai-edits.6}}</li>
+<li>{{ai-edits.7}}</li>
+<li>{{ai-edits.8}}</li>
+<li>{{ai-edits.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edits.png" alt="{{ai-edits.10.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-edits.11}}</figcaption></figure>
+<p>{{ai-edits.12}}</p>
+
+<h3 id="ai-effects">{{ai-effects.1}}</h3>
+<p>{{ai-effects.2}}</p>
+<ul>
+<li>{{ai-effects.3}}</li>
+<li>{{ai-effects.4}}</li>
+<li>{{ai-effects.5}}</li>
+<li>{{ai-effects.6}}</li>
+<li>{{ai-effects.7}}</li>
+</ul>
+<p>{{ai-effects.8}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-effects.png" alt="{{ai-effects.9.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-effects.10}}</figcaption></figure>
+
+<h3 id="ai-references">{{ai-references.1}}</h3>
+<p>{{ai-references.2}}</p>
+<ul>
+<li>{{ai-references.3}}</li>
+<li>{{ai-references.4}}</li>
+<li>{{ai-references.5}}</li>
+</ul>
+<p>{{ai-references.6}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-references.7}}</th><th>{{ai-references.8}}</th></tr></thead>
+<tbody>
+<tr><td>⑦ <strong>{{UiStrings.Refs_AddFiles}}</strong></td><td>{{ai-references.10}}</td></tr>
+<tr><td>⑧ <strong>{{UiStrings.Refs_AddCanvas}}</strong></td><td>{{ai-references.12}}</td></tr>
+<tr><td>{{ai-references.13}}</td><td>{{ai-references.14}}</td></tr>
+<tr><td>⑩ <strong>{{UiStrings.Refs_OpenFolder}}</strong></td><td>{{ai-references.16}}</td></tr>
+<tr><td>⑪ <strong>{{UiStrings.Refs_EditRules}}</strong></td><td>{{ai-references.18}}</td></tr>
+<tr><td>⑫ <strong>{{UiStrings.Refs_CaptionWithAi}}</strong></td><td>{{ai-references.20}}</td></tr>
+</tbody>
+</table></div>
+<p>{{ai-references.21}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references.png" alt="{{ai-references.22.alt}}" width="1000" height="912" loading="lazy"><figcaption>{{ai-references.23}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references-2.png" alt="{{ai-references.24.alt}}" width="328" height="304" loading="lazy"><figcaption>{{ai-references.25}}</figcaption></figure>
+<ul>
+<li>{{ai-references.26}}</li>
+<li>{{ai-references.27}}</li>
+<li>{{ai-references.28}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references-3.png" alt="{{ai-references.29.alt}}" width="678" height="301" loading="lazy"><figcaption>{{ai-references.30}}</figcaption></figure>
+<div class="note"><p>{{ai-references.31}}</p></div>
+
+<h3 id="ai-undo">{{ai-undo.1}}</h3>
+<p>{{ai-undo.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-undo.png" alt="{{ai-undo.3.alt}}" width="428" height="400" loading="lazy"><figcaption>{{ai-undo.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-undo-2.png" alt="{{ai-undo.5.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-undo.6}}</figcaption></figure>
+
+<h3 id="ai-edit-last">{{ai-edit-last.1}}</h3>
+<p>{{ai-edit-last.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edit-last.png" alt="{{ai-edit-last.3.alt}}" width="468" height="156" loading="lazy"><figcaption>{{ai-edit-last.4}}</figcaption></figure>
+<ul>
+<li>{{ai-edit-last.5}}</li>
+<li>{{ai-edit-last.6}}</li>
+<li>{{ai-edit-last.7}}</li>
+<li>{{ai-edit-last.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edit-last-2.png" alt="{{ai-edit-last.9.alt}}" width="345" height="126" loading="lazy"><figcaption>{{ai-edit-last.10}}</figcaption></figure>
+<div class="note"><p>{{ai-edit-last.11}}</p></div>
+
+<h3 id="ai-troubleshoot">{{ai-troubleshoot.1}}</h3>
+<ul>
+<li>{{ai-troubleshoot.2}}</li>
+<li>{{ai-troubleshoot.3}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-troubleshoot.png" alt="{{ai-troubleshoot.4.alt}}" width="470" height="552" loading="lazy"><figcaption>{{ai-troubleshoot.5}}</figcaption></figure>
+<div class="note">{{ai-troubleshoot.6}}</div>
+</section>
+
+<section class="doc" id="shortcuts">
+<h2>{{shortcuts.1}}</h2>
+<p>{{shortcuts.2}}</p>
+
+<h3 id="shortcuts-customize">{{shortcuts-customize.1}}</h3>
+<p>{{shortcuts-customize.2}}</p>
+<ul>
+<li>{{shortcuts-customize.3}}</li>
+<li>{{shortcuts-customize.4}}</li>
+<li>{{shortcuts-customize.5}}</li>
+<li>{{shortcuts-customize.6}}</li>
+<li>{{shortcuts-customize.7}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-customize.png" alt="{{shortcuts-customize.8.alt}}" width="744" height="637" loading="lazy"><figcaption>{{shortcuts-customize.9}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-customize-2.png" alt="{{shortcuts-customize.10.alt}}" width="318" height="154" loading="lazy"><figcaption>{{shortcuts-customize.11}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-customize-3.png" alt="{{shortcuts-customize.12.alt}}" width="326" height="369" loading="lazy"><figcaption>{{shortcuts-customize.13}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-customize-4.png" alt="{{shortcuts-customize.14.alt}}" width="271" height="234" loading="lazy"><figcaption>{{shortcuts-customize.15}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-customize-5.png" alt="{{shortcuts-customize.16.alt}}" width="810" height="639" loading="lazy"></figure>
+
+<h3 id="shortcuts-file">{{shortcuts-file.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-file.2}}</th><th>{{shortcuts-file.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-file.4}}</td><td>{{key:파일/새 프로젝트…}}</td></tr>
+<tr><td>{{shortcuts-file.5}}</td><td>{{key:파일/열기(.gpixel / PNG 가져오기)…}}</td></tr>
+<tr><td>{{shortcuts-file.6}}</td><td>{{key:파일/폴더 열기…}}</td></tr>
+<tr><td>{{shortcuts-file.7}}</td><td>{{key:파일/Unity 프로젝트 열기…}}</td></tr>
+<tr><td>{{shortcuts-file.8}}</td><td>{{key:파일/저장(+ 시트 내보내기)}}</td></tr>
+<tr><td>{{shortcuts-file.9}}</td><td>{{key:파일/다른 이름으로 저장…}}</td></tr>
+<tr><td>{{shortcuts-file.10}}</td><td>{{key:파일/내보내기…}}</td></tr>
+<tr><td>{{shortcuts-file.11}}</td><td>{{key:파일/닫기}}</td></tr>
+<tr><td>{{shortcuts-file.12}}</td><td>{{key:편집/환경 설정…}}</td></tr>
+<tr><td>{{shortcuts-file.13}}</td><td>{{key:보기/다음 탭}} / {{key:보기/이전 탭}}</td></tr>
+<tr><td>{{shortcuts-file.14}}</td><td>{{key:보기/파일 브라우저}}</td></tr>
+<tr><td>{{shortcuts-file.15}}</td><td>{{key:AI/AI 채팅}}</td></tr>
+<tr><td>{{shortcuts-file.16}}</td><td>{{key:보기/움직임 테스트}}</td></tr>
+<tr><td>{{shortcuts-file.17}}</td><td>{{key:도움말/사용 가이드}}</td></tr>
+</tbody></table></div>
+<p>{{shortcuts-file.18}}</p>
+
+<p>{{shortcuts-file.19}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-file.png" alt="{{shortcuts-file.20.alt}}" width="326" height="369" loading="lazy"><figcaption>{{shortcuts-file.21}}</figcaption></figure>
+
+<h3 id="shortcuts-edit">{{shortcuts-edit.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-edit.2}}</th><th>{{shortcuts-edit.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-edit.4}}</td><td>{{key:편집/실행취소}} / {{key:편집/다시 실행}}</td></tr>
+<tr><td>{{shortcuts-edit.5}}</td><td>{{key:편집/잘라내기}} / {{key:편집/복사}} / {{key:편집/붙여넣기}}</td></tr>
+<tr><td>{{shortcuts-edit.6}}</td><td>{{key:편집/지우기}}</td></tr>
+<tr><td>{{shortcuts-edit.7}}</td><td>{{key:편집/모두 선택}}</td></tr>
+<tr><td>{{shortcuts-edit.8}}</td><td>{{shortcuts-edit.9}}</td></tr>
+<tr><td>{{shortcuts-edit.10}}</td><td>{{key:편집/선택 내려놓기}}</td></tr>
+<tr><td>{{shortcuts-edit.11}}</td><td>{{shortcuts-edit.12}}</td></tr>
+<tr><td>{{shortcuts-edit.13}}</td><td>{{shortcuts-edit.14}}</td></tr>
+</tbody></table></div>
+<div class="note">{{shortcuts-edit.15}}</div>
+
+<p>{{shortcuts-edit.16}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-edit.png" alt="{{shortcuts-edit.17.alt}}" width="347" height="593" loading="lazy"><figcaption>{{shortcuts-edit.18}}</figcaption></figure>
+
+<h3 id="shortcuts-transform">{{shortcuts-transform.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-transform.2}}</th><th>{{shortcuts-transform.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-transform.4}}</td><td>{{key:편집/좌우 뒤집기(선택/셀)}} / {{key:편집/상하 뒤집기(선택/셀)}}</td></tr>
+<tr><td>{{shortcuts-transform.5}}</td><td>{{key:편집/90° 회전(선택/캔버스)}} / {{key:편집/-90° 회전(선택/캔버스)}}</td></tr>
+<tr><td>{{shortcuts-transform.6}}</td><td>{{key:편집/변형(회전·크기)…}}</td></tr>
+<tr><td>{{shortcuts-transform.7}}</td><td>{{key:편집/외곽선 추가(기본색)}}</td></tr>
+<tr><td>{{shortcuts-transform.8}}</td><td>{{key:편집/색 바꾸기…}}</td></tr>
+<tr><td>{{shortcuts-transform.9}}</td><td>{{key:편집/캔버스 크기…}}</td></tr>
+<tr><td>{{shortcuts-transform.10}}</td><td>{{key:편집/선택 내려놓기}}</td></tr>
+<tr><td>{{shortcuts-transform.11}}</td><td>{{shortcuts-transform.12}}</td></tr>
+</tbody></table></div>
+<p>{{shortcuts-transform.13}}</p>
+
+<p>{{shortcuts-transform.14}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-transform.png" alt="{{shortcuts-transform.15.alt}}" width="347" height="593" loading="lazy"><figcaption>{{shortcuts-transform.16}}</figcaption></figure>
+
+<h3 id="shortcuts-tools">{{shortcuts-tools.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-tools.2}}</th><th>{{shortcuts-tools.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-tools.4}}</td><td>{{key:도구/선택 칸(다음 선택 도구)}}</td></tr>
+<tr><td>{{MainStrings.Tool_Lasso_Name}}</td><td>{{key:도구/자유 선택}}</td></tr>
+<tr><td>{{MainStrings.Tool_MagicWand_Name}}</td><td>{{key:도구/스마트 선택}}</td></tr>
+<tr><td>{{MainStrings.Tool_Gradient_Name}}</td><td>{{key:도구/그라데이션}}</td></tr>
+<tr><td>{{shortcuts-tools.8}}</td><td>{{key:도구/브러시 작게}} / {{key:도구/브러시 크게}}</td></tr>
+<tr><td>{{shortcuts-tools.9}}</td><td>{{key:도구/픽셀 퍼펙트}}</td></tr>
+<tr><td>{{shortcuts-tools.10}}</td><td>{{key:도구/도형 채움}}</td></tr>
+<tr><td>{{shortcuts-tools.11}}</td><td>{{key:도구/기본색 ↔ 보조색}}</td></tr>
+<tr><td>{{shortcuts-tools.12}}</td><td>{{key:도구/채우기: 같은 색 전체}}</td></tr>
+<tr><td>{{shortcuts-tools.13}}</td><td>{{key:도구/좌우 대칭 그리기}} / {{key:도구/상하 대칭 그리기}}</td></tr>
+<tr><td>{{shortcuts-tools.14}}</td><td>{{shortcuts-tools.15}}</td></tr>
+</tbody></table></div>
+<p>{{shortcuts-tools.16}}</p>
+
+<p>{{shortcuts-tools.17}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-tools.png" alt="{{shortcuts-tools.18.alt}}" width="313" height="710" loading="lazy"><figcaption>{{shortcuts-tools.19}}</figcaption></figure>
+
+<h3 id="shortcuts-view">{{shortcuts-view.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-view.2}}</th><th>{{shortcuts-view.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-view.4}}</td><td>{{shortcuts-view.5}}</td></tr>
+<tr><td>{{shortcuts-view.6}}</td><td>{{shortcuts-view.7}}</td></tr>
+<tr><td>{{shortcuts-view.8}}</td><td>{{shortcuts-view.9}}</td></tr>
+<tr><td>{{shortcuts-view.10}}</td><td>{{key:보기/화면에 맞추기}} / {{key:보기/실제 크기(1배)}}</td></tr>
+<tr><td>{{shortcuts-view.11}}</td><td>{{key:보기/픽셀 격자}}</td></tr>
+<tr><td>{{shortcuts-view.12}}</td><td>{{key:보기/타일 격자}}</td></tr>
+<tr><td>{{shortcuts-view.13}}</td><td>{{key:보기/타일 모드(반복해 보기)}}</td></tr>
+<tr><td>{{shortcuts-view.14}}</td><td>{{key:보기/양파 껍질}}</td></tr>
+<tr><td>{{shortcuts-view.15}}</td><td>{{shortcuts-view.16}}</td></tr>
+</tbody></table></div>
+
+<p>{{shortcuts-view.17}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-view.png" alt="{{shortcuts-view.18.alt}}" width="348" height="410" loading="lazy"><figcaption>{{shortcuts-view.19}}</figcaption></figure>
+
+<h3 id="shortcuts-timeline">{{shortcuts-timeline.1}}</h3>
+<div class="table-wrap"><table><thead><tr><th>{{shortcuts-timeline.2}}</th><th>{{shortcuts-timeline.3}}</th></tr></thead><tbody>
+<tr><td>{{shortcuts-timeline.4}}</td><td>{{key:프레임·레이어/재생 / 정지}}</td></tr>
+<tr><td>{{shortcuts-timeline.5}}</td><td>{{key:프레임·레이어/이전 프레임}} / {{key:프레임·레이어/다음 프레임}}</td></tr>
+<tr><td>{{shortcuts-timeline.6}}</td><td>{{key:프레임·레이어/첫 프레임}} / {{key:프레임·레이어/마지막 프레임}}</td></tr>
+<tr><td>{{shortcuts-timeline.7}}</td><td>{{key:프레임·레이어/새 빈 프레임}}</td></tr>
+<tr><td>{{shortcuts-timeline.8}}</td><td>{{key:프레임·레이어/프레임 복제}}</td></tr>
+<tr><td>{{shortcuts-timeline.9}}</td><td>{{key:프레임·레이어/새 레이어}}</td></tr>
+<tr><td>{{shortcuts-timeline.10}}</td><td>{{key:프레임·레이어/레이어 이름 바꾸기}}</td></tr>
+<tr><td>{{shortcuts-timeline.11}}</td><td>{{key:프레임·레이어/새 그룹}}</td></tr>
+<tr><td>{{shortcuts-timeline.12}}</td><td>{{key:프레임·레이어/새 부위…}}</td></tr>
+<tr><td>{{shortcuts-timeline.13}}</td><td>{{key:프레임·레이어/이전 스킨(현재 그룹)}} / {{key:프레임·레이어/다음 스킨(현재 그룹)}}</td></tr>
+<tr><td>{{shortcuts-timeline.14}}</td><td>{{shortcuts-timeline.15}}</td></tr>
+<tr><td>{{shortcuts-timeline.16}}</td><td>{{shortcuts-timeline.17}}</td></tr>
+</tbody></table></div>
+<p>{{shortcuts-timeline.18}}</p>
+<p>{{shortcuts-timeline.19}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/shortcuts-timeline.png" alt="{{shortcuts-timeline.20.alt}}" width="299" height="469" loading="lazy"><figcaption>{{shortcuts-timeline.21}}</figcaption></figure>
+</section>
+
+<section class="doc" id="language">
+<h2>{{language.1}}</h2>
+<p>{{language.2}}</p>
+
+<h3 id="language-change">{{language-change.1}}</h3>
+<ol>
+<li>{{language-change.2}}</li>
+<li>{{language-change.3}}</li>
+<li>{{language-change.4}}</li>
+</ol>
+<figure class="shot"><img src="{{root}}assets/guide/language-change.png" alt="{{language-change.5.alt}}" width="347" height="593" loading="lazy"><figcaption>{{language-change.6}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/language-change-2.png" alt="{{language-change.7.alt}}" width="965" height="799" loading="lazy"><figcaption>{{language-change.8}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/language-change-3.png" alt="{{language-change.9.alt}}" width="356" height="126" loading="lazy"><figcaption>{{language-change.10}}</figcaption></figure>
+
+<h3 id="language-make">{{language-make.1}}</h3>
+<ol>
+<li>{{language-make.2}}</li>
+<li>{{language-make.3}}</li>
+<li>{{language-make.4}}</li>
+<li>{{language-make.5}}</li>
+</ol>
+<figure class="shot"><img src="{{root}}assets/guide/language-make.png" alt="{{language-make.6.alt}}" width="947" height="163" loading="lazy"><figcaption>{{language-make.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/language-make-2.png" alt="{{language-make.8.alt}}" width="947" height="186" loading="lazy"><figcaption>{{language-make.9}}</figcaption></figure>
+<div class="note"><p>{{language-make.10}}</p></div>
+
+<h3 id="language-fix">{{language-fix.1}}</h3>
+<ul>
+<li>{{language-fix.2}}</li>
+<li>{{language-fix.3}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/language-fix.png" alt="{{language-fix.4.alt}}" width="947" height="163" loading="lazy"><figcaption>{{language-fix.5}}</figcaption></figure>
+</section>
+</div>
+</div>
+</main>
+
+<footer>
+<div class="wrap">{{language-fix.6}}</div>
+</footer>
+<script>
+// 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
+document.getElementById('lang-select').addEventListener('change', function (e) {
+  var to = e.target.value;
+  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  var page = location.pathname.split('/').pop() || '';
+{{language-fix.7.script}}
+});
+</script>
+<script src="{{root}}guide.js?v=20261027a"></script>
+</body>
+</html>

@@ -6,7 +6,7 @@ namespace Gpixel.App;
 
 /// <summary>
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
-/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
+/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지, 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
@@ -23,13 +23,31 @@ public sealed class ToolOptionsPanel : UserControl
         [(0, 2)] = VectorIcon.ArrowLeft, [(2, 2)] = VectorIcon.Dot, [(4, 2)] = VectorIcon.ArrowRight,
         [(0, 4)] = VectorIcon.ArrowDownLeft, [(2, 4)] = VectorIcon.ArrowDown, [(4, 4)] = VectorIcon.ArrowDownRight,
     };
-    private static readonly (BrushShape Shape, VectorIcon Icon, string Text, string Tip)[] Shapes =
+    private static readonly (BrushShape Shape, VectorIcon Icon, string Text, string Tip)[] BrushShapes =
     [
         (BrushShape.Square, VectorIcon.Square, UiStrings.S_ToolOptionsPanel_Shapes_157988A91F, UiStrings.S_ToolOptionsPanel_Shapes_B8823EE594),
         (BrushShape.Circle, VectorIcon.Circle, UiStrings.S_ToolOptionsPanel_Shapes_C6B5555BE7, UiStrings.S_ToolOptionsPanel_Shapes_C3C41E96DA),
         (BrushShape.Diamond, VectorIcon.Diamond, UiStrings.S_ToolOptionsPanel_Shapes_E6AFBF1490, UiStrings.S_ToolOptionsPanel_Shapes_8D0E0B04AC),
     ];
+    /// <summary>도형 도구 모양 단추(순서대로): 모양, 아이콘, 이름(실행취소 이름으로도 씀), 안내.</summary>
+    private static readonly (ShapeKind Kind, VectorIcon Icon, string Name, string Hint)[] ShapeDefs =
+    [
+        (ShapeKind.Line, VectorIcon.LineDiagonal, UiStrings.Shape_Line, UiStrings.Shape_Line_Hint),
+        (ShapeKind.Curve, VectorIcon.Curve, UiStrings.Shape_Curve, UiStrings.Shape_Curve_Hint),
+        (ShapeKind.Rectangle, VectorIcon.Square, UiStrings.Shape_Rectangle, UiStrings.Shape_Rectangle_Hint),
+        (ShapeKind.Ellipse, VectorIcon.Oval, UiStrings.Shape_Ellipse, UiStrings.Shape_Ellipse_Hint),
+        (ShapeKind.Triangle, VectorIcon.Triangle, UiStrings.Shape_Triangle, UiStrings.Shape_Triangle_Hint),
+        (ShapeKind.IsoscelesTriangle, VectorIcon.TriangleTall, UiStrings.Shape_Isosceles, UiStrings.Shape_Isosceles_Hint),
+        (ShapeKind.Polygon, VectorIcon.Pentagon, UiStrings.Shape_Polygon, UiStrings.Shape_Polygon_Hint),
+        (ShapeKind.Star, VectorIcon.Star, UiStrings.Shape_Star, UiStrings.Shape_Star_Hint),
+        (ShapeKind.Spiral, VectorIcon.Spiral, UiStrings.Shape_Spiral, UiStrings.Shape_Spiral_Hint),
+        (ShapeKind.Cylinder, VectorIcon.Cylinder, UiStrings.Shape_Cylinder, UiStrings.Shape_Cylinder_Hint),
+        (ShapeKind.Cube, VectorIcon.Cube, UiStrings.Shape_Cube, UiStrings.Shape_Cube_Hint),
+    ];
     private static readonly string[] SourceNames = [UiStrings.S_ToolOptionsPanel_SourceNames_6198D7D9B6, UiStrings.S_ToolOptionsPanel_SourceNames_06199A4484];
+
+    /// <summary>도형 모양 이름(예: "별").</summary>
+    internal static string ShapeName(ShapeKind kind) => ShapeDefs.First(d => d.Kind == kind).Name;
 
     private readonly EditorContext _ctx;
     private readonly TextBlock _title;
@@ -39,7 +57,7 @@ public sealed class ToolOptionsPanel : UserControl
     // 브러시
     private readonly Border _brushBox;
     private readonly TextBlock _brushTitle, _fillTitle;
-    /// <summary>브러시 모양(<see cref="Shapes"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    /// <summary>브러시 모양(<see cref="BrushShapes"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
     private readonly TabStrip _shapes = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
     private readonly NumericUpDown _sizeNum;
     private readonly BrushPreview _brushPreview = new();
@@ -51,6 +69,17 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly ComboBox _fillSource, _pickSource, _ditherPattern;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
+
+    // 도형
+    private readonly Border _shapeBox;
+    /// <summary>모양 단추(<see cref="ShapeDefs"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly Button[] _shapeButtons = new Button[ShapeDefs.Length];
+    private readonly TextBlock _shapeHint;
+    private readonly NumericUpDown _sidesNum, _starNum, _turnsNum;
+    /// <summary>선·곡선 픽셀 잇기(0 = 대각선, 1 = ㄱ자 4방향). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly TabStrip _lineSteps = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
+    private readonly StackPanel _lineStepsRow;
+    private readonly StackPanel _sidesRow, _starRow, _turnsRow;
 
     // 그라데이션
     private readonly Border _gradientBox;
@@ -87,12 +116,12 @@ public sealed class ToolOptionsPanel : UserControl
         Background = AppTheme.PanelBrush;
 
         // ── 브러시: 모양 단추 + 크기(슬라이더·숫자) + 미리보기
-        foreach (var s in Shapes)
+        foreach (var s in BrushShapes)
             _shapes.Add(s.Text, (g, r, b) => VectorIcons.Draw(g, s.Icon, r, 10, b, filled: true), s.Tip);
         _shapes.SelectionChanged += (_, _) =>
         {
             if (_updating || _shapes.SelectedIndex < 0) return;
-            _ctx.BrushShape = Shapes[_shapes.SelectedIndex].Shape;
+            _ctx.BrushShape = BrushShapes[_shapes.SelectedIndex].Shape;
             Refresh();
         };
         _sizeNum = NumBox(1, BrushFootprint.MaxSize, v => _ctx.BrushSize = v)
@@ -106,6 +135,42 @@ public sealed class ToolOptionsPanel : UserControl
         var brushGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { _brushPreview, brushRight } };
         _brushBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_244D56A524, Ui.Stack(brushGrid));
         _brushTitle = GroupTitle(_brushBox);
+
+        // ── 도형: 모양 단추 + 모양별 개수(정다각형 꼭짓점·별 뿔·나선 감은 수)
+        var shapeButtons = new WrapPanel { Orientation = Orientation.Horizontal };
+        for (int i = 0; i < ShapeDefs.Length; i++)
+        {
+            var kind = ShapeDefs[i].Kind;
+            var b = Ui.Button("", (_, _) => _ctx.ShapeKind = kind, 30);
+            b.Height = 26;
+            b.Padding = new Thickness(0);
+            b.Margin = new Thickness(1);
+            b.Focusable = false;
+            b.HorizontalContentAlignment = HorizontalAlignment.Center;
+            b.VerticalContentAlignment = VerticalAlignment.Center;
+            b.Tip(ShapeDefs[i].Name);
+            _shapeButtons[i] = b;
+            shapeButtons.Children.Add(b);
+        }
+        _shapeHint = Dim("");
+        _shapeHint.TextWrapping = TextWrapping.Wrap;
+        _sidesNum = NumBox(Shapes.MinSides, Shapes.MaxSides, v => _ctx.ShapeSides = v)
+            .Presets(3, 4, 5, 6, 7, 8, 10, 12, 16).RecentKey("shape.sides");
+        _sidesNum.Tip(UiStrings.Shape_SidesTip);
+        _starNum = NumBox(Shapes.MinSides, Shapes.MaxSides, v => _ctx.StarPoints = v)
+            .Presets(3, 4, 5, 6, 7, 8, 10, 12).RecentKey("shape.star");
+        _starNum.Tip(UiStrings.Shape_PointsTip);
+        _turnsNum = NumBox(Shapes.MinTurns, Shapes.MaxTurns, v => _ctx.SpiralTurns = v)
+            .Presets(1, 2, 3, 4, 5, 6, 8, 10).RecentKey("shape.turns");
+        _turnsNum.Tip(UiStrings.Shape_TurnsTip);
+        _sidesRow = Ui.Row(Ui.Label(UiStrings.Shape_Sides), _sidesNum);
+        _starRow = Ui.Row(Ui.Label(UiStrings.Shape_Points), _starNum);
+        _turnsRow = Ui.Row(Ui.Label(UiStrings.Shape_Turns), _turnsNum);
+        _lineSteps.Add(UiStrings.Shape_StepsDiagonal, tip: UiStrings.Shape_StepsDiagonalTip);
+        _lineSteps.Add(UiStrings.Shape_StepsOrthogonal, tip: UiStrings.Shape_StepsOrthogonalTip);
+        _lineSteps.SelectionChanged += (_, _) => { if (!_updating && _lineSteps.SelectedIndex >= 0) _ctx.ShapeOrthogonal = _lineSteps.SelectedIndex == 1; };
+        _lineStepsRow = Ui.Row(Ui.Label(UiStrings.Shape_Steps), _lineSteps);
+        _shapeBox = Ui.Group(UiStrings.Shape_Group, Ui.Stack(shapeButtons, _shapeHint, _sidesRow, _starRow, _turnsRow, _lineStepsRow));
 
         // ── 채우기
         _tolNum = NumBox(0, 100, v => _ctx.FillTolerance = v)
@@ -345,7 +410,7 @@ public sealed class ToolOptionsPanel : UserControl
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
             Ui.Row(crApply, crCancel)));
 
-        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox);
+        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
         header.Child = null;
@@ -493,11 +558,12 @@ public sealed class ToolOptionsPanel : UserControl
     private void Refresh()
     {
         var tool = _ctx.Tool;
-        bool shape = tool is ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse;
+        bool shape = tool == ToolKind.Shape;
         bool brush = shape || tool is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
         bool paint = brush || tool == ToolKind.Fill;
 
         _title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_Refresh_2AA5BFEE57,MainForm.ToolName(tool));
+        _shapeBox.IsVisible = tool == ToolKind.Shape;
         _brushBox.IsVisible = brush;
         _brushTitle.Text = shape ? UiStrings.S_ToolOptionsPanel_Refresh_FD736DAE6B : UiStrings.S_ToolOptionsPanel_Refresh_5A8AEEEBD3;
         _fillBox.IsVisible = tool is ToolKind.Fill or ToolKind.MagicWand;
@@ -507,8 +573,8 @@ public sealed class ToolOptionsPanel : UserControl
         _ditherBox.IsVisible = tool == ToolKind.Dither;
         _gradientBox.IsVisible = tool == ToolKind.Gradient;
         _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.Eraser;
-        _shapeFilled.IsVisible = tool is ToolKind.Rectangle or ToolKind.Ellipse;
-        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.Line or ToolKind.Rectangle or ToolKind.Ellipse or ToolKind.Fill;
+        _shapeFilled.IsVisible = tool == ToolKind.Shape && Shapes.CanFill(_ctx.ShapeKind);
+        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.Shape or ToolKind.Fill;
         _wrap.IsVisible = tool == ToolKind.Move;
         _optionsBox.IsVisible = _pixelPerfect.IsVisible || _shapeFilled.IsVisible || _rightErase.IsVisible || _wrap.IsVisible;
         _mirrorBox.IsVisible = paint;
@@ -532,14 +598,14 @@ public sealed class ToolOptionsPanel : UserControl
         {
             // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
             _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
-            foreach (var box in new Control[] { _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
+            foreach (var box in new Control[] { _shapeBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
 
         _updating = true;
         try
         {
-            _shapes.SelectedIndex = Array.FindIndex(Shapes, s => s.Shape == _ctx.BrushShape);
+            _shapes.SelectedIndex = Array.FindIndex(BrushShapes, s => s.Shape == _ctx.BrushShape);
             _sizeNum.Value = _ctx.BrushSize;
             _brushPreview.Footprint = _ctx.Brush;
             _tolNum.Value = _ctx.FillTolerance;
@@ -556,6 +622,7 @@ public sealed class ToolOptionsPanel : UserControl
             _wrap.IsChecked = _ctx.MoveWrap;
             _mirrorX.IsChecked = _ctx.MirrorX;
             _mirrorY.IsChecked = _ctx.MirrorY;
+            RefreshShape();
             if (!_gradientSyncing)
                 _gradientEditor.Load(_ctx.GradientStops, _ctx.GradientAlphaStops,
                     _ctx.GradientInterpolation, _ctx.GradientDither, colorSpace: _ctx.GradientColorSpace);
@@ -568,6 +635,27 @@ public sealed class ToolOptionsPanel : UserControl
         RefreshSlice();
         RefreshTransform();
         RefreshCanvasResize();
+    }
+
+    /// <summary>도형 모양 단추(고른 것 = 강조색, 채움이면 아이콘도 채움)·안내·모양별 개수 칸.</summary>
+    private void RefreshShape()
+    {
+        var kind = _ctx.ShapeKind;
+        for (int i = 0; i < ShapeDefs.Length; i++)
+        {
+            var def = ShapeDefs[i];
+            _shapeButtons[i].Background = def.Kind == kind ? AppTheme.AccentBrush : AppTheme.InputBrush;
+            _shapeButtons[i].Content = Ui.Icon(def.Icon, 16, filled: _ctx.ShapeFilled && Shapes.CanFill(def.Kind));
+        }
+        _shapeHint.Text = ShapeDefs.First(d => d.Kind == kind).Hint;
+        _sidesRow.IsVisible = kind == ShapeKind.Polygon;
+        _starRow.IsVisible = kind == ShapeKind.Star;
+        _turnsRow.IsVisible = kind == ShapeKind.Spiral;
+        _lineStepsRow.IsVisible = kind is ShapeKind.Line or ShapeKind.Curve;
+        _lineSteps.SelectedIndex = _ctx.ShapeOrthogonal ? 1 : 0;
+        _sidesNum.Value = _ctx.ShapeSides;
+        _starNum.Value = _ctx.StarPoints;
+        _turnsNum.Value = _ctx.SpiralTurns;
     }
 
     // ───────────── 변형 ─────────────

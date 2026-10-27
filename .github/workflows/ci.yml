@@ -28,3 +28,11 @@ jobs:
 
       - name: Test
         run: dotnet test tests/Gpixel.Core.Tests -c Release --no-build
+
+      # 홈페이지 HTML이 docs/i18n(틀·언어별 문구 표)과 앱 문구(resx)로 만든 그대로인지
+      - name: Website pages up to date
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          dotnet run --project tools/GuideShots -c Release -- --shortcuts docs/i18n/shortcuts.json
+          git diff --exit-code docs/i18n/shortcuts.json
+          python3 tools/build-docs.py --check

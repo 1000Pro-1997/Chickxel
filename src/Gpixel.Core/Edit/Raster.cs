@@ -28,6 +28,50 @@ public static class Raster
         return pts;
     }
 
+    /// <summary>
+    /// 두 점을 잇는 4방향 선(양 끝 포함): 한 번에 가로나 세로로만 움직여 모든 점이 앞 점과 변으로 붙는다(대각선 대신 ㄱ자 계단).
+    /// 이상적인 선이 가로·세로 칸 경계를 지나는 순서대로 걷는다(같으면 세로 먼저).
+    /// </summary>
+    public static List<Point> Line4(Point a, Point b)
+    {
+        int dx = Math.Abs(b.X - a.X), dy = Math.Abs(b.Y - a.Y);
+        int sx = a.X < b.X ? 1 : -1, sy = a.Y < b.Y ? 1 : -1;
+        var pts = new List<Point>(dx + dy + 1) { a };
+        int x = a.X, y = a.Y;
+        for (int ix = 0, iy = 0; ix < dx || iy < dy;)
+        {
+            // 다음 세로 경계(가로 한 칸)를 지나는 t = (½ + ix)/dx, 다음 가로 경계는 (½ + iy)/dy — 먼저 오는 쪽으로.
+            if ((long)(1 + 2 * ix) * dy < (long)(1 + 2 * iy) * dx) { x += sx; ix++; }
+            else { y += sy; iy++; }
+            pts.Add(new Point(x, y));
+        }
+        return pts;
+    }
+
+    /// <summary>끝점 <paramref name="b"/>를 시작점 <paramref name="a"/>에서 0°/45°/90° 방향으로 맞춘다(Shift).</summary>
+    public static Point SnapAngle(Point a, Point b)
+    {
+        int dx = b.X - a.X, dy = b.Y - a.Y;
+        int adx = Math.Abs(dx), ady = Math.Abs(dy);
+        if (adx > ady * 2) return new Point(b.X, a.Y);
+        if (ady > adx * 2) return new Point(a.X, b.Y);
+        int d = Math.Max(adx, ady);
+        return new Point(a.X + Math.Sign(dx) * d, a.Y + Math.Sign(dy) * d);
+    }
+
+    /// <summary>
+    /// 끝점 <paramref name="b"/>를 시작점 <paramref name="a"/>에서 <paramref name="stepDegrees"/>° 단위 방향으로 맞춘다(길이는 그대로, 끝점은 가장 가까운 픽셀).
+    /// </summary>
+    public static Point SnapAngle(Point a, Point b, double stepDegrees)
+    {
+        if (a == b) return b;
+        double dx = b.X - a.X, dy = b.Y - a.Y, len = Math.Sqrt(dx * dx + dy * dy);
+        double step = stepDegrees * Math.PI / 180;
+        double angle = Math.Round(Math.Atan2(dy, dx) / step) * step;
+        return new Point(a.X + (int)Math.Round(len * Math.Cos(angle), MidpointRounding.AwayFromZero),
+            a.Y + (int)Math.Round(len * Math.Sin(angle), MidpointRounding.AwayFromZero));
+    }
+
     /// <summary>두 모서리 점(양 끝 포함)을 감싸는 사각형. <paramref name="square"/>면 정사각형으로 맞춘다(Shift).</summary>
     public static Rectangle RectFromPoints(Point a, Point b, bool square = false)
     {

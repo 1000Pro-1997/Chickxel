@@ -72,6 +72,12 @@ public sealed class AppSettings
     public bool PixelPerfect { get; set; }
     public bool FillContiguous { get; set; } = true;
     public bool ShapeFilled { get; set; }
+    /// <summary>도형 도구 모양·정다각형 꼭짓점 수·별 뿔 수·나선 감은 수·선/곡선 ㄱ자(4방향) 잇기.</summary>
+    public ShapeKind ShapeKind { get; set; } = ShapeKind.Rectangle;
+    public int ShapeSides { get; set; } = 5;
+    public int StarPoints { get; set; } = 5;
+    public int SpiralTurns { get; set; } = 3;
+    public bool ShapeOrthogonal { get; set; }
     public bool RightButtonErases { get; set; }
     public bool MoveWrap { get; set; } = true;
     /// <summary>변형 모드(Ctrl+T) 리샘플링(기본 RotSprite).</summary>

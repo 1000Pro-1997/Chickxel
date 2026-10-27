@@ -1,0 +1,161 @@
+<!doctype html>
+<!-- tools/build-docs.py가 docs/i18n/index.html(틀)·index.csv(언어별 문구)로 만든 파일입니다. 이 파일을 직접 고치지 말고 docs/i18n을 고친 뒤 다시 만드세요. -->
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{head.2}}</title>
+<meta name="description" content="{{head.3.content}}">
+<meta property="og:title" content="{{head.4.content}}">
+<meta property="og:description" content="{{head.5.content}}">
+<meta property="og:image" content="{{head.6.content}}">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/">
+<link rel="icon" href="{{root}}assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="{{root}}style.css?v=20261027a">
+<script>
+// 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
+{{head.7.script}}
+})();
+</script>
+</head>
+<body>
+<header class="top">
+<div class="bar">
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="{{root}}assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<nav class="nav">{{head.8}}<svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
+</nav>
+<label class="lang" title="{{head.9.title}}"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="{{lang-select.1.aria-label}}">
+<option value="ko"{{selected:ko}}>한국어</option>
+<option value="en"{{selected:en}}>English</option>
+</select></label>
+</div>
+</header>
+
+<main>
+<section class="hero">
+<div class="wrap hero-grid">
+<div class="hero-copy">
+<span class="eyebrow">Pixel art editor for Unity 2D</span>
+<h1>{{lang-select.2}}</h1>
+<p class="lead">{{lang-select.3}}</p>
+<div class="buttons">
+<a class="btn primary" id="main-download" href="#download"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>{{lang-select.4}}<svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg><span>Discord</span></a>
+</div>
+<p class="os-links">{{lang-select.5}}</p>
+<div class="facts">{{lang-select.6}}</div>
+</div>
+<div class="hero-board"><img src="{{lang-select.7.src}}" alt="{{lang-select.8.alt}}" width="1440" height="860"></div>
+</div>
+</section>
+
+<section class="section core" id="core">
+<div class="wrap">
+<div class="section-title"><span class="eyebrow">Key features</span><h2>{{core.1}}</h2><p>{{core.2}}</p></div>
+<div class="core-grid">
+<a class="core-card tall" href="guide.html#featured-number-field">
+<div class="core-card-head">{{core.3}}<h3>{{core.4}}</h3></div>
+<div class="core-card-media"><img src="{{root}}assets/feature-number-field.gif" alt="{{core.5.alt}}" width="512" height="1031" loading="lazy"></div>
+</a>
+<a class="core-card" href="guide.html#featured-ai-draw">
+<div class="core-card-head"><h3>{{core.6}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-ai-draw.mp4" poster="{{root}}assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.7.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-pixelate-convert">
+<div class="core-card-head">{{core.8}}<h3>{{core.9}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-pixelate.mp4" poster="{{root}}assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.10.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-pixelate-colors">
+<div class="core-card-head">{{core.11}}<h3>{{core.12}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-pixelate-colors.mp4" poster="{{root}}assets/feature-pixelate-colors.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.13.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-effects">
+<div class="core-card-head">{{core.14}}<h3>{{core.15}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-effects.mp4" poster="{{root}}assets/feature-effects.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.16.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-clip">
+<div class="core-card-head">{{core.17}}<h3>{{core.18}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-clip.mp4" poster="{{root}}assets/feature-clip.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.19.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-palette-web">
+<div class="core-card-head">{{core.20}}<h3>{{core.21}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-palette.mp4" poster="{{root}}assets/feature-palette.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.22.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-palette-convert">
+<div class="core-card-head">{{core.23}}<h3>{{core.24}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-convert.mp4" poster="{{root}}assets/feature-convert.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.25.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-skins">
+<div class="core-card-head">{{core.26}}<h3>{{core.27}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-skins.mp4" poster="{{root}}assets/feature-skins.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.28.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-skins-tiles">
+<div class="core-card-head">{{core.29}}<h3>{{core.30}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-skins-tiles.mp4" poster="{{root}}assets/feature-skins-tiles.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.31.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-pivot">
+<div class="core-card-head">{{core.32}}<h3>{{core.33}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-pivot.mp4" poster="{{root}}assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.34.aria-label}}"></video></div>
+</a>
+<a class="core-card" href="guide.html#featured-export">
+<div class="core-card-head"><h3>{{core.35}}</h3></div>
+<div class="core-card-media"><video src="{{root}}assets/feature-export.mp4" poster="{{root}}assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="{{core.36.aria-label}}"></video></div>
+</a>
+</div>
+</div>
+</section>
+
+<section class="section alt" id="features">
+<div class="wrap">
+<div class="section-title"><span class="eyebrow">Features</span><h2>{{features.1}}</h2><p>{{features.2}}</p></div>
+<div class="features">
+<div class="card"><span class="num">01</span><h3>{{features.3}}</h3><p>{{features.4}}</p></div>
+<div class="card"><span class="num">02</span><h3>{{features.5}}</h3><p>{{features.6}}</p></div>
+<div class="card"><span class="num">03</span><h3>{{features.7}}</h3><p>{{features.8}}</p></div>
+<div class="card"><span class="num">04</span><h3>{{features.9}}</h3><p>{{features.10}}</p></div>
+<div class="card"><span class="num">05</span><h3>{{features.11}}</h3><p>{{features.12}}</p></div>
+<div class="card"><span class="num">06</span><h3>{{features.13}}</h3><p>{{features.14}}</p></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="download">
+<div class="wrap">
+<div class="section-title"><span class="eyebrow">Download</span><h2>{{download.1}}</h2><p>{{download.2}}</p></div>
+<div class="downloads">
+<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"><strong>Windows</strong><span>Windows 10/11 · x64</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>{{download.3}}<svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>{{download.4}}<svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>{{download.5}}</div>
+<p class="note-line">{{download.6}}</p>
+<p class="note-line"><a class="btn discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>{{download.7}}</p>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">{{download.8}}</div>
+</footer>
+<script>
+// 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
+document.getElementById('lang-select').addEventListener('change', function (e) {
+  var to = e.target.value;
+  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  var page = location.pathname.split('/').pop() || '';
+{{download.9.script}}
+});
+// 첫 화면 내려받기 단추: 접속한 OS에 맞는 파일로.
+(function () {
+  var ua = navigator.platform || navigator.userAgent;
+  var mac = /Mac/i.test(ua), win = /Win/i.test(ua);
+  var main = document.getElementById('main-download');
+  if (mac || win) {
+    main.href = 'https://github.com/1000Pro-1997/GPixel/releases/latest/download/' + (mac ? 'Gpixel-macos-arm64.zip' : 'Gpixel-windows-x64.zip');
+{{download.10.script}}
+  }
+})();
+</script>
+</body>
+</html>

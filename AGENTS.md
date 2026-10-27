@@ -14,6 +14,6 @@
 
 ## 도움말 변경은 대기 목록으로
 
-- 사용자가 반영하라고 하기 전에는 도움말(`docs/guide.html`, `docs/en/guide.html`, `src/Gpixel.App/Assets/Help/*.json`)을 고치지 않습니다.
+- 사용자가 반영하라고 하기 전에는 도움말(원본 `docs/i18n/guide.html`·`docs/i18n/guide.csv`와 거기서 만드는 `docs/guide.html`, `docs/en/guide.html`, `src/Gpixel.App/Assets/Help/*.json`)을 고치지 않습니다.
 - 도움말에 써야 할 변경은 저장소 루트의 `도움말-대기.md`에 한국어로 항목별로 적어 둡니다.
-- 반영하라고 하면 요청한 항목만 하나씩 도움말에 쓰고(`python tools/build-help.py`로 JSON 다시 만들기), 반영한 항목은 `도움말-대기.md`에서 지웁니다.
+- 반영하라고 하면 요청한 항목만 하나씩 `docs/i18n`(틀·언어별 문구 표)에 쓰고(`python tools/build-docs.py`로 홈페이지 HTML과 앱 도움말 JSON 다시 만들기), 반영한 항목은 `도움말-대기.md`에서 지웁니다.

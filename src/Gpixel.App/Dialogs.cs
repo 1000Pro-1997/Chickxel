@@ -508,7 +508,6 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_38E4E2F3CE, UiStrings.S_Dialogs_Shortcuts_F8F7C54D54),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "L", UiStrings.S_Dialogs_Shortcuts_63ADB1FB8F),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "R", UiStrings.S_Dialogs_Shortcuts_DAEB4ED541),
-        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "O", UiStrings.S_Dialogs_Shortcuts_495263DD23),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "U", UiStrings.S_Dialogs_Shortcuts_094D63C9FA),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "M", UiStrings.S_Dialogs_Shortcuts_7E24CFF354),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "Q", UiStrings.S_Dialogs_Shortcuts_2C42C899BE),
