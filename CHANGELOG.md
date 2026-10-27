@@ -2,6 +2,10 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.45 (2026-10-27)
+### Guide: saving and copying in the Pixelate window
+- The homepage and in-app (F1) guide now explain right-clicking the source image and candidate tiles in the Pixelate window to copy (1× or ×4) or save as PNG, and where **Rerun only this preset** appears.
+
 ## v1.14.44 (2026-10-27)
 ### Save or copy images from the Pixelate window
 - Right-click the source image on the left to **Copy image** or **Save as PNG…**. With **Show background removed** on, the background-removed source is used.
