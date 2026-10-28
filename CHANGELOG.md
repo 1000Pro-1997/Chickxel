@@ -66,6 +66,9 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - The saved undo history now keeps the sources of older script versions, so undoing to an earlier script after reopening still draws it. Script effects this version cannot read keep their source and recipe group when saved.
 - A script whose `padding` fails now counts as a failed run (shown in the effect list and suspended after repeated failures) instead of silently clipping, and a frame where a script failed is no longer cached as if it had succeeded.
 
+### Pixelate current layer moved to the AI menu
+- **Pixelate current layer…** moved from the Edit menu to the AI menu, right below **Pixelate AI image…**, which opens the same window. A shortcut you had assigned to it needs to be set again.
+
 ## v1.14.54 (2026-10-28)
 ### Automatically found AI CLI paths no longer require PATH setup
 - Gpixel uses the full path of a discovered Claude Code or Codex executable and adds its folder to the child process PATH, so AI Status no longer warns when the executable is absent from Gpixel's own PATH.

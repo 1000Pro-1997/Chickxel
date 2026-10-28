@@ -637,7 +637,6 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
             DocCmd("팔레트 색으로 변환…", MainStrings.Menu_Edit_Command_129, _colors.ConvertImageToActivePalette),
-            WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Edit_Pixelate, PixelateCurrentLayer), VectorIcon.Grid3x3),
             new Separator(),
             Cmd("환경 설정…", MainStrings.Menu_Edit_ShowPreferences_131, ShowPreferences, "Ctrl+,", KeyScope.Global, (Key.OemComma, Ctrl)));
         Bind("편집", "선택 내려놓기", MainStrings.ShortcutCategory_Edit, MainStrings.Shortcut_CommitSelection, KeyScope.Canvas, () =>
@@ -758,7 +757,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             WithIcon(Cmd("AI 상태 열기…", UiStrings.AiStatus_OpenMenu, () => ShowAiStatus(this)), VectorIcon.Info),
             refs,
             new Separator(),
-            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3));
+            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3),
+            WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Ai_PixelateLayer, PixelateCurrentLayer), VectorIcon.Grid3x3));
 
         // 도움말
         var help = TopMenu("도움말(_H)", MainStrings.Menu_Help);
