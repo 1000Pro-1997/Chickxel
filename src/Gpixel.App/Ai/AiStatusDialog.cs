@@ -32,6 +32,9 @@ internal sealed class AiStatusDialog : DialogBase
         _settings = settings;
         Body.Width = 700;
         Body.MaxHeight = 700;
+        // 기본 폭 90에서는 "확인하고 AI 열기"가 잘리므로 글에 맞춘다.
+        OkButton.Width = double.NaN;
+        OkButton.MinWidth = 90;
 
         var intro = Ui.Label(UiStrings.AiStatus_Intro);
         intro.TextWrapping = TextWrapping.Wrap;

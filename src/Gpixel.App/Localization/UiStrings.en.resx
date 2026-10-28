@@ -3188,6 +3188,11 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_Marker_Time" xml:space="preserve"><value>Time limit ({score})</value></data>
   <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>Trial limit ({score})</value></data>
   <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>Cancelled ({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Waiting" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Pixelate_Opt_Marker_Running" xml:space="preserve"><value>Optimizing…</value></data>
+  <data name="Pixelate_Opt_Marker_RunningScore" xml:space="preserve"><value>Optimizing ({score})</value></data>
+  <data name="Pixelate_Pin_Applying" xml:space="preserve"><value>Applying fixed colors to the optimized results…</value></data>
+  <data name="Pixelate_Pin_Applied" xml:space="preserve"><value>Fixed colors applied to each optimized result (settings unchanged).</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>Rerun only this preset</value></data>
   <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>Save as PNG…</value></data>
   <data name="Pixelate_Save_Title" xml:space="preserve"><value>Save image as PNG</value></data>
@@ -3358,7 +3363,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiStatus_GpixelConnection" xml:space="preserve"><value>Gpixel Internal Connection</value></data>
   <data name="AiStatus_McpServer" xml:space="preserve"><value>MCP server</value></data>
   <data name="AiStatus_DontShowUntilChange" xml:space="preserve"><value>Don't show again</value></data>
-  <data name="AiStatus_DontShowNote" xml:space="preserve"><value>This appears again after the app version, AI CLI file, or custom path changes. Open it anytime from AI &gt; Open AI Status or Preferences &gt; AI Status.</value></data>
+  <data name="AiStatus_DontShowNote" xml:space="preserve"><value>This appears again only if an AI CLI location or custom path changes, not after app or CLI updates. Open it anytime from AI &gt; Open AI Status or Preferences &gt; AI Status.</value></data>
   <data name="AiStatus_Recheck" xml:space="preserve"><value>Check all again</value></data>
   <data name="AiStatus_Checking" xml:space="preserve"><value>Checking AI installation and connections…</value></data>
   <data name="AiStatus_CheckingShort" xml:space="preserve"><value>Checking…</value></data>

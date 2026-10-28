@@ -447,6 +447,12 @@ public sealed class PixelateDialog : DialogBase
     private PixelateSettings? _optRevertTo;
     /// <summary>최적화가 넣은 후보와 그 프리셋·이름·멈춘 까닭(칸 제목 = 프리셋 이름, 아래에 "최적화(점수)"·"시간초과(점수)" 같은 표시, 우클릭 = 이 설정만 다시 돌리기).</summary>
     private readonly Dictionary<PixelateCandidate, OptimizedTile> _optimized = new(ReferenceEqualityComparer.Instance);
+    /// <summary>모든 프리셋을 돌리는 동안 아직 끝나지 않은 프리셋 이름(첫 번째 = 도는 중). 후보 줄에 순위 대신 프리셋 칸으로 보인다. 돌지 않으면 null.</summary>
+    private List<string>? _optPending;
+    /// <summary>모든 프리셋 최적화를 시작하기 전의 보통 후보(결과 없이 끝나면 되돌림).</summary>
+    private List<PixelateCandidate>? _optRankBackup;
+    /// <summary>도는 프리셋 칸의 "최적화 중(점수)" 글(진행마다 바꿈).</summary>
+    private TextBlock? _optRunningMarker;
     /// <summary>마지막으로 보통 후보를 잰 점수 기준(설정 창에서 바뀌면 다시 돌림).</summary>
     private (ScoreWeights Weights, ColorDistanceMode Distance, double HueWeight) _scoredWith;
 
@@ -1794,6 +1800,7 @@ public sealed class PixelateDialog : DialogBase
     private void RebuildTiles()
     {
         _tiles.Children.Clear();
+        _optRunningMarker = null;
         for (int i = 0; i < _candidates.Count; i++)
         {
             var c = _candidates[i];
@@ -1815,7 +1822,26 @@ public sealed class PixelateDialog : DialogBase
             };
             _tiles.Children.Add(tile);
         }
+        // 모든 프리셋을 돌리는 중: 아직 안 끝난 프리셋도 이름 칸으로 자리를 잡아 둔다(첫 칸 = 도는 중).
+        if (_optPending is not { } pending) return;
+        for (int i = 0; i < pending.Count; i++)
+        {
+            var marker = new TextBlock
+            {
+                Text = i == 0 ? RunningMarker() : UiStrings.Pixelate_Opt_Marker_Waiting,
+                Foreground = i == 0 ? AppTheme.AccentBrush : AppTheme.DimTextBrush,
+                FontSize = AppTheme.SmallFontSize,
+                FontWeight = i == 0 ? FontWeight.Bold : FontWeight.Normal,
+            };
+            if (i == 0) _optRunningMarker = marker;
+            _tiles.Children.Add(new PendingTile(pending[i], marker));
+        }
     }
+
+    /// <summary>도는 프리셋 칸의 표시: 아직 시도 전이면 "최적화 중…", 시도가 있으면 지금까지 최고 점수를 붙인다.</summary>
+    private string RunningMarker() => _optDone > 0
+        ? UiStrings.FormatPixelate_Opt_Marker_RunningScore(score: _optGraph.Best.ToString("0.0", CultureInfo.CurrentCulture))
+        : UiStrings.Pixelate_Opt_Marker_Running;
 
     /// <summary>
     /// 후보 칸 우클릭 메뉴: 결과 첫 프레임 복사(1×·×4)·PNG로 저장, 최적화 후보면 그 프리셋만 같은 시작 설정에서 다시 돌리기
@@ -2119,12 +2145,12 @@ public sealed class PixelateDialog : DialogBase
             Result = Pixelator.WithExclusions(c.Result, _excluded),
         };
 
-    /// <summary>고정 색 풀기(다시 돌림).</summary>
+    /// <summary>고정 색 풀기(최적화 프리셋 칸이면 그 설정 그대로 다시 정리, 아니면 다시 돌림).</summary>
     private void Unpin(Color32 color)
     {
         _pinned = PaletteEdits.Toggle(_pinned, color);
         if (_selected is { } s) ShowColors(s.Result);
-        Changed();
+        PinsChanged();
     }
 
     private void ClearPins()
@@ -2132,7 +2158,76 @@ public sealed class PixelateDialog : DialogBase
         if (_pinned.Count == 0) return;
         _pinned = [];
         if (_selected is { } s) ShowColors(s.Result);
-        Changed();
+        PinsChanged();
+    }
+
+    /// <summary>고정 색이 바뀜: 후보 줄이 최적화 프리셋 칸이면 칸마다 그 설정에 고정 색만 바꿔 다시 정리하고(순위 후보로 바꾸지 않음), 아니면 보통처럼 다시 돌린다.</summary>
+    private void PinsChanged()
+    {
+        if (!RepinPresets()) Changed();
+    }
+
+    /// <summary>
+    /// 최적화 프리셋 칸마다 그 칸의 설정 그대로 고정 색만 지금 것으로 바꿔 다시 정리하고(최적화는 다시 하지 않음) 그 프리셋 점수 기준으로 다시 잰다.
+    /// 칸 순서·고른 칸·뺀 색은 그대로. 프리셋 칸이 아니거나 최적화가 도는 중이면 false.
+    /// </summary>
+    private bool RepinPresets()
+    {
+        if (_loading || _optCts is not null || _input is not { } input || _candidates.Count == 0) return false;
+        var tiles = _candidates.Select(c => (Candidate: c, Tile: _optimized.GetValueOrDefault(c))).ToList();
+        if (tiles.Any(t => t.Tile is null)) return false;
+        UpdateEnabled();
+        DeselectPreset();
+        _debounce.Stop();
+        _cts?.Cancel();
+        var cts = _cts = new CancellationTokenSource();
+        int gen = ++_generation;
+        int selected = _selected is { } sel ? _candidates.IndexOf(sel) : -1;
+        var pinned = _pinned;
+        var prepared = _prepared;
+        var image = input.Image;
+        _status.Text = UiStrings.Pixelate_Pin_Applying;
+        Task.Run(() =>
+        {
+            try
+            {
+                var updated = new List<(PixelateCandidate Candidate, OptimizedTile Tile)>(tiles.Count);
+                foreach (var (c, tile) in tiles)
+                {
+                    var s = c.Settings with { Palette = c.Settings.Palette with { PinnedColors = pinned, ExcludedColors = [] } };
+                    var src = prepared is not null && prepared.Matches(s) ? prepared : PixelateSource.Prepare(image, s);
+                    // 후보 하나만(바꿔 보는 항목 없음) — 그 프리셋의 점수 기준·색 거리로 잰다.
+                    var one = PixelateCandidates.Run(src, s, CandidateVary.None, 1, tile!.Preset.Weights, null, cts.Token, tile.Preset.ScoreMetric)[0];
+                    updated.Add((one with { Index = c.Index }, tile));
+                }
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (gen != _generation) return;
+                    _candidates.Clear();
+                    _optimized.Clear();
+                    foreach (var (c, tile) in updated)
+                    {
+                        var n = WithExcluded(c);
+                        _candidates.Add(n);
+                        _optimized[n] = tile;
+                    }
+                    var pick = selected >= 0 && selected < _candidates.Count ? _candidates[selected] : _candidates[0];
+                    _selected = pick;
+                    RebuildTiles();
+                    Select(pick);
+                    _status.Text = pick.Result.Failed ? FailureNote(pick.Result) : UiStrings.Pixelate_Pin_Applied;
+                });
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException or AggregateException)
+            {
+                var message = ex is AggregateException agg ? agg.Flatten().InnerExceptions[0].Message : ex.Message;
+                Dispatcher.UIThread.Post(() => { if (gen == _generation) _status.Text = UiStrings.FormatPixelate_Status_Error(message: message); });
+            }
+        });
+        return true;
     }
 
     /// <summary>
@@ -2260,7 +2355,7 @@ public sealed class PixelateDialog : DialogBase
         _pinned = [.. _pinned, color.WithAlpha(255).ToHex()];
         _excluded = [.. _excluded.Where(hex => !(Color32.TryParseHex(hex, out var e) && PaletteEdits.Matches(e, color)))];
         ShowColors(sel.Result);
-        Changed();
+        PinsChanged();
     }
 
     private void UseDetectedGrid()
@@ -2392,7 +2487,8 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 지금 설정(왼쪽)에서 체크한 최적화 프리셋을 목록 순서대로 배경에서 하나씩 돌린다(모두 같은 준비된 원본·시작 설정, 프리셋마다 자기 항목·예산·점수 기준).
-    /// 돌던 후보 만들기는 멈추고(결과가 섞이지 않게), 끝나면 프리셋마다 1위 하나를 후보로 넣고(칸 제목 = 프리셋 이름) 첫 후보의 설정을 왼쪽에 불러온다(다시 돌리지 않음).
+    /// 돌던 후보 만들기는 멈추고(결과가 섞이지 않게), 후보 줄은 순위 대신 돌릴 프리셋 칸(대기·최적화 중)으로 바꿔 프리셋이 끝날 때마다 그 1위로 채운다.
+    /// 다 끝나면 첫 후보의 설정을 왼쪽에 불러온다(다시 돌리지 않음).
     /// 취소하면 남은 프리셋은 건너뛰고 그때까지 돈 프리셋(도는 중이던 프리셋은 그때까지 찾은 1위)을 같은 방법으로 보인다.
     /// <paramref name="only"/>면(최적화 후보 칸 우클릭) 그 프리셋 하나만 지난 최적화와 같은 시작 설정에서 다시 돌려 그 칸만 바꾼다.
     /// </summary>
@@ -2419,6 +2515,15 @@ public sealed class PixelateDialog : DialogBase
         SetOptText(UiStrings.Pixelate_Opt_Preparing);
         _status.Text = UiStrings.Pixelate_Opt_Preparing;
         UpdateOptimizeButtons();
+        if (only is null)
+        {
+            _optRankBackup = [.. _candidates];
+            _candidates.Clear();
+            _optimized.Clear();
+            _userPicked = false;
+            _optPending = [.. runs.Select(r => r.Name)];
+            RebuildTiles();
+        }
         var clock = Stopwatch.StartNew();
         Task.Run(() =>
         {
@@ -2440,7 +2545,9 @@ public sealed class PixelateDialog : DialogBase
                     Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizePresetStarted(running); });
                     var result = PixelateOptimizer.Run(src, settings, run.Options,
                         p => Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeProgress(p); }), cts.Token);
-                    done.Add(new OptimizeRun(run.Preset, run.Name, run.Options.Params, result));
+                    var completed = new OptimizeRun(run.Preset, run.Name, run.Options.Params, result);
+                    done.Add(completed);
+                    if (only is null) Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizePresetDone(completed); });
                 }
                 PixelateSource finished = src;
                 Dispatcher.UIThread.Post(() => { if (gen == _optGeneration) OnOptimizeFinished(finished, done, runs.Count, clock.Elapsed, only is not null); });
@@ -2476,8 +2583,29 @@ public sealed class PixelateDialog : DialogBase
     {
         _optCts?.Dispose();
         _optCts = null;
+        // 프리셋 결과 없이 끝났으면(취소·오류) 최적화 전 순위 후보를 되돌린다.
+        if (_optPending is not null)
+        {
+            _optPending = null;
+            if (_candidates.Count == 0 && _optRankBackup is { } backup) _candidates.AddRange(backup);
+            RebuildTiles();
+        }
+        _optRankBackup = null;
         SetOptText(message, tip);
         UpdateOptimizeButtons();
+    }
+
+    /// <summary>모든 프리셋을 돌리는 중 프리셋 하나가 끝남: 그 1위를 기다리던 칸 자리에 넣는다(사용자가 고르지 않았으면 첫 결과를 고름).</summary>
+    private void OnOptimizePresetDone(OptimizeRun run)
+    {
+        if (_optPending is not { } pending) return;
+        var c = WithExcluded(run.Result.Best);
+        _candidates.Add(c);
+        _optimized[c] = new OptimizedTile(run.Preset, run.Name, run.Result.StoppedReason);
+        if (pending.Count > 0) pending.RemoveAt(0);
+        if (!_userPicked && _candidates.Count == 1) _selected = c;
+        RebuildTiles();
+        if (ReferenceEquals(_selected, c)) Select(c);
     }
 
     /// <summary>프리셋 하나를 돌리기 시작함: 그래프·시도 수를 새로(프리셋마다 점수 기준이 달라 이어 그리지 않음).</summary>
@@ -2489,6 +2617,7 @@ public sealed class PixelateDialog : DialogBase
         var text = UiStrings.FormatPixelate_Opt_PresetLine(name: running.Name, summary: UiStrings.Pixelate_Opt_Preparing);
         SetOptText(text);
         _status.Text = text;
+        if (_optRunningMarker is { } marker) marker.Text = RunningMarker();
     }
 
     private void OnOptimizeProgress(PixelateOptimizeProgress p)
@@ -2505,6 +2634,7 @@ public sealed class PixelateDialog : DialogBase
             score: _optGraph.Best.ToString("0.0", CultureInfo.CurrentCulture));
         SetOptText(text);
         _status.Text = text;
+        if (_optRunningMarker is { } marker) marker.Text = RunningMarker();
     }
 
     /// <summary>
@@ -2524,6 +2654,9 @@ public sealed class PixelateDialog : DialogBase
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
         }
+        // 도는 동안 사용자가 끝난 프리셋 칸을 골랐으면 다 끝난 뒤에도 그 칸(같은 자리)을 고른 채로 둔다.
+        int picked = !rerun && _optPending is not null && _userPicked && _selected is { } sel ? _candidates.IndexOf(sel) : -1;
+        _optPending = null;
         if (!rerun)
         {
             _candidates.Clear();
@@ -2547,10 +2680,10 @@ public sealed class PixelateDialog : DialogBase
             _optResults[run.Preset] = (run.Result, run.Params);
             lines.Add(UiStrings.FormatPixelate_Opt_PresetLine(name: run.Name, summary: OptimizeDone(run.Result)));
         }
-        var best = first!;
+        var best = picked >= 0 && picked < _candidates.Count ? _candidates[picked] : first!;
         _userPicked = false;
         _runFit = best.Settings.Cleanup.OutlineFit;
-        // 첫 후보의 설정을 왼쪽에 불러온다 — 불러오는 중에는 다시 돌리지 않으므로 최적화 후보가 그대로 남는다.
+        // 고른 후보(보통 첫 후보)의 설정을 왼쪽에 불러온다 — 불러오는 중에는 다시 돌리지 않으므로 최적화 후보가 그대로 남는다.
         LoadSettings(best.Settings);
         _presetSilent = true;
         _preset.SelectedIndex = -1;
@@ -4357,6 +4490,30 @@ public sealed class PixelateDialog : DialogBase
         {
             get => BorderBrush == AppTheme.AccentBrush;
             set => BorderBrush = value ? AppTheme.AccentBrush : AppTheme.BorderBrush;
+        }
+    }
+
+    /// <summary>모든 프리셋을 돌리는 중 아직 결과가 없는 프리셋 칸: 빈 썸네일 자리, 프리셋 이름, "대기"·"최적화 중(점수)".</summary>
+    private sealed class PendingTile : Border
+    {
+        public PendingTile(string presetName, TextBlock marker)
+        {
+            var thumb = new Border { Width = 112, Height = 112, Background = AppTheme.BackBrush, CornerRadius = new CornerRadius(2) };
+            var title = new TextBlock
+            {
+                Text = presetName,
+                MaxWidth = 112,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = AppTheme.DimTextBrush,
+                FontWeight = FontWeight.Bold,
+            };
+            Child = new StackPanel { Spacing = 2, Children = { thumb, title, marker } };
+            Padding = new Thickness(4);
+            Margin = new Thickness(3);
+            BorderThickness = new Thickness(2);
+            BorderBrush = AppTheme.BorderBrush;
+            CornerRadius = new CornerRadius(3);
+            Background = AppTheme.PanelBrush;
         }
     }
 }

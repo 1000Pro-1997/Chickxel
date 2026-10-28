@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.58 (2026-10-28)
+### AI status window stays dismissed after updates
+- "Don't show again" in the AI status window now survives Gpixel updates and AI CLI self-updates; it reappears only when an AI CLI location or custom path changes.
+- The "Confirm and open AI" button is sized to its label instead of being cut off.
+
+### Auto-optimize shows preset results instead of rankings
+- Starting auto-optimize in Clean Up as Pixels replaces the ranked candidates with one tile per optimization preset, marked Waiting or Optimizing with the best score so far, and fills each tile as its preset finishes.
+- Adding or removing fixed colors while preset results are shown keeps the preset tiles: each result keeps its optimized settings and only the fixed colors change.
+- Cancelling before any preset finishes brings the ranked candidates back.
+
 ## v1.14.57 (2026-10-28)
 ### Simpler homepage navigation
 - Removed the GitHub link from the homepage header; the footer still links to the repository.

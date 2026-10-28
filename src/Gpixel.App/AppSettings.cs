@@ -155,7 +155,7 @@ public sealed class AppSettings
     /// <summary>예전 기본 "그림 생성"을 새 기본 "자동"으로 한 번 옮겼는지(이후 사용자가 다시 그림 생성을 골라도 보존).</summary>
     public bool AiDrawAutoDefaultApplied { get; set; } = true;
     /// <summary>
-    /// AI 상태 창을 다시 보지 않기로 한 앱·CLI 구성 지문. 앱 버전, 찾은 CLI 파일 또는 직접 지정 경로가 바뀌면 지문이 달라져 다시 보인다.
+    /// AI 상태 창을 다시 보지 않기로 한 CLI 구성 지문. 찾은 AI CLI 경로나 직접 지정 경로가 바뀌면 지문이 달라져 다시 보인다(앱·CLI 업데이트로는 바뀌지 않음).
     /// </summary>
     public string? AiStatusDismissedFingerprint { get; set; }
 

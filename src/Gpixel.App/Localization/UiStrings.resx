@@ -10142,6 +10142,11 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Opt_Marker_Time" xml:space="preserve"><value>시간초과({score})</value></data>
   <data name="Pixelate_Opt_Marker_Trials" xml:space="preserve"><value>횟수초과({score})</value></data>
   <data name="Pixelate_Opt_Marker_Cancelled" xml:space="preserve"><value>취소({score})</value></data>
+  <data name="Pixelate_Opt_Marker_Waiting" xml:space="preserve"><value>대기</value></data>
+  <data name="Pixelate_Opt_Marker_Running" xml:space="preserve"><value>최적화 중…</value></data>
+  <data name="Pixelate_Opt_Marker_RunningScore" xml:space="preserve"><value>최적화 중({score})</value></data>
+  <data name="Pixelate_Pin_Applying" xml:space="preserve"><value>고정 색을 최적화 결과에 반영하는 중…</value></data>
+  <data name="Pixelate_Pin_Applied" xml:space="preserve"><value>고정 색을 최적화 결과마다 반영했습니다(설정은 그대로).</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>이 설정만 다시 돌리기</value></data>
   <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>PNG로 저장…</value></data>
   <data name="Pixelate_Save_Title" xml:space="preserve"><value>그림을 PNG로 저장</value></data>
@@ -10312,7 +10317,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiStatus_GpixelConnection" xml:space="preserve"><value>Gpixel 내부 연결</value></data>
   <data name="AiStatus_McpServer" xml:space="preserve"><value>MCP 서버</value></data>
   <data name="AiStatus_DontShowUntilChange" xml:space="preserve"><value>다시 표시하지 않기</value></data>
-  <data name="AiStatus_DontShowNote" xml:space="preserve"><value>앱 버전, AI CLI 파일 또는 직접 지정한 경로가 바뀌면 다시 표시됩니다. AI &gt; AI 상태 열기 또는 환경 설정 &gt; AI 상태에서 언제든 열 수 있습니다.</value></data>
+  <data name="AiStatus_DontShowNote" xml:space="preserve"><value>AI CLI 위치나 직접 지정한 경로가 바뀌면 다시 표시됩니다. 앱이나 CLI를 업데이트해서는 다시 표시되지 않습니다. AI &gt; AI 상태 열기 또는 환경 설정 &gt; AI 상태에서 언제든 열 수 있습니다.</value></data>
   <data name="AiStatus_Recheck" xml:space="preserve"><value>모두 다시 확인</value></data>
   <data name="AiStatus_Checking" xml:space="preserve"><value>AI 설치와 연결 상태를 확인하고 있습니다…</value></data>
   <data name="AiStatus_CheckingShort" xml:space="preserve"><value>확인 중…</value></data>

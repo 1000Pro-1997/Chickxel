@@ -33,25 +33,15 @@ internal static class AiStatusProbe
     private const string ProtocolVersion = "2025-06-18";
     private const string CodexTokenVariable = "GPIXEL_MCP_TOKEN";
 
-    /// <summary>앱이나 찾은 CLI 파일·직접 지정 경로가 바뀌면 달라지는, 상태 창 숨김용 지문.</summary>
+    /// <summary>
+    /// 상태 창 숨김용 지문: 사용할 AI CLI 경로나 직접 지정한 경로가 바뀔 때만 달라진다.
+    /// 앱 업데이트나 CLI 자체 업데이트(같은 경로의 파일 교체)로는 다시 띄우지 않는다.
+    /// </summary>
     internal static string Fingerprint(AppSettings settings)
     {
-        var text = new StringBuilder(AppInfo.VersionText);
+        var text = new StringBuilder();
         foreach (var provider in AiProvider.All)
-        {
-            var path = provider.Locate(settings);
-            text.Append('|').Append(provider.Id).Append('|').Append(provider.GetPathOverride(settings)).Append('|').Append(path);
-            if (path is null) continue;
-            try
-            {
-                var file = new FileInfo(path);
-                text.Append('|').Append(file.Length).Append('|').Append(file.LastWriteTimeUtc.Ticks);
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
-            {
-                text.Append("|unreadable");
-            }
-        }
+            text.Append('|').Append(provider.Id).Append('|').Append(provider.GetPathOverride(settings)).Append('|').Append(provider.Locate(settings));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())));
     }
 
