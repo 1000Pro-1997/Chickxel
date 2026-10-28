@@ -38,8 +38,8 @@ public sealed partial class LayerEffectsDialog
     /// <summary>프레임 수 칸이 보이는 효과 번호.</summary>
     private int _extendFor = -1;
     private bool _extendSyncing;
-    /// <summary>프레임 줄을 누른 때의 늘리기와 칸 수(끄는 동안 칸 번호를 그때 차례로 읽는다).</summary>
-    private (FrameExtension? Extension, int Cells) _dragBase;
+    /// <summary>프레임 줄을 누른 때의 늘리기, 칸 수, 지우기로 한 뒤 프레임 수(끄는 동안 칸 번호를 그때 차례로 읽는다).</summary>
+    private (FrameExtension? Extension, int Cells, int Trim) _dragBase;
 
     /// <summary>프레임 줄 끝의 지우기 칸으로 지우기로 한 뒤 프레임 수(늘린 뒤 차례의 끝에서부터, 확인할 때 지움). 첫 프레임은 늘 남는다.</summary>
     private int _trim;
@@ -100,9 +100,12 @@ public sealed partial class LayerEffectsDialog
     /// <summary>
     /// 지우기 칸을 놓음: 뒤 프레임 <paramref name="count"/>개를 더 지우기로 한다(0 이하 = 지우기로 한 것을 모두 되돌림). 프로젝트는 확인할 때 바뀐다.
     /// </summary>
-    private void SetTrim(int count)
+    private void SetTrim(int count) => ApplyTrim(count <= 0 ? 0 : Trim + count);
+
+    /// <summary>지우기로 한 뒤 프레임 수를 <paramref name="next"/>로(첫 프레임은 남게) 하고 목록·미리보기·프레임 줄을 맞춘다.</summary>
+    private void ApplyTrim(int next)
     {
-        int next = count <= 0 ? 0 : Math.Clamp(Trim + count, 0, ExtendedCount - 1);
+        next = Math.Clamp(next, 0, ExtendedCount - 1);
         if (next == Trim) return;
         _trim = next;
         _previewFrame = Math.Clamp(_previewFrame, 0, VirtualCount - 1);
@@ -410,9 +413,14 @@ public sealed partial class LayerEffectsDialog
     /// </summary>
     private void DragRange(int a, int b)
     {
-        var (ext, cells) = _dragBase;
-        // 뒤 프레임을 지우기로 한 동안은 마지막 칸 너머로 늘리지 않는다(지우기를 되돌린 뒤 늘림)
-        if (Trim > 0) b = Math.Min(b, cells - 1);
+        var (ext, cells, trimmed) = _dragBase;
+        if (trimmed > 0)
+        {
+            // 지우기로 한 프레임이 있으면 마지막 칸 너머로 끈 만큼 먼저 되살리고(되돌아오면 다시 지움), 그보다 더 끌면 늘린다.
+            // 되살린 칸은 원래 있던 프레임이므로 아래는 지우기 전 칸 수로 판단한다.
+            ApplyTrim(trimmed - Math.Clamp(b - cells + 1, 0, trimmed));
+            cells += trimmed;
+        }
         bool selected = Selected >= 0 && Selected < _effects.Count;
         // 예정된 타임라인 안에서 끈 것은 고른 효과의 적용 범위만 정한다.
         // 전체를 덮어도 명시한 끝을 기억해야 나중에 다른 효과가 타임라인을 더 늘릴 때 함께 늘어나지 않는다.

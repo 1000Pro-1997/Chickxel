@@ -27,7 +27,7 @@ public sealed partial class LayerEffectsDialog
         };
         _strip.DragStarted += () =>
         {
-            _dragBase = (_extension, VirtualCount);
+            _dragBase = (_extension, VirtualCount, Trim);
             _stripDragging = true;
         };
         _strip.DragEnded += () =>
@@ -72,7 +72,7 @@ public sealed partial class LayerEffectsDialog
     {
         int n = _project.Frames.Count;
         bool selected = Selected >= 0 && Selected < _effects.Count;
-        _strip.CanExtend = selected && Trim == 0; // 뒤 프레임을 지우기로 한 동안은 늘리지 않음
+        _strip.CanExtend = selected || Trim > 0; // 지우기로 한 프레임이 있으면 효과를 고르지 않아도 끌어 되살림
         if (selected)
         {
             var (a, b) = VRangeOf(_effects[Selected]);
