@@ -4,8 +4,9 @@ namespace Gpixel.Core.Pixelate;
 
 /// <summary>
 /// 색 빼기·고정 색 목록("#RRGGBB")을 다루는 도움말. 색은 거리로 맞추므로(OKLab 거리 ≤ <see cref="MatchDistance"/>) 설정이 조금 달라 팔레트 색이 살짝 바뀌어도 그대로 맞는다.
-/// 색 빼기(<see cref="Apply"/>)는 다 만든 결과의 뒤처리: 뺀 색과 맞는 결과 색을 지우고, 그 픽셀만 원본 칸 색(<see cref="PixelateResult.SourceColors"/>)에
-/// 가장 가까운 남은 결과 색으로 바꾼다 — 다른 픽셀·색은 그대로라 결과 색 수가 뺀 만큼 준다.
+/// 둘 다 다 만든 결과의 뒤처리라 팔레트를 다시 만들지 않는다 — 고정 색(<see cref="AddPins"/>)은 원본 칸 색이 지금 결과 색보다 그 고정 색에 더 가까운 픽셀만
+/// 고정 색으로 바꾸고(다른 색은 그대로, 결과 색 수가 그만큼 늚), 색 빼기(<see cref="Apply"/>)는 뺀 색과 맞는 결과 색을 지우고 그 픽셀만 원본 칸 색
+/// (<see cref="PixelateResult.SourceColors"/>)에 가장 가까운 남은 결과 색으로 바꾼다 — 결과 색 수가 뺀 만큼 준다.
 /// 고정 색과 맞는 색은 빠지지 않고, 모든 색이 빠지게 되면 마지막에 넣은 빼기부터 무시한다 — 늘 한 색은 남는다.
 /// </summary>
 public static class PaletteEdits
@@ -92,6 +93,46 @@ public static class PaletteEdits
                 if (replaced is not null) (replaced[n] ??= new PixelImage(img.Width, img.Height)).Pixels[i] = c;
                 var from = src is not null && src[i].A != 0 ? src[i] : c;
                 px[i] = Nearest(from).WithAlpha(c.A);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /// <summary>
+    /// 고정 색 뒤처리: 같은 자리 원본 칸 색(<paramref name="sources"/> — 투명이거나 없으면 그 픽셀 색)이 <paramref name="metric"/>(없으면 OKLab)로
+    /// 지금 결과 색보다 어느 고정 색에 더 가까운 픽셀을 가장 가까운 고정 색으로 바꾼다(알파는 그대로). 그 밖의 픽셀·색은 그대로라 팔레트를 다시 만들지 않는다.
+    /// 그 자리에서 바꾸고 바꾼 픽셀 수를 돌려준다.
+    /// </summary>
+    public static int AddPins(IReadOnlyList<PixelImage> images, IReadOnlyList<PixelImage>? sources, IReadOnlyList<string> pinned, ColorMetric? metric = null)
+    {
+        var pins = Colors(pinned).DistinctBy(c => c.Argb).ToArray();
+        if (pins.Length == 0) return 0;
+        metric ??= ColorMetric.OkLab;
+        var pinPts = pins.Select(metric.Point).ToArray();
+        // (원본 칸 색, 지금 색) → 바꿀 고정 색 번호(-1 = 그대로).
+        var pick = new Dictionary<(uint From, uint Now), int>();
+        int changed = 0;
+        for (int n = 0; n < images.Count; n++)
+        {
+            var img = images[n];
+            var px = img.Pixels;
+            var src = sources is not null && n < sources.Count && sources[n].Size == img.Size ? sources[n].Pixels : null;
+            for (int i = 0; i < px.Length; i++)
+            {
+                var c = px[i];
+                if (c.A == 0) continue;
+                var from = src is not null && src[i].A != 0 ? src[i] : c;
+                var key = (from.Argb | 0xFF000000u, c.Argb | 0xFF000000u);
+                if (!pick.TryGetValue(key, out int to))
+                {
+                    var p = metric.Point(from);
+                    int best = metric.Nearest(p, pinPts);
+                    to = metric.Distance(p, pinPts[best]) < metric.Distance(p, metric.Point(c)) ? best : -1;
+                    pick[key] = to;
+                }
+                if (to < 0 || (pins[to].Argb | 0xFF000000u) == key.Item2) continue;
+                px[i] = pins[to].WithAlpha(c.A);
                 changed++;
             }
         }

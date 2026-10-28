@@ -2,6 +2,36 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## Unreleased
+### One preset list for Clean Up as Pixels and Auto optimize
+- Clean Up as Pixels presets and Auto optimize presets are now one list, pinned at the top of the settings with Save, Rename, Delete and a new Clean up button. Your old presets move to the end of the list.
+- Each step (Background, Pixel grid, Cell color, Palette, Cleanup) has an Optimize checkbox, and the new "0. Optimize criteria" section holds the budget and scoring; both are saved with the preset.
+- Choosing a preset or changing a value no longer re-runs the cleanup; only Clean up does. The Save button turns red when there are unsaved changes and green when everything is saved, and switching away from unsaved changes asks whether to save.
+- The Auto optimize settings window now only picks which presets run, plus the history. The Auto optimize tab in Tools > Presets is gone.
+- Optimizing writes the best values found into the preset that was optimized (Clean up: the chosen preset; Auto optimize: each checked preset), so you can turn Optimize off and fine-tune from there. If that preset is open, the settings on the left follow the best result live. Revert restores the presets as well.
+- Clean up with Optimize on shows the run's trials as ranked candidates (#1 is the optimized result) instead of a single preset tile.
+- Optimizing a step now tries everything in it: the Palette step switches freely between k-means, median cut, OKLCH grouping and keep original colors (and the existing palette you started from), and tunes OKLCH grouping's L, C and H ranges; the Cleanup step also tries the outline-fit modes. Settings that belong to one palette method change only in trials that use it.
+- "0. Optimize criteria" has a Target colors setting: results with more colors than the target have their whole score multiplied by (1 − Color count weight × extra colors ÷ target), so with the default weight 0.5 and a target of 16, 32 colors lose half the score and 48 or more score 0; fewer colors are not penalized, and Auto (the default) leaves the color count out of the score.
+- Keep original colors no longer fails on large sprite sheets (it counted colors through a one-row image wider than the 16384-pixel limit).
+- The built-in presets on a fresh install (and after Restore defaults) are now the tuned set: each preset's step settings, per-step optimize, budget, scoring and target colors come from one data file shipped with the app.
+
+### Fixed colors no longer rebuild the palette
+- Adding a fixed color in Clean Up as Pixels now keeps the current result and only adds that color: pixels whose source color is closer to it than to their current color switch to it, and every other color stays exactly as it was.
+- Candidate rankings, scores and optimized preset tiles stay in place; unpinning a color restores the previous pixels.
+
+### OKLCH grouping palette method, now the default
+- Clean Up as Pixels has a new palette method, OKLCH grouping: colors whose lightness, chroma and hue differences are all within adjustable limits (default L 0.1, C 0.1, H 20°) become one color. It is now the default palette method; "Fewer colors (16)" still uses k-means.
+- Group centers are chosen greedily by how many pixels they cover; colors in reach of several centers join the nearest, and hue is ignored for near-gray colors. The limits decide the color count.
+
+### Separate L, C and H weights for the scoring color distance
+- With OKLCh hue-weighted as the "Major color shift" distance in "0. Optimize criteria", lightness, chroma and hue differences each have their own weight (default 1 · 1 · 2), saved with the preset.
+
+### Clean Up as Pixels layout fixes
+- Choosing a preset right after the update no longer shows it as unsaved: settings saved with a palette that the chosen method doesn't use now count as the same.
+- "4. Output size" has an Auto checkbox linked to the Auto checkbox in the output size bar under the source.
+- A long color swatch list scrolls once it would take more than half of the preview panel, and the swatch for a hovered color scrolls into view.
+- "Keep distinct hues" puts Min area on its own line so it is no longer cut off.
+
 ## v1.14.58 (2026-10-28)
 ### AI status window stays dismissed after updates
 - "Don't show again" in the AI status window now survives Gpixel updates and AI CLI self-updates; it reappears only when an AI CLI location or custom path changes.

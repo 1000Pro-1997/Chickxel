@@ -150,7 +150,7 @@ public class PixelateTests
     public void SmallApricotShadingDoesNotTurnGold()
     {
         var source = Render([FaceSprite()]);
-        var s = new PixelateSettings { Palette = new PaletteSettings { Colors = 5 } };
+        var s = new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.KMeans, Colors = 5 } };
         var src = PixelateSource.Prepare(source, s);
         var apricot = OkLab.FromColor(Apricot);
         var gold = OkLab.FromColor(Gold);
@@ -305,6 +305,12 @@ public class PixelateTests
         var light = OkLab.FromColor(new Color32(0xF0, 0xF0, 0xF0));
         var dark = OkLab.FromColor(new Color32(0x80, 0x80, 0x80));
         Assert.Equal(ColorDistance.OkLchHue(light, dark, 1), ColorDistance.OkLchHue(light, dark, 3), 3);
+        // 밝기·채도 가중치: 회색끼리는 밝기 차만 남아 wL배, 밝기를 0으로 두면 색상·채도 차만 잰다.
+        Assert.Equal(ColorDistance.OkLchHue(light, dark, 1) * 3, new ColorMetric(ColorDistanceMode.OkLchHue, 1, lightWeight: 3).Distance(new ColorPoint(light, default), new ColorPoint(dark, default)), 5);
+        var noLight = new ColorMetric(ColorDistanceMode.OkLchHue, 2, lightWeight: 0, chromaWeight: 0.5);
+        Assert.Equal(0, noLight.Distance(new ColorPoint(light, default), new ColorPoint(dark, default)), 5);
+        double dc = ColorDistance.Chroma(a) - ColorDistance.Chroma(g), dh2 = Math.Pow(a.A - g.A, 2) + Math.Pow(a.B - g.B, 2) - dc * dc;
+        Assert.Equal(Math.Sqrt(0.25 * dc * dc + 4 * dh2), noLight.Distance(new ColorPoint(a, default), new ColorPoint(g, default)), 5);
     }
 
     [Fact]
@@ -412,6 +418,48 @@ public class PixelateTests
         tiny[1, 0] = RobePurple;
         var (th, tm) = PaletteBuilder.WeightedHistogram([tiny], 0, 0.24);
         Assert.Equal([RobePurple, RobeWhite], PaletteBuilder.KMeans(th, 2, tm).Palette.OrderBy(c => c.R));
+    }
+
+    private static Color32 Lch(double l, double c, double hDeg)
+        => OkLab.ToColor(new Lab((float)l, (float)(c * Math.Cos(hDeg * Math.PI / 180)), (float)(c * Math.Sin(hDeg * Math.PI / 180))));
+
+    [Fact]
+    public void OkLchGroupingMergesOnlyWithinEachLimitAndPrefersWidestCenter()
+    {
+        // 같은 색상·채도의 밝기 0.50·0.53·0.56: 0.53만 둘 다 문턱(0.05) 안 → 가운데가 가장 많이 묶어 셋이 한 색.
+        var ramp = new[] { Lch(0.50, 0.12, 40), Lch(0.53, 0.12, 40), Lch(0.56, 0.12, 40) };
+        var hist = ramp.Select(c => (c, 10.0)).ToList();
+        var one = PaletteBuilder.OkLchGroups(hist, 0.05, 0.05, 5);
+        Assert.Equal([ramp[1]], one);
+
+        // 밝기·채도가 같아도 색상이 10° 다르면 따로, 문턱을 넓히면 함께.
+        var hues = new List<(Color32, double)> { (Lch(0.6, 0.12, 40), 5), (Lch(0.6, 0.12, 50), 5) };
+        Assert.Equal(2, PaletteBuilder.OkLchGroups(hues, 0.05, 0.05, 5).Count);
+        Assert.Single(PaletteBuilder.OkLchGroups(hues, 0.05, 0.05, 12));
+
+        // 밝기 차가 문턱을 넘으면 따로, 채도 차도 마찬가지.
+        Assert.Equal(2, PaletteBuilder.OkLchGroups([(Lch(0.4, 0.1, 200), 1), (Lch(0.5, 0.1, 200), 1)], 0.05, 0.05, 5).Count);
+        Assert.Equal(2, PaletteBuilder.OkLchGroups([(Lch(0.5, 0.05, 200), 1), (Lch(0.5, 0.15, 200), 1)], 0.05, 0.05, 5).Count);
+
+        // 회색(채도가 아주 낮음)은 색상각이 달라도 함께.
+        Assert.Single(PaletteBuilder.OkLchGroups([(Lch(0.5, 0.01, 30), 1), (Lch(0.52, 0.01, 210), 1)], 0.05, 0.05, 5));
+    }
+
+    [Fact]
+    public void OkLchPaletteMethodKeepsDistinctHuesApartAndIsDeterministic()
+    {
+        var image = PngIO.Load(TestUtil.Fixture("ai-mage.png"));
+        var s = new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.OkLch, KeepDistinctHues = false } };
+        var src = PixelateSource.Prepare(image, s);
+        var r = Pixelator.Run(src, s);
+        Assert.Equal(r.Palette, Pixelator.Run(src, s).Palette);
+        Assert.InRange(r.Palette.Count, 2, 200);
+        Assert.Equal(r.Palette.Count, r.ResolvedColors);
+        // 범위를 넓히면 더 적은 색.
+        var wide = s with { Palette = s.Palette with { OkLchMaxL = 0.15, OkLchMaxC = 0.15, OkLchMaxH = 30 } };
+        Assert.True(Pixelator.Run(src, wide).Palette.Count < r.Palette.Count);
+        // 색 수 설정은 쓰지 않는다.
+        Assert.Equal(r.Palette, Pixelator.Run(src, s with { Palette = s.Palette with { Colors = 4 } }).Palette);
     }
 
     /// <summary><see cref="Sprite"/>와 같고 외곽선만 2px 두께(바깥 둘레에서 2칸 안).</summary>
@@ -892,7 +940,7 @@ public class PixelateTests
         var palette = new[] { "#1E140C", "#C82828", "#3CA046", "#3C50C8", "#E6C83C", "#F0BE96" };
         var r = Pixelator.Run(source, new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.Existing, ExistingColors = palette, SnapOutline = false } });
         Assert.All(r.Palette, c => Assert.Contains(c.ToHex(), palette));
-        var keep = Pixelator.Run(source, PixelatePresets.BuiltIn(PixelateBuiltIn.KeepColors));
+        var keep = Pixelator.Run(source, new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.KeepOriginal, SnapOutline = false } });
         Assert.True(keep.Palette.Count > 6);
     }
 
@@ -1112,7 +1160,7 @@ public class PixelateTests
     {
         var presets = new List<PixelatePreset>
         {
-            new("small", PixelatePresets.BuiltIn(PixelateBuiltIn.Small32)),
+            new("small", new PixelateSettings { Size = new SizeSettings { Mode = OutputSizeMode.FixedSize, Width = 32, Height = 32 } }),
             new("custom", new PixelateSettings
             {
                 Background = new BackgroundSettings { Mode = BackgroundMode.PickColor, Color = "#102030", Tolerance = 33, AutoTolerance = false },
@@ -1382,7 +1430,7 @@ public class PixelateTests
         Assert.False(OptimizeParam.Default.HasFlag(OptimizeParam.EdgeWeight));
 
         var source = Render([RobeSprite()]);
-        var start = new PixelateSettings { Palette = new PaletteSettings { Colors = 4 } };
+        var start = new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.KMeans, Colors = 4 } };
         var src = PixelateSource.Prepare(source, start);
         var p = OptimizeParam.PaletteColorSource | OptimizeParam.PaletteMethod | OptimizeParam.EdgeWeight | OptimizeParam.SnapOutline;
         var r = PixelateOptimizer.Run(src, start, new PixelateOptimizeOptions { Params = p, MaxTrials = 60 });
@@ -1394,12 +1442,42 @@ public class PixelateTests
         Assert.All(tried, s => Assert.InRange(s.EdgeWeight, 0, 1));
         Assert.Contains("palette ", PixelateOptimizer.Summary(r.Best.Settings, r.Best.Result, p));
 
+        // 원래 색 유지·기존 팔레트에서 시작하면 방식에 딸린 항목은 그대로지만, 팔레트 방식도 바꿔 보면 다른 방식(그 방식의 항목 포함)도 시도한다.
         foreach (var method in new[] { PaletteMethod.KeepOriginal, PaletteMethod.Existing })
         {
             var other = start with { Palette = start.Palette with { Method = method, ExistingColors = ["#000000", "#FFFFFF"] } };
-            var none = PixelateOptimizer.Run(src, other, new PixelateOptimizeOptions { Params = p & ~OptimizeParam.SnapOutline });
+            var none = PixelateOptimizer.Run(src, other, new PixelateOptimizeOptions { Params = p & ~(OptimizeParam.SnapOutline | OptimizeParam.PaletteMethod) });
             Assert.Single(none.Trials);
+            var free = PixelateOptimizer.Run(src, other, new PixelateOptimizeOptions { Params = p & ~OptimizeParam.SnapOutline, MaxTrials = 80 });
+            var methods = free.Trials.Select(t => t.Settings.Palette.Method).ToHashSet();
+            Assert.Contains(PaletteMethod.OkLch, methods);
+            Assert.Contains(PaletteMethod.KMeans, methods);
         }
+        // OKLCH 묶기에서 시작하면 묶을 범위도 바꿔 보고, 다른 방식으로도 옮겨 본다.
+        var oklch = start with { Palette = start.Palette with { Method = PaletteMethod.OkLch } };
+        var grouped = PixelateOptimizer.Run(src, oklch, new PixelateOptimizeOptions { Params = OptimizeParam.PaletteMethod | OptimizeParam.OkLchRange | OptimizeParam.Colors, MaxTrials = 80 });
+        Assert.True(grouped.Trials.Where(t => t.Settings.Palette.Method == PaletteMethod.OkLch).Select(t => t.Settings.Palette.OkLchMaxH).Distinct().Count() >= 3);
+        Assert.Contains(grouped.Trials, t => t.Settings.Palette.Method is PaletteMethod.KMeans or PaletteMethod.MedianCut);
+    }
+
+    [Fact]
+    public void ColorCountOverTargetScalesWholeScore()
+    {
+        var r = Pixelator.Run(PixelateSource.Prepare(Render([Sprite()]), new PixelateSettings()), new PixelateSettings());
+        int colors = r.Metrics.Colors;
+        Assert.True(colors >= 4, $"colors {colors}");
+        var w = new ScoreWeights();
+        double Total(int? target, ScoreWeights? weights = null) => PixelateScoring.Score(r, weights ?? w, target).Total;
+        double free = Total(null);
+        // 목표 이하(같거나 적은 색)는 깎지 않고, 자동(목표 없음)과 같다.
+        Assert.Equal(free, Total(colors), 10);
+        Assert.Equal(free, Total(colors + 10), 10);
+        // 넘으면 전체에 (1 − 가중치 × 넘은 수 ÷ 목표)를 곱한다 — 가중치 0.5, 목표 = 색 수 − 1이면 0.5 ÷ (색 수 − 1)만큼.
+        Assert.Equal(free * (1 - w.Colors / (colors - 1)), Total(colors - 1), 8);
+        // 목표를 크게 넘으면(가중치 × 넘은 비율 ≥ 1) 0점 — 다른 항목이 좋아도 이기지 못한다.
+        Assert.Equal(0, Total(1));
+        // 가중치 0이면 색 수를 보지 않는다.
+        Assert.Equal(free, Total(1, w with { Colors = 0 }), 10);
     }
 
     [Fact]
@@ -1461,14 +1539,14 @@ public class PixelateTests
         var r = Pixelator.Run(src, s);
         AssertPostProcessed(baseline, r, [red]);
         // 다시 돌리지 않고 뺀 것과 같다.
-        Assert.Equal(r.Frames.Select(f => f.Pixels), Pixelator.WithExclusions(baseline, s.Palette.ExcludedColors).Frames.Select(f => f.Pixels));
+        Assert.Equal(r.Frames.Select(f => f.Pixels), Pixelator.WithPaletteEdits(baseline, [], s.Palette.ExcludedColors).Frames.Select(f => f.Pixels));
 
         // 다시 누르면(살짝 다른 색이어도 같은 색으로 맞음) 되살아나 처음 결과 그대로.
         var restored = s with { Palette = s.Palette with { ExcludedColors = PaletteEdits.Toggle(s.Palette.ExcludedColors, new Color32((byte)(red.R + 2), (byte)(red.G - 1), red.B)) } };
         Assert.Empty(restored.Palette.ExcludedColors);
         Assert.Equal(SixColors.Key(), restored.Key());
         Assert.Equal(Assert.Single(baseline.Frames).Pixels, Assert.Single(Pixelator.Run(src, restored).Frames).Pixels);
-        var back = Pixelator.WithExclusions(r, []);
+        var back = Pixelator.WithPaletteEdits(r, [], []);
         Assert.Equal(Assert.Single(baseline.Frames).Pixels, Assert.Single(back.Frames).Pixels);
         Assert.Equal(baseline.Palette, back.Palette);
         Assert.Empty(back.ExcludedFrames);
@@ -1488,7 +1566,7 @@ public class PixelateTests
         AssertPostProcessed(baseline, one, [byUse[2]]);
         var two = Pixelator.Run(src, s with { Palette = s.Palette with { ExcludedColors = [byUse[2].ToHex(), byUse[5].ToHex()] } });
         AssertPostProcessed(baseline, two, [byUse[2], byUse[5]]);
-        var restored = Pixelator.WithExclusions(two, []);
+        var restored = Pixelator.WithPaletteEdits(two, [], []);
         Assert.Equal(baseline.Frames.Select(f => f.Pixels), restored.Frames.Select(f => f.Pixels));
         Assert.Equal(baseline.Palette, restored.Palette);
     }
@@ -1626,11 +1704,12 @@ public class PixelateTests
     }
 
     [Fact]
-    public void PinnedColorIsFixedPaletteEntryAndTakesNearestCells()
+    public void PinnedColorIsAddedWithoutRebuildingPalette()
     {
-        // 4색이면 살색이 노랑·빨강과 묶여 사라진다(다른 색상 지키기를 끄면 — 켜면 살색을 스스로 넣음) — 원본 칸에서 살색을 집어 고정하면 그 색이 그대로 들어가고, 색 수(4)에 든다.
+        // 4색이면 살색이 노랑·빨강과 묶여 사라진다(다른 색상 지키기를 끄면) — 원본 칸에서 살색을 집어 고정하면 팔레트를 다시 만들지 않고
+        // 원본 칸 색이 지금 색보다 살색에 가까운 픽셀만 살색이 된다: 다른 픽셀·색은 처음 결과 그대로, 색 수는 하나 는다.
         var noCleanup = new CleanupSettings { RemoveOrphans = false, FillHoles = false };
-        var four = new PixelateSettings { Palette = new PaletteSettings { Colors = 4, KeepDistinctHues = false }, Cleanup = noCleanup };
+        var four = new PixelateSettings { Palette = new PaletteSettings { Method = PaletteMethod.KMeans, Colors = 4, KeepDistinctHues = false }, Cleanup = noCleanup };
         var source = Render([Sprite()]);
         var src = PixelateSource.Prepare(source, four);
         var baseline = Pixelator.Run(src, four);
@@ -1644,26 +1723,26 @@ public class PixelateTests
         var pinned = four with { Palette = four.Palette with { PinnedColors = [skin.ToHex()] } };
         var r = Pixelator.Run(src, pinned);
         Assert.Contains(skin, r.Palette);
-        Assert.InRange(r.Palette.Count, 2, 4);
-        Assert.Equal(4, r.ResolvedColors);
-        // 원본 칸 색이 다른 결과 색보다 고정 색에 가까운 칸은 모두 고정 색.
+        Assert.Equal(baseline.Palette.Count + 1, r.Palette.Count);
+        Assert.Equal(baseline.Frames.Select(f => f.Pixels), r.BaseFrames.Select(f => f.Pixels));
+        var metric = ColorMetric.For(r.Settings.Palette);
         int taken = 0;
         for (int f = 0; f < r.Frames.Count; f++)
             for (int i = 0; i < r.Frames[f].Pixels.Length; i++)
             {
+                var before = baseline.Frames[f].Pixels[i];
                 var from = r.SourceColors[f].Pixels[i];
-                if (from.A == 0 || r.Frames[f].Pixels[i].A == 0 || Nearest(r.Palette, from, ColorMetric.For(r.Settings.Palette)) != skin) continue;
-                Assert.Equal(skin, r.Frames[f].Pixels[i]);
-                taken++;
+                if (before.A == 0 || from.A == 0) { Assert.Equal(before, r.Frames[f].Pixels[i]); continue; }
+                bool nearer = metric.Distance(from, skin) < metric.Distance(from, before);
+                Assert.Equal(nearer ? skin : before, r.Frames[f].Pixels[i]);
+                if (nearer) taken++;
             }
         Assert.True(taken > 10, taken.ToString());
-
-        // 두 고정 색도 색 수 안에.
-        var two = four with { Palette = four.Palette with { PinnedColors = [skin.ToHex(), "#3CA046"] } };
-        var r2 = Pixelator.Run(src, two);
-        Assert.Contains(skin, r2.Palette);
-        Assert.Contains(new Color32(0x3C, 0xA0, 0x46), r2.Palette);
-        Assert.True(r2.Palette.Count <= 4, r2.Palette.Count.ToString());
+        // 다시 돌리지 않고 더한 것과 같고, 풀면 처음 결과 그대로.
+        Assert.Equal(r.Frames.Select(f => f.Pixels), Pixelator.WithPaletteEdits(baseline, pinned.Palette.PinnedColors, []).Frames.Select(f => f.Pixels));
+        var back = Pixelator.WithPaletteEdits(r, [], []);
+        Assert.Equal(baseline.Frames.Select(f => f.Pixels), back.Frames.Select(f => f.Pixels));
+        Assert.Equal(baseline.Palette, back.Palette);
     }
 
     [Fact]

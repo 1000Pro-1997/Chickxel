@@ -21,14 +21,21 @@ public sealed class ColorMetric
     public static readonly ColorMetric OkLab = new(ColorDistanceMode.OkLab, 1);
 
     public ColorDistanceMode Mode { get; }
+    /// <summary>OKLCh 가중 거리의 색상(H) 가중치.</summary>
     public double HueWeight { get; }
+    /// <summary>OKLCh 가중 거리의 밝기(L) 가중치(팔레트 색 거리는 늘 1).</summary>
+    public double LightWeight { get; }
+    /// <summary>OKLCh 가중 거리의 채도(C) 가중치(팔레트 색 거리는 늘 1).</summary>
+    public double ChromaWeight { get; }
     /// <summary>명암 계열 우선(<see cref="PaletteSettings.PreferShadeFamily"/>): <see cref="Nearest"/>가 같은 색상 계열 팔레트 색을 먼저 본다.</summary>
     public bool ShadeFamily { get; }
 
-    public ColorMetric(ColorDistanceMode mode, double hueWeight, bool shadeFamily = false)
+    public ColorMetric(ColorDistanceMode mode, double hueWeight, bool shadeFamily = false, double lightWeight = 1, double chromaWeight = 1)
     {
         Mode = mode;
         HueWeight = PixelateRanges.HueWeight.Clamp(hueWeight);
+        LightWeight = PixelateRanges.HueWeight.Clamp(lightWeight);
+        ChromaWeight = PixelateRanges.HueWeight.Clamp(chromaWeight);
         ShadeFamily = shadeFamily;
     }
 
@@ -44,7 +51,7 @@ public sealed class ColorMetric
     public double Distance(in ColorPoint a, in ColorPoint b) => Mode switch
     {
         ColorDistanceMode.Ciede2000 => ColorDistance.Ciede2000(a.Cie, b.Cie) / CiedeScale,
-        ColorDistanceMode.OkLchHue => ColorDistance.OkLchHue(a.Ok, b.Ok, HueWeight),
+        ColorDistanceMode.OkLchHue => ColorDistance.OkLchHue(a.Ok, b.Ok, HueWeight, LightWeight, ChromaWeight),
         _ => Lab.Distance(a.Ok, b.Ok),
     };
 
@@ -177,15 +184,15 @@ public static class ColorDistance
     }
 
     /// <summary>
-    /// OKLCh 색상 가중 거리 √(ΔL² + ΔC² + (w·ΔH)²): ΔH는 채도를 곱한 색상 차(ΔH² = Δa² + Δb² − ΔC²) — w = 1이면 OKLab 거리와 같다.
+    /// OKLCh 가중 거리 √((wL·ΔL)² + (wC·ΔC)² + (wH·ΔH)²): ΔH는 채도를 곱한 색상 차(ΔH² = Δa² + Δb² − ΔC²) — 세 가중치가 모두 1이면 OKLab 거리와 같다.
     /// </summary>
-    public static double OkLchHue(in Lab x, in Lab y, double hueWeight)
+    public static double OkLchHue(in Lab x, in Lab y, double hueWeight, double lightWeight = 1, double chromaWeight = 1)
     {
         double dl = x.L - y.L, da = x.A - y.A, db = x.B - y.B;
         double c1 = Math.Sqrt(x.A * x.A + x.B * x.B), c2 = Math.Sqrt(y.A * y.A + y.B * y.B);
         double dc = c1 - c2;
         double dh2 = Math.Max(0, da * da + db * db - dc * dc);
-        return Math.Sqrt(dl * dl + dc * dc + hueWeight * hueWeight * dh2);
+        return Math.Sqrt(lightWeight * lightWeight * dl * dl + chromaWeight * chromaWeight * dc * dc + hueWeight * hueWeight * dh2);
     }
 
     /// <summary>OKLCh 채도.</summary>

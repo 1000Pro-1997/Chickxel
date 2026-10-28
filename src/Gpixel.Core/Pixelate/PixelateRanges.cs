@@ -47,7 +47,7 @@ public static class PixelateRanges
     public static readonly PixelateRange OutlineDarkness = new(0, 1);
     /// <summary>원본 색에서 가장자리·섞인 칸 무게.</summary>
     public static readonly PixelateRange EdgeWeight = new(0, 1);
-    /// <summary>OKLCh 색상 가중 거리의 색상 무게(최대값이면 색상 차가 밝기·채도 차를 사실상 압도해 같은 색상 계열을 먼저 고름).</summary>
+    /// <summary>OKLCh 가중 거리의 무게(색상 H, 점수 기준에서는 밝기 L·채도 C도) — 최대값이면 그 차가 나머지를 사실상 압도한다(색상이면 같은 색상 계열을 먼저 고름).</summary>
     public static readonly PixelateRange HueWeight = new(0, 1000);
     /// <summary>다른 색상 지키기: 최소 채도(OKLCh C).</summary>
     public static readonly PixelateRange DistinctMinChroma = new(0.01, 0.2);
@@ -55,6 +55,12 @@ public static class PixelateRanges
     public static readonly PixelateRange DistinctMinHue = new(5, 90);
     /// <summary>다른 색상 지키기: 최소 넓이(칸).</summary>
     public static readonly PixelateRange DistinctMinArea = new(1, 200);
+    /// <summary>OKLCh 묶기: 최대 밝기 차(OKLCh L).</summary>
+    public static readonly PixelateRange OkLchMaxL = new(0.005, 0.5);
+    /// <summary>OKLCh 묶기: 최대 채도 차(OKLCh C).</summary>
+    public static readonly PixelateRange OkLchMaxC = new(0.005, 0.4);
+    /// <summary>OKLCh 묶기: 최대 색상 차(도).</summary>
+    public static readonly PixelateRange OkLchMaxH = new(0.5, 180);
     /// <summary>벡터로 다시 그리기의 단순화 허용 오차(결과 px).</summary>
     public static readonly PixelateRange VectorTolerance = new(0, 3);
     /// <summary>벡터로 다시 그리기에서 그대로 둘 작은 안쪽 덩어리 넓이(칸).</summary>

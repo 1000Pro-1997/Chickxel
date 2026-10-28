@@ -18,7 +18,7 @@ internal static class PixelateKit
 
     public const string SourceName = "Wolf-ear adventurer AI";
 
-    /// <summary>창 옵션을 새로: 불러오면 자동 최적화 끔, 설정 칸 펼침 여부, 창 크기, 최적화 프리셋은 앞의 두 개만 짧은 예산으로.</summary>
+    /// <summary>창 옵션을 새로: 불러오면 자동 최적화 끔, 설정 칸 펼침 여부, 창 크기, 최적화하는 프리셋은 앞의 두 개만 체크·짧은 예산으로.</summary>
     public static PixelateOptions Options(bool expanded = false, int width = 1400, int height = 860)
     {
         var o = new PixelateOptions();
@@ -27,10 +27,10 @@ internal static class PixelateKit
         o.SettingsExpanded = expanded;
         o.Width = width;
         o.Height = height;
-        for (int i = 0; i < o.OptimizePresets.Count; i++)
+        int optimizing = 0;
+        foreach (var p in o.OptimizePresets)
         {
-            var p = o.OptimizePresets[i];
-            p.Enabled = i < 2;
+            p.Enabled = p.Sections != 0 && optimizing++ < 2;
             p.Trials = 120;
             p.Seconds = 20;
         }
@@ -134,15 +134,23 @@ internal static class PixelateKit
         k.Settle(800);
     }
 
+    /// <summary>설정 칸 단계 머리의 글자(최적화 켜기가 있는 머리는 그 옆 제목).</summary>
+    public static string? HeaderText(Expander e) => e.Header switch
+    {
+        TextBlock t => t.Text,
+        Panel p => p.Children.OfType<TextBlock>().FirstOrDefault()?.Text,
+        _ => null,
+    };
+
     /// <summary>설정 칸의 단계 접기 상자(머리글 글자로).</summary>
     public static Expander Section(PixelateDialog dlg, string title)
-        => ShotKit.All<Expander>(dlg).First(e => e.Header is TextBlock t && t.Text == title);
+        => ShotKit.All<Expander>(dlg).First(e => HeaderText(e) == title);
 
     /// <summary>설정 칸에서 <paramref name="open"/> 단계만 펼치고 나머지는 접는다.</summary>
     public static void OnlyExpand(ShotKit k, PixelateDialog dlg, params string[] open)
     {
-        foreach (var e in ShotKit.All<Expander>(dlg).Where(e => e.Header is TextBlock))
-            e.IsExpanded = open.Contains(((TextBlock)e.Header!).Text);
+        foreach (var e in ShotKit.All<Expander>(dlg).Where(e => HeaderText(e) is not null && e.FindAncestorOfType<Window>() is PixelateDialog))
+            e.IsExpanded = open.Contains(HeaderText(e));
         k.Settle(600);
     }
 
@@ -389,7 +397,7 @@ internal static class PixelateShots
         ToolTip.SetIsOpen(tip, false);
     }
 
-    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중(⑦⑧), 최적화 설정 창(⑨~⑯).
+    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중(⑦⑧), 자동 최적화 설정 창(⑨~⑪).
     [Shot("pixelate-optimize")]
     public static void Optimize(ShotKit k)
     {
@@ -407,7 +415,7 @@ internal static class PixelateShots
         breakdown.Opacity = 0; // 바로 위 점수 내역 줄 끝이 잘려 보이지 않게.
 
         // 도는 중: 취소 단추와 진행 한 줄.
-        ShotKit.Call(dlg, "StartOptimize", (object?)null);
+        ShotKit.Call(dlg, "StartOptimize", null, null);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 20000 && ShotKit.Get<int>(dlg, "_optDone") < 40 && ShotKit.Get<object?>(dlg, "_optCts") is not null) k.Settle(50);
         if (ShotKit.Get<object?>(dlg, "_optCts") is null) throw new InvalidOperationException("optimize finished before the running shot");
@@ -432,36 +440,22 @@ internal static class PixelateShots
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
-        // 최적화 설정 창: 항목 체크·모두 선택/해제·예산·점수 가중치·시도 기록(펼침)·불러오면 자동 최적화·프리셋 목록·점수용 색 거리.
+        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·시도 기록(펼침)·불러오면 자동 최적화.
         ShotKit.Call(dlg, "OpenOptimizeSettings");
         k.Settle(800);
         var win = ShotKit.Get<Window>(dlg, "_optSettingsWindow");
-        win.Height = 900;
+        win.Height = 640;
         k.Settle(300);
         var history = ShotKit.All<Expander>(win).First(e => e.Header is TextBlock t && t.Text == UiStrings.Pixelate_Opt_History);
         history.IsExpanded = true;
         k.Settle(600);
-        var panel = ShotKit.Find<OptimizePresetsPanel>(win);
-        var checks = ShotKit.Get<System.Collections.IEnumerable>(panel, "_checks").Cast<object>()
-            .Select(t => (Control)t.GetType().GetField("Item2")!.GetValue(t)!).Where(c => c.IsVisible).ToArray();
-        var all = ShotKit.Get<Button>(panel, "_all");
-        var trials = ShotKit.Get<NumericUpDown>(panel, "_trials");
-        var seconds = ShotKit.Get<NumericUpDown>(panel, "_seconds");
-        var weightsLabel = ShotKit.FindText(panel, UiStrings.Pixelate_Opt_ScoreWeights);
-        var weights = ShotKit.Get<NumericUpDown[]>(panel, "_weights");
-        var presetList = (Control)ShotKit.Get<ListBox>(panel, "_list").Parent!;
-        var scoreDistance = (Control)ShotKit.Get<ComboBox>(panel, "_distance").Parent!;
+        var presetList = ShotKit.Get<ListBox>(dlg, "_optPresetList");
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
         k.Save(win, "pixelate-optimize-3", marks:
         [
-            PixelateKit.Union(win, checks).Inflate(new Thickness(12, 3, 3, 3)),
-            PixelateKit.LeftBox(all, win, 10),
-            PixelateKit.Union(win, trials, seconds).Inflate(new Thickness(3, 14, 3, 3)),
-            PixelateKit.Union(win, [weightsLabel, .. weights]).Inflate(new Thickness(12, 3, 4, 4)),
+            PixelateKit.Box(presetList, win, 2),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
-            PixelateKit.Box(presetList, win, 2),
-            PixelateKit.Box(scoreDistance, win, 2),
         ], firstNumber: 9);
     }
 
@@ -625,7 +619,7 @@ internal static class PixelateShots
         provider.IsDropDownOpen = false;
     }
 
-    // 프리셋: 목록(①)·저장(②)·삭제(③), 저장할 때 묻는 이름 창(④).
+    // 프리셋 줄: 목록(①)·저장(②)·이름 바꾸기(③)·삭제(④)·정리하기(⑤), 이름 바꾸기 창(⑥).
     [Shot("pixelate-presets")]
     public static void Presets(ShotKit k)
     {
@@ -641,17 +635,17 @@ internal static class PixelateShots
         var list = PixelateKit.DropDownBounds(combo, dlg);
         var b = ShotKit.Bounds(row, dlg);
         k.Save(dlg, "pixelate-presets", crop: new Rect(0, Math.Max(0, b.Y - 16), b.Right + 40, Math.Max(list.Bottom, b.Bottom) - b.Y + 40),
-            marks: [list.Union(PixelateKit.Box(combo, dlg, 0)), PixelateKit.Box(buttons[0], dlg, 2), PixelateKit.Box(buttons[1], dlg, 2)]);
+            marks: [list.Union(PixelateKit.Box(combo, dlg, 0)), .. buttons.Select(x => PixelateKit.Box(x, dlg, 2))]);
         combo.IsDropDownOpen = false;
         k.Settle(300);
 
-        k.Dialog(() => ShotKit.Call(dlg, "SavePreset"), w =>
+        k.Dialog(() => ShotKit.Call(dlg, "RenamePreset"), w =>
         {
             var box = ShotKit.Find<TextBox>(w);
             box.Text = "Chibi 48px";
             box.CaretIndex = box.Text.Length;
             ShotKit.Pump(300);
-            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 4);
+            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 6);
         });
     }
 }

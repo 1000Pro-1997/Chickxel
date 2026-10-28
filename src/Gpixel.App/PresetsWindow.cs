@@ -5,11 +5,10 @@ using Gpixel.Core.IO;
 
 namespace Gpixel.App;
 
-/// <summary>Tabs of <see cref="PresetsWindow"/>, in tab order.</summary>
+/// <summary>Tabs of <see cref="PresetsWindow"/>, in tab order. Pixelate presets live in the Pixelate window itself (its left preset row).</summary>
 public enum PresetsTab
 {
     Gradients,
-    AutoOptimize,
 }
 
 /// <summary>
@@ -120,14 +119,8 @@ public sealed class PresetsWindow : DialogBase
             Children = { left, right },
         };
 
-        // ── Auto optimize: the panel edits the presets inside the app settings; they are saved when the window closes.
-        var options = App.Settings.Pixelate ??= new PixelateOptions();
-        options.Migrate();
-        var optimizer = new OptimizePresetsPanel(options) { Margin = new Thickness(0, 8, 0, 0) };
-
         var tabs = new TabControl();
         tabs.Items.Add(new TabItem { Header = UiStrings.GradientPreset_Category, Content = gradients });
-        tabs.Items.Add(new TabItem { Header = UiStrings.Presets_OptimizerTab, Content = optimizer });
         tabs.SelectedIndex = (int)tab;
 
         // The dialog body (StackPanel) gives no height, so the tabs go straight into the outer DockPanel's fill slot.

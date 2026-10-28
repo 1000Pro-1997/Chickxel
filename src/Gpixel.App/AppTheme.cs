@@ -19,6 +19,8 @@ public static class AppTheme
     public static readonly Color WarningColor = Color.FromRgb(230, 160, 70);
     /// <summary>저장하지 않은 변경 표시(파일 목록의 빨간 점).</summary>
     public static readonly Color UnsavedColor = Color.FromRgb(235, 64, 64);
+    /// <summary>저장한 상태 표시(픽셀로 정리 프리셋의 저장 단추).</summary>
+    public static readonly Color SavedColor = Color.FromRgb(64, 170, 96);
     /// <summary>즐겨찾기 별(채운 별) 색.</summary>
     public static readonly Color FavoriteColor = Color.FromRgb(240, 196, 70);
     /// <summary>Discord 브랜드색(blurple) — Discord 로고·링크.</summary>
@@ -36,6 +38,7 @@ public static class AppTheme
     public static readonly IImmutableSolidColorBrush BorderBrush = new ImmutableSolidColorBrush(BorderColor);
     public static readonly IImmutableSolidColorBrush WarningBrush = new ImmutableSolidColorBrush(WarningColor);
     public static readonly IImmutableSolidColorBrush UnsavedBrush = new ImmutableSolidColorBrush(UnsavedColor);
+    public static readonly IImmutableSolidColorBrush SavedBrush = new ImmutableSolidColorBrush(SavedColor);
     public static readonly IImmutableSolidColorBrush FavoriteBrush = new ImmutableSolidColorBrush(FavoriteColor);
     public static readonly IImmutableSolidColorBrush DiscordBrush = new ImmutableSolidColorBrush(DiscordColor);
 

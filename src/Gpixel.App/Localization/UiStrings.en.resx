@@ -2895,15 +2895,24 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Paste_Nothing" xml:space="preserve"><value>The clipboard has no image or image file path.</value></data>
   <data name="Pixelate_Settings_Show" xml:space="preserve"><value>Show settings</value></data>
   <data name="Pixelate_Settings_Hide" xml:space="preserve"><value>Hide settings</value></data>
-  <data name="Pixelate_Preset" xml:space="preserve"><value>Preset</value></data>
   <data name="Pixelate_Preset_Default" xml:space="preserve"><value>Default</value></data>
   <data name="Pixelate_Preset_Small32" xml:space="preserve"><value>Small sprite (32px)</value></data>
   <data name="Pixelate_Preset_Colors16" xml:space="preserve"><value>Fewer colors (16)</value></data>
   <data name="Pixelate_Preset_KeepColors" xml:space="preserve"><value>Keep original colors</value></data>
-  <data name="Pixelate_Preset_Save" xml:space="preserve"><value>Save current settings as a preset</value></data>
-  <data name="Pixelate_Preset_SavePrompt" xml:space="preserve"><value>Preset name</value></data>
-  <data name="Pixelate_Preset_Delete" xml:space="preserve"><value>Delete the chosen preset (built-in presets can't be deleted)</value></data>
-  <data name="Pixelate_Preset_SaveFailed" xml:space="preserve"><value>Couldn't save presets: {message}</value></data>
+  <data name="Pixelate_Preset_Save" xml:space="preserve"><value>Save preset</value></data>
+  <data name="Pixelate_Preset_SaveDirty" xml:space="preserve"><value>There are unsaved changes - click to save them to the chosen preset (settings, per-step optimize and optimize criteria)</value></data>
+  <data name="Pixelate_Preset_SaveClean" xml:space="preserve"><value>Matches the chosen preset as saved</value></data>
+  <data name="Pixelate_Preset_Rename" xml:space="preserve"><value>Rename the chosen preset</value></data>
+  <data name="Pixelate_Preset_New" xml:space="preserve"><value>New preset</value></data>
+  <data name="Pixelate_Preset_UnsavedQuestion" xml:space="preserve"><value>The preset '{name}' has unsaved changes. Save them?</value></data>
+  <data name="Pixelate_Run" xml:space="preserve"><value>Clean up</value></data>
+  <data name="Pixelate_RunTip" xml:space="preserve"><value>Cleans up with the current values on the left. If any step has Optimize on, only those steps are auto-optimized (starting from the values shown, with the budget and scoring of '0. Optimize criteria'); otherwise ranked candidates are made. Changing settings alone does not clean up again.</value></data>
+  <data name="Pixelate_RunNoSourceTip" xml:space="preserve"><value>Add a source image first.</value></data>
+  <data name="Pixelate_CurrentSettings" xml:space="preserve"><value>Current settings</value></data>
+  <data name="Pixelate_Section_Criteria" xml:space="preserve"><value>0. Optimize criteria</value></data>
+  <data name="Pixelate_Section_Optimize" xml:space="preserve"><value>Optimize</value></data>
+  <data name="Pixelate_Section_OptimizeTip" xml:space="preserve"><value>When on, Clean up and Auto optimize try values for this step, starting from the values shown, and keep the highest-scoring ones. When off, the values shown are used as is. Saved with the preset.</value></data>
+  <data name="Pixelate_Preset_Delete" xml:space="preserve"><value>Delete the chosen preset (the last one can't be deleted)</value></data>
   <data name="Pixelate_Section_Background" xml:space="preserve"><value>1. Background</value></data>
   <data name="Pixelate_Section_Frames" xml:space="preserve"><value>2. Frames</value></data>
   <data name="Pixelate_Section_Grid" xml:space="preserve"><value>3. Pixel grid</value></data>
@@ -2971,6 +2980,9 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Pal_MedianCut" xml:space="preserve"><value>Median cut</value></data>
   <data name="Pixelate_Pal_Existing" xml:space="preserve"><value>Existing palette</value></data>
   <data name="Pixelate_Pal_Keep" xml:space="preserve"><value>Keep original colors</value></data>
+  <data name="Pixelate_Pal_OkLch" xml:space="preserve"><value>OKLCH grouping</value></data>
+  <data name="Pixelate_Pal_OkLchRange" xml:space="preserve"><value>Group within</value></data>
+  <data name="Pixelate_Pal_OkLch_Tip" xml:space="preserve"><value>OKLCH grouping (the default palette method): colors whose lightness (L), chroma (C) and hue (H, degrees) differences are all within these limits become one color (default L 0.1 · C 0.1 · H 20°). The color that groups the most pixels becomes a group center first; a color within reach of several centers joins the nearest. The limits decide the color count, and hue is ignored for near-gray colors.</value></data>
   <data name="Pixelate_Pal_Colors" xml:space="preserve"><value>Colors</value></data>
   <data name="Pixelate_Pal_Which" xml:space="preserve"><value>Palette</value></data>
   <data name="Pixelate_Pal_NoPalettes" xml:space="preserve"><value>(no palettes)</value></data>
@@ -3001,7 +3013,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Pal_DistinctHue_Tip" xml:space="preserve"><value>A color counts as "lost" when the palette color it would become differs in hue by at least this many degrees.</value></data>
   <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>Min area</value></data>
   <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>Minimum size of the color group in cells (with original colors, edge cells count with the edge cell weight).</value></data>
-  <data name="Pixelate_Opt_ColorDistanceTip" xml:space="preserve"><value>Tries OKLab, CIEDE2000 and OKLCh hue-weighted (weight 0–1000) for palette conversion. Set the fixed scoring distance separately in Optimizer Settings.</value></data>
   <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>Auto optimize on load</value></data>
   <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>When a source is loaded (open, drop, paste, browse, replace), the auto optimizer runs once after the first candidates finish. It does not run again when settings change, and you can cancel it while it runs.</value></data>
   <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>Source cell {source} → result {result}</value></data>
@@ -3110,9 +3121,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Pin_Already" xml:space="preserve"><value>That color is already pinned.</value></data>
   <data name="Pixelate_Pin_Notice" xml:space="preserve"><value>{count} pinned colors</value></data>
   <data name="Pixelate_Pin_ClearAll" xml:space="preserve"><value>Clear all</value></data>
-  <data name="Pixelate_Opt_SelectAll" xml:space="preserve"><value>Select all</value></data>
-  <data name="Pixelate_Opt_ClearAll" xml:space="preserve"><value>Clear all</value></data>
-  <data name="Pixelate_Opt_SelectAllTip" xml:space="preserve"><value>Checks or unchecks every item that applies to the current settings (greyed-out items and the outline fit mode are left as they are, so your chosen mode is kept).</value></data>
   <data name="Pixelate_Fit" xml:space="preserve"><value>Fit outline to 1 px</value></data>
   <data name="Pixelate_Fit_Shrink" xml:space="preserve"><value>By shrinking</value></data>
   <data name="Pixelate_Fit_Thin" xml:space="preserve"><value>Thin outline only</value></data>
@@ -3127,52 +3135,40 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Clean_VectorBlob_Tip" xml:space="preserve"><value>Dark shapes that don't touch the outer outline are left as they are (not redrawn) when smaller than this many cells, such as eyes.</value></data>
   <data name="Pixelate_Vary_OutlineFit" xml:space="preserve"><value>Outline fit mode</value></data>
   <data name="Pixelate_Opt_Toggle" xml:space="preserve"><value>Auto optimize</value></data>
-  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: each checked optimizer preset tries its chosen settings step by step and keeps its highest-scoring result, shown as one candidate per preset (starts from the current settings). Presets, items and budget are under the settings button next to it.</value></data>
-  <data name="Pixelate_Opt_Scale" xml:space="preserve"><value>Pixel size</value></data>
-  <data name="Pixelate_Opt_OffsetX" xml:space="preserve"><value>Grid offset X</value></data>
-  <data name="Pixelate_Opt_OffsetY" xml:space="preserve"><value>Grid offset Y</value></data>
-  <data name="Pixelate_Opt_OffsetTip" xml:space="preserve"><value>Only changed when the grid is manual (the auto grid follows the color edges, so it is skipped).</value></data>
-  <data name="Pixelate_Opt_Colors" xml:space="preserve"><value>Color count</value></data>
+  <data name="Pixelate_Opt_ToggleTip" xml:space="preserve"><value>Starts right away: each checked preset starts from its own settings, tries values for the steps that have Optimize on, and keeps its highest-scoring result, shown as one candidate per preset. Check which presets run under the settings button next to it.</value></data>
   <data name="Pixelate_Opt_Downsample" xml:space="preserve"><value>Cell color method</value></data>
   <data name="Pixelate_Opt_Border" xml:space="preserve"><value>Ignored cell border</value></data>
   <data name="Pixelate_Opt_Alpha" xml:space="preserve"><value>Transparency threshold</value></data>
   <data name="Pixelate_Opt_Snap" xml:space="preserve"><value>Color snap step</value></data>
   <data name="Pixelate_Opt_Darkness" xml:space="preserve"><value>Outline darkness</value></data>
-  <data name="Pixelate_Opt_Cleanup" xml:space="preserve"><value>Cleanup on/off</value></data>
-  <data name="Pixelate_Opt_Dither" xml:space="preserve"><value>Dithering</value></data>
-  <data name="Pixelate_Opt_OutlineFit" xml:space="preserve"><value>Outline fit mode</value></data>
-  <data name="Pixelate_Opt_FitTip" xml:space="preserve"><value>When unchecked (default), the outline fit mode you chose is kept as is. 'Select all' does not check it either — tick it yourself to try other modes. Even then, trials using 'By shrinking' keep the cell within ±15% of the outline thickness.</value></data>
-  <data name="Pixelate_Opt_VectorTip" xml:space="preserve"><value>Available when the outline fit is 'Redraw as vector' or the outline fit mode is also being tried; only varied in trials that use 'Redraw as vector'.</value></data>
-  <data name="Pixelate_Opt_ColorSource" xml:space="preserve"><value>Palette colors (original/average)</value></data>
-  <data name="Pixelate_Opt_PaletteMethod" xml:space="preserve"><value>Palette method (k-means/median cut)</value></data>
   <data name="Pixelate_Opt_EdgeWeight" xml:space="preserve"><value>Edge cell weight</value></data>
   <data name="Pixelate_Opt_SnapOutline" xml:space="preserve"><value>Snap outline color</value></data>
-  <data name="Pixelate_Opt_PaletteTip" xml:space="preserve"><value>Only tried when the palette method is k-means or median cut.</value></data>
   <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>Trials</value></data>
   <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
-  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Optimizer settings (presets, search parameters, budget, scoring, history)</value></data>
+  <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Choose presets for Auto optimize, history</value></data>
   <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
   <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>{name} ({index}/{count}) · pass {pass} · trial {done}/{total} · best {score}</value></data>
   <data name="Pixelate_Opt_Note" xml:space="preserve"><value>All candidates use the same scoring rules. Scoring color distance affects only Major color shift, not palette conversion.</value></data>
   <data name="Pixelate_Opt_SettingsTitle" xml:space="preserve"><value>Auto Optimize Settings</value></data>
-  <data name="Pixelate_Opt_ScoreCriteria" xml:space="preserve"><value>Fixed scoring criteria</value></data>
   <data name="Pixelate_Opt_ScoreDistance" xml:space="preserve"><value>Major color shift distance</value></data>
+  <data name="Pixelate_Opt_ScoreLightWeightTip" xml:space="preserve"><value>Lightness (L) difference weight - wL in the OKLCh hue-weighted distance √((wL·ΔL)² + (wC·ΔC)² + (wH·ΔH)²). 1 = same as OKLab, 0 = ignore lightness differences.</value></data>
+  <data name="Pixelate_Opt_ScoreChromaWeightTip" xml:space="preserve"><value>Chroma (C) difference weight - wC in the OKLCh hue-weighted distance. 1 = same as OKLab, 0 = ignore chroma differences.</value></data>
+  <data name="Pixelate_Opt_ScoreHueWeightTip" xml:space="preserve"><value>Hue (H) difference weight - wH in the OKLCh hue-weighted distance. 1 = same as OKLab; higher counts a change to a different hue more heavily.</value></data>
   <data name="Pixelate_Opt_ScoreWeights" xml:space="preserve"><value>Score weights (0 = ignore)</value></data>
-  <data name="Pixelate_Opt_NoPresetTip" xml:space="preserve"><value>No optimizer preset is checked. Check at least one preset under the settings button next to it.</value></data>
+  <data name="Pixelate_Opt_TargetColors" xml:space="preserve"><value>Target colors</value></data>
+  <data name="Pixelate_Opt_TargetColorsTip" xml:space="preserve"><value>If the result has more colors than this, the whole score is multiplied by (1 − Color count weight × extra colors ÷ target): with weight 0.5 and target 16, 20 colors lose 12.5%, 32 colors lose 50%, and 48 or more score 0. Fewer colors are not penalized.</value></data>
+  <data name="Pixelate_Opt_TargetColorsAutoTip" xml:space="preserve"><value>Auto: the color count doesn't count in the score (no "Color count" penalty however many colors there are).</value></data>
+  <data name="Pixelate_Opt_NoPresetTip" xml:space="preserve"><value>No preset is checked. Check at least one preset under the settings button next to it.</value></data>
   <data name="Pixelate_Opt_HistoryEmpty" xml:space="preserve"><value>The selected preset was not run this time.</value></data>
   <data name="Pixelate_Opt_PresetsDone" xml:space="preserve"><value>{done}/{count} presets · {seconds}s</value></data>
   <data name="Pixelate_Opt_PresetLine" xml:space="preserve"><value>{name}: {summary}</value></data>
   <data name="OptimizePreset_DefaultName" xml:space="preserve"><value>Default</value></data>
   <data name="OptimizePreset_NewName" xml:space="preserve"><value>New preset</value></data>
-  <data name="OptimizePreset_CopyName" xml:space="preserve"><value>{name} copy</value></data>
-  <data name="OptimizePreset_List" xml:space="preserve"><value>Optimizer presets (all checked ones run)</value></data>
-  <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>When checked, Auto optimize also runs this preset (one best candidate per preset, named after the preset). Regular candidates are scored with the first checked preset's criteria.</value></data>
+  <data name="OptimizePreset_List" xml:space="preserve"><value>Presets to run with Auto optimize (all checked ones run - edit their values in the settings on the left)</value></data>
+  <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>When checked, Auto optimize also runs this preset (one best candidate per preset, named after the preset).</value></data>
   <data name="OptimizePreset_Add" xml:space="preserve"><value>Add preset</value></data>
   <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>Duplicate preset</value></data>
-  <data name="OptimizePreset_Rename" xml:space="preserve"><value>Rename</value></data>
-  <data name="OptimizePreset_AddFavorite" xml:space="preserve"><value>Add to favorites (moves to the top)</value></data>
-  <data name="OptimizePreset_RemoveFavorite" xml:space="preserve"><value>Remove from favorites</value></data>
   <data name="OptimizePreset_Delete" xml:space="preserve"><value>Delete preset (the last one can't be deleted)</value></data>
   <data name="OptimizePreset_DeleteQuestion" xml:space="preserve"><value>Delete the preset '{name}'?</value></data>
   <data name="OptimizePreset_NamePrompt" xml:space="preserve"><value>Preset name:</value></data>
@@ -3182,7 +3178,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="OptimizePreset_BuiltInClean" xml:space="preserve"><value>Clean pixels</value></data>
   <data name="OptimizePreset_BuiltInShade" xml:space="preserve"><value>Same hue family (OKLCH 20)</value></data>
   <data name="Pixelate_Opt_LocalGrid" xml:space="preserve"><value>Try local correction</value></data>
-  <data name="Pixelate_Opt_LocalGridTip" xml:space="preserve"><value>Lets the optimizer try local correction on/off, maximum shift, band width and minimum cell size. Checking this does not apply it to the current result. The actual setting is under Pixel grid on the left.</value></data>
   <data name="Pixelate_Opt_GraphTip" xml:space="preserve"><value>Best score so far after each trial (faint vertical lines = a new pass starts)</value></data>
   <data name="Pixelate_Opt_Marker_Done" xml:space="preserve"><value>Optimized ({score})</value></data>
   <data name="Pixelate_Opt_Marker_Time" xml:space="preserve"><value>Time limit ({score})</value></data>
@@ -3191,8 +3186,6 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_Marker_Waiting" xml:space="preserve"><value>Waiting</value></data>
   <data name="Pixelate_Opt_Marker_Running" xml:space="preserve"><value>Optimizing…</value></data>
   <data name="Pixelate_Opt_Marker_RunningScore" xml:space="preserve"><value>Optimizing ({score})</value></data>
-  <data name="Pixelate_Pin_Applying" xml:space="preserve"><value>Applying fixed colors to the optimized results…</value></data>
-  <data name="Pixelate_Pin_Applied" xml:space="preserve"><value>Fixed colors applied to each optimized result (settings unchanged).</value></data>
   <data name="Pixelate_Opt_RerunPreset" xml:space="preserve"><value>Rerun only this preset</value></data>
   <data name="Pixelate_Menu_SavePng" xml:space="preserve"><value>Save as PNG…</value></data>
   <data name="Pixelate_Save_Title" xml:space="preserve"><value>Save image as PNG</value></data>

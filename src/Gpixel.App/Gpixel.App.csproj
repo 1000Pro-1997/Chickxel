@@ -28,6 +28,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 픽셀로 정리 기본 프리셋(처음 설치·기본값 되살리기). Settings는 단계 설정 JSON 객체 그대로, 나머지는 OptimizePreset과 같은 이름. -->
+    <EmbeddedResource Include="Assets\Pixelate\default-presets.json" LogicalName="Gpixel.Pixelate.default-presets.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- F1 사용 가이드: docs/guide.html·docs/en/guide.html에서 tools/build-help.py로 만든 쪽 데이터.
          이름의 .ko/.en을 언어로 보고 위성 어셈블리로 빼지 않게 WithCulture=false. -->
     <EmbeddedResource Include="Assets\Help\help.*.json" LogicalName="Gpixel.Help.%(Filename)%(Extension)" WithCulture="false" />

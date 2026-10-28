@@ -254,7 +254,7 @@ public sealed class PreferencesDialog : DialogBase
                 if (Ui.Ask(this, UiStrings.Presets_RestoreOptimizerQuestion, UiStrings.Presets_RestoreOptimizer,
                         MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
                 var options = App.Settings.Pixelate ??= new PixelateOptions();
-                options.Migrate();
+                options.Migrate(App.Settings);
                 OptimizePreset.RestoreBuiltIns(options.OptimizePresets);
                 App.Settings.Save();
                 presetsStatus.Text = UiStrings.Presets_Restored;

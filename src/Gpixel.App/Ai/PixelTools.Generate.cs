@@ -240,9 +240,9 @@ public sealed partial class PixelTools
             }
 
             Report(progress, options.AutoOptimize ? UiStrings.AiDraw_Progress_Optimizing : UiStrings.AiDraw_Progress_Converting);
-            // 정리 창과 같은 자동 최적화: 체크한 첫 최적화 프리셋(없으면 첫 프리셋 — PixelateOptions.PrimaryPreset)의 항목·예산·점수 기준으로 — 1위를 그대로 넣는다.
+            // 정리 창과 같은 자동 최적화: 체크한 첫 프리셋(없으면 첫 프리셋 — PixelateOptions.PrimaryPreset)의 칸별 최적화·예산·점수 기준으로 — 1위를 그대로 넣는다.
             var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
-            pixelate.Migrate();
+            pixelate.Migrate(_host.Settings);
             var optimize = pixelate.PrimaryPreset.Options();
             // 진행: UI 스레드로(이 메서드의 동기화 문맥), 0.2초에 한 번쯤.
             IProgress<PixelateOptimizeProgress> ui = new Progress<PixelateOptimizeProgress>(p => Report(progress, UiStrings.FormatAiDraw_Progress_OptimizeTrial(

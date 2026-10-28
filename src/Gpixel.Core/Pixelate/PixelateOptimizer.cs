@@ -41,7 +41,7 @@ public enum OptimizeParam
     PaletteColorSource = 4096,
     /// <summary>외곽선 색 모으기 켜기·끄기.</summary>
     SnapOutline = 8192,
-    /// <summary>팔레트 방식(k-평균·중앙 분할 — 기존 팔레트·원래 색 유지면 건너뜀).</summary>
+    /// <summary>팔레트 방식(k-평균·중앙 분할·OKLCH 묶기·원래 색 유지, 시작이 기존 팔레트면 그것도 — 방식마다 쓰는 항목은 그 방식인 점에서만 바꿔 봄).</summary>
     PaletteMethod = 16384,
     /// <summary>가장자리 칸 가중 0~1(원본 색 팔레트일 때만 뜻이 있음 — k-평균·중앙 분할일 때만).</summary>
     EdgeWeight = 32768,
@@ -59,10 +59,12 @@ public enum OptimizeParam
     DistinctHues = 2097152,
     /// <summary>명암 계열 우선(<see cref="PaletteSettings.PreferShadeFamily"/>) 켜기·끄기(원래 색 유지가 아닐 때).</summary>
     ShadeFamily = 4194304,
+    /// <summary>OKLCH 묶기의 묶을 범위 L 0.005~0.5 · C 0.005~0.4 · H 0.5~180°(팔레트 방식이 OKLCH 묶기인 점에서만).</summary>
+    OkLchRange = 8388608,
     Default = Scale | Colors | DownsampleMode | Cleanup | PaletteColorSource,
     All = Scale | OffsetX | OffsetY | Colors | DownsampleMode | BorderFraction | AlphaThreshold | SnapStep | OutlineDarkness | Cleanup | Dither | OutlineFit
         | PaletteColorSource | SnapOutline | PaletteMethod | EdgeWeight | StickerBorder | VectorTolerance | VectorBlob | LocalGrid | ColorDistance | DistinctHues
-        | ShadeFamily,
+        | ShadeFamily | OkLchRange,
     /// <summary>대화상자의 '모두 선택'이 켜는 항목: 외곽선 맞추기 방식만 빼고 모두(벡터 설정은 외곽선 맞추기가 벡터로 다시 그리기일 때만 쓰임 — <see cref="PixelateOptimizer.Applicable"/>).</summary>
     SelectAll = All & ~OutlineFit,
 }
@@ -91,6 +93,8 @@ public sealed record PixelateOptimizeOptions
     public ScoreWeights Weights { get; init; } = new();
     /// <summary>모든 시도의 주요 색 변화를 재는 고정 색 거리(null = 시작 팔레트의 색 거리). 후보 팔레트의 색 변환 설정은 그대로 적용한다.</summary>
     public ColorMetric? ScoreMetric { get; init; }
+    /// <summary>점수의 목표 색 수(결과 색이 이보다 많을 때만 '색 수' 감점, 0 = 자동 — 색 수를 보지 않음).</summary>
+    public int TargetColors { get; init; }
     public int MaxDegreeOfParallelism { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
     /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 나아지지 않은 돌림이 <see cref="PixelateOptimizer.StalePasses"/>번 넘게 이어질 때까지 다시 돌림, 1 = 한 번만).</summary>
     public int MaxPasses { get; init; } = int.MaxValue;
@@ -199,20 +203,29 @@ public static class PixelateOptimizer
     }
 
     /// <summary>
-    /// 시작 설정 <paramref name="s"/>에서 바꿔 볼 수 있는 항목: 고정 크기면 칸 크기 빼고, 격자가 수동(배율 크기 아님)일 때만 시작 위치,
-    /// 팔레트가 k-평균·중앙 분할일 때만 색 수·팔레트 색·만드는 방법·가장자리 칸 가중(원본 색이거나 팔레트 색도 바꿔 볼 때 — <paramref name="chosen"/>),
-    /// 원본 색 유지가 아닐 때만 디더링, 외곽선 맞추기가 벡터로 다시 그리기이거나 외곽선 맞추기도 바꿔 볼 때만 벡터 설정(허용 오차·작은 덩어리).
+    /// 시작 설정 <paramref name="s"/>에서 바꿔 볼 수 있는 항목: 고정 크기면 칸 크기 빼고, 격자가 수동(배율 크기 아님)일 때만 시작 위치.
+    /// 팔레트 방식도 바꿔 보면(<paramref name="chosen"/>) 방식에 딸린 항목(색 수·팔레트 색·가장자리 칸 가중·다른 색상 지키기·디더링·색 거리·명암 계열·OKLCH 범위)을
+    /// 모두 남기고 시도마다 그 방식에서 쓰는 것만 바꾼다(<c>Axis.Active</c>). 아니면 시작 방식에서 쓰는 것만: 색 수는 k-평균·중앙 분할, 팔레트 색·가장자리 칸 가중·
+    /// 다른 색상 지키기는 여기에 OKLCH 묶기, OKLCH 범위는 OKLCH 묶기, 디더링·색 거리·명암 계열은 원래 색 유지가 아닐 때.
+    /// 외곽선 맞추기가 벡터로 다시 그리기이거나 외곽선 맞추기도 바꿔 볼 때만 벡터 설정(허용 오차·작은 덩어리).
     /// </summary>
     public static OptimizeParam Applicable(PixelateSettings s, OptimizeParam chosen = OptimizeParam.None)
     {
         var p = OptimizeParam.All;
         if (s.Size.Mode == OutputSizeMode.FixedSize) p &= ~OptimizeParam.Scale;
         if (s.Size.Mode == OutputSizeMode.ScaleFactor || s.Grid.Mode != GridMode.Manual) p &= ~(OptimizeParam.OffsetX | OptimizeParam.OffsetY);
-        if (s.Palette.Method is not (PaletteMethod.KMeans or PaletteMethod.MedianCut))
-            p &= ~(OptimizeParam.Colors | OptimizeParam.PaletteColorSource | OptimizeParam.PaletteMethod | OptimizeParam.EdgeWeight | OptimizeParam.DistinctHues);
-        else if (s.Palette.ColorSource != PaletteColorSource.Original && !chosen.HasFlag(OptimizeParam.PaletteColorSource))
-            p &= ~OptimizeParam.EdgeWeight;
-        if (s.Palette.Method == PaletteMethod.KeepOriginal) p &= ~(OptimizeParam.Dither | OptimizeParam.ColorDistance | OptimizeParam.ShadeFamily);
+        if (!chosen.HasFlag(OptimizeParam.PaletteMethod))
+        {
+            var m = s.Palette.Method;
+            if (m is not (PaletteMethod.KMeans or PaletteMethod.MedianCut)) p &= ~(OptimizeParam.Colors | OptimizeParam.PaletteMethod);
+            if (m is not (PaletteMethod.KMeans or PaletteMethod.MedianCut or PaletteMethod.OkLch))
+                p &= ~(OptimizeParam.PaletteColorSource | OptimizeParam.EdgeWeight | OptimizeParam.DistinctHues);
+            if (m != PaletteMethod.OkLch) p &= ~OptimizeParam.OkLchRange;
+            if (m == PaletteMethod.KeepOriginal) p &= ~(OptimizeParam.Dither | OptimizeParam.ColorDistance | OptimizeParam.ShadeFamily);
+            if (m is PaletteMethod.KMeans or PaletteMethod.MedianCut or PaletteMethod.OkLch
+                && s.Palette.ColorSource != PaletteColorSource.Original && !chosen.HasFlag(OptimizeParam.PaletteColorSource))
+                p &= ~OptimizeParam.EdgeWeight;
+        }
         if (s.Downsample.Mode is not (DownsampleMode.Mode or DownsampleMode.ClusterWeighted)
             && !chosen.HasFlag(OptimizeParam.DownsampleMode)) p &= ~OptimizeParam.SnapStep;
         if (s.Background.Mode == BackgroundMode.None) p &= ~OptimizeParam.StickerBorder;
@@ -296,7 +309,7 @@ public static class PixelateOptimizer
 
             // 시작 설정은 꼭 돌린다(취소만 멈춤 — 시간이 지나도 시작점은 있어야 함).
             var first = Pixelator.Run(_src, _start, _scoreMetric, _ct);
-            _target = _start.Palette.Method == PaletteMethod.KeepOriginal ? null : first.ResolvedColors;
+            _target = _opt.TargetColors > 0 ? _opt.TargetColors : null;
             _shrink = ShrinkBand();
             _band = ScaleBand(first);
             _reserved = 1;
@@ -702,11 +715,16 @@ public static class PixelateOptimizer
             if (p.HasFlag(OptimizeParam.OffsetY))
                 axes.Add(Num(OptimizeParam.OffsetY, PixelateRanges.Offset, s0.Grid.OffsetY - half, s0.Grid.OffsetY + half, 0.5, 1,
                     s => s.Grid.OffsetY, (s, v) => s with { Grid = s.Grid with { OffsetY = v } }));
+            // 팔레트 방식마다 쓰는 항목: 그 방식인 점에서만 바꿔 본다(다른 방식에서는 결과가 같아 시도를 아낌 — 팔레트 방식도 바꿔 보면 방식이 바뀐 점에서 언덕 오르기로 다듬음).
+            static bool Counts(PixelateSettings s) => s.Palette.Method is PaletteMethod.KMeans or PaletteMethod.MedianCut;
+            static bool Builds(PixelateSettings s) => s.Palette.Method is PaletteMethod.KMeans or PaletteMethod.MedianCut or PaletteMethod.OkLch;
+            static bool Maps(PixelateSettings s) => s.Palette.Method != PaletteMethod.KeepOriginal;
+            static bool Groups(PixelateSettings s) => s.Palette.Method == PaletteMethod.OkLch;
             if (p.HasFlag(OptimizeParam.Colors))
             {
                 int resolved = first.ResolvedColors;
                 axes.Add(Num(OptimizeParam.Colors, PixelateRanges.Colors, 4, 48, 1, 0,
-                    s => s.Palette.Colors > 0 ? s.Palette.Colors : resolved, (s, v) => s with { Palette = s.Palette with { Colors = (int)v } }));
+                    s => s.Palette.Colors > 0 ? s.Palette.Colors : resolved, (s, v) => s with { Palette = s.Palette with { Colors = (int)v } }) with { Active = Counts });
             }
             if (p.HasFlag(OptimizeParam.DownsampleMode))
             {
@@ -737,7 +755,7 @@ public static class PixelateOptimizer
             {
                 PaletteDither[] dithers = [PaletteDither.None, PaletteDither.Bayer2, PaletteDither.Bayer4];
                 axes.Add(new Axis(OptimizeParam.Dither, 0, 2, 1, 0, dithers.Length,
-                    s => Math.Max(0, Array.IndexOf(dithers, s.Palette.Dither)), (s, v) => s with { Palette = s.Palette with { Dither = dithers[(int)v] } }));
+                    s => Math.Max(0, Array.IndexOf(dithers, s.Palette.Dither)), (s, v) => s with { Palette = s.Palette with { Dither = dithers[(int)v] } }) { Active = Maps });
             }
             if (p.HasFlag(OptimizeParam.OutlineFit))
             {
@@ -749,18 +767,31 @@ public static class PixelateOptimizer
             {
                 PaletteColorSource[] sources = [PaletteColorSource.Original, PaletteColorSource.Mean];
                 axes.Add(new Axis(OptimizeParam.PaletteColorSource, 0, 1, 1, 0, sources.Length,
-                    s => Math.Max(0, Array.IndexOf(sources, s.Palette.ColorSource)), (s, v) => s with { Palette = s.Palette with { ColorSource = sources[(int)v] } }));
+                    s => Math.Max(0, Array.IndexOf(sources, s.Palette.ColorSource)), (s, v) => s with { Palette = s.Palette with { ColorSource = sources[(int)v] } }) { Active = Builds });
             }
             if (p.HasFlag(OptimizeParam.PaletteMethod))
             {
-                PaletteMethod[] methods = [PaletteMethod.KMeans, PaletteMethod.MedianCut];
-                axes.Add(new Axis(OptimizeParam.PaletteMethod, 0, 1, 1, 0, methods.Length,
+                // 모든 방식: k-평균·중앙 분할·OKLCH 묶기·원래 색 유지, 시작이 기존 팔레트(색이 있음)면 그것도.
+                List<PaletteMethod> list = [PaletteMethod.KMeans, PaletteMethod.MedianCut, PaletteMethod.OkLch, PaletteMethod.KeepOriginal];
+                if (s0.Palette.Method == PaletteMethod.Existing && s0.Palette.ExistingColors.Count > 0) list.Add(PaletteMethod.Existing);
+                var methods = list.ToArray();
+                axes.Add(new Axis(OptimizeParam.PaletteMethod, 0, methods.Length - 1, 1, 0, methods.Length,
                     s => Math.Max(0, Array.IndexOf(methods, s.Palette.Method)), (s, v) => s with { Palette = s.Palette with { Method = methods[(int)v] } }));
+            }
+            if (p.HasFlag(OptimizeParam.OkLchRange))
+            {
+                axes.Add(Num(OptimizeParam.OkLchRange, PixelateRanges.OkLchMaxL, 0.005, 0.5, 0.005, 3,
+                    s => s.Palette.OkLchMaxL, (s, v) => s with { Palette = s.Palette with { OkLchMaxL = v } }) with { Active = Groups, Seeds = [0.03, 0.05, 0.1, 0.15, 0.2] });
+                axes.Add(Num(OptimizeParam.OkLchRange, PixelateRanges.OkLchMaxC, 0.005, 0.4, 0.005, 3,
+                    s => s.Palette.OkLchMaxC, (s, v) => s with { Palette = s.Palette with { OkLchMaxC = v } }) with { Active = Groups, Seeds = [0.03, 0.05, 0.1, 0.15, 0.2] });
+                axes.Add(Num(OptimizeParam.OkLchRange, PixelateRanges.OkLchMaxH, 0.5, 180, 0.5, 1,
+                    s => s.Palette.OkLchMaxH, (s, v) => s with { Palette = s.Palette with { OkLchMaxH = v } }) with { Active = Groups, Seeds = [5, 10, 20, 30, 45, 90] });
             }
             // 가장자리 칸 가중은 원본 색에서만 쓰므로, 평균 색으로 시작하고 팔레트 색을 바꿔 보지 않으면 건너뜀(Applicable).
             if (p.HasFlag(OptimizeParam.EdgeWeight))
                 axes.Add(Num(OptimizeParam.EdgeWeight, PixelateRanges.EdgeWeight, 0, 1, 0.05, 2,
-                    s => s.Palette.EdgeWeight, (s, v) => s with { Palette = s.Palette with { EdgeWeight = v } }));
+                    s => s.Palette.EdgeWeight, (s, v) => s with { Palette = s.Palette with { EdgeWeight = v } })
+                    with { Active = s => Builds(s) && s.Palette.ColorSource == PaletteColorSource.Original });
             if (p.HasFlag(OptimizeParam.SnapOutline))
                 axes.Add(new Axis(OptimizeParam.SnapOutline, 0, 1, 1, 0, 2,
                     s => s.Palette.SnapOutline ? 1 : 0, (s, v) => s with { Palette = s.Palette with { SnapOutline = v >= 0.5 } }));
@@ -784,23 +815,23 @@ public static class PixelateOptimizer
             {
                 var modes = Enum.GetValues<ColorDistanceMode>();
                 axes.Add(new Axis(OptimizeParam.ColorDistance, 0, modes.Length - 1, 1, 0, modes.Length,
-                    s => Array.IndexOf(modes, s.Palette.ColorDistance), (s, v) => s with { Palette = s.Palette with { ColorDistance = modes[(int)v] } }));
+                    s => Array.IndexOf(modes, s.Palette.ColorDistance), (s, v) => s with { Palette = s.Palette with { ColorDistance = modes[(int)v] } }) { Active = Maps });
                 var hue = PixelateRanges.HueWeight;
                 axes.Add(Num(OptimizeParam.ColorDistance, hue, hue.Min, hue.Max, 0.25, 2,
                     s => s.Palette.HueWeight, (s, v) => s with { Palette = s.Palette with { HueWeight = v } })
-                    with { Active = s => s.Palette.ColorDistance == ColorDistanceMode.OkLchHue, Seeds = [1, 2, 3, 5, 10, 20, 50, 100, 200, 500] });
+                    with { Active = s => Maps(s) && s.Palette.ColorDistance == ColorDistanceMode.OkLchHue, Seeds = [1, 2, 3, 5, 10, 20, 50, 100, 200, 500] });
             }
             if (p.HasFlag(OptimizeParam.DistinctHues))
             {
                 axes.Add(new Axis(OptimizeParam.DistinctHues, 0, 1, 1, 0, 2,
-                    s => s.Palette.KeepDistinctHues ? 1 : 0, (s, v) => s with { Palette = s.Palette with { KeepDistinctHues = v >= 0.5 } }));
+                    s => s.Palette.KeepDistinctHues ? 1 : 0, (s, v) => s with { Palette = s.Palette with { KeepDistinctHues = v >= 0.5 } }) { Active = Builds });
                 axes.Add(Num(OptimizeParam.DistinctHues, PixelateRanges.DistinctMinHue, 10, 40, 1, 0,
                     s => s.Palette.DistinctMinHue, (s, v) => s with { Palette = s.Palette with { DistinctMinHue = v } })
-                    with { Active = s => s.Palette.KeepDistinctHues });
+                    with { Active = s => Builds(s) && s.Palette.KeepDistinctHues });
             }
             if (p.HasFlag(OptimizeParam.ShadeFamily))
                 axes.Add(new Axis(OptimizeParam.ShadeFamily, 0, 1, 1, 0, 2,
-                    s => s.Palette.PreferShadeFamily ? 1 : 0, (s, v) => s with { Palette = s.Palette with { PreferShadeFamily = v >= 0.5 } }));
+                    s => s.Palette.PreferShadeFamily ? 1 : 0, (s, v) => s with { Palette = s.Palette with { PreferShadeFamily = v >= 0.5 } }) { Active = Maps });
             // 벡터 설정은 벡터로 다시 그리기에서만 뜻이 있으므로 그 점에서만 바꿔 본다(외곽선 맞추기 항목이 벡터로 바꾼 점에서 언덕 오르기로 다듬음).
             static bool IsVector(PixelateSettings s) => s.Cleanup.OutlineFit == OutlineFit.Vector;
             if (p.HasFlag(OptimizeParam.VectorTolerance))

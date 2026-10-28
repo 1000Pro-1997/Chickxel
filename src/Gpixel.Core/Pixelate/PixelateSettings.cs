@@ -82,6 +82,11 @@ public enum PaletteMethod
     Existing,
     /// <summary>색을 줄이지 않는다.</summary>
     KeepOriginal,
+    /// <summary>
+    /// OKLCh 문턱 묶기: 밝기·채도·색상 차가 모두 문턱(<see cref="PaletteSettings.OkLchMaxL"/>·<see cref="PaletteSettings.OkLchMaxC"/>·
+    /// <see cref="PaletteSettings.OkLchMaxH"/>) 안인 색끼리 한 색으로 — 가장 많이 묶는 색부터 차례로 묶음 중심을 고른다(색 수는 문턱이 정함).
+    /// </summary>
+    OkLch,
 }
 
 /// <summary>만든 팔레트(k-평균·중앙 분할)의 색을 무엇으로 정하는지.</summary>
@@ -225,7 +230,7 @@ public sealed record DownsampleSettings
 
 public sealed record PaletteSettings
 {
-    public PaletteMethod Method { get; init; } = PaletteMethod.KMeans;
+    public PaletteMethod Method { get; init; } = PaletteMethod.OkLch;
     /// <summary>색 수 2~64, 0 = 자동(오차 곡선의 팔꿈치).</summary>
     public int Colors { get; init; }
     /// <summary>기존 팔레트 색("#RRGGBB").</summary>
@@ -258,10 +263,9 @@ public sealed record PaletteSettings
     /// </summary>
     public IReadOnlyList<string> ExcludedColors { get; init; } = [];
     /// <summary>
-    /// 고정 색("#RRGGBB" — 원본 칸에서 집은 색): 만든 팔레트(k-평균·중앙 분할)와 기존 팔레트에 그대로 들어가는 색. 색 수(자동이면 찾은 수)에 들어가며
-    /// 나머지 색을 (색 수 − 고정 색 수, 적어도 1)로 만든다. 원본 칸 색이 다른 팔레트 색보다 고정 색에 가까운(OKLab) 칸은 늘 그 고정 색.
-    /// 원본 색 유지(<see cref="PaletteMethod.KeepOriginal"/>)는 고정 색과 같은 색으로 맞는(<see cref="PaletteEdits.MatchDistance"/>) 칸만 그 색으로 맞춘다.
-    /// 색 빼기·외곽선 색 모으기(<see cref="SnapOutline"/>)에 빠지지 않는다.
+    /// 고정 색("#RRGGBB" — 원본 칸에서 집은 색): 팔레트를 다시 만들지 않는 뒤처리(<see cref="PaletteEdits.AddPins"/>, 색 빼기보다 먼저) — 원본 칸 색이
+    /// 지금 결과 색보다 고정 색에 더 가까운(<see cref="ColorDistance"/>) 픽셀만 그 고정 색으로 바꾸고 나머지 픽셀·색은 그대로라, 결과 색 수가 그만큼 는다.
+    /// 색 빼기에 빠지지 않는다.
     /// </summary>
     public IReadOnlyList<string> PinnedColors { get; init; } = [];
     /// <summary>
@@ -280,7 +284,7 @@ public sealed record PaletteSettings
     public bool PreferShadeFamily { get; init; } = true;
     /// <summary>
     /// 다른 색상 지키기: 원본에서 채도 ≥ <see cref="DistinctMinChroma"/>이고 넓이 ≥ <see cref="DistinctMinArea"/>칸인 색 무리가 바뀔 팔레트 색과
-    /// 색상이 <see cref="DistinctMinHue"/>도 이상 다르면 그 색을 넣는다(자동 색 수는 더하고, 고른 색 수는 가장 덜 중요한 색과 바꿈 — 고정 색은 그대로).
+    /// 색상이 <see cref="DistinctMinHue"/>도 이상 다르면 그 색을 넣는다(자동 색 수는 더하고, 고른 색 수는 가장 덜 중요한 색과 바꿈).
     /// </summary>
     public bool KeepDistinctHues { get; init; } = true;
     /// <summary>다른 색상 지키기: 볼 색의 최소 채도(OKLCh C).</summary>
@@ -289,6 +293,12 @@ public sealed record PaletteSettings
     public double DistinctMinHue { get; init; } = 20;
     /// <summary>다른 색상 지키기: 색 무리의 최소 넓이(칸 — 원본 색이면 가장자리 무게를 준 칸 수).</summary>
     public double DistinctMinArea { get; init; } = 4;
+    /// <summary>OKLCh 묶기(<see cref="PaletteMethod.OkLch"/>): 같은 색으로 묶을 최대 밝기 차(OKLCh L, 0~1).</summary>
+    public double OkLchMaxL { get; init; } = 0.1;
+    /// <summary>OKLCh 묶기: 같은 색으로 묶을 최대 채도 차(OKLCh C).</summary>
+    public double OkLchMaxC { get; init; } = 0.1;
+    /// <summary>OKLCh 묶기: 같은 색으로 묶을 최대 색상 차(도). 둘 중 하나라도 채도가 <see cref="PaletteBuilder.OkLchAchromatic"/> 아래면(색상이 없는 회색) 보지 않는다.</summary>
+    public double OkLchMaxH { get; init; } = 20;
 }
 
 public sealed record CleanupSettings

@@ -7,20 +7,8 @@ namespace Gpixel.Core.Pixelate;
 /// <summary>이름 붙인 설정.</summary>
 public sealed record PixelatePreset(string Name, PixelateSettings Settings);
 
-/// <summary>기본으로 들어 있는 프리셋.</summary>
-public enum PixelateBuiltIn
-{
-    Default,
-    /// <summary>작은 스프라이트(32×32).</summary>
-    Small32,
-    /// <summary>색 적게(16색).</summary>
-    Colors16,
-    /// <summary>원본 색 유지.</summary>
-    KeepColors,
-}
-
 /// <summary>
-/// 프리셋 파일(<c>presets.json</c> — 버전과 이름·설정 목록)과 기본 프리셋. 읽을 수 없는 파일은 빈 목록.
+/// 예전 프리셋 파일(<c>presets.json</c> — 버전과 이름·설정 목록)과 설정 JSON 읽기·쓰기. 읽을 수 없는 파일은 빈 목록.
 /// </summary>
 public static class PixelatePresets
 {
@@ -39,18 +27,6 @@ public static class PixelatePresets
     {
         public int Version { get; set; } = FileVersion;
         public List<PixelatePreset>? Presets { get; set; }
-    }
-
-    public static PixelateSettings BuiltIn(PixelateBuiltIn kind)
-    {
-        var d = new PixelateSettings();
-        return kind switch
-        {
-            PixelateBuiltIn.Small32 => d with { Size = d.Size with { Mode = OutputSizeMode.FixedSize, Width = 32, Height = 32 } },
-            PixelateBuiltIn.Colors16 => d with { Palette = d.Palette with { Colors = 16 } },
-            PixelateBuiltIn.KeepColors => d with { Palette = d.Palette with { Method = PaletteMethod.KeepOriginal, SnapOutline = false } },
-            _ => d,
-        };
     }
 
     public static string SerializeSettings(PixelateSettings s, bool indented = true)

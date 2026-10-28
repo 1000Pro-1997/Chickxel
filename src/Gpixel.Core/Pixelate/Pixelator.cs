@@ -187,7 +187,7 @@ public sealed class PixelateResult
     public required PixelateSettings Settings { get; init; }
     /// <summary>결과 프레임(색 빼기까지 한 것).</summary>
     public required IReadOnlyList<PixelImage> Frames { get; init; }
-    /// <summary>색 빼기 전 결과 프레임(빼기가 없으면 <see cref="Frames"/>와 같은 목록) — 빼기를 바꿀 때 다시 돌리지 않고 여기서 다시 뺀다(<see cref="Pixelator.WithExclusions"/>).</summary>
+    /// <summary>고정 색·색 빼기 전 결과 프레임(둘 다 없으면 <see cref="Frames"/>와 같은 목록) — 둘을 바꿀 때 다시 돌리지 않고 여기서 다시 고친다(<see cref="Pixelator.WithPaletteEdits"/>).</summary>
     public required IReadOnlyList<PixelImage> BaseFrames { get; init; }
     /// <summary>
     /// 결과 픽셀 자리의 원본 칸 색(팔레트 전, <see cref="Pixelator.CellColor"/>와 같은 색): <see cref="Frames"/>와 같은 크기·배치, 칸이 없거나 투명한 자리는 투명.
@@ -358,20 +358,19 @@ public static class Pixelator
             cells[f] = Downsample(src, f, layouts[f], s.Downsample);
             ct.ThrowIfCancellationRequested();
         }
-        // 팔레트 전 칸 색(고정 색 맞추기, 색 빼기의 원본 칸 색 — PixelateResult.SourceColors).
+        // 팔레트 전 칸 색(고정 색·색 빼기의 원본 칸 색 — PixelateResult.SourceColors).
         var raw = cells.Select(c => c.Clone()).ToArray();
 
         // 2) 팔레트.
-        int resolved = ApplyPalette(cells, raw, s.Palette);
+        int resolved = ApplyPalette(cells, s.Palette);
         ct.ThrowIfCancellationRequested();
 
-        // 3) 정리(고정 색은 외곽선 색으로 모으지 않음).
-        var pins = PaletteEdits.Colors(s.Palette.PinnedColors).Select(c => c.Argb).ToHashSet();
+        // 3) 정리.
         var outline = OutlineColor(cells, s.Palette.OutlineDarkness);
         for (int f = 0; f < nf; f++)
         {
             var img = cells[f];
-            if (s.Palette.SnapOutline) SnapDark(img, outline, s.Palette.OutlineDarkness, pins);
+            if (s.Palette.SnapOutline) SnapDark(img, outline, s.Palette.OutlineDarkness);
             if (s.Cleanup.OutlineFit == OutlineFit.Vector)
                 VectorOutline.Apply(img, src.VectorTrace(f, s.Palette.OutlineDarkness), split.Frames[f].Bounds, src.Cleaned.Width,
                     layouts[f], outline, s.Palette.OutlineDarkness, s.Cleanup);
@@ -419,29 +418,34 @@ public static class Pixelator
             Failure = CheckFailure(src, frames, [.. grids.Select(g => g.Scale)], palette.Count),
             RetriedFrom = retriedFrom,
         };
-        // 5) 색 빼기 — 다 만든 결과의 뒤처리(다른 픽셀·색은 그대로).
-        return s.Palette.ExcludedColors.Count == 0 ? result : WithExclusions(result, s.Palette.ExcludedColors);
+        // 5) 고정 색·색 빼기 — 다 만든 결과의 뒤처리(팔레트를 다시 만들지 않음, 다른 픽셀·색은 그대로).
+        return s.Palette.PinnedColors.Count == 0 && s.Palette.ExcludedColors.Count == 0
+            ? result
+            : WithPaletteEdits(result, s.Palette.PinnedColors, s.Palette.ExcludedColors);
     }
 
     /// <summary>
-    /// 색 빼기만 바꾼 결과: 다시 돌리지 않고 색 빼기 전 결과(<see cref="PixelateResult.BaseFrames"/>)에서 <paramref name="excluded"/>를 뺀다
-    /// (<see cref="PaletteEdits.Apply"/> — 뺀 색 픽셀만 원본 칸 색에 가장 가까운 남은 색으로, 고정 색은 빼지 않음). 측정값·격자·칸 대응은 그대로,
-    /// 설정의 <see cref="PaletteSettings.ExcludedColors"/>만 바뀐다. 빈 목록이면 색 빼기 전 결과 그대로.
+    /// 고정 색·색 빼기만 바꾼 결과: 다시 돌리지 않고 뒤처리 전 결과(<see cref="PixelateResult.BaseFrames"/>)에 고정 색을 더한 뒤(<see cref="PaletteEdits.AddPins"/> —
+    /// 원본 칸 색이 지금 색보다 고정 색에 더 가까운 픽셀만 그 고정 색으로) <paramref name="excluded"/>를 뺀다(<see cref="PaletteEdits.Apply"/> — 뺀 색 픽셀만
+    /// 원본 칸 색에 가장 가까운 남은 색으로, 고정 색은 빼지 않음). 측정값·격자·칸 대응은 그대로, 설정의 두 목록만 바뀐다. 둘 다 비면 뒤처리 전 결과 그대로.
     /// </summary>
-    public static PixelateResult WithExclusions(PixelateResult r, IReadOnlyList<string> excluded)
+    public static PixelateResult WithPaletteEdits(PixelateResult r, IReadOnlyList<string> pinned, IReadOnlyList<string> excluded)
     {
-        var settings = r.Settings with { Palette = r.Settings.Palette with { ExcludedColors = excluded } };
+        var settings = r.Settings with { Palette = r.Settings.Palette with { PinnedColors = pinned, ExcludedColors = excluded } };
         IReadOnlyList<PixelImage> frames = r.BaseFrames;
         IReadOnlyList<PixelImage> excludedFrames = [];
-        if (excluded.Count > 0)
+        if (pinned.Count > 0 || excluded.Count > 0)
         {
+            var metric = ColorMetric.For(settings.Palette);
             var copy = r.BaseFrames.Select(f => f.Clone()).ToList();
+            int changed = PaletteEdits.AddPins(copy, r.SourceColors, pinned, metric);
             var replaced = new PixelImage?[copy.Count];
-            if (PaletteEdits.Apply(copy, r.SourceColors, excluded, settings.Palette.PinnedColors, replaced, ColorMetric.For(settings.Palette)) > 0)
+            if (PaletteEdits.Apply(copy, r.SourceColors, excluded, pinned, replaced, metric) > 0)
             {
-                frames = copy;
+                changed++;
                 excludedFrames = replaced.Select((x, i) => x ?? new PixelImage(copy[i].Width, copy[i].Height)).ToList();
             }
+            if (changed > 0) frames = copy;
         }
         return new PixelateResult
         {
@@ -729,20 +733,13 @@ public static class Pixelator
     }
 
     /// <summary>
-    /// 팔레트를 만들고 그 색으로 바꾼다. 고른(자동이면 찾은 — 고정 색 포함) 색 수를 돌려준다. <paramref name="raw"/> = 팔레트 전 칸 색(<paramref name="cells"/>와 같은 크기).
-    /// 고정 색(<see cref="PaletteSettings.PinnedColors"/>)은 팔레트 앞에 그대로 넣고, 나머지는 (색 수 − 고정 색 수, 적어도 1)개를 만든다(고정 색과 맞는 만든 색은 버림).
-    /// 자동 색 수면 넓게 쓰인 색 지키기에서 고정 색도 그 색을 덮는 색으로 본다. 바꾼 뒤 원본 칸 색이 OKLab로 고정 색에 가장 가까운 칸은 그 고정 색으로(디더 없이).
-    /// 원본 색 유지(또는 기존 팔레트가 비어 원본 색 그대로)면 고정 색과 맞는(<see cref="PaletteEdits.MatchDistance"/>) 칸만 가장 가까운 고정 색으로.
+    /// 팔레트를 만들고 그 색으로 바꾼다. 고른(자동이면 찾은) 색 수를 돌려준다. 고정 색은 여기서 다루지 않는다 — 다 만든 결과의 뒤처리(<see cref="WithPaletteEdits"/>).
     /// </summary>
-    private static int ApplyPalette(PixelImage[] cells, PixelImage[] raw, PaletteSettings s)
+    private static int ApplyPalette(PixelImage[] cells, PaletteSettings s)
     {
-        var pins = PaletteEdits.Colors(s.PinnedColors).DistinctBy(c => c.Argb).ToList();
         var existing = s.ExistingColors.Select(h => PixelateSettings.ParseColor(h, Color32.Transparent)).Where(c => c.A != 0).ToList();
         if (s.Method == PaletteMethod.KeepOriginal || (s.Method == PaletteMethod.Existing && existing.Count == 0))
-        {
-            SnapToPins(cells, pins);
-            return PaletteRemap.CountColors(Combine(cells));
-        }
+            return CountColors(cells);
         var metric = ColorMetric.For(s);
         int[][] groups = s.Shared || s.Method == PaletteMethod.Existing
             ? [Enumerable.Range(0, cells.Length).ToArray()]
@@ -754,7 +751,7 @@ public static class Pixelator
             List<Color32> palette;
             if (s.Method == PaletteMethod.Existing)
             {
-                palette = [.. pins, .. existing.Where(c => !pins.Any(p => p.Argb == (c.Argb | 0xFF000000u)))];
+                palette = existing;
                 resolved = palette.Count;
             }
             else
@@ -764,18 +761,24 @@ public static class Pixelator
                     ? PaletteBuilder.WeightedHistogram(images, s.EdgeWeight, s.OutlineDarkness)
                     : (PaletteBuilder.Histogram(images), null);
                 if (hist.Count == 0) continue;
-                int k = s.Colors > 0 ? Math.Clamp(s.Colors, 2, PaletteBuilder.MaxColors) : PaletteBuilder.AutoCount(hist);
-                int generate = Math.Max(1, k - pins.Count);
-                var made = s.Method == PaletteMethod.MedianCut ? PaletteBuilder.MedianCut(hist, generate, members, metric) : PaletteBuilder.KMeans(hist, generate, members, metric).Palette;
-                palette = [.. pins, .. made.Where(c => !pins.Any(p => PaletteEdits.Matches(p, c)))];
-                // 자동 색 수면 넓게 쓰인 색이 다른 색과 섞여 바뀌지 않게 더한다(고른 색 수는 그대로).
-                if (s.Colors <= 0) palette = PaletteBuilder.KeepMajorColors(palette, hist, members, metric: metric);
-                // 다른 색상 지키기: 작은 면이라도 색상이 뚜렷이 다른 색(귀 그늘의 살구색 등)이 다른 색상(금색)으로 바뀌지 않게.
-                if (s.KeepDistinctHues)
-                    palette = PaletteBuilder.KeepDistinctHues(palette, hist, members, pins.Count, s.Colors > 0 && palette.Count >= k, metric,
-                        PixelateRanges.DistinctMinChroma.Clamp(s.DistinctMinChroma), PixelateRanges.DistinctMinHue.Clamp(s.DistinctMinHue),
-                        PixelateRanges.DistinctMinArea.Clamp(s.DistinctMinArea));
-                resolved = Math.Max(resolved, Math.Max(k, palette.Count));
+                if (s.Method == PaletteMethod.OkLch)
+                {
+                    // OKLCh 문턱 묶기: 색 수는 문턱이 정한다(색 수·넓게 쓰인 색 지키기는 쓰지 않음).
+                    palette = PaletteBuilder.OkLchGroups(hist, PixelateRanges.OkLchMaxL.Clamp(s.OkLchMaxL), PixelateRanges.OkLchMaxC.Clamp(s.OkLchMaxC),
+                        PixelateRanges.OkLchMaxH.Clamp(s.OkLchMaxH), members, metric);
+                    if (s.KeepDistinctHues) palette = KeepDistinct(palette, hist, members, replace: false, metric, s);
+                    resolved = Math.Max(resolved, palette.Count);
+                }
+                else
+                {
+                    int k = s.Colors > 0 ? Math.Clamp(s.Colors, 2, PaletteBuilder.MaxColors) : PaletteBuilder.AutoCount(hist);
+                    palette = s.Method == PaletteMethod.MedianCut ? PaletteBuilder.MedianCut(hist, k, members, metric) : PaletteBuilder.KMeans(hist, k, members, metric).Palette;
+                    // 자동 색 수면 넓게 쓰인 색이 다른 색과 섞여 바뀌지 않게 더한다(고른 색 수는 그대로).
+                    if (s.Colors <= 0) palette = PaletteBuilder.KeepMajorColors(palette, hist, members, metric: metric);
+                    // 다른 색상 지키기: 작은 면이라도 색상이 뚜렷이 다른 색(귀 그늘의 살구색 등)이 다른 색상(금색)으로 바뀌지 않게.
+                    if (s.KeepDistinctHues) palette = KeepDistinct(palette, hist, members, s.Colors > 0 && palette.Count >= k, metric, s);
+                    resolved = Math.Max(resolved, Math.Max(k, palette.Count));
+                }
             }
             // 디더 없음: 고른 색 거리로 가장 가까운 색(명암 계열 우선이면 같은 계열 먼저 — ColorMetric.Nearest).
             // 디더(Bayer): RGB 거리(PaletteRemap)의 두 색 섞기 — 명암 계열 우선이면 섞을 바탕 색도 고른 색 거리(같은 계열 먼저)로 고르고, 색상이 다른 유채색과는
@@ -793,10 +796,15 @@ public static class Pixelator
                 else remap = new PaletteRemap(palette);
                 foreach (var img in images) remap.Apply(img, s.Dither);
             }
-            if (pins.Count > 0) TakePins(images, group.Select(i => raw[i]).ToArray(), palette, pins.Count, metric);
         }
         return resolved;
     }
+
+    private static List<Color32> KeepDistinct(List<Color32> palette, IReadOnlyList<(Color32 Color, double Count)> hist,
+        IReadOnlyList<List<(Color32 Color, double Weight)>>? members, bool replace, ColorMetric metric, PaletteSettings s)
+        => PaletteBuilder.KeepDistinctHues(palette, hist, members, replace, metric,
+            PixelateRanges.DistinctMinChroma.Clamp(s.DistinctMinChroma), PixelateRanges.DistinctMinHue.Clamp(s.DistinctMinHue),
+            PixelateRanges.DistinctMinArea.Clamp(s.DistinctMinArea));
 
     /// <summary>칸마다 <paramref name="metric"/>로 가장 가까운 팔레트 색(알파는 그대로, 같은 색은 한 번만 계산).</summary>
     private static void MapNearest(PixelImage[] images, List<Color32> palette, ColorMetric metric)
@@ -818,63 +826,14 @@ public static class Pixelator
         }
     }
 
-    /// <summary>원본 칸 색(<paramref name="raw"/>)이 <paramref name="metric"/>로 팔레트 앞 <paramref name="pinCount"/>개(고정 색) 중 하나에 가장 가까운 칸을 그 고정 색으로.</summary>
-    private static void TakePins(PixelImage[] images, PixelImage[] raw, List<Color32> palette, int pinCount, ColorMetric metric)
+    /// <summary>모든 칸 그림에 쓰인 불투명 색 수(예전에는 픽셀을 한 줄 그림으로 이어 셌는데, 큰 시트에서 그림 너비 한도 16384를 넘어 원래 색 유지가 실패했음).</summary>
+    private static int CountColors(PixelImage[] cells)
     {
-        var labs = palette.Select(metric.Point).ToArray();
-        var pick = new Dictionary<uint, int>();
-        for (int n = 0; n < images.Length; n++)
-        {
-            var px = images[n].Pixels;
-            var from = raw[n].Pixels;
-            for (int i = 0; i < px.Length; i++)
-            {
-                if (px[i].A == 0 || from[i].A == 0) continue;
-                uint key = from[i].Argb | 0xFF000000u;
-                if (!pick.TryGetValue(key, out int best))
-                    pick[key] = best = metric.Nearest(metric.Point(from[i]), labs);
-                if (best < pinCount) px[i] = palette[best].WithAlpha(px[i].A);
-            }
-        }
-    }
-
-    /// <summary>고정 색과 맞는(<see cref="PaletteEdits.MatchDistance"/>) 칸을 가장 가까운 고정 색으로(원본 색 유지).</summary>
-    private static void SnapToPins(PixelImage[] cells, List<Color32> pins)
-    {
-        if (pins.Count == 0) return;
-        var labs = pins.Select(OkLab.FromColor).ToArray();
-        var snap = new Dictionary<uint, int>();
-        foreach (var img in cells)
-        {
-            var px = img.Pixels;
-            for (int i = 0; i < px.Length; i++)
-            {
-                if (px[i].A == 0) continue;
-                uint key = px[i].Argb | 0xFF000000u;
-                if (!snap.TryGetValue(key, out int best))
-                {
-                    var lab = OkLab.FromColor(px[i]);
-                    best = -1;
-                    float bestD = PaletteEdits.MatchDistance;
-                    for (int p = 0; p < labs.Length; p++)
-                    {
-                        float d = Lab.Distance(lab, labs[p]);
-                        if (d <= bestD) { bestD = d; best = p; }
-                    }
-                    snap[key] = best;
-                }
-                if (best >= 0) px[i] = pins[best].WithAlpha(px[i].A);
-            }
-        }
-    }
-
-    private static PixelImage Combine(PixelImage[] cells)
-    {
-        int total = cells.Sum(c => c.Pixels.Length);
-        var all = new Color32[Math.Max(1, total)];
-        int at = 0;
-        foreach (var c in cells) { c.Pixels.CopyTo(all, at); at += c.Pixels.Length; }
-        return new PixelImage(all.Length, 1, all);
+        var set = new HashSet<uint>();
+        foreach (var c in cells)
+            foreach (var px in c.Pixels)
+                if (px.A != 0) set.Add(px.Argb);
+        return set.Count;
     }
 
     /// <summary>
@@ -896,7 +855,7 @@ public static class Pixelator
         return new Color32(pick);
     }
 
-    private static void SnapDark(PixelImage img, Color32 outline, double darkness, HashSet<uint> pinned)
+    private static void SnapDark(PixelImage img, Color32 outline, double darkness)
     {
         var px = img.Pixels;
         var cache = new Dictionary<uint, bool>();
@@ -904,7 +863,7 @@ public static class Pixelator
         {
             var c = px[i];
             if (c.A == 0 || c == outline) continue;
-            if (!cache.TryGetValue(c.Argb, out bool dark)) cache[c.Argb] = dark = !pinned.Contains(c.Argb | 0xFF000000u) && OkLab.FromColor(c).L <= darkness;
+            if (!cache.TryGetValue(c.Argb, out bool dark)) cache[c.Argb] = dark = OkLab.FromColor(c).L <= darkness;
             if (dark) px[i] = outline;
         }
     }

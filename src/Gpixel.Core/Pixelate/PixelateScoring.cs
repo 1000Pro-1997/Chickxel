@@ -9,7 +9,7 @@ public enum ScoreTerm
     Orphans,
     /// <summary>가장자리 중 외곽선(어두운 색)이 아닌 비율.</summary>
     OutlineGaps,
-    /// <summary>색 수가 목표와 다른 정도.</summary>
+    /// <summary>색 수가 목표보다 많은 정도(점수 전체에 곱하는 감점 — <see cref="PixelateScoring.Score"/>).</summary>
     Colors,
     /// <summary>프레임 사이 색 쓰임이 다른 정도.</summary>
     Consistency,
@@ -58,7 +58,7 @@ public sealed record PixelateScore(double Total, IReadOnlyList<ScorePart> Parts)
 
 /// <summary>
 /// AI 없이 후보를 매기는 점수: 항목마다 나쁨(0~1)을 가중 평균해 100 × (1 − 평균). 충실도는 OKLab 평균 차 0.12에서,
-/// 외톨이는 불투명 픽셀의 5%에서 가장 나쁨. 색 수는 목표가 있을 때만(없으면 0). 색 바뀜은 팔레트 단계의 색 거리(<see cref="PaletteSettings.ColorDistance"/> — OKLab와 같은 크기,
+/// 외톨이는 불투명 픽셀의 5%에서 가장 나쁨. 색 수는 평균에 넣지 않고 목표가 있을 때만 점수 전체에 곱해 깎는다(아래). 색 바뀜은 팔레트 단계의 색 거리(<see cref="PaletteSettings.ColorDistance"/> — OKLab와 같은 크기,
 /// CIEDE2000은 ΔE00/200 — <see cref="ColorMetric.CiedeScale"/>)로 0.02(겨우 보이는 차이)까지는 0, 0.10에서 가장 나쁨.
 /// 블록 반복도는 0.65(제대로 줄인 표본 결과 0.17~0.34, 두 칸 두께 외곽선·눈인 걷기 표본의 맞는 크기 0.64)까지는 0, 0.95에서 가장 나쁨(칸을 진짜 칸의
 /// ½~⅓로 고른 표본 결과 0.52~1.0, 깨끗한 그림을 키운 것은 1.0) — 칸이 작을수록 충실도는 늘 좋아지므로 이것이 없으면 점수가 그림을 덜 줄이는 쪽으로 끌린다.
@@ -67,11 +67,16 @@ public sealed record PixelateScore(double Total, IReadOnlyList<ScorePart> Parts)
 /// </summary>
 public static class PixelateScoring
 {
+    /// <summary>
+    /// 목표 색 수(<paramref name="targetColors"/>)가 있으면 결과 색이 그보다 많을 때만 점수 전체에 (1 − 색 수 가중치 × 넘은 수 ÷ 목표)를 곱한다(0 아래면 0,
+    /// 적으면 그대로). 예: 가중치 0.5·목표 16이면 20색 −12.5%, 32색 −50%, 48색 이상 0점. 예전처럼 다른 항목과 가중 평균하면 색 수 가중치가 전체의 3%뿐이라
+    /// 653색(원래 색 유지)이 목표 16색을 크게 넘어도 3점밖에 깎이지 않아 충실도가 높은 쪽이 이겼다. 항목의 나쁨 = 깎인 비율.
+    /// </summary>
     public static PixelateScore Score(PixelateResult r, ScoreWeights w, int? targetColors)
     {
         var m = r.Metrics;
         double orphanRate = m.OpaquePixels == 0 ? 0 : m.Orphans / (double)m.OpaquePixels;
-        double colorBad = targetColors is > 0 and var t ? Math.Min(1, Math.Abs(m.Colors - t) / (double)t) : 0;
+        double colorBad = targetColors is > 0 and var t ? Math.Clamp(Math.Max(0, w.Colors) * Math.Max(0, m.Colors - t) / t, 0, 1) : 0;
         var parts = new List<ScorePart>
         {
             new(ScoreTerm.Fidelity, m.Fidelity, Math.Min(1, m.Fidelity / 0.12), w.Fidelity),
@@ -84,8 +89,9 @@ public static class PixelateScoring
             new(ScoreTerm.ColorShift, m.ColorShift, Math.Clamp((m.ColorShift - 0.02) / 0.08, 0, 1), w.ColorShift),
             new(ScoreTerm.BlockRepetition, m.BlockRepetition, Math.Clamp((m.BlockRepetition - 0.65) / 0.3, 0, 1), w.BlockRepetition),
         };
-        double tw = parts.Sum(p => Math.Max(0, p.Weight));
-        double bad = tw <= 0 ? 0 : parts.Sum(p => Math.Max(0, p.Weight) * p.Badness) / tw;
-        return new PixelateScore(r.Failed ? 0 : 100 * (1 - bad), parts);
+        // 색 수는 평균에 넣지 않고 전체에 곱한다(위).
+        double tw = parts.Where(p => p.Term != ScoreTerm.Colors).Sum(p => Math.Max(0, p.Weight));
+        double bad = tw <= 0 ? 0 : parts.Where(p => p.Term != ScoreTerm.Colors).Sum(p => Math.Max(0, p.Weight) * p.Badness) / tw;
+        return new PixelateScore(r.Failed ? 0 : 100 * (1 - bad) * (1 - colorBad), parts);
     }
 }

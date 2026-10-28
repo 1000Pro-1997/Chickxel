@@ -244,18 +244,18 @@ public static class PaletteBuilder
     /// 다른 색상 지키기: 히스토그램 색 중 채도 ≥ <paramref name="minChroma"/>이고, <paramref name="metric"/>로 가장 가까운 팔레트 색과 색상이
     /// <paramref name="minHue"/>도 이상 다른(그 팔레트 색이 거의 무채색이면 다른 것으로 봄) 색들을 무리(무게 큰 색을 씨앗으로 <see cref="HueClusterRadius"/>·색상 차 ½ 문턱 안)로 묶어,
     /// 무리 무게 ≥ <paramref name="minArea"/>이면 그 색(실제 칸 색 — <see cref="Representative"/>, 칸 색이 없으면 무게 평균)을 넣는다.
-    /// <paramref name="replace"/>가 거짓이면 더하고(최대 <paramref name="max"/>색), 참이면(고른 색 수) 앞 <paramref name="pinCount"/>개(고정 색)와 이 단계에서 넣은 색을 빼고
+    /// <paramref name="replace"/>가 거짓이면 더하고(최대 <paramref name="max"/>색), 참이면(고른 색 수) 이 단계에서 넣은 색을 빼고
     /// 가장 덜 중요한 색 — 그 색으로 가는 색들이 다음으로 가까운 색으로 갈 때 늘어나는 (무게 × 거리) 합이 가장 작은 색 — 과 바꾼다(팔레트의 ¼까지, 적어도 1색).
     /// </summary>
     public static List<Color32> KeepDistinctHues(List<Color32> palette, IReadOnlyList<(Color32 Color, double Count)> hist,
-        IReadOnlyList<List<(Color32 Color, double Weight)>>? members, int pinCount, bool replace, ColorMetric metric,
+        IReadOnlyList<List<(Color32 Color, double Weight)>>? members, bool replace, ColorMetric metric,
         double minChroma, double minHue, double minArea, int max = MaxColors)
     {
         if (hist.Count == 0 || palette.Count == 0) return palette;
         var pts = hist.Select(h => OkLab.FromColor(h.Color)).ToArray();
         var cps = pts.Select(p => metric.Point(p)).ToArray();
         var result = new List<Color32>(palette);
-        var locked = new HashSet<int>(Enumerable.Range(0, Math.Min(pinCount, result.Count)));
+        var locked = new HashSet<int>();
         int rounds = replace ? Math.Max(1, palette.Count / 4) : MaxDistinctHues;
         for (int round = 0; round < rounds; round++)
         {
@@ -524,6 +524,107 @@ public static class PaletteBuilder
             foreach (int i in b) { var (c, n) = hist[i]; r += c.R * n; g += c.G * n; bl += c.B * n; w += n; }
             return new Color32((byte)Math.Round(r / w), (byte)Math.Round(g / w), (byte)Math.Round(bl / w));
         }).Distinct().ToList();
+    }
+
+    /// <summary>OKLCh 묶기에서 색상을 볼 최소 채도(OKLCh C) — 이보다 흐린 색은 색상각이 흔들리는 회색이라 색상 차를 보지 않는다.</summary>
+    public const double OkLchAchromatic = 0.02;
+
+    /// <summary>
+    /// OKLCh 문턱 묶기(<see cref="PaletteMethod.OkLch"/>): 두 색의 밝기 차 ≤ <paramref name="maxL"/>, 채도 차 ≤ <paramref name="maxC"/>, 색상 차 ≤ <paramref name="maxH"/>도
+    /// (둘 다 채도 ≥ <see cref="OkLchAchromatic"/>일 때만)면 같은 색으로 묶을 수 있다. 아직 묶이지 않은 색 중 문턱 안에 드는 쓰인 수의 합이 가장 큰 색(같으면 쓰인 수가 큰 색,
+    /// 그다음 앞 번호)을 묶음 중심으로 뽑고 그 이웃을 묶음에서 빼기를 모든 색이 묶일 때까지 되풀이한다 — 가장 많이 묶는 중심부터. 그 뒤 색마다 문턱 안의 중심 중
+    /// 가장 가까운(각 문턱으로 나눈 차의 제곱합) 중심으로 다시 나눈다. 묶음 색은 <paramref name="members"/>가 있으면 실제 칸 색(<see cref="Representative"/>), 없으면 OKLab 무게 평균.
+    /// 색 수는 문턱이 정한다(같은 입력이면 늘 같은 결과).
+    /// </summary>
+    public static List<Color32> OkLchGroups(IReadOnlyList<(Color32 Color, double Count)> hist, double maxL, double maxC, double maxH,
+        IReadOnlyList<List<(Color32 Color, double Weight)>>? members = null, ColorMetric? metric = null)
+    {
+        int n = hist.Count;
+        if (n == 0) return [];
+        var pts = hist.Select(h => OkLab.FromColor(h.Color)).ToArray();
+        var l = new double[n];
+        var c = new double[n];
+        var h = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            l[i] = pts[i].L;
+            c[i] = ColorDistance.Chroma(pts[i]);
+            double deg = Math.Atan2(pts[i].B, pts[i].A) * 180 / Math.PI;
+            h[i] = deg < 0 ? deg + 360 : deg;
+        }
+        double HueGap(int a, int b)
+        {
+            double d = Math.Abs(h[a] - h[b]);
+            return d > 180 ? 360 - d : d;
+        }
+        bool Within(int a, int b)
+            => Math.Abs(l[a] - l[b]) <= maxL && Math.Abs(c[a] - c[b]) <= maxC
+               && (c[a] < OkLchAchromatic || c[b] < OkLchAchromatic || HueGap(a, b) <= maxH);
+
+        // 이웃 목록(자기 포함): 밝기 순으로 늘어놓고 밝기 문턱 안만 견준다.
+        var byL = Enumerable.Range(0, n).OrderBy(i => l[i]).ThenBy(i => i).ToArray();
+        var near = new List<int>[n];
+        for (int i = 0; i < n; i++) near[i] = [i];
+        for (int a = 0; a < n; a++)
+            for (int b = a + 1; b < n && l[byL[b]] - l[byL[a]] <= maxL; b++)
+                if (Within(byL[a], byL[b]))
+                {
+                    near[byL[a]].Add(byL[b]);
+                    near[byL[b]].Add(byL[a]);
+                }
+
+        // 가장 많이 묶는 중심부터: 남은 이웃의 쓰인 수 합(묶이면 이웃들의 합에서 뺀다).
+        var cover = new double[n];
+        for (int i = 0; i < n; i++) foreach (int j in near[i]) cover[i] += hist[j].Count;
+        var taken = new bool[n];
+        var centers = new List<int>();
+        for (int left = n; left > 0;)
+        {
+            int best = -1;
+            for (int i = 0; i < n; i++)
+                if (!taken[i] && (best < 0 || cover[i] > cover[best] + 1e-9
+                                  || (Math.Abs(cover[i] - cover[best]) <= 1e-9 && hist[i].Count > hist[best].Count)))
+                    best = i;
+            centers.Add(best);
+            foreach (int j in near[best])
+            {
+                if (taken[j]) continue;
+                taken[j] = true;
+                left--;
+                foreach (int k in near[j]) cover[k] -= hist[j].Count;
+            }
+        }
+
+        // 색마다 문턱 안의 가장 가까운 중심(자기 묶음의 중심은 늘 문턱 안).
+        var isCenter = new int[n];
+        Array.Fill(isCenter, -1);
+        for (int g = 0; g < centers.Count; g++) isCenter[centers[g]] = g;
+        var groups = Enumerable.Range(0, centers.Count).Select(_ => new List<int>()).ToArray();
+        for (int i = 0; i < n; i++)
+        {
+            int pick = -1;
+            double pickD = double.MaxValue;
+            foreach (int j in near[i])
+            {
+                if (isCenter[j] < 0) continue;
+                double dl = (l[i] - l[j]) / maxL, dc = (c[i] - c[j]) / maxC;
+                double dh = c[i] < OkLchAchromatic || c[j] < OkLchAchromatic ? 0 : HueGap(i, j) / maxH;
+                double d = dl * dl + dc * dc + dh * dh;
+                if (d < pickD - 1e-12 || (Math.Abs(d - pickD) <= 1e-12 && isCenter[j] < pick)) (pick, pickD) = (isCenter[j], d);
+            }
+            groups[pick].Add(i);
+        }
+
+        var result = new List<Color32>(groups.Length);
+        foreach (var g in groups)
+        {
+            if (g.Count == 0) continue;
+            if (members is not null) { result.Add(Representative(g, pts, hist, members, metric)); continue; }
+            double sl = 0, sa = 0, sb = 0, sw = 0;
+            foreach (int j in g) { sl += pts[j].L * hist[j].Count; sa += pts[j].A * hist[j].Count; sb += pts[j].B * hist[j].Count; sw += hist[j].Count; }
+            result.Add(OkLab.ToColor(new Lab((float)(sl / sw), (float)(sa / sw), (float)(sb / sw))));
+        }
+        return result.Distinct().ToList();
     }
 
     private static int Channel(Color32 c, int ch) => ch == 0 ? c.R : ch == 1 ? c.G : c.B;

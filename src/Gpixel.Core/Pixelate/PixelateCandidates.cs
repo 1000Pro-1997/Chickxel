@@ -92,7 +92,8 @@ public static class PixelateCandidates
 
     private static List<Func<PixelateSettings, PixelateSettings>> PaletteVariants(PixelateSettings b, PixelateResult r)
     {
-        if (b.Palette.Method == PaletteMethod.Existing) return [];
+        // 기존 팔레트·OKLCh 묶기는 색 수를 쓰지 않는다(OKLCh는 문턱이 색 수를 정함).
+        if (b.Palette.Method is PaletteMethod.Existing or PaletteMethod.OkLch) return [];
         if (b.Palette.Method == PaletteMethod.KeepOriginal)
             return [s => s with { Palette = s.Palette with { Method = PaletteMethod.KMeans, Colors = 0 } }];
         int k = b.Palette.Colors > 0 ? b.Palette.Colors : r.ResolvedColors;
@@ -113,14 +114,14 @@ public static class PixelateCandidates
 
     /// <summary>
     /// 후보를 모두 돌린다: 지금 설정을 먼저(번호 0), 그다음 바꾼 설정들을 여러 스레드로. 하나 끝날 때마다 <paramref name="onResult"/>(아무 스레드).
-    /// 점수의 목표 색 수는 지금 설정의 색 수(자동이면 찾은 수). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
+    /// 점수의 목표 색 수는 <paramref name="targetColors"/>(결과 색이 그보다 많을 때만 감점, 0 = 자동 — 색 수를 보지 않음). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
     /// </summary>
     /// <param name="scoreMetric">모든 후보의 주요 색 변화에 쓸 거리(null = 각 후보의 팔레트 거리). 색 변환은 후보 설정대로 한다.</param>
     public static List<PixelateCandidate> Run(PixelateSource src, PixelateSettings b, CandidateVary vary, int count, ScoreWeights weights,
-        Action<PixelateCandidate>? onResult = null, CancellationToken ct = default, ColorMetric? scoreMetric = null)
+        Action<PixelateCandidate>? onResult = null, CancellationToken ct = default, ColorMetric? scoreMetric = null, int targetColors = 0)
     {
         var first = Pixelator.Run(src, b, scoreMetric, ct);
-        int? target = b.Palette.Method == PaletteMethod.KeepOriginal ? null : first.ResolvedColors;
+        int? target = targetColors > 0 ? targetColors : null;
         var all = new List<PixelateCandidate> { new(0, b, first, PixelateScoring.Score(first, weights, target)) };
         onResult?.Invoke(all[0]);
         var variants = count > 1 ? Variants(b, first, vary, count) : [];
