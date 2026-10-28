@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.56 (2026-10-28)
+### App icon is now the plain chick
+- The app, window, Dock and taskbar icon shows the default pixel chick without the palette or background, scaled on a consistent 16×16 pixel grid.
+- The website's logo and favicon use the same picture.
+
 ## v1.14.55 (2026-10-28)
 ### Heavy effects no longer freeze the editor
 - Layer effects on large images or many frames are computed on background threads, so the canvas, timeline, preview and effects window keep responding while you drag effect settings, draw or play.

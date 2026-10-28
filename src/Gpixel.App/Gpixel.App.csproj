@@ -17,7 +17,7 @@
     <NeutralLanguage>ko</NeutralLanguage>
     <!-- UI는 모두 코드로 만든다(XAML 없음). -->
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
-    <!-- Windows exe 아이콘(32×32 점 그림에서 만든 16~256) -->
+    <!-- Windows exe 아이콘(기본 병아리를 놓은 16×16 점 그림을 정수배로 키운 16~256) -->
     <ApplicationIcon>Assets\AppIcon\gpixel.ico</ApplicationIcon>
   </PropertyGroup>
 
