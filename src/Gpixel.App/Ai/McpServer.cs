@@ -29,7 +29,7 @@ public sealed class McpServer : IDisposable
     private HttpListener? _listener;
     private string _host = "127.0.0.1";
     private int _port;
-    private string? _configPath;
+    private readonly HashSet<string> _configPaths = new(StringComparer.Ordinal);
     private volatile bool _disposed;
     private long _requests, _unauthorized, _toolLists;
 
@@ -123,7 +123,8 @@ public sealed class McpServer : IDisposable
     }
 
     /// <summary>
-    /// Claude Code의 <c>--mcp-config</c> 파일을 임시 폴더에 쓰고 경로를 돌려준다(서버가 꺼져 있으면 시작).
+    /// Claude Code의 <c>--mcp-config</c> 파일을 임시 폴더에 쓴다(서버가 꺼져 있으면 시작).
+    /// 동시에 상태 점검과 채팅이 시작되어도 서로 파일을 지우지 않도록 호출마다 고유 파일을 만들며,
     /// 토큰이 들어 있으므로 macOS·Linux에서는 본인만 읽을 수 있게 만든다.
     /// </summary>
     public string WriteMcpConfigFile()
@@ -141,31 +142,47 @@ public sealed class McpServer : IDisposable
                 },
             },
         };
-        var path = Path.Combine(Path.GetTempPath(), $"gpixel-mcp-{Environment.ProcessId}.json");
+        var path = Path.Combine(Path.GetTempPath(), $"gpixel-mcp-{Environment.ProcessId}-{Guid.NewGuid():N}.json");
         var bytes = Encoding.UTF8.GetBytes(config.ToJsonString(PixelTools.JsonOptions));
-        File.Delete(path);
         var options = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None };
         if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
         using (var fs = new FileStream(path, options)) fs.Write(bytes);
-        _configPath = path;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                try { File.Delete(path); } catch { /* 종료와 겹친 임시 파일 */ }
+                throw new ObjectDisposedException(nameof(McpServer));
+            }
+            _configPaths.Add(path);
+        }
         return path;
+    }
+
+    /// <summary>짧게 띄운 상태 점검 프로세스가 다 읽은 임시 설정을 바로 지운다.</summary>
+    internal void ReleaseMcpConfigFile(string path)
+    {
+        lock (_gate)
+            if (!_configPaths.Remove(path)) return;
+        try { File.Delete(path); } catch { /* 앱 종료 때 남은 임시 파일과 함께 정리됨 */ }
     }
 
     public void Dispose()
     {
         HttpListener? listener;
+        string[] configPaths;
         lock (_gate)
         {
             if (_disposed) return;
             _disposed = true;
             listener = _listener;
             _listener = null;
+            configPaths = [.. _configPaths];
+            _configPaths.Clear();
         }
         try { listener?.Close(); } catch { /* 종료 중 오류는 무시 */ }
-        if (_configPath is { } path)
-        {
+        foreach (var path in configPaths)
             try { File.Delete(path); } catch { /* 지우지 못해도 임시 폴더라 괜찮다 */ }
-        }
     }
 
     // ───────────── HTTP ─────────────

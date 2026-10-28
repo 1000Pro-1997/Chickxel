@@ -10345,12 +10345,13 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiStatus_LoginUnavailable" xml:space="preserve"><value>CLI를 설치한 뒤 확인할 수 있습니다.</value></data>
   <data name="AiStatus_McpUnavailable" xml:space="preserve"><value>CLI를 설치한 뒤 연결할 수 있습니다.</value></data>
   <data name="AiStatus_VersionPath" xml:space="preserve"><value>{version} · {path}</value><comment>version = CLI 버전, path = 실행 파일 경로.</comment></data>
-  <data name="AiStatus_NotOnPath" xml:space="preserve"><value>현재 Gpixel의 PATH에서는 명령을 찾지 못합니다. 터미널의 PATH도 확인하세요.</value></data>
-  <data name="AiStatus_DifferentPath" xml:space="preserve"><value>현재 Gpixel의 PATH는 다른 실행 파일을 가리킵니다: {path}</value><comment>path = PATH의 CLI 실행 파일.</comment></data>
+  <data name="AiStatus_NotOnPath" xml:space="preserve"><value>Gpixel이 위 실행 파일을 직접 사용합니다. PATH 설정은 필요 없습니다.</value></data>
+  <data name="AiStatus_DifferentPath" xml:space="preserve"><value>Gpixel은 위 실행 파일을 직접 사용합니다. PATH의 다른 실행 파일: {path}</value><comment>path = PATH의 CLI 실행 파일.</comment></data>
   <data name="AiStatus_LoggedIn" xml:space="preserve"><value>로그인됨 · {account}</value><comment>account = 계정 또는 로그인 방식.</comment></data>
   <data name="AiStatus_NotLoggedIn" xml:space="preserve"><value>로그인되지 않음</value></data>
-  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>설정만 생성됨 · 실제 Claude 연결은 아직 확인하지 않음(첫 메시지에서 확인)</value></data>
-  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>설정만 확인됨 · 실제 도구 연결은 아직 확인하지 않음(첫 메시지에서 확인)</value></data>
+  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>연결 준비됨 · 첫 메시지에서 자동으로 연결하고 확인</value></data>
+  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>연결 준비됨 · 첫 메시지에서 자동으로 연결하고 확인</value></data>
+  <data name="AiStatus_McpConnected" xml:space="preserve"><value>실제 CLI 연결 정상 · 도구 목록 확인됨</value></data>
   <data name="Chat_McpCliPath" xml:space="preserve"><value>연결을 시도한 CLI: {path}. AI 상태 창에서 이 경로와 실제 터미널 경로를 비교하세요.</value><comment>path = MCP 연결에 사용한 CLI 실행 파일.</comment></data>
   <data name="Chat_CliPathChanged" xml:space="preserve"><value>CLI 경로가 바뀌어 세션을 다시 연결합니다. 확인 뒤 메시지를 다시 보내세요.</value></data>
   <data name="AiStatus_SettingsTab" xml:space="preserve"><value>AI 상태</value></data>

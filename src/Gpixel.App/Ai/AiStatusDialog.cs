@@ -360,8 +360,8 @@ internal sealed class AiStatusDialog : DialogBase
             else
             {
                 var shellPath = AiCli.LocateOnPath(_provider.Command);
-                var samePath = shellPath is not null && string.Equals(System.IO.Path.GetFullPath(shellPath), System.IO.Path.GetFullPath(health.Path), OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
-                var cliLevel = health.CliError is not null ? AiHealthLevel.Error : samePath ? AiHealthLevel.Ok : AiHealthLevel.Warning;
+                var samePath = AiCli.SamePath(shellPath, health.Path);
+                var cliLevel = health.CliError is not null ? AiHealthLevel.Error : samePath ? AiHealthLevel.Ok : AiHealthLevel.Info;
                 var versionPath = UiStrings.FormatAiStatus_VersionPath(version: health.Version ?? UiStrings.AiStatus_Unknown, path: health.Path);
                 SetStatus(_cliIcon, _cliText, cliLevel, health.CliError is not null
                     ? UiStrings.FormatAiStatus_Failed(reason: health.CliError)
@@ -375,6 +375,7 @@ internal sealed class AiStatusDialog : DialogBase
                 SetStatus(_loginIcon, _loginText, loginLevel, loginText);
                 SetStatus(_mcpIcon, _mcpText, health.McpLevel, health.McpLevel switch
                 {
+                    AiHealthLevel.Ok => UiStrings.AiStatus_McpConnected,
                     AiHealthLevel.Info when _provider.Id == "claude" => UiStrings.AiStatus_McpPreparedClaude,
                     AiHealthLevel.Info => UiStrings.AiStatus_McpPreparedCodex,
                     _ => UiStrings.FormatAiStatus_Failed(reason: health.McpError ?? UiStrings.AiStatus_Unknown),

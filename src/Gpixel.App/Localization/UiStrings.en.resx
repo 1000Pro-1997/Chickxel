@@ -3391,12 +3391,13 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiStatus_LoginUnavailable" xml:space="preserve"><value>Install the CLI before checking sign-in.</value></data>
   <data name="AiStatus_McpUnavailable" xml:space="preserve"><value>Install the CLI before connecting.</value></data>
   <data name="AiStatus_VersionPath" xml:space="preserve"><value>{version} · {path}</value><comment>version = CLI version, path = executable path.</comment></data>
-  <data name="AiStatus_NotOnPath" xml:space="preserve"><value>Not found on Gpixel's current PATH. Check the terminal's PATH too.</value></data>
-  <data name="AiStatus_DifferentPath" xml:space="preserve"><value>Gpixel's current PATH points to a different executable: {path}</value><comment>path = CLI executable on PATH.</comment></data>
+  <data name="AiStatus_NotOnPath" xml:space="preserve"><value>Gpixel uses the executable above directly. No PATH setup is required.</value></data>
+  <data name="AiStatus_DifferentPath" xml:space="preserve"><value>Gpixel uses the executable above directly. Different executable on PATH: {path}</value><comment>path = CLI executable on PATH.</comment></data>
   <data name="AiStatus_LoggedIn" xml:space="preserve"><value>Signed in · {account}</value><comment>account = account or sign-in method.</comment></data>
   <data name="AiStatus_NotLoggedIn" xml:space="preserve"><value>Not signed in</value></data>
-  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>Configuration created only · live Claude connection not yet verified (checked on the first message)</value></data>
-  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>Configuration read only · live tool connection not yet verified (checked on the first message)</value></data>
+  <data name="AiStatus_McpPreparedClaude" xml:space="preserve"><value>Ready · connects and verifies automatically on the first message</value></data>
+  <data name="AiStatus_McpPreparedCodex" xml:space="preserve"><value>Ready · connects and verifies automatically on the first message</value></data>
+  <data name="AiStatus_McpConnected" xml:space="preserve"><value>Live CLI connection passed · tool list received</value></data>
   <data name="Chat_McpCliPath" xml:space="preserve"><value>CLI used for this connection: {path}. Compare this path with the terminal path in AI Status.</value><comment>path = CLI executable used for the MCP connection.</comment></data>
   <data name="Chat_CliPathChanged" xml:space="preserve"><value>The CLI path changed. Reconnecting the session; send your message again after the check.</value></data>
   <data name="AiStatus_SettingsTab" xml:space="preserve"><value>AI Status</value></data>

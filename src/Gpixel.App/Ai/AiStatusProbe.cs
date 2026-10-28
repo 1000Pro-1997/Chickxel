@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
@@ -105,21 +106,55 @@ internal static class AiStatusProbe
         }
     }
 
+    private sealed record CandidateHealth(string Path, string? Version, string? CliError, AiHealthLevel McpLevel, string? McpError);
+
     internal static async Task<AiProviderHealth> CheckProviderAsync(
         AiProvider provider, AppSettings settings, McpServer mcp, CancellationToken cancellationToken)
     {
-        var path = provider.Locate(settings);
-        if (path is null)
+        CandidateHealth? first = null, firstRunnable = null, selected = null;
+        foreach (var path in provider.LocateCandidates(settings))
+        {
+            var health = await CheckCandidateAsync(provider, path, mcp, cancellationToken).ConfigureAwait(false);
+            first ??= health;
+            if (health.CliError is not null) continue;
+            firstRunnable ??= health;
+            if (health.McpLevel == AiHealthLevel.Error) continue;
+            selected = health;
+            break;
+        }
+        selected ??= firstRunnable ?? first;
+        if (selected is null)
             return new AiProviderHealth(provider, null, null, null, null, AiHealthLevel.Error, null);
 
-        var versionRun = await AiCli.RunAsync(path, ["--version"], cancellationToken, timeoutSeconds: 10).ConfigureAwait(false);
-        var version = FirstLine(versionRun.Stdout, versionRun.Stderr);
-        var cliError = versionRun.Error ?? (versionRun.ExitCode == 0 ? null : ExitFailure(versionRun, 300));
-        if (version is null && cliError is null) cliError = UiStrings.AiStatus_NoVersionOutput;
+        if (selected.CliError is null && selected.McpLevel != AiHealthLevel.Error)
+            RememberWorkingPath(provider, settings, selected.Path);
+        var auth = await provider.GetAuthStatusAsync(selected.Path, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        return new AiProviderHealth(provider, selected.Path, selected.Version, selected.CliError, auth, selected.McpLevel, selected.McpError);
+    }
 
-        var auth = await provider.GetAuthStatusAsync(path, cancellationToken).ConfigureAwait(false);
+    private static async Task<CandidateHealth> CheckCandidateAsync(
+        AiProvider provider, string path, McpServer mcp, CancellationToken cancellationToken)
+    {
+        var run = await AiCli.RunAsync(path, ["--version"], cancellationToken, timeoutSeconds: 10).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        var version = FirstLine(run.Stdout, run.Stderr);
+        var error = run.Error ?? (run.ExitCode == 0 ? null : ExitFailure(run, 300));
+        if (version is null && error is null) error = UiStrings.AiStatus_NoVersionOutput;
+        if (error is not null)
+            return new CandidateHealth(path, version, error, AiHealthLevel.Error, UiStrings.AiStatus_McpUnavailable);
         var (mcpLevel, mcpError) = await CheckCliMcpAsync(provider, path, mcp, cancellationToken).ConfigureAwait(false);
-        return new AiProviderHealth(provider, path, version, cliError, auth, mcpLevel, mcpError);
+        cancellationToken.ThrowIfCancellationRequested();
+        return new CandidateHealth(path, version, null, mcpLevel, mcpError);
+    }
+
+    /// <summary>직접 지정 경로가 망가졌거나 먼저 찾은 자동 후보가 실행되지 않으면, 확인된 후보를 이후 채팅도 쓰도록 설정을 고친다.</summary>
+    private static void RememberWorkingPath(AiProvider provider, AppSettings settings, string path)
+    {
+        var configured = provider.GetPathOverride(settings);
+        if (!string.IsNullOrWhiteSpace(configured) && AiCli.SamePath(AiCli.ExpandHome(configured.Trim().Trim('"')), path)) return;
+        var automatic = provider.LocateAutomatically();
+        provider.SetPathOverride(settings, AiCli.SamePath(automatic, path) ? null : path);
     }
 
     internal static async Task<string?> LogoutAsync(AiProvider provider, string path, CancellationToken cancellationToken)
@@ -134,15 +169,12 @@ internal static class AiStatusProbe
         AiProvider provider, string path, McpServer mcp, CancellationToken cancellationToken)
     {
         if (provider.Id == "claude")
+            return await CheckClaudeMcpAsync(path, mcp, cancellationToken).ConfigureAwait(false);
+
+        try { mcp.Start(); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            // Claude의 관리 명령은 --mcp-config를 적용하지 않고 계정의 원격 MCP를 검사한다. 모델 호출 없이 할 수 있는 범위는
-            // 실제 채팅이 쓸 엄격한 임시 설정 생성까지이며, 연결 여부는 첫 메시지의 init과 서버 요청 카운터로 확인한다.
-            try { mcp.WriteMcpConfigFile(); }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
-            {
-                return (AiHealthLevel.Error, e.Message);
-            }
-            return (AiHealthLevel.Info, null);
+            return (AiHealthLevel.Error, e.Message);
         }
 
         var setting = $"mcp_servers={{{McpServer.ServerName}={{url={CodexSession.TomlString(mcp.Url)},bearer_token_env_var={CodexSession.TomlString(CodexTokenVariable)}}}}}";
@@ -166,6 +198,76 @@ internal static class AiStatusProbe
         {
             return (AiHealthLevel.Error, UiStrings.AiStatus_McpConfigUnreadable);
         }
+    }
+
+    /// <summary>
+    /// 모델 요청이나 메시지를 보내지 않고 실제 Claude 프로세스를 채팅과 같은 stream-json 모드로 띄운다.
+    /// 명시한 임시 MCP만 읽게 한 뒤 Gpixel 서버가 tools/list를 받으면 실제 CLI 연결 성공이다.
+    /// 빈 입력을 유지하므로 AI 사용량이 들지 않고, 사용자 hook은 상태 점검에서 실행하지 않는다.
+    /// </summary>
+    private static async Task<(AiHealthLevel Level, string? Error)> CheckClaudeMcpAsync(
+        string path, McpServer mcp, CancellationToken cancellationToken)
+    {
+        string config;
+        try { config = mcp.WriteMcpConfigFile(); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return (AiHealthLevel.Error, e.Message);
+        }
+
+        var since = mcp.Counters;
+        var args = new[]
+        {
+            "-p",
+            "--input-format", "stream-json",
+            "--output-format", "stream-json",
+            "--verbose",
+            "--disable-slash-commands",
+            "--setting-sources", "",
+            "--strict-mcp-config",
+            "--mcp-config", config,
+            "--allowedTools", "mcp__" + McpServer.ServerName,
+            "--tools", "",
+        };
+        using var process = new Process { StartInfo = AiCli.CreateStartInfo(path, args, AiCli.Home, true) };
+        var stderr = new StringBuilder();
+        Task<string>? stdoutDone = null;
+        Task? stderrDone = null;
+        try
+        {
+            process.Start();
+            stdoutDone = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
+            stderrDone = AiCli.CollectErrorTail(process, stderr);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(15));
+            try
+            {
+                while (!mcp.ToolsListedSince(since) && !process.HasExited)
+                    await Task.Delay(50, timeout.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // 아래 진단에서 요청이 아예 없었는지, 인증이 틀렸는지 구분한다.
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            if (mcp.ToolsListedSince(since)) return (AiHealthLevel.Ok, null);
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
+        {
+            return (AiHealthLevel.Error, e.Message);
+        }
+        finally
+        {
+            AiCli.Kill(process);
+            if (stdoutDone is not null)
+                try { await stdoutDone.ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException) { }
+            if (stderrDone is not null)
+                try { await stderrDone.ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException) { }
+            mcp.ReleaseMcpConfigFile(config);
+        }
+        var problem = mcp.DescribeProblem(since, null);
+        var detail = AiCli.Tail(stderr.ToString().Trim(), 400);
+        return (AiHealthLevel.Error, detail.Length == 0 ? problem : problem + "\n" + detail);
     }
 
     private static string ExitFailure(AiCli.RunResult run, int maxLength)

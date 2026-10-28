@@ -67,29 +67,37 @@ public static class AiCli
            + palette.ListColors() + "]";
 
     internal static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    internal static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+    internal static bool SamePath(string? left, string? right)
+    {
+        if (left is null || right is null) return left == right;
+        try { return PathComparer.Equals(Path.GetFullPath(left), Path.GetFullPath(right)); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { return false; }
+    }
+
 
     /// <summary>
     /// <paramref name="command"/> 실행 파일을 찾는다. <paramref name="overridePath"/>(설정에서 직접 정한 경로)가 있으면 먼저 쓰고,
-    /// 없으면 PATH와 흔한 설치 위치, 그다음 <paramref name="extraCandidates"/>를 살핀다. 못 찾으면 null.
+    /// 없거나 쓸 수 없으면 PATH와 흔한 설치 위치, 그다음 <paramref name="extraCandidates"/>를 살핀다. 못 찾으면 null.
     /// </summary>
     public static string? Locate(string command, string? overridePath, IEnumerable<string> extraCandidates)
+        => LocateCandidates(command, overridePath, extraCandidates).FirstOrDefault();
+
+    /// <summary>직접 지정 경로와 자동 탐색 경로 중 실제 파일이 있는 후보들. 상태 점검은 앞 후보가 망가졌으면 다음 후보까지 실행해 본다.</summary>
+    internal static IEnumerable<string> LocateCandidates(string command, string? overridePath, IEnumerable<string> extraCandidates)
     {
-        if (!string.IsNullOrWhiteSpace(overridePath))
+        var seen = new HashSet<string>(PathComparer);
+        IEnumerable<string> paths = string.IsNullOrWhiteSpace(overridePath)
+            ? Candidates(command).Concat(extraCandidates)
+            : new[] { ExpandHome(overridePath.Trim().Trim('"')) }.Concat(Candidates(command)).Concat(extraCandidates);
+        foreach (var path in paths)
         {
-            var p = ExpandHome(overridePath.Trim().Trim('"'));
-            if (File.Exists(p)) return p;
+            string full;
+            try { full = Path.GetFullPath(path); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { continue; }
+            if (seen.Add(full) && File.Exists(full)) yield return full;
         }
-        foreach (var c in Candidates(command).Concat(extraCandidates))
-        {
-            try
-            {
-                if (File.Exists(c)) return c;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
-            {
-            }
-        }
-        return null;
     }
 
     /// <summary>현재 프로세스 PATH에서 셸이 실행할 CLI(.exe/.cmd)를 찾는다. 앱의 설치 위치 추측과는 별개다.</summary>

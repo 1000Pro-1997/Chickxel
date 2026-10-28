@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.54 (2026-10-28)
+### Automatically found AI CLI paths no longer require PATH setup
+- Gpixel uses the full path of a discovered Claude Code or Codex executable and adds its folder to the child process PATH, so AI Status no longer warns when the executable is absent from Gpixel's own PATH.
+- AI Status now starts Claude Code without sending a message or model request, supplies the same strict temporary MCP configuration as chat and waits for the Gpixel server to receive `tools/list`; success is shown as a verified live CLI connection.
+- If a saved executable path exists but cannot run or complete the MCP handshake, Gpixel tries the remaining known locations, selects the first fully working CLI and clears or replaces the stale path automatically.
+
 ## v1.14.53 (2026-10-28)
 ### New key feature video: comparing cell by cell in the enlarged view
 - The website's key features, the guide's Quick tasks > Pixelate and the in-app guide (F1) open with a new video showing the cell grid on the source and the enlarged view comparing result and source cell by cell.
