@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## Unreleased
+### Simpler homepage navigation
+- Removed the GitHub link from the homepage header; the footer still links to the repository.
+- The Korean header now labels the download link "다운로드" to match the main download button.
+
+### Homepage feature descriptions updated
+- The homepage now describes script effects, the asset manager and adjustable effect recipes, along with responsive rendering of heavy effects.
+- The download section and ZIP links use consistent "다운로드" labels in Korean.
+
 ## v1.14.56 (2026-10-28)
 ### App icon is now the plain chick
 - The app, window, Dock and taskbar icon shows the default pixel chick without the palette or background, scaled on a consistent 16×16 pixel grid.

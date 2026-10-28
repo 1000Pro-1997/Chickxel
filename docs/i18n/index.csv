@@ -10,14 +10,12 @@ head.8,"
 <a href=""index.html"" aria-current=""page"">홈</a>
 <a class=""hide-sm"" href=""index.html#core"">대표 기능</a>
 <a href=""guide.html"">사용 가이드</a>
-<a class=""hide-sm"" href=""index.html#download"">내려받기</a>
-<a class=""hide-sm"" href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a>
+<a class=""hide-sm"" href=""index.html#download"">다운로드</a>
 <a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","
 <a href=""index.html"" aria-current=""page"">Home</a>
 <a class=""hide-sm"" href=""index.html#core"">Key features</a>
 <a href=""guide.html"">Guide</a>
 <a class=""hide-sm"" href=""index.html#download"">Download</a>
-<a class=""hide-sm"" href=""https://github.com/1000Pro-1997/GPixel"">GitHub</a>
 <a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
 head.9.title,언어,Language
 lang-select.1.aria-label,언어,Language
@@ -81,20 +79,26 @@ features.6,타임라인에서 프레임과 레이어를 다루고 태그로 애�
 features.7,부위와 스킨,Parts and skins
 features.8,"머리·몸·팔처럼 부위로 나눠 그리고, 스킨으로 옷·장비를 바꿔 끼웁니다. Unity Sprite Library까지 내보냅니다.","Draw characters as parts like head, body and arms, and swap outfits and gear with skins. Exports Unity Sprite Libraries too."
 features.9,레이어 효과,Layer effects
-features.10,"외곽선·그림자·광선부터 흔들림·폭발·페이드 같은 움직이는 효과까지, 원본을 건드리지 않고 덧입힙니다.","From outline, shadow and glow to animated shake, explosion and fade — layered on without touching your pixels."
+features.10,"외곽선·그림자·광선부터 흔들림·폭발·페이드까지 원본을 건드리지 않고 덧입힙니다. 무거운 효과도 편집을 멈추지 않고 계산합니다.","Add outline, shadow and glow or animated shake, explosion and fade without changing your pixels. Heavy effects compute without freezing the editor."
 features.11,AI 채팅,AI chat
 features.12,"내 컴퓨터의 Claude Code·Codex로 말로 그리고 고칩니다. API 키 없이 내 계정으로, 한 단계씩 되돌릴 수 있습니다.","Draw and edit by talking to Claude Code or Codex on your own computer. Uses your own account, no API key, and every step can be undone."
 features.13,팔레트와 언어,Palettes and languages
 features.14,Lospec 팔레트를 바로 가져오고 팔레트 변환을 합니다. 한국어·영어를 지원하고 CSV로 다른 언어를 직접 만들 수 있습니다.,Import Lospec palettes and convert to a palette in one step. Korean and English built in; add any language yourself with a CSV.
-download.1,내려받기,Download
+features.15,스크립트 효과,Script effects
+features.16,JavaScript로 효과와 설정을 직접 만듭니다. 프로젝트에 든 처음 보는 스크립트는 실행하기 전에 허락을 묻습니다.,Build your own effects and controls with JavaScript. Scripts from an unfamiliar project ask for permission before running.
+features.17,에셋 관리자,Asset manager
+features.18,효과 레시피와 그라데이션을 패키지로 저장하거나 온라인 카탈로그에서 하나씩 찾아 설치·업데이트합니다. 내 에셋도 제출할 수 있습니다.,"Save effect recipes and gradients as packages, or browse, install and update them individually from the online catalog. Submit your own assets too."
+features.19,조절 가능한 효과 레시피,Adjustable effect recipes
+features.20,여러 효과를 레시피 하나로 묶고 필요한 설정만 매개변수로 꺼내 한 번에 조절합니다.,Group effects into one recipe and expose only the settings you want to adjust together.
+download.1,다운로드,Download
 download.2,압축을 풀고 바로 실행합니다. 새 버전은 앱이 알려 주고 스스로 업데이트합니다.,Unzip and run. The app tells you about new versions and updates itself.
-download.3,"zip 내려받기</span></a>
+download.3,"ZIP 다운로드</span></a>
 <a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
 <a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 or later · macOS 12+</span><span class=""get"">"
-download.4,"zip 내려받기</span></a>
+download.4,"ZIP 다운로드</span></a>
 <a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
 <a class=""download"" href=""https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">"
-download.5,"zip 내려받기</span></a>
+download.5,"ZIP 다운로드</span></a>
 ","Download zip</span></a>
 "
 download.6,"처음 실행할 때 서명 경고가 뜨면 사용 가이드의 <a href=""guide.html#start-first-run"">처음 실행할 때</a>를 보세요. 지난 버전과 바뀐 점은 <a href=""https://github.com/1000Pro-1997/GPixel/releases"">릴리스</a>에 있습니다.","If you see a signing warning on first launch, see <a href=""guide.html#start-first-run"">First launch</a> in the guide. What changed in each version is on the <a href=""https://github.com/1000Pro-1997/GPixel/releases"">Releases</a> page."
