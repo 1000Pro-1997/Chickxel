@@ -62,7 +62,6 @@ public sealed partial class LayerEffectsDialog
     /// <summary>프레임 칸 수·사본 칸 표시·범위를 지금 상태(늘리는 중이면 늘린 뒤 차례)에 맞춘다. 칸 그림은 새 결과가 올 때까지 이전 그림.</summary>
     private void SyncStripFrames()
     {
-        _strip.Trimmed = Trim;
         _strip.Restorable = Math.Min(_restorable, Trim);
         _strip.SetCount(VirtualCount, IsCopyFrame);
         SyncStripRange();
@@ -140,7 +139,7 @@ public sealed partial class LayerEffectsDialog
         /// <summary>지우기 칸(마지막 칸 다음, 점선)을 눌러 끄는 중인지와 빨갛게 보일 첫 칸(칸 수 = 지울 것 없음).</summary>
         private bool _trimming, _trimMoved, _trashHover;
         private int _trimFrom;
-        private int _trimmed;
+        private int _restorable;
 
         public FrameStrip()
         {
@@ -156,24 +155,21 @@ public sealed partial class LayerEffectsDialog
         /// </summary>
         public event Action<int>? TrimReleased;
 
-        /// <summary>지우기로 한 뒤 프레임 수(지우기 칸에 표시, 되돌리기 안내).</summary>
-        public int Trimmed
+        /// <summary>지우기 칸을 눌러 되돌릴 수 있는 프레임 수(마지막으로 지운 한 번, 0 = 되돌릴 것 없음). 지우기 칸에 이 수를 보인다.</summary>
+        public int Restorable
         {
-            get => _trimmed;
+            get => _restorable;
             set
             {
-                if (_trimmed == value) return;
-                _trimmed = value;
+                if (_restorable == value) return;
+                _restorable = value;
                 UpdateWidth();
                 InvalidateVisual();
             }
         }
 
-        /// <summary>지우기 칸을 눌러 되돌릴 수 있는 프레임 수(마지막으로 지운 한 번, 0 = 되돌릴 것 없음).</summary>
-        public int Restorable { get; set; }
-
         /// <summary>지우기 칸이 보이는지: 지울 수 있는 프레임(첫 프레임 뒤)이 있거나 되돌릴 것이 있을 때. 마지막 칸 너머로 늘리며 끄는 동안은 숨긴다.</summary>
-        private bool ShowsTrash => (_thumbs.Length > 1 || _trimmed > 0) && !(_dragging && _dragTo >= _thumbs.Length);
+        private bool ShowsTrash => (_thumbs.Length > 1 || _restorable > 0) && !(_dragging && _dragTo >= _thumbs.Length);
 
         /// <summary>지우기 칸 위인지(그 칸 번호 = 칸 수).</summary>
         private bool OnTrash(Avalonia.Point p)
@@ -476,15 +472,15 @@ public sealed partial class LayerEffectsDialog
             if (ShowsTrash) DrawTrash(g, CellRect(_thumbs.Length));
         }
 
-        /// <summary>마지막 칸 다음의 지우기 칸: 점선 칸에 휴지통(누르거나 끄는 중·마우스가 올라가면 빨강), 지우기로 한 프레임이 있으면 그 수.</summary>
+        /// <summary>마지막 칸 다음의 지우기 칸: 점선 칸에 휴지통(누르거나 끄는 중·마우스가 올라가면 빨강), 되돌릴 수 있는 프레임이 있으면 그 수.</summary>
         private void DrawTrash(DrawingContext g, Rect cell)
         {
             bool active = _trimming || _trashHover;
             g.DrawRectangle(null, active ? TrashActivePen : TrashPen, cell.Deflate(0.5));
-            var icon = _trimmed > 0 ? new Rect(cell.X, cell.Y, cell.Width, cell.Height - 12) : cell;
-            VectorIcons.Draw(g, VectorIcon.Trash, icon, 18, active || _trimmed > 0 ? DeleteBrush : AppTheme.DimTextBrush, 1.75);
-            if (_trimmed > 0)
-                AppTheme.DrawTextIn(g, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectStrip_TrashCount, _trimmed),
+            var icon = _restorable > 0 ? new Rect(cell.X, cell.Y, cell.Width, cell.Height - 12) : cell;
+            VectorIcons.Draw(g, VectorIcon.Trash, icon, 18, active || _restorable > 0 ? DeleteBrush : AppTheme.DimTextBrush, 1.75);
+            if (_restorable > 0)
+                AppTheme.DrawTextIn(g, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectStrip_TrashCount, _restorable),
                     new Rect(cell.X, cell.Bottom - 14, cell.Width, 13), DeleteBrush, AppTheme.SmallFontSize - 1, center: true);
         }
 
