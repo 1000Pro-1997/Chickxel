@@ -38,11 +38,16 @@ public sealed partial class LayerEffectsDialog
     /// <summary>프레임 수 칸이 보이는 효과 번호.</summary>
     private int _extendFor = -1;
     private bool _extendSyncing;
-    /// <summary>프레임 줄을 누른 때의 늘리기, 칸 수, 지우기로 한 뒤 프레임 수(끄는 동안 칸 번호를 그때 차례로 읽는다).</summary>
-    private (FrameExtension? Extension, int Cells, int Trim) _dragBase;
+    /// <summary>프레임 줄을 누른 때의 늘리기와 칸 수(끄는 동안 칸 번호를 그때 차례로 읽는다).</summary>
+    private (FrameExtension? Extension, int Cells) _dragBase;
 
     /// <summary>프레임 줄 끝의 지우기 칸으로 지우기로 한 뒤 프레임 수(늘린 뒤 차례의 끝에서부터, 확인할 때 지움). 첫 프레임은 늘 남는다.</summary>
     private int _trim;
+    /// <summary>
+    /// 지우기 칸을 눌러 되돌릴 수 있는 프레임 수: 마지막으로 지운 한 번만(그 전에 지운 것은 되돌릴 수 없음). 지운 뒤 프레임을 늘리면 0 —
+    /// 지운 프레임은 버려지고 늘린 프레임은 새로 더해진다.
+    /// </summary>
+    private int _restorable;
 
     /// <summary>늘린 뒤 프레임 수(지우기 전).</summary>
     private int ExtendedCount => _project.Frames.Count + (_extension?.Added ?? 0);
@@ -98,9 +103,24 @@ public sealed partial class LayerEffectsDialog
         => Trim == 0 ? VirtualEffects() : VirtualEffects().Where((_, i) => !TrimmedAway(i)).ToArray();
 
     /// <summary>
-    /// 지우기 칸을 놓음: 뒤 프레임 <paramref name="count"/>개를 더 지우기로 한다(0 이하 = 지우기로 한 것을 모두 되돌림). 프로젝트는 확인할 때 바뀐다.
+    /// 지우기 칸을 놓음: 뒤 프레임 <paramref name="count"/>개를 더 지우기로 한다(이번에 지운 것만 되돌릴 수 있음).
+    /// 0 이하 = 마지막으로 지운 것을 되돌림. 프로젝트는 확인할 때 바뀐다.
     /// </summary>
-    private void SetTrim(int count) => ApplyTrim(count <= 0 ? 0 : Trim + count);
+    private void SetTrim(int count)
+    {
+        if (count <= 0)
+        {
+            int back = _restorable;
+            _restorable = 0;
+            ApplyTrim(Trim - back);
+            SyncStripFrames(); // 되돌릴 것 없음 표시
+            return;
+        }
+        int before = Trim;
+        ApplyTrim(Trim + count);
+        _restorable = Trim - before;
+        SyncStripFrames();
+    }
 
     /// <summary>지우기로 한 뒤 프레임 수를 <paramref name="next"/>로(첫 프레임은 남게) 하고 목록·미리보기·프레임 줄을 맞춘다.</summary>
     private void ApplyTrim(int next)
@@ -328,6 +348,8 @@ public sealed partial class LayerEffectsDialog
         int original = OriginalOf(_previewFrame);
         var previous = _extension;
         _extension = next;
+        // 지운 상태에서 늘리기를 바꾸면 지운 프레임은 버린다(되돌리기 없음) — 늘린 프레임은 남은 프레임 뒤에 새로 더해진다
+        if (Trim > 0) _restorable = 0;
         _extensionOwner = next is null ? null : owner;
         if (next is null && previous is { } oldExtension)
             CollapseVirtualRanges(oldExtension);
@@ -413,14 +435,7 @@ public sealed partial class LayerEffectsDialog
     /// </summary>
     private void DragRange(int a, int b)
     {
-        var (ext, cells, trimmed) = _dragBase;
-        if (trimmed > 0)
-        {
-            // 지우기로 한 프레임이 있으면 마지막 칸 너머로 끈 만큼 먼저 되살리고(되돌아오면 다시 지움), 그보다 더 끌면 늘린다.
-            // 되살린 칸은 원래 있던 프레임이므로 아래는 지우기 전 칸 수로 판단한다.
-            ApplyTrim(trimmed - Math.Clamp(b - cells + 1, 0, trimmed));
-            cells += trimmed;
-        }
+        var (ext, cells) = _dragBase;
         bool selected = Selected >= 0 && Selected < _effects.Count;
         // 예정된 타임라인 안에서 끈 것은 고른 효과의 적용 범위만 정한다.
         // 전체를 덮어도 명시한 끝을 기억해야 나중에 다른 효과가 타임라인을 더 늘릴 때 함께 늘어나지 않는다.

@@ -3707,7 +3707,7 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="Busy_EffectBounds" xml:space="preserve"><value>Measuring effect bounds</value></data>
   <data name="Busy_Baking" xml:space="preserve"><value>Baking effects</value></data>
   <data name="EffectStrip_TrashTip" xml:space="preserve"><value>Drag left to mark frames red from there to the last frame; release to delete them (removed from the project when you press OK; the first frame always stays).</value></data>
-  <data name="EffectStrip_TrashTipRestore" xml:space="preserve"><value>Drag left to delete more frames. Click to bring back the {0} frames marked for deletion.</value></data>
+  <data name="EffectStrip_TrashTipRestore" xml:space="preserve"><value>Drag left to delete more frames. Click to bring back the {0} frames you deleted last.</value></data>
   <data name="EffectStrip_TrimSummary" xml:space="preserve"><value>deleted the last {0} frames</value></data>
   <data name="EffectStrip_TrimLabel" xml:space="preserve"><value>Layer effects and delete frames</value></data>
   <data name="EffectStrip_TrashCount" xml:space="preserve"><value>{0}</value></data>

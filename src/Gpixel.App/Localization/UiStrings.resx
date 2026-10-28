@@ -10661,7 +10661,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Busy_EffectBounds" xml:space="preserve"><value>효과 범위 재는 중</value><comment>효과 창 확인: 캔버스를 늘릴 크기를 정하려고 모든 프레임의 효과 결과를 기다리는 동안의 덮개 제목</comment></data>
   <data name="Busy_Baking" xml:space="preserve"><value>효과 굽는 중</value><comment>효과 영구 적용: 셀마다 효과를 입히는 동안의 덮개 제목</comment></data>
   <data name="EffectStrip_TrashTip" xml:space="preserve"><value>왼쪽으로 끌면 끈 곳부터 마지막 프레임까지 빨갛게 표시되고, 놓으면 그 프레임들을 지웁니다(확인할 때 프로젝트에서 지움, 첫 프레임은 지울 수 없음).</value><comment>효과 창 프레임 줄 끝의 지우기 칸 풍선 도움말</comment></data>
-  <data name="EffectStrip_TrashTipRestore" xml:space="preserve"><value>왼쪽으로 끌면 프레임을 더 지웁니다. 누르면 지우기로 한 프레임 {0}개를 되돌립니다.</value><comment>효과 창 지우기 칸: 이미 지우기로 한 프레임이 있을 때</comment></data>
+  <data name="EffectStrip_TrashTipRestore" xml:space="preserve"><value>왼쪽으로 끌면 프레임을 더 지웁니다. 누르면 마지막으로 지운 프레임 {0}개를 되돌립니다.</value><comment>효과 창 지우기 칸: 이미 지우기로 한 프레임이 있을 때</comment></data>
   <data name="EffectStrip_TrimSummary" xml:space="preserve"><value>뒤 프레임 {0}개 지움</value><comment>효과 창 확인 결과 알림</comment></data>
   <data name="EffectStrip_TrimLabel" xml:space="preserve"><value>레이어 효과·프레임 지우기</value><comment>실행취소 기록 이름: 효과 창에서 뒤 프레임을 지우고 확인</comment></data>
   <data name="EffectStrip_TrashCount" xml:space="preserve"><value>{0}개</value><comment>효과 창 지우기 칸: 지우기로 한 뒤 프레임 수</comment></data>

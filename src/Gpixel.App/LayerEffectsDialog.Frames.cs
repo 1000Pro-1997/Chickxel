@@ -27,7 +27,7 @@ public sealed partial class LayerEffectsDialog
         };
         _strip.DragStarted += () =>
         {
-            _dragBase = (_extension, VirtualCount, Trim);
+            _dragBase = (_extension, VirtualCount);
             _stripDragging = true;
         };
         _strip.DragEnded += () =>
@@ -63,6 +63,7 @@ public sealed partial class LayerEffectsDialog
     private void SyncStripFrames()
     {
         _strip.Trimmed = Trim;
+        _strip.Restorable = Math.Min(_restorable, Trim);
         _strip.SetCount(VirtualCount, IsCopyFrame);
         SyncStripRange();
     }
@@ -72,7 +73,7 @@ public sealed partial class LayerEffectsDialog
     {
         int n = _project.Frames.Count;
         bool selected = Selected >= 0 && Selected < _effects.Count;
-        _strip.CanExtend = selected || Trim > 0; // 지우기로 한 프레임이 있으면 효과를 고르지 않아도 끌어 되살림
+        _strip.CanExtend = selected;
         if (selected)
         {
             var (a, b) = VRangeOf(_effects[Selected]);
@@ -151,7 +152,7 @@ public sealed partial class LayerEffectsDialog
         }
 
         /// <summary>
-        /// 지우기 칸을 놓음: 빨갛게 보인 뒤 프레임 수(1 이상 = 더 지우기로 함). 끌지 않고 눌렀다 떼면 0 — 지우기로 한 프레임을 모두 되돌린다.
+        /// 지우기 칸을 놓음: 빨갛게 보인 뒤 프레임 수(1 이상 = 더 지우기로 함). 끌지 않고 눌렀다 떼면 0 — 마지막으로 지운 것을 되돌린다(<see cref="Restorable"/>).
         /// </summary>
         public event Action<int>? TrimReleased;
 
@@ -167,6 +168,9 @@ public sealed partial class LayerEffectsDialog
                 InvalidateVisual();
             }
         }
+
+        /// <summary>지우기 칸을 눌러 되돌릴 수 있는 프레임 수(마지막으로 지운 한 번, 0 = 되돌릴 것 없음).</summary>
+        public int Restorable { get; set; }
 
         /// <summary>지우기 칸이 보이는지: 지울 수 있는 프레임(첫 프레임 뒤)이 있거나 되돌릴 것이 있을 때. 마지막 칸 너머로 늘리며 끄는 동안은 숨긴다.</summary>
         private bool ShowsTrash => (_thumbs.Length > 1 || _trimmed > 0) && !(_dragging && _dragTo >= _thumbs.Length);
@@ -334,7 +338,7 @@ public sealed partial class LayerEffectsDialog
                 if (hover == _trashHover) return;
                 _trashHover = hover;
                 ToolTip.SetTip(this, !hover ? UiStrings.S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70
-                    : _trimmed > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectStrip_TrashTipRestore, _trimmed)
+                    : Restorable > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectStrip_TrashTipRestore, Restorable)
                     : UiStrings.EffectStrip_TrashTip);
                 InvalidateVisual();
                 return;
@@ -371,7 +375,7 @@ public sealed partial class LayerEffectsDialog
                 EndTrim();
                 e.Pointer.Capture(null);
                 if (count > 0) TrimReleased?.Invoke(count);
-                else if (!moved && _trimmed > 0) TrimReleased?.Invoke(0);
+                else if (!moved && Restorable > 0) TrimReleased?.Invoke(0);
                 return;
             }
             if (_press < 0) return;
