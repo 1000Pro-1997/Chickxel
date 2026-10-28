@@ -3614,8 +3614,8 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>Couldn't install the downloaded package: {0}</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>Couldn't download the package: {0}</value></data>
   <data name="Assets_SourceRemote" xml:space="preserve"><value>Online catalog</value></data>
-  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>{0} effect recipes</value></data>
-  <data name="Assets_ContentsGradients" xml:space="preserve"><value>{0} gradients</value></data>
+  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect recipes: {0}</value></data>
+  <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
   <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>A stack of {1} effects from the {0} package. Double-click or drag it into the effect list.</value></data>
@@ -3689,7 +3689,7 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="RecipeParams_KindChoice" xml:space="preserve"><value>choice</value></data>
   <data name="RecipeParams_SaveError" xml:space="preserve"><value>Couldn't save the recipe parameters: {0}</value></data>
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
-  <data name="Assets_ContentsScripts" xml:space="preserve"><value>{0} script effects</value></data>
+  <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>Script effect</value></data>
   <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects. Scripts from a package don't run until you allow them in the effects window (scripts you wrote or saved as personal assets on this computer run right away).</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>Script run</value></data>
