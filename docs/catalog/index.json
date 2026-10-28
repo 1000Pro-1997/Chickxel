@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "page": 1,
+  "pageCount": 1,
+  "totalCount": 2,
+  "next": null,
+  "packages": [
+    {
+      "id": "gpixel.basic-gradients",
+      "version": "1.0.0",
+      "name": "Basic Gradients",
+      "summary": "The eight gradients that ship with Gpixel, as one installable pack.",
+      "tags": [
+        "gradient",
+        "starter",
+        "official"
+      ],
+      "author": {
+        "id": "gpixel",
+        "name": "Gpixel",
+        "url": "https://1000pro-1997.github.io/GPixel/"
+      },
+      "license": "MIT",
+      "kinds": {
+        "gradient": 8
+      },
+      "minAppVersion": "1.14.55",
+      "package": {
+        "url": "packages/gpixel.basic-gradients-1.0.0.gpixel-asset",
+        "size": 9772,
+        "sha256": "9a34bdd07d84e7e9a20c0b19d3a4035e9ed845ba78935a74090705838bd6d1ef"
+      },
+      "preview": {
+        "url": "previews/gpixel.basic-gradients-1.0.0.png",
+        "size": 1327,
+        "sha256": "61538276bf1fac6cf581f5e3525567dc7cec7f9ab450f7d469126b5a15794279"
+      },
+      "published": "2026-10-28",
+      "updated": "2026-10-28",
+      "review": "official"
+    },
+    {
+      "id": "gpixel.starter-effects",
+      "version": "1.0.0",
+      "name": "Starter Effects",
+      "summary": "Outlined drop shadow, hit reaction and shiny pickup recipes made from built-in effects.",
+      "tags": [
+        "effect",
+        "starter",
+        "official"
+      ],
+      "author": {
+        "id": "gpixel",
+        "name": "Gpixel",
+        "url": "https://1000pro-1997.github.io/GPixel/"
+      },
+      "license": "MIT",
+      "kinds": {
+        "effect-recipe": 3
+      },
+      "minAppVersion": "1.14.55",
+      "package": {
+        "url": "packages/gpixel.starter-effects-1.0.0.gpixel-asset",
+        "size": 5006,
+        "sha256": "f48cb37f63ce8f5b4d6b248d1e2008f20cd46a550dfbf07a422ddf87fd1cf1c4"
+      },
+      "preview": {
+        "url": "previews/gpixel.starter-effects-1.0.0.png",
+        "size": 411,
+        "sha256": "fa998ee061e50d4decdb771ac35f9944769c3f12281d67d1730b79834c1b5c68"
+      },
+      "published": "2026-10-28",
+      "updated": "2026-10-28",
+      "review": "official"
+    }
+  ]
+}

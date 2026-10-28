@@ -2,6 +2,70 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.55 (2026-10-28)
+### Heavy effects no longer freeze the editor
+- Layer effects on large images or many frames are computed on background threads, so the canvas, timeline, preview and effects window keep responding while you drag effect settings, draw or play.
+- When a frame takes longer than 150 ms, it is covered with a translucent gray layer that shows the intermediate result as it is computed, with a spinning progress badge; the cover lifts once the whole frame is done. Light work still updates instantly without a cover.
+- Each effect now splits its rows across CPU cores (about 3 to 5 times faster on 1024×1024 and larger images), afterimage ghosts are reused between neighbouring frames, and changing one effect value recomputes from that effect onward.
+- Changing a layer's effects or visibility only recomputes results that include that layer; timeline thumbnails are kept at thumbnail size and cached results stay within a memory budget.
+- The effects window draws every frame once in the background and shares it between the frame strip, the before/after preview and the canvas-expansion size, instead of redrawing all frames on every change.
+- Pressing OK or Apply permanently in the effects window no longer freezes the window while it measures how far the effects reach or bakes them (1920×1080 with explode and 30 more frames: about 2 to 3 seconds). It now waits for the frames already being drawn in the background and shows the progress cover meanwhile.
+- In the effects window, dragging a number box or the frame strip on a heavy image (all frames take over 50 ms to draw) no longer redraws every frame at each step: the previews keep the last result under the gray cover and everything is drawn once when you release. Dragging an effect bar's range in the timeline likewise only moves the bar and applies the new range on release. Confirming an effect or releasing a drag no longer redraws frames whose effects did not actually change.
+- The effects window prepares the before/after pictures of every frame once after drawing, so playback only swaps pictures instead of cropping and converting the full image each frame.
+
+### Delete frames from the effects window's frame strip
+- The frame strip in the effects window ends with a dashed trash cell. Drag it left and the frames from there to the last one turn red; release to mark them for deletion (the first frame always stays). The marked frames are removed from the project when you press OK or Apply permanently, in the same undo step as the effects; effect ranges and tags shrink the same way as deleting frames in the timeline. Click the trash cell to bring the marked frames back.
+
+### Long saves, exports and opens show a progress cover
+- Saving with Ctrl+S, exporting, opening a project and creating a GIF run on a background thread. If one takes longer than 150 ms, the window is covered with a dark translucent layer that shows what is happening, a spinning icon and a percentage.
+- Autosave no longer interrupts editing: it copies the document and writes the copy in the background, so you can keep drawing or dragging while it saves. Only very large documents (over about 768 MB of pixels) still show the cover during autosave.
+- While the cover is up, editing, shortcuts, file drops and AI tool calls wait until the work finishes; closing the window closes it right after.
+- Saving and exporting are much faster: cel and sheet images are compressed on several CPU cores, and export reuses afterimage ghosts between frames (1024×1024, 60 frames, heavy effects: save with export 7.1 s to 1.5 s, open 0.4 s to 0.07 s).
+- Large exported PNGs (about 1450×1450 and up) have the same pixels but may differ by about 0.1% in file size, because they are compressed in pieces.
+
+### Effects are saved with stable type IDs, and unknown effects are kept
+- Layer effects are now saved with permanent type IDs (such as `gpixel.effect.outline`) and a settings object. The project format is now version 4, so earlier Gpixel versions cannot open projects saved by this version.
+- Projects and custom effect presets saved by earlier versions open with the same effects and the same pixels; their old effect names are converted when read.
+- An effect this version does not know (for example one added by a newer Gpixel) is no longer dropped when opening a project: the effects window lists it as an unknown effect that is not drawn and cannot be edited, and saving keeps it unchanged.
+- AI tools list effect types with the same IDs, and every effect setting has an explicit default and range.
+
+### Asset manager and local asset packages
+- A new **Asset Manager** (Tools menu, and buttons in the effects window's Custom tab and the gradient preset window) lists personal assets and installed packages with previews, author, version, required app version and source.
+- Effect recipes and gradients can be exported to and imported from `.gpixel-asset` package files. Packages are checked before anything is written (paths, sizes, file list and SHA-256, every effect against its settings schema, preview images) and installed atomically, so an interrupted install leaves the previous state intact.
+- Turning a package off hides its recipes and gradients from the effects window, gradient menus and AI tools without removing its files; deleting moves it to a 30-day restorable archive, and installing a newer version keeps the previous one for rollback. Effects and gradients already inserted into projects never change.
+- On first start, custom effects (`effect-presets.json`) and gradient presets (`gradient-presets.json`) move into personal assets once; the old files are kept as dated backups and are no longer read or written.
+
+### Script effects: write your own effects in JavaScript
+- The effects window has **New script** (starts from a light sweep example) and **Open JS file…** below the built-in effect types. A script declares `effect({ name, settings, render(img, ctx, s) })`; its settings panel (sliders, checkboxes, colors, choices) is built from the declaration, and the canvas, timeline, preview and export draw it exactly like built-in effects.
+- The script editor shows syntax and declaration errors with line and column, runtime errors with their line, and the time per frame in the current preview. Applying an edited source switches the effect to the new source.
+- The source is stored once in the project by its hash, and sources no longer used are dropped on save. Opening a project with scripts you have not seen asks whether to run each one (name, author, hash) and remembers the choice; scripts you write or import on this computer run without asking.
+- Scripts run in an isolated engine with no file, network or .NET access. If a frame goes over the limits (2 seconds, 50 million statements, 256 MB), only that effect is skipped on that frame and marked in the effects list and timeline; after 3 failures in a row it stops until you turn it on again or press **Run again**.
+
+### Browse, install and update assets from the online catalog
+- The asset manager's **Browse** tab reads the online asset list from the Gpixel website over HTTPS, with search, effect/gradient and tag filters, and a detail view with preview, author, license, contents, required app version, size, dates and review status.
+- **Install** and **Update to (version)** download with an inline progress bar and **Cancel**, retry brief connection failures, and install only when the file's SHA-256 matches the list; a package this version can't use shows the exact reason and can't be installed.
+- The **Updates** tab lists installed packages that have a newer version and updates each one only when you click. Without a connection, the last downloaded list stays visible with a notice and installed assets keep working.
+- The first official packages are **Basic Gradients** and **Starter Effects** (recipes made from built-in effects). Catalog packages live in `catalog/`, and `tools/CatalogBuilder` checks them and builds the website's `docs/catalog/` (CI fails when it is out of date).
+
+### Effect recipes can expose a few adjustable values
+- Right-click a personal recipe in the effects window's Custom tab (or select it in the Asset Manager) and choose **Edit parameters** to pick which effect settings users can adjust: a color, a whole number, an on/off switch or a choice. One parameter can drive several settings of the same kind, and its range and choices stay within what every linked setting allows.
+- A recipe with parameters is inserted as one item in the effect list that shows only its parameters; changing a value updates every linked effect setting at once, and the effects window is still a single undo step. Expand the item to edit the effects inside, or ungroup it into ordinary effects.
+- The inserted effects keep their parameter definitions in the project file (an optional field of project format 4), so the project still edits and renders after the recipe or its package is deleted.
+- Package checks reject parameters that point to a missing effect or unknown setting, use a different value kind, link the same setting twice, or allow values outside the effect's settings schema. Recipes with parameters are written as recipe format 2; recipes without them stay format 1.
+
+### Publish your own assets to the online catalog
+- **Publish Online…** in the asset manager (toolbar, and on a personal asset's details) bundles personal effect recipes and gradients into a public package: author ID, display name and website (remembered), package ID, version (the next version is suggested from your last one), name, short description, tags, license (CC0, CC BY, CC BY-SA, CC BY-NC, MIT, Apache 2.0 or your own `LicenseRef-` with its text), list preview and included assets.
+- A pre-submission check runs as you type and lists errors (which block saving) and warnings, using exactly the rules the catalog CI applies: no package without a public author or license, author ID as the first part of the package ID, a list preview, and no changed or lowered published version.
+- **Save and Open Submission Page…** saves the `.gpixel-asset` and a submission zip, then opens the new GitHub asset submission form prefilled with the package details. Gpixel uploads nothing; maintainers unpack the zip into `catalog/` and run `tools/CatalogBuilder`.
+- Plain personal export still works as before; it now uses your remembered display name instead of the computer's user name.
+
+### Script effects travel with recipes and packages
+- Asset packages can hold script effects (`assets/scripts/*.js`). They appear as tiles in the effects window's Custom tab and in the asset manager; every script is checked before install (size, syntax and declaration, run inside the sandbox with tight limits).
+- Effect recipes that contain script effects now carry the script sources, so a recipe saved as a personal asset, exported, published or installed on another computer draws the same once inserted; inserting copies the source into the project. Recipes without scripts are still written in the old format.
+- Scripts that come from a package (file or online) never run until you click **Allow to run**; the tile and the asset manager say when a package contains scripts. **Save as asset** in a script effect's settings keeps an allowed script as a personal asset.
+- The saved undo history now keeps the sources of older script versions, so undoing to an earlier script after reopening still draws it. Script effects this version cannot read keep their source and recipe group when saved.
+- A script whose `padding` fails now counts as a failed run (shown in the effect list and suspended after repeated failures) instead of silently clipping, and a frame where a script failed is no longer cached as if it had succeeded.
+
 ## v1.14.54 (2026-10-28)
 ### Automatically found AI CLI paths no longer require PATH setup
 - Gpixel uses the full path of a discovered Claude Code or Codex executable and adds its folder to the child process PATH, so AI Status no longer warns when the executable is absent from Gpixel's own PATH.
