@@ -36,6 +36,8 @@ public static partial class ProjectIO
     internal static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
+        // 줄바꿈은 OS와 관계없이 LF — Windows·macOS에서 같은 문서를 저장하면 같은 바이트(버전 관리에서 줄바꿈만 바뀌지 않게)
+        NewLine = "\n",
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new JsonStringEnumConverter() },
