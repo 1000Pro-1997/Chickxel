@@ -3232,10 +3232,12 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Grid_LocalMinCell" xml:space="preserve"><value>Minimum cell size (px)</value></data>
   <data name="Pixelate_Grid_LocalMinCell_Tip" xml:space="preserve"><value>Minimum average cell size for local correction (source pixels, 1–16 px, default 4 px). Lower values allow small cells to adjust but may follow blurred-edge noise. The optimizer's 'Try local correction' also explores this value.</value></data>
   <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>Close settings</value></data>
-  <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>Drawing settings (generate image → pixelate / draw pixels directly)</value></data>
+  <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>Drawing settings (auto / generate image → pixelate / draw pixels directly)</value></data>
   <data name="AiDraw_Settings_Close" xml:space="preserve"><value>Close drawing settings</value></data>
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>Drawing settings</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>Drawing mode</value></data>
+  <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, requests for new art generate an image and convert it to pixel art. Exact sizes such as 32×32 and edits to the current picture use the pixel tools directly. Claude can only draw pixels directly.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>Generate image → pixelate</value></data>
   <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates a high-quality image and Gpixel converts it to pixel art (background removal, grid and palette are automatic). Animations are drawn with all frames on one sprite sheet, then split and converted. Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>Draw pixels directly</value></data>

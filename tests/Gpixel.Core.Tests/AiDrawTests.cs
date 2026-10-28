@@ -12,13 +12,48 @@ public class AiDrawTests
     // ───────────── 설정 ─────────────
 
     [Fact]
-    public void Settings_claude_always_draws_directly_and_codex_follows_mode()
+    public void Settings_auto_routes_new_art_to_generation_but_manual_modes_override_it()
     {
         var s = new AiDrawSettings();
-        Assert.Equal(AiDrawMode.Generate, s.EffectiveMode("codex"));
-        Assert.Equal(AiDrawMode.Direct, s.EffectiveMode("claude"));
+        Assert.Equal(AiDrawMode.Auto, s.Mode);
+        Assert.Equal(AiDrawMode.Generate, s.EffectiveMode("codex", "새 나무 통 캐릭터를 그려 줘"));
+        Assert.Equal(AiDrawMode.Direct, s.EffectiveMode("claude", "새 나무 통 캐릭터를 그려 줘"));
         s.Mode = AiDrawMode.Direct;
-        Assert.Equal(AiDrawMode.Direct, s.EffectiveMode("codex"));
+        Assert.Equal(AiDrawMode.Direct, s.EffectiveMode("codex", "새 나무 통 캐릭터를 그려 줘"));
+        s.Mode = AiDrawMode.Generate;
+        Assert.Equal(AiDrawMode.Generate, s.EffectiveMode("codex", "32×32 캐릭터를 그려 줘"));
+    }
+
+    [Theory]
+    [InlineData("32×32 캐릭터를 생성해 줘")]
+    [InlineData("Draw a 48 x 64 sprite")]
+    [InlineData("64픽셀 아이템을 그려 줘")]
+    [InlineData("가로 24 세로 32로 그려 줘")]
+    [InlineData("Change this image to blue")]
+    [InlineData("지금 그림에서 모자 색을 바꿔 줘")]
+    [InlineData("현재 레이어에 눈을 그려 줘")]
+    public void Settings_auto_draws_explicit_sizes_and_existing_art_directly(string request)
+    {
+        Assert.Equal(AiDrawMode.Direct, new AiDrawSettings().EffectiveMode("codex", request));
+    }
+
+    [Theory]
+    [InlineData("새 캐릭터를 그려 줘")]
+    [InlineData("이 그림을 참고해서 새 캐릭터를 생성해 줘")]
+    [InlineData("Draw a new character without a specific size")]
+    public void Settings_auto_keeps_unsized_new_art_in_generation(string request)
+    {
+        Assert.Equal(AiDrawMode.Generate, new AiDrawSettings().EffectiveMode("codex", request));
+    }
+
+    [Fact]
+    public void Settings_auto_edits_open_art_even_without_naming_the_current_image()
+    {
+        var settings = new AiDrawSettings();
+        Assert.Equal(AiDrawMode.Direct, settings.EffectiveMode("codex", "모자 색만 바꿔 줘", hasOpenProject: true));
+        Assert.Equal(AiDrawMode.Direct, settings.EffectiveMode("codex", "Recolor the hat", hasOpenProject: true));
+        Assert.Equal(AiDrawMode.Generate, settings.EffectiveMode("codex", "모자 색만 바꿔 줘"));
+        Assert.Equal(AiDrawMode.Generate, settings.EffectiveMode("codex", "새 캐릭터를 그려 줘", hasOpenProject: true));
     }
 
     [Fact]

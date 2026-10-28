@@ -921,12 +921,16 @@ public sealed partial class ChatWindow : Window
         /// <summary>실행취소 묶음을 연 프로젝트.</summary>
         public SpriteProject? Project { get; set; }
         public Stopwatch Clock { get; } = Stopwatch.StartNew();
+        public bool DirectDrawing { get; set; }
+        public bool DrawingChanged { get; set; }
+        public bool ReviewRequested { get; set; }
+        public double EarlierCostUsd { get; set; }
         public MarkdownView? StreamHost { get; set; }
         /// <summary>스트리밍 글을 곧 다시 그리도록 걸어 둠(100ms에 한 번).</summary>
         public bool RenderPending { get; set; }
         public StringBuilder Stream { get; } = new();
-        /// <summary>도구 호출 id → 그 줄과 저장할 대화 줄(실패하면 둘 다 고침).</summary>
-        public Dictionary<string, (TextBlock Line, ChatItem Item)> Tools { get; } = new();
+        /// <summary>도구 호출 id → 이름·줄·저장할 대화 줄·시작 시각(완료 시 걸린 시간 표시).</summary>
+        public Dictionary<string, (string Name, TextBlock Line, ChatItem Item, long Started)> Tools { get; } = new();
     }
 
     /// <summary>투명한 곳이 보이게 체커 무늬 위에 자식을 그리는 틀.</summary>
@@ -1431,6 +1435,11 @@ public sealed partial class ChatWindow : Window
 
         // ───────────── 세션 이벤트(가려져 있어도 이 탭에 쓴다) ─────────────
 
+        private static bool AffectsDrawing(string name) => name is
+            "draw_pixels" or "set_pixels" or "draw_shape" or "fill" or "clear" or "replace_color" or
+            "add_part" or "set_part" or "set_skin" or "apply_outfit" or
+            "add_effect" or "set_effect" or "remove_effect" or "apply_effects" or "resize_canvas";
+
         private void HookSession(IChatSession s)
         {
             var sessionPath = _cliPath;
@@ -1467,24 +1476,49 @@ public sealed partial class ChatWindow : Window
                 FinishStream(t);
                 var item = new ChatItem { Kind = ChatItemKind.Tool, Text = $"• {info.Name}" + (Summarize(info.Input) is { Length: > 0 } sum ? $" · {sum}" : "") };
                 var line = ToolLine(item.Text, error: false);
-                if (info.Id.Length > 0) t.Tools[info.Id] = (line, item);
+                if (info.Id.Length > 0) t.Tools[info.Id] = (info.Name, line, item, Stopwatch.GetTimestamp());
                 AddItem(line);
                 Record(item);
             };
             s.BlockStarted += (kind, name) => { if (_turn is not null) SetPhase(kind, name); };
             s.BlockProgress += chars => _phaseChars += chars;
-            s.ToolResult += info => { if (_turn is not null && info.ToolUseId.Length > 0) SetPhase("wait", null); };
             s.ToolResult += info =>
             {
-                if (_turn is not { } t || !info.IsError || !t.Tools.TryGetValue(info.ToolUseId, out var tool)) return;
-                tool.Line.Foreground = ErrorBrush;
-                if (info.Text.Length > 0) tool.Line.Text += $" — {info.Text}";
-                tool.Item.Error = true;
-                tool.Item.Text = tool.Line.Text ?? tool.Item.Text;
+                if (_turn is not { } t) return;
+                if (info.ToolUseId.Length > 0) SetPhase("wait", null);
+                if (!t.Tools.Remove(info.ToolUseId, out var tool)) return;
+                if (info.IsError)
+                {
+                    tool.Line.Foreground = ErrorBrush;
+                    if (info.Text.Length > 0) tool.Line.Text += $" — {info.Text}";
+                    tool.Item.Error = true;
+                }
+                else if (AffectsDrawing(tool.Name)) t.DrawingChanged = true;
+                tool.Line.Text += $" ({ToolDuration(Stopwatch.GetElapsedTime(tool.Started))})";
+                tool.Item.Text = tool.Line.Text;
             };
             s.TurnCompleted += r =>
             {
                 string? error = r.IsError ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_HookSession_E1F3DD4697,(string.IsNullOrWhiteSpace(r.Text) ? r.Subtype ?? UiStrings.S_ChatWindow_HookSession_365CF8E859 : r.Text)) : null;
+                if (_turn is { DirectDrawing: true } turn && error is null && turn.DrawingChanged && !turn.ReviewRequested)
+                {
+                    turn.ReviewRequested = true;
+                    try
+                    {
+                        // 도구를 다시 부르지 않아도 모델이 합쳐진 전체 그림을 보도록 현재 프레임을 붙인다.
+                        var image = _w._mcp.Tools.Call("get_image", null);
+                        var png = image["isError"]?.GetValue<bool>() == false && image["content"]?[0]?["data"] is { } data
+                            ? Convert.FromBase64String(data.GetValue<string>()) : null;
+                        s.Send(AiCli.VisualReviewPrompt, png is null ? [] : [png]);
+                        turn.EarlierCostUsd += r.CostUsd ?? 0;
+                        SetPhase("wait", null);
+                        return;
+                    }
+                    catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException or FormatException)
+                    {
+                        error = ex.Message;
+                    }
+                }
                 if (_turn is not null) EndTurn(error, r, cancelled: false);
                 else if (error is not null) AddSystemLine(error, error: true);
                 // 로그인이 풀렸으면 로그인 화면으로(대화 내용은 남아 있다가 다시 로그인하면 보인다).
@@ -1597,8 +1631,9 @@ public sealed partial class ChatWindow : Window
             // 마지막 차례를 지운 대화: CLI 세션에서는 차례를 뺄 수 없으므로 새 세션으로 보내고, 남은 대화 정리를 앞에 붙인다.
             var modelText = ChatImageTokens.ToModel(text);
             var message = scope is null ? modelText : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: modelText);
-            // 그리는 방식(모델에게만 — 화면·저장에는 남기지 않음). Claude 탭은 늘 직접 찍기(사용자가 Codex에 맡기라고 할 때만 생성 도구).
-            message = AiCli.DrawingModeLine(_w._settings.AiDraw.EffectiveMode(Provider.Id), Provider.Id == AiDrawSettings.GeneratingProvider) + "\n" + message;
+            // 자동 모드는 요청의 정확한 크기·기존 그림 수정 여부로 이번 차례의 방식을 고른다. Claude는 늘 직접 찍는다.
+            var drawingMode = _w._settings.AiDraw.EffectiveMode(Provider.Id, text, _w._ctx.Project is not null);
+            message = AiCli.DrawingModeLine(drawingMode, Provider.Id == AiDrawSettings.GeneratingProvider) + "\n" + message;
             // "팔레트 색만 사용": 처음부터 팔레트 색으로 그리게 활성 팔레트 색을 알린다(도구도 다른 색은 가장 가까운 팔레트 색으로 바꿈).
             if (_w._settings.AiDraw.PaletteOnly && new PaletteLock(_w._mcp.Tools.Host.Palette) is { IsEmpty: false } palette)
                 message = AiCli.PaletteLine(palette) + "\n" + message;
@@ -1650,7 +1685,7 @@ public sealed partial class ChatWindow : Window
             if (scope is not null) AddSystemLine(UiStrings.FormatChat_FileOnly_Notice(name: scope.Project.DisplayName), error: false);
 
             var label = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_9DB69B8394,Provider.Name,Shorten(plain.Length > 0 ? plain : UiStrings.S_ChatWindow_Send_A2D9AB8F67, 24));
-            var turn = new Turn(label);
+            var turn = new Turn(label) { DirectDrawing = drawingMode == AiDrawMode.Direct };
             if (_w._ctx.Project is { } p)
             {
                 // 사용자가 하던 떠 있는 선택 편집은 이 차례에 섞이지 않게 먼저 확정한다.
@@ -1697,8 +1732,9 @@ public sealed partial class ChatWindow : Window
 
             var parts = new List<string>();
             if (cancelled) parts.Add(UiStrings.S_ChatWindow_EndTurn_D19A601695);
-            if (result?.CostUsd is { } cost && cost > 0) parts.Add("$" + cost.ToString("0.000", CultureInfo.InvariantCulture));
-            double ms = result?.DurationMs ?? turn.Clock.Elapsed.TotalMilliseconds;
+            double cost = turn.EarlierCostUsd + (result?.CostUsd ?? 0);
+            if (cost > 0) parts.Add("$" + cost.ToString("0.000", CultureInfo.InvariantCulture));
+            double ms = turn.ReviewRequested ? turn.Clock.Elapsed.TotalMilliseconds : result?.DurationMs ?? turn.Clock.Elapsed.TotalMilliseconds;
             parts.Add((ms / 1000).ToString("0.0", CultureInfo.InvariantCulture) + UiStrings.S_ChatWindow_EndTurn_7EEAC40074);
             var footer = string.Join(" · ", parts);
             AddItem(FooterLine(footer));
@@ -2330,6 +2366,9 @@ public sealed partial class ChatWindow : Window
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(2, 0),
         };
+
+        private static string ToolDuration(TimeSpan elapsed) =>
+            elapsed.TotalMinutes >= 1 ? $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds}s" : $"{elapsed.Seconds}s";
 
         /// <summary>차례 끝 비용·시간 줄.</summary>
         private static TextBlock FooterLine(string text) => new()

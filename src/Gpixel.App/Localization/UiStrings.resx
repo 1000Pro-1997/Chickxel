@@ -10186,10 +10186,12 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Grid_LocalMinCell" xml:space="preserve"><value>최소 칸 크기(px)</value></data>
   <data name="Pixelate_Grid_LocalMinCell_Tip" xml:space="preserve"><value>지역 보정을 적용할 최소 평균 칸 크기(원본 픽셀, 1~16px, 기본 4px). 낮추면 작은 칸도 보정하지만 흐린 경계의 잡음을 따라갈 수 있습니다. 자동 최적화의 '지역 보정도 탐색'에서도 이 값을 시험합니다.</value></data>
   <data name="Pixelate_Opt_SettingsClose" xml:space="preserve"><value>설정 닫기</value></data>
-  <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>그리기 설정(그림 생성 → 픽셀 변환 / 직접 찍기)</value></data>
+  <data name="AiDraw_Settings_Tip" xml:space="preserve"><value>그리기 설정(자동 / 그림 생성 → 픽셀 변환 / 직접 찍기)</value></data>
   <data name="AiDraw_Settings_Close" xml:space="preserve"><value>그리기 설정 닫기</value></data>
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>그리기 설정</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>그리는 방식</value></data>
+  <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>자동</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>Codex에서 새 그림을 부탁하면 이미지 생성 후 픽셀로 변환합니다. 32×32처럼 크기를 명확히 정하거나 지금 그림을 고치라고 하면 픽셀 도구로 직접 찍습니다. Claude는 직접 찍기만 할 수 있습니다.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>그림 생성 → 픽셀 변환</value></data>
   <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex가 이미지 생성으로 고품질 그림을 만들고, Gpixel이 픽셀 아트로 변환해 넣습니다(배경 지우기·격자·팔레트 자동). 애니메이션은 모든 프레임을 한 장(스프라이트 시트)에 그려 나눠 변환합니다. 한 장에 30초~1분 30초쯤 걸립니다. Claude 탭은 직접 찍기로 그리며, "Codex에 맡겨"처럼 부탁하면 그 그림만 Codex로 생성합니다.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>직접 찍기</value></data>

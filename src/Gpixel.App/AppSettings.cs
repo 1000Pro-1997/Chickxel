@@ -152,6 +152,8 @@ public sealed class AppSettings
     public bool ChatOpen { get; set; }
     /// <summary>AI 그리기 설정(채팅의 설정 칸 — 그리는 방식, 생성·변환 옵션).</summary>
     public Gpixel.Core.AiDraw.AiDrawSettings AiDraw { get; set; } = new();
+    /// <summary>예전 기본 "그림 생성"을 새 기본 "자동"으로 한 번 옮겼는지(이후 사용자가 다시 그림 생성을 골라도 보존).</summary>
+    public bool AiDrawAutoDefaultApplied { get; set; } = true;
     /// <summary>
     /// AI 상태 창을 다시 보지 않기로 한 앱·CLI 구성 지문. 앱 버전, 찾은 CLI 파일 또는 직접 지정 경로가 바뀌면 지문이 달라져 다시 보인다.
     /// </summary>
@@ -271,6 +273,9 @@ public sealed class AppSettings
                 if (document.RootElement.ValueKind == JsonValueKind.Object &&
                     !document.RootElement.TryGetProperty(nameof(GradientColorSpace), out _))
                     settings.GradientColorSpace = null;
+                if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                    !document.RootElement.TryGetProperty(nameof(AiDrawAutoDefaultApplied), out _))
+                    settings.AiDrawAutoDefaultApplied = false;
                 return Migrate(settings);
             }
         }
@@ -303,6 +308,11 @@ public sealed class AppSettings
             s.ReferencesExamplesOffApplied = true;
         }
         s.AiDraw ??= new();
+        if (!s.AiDrawAutoDefaultApplied)
+        {
+            if (s.AiDraw.Mode == Gpixel.Core.AiDraw.AiDrawMode.Generate) s.AiDraw.Mode = Gpixel.Core.AiDraw.AiDrawMode.Auto;
+            s.AiDrawAutoDefaultApplied = true;
+        }
         s.AiDraw.FrameCounts ??= Gpixel.Core.AiDraw.AiDrawActions.DefaultFrameCounts();
         return s;
     }

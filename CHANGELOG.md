@@ -2,7 +2,7 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## Unreleased
+## v1.14.57 (2026-10-28)
 ### Simpler homepage navigation
 - Removed the GitHub link from the homepage header; the footer still links to the repository.
 - The Korean header now labels the download link "다운로드" to match the main download button.
@@ -10,6 +10,18 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 ### Homepage feature descriptions updated
 - The homepage now describes script effects, the asset manager and adjustable effect recipes, along with responsive rendering of heavy effects.
 - The download section and ZIP links use consistent "다운로드" labels in Korean.
+
+### AI tool calls show elapsed time
+- Completed tool calls in the AI chat show their own duration at the end of the line, such as `get_image (1m 20s)`.
+- Failed tool calls keep their error message and also show the duration; both are saved in the conversation history.
+
+### Automatic AI drawing mode
+- Automatic is now the default: new artwork without an exact size uses image generation and pixel conversion; exact pixel sizes and edits to the open artwork use direct pixel drawing.
+- The two manual modes remain available. Previously saved "Generate" settings switch to Automatic once because old settings did not distinguish a default from a manual choice; a saved "Direct" mode is retained.
+
+### Direct drawing reviews the complete picture
+- For direct pixel drawing, the assistant plans against the user's written requirements and any attached images, including proportions and part placement, before drawing. Image generation is unchanged.
+- After a successful drawing edit, the app starts one additional review pass with the full composited canvas attached. The assistant scores visual fidelity against the original requirements, corrects visible defects and reports remaining issues; the score is its visual judgment, not an objective similarity measurement.
 
 ## v1.14.56 (2026-10-28)
 ### App icon is now the plain chick

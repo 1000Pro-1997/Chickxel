@@ -82,8 +82,8 @@ public sealed partial class PixelTools
             "Call this first. Works without an open project.",
             new JsonObject()),
         Tool("get_image",
-            "Render a frame as a PNG so you can look at it. Omit `layer` for the composite of visible layers; pass a normal or " +
-            "part layer index to see that layer alone (a part renders at its own size), or a group index for that group's composite. " +
+            "Render a frame as a PNG so you can look at it. Omit `layer` for the composite of ALL visible layers: inspect this whole image after assembling parts to catch misaligned limbs, proportions and overall style before replying. " +
+            "Pass a normal or part layer index to see that layer alone (a part renders at its own size), or a group index for that group's composite. " +
             "Pixels are enlarged with nearest neighbor; transparent areas are drawn over a light gray checkerboard that is NOT part of the image.",
             new JsonObject
             {
