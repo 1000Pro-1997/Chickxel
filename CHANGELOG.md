@@ -2,6 +2,19 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.60 (2026-10-30)
+### Edit and apply sprite-sheet frames
+- The source preview shows numbered frame boundaries. Drag a frame to move it or an edge or corner to resize it; the edited regions feed into the next pixel cleanup and can be saved in presets.
+- A source image is split once when loaded or replaced. Changing the split mode or grid dimensions leaves the current frames in place until **Apply frame split** is clicked; dragging a frame boundary applies it immediately.
+
+### Pixel grids and target-color scoring
+- Pixel grids are now fitted independently for every frame, including fixed output sizes and scale factors. The separate per-frame detection checkbox is gone.
+- Setting a target color count penalizes results with either more or fewer colors by their distance from the target. An exact match has no color-count penalty; Auto still ignores color count in scoring.
+
+### Auto optimization on source load
+- Auto optimization after loading, pasting, dropping or replacing a source image is off by default, including when upgrading existing settings.
+- Turn **Auto optimize on load** on to run it after the first candidates finish for future source images; the choice is remembered.
+
 ## v1.14.59 (2026-10-29)
 ### Chat images and message copying
 - Click an image chip in a chat message to enlarge it and use the visible **Copy image** or **Save image** buttons; right-clicking the chip also offers those actions. Older conversations retain only their saved preview size.

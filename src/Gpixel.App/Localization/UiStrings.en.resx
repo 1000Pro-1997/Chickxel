@@ -3015,7 +3015,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>Min area</value></data>
   <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>Minimum size of the color group in cells (with original colors, edge cells count with the edge cell weight).</value></data>
   <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>Auto optimize on load</value></data>
-  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>When a source is loaded (open, drop, paste, browse, replace), the auto optimizer runs once after the first candidates finish. It does not run again when settings change, and you can cancel it while it runs.</value></data>
+  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>Off by default. When enabled, loading a source (open, drop, paste, browse, replace) runs auto optimization once after the first candidates finish. Changing settings does not run it again, and you can cancel it while it runs.</value></data>
   <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>Source cell {source} → result {result}</value></data>
   <data name="Pixelate_Pal_Info" xml:space="preserve"><value>{count} colors</value></data>
   <data name="Pixelate_Clean_Orphans" xml:space="preserve"><value>Remove orphan pixels</value></data>

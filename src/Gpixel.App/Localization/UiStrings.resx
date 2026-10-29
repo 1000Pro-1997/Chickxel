@@ -9969,7 +9969,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Pal_DistinctArea" xml:space="preserve"><value>최소 넓이</value></data>
   <data name="Pixelate_Pal_DistinctArea_Tip" xml:space="preserve"><value>색 무리의 최소 크기(칸 — 원본 색이면 가장자리 칸은 가장자리 칸 가중만큼 셉니다).</value></data>
   <data name="Pixelate_Opt_AutoOnLoad" xml:space="preserve"><value>불러오면 자동 최적화</value></data>
-  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>원본을 넣으면(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌립니다. 설정을 바꿔 다시 돌릴 때는 돌리지 않고, 도는 동안 취소할 수 있습니다.</value></data>
+  <data name="Pixelate_Opt_AutoOnLoadTip" xml:space="preserve"><value>기본은 꺼짐. 켜면 원본을 넣을 때(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌립니다. 설정을 바꿔 다시 돌릴 때는 돌리지 않고, 도는 동안 취소할 수 있습니다.</value></data>
   <data name="Pixelate_SourceCellResult" xml:space="preserve"><value>원본 칸 {source} → 결과 {result}</value></data>
   <data name="Pixelate_Pal_Info" xml:space="preserve"><value>색 {count}개</value></data>
   <data name="Pixelate_Clean_Orphans" xml:space="preserve"><value>외톨이 픽셀 지우기</value></data>

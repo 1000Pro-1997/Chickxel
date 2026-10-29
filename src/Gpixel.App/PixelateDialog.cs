@@ -36,11 +36,11 @@ public sealed class PixelateOptions
     public List<OptimizePreset> OptimizePresets { get; set; } = [];
     /// <summary>왼쪽에서 마지막으로 고른 프리셋 이름(창을 다시 열면 그 프리셋을 고름 — 없으면 고르지 않은 상태).</summary>
     public string? SelectedPreset { get; set; }
-    /// <summary>원본을 넣으면(열기·끌어 놓기·붙여 넣기·찾기·바꾸기) 첫 후보가 끝난 뒤 자동 최적화를 한 번 돌린다(기본 켬, 모든 프리셋 공통).</summary>
-    public bool AutoOptimizeOnLoad { get; set; } = true;
+    /// <summary>원본을 넣은 뒤 자동 최적화를 돌릴지(기본 끔, 사용자가 켜면 열기·끌어 놓기·붙여 넣기·바꾸기에 적용).</summary>
+    public bool AutoOptimizeOnLoad { get; set; }
     /// <summary>왼쪽 설정 칸을 펼쳐 두었는지(기본 접힘 — 미리보기·후보가 넓게).</summary>
     public bool SettingsExpanded { get; set; }
-    /// <summary>옵션 판(<see cref="Migrate"/>): 0 = 자동 최적화 기본값이 바뀌기 전에 저장한 값.</summary>
+    /// <summary>옵션 판(<see cref="Migrate"/>): 0 = 옛 설정 또는 새 옵션.</summary>
     public int Version { get; set; }
     public bool ShowGrid { get; set; } = true;
     public bool ShowMask { get; set; }
@@ -59,18 +59,18 @@ public sealed class PixelateOptions
     public OptimizePreset PrimaryPreset => OptimizePresets.FirstOrDefault(p => p.Enabled) ?? OptimizePresets[0];
 
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
 
     /// <summary>
     /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
-    /// 판 2 = 새 자동 최적화 항목(색 거리·다른 색상 지키기)을 켠다. 판 3 = 명암 계열 우선 항목을 켜고 '불러오면 자동 최적화'를 켠다.
+    /// 판 2 = 새 자동 최적화 항목(색 거리·다른 색상 지키기)을 켠다. 판 3 = 명암 계열 우선 항목을 켠다.
     /// 판 4 = 낱개로 저장하던 항목·예산·점수 기준(<see cref="Legacy"/>)을 '기본' 프리셋 하나로 옮긴다.
     /// 판 5 = 기본 프리셋(<see cref="OptimizePreset.BuiltIns"/>) 중 같은 이름이 없는 것을 뒤에 더한다(한 번만 — 그 뒤 지운 기본 프리셋은 되살리지 않음).
     /// 판 6 = 프리셋 하나로 합침: 최적화 프리셋의 바꿔 볼 항목(Params)을 칸별 최적화(<see cref="OptimizePreset.Sections"/>)로 바꾸고 시작 설정은
     /// <paramref name="lastSettings"/>(예전에는 지금 설정에서 시작했음), 앞에 기본 설정 프리셋(기본·작은 스프라이트·색 적게·원본 색 유지)을, 뒤에 예전
     /// 수동 프리셋 파일(<paramref name="manualPresetsPath"/>)의 프리셋을 체크 없이 더한다.
     /// 단계 설정 JSON(마지막 설정·프리셋)은 빠진 값이 기본값이라 예전에 저장한 설정도 새 기본값(OKLCh 색상 가중·다른 색상 지키기·명암 계열 우선 켬)으로 읽힌다.
-    /// 새로 만든 옵션은 기본 프리셋 전부로 시작한다.
+    /// 판 7 = 이미지 붙여넣기를 포함해 원본을 넣을 때의 자동 최적화를 기본으로 끈다(사용자가 다시 켜면 이후에는 그대로 기억한다).
     /// </summary>
     public void Migrate(string? lastSettings = null, string? manualPresetsPath = null)
     {
@@ -78,7 +78,6 @@ public sealed class PixelateOptions
         {
             bool fresh = OptimizePresets.Count == 0 && Legacy is null && Version == 0;
             if (OptimizePresets.Count == 0 && !fresh) OptimizePresets.Add(LegacyPreset());
-            if (Version < 3) AutoOptimizeOnLoad = true;
             if (Version < 6)
             {
                 var start = PixelatePresets.ParseSettings(lastSettings) is { } last ? OptimizePreset.Serialize(last) : null;
@@ -111,6 +110,7 @@ public sealed class PixelateOptions
                     OptimizePresets.Add(new OptimizePreset { Name = name, Enabled = false, Sections = 0, Settings = OptimizePreset.Serialize(m.Settings) });
                 }
             }
+            if (Version < 7) AutoOptimizeOnLoad = false;
             Version = CurrentVersion;
         }
         Legacy = null;

@@ -618,7 +618,7 @@ public static class GridDetector
     /// 색 경계 = 색 경계 값(경계열은 예전처럼 색 차이 세기로). 덩어리 경계 = 덩어리 경계 값(못 재면 자동처럼).
     /// 외곽선 = 바깥 외곽선 두께 — 줄였을 때 외곽선이 1px이 되는 크기라는 뜻은 지키고, 다른 값이 외곽선 두께와 같은 칸(±<see cref="SameCellTolerance"/>)이면
     /// 그중 경계 일치가 가장 높은 값(같은 칸을 더 정확히 잰 값). 반 칸(외곽선 두께의 ½) 같은 값은 외곽선이 2px이 되므로 고르지 않는다. 외곽선을 못 재면 자동처럼.
-    /// 외곽선 두께보다 큰 값이 <see cref="ThinOutlineMargin"/> 넘게 더 잘 맞으면(외곽선이 칸보다 가늚 — <see cref="ScaleEstimate.ThinOutline"/>) 그 값들 중에서.
+    /// 외곽선 두께보다 큰 값이 <see cref="ThinOutlineMargin"/> 넘게 더 잘 맞고 절대 일치도도 충분하면(외곽선이 칸보다 가늚 — <see cref="ScaleEstimate.ThinOutline"/>) 그 값들 중에서.
     /// 자동 = 덩어리 경계 간격이 뚜렷하면(<see cref="ClearBlockFit"/>) 덩어리 경계 값, 아니면 잰 값 중 경계 일치가 가장 높은 값.
     /// 둘 다 경계 일치가 <see cref="MatchTie"/> 안이면 외곽선 → 덩어리 경계 → 색 경계 순으로(외곽선 두께가 맞으면 정리에서 외곽선이 1px).
     /// 고른 값의 정수배인 값이 거의 같게 맞으면(<see cref="DivisorTie"/>) 큰 쪽.
@@ -670,7 +670,8 @@ public static class GridDetector
         ScaleEstimate OutlineFirst()
         {
             var same = Pick(all.Where(o => Math.Abs(o.Item2 / outline - 1) <= SameCellTolerance))!.Value;
-            var larger = all.Where(o => o.Item2 > outline * (1 + SameCellTolerance) && o.Item3 > same.Match + ThinOutlineMargin).ToList();
+            // 프레임 하나의 큰 색 덩어리가 겨우 문턱을 넘더라도 얇은 외곽선으로 오인하지 않는다.
+            var larger = all.Where(o => o.Item2 > outline * (1 + SameCellTolerance) && o.Item3 > same.Match + ThinOutlineMargin && o.Item3 >= 2 * ThinOutlineMargin).ToList();
             return larger.Count == 0 ? Use(same) : Use(Pick(larger)) with { ThinOutline = true };
         }
         return source switch
