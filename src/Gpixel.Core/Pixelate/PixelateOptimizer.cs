@@ -93,7 +93,7 @@ public sealed record PixelateOptimizeOptions
     public ScoreWeights Weights { get; init; } = new();
     /// <summary>모든 시도의 주요 색 변화를 재는 고정 색 거리(null = 시작 팔레트의 색 거리). 후보 팔레트의 색 변환 설정은 그대로 적용한다.</summary>
     public ColorMetric? ScoreMetric { get; init; }
-    /// <summary>점수의 목표 색 수(결과 색이 이보다 많을 때만 '색 수' 감점, 0 = 자동 — 색 수를 보지 않음).</summary>
+    /// <summary>점수의 목표 색 수(결과 색이 목표보다 많거나 적으면 '색 수' 감점, 0 = 자동 — 색 수를 보지 않음).</summary>
     public int TargetColors { get; init; }
     public int MaxDegreeOfParallelism { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
     /// <summary>찾기 돌림 수 상한(기본 제한 없음 — 나아지지 않은 돌림이 <see cref="PixelateOptimizer.StalePasses"/>번 넘게 이어질 때까지 다시 돌림, 1 = 한 번만).</summary>

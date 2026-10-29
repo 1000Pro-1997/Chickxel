@@ -157,11 +157,16 @@ public sealed record BackgroundSettings
     public bool KeepBackground { get; init; }
 }
 
+/// <summary>원본 이미지 px 단위의 수동 프레임 자리. JSON에서도 좌표와 크기만 저장한다.</summary>
+public readonly record struct FrameSlot(int X, int Y, int Width, int Height);
+
 public sealed record FrameSettings
 {
     public FrameSplitMode Mode { get; init; } = FrameSplitMode.Auto;
     public int Columns { get; init; } = 4;
     public int Rows { get; init; } = 1;
+    /// <summary>수동 프레임 자리(원본 px, 순서 유지). null이면 <see cref="Mode"/>에 따라 자동·격자·단일 분할한다.</summary>
+    public IReadOnlyList<FrameSlot>? ManualRegions { get; init; }
     /// <summary>자동 나누기: 가장 큰 조각 넓이의 이 비율보다 작은 조각은 가까운 프레임에 합친다(0~1).</summary>
     public double MergeSmallFraction { get; init; } = 0.12;
     /// <summary>자동 나누기: 합칠 조각이 프레임에서 이만큼(원본 px) 넘게 떨어져 있으면 버린다(잡티).</summary>
@@ -187,8 +192,6 @@ public sealed record PixelGridSettings
     public double ScaleAdjust { get; init; }
     /// <summary>자동: 칸 크기가 흔들려도 되는 비율(0 = 고른 간격 그대로, 0.15 = ±15%).</summary>
     public double Jitter { get; init; } = 0.15;
-    /// <summary>자동: 프레임마다 따로 찾는다(끄면 그림 전체에서 한 번 — 모든 프레임이 같은 격자).</summary>
-    public bool PerFrame { get; init; }
     /// <summary>자동 칸 크기를 무엇으로 정할지(기본: 색 경계). 정리의 외곽선 맞추기가 "크기를 줄여서"면 그쪽이 이겨 외곽선 두께를 쓴다(<see cref="Pixelator.ScaleSourceFor"/>).</summary>
     public ScaleSource Source { get; init; } = ScaleSource.Auto;
     /// <summary>

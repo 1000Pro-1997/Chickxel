@@ -2952,12 +2952,12 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Align_Keep" xml:space="preserve"><value>Keep offsets</value></data>
   <data name="Pixelate_Frames_Common" xml:space="preserve"><value>Same canvas size for all frames</value></data>
   <data name="Pixelate_Frames_Info" xml:space="preserve"><value>{count} frames</value></data>
+  <data name="Pixelate_Frames_Apply" xml:space="preserve"><value>Apply frame split</value></data>
   <data name="Pixelate_Grid_Auto" xml:space="preserve"><value>Auto (edge analysis)</value></data>
   <data name="Pixelate_Grid_Manual" xml:space="preserve"><value>Manual</value></data>
   <data name="Pixelate_Grid_Scale" xml:space="preserve"><value>Pixel size (px)</value></data>
   <data name="Pixelate_Grid_Offset" xml:space="preserve"><value>Offset X·Y</value></data>
   <data name="Pixelate_Grid_Jitter" xml:space="preserve"><value>Allowed size jitter (%)</value></data>
-  <data name="Pixelate_Grid_PerFrame" xml:space="preserve"><value>Detect per frame</value></data>
   <data name="Pixelate_Grid_UseDetected" xml:space="preserve"><value>Use detected as manual</value></data>
   <data name="Pixelate_Grid_Info" xml:space="preserve"><value>Detected pixel size {scale}px · offset ({x}, {y}) · edge fit {confidence}%</value></data>
   <data name="Pixelate_Size_FromScale" xml:space="preserve"><value>From pixel size</value></data>
@@ -3055,7 +3055,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Ai_RankCount" xml:space="preserve"><value>Candidates to send</value></data>
   <data name="Pixelate_Ai_RankItem" xml:space="preserve"><value>candidate {index} (score {score}, {colors} colors, {width}×{height})</value></data>
   <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>The first attached image is the original (pixel-look art made by AI); the next {count} are candidates that pixelate it ({list}, in order — each image shows the frames side by side). Check whether outlines are unbroken, the eyes and face are readable, there are no stray pixels, and colors and shapes are consistent between frames, then rank them from best with reasons. Suggest settings (pixel size, color count, cleanup) that would improve them.</value></data>
-  <data name="Pixelate_Source" xml:space="preserve"><value>Source {size} (wheel: zoom, drag: pan, double-click: fit)</value></data>
+  <data name="Pixelate_Source" xml:space="preserve"><value>Source {size} (wheel: zoom, frame: move, edge: resize, empty area: pan)</value></data>
   <data name="Pixelate_ShowGrid" xml:space="preserve"><value>Show grid</value></data>
   <data name="Pixelate_ShowMask" xml:space="preserve"><value>Show background removed</value></data>
   <data name="Pixelate_Bar_Size" xml:space="preserve"><value>Output size</value></data>
@@ -3158,7 +3158,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_ScoreHueWeightTip" xml:space="preserve"><value>Hue (H) difference weight - wH in the OKLCh hue-weighted distance. 1 = same as OKLab; higher counts a change to a different hue more heavily.</value></data>
   <data name="Pixelate_Opt_ScoreWeights" xml:space="preserve"><value>Score weights (0 = ignore)</value></data>
   <data name="Pixelate_Opt_TargetColors" xml:space="preserve"><value>Target colors</value></data>
-  <data name="Pixelate_Opt_TargetColorsTip" xml:space="preserve"><value>If the result has more colors than this, the whole score is multiplied by (1 − Color count weight × extra colors ÷ target): with weight 0.5 and target 16, 20 colors lose 12.5%, 32 colors lose 50%, and 48 or more score 0. Fewer colors are not penalized.</value></data>
+  <data name="Pixelate_Opt_TargetColorsTip" xml:space="preserve"><value>If the result has more or fewer colors than the target, the whole score is multiplied by (1 − Color count weight × distance from target ÷ target). With weight 0.5 and target 16, 12 or 20 colors lose 12.5%, while 8 or 24 colors lose 25%. An exact match is not penalized.</value></data>
   <data name="Pixelate_Opt_TargetColorsAutoTip" xml:space="preserve"><value>Auto: the color count doesn't count in the score (no "Color count" penalty however many colors there are).</value></data>
   <data name="Pixelate_Opt_NoPresetTip" xml:space="preserve"><value>No preset is checked. Check at least one preset under the settings button next to it.</value></data>
   <data name="Pixelate_Opt_HistoryEmpty" xml:space="preserve"><value>The selected preset was not run this time.</value></data>

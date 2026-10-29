@@ -26,6 +26,10 @@ public sealed record FrameSplit(IReadOnlyList<FrameRegion> Frames, int[] Labels)
 /// 격자: 같은 크기 칸마다 한 프레임(빈 칸은 뺌). 칸 선으로 픽셀을 자르지 않고 8방향으로 이어진 덩어리째 칸에 준다(<see cref="AssignCells"/>) —
 /// 칸 선을 넘은 손끝·발끝이 이웃 프레임 가장자리에 조각으로 남지 않는다. 프레임 범위는 받은 덩어리를 합친 사각형, 자리는 칸 그대로.
 /// </para>
+/// <para>
+/// 수동: 지정한 자리의 순서를 유지하고 빈 자리는 결과에서 뺀다. 겹치는 픽셀과 같은 거리의 픽셀은 앞자리의 것으로 본다.
+/// 연결된 덩어리는 격자와 같이 주인이 뚜렷하면 통째로 주고, 아니면 픽셀마다 가장 가까운 자리에 나눈다.
+/// </para>
 /// </summary>
 public static class FrameSplitter
 {
@@ -48,6 +52,7 @@ public static class FrameSplitter
     {
         var labels = new int[fg.Length];
         Array.Fill(labels, -1);
+        if (s.ManualRegions is { } manual) return SplitManual(fg, width, height, manual, labels);
         return s.Mode switch
         {
             FrameSplitMode.Grid => SplitGrid(fg, width, height, Math.Max(1, s.Columns), Math.Max(1, s.Rows), labels),
@@ -85,6 +90,124 @@ public static class FrameSplitter
         for (int i = 0; i < labels.Length; i++)
             if (labels[i] >= 0) labels[i] = index[labels[i]];
         return new FrameSplit(frames, labels);
+    }
+
+    private static FrameSplit SplitManual(bool[] fg, int w, int h, IReadOnlyList<FrameSlot> manual, int[] labels)
+    {
+        if (manual.Count == 0 || w <= 0 || h <= 0) return new FrameSplit([], labels);
+        var slots = new Rectangle[manual.Count];
+        for (int k = 0; k < slots.Length; k++)
+        {
+            var r = manual[k];
+            int left = Math.Clamp(r.X, 0, w - 1), top = Math.Clamp(r.Y, 0, h - 1);
+            int right = (int)Math.Clamp((long)r.X + Math.Max(1, r.Width), left + 1, w);
+            int bottom = (int)Math.Clamp((long)r.Y + Math.Max(1, r.Height), top + 1, h);
+            slots[k] = Rectangle.FromLTRB(left, top, right, bottom);
+        }
+
+        var (id, size, box) = Blobs(fg, null, 0, w, new Rectangle(0, 0, w, h));
+        if (size.Count == 0) return new FrameSplit([], labels);
+        var nearest = new int[fg.Length];
+        var hits = new int[size.Count * slots.Length];
+        for (int i = 0; i < fg.Length; i++)
+        {
+            if (id[i] < 0) continue;
+            int k = ClosestSlot(slots, i % w, i / w);
+            nearest[i] = k;
+            hits[id[i] * slots.Length + k]++;
+        }
+
+        const int Cut = -1, Small = -2;
+        int largest = size.Max();
+        var topSlot = new int[size.Count];
+        var whole = new int[size.Count];
+        for (int b = 0; b < size.Count; b++)
+        {
+            int best = 0, second = 0;
+            for (int k = 0; k < slots.Length; k++)
+            {
+                int n = hits[b * slots.Length + k];
+                if (n > best) { second = best; best = n; topSlot[b] = k; }
+                else if (n > second) second = n;
+            }
+            whole[b] = size[b] < largest * LargeShare ? Small
+                : best >= size[b] * MajorityShare && second < size[b] * SecondShare ? topSlot[b]
+                : Cut;
+        }
+
+        var bounds = new Rectangle[slots.Length];
+        var minX = new int[slots.Length];
+        var minY = new int[slots.Length];
+        var maxX = new int[slots.Length];
+        var maxY = new int[slots.Length];
+        Array.Fill(minX, int.MaxValue);
+        Array.Fill(minY, int.MaxValue);
+        Array.Fill(maxX, -1);
+        Array.Fill(maxY, -1);
+        for (int i = 0; i < fg.Length; i++)
+        {
+            int b = id[i];
+            if (b < 0 || whole[b] == Small) continue;
+            int k = whole[b] == Cut ? nearest[i] : whole[b];
+            labels[i] = k;
+            int x = i % w, y = i / w;
+            if (x < minX[k]) minX[k] = x;
+            if (x > maxX[k]) maxX[k] = x;
+            if (y < minY[k]) minY[k] = y;
+            if (y > maxY[k]) maxY[k] = y;
+        }
+        for (int k = 0; k < slots.Length; k++)
+            if (maxX[k] >= 0) bounds[k] = Rectangle.FromLTRB(minX[k], minY[k], maxX[k] + 1, maxY[k] + 1);
+
+        // 작은 덩어리의 대상은 큰 덩어리의 범위만 보고 정한다(작은 덩어리의 순서에 영향받지 않음).
+        var had = bounds.Select(b => !b.IsEmpty).ToArray();
+        for (int b = 0; b < size.Count; b++)
+        {
+            if (whole[b] != Small) continue;
+            int best = topSlot[b];
+            if (had[best])
+            {
+                int gap = Gap(bounds[best], box[b]);
+                for (int k = 0; k < slots.Length; k++)
+                {
+                    if (!had[k]) continue;
+                    int distance = Gap(bounds[k], box[b]);
+                    if (distance < gap) { gap = distance; best = k; }
+                }
+            }
+            var bb = box[b];
+            for (int y = bb.Top; y < bb.Bottom; y++)
+                for (int x = bb.Left; x < bb.Right; x++)
+                    if (id[y * w + x] == b) labels[y * w + x] = best;
+            bounds[best] = bounds[best].IsEmpty ? bb : Rectangle.Union(bounds[best], bb);
+        }
+
+        var frames = new List<FrameRegion>(slots.Length);
+        var index = new int[slots.Length];
+        for (int k = 0; k < slots.Length; k++)
+        {
+            index[k] = bounds[k].IsEmpty ? -1 : frames.Count;
+            if (index[k] >= 0) frames.Add(new FrameRegion(slots[k], bounds[k]));
+        }
+        for (int i = 0; i < labels.Length; i++)
+            if (labels[i] >= 0) labels[i] = index[labels[i]];
+        return new FrameSplit(frames, labels);
+    }
+
+    /// <summary>자리 안쪽을 우선하고, 빈 공간은 가장 가까운 자리로. 겹침·동점은 앞자리로 결정한다.</summary>
+    private static int ClosestSlot(Rectangle[] slots, int x, int y)
+    {
+        int best = 0, distance = int.MaxValue;
+        for (int k = 0; k < slots.Length; k++)
+        {
+            var r = slots[k];
+            int dx = Math.Max(0, Math.Max(r.Left - x, x - (r.Right - 1)));
+            int dy = Math.Max(0, Math.Max(r.Top - y, y - (r.Bottom - 1)));
+            int d = Math.Max(dx, dy);
+            if (d < distance) { distance = d; best = k; }
+            if (d == 0) break;
+        }
+        return best;
     }
 
     /// <summary>자동 나누기 조각: 번호(나누는 동안 픽셀마다 적는 주인), 스프라이트 범위, 띠(자리), 픽셀 수.</summary>

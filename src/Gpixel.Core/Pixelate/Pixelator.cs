@@ -491,25 +491,38 @@ public static class Pixelator
         var size = s.Size;
         double forced = 0;
         if (size.Mode == OutputSizeMode.ScaleFactor) forced = 1 / PixelateRanges.Factor.Clamp(size.Factor);
-        GridFit? shared = null;
-        if (!s.Grid.PerFrame || forced > 0)
+        // 단일 프레임은 기존 그림 전체 격자를 유지한다. 여러 프레임은 배율이 같아도
+        // 각각의 경계 세기에서 시작 위치와 칸 경계를 찾는다.
+        if (nf == 1)
         {
             var bounds = src.ContentBounds;
-            shared = forced > 0
+            result[0] = forced > 0
                 ? new GridFit(GridDetector.UniformCuts(bounds.Left, bounds.Right, forced, 0), GridDetector.UniformCuts(bounds.Top, bounds.Bottom, forced, 0), forced, forced, 0)
                 : estimate is { } e && s.Grid.Mode == GridMode.Auto
                     ? GridDetector.Fit(src.ProfileX, src.ProfileY, bounds, s.Grid, e, e.BlockCuts ? src.BlockEdges(-1) : null)
                     : DetectGrid(src, s.Grid with { Source = ScaleSourceFor(s) }, s.Palette.OutlineDarkness);
             if (forced > 0)
-                shared = shared with { Confidence = 0.5 * (GridDetector.Confidence(src.ProfileX, shared.XCuts, bounds.Left, bounds.Right) + GridDetector.Confidence(src.ProfileY, shared.YCuts, bounds.Top, bounds.Bottom)) };
+                result[0] = result[0] with { Confidence = 0.5 * (GridDetector.Confidence(src.ProfileX, result[0].XCuts, bounds.Left, bounds.Right) + GridDetector.Confidence(src.ProfileY, result[0].YCuts, bounds.Top, bounds.Bottom)) };
         }
-        for (int f = 0; f < nf; f++)
+        else
         {
-            if (shared is not null) { result[f] = shared; continue; }
-            var b = split.Frames[f].Bounds;
-            var (ex, ey) = src.FrameProfiles(f);
-            var est = s.Grid.Mode == GridMode.Auto ? estimate ?? src.EstimatedScale(f, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness) : default;
-            result[f] = GridDetector.Fit(ex, ey, b, s.Grid, est, est.BlockCuts ? src.BlockEdges(f) : null);
+            for (int f = 0; f < nf; f++)
+            {
+                var b = split.Frames[f].Bounds;
+                var (ex, ey) = src.FrameProfiles(f);
+                if (forced > 0)
+                {
+                    var xc = GridDetector.FitCuts(ex, b.Left, b.Right, forced, 0);
+                    var yc = GridDetector.FitCuts(ey, b.Top, b.Bottom, forced, 0);
+                    double conf = 0.5 * (GridDetector.Confidence(ex, xc, b.Left, b.Right) + GridDetector.Confidence(ey, yc, b.Top, b.Bottom));
+                    result[f] = new GridFit(xc, yc, forced, forced, conf);
+                }
+                else
+                {
+                    var est = s.Grid.Mode == GridMode.Auto ? estimate ?? src.EstimatedScale(f, s.Grid.Jitter, ScaleSourceFor(s), s.Palette.OutlineDarkness) : default;
+                    result[f] = GridDetector.Fit(ex, ey, b, s.Grid, est, est.BlockCuts ? src.BlockEdges(f) : null);
+                }
+            }
         }
 
         if (size.Mode == OutputSizeMode.FixedSize)
@@ -524,8 +537,8 @@ public static class Pixelator
             {
                 for (int f = 0; f < nf; f++)
                 {
-                    var b = shared is not null ? src.ContentBounds : split.Frames[f].Bounds;
-                    var (ex, ey) = shared is not null ? (src.ProfileX, src.ProfileY) : src.FrameProfiles(f);
+                    var b = split.Frames[f].Bounds;
+                    var (ex, ey) = src.FrameProfiles(f);
                     var xc = GridDetector.FitCuts(ex, b.Left, b.Right, Math.Max(sx, 1), 0);
                     var yc = GridDetector.FitCuts(ey, b.Top, b.Bottom, Math.Max(sy, 1), 0);
                     double conf = 0.5 * (GridDetector.Confidence(ex, xc, b.Left, b.Right) + GridDetector.Confidence(ey, yc, b.Top, b.Bottom));

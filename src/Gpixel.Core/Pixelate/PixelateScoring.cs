@@ -9,7 +9,7 @@ public enum ScoreTerm
     Orphans,
     /// <summary>가장자리 중 외곽선(어두운 색)이 아닌 비율.</summary>
     OutlineGaps,
-    /// <summary>색 수가 목표보다 많은 정도(점수 전체에 곱하는 감점 — <see cref="PixelateScoring.Score"/>).</summary>
+    /// <summary>색 수가 목표에서 벗어난 정도(점수 전체에 곱하는 감점 — <see cref="PixelateScoring.Score"/>).</summary>
     Colors,
     /// <summary>프레임 사이 색 쓰임이 다른 정도.</summary>
     Consistency,
@@ -68,15 +68,15 @@ public sealed record PixelateScore(double Total, IReadOnlyList<ScorePart> Parts)
 public static class PixelateScoring
 {
     /// <summary>
-    /// 목표 색 수(<paramref name="targetColors"/>)가 있으면 결과 색이 그보다 많을 때만 점수 전체에 (1 − 색 수 가중치 × 넘은 수 ÷ 목표)를 곱한다(0 아래면 0,
-    /// 적으면 그대로). 예: 가중치 0.5·목표 16이면 20색 −12.5%, 32색 −50%, 48색 이상 0점. 예전처럼 다른 항목과 가중 평균하면 색 수 가중치가 전체의 3%뿐이라
-    /// 653색(원래 색 유지)이 목표 16색을 크게 넘어도 3점밖에 깎이지 않아 충실도가 높은 쪽이 이겼다. 항목의 나쁨 = 깎인 비율.
+    /// 목표 색 수(<paramref name="targetColors"/>)가 있으면 점수 전체에 (1 − 색 수 가중치 × |결과 색 수 − 목표| ÷ 목표)를 곱한다(0 아래면 0).
+    /// 예: 가중치 0.5·목표 16이면 12색과 20색 모두 −12.5%, 8색과 24색 모두 −25%, 48색 이상 0점.
+    /// 다른 항목과 가중 평균하면 색 수 비중이 작아 크게 벗어난 결과도 거의 깎이지 않는다. 항목의 나쁨 = 깎인 비율.
     /// </summary>
     public static PixelateScore Score(PixelateResult r, ScoreWeights w, int? targetColors)
     {
         var m = r.Metrics;
         double orphanRate = m.OpaquePixels == 0 ? 0 : m.Orphans / (double)m.OpaquePixels;
-        double colorBad = targetColors is > 0 and var t ? Math.Clamp(Math.Max(0, w.Colors) * Math.Max(0, m.Colors - t) / t, 0, 1) : 0;
+        double colorBad = targetColors is > 0 and var t ? Math.Clamp(Math.Max(0, w.Colors) * Math.Abs((double)m.Colors - t) / t, 0, 1) : 0;
         var parts = new List<ScorePart>
         {
             new(ScoreTerm.Fidelity, m.Fidelity, Math.Min(1, m.Fidelity / 0.12), w.Fidelity),

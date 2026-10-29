@@ -241,7 +241,7 @@ public sealed class OptimizePreset
     public double ScoreHueWeight { get; set; } = 2;
     public double ScoreLightWeight { get; set; } = 1;
     public double ScoreChromaWeight { get; set; } = 1;
-    /// <summary>점수의 목표 색 수(결과 색이 이보다 많으면 '색 수' 감점, 적으면 그대로). 0 = 자동(색 수를 점수에서 보지 않음).</summary>
+    /// <summary>점수의 목표 색 수(결과 색이 목표보다 많거나 적으면 '색 수' 감점). 0 = 자동(색 수를 점수에서 보지 않음).</summary>
     public int ScoreTargetColors { get; set; }
     public ScoreWeights Weights { get; set; } = new();
 
@@ -465,6 +465,10 @@ public sealed class PixelateDialog : DialogBase
     private int _generation;
     private bool _loading;
     private PixelateSource? _prepared;
+    /// <summary>현재 원본에 마지막으로 적용한 나누기(슬롯은 원본 px). 화면의 나누기 입력과 별개이며 원본 교체·'프레임 나누기 적용'에서만 새로 만든다.</summary>
+    private FrameSettings? _appliedFrames;
+    /// <summary>화면 설정에 남길 직접 편집한 슬롯(null = 프레임 나누기 입력값만 저장).</summary>
+    private IReadOnlyList<FrameSlot>? _manualRegions;
     private readonly List<PixelateCandidate> _candidates = new();
     private PixelateCandidate? _selected;
     private bool _userPicked;
@@ -538,10 +542,11 @@ public sealed class PixelateDialog : DialogBase
     private readonly NumericUpDown _frCols, _frRows, _frMerge, _frMergeDist;
     private readonly CheckBox _frCommon;
     private readonly TextBlock _frInfo;
+    private readonly Button _frApply;
     // 3. 격자
     private readonly ComboBox _grMode;
     private readonly NumericUpDown _grScale, _grOffX, _grOffY, _grJitter, _grAdjust;
-    private readonly CheckBox _grPerFrame, _grLocal;
+    private readonly CheckBox _grLocal;
     /// <summary>칸 경계 지역 보정: 최대 이동(칸 %)·띠 너비(칸)·최소 평균 칸 크기(px).</summary>
     private readonly NumericUpDown _grLocalShift, _grLocalBand, _grLocalMinCell;
     private readonly ComboBox _grSource;
@@ -678,7 +683,7 @@ public sealed class PixelateDialog : DialogBase
         {
             // 레이어의 여러 프레임을 가로로 이은 그림: 칸마다 한 프레임(기억한 나누기 설정은 닫을 때 되돌림).
             _restoreFrames = initial.Frames;
-            initial = initial with { Frames = initial.Frames with { Mode = FrameSplitMode.Grid, Columns = sourceFrames, Rows = 1 } };
+            initial = initial with { Frames = initial.Frames with { Mode = FrameSplitMode.Grid, Columns = sourceFrames, Rows = 1, ManualRegions = null } };
         }
 
         // ── 프리셋(설정 칸 맨 위에 고정): 고르기 · 저장(빨강 = 저장 안 된 변경, 초록 = 저장됨) · 이름 바꾸기 · 지우기 · 정리하기
@@ -760,13 +765,14 @@ public sealed class PixelateDialog : DialogBase
         _frMergeDist = Num(0, 4096, 48, 0);
         _frAlign = Ui.Combo(130, UiStrings.Pixelate_Align_BottomCenter, UiStrings.Pixelate_Align_Center, UiStrings.Pixelate_Align_Keep);
         _frCommon = Ui.Check(UiStrings.Pixelate_Frames_Common);
+        _frApply = Ui.Button(UiStrings.Pixelate_Frames_Apply, (_, _) => ApplyFrameSplit());
         _frInfo = Info();
         var frBody = Ui.Stack(
             Ui.Row(Ui.Label(UiStrings.Pixelate_Mode), _frMode),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Frames_Columns), _frCols, Ui.Label(UiStrings.Pixelate_Frames_Rows), _frRows),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Frames_Merge), _frMerge, Ui.Label(UiStrings.Pixelate_Frames_MergeDistance), _frMergeDist),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Frames_Align), _frAlign),
-            _frCommon, _frInfo);
+            _frCommon, _frApply, _frInfo);
 
         // ── 3. 격자
         _grMode = Ui.Combo(170, UiStrings.Pixelate_Grid_Auto, UiStrings.Pixelate_Grid_Manual);
@@ -775,7 +781,6 @@ public sealed class PixelateDialog : DialogBase
         _grOffY = Num(PixelateRanges.Offset, 0, 1, 0.5m);
         _grJitter = Num(0, 45, 15, 0);
         _grAdjust = Num(PixelateRanges.ScaleAdjust, 0, 2, 0.25m).Tip(UiStrings.Pixelate_Grid_Adjust_Tip);
-        _grPerFrame = Ui.Check(UiStrings.Pixelate_Grid_PerFrame);
         _grLocal = Ui.Check(UiStrings.Pixelate_Grid_Local, true).Tip(UiStrings.Pixelate_Grid_Local_Tip);
         _grLocalShift = Num(PixelateRanges.LocalShift, 35, 0, 5, unit: 100).Tip(UiStrings.Pixelate_Grid_LocalShift_Tip);
         _grLocalBand = Num(PixelateRanges.LocalBand, 2, 0).Tip(UiStrings.Pixelate_Grid_LocalBand_Tip);
@@ -790,7 +795,6 @@ public sealed class PixelateDialog : DialogBase
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_Jitter), _grJitter),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_Adjust), _grAdjust),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_Source), _grSource),
-            _grPerFrame,
             _grLocal,
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalShift), _grLocalShift, Ui.Label(UiStrings.Pixelate_Grid_LocalBand), _grLocalBand),
             Ui.Row(Ui.Label(UiStrings.Pixelate_Grid_LocalMinCell), _grLocalMinCell),
@@ -992,6 +996,7 @@ public sealed class PixelateDialog : DialogBase
         _sourceView.ShowGrid = _showGrid.On();
         _sourceView.ShowAlt = _showMask.On();
         _sourceView.HoverChanged += h => _preview.SetHover(h);
+        _sourceView.FrameEdited += OnFrameEdited;
         // 크게 보기: 큰 미리보기의 결과·원본 그림을 누르면 열림(대화상자를 덮는 겹판 — 같은 프레임 번호·재생·후보·격자 보기·뺀 색을 함께 씀).
         _zoomColors = new ColorsBlock(this) { Margin = new Thickness(0, 4, 0, 0) };
         _zoomStripScroll = StripScroll(_zoomStrip);
@@ -1200,7 +1205,11 @@ public sealed class PixelateDialog : DialogBase
                      _szW, _szH, _szPad, _szFactor, _dsBorder, _dsAlpha, _dsSnap, _palColors, _palEdge, _palDark, _palHueWeight, _palHueChroma, _palHueMin, _palHueArea, _palOkL, _palOkC, _palOkH,
                      _clContrast, _clVecTol, _clVecBlob, _coContrast, _candCount, _crTrials, _crSeconds, _crLightWeight, _crChromaWeight, _crHueWeight, _crTargetColors }.Concat(_crWeights))
             n.ValueChanged += (_, _) => Changed();
-        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grPerFrame, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade,
+        // 나누기 조건이 바뀌면 이전 조건에서 편집한 슬롯은 버린다.
+        _frMode.SelectionChanged += (_, _) => ResetManualFrames();
+        foreach (var n in new[] { _frCols, _frRows, _frMerge, _frMergeDist })
+            n.ValueChanged += (_, _) => ResetManualFrames();
+        foreach (var c in new[] { _bgAutoTol, _bgConnected, _bgKeepAlpha, _bgSticker, _bgKeep, _frCommon, _grLocal, _szAspect, _palAuto, _palShared, _palSnap, _palDistinct, _palShade,
                      _clOrphans, _clHoles, _clJaggies, _coTemporal, _vScale, _vPalette, _vDownsample, _vCleanup, _vDither, _vFit, _crTargetAuto })
             c.IsCheckedChanged += (_, _) => Changed();
         _crDistance.SelectionChanged += (_, _) => Changed();
@@ -1248,6 +1257,7 @@ public sealed class PixelateDialog : DialogBase
         _replaceSource.IsVisible = has;
         OkButton.IsEnabled = has;
         _newTab.IsEnabled = has;
+        _frApply.IsEnabled = has;
         UpdateOptimizeButtons();
     }
 
@@ -1263,8 +1273,10 @@ public sealed class PixelateDialog : DialogBase
         if (_restoreFrames is { } frames)
         {
             _restoreFrames = null;
-            LoadSettings(ReadSettings() with { Frames = frames });
+            LoadSettings(ReadSettings() with { Frames = frames with { ManualRegions = null } });
         }
+        _manualRegions = null;
+        _appliedFrames = null;
         _input = input;
         _prepared = null;
         _detected = null;
@@ -1307,6 +1319,7 @@ public sealed class PixelateDialog : DialogBase
         _colors.Show([], _excluded, _pinned);
         _zoomColors.Show([], _excluded, _pinned);
         _sourceView.SetGrid([]);
+        _sourceView.SetFrames([]);
         _play.Stop();
         UpdatePlayIcon();
     }
@@ -1531,6 +1544,7 @@ public sealed class PixelateDialog : DialogBase
             _bgSpecks.Value = Math.Clamp(bg.RemoveSpecks, 0, 10000);
 
             var fr = s.Frames;
+            _manualRegions = fr.ManualRegions;
             _frMode.SelectedIndex = Index(fr.Mode);
             _frCols.Value = Math.Clamp(fr.Columns, 1, 64);
             _frRows.Value = Math.Clamp(fr.Rows, 1, 64);
@@ -1546,7 +1560,6 @@ public sealed class PixelateDialog : DialogBase
             _grOffY.Value = In(PixelateRanges.Offset, gr.OffsetY, decimals: 1);
             _grJitter.Value = (decimal)Math.Clamp(gr.Jitter * 100, 0, 45);
             _grAdjust.Value = In(PixelateRanges.ScaleAdjust, gr.ScaleAdjust, decimals: 2);
-            _grPerFrame.IsChecked = gr.PerFrame;
             _grLocal.IsChecked = gr.LocalCorrection;
             _grLocalShift.Value = In(PixelateRanges.LocalShift, gr.LocalShift, 100, 0);
             _grLocalBand.Value = In(PixelateRanges.LocalBand, gr.LocalBand, decimals: 0);
@@ -1646,6 +1659,7 @@ public sealed class PixelateDialog : DialogBase
                 MergeDistance = I(_frMergeDist),
                 Align = At<FrameAlign>(_frAlign),
                 CommonCanvas = _frCommon.On(),
+                ManualRegions = _manualRegions,
             },
             Grid = new PixelGridSettings
             {
@@ -1655,7 +1669,6 @@ public sealed class PixelateDialog : DialogBase
                 OffsetY = D(_grOffY),
                 Jitter = D(_grJitter) / 100,
                 ScaleAdjust = D(_grAdjust),
-                PerFrame = _grPerFrame.On(),
                 LocalCorrection = _grLocal.On(),
                 LocalShift = D(_grLocalShift) / 100,
                 LocalBand = (int)D(_grLocalBand),
@@ -1869,6 +1882,41 @@ public sealed class PixelateDialog : DialogBase
         UpdateSaveState();
     }
 
+    /// <summary>준비·최적화에는 화면의 미적용 나누기 값 대신 마지막으로 적용한 슬롯을 사용한다.</summary>
+    private PixelateSettings WithAppliedFrames(PixelateSettings settings)
+        => _appliedFrames is { } applied
+            ? settings with { Frames = applied with { Align = settings.Frames.Align, CommonCanvas = settings.Frames.CommonCanvas } }
+            : settings;
+
+    private void ApplyFrameSplit()
+    {
+        if (_input is null) return;
+        _manualRegions = null;
+        _appliedFrames = null;
+        _prepared = null;
+        UpdateSaveState();
+        Rerun();
+    }
+
+    private void ResetManualFrames()
+    {
+        if (_loading || _manualRegions is null) return;
+        _manualRegions = null;
+        UpdateSaveState();
+    }
+
+    private void OnFrameEdited(int index, Rectangle rectangle)
+    {
+        if (_prepared is null || _appliedFrames?.ManualRegions is not { } active || index < 0 || index >= active.Count) return;
+        // 편집 기준은 후보의 잘린 칸이 아닌 화면에 보이는 적용 슬롯이다.
+        var slots = active.ToArray();
+        slots[index] = new FrameSlot(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+        _manualRegions = slots;
+        _appliedFrames = _appliedFrames with { ManualRegions = slots };
+        UpdateSaveState();
+        Rerun();
+    }
+
     // ───────────── 후보 만들기 ─────────────
 
     private void Rerun()
@@ -1877,7 +1925,7 @@ public sealed class PixelateDialog : DialogBase
         _cts?.Cancel();
         var cts = _cts = new CancellationTokenSource();
         int gen = ++_generation;
-        var settings = ReadSettings();
+        var settings = WithAppliedFrames(ReadSettings());
         _runFit = settings.Cleanup.OutlineFit;
         var vary = ReadVary();
         int count = (int)_candCount.NumValue();
@@ -1928,12 +1976,18 @@ public sealed class PixelateDialog : DialogBase
     private void OnPrepared(PixelateSource src, GridFit? detected, ScaleEstimate estimate, OutlineFit fit)
     {
         _prepared = src;
+        _appliedFrames ??= src.FrameSettings with { ManualRegions = src.Split.Frames.Select(f =>
+        {
+            var r = f.Slot;
+            return new FrameSlot(r.X, r.Y, r.Width, r.Height);
+        }).ToArray() };
         _detected = detected;
         _sourceView.SetImage(_input!.Image, src.Cleaned);
+        _sourceView.SetFrames(_appliedFrames.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
         _bgInfo.Text = src.Background.UsedAlpha
             ? UiStrings.Pixelate_Bg_InfoAlpha
             : UiStrings.FormatPixelate_Bg_InfoColor(color: src.Background.Color?.ToHex() ?? "", tolerance: src.Background.Tolerance.ToString("0.#", CultureInfo.CurrentCulture));
-        _frInfo.Text = UiStrings.FormatPixelate_Frames_Info(count: src.Split.Frames.Count);
+        _frInfo.Text = UiStrings.FormatPixelate_Frames_Info(count: _appliedFrames.ManualRegions!.Count);
         _grInfo.Text = detected is null ? "" : UiStrings.FormatPixelate_Grid_Info(
             scale: detected.DetectedScale.ToString("0.##", CultureInfo.CurrentCulture),
             x: detected.Offset.X.ToString("0.#", CultureInfo.CurrentCulture),
@@ -2698,12 +2752,19 @@ public sealed class PixelateDialog : DialogBase
     private void StartOptimize(OptimizePreset? only = null, OptimizePreset? current = null)
     {
         if (_optCts is not null || _input is not { } input) return;
+        // 첫 준비가 아직 끝나지 않았다면 그 결과의 슬롯을 기다린다. 프리셋마다 독립적으로 최초 분할하지 않는다.
+        if (_appliedFrames is null)
+        {
+            _autoOptimizePending = true;
+            if (_cts is null || _cts.IsCancellationRequested) Rerun();
+            return;
+        }
         var presets = current is not null ? new List<OptimizePreset> { current }
             : only is not null ? _opt.OptimizePresets.Where(p => ReferenceEquals(p, only)).ToList()
             : _opt.OptimizePresets.Where(p => p.Enabled).ToList();
         // 정리하기는 왼쪽 값 그대로(고정 색·뺀 색 포함)로 돌려 고른 프리셋(새 프리셋이면 그것)에 써 넣고, 체크한 프리셋은 저장한 시작 설정으로 돌려 그 프리셋에 써 넣는다.
         var runs = presets.Select(p => (Preset: p, p.Name, Options: p.Options(),
-            Settings: current is not null ? ReadSettings() : p.StartSettings(), Target: current is not null ? _current : p)).ToList();
+            Settings: WithAppliedFrames(current is not null ? ReadSettings() : p.StartSettings()), Target: current is not null ? _current : p)).ToList();
         if (runs.Count == 0) return;
         _optPresetBackup.Clear();
         foreach (var r in runs)
@@ -2833,6 +2894,8 @@ public sealed class PixelateDialog : DialogBase
     private void WriteOptimized(OptimizePreset? target, PixelateSettings settings)
     {
         if (target is null) return;
+        // 분할 슬롯은 실행용일 뿐이다. 저장할 프리셋의 미적용 나누기 입력은 덮지 않는다.
+        settings = settings with { Frames = ReferenceEquals(target, _current) ? ReadSettings().Frames : target.StartSettings().Frames };
         var json = OptimizePreset.Serialize(settings);
         if (json == target.Settings) return;
         target.Settings = json;
@@ -2955,6 +3018,7 @@ public sealed class PixelateDialog : DialogBase
         {
             _prepared = src;
             _sourceView.SetImage(_input!.Image, src.Cleaned);
+            _sourceView.SetFrames(_appliedFrames!.ManualRegions!.Select(r => new Rectangle(r.X, r.Y, r.Width, r.Height)).ToArray());
         }
         if (targetOf.GetValueOrDefault(best) is { } bestTarget && _opt.OptimizePresets.Contains(bestTarget) && !ReferenceEquals(bestTarget, _current) && !IsDirty())
         {
@@ -2963,7 +3027,8 @@ public sealed class PixelateDialog : DialogBase
             LoadPresetValues(bestTarget, settingsToo: true);
             FillPresets();
         }
-        else if (targetOf.GetValueOrDefault(best) is not { } shown || !ReferenceEquals(shown, _current)) LoadSettings(best.Settings);
+        else if (targetOf.GetValueOrDefault(best) is not { } shown || !ReferenceEquals(shown, _current))
+            LoadSettings(best.Settings with { Frames = ReadSettings().Frames });
         // 써 넣은 프리셋을 파일에 남긴다(아직 저장하지 않은 새 프리셋은 저장 단추를 눌러야 들어감).
         if (targetOf.Values.Any(t => !ReferenceEquals(t, _draft))) _settings.Save();
         UpdateSaveState();
@@ -3618,10 +3683,10 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 원본 보기: 휠로 확대·축소(마우스 자리 기준), 끌어서 이동. 고른 후보가 쓴 칸 경계와 배경 지운 모습을 겹쳐 볼 수 있고,
-    /// 마우스를 올린 칸을 강조해 알린다(<see cref="HoverChanged"/> — 큰 미리보기가 결과의 같은 픽셀을 강조).
-    /// 스포이드 중(<see cref="Picking"/>)이면 스포이드 커서에 칸 경계를 켜지 않아도 올린 칸을 강조하고, 왼쪽 클릭 = 그 칸 고르기(<see cref="CellPicked"/>, 끌기 대신),
-    /// 오른쪽 클릭 = 그만(<see cref="PickCancelled"/>). 휠·가운데 끌기는 그대로.
+    /// 원본 보기: 휠로 확대·축소(마우스 자리 기준), 빈 곳·가운데 버튼으로 이동.
+    /// 프레임 슬롯은 격자 표시와 관계없이 보이며 왼쪽 끌기로 이동·크기 조절한다.
+    /// 고른 후보의 칸 경계·배경 지운 모습을 겹쳐 보고, 올린 칸을 큰 미리보기에도 강조한다.
+    /// 스포이드 중에는 왼쪽 클릭으로 칸을 고르고 오른쪽 클릭으로 끝낸다. 휠·가운데 끌기는 그대로.
     /// </summary>
     private sealed class ZoomImageView : Control
     {
@@ -3631,12 +3696,28 @@ public sealed class PixelateDialog : DialogBase
         private PixelImage? _imageData, _altData;
         private Size _size;
         private IReadOnlyList<PixelateFrameMap> _maps = [];
+        private Rectangle[] _frames = [];
+        private string[] _frameLabels = [];
         private double _zoom = 1;
         private Vector _offset;
         private bool _fitted;
         private Avalonia.Point? _drag;
+        private int _frameDrag = -1;
+        private FrameEdge _frameEdges;
+        private Rectangle _frameStart;
+        private Avalonia.Point _framePointer;
         private CellHover? _hover;
+        private static readonly IPen FrameUnder = AppTheme.Pen(Color.FromArgb(230, 24, 24, 28), 4);
+        private static readonly IPen FrameOver = AppTheme.Pen(Color.FromArgb(255, 110, 226, 255), 2);
+        private static readonly IBrush FrameLabel = AppTheme.Brush(Color.FromArgb(230, 24, 24, 28));
+        private static readonly Cursor MoveCursor = new(StandardCursorType.SizeAll);
+        private static readonly Cursor HorizontalCursor = new(StandardCursorType.SizeWestEast);
+        private static readonly Cursor VerticalCursor = new(StandardCursorType.SizeNorthSouth);
+        private static readonly Cursor DiagonalCursor = new(StandardCursorType.TopLeftCorner);
+        private static readonly Cursor OtherDiagonalCursor = new(StandardCursorType.TopRightCorner);
 
+        [Flags]
+        private enum FrameEdge { None = 0, Left = 1, Right = 2, Top = 4, Bottom = 8 }
         public ZoomImageView()
         {
             ClipToBounds = true;
@@ -3648,6 +3729,8 @@ public sealed class PixelateDialog : DialogBase
         public event Action<CellHover, bool>? CellPicked;
         /// <summary>스포이드 중 오른쪽 클릭.</summary>
         public event Action? PickCancelled;
+        /// <summary>슬롯 드래그가 끝나고 실제 원본 px 사각형이 달라졌을 때.</summary>
+        public event Action<int, System.Drawing.Rectangle>? FrameEdited;
 
         public bool Picking
         {
@@ -3671,9 +3754,10 @@ public sealed class PixelateDialog : DialogBase
 
         public void SetImage(PixelImage image, PixelImage? alt)
         {
+            bool newImage = !ReferenceEquals(_imageData, image);
             _imageData = image;
             _altData = alt;
-            if (_image is null || _size != image.Size)
+            if (_image is null || newImage || _size != image.Size)
             {
                 _image?.Dispose();
                 _image = ImageUtil.ToBitmap(image);
@@ -3689,6 +3773,17 @@ public sealed class PixelateDialog : DialogBase
         {
             _maps = maps;
             SetHover(null);
+            InvalidateVisual();
+        }
+
+        public void SetFrames(IReadOnlyList<Rectangle> frames)
+        {
+            _frames = frames as Rectangle[] ?? [.. frames];
+            _frameLabels = new string[_frames.Length];
+            for (int i = 0; i < _frameLabels.Length; i++)
+                _frameLabels[i] = (i + 1).ToString(CultureInfo.CurrentCulture);
+            _frameDrag = -1;
+            Cursor = Picking ? CutOverlay.PickerCursor : null;
             InvalidateVisual();
         }
 
@@ -3719,6 +3814,62 @@ public sealed class PixelateDialog : DialogBase
             e.Handled = true;
         }
 
+        private (int Index, FrameEdge Edges)? FrameAt(Avalonia.Point p)
+        {
+            if (_size.Width <= 0 || _zoom <= 0) return null;
+            // Keep resize handles usable even when a frame is just one source pixel wide.
+            for (int i = _frames.Length - 1; i >= 0; i--)
+            {
+                var r = _frames[i];
+                double l = _offset.X + r.Left * _zoom, t = _offset.Y + r.Top * _zoom;
+                double right = _offset.X + r.Right * _zoom, bottom = _offset.Y + r.Bottom * _zoom;
+                const double handle = 5;
+                bool nearL = Math.Abs(p.X - l) <= handle, nearR = Math.Abs(p.X - right) <= handle;
+                bool nearT = Math.Abs(p.Y - t) <= handle, nearB = Math.Abs(p.Y - bottom) <= handle;
+                if (p.X < l - handle || p.X > right + handle || p.Y < t - handle || p.Y > bottom + handle) continue;
+                var horizontal = nearL && nearR ? (Math.Abs(p.X - l) <= Math.Abs(p.X - right) ? FrameEdge.Left : FrameEdge.Right)
+                    : nearL ? FrameEdge.Left : nearR ? FrameEdge.Right : FrameEdge.None;
+                var vertical = nearT && nearB ? (Math.Abs(p.Y - t) <= Math.Abs(p.Y - bottom) ? FrameEdge.Top : FrameEdge.Bottom)
+                    : nearT ? FrameEdge.Top : nearB ? FrameEdge.Bottom : FrameEdge.None;
+                if (horizontal != FrameEdge.None || vertical != FrameEdge.None) return (i, horizontal | vertical);
+            }
+            for (int i = _frames.Length - 1; i >= 0; i--)
+            {
+                var r = _frames[i];
+                double x = (p.X - _offset.X) / _zoom, y = (p.Y - _offset.Y) / _zoom;
+                if (x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom) return (i, FrameEdge.None);
+            }
+            return null;
+        }
+
+        private void UpdateFrameCursor(Avalonia.Point p)
+        {
+            if (Picking) { Cursor = CutOverlay.PickerCursor; return; }
+            if (FrameAt(p) is not { } hit) { Cursor = null; return; }
+            bool h = (hit.Edges & (FrameEdge.Left | FrameEdge.Right)) != 0;
+            bool v = (hit.Edges & (FrameEdge.Top | FrameEdge.Bottom)) != 0;
+            Cursor = h && v ? ((hit.Edges == (FrameEdge.Left | FrameEdge.Top) || hit.Edges == (FrameEdge.Right | FrameEdge.Bottom))
+                    ? DiagonalCursor : OtherDiagonalCursor)
+                : h ? HorizontalCursor : v ? VerticalCursor : MoveCursor;
+        }
+
+        private Rectangle DraggedFrame(Avalonia.Point p)
+        {
+            var r = _frameStart;
+            int dx = (int)Math.Round((p.X - _framePointer.X) / _zoom);
+            int dy = (int)Math.Round((p.Y - _framePointer.Y) / _zoom);
+            int width = (int)_size.Width, height = (int)_size.Height;
+            if (_frameEdges == FrameEdge.None)
+                return new Rectangle(Math.Clamp(r.X + dx, 0, width - r.Width),
+                    Math.Clamp(r.Y + dy, 0, height - r.Height), r.Width, r.Height);
+            int l = r.Left, t = r.Top, right = r.Right, bottom = r.Bottom;
+            if (_frameEdges.HasFlag(FrameEdge.Left)) l = Math.Clamp(l + dx, 0, right - 1);
+            if (_frameEdges.HasFlag(FrameEdge.Right)) right = Math.Clamp(right + dx, l + 1, width);
+            if (_frameEdges.HasFlag(FrameEdge.Top)) t = Math.Clamp(t + dy, 0, bottom - 1);
+            if (_frameEdges.HasFlag(FrameEdge.Bottom)) bottom = Math.Clamp(bottom + dy, t + 1, height);
+            return Rectangle.FromLTRB(l, t, right, bottom);
+        }
+
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             var point = e.GetCurrentPoint(this);
@@ -3731,9 +3882,20 @@ public sealed class PixelateDialog : DialogBase
                     CellPicked?.Invoke(h, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
                 return;
             }
-            // 오른쪽 버튼은 끌기가 아니라 우클릭 메뉴(이미지 저장·복사).
+            // Right click retains its save/copy menu; middle click pans anywhere.
             if (!point.Properties.IsLeftButtonPressed && !point.Properties.IsMiddleButtonPressed) return;
-            _drag = e.GetPosition(this);
+            var position = point.Position;
+            if (point.Properties.IsLeftButtonPressed && e.ClickCount != 2 && FrameAt(position) is { } hit)
+            {
+                _frameDrag = hit.Index;
+                _frameEdges = hit.Edges;
+                _frameStart = _frames[hit.Index];
+                _framePointer = position;
+                e.Pointer.Capture(this);
+                e.Handled = true;
+                return;
+            }
+            _drag = position;
             e.Pointer.Capture(this);
             if (e.ClickCount == 2) { Fit(); InvalidateVisual(); }
         }
@@ -3741,6 +3903,16 @@ public sealed class PixelateDialog : DialogBase
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             var p = e.GetPosition(this);
+            if (_frameDrag >= 0)
+            {
+                var frame = DraggedFrame(p);
+                if (_frames[_frameDrag] != frame)
+                {
+                    _frames[_frameDrag] = frame;
+                    InvalidateVisual();
+                }
+                return;
+            }
             if (_drag is { } start)
             {
                 _offset += p - start;
@@ -3748,15 +3920,27 @@ public sealed class PixelateDialog : DialogBase
                 InvalidateVisual();
                 return;
             }
+            UpdateFrameCursor(p);
             SetHover(ShowGrid || Picking ? CutOverlay.Hit(_maps, (p.X - _offset.X) / _zoom, (p.Y - _offset.Y) / _zoom) : null);
         }
 
-        protected override void OnPointerExited(PointerEventArgs e) => SetHover(null);
+        protected override void OnPointerExited(PointerEventArgs e)
+        {
+            SetHover(null);
+            if (_frameDrag < 0 && !Picking) Cursor = null;
+        }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
+            if (_frameDrag >= 0)
+            {
+                int index = _frameDrag;
+                _frameDrag = -1;
+                if (_frames[index] != _frameStart) FrameEdited?.Invoke(index, _frames[index]);
+            }
             _drag = null;
             e.Pointer.Capture(null);
+            UpdateFrameCursor(e.GetPosition(this));
         }
 
         public override void Render(DrawingContext g)
@@ -3772,6 +3956,7 @@ public sealed class PixelateDialog : DialogBase
                 using (ImageUtil.Pixelated(g))
                     g.DrawImage(bmp, new Rect(0, 0, _size.Width, _size.Height), dest);
                 if (ShowGrid) DrawGrid(g, bounds);
+                DrawFrames(g, bounds);
                 DrawHover(g);
                 if (PickPulse is { } level) CutOverlay.DrawPickPulse(g, dest.Intersect(new Rect(0, 18, bounds.Width, Math.Max(0, bounds.Height - 18))), level);
             }
@@ -3779,6 +3964,28 @@ public sealed class PixelateDialog : DialogBase
             g.FillRectangle(AppTheme.BackBrush, caption);
             var text = UiStrings.FormatPixelate_Source(size: _image is null ? "" : SizeText(_size.Width, _size.Height));
             AppTheme.DrawTextIn(g, text, new Rect(4, 0, bounds.Width - 8, 18), AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+        }
+
+        private void DrawFrames(DrawingContext g, Rect bounds)
+        {
+            using (g.PushClip(bounds))
+            {
+                for (int i = 0; i < _frames.Length; i++)
+                {
+                    var r = _frames[i];
+                    var box = new Rect(_offset.X + r.Left * _zoom, _offset.Y + r.Top * _zoom,
+                        r.Width * _zoom, r.Height * _zoom);
+                    g.DrawRectangle(null, FrameUnder, box);
+                    g.DrawRectangle(null, FrameOver, box);
+                    var label = new Rect(box.X + 2, box.Y + 2, 26, 18);
+                    if (label.Intersects(bounds))
+                    {
+                        g.FillRectangle(FrameLabel, label);
+                        AppTheme.DrawTextIn(g, _frameLabels[i], label,
+                            AppTheme.TextBrush, AppTheme.SmallFontSize);
+                    }
+                }
+            }
         }
 
         private void DrawGrid(DrawingContext g, Rect bounds)

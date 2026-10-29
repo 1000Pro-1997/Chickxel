@@ -840,6 +840,95 @@ public class PixelateTests
         Assert.Equal(0, StrayEdgePieces(split, w, h));
     }
 
+    [Fact]
+    public void ManualSplitAssignsCrossingBlobsAndKeepsExplicitSlotOrder()
+    {
+        const int w = 12, h = 5;
+        var mask = new bool[w * h];
+        for (int y = 1; y <= 3; y++)
+        {
+            for (int x = 1; x <= 3; x++) mask[y * w + x] = true;
+            for (int x = 8; x <= 10; x++) mask[y * w + x] = true;
+        }
+        mask[2 * w + 4] = true; // 첫 스프라이트의 경계 밖 손끝: 덩어리째 첫 자리로 간다.
+        var slots = new[] { new FrameSlot(7, 0, 5, h), new FrameSlot(0, 0, 4, h) };
+        var split = FrameSplitter.Run(mask, w, h, new FrameSettings { Mode = FrameSplitMode.Single, ManualRegions = slots });
+
+        Assert.Equal(2, split.Frames.Count);
+        Assert.Equal(new Rectangle(7, 0, 5, h), split.Frames[0].Slot);
+        Assert.Equal(Rectangle.FromLTRB(8, 1, 11, 4), split.Frames[0].Bounds);
+        Assert.Equal(new Rectangle(0, 0, 4, h), split.Frames[1].Slot);
+        Assert.Equal(Rectangle.FromLTRB(1, 1, 5, 4), split.Frames[1].Bounds);
+        Assert.Equal(1, split.Labels[2 * w + 4]);
+        Assert.Equal(0, split.Labels[2 * w + 9]);
+        Assert.Equal(-1, split.Labels[0]);
+    }
+
+    [Fact]
+    public void ManualSplitCutsSharedBlobAndDeterministicallyResolvesOverlaps()
+    {
+        const int w = 12, h = 5;
+        var mask = new bool[w * h];
+        for (int y = 1; y <= 3; y++)
+        {
+            for (int x = 1; x <= 3; x++) mask[y * w + x] = true;
+            for (int x = 8; x <= 10; x++) mask[y * w + x] = true;
+        }
+        for (int x = 4; x <= 7; x++) mask[2 * w + x] = true; // 8방향으로 두 몸통을 연결
+        var slots = new[] { new FrameSlot(0, 0, 6, h), new FrameSlot(5, 0, 7, h) };
+        var split = FrameSplitter.Run(mask, w, h, new FrameSettings { ManualRegions = slots });
+
+        Assert.Equal(2, split.Frames.Count);
+        Assert.Equal(Rectangle.FromLTRB(1, 1, 6, 4), split.Frames[0].Bounds);
+        Assert.Equal(Rectangle.FromLTRB(6, 1, 11, 4), split.Frames[1].Bounds);
+        Assert.Equal(0, split.Labels[2 * w + 5]); // 겹친 자리: 앞 슬롯 승리
+        Assert.Equal(1, split.Labels[2 * w + 6]);
+    }
+
+    [Fact]
+    public void ManualSplitClampsTinySlotsAndCompactsEmptySlots()
+    {
+        const int w = 8, h = 4;
+        var mask = new bool[w * h];
+        mask[0] = mask[3 * w + 7] = true;
+        var split = FrameSplitter.Run(mask, w, h, new FrameSettings
+        {
+            ManualRegions = [new FrameSlot(-9, -3, 0, 0), new FrameSlot(2, 1, 1, 1), new FrameSlot(50, 30, 0, 0)],
+        });
+
+        Assert.Equal(2, split.Frames.Count);
+        Assert.Equal(new Rectangle(0, 0, 1, 1), split.Frames[0].Slot);
+        Assert.Equal(new Rectangle(7, 3, 1, 1), split.Frames[1].Slot);
+        Assert.Equal(0, split.Labels[0]);
+        Assert.Equal(1, split.Labels[3 * w + 7]);
+    }
+
+    [Fact]
+    public void ManualFrameSlotsReachPixelatorInEditedOrder()
+    {
+        var image = new PixelImage(40, 20);
+        var red = new Color32(220, 40, 40);
+        var blue = new Color32(40, 60, 220);
+        for (int y = 4; y < 16; y++)
+            for (int x = 3; x < 35; x++)
+                if (x < 13 || x >= 25) image[x, y] = x < 13 ? red : blue;
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { ManualRegions = [new FrameSlot(20, 0, 20, 20), new FrameSlot(0, 0, 20, 20)] },
+            Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 2, LocalCorrection = false },
+            Palette = new PaletteSettings { Method = PaletteMethod.KeepOriginal },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+
+        var result = Pixelator.Run(image, settings);
+        Assert.Equal(2, result.Frames.Count);
+        Assert.Equal(Rectangle.FromLTRB(25, 4, 35, 16), result.Maps[0].SourceBounds);
+        Assert.Equal(Rectangle.FromLTRB(3, 4, 13, 16), result.Maps[1].SourceBounds);
+        Assert.Contains(result.Frames[0].Pixels, pixel => pixel.B > pixel.R && pixel.A > 0);
+        Assert.Contains(result.Frames[1].Pixels, pixel => pixel.R > pixel.B && pixel.A > 0);
+    }
+
     /// <summary>
     /// 자동 나누기: 맞닿은 2·3번은 빈 열이 없어 한 조각 → 기대 프레임 수(4)가 있으면, 없으면 다른 조각 너비 중앙값의 1.8배 규칙으로 손끝 열에서 가른다.
     /// 기대 수만큼 이미 나왔거나(3) 넓은 조각이 한 스프라이트 몸통이면(얇은 열 없음) 가르지 않는다.
@@ -1111,6 +1200,64 @@ public class PixelateTests
         Assert.All(OpaqueSizes(r), size => Assert.Equal(new Size(24, 24), size));
     }
 
+    /// <summary>두 프레임은 칸 크기가 같아도 서로 다른 색 경계에 맞춰 격자 시작 위치를 잡는다.</summary>
+    [Theory]
+    [InlineData(OutputSizeMode.FromScale)]
+    [InlineData(OutputSizeMode.ScaleFactor)]
+    [InlineData(OutputSizeMode.FixedSize)]
+    public void OffsetFramesUseIndependentGridCuts(OutputSizeMode sizeMode)
+    {
+        var image = new PixelImage(104, 48);
+        var red = new Color32(230, 35, 35);
+        var blue = new Color32(35, 35, 230);
+        foreach (var (left, phaseX, phaseY) in new[] { (0, 1, 1), (56, 2, 3) })
+            for (int y = 0; y < 48; y++)
+                for (int x = left; x < left + 48; x++)
+                {
+                    int cx = (int)Math.Floor((x - left - phaseX) / 4.0);
+                    int cy = (int)Math.Floor((y - phaseY) / 4.0);
+                    image[x, y] = (cx + cy) % 2 == 0 ? red : blue;
+                }
+
+        var settings = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Frames = new FrameSettings { ManualRegions = [new FrameSlot(0, 0, 48, 48), new FrameSlot(56, 0, 48, 48)] },
+            Grid = new PixelGridSettings { LocalCorrection = false },
+            Size = new SizeSettings { Mode = sizeMode, Factor = 0.25, Width = sizeMode == OutputSizeMode.FixedSize ? 10 : 16, Height = sizeMode == OutputSizeMode.FixedSize ? 10 : 16 },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+        var source = PixelateSource.Prepare(image, settings);
+        Assert.Equal(2, source.Split.Frames.Count);
+        var result = Pixelator.Run(source, settings);
+        // 재시도에서 그림 전체의 칸 크기 어림을 넘겨도 각 프레임 경계열로 격자를 다시 맞춘다.
+        if (sizeMode == OutputSizeMode.FromScale)
+        {
+            var retryScale = source.EstimatedScale(-1, settings.Grid.Jitter, Pixelator.ScaleSourceFor(settings), settings.Palette.OutlineDarkness)
+                with { Scale = 4, Exact = true };
+            var retried = Pixelator.RunOnce(source, settings, null, retryScale, 0, default);
+            Assert.Equal(2, retried.Maps.Count);
+            for (int f = 0; f < 2; f++)
+            {
+                var bounds = retried.Maps[f].SourceBounds;
+                Assert.All(retried.Maps[f].XCuts.Where(x => x > bounds.Left && x < bounds.Right), x => Assert.Equal(f == 0 ? 1 : 2, x % 4));
+                Assert.All(retried.Maps[f].YCuts.Where(y => y > bounds.Top && y < bounds.Bottom), y => Assert.Equal(f == 0 ? 1 : 3, y % 4));
+            }
+        }
+        Assert.Equal(2, result.Maps.Count);
+        for (int f = 0; f < 2; f++)
+        {
+            var map = result.Maps[f];
+            int phaseX = f == 0 ? 1 : 2, phaseY = f == 0 ? 1 : 3;
+            var xCuts = map.XCuts.Where(x => x > map.SourceBounds.Left && x < map.SourceBounds.Right).ToArray();
+            var yCuts = map.YCuts.Where(y => y > map.SourceBounds.Top && y < map.SourceBounds.Bottom).ToArray();
+            Assert.True(xCuts.Length >= 5 && yCuts.Length >= 5);
+            Assert.All(xCuts, x => Assert.Equal(phaseX, x % 4));
+            Assert.All(yCuts, y => Assert.Equal(phaseY, y % 4));
+            if (sizeMode == OutputSizeMode.FixedSize) Assert.Equal(new Size(10, 10), result.Frames[f].Size);
+        }
+    }
+
     /// <summary>
     /// 결과 블록 반복도: 맞는 칸 크기의 결과는 낮고(가장자리 칸 대부분이 1칸 계단·외곽선), 칸을 진짜 칸의 ½로 고른 결과는 1에 가깝다 —
     /// 디더링을 켜도(결과 색이 아니라 칸마다 원본 평균 색으로 재므로) 그대로이고, 점수는 맞는 크기를 더 높게 본다.
@@ -1164,6 +1311,7 @@ public class PixelateTests
             new("custom", new PixelateSettings
             {
                 Background = new BackgroundSettings { Mode = BackgroundMode.PickColor, Color = "#102030", Tolerance = 33, AutoTolerance = false },
+                Frames = new FrameSettings { ManualRegions = [new FrameSlot(3, 2, 17, 13), new FrameSlot(25, 1, 9, 18)] },
                 Grid = new PixelGridSettings { Mode = GridMode.Manual, Scale = 7.5, OffsetX = 2, OffsetY = 3 },
                 Palette = new PaletteSettings { Method = PaletteMethod.Existing, ExistingColors = ["#000000", "#FFFFFF"], ExistingName = "BW", Dither = Gpixel.Core.Edit.PaletteDither.Bayer2 },
                 Cleanup = new CleanupSettings { Outline = OutlineMode.EnsureClosed, ReduceJaggies = true },
@@ -1175,6 +1323,8 @@ public class PixelateTests
         var loaded = PixelatePresets.Load(path);
         Assert.Equal(presets.Select(p => p.Name), loaded.Select(p => p.Name));
         for (int i = 0; i < presets.Count; i++) Assert.Equal(presets[i].Settings.Key(), loaded[i].Settings.Key());
+        Assert.Equal(new[] { new FrameSlot(3, 2, 17, 13), new FrameSlot(25, 1, 9, 18) }, loaded[1].Settings.Frames.ManualRegions);
+        Assert.Null(loaded[0].Settings.Frames.ManualRegions);
 
         Assert.Empty(PixelatePresets.Parse("not json"));
         var partial = PixelatePresets.ParseSettings("{\"grid\":{\"scale\":5}}");
@@ -1461,7 +1611,7 @@ public class PixelateTests
     }
 
     [Fact]
-    public void ColorCountOverTargetScalesWholeScore()
+    public void ColorCountDistanceFromTargetScalesWholeScore()
     {
         var r = Pixelator.Run(PixelateSource.Prepare(Render([Sprite()]), new PixelateSettings()), new PixelateSettings());
         int colors = r.Metrics.Colors;
@@ -1469,14 +1619,16 @@ public class PixelateTests
         var w = new ScoreWeights();
         double Total(int? target, ScoreWeights? weights = null) => PixelateScoring.Score(r, weights ?? w, target).Total;
         double free = Total(null);
-        // 목표 이하(같거나 적은 색)는 깎지 않고, 자동(목표 없음)과 같다.
+        Assert.True(free > 0);
+        // 목표와 같거나 자동(목표 없음)이면 색 수 감점이 없다.
         Assert.Equal(free, Total(colors), 10);
-        Assert.Equal(free, Total(colors + 10), 10);
-        // 넘으면 전체에 (1 − 가중치 × 넘은 수 ÷ 목표)를 곱한다 — 가중치 0.5, 목표 = 색 수 − 1이면 0.5 ÷ (색 수 − 1)만큼.
+        // 목표보다 많거나 적어도 목표 대비 거리만큼 같은 비중으로 깎는다.
         Assert.Equal(free * (1 - w.Colors / (colors - 1)), Total(colors - 1), 8);
+        Assert.Equal(free * (1 - w.Colors / (colors + 1)), Total(colors + 1), 8);
+        Assert.Equal(free * (1 - w.Colors * 0.5), Total(colors * 2), 8);
+        Assert.True(PixelateScoring.Score(r, w, colors * 2).Parts.Single(p => p.Term == ScoreTerm.Colors).Badness > 0);
         // 목표를 크게 넘으면(가중치 × 넘은 비율 ≥ 1) 0점 — 다른 항목이 좋아도 이기지 못한다.
         Assert.Equal(0, Total(1));
-        // 가중치 0이면 색 수를 보지 않는다.
         Assert.Equal(free, Total(1, w with { Colors = 0 }), 10);
     }
 

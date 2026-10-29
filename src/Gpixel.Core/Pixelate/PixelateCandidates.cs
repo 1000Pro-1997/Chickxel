@@ -114,7 +114,7 @@ public static class PixelateCandidates
 
     /// <summary>
     /// 후보를 모두 돌린다: 지금 설정을 먼저(번호 0), 그다음 바꾼 설정들을 여러 스레드로. 하나 끝날 때마다 <paramref name="onResult"/>(아무 스레드).
-    /// 점수의 목표 색 수는 <paramref name="targetColors"/>(결과 색이 그보다 많을 때만 감점, 0 = 자동 — 색 수를 보지 않음). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
+    /// 점수의 목표 색 수는 <paramref name="targetColors"/>(결과 색이 목표보다 많거나 적으면 감점, 0 = 자동 — 색 수를 보지 않음). 실패한 결과(<see cref="PixelateResult.Failed"/>)는 맨 뒤. 취소하면 <see cref="OperationCanceledException"/>.
     /// </summary>
     /// <param name="scoreMetric">모든 후보의 주요 색 변화에 쓸 거리(null = 각 후보의 팔레트 거리). 색 변환은 후보 설정대로 한다.</param>
     public static List<PixelateCandidate> Run(PixelateSource src, PixelateSettings b, CandidateVary vary, int count, ScoreWeights weights,
