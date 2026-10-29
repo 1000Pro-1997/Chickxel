@@ -71,13 +71,16 @@ public static class ImageActions
                 Path.GetFileName(path), img.Width, img.Height));
         });
         var copy = new MenuItem { Header = Ui.IconLabel(VectorIcon.Copy, UiStrings.Preview_Menu_CopyImage), IsEnabled = current is not null };
-        copy.Click += (_, _) => Dispatcher.UIThread.Post(() =>
+        // 복사는 대화상자가 없으므로 메뉴 Click 안에서 끝낸다. 다음 UI 작업으로 미루면
+        // 채팅 결과 칸이 갱신되어 owner가 트리에서 빠진 뒤 Clipboard를 찾지 못할 수 있다.
+        copy.Click += (_, _) =>
         {
             if (image() is not { } img) return;
-            done?.Invoke(Copy(owner, img)
+            var copied = Copy(owner, img);
+            done?.Invoke(copied
                 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Image_Copied, img.Width, img.Height)
                 : UiStrings.Image_CopyFailed);
-        });
+        };
         return [save, copy];
     }
 }

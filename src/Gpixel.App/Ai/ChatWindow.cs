@@ -2186,7 +2186,7 @@ public sealed partial class ChatWindow : Window
 
         /// <summary>
         /// 사용자 메시지 말풍선. 글에 그림 칩이 있으면 글 사이 그 자리에 칩(작은 미리보기 + 번호)을 넣고, 칩이 없는 예전 대화는 미리보기 줄,
-        /// (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글 순서. 아래에 수정·삭제 단추 줄(마지막 메시지에만 보임, <see cref="RefreshTurnActions"/>).
+        /// (미리보기를 남기지 못한 그림이 있으면) 그림 표시, 글 순서. 아래에 복사 단추는 항상 보이고 수정·삭제는 마지막 메시지에만 보인다.
         /// <paramref name="images"/> = 첨부 순서(칩 번호 − 1)의 미리보기(없으면 null), <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
         /// 글은 AI 답처럼 끌어서 골라 Ctrl+C로 복사한다. 말풍선 안쪽 여백은 글 칸의 여백이라, 글자 바로 옆 여백에서 끌기 시작해도 골라진다.
         /// </summary>
@@ -2196,6 +2196,7 @@ public sealed partial class ChatWindow : Window
             var segments = ChatImageTokens.Split(item.Text);
             if (segments.Any(s => s.IsImage))
             {
+                var chips = new List<(Control Chip, Bitmap Image)>();
                 var text = new SelectableTextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
@@ -2206,8 +2207,15 @@ public sealed partial class ChatWindow : Window
                 foreach (var s in segments)
                 {
                     if (!s.IsImage) text.Inlines!.Add(new Run(s.Text));
-                    else text.Inlines!.Add(new InlineUIContainer(_w.BubbleChip(s.Image, s.Image <= images.Count ? images[s.Image - 1] : null)) { BaselineAlignment = BaselineAlignment.Center });
+                    else
+                    {
+                        var thumb = s.Image <= images.Count ? images[s.Image - 1] : null;
+                        var chip = _w.BubbleChip(s.Image, thumb);
+                        text.Inlines!.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
+                        if (thumb is not null) chips.Add((chip, thumb));
+                    }
                 }
+                RouteBubbleChipEvents(text, chips);
                 stack.Children.Add(text);
             }
             else
@@ -2255,10 +2263,9 @@ public sealed partial class ChatWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Child = stack,
             };
-            var actions = new StackPanel
+            var turnActions = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
                 IsVisible = false,
                 Children =
                 {
@@ -2266,9 +2273,19 @@ public sealed partial class ChatWindow : Window
                     TurnButton(VectorIcon.Trash, UiStrings.Chat_Turn_Delete_Tip, () => RemoveLastTurn(edit: false)),
                 },
             };
+            var actions = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Children =
+                {
+                    TurnButton(VectorIcon.Copy, UiStrings.Chat_Turn_Copy_Tip, () => _w.CopyText(ChatImageTokens.WithoutTokens(item.Text))),
+                    turnActions,
+                },
+            };
             var row = new StackPanel { Margin = new Thickness(40, 4, 0, 0), Children = { bubble, actions } };
             AddItem(row);
-            _userTurns.Add(new UserTurn(row, item, actions, attachments));
+            _userTurns.Add(new UserTurn(row, item, turnActions, attachments));
             RefreshTurnActions();
         }
 

@@ -77,7 +77,7 @@ public sealed partial class ChatWindow
         return new CheckerBackground { Child = image };
     }
 
-    /// <summary>칩을 누르면: 그림을 크게(긴 변 <see cref="ChipViewSide"/> 안, 작은 그림은 정수 배 최근접) 보이는 풍선. <paramref name="remove"/>가 있으면 "첨부 빼기" 단추.</summary>
+    /// <summary>칩을 누르면: 그림을 크게(긴 변 <see cref="ChipViewSide"/> 안, 작은 그림은 정수 배 최근접) 보이고 복사·저장 단추를 제공한다. <paramref name="remove"/>가 있으면 "첨부 빼기" 단추.</summary>
     private static void ShowChipFlyout(Control anchor, Bitmap image, Action? remove)
     {
         var px = image.PixelSize;
@@ -88,6 +88,21 @@ public sealed partial class ChatWindow
         var stack = new StackPanel { Spacing = 6, Children = { new CheckerBackground { Child = view, HorizontalAlignment = HorizontalAlignment.Left } } };
         AttachImageMenu(view, image);
         var flyout = new Flyout { Placement = PlacementMode.Top, Content = stack };
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        actions.Children.Add(Ui.Button(VectorIcon.Copy, UiStrings.Preview_Menu_CopyImage, (_, _) =>
+        {
+            if (ToPixelImage(image) is { } img) ImageActions.Copy(anchor, img);
+            flyout.Hide();
+        }));
+        actions.Children.Add(Ui.Button(VectorIcon.Download, UiStrings.Image_SaveMenu, (_, _) =>
+        {
+            flyout.Hide();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ToPixelImage(image) is { } img) ImageActions.SaveAs(anchor, img, "gpixel-chat.png");
+            });
+        }));
+        stack.Children.Add(actions);
         if (remove is not null)
         {
             var button = Ui.Button(VectorIcon.Trash, UiStrings.S_ChatWindow_AddAttachment_1F581E4392, (_, _) =>
@@ -118,6 +133,7 @@ public sealed partial class ChatWindow
         if (thumb is not null)
         {
             ToolTip.SetTip(chip, ChipTip(thumb));
+            AttachImageMenu(chip, thumb);
             chip.PointerReleased += (_, e) =>
             {
                 if (e.InitialPressMouseButton != MouseButton.Left) return;
@@ -126,6 +142,35 @@ public sealed partial class ChatWindow
             };
         }
         return chip;
+    }
+
+    /// <summary>
+    /// SelectableTextBlock가 안쪽 칩보다 먼저 우클릭을 처리해 글 복사 메뉴를 열거나 포인터를 잡을 수 있으므로
+    /// 글 컨트롤의 터널 단계에서 칩 자리를 처리한다. 칩 밖의 글 선택·기본 메뉴는 그대로 둔다.
+    /// </summary>
+    private static void RouteBubbleChipEvents(SelectableTextBlock text, IReadOnlyList<(Control Chip, Bitmap Image)> chips)
+    {
+        if (chips.Count == 0) return;
+        text.AddHandler(Control.ContextRequestedEvent, (_, e) =>
+        {
+            foreach (var (chip, image) in chips)
+            {
+                if (!e.TryGetPosition(chip, out var point) || !new Rect(chip.Bounds.Size).Contains(point)) continue;
+                PopupMenus.Show(chip, ImageActions.Menu(chip, () => ToPixelImage(image), () => "gpixel-chat.png"), e);
+                return;
+            }
+        }, RoutingStrategies.Tunnel, handledEventsToo: true);
+        text.AddHandler(InputElement.PointerReleasedEvent, (_, e) =>
+        {
+            if (e.InitialPressMouseButton != MouseButton.Left) return;
+            foreach (var (chip, image) in chips)
+            {
+                if (!new Rect(chip.Bounds.Size).Contains(e.GetPosition(chip))) continue;
+                e.Handled = true;
+                ShowChipFlyout(chip, image, null);
+                return;
+            }
+        }, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private sealed partial class ChatTab

@@ -2803,6 +2803,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Lospec_Favorites_View" xml:space="preserve"><value>View favorites</value></data>
   <data name="Lospec_Favorites_OfflineHint" xml:space="preserve"><value>Favorite palettes are available offline.</value></data>
   <data name="Lospec_Favorites_SaveFailed" xml:space="preserve"><value>Couldn't save favorites: {message}</value></data>
+  <data name="Chat_Turn_Copy_Tip" xml:space="preserve"><value>Copy message text</value></data>
   <data name="Chat_Turn_Edit_Tip" xml:space="preserve"><value>Edit — remove this message and the replies after it, and put its text back in the input box</value></data>
   <data name="Chat_Turn_Delete_Tip" xml:space="preserve"><value>Delete — remove this message and the replies after it from the chat</value></data>
   <data name="Chat_Turn_Edit_Title" xml:space="preserve"><value>Edit message</value></data>

@@ -2,7 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## Unreleased
+## v1.14.59 (2026-10-29)
+### Chat images and message copying
+- Click an image chip in a chat message to enlarge it and use the visible **Copy image** or **Save image** buttons; right-clicking the chip also offers those actions. Older conversations retain only their saved preview size.
+- Sent image chips now prioritize image actions over the text-selection menu on right-click. **Copy image** in generated-image and chip menus now copies even when no status callback is installed, before the image view can be replaced.
+- Every sent message now has a copy-text button below its bubble, including older messages. It copies the words without image-chip tokens; edit and delete remain available only on the latest message.
+
 ### One preset list for Clean Up as Pixels and Auto optimize
 - Clean Up as Pixels presets and Auto optimize presets are now one list, pinned at the top of the settings with Save, Rename, Delete and a new Clean up button. Your old presets move to the end of the list.
 - Each step (Background, Pixel grid, Cell color, Palette, Cleanup) has an Optimize checkbox, and the new "0. Optimize criteria" section holds the budget and scoring; both are saved with the preset.
