@@ -55,6 +55,7 @@ public static class AiDrawPrompts
     public static string Frame(AiDrawRequest r, AiDrawFrame f, IReadOnlyList<AiDrawImageRole> images)
     {
         var sb = new StringBuilder();
+        AppendOpening(sb, r, sheet: false, HasSubjectImage(images));
         sb.Append("Pixel-art ").Append(What(r)).Append(": ").Append(Subject(r)).Append('.').AppendLine();
         if (r.Animated)
         {
@@ -64,13 +65,20 @@ public static class AiDrawPrompts
         }
         else if (f.Pose.Length > 0) sb.Append("Pose: ").Append(f.Pose.TrimEnd('.')).Append('.').AppendLine();
 
-        AppendStyle(sb, r, "the whole sprite", "a small sprite of roughly 32 to 64 pixels tall");
-        sb.Append("Composition: exactly one ").Append(r.Kind == "character" ? "character, full body" : "subject").Append(", ").Append(View(r))
-          .AppendLine(", centered, the whole sprite visible with empty margin on every side, nothing cropped.");
+        AppendStyle(sb, r, "the whole sprite", "a small sprite of roughly 32 to 64 pixels tall", HasSubjectImage(images), sheet: false);
+        sb.Append("Composition: exactly one ").Append(r.Kind == "character" ? "character, full body" : "subject").Append(", ").Append(View(r, images))
+          .Append(", centered, the whole sprite visible with empty margin on every side, nothing cropped");
+        if (r.SizeTarget > 0) sb.Append(" within a square ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget).Append(" pixel canvas");
+        sb.AppendLine(".");
         if (r.Animated)
-            sb.AppendLine("Keep the same character design, size, scale, camera, lighting and canvas position as the other frames; only the pose changes. The feet stay on the same ground line unless the pose leaves the ground.");
+        {
+            sb.Append("Keep the same subject design, size, scale, camera, lighting and canvas position as the other frames; only the requested motion changes.");
+            if (r.Kind == "character") sb.Append(" The feet stay on the same ground line unless the pose leaves the ground.");
+            sb.AppendLine();
+        }
         AppendBackground(sb, r);
-        AppendImages(sb, images);
+        AppendPixelRules(sb, r, sheet: false);
+        AppendImages(sb, images, poseMayChange: r.Animated || f.Pose.Length > 0);
         return sb.ToString().TrimEnd();
     }
 
@@ -82,6 +90,7 @@ public static class AiDrawPrompts
     {
         int n = frames.Count;
         var sb = new StringBuilder();
+        AppendOpening(sb, r, sheet: true, HasSubjectImage(images));
         sb.Append("Pixel-art ").Append(What(r)).Append(" sprite sheet: a single wide landscape image containing exactly ").Append(n)
           .Append(" frames of the same ").Append(r.Kind == "character" ? "character" : "subject").Append("'s \"").Append(r.Action?.Trim() ?? "animation").Append("\" ")
           .Append(r.Action is { } act && AiDrawActions.Loops(act.Trim().ToLowerInvariant()) ? "cycle" : "animation").Append(". Subject: ").Append(Subject(r)).Append('.').AppendLine();
@@ -91,16 +100,43 @@ public static class AiDrawPrompts
             sb.Append("Layout: a grid of ").Append(layout.Columns).Append(" columns by ").Append(layout.Rows).Append(" rows, frames ordered left to right then top to bottom (frames 1-")
               .Append(layout.Columns).Append(" in the top row, frames ").Append(layout.Columns + 1).Append('-').Append(n)
               .AppendLine(" in the bottom row), evenly spaced cells with a clear empty gap so no two frames touch or overlap.");
-        sb.AppendLine("Every frame shows the identical character design, colors, proportions, pixel size, scale, camera angle and lighting; each frame is the full body, the same size, centered in its cell and standing on the same baseline (feet at the same height), unless the pose leaves the ground. Only the pose changes between frames.");
+        sb.Append("Every frame shows the identical ").Append(r.Kind == "character" ? "character" : "subject").Append(" design, colors, proportions, pixel size, scale, camera angle and lighting; each frame shows the whole subject, the same size, centered in its cell");
+        if (r.SizeTarget > 0) sb.Append(" on a logical ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget).Append(" pixel canvas");
+        sb.AppendLine(r.Kind == "character" ? " and on the same baseline unless the pose leaves the ground. Only the pose changes between frames." : ". Only the requested animation changes between frames.");
         sb.AppendLine("Frames:");
         foreach (var f in frames)
             sb.Append(f.Index + 1).Append(": ").Append(f.Pose.Length > 0 ? f.Pose.TrimEnd('.') : "the next step of the motion").AppendLine();
-        AppendStyle(sb, r, "each frame", "each frame a small sprite of roughly 32 to 64 pixels tall");
-        sb.Append("View: ").Append(View(r)).AppendLine(" in every frame.");
+        AppendStyle(sb, r, "each frame", "each frame a small sprite of roughly 32 to 64 pixels tall", HasSubjectImage(images), sheet: true);
+        sb.Append("View: ").Append(View(r, images)).AppendLine(" in every frame.");
         AppendBackground(sb, r);
+        AppendPixelRules(sb, r, sheet: true);
         sb.AppendLine("No labels, no frame numbers, no text, no grid lines, no borders or boxes around the frames.");
-        AppendImages(sb, images);
+        AppendImages(sb, images, poseMayChange: true);
         return sb.ToString().TrimEnd();
+    }
+
+    private static void AppendOpening(StringBuilder sb, AiDrawRequest r, bool sheet, bool hasSubjectImage)
+    {
+        if (hasSubjectImage) sb.AppendLine("Convert the attached reference image into authentic, hand-crafted pixel art.");
+        if (r.SizeTarget <= 0) return;
+        sb.Append("Create a true ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget)
+          .Append(sheet ? " logical pixel-art sprite for each frame" : " pixel-art sprite")
+          .AppendLine(", not a high-resolution image with a pixelation filter.");
+    }
+
+    private static void AppendPixelRules(StringBuilder sb, AiDrawRequest r, bool sheet)
+    {
+        if (r.SizeTarget <= 0) return;
+        sb.Append("Important pixel-art rules: Every logical pixel must have the same size and align to a consistent grid. ")
+          .Append("Use intentional pixel clusters and pixel-perfect outlines. ");
+        if (sheet)
+            sb.Append("Keep every frame at the same logical ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget)
+              .Append(" pixel resolution; scale the full sheet with nearest-neighbor if the image tool cannot output at that resolution.");
+        else
+            sb.Append("Output exactly ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget)
+              .Append(" pixels if supported; otherwise preserve the appearance of a ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget)
+              .Append(" logical sprite with nearest-neighbor scaling.");
+        sb.AppendLine();
     }
 
     private static string What(AiDrawRequest r) => r.Kind switch
@@ -112,16 +148,35 @@ public static class AiDrawPrompts
         _ => "game character sprite",
     };
 
+    private static bool HasSubjectImage(IReadOnlyList<AiDrawImageRole> images)
+    {
+        for (int i = 0; i < images.Count; i++)
+            if (images[i] == AiDrawImageRole.Subject) return true;
+        return false;
+    }
+
     private static string Subject(AiDrawRequest r) => r.Subject.Trim().TrimEnd('.');
 
-    private static string View(AiDrawRequest r) => !string.IsNullOrWhiteSpace(r.View) ? r.View!.Trim().TrimEnd('.')
+    private static string View(AiDrawRequest r, IReadOnlyList<AiDrawImageRole> images) => !string.IsNullOrWhiteSpace(r.View) ? r.View!.Trim().TrimEnd('.')
+        : HasSubjectImage(images) ? "the same view as the subject image"
         : r.Animated ? "side view facing right" : r.Kind == "character" ? "front three-quarter view" : "front view";
 
-    private static void AppendStyle(StringBuilder sb, AiDrawRequest r, string sizeOf, string autoSize)
+    private static void AppendStyle(StringBuilder sb, AiDrawRequest r, string sizeOf, string autoSize, bool hasSubjectImage, bool sheet)
     {
+        if (hasSubjectImage)
+        {
+            sb.Append("Style: (masterpiece, best quality), authentic hand-crafted 16-bit JRPG pixel art, a strict uniform grid of large, crisp square pixels; ");
+            if (r.SizeTarget > 0)
+                sb.Append(sizeOf).Append(" drawn at a logical ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget)
+                  .Append(sheet ? " pixel resolution in its square animation cell; " : " pixel resolution on a square canvas; ");
+            else
+                sb.Append(autoSize).Append("; ");
+            sb.AppendLine("intentional chunky pixel clusters for hair, eyes, hands, clothing folds and shadows where applicable; prioritize a readable silhouette over tiny details; limited 24-color palette, clean dark pixel-perfect outline, flat colors and 2-step cel shading with hard pixel edges. No pixelation filter, mixed pixel sizes, anti-aliasing, gradients, blur, smooth lines, dithering, high-resolution anime, vector art, 3D rendering or mosaic effects; no extra fingers or limbs, text, watermark or UI.");
+            return;
+        }
         sb.Append("Style: authentic retro pixel art with clearly visible square pixels, all pixels the same size");
         if (r.SizeTarget > 0)
-            sb.Append(", ").Append(sizeOf).Append(" drawn on a grid of about ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget).Append(" pixels (each pixel a big crisp square block)");
+            sb.Append(", ").Append(sizeOf).Append(" drawn on a logical ").Append(r.SizeTarget).Append('x').Append(r.SizeTarget).Append(" pixel grid (each pixel a big crisp square block)");
         else sb.Append(", ").Append(autoSize).Append(" (each pixel a big crisp square block)");
         sb.AppendLine(", limited palette of about 12 to 24 colors, flat cel shading with 2 or 3 shades per color, a clean 1-pixel dark outline around the silhouette, no anti-aliasing, no gradients, no blur, no soft glow, no noise or dithering, no text, no watermark, no UI.");
     }
@@ -132,7 +187,7 @@ public static class AiDrawPrompts
         else sb.Append("Background: ").Append(r.Background!.Trim().TrimEnd('.')).AppendLine(", drawn in the same pixel-art style.");
     }
 
-    private static void AppendImages(StringBuilder sb, IReadOnlyList<AiDrawImageRole> images)
+    private static void AppendImages(StringBuilder sb, IReadOnlyList<AiDrawImageRole> images, bool poseMayChange)
     {
         if (images.Count == 0) return;
         sb.AppendLine("Attached images:");
@@ -140,10 +195,11 @@ public static class AiDrawPrompts
         {
             sb.Append("- Image ").Append(i + 1).Append(": ").AppendLine(images[i] switch
             {
-                AiDrawImageRole.Subject => "the subject to draw. Keep its design, proportions, colors, outfit and details, and redraw it as clean pixel art in this style.",
+                AiDrawImageRole.Subject => "the subject to draw, not a style reference. Preserve its identity, silhouette, proportions, facial features, colors, clothing and distinguishing details; redraw the actual subject as pixel art, not a generic substitute. "
+                    + (poseMayChange ? "Change the original pose only as required by the requested action or frame pose." : "Preserve its original pose unless the request explicitly asks to change it."),
                 AiDrawImageRole.Style => "pixel-art style reference only. Match its pixel size, outline, palette treatment and shading; do NOT copy its subject, shape or colors.",
-                AiDrawImageRole.FirstFrame => "frame 1 of this animation. Draw the identical character (same design, colors, proportions, pixel size, scale and position on the canvas); only change the pose.",
-                _ => "the previous frame of this animation. Continue the motion smoothly from it, with the same scale, camera and ground line.",
+                AiDrawImageRole.FirstFrame => "frame 1 of this animation. Draw the identical subject (same design, colors, proportions, pixel size, scale and position on the canvas); only change the pose as needed for the animation.",
+                _ => "the previous frame of this animation. Continue the motion smoothly from it, with the same scale and camera.",
             });
         }
     }

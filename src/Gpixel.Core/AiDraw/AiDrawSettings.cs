@@ -62,8 +62,9 @@ public sealed partial class AiDrawSettings
     public bool PaletteOnly { get; set; }
 
     /// <summary>
-    /// 결과 크기 보정(기본 끔): 켜면 변환 결과를 <see cref="SizeTarget"/>(또는 채팅에서 정한 크기)에 맞춘 고정 크기로, 끄면 그림에서 찾은 칸 크기대로(자동 크기 + 자동 최적화) 변환한다.
-    /// 꺼져 있어도 채팅에서 말한 크기는 생성 프롬프트에 대략적인 크기 힌트로 들어간다. 이 설정이 없던 예전 설정 파일은 읽을 때 끔이 된다.
+    /// 결과 크기 보정(기본 끔): 일반 생성 그림에서 켜면 변환 결과를 <see cref="SizeTarget"/>(또는 채팅에서 정한 크기)에 맞춘다.
+    /// 끄면 대표 프리셋의 결과 크기 설정을 따른다. 참고 이미지를 픽셀 아트로 바꾸는 차례는 채팅 크기, 켜 둔 보정 크기,
+    /// 이미지 판정 크기 중 먼저 정해진 값으로 결과를 맞춘다. 예전 설정 파일에는 없으면 끔이다.
     /// </summary>
     public bool ResizeResult { get; set; }
 
@@ -103,17 +104,21 @@ public sealed partial class AiDrawSettings
     /// <summary>동작 이름(<see cref="AiDrawActions"/>) → 기본 프레임 수. 빠진 동작은 <see cref="AiDrawActions.DefaultFrames"/>.</summary>
     public Dictionary<string, int> FrameCounts { get; set; } = AiDrawActions.DefaultFrameCounts();
 
-    /// <summary>Codex의 자동 모드는 정확한 픽셀 크기나 열린 그림 수정 요청이면 직접 찍고, 나머지 새 그림은 생성한다. Claude는 늘 직접 찍는다.</summary>
-    public AiDrawMode EffectiveMode(string provider, string request, bool hasOpenProject = false)
+    /// <summary>Codex 자동 모드: 참고 이미지를 픽셀 아트로 변환할 때는 지정 크기도 생성에 넘기고, 그 밖의 정확한 크기·기존 그림 수정은 직접 찍는다. Claude는 늘 직접 찍는다.</summary>
+    public AiDrawMode EffectiveMode(string provider, string request, bool hasOpenProject = false, bool hasAttachedImage = false)
     {
         if (provider != GeneratingProvider) return AiDrawMode.Direct;
         if (Mode != AiDrawMode.Auto) return Mode;
+        if (hasAttachedImage && PixelArtConversion().IsMatch(request)) return AiDrawMode.Generate;
         if (ExplicitSize().IsMatch(request)) return AiDrawMode.Direct;
         bool existing = CurrentArtKo().IsMatch(request) || CurrentArtEn().IsMatch(request);
         bool changing = EditKo().IsMatch(request) || EditEn().IsMatch(request);
         return (existing && changing) || (hasOpenProject && (ChangeKo().IsMatch(request) || ChangeEn().IsMatch(request)))
             ? AiDrawMode.Direct : AiDrawMode.Generate;
     }
+
+    [GeneratedRegex(@"(?:픽셀\s*(?:아트|로|화)|도트\s*(?:그림|아트)?|pixel[\s-]*(?:art|sprite)).*(?:변환|바꿔|바꾸|만들|그려|그리|convert|turn|make|draw)|(?:변환|바꿔|바꾸|만들|그려|그리|convert|turn|make|draw).*(?:픽셀\s*(?:아트|로|화)|도트\s*(?:그림|아트)?|pixel[\s-]*(?:art|sprite))", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PixelArtConversion();
 
     [GeneratedRegex(@"(?<!\w)\d+\s*(?:[x×*]\s*\d+|px|pixels?|픽셀|화소)|(?:가로|세로|width|height)\s*\d+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex ExplicitSize();

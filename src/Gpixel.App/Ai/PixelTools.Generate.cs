@@ -21,6 +21,7 @@ public sealed record AiDrawOutcome(AiDrawJob Job, PixelImage Preview, string Mes
 public sealed partial class PixelTools
 {
     private const string GenerateTool = "generate_pixel_art";
+    private const string AskTool = "ask_user";
     /// <summary>스타일 참고 그림을 보낼 때 키울 긴 변(px, 정수 배 최근접).</summary>
     private const int StyleImageSide = 512;
 
@@ -42,12 +43,14 @@ public sealed partial class PixelTools
 
     /// <summary>그림 생성 진행(사용자에게 보일 짧은 글 — "프레임 2/6 생성 중"). UI 스레드.</summary>
     public event Action<string>? AiDrawProgress;
+    /// <summary>Codex 이미지 생성에 실제로 보낼 지시(프레임 번호·전체 생성 횟수 포함). UI 스레드.</summary>
+    public event Action<string, int, int>? AiDrawPromptReady;
 
     /// <summary>그림 생성이 끝나 문서에 넣음. UI 스레드.</summary>
     public event Action<AiDrawOutcome>? AiDrawCompleted;
 
     /// <summary>오래 걸리는 도구(MCP 서버가 SSE로 답하며 기다림).</summary>
-    public static bool IsLongRunning(string name) => name == GenerateTool;
+    public static bool IsLongRunning(string name) => name is GenerateTool or AskTool;
 
     /// <summary>도는 그림 생성을 멈춘다(채팅의 멈춤).</summary>
     public void CancelAiDraw() => _aiDrawCts?.Cancel();
@@ -58,10 +61,10 @@ public sealed partial class PixelTools
     /// </summary>
     public async Task<JsonObject> CallAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct)
     {
-        if (name != GenerateTool) return Call(name, arguments);
+        if (name is not (GenerateTool or AskTool)) return Call(name, arguments);
         try
         {
-            return await GeneratePixelArtAsync(arguments, progress, ct);
+            return name == AskTool ? await AskUserAsync(arguments, ct) : await GeneratePixelArtAsync(arguments, progress, ct);
         }
         catch (ToolError e)
         {
@@ -108,8 +111,9 @@ public sealed partial class PixelTools
                 },
                 ["view"] = Str("Camera/facing, in English (default: side view facing right for animations, front three-quarter view for a still character)."),
                 ["background"] = Str("Only if the user explicitly asked for a background or scene: describe it in English. Omit otherwise; a plain transparent background is used."),
-                ["size"] = Int($"Rough size of the sprite in pixels (long side, {AiDrawSettings.MinSize}-{AiDrawSettings.MaxSize}) when the user mentions one (e.g. \"64x64\"). It is a scale hint for the " +
-                    "generated drawing; the conversion keeps the pixel grid found in the image unless the user turned on result-size correction in the settings. Omit otherwise.",
+                ["size"] = Int($"Sprite size in pixels (long side, {AiDrawSettings.MinSize}-{AiDrawSettings.MaxSize}) only when the user specifies one (e.g. \"128x128\"). " +
+                    "Omit otherwise: before generating, the app chooses a suitable logical pixel size from the attached subject image or the subject description, " +
+                    "unless result-size correction is enabled (then the user's configured size applies).",
                     AiDrawSettings.MinSize, AiDrawSettings.MaxSize),
                 ["subject_image"] = Int("Number N of an image the user attached to this message (written as [Image #N] in the message) that shows the character/item to draw " +
                     "(e.g. \"make this character as pixel art\"). A suitable pixel-art style reference is then added automatically.", 1),
@@ -119,6 +123,33 @@ public sealed partial class PixelTools
                 ["name"] = Str("Name for the new layer/document (default: from the subject)."),
             },
             "subject");
+        yield return Tool(AskTool,
+            "Ask the user to resolve an ambiguous choice before changing the document. Show the question and 2-5 mutually exclusive options above the chat input; the user can also type an Other answer or cancel. Do not guess or proceed if canceled.",
+            new JsonObject
+            {
+                ["question"] = Str("A short specific question explaining the tradeoff."),
+                ["options"] = new JsonObject
+                {
+                    ["type"] = "array",
+                    ["items"] = new JsonObject { ["type"] = "string" },
+                    ["minItems"] = 2,
+                    ["maxItems"] = 5,
+                    ["description"] = "Distinct actions the user can choose.",
+                },
+            },
+            "question", "options");
+    }
+
+    private async Task<JsonObject> AskUserAsync(JsonObject? arguments, CancellationToken ct)
+    {
+        var question = ReqString(arguments, "question").Trim();
+        var options = OptStringList(arguments, "options");
+        if (question.Length == 0 || options.Count is < 2 or > 5 || options.Any(string.IsNullOrWhiteSpace))
+            throw new ToolError(UiStrings.AiQuestion_Invalid);
+        var answer = await _host.AskUserAsync(question, options, ct);
+        if (answer is null) throw new ToolError(UiStrings.AiQuestion_Cancelled);
+        return TextResult(options.Contains(answer) ? UiStrings.FormatAiQuestion_Selected(choice: answer)
+            : UiStrings.FormatAiQuestion_Custom(answer: answer));
     }
 
     private async Task<JsonObject> GeneratePixelArtAsync(JsonObject? a, Action<string>? progress, CancellationToken ct)
@@ -132,8 +163,9 @@ public sealed partial class PixelTools
         var poses = OptStringList(a, "poses");
         if (animation == AiDrawActions.Custom && poses.Count == 0) throw new ToolError(UiStrings.AiDraw_Error_CustomPoses);
         int? frames = OptInt(a, "frames", AiDrawSettings.MinFrames, AiDrawSettings.MaxFrames);
-        // 크기: 생성 프롬프트에는 대략적인 크기 힌트로, 변환은 "결과 크기 보정"이 켜졌을 때만 그 크기로 고정(꺼지면 자동 크기 + 자동 최적화).
-        var (size, convertSize) = options.SizesFor(OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize));
+        // 사용자가 크기를 지정했으면 그대로 쓰고, 없으면 결과 크기 설정 또는 생성 전 영어 판정으로 정한다.
+        int? requestedSize = OptInt(a, "size", AiDrawSettings.MinSize, AiDrawSettings.MaxSize);
+        var (size, convertSize) = options.SizesFor(requestedSize);
         int? subjectIndex = OptInt(a, "subject_image", 1, Math.Max(1, TurnImages.Count)) is { } number ? number - 1 : null;
         if (subjectIndex >= TurnImages.Count) throw new ToolError(UiStrings.AiDraw_Error_NoImageAttached);
         var styleId = OptString(a, "style_reference")?.Trim();
@@ -175,19 +207,27 @@ public sealed partial class PixelTools
             // 이미 픽셀 아트 그림이라 스타일 참고는 붙이지 않는다.
             subjectIsPixelArt = true;
         }
-        var style = StyleReference(options, styleId, subject, kind, size, subjectFile is not null && !subjectIsPixelArt, subjectIsPixelArt);
-        string? styleFile = null;
-        if (style is not null)
-        {
-            styleFile = Path.Combine(dir, "style.png");
-            PngIO.Save(ScaleUpTo(style.Frame, StyleImageSide), styleFile);
-        }
-
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _aiDrawCts = cts;
         try
         {
             var generator = new CodexImageGenerator(codexPath, _host.Settings.CodexModel);
+            if (requestedSize is null && !options.ResizeResult)
+            {
+                Report(progress, UiStrings.AiDraw_Progress_Size);
+                size = await generator.SuggestSizeAsync(subject, subjectFile, cts.Token);
+                request = request with { SizeTarget = size };
+            }
+            // 참고 그림 변환은 명시 크기 또는 판정 크기로 결과 캔버스를 맞춘다.
+            if (subjectIndex is not null) convertSize = size;
+            var style = StyleReference(options, styleId, subject, kind, size, subjectFile is not null && !subjectIsPixelArt, subjectIsPixelArt);
+            string? styleFile = null;
+            if (style is not null)
+            {
+                styleFile = Path.Combine(dir, "style.png");
+                PngIO.Save(ScaleUpTo(style.Frame, StyleImageSide), styleFile);
+            }
+
             var prompts = new List<string>(count);
             // 처음 그림에 붙일 것: 대상 그림, 스타일 참고.
             var firstRoles = new List<AiDrawImageRole>();
@@ -196,7 +236,11 @@ public sealed partial class PixelTools
             if (styleFile is not null) { firstRoles.Add(AiDrawImageRole.Style); firstFiles.Add(styleFile); }
             bool sheet = count > 1 && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
             bool keepOffsets = animation == AiDrawActions.Jump;
-            var settings = AiDrawConversion.Settings(new PixelateSettings(), count, convertSize, options.RemoveBackground, keepOffsets);
+            var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
+            pixelate.Migrate(_host.Settings);
+            var representative = pixelate.PrimaryPreset;
+            var optimize = representative.Options();
+            var settings = AiDrawConversion.Settings(representative.StartSettings(), count, convertSize, options.RemoveBackground, keepOffsets);
             PixelImage source;
             string firstImage;
             var layout = AiDrawSheetLayout.For(count);
@@ -207,7 +251,9 @@ public sealed partial class PixelTools
                 var prompt = AiDrawPrompts.Sheet(request, plan, layout, firstRoles);
                 prompts.Add(prompt);
                 firstImage = _jobs.SheetPath(jobId);
-                await generator.GenerateAsync(AiDrawPrompts.CodexInstruction(prompt, request.Transparent, firstFiles.Count, landscape: true), firstFiles, firstImage, cts.Token);
+                var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, firstFiles.Count, landscape: true);
+                AiDrawPromptReady?.Invoke(instruction, 1, 1);
+                await generator.GenerateAsync(instruction, firstFiles, firstImage, cts.Token);
                 source = AiDrawConversion.Downscale(LoadGenerated(firstImage), AiDrawConversion.MaxSheetSide);
             }
             else
@@ -232,7 +278,9 @@ public sealed partial class PixelTools
                     var prompt = AiDrawPrompts.Frame(request, f, roles);
                     prompts.Add(prompt);
                     var output = _jobs.FramePath(jobId, f.Index);
-                    await generator.GenerateAsync(AiDrawPrompts.CodexInstruction(prompt, request.Transparent, files.Count), files, output, cts.Token);
+                    var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, files.Count);
+                    AiDrawPromptReady?.Invoke(instruction, f.Index + 1, count);
+                    await generator.GenerateAsync(instruction, files, output, cts.Token);
                     images.Add(LoadGenerated(output));
                 }
                 firstImage = _jobs.FramePath(jobId, 0);
@@ -240,10 +288,7 @@ public sealed partial class PixelTools
             }
 
             Report(progress, options.AutoOptimize ? UiStrings.AiDraw_Progress_Optimizing : UiStrings.AiDraw_Progress_Converting);
-            // 정리 창과 같은 자동 최적화: 체크한 첫 프리셋(없으면 첫 프리셋 — PixelateOptions.PrimaryPreset)의 칸별 최적화·예산·점수 기준으로 — 1위를 그대로 넣는다.
-            var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
-            pixelate.Migrate(_host.Settings);
-            var optimize = pixelate.PrimaryPreset.Options();
+            // AI 그림은 대표 프리셋에 저장한 단계 설정·칸별 최적화·예산·점수 기준으로 변환한다.
             // 진행: UI 스레드로(이 메서드의 동기화 문맥), 0.2초에 한 번쯤.
             IProgress<PixelateOptimizeProgress> ui = new Progress<PixelateOptimizeProgress>(p => Report(progress, UiStrings.FormatAiDraw_Progress_OptimizeTrial(
                 pass: p.Pass, done: p.Done, total: p.Budget, score: p.BestScore.ToString("0.0", CultureInfo.CurrentCulture))));
@@ -277,7 +322,6 @@ public sealed partial class PixelTools
             int duration = AiDrawActions.DurationMs(animation);
             // 기다리는 동안 저장·열기 덮개가 떴으면(작업 스레드가 프로젝트를 읽는 중) 끝난 뒤에 넣는다.
             while (WorkOverlay.IsActive) await WorkOverlay.WhenIdle();
-            if (!_host.InsertPixelArt(name, outFrames, duration, newDocument, out var message)) throw new ToolError(message);
 
             var job = new AiDrawJob
             {
@@ -296,11 +340,14 @@ public sealed partial class PixelTools
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // 기록을 남기지 못해도 결과는 이미 넣었다("변환 설정 보기"만 안 됨).
+                // 기록이 없어도 결과는 넣을 수 있다("변환 설정 보기"만 사용할 수 없음).
             }
             _lastGenerated = firstImage;
+            var inserted = await _host.InsertPixelArtAsync(name, outFrames, duration, newDocument, cts.Token);
+            var message = inserted.Message;
             var preview = Strip(outFrames);
             AiDrawCompleted?.Invoke(new AiDrawOutcome(job, preview, message));
+            if (!inserted.Inserted) throw new ToolError(message);
 
             var (png, zoom) = Enlarge(preview, null);
             var summary = (sheet ? $"Generated one sprite sheet with {count} frames" : $"Generated {count} image(s)") + " with Codex image generation and converted it to pixel art: " + $"{outFrames.Count} frame(s) of " +

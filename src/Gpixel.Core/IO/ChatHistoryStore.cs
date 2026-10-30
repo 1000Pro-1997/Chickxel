@@ -22,6 +22,8 @@ public enum ChatItemKind
     Footer,
     /// <summary>AI 그리기(그림 생성 → 픽셀 변환) 결과: 결과 그림, 결과 글, 다시 열 기록(<see cref="ChatItem.Job"/>).</summary>
     AiDraw,
+    /// <summary>그림 생성에 실제로 보낸 프롬프트(접힌 요약과 펼친 본문).</summary>
+    AiDrawPrompt,
 }
 
 /// <summary>저장한 대화의 한 줄.</summary>
@@ -37,6 +39,8 @@ public sealed class ChatItem
     public bool Error { get; set; }
     /// <summary><see cref="ChatItemKind.AiDraw"/>: 생성 기록 id(<c>Gpixel.Core.AiDraw.AiDrawJobStore</c> — "변환 설정 보기"로 다시 엶). 없으면 null.</summary>
     public string? Job { get; set; }
+    /// <summary><see cref="ChatItemKind.AiDrawPrompt"/>: 접힌 줄에 보일 사용자 질문 요약.</summary>
+    public string? PromptSummary { get; set; }
 }
 
 /// <summary>

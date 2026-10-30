@@ -74,8 +74,60 @@ public sealed partial class MainForm
 
     void Ai.IAiHost.ShowPixelate(PixelateInput input, int sourceFrames, PixelateSettings settings) => ShowPixelate(input, sourceFrames, settings);
 
-    bool Ai.IAiHost.InsertPixelArt(string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, out string message)
-        => InsertPixelated(name, frames, frameDurationMs, newDocument, interactive: false, out message);
+    Task<string?> Ai.IAiHost.AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct)
+        => _chat?.AskUserAsync(question, options, ct) ?? Task.FromResult<string?>(null);
+
+    async Task<Ai.AiInsertResult> Ai.IAiHost.InsertPixelArtAsync(
+        string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, CancellationToken ct)
+    {
+        if (frames.Count == 0) return new(false, UiStrings.AiDraw_Error_NoSprite);
+        if (!newDocument && _ctx.IsCanvasResizing) return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
+        if (!newDocument && _ctx.Project is { } project && !_ctx.IsCanvasResizing)
+        {
+            int width = frames.Max(f => f.Width), height = frames.Max(f => f.Height);
+            int canvasWidth = project.Width, canvasHeight = project.Height;
+            if (width > canvasWidth || height > canvasHeight)
+            {
+                var choices = new[] { UiStrings.AiDraw_Insert_Expand, UiStrings.AiDraw_Insert_Crop };
+                var question = UiStrings.FormatAiDraw_Insert_Question(
+                    width: width, height: height, canvasWidth: canvasWidth, canvasHeight: canvasHeight);
+                var answer = await ((Ai.IAiHost)this).AskUserAsync(question, choices, ct);
+                ct.ThrowIfCancellationRequested();
+                if (_ctx.IsCanvasResizing || !ReferenceEquals(project, _ctx.Project)
+                    || project.Width != canvasWidth || project.Height != canvasHeight)
+                    return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
+                if (answer == choices[0])
+                {
+                    if (project.Layers.Where((_, i) => project.IsLayerLocked(i)).Any())
+                        return new(false, UiStrings.AiDraw_Insert_Locked);
+                    _ctx.Structural(() => project.ResizeCanvas(Math.Max(width, canvasWidth), Math.Max(height, canvasHeight), Anchor.Center));
+                }
+                else if (answer == choices[1])
+                {
+                    var crop = new Ai.AiCropDialog(frames[0], canvasWidth, canvasHeight);
+                    using var cancelCrop = ct.Register(() => Avalonia.Threading.Dispatcher.UIThread.Post(crop.Close));
+                    if (crop.ShowDialog((Avalonia.Controls.Window?)_chat ?? this) != DialogResult.OK)
+                        return new(false, UiStrings.AiDraw_Insert_Cancelled);
+                    ct.ThrowIfCancellationRequested();
+                    if (_ctx.IsCanvasResizing || !ReferenceEquals(project, _ctx.Project)
+                        || project.Width != canvasWidth || project.Height != canvasHeight)
+                        return new(false, UiStrings.AiDraw_Insert_CanvasChanged);
+                    var origin = crop.CropOrigin;
+                    frames = frames.Select(frame =>
+                    {
+                        var kept = new PixelImage(canvasWidth, canvasHeight);
+                        kept.Blit(frame, frame.Width < canvasWidth ? (canvasWidth - frame.Width) / 2 : -origin.X,
+                            frame.Height < canvasHeight ? (canvasHeight - frame.Height) / 2 : -origin.Y);
+                        return kept;
+                    }).ToList();
+                }
+                else if (answer is null) return new(false, UiStrings.AiDraw_Insert_Cancelled);
+                else return new(false, UiStrings.FormatAiDraw_Insert_Custom(answer: answer));
+            }
+        }
+        bool inserted = InsertPixelated(name, frames, frameDurationMs, newDocument, interactive: false, out var message);
+        return new(inserted, message);
+    }
 
     private void ApplyPixelate(PixelateOutcome o)
     {

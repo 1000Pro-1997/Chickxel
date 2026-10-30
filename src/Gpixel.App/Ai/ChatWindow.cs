@@ -220,6 +220,7 @@ public sealed partial class ChatWindow : Window
 
         _ctx.UndoChanged += OnUndoChanged;
         _mcp.Tools.AiDrawProgress += OnAiDrawProgress;
+        _mcp.Tools.AiDrawPromptReady += OnAiDrawPromptReady;
         _mcp.Tools.AiDrawCompleted += OnAiDrawCompleted;
         _ctx.ProjectReplaced += OnProjectReplaced;
         PositionChanged += (_, _) => SaveBounds();
@@ -256,18 +257,28 @@ public sealed partial class ChatWindow : Window
 
     /// <summary>보이는 탭에 그림을 첨부한다(보내지 않음). 픽셀 아트면 정수 배로 키워 보낸다.</summary>
     public void AttachImage(PixelImage image, bool pixelArt) => _visible.AttachImage(image, pixelArt);
+    /// <summary>도는 AI 차례의 질문을 입력란 위에 띄우고 선택을 기다린다. 다른 탭에 있으면 질문이 있는 탭으로 전환한다.</summary>
+    internal Task<string?> AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct)
+    {
+        if (_shutdown || RunningTab is not { } tab) return Task.FromResult<string?>(null);
+        SelectProvider(tab.Provider.Id);
+        return tab.AskQuestionAsync(question, options, ct);
+    }
+
 
     /// <summary>AI 프로세스를 모두 끝낸다(앱을 닫을 때 메인 창이 부름). 진행 중인 차례는 멈춘다.</summary>
     public void Shutdown()
     {
         if (_shutdown) return;
         SaveBounds();
+        AiSystemNotifications.Clear(this);
         foreach (var t in _tabs) t.StopTurn();
         _shutdown = true;
         _helpTimer.Stop();
         foreach (var t in _tabs) t.Close();
         _ctx.UndoChanged -= OnUndoChanged;
         _mcp.Tools.AiDrawProgress -= OnAiDrawProgress;
+        _mcp.Tools.AiDrawPromptReady -= OnAiDrawPromptReady;
         _mcp.Tools.AiDrawCompleted -= OnAiDrawCompleted;
         _ctx.ProjectReplaced -= OnProjectReplaced;
     }
@@ -964,6 +975,8 @@ public sealed partial class ChatWindow : Window
         private readonly TextBox _input;
         private readonly Button _sendButton, _stopButton;
         private readonly ToggleButton _scopeToggle;
+        private readonly StackPanel _questionHost;
+        private TaskCompletionSource<string?>? _questionCompletion;
 
         /// <summary>"지금 그림만" 단추를 설정 값에 맞춘다(다른 탭에서 바꿨을 때).</summary>
         public void SyncScopeToggle(bool on)
@@ -1071,13 +1084,14 @@ public sealed partial class ChatWindow : Window
             buttons.Children.Add(_sendButton);
             Grid.SetColumn(_stopButton, 5);
             buttons.Children.Add(_stopButton);
+            _questionHost = new StackPanel();
             var inputArea = new Border
             {
                 Background = AppTheme.BackBrush,
                 BorderBrush = AppTheme.BorderBrush,
                 BorderThickness = new Thickness(0, 1, 0, 0),
                 Padding = new Thickness(8, 6),
-                Child = new StackPanel { Children = { new Panel { Children = { _input, _chipLayer } }, buttons } },
+                Child = new StackPanel { Children = { _questionHost, new Panel { Children = { _input, _chipLayer } }, buttons } },
             };
             DockPanel.SetDock(inputArea, Dock.Bottom);
             _list = new StackPanel { Spacing = 4, Margin = new Thickness(10, 8) };
@@ -1125,7 +1139,32 @@ public sealed partial class ChatWindow : Window
             LeaveLogin();
             _session?.Dispose();
             _session = null;
+            _questionCompletion?.TrySetResult(null);
         }
+        public async Task<string?> AskQuestionAsync(string question, IReadOnlyList<string> options, CancellationToken ct)
+        {
+            if (_questionCompletion is not null) throw new InvalidOperationException("A question is already open.");
+            var pending = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _questionCompletion = pending;
+            _questionHost.Children.Add(new AiQuestionPanel(question, options, choice => pending.TrySetResult(choice)));
+            AiSystemNotifications.Show(_w, UiStrings.AiNotify_Question, question);
+            using var cancellation = ct.Register(() => Dispatcher.UIThread.Post(() => pending.TrySetResult(null)));
+            try
+            {
+                var choice = await pending.Task;
+                ct.ThrowIfCancellationRequested();
+                if (choice is not null)
+                    AddSystemLine(options.Contains(choice) ? UiStrings.FormatAiQuestion_Selected(choice: choice)
+                        : UiStrings.FormatAiQuestion_Custom(answer: choice), error: false);
+                return choice;
+            }
+            finally
+            {
+                _questionHost.Children.Clear();
+                _questionCompletion = null;
+            }
+        }
+
 
         private void FocusInput() => Dispatcher.UIThread.Post(() => _input.Focus(), DispatcherPriority.Background);
 
@@ -1631,8 +1670,8 @@ public sealed partial class ChatWindow : Window
             // 마지막 차례를 지운 대화: CLI 세션에서는 차례를 뺄 수 없으므로 새 세션으로 보내고, 남은 대화 정리를 앞에 붙인다.
             var modelText = ChatImageTokens.ToModel(text);
             var message = scope is null ? modelText : UiStrings.FormatChat_FileOnly_Prefix(name: scope.Project.DisplayName, text: modelText);
-            // 자동 모드는 요청의 정확한 크기·기존 그림 수정 여부로 이번 차례의 방식을 고른다. Claude는 늘 직접 찍는다.
-            var drawingMode = _w._settings.AiDraw.EffectiveMode(Provider.Id, text, _w._ctx.Project is not null);
+            // 자동 모드는 요청의 크기·기존 그림 수정 여부와 참고 이미지의 픽셀 아트 변환 여부로 이번 차례의 방식을 고른다. Claude는 늘 직접 찍는다.
+            var drawingMode = _w._settings.AiDraw.EffectiveMode(Provider.Id, text, _w._ctx.Project is not null, attachments.Count > 0);
             message = AiCli.DrawingModeLine(drawingMode, Provider.Id == AiDrawSettings.GeneratingProvider) + "\n" + message;
             // "팔레트 색만 사용": 처음부터 팔레트 색으로 그리게 활성 팔레트 색을 알린다(도구도 다른 색은 가장 가까운 팔레트 색으로 바꿈).
             if (_w._settings.AiDraw.PaletteOnly && new PaletteLock(_w._mcp.Tools.Host.Palette) is { IsEmpty: false } palette)
@@ -1706,6 +1745,7 @@ public sealed partial class ChatWindow : Window
             if (_turn is null) return;
             _w._mcp.Tools.CancelAiDraw();
             _session?.Cancel();
+            _questionCompletion?.TrySetResult(null);
             EndTurn(null, null, cancelled: true);
         }
 
@@ -1740,6 +1780,9 @@ public sealed partial class ChatWindow : Window
             AddItem(FooterLine(footer));
             Record(new ChatItem { Kind = ChatItemKind.Footer, Text = footer });
             SaveChat();
+            if (!cancelled)
+                AiSystemNotifications.Show(_w, error is null ? UiStrings.AiNotify_Done : UiStrings.AiNotify_Error,
+                    UiStrings.AiNotify_DoneBody);
             _w.OnTurnsChanged();
         }
 
@@ -1882,6 +1925,9 @@ public sealed partial class ChatWindow : Window
                     break;
                 case ChatItemKind.Assistant:
                     AddItem(_w.AnswerView(item.Text));
+                    break;
+                case ChatItemKind.AiDrawPrompt:
+                    AddItem(_w.AiDrawPromptCard(item.PromptSummary ?? UiStrings.AiDraw_Prompt_Label, item.Text));
                     break;
                 case ChatItemKind.Tool:
                     AddItem(ToolLine(item.Text, item.Error));
@@ -2116,6 +2162,17 @@ public sealed partial class ChatWindow : Window
             }
             UpdateProgress();
         }
+        /// <summary>실제 Codex 이미지 생성 지시를 사용자 질문 한 줄로 접어 보이고, 펼쳐 확인할 수 있게 대화에 남긴다.</summary>
+        public void OnAiDrawPromptReady(string instruction, int index, int count)
+        {
+            if (_turn is null || _userTurns.Count == 0) return;
+            var question = ChatImageTokens.Plain(_userTurns[^1].Item.Text, UiStrings.Chat_Image_Label).Trim();
+            var summary = ChatHistoryStore.MakeTitle(question.Length > 0 ? question : UiStrings.Chat_History_ImageTitle, 100);
+            if (count > 1) summary += $" ({index}/{count})";
+            AddItem(_w.AiDrawPromptCard(summary, instruction));
+            Record(new ChatItem { Kind = ChatItemKind.AiDrawPrompt, Text = instruction, PromptSummary = summary });
+        }
+
 
         /// <summary>그림 생성 결과 칸(결과 그림·결과 글·"변환 설정 보기")을 붙이고 저장할 내용에 넣는다(그림이 너무 크면 그림은 남기지 않음).</summary>
         public void OnAiDrawCompleted(AiDrawOutcome o)

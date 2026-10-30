@@ -2,10 +2,7 @@ using Gpixel.Core.Model;
 
 namespace Gpixel.App.Ai;
 
-/// <summary>
-/// AI 도구가 편집기(메인 창)에 부탁하는 일. 모두 UI 스레드에서 불리고, 대화상자를 띄우지 않는다
-/// (실패하면 false와 이유 문구를 돌려준다).
-/// </summary>
+/// <summary>AI 도구가 편집기(메인 창)에 부탁하는 일. 모두 UI 스레드에서 불린다.</summary>
 public interface IAiHost
 {
     EditorContext Context { get; }
@@ -36,11 +33,14 @@ public interface IAiHost
     /// <summary>앱 설정(AI 그리기 설정·Codex 경로·모델).</summary>
     AppSettings Settings { get; }
 
-    /// <summary>
-    /// 변환한 픽셀 아트 프레임을 넣는다: 열린 문서의 새 레이어(실행취소 한 단계, 프레임이 모자라면 더함) 또는 새 탭의 새 문서. 결과 문구를 돌려준다.
-    /// </summary>
-    bool InsertPixelArt(string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, out string message);
+    /// <summary>모호한 선택을 채팅 입력란 위에서 사용자에게 묻는다. 취소·창 닫기는 null.</summary>
+    Task<string?> AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct);
+
+    /// <summary>변환한 픽셀 아트를 넣는다. 열린 캔버스보다 크면 사용자에게 확장·자르기·새 문서를 묻고, 자르기는 위치 미리보기를 연다.</summary>
+    Task<AiInsertResult> InsertPixelArtAsync(string name, IReadOnlyList<PixelImage> frames, int frameDurationMs, bool newDocument, CancellationToken ct);
 
     /// <summary>AI 그림 픽셀로 정리 창을 이 원본(가로로 이은 <paramref name="sourceFrames"/>프레임)과 변환 설정으로 연다(다시 조정해 적용).</summary>
     void ShowPixelate(PixelateInput input, int sourceFrames, Gpixel.Core.Pixelate.PixelateSettings settings);
 }
+
+public readonly record struct AiInsertResult(bool Inserted, string Message);

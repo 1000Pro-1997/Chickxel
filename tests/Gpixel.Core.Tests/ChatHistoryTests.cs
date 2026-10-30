@@ -66,6 +66,7 @@ public class ChatHistoryTests : IDisposable
         chat.SessionId = "session-1";
         chat.SessionDirectory = @"C:\work";
         chat.Items.Add(new ChatItem { Kind = ChatItemKind.Tool, Text = "draw_pixels", Error = true });
+        chat.Items.Add(new ChatItem { Kind = ChatItemKind.AiDrawPrompt, Text = "full generation prompt\nwith original pose", PromptSummary = "character pose" });
         chat.Items.Add(new ChatItem { Kind = ChatItemKind.Snapshot, Images = ["iVBORw0KGgo="] });
         store.Save(chat);
 
@@ -76,9 +77,11 @@ public class ChatHistoryTests : IDisposable
         Assert.Equal("session-1", back.SessionId);
         Assert.Equal(@"C:\work", back.SessionDirectory);
         Assert.Equal(chat.UpdatedUtc, back.UpdatedUtc);
-        Assert.Equal([ChatItemKind.User, ChatItemKind.Tool, ChatItemKind.Snapshot], back.Items.Select(i => i.Kind));
+        Assert.Equal([ChatItemKind.User, ChatItemKind.Tool, ChatItemKind.AiDrawPrompt, ChatItemKind.Snapshot], back.Items.Select(i => i.Kind));
         Assert.True(back.Items[1].Error);
-        Assert.Equal(["iVBORw0KGgo="], back.Items[2].Images!);
+        Assert.Equal("full generation prompt\nwith original pose", back.Items[2].Text);
+        Assert.Equal("character pose", back.Items[2].PromptSummary);
+        Assert.Equal(["iVBORw0KGgo="], back.Items[3].Images!);
         Assert.Equal(["abc"], store.List("claude").Select(c => c.Id));
         Assert.Empty(store.List("codex"));
     }

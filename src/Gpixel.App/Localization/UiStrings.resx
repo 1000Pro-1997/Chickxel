@@ -10120,8 +10120,10 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="Pixelate_Opt_PresetLine" xml:space="preserve"><value>{name}: {summary}</value></data>
   <data name="OptimizePreset_DefaultName" xml:space="preserve"><value>기본</value></data>
   <data name="OptimizePreset_NewName" xml:space="preserve"><value>새 프리셋</value></data>
-  <data name="OptimizePreset_List" xml:space="preserve"><value>자동 최적화로 돌릴 프리셋(체크한 것을 모두 돌림 — 값은 왼쪽 설정 칸에서 고침)</value></data>
+  <data name="OptimizePreset_List" xml:space="preserve"><value>자동 최적화는 체크한 프리셋을 모두 돌립니다. 원형 선택은 AI 그림 변환의 대표 프리셋입니다(값은 왼쪽 설정 칸에서 고침).</value></data>
   <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>체크하면 자동 최적화를 누를 때 이 프리셋도 돌립니다(프리셋마다 1위 후보 하나, 후보 이름 = 프리셋 이름).</value></data>
+  <data name="OptimizePreset_Representative" xml:space="preserve"><value>AI 그림 변환 대표 프리셋</value></data>
+  <data name="OptimizePreset_RepresentativeTip" xml:space="preserve"><value>AI가 생성한 그림은 이 프리셋에 저장한 단계 설정과 최적화 기준으로 변환합니다. 일괄 최적화 체크 여부와 무관합니다.</value></data>
   <data name="OptimizePreset_Add" xml:space="preserve"><value>프리셋 추가</value></data>
   <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>프리셋 복제</value></data>
   <data name="OptimizePreset_Delete" xml:space="preserve"><value>프리셋 삭제(마지막 하나는 지울 수 없음)</value></data>
@@ -10190,7 +10192,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>그리기 설정</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>그리는 방식</value></data>
   <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>자동</value></data>
-  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>Codex에서 새 그림을 부탁하면 이미지 생성 후 픽셀로 변환합니다. 32×32처럼 크기를 명확히 정하거나 지금 그림을 고치라고 하면 픽셀 도구로 직접 찍습니다. Claude는 직접 찍기만 할 수 있습니다.</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>Codex에서 새 그림을 부탁하면 이미지 생성 후 픽셀로 변환합니다. 크기를 명확히 정한 새 그림이나 지금 그림 수정은 직접 찍지만, 참고 이미지를 픽셀 아트로 바꾸는 요청은 크기를 정해도 생성 후 변환합니다. Claude는 직접 찍기만 할 수 있습니다.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>그림 생성 → 픽셀 변환</value></data>
   <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex가 이미지 생성으로 고품질 그림을 만들고, Gpixel이 픽셀 아트로 변환해 넣습니다(배경 지우기·격자·팔레트 자동). 애니메이션은 모든 프레임을 한 장(스프라이트 시트)에 그려 나눠 변환합니다. 한 장에 30초~1분 30초쯤 걸립니다. Claude 탭은 직접 찍기로 그리며, "Codex에 맡겨"처럼 부탁하면 그 그림만 Codex로 생성합니다.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>직접 찍기</value></data>
@@ -10227,6 +10229,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiDraw_Action_Hurt" xml:space="preserve"><value>피격</value></data>
   <data name="AiDraw_Action_Death" xml:space="preserve"><value>쓰러짐</value></data>
   <data name="AiDraw_Progress_Image" xml:space="preserve"><value>그림 생성 중(Codex)…</value></data>
+  <data name="AiDraw_Progress_Size" xml:space="preserve"><value>참고 이미지에 맞는 픽셀 크기 판정 중(Codex)…</value></data>
   <data name="AiDraw_Progress_Frame" xml:space="preserve"><value>프레임 {index}/{count} 생성 중(Codex)…</value></data>
   <data name="AiDraw_Progress_Converting" xml:space="preserve"><value>픽셀 아트로 변환 중…</value></data>
   <data name="AiDraw_Progress_Optimizing" xml:space="preserve"><value>픽셀 아트로 변환·자동 최적화 중…</value></data>
@@ -10239,6 +10242,8 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiDraw_Error_Login" xml:space="preserve"><value>Codex CLI에 로그인되어 있지 않아 그림을 생성하지 못했습니다. Codex 탭에서 로그인하세요.</value></data>
   <data name="AiDraw_Error_Start" xml:space="preserve"><value>Codex CLI를 실행하지 못했습니다: {message}</value></data>
   <data name="AiDraw_Error_Timeout" xml:space="preserve"><value>그림 생성이 {minutes}분 안에 끝나지 않았습니다.</value></data>
+  <data name="AiDraw_Error_SizeTimeout" xml:space="preserve"><value>픽셀 아트 크기 판정이 2분 안에 끝나지 않았습니다.</value></data>
+  <data name="AiDraw_Error_SizeSelection" xml:space="preserve"><value>픽셀 아트 크기를 판정하지 못했습니다(8~256 크기의 JSON 필요): {reason}</value></data>
   <data name="AiDraw_Error_NoImage" xml:space="preserve"><value>Codex가 그림을 만들지 못했습니다: {reason}</value></data>
   <data name="AiDraw_Error_Read" xml:space="preserve"><value>생성한 그림 파일을 읽지 못했습니다.</value></data>
   <data name="AiDraw_Error_NoSprite" xml:space="preserve"><value>생성한 그림에서 스프라이트를 찾지 못했습니다(배경만 있음).</value></data>
@@ -10303,7 +10308,7 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>AI가 직접 칠하는 색(점·선·채우기·색 바꾸기)을 활성 팔레트에서 가장 가까운 색으로 바꿉니다. 지우기(완전 투명)는 되고 반투명은 불투명이 됩니다. 그림 생성 결과(변환기의 팔레트 설정)와 레이어 효과에는 영향이 없습니다.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>팔레트 색으로 맞춤: {changes}</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>결과 크기 보정</value></data>
-  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 생성한 그림의 픽셀 칸 크기대로 자동 크기 + 자동 최적화로 변환합니다. 채팅에서 "64×64"처럼 말한 크기는 그림을 그릴 때 대략적인 크기로만 참고합니다. 켜면 아래 크기(또는 채팅에서 말한 크기)로 맞춥니다.</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>끄면(기본) 일반 생성 그림은 픽셀 칸 크기대로 자동 변환하고, 채팅에서 말한 크기는 대략적인 힌트로 씁니다. 참고 이미지를 픽셀 아트로 바꿀 때는 말한 크기(없으면 이미지를 보고 정한 크기)로 결과를 맞춥니다. 켜면 다른 생성 그림도 아래 크기나 채팅 크기로 맞춥니다.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI 상태 및 설정</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>확인하고 AI 열기</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>닫기</value></data>
@@ -10666,4 +10671,29 @@ Gpixel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하�
   <data name="EffectStrip_TrimSummary" xml:space="preserve"><value>뒤 프레임 {0}개 지움</value><comment>효과 창 확인 결과 알림</comment></data>
   <data name="EffectStrip_TrimLabel" xml:space="preserve"><value>레이어 효과·프레임 지우기</value><comment>실행취소 기록 이름: 효과 창에서 뒤 프레임을 지우고 확인</comment></data>
   <data name="EffectStrip_TrashCount" xml:space="preserve"><value>{0}개</value><comment>효과 창 지우기 칸: 지우기로 한 뒤 프레임 수</comment></data>
+  <data name="AiQuestion_Other" xml:space="preserve"><value>직접 입력</value></data>
+  <data name="AiQuestion_OtherInput" xml:space="preserve"><value>다른 답변</value></data>
+  <data name="AiQuestion_Submit" xml:space="preserve"><value>답변 보내기</value></data>
+  <data name="AiQuestion_Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="AiCrop_Title" xml:space="preserve"><value>그림 자를 위치 선택</value></data>
+  <data name="AiCrop_Keep" xml:space="preserve"><value>이 영역 사용</value></data>
+  <data name="AiCrop_Instruction" xml:space="preserve"><value>밝은 테두리 안이 남을 영역입니다. 영역을 끌거나 바깥을 눌러 위치를 바꾸세요. 방향키로 1픽셀, Shift+방향키로 10픽셀씩 움직일 수 있습니다. 그림보다 큰 캔버스 부분은 투명하게 남습니다.</value></data>
+  <data name="AiCrop_Position" xml:space="preserve"><value>남길 크기 {0}×{1} px · 위치 X: {2}, Y: {3}</value></data>
+  <data name="AiDraw_Prompt_Label" xml:space="preserve"><value>생성 프롬프트</value></data>
+  <data name="AiDraw_Prompt_Tip" xml:space="preserve"><value>누르면 Codex 이미지 생성에 보낸 프롬프트 전문이 보입니다.</value></data>
+  <data name="AiQuestion_Invalid" xml:space="preserve"><value>질문과 선택지 2~5개가 필요합니다.</value></data>
+  <data name="AiQuestion_Cancelled" xml:space="preserve"><value>사용자가 질문을 취소했습니다. 선택을 추측하지 마세요.</value></data>
+  <data name="AiQuestion_Selected" xml:space="preserve"><value>사용자 선택: {choice}</value></data>
+  <data name="AiQuestion_Custom" xml:space="preserve"><value>사용자가 직접 입력한 답변: {answer}</value></data>
+  <data name="AiDraw_Insert_Question" xml:space="preserve"><value>생성 그림({width}×{height})이 현재 캔버스({canvasWidth}×{canvasHeight})보다 큽니다. 기존 그림을 보존하며 캔버스를 늘릴까요, 새 그림에서 남길 부분을 직접 골라 자를까요?</value></data>
+  <data name="AiDraw_Insert_Expand" xml:space="preserve"><value>캔버스 늘리기</value></data>
+  <data name="AiDraw_Insert_Crop" xml:space="preserve"><value>자를 위치 고르기</value></data>
+  <data name="AiDraw_Insert_CanvasChanged" xml:space="preserve"><value>답변을 기다리는 동안 열린 문서나 캔버스 크기가 바뀌어 그림을 넣지 않았습니다.</value></data>
+  <data name="AiDraw_Insert_Locked" xml:space="preserve"><value>잠긴 레이어가 있어 캔버스를 늘릴 수 없습니다. 잠금을 풀거나 자르기를 선택하세요. 그림은 넣지 않았습니다.</value></data>
+  <data name="AiDraw_Insert_Cancelled" xml:space="preserve"><value>넣기 선택을 취소해 그림을 자르거나 넣지 않았습니다.</value></data>
+  <data name="AiDraw_Insert_Custom" xml:space="preserve"><value>사용자가 다른 방법을 요청했습니다: {answer}. 그림을 아직 넣지 않았습니다. 임의로 자르거나 캔버스를 늘리지 마세요.</value></data>
+  <data name="AiNotify_Question" xml:space="preserve"><value>Gpixel AI가 질문합니다</value></data>
+  <data name="AiNotify_Done" xml:space="preserve"><value>Gpixel AI 작업 완료</value></data>
+  <data name="AiNotify_Error" xml:space="preserve"><value>Gpixel AI 작업 오류</value></data>
+  <data name="AiNotify_DoneBody" xml:space="preserve"><value>채팅에서 결과를 확인하세요.</value></data>
 </root>

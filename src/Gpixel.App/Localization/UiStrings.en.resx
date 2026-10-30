@@ -3166,8 +3166,10 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Opt_PresetLine" xml:space="preserve"><value>{name}: {summary}</value></data>
   <data name="OptimizePreset_DefaultName" xml:space="preserve"><value>Default</value></data>
   <data name="OptimizePreset_NewName" xml:space="preserve"><value>New preset</value></data>
-  <data name="OptimizePreset_List" xml:space="preserve"><value>Presets to run with Auto optimize (all checked ones run - edit their values in the settings on the left)</value></data>
+  <data name="OptimizePreset_List" xml:space="preserve"><value>Auto optimize runs all checked presets. The radio selection is the AI image conversion preset (edit values in the settings on the left).</value></data>
   <data name="OptimizePreset_EnabledTip" xml:space="preserve"><value>When checked, Auto optimize also runs this preset (one best candidate per preset, named after the preset).</value></data>
+  <data name="OptimizePreset_Representative" xml:space="preserve"><value>AI image conversion preset</value></data>
+  <data name="OptimizePreset_RepresentativeTip" xml:space="preserve"><value>Generated AI images are converted with this preset's saved settings and optimization criteria, regardless of its Auto optimize checkbox.</value></data>
   <data name="OptimizePreset_Add" xml:space="preserve"><value>Add preset</value></data>
   <data name="OptimizePreset_Duplicate" xml:space="preserve"><value>Duplicate preset</value></data>
   <data name="OptimizePreset_Delete" xml:space="preserve"><value>Delete preset (the last one can't be deleted)</value></data>
@@ -3236,7 +3238,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>Drawing settings</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>Drawing mode</value></data>
   <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>Auto</value></data>
-  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, requests for new art generate an image and convert it to pixel art. Exact sizes such as 32×32 and edits to the current picture use the pixel tools directly. Claude can only draw pixels directly.</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, new art is generated and converted to pixel art. Exact sizes for new art and edits to the current picture use pixel tools directly; converting an attached image to pixel art uses generation even with a specified size. Claude draws pixels directly.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>Generate image → pixelate</value></data>
   <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates a high-quality image and Gpixel converts it to pixel art (background removal, grid and palette are automatic). Animations are drawn with all frames on one sprite sheet, then split and converted. Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>Draw pixels directly</value></data>
@@ -3273,6 +3275,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiDraw_Action_Hurt" xml:space="preserve"><value>Hurt</value></data>
   <data name="AiDraw_Action_Death" xml:space="preserve"><value>Death</value></data>
   <data name="AiDraw_Progress_Image" xml:space="preserve"><value>Generating image (Codex)…</value></data>
+  <data name="AiDraw_Progress_Size" xml:space="preserve"><value>Selecting a pixel size from the reference image (Codex)…</value></data>
   <data name="AiDraw_Progress_Frame" xml:space="preserve"><value>Generating frame {index}/{count} (Codex)…</value></data>
   <data name="AiDraw_Progress_Converting" xml:space="preserve"><value>Converting to pixel art…</value></data>
   <data name="AiDraw_Progress_Optimizing" xml:space="preserve"><value>Converting to pixel art and auto-optimizing…</value></data>
@@ -3285,6 +3288,8 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiDraw_Error_Login" xml:space="preserve"><value>Codex CLI is not logged in, so the image couldn't be generated. Log in from the Codex tab.</value></data>
   <data name="AiDraw_Error_Start" xml:space="preserve"><value>Couldn't run Codex CLI: {message}</value></data>
   <data name="AiDraw_Error_Timeout" xml:space="preserve"><value>Image generation didn't finish within {minutes} minutes.</value></data>
+  <data name="AiDraw_Error_SizeTimeout" xml:space="preserve"><value>Pixel-art size selection didn't finish within 2 minutes.</value></data>
+  <data name="AiDraw_Error_SizeSelection" xml:space="preserve"><value>Couldn't select a pixel-art size (expected JSON with a size from 8 to 256): {reason}</value></data>
   <data name="AiDraw_Error_NoImage" xml:space="preserve"><value>Codex didn't produce an image: {reason}</value></data>
   <data name="AiDraw_Error_Read" xml:space="preserve"><value>Couldn't read the generated image file.</value></data>
   <data name="AiDraw_Error_NoSprite" xml:space="preserve"><value>No sprite was found in the generated image (only background).</value></data>
@@ -3349,7 +3354,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="AiDraw_PaletteOnly_Text" xml:space="preserve"><value>Colors the AI paints directly (pixels, shapes, fills, color replacement) are changed to the nearest color in the active palette. Erasing (fully transparent) is allowed and semi-transparent colors become opaque. Generated images (the converter's palette settings) and layer effects are not affected.</value></data>
   <data name="AiDraw_PaletteSnapped" xml:space="preserve"><value>Snapped to palette colors: {changes}</value></data>
   <data name="AiDraw_ResizeResult" xml:space="preserve"><value>Result-size correction</value></data>
-  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): the generated image is converted at the pixel grid found in it, with automatic size and auto-optimize. A size you mention in the chat (e.g. "64×64") is only used as a rough scale for the drawing. On: the result is fitted to the size below (or the size from the chat).</value></data>
+  <data name="AiDraw_ResizeResult_Text" xml:space="preserve"><value>Off (default): ordinary generated art uses its detected pixel grid, and sizes in chat are rough hints. When converting an attached image to pixel art, the result uses the requested size (or a size chosen from the image). On: other generated art is also fitted to the size below or the size from chat.</value></data>
   <data name="AiStatus_Title" xml:space="preserve"><value>AI Status and Settings</value></data>
   <data name="AiStatus_Continue" xml:space="preserve"><value>Continue to AI</value></data>
   <data name="AiStatus_Close" xml:space="preserve"><value>Close</value></data>
@@ -3712,4 +3717,29 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="EffectStrip_TrimSummary" xml:space="preserve"><value>deleted the last {0} frames</value></data>
   <data name="EffectStrip_TrimLabel" xml:space="preserve"><value>Layer effects and delete frames</value></data>
   <data name="EffectStrip_TrashCount" xml:space="preserve"><value>{0}</value></data>
+  <data name="AiQuestion_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="AiQuestion_OtherInput" xml:space="preserve"><value>Other answer</value></data>
+  <data name="AiQuestion_Submit" xml:space="preserve"><value>Submit answer</value></data>
+  <data name="AiQuestion_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AiCrop_Title" xml:space="preserve"><value>Choose crop position</value></data>
+  <data name="AiCrop_Keep" xml:space="preserve"><value>Keep this area</value></data>
+  <data name="AiCrop_Instruction" xml:space="preserve"><value>The highlighted outline shows what will be kept. Drag it or click outside to reposition. Arrow keys move by one pixel; Shift+arrow keys move by ten. Canvas space beyond the image remains transparent.</value></data>
+  <data name="AiCrop_Position" xml:space="preserve"><value>Keep {0}×{1} px · Position X: {2}, Y: {3}</value></data>
+  <data name="AiDraw_Prompt_Label" xml:space="preserve"><value>Generation prompt</value></data>
+  <data name="AiDraw_Prompt_Tip" xml:space="preserve"><value>Click to see the full prompt sent to Codex image generation.</value></data>
+  <data name="AiQuestion_Invalid" xml:space="preserve"><value>A question with 2 to 5 options is required.</value></data>
+  <data name="AiQuestion_Cancelled" xml:space="preserve"><value>The user canceled the question. Do not guess their choice.</value></data>
+  <data name="AiQuestion_Selected" xml:space="preserve"><value>User selected: {choice}</value></data>
+  <data name="AiQuestion_Custom" xml:space="preserve"><value>User entered another answer: {answer}</value></data>
+  <data name="AiDraw_Insert_Question" xml:space="preserve"><value>The generated image ({width}×{height}) is larger than the current canvas ({canvasWidth}×{canvasHeight}). Expand the canvas without cropping existing art, or choose which part of the new image to keep?</value></data>
+  <data name="AiDraw_Insert_Expand" xml:space="preserve"><value>Expand canvas</value></data>
+  <data name="AiDraw_Insert_Crop" xml:space="preserve"><value>Choose crop position</value></data>
+  <data name="AiDraw_Insert_CanvasChanged" xml:space="preserve"><value>The open document or canvas size changed while waiting for your answer. Nothing was inserted.</value></data>
+  <data name="AiDraw_Insert_Locked" xml:space="preserve"><value>Locked layers prevent expanding the canvas. Unlock them or choose a crop. Nothing was inserted.</value></data>
+  <data name="AiDraw_Insert_Cancelled" xml:space="preserve"><value>Insertion was canceled. The image was neither cropped nor inserted.</value></data>
+  <data name="AiDraw_Insert_Custom" xml:space="preserve"><value>The user requested another approach: {answer}. Nothing was inserted yet. Do not crop or expand the canvas without their choice.</value></data>
+  <data name="AiNotify_Question" xml:space="preserve"><value>Gpixel AI has a question</value></data>
+  <data name="AiNotify_Done" xml:space="preserve"><value>Gpixel AI finished</value></data>
+  <data name="AiNotify_Error" xml:space="preserve"><value>Gpixel AI encountered an error</value></data>
+  <data name="AiNotify_DoneBody" xml:space="preserve"><value>Open the chat to see the result.</value></data>
 </root>

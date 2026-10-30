@@ -33,6 +33,7 @@ public sealed partial class ChatWindow
 
     /// <summary>그림 생성 진행·결과는 차례가 도는 탭에 붙인다(차례가 없으면 버림 — 멈춘 뒤 늦게 온 것).</summary>
     private void OnAiDrawProgress(string text) => RunningTab?.OnAiDrawProgress(text);
+    private void OnAiDrawPromptReady(string instruction, int index, int count) => RunningTab?.OnAiDrawPromptReady(instruction, index, count);
 
     private void OnAiDrawCompleted(AiDrawOutcome outcome) => RunningTab?.OnAiDrawCompleted(outcome);
 
@@ -384,6 +385,61 @@ public sealed partial class ChatWindow
         }
         var (job, source) = loaded;
         _mcp.Tools.Host.ShowPixelate(new PixelateInput(source, job.Name, null), job.Frames, job.ReadSettings());
+    }
+
+    /// <summary>보낸 질문 한 줄을 눌러 Codex 이미지 생성에 전달한 프롬프트 전문을 보는 카드.</summary>
+    private Control AiDrawPromptCard(string summary, string instruction)
+    {
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), MinWidth = 0 };
+        header.Children.Add(new TextBlock
+        {
+            Text = UiStrings.AiDraw_Prompt_Label,
+            Foreground = AppTheme.AccentBrush,
+            FontSize = AppTheme.SmallFontSize,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0),
+        });
+        var question = new TextBlock
+        {
+            Text = summary,
+            Foreground = AppTheme.TextBrush,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+            MinWidth = 0,
+        };
+        Grid.SetColumn(question, 1);
+        header.Children.Add(question);
+        var full = new SelectableTextBlock
+        {
+            Text = instruction,
+            FontFamily = MonoFont,
+            FontSize = AppTheme.SmallFontSize,
+            Foreground = AppTheme.TextBrush,
+            TextWrapping = TextWrapping.Wrap,
+            Padding = new Thickness(10, 6),
+            Background = Brushes.Transparent,
+        };
+        var expander = new Expander
+        {
+            Header = header,
+            Content = new ScrollViewer
+            {
+                Content = full,
+                MaxHeight = 320,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            },
+            IsExpanded = false,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        }.Tip(UiStrings.AiDraw_Prompt_Tip);
+        return new Border
+        {
+            Background = AppTheme.PanelBrush,
+            BorderBrush = AppTheme.BorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Margin = new Thickness(2, 4, 2, 4),
+            Child = expander,
+        };
     }
 
     /// <summary>AI 그리기 결과 칸: 결과 그림, 결과 글, "변환 설정 보기" 단추(기록이 있을 때).</summary>

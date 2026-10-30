@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Gpixel.App.Localization;
+using Gpixel.Core.AiDraw;
 
 namespace Gpixel.App.Ai;
 
@@ -22,6 +23,90 @@ public sealed class CodexImageGenerator(string codexPath, string? model)
 {
     /// <summary>그림 한 장에 기다리는 최대 시간.</summary>
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(6);
+
+    /// <summary>생성 전 논리 스프라이트 크기를 대상 설명과 선택적 참고 그림으로 판정한다. 이미지 생성 도구는 쓰지 않는다.</summary>
+    public async Task<int> SuggestSizeAsync(string subject, string? image, CancellationToken ct)
+    {
+        await CodexProvider.LoadFeaturesAsync(codexPath, ct).ConfigureAwait(false);
+        var work = Path.Combine(Path.GetTempPath(), "gpixel-codex", "imagegen");
+        Directory.CreateDirectory(work);
+        var args = new List<string> { "exec" };
+        if (image is not null) args.AddRange(["-i", image]);
+        args.AddRange(["--json", "--skip-git-repo-check", "--ephemeral"]);
+        if (!string.IsNullOrEmpty(model)) args.AddRange(["-m", model]);
+        foreach (var setting in ConfigOverrides()) args.AddRange(["-c", setting]);
+        args.AddRange(["-c", "features.image_generation=false", "-"]);
+
+        ProcessStartInfo psi;
+        try { psi = AiCli.CreateStartInfo(codexPath, args, work, true); }
+        catch (CommandLineTooLongException ex) { throw new AiDrawException(UiStrings.FormatAiDraw_Error_Start(message: ex.Message)); }
+        using var p = new Process { StartInfo = psi };
+        var stderr = new StringBuilder();
+        try { p.Start(); }
+        catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            throw new AiDrawException(UiStrings.FormatAiDraw_Error_Start(message: ex.Message));
+        }
+        var stderrDone = AiCli.CollectErrorTail(p, stderr);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromMinutes(2));
+        using var kill = timeout.Token.Register(() => AiCli.Kill(p));
+        string? answer = null, error = null;
+        try
+        {
+            await p.StandardInput.WriteAsync(
+                ((image is null ? "Given this requested pixel-art subject: " : "Inspect the attached character/item reference image and the requested subject: ") + subject +
+                 ". Choose the appropriate square logical pixel-art sprite canvas size in pixels, from 8 to 256. " +
+                 "Keep the full subject readable with its important details; do not generate an image or use tools. " +
+                 "Reply with JSON only, exactly {\"size\":128} with your chosen integer replacing 128. No markdown or other words.").AsMemory(),
+                timeout.Token).ConfigureAwait(false);
+            p.StandardInput.Close();
+            string? line;
+            while ((line = await p.StandardOutput.ReadLineAsync(timeout.Token).ConfigureAwait(false)) is not null)
+            {
+                if (line.Length == 0 || line[0] != '{') continue;
+                JsonObject? o;
+                try { o = JsonNode.Parse(line) as JsonObject; }
+                catch (JsonException) { continue; }
+                switch (AiCli.Str(o?["type"]))
+                {
+                    case "item.completed" when AiCli.Str(o!["item"]?["type"]) == "agent_message":
+                        answer = AiCli.Str(o["item"]?["text"]);
+                        break;
+                    case "turn.failed":
+                        error = AiCli.Str(o!["error"]?["message"]) ?? error;
+                        break;
+                    case "error":
+                        error = AiCli.Str(o!["message"]) ?? error;
+                        break;
+                }
+            }
+            await p.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            AiCli.Kill(p);
+            ct.ThrowIfCancellationRequested();
+            throw new AiDrawException(UiStrings.AiDraw_Error_SizeTimeout);
+        }
+        catch (IOException) { /* 프로세스 종료 원인은 아래에서 알린다. */ }
+
+        try
+        {
+            if (p.HasExited && p.ExitCode == 0 && JsonNode.Parse(answer ?? "") is JsonObject json
+                && json.Count == 1 && json["size"] is JsonValue value
+                && value.TryGetValue<int>(out int size)
+                && size is >= AiDrawSettings.MinSize and <= AiDrawSettings.MaxSize)
+                return size;
+        }
+        catch (JsonException) { /* JSON이 아니면 잘못된 판정으로 처리한다. */ }
+        await Task.WhenAny(stderrDone, Task.Delay(2000)).ConfigureAwait(false);
+        string tail;
+        lock (stderr) tail = AiCli.Tail(AiCli.StripAnsi(stderr.ToString()).Trim(), 600);
+        var reason = error ?? answer ?? tail;
+        if (IsAuthError(reason) || IsAuthError(tail)) throw new AiDrawException(UiStrings.AiDraw_Error_Login);
+        throw new AiDrawException(UiStrings.FormatAiDraw_Error_SizeSelection(reason: AiCli.Tail(reason, 300)));
+    }
 
     /// <summary>
     /// 그림 한 장을 만들어 <paramref name="outputFile"/>(PNG)에 복사한다. 취소하면 프로세스를 끝내고 <see cref="OperationCanceledException"/>,

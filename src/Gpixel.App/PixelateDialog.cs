@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Avalonia.Automation;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Gpixel.App.Localization;
@@ -54,9 +55,18 @@ public sealed class PixelateOptions
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Legacy { get; set; }
 
-    /// <summary>보통 후보를 잴 점수 기준·AI 그리기의 자동 최적화: 체크한 첫 프리셋(없으면 첫 프리셋). <see cref="Migrate"/> 뒤에만 쓴다.</summary>
+    /// <summary>AI 생성 그림을 변환할 대표 프리셋. 체크 여부는 정리 창의 일괄 최적화에만 적용한다.</summary>
     [JsonIgnore]
-    public OptimizePreset PrimaryPreset => OptimizePresets.FirstOrDefault(p => p.Enabled) ?? OptimizePresets[0];
+    public OptimizePreset PrimaryPreset => OptimizePresets.FirstOrDefault(p => p.Representative)
+        ?? OptimizePresets.FirstOrDefault(p => p.BuiltIn == "oklch1000")
+        ?? OptimizePresets[0];
+
+    /// <summary>대표 프리셋은 목록에서 정확히 하나만 유지한다.</summary>
+    public void SetRepresentative(OptimizePreset preset)
+    {
+        if (!OptimizePresets.Contains(preset)) throw new ArgumentException("Preset is not in the list.", nameof(preset));
+        foreach (var item in OptimizePresets) item.Representative = ReferenceEquals(item, preset);
+    }
 
     /// <summary>지금 옵션 판.</summary>
     public const int CurrentVersion = 7;
@@ -117,6 +127,7 @@ public sealed class PixelateOptions
         OptimizePresets.RemoveAll(p => p is null);
         if (OptimizePresets.Count == 0) OptimizePresets.AddRange(OptimizePreset.BuiltIns());
         OptimizePreset.LocalizeBuiltIns(OptimizePresets);
+        SetRepresentative(PrimaryPreset);
     }
 
     /// <summary><see cref="Migrate(string?, string?)"/>에 이 앱의 마지막 단계 설정과 예전 수동 프리셋 파일을 넘긴다(모든 호출은 이것으로).</summary>
@@ -225,6 +236,8 @@ public sealed class OptimizePreset
     /// </summary>
     public string? BuiltIn { get; set; }
     public bool Enabled { get; set; } = true;
+    /// <summary>AI 생성 그림 변환에 사용할 대표 프리셋(일괄 최적화 체크와 무관).</summary>
+    public bool Representative { get; set; }
     public bool Favorite { get; set; }
     /// <summary>시작 단계 설정 JSON(<see cref="PixelatePresets.SerializeSettings"/> — 고정 색·뺀 색은 넣지 않음). null = 기본 설정.</summary>
     public string? Settings { get; set; }
@@ -288,6 +301,7 @@ public sealed class OptimizePreset
         copy.Name = name;
         copy.BuiltIn = null;
         copy.Favorite = false;
+        copy.Representative = false;
         return copy;
     }
 
@@ -407,6 +421,7 @@ public sealed class OptimizePreset
             }
             else
             {
+                builtIn.Representative = presets[index].Representative;
                 builtIn.Favorite = presets[index].Favorite;
                 presets[index] = builtIn;
                 if (plain) insertAt = Math.Max(insertAt, index + 1);
@@ -2610,8 +2625,8 @@ public sealed class PixelateDialog : DialogBase
     private sealed record OptimizedTile(OptimizePreset Preset, string Name, OptimizeStop Reason);
 
     /// <summary>
-    /// 자동 최적화 설정 창: 자동 최적화를 누르면 함께 돌릴 프리셋 체크 목록(프리셋의 값은 왼쪽 설정 칸에서 고침), 고른 줄의 마지막 시도 기록,
-    /// '불러오면 자동 최적화'. 도는 동안은 체크를 바꿀 수 없다. 닫으면 설정 파일에 저장한다.
+    /// 자동 최적화 설정 창: 일괄 최적화 체크와 AI 그림 변환의 대표 프리셋, 마지막 시도 기록,
+    /// '불러오면 자동 최적화'. 도는 동안은 선택을 바꿀 수 없다. 닫으면 설정 파일에 저장한다.
     /// </summary>
     private void OpenOptimizeSettings()
     {
@@ -2640,7 +2655,20 @@ public sealed class PixelateDialog : DialogBase
                 preset.Enabled = check.On();
                 UpdateOptimizeButtons();
             };
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { check } };
+            var representative = new RadioButton
+            {
+                GroupName = "pixelate-ai-representative",
+                IsChecked = ReferenceEquals(preset, _opt.PrimaryPreset),
+                VerticalAlignment = VerticalAlignment.Center,
+            }.Tip(UiStrings.OptimizePreset_RepresentativeTip);
+            AutomationProperties.SetName(representative, $"{UiStrings.OptimizePreset_Representative}: {preset.Name}");
+            representative.IsCheckedChanged += (_, _) =>
+            {
+                if (representative.IsChecked != true) return;
+                _opt.SetRepresentative(preset);
+                _settings.Save();
+            };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { check, representative } };
             row.Children.Add(new TextBlock { Text = preset.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
             list.Items.Add(new ListBoxItem { Content = row, Tag = preset });
         }
@@ -2682,7 +2710,7 @@ public sealed class PixelateDialog : DialogBase
         };
         _optPresetList = list;
         _optSettingsWindow = popup;
-        if (list.ItemCount > 0) list.SelectedIndex = 0;
+        if (list.ItemCount > 0) list.SelectedIndex = _opt.OptimizePresets.IndexOf(_opt.PrimaryPreset);
         UpdateOptimizeButtons();
         FillOptimizeHistory();
         popup.Show(this);
@@ -3475,6 +3503,7 @@ public sealed class PixelateDialog : DialogBase
         if (Ui.Ask(this, UiStrings.FormatOptimizePreset_DeleteQuestion(name: preset.Name), UiStrings.OptimizePreset_Delete,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         _opt.OptimizePresets.Remove(preset);
+        _opt.SetRepresentative(_opt.PrimaryPreset);
         _current = null;
         _settings.Save();
         FillPresets();

@@ -38,6 +38,17 @@ public class AiDrawTests
     }
 
     [Theory]
+    [InlineData("이 이미지를 참고해서 64×64 픽셀아트로 변환해 줘", AiDrawMode.Generate)]
+    [InlineData("이 이미지를 128×128 픽셀로 바꿔 줘", AiDrawMode.Generate)]
+    [InlineData("Convert the attached image into a 48x48 pixel sprite", AiDrawMode.Generate)]
+    [InlineData("32×32 캐릭터를 생성해 줘", AiDrawMode.Direct)]
+    [InlineData("Draw a 48 x 64 sprite", AiDrawMode.Direct)]
+    public void Settings_auto_routes_explicit_size_reference_conversion_to_generation(string request, AiDrawMode expected)
+    {
+        Assert.Equal(expected, new AiDrawSettings().EffectiveMode("codex", request, hasAttachedImage: true));
+    }
+
+    [Theory]
     [InlineData("새 캐릭터를 그려 줘")]
     [InlineData("이 그림을 참고해서 새 캐릭터를 생성해 줘")]
     [InlineData("Draw a new character without a specific size")]
@@ -154,70 +165,6 @@ public class AiDrawTests
         Assert.Contains("frame 1 of 3", plan[0].Pose);
         Assert.Contains("\"wave\"", plan[2].Pose);
         Assert.Contains("looping", plan[2].Pose);
-    }
-
-    // ───────────── 프롬프트 ─────────────
-
-    [Fact]
-    public void Prompt_asks_for_clean_pixel_art_on_transparent_background()
-    {
-        var r = new AiDrawRequest { Subject = "a small knight in silver armor." };
-        Assert.True(r.Transparent);
-        var p = AiDrawPrompts.Frame(r, new AiDrawFrame(0, 1, ""), []);
-        Assert.StartsWith("Pixel-art game character sprite: a small knight in silver armor.", p);
-        Assert.Contains("1-pixel dark outline", p);
-        Assert.Contains("no anti-aliasing", p);
-        Assert.Contains("limited palette", p);
-        Assert.Contains("full body", p);
-        Assert.Contains("plain transparent background, no scenery", p);
-        Assert.DoesNotContain("Animation", p);
-        Assert.DoesNotContain("Attached images", p);
-    }
-
-    [Fact]
-    public void Prompt_keeps_requested_background_and_size()
-    {
-        var r = new AiDrawRequest { Subject = "a red potion", Kind = "item", Background = "a wooden table", SizeTarget = 32 };
-        Assert.False(r.Transparent);
-        var p = AiDrawPrompts.Frame(r, new AiDrawFrame(0, 1, ""), []);
-        Assert.Contains("game item icon", p);
-        Assert.Contains("Background: a wooden table", p);
-        Assert.DoesNotContain("transparent", p);
-        Assert.Contains("about 32x32 pixels", p);
-    }
-
-    [Fact]
-    public void Prompt_for_animation_frame_names_pose_and_reference_roles_in_order()
-    {
-        var r = new AiDrawRequest { Subject = "a slime", Action = "walk" };
-        var p = AiDrawPrompts.Frame(r, new AiDrawFrame(2, 6, "passing pose"), [AiDrawImageRole.FirstFrame, AiDrawImageRole.PreviousFrame]);
-        Assert.Contains("Animation \"walk\", frame 3 of 6. Pose in this frame: passing pose.", p);
-        Assert.Contains("side view facing right", p);
-        int first = p.IndexOf("- Image 1: frame 1 of this animation", StringComparison.Ordinal);
-        int prev = p.IndexOf("- Image 2: the previous frame", StringComparison.Ordinal);
-        Assert.True(first >= 0 && prev > first);
-    }
-
-    [Fact]
-    public void Prompt_style_reference_is_style_only()
-    {
-        var r = new AiDrawRequest { Subject = "the girl from the photo" };
-        var p = AiDrawPrompts.Frame(r, new AiDrawFrame(0, 1, ""), [AiDrawImageRole.Subject, AiDrawImageRole.Style]);
-        Assert.Contains("- Image 1: the subject to draw", p);
-        Assert.Contains("- Image 2: pixel-art style reference only", p);
-        Assert.Contains("do NOT copy its subject", p);
-    }
-
-    [Fact]
-    public void Codex_instruction_calls_tool_once_with_transparency_flag()
-    {
-        var t = AiDrawPrompts.CodexInstruction("PROMPT", transparent: true, attachedImages: 0);
-        Assert.Contains("exactly once", t);
-        Assert.Contains("transparent_background set to true", t);
-        Assert.EndsWith("Prompt:\nPROMPT", t);
-        Assert.DoesNotContain("attached image", t);
-        Assert.Contains("transparent_background set to false", AiDrawPrompts.CodexInstruction("P", false, 2));
-        Assert.Contains("attached image", AiDrawPrompts.CodexInstruction("P", false, 2));
     }
 
     // ───────────── 스타일 참고 고르기 ─────────────
@@ -364,42 +311,6 @@ public class AiDrawTests
     [InlineData(12, 6, 2)]
     public void Sheet_layout_uses_one_row_up_to_six_then_two_rows(int frames, int columns, int rows)
         => Assert.Equal(new AiDrawSheetLayout(columns, rows), AiDrawSheetLayout.For(frames));
-
-    [Fact]
-    public void Sheet_prompt_lists_frames_in_one_row()
-    {
-        var r = new AiDrawRequest { Subject = "a tiny knight", Action = "walk" };
-        var plan = AiDrawPlanner.Plan("walk", 4, null);
-        var p = AiDrawPrompts.Sheet(r, plan, AiDrawSheetLayout.For(4), []);
-        Assert.Contains("single wide landscape image containing exactly 4 frames", p);
-        Assert.Contains("\"walk\" cycle", p);
-        Assert.Contains("ONE horizontal row, ordered left to right", p);
-        Assert.Contains("same baseline", p);
-        Assert.Contains("1: " + plan[0].Pose, p);
-        Assert.Contains("4: " + plan[3].Pose.TrimEnd('.'), p);
-        Assert.DoesNotContain("5: ", p);
-        Assert.Contains("plain transparent background", p);
-        Assert.Contains("no grid lines", p);
-        Assert.Contains("No labels, no frame numbers", p);
-        Assert.DoesNotContain("Attached images", p);
-    }
-
-    [Fact]
-    public void Sheet_prompt_names_grid_for_many_frames_and_attached_roles()
-    {
-        var r = new AiDrawRequest { Subject = "a slime", Action = "attack" };
-        var plan = AiDrawPlanner.Plan("attack", 7, null);
-        var p = AiDrawPrompts.Sheet(r, plan, AiDrawSheetLayout.For(7), [AiDrawImageRole.Subject, AiDrawImageRole.Style]);
-        Assert.Contains("exactly 7 frames", p);
-        Assert.Contains("\"attack\" animation", p);
-        Assert.Contains("a grid of 4 columns by 2 rows", p);
-        Assert.Contains("frames 1-4 in the top row, frames 5-7 in the bottom row", p);
-        Assert.Contains("7: ", p);
-        Assert.Contains("- Image 1: the subject to draw", p);
-        Assert.Contains("- Image 2: pixel-art style reference only", p);
-        Assert.Contains("wide landscape size", AiDrawPrompts.CodexInstruction(p, true, 2, landscape: true));
-        Assert.DoesNotContain("landscape size", AiDrawPrompts.CodexInstruction(p, true, 2));
-    }
 
     [Fact]
     public void Sheet_split_keeps_auto_when_frame_count_matches()

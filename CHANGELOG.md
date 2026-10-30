@@ -3,6 +3,21 @@
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
 ## v1.14.60 (2026-10-30)
+### AI pixel size and reference conversion
+- When the user does not specify a pixel size, Codex chooses a logical square sprite size in English before generation, from the attached reference or the subject description. An explicitly requested size or enabled fixed-result setting takes precedence.
+- The generation prompt starts with the selected size and repeats it in the style, composition and pixel-grid rules; sprite sheets apply that size per frame.
+- Codex Auto also converts attached-image requests with an explicit size; the prompt preserves the reference subject and pose.
+
+### Representative preset for AI conversion
+- Select one representative preset in Auto Optimize Settings; OKLCH1000 is the initial choice, independent of the presets checked for batch optimization.
+- AI-generated images use that preset's saved conversion settings, optimization sections, budget and scoring criteria; an explicit output-size target still takes precedence.
+
+### AI chat prompts, choices, and notifications
+- Image generation adds a collapsed card showing the request; expand it to inspect the exact prompt sent to Codex, including after reopening a chat.
+- When the AI needs a decision, choose one of its options, type another answer, or cancel directly above the chat input. Cancelling never silently selects an option.
+- If generated art is larger than the open canvas, choose to expand the canvas or position a crop in a preview before insertion. Cancelling leaves the document unchanged.
+- AI questions and finished turns send system notifications on Windows and macOS when notifications are available.
+
 ### Edit and apply sprite-sheet frames
 - The source preview shows numbered frame boundaries. Drag a frame to move it or an edge or corner to resize it; the edited regions feed into the next pixel cleanup and can be saved in presets.
 - A source image is split once when loaded or replaced. Changing the split mode or grid dimensions leaves the current frames in place until **Apply frame split** is clicked; dragging a frame boundary applies it immediately.

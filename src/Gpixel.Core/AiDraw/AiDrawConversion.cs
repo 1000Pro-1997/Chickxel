@@ -71,9 +71,9 @@ public static class AiDrawConversion
     }
 
     /// <summary>
-    /// 변환 설정: <paramref name="baseline"/>에 프레임 나누기(여럿이면 가로 <paramref name="frames"/>칸, 하나면 나누지 않음 — 공통 캔버스, 공유 팔레트),
-    /// 맞추기(<paramref name="keepOffsets"/> = 칸 안 원래 자리 — 점프처럼 높이가 바뀌는 동작, 아니면 아래 가운데), 배경 지우기,
-    /// 결과 크기(0 = 찾은 격자 그대로, 아니면 그 크기 안에 맞춤)를 넣는다. 외곽선 1px 맞추기 등 나머지는 그대로.
+    /// 대표 프리셋의 시작 설정(<paramref name="baseline"/>)에 생성 그림의 프레임 나누기(여럿이면 가로 <paramref name="frames"/>칸, 하나면 나누지 않음 —
+    /// 공통 캔버스, 공유 팔레트), 맞추기(<paramref name="keepOffsets"/> = 칸 안 원래 자리, 아니면 아래 가운데), 배경 지우기를 적용한다.
+    /// 결과 크기(<paramref name="sizeTarget"/>)가 있으면 그 정사각형 안에 맞추고, 없으면 대표 프리셋의 결과 크기 설정을 따른다.
     /// </summary>
     public static PixelateSettings Settings(PixelateSettings baseline, int frames, int sizeTarget, bool removeBackground, bool keepOffsets)
     {
@@ -87,7 +87,7 @@ public static class AiDrawConversion
         };
         return sizeTarget > 0
             ? s with { Size = s.Size with { Mode = OutputSizeMode.FixedSize, Width = sizeTarget, Height = sizeTarget, KeepAspect = true } }
-            : s with { Size = s.Size with { Mode = OutputSizeMode.FromScale } };
+            : s;
     }
 
     /// <summary>
