@@ -356,12 +356,16 @@ internal static class PixelateShots
         Pair("pixelate-settings-6", 12, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
     }
 
-    // 후보와 점수: 후보 칸·방식 이름·점수·점수 내역(①~④), 후보 풍선의 점수 내역(⑤).
+    // 후보와 점수: 후보 칸·방식 이름·프리셋 이름·점수 내역(①~④)과 체크했지만 돌리지 않은 프리셋 칸(⑤), 후보 풍선의 점수 내역(⑥).
     [Shot("pixelate-candidates")]
     public static void Candidates(ShotKit k)
     {
         var dlg = PixelateKit.Open(k, expanded: false);
         ShotKit.Call(dlg, "StopPlayback");
+        // 설정 창에서 프리셋 하나를 더 체크한 모습: 후보 줄 끝에 "돌리지 않음" 칸이 생긴다.
+        var idlePreset = App.Settings.Pixelate!.OptimizePresets.First(p => !p.Enabled && p.Sections != 0);
+        idlePreset.Enabled = true;
+        ShotKit.Call(dlg, "RebuildTiles");
         k.Settle(600);
 
         var info = ShotKit.Get<TextBlock>(dlg, "_selectedInfo");
@@ -369,26 +373,29 @@ internal static class PixelateShots
         var tiles = ShotKit.Get<WrapPanel>(dlg, "_tiles");
         var scroll = tiles.FindAncestorOfType<ScrollViewer>()!;
         var tileList = tiles.Children.OfType<Border>().ToList();
-        TextBlock Line(Border tile, int i) => ((StackPanel)tile.Child!).Children.OfType<TextBlock>().ElementAt(i);
-        var thin = tileList.FirstOrDefault(t => Line(t, 2).Text == UiStrings.Pixelate_Fit_Thin) ?? tileList[Math.Min(3, tileList.Count - 1)];
-        var title = Line(tileList[0], 0);
+        List<TextBlock> Lines(Border tile) => [.. ((StackPanel)tile.Child!).Children.OfType<TextBlock>()];
+        // 결과 칸: 이름 · 색 수와 크기 · 외곽선 맞추기 방식 (· 까닭과 점수). 아직 돌리지 않은 칸은 이름 · "돌리지 않음"뿐.
+        var results = tileList.Where(t => Lines(t).Count >= 3).ToList();
+        var idle = tileList.Last(t => Lines(t).Count < 3);
+        var thin = results.FirstOrDefault(t => Lines(t)[2].Text == UiStrings.Pixelate_Fit_Thin) ?? results[0];
+        var title = Lines(results[0])[0];
         var area = PixelateKit.Union(dlg, info, breakdown, scroll);
         k.Save(dlg, "pixelate-candidates-2", crop: new Rect(area.X - 40, area.Y - 4, area.Width + 48, area.Height + 12),
-            marks: [scroll, PixelateKit.LeftBox(Line(thin, 2), dlg), PixelateKit.LeftBox(title, dlg), PixelateKit.LeftBox(breakdown, dlg, 26, 1)]);
+            marks: [scroll, PixelateKit.LeftBox(Lines(thin)[2], dlg), PixelateKit.LeftBox(title, dlg), PixelateKit.LeftBox(breakdown, dlg, 26, 1), PixelateKit.Box(idle, dlg, 2)]);
 
         // 후보 칸 풍선(점수 항목별 내역).
-        var tip = tileList[1];
+        var tip = results[Math.Min(1, results.Count - 1)];
         k.Hover(dlg, ShotKit.Center(tip, dlg), 200);
         ToolTip.SetIsOpen(tip, true);
         k.Settle(600);
         var popup = PixelateKit.LastOpenPopup();
         var pr = PixelateKit.PopupBounds((Control)popup.Child!, dlg);
         var tr = ShotKit.Bounds(tip, dlg);
-        k.Save(dlg, "pixelate-candidates-3", crop: pr.Union(tr).Inflate(16), marks: [pr], firstNumber: 5);
+        k.Save(dlg, "pixelate-candidates-3", crop: pr.Union(tr).Inflate(16), marks: [pr], firstNumber: 6);
         ToolTip.SetIsOpen(tip, false);
     }
 
-    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중(⑦⑧), 자동 최적화 설정 창(⑨~⑪).
+    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중의 취소·진행·프리셋 칸(⑦~⑩), 자동 최적화 설정 창(⑪~⑮), 0. 최적화 기준과 칸별 최적화 체크(⑯⑰).
     [Shot("pixelate-optimize")]
     public static void Optimize(ShotKit k)
     {
@@ -405,15 +412,18 @@ internal static class PixelateShots
         var breakdown = ShotKit.Get<TextBlock>(dlg, "_breakdown");
         breakdown.Opacity = 0; // 바로 위 점수 내역 줄 끝이 잘려 보이지 않게.
 
-        // 도는 중: 취소 단추와 진행 한 줄.
-        ShotKit.Call(dlg, "StartOptimize", null, null);
+        // 도는 중: 취소 단추, 진행 한 줄, 도는 프리셋 칸(노란 테두리)과 기다리는 프리셋 칸.
+        ShotKit.Call(dlg, "StartOptimize");
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 20000 && ShotKit.Get<int>(dlg, "_optDone") < 40 && ShotKit.Get<object?>(dlg, "_optCts") is not null) k.Settle(50);
         if (ShotKit.Get<object?>(dlg, "_optCts") is null) throw new InvalidOperationException("optimize finished before the running shot");
-        var barRect = ShotKit.Bounds(bar, dlg);
+        var pending = tiles.Children.OfType<Border>().ToList();
+        if (pending.Count < 2) throw new InvalidOperationException("expected a running and a waiting preset tile");
+        var runningArea = ShotKit.Bounds(bar, dlg).Union(ShotKit.Bounds(scroll, dlg));
         var progress = PixelateKit.TextRect(text, dlg);
-        k.Save(dlg, "pixelate-optimize-2", crop: new Rect(barRect.X - 6, barRect.Y - 32, progress.Right + 24 - barRect.X, barRect.Height + 40),
-            marks: [PixelateKit.UpBox(run, dlg), PixelateKit.UpBox(graph, dlg), new Rect(progress.X, progress.Y - 12, progress.Width, progress.Height + 12)], firstNumber: 7);
+        k.Save(dlg, "pixelate-optimize-2", crop: new Rect(runningArea.X - 24, runningArea.Y - 32, runningArea.Width + 30, runningArea.Height + 38),
+            marks: [PixelateKit.UpBox(run, dlg), new Rect(progress.X, progress.Y - 12, progress.Width, progress.Height + 12), PixelateKit.Box(pending[0], dlg, 2), PixelateKit.Box(pending[1], dlg, 2)],
+            firstNumber: 7);
 
         PixelateKit.WaitOptimize(k, dlg);
         var optimized = tiles.Children.OfType<Border>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Foreground == AppTheme.AccentBrush))
@@ -431,7 +441,7 @@ internal static class PixelateShots
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
-        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·시도 기록(펼침)·불러오면 자동 최적화.
+        // 자동 최적화 설정 창: 돌릴 프리셋 체크 목록·대표 단추·시도 기록(펼침)·불러오면 자동 최적화·초기화.
         ShotKit.Call(dlg, "OpenOptimizeSettings");
         k.Settle(800);
         var win = ShotKit.Get<Window>(dlg, "_optSettingsWindow");
@@ -441,16 +451,36 @@ internal static class PixelateShots
         history.IsExpanded = true;
         k.Settle(600);
         var presetList = ShotKit.Get<ListBox>(dlg, "_optPresetList");
+        var badge = ShotKit.All<Button>(presetList).First(b => b.Content as string == UiStrings.OptimizePreset_RepresentativeBadge && ReferenceEquals(b.Background, AppTheme.SavedBrush));
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
+        var reset = ShotKit.Get<Button>(dlg, "_optResetButton");
         k.Save(win, "pixelate-optimize-3", marks:
         [
             PixelateKit.Box(presetList, win, 2),
+            PixelateKit.Box(badge, win, 2),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
-        ], firstNumber: 9);
+            PixelateKit.UpBox(reset, win, 10),
+        ], firstNumber: 11);
+        win.Close();
+        k.Settle(400);
+
+        // 설정 칸: 0. 최적화 기준(펼침)과 그 아래 단계 머리의 최적화 체크.
+        ShotKit.Call(dlg, "SetSettingsExpanded", true, false);
+        k.Settle(800);
+        PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Criteria);
+        var criteria = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Criteria);
+        PixelateKit.ScrollToTop(k, criteria);
+        var background = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Background);
+        var toggle = ShotKit.Get<System.Collections.IDictionary>(dlg, "_sectionToggles").Values.OfType<CheckBox>()
+            .First(c => ReferenceEquals(c.FindAncestorOfType<Expander>(), background));
+        var sections = ShotKit.Bounds(criteria, dlg).Union(ShotKit.Bounds(background, dlg));
+        var view = ShotKit.Bounds(criteria.FindAncestorOfType<ScrollViewer>()!, dlg);
+        k.Save(dlg, "pixelate-optimize-4", crop: new Rect(view.X - 8, sections.Y - 14, view.Width + 16, Math.Min(sections.Bottom, view.Bottom) - sections.Y + 24),
+            marks: [criteria, PixelateKit.Box(toggle, dlg, 2)], firstNumber: 16);
     }
 
-    // 원본과 미리보기: 전체 창(①~⑤), 원본 아래 막대(⑥~⑩), 칸 경계 지역 보정(⑪), 색 견본(⑫~⑭), 배경 남기기 설정(⑮⑯), 크게 보기(⑰~⑳).
+    // 원본과 미리보기: 전체 창(①~⑤), 원본 아래 막대(⑥~⑩), 칸 경계 지역 보정(⑪), 색 견본(⑫~⑭), 배경 남기기 설정(⑮⑯), 크게 보기와 색 판정 줄(⑰~㉑).
     [Shot("pixelate-view")]
     public static void View(ShotKit k)
     {
@@ -512,7 +542,7 @@ internal static class PixelateShots
         ShotKit.Call(dlg, "RestoreAllColors");
         k.Settle(400);
 
-        // 크게 보기: 결과 칸·원본 칸·격자 보기 단추·색 견본.
+        // 크게 보기: 결과 칸·원본 칸·격자 보기 단추·색 견본, 결과 픽셀을 좌클릭해 연 색 판정 줄.
         ShotKit.Call(dlg, "OpenZoom");
         k.Settle(800);
         var zoom = ShotKit.Get<Control>(dlg, "_zoom");
@@ -522,12 +552,20 @@ internal static class PixelateShots
         var right = ShotKit.Get<Rect>(pair, "RightPane").Translate(origin);
         var gridButton = ShotKit.Get<ToggleButton>(zoom, "GridButton");
         var zoomColors = ShotKit.Get<Control>(dlg, "_zoomColors");
+        var frameIndex = ShotKit.Get<int>(preview, "Index");
+        var frameImage = ShotKit.Get<PixelImage>(preview, "FrameImage");
+        var (px, py) = (frameImage.Width / 2, frameImage.Height * 2 / 5);
+        while (py < frameImage.Height - 1 && frameImage[px, py].A == 0) py++;
+        ShotKit.Call(dlg, "OnResultPixel", frameIndex, px, py);
+        k.Settle(3000);
+        var trace = ShotKit.Get<Control>(dlg, "_trace");
         k.Save(dlg, "pixelate-view-6", marks:
         [
             new Rect(left.X - 14, left.Y, left.Width - 6, left.Height),
             new Rect(right.X - 14, right.Y, right.Width + 14, right.Height),
             PixelateKit.Box(gridButton, dlg, 2),
             PixelateKit.LeftBox(zoomColors, dlg, 12),
+            PixelateKit.LeftBox(trace, dlg, 12),
         ], firstNumber: 17);
         ShotKit.Call(dlg, "CloseZoom");
         k.Settle(300);

@@ -332,6 +332,35 @@ internal static class ToolsShots
         pattern.IsDropDownOpen = false;
     }
 
+    [Shot("tools-shape")]
+    public static void Shape(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "도형");
+        var ctx = ToolFileHelp.Ctx(m);
+        // 1: 별 + 채움 — ① 모양 단추(채움이면 아이콘도 채워짐) ② 그리는 법 안내 ③ 뿔 수 ④ 채움.
+        ctx.ShapeKind = ShapeKind.Star;
+        ctx.ShapeFilled = true;
+        k.Settle(300);
+        var buttons = ShotKit.Get<Button[]>(ToolFileHelp.Options(m), "_shapeButtons");
+        var wrap = R(m, (Control)buttons[0].Parent!);
+        var hint = Opt<TextBlock>(m, "_shapeHint");
+        var filled = Opt<CheckBox>(m, "_shapeFilled");
+        k.Save(m, crop: OptionsUpTo(m, Opt<Control>(m, "_optionsBox")), marks:
+        [
+            Lead(wrap, 4, 0),
+            Lead(m, hint, 18, 0),
+            Lead(m, Opt<Control>(m, "_starRow"), 4, 0),
+            Lead(m, filled),
+        ]);
+
+        // 2: 선 — ⑤ 픽셀 잇기(대각선 / ㄱ자).
+        ctx.ShapeKind = ShapeKind.Line;
+        k.Settle(300);
+        k.Save(m, "tools-shape-2", crop: OptionsUpTo(m, Opt<Control>(m, "_shapeBox")),
+            marks: [Lead(m, Opt<Control>(m, "_lineStepsRow"), 4, 0)], firstNumber: 5);
+    }
+
     [Shot("tools-fill")]
     public static void Fill(ShotKit k)
     {
@@ -481,7 +510,9 @@ internal static class ToolsShots
             var buttons = Union(ShotKit.Bounds(ShotKit.Get<Control>(w, "_favorite"), w), ShotKit.Bounds(ShotKit.Get<Control>(w, "_rename"), w),
                 ShotKit.Bounds(ShotKit.Get<Control>(w, "_delete"), w));
             var detail = Union(ShotKit.Bounds(ShotKit.Get<Control>(w, "_preview"), w), ShotKit.Bounds(ShotKit.Get<Control>(w, "_editor"), w));
-            k.Save(w, "tools-gradient-3", marks: [list, buttons, detail, ShotKit.Get<Control>(w, "_save")], firstNumber: next);
+            // ⑰ 목록 밑 에셋 관리자 단추(그라데이션만 거른 에셋 관리자를 연다)
+            var manager = ShotKit.All<Button>(w).First(b => b.IsEffectivelyVisible && ShotKit.All<TextBlock>(b).Any(t => t.Text == UiStrings.Assets_ManagerButton));
+            k.Save(w, "tools-gradient-3", marks: [list, buttons, detail, ShotKit.Get<Control>(w, "_save"), manager], firstNumber: next);
         }, settleMs: 700);
     }
 

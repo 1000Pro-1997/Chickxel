@@ -52,10 +52,14 @@ internal sealed class AiChat
         var chat = new AiChat(k, main, window, mcp);
         ShotKit.Call(window, "ShowChatWithoutCli", new Func<AiProvider, IChatSession>(p =>
         {
-            var s = new ScriptSession(mcp.Tools);
+            var s = new ScriptSession(mcp.Tools) { ToolTiming = (id, elapsed) => chat.FakeToolTime(p.Id, id, elapsed) };
             chat.Sessions[p.Id] = s;
             return s;
         }));
+        // 보낼 때·탭을 켤 때 CLI 경로가 바뀌었으면 다시 확인해 진짜 CLI 세션으로 바꾸므로(이 컴퓨터에 CLI가 깔려 있으면 대본 대신 실제 모델에 보냄),
+        // 탭이 아는 경로를 지금 찾아지는 경로로 맞춘다.
+        foreach (var id in new[] { Claude, Codex })
+            ShotKit.Set(chat.Tab(id), "_cliPath", ShotKit.Get<AiProvider>(chat.Tab(id), "Provider").Locate(settings));
         ShotKit.Set(main, "_chat", window);
         window.Show(main);
         k.Settle(500);
@@ -112,6 +116,17 @@ internal sealed class AiChat
         ShotKit.Set(tab, "_phaseStart", DateTime.UtcNow - phase);
         ShotKit.Call(tab, "UpdateProgress");
         _k.Settle(100);
+    }
+
+    /// <summary>도는 도구 호출 <paramref name="id"/>가 <paramref name="elapsed"/>만큼 걸린 것처럼 시작 시각을 당긴다(결과 줄 끝의 걸린 시간).</summary>
+    public void FakeToolTime(string provider, string id, TimeSpan elapsed)
+    {
+        if (ShotKit.Get<object?>(Tab(provider), "_turn") is not { } turn) return;
+        var tools = ShotKit.Get<IDictionary>(turn, "Tools");
+        if (!tools.Contains(id)) return;
+        object entry = tools[id]!;
+        entry.GetType().GetField("Item4")!.SetValue(entry, System.Diagnostics.Stopwatch.GetTimestamp() - (long)(elapsed.TotalSeconds * System.Diagnostics.Stopwatch.Frequency));
+        tools[id] = entry;
     }
 
     /// <summary>열린 문서.</summary>
@@ -191,8 +206,8 @@ internal sealed class Script
 
     public Script Think(int chars = 400) { Steps.Add(s => s.Block("thinking", null, chars)); return this; }
 
-    /// <summary>진짜 AI 도구를 부른다(도구 줄 + 실행 + 결과).</summary>
-    public Script Tool(string name, JsonObject? args = null) { Steps.Add(s => s.RunTool(name, args ?? new JsonObject())); return this; }
+    /// <summary>진짜 AI 도구를 부른다(도구 줄 + 실행 + 결과, 결과 줄 끝에 <paramref name="seconds"/>초 걸린 것으로).</summary>
+    public Script Tool(string name, JsonObject? args = null, double seconds = 1) { Steps.Add(s => s.RunTool(name, args ?? new JsonObject(), seconds)); return this; }
 
     /// <summary>도구 줄만(실행하지 않음 — 그림 생성처럼 밖에서 결과를 넣을 때).</summary>
     public Script ToolLine(string name, JsonObject? args = null) { Steps.Add(s => s.ToolUseOnly(name, args ?? new JsonObject())); return this; }
@@ -220,6 +235,8 @@ internal sealed class ScriptSession(PixelTools tools) : IChatSession
     public bool Busy { get; private set; }
 
     public string? Model { get; set; }
+    /// <summary>도구 결과를 내기 직전에 부른다(호출 id, 걸린 것으로 보일 시간).</summary>
+    public Action<string, TimeSpan>? ToolTiming { get; set; }
     public string? WorkingDirectory { get; set; }
     public string? SessionId { get; private set; }
     public string? SessionDirectory => null;
@@ -246,6 +263,8 @@ internal sealed class ScriptSession(PixelTools tools) : IChatSession
         SessionId ??= Guid.NewGuid().ToString("N");
         _running.Clear();
         if (Next.TryDequeue(out var script)) foreach (var s in script.Steps) _running.Enqueue(s);
+        // 직접 찍기 차례 뒤 앱이 자동으로 보내는 전체 그림 검토: 대본이 따로 없으면 고칠 것 없이 끝낸다.
+        else if (text == AiCli.VisualReviewPrompt) _running.Enqueue(s => s.Complete(null, 0));
         Busy = true;
         Dispatcher.UIThread.Post(Run, DispatcherPriority.Background);
     }
@@ -277,7 +296,7 @@ internal sealed class ScriptSession(PixelTools tools) : IChatSession
         BlockProgress?.Invoke(chars);
     }
 
-    public void RunTool(string name, JsonObject args)
+    public void RunTool(string name, JsonObject args, double seconds)
     {
         var id = "t" + ++_toolId;
         BlockStarted?.Invoke("tool_use", name);
@@ -285,6 +304,7 @@ internal sealed class ScriptSession(PixelTools tools) : IChatSession
         var result = tools.Call(name, args);
         bool error = result["isError"]?.GetValue<bool>() == true;
         var text = result["content"] is JsonArray { Count: > 0 } c && c[0]?["text"]?.GetValue<string>() is { } t ? t : "";
+        ToolTiming?.Invoke(id, TimeSpan.FromSeconds(seconds));
         ToolResult?.Invoke(new ToolResultInfo(id, error, error ? text : ""));
     }
 

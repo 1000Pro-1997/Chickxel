@@ -230,7 +230,7 @@ internal static class StartShots
         });
     }
 
-    // 제보: ① 도움말 ② 제보·아이디어(Discord) ③ Chickxel 정보, 정보 창 ④ Discord ⑤ 문제 신고 ⑥ 버전.
+    // 제보: ① 도움말 ② 제보·아이디어(Discord) ③ Chickxel 정보, 정보 창 ④ Discord ⑤ 문제 신고 ⑥ 버전 ⑦ 개발자에게 커피 사주기.
     [Shot("start-feedback")]
     public static void Feedback(ShotKit k)
     {
@@ -257,6 +257,7 @@ internal static class StartShots
                 ShotKit.FindText(w, UiStrings.About_Discord, ancestorControl: true),
                 ShotKit.FindText(w, UiStrings.S_AboutDialog_AboutDialog_9A9BD8295A, ancestorControl: true),
                 versionRect,
+                ShotKit.FindText(w, UiStrings.About_BuyCoffee, ancestorControl: true),
             ]);
         });
     }

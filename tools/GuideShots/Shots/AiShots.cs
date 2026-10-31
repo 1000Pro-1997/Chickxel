@@ -56,7 +56,7 @@ internal static class AiShots
     /// <summary>지팡이 그리기(새 레이어 + 선·타원 — 여러 그리기 도구).</summary>
     private static Script StaffScript() => new Script()
         .Think(610)
-        .Tool("get_image")
+        .Tool("get_image", seconds: 3)
         .Tool("add_layer", new JsonObject { ["name"] = "Staff" })
         .Tool("draw_shape", new JsonObject { ["shape"] = "line", ["x1"] = 45, ["y1"] = 30, ["x2"] = 45, ["y2"] = 95, ["color"] = "#7A4A24" })
         .Tool("draw_shape", new JsonObject { ["shape"] = "line", ["x1"] = 46, ["y1"] = 31, ["x2"] = 46, ["y2"] = 95, ["color"] = "#5A3418" })
@@ -288,10 +288,12 @@ internal static class AiShots
 
         // ⑤⑥ 설치 단추를 누르면 실행할 명령을 묻는 창(가이드는 Windows 기준이라 Windows 명령으로 보인다).
         var macSteps = UiStrings.S_AiInstaller_Preview_91DCED206B;
+        var windowsSteps = UiStrings.S_AiInstaller_Preview_A6B5B3079B;
         k.Dialog(() => ShotKit.Call(tab, "StartInstall"), d =>
         {
-            var message = ShotKit.All<TextBlock>(d).First(t => t.Text?.Contains(macSteps, StringComparison.Ordinal) == true);
-            message.Text = message.Text!.Replace(macSteps, UiStrings.S_AiInstaller_Preview_A6B5B3079B, StringComparison.Ordinal);
+            var message = ShotKit.All<TextBlock>(d).First(t => t.Text?.Contains(macSteps, StringComparison.Ordinal) == true
+                || t.Text?.Contains(windowsSteps, StringComparison.Ordinal) == true);
+            message.Text = message.Text!.Replace(macSteps, windowsSteps, StringComparison.Ordinal);
             ShotKit.Pump(300);
             var ok = ShotKit.All<Button>(d).FirstOrDefault(b => b.IsDefault && b.IsEffectivelyVisible) ?? VisibleButton(d, "OK");
             k.Save(d, "ai-setup-2", marks: [Room(message, d, left: 14, up: 0), ok], firstNumber: 5);
@@ -326,9 +328,12 @@ internal static class AiShots
                 UiStrings.AiStatus_McpServerReady.Replace("{tools}", mcp.Tools.ListTools().Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal));
             var cards = ShotKit.Get<IDictionary>(dlg, "_cards");
             var claude = Activator.CreateInstance(healthType, AiProvider.Claude, @"%USERPROFILE%\.local\bin\claude.exe", "2.1.4 (Claude Code)", null,
-                new AuthStatus(true, "you@example.com", "max", null, null), Level("Info"), null)!;
+                new AuthStatus(true, "you@example.com", "max", null, null), Level("Ok"), null)!;
             var codex = Activator.CreateInstance(healthType, AiProvider.Codex, null, null, null, null, Level("Warning"), null)!;
             ShotKit.Call(cards["claude"]!, "Apply", claude);
+            // CLI 줄은 이 컴퓨터의 PATH를 읽으므로(사용자 경로가 보임) 보통 모습(PATH와 같은 실행 파일)으로 맞춘다.
+            ShotKit.Call(dlg, "SetStatus", ShotKit.Get<Control>(cards["claude"]!, "_cliIcon"), ShotKit.Get<TextBlock>(cards["claude"]!, "_cliText"), Level("Ok"),
+                UiStrings.AiStatus_VersionPath.Replace("{version}", "2.1.4 (Claude Code)", StringComparison.Ordinal).Replace("{path}", @"%USERPROFILE%\.local\bin\claude.exe", StringComparison.Ordinal));
             ShotKit.Call(cards["codex"]!, "Apply", codex);
             ShotKit.Get<ProgressBar>(dlg, "_progress").IsVisible = false;
             ShotKit.Get<TextBlock>(dlg, "_message").Text = UiStrings.AiStatus_CheckComplete;
@@ -336,8 +341,8 @@ internal static class AiShots
             ShotKit.Get<Button>(dlg, "OkButton").IsEnabled = true;
             ShotKit.Pump(400);
             TextBlock Line(string part) => ShotKit.All<TextBlock>(w).First(t => t.IsEffectivelyVisible && t.Text?.Contains(part, StringComparison.Ordinal) == true);
-            // 줄 앞의 상태 아이콘까지 담는다(번호가 글을 가리지 않게).
-            var claudeRows = Room(Union(w, 2, Line("2.1.4"), Line("you@example.com")), left: 22, up: 0);
+            // 줄 앞의 상태 아이콘까지 담는다(번호가 글을 가리지 않게). Claude Code: 실행·버전 · 로그인 · 실제 CLI 연결.
+            var claudeRows = Room(Union(w, 2, Line("2.1.4"), Line(UiStrings.AiStatus_McpConnected)), left: 22, up: 0);
             var codexRow = Room(Line(AiProvider.Codex.ProductName + " was not found"), w, left: 22, up: 0);
             k.Save(w, name, marks: [claudeRows, codexRow, ShotKit.Get<Button>(dlg, "OkButton")], firstNumber: firstNumber);
         });
@@ -409,19 +414,21 @@ internal static class AiShots
         ToolTip.SetIsOpen(chip, false);
         k.Settle(200);
 
-        // ⑫⑬ 칩을 누르면: 큰 그림과 "첨부 빼기".
+        // ⑫~⑭ 칩을 누르면: 큰 그림, "이미지 복사"·"이미지 저장…", "첨부 빼기".
         k.Click(chip, settleMs: 500);
         var flyout = OpenPopups().Last();
         var content = (Control)flyout.Child!;
-        var big = ShotKit.All<Image>(content).First();
-        var remove = ShotKit.All<Button>(content).First();
+        var big = ShotKit.All<Image>(content).OrderByDescending(i => i.Bounds.Width * i.Bounds.Height).First();
+        var copyImage = VisibleButton(content, UiStrings.Preview_Menu_CopyImage);
+        var saveImage = VisibleButton(content, UiStrings.Image_SaveMenu);
+        var remove = VisibleButton(content, UiStrings.S_ChatWindow_AddAttachment_1F581E4392);
         var flyRect = PopupRect(content, w);
         k.Save(w, "ai-chat-5", crop: inputArea.Union(flyRect.Inflate(10)).Intersect(new Rect(w.Bounds.Size)),
-            marks: [PopupRect(big, w), PopupRect(remove, w)], firstNumber: 12);
+            marks: [PopupRect(big, w), PopupRect(copyImage, w).Union(PopupRect(saveImage, w)), PopupRect(remove, w)], firstNumber: 12);
         flyout.IsOpen = false;
         k.Settle(200);
 
-        // ⑭ 보낸 메시지의 칩.
+        // ⑮ 보낸 메시지의 칩 ⑯ 말풍선 아래 메시지 글 복사 단추.
         chat.Sessions[Claude].Next.Enqueue(new Script()
             .Think(300)
             .Text("Sure — I'll draw a smiling version of this face as a new frame.")
@@ -430,10 +437,11 @@ internal static class AiShots
         k.Settle(600);
         var bubble = LastBubble(chat, Claude);
         var sentChip = ShotKit.All<Border>(bubble).First(b => b.Cursor is not null && ShotKit.All<TextBlock>(b).Any(t => t.Text == "#1"));
+        var copyText = ((Panel)LastUserRow(chat, Claude).Children[1]).Children[0];
         // ⑧ 답을 받는 동안의 정지 단추.
         chat.FakeElapsed(Claude, TimeSpan.FromSeconds(6), TimeSpan.FromSeconds(2));
         var stop = chat.Field<Button>(Claude, "_stopButton");
-        k.Save(w, "ai-chat-6", crop: Union(w, 30, bubble).Intersect(new Rect(w.Bounds.Size)), marks: [Room(sentChip, w, left: 16, up: 0)], firstNumber: 14);
+        k.Save(w, "ai-chat-6", crop: Union(w, 30, bubble, copyText).Intersect(new Rect(w.Bounds.Size)), marks: [Room(sentChip, w, left: 16, up: 0), Room(copyText, w, left: 16, up: 0)], firstNumber: 15);
         k.Save(w, "ai-chat-2", crop: Union(w, 8, chat.Field<TextBlock>(Claude, "_thinking"), chat.Input(Claude), stop), marks: [stop], firstNumber: 8);
     }
 
@@ -542,18 +550,19 @@ internal static class AiShots
         var codexStatus = ShotKit.Get<TextBlock>(w, "_codexStatus");
         codexStatus.Text = UiStrings.AiDraw_Codex_Ready;
         k.Settle(300);
+        var modeAuto = ShotKit.Get<RadioButton>(w, "_modeAuto");
         var modeGenerate = ShotKit.Get<RadioButton>(w, "_modeGenerate");
         var modeDirect = ShotKit.Get<RadioButton>(w, "_modeDirect");
-        var info = ((Panel)modeGenerate.GetVisualParent()!).Children[1];
+        var info = ((Panel)modeAuto.GetVisualParent()!).Children[1];
         var paletteRow = ShotKit.Get<Control>(w, "_paletteRow");
         var drawPanel = ShotKit.Get<Control>(w, "_drawPanel");
-        // ① 그리기 설정 단추 ② Codex CLI 상태 ③ 정보 아이콘 ④ 그림 생성 ⑤ 직접 찍기 ⑥ 팔레트 색만 사용.
+        // ① 그리기 설정 단추 ② Codex CLI 상태 ③ 정보 아이콘 ④ 자동 ⑤ 그림 생성 ⑥ 직접 찍기 ⑦ 팔레트 색만 사용.
         // 칸 안의 줄은 번호가 단추·글을 가리지 않게 왼쪽 여백 쪽으로 늘린다.
         k.Save(w, crop: new Rect(0, 0, w.Bounds.Width, ShotKit.Bounds(codexStatus, w).Bottom + 24), titleBar: true,
-            marks: [settingsButton, Room(codexStatus, w, left: 12, up: 0), Room(info, w, up: 12), Room(modeGenerate, w, left: 12, up: 0),
+            marks: [settingsButton, Room(codexStatus, w, left: 12, up: 0), Room(info, w, up: 12), Room(modeAuto, w, left: 12, up: 0), Room(modeGenerate, w, left: 12, up: 0),
                 Room(modeDirect, w, left: 12, up: 0), Room(paletteRow, w, left: 14, up: 0)]);
 
-        // ⑦~⑭ 생성 옵션(표 순서).
+        // ⑧~⑮ 생성 옵션(표 순서).
         modeGenerate.IsChecked = true;
         k.Settle(400);
         // 선택지 줄(이름 + 컨트롤) — 번호가 체크 상자·이름을 가리지 않게 왼쪽 여백 쪽으로 늘린다.
@@ -575,11 +584,11 @@ internal static class AiShots
             Row("_styleCombo"),
             Room(frameGrid, w, left: 12, up: 0),
             Row("_animCombo", 2),
-        ], firstNumber: 7);
+        ], firstNumber: 8);
         settingsButton.IsChecked = false;
         FinishPanel(k, w);
 
-        // ⑰⑱ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
+        // ⑱⑲ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
         var wolf = Wolf(chat);
         var host = (IAiHost)main;
         host.CreateProject(64, 112, null, null, out _);
@@ -606,9 +615,9 @@ internal static class AiShots
         var card = (Control)cardButton.GetVisualParent()!;
         var askRow = LastUserRow(chat, Codex);
         var cardCrop = Union(w, 10, askRow, card);
-        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, cardButton], firstNumber: 17);
+        k.Save(w, "ai-generate-4", crop: cardCrop.WithHeight(ShotKit.Bounds(card, w).Bottom + 8 - cardCrop.Y), marks: [card, cardButton], firstNumber: 18);
 
-        // ⑮⑯ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추.
+        // ⑯⑰ 애니메이션: 스프라이트 시트 한 장 생성 중인 진행 줄과 정지 단추.
         chat.Send(Codex, "Make a 4-frame walk animation of her", new Script()
             .Think(300)
             .ToolLine("generate_pixel_art", new JsonObject { ["prompt"] = "wolf-eared adventurer walk cycle", ["animation"] = "walk", ["frames"] = 4 })
@@ -619,9 +628,9 @@ internal static class AiShots
         var stop = chat.Field<Button>(Codex, "_stopButton");
         WidenGutter(k, chat, Codex);
         var progressArea = Union(w, 8, LastUserRow(chat, Codex), thinking, stop);
-        k.Save(w, "ai-generate-3", crop: new Rect(0, progressArea.Y, w.Bounds.Width, progressArea.Height), marks: [Room(thinking, w, left: Gutter - 2, up: 0), stop], firstNumber: 15);
+        k.Save(w, "ai-generate-3", crop: new Rect(0, progressArea.Y, w.Bounds.Width, progressArea.Height), marks: [Room(thinking, w, left: Gutter - 2, up: 0), stop], firstNumber: 16);
 
-        // ⑲ Claude 탭: 그림 생성 옆 빨간 경고 아이콘과 그 풍선.
+        // ⑳ Claude 탭: 그림 생성 옆 빨간 경고 아이콘과 그 풍선.
         chat.Show(Claude);
         settingsButton.IsChecked = true;
         FinishPanel(k, w);
@@ -632,8 +641,93 @@ internal static class AiShots
         var tip = TipRect(warning, w);
         var panelRect = ShotKit.Bounds(drawPanel, w);
         var crop = new Rect(panelRect.X - 8, 0, panelRect.Width + 8, ShotKit.Bounds(codexStatus, w).Bottom + 16).Union(tip.Inflate(8)).Intersect(new Rect(w.Bounds.Size));
-        k.Save(w, "ai-generate-5", crop: crop, marks: [warning], firstNumber: 19);
+        k.Save(w, "ai-generate-5", crop: crop, marks: [warning], firstNumber: 20);
         ToolTip.SetIsOpen(warning, false);
+    }
+
+    /// <summary>㉑㉒ 생성 프롬프트 카드: 붙인 그림을 48px 픽셀 아트로 바꿔 달라는 차례에서 생성 지시 전문을 펼친 모습.</summary>
+    [Shot("ai-generate-6")]
+    public static void GeneratePrompt(ShotKit k)
+    {
+        var main = k.Main(Sample(k));
+        var chat = AiChat.Open(k, main, Codex, 470, 720);
+        var w = chat.Window;
+        var tab = chat.Tab(Codex);
+        ShotKit.Call(tab, "AttachImage", Wolf(chat), true);
+        ShotKit.Call(tab, "Prefill", "Turn this character into 48px pixel art");
+        k.Settle(300);
+        var request = new AiDrawRequest { Subject = "the wolf-eared adventurer from Image 1", SizeTarget = 48 };
+        var instruction = AiDrawPrompts.CodexInstruction(
+            AiDrawPrompts.Frame(request, AiDrawPlanner.Plan(null, 1, null)[0], [AiDrawImageRole.Subject]), request.Transparent, 1);
+        chat.Sessions[Codex].Next.Enqueue(new Script()
+            .Think(300)
+            .ToolLine("generate_pixel_art", new JsonObject { ["subject"] = "the wolf-eared adventurer from Image 1", ["subject_image"] = 1, ["size"] = 48 })
+            .Do(() => ShotKit.Call(tab, "OnAiDrawPromptReady", instruction, 1, 1))
+            .Do(() => ShotKit.Call(tab, "OnAiDrawProgress", UiStrings.AiDraw_Progress_Image))
+            .Pause());
+        ShotKit.Call(tab, "Send");
+        k.Settle(600);
+        chat.FakeElapsed(Codex, TimeSpan.FromSeconds(18), TimeSpan.FromSeconds(12));
+        var expander = ShotKit.All<Expander>(chat.Messages(Codex)).Last();
+        expander.IsExpanded = true;
+        k.Settle(500);
+        var card = (Control)expander.GetVisualParent()!;
+        var header = (Control)expander.Header!;
+        var full = ShotKit.All<SelectableTextBlock>(expander).First(t => t.Text == instruction);
+        var crop = Union(w, 10, LastUserRow(chat, Codex), card);
+        k.Save(w, crop: crop.Intersect(new Rect(w.Bounds.Size)), marks: [Room(header, w, left: 14, up: 4), ShotKit.Bounds(full, w).Intersect(ShotKit.Bounds(card, w))], firstNumber: 21);
+    }
+
+    // ───────────── AI의 질문 ─────────────
+
+    [Shot("ai-questions")]
+    public static void Questions(ShotKit k)
+    {
+        var main = k.Main(Sample(k));
+        var chat = AiChat.Open(k, main, Codex, 470, 640);
+        var w = chat.Window;
+        var wolf = Wolf(chat);
+        ((IAiHost)main).CreateProject(32, 32, null, null, out _);
+        k.Settle(400);
+        var tab = chat.Tab(Codex);
+        chat.Send(Codex, "Draw a wolf-eared adventurer: silver hair, navy jacket", new Script()
+            .Think(300)
+            .ToolLine("generate_pixel_art", new JsonObject { ["subject"] = "wolf-eared adventurer, silver hair, navy jacket", ["name"] = "Wolf adventurer" })
+            .Do(() => ShotKit.Call(tab, "OnAiDrawProgress", UiStrings.AiDraw_Progress_Converting))
+            .Pause());
+        // 생성 그림(49×98)이 열린 캔버스(32×32)보다 커서 넣기 전에 묻는 질문.
+        var question = UiStrings.AiDraw_Insert_Question.Replace("{width}", "49", StringComparison.Ordinal).Replace("{height}", "98", StringComparison.Ordinal)
+            .Replace("{canvasWidth}", "32", StringComparison.Ordinal).Replace("{canvasHeight}", "32", StringComparison.Ordinal);
+        using var cts = new CancellationTokenSource();
+        string[] options = [UiStrings.AiDraw_Insert_Expand, UiStrings.AiDraw_Insert_Crop];
+        _ = ShotKit.Call(tab, "AskQuestionAsync", question, options, cts.Token);
+        chat.FakeElapsed(Codex, TimeSpan.FromSeconds(64), TimeSpan.FromSeconds(3));
+        k.Settle(500);
+        var panel = (Control)chat.Field<Panel>(Codex, "_questionHost").Children[0];
+        var text = ShotKit.All<TextBlock>(panel).First(t => t.Text == question);
+        // ① 질문 ② 선택지 ③ 직접 입력 ④ 취소.
+        k.Save(w, marks:
+        [
+            Room(text, w, left: 14, up: 0),
+            Union(w, 1, VisibleButton(panel, UiStrings.AiDraw_Insert_Expand), VisibleButton(panel, UiStrings.AiDraw_Insert_Crop)),
+            VisibleButton(panel, UiStrings.AiQuestion_Other),
+            VisibleButton(panel, UiStrings.AiQuestion_Cancel),
+        ]);
+        cts.Cancel();
+        k.Settle(300);
+
+        // ⑤~⑦ 자를 위치 고르기: 원본 미리보기의 밝은 테두리(남길 32×32), 남길 크기·위치, 이 영역 사용.
+        var dlgType = typeof(ChatWindow).Assembly.GetType("Chickxel.App.Ai.AiCropDialog")!;
+        var dlg = (DialogBase)Activator.CreateInstance(dlgType, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [wolf, 32, 32], null)!;
+        k.Dialog(() => dlg.ShowDialog(main), d =>
+        {
+            var preview = ShotKit.Get<Control>(dlg, "_preview");
+            ShotKit.Call(preview, "SetOrigin", 9, 6);
+            ShotKit.Pump(300);
+            var position = string.Format(CultureInfo.CurrentCulture, UiStrings.AiCrop_Position, 32, 32, 9, 6);
+            var positionText = ShotKit.All<TextBlock>(d).First(t => t.Text == position);
+            k.Save(d, "ai-questions-2", marks: [preview, Room(positionText, d, left: 14, up: 0), ShotKit.Get<Button>(dlg, "OkButton")], firstNumber: 5);
+        });
     }
 
     // ───────────── 지금 그림만 · 잠긴 레이어 · 진행 ─────────────
