@@ -23,6 +23,10 @@ public enum CommunityErrorCode
     TooLarge,
     /// <summary>요청이 너무 잦음(429 <c>rate_limited</c> — <see cref="CommunityException.RetryAfter"/>).</summary>
     RateLimited,
+    /// <summary>올리면 내 저장 공간 한도를 넘음(413 <c>quota_exceeded</c>).</summary>
+    QuotaExceeded,
+    /// <summary>사이트 저장 공간이 가득 차 올리기가 멈춤(507 <c>storage_full</c>).</summary>
+    StorageFull,
     /// <summary>서버 문제나 앱이 모르는 오류.</summary>
     Server,
     /// <summary>연결 실패.</summary>
@@ -88,6 +92,8 @@ public sealed class CommunityException(CommunityErrorCode code, int status = 0, 
         "conflict" => CommunityErrorCode.Conflict,
         "too_large" => CommunityErrorCode.TooLarge,
         "rate_limited" => CommunityErrorCode.RateLimited,
+        "quota_exceeded" => CommunityErrorCode.QuotaExceeded,
+        "storage_full" => CommunityErrorCode.StorageFull,
         _ => status switch
         {
             401 => CommunityErrorCode.Unauthorized,
