@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Headless;
-using Gpixel.App;
+using Chickxel.App;
 
 namespace GuideShots;
 
@@ -10,7 +10,7 @@ namespace GuideShots;
 /// 진입점: <c>dotnet run --project tools/GuideShots -- [id 앞부분 …] [--list]</c>. 인수가 없으면 모든 샷을 찍는다.
 /// <c>--shortcuts &lt;파일&gt;</c>은 샷 대신 앱의 기본 단축키(설정 창 "내보내기(JSON)"와 같은 모양)를 써서 홈페이지 가이드가 쓰게 한다
 /// (<c>docs/i18n/shortcuts.json</c>, <c>tools/build-docs.py</c>의 <c>{{key:명령}}</c>).
-/// 샷마다 설정 폴더를 새로 만들어(GPIXEL_DATA_DIR) 사용자 설정을 건드리지 않고, 결과는 docs/assets/guide/&lt;이름&gt;.png.
+/// 샷마다 설정 폴더를 새로 만들어(CHICKXEL_DATA_DIR) 사용자 설정을 건드리지 않고, 결과는 docs/assets/guide/&lt;이름&gt;.png.
 /// 샷은 하나씩 따로 된 프로세스(<c>--only &lt;id&gt;</c>)에서 찍는다 — 앞 샷이 남긴 창·타이머·폴더 감시가 다음 샷을 멈추게 하지 않게.
 /// </summary>
 public static class Program

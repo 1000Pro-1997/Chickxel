@@ -2,8 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.Core.Model;
 using static GuideShots.ScreenDemo;
 using static GuideShots.ScreenShot;
 
@@ -17,7 +17,7 @@ internal static class ScreenPanelShots
         => ShotKit.All<ListBoxItem>(browser).First(i => i.Tag is { } t && Path.GetFileName(ShotKit.Get<string>(t, "Path")) == fileName);
 
     /// <summary>
-    /// 파일 브라우저: 1 = ① 폴더 트리 ② 썸네일 목록 ③ 검색 ④ 하위 폴더 포함 ⑤ 제목 줄 아이콘 셋 ⑥ .gpixel 배지 ⑦ 저장 안 한 빨간 점,
+    /// 파일 브라우저: 1 = ① 폴더 트리 ② 썸네일 목록 ③ 검색 ④ 하위 폴더 포함 ⑤ 제목 줄 아이콘 셋 ⑥ .chickxel 배지 ⑦ 저장 안 한 빨간 점,
     /// 2 = ⑧ 여러 개 고름 ⑨ 우클릭 메뉴, 3 = 합치기 창(⑩ 순서 ⑪ 이름 ⑫ 방식 ⑬ 캔버스·기준점·원본 삭제 ⑭ 미리보기 ⑮ 타임라인 모양),
     /// 4 = 앱 휴지통(⑯ 목록·미리보기 ⑰ 되살리기·영구 삭제·비우기 ⑱ 보관 정책).
     /// </summary>
@@ -32,7 +32,7 @@ internal static class ScreenPanelShots
         k.Settle(1500);
         PrettyRoot(main);
         k.Settle(100);
-        string projectName = SampleName + ".gpixel", nightName = SampleName + "_night.png";
+        string projectName = SampleName + ".chickxel", nightName = SampleName + "_night.png";
         var project = FileItem(browser, projectName);
         var badge = ShotKit.All<Control>(project).First(c => !ReferenceEquals(c, project) && ToolTip.GetTip(c) is string && c.Bounds.Width < 30);
         var dot = ShotKit.Get<Control>(project.Tag!, "Dot");
@@ -109,7 +109,7 @@ internal static class ScreenPanelShots
         Build(k, main);
         var colors = ShotKit.Get<ColorPanel>(main, "_colors");
         var ctx = Ctx(main);
-        var extracted = Gpixel.Core.IO.PaletteIO.ExtractFromImage(ctx.VisibleImage(), 24);
+        var extracted = Chickxel.Core.IO.PaletteIO.ExtractFromImage(ctx.VisibleImage(), 24);
         colors.SetPalettes([.. colors.Palettes, new NamedPalette(SampleName, extracted)]);
         k.Settle(300);
         // PaletteSection은 앱 안 형식이라 속성을 이름으로 읽는다.

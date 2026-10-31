@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Gpixel.App;
-using Gpixel.App.Localization;
+using Chickxel.App;
+using Chickxel.App.Localization;
 
 namespace GuideShots;
 
@@ -51,7 +51,7 @@ internal static class LanguageShots
         });
 
         // 확인 뒤 묻는 창(직접 띄워 찍고 닫음 — 닫으면 "나중에"와 같아 다시 시작하지 않는다).
-        k.Dialog(() => Ui.Ask(main, UiStrings.Language_RestartNotice, "Gpixel", MessageButtons.YesNo, MessageIcon.Question,
+        k.Dialog(() => Ui.Ask(main, UiStrings.Language_RestartNotice, "Chickxel", MessageButtons.YesNo, MessageIcon.Question,
                 UiStrings.Language_RestartNow, UiStrings.Language_RestartLater),
             w => k.Save(w, "language-change-3", firstNumber: 5, marks: [ShotKit.Get<Button>(w, "OkButton"), ShotKit.Get<Button>(w, "CancelButtonControl")]));
     }
@@ -66,7 +66,7 @@ internal static class LanguageShots
             k.Save(w, crop: Area(w), marks: [Button(w, UiStrings.Language_Export), Button(w, UiStrings.Language_Import)]);
 
             // "CSV로 언어 추가…"로 일본어 열을 더한 CSV를 넣은 뒤의 모습(파일 고르기 창 대신 같은 처리를 직접 부름).
-            var csv = Path.Combine(k.WorkDir, "gpixel-translations.csv");
+            var csv = Path.Combine(k.WorkDir, "chickxel-translations.csv");
             File.WriteAllText(csv, "key,ja\n#name,日本語\nUiStrings.Language_Title,言語\nUiStrings.Language_Export,翻訳CSVを書き出す…\nUiStrings.Language_Import,CSVから言語を追加…\n");
             var result = UiLanguage.ImportCsv(csv);
             ShotKit.Call(w, "FillLanguages", "ja");

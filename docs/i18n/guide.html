@@ -9,8 +9,8 @@
 <meta property="og:title" content="{{head.4.content}}">
 <meta property="og:description" content="{{head.5.content}}">
 <meta property="og:image" content="{{head.6.content}}">
-<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
-<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/Chickxel/guide.html">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/guide.html">
 <link rel="icon" href="{{root}}assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{root}}style.css?v=20261027g">
@@ -18,7 +18,7 @@
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
   var saved = null;
-  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
 {{head.7.script}}
 })();
@@ -27,7 +27,7 @@
 <body class="guide-page">
 <header class="top">
 <div class="bar">
-<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="{{root}}assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="{{root}}assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
 <nav class="nav">{{head.8}}<svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
 </nav>
 <label class="lang" title="{{head.9.title}}"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="{{lang-select.1.aria-label}}">
@@ -273,25 +273,25 @@
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>{{start-install.2}}</th><th>{{start-install.3}}</th></tr></thead>
 <tbody>
-<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Gpixel-windows-x64.zip</a></td><td>{{start-install.4}}</td></tr>
-<tr><td>{{start-install.5}}</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">Gpixel-macos-arm64.zip</a></td><td>{{start-install.6}}</td></tr>
-<tr><td>{{start-install.7}}</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">Gpixel-macos-x64.zip</a></td><td>{{start-install.8}}</td></tr>
+<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip">Chickxel-windows-x64.zip</a></td><td>{{start-install.4}}</td></tr>
+<tr><td>{{start-install.5}}</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip">Chickxel-macos-arm64.zip</a></td><td>{{start-install.6}}</td></tr>
+<tr><td>{{start-install.7}}</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip">Chickxel-macos-x64.zip</a></td><td>{{start-install.8}}</td></tr>
 </tbody>
 </table></div>
 <p>{{start-install.9}}</p>
 <h4>{{start-install.10}}</h4>
 <p>{{start-install.11}}</p>
 <pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
-curl -fL -o /tmp/Gpixel.zip "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-$ARCH.zip" \
-  &amp;&amp; rm -rf /Applications/Gpixel.app &amp;&amp; ditto -x -k /tmp/Gpixel.zip /Applications \
-  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Gpixel.app; rm -f /tmp/Gpixel.zip; open /Applications/Gpixel.app</code></pre>
+curl -fL -o /tmp/Chickxel.zip "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-$ARCH.zip" \
+  &amp;&amp; rm -rf /Applications/Chickxel.app &amp;&amp; ditto -x -k /tmp/Chickxel.zip /Applications \
+  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Chickxel.app; rm -f /tmp/Chickxel.zip; open /Applications/Chickxel.app</code></pre>
 <p>{{start-install.12}}</p>
-<pre><code>$d = "$env:LOCALAPPDATA\Programs\Gpixel"; $z = "$env:TEMP\Gpixel.zip"; $x = "$env:TEMP\Gpixel-x"
-Invoke-WebRequest "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip" -OutFile $z
+<pre><code>$d = "$env:LOCALAPPDATA\Programs\Chickxel"; $z = "$env:TEMP\Chickxel.zip"; $x = "$env:TEMP\Chickxel-x"
+Invoke-WebRequest "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip" -OutFile $z
 Expand-Archive $z $x -Force; New-Item -ItemType Directory -Force $d | Out-Null
-Copy-Item "$x\Gpixel-windows-x64\Gpixel.exe" $d -Force; Unblock-File "$d\Gpixel.exe"; Remove-Item $z, $x -Recurse -Force
-$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Gpixel.lnk"); $s.TargetPath = "$d\Gpixel.exe"; $s.Save()
-Start-Process "$d\Gpixel.exe"</code></pre>
+Copy-Item "$x\Chickxel-windows-x64\Chickxel.exe" $d -Force; Unblock-File "$d\Chickxel.exe"; Remove-Item $z, $x -Recurse -Force
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Chickxel.lnk"); $s.TargetPath = "$d\Chickxel.exe"; $s.Save()
+Start-Process "$d\Chickxel.exe"</code></pre>
 <p>{{start-install.13}}</p>
 
 <h3 id="start-first-run">{{start-first-run.1}}</h3>
@@ -958,7 +958,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>{{files-roles.2}}</th><th>{{files-roles.3}}</th></tr></thead>
 <tbody>
-<tr><td><code>.gpixel</code></td><td>{{files-roles.4}}</td></tr>
+<tr><td><code>.chickxel</code></td><td>{{files-roles.4}}</td></tr>
 <tr><td>{{files-roles.5}}</td><td>{{files-roles.6}}</td></tr>
 <tr><td><code>.meta</code></td><td>{{files-roles.7}}</td></tr>
 <tr><td><code>.spriteLib</code></td><td>{{files-roles.8}}</td></tr>
@@ -1084,8 +1084,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>{{files-settings.15}}</th></tr></thead>
 <tbody>
-<tr><td>Windows</td><td><code>%AppData%\Gpixel\settings.json</code></td></tr>
-<tr><td>macOS</td><td><code>~/Library/Application Support/Gpixel/settings.json</code></td></tr>
+<tr><td>Windows</td><td><code>%AppData%\Chickxel\settings.json</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/Chickxel/settings.json</code></td></tr>
 </tbody>
 </table></div>
 <p>{{files-settings.16}}</p>
@@ -1714,7 +1714,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="shortcuts-file">{{shortcuts-file.1}}</h3>
 <div class="table-wrap"><table><thead><tr><th>{{shortcuts-file.2}}</th><th>{{shortcuts-file.3}}</th></tr></thead><tbody>
 <tr><td>{{shortcuts-file.4}}</td><td>{{key:파일/새 프로젝트…}}</td></tr>
-<tr><td>{{shortcuts-file.5}}</td><td>{{key:파일/열기(.gpixel / PNG 가져오기)…}}</td></tr>
+<tr><td>{{shortcuts-file.5}}</td><td>{{key:파일/열기(.chickxel / PNG 가져오기)…}}</td></tr>
 <tr><td>{{shortcuts-file.6}}</td><td>{{key:파일/폴더 열기…}}</td></tr>
 <tr><td>{{shortcuts-file.7}}</td><td>{{key:파일/Unity 프로젝트 열기…}}</td></tr>
 <tr><td>{{shortcuts-file.8}}</td><td>{{key:파일/저장(+ 시트 내보내기)}}</td></tr>
@@ -1864,7 +1864,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 // 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
 document.getElementById('lang-select').addEventListener('change', function (e) {
   var to = e.target.value;
-  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  try { localStorage.setItem('chickxel-lang', to); } catch (err) {}
   var page = location.pathname.split('/').pop() || '';
 {{language-fix.7.script}}
 });

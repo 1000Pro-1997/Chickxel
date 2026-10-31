@@ -6,9 +6,9 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Gpixel.App;
-using Gpixel.App.Ai;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.App.Ai;
+using Chickxel.Core.Model;
 
 namespace GuideShots;
 
@@ -133,7 +133,7 @@ internal sealed class AiChat
         var origins = new Dictionary<Window, Point> { [back] = new Point(0, bar) };
         using (var ctx = target.CreateDrawingContext())
         {
-            DrawTitleBar(ctx, back.Title ?? "Gpixel", new Rect(0, 0, size.Width, bar));
+            DrawTitleBar(ctx, back.Title ?? "Chickxel", new Rect(0, 0, size.Width, bar));
             ctx.DrawImage(backImg, new Rect(0, bar, backImg.PixelSize.Width, backImg.PixelSize.Height));
             foreach (var (w, at) in placed)
             {

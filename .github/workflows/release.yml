@@ -21,7 +21,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Test
-        run: dotnet test tests/Gpixel.Core.Tests -c Release
+        run: dotnet test tests/Chickxel.Core.Tests -c Release
 
       - name: Publish
         run: |
@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: gpixel
+          name: chickxel
           path: |
             dist/*.zip
             dist/SHA256SUMS.txt
@@ -59,7 +59,7 @@ jobs:
             printf '%s\n' "$KO" >> dist/RELEASE_NOTES.md
           fi
           if [ -s dist/RELEASE_NOTES.md ]; then NOTES=(--notes-file dist/RELEASE_NOTES.md); else NOTES=(--generate-notes); fi
-          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md CHANGELOG.ko.md --title "Gpixel $GITHUB_REF_NAME" "${NOTES[@]}"
+          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md CHANGELOG.ko.md --title "Chickxel $GITHUB_REF_NAME" "${NOTES[@]}"
 
   announce:
     needs: build

@@ -1,8 +1,8 @@
 using System.Drawing;
 using Avalonia.Controls;
-using Gpixel.App;
-using Gpixel.Core.IO;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.Core.IO;
+using Chickxel.Core.Model;
 
 namespace GuideShots;
 

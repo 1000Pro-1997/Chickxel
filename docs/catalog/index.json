@@ -6,7 +6,7 @@
   "next": null,
   "packages": [
     {
-      "id": "gpixel.effects.hit-reaction",
+      "id": "chickxel.effects.hit-reaction",
       "version": "1.0.0",
       "name": "Hit Reaction",
       "summary": "A white flash with a decaying shake for the frames where a character takes damage.",
@@ -16,9 +16,9 @@
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -26,12 +26,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.effects.hit-reaction-1.0.0.gpixel-asset",
-        "size": 2479,
-        "sha256": "90a1216c17dec71cae5244c4a615dd40085816a861381efebd89cb4f7fa623ae"
+        "url": "packages/chickxel.effects.hit-reaction-1.0.0.chickxel-asset",
+        "size": 2452,
+        "sha256": "b613ec4415ce8d50b8708ca91711ddce9ce0c33954af7edcfdcc68bbb25fbb0c"
       },
       "preview": {
-        "url": "previews/gpixel.effects.hit-reaction-1.0.0.png",
+        "url": "previews/chickxel.effects.hit-reaction-1.0.0.png",
         "size": 272,
         "sha256": "c4bcc4a9cd6ecc2d221177c703a67abbc0586d05687f12030eee71a551d49502"
       },
@@ -40,7 +40,7 @@
       "review": "official"
     },
     {
-      "id": "gpixel.effects.outlined-drop-shadow",
+      "id": "chickxel.effects.outlined-drop-shadow",
       "version": "1.0.0",
       "name": "Outlined Drop Shadow",
       "summary": "A black outline with a soft drop shadow \u2014 a quick way to make a sprite read on any background.",
@@ -50,9 +50,9 @@
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -60,12 +60,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.effects.outlined-drop-shadow-1.0.0.gpixel-asset",
-        "size": 2711,
-        "sha256": "413399263dd886ef8d471c8f59521a6f4c7bf296443beee93d05d5d02f22fb32"
+        "url": "packages/chickxel.effects.outlined-drop-shadow-1.0.0.chickxel-asset",
+        "size": 2683,
+        "sha256": "6be54ba21c2e269df82feba18181d0cac10d56d17c2057bfcb7e6f3e948fec17"
       },
       "preview": {
-        "url": "previews/gpixel.effects.outlined-drop-shadow-1.0.0.png",
+        "url": "previews/chickxel.effects.outlined-drop-shadow-1.0.0.png",
         "size": 411,
         "sha256": "fa998ee061e50d4decdb771ac35f9944769c3f12281d67d1730b79834c1b5c68"
       },
@@ -74,7 +74,7 @@
       "review": "official"
     },
     {
-      "id": "gpixel.effects.shiny-pickup",
+      "id": "chickxel.effects.shiny-pickup",
       "version": "1.0.0",
       "name": "Shiny Pickup",
       "summary": "A warm outline, a light sweep and a gentle bob for coins and items.",
@@ -84,9 +84,9 @@
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -94,12 +94,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.effects.shiny-pickup-1.0.0.gpixel-asset",
-        "size": 2836,
-        "sha256": "d84cd64dee9cc594fbab8ea48df736ca7aa3a2c0f328b5e624bc248a3756a7af"
+        "url": "packages/chickxel.effects.shiny-pickup-1.0.0.chickxel-asset",
+        "size": 2807,
+        "sha256": "ef180180d56ed469fd6ffd903f86009ee6d649991c58580abefd3a5e4c76ee3f"
       },
       "preview": {
-        "url": "previews/gpixel.effects.shiny-pickup-1.0.0.png",
+        "url": "previews/chickxel.effects.shiny-pickup-1.0.0.png",
         "size": 540,
         "sha256": "daaa07595fa19dd23fb8e3a92905844ea505198a5387f4dc3bafa45322a72c6c"
       },
@@ -108,19 +108,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.fire",
+      "id": "chickxel.gradients.fire",
       "version": "1.0.0",
       "name": "Fire",
-      "summary": "The Fire gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Fire gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -128,12 +128,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.fire-1.0.0.gpixel-asset",
-        "size": 2289,
-        "sha256": "e519ae99ae400774bd4a63b78723b328e53dfb8da21d620e2525156d59d89b2d"
+        "url": "packages/chickxel.gradients.fire-1.0.0.chickxel-asset",
+        "size": 2270,
+        "sha256": "258e5cb6882d97bcadf7545922483ba30c2c48b8efd50af2c89b40e56523c1ba"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.fire-1.0.0.png",
+        "url": "previews/chickxel.gradients.fire-1.0.0.png",
         "size": 236,
         "sha256": "7ccbfb23e9ab34bceb5aa4564f69cb47aa81d2683cc0306dc45a83ab0c7f07aa"
       },
@@ -142,19 +142,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.forest",
+      "id": "chickxel.gradients.forest",
       "version": "1.0.0",
       "name": "Forest",
-      "summary": "The Forest gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Forest gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -162,12 +162,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.forest-1.0.0.gpixel-asset",
-        "size": 2274,
-        "sha256": "d81590f00e500cac6e16e783f511c0377b270a48bde9358c55f667bc71e876ff"
+        "url": "packages/chickxel.gradients.forest-1.0.0.chickxel-asset",
+        "size": 2253,
+        "sha256": "1f1e421e10fede3764b34352a82592b9842bed710d5fd2cd54fbfc25f7a1f48c"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.forest-1.0.0.png",
+        "url": "previews/chickxel.gradients.forest-1.0.0.png",
         "size": 212,
         "sha256": "eb3c8437cfc9128a13a468dd1eab8435bbc67aa86c58c38586306987a89767cf"
       },
@@ -176,19 +176,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.grayscale",
+      "id": "chickxel.gradients.grayscale",
       "version": "1.0.0",
       "name": "Grayscale",
-      "summary": "The Grayscale gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Grayscale gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -196,12 +196,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.grayscale-1.0.0.gpixel-asset",
-        "size": 2170,
-        "sha256": "8fb394cfd65fb5a7e2de9bca3eb870c32482186cea0596fb3318318e7053bdf6"
+        "url": "packages/chickxel.gradients.grayscale-1.0.0.chickxel-asset",
+        "size": 2151,
+        "sha256": "b546d123123faa6516ff46366dc58b9f15391f5ba04f5a71e12e8b8aeeab40f8"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.grayscale-1.0.0.png",
+        "url": "previews/chickxel.gradients.grayscale-1.0.0.png",
         "size": 119,
         "sha256": "1256107deafa816955fe2b9a62a3127be7033412d808b3e360ccff68bb0c20fc"
       },
@@ -210,19 +210,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.ocean",
+      "id": "chickxel.gradients.ocean",
       "version": "1.0.0",
       "name": "Ocean",
-      "summary": "The Ocean gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Ocean gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -230,12 +230,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.ocean-1.0.0.gpixel-asset",
-        "size": 2277,
-        "sha256": "a229e8341dde0ecb8c2d4fb1a1bdfae806aa369c27eb84b9d138f7bd22f860e8"
+        "url": "packages/chickxel.gradients.ocean-1.0.0.chickxel-asset",
+        "size": 2254,
+        "sha256": "0ec4df938fa455965a66924343faabdba1ab0a5c8c83ddf08bb025e32e568f03"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.ocean-1.0.0.png",
+        "url": "previews/chickxel.gradients.ocean-1.0.0.png",
         "size": 224,
         "sha256": "28c946bdbd8b5aab45c1d9db50fe7ee5cd69b38709045e0e1b59324b11d2a033"
       },
@@ -244,19 +244,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.rainbow",
+      "id": "chickxel.gradients.rainbow",
       "version": "1.0.0",
       "name": "Rainbow",
-      "summary": "The Rainbow gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Rainbow gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -264,12 +264,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.rainbow-1.0.0.gpixel-asset",
-        "size": 2410,
-        "sha256": "e412d23f57ca53c39e60e7489715bb8c9e4cbab2ac0a2eebb68b9048b7011642"
+        "url": "packages/chickxel.gradients.rainbow-1.0.0.chickxel-asset",
+        "size": 2388,
+        "sha256": "122b1aa2bc9b991aa681dc5b5022e6ec585fb9477bbdaecdce76d1b80a4b097d"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.rainbow-1.0.0.png",
+        "url": "previews/chickxel.gradients.rainbow-1.0.0.png",
         "size": 326,
         "sha256": "00f0b5659021916059b510436ad630d3cecdf34782e419898a9df699d83ffe2a"
       },
@@ -278,19 +278,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.repeating-rainbow",
+      "id": "chickxel.gradients.repeating-rainbow",
       "version": "1.0.0",
       "name": "Repeating Rainbow",
-      "summary": "The Repeating Rainbow gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Repeating Rainbow gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -298,12 +298,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.repeating-rainbow-1.0.0.gpixel-asset",
-        "size": 2515,
-        "sha256": "a99d9727875d58b136d58800ec6fe9728c7e9cea6196be01b85a6f4a918d277a"
+        "url": "packages/chickxel.gradients.repeating-rainbow-1.0.0.chickxel-asset",
+        "size": 2492,
+        "sha256": "9c86fcfc8da1ea149e099db278c80ced5a19c62565e3a56672c4c50b93db7f98"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.repeating-rainbow-1.0.0.png",
+        "url": "previews/chickxel.gradients.repeating-rainbow-1.0.0.png",
         "size": 346,
         "sha256": "ed5843ef27f8ba23e1bcdd225d2e143b917ed92899473aea3e17b6d119b7ee45"
       },
@@ -312,19 +312,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.sunset",
+      "id": "chickxel.gradients.sunset",
       "version": "1.0.0",
       "name": "Sunset",
-      "summary": "The Sunset gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Sunset gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -332,12 +332,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.sunset-1.0.0.gpixel-asset",
-        "size": 2299,
-        "sha256": "391767f22b34b67663e74533d90cf816400b68c88f1c44328d50cda1fa8be523"
+        "url": "packages/chickxel.gradients.sunset-1.0.0.chickxel-asset",
+        "size": 2276,
+        "sha256": "6d61fee3cc41a1edbd8e6114aadcb2642322b5e23c2241b79c558164843cc9dd"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.sunset-1.0.0.png",
+        "url": "previews/chickxel.gradients.sunset-1.0.0.png",
         "size": 238,
         "sha256": "f5bc8c10926df975d97493495acbbc0cf6135ee6da61d28d4df39b312b8f7066"
       },
@@ -346,19 +346,19 @@
       "review": "official"
     },
     {
-      "id": "gpixel.gradients.transparent-fade",
+      "id": "chickxel.gradients.transparent-fade",
       "version": "1.0.0",
       "name": "Transparent Fade",
-      "summary": "The Transparent Fade gradient from Gpixel\u0027s built-in set.",
+      "summary": "The Transparent Fade gradient from Chickxel\u0027s built-in set.",
       "tags": [
         "gradient",
         "starter",
         "official"
       ],
       "author": {
-        "id": "gpixel",
-        "name": "Gpixel",
-        "url": "https://1000pro-1997.github.io/GPixel/"
+        "id": "chickxel",
+        "name": "Chickxel",
+        "url": "https://1000pro-1997.github.io/Chickxel/"
       },
       "license": "MIT",
       "kinds": {
@@ -366,12 +366,12 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/gpixel.gradients.transparent-fade-1.0.0.gpixel-asset",
-        "size": 2223,
-        "sha256": "6978649048bd7fb91d62b8812b5131e1a8e70e8a4e37d54f50b3819939482bf6"
+        "url": "packages/chickxel.gradients.transparent-fade-1.0.0.chickxel-asset",
+        "size": 2199,
+        "sha256": "1ebb2a811e484dac8594068b8667a7d84e7bc81a9cbc455f8d46be46568e30c3"
       },
       "preview": {
-        "url": "previews/gpixel.gradients.transparent-fade-1.0.0.png",
+        "url": "previews/chickxel.gradients.transparent-fade-1.0.0.png",
         "size": 120,
         "sha256": "723009964914de4d7da700a42b51a5a2604e47af0134f43b219ea1a8de2575ea"
       },

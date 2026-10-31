@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Gpixel.App;
+using Chickxel.App;
 using static GuideShots.ScreenDemo;
 
 namespace GuideShots;

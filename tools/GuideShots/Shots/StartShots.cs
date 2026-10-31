@@ -2,9 +2,9 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
-using Gpixel.App;
-using Gpixel.App.Localization;
-using Gpixel.Core.IO;
+using Chickxel.App;
+using Chickxel.App.Localization;
+using Chickxel.Core.IO;
 using static GuideShots.ScreenDemo;
 
 namespace GuideShots;
@@ -108,7 +108,7 @@ internal static class StartShots
         {
             if (tb.Text is not { } original) continue;
             var t = original == devNote ? releaseNote : original;
-            t = t.Replace(AppSettings.FilePath, @"%APPDATA%\Gpixel\settings.json")
+            t = t.Replace(AppSettings.FilePath, @"%APPDATA%\Chickxel\settings.json")
                 .Replace(UiStrings.S_AboutDialog_AboutDialog_27606A6DB7, "")
                 .Replace(AppInfo.VersionText, version);
             if (t != original) tb.Text = t;
@@ -125,7 +125,7 @@ internal static class StartShots
         string root = @"D:\MyGame\Assets";
         start.SetRecent(
             [root + @"\Sprites", @"D:\Art\Pixel practice"],
-            [root + @"\Sprites\Wolf Adventurer.gpixel", @"D:\Art\Pixel practice\slime.gpixel"]);
+            [root + @"\Sprites\Wolf Adventurer.chickxel", @"D:\Art\Pixel practice\slime.chickxel"]);
         var hub = ShotKit.Get<ListBox>(start, "_hub");
         var cols = ShotKit.Get<double[]>(start, "HubColumns");
         UnityHubDialog.Fill(hub,
@@ -136,7 +136,7 @@ internal static class StartShots
         ], cols);
         ShotKit.Get<TextBlock>(start, "_hubMessage").IsVisible = false;
         k.Settle(300);
-        main.Title = "Gpixel";
+        main.Title = "Chickxel";
         var openFolder = ShotKit.FindText(start, StartStrings.OpenFolder, ancestorControl: true);
         var recent = ShotKit.Get<ListBox>(start, "_recentFolders");
         var browser = ShotKit.Bounds(ShotKit.Get<Control>(main, "_browser"), main);
@@ -164,11 +164,11 @@ internal static class StartShots
         var current = heads[2].Version.ToString();
         var notes = text[newest.Start..heads[2].Start].Trim();
         var page = new Uri($"{AppUpdate.ReleasesUrl}/tag/v{newest.Version}");
-        var asset = new ReleaseAsset("Gpixel-windows-x64.zip", new Uri(AppUpdate.ReleasesUrl + "/download/Gpixel-windows-x64.zip"), 48_000_000);
+        var asset = new ReleaseAsset("Chickxel-windows-x64.zip", new Uri(AppUpdate.ReleasesUrl + "/download/Chickxel-windows-x64.zip"), 48_000_000);
         var sums = new ReleaseAsset(AppUpdate.ChecksumsAssetName, new Uri(AppUpdate.ReleasesUrl + "/download/" + AppUpdate.ChecksumsAssetName), 300);
-        var release = new ReleaseInfo("v" + newest.Version, newest.Version, "Gpixel v" + newest.Version, notes, page, false, false,
+        var release = new ReleaseInfo("v" + newest.Version, newest.Version, "Chickxel v" + newest.Version, notes, page, false, false,
             new DateTimeOffset(2026, 10, 27, 12, 0, 0, TimeSpan.FromHours(9)), [asset, sums]);
-        var plan = new InstallPlan(release, asset, sums, InstallKind.WindowsExe, @"C:\Users\me\AppData\Local\Programs\Gpixel\Gpixel.exe");
+        var plan = new InstallPlan(release, asset, sums, InstallKind.WindowsExe, @"C:\Users\me\AppData\Local\Programs\Chickxel\Chickxel.exe");
         var updater = ShotKit.Get<Updater>(main, "_updater");
 
         // ① 위 막대의 업데이트 단추
@@ -230,7 +230,7 @@ internal static class StartShots
         });
     }
 
-    // 제보: ① 도움말 ② 제보·아이디어(Discord) ③ Gpixel 정보, 정보 창 ④ Discord ⑤ 문제 신고 ⑥ 버전.
+    // 제보: ① 도움말 ② 제보·아이디어(Discord) ③ Chickxel 정보, 정보 창 ④ Discord ⑤ 문제 신고 ⑥ 버전.
     [Shot("start-feedback")]
     public static void Feedback(ShotKit k)
     {
@@ -244,7 +244,7 @@ internal static class StartShots
         k.Key(main, Avalonia.Input.Key.Escape);
 
         var (_, heads) = Changelog();
-        k.Dialog(() => k.Command("도움말/Gpixel 정보…"), w =>
+        k.Dialog(() => k.Command("도움말/Chickxel 정보…"), w =>
         {
             Scrub(w, heads[0].Version.ToString());
             ShotKit.Pump(300);

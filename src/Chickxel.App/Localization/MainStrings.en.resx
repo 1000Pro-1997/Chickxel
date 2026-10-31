@@ -1,0 +1,392 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Tool_Pencil_Name" xml:space="preserve"><value>Pencil</value></data>
+  <data name="Tool_Pencil_Hint" xml:space="preserve"><value>Left: primary color · Right: secondary color (or eraser) · Shift+click: line from last point · Alt+click: pick color</value></data>
+  <data name="Tool_Eraser_Name" xml:space="preserve"><value>Eraser</value></data>
+  <data name="Tool_Eraser_Hint" xml:space="preserve"><value>Erases to transparent</value></data>
+  <data name="Tool_Fill_Name" xml:space="preserve"><value>Fill</value></data>
+  <data name="Tool_Fill_Hint" xml:space="preserve"><value>Fills the area of the clicked color (including similar colors within tolerance)</value></data>
+  <data name="Tool_Gradient_Name" xml:space="preserve"><value>Gradient</value></data>
+  <data name="Tool_Gradient_Hint" xml:space="preserve"><value>Drag to paint from start point to end point (only inside the selection, if any) · Shift: 45° steps · Color stops, interpolation, and dithering are in tool settings</value></data>
+  <data name="Tool_Picker_Name" xml:space="preserve"><value>Eyedropper</value></data>
+  <data name="Tool_Picker_Hint" xml:space="preserve"><value>Left: pick as primary color · Right: pick as secondary color</value></data>
+  <data name="Tool_Select_Name" xml:space="preserve"><value>Rectangle select</value></data>
+  <data name="Tool_Select_Hint" xml:space="preserve"><value>Drag to select (Shift: square), drag inside to move · Enter: drop · M: next selection tool</value></data>
+  <data name="Tool_EllipseSelect_Name" xml:space="preserve"><value>Ellipse select</value></data>
+  <data name="Tool_EllipseSelect_Hint" xml:space="preserve"><value>Drag to select an ellipse (Shift: circle), drag inside to move · Enter: drop · M: next selection tool</value></data>
+  <data name="Tool_Lasso_Name" xml:space="preserve"><value>Lasso select</value></data>
+  <data name="Tool_Lasso_Hint" xml:space="preserve"><value>Drag to draw an outline; it closes into a selection on release. Drag inside to move · Enter: drop</value></data>
+  <data name="Tool_MagicWand_Name" xml:space="preserve"><value>Magic wand</value></data>
+  <data name="Tool_MagicWand_Hint" xml:space="preserve"><value>Selects areas similar to the clicked color (tolerance, contiguous, and sampling use the same settings as Fill) · Move: V/arrow keys</value></data>
+  <data name="Tool_Move_Name" xml:space="preserve"><value>Move</value></data>
+  <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option) · Ctrl+drag in other tools (move tool while held)</value></data>
+  <data name="Tool_Dodge_Name" xml:space="preserve"><value>Dodge/burn</value></data>
+  <data name="Tool_Dodge_Hint" xml:space="preserve"><value>Left: lighten · Right: darken (once per stroke)</value></data>
+  <data name="Tool_Dither_Name" xml:space="preserve"><value>Dithering</value></data>
+  <data name="Tool_Dither_Hint" xml:space="preserve"><value>Paints by mixing primary and secondary colors in a pattern (checker, 25%, 75%)</value></data>
+  <data name="Tool_ReplaceBrush_Name" xml:space="preserve"><value>Replace color brush</value></data>
+  <data name="Tool_ReplaceBrush_Hint" xml:space="preserve"><value>Replaces only the first color touched with the primary color</value></data>
+  <data name="Tool_Pivot_Name" xml:space="preserve"><value>Pivot</value></data>
+  <data name="Tool_Pivot_Hint" xml:space="preserve"><value>Drag to move the pivot (Unity focus)</value></data>
+  <data name="Ui_035" xml:space="preserve"><value>Drag the green lines to set borders that don't stretch (Unity Sprite Border) — for UI buttons and panels</value></data>
+  <data name="Ui_036" xml:space="preserve"><value>Show/hide file browser (F8)</value></data>
+  <data name="Ui_037" xml:space="preserve"><value>Save (Ctrl+S)</value></data>
+  <data name="Ui_038" xml:space="preserve"><value>Revert to saved</value></data>
+  <data name="Ui_039" xml:space="preserve"><value>Update</value></data>
+  <data name="Ui_040" xml:space="preserve"><value>A new version is available — click to see what's new and install</value></data>
+  <data name="Ui_041" xml:space="preserve"><value>Grid</value></data>
+  <data name="Ui_042" xml:space="preserve"><value>Pixel grid (Ctrl+G) · Right-click = color, visible zoom</value></data>
+  <data name="Ui_043" xml:space="preserve"><value>Tile grid</value></data>
+  <data name="Ui_044" xml:space="preserve"><value>Tile grid (Ctrl+Shift+G) · Right-click = size, color</value></data>
+  <data name="Ui_045" xml:space="preserve"><value>Tile mode</value></data>
+  <data name="Ui_046" xml:space="preserve"><value>Tiled view and seamless drawing (Ctrl+Shift+T) · Right-click = repeat size, dim surroundings</value></data>
+  <data name="Ui_047" xml:space="preserve"><value>Pivot</value></data>
+  <data name="Ui_048" xml:space="preserve"><value>Show pivot</value></data>
+  <data name="Ui_049" xml:space="preserve"><value>Onion</value></data>
+  <data name="Ui_050" xml:space="preserve"><value>Onion skin: overlay previous/next frames (Ctrl+J) · Right-click = frame count, strength, color</value></data>
+  <data name="Ui_051" xml:space="preserve"><value>Zoom out (Ctrl+-)</value></data>
+  <data name="Ui_052" xml:space="preserve"><value>Zoom in (Ctrl+=)</value></data>
+  <data name="Ui_053" xml:space="preserve"><value>Fit</value></data>
+  <data name="Ui_054" xml:space="preserve"><value>When on, fits each image to the screen when opened (also fits once when turned on) · Ctrl+0: fit now</value></data>
+  <data name="Ui_055" xml:space="preserve"><value>AI chat (Claude·Codex): create and edit art with words (Ctrl+L)</value></data>
+  <data name="Ui_056" xml:space="preserve"><value>Pencil</value></data>
+  <data name="Ui_057" xml:space="preserve"><value>Zoom — click to type (%) · drag left/right to change · Right-click = fit to screen, zoom list</value></data>
+  <data name="Ui_058" xml:space="preserve"><value>Fit to screen</value></data>
+  <data name="Menu_File" xml:space="preserve"><value>_File</value></data>
+  <data name="Ui_061" xml:space="preserve"><value>Recent folders</value></data>
+  <data name="Ui_062" xml:space="preserve"><value>Recent files</value></data>
+  <data name="Menu_File_NewProject_063" xml:space="preserve"><value>New project…</value></data>
+  <data name="Menu_File_OpenFileDialogCmd_065" xml:space="preserve"><value>Open (.chickxel · image · GIF · video)…</value></data>
+  <data name="Menu_File_OpenFolder_067" xml:space="preserve"><value>Open folder…</value></data>
+  <data name="Menu_File_OpenUnityProject_069" xml:space="preserve"><value>Open Unity project…</value></data>
+  <data name="Menu_File_Save_071" xml:space="preserve"><value>Save (+ export sheets)</value></data>
+  <data name="Menu_File_SaveAs_073" xml:space="preserve"><value>Save as…</value></data>
+  <data name="Menu_File_Command_075" xml:space="preserve"><value>Revert to saved</value></data>
+  <data name="Menu_File_OpenExportDialog_077" xml:space="preserve"><value>Export…</value></data>
+  <data name="Menu_File_Command_079" xml:space="preserve"><value>Export as animated GIF…</value></data>
+  <data name="Menu_File_CloseProject_081" xml:space="preserve"><value>Close</value></data>
+  <data name="Menu_File_Command_083" xml:space="preserve"><value>Start screen</value></data>
+  <data name="Menu_File_Close_085" xml:space="preserve"><value>Exit</value></data>
+  <data name="Menu_Edit" xml:space="preserve"><value>_Edit</value></data>
+  <data name="Menu_Edit_Undo_089" xml:space="preserve"><value>Undo</value></data>
+  <data name="Menu_Edit_Redo_091" xml:space="preserve"><value>Redo</value></data>
+  <data name="Menu_Edit_Cut_093" xml:space="preserve"><value>Cut</value></data>
+  <data name="Menu_Edit_Copy_095" xml:space="preserve"><value>Copy</value></data>
+  <data name="Menu_Edit_Paste_097" xml:space="preserve"><value>Paste</value></data>
+  <data name="Menu_Edit_DeleteSelection_099" xml:space="preserve"><value>Delete</value></data>
+  <data name="Menu_Edit_SelectAll_101" xml:space="preserve"><value>Select all</value></data>
+  <data name="Menu_Edit_Deselect_103" xml:space="preserve"><value>Deselect</value></data>
+  <data name="Menu_Edit_Flip_105" xml:space="preserve"><value>Flip horizontal (selection/cel)</value></data>
+  <data name="Menu_Edit_Flip_107" xml:space="preserve"><value>Flip vertical (selection/cel)</value></data>
+  <data name="Menu_Edit_Rotate_109" xml:space="preserve"><value>Rotate 90° (selection/canvas)</value></data>
+  <data name="Menu_Edit_Rotate_111" xml:space="preserve"><value>Rotate -90° (selection/canvas)</value></data>
+  <data name="Menu_Edit_BeginTransform_113" xml:space="preserve"><value>Transform (rotate/size)…</value></data>
+  <data name="Menu_Edit_AddOutline_115" xml:space="preserve"><value>Add outline (primary color)</value></data>
+  <data name="Menu_Edit_AddOutline_117" xml:space="preserve"><value>Add outline (with diagonals)</value></data>
+  <data name="Menu_Edit_ReplaceColor_119" xml:space="preserve"><value>Replace color…</value></data>
+  <data name="Menu_Edit_BeginCanvasResize_121" xml:space="preserve"><value>Canvas size…</value></data>
+  <data name="Menu_Edit_Structural_123" xml:space="preserve"><value>Flip entire canvas horizontally (all frames)</value></data>
+  <data name="Menu_Edit_Structural_125" xml:space="preserve"><value>Flip entire canvas vertically (all frames)</value></data>
+  <data name="Menu_Edit_Command_127" xml:space="preserve"><value>Create palette from image</value></data>
+  <data name="Menu_Edit_Command_129" xml:space="preserve"><value>Convert to palette colors…</value></data>
+  <data name="Menu_Edit_ShowPreferences_131" xml:space="preserve"><value>Preferences…</value></data>
+  <data name="Message_133" xml:space="preserve"><value>Apply transform</value></data>
+  <data name="Ui_134" xml:space="preserve"><value>left</value></data>
+  <data name="Ui_135" xml:space="preserve"><value>right</value></data>
+  <data name="Ui_136" xml:space="preserve"><value>up</value></data>
+  <data name="Ui_137" xml:space="preserve"><value>down</value></data>
+  <data name="Menu_View" xml:space="preserve"><value>_View</value></data>
+  <data name="Menu_View_SetPixelGrid_140" xml:space="preserve"><value>Pixel grid</value></data>
+  <data name="Menu_View_SetTileGrid_142" xml:space="preserve"><value>Tile grid</value></data>
+  <data name="Menu_View_SetTiledMode_144" xml:space="preserve"><value>Tiled mode (repeat view)</value></data>
+  <data name="Menu_View_SetShowPivot_146" xml:space="preserve"><value>Show pivot</value></data>
+  <data name="Menu_View_OnionSkin_148" xml:space="preserve"><value>Onion skin</value></data>
+  <data name="Menu_View_SetFilesVisible_150" xml:space="preserve"><value>File browser</value></data>
+  <data name="Menu_View_ZoomStep_152" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="Menu_View_ZoomStep_154" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="Menu_View_FitToWindow_156" xml:space="preserve"><value>Fit to window</value></data>
+  <data name="Menu_View_SetZoom_158" xml:space="preserve"><value>Actual size (1x)</value></data>
+  <data name="Menu_View_Command_160" xml:space="preserve"><value>Grid settings…</value></data>
+  <data name="Menu_FrameLayer" xml:space="preserve"><value>F_rame·Layer</value></data>
+  <data name="Menu_FrameLayer_TogglePlay_164" xml:space="preserve"><value>Play / stop</value></data>
+  <data name="Menu_FrameLayer_StepFrame_166" xml:space="preserve"><value>Previous frame</value></data>
+  <data name="Menu_FrameLayer_StepFrame_168" xml:space="preserve"><value>Next frame</value></data>
+  <data name="Menu_FrameLayer_SetCurrentFrame_170" xml:space="preserve"><value>First frame</value></data>
+  <data name="Menu_FrameLayer_SetCurrentFrame_172" xml:space="preserve"><value>Last frame</value></data>
+  <data name="Menu_FrameLayer_NewEmptyFrame_174" xml:space="preserve"><value>New empty frame</value></data>
+  <data name="Menu_FrameLayer_DuplicateFrame_176" xml:space="preserve"><value>Duplicate frame</value></data>
+  <data name="Menu_FrameLayer_Command_178" xml:space="preserve"><value>Delete frame</value></data>
+  <data name="Menu_FrameLayer_AddLayer_180" xml:space="preserve"><value>New layer</value></data>
+  <data name="Menu_FrameLayer_AddGroup_182" xml:space="preserve"><value>New group</value></data>
+  <data name="Menu_FrameLayer_AddPart_184" xml:space="preserve"><value>New part…</value></data>
+  <data name="Menu_FrameLayer_Command_186" xml:space="preserve"><value>Part size…</value></data>
+  <data name="Menu_FrameLayer_BeginRenameLayer_188" xml:space="preserve"><value>Rename layer</value></data>
+  <data name="Menu_FrameLayer_StepSkin_190" xml:space="preserve"><value>Previous skin (current group)</value></data>
+  <data name="Menu_FrameLayer_StepSkin_192" xml:space="preserve"><value>Next skin (current group)</value></data>
+  <data name="Menu_FrameLayer_OpenSkinManager_194" xml:space="preserve"><value>Manage skins…</value></data>
+  <data name="Menu_FrameLayer_Command_196" xml:space="preserve"><value>New tag (animation)…</value></data>
+  <data name="Menu_FrameLayer_Command_198" xml:space="preserve"><value>Split into frames by grid (sheet → frames)…</value></data>
+  <data name="Menu_Tools" xml:space="preserve"><value>_Tools</value></data>
+  <data name="Menu_Tools_ShapeFilled_202" xml:space="preserve"><value>Filled shapes</value></data>
+  <data name="Menu_Tools_FillContiguous_204" xml:space="preserve"><value>Fill: all matching colors</value></data>
+  <data name="Menu_Tools_PixelPerfect_206" xml:space="preserve"><value>Pixel perfect</value></data>
+  <data name="Menu_Tools_MirrorX_208" xml:space="preserve"><value>Mirror horizontally</value></data>
+  <data name="Menu_Tools_MirrorY_210" xml:space="preserve"><value>Mirror vertically</value></data>
+  <data name="Menu_Tools_RightButtonErases_212" xml:space="preserve"><value>Right button = eraser</value></data>
+  <data name="Menu_Tools_MoveWrap_214" xml:space="preserve"><value>Move: wrap around</value></data>
+  <data name="Menu_Tools_BrushSize_216" xml:space="preserve"><value>Larger brush</value></data>
+  <data name="Menu_Tools_BrushSize_218" xml:space="preserve"><value>Smaller brush</value></data>
+  <data name="Menu_Tools_SwapColors_220" xml:space="preserve"><value>Primary ↔ secondary color</value></data>
+  <data name="Menu_Test_ShowPlayTest_224" xml:space="preserve"><value>Movement test</value></data>
+  <data name="Menu_Ai_ToggleChat_226" xml:space="preserve"><value>AI chat</value></data>
+  <data name="Menu_Ai_References" xml:space="preserve"><value>References…</value></data>
+  <data name="Menu_Help" xml:space="preserve"><value>_Help</value></data>
+  <data name="Menu_Help_ShowShortcuts_230" xml:space="preserve"><value>Shortcut list</value></data>
+  <data name="Menu_Help_Command_232" xml:space="preserve"><value>Open settings file location</value></data>
+  <data name="Menu_Help_Command_234" xml:space="preserve"><value>Open error log folder</value></data>
+  <data name="Menu_Help_CheckAsync_236" xml:space="preserve"><value>Check for updates…</value></data>
+  <data name="Menu_Help_AboutDialog_238" xml:space="preserve"><value>About Chickxel…</value></data>
+  <data name="Ui_240" xml:space="preserve"><value>(empty)</value></data>
+  <data name="Ui_241" xml:space="preserve"><value>Show/hide file browser</value></data>
+  <data name="Ui_242" xml:space="preserve"><value>Clear list</value></data>
+  <data name="Ui_243" xml:space="preserve"><value>Modified</value></data>
+  <data name="Ui_244" xml:space="preserve"><value>Saved</value></data>
+  <data name="Ui_245" xml:space="preserve"><value> (group)</value></data>
+  <data name="Ui_246" xml:space="preserve"><value>Transparent</value></data>
+  <data name="Message_248" xml:space="preserve"><value>Tiled mode: drawing past an edge continues on the opposite side.</value></data>
+  <data name="Message_249" xml:space="preserve"><value>Tiled mode off</value></data>
+  <data name="Ui_250" xml:space="preserve"><value>2x</value></data>
+  <data name="Ui_251" xml:space="preserve"><value>4x</value></data>
+  <data name="Ui_252" xml:space="preserve"><value>6x</value></data>
+  <data name="Ui_253" xml:space="preserve"><value>8x</value></data>
+  <data name="Ui_254" xml:space="preserve"><value>12x</value></data>
+  <data name="Ui_255" xml:space="preserve"><value>16x</value></data>
+  <data name="Ui_256" xml:space="preserve"><value>Pixel grid</value></data>
+  <data name="Message_257" xml:space="preserve"><value>Color</value></data>
+  <data name="Message_258" xml:space="preserve"><value>Alpha (#RRGGBBAA) sets the intensity.</value></data>
+  <data name="Message_259" xml:space="preserve"><value>Show from this zoom</value></data>
+  <data name="Ui_260" xml:space="preserve"><value>Auto</value></data>
+  <data name="Ui_261" xml:space="preserve"><value>3×3 if the image is larger than 128px, otherwise 5×5</value></data>
+  <data name="Message_262" xml:space="preserve"><value>Dim around the center</value></data>
+  <data name="Message_263" xml:space="preserve"><value>Tiled mode</value></data>
+  <data name="Message_264" xml:space="preserve"><value>Repeat</value></data>
+  <data name="Message_265" xml:space="preserve"><value>frames</value></data>
+  <data name="Message_266" xml:space="preserve"><value>frames</value></data>
+  <data name="Message_267" xml:space="preserve"><value>Tint (before = red, after = blue)</value></data>
+  <data name="Ui_268" xml:space="preserve"><value>Onion skin</value></data>
+  <data name="Message_269" xml:space="preserve"><value>Before</value></data>
+  <data name="Message_270" xml:space="preserve"><value>After</value></data>
+  <data name="Message_271" xml:space="preserve"><value>frames</value></data>
+  <data name="Message_272" xml:space="preserve"><value>Intensity</value></data>
+  <data name="Message_273" xml:space="preserve"><value>% (fainter with distance)</value></data>
+  <data name="Ui_274" xml:space="preserve"><value>Tile grid</value></data>
+  <data name="Message_275" xml:space="preserve"><value>Width</value></data>
+  <data name="Message_276" xml:space="preserve"><value>Height</value></data>
+  <data name="Message_277" xml:space="preserve"><value>Color</value></data>
+  <data name="Message_278" xml:space="preserve"><value>Alpha (#RRGGBBAA) sets the intensity.</value></data>
+  <data name="Ui_280" xml:space="preserve"><value>Undo history</value></data>
+  <data name="Ui_284" xml:space="preserve"><value>Revert to saved</value></data>
+  <data name="Ui_286" xml:space="preserve"><value>New project</value></data>
+  <data name="Ui_287" xml:space="preserve"><value>Choose a save location</value></data>
+  <data name="Message_289" xml:space="preserve"><value>Choose the root folder containing the images to edit.</value></data>
+  <data name="Message_290" xml:space="preserve"><value>Open</value></data>
+  <data name="Ui_292" xml:space="preserve"><value>Chickxel project</value></data>
+  <data name="Message_294" xml:space="preserve"><value>New project — press Ctrl+S to choose where to save.</value></data>
+  <data name="Ui_295" xml:space="preserve"><value>New project</value></data>
+  <data name="Message_296" xml:space="preserve"><value>Save as</value></data>
+  <data name="Ui_297" xml:space="preserve"><value>Chickxel project</value></data>
+  <data name="Message_298" xml:space="preserve"><value>Save failed</value></data>
+  <data name="Ui_299" xml:space="preserve"><value> (export off)</value></data>
+  <data name="Ui_300" xml:space="preserve"><value>cells</value></data>
+  <data name="Ui_301" xml:space="preserve"><value>frames</value></data>
+  <data name="Ui_302" xml:space="preserve"><value>parts</value></data>
+  <data name="Ui_303" xml:space="preserve"><value>labels</value></data>
+  <data name="Message_304" xml:space="preserve"><value>Export:</value></data>
+  <data name="Message_308" xml:space="preserve"><value>File changed</value></data>
+  <data name="Message_309" xml:space="preserve"><value>The externally changed file was not reloaded. Saving will overwrite it.</value></data>
+  <data name="Message_310" xml:space="preserve"><value>Transform canceled</value></data>
+  <data name="Message_311" xml:space="preserve"><value>Canvas resize canceled</value></data>
+  <data name="Message_312" xml:space="preserve"><value>Timeline: copy</value></data>
+  <data name="Message_313" xml:space="preserve"><value>Timeline: cut</value></data>
+  <data name="Message_314" xml:space="preserve"><value>There is no selection to cut.</value></data>
+  <data name="Message_315" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Message_316" xml:space="preserve"><value>Timeline: paste</value></data>
+  <data name="Message_317" xml:space="preserve"><value>There is no image to paste.</value></data>
+  <data name="Message_318" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Message_319" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Ui_320" xml:space="preserve"><value>Flip horizontal</value></data>
+  <data name="Ui_321" xml:space="preserve"><value>Flip vertical</value></data>
+  <data name="Message_322" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Message_323" xml:space="preserve"><value>Selection rotated — press Enter to drop</value></data>
+  <data name="Message_324" xml:space="preserve"><value>Rotate canvas (all frames)</value></data>
+  <data name="Message_325" xml:space="preserve"><value>Transform: inside = move, handles = size, outside = rotate — Enter to apply, Esc to cancel</value></data>
+  <data name="Message_326" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Message_327" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="Message_328" xml:space="preserve"><value>Select a group or part to change that group's skin.</value></data>
+  <data name="Ui_331" xml:space="preserve"><value>Split by grid</value></data>
+  <data name="Message_332" xml:space="preserve"><value>Canvas size: handles = edges, Ctrl+drag = resize the image too (Shift keeps ratio), inside the image = move — Enter to confirm, Esc to cancel</value></data>
+  <data name="Message_333" xml:space="preserve"><value>No folder is open, so it can't be saved to a file. Create it without file_name or ask the user to open a folder.</value></data>
+  <data name="Message_334" xml:space="preserve"><value>No project is open.</value></data>
+  <data name="Message_335" xml:space="preserve"><value>This project has no save location yet. Tell the user to press Ctrl+S (⌘S) to choose a save location.</value></data>
+  <data name="Message_336" xml:space="preserve"><value>Couldn't write undo history: {m}</value></data>
+  <data name="Message_337" xml:space="preserve"><value>Folder not found:
+{openFolder}</value></data>
+  <data name="Message_338" xml:space="preserve"><value>Update {version}</value></data>
+  <data name="Message_339" xml:space="preserve"><value>Frame {value}/{count} · L{value2}</value></data>
+  <data name="Message_340" xml:space="preserve"><value>Undo: {u}</value></data>
+  <data name="Message_341" xml:space="preserve"><value>Redo: {r}</value></data>
+  <data name="Message_342" xml:space="preserve"><value>Tile {n}×{n2}px</value></data>
+  <data name="Message_343" xml:space="preserve"><value>Also delete the remaining undo history ({bytes} · {files} files) now?
+If "No", it is kept and deleted automatically based on the retention period and size limit (it resumes when turned back on).</value></data>
+  <data name="Message_344" xml:space="preserve"><value> · {n} unsaved files</value></data>
+  <data name="Message_345" xml:space="preserve"><value>"{displayName}" is a new project that has never been saved, so switching will lose its changes. Ask the user whether to save (save_project if they ask).</value></data>
+  <data name="Message_346" xml:space="preserve"><value>"{displayName}" is a new project that hasn't been saved yet. Save changes?</value></data>
+  <data name="Message_347" xml:space="preserve"><value>Discard unsaved changes to "{name}" and revert to the saved file? Discarded changes can't be restored with undo.</value></data>
+  <data name="Message_348" xml:space="preserve"><value>Reverted to saved: {name}{unsavedSuffix}</value></data>
+  <data name="Message_349" xml:space="preserve"><value>Couldn't save "{displayName}", so the app did not exit.{unsavedSuffix}</value></data>
+  <data name="Message_350" xml:space="preserve"><value>Saving will create {value}</value></data>
+  <data name="Message_351" xml:space="preserve"><value>Folder not found:
+{folder}</value></data>
+  <data name="Message_352" xml:space="preserve"><value>Folder: {folder}</value></data>
+  <data name="Message_353" xml:space="preserve"><value>Unity project "{value}" — saving also exports the sheet and .meta.</value></data>
+  <data name="Message_354" xml:space="preserve"><value>Invalid path: {path}</value></data>
+  <data name="Message_355" xml:space="preserve"><value>Already open: {value}</value></data>
+  <data name="Message_356" xml:space="preserve"><value>Opened: {value} — continuing to edit unsaved changes{unsavedSuffix}</value></data>
+  <data name="Message_357" xml:space="preserve"><value>File not found:
+{full}</value></data>
+  <data name="Message_358" xml:space="preserve"><value>Couldn't open:
+{full}
+
+{message}</value></data>
+  <data name="Message_359" xml:space="preserve"><value>{count} frames · {count2} tags</value></data>
+  <data name="Message_360" xml:space="preserve"><value> · {parts} parts</value></data>
+  <data name="Message_361" xml:space="preserve"><value>Imported PNG: {value} → {contents} — saving will create {path}.</value></data>
+  <data name="Message_362" xml:space="preserve"><value>Opened: {displayName} ({count} layers · {contents})</value></data>
+  <data name="Message_363" xml:space="preserve"><value>A file with the same name already exists:
+{path}</value></data>
+  <data name="Message_364" xml:space="preserve"><value>Closed — unsaved changes remain in memory (red dot in the file list){unsavedSuffix}</value></data>
+  <data name="Message_365" xml:space="preserve"><value>Autosaved ({name}){unsavedSuffix}</value></data>
+  <data name="Message_366" xml:space="preserve"><value>Autosave ({name}) — </value></data>
+  <data name="Message_367" xml:space="preserve"><value>The project was saved, but exporting the PNG sheet/.meta failed (check whether another program is using the file).
+{path}
+
+{message}</value></data>
+  <data name="Message_368" xml:space="preserve"><value>Couldn't save. The project remains modified.
+{path}
+
+{message}</value></data>
+  <data name="Message_369" xml:space="preserve"><value>Saved: {projectPath}</value></data>
+  <data name="Message_370" xml:space="preserve"><value>{label} {imagePath} {spriteCount} {unit}{meta}</value></data>
+  <data name="Message_371" xml:space="preserve"><value>{label} {count} files, {spriteCount} {unit}{meta}</value></data>
+  <data name="Message_372" xml:space="preserve"><value> · cleaned up {value} old outputs (app trash)</value></data>
+  <data name="Message_373" xml:space="preserve"><value> · failed to clean up old outputs ({message})</value></data>
+  <data name="Message_374" xml:space="preserve"><value>Couldn't export.
+{message}</value></data>
+  <data name="Message_375" xml:space="preserve"><value>Renamed: {value}</value></data>
+  <data name="Message_376" xml:space="preserve"><value>Moved the open project file to the trash: {value} — saving will recreate it.</value></data>
+  <data name="Message_377" xml:space="preserve"><value>Discarded unsaved in-memory changes to trashed {value}{unsavedSuffix}</value></data>
+  <data name="Message_378" xml:space="preserve"><value>"{value}" changed outside the app, but unsaved changes in memory are kept — saving will overwrite it.</value></data>
+  <data name="Message_379" xml:space="preserve"><value>"{displayName}" changed outside the app.
+Reloading will discard your current edits. Reload?</value></data>
+  <data name="Message_380" xml:space="preserve"><value>"{displayName}" changed outside the app. Reload?</value></data>
+  <data name="Message_381" xml:space="preserve"><value>Undo: {label}</value></data>
+  <data name="Message_382" xml:space="preserve"><value>Redo: {label}</value></data>
+  <data name="Message_383" xml:space="preserve"><value>Copy: {width}×{height}</value></data>
+  <data name="Message_384" xml:space="preserve"><value>Cut: {width}×{height}</value></data>
+  <data name="Message_385" xml:space="preserve"><value>Paste: {width}×{height} — drag to move, press Enter to drop</value></data>
+  <data name="Message_386" xml:space="preserve"><value>{label} (selection) — press Enter to drop</value></data>
+  <data name="Message_387" xml:space="preserve"><value>{label} (current cel)</value></data>
+  <data name="Message_388" xml:space="preserve"><value>Outline: {n} pixels</value></data>
+  <data name="Message_389" xml:space="preserve"><value>Replace color: {n} pixels</value></data>
+  <data name="Message_390" xml:space="preserve"><value>"{name}" skin: {name2}</value></data>
+  <data name="Message_391" xml:space="preserve"><value>Group "{name}" has only one skin — click the skin chip in the timeline name column to add skins in the skin manager.</value></data>
+  <data name="Message_392" xml:space="preserve"><value>This discards the current {count} frames, layers, and tags and replaces them with {count2} frames split from the current frame's image. This can't be undone.</value></data>
+  <data name="Message_393" xml:space="preserve"><value>Split by grid: {count} frames ({width}×{height}) — create tags to define animations.</value></data>
+  <data name="Message_394" xml:space="preserve"><value>Couldn't start the internal AI connection server (MCP).
+{message}</value></data>
+  <data name="Message_395" xml:space="preserve"><value>Size must be between 1 and {maxSize}: {width}×{height}</value></data>
+  <data name="Message_396" xml:space="preserve"><value>Invalid file name: {fileName}</value></data>
+  <data name="Message_397" xml:space="preserve"><value>A file with the same name already exists: {path}</value></data>
+  <data name="Message_398" xml:space="preserve"><value>New project {width}×{height} — no save location yet</value></data>
+  <data name="Message_399" xml:space="preserve"><value>Created a new project but couldn't save it: {saveMessage}</value></data>
+  <data name="Message_400" xml:space="preserve"><value>New project {width}×{height} → {path}</value></data>
+  <data name="Shortcut_DuplicateId" xml:space="preserve"><value>Duplicate shortcut command name: {id}</value></data>
+  <data name="Shortcut_CommitSelection" xml:space="preserve"><value>Drop selection</value></data>
+  <data name="Shortcut_DeselectCanvas" xml:space="preserve"><value>Deselect (canvas)</value></data>
+  <data name="Shortcut_PeekPrevious" xml:space="preserve"><value>Peek previous frame (hold)</value></data>
+  <data name="Shortcut_CycleSelection" xml:space="preserve"><value>Selection slot (next selection tool)</value></data>
+  <data name="Shortcut_NudgeOne" xml:space="preserve"><value>Move 1px {direction}</value></data>
+  <data name="Shortcut_NudgeEight" xml:space="preserve"><value>Move 8px {direction}</value></data>
+  <data name="Shortcut_CycleAgain" xml:space="preserve"><value>{tool} — press {shortcut} again within 10 seconds to switch to the next selection tool.</value></data>
+  <data name="Message_NoOutlinePixels" xml:space="preserve"><value>Nowhere to draw an outline (no opaque pixels).</value></data>
+  <data name="Menu_Category_Ai" xml:space="preserve"><value>_AI</value></data>
+  <data name="ShortcutCategory_File" xml:space="preserve"><value>File</value></data>
+  <data name="ShortcutCategory_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="ShortcutCategory_View" xml:space="preserve"><value>View</value></data>
+  <data name="ShortcutCategory_FrameLayer" xml:space="preserve"><value>Frames · layers</value></data>
+  <data name="ShortcutCategory_Tools" xml:space="preserve"><value>Tools</value></data>
+  <data name="ShortcutCategory_Test" xml:space="preserve"><value>Test</value></data>
+  <data name="ShortcutCategory_Ai" xml:space="preserve"><value>AI</value></data>
+  <data name="ShortcutCategory_Help" xml:space="preserve"><value>Help</value></data>
+  <data name="Export_FailureTitle" xml:space="preserve"><value>Export failed</value></data>
+  <data name="Export_TrashOne" xml:space="preserve"><value>Export cleanup: {name}</value></data>
+  <data name="Export_TrashMany" xml:space="preserve"><value>Export cleanup: {name} and {count} more</value></data>
+  <data name="Edit_AddOutline" xml:space="preserve"><value>Add outline</value></data>
+  <data name="Edit_ReplaceColor" xml:space="preserve"><value>Replace color</value></data>
+  <data name="Menu_Help_Guide" xml:space="preserve"><value>Guide…</value></data>
+  <data name="Menu_Help_Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Menu_Help_Discord" xml:space="preserve"><value>Report a bug or idea (Discord)…</value></data>
+  <data name="Drop_UndoLabel" xml:space="preserve"><value>Drop image</value></data>
+  <data name="Drop_Added" xml:space="preserve"><value>Added as new layer: {names}</value></data>
+  <data name="Drop_FramesAdded" xml:space="preserve"><value> · {count} frames added</value></data>
+  <data name="Drop_Oversized" xml:space="preserve"><value> — An image larger than the canvas was centered and the parts outside the canvas were cut. To keep everything, enlarge the canvas first in Canvas size mode (Edit > Canvas size…).</value></data>
+  <data name="Drop_Unreadable" xml:space="preserve"><value>Could not read image: {names}</value></data>
+  <data name="Menu_Ai_Pixelate" xml:space="preserve"><value>Pixelate AI image…</value></data>
+  <data name="Menu_Ai_PixelateLayer" xml:space="preserve"><value>Pixelate current layer…</value></data>
+  <data name="Pixelate_UndoLabel" xml:space="preserve"><value>Pixelate AI image</value></data>
+  <data name="Pixelate_EmptyLayer" xml:space="preserve"><value>The current layer has nothing to pixelate.</value></data>
+  <data name="Pixelate_AddedLayer" xml:space="preserve"><value>Added as layer ‘{name}’ ({frames} frames, {width}×{height})</value></data>
+  <data name="Pixelate_NewDocument" xml:space="preserve"><value>Created a new document ({frames} frames, {width}×{height})</value></data>
+  <data name="Pixelate_PaletteName" xml:space="preserve"><value>{name} palette</value></data>
+  <data name="Pixelate_ReferenceAdded" xml:space="preserve"><value> · source added to AI references</value></data>
+  <data name="Pixelate_ReferenceFailed" xml:space="preserve"><value> · couldn't add to references: {message}</value></data>
+  <data name="Tabs_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Tabs_CloseOthers" xml:space="preserve"><value>Close other tabs</value></data>
+  <data name="Tabs_New" xml:space="preserve"><value>New project (new tab)</value></data>
+  <data name="Tabs_MoveToOther" xml:space="preserve"><value>Move to the other pane</value></data>
+  <data name="Tabs_SplitTip" xml:space="preserve"><value>Move this tab to the other pane (you can also drag the tab to the right edge of the canvas)</value></data>
+  <data name="Tabs_UnsavedTip" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Tabs_Next" xml:space="preserve"><value>Next tab</value></data>
+  <data name="Tabs_Previous" xml:space="preserve"><value>Previous tab</value></data>
+  <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to move to a right pane</value></data>
+  <data name="Tabs_DropMove" xml:space="preserve"><value>Drop to move here</value></data>
+  <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
+  <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
+  <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
+  <data name="Place_TransformHint" xml:space="preserve"><value> — Transform mode: drag inside = move, handles = size, outside = rotate, Enter = apply (parts outside the canvas are cut then), Esc = keep as inserted</value></data>
+  <data name="Place_MultiFrameHint" xml:space="preserve"><value> — inserted without transform mode because the image has several frames (move each frame with Ctrl+T)</value></data>
+  <data name="Open_FilterSupported" xml:space="preserve"><value>All supported files</value></data>
+  <data name="Open_FilterImages" xml:space="preserve"><value>Images (PNG, JPG, BMP, GIF, WebP, ICO, AVIF, HEIC)</value></data>
+  <data name="Open_FilterAnimations" xml:space="preserve"><value>Animations (GIF, WebP, APNG)</value></data>
+  <data name="Open_FilterVideos" xml:space="preserve"><value>Videos (MP4, WebM, MOV, MKV, AVI)</value></data>
+  <data name="Open_FilterAllFiles" xml:space="preserve"><value>All files</value></data>
+  <data name="Open_ManyFiles" xml:space="preserve"><value>Open {count} files, each in its own tab?</value></data>
+  <data name="Open_ManyFrames" xml:space="preserve"><value>{name} has {count} frames. Opening all of them can use a lot of memory and take a while.
+
+Open all frames, or only the first {limit}?</value></data>
+  <data name="Open_AllFrames" xml:space="preserve"><value>Open all</value></data>
+  <data name="Open_FirstFrames" xml:space="preserve"><value>First {limit} only</value></data>
+  <data name="Open_DecodingTitle" xml:space="preserve"><value>Decoding image</value></data>
+  <data name="Open_Decoding" xml:space="preserve"><value>Decoding frames of {name}…</value></data>
+  <data name="Open_Unreadable" xml:space="preserve"><value>Can't open {name} (unsupported format or damaged file).</value></data>
+  <data name="Open_Opened" xml:space="preserve"><value>Opened {name} — {frames} frames, {width}×{height}, {ms} ms total · not saved yet (saving asks where to put the .chickxel)</value></data>
+  <data name="Transform_Cels" xml:space="preserve"><value>Transforming {count} cels together · </value></data>
+  <data name="Transform_LockedSkipped" xml:space="preserve"><value>Skipped {count} cels on locked layers · </value></data>
+  <data name="Tool_Shape_Name" xml:space="preserve"><value>Shape</value></data>
+  <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: keep proportions · U: outline/filled · pick the shape in Tool options</value></data>
+  <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
+</root>

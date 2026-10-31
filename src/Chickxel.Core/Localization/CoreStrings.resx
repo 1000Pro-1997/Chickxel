@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Png_InvalidFile" xml:space="preserve">
+    <value>PNG 파일이 아닙니다.</value>
+  </data>
+  <data name="Png_InvalidChunkLength" xml:space="preserve">
+    <value>PNG 청크 길이가 잘못되었습니다.</value>
+  </data>
+  <data name="Png_InvalidHeader" xml:space="preserve"><value>IHDR가 잘못되었습니다.</value></data>
+  <data name="Png_HeaderMissing" xml:space="preserve"><value>PNG 헤더(IHDR)가 없습니다.</value></data>
+  <data name="Png_UnsupportedColorType" xml:space="preserve"><value>지원하지 않는 PNG 색 형식: {colorType}</value><comment>colorType = PNG 색 형식 번호.</comment></data>
+  <data name="Png_UnsupportedBitDepth" xml:space="preserve"><value>지원하지 않는 PNG 비트 깊이: {bitDepth}</value><comment>bitDepth = PNG 비트 깊이.</comment></data>
+  <data name="Png_PaletteMissing" xml:space="preserve"><value>팔레트(PLTE)가 없습니다.</value></data>
+  <data name="Png_ImageTooLarge" xml:space="preserve"><value>이미지 크기가 너무 큽니다: {width}x{height}</value><comment>width, height = PNG 원본 픽셀 크기.</comment></data>
+  <data name="Png_InvalidFilter" xml:space="preserve"><value>PNG 필터 값이 잘못되었습니다: {filter}</value><comment>filter = PNG 필터 번호.</comment></data>
+  <data name="Png_Truncated" xml:space="preserve"><value>PNG 데이터가 중간에 끝났습니다.</value></data>
+  <data name="TranslationCsv_NoKeyHeader" xml:space="preserve"><value>번역 CSV가 아닙니다. 첫 줄 첫 칸이 "key"여야 합니다.</value></data>
+  <data name="TranslationCsv_DuplicateLanguage" xml:space="preserve"><value>같은 언어 코드의 열이 두 개 있습니다: {code}</value><comment>code = 겹친 언어 코드(예: ja).</comment></data>
+  <data name="Refs_BuiltInRules_Title" xml:space="preserve"><value>Chickxel 기본 규칙</value></data>
+  <data name="Refs_Example_slime_Title" xml:space="preserve"><value>슬라임</value></data>
+  <data name="Refs_Example_slime_Description" xml:space="preserve"><value>16×16 초록 슬라임 캐릭터. 어두운 녹색 1px 외곽선, 왼쪽 위 광원, 노란빛으로 색조가 옮겨 가는 4단 녹색 명암에 왼쪽 위 하이라이트와 오른쪽 아래 그림자, 큼직한 2×2 눈으로 작은 크기에서도 읽히게 했습니다.</value></data>
+  <data name="Refs_Example_slime_Tags" xml:space="preserve"><value>슬라임, 몬스터, 적, 16px</value></data>
+  <data name="Refs_Example_sword_Title" xml:space="preserve"><value>검</value></data>
+  <data name="Refs_Example_sword_Description" xml:space="preserve"><value>16×16 대각선 검 아이템 아이콘. 남보라색 1px 외곽선, 왼쪽 위 광원으로 칼날 왼쪽은 흰색·오른쪽은 푸른 회색 3단 명암, 금색 가드와 갈색 손잡이, 빨간 폼멜로 재질을 구분했습니다.</value></data>
+  <data name="Refs_Example_sword_Tags" xml:space="preserve"><value>검, 무기, 아이템, 아이콘, 16px</value></data>
+  <data name="Refs_Example_hero_Title" xml:space="preserve"><value>주인공</value></data>
+  <data name="Refs_Example_hero_Description" xml:space="preserve"><value>32×32 정면 2등신 캐릭터. 머리가 키의 절반을 넘는 치비 비율, 짙은 자주빛 1px 외곽선, 왼쪽 위 광원의 3단 머리·피부·옷 명암, 좌우 대칭 실루엣에 하이라이트만 왼쪽에 두었습니다.</value></data>
+  <data name="Refs_Example_hero_Tags" xml:space="preserve"><value>주인공, 캐릭터, 사람, 정면, 치비, 32px</value></data>
+  <data name="Refs_Example_slime_bounce_Title" xml:space="preserve"><value>슬라임 통통 튀기</value></data>
+  <data name="Refs_Example_slime_bounce_Description" xml:space="preserve"><value>16×16 슬라임의 4프레임 점프 애니메이션(프레임당 120ms). 기본 → 납작하게 눌림(스쿼시) → 위로 늘어나며 뜸(스트레치) → 착지 순서이며, 모양만 바뀌고 외곽선·명암·눈 위치 규칙은 정지 그림과 같습니다.</value></data>
+  <data name="Refs_Example_slime_bounce_Tags" xml:space="preserve"><value>슬라임, 몬스터, 애니메이션, 점프, 스쿼시, 16px</value></data>
+  <data name="Refs_Example_grass_Title" xml:space="preserve"><value>풀 타일</value></data>
+  <data name="Refs_Example_grass_Description" xml:space="preserve"><value>16×16 풀 덮인 흙 지면 타일. 위쪽은 3단 녹색 풀, 들쭉날쭉한 어두운 경계선 아래는 3단 갈색 흙에 흩뿌린 돌 점이며, 좌우 끝이 이어져 가로로 반복해도 이음매가 보이지 않습니다.</value></data>
+  <data name="Refs_Example_grass_Tags" xml:space="preserve"><value>풀, 흙, 지면, 타일, 반복, 16px</value></data>
+  <data name="Gif_InvalidFile" xml:space="preserve"><value>GIF 파일이 아니거나 머리글이 잘못되었습니다.</value></data>
+  <data name="Gif_NoFrames" xml:space="preserve"><value>GIF에 읽을 수 있는 프레임이 없습니다.</value></data>
+</root>

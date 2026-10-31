@@ -6,7 +6,7 @@
 
 - UI에 **이모지나 기호 문자를 아이콘으로 쓰지 않습니다**. 단추·메뉴·탭·목록·칩·타임라인처럼 그림 역할을 하는 자리는 모두 해당합니다(예: 재생·멈춤 기호, 주사위·경고·별·하트 이모지, ↗ ⇄ ✓ ✕ ● ◆ ☰ ▾ ▸ ⠿ ⧉ ＋ 같은 기호 — 금지 목록을 적는 이 줄 말고는 문서에도 쓰지 않음).
 - 아이콘은 **벡터(SVG 경로)로 그립니다**.
-  - 경로는 `src/Gpixel.App/VectorIcons.cs`에 24×24 선 아이콘으로 더합니다(Lucide 모양, 새 Lucide 아이콘을 쓰면 `THIRD-PARTY-NOTICES.md`에도 적음).
+  - 경로는 `src/Chickxel.App/VectorIcons.cs`에 24×24 선 아이콘으로 더합니다(Lucide 모양, 새 Lucide 아이콘을 쓰면 `THIRD-PARTY-NOTICES.md`에도 적음).
   - 화면에는 `IconView`, `Ui.Icon`, `Ui.IconLabel`, `Ui.IconButton`, `Ui.InlineIcon`, 메뉴는 `MenuItem.Icon`, 직접 그리는 컨트롤은 경로 도형으로 그립니다.
 - 이모지는 문서(README·CHANGELOG 등)와 커밋 메시지에도 쓰지 않습니다.
 - 그대로 써도 되는 것은 **문장 속 글자**뿐입니다: 단축키 기호(⌘ ⇧ ⌥ ⌫), 방향키 안내(↑↓←→), 설명 문장의 → ↔ · — ~, 크기의 ×(16×16), 단위(° %), ©, ①②.
@@ -14,7 +14,7 @@
 
 ## 도움말 변경은 대기 목록으로
 
-- 사용자가 반영하라고 하기 전에는 도움말(원본 `docs/i18n/guide.html`·`docs/i18n/guide.csv`와 거기서 만드는 `docs/guide.html`, `docs/en/guide.html`, `src/Gpixel.App/Assets/Help/*.json`)을 고치지 않습니다.
+- 사용자가 반영하라고 하기 전에는 도움말(원본 `docs/i18n/guide.html`·`docs/i18n/guide.csv`와 거기서 만드는 `docs/guide.html`, `docs/en/guide.html`, `src/Chickxel.App/Assets/Help/*.json`)을 고치지 않습니다.
 - 도움말에 써야 할 변경은 저장소 루트의 `도움말-대기.md`에 한국어로 항목별로 적어 둡니다.
 - 반영하라고 하면 요청한 항목만 하나씩 `docs/i18n`(틀·언어별 문구 표)에 쓰고(`python tools/build-docs.py`로 홈페이지 HTML과 앱 도움말 JSON 다시 만들기), 반영한 항목은 `도움말-대기.md`에서 지웁니다.
 

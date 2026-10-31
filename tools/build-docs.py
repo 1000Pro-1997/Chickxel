@@ -10,15 +10,15 @@ Sources (docs/i18n/):
                                        `dotnet run --project tools/GuideShots -- --shortcuts docs/i18n/shortcuts.json`);
                                        the website shows ⌘⌥⇧ on macOS and the app's F1 guide shows the user's own keys
                  {{selected:<lang>}}   " selected" on the page of that language (language picker)
-                 {{MainStrings.Name}}  an app string (src/Gpixel.App/Localization or
-                 {{UiStrings.Name}}    src/Gpixel.Core/Localization <Table>.resx / <Table>.<lang>.resx),
+                 {{MainStrings.Name}}  an app string (src/Chickxel.App/Localization or
+                 {{UiStrings.Name}}    src/Chickxel.Core/Localization <Table>.resx / <Table>.<lang>.resx),
                                        so tool and menu names match the app
   <page>.csv   strings in the app's translation CSV format: first row `key,ko,en,...`,
                second row `#name,한국어,English,...`. Values may use {{root}} and app strings too.
                An empty cell falls back to English, then Korean.
 
 Output: docs/<page>.html for Korean and docs/<lang>/<page>.html for every other column,
-then `tools/build-help.py` regenerates src/Gpixel.App/Assets/Help/help.<lang>.json.
+then `tools/build-help.py` regenerates src/Chickxel.App/Assets/Help/help.<lang>.json.
 
     python tools/build-docs.py           # write pages + in-app guide
     python tools/build-docs.py --check   # exit 1 if a page is out of date, a key is unknown/unused,
@@ -42,7 +42,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "docs" / "i18n"
 DOCS = ROOT / "docs"
-RESX_DIRS = [ROOT / "src" / "Gpixel.App" / "Localization", ROOT / "src" / "Gpixel.Core" / "Localization"]
+RESX_DIRS = [ROOT / "src" / "Chickxel.App" / "Localization", ROOT / "src" / "Chickxel.Core" / "Localization"]
 BASE_LANG = "ko"
 PLACEHOLDER = re.compile(r"\{\{(key:[^{}]+|[\w.:\-]+)\}\}")
 SHORTCUTS = SRC / "shortcuts.json"

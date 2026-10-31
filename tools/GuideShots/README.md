@@ -1,6 +1,6 @@
 # GuideShots — 사용 가이드 스크린샷
 
-실제 Gpixel 화면을 화면 없이(Avalonia Headless + Skia) 띄워 사용 가이드(홈페이지·F1)용 PNG를 찍습니다. 샷마다 임시 설정 폴더(`GPIXEL_DATA_DIR`)를 새로 만들어 사용자 설정과 실행 중인 앱을 건드리지 않습니다.
+실제 Chickxel 화면을 화면 없이(Avalonia Headless + Skia) 띄워 사용 가이드(홈페이지·F1)용 PNG를 찍습니다. 샷마다 임시 설정 폴더(`CHICKXEL_DATA_DIR`)를 새로 만들어 사용자 설정과 실행 중인 앱을 건드리지 않습니다.
 
 ## 실행
 
@@ -11,7 +11,7 @@ dotnet run --project tools/GuideShots -- --list
 
 - 인수가 없으면 모든 샷을 찍습니다. `screen-`처럼 앞부분만 주면 그 샷들만 찍습니다. 샷은 하나씩 따로 된 프로세스(`--only <id>`)에서 찍어 앞 샷이 남긴 창·타이머·폴더 감시가 다음 샷에 끼어들지 않습니다(4분이 넘으면 멈춘 것으로 보고 실패 처리).
 - macOS에서 돌려도 Windows 모습(단축키 `Ctrl`)으로 찍습니다. 가이드 글이 `Ctrl` 기준이기 때문입니다.
-- 그림에 보이는 예시 파일 폴더는 Windows `C:\GpixelGuide\MyGame`, 그 밖에는 `/tmp/GpixelGuide/MyGame`입니다. 샷마다 지우고 다시 만들므로 여러 프로세스를 같이 돌릴 때는 `GUIDESHOTS_ROOT`로 프로세스마다 다른 폴더를 주고, 빌드도 `dotnet build tools/GuideShots --artifacts-path <폴더>`로 나눕니다(저장소 루트에서 실행).
+- 그림에 보이는 예시 파일 폴더는 Windows `C:\ChickxelGuide\MyGame`, 그 밖에는 `/tmp/ChickxelGuide/MyGame`입니다. 샷마다 지우고 다시 만들므로 여러 프로세스를 같이 돌릴 때는 `GUIDESHOTS_ROOT`로 프로세스마다 다른 폴더를 주고, 빌드도 `dotnet build tools/GuideShots --artifacts-path <폴더>`로 나눕니다(저장소 루트에서 실행).
 - UI를 바꾼 뒤 다시 돌리면 같은 상태로 다시 찍힙니다. 그다음 `python tools/build-docs.py`로 홈페이지 HTML과 F1 가이드(WebP 포함)를 갱신합니다.
 
 ## 표시 규칙

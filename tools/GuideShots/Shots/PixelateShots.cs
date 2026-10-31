@@ -3,10 +3,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.App.Localization;
-using Gpixel.Core.IO;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.App.Localization;
+using Chickxel.Core.IO;
+using Chickxel.Core.Model;
 
 namespace GuideShots;
 
@@ -114,14 +114,12 @@ internal static class PixelateKit
 
     public static void WaitCandidates(ShotKit k, PixelateDialog dlg, int timeoutMs = 120000)
     {
-        var running = UiStrings.Pixelate_Status_Running;
-        running = running[..running.IndexOf('{')];
-        var status = ShotKit.Get<TextBlock>(dlg, "_status");
+        // 처음 후보 줄(체크한 프리셋을 설정 그대로 한 번씩)이 끝나고 후보 하나가 골라질 때까지.
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
             k.Settle(200);
-            if (ShotKit.Get<object?>(dlg, "_selected") is not null && !(status.Text ?? "").StartsWith(running, StringComparison.Ordinal)) break;
+            if (ShotKit.Get<object?>(dlg, "_selected") is not null && ShotKit.Get<object?>(dlg, "_optCts") is null) break;
         }
         k.Settle(600);
     }
@@ -358,19 +356,12 @@ internal static class PixelateShots
         Pair("pixelate-settings-6", 12, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
     }
 
-    // 후보와 점수: 후보 단계 설정(①②), 후보 칸·방식 이름·점수·점수 내역(③~⑥), 후보 풍선의 점수 내역(⑦).
+    // 후보와 점수: 후보 칸·방식 이름·점수·점수 내역(①~④), 후보 풍선의 점수 내역(⑤).
     [Shot("pixelate-candidates")]
     public static void Candidates(ShotKit k)
     {
-        var dlg = PixelateKit.Open(k, expanded: true);
+        var dlg = PixelateKit.Open(k, expanded: false);
         ShotKit.Call(dlg, "StopPlayback");
-        PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Candidates);
-        var section = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Candidates);
-        PixelateKit.ScrollToTop(k, section);
-        var count = ShotKit.Get<NumericUpDown>(dlg, "_candCount");
-        var vary = (Control)ShotKit.Get<CheckBox>(dlg, "_vScale").Parent!;
-        k.SaveControl(section, "pixelate-candidates", pad: 14, marks: [PixelateKit.LeftBox((Control)count.Parent!, dlg, 10), PixelateKit.LeftBox(vary, dlg, 10)]);
-        ShotKit.Call(dlg, "SetSettingsExpanded", false, false);
         k.Settle(600);
 
         var info = ShotKit.Get<TextBlock>(dlg, "_selectedInfo");
@@ -383,7 +374,7 @@ internal static class PixelateShots
         var title = Line(tileList[0], 0);
         var area = PixelateKit.Union(dlg, info, breakdown, scroll);
         k.Save(dlg, "pixelate-candidates-2", crop: new Rect(area.X - 40, area.Y - 4, area.Width + 48, area.Height + 12),
-            marks: [scroll, PixelateKit.LeftBox(Line(thin, 2), dlg), PixelateKit.LeftBox(title, dlg), PixelateKit.LeftBox(breakdown, dlg, 26, 1)], firstNumber: 3);
+            marks: [scroll, PixelateKit.LeftBox(Line(thin, 2), dlg), PixelateKit.LeftBox(title, dlg), PixelateKit.LeftBox(breakdown, dlg, 26, 1)]);
 
         // 후보 칸 풍선(점수 항목별 내역).
         var tip = tileList[1];
@@ -393,7 +384,7 @@ internal static class PixelateShots
         var popup = PixelateKit.LastOpenPopup();
         var pr = PixelateKit.PopupBounds((Control)popup.Child!, dlg);
         var tr = ShotKit.Bounds(tip, dlg);
-        k.Save(dlg, "pixelate-candidates-3", crop: pr.Union(tr).Inflate(16), marks: [pr], firstNumber: 7);
+        k.Save(dlg, "pixelate-candidates-3", crop: pr.Union(tr).Inflate(16), marks: [pr], firstNumber: 5);
         ToolTip.SetIsOpen(tip, false);
     }
 
@@ -619,7 +610,7 @@ internal static class PixelateShots
         provider.IsDropDownOpen = false;
     }
 
-    // 프리셋 줄: 목록(①)·저장(②)·이름 바꾸기(③)·삭제(④)·정리하기(⑤), 이름 바꾸기 창(⑥).
+    // 프리셋 줄: 목록(①)·저장(②)·이름 바꾸기(③)·복사(④)·삭제(⑤)·정리하기(⑥), 이름 바꾸기 창(⑦).
     [Shot("pixelate-presets")]
     public static void Presets(ShotKit k)
     {
@@ -645,7 +636,7 @@ internal static class PixelateShots
             box.Text = "Chibi 48px";
             box.CaretIndex = box.Text.Length;
             ShotKit.Pump(300);
-            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 6);
+            k.Save(w, "pixelate-presets-2", marks: [PixelateKit.Box(box, w, 2)], firstNumber: 7);
         });
     }
 }

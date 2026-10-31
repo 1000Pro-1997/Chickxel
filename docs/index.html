@@ -4,13 +4,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gpixel — 게임용 픽셀 아트 편집기</title>
-<meta name="description" content="Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
-<meta property="og:title" content="Gpixel — 게임용 픽셀 아트 편집기">
-<meta property="og:description" content="Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
-<meta property="og:image" content="https://1000pro-1997.github.io/GPixel/assets/screenshot.png">
-<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/">
-<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/">
+<title>Chickxel — 게임용 픽셀 아트 편집기</title>
+<meta name="description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
+<meta property="og:title" content="Chickxel — 게임용 픽셀 아트 편집기">
+<meta property="og:description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
+<meta property="og:image" content="https://1000pro-1997.github.io/Chickxel/assets/screenshot.png">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/Chickxel/">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=20261027g">
@@ -18,7 +18,7 @@
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
   var saved = null;
-  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
   if (want !== 'ko') location.replace('en/' + '' + location.hash);
 })();
@@ -27,7 +27,7 @@
 <body>
 <header class="top">
 <div class="bar">
-<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
 <nav class="nav">
 <a href="index.html" aria-current="page">홈</a>
 <a class="hide-sm" href="index.html#core">대표 기능</a>
@@ -53,18 +53,18 @@
 <a class="btn primary" id="main-download" href="#download"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>다운로드</span></a>
 <a class="btn" href="guide.html">사용 가이드</a>
 <a class="btn discord icon-only" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener" aria-label="Discord" title="Discord"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>
-<a class="btn support" href="https://buymeacoffee.com/gpixel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>후원하기</a>
+<a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>후원하기</a>
 </div>
-<p class="os-links">바로 받기: <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Windows</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">macOS (Apple Silicon)</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">macOS (Intel)</a></p>
-<div class="facts"><span class="fact">무료</span><span class="fact">오픈 소스 (MIT)</span><span class="fact">Windows 10/11</span><span class="fact">macOS 12+</span><span class="fact">설치할 것 없음</span></div>
+<p class="os-links">바로 받기: <a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip">Windows</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip">macOS (Apple Silicon)</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip">macOS (Intel)</a></p>
+<div class="facts"><span class="fact">무료</span><span class="fact">소스 공개</span><span class="fact">Windows 10/11</span><span class="fact">macOS 12+</span><span class="fact">설치할 것 없음</span></div>
 </div>
-<div class="hero-board"><img src="assets/screenshot.png" alt="Gpixel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정" width="1440" height="860"></div>
+<div class="hero-board"><img src="assets/screenshot.png" alt="Chickxel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정" width="1440" height="860"></div>
 </div>
 </section>
 
 <section class="section core" id="core">
 <div class="wrap">
-<div class="section-title"><span class="eyebrow">Key features</span><h2>대표 기능</h2><p>Gpixel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href="guide.html#featured-common">빠른 작업</a>에서도 볼 수 있습니다.</p></div>
+<div class="section-title"><span class="eyebrow">Key features</span><h2>대표 기능</h2><p>Chickxel을 쓰면서 가장 자주 만나는 기능을 움직이는 화면과 함께 소개합니다. 사용 가이드의 <a href="guide.html#featured-common">빠른 작업</a>에서도 볼 수 있습니다.</p></div>
 <div class="core-grid">
 <a class="core-card tall" href="guide.html#featured-number-field">
 <div class="core-card-head"><span class="core-tag">공통 기능</span><h3>숫자 칸 바꾸는 법</h3></div>
@@ -143,28 +143,28 @@
 <div class="wrap">
 <div class="section-title"><span class="eyebrow">Download</span><h2>다운로드</h2><p>압축을 풀고 바로 실행합니다. 새 버전은 앱이 알려 주고 스스로 업데이트합니다.</p></div>
 <div class="downloads">
-<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip"><strong>Windows</strong><span>Windows 10/11 · x64</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
-<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip"><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
-<a class="download" href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip"><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
+<a class="download" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"><strong>Windows</strong><span>Windows 10/11 · x64</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
+<a class="download" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
+<a class="download" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class="get"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>ZIP 다운로드</span></a>
 </div>
-<p class="note-line">처음 실행할 때 서명 경고가 뜨면 사용 가이드의 <a href="guide.html#start-first-run">처음 실행할 때</a>를 보세요. 지난 버전과 바뀐 점은 <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스</a>에 있습니다.</p>
+<p class="note-line">처음 실행할 때 서명 경고가 뜨면 사용 가이드의 <a href="guide.html#start-first-run">처음 실행할 때</a>를 보세요. 지난 버전과 바뀐 점은 <a href="https://github.com/1000Pro-1997/Chickxel/releases">릴리스</a>에 있습니다.</p>
 <div class="buttons note-line"><a class="btn discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg><span>제보·아이디어는 Discord로</span></a>
-<a class="btn support" href="https://buymeacoffee.com/gpixel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Gpixel 개발 후원하기</a></div>
+<a class="btn support" href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Chickxel 개발 후원하기</a></div>
 </div>
 </section>
 </main>
 
 <footer>
 <div class="wrap">
-<span><strong>Gpixel</strong> · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
-<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
+<span><strong>Chickxel</strong> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href="https://github.com/1000Pro-1997/Chickxel">GitHub</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases">릴리스</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/Chickxel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
 </div>
 </footer>
 <script>
 // 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
 document.getElementById('lang-select').addEventListener('change', function (e) {
   var to = e.target.value;
-  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  try { localStorage.setItem('chickxel-lang', to); } catch (err) {}
   var page = location.pathname.split('/').pop() || '';
   location.href = ('en/') + page + location.hash;
 });
@@ -174,7 +174,7 @@ document.getElementById('lang-select').addEventListener('change', function (e) {
   var mac = /Mac/i.test(ua), win = /Win/i.test(ua);
   var main = document.getElementById('main-download');
   if (mac || win) {
-    main.href = 'https://github.com/1000Pro-1997/GPixel/releases/latest/download/' + (mac ? 'Gpixel-macos-arm64.zip' : 'Gpixel-windows-x64.zip');
+    main.href = 'https://github.com/1000Pro-1997/Chickxel/releases/latest/download/' + (mac ? 'Chickxel-macos-arm64.zip' : 'Chickxel-windows-x64.zip');
   }
 })();
 </script>

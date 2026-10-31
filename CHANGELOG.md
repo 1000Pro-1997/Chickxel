@@ -2,14 +2,85 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## v1.14.60 (2026-10-30)
+## v1.14.61 (2026-11-01)
+### Chickxel moves from MIT to a source-available license
+- Chickxel is now under its own source-available license (`LICENSE`). Official releases stay free for anyone, including commercial work, and what you make with Chickxel is yours.
+- The source stays public: you can read it, build it and change it for your own use, but you can't redistribute or sell the original or a modified version without permission.
+- Contributions can be used and relicensed by the copyright holder. Everything published under MIT (releases up to v1.14.60) stays MIT.
+- The About window, the website and `THIRD-PARTY-NOTICES.md` show the new license.
+
+### Checked presets always have a place in the candidate row
+- Every preset checked in the auto-optimize settings now shows a tile in the candidate row even before it has run (preset name, "Not run yet"), including before a source image is added. Checking or unchecking a preset adds or removes its tile right away.
+- Right-click such a tile and choose **Run only this preset** to optimize just that one; the tile blinks while it runs and becomes its result.
+
+### Preset bar: copy button and clearer colors
+- A **Copy** button next to Delete saves the current values as "name copy 1" right after the open preset (then copy 2, 3…; copying a copy counts up from the original name).
+- **Save** is now disabled when nothing changed, instead of turning green. **Delete** is red, and **Clean up** is a green icon-only button with its name in the tooltip.
+
+### Gpixel is now Chickxel
+- The app, its website and its GitHub repository are renamed to Chickxel: https://1000pro-1997.github.io/Chickxel/ and https://github.com/1000Pro-1997/Chickxel (old github.com links redirect).
+- New projects are saved as `.chickxel` and asset packages as `.chickxel-asset`. `.gpixel` projects and `.gpixel-asset` packages still open, import and save as before; **Save As** suggests the `.chickxel` name. Effects saved with `gpixel.effect.` type IDs read as before.
+- On first start the `Gpixel` settings folder (settings, installed assets, undo history, trash, chats, logs, and on Windows the Node.js added by the AI installer) moves to `Chickxel`. If an older version is still running, it is copied and the old folder stays.
+- Downloads are now `Chickxel-windows-x64.zip` (`Chickxel.exe`) and `Chickxel-macos-*.zip` (`Chickxel.app`). Versions up to 1.14.60 can't find these in their update check, and their online asset list stops loading, so download this version manually once.
+- Official catalog assets now have `chickxel.` IDs; ones already installed with `gpixel.` IDs keep working.
+
+### Optimize the pixel grid first, and preview the cell split
+- **3. Pixel grid** has a new **Optimize grid fit first** checkbox. When on, Clean up and Auto optimize first try only the grid values (pixel size, size jitter, pixel size source, local correction; offset X·Y for a manual grid) and keep the cell split with the best cell split score, then optimize the other steps on that grid with the normal score. The grid stage uses up to half of the trial and time budget when other steps are optimized too. The checkbox is saved with the preset.
+- The cell split score looks only at the source and the cell boundaries, not at the palette or cleanup result. **Cell edge fit** is high when cell boundaries sit on the source's clear color edges and miss none (beyond what random placement would hit), and **Cell color purity** is high when each cell holds only similar colors.
+- Next to it, **Preview cells** adds a "Preview cells" candidate, selects it and shows its cell split over the source (grid view on). With the checkbox on it runs only the grid stage; with it off it cleans up once with the values shown.
+- Optimizing the grid now also tries **Allowed size jitter** and **Pixel size from**, which used to stay as set.
+- While a tile is being optimized, clicking it shows the best result so far in the large preview, source grid and zoom view, and follows it as the best changes. Removing or pinning colors waits until it finishes; when it finishes, its result tile is selected.
+
+### Color decision in the enlarged view
+- Left-clicking a result pixel or a source cell in the enlarged view shows a **Color decision** row above the color swatches: how that pixel's color was chosen, step by step, with a swatch and HEX for each — the cell color (by the cell color method) → the palette → any later cleanup step that changed it (remove orphan pixels, fill 1px holes, thin outline, vector redraw and so on), pinned colors and excluded colors.
+- Below it are the three palette colors closest to the cell color with their palette color distance and their lightness, chroma and hue difference from the cell color (OKLCh), the chosen one in bold — so you can read, for example, why a light gray cell came out closer to peach than to white (same lightness, only chroma added). When Prefer shade family or dithering picked a color other than the closest, the palette step's name says so.
+- Hover a step's name to see the rule it uses; for example, removing orphan pixels takes the most common neighbor color without looking at the source cell color.
+
+### Palette method "Distance grouping"
+- **6. Palette** has a new method, **Distance grouping**: colors whose difference, measured with the **Color distance** below (the same distance cells use to pick a palette color), is within the **Group radius** (default 0.04) become one color, and the radius decides the color count.
+- With CIEDE2000 as the color distance, colors that look alike are grouped. OKLCH grouping measures lightness, chroma and hue separately and ignores hue for grays, so a light gray could join a peach group of the same lightness and be painted peach. On the sample image, light neutral cells painted with a chromatic color went from 35 of 1845 to none.
+- Optimizing the Palette step also tries this method and its radius.
+
+### Auto drawing mode: generate first unless "Current file only"
+- In Codex's Auto drawing mode, turning on **Current file only** in the chat draws directly on the current picture; otherwise image generation → pixelate is tried first. Request wording such as exact sizes or "change the hat color" no longer switches the mode.
+- If generation fails (no Codex, generation error and so on), the AI draws the same request with pixel tools instead and then reviews the whole picture like a direct-drawing turn. Stopping the generation yourself does not trigger this.
+
+### Keep the palette method while optimizing
+- A **Don't optimize** checkbox next to the Palette step's method keeps the method as set when that step is optimized; its other values, such as the OKLCH grouping range, are still tried. The checkbox is saved with the preset.
+- OKLCH1000 is no longer a built-in preset. If your list has it, it stays as one of your own presets with its saved values (so **Reset** removes it).
+- Dithering has its own **Don't optimize** checkbox, on by default, so optimizing the Palette step no longer switches dithering on: a dither pattern scored well because its average color is close to the source, but zoomed in it showed checkerboards or stray colored dots. Built-in presets now start with no dithering, and existing built-in presets are switched to no dithering once on update.
+- **Fidelity** in the score now compares cell by cell by default: each result pixel is compared only with its own source cell's color (the average of the cell's largest group of similar colors, center weighted) using the scoring color distance, so a stray colored dot or a dither pattern costs points in every cell instead of being blended away with its neighbors. **0. Optimize criteria** has the choice (**Cell by cell** / **Blended with neighbors**), the cell color (**Dominant group** / **Cell average**), the group range and **Center weighted**; they are saved with the preset. Scores are stricter than before.
+
+### Pixelate candidate row shows presets, not ranks
+- Loading a source now runs each checked preset once with its settings as they are and shows one tile per preset, marked "As set". The ranked 1st/2nd/3rd candidates and the **Candidates** settings (count and what to vary) are gone.
+- **Clean up** with values you changed adds the new tile at the front of the row; rerunning an existing preset updates its tile in place.
+- The tile that is running gets a slowly blinking yellow border. A new run's tile appears right away and blinks until its result fills it, showing the best result found so far as it improves (refreshed at most five times a second).
+- While running, the **Cancel** button is red and stops only the preset that is running; its best result so far stays in its tile and the next preset starts. Right-click it and choose **Cancel all** to stop the remaining presets too.
+- Right-clicking a frame in the source view offers **Copy frame N** and **Save frame N as PNG…** (the frame as shown, with the background removed if that view is on), above the whole-image copy and save. The source view's right-click menu did not open before; it does now.
+- Hovering a candidate tile now shows its full name, how it ended and its score (for example "Optimized (72.4)"), colors and size, and the pixel size above the score breakdown.
+
+### Pixelate candidates drive the settings panel
+- Clicking a candidate tile loads its settings on the left, including its preset, Optimize checkboxes, optimize criteria and whether the output size is automatic. If you have edits that have not been run yet, you are asked whether to save them first.
+- **Clean up** now reruns only the selected preset's tile and keeps the other candidates instead of replacing the row with ranked results. An unchanged saved preset behaves like **Rerun only this preset**.
+- Running unsaved edits adds a separate "Name (modified)" tile and leaves the saved preset unchanged. A preset with no Optimize checkboxes runs once as set and is marked "As set".
+
+### Native-resolution pixel art and image-specific grid values
+- Pixel art saved at its own resolution (one dot = one pixel) or at 2×, with noise or JPEG artifacts pushing it past 256 colors, now gets 1 px or 2 px cells. Before, auto detection only tried 3 px and up and blurred such art into blocks several times too large.
+- Presets no longer save **Add to auto pixel size** or the manual grid's start X/Y, which only fit the image they were measured on. Values written there by earlier optimizations (up to +45 px) are removed once on update, and reopening the window no longer carries them over to a new image.
+- Pixel art with cells of about 3 px is no longer squashed into blocks (for example about 85×195 instead of 11×20). The color-edge estimate now counts the smallest 3 px candidate, and when choosing between estimates a value is only taken as a multiple of another up to 4×, not 10×.
+
+### Auto Optimize Settings Main button and Reset, resizable color swatches
+- The AI conversion preset is now chosen with a rounded **Main** button on each row; the chosen one is green.
+- A red **Reset** button next to **Close settings** asks for confirmation, then restores the preset list, checkboxes, main preset, preset values (including values written by optimization) and **Auto optimize on load** to their first-install state. Presets you created are deleted.
+- The color swatches in the preview and the enlarged view start at no more than half the panel height; drag the short grip above them up or down to resize (remembered separately for each view), or double-click it to restore half.
+
 ### AI pixel size and reference conversion
 - When the user does not specify a pixel size, Codex chooses a logical square sprite size in English before generation, from the attached reference or the subject description. An explicitly requested size or enabled fixed-result setting takes precedence.
 - The generation prompt starts with the selected size and repeats it in the style, composition and pixel-grid rules; sprite sheets apply that size per frame.
 - Codex Auto also converts attached-image requests with an explicit size; the prompt preserves the reference subject and pose.
 
 ### Representative preset for AI conversion
-- Select one representative preset in Auto Optimize Settings; OKLCH1000 is the initial choice, independent of the presets checked for batch optimization.
+- Select one representative preset in Auto Optimize Settings; Same hue family (OKLCH 20) is the initial choice, independent of the presets checked for batch optimization. If OKLCH1000 was your representative because it was the old default, it moves to Same hue family (OKLCH 20).
 - AI-generated images use that preset's saved conversion settings, optimization sections, budget and scoring criteria; an explicit output-size target still takes precedence.
 
 ### AI chat prompts, choices, and notifications
@@ -18,13 +89,14 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - If generated art is larger than the open canvas, choose to expand the canvas or position a crop in a preview before insertion. Cancelling leaves the document unchanged.
 - AI questions and finished turns send system notifications on Windows and macOS when notifications are available.
 
+## v1.14.60 (2026-10-30)
 ### Edit and apply sprite-sheet frames
 - The source preview shows numbered frame boundaries. Drag a frame to move it or an edge or corner to resize it; the edited regions feed into the next pixel cleanup and can be saved in presets.
 - A source image is split once when loaded or replaced. Changing the split mode or grid dimensions leaves the current frames in place until **Apply frame split** is clicked; dragging a frame boundary applies it immediately.
 
 ### Pixel grids and target-color scoring
 - Pixel grids are now fitted independently for every frame, including fixed output sizes and scale factors. The separate per-frame detection checkbox is gone.
-- Setting a target color count penalizes results with either more or fewer colors by their distance from the target. An exact match has no color-count penalty; Auto still ignores color count in scoring.
+- Setting a target color count penalizes results with more colors than the target by how far they go over it. Next to the target, a new **Strict** checkbox (off by default) also penalizes results with fewer colors than the target; with it off, fewer colors are not penalized. An exact match has no color-count penalty; Auto still ignores color count in scoring.
 
 ### Auto optimization on source load
 - Auto optimization after loading, pasting, dropping or replacing a source image is off by default, including when upgrading existing settings.

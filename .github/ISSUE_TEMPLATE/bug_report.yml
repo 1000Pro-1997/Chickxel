@@ -19,8 +19,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Gpixel 버전
-      description: 도움말 > Gpixel 정보…에 나옵니다.
+      label: Chickxel 버전
+      description: 도움말 > Chickxel 정보…에 나옵니다.
     validations:
       required: true
   - type: dropdown

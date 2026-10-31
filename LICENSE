@@ -1,21 +1,80 @@
-MIT License
+Chickxel Source-Available License
 
-Copyright (c) 2026 천성훈 (1000Pro-1997)
+Copyright (c) 2026 천성훈 (1000Pro-1997). All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This license applies to Chickxel (formerly Gpixel), including its source code,
+compiled releases, documentation, icons and other files in this repository
+(the "Software"), except the third-party components listed in
+THIRD-PARTY-NOTICES.md, which remain under their own licenses.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Using the Software
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   You may download, install and use official releases of the Software free
+   of charge, on any number of devices, for any purpose, including commercial
+   work.
+
+2. Your work
+
+   Images, animations, palettes, assets and other content you create with the
+   Software belong to you. This license places no restriction on how you use,
+   sell or license them.
+
+3. Source code
+
+   You may view and study the source code, build it, and modify it for your
+   own personal use. You may fork this repository on GitHub to view it or to
+   prepare contributions to it, as GitHub's terms of service allow.
+
+4. Restrictions
+
+   Except as allowed in section 3 or with prior written permission from the
+   copyright holder, you may not:
+
+   a. distribute, publish, upload or share the Software or any modified
+      version of it, in source or compiled form, including as part of another
+      product or service;
+   b. sell, rent, lease, sublicense or otherwise charge for the Software or
+      any modified version of it;
+   c. remove or change copyright notices or this license.
+
+   Linking to the official repository, website or release downloads is always
+   allowed.
+
+5. Contributions
+
+   By submitting a contribution (for example a pull request, patch, asset or
+   translation) to this repository, you confirm that you have the right to do
+   so, and you grant the copyright holder a perpetual, worldwide,
+   non-exclusive, royalty-free, irrevocable license to use, modify,
+   distribute, sublicense and relicense your contribution as part of the
+   Software or otherwise.
+
+   Online catalog asset packages are not contributions to the Software; each
+   package is covered by the license stated in its own LICENSE file.
+
+6. Earlier versions
+
+   Copies of the Software that were published under the MIT License (all
+   releases up to and including v1.14.60, and the repository contents while
+   this file contained the MIT License) remain available under the MIT License
+   for those copies. This license applies to everything published after it.
+
+7. Termination
+
+   If you break the terms of this license, your rights under it end
+   automatically. They are restored if you fix the breach within 30 days of
+   becoming aware of it, unless you have broken them before.
+
+8. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+For permissions beyond this license, contact the copyright holder through
+https://github.com/1000Pro-1997/Chickxel/issues or the Discord server linked
+from the website.

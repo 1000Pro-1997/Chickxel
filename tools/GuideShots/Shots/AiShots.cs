@@ -7,12 +7,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.App.Ai;
-using Gpixel.App.Localization;
-using Gpixel.Core.AiDraw;
-using Gpixel.Core.IO;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.App.Ai;
+using Chickxel.App.Localization;
+using Chickxel.Core.AiDraw;
+using Chickxel.Core.IO;
+using Chickxel.Core.Model;
 using static GuideShots.AiChat;
 
 namespace GuideShots;
@@ -38,7 +38,7 @@ internal static class AiShots
     private static string Sample(ShotKit k) => k.CopySample(SampleName);
 
     /// <summary>합친 그림의 메인 창 제목(실제 제목 끝의 폴더 경로는 넣지 않음).</summary>
-    private const string MainTitle = SampleName + " — Gpixel";
+    private const string MainTitle = SampleName + " — Chickxel";
 
     /// <summary>합친 그림에서 채팅 창을 놓는 자리(메인 창 1280 너비, 채팅 창 430 너비).</summary>
     private static readonly Point ChatAt = new(1280 - 430 - 18, 120);
@@ -314,9 +314,9 @@ internal static class AiShots
     private static void StatusDialog(ShotKit k, MainForm main, McpServer mcp, string name, int firstNumber)
     {
         var asm = typeof(ChatWindow).Assembly;
-        var dlgType = asm.GetType("Gpixel.App.Ai.AiStatusDialog")!;
-        var levelType = asm.GetType("Gpixel.App.Ai.AiHealthLevel")!;
-        var healthType = asm.GetType("Gpixel.App.Ai.AiProviderHealth")!;
+        var dlgType = asm.GetType("Chickxel.App.Ai.AiStatusDialog")!;
+        var levelType = asm.GetType("Chickxel.App.Ai.AiHealthLevel")!;
+        var healthType = asm.GetType("Chickxel.App.Ai.AiProviderHealth")!;
         object Level(string n) => Enum.Parse(levelType, n);
         var dlg = (DialogBase)Activator.CreateInstance(dlgType, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [mcp, App.Settings, true], null)!;
         ShotKit.Set(dlg, "_checking", true);
@@ -452,7 +452,7 @@ internal static class AiShots
         var main = k.Main(Sample(k));
         var chat = AiChat.Open(k, main, Claude, 470, 560, before: settings =>
         {
-            var store = new ChatHistoryStore(Path.Combine(Platform.AppDataDirectory, "Gpixel", "Chats"));
+            var store = new ChatHistoryStore(Path.Combine(Platform.AppFolder, "Chats"));
             var models = AiProvider.Claude.Models(settings);
             string? other = models.Count > 1 ? models[1].Value : null;
             var now = DateTime.UtcNow;
@@ -595,7 +595,7 @@ internal static class AiShots
         var rest = new Script()
             .Do(() =>
             {
-                host.InsertPixelArt("Wolf adventurer", [wolf], 100, false, out message);
+                message = host.InsertPixelArtAsync("Wolf adventurer", [wolf], 100, false, CancellationToken.None).GetAwaiter().GetResult().Message;
                 var job = new AiDrawJob { Id = "guide-sample", Name = "Wolf adventurer", Frames = 1 };
                 ShotKit.Call(tab, "OnAiDrawCompleted", new AiDrawOutcome(job, wolf, message));
             })
@@ -793,7 +793,7 @@ internal static class AiShots
             ShotKit.Find<TabView>(d).SelectedIndex = 3;
             ShotKit.Pump(300);
             var box = ShotKit.Get<TextBox>(d, "_refsFolderBox");
-            box.Text = @"%AppData%\Gpixel\References";
+            box.Text = @"%AppData%\Chickxel\References";
             ShotKit.Pump(300);
             var builtIn = ShotKit.Get<CheckBox>(d, "_refsExamples");
             k.Save(d, "ai-references-3", marks:

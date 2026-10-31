@@ -4,13 +4,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>사용 가이드 — Gpixel</title>
-<meta name="description" content="Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
-<meta property="og:title" content="사용 가이드 — Gpixel">
-<meta property="og:description" content="Gpixel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
-<meta property="og:image" content="https://1000pro-1997.github.io/GPixel/assets/screenshot.png">
-<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
-<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
+<title>사용 가이드 — Chickxel</title>
+<meta name="description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
+<meta property="og:title" content="사용 가이드 — Chickxel">
+<meta property="og:description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
+<meta property="og:image" content="https://1000pro-1997.github.io/Chickxel/assets/screenshot.png">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/Chickxel/guide.html">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/guide.html">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=20261027g">
@@ -18,7 +18,7 @@
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
   var saved = null;
-  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
   if (want !== 'ko') location.replace('en/' + 'guide.html' + location.hash);
 })();
@@ -27,13 +27,13 @@
 <body class="guide-page">
 <header class="top">
 <div class="bar">
-<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
 <nav class="nav">
 <a href="index.html">홈</a>
 <a class="hide-sm" href="#featured-common">빠른 작업</a>
 <a href="guide.html" aria-current="page">사용 가이드</a>
 <a class="hide-sm" href="index.html#download">내려받기</a>
-<a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
+<a class="hide-sm" href="https://github.com/1000Pro-1997/Chickxel">GitHub</a>
 <a class="hide-sm discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
 </nav>
 <label class="lang" title="언어"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="언어">
@@ -104,7 +104,7 @@
 </aside>
 <div class="content">
 <section class="doc guide-home" id="guide-home">
-<h2>Gpixel 사용 가이드</h2>
+<h2>Chickxel 사용 가이드</h2>
 <p class="guide-home-lead">처음부터 끝까지 읽지 않아도 됩니다. 처음 쓰는 흐름을 따라가거나 지금 하려는 작업을 골라 필요한 쪽만 확인하세요.</p>
 <div class="guide-paths">
 <div class="guide-path">
@@ -147,7 +147,7 @@
 <section class="doc" id="featured-ai-draw">
 <h2>AI로 그리기</h2>
 <figure class="core-media wide guide-media"><video src="assets/feature-ai-draw.mp4" poster="assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Codex 채팅에 32×32 나무 통을 그려 달라고 하자 AI가 캔버스에 나무 통을 그리는 모습" width="1280" height="720"></video></figure>
-<p>내 컴퓨터의 Claude Code·Codex가 내 계정으로 Gpixel을 직접 다룹니다(API 키 없음). "32×32 나무 통 그려 줘"처럼 말하면 열린 그림에 바로 그려 줍니다.</p>
+<p>내 컴퓨터의 Claude Code·Codex가 내 계정으로 Chickxel을 직접 다룹니다(API 키 없음). "32×32 나무 통 그려 줘"처럼 말하면 열린 그림에 바로 그려 줍니다.</p>
 <ol class="core-steps">
 <li><strong>AI 채팅 열기</strong><span><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span> 또는 위 막대의 AI 단추. Claude·Codex 탭 중 하나를 고르고 처음 한 번 로그인합니다.</span></li>
 <li><strong>그리고 싶은 것을 말하기</strong><span>크기·소재·색을 함께 적으면 좋습니다. 그리는 동안 진행 상황이 보입니다.</span></li>
@@ -265,11 +265,11 @@
 
 <section class="doc" id="featured-unity">
 <h2>유니티 연동</h2>
-<p>Gpixel에서 정한 값이 Unity에 그대로 이어집니다.</p>
+<p>Chickxel에서 정한 값이 Unity에 그대로 이어집니다.</p>
 
 <h3 id="featured-pivot">피벗 연동</h3>
 <figure class="core-media wide guide-media"><video src="assets/feature-pivot.mp4" poster="assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="피벗 도구로 캐릭터의 기준점을 옮기고 그 피벗을 중심으로 회전시키는 모습" width="1280" height="688"></video></figure>
-<p>Gpixel에서 정한 피벗은 저장할 때 Unity <code>.meta</code>의 스프라이트 피벗으로 그대로 들어갑니다. Unity에서 따로 맞출 필요 없이, 캐릭터 발밑이나 무기 손잡이처럼 원하는 기준점이 게임에서도 똑같이 잡힙니다.</p>
+<p>Chickxel에서 정한 피벗은 저장할 때 Unity <code>.meta</code>의 스프라이트 피벗으로 그대로 들어갑니다. Unity에서 따로 맞출 필요 없이, 캐릭터 발밑이나 무기 손잡이처럼 원하는 기준점이 게임에서도 똑같이 잡힙니다.</p>
 <ol class="core-steps">
 <li><strong>피벗 도구(K) 고르기</strong><span>캔버스에서 기준점을 끌어 옮기거나, 도구 설정의 9방향 단추와 X/Y 숫자로 정합니다.</span></li>
 <li><strong>대상 정하기</strong><span>부위를 고르면 그 부위의 피벗, 아니면 프로젝트 기본 피벗(모든 프레임)이 바뀝니다. <strong>현재 프레임만</strong>을 켜면 그 프레임만 따로 정합니다.</span></li>
@@ -280,41 +280,41 @@
 <section class="doc" id="featured-export">
 <h2>내보내기</h2>
 <figure class="core-media wide guide-media"><video src="assets/feature-export.mp4" poster="assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="내보내기 창에서 스킨을 따로 내보내거나 한 장에 모으도록 바꾸며 미리보기와 파일 목록이 바뀌는 모습" width="1280" height="688"></video></figure>
-<p><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> 내보내기 창에서 시트 배치와 스킨을 묶는 방법, 파일을 나눌지, Unity 가져오기 설정까지 정합니다. 파일이 여러 개로 나가도 <code>.gpixel</code> 하나가 그 파일들을 묶어 관리합니다.</p>
+<p><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> 내보내기 창에서 시트 배치와 스킨을 묶는 방법, 파일을 나눌지, Unity 가져오기 설정까지 정합니다. 파일이 여러 개로 나가도 <code>.chickxel</code> 하나가 그 파일들을 묶어 관리합니다.</p>
 <ol class="core-steps">
 <li><strong>내보내기 창 열기</strong><span><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>. 오른쪽에 나갈 시트 미리보기와 만들어질 파일 목록이 바로 보입니다.</span></li>
 <li><strong>배치·스킨·나누기 정하기</strong><span>칸 배치와 간격, 스킨을 한 장에 모을지 스킨마다 따로 낼지, 태그·부위·스킨별로 파일을 나눌지 고릅니다. Unity Sprite Library와 가져오기 설정(<code>.meta</code>)도 여기서 정하고, 자주 쓰는 설정은 프리셋으로 저장합니다.</span></li>
-<li><strong>저장하면 함께 나가기</strong><span>저장할 때마다 이 설정대로 PNG와 <code>.meta</code>가 다시 만들어집니다. 파일 브라우저는 내보낸 PNG를 숨기고 <code>.gpixel</code> 하나로 보여 주며, 마우스를 올리면 내보낸 파일 이름이 보이고 그 이름으로 검색해도 찾습니다.</span></li>
+<li><strong>저장하면 함께 나가기</strong><span>저장할 때마다 이 설정대로 PNG와 <code>.meta</code>가 다시 만들어집니다. 파일 브라우저는 내보낸 PNG를 숨기고 <code>.chickxel</code> 하나로 보여 주며, 마우스를 올리면 내보낸 파일 이름이 보이고 그 이름으로 검색해도 찾습니다.</span></li>
 </ol>
 </section>
 
 <section class="doc" id="start">
 <h2>시작하기</h2>
-<p>Gpixel은 게임(특히 Unity 2D)용 픽셀 아트 편집기입니다. 프레임·레이어·태그(애니메이션)는 <code>.gpixel</code> 프로젝트에 저장되고, 저장할 때 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다. .NET 같은 것을 따로 설치할 필요가 없습니다.</p>
+<p>Chickxel은 게임(특히 Unity 2D)용 픽셀 아트 편집기입니다. 프레임·레이어·태그(애니메이션)는 <code>.chickxel</code> 프로젝트에 저장되고, 저장할 때 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다. .NET 같은 것을 따로 설치할 필요가 없습니다.</p>
 
 <h3 id="start-install">설치</h3>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>내려받기(최신 버전)</th><th>실행</th></tr></thead>
 <tbody>
-<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Gpixel-windows-x64.zip</a></td><td>압축을 풀고 <code>Gpixel.exe</code> 더블클릭</td></tr>
-<tr><td>macOS 12 이상, Apple Silicon(M1 이후)</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">Gpixel-macos-arm64.zip</a></td><td>압축을 풀고 <code>Gpixel.app</code>을 응용 프로그램 폴더로 옮긴 뒤 더블클릭</td></tr>
-<tr><td>macOS 12 이상, Intel</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">Gpixel-macos-x64.zip</a></td><td>위와 같음</td></tr>
+<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip">Chickxel-windows-x64.zip</a></td><td>압축을 풀고 <code>Chickxel.exe</code> 더블클릭</td></tr>
+<tr><td>macOS 12 이상, Apple Silicon(M1 이후)</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip">Chickxel-macos-arm64.zip</a></td><td>압축을 풀고 <code>Chickxel.app</code>을 응용 프로그램 폴더로 옮긴 뒤 더블클릭</td></tr>
+<tr><td>macOS 12 이상, Intel</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip">Chickxel-macos-x64.zip</a></td><td>위와 같음</td></tr>
 </tbody>
 </table></div>
-<p>내 Mac의 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다. 지난 버전과 바뀐 점은 <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스 페이지</a>에 있습니다.</p>
+<p>내 Mac의 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다. 지난 버전과 바뀐 점은 <a href="https://github.com/1000Pro-1997/Chickxel/releases">릴리스 페이지</a>에 있습니다.</p>
 <h4>터미널로 설치</h4>
-<p><strong>macOS</strong> — 터미널에 붙여 넣으면 칩에 맞는 파일을 받아 <code>/Applications/Gpixel.app</code>에 설치하고 실행합니다.</p>
+<p><strong>macOS</strong> — 터미널에 붙여 넣으면 칩에 맞는 파일을 받아 <code>/Applications/Chickxel.app</code>에 설치하고 실행합니다.</p>
 <pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
-curl -fL -o /tmp/Gpixel.zip "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-$ARCH.zip" \
-  &amp;&amp; rm -rf /Applications/Gpixel.app &amp;&amp; ditto -x -k /tmp/Gpixel.zip /Applications \
-  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Gpixel.app; rm -f /tmp/Gpixel.zip; open /Applications/Gpixel.app</code></pre>
-<p><strong>Windows</strong> — PowerShell에 붙여 넣으면 <code>%LOCALAPPDATA%\Programs\Gpixel</code>에 설치하고 시작 메뉴 바로 가기를 만든 뒤 실행합니다.</p>
-<pre><code>$d = "$env:LOCALAPPDATA\Programs\Gpixel"; $z = "$env:TEMP\Gpixel.zip"; $x = "$env:TEMP\Gpixel-x"
-Invoke-WebRequest "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip" -OutFile $z
+curl -fL -o /tmp/Chickxel.zip "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-$ARCH.zip" \
+  &amp;&amp; rm -rf /Applications/Chickxel.app &amp;&amp; ditto -x -k /tmp/Chickxel.zip /Applications \
+  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Chickxel.app; rm -f /tmp/Chickxel.zip; open /Applications/Chickxel.app</code></pre>
+<p><strong>Windows</strong> — PowerShell에 붙여 넣으면 <code>%LOCALAPPDATA%\Programs\Chickxel</code>에 설치하고 시작 메뉴 바로 가기를 만든 뒤 실행합니다.</p>
+<pre><code>$d = "$env:LOCALAPPDATA\Programs\Chickxel"; $z = "$env:TEMP\Chickxel.zip"; $x = "$env:TEMP\Chickxel-x"
+Invoke-WebRequest "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip" -OutFile $z
 Expand-Archive $z $x -Force; New-Item -ItemType Directory -Force $d | Out-Null
-Copy-Item "$x\Gpixel-windows-x64\Gpixel.exe" $d -Force; Unblock-File "$d\Gpixel.exe"; Remove-Item $z, $x -Recurse -Force
-$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Gpixel.lnk"); $s.TargetPath = "$d\Gpixel.exe"; $s.Save()
-Start-Process "$d\Gpixel.exe"</code></pre>
+Copy-Item "$x\Chickxel-windows-x64\Chickxel.exe" $d -Force; Unblock-File "$d\Chickxel.exe"; Remove-Item $z, $x -Recurse -Force
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Chickxel.lnk"); $s.TargetPath = "$d\Chickxel.exe"; $s.Save()
+Start-Process "$d\Chickxel.exe"</code></pre>
 <p>두 방법 모두 내 계정이 쓸 수 있는 곳에 설치하므로 이후 업데이트는 앱 안에서 자동으로 됩니다.</p>
 
 <h3 id="start-first-run">처음 실행할 때</h3>
@@ -322,10 +322,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>개발자 서명이 없는 앱이라 처음 한 번은 경고가 뜹니다.
 <ul>
 <li>Windows "PC 보호" 창: <strong>추가 정보 → 실행</strong>.</li>
-<li>macOS "확인되지 않은 개발자": <code>Gpixel.app</code>을 <strong>우클릭 → 열기</strong>. 안 되면 시스템 설정 → 개인정보 보호 및 보안 → <strong>그래도 열기</strong>.</li>
+<li>macOS "확인되지 않은 개발자": <code>Chickxel.app</code>을 <strong>우클릭 → 열기</strong>. 안 되면 시스템 설정 → 개인정보 보호 및 보안 → <strong>그래도 열기</strong>.</li>
 </ul></li>
 </ul>
-<figure class="shot"><img src="assets/guide/start-first-run.png" alt="문서 없이 켠 Gpixel 첫 화면: 가운데 시작 화면에 폴더 열기 단추, 최근 폴더·최근 파일 목록, Unity Hub 프로젝트 목록이 있고 왼쪽에 파일 브라우저가 있는 모습" width="1600" height="932" loading="lazy"><figcaption>① 폴더 열기(Open folder…) · ② 최근 폴더 · ③ 파일 브라우저(폴더를 고르면 그림이 보이는 곳) · ④ Unity Hub 프로젝트 목록</figcaption></figure>
+<figure class="shot"><img src="assets/guide/start-first-run.png" alt="문서 없이 켠 Chickxel 첫 화면: 가운데 시작 화면에 폴더 열기 단추, 최근 폴더·최근 파일 목록, Unity Hub 프로젝트 목록이 있고 왼쪽에 파일 브라우저가 있는 모습" width="1600" height="932" loading="lazy"><figcaption>① 폴더 열기(Open folder…) · ② 최근 폴더 · ③ 파일 브라우저(폴더를 고르면 그림이 보이는 곳) · ④ Unity Hub 프로젝트 목록</figcaption></figure>
 <ul>
 <li>시작 화면에서 폴더(① <strong>폴더 열기…</strong>, ② 최근 폴더)나 Unity 프로젝트를 고르면 왼쪽 ③ 파일 브라우저에 그 폴더의 그림이 보입니다. ④ Unity Hub에 등록된 프로젝트는 목록에서 바로 열 수 있습니다.</li>
 <li>화면 언어는 처음 켤 때 컴퓨터 언어에 맞춰 고릅니다(한국어·영어, 맞는 언어가 없으면 영어). 바꾸는 방법은 <a href="#language">언어</a>에 있습니다.</li>
@@ -334,7 +334,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="start-update">업데이트</h3>
 <figure class="shot"><img src="assets/guide/start-update.png" alt="위 막대 오른쪽, 격자 단추 왼쪽에 나타난 업데이트 단추(새 버전 번호 표시)" width="986" height="67" loading="lazy"><figcaption>① 업데이트 단추(누르면 업데이트 창이 다시 열림)</figcaption></figure>
-<p>Gpixel은 시작할 때마다 새 버전을 확인합니다. 새 버전이 있으면 <strong>업데이트 창</strong>이 뜨고 위 막대에 ① <strong>업데이트</strong> 단추가 나타납니다.</p>
+<p>Chickxel은 시작할 때마다 새 버전을 확인합니다. 새 버전이 있으면 <strong>업데이트 창</strong>이 뜨고 위 막대에 ① <strong>업데이트</strong> 단추가 나타납니다.</p>
 <figure class="shot"><img src="assets/guide/start-update-2.png" alt="업데이트 창: 새 버전과 지금 버전, CHANGELOG의 바뀐 점 목록, 아래에 지금 업데이트·다음 업데이트까지 띄우지 않기·릴리스 페이지 열기·나중에 단추" width="610" height="458" loading="lazy"><figcaption>② 지금 업데이트(Update now) · ③ 나중에(Later) · ④ 다음 업데이트까지 띄우지 않기 · ⑤ 새 버전·지금 버전·나온 날 · ⑥ 바뀐 점</figcaption></figure>
 <ul>
 <li>② <strong>지금 업데이트</strong>: 내 OS용 파일을 내려받아 검증한 뒤, 앱을 닫고 새 버전으로 바꿔 다시 실행합니다. 저장하지 않은 작업은 먼저 묻고, 실패하면 이전 버전을 그대로 둡니다.</li>
@@ -357,13 +357,13 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="start-feedback">제보·아이디어</h3>
-<figure class="shot"><img src="assets/guide/start-feedback.png" alt="도움말 메뉴를 펼쳐 제보·아이디어 (Discord)…와 Gpixel 정보… 항목을 표시한 모습" width="271" height="234" loading="lazy"><figcaption>① 도움말(Help) 메뉴 · ② 제보·아이디어 (Discord)… · ③ Gpixel 정보…(About Gpixel…)</figcaption></figure>
-<figure class="shot"><img src="assets/guide/start-feedback-2.png" alt="Gpixel 정보 창: 버전, GitHub 저장소·릴리스·Discord·문제 신고 단추, 라이선스와 AI 채팅 안내" width="568" height="449" loading="lazy"><figcaption>④ Discord(버그·아이디어) · ⑤ 문제 신고(Report an issue, GitHub Issues) · ⑥ 버전</figcaption></figure>
-<p>버그, 불편한 점, 바라는 기능은 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Gpixel Discord</a>에 남겨 주세요. 앱에서는 ① <strong>도움말</strong> &gt; ② <strong>제보·아이디어 (Discord)…</strong>로 바로 열 수 있고, ③ <strong>도움말 &gt; Gpixel 정보…</strong> 창의 ④ <strong>Discord</strong> 단추로도 열 수 있습니다. GitHub 계정이 있다면 <a href="https://github.com/1000Pro-1997/GPixel/issues" target="_blank" rel="noopener">GitHub Issues</a>(정보 창의 ⑤ <strong>문제 신고</strong>)에 올려도 됩니다.</p>
-<p>개발을 응원하고 싶다면 홈페이지의 <a href="https://buymeacoffee.com/gpixel" target="_blank" rel="noopener">개발 후원하기</a> 또는 에디터의 사용 가이드(F1) 창 오른쪽 위 <strong>개발 후원하기</strong> 단추를 누르세요.</p>
+<figure class="shot"><img src="assets/guide/start-feedback.png" alt="도움말 메뉴를 펼쳐 제보·아이디어 (Discord)…와 Chickxel 정보… 항목을 표시한 모습" width="271" height="234" loading="lazy"><figcaption>① 도움말(Help) 메뉴 · ② 제보·아이디어 (Discord)… · ③ Chickxel 정보…(About Chickxel…)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/start-feedback-2.png" alt="Chickxel 정보 창: 버전, GitHub 저장소·릴리스·Discord·문제 신고 단추, 라이선스와 AI 채팅 안내" width="568" height="449" loading="lazy"><figcaption>④ Discord(버그·아이디어) · ⑤ 문제 신고(Report an issue, GitHub Issues) · ⑥ 버전</figcaption></figure>
+<p>버그, 불편한 점, 바라는 기능은 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Chickxel Discord</a>에 남겨 주세요. 앱에서는 ① <strong>도움말</strong> &gt; ② <strong>제보·아이디어 (Discord)…</strong>로 바로 열 수 있고, ③ <strong>도움말 &gt; Chickxel 정보…</strong> 창의 ④ <strong>Discord</strong> 단추로도 열 수 있습니다. GitHub 계정이 있다면 <a href="https://github.com/1000Pro-1997/Chickxel/issues" target="_blank" rel="noopener">GitHub Issues</a>(정보 창의 ⑤ <strong>문제 신고</strong>)에 올려도 됩니다.</p>
+<p>개발을 응원하고 싶다면 홈페이지의 <a href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener">개발 후원하기</a> 또는 에디터의 사용 가이드(F1) 창 오른쪽 위 <strong>개발 후원하기</strong> 단추를 누르세요.</p>
 <p>버그를 알릴 때 다음을 함께 적어 주면 빨리 고칠 수 있습니다.</p>
 <ul>
-<li><strong>버전</strong>: ③ <strong>도움말 &gt; Gpixel 정보…</strong>의 ⑥에 보입니다.</li>
+<li><strong>버전</strong>: ③ <strong>도움말 &gt; Chickxel 정보…</strong>의 ⑥에 보입니다.</li>
 <li><strong>OS</strong>: Windows 10/11 또는 macOS 버전(Apple Silicon·Intel).</li>
 <li><strong>재현 순서</strong>: 무엇을 했을 때 어떻게 되었는지, 원래 기대한 결과.</li>
 <li><strong>오류 로그</strong>: 오류 창이 떴다면 그 로그 파일(<a href="#files-crash-log">오류가 생겼을 때</a>). 화면 캡처도 도움이 됩니다.</li>
@@ -372,8 +372,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <section class="doc" id="screen">
 <h2>화면 구성</h2>
-<figure class="shot"><img src="assets/guide/screen-overview.png" alt="전체 Gpixel 창: 위 막대, 도구 막대, 파일 브라우저, 팔레트, 색, 문서 탭, 캔버스, 타임라인, 미리보기, 도구 설정, 상태 표시줄" width="1622" height="919" loading="lazy"><figcaption>① 메뉴와 위 막대 · ② 도구 막대 · ③ 파일 브라우저 · ④ 팔레트 · ⑤ 색 · ⑥ 문서 탭 · ⑦ 캔버스 · ⑧ 타임라인 · ⑨ 미리보기 · ⑩ 도구 설정 · ⑪ 상태 표시줄</figcaption></figure>
-<p>Gpixel의 화면은 Aseprite와 비슷하게 배치되어 있습니다. 맨 위에 ① 메뉴와 위 막대가 있고, 왼쪽 끝에 ② 도구 막대와 ③ 파일 브라우저, 그 옆에 ④ 팔레트와 ⑤ 색, 가운데에 ⑥ 문서 탭과 ⑦ 캔버스, 아래에 ⑧ 타임라인, 오른쪽에 ⑨ 미리보기와 ⑩ 도구 설정이 있고, 맨 아래에 ⑪ 상태 표시줄이 있습니다.</p>
+<figure class="shot"><img src="assets/guide/screen-overview.png" alt="전체 Chickxel 창: 위 막대, 도구 막대, 파일 브라우저, 팔레트, 색, 문서 탭, 캔버스, 타임라인, 미리보기, 도구 설정, 상태 표시줄" width="1622" height="919" loading="lazy"><figcaption>① 메뉴와 위 막대 · ② 도구 막대 · ③ 파일 브라우저 · ④ 팔레트 · ⑤ 색 · ⑥ 문서 탭 · ⑦ 캔버스 · ⑧ 타임라인 · ⑨ 미리보기 · ⑩ 도구 설정 · ⑪ 상태 표시줄</figcaption></figure>
+<p>Chickxel의 화면은 Aseprite와 비슷하게 배치되어 있습니다. 맨 위에 ① 메뉴와 위 막대가 있고, 왼쪽 끝에 ② 도구 막대와 ③ 파일 브라우저, 그 옆에 ④ 팔레트와 ⑤ 색, 가운데에 ⑥ 문서 탭과 ⑦ 캔버스, 아래에 ⑧ 타임라인, 오른쪽에 ⑨ 미리보기와 ⑩ 도구 설정이 있고, 맨 아래에 ⑪ 상태 표시줄이 있습니다.</p>
 
 <h3 id="screen-top-bar">메뉴와 위 막대</h3>
 <figure class="shot"><img src="assets/guide/screen-top-bar.png" alt="메뉴 아래 위 막대: 도구 이름과 사용법, 보기 옵션, 확대율, 맞추기, AI 채팅 단추" width="1613" height="64" loading="lazy"><figcaption>① 도구 이름 · ② 사용법 · ③ 보기 옵션 · ④ 확대율 상자 · ⑤ 맞추기(Fit) · ⑥ AI 채팅</figcaption></figure>
@@ -421,18 +421,18 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="screen-file-browser">파일 브라우저</h3>
-<figure class="shot"><img src="assets/guide/screen-file-browser.png" alt="파일 브라우저: 폴더 트리, 검색, 하위 폴더 포함, 썸네일 목록과 .gpixel 배지·빨간 점" width="252" height="593" loading="lazy"><figcaption>① 폴더 트리 · ② 썸네일 목록 · ③ 검색 · ④ 하위 폴더 포함 · ⑤ 새 픽셀 파일·새 폴더·새로 고침 · ⑥ .gpixel 배지 · ⑦ 저장 안 한 변경(빨간 점)</figcaption></figure>
-<p>① 폴더 트리와 ② <code>.gpixel</code>·PNG 썸네일 목록, ③ 검색, ④ 하위 폴더 포함 옵션이 있고, 폴더 안 파일이 바뀌면 자동으로 반영됩니다. Unity Hub에 등록된 프로젝트 목록에서 바로 열 수도 있습니다. 폴더 열기는 <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Unity 프로젝트 열기는 <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>입니다.</p>
+<figure class="shot"><img src="assets/guide/screen-file-browser.png" alt="파일 브라우저: 폴더 트리, 검색, 하위 폴더 포함, 썸네일 목록과 .chickxel 배지·빨간 점" width="252" height="593" loading="lazy"><figcaption>① 폴더 트리 · ② 썸네일 목록 · ③ 검색 · ④ 하위 폴더 포함 · ⑤ 새 픽셀 파일·새 폴더·새로 고침 · ⑥ .chickxel 배지 · ⑦ 저장 안 한 변경(빨간 점)</figcaption></figure>
+<p>① 폴더 트리와 ② <code>.chickxel</code>·PNG 썸네일 목록, ③ 검색, ④ 하위 폴더 포함 옵션이 있고, 폴더 안 파일이 바뀌면 자동으로 반영됩니다. Unity Hub에 등록된 프로젝트 목록에서 바로 열 수도 있습니다. 폴더 열기는 <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Unity 프로젝트 열기는 <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>입니다.</p>
 <ul>
-<li>⑤ 제목 줄 오른쪽 아이콘 셋: <strong>새 픽셀 파일</strong>(고른 폴더에 <code>.gpixel</code>을 만들어 엶), <strong>새 폴더</strong>, <strong>새로 고침</strong>.</li>
-<li><code>.gpixel</code> 프로젝트는 썸네일 오른쪽 아래에 ⑥ 파란 레이어 배지가 붙습니다. 프로젝트가 내보낸 PNG(같은 이름 PNG, 프레임 시트, 부위 아틀라스)는 목록에서 빼고 <code>.gpixel</code> 하나로만 보여 줍니다. 마우스를 올리면 내보내는 파일 이름이 보이고, 그 이름으로 검색해도 찾아집니다.</li>
+<li>⑤ 제목 줄 오른쪽 아이콘 셋: <strong>새 픽셀 파일</strong>(고른 폴더에 <code>.chickxel</code>을 만들어 엶), <strong>새 폴더</strong>, <strong>새로 고침</strong>.</li>
+<li><code>.chickxel</code> 프로젝트는 썸네일 오른쪽 아래에 ⑥ 파란 레이어 배지가 붙습니다. 프로젝트가 내보낸 PNG(같은 이름 PNG, 프레임 시트, 부위 아틀라스)는 목록에서 빼고 <code>.chickxel</code> 하나로만 보여 줍니다. 마우스를 올리면 내보내는 파일 이름이 보이고, 그 이름으로 검색해도 찾아집니다.</li>
 <li>JPG·BMP·GIF·WebP·APNG·ICO·AVIF·HEIC 그림과 영상(MP4·WebM·MOV·MKV·AVI 등)도 나열합니다(썸네일 = 첫 프레임). 영상은 필름 배지가 붙고 ffmpeg가 있으면 첫 프레임 썸네일을 만듭니다. 누르면 <a href="#files-open-media">그림·영상 열기</a>와 같이 새 탭으로 엽니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/screen-file-browser-2.png" alt="파일 두 개를 고르고 우클릭한 메뉴" width="336" height="740" loading="lazy"><figcaption>⑧ 여러 개 고름 · ⑨ 우클릭 메뉴</figcaption></figure>
 <ul>
 <li>그냥 클릭하면 하나만 골라 엽니다. <kbd>Ctrl</kbd>+클릭(하나씩 더하고 빼기), <kbd>Shift</kbd>+클릭(범위), 목록 위를 끌어 사각형으로 ⑧ 여러 개를 고를 수 있습니다(여럿을 고를 때는 열지 않음).</li>
 <li>파일 칸을 눌러 목록 왼쪽·오른쪽 밖(캔버스 쪽)으로 끌면 파일 끌어 놓기가 됩니다(이미 고른 칸이면 고른 파일 모두). 캔버스에 놓으면 <a href="#files-drop-layer">새 레이어</a>로 들어갑니다.</li>
-<li>⑨ 우클릭 메뉴: 새 프로젝트, 합치기, 이름 바꾸기, 탐색기/Finder에서 보기, 이미지 폴더 선택, 삭제, <code>.gpixel</code> 파일만 삭제, 마지막 삭제 되살리기, 앱 휴지통 보기.</li>
+<li>⑨ 우클릭 메뉴: 새 프로젝트, 합치기, 이름 바꾸기, 탐색기/Finder에서 보기, 이미지 폴더 선택, 삭제, <code>.chickxel</code> 파일만 삭제, 마지막 삭제 되살리기, 앱 휴지통 보기.</li>
 </ul>
 <h4>저장하지 않은 변경(빨간 점)</h4>
 <p>열린 문서는 모두 캔버스 위 <a href="#screen-tabs">문서 탭</a>에 있고, 다른 탭으로 바꿔도 저장할지 묻지 않습니다. 저장 안 한 변경이 있는 문서는 목록의 썸네일 <strong>왼쪽 위에 ⑦ 빨간 점</strong>이 붙고(탭 제목 옆에도), 이미 열린 파일을 다시 누르면 그 탭으로 갑니다. 상태 표시줄에는 "저장 안 한 파일 N개"가 보입니다.</p>
@@ -442,7 +442,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>저장 안 한 문서의 탭을 닫을 때만 저장·저장 안 함·취소를 묻습니다.</li>
 </ul>
 <h4>합치기</h4>
-<p>파일을 2개 이상 고르고 우클릭 <strong>합치기…</strong>를 고르면 여러 그림을 하나의 <code>.gpixel</code>로 묶습니다. 창에서 정하는 것:</p>
+<p>파일을 2개 이상 고르고 우클릭 <strong>합치기…</strong>를 고르면 여러 그림을 하나의 <code>.chickxel</code>로 묶습니다. 창에서 정하는 것:</p>
 <figure class="shot"><img src="assets/guide/screen-file-browser-3.png" alt="합치기 창: 순서, 이름, 방식, 캔버스, 미리보기, 타임라인 모양" width="759" height="908" loading="lazy"><figcaption>⑩ 순서 · ⑪ 이름 · ⑫ 방식 · ⑬ 캔버스 크기·기준점·원본 삭제 · ⑭ 미리보기 · ⑮ 타임라인에서는 이렇게 보입니다</figcaption></figure>
 <ul class="marks">
 <li>⑩ <strong>순서</strong>: 줄을 끌거나 위/아래 단추로 바꿈(위 = 먼저).</li>
@@ -459,7 +459,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>프레임으로</td><td>파일 순서대로 프레임을 이어 붙임</td></tr>
 </tbody>
 </table></div>
-<p>⑭ 미리보기(여러 프레임이면 재생)와 함께 ⑮ <strong>"타임라인에서는 이렇게 보입니다"</strong>에 결과의 타임라인 모양이 나오고, 무엇을 어떻게 유지하는지 안내도 보입니다. <code>.gpixel</code>의 레이어·그룹·스킨·효과·태그 같은 구조는 어느 방식이든 버리지 않고 옮깁니다. 결과는 첫 파일 폴더에 <code>&lt;이름&gt;.gpixel</code>로 저장되고 바로 열립니다. 같은 이름 파일이 이미 있으면 합치지 않고 알려 줍니다.</p>
+<p>⑭ 미리보기(여러 프레임이면 재생)와 함께 ⑮ <strong>"타임라인에서는 이렇게 보입니다"</strong>에 결과의 타임라인 모양이 나오고, 무엇을 어떻게 유지하는지 안내도 보입니다. <code>.chickxel</code>의 레이어·그룹·스킨·효과·태그 같은 구조는 어느 방식이든 버리지 않고 옮깁니다. 결과는 첫 파일 폴더에 <code>&lt;이름&gt;.chickxel</code>로 저장되고 바로 열립니다. 같은 이름 파일이 이미 있으면 합치지 않고 알려 줍니다.</p>
 <h4>삭제와 앱 휴지통</h4>
 <ul>
 <li>삭제(<kbd>Delete</kbd>, 여러 개 가능)와 합치기로 지운 원본은 묻지 않고 앱 자체 휴지통에 보관됩니다(딸린 PNG·<code>.meta</code> 포함).</li>
@@ -469,7 +469,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>우클릭 <strong>앱 휴지통 보기…</strong>에서 ⑯ 미리보기를 보며 ⑰ 되살리기(더블클릭)·영구 삭제·비우기를 합니다.</li>
 <li>⑱ 보관 정책: <strong>기간 제한</strong>(기본 꺼짐, 켜면 N일 지난 항목 영구 삭제), <strong>용량 제한</strong>(기본 1GB, 넘치면 오래된 것부터 삭제). 휴지통 창이나 <strong>편집 &gt; 환경 설정…</strong>에서 바꿉니다.</li>
-<li><strong><code>.gpixel</code> 파일만 삭제</strong>: 프로젝트 파일만 휴지통으로 보내고 내보낸 PNG·<code>.meta</code>는 남깁니다.</li>
+<li><strong><code>.chickxel</code> 파일만 삭제</strong>: 프로젝트 파일만 휴지통으로 보내고 내보낸 PNG·<code>.meta</code>는 남깁니다.</li>
 <li><strong>이미지 폴더 선택</strong>: 하위 폴더 포함으로 보던 파일이 실제로 든 폴더를 트리에서 찾아 보여 줍니다.</li>
 </ul>
 
@@ -495,7 +495,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>정렬(인기·다운로드순·최신·이름순), 색 수, 태그(예: <code>gameboy</code>, <code>pico8</code>)로 거릅니다. 태그 칸에 팔레트 이름을 넣으면 그 팔레트를 맨 위에 보여 줍니다.</li>
 <li>팔레트를 고르면 색과 함께 그 팔레트로 그린 예시 그림이 보입니다.</li>
 <li><strong>팔레트로 쓰기</strong>(지금 팔레트를 바꿈, 더블클릭과 같음), <strong>현재 팔레트에 추가</strong>(겹치는 색 제외), <strong>.hex로 저장</strong>, <strong>Lospec에서 보기</strong>.</li>
-<li><strong>즐겨찾기</strong>: 목록 줄 오른쪽이나 고른 팔레트 이름 옆의 별을 누르면 넣고 뺍니다. 즐겨찾기한 팔레트는 정보와 예시 그림까지 이 컴퓨터(<code>&lt;설정 폴더&gt;/Gpixel/Lospec</code>)에 남습니다.</li>
+<li><strong>즐겨찾기</strong>: 목록 줄 오른쪽이나 고른 팔레트 이름 옆의 별을 누르면 넣고 뺍니다. 즐겨찾기한 팔레트는 정보와 예시 그림까지 이 컴퓨터(<code>&lt;설정 폴더&gt;/Chickxel/Lospec</code>)에 남습니다.</li>
 <li>정렬에서 <strong>즐겨찾기</strong>를 고르면 즐겨찾기만 최근에 넣은 것부터 보입니다(인터넷 필요 없음). 색 수와 태그/이름 칸으로 거를 수 있습니다. 인터넷에 연결하지 못하면 오류 옆 <strong>즐겨찾기 보기</strong>로 넘어갑니다.</li>
 <li>마지막으로 고른 정렬은 다음에 창을 열 때도 그대로입니다.</li>
 </ul>
@@ -807,7 +807,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h2>도구</h2>
 
 <h3 id="tools-list">도구 목록</h3>
-<figure class="shot"><img src="assets/guide/tools-list.png" alt="연필을 고른 Gpixel 창: 왼쪽 도구 막대와 오른쪽 도구 설정" width="1600" height="932" loading="lazy"><figcaption>① 도구 막대 · ② 도구 설정(Tool settings)</figcaption></figure>
+<figure class="shot"><img src="assets/guide/tools-list.png" alt="연필을 고른 Chickxel 창: 왼쪽 도구 막대와 오른쪽 도구 설정" width="1600" height="932" loading="lazy"><figcaption>① 도구 막대 · ② 도구 설정(Tool settings)</figcaption></figure>
 <p>① 도구 막대에서 도구를 고르면 오른쪽 독의 ② <strong>도구 설정</strong>에 그 도구의 설정이 나옵니다. 긴 설명은 화면을 차지하지 않도록 <strong>i</strong> 아이콘 풍선에 들어 있습니다. 사각 선택·원 선택·자유 선택·스마트 선택·이동·그라데이션 도구의 사용 안내는 <strong>도구 설정 · …</strong> 제목 옆, 캔버스 크기·변형·그라데이션·9-slice·스포이드 묶음의 설명은 묶음 제목 옆의 <strong>i</strong>에 마우스를 올리면 보입니다.</p>
 <figure class="shot"><img src="assets/guide/tools-list-2.png" alt="도구 막대의 도구 칸들" width="104" height="515" loading="lazy"><figcaption>③ 연필 · ④ 지우개 · ⑤ 채우기·그라데이션 묶음 · ⑥ 스포이드 · ⑦ 도형 묶음(선·사각형·원) · ⑧ 선택 묶음(사각·원·자유·스마트) · ⑨ 이동 · ⑩ 밝게/어둡게 · ⑪ 디더링 · ⑫ 색 바꾸기 브러시 · ⑬ 피벗 · ⑭ 9-slice</figcaption></figure>
 <div class="table-wrap"><table>
@@ -972,7 +972,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="tools-nine-slice">9-slice</h3>
 <figure class="shot"><img src="assets/guide/tools-nine-slice.png" alt="예시 UI 단추(32×20)에 9-slice 초록 선 4개를 둔 캔버스와 도구 설정" width="1003" height="400" loading="lazy"><figcaption>① 초록 선 4개(L5·T5·R5·B6) · ② L·T·R·B 값 · ③ 모두 0(All 0) · ④ 적용 대상(프레임 시트 모든 칸)</figcaption></figure>
 <p>Unity Sprite Border를 정합니다. 캔버스에 ① <strong>초록 선 4개</strong>가 나오고, 끌면 ② L·T·R·B 값이 바뀝니다. 도구 설정에서 숫자로 넣거나 ③ <strong>모두 0</strong>으로 되돌릴 수 있습니다.</p>
-<p>부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용됩니다(④ 도구 설정에 대상이 나옵니다). 크기를 늘려도 선 바깥(모서리·가장자리)은 그대로이고 가운데만 늘어나서, Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널에 알맞습니다. Gpixel 안에서도 <a href="#tools-canvas-size">캔버스 크기 모드</a>의 <strong>9-slice로 늘리기</strong>로 같은 방식으로 그림 크기를 바꿀 수 있습니다.</p>
+<p>부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용됩니다(④ 도구 설정에 대상이 나옵니다). 크기를 늘려도 선 바깥(모서리·가장자리)은 그대로이고 가운데만 늘어나서, Unity에서 Image Type = Sliced로 쓰는 UI 버튼·패널에 알맞습니다. Chickxel 안에서도 <a href="#tools-canvas-size">캔버스 크기 모드</a>의 <strong>9-slice로 늘리기</strong>로 같은 방식으로 그림 크기를 바꿀 수 있습니다.</p>
 </section>
 
 <section class="doc" id="files">
@@ -982,7 +982,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>파일</th><th>역할</th></tr></thead>
 <tbody>
-<tr><td><code>.gpixel</code></td><td>편집 원본. 레이어·효과·프레임·태그·부위·스킨·착장 프리셋·내보내기 설정이 모두 여기에만 저장됩니다.</td></tr>
+<tr><td><code>.chickxel</code></td><td>편집 원본. 레이어·효과·프레임·태그·부위·스킨·착장 프리셋·내보내기 설정이 모두 여기에만 저장됩니다.</td></tr>
 <tr><td>내보낸 이미지(PNG)</td><td>결과물. Unity나 다른 프로그램에서 씁니다.</td></tr>
 <tr><td><code>.meta</code></td><td>Unity 설정(스프라이트 칸·피벗 등).</td></tr>
 <tr><td><code>.spriteLib</code></td><td>Unity Sprite Library. 켰을 때만 만듭니다(<a href="#parts">부위 · 스킨</a> 참고).</td></tr>
@@ -991,17 +991,17 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="files-save">저장하기</h3>
 <figure class="shot"><img src="assets/guide/files-save.png" alt="파일 메뉴를 펼친 모습. 저장(+ 시트 내보내기) 항목에 1번 표시" width="345" height="368" loading="lazy"><figcaption>① 파일 메뉴의 저장(+ 시트 내보내기) — Ctrl+S</figcaption></figure>
-<figure class="shot"><img src="assets/guide/files-save-2.png" alt="저장한 뒤 상태 표시줄. 저장한 파일과 내보낸 시트를 알리는 글에 2번 표시" width="969" height="113" loading="lazy"><figcaption>② 저장한 뒤 상태 표시줄: 저장한 .gpixel과 내보낸 시트·칸 수</figcaption></figure>
-<p><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>(① <strong>파일 &gt; 저장(+ 시트 내보내기)</strong>)로 <code>.gpixel</code>을 저장하면, 설정에 따라 이미지와 <code>.meta</code>도 함께 내보내고 ② 상태 표시줄에 결과를 보여 줍니다. <code>.meta</code>는 파일이 Unity 프로젝트의 <code>Assets</code> 안에 있거나 이미 메타가 있을 때 만듭니다. 기존 메타의 guid·spriteID는 이름 기준으로 유지되므로 Unity 쪽 참조가 끊기지 않습니다.</p>
+<figure class="shot"><img src="assets/guide/files-save-2.png" alt="저장한 뒤 상태 표시줄. 저장한 파일과 내보낸 시트를 알리는 글에 2번 표시" width="969" height="113" loading="lazy"><figcaption>② 저장한 뒤 상태 표시줄: 저장한 .chickxel과 내보낸 시트·칸 수</figcaption></figure>
+<p><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>(① <strong>파일 &gt; 저장(+ 시트 내보내기)</strong>)로 <code>.chickxel</code>을 저장하면, 설정에 따라 이미지와 <code>.meta</code>도 함께 내보내고 ② 상태 표시줄에 결과를 보여 줍니다. <code>.meta</code>는 파일이 Unity 프로젝트의 <code>Assets</code> 안에 있거나 이미 메타가 있을 때 만듭니다. 기존 메타의 guid·spriteID는 이름 기준으로 유지되므로 Unity 쪽 참조가 끊기지 않습니다.</p>
 <figure class="shot"><img src="assets/guide/files-save-3.png" alt="저장 실패 창. 프로젝트는 저장됐지만 시트 내보내기가 실패했다는 글에 3번 표시" width="597" height="168" loading="lazy"><figcaption>③ 프로젝트는 저장됐지만 시트·.meta 내보내기가 실패했다는 알림(Save failed)</figcaption></figure>
-<p><code>.gpixel</code>은 저장됐지만 이미지 내보내기만 실패하면(다른 프로그램이 파일을 잡고 있는 등) ③ 그 사실을 알려 줍니다.</p>
+<p><code>.chickxel</code>은 저장됐지만 이미지 내보내기만 실패하면(다른 프로그램이 파일을 잡고 있는 등) ③ 그 사실을 알려 줍니다.</p>
 
 <h3 id="files-autosave">자동 저장</h3>
 <figure class="shot"><img src="assets/guide/files-autosave.png" alt="상태 표시줄의 자동 저장됨 알림에 1번 표시" width="809" height="113" loading="lazy"><figcaption>① 자동 저장이 돈 뒤 상태 표시줄의 자동 저장됨(Autosaved) 알림</figcaption></figure>
 <p>기본으로 켜져 있습니다. 편집이 <strong>3초</strong> 동안 없으면 <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>와 같이(내보내기 포함) 묻지 않고 저장하고, ① 상태 표시줄에 <code>자동 저장됨</code>을 보여 줍니다.</p>
 <ul>
 <li>그리는 중이나 끌기·변형·AI 작업 중에는 끝날 때까지 미룹니다.</li>
-<li>디스크에 <code>.gpixel</code>이 이미 있는 파일만 저장합니다. 새 프로젝트나 가져온 PNG는 처음 한 번 직접 저장해야 합니다.</li>
+<li>디스크에 <code>.chickxel</code>이 이미 있는 파일만 저장합니다. 새 프로젝트나 가져온 PNG는 처음 한 번 직접 저장해야 합니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-autosave-2.png" alt="환경 설정 일반 탭의 저장 묶음. 자동 저장 체크에 2번, 기다리는 시간 칸에 3번 표시" width="987" height="82" loading="lazy"><figcaption>② 자동 저장(Autosave) 켜기 · ③ 기다리는 시간(초)</figcaption></figure>
 <ul class="marks">
@@ -1015,12 +1015,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>① 도구 막대 맨 아래 단추나 ② <strong>파일 &gt; 저장한 내용으로 되돌리기</strong>를 쓰면, ③ 확인한 뒤 저장하지 않은 수정을 버리고 파일을 다시 엽니다. 현재 레이어·프레임·확대율은 그대로입니다. 되돌리기 자체는 실행취소할 수 없습니다.</p>
 
 <h3 id="files-history">닫아도 남는 실행취소 기록</h3>
-<p>기본으로 켜져 있어, 파일을 닫거나 앱을 끝낸 뒤 다시 열어도 실행취소·다시 실행을 이어서 쓸 수 있습니다. 기록은 <strong>저장한 상태까지만</strong> 남으며, "저장 안 함"으로 버린 수정은 남지 않습니다. 기록은 <code>.gpixel</code>이 아니라 앱 설정 폴더에 따로 보관됩니다.</p>
+<p>기본으로 켜져 있어, 파일을 닫거나 앱을 끝낸 뒤 다시 열어도 실행취소·다시 실행을 이어서 쓸 수 있습니다. 기록은 <strong>저장한 상태까지만</strong> 남으며, "저장 안 함"으로 버린 수정은 남지 않습니다. 기록은 <code>.chickxel</code>이 아니라 앱 설정 폴더에 따로 보관됩니다.</p>
 <figure class="shot"><img src="assets/guide/files-history.png" alt="환경 설정 일반 탭의 실행취소 기록 묶음. 기록 남기기 체크, 보관 기간, 최대 용량, 기록 모두 지우기 단추에 1~4번 표시" width="987" height="174" loading="lazy"><figcaption>① 닫은 뒤에도 실행취소 기록 남기기 · ② 보관 기간(Retention period) · ③ 최대 용량(Max size) · ④ 기록 모두 지우기(Clear all history)</figcaption></figure>
 <p>① 켜고 끄기, ② 보관 기간(기본 30일)·③ 최대 용량(기본 500MB)·④ <strong>기록 모두 지우기</strong>는 <strong>환경 설정 &gt; 일반</strong>에 있습니다.</p>
 
 <h3 id="files-png-import">PNG 열기(가져오기)</h3>
-<p>PNG를 열면 프로젝트로 가져옵니다. 같은 이름의 <code>.gpixel</code>이 있거나 같은 폴더의 프로젝트가 그 PNG를 내보내고 있으면 그 프로젝트를 엽니다.</p>
+<p>PNG를 열면 프로젝트로 가져옵니다. 같은 이름의 <code>.chickxel</code>이 있거나 같은 폴더의 프로젝트가 그 PNG를 내보내고 있으면 그 프로젝트를 엽니다.</p>
 <ul>
 <li>메타에 칸 정보가 있고 칸 크기가 서로 다르면 <strong>부위</strong>(그룹 하나 + 칸마다 부위 하나)로 가져옵니다.</li>
 </ul>
@@ -1036,20 +1036,20 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="files-open-media">그림·움직이는 그림·영상 열기</h3>
-<figure class="shot"><img src="assets/guide/files-open-media.png" alt="파일 메뉴를 펼친 모습. 열기 항목에 1번 표시" width="345" height="368" loading="lazy"><figcaption>① 파일 메뉴의 열기(.gpixel · 이미지 · GIF · 영상)… — Ctrl+O</figcaption></figure>
+<figure class="shot"><img src="assets/guide/files-open-media.png" alt="파일 메뉴를 펼친 모습. 열기 항목에 1번 표시" width="345" height="368" loading="lazy"><figcaption>① 파일 메뉴의 열기(.chickxel · 이미지 · GIF · 영상)… — Ctrl+O</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-open-media-2.png" alt="움직이는 GIF를 연 새 문서. 새 탭, 파일 이름의 레이어, 네 프레임에 2~4번 표시" width="1036" height="814" loading="lazy"><figcaption>움직이는 GIF(slime_bounce.gif, 4프레임)를 연 새 문서: ② 새 탭 · ③ 파일 이름의 레이어 하나 · ④ 그림 프레임마다 프레임(길이 120ms 그대로)</figcaption></figure>
-<p>① <strong>파일 &gt; 열기(.gpixel · 이미지 · GIF · 영상)…</strong>(<span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>)는 여러 파일을 한 번에 고를 수 있고 파일마다 ② 새 탭으로 엽니다. PNG가 아닌 그림(JPG·BMP·GIF·WebP·ICO·움직이는 PNG)은 <strong>새 문서</strong>가 됩니다 — 캔버스 = 그림 크기, ③ 레이어 하나(파일 이름), ④ 그림 프레임마다 프레임 하나.</p>
+<p>① <strong>파일 &gt; 열기(.chickxel · 이미지 · GIF · 영상)…</strong>(<span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>)는 여러 파일을 한 번에 고를 수 있고 파일마다 ② 새 탭으로 엽니다. PNG가 아닌 그림(JPG·BMP·GIF·WebP·ICO·움직이는 PNG)은 <strong>새 문서</strong>가 됩니다 — 캔버스 = 그림 크기, ③ 레이어 하나(파일 이름), ④ 그림 프레임마다 프레임 하나.</p>
 <ul>
 <li>프레임 길이는 파일에 적힌 그대로입니다(0~10ms는 브라우저처럼 100ms). 투명은 그대로이고, GIF·APNG의 부분 프레임과 처리 방법(배경으로·이전으로)을 합성해 프레임마다 완성된 그림이 됩니다. 사진은 EXIF 회전을 따릅니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-open-media-3.png" alt="프레임이 300개를 넘는 그림을 열 때 묻는 창. 세 단추에 5번 표시" width="528" height="140" loading="lazy"><figcaption>⑤ 프레임이 300개를 넘는 그림을 열 때 묻는 창(모두 열기 / 앞 300개만 / 취소)</figcaption></figure>
 <ul>
 <li>프레임이 300개를 넘으면 ⑤ "모두 열기 / 앞 300개만 / 취소"를 묻습니다.</li>
-<li>아직 <code>.gpixel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. 파일 브라우저에서 누르기, 최근 파일, 창에 끌어 놓기도 같은 길로 엽니다.</li>
+<li>아직 <code>.chickxel</code>이 없으므로 처음 저장할 때 위치를 묻습니다. 파일 브라우저에서 누르기, 최근 파일, 창에 끌어 놓기도 같은 길로 엽니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-open-media-4.png" alt="환경 설정의 영상(ffmpeg) 탭. 탭, ffmpeg 실행 파일 칸, 찾아보기 단추에 6~8번 표시" width="696" height="279" loading="lazy"><figcaption>⑥ 환경 설정의 영상(ffmpeg) 탭 · ⑦ ffmpeg 실행 파일 위치(비우면 자동으로 찾음) · ⑧ 찾아보기(Browse…)</figcaption></figure>
 <ul>
-<li><strong>영상</strong>(MP4·WebM·MOV·MKV·AVI 등)과 AVIF·HEIC 그림은 <strong>ffmpeg</strong>가 있어야 엽니다(Gpixel에 들어 있지 않고 자동으로 내려받지 않음 — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, Windows는 <code>winget install Gyan.FFmpeg</code>). PATH나 흔한 설치 위치에 있으면 저절로 찾고, 아니면 ⑥ <strong>편집 &gt; 환경 설정… &gt; 영상(ffmpeg)</strong>에서 ⑦ 실행 파일을 ⑧ 찾아보기로 고릅니다.</li>
+<li><strong>영상</strong>(MP4·WebM·MOV·MKV·AVI 등)과 AVIF·HEIC 그림은 <strong>ffmpeg</strong>가 있어야 엽니다(Chickxel에 들어 있지 않고 자동으로 내려받지 않음 — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, Windows는 <code>winget install Gyan.FFmpeg</code>). PATH나 흔한 설치 위치에 있으면 저절로 찾고, 아니면 ⑥ <strong>편집 &gt; 환경 설정… &gt; 영상(ffmpeg)</strong>에서 ⑦ 실행 파일을 ⑧ 찾아보기로 고릅니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/files-open-media-5.png" alt="영상 가져오기 창. 구간, 초당 프레임, 최대 프레임 수, 크기, 부드럽게, 예상치, 가져오기 단추에 9~15번 표시" width="478" height="262" loading="lazy"><figcaption>영상 가져오기 창(예시 영상 8.4초, 1280×720, 30fps): ⑨ 구간(Range) · ⑩ 초당 프레임 · ⑪ 최대 프레임 수 · ⑫ 크기(Size) · ⑬ 부드럽게(Smooth) · ⑭ 예상치 · ⑮ 가져오기(Import)</figcaption></figure>
 <ul>
@@ -1065,7 +1065,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>그림은 <strong>놓은 픽셀이 가운데</strong>가 되게 현재 프레임에 색 그대로 들어가고, 캔버스 밖으로 나간 부분은 잘립니다. 캔버스보다 큰 그림은 캔버스 가운데에 놓고 잘렸다고 알려 줍니다 — 다 넣으려면 먼저 <a href="#tools-canvas-size">캔버스 크기 모드</a>로 캔버스를 키우세요.</li>
 <li><strong>움직이는 GIF·WebP·APNG</strong>와 <strong>영상</strong>(먼저 영상 가져오기 창)은 한 레이어에 현재 프레임부터 차례로 넣고, 프레임이 모자라면 맨 끝에 더합니다(더한 프레임 길이 = 그림·영상 프레임 길이).</li>
 <li>한 번 놓은 것 전체가 실행취소 한 단계(<code>이미지 끌어 넣기</code>)입니다.</li>
-<li>캔버스 <strong>밖</strong>(파일 목록·시작 화면·탭 줄·패널)에 놓으면 레이어로 넣지 않고 파일마다 새 탭으로 엽니다. 그림 없이 <code>.gpixel</code>만 놓아도 새 탭으로 엽니다.</li>
+<li>캔버스 <strong>밖</strong>(파일 목록·시작 화면·탭 줄·패널)에 놓으면 레이어로 넣지 않고 파일마다 새 탭으로 엽니다. 그림 없이 <code>.chickxel</code>만 놓아도 새 탭으로 엽니다.</li>
 <li>그림 한 장(한 프레임)을 넣으면 마지막 그림이 바로 ③ <a href="#tools-transform">변형 모드</a>로 들립니다(④ 상태 표시줄에 안내): 잘리기 전 그림 전체를 들고 있으니 옮기거나 크기를 맞춘 뒤 <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span>로 적용하면 그때 캔버스 밖이 잘리고, <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span>면 넣은 그대로 둡니다(넣기·변형은 실행취소 두 단계). 여러 프레임 그림은 변형 모드 없이 넣습니다.</li>
 </ul>
 
@@ -1074,8 +1074,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="assets/guide/files-cleanup-2.png" alt="파일 목록 우클릭 메뉴. 마지막 삭제 되살리기에 2번, 앱 휴지통 보기에 3번 표시" width="263" height="221" loading="lazy"><figcaption>파일 목록 우클릭 메뉴: ② 마지막 삭제 되살리기(Restore last deleted, Ctrl+Z) · ③ 앱 휴지통 보기(View app trash…)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/files-cleanup-3.png" alt="앱 휴지통 창. 저장 때 옮겨진 옛 결과 항목에 4번, 되살리기 단추에 5번 표시" width="796" height="556" loading="lazy"><figcaption>앱 휴지통 창: ④ 저장 때 옮겨진 옛 결과(Export cleanup) · ⑤ 되살리기(Restore)</figcaption></figure>
 <p>내보내기 방식이나 이름을 바꿔 더 이상 만들지 않게 된 옛 결과 파일(그리고 그 <code>.meta</code>)은 다음 저장 때 <strong>앱 휴지통</strong>으로 옮기고 ① 상태 표시줄에 알려 줍니다. 파일 목록에서 ② <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>나 ③ 앱 휴지통 보기로 되살릴 수 있습니다(앱 휴지통 창에서 ④ 항목을 골라 ⑤ 되살리기).</p>
-<p>파일 브라우저에서 <code>.gpixel</code>의 이름을 바꾸거나 지우면, 기본 이름으로 내보낸 결과물과 <code>.meta</code>도 함께 옮기거나 앱 휴지통으로 보냅니다. Unity guid는 유지됩니다.</p>
-<p>정리 대상은 Gpixel이 직접 내보냈던 기록에 있는 파일뿐입니다. 사용자가 따로 만든 파일이나 내보내기 폴더·이름을 따로 지정한 파일은 건드리지 않습니다.</p>
+<p>파일 브라우저에서 <code>.chickxel</code>의 이름을 바꾸거나 지우면, 기본 이름으로 내보낸 결과물과 <code>.meta</code>도 함께 옮기거나 앱 휴지통으로 보냅니다. Unity guid는 유지됩니다.</p>
+<p>정리 대상은 Chickxel이 직접 내보냈던 기록에 있는 파일뿐입니다. 사용자가 따로 만든 파일이나 내보내기 폴더·이름을 따로 지정한 파일은 건드리지 않습니다.</p>
 
 <h3 id="files-cell-names">내보낼 칸 이름</h3>
 <figure class="shot"><img src="assets/guide/files-cell-names.png" alt="타임라인 프레임 우클릭 메뉴. 내보낼 칸 이름 항목에 1번 표시" width="1034" height="558" loading="lazy"><figcaption>① 프레임 머리 우클릭 메뉴의 내보낼 칸 이름…(Export cell name…)</figcaption></figure>
@@ -1108,17 +1108,17 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>위치</th></tr></thead>
 <tbody>
-<tr><td>Windows</td><td><code>%AppData%\Gpixel\settings.json</code></td></tr>
-<tr><td>macOS</td><td><code>~/Library/Application Support/Gpixel/settings.json</code></td></tr>
+<tr><td>Windows</td><td><code>%AppData%\Chickxel\settings.json</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/Chickxel/settings.json</code></td></tr>
 </tbody>
 </table></div>
 <p>내보내기 설정 프리셋은 같은 폴더의 <code>export-presets.json</code>에 있습니다.</p>
 
 <h3 id="files-crash-log">오류가 생겼을 때</h3>
 <figure class="shot"><img src="assets/guide/files-crash-log.png" alt="예상하지 못한 오류 창. 안내와 로그 파일 이름, 로그 폴더 열기 단추, Discord에 제보 단추에 1~3번 표시" width="436" height="244" loading="lazy"><figcaption>① 예상하지 못한 오류 창(예시 오류, 로그 파일 이름 포함) · ② 로그 폴더 열기(Open log folder) · ③ Discord에 제보(Report on Discord)</figcaption></figure>
-<p>예상하지 못한 오류가 생겨도 앱은 끝나지 않고 ① "작업은 계속할 수 있습니다" 창을 띄웁니다. 내용은 설정 폴더의 <code>Gpixel/Logs</code>에 로그로 남습니다(최근 20개).</p>
+<p>예상하지 못한 오류가 생겨도 앱은 끝나지 않고 ① "작업은 계속할 수 있습니다" 창을 띄웁니다. 내용은 설정 폴더의 <code>Chickxel/Logs</code>에 로그로 남습니다(최근 20개).</p>
 <figure class="shot"><img src="assets/guide/files-crash-log-2.png" alt="도움말 메뉴를 펼친 모습. 오류 로그 폴더 열기 항목에 4번 표시" width="273" height="233" loading="lazy"><figcaption>④ 도움말 메뉴의 오류 로그 폴더 열기(Open error log folder)</figcaption></figure>
-<div class="note">④ <strong>도움말 &gt; 오류 로그 폴더 열기</strong>(오류 창에서는 ② 로그 폴더 열기)로 로그를 찾을 수 있습니다. 오류 창의 ③ <strong>Discord에 제보</strong>로 바로 알리거나 <a href="#start-feedback">제보·아이디어</a>를 보고, 알릴 때 이 파일을 붙여 주세요. 앱이 끝날 수밖에 없는 오류라면 수정된 문서는 <code>Gpixel/Recovery/</code>에 따로 저장됩니다.</div>
+<div class="note">④ <strong>도움말 &gt; 오류 로그 폴더 열기</strong>(오류 창에서는 ② 로그 폴더 열기)로 로그를 찾을 수 있습니다. 오류 창의 ③ <strong>Discord에 제보</strong>로 바로 알리거나 <a href="#start-feedback">제보·아이디어</a>를 보고, 알릴 때 이 파일을 붙여 주세요. 앱이 끝날 수밖에 없는 오류라면 수정된 문서는 <code>Chickxel/Recovery/</code>에 따로 저장됩니다.</div>
 </section>
 
 <section class="doc" id="pixelate">
@@ -1186,7 +1186,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="assets/guide/pixelate-candidates-3.png" alt="후보 칸에 마우스를 올린 툴팁" width="330" height="260" loading="lazy"><figcaption>⑦ 툴팁의 점수 내역</figcaption></figure>
 <ul>
 <li>후보마다 점수 내역을 ⑦ 툴팁과 ⑥ 미리보기 아래에 보여 줍니다.</li>
-<li>후보 칸을 우클릭하면 <strong>이미지 복사</strong>·<strong>크게 복사 (×4)</strong>·<strong>PNG로 저장…</strong>이 있습니다(여러 프레임 결과는 첫 프레임, 파일 이름은 원본 이름_순위 또는 _프리셋 이름). 복사한 그림은 Gpixel 안 클립보드와 시스템 클립보드에 함께 올라가 캔버스나 다른 프로그램에 붙여 넣을 수 있습니다. 최적화 후보는 같은 메뉴 아래에 <strong>이 설정만 다시 돌리기</strong>가 있습니다(<a href="#pixelate-optimize">자동 최적화</a>).</li>
+<li>후보 칸을 우클릭하면 <strong>이미지 복사</strong>·<strong>크게 복사 (×4)</strong>·<strong>PNG로 저장…</strong>이 있습니다(여러 프레임 결과는 첫 프레임, 파일 이름은 원본 이름_순위 또는 _프리셋 이름). 복사한 그림은 Chickxel 안 클립보드와 시스템 클립보드에 함께 올라가 캔버스나 다른 프로그램에 붙여 넣을 수 있습니다. 최적화 후보는 같은 메뉴 아래에 <strong>이 설정만 다시 돌리기</strong>가 있습니다(<a href="#pixelate-optimize">자동 최적화</a>).</li>
 <li><strong>실패한 결과</strong>: 결과가 비었거나(모두 투명) 거의 비었거나(원본 그림의 ¼도 못 덮음) 한 색뿐이거나 모든 프레임이 8×8보다 작으면 칸 크기 감지가 잘못된 것으로 보고 0점으로 맨 뒤에 두며, 미리 고르거나 자동 최적화가 1위로 고르지 않습니다. 고르면 미리보기 아래에 "결과가 비었습니다 — 칸 크기 감지가 잘못됨(183px)"처럼 까닭이 보입니다. 자동 격자는 이런 결과가 나오면 다른 어림(다른 칸 크기 기준 값, 찾은 값의 ½·⅓)으로 저절로 다시 정리하고 그렇다고 알립니다. 자동 칸 크기는 프레임(스프라이트) 짧은 변의 1/5을 넘지 않습니다(격자 정보에 상한이 보임) — 시트에서 프레임 간격이나 큰 덩어리를 칸으로 잡지 않게.</li>
 </ul>
 
@@ -1197,7 +1197,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>후보 위의 ① <strong>자동 최적화</strong> 단추를 누르면 바로 시작합니다(도는 동안 단추가 ⑦ <strong>취소</strong>로 바뀌고, 끝나면 돌아옵니다). 지금 설정에서 시작해 체크한 항목을 바꿔 가며 점수가 가장 높은 설정을 찾습니다. 단추 옆에는 ③ 최고 점수 그래프(시도마다 그때까지의 최고 점수, 새 돌림이 시작된 곳에 옅은 세로 선, 오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음)와 ④ 한 줄 결과("프리셋 n/m개 · t초", 한 프리셋만 다시 돌렸으면 "프리셋 이름: 돌림 k번 · a점 → b점 · 시도 n번 · t초 · 까닭"), 끝난 뒤 작은 ⑤ <strong>되돌리기</strong> 단추만 보입니다. 그 옆 ② 설정 단추(슬라이더 아이콘)를 누르면 별도 창 <strong>자동 최적화 설정</strong>이 열립니다.</p>
 <h4>바꿔 볼 항목</h4>
 <figure class="shot"><img src="assets/guide/pixelate-optimize-3.png" alt="자동 최적화 설정 창" width="1000" height="932" loading="lazy"><figcaption>⑨ 항목 체크 · ⑩ 모두 선택 / 모두 해제(Clear all) · ⑪ 예산: 시도·초(Trials·Seconds) · ⑫ 점수 항목별 비중(Score weights) · ⑬ 시도 기록(Trial history) · ⑭ 불러오면 자동 최적화(Auto optimize on load) · ⑮ 최적화 프리셋 목록(Optimizer presets) · ⑯ 점수용 색 거리(Major color shift distance)</figcaption></figure>
-<p>⑭ <strong>불러오면 자동 최적화</strong>(기본 켬)가 켜져 있으면 원본을 넣을 때마다(열기·끌어 놓기·붙여 넣기·파일 찾기·원본 바꾸기) 첫 후보가 끝난 뒤 한 번 저절로 시작합니다. 설정을 바꿔 후보를 다시 만들 때는 시작하지 않고, <strong>취소</strong>로 멈출 수 있습니다. 설정 창 왼쪽의 ⑮ <strong>자동 최적화로 돌릴 프리셋(체크한 것을 모두 돌림 — 값은 왼쪽 설정 칸에서 고침)</strong>에서 프리셋을 고르고, 오른쪽에서 ⑨ 항목 체크·⑩ <strong>모두 선택 / 모두 해제</strong>·⑪ 예산(<strong>시도</strong>·<strong>초</strong>)·⑯ <strong>주요 색 변화의 점수용 색 거리</strong>·⑫ <strong>점수 항목별 비중(0 = 제외)</strong>을 정합니다. 창 아래에서 ⑬ <strong>시도 기록</strong>을 펼칠 수 있습니다. 목표는 프리셋마다 그 프리셋의 점수 기준입니다.</p>
+<p>⑭ <strong>불러오면 자동 최적화</strong>(기본 켬)가 켜져 있으면 원본을 넣을 때마다(열기·끌어 놓기·붙여 넣기·파일 찾기·원본 바꾸기) 첫 후보가 끝난 뒤 한 번 저절로 시작합니다. 설정을 바꿔 후보를 다시 만들 때는 시작하지 않고, <strong>취소</strong>로 멈출 수 있습니다. 설정 창 왼쪽의 ⑮ <strong>자동 최적화는 체크한 프리셋을 모두 돌립니다. &#x27;대표&#x27;가 초록인 프리셋이 AI 그림 변환의 대표 프리셋입니다(값은 왼쪽 설정 칸에서 고침).</strong>에서 프리셋을 고르고, 오른쪽에서 ⑨ 항목 체크·⑩ <strong>모두 선택 / 모두 해제</strong>·⑪ 예산(<strong>시도</strong>·<strong>초</strong>)·⑯ <strong>점수용 색 거리(주요 색 변화·칸끼리 닮음)</strong>·⑫ <strong>점수 항목별 비중(0 = 제외)</strong>을 정합니다. 창 아래에서 ⑬ <strong>시도 기록</strong>을 펼칠 수 있습니다. 목표는 프리셋마다 그 프리셋의 점수 기준입니다.</p>
 <ul>
 <li>항목(기본은 외곽선 맞추기 방식만 빼고 지금 설정에서 쓸 수 있는 항목 모두 체크 — 고른 방식의 1px 외곽선을 지킴): <strong>칸 크기</strong>(크기를 줄여서로 시작하고 외곽선 맞추기 방식을 바꿔 보지 않으면 원본 외곽선 두께 ±15% 안에서만 — 외곽선 띠가 한 칸, 두께는 기본 외곽선 밝기로 재서 외곽선 밝기를 올린 최적화 결과에서 다시 시작해도 범위가 그대로; 아니면 세 방식 어림(외곽선 두께·색 경계·덩어리 경계)·시작 칸 크기와 그 2·3배·½·⅓을 하나하나 돌려 보고 그 사이를 고르게 훑음 — 아래쪽은 시작 칸 크기·자동 어림의 0.75배까지만(외곽선 맞추기도 바꿔 볼 때는 다른 방식이 어림의 ½·⅓을 따로 쟀으면 그 크기까지), 칸이 작을수록 충실도는 늘 좋아져 근거 없이 열면 결과가 커지기 때문; 깨끗한 그림의 정확한 배수면 바꾸지 않음. 자동 격자는 격자의 <strong>자동 칸 크기에 더하기(px)</strong>를, 수동 격자는 칸 크기를, 배율 크기는 배율을 바꾸고 고정 크기면 건너뜀) · 격자 시작 X·Y(수동 격자일 때만) · <strong>색 수</strong>(4~48) · <strong>칸 색 방식</strong>(여섯 방식 모두) · 칸 가장자리 무시 · 투명 문턱 · 색 묶기 간격(가장 많은 색·우세 색 묶음 가중 평균인 시도에서만) · 외곽선 밝기 · <strong>정리 켜기·끄기</strong>(외톨이·구멍·계단 각각) · 디더링 · 외곽선 맞추기 방식(벡터로 다시 그리기 포함, 기본 꺼짐 — 끄면 지금 고른 방식을 그대로 둠, '모두 선택'도 켜지 않음; 켜도 크기를 줄여서인 시도는 외곽선 두께 ±15% 안이어야 고름) · 벡터 단순화·남길 작은 덩어리(벡터로 다시 그리기인 시도에서만 바꿈) · <strong>팔레트 색</strong>(원본·평균) · 팔레트 방식(k-평균·중앙 분할) · 가장자리 칸 가중(0~1) — 이 셋은 k-평균·중앙 분할일 때만 · 외곽선 색 모으기(켜기·끄기) · <strong>칸 경계 지역 보정</strong>(켜기·끄기, 켠 시도에서 최대 이동 10~50%·띠 1~8칸) · <strong>색 거리</strong>(변환용 OKLab·CIEDE2000·OKLCh 색상 가중 — OKLCh면 색상 무게도 0~1000에서 작은 값 쪽 대표 값과 함께 탐색. 점수용 색 거리는 바꾸지 않음).</li>
 </ul>
@@ -1210,7 +1210,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <h4>최적화 프리셋</h4>
 <ul>
-<li>최적화 프리셋: 설정 창 왼쪽 목록 아래 단추로 <strong>프리셋 추가</strong>·<strong>프리셋 복제</strong>·<strong>이름 바꾸기</strong>·즐겨찾기(목록 맨 위로)·<strong>프리셋 삭제</strong>(마지막 하나는 지울 수 없음)를 하고, 체크한 프리셋만 돌립니다. 프리셋마다 탐색 항목, 시도 수·시간, 점수용 색 거리, 점수 항목별 비중을 따로 가집니다. 점수용 색 거리(OKLab · CIEDE2000 · OKLCh 색상 가중, 색상 무게 0~1000)는 팔레트의 변환용 색 거리와 따로 저장하며, 모든 후보의 <strong>큰 면 색 바뀜</strong>을 이 고정 기준으로 견주고 변환은 후보마다 고른 팔레트 설정을 씁니다. 기본 프리셋은 <strong>OKLCH1000</strong>(모든 항목, 점수용 색 거리 OKLCh 색상 무게 1000) · <strong>OKLab</strong>(점수용 색 거리 OKLab) · <strong>빠른 확인</strong>(기본 항목, 1000번·30초, 처음엔 체크 안 됨) · <strong>원본 충실</strong>(충실도·큰 면 색 바뀜 비중을 높임) · <strong>깔끔한 도트</strong>(외톨이·외곽선 틈·외곽선 1px 비중을 높임) · <strong>같은 색상 계열(OKLCH 20)</strong>(OKLCh 색상 무게 20)이고, 빠른 확인 말고는 10000번·120초입니다. 이름은 화면 언어를 따릅니다.</li>
+<li>최적화 프리셋: 설정 창 왼쪽 목록 아래 단추로 <strong>프리셋 추가</strong>·<strong>프리셋 복제</strong>·<strong>이름 바꾸기</strong>·즐겨찾기(목록 맨 위로)·<strong>프리셋 삭제</strong>(마지막 하나는 지울 수 없음)를 하고, 체크한 프리셋만 돌립니다. 프리셋마다 탐색 항목, 시도 수·시간, 점수용 색 거리, 점수 항목별 비중을 따로 가집니다. 점수용 색 거리(OKLab · CIEDE2000 · OKLCh 색상 가중, 색상 무게 0~1000)는 팔레트의 변환용 색 거리와 따로 저장하며, 모든 후보의 <strong>큰 면 색 바뀜</strong>을 이 고정 기준으로 견주고 변환은 후보마다 고른 팔레트 설정을 씁니다. 기본 프리셋은 <strong>OKLCH1000</strong>(모든 항목, 점수용 색 거리 OKLCh 색상 무게 1000) · <strong>OKLab</strong>(점수용 색 거리 OKLab) · <strong>빠른 확인</strong>(기본 항목, 1000번·30초, 처음엔 체크 안 됨) · <strong>원본 충실</strong>(충실도·큰 면 색 바뀜 비중을 높임) · <strong>깔끔한 도트</strong>(외톨이·외곽선 틈·외곽선 1px 비중을 높임) · <strong>같은 색상 계열</strong>(OKLCh 색상 무게 20)이고, 빠른 확인 말고는 10000번·120초입니다. 이름은 화면 언어를 따릅니다.</li>
 <li>프리셋 목록과 프리셋마다의 값은 기억합니다. <strong>도구 &gt; 프리셋…</strong>의 <strong>자동 최적화(픽셀로 정리)</strong> 탭에서도 같은 프리셋을 보고 고칠 수 있습니다.</li>
 </ul>
 <div class="note"><p>함께 든 예시(기본 설정, 예전 기본 항목·예산 — 칸 크기·색 수·칸 색 방식·정리·팔레트 색, 200번·60초)는 약 3초, 시도 162번에 70.3점 → 80.8점(칸 약 16.1 → 14.9px, 26색, 구멍 메우기 끔, 팔레트 색은 원본 색 그대로, 외곽선 1px 비율 99%)입니다.</p></div>
@@ -1279,7 +1279,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="pixelate-presets">프리셋</h3>
 <figure class="shot"><img src="assets/guide/pixelate-presets.png" alt="프리셋 목록을 펼친 모습" width="424" height="185" loading="lazy"><figcaption>① 프리셋 목록(Preset) · ② 저장(+) · ③ 삭제</figcaption></figure>
 <figure class="shot"><img src="assets/guide/pixelate-presets-2.png" alt="프리셋 이름을 묻는 창" width="304" height="143" loading="lazy"><figcaption>④ 프리셋 이름(Preset name)</figcaption></figure>
-<p>① 기본 프리셋은 <strong>기본</strong> · <strong>작은 스프라이트(32px)</strong> · <strong>색 적게(16색)</strong> · <strong>원본 색 유지</strong>입니다. ④ 이름을 붙여 ② 저장·③ 삭제할 수 있고(<code>&lt;앱 데이터&gt;/Gpixel/Pixelate/presets.json</code>), 마지막 설정은 기억합니다.</p>
+<p>① 기본 프리셋은 <strong>기본</strong> · <strong>작은 스프라이트(32px)</strong> · <strong>색 적게(16색)</strong> · <strong>원본 색 유지</strong>입니다. ④ 이름을 붙여 ② 저장·③ 삭제할 수 있고(<code>&lt;앱 데이터&gt;/Chickxel/Pixelate/presets.json</code>), 마지막 설정은 기억합니다.</p>
 <div class="note"><p>함께 든 예시(4프레임 걷기, 2172×724px)는 외곽선 두께 16.3px(색 경계 8.25px, 덩어리 경계 15.5px)로 나옵니다. 기본인 크기를 줄여서는 칸 약 16px, 프레임마다 약 29×35, 약 24색, 바깥 외곽선 픽셀의 약 99%가 1px(칸 경계 지역 보정 켬, 끄면 약 96%)이고, 외곽선만 얇게에 칸 크기 기준을 색 경계로 하면 칸 약 8px, 약 99%가 1px입니다(자동이면 외곽선 두께와 경계 일치가 같아 16px). 원본에서 가장 많이 쓰인 10색과 가장 가까운 팔레트 색의 차이(OKLab, 지역 보정 끔 기준)는 원본 색이 평균 0.011·최대 0.025, 평균 색이 평균 0.013·최대 0.026입니다.</p></div>
 </section>
 
@@ -1446,7 +1446,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="parts-import">예전 파일과 PNG 가져오기</h3>
 <ul>
-<li>예전 버전의 아틀라스 <code>.gpixel</code>을 열면 그룹 "부위" + 스프라이트마다 부위 하나로 바뀝니다. Unity의 guid·spriteID는 그대로 이어집니다.</li>
+<li>예전 버전의 아틀라스 <code>.chickxel</code>을 열면 그룹 "부위" + 스프라이트마다 부위 하나로 바뀝니다. Unity의 guid·spriteID는 그대로 이어집니다.</li>
 </ul>
 <figure class="shot"><img src="assets/guide/parts-import.png" alt="칸 크기가 서로 다른 부위 아틀라스 PNG를 연 화면: 타임라인에 그룹 wolf_parts 하나와 그 아래 Head·Body·Legs 부위, 프레임 1개" width="1034" height="784" loading="lazy"><figcaption>① 시트 이름의 그룹 하나(wolf_parts) · ② 칸마다 부위 하나(Head·Body·Legs)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/parts-import-2.png" alt="가져온 그림의 내보내기 창 공통 설정: 내보낼 결과가 부위 아틀라스만 켜진 상태" width="488" height="519" loading="lazy"><figcaption>③ 내보낼 결과 = 부위 아틀라스(Part atlas, 프레임 시트는 꺼짐)</figcaption></figure>
@@ -1473,7 +1473,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>채팅은 작은 창으로 따로 뜨며 위치와 크기를 기억합니다. 앱을 닫을 때 열려 있었다면 다음에 다시 열립니다.</p>
 
 <h3 id="ai-setup">처음 한 번: 설치와 로그인</h3>
-<p>Gpixel 설치 파일에는 Claude Code와 Codex CLI가 들어 있지 않습니다. 처음 쓸 때 다음 순서를 따르세요.</p>
+<p>Chickxel 설치 파일에는 Claude Code와 Codex CLI가 들어 있지 않습니다. 처음 쓸 때 다음 순서를 따르세요.</p>
 <figure class="shot"><img src="assets/guide/ai-setup.png" alt="Claude Code를 찾지 못했을 때의 채팅 창: 설치 단추, 설치 명령과 복사 단추, 직접 경로 지정, 다시 확인" width="520" height="672" loading="lazy"><figcaption>① 터미널에서 설치하고 로그인(Install and log in via terminal) · ② 명령 복사(Copy) · ③ 직접 경로 지정 · ④ 다시 확인(Check again)</figcaption></figure>
 <figure class="shot"><img src="assets/guide/ai-setup-2.png" alt="설치 단추를 누르면 뜨는 AI 설치 확인 창: 실행할 명령과 확인 단추" width="476" height="183" loading="lazy"><figcaption>⑤ 실행할 명령 · ⑥ 승인(OK)</figcaption></figure>
 <ol>
@@ -1482,7 +1482,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ol>
 <figure class="shot"><img src="assets/guide/ai-setup-3.png" alt="처음 쓸 때 뜨는 AI 상태 창: Claude Code는 설치·로그인됨, Codex CLI는 설치 안 됨" width="724" height="571" loading="lazy"><figcaption>⑦ Claude Code 설치·로그인 확인됨 · ⑧ Codex CLI 설치 안 됨 · ⑨ AI로 계속(Continue to AI)</figcaption></figure>
 <ol>
-<li>Gpixel이 설치·로그인 상태를 확인하고(⑦ 준비됨, ⑧ 설치 안 됨처럼 보임) ⑨ 채팅 화면으로 넘어갑니다.</li>
+<li>Chickxel이 설치·로그인 상태를 확인하고(⑦ 준비됨, ⑧ 설치 안 됨처럼 보임) ⑨ 채팅 화면으로 넘어갑니다.</li>
 </ol>
 <ul>
 <li>Codex에 필요한 Node.js가 없으면 함께 설치합니다(Windows는 winget 또는 공식 ZIP, macOS는 Homebrew 또는 nvm).</li>
@@ -1565,7 +1565,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="ai-generate">그림 생성 → 픽셀 변환</h3>
-<p>Codex 탭에서 "검을 든 기사 그려 줘"처럼 부탁하면 AI가 점을 하나씩 찍는 대신 <code>generate_pixel_art</code> 도구를 부릅니다. Gpixel은 내 컴퓨터의 Codex CLI(<code>codex exec</code>, Codex 이미지 생성)를 내 ChatGPT 로그인으로 실행해 고품질 그림을 만들고(API 키 없음), 그 그림을 <a href="#pixelate">AI 그림 픽셀로 정리</a>와 같은 방식(배경 지우기, 자동 최적화, 공유 팔레트, 1px 외곽선)으로 픽셀 아트로 바꿔 넣습니다. 그림 한 장에 30~90초쯤 걸립니다.</p>
+<p>Codex 탭에서 "검을 든 기사 그려 줘"처럼 부탁하면 AI가 점을 하나씩 찍는 대신 <code>generate_pixel_art</code> 도구를 부릅니다. Chickxel은 내 컴퓨터의 Codex CLI(<code>codex exec</code>, Codex 이미지 생성)를 내 ChatGPT 로그인으로 실행해 고품질 그림을 만들고(API 키 없음), 그 그림을 <a href="#pixelate">AI 그림 픽셀로 정리</a>와 같은 방식(배경 지우기, 자동 최적화, 공유 팔레트, 1px 외곽선)으로 픽셀 아트로 바꿔 넣습니다. 그림 한 장에 30~90초쯤 걸립니다.</p>
 <figure class="shot"><img src="assets/guide/ai-generate.png" alt="Codex 탭에서 그리기 설정 칸을 연 모습(직접 찍기를 고름)" width="810" height="229" loading="lazy"><figcaption>① 그리기 설정 단추(열려 있으면 빨간 X) · ② Codex CLI 상태 · ③ 정보 아이콘 · ④ 그림 생성 → 픽셀 변환 · ⑤ 직접 찍기 · ⑥ 팔레트 색만 사용</figcaption></figure>
 <ul>
 <li><strong>그리기 설정</strong>: 채팅 창 위쪽 물음표 단추 옆의 ① <strong>그리기 설정</strong> 단추(슬라이더 아이콘)를 누르면 도움말 칸처럼 오른쪽에 설정 칸이 열립니다. 도움말과 그리기 설정은 한 번에 하나만 열리고, 열려 있는 동안 단추가 빨간 X로 바뀝니다. 칸에는 ② Codex CLI 상태(로그인됨 / 설치 안 됨 / 로그인 안 됨)도 보입니다.</li>
@@ -1598,7 +1598,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <figure class="shot"><img src="assets/guide/ai-generate-4.png" alt="그림 생성이 끝난 결과 카드: 썸네일, 넣은 결과, 변환 설정 보기 단추" width="468" height="347" loading="lazy"><figcaption>⑰ 결과 카드 · ⑱ 변환 설정 보기(View conversion settings)</figcaption></figure>
 <ul class="marks">
-<li>⑰ <strong>결과 카드</strong>: 끝나면 채팅에 썸네일(프레임은 옆으로 나란히), 넣은 결과 안내, ⑱ <strong>변환 설정 보기</strong> 단추가 붙습니다. 단추를 누르면 생성한 시트와 쓴 나누기·변환 설정(프레임마다 따로면 프레임 그림들)을 불러온 <strong>AI 그림 픽셀로 정리</strong> 창이 열려, 설정을 바꿔 다시 넣을 수 있습니다. 생성 기록은 <code>&lt;설정 폴더&gt;/Gpixel/AiDraw/</code>에 최근 40개까지 남습니다(시트는 <code>sheet.png</code>, 프레임마다 따로면 <code>frame-01.png</code>…).</li>
+<li>⑰ <strong>결과 카드</strong>: 끝나면 채팅에 썸네일(프레임은 옆으로 나란히), 넣은 결과 안내, ⑱ <strong>변환 설정 보기</strong> 단추가 붙습니다. 단추를 누르면 생성한 시트와 쓴 나누기·변환 설정(프레임마다 따로면 프레임 그림들)을 불러온 <strong>AI 그림 픽셀로 정리</strong> 창이 열려, 설정을 바꿔 다시 넣을 수 있습니다. 생성 기록은 <code>&lt;설정 폴더&gt;/Chickxel/AiDraw/</code>에 최근 40개까지 남습니다(시트는 <code>sheet.png</code>, 프레임마다 따로면 <code>frame-01.png</code>…).</li>
 </ul>
 <figure class="shot"><img src="assets/guide/ai-generate-5.png" alt="Claude 탭의 그리기 설정: 그림 생성 옆 빨간 경고 아이콘과 그 풍선" width="438" height="155" loading="lazy"><figcaption>⑲ 빨간 경고 아이콘과 풍선</figcaption></figure>
 <ul>
@@ -1612,7 +1612,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>그 그림 안에서는 그리기는 물론 새 레이어·프레임·그룹·부위·스킨을 만들고, 레이어 효과를 넣고, 레이어를 정리할 수 있습니다.</li>
 <li>새 프로젝트·열기처럼 다른 파일을 열거나 만드는 일은 거절됩니다(③ 빨간 줄, 저장은 됨).</li>
-<li>채팅에 ② <code>편집 범위: 지금 그림 "slime.gpixel"만</code>처럼 범위가 표시됩니다. 끄면 다음 메시지부터 제한이 풀립니다.</li>
+<li>채팅에 ② <code>편집 범위: 지금 그림 "slime.chickxel"만</code>처럼 범위가 표시됩니다. 끄면 다음 메시지부터 제한이 풀립니다.</li>
 </ul>
 
 <h3 id="ai-locked">잠긴 레이어 지키기</h3>
@@ -1678,12 +1678,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <figure class="shot"><img src="assets/guide/ai-references-3.png" alt="환경 설정의 AI 참고 자료 탭" width="678" height="301" loading="lazy"><figcaption>⑭ 참고 자료 폴더 · ⑮ 바꾸기…(Change…) · ⑯ 기본 폴더(Default) · ⑰ 폴더 열기(Open folder) · ⑱ 기본 예시 보이기</figcaption></figure>
 <ul>
-<li><strong>폴더</strong>(⑭): 기본은 <code>&lt;설정 폴더&gt;/Gpixel/References</code>(Windows는 <code>%AppData%\Gpixel\References</code>)입니다. 앱 밖에서 이 폴더에 넣은 파일도 창을 열 때 다시 읽어 자동으로 목록에 들어갑니다.</li>
-<li><strong>넣을 수 있는 파일</strong>: 그림(<code>.png</code>, 프레임이 있는 <code>.gif</code>, <code>.gpixel</code> 프로젝트 — 프레임마다 합친 그림, 애니메이션은 프레임 수 그대로)과 글 메모(<code>.md</code>·<code>.txt</code>). 제목·설명·태그·종류(캐릭터·아이템·타일·효과·UI·기타)·크기·프레임 수·팔레트 같은 정보는 같은 폴더의 <code>index.json</code>에 저장됩니다.</li>
-<li><strong>기본 자료</strong>(<strong>기본</strong> 표시, 지울 수 없음): 스타일 규칙 <strong>Gpixel 기본 규칙</strong>(1px·선택적 외곽선, 빛 방향 하나, 색조를 옮긴 3~4단 명암, 외톨이·계단 픽셀 없애기, 적은 팔레트, 읽기 쉬운 실루엣, 일정한 비율, 애니메이션의 키 포즈·잔상·걷기 접지)과 예시 그림 — 16×16 슬라임, 16×16 검, 32×32 정면 캐릭터, 4프레임 16×16 슬라임 튀기기, 16×16 풀 타일.</li>
+<li><strong>폴더</strong>(⑭): 기본은 <code>&lt;설정 폴더&gt;/Chickxel/References</code>(Windows는 <code>%AppData%\Chickxel\References</code>)입니다. 앱 밖에서 이 폴더에 넣은 파일도 창을 열 때 다시 읽어 자동으로 목록에 들어갑니다.</li>
+<li><strong>넣을 수 있는 파일</strong>: 그림(<code>.png</code>, 프레임이 있는 <code>.gif</code>, <code>.chickxel</code> 프로젝트 — 프레임마다 합친 그림, 애니메이션은 프레임 수 그대로)과 글 메모(<code>.md</code>·<code>.txt</code>). 제목·설명·태그·종류(캐릭터·아이템·타일·효과·UI·기타)·크기·프레임 수·팔레트 같은 정보는 같은 폴더의 <code>index.json</code>에 저장됩니다.</li>
+<li><strong>기본 자료</strong>(<strong>기본</strong> 표시, 지울 수 없음): 스타일 규칙 <strong>Chickxel 기본 규칙</strong>(1px·선택적 외곽선, 빛 방향 하나, 색조를 옮긴 3~4단 명암, 외톨이·계단 픽셀 없애기, 적은 팔레트, 읽기 쉬운 실루엣, 일정한 비율, 애니메이션의 키 포즈·잔상·걷기 접지)과 예시 그림 — 16×16 슬라임, 16×16 검, 32×32 정면 캐릭터, 4프레임 16×16 슬라임 튀기기, 16×16 풀 타일.</li>
 <li><strong>환경 설정</strong>: <strong>편집 &gt; 환경 설정… &gt; AI 참고 자료</strong>에서 ⑭ 폴더를 ⑮ <strong>바꾸기…</strong>·⑯ <strong>기본 폴더</strong>로 되돌리기·⑰ <strong>폴더 열기</strong>를 하고, ⑱ <strong>기본 예시 보이기</strong>로 기본 예시 그림을 다시 켤 수 있습니다(그림 품질이 낮아 지금은 기본으로 꺼져 있고, 꺼져 있으면 검색과 그림 생성의 스타일 참고에도 쓰지 않음).</li>
 </ul>
-<div class="note"><p>참고 자료는 이 컴퓨터에만 있습니다. Gpixel은 아무것도 올리거나 내려받지 않으며, AI가 도구로 가져간 자료만 사용자가 쓰는 AI CLI(Claude Code·Codex)가 봅니다.</p></div>
+<div class="note"><p>참고 자료는 이 컴퓨터에만 있습니다. Chickxel은 아무것도 올리거나 내려받지 않으며, AI가 도구로 가져간 자료만 사용자가 쓰는 AI CLI(Claude Code·Codex)가 봅니다.</p></div>
 
 <h3 id="ai-undo">되돌리기</h3>
 <figure class="shot"><img src="assets/guide/ai-undo.png" alt="AI 답 아래의 결과 그림과 이 단계 되돌리기 단추" width="428" height="400" loading="lazy"><figcaption>① 답의 결과 그림 · ② 이 단계 되돌리기(Undo this step)</figcaption></figure>
@@ -1739,7 +1739,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="shortcuts-file">파일과 창</h3>
 <div class="table-wrap"><table><thead><tr><th>동작</th><th>키</th></tr></thead><tbody>
 <tr><td>새 프로젝트</td><td><span class="key" data-cmd="파일/새 프로젝트…"><kbd>Ctrl</kbd>+<kbd>N</kbd></span></td></tr>
-<tr><td>열기</td><td><span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td></tr>
+<tr><td>열기</td><td><span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td></tr>
 <tr><td>폴더 열기</td><td><span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span></td></tr>
 <tr><td>Unity 프로젝트 열기</td><td><span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span></td></tr>
 <tr><td>저장(내보내기 포함)</td><td><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span></td></tr>
@@ -1842,7 +1842,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <section class="doc" id="language">
 <h2>언어</h2>
-<p>Gpixel에는 한국어와 영어가 들어 있습니다. 처음 켤 때 컴퓨터 언어에 맞는 언어를 고르고, 맞는 언어가 없으면 영어로 시작합니다. 다른 언어는 CSV 파일로 직접 만들어 넣을 수 있습니다.</p>
+<p>Chickxel에는 한국어와 영어가 들어 있습니다. 처음 켤 때 컴퓨터 언어에 맞는 언어를 고르고, 맞는 언어가 없으면 영어로 시작합니다. 다른 언어는 CSV 파일로 직접 만들어 넣을 수 있습니다.</p>
 
 <h3 id="language-change">화면 언어 바꾸기</h3>
 <figure class="shot"><img src="assets/guide/language-change.png" alt="편집 메뉴를 펼쳐 맨 아래 환경 설정… 항목을 표시한 모습" width="347" height="593" loading="lazy"><figcaption>① 편집 &gt; 환경 설정…(Preferences…, Ctrl+,)</figcaption></figure>
@@ -1884,15 +1884,15 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <footer>
 <div class="wrap">
-<span><strong>Gpixel</strong> · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
-<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">릴리스</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
+<span><strong>Chickxel</strong> · MIT 라이선스 · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href="https://github.com/1000Pro-1997/Chickxel">GitHub</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases">릴리스</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/Chickxel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
 </div>
 </footer>
 <script>
 // 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
 document.getElementById('lang-select').addEventListener('change', function (e) {
   var to = e.target.value;
-  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  try { localStorage.setItem('chickxel-lang', to); } catch (err) {}
   var page = location.pathname.split('/').pop() || '';
   location.href = ('en/') + page + location.hash;
 });

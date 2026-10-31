@@ -24,10 +24,10 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Build
-        run: dotnet build Gpixel.sln -c Release
+        run: dotnet build Chickxel.sln -c Release
 
       - name: Test
-        run: dotnet test tests/Gpixel.Core.Tests -c Release --no-build
+        run: dotnet test tests/Chickxel.Core.Tests -c Release --no-build
 
       # 홈페이지 HTML이 docs/i18n(틀·언어별 문구 표)과 앱 문구(resx)로 만든 그대로인지
       - name: Website pages up to date

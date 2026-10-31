@@ -6,8 +6,8 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.Core.Model;
 using static GuideShots.ScreenDemo;
 using static GuideShots.ScreenShot;
 

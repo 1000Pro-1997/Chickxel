@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.Core.Model;
 
 namespace GuideShots;
 
@@ -31,18 +31,18 @@ internal static class ScreenDemo
     /// </summary>
     public static MainForm OpenFolder(ShotKit k, int width = 1600, int height = 900)
     {
-        var src = Gpixel.Core.IO.PngIO.Load(ShotKit.SamplePng);
+        var src = Chickxel.Core.IO.PngIO.Load(ShotKit.SamplePng);
         var dir = Path.Combine(k.WorkDir, FolderName);
         Directory.CreateDirectory(dir);
         var icons = Path.Combine(dir, "Icons");
         var tiles = Path.Combine(dir, "Tiles");
         Directory.CreateDirectory(icons);
         Directory.CreateDirectory(tiles);
-        Gpixel.Core.IO.PngIO.Save(Tint(src, 0.55, 0.65, 1.0), Path.Combine(dir, SampleName + "_night" + ".png"));
-        Gpixel.Core.IO.PngIO.Save(Tint(src, 1.0, 0.75, 0.75), Path.Combine(dir, SampleName + "_hurt" + ".png"));
+        Chickxel.Core.IO.PngIO.Save(Tint(src, 0.55, 0.65, 1.0), Path.Combine(dir, SampleName + "_night" + ".png"));
+        Chickxel.Core.IO.PngIO.Save(Tint(src, 1.0, 0.75, 0.75), Path.Combine(dir, SampleName + "_hurt" + ".png"));
         var face = src.Crop(new System.Drawing.Rectangle(6, 4, 36, 36));
-        Gpixel.Core.IO.PngIO.Save(face, Path.Combine(icons, "face" + ".png"));
-        Gpixel.Core.IO.PngIO.Save(Tint(face, 0.6, 0.6, 0.6), Path.Combine(icons, "face_gray" + ".png"));
+        Chickxel.Core.IO.PngIO.Save(face, Path.Combine(icons, "face" + ".png"));
+        Chickxel.Core.IO.PngIO.Save(Tint(face, 0.6, 0.6, 0.6), Path.Combine(icons, "face_gray" + ".png"));
         var main = Open(k, browserFolder: true, width, height);
         PrettyRoot(main);
         return main;
@@ -80,7 +80,7 @@ internal static class ScreenDemo
 
     /// <summary>
     /// 지금 문서를 애니메이션 프로젝트로 키운다: 6프레임(idle 1~4 들썩임, hit 5~6 흔들림), 그림자 레이어, 그룹+부위 2개, 태그 2개.
-    /// <paramref name="effects"/>면 몸 레이어에 외곽선(모든 프레임)·피격 번쩍임(5~6) 효과. <paramref name="save"/>면 .gpixel로 저장해 깨끗한 상태로 둔다.
+    /// <paramref name="effects"/>면 몸 레이어에 외곽선(모든 프레임)·피격 번쩍임(5~6) 효과. <paramref name="save"/>면 .chickxel로 저장해 깨끗한 상태로 둔다.
     /// </summary>
     public static void Build(ShotKit k, MainForm main, bool effects = false, bool group = true, bool save = true)
     {
@@ -144,11 +144,11 @@ internal static class ScreenDemo
         }
     }
 
-    /// <summary>창 제목을 임시 폴더 경로 없이 "문서 — Gpixel"로.</summary>
+    /// <summary>창 제목을 임시 폴더 경로 없이 "문서 — Chickxel"로.</summary>
     public static void CleanTitle(MainForm main)
     {
         var p = Ctx(main).Project;
-        main.Title = p is null ? "Gpixel" : p.DisplayName + " — Gpixel";
+        main.Title = p is null ? "Chickxel" : p.DisplayName + " — Chickxel";
     }
 
     private static void Shift(SpriteProject p, int layer, int frame, int dx, int dy)

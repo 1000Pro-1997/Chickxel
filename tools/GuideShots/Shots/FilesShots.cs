@@ -4,10 +4,10 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.App.Localization;
-using Gpixel.Core.IO;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.App.Localization;
+using Chickxel.Core.IO;
+using Chickxel.Core.Model;
 
 namespace GuideShots;
 
@@ -105,7 +105,7 @@ internal static class FilesShots
         {
             using (ctx.PushTransform(Matrix.CreateTranslation(margin, 0)))
                 typeof(ShotKit).GetMethod("DrawTitleBar", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-                    .Invoke(null, [ctx, w.Title ?? "Gpixel", frame.PixelSize.Width]);
+                    .Invoke(null, [ctx, w.Title ?? "Chickxel", frame.PixelSize.Width]);
             ctx.DrawImage(frame, new Rect(margin, bar, frame.PixelSize.Width, frame.PixelSize.Height));
             ShotKit.DrawMarks(ctx, marks.Select(mk => mk.In(w).Translate(new Vector(margin, bar))), firstNumber,
                 new Rect(0, 0, size.Width, size.Height));
@@ -207,7 +207,7 @@ internal static class FilesShots
         k.Settle(500);
         k.Save(m, name: "files-save-2", crop: BottomStrip(m), marks: [MessageRect(m)], firstNumber: 2);
 
-        // ③ .gpixel은 저장됐지만 이미지 내보내기가 실패: 내보낼 이름 자리에 폴더가 있어 쓰지 못하게 한다.
+        // ③ .chickxel은 저장됐지만 이미지 내보내기가 실패: 내보낼 이름 자리에 폴더가 있어 쓰지 못하게 한다.
         var ctx = ToolFileHelp.Ctx(m);
         ctx.Project!.Export.FileName = "wolf_sheet";
         Directory.CreateDirectory(Path.Combine(k.WorkDir, "wolf_sheet.png"));
@@ -310,8 +310,8 @@ internal static class FilesShots
     {
         var m = ToolFileHelp.Open(k, ToolFileHelp.Sample(k), timeline: 200);
         ToolFileHelp.HideFiles(k, m);
-        // ① 파일 메뉴의 열기(.gpixel · 이미지 · GIF · 영상).
-        MenuShot(k, m, 0, "파일/열기(.gpixel / PNG 가져오기)", "files-open-media", 1);
+        // ① 파일 메뉴의 열기(.chickxel · 이미지 · GIF · 영상).
+        MenuShot(k, m, 0, "파일/열기(.chickxel / PNG 가져오기)", "files-open-media", 1);
 
         // ②③④ 움직이는 GIF를 연 새 문서: 새 탭, 파일 이름 레이어 하나, 그림 프레임마다 프레임(길이 그대로).
         var gif = SlimeGif(Path.Combine(k.WorkDir, "slime_bounce.gif"), 4, 120);
@@ -345,7 +345,7 @@ internal static class FilesShots
             PrefsTab(w, 5);
             var box = ShotKit.Get<Control>(w, "_ffmpegBox");
             // 찾은 ffmpeg 위치는 이 컴퓨터의 경로라 Windows 예시 경로로 바꿔 찍는다.
-            if (Gpixel.App.FfmpegTool.Locate((string?)null) is { } found)
+            if (Chickxel.App.FfmpegTool.Locate((string?)null) is { } found)
                 foreach (var t in ShotKit.All<TextBlock>(w).Where(t => t.Text?.Contains(found, StringComparison.Ordinal) == true))
                     t.Text = t.Text!.Replace(found, @"C:\ffmpeg\bin\ffmpeg.exe", StringComparison.Ordinal);
             ShotKit.Pump(100);
@@ -384,7 +384,7 @@ internal static class FilesShots
         // ① 끄는 중: 캔버스 둘레가 빛나고 들어갈 자리가 점선 사각형.
         var at = new System.Drawing.Point(38, 22);
         var size = new System.Drawing.Size(11, 10);
-        var ghost = Gpixel.Core.Edit.ImageDrop.Place(new System.Drawing.Size(49, 98), size, at);
+        var ghost = Chickxel.Core.Edit.ImageDrop.Place(new System.Drawing.Size(49, 98), size, at);
         canvas.SetDropHint([new System.Drawing.Rectangle(ghost.Location, size)]);
         k.Settle(300);
         var hint = new Rect(ToolFileHelp.At(m, ghost.Location.X, ghost.Location.Y), ToolFileHelp.At(m, ghost.Location.X + size.Width, ghost.Location.Y + size.Height));

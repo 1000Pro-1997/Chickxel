@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Gpixel.Core\Gpixel.Core.csproj" />
+    <ProjectReference Include="..\..\src\Chickxel.Core\Chickxel.Core.csproj" />
   </ItemGroup>
 
 </Project>

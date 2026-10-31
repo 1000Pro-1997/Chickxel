@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
-using Gpixel.App;
+using Chickxel.App;
 using static GuideShots.ScreenDemo;
 using static GuideShots.ScreenShot;
 

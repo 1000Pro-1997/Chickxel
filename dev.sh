@@ -3,12 +3,12 @@
 #   start   Debug 빌드 후 실행(이미 떠 있으면 다시 띄우지 않음)
 #   restart 창을 정상 종료한 뒤 다시 빌드·실행
 #   stop    창을 정상 종료(close도 같음). 저장하지 않은 문서가 있으면 앱이 물어보며, 강제 종료하지 않는다.
-#   status  이 저장소의 Debug Gpixel이 떠 있는지
-# 이 저장소의 Debug 실행 파일만 찾으며 배포판(Gpixel.app)은 건드리지 않는다. 앱 출력은 .dev/gpixel.log에 남는다.
+#   status  이 저장소의 Debug Chickxel이 떠 있는지
+# 이 저장소의 Debug 실행 파일만 찾으며 배포판(Chickxel.app)은 건드리지 않는다. 앱 출력은 .dev/chickxel.log에 남는다.
 root=$(cd "$(dirname "$0")" && pwd -P) || exit 1
-project="$root/src/Gpixel.App/Gpixel.App.csproj"
-exe="$root/src/Gpixel.App/bin/Debug/net10.0/Gpixel.App"
-log="$root/.dev/gpixel.log"
+project="$root/src/Chickxel.App/Chickxel.App.csproj"
+exe="$root/src/Chickxel.App/bin/Debug/net10.0/Chickxel.App"
+log="$root/.dev/chickxel.log"
 
 if ! command -v dotnet >/dev/null 2>&1; then
   if [ -x "$HOME/.dotnet/dotnet" ]; then PATH="$HOME/.dotnet:$PATH"; export DOTNET_ROOT="$HOME/.dotnet"
@@ -32,33 +32,33 @@ stop_all() {
       fi
       sleep 0.1
     done
-    echo "Gpixel PID $pid 종료."
+    echo "Chickxel PID $pid 종료."
   done
 }
 
 start() {
-  dotnet build "$project" -c Debug --nologo -v q || { echo "빌드 실패: Gpixel을 띄우지 않았습니다." >&2; return 1; }
+  dotnet build "$project" -c Debug --nologo -v q || { echo "빌드 실패: Chickxel을 띄우지 않았습니다." >&2; return 1; }
   mkdir -p "$root/.dev"
   (cd "$root" && nohup "$exe" >"$log" 2>&1 &)
   sleep 1.5
   pid=$(pids | head -n 1)
   if [ -z "$pid" ]; then
-    echo "Gpixel이 시작하자마자 끝났습니다. 로그: $log" >&2
+    echo "Chickxel이 시작하자마자 끝났습니다. 로그: $log" >&2
     tail -n 20 "$log" >&2
     return 1
   fi
-  echo "로컬 Debug Gpixel PID $pid 실행."
+  echo "로컬 Debug Chickxel PID $pid 실행."
 }
 
 case "${1:-start}" in
   status)
     running=$(pids)
-    if [ -z "$running" ]; then echo "로컬 Debug Gpixel이 실행 중이 아닙니다."
-    else for pid in $running; do echo "로컬 Debug Gpixel PID $pid 실행 중."; done; fi ;;
+    if [ -z "$running" ]; then echo "로컬 Debug Chickxel이 실행 중이 아닙니다."
+    else for pid in $running; do echo "로컬 Debug Chickxel PID $pid 실행 중."; done; fi ;;
   stop|close) stop_all ;;
   restart) stop_all && start ;;
   start)
-    if [ -n "$(pids)" ]; then echo "로컬 Debug Gpixel이 이미 실행 중입니다. 다시 빌드하려면 restart."; exit 0; fi
+    if [ -n "$(pids)" ]; then echo "로컬 Debug Chickxel이 이미 실행 중입니다. 다시 빌드하려면 restart."; exit 0; fi
     start ;;
-  *) echo "사용법: gpixel start | restart | stop(close) | status" >&2; exit 2 ;;
+  *) echo "사용법: chickxel start | restart | stop(close) | status" >&2; exit 2 ;;
 esac

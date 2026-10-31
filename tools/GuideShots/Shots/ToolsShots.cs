@@ -3,10 +3,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.App.Localization;
-using Gpixel.Core.Model;
-using Gpixel.Core.Edit;
+using Chickxel.App;
+using Chickxel.App.Localization;
+using Chickxel.Core.Model;
+using Chickxel.Core.Edit;
 
 namespace GuideShots;
 

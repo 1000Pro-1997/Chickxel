@@ -11,7 +11,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Gpixel.App;
+using Chickxel.App;
 
 namespace GuideShots;
 
@@ -35,7 +35,7 @@ public sealed class ShotKit
 
     public string Id { get; }
     /// <summary>
-    /// 이 샷의 예시 파일 폴더(<c>C:\GpixelGuide\MyGame</c>, macOS·Linux는 <c>/tmp/GpixelGuide/MyGame</c> — 그림에 보이는 경로에 사용자 이름이 나오지 않게,
+    /// 이 샷의 예시 파일 폴더(<c>C:\ChickxelGuide\MyGame</c>, macOS·Linux는 <c>/tmp/ChickxelGuide/MyGame</c> — 그림에 보이는 경로에 사용자 이름이 나오지 않게,
     /// 샷마다 비우고 다시 만듦). 설정 폴더는 그 옆 appdata라 파일 브라우저에 보이지 않는다.
     /// </summary>
     public string WorkDir { get; }
@@ -47,7 +47,7 @@ public sealed class ShotKit
         Id = id;
         // 예시 파일 폴더는 그림에 보이므로 짧고 사용자 이름 없는 경로. GUIDESHOTS_ROOT로 바꿀 수 있다(여러 프로세스를 같이 돌릴 때 — 샷마다 지우고 다시 만들므로).
         var shotRoot = Environment.GetEnvironmentVariable("GUIDESHOTS_ROOT") is { Length: > 0 } env ? env
-            : OperatingSystem.IsWindows() ? @"C:\GpixelGuide" : "/tmp/GpixelGuide";
+            : OperatingSystem.IsWindows() ? @"C:\ChickxelGuide" : "/tmp/ChickxelGuide";
         if (Directory.Exists(shotRoot)) Directory.Delete(shotRoot, recursive: true);
         WorkDir = Path.Combine(shotRoot, "MyGame");
         Directory.CreateDirectory(WorkDir);
@@ -56,7 +56,7 @@ public sealed class ShotKit
         Environment.SetEnvironmentVariable(Platform.DataDirVariable, data);
         App.Settings = AppSettings.Load();
         App.Settings.Language = Language;
-        Gpixel.App.Localization.UiLanguage.Apply(Language);
+        Chickxel.App.Localization.UiLanguage.Apply(Language);
     }
 
     public static void InstallTracking()
@@ -80,7 +80,7 @@ public sealed class ShotKit
     // ───────────── 준비 ─────────────
 
     /// <summary>
-    /// 메인 창을 띄운다. <paramref name="open"/> = 열 파일(.gpixel·이미지), <paramref name="folder"/> = 파일 브라우저 폴더.
+    /// 메인 창을 띄운다. <paramref name="open"/> = 열 파일(.chickxel·이미지), <paramref name="folder"/> = 파일 브라우저 폴더.
     /// 기본 크기 1600×900(가이드 그림 기준 크기).
     /// </summary>
     public MainForm Main(string? open = null, string? folder = null, int width = 1600, int height = 900)
@@ -213,7 +213,7 @@ public sealed class ShotKit
         using var target = new RenderTargetBitmap(size, new Vector(96, 96));
         using (var ctx = target.CreateDrawingContext())
         {
-            if (bar > 0) DrawTitleBar(ctx, ((Window)top).Title ?? "Gpixel", size.Width);
+            if (bar > 0) DrawTitleBar(ctx, ((Window)top).Title ?? "Chickxel", size.Width);
             ctx.DrawImage(frame, src, new Rect(0, bar, src.Width, src.Height));
             DrawMarks(ctx, rects.Select(r => r.Translate(new Vector(-src.X, bar - src.Y))), firstNumber, new Rect(0, 0, size.Width, size.Height));
         }
@@ -316,7 +316,7 @@ public sealed class ShotKit
     {
         ctx.FillRectangle(new SolidColorBrush(Color.FromRgb(32, 32, 36)), new Rect(0, 0, width, TitleHeight));
         ctx.FillRectangle(new SolidColorBrush(Color.FromRgb(60, 60, 66)), new Rect(0, TitleHeight - 1, width, 1));
-        using (var stream = new MemoryStream(Gpixel.App.Icons.AppIconPng()))
+        using (var stream = new MemoryStream(Chickxel.App.Icons.AppIconPng()))
         {
             using var icon = new Bitmap(stream);
             ctx.DrawImage(icon, new Rect(10, 8, 16, 16));
@@ -477,13 +477,13 @@ public sealed class ShotKit
         throw new MissingMethodException(target.GetType().Name, name);
     }
 
-    /// <summary>저장소 루트: 실행 파일 위쪽, 없으면 지금 폴더 위쪽에서 Gpixel.sln을 찾는다(빌드 결과를 다른 곳에 둔 경우 — --artifacts-path).</summary>
+    /// <summary>저장소 루트: 실행 파일 위쪽, 없으면 지금 폴더 위쪽에서 Chickxel.sln을 찾는다(빌드 결과를 다른 곳에 둔 경우 — --artifacts-path).</summary>
     private static string FindRoot()
     {
         foreach (var start in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
             for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
-                if (File.Exists(Path.Combine(dir.FullName, "Gpixel.sln"))) return dir.FullName;
-        throw new InvalidOperationException("Gpixel.sln not found above " + AppContext.BaseDirectory + " or " + Environment.CurrentDirectory);
+                if (File.Exists(Path.Combine(dir.FullName, "Chickxel.sln"))) return dir.FullName;
+        throw new InvalidOperationException("Chickxel.sln not found above " + AppContext.BaseDirectory + " or " + Environment.CurrentDirectory);
     }
 }
 

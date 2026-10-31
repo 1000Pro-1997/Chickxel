@@ -1,4 +1,4 @@
-using Gpixel.Core.Assets;
+using Chickxel.Core.Assets;
 
 namespace CatalogBuilder;
 
@@ -45,12 +45,12 @@ public static class Program
         return 0;
     }
 
-    /// <summary>저장소 루트: 지금 폴더, 없으면 실행 파일 위쪽에서 Gpixel.sln을 찾는다.</summary>
+    /// <summary>저장소 루트: 지금 폴더, 없으면 실행 파일 위쪽에서 Chickxel.sln을 찾는다.</summary>
     private static string RepoRoot()
     {
         foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
             for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
-                if (File.Exists(Path.Combine(dir.FullName, "Gpixel.sln"))) return dir.FullName;
-        throw new InvalidOperationException("Gpixel.sln not found above " + Environment.CurrentDirectory);
+                if (File.Exists(Path.Combine(dir.FullName, "Chickxel.sln"))) return dir.FullName;
+        throw new InvalidOperationException("Chickxel.sln not found above " + Environment.CurrentDirectory);
     }
 }

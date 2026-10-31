@@ -58,7 +58,7 @@ jobs:
           request = urllib.request.Request(
               "https://api.github.com/repos/" + repo + "/releases/" + endpoint,
               headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
-                       "Accept": "application/vnd.github+json", "User-Agent": "GPixel-release-notify"})
+                       "Accept": "application/vnd.github+json", "User-Agent": "Chickxel-release-notify"})
           with urllib.request.urlopen(request, timeout=30) as response:
               release = json.load(response)
           if release.get("draft"):
@@ -94,19 +94,19 @@ jobs:
           if len(body) > 3800:
               body = body[:3750].rsplit("\n", 1)[0] + "\n\nSee the full release notes for more."
           downloads = []
-          labels = {"Gpixel-windows-x64.zip": "Windows",
-                    "Gpixel-macos-arm64.zip": "macOS Apple Silicon",
-                    "Gpixel-macos-x64.zip": "macOS Intel"}
+          labels = {"Chickxel-windows-x64.zip": "Windows",
+                    "Chickxel-macos-arm64.zip": "macOS Apple Silicon",
+                    "Chickxel-macos-x64.zip": "macOS Intel"}
           for asset in release.get("assets", []):
               label = labels.get(asset["name"])
               if label:
                   downloads.append("[" + label + "](" + asset["browser_download_url"] + ")")
-          embed = {"title": ("GPixel " + release["tag_name"] + " Update")[:256],
+          embed = {"title": ("Chickxel " + release["tag_name"] + " Update")[:256],
                    "url": url, "description": body, "color": 0x37CDBE,
                    "fields": [{"name": "Downloads", "value": " · ".join(downloads) or "[Release page](" + url + ")"},
                               {"name": "Full release notes", "value": "[View on GitHub](" + url + ")"}],
-                   "footer": {"text": "GPixel Updates"}}
-          payload = {"username": "GPixel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
+                   "footer": {"text": "Chickxel Updates"}}
+          payload = {"username": "Chickxel Updates", "allowed_mentions": {"parse": []}, "embeds": [embed]}
           hook = os.environ.get("DISCORD_RELEASE_WEBHOOK", "").rstrip("/")
           if not hook.startswith("https://discord.com/api/webhooks/"):
               raise SystemExit("DISCORD_RELEASE_WEBHOOK is missing or invalid")
@@ -116,7 +116,7 @@ jobs:
           delivery_url = hook + ("/messages/" + message_id if message_id else "?wait=true")
           request = urllib.request.Request(delivery_url,
               data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-              headers={"Content-Type": "application/json", "User-Agent": "GPixel-release-notify"},
+              headers={"Content-Type": "application/json", "User-Agent": "Chickxel-release-notify"},
               method="PATCH" if message_id else "POST")
           try:
               with urllib.request.urlopen(request, timeout=30) as response:

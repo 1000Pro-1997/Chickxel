@@ -1,8 +1,8 @@
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $bin = Join-Path $HOME '.local\bin'
-$launcher = Join-Path $bin 'gpixel.cmd'
-$marker = 'rem Managed by Gpixel tools/install-dev-command.ps1'
+$launcher = Join-Path $bin 'chickxel.cmd'
+$marker = 'rem Managed by Chickxel tools/install-dev-command.ps1'
 $body = "@echo off`r`n$marker`r`ncall `"$root\dev.bat`" %*`r`nexit /b %errorlevel%`r`n"
 
 New-Item -ItemType Directory -Path $bin -Force | Out-Null
@@ -19,6 +19,6 @@ $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 $inPath = @($userPath -split ';' | Where-Object { $_.TrimEnd('\') -ieq $bin.TrimEnd('\') }).Count -gt 0
 if (-not $inPath) {
     [Environment]::SetEnvironmentVariable('Path', ($userPath.TrimEnd(';') + ';' + $bin), 'User')
-    Write-Host "Added $bin to user PATH. Open a new terminal to use gpixel."
+    Write-Host "Added $bin to user PATH. Open a new terminal to use chickxel."
 }
-Write-Host "Installed gpixel start/restart/stop/status in $launcher"
+Write-Host "Installed chickxel start/restart/stop/status in $launcher"

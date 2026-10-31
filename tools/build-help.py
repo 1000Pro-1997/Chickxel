@@ -2,7 +2,7 @@
 """Build the in-app guide (F1) from the website guide.
 
 Reads docs/guide.html (Korean) and docs/en/guide.html (English) and writes
-src/Gpixel.App/Assets/Help/help.<lang>.json. Re-run after editing either guide:
+src/Chickxel.App/Assets/Help/help.<lang>.json. Re-run after editing either guide:
 
     python tools/build-help.py
 
@@ -14,7 +14,7 @@ with the chapter id.
 
 Screenshots (<figure class="shot"> with docs/assets/guide/<name>.png) become
 "shot" blocks; their lossless WebP copies are kept in
-src/Gpixel.App/Assets/Help/shots/ (embedded in the app), re-encoded when the PNG
+src/Chickxel.App/Assets/Help/shots/ (embedded in the app), re-encoded when the PNG
 is newer, and unused ones are deleted.
 """
 
@@ -29,10 +29,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT / "src" / "Gpixel.App" / "Assets" / "Help"
+OUT_DIR = ROOT / "src" / "Chickxel.App" / "Assets" / "Help"
 SHOTS_SRC = ROOT / "docs" / "assets" / "guide"
 SHOTS_OUT = OUT_DIR / "shots"
-SITE = "https://1000pro-1997.github.io/GPixel/"
+SITE = "https://1000pro-1997.github.io/Chickxel/"
 SOURCES = {
     "ko": (ROOT / "docs" / "guide.html", SITE),
     "en": (ROOT / "docs" / "en" / "guide.html", SITE + "en/"),

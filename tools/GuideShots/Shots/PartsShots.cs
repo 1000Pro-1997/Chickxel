@@ -4,10 +4,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
-using Gpixel.App;
-using Gpixel.App.Localization;
-using Gpixel.Core.IO;
-using Gpixel.Core.Model;
+using Chickxel.App;
+using Chickxel.App.Localization;
+using Chickxel.Core.IO;
+using Chickxel.Core.Model;
 using static GuideShots.PartsSample;
 
 namespace GuideShots;

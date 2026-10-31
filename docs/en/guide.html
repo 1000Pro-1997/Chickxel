@@ -4,13 +4,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guide — Gpixel</title>
-<meta name="description" content="Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
-<meta property="og:title" content="Guide — Gpixel">
-<meta property="og:description" content="Gpixel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
-<meta property="og:image" content="https://1000pro-1997.github.io/GPixel/assets/screenshot-en.png">
-<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/GPixel/guide.html">
-<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/GPixel/en/guide.html">
+<title>Guide — Chickxel</title>
+<meta name="description" content="Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
+<meta property="og:title" content="Guide — Chickxel">
+<meta property="og:description" content="Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS.">
+<meta property="og:image" content="https://1000pro-1997.github.io/Chickxel/assets/screenshot-en.png">
+<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/Chickxel/guide.html">
+<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/guide.html">
 <link rel="icon" href="../assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../style.css?v=20261027g">
@@ -18,7 +18,7 @@
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
   var saved = null;
-  try { saved = localStorage.getItem('gpixel-lang'); } catch (e) {}
+  try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
   if (want !== 'en') location.replace('../' + 'guide.html' + location.hash);
 })();
@@ -27,13 +27,13 @@
 <body class="guide-page">
 <header class="top">
 <div class="bar">
-<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="../assets/icon.png" alt=""></span><span class="brand-text">Gpixel</span></a>
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="../assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
 <nav class="nav">
 <a href="index.html">Home</a>
 <a class="hide-sm" href="#featured-common">Quick tasks</a>
 <a href="guide.html" aria-current="page">Guide</a>
 <a class="hide-sm" href="index.html#download">Download</a>
-<a class="hide-sm" href="https://github.com/1000Pro-1997/GPixel">GitHub</a>
+<a class="hide-sm" href="https://github.com/1000Pro-1997/Chickxel">GitHub</a>
 <a class="hide-sm discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
 </nav>
 <label class="lang" title="Language"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="Language">
@@ -104,7 +104,7 @@
 </aside>
 <div class="content">
 <section class="doc guide-home" id="guide-home">
-<h2>Gpixel guide</h2>
+<h2>Chickxel guide</h2>
 <p class="guide-home-lead">You don't need to read from start to finish. Follow the first-time path, or choose the task you want to do and read only what you need.</p>
 <div class="guide-paths">
 <div class="guide-path">
@@ -147,7 +147,7 @@
 <section class="doc" id="featured-ai-draw">
 <h2>Drawing with AI</h2>
 <figure class="core-media wide guide-media"><video src="../assets/feature-ai-draw.mp4" poster="../assets/feature-ai-draw.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Asking Codex chat to draw a 32×32 wooden barrel, and the AI drawing it on the canvas" width="1280" height="720"></video></figure>
-<p>Claude Code or Codex on your own computer drives Gpixel with your own account (no API key). Say something like "draw a 32×32 wooden barrel" and it draws right into the open image.</p>
+<p>Claude Code or Codex on your own computer drives Chickxel with your own account (no API key). Say something like "draw a 32×32 wooden barrel" and it draws right into the open image.</p>
 <ol class="core-steps">
 <li><strong>Open AI chat</strong><span><span class="key" data-cmd="AI/AI 채팅"><kbd>Ctrl</kbd>+<kbd>L</kbd></span> or the AI button in the top bar. Pick the Claude or Codex tab and log in once.</span></li>
 <li><strong>Describe what you want</strong><span>Include size, subject and colors for the best results. Progress shows while it draws.</span></li>
@@ -162,7 +162,7 @@
 
 <h3 id="featured-pixelate-zoom">Comparing cell by cell in the enlarged view</h3>
 <figure class="core-media wide guide-media"><video src="../assets/feature-pixelate-grid.mp4" poster="../assets/feature-pixelate-grid.jpg" autoplay loop muted playsinline preload="metadata" aria-label="In the Pixelate window, viewing the cell grid on the source, opening the enlarged view and comparing the result with the source cell by cell while highlighting where colors are used" width="1300" height="884"></video></figure>
-<p>See the cell grid Gpixel actually used laid over the source, then check the result and the source side by side at the same size, one cell at a time.</p>
+<p>See the cell grid Chickxel actually used laid over the source, then check the result and the source side by side at the same size, one cell at a time.</p>
 <ol class="core-steps">
 <li><strong>Show grid</strong><span>The source view draws the cell borders the selected candidate used</li>
 <li><strong>Enlarge</strong><span>Click the result or the source in the large preview to open both at the same size.</span></li>
@@ -171,7 +171,7 @@
 
 <h3 id="featured-pixelate-convert">Turning images into pixel art</h3>
 <figure class="core-media wide guide-media"><video src="../assets/feature-pixelate.mp4" poster="../assets/feature-pixelate.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Pasting an AI-drawn character into the Pixelate window, candidates being built, and comparing the result with the source cell by cell in the enlarged view" width="1512" height="914"></video></figure>
-<p>Drop in an image and Gpixel finds the pixel size, snaps to the grid, removes the background and reduces the colors. It builds candidates with different settings and ranks them by score, so you just pick the one you like.</p>
+<p>Drop in an image and Chickxel finds the pixel size, snaps to the grid, removes the background and reduces the colors. It builds candidates with different settings and ranks them by score, so you just pick the one you like.</p>
 <ol class="core-steps">
 <li><strong>Add an image</strong><span>Open <strong>AI &gt; Pixelate AI image…</strong> and drag an image in or paste it with <kbd>Ctrl</kbd>+<kbd>V</kbd>.</span></li>
 <li><strong>Pick a candidate</strong><span>Auto-optimize builds candidates and ranks them by score. The enlarged view compares the result and the source cell by cell.</span></li>
@@ -265,11 +265,11 @@
 
 <section class="doc" id="featured-unity">
 <h2>Unity integration</h2>
-<p>Values you set in Gpixel carry straight into Unity.</p>
+<p>Values you set in Chickxel carry straight into Unity.</p>
 
 <h3 id="featured-pivot">Pivot sync</h3>
 <figure class="core-media wide guide-media"><video src="../assets/feature-pivot.mp4" poster="../assets/feature-pivot.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Moving a character's anchor with the Pivot tool and rotating around that pivot" width="1280" height="688"></video></figure>
-<p>The pivot you set in Gpixel is written into the Unity <code>.meta</code> sprite pivot when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game.</p>
+<p>The pivot you set in Chickxel is written into the Unity <code>.meta</code> sprite pivot when you save. No adjusting in Unity — the anchor you want, like a character's feet or a weapon's grip, lines up the same in the game.</p>
 <ol class="core-steps">
 <li><strong>Pick the Pivot tool (K)</strong><span>Drag the anchor on the canvas, or use the 9-direction buttons and X/Y fields in the tool settings.</span></li>
 <li><strong>Choose the target</strong><span>With a part selected, that part's pivot changes; otherwise the project default pivot (all frames). Turn on <strong>Current frame only</strong> to set it for one frame.</span></li>
@@ -280,41 +280,41 @@
 <section class="doc" id="featured-export">
 <h2>Export</h2>
 <figure class="core-media wide guide-media"><video src="../assets/feature-export.mp4" poster="../assets/feature-export.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Switching between exporting skins separately and packing them into one image in the export window, with the preview and file list updating" width="1280" height="688"></video></figure>
-<p>In the <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.gpixel</code> keeps them together.</p>
+<p>In the <span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> export window, set the sheet layout, how skins are packed, whether to split files, and the Unity import settings. Even when it exports several files, one <code>.chickxel</code> keeps them together.</p>
 <ol class="core-steps">
 <li><strong>Open the export window</strong><span><span class="key" data-cmd="파일/내보내기…"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>. A preview of the sheets and the list of files to be written appear on the right.</span></li>
 <li><strong>Set layout, skins and splitting</strong><span>Choose cell layout and spacing, whether to pack all skins in one image or one file per skin, and whether to split by tag, part or skin. Unity Sprite Library and import settings (<code>.meta</code>) are set here too, and you can save favorite settings as presets.</span></li>
-<li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The file browser hides the exported PNGs and shows the single <code>.gpixel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
+<li><strong>Save to export them together</strong><span>Every save rewrites the PNGs and <code>.meta</code> with these settings. The file browser hides the exported PNGs and shows the single <code>.chickxel</code>; hover to see the exported file names, and searching by those names finds it too.</span></li>
 </ol>
 </section>
 
 <section class="doc" id="start">
 <h2>Getting started</h2>
-<p>Gpixel is a pixel art editor for games (especially Unity 2D). Frames, layers and tags (animations) are stored in a <code>.gpixel</code> project, and saving also produces a PNG sprite sheet and a Unity <code>.meta</code>. You don't need to install .NET or anything else.</p>
+<p>Chickxel is a pixel art editor for games (especially Unity 2D). Frames, layers and tags (animations) are stored in a <code>.chickxel</code> project, and saving also produces a PNG sprite sheet and a Unity <code>.meta</code>. You don't need to install .NET or anything else.</p>
 
 <h3 id="start-install">Installation</h3>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>Download (latest version)</th><th>Run</th></tr></thead>
 <tbody>
-<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip">Gpixel-windows-x64.zip</a></td><td>Unzip and double-click <code>Gpixel.exe</code></td></tr>
-<tr><td>macOS 12 or later, Apple Silicon (M1 and later)</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-arm64.zip">Gpixel-macos-arm64.zip</a></td><td>Unzip, move <code>Gpixel.app</code> to the Applications folder, then double-click it</td></tr>
-<tr><td>macOS 12 or later, Intel</td><td><a href="https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-x64.zip">Gpixel-macos-x64.zip</a></td><td>Same as above</td></tr>
+<tr><td>Windows 10/11</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip">Chickxel-windows-x64.zip</a></td><td>Unzip and double-click <code>Chickxel.exe</code></td></tr>
+<tr><td>macOS 12 or later, Apple Silicon (M1 and later)</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip">Chickxel-macos-arm64.zip</a></td><td>Unzip, move <code>Chickxel.app</code> to the Applications folder, then double-click it</td></tr>
+<tr><td>macOS 12 or later, Intel</td><td><a href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip">Chickxel-macos-x64.zip</a></td><td>Same as above</td></tr>
 </tbody>
 </table></div>
-<p>To see which chip your Mac has, open Apple menu → About This Mac. Changes from earlier versions are listed on the <a href="https://github.com/1000Pro-1997/GPixel/releases">releases page</a>.</p>
+<p>To see which chip your Mac has, open Apple menu → About This Mac. Changes from earlier versions are listed on the <a href="https://github.com/1000Pro-1997/Chickxel/releases">releases page</a>.</p>
 <h4>Installing from the terminal</h4>
-<p><strong>macOS</strong> — paste this into Terminal to download the file for your chip, install it to <code>/Applications/Gpixel.app</code> and launch it.</p>
+<p><strong>macOS</strong> — paste this into Terminal to download the file for your chip, install it to <code>/Applications/Chickxel.app</code> and launch it.</p>
 <pre><code>ARCH=$(uname -m); [ "$ARCH" = x86_64 ] &amp;&amp; ARCH=x64
-curl -fL -o /tmp/Gpixel.zip "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-macos-$ARCH.zip" \
-  &amp;&amp; rm -rf /Applications/Gpixel.app &amp;&amp; ditto -x -k /tmp/Gpixel.zip /Applications \
-  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Gpixel.app; rm -f /tmp/Gpixel.zip; open /Applications/Gpixel.app</code></pre>
-<p><strong>Windows</strong> — paste this into PowerShell to install to <code>%LOCALAPPDATA%\Programs\Gpixel</code>, create a Start menu shortcut and launch it.</p>
-<pre><code>$d = "$env:LOCALAPPDATA\Programs\Gpixel"; $z = "$env:TEMP\Gpixel.zip"; $x = "$env:TEMP\Gpixel-x"
-Invoke-WebRequest "https://github.com/1000Pro-1997/GPixel/releases/latest/download/Gpixel-windows-x64.zip" -OutFile $z
+curl -fL -o /tmp/Chickxel.zip "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-$ARCH.zip" \
+  &amp;&amp; rm -rf /Applications/Chickxel.app &amp;&amp; ditto -x -k /tmp/Chickxel.zip /Applications \
+  &amp;&amp; xattr -dr com.apple.quarantine /Applications/Chickxel.app; rm -f /tmp/Chickxel.zip; open /Applications/Chickxel.app</code></pre>
+<p><strong>Windows</strong> — paste this into PowerShell to install to <code>%LOCALAPPDATA%\Programs\Chickxel</code>, create a Start menu shortcut and launch it.</p>
+<pre><code>$d = "$env:LOCALAPPDATA\Programs\Chickxel"; $z = "$env:TEMP\Chickxel.zip"; $x = "$env:TEMP\Chickxel-x"
+Invoke-WebRequest "https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip" -OutFile $z
 Expand-Archive $z $x -Force; New-Item -ItemType Directory -Force $d | Out-Null
-Copy-Item "$x\Gpixel-windows-x64\Gpixel.exe" $d -Force; Unblock-File "$d\Gpixel.exe"; Remove-Item $z, $x -Recurse -Force
-$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Gpixel.lnk"); $s.TargetPath = "$d\Gpixel.exe"; $s.Save()
-Start-Process "$d\Gpixel.exe"</code></pre>
+Copy-Item "$x\Chickxel-windows-x64\Chickxel.exe" $d -Force; Unblock-File "$d\Chickxel.exe"; Remove-Item $z, $x -Recurse -Force
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Chickxel.lnk"); $s.TargetPath = "$d\Chickxel.exe"; $s.Save()
+Start-Process "$d\Chickxel.exe"</code></pre>
 <p>Both methods install to a location your account can write to, so later updates happen automatically inside the app.</p>
 
 <h3 id="start-first-run">First launch</h3>
@@ -322,10 +322,10 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>The app isn't developer-signed, so you'll see a warning the first time.
 <ul>
 <li>Windows "Windows protected your PC": <strong>More info → Run anyway</strong>.</li>
-<li>macOS "unidentified developer": <strong>right-click → Open</strong> on <code>Gpixel.app</code>. If that doesn't work, go to System Settings → Privacy &amp; Security → <strong>Open Anyway</strong>.</li>
+<li>macOS "unidentified developer": <strong>right-click → Open</strong> on <code>Chickxel.app</code>. If that doesn't work, go to System Settings → Privacy &amp; Security → <strong>Open Anyway</strong>.</li>
 </ul></li>
 </ul>
-<figure class="shot"><img src="../assets/guide/start-first-run.png" alt="Gpixel's first screen with no document: the start screen in the middle with the Open folder button, recent folders and recent files lists and the Unity Hub project list, and the file browser on the left" width="1600" height="932" loading="lazy"><figcaption>① Open folder… · ② Recent folders · ③ File browser (shows the images once you choose a folder) · ④ Unity Hub project list</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/start-first-run.png" alt="Chickxel's first screen with no document: the start screen in the middle with the Open folder button, recent folders and recent files lists and the Unity Hub project list, and the file browser on the left" width="1600" height="932" loading="lazy"><figcaption>① Open folder… · ② Recent folders · ③ File browser (shows the images once you choose a folder) · ④ Unity Hub project list</figcaption></figure>
 <ul>
 <li>Choose a folder (① <strong>Open folder…</strong>, ② recent folders) or Unity project on the start screen and the ③ file browser on the left shows that folder's images. ④ Projects registered in Unity Hub can be opened directly from the list.</li>
 <li>On first launch the display language follows your computer's language (Korean or English; English if there's no match). See <a href="#language">Language</a> to change it.</li>
@@ -334,7 +334,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="start-update">Updates</h3>
 <figure class="shot"><img src="../assets/guide/start-update.png" alt="The Update button with the new version number at the right of the top bar, left of the Grid button" width="986" height="67" loading="lazy"><figcaption>① Update button (opens the update dialog again)</figcaption></figure>
-<p>Gpixel checks for a new version every time it starts. If one is available, the <strong>update dialog</strong> opens and an ① <strong>Update</strong> button appears in the top bar.</p>
+<p>Chickxel checks for a new version every time it starts. If one is available, the <strong>update dialog</strong> opens and an ① <strong>Update</strong> button appears in the top bar.</p>
 <figure class="shot"><img src="../assets/guide/start-update-2.png" alt="The update dialog: new and current version, the list of changes from the CHANGELOG, and the Update now, Don't show until the next update, Open release page and Later buttons" width="610" height="458" loading="lazy"><figcaption>② Update now · ③ Later · ④ Don't show until the next update · ⑤ New version, current version and release date · ⑥ Changes</figcaption></figure>
 <ul>
 <li>② <strong>Update now</strong>: downloads and verifies the file for your OS, then closes the app, replaces it with the new version and restarts. You're asked about unsaved work first, and if anything fails the previous version stays as it is.</li>
@@ -349,7 +349,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="start-privacy">Network and privacy</h3>
 <p>There are no accounts, analytics or ads, and your images and files are never sent anywhere. The network is used only in these cases:</p>
-<figure class="shot"><img src="../assets/guide/start-privacy.png" alt="The General tab of Edit &gt; Preferences… with the Check for a new version at startup checkbox in the Updates part marked" width="965" height="799" loading="lazy"><figcaption>① Check for a new version at startup: clear it and Gpixel no longer goes online to check for updates</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/start-privacy.png" alt="The General tab of Edit &gt; Preferences… with the Check for a new version at startup checkbox in the Updates part marked" width="965" height="799" loading="lazy"><figcaption>① Check for a new version at startup: clear it and Chickxel no longer goes online to check for updates</figcaption></figure>
 <ul>
 <li>① <strong>Check for updates</strong>: asks GitHub for the latest version (can be turned off).</li>
 <li><strong>Palette web (Lospec)</strong>: downloads palette lists and sample images only when you open that window. Favorite palettes are stored only on your computer.</li>
@@ -357,13 +357,13 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="start-feedback">Feedback</h3>
-<figure class="shot"><img src="../assets/guide/start-feedback.png" alt="The Help menu open with the Report a bug or idea (Discord)… and About Gpixel… items marked" width="271" height="234" loading="lazy"><figcaption>① Help menu · ② Report a bug or idea (Discord)… · ③ About Gpixel…</figcaption></figure>
-<figure class="shot"><img src="../assets/guide/start-feedback-2.png" alt="The About Gpixel window: version, the GitHub repository, Releases, Discord and Report an issue buttons, license and AI chat notes" width="568" height="449" loading="lazy"><figcaption>④ Discord (bugs and ideas) · ⑤ Report an issue (GitHub Issues) · ⑥ Version</figcaption></figure>
-<p>Please post bugs, annoyances and feature ideas on the <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Gpixel Discord</a>. In the app, ① <strong>Help</strong> &gt; ② <strong>Report a bug or idea (Discord)…</strong> opens it directly; in the ③ <strong>Help &gt; About Gpixel…</strong> window, the ④ <strong>Discord</strong> button does the same. If you have a GitHub account, you can also use <a href="https://github.com/1000Pro-1997/GPixel/issues" target="_blank" rel="noopener">GitHub Issues</a> (⑤ <strong>Report an issue</strong> in the About window).</p>
-<p>To support development, use <a href="https://buymeacoffee.com/gpixel" target="_blank" rel="noopener">Support Gpixel development</a> on the website or the <strong>Support development</strong> button at the top right of the in-app guide (F1).</p>
+<figure class="shot"><img src="../assets/guide/start-feedback.png" alt="The Help menu open with the Report a bug or idea (Discord)… and About Chickxel… items marked" width="271" height="234" loading="lazy"><figcaption>① Help menu · ② Report a bug or idea (Discord)… · ③ About Chickxel…</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/start-feedback-2.png" alt="The About Chickxel window: version, the GitHub repository, Releases, Discord and Report an issue buttons, license and AI chat notes" width="568" height="449" loading="lazy"><figcaption>④ Discord (bugs and ideas) · ⑤ Report an issue (GitHub Issues) · ⑥ Version</figcaption></figure>
+<p>Please post bugs, annoyances and feature ideas on the <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Chickxel Discord</a>. In the app, ① <strong>Help</strong> &gt; ② <strong>Report a bug or idea (Discord)…</strong> opens it directly; in the ③ <strong>Help &gt; About Chickxel…</strong> window, the ④ <strong>Discord</strong> button does the same. If you have a GitHub account, you can also use <a href="https://github.com/1000Pro-1997/Chickxel/issues" target="_blank" rel="noopener">GitHub Issues</a> (⑤ <strong>Report an issue</strong> in the About window).</p>
+<p>To support development, use <a href="https://buymeacoffee.com/chickxel" target="_blank" rel="noopener">Support Chickxel development</a> on the website or the <strong>Support development</strong> button at the top right of the in-app guide (F1).</p>
 <p>When reporting a bug, including the following helps get it fixed quickly:</p>
 <ul>
-<li><strong>Version</strong>: shown in ③ <strong>Help &gt; About Gpixel…</strong> at ⑥.</li>
+<li><strong>Version</strong>: shown in ③ <strong>Help &gt; About Chickxel…</strong> at ⑥.</li>
 <li><strong>OS</strong>: Windows 10/11, or your macOS version (Apple Silicon or Intel).</li>
 <li><strong>Steps</strong>: what you did, what happened, and what you expected.</li>
 <li><strong>Error log</strong>: if an error dialog appeared, its log file (<a href="#files-crash-log">When errors occur</a>). A screenshot helps too.</li>
@@ -372,8 +372,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <section class="doc" id="screen">
 <h2>Screen layout</h2>
-<figure class="shot"><img src="../assets/guide/screen-overview.png" alt="The whole Gpixel window: top bar, toolbar, file browser, palette, colors, document tabs, canvas, timeline, preview, tool options and status bar" width="1622" height="919" loading="lazy"><figcaption>① Menu and top bar · ② Toolbar · ③ File browser · ④ Palette · ⑤ Colors · ⑥ Document tabs · ⑦ Canvas · ⑧ Timeline · ⑨ Preview · ⑩ Tool options · ⑪ Status bar</figcaption></figure>
-<p>Gpixel's layout is similar to Aseprite. The ① menu and top bar run across the top, the ② toolbar and ③ file browser are on the far left, the ④ palette and ⑤ colors next to them, the ⑥ document tabs and ⑦ canvas in the middle, the ⑧ timeline below, the ⑨ preview and ⑩ tool options on the right, and the ⑪ status bar at the very bottom.</p>
+<figure class="shot"><img src="../assets/guide/screen-overview.png" alt="The whole Chickxel window: top bar, toolbar, file browser, palette, colors, document tabs, canvas, timeline, preview, tool options and status bar" width="1622" height="919" loading="lazy"><figcaption>① Menu and top bar · ② Toolbar · ③ File browser · ④ Palette · ⑤ Colors · ⑥ Document tabs · ⑦ Canvas · ⑧ Timeline · ⑨ Preview · ⑩ Tool options · ⑪ Status bar</figcaption></figure>
+<p>Chickxel's layout is similar to Aseprite. The ① menu and top bar run across the top, the ② toolbar and ③ file browser are on the far left, the ④ palette and ⑤ colors next to them, the ⑥ document tabs and ⑦ canvas in the middle, the ⑧ timeline below, the ⑨ preview and ⑩ tool options on the right, and the ⑪ status bar at the very bottom.</p>
 
 <h3 id="screen-top-bar">Menu and top bar</h3>
 <figure class="shot"><img src="../assets/guide/screen-top-bar.png" alt="Top bar below the menu: tool name and hint, view options, zoom, Fit and the AI chat button" width="1613" height="64" loading="lazy"><figcaption>① Tool name · ② Usage hint · ③ View options · ④ Zoom box · ⑤ Fit · ⑥ AI chat</figcaption></figure>
@@ -421,18 +421,18 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="screen-file-browser">File browser</h3>
-<figure class="shot"><img src="../assets/guide/screen-file-browser.png" alt="File browser: folder tree, search, include subfolders, thumbnail list with the .gpixel badge and red dot" width="252" height="593" loading="lazy"><figcaption>① Folder tree · ② Thumbnail list · ③ Search · ④ Include subfolders · ⑤ New pixel file, New folder, Refresh · ⑥ .gpixel badge · ⑦ Unsaved changes (red dot)</figcaption></figure>
-<p>It has ① a folder tree, ② a thumbnail list of <code>.gpixel</code> and PNG files, ③ search, and ④ an option to include subfolders; changes to files in the folder are picked up automatically. You can also open projects straight from the Unity Hub list. Open folder is <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Open Unity project is <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>.</p>
+<figure class="shot"><img src="../assets/guide/screen-file-browser.png" alt="File browser: folder tree, search, include subfolders, thumbnail list with the .chickxel badge and red dot" width="252" height="593" loading="lazy"><figcaption>① Folder tree · ② Thumbnail list · ③ Search · ④ Include subfolders · ⑤ New pixel file, New folder, Refresh · ⑥ .chickxel badge · ⑦ Unsaved changes (red dot)</figcaption></figure>
+<p>It has ① a folder tree, ② a thumbnail list of <code>.chickxel</code> and PNG files, ③ search, and ④ an option to include subfolders; changes to files in the folder are picked up automatically. You can also open projects straight from the Unity Hub list. Open folder is <span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span>, Open Unity project is <span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span>.</p>
 <ul>
-<li>⑤ Three icons on the right of the title row: <strong>New pixel file</strong> (creates and opens a <code>.gpixel</code> in the selected folder), <strong>New folder</strong>, <strong>Refresh</strong>.</li>
-<li><code>.gpixel</code> projects get ⑥ a blue layer badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, frame sheet, part atlas) are hidden from the list so only the single <code>.gpixel</code> is shown. Hover it to see the exported file names; searching by those names also finds it.</li>
+<li>⑤ Three icons on the right of the title row: <strong>New pixel file</strong> (creates and opens a <code>.chickxel</code> in the selected folder), <strong>New folder</strong>, <strong>Refresh</strong>.</li>
+<li><code>.chickxel</code> projects get ⑥ a blue layer badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, frame sheet, part atlas) are hidden from the list so only the single <code>.chickxel</code> is shown. Hover it to see the exported file names; searching by those names also finds it.</li>
 <li>JPG, BMP, GIF, WebP, APNG, ICO, AVIF and HEIC images and videos (MP4, WebM, MOV, MKV, AVI, …) are listed too (thumbnail = first frame). Videos get a film badge, with a first-frame thumbnail when ffmpeg is available. Clicking one opens it in a new tab as in <a href="#files-open-media">Opening images, animations and videos</a>.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/screen-file-browser-2.png" alt="Right-click menu with two files selected" width="336" height="740" loading="lazy"><figcaption>⑧ Several files selected · ⑨ Right-click menu</figcaption></figure>
 <ul>
 <li>A plain click selects and opens one file. <kbd>Ctrl</kbd>+click (add/remove one at a time), <kbd>Shift</kbd>+click (range), or drag a rectangle over the list to ⑧ select several (multiple selections don't open).</li>
 <li>Press a file and drag it out of the list to the left or right (toward the canvas) to drag the file instead (if the item was already selected, all selected files). Dropping it on the canvas adds it as a <a href="#files-drop-layer">new layer</a>.</li>
-<li>⑨ Right-click menu: new project, merge, rename, show in Explorer/Finder, select image folder, delete, delete <code>.gpixel</code> files only, restore last deleted, view app trash.</li>
+<li>⑨ Right-click menu: new project, merge, rename, show in Explorer/Finder, select image folder, delete, delete <code>.chickxel</code> files only, restore last deleted, view app trash.</li>
 </ul>
 <h4>Unsaved changes (red dot)</h4>
 <p>Every open document lives in a <a href="#screen-tabs">document tab</a> above the canvas, and switching tabs never asks you to save. A document with unsaved changes gets a <strong>⑦ red dot in the top-left</strong> of its thumbnail (and next to its tab title); clicking a file that's already open goes to its tab. The status bar shows "N unsaved files".</p>
@@ -442,7 +442,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Only closing the tab of a document with unsaved changes asks Save / Don't save / Cancel.</li>
 </ul>
 <h4>Merge</h4>
-<p>Select two or more files and choose <strong>Merge…</strong> from the right-click menu to combine several images into one <code>.gpixel</code>. In the dialog you set:</p>
+<p>Select two or more files and choose <strong>Merge…</strong> from the right-click menu to combine several images into one <code>.chickxel</code>. In the dialog you set:</p>
 <figure class="shot"><img src="../assets/guide/screen-file-browser-3.png" alt="Merge dialog: order, name, mode, canvas, preview and timeline layout" width="759" height="908" loading="lazy"><figcaption>⑩ Order · ⑪ Name · ⑫ Mode · ⑬ Canvas size, anchor, delete originals · ⑭ Preview · ⑮ How it will look in the timeline</figcaption></figure>
 <ul class="marks">
 <li>⑩ <strong>Order</strong>: drag rows or use the up/down buttons (top = first).</li>
@@ -459,7 +459,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <tr><td>As frames</td><td>Frames appended in file order</td></tr>
 </tbody>
 </table></div>
-<p>Along with ⑭ a preview (played if there are several frames), ⑮ <strong>"How it will look in the timeline"</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.gpixel</code> files such as layers, groups, skins, effects and tags is carried over in every mode. The result is saved as <code>&lt;name&gt;.gpixel</code> in the first file's folder and opened right away. If a file with that name already exists, nothing is merged and you're told.</p>
+<p>Along with ⑭ a preview (played if there are several frames), ⑮ <strong>"How it will look in the timeline"</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.chickxel</code> files such as layers, groups, skins, effects and tags is carried over in every mode. The result is saved as <code>&lt;name&gt;.chickxel</code> in the first file's folder and opened right away. If a file with that name already exists, nothing is merged and you're told.</p>
 <h4>Deleting and the app trash</h4>
 <ul>
 <li>Deleted files (<kbd>Delete</kbd>, multiple allowed) and originals removed by merging go to the app's own trash without asking (including their PNG and <code>.meta</code> files).</li>
@@ -469,7 +469,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>In <strong>View app trash…</strong> on the right-click menu, browse ⑯ previews and ⑰ restore (double-click), delete permanently or empty the trash.</li>
 <li>⑱ Retention policy: <strong>Time limit</strong> (off by default; when on, items older than N days are permanently deleted) and <strong>Size limit</strong> (default 1 GB; oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>.</li>
-<li><strong>Delete <code>.gpixel</code> files only</strong>: sends only the project file to the trash and keeps the exported PNG and <code>.meta</code>.</li>
+<li><strong>Delete <code>.chickxel</code> files only</strong>: sends only the project file to the trash and keeps the exported PNG and <code>.meta</code>.</li>
 <li><strong>Select image folder</strong>: when viewing with subfolders included, finds and shows the folder that actually contains the file in the tree.</li>
 </ul>
 
@@ -495,7 +495,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Filter by sort order (popular, downloads, newest, name), color count and tag (e.g. <code>gameboy</code>, <code>pico8</code>). Entering a palette name in the tag field shows that palette at the top.</li>
 <li>Selecting a palette shows its colors along with example art made with it.</li>
 <li><strong>Use as palette</strong> (replaces the current palette; same as double-click), <strong>Add to current palette</strong> (skips duplicate colors), <strong>Save as .hex</strong>, <strong>View on Lospec</strong>.</li>
-<li><strong>Favorites</strong>: click the star at the right of a list row or next to the selected palette's name to add or remove it. Favorite palettes, including their example art, are kept on your computer (<code>&lt;settings folder&gt;/Gpixel/Lospec</code>).</li>
+<li><strong>Favorites</strong>: click the star at the right of a list row or next to the selected palette's name to add or remove it. Favorite palettes, including their example art, are kept on your computer (<code>&lt;settings folder&gt;/Chickxel/Lospec</code>).</li>
 <li>Choose <strong>Favorites</strong> in the sort box to show only your favorites, most recently added first (no internet needed). The color count and tag/name fields still filter them. If Lospec can't be reached, use <strong>View favorites</strong> next to the error.</li>
 <li>The last sort you chose is kept the next time you open the window.</li>
 </ul>
@@ -807,7 +807,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h2>Tools</h2>
 
 <h3 id="tools-list">Tool list</h3>
-<figure class="shot"><img src="../assets/guide/tools-list.png" alt="Gpixel window with the pencil selected: the toolbar on the left and Tool options on the right" width="1600" height="932" loading="lazy"><figcaption>① Toolbar · ② Tool options (shown as “Tool settings”)</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/tools-list.png" alt="Chickxel window with the pencil selected: the toolbar on the left and Tool options on the right" width="1600" height="932" loading="lazy"><figcaption>① Toolbar · ② Tool options (shown as “Tool settings”)</figcaption></figure>
 <p>When you select a tool in the ① toolbar, its settings appear in ② <strong>Tool options</strong> in the right dock. Long explanations live in <strong>i</strong> icon tooltips so they don't take up space: usage hints for Rectangle select, Ellipse select, Lasso select, Magic wand, Move and Gradient sit next to the <strong>Tool settings · …</strong> title, and the explanations of the canvas size, transform, gradient, 9-slice and eyedropper groups sit next to each group title. Hover the <strong>i</strong> to read them.</p>
 <figure class="shot"><img src="../assets/guide/tools-list-2.png" alt="The tool slots of the toolbar" width="104" height="515" loading="lazy"><figcaption>③ Pencil · ④ Eraser · ⑤ Fill/gradient group · ⑥ Eyedropper · ⑦ Shapes group (line, rectangle, circle) · ⑧ Select group (rectangle, ellipse, lasso, magic wand) · ⑨ Move · ⑩ Lighten/darken · ⑪ Dithering · ⑫ Color replace brush · ⑬ Pivot · ⑭ 9-slice</figcaption></figure>
 <div class="table-wrap"><table>
@@ -972,7 +972,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="tools-nine-slice">9-slice</h3>
 <figure class="shot"><img src="../assets/guide/tools-nine-slice.png" alt="Sample UI button (32×20) with the four green 9-slice lines, and the tool options" width="1003" height="400" loading="lazy"><figcaption>① Four green lines (L5, T5, R5, B6) · ② L, T, R, B values · ③ All 0 · ④ Target (every cell of the frame sheet)</figcaption></figure>
 <p>Sets the Unity Sprite Border. ① <strong>Four green lines</strong> appear on the canvas; drag them to change ② the L, T, R and B values. In Tool options you can enter numbers or reset with ③ <strong>All 0</strong>.</p>
-<p>With a part selected it applies to that part; otherwise to every cell of the frame sheet (④ Tool options shows the target). When scaled up, everything outside the lines (corners and edges) stays the same and only the center stretches, which suits UI buttons and panels used with Image Type = Sliced in Unity. You can resize the image the same way inside Gpixel with <strong>Stretch with 9-slice</strong> in <a href="#tools-canvas-size">canvas size mode</a>.</p>
+<p>With a part selected it applies to that part; otherwise to every cell of the frame sheet (④ Tool options shows the target). When scaled up, everything outside the lines (corners and edges) stays the same and only the center stretches, which suits UI buttons and panels used with Image Type = Sliced in Unity. You can resize the image the same way inside Chickxel with <strong>Stretch with 9-slice</strong> in <a href="#tools-canvas-size">canvas size mode</a>.</p>
 </section>
 
 <section class="doc" id="files">
@@ -982,7 +982,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>File</th><th>Role</th></tr></thead>
 <tbody>
-<tr><td><code>.gpixel</code></td><td>The editable source. Layers, effects, frames, tags, parts, skins, outfit presets and export settings are all stored only here.</td></tr>
+<tr><td><code>.chickxel</code></td><td>The editable source. Layers, effects, frames, tags, parts, skins, outfit presets and export settings are all stored only here.</td></tr>
 <tr><td>Exported images (PNG)</td><td>The output, used in Unity or other programs.</td></tr>
 <tr><td><code>.meta</code></td><td>Unity settings (sprite cells, pivot, etc.).</td></tr>
 <tr><td><code>.spriteLib</code></td><td>Unity Sprite Library. Created only when turned on (see <a href="#parts">Parts · skins</a>).</td></tr>
@@ -991,17 +991,17 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="files-save">Saving</h3>
 <figure class="shot"><img src="../assets/guide/files-save.png" alt="The File menu opened, with Save (+ export sheets) marked 1" width="345" height="368" loading="lazy"><figcaption>① Save (+ export sheets) in the File menu — Ctrl+S</figcaption></figure>
-<figure class="shot"><img src="../assets/guide/files-save-2.png" alt="The status bar after saving, with the message about the saved file and exported sheet marked 2" width="969" height="113" loading="lazy"><figcaption>② The status bar after saving: the saved .gpixel and the exported sheet and cell count</figcaption></figure>
-<p>Saving the <code>.gpixel</code> with <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> (① <strong>File &gt; Save (+ export sheets)</strong>) also exports the image and <code>.meta</code>, depending on your settings, and ② the status bar shows the result. A <code>.meta</code> is created when the file is inside a Unity project's <code>Assets</code> or already has a meta. Existing guids and spriteIDs are kept by name, so references on the Unity side don't break.</p>
+<figure class="shot"><img src="../assets/guide/files-save-2.png" alt="The status bar after saving, with the message about the saved file and exported sheet marked 2" width="969" height="113" loading="lazy"><figcaption>② The status bar after saving: the saved .chickxel and the exported sheet and cell count</figcaption></figure>
+<p>Saving the <code>.chickxel</code> with <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> (① <strong>File &gt; Save (+ export sheets)</strong>) also exports the image and <code>.meta</code>, depending on your settings, and ② the status bar shows the result. A <code>.meta</code> is created when the file is inside a Unity project's <code>Assets</code> or already has a meta. Existing guids and spriteIDs are kept by name, so references on the Unity side don't break.</p>
 <figure class="shot"><img src="../assets/guide/files-save-3.png" alt="The Save failed dialog, with the message that the project was saved but the sheet export failed marked 3" width="597" height="168" loading="lazy"><figcaption>③ The project was saved but exporting the sheet/.meta failed (Save failed)</figcaption></figure>
-<p>If the <code>.gpixel</code> was saved but only the image export failed (for example because another program has the file open), ③ you're told about it.</p>
+<p>If the <code>.chickxel</code> was saved but only the image export failed (for example because another program has the file open), ③ you're told about it.</p>
 
 <h3 id="files-autosave">Autosave</h3>
 <figure class="shot"><img src="../assets/guide/files-autosave.png" alt="The status bar with the Autosaved message marked 1" width="809" height="113" loading="lazy"><figcaption>① The Autosaved message in the status bar after an autosave</figcaption></figure>
 <p>On by default. After <strong>3 seconds</strong> without edits, it saves without asking, just like <span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> (including export), and shows <code>Autosaved</code> in ① the status bar.</p>
 <ul>
 <li>It waits while you're drawing, dragging, transforming or while the AI is working.</li>
-<li>It only saves files that already have a <code>.gpixel</code> on disk. New projects and imported PNGs must be saved manually once.</li>
+<li>It only saves files that already have a <code>.chickxel</code> on disk. New projects and imported PNGs must be saved manually once.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/files-autosave-2.png" alt="The Save group of the General preferences, with the Autosave check box marked 2 and the seconds field marked 3" width="987" height="82" loading="lazy"><figcaption>② Autosave on/off · ③ Wait time in seconds</figcaption></figure>
 <ul class="marks">
@@ -1015,12 +1015,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>① The button at the bottom of the toolbar or ② <strong>File &gt; Revert to saved</strong> discards unsaved changes after ③ confirmation and reopens the file. The current layer, frame and zoom stay the same. The revert itself can't be undone.</p>
 
 <h3 id="files-history">Undo history that survives closing</h3>
-<p>On by default: even after closing a file or quitting the app, you can keep using undo and redo when you reopen it. History is kept <strong>only up to the saved state</strong>; changes discarded with "Don't save" aren't kept. The history is stored separately in the app settings folder, not in the <code>.gpixel</code>.</p>
+<p>On by default: even after closing a file or quitting the app, you can keep using undo and redo when you reopen it. History is kept <strong>only up to the saved state</strong>; changes discarded with "Don't save" aren't kept. The history is stored separately in the app settings folder, not in the <code>.chickxel</code>.</p>
 <figure class="shot"><img src="../assets/guide/files-history.png" alt="The Undo history group of the General preferences, with the keep-history check box, retention period, max size and Clear all history marked 1 to 4" width="987" height="174" loading="lazy"><figcaption>① Keep undo history after closing files · ② Retention period · ③ Max size · ④ Clear all history</figcaption></figure>
 <p>① Turning it on/off, ② retention period (default 30 days), ③ maximum size (default 500 MB) and ④ <strong>Clear all history</strong> are in <strong>Preferences &gt; General</strong>.</p>
 
 <h3 id="files-png-import">Opening (importing) PNGs</h3>
-<p>Opening a PNG imports it as a project. If a <code>.gpixel</code> with the same name exists, or a project in the same folder exports that PNG, that project opens instead.</p>
+<p>Opening a PNG imports it as a project. If a <code>.chickxel</code> with the same name exists, or a project in the same folder exports that PNG, that project opens instead.</p>
 <ul>
 <li>If the meta contains cell information and the cells differ in size, it's imported as <strong>parts</strong> (one group + one part per cell).</li>
 </ul>
@@ -1036,20 +1036,20 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="files-open-media">Opening images, animations and videos</h3>
-<figure class="shot"><img src="../assets/guide/files-open-media.png" alt="The File menu opened, with Open marked 1" width="345" height="368" loading="lazy"><figcaption>① Open (.gpixel · image · GIF · video)… in the File menu — Ctrl+O</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/files-open-media.png" alt="The File menu opened, with Open marked 1" width="345" height="368" loading="lazy"><figcaption>① Open (.chickxel · image · GIF · video)… in the File menu — Ctrl+O</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-open-media-2.png" alt="A new document from an animated GIF, with the new tab, the layer named after the file and the four frames marked 2 to 4" width="1036" height="814" loading="lazy"><figcaption>A new document from an animated GIF (slime_bounce.gif, 4 frames): ② new tab · ③ one layer named after the file · ④ one frame per image frame (120 ms kept)</figcaption></figure>
-<p>① <strong>File &gt; Open (.gpixel · image · GIF · video)…</strong> (<span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>) lets you pick several files at once and opens each in ② its own tab. Images other than PNG (JPG, BMP, GIF, WebP, ICO, animated PNG) become a <strong>new document</strong>: canvas = image size, ③ one layer named after the file, ④ one frame per image frame.</p>
+<p>① <strong>File &gt; Open (.chickxel · image · GIF · video)…</strong> (<span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>) lets you pick several files at once and opens each in ② its own tab. Images other than PNG (JPG, BMP, GIF, WebP, ICO, animated PNG) become a <strong>new document</strong>: canvas = image size, ③ one layer named after the file, ④ one frame per image frame.</p>
 <ul>
 <li>Frame durations come from the file (0–10 ms become 100 ms, like browsers). Transparency is kept, and partial GIF/APNG frames with their disposal (restore to background / previous) are composited so every frame is a complete picture. Photos follow their EXIF rotation.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/files-open-media-3.png" alt="The question shown for an image with more than 300 frames, with its three buttons marked 5" width="528" height="140" loading="lazy"><figcaption>⑤ The question for an image with more than 300 frames (Open all / First 300 only / Cancel)</figcaption></figure>
 <ul>
 <li>Files with more than 300 frames ask ⑤ "Open all / First 300 only / Cancel".</li>
-<li>There's no <code>.gpixel</code> yet, so the first save asks where to put it. Clicking in the file browser, recent files and dropping on the window open files the same way.</li>
+<li>There's no <code>.chickxel</code> yet, so the first save asks where to put it. Clicking in the file browser, recent files and dropping on the window open files the same way.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/files-open-media-4.png" alt="The Video (ffmpeg) tab of Preferences, with the tab, the ffmpeg executable field and Browse marked 6 to 8" width="696" height="279" loading="lazy"><figcaption>⑥ The Video (ffmpeg) tab of Preferences · ⑦ ffmpeg executable (empty = find automatically) · ⑧ Browse…</figcaption></figure>
 <ul>
-<li><strong>Videos</strong> (MP4, WebM, MOV, MKV, AVI, …) and AVIF/HEIC images need <strong>ffmpeg</strong> (not included with Gpixel and never downloaded automatically — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, or <code>winget install Gyan.FFmpeg</code> on Windows). It's found automatically on PATH or in common install locations; otherwise choose ⑦ the executable in ⑥ <strong>Edit &gt; Preferences… &gt; Video (ffmpeg)</strong> with ⑧ <strong>Browse…</strong>.</li>
+<li><strong>Videos</strong> (MP4, WebM, MOV, MKV, AVI, …) and AVIF/HEIC images need <strong>ffmpeg</strong> (not included with Chickxel and never downloaded automatically — <a href="https://ffmpeg.org/download.html">ffmpeg.org</a>, or <code>winget install Gyan.FFmpeg</code> on Windows). It's found automatically on PATH or in common install locations; otherwise choose ⑦ the executable in ⑥ <strong>Edit &gt; Preferences… &gt; Video (ffmpeg)</strong> with ⑧ <strong>Browse…</strong>.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/files-open-media-5.png" alt="The Import video dialog, with range, frames per second, max frames, size, Smooth, estimate and Import marked 9 to 15" width="478" height="262" loading="lazy"><figcaption>Import video (example: 8.4 s, 1280×720, 30 fps): ⑨ Range · ⑩ Frames per second · ⑪ Max frames · ⑫ Size · ⑬ Smooth · ⑭ Estimate · ⑮ Import</figcaption></figure>
 <ul>
@@ -1065,7 +1065,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>The image is placed with <strong>the pixel you dropped on at its center</strong>, in the current frame, with its colors unchanged; anything outside the canvas is cut off. An image larger than the canvas is centered on the canvas and you're told it was cut — to keep all of it, enlarge the canvas first in <a href="#tools-canvas-size">Canvas size mode</a>.</li>
 <li><strong>Animated GIF, WebP and APNG</strong> files and <strong>videos</strong> (after the Import video window) go into one layer starting at the current frame; if there aren't enough frames, new ones are added at the end (with the image's or video's frame durations).</li>
 <li>The whole drop is a single undo step (<code>Drop image</code>).</li>
-<li>Dropping <strong>outside</strong> the canvas (file list, start screen, tab strip, panels) doesn't add layers — each file opens in its own tab. Dropping only a <code>.gpixel</code> on the canvas opens it in a new tab too.</li>
+<li>Dropping <strong>outside</strong> the canvas (file list, start screen, tab strip, panels) doesn't add layers — each file opens in its own tab. Dropping only a <code>.chickxel</code> on the canvas opens it in a new tab too.</li>
 <li>A single-frame image goes straight into ③ <a href="#tools-transform">transform mode</a> (the last one if you drop several; ④ the status bar explains the keys): the whole uncropped image is held, so move or resize it and press <span class="key" data-cmd="편집/선택 내려놓기"><kbd>Enter</kbd></span> to apply — parts outside the canvas are cut only then — or <span class="key" data-cmd="편집/선택 해제(캔버스)"><kbd>Esc</kbd></span> to keep it as inserted (insert and transform are two undo steps). Multi-frame images are inserted without transform mode.</li>
 </ul>
 
@@ -1074,8 +1074,8 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/files-cleanup-2.png" alt="The file list context menu, with Restore last deleted marked 2 and View app trash marked 3" width="263" height="221" loading="lazy"><figcaption>File list context menu: ② Restore last deleted (Ctrl+Z) · ③ View app trash…</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/files-cleanup-3.png" alt="The App trash window, with the old output moved on save marked 4 and Restore marked 5" width="796" height="556" loading="lazy"><figcaption>App trash: ④ the old output moved on save (Export cleanup) · ⑤ Restore</figcaption></figure>
 <p>Old output files (and their <code>.meta</code>) that are no longer produced because you changed the export method or name are moved to the <strong>app trash</strong> on the next save, with ① a notice in the status bar. Restore them with ② <span class="key" data-cmd="편집/실행취소"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> in the file list or ③ View app trash (in the app trash window, pick ④ the entry and press ⑤ Restore).</p>
-<p>Renaming or deleting a <code>.gpixel</code> in the file browser also moves the outputs exported under the default name and their <code>.meta</code>, or sends them to the app trash. Unity guids are kept.</p>
-<p>Only files recorded as exported by Gpixel itself are cleaned up. Files you created yourself, or files with a custom export folder or name, are never touched.</p>
+<p>Renaming or deleting a <code>.chickxel</code> in the file browser also moves the outputs exported under the default name and their <code>.meta</code>, or sends them to the app trash. Unity guids are kept.</p>
+<p>Only files recorded as exported by Chickxel itself are cleaned up. Files you created yourself, or files with a custom export folder or name, are never touched.</p>
 
 <h3 id="files-cell-names">Export cell names</h3>
 <figure class="shot"><img src="../assets/guide/files-cell-names.png" alt="The timeline frame context menu, with Export cell name marked 1" width="1034" height="558" loading="lazy"><figcaption>① Export cell name… in the frame header context menu</figcaption></figure>
@@ -1108,17 +1108,17 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <div class="table-wrap"><table>
 <thead><tr><th>OS</th><th>Location</th></tr></thead>
 <tbody>
-<tr><td>Windows</td><td><code>%AppData%\Gpixel\settings.json</code></td></tr>
-<tr><td>macOS</td><td><code>~/Library/Application Support/Gpixel/settings.json</code></td></tr>
+<tr><td>Windows</td><td><code>%AppData%\Chickxel\settings.json</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/Chickxel/settings.json</code></td></tr>
 </tbody>
 </table></div>
 <p>Export setting presets are in <code>export-presets.json</code> in the same folder.</p>
 
 <h3 id="files-crash-log">When errors occur</h3>
 <figure class="shot"><img src="../assets/guide/files-crash-log.png" alt="The unexpected error dialog, with the message and log file name, Open log folder and Report on Discord marked 1 to 3" width="436" height="244" loading="lazy"><figcaption>① The unexpected error dialog (example error, with the log file name) · ② Open log folder · ③ Report on Discord</figcaption></figure>
-<p>Even when an unexpected error occurs, the app doesn't quit; it shows ① a "You can keep working" dialog. Details are logged in <code>Gpixel/Logs</code> in the settings folder (last 20).</p>
+<p>Even when an unexpected error occurs, the app doesn't quit; it shows ① a "You can keep working" dialog. Details are logged in <code>Chickxel/Logs</code> in the settings folder (last 20).</p>
 <figure class="shot"><img src="../assets/guide/files-crash-log-2.png" alt="The Help menu opened, with Open error log folder marked 4" width="273" height="233" loading="lazy"><figcaption>④ Open error log folder in the Help menu</figcaption></figure>
-<div class="note">Find the logs with ④ <strong>Help &gt; Open error log folder</strong> (or ② Open log folder in the error dialog). Report right away with ③ <strong>Report on Discord</strong> in the error dialog or see <a href="#start-feedback">Feedback</a>, and please attach that file. If the error forces the app to quit, modified documents are saved separately in <code>Gpixel/Recovery/</code>.</div>
+<div class="note">Find the logs with ④ <strong>Help &gt; Open error log folder</strong> (or ② Open log folder in the error dialog). Report right away with ③ <strong>Report on Discord</strong> in the error dialog or see <a href="#start-feedback">Feedback</a>, and please attach that file. If the error forces the app to quit, modified documents are saved separately in <code>Chickxel/Recovery/</code>.</div>
 </section>
 
 <section class="doc" id="pixelate">
@@ -1186,7 +1186,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <figure class="shot"><img src="../assets/guide/pixelate-candidates-3.png" alt="Tooltip over a candidate tile" width="330" height="260" loading="lazy"><figcaption>⑦ Score breakdown in the tooltip</figcaption></figure>
 <ul>
 <li>Each candidate's score breakdown is shown in ⑦ its tooltip and ⑥ under the preview.</li>
-<li>Right-click a candidate tile for <strong>Copy image</strong>, <strong>Copy enlarged (×4)</strong> and <strong>Save as PNG…</strong> (multi-frame results use the first frame; the file is named source name_rank or _preset name). Copies go to both Gpixel's clipboard and the system clipboard, so you can paste into the canvas or other apps. Optimized candidates also have <strong>Rerun only this preset</strong> at the bottom of the same menu (see <a href="#pixelate-optimize">Auto optimize</a>).</li>
+<li>Right-click a candidate tile for <strong>Copy image</strong>, <strong>Copy enlarged (×4)</strong> and <strong>Save as PNG…</strong> (multi-frame results use the first frame; the file is named source name_rank or _preset name). Copies go to both Chickxel's clipboard and the system clipboard, so you can paste into the canvas or other apps. Optimized candidates also have <strong>Rerun only this preset</strong> at the bottom of the same menu (see <a href="#pixelate-optimize">Auto optimize</a>).</li>
 <li><strong>Failed results</strong>: a result that is empty (all transparent), nearly empty (covers less than ¼ of the source sprite), single-colored, or has every frame under 8×8 is treated as a wrongly detected pixel size: it scores 0, sorts last and is never preselected or picked as the auto-optimize winner. Selecting it shows why under the preview, such as "The result is empty (all transparent) — the pixel size was detected wrong (183px)". With the auto grid such a result is redone automatically with the next-best estimate (another pixel-size source, or ½ or ⅓ of the detected size), and the window says so. The auto pixel size never exceeds 1/5 of a frame's (sprite's) shorter side (the grid info shows the limit), so frame spacing or large blobs in a sheet aren't taken for a pixel.</li>
 </ul>
 
@@ -1197,7 +1197,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>Click ① <strong>Auto optimize</strong> above the candidates to start right away (the button turns into ⑦ <strong>Cancel</strong> while it runs and back when it's done). Starting from the current settings, it varies the checked items to find the highest-scoring settings. Next to the button you see only ③ a best-score graph (the best score so far after each trial, a faint vertical line where a new pass starts, and the best score at the bottom right — it stays after the run), ④ a one-line result ("n/m presets · t s", or after rerunning one preset "preset name: k passes · a → b · n trials · t s · reason") and, after a run, a small ⑤ <strong>Revert</strong> button. ② The settings button beside it (sliders icon) opens the separate <strong>Auto Optimize Settings</strong> window.</p>
 <h4>Settings to vary</h4>
 <figure class="shot"><img src="../assets/guide/pixelate-optimize-3.png" alt="The Auto Optimize Settings window" width="1000" height="932" loading="lazy"><figcaption>⑨ Item checks · ⑩ Select all / Clear all · ⑪ Budget: Trials and Seconds · ⑫ Score weights · ⑬ Trial history · ⑭ Auto optimize on load · ⑮ Optimizer presets list · ⑯ Major color shift distance</figcaption></figure>
-<p>With ⑭ <strong>Auto optimize on load</strong> on (the default), optimization starts once by itself after the first candidates whenever a source is loaded (open, drop, paste, browse, or replace source). It does not start when settings change and candidates are rebuilt, and <strong>Cancel</strong> stops it. Pick a preset in the ⑮ <strong>Presets to run with Auto optimize (all checked ones run - edit their values in the settings on the left)</strong> on the left, and on the right set its ⑨ item checks, ⑩ <strong>Select all / Clear all</strong>, ⑪ budget (<strong>Trials</strong> and <strong>Seconds</strong>), ⑯ <strong>Major color shift distance</strong> and ⑫ <strong>Score weights (0 = ignore)</strong>. Expand ⑬ <strong>Trial history</strong> at the bottom. Each preset maximizes its own scoring criteria.</p>
+<p>With ⑭ <strong>Auto optimize on load</strong> on (the default), optimization starts once by itself after the first candidates whenever a source is loaded (open, drop, paste, browse, or replace source). It does not start when settings change and candidates are rebuilt, and <strong>Cancel</strong> stops it. Pick a preset in the ⑮ <strong>Auto optimize runs all checked presets. The preset whose &#x27;Main&#x27; button is green is the AI image conversion preset (edit values in the settings on the left).</strong> on the left, and on the right set its ⑨ item checks, ⑩ <strong>Select all / Clear all</strong>, ⑪ budget (<strong>Trials</strong> and <strong>Seconds</strong>), ⑯ <strong>Scoring color distance (major shift, cell match)</strong> and ⑫ <strong>Score weights (0 = ignore)</strong>. Expand ⑬ <strong>Trial history</strong> at the bottom. Each preset maximizes its own scoring criteria.</p>
 <ul>
 <li>Items (by default everything that applies to the current settings is checked except the outline fit mode, so your chosen mode keeps its 1-px outline): <strong>Pixel size</strong> (when starting from By shrinking without varying the outline fit mode, only within ±15% of the source outline thickness — the outline band is one cell, and the thickness is measured at the default outline darkness, so restarting from an optimized result with a brighter outline darkness keeps the same range; otherwise tries each of the three estimates (outline thickness, color edges, block edges), the starting size and their 2×, 3×, ½ and ⅓, and sweeps the range between them — downward only to 0.75× of the starting size and the auto estimate (when the outline fit mode is varied too, down to another estimate that independently measured ½ or ⅓ of it), because smaller cells always improve fidelity and an open lower end makes results needlessly large; left alone for an exact multiple of a clean image. Changes the grid's <strong>Add to auto pixel size (px)</strong> for an auto grid, the pixel size for a manual grid and the factor for scale-factor output; skipped for a fixed size) · grid offset X/Y (manual grid only) · <strong>Color count</strong> (4–48) · <strong>Cell color method</strong> (all six methods) · ignored cell border · transparency threshold · color snap step (only in trials using most frequent color or dominant-color weighted mean) · outline darkness · <strong>Cleanup on/off</strong> (orphans, holes and jaggies each) · dithering · outline fit mode (including Redraw as vector; off by default — when unchecked, the mode you chose is kept; 'Select all' doesn't check it either, and even when checked, trials using By shrinking must stay within ±15% of the outline thickness) · vector simplify and keep small blobs (only varied in trials that redraw as vector) · <strong>Palette colors</strong> (original/average) · palette method (k-means/median cut) · edge cell weight (0–1) — these three only with k-means or median cut · snap outline color (on/off) · <strong>Local cell correction</strong> (on/off; in trials with it on, max shift 10–50% and band 1–8 cells) · <strong>Color distance</strong> (the conversion distance: OKLab, CIEDE2000, OKLCh hue-weighted — with OKLCh the hue weight is also searched over 0–1000, including representative small values; the scoring distance is never changed).</li>
 </ul>
@@ -1210,7 +1210,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <h4>Optimizer presets</h4>
 <ul>
-<li>Optimizer presets: the buttons under the list on the left of the settings window <strong>Add preset</strong>, <strong>Duplicate preset</strong>, <strong>Rename</strong>, favorite (moves to the top) and <strong>Delete preset</strong> (the last one can't be deleted); only checked presets run. Each preset has its own search items, trials and seconds, scoring color distance and score weights. The scoring color distance (OKLab · CIEDE2000 · OKLCh hue-weighted, hue weight 0–1000) is stored separately from the palette's conversion distance: every candidate's <strong>Major color shift</strong> is compared with this fixed criterion, while conversion uses each candidate's own palette settings. The built-in presets are <strong>OKLCH1000</strong> (all items, scoring distance OKLCh with hue weight 1000) · <strong>OKLab</strong> (scoring distance OKLab) · <strong>Quick check</strong> (default items, 1000 trials and 30 seconds, unchecked at first) · <strong>Faithful to source</strong> (higher fidelity and major color shift weights) · <strong>Clean pixels</strong> (higher orphan, outline gap and 1-px outline weights) · <strong>Same hue family (OKLCH 20)</strong> (OKLCh hue weight 20); all but Quick check use 10000 trials and 120 seconds. Their names follow the display language.</li>
+<li>Optimizer presets: the buttons under the list on the left of the settings window <strong>Add preset</strong>, <strong>Duplicate preset</strong>, <strong>Rename</strong>, favorite (moves to the top) and <strong>Delete preset</strong> (the last one can't be deleted); only checked presets run. Each preset has its own search items, trials and seconds, scoring color distance and score weights. The scoring color distance (OKLab · CIEDE2000 · OKLCh hue-weighted, hue weight 0–1000) is stored separately from the palette's conversion distance: every candidate's <strong>Major color shift</strong> is compared with this fixed criterion, while conversion uses each candidate's own palette settings. The built-in presets are <strong>OKLCH1000</strong> (all items, scoring distance OKLCh with hue weight 1000) · <strong>OKLab</strong> (scoring distance OKLab) · <strong>Quick check</strong> (default items, 1000 trials and 30 seconds, unchecked at first) · <strong>Faithful to source</strong> (higher fidelity and major color shift weights) · <strong>Clean pixels</strong> (higher orphan, outline gap and 1-px outline weights) · <strong>Same hue family</strong> (OKLCh hue weight 20); all but Quick check use 10000 trials and 120 seconds. Their names follow the display language.</li>
 <li>The preset list and each preset's values are remembered. The <strong>Auto optimize (Pixelate)</strong> tab of <strong>Tools &gt; Presets…</strong> shows and edits the same presets.</li>
 </ul>
 <div class="note"><p>On the bundled sample (default settings, the earlier default items and budget — pixel size, color count, cell color method, cleanup and palette colors; 200 trials, 60 s) it took about 3 s and 162 trials to go from 70.3 to 80.8 (cells about 16.1 → 14.9 px, 26 colors, fill holes off, palette colors kept as original colors, 99% of outline pixels 1 px).</p></div>
@@ -1279,7 +1279,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="pixelate-presets">Presets</h3>
 <figure class="shot"><img src="../assets/guide/pixelate-presets.png" alt="The preset list open" width="424" height="185" loading="lazy"><figcaption>① Preset list · ② Save (+) · ③ Delete</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/pixelate-presets-2.png" alt="The preset name prompt" width="304" height="143" loading="lazy"><figcaption>④ Preset name</figcaption></figure>
-<p>① Built-in presets are <strong>Default</strong> · <strong>Small sprite (32px)</strong> · <strong>Fewer colors (16)</strong> · <strong>Keep original colors</strong>. You can ② save and ③ delete ④ named presets (stored in <code>&lt;app data&gt;/Gpixel/Pixelate/presets.json</code>), and the last settings are remembered.</p>
+<p>① Built-in presets are <strong>Default</strong> · <strong>Small sprite (32px)</strong> · <strong>Fewer colors (16)</strong> · <strong>Keep original colors</strong>. You can ② save and ③ delete ④ named presets (stored in <code>&lt;app data&gt;/Chickxel/Pixelate/presets.json</code>), and the last settings are remembered.</p>
 <div class="note"><p>On the bundled sample (a 4-frame walk cycle, 2172×724 px) the outline is 16.3 px thick (color edges 8.25 px, block edges 15.5 px). The default By shrinking gives cells of about 16 px, about 29×35 per frame, about 24 colors and about 99% of outer outline pixels 1 px thick (with local cell correction; about 96% without); Thin outline only with pixel size from Color edges gives cells of about 8 px and about 99% (with Auto the outline thickness ties on edge match, so 16 px). The OKLab distance (local correction off) from the source's 10 most-used colors to the nearest palette color averages 0.011 (max 0.025) with original colors and 0.013 (max 0.026) with average colors.</p></div>
 </section>
 
@@ -1446,7 +1446,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <h3 id="parts-import">Importing old files and PNGs</h3>
 <ul>
-<li>Opening an atlas <code>.gpixel</code> from an older version converts it into a "parts" group with one part per sprite. Unity guids and spriteIDs carry over.</li>
+<li>Opening an atlas <code>.chickxel</code> from an older version converts it into a "parts" group with one part per sprite. Unity guids and spriteIDs carry over.</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/parts-import.png" alt="A part atlas PNG with cells of different sizes opened: one group wolf_parts in the timeline with Head, Body and Legs parts under it, and a single frame" width="1034" height="784" loading="lazy"><figcaption>① One group named after the sheet (wolf_parts) · ② One part per cell (Head, Body, Legs)</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/parts-import-2.png" alt="Common settings of the export dialog for the imported image: Output set to Part atlas only" width="488" height="519" loading="lazy"><figcaption>③ Output = Part atlas (frame sheet off)</figcaption></figure>
@@ -1473,7 +1473,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <p>The chat opens in its own small window and remembers its position and size. If it was open when you closed the app, it reopens next time.</p>
 
 <h3 id="ai-setup">One-time setup: install and log in</h3>
-<p>The Gpixel download doesn't include Claude Code or Codex CLI. The first time, follow these steps.</p>
+<p>The Chickxel download doesn't include Claude Code or Codex CLI. The first time, follow these steps.</p>
 <figure class="shot"><img src="../assets/guide/ai-setup.png" alt="The chat window when Claude Code is not found: install button, install commands with Copy buttons, manual path and Check again" width="520" height="672" loading="lazy"><figcaption>① Install and log in via terminal · ② Copy the command · ③ Set path manually · ④ Check again</figcaption></figure>
 <figure class="shot"><img src="../assets/guide/ai-setup-2.png" alt="The Install AI confirmation shown after pressing the install button: the commands to run and OK" width="476" height="183" loading="lazy"><figcaption>⑤ The commands to run · ⑥ Approve (OK)</figcaption></figure>
 <ol>
@@ -1482,7 +1482,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ol>
 <figure class="shot"><img src="../assets/guide/ai-setup-3.png" alt="The AI Status window shown on first use: Claude Code installed and signed in, Codex CLI not installed" width="724" height="571" loading="lazy"><figcaption>⑦ Claude Code installed and signed in · ⑧ Codex CLI not installed · ⑨ Continue to AI</figcaption></figure>
 <ol>
-<li>Gpixel checks the install and login status (⑦ ready, ⑧ not installed) and moves on to the chat screen (⑨).</li>
+<li>Chickxel checks the install and login status (⑦ ready, ⑧ not installed) and moves on to the chat screen (⑨).</li>
 </ol>
 <ul>
 <li>If Node.js, which Codex needs, is missing, it's installed too (winget or the official ZIP on Windows, Homebrew or nvm on macOS).</li>
@@ -1565,7 +1565,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 
 <h3 id="ai-generate">Generate image → pixelate</h3>
-<p>Ask the Codex tab for something like "draw a knight with a sword", and instead of placing pixels one by one the AI calls the <code>generate_pixel_art</code> tool. Gpixel runs the Codex CLI on your computer (<code>codex exec</code>, Codex image generation) with your ChatGPT login (no API key) to generate a high-quality image, then turns it into pixel art the same way as <a href="#pixelate">Pixelate AI images</a> (background removal, auto optimize, a shared palette and 1-px outlines) and inserts it. Each image takes about 30–90 seconds.</p>
+<p>Ask the Codex tab for something like "draw a knight with a sword", and instead of placing pixels one by one the AI calls the <code>generate_pixel_art</code> tool. Chickxel runs the Codex CLI on your computer (<code>codex exec</code>, Codex image generation) with your ChatGPT login (no API key) to generate a high-quality image, then turns it into pixel art the same way as <a href="#pixelate">Pixelate AI images</a> (background removal, auto optimize, a shared palette and 1-px outlines) and inserts it. Each image takes about 30–90 seconds.</p>
 <figure class="shot"><img src="../assets/guide/ai-generate.png" alt="The drawing settings panel opened in the Codex tab (Draw pixels directly chosen)" width="810" height="229" loading="lazy"><figcaption>① Drawing settings button (a red X while open) · ② Codex CLI status · ③ Info icon · ④ Generate image → pixelate · ⑤ Draw pixels directly · ⑥ Use palette colors only</figcaption></figure>
 <ul>
 <li><strong>Drawing settings</strong>: the ① <strong>Drawing settings</strong> button (sliders icon) next to the question mark button at the top of the chat window opens a settings panel on the right, like the help panel. Only one of help and drawing settings is open at a time, and while it's open the button shows a red X. The panel also shows the ② Codex CLI status (logged in / not installed / not logged in).</li>
@@ -1598,7 +1598,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <figure class="shot"><img src="../assets/guide/ai-generate-4.png" alt="The result card after image generation: thumbnail, insert message and View conversion settings" width="468" height="347" loading="lazy"><figcaption>⑰ Result card · ⑱ View conversion settings</figcaption></figure>
 <ul class="marks">
-<li>⑰ <strong>Result card</strong>: when it's done, the chat shows a thumbnail (frames side by side), the insert message and a ⑱ <strong>View conversion settings</strong> button. It opens the <strong>Pixelate AI image</strong> window with the generated sheet (or per-frame images) and the split and conversion settings used, so you can tweak them and insert again. Generation records are kept in <code>&lt;settings folder&gt;/Gpixel/AiDraw/</code> (the latest 40; the sheet as <code>sheet.png</code>, per-frame images as <code>frame-01.png</code>…).</li>
+<li>⑰ <strong>Result card</strong>: when it's done, the chat shows a thumbnail (frames side by side), the insert message and a ⑱ <strong>View conversion settings</strong> button. It opens the <strong>Pixelate AI image</strong> window with the generated sheet (or per-frame images) and the split and conversion settings used, so you can tweak them and insert again. Generation records are kept in <code>&lt;settings folder&gt;/Chickxel/AiDraw/</code> (the latest 40; the sheet as <code>sheet.png</code>, per-frame images as <code>frame-01.png</code>…).</li>
 </ul>
 <figure class="shot"><img src="../assets/guide/ai-generate-5.png" alt="Drawing settings in the Claude tab: the red alert icon next to Generate image and its tooltip" width="438" height="155" loading="lazy"><figcaption>⑲ Red alert icon and its tooltip</figcaption></figure>
 <ul>
@@ -1612,7 +1612,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <ul>
 <li>Inside that file it can draw, add layers, frames, groups, parts, skins, and layer effects, and tidy up layers.</li>
 <li>Opening or creating other files, such as new projects or opening files, is refused (③ red line; saving still works).</li>
-<li>The chat shows the scope (②), like <code>Edit scope: current file "slime.gpixel" only</code>. Turn it off to lift the limit from the next message.</li>
+<li>The chat shows the scope (②), like <code>Edit scope: current file "slime.chickxel" only</code>. Turn it off to lift the limit from the next message.</li>
 </ul>
 
 <h3 id="ai-locked">Protecting locked layers</h3>
@@ -1678,12 +1678,12 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 </ul>
 <figure class="shot"><img src="../assets/guide/ai-references-3.png" alt="The AI references tab in Preferences" width="678" height="301" loading="lazy"><figcaption>⑭ References folder · ⑮ Change… · ⑯ Default · ⑰ Open folder · ⑱ Show built-in examples</figcaption></figure>
 <ul>
-<li><strong>Folder</strong> (⑭): by default <code>&lt;settings folder&gt;/Gpixel/References</code> (<code>%AppData%\Gpixel\References</code> on Windows). Files you put into this folder outside the app are picked up automatically when the window opens.</li>
-<li><strong>Supported files</strong>: images (<code>.png</code>, <code>.gif</code> with frames, <code>.gpixel</code> projects — each frame composited, animations keep their frame count) and text notes (<code>.md</code>, <code>.txt</code>). Title, description, tags, kind (character, item, tile, effect, UI, other), size, frame count, palette and similar info are stored in <code>index.json</code> in the same folder.</li>
-<li><strong>Built-in references</strong> (marked <strong>Built-in</strong>, can't be deleted): the style rule set <strong>Gpixel default rules</strong> (1 px or selective outline, a single light direction, 3–4-shade hue-shifted ramps, no orphan or jaggy pixels, a limited palette, a readable silhouette, consistent proportions, and key poses, smears and walk-cycle contacts for animation) and example images — a 16×16 slime, a 16×16 sword, a 32×32 front-facing character, a 4-frame 16×16 slime bounce, and a 16×16 grass tile.</li>
+<li><strong>Folder</strong> (⑭): by default <code>&lt;settings folder&gt;/Chickxel/References</code> (<code>%AppData%\Chickxel\References</code> on Windows). Files you put into this folder outside the app are picked up automatically when the window opens.</li>
+<li><strong>Supported files</strong>: images (<code>.png</code>, <code>.gif</code> with frames, <code>.chickxel</code> projects — each frame composited, animations keep their frame count) and text notes (<code>.md</code>, <code>.txt</code>). Title, description, tags, kind (character, item, tile, effect, UI, other), size, frame count, palette and similar info are stored in <code>index.json</code> in the same folder.</li>
+<li><strong>Built-in references</strong> (marked <strong>Built-in</strong>, can't be deleted): the style rule set <strong>Chickxel default rules</strong> (1 px or selective outline, a single light direction, 3–4-shade hue-shifted ramps, no orphan or jaggy pixels, a limited palette, a readable silhouette, consistent proportions, and key poses, smears and walk-cycle contacts for animation) and example images — a 16×16 slime, a 16×16 sword, a 32×32 front-facing character, a 4-frame 16×16 slime bounce, and a 16×16 grass tile.</li>
 <li><strong>Preferences</strong>: in <strong>Edit &gt; Preferences… &gt; AI references</strong> you can ⑮ <strong>Change…</strong> the ⑭ folder, go back to the ⑯ <strong>Default</strong> folder, ⑰ <strong>Open folder</strong>, and turn the built-in example images back on with ⑱ <strong>Show built-in examples</strong> (they are off by default for now because of their low quality; while off they are not used for search or as image-generation style references).</li>
 </ul>
-<div class="note"><p>References stay on your computer. Gpixel uploads and downloads nothing; only the AI CLI you already use (Claude Code or Codex) sees what the AI fetches with its tools.</p></div>
+<div class="note"><p>References stay on your computer. Chickxel uploads and downloads nothing; only the AI CLI you already use (Claude Code or Codex) sees what the AI fetches with its tools.</p></div>
 
 <h3 id="ai-undo">Undoing</h3>
 <figure class="shot"><img src="../assets/guide/ai-undo.png" alt="The result image and Undo this step button under an AI reply" width="428" height="400" loading="lazy"><figcaption>① Result image of the reply · ② Undo this step</figcaption></figure>
@@ -1739,7 +1739,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <h3 id="shortcuts-file">Files and windows</h3>
 <div class="table-wrap"><table><thead><tr><th>Action</th><th>Keys</th></tr></thead><tbody>
 <tr><td>New project</td><td><span class="key" data-cmd="파일/새 프로젝트…"><kbd>Ctrl</kbd>+<kbd>N</kbd></span></td></tr>
-<tr><td>Open</td><td><span class="key" data-cmd="파일/열기(.gpixel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td></tr>
+<tr><td>Open</td><td><span class="key" data-cmd="파일/열기(.chickxel / PNG 가져오기)…"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td></tr>
 <tr><td>Open folder</td><td><span class="key" data-cmd="파일/폴더 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></span></td></tr>
 <tr><td>Open Unity project</td><td><span class="key" data-cmd="파일/Unity 프로젝트 열기…"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span></td></tr>
 <tr><td>Save (including export)</td><td><span class="key" data-cmd="파일/저장(+ 시트 내보내기)"><kbd>Ctrl</kbd>+<kbd>S</kbd></span></td></tr>
@@ -1842,7 +1842,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <section class="doc" id="language">
 <h2>Language</h2>
-<p>Gpixel includes Korean and English. On first launch it picks the language that matches your computer, or starts in English if there's no match. You can add other languages yourself with a CSV file.</p>
+<p>Chickxel includes Korean and English. On first launch it picks the language that matches your computer, or starts in English if there's no match. You can add other languages yourself with a CSV file.</p>
 
 <h3 id="language-change">Changing the display language</h3>
 <figure class="shot"><img src="../assets/guide/language-change.png" alt="The Edit menu open with the Preferences… item at the bottom marked" width="347" height="593" loading="lazy"><figcaption>① Edit &gt; Preferences… (Ctrl+,)</figcaption></figure>
@@ -1851,7 +1851,7 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 <li>Open ① <strong>Edit &gt; Preferences…</strong> (<span class="key" data-cmd="편집/환경 설정…"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>). ② <strong>Language</strong> is at the top.</li>
 <li>Choose from the ③ <strong>Display language</strong> list and click ④ <strong>OK</strong>.</li>
 </ul>
-<figure class="shot"><img src="../assets/guide/language-change-3.png" alt="The prompt after OK: language settings changed, restart Gpixel to apply them, with Restart now and Later buttons" width="356" height="126" loading="lazy"><figcaption>⑤ Restart now · ⑥ Later</figcaption></figure>
+<figure class="shot"><img src="../assets/guide/language-change-3.png" alt="The prompt after OK: language settings changed, restart Chickxel to apply them, with Restart now and Later buttons" width="356" height="126" loading="lazy"><figcaption>⑤ Restart now · ⑥ Later</figcaption></figure>
 <ul class="marks">
 <li>Click ⑤ <strong>Restart now</strong> to close the app and reopen it in the new language. If there are unsaved documents, you're asked first, just like when closing. Choose ⑥ <strong>Later</strong> to apply it the next time you launch.</li>
 </ul>
@@ -1884,15 +1884,15 @@ Start-Process "$d\Gpixel.exe"</code></pre>
 
 <footer>
 <div class="wrap">
-<span><strong>Gpixel</strong> · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
-<span><a href="https://github.com/1000Pro-1997/GPixel">GitHub</a> · <a href="https://github.com/1000Pro-1997/GPixel/releases">Releases</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/GPixel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/GPixel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
+<span><strong>Chickxel</strong> · MIT License · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href="https://github.com/1000Pro-1997/Chickxel">GitHub</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases">Releases</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/Chickxel/issues">Report an issue</a> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md">Open source notices</a></span>
 </div>
 </footer>
 <script>
 // 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
 document.getElementById('lang-select').addEventListener('change', function (e) {
   var to = e.target.value;
-  try { localStorage.setItem('gpixel-lang', to); } catch (err) {}
+  try { localStorage.setItem('chickxel-lang', to); } catch (err) {}
   var page = location.pathname.split('/').pop() || '';
   location.href = ('../') + page + location.hash;
 });
