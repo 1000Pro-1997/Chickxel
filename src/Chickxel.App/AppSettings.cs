@@ -240,7 +240,7 @@ public sealed class AppSettings
     public Dictionary<string, bool> ScriptTrust { get; set; } = new();
 
     // 에셋 게시
-    /// <summary>에셋 게시 창이 기억하는 작성자 정보와 게시용으로 저장한 패키지(<see cref="AssetPublishDialog"/>).</summary>
+    /// <summary>에셋 게시 창이 기억하는 작성자 표시 이름·주소와 이 컴퓨터에서 올린 패키지(<see cref="AssetPublishDialog"/>).</summary>
     public AssetPublishSettings AssetPublish { get; set; } = new();
 
     /// <summary>처음 실행할 때 쓰는 기본 팔레트(DawnBringer 32).</summary>
@@ -355,18 +355,20 @@ public sealed class PaletteSetting
         => new(Name, [.. Colors.Select(h => Color32.TryParseHex(h, out var c) ? c : (Color32?)null).OfType<Color32>()], Collapsed);
 }
 
-/// <summary>에셋 게시 창의 작성자 정보(다음 게시에 다시 채움)와 이 컴퓨터에서 게시용으로 저장한 패키지(최근 것부터, 다음 버전 제안·같은 에셋 다시 게시).</summary>
+/// <summary>
+/// 에셋 게시 창의 작성자 표시 이름·주소(다음 게시에 다시 채움 — 작성자 ID는 계정 핸들)와 이 컴퓨터에서 올린 패키지
+/// (최근 것부터, 다음 버전 제안·같은 에셋 다시 올리기).
+/// </summary>
 public sealed class AssetPublishSettings
 {
     public const int MaxSaved = 50;
 
-    public string AuthorId { get; set; } = "";
     public string AuthorName { get; set; } = "";
     public string AuthorUrl { get; set; } = "";
     public List<AssetPublishRecord> Saved { get; set; } = new();
 }
 
-/// <summary>게시용으로 저장한 패키지 하나: 패키지 정보와 포함한 개인 에셋 ID, 패키지 SHA-256.</summary>
+/// <summary>올린 패키지 하나: 패키지 정보와 포함한 개인 에셋 ID, 패키지 SHA-256.</summary>
 public sealed class AssetPublishRecord
 {
     public string Id { get; set; } = "";

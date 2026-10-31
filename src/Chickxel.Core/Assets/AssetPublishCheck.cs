@@ -1,12 +1,10 @@
 using System.Globalization;
-using System.IO.Compression;
-using System.Text;
 using Chickxel.Core.IO;
 using Chickxel.Core.Localization;
 
 namespace Chickxel.Core.Assets;
 
-/// <summary>게시 검사 문제의 무게: 오류는 저장을 막고(카탈로그 CI도 거부), 경고는 알리기만 한다.</summary>
+/// <summary>게시 검사 문제의 무게: 오류는 올리기를 막고(서버·카탈로그 CI도 거부), 경고는 알리기만 한다.</summary>
 public enum PublishSeverity
 {
     Error,
@@ -58,12 +56,13 @@ public sealed record PublishIssue(PublishSeverity Severity, string Message)
 /// <summary>게시 창에 넣을 에셋 하나: 종류, 값, 미리보기 PNG(없으면 null).</summary>
 public sealed record PublishAsset(string Kind, IAssetData Data, byte[]? Preview);
 
-/// <summary>이 컴퓨터에서 게시용으로 저장한 패키지(같은 ID·버전을 다른 내용으로 다시 저장하면 경고, 다음 버전 제안).</summary>
+/// <summary>이 컴퓨터에서 올린 패키지(같은 ID·버전을 다른 내용으로 다시 올리려 하면 경고, 다음 버전 제안).</summary>
 public sealed record PublishedVersion(string Id, string Version, string Sha256);
 
 /// <summary>
 /// 게시 창 입력: 작성자, 패키지 ID·버전·이름, 짧은 설명(manifest 설명과 목록 요약), 태그, 라이선스(SPDX ID나 <c>LicenseRef-…</c>)와
 /// <c>LICENSE.txt</c> 글, 에셋, 목록 미리보기(직접 고른 PNG, 없으면 <see cref="PreviewAsset"/>번째 에셋의 미리보기), 최소 앱 버전.
+/// 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓰므로, 고른 에셋을 맨 앞에 두고 직접 고른 PNG는 그 에셋의 미리보기로 넣는다.
 /// </summary>
 public sealed record PublishRequest
 {
@@ -83,14 +82,14 @@ public sealed record PublishRequest
 }
 
 /// <summary>
-/// 게시 검사 결과: 문제 목록, 만든 패키지 바이트·manifest와 <c>review.json</c>(입력 칸 오류나 패키지 검사 실패면 null).
-/// <see cref="Ok"/>일 때만 저장한다.
+/// 게시 검사 결과: 문제 목록, 만든 패키지 바이트와 manifest(입력 칸 오류나 패키지 검사 실패면 null), 목록 태그.
+/// <see cref="Ok"/>일 때만 올린다.
 /// </summary>
-public sealed record PublishResult(IReadOnlyList<PublishIssue> Issues, byte[]? Package, AssetManifest? Manifest, byte[]? Review)
+public sealed record PublishResult(IReadOnlyList<PublishIssue> Issues, byte[]? Package, AssetManifest? Manifest)
 {
     public bool Ok => Package is not null && Issues.All(issue => !issue.IsError);
 
-    /// <summary>목록 태그(제출 양식 미리 채우기용).</summary>
+    /// <summary>목록 태그(올릴 때 같이 보냄).</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 
     public int ErrorCount => Issues.Count(issue => issue.IsError);
@@ -100,15 +99,16 @@ public sealed record PublishResult(IReadOnlyList<PublishIssue> Issues, byte[]? P
     /// <summary>패키지 SHA-256(소문자 16진수). 패키지가 없으면 null.</summary>
     public string? Sha256 => Package is null ? null : AssetPackageWriter.Hash(Package);
 
-    /// <summary>카탈로그 제출 폴더 안 패키지 파일 이름 <c>&lt;ID&gt;-&lt;버전&gt;.chickxel-asset</c>.</summary>
+    /// <summary>패키지 파일 이름 <c>&lt;ID&gt;-&lt;버전&gt;.chickxel-asset</c>.</summary>
     public string? PackageFileName => Manifest is null ? null : $"{Manifest.Id}-{Manifest.Version}{AssetPackage.Extension}";
 }
 
 /// <summary>
-/// 공개 게시 규칙(계획 9.1·9.3, 14장 5단계). 카탈로그 만들기(<see cref="RemoteCatalogBuilder"/>, CI)와 앱의 게시 창이 같은 함수를 쓴다:
+/// 공개 게시 규칙(계획 9.1·9.3, 14장 5단계). 예전 정적 카탈로그 만들기(<see cref="RemoteCatalogBuilder"/>, CI)와 앱의 게시 창이 같은 함수를 쓴다:
 /// 개인 작성자·<c>personal.</c> ID 금지, ID 첫 조각 = 작성자 ID, 공개 라이선스와 LICENSE 파일, <c>official</c> ↔ 작성자 <c>chickxel</c>,
 /// 목록 미리보기, 짧은 설명·태그, 이미 게시한 버전의 내용 변경·버전 내림 금지.
-/// <see cref="Check"/>는 게시 창 입력으로 패키지를 만들어 설치와 같은 엄격 검사와 위 규칙을 모두 돌린다 — 오류가 없으면 CI도 통과한다.
+/// <see cref="Check"/>는 게시 창 입력으로 패키지를 만들어 설치와 같은 엄격 검사와 위 규칙을 모두 돌린다. 앱은 오류가 없을 때만 커뮤니티 서비스에 올린다
+/// (작성자 ID·패키지 ID 첫 조각 = 계정 핸들은 서버가 다시 본다).
 /// </summary>
 public static class AssetPublishCheck
 {
@@ -117,10 +117,6 @@ public static class AssetPublishCheck
 
     public const string LicenseRefPrefix = "LicenseRef-";
     public const string LicenseFileName = "LICENSE.txt";
-    /// <summary>직접 고른 목록 미리보기의 패키지 안 이름 조각(<c>previews/pack.png</c>).</summary>
-    public const string CustomPreviewName = "pack";
-    /// <summary>제출 양식 파일 이름(<c>.github/ISSUE_TEMPLATE/</c>).</summary>
-    public const string SubmissionTemplate = "asset-submission.yml";
 
     // ───────────── CI와 같이 쓰는 공개 규칙 ─────────────
 
@@ -208,11 +204,12 @@ public static class AssetPublishCheck
             $"{packageName.Trim()}\nCopyright (c) {year} {authorName.Trim()}\n\nLicensed under {spdxId} (SPDX-License-Identifier: {spdxId}).\nFull license text: https://spdx.org/licenses/{spdxId}.html\n");
 
     /// <summary>
-    /// 게시 창 입력을 검사한다. 입력 칸이 맞으면 패키지를 만들어 설치와 같은 엄격 검사, CI와 같은 공개 규칙(<see cref="PackageRules"/>,
+    /// 게시 창 입력을 검사한다. 입력 칸이 맞으면 패키지를 만들어 설치와 같은 엄격 검사, 공개 규칙(<see cref="PackageRules"/>,
     /// <see cref="ReviewRules"/>, 짧은 설명·태그), 온라인 목록(<paramref name="catalog"/>, 마지막으로 받은 목록)과의 버전·이름 비교를 하고,
-    /// 이 컴퓨터의 저장 기록(<paramref name="saved"/>)으로 경고를 더한다. 검토 상태는 기여 패키지의 <c>reviewed</c>.
+    /// 이 컴퓨터에서 올린 기록(<paramref name="saved"/>)으로 경고를 더한다. 검토 상태는 서버와 같이 작성자 <c>chickxel</c>이면
+    /// <c>official</c>, 아니면 <c>community</c>다.
     /// </summary>
-    public static PublishResult Check(PublishRequest request, IReadOnlyList<RemoteCatalogEntry> catalog, IEnumerable<PublishedVersion> saved, DateOnly today)
+    public static PublishResult Check(PublishRequest request, IReadOnlyList<RemoteCatalogEntry> catalog, IEnumerable<PublishedVersion> saved)
     {
         var issues = new List<PublishIssue>();
         void Error(PublishIssueCode code) => issues.Add(PublishIssue.Field(PublishSeverity.Error, code));
@@ -233,7 +230,7 @@ public static class AssetPublishCheck
         if (AssetManifest.IsValidLicense(request.License) && !request.License.StartsWith(LicenseRefPrefix, StringComparison.Ordinal)
                                                           && !CommonLicenses.Contains(request.License))
             Warn(PublishIssueCode.UnknownLicense, request.License);
-        if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null, null);
+        if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null);
 
         string summary = request.Summary.Trim();
         var builder = new AssetPackageBuilder(new AssetManifest
@@ -246,8 +243,16 @@ public static class AssetPublishCheck
             License = request.License,
             MinAppVersion = request.MinAppVersion,
         });
-        foreach (var asset in request.Assets) builder.Add(asset.Kind, asset.Data, asset.Preview);
-        string? reviewPreview = request.CustomPreview is { Length: > 0 } custom ? builder.AddPreview(CustomPreviewName, custom) : null;
+        // 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓴다: 고른 에셋을 맨 앞에, 직접 고른 PNG는 그 에셋의 미리보기로.
+        var assets = request.Assets.ToList();
+        if (request.PreviewAsset > 0 && request.PreviewAsset < assets.Count)
+        {
+            var chosen = assets[request.PreviewAsset];
+            assets.RemoveAt(request.PreviewAsset);
+            assets.Insert(0, chosen);
+        }
+        if (request.CustomPreview is { Length: > 0 } custom && assets.Count > 0) assets[0] = assets[0] with { Preview = custom };
+        foreach (var asset in assets) builder.Add(asset.Kind, asset.Data, asset.Preview);
         if (!string.IsNullOrWhiteSpace(request.LicenseText)) builder.AddDocument(LicenseFileName, request.LicenseText);
         byte[] bytes;
         AssetManifest manifest;
@@ -256,10 +261,8 @@ public static class AssetPublishCheck
             manifest = builder.Write(buffer);
             bytes = buffer.ToArray();
         }
-        if (reviewPreview is null && request.PreviewAsset >= 0 && request.PreviewAsset < manifest.Assets.Count)
-            reviewPreview = manifest.Assets[request.PreviewAsset].Preview;
 
-        // 설치·CI와 같은 엄격 검사(최소 앱 버전은 카탈로그가 앱마다 보이므로 보지 않음).
+        // 설치와 같은 엄격 검사(최소 앱 버전은 카탈로그가 앱마다 보이므로 보지 않음).
         AssetPackage package;
         try
         {
@@ -269,12 +272,13 @@ public static class AssetPublishCheck
         catch (AssetPackageException ex)
         {
             issues.AddRange(ex.Issues.Select(issue => PublishIssue.Catalog(new CatalogBuildIssue(CatalogBuildIssueCode.InvalidPackage, manifest.Id, issue.Message))));
-            return new PublishResult(issues, null, null, null);
+            return new PublishResult(issues, null, null);
         }
 
         string where = manifest.Id;
+        string status = manifest.Author.Id == RemoteCatalogBuilder.OfficialAuthor ? RemoteReview.Official : RemoteReview.Community;
         issues.AddRange(PackageRules(package, where).Select(PublishIssue.Catalog));
-        issues.AddRange(ReviewRules(package, RemoteReview.Reviewed, reviewPreview, where).Select(PublishIssue.Catalog));
+        issues.AddRange(ReviewRules(package, status, null, where).Select(PublishIssue.Catalog));
         string sha256 = AssetPackageWriter.Hash(bytes);
         var published = catalog.FirstOrDefault(entry => entry.Id == manifest.Id);
         if (published is not null && PublishedRule(manifest, sha256, published.Version, published.Package.Sha256, where) is { } changed)
@@ -283,50 +287,6 @@ public static class AssetPublishCheck
             issues.Add(PublishIssue.Catalog(new CatalogBuildIssue(CatalogBuildIssueCode.Duplicate, where, same.Id)));
         if (saved.Any(record => record.Id == manifest.Id && record.Version == manifest.Version && record.Sha256 != sha256))
             Warn(PublishIssueCode.SavedVersionChanged, manifest.Version);
-
-        // 게시 날짜는 이미 게시한 패키지면 처음 날짜를 잇는다.
-        byte[] review = RemoteCatalogBuilder.WriteReview(summary, request.Tags, RemoteReview.Reviewed,
-            published?.Published ?? today, today, reviewPreview);
-        return new PublishResult(issues, bytes, manifest, review) { Tags = request.Tags };
-    }
-
-    /// <summary>
-    /// 제출용 zip: 카탈로그 원본 자리 그대로 <c>&lt;ID&gt;/&lt;ID&gt;-&lt;버전&gt;.chickxel-asset</c>와 <c>&lt;ID&gt;/review.json</c>.
-    /// 관리자는 이 zip을 저장소의 <c>catalog/</c>에 풀고 <c>tools/CatalogBuilder</c>를 돌린다(GitHub 첨부는 <c>.chickxel-asset</c>을 받지 않아 zip으로 낸다).
-    /// </summary>
-    public static void WriteSubmission(PublishResult result, Stream output)
-    {
-        if (!result.Ok || result.Manifest is not { } manifest || result.Review is not { } review)
-            throw new InvalidOperationException(result.Issues.FirstOrDefault(issue => issue.IsError)?.Message ?? nameof(WriteSubmission));
-        using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true, Encoding.UTF8);
-        void Add(string path, byte[] data)
-        {
-            var entry = zip.CreateEntry(path, CompressionLevel.Optimal);
-            entry.ExternalAttributes = 0x81A4 << 16; // 일반 파일 rw-r--r--
-            using var stream = entry.Open();
-            stream.Write(data);
-        }
-        Add($"{manifest.Id}/{result.PackageFileName}", result.Package!);
-        Add($"{manifest.Id}/{RemoteCatalogBuilder.ReviewFileName}", review);
-    }
-
-    /// <summary>
-    /// 저장소의 제출 양식 주소. GitHub 이슈 양식은 칸 ID와 같은 이름의 query 값으로 칸을 미리 채운다(패키지 ID·버전·이름·설명·태그·라이선스).
-    /// </summary>
-    public static string SubmissionUrl(PublishResult result)
-    {
-        var manifest = result.Manifest ?? throw new InvalidOperationException(nameof(SubmissionUrl));
-        var query = new (string Key, string Value)[]
-        {
-            ("template", SubmissionTemplate),
-            ("title", $"[Asset] {manifest.Id} {manifest.Version}"),
-            ("package-id", manifest.Id),
-            ("version", manifest.Version),
-            ("name", manifest.Name),
-            ("summary", manifest.Description ?? ""),
-            ("tags", string.Join(", ", result.Tags)),
-            ("license", manifest.License),
-        };
-        return AppUpdate.RepoUrl + "/issues/new?" + string.Join("&", query.Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value)));
+        return new PublishResult(issues, bytes, manifest) { Tags = request.Tags };
     }
 }

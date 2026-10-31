@@ -291,15 +291,15 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 온라인에 올리기(게시 창): <paramref name="single"/>이 있으면 그것을, 없으면 목록에서 고른 개인 에셋(고른 것이 없으면 목록에 보이는 개인 에셋 전부)을
+    /// 온라인에 올리기(게시 창, 로그인 필요): <paramref name="single"/>이 있으면 그것을, 없으면 목록에서 고른 개인 에셋(고른 것이 없으면 목록에 보이는 개인 에셋 전부)을
     /// 처음 체크해 연다. 게시 창 안에서 포함할 에셋을 더 고를 수 있다.
     /// </summary>
-    private void PublishPersonal(AssetEntry? single)
+    private async void PublishPersonal(AssetEntry? single)
     {
         var preselected = single is not null ? [single]
             : Selected?.Asset is { Origin: AssetOrigin.Personal } selected ? [selected]
             : AppAssets.Catalog.Personal.Where(Matches).ToList();
-        AssetPublishDialog.Run(this, preselected.Select(entry => entry.Id));
+        await AssetPublishDialog.RunAsync(this, preselected.Select(entry => entry.Id).ToList());
     }
 
     private void DeletePackage(InstalledPackage package)

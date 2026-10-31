@@ -1,13 +1,11 @@
-using System.IO.Compression;
-using System.Text.Json.Nodes;
 using Chickxel.Core.Assets;
 using Chickxel.Core.IO;
 
 namespace Chickxel.Core.Tests;
 
 /// <summary>
-/// 게시 흐름(5단계): 게시 창 검사가 CI(카탈로그 만들기)와 같은 공개 규칙으로 작성자·라이선스 없는 제출을 막고, 앱이 만든 제출 zip이
-/// 그대로 카탈로그 만들기·최신 확인을 통과하며 다른 컴퓨터(새 저장소)에 설치되는지, 버전 제안과 게시 버전 규칙.
+/// 게시 흐름(5단계): 게시 창 검사가 공개 규칙(예전 카탈로그 CI와 같은 함수)으로 작성자·라이선스 없는 패키지를 막고, 앱이 만든 패키지가
+/// 그대로 예전 정적 카탈로그 만들기·최신 확인을 통과하며 다른 컴퓨터(새 저장소)에 설치되는지, 목록 미리보기 순서, 버전 제안과 게시 버전 규칙.
 /// </summary>
 public class AssetPublishTests
 {
@@ -37,15 +35,23 @@ public class AssetPublishTests
     };
 
     private static PublishResult Check(PublishRequest request, IReadOnlyList<RemoteCatalogEntry>? catalog = null, IEnumerable<PublishedVersion>? saved = null)
-        => AssetPublishCheck.Check(request, catalog ?? [], saved ?? [], Today);
+        => AssetPublishCheck.Check(request, catalog ?? [], saved ?? []);
 
-    /// <summary>제출 zip을 관리자처럼 <paramref name="catalog"/>에 푼다.</summary>
-    private static void Unpack(PublishResult result, string catalog)
+    /// <summary>관리자처럼 패키지와 검토 정보를 예전 정적 카탈로그 원본 <paramref name="catalog"/>의 <c>&lt;ID&gt;/</c>에 둔다.</summary>
+    private static void Unpack(PublishResult result, string catalog, string? summary = null, DateOnly? updated = null)
     {
-        using var zip = new MemoryStream();
-        AssetPublishCheck.WriteSubmission(result, zip);
-        zip.Position = 0;
-        ZipFile.ExtractToDirectory(zip, catalog);
+        var manifest = result.Manifest!;
+        string folder = Path.Combine(catalog, manifest.Id);
+        Directory.CreateDirectory(folder);
+        File.WriteAllBytes(Path.Combine(folder, result.PackageFileName!), result.Package!);
+        File.WriteAllBytes(Path.Combine(folder, RemoteCatalogBuilder.ReviewFileName),
+            RemoteCatalogBuilder.WriteReview(summary ?? manifest.Description!, result.Tags, RemoteReview.Reviewed, Today, updated ?? Today, null));
+    }
+
+    private static AssetPackage Read(byte[] package)
+    {
+        using var stream = new MemoryStream(package, writable: false);
+        return AssetPackageValidator.Read(stream, new AssetValidationOptions());
     }
 
     // ───────────── 작성자·라이선스 없는 공개 제출 ─────────────
@@ -59,7 +65,6 @@ public class AssetPublishTests
         ["personal-license"] = r => r with { License = "LicenseRef-Personal", LicenseText = "personal" },
         ["personal-author"] = r => r with { Author = new AssetAuthor("personal", "Me"), Id = "personal.neon" },
         ["other-author-namespace"] = r => r with { Id = "chickxel.neon" },
-        ["reserved-chickxel"] = r => r with { Author = new AssetAuthor("chickxel", "Not Chickxel"), Id = "chickxel.neon" },
         ["no-preview"] = r => r with { Assets = r.Assets.Select(a => a with { Preview = null }).ToArray() },
         ["no-summary"] = r => r with { Summary = " " },
         ["bad-tag"] = r => r with { Tags = ["Neon!"] },
@@ -76,7 +81,6 @@ public class AssetPublishTests
         { "personal-license", nameof(CatalogBuildIssueCode.MissingLicense) },
         { "personal-author", nameof(CatalogBuildIssueCode.MissingAuthor) },
         { "other-author-namespace", nameof(CatalogBuildIssueCode.AuthorMismatch) },
-        { "reserved-chickxel", nameof(CatalogBuildIssueCode.OfficialMismatch) },
         { "no-preview", nameof(CatalogBuildIssueCode.MissingPreview) },
         { "no-summary", nameof(PublishIssueCode.Summary) },
         { "bad-tag", nameof(PublishIssueCode.Tags) },
@@ -86,14 +90,22 @@ public class AssetPublishTests
 
     [Theory]
     [MemberData(nameof(BadRequestCodes))]
-    public void PublicSubmission_BrokenRule_IsAnErrorThatBlocksSaving(string label, string code)
+    public void PublicSubmission_BrokenRule_IsAnErrorThatBlocksUploading(string label, string code)
     {
         using var dir = new TempDir();
         var result = Check(BadRequests[label](Request(PersonalStore(dir))));
         Assert.False(result.Ok, label);
         Assert.Contains(result.Issues, issue => issue.IsError && (issue.Code?.ToString() ?? issue.CatalogCode?.ToString()) == code);
         Assert.All(result.Issues, issue => Assert.False(string.IsNullOrWhiteSpace(issue.Message)));
-        Assert.Throws<InvalidOperationException>(() => AssetPublishCheck.WriteSubmission(result, new MemoryStream()));
+    }
+
+    [Fact]
+    public void OfficialAuthor_IsCheckedAsAnOfficialPackage()
+    {
+        // 서버와 같이 작성자 chickxel이면 official(관리자 계정만 그 핸들을 가짐 — 서버가 소유를 본다).
+        using var dir = new TempDir();
+        var result = Check(Request(PersonalStore(dir)) with { Author = new AssetAuthor("chickxel", "Chickxel"), Id = "chickxel.neon" });
+        Assert.True(result.Ok, string.Join("\n", result.Issues));
     }
 
     [Fact]
@@ -127,7 +139,7 @@ public class AssetPublishTests
     // ───────────── 앱이 만든 패키지: CI 통과와 다른 컴퓨터 설치 ─────────────
 
     [Fact]
-    public void AppMadeSubmission_PassesCatalogBuildAndCheck_AndInstallsIntoAFreshStore()
+    public void AppMadePackage_PassesCatalogBuildAndCheck_AndInstallsIntoAFreshStore()
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
@@ -137,7 +149,7 @@ public class AssetPublishTests
         Assert.Empty(result.Issues);
         Assert.Equal("pixel-cat.neon-1.0.0.chickxel-asset", result.PackageFileName);
 
-        // 관리자 흐름: 제출 zip을 catalog/에 풀고 만들기 → 쓰기 → --check(다시 만들어 최신인지).
+        // 관리자 흐름: 패키지를 catalog/에 두고 만들기 → 쓰기 → --check(다시 만들어 최신인지).
         string catalog = Path.Combine(dir.Path, "repo", "catalog");
         string output = Path.Combine(dir.Path, "repo", "docs", "catalog");
         Directory.CreateDirectory(catalog);
@@ -174,22 +186,24 @@ public class AssetPublishTests
     }
 
     [Fact]
-    public void PreviewChoice_UsesTheChosenAssetPreview_AndSubmissionUrlPrefillsTheIssueForm()
+    public void PreviewChoice_PutsTheChosenAssetFirst_AndACustomImageBecomesItsPreview()
     {
+        // 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓴다.
         using var dir = new TempDir();
-        var result = Check(Request(PersonalStore(dir)) with { PreviewAsset = 1 });
+        var request = Request(PersonalStore(dir)) with { PreviewAsset = 1 };
+        var result = Check(request);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
-        var review = JsonNode.Parse(result.Review!)!;
-        Assert.Equal(result.Manifest!.Assets[1].Preview, review["preview"]!.GetValue<string>());
-        Assert.Equal("reviewed", review["review"]!.GetValue<string>());
+        var package = Read(result.Package!);
+        Assert.Equal(request.Assets[1].Kind, package.Manifest.Assets[0].Kind);
+        Assert.Equal(request.Assets[1].Preview, package.Files[AssetPublishCheck.ListPreview(package.Manifest, null)!]);
 
-        string url = AssetPublishCheck.SubmissionUrl(result);
-        Assert.StartsWith(AppUpdate.RepoUrl + "/issues/new?template=asset-submission.yml&", url);
-        var query = new Uri(url).Query.TrimStart('?').Split('&')
-            .ToDictionary(pair => pair.Split('=')[0], pair => Uri.UnescapeDataString(pair.Split('=')[1]));
-        Assert.Equal(("pixel-cat.neon", "1.0.0", "Neon Set", "neon, effect, gradient", "CC0-1.0"),
-            (query["package-id"], query["version"], query["name"], query["tags"], query["license"]));
-        Assert.Equal("네온 외곽선 효과와 파란 그라데이션", query["summary"]);
+        byte[] custom = AssetPreview.Png(new GradientAsset("", AssetSamples.Gradient("Cover")))!;
+        var withCustom = Check(request with { CustomPreview = custom });
+        Assert.True(withCustom.Ok, string.Join("\n", withCustom.Issues));
+        var customPackage = Read(withCustom.Package!);
+        Assert.Equal(request.Assets[1].Kind, customPackage.Manifest.Assets[0].Kind);
+        Assert.Equal(custom, customPackage.Files[customPackage.Manifest.Assets[0].Preview!]);
+        Assert.Equal(["neon", "effect", "gradient"], withCustom.Tags);
     }
 
     // ───────────── 버전 ─────────────
@@ -236,7 +250,7 @@ public class AssetPublishTests
 
         // 관리자가 새 버전으로 바꾸면 CI도 통과한다.
         Directory.Delete(Path.Combine(catalog, "pixel-cat.neon"), recursive: true);
-        Unpack(bumped with { Review = RemoteCatalogBuilder.WriteReview("새 두께", ["neon"], RemoteReview.Reviewed, Today, Today.AddDays(3), null) }, catalog);
+        Unpack(bumped, catalog, "새 두께", Today.AddDays(3));
         var rebuilt = RemoteCatalogBuilder.Build(catalog, output);
         Assert.True(rebuilt.Ok, string.Join("\n", rebuilt.Issues));
         Assert.Equal("1.3.0", Assert.Single(rebuilt.Entries).Version);

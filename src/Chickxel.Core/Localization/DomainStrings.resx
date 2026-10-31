@@ -338,7 +338,22 @@
   <data name="Publish_Tags" xml:space="preserve"><value>태그는 8개까지, 각각 소문자·숫자·하이픈으로 32자 이하여야 합니다.</value></data>
   <data name="Publish_NoTags" xml:space="preserve"><value>태그가 없으면 둘러보기에서 찾기 어렵습니다.</value></data>
   <data name="Publish_UnknownLicense" xml:space="preserve"><value>{detail}은(는) 흔한 SPDX ID가 아닙니다. 철자를 확인하고, 직접 만든 라이선스는 LicenseRef-로 시작하세요.</value></data>
-  <data name="Publish_SavedVersionChanged" xml:space="preserve"><value>이 컴퓨터에서 버전 {detail}을(를) 다른 내용으로 저장한 적이 있습니다. 이미 제출했다면 버전을 올리세요.</value></data>
+  <data name="Publish_SavedVersionChanged" xml:space="preserve"><value>이 컴퓨터에서 버전 {detail}을(를) 다른 내용으로 올린 적이 있습니다. 이미 올렸다면 버전을 올리세요.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>이름 없는 효과 {number}</value><comment>예전 사용자 정의 효과 이름이 제어 문자뿐이라 비었을 때 개인 에셋으로 옮기며 붙이는 이름. number = 목록 순번(1부터).</comment></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>이름 없는 그라데이션 {number}</value><comment>예전 그라데이션 프리셋 이름이 비었을 때 붙이는 이름. number = 목록 순번(1부터).</comment></data>
+  <data name="Community_Error_Unauthorized" xml:space="preserve"><value>로그인이 필요합니다. 로그인이 끝났으면 다시 로그인하세요.</value></data>
+  <data name="Community_Error_Forbidden" xml:space="preserve"><value>이 일을 할 권한이 없습니다.</value></data>
+  <data name="Community_Error_Banned" xml:space="preserve"><value>이 계정은 이용이 제한되어 올리거나 고칠 수 없습니다.</value></data>
+  <data name="Community_Error_NotFound" xml:space="preserve"><value>찾는 항목이 없습니다.</value></data>
+  <data name="Community_Error_Invalid" xml:space="preserve"><value>서버가 입력이나 파일을 받지 않았습니다.</value></data>
+  <data name="Community_Error_Conflict" xml:space="preserve"><value>이미 있는 것과 겹칩니다(쓰고 있는 핸들이나 이미 올린 버전).</value></data>
+  <data name="Community_Error_TooLarge" xml:space="preserve"><value>파일이 너무 큽니다.</value></data>
+  <data name="Community_Error_RateLimited" xml:space="preserve"><value>짧은 시간에 너무 많이 올렸습니다. 잠시 뒤에 다시 하세요.</value></data>
+  <data name="Community_Error_RateLimitedWait" xml:space="preserve"><value>짧은 시간에 너무 많이 올렸습니다. {detail}분 뒤에 다시 하세요.</value></data>
+  <data name="Community_Error_Server" xml:space="preserve"><value>Chickxel 서버에 문제가 있습니다. 잠시 뒤에 다시 하세요.</value></data>
+  <data name="Community_Error_Network" xml:space="preserve"><value>Chickxel 서버에 연결하지 못했습니다. 인터넷 연결을 확인하세요.</value></data>
+  <data name="Community_Error_Timeout" xml:space="preserve"><value>Chickxel 서버가 제때 답하지 않았습니다.</value></data>
+  <data name="Community_Error_BadResponse" xml:space="preserve"><value>Chickxel 서버의 답을 읽지 못했습니다.</value></data>
+  <data name="Community_Error_LoginTimeout" xml:space="preserve"><value>브라우저 로그인이 시간 안에 끝나지 않았습니다. 다시 시도하세요.</value></data>
+  <data name="Community_Error_LoginFailed" xml:space="preserve"><value>브라우저에서 로그인하지 못했습니다.</value></data>
 </root>

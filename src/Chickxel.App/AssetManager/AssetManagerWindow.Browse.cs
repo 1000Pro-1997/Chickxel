@@ -279,7 +279,12 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_Size, SizeText(entry.Package.Size)),
             (UiStrings.Assets_Published, entry.Published.ToString("d", CultureInfo.CurrentCulture)),
             (UiStrings.Assets_Updated, entry.Updated.ToString("d", CultureInfo.CurrentCulture)),
-            (UiStrings.Assets_Review, entry.Review == RemoteReview.Official ? UiStrings.Assets_ReviewOfficial : UiStrings.Assets_ReviewReviewed),
+            (UiStrings.Assets_Review, entry.Review switch
+            {
+                RemoteReview.Official => UiStrings.Assets_ReviewOfficial,
+                RemoteReview.Community => UiStrings.Assets_ReviewCommunity,
+                _ => UiStrings.Assets_ReviewReviewed,
+            }),
             (UiStrings.Assets_Tags, string.Join(", ", entry.Tags))));
         if (entry.IncompatibleReason(AppVersion) is { } reason)
             _remoteDetail.Children.Add(new TextBlock { Text = F(UiStrings.Assets_Incompatible, reason), Foreground = AppTheme.WarningBrush, TextWrapping = TextWrapping.Wrap });

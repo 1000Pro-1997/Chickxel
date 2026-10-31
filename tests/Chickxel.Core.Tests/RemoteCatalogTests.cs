@@ -305,6 +305,36 @@ public class RemoteCatalogTests
     }
 
     [Fact]
+    public async Task CommunityServiceCatalog_WithCommunityReview_ParsesAndDownloadsFromTheSameSite()
+    {
+        // 커뮤니티 서비스(chickxel.com)의 /api/catalog/index.json: 패키지·미리보기 주소는 ../../files/… (같은 사이트), review는 community.
+        using var f = new Fixture();
+        byte[] package = Pack(id: "pixel-cat.neon", author: "pixel-cat");
+        string sha = AssetPackageWriter.Hash(package);
+        var page = $$"""
+            { "schemaVersion": 1, "page": 1, "pageCount": 1, "totalCount": 1, "next": null,
+              "packages": [ { "id": "pixel-cat.neon", "version": "1.0.0", "name": "Neon Pack", "summary": "네온", "tags": ["neon"],
+                "author": { "id": "pixel-cat", "name": "Author", "url": "https://chickxel.com/gallery/u/pixel-cat" }, "license": "CC0-1.0",
+                "kinds": { "effect-recipe": 1, "gradient": 1 }, "minAppVersion": "0.1.0",
+                "package": { "url": "../../files/packages/pixel-cat.neon-1.0.0.chickxel-asset", "size": {{package.Length}}, "sha256": "{{sha}}" },
+                "published": "2026-11-01", "updated": "2026-11-01", "review": "community" } ] }
+            """;
+        var index = new Uri("https://chickxel.com/api/catalog/index.json");
+        f.Handler.Serve(index.AbsoluteUri, Encoding.UTF8.GetBytes(page));
+        f.Handler.Serve("https://chickxel.com/files/packages/pixel-cat.neon-1.0.0.chickxel-asset", package);
+        var client = new RemoteAssetClient(new HttpClient(f.Handler), index, f.Cache, "Chickxel-test/1.0");
+
+        var snapshot = await client.FetchCatalogAsync();
+        Assert.Null(snapshot.Error);
+        var entry = Assert.Single(snapshot.Packages);
+        Assert.Equal((RemoteReview.Community, "https://chickxel.com/files/packages/pixel-cat.neon-1.0.0.chickxel-asset", (RemoteFile?)null),
+            (entry.Review, entry.Package.Url, entry.Preview));
+        string file = await client.DownloadPackageAsync(entry);
+        Assert.Equal(package, File.ReadAllBytes(file));
+        Assert.Equal(RemoteReview.Community, client.LoadCache()!.Packages[0].Review);
+    }
+
+    [Fact]
     public async Task Fetch_Offline_ReturnsLastCachedListWithError_OrEmptyWithoutCache()
     {
         using var f = new Fixture();

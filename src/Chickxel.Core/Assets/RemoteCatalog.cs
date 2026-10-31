@@ -9,13 +9,17 @@ namespace Chickxel.Core.Assets;
 /// <summary>원격 파일 하나: 주소(앱 안에서는 늘 HTTPS 절대 주소, index 파일에는 page 기준 상대 주소), 바이트 수, SHA-256(소문자 16진수).</summary>
 public sealed record RemoteFile(string Url, long Size, string Sha256);
 
-/// <summary>원격 카탈로그의 검토 상태. <see cref="Official"/>은 Chickxel이 만든 패키지(작성자 ID <c>chickxel</c>)만 쓴다.</summary>
+/// <summary>
+/// 원격 카탈로그의 검토 상태. <see cref="Official"/>은 Chickxel이 만든 패키지(작성자 ID <c>chickxel</c>)만 쓴다.
+/// <see cref="Reviewed"/>는 예전 정적 카탈로그(검토 뒤 실림), <see cref="Community"/>는 커뮤니티 서비스에 사용자가 바로 올린 패키지다.
+/// </summary>
 public static class RemoteReview
 {
     public const string Official = "official";
     public const string Reviewed = "reviewed";
+    public const string Community = "community";
 
-    public static bool IsKnown(string? value) => value is Official or Reviewed;
+    public static bool IsKnown(string? value) => value is Official or Reviewed or Community;
 }
 
 /// <summary>

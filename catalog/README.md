@@ -1,6 +1,8 @@
-# Chickxel 온라인 에셋 카탈로그 원본
+# Chickxel 온라인 에셋 카탈로그 원본 (예전 정적 목록)
 
-에셋 관리자의 **둘러보기** 탭이 읽는 온라인 목록의 원본입니다. 여기의 패키지를 검사해 홈페이지(GitHub Pages, `docs/`)의 `docs/catalog/`에 정적 index와 파일을 만듭니다. 앱은 `https://1000pro-1997.github.io/Chickxel/catalog/index.json`을 HTTPS로 읽습니다.
+1.14.61까지의 앱이 에셋 관리자의 **둘러보기** 탭에서 읽는 정적 목록의 원본입니다. 여기의 패키지를 검사해 홈페이지(`docs/`)의 `docs/catalog/`에 정적 index와 파일을 만들고, 그 버전들은 `https://1000pro-1997.github.io/Chickxel/catalog/index.json`을 HTTPS로 읽습니다.
+
+그다음 버전의 앱은 Chickxel 커뮤니티 서비스(`https://chickxel.com/api/catalog/index.json`, 같은 모양의 목록)를 읽고, 사용자는 앱의 **온라인에 올리기…** 로 Chickxel 계정을 써서 패키지를 바로 올립니다(검토 없이 게시, `review`는 `community`, 공식 패키지는 `official`). 이 폴더는 예전 버전을 위해 남겨 둡니다.
 
 ## 구조
 
@@ -45,19 +47,16 @@ catalog/
 - 다른 제출과 이름이나 패키지 파일이 겹치면 안 됩니다.
 - 이미 게시한 버전의 내용은 바꿀 수 없고 버전을 내릴 수 없습니다. 고친 패키지는 버전을 올려 파일을 바꿉니다(목록에는 최신 버전 하나만 남습니다).
 
-이 규칙은 Core의 `AssetPublishCheck`에 한 벌만 있고, `tools/CatalogBuilder`(CI)와 앱의 **온라인에 올리기** 창이 같이 씁니다. 앱은 게시 버전·이름 겹침을 마지막으로 받은 온라인 목록과 비교하므로, 그 뒤에 게시된 패키지와 겹치는 경우만 CI에서 새로 걸릴 수 있습니다.
+이 규칙은 Core의 `AssetPublishCheck`에 한 벌만 있고, `tools/CatalogBuilder`(CI)와 앱의 **온라인에 올리기** 창이 같이 씁니다(앱은 올리기 전에 검사하고, 작성자 ID·패키지 ID 첫 조각 = 계정 핸들 같은 소유 규칙은 서버가 다시 봅니다).
 
-## 제출하기 (기여자)
+## 제출하기 (예전 버전의 기여자)
 
-1. Chickxel의 **에셋 관리자**에서 개인 에셋을 고르고 **온라인에 올리기…** 를 누릅니다.
-2. 작성자 ID·표시 이름(다음에도 기억), 패키지 ID(`작성자 ID.이름`)·버전·이름·짧은 설명·태그, 라이선스(흔한 SPDX ID나 `LicenseRef-…` + 라이선스 글), 목록 미리보기, 포함할 에셋을 정합니다. 같은 ID를 전에 게시했으면 다음 버전을 제안합니다.
-3. **제출 전 검사**에 오류가 없으면 **저장하고 제출 페이지 열기…** 로 `<ID>-<버전>.chickxel-asset`과 같은 폴더의 `<ID>-<버전>-submission.zip`(이 폴더 구조 그대로 `<ID>/` 아래 패키지와 `review.json`)을 저장합니다. 브라우저에 [에셋 제출 양식](https://github.com/1000Pro-1997/Chickxel/issues/new?template=asset-submission.yml)이 패키지 정보로 채워져 열립니다.
-4. 양식의 첨부 칸에 submission zip을 끌어다 놓고 제출합니다(GitHub는 `.chickxel-asset` 첨부를 받지 않습니다). 앱은 아무것도 올리지 않습니다.
+1.14.61까지의 앱은 **온라인에 올리기…** 에서 `<ID>-<버전>.chickxel-asset`과 `<ID>-<버전>-submission.zip`(이 폴더 구조 그대로 `<ID>/` 아래 패키지와 `review.json`)을 저장하고 [에셋 제출 양식](https://github.com/1000Pro-1997/Chickxel/issues/new?template=asset-submission.yml)을 엽니다. 기여자는 양식의 첨부 칸에 submission zip을 끌어다 놓고 제출합니다. 새 버전의 앱은 이 양식을 쓰지 않고 chickxel.com에 바로 올립니다.
 
 ## 제출 처리 (관리자)
 
-1. 이슈의 zip을 받아 저장소의 `catalog/`에 풉니다(`catalog/<ID>/<ID>-<버전>.chickxel-asset`, `catalog/<ID>/review.json`). 새 버전이면 그 폴더의 예전 패키지 파일을 지우고, `review.json`의 `published`는 처음 게시한 날짜로 둡니다(앱은 받은 목록에 있으면 그 날짜를 씁니다).
-2. 에셋과 미리보기를 직접 보고 검토합니다. `review`는 `reviewed`(앱이 쓰는 값) 그대로 둡니다.
+1. 이슈의 zip을 받아 저장소의 `catalog/`에 풉니다(`catalog/<ID>/<ID>-<버전>.chickxel-asset`, `catalog/<ID>/review.json`). 새 버전이면 그 폴더의 예전 패키지 파일을 지우고, `review.json`의 `published`는 처음 게시한 날짜로 둡니다(예전 앱은 받은 목록에 있으면 그 날짜를 씁니다).
+2. 에셋과 미리보기를 직접 보고 검토합니다. `review`는 `reviewed`(예전 앱이 쓰는 값) 그대로 둡니다.
 3. `dotnet run --project tools/CatalogBuilder`로 `docs/catalog/`를 다시 만들고 `catalog/`와 함께 커밋합니다. 규칙에 걸리면 까닭이 한 줄씩 나옵니다 — 이슈에 그대로 답하면 됩니다.
 4. 양식이 붙이는 `asset-submission` 라벨은 저장소에 만들어 두어야 붙습니다.
 
