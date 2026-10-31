@@ -8,12 +8,12 @@ head.6.content,https://1000pro-1997.github.io/Chickxel/assets/screenshot.png,htt
 head.7.script,  if (want !== 'ko') location.replace('en/' + '' + location.hash);,  if (want !== 'en') location.replace('../' + '' + location.hash);
 head.8,"
 <a href=""index.html"" aria-current=""page"">홈</a>
-<a class=""hide-sm"" href=""index.html#core"">대표 기능</a>
+<a href=""/gallery"">갤러리</a>
 <a href=""guide.html"">사용 가이드</a>
 <a class=""hide-sm"" href=""index.html#download"">다운로드</a>
 <a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","
 <a href=""index.html"" aria-current=""page"">Home</a>
-<a class=""hide-sm"" href=""index.html#core"">Key features</a>
+<a href=""/gallery"">Gallery</a>
 <a href=""guide.html"">Guide</a>
 <a class=""hide-sm"" href=""index.html#download"">Download</a>
 <a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
