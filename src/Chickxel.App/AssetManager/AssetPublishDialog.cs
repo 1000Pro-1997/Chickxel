@@ -1,16 +1,17 @@
 using System.Globalization;
 using Chickxel.App.Localization;
 using Chickxel.Core.Assets;
+using Chickxel.Core.Community;
 using Chickxel.Core.IO;
 
 namespace Chickxel.App;
 
 /// <summary>
-/// 에셋 게시 창(계획 8.4 "온라인 제출용 검사", 9.3, 14장 5단계): 개인 에셋을 공개 패키지로 묶는다.
-/// 왼쪽은 작성자 정보(설정에 기억), 패키지 ID·버전(전에 게시한 버전에서 다음 버전 제안)·이름·짧은 설명·태그, 라이선스(흔한 SPDX ID나 직접 입력한 ID + 글),
-/// 오른쪽은 포함할 에셋, 목록 미리보기(에셋 미리보기 중 고르거나 PNG로 바꿈), 제출 전 검사 결과.
-/// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>(CI와 같은 규칙)로 다시 검사하고, 오류가 없을 때만 패키지와 제출 zip을 저장한 뒤
-/// GitHub 제출 양식(패키지 ID·버전 등을 미리 채움)을 브라우저로 연다. 앱은 아무것도 올리지 않는다.
+/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 개인 에셋을 공개 패키지로 묶어 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
+/// 왼쪽은 작성자 정보(작성자 ID = 계정 핸들, 표시 이름·주소는 설정에 기억), 패키지 ID(핸들.이름)·버전(전에 올린 버전에서 다음 버전 제안)·이름·짧은 설명·태그,
+/// 라이선스(흔한 SPDX ID나 직접 입력한 ID + 글), 오른쪽은 포함할 에셋, 목록 미리보기(에셋 미리보기 중 고르거나 PNG로 바꿈), 올리기 전 검사 결과.
+/// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
+/// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
 public sealed class AssetPublishDialog : DialogBase
 {
@@ -29,27 +30,35 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly StackPanel _checks = new() { Spacing = 4 };
     private readonly PngView _preview = new() { Height = 150 };
     private readonly DispatcherTimer _recheck = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, Height = 4, MinHeight = 4, Width = 220, Foreground = AppTheme.AccentBrush };
+    private readonly TextBlock _progressText = Note("");
+    private readonly StackPanel _progressRow;
+    private readonly Control _columns;
     /// <summary>미리보기 목록 항목 순서의 에셋(= 포함한 에셋).</summary>
     private List<AssetEntry> _previewEntries = [];
     private byte[]? _customPreview;
     private bool _idEdited, _versionEdited, _filling = true;
     private string _suggested = "1.0.0";
     private PublishResult? _result;
+    private CancellationTokenSource? _upload;
 
     /// <summary>
-    /// 게시 창을 연다. <paramref name="preselected"/>는 처음 체크할 개인 에셋 ID(전에 같은 에셋으로 저장한 기록이 있으면 그 패키지 정보와 에셋을 다시 채움).
+    /// 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창. <paramref name="preselected"/>는 처음 체크할 개인 에셋 ID
+    /// (전에 같은 에셋으로 올린 기록이 있으면 그 패키지 정보와 에셋을 다시 채움).
     /// </summary>
-    public static void Run(Window owner, IEnumerable<string> preselected)
+    public static async Task RunAsync(Window owner, IEnumerable<string> preselected)
     {
         if (AppAssets.Catalog.Personal.Count == 0)
         {
             Ui.Info(owner, UiStrings.Publish_NoPersonal, UiStrings.Publish_Title);
             return;
         }
-        new AssetPublishDialog(preselected.ToHashSet(StringComparer.Ordinal)).ShowDialog(owner);
+        var ids = preselected.ToHashSet(StringComparer.Ordinal);
+        if (await AppCommunity.RequireUserAsync(owner, UiStrings.Publish_LoginReason) is not { } user) return;
+        new AssetPublishDialog(ids, user).ShowDialog(owner);
     }
 
-    private AssetPublishDialog(HashSet<string> preselected) : base(UiStrings.Publish_Title, UiStrings.Publish_Save)
+    private AssetPublishDialog(HashSet<string> preselected, CommunityUser user) : base(UiStrings.Publish_Title, UiStrings.Publish_Upload)
     {
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
@@ -70,12 +79,14 @@ public sealed class AssetPublishDialog : DialogBase
         if (record is not null) check.UnionWith(record.Assets);
 
         // ── 왼쪽: 작성자·패키지·라이선스 ──
-        _authorId = Field(_settings.AuthorId, "pixel-cat");
-        _authorName = Field(_settings.AuthorName);
+        // 작성자 ID = 계정 핸들(서버가 패키지 ID 첫 조각·작성자 ID를 핸들과 맞춰 봄). 핸들은 계정 창에서 바꾼다.
+        _authorId = Field(user.Handle);
+        _authorId.IsReadOnly = true;
+        _authorName = Field(AssetManifest.IsValidName(_settings.AuthorName) ? _settings.AuthorName : user.Name);
         _authorUrl = Field(_settings.AuthorUrl, "https://");
         var single = personal.Where(e => check.Contains(e.Id)).ToList() is [var only] ? only : null;
         _name = Field(record?.Name ?? single?.Name ?? UiStrings.Assets_DefaultPackageName);
-        _id = Field(record?.Id ?? "");
+        _id = Field(record?.Id is { } recordId && recordId.StartsWith(user.Handle + ".", StringComparison.Ordinal) ? recordId : "");
         _version = Field("1.0.0");
         _version.Width = 110;
         _summary = new TextBox
@@ -105,7 +116,7 @@ public sealed class AssetPublishDialog : DialogBase
                 _licenseText.Text = saved.LicenseText ?? "";
             }
         }
-        if (record is null) _id.Text = DerivedId();
+        if (string.IsNullOrEmpty(_id.Text)) _id.Text = DerivedId();
         _idEdited = _id.Text != DerivedId();
 
         var left = new StackPanel
@@ -184,8 +195,14 @@ public sealed class AssetPublishDialog : DialogBase
         Grid.SetColumn(rightScroll, 1);
         columns.Children.Add(leftScroll);
         columns.Children.Add(rightScroll);
+        _columns = columns;
+        var cancelUpload = Ui.Button(VectorIcon.X, UiStrings.Publish_CancelUpload, (_, _) => _upload?.Cancel());
+        _progress.VerticalAlignment = _progressText.VerticalAlignment = VerticalAlignment.Center;
+        _progressRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 8, 0, 0), IsVisible = false, Children = { _progress, _progressText, cancelUpload } };
+        DockPanel.SetDock(_progressRow, Dock.Bottom);
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);
+        root.Children.Add(_progressRow);
         root.Children.Add(columns);
 
         foreach (var box in new[] { _authorId, _authorName, _authorUrl, _name, _summary, _tags, _licenseId, _licenseText })
@@ -217,12 +234,19 @@ public sealed class AssetPublishDialog : DialogBase
         };
         OkButton.Click += (_, _) =>
         {
-            DialogResult = DialogResult.None; // 저장 위치를 고르고 저장한 뒤에 닫는다
+            DialogResult = DialogResult.None; // 올린 뒤에 닫는다
             Dispatcher.UIThread.Post(Submit);
+        };
+        CancelButtonControl.Click += (_, _) =>
+        {
+            if (_upload is null) return;
+            _upload.Cancel();
+            DialogResult = DialogResult.None; // 올리기만 멈추고 창은 둔다
         };
         Closed += (_, _) =>
         {
             _recheck.Stop();
+            _upload?.Cancel();
             RememberAuthor();
             App.Settings.Save();
         };
@@ -381,14 +405,14 @@ public sealed class AssetPublishDialog : DialogBase
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Ui.Error(this, F(UiStrings.Publish_SaveError, ex.Message), UiStrings.Publish_Title);
+            Ui.Error(this, F(UiStrings.Publish_PreviewError, ex.Message), UiStrings.Publish_Title);
             return;
         }
         ShowPreview();
         Changed();
     }
 
-    // ───────────── 검사와 저장 ─────────────
+    // ───────────── 검사와 올리기 ─────────────
 
     private PublishRequest BuildRequest()
     {
@@ -416,7 +440,7 @@ public sealed class AssetPublishDialog : DialogBase
 
     private void RunCheck()
     {
-        _result = AssetPublishCheck.Check(BuildRequest(), _catalog, SavedVersions, DateOnly.FromDateTime(DateTime.Now));
+        _result = AssetPublishCheck.Check(BuildRequest(), _catalog, SavedVersions);
         _checks.Children.Clear();
         foreach (var issue in _result.Issues.OrderBy(issue => issue.IsError ? 0 : 1))
             _checks.Children.Add(CheckRow(issue.IsError ? VectorIcon.X : VectorIcon.ExclamationMark,
@@ -425,7 +449,7 @@ public sealed class AssetPublishDialog : DialogBase
         _checksSummary.IsVisible = _result.Issues.Count > 0;
         _checksSummary.Text = _result.ErrorCount > 0 ? F(UiStrings.Publish_ChecksErrors, _result.ErrorCount, _result.WarningCount)
             : F(UiStrings.Publish_ChecksWarnings, _result.WarningCount);
-        OkButton.IsEnabled = _result.Ok;
+        OkButton.IsEnabled = _result.Ok && _upload is null;
     }
 
     private static DockPanel CheckRow(VectorIcon icon, IBrush brush, string text)
@@ -438,41 +462,73 @@ public sealed class AssetPublishDialog : DialogBase
         };
     }
 
-    /// <summary>저장 위치를 고르고 패키지·제출 zip을 저장한 뒤 파일 위치와 제출 양식을 연다.</summary>
-    private void Submit()
+    /// <summary>
+    /// 다시 검사하고 오류가 없으면 패키지를 올린다(진행 막대·취소). 올리면 기록을 남기고 패키지 쪽을 연 뒤 닫는다.
+    /// 서버가 거절한 까닭은 검사 목록 끝에, 세션이 끝났으면 계정 창을 연다.
+    /// </summary>
+    private async void Submit()
     {
+        if (_upload is not null) return;
         _recheck.Stop();
         RunCheck(); // 입력 중이던 값까지 다시 검사
         if (_result is not { Ok: true } result) return;
-        if (Ui.SaveFile(this, UiStrings.Publish_SaveTitle, null, result.PackageFileName, AssetPackage.Extension,
-                new FileFilter(UiStrings.Assets_FileType, "*" + AssetPackage.Extension)) is not { } path) return;
-        if (Save(result, path) is not { } zip) return;
-        Platform.RevealInFileManager(zip);
-        Updater.OpenUrl(this, AssetPublishCheck.SubmissionUrl(result));
-        Ui.Info(this, F(UiStrings.Publish_Saved, path, zip), UiStrings.Publish_Title);
-        DialogResult = DialogResult.OK;
-    }
-
-    /// <summary>
-    /// 패키지를 <paramref name="path"/>에, 같은 폴더에 제출 zip(<c>&lt;ID&gt;-&lt;버전&gt;-submission.zip</c>)을 쓰고 저장 기록을 남긴다.
-    /// 실패하면 알리고 null.
-    /// </summary>
-    private string? Save(PublishResult result, string path)
-    {
         var manifest = result.Manifest!;
-        string zip = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!, $"{manifest.Id}-{manifest.Version}-submission.zip");
+        using var cancel = new CancellationTokenSource();
+        _upload = cancel;
+        SetUploading(true);
         try
         {
-            File.WriteAllBytes(path, result.Package!);
-            using var buffer = new MemoryStream();
-            AssetPublishCheck.WriteSubmission(result, buffer);
-            File.WriteAllBytes(zip, buffer.ToArray());
+            var package = await AppCommunity.Client.UploadPackageAsync(result.Package!, result.PackageFileName!, manifest.Description ?? manifest.Name,
+                result.Tags, new Progress<double>(ReportProgress), cancel.Token);
+            Remember(result);
+            AppCommunity.Open(this, AppCommunity.Client.PackagePageUrl(package.Id));
+            Ui.Info(this, F(UiStrings.Publish_Uploaded, package.Name.Length > 0 ? package.Name : manifest.Name, package.Version), UiStrings.Publish_Title);
+            _upload = null;
+            DialogResult = DialogResult.OK;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (OperationCanceledException)
         {
-            Ui.Error(this, F(UiStrings.Publish_SaveError, ex.Message), UiStrings.Publish_Title);
-            return null;
         }
+        catch (CommunityException ex)
+        {
+            ShowServerIssues(ex);
+            Ui.Error(this, ex.DisplayText, UiStrings.Publish_Title);
+            if (ex.Code == CommunityErrorCode.Unauthorized && AccountDialog.Show(this, UiStrings.Publish_LoginReason)
+                                                           && AppCommunity.Client.User is { } user)
+                _authorId.Text = user.Handle;
+        }
+        finally
+        {
+            _upload = null;
+            SetUploading(false);
+        }
+    }
+
+    /// <summary>서버가 거절한 까닭을 검사 목록 끝에 오류 줄로 더한다(다음 검사에서 지워짐).</summary>
+    private void ShowServerIssues(CommunityException ex)
+    {
+        _checks.Children.Add(CheckRow(VectorIcon.X, AppTheme.UnsavedBrush, F(UiStrings.Publish_ServerRejected, ex.Message)));
+        foreach (var issue in ex.Issues) _checks.Children.Add(CheckRow(VectorIcon.X, AppTheme.UnsavedBrush, issue));
+    }
+
+    private void ReportProgress(double fraction)
+    {
+        _progress.Value = fraction;
+        _progressText.Text = F(UiStrings.Publish_Uploading, (int)Math.Round(fraction * 100));
+    }
+
+    private void SetUploading(bool on)
+    {
+        _columns.IsEnabled = !on;
+        _progressRow.IsVisible = on;
+        if (on) ReportProgress(0);
+        OkButton.IsEnabled = !on && _result is { Ok: true };
+    }
+
+    /// <summary>올린 기록을 남긴다(같은 에셋으로 다시 열 때 채우기, 다음 버전 제안, 같은 버전 내용 변경 경고).</summary>
+    private void Remember(PublishResult result)
+    {
+        var manifest = result.Manifest!;
         RememberAuthor();
         _settings.Saved.RemoveAll(r => r.Id == manifest.Id && r.Version == manifest.Version);
         _settings.Saved.Insert(0, new AssetPublishRecord
@@ -490,12 +546,10 @@ public sealed class AssetPublishDialog : DialogBase
         });
         if (_settings.Saved.Count > AssetPublishSettings.MaxSaved) _settings.Saved.RemoveRange(AssetPublishSettings.MaxSaved, _settings.Saved.Count - AssetPublishSettings.MaxSaved);
         App.Settings.Save();
-        return zip;
     }
 
     private void RememberAuthor()
     {
-        _settings.AuthorId = _authorId.Text?.Trim() ?? "";
         _settings.AuthorName = _authorName.Text?.Trim() ?? "";
         _settings.AuthorUrl = _authorUrl.Text?.Trim() ?? "";
     }

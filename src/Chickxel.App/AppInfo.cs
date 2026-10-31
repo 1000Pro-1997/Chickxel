@@ -24,8 +24,8 @@ public static class AppInfo
     public const string DiscordUrl = "https://discord.gg/Avw7aUVxqr";
     /// <summary>Chickxel 개발 후원 페이지.</summary>
     public const string SupportUrl = "https://buymeacoffee.com/chickxel";
-    /// <summary>홈페이지(한국어 쪽; 영어 쪽은 뒤에 "en/").</summary>
-    public const string WebsiteUrl = "https://1000pro-1997.github.io/Chickxel/";
+    /// <summary>홈페이지(한국어 쪽; 영어 쪽은 뒤에 "en/"). 같은 사이트가 커뮤니티 서비스(갤러리·에셋·로그인)와 온라인 에셋 목록도 낸다.</summary>
+    public const string WebsiteUrl = "https://chickxel.com/";
 
     /// <summary>지금 UI 언어의 홈페이지 주소(한국어가 아니면 영어 쪽).</summary>
     public static string LocalizedWebsiteUrl => UiLanguage.Current == UiLanguage.Korean ? WebsiteUrl : WebsiteUrl + "en/";

@@ -109,17 +109,6 @@ public sealed class AssetPackageBuilder(AssetManifest header)
 
     public string Add(GradientPreset gradient, byte[]? previewPng = null) => Add(AssetKinds.Gradient, new GradientAsset("", gradient), previewPng);
 
-    /// <summary>
-    /// 에셋에 매이지 않은 미리보기 PNG(게시할 때 고른 목록 미리보기)를 <c>previews/</c>에 넣고 패키지 안 경로를 돌려준다.
-    /// 이름 조각은 에셋 ID 조각과 겹치지 않게 고른다.
-    /// </summary>
-    public string AddPreview(string name, byte[] png)
-    {
-        string path = AssetPackageValidator.PreviewFolder + UniqueSegment(Slug(name, "preview")) + ".png";
-        _files[path] = png;
-        return path;
-    }
-
     /// <summary>뿌리 문서(<c>LICENSE.txt</c>, <c>README.md</c>).</summary>
     public void AddDocument(string name, string text) => _files[name] = Encoding.UTF8.GetBytes(text);
 

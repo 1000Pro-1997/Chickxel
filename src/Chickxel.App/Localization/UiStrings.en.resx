@@ -3546,24 +3546,24 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_DefaultPackageName" xml:space="preserve"><value>My Assets</value></data>
   <data name="Assets_PersonalExportEmpty" xml:space="preserve"><value>There are no personal assets to export.</value></data>
   <data name="Assets_Publish" xml:space="preserve"><value>Publish Online…</value></data>
-  <data name="Assets_PublishTip" xml:space="preserve"><value>Bundles the selected personal asset (or, with none selected, the personal assets shown in the list) into a public package, checks it, saves it and opens the online catalog submission form.</value></data>
-  <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Starts a public package with this asset and submits it to the online catalog. You can add other personal assets in the publish window.</value></data>
+  <data name="Assets_PublishTip" xml:space="preserve"><value>Bundles the selected personal asset (or, with none selected, the personal assets shown in the list) into a public package, checks it and uploads it with your Chickxel account.</value></data>
+  <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Starts a public package with this asset and uploads it with your Chickxel account. You can add other personal assets in the publish window.</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>Publish Online</value></data>
-  <data name="Publish_Intro" xml:space="preserve"><value>Enter the author and license; once the checks pass, the package and a submission zip are saved and the GitHub submission form opens. Chickxel uploads nothing itself; submitted packages appear in Browse after review.</value></data>
+  <data name="Publish_Intro" xml:space="preserve"><value>Enter the license and package details; once the checks pass, the package is uploaded with your Chickxel account. Uploaded packages appear right away in Browse and on the assets page of chickxel.com.</value></data>
   <data name="Publish_NoPersonal" xml:space="preserve"><value>There are no personal assets to publish. Save some from the effects window or the gradient preset window first.</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>Author</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>Author ID</value></data>
-  <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Lowercase letters, digits and hyphens (e.g. pixel-cat). It becomes the first part of the package ID and can't change after publishing. chickxel is reserved for official packages.</value></data>
+  <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Your Chickxel account handle is the author ID. It becomes the first part of the package ID; you can change the handle in Help > Chickxel Account (not after you have uploaded a package).</value></data>
   <data name="Publish_AuthorName" xml:space="preserve"><value>Display name</value></data>
   <data name="Publish_AuthorUrl" xml:space="preserve"><value>Website (optional)</value></data>
-  <data name="Publish_AuthorNote" xml:space="preserve"><value>The author information is remembered on this computer for your next publish and for personal exports.</value></data>
+  <data name="Publish_AuthorNote" xml:space="preserve"><value>The display name and website are remembered on this computer for your next publish and for personal exports.</value></data>
   <data name="Publish_Package" xml:space="preserve"><value>Package</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Publish_Id" xml:space="preserve"><value>Package ID</value></data>
-  <data name="Publish_IdTip" xml:space="preserve"><value>"author-id.name" (lowercase letters, digits and hyphens). It can't change after publishing; a fixed package keeps the ID with a higher version.</value></data>
+  <data name="Publish_IdTip" xml:space="preserve"><value>"handle.name" (lowercase letters, digits and hyphens). It can't change after uploading; a fixed package keeps the ID with a higher version.</value></data>
   <data name="Publish_Version" xml:space="preserve"><value>Version</value></data>
-  <data name="Publish_VersionFirst" xml:space="preserve"><value>This ID has not been published yet.</value></data>
-  <data name="Publish_VersionPrevious" xml:space="preserve"><value>Last version of this ID: {0} (online list or saved on this computer). Suggested next version: {1}.</value></data>
+  <data name="Publish_VersionFirst" xml:space="preserve"><value>This ID has not been uploaded yet.</value></data>
+  <data name="Publish_VersionPrevious" xml:space="preserve"><value>Last version of this ID: {0} (online list or uploaded from this computer). Suggested next version: {1}.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>Use suggested version</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Short description</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in Browse (up to 200 characters)</value></data>
@@ -3591,18 +3591,17 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_PreviewReplace" xml:space="preserve"><value>Replace with Image File…</value></data>
   <data name="Publish_PreviewAuto" xml:space="preserve"><value>Use Asset Preview</value></data>
   <data name="Publish_PreviewCustom" xml:space="preserve"><value>Chosen image: {0}</value></data>
-  <data name="Publish_Checks" xml:space="preserve"><value>Pre-submission check</value></data>
-  <data name="Publish_ChecksOk" xml:space="preserve"><value>All checks passed. These are the same rules the online catalog CI uses.</value></data>
-  <data name="Publish_ChecksErrors" xml:space="preserve"><value>Errors: {0} · warnings: {1} — fix the errors to save.</value></data>
-  <data name="Publish_ChecksWarnings" xml:space="preserve"><value>Warnings: {0} — review them; you can still save.</value></data>
-  <data name="Publish_Save" xml:space="preserve"><value>Save and Open Submission Page…</value></data>
-  <data name="Publish_SaveTitle" xml:space="preserve"><value>Save Package for Publishing</value></data>
-  <data name="Publish_Saved" xml:space="preserve"><value>Saved.
-{0}
-{1}
-
-Drag the zip file into the submission form opened in your browser and submit it. It appears in Browse after review.</value></data>
-  <data name="Publish_SaveError" xml:space="preserve"><value>Could not save: {0}</value></data>
+  <data name="Publish_Checks" xml:space="preserve"><value>Pre-upload check</value></data>
+  <data name="Publish_ChecksOk" xml:space="preserve"><value>All checks passed.</value></data>
+  <data name="Publish_ChecksErrors" xml:space="preserve"><value>Errors: {0} · warnings: {1} — fix the errors to upload.</value></data>
+  <data name="Publish_ChecksWarnings" xml:space="preserve"><value>Warnings: {0} — review them; you can still upload.</value></data>
+  <data name="Publish_Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Publish_LoginReason" xml:space="preserve"><value>Sign in with your Chickxel account to upload assets. Your account handle becomes the package author ID.</value></data>
+  <data name="Publish_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
+  <data name="Publish_Uploading" xml:space="preserve"><value>Uploading… {0}%</value></data>
+  <data name="Publish_Uploaded" xml:space="preserve"><value>Uploaded {0} {1}. The package page is open in your browser.</value></data>
+  <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
+  <data name="Publish_PreviewError" xml:space="preserve"><value>Could not read the image file: {0}</value></data>
   <data name="Assets_PersonalHeader" xml:space="preserve"><value>Personal assets</value></data>
   <data name="Assets_PackagesHeader" xml:space="preserve"><value>Installed packages</value></data>
   <data name="Assets_DeletedHeader" xml:space="preserve"><value>Recently deleted packages</value></data>
@@ -3674,6 +3673,7 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="Assets_Review" xml:space="preserve"><value>Review</value></data>
   <data name="Assets_ReviewOfficial" xml:space="preserve"><value>Official Chickxel</value></data>
   <data name="Assets_ReviewReviewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="Assets_ReviewCommunity" xml:space="preserve"><value>Community</value></data>
   <data name="Assets_Tags" xml:space="preserve"><value>Tags</value></data>
   <data name="Assets_Incompatible" xml:space="preserve"><value>Can't install: {0}</value></data>
   <data name="Assets_Install" xml:space="preserve"><value>Install</value></data>
@@ -3811,4 +3811,58 @@ Drag the zip file into the submission form opened in your browser and submit it.
   <data name="AiNotify_Done" xml:space="preserve"><value>Chickxel AI finished</value></data>
   <data name="AiNotify_Error" xml:space="preserve"><value>Chickxel AI encountered an error</value></data>
   <data name="AiNotify_DoneBody" xml:space="preserve"><value>Open the chat to see the result.</value></data>
+  <data name="Account_Title" xml:space="preserve"><value>Chickxel Account</value></data>
+  <data name="Account_Menu" xml:space="preserve"><value>Chickxel Account…</value></data>
+  <data name="Account_Intro" xml:space="preserve"><value>With a Chickxel account you can upload pictures to the gallery and share effect and gradient assets. The account is created the first time you sign in.</value></data>
+  <data name="Account_SignInWith" xml:space="preserve"><value>Sign in with {0}</value></data>
+  <data name="Account_BrowserNote" xml:space="preserve"><value>The sign-in page opens in your browser. When you are done, return to Chickxel.</value></data>
+  <data name="Account_Waiting" xml:space="preserve"><value>Finish signing in in your browser. This window updates when you are done.</value></data>
+  <data name="Account_ReopenBrowser" xml:space="preserve"><value>Open Browser Again</value></data>
+  <data name="Account_CancelSignIn" xml:space="preserve"><value>Cancel Sign-in</value></data>
+  <data name="Account_Loading" xml:space="preserve"><value>Loading account…</value></data>
+  <data name="Account_Profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="Account_Name" xml:space="preserve"><value>Display name</value></data>
+  <data name="Account_Handle" xml:space="preserve"><value>Handle</value></data>
+  <data name="Account_HandleTip" xml:space="preserve"><value>3–32 lowercase letters, digits and hyphens (e.g. pixel-cat). Used in your gallery address and as the author ID of your asset packages. It can't change after you upload an asset package.</value></data>
+  <data name="Account_SaveProfile" xml:space="preserve"><value>Save Profile</value></data>
+  <data name="Account_OpenPage" xml:space="preserve"><value>Open My Gallery Page</value></data>
+  <data name="Account_SignOut" xml:space="preserve"><value>Sign Out</value></data>
+  <data name="Account_ListenError" xml:space="preserve"><value>Could not get ready to receive the sign-in: {0}</value></data>
+  <data name="Account_NameInvalid" xml:space="preserve"><value>Enter a display name of 1–100 characters.</value></data>
+  <data name="Account_HandleInvalid" xml:space="preserve"><value>A handle has 3–32 lowercase letters, digits and inner hyphens.</value></data>
+  <data name="Account_Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Account_Saved" xml:space="preserve"><value>Profile saved.</value></data>
+  <data name="Account_SignedOut" xml:space="preserve"><value>Signed out.</value></data>
+  <data name="Gallery_Title" xml:space="preserve"><value>Upload to Gallery</value></data>
+  <data name="Gallery_Menu" xml:space="preserve"><value>Upload to Gallery…</value></data>
+  <data name="Gallery_Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Gallery_What" xml:space="preserve"><value>Picture</value></data>
+  <data name="Gallery_KindPng" xml:space="preserve"><value>Current frame (PNG)</value></data>
+  <data name="Gallery_KindGif" xml:space="preserve"><value>Whole animation (GIF, {0} frames)</value></data>
+  <data name="Gallery_Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="Gallery_InfoPng" xml:space="preserve"><value>{0}×{1} · frame {2}</value></data>
+  <data name="Gallery_InfoGif" xml:space="preserve"><value>{0}×{1} · {2} frames · loops forever</value></data>
+  <data name="Gallery_TooBig" xml:space="preserve"><value>Pictures wider or taller than {0}px can't be uploaded.</value></data>
+  <data name="Gallery_Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Gallery_TitleLabel" xml:space="preserve"><value>Title</value></data>
+  <data name="Gallery_TitleHint" xml:space="preserve"><value>Up to 100 characters</value></data>
+  <data name="Gallery_DescriptionLabel" xml:space="preserve"><value>Description (optional)</value></data>
+  <data name="Gallery_DescriptionHint" xml:space="preserve"><value>Up to 2000 characters</value></data>
+  <data name="Gallery_TagsLabel" xml:space="preserve"><value>Tags (optional)</value></data>
+  <data name="Gallery_TagsHint" xml:space="preserve"><value>Comma-separated (e.g. character, idle) — up to 8</value></data>
+  <data name="Gallery_PublicNote" xml:space="preserve"><value>Uploaded pictures are public on the chickxel.com gallery right away. Don't upload other people's work or pictures you have no rights to.</value></data>
+  <data name="Gallery_SignedInAs" xml:space="preserve"><value>Uploading as {0} (@{1}).</value></data>
+  <data name="Gallery_SignedInUnknown" xml:space="preserve"><value>Signed in. The account is checked when you upload.</value></data>
+  <data name="Gallery_SignInLater" xml:space="preserve"><value>Not signed in. You'll sign in when you upload.</value></data>
+  <data name="Gallery_LoginReason" xml:space="preserve"><value>Sign in with your Chickxel account to upload to the gallery.</value></data>
+  <data name="Gallery_TitleInvalid" xml:space="preserve"><value>Enter a title of 1–{0} characters.</value></data>
+  <data name="Gallery_DescriptionInvalid" xml:space="preserve"><value>The description can have up to {0} characters.</value></data>
+  <data name="Gallery_TagsInvalid" xml:space="preserve"><value>Up to 8 tags, each up to 32 lowercase letters, digits and hyphens.</value></data>
+  <data name="Gallery_FileTooLarge" xml:space="preserve"><value>The file is {0:0.##} MB, over the {1} MB limit. Lower the scale or upload only the current frame.</value></data>
+  <data name="Gallery_TooManyFrames" xml:space="preserve"><value>A GIF can have up to {0} frames.</value></data>
+  <data name="Gallery_Encoding" xml:space="preserve"><value>Making the picture</value></data>
+  <data name="Gallery_Uploading" xml:space="preserve"><value>Uploading… {0}%</value></data>
+  <data name="Gallery_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
+  <data name="Gallery_Cancelled" xml:space="preserve"><value>Upload cancelled.</value></data>
+  <data name="Gallery_Done" xml:space="preserve"><value>Uploaded "{0}" to the gallery. Its page is open in your browser.</value></data>
 </root>

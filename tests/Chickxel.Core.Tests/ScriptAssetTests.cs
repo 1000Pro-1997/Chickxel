@@ -215,17 +215,17 @@ public class ScriptAssetTests
             LicenseText = AssetPublishCheck.LicenseNotice("CC0-1.0", "Shine Set", "Pixel Cat", 2026),
             Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Png(entry.Data))).ToArray(),
             MinAppVersion = "1.14.55",
-        }, [], [], new DateOnly(2026, 10, 28));
+        }, [], []);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
 
         string catalog = Path.Combine(dir.Path, "repo", "catalog"), output = Path.Combine(dir.Path, "repo", "docs", "catalog");
         Directory.CreateDirectory(catalog);
-        using (var zip = new MemoryStream())
-        {
-            AssetPublishCheck.WriteSubmission(result, zip);
-            zip.Position = 0;
-            System.IO.Compression.ZipFile.ExtractToDirectory(zip, catalog);
-        }
+        // 예전 정적 카탈로그 원본 자리(<ID>/패키지 + review.json)에 두고 만든다.
+        string folder = Path.Combine(catalog, result.Manifest!.Id);
+        Directory.CreateDirectory(folder);
+        File.WriteAllBytes(Path.Combine(folder, result.PackageFileName!), result.Package!);
+        File.WriteAllBytes(Path.Combine(folder, RemoteCatalogBuilder.ReviewFileName),
+            RemoteCatalogBuilder.WriteReview(result.Manifest.Description!, result.Tags, RemoteReview.Reviewed, new DateOnly(2026, 10, 28), new DateOnly(2026, 10, 28), null));
         var build = RemoteCatalogBuilder.Build(catalog, output);
         Assert.True(build.Ok, string.Join("\n", build.Issues));
         var entry = Assert.Single(build.Entries);

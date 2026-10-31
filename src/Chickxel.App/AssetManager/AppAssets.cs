@@ -15,8 +15,8 @@ public static class AppAssets
     /// <summary>원격에서 설치한 패키지의 출처 값(installed.json).</summary>
     public const string RemoteSource = "remote";
 
-    /// <summary>홈페이지(GitHub Pages)의 정적 카탈로그 첫 쪽.</summary>
-    public static readonly Uri CatalogIndexUrl = new(AppInfo.WebsiteUrl + "catalog/" + RemoteCatalogFormat.FirstPageName);
+    /// <summary>커뮤니티 서비스가 내는 온라인 카탈로그 첫 쪽(예전 홈페이지의 정적 <c>catalog/</c>와 같은 모양, 패키지·미리보기는 같은 사이트의 <c>/files/</c>).</summary>
+    public static readonly Uri CatalogIndexUrl = new(AppInfo.WebsiteUrl + "api/catalog/" + RemoteCatalogFormat.FirstPageName);
 
     private static readonly HttpClient RemoteHttp = new() { Timeout = Timeout.InfiniteTimeSpan };
     private static RemoteAssetClient? _remote;
