@@ -19,7 +19,7 @@ head.8,"
 <a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
 head.9.title,언어,Language
 lang-select.1.aria-label,언어,Language
-lang-select.2,"Unity 2D 게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for Unity 2D.</span>"
+lang-select.2,"게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for games.</span>"
 lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다.","Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside."
 lang-select.4,"<span>다운로드</span></a>
 <a class=""btn"" href=""guide.html"">사용 가이드</a>
