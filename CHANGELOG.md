@@ -2,12 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## 미배포
+## v1.14.62 (2026-11-01)
 ### Chickxel account, gallery uploads and asset publishing on chickxel.com
 - **Help > Chickxel Account…** signs in with Google, GitHub or Discord in your browser and returns to Chickxel. The window shows your picture, name and handle, lets you change the name and handle, opens your gallery page and signs out. The session is kept in the settings folder (encrypted for your Windows user on Windows).
 - **File > Upload to Gallery…** uploads the current frame as PNG or the whole animation as GIF (scale, title, description, tags) to the chickxel.com gallery, with progress and cancel, and opens the picture's page when done.
 - **Publish Online…** in the asset manager now uploads the package with your account instead of saving a submission zip for a GitHub form. Your handle is the author ID and the first part of the package ID; problems the server finds are listed under the checks, and the package page opens after uploading. The chosen list preview becomes the first asset's preview.
 - The website and the online asset list moved to https://chickxel.com (the list is read from `/api/catalog/index.json`). Packages uploaded by users show "Community" as their review status.
+- Each account can store up to 50 MB on chickxel.com; uploads past that, or while the site storage is full, are refused with a message saying so.
+
+### Website: gallery in the menu
+- The website menu has **Gallery** (https://chickxel.com/gallery) instead of Key features. Signed-in visitors can upload pixel art there, browse effect and gradient packages under Assets, and like or dislike them.
+- The headline now reads "A pixel art editor built for games."
 
 ## v1.14.61 (2026-11-01)
 ### Chickxel moves from MIT to a source-available license
