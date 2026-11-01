@@ -60,6 +60,16 @@ public sealed record ScriptFrameContext
     /// </summary>
     public double GradientTime { get; init; }
 
+    /// <summary>
+    /// 효과 만들기 미리보기·검증의 <paramref name="step"/>번째 칸 진행(올릴 때 미리보기의 그 칸과 같음): <paramref name="steps"/>칸(선언의 <c>previewFrames</c>)에 고르게 나눈 선형 진행.
+    /// </summary>
+    public static ScriptFrameContext PreviewStep(int step, int steps)
+    {
+        int span = steps - 1;
+        double t = span == 0 ? 0 : step / (double)span;
+        return new ScriptFrameContext { Time = t, Progress = t, FrameIndex = step, FrameStep = step, FrameSpan = span };
+    }
+
     /// <summary>그릴 때 채운 <paramref name="effect"/> 사본(<see cref="AnimatedEffect.AtFrame"/>)의 프레임 정보.</summary>
     public static ScriptFrameContext From(AnimatedEffect effect) => new()
     {

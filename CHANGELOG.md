@@ -2,6 +2,20 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## 미배포
+### Effects follow gradients on color settings
+- The Effect Maker rules (Rules window and AI guide) now recommend picking color settings per pixel with `ctx.color("key", x, y)` (lists: `ctx.colorAt`, `ctx.pairColor`), with a short example, so a color switched to a gradient varies across pixels. The AI does this by default and keeps a flat color only when an effect really needs one solid color.
+- The Effect Maker check renders each color setting with a sample gradient (red to green to blue) and lists color settings that still draw one flat color when a gradient is chosen. These are recommendations: they don't change the check result or block upload, and the AI tools `check_effect_maker`, `write_script_effect` and `set_effect_maker_source` report them too.
+
+### Package IDs are set automatically
+- Publish Online no longer has a Package ID field. The ID is the package's own ID when the asset comes from a package you uploaded (installed, or a copy of one), otherwise "your-handle.package-name"; the same name updates the same package, and someone else's package uploaded by you becomes your own separate package.
+- The top of the Package group says "Uploading as a new package" or "Update <name>: 1.0.0 → 1.0.1", checked online (it says so when it can't connect), and tells you when a package of yours with the same name is being updated. The suggested next version raises the patch number (1.0.0 → 1.0.1).
+- The Asset Manager has a **Publish New Version…** button for single-asset packages you uploaded.
+
+### Effect Maker languages for older scripts
+- Scripts without `language` now show and edit the UI-language translation in Title and Description when one exists. The labels always show which language you are editing (or "Base (language not set)").
+- The Languages window has a **Base language** picker at the top for the language of the title and description written in the source; it is guessed from the text when `language` is missing and written into the source when you click OK.
+
 ## v1.14.64 (2026-11-01)
 ### Publish one asset with languages, tags and a fixed license
 - The Publish Online window uploads one asset as its own package; the included-assets checklist is gone. The suggested package ID is "handle.asset-name" (a short hash when the name has no English letters).

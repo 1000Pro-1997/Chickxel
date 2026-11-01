@@ -8,11 +8,12 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App;
 
 /// <summary>
-/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 개인 에셋 하나를 공개 패키지로 묶어 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
-/// 왼쪽은 작성자(로그인한 계정의 핸들·표시 이름, 고칠 수 없음), 패키지 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 패키지 ID(핸들.이름 조각)·
-/// 버전(전에 올린 버전에서 다음 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
+/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 에셋 하나(개인 에셋이나 내가 만든 설치 패키지의 에셋)를 공개 패키지로 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
+/// 왼쪽은 작성자(로그인한 계정의 핸들·표시 이름, 고칠 수 없음), 패키지 묶음 맨 위의 모드 줄(서버에 물어 "새 패키지" / "이름 업데이트: 1.0.0 → 1.0.1"),
+/// 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내 패키지면 그 ID, 아니면 핸들.이름 조각),
+/// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
-/// 스크립트 효과는 선언의 이름·설명·번역·태그로 채우고, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
+/// 내 설치 패키지의 에셋은 그 패키지 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
 /// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
 /// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
@@ -25,10 +26,14 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly AssetEntry _asset;
     private readonly PackagePreview? _assetPreview;
     private CommunityUser _user;
-    private readonly TextBox _id, _version, _name, _summary;
+    private readonly TextBox _version, _name, _summary;
     private readonly TagChipEditor _tags;
-    private readonly SelectableTextBlock _authorId, _authorName;
-    private readonly TextBlock _versionHint = Note(""), _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
+    private readonly SelectableTextBlock _authorId, _authorName, _idText;
+    private readonly TextBlock _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
+    /// <summary>패키지 묶음 맨 위의 모드 줄(새 패키지 / 업데이트 / 확인 중 / 확인 못 함)과 그 아래 덧붙임.</summary>
+    private readonly TextBlock _mode = new() { FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _modeNote = Note("");
+    private readonly IconView _modeIcon = new(VectorIcon.LoaderCircle, AppTheme.DimTextBrush, 2.2) { Width = 15, Height = 15, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 6, 0) };
     private readonly Button _useSuggestion, _previewAuto;
     private readonly StackPanel _checks = new() { Spacing = 4 };
     private readonly PngView _preview = new() { Height = 170 };
@@ -40,18 +45,26 @@ public sealed class AssetPublishDialog : DialogBase
     /// <summary>언어별 이름·짧은 설명(언어 설정 창에서 고침, 언어 차례).</summary>
     private IReadOnlyList<KeyValuePair<string, AssetTranslation>> _translations;
     private byte[]? _customPreview;
-    private bool _idEdited, _versionEdited, _filling = true;
+    private bool _versionEdited, _filling = true;
+    /// <summary>지금 이름으로 정한 패키지 ID와 그 출처(<see cref="AssetPublishCheck.ResolveTarget"/>).</summary>
+    private PublishTarget _target = new("", PublishIdSource.Derived, null);
+    /// <summary>ID별 서버 조회 결과: 끝나지 않았으면 없음, 실패면 <see cref="Lookup.Failed"/>.</summary>
+    private readonly Dictionary<string, Lookup> _lookups = new(StringComparer.Ordinal);
+    private readonly CancellationTokenSource _closing = new();
     private string _suggested = "1.0.0";
     private PublishResult? _result;
     private CancellationTokenSource? _upload;
 
+    /// <summary>서버 조회 결과 하나: 올린 패키지(없으면 null — 새 패키지), 연결 실패면 <see cref="Failed"/>.</summary>
+    private sealed record Lookup(CommunityPackage? Package, bool Failed);
+
     /// <summary>
-    /// 개인 에셋 <paramref name="assetId"/>의 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창.
+    /// 에셋 <paramref name="assetId"/>(개인 에셋이나 내가 만든 설치 패키지의 에셋)의 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창.
     /// 효과 레시피(기본 효과를 합친 것)는 올리지 않는다(<see cref="PublishIssueCode.RecipeNotPublishable"/>, 서버도 거부).
     /// </summary>
     public static async Task RunAsync(Window owner, string assetId)
     {
-        if (AppAssets.Catalog.Personal.FirstOrDefault(e => e.Id == assetId) is not { } asset)
+        if (AppAssets.Catalog.Find(assetId) is not { } asset)
         {
             Ui.Info(owner, UiStrings.Publish_NoPersonal, UiStrings.Publish_Title);
             return;
@@ -85,11 +98,19 @@ public sealed class AssetPublishDialog : DialogBase
         // 개인 내보내기의 작성자 이름(로그인하지 않았을 때)으로 계정 표시 이름을 기억한다.
         _settings.AuthorName = user.Name;
 
-        // 채울 값: 스크립트 효과는 선언(이름·설명·번역·태그), 그 밖은 전에 올린 기록이나 에셋 이름.
+        // 채울 값: 내 설치 패키지의 에셋은 그 패키지 정보(이름·설명·번역), 스크립트 효과는 선언(이름·설명·번역·태그),
+        // 그 밖은 전에 올린 기록이나 에셋 이름.
         var record = _settings.Saved.FirstOrDefault(r => r.Assets.Contains(asset.Id));
         string name, summary;
         IReadOnlyList<string> tags;
-        if (asset.Script is { } script)
+        if (asset.Origin == AssetOrigin.Package && AppAssets.Catalog.FindPackage(asset.PackageId ?? "")?.Manifest is { } own && own.Author.Id == user.Handle)
+        {
+            name = own.Name;
+            summary = own.Description ?? "";
+            _translations = own.Translations.ToList();
+            tags = asset.Script?.Tags.Count > 0 ? asset.Script.Tags : record?.Tags ?? [];
+        }
+        else if (asset.Script is { } script)
         {
             name = script.Name;
             summary = script.Description ?? "";
@@ -116,7 +137,8 @@ public sealed class AssetPublishDialog : DialogBase
             MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
         };
         var languages = Ui.Button(VectorIcon.Languages, UiStrings.Publish_Languages, (_, _) => EditLanguages()).Tip(UiStrings.Publish_LanguagesTip);
-        _id = Field(record?.Id is { } recordId && recordId.StartsWith(user.Handle + ".", StringComparison.Ordinal) ? recordId : "");
+        // 패키지 ID는 고칠 수 없다: 내 패키지(설치한 것이나 그 사본)면 그 ID, 아니면 "핸들.이름 조각"(UpdateTarget).
+        _idText = new SelectableTextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 6, 3, 3) };
         _version = Field("1.0.0");
         _version.Width = 110;
         _tags = new TagChipEditor(FieldWidth);
@@ -126,8 +148,14 @@ public sealed class AssetPublishDialog : DialogBase
             _versionEdited = false;
             _version.Text = _suggested;
         });
-        if (string.IsNullOrEmpty(_id.Text)) _id.Text = DerivedId();
-        _idEdited = _id.Text != DerivedId();
+        var mode = new Border
+        {
+            Background = AppTheme.PanelBrush, BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(8, 6), Margin = new Thickness(0, 0, 0, 4),
+            Child = new StackPanel { Children = { new DockPanel { Children = { _modeIcon, _mode } }, _modeNote } },
+        };
+        DockPanel.SetDock(_modeIcon, Dock.Left);
+        _modeNote.Margin = new Thickness(21, 2, 0, 0);
 
         var left = new StackPanel
         {
@@ -140,13 +168,13 @@ public sealed class AssetPublishDialog : DialogBase
                         (UiStrings.Publish_AuthorName, _authorName, null)),
                     Note(UiStrings.Publish_AuthorFromAccount))),
                 Ui.Group(UiStrings.Publish_Package, Ui.Stack(
+                    mode,
                     Rows((UiStrings.Publish_Name, _name, null),
                         (UiStrings.Publish_Summary, _summary, null),
                         (UiStrings.Publish_LanguagesLabel, Ui.Stack(languages, _languages), null),
-                        (UiStrings.Publish_Id, _id, UiStrings.Publish_IdTip),
-                        (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null)),
-                    _versionHint,
-                    Rows((UiStrings.Publish_Tags, _tags, UiStrings.Publish_TagsTip)))),
+                        (UiStrings.Publish_Id, _idText, UiStrings.Publish_IdTip),
+                        (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null),
+                        (UiStrings.Publish_Tags, _tags, UiStrings.Publish_TagsTip)))),
                 Ui.Group(UiStrings.Publish_License, Ui.Stack(
                     Ui.Row(Ui.Icon(VectorIcon.Check, 13), Ui.Label(AssetPublishCheck.License, bold: true)),
                     Note(UiStrings.Publish_LicenseFixed))),
@@ -203,20 +231,14 @@ public sealed class AssetPublishDialog : DialogBase
         _tags.TagsChanged += (_, _) => Changed();
         _name.TextChanged += (_, _) =>
         {
-            UpdateId();
-            Changed();
-        };
-        // TextChanged는 값을 넣은 뒤 늦게 올 수 있어(코드로 넣은 값 포함) "손댔는지"는 지금 값과 자동 값을 비교해 정한다.
-        _id.TextChanged += (_, _) =>
-        {
-            _idEdited = (_id.Text ?? "") != DerivedId();
-            UpdateVersion();
+            UpdateTarget();
             Changed();
         };
         _version.TextChanged += (_, _) =>
         {
             _versionEdited = _version.Text != _suggested;
             _useSuggestion.IsVisible = _versionEdited;
+            ShowMode();
             Changed();
         };
         _recheck.Tick += (_, _) =>
@@ -239,12 +261,13 @@ public sealed class AssetPublishDialog : DialogBase
         {
             _recheck.Stop();
             _upload?.Cancel();
+            _closing.Cancel();
             App.Settings.Save();
         };
 
         ShowLanguages();
         ShowPreview();
-        UpdateVersion();
+        UpdateTarget();
         _filling = false;
         RunCheck();
     }
@@ -306,30 +329,98 @@ public sealed class AssetPublishDialog : DialogBase
         _recheck.Start();
     }
 
-    /// <summary>패키지 ID를 손대지 않았으면 "작성자 ID.이름 조각"으로 맞춘다.</summary>
-    private void UpdateId()
-    {
-        if (!_idEdited) _id.Text = DerivedId();
-    }
-
-    /// <summary>자동 패키지 ID: 이름, 영어 이름, 에셋 이름 중 ASCII 조각이 나오는 첫 것(없으면 이름의 짧은 해시).</summary>
-    private string DerivedId()
+    /// <summary>
+    /// 패키지 ID를 다시 정하고(이름·영어 이름·계정이 바뀔 때) 그 ID를 서버에 물어 모드(새 패키지 / 업데이트)와 다음 버전을 맞춘다.
+    /// </summary>
+    private void UpdateTarget()
     {
         string? english = _translations.FirstOrDefault(pair => string.Equals(pair.Key, "en", StringComparison.OrdinalIgnoreCase)).Value?.Name;
-        return AssetPublishCheck.DefaultId(_user.Handle, _name.Text, english, _asset.Name);
+        _target = AssetPublishCheck.ResolveTarget(_user.Handle, _asset, AppAssets.Catalog, _name.Text, english, _asset.Name);
+        _idText.Text = _target.Id;
+        if (!_lookups.ContainsKey(_target.Id) && AssetManifest.IsValidId(_target.Id)) LookUp(_target.Id);
+        UpdateVersion();
+    }
+
+    /// <summary>서버에 그 ID의 패키지를 묻는다(결과는 ID별로 기억, 지금 ID면 모드·버전을 다시 맞춤).</summary>
+    private async void LookUp(string id)
+    {
+        Lookup result;
+        try
+        {
+            result = new Lookup(await AppCommunity.Client.GetPackageAsync(id, _closing.Token), false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (CommunityException)
+        {
+            result = new Lookup(null, true);
+        }
+        _lookups[id] = result;
+        if (id != _target.Id) return;
+        UpdateVersion();
+        Changed();
     }
 
     private IEnumerable<PublishedVersion> SavedVersions => _settings.Saved.Select(r => new PublishedVersion(r.Id, r.Version, r.Sha256));
 
-    /// <summary>같은 ID로 전에 게시한 버전(온라인 목록·이 컴퓨터의 저장 기록)에서 다음 버전을 제안하고, 손대지 않았으면 채운다.</summary>
+    /// <summary>이미 올린 버전: 이 컴퓨터의 기록, 설치한 내 패키지, 서버가 알려 준 최신 버전.</summary>
+    private IEnumerable<PublishedVersion> KnownVersions
+        => SavedVersions
+            .Concat(_target.Package is { } package ? [new PublishedVersion(package.Id, package.Version, "")] : [])
+            .Concat(_lookups.Where(pair => pair.Value.Package is not null).Select(pair => new PublishedVersion(pair.Key, pair.Value.Package!.Version, "")));
+
+    /// <summary>같은 ID로 전에 게시한 버전(서버·온라인 목록·이 컴퓨터)에서 다음 버전을 제안하고, 손대지 않았으면 채운다.</summary>
     private void UpdateVersion()
     {
-        string id = _id.Text?.Trim() ?? "";
-        string? latest = AssetPublishCheck.LatestVersion(id, _catalog, SavedVersions);
+        string? latest = AssetPublishCheck.LatestVersion(_target.Id, _catalog, KnownVersions);
         _suggested = AssetPublishCheck.SuggestVersion(latest);
-        _versionHint.Text = latest is null ? UiStrings.Publish_VersionFirst : F(UiStrings.Publish_VersionPrevious, latest, _suggested);
         if (!_versionEdited) _version.Text = _suggested;
         _useSuggestion.IsVisible = _version.Text != _suggested;
+        ShowMode();
+    }
+
+    /// <summary>
+    /// 모드 줄: 서버 조회가 끝나지 않았으면 "확인하는 중", 실패면 "확인하지 못함", 없으면 "새 패키지", 있으면 "이름 업데이트: 이전 → 새 버전".
+    /// 업데이트인데 ID가 이름에서 나왔으면(설치한 내 패키지의 에셋·사본이 아님) 이름이 같아 업데이트가 된다고 덧붙이고,
+    /// 내 패키지의 사본으로 알아봤으면 그 패키지를 업데이트한다고 덧붙인다.
+    /// </summary>
+    private void ShowMode()
+    {
+        string note = "";
+        if (!_lookups.TryGetValue(_target.Id, out var lookup))
+        {
+            _modeIcon.Icon = VectorIcon.LoaderCircle;
+            _modeIcon.Foreground = AppTheme.DimTextBrush;
+            _mode.Text = UiStrings.Publish_ModeChecking;
+        }
+        else if (lookup.Failed)
+        {
+            _modeIcon.Icon = VectorIcon.CircleAlert;
+            _modeIcon.Foreground = AppTheme.WarningBrush;
+            _mode.Text = UiStrings.Publish_ModeUnknown;
+        }
+        else if (lookup.Package is not { } package)
+        {
+            _modeIcon.Icon = VectorIcon.Plus;
+            _modeIcon.Foreground = AppTheme.AccentBrush;
+            _mode.Text = UiStrings.Publish_ModeNew;
+        }
+        else
+        {
+            _modeIcon.Icon = VectorIcon.Refresh;
+            _modeIcon.Foreground = AppTheme.SavedBrush;
+            _mode.Text = F(UiStrings.Publish_ModeUpdate, package.Name.Length > 0 ? package.Name : _target.Id, package.Version, _version.Text?.Trim() ?? "");
+            note = _target.Source switch
+            {
+                PublishIdSource.Derived => UiStrings.Publish_ModeSameName,
+                PublishIdSource.OwnPackageCopy => UiStrings.Publish_ModeOwnCopy,
+                _ => "",
+            };
+        }
+        _modeNote.Text = note;
+        _modeNote.IsVisible = note.Length > 0;
     }
 
     /// <summary>언어 설정 창으로 언어별 이름·짧은 설명을 고친다.</summary>
@@ -338,7 +429,7 @@ public sealed class AssetPublishDialog : DialogBase
         if (PackageTranslationsDialog.Ask(this, _name.Text ?? "", _summary.Text ?? "", _translations) is not { } edited) return;
         _translations = edited;
         ShowLanguages();
-        UpdateId();
+        UpdateTarget();
         Changed();
     }
 
@@ -382,7 +473,7 @@ public sealed class AssetPublishDialog : DialogBase
         return new PublishRequest
         {
             Author = new AssetAuthor(_user.Handle, _user.Name),
-            Id = _id.Text?.Trim() ?? "",
+            Id = _target.Id,
             Version = _version.Text?.Trim() ?? "",
             Name = _name.Text ?? "",
             Summary = _summary.Text ?? "",
@@ -396,7 +487,7 @@ public sealed class AssetPublishDialog : DialogBase
 
     private void RunCheck()
     {
-        _result = AssetPublishCheck.Check(BuildRequest(), _catalog, SavedVersions);
+        _result = AssetPublishCheck.Check(BuildRequest(), _catalog, KnownVersions);
         _checks.Children.Clear();
         foreach (var issue in _result.Issues.OrderBy(issue => issue.IsError ? 0 : 1))
             _checks.Children.Add(CheckRow(issue.IsError ? VectorIcon.X : VectorIcon.ExclamationMark,
@@ -468,7 +559,7 @@ public sealed class AssetPublishDialog : DialogBase
         _settings.AuthorName = user.Name;
         _authorId.Text = user.Handle;
         _authorName.Text = user.Name;
-        UpdateId();
+        UpdateTarget();
         Changed();
     }
 

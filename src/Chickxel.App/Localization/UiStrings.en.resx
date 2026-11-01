@@ -3177,6 +3177,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_Publish" xml:space="preserve"><value>Publish Online…</value></data>
   <data name="Assets_PublishTip" xml:space="preserve"><value>Uploads the selected personal asset as a public package with your Chickxel account (one asset per package).</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Uploads this asset as a public package with your Chickxel account.</value></data>
+  <data name="Assets_PublishNewVersion" xml:space="preserve"><value>Publish New Version…</value></data>
+  <data name="Assets_PublishNewVersionTip" xml:space="preserve"><value>This is a package you uploaded. Uploads a new version with the same package ID (you can change the name, description, translations and tags).</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>Publish Online</value></data>
   <data name="Publish_Intro" xml:space="preserve"><value>Each asset is uploaded as its own package. Enter the package details; once the checks pass, it is uploaded with your Chickxel account. Uploaded packages appear right away in the Store and on the assets page of chickxel.com.</value></data>
   <data name="Publish_ChooseAsset" xml:space="preserve"><value>Select the personal asset to publish in the list. Assets are uploaded one at a time.</value></data>
@@ -3189,10 +3191,14 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Package" xml:space="preserve"><value>Package</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Publish_Id" xml:space="preserve"><value>Package ID</value></data>
-  <data name="Publish_IdTip" xml:space="preserve"><value>"handle.name" (lowercase letters, digits and hyphens). It can't change after uploading; a fixed package keeps the ID with a higher version.</value></data>
+  <data name="Publish_IdTip" xml:space="preserve"><value>Set automatically: the package's ID if the asset comes from a package you uploaded (installed, or a copy of one), otherwise "handle.package-name". Uploading with the same ID adds a new version of that package; rename it to upload a different package.</value></data>
   <data name="Publish_Version" xml:space="preserve"><value>Version</value></data>
-  <data name="Publish_VersionFirst" xml:space="preserve"><value>This ID has not been uploaded yet.</value></data>
-  <data name="Publish_VersionPrevious" xml:space="preserve"><value>Last version of this ID: {0} (online list or uploaded from this computer). Suggested next version: {1}.</value></data>
+  <data name="Publish_ModeChecking" xml:space="preserve"><value>Checking online whether this is a new package or an update…</value></data>
+  <data name="Publish_ModeUnknown" xml:space="preserve"><value>Couldn't connect, so it's not known whether this is a new package or an update. The version is suggested from this computer's records.</value></data>
+  <data name="Publish_ModeNew" xml:space="preserve"><value>Uploading as a new package</value></data>
+  <data name="Publish_ModeUpdate" xml:space="preserve"><value>Update {0}: {1} → {2}</value></data>
+  <data name="Publish_ModeSameName" xml:space="preserve"><value>A package of yours has the same name, so this becomes its new version. Rename it to upload a different package.</value></data>
+  <data name="Publish_ModeOwnCopy" xml:space="preserve"><value>This asset is from a package you uploaded (or a copy of it), so it becomes that package's new version even if you rename it.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>Use suggested version</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Short description</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in the Store (up to 200 characters)</value></data>
@@ -3526,6 +3532,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>Writes the title, description and setting labels in other languages (translations in the source's declaration). The one for the app's UI language is shown, otherwise the title and description written here.</value></data>
   <data name="ScriptLanguages_Title" xml:space="preserve"><value>Languages</value></data>
   <data name="ScriptLanguages_Hint" xml:space="preserve"><value>Write a title, description and setting labels per language; people using the app in that language see them. Empty fields show the values written in the source (the Effect Maker's title and description, each setting's label).</value></data>
+  <data name="ScriptLanguages_Base" xml:space="preserve"><value>Base language</value></data>
+  <data name="ScriptLanguages_BaseHint" xml:space="preserve"><value>The language of the title, description and setting labels written in the source's declaration (name, description, label — the declaration's language).</value></data>
+  <data name="ScriptLanguages_BaseGuessed" xml:space="preserve"><value>The source doesn't set a base language, so it was guessed from the text. Pick another if it's wrong; it is written into the source when you click OK.</value></data>
   <data name="ScriptLanguages_Empty" xml:space="preserve"><value>No other languages yet. Click Add language.</value></data>
   <data name="ScriptLanguages_Add" xml:space="preserve"><value>Add language</value></data>
   <data name="ScriptLanguages_Remove" xml:space="preserve"><value>Remove this language</value></data>
@@ -3565,6 +3574,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_TitleHint" xml:space="preserve"><value>Name shown in the effect list and the Store</value></data>
   <data name="EffectMaker_DescriptionLabel" xml:space="preserve"><value>Description</value></data>
   <data name="EffectMaker_DescriptionHint" xml:space="preserve"><value>A sentence or two about the effect (optional, up to 200 characters)</value></data>
+  <data name="EffectMaker_BaseLanguageUnknown" xml:space="preserve"><value>Base (language not set)</value></data>
   <data name="EffectMaker_TagsLabel" xml:space="preserve"><value>Tags</value></data>
   <data name="EffectMaker_TagsTip" xml:space="preserve"><value>Tags used when you upload (tags in the source's declaration). Type a tag like #neon and press Space, Enter or comma; up to 8 tags of lowercase English letters, digits and hyphens.</value></data>
   <data name="EffectMaker_Validate" xml:space="preserve"><value>Check</value></data>
@@ -3628,6 +3638,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>The check stopped because the source changed before it finished. Call it again.</value></data>
   <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>Check passed: {runs} runs, slowest frame {ms} ms (chick {chick}).</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>The check found {count} problem(s):</value></data>
+  <data name="Ai_Script_GradientHints" xml:space="preserve"><value>Gradient hints (recommended, not problems; they don't change the check result. Unless the effect really needs one flat color, it is better to pick the color per pixel):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: not available in the Effect Maker AI. The Effect Maker AI can only look at the document and change the Effect Maker's source.</value></data>
   <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>Couldn't find the script effect "{effect}". Check ids and names with list_script_effects.</value></data>
   <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>Attach the current frame of the open drawing (reference).</value></data>

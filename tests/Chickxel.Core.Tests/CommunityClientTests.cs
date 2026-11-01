@@ -278,6 +278,23 @@ public class CommunityClientTests
     }
 
     [Fact]
+    public async Task GetPackage_ReturnsTheLatestVersion_NullWhenNotFound_AndSendsNoToken()
+    {
+        var (client, handler, tokens) = Make();
+        handler.Routes["GET /api/assets/pixel-cat.neon"] = _ => Json(HttpStatusCode.OK,
+            """{ "id": "pixel-cat.neon", "version": "1.0.2", "name": "Neon", "summary": "s", "review": "community", "translations": {} }""");
+        Assert.Equal(new CommunityPackage("pixel-cat.neon", "1.0.2", "Neon", "community"), await client.GetPackageAsync("pixel-cat.neon"));
+        Assert.Null(await client.GetPackageAsync("pixel-cat.missing"));
+        Assert.All(handler.Requests, sent => Assert.Null(sent.Authorization));
+        Assert.Equal("https://chickxel.com/api/assets/pixel-cat.missing", handler.Requests[^1].Url);
+        Assert.Equal("secret-token", tokens.Token);
+
+        var broken = new CommunityClient(new HttpClient(new ThrowingHandler()), Site, "Chickxel-test/1.0", new MemoryTokens());
+        var error = await Assert.ThrowsAsync<CommunityException>(() => broken.GetPackageAsync("pixel-cat.neon"));
+        Assert.Equal(CommunityErrorCode.Network, error.Code);
+    }
+
+    [Fact]
     public async Task SignOut_DeletesTheServerSession_AndForgetsTheTokenEvenIfTheServerFails()
     {
         var (client, handler, tokens) = Make();

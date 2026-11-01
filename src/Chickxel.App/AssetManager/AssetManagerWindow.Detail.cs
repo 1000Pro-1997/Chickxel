@@ -107,8 +107,17 @@ public sealed partial class AssetManagerWindow
             .Select(name => Path.Combine(package.Folder, name)).FirstOrDefault(File.Exists);
         var license = licenseFile is null ? null : Ui.Button(VectorIcon.Info, UiStrings.Assets_ViewLicense, (_, _) => ShowLicense(package, licenseFile));
         var delete = Ui.Button(VectorIcon.Trash, UiStrings.Assets_Delete, (_, _) => DeletePackage(package));
-        Actions(toggle, export, rollback, folder, web, license, delete);
+        Actions(toggle, PublishNewVersionButton(package), export, rollback, folder, web, license, delete);
     }
+
+    /// <summary>
+    /// 로그인한 계정이 만든 에셋 하나짜리 패키지면 "새 버전 올리기" 단추(그 패키지 ID로 게시 창을 연다 — <see cref="AssetPublishCheck.IsOwnPackage"/>). 아니면 null.
+    /// </summary>
+    private Button? PublishNewVersionButton(InstalledPackage package)
+        => AssetPublishCheck.IsOwnPackage(package, AppCommunity.Client.User?.Handle) && package.Entries[0].Kind != AssetKinds.EffectRecipe
+            ? Ui.Button(VectorIcon.Globe, UiStrings.Assets_PublishNewVersion, async (_, _) => await AssetPublishDialog.RunAsync(this, package.Entries[0].Id))
+                .Tip(UiStrings.Assets_PublishNewVersionTip)
+            : null;
 
     private static string SourceText(string source) => source switch
     {
@@ -223,6 +232,7 @@ public sealed partial class AssetManagerWindow
         else
             Actions(
                 favorite,
+                AppAssets.Catalog.FindPackage(entry.PackageId ?? "") is { } owner ? PublishNewVersionButton(owner) : null,
                 Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopyToPersonal(entry)).Tip(UiStrings.Assets_CopyToPersonalTip));
     }
 

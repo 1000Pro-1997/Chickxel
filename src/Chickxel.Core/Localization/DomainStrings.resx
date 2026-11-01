@@ -281,6 +281,7 @@
   <data name="Script_UnknownColorPairSetting" xml:space="preserve"><value>색 쌍 목록 설정이 아닙니다: {key}</value><comment>key = ctx.pairColor에 넘긴 키.</comment></data>
   <data name="Script_InvalidColorIndex" xml:space="preserve"><value>설정 {key}에 {index}번 항목이 없습니다.</value><comment>key = 목록 설정 키; index = 넘긴 번호.</comment></data>
   <data name="Script_InvalidPairPart" xml:space="preserve"><value>색 쌍의 칸은 "from"이나 "to"여야 합니다: {part}</value><comment>part = ctx.pairColor에 넘긴 값.</comment></data>
+  <data name="Script_GradientHint" xml:space="preserve"><value>{label}: 그라데이션을 고르면 한 색으로만 그려집니다 — {call}로 픽셀마다 고르면 그라데이션이 보입니다.</value><comment>검증 안내(권장, 실패 아님). label = 색 설정 이름; call = 바꿔 쓸 호출(예: ctx.color("tint", x, y)).</comment></data>
   <data name="Script_UnknownColorSlot" xml:space="preserve"><value>색 설정 슬롯이 아닙니다: {slot}</value><comment>slot = ctx.hasGradient에 넘긴 이름(예: color, colors[0], pairs[1].to).</comment></data>
   <data name="Script_InvalidBounds" xml:space="preserve"><value>그라데이션 범위는 x, y, w, h 숫자를 가진 객체여야 합니다.</value></data>
   <data name="Script_FastSyntax" xml:space="preserve"><value>빠른 경로에서 쓸 수 없는 문법입니다: {construct}</value><comment>construct = 구문 종류(JS 해석기의 노드 이름, 영어)나 이름.</comment></data>

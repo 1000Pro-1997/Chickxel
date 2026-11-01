@@ -9057,6 +9057,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_Publish" xml:space="preserve"><value>온라인에 올리기…</value></data>
   <data name="Assets_PublishTip" xml:space="preserve"><value>목록에서 고른 개인 에셋을 공개 패키지로 만들어 Chickxel 계정으로 올립니다(에셋 하나에 패키지 하나).</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>이 에셋을 공개 패키지로 만들어 Chickxel 계정으로 올립니다.</value></data>
+  <data name="Assets_PublishNewVersion" xml:space="preserve"><value>새 버전 올리기…</value></data>
+  <data name="Assets_PublishNewVersionTip" xml:space="preserve"><value>내가 올린 패키지입니다. 같은 패키지 ID로 새 버전을 올립니다(이름·설명·번역·태그를 고칠 수 있음).</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>온라인에 올리기</value></data>
   <data name="Publish_Intro" xml:space="preserve"><value>에셋은 하나씩 패키지로 올립니다. 패키지 정보를 넣고 검사를 통과하면 Chickxel 계정으로 올립니다. 올린 패키지는 바로 상점 목록과 chickxel.com의 에셋 쪽에 실립니다.</value></data>
   <data name="Publish_ChooseAsset" xml:space="preserve"><value>올릴 개인 에셋을 목록에서 하나 고르세요. 에셋은 하나씩 올립니다.</value></data>
@@ -9069,10 +9071,14 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_Package" xml:space="preserve"><value>패키지</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>이름</value></data>
   <data name="Publish_Id" xml:space="preserve"><value>패키지 ID</value></data>
-  <data name="Publish_IdTip" xml:space="preserve"><value>"핸들.이름" 꼴(소문자·숫자·하이픈). 한 번 올리면 바꿀 수 없고, 고친 패키지도 같은 ID에 버전을 올려 냅니다.</value></data>
+  <data name="Publish_IdTip" xml:space="preserve"><value>저절로 정해집니다: 내가 올린 패키지(설치한 것이나 그 사본)의 에셋이면 그 패키지 ID, 아니면 "핸들.패키지 이름". 같은 ID로 올리면 그 패키지의 새 버전이 되므로, 다른 패키지로 올리려면 이름을 바꾸세요.</value></data>
   <data name="Publish_Version" xml:space="preserve"><value>버전</value></data>
-  <data name="Publish_VersionFirst" xml:space="preserve"><value>처음 올리는 ID입니다.</value></data>
-  <data name="Publish_VersionPrevious" xml:space="preserve"><value>이 ID의 마지막 버전 {0}(온라인 목록이나 이 컴퓨터에서 올린 것). 다음 버전으로 {1}을(를) 권합니다.</value></data>
+  <data name="Publish_ModeChecking" xml:space="preserve"><value>새 패키지인지 업데이트인지 온라인에서 확인하는 중…</value></data>
+  <data name="Publish_ModeUnknown" xml:space="preserve"><value>온라인에 연결하지 못해 새 패키지인지 업데이트인지 확인하지 못했습니다. 버전은 이 컴퓨터의 기록으로 제안합니다.</value></data>
+  <data name="Publish_ModeNew" xml:space="preserve"><value>새 패키지로 올립니다</value></data>
+  <data name="Publish_ModeUpdate" xml:space="preserve"><value>{0} 업데이트: {1} → {2}</value><comment>0 = 올린 패키지 이름, 1 = 올라가 있는 버전, 2 = 이번 버전.</comment></data>
+  <data name="Publish_ModeSameName" xml:space="preserve"><value>이름이 같은 내 패키지라 그 패키지의 새 버전으로 올라갑니다. 다른 패키지로 올리려면 이름을 바꾸세요.</value></data>
+  <data name="Publish_ModeOwnCopy" xml:space="preserve"><value>내가 올린 패키지의 에셋(또는 그 사본)이라 이름을 바꿔도 그 패키지의 새 버전으로 올라갑니다.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>제안 버전 쓰기</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>짧은 설명</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>상점 목록에 보일 한두 문장(200자 이하)</value></data>
@@ -9406,6 +9412,9 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름을 적습니다(원문 선언의 translations). 앱 화면 언어에 맞는 것이 보이고, 없으면 여기 적은 제목·설명이 보입니다.</value></data>
   <data name="ScriptLanguages_Title" xml:space="preserve"><value>언어 설정</value></data>
   <data name="ScriptLanguages_Hint" xml:space="preserve"><value>언어마다 제목·설명·설정 이름을 적으면 앱을 그 언어로 쓰는 사람에게 그것이 보입니다. 비워 둔 칸은 원문에 적은 값(효과 만들기의 제목·설명, 설정의 label)으로 보입니다.</value></data>
+  <data name="ScriptLanguages_Base" xml:space="preserve"><value>기본 언어</value></data>
+  <data name="ScriptLanguages_BaseHint" xml:space="preserve"><value>원문 선언에 적은 제목·설명·설정 이름(name·description·label)의 언어입니다(선언의 language).</value></data>
+  <data name="ScriptLanguages_BaseGuessed" xml:space="preserve"><value>원문에 기본 언어(language)가 없어 글자로 짐작했습니다. 맞지 않으면 고르고, 확인하면 원문에 적습니다.</value></data>
   <data name="ScriptLanguages_Empty" xml:space="preserve"><value>아직 다른 언어가 없습니다. 언어 추가를 누르세요.</value></data>
   <data name="ScriptLanguages_Add" xml:space="preserve"><value>언어 추가</value></data>
   <data name="ScriptLanguages_Remove" xml:space="preserve"><value>이 언어 빼기</value></data>
@@ -9445,6 +9454,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_TitleHint" xml:space="preserve"><value>효과 목록과 상점에 보일 이름</value></data>
   <data name="EffectMaker_DescriptionLabel" xml:space="preserve"><value>설명</value></data>
   <data name="EffectMaker_DescriptionHint" xml:space="preserve"><value>어떤 효과인지 한두 문장(선택, 200자까지)</value></data>
+  <data name="EffectMaker_BaseLanguageUnknown" xml:space="preserve"><value>기본 (언어 미지정)</value><comment>정보 칸 이름 옆: 원문에 language가 없어 선언 값의 언어를 모를 때.</comment></data>
   <data name="EffectMaker_TagsLabel" xml:space="preserve"><value>태그</value></data>
   <data name="EffectMaker_TagsTip" xml:space="preserve"><value>올릴 때 쓰는 태그(원문 선언의 tags). #neon처럼 적고 Space·Enter·쉼표로 더합니다. 8개까지, 소문자 영어·숫자·하이픈으로.</value></data>
   <data name="EffectMaker_Validate" xml:space="preserve"><value>검증</value></data>
@@ -9508,6 +9518,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>검증이 끝나기 전에 원문이 바뀌어 멈췄습니다. 다시 부르세요.</value></data>
   <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>검증 통과: {runs}번 실행, 가장 느린 칸 {ms}ms(병아리 {chick}).</value></data>
   <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>검증에서 문제 {count}개를 찾았습니다:</value></data>
+  <data name="Ai_Script_GradientHints" xml:space="preserve"><value>그라데이션 안내(권장 — 문제가 아니며 검증 결과에 영향 없음. 한 색이 꼭 필요한 효과가 아니면 픽셀마다 색을 고르도록 바꾸면 좋습니다):</value></data>
   <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: 효과 만들기 AI에서는 쓸 수 없는 도구입니다. 효과 만들기 AI는 문서를 보기만 하고 효과 만들기 편집기의 원문만 고칠 수 있습니다.</value></data>
   <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>스크립트 효과 "{effect}"를 찾지 못했습니다. list_script_effects로 ID와 이름을 확인하세요.</value></data>
   <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>열린 그림의 지금 프레임을 첨부합니다(참고 그림).</value></data>

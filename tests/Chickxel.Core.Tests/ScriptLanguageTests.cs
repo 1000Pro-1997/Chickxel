@@ -94,7 +94,77 @@ public class ScriptLanguageTests
     [InlineData("en", "", null)]
     public void EditLanguage_is_null_for_the_declared_fields_else_the_translation_key(string? baseLanguage, string ui, string? expected)
     {
-        Assert.Equal(expected, ScriptTranslations.EditLanguage(baseLanguage, C(ui)));
+        Assert.Equal(expected, ScriptTranslations.EditLanguage(baseLanguage, ScriptTranslations.Empty, C(ui)));
+    }
+
+    /// <summary>
+    /// language가 없는 예전 원문(Teleport처럼 한국어 선언 + translations.en): 화면 언어의 번역이 있으면 그 번역을 고치고(적힌 키 그대로),
+    /// 없으면 선언 값을 고친다.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "en")]
+    [InlineData("en-US", "en")]
+    [InlineData("zh-CN", "zh-Hans")]
+    [InlineData("ja-JP", null)]
+    [InlineData("ko-KR", null)]
+    [InlineData("", null)]
+    public void EditLanguage_without_language_edits_an_existing_ui_translation_else_the_declared_fields(string ui, string? expected)
+    {
+        var translations = new Dictionary<string, ScriptTranslation>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new("Teleport", "Vanishes and reappears.", new Dictionary<string, string>()),
+            ["zh-Hans"] = new("传送", null, new Dictionary<string, string>()),
+        };
+        Assert.Equal(expected, ScriptTranslations.EditLanguage(null, translations, C(ui)));
+    }
+
+    [Fact]
+    public void EditLanguage_for_a_parsed_legacy_script_in_english_is_the_en_translation()
+    {
+        var program = ScriptEffectProgram.Parse("""
+            effect({
+              name: "순간이동",
+              description: "사라졌다가 다른 곳에 나타납니다.",
+              translations: { en: { name: "Teleport", description: "Vanishes and reappears elsewhere." } },
+              render(img) {},
+            });
+            """).Program!;
+        Assert.Null(program.Language);
+        Assert.Equal("en", ScriptTranslations.EditLanguage(program.Language, program.Translations, C("en-US")));
+        Assert.Null(ScriptTranslations.EditLanguage(program.Language, program.Translations, C("ja-JP")));
+        Assert.Equal("ko", ScriptTranslations.GuessLanguage(program.Name, program.Description));
+    }
+
+    [Theory]
+    [InlineData("순간이동", null, "ko")]
+    [InlineData("Teleport 텔레포트", null, "ko")]
+    [InlineData("テレポート", "瞬間移動します", "ja")]
+    [InlineData("瞬间移动", null, "zh-Hans")]
+    [InlineData("Телепорт", null, "ru")]
+    [InlineData("เทเลพอร์ต", null, "th")]
+    [InlineData("Teleport", "Vanishes.", "en")]
+    [InlineData("Téléportation", null, "en")]
+    [InlineData("123 ...", "", null)]
+    public void GuessLanguage_reads_the_script_of_the_declared_text(string name, string? description, string? expected)
+        => Assert.Equal(expected, ScriptTranslations.GuessLanguage(name, description));
+
+    [Fact]
+    public void SetLanguage_adds_after_name_replaces_and_rejects_bad_codes()
+    {
+        const string legacy = """
+            effect({
+              name: "순간이동",
+              description: "사라집니다.",
+              render(img) {},
+            });
+            """;
+        string added = ScriptDeclarationEdit.SetLanguage(legacy, "ko")!;
+        Assert.Contains("name: \"순간이동\",\n  language: \"ko\",", added.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Equal("ko", ScriptEffectProgram.Parse(added).Program!.Language);
+        string replaced = ScriptDeclarationEdit.SetLanguage(added, "en")!;
+        Assert.Equal("en", ScriptEffectProgram.Parse(replaced).Program!.Language);
+        Assert.Equal(2, replaced.Split("language:").Length); // 키는 하나
+        Assert.Null(ScriptDeclarationEdit.SetLanguage(legacy, "not a code"));
     }
 
     [Fact]

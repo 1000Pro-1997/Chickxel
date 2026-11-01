@@ -18,6 +18,8 @@ public sealed class ScriptTranslationsDialog : DialogBase
     private readonly StackPanel _sections = new() { Spacing = 8 };
     private readonly TextBlock _empty;
     private readonly List<Section> _list = [];
+    /// <summary>선언 값(name·description·label)의 언어. 선언에 <c>language</c>가 없으면 글자로 짐작한 언어로 시작한다(확인하면 원문에 씀).</summary>
+    private readonly LanguagePicker _base;
 
     private ScriptTranslationsDialog(ScriptEffectProgram program) : base(UiStrings.ScriptLanguages_Title)
     {
@@ -28,7 +30,28 @@ public sealed class ScriptTranslationsDialog : DialogBase
             Text = UiStrings.ScriptLanguages_Hint, Width = FieldWidth + 160, TextWrapping = TextWrapping.Wrap,
             Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 0, 3, 6),
         });
-        Body.Children.Add(new ScrollViewer { Content = Ui.Stack(_empty, _sections), MaxHeight = 520, Width = FieldWidth + 190 });
+        // 맨 위: 기본 언어(선언에 적은 값이 그 언어로 보임 — 늘 글이 있으므로 초록)
+        string baseCode = program.Language
+                          ?? ScriptTranslations.GuessLanguage(program.Name, program.Description)
+                          ?? ScriptTranslations.LanguageOf(CultureInfo.CurrentUICulture) ?? "en";
+        _base = new LanguagePicker(baseCode);
+        _base.CodeChanged += (_, _) => UpdateFilled();
+        var baseText = new TextBlock
+        {
+            Text = string.IsNullOrEmpty(program.Description) ? program.Name : program.Name + "\n" + program.Description,
+            Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap, Width = FieldWidth + 150, Margin = new Thickness(3, 2, 3, 0),
+        };
+        var baseNote = new TextBlock
+        {
+            Text = program.Language is null ? UiStrings.ScriptLanguages_BaseGuessed : UiStrings.ScriptLanguages_BaseHint,
+            Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, TextWrapping = TextWrapping.Wrap, Width = FieldWidth + 150, Margin = new Thickness(3, 2, 3, 0),
+        };
+        Body.Children.Add(new Border
+        {
+            BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 8),
+            Child = Ui.Stack(Ui.Row(Ui.Label(UiStrings.ScriptLanguages_Base, bold: true), _base.View), baseText, baseNote),
+        });
+        Body.Children.Add(new ScrollViewer { Content = Ui.Stack(_empty, _sections), MaxHeight = 460, Width = FieldWidth + 190 });
         Body.Children.Add(Ui.Button(VectorIcon.Plus, UiStrings.ScriptLanguages_Add, (_, _) => AddSection(NextLanguage(), null)));
         foreach (var (code, translation) in program.Translations) AddSection(code, translation);
         UpdateEmpty();
@@ -43,13 +66,14 @@ public sealed class ScriptTranslationsDialog : DialogBase
         };
     }
 
-    /// <summary>
-    /// 언어 설정 창을 연다. 확인하면 고친 번역(언어 차례대로 — 모두 비운 언어는 뺌), 취소하면 null.
-    /// </summary>
-    public static IReadOnlyList<KeyValuePair<string, ScriptTranslation>>? Ask(Visual? owner, ScriptEffectProgram program)
+    /// <summary>확인한 언어 설정: 번역(언어 차례대로 — 모두 비운 언어는 뺌)과 선언 값의 언어.</summary>
+    public sealed record Answer(IReadOnlyList<KeyValuePair<string, ScriptTranslation>> Translations, string Language);
+
+    /// <summary>언어 설정 창을 연다. 확인하면 <see cref="Answer"/>, 취소하면 null.</summary>
+    public static Answer? Ask(Visual? owner, ScriptEffectProgram program)
     {
         var dialog = new ScriptTranslationsDialog(program);
-        return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.Result : null;
+        return dialog.ShowDialog(owner) == DialogResult.OK ? new Answer(dialog.Result, dialog._base.Code) : null;
     }
 
     /// <summary>지금 칸들의 번역(언어 차례, 빈 칸은 뺌, 모두 빈 언어도 뺌).</summary>
@@ -61,6 +85,7 @@ public sealed class ScriptTranslationsDialog : DialogBase
     /// <summary>확인할 수 없는 까닭(틀린 코드·겹친 언어), 없으면 null.</summary>
     private string? Problem()
     {
+        if (!ScriptTranslations.IsLanguageCode(_base.Code)) return string.Format(CultureInfo.CurrentCulture, UiStrings.ScriptLanguages_BadCode, _base.Code);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var section in _list)
         {
@@ -70,9 +95,11 @@ public sealed class ScriptTranslationsDialog : DialogBase
         return null;
     }
 
-    /// <summary>아직 없는 흔한 언어 중 첫째(모두 있으면 빈 코드 — 직접 적음).</summary>
+    /// <summary>아직 없는 흔한 언어 중 첫째(기본 언어는 빼고, 모두 있으면 빈 코드 — 직접 적음).</summary>
     private string NextLanguage()
-        => LanguagePicker.CommonLanguages.Select(l => l.Code).FirstOrDefault(code => !_list.Any(s => string.Equals(s.Code, code, StringComparison.OrdinalIgnoreCase))) ?? "";
+        => LanguagePicker.CommonLanguages.Select(l => l.Code)
+            .FirstOrDefault(code => !string.Equals(code, _base.Code, StringComparison.OrdinalIgnoreCase)
+                                    && !_list.Any(s => string.Equals(s.Code, code, StringComparison.OrdinalIgnoreCase))) ?? "";
 
     private void AddSection(string code, ScriptTranslation? translation)
     {
@@ -93,10 +120,12 @@ public sealed class ScriptTranslationsDialog : DialogBase
 
     private void UpdateEmpty() => _empty.IsVisible = _list.Count == 0;
 
-    /// <summary>글이 있는 언어를 모든 언어 목록에 초록으로 보인다.</summary>
+    /// <summary>글이 있는 언어(기본 언어 포함)를 모든 언어 목록에 초록으로 보인다.</summary>
     private void UpdateFilled()
     {
         var filled = _list.Where(s => s.HasContent).Select(s => s.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        filled.Add(_base.Code);
+        _base.SetFilled(filled);
         foreach (var section in _list) section.Picker.SetFilled(filled);
     }
 

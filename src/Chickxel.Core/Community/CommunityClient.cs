@@ -208,6 +208,24 @@ public sealed class CommunityClient
     }
 
     /// <summary>
+    /// <c>GET /api/assets/{id}</c>: 올린 패키지의 최신 버전(게시 창의 "새 패키지 / 업데이트" 판단). 없으면(404) null.
+    /// 공개 조회라 토큰을 붙이지 않는다(끝난 세션이 여기서 지워지지 않게). 연결 실패 등은 <see cref="CommunityException"/>.
+    /// </summary>
+    public async Task<CommunityPackage?> GetPackageAsync(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var json = await SendAsync(HttpMethod.Get, "api/assets/" + Uri.EscapeDataString(id), null, auth: false, _options.RequestTimeout, cancellationToken)
+                .ConfigureAwait(false);
+            return CommunityPackage.Read(json);
+        }
+        catch (CommunityException ex) when (ex.Code == CommunityErrorCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// multipart 본문. 경계 값은 영문·숫자만 써서 머리에 따옴표 없이 적는다(<c>boundary=…</c> — 따옴표를 다르게 읽는 서버가 없게).
     /// </summary>
     private static MultipartFormDataContent Form(params HttpContent[] parts)

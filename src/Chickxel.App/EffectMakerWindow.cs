@@ -518,7 +518,7 @@ public sealed class EffectMakerWindow : Window
     private void SetInfo(ScriptEffectProgram? program)
     {
         _syncingInfo = true;
-        _infoLanguage = program is null ? null : ScriptTranslations.EditLanguage(program.Language, CultureInfo.CurrentUICulture);
+        _infoLanguage = program is null ? null : ScriptTranslations.EditLanguage(program.Language, program.Translations, CultureInfo.CurrentUICulture);
         string? name = program is null ? null : InfoValue(program, _infoLanguage, "name");
         string? description = program is null ? null : InfoValue(program, _infoLanguage, "description");
         if (!_title.IsFocused && (_title.Text ?? "") != (name ?? "")) _title.Text = name ?? "";
@@ -526,7 +526,9 @@ public sealed class EffectMakerWindow : Window
         bool translating = _infoLanguage is not null;
         _title.Watermark = translating ? program!.Name : UiStrings.EffectMaker_TitleHint;
         _description.Watermark = translating && program!.Description is { Length: > 0 } baseDescription ? baseDescription : UiStrings.EffectMaker_DescriptionHint;
-        string? caption = (_infoLanguage ?? program?.Language) is { } code ? LanguagePicker.NativeName(code) : null;
+        // 고치는 언어는 늘 적는다: 번역이면 그 언어, 선언 값이면 선언의 language(없으면 "기본(언어 미지정)").
+        string? caption = program is null ? null
+            : (_infoLanguage ?? program.Language) is { } code ? LanguagePicker.NativeName(code) : UiStrings.EffectMaker_BaseLanguageUnknown;
         foreach (var label in new[] { _titleLanguage, _descriptionLanguage })
         {
             label.Text = caption ?? "";
@@ -631,7 +633,7 @@ public sealed class EffectMakerWindow : Window
             var watch = Stopwatch.StartNew();
             try
             {
-                program.Render(probe, new Rectangle(0, 0, probe.Width, probe.Height), Frame(steps / 2, steps), values, cancel.Token);
+                program.Render(probe, new Rectangle(0, 0, probe.Width, probe.Height), ScriptFrameContext.PreviewStep(steps / 2, steps), values, cancel.Token);
                 msPerFrame = watch.Elapsed.TotalMilliseconds;
             }
             catch (ScriptEffectException ex)
@@ -659,14 +661,6 @@ public sealed class EffectMakerWindow : Window
                 _code.SetErrors([runError]);
             }
         }, TaskScheduler.FromCurrentSynchronizationContext());
-    }
-
-    /// <summary>올릴 때 미리보기의 <paramref name="step"/>번째 칸과 같은 진행(선형, <paramref name="steps"/>칸 — 선언의 <c>previewFrames</c>).</summary>
-    private static ScriptFrameContext Frame(int step, int steps)
-    {
-        int span = steps - 1;
-        double t = span == 0 ? 0 : step / (double)span;
-        return new ScriptFrameContext { Time = t, Progress = t, FrameIndex = step, FrameStep = step, FrameSpan = span };
     }
 
     /// <summary>
@@ -802,13 +796,17 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// "언어 설정": 다른 언어의 제목·설명·설정 이름을 고치는 창을 열고, 확인하면 선언의 <c>translations</c>를 바꾼다(달라진 언어만 고침 — 실행취소 한 단계).
+    /// "언어 설정": 기본 언어(선언 <c>language</c>)와 다른 언어의 제목·설명·설정 이름을 고치는 창을 열고, 확인하면 선언의 <c>translations</c>와
+    /// <c>language</c>를 바꾼다(달라진 것만 고침 — 실행취소 한 단계). <c>language</c>가 없던 원문은 확인하면 고른(짐작한) 언어를 적는다.
     /// </summary>
     private void EditTranslations()
     {
         if (!_open || _program is not { } program) return;
-        if (ScriptTranslationsDialog.Ask(this, program) is not { } translations) return;
-        if (ScriptDeclarationEdit.SetTranslations(_source, translations) is not { } edited)
+        if (ScriptTranslationsDialog.Ask(this, program) is not { } answer) return;
+        string? edited = ScriptDeclarationEdit.SetTranslations(_source, answer.Translations);
+        if (edited is not null && !string.Equals(program.Language, answer.Language, StringComparison.Ordinal))
+            edited = ScriptDeclarationEdit.SetLanguage(edited, answer.Language);
+        if (edited is null)
         {
             Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
             return;
@@ -919,7 +917,9 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>
     /// 올리기 전 검사: 설치와 같은 원문 검사(크기·문법·선언, 맨 위 실행 한도)와 제목, 그리고 선언의 기본 설정으로 모든 병아리 견본 × 올릴 때 미리보기 칸마다
-    /// 직접 돌려 실행 오류(같은 오류는 처음 한 번만)와 가장 느린 칸을 본다. 결과는 상태 칸에 보이고 돌려준다(열린 스크립트가 없거나, 끝나기 전에 원문이 바뀌어 취소되면 null).
+    /// 직접 돌려 실행 오류(같은 오류는 처음 한 번만)와 가장 느린 칸을 본다. 실행 오류가 없으면 색 설정마다 그라데이션이 픽셀마다 보이는지도 본다
+    /// (<see cref="ScriptGradientCheck.Render"/> — 권장 안내라 문제 수에 넣지 않고 올리기를 막지 않는다).
+    /// 결과는 상태 칸에 보이고 돌려준다(열린 스크립트가 없거나, 끝나기 전에 원문이 바뀌어 취소되면 null).
     /// 검증 단추와 AI 도구 <c>check_effect_maker</c>가 같이 쓴다.
     /// </summary>
     internal async Task<ValidationResult?> CheckAsync()
@@ -946,13 +946,16 @@ public sealed class EffectMakerWindow : Window
             : string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_ValidateOk, result.Runs,
                 result.SlowestMs.ToString("0.00", CultureInfo.CurrentCulture), result.SlowestChick);
         if (errors == 0) AddNote(UiStrings.EffectMaker_ValidateOkNote, AppTheme.DimTextBrush);
+        foreach (var hint in result.Hints) AddNote(hint, AppTheme.DimTextBrush);
         _code.SetErrors(result.Problems.Select(p => p.Error));
         return result;
     }
 
     internal sealed record ValidationProblem(ScriptError Error, string? Where);
 
-    internal sealed record ValidationResult(IReadOnlyList<ValidationProblem> Problems, ScriptExecutionPath? Path, int Runs, double SlowestMs, int SlowestChick);
+    /// <param name="Hints">권장 안내(<see cref="ScriptGradientCheck"/> — 문제가 아니라 올리기를 막지 않음).</param>
+    internal sealed record ValidationResult(IReadOnlyList<ValidationProblem> Problems, ScriptExecutionPath? Path, int Runs, double SlowestMs, int SlowestChick,
+        IReadOnlyList<string> Hints);
 
     private static ValidationResult Validate(string source, CancellationToken cancel)
     {
@@ -965,18 +968,20 @@ public sealed class EffectMakerWindow : Window
             var parsed = ScriptEffectProgram.Parse(source, ScriptAssetFormat.CheckLimits);
             problems.AddRange(parsed.Errors.Select(e => new ValidationProblem(e, null)));
             if (problems.Count == 0) problems.AddRange(issues.Select(i => new ValidationProblem(new ScriptError(ScriptErrorKind.Declaration, i.Message, 0, 0), null)));
-            return new ValidationResult(problems, null, 0, 0, 0);
+            return new ValidationResult(problems, null, 0, 0, 0, []);
         }
         var program = ScriptEffectProgram.Parse(source).Program!;
         if (!AssetManifest.IsValidName(program.Name))
             problems.Add(new ValidationProblem(new ScriptError(ScriptErrorKind.Declaration, UiStrings.EffectMaker_ValidateName, 0, 0), null));
 
         var seen = new HashSet<(string, int, int)>();
+        var chicks = PreviewChicks.Ids.Select(PreviewChicks.Load).ToList();
         int runs = 0, slowestChick = 1;
+        bool runFailed = false;
         double slowest = 0;
-        for (int c = 0; c < PreviewChicks.Ids.Count; c++)
+        for (int c = 0; c < chicks.Count; c++)
         {
-            var chick = PreviewChicks.Load(PreviewChicks.Ids[c]);
+            var chick = chicks[c];
             for (int step = 0; step < program.PreviewFrames; step++)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -984,7 +989,7 @@ public sealed class EffectMakerWindow : Window
                 var watch = Stopwatch.StartNew();
                 try
                 {
-                    program.Render(image, new Rectangle(0, 0, image.Width, image.Height), Frame(step, program.PreviewFrames), null, cancel);
+                    program.Render(image, new Rectangle(0, 0, image.Width, image.Height), ScriptFrameContext.PreviewStep(step, program.PreviewFrames), null, cancel);
                     double ms = watch.Elapsed.TotalMilliseconds;
                     if (ms > slowest)
                     {
@@ -994,13 +999,15 @@ public sealed class EffectMakerWindow : Window
                 }
                 catch (ScriptEffectException ex)
                 {
+                    runFailed = true;
                     if (seen.Add((ex.Error.Message, ex.Error.Line, ex.Error.Column)))
                         problems.Add(new ValidationProblem(ex.Error, string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_ValidateWhere, c + 1, step + 1)));
                 }
                 runs++;
             }
         }
-        return new ValidationResult(problems, program.ExecutionPath, runs, slowest, slowestChick);
+        IReadOnlyList<string> hints = runFailed ? [] : ScriptGradientCheck.Render(program, chicks, cancel).Select(h => h.Message).ToList();
+        return new ValidationResult(problems, program.ExecutionPath, runs, slowest, slowestChick, hints);
     }
 
     // ───────────── 저장·넣기·올리기 ─────────────

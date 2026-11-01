@@ -27,14 +27,14 @@ public sealed partial class PixelTools
     {
         yield return Tool("get_script_api",
             "Read the guide for writing a script effect (JavaScript): the rules every effect must follow (one effect({...}) call, render changes img.data in place, " +
-            "deterministic, run limits, setting types, fast path, answer format), then the API (declaration, img/ctx/s objects, helpers) and an example. " +
+            "deterministic, run limits, setting types, colors that follow gradients, fast path, answer format), then the API (declaration, img/ctx/s objects, helpers) and an example. " +
             "Read it before writing a script with write_script_effect or set_effect_maker_source. The installed effects (list_effect_types: the official effects and any packages) cover most needs; write a script only for looks they can't make.",
             new JsonObject());
         yield return Tool("write_script_effect",
             "Write a script effect (JavaScript source calling effect({...}) once) and add it to a layer, or replace the source of an existing script effect. " +
             "If the source has syntax or declaration errors nothing changes and the errors come back with line and column; fix and call again. " +
-            "On success the result shows the effect on the preview chick (several frames for animated effects) and any run error. One undo step. " +
-            DeclarationNote + FrameRangeNote,
+            "On success the result shows the effect on the preview chick (several frames for animated effects), any run error and gradient hints. One undo step. " +
+            DeclarationNote + GradientNote + FrameRangeNote,
             new JsonObject
             {
                 ["source"] = Str("Full JavaScript source."),
@@ -71,13 +71,15 @@ public sealed partial class PixelTools
         yield return Tool("set_effect_maker_source",
             "Replace the source in the Effect Maker editor with a complete JavaScript file (one undo step in the editor; the user's document is not changed). " +
             "If no script is open, it opens as a new unsaved script. Returns parse errors with line and column (the source is still put in the editor so the user sees it), " +
-            "or the effect on the preview chick (several frames for animated effects), any run error and the execution path. Fails if the Effect Maker is closed. " + DeclarationNote,
+            "or the effect on the preview chick (several frames for animated effects), any run error, gradient hints and the execution path. Fails if the Effect Maker is closed. " +
+            DeclarationNote + GradientNote,
             new JsonObject { ["source"] = Str("Full JavaScript source calling effect({...}) once.") },
             "source");
         yield return Tool(CheckMakerTool,
             "Run the Effect Maker's Validate check on its current source (same as the Validate button): the install/source check, the name, and every preview chick at every " +
             $"preview frame (the declared previewFrames, default {AssetPreview.PackageFrames}) with the declared default settings. Returns each problem (where, line and column) or the number of runs and the slowest frame, " +
-            "plus the execution path. Fails if the Effect Maker is closed or has no script open.",
+            "plus the execution path and gradient hints: color settings that stay one flat color when the user picks a gradient (it renders each color setting with a sample gradient and compares). " +
+            "Gradient hints are recommendations, not problems; follow them unless the effect really needs one flat color. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("list_script_effects",
             "List the user's script effects: personal script effects and the script effects of installed asset packages (id, name, description, origin personal/package, " +
@@ -94,6 +96,12 @@ public sealed partial class PixelTools
     private const string DeclarationNote =
         "Always declare language (the language code of the declared name, description and labels, e.g. \"ko\" or \"en\"), description (one short sentence) " +
         "and tags (3-6 lowercase English tags, e.g. tags: [\"neon\", \"glow\"]), and keep them, translations.en and other translations in sync whenever the effect changes. ";
+
+    /// <summary>스크립트를 쓰는 도구 설명에 붙이는 그라데이션 권장(<see cref="ScriptEffectGuide"/>의 규칙과 같음 — 꼭 지킬 규칙이 아니라 권장).</summary>
+    private const string GradientNote =
+        "The user can switch any color setting to a gradient, so by default draw each color by sampling it at the pixel you write with ctx.color(\"key\", x, y) " +
+        "(lists: ctx.colorAt, pairs: ctx.pairColor; pass bounds like a beam's own rectangle when the source's opaque bounds don't fit the shape) instead of reading s.key once; " +
+        "keep a flat s.key color only when the effect really needs one solid color. ";
 
     private static JsonObject GetScriptApi() => TextResult(ScriptEffectGuide.ToMarkdown(null));
 
@@ -197,7 +205,15 @@ public sealed partial class PixelTools
         if (maker.PreviewEffects() is not [ScriptEffect effect]) throw new ToolError(UiStrings.Ai_Maker_SetErrors);
         string text = UiStrings.FormatAi_Maker_Set(name: program.Name) + "\n" + PathText(program.ExecutionPath);
         if (RunError(program, effect, program.PreviewChick) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
+        text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
         return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames), text);
+    }
+
+    /// <summary>그라데이션 안내 줄들(머리 줄 + 안내마다 한 줄, 앞에 줄바꿈). 없으면 빈 글.</summary>
+    private static string GradientHintText(IEnumerable<string> hints)
+    {
+        var list = hints.ToList();
+        return list.Count == 0 ? "" : "\n" + UiStrings.Ai_Script_GradientHints + "\n" + string.Join("\n", list.Select(h => "- " + h));
     }
 
     /// <summary>효과 만들기의 검증(검증 단추와 같음)을 돌려 결과를 글로. 검증은 작업 스레드에서 돌고 결과는 창의 상태 칸에도 보인다.</summary>
@@ -214,7 +230,7 @@ public sealed partial class PixelTools
             lines.AddRange(result.Problems.Select(p => p.Where is { } where ? $"{where} {ErrorLine(p.Error)}" : ErrorLine(p.Error)));
         }
         if (result.Path is { } path) lines.Add(PathText(path));
-        return TextResult(string.Join("\n", lines), isError: result.Problems.Count > 0);
+        return TextResult(string.Join("\n", lines) + GradientHintText(result.Hints), isError: result.Problems.Count > 0);
     }
 
     /// <summary>실행 경로(모델이 읽음 — 영어): 빠른 경로, 또는 Jint로 도는 까닭과 줄.</summary>
@@ -273,6 +289,7 @@ public sealed partial class PixelTools
         var effect = (ScriptEffect)p.Layers[index].Effects[position];
         string text = UiStrings.FormatAi_Script_Written(tool: tool, name: program.Name, effect: position, layer: index);
         if (RunError(program, effect, program.PreviewChick) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
+        text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
         text += "\n" + EffectsJson(p, index).ToJsonString(JsonOptions);
         return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames), text);
     }

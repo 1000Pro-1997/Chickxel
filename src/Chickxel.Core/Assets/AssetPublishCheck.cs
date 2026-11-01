@@ -59,6 +59,20 @@ public sealed record PublishAsset(string Kind, IAssetData Data, PackagePreview? 
 /// <summary>이 컴퓨터에서 올린 패키지(다음 버전은 이 기록과 온라인 목록 중 가장 높은 버전보다 높아야 함, 다음 버전 제안).</summary>
 public sealed record PublishedVersion(string Id, string Version, string Sha256);
 
+/// <summary>패키지 ID를 어디서 정했는지(<see cref="AssetPublishCheck.ResolveTarget"/>).</summary>
+public enum PublishIdSource
+{
+    /// <summary>내가 만든 설치 패키지의 에셋 — 그 패키지 ID.</summary>
+    OwnPackage,
+    /// <summary>내 설치 패키지 에셋의 개인 사본(원문 해시나 이름이 같음) — 그 패키지 ID.</summary>
+    OwnPackageCopy,
+    /// <summary>핸들과 이름에서 만든 ID.</summary>
+    Derived,
+}
+
+/// <summary>게시할 패키지 ID와 그 출처, 그 ID의 내 설치 패키지(없으면 null).</summary>
+public sealed record PublishTarget(string Id, PublishIdSource Source, InstalledPackage? Package);
+
 /// <summary>
 /// 게시 창 입력: 작성자(계정 핸들·표시 이름), 패키지 ID·버전·이름, 짧은 설명(manifest 설명과 목록 요약), 언어별 이름·짧은 설명, 태그,
 /// 올릴 에셋 하나, 목록 미리보기(직접 고른 PNG, 없으면 에셋 미리보기), 최소 앱 버전. 라이선스는 고정(<see cref="AssetPublishCheck.License"/>).
@@ -201,14 +215,49 @@ public static class AssetPublishCheck
     }
 
     /// <summary>
-    /// 다음 버전 제안: 전에 게시한 버전이 없으면 1.0.0, 프리릴리스(1.2.0-beta)면 그 정식 버전(1.2.0), 아니면 부 버전을 올린다(1.2.3 → 1.3.0).
+    /// 게시할 패키지 ID를 정한다(사용자 모델: 같은 핸들 + 같은 패키지 = 업데이트).
+    /// <list type="number">
+    /// <item>에셋이 내가 만든(작성자 ID = <paramref name="handle"/>) 설치 패키지의 것이면 그 패키지 ID(<see cref="PublishIdSource.OwnPackage"/>).</item>
+    /// <item>개인 에셋이 내 설치 패키지 에셋의 사본이면(스크립트 원문 해시가 같은 것, 없으면 같은 종류·같은 이름) 그 패키지 ID
+    /// (<see cref="PublishIdSource.OwnPackageCopy"/>) — 이름·번역을 바꿔도 같은 패키지를 업데이트한다.</item>
+    /// <item>그 밖(다른 사람의 패키지 에셋 포함)은 <see cref="DefaultId"/>(<paramref name="handle"/>.이름 조각, <see cref="PublishIdSource.Derived"/>).
+    /// 그 ID가 내 설치 패키지면 <see cref="PublishTarget.Package"/>에 둔다(이름이 같아 업데이트가 됨 — 창이 알림).</item>
+    /// </list>
+    /// 에셋이 여럿인 예전 패키지는 알아보지 않는다(한 에셋으로 올리면 나머지가 빠지므로).
+    /// </summary>
+    public static PublishTarget ResolveTarget(string handle, AssetEntry asset, AssetCatalog catalog, params IEnumerable<string?> names)
+    {
+        bool Mine(InstalledPackage package) => IsOwnPackage(package, handle);
+        if (asset.Origin == AssetOrigin.Package && asset.PackageId is { } packageId && catalog.FindPackage(packageId) is { } owner && Mine(owner))
+            return new PublishTarget(owner.Id, PublishIdSource.OwnPackage, owner);
+        if (asset.Origin == AssetOrigin.Personal)
+        {
+            var mine = catalog.Packages.Where(Mine).ToList();
+            string? hash = asset.Script?.Hash;
+            var copied = (hash is null ? null : mine.FirstOrDefault(p => p.Entries.Any(e => e.Script?.Hash == hash)))
+                         ?? mine.FirstOrDefault(p => p.Entries.Any(e => e.Kind == asset.Kind
+                                                                     && string.Equals(e.Name.Trim(), asset.Name.Trim(), StringComparison.OrdinalIgnoreCase)));
+            if (copied is not null) return new PublishTarget(copied.Id, PublishIdSource.OwnPackageCopy, copied);
+        }
+        string id = DefaultId(handle, names);
+        return new PublishTarget(id, PublishIdSource.Derived, catalog.FindPackage(id) is { } same && same.Manifest?.Author.Id == handle ? same : null);
+    }
+
+    /// <summary>
+    /// <paramref name="handle"/>이 만든(작성자 ID가 같은), 읽을 수 있는 에셋 하나짜리 설치 패키지인지 — 게시 창이 그 ID로 새 버전을 올리는 패키지.
+    /// </summary>
+    public static bool IsOwnPackage(InstalledPackage package, string? handle)
+        => handle is { Length: > 0 } && package.Manifest?.Author.Id == handle && !package.IsBroken && package.Entries.Count == 1;
+
+    /// <summary>
+    /// 다음 버전 제안: 전에 게시한 버전이 없으면 1.0.0, 프리릴리스(1.2.0-beta)면 그 정식 버전(1.2.0), 아니면 수 버전을 올린다(1.2.3 → 1.2.4).
     /// </summary>
     public static string SuggestVersion(string? previous)
     {
         if (!SemVersion.TryParse(previous, out var v)) return "1.0.0";
         return v.IsPrerelease
             ? string.Create(CultureInfo.InvariantCulture, $"{v.Major}.{v.Minor}.{v.Patch}")
-            : string.Create(CultureInfo.InvariantCulture, $"{v.Major}.{v.Minor + 1}.0");
+            : string.Create(CultureInfo.InvariantCulture, $"{v.Major}.{v.Minor}.{v.Patch + 1}");
     }
 
     /// <summary><paramref name="id"/>의 가장 높은 게시 버전(온라인 목록과 이 컴퓨터의 저장 기록 중). 없으면 null.</summary>

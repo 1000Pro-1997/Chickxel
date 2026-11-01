@@ -273,6 +273,7 @@
   <data name="Script_UnknownColorPairSetting" xml:space="preserve"><value>Not a color pair setting: {key}</value></data>
   <data name="Script_InvalidColorIndex" xml:space="preserve"><value>Setting {key} has no item {index}.</value></data>
   <data name="Script_InvalidPairPart" xml:space="preserve"><value>The part of a color pair must be "from" or "to": {part}</value></data>
+  <data name="Script_GradientHint" xml:space="preserve"><value>{label}: choosing a gradient still draws one flat color. Pick the color per pixel with {call} to show the gradient.</value></data>
   <data name="Script_UnknownColorSlot" xml:space="preserve"><value>Not a color setting slot: {slot}</value></data>
   <data name="Script_InvalidBounds" xml:space="preserve"><value>Gradient bounds must be an object with numbers x, y, w and h.</value></data>
   <data name="Script_FastSyntax" xml:space="preserve"><value>Not supported on the fast path: {construct}</value></data>

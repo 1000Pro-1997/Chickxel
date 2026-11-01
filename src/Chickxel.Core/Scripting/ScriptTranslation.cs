@@ -81,11 +81,40 @@ public static partial class ScriptTranslations
     }
 
     /// <summary>
-    /// 화면 언어 <paramref name="culture"/>에서 정보 칸(이름·설명)이 고칠 곳: 선언 값이면 null(<paramref name="baseLanguage"/>가 없거나 화면 언어가 그 언어일 때),
-    /// 아니면 고칠 번역의 언어 코드(<see cref="LanguageOf"/>). 고정 문화권이면 null.
+    /// 화면 언어 <paramref name="culture"/>에서 정보 칸(이름·설명)이 고칠 곳: 선언 값이면 null, 아니면 고칠 번역의 언어 코드.
+    /// <list type="bullet">
+    /// <item><paramref name="baseLanguage"/>가 있으면: 화면 언어가 그 언어면 null, 아니면 <see cref="LanguageOf"/>(없는 번역이면 새로 만든다).</item>
+    /// <item>없으면(예전 원문): 화면 언어의 찾는 차례에 있는 번역이 있으면 그 번역의 키(적힌 그대로), 없으면 null(선언 값을 고침).</item>
+    /// </list>
+    /// 고정 문화권이면 null.
     /// </summary>
-    public static string? EditLanguage(string? baseLanguage, CultureInfo culture)
-        => baseLanguage is null || Matches(baseLanguage, culture) ? null : LanguageOf(culture);
+    public static string? EditLanguage(string? baseLanguage, IReadOnlyDictionary<string, ScriptTranslation> translations, CultureInfo culture)
+    {
+        if (baseLanguage is not null) return Matches(baseLanguage, culture) ? null : LanguageOf(culture);
+        for (var c = culture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+            if (translations.Keys.FirstOrDefault(key => string.Equals(key, c.Name, StringComparison.OrdinalIgnoreCase)) is { } key) return key;
+        return null;
+    }
+
+    /// <summary>
+    /// 선언에 <c>language</c>가 없을 때 이름·설명 글자로 짐작한 언어: 한글 → <c>ko</c>, 가나 → <c>ja</c>, 한자만 → <c>zh-Hans</c>,
+    /// 키릴 → <c>ru</c>, 타이 → <c>th</c>, 라틴 글자 → <c>en</c>. 글자가 없으면 null. 처음 나온 순서가 아니라 위 차례로 본다(한국어·일본어 글에 한자·영어가 섞여도).
+    /// </summary>
+    public static string? GuessLanguage(params IEnumerable<string?> texts)
+    {
+        bool hangul = false, kana = false, han = false, cyrillic = false, thai = false, latin = false;
+        foreach (string text in texts.OfType<string>())
+            foreach (char ch in text)
+            {
+                hangul |= ch is >= '\uAC00' and <= '\uD7A3' or >= '\u1100' and <= '\u11FF' or >= '\u3130' and <= '\u318F';
+                kana |= ch is >= '\u3040' and <= '\u30FF';
+                han |= ch is >= '\u4E00' and <= '\u9FFF' or >= '\u3400' and <= '\u4DBF';
+                cyrillic |= ch is >= '\u0400' and <= '\u04FF';
+                thai |= ch is >= '\u0E00' and <= '\u0E7F';
+                latin |= ch is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '\u00C0' and <= '\u024F';
+            }
+        return hangul ? "ko" : kana ? "ja" : han ? "zh-Hans" : cyrillic ? "ru" : thai ? "th" : latin ? "en" : null;
+    }
 
     public static string NameFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string declared, CultureInfo culture, string? baseLanguage = null)
         => Find(translations, culture, t => t.Name, baseLanguage) ?? declared;
