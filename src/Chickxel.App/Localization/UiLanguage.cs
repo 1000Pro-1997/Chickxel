@@ -34,6 +34,7 @@ public static class UiLanguage
         (nameof(StartStrings), StartStrings.ResourceManager),
         (nameof(CoreStrings), CoreStrings.ResourceManager),
         (nameof(DomainStrings), DomainStrings.ResourceManager),
+        (nameof(ScriptApiStrings), ScriptApiStrings.ResourceManager),
     ];
 
     /// <summary>CSV로 더한 언어를 두는 폴더(<c>&lt;설정 폴더&gt;/Chickxel/Languages</c>).</summary>

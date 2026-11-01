@@ -252,6 +252,17 @@
   <data name="Script_InvalidBlankSize" xml:space="preserve"><value>img.blank width and height must be whole numbers from 1 to {max}, with at most {pixels} pixels.</value></data>
   <data name="Script_InvalidImageArgument" xml:space="preserve"><value>Expected an image made by img.blank or ctx.frameSource.</value></data>
   <data name="Script_UnknownColorSetting" xml:space="preserve"><value>Not a color setting: {key}</value></data>
+  <data name="Script_FastSyntax" xml:space="preserve"><value>Not supported on the fast path: {construct}</value></data>
+  <data name="Script_FastName" xml:space="preserve"><value>Name not available on the fast path: {name}</value></data>
+  <data name="Script_FastValue" xml:space="preserve"><value>The fast path only computes numbers and booleans (no strings, objects, arrays, undefined or mixed kinds): {construct}</value></data>
+  <data name="Script_FastAssign" xml:space="preserve"><value>The fast path cannot assign to {name} (only let number/boolean variables and img.data elements can change).</value></data>
+  <data name="Script_FastRecursion" xml:space="preserve"><value>Function {name}: recursion or very deep calls are not supported on the fast path.</value></data>
+  <data name="Script_FastArguments" xml:space="preserve"><value>Function {name}: calls with fewer arguments than parameters are not supported on the fast path.</value></data>
+  <data name="Script_FastNoValue" xml:space="preserve"><value>Function {name}: using the result of a function that returns no value is not supported on the fast path.</value></data>
+  <data name="Script_FastBeforeDeclaration" xml:space="preserve"><value>{name} is used before its declaration (not supported on the fast path).</value></data>
+  <data name="Script_FastTopLevel" xml:space="preserve"><value>Only effect(...), const and function declarations are supported at the top level on the fast path (no calls inside the declaration object or top-level const).</value></data>
+  <data name="Script_FastTooLarge" xml:space="preserve"><value>The code is too large after inlining functions, so it was not converted to the fast path.</value></data>
+  <data name="Script_FastInternal" xml:space="preserve"><value>Converting to the fast path failed, so the effect runs on Jint: {detail}</value></data>
   <data name="Asset_Issue_PackageTooLarge" xml:space="preserve"><value>The package file is too large (max {detail} bytes).</value></data>
   <data name="Asset_Issue_NotZip" xml:space="preserve"><value>Can't read this as a ZIP package.</value></data>
   <data name="Asset_Issue_TooManyFiles" xml:space="preserve"><value>The package has too many files (max {detail}).</value></data>
@@ -331,7 +342,7 @@
   <data name="Publish_Tags" xml:space="preserve"><value>Up to 8 tags, each up to 32 lowercase letters, digits and hyphens.</value></data>
   <data name="Publish_NoTags" xml:space="preserve"><value>Without tags the package is hard to find in Browse.</value></data>
   <data name="Publish_UnknownLicense" xml:space="preserve"><value>{detail} is not a common SPDX ID. Check the spelling; a license you wrote yourself should start with LicenseRef-.</value></data>
-  <data name="Publish_SavedVersionChanged" xml:space="preserve"><value>You uploaded version {detail} with different contents from this computer before. If it is already uploaded, raise the version.</value></data>
+  <data name="Publish_VersionNotNewer" xml:space="preserve"><value>Enter a version higher than {detail}, which is already published. Published versions can't change, so the same or a lower version can't be uploaded.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>Unnamed effect {number}</value></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>Unnamed gradient {number}</value></data>
   <data name="Community_Error_Unauthorized" xml:space="preserve"><value>You need to sign in. If your session ended, sign in again.</value></data>

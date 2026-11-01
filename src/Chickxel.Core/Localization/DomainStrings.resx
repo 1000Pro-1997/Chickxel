@@ -260,6 +260,17 @@
   <data name="Script_InvalidBlankSize" xml:space="preserve"><value>img.blank의 가로세로는 1~{max} 정수이고 픽셀은 {pixels}개까지입니다.</value><comment>max = 축 최대 크기; pixels = 최대 픽셀 수.</comment></data>
   <data name="Script_InvalidImageArgument" xml:space="preserve"><value>img.blank나 ctx.frameSource로 만든 그림이 필요합니다.</value></data>
   <data name="Script_UnknownColorSetting" xml:space="preserve"><value>색 설정이 아닙니다: {key}</value><comment>key = ctx.color에 넘긴 키.</comment></data>
+  <data name="Script_FastSyntax" xml:space="preserve"><value>빠른 경로에서 쓸 수 없는 문법입니다: {construct}</value><comment>construct = 구문 종류(JS 해석기의 노드 이름, 영어)나 이름.</comment></data>
+  <data name="Script_FastName" xml:space="preserve"><value>빠른 경로에서 쓸 수 없는 이름입니다: {name}</value><comment>name = 전역 이름이나 속성 경로(예: ctx.frameSource).</comment></data>
+  <data name="Script_FastValue" xml:space="preserve"><value>빠른 경로에서는 숫자와 참거짓만 계산합니다(문자열, 객체, 배열, undefined, 종류가 섞인 값은 안 됨): {construct}</value><comment>construct = 걸린 식의 이름이나 구문 종류(영어).</comment></data>
+  <data name="Script_FastAssign" xml:space="preserve"><value>빠른 경로에서는 {name}에 값을 넣을 수 없습니다(let 숫자·참거짓 변수와 img.data 칸만 바꿀 수 있음).</value><comment>name = 값을 넣으려 한 이름이나 속성 경로.</comment></data>
+  <data name="Script_FastRecursion" xml:space="preserve"><value>함수 {name}: 재귀 호출이나 너무 깊은 호출은 빠른 경로에서 쓸 수 없습니다.</value><comment>name = 함수 이름.</comment></data>
+  <data name="Script_FastArguments" xml:space="preserve"><value>함수 {name}: 매개변수보다 적은 인자로 부르면 빠른 경로에서 쓸 수 없습니다.</value><comment>name = 함수 이름.</comment></data>
+  <data name="Script_FastNoValue" xml:space="preserve"><value>함수 {name}: 값을 돌려주지 않는 함수의 결과는 빠른 경로에서 쓸 수 없습니다.</value><comment>name = 함수 이름.</comment></data>
+  <data name="Script_FastBeforeDeclaration" xml:space="preserve"><value>{name}을(를) 선언하기 전에 씁니다(빠른 경로에서 쓸 수 없음).</value><comment>name = 변수 이름.</comment></data>
+  <data name="Script_FastTopLevel" xml:space="preserve"><value>맨 위에는 effect(...), const, function 선언만 빠른 경로에서 쓸 수 있습니다(선언 객체 안이나 맨 위 const에서는 함수를 부를 수 없음).</value></data>
+  <data name="Script_FastTooLarge" xml:space="preserve"><value>함수를 펼친 코드가 너무 커서 빠른 경로로 바꾸지 않았습니다.</value></data>
+  <data name="Script_FastInternal" xml:space="preserve"><value>빠른 경로로 바꾸다 문제가 생겨 Jint로 돕니다: {detail}</value><comment>detail = .NET 오류 문구(영어).</comment></data>
   <data name="Asset_Issue_PackageTooLarge" xml:space="preserve"><value>패키지 파일이 너무 큽니다(최대 {detail}바이트).</value></data>
   <data name="Asset_Issue_NotZip" xml:space="preserve"><value>ZIP 패키지로 읽을 수 없습니다.</value></data>
   <data name="Asset_Issue_TooManyFiles" xml:space="preserve"><value>패키지 안 파일이 너무 많습니다(최대 {detail}개).</value></data>
@@ -339,7 +350,7 @@
   <data name="Publish_Tags" xml:space="preserve"><value>태그는 8개까지, 각각 소문자·숫자·하이픈으로 32자 이하여야 합니다.</value></data>
   <data name="Publish_NoTags" xml:space="preserve"><value>태그가 없으면 둘러보기에서 찾기 어렵습니다.</value></data>
   <data name="Publish_UnknownLicense" xml:space="preserve"><value>{detail}은(는) 흔한 SPDX ID가 아닙니다. 철자를 확인하고, 직접 만든 라이선스는 LicenseRef-로 시작하세요.</value></data>
-  <data name="Publish_SavedVersionChanged" xml:space="preserve"><value>이 컴퓨터에서 버전 {detail}을(를) 다른 내용으로 올린 적이 있습니다. 이미 올렸다면 버전을 올리세요.</value></data>
+  <data name="Publish_VersionNotNewer" xml:space="preserve"><value>이미 올린 버전 {detail}보다 높은 버전을 적으세요. 올린 버전은 바꿀 수 없어서 같거나 낮은 버전은 올릴 수 없습니다.</value><comment>detail = 이미 올린 가장 높은 버전.</comment></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>이름 없는 효과 {number}</value><comment>예전 사용자 정의 효과 이름이 제어 문자뿐이라 비었을 때 개인 에셋으로 옮기며 붙이는 이름. number = 목록 순번(1부터).</comment></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>이름 없는 그라데이션 {number}</value><comment>예전 그라데이션 프리셋 이름이 비었을 때 붙이는 이름. number = 목록 순번(1부터).</comment></data>
   <data name="Community_Error_Unauthorized" xml:space="preserve"><value>로그인이 필요합니다. 로그인이 끝났으면 다시 로그인하세요.</value></data>

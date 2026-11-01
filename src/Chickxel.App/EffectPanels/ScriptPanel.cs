@@ -82,7 +82,7 @@ public sealed partial class LayerEffectsDialog
     /// <summary>
     /// 정수·실수 설정: 범위가 있으면 슬라이더 + 숫자 칸(값을 바꿀 때마다 반영), 없으면 숫자 칸만. 실수는 <c>step</c>의 소수 자리까지(최대 4자리).
     /// </summary>
-    private static Control ScriptNumberEditor(ScriptSetting setting, double value, Action<double> changed)
+    internal static Control ScriptNumberEditor(ScriptSetting setting, double value, Action<double> changed)
     {
         bool whole = setting.Type == ScriptSettingType.Int;
         const double Limit = 1e9;

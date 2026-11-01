@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <!-- 스크립트 API 표(ScriptApiCatalog)의 한 줄 설명: 키 = Api_<자리>_<이름>. 코드 편집기 자동 완성 풍선과 편집기 안내가 쓴다. -->
+  <data name="Api_global_effect" xml:space="preserve"><value>효과를 선언합니다. 파일에서 한 번만 부르고, 이름·설정·render 함수를 담은 객체를 넘깁니다.</value></data>
+  <data name="Api_global_Math" xml:space="preserve"><value>수학 함수(Math.random은 없음 — ctx.hash·ctx.random을 씁니다).</value></data>
+  <data name="Api_global_lerp" xml:space="preserve"><value>a에서 b까지 t(0~1)만큼 간 값: a + (b − a) × t.</value></data>
+  <data name="Api_global_hsvToRgb" xml:space="preserve"><value>색상 h(0~360)·채도 s·명도 v(0~1)로 색 { r, g, b, a }(0~255)를 만듭니다. a는 선택(기본 255).</value></data>
+  <data name="Api_global_rgbToHsv" xml:space="preserve"><value>r·g·b(0~255)를 { h(0~360), s, v(0~1) }로 바꿉니다.</value></data>
+  <data name="Api_effect_name" xml:space="preserve"><value>효과 이름(효과 목록·에셋에 보임). 꼭 필요합니다.</value></data>
+  <data name="Api_effect_author" xml:space="preserve"><value>작성자 이름(선택). 실행 확인 창에 보입니다.</value></data>
+  <data name="Api_effect_animated" xml:space="preserve"><value>프레임 진행(ctx.progress)에 따라 모습이 바뀌면 true. 빠르기 곡선·반복 설정이 생깁니다.</value></data>
+  <data name="Api_effect_area" xml:space="preserve"><value>계산 범위: "global"(기본, 프레임마다 한 번) 또는 "local"(조각마다, radius만큼 여유).</value></data>
+  <data name="Api_effect_radius" xml:space="preserve"><value>area가 "local"일 때 조각 둘레에 붙일 여유 px.</value></data>
+  <data name="Api_effect_previewChick" xml:space="preserve"><value>온라인에 올릴 때 미리보기에 쓸 병아리 ID(기본 "original").</value></data>
+  <data name="Api_effect_settings" xml:space="preserve"><value>효과 창에 보일 설정 칸 목록. 값은 render의 s.키로 읽습니다.</value></data>
+  <data name="Api_effect_padding" xml:space="preserve"><value>효과가 그림 밖으로 넓히는 여백: 고정 [왼, 위, 오른, 아래] 또는 설정·크기로 계산하는 함수.</value></data>
+  <data name="Api_effect_render" xml:space="preserve"><value>프레임마다 불려 img.data를 제자리에서 바꿉니다. 같은 입력이면 늘 같은 결과여야 합니다.</value></data>
+  <data name="Api_effect_area_global" xml:space="preserve"><value>프레임마다 그림 전체로 한 번 부릅니다.</value></data>
+  <data name="Api_effect_area_local" xml:space="preserve"><value>조각마다 부릅니다(radius만큼 둘레를 같이 넘김).</value></data>
+  <data name="Api_setting_key" xml:space="preserve"><value>저장 키(영문자나 _로 시작). render에서 s.키로 읽습니다.</value></data>
+  <data name="Api_setting_label" xml:space="preserve"><value>설정 칸 이름.</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice".</value></data>
+  <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number).</value></data>
+  <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number).</value></data>
+  <data name="Api_setting_step" xml:space="preserve"><value>슬라이더 간격(number).</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, 색은 "#ff8800").</value></data>
+  <data name="Api_setting_choices" xml:space="preserve"><value>choice의 항목: [{ value, label }].</value></data>
+  <data name="Api_setting_type_int" xml:space="preserve"><value>정수: 슬라이더와 숫자 칸.</value></data>
+  <data name="Api_setting_type_number" xml:space="preserve"><value>실수: 슬라이더와 숫자 칸(step 자리까지).</value></data>
+  <data name="Api_setting_type_bool" xml:space="preserve"><value>켜고 끄기: 체크 상자.</value></data>
+  <data name="Api_setting_type_color" xml:space="preserve"><value>색: 색 칸. s.키는 { r, g, b, a }.</value></data>
+  <data name="Api_setting_type_choice" xml:space="preserve"><value>목록에서 고르기: s.키는 고른 value 문자열.</value></data>
+  <data name="Api_img_width" xml:space="preserve"><value>그림 너비(px, 여백 포함).</value></data>
+  <data name="Api_img_height" xml:space="preserve"><value>그림 높이(px, 여백 포함).</value></data>
+  <data name="Api_img_data" xml:space="preserve"><value>RGBA 숫자 배열(길이 = 너비 × 높이 × 4). 바꾸면 그림이 바뀝니다.</value></data>
+  <data name="Api_img_blank" xml:space="preserve"><value>같은 형식의 빈(투명) 그림을 만듭니다.</value></data>
+  <data name="Api_img_blendOver" xml:space="preserve"><value>src를 이 그림의 (x, y)에 알파 합성으로 겹칩니다.</value></data>
+  <data name="Api_ctx_t" xml:space="preserve"><value>효과 범위 안 진행(0~1, 반복·빠르기 곡선 전).</value></data>
+  <data name="Api_ctx_progress" xml:space="preserve"><value>반복·빠르기 곡선을 넣은 진행(0~1). 움직이는 효과는 보통 이것을 씁니다.</value></data>
+  <data name="Api_ctx_frame" xml:space="preserve"><value>그리는 프레임 번호(0부터).</value></data>
+  <data name="Api_ctx_step" xml:space="preserve"><value>효과 범위 첫 프레임부터 몇 프레임째인지(0부터).</value></data>
+  <data name="Api_ctx_span" xml:space="preserve"><value>효과 범위 길이 − 1.</value></data>
+  <data name="Api_ctx_source" xml:space="preserve"><value>여백을 넣은 그림 안의 원본 자리 { x, y, w, h }.</value></data>
+  <data name="Api_ctx_pivot" xml:space="preserve"><value>피벗 자리 { x, y }(그림 좌표).</value></data>
+  <data name="Api_ctx_color" xml:space="preserve"><value>색 설정 key의 색 { r, g, b, a }. x, y는 나중의 그라데이션 색용.</value></data>
+  <data name="Api_ctx_hash" xml:space="preserve"><value>위치·시드로 정해지는 0 이상 1 미만의 수(프레임과 무관, 늘 같음).</value></data>
+  <data name="Api_ctx_random" xml:space="preserve"><value>프레임·시드로 정해지는 0 이상 1 미만의 수(늘 같음).</value></data>
+  <data name="Api_ctx_frameSource" xml:space="preserve"><value>다른 프레임의 효과 원본(효과 없이, 같은 크기). 없으면 null.</value></data>
+  <data name="Api_ctx_source_x" xml:space="preserve"><value>원본 왼쪽 px.</value></data>
+  <data name="Api_ctx_source_y" xml:space="preserve"><value>원본 위쪽 px.</value></data>
+  <data name="Api_ctx_source_w" xml:space="preserve"><value>원본 너비 px.</value></data>
+  <data name="Api_ctx_source_h" xml:space="preserve"><value>원본 높이 px.</value></data>
+  <data name="Api_ctx_pivot_x" xml:space="preserve"><value>피벗 X(그림 좌표).</value></data>
+  <data name="Api_ctx_pivot_y" xml:space="preserve"><value>피벗 Y(그림 좌표).</value></data>
+  <data name="Api_color_r" xml:space="preserve"><value>빨강(0~255).</value></data>
+  <data name="Api_color_g" xml:space="preserve"><value>초록(0~255).</value></data>
+  <data name="Api_color_b" xml:space="preserve"><value>파랑(0~255).</value></data>
+  <data name="Api_color_a" xml:space="preserve"><value>불투명도(0~255).</value></data>
+  <data name="Api_hsv_h" xml:space="preserve"><value>색상(0~360).</value></data>
+  <data name="Api_hsv_s" xml:space="preserve"><value>채도(0~1).</value></data>
+  <data name="Api_hsv_v" xml:space="preserve"><value>명도(0~1).</value></data>
+  <data name="Api_Math_PI" xml:space="preserve"><value>원주율 π.</value></data>
+  <data name="Api_Math_E" xml:space="preserve"><value>자연로그의 밑 e.</value></data>
+  <data name="Api_Math_abs" xml:space="preserve"><value>절댓값.</value></data>
+  <data name="Api_Math_floor" xml:space="preserve"><value>내림(작거나 같은 정수).</value></data>
+  <data name="Api_Math_ceil" xml:space="preserve"><value>올림(크거나 같은 정수).</value></data>
+  <data name="Api_Math_trunc" xml:space="preserve"><value>소수 버림(0 쪽 정수).</value></data>
+  <data name="Api_Math_round" xml:space="preserve"><value>반올림(.5는 위로).</value></data>
+  <data name="Api_Math_sign" xml:space="preserve"><value>부호: −1, 0, 1.</value></data>
+  <data name="Api_Math_min" xml:space="preserve"><value>가장 작은 값.</value></data>
+  <data name="Api_Math_max" xml:space="preserve"><value>가장 큰 값.</value></data>
+  <data name="Api_Math_sqrt" xml:space="preserve"><value>제곱근.</value></data>
+  <data name="Api_Math_pow" xml:space="preserve"><value>x의 y제곱.</value></data>
+  <data name="Api_Math_hypot" xml:space="preserve"><value>√(x² + y²): 원점까지 거리.</value></data>
+  <data name="Api_Math_sin" xml:space="preserve"><value>사인(라디안).</value></data>
+  <data name="Api_Math_cos" xml:space="preserve"><value>코사인(라디안).</value></data>
+  <data name="Api_Math_tan" xml:space="preserve"><value>탄젠트(라디안).</value></data>
+  <data name="Api_Math_atan2" xml:space="preserve"><value>(x, y) 방향의 각도(라디안, −π~π).</value></data>
+  <data name="Api_Math_exp" xml:space="preserve"><value>e의 x제곱.</value></data>
+  <data name="Api_Math_log" xml:space="preserve"><value>자연로그.</value></data>
+  <data name="Completion_Local" xml:space="preserve"><value>이 원문의 이름</value></data>
+  <data name="Completion_Keyword" xml:space="preserve"><value>JavaScript 키워드</value></data>
+  <data name="Completion_Setting" xml:space="preserve"><value>설정({type})</value><comment>type = 설정 종류(int, number, bool, color, choice).</comment></data>
+  <data name="Completion_Chick" xml:space="preserve"><value>병아리 {number}번</value><comment>number = 병아리 번호(효과 저장 창과 같은 번호).</comment></data>
+</root>

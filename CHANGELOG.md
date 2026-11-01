@@ -2,6 +2,29 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## 미배포
+### Effect Maker window
+- **Tools > Effect Maker…** makes and edits recipes (combinations of built-in effects) and script effects (JavaScript). On the left is your effect list, in the middle the editor, and on the right the same chick preview that is made when you publish (play, show without effect) and the status.
+- For a recipe you set the name, description, insert range and parameters, and **Edit effects…** opens the effects window with the effects on the preview chick. **From layer** makes a new recipe from the effect list of the current layer in the main window.
+- **Save** keeps it as a personal asset (Ctrl+S), **Insert into layer** adds it to the end of the main window's current layer (one undo step), and **Upload…** saves and opens the publish window with just this effect selected (the preview is made automatically).
+- The right-click menu of Custom tab tiles in the effects window and the details of personal recipes and scripts in the asset manager have **Edit in Effect Maker**.
+
+### Script code editor: syntax colors, autocomplete, error underlines
+- The Effect Maker and the script editor of the effects window share one code editor: JavaScript syntax colors, line numbers, wavy underlines at errors and description tooltips over names.
+- Suggestions appear after `img.`, `ctx.`, `ctx.source.` and `Math.`, after `s.` (the declared setting keys), at key positions of the declaration and setting items, and inside `type: "`, `area: "`, `previewChick: "` and `ctx.color("` (also with Ctrl+Space). While you type a call, a parameter hint shows with the current argument in bold.
+
+### AI makes and saves effects
+- AI chat writes script effects for looks the built-in effects can't make (`write_script_effect` - with errors nothing changes and the line and column come back so it can fix them). It reads the API with `get_script_api` first.
+- `preview_effects` shows frames of effects on the chick or the layer's own image, and `save_effect_asset` saves a layer's effect bundle as a personal recipe and opens it in the Effect Maker. Publishing online is left to you.
+
+### Preview chicks and animated previews
+- The save custom effect window lets you pick one of 20 preview chicks; script effects name one in the declaration, like `previewChick: "knight"`.
+- Previews made for Publish Online and package export are animated PNGs of the effect over 10 steps on that chick (still effects stay one image), with the effect-free original included so chickxel.com can compare before and after.
+- The official effect packages (Shiny Pickup, Outlined Drop Shadow, Hit Reaction) are now 1.0.1 with the new previews.
+
+### Re-uploaded versions must be higher
+- The publish window won't upload a version that is the same as or lower than the highest version already published (online list and this computer's records), and says why: published versions can't change.
+
 ## v1.14.62 (2026-11-01)
 ### Chickxel account, gallery uploads and asset publishing on chickxel.com
 - **Help > Chickxel Account…** signs in with Google, GitHub or Discord in your browser and returns to Chickxel. The window shows your picture, name and handle, lets you change the name and handle, opens your gallery page and signs out. The session is kept in the settings folder (encrypted for your Windows user on Windows).

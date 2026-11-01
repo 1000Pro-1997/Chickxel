@@ -47,6 +47,8 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.22" />
+    <!-- 효과 만들기의 스크립트 코드 편집기(문법 색칠·자동 완성 창). 순수 .NET이라 exe·.app에 그대로 묶인다. -->
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="11.4.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="5.0.0-1.25277.114" PrivateAssets="all" />
   </ItemGroup>
 

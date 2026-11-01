@@ -150,10 +150,12 @@ public sealed partial class LayerEffectsDialog
         }
         var show = Item(UiStrings.EffectPreset_ShowInManager, VectorIcon.Package, () => AssetManagerWindow.Open(this, entry.Kind, entry.Id));
         if (entry.Origin != AssetOrigin.Personal) return [show];
+        var maker = Item(UiStrings.EffectMaker_EditIn, VectorIcon.Sparkles, () => EffectMakerWindow.OpenFromAnywhere(entry.Id));
         // 스크립트 에셋의 이름은 원문의 선언이라 여기서 바꾸지 않는다
-        if (entry.Script is not null) return [Item(UiStrings.EffectPreset_Delete, VectorIcon.Trash, () => DeletePreset(entry)), new Separator(), show];
+        if (entry.Script is not null) return [maker, Item(UiStrings.EffectPreset_Delete, VectorIcon.Trash, () => DeletePreset(entry)), new Separator(), show];
         return
         [
+            maker,
             Item(UiStrings.EffectPreset_Rename, VectorIcon.Pencil, () => RenamePreset(entry)),
             Item(UiStrings.RecipeParams_Edit, VectorIcon.SlidersHorizontal, () => RecipeParametersDialog.Edit(this, entry)),
             Item(UiStrings.EffectPreset_Delete, VectorIcon.Trash, () => DeletePreset(entry)),

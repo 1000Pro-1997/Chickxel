@@ -47,6 +47,11 @@ public sealed class App : Application
         {
             Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"),
         });
+        // 효과 만들기의 코드 편집기(AvaloniaEdit) 기본 모양
+        Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://Chickxel.App/"))
+        {
+            Source = new Uri("avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"),
+        });
         AppTheme.Install(this);
         PopupMenus.Install();
         TextFocusRelease.Install();

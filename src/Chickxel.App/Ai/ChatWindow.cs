@@ -807,6 +807,8 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "list_outfits", "save_outfit", "apply_outfit"]),
         (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
+        (UiStrings.Chat_Help_GroupEffectMaker, UiStrings.Chat_Help_GroupEffectMaker_Text,
+            ["get_script_api", "write_script_effect", "preview_effects", "save_effect_asset"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_palette", "set_colors"]),
         (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "save_project", "open_file"]),
         (UiStrings.Chat_Help_GroupReferences, UiStrings.Chat_Help_GroupReferences_Text,
@@ -841,7 +843,7 @@ public sealed partial class ChatWindow : Window
         [
             UiStrings.Chat_Help_Example1, UiStrings.Chat_Help_Example2, UiStrings.Chat_Help_Example3, UiStrings.Chat_Help_Example4,
             UiStrings.Chat_Help_Example5, UiStrings.Chat_Help_Example6, UiStrings.Chat_Help_Example7, UiStrings.Chat_Help_Example8,
-            UiStrings.Chat_Help_Example9, UiStrings.Chat_Help_Example10,
+            UiStrings.Chat_Help_Example9, UiStrings.Chat_Help_Example10, UiStrings.Chat_Help_ExampleEffectMaker,
         ];
         foreach (var example in examples)
         {

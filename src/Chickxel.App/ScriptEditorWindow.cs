@@ -4,14 +4,14 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App;
 
 /// <summary>
-/// 스크립트 효과 원문 편집 창(13.6, 효과 창에서 띄움 — 효과 창이 닫히면 같이 닫힘): 고정폭 글 상자, "적용", 문법·선언 오류 목록(줄·칸, 누르면 그 자리로),
-/// 지금 미리보기의 실행 상태(실행 오류 줄, 프레임당 계산 시간). 적용은 효과 창이 맡는다(<c>apply</c>가 오류 목록을 돌려줌 — 비었으면 적용됨).
+/// 스크립트 효과 원문 편집 창(13.6, 효과 창에서 띄움 — 효과 창이 닫히면 같이 닫힘): 효과 만들기와 같은 코드 편집기(<see cref="ScriptCodeEditor"/> — 문법 색칠·
+/// 자동 완성·매개변수 안내·오류 밑줄), "적용", 문법·선언 오류 목록(줄·칸, 누르면 그 자리로), 지금 미리보기의 실행 상태(실행 오류 줄, 프레임당 계산 시간).
+/// 적용은 효과 창이 맡는다(<c>apply</c>가 오류 목록을 돌려줌 — 비었으면 적용됨). 레이어에 넣은 효과 하나를 바로 고치는 곳이고,
+/// 에셋으로 만들고 올리는 곳은 효과 만들기다.
 /// </summary>
 internal sealed class ScriptEditorWindow : Window
 {
-    private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
-
-    private readonly TextBox _code;
+    private readonly ScriptCodeEditor _code = new();
     private readonly StackPanel _errors = new() { Spacing = 2 };
     private readonly TextBlock _result, _status;
     private readonly Func<string, IReadOnlyList<ScriptError>> _apply;
@@ -29,17 +29,7 @@ internal sealed class ScriptEditorWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = AppTheme.BackBrush;
 
-        _code = new TextBox
-        {
-            Text = ScriptEffectProgram.NormalizeSource(source),
-            AcceptsReturn = true,
-            AcceptsTab = true,
-            TextWrapping = TextWrapping.NoWrap,
-            FontFamily = MonoFont,
-            FontSize = 13,
-        };
-        ScrollViewer.SetHorizontalScrollBarVisibility(_code, ScrollBarVisibility.Auto);
-        ScrollViewer.SetVerticalScrollBarVisibility(_code, ScrollBarVisibility.Auto);
+        _code.Text = ScriptEffectProgram.NormalizeSource(source);
         var hint = Ui.Label(UiStrings.ScriptEditor_Hint);
         hint.TextWrapping = TextWrapping.Wrap;
         hint.Foreground = AppTheme.DimTextBrush;
@@ -63,11 +53,11 @@ internal sealed class ScriptEditorWindow : Window
                 e.Handled = true;
             }
         };
-        Opened += (_, _) => _code.Focus();
+        Opened += (_, _) => _code.GoTo(1, 1);
     }
 
     /// <summary>지금 원문(정리 전).</summary>
-    public string Source => _code.Text ?? "";
+    public string Source => _code.Text;
 
     /// <summary>미리보기에서 본 실행 상태 글(실행 오류 줄·프레임당 시간). 빈 글이면 숨긴다.</summary>
     public void ShowStatus(string text, bool problem)
@@ -85,6 +75,7 @@ internal sealed class ScriptEditorWindow : Window
     public void ShowErrors(IReadOnlyList<ScriptError> errors, bool applied = false)
     {
         _errors.Children.Clear();
+        _code.SetErrors(errors);
         foreach (var error in errors)
         {
             var row = new Button
@@ -96,29 +87,11 @@ internal sealed class ScriptEditorWindow : Window
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(3, 1),
             };
-            row.Click += (_, _) => GoTo(error.Line, error.Column);
+            row.Click += (_, _) => _code.GoTo(error.Line, Math.Max(1, error.Column));
             _errors.Children.Add(row);
         }
         _result.Text = errors.Count > 0 ? UiStrings.FormatScriptEditor_Errors(count: errors.Count) : applied ? UiStrings.ScriptEditor_Applied : "";
         _result.Foreground = errors.Count == 0 ? AppTheme.DimTextBrush : AppTheme.WarningBrush;
-        if (errors.Count > 0) GoTo(errors[0].Line, errors[0].Column);
-    }
-
-    /// <summary>원문의 <paramref name="line"/>줄 <paramref name="column"/>칸(1부터, 0이면 줄 처음)으로 커서를 옮긴다.</summary>
-    private void GoTo(int line, int column)
-    {
-        if (line < 1) return;
-        var text = _code.Text ?? "";
-        int at = 0;
-        for (int l = 1; l < line && at < text.Length; l++)
-        {
-            int next = text.IndexOf('\n', at);
-            if (next < 0) break;
-            at = next + 1;
-        }
-        int end = text.IndexOf('\n', at);
-        if (end < 0) end = text.Length;
-        _code.CaretIndex = Math.Min(end, at + Math.Max(0, column - 1));
-        _code.Focus();
+        if (errors.Count > 0) _code.GoTo(errors[0].Line, Math.Max(1, errors[0].Column));
     }
 }

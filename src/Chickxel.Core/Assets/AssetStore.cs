@@ -742,14 +742,17 @@ public sealed class AssetStore
 
     /// <summary>
     /// 스크립트 원문을 개인 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 설치와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
-    /// 통과하지 못하면 <see cref="AssetPackageException"/>. 같은 원문(해시)의 개인 스크립트가 있으면 새로 더하지 않고 그 항목을 돌려준다.
+    /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 개인 스크립트면 그 자리의 원문을 바꾸고(효과 만들기에서 고쳐 저장 —
+    /// 게시 기록이 에셋 ID로 이어짐), 아니면 같은 원문(해시)의 개인 스크립트가 있을 때 새로 더하지 않고 그 항목을 돌려준다.
     /// 실행 허락은 앱이 정한다(이 컴퓨터에서 쓴 원문).
     /// </summary>
-    public AssetEntry SavePersonalScript(string source)
+    public AssetEntry SavePersonalScript(string source, string? id = null)
     {
         var issues = new List<AssetIssue>();
         var context = new AssetReadContext(AssetKinds.EffectScript, strict: true, _options.EffectiveLimits, issues);
         if (ScriptAssetFormat.Check(source, "source", context) is not { } program) throw new AssetPackageException(issues);
+        if (id is not null && Catalog.Personal.Any(e => e.Id == id && e.Kind == AssetKinds.EffectScript))
+            return SavePersonalData(AssetKinds.EffectScript, ScriptAsset.From(id, program), favorite: null);
         if (Catalog.Personal.FirstOrDefault(e => e.Data is ScriptAsset s && s.Hash == program.ContentHash) is { } existing) return existing;
         return SavePersonalData(AssetKinds.EffectScript, ScriptAsset.From("", program), favorite: null);
     }

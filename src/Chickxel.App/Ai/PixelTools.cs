@@ -59,10 +59,11 @@ public sealed partial class PixelTools
     private static readonly HashSet<string> ReadTools =
     [
         "get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects",
+        "get_script_api", "preview_effects",
         "search_references", "get_reference", "get_style_rules",
     ];
-    /// <summary>참고 자료 보관소에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
-    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info"];
+    /// <summary>문서 밖(참고 자료 보관소·개인 에셋)에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
+    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_effect_asset"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
 
@@ -395,6 +396,7 @@ public sealed partial class PixelTools
             new JsonObject { ["path"] = Str("File path.") },
             "path"),
         .. EffectToolDefinitions(),
+        .. EffectMakerToolDefinitions(),
         .. ReferenceToolDefinitions(),
         .. GenerateToolDefinitions()]);
 
@@ -501,6 +503,10 @@ public sealed partial class PixelTools
                 "remove_effect" => RemoveEffect(name, a),
                 "apply_effects" => ApplyEffects(name, a),
                 "expand_canvas_for_effects" => ExpandCanvasForEffects(name, a),
+                "get_script_api" => GetScriptApi(),
+                "write_script_effect" => WriteScriptEffect(name, a),
+                "preview_effects" => PreviewEffects(a),
+                "save_effect_asset" => SaveEffectAsset(a),
                 "resize_canvas" => ResizeCanvas(name, a),
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),

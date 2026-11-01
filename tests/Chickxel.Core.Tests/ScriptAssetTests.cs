@@ -138,6 +138,24 @@ public class ScriptAssetTests
         Assert.Throws<AssetPackageException>(() => store.SavePersonalScript("effect({ name: 'x', render( {} });"));
     }
 
+    [Fact]
+    public void Editing_a_personal_script_keeps_its_id_and_replaces_the_source()
+    {
+        var source = Unique(ScriptTemplates.Shine);
+        var edited = source.Replace("빛 지나가기", "고친 빛");
+        using var dir = new TempDir();
+        var store = AssetStore.Open(dir.File("Assets"));
+        var saved = store.SavePersonalScript(source);
+
+        var replaced = store.SavePersonalScript(edited, saved.Id);
+
+        var entry = Assert.Single(store.Catalog.Personal);
+        Assert.Equal((saved.Id, saved.Id, "고친 빛", ScriptEffectProgram.HashOf(edited)), (replaced.Id, entry.Id, entry.Name, entry.Script!.Hash));
+        // 모르는 ID면 새 항목(같은 원문이 있으면 그 항목)
+        Assert.NotEqual(saved.Id, store.SavePersonalScript(source, "personal.missing").Id);
+        Assert.Equal(2, store.Catalog.Personal.Count);
+    }
+
     // ───────────── 원문을 실은 레시피 ─────────────
 
     [Fact]

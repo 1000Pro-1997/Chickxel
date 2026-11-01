@@ -7,6 +7,7 @@ using Acornima.Ast;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Localization;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting.Fast;
 using Jint;
 
 namespace Chickxel.Core.Scripting;
@@ -31,6 +32,10 @@ public sealed record ScriptParseResult(ScriptEffectProgram? Program, IReadOnlyLi
 /// <para>
 /// 스크립트 정체는 <see cref="ContentHash"/>(정리한 원문의 SHA-256)다(13.5). 효과 TypeId <c>chickxel.effect.script</c>와 이 해시, 설정값으로 효과 하나가 정해진다.
 /// </para>
+/// <para>
+/// render는 처음 부를 때(또는 <see cref="ExecutionPath"/>를 처음 읽을 때) 앱이 원문을 .NET 코드로 바꿔 보고(빠른 경로, <see cref="FastCompiler"/>),
+/// 바꿀 수 있으면 그 코드로, 아니면 Jint로 돈다. 두 길은 같은 입력에 같은 픽셀과 같은 문장 수 한도를 낸다. 선언 읽기와 <c>padding</c>은 늘 Jint다.
+/// </para>
 /// </summary>
 public sealed class ScriptEffectProgram
 {
@@ -39,6 +44,7 @@ public sealed class ScriptEffectProgram
 
     private readonly Prepared<Script> _script;
     private readonly EffectPadding? _fixedPadding; // null이면 padding 함수
+    private readonly Lazy<FastState> _fast;
 
     /// <summary>
     /// 설정 키로 쓸 수 없는 이름. 효과의 빠르기 곡선·반복이 같은 설정 JSON에 이 키로 저장된다(기본 움직이는 효과와 같은 모양).
@@ -60,7 +66,17 @@ public sealed class ScriptEffectProgram
         Settings = settings;
         _fixedPadding = fixedPadding;
         PreviewChick = previewChick;
+        _fast = new(CompileFast, LazyThreadSafetyMode.ExecutionAndPublication);
     }
+
+    /// <summary>render가 도는 길: 빠른 경로인지, 아니면 Jint로 도는 까닭과 위치. 처음 읽을 때 한 번 바꿔 보고 그 결과를 계속 쓴다.</summary>
+    public ScriptExecutionPath ExecutionPath => _fast.Value.Path;
+
+    /// <summary>해석한 원문(시험에서 Jint 길을 직접 부를 때).</summary>
+    internal Prepared<Script> PreparedScript => _script;
+
+    /// <summary>빠른 경로 render(바꿀 수 없으면 null).</summary>
+    internal FastRender? Fast => _fast.Value.Render;
 
     /// <summary>정리한 원문(<see cref="NormalizeSource"/>). 오류의 줄·칸은 이 글 기준이다.</summary>
     public string Source { get; }
@@ -165,6 +181,7 @@ public sealed class ScriptEffectProgram
     /// <c>render(img, ctx, s)</c>로 <paramref name="image"/>를 제자리에서 바꾼다(기본 효과 렌더러와 같은 계약).
     /// <paramref name="source"/>는 여백을 넣은 그림 안의 원본 자리(<c>ctx.source</c>). 실패하면 그림은 그대로 두고
     /// <see cref="ScriptEffectException"/>을, 취소되면 <see cref="OperationCanceledException"/>을 던진다.
+    /// 빠른 경로가 JS와 결과가 갈릴 자리에 닿으면 그 호출만 Jint로 다시 그린다.
     /// </summary>
     public void Render(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object>? settings = null,
         CancellationToken cancel = default)
@@ -173,6 +190,14 @@ public sealed class ScriptEffectProgram
             throw new ScriptEffectException(new(ScriptErrorKind.Memory,
                 DomainStrings.FormatScript_ImageTooLarge(width: image.Width, height: image.Height), 0, 0));
         var values = NormalizeSettings(settings);
+        if (Fast is { } fast && fast.TryRender(image, source, context, values, cancel)) return;
+        RenderOnJint(image, source, context, values, cancel);
+    }
+
+    /// <summary>Jint로 render(<paramref name="values"/>는 <see cref="NormalizeSettings"/>를 거친 값).</summary>
+    internal void RenderOnJint(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values,
+        CancellationToken cancel)
+    {
         ScriptSandbox.Run(Limits, cancel, sandbox =>
         {
             var declaration = sandbox.Declare(_script);
@@ -183,6 +208,25 @@ public sealed class ScriptEffectProgram
             ScriptHostApi.CopyBack(data, image);
             return true;
         });
+    }
+
+    private sealed record FastState(FastRender? Render, ScriptExecutionPath Path);
+
+    private FastState CompileFast()
+    {
+        try
+        {
+            return new(FastCompiler.Compile(_script.Program!, Settings, Limits), ScriptExecutionPath.Fast);
+        }
+        catch (FastUnsupportedException ex)
+        {
+            return new(null, new(false, ex.Message, ex.Line, ex.Column));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NotSupportedException)
+        {
+            // 변환기 자체의 결함: 효과는 Jint로 그대로 돌게 하고 까닭만 알린다
+            return new(null, new(false, DomainStrings.FormatScript_FastInternal(detail: ex.Message), 0, 0));
+        }
     }
 
     private static object? Coerce(ScriptSetting setting, object? value)

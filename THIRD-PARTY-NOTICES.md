@@ -6,6 +6,7 @@ Chickxel itself is released under the Chickxel Source-Available License (see `LI
 |---|---|---|
 | [.NET runtime](https://github.com/dotnet/runtime) | Self-contained runtime in release builds | MIT |
 | [Avalonia](https://github.com/AvaloniaUI/Avalonia) (Avalonia, Desktop, Themes.Fluent, Controls.ColorPicker) | Cross-platform UI | MIT |
+| [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) | Code editor of the Effect Maker and script editor (syntax colors, completion window) | MIT |
 | [SkiaSharp](https://github.com/mono/SkiaSharp) / [HarfBuzzSharp](https://github.com/mono/SkiaSharp) | Rendering and text shaping (via Avalonia) | MIT |
 | [Skia](https://skia.org) | 2D graphics library (via SkiaSharp) | BSD-3-Clause |
 | [HarfBuzz](https://github.com/harfbuzz/harfbuzz) | Text shaping (via HarfBuzzSharp) | MIT ("Old MIT") |

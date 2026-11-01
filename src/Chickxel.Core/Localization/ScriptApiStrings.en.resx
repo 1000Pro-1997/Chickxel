@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Api_global_effect" xml:space="preserve"><value>Declares the effect. Call it once per file with an object holding the name, settings and render function.</value></data>
+  <data name="Api_global_Math" xml:space="preserve"><value>Math functions (no Math.random; use ctx.hash or ctx.random).</value></data>
+  <data name="Api_global_lerp" xml:space="preserve"><value>The value t (0-1) of the way from a to b: a + (b - a) * t.</value></data>
+  <data name="Api_global_hsvToRgb" xml:space="preserve"><value>Makes a color { r, g, b, a } (0-255) from hue h (0-360), saturation s and value v (0-1). a is optional (default 255).</value></data>
+  <data name="Api_global_rgbToHsv" xml:space="preserve"><value>Turns r, g, b (0-255) into { h (0-360), s, v (0-1) }.</value></data>
+  <data name="Api_effect_name" xml:space="preserve"><value>Effect name (shown in the effect list and assets). Required.</value></data>
+  <data name="Api_effect_author" xml:space="preserve"><value>Author name (optional). Shown in the run confirmation window.</value></data>
+  <data name="Api_effect_animated" xml:space="preserve"><value>true if the look changes with frame progress (ctx.progress). Adds easing and repeat settings.</value></data>
+  <data name="Api_effect_area" xml:space="preserve"><value>Work area: "global" (default, once per frame) or "local" (per tile, with radius px of margin).</value></data>
+  <data name="Api_effect_radius" xml:space="preserve"><value>Margin in px around each tile when area is "local".</value></data>
+  <data name="Api_effect_previewChick" xml:space="preserve"><value>Chick ID for the preview made when you publish (default "original").</value></data>
+  <data name="Api_effect_settings" xml:space="preserve"><value>Settings shown in the effects window. Read the values as s.key in render.</value></data>
+  <data name="Api_effect_padding" xml:space="preserve"><value>Margin the effect adds outside the image: fixed [left, top, right, bottom] or a function of the settings and size.</value></data>
+  <data name="Api_effect_render" xml:space="preserve"><value>Called for every frame; changes img.data in place. The same input must always give the same result.</value></data>
+  <data name="Api_effect_area_global" xml:space="preserve"><value>Called once per frame with the whole image.</value></data>
+  <data name="Api_effect_area_local" xml:space="preserve"><value>Called per tile (with radius px around it).</value></data>
+  <data name="Api_setting_key" xml:space="preserve"><value>Storage key (starts with a letter or _). Read it as s.key in render.</value></data>
+  <data name="Api_setting_label" xml:space="preserve"><value>Setting label.</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>Value kind: "int", "number", "bool", "color", "choice".</value></data>
+  <data name="Api_setting_min" xml:space="preserve"><value>Smallest value (int, number).</value></data>
+  <data name="Api_setting_max" xml:space="preserve"><value>Largest value (int, number).</value></data>
+  <data name="Api_setting_step" xml:space="preserve"><value>Slider step (number).</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>Initial value (of the right kind; colors as "#ff8800").</value></data>
+  <data name="Api_setting_choices" xml:space="preserve"><value>Items of a choice: [{ value, label }].</value></data>
+  <data name="Api_setting_type_int" xml:space="preserve"><value>Integer: slider and number field.</value></data>
+  <data name="Api_setting_type_number" xml:space="preserve"><value>Number: slider and number field (to the digits of step).</value></data>
+  <data name="Api_setting_type_bool" xml:space="preserve"><value>On/off: checkbox.</value></data>
+  <data name="Api_setting_type_color" xml:space="preserve"><value>Color: color swatch. s.key is { r, g, b, a }.</value></data>
+  <data name="Api_setting_type_choice" xml:space="preserve"><value>Pick from a list: s.key is the chosen value string.</value></data>
+  <data name="Api_img_width" xml:space="preserve"><value>Image width in px (including padding).</value></data>
+  <data name="Api_img_height" xml:space="preserve"><value>Image height in px (including padding).</value></data>
+  <data name="Api_img_data" xml:space="preserve"><value>RGBA number array (length = width * height * 4). Changing it changes the image.</value></data>
+  <data name="Api_img_blank" xml:space="preserve"><value>Makes an empty (transparent) image of the same form.</value></data>
+  <data name="Api_img_blendOver" xml:space="preserve"><value>Alpha-blends src over this image at (x, y).</value></data>
+  <data name="Api_ctx_t" xml:space="preserve"><value>Progress within the effect range (0-1, before repeat and easing).</value></data>
+  <data name="Api_ctx_progress" xml:space="preserve"><value>Progress with repeat and easing (0-1). Animated effects usually use this.</value></data>
+  <data name="Api_ctx_frame" xml:space="preserve"><value>Index of the frame being drawn (from 0).</value></data>
+  <data name="Api_ctx_step" xml:space="preserve"><value>Frames since the first frame of the effect range (from 0).</value></data>
+  <data name="Api_ctx_span" xml:space="preserve"><value>Length of the effect range minus 1.</value></data>
+  <data name="Api_ctx_source" xml:space="preserve"><value>Where the original sits inside the padded image: { x, y, w, h }.</value></data>
+  <data name="Api_ctx_pivot" xml:space="preserve"><value>Pivot position { x, y } in image coordinates.</value></data>
+  <data name="Api_ctx_color" xml:space="preserve"><value>Color { r, g, b, a } of the color setting key. x, y are for gradient colors later.</value></data>
+  <data name="Api_ctx_hash" xml:space="preserve"><value>A number from 0 up to 1 fixed by position and seed (independent of the frame).</value></data>
+  <data name="Api_ctx_random" xml:space="preserve"><value>A number from 0 up to 1 fixed by frame and seed.</value></data>
+  <data name="Api_ctx_frameSource" xml:space="preserve"><value>The effect source of another frame (without effects, same size), or null.</value></data>
+  <data name="Api_ctx_source_x" xml:space="preserve"><value>Left of the original in px.</value></data>
+  <data name="Api_ctx_source_y" xml:space="preserve"><value>Top of the original in px.</value></data>
+  <data name="Api_ctx_source_w" xml:space="preserve"><value>Width of the original in px.</value></data>
+  <data name="Api_ctx_source_h" xml:space="preserve"><value>Height of the original in px.</value></data>
+  <data name="Api_ctx_pivot_x" xml:space="preserve"><value>Pivot X (image coordinates).</value></data>
+  <data name="Api_ctx_pivot_y" xml:space="preserve"><value>Pivot Y (image coordinates).</value></data>
+  <data name="Api_color_r" xml:space="preserve"><value>Red (0-255).</value></data>
+  <data name="Api_color_g" xml:space="preserve"><value>Green (0-255).</value></data>
+  <data name="Api_color_b" xml:space="preserve"><value>Blue (0-255).</value></data>
+  <data name="Api_color_a" xml:space="preserve"><value>Opacity (0-255).</value></data>
+  <data name="Api_hsv_h" xml:space="preserve"><value>Hue (0-360).</value></data>
+  <data name="Api_hsv_s" xml:space="preserve"><value>Saturation (0-1).</value></data>
+  <data name="Api_hsv_v" xml:space="preserve"><value>Value (0-1).</value></data>
+  <data name="Api_Math_PI" xml:space="preserve"><value>Pi.</value></data>
+  <data name="Api_Math_E" xml:space="preserve"><value>Euler's number e.</value></data>
+  <data name="Api_Math_abs" xml:space="preserve"><value>Absolute value.</value></data>
+  <data name="Api_Math_floor" xml:space="preserve"><value>Rounds down.</value></data>
+  <data name="Api_Math_ceil" xml:space="preserve"><value>Rounds up.</value></data>
+  <data name="Api_Math_trunc" xml:space="preserve"><value>Drops the fraction (toward 0).</value></data>
+  <data name="Api_Math_round" xml:space="preserve"><value>Rounds to nearest (.5 up).</value></data>
+  <data name="Api_Math_sign" xml:space="preserve"><value>Sign: -1, 0 or 1.</value></data>
+  <data name="Api_Math_min" xml:space="preserve"><value>Smallest value.</value></data>
+  <data name="Api_Math_max" xml:space="preserve"><value>Largest value.</value></data>
+  <data name="Api_Math_sqrt" xml:space="preserve"><value>Square root.</value></data>
+  <data name="Api_Math_pow" xml:space="preserve"><value>x to the power y.</value></data>
+  <data name="Api_Math_hypot" xml:space="preserve"><value>sqrt(x^2 + y^2): distance from the origin.</value></data>
+  <data name="Api_Math_sin" xml:space="preserve"><value>Sine (radians).</value></data>
+  <data name="Api_Math_cos" xml:space="preserve"><value>Cosine (radians).</value></data>
+  <data name="Api_Math_tan" xml:space="preserve"><value>Tangent (radians).</value></data>
+  <data name="Api_Math_atan2" xml:space="preserve"><value>Angle of direction (x, y) in radians (-pi to pi).</value></data>
+  <data name="Api_Math_exp" xml:space="preserve"><value>e to the power x.</value></data>
+  <data name="Api_Math_log" xml:space="preserve"><value>Natural logarithm.</value></data>
+  <data name="Completion_Local" xml:space="preserve"><value>Name in this source</value></data>
+  <data name="Completion_Keyword" xml:space="preserve"><value>JavaScript keyword</value></data>
+  <data name="Completion_Setting" xml:space="preserve"><value>Setting ({type})</value></data>
+  <data name="Completion_Chick" xml:space="preserve"><value>Chick {number}</value></data>
+</root>

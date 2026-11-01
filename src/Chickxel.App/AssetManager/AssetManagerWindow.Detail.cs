@@ -196,6 +196,14 @@ public sealed partial class AssetManagerWindow
         if (entry.Origin == AssetOrigin.Personal)
             Actions(
                 favorite,
+                entry.Kind is AssetKinds.EffectRecipe or AssetKinds.EffectScript
+                    ? Ui.Button(VectorIcon.Sparkles, UiStrings.EffectMaker_EditIn, (_, _) =>
+                    {
+                        // 에셋 관리자는 모달이라 닫고 효과 만들기(메인 창에 딸린 창)로 넘어간다
+                        Close();
+                        EffectMakerWindow.OpenFromAnywhere(entry.Id);
+                    })
+                    : null,
                 entry.Script is not null ? null : Ui.Button(VectorIcon.Pencil, UiStrings.Assets_Rename, (_, _) => RenamePersonal(entry)),
                 entry.Recipe is null ? null
                     : Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.RecipeParams_Edit, (_, _) => RecipeParametersDialog.Edit(this, entry)).Tip(UiStrings.RecipeParams_EditTip),

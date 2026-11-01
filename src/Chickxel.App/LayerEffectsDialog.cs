@@ -124,6 +124,9 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>확인(프레임을 늘렸을 때)·영구 적용으로 닫혔으면 상태 표시줄에 보일 알림.</summary>
     public string? ResultMessage { get; private set; }
 
+    /// <summary>열려 있는 효과 창 수(효과 만들기가 그동안 메인 편집기 레이어에 넣지 않게 — 효과 창이 같은 레이어를 미리 바꾸고 있을 수 있음).</summary>
+    internal static int OpenCount { get; private set; }
+
     /// <param name="focus">처음 고를 효과 번호(범위 밖이면 첫 효과).</param>
     /// <param name="newRange">"추가 범위"의 처음 값(타임라인에서 칸을 고르고 "효과 추가…"로 열었을 때 그 프레임들). null = 모든 프레임.</param>
     /// <param name="motionRange">추가 범위를 그대로 두고 움직이는 효과를 추가할 때 쓸 범위(한 칸만 골랐으면 태그 끝까지 넓힌 것). null = newRange.</param>
@@ -131,6 +134,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         // 숫자·색 값 입력에서 Enter는 입력만 확정한다. 효과 적용은 확인 단추로만 한다.
         OkButton.IsDefault = false;
+        OpenCount++;
+        Closed += (_, _) => OpenCount--;
         _motionRange = motionRange ?? newRange;
         _project = ctx.Project ?? throw new InvalidOperationException(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_42089F3C1D);
         _layer = layer;

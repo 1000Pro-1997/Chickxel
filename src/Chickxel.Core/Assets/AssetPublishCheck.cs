@@ -29,8 +29,8 @@ public enum PublishIssueCode
     NoTags,
     /// <summary>경고: 흔한 SPDX ID도 <c>LicenseRef-</c>도 아님(철자 확인).</summary>
     UnknownLicense,
-    /// <summary>경고: 이 컴퓨터에서 같은 ID·버전을 다른 내용으로 저장한 적이 있음(이미 제출했다면 CI가 거부).</summary>
-    SavedVersionChanged,
+    /// <summary>버전이 이미 올린 가장 높은 버전(온라인 목록·이 컴퓨터의 기록)보다 높지 않음. 올린 버전은 바꿀 수 없으므로 같은 버전도 안 된다.</summary>
+    VersionNotNewer,
 }
 
 /// <summary>
@@ -56,7 +56,7 @@ public sealed record PublishIssue(PublishSeverity Severity, string Message)
 /// <summary>게시 창에 넣을 에셋 하나: 종류, 값, 미리보기(효과면 원본 포함, 없으면 null).</summary>
 public sealed record PublishAsset(string Kind, IAssetData Data, PackagePreview? Preview);
 
-/// <summary>이 컴퓨터에서 올린 패키지(같은 ID·버전을 다른 내용으로 다시 올리려 하면 경고, 다음 버전 제안).</summary>
+/// <summary>이 컴퓨터에서 올린 패키지(다음 버전은 이 기록과 온라인 목록 중 가장 높은 버전보다 높아야 함, 다음 버전 제안).</summary>
 public sealed record PublishedVersion(string Id, string Version, string Sha256);
 
 /// <summary>
@@ -205,8 +205,8 @@ public static class AssetPublishCheck
 
     /// <summary>
     /// 게시 창 입력을 검사한다. 입력 칸이 맞으면 패키지를 만들어 설치와 같은 엄격 검사, 공개 규칙(<see cref="PackageRules"/>,
-    /// <see cref="ReviewRules"/>, 짧은 설명·태그), 온라인 목록(<paramref name="catalog"/>, 마지막으로 받은 목록)과의 버전·이름 비교를 하고,
-    /// 이 컴퓨터에서 올린 기록(<paramref name="saved"/>)으로 경고를 더한다. 검토 상태는 서버와 같이 작성자 <c>chickxel</c>이면
+    /// <see cref="ReviewRules"/>, 짧은 설명·태그)과 이름 겹침을 보고, 버전은 온라인 목록(<paramref name="catalog"/>, 마지막으로 받은 목록)과
+    /// 이 컴퓨터에서 올린 기록(<paramref name="saved"/>) 중 가장 높은 버전보다 높아야 한다. 검토 상태는 서버와 같이 작성자 <c>chickxel</c>이면
     /// <c>official</c>, 아니면 <c>community</c>다.
     /// </summary>
     public static PublishResult Check(PublishRequest request, IReadOnlyList<RemoteCatalogEntry> catalog, IEnumerable<PublishedVersion> saved)
@@ -280,14 +280,11 @@ public static class AssetPublishCheck
         string status = manifest.Author.Id == RemoteCatalogBuilder.OfficialAuthor ? RemoteReview.Official : RemoteReview.Community;
         issues.AddRange(PackageRules(package, where).Select(PublishIssue.Catalog));
         issues.AddRange(ReviewRules(package, status, null, where).Select(PublishIssue.Catalog));
-        string sha256 = AssetPackageWriter.Hash(bytes);
-        var published = catalog.FirstOrDefault(entry => entry.Id == manifest.Id);
-        if (published is not null && PublishedRule(manifest, sha256, published.Version, published.Package.Sha256, where) is { } changed)
-            issues.Add(PublishIssue.Catalog(changed));
+        // 올린 버전은 바꿀 수 없다: 온라인 목록과 이 컴퓨터의 기록 중 가장 높은 버전보다 높아야 한다(서버도 같은 비교로 거부).
+        if (LatestVersion(manifest.Id, catalog, saved) is { } latest && SemVersion.TryParse(latest, out var top) && manifest.SemanticVersion <= top)
+            issues.Add(PublishIssue.Field(PublishSeverity.Error, PublishIssueCode.VersionNotNewer, latest));
         if (catalog.FirstOrDefault(entry => entry.Id != manifest.Id && string.Equals(entry.Name.Trim(), manifest.Name, StringComparison.OrdinalIgnoreCase)) is { } same)
             issues.Add(PublishIssue.Catalog(new CatalogBuildIssue(CatalogBuildIssueCode.Duplicate, where, same.Id)));
-        if (saved.Any(record => record.Id == manifest.Id && record.Version == manifest.Version && record.Sha256 != sha256))
-            Warn(PublishIssueCode.SavedVersionChanged, manifest.Version);
         return new PublishResult(issues, bytes, manifest) { Tags = request.Tags };
     }
 }

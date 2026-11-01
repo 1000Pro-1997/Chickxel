@@ -3868,4 +3868,75 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
   <data name="Gallery_Cancelled" xml:space="preserve"><value>Upload cancelled.</value></data>
   <data name="Gallery_Done" xml:space="preserve"><value>Uploaded "{0}" to the gallery. Its page is open in your browser.</value></data>
+  <data name="EffectMaker_Menu" xml:space="preserve"><value>Effect Maker…</value></data>
+  <data name="EffectMaker_Title" xml:space="preserve"><value>Effect Maker</value></data>
+  <data name="EffectMaker_TitleWith" xml:space="preserve"><value>Effect Maker - {0}</value></data>
+  <data name="EffectMaker_MyEffects" xml:space="preserve"><value>My effects</value></data>
+  <data name="EffectMaker_NewRecipe" xml:space="preserve"><value>New recipe</value></data>
+  <data name="EffectMaker_FromLayer" xml:space="preserve"><value>From layer</value></data>
+  <data name="EffectMaker_FromLayerTip" xml:space="preserve"><value>Makes a new recipe from the effect list of the current layer in the main window.</value></data>
+  <data name="EffectMaker_NewScript" xml:space="preserve"><value>New script</value></data>
+  <data name="EffectMaker_NewRecipeName" xml:space="preserve"><value>New effect</value></data>
+  <data name="EffectMaker_Empty" xml:space="preserve"><value>Pick an effect on the left, or make a new recipe (a combination of built-in effects) or a new script (JavaScript). What you make becomes a personal asset; Upload publishes it online.</value></data>
+  <data name="EffectMaker_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="EffectMaker_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="EffectMaker_Range" xml:space="preserve"><value>Insert range</value></data>
+  <data name="EffectMaker_RangeAdd" xml:space="preserve"><value>Effects window add range</value></data>
+  <data name="EffectMaker_RangeAll" xml:space="preserve"><value>Always all frames</value></data>
+  <data name="EffectMaker_Effects" xml:space="preserve"><value>Effects</value></data>
+  <data name="EffectMaker_EditEffects" xml:space="preserve"><value>Edit effects…</value></data>
+  <data name="EffectMaker_EditEffectsTip" xml:space="preserve"><value>Opens the effects window with these effects on the preview chick. OK updates the recipe.</value></data>
+  <data name="EffectMaker_RecipeHint" xml:space="preserve"><value>A recipe bundles built-in effects (and script effects) with their values, order and clipping. With parameters, a few values adjust the whole bundle after you insert it.</value></data>
+  <data name="EffectMaker_NoEffects" xml:space="preserve"><value>No effects yet. Add some with Edit effects.</value></data>
+  <data name="EffectMaker_Off" xml:space="preserve"><value>(off)</value></data>
+  <data name="EffectMaker_ParametersDropped" xml:space="preserve"><value>Parameters that no longer match the changed effect list were removed. Set them again if needed.</value></data>
+  <data name="EffectMaker_PreviewSettings" xml:space="preserve"><value>Preview setting values</value></data>
+  <data name="EffectMaker_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>Same image as the preview made when you upload (chosen chick, 10 steps).</value></data>
+  <data name="EffectMaker_Play" xml:space="preserve"><value>Play</value></data>
+  <data name="EffectMaker_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="EffectMaker_ShowOriginal" xml:space="preserve"><value>Show without effect</value></data>
+  <data name="EffectMaker_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="EffectMaker_Rendering" xml:space="preserve"><value>Rendering…</value></data>
+  <data name="EffectMaker_Ready" xml:space="preserve"><value>Preview rendered.</value></data>
+  <data name="EffectMaker_FrameTime" xml:space="preserve"><value>{0} ms per chick frame.</value></data>
+  <data name="EffectMaker_ParseFailed" xml:space="preserve"><value>Couldn't draw because the source has errors.</value></data>
+  <data name="EffectMaker_RunFailed" xml:space="preserve"><value>The effect was skipped because of a run error.</value></data>
+  <data name="EffectMaker_FixSourceFirst" xml:space="preserve"><value>Fix the errors in the source first.</value></data>
+  <data name="EffectMaker_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>Saves it as a personal asset (Ctrl+S). It shows in the Custom tab of the effects window and in the Asset Manager.</value></data>
+  <data name="EffectMaker_Discard" xml:space="preserve"><value>Discard</value></data>
+  <data name="EffectMaker_SaveError" xml:space="preserve"><value>Couldn't save the effect: {0}</value></data>
+  <data name="EffectMaker_NeedName" xml:space="preserve"><value>Enter a name.</value></data>
+  <data name="EffectMaker_UnsavedQuestion" xml:space="preserve"><value>Save your changes to '{0}'?</value></data>
+  <data name="EffectMaker_Insert" xml:space="preserve"><value>Insert into layer</value></data>
+  <data name="EffectMaker_InsertTip" xml:space="preserve"><value>Adds it to the end of the current layer's effects in the main window (one undo step).</value></data>
+  <data name="EffectMaker_InsertUndo" xml:space="preserve"><value>Insert effect: {0}</value></data>
+  <data name="EffectMaker_LayerLocked" xml:space="preserve"><value>The current layer is locked.</value></data>
+  <data name="EffectMaker_NoLayerEffects" xml:space="preserve"><value>The current layer in the main window has no effects.</value></data>
+  <data name="EffectMaker_Upload" xml:space="preserve"><value>Upload…</value></data>
+  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves, then opens the publish window. Enter the name, description, tags, license and version to upload; the preview is made automatically.</value></data>
+  <data name="EffectMaker_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="EffectMaker_DeleteQuestion" xml:space="preserve"><value>Delete '{0}' from your personal assets?</value></data>
+  <data name="EffectMaker_EditIn" xml:space="preserve"><value>Edit in Effect Maker</value></data>
+  <data name="EffectMaker_CloseEffectsFirst" xml:space="preserve"><value>Close the effects window first (it's editing layer effects).</value></data>
+  <data name="EffectMaker_PathFast" xml:space="preserve"><value>Runs on the fast path (the app converts and compiles the source).</value></data>
+  <data name="EffectMaker_PathJint" xml:space="preserve"><value>Runs on Jint (slower): {0}</value></data>
+  <data name="EffectMaker_PathJintAt" xml:space="preserve"><value>Runs on Jint (slower) - line {0}: {1}</value></data>
+  <data name="EffectMaker_PathTip" xml:space="preserve"><value>Sources that use only numbers, loops, Math and img.data are converted by the app and run fast. Anything else (strings, objects and arrays, img.blank and so on) runs on Jint with the same result.</value></data>
+  <data name="Ai_Script_Errors" xml:space="preserve"><value>{tool}: the source has errors, so nothing changed. Fix them and call again.</value></data>
+  <data name="Ai_Script_NotScript" xml:space="preserve"><value>Effect {effect} of layer {layer} isn't a script effect.</value></data>
+  <data name="Ai_Script_UnknownSetting" xml:space="preserve"><value>The script has no setting '{key}'. Declared settings: {keys}</value></data>
+  <data name="Ai_Script_BadSetting" xml:space="preserve"><value>The value of setting '{key}' doesn't fit its {type} kind (a number / true or false / "#RRGGBB" / a choice value).</value></data>
+  <data name="Ai_Script_Written" xml:space="preserve"><value>{tool}: added script effect "{name}" as effect {effect} of layer {layer}.</value></data>
+  <data name="Ai_Script_RunError" xml:space="preserve"><value>Run error (the effect is skipped on that frame): {error}</value></data>
+  <data name="Ai_Preview_RecipeOnChick" xml:space="preserve"><value>A saved recipe can only be previewed on the chick (on = chick).</value></data>
+  <data name="Ai_Preview_Layer" xml:space="preserve"><value>Frames of layer {layer} "{name}" with its effects (left to right, first to last).</value></data>
+  <data name="Ai_Preview_Chick" xml:space="preserve"><value>"{name}" effects on chick {chick} (animated: left to right, first to last; same as the published preview).</value></data>
+  <data name="Ai_Preview_Empty" xml:space="preserve"><value>This layer has no frame with an image to draw.</value></data>
+  <data name="Ai_Asset_Name" xml:space="preserve"><value>name needs a recipe name (non-empty, up to 100 characters).</value></data>
+  <data name="Ai_Asset_Saved" xml:space="preserve"><value>Saved as personal recipe "{name}" ({id}) and opened it in the Effect Maker. The user publishes it online with Upload in that window.</value></data>
+  <data name="Chat_Help_GroupEffectMaker" xml:space="preserve"><value>Effect making</value></data>
+  <data name="Chat_Help_GroupEffectMaker_Text" xml:space="preserve"><value>Writes script effects (JavaScript) for looks the built-in effects can't make and checks them on the preview chick. Saves a layer's effect bundle as a personal recipe and opens it in the Effect Maker (you upload it yourself).</value></data>
+  <data name="Chat_Help_ExampleEffectMaker" xml:space="preserve"><value>Make a script effect that flashes red and scatters into pieces when hit, and save it as a recipe.</value></data>
 </root>

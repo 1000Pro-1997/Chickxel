@@ -747,6 +747,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         // 프리셋 종류가 늘어도 한 창의 탭으로 모은다.
         AddItems(tools, new Separator(), Cmd("프리셋", UiStrings.Presets_Menu, () => PresetsWindow.Open(this)),
             WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
+        // 효과를 만드는 사람은 적으므로 효과 넣기 흐름과 따로, 도구 메뉴 맨 아래 별도 항목으로 둔다(설계 3.1).
+        AddItems(tools, new Separator(), WithIcon(Cmd("효과 만들기", UiStrings.EffectMaker_Menu, () => EffectMakerWindow.Open(this, _ctx)), VectorIcon.Sparkles));
 
 
         // AI

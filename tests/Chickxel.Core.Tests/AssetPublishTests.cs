@@ -236,15 +236,15 @@ public class AssetPublishTests
         RemoteCatalogBuilder.Write(build, output);
         var online = build.Entries;
 
-        // 같은 내용 다시 저장은 문제없음(같은 바이트).
+        // 같은 버전은 내용이 같아도 거부(올린 버전은 바꿀 수 없음). 패키지 바이트는 같은 입력이면 같다.
         var again = Check(Request(store, "1.2.0"), online);
-        Assert.True(again.Ok, string.Join("\n", again.Issues));
+        Assert.Equal(PublishIssueCode.VersionNotNewer, Assert.Single(again.Issues, i => i.IsError).Code);
         Assert.Equal(first.Package, again.Package);
 
         // 내용을 바꾸고 같은 버전 → 거부, 낮은 버전 → 거부, 제안 버전 → 통과(게시 날짜는 처음 날짜를 이음).
         store.SavePersonalRecipe(AssetSamples.Recipe(thickness: 3) with { Id = store.Catalog.Personal.Single(e => e.Recipe is not null).Id });
-        Assert.Contains(Check(Request(store, "1.2.0"), online).Issues, i => i.CatalogCode == CatalogBuildIssueCode.PublishedChanged);
-        Assert.Contains(Check(Request(store, "1.1.9"), online).Issues, i => i.CatalogCode == CatalogBuildIssueCode.VersionDowngrade);
+        Assert.Contains(Check(Request(store, "1.2.0"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
+        Assert.Contains(Check(Request(store, "1.1.9"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         string next = AssetPublishCheck.SuggestVersion(AssetPublishCheck.LatestVersion("pixel-cat.neon", online, []));
         Assert.Equal("1.3.0", next);
         var bumped = Check(Request(store, next), online);
@@ -257,12 +257,11 @@ public class AssetPublishTests
         Assert.True(rebuilt.Ok, string.Join("\n", rebuilt.Issues));
         Assert.Equal("1.3.0", Assert.Single(rebuilt.Entries).Version);
 
-        // 이 컴퓨터의 저장 기록: 가장 높은 버전으로 제안, 같은 버전을 다른 내용으로 다시 저장하면 경고만.
+        // 이 컴퓨터의 기록도 센다: 가장 높은 버전(프리릴리스 포함)보다 높아야 한다.
         PublishedVersion[] saved = [new("pixel-cat.neon", "1.4.0-rc.1", "x"), new("pixel-cat.neon", "1.3.0", first.Sha256!)];
         Assert.Equal("1.4.0-rc.1", AssetPublishCheck.LatestVersion("pixel-cat.neon", online, saved));
-        var warned = Check(Request(store, "1.3.0"), online, saved);
-        Assert.True(warned.Ok, string.Join("\n", warned.Issues));
-        var warning = Assert.Single(warned.Issues);
-        Assert.Equal((PublishSeverity.Warning, PublishIssueCode.SavedVersionChanged), (warning.Severity, warning.Code));
+        Assert.Contains(Check(Request(store, "1.3.0"), online, saved).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
+        var above = Check(Request(store, "1.4.0"), online, saved);
+        Assert.True(above.Ok, string.Join("\n", above.Issues));
     }
 }

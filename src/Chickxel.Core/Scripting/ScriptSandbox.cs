@@ -166,17 +166,30 @@ internal sealed class ScriptSandbox
     private static ScriptEffectException Declaration(string message, (int Line, int Column) at)
         => new(new(ScriptErrorKind.Declaration, message, at.Line, at.Column));
 
+    /// <summary>문장 한도 오류(Jint와 빠른 경로가 같은 문구를 쓴다).</summary>
+    internal static ScriptEffectException StatementLimitError(ScriptLimits limits, int line, int column)
+        => new(new(ScriptErrorKind.Statements, DomainStrings.FormatScript_StatementLimit(count: limits.MaxStatements), line, column));
+
+    /// <summary>시간 한도 오류(Jint와 빠른 경로가 같은 문구를 쓴다).</summary>
+    internal static ScriptEffectException TimeoutError(ScriptLimits limits, int line, int column)
+        => new(new(ScriptErrorKind.Timeout,
+            DomainStrings.FormatScript_Timeout(seconds: limits.Timeout.TotalSeconds.ToString("0.##", CultureInfo.CurrentCulture)), line, column));
+
     private ScriptEffectException Translate(Exception ex)
     {
         var (line, column) = ex is JavaScriptException { Location.Start.Line: > 0 } thrown
             ? (thrown.Location.Start.Line, thrown.Location.Start.Column + 1)
             : StackLocation();
+        switch (ex)
+        {
+            case StatementsCountOverflowException:
+                return StatementLimitError(Limits, line, column);
+            case TimeoutException or RegexMatchTimeoutException:
+                return TimeoutError(Limits, line, column);
+        }
         var (kind, message) = ex switch
         {
             JavaScriptException js => (ScriptErrorKind.Runtime, DomainStrings.FormatScript_RuntimeError(detail: js.Message)),
-            StatementsCountOverflowException => (ScriptErrorKind.Statements, DomainStrings.FormatScript_StatementLimit(count: Limits.MaxStatements)),
-            TimeoutException or RegexMatchTimeoutException => (ScriptErrorKind.Timeout,
-                DomainStrings.FormatScript_Timeout(seconds: Limits.Timeout.TotalSeconds.ToString("0.##", CultureInfo.CurrentCulture))),
             MemoryLimitExceededException or OutOfMemoryException => (ScriptErrorKind.Memory,
                 DomainStrings.FormatScript_MemoryLimit(megabytes: Limits.MemoryBytes >> 20, length: Limits.MaxArrayLength)),
             RecursionDepthOverflowException or InsufficientExecutionStackException => (ScriptErrorKind.Recursion,
