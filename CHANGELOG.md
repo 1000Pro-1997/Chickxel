@@ -2,7 +2,7 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## 미배포
+## v1.14.65 (2026-11-01)
 ### Effects follow gradients on color settings
 - The Effect Maker rules (Rules window and AI guide) now recommend picking color settings per pixel with `ctx.color("key", x, y)` (lists: `ctx.colorAt`, `ctx.pairColor`), with a short example, so a color switched to a gradient varies across pixels. The AI does this by default and keeps a flat color only when an effect really needs one solid color.
 - The Effect Maker check renders each color setting with a sample gradient (red to green to blue) and lists color settings that still draw one flat color when a gradient is chosen. These are recommendations: they don't change the check result or block upload, and the AI tools `check_effect_maker`, `write_script_effect` and `set_effect_maker_source` report them too.
