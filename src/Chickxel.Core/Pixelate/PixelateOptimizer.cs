@@ -658,7 +658,8 @@ public static class PixelateOptimizer
             Parallel.For(0, todo.Count, po, (i, state) =>
             {
                 if (Stopped) { state.Stop(); return; }
-                if (_deadline.IsCancellationRequested)
+                // CancelAfter는 스레드 풀 타이머라 풀이 바쁘면 늦게 울린다 — 시계도 직접 본다.
+                if (_deadline.IsCancellationRequested || (Timed(_opt.MaxTime) && _clock.Elapsed >= _opt.MaxTime))
                 {
                     StopWith(_ct.IsCancellationRequested ? OptimizeStop.Cancelled : OptimizeStop.Time);
                     state.Stop();
