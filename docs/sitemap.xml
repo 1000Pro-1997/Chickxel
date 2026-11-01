@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://chickxel.com/</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/"/>
+  </url>
+  <url>
+    <loc>https://chickxel.com/en/</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/"/>
+  </url>
+  <url>
+    <loc>https://chickxel.com/guide</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/guide"/>
+  </url>
+  <url>
+    <loc>https://chickxel.com/en/guide</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/guide"/>
+  </url>
+  <url>
+    <loc>https://chickxel.com/gallery</loc>
+  </url>
+  <url>
+    <loc>https://chickxel.com/packages</loc>
+  </url>
+</urlset>

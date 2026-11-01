@@ -8,15 +8,20 @@
 <meta name="description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
 <meta property="og:title" content="Chickxel — 게임용 픽셀 아트 편집기">
 <meta property="og:description" content="Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.">
-<meta property="og:image" content="https://1000pro-1997.github.io/Chickxel/assets/screenshot.png">
-<link rel="alternate" hreflang="ko" href="https://1000pro-1997.github.io/Chickxel/">
-<link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/">
+<meta property="og:image" content="https://chickxel.com/assets/screenshot.png">
+<meta property="og:url" content="https://chickxel.com/">
+<link rel="canonical" href="https://chickxel.com/">
+<link rel="alternate" hreflang="ko" href="https://chickxel.com/">
+<link rel="alternate" hreflang="en" href="https://chickxel.com/en/">
+<link rel="alternate" hreflang="x-default" href="https://chickxel.com/en/">
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=20261101">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
+  // 검색 엔진은 넘기지 않는다(로봇은 브라우저 언어가 대개 영어라 한국어 쪽이 늘 영어로 넘어가 색인되지 않음 — 언어별 쪽은 hreflang으로 알려 줌)
+  if (/bot|crawl|spider|slurp|yeti|daum|mediapartners/i.test(navigator.userAgent || '')) return;
   var saved = null;
   try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
