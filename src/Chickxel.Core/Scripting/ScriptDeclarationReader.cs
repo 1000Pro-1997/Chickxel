@@ -318,6 +318,7 @@ internal static partial class ScriptDeclarationReader
             "choice" => ScriptSettingType.Choice,
             "colorList" => ScriptSettingType.ColorList,
             "colorPairs" => ScriptSettingType.ColorPairs,
+            "layer" => ScriptSettingType.Layer,
             _ => null,
         } : null;
         if (type is null)
@@ -401,6 +402,23 @@ internal static partial class ScriptDeclarationReader
                     return null;
                 }
                 return Done(new(key, label, type.Value, null, null, null, alpha ? color : color.WithAlpha(255), []));
+            }
+            case ScriptSettingType.Layer:
+            {
+                // 레이어 고르기: key·label·default(레이어 이름, 비우면 고르지 않음)만. 범위·고르기 항목은 받지 않는다
+                foreach (string field in (string[])["min", "max", "step", "choices"])
+                    if (!setting.Get(field).IsUndefined())
+                    {
+                        fail(DomainStrings.FormatScript_InvalidLayerSettingField(key: key, field: field), ["settings", index, field]);
+                        return null;
+                    }
+                string? layerName = defaultValue.IsUndefined() ? "" : defaultValue is JsString ? ScriptSetting.LayerName(defaultValue.AsString()) : null;
+                if (layerName is null)
+                {
+                    BadDefault();
+                    return null;
+                }
+                return Done(new(key, label, type.Value, null, null, null, layerName, []));
             }
             case ScriptSettingType.ColorList:
             case ScriptSettingType.ColorPairs:

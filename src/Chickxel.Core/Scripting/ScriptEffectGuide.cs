@@ -43,6 +43,7 @@ public static class ScriptEffectGuide
             pixelMicroseconds: limits.TimePerPixel.TotalMicroseconds.ToString("0", CultureInfo.InvariantCulture),
             pixelKilobytes: (limits.MemoryPerPixel >> 10).ToString(CultureInfo.InvariantCulture)));
         Rule(md, ScriptGuideStrings.Guide_RuleSettings);
+        Rule(md, ScriptGuideStrings.Guide_RuleUsefulSettings);
         Rule(md, ScriptGuideStrings.Guide_RuleGradient);
         Rule(md, ScriptGuideStrings.Guide_RuleAnimated);
         Rule(md, ScriptGuideStrings.Guide_RuleFast);

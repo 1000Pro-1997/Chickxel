@@ -269,10 +269,11 @@
   <data name="Script_InvalidSettingKey" xml:space="preserve"><value>settings[{index}]의 key는 영문자나 _로 시작하고 영문자, 숫자, _만 쓴 이름이어야 합니다.</value><comment>index = 설정 목록 안 번호(0부터).</comment></data>
   <data name="Script_DuplicateSettingKey" xml:space="preserve"><value>설정 key가 겹칩니다: {key}</value><comment>key = 겹친 설정 키.</comment></data>
   <data name="Script_InvalidSettingLabel" xml:space="preserve"><value>설정 {key}의 label은 문자열이어야 합니다.</value><comment>key = 설정 키.</comment></data>
-  <data name="Script_InvalidSettingType" xml:space="preserve"><value>설정 {key}의 type은 int, number, bool, color, choice, colorList, colorPairs 중 하나여야 합니다.</value><comment>key = 설정 키.</comment></data>
+  <data name="Script_InvalidSettingType" xml:space="preserve"><value>설정 {key}의 type은 int, number, bool, color, choice, colorList, colorPairs, layer 중 하나여야 합니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingRange" xml:space="preserve"><value>설정 {key}의 min, max, step이 잘못되었습니다(숫자, min ≤ max, step &gt; 0, int는 정수).</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingDefault" xml:space="preserve"><value>설정 {key}의 default가 type에 맞지 않거나 범위를 벗어납니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingChoices" xml:space="preserve"><value>설정 {key}의 choices는 값이 겹치지 않는 문자열이나 value, label을 가진 객체 목록이어야 합니다.</value><comment>key = 설정 키.</comment></data>
+  <data name="Script_InvalidLayerSettingField" xml:space="preserve"><value>레이어 설정 {key}에는 {field}를 쓸 수 없습니다(key, label, default만 — default는 레이어 이름). 고를 레이어 목록은 효과 창이 문서의 레이어로 보여 줍니다.</value><comment>key = 설정 키; field = 쓸 수 없는 칸 이름.</comment></data>
   <data name="Script_InvalidImageData" xml:space="preserve"><value>img.data는 길이 {length}인 숫자 배열이어야 합니다({index}번째 값이 잘못됨).</value><comment>length = 배열 길이; index = 잘못된 칸 번호(0부터).</comment></data>
   <data name="Script_ImageTooLarge" xml:space="preserve"><value>그림이 너무 커서 스크립트 효과로 계산할 수 없습니다: {width}x{height}</value><comment>width, height = 그림 크기.</comment></data>
   <data name="Script_InvalidBlankSize" xml:space="preserve"><value>img.blank의 가로세로는 1~{max} 정수이고 픽셀은 {pixels}개까지입니다.</value><comment>max = 축 최대 크기; pixels = 최대 픽셀 수.</comment></data>

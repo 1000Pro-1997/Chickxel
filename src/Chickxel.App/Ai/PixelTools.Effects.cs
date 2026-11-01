@@ -227,7 +227,7 @@ public sealed partial class PixelTools
             ["types"] = types,
             ["presets"] = presets,
             ["notes"] = "Effects render in stack order (index 0 first) and never change pixels. Pass only the settings you want to change (null resets one). " +
-                        "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]. Every effect also accepts colorGradients " +
+                        "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]; script layer settings (declared type: \"layer\") = the name of a layer in this document (\"\" = none). Every effect also accepts colorGradients " +
                         "(advanced: per color key gradient objects in the .chickxel format). Animated effects run once over their frame range; easing, repeat and repeatCount change that. " +
                         "Effects with \"allowed\": false are scripts the user has not allowed to run yet: they can be added but are not drawn until the user allows them " +
                         "in the effects window, and only their declared default settings are known.",

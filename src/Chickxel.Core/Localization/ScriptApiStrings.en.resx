@@ -41,11 +41,11 @@
   <data name="Api_effect_area_local" xml:space="preserve"><value>Called per tile (with radius px around it).</value></data>
   <data name="Api_setting_key" xml:space="preserve"><value>Storage key (starts with a letter or _). Read it as s.key in render.</value></data>
   <data name="Api_setting_label" xml:space="preserve"><value>Setting label.</value></data>
-  <data name="Api_setting_type" xml:space="preserve"><value>Value kind: "int", "number", "bool", "color", "choice", "colorList", "colorPairs".</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>Value kind: "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer".</value></data>
   <data name="Api_setting_min" xml:space="preserve"><value>Smallest value (int, number). For colorList and colorPairs: fewest items (default 0).</value></data>
   <data name="Api_setting_max" xml:space="preserve"><value>Largest value (int, number). For colorList and colorPairs: most items (default 16, up to 64).</value></data>
   <data name="Api_setting_step" xml:space="preserve"><value>Slider step (number).</value></data>
-  <data name="Api_setting_default" xml:space="preserve"><value>Initial value (of the right kind; colors as "#ff8800", colorList as ["#ff8800", ...], colorPairs as [{ from: "#000000", to: "#ffffff" }, ...]).</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>Initial value (of the right kind; colors as "#ff8800", colorList as ["#ff8800", ...], colorPairs as [{ from: "#000000", to: "#ffffff" }, ...], layer as a layer name like "ground" — none chosen when omitted).</value></data>
   <data name="Api_setting_choices" xml:space="preserve"><value>Items of a choice: [{ value, label }].</value></data>
   <data name="Api_setting_alpha" xml:space="preserve"><value>When false, colors of a color, colorList or colorPairs setting have no alpha choice and are always opaque (255). Default true.</value></data>
   <data name="Api_setting_widget" xml:space="preserve"><value>Editor shape in the effects window (int only): "angle" shows an angle dial, "point" an X/Y point picker together with the setting named by pair.</value></data>
@@ -59,6 +59,7 @@
   <data name="Api_setting_type_choice" xml:space="preserve"><value>Pick from a list: s.key is the chosen value string.</value></data>
   <data name="Api_setting_type_colorList" xml:space="preserve"><value>Color list (add, remove, reorder): s.key is [{ r, g, b, a }, ...]. Read item colors with ctx.colorAt (gradients included).</value></data>
   <data name="Api_setting_type_colorPairs" xml:space="preserve"><value>Color pair list (from color to color): s.key is [{ from, to }, ...]. Read item colors with ctx.pairColor (gradients included).</value></data>
+  <data name="Api_setting_type_layer" xml:space="preserve"><value>Pick a layer: the effects window lists the document's layers (the Effect Maker lists the preview scene's layers) in a dropdown. s.key is the chosen layer name ("" when none). Read that layer with ctx.layer(key), ctx.layerWithEffects(key) and ctx.layerEffects(key).</value></data>
   <data name="Api_img_width" xml:space="preserve"><value>Image width in px (including padding).</value></data>
   <data name="Api_img_height" xml:space="preserve"><value>Image height in px (including padding).</value></data>
   <data name="Api_img_data" xml:space="preserve"><value>RGBA number array (length = width * height * 4). Changing it changes the image.</value></data>
@@ -99,14 +100,9 @@
   <data name="Api_ctx_slice_top" xml:space="preserve"><value>Top border in px.</value></data>
   <data name="Api_ctx_slice_right" xml:space="preserve"><value>Right border in px.</value></data>
   <data name="Api_ctx_slice_bottom" xml:space="preserve"><value>Bottom border in px.</value></data>
-  <data name="Api_ctx_layerBelow" xml:space="preserve"><value>The layer directly below (same group and level, hidden layers count) on this frame without its effects, aligned to img (same size and position, transparent outside). null when there is no such layer or cel, or outside a project.</value></data>
-  <data name="Api_ctx_layerAbove" xml:space="preserve"><value>The layer directly above on this frame without its effects, aligned to img. null when there is none.</value></data>
-  <data name="Api_ctx_layerBelowWithEffects" xml:space="preserve"><value>The layer directly below with its effects for this frame, aligned to img. Effects of that layer that read other layers with effects are skipped (no cycles). null when there is none.</value></data>
-  <data name="Api_ctx_layerAboveWithEffects" xml:space="preserve"><value>The layer directly above with its effects for this frame, aligned to img. Effects of that layer that read other layers with effects are skipped. null when there is none.</value></data>
-  <data name="Api_ctx_layerByName" xml:space="preserve"><value>The layer with this name (the nearest one if several, excluding this layer and the group containing it; hidden layers count) on this frame without its effects, aligned to img. null when there is no such layer or cel, or outside a project.</value></data>
-  <data name="Api_ctx_layerByNameWithEffects" xml:space="preserve"><value>The layer with this name with its effects for this frame, aligned to img. Effects of that layer that read other layers with effects are skipped (no cycles). null when there is none.</value></data>
-  <data name="Api_ctx_layerEffectsByName" xml:space="preserve"><value>Names of the effects enabled on this frame (list order) of the layer with this name (the nearest one if several). Empty array when there is none.</value></data>
-  <data name="Api_ctx_layerEffectsAt" xml:space="preserve"><value>Names of the effects enabled on this frame of the layer offset steps away in the same group and level (-1 = directly below, 1 = directly above, 0 = this layer). Empty array when there is none.</value></data>
+  <data name="Api_ctx_layer" xml:space="preserve"><value>The layer chosen in the layer setting (type: "layer") with this key (the nearest one if several layers share the name, excluding this layer and the group containing it; hidden layers count) on this frame without its effects, aligned to img (same size and position, transparent outside). null when nothing is chosen, the layer or cel doesn't exist, the key isn't a layer setting, or outside a project.</value></data>
+  <data name="Api_ctx_layerWithEffects" xml:space="preserve"><value>The layer chosen in the layer setting with this key, with its effects for this frame, aligned to img. Effects of that layer that read other layers with effects are skipped (no cycles). null when there is none.</value></data>
+  <data name="Api_ctx_layerEffects" xml:space="preserve"><value>Names of the effects enabled on this frame (list order) of the layer chosen in the layer setting with this key. Empty array when there is none.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>Red (0-255).</value></data>
   <data name="Api_color_g" xml:space="preserve"><value>Green (0-255).</value></data>
   <data name="Api_color_b" xml:space="preserve"><value>Blue (0-255).</value></data>

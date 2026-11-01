@@ -35,12 +35,12 @@ public class PreviewSceneTests
             """, test),
     };
 
-    /// <summary>바로 아래 레이어가 불투명한 자리를 자홍으로 칠하는 스크립트.</summary>
-    private static ScriptEffect MarkBelow([CallerMemberName] string test = "") => new()
+    /// <summary>레이어 고르기 설정(기본값 = 장면의 "ground")으로 고른 레이어가 불투명한 자리를 자홍으로 칠하는 스크립트.</summary>
+    private static ScriptEffect MarkGround([CallerMemberName] string test = "") => new()
     {
         ScriptHash = Trusted("""
-            effect({ name: "mark below", render(img, ctx) {
-              const o = ctx.layerBelow();
+            effect({ name: "mark ground", settings: [{ key: "ground", label: "Ground", type: "layer", default: "ground" }], render(img, ctx) {
+              const o = ctx.layer("ground");
               if (!o) return;
               const d = img.data;
               for (let i = 0; i < d.length; i += 4)
@@ -280,7 +280,7 @@ public class PreviewSceneTests
     {
         var chick = Chick;
         var scene = GroundScene(chick);
-        var effects = new LayerEffect[] { MarkBelow() };
+        var effects = new LayerEffect[] { MarkGround() };
         var render = new PreviewSceneRender(scene, effects, chick, 4);
         int bottom = scene.Height - 1;
         Assert.Equal(Magenta, render.Render(0)[1, bottom]);
@@ -288,6 +288,13 @@ public class PreviewSceneTests
         Assert.Equal(default, render.Render(0)[1, 0]);
         // 장면 프레임은 칸마다 되풀이(1프레임 장면이면 모든 칸이 같은 바닥)
         Assert.Equal(Magenta, render.Render(3)[1, bottom]);
+
+        // 장면 레이어를 숨기면 바닥은 그리지 않지만 효과는 여전히 바닥을 읽는다(같은 캔버스 크기)
+        var solo = render.Render(0, hideSceneLayers: true);
+        Assert.Equal(scene.Width, solo.Width);
+        Assert.Equal(scene.Height, solo.Height);
+        Assert.Equal(Magenta, solo[1, bottom]);
+        Assert.Equal(default, render.Original(0, hideSceneLayers: true)[1, bottom]);
 
         // 병아리만 그리는 미리보기에는 다른 레이어가 없어 표시가 없다
         var alone = AssetPreview.Render(effects, chick, 0, 4);
@@ -298,7 +305,10 @@ public class PreviewSceneTests
     public void Probe_runs_the_script_with_the_scene_layers_and_reports_errors()
     {
         var chick = Chick;
-        var hash = Trusted("effect({ name: 'needs ground', render(img, ctx) { if (!ctx.layerBelow()) throw new Error('no ground'); } });");
+        var hash = Trusted("""
+            effect({ name: 'needs ground', settings: [{ key: 'ground', type: 'layer', default: 'ground' }],
+              render(img, ctx) { if (!ctx.layer('ground')) throw new Error('no ground'); } });
+            """);
         var program = ScriptLibrary.Runnable(hash)!;
         LayerEffect[] effects = [new ScriptEffect { ScriptHash = hash }];
 
@@ -309,21 +319,49 @@ public class PreviewSceneTests
         var (w, h, anchor) = Canvas(chick);
         var bare = new PreviewSceneRender(new PreviewScene(w, h, 1, [], 0, anchor), effects, chick, 4).Probe(program, null, 1, CancellationToken.None);
         Assert.IsType<ScriptEffectException>(bare.Error);
+
+        // 장면에 고른 이름의 레이어가 없으면 null → 오류, 설정 값으로 있는 레이어를 고르면 다시 괜찮다
+        var sky = new PreviewScene(w, h, 1, [new PreviewSceneLayer("sky", [Dot(w, h)])], 1, anchor);
+        var skyRender = new PreviewSceneRender(sky, effects, chick, 4);
+        Assert.IsType<ScriptEffectException>(skyRender.Probe(program, null, 1, CancellationToken.None).Error);
+        Assert.Null(skyRender.Probe(program, new Dictionary<string, object> { ["ground"] = "sky" }, 1, CancellationToken.None).Error);
+    }
+
+    private static PixelImage Dot(int width, int height)
+    {
+        var image = new PixelImage(width, height);
+        image[0, 0] = Green;
+        return image;
     }
 
     // ───────────── 패키지 ─────────────
 
     private const string GroundSource = """
-        effect({ name: "Ground Mark", tags: ["ground"], render(img, ctx) {
-          const o = ctx.layerBelow();
+        effect({ name: "Ground Mark", tags: ["ground"], settings: [{ key: "ground", label: "Ground", type: "layer", default: "ground" }], render(img, ctx) {
+          const o = ctx.layer("ground");
           if (!o) return;
           for (let i = 0; i < img.data.length; i += 4) if (o.data[i + 3] > 0) img.data[i] = 255;
         } });
         """;
 
-    private static ScriptAsset GroundScript([CallerMemberName] string test = "")
+    private static ScriptAsset GroundScript([CallerMemberName] string test = "") => Script(GroundSource, test);
+
+    /// <summary>레이어 고르기 설정(기본값 = 장면의 "ground")으로 고른 레이어가 불투명한 자리 중 캔버스 왼쪽 반만 자홍으로 칠하는 스크립트.</summary>
+    private const string HalfMarkSource = """
+        effect({ name: "Half Mark", tags: ["ground"], settings: [{ key: "target", label: "Target", type: "layer", default: "ground" }], render(img, ctx) {
+          const o = ctx.layer("target");
+          if (!o) return;
+          const d = img.data, w = img.width;
+          for (let i = 0; i < d.length; i += 4)
+            if (o.data[i + 3] > 0 && (i / 4) % w < w / 2) { d[i] = 255; d[i + 1] = 0; d[i + 2] = 255; d[i + 3] = 255; }
+        } });
+        """;
+
+    private static ScriptAsset HalfMarkScript([CallerMemberName] string test = "") => Script(HalfMarkSource, test);
+
+    private static ScriptAsset Script(string source, string test)
     {
-        var program = ScriptEffectProgram.Parse(GroundSource + "\n// " + test + "\n").Program!;
+        var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
         ScriptLibrary.Add(program.Source);
         ScriptLibrary.SetTrust(program.ContentHash, true);
         return ScriptAsset.From("", program);
@@ -372,6 +410,96 @@ public class PreviewSceneTests
         // 장면이 있는 스크립트의 패키지 미리보기는 장면 캔버스 전체
         var preview = PngIO.Load(new MemoryStream(AssetPreview.Package(script)!.OriginalPng!));
         Assert.Equal(AssetPreview.Upscale(new PixelImage(scene.Width, scene.Height), AssetPreview.PngMaxSize).Size, preview.Size);
+    }
+
+    private static PixelImage LoadPng(byte[]? png) => PngIO.Load(new MemoryStream(png!));
+
+    [Fact]
+    public void Scene_preview_also_draws_the_effect_without_the_scene_layers_at_the_same_size()
+    {
+        var scene = GroundScene(Chick);
+        var preview = AssetPreview.Package(HalfMarkScript() with { Scene = scene })!;
+        var (image, original, solo, soloOriginal) = (LoadPng(preview.Png), LoadPng(preview.OriginalPng), LoadPng(preview.SoloPng), LoadPng(preview.SoloOriginalPng));
+        Assert.All([original, solo, soloOriginal], other => Assert.Equal(image.Size, other.Size));
+
+        int scale = image.Width / scene.Width, bottom = (scene.Height - 1) * scale, left = scale, right = (scene.Width - 2) * scale;
+        Assert.Equal(AssetPreview.Upscale(new PixelImage(scene.Width, scene.Height), AssetPreview.PngMaxSize).Size, image.Size);
+        // 효과는 숨긴 바닥도 읽는다: 왼쪽 반의 바닥 자리는 둘 다 자홍
+        Assert.Equal(Magenta, image[left, bottom]);
+        Assert.Equal(Magenta, solo[left, bottom]);
+        // 칠하지 않은 오른쪽 반: 장면 그림은 바닥(초록), 숨긴 그림은 비었다
+        Assert.Equal(Green, image[right, bottom]);
+        Assert.Equal(0, solo[right, bottom].A);
+        Assert.Equal(Green, original[left, bottom]);
+        Assert.Equal(0, soloOriginal[left, bottom].A);
+        // 숨긴 원본 = 병아리 레이어만 그린 장면 원본(같은 배율)
+        Assert.True(AssetPreview.Upscale(new PreviewSceneRender(scene, [], Chick, 1).Original(0, hideSceneLayers: true), AssetPreview.PngMaxSize).ContentEquals(soloOriginal));
+    }
+
+    private static PublishResult Publish(ScriptAsset script, byte[]? customPreview = null) => AssetPublishCheck.Check(new PublishRequest
+    {
+        Author = new AssetAuthor("pixel-cat", "Pixel Cat"),
+        Id = "pixel-cat.half-mark",
+        Name = "Half Mark",
+        Summary = "바닥 왼쪽 반을 칠하는 효과",
+        Tags = AssetPublishCheck.ParseTags("#ground #effect #" + ScriptAsset.LayerReferenceTag),
+        Asset = new PublishAsset(AssetKinds.EffectScript, script, AssetPreview.Package(script)),
+        CustomPreview = customPreview,
+        MinAppVersion = "1.14.55",
+    }, [], []);
+
+    [Fact]
+    public void Packages_carry_the_solo_previews_and_pass_the_validator()
+    {
+        var script = HalfMarkScript() with { Scene = GroundScene(Chick) };
+        var expected = AssetPreview.Package(script)!;
+        var (bytes, manifest) = Package(script);
+        var package = Read(bytes);
+        Assert.Empty(package.Warnings);
+        string preview = Assert.Single(manifest.Assets).Preview!;
+        Assert.Equal(("previews/half-mark.solo.png", "previews/half-mark.solo.original.png"),
+            (AssetPackageBuilder.SoloPreviewPath(preview), AssetPackageBuilder.SoloOriginalPreviewPath(preview)));
+        Assert.Equal(expected.SoloPng, package.Files[AssetPackageBuilder.SoloPreviewPath(preview)]);
+        Assert.Equal(expected.SoloOriginalPng, package.Files[AssetPackageBuilder.SoloOriginalPreviewPath(preview)]);
+        Assert.Equal(preview, Assert.Single(package.Manifest.Assets).Preview);
+
+        // 게시 패키지
+        var published = Publish(script);
+        Assert.True(published.Ok, string.Join("\n", published.Issues));
+        var publishedFiles = Read(published.Package!).Files;
+        Assert.Equal(expected.SoloPng, publishedFiles[AssetPackageBuilder.SoloPreviewPath(Assert.Single(published.Manifest!.Assets).Preview!)]);
+
+        // 개인 내보내기
+        using var dir = new TempDir();
+        var store = AssetStore.Open(dir.File("Assets"));
+        var saved = store.SavePersonalScript(HalfMarkSource + "\n// " + nameof(Packages_carry_the_solo_previews_and_pass_the_validator) + "\n", null, script.Scene);
+        using var exported = new MemoryStream();
+        var exportedManifest = store.ExportPersonal([saved.Id], AssetSamples.Header(), exported, entry => AssetPreview.Package(entry.Data));
+        var exportedFiles = Read(exported.ToArray()).Files;
+        string exportedPreview = Assert.Single(exportedManifest.Assets).Preview!;
+        Assert.Contains(AssetPackageBuilder.SoloPreviewPath(exportedPreview), exportedFiles.Keys);
+        Assert.Contains(AssetPackageBuilder.SoloOriginalPreviewPath(exportedPreview), exportedFiles.Keys);
+    }
+
+    [Fact]
+    public void No_solo_previews_without_scene_layers_or_with_a_custom_preview()
+    {
+        var script = HalfMarkScript();
+        var (w, h, anchor) = Canvas(Chick);
+        foreach (var asset in new[] { script, script with { Scene = new PreviewScene(w, h, 1, [], 0, anchor) } })
+        {
+            var preview = AssetPreview.Package(asset)!;
+            Assert.NotNull(preview.OriginalPng);
+            Assert.Null(preview.SoloPng);
+            Assert.Null(preview.SoloOriginalPng);
+            Assert.DoesNotContain(Read(Package(asset).Bytes).Files.Keys, path => path.Contains(".solo.", StringComparison.Ordinal));
+        }
+
+        // 직접 고른 미리보기는 원본처럼 숨긴 그림도 없다
+        byte[] custom = AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient("Cover")))!.Png;
+        var result = Publish(script with { Scene = GroundScene(Chick) }, custom);
+        Assert.True(result.Ok, string.Join("\n", result.Issues));
+        Assert.DoesNotContain(Read(result.Package!).Files.Keys, path => path.Contains(".solo.", StringComparison.Ordinal) || path.EndsWith(".original.png", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -462,7 +590,7 @@ public class PreviewSceneTests
         Assert.True(reads.ReadsOtherLayers);
         Assert.Equal(["ground", ScriptAsset.LayerReferenceTag], reads.Tags);
 
-        var declared = ScriptEffectProgram.Parse("effect({ name: 'x', tags: ['layer-reference', 'a'], render(img, ctx) { ctx.layerAbove(); } });").Program!;
+        var declared = ScriptEffectProgram.Parse("effect({ name: 'x', tags: ['layer-reference', 'a'], settings: [{ key: 'k', type: 'layer' }], render(img, ctx) { ctx.layerEffects('k'); } });").Program!;
         Assert.Equal(["layer-reference", "a"], ScriptAsset.From("", declared).Tags);
 
         var plain = ScriptEffectProgram.Parse("effect({ name: 'x', tags: ['a'], render(img, ctx) { ctx.frameSource(0); } });").Program!;

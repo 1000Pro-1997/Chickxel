@@ -14,6 +14,7 @@ public class ScriptCompletionTests
           settings: [
             { key: "strength", label: "S", type: "int", min: 0, max: 100, default: 50 },
             { key: "tint", label: "T", type: "color", default: "#ff0000" },
+            { key: "target", label: "L", type: "layer", default: "ground" },
           ],
           render(img, ctx, s) {
             const w = img.width;
@@ -31,19 +32,21 @@ public class ScriptCompletionTests
     [Theory]
     [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "source", "pivot", "center", "slice", "color", "colorAt", "pairColor",
         "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource",
-        "layerBelow", "layerAbove", "layerBelowWithEffects", "layerAboveWithEffects", "layerByName", "layerByNameWithEffects", "layerEffectsByName",
-        "layerEffectsAt" })]
+        "layer", "layerWithEffects", "layerEffects" })]
     [InlineData("ctx.slice.|", new[] { "left", "top", "right", "bottom" })]
     [InlineData("ctx.pr|", new[] { "progress" })]
     [InlineData("ctx.source.|", new[] { "x", "y", "w", "h" })]
     [InlineData("img.|", new[] { "width", "height", "data", "blank", "blendOver" })]
-    [InlineData("s.|", new[] { "strength", "tint" })]
+    [InlineData("s.|", new[] { "strength", "tint", "target" })]
     [InlineData("s.tint.|", new[] { "r", "g", "b", "a" })]
     [InlineData("const c = ctx.color(\"tint\", 0, 0);\n    c.|", new[] { "r", "g", "b", "a" })]
     [InlineData("ctx.color(\"tint\", 0, 0).|", new[] { "r", "g", "b", "a" })]
     [InlineData("const hsv = rgbToHsv(1, 2, 3); hsv.|", new[] { "h", "s", "v" })]
     [InlineData("Math.fl|", new[] { "floor" })]
     [InlineData("ctx.color(\"|", new[] { "tint" })]
+    [InlineData("ctx.layer(\"|", new[] { "target" })]
+    [InlineData("ctx.layerWithEffects(\"|", new[] { "target" })]
+    [InlineData("ctx.layerEffects(\"|", new[] { "target" })]
     [InlineData("// ctx.|", new string[0])]
     [InlineData("const label = \"ctx.|", new string[0])]
     [InlineData("w.|", new string[0])]
@@ -69,6 +72,7 @@ public class ScriptCompletionTests
     [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewFrames" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', ty|", new[] { "type" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"co|", new[] { "color", "colorList", "colorPairs" })]
+    [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer" })]
     [InlineData("effect({ name: 'x', easing: \"Ease|", new[] { "EaseIn", "EaseOut", "EaseInOut" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', widget: \"|", new[] { "angle", "point" })]
     [InlineData("effect({ name: 'x', area: \"lo|", new[] { "local" })]

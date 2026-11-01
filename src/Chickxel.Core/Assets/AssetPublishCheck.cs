@@ -315,7 +315,7 @@ public static class AssetPublishCheck
             License = License,
             MinAppVersion = request.MinAppVersion,
         });
-        // 직접 고른 PNG는 효과 없는 원본과 짝이 맞지 않으므로 원본 없이 넣는다(서버는 첫 에셋의 미리보기를 목록 미리보기로 씀).
+        // 직접 고른 PNG는 효과 없는 원본·장면 레이어를 숨긴 그림과 짝이 맞지 않으므로 그것들 없이 넣는다(서버는 첫 에셋의 미리보기를 목록 미리보기로 씀).
         var preview = request.CustomPreview is { Length: > 0 } custom ? new PackagePreview(custom, null) : request.Asset.Preview;
         builder.Add(request.Asset.Kind, request.Asset.Data, preview);
         builder.AddDocument(LicenseFileName, LicenseText);

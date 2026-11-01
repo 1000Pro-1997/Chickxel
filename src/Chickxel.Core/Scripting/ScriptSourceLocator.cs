@@ -82,6 +82,30 @@ internal static class ScriptSourceLocator
     }
 
     /// <summary>
+    /// 원문 어디든 <paramref name="name"/>이 속성 이름으로 나오는지: <c>a.이름</c>, <c>a["이름"]</c>, 구조 분해 <c>{ 이름 }</c>. 같은 이름의 변수나 다른 문자열은 세지 않는다
+    /// (<c>layer</c>처럼 흔한 이름을 <see cref="Mentions"/>로 찾으면 설정 <c>type: "layer"</c>나 지역 변수까지 걸림).
+    /// </summary>
+    public static bool MentionsProperty(Script program, string name)
+    {
+        var pending = new Stack<Node>();
+        pending.Push(program);
+        while (pending.Count > 0)
+        {
+            var node = pending.Pop();
+            switch (node)
+            {
+                case MemberExpression { Computed: false, Property: Identifier id } when id.Name == name:
+                case MemberExpression { Computed: true, Property: StringLiteral literal } when literal.Value == name:
+                    return true;
+                case ObjectPattern pattern when pattern.Properties.Any(p => p is Property property && KeyName(property) == name):
+                    return true;
+            }
+            foreach (var child in node.ChildNodes) pending.Push(child);
+        }
+        return false;
+    }
+
+    /// <summary>
     /// 첫 <c>effect({...})</c> 객체의 <c>translations</c>에 글자 그대로 적은 언어별 이름(<c>translations.언어.name</c> 문자열 literal, 언어 코드 모양인 것만).
     /// 실행하지 않고 읽으므로 신뢰하기 전 화면 이름에 쓴다. 없으면 빈 표.
     /// </summary>

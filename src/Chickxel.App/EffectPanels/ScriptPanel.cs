@@ -17,7 +17,7 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>
     /// 스크립트 효과 설정: 이름·작성자·해시, 실행 상태(오류 줄·프레임당 시간, 허용·다시 실행 단추), 편집·파일 열기 단추,
-    /// 스크립트 schema로 만든 설정 칸(<see cref="AddScriptSettingRows"/> — 숫자·각도·점, 켜고 끔, 색·색 목록·색 쌍 목록과 그라데이션, 고르기),
+    /// 스크립트 schema로 만든 설정 칸(<see cref="AddScriptSettingRows"/> — 숫자·각도·점, 켜고 끔, 색·색 목록·색 쌍 목록과 그라데이션, 고르기, 레이어 고르기),
     /// 움직이는 스크립트면 빠르기 곡선·반복.
     /// </summary>
     private void ScriptPanel(ScriptEffect s, Action<Func<LayerEffect, LayerEffect>> set)
@@ -50,13 +50,30 @@ public sealed partial class LayerEffectsDialog
             return;
         }
         if (program.Settings.Count == 0) _settings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-        AddScriptSettingRows(program, s, set, ShowSettings, (label, editor, block) =>
+        AddScriptSettingRows(program, s, set, ShowSettings, ProjectLayerChoices(), (label, editor, block) =>
         {
             if (block) SettingsBlock(label, editor);
             else SettingsRow(label, editor);
         });
         if (program.Animated && program.Motion) AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint(UiStrings.ScriptEffect_Hint));
+    }
+
+    /// <summary>
+    /// 레이어 고르기 설정 칸에 보일 이 문서의 레이어 이름: 타임라인처럼 위→아래(그룹·부위 포함), 같은 이름은 한 번만.
+    /// 효과가 붙은 레이어와 그 레이어를 담은 그룹은 뺀다(스크립트가 그 둘은 찾지 않음 — <see cref="ScriptLayerContext"/>). 고를 수 없는 이름(빈 이름, 앞뒤 공백, 너무 긺)도 뺀다.
+    /// </summary>
+    private ScriptLayerChoices ProjectLayerChoices()
+    {
+        var names = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = _project.Layers.Count - 1; i >= 0; i--)
+        {
+            var layer = _project.Layers[i];
+            if (ReferenceEquals(layer, _layer) || ReferenceEquals(layer, _layer.Parent)) continue;
+            if (ScriptSetting.LayerName(layer.Name) is { Length: > 0 } name && name == layer.Name && seen.Add(name)) names.Add(name);
+        }
+        return new ScriptLayerChoices(names);
     }
 
     /// <summary>

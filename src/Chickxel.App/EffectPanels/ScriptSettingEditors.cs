@@ -6,17 +6,24 @@ using Chickxel.Core.Scripting;
 
 namespace Chickxel.App;
 
+/// <summary>
+/// 레이어 고르기 설정(<c>type: "layer"</c>) 칸이 보일 레이어 이름(위→아래, 겹치지 않음)과, 고를 이름이 하나도 없을 때 고르기 상자 아래에 보일 흐린 안내(null이면 없음).
+/// 효과 창은 지금 문서의 레이어, 효과 만들기는 미리보기 장면의 레이어를 준다.
+/// </summary>
+internal sealed record ScriptLayerChoices(IReadOnlyList<string> Names, string? EmptyHint = null);
+
 public sealed partial class LayerEffectsDialog
 {
     /// <summary>
     /// 스크립트 설정 칸들(효과 창의 설정 칸과 효과 만들기 창의 미리보기 설정 칸이 함께 씀): 선언 순서대로 설정마다 <paramref name="row"/>(이름, 편집기,
     /// 여러 줄 덩어리인지)를 부른다. 정수·실수는 슬라이더·숫자 칸(<c>widget: "angle"</c>이면 각도 다이얼도, <c>"point"</c>면 짝 Y 설정과 함께 X·Y 칸과
     /// 점 고르기 — Y 설정은 따로 줄이 없음), 켜고 끔, 색(단색·그라데이션 — 기본 효과 색 칸과 같고 슬롯은 설정 키), 고르기,
-    /// 색 목록·색 쌍 목록(항목마다 단색·그라데이션, 더하기·빼기·순서 바꾸기 — 그라데이션은 항목을 따라 옮김).
+    /// 색 목록·색 쌍 목록(항목마다 단색·그라데이션, 더하기·빼기·순서 바꾸기 — 그라데이션은 항목을 따라 옮김),
+    /// 레이어 고르기(<paramref name="layers"/>의 이름 — <see cref="ScriptLayerEditor"/>).
     /// 값과 그라데이션은 <paramref name="set"/>으로 효과를 바꿔 고치고, 항목 수·순서가 바뀌면 <paramref name="rebuild"/>로 칸을 다시 만든다.
     /// </summary>
     internal static void AddScriptSettingRows(ScriptEffectProgram program, ScriptEffect effect, Action<Func<LayerEffect, LayerEffect>> set,
-        Action rebuild, Action<string, Control, bool> row)
+        Action rebuild, ScriptLayerChoices layers, Action<string, Control, bool> row)
     {
         var values = program.NormalizeSettings(effect.Settings);
         var culture = CultureInfo.CurrentUICulture;
@@ -65,6 +72,9 @@ public sealed partial class LayerEffectsDialog
                 case ScriptSettingType.ColorPairs:
                     row(label, ScriptColorPairsEditor(program, setting, effect, (IReadOnlyList<ScriptColorPair>)values[key], set, rebuild), true);
                     break;
+                case ScriptSettingType.Layer:
+                    row(label, ScriptLayerEditor(layers, (string)values[key], v => SetValue(key, v)), false);
+                    break;
                 default:
                     var choices = setting.Choices;
                     int index = Math.Max(0, choices.ToList().FindIndex(c => c.Value == (string)values[key]));
@@ -80,6 +90,31 @@ public sealed partial class LayerEffectsDialog
         => setting is { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.Point, Pair: { } pair } && pair != setting.Key
             ? program.Settings.FirstOrDefault(s => s.Key == pair && s.Type == ScriptSettingType.Int)
             : null;
+
+    /// <summary>
+    /// 레이어 고르기 설정: 첫 항목 "(없음)"(빈 이름) 뒤에 <paramref name="layers"/>의 이름을 늘어놓은 고르기 상자. 저장된 이름이 목록에 없으면 버리지 않고
+    /// "이름 (없음)" 항목으로 끝에 둔다(고르면 그 이름 그대로). 고를 이름이 없고 안내가 있으면 상자 아래에 흐리게 적는다.
+    /// </summary>
+    private static Control ScriptLayerEditor(ScriptLayerChoices layers, string value, Action<string> changed)
+    {
+        var names = new List<string> { "" };
+        names.AddRange(layers.Names.Where(n => n.Length > 0));
+        var items = new List<string> { UiStrings.ScriptEffect_LayerNone };
+        items.AddRange(names.Skip(1));
+        if (value.Length > 0 && !names.Contains(value))
+        {
+            names.Add(value);
+            items.Add(UiStrings.FormatScriptEffect_LayerMissing(name: value));
+        }
+        var combo = ChoiceEditor([.. items], names.IndexOf(value), k => changed(names[k]));
+        if (layers.Names.Count > 0 || layers.EmptyHint is not { } hint) return combo;
+        var note = Ui.Label(hint);
+        note.TextWrapping = TextWrapping.Wrap;
+        note.MaxWidth = 220;
+        note.Foreground = AppTheme.DimTextBrush;
+        note.FontSize = AppTheme.SmallFontSize;
+        return new StackPanel { Spacing = 2, Children = { combo, note } };
+    }
 
     /// <summary>각도 설정: 다이얼(끌어 고름) + 슬라이더·숫자 칸. 다이얼 각도는 설정 범위 안으로 맞춘다(예: -180~180이면 270° → -90).</summary>
     private static Control ScriptAngleEditor(ScriptSetting setting, double value, Action<double> changed)

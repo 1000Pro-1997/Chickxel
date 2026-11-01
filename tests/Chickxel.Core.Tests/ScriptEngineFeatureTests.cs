@@ -297,6 +297,43 @@ public class ScriptEngineFeatureTests
     }
 
     [Fact]
+    public void Layer_settings_default_to_no_layer_and_trim_the_declared_name()
+    {
+        var program = Parse("effect({ name: 'x', settings: [{ key: 'p', type: 'layer' }, { key: 'q', label: 'Q', type: 'layer', default: '  ground  ' }], render(img, ctx, s) {} });");
+        Assert.Equal((ScriptSettingType.Layer, ""), (program.Settings[0].Type, program.Settings[0].Default));
+        Assert.Equal((ScriptSettingType.Layer, "ground"), (program.Settings[1].Type, program.Settings[1].Default));
+        // 값 맞추기: 문서에 없는 이름도 그대로, 앞뒤 공백은 지움, 너무 길거나 글이 아니면 기본값
+        var values = program.NormalizeSettings(new Dictionary<string, object> { ["p"] = " nowhere ", ["q"] = new string('a', ScriptSetting.MaxLayerNameLength + 1) });
+        Assert.Equal(("nowhere", "ground"), (values["p"], values["q"]));
+        Assert.Equal("", program.NormalizeSettings(new Dictionary<string, object> { ["p"] = 3 })["p"]);
+        Assert.Equal(new string('a', 64), ScriptSetting.LayerName(" " + new string('a', 64) + " "));
+    }
+
+    [Theory]
+    [InlineData("{ key: 'p', type: 'layer', min: 0 }", "min")]
+    [InlineData("{ key: 'p', type: 'layer', max: 3 }", "max")]
+    [InlineData("{ key: 'p', type: 'layer', step: 1 }", "step")]
+    [InlineData("{ key: 'p', type: 'layer', choices: ['a'] }", "choices")]
+    [InlineData("{ key: 'p', type: 'layer', alpha: false }", "alpha")]
+    [InlineData("{ key: 'p', type: 'layer', widget: 'angle' }", "widget")]
+    [InlineData("{ key: 'p', type: 'layer', default: 3 }", "default")]
+    [InlineData("{ key: 'p', type: 'layer', default: ['ground'] }", "default")]
+    [InlineData("{ key: 'p', type: 'layer', default: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }", "default")]
+    public void Invalid_layer_setting_declarations_are_reported_at_the_field(string setting, string field)
+    {
+        string source = $"effect({{ name: 'x', settings: [{setting}], render(img, ctx, s) {{}} }});";
+        var result = ScriptEffectProgram.Parse(source);
+        Assert.False(result.Success);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(ScriptErrorKind.Declaration, error.Kind);
+        Assert.Contains(field, error.Message);
+        // 오류 자리는 그 칸(한 줄 원문의 칸 이름이나 값 위치)
+        int at = source.IndexOf(field + ":", StringComparison.Ordinal);
+        Assert.Equal(1, error.Line);
+        Assert.InRange(error.Column, at, source.IndexOf('}', at) + 1);
+    }
+
+    [Fact]
     public void List_defaults_can_be_written_back_to_the_declaration()
     {
         const string source = "effect({ name: 'x', settings: [{ key: 'l', type: 'colorList', default: ['#FF0000'] }, { key: 'p', type: 'colorPairs' }], render() {} });";

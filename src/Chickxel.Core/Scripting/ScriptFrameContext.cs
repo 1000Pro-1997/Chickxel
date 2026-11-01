@@ -8,7 +8,7 @@ namespace Chickxel.Core.Scripting;
 /// <c>ctx.t</c> = <see cref="Time"/>, <c>ctx.progress</c> = <see cref="Progress"/>, <c>ctx.frame</c> = <see cref="FrameIndex"/>,
 /// <c>ctx.step</c> = <see cref="FrameStep"/>, <c>ctx.span</c> = <see cref="FrameSpan"/>, <c>ctx.pivot</c> = <see cref="Pivot"/>(그림 좌표로 바꿔서),
 /// <c>ctx.frameSource(i)</c> = <see cref="FrameSource"/>, <c>ctx.renderedFrameSource(i)</c> = <see cref="RenderedFrameSource"/>, <c>ctx.slice</c> = <see cref="Slice"/>,
-/// 다른 레이어 함수(<c>ctx.layerBelow</c> 등) = <see cref="Layers"/>, <c>ctx.color</c> 등의 그라데이션 = <see cref="Gradients"/>·<see cref="GradientTime"/>.
+/// 다른 레이어 함수(<c>ctx.layer</c> 등) = <see cref="Layers"/>, <c>ctx.color</c> 등의 그라데이션 = <see cref="Gradients"/>·<see cref="GradientTime"/>.
 /// </summary>
 public sealed record ScriptFrameContext
 {
@@ -42,7 +42,7 @@ public sealed record ScriptFrameContext
     /// <summary>효과 원본의 9-slice 테두리(px, 원본 가장자리부터). 없거나 맞지 않으면(<see cref="Edit.NineSlice.Applies"/>) null.</summary>
     public SpriteBorder? Slice { get; init; }
 
-    /// <summary>다른 레이어(<c>ctx.layerBelow</c>·<c>ctx.layerEffectsAt</c> 등). null이면 프로젝트 밖 그리기 — 그림 함수는 null, 이름 함수는 빈 배열.</summary>
+    /// <summary>다른 레이어(<c>ctx.layer</c>·<c>ctx.layerWithEffects</c>·<c>ctx.layerEffects</c>). null이면 프로젝트 밖 그리기 — 그림 함수는 null, 효과 이름 함수는 빈 배열.</summary>
     public ScriptLayerContext? Layers { get; init; }
 
     /// <summary>

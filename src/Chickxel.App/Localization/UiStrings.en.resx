@@ -3359,6 +3359,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptEffect_ErrorAt" xml:space="preserve"><value>Line {line}, column {column}: {message}</value></data>
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>Line {line}: {message}</value></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>This script has no settings.</value></data>
+  <data name="ScriptEffect_LayerNone" xml:space="preserve"><value>(none)</value></data>
+  <data name="ScriptEffect_LayerMissing" xml:space="preserve"><value>{name} (missing)</value></data>
   <data name="ScriptSetting_AddColor" xml:space="preserve"><value>Add color</value></data>
   <data name="ScriptSetting_AddPair" xml:space="preserve"><value>Add pair</value></data>
   <data name="ScriptSetting_RemoveItem" xml:space="preserve"><value>Remove this item</value></data>
@@ -3606,13 +3608,14 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_RenderFailed" xml:space="preserve"><value>Couldn't draw the preview: {0}</value></data>
   <data name="EffectMaker_ValidateError" xml:space="preserve"><value>Couldn't run the check: {0}</value></data>
   <data name="EffectMaker_Scene" xml:space="preserve"><value>Preview scene</value></data>
-  <data name="EffectMaker_SceneTip" xml:space="preserve"><value>Layers drawn around the chick (a ground to collide with, a path to follow and so on). Effects that read other layers (ctx.layerBelow, ctx.layerByName and so on) read these layers in the preview, the check and the upload preview. Edit it in a main editor tab; it is saved with the effect.</value></data>
+  <data name="EffectMaker_SceneTip" xml:space="preserve"><value>Layers drawn around the chick (a ground to collide with, a path to follow and so on). Effects that read other layers (a layer setting read with ctx.layer and so on) pick from these layers in the preview, the check and the upload preview. Edit it in a main editor tab; it is saved with the effect.</value></data>
   <data name="EffectMaker_SceneEdit" xml:space="preserve"><value>Edit in main editor</value></data>
   <data name="EffectMaker_SceneEditTip" xml:space="preserve"><value>Opens the scene in a new main editor tab (creates one with an empty ground layer if there is none). The preview updates as you edit. The tab itself isn't saved; the scene is saved when you save the effect.</value></data>
   <data name="EffectMaker_SceneRemove" xml:space="preserve"><value>Remove scene</value></data>
   <data name="EffectMaker_SceneRemoveTip" xml:space="preserve"><value>Removes the preview scene (saving removes it from the effect too).</value></data>
   <data name="EffectMaker_SceneRemoveQuestion" xml:space="preserve"><value>Remove the preview scene? Its editor tab closes too.</value></data>
   <data name="EffectMaker_SceneNone" xml:space="preserve"><value>No scene - the chick is drawn alone, so the other-layer functions return null.</value></data>
+  <data name="EffectMaker_LayerSettingNeedsScene" xml:space="preserve"><value>Add a preview scene to pick one of its layers.</value></data>
   <data name="EffectMaker_SceneLayers" xml:space="preserve"><value>Layers (bottom to top): {0}</value></data>
   <data name="EffectMaker_SceneChickLayer" xml:space="preserve"><value>Chick</value></data>
   <data name="EffectMaker_SceneTab" xml:space="preserve"><value>Preview scene - {0}</value></data>

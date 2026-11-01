@@ -9239,6 +9239,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="ScriptEffect_ErrorAt" xml:space="preserve"><value>줄 {line}, 칸 {column}: {message}</value><comment>line, column = 원문 위치(1부터); message = 오류 설명.</comment></data>
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>줄 {line}: {message}</value><comment>line = 원문 줄(1부터); message = 오류 설명.</comment></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>이 스크립트에는 설정이 없습니다.</value></data>
+  <data name="ScriptEffect_LayerNone" xml:space="preserve"><value>(고르지 않음)</value><comment>레이어 고르기 설정의 첫 항목 — 레이어를 고르지 않음.</comment></data>
+  <data name="ScriptEffect_LayerMissing" xml:space="preserve"><value>{name} (문서에 없음)</value><comment>name = 저장된 레이어 이름(지금 문서에 그런 레이어가 없음).</comment></data>
   <data name="ScriptSetting_AddColor" xml:space="preserve"><value>색 추가</value></data>
   <data name="ScriptSetting_AddPair" xml:space="preserve"><value>쌍 추가</value></data>
   <data name="ScriptSetting_RemoveItem" xml:space="preserve"><value>이 항목 빼기</value></data>
@@ -9486,13 +9488,14 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_RenderFailed" xml:space="preserve"><value>미리보기를 그리지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
   <data name="EffectMaker_ValidateError" xml:space="preserve"><value>검증하지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
   <data name="EffectMaker_Scene" xml:space="preserve"><value>미리보기 장면</value></data>
-  <data name="EffectMaker_SceneTip" xml:space="preserve"><value>병아리 둘레에 그린 레이어(부딪힐 바닥, 따라갈 길 등)입니다. 다른 레이어를 읽는 효과(ctx.layerBelow, ctx.layerByName 등)는 미리보기·검증·올릴 때 미리보기에서 이 레이어를 읽습니다. 메인 편집기 탭에서 고치고, 효과를 저장할 때 함께 저장됩니다.</value></data>
+  <data name="EffectMaker_SceneTip" xml:space="preserve"><value>병아리 둘레에 그린 레이어(부딪힐 바닥, 따라갈 길 등)입니다. 다른 레이어를 읽는 효과(레이어 설정을 ctx.layer 등으로 읽는 효과)는 미리보기·검증·올릴 때 미리보기에서 이 레이어 중에서 고릅니다. 메인 편집기 탭에서 고치고, 효과를 저장할 때 함께 저장됩니다.</value></data>
   <data name="EffectMaker_SceneEdit" xml:space="preserve"><value>메인 편집기에서 고치기</value></data>
   <data name="EffectMaker_SceneEditTip" xml:space="preserve"><value>장면을 메인 편집기의 새 탭으로 엽니다(장면이 없으면 빈 ground 레이어 하나로 만듦). 고치면 미리보기가 바로 바뀝니다. 탭 자체는 저장하지 않으며, 장면은 효과를 저장할 때 함께 저장됩니다.</value></data>
   <data name="EffectMaker_SceneRemove" xml:space="preserve"><value>장면 빼기</value></data>
   <data name="EffectMaker_SceneRemoveTip" xml:space="preserve"><value>미리보기 장면을 뺍니다(저장하면 효과에서도 빠짐).</value></data>
   <data name="EffectMaker_SceneRemoveQuestion" xml:space="preserve"><value>미리보기 장면을 뺄까요? 열린 장면 탭도 닫힙니다.</value></data>
   <data name="EffectMaker_SceneNone" xml:space="preserve"><value>장면이 없습니다 — 병아리만 그리므로 다른 레이어 함수는 null을 돌려줍니다.</value></data>
+  <data name="EffectMaker_LayerSettingNeedsScene" xml:space="preserve"><value>미리보기 장면을 더하면 장면 레이어를 고를 수 있습니다.</value></data>
   <data name="EffectMaker_SceneLayers" xml:space="preserve"><value>레이어(아래에서 위로): {0}</value><comment>0 = 쉼표로 이은 레이어 이름(병아리 자리는 [병아리]).</comment></data>
   <data name="EffectMaker_SceneChickLayer" xml:space="preserve"><value>병아리</value><comment>미리보기 장면 문서에서 병아리를 그린 레이어 이름.</comment></data>
   <data name="EffectMaker_SceneTab" xml:space="preserve"><value>미리보기 장면 — {0}</value><comment>메인 편집기 탭 제목. 0 = 효과 이름.</comment></data>

@@ -67,7 +67,7 @@ public sealed partial class PixelTools
         yield return Tool("get_effect_maker_source",
             "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewFrames and animated, " +
             "the execution path (fast path, or Jint with the reason and line), the preview setting values and the preview scene: the layers drawn around the preview chick (names bottom to top and which layers the chick sits between), " +
-            "which ctx.layerBelow/layerAbove/layerByName and the other layer functions read in the preview, Check and the upload preview. Fails if the Effect Maker is closed or has no script open.",
+            "which the user can pick in the effect's layer settings (type: \"layer\") and ctx.layer/layerWithEffects/layerEffects read in the preview, Check and the upload preview. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("set_effect_maker_source",
             "Replace the source in the Effect Maker editor with a complete JavaScript file (one undo step in the editor; the user's document is not changed). " +
@@ -193,7 +193,7 @@ public sealed partial class PixelTools
         o["preview_settings"] = values;
         if (maker.Scene is { } scene) o["preview_scene"] = SceneJson(scene);
         else if (ScriptLibrary.InfoOf(ScriptLibrary.Add(maker.Source)) is { ReadsOtherLayers: true })
-            o["preview_scene"] = "none: the preview chick is drawn alone, so the layer functions return null in the preview. The user can add a scene with \"Edit in main editor\" in the Effect Maker.";
+            o["preview_scene"] = "none: the preview chick is drawn alone, so ctx.layer, ctx.layerWithEffects and ctx.layerEffects return null / [] in the preview. The user can add a scene with \"Edit in main editor\" in the Effect Maker.";
         return TextResult(o.ToJsonString(JsonOptions));
     }
 
@@ -210,7 +210,7 @@ public sealed partial class PixelTools
         };
         string below = scene.ChickIndex > 0 ? $"\"{scene.Layers[scene.ChickIndex - 1].Name}\"" : "nothing";
         string above = scene.ChickIndex < scene.Layers.Count ? $"\"{scene.Layers[scene.ChickIndex].Name}\"" : "nothing";
-        o["chick_position"] = $"The chick layer sits above {below} and below {above}; ctx.layerByName(name) reads a scene layer by its exact name.";
+        o["chick_position"] = $"The chick layer sits above {below} and below {above}. A layer setting (type: \"layer\") lists these names in the settings panel; give it the scene layer's exact name as default so ctx.layer(key) finds it in the preview.";
         return o;
     }
 
@@ -333,6 +333,7 @@ public sealed partial class PixelTools
                 ScriptSettingType.Int or ScriptSettingType.Number => Number(node),
                 ScriptSettingType.Bool => node is JsonValue v && v.TryGetValue(out bool b) ? b : null,
                 ScriptSettingType.Color => node is JsonValue v && v.TryGetValue(out string? hex) && Color32.TryParseHex(hex, out var c) ? c : null,
+                ScriptSettingType.Layer => node is JsonValue v && v.TryGetValue(out string? layer) ? ScriptSetting.LayerName(layer) : null,
                 _ => node is JsonValue v && v.TryGetValue(out string? choice) && setting.Choices.Any(x => x.Value == choice) ? choice : null,
             };
             values[key] = value ?? throw new ToolError(UiStrings.FormatAi_Script_BadSetting(key: key, type: setting.Type.ToString().ToLowerInvariant()));

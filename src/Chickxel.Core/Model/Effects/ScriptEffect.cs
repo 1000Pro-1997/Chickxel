@@ -19,7 +19,7 @@ public sealed record ScriptEffect : AnimatedEffect
     public ScriptSettingValues Settings { get; init; } = ScriptSettingValues.Empty;
 
     /// <summary>
-    /// 그릴 때만: 효과 원본의 9-slice 테두리와 다른 레이어(<c>ctx.slice</c>, <c>ctx.layerBelow</c> 등 — <see cref="ScriptLayerContext"/>).
+    /// 그릴 때만: 효과 원본의 9-slice 테두리와 다른 레이어(<c>ctx.slice</c>, <c>ctx.layer</c> 등 — <see cref="ScriptLayerContext"/>).
     /// 프로젝트 렌더가 다른 레이어나 <c>ctx.slice</c>를 읽는 스크립트에만 채운다(<see cref="Edit.LayerEffects.WithScriptLayers"/>). 목록에 든 효과와 프로젝트 없는 그리기는 null.
     /// </summary>
     public ScriptLayerContext? Layers { get; init; }

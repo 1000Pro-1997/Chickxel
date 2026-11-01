@@ -42,11 +42,11 @@
   <data name="Api_effect_area_local" xml:space="preserve"><value>조각마다 부릅니다(radius만큼 둘레를 같이 넘김).</value></data>
   <data name="Api_setting_key" xml:space="preserve"><value>저장 키(영문자나 _로 시작). render에서 s.키로 읽습니다.</value></data>
   <data name="Api_setting_label" xml:space="preserve"><value>설정 칸 이름.</value></data>
-  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice", "colorList", "colorPairs".</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer".</value></data>
   <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number). colorList·colorPairs는 가장 적은 항목 수(기본 0).</value></data>
   <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number). colorList·colorPairs는 가장 많은 항목 수(기본 16, 64까지).</value></data>
   <data name="Api_setting_step" xml:space="preserve"><value>슬라이더 간격(number).</value></data>
-  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, 색은 "#ff8800", colorList는 ["#ff8800", …], colorPairs는 [{ from: "#000000", to: "#ffffff" }, …]).</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, 색은 "#ff8800", colorList는 ["#ff8800", …], colorPairs는 [{ from: "#000000", to: "#ffffff" }, …], layer는 레이어 이름 "ground" — 없으면 고르지 않음).</value></data>
   <data name="Api_setting_choices" xml:space="preserve"><value>choice의 항목: [{ value, label }].</value></data>
   <data name="Api_setting_alpha" xml:space="preserve"><value>false면 색·색 목록·색 쌍 목록의 알파를 고르지 않고 늘 불투명(255)입니다(기본 true).</value></data>
   <data name="Api_setting_widget" xml:space="preserve"><value>효과 창 편집기 모양(int만): "angle"은 각도 다이얼, "point"는 pair의 설정과 함께 X·Y 점 고르기.</value></data>
@@ -60,6 +60,7 @@
   <data name="Api_setting_type_choice" xml:space="preserve"><value>목록에서 고르기: s.키는 고른 value 문자열.</value></data>
   <data name="Api_setting_type_colorList" xml:space="preserve"><value>색 목록(더하기·빼기·순서 바꾸기): s.키는 [{ r, g, b, a }, …]. 항목 색은 ctx.colorAt으로(그라데이션 포함).</value></data>
   <data name="Api_setting_type_colorPairs" xml:space="preserve"><value>색 쌍 목록(바꿀 색 → 바뀐 색): s.키는 [{ from, to }, …]. 항목 색은 ctx.pairColor로(그라데이션 포함).</value></data>
+  <data name="Api_setting_type_layer" xml:space="preserve"><value>레이어 고르기: 효과 창이 문서의 레이어(효과 만들기는 미리보기 장면의 레이어)를 고르기 상자로 보입니다. s.키는 고른 레이어 이름(고르지 않으면 ""). 그 레이어는 ctx.layer(키)·ctx.layerWithEffects(키)·ctx.layerEffects(키)로 읽습니다.</value></data>
   <data name="Api_img_width" xml:space="preserve"><value>그림 너비(px, 여백 포함).</value></data>
   <data name="Api_img_height" xml:space="preserve"><value>그림 높이(px, 여백 포함).</value></data>
   <data name="Api_img_data" xml:space="preserve"><value>RGBA 숫자 배열(길이 = 너비 × 높이 × 4). 바꾸면 그림이 바뀝니다.</value></data>
@@ -100,14 +101,9 @@
   <data name="Api_ctx_slice_top" xml:space="preserve"><value>위쪽 테두리 px.</value></data>
   <data name="Api_ctx_slice_right" xml:space="preserve"><value>오른쪽 테두리 px.</value></data>
   <data name="Api_ctx_slice_bottom" xml:space="preserve"><value>아래쪽 테두리 px.</value></data>
-  <data name="Api_ctx_layerBelow" xml:space="preserve"><value>바로 아래 레이어(같은 그룹·같은 단계, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로(밖은 투명). 레이어나 셀이 없거나 프로젝트 밖이면 null.</value></data>
-  <data name="Api_ctx_layerAbove" xml:space="preserve"><value>바로 위 레이어의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로. 없으면 null.</value></data>
-  <data name="Api_ctx_layerBelowWithEffects" xml:space="preserve"><value>바로 아래 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
-  <data name="Api_ctx_layerAboveWithEffects" xml:space="preserve"><value>바로 위 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다. 없으면 null.</value></data>
-  <data name="Api_ctx_layerByName" xml:space="preserve"><value>이름이 같은 레이어(여럿이면 가장 가까운 것, 이 레이어와 이 레이어를 담은 그룹은 빼고, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로. 레이어나 셀이 없거나 프로젝트 밖이면 null.</value></data>
-  <data name="Api_ctx_layerByNameWithEffects" xml:space="preserve"><value>이름이 같은 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
-  <data name="Api_ctx_layerEffectsByName" xml:space="preserve"><value>이름이 같은 레이어(여럿이면 가장 가까운 것)에서 이 프레임에 켜진 효과 이름 배열(목록 순서). 없으면 빈 배열.</value></data>
-  <data name="Api_ctx_layerEffectsAt" xml:space="preserve"><value>같은 그룹·같은 단계에서 offset칸 떨어진 레이어(−1 = 바로 아래, 1 = 바로 위, 0 = 이 레이어)에서 이 프레임에 켜진 효과 이름 배열. 없으면 빈 배열.</value></data>
+  <data name="Api_ctx_layer" xml:space="preserve"><value>레이어 고르기 설정(type: "layer") 키로 고른 레이어(같은 이름이 여럿이면 가장 가까운 것, 이 레이어와 이 레이어를 담은 그룹은 빼고, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로(밖은 투명). 고르지 않았거나 레이어·셀이 없거나 레이어 설정이 아닌 키거나 프로젝트 밖이면 null.</value></data>
+  <data name="Api_ctx_layerWithEffects" xml:space="preserve"><value>레이어 고르기 설정 키로 고른 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
+  <data name="Api_ctx_layerEffects" xml:space="preserve"><value>레이어 고르기 설정 키로 고른 레이어에서 이 프레임에 켜진 효과 이름 배열(목록 순서). 없으면 빈 배열.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>빨강(0~255).</value></data>
   <data name="Api_color_g" xml:space="preserve"><value>초록(0~255).</value></data>
   <data name="Api_color_b" xml:space="preserve"><value>파랑(0~255).</value></data>

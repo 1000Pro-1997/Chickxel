@@ -7,8 +7,9 @@ namespace Chickxel.Core.Assets;
 
 /// <summary>
 /// 패키지에 넣을 미리보기: 효과를 입힌 그림 PNG(움직이면 APNG)와, 효과 패키지면 같은 크기·같은 자리의 효과 없는 견본 PNG(웹 비교용, 그라데이션은 null).
+/// 장면 레이어가 있는 미리보기 장면의 스크립트는 장면 레이어를 숨긴 같은 크기의 효과 그림(<paramref name="SoloPng"/>)과 원본(<paramref name="SoloOriginalPng"/>)도 둘 다 있다(웹의 장면 레이어 숨기기용, 없으면 둘 다 null).
 /// </summary>
-public sealed record PackagePreview(byte[] Png, byte[]? OriginalPng);
+public sealed record PackagePreview(byte[] Png, byte[]? OriginalPng, byte[]? SoloPng = null, byte[]? SoloOriginalPng = null);
 
 /// <summary>
 /// 에셋 미리보기 그림: 효과 묶음을 견본(또는 지금 그림)에 입힌 모습, 그라데이션 띠. 효과 창 상자, 에셋 관리자 상세, 패키지 미리보기가 같이 쓴다.
@@ -94,7 +95,8 @@ public static class AssetPreview
     /// 패키지에 넣을 미리보기. 레시피·스크립트 에셋(기본 설정 효과 하나)은 고른 병아리(<see cref="PreviewChicks"/>)에 효과를
     /// 칸 수(레시피는 <see cref="PackageFrames"/>, 스크립트는 선언의 <see cref="ScriptAsset.PreviewFrames"/>)만큼 돌려 입힌 그림을 정수 배로 키운 APNG
     /// — 앞 칸과 같은 칸은 그 칸의 시간에 더해 빼므로 움직이지 않는 효과는 한 장짜리 PNG가 된다 — 와 첫 칸 자리의 원본이고, 그라데이션은 띠 하나다.
-    /// 미리보기 장면(<see cref="ScriptAsset.Scene"/>)이 있는 스크립트는 장면 캔버스 전체(<see cref="PreviewSceneRender"/>)를 같은 규칙으로 그린다.
+    /// 미리보기 장면(<see cref="ScriptAsset.Scene"/>)이 있는 스크립트는 장면 캔버스 전체(<see cref="PreviewSceneRender"/>)를 같은 규칙으로 그리고,
+    /// 장면 레이어가 있으면 그 레이어를 숨긴 그림·원본(<see cref="PackagePreview.SoloPng"/>)도 같은 규칙·같은 크기로 그린다.
     /// 스크립트는 실행을 허락한 원문만 그린다. 모르는 종류면 null.
     /// </summary>
     public static PackagePreview? Package(IAssetData data) => data switch
@@ -107,20 +109,28 @@ public static class AssetPreview
     };
 
     private static PackagePreview EffectPreview(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps)
-        => Animation(step => Render(effects, chick, step, steps), Original(effects, chick, 0, steps), steps);
+        => new(Animation(step => Render(effects, chick, step, steps), steps), Still(Original(effects, chick, 0, steps)));
 
+    /// <summary>
+    /// 장면 위 미리보기. 장면 레이어가 있으면 그 레이어를 숨긴 그림(효과는 장면 레이어를 그대로 읽음)과 원본도 같은 칸 수·같은 배율로 그린다
+    /// (캔버스가 같아 크기도 같음). 칸 줄이기는 따로 하고, 그래도 미리보기 크기 한도를 넘는 것이 있으면 숨긴 그림은 둘 다 뺀다.
+    /// </summary>
     private static PackagePreview ScenePreview(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps)
     {
         var render = new PreviewSceneRender(scene, effects, chick, steps);
-        return Animation(render.Render, render.Original(0), steps);
+        byte[] png = Animation(step => render.Render(step), steps), original = Still(render.Original(0));
+        if (scene.Layers.Count == 0) return new PackagePreview(png, original);
+        byte[] solo = Animation(step => render.Render(step, hideSceneLayers: true), steps), soloOriginal = Still(render.Original(0, hideSceneLayers: true));
+        long max = AssetPackageLimits.Default.MaxPreviewBytes;
+        return solo.Length <= max && soloOriginal.Length <= max ? new PackagePreview(png, original, solo, soloOriginal) : new PackagePreview(png, original);
     }
 
     /// <summary>
-    /// 효과 미리보기 APNG(<paramref name="frame"/> = 칸마다 그림, <paramref name="original"/> = 효과 없는 첫 칸). 칸마다 무늬가 달라 잘 줄지 않는 효과(칸마다 다른 잡음 등)는
+    /// 효과 미리보기 APNG(<paramref name="frame"/> = 칸마다 그림). 칸마다 무늬가 달라 잘 줄지 않는 효과(칸마다 다른 잡음 등)는
     /// 칸이 많으면 패키지의 미리보기 크기 한도(<see cref="AssetPackageLimits.MaxPreviewBytes"/>)를 넘을 수 있으므로, 넘으면 두 칸씩 합쳐(앞 칸을 두 칸 시간만큼)
     /// 한도 안에 들 때까지 칸을 줄인다 — 한 바퀴 시간은 그대로다.
     /// </summary>
-    private static PackagePreview Animation(Func<int, PixelImage> frame, PixelImage original, int steps)
+    private static byte[] Animation(Func<int, PixelImage> frame, int steps)
     {
         var frames = new List<PngFrame>();
         for (int step = 0; step < steps; step++)
@@ -138,8 +148,11 @@ public static class AssetPreview
                 .ToList();
             png = Encode(frames);
         }
-        return new PackagePreview(png, Encode([new PngFrame(Upscale(original, PngMaxSize), PackageFrameMs)]));
+        return png;
     }
+
+    /// <summary>효과 없는 원본 한 장(<see cref="Animation"/>과 같은 배율).</summary>
+    private static byte[] Still(PixelImage original) => Encode([new PngFrame(Upscale(original, PngMaxSize), PackageFrameMs)]);
 
     private static byte[] Encode(IReadOnlyList<PngFrame> frames)
     {

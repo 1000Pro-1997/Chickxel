@@ -108,6 +108,8 @@ public sealed class EffectMakerWindow : Window
     /// 미리보기 장면(없으면 null)과 마지막으로 불러오거나 저장한 장면. 장면은 고칠 때마다 새 인스턴스라 같은 인스턴스인지로 고친 것이 있는지 본다.
     /// </summary>
     private PreviewScene? _scene, _savedScene;
+    /// <summary>미리보기 설정의 레이어 고르기 칸이 마지막으로 본 장면 레이어 이름(장면이 없으면 null) — 바뀌면 설정 칸을 다시 만든다.</summary>
+    private string[]? _sceneChoices;
     /// <summary>메인 편집기 탭에서 고치는 장면 문서와 그 병아리 레이어(탭이 없으면 null).</summary>
     private (SpriteProject Project, Layer ChickLayer)? _sceneDoc;
     /// <summary>장면 문서가 바뀌었는데 아직 장면을 다시 읽지 않음(다음 다시 그리기 전에 읽음).</summary>
@@ -854,7 +856,7 @@ public sealed class EffectMakerWindow : Window
         _scriptSettings.Children.Clear();
         if (_program is not { } program) return;
         if (program.Settings.Count == 0) _scriptSettings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-        LayerEffectsDialog.AddScriptSettingRows(program, PreviewEffect(program), ChangePreview, BuildScriptSettings, (name, editor, block) =>
+        LayerEffectsDialog.AddScriptSettingRows(program, PreviewEffect(program), ChangePreview, BuildScriptSettings, SceneLayerChoices(), (name, editor, block) =>
         {
             var label = Ui.Label(name);
             label.Width = 110;
@@ -868,6 +870,18 @@ public sealed class EffectMakerWindow : Window
             _scriptSettings.Children.Add(line);
         });
     }
+
+    /// <summary>
+    /// 미리보기 설정의 레이어 고르기 칸에 보일 이름: 미리보기 장면 레이어(위→아래, 병아리 레이어는 빼고, 같은 이름은 한 번만).
+    /// 장면이 없으면 고를 이름 없이 "장면을 더하라"는 안내를 보인다.
+    /// </summary>
+    private ScriptLayerChoices SceneLayerChoices()
+        => _scene is { } scene
+            ? new ScriptLayerChoices(SceneChoiceNames(scene))
+            : new ScriptLayerChoices([], UiStrings.EffectMaker_LayerSettingNeedsScene);
+
+    private static string[] SceneChoiceNames(PreviewScene scene)
+        => [.. scene.Layers.Select(l => l.Name).Reverse().Where(n => ScriptSetting.LayerName(n) is { Length: > 0 } name && name == n).Distinct(StringComparer.Ordinal)];
 
     /// <summary>미리보기 설정 값과 그라데이션을 원문의 기본값(그라데이션 없음)으로 되돌린다(원문은 그대로).</summary>
     private void ResetValues()
@@ -1100,6 +1114,11 @@ public sealed class EffectMakerWindow : Window
         _sceneLayers.Text = _scene is { } scene
             ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_SceneLayers, string.Join(", ", SceneLayerNames(scene, "[" + UiStrings.EffectMaker_SceneChickLayer + "]")))
             : UiStrings.EffectMaker_SceneNone;
+        // 장면 레이어 이름이 바뀌면(장면을 더하거나 빼거나 레이어 이름을 고침) 레이어 고르기 칸도 다시 만든다
+        var choices = _scene is { } current ? SceneChoiceNames(current) : null;
+        bool changed = choices is null ? _sceneChoices is not null : _sceneChoices is null || !choices.SequenceEqual(_sceneChoices);
+        _sceneChoices = choices;
+        if (changed && _program is { } program && program.Settings.Any(s => s.Type == ScriptSettingType.Layer)) BuildScriptSettings();
     }
 
     /// <summary>장면 레이어 이름(아래에서 위로)과 그 사이 병아리 자리(<paramref name="chick"/>).</summary>

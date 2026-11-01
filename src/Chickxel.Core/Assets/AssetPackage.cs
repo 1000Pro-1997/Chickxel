@@ -95,6 +95,7 @@ public sealed class AssetPackageBuilder(AssetManifest header)
     /// <summary>
     /// 에셋 하나를 더하고 새 에셋 ID를 돌려준다. <paramref name="preview"/>가 있으면 <c>previews/&lt;조각&gt;.png</c>를 미리보기로 넣고,
     /// 효과 없는 원본이 있으면 <see cref="OriginalPreviewPath"/> 자리에 같이 넣는다(manifest는 가리키지 않음 — 웹 비교용).
+    /// 장면 레이어를 숨긴 그림·원본이 둘 다 있으면 <see cref="SoloPreviewPath"/>·<see cref="SoloOriginalPreviewPath"/> 자리에 넣는다(manifest는 가리키지 않음 — 웹의 장면 레이어 숨기기용).
     /// 미리보기 장면이 있는 스크립트 에셋(<see cref="ScriptAsset.Scene"/>)은 그 저장 PNG를 <see cref="ScenePath"/> 자리에 넣는다(manifest는 가리키지 않음).
     /// <paramref name="segment"/>를 주면 이름 대신 그 조각을 ID·파일 이름에 쓴다(공식 패키지처럼 ID를 정해 둘 때 — 소문자·숫자·하이픈).
     /// </summary>
@@ -111,6 +112,11 @@ public sealed class AssetPackageBuilder(AssetManifest header)
             previewPath = "previews/" + segment + ".png";
             _files[previewPath] = preview.Png;
             if (preview.OriginalPng is { Length: > 0 } original) _files[OriginalPreviewPath(previewPath)] = original;
+            if (preview is { SoloPng: { Length: > 0 } solo, SoloOriginalPng: { Length: > 0 } soloOriginal })
+            {
+                _files[SoloPreviewPath(previewPath)] = solo;
+                _files[SoloOriginalPreviewPath(previewPath)] = soloOriginal;
+            }
         }
         if (value is ScriptAsset { Scene: { } scene }) _files[ScenePath(path)] = scene.ToPng();
         _entries.Add(new AssetManifestEntry(id, kind, path, previewPath));
@@ -123,6 +129,12 @@ public sealed class AssetPackageBuilder(AssetManifest header)
 
     /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 효과 없는 원본 자리 <c>previews/&lt;이름&gt;.original.png</c>(서버가 이 이름으로 찾는다).</summary>
     public static string OriginalPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".original.png";
+
+    /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 장면 레이어를 숨긴 그림 자리 <c>previews/&lt;이름&gt;.solo.png</c>(서버가 이 이름으로 찾는다).</summary>
+    public static string SoloPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".solo.png";
+
+    /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 장면 레이어를 숨긴 효과 없는 원본 자리 <c>previews/&lt;이름&gt;.solo.original.png</c>(서버가 이 이름으로 찾는다).</summary>
+    public static string SoloOriginalPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".solo.original.png";
 
     /// <summary>
     /// 에셋 파일 <paramref name="assetPath"/>(<c>assets/scripts/&lt;조각&gt;.js</c>)의 미리보기 장면 자리 <c>previews/&lt;조각&gt;.scene.png</c>

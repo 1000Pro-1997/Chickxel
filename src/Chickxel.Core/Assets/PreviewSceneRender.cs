@@ -19,7 +19,7 @@ public sealed record ScriptProbeResult(Exception? Error, TimeSpan Elapsed);
 /// 장면을 <paramref name="steps"/>프레임짜리 프로젝트로 만든다: 장면 레이어의 프레임 i 셀 = 장면 프레임 i % <see cref="PreviewScene.FrameCount"/>,
 /// 병아리 레이어(<see cref="ChickLayerName"/>)의 셀 = 병아리를 <see cref="PreviewScene.ChickOffset"/>에 놓은 그림, 효과 = <paramref name="effects"/>(프레임 범위를 지워
 /// 모든 프레임에 걸침). 그래서 프레임 i의 진행은 효과 만들기의 칸 진행(<see cref="ScriptFrameContext.PreviewStep"/>, <see cref="AssetPreview.Render"/>)과 같고,
-/// 다른 레이어 함수(<c>ctx.layerBelow</c>·<c>ctx.layerByName</c> 등)는 장면 레이어를 본다. 합성은 프로젝트와 같다(<see cref="SpriteProject.Flatten"/> — 캔버스 밖은 잘림).
+/// 다른 레이어 함수(<c>ctx.layer</c> 등 — 레이어 고르기 설정으로 고른 장면 레이어)는 장면 레이어를 본다. 합성은 프로젝트와 같다(<see cref="SpriteProject.Flatten"/> — 캔버스 밖은 잘림).
 /// </para>
 /// <para>
 /// <see cref="AssetPreview"/>와 맞춘 것: 다른 프레임을 쓰는 효과(잔상)가 있으면 병아리가 칸마다 한 칸씩 오른쪽으로 간다(<see cref="AssetPreview"/>의 늘린 원본처럼,
@@ -39,7 +39,7 @@ public sealed class PreviewSceneRender
     private readonly bool _moves;
     private readonly SpriteProject _project;
     private readonly Layer _chickLayer;
-    private SpriteProject? _original;
+    private (SpriteProject Project, Layer ChickLayer)? _original;
 
     public PreviewSceneRender(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps)
     {
@@ -55,14 +55,24 @@ public sealed class PreviewSceneRender
     /// <summary>렌더 프로젝트(그리기 전용 — 고치지 않는다). 시험·진단용.</summary>
     internal SpriteProject Project => _project;
 
-    /// <summary><paramref name="step"/>칸(0..steps-1로 자름)의 캔버스 전체 합성: 병아리 레이어에 효과를 입히고 다른 레이어는 프로젝트처럼 그린다.</summary>
-    public PixelImage Render(int step) => _project.Flatten(Frame(step));
+    /// <summary>
+    /// <paramref name="step"/>칸(0..steps-1로 자름)의 캔버스 전체 합성: 병아리 레이어에 효과를 입히고 다른 레이어는 프로젝트처럼 그린다.
+    /// <paramref name="hideSceneLayers"/>면 장면 레이어는 그리지 않고 병아리 레이어만 같은 캔버스에 그린다(효과는 여전히 <c>ctx.layer</c> 등으로 장면 레이어를 읽음).
+    /// </summary>
+    public PixelImage Render(int step, bool hideSceneLayers = false) => Flatten(_project, _chickLayer, step, hideSceneLayers);
 
-    /// <summary><see cref="Render"/>와 같은 장면·병아리 자리에 효과 없이.</summary>
-    public PixelImage Original(int step)
+    /// <summary><see cref="Render"/>와 같은 장면·병아리 자리에 효과 없이(<paramref name="hideSceneLayers"/>면 병아리 레이어만).</summary>
+    public PixelImage Original(int step, bool hideSceneLayers = false)
     {
-        _original ??= Build(_moves).Project;
-        return _original.Flatten(Frame(step));
+        var (project, chickLayer) = _original ??= Build(_moves);
+        return Flatten(project, chickLayer, step, hideSceneLayers);
+    }
+
+    private PixelImage Flatten(SpriteProject project, Layer chickLayer, int step, bool hideSceneLayers)
+    {
+        var image = new PixelImage(_scene.Width, _scene.Height);
+        project.FlattenInto(image, Frame(step), layerFilter: hideSceneLayers ? layer => layer == chickLayer : null);
+        return image;
     }
 
     /// <summary>

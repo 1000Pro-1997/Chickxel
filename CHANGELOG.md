@@ -2,6 +2,21 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.69 (2026-11-01)
+### Script effects pick the layer they read from a dropdown
+- New script setting type `layer`: the effects window shows a dropdown of the document's layers (top to bottom, as in the timeline), and the Effect Maker lists the preview scene's layers. A saved name that isn't in the document stays in the list marked missing.
+- Scripts read the chosen layer with `ctx.layer("key")`, `ctx.layerWithEffects("key")` and `ctx.layerEffects("key")`, using the key of the `layer` setting; they return null (or an empty list) when nothing is chosen or the layer is missing.
+- `ctx.layerBelow`, `ctx.layerAbove`, `ctx.layerByName`, their `WithEffects` versions, `ctx.layerEffectsByName` and `ctx.layerEffectsAt` are removed. Scripts that still call them stop with a "not a function" error until they are rewritten with a `layer` setting.
+- The chosen layer's name is saved with the effect, so it survives saving, presets, copying effects and inserting from the Effect Maker.
+
+### The Effect Maker AI adds useful settings on its own
+- Before writing an effect, the AI decides which settings make it useful and adds them without being asked: the anchor (pivot, center or the source's bounds), direction, speed and easing, looping, range, offsets, colors and size, and a `layer` setting for effects that read another layer.
+- It keeps them to a handful with defaults that look good on the preview chick, and names the settings it added in its reply. The effect-writing guide has the same rule.
+
+### Uploaded previews can hide the preview scene's layers
+- Effects with a preview scene now also upload the preview with the scene's layers hidden, with and without the effect, at the same size as the normal preview. The effect still reacts to the hidden layers; the website uses them for its "hide helper layers" toggle.
+- Exported and published packages carry them as `previews/<name>.solo.png` and `previews/<name>.solo.original.png`. A custom preview image gets none, like the before-effect image.
+
 ## v1.14.68 (2026-11-01)
 ### Start a new project from the clipboard image
 - When the clipboard holds an image, the New project window shows it with **Paste the clipboard image (W×H)**. Turning it on sets the canvas to the image size and puts the image on the first layer.

@@ -52,16 +52,16 @@ public static class ScriptDefinition
     internal static bool ReadsRenderedFrames(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedFrames: true };
 
-    /// <summary>실행하는 스크립트가 다른 레이어(<c>ctx.layerBelow</c> 등)나 <c>ctx.slice</c>를 읽는지 — 그릴 때 <see cref="ScriptLayerContext"/>를 넘긴다.</summary>
+    /// <summary>실행하는 스크립트가 다른 레이어(<c>ctx.layer</c> 등)나 <c>ctx.slice</c>를 읽는지 — 그릴 때 <see cref="ScriptLayerContext"/>를 넘긴다.</summary>
     public static bool UsesOtherLayers(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted
            && ScriptLibrary.InfoOf(effect.ScriptHash) is { } info && (info.ReadsOtherLayers || info.ReadsSlice);
 
-    /// <summary>실행하는 스크립트가 다른 레이어 함수(<c>ctx.layerBelow</c>·<c>ctx.layerEffectsAt</c> 등)를 쓰는지.</summary>
+    /// <summary>실행하는 스크립트가 다른 레이어 함수(<c>ctx.layer</c>·<c>ctx.layerWithEffects</c>·<c>ctx.layerEffects</c>)를 쓰는지.</summary>
     internal static bool ReadsOtherLayers(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsOtherLayers: true };
 
-    /// <summary>실행하는 스크립트가 다른 레이어를 효과까지 입혀 읽는지(<c>ctx.layerBelowWithEffects</c>·<c>ctx.layerAboveWithEffects</c>).</summary>
+    /// <summary>실행하는 스크립트가 다른 레이어를 효과까지 입혀 읽는지(<c>ctx.layerWithEffects</c>).</summary>
     internal static bool ReadsRenderedLayers(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedLayers: true };
 

@@ -352,4 +352,70 @@ public class ScriptRecipeParameterTests
         var issue = Assert.Single(issues);
         Assert.Equal((AssetIssueCode.RecipeParameterOutOfRange, "parameters[0].max: 20 > effects[0].size 8"), (issue.Code, issue.Detail));
     }
+
+    // ───────────── 레이어 고르기 설정 ─────────────
+
+    private const string LayerSource = """
+        effect({
+          name: "Layered",
+          settings: [
+            { key: "target", type: "layer", default: "ground" },
+            { key: "size", type: "int", min: 1, max: 8, default: 3 },
+          ],
+          render(img, ctx, s) {},
+        });
+        """;
+
+    [Fact]
+    public void Layer_settings_are_text_settings_that_recipes_do_not_expose()
+    {
+        var program = TrustedProgram(Unique(LayerSource));
+        var effect = program.CreateEffect();
+
+        var target = RecipeParameters.SettingOf(effect, "target")!;
+        Assert.Equal((EffectParameterKind.Text, ScriptSetting.MaxLayerNameLength), (target.Kind, target.MaxLength));
+        Assert.False(target.Exposed);
+        Assert.False(RecipeParameters.CanExpose(target));
+        Assert.Null(RecipeParameters.ValueOf(effect, "target"));
+        Assert.Null(RecipeParameters.SettingOf(effect, "size")!.MaxLength);
+
+        // AI 도구 설정: 글(레이어 이름) — JSON 글을 읽어 앞뒤 공백을 지운 이름으로, 문서에 없는 이름도 받는다
+        var schema = EffectSettings.Describe(effect);
+        Assert.Equal(["target", "size", "easing", "repeat", "repeatCount"], schema.Select(p => p.Key));
+        Assert.Equal("ground", schema[0].DefaultValue.GetValue<string>());
+        Assert.Equal("ground", EffectSettings.ToJson(effect)["target"]!.GetValue<string>());
+        var (merged, clamped) = EffectSettings.Merge(effect, new JsonObject { ["target"] = "  sky  " });
+        Assert.Empty(clamped);
+        var script = Assert.IsType<ScriptEffect>(merged);
+        Assert.Equal("sky", script.Settings["target"]);
+        Assert.Equal("sky", program.NormalizeSettings(script.Settings)["target"]);
+        (merged, _) = EffectSettings.Merge(script, new JsonObject { ["target"] = "" });
+        Assert.Equal("", ((ScriptEffect)merged).Settings["target"]);
+
+        // 너무 긴 이름·글이 아닌 값은 거부
+        var tooLong = Assert.Throws<EffectSettingException>(() => EffectSettings.Merge(effect, new JsonObject { ["target"] = new string('a', 65) }));
+        Assert.Equal(("target", EffectSettingError.InvalidValue), (tooLong.Key, tooLong.Error));
+        var number = Assert.Throws<EffectSettingException>(() => EffectSettings.Merge(effect, new JsonObject { ["target"] = 3 }));
+        Assert.Equal(("target", EffectSettingError.WrongType), (number.Key, number.Error));
+    }
+
+    [Theory]
+    [InlineData("\"sky\"", true)]
+    [InlineData("\"\"", true)]
+    [InlineData("\" sky\"", false)]
+    [InlineData("3", false)]
+    [InlineData("\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"", false)]
+    public void Strict_recipe_accepts_only_trimmed_layer_names(string value, bool ok)
+    {
+        var (recipe, issues) = ReadStrict(RecipeNode(Unique(LayerSource) + "// " + value, new JsonObject { ["target"] = JsonNode.Parse(value) }));
+        if (ok)
+        {
+            Assert.Empty(issues);
+            Assert.Equal(JsonNode.Parse(value)!.GetValue<string>(), Assert.IsType<ScriptEffect>(Assert.Single(recipe!.Effects)).Settings["target"]);
+            return;
+        }
+        Assert.Null(recipe);
+        Assert.Equal([(AssetIssueCode.InvalidEffectSetting, "effects[0].settings.target")],
+            issues.Where(i => i.Code != AssetIssueCode.InvalidField).Select(i => (i.Code, i.Detail)));
+    }
 }

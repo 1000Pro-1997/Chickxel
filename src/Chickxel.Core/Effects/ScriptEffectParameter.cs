@@ -27,6 +27,7 @@ internal sealed class ScriptEffectParameter : EffectParameter
     {
         _program = program;
         _setting = setting;
+        if (setting.Type == ScriptSettingType.Layer) MaxLength = ScriptSetting.MaxLayerNameLength;
         SetDefault(program.CreateEffect());
     }
 
@@ -79,6 +80,9 @@ internal sealed class ScriptEffectParameter : EffectParameter
                 return EffectJson.TryColors(node, out var colors) ? colors : null;
             case ScriptSettingType.ColorPairs:
                 return EffectJson.TryColorPairs(node, out var pairs) ? pairs.Select(p => new ScriptColorPair(p.From, p.To)).ToArray() : null;
+            case ScriptSettingType.Layer:
+                // 레이어 이름(글): 앞뒤 공백만 지운다 — 문서에 없는 이름도 받는다
+                return ScriptSetting.LayerName(EffectJson.String(node));
             default:
                 // 고르기: 저장 ID 그대로, 없으면 대소문자만 다른 ID(기본 효과의 열거 이름 읽기와 같게)
                 if (EffectJson.String(node) is not { } name) return null;
@@ -95,6 +99,8 @@ internal sealed class ScriptEffectParameter : EffectParameter
         ScriptSettingType.Color => EffectParameterKind.Color,
         ScriptSettingType.ColorList => EffectParameterKind.ColorList,
         ScriptSettingType.ColorPairs => EffectParameterKind.ColorPairList,
+        // 레이어 고르기는 글(레이어 이름) — 레시피 매개변수로는 내보내지 않는다(고를 레이어가 문서마다 다름)
+        ScriptSettingType.Layer => EffectParameterKind.Text,
         _ => EffectParameterKind.Choice,
     };
 

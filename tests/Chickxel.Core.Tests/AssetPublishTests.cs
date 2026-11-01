@@ -126,7 +126,8 @@ public class AssetPublishTests
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
         var saved = store.SavePersonalScript(
-            "effect({ name: \"Ground Glow\", tags: [\"glow\"], render(img, ctx) { const g = ctx.layerBelow(); if (g) img.data[0] = g.data[0]; } });", null, null);
+            "effect({ name: \"Ground Glow\", tags: [\"glow\"], settings: [{ key: \"ground\", type: \"layer\", default: \"ground\" }], "
+            + "render(img, ctx) { const g = ctx.layer(\"ground\"); if (g) img.data[0] = g.data[0]; } });", null, null);
         // 저장한 에셋의 태그(게시 창의 처음 값)에는 강제 태그가 붙어 있다
         Assert.Equal(["glow", ScriptAsset.LayerReferenceTag], saved.Script!.Tags);
         var request = Request(store) with { Id = "pixel-cat.ground-glow", Name = "Ground Glow", Translations = AssetTranslations.Empty, Asset = Asset(saved) };

@@ -184,22 +184,25 @@ internal static class ScriptHostApi
         Method(ctx, engine, "frameSource", 1, args =>
             frameSource?.Invoke(TypeConverter.ToInt32(Arg(args, 0))) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null);
 
-        // 다른 레이어(같은 부모 안 바로 아래·위, 이름으로 찾은 레이어): img와 같은 크기·같은 자리, 부를 때마다 새 사본. 프로젝트 밖 그리기는 null·빈 배열
+        // 다른 레이어: 레이어 고르기 설정(type: "layer")의 키로 그 설정에 고른 레이어를 읽는다. img와 같은 크기·같은 자리, 부를 때마다 새 사본.
+        // 모르는 키·레이어 설정이 아닌 키·비운 값·없는 레이어·프로젝트 밖 그리기는 null(효과 이름은 빈 배열) — 오류를 내지 않는다
         var layers = frame.Layers;
-        JsValue Copy(PixelImage? other) => other is not null ? CreateImage(sandbox, other).Image : JsValue.Null;
-        JsValue Neighbor(int direction, bool withEffects) => Copy(layers?.Neighbor(direction, withEffects, image.Width, image.Height, source));
-        JsValue Named(JsValue[] args, bool withEffects)
-            => Copy(layers?.Named(TypeConverter.ToString(Arg(args, 0)), withEffects, image.Width, image.Height, source));
-        Method(ctx, engine, "layerBelow", 0, _ => Neighbor(-1, false));
-        Method(ctx, engine, "layerAbove", 0, _ => Neighbor(1, false));
-        Method(ctx, engine, "layerBelowWithEffects", 0, _ => Neighbor(-1, true));
-        Method(ctx, engine, "layerAboveWithEffects", 0, _ => Neighbor(1, true));
-        Method(ctx, engine, "layerByName", 1, args => Named(args, false));
-        Method(ctx, engine, "layerByNameWithEffects", 1, args => Named(args, true));
-        Method(ctx, engine, "layerEffectsByName", 1, args =>
-            Strings(engine, layers?.EffectsByName(TypeConverter.ToString(Arg(args, 0))) ?? []));
-        Method(ctx, engine, "layerEffectsAt", 1, args =>
-            Strings(engine, layers?.EffectsAt(TypeConverter.ToInt32(Arg(args, 0))) ?? []));
+        string? Chosen(JsValue key)
+        {
+            if (layers is null || key is not JsString) return null;
+            string name = key.AsString();
+            foreach (var setting in schema)
+                if (setting.Type == ScriptSettingType.Layer && setting.Key == name)
+                    return settings.Get(name) is JsString chosen && chosen.AsString() is { Length: > 0 } text ? text : null;
+            return null;
+        }
+        JsValue Layer(JsValue[] args, bool withEffects)
+            => Chosen(Arg(args, 0)) is { } name && layers!.Named(name, withEffects, image.Width, image.Height, source) is { } other
+                ? CreateImage(sandbox, other).Image
+                : JsValue.Null;
+        Method(ctx, engine, "layer", 1, args => Layer(args, false));
+        Method(ctx, engine, "layerWithEffects", 1, args => Layer(args, true));
+        Method(ctx, engine, "layerEffects", 1, args => Strings(engine, Chosen(Arg(args, 0)) is { } name ? layers!.EffectsByName(name) : []));
 
         // 미루는 스크립트만: 다른 프레임에 이 레이어의 다른 효과를 입힌 그림 { image, offsetX, offsetY }(원본 대비 위치). 원본이 없거나 크기가 다르면 null
         var rendered = frame.RenderedFrameSource;

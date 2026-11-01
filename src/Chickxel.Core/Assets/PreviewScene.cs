@@ -9,11 +9,11 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Assets;
 
-/// <summary>미리보기 장면의 픽셀 레이어 하나: 이름(스크립트가 <c>ctx.layerByName</c>으로 찾음), 프레임마다 장면 크기 그림, 불투명도, 보이기.</summary>
+/// <summary>미리보기 장면의 픽셀 레이어 하나: 이름(효과의 레이어 고르기 설정이 고르는 이름), 프레임마다 장면 크기 그림, 불투명도, 보이기.</summary>
 public sealed record PreviewSceneLayer(string Name, IReadOnlyList<PixelImage> Frames, byte Opacity = 255, bool Visible = true);
 
 /// <summary>
-/// 효과 만들기의 미리보기 장면: 병아리 둘레의 픽셀 레이어(아래→위), 프레임, 병아리 자리. 다른 레이어를 읽는 효과(<c>ctx.layerBelow</c> 등)가
+/// 효과 만들기의 미리보기 장면: 병아리 둘레의 픽셀 레이어(아래→위), 프레임, 병아리 자리. 다른 레이어를 읽는 효과(<c>ctx.layer</c> 등)가
 /// 부딪힐 바닥, 따라갈 길 같은 것을 효과와 같이 저장하고 패키지로 나른다. 미리보기 칸 i는 장면 프레임 i % <see cref="FrameCount"/>를 쓴다.
 /// <para>
 /// 저장 형식(<see cref="ToPng"/>): PNG 한 장 — 칸 격자(레이어 × 프레임 셀, 셀 차례 = 레이어 × <see cref="FrameCount"/> + 프레임, 가로로 채우다 넘치면 다음 줄,

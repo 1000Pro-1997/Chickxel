@@ -81,8 +81,33 @@ public class ScriptEffectGuideTests
             string rule = ScriptGuideStrings.FormatGuide_RuleLayers(tag: Chickxel.Core.IO.ScriptAsset.LayerReferenceTag);
             Assert.Contains("- " + rule, guide, StringComparison.Ordinal);
             Assert.Contains("`layer-reference`", rule, StringComparison.Ordinal);
-            Assert.Contains("ctx.layerByName(\"ground\")", rule, StringComparison.Ordinal);
+            Assert.Contains("ctx.layer(\"target\")", rule, StringComparison.Ordinal);
+            Assert.Contains("type: \"layer\"", rule, StringComparison.Ordinal);
+            Assert.Contains("default: \"ground\"", rule, StringComparison.Ordinal);
             Assert.Contains("null", rule, StringComparison.Ordinal);
+            // 설정 규칙은 레이어 고르기도 말한다
+            Assert.Contains("`layer`", ScriptGuideStrings.Guide_RuleSettings, StringComparison.Ordinal);
+        }
+        finally
+        {
+            ScriptGuideStrings.Culture = saved;
+        }
+    }
+
+    [Theory]
+    [InlineData("ko")]
+    [InlineData("en")]
+    public void Guide_puts_the_useful_settings_rule_right_after_the_settings_rule(string culture)
+    {
+        var saved = ScriptGuideStrings.Culture;
+        ScriptGuideStrings.Culture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            string guide = ScriptEffectGuide.ToMarkdown(null);
+            string useful = ScriptGuideStrings.Guide_RuleUsefulSettings;
+            Assert.Contains("- " + ScriptGuideStrings.Guide_RuleSettings + "\n- " + useful + "\n", guide.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+            Assert.Contains("ctx.pivot", useful, StringComparison.Ordinal);
+            Assert.Contains("ctx.center", useful, StringComparison.Ordinal);
         }
         finally
         {

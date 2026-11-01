@@ -127,8 +127,8 @@ public static class LayerEffects
     }
 
     /// <summary>
-    /// 켜진 효과 중 다른 레이어나 효과 원본 테두리를 읽는 스크립트 효과(<c>ctx.layerBelow</c> 등, <c>ctx.slice</c> — <see cref="ScriptDefinition.UsesOtherLayers"/>)가
-    /// 있는지 — 있으면 이 레이어 결과는 자기 셀·효과 밖(이웃 레이어의 셀·효과·이름·순서, 9-slice 테두리)에도 달려 있다.
+    /// 켜진 효과 중 다른 레이어나 효과 원본 테두리를 읽는 스크립트 효과(<c>ctx.layer</c> 등, <c>ctx.slice</c> — <see cref="ScriptDefinition.UsesOtherLayers"/>)가
+    /// 있는지 — 있으면 이 레이어 결과는 자기 셀·효과 밖(고른 레이어의 셀·효과·이름, 9-slice 테두리)에도 달려 있다.
     /// </summary>
     public static bool UsesOtherLayers(IReadOnlyList<LayerEffect> effects)
     {

@@ -454,7 +454,7 @@ public static class EffectRecipeFormat
 
     /// <summary>
     /// 스크립트 설정 값이 선언한 schema에 맞는지(정수는 소수 없는 수, 숫자는 min~max 안, 색은 16진수, 고르기는 선언한 값,
-    /// 색 목록·색 쌍 목록은 모든 칸이 맞고 항목 수가 선언의 min~max 안).
+    /// 색 목록·색 쌍 목록은 모든 칸이 맞고 항목 수가 선언의 min~max 안, 레이어는 앞뒤 공백 없는 이름 글).
     /// </summary>
     private static bool ValidScriptSetting(ScriptSetting setting, JsonNode? value)
     {
@@ -475,6 +475,8 @@ public static class EffectRecipeFormat
                        && pairs.All(pair => pair is JsonArray { Count: 2 } p && ValidColor(p[0]) && ValidColor(p[1]));
             case ScriptSettingType.Choice:
                 return AssetJson.String(value) is { } choice && setting.Choices.Any(c => c.Value == choice);
+            case ScriptSettingType.Layer:
+                return AssetJson.String(value) is { } layer && ScriptSetting.LayerName(layer) == layer;
             default:
                 return false;
         }
