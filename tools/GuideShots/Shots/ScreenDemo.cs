@@ -128,11 +128,14 @@ internal static class ScreenDemo
             if (effects)
             {
                 int bi = p.IndexOf(body);
-                p.SetLayerEffects(bi,
+                // 공식 스크립트 효과(예전 기본 효과와 같은 설정)로 넣고 원문을 프로젝트 스크립트 표에
+                LayerEffect[] fx =
                 [
-                    new OutlineEffect { Color = new Color32(255, 230, 120, 255) },
-                    new HitFlashEffect { Frames = new FrameRange(4, 5), Color = Color32.White },
-                ]);
+                    Chickxel.Core.Effects.LegacyEffects.Convert(new OutlineEffect { Color = new Color32(255, 230, 120, 255) }),
+                    Chickxel.Core.Effects.LegacyEffects.Convert(new HitFlashEffect { Frames = new FrameRange(4, 5), Color = Color32.White }),
+                ];
+                foreach (var script in fx.OfType<ScriptEffect>()) p.AddScript(Chickxel.Core.Scripting.ScriptLibrary.SourceOf(script.ScriptHash)!);
+                p.SetLayerEffects(bi, fx);
             }
         });
         ctx.SetCurrent(p.IndexOf(p.Layers.First(l => l.Name == "Body")), 0);

@@ -46,6 +46,12 @@ public static partial class ScriptCompletion
     [GeneratedRegex(@"\barea\s*:\s*$")]
     private static partial Regex BeforeArea();
 
+    [GeneratedRegex(@"\beasing\s*:\s*$")]
+    private static partial Regex BeforeEasing();
+
+    [GeneratedRegex(@"\bwidget\s*:\s*$")]
+    private static partial Regex BeforeWidget();
+
     [GeneratedRegex(@"\bpreviewChick\s*:\s*$")]
     private static partial Regex BeforeChick();
 
@@ -75,9 +81,18 @@ public static partial class ScriptCompletion
             string before = text[..quote].TrimEnd();
             items = BeforeType().IsMatch(before) ? Members(ScriptApiCatalog.SettingType, quoted: false)
                 : BeforeArea().IsMatch(before) ? Members(ScriptApiCatalog.Area, quoted: false)
+                : BeforeEasing().IsMatch(before) ? Members(ScriptApiCatalog.Easing, quoted: false)
+                : BeforeWidget().IsMatch(before) ? Members(ScriptApiCatalog.Widget, quoted: false)
                 : BeforeChick().IsMatch(before) ? Chicks()
-                : before.EndsWith('(') && CalleeBefore(text, code, before.Length - 1) is [var head, "color"] && head == names.Ctx
-                    ? names.Settings.Where(s => s.Type == "color").Select(SettingItem)
+                : before.EndsWith('(') && CalleeBefore(text, code, before.Length - 1) is [var head, var method] && head == names.Ctx
+                    ? method switch
+                    {
+                        "color" => names.Settings.Where(s => s.Type == "color").Select(SettingItem),
+                        "colorAt" => names.Settings.Where(s => s.Type == "colorList").Select(SettingItem),
+                        "pairColor" => names.Settings.Where(s => s.Type == "colorPairs").Select(SettingItem),
+                        "hasGradient" => names.Settings.Where(s => s.Type is "color" or "colorList" or "colorPairs").Select(SettingItem),
+                        _ => [],
+                    }
                 : [];
         }
         else if (PreviousCode(text, code, start) is int dot && text[dot] == '.')

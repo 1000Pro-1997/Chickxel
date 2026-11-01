@@ -79,7 +79,8 @@ public readonly record struct EffectCanvasExpansion(int Width, int Height, int O
 }
 
 /// <summary>
-/// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 잔상을 뺀 효과는 목록 순서대로 적용하고, 잔상은 다른 효과가 각 프레임에 적용된 모습을 현재 그림 뒤에 합성한다. 꺼진 효과는 건너뛴다.
+/// 레이어 효과(<see cref="LayerEffect"/>) 그리기. 미루는 효과(잔상·<c>deferred</c> 스크립트 — <see cref="IsDeferred"/>)를 뺀 효과는 목록 순서대로 적용하고, 미루는 효과는 그 뒤에 그린다
+/// (잔상은 다른 효과가 각 프레임에 적용된 모습을 현재 그림 뒤에 합성한다). 꺼진 효과는 건너뛴다.
 /// 모양은 알파가 0이 아닌 픽셀이다. 바깥 외곽선·그림자·반사·터지기·늘었다 줄기는 그림 밖으로 번지므로 <see cref="Render(PixelImage, IReadOnlyList{LayerEffect})"/>는 그만큼(<see cref="Padding"/>)
 /// 넓힌 이미지와 원래 그림의 왼쪽 위가 놓인 자리를 돌려준다. 이미지 밖은 투명으로 본다.
 /// 그리기 함수는 받은 목록을 프레임 범위(<see cref="LayerEffect.Frames"/>)와 관계없이 그린다 — 프레임 하나를 그릴 때는 부르는 쪽이
@@ -104,6 +105,17 @@ public static class LayerEffects
     }
 
     /// <summary>
+    /// 프레임 <paramref name="frameIndex"/>에 입혀질 효과 중 원본 없이 그림을 만드는 효과(<see cref="EffectDefinition.GeneratesContent"/>, 글씨)가 있는지 —
+    /// 있으면 셀이 없는 프레임도 빈 그림을 원본으로 그린다.
+    /// </summary>
+    public static bool GeneratesContent(IReadOnlyList<LayerEffect> effects, int frameIndex)
+    {
+        for (int i = 0; i < effects.Count; i++)
+            if (effects[i].Enabled && effects[i].AppliesTo(frameIndex) && EffectRegistry.Of(effects[i]) is { GeneratesContent: true }) return true;
+        return false;
+    }
+
+    /// <summary>
     /// 켜진 효과 중 다른 프레임 그림을 보는 효과(<see cref="EffectDefinition.UsesOtherFrames"/>, 잔상·<c>ctx.frameSource</c>를 쓰는 스크립트)가 있는지 —
     /// 있을 때만 <see cref="At"/>에 다른 프레임 원본을 넘긴다.
     /// </summary>
@@ -112,6 +124,45 @@ public static class LayerEffects
         for (int i = 0; i < effects.Count; i++)
             if (effects[i].Enabled && EffectRegistry.Of(effects[i]) is { } definition && definition.UsesOtherFrames(effects[i])) return true;
         return false;
+    }
+
+    /// <summary>
+    /// 켜진 효과 중 다른 레이어나 효과 원본 테두리를 읽는 스크립트 효과(<c>ctx.layerBelow</c> 등, <c>ctx.slice</c> — <see cref="ScriptDefinition.UsesOtherLayers"/>)가
+    /// 있는지 — 있으면 이 레이어 결과는 자기 셀·효과 밖(이웃 레이어의 셀·효과·이름·순서, 9-slice 테두리)에도 달려 있다.
+    /// </summary>
+    public static bool UsesOtherLayers(IReadOnlyList<LayerEffect> effects)
+    {
+        for (int i = 0; i < effects.Count; i++)
+            if (effects[i] is ScriptEffect { Enabled: true } script && ScriptDefinition.UsesOtherLayers(script)) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 그릴 효과 목록(<see cref="At"/>의 결과)의 켜진 스크립트 효과 중 다른 레이어나 <c>ctx.slice</c>를 읽는 것에 <paramref name="layers"/>를 채운 사본
+    /// (<see cref="ScriptEffect.Layers"/>). <paramref name="layers"/>가 null이거나 바꿀 것이 없으면 <paramref name="effects"/> 그대로.
+    /// <paramref name="layers"/>는 <see cref="SpriteProject.ScriptLayersAt"/>로 그 레이어·프레임에 맞춰 얻는다.
+    /// </summary>
+    public static IReadOnlyList<LayerEffect> WithScriptLayers(IReadOnlyList<LayerEffect> effects, ScriptLayerContext? layers)
+    {
+        if (layers is null) return effects;
+        LayerEffect[]? copy = null;
+        for (int i = 0; i < effects.Count; i++)
+        {
+            if (effects[i] is not ScriptEffect { Enabled: true } script || !ScriptDefinition.UsesOtherLayers(script)) continue;
+            copy ??= [.. effects];
+            copy[i] = script with { Layers = layers };
+        }
+        return copy ?? effects;
+    }
+
+    /// <summary>
+    /// 겹침 규칙(<see cref="ScriptLayerContext"/>): 다른 레이어를 효과까지 그릴 때 그 안에서 건너뛰는 효과 — 다른 레이어를 효과까지 입혀 읽는 스크립트 효과를 끈 목록
+    /// (꺼진 효과와 같이 건너뛰므로 그 효과에 맞춰 자르던 효과도 함께 빠진다). 바꿀 것이 없으면 <paramref name="effects"/> 그대로.
+    /// </summary>
+    internal static IReadOnlyList<LayerEffect> WithoutRenderedLayerReaders(IReadOnlyList<LayerEffect> effects)
+    {
+        static bool Reads(LayerEffect e) => e is ScriptEffect { Enabled: true } script && ScriptDefinition.ReadsRenderedLayers(script);
+        return effects.Any(Reads) ? [.. effects.Select(e => Reads(e) ? e with { Enabled = false } : e)] : effects;
     }
 
     /// <summary>
@@ -132,15 +183,27 @@ public static class LayerEffects
         Func<int, PixelImage?>? frameSource = null, Func<int, PointF?>? framePivot = null, EffectRenderCache? cache = null)
         => Resolve(effects, frameIndex, frameCount, pivot, frameSource, inRangeOnly: false, framePivot, cache);
 
+    /// <summary>
+    /// 목록 자리와 관계없이 다른 효과를 모두 입힌 뒤에 그리는 효과(미루는 효과): 잔상과 <c>deferred: true</c>로 선언한 실행할 수 있는 스크립트 효과.
+    /// 미루는 효과끼리는 목록 차례로, 클리핑되지 않은 것을 먼저 그리고 클리핑된 것(기준 효과가 있을 때만)을 그 뒤에 그린다(<see cref="Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>).
+    /// 다른 프레임에 다른 효과를 입힌 그림(<see cref="AnimatedEffect.RenderedFrameSource"/>)은 미루지 않는 효과만으로 그린다.
+    /// </summary>
+    public static bool IsDeferred(LayerEffect effect)
+        => effect is AfterimageEffect || effect is ScriptEffect script && ScriptDefinition.IsDeferred(script);
+
+    // 다른 프레임에 다른 효과를 입힌 그림을 받는 미루는 효과: 잔상과 ctx.renderedFrameSource를 쓰는 미루는 스크립트
+    private static bool WantsRenderedFrames(LayerEffect effect)
+        => effect is AfterimageEffect || effect is ScriptEffect script && ScriptDefinition.IsDeferred(script) && ScriptDefinition.ReadsRenderedFrames(script);
+
     private static IReadOnlyList<LayerEffect> Resolve(IReadOnlyList<LayerEffect> effects, int frameIndex, int frameCount, PointF? pivot,
         Func<int, PixelImage?>? frameSource, bool inRangeOnly, Func<int, PointF?>? framePivot = null, EffectRenderCache? cache = null)
     {
         bool preservePositions = inRangeOnly && effects.Any(e => e.ClipToPrevious);
         Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? rendered = null;
-        if (frameSource is not null && effects.Any(e => e is AfterimageEffect { Enabled: true } && (!inRangeOnly || e.AppliesTo(frameIndex)))
-            && effects.Any(e => e.Enabled && e is not AfterimageEffect))
+        if (frameSource is not null && effects.Any(e => e.Enabled && WantsRenderedFrames(e) && (!inRangeOnly || e.AppliesTo(frameIndex)))
+            && effects.Any(e => e.Enabled && !IsDeferred(e)))
         {
-            var others = effects.Where(e => e is not AfterimageEffect).ToArray();
+            var others = effects.Where(e => !IsDeferred(e)).ToArray();
             rendered = (f, raw) =>
             {
                 var previous = At(others, f, frameCount, framePivot?.Invoke(f) ?? pivot);
@@ -156,14 +219,14 @@ public static class LayerEffects
             var e = effects[i];
             LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex)
                 ? preservePositions ? e with { Enabled = false } : null
-                : e is AfterimageEffect a
-                    ? a.AtFrame(frameIndex, frameCount, pivot, frameSource) with
+                : e is AnimatedEffect animated && WantsRenderedFrames(e)
+                    ? animated.AtFrame(frameIndex, frameCount, pivot, frameSource) with
                     {
-                        RenderedFrameSource = a.ClipToPrevious && rendered is not null
+                        RenderedFrameSource = e.ClipToPrevious && rendered is not null
                             ? ClippedGhostSource(effects, i, frameCount, framePivot, pivot, cache)
                             : rendered,
                     }
-                    : e is AnimatedEffect animated ? animated.AtFrame(frameIndex, frameCount, pivot, e is ScriptEffect ? frameSource : null) : e;
+                    : e is AnimatedEffect other ? other.AtFrame(frameIndex, frameCount, pivot, e is ScriptEffect ? frameSource : null) : e;
             if (r is { Enabled: true } && r is not AnimatedEffect && r.HasAnimatedColorGradient())
             {
                 var (from, to) = r.Frames is { } range ? (range.From, range.To) : (0, Math.Max(0, frameCount - 1));
@@ -184,8 +247,8 @@ public static class LayerEffects
     {
         int anchor = index - 1;
         while (anchor >= 0 && effects[anchor].ClipToPrevious) anchor--;
-        if (anchor < 0 || effects[anchor] is AfterimageEffect) return null;
-        var group = effects.Take(anchor + 1).Where(e => e is not AfterimageEffect).ToArray();
+        if (anchor < 0 || IsDeferred(effects[anchor])) return null;
+        var group = effects.Take(anchor + 1).Where(e => !IsDeferred(e)).ToArray();
         var before = group[..^1];
         return (frame, raw) =>
         {
@@ -211,7 +274,7 @@ public static class LayerEffects
 
     /// <summary>
     /// 영구 적용할 효과 번호(목록 순서): 고른 효과(꺼져 있어도)와 그보다 위(앞)의 켜진 효과 모두.
-    /// 잔상을 고르면 앞뒤의 켜진 효과까지 구워야 각 프레임의 완성된 모습이 잔상에도 남는다. 고른 것이 없으면 빈 목록.
+    /// 미루는 효과(잔상 등 — <see cref="IsDeferred"/>)를 고르면 앞뒤의 켜진 효과까지 구워야 각 프레임의 완성된 모습이 잔상에도 남는다. 고른 것이 없으면 빈 목록.
     /// 모르는 효과(<see cref="MissingEffect"/>)는 그리지 않으므로 굽지 않고 목록에 남긴다.
     /// </summary>
     public static IReadOnlyList<int> BakeSet(IReadOnlyList<LayerEffect> effects, IEnumerable<int> selected)
@@ -227,7 +290,7 @@ public static class LayerEffects
             while (lastInGroup + 1 < effects.Count && effects[lastInGroup + 1].ClipToPrevious) lastInGroup++;
             for (int i = first; i <= lastInGroup; i++) group.Add(i);
         }
-        int last = chosen.Any(i => effects[i] is AfterimageEffect) ? effects.Count - 1 : group.Max();
+        int last = chosen.Any(i => IsDeferred(effects[i])) ? effects.Count - 1 : group.Max();
         return Enumerable.Range(0, last + 1).Where(i => effects[i] is not MissingEffect && (group.Contains(i) || effects[i].Enabled)).ToList();
     }
 
@@ -244,7 +307,7 @@ public static class LayerEffects
         foreach (var e in effects)
         {
             if (!e.Enabled || EffectRegistry.Of(e) is not { } definition) continue;
-            if (e.ClipToPrevious && !definition.ClipsBySource) continue;
+            if (e.ClipToPrevious && !definition.ClipsBySource(e)) continue;
             var add = definition.Padding(e, width + l + r, height + t + b);
             l += add.Left;
             t += add.Top;
@@ -316,16 +379,19 @@ public static class LayerEffects
         var done = hooks?.EffectDone;
         var checkpoints = EffectCheckpoints.For(image, effects, source, hooks);
         int start = checkpoints?.Restore(image) ?? 0;
-        List<AfterimageEffect>? clippedAfterimages = null;
+        // 미루는 효과(잔상·deferred 스크립트)는 효과마다 한 번 가린다(스크립트는 해석 결과를 찾는다)
+        var deferred = new bool[effects.Count];
+        for (int i = 0; i < deferred.Length; i++) deferred[i] = IsDeferred(effects[i]);
+        List<LayerEffect>? clippedDeferred = null;
         bool[]? clipMask = null;
         for (int index = start; index < effects.Count; index++)
         {
             cancel.ThrowIfCancellationRequested();
             var effect = effects[index];
-            if (effect is AfterimageEffect after)
+            if (deferred[index])
             {
-                if (after.ClipToPrevious && effect.Enabled && clipMask is not null)
-                    (clippedAfterimages ??= []).Add(after);
+                if (effect.ClipToPrevious && effect.Enabled && clipMask is not null)
+                    (clippedDeferred ??= []).Add(effect);
                 if (!effect.ClipToPrevious) clipMask = null;
                 continue;
             }
@@ -339,7 +405,7 @@ public static class LayerEffects
             {
                 if (clipMask is not null)
                 {
-                    if (definition.ClipsBySource)
+                    if (definition.ClipsBySource(effect))
                     {
                         var moved = new PixelImage(image.Width, image.Height);
                         for (int i = 0; i < image.Pixels.Length; i++)
@@ -374,28 +440,35 @@ public static class LayerEffects
             checkpoints?.Store(index, image);
             done?.Invoke(image);
         }
-        // 잔상은 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
+        // 미루는 효과는 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
         int ghosts = 0;
-        foreach (var effect in effects)
-            if (effect is AfterimageEffect { Enabled: true, ClipToPrevious: false } after)
+        for (int index = 0; index < effects.Count; index++)
+            if (deferred[index] && effects[index] is { Enabled: true, ClipToPrevious: false } effect)
             {
                 cancel.ThrowIfCancellationRequested();
-                AfterimageRender.Apply(image, after, source);
+                RenderDeferred(image, effect, source, hooks);
                 ghosts++;
                 done?.Invoke(image);
             }
-        if (clippedAfterimages is not null)
-            foreach (var after in clippedAfterimages)
+        if (clippedDeferred is not null)
+            foreach (var effect in clippedDeferred)
             {
                 cancel.ThrowIfCancellationRequested();
-                AfterimageRender.Apply(image, after, source);
+                RenderDeferred(image, effect, source, hooks);
                 ghosts++;
                 done?.Invoke(image);
             }
         if (done is null) return;
-        // 기준 효과 영역이 없어 건너뛴 클리핑된 잔상도 끝낸 것으로 센다
-        foreach (var effect in effects)
-            if (effect is AfterimageEffect { Enabled: true } && --ghosts < 0) done(image);
+        // 기준 효과 영역이 없어 건너뛴 클리핑된 미루는 효과도 끝낸 것으로 센다
+        for (int index = 0; index < effects.Count; index++)
+            if (deferred[index] && effects[index].Enabled && --ghosts < 0) done(image);
+    }
+
+    // 미루는 효과 하나: 잔상은 잔상 렌더러, 스크립트는 효과 정의의 렌더러(실패 기록·알림 포함)
+    private static void RenderDeferred(PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks)
+    {
+        if (effect is AfterimageEffect after) AfterimageRender.Apply(image, after, source);
+        else EffectRegistry.Of(effect)?.Render(image, effect, source, hooks);
     }
 
     private static bool[] ChangedPixels(Color32[] before, Color32[] after)

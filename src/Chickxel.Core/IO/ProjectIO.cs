@@ -917,6 +917,9 @@ public static partial class ProjectIO
                 {
                     var effect = e is null ? null : EffectCodec.Read(e);
                     if (effect is not null) list.Add(effect);
+                    // 예전 기본 효과는 공식 스크립트로 바뀌어 읽힌다(EffectCodec) — 그 원문을 표에 넣어 저장하면 스크립트로 쓴다
+                    if (effect is ScriptEffect official && !p.Scripts.ContainsKey(official.ScriptHash) && OfficialEffects.IdOfHash(official.ScriptHash) is { } officialId)
+                        p.AddScript(OfficialEffects.Source(officialId));
                     if (effect is ScriptEffect script && !p.Scripts.ContainsKey(script.ScriptHash))
                         warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_MissingScript(layer: layer.Name, hash: ShortHash(script.ScriptHash)));
                     // 모르는 효과는 원본 JSON 그대로 남기고(다시 저장하면 그대로 씀) 그리지 않는다는 것만 알린다.

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using Acornima.Ast;
 using Chickxel.Core.Edit;
 using Jint;
@@ -15,8 +16,32 @@ public enum ScriptTrust
     Blocked,
 }
 
-/// <summary>실행하지 않고 원문만 읽어 안 정보(신뢰 확인 창·목록 이름용). 선언에 글자 그대로 적은 값만 읽는다.</summary>
-public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFrames);
+/// <summary>
+/// 실행하지 않고 원문만 읽어 안 정보(신뢰 확인 창·목록 이름용). 선언에 글자 그대로 적은 값만 읽는다.
+/// 읽기 표시는 원문에 그 이름이 나오는지로 정한다(<see cref="ScriptSourceLocator.Mentions"/>): <see cref="ReadsOtherFrames"/> = <c>ctx.frameSource</c>,
+/// <see cref="ReadsRenderedFrames"/> = <c>ctx.renderedFrameSource</c>,
+/// <see cref="ReadsOtherLayers"/> = 다른 레이어 함수(<see cref="OtherLayerNames"/>), <see cref="ReadsRenderedLayers"/> = 그중 효과까지 입힌 그림을 보는 함수
+/// (<see cref="RenderedLayerNames"/>), <see cref="ReadsSlice"/> = <c>ctx.slice</c>(배열의 <c>slice</c>도 같은 이름이라 함께 걸린다 — 더 주기만 할 뿐 결과는 같다).
+/// </summary>
+public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFrames, bool ReadsOtherLayers = false, bool ReadsRenderedLayers = false,
+    bool ReadsSlice = false)
+{
+    /// <summary>선언 <c>translations</c>의 언어별 이름(글자 그대로 적은 문자열만 — 설명·설정 이름은 읽지 않음). 해석 전 화면 이름에 쓴다.</summary>
+    public IReadOnlyDictionary<string, ScriptTranslation> Translations { get; init; } = ScriptTranslations.Empty;
+
+    /// <summary>
+    /// 원문에 <c>renderedFrameSource</c>가 나오는지: 미루는 스크립트(<c>deferred: true</c>)면 그릴 때 다른 프레임 원본과 그 프레임에 다른 효과를 입힌 그림을
+    /// 넘긴다(잔상과 같은 캐시·무효화).
+    /// </summary>
+    public bool ReadsRenderedFrames { get; init; }
+
+    /// <summary>다른 레이어를 읽는 <c>ctx</c> 함수 이름.</summary>
+    public static IReadOnlyList<string> OtherLayerNames { get; } =
+        ["layerBelow", "layerAbove", "layerBelowWithEffects", "layerAboveWithEffects", "layerEffectsByName", "layerEffectsAt"];
+
+    /// <summary>다른 레이어를 효과까지 입혀 읽는 <c>ctx</c> 함수 이름(겹쳐 그릴 때 건너뛰는 효과 — <see cref="Model.ScriptLayerContext"/>).</summary>
+    public static IReadOnlyList<string> RenderedLayerNames { get; } = ["layerBelowWithEffects", "layerAboveWithEffects"];
+}
 
 /// <summary>
 /// 이 앱 프로세스가 아는 스크립트 원문(해시 → 원문)과 해석 결과, 신뢰 결정(13.5). 여러 스레드에서 같이 쓴다.
@@ -69,15 +94,22 @@ public static class ScriptLibrary
     /// <summary>실행하지 않고 읽은 정보(원문을 모르면 null).</summary>
     public static ScriptInfo? InfoOf(string hash) => s_entries.TryGetValue(hash, out var e) ? e.Info : null;
 
-    /// <summary>화면 이름: 해석했으면 선언의 이름, 아니면 원문에 글자로 적힌 이름(모르면 null). 해석을 시작하지 않는다.</summary>
+    /// <summary>
+    /// 화면 이름: 해석했으면 선언의 이름, 아니면 원문에 글자로 적힌 이름(모르면 null) — 둘 다 화면 언어(<see cref="CultureInfo.CurrentUICulture"/>)의
+    /// 번역이 있으면 그것(<see cref="ScriptEffectProgram.NameFor"/>). 해석을 시작하지 않는다.
+    /// </summary>
     public static string? NameOf(string hash)
     {
         if (!s_entries.TryGetValue(hash, out var e)) return null;
-        return e.Parsed.IsValueCreated && e.Parsed.Value.Program is { } program ? program.Name : e.Info.Name;
+        var culture = CultureInfo.CurrentUICulture;
+        if (e.Parsed.IsValueCreated && e.Parsed.Value.Program is { } program) return program.NameFor(culture);
+        return e.Info.Name is { } name ? ScriptTranslations.NameFor(e.Info.Translations, name, culture) : null;
     }
 
+    /// <summary>해시의 신뢰 결정. 공식 효과 원문(<see cref="OfficialEffects.IsOfficialHash"/> — 지금 앱에 든 것과 예전 앱이 내보낸 것)은 늘 허락한다.</summary>
     public static ScriptTrust TrustOf(string hash)
-        => s_trust.TryGetValue(hash, out bool trusted) ? trusted ? ScriptTrust.Trusted : ScriptTrust.Blocked : ScriptTrust.Unknown;
+        => OfficialEffects.IsOfficialHash(hash) ? ScriptTrust.Trusted
+            : s_trust.TryGetValue(hash, out bool trusted) ? trusted ? ScriptTrust.Trusted : ScriptTrust.Blocked : ScriptTrust.Unknown;
 
     /// <summary>해시의 신뢰 결정을 정한다(바뀌면 <see cref="Changed"/>).</summary>
     public static void SetTrust(string hash, bool trusted)
@@ -173,6 +205,13 @@ public static class ScriptLibrary
         }
         return new ScriptInfo(ScriptSourceLocator.DeclaredString(program, "name")?.Trim() is { Length: > 0 } name ? name : null,
             ScriptSourceLocator.DeclaredString(program, "author")?.Trim() is { Length: > 0 } author ? author : null,
-            ScriptSourceLocator.Mentions(program, "frameSource"));
+            ScriptSourceLocator.Mentions(program, "frameSource"),
+            ScriptInfo.OtherLayerNames.Any(n => ScriptSourceLocator.Mentions(program, n)),
+            ScriptInfo.RenderedLayerNames.Any(n => ScriptSourceLocator.Mentions(program, n)),
+            ScriptSourceLocator.Mentions(program, "slice"))
+        {
+            Translations = ScriptSourceLocator.DeclaredTranslatedNames(program),
+            ReadsRenderedFrames = ScriptSourceLocator.Mentions(program, "renderedFrameSource"),
+        };
     }
 }

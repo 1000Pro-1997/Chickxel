@@ -31,6 +31,7 @@ public class EffectRegistryTests
                 EffectParameterKind.Choice => JsonValue.Create(high ? p.Choices![^1] : p.Choices![0]),
                 EffectParameterKind.Color => JsonValue.Create(high ? "#10203040" : "#FEDCBA"),
                 EffectParameterKind.ColorList => new JsonArray("#FF0000", "#00FF00", "#0000FF"),
+                EffectParameterKind.Text => JsonValue.Create(high ? "가나다\nAbc?" : ""),
                 _ => new JsonArray(new JsonArray("#FF0000", "#0000FF80"), new JsonArray("#00FF00", "#00000000")),
             };
             Assert.True(p.TryRead(e, value, out e), $"{d.TypeId}.{p.Key}");
@@ -74,6 +75,7 @@ public class EffectRegistryTests
                 EffectParameterKind.Color => typeof(Color32),
                 EffectParameterKind.ColorList => typeof(IReadOnlyList<Color32>),
                 EffectParameterKind.ColorPairList => typeof(IReadOnlyList<ColorSwap>),
+                EffectParameterKind.Text => typeof(string),
                 _ => property!.PropertyType.IsEnum ? property.PropertyType : typeof(void),
             };
             Assert.Equal(expected, property!.PropertyType);
@@ -95,6 +97,11 @@ public class EffectRegistryTests
                     break;
                 case EffectParameterKind.Choice:
                     Assert.Contains(p.DefaultValue.GetValue<string>(), p.Choices!);
+                    break;
+                case EffectParameterKind.Text:
+                    Assert.NotNull(p.MaxLength);
+                    Assert.InRange(p.DefaultValue.GetValue<string>().Length, 0, p.MaxLength!.Value);
+                    Assert.False(p.Exposed);
                     break;
             }
     }
@@ -129,7 +136,10 @@ public class EffectRegistryTests
             Assert.Equal(effect, d.ReadSettings(d.WriteSettings(effect)));
             var framed = effect with { Enabled = false, ClipToPrevious = true, Frames = new FrameRange(1, 4) };
             var json = EffectCodec.Write(framed);
-            Assert.Equal(framed, EffectCodec.Read(JsonNode.Parse(json.ToJsonString())!.AsObject()));
+            Assert.Equal(framed, EffectCodec.ReadStored(JsonNode.Parse(json.ToJsonString())!.AsObject()));
+            // 앱의 읽기 길은 공식 스크립트로 바꾼다(바꾼 효과와 같은 저장 JSON)
+            Assert.Equal(EffectCodec.Write(LegacyEffects.Convert(framed)).ToJsonString(),
+                EffectCodec.Write(EffectCodec.Read(JsonNode.Parse(json.ToJsonString())!.AsObject())).ToJsonString());
             // 설정 JSON의 키는 schema 키와 같다
             Assert.Equal(d.Parameters.Select(p => p.Key), json[EffectCodec.SettingsKey]!.AsObject().Select(entry => entry.Key));
         }

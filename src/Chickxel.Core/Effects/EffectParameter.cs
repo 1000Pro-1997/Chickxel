@@ -18,6 +18,10 @@ public enum EffectParameterKind
     ColorList,
     /// <summary>색 쌍 목록 [["#바꿀 색", "#바뀐 색"], …]. 칸마다 그라데이션 슬롯 "{슬롯}[i].From"·"{슬롯}[i].To".</summary>
     ColorPairList,
+    /// <summary>실수(스크립트 효과의 <c>number</c> 설정만). 범위는 스크립트가 자른다. 레시피 매개변수로 내보낼 수 없다.</summary>
+    Number,
+    /// <summary>글(JSON 문자열, 최대 <see cref="EffectParameter.MaxLength"/>자 — 글씨 효과의 글). 레시피 매개변수로 내보낼 수 없다.</summary>
+    Text,
 }
 
 /// <summary>
@@ -51,19 +55,22 @@ public abstract class EffectParameter
     /// <summary>고를 수 있는 저장 ID(<see cref="EffectParameterKind.Choice"/>만).</summary>
     public IReadOnlyList<string>? Choices { get; }
 
+    /// <summary>글 설정의 최대 글자 수(<see cref="EffectParameterKind.Text"/>만, 아니면 null).</summary>
+    public int? MaxLength { get; internal init; }
+
     /// <summary>예전 파일(짧은 효과 ID 형식)에서 이 설정을 찾을 키들(앞에서부터). 따로 정하지 않았으면 <see cref="Key"/> 하나.</summary>
     public IReadOnlyList<string> LegacyKeys { get; }
 
     /// <summary>
-    /// 색 그라데이션 슬롯(<see cref="LayerEffect.ColorGradients"/> 키) — 모델 속성 이름(키의 첫 글자를 대문자로).
-    /// 목록이면 칸 슬롯의 앞부분이다. 색이 아니면 null.
+    /// 색 그라데이션 슬롯(<see cref="LayerEffect.ColorGradients"/> 키) — 기본 효과는 모델 속성 이름(키의 첫 글자를 대문자로),
+    /// 스크립트 효과는 설정 키 그대로(<see cref="Scripting.ScriptColorSlots"/>). 목록이면 칸 슬롯의 앞부분이다. 색이 아니면 null.
     /// </summary>
-    public string? ColorSlot => Kind is EffectParameterKind.Color or EffectParameterKind.ColorList or EffectParameterKind.ColorPairList
+    public virtual string? ColorSlot => Kind is EffectParameterKind.Color or EffectParameterKind.ColorList or EffectParameterKind.ColorPairList
         ? char.ToUpperInvariant(Key[0]) + Key[1..]
         : null;
 
-    /// <summary>레시피 매개변수로 사용자에게 내보낼 수 있는지(값 하나짜리 설정만).</summary>
-    public bool Exposed => Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList);
+    /// <summary>레시피 매개변수로 사용자에게 내보낼 수 있는지(값 하나짜리 정수·켜고 끄기·색·고르기 설정만).</summary>
+    public bool Exposed => Kind is not (EffectParameterKind.ColorList or EffectParameterKind.ColorPairList or EffectParameterKind.Number or EffectParameterKind.Text);
 
     /// <summary>그 종류 기본 효과의 값(저장 JSON 모양, 부를 때마다 새 사본).</summary>
     public JsonNode DefaultValue => _default!.DeepClone();
@@ -131,6 +138,13 @@ internal sealed class EffectSchema<TEffect> where TEffect : LayerEffect
         => new EffectParameter<TEffect, IReadOnlyList<ColorSwap>>(key, EffectParameterKind.ColorPairList, get, set,
             v => new JsonArray(v.Select(p => (JsonNode)new JsonArray(JsonValue.Create(p.From.ToHex()), JsonValue.Create(p.To.ToHex()))).ToArray()),
             EffectJson.TryColorPairs, legacyKeys: legacy);
+
+    /// <summary>글 설정. 저장은 JSON 문자열 그대로, 길이 자르기·줄바꿈 맞추기는 모델이 한다(<paramref name="maxLength"/>는 검사·AI 도구용).</summary>
+    public EffectParameter Text(string key, Func<TEffect, string> get, Func<TEffect, string, TEffect> set, int maxLength, string[]? legacy = null)
+        => new EffectParameter<TEffect, string>(key, EffectParameterKind.Text, get, set, v => JsonValue.Create(v), EffectJson.TryString, legacyKeys: legacy)
+        {
+            MaxLength = maxLength,
+        };
 }
 
 /// <summary>효과 JSON 값 읽기(모양이 틀리면 false — 파일의 잘못된 값은 기본값으로 둔다).</summary>
@@ -139,6 +153,13 @@ internal static class EffectJson
     public delegate bool Parser<T>(JsonNode? node, out T value);
 
     public static string? String(JsonNode? node) => node is JsonValue v && v.TryGetValue(out string? s) ? s : null;
+
+    /// <summary>문자열 값(다른 모양이면 false).</summary>
+    public static bool TryString(JsonNode? node, out string value)
+    {
+        value = String(node)!;
+        return value is not null;
+    }
 
     /// <summary>정수: 숫자(소수점 아래가 0이면 받음) 또는 숫자 글자.</summary>
     public static bool TryInt(JsonNode? node, out int value)
@@ -168,6 +189,18 @@ internal static class EffectJson
     {
         value = default;
         return String(node) is { } hex && Color32.TryParseHex(hex, out value);
+    }
+
+    /// <summary>유한한 실수: 숫자 또는 숫자 글자.</summary>
+    public static bool TryNumber(JsonNode? node, out double value)
+    {
+        value = 0;
+        if (node is not JsonValue v) return false;
+        if (v.TryGetValue(out double d)) value = d;
+        else if (v.TryGetValue(out int i)) value = i;
+        else if (v.TryGetValue(out long l)) value = l;
+        else if (!(v.TryGetValue(out string? s) && double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))) return false;
+        return double.IsFinite(value);
     }
 
     /// <summary>열거 이름(대소문자 무시, 정의된 값만).</summary>

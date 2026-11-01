@@ -43,13 +43,15 @@ internal sealed class FastBudget
     private long _left;
     private long _granted;
 
-    public FastBudget(ScriptLimits limits, FastSite[] sites, CancellationToken cancel)
+    public FastBudget(ScriptLimits limits, FastSite[] sites, CancellationToken cancel, long dataLength = 0)
     {
         _limits = limits;
         _sites = sites;
         _cancel = cancel;
         _deadline = Stopwatch.GetTimestamp() + (long)(limits.Timeout.TotalSeconds * Stopwatch.Frequency);
         _left = limits.MaxStatements > 0 ? limits.MaxStatements : long.MaxValue;
+        // 숫자 배열은 img.data만큼까지(큰 그림의 사본) — Jint의 배열 한도보다 큰 그림은 빠른 경로만 그린다
+        MaxArrayLength = Math.Max(limits.MaxArrayLength, dataLength);
     }
 
     /// <summary>실행을 마친 호출이 센 문장 수(<see cref="Finish"/> 뒤).</summary>
@@ -78,6 +80,35 @@ internal sealed class FastBudget
 
     /// <summary>끝까지 실행한 호출의 남은 몫으로 센 문장 수를 정한다.</summary>
     public void Finish(long ticks) => Statements = _granted - ticks;
+
+    private long _allocated;
+
+    /// <summary>
+    /// 빠른 경로가 만든 배열(<c>new Float64Array(n)</c> 등)의 바이트를 센다. 합이 메모리 한도를 넘으면 그 호출은 Jint로 다시 돈다
+    /// (Jint가 한도 오류를 낼지 정한다).
+    /// </summary>
+    public void Allocate(long bytes)
+    {
+        _allocated += bytes;
+        if (_allocated > _limits.MemoryBytes) throw new FastDeoptException();
+    }
+
+    /// <summary>숫자 배열 한 개의 길이 한도: <see cref="ScriptLimits.MaxArrayLength"/>와 이 그림 <c>img.data</c> 길이 중 큰 것.</summary>
+    public long MaxArrayLength { get; }
+}
+
+/// <summary>빠른 경로의 다른 그림(<c>img.blank</c>, <c>ctx.renderedFrameSource</c>의 image): RGBA 숫자 배열과 크기.</summary>
+internal sealed class FastImage(double[] data, int width, int height)
+{
+    public readonly double[] Data = data;
+    public readonly int Width = width, Height = height;
+}
+
+/// <summary>빠른 경로의 <c>ctx.renderedFrameSource</c> 결과(없으면 null).</summary>
+internal sealed class FastRendered(FastImage image, int offsetX, int offsetY)
+{
+    public readonly FastImage Image = image;
+    public readonly int OffsetX = offsetX, OffsetY = offsetY;
 }
 
 /// <summary>
@@ -437,9 +468,154 @@ internal static class JsOps
     public static (float H, float S, float V) RgbToHsv(double r, double g, double b)
         => new Color32(ScriptHostApi.ToByte(r), ScriptHostApi.ToByte(g), ScriptHostApi.ToByte(b)).ToHsv();
 
-    /// <summary><c>ctx.hash(x, y, seed)</c>.</summary>
-    public static double Hash(double x, double y, double seed) => LayerEffects.Random(ToInt32(seed), ToInt32(x), ToInt32(y), 0);
+    /// <summary><c>ctx.hash(x, y, seed[, salt])</c>: 넷째가 없으면 NaN → 0(Jint의 undefined와 같음).</summary>
+    public static double Hash(double x, double y, double seed, double salt) => LayerEffects.Random(ToInt32(seed), ToInt32(x), ToInt32(y), ToInt32(salt));
 
     /// <summary><c>ctx.random(seed)</c>: 프레임 번호와 시드로 정한 값.</summary>
     public static double FrameRandom(double seed, double frame) => LayerEffects.Random(ToInt32(seed), (int)frame, 0, 1);
+
+    /// <summary><c>ctx.bayer2(x, y)</c>: 0~3.</summary>
+    public static double Bayer2(double x, double y) => Bayer.Threshold2(ToInt32(x), ToInt32(y));
+
+    /// <summary><c>ctx.bayer4(x, y)</c>: 0~15.</summary>
+    public static double Bayer4(double x, double y) => Bayer.Threshold4(ToInt32(x), ToInt32(y));
+
+    /// <summary>
+    /// <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>의 색(기본 범위). 목록 번호(<paramref name="item"/>, 색은 -1)가 정수 항목 번호가 아니면
+    /// Jint로 다시 그린다(Jint가 오류를 낸다).
+    /// </summary>
+    public static Color32 SampleColor(ScriptColors colors, int setting, double item, bool to, double x, double y)
+        => colors.Sample(setting, Item(colors, setting, item), to, ToInt32(x), ToInt32(y));
+
+    /// <summary><see cref="SampleColor"/>을 범위 (bx, by, bw, bh)로.</summary>
+    public static Color32 SampleColorIn(ScriptColors colors, int setting, double item, bool to, double x, double y, double bx, double by, double bw, double bh)
+        => colors.Sample(setting, Item(colors, setting, item), to, ToInt32(x), ToInt32(y), new System.Drawing.Rectangle(ToInt32(bx), ToInt32(by), ToInt32(bw), ToInt32(bh)));
+
+    /// <summary><c>ctx.hasGradient("슬롯")</c>(슬롯은 컴파일할 때 정함 — 지금 목록에 없는 항목이면 false).</summary>
+    public static bool HasGradient(ScriptColors colors, int setting, int item, bool to) => colors.Has(setting, item) && colors.HasGradient(setting, item, to);
+
+    /// <summary><c>rgbToOklab(r, g, b)</c>: 채널은 <see cref="ScriptHostApi.ToByte"/>로, 결과는 <see cref="Pixelate.OkLab.FromRgb"/>의 float를 double로.</summary>
+    public static (double L, double A, double B) RgbToOklab(double r, double g, double b)
+    {
+        var lab = Pixelate.OkLab.FromRgb(ScriptHostApi.ToByte(r), ScriptHostApi.ToByte(g), ScriptHostApi.ToByte(b));
+        return (lab.L, lab.A, lab.B);
+    }
+
+    /// <summary><c>oklabToRgb(l, a, b)</c>: float로 바꿔 <see cref="Pixelate.OkLab.ToGamutColor"/>(밝기·색상 유지, sRGB 밖이면 채도만 줄임), 알파 255.</summary>
+    public static Color32 OklabToRgb(double l, double a, double b) => Pixelate.OkLab.ToGamutColor(new Pixelate.Lab((float)l, (float)a, (float)b));
+
+    // ───── 숫자 배열(typed array·img.data 사본) ─────
+
+    /// <summary>배열 종류: 0 = JS 배열 사본(<c>img.data.slice()</c>, 바꾸지 않음), 1 = Float64Array, 2 = Int32Array, 3 = Uint8Array.</summary>
+    public const int ArrayPlain = 0, ArrayFloat64 = 1, ArrayInt32 = 2, ArrayUint8 = 3;
+
+    private static int BytesPer(int kind) => kind switch { ArrayInt32 => 4, ArrayUint8 => 1, _ => 8 };
+
+    /// <summary>
+    /// <c>new Float64Array(n)</c> 등: 칸 값은 그 종류로 바꾼 수(Int32는 ToInt32, Uint8은 256으로 나눈 나머지)를 double로 담는다.
+    /// n이 0~최대 길이 정수가 아니면 Jint로(샌드박스가 TypeError를 낸다).
+    /// </summary>
+    public static double[] NewArray(FastBudget budget, double length, int kind)
+    {
+        if (!(length >= 0 && length <= budget.MaxArrayLength && length == Math.Floor(length))) throw new FastDeoptException();
+        budget.Allocate((long)length * BytesPer(kind));
+        return new double[(int)length];
+    }
+
+    /// <summary><c>new Float64Array(배열)</c>·<c>img.data.slice()</c>: 칸마다 그 종류로 바꾼 사본.</summary>
+    public static double[] CopyArray(FastBudget budget, double[] source, int kind)
+    {
+        budget.Allocate((long)source.Length * BytesPer(kind));
+        var copy = (double[])source.Clone();
+        if (kind is ArrayInt32 or ArrayUint8)
+            for (int i = 0; i < copy.Length; i++) copy[i] = Store(copy[i], kind);
+        return copy;
+    }
+
+    /// <summary>typed array에 넣을 때의 값(Int32 = ToInt32, Uint8 = ToUint32의 아래 8비트, 그 밖은 그대로).</summary>
+    public static double Store(double value, int kind) => kind switch
+    {
+        ArrayInt32 => ToInt32(value),
+        ArrayUint8 => ToUint32(value) & 255,
+        _ => value,
+    };
+
+    /// <summary><c>a.fill(v)</c>(인자 하나): 모든 칸을 그 종류로 바꾼 v로.</summary>
+    public static void Fill(double[] array, double value, int kind) => Array.Fill(array, Store(value, kind));
+
+    // ───── 다른 그림(img.blank, img.blendOver, ctx.renderedFrameSource) ─────
+
+    /// <summary><c>img.blank(w, h)</c>: 0으로 채운 그림. 크기가 1~최대 정수가 아니거나 배열·메모리 한도를 넘으면 Jint로(Jint가 TypeError를 낸다).</summary>
+    public static FastImage Blank(FastBudget budget, double width, double height)
+    {
+        int w = ToInt32(width), h = ToInt32(height);
+        if (w < 1 || h < 1 || w > Model.PixelImage.MaxSize || h > Model.PixelImage.MaxSize || (long)w * h * 4 > budget.MaxArrayLength)
+            throw new FastDeoptException();
+        budget.Allocate((long)w * h * 4 * 8);
+        return new FastImage(new double[w * h * 4], w, h);
+    }
+
+    /// <summary>
+    /// <c>dst.blendOver(src, x, y)</c>: src의 알파가 0이 아닌 칸을 dst의 (x, y)에 <see cref="Color32.BlendOver"/>로(Jint 호스트 함수와 같은 계산 —
+    /// 칸 값은 <see cref="ScriptHostApi.ToByte"/>로 읽는다). 칸 수가 크기와 다르면 Jint로.
+    /// </summary>
+    public static void BlendOver(double[] dst, double dstWidth, double dstHeight, double[] src, double srcWidth, double srcHeight, double x, double y)
+    {
+        int dw = (int)dstWidth, dh = (int)dstHeight, sw = (int)srcWidth, sh = (int)srcHeight, dx = ToInt32(x), dy = ToInt32(y);
+        if (dst.Length != (long)dw * dh * 4 || src.Length != (long)sw * sh * 4) throw new FastDeoptException();
+        int x0 = Math.Max(0, -dx), y0 = Math.Max(0, -dy);
+        int x1 = (int)Math.Min(sw, (long)dw - dx), y1 = (int)Math.Min(sh, (long)dh - dy);
+        for (int sy = y0; sy < y1; sy++)
+            for (int sx = x0; sx < x1; sx++)
+            {
+                int s = (sy * sw + sx) * 4;
+                var top = new Color32(ScriptHostApi.ToByte(src[s]), ScriptHostApi.ToByte(src[s + 1]), ScriptHostApi.ToByte(src[s + 2]), ScriptHostApi.ToByte(src[s + 3]));
+                if (top.A == 0) continue;
+                int d = ((sy + dy) * dw + sx + dx) * 4;
+                var under = new Color32(ScriptHostApi.ToByte(dst[d]), ScriptHostApi.ToByte(dst[d + 1]), ScriptHostApi.ToByte(dst[d + 2]), ScriptHostApi.ToByte(dst[d + 3]));
+                var blended = Color32.BlendOver(under, top);
+                dst[d] = blended.R;
+                dst[d + 1] = blended.G;
+                dst[d + 2] = blended.B;
+                dst[d + 3] = blended.A;
+            }
+    }
+
+    /// <summary>
+    /// <c>ctx.renderedFrameSource(i)</c>: 미루는 스크립트만, 그 프레임 원본이 있고 크기가 원본 자리와 같을 때 다른 효과를 입힌 그림(새 사본)과 위치. 아니면 null
+    /// (<see cref="ScriptHostApi.CreateContext"/>와 같은 규칙).
+    /// </summary>
+    public static FastRendered? RenderedFrame(FastBudget budget, ScriptColors host, double index)
+    {
+        var frame = host.Frame;
+        if (!host.Deferred || frame.FrameSource is not { } frameSource) return null;
+        int i = ToInt32(index);
+        if (frameSource(i) is not { } raw || raw.Width != host.Source.Width || raw.Height != host.Source.Height) return null;
+        var (picture, offsetX, offsetY) = frame.RenderedFrameSource?.Invoke(i, raw) ?? (raw, 0, 0);
+        var px = picture.Pixels;
+        budget.Allocate((long)px.Length * 4 * 8);
+        var data = new double[px.Length * 4];
+        for (int p = 0, j = 0; p < px.Length; p++, j += 4)
+        {
+            var c = px[p];
+            (data[j], data[j + 1], data[j + 2], data[j + 3]) = (c.R, c.G, c.B, c.A);
+        }
+        return new FastRendered(new FastImage(data, picture.Width, picture.Height), offsetX, offsetY);
+    }
+
+    /// <summary>null인 <c>ctx.renderedFrameSource</c> 결과의 속성을 읽으면 Jint로(Jint가 TypeError를 낸다).</summary>
+    public static FastRendered Present(FastRendered? rendered) => rendered ?? throw new FastDeoptException();
+
+    /// <summary><c>ctx.hasGradient("목록 키", 번호[, "from"|"to"])</c>: 번호가 정수 항목 번호가 아니면 false.</summary>
+    public static bool HasGradientAt(ScriptColors colors, int setting, double item, bool to)
+    {
+        int k = item == Math.Floor(item) && item is >= 0 and <= int.MaxValue ? (int)item : -1;
+        return colors.Has(setting, k) && colors.HasGradient(setting, k, to);
+    }
+
+    private static int Item(ScriptColors colors, int setting, double item)
+    {
+        int k = item == Math.Floor(item) && item is >= int.MinValue and <= int.MaxValue ? (int)item : -2;
+        return colors.Has(setting, k) ? k : throw new FastDeoptException();
+    }
 }

@@ -17,7 +17,8 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>
     /// 스크립트 효과 설정: 이름·작성자·해시, 실행 상태(오류 줄·프레임당 시간, 허용·다시 실행 단추), 편집·파일 열기 단추,
-    /// 스크립트 schema로 만든 설정 칸(정수·실수 슬라이더, 켜고 끔, 색, 고르기), 움직이는 스크립트면 빠르기 곡선·반복.
+    /// 스크립트 schema로 만든 설정 칸(<see cref="AddScriptSettingRows"/> — 숫자·각도·점, 켜고 끔, 색·색 목록·색 쌍 목록과 그라데이션, 고르기),
+    /// 움직이는 스크립트면 빠르기 곡선·반복.
     /// </summary>
     private void ScriptPanel(ScriptEffect s, Action<Func<LayerEffect, LayerEffect>> set)
     {
@@ -48,41 +49,24 @@ public sealed partial class LayerEffectsDialog
             _settings.Children.Add(Hint(UiStrings.ScriptEffect_Hint));
             return;
         }
-        var values = program.NormalizeSettings(s.Settings);
-        void SetValue(string key, object value) => set(o => o is ScriptEffect e && ScriptLibrary.Runnable(e.ScriptHash) is { } p
-            ? e with { Settings = ScriptSettingValues.Normalized(p, e.Settings.With(key, value)) }
-            : o);
         if (program.Settings.Count == 0) _settings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-        foreach (var setting in program.Settings)
+        AddScriptSettingRows(program, s, set, ShowSettings, (label, editor, block) =>
         {
-            var key = setting.Key;
-            switch (setting.Type)
-            {
-                case ScriptSettingType.Int:
-                case ScriptSettingType.Number:
-                    SettingsRow(setting.Label, ScriptNumberEditor(setting, Convert.ToDouble(values[key], CultureInfo.InvariantCulture), v => SetValue(key, v)));
-                    break;
-                case ScriptSettingType.Bool:
-                    SettingsRow(setting.Label, CheckEditor("", (bool)values[key], v => SetValue(key, v)));
-                    break;
-                case ScriptSettingType.Color:
-                    SettingsRow(setting.Label, ColorEditor((Color32)values[key], v => SetValue(key, v)));
-                    break;
-                default:
-                    var choices = setting.Choices;
-                    int index = Math.Max(0, choices.ToList().FindIndex(c => c.Value == (string)values[key]));
-                    SettingsRow(setting.Label, ChoiceEditor(choices.Select(c => c.Label).ToArray(), index, k => SetValue(key, choices[k].Value)));
-                    break;
-            }
-        }
-        if (program.Animated) AddMotionEditors(Selected, set);
+            if (block) SettingsBlock(label, editor);
+            else SettingsRow(label, editor);
+        });
+        if (program.Animated && program.Motion) AddMotionEditors(Selected, set);
         _settings.Children.Add(Hint(UiStrings.ScriptEffect_Hint));
     }
 
     /// <summary>
     /// 정수·실수 설정: 범위가 있으면 슬라이더 + 숫자 칸(값을 바꿀 때마다 반영), 없으면 숫자 칸만. 실수는 <c>step</c>의 소수 자리까지(최대 4자리).
     /// </summary>
-    internal static Control ScriptNumberEditor(ScriptSetting setting, double value, Action<double> changed)
+    private static Control ScriptNumberEditor(ScriptSetting setting, double value, Action<double> changed)
+        => ScriptNumberEditor(setting, value, changed, out _);
+
+    /// <summary><see cref="ScriptNumberEditor(ScriptSetting, double, Action{double})"/> + 숫자 칸(값을 넣으면 슬라이더도 따라오고 <paramref name="changed"/>가 불림).</summary>
+    private static Control ScriptNumberEditor(ScriptSetting setting, double value, Action<double> changed, out NumericUpDown number)
     {
         bool whole = setting.Type == ScriptSettingType.Int;
         const double Limit = 1e9;
@@ -90,6 +74,7 @@ public sealed partial class LayerEffectsDialog
         double step = setting.Step ?? (whole ? 1 : 0.01);
         int decimals = whole ? 0 : Math.Clamp((int)Math.Ceiling(-Math.Log10(step) - 1e-9), 0, 4);
         var num = Ui.Num((decimal)min, (decimal)max, (decimal)Math.Clamp(value, min, max), 64, decimals, (decimal)step);
+        number = num;
         if (setting.Min is null || setting.Max is null || max <= min)
         {
             num.ValueChanged += (_, _) => changed((double)num.NumValue());

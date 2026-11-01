@@ -1,4 +1,5 @@
 using Chickxel.Core.Edit;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -176,7 +177,8 @@ public class EffectColorGradientTests
         ProjectIO.Save(project, stream);
         stream.Position = 0;
         var loaded = ProjectIO.Load(stream);
-        var stored = loaded.Layers[0].Effects[0].ColorGradients[nameof(ColorOverlayEffect.Color)];
+        // 열면 색 덮기의 공식 스크립트 — 그라데이션 슬롯은 스크립트 이름(Color → color)
+        var stored = Assert.IsType<ScriptEffect>(loaded.Layers[0].Effects[0]).ColorGradients[LegacyEffects.ScriptSlot(nameof(ColorOverlayEffect.Color))];
         Assert.Equal(GradientColorSpace.Hsl, stored.ColorSpace);
         Assert.Equal(gradient, stored);
         Assert.True(project.Flatten(0).ContentEquals(loaded.Flatten(0)));
@@ -186,6 +188,8 @@ public class EffectColorGradientTests
     public void SpatialModesRoundTripAndMissingModeFieldsKeepOldLinearGradient()
     {
         const string slot = nameof(ColorOverlayEffect.Color);
+        // 열면 색 덮기의 공식 스크립트 — 그라데이션 슬롯은 스크립트 이름
+        string scriptSlot = LegacyEffects.ScriptSlot(slot);
         var gradients = Enum.GetValues<EffectGradientShape>()
             .SelectMany(shape => new[] { false, true }.Select(animated =>
                 Horizontal(Red, Blue) with { Shape = shape, Animated = animated, Reverse = true, Cycles = 3,
@@ -200,7 +204,7 @@ public class EffectColorGradientTests
         ProjectIO.Save(project, stream);
         stream.Position = 0;
         Assert.Equal(gradients, ProjectIO.Load(stream).Layers[0].Effects
-            .Select(effect => effect.ColorGradients[slot]));
+            .Select(effect => effect.ColorGradients[scriptSlot]));
 
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
         {
@@ -219,7 +223,7 @@ public class EffectColorGradientTests
         }
         stream.Position = 0;
         var legacyProject = ProjectIO.Load(stream);
-        var legacy = legacyProject.Layers[0].Effects[0].ColorGradients[slot];
+        var legacy = legacyProject.Layers[0].Effects[0].ColorGradients[scriptSlot];
         Assert.Equal(gradients[0] with { Shape = EffectGradientShape.Linear, Animated = false, Reverse = false, Cycles = 1,
             ColorSpace = GradientColorSpace.Rgb }, legacy);
         var legacyMiddle = Sample(legacy, 3, 1)[1, 0];
@@ -230,7 +234,7 @@ public class EffectColorGradientTests
         ProjectIO.Save(legacyProject, savedAgain);
         savedAgain.Position = 0;
         Assert.Equal(GradientColorSpace.Rgb,
-            ProjectIO.Load(savedAgain).Layers[0].Effects[0].ColorGradients[slot].ColorSpace);
+            ProjectIO.Load(savedAgain).Layers[0].Effects[0].ColorGradients[scriptSlot].ColorSpace);
     }
 
     private static PixelImage Sample(EffectColorGradient gradient, int width = 5, int height = 5,

@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.IO.Compression;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -291,7 +292,8 @@ public class SkinTests
         p.AddSkin(g, "knight");
         Paint(p, head, 1, 1, 1, Blue);
         p.AddTag("walk", 0, 1);
-        p.SetLayerEffects(p.IndexOf(head), [new OutlineEffect { Color = Green }]);
+        // 앱의 효과는 스크립트 효과(예전 외곽선을 바꾼 공식 스크립트 — 저장하면 원문 표도 씀)
+        p.SetLayerEffects(p.IndexOf(head), [LegacyEffects.Convert(new OutlineEffect { Color = Green })]);
         var path = dir.File("hero.chickxel");
 
         static Dictionary<string, string> Entries(SpriteProject project)

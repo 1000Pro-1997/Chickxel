@@ -76,6 +76,13 @@ internal readonly struct EffectGradientSampler
             bounds, solid, sourceX, sourceY,
             effect is AnimatedEffect animated ? animated.Time : effect.GradientTime);
 
+    /// <summary>
+    /// <paramref name="gradient"/>(null이면 단색 <paramref name="solid"/>)의 샘플러. <paramref name="time"/>은 효과의 범위 안 진행(반복·곡선 전 —
+    /// 움직이는 효과의 <see cref="AnimatedEffect.Time"/>)이고, 그라데이션 자신의 곡선·반복은 여기서 넣는다(스크립트 효과의 <c>ctx.color</c>).
+    /// </summary>
+    public static EffectGradientSampler For(EffectColorGradient? gradient, Rectangle bounds, Color32 solid, int sourceX, int sourceY, double time)
+        => new(gradient, bounds, solid, sourceX, sourceY, time);
+
     public bool HasGradient => _gradient is not null;
 
     public Color32 Sample(int x, int y)

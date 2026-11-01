@@ -33,9 +33,6 @@ public sealed partial class ChatWindow : Window
     private static readonly IBrush UserBubbleBrush = AppTheme.Brush(Color.FromRgb(50, 66, 88));
     private static readonly FontFamily MonoFont = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
     private const int SnapshotMax = 240;
-    private const int CanvasAttachSide = 512;
-    /// <summary>첨부 이미지의 긴 변 최대(이보다 크면 줄여서 PNG로 보냄).</summary>
-    private const int AttachMaxSide = 1568;
     /// <summary>저장하는 첨부 미리보기의 긴 변 최대.</summary>
     private const int SavedThumbSide = 64;
     /// <summary>저장하는 캔버스 모습의 긴 변 최대(이보다 큰 그림은 모습을 남기지 않음 — 큰 그림을 저장하지 않도록).</summary>
@@ -419,24 +416,6 @@ public sealed partial class ChatWindow : Window
 
     // ───────────── 이미지 도우미 ─────────────
 
-    /// <summary>비트맵을 PNG로(긴 변이 너무 크면 줄임).</summary>
-    private static byte[] ToPng(Bitmap bmp)
-    {
-        var size = bmp.PixelSize;
-        int longSide = Math.Max(size.Width, size.Height);
-        Bitmap src = bmp;
-        if (longSide > AttachMaxSide)
-        {
-            double k = (double)AttachMaxSide / longSide;
-            src = bmp.CreateScaledBitmap(new PixelSize(Math.Max(1, (int)(size.Width * k)), Math.Max(1, (int)(size.Height * k))),
-                BitmapInterpolationMode.HighQuality);
-        }
-        using var ms = new MemoryStream();
-        src.Save(ms);
-        if (!ReferenceEquals(src, bmp)) src.Dispose();
-        return ms.ToArray();
-    }
-
     private static Control Thumb(Bitmap bmp, bool pixelArt, int size)
     {
         var px = bmp.PixelSize;
@@ -444,48 +423,11 @@ public sealed partial class ChatWindow : Window
         if (pixelArt && k > 1) k = Math.Floor(k);
         var image = new Image { Source = bmp, Width = Math.Max(1, px.Width * k), Height = Math.Max(1, px.Height * k), Stretch = Stretch.Fill };
         if (pixelArt) RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.None);
-        return WithImageActions(new CheckerBackground { Child = image, Margin = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left }, bmp);
-    }
-
-    /// <summary>
-    /// 대화 속 그림: 한 번 누르면 크게 보기(<see cref="ShowChipFlyout"/>), 우클릭하면 이미지 저장·복사.
-    /// </summary>
-    private static Control WithImageActions(Control view, Bitmap bmp)
-    {
-        view.Cursor = new Cursor(StandardCursorType.Hand);
-        view.PointerReleased += (_, e) =>
-        {
-            if (e.InitialPressMouseButton != MouseButton.Left) return;
-            e.Handled = true;
-            ShowChipFlyout(view, bmp, null);
-        };
-        AttachImageMenu(view, bmp);
-        return view;
-    }
-
-    /// <summary>그림 우클릭 메뉴(이미지 저장…·이미지 복사). 저장·복사는 화면에 보이는 비트맵 그대로(픽셀 크기 그대로).</summary>
-    private static void AttachImageMenu(Control view, Bitmap bmp)
-        => PopupMenus.Attach(view, () => ImageActions.Menu(view, () => ToPixelImage(bmp), () => "chickxel-chat.png"));
-
-    /// <summary>비트맵 → 픽셀 그림(PNG를 거침). 읽지 못하면 null.</summary>
-    private static PixelImage? ToPixelImage(Bitmap bmp)
-    {
-        try
-        {
-            using var ms = new MemoryStream();
-            bmp.Save(ms);
-            ms.Position = 0;
-            return PngIO.Load(ms);
-        }
-        catch (Exception)
-        {
-            // 플랫폼 인코더·디코더가 던지는 예외 형식은 정해져 있지 않다 — 메뉴 항목을 끈다.
-            return null;
-        }
+        return ChatImages.WithImageActions(new ChatImages.CheckerBackground { Child = image, Margin = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left }, bmp);
     }
 
     /// <summary>저장할 첨부 미리보기(긴 변 <see cref="SavedThumbSide"/> 이하 PNG, base64). 만들지 못하면 null.</summary>
-    private static string? SavedThumb(Attachment a)
+    private static string? SavedThumb(ChatAttachment a)
     {
         try
         {
@@ -533,12 +475,12 @@ public sealed partial class ChatWindow : Window
         double scale = longSide <= SnapshotMax ? Math.Max(1, SnapshotMax / longSide) : (double)SnapshotMax / longSide;
         var image = new Image { Source = bmp, Width = px.Width * scale, Height = px.Height * scale, Stretch = Stretch.Fill };
         RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.None);
-        return WithImageActions(new Border
+        return ChatImages.WithImageActions(new Border
         {
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Child = new CheckerBackground { Child = image },
+            Child = new ChatImages.CheckerBackground { Child = image },
         }, bmp);
     }
 
@@ -546,18 +488,6 @@ public sealed partial class ChatWindow : Window
     private PixelImage? Composite(SpriteProject p)
     {
         return p.Frames.Count == 0 ? null : p.Flatten(Math.Clamp(_ctx.CurrentFrame, 0, p.Frames.Count - 1));
-    }
-
-    /// <summary>정수 배 최근접 확대.</summary>
-    private static PixelImage ScaleUp(PixelImage src, int n)
-    {
-        var dst = new PixelImage(src.Width * n, src.Height * n);
-        for (int y = 0; y < dst.Height; y++)
-        {
-            int row = (y / n) * src.Width, dstRow = y * dst.Width;
-            for (int x = 0; x < dst.Width; x++) dst.Pixels[dstRow + x] = src.Pixels[row + x / n];
-        }
-        return dst;
     }
 
     // ───────────── 작은 UI 도우미 ─────────────
@@ -808,7 +738,8 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupEffects, UiStrings.Chat_Help_GroupEffects_Text,
             ["list_effect_types", "get_effects", "add_effect", "set_effect", "remove_effect", "apply_effects", "expand_canvas_for_effects"]),
         (UiStrings.Chat_Help_GroupEffectMaker, UiStrings.Chat_Help_GroupEffectMaker_Text,
-            ["get_script_api", "write_script_effect", "preview_effects", "save_effect_asset"]),
+            ["get_script_api", "write_script_effect", "preview_effects", "save_script_effect", "list_script_effects", "get_script_effect_source",
+             "get_effect_maker_source", "set_effect_maker_source", "check_effect_maker"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_palette", "set_colors"]),
         (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "save_project", "open_file"]),
         (UiStrings.Chat_Help_GroupReferences, UiStrings.Chat_Help_GroupReferences_Text,
@@ -908,9 +839,6 @@ public sealed partial class ChatWindow : Window
 
     // ───────────── 내부 형식 ─────────────
 
-    /// <summary>보낼 첨부 이미지(PNG 바이트 + 미리보기).</summary>
-    private sealed record Attachment(byte[] Png, Bitmap Thumb, bool PixelArt);
-
     /// <summary>끝난 차례 하나의 실행취소 묶음과 그 단추.</summary>
     private sealed record UndoStep(SpriteProject Project, IUndoCommand Command, Button Button);
 
@@ -918,12 +846,12 @@ public sealed partial class ChatWindow : Window
     /// 대화에 보이는 사용자 메시지 하나(= 차례 하나): 말풍선 줄(지울 때 여기부터 끝까지 뺌), 저장할 줄, 고치기·지우기 단추 줄,
     /// 다시 보낼 수 있는 첨부(이번 실행 중 보낸 것만, 저장한 대화는 없음), 그 차례의 실행취소 묶음(있으면).
     /// </summary>
-    private sealed class UserTurn(Control row, ChatItem item, Control actions, IReadOnlyList<Attachment> attachments)
+    private sealed class UserTurn(Control row, ChatItem item, Control actions, IReadOnlyList<ChatAttachment> attachments)
     {
         public Control Row { get; } = row;
         public ChatItem Item { get; } = item;
         public Control Actions { get; } = actions;
-        public IReadOnlyList<Attachment> Attachments { get; } = attachments;
+        public IReadOnlyList<ChatAttachment> Attachments { get; } = attachments;
         public UndoStep? Step { get; set; }
     }
 
@@ -953,12 +881,6 @@ public sealed partial class ChatWindow : Window
         public Dictionary<string, (string Name, TextBlock Line, ChatItem Item, long Started)> Tools { get; } = new();
     }
 
-    /// <summary>투명한 곳이 보이게 체커 무늬 위에 자식을 그리는 틀.</summary>
-    private sealed class CheckerBackground : Decorator
-    {
-        public override void Render(DrawingContext g) => AppTheme.DrawChecker(g, new Rect(Bounds.Size), 6);
-    }
-
     /// <summary>탭 가운데에 보이는 것: 지금 대화 / 지난 대화 목록.</summary>
     private enum TabView { Chat, List }
 
@@ -979,8 +901,8 @@ public sealed partial class ChatWindow : Window
         private readonly ScrollViewer _listScroll;
         private readonly StackPanel _list;
         private readonly TextBlock _thinking;
-        /// <summary>입력란 위에 그림 칩을 그리는 층(칩 글자 자리를 덮음 — <c>ChatWindow.ImageChips.cs</c>).</summary>
-        private readonly Canvas _chipLayer;
+        /// <summary>그림 칩이 들어가는 입력란(<see cref="ChatImageInput"/>)과 그 글 상자.</summary>
+        private readonly ChatImageInput _imageInput;
         private readonly TextBox _input;
         private readonly Button _sendButton, _stopButton;
         private readonly ToggleButton _scopeToggle;
@@ -993,8 +915,6 @@ public sealed partial class ChatWindow : Window
             if (_scopeToggle.IsChecked != on) _scopeToggle.IsChecked = on;
         }
 
-        /// <summary>입력란의 그림(칩 번호 순서 — <see cref="ChatImageTokens"/>).</summary>
-        private readonly List<Attachment> _attachments = new();
         private readonly List<UndoStep> _steps = new();
         /// <summary>지금 대화의 사용자 메시지(차례) 순서대로. 마지막 것에만 고치기·지우기 단추가 보인다.</summary>
         private readonly List<UserTurn> _userTurns = new();
@@ -1056,19 +976,10 @@ public sealed partial class ChatWindow : Window
                 TextWrapping = TextWrapping.Wrap,
             };
 
-            _input = new TextBox
-            {
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                MinHeight = 54,
-                MaxHeight = 160,
-                Watermark = Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC),
-            };
-            ScrollViewer.SetVerticalScrollBarVisibility(_input, ScrollBarVisibility.Auto);
+            _imageInput = new ChatImageInput(Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC));
+            _input = _imageInput.Input;
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
-            _chipLayer = new Canvas { ClipToBounds = false };
-            SetupInlineImages();
-            var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
+            var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => _imageInput.AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
             var canvasButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_F9D4399092, (_, _) => AttachCanvas()).Tip(UiStrings.S_ChatWindow_ChatTab_B9C7852D0E);
             _scopeToggle = new ToggleButton
             {
@@ -1100,7 +1011,7 @@ public sealed partial class ChatWindow : Window
                 BorderBrush = AppTheme.BorderBrush,
                 BorderThickness = new Thickness(0, 1, 0, 0),
                 Padding = new Thickness(8, 6),
-                Child = new StackPanel { Children = { _questionHost, new Panel { Children = { _input, _chipLayer } }, buttons } },
+                Child = new StackPanel { Children = { _questionHost, _imageInput, buttons } },
             };
             DockPanel.SetDock(inputArea, Dock.Bottom);
             _list = new StackPanel { Spacing = 4, Margin = new Thickness(10, 8) };
@@ -1444,7 +1355,7 @@ public sealed partial class ChatWindow : Window
             if (_cliPath is not { } path) return;
             var who = status.Describe();
             SetHeader(who.Length > 0 ? who : UiStrings.S_ChatWindow_ShowChat_B46AD2AE0A, inChat: true);
-            if (_session is null) AttachSession(Provider.CreateSession(path, _w._mcp));
+            if (_session is null) AttachSession(Provider.CreateSession(path, _w._mcp, AiCli.SystemPrompt, McpScope.Full));
             EnterChat();
         }
 
@@ -1644,10 +1555,8 @@ public sealed partial class ChatWindow : Window
         private void Send()
         {
             if (_session is not { } session || _turn is not null || _w._shutdown) return;
-            SyncInlineImages();
-            // 입력란 글(칩 = 화면 언어 이름)을 저장할 모양(칩 이름 "Image")으로. 칩 번호 = 첨부 순서.
-            var text = ChatImageTokens.Relabel((_input.Text ?? "").Trim(), ChatImageTokens.StoredLabel);
-            if (text.Length == 0 && _attachments.Count == 0) return;
+            var text = _imageInput.StoredText();
+            if (text.Length == 0 && _imageInput.Attachments.Count == 0) return;
             if (_cliPath != Provider.Locate(_w._settings))
             {
                 AddSystemLine(UiStrings.Chat_CliPathChanged, error: false, record: false);
@@ -1670,7 +1579,7 @@ public sealed partial class ChatWindow : Window
                 AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_2A1D03CC20,other.Provider.Name), error: false, record: false);
                 return;
             }
-            var attachments = _attachments.ToList();
+            var attachments = _imageInput.Attachments.ToList();
             session.WorkingDirectory = _w.ProjectFolder();
             session.Model = CurrentModel();
             // "지금 그림만": 보내는 순간 열린 문서로 편집 범위를 정하고(도구가 막음), AI에게도 알린다.
@@ -1704,8 +1613,7 @@ public sealed partial class ChatWindow : Window
                 AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_E1ACACFBF7,Provider.Command,ex.Message), error: true, record: false);
                 return;
             }
-            _input.Text = "";
-            ClearAttachments();
+            _imageInput.Clear();
             _follow = true;
             if (_chat is null)
             {
@@ -2084,34 +1992,10 @@ public sealed partial class ChatWindow : Window
         /// 입력란에 글을 넣고(보내지 않음) 입력란에 포커스. 이미 넣은 그림 칩은 앞에 그대로 둔다(정리 창이 그림을 붙인 뒤 부탁 글을 채움).
         /// 도움말의 예시 부탁과 "AI로 설명 붙이기"가 부른다.
         /// </summary>
-        public void Prefill(string text)
-        {
-            SyncInlineImages();
-            var current = _input.Text ?? "";
-            var chips = string.Join(" ", ChatImageTokens.Find(current).Select(t => current.Substring(t.Start, t.Length)));
-            var full = chips.Length > 0 ? chips + " " + text : text;
-            SetInputText(full, full.Length);
-            SyncInlineImages();
-            FocusInput();
-        }
+        public void Prefill(string text) => _imageInput.Prefill(text);
 
-        /// <summary>
-        /// 그림을 첨부한다(보내지 않음). 픽셀 아트면 작은 그림을 정수 배 최근접으로 키워(긴 변 <see cref="CanvasAttachSide"/> 안팎) 보내고,
-        /// 아니면 긴 변이 <see cref="AttachMaxSide"/>를 넘을 때 줄여 보낸다.
-        /// </summary>
-        public void AttachImage(PixelImage img, bool pixelArt)
-        {
-            var bmp = ImageUtil.ToBitmap(img);
-            if (!pixelArt && Math.Max(img.Width, img.Height) > AttachMaxSide)
-            {
-                AddAttachment(ToPng(bmp), bmp, pixelArt);
-                return;
-            }
-            int n = pixelArt ? Math.Max(1, CanvasAttachSide / Math.Max(img.Width, img.Height)) : 1;
-            using var ms = new MemoryStream();
-            PngIO.Save(n > 1 ? ScaleUp(img, n) : img, ms);
-            AddAttachment(ms.ToArray(), bmp, pixelArt);
-        }
+        /// <summary>그림을 첨부한다(보내지 않음, 크기 규칙은 <see cref="ChatImages.Attachment"/>).</summary>
+        public void AttachImage(PixelImage img, bool pixelArt) => _imageInput.AttachImage(img, pixelArt);
 
         /// <summary>차례 중에 다른 프로젝트가 열리면(new_project 등) 묶음을 새 프로젝트로 옮긴다.</summary>
         public void OnProjectReplaced()
@@ -2142,20 +2026,13 @@ public sealed partial class ChatWindow : Window
             RefreshTurnActions();
         }
 
+        /// <summary>Enter = 보내기(칩 자판·그림 붙여넣기는 <see cref="ChatImageInput"/>이 먼저 처리).</summary>
         private void OnInputKeyDown(object? sender, KeyEventArgs e)
         {
-            if (HandleChipKey(e)) return;
-            if (e.Key == Key.Enter)
-            {
-                if ((e.KeyModifiers & KeyModifiers.Shift) != 0) return; // 줄바꿈(TextBox가 처리)
-                e.Handled = true;
-                // 한글 조합 중이던 글자가 먼저 들어가도록 한 박자 늦게 보낸다.
-                Dispatcher.UIThread.Post(Send, DispatcherPriority.Background);
-            }
-            else if (e.Key == Key.V && Ui.HasCommand(e.KeyModifiers))
-            {
-                _ = PasteImageAsync();
-            }
+            if (e.Key != Key.Enter || (e.KeyModifiers & KeyModifiers.Shift) != 0) return; // Shift+Enter = 줄바꿈(TextBox가 처리)
+            e.Handled = true;
+            // 한글 조합 중이던 글자가 먼저 들어가도록 한 박자 늦게 보낸다.
+            Dispatcher.UIThread.Post(Send, DispatcherPriority.Background);
         }
 
         // ───────────── 메시지 목록 ─────────────
@@ -2258,34 +2135,10 @@ public sealed partial class ChatWindow : Window
         /// <paramref name="images"/> = 첨부 순서(칩 번호 − 1)의 미리보기(없으면 null), <paramref name="attachments"/> = 수정할 때 입력란에 되돌릴 첨부.
         /// 글은 AI 답처럼 끌어서 골라 Ctrl+C로 복사한다. 말풍선 안쪽 여백은 글 칸의 여백이라, 글자 바로 옆 여백에서 끌기 시작해도 골라진다.
         /// </summary>
-        private void AddUserBubble(ChatItem item, IReadOnlyList<Bitmap?> images, IReadOnlyList<Attachment> attachments)
+        private void AddUserBubble(ChatItem item, IReadOnlyList<Bitmap?> images, IReadOnlyList<ChatAttachment> attachments)
         {
             var stack = new StackPanel();
-            var segments = ChatImageTokens.Split(item.Text);
-            if (segments.Any(s => s.IsImage))
-            {
-                var chips = new List<(Control Chip, Bitmap Image)>();
-                var text = new SelectableTextBlock
-                {
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = AppTheme.TextBrush,
-                    Padding = new Thickness(8, 6),
-                    Background = Brushes.Transparent,
-                };
-                foreach (var s in segments)
-                {
-                    if (!s.IsImage) text.Inlines!.Add(new Run(s.Text));
-                    else
-                    {
-                        var thumb = s.Image <= images.Count ? images[s.Image - 1] : null;
-                        var chip = _w.BubbleChip(s.Image, thumb);
-                        text.Inlines!.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
-                        if (thumb is not null) chips.Add((chip, thumb));
-                    }
-                }
-                RouteBubbleChipEvents(text, chips);
-                stack.Children.Add(text);
-            }
+            if (ChatImageTokens.Split(item.Text).Any(s => s.IsImage)) stack.Children.Add(ChatImages.BubbleText(item.Text, images));
             else
             {
                 var thumbs = images.OfType<Bitmap>().Select(b => Thumb(b, pixelArt: true, 72)).ToList();
@@ -2422,7 +2275,7 @@ public sealed partial class ChatWindow : Window
             if (hasTurns) AddSystemLine(UiStrings.Chat_Turn_Removed, error: false, record: false);
             RefreshTurnActions();
 
-            if (edit) RestoreInput(last.Item.Text, last.Attachments);
+            if (edit) _imageInput.Restore(last.Item.Text, last.Attachments);
             FocusInput();
         }
 
@@ -2593,12 +2446,6 @@ public sealed partial class ChatWindow : Window
 
         // ───────────── 첨부 ─────────────
 
-        private void AttachFile()
-        {
-            var path = Ui.OpenFile(_w, UiStrings.S_ChatWindow_AttachFile_A024695555, null, new FileFilter(UiStrings.S_ChatWindow_AttachFile_1565F6E888, "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"));
-            if (path is not null) AttachPath(path);
-        }
-
         private void AttachCanvas()
         {
             if (_w._ctx.Project is not { } p || _w.Composite(p) is not { } img)
@@ -2607,28 +2454,6 @@ public sealed partial class ChatWindow : Window
                 return;
             }
             AttachImage(img, pixelArt: true);
-        }
-
-        /// <summary>⌘/Ctrl+V: 클립보드에 그림(또는 복사한 그림 파일)이 있으면 커서 자리에 칩으로 넣는다(글자 붙여넣기는 입력란이 그대로 함).</summary>
-        private async Task PasteImageAsync()
-        {
-            if (_w.Clipboard is not { } clipboard) return;
-            Bitmap? bmp;
-            List<string> files = [];
-            try
-            {
-                bmp = await clipboard.TryGetBitmapAsync();
-                if (bmp is null && await clipboard.TryGetFilesAsync() is { } items)
-                    files = [.. items.Select(f => f.TryGetLocalPath()).OfType<string>().Where(IsAttachable)];
-            }
-            catch (Exception)
-            {
-                // 플랫폼 클립보드가 그림 형식을 못 주면 무시(글자 붙여넣기만).
-                return;
-            }
-            if (_w._shutdown) return;
-            if (bmp is not null) AddAttachment(ToPng(bmp), bmp, pixelArt: false);
-            foreach (var f in files) AttachPath(f);
         }
     }
 }

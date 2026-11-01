@@ -145,9 +145,9 @@ public sealed partial class LayerEffectsDialog
     {
         int original = OriginalOf(frame);
         if (SourceAt(original) is not { } source) return (null, []);
-        return (source, LayerEffects.At(effects, frame, VirtualCount, _project.EffectPivot(_layer, original),
+        return (source, LayerEffects.WithScriptLayers(LayerEffects.At(effects, frame, VirtualCount, _project.EffectPivot(_layer, original),
             LayerEffects.UsesOtherFrames(effects) ? VirtualSourceAt : null,
-            f => _project.EffectPivot(_layer, OriginalOf(f))));
+            f => _project.EffectPivot(_layer, OriginalOf(f))), _project.ScriptLayersAt(_layer, original, effects)));
     }
 
     // ───────────── 설정 칸 ─────────────

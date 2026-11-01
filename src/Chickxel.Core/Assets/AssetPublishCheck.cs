@@ -25,12 +25,14 @@ public enum PublishIssueCode
     License,
     Summary,
     Tags,
-    /// <summary>경고: 태그가 없음(둘러보기에서 찾기 어려움).</summary>
+    /// <summary>경고: 태그가 없음(상점에서 찾기 어려움).</summary>
     NoTags,
     /// <summary>경고: 흔한 SPDX ID도 <c>LicenseRef-</c>도 아님(철자 확인).</summary>
     UnknownLicense,
     /// <summary>버전이 이미 올린 가장 높은 버전(온라인 목록·이 컴퓨터의 기록)보다 높지 않음. 올린 버전은 바꿀 수 없으므로 같은 버전도 안 된다.</summary>
     VersionNotNewer,
+    /// <summary>효과 레시피(기본 효과를 합친 것)가 들어 있음. 지금은 효과로 스크립트 효과만 올린다(서버도 받지 않음).</summary>
+    RecipeNotPublishable,
 }
 
 /// <summary>
@@ -217,6 +219,7 @@ public static class AssetPublishCheck
 
         string? url = string.IsNullOrWhiteSpace(request.Author.Url) ? null : request.Author.Url.Trim();
         if (request.Assets.Count == 0) Error(PublishIssueCode.NoAssets);
+        if (request.Assets.Any(asset => asset.Kind == AssetKinds.EffectRecipe)) Error(PublishIssueCode.RecipeNotPublishable);
         if (!AssetManifest.IsValidSegment(request.Author.Id)) Error(PublishIssueCode.AuthorId);
         if (!AssetManifest.IsValidName(request.Author.Name)) Error(PublishIssueCode.AuthorName);
         if (url is not null && !AssetManifest.IsHttpsUrl(url)) Error(PublishIssueCode.AuthorUrl);

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 
@@ -19,6 +20,13 @@ public enum AssetOrigin
 public sealed record AssetEntry(string Id, string Kind, AssetOrigin Origin, IAssetData Data)
 {
     public string Name => Data.Name;
+
+    /// <summary>
+    /// 화면에 보일 이름: 스크립트 에셋은 화면 언어(<see cref="CultureInfo.CurrentUICulture"/>)의 번역(<see cref="ScriptAsset.NameFor"/>), 그 밖은 <see cref="Name"/>.
+    /// 정체·중복 판정·이름 바꾸기에는 <see cref="Name"/>을 쓴다.
+    /// </summary>
+    public string DisplayName => Script?.NameFor(CultureInfo.CurrentUICulture) ?? Name;
+
     public string? PackageId { get; init; }
     public string? PackageVersion { get; init; }
     public string? PackageName { get; init; }
@@ -84,9 +92,6 @@ public sealed class AssetCatalog
 
     public static AssetCatalog Empty { get; } = new([], []);
 
-    /// <summary>앱에 들어 있는 기본 효과(레시피의 재료).</summary>
-    public IReadOnlyList<EffectDefinition> BuiltInEffects => EffectRegistry.All;
-
     /// <summary>개인 에셋(저장 순서).</summary>
     public IReadOnlyList<AssetEntry> Personal { get; }
 
@@ -102,9 +107,29 @@ public sealed class AssetCatalog
 
     public IReadOnlyList<AssetEntry> Recipes => Available(AssetKinds.EffectRecipe);
 
-    /// <summary>효과 창 커스텀 탭에 놓을 에셋: 효과 레시피와 스크립트 효과(개인 다음 켜진 패키지, 저장·설치 순서).</summary>
+    /// <summary>효과 창 종류 칸에 놓을 에셋: 효과 레시피(프리셋 탭)와 스크립트 효과(효과 탭) — 개인 다음 켜진 패키지, 저장·설치 순서.</summary>
     public IReadOnlyList<AssetEntry> EffectTemplates
         => All.Where(entry => entry.Enabled && entry.Kind is AssetKinds.EffectRecipe or AssetKinds.EffectScript).ToArray();
+
+    /// <summary>
+    /// 넣을 수 있는 스크립트 효과(효과 창 효과 탭·AI 도구의 차례): 켜진 공식 효과 패키지(<see cref="OfficialEffectPackages"/>)를 예전 기본 효과 차례
+    /// (<see cref="Scripting.OfficialEffects.Ordered"/>)로 먼저, 다른 켜진 패키지(설치 순서), 개인 스크립트(저장 순서).
+    /// </summary>
+    public IReadOnlyList<AssetEntry> EffectScripts
+    {
+        get
+        {
+            var order = Scripting.OfficialEffects.Ordered.ToList();
+            int Rank(AssetEntry entry) => OfficialIdOf(entry) is { } official ? order.IndexOf(official)
+                : entry.Origin == AssetOrigin.Personal ? int.MaxValue : int.MaxValue - 1;
+            return Available(AssetKinds.EffectScript).Select((entry, index) => (entry, index)).OrderBy(p => Rank(p.entry)).ThenBy(p => p.index)
+                .Select(p => p.entry).ToArray();
+        }
+    }
+
+    /// <summary>스크립트 효과 에셋이 앱에 든 공식 효과 패키지의 것이면 그 공식 효과 ID(<c>outline</c>), 아니면 null.</summary>
+    public static string? OfficialIdOf(AssetEntry entry)
+        => OfficialEffectPackages.IdOfPackage(entry.PackageId) is { } official && entry.Id == OfficialEffectPackages.AssetId(official) ? official : null;
 
     public IReadOnlyList<AssetEntry> Gradients => Available(AssetKinds.Gradient);
 

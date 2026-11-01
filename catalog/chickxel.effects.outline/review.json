@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "summary": "Draws an outline around the image (outside = beyond the image, inside = on edge pixels). The line is a fixed color or the touching pixels' color made darker or lighter (shade from neighbors).",
+  "tags": [
+    "effect",
+    "official",
+    "script"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

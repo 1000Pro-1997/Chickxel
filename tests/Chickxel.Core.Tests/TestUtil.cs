@@ -46,6 +46,16 @@ internal static class TestUtil
         System.IO.File.WriteAllText(Chickxel.Core.IO.SidecarIO.GetPath(pngPath), System.Text.Json.JsonSerializer.Serialize(dto));
     }
 
+    /// <summary>효과들의 저장 JSON(그라데이션 사전은 참조로 비교되므로 글로 비교한다).</summary>
+    public static string[] EffectJson(IEnumerable<LayerEffect> effects)
+        => [.. effects.Select(e => Chickxel.Core.Effects.EffectCodec.Write(e).ToJsonString())];
+
+    /// <summary>
+    /// 앱 길(프로젝트·레시피·패키지 읽기)로 읽은 뒤의 저장 JSON: 예전 기본 효과는 같은 그림의 공식 스크립트 효과로 바뀐다
+    /// (<see cref="Chickxel.Core.Effects.LegacyEffects.Convert(LayerEffect)"/>).
+    /// </summary>
+    public static string[] ConvertedJson(IEnumerable<LayerEffect> effects)
+        => EffectJson(effects.Select(e => Chickxel.Core.Effects.LegacyEffects.Convert(e)));
 }
 
 /// <summary>테스트마다 쓰고 지우는 임시 폴더.</summary>

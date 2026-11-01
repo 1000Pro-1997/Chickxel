@@ -44,9 +44,17 @@ public static class EffectCodec
 
     /// <summary>
     /// 저장 JSON의 효과. 늘 효과를 돌려준다 — 읽을 수 없으면 <see cref="MissingEffect"/>(원본 보존, 부르는 쪽이 경고).
+    /// 예전 기본 효과(<c>chickxel.effect.outline</c> 등)는 같은 그림의 공식 스크립트 효과로 바꿔 돌려준다(<see cref="LegacyEffects"/> — 원문은
+    /// <see cref="Scripting.OfficialEffects.Source"/>, 부르는 쪽이 자기 스크립트 표에 넣음).
     /// 프레임 범위는 음수만 걸러 두고, 프레임 수에 맞추기는 부르는 쪽이 프레임을 읽은 뒤에 한다.
     /// </summary>
-    public static LayerEffect Read(JsonObject json)
+    public static LayerEffect Read(JsonObject json) => LegacyEffects.Convert(ReadStored(json));
+
+    /// <summary>
+    /// 저장 JSON에 적힌 그대로의 효과(예전 기본 효과도 C# 모델로 — 바꾸지 않음). 예전 읽기 길과 픽셀 비교 기준을 보는 시험이 쓴다.
+    /// 읽을 수 없으면 <see cref="MissingEffect"/>.
+    /// </summary>
+    internal static LayerEffect ReadStored(JsonObject json)
     {
         LayerEffect? effect;
         try

@@ -196,27 +196,28 @@ public static class Raster
     }
 
     /// <summary>
-    /// 대칭 그리기: 점과 그 거울 점들(가로축 대칭 = 좌우 반전 <c>x' = W-1-x</c>, 세로축 대칭 = 상하 반전).
+    /// 대칭 그리기: 점과 그 거울 점들(좌우 = 세로 축 기준 반전 <c>x' = X2-1-x</c>, 상하 = 가로 축 기준 반전).
+    /// 축은 <paramref name="axes"/>(캔버스 가운데면 <see cref="MirrorAxes.Center"/>)이고, 거울 점은 이미지 밖일 수 있다.
     /// </summary>
-    public static IEnumerable<Point> Mirror(Point p, int width, int height, bool mirrorX, bool mirrorY)
+    public static IEnumerable<Point> Mirror(Point p, MirrorAxes axes, bool mirrorX, bool mirrorY)
     {
         yield return p;
-        var mx = new Point(width - 1 - p.X, p.Y);
-        var my = new Point(p.X, height - 1 - p.Y);
-        var mxy = new Point(width - 1 - p.X, height - 1 - p.Y);
+        var mx = axes.Flip(p, true, false);
+        var my = axes.Flip(p, false, true);
+        var mxy = axes.Flip(p, true, true);
         if (mirrorX && mx != p) yield return mx;
         if (mirrorY && my != p) yield return my;
         if (mirrorX && mirrorY && mxy != p && mxy != mx && mxy != my) yield return mxy;
     }
 
     /// <summary>점 목록 전체에 대칭을 적용(중복 제거).</summary>
-    public static List<Point> Mirror(IEnumerable<Point> points, int width, int height, bool mirrorX, bool mirrorY)
+    public static List<Point> Mirror(IEnumerable<Point> points, MirrorAxes axes, bool mirrorX, bool mirrorY)
     {
         if (!mirrorX && !mirrorY) return points as List<Point> ?? points.ToList();
         var set = new HashSet<Point>();
         var list = new List<Point>();
         foreach (var p in points)
-            foreach (var m in Mirror(p, width, height, mirrorX, mirrorY))
+            foreach (var m in Mirror(p, axes, mirrorX, mirrorY))
                 if (set.Add(m)) list.Add(m);
         return list;
     }

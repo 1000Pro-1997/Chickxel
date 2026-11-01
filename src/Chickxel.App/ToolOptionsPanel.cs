@@ -6,7 +6,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 오른쪽 독 "도구 설정": 고른 도구의 세부 설정만 보인다. 브러시(모양·크기·미리보기), 채우기(허용 오차·이어진 영역·대각선·기준),
-/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 그라데이션(색 정지점 바·보간·디더링), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭, 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
+/// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지, 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
@@ -52,7 +52,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly EditorContext _ctx;
     private readonly TextBlock _title;
     private bool _updating;
-    private bool _gradientSyncing;
+    private bool _gradientSyncing, _pencilGradientSyncing;
 
     // 브러시
     private readonly Border _brushBox;
@@ -63,10 +63,11 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly BrushPreview _brushPreview = new();
 
     // 도구별
-    private readonly Border _fillBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox;
-    private readonly NumericUpDown _tolNum, _dodgeNum;
-    private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY;
-    private readonly ComboBox _fillSource, _pickSource, _ditherPattern;
+    private readonly Border _fillBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox;
+    private readonly NumericUpDown _tolNum, _dodgeNum, _eraserNum;
+    private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY, _mirrorAtPivot;
+    private readonly CheckBox _eraseRed, _eraseGreen, _eraseBlue;
+    private readonly ComboBox _fillSource, _pickSource, _ditherPattern, _textFont;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
 
@@ -84,6 +85,14 @@ public sealed class ToolOptionsPanel : UserControl
     // 그라데이션
     private readonly Border _gradientBox;
     private readonly GradientEditor _gradientEditor;
+
+    // 그라데이션 연필
+    private readonly Border _pencilGradientBox;
+    private readonly GradientEditor _pencilGradientEditor;
+    /// <summary>획 전체 / 반복. 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly TabStrip _pencilGradientMode = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
+    private readonly NumericUpDown _pencilIntervalNum;
+    private readonly StackPanel _pencilIntervalRow;
 
     // 피벗
     private readonly Border _pivotBox;
@@ -199,6 +208,20 @@ public sealed class ToolOptionsPanel : UserControl
         _dodgeNum.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_5D33990D7E);
         _dodgeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D0A7B65132, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1), _dodgeNum, Ui.Label("%"))));
 
+        // ── 지우개: 강도와 채널
+        _eraserNum = NumBox(1, 100, v => _ctx.EraserStrength = v)
+            .Presets(5, 10, 20, 25, 33, 50, 75, 100).Unit("%").RecentKey("eraser.strength");
+        _eraserNum.Tip(UiStrings.Eraser_StrengthTip);
+        _eraseRed = Ui.Check("R");
+        _eraseGreen = Ui.Check("G");
+        _eraseBlue = Ui.Check("B");
+        _eraseRed.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.EraserRed = _eraseRed.On(); };
+        _eraseGreen.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.EraserGreen = _eraseGreen.On(); };
+        _eraseBlue.IsCheckedChanged += (_, _) => { if (!_updating) _ctx.EraserBlue = _eraseBlue.On(); };
+        var channels = Ui.Row(Ui.Label(UiStrings.Eraser_Channels), _eraseRed, _eraseGreen, _eraseBlue);
+        ToolTip.SetTip(channels, UiStrings.Eraser_ChannelsTip);
+        _eraserBox = Ui.Group(UiStrings.Eraser_Group, Ui.Stack(Ui.Row(Ui.Label(UiStrings.Eraser_Strength), _eraserNum, Ui.Label("%")), channels));
+
         // ── 디더링
         _ditherPattern = Ui.Combo(150, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_189071FAD4, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0CF48A0E79, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A181F0EEA8);
         _ditherPattern.SelectionChanged += (_, _) =>
@@ -208,6 +231,16 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _ditherPattern.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_7D99E90556);
         _ditherBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FC57CE224F, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_607280800B), _ditherPattern)));
+
+        // ── 글씨: 새 글씨 레이어의 글꼴
+        _textFont = Ui.Combo(150, LayerEffectsDialog.TextFontNames);
+        _textFont.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _textFont.SelectedIndex < 0) return;
+            _ctx.TextFont = (TextFont)_textFont.SelectedIndex;
+        };
+        _textFont.Tip(UiStrings.TextTool_FontTip);
+        _textBox = Ui.Group(UiStrings.TextTool_Group, Ui.Stack(Ui.Row(Ui.Label(UiStrings.TextEffect_Font), _textFont)));
 
         // ── 그라데이션: 같은 정지점 편집기를 도구와 레이어 효과에 사용한다.
         _gradientEditor = new GradientEditor(() => _ctx.Primary);
@@ -226,6 +259,35 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _gradientBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3700B54FB1, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_DA4BE7471C, Ui.Stack(_gradientEditor));
 
+        // ── 그라데이션 연필: 방식(획 전체·반복)·반복 간격 + 프리셋 고르기·기본값 + 같은 정지점 편집기
+        _pencilGradientMode.Add(UiStrings.GradientPencil_ModeWhole, tip: UiStrings.GradientPencil_ModeWholeTip);
+        _pencilGradientMode.Add(UiStrings.GradientPencil_ModeRepeat, tip: UiStrings.GradientPencil_ModeRepeatTip);
+        _pencilGradientMode.SelectionChanged += (_, _) =>
+        {
+            if (!_updating && _pencilGradientMode.SelectedIndex >= 0) _ctx.PencilGradientMode = (GradientStrokeMode)_pencilGradientMode.SelectedIndex;
+        };
+        _pencilIntervalNum = NumBox(GradientStroke.MinInterval, GradientStroke.MaxInterval, v => _ctx.PencilGradientInterval = v)
+            .Presets(2, 4, 8, 12, 16, 24, 32, 48, 64, 128).Unit("px").RecentKey("gradient.pencil.interval");
+        _pencilIntervalNum.Tip(UiStrings.GradientPencil_IntervalTip);
+        _pencilIntervalRow = Ui.Row(Ui.Label(UiStrings.GradientPencil_Interval), _pencilIntervalNum, Ui.Label("px"));
+        _pencilGradientEditor = new GradientEditor(() => _ctx.Primary);
+        _pencilGradientEditor.Changed += () =>
+        {
+            _pencilGradientSyncing = true;
+            try { _ctx.PencilGradient = _pencilGradientEditor.ToPreset("", favorite: false); }
+            finally { _pencilGradientSyncing = false; }
+        };
+        var pencilPresets = Ui.Button(VectorIcon.ChevronDown, UiStrings.GradientPencil_Presets, iconAfter: true)
+            .Tip(UiStrings.GradientPencil_PresetsTip);
+        pencilPresets.Click += (_, _) => _pencilGradientEditor.ShowPresetMenu(pencilPresets);
+        var pencilReset = Ui.Button(VectorIcon.Undo2, UiStrings.GradientPencil_Reset, (_, _) => _ctx.PencilGradient = EditorContext.DefaultPencilGradient)
+            .Tip(UiStrings.GradientPencil_ResetTip);
+        _pencilGradientBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3700B54FB1, UiStrings.GradientPencil_Info, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.GradientPencil_Mode), _pencilGradientMode),
+            _pencilIntervalRow,
+            Ui.Row(pencilPresets, pencilReset),
+            _pencilGradientEditor));
+
         // ── 옵션(도구마다 보이는 것만)
         _pixelPerfect = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B655203628, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4DC4117198, v => _ctx.PixelPerfect = v);
         _shapeFilled = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FCE800703F, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A43E20CBEA, v => _ctx.ShapeFilled = v);
@@ -238,7 +300,8 @@ public sealed class ToolOptionsPanel : UserControl
         _mirrorX.Content = Ui.IconLabel(VectorIcon.MoveHorizontal, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D, iconAfter: true);
         _mirrorY = Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_3FD1E9A85E, v => _ctx.MirrorY = v);
         _mirrorY.Content = Ui.IconLabel(VectorIcon.MoveVertical, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_B4DDF34C98, iconAfter: true);
-        _mirrorBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0E1824FF47, Ui.Stack(_mirrorX, _mirrorY));
+        _mirrorAtPivot = Check(UiStrings.Mirror_AtPivot, UiStrings.Mirror_AtPivotTip, v => _ctx.MirrorAtPivot = v);
+        _mirrorBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_0E1824FF47, Ui.Stack(_mirrorX, _mirrorY, _mirrorAtPivot));
 
         // ── 피벗(픽셀: X는 왼쪽에서, Y는 아래에서)
         // 5×5: 가로·세로 0, 1/4, 1/2, 3/4, 1 지점(위 왼쪽 단추 = 왼쪽 위).
@@ -410,7 +473,7 @@ public sealed class ToolOptionsPanel : UserControl
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
             Ui.Row(crApply, crCancel)));
 
-        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox);
+        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
         header.Child = null;
@@ -559,7 +622,7 @@ public sealed class ToolOptionsPanel : UserControl
     {
         var tool = _ctx.Tool;
         bool shape = tool == ToolKind.Shape;
-        bool brush = shape || tool is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
+        bool brush = shape || tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
         bool paint = brush || tool == ToolKind.Fill;
 
         _title.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_Refresh_2AA5BFEE57,MainForm.ToolName(tool));
@@ -570,11 +633,14 @@ public sealed class ToolOptionsPanel : UserControl
         _fillTitle.Text = tool == ToolKind.MagicWand ? UiStrings.S_ToolOptionsPanel_Refresh_EA94B5AD1D : UiStrings.S_ToolOptionsPanel_Refresh_ADEB941184;
         _pickerBox.IsVisible = tool == ToolKind.Picker;
         _dodgeBox.IsVisible = tool == ToolKind.Dodge;
+        _eraserBox.IsVisible = tool == ToolKind.Eraser;
         _ditherBox.IsVisible = tool == ToolKind.Dither;
+        _textBox.IsVisible = tool == ToolKind.Text;
         _gradientBox.IsVisible = tool == ToolKind.Gradient;
-        _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.Eraser;
+        _pencilGradientBox.IsVisible = tool == ToolKind.GradientPencil;
+        _pixelPerfect.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser;
         _shapeFilled.IsVisible = tool == ToolKind.Shape && Shapes.CanFill(_ctx.ShapeKind);
-        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.Shape or ToolKind.Fill;
+        _rightErase.IsVisible = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Shape or ToolKind.Fill;
         _wrap.IsVisible = tool == ToolKind.Move;
         _optionsBox.IsVisible = _pixelPerfect.IsVisible || _shapeFilled.IsVisible || _rightErase.IsVisible || _wrap.IsVisible;
         _mirrorBox.IsVisible = paint;
@@ -588,6 +654,7 @@ public sealed class ToolOptionsPanel : UserControl
             ToolKind.MagicWand => UiStrings.S_ToolOptionsPanel_Refresh_E90544A4CC,
             ToolKind.Move => UiStrings.S_ToolOptionsPanel_Refresh_00F0C73AC7,
             ToolKind.Gradient => UiStrings.S_ToolOptionsPanel_Refresh_FB6D406AF9,
+            ToolKind.Text => UiStrings.TextTool_Info,
             _ => "",
         };
         ToolTip.SetTip(_hint, hint);
@@ -598,7 +665,7 @@ public sealed class ToolOptionsPanel : UserControl
         {
             // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
             _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
-            foreach (var box in new Control[] { _shapeBox, _brushBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _ditherBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
+            foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
 
@@ -615,13 +682,24 @@ public sealed class ToolOptionsPanel : UserControl
             _fillSource.SelectedIndex = _ctx.FillSampleVisible ? 1 : 0;
             _pickSource.SelectedIndex = _ctx.PickerSampleVisible ? 1 : 0;
             _dodgeNum.Value = _ctx.DodgeStrength;
+            _eraserNum.Value = _ctx.EraserStrength;
+            _eraseRed.IsChecked = _ctx.EraserRed;
+            _eraseGreen.IsChecked = _ctx.EraserGreen;
+            _eraseBlue.IsChecked = _ctx.EraserBlue;
             _ditherPattern.SelectedIndex = (int)_ctx.DitherPattern;
+            _textFont.SelectedIndex = (int)_ctx.TextFont;
             _pixelPerfect.IsChecked = _ctx.PixelPerfect;
             _shapeFilled.IsChecked = _ctx.ShapeFilled;
             _rightErase.IsChecked = _ctx.RightButtonErases;
             _wrap.IsChecked = _ctx.MoveWrap;
             _mirrorX.IsChecked = _ctx.MirrorX;
             _mirrorY.IsChecked = _ctx.MirrorY;
+            _mirrorAtPivot.IsChecked = _ctx.MirrorAtPivot;
+            _mirrorAtPivot.IsEnabled = _ctx.MirrorX || _ctx.MirrorY;
+            _pencilGradientMode.SelectedIndex = (int)_ctx.PencilGradientMode;
+            _pencilIntervalNum.Value = _ctx.PencilGradientInterval;
+            _pencilIntervalRow.IsVisible = _ctx.PencilGradientMode == GradientStrokeMode.Repeat;
+            if (!_pencilGradientSyncing) _pencilGradientEditor.LoadPreset(_ctx.PencilGradient);
             RefreshShape();
             if (!_gradientSyncing)
                 _gradientEditor.Load(_ctx.GradientStops, _ctx.GradientAlphaStops,

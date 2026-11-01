@@ -11,7 +11,7 @@ using Chickxel.Core.Model;
 
 namespace GuideShots;
 
-/// <summary>화면 구성: 에셋 관리자(설치됨·둘러보기 탭, 온라인에 올리기 창). 온라인 목록은 저장소의 <c>docs/catalog</c>를 가짜 HTTP로 내어 준다.</summary>
+/// <summary>화면 구성: 에셋 관리자(설치됨·상점 탭, 온라인에 올리기 창). 온라인 목록은 저장소의 <c>docs/catalog</c>를 가짜 HTTP로 내어 준다.</summary>
 internal static class ScreenAssetShots
 {
     private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
@@ -55,7 +55,7 @@ internal static class ScreenAssetShots
     private static Rect PadLeft(Rect r, double dx) => new(r.X - dx, r.Y, r.Width + dx, r.Height);
 
     /// <summary>
-    /// 1 = 설치됨 탭(① 탭 ② 거르기·검색 ③ 가져오기·내보내기·올리기 ④ 목록 ⑤ 상세), 2 = 둘러보기 탭(⑥ 거르기·검색·태그·새로 고침 ⑦ 목록 ⑧ 상세).
+    /// 1 = 설치됨 탭(① 탭 ② 거르기·검색 ③ 가져오기·내보내기·올리기 ④ 목록 ⑤ 상세), 2 = 상점 탭(⑥ 거르기·검색·태그·새로 고침·홈페이지에서 보기 ⑦ 목록 ⑧ 상세).
     /// </summary>
     [Shot("screen-asset-manager")]
     public static void AssetManager(ShotKit k)
@@ -88,7 +88,7 @@ internal static class ScreenAssetShots
                 detail,
             ]);
 
-            // 2: 둘러보기 — 목록을 받은 뒤 설치하지 않은 레시피 하나를 고른다
+            // 2: 상점 — 목록을 받은 뒤 설치하지 않은 프리셋 하나를 고른다
             tabs.SelectedIndex = 1;
             var remoteList = ShotKit.Get<ListBox>(w, "_remoteList");
             ShotKit.Pump(200);

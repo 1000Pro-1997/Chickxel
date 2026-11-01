@@ -173,6 +173,9 @@ public sealed class GradientEditor : StackPanel
         Load(_stops, _alphaStops, _mode, _ditherMode);
     }
 
+    /// <summary>막대 우클릭과 같은 프리셋 메뉴(지금 것 저장·즐겨찾기·프리셋 목록·관리)를 <paramref name="anchor"/> 아래에 연다.</summary>
+    public void ShowPresetMenu(Control anchor) => PopupMenus.Show(anchor, BuildPresetMenu(), PlacementMode.BottomEdgeAlignedLeft);
+
     private IEnumerable<object> BuildPresetMenu()
     {
         var items = new List<object>();

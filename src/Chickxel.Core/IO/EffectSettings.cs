@@ -34,9 +34,10 @@ public sealed class EffectSettingException(string key, EffectSettingError error,
 }
 
 /// <summary>
-/// 레이어 효과 설정을 그 정의의 명시적 schema(<see cref="EffectDefinition.Parameters"/>) JSON으로 읽고 고친다 — AI 도구가 효과 종류마다 따로 쓰지 않고
-/// 모든 효과 종류를 같은 형식으로 다룬다. 설정 JSON은 저장 형식의 <c>settings</c>와 같고, 색 설정별 그라데이션(<see cref="GradientsKey"/>)을 더한다.
-/// 종류·켜짐·프레임 범위·클리핑은 설정이 아니다(<see cref="ReservedKeys"/>).
+/// 레이어 효과 설정을 그 효과의 명시적 schema(<c>EffectRegistry.ParametersOf</c> —
+/// 기본 효과는 정의의 schema, 스크립트 효과는 원문이 선언한 설정과 움직임 설정) JSON으로 읽고 고친다 — AI 도구가 효과 종류마다 따로 쓰지 않고
+/// 모든 효과 종류를 같은 형식으로 다룬다. 설정 JSON은 저장 형식의 <c>settings</c>와 같고, 색 설정별 그라데이션(<see cref="GradientsKey"/>)을 더한다
+/// (슬롯 이름은 <see cref="EffectParameter.ColorSlot"/> — 스크립트 효과는 설정 키 그대로). 종류·켜짐·프레임 범위·클리핑은 설정이 아니다(<see cref="ReservedKeys"/>).
 /// </summary>
 public static class EffectSettings
 {
@@ -57,12 +58,12 @@ public static class EffectSettings
         return json;
     }
 
-    /// <summary>효과 종류의 설정 schema(모르는 효과면 빈 목록 — 고칠 수 없음).</summary>
-    public static IReadOnlyList<EffectParameter> Describe(LayerEffect effect) => EffectRegistry.Of(effect)?.Parameters ?? [];
+    /// <summary>효과의 설정 schema(모르는 효과면 빈 목록 — 고칠 수 없음, 원문을 실행할 수 없는 스크립트 효과는 움직임 설정만).</summary>
+    public static IReadOnlyList<EffectParameter> Describe(LayerEffect effect) => EffectRegistry.ParametersOf(effect);
 
     /// <summary>
     /// <paramref name="settings"/>(일부 키만, 키는 대소문자·밑줄 무시)를 <paramref name="effect"/> 위에 덮은 새 효과. 켜짐·프레임 범위·클리핑은 그대로다.
-    /// 값이 null인 키는 그 종류의 기본값으로 돌아간다. 효과가 범위에 맞춰 바꾼 정수 설정은 <c>Clamped</c>에 "키 = 값"으로 돌려준다.
+    /// 값이 null인 키는 그 종류의 기본값으로 돌아간다. 효과가 범위에 맞춰 바꾼 정수·실수 설정은 <c>Clamped</c>에 "키 = 값"으로 돌려준다.
     /// 잘못된 키·값이면 <see cref="EffectSettingException"/>.
     /// </summary>
     public static (LayerEffect Effect, IReadOnlyList<string> Clamped) Merge(LayerEffect effect, JsonObject? settings)
@@ -86,7 +87,7 @@ public static class EffectSettings
             if (!parameter.TryRead(effect, asked, out effect))
                 throw new EffectSettingException(parameter.Key, EffectSettingError.WrongType, parameter.Kind.ToString());
             var result = parameter.Write(effect);
-            if (parameter.Kind == EffectParameterKind.Int && !JsonNode.DeepEquals(result, asked))
+            if (parameter.Kind is EffectParameterKind.Int or EffectParameterKind.Number && !JsonNode.DeepEquals(result, asked))
                 clamped.Add($"{parameter.Key} = {result.ToJsonString()}");
             else if (asked is JsonArray list && (result as JsonArray)?.Count != list.Count)
                 throw new EffectSettingException(parameter.Key, EffectSettingError.InvalidEntries, $"{(result as JsonArray)?.Count ?? 0}/{list.Count}");
@@ -129,6 +130,9 @@ public static class EffectSettings
                         return JsonValue.Create(i);
                 }
                 break;
+            case EffectParameterKind.Number:
+                if (EffectJson.TryNumber(value, out double number)) return JsonValue.Create(number);
+                break;
             case EffectParameterKind.Bool:
                 if (value is JsonValue bv)
                 {
@@ -157,6 +161,15 @@ public static class EffectSettings
             case EffectParameterKind.ColorList:
             case EffectParameterKind.ColorPairList:
                 if (value is JsonArray) return value.DeepClone();
+                break;
+            case EffectParameterKind.Text:
+                if (EffectJson.String(value) is { } words)
+                {
+                    // 모델이 자르기 전에 알린다(줄바꿈 "\r\n"은 한 글자로 센다)
+                    if (parameter.MaxLength is { } max && words.Replace("\r\n", "\n").Length > max)
+                        throw new EffectSettingException(key, EffectSettingError.InvalidValue, $"> {max}");
+                    return JsonValue.Create(words);
+                }
                 break;
         }
         throw new EffectSettingException(key, EffectSettingError.WrongType, parameter.Kind.ToString());

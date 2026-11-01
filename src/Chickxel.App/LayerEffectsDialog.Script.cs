@@ -5,9 +5,9 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App;
 
 /// <summary>
-/// 효과 창의 스크립트 효과(13.6): 종류 칸의 "새 스크립트"(빛 지나가기 예제로 시작)·"JS 파일 열기", 편집 창(<see cref="ScriptEditorWindow"/>)과 적용,
-/// 목록의 오류 표시와 실행 상태 갱신. 이 컴퓨터에서 쓰거나 가져온 원문은 바로 실행을 허락한다(<see cref="ScriptTrustStore.TrustLocal"/>).
-/// 원문을 고치면 새 해시로 프로젝트 스크립트 표에 들어가고, 쓰지 않게 된 예전 원문은 저장할 때 빠진다.
+/// 효과 창의 스크립트 효과(13.6): 설정 칸의 "JS 파일 열기"(원문 바꾸기), 편집 창(<see cref="ScriptEditorWindow"/>)과 적용,
+/// 목록의 오류 표시와 실행 상태 갱신. 새 스크립트 만들기는 효과 만들기 창이 맡는다. 이 컴퓨터에서 쓰거나 가져온 원문은 바로 실행을 허락한다
+/// (<see cref="ScriptTrustStore.TrustLocal"/>). 원문을 고치면 새 해시로 프로젝트 스크립트 표에 들어가고, 쓰지 않게 된 예전 원문은 저장할 때 빠진다.
 /// </summary>
 public sealed partial class LayerEffectsDialog
 {
@@ -17,19 +17,6 @@ public sealed partial class LayerEffectsDialog
     private ScriptEditorWindow? _scriptEditor;
     private LayerEffect? _scriptEditorTarget;
     private bool _scriptEventsAttached;
-
-    /// <summary>종류 칸(기본 효과 탭) 아래의 스크립트 효과 묶음.</summary>
-    private Control BuildScriptSection()
-    {
-        var title = Ui.Row(Ui.Label(UiStrings.ScriptEffect_PaletteTitle, bold: true), Ui.InfoBadge(UiStrings.ScriptEffect_PaletteHelp));
-        var create = Ui.Button(VectorIcon.FilePlus, UiStrings.ScriptEffect_New, (_, _) => AddNewScript());
-        ToolTip.SetTip(create, UiStrings.ScriptEffect_NewTip);
-        var open = Ui.Button(VectorIcon.FolderOpen, UiStrings.ScriptEffect_OpenFile, (_, _) => OpenScriptFile(-1));
-        ToolTip.SetTip(open, UiStrings.ScriptEffect_OpenFileTip);
-        var section = Ui.Stack(title, Ui.Row(create, open));
-        section.Margin = new Thickness(2, 10, 2, 2);
-        return section;
-    }
 
     /// <summary>스크립트 실행 상태·신뢰가 바뀌면 상태 칸을 고치고, 결과가 달라질 수 있으면 모든 프레임을 다시 그린다(이벤트는 작업 스레드에서도 옴).</summary>
     private void AttachScriptEvents()
@@ -57,29 +44,19 @@ public sealed partial class LayerEffectsDialog
         _effectCache.Clear();
         RestartRenders();
         RefreshScriptStatus();
-        // 커스텀 탭 상자의 미리보기·실행 허용 안내도 새로
-        ReloadRecipes();
+        // 효과·프리셋 탭 상자의 미리보기·실행 허용 안내도 새로
+        ReloadAssetTiles();
     });
 
-    /// <summary>"새 스크립트": 빛 지나가기 예제 원문으로 효과를 더하고 편집 창을 연다.</summary>
-    private void AddNewScript()
-    {
-        var hash = _project.AddScript(ScriptTemplates.Shine);
-        ScriptTrustStore.TrustLocal(hash);
-        AddScriptEffect(hash);
-        OpenScriptEditor(Selected);
-    }
-
-    /// <summary>원문 <paramref name="hash"/>의 기본 설정 효과를 목록 끝에 더하고 고른다.</summary>
+    /// <summary>원문 <paramref name="hash"/>의 기본 설정 효과(선언의 빠르기 곡선)를 목록 끝에 더하고 고른다.</summary>
     private void AddScriptEffect(string hash)
     {
         var program = ScriptLibrary.Runnable(hash);
-        Add([new ScriptEffect { ScriptHash = hash, Settings = program is null ? ScriptSettingValues.Empty : ScriptSettingValues.Normalized(program, null) }],
-            _effects.Count);
+        Add([program?.CreateEffect() ?? new ScriptEffect { ScriptHash = hash, Settings = ScriptSettingValues.Empty }], _effects.Count);
     }
 
     /// <summary>
-    /// JS 파일 열기: <paramref name="index"/>번이 스크립트 효과면 그 원문을 바꾸고, 아니면(-1) 새 효과로 더한다.
+    /// JS 파일 열기: <paramref name="index"/>번 스크립트 효과의 원문을 바꾼다(<paramref name="index"/>가 스크립트 효과가 아니면 새 효과로 더한다).
     /// 문법·선언 오류가 있으면 바꾸거나 더하지 않고 편집 창에 그 원문과 오류를 띄운다(고쳐서 적용하면 반영).
     /// </summary>
     private void OpenScriptFile(int index)
@@ -178,7 +155,7 @@ public sealed partial class LayerEffectsDialog
 
     /// <summary>
     /// 고른 스크립트 효과의 원문을 개인 스크립트 에셋으로 저장한다(실행을 허용한 원문만 — 개인 에셋은 이 컴퓨터에서 믿는 스크립트다).
-    /// 같은 원문이 이미 개인 에셋이면 그대로 둔다. 커스텀 탭은 저장소 변경 알림으로 다시 만들어진다.
+    /// 같은 원문이 이미 개인 에셋이면 그대로 둔다. 효과 탭 상자는 저장소 변경 알림으로 다시 만들어진다.
     /// </summary>
     private void SaveScriptAsset(ScriptEffect effect)
     {

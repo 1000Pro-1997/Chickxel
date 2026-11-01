@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "summary": "Leaves fading copies of previous frames behind for a sense of fast motion.",
+  "tags": [
+    "effect",
+    "official",
+    "script",
+    "animated"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

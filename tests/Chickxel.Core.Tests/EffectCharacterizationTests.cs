@@ -67,7 +67,19 @@ public class EffectCharacterizationTests
             Band = false, BandSize = 5, BandStrength = 30, Opacity = 55, Dither = true, FlickerRate = 33, FlickerStrength = 80, GlitchRate = 45, GlitchShift = 3,
             RgbSplit = false, EdgeGlow = true, EdgeOpacity = 20, Seed = 4321, Easing = EffectEasing.EaseInOut, Repeat = EffectRepeat.Loop, RepeatCount = 3,
         },
+        new TextEffect
+        {
+            Text = "가A\nb!?", Font = TextFont.Galmuri9, Color = new Color32(30, 200, 90, 220), X = 6, Y = -2, LetterSpacing = 1, LineSpacing = -4,
+            Align = TextAlign.Center, Typewriter = true, Easing = EffectEasing.EaseOut,
+            ColorGradients = new Dictionary<string, EffectColorGradient>
+            {
+                [nameof(TextEffect.Color)] = new EffectColorGradient { Stops = [new(0, Red), new(1, new Color32(0, 0, 255, 160))] },
+            },
+        },
     ];
+
+    /// <summary>예전 형식(짧은 효과 ID) fixture를 만든 뒤에 생긴 효과 — 예전 형식 파일에는 없다.</summary>
+    private static readonly Type[] NewerThanLegacyFixtures = [typeof(TextEffect)];
 
     /// <summary>프레임마다 조금씩 다른 결정적 그림(빨강·초록·파랑·반투명 섞임).</summary>
     internal static SpriteProject Project(IReadOnlyList<LayerEffect> effects)
@@ -135,9 +147,10 @@ public class EffectCharacterizationTests
         ["ColorCycleEffect"] = "F1E13EFFFB7A415F",
         ["ShockwaveEffect"] = "724D046E64AEB333",
         ["HologramEffect"] = "B943DE66A4C5939F",
+        ["TextEffect"] = "6308595535962738",
     };
 
-    private const string ExpectedProjectJson = "4BA90CD358CD3420";
+    private const string ExpectedProjectJson = "3F10EE9C2AD4ED97";
 
     /// <summary>저장 형식 고정과 예전 형식 fixture에 쓰는 목록: 모든 종류 + 꺼진 효과 하나 + 프레임 범위·클리핑이 있는 효과 하나.</summary>
     internal static LayerEffect[] SavedKinds()
@@ -148,7 +161,10 @@ public class EffectCharacterizationTests
         return fx;
     }
 
-    private const string ExpectedStack = "5F234376E5767A4E";
+    /// <summary><see cref="SavedKinds"/>에서 예전 형식 fixture(<c>fixtures/effects</c>)에 없는 새 효과를 뺀 목록 — fixture 읽기 호환 검사용.</summary>
+    internal static LayerEffect[] LegacySavedKinds() => [.. SavedKinds().Where(e => !NewerThanLegacyFixtures.Contains(e.GetType()))];
+
+    private const string ExpectedStack = "98BC3D8FF537CA67";
 
     [Fact]
     public void AllEffectKinds_AreCovered()

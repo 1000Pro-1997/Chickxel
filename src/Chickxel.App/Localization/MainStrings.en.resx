@@ -6,6 +6,9 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Tool_Pencil_Name" xml:space="preserve"><value>Pencil</value></data>
   <data name="Tool_Pencil_Hint" xml:space="preserve"><value>Left: primary color · Right: secondary color (or eraser) · Shift+click: line from last point · Alt+click: pick color</value></data>
+  <data name="Tool_GradientPencil_Name" xml:space="preserve"><value>Gradient Pencil</value></data>
+  <data name="Tool_GradientPencil_Hint" xml:space="preserve"><value>Draws like the pencil with colors from a gradient (tool settings: whole stroke or repeat) · Shift+click: line from last point · Alt+click: pick color</value></data>
+  <data name="Menu_Tools_MirrorAtPivot" xml:space="preserve"><value>Mirror around pivot</value></data>
   <data name="Tool_Eraser_Name" xml:space="preserve"><value>Eraser</value></data>
   <data name="Tool_Eraser_Hint" xml:space="preserve"><value>Erases to transparent</value></data>
   <data name="Tool_Fill_Name" xml:space="preserve"><value>Fill</value></data>
@@ -23,7 +26,7 @@
   <data name="Tool_MagicWand_Name" xml:space="preserve"><value>Magic wand</value></data>
   <data name="Tool_MagicWand_Hint" xml:space="preserve"><value>Selects areas similar to the clicked color (tolerance, contiguous, and sampling use the same settings as Fill) · Move: V/arrow keys</value></data>
   <data name="Tool_Move_Name" xml:space="preserve"><value>Move</value></data>
-  <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option) · Ctrl+drag in other tools (move tool while held)</value></data>
+  <data name="Tool_Move_Hint" xml:space="preserve"><value>Moves the selection if there is one; otherwise shifts the whole cel (wrap option) · On text layers (empty cel + Text effect) moves the text · Ctrl+drag in other tools (move tool while held)</value></data>
   <data name="Tool_Dodge_Name" xml:space="preserve"><value>Dodge/burn</value></data>
   <data name="Tool_Dodge_Hint" xml:space="preserve"><value>Left: lighten · Right: darken (once per stroke)</value></data>
   <data name="Tool_Dither_Name" xml:space="preserve"><value>Dithering</value></data>
@@ -389,4 +392,6 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Tool_Shape_Name" xml:space="preserve"><value>Shape</value></data>
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: keep proportions · U: outline/filled · pick the shape in Tool options</value></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
+  <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
+  <data name="Tool_Text_Hint" xml:space="preserve"><value>Click: new text layer · Click on text: edit it · Enter: commit, Shift+Enter: new line, Esc: cancel · pick the font in Tool options</value></data>
 </root>

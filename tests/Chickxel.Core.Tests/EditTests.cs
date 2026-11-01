@@ -122,9 +122,30 @@ public class EditTests
         Assert.Contains(new Point(4, 4), Raster.Brush(5, 5, 3));
         Assert.Equal(4, Raster.Brush(5, 5, 2).Count);
 
-        var m = Raster.Mirror(new Point(1, 2), 10, 8, mirrorX: true, mirrorY: true).ToList();
+        var m = Raster.Mirror(new Point(1, 2), MirrorAxes.Center(10, 8), mirrorX: true, mirrorY: true).ToList();
         Assert.Equal([new Point(1, 2), new Point(8, 2), new Point(1, 5), new Point(8, 5)], m);
-        Assert.Single(Raster.Mirror(new Point(2, 2), 5, 5, true, true)); // 정중앙
+        Assert.Single(Raster.Mirror(new Point(2, 2), MirrorAxes.Center(5, 5), true, true)); // 정중앙
+    }
+
+    [Fact]
+    public void Mirror_AroundPivotAxes()
+    {
+        // 픽셀 경계(x = 3)를 지나는 세로 축: 2 ↔ 3, 0 ↔ 5 (가운데 축과 같은 규칙)
+        var edge = MirrorAxes.Through(3, 4);
+        Assert.Equal([new Point(0, 1), new Point(5, 1)], Raster.Mirror(new Point(0, 1), edge, true, false).ToList());
+        Assert.Equal([new Point(2, 1), new Point(3, 1)], Raster.Mirror(new Point(2, 1), edge, true, false).ToList());
+        // 상하: y = 4 축이면 1 ↔ 6
+        Assert.Equal([new Point(0, 1), new Point(0, 6)], Raster.Mirror(new Point(0, 1), edge, false, true).ToList());
+
+        // 픽셀 가운데(x = 3.5)를 지나는 축: 3은 자기 자신, 1 ↔ 5
+        var center = MirrorAxes.Through(3.5, 2.5);
+        Assert.Single(Raster.Mirror(new Point(3, 2), center, true, true));
+        Assert.Equal([new Point(1, 0), new Point(5, 0), new Point(1, 4), new Point(5, 4)], Raster.Mirror(new Point(1, 0), center, true, true).ToList());
+
+        // 반 픽셀 단위로 맞춘다
+        Assert.Equal(new MirrorAxes(7, 5), MirrorAxes.Through(3.4, 2.6));
+        // 축이 캔버스 가운데에서 벗어나면 거울 점이 캔버스 밖일 수 있다(칠할 때 버림)
+        Assert.Equal(new Point(-3, 0), MirrorAxes.Through(1, 0).Flip(new Point(4, 0), true, false));
     }
 
     [Theory]

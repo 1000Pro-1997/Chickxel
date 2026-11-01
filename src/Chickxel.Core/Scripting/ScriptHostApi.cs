@@ -44,6 +44,18 @@ internal static class ScriptHostApi
             hsv.CreateDataProperty("v", v);
             return hsv;
         }, 3));
+        // OKLab(Pixelate.OkLab과 같은 float 계산 — 외곽선 명암 등 기본 효과와 같은 결과): rgbToOklab은 { l, a, b }, oklabToRgb는 sRGB 밖이면 채도만 줄인 색
+        engine.SetValue("rgbToOklab", new ClrFunction(engine, "rgbToOklab", (_, args) =>
+        {
+            var lab = Fast.JsOps.RgbToOklab(Number(args, 0), Number(args, 1), Number(args, 2));
+            var result = new JsObject(engine);
+            result.CreateDataProperty("l", lab.L);
+            result.CreateDataProperty("a", lab.A);
+            result.CreateDataProperty("b", lab.B);
+            return result;
+        }, 3));
+        engine.SetValue("oklabToRgb", new ClrFunction(engine, "oklabToRgb", (_, args)
+            => ColorObject(engine, Fast.JsOps.OklabToRgb(Number(args, 0), Number(args, 1), Number(args, 2)), frozen: false), 3));
 
         var prototype = new JsObject(engine);
         prototype.DefineOwnProperty("blank", new PropertyDescriptor(new ClrFunction(engine, "blank", (_, args) =>
@@ -102,6 +114,15 @@ internal static class ScriptHostApi
                 double d => JsNumber.Create(d),
                 bool b => b ? JsBoolean.True : JsBoolean.False,
                 Color32 c => ColorObject(engine, c, frozen: true),
+                IReadOnlyList<Color32> colors => FixedArray(engine, colors.Select(c => (JsValue)ColorObject(engine, c, frozen: true))),
+                IReadOnlyList<ScriptColorPair> pairs => FixedArray(engine, pairs.Select(p =>
+                {
+                    var pair = new JsObject(engine);
+                    pair.DefineOwnProperty("from", new PropertyDescriptor(ColorObject(engine, p.From, frozen: true), Fixed));
+                    pair.DefineOwnProperty("to", new PropertyDescriptor(ColorObject(engine, p.To, frozen: true), Fixed));
+                    pair.PreventExtensions();
+                    return (JsValue)pair;
+                })),
                 _ => new JsString((string)value),
             };
             settings.DefineOwnProperty(setting.Key, new PropertyDescriptor(js, Fixed));
@@ -110,9 +131,23 @@ internal static class ScriptHostApi
         return settings;
     }
 
-    /// <summary>렌더 함수의 두 번째 인자 <c>ctx</c>. <paramref name="settings"/>는 <see cref="CreateSettings"/>로 만든 <c>s</c>.</summary>
+    // 고정된 배열(항목을 바꾸거나 더하거나 지울 수 없음)
+    private static ArrayInstance FixedArray(Engine engine, IEnumerable<JsValue> items)
+    {
+        var array = new JsArray(engine, [.. items]);
+        for (uint i = 0, n = Length(array); i < n; i++)
+            array.DefineOwnProperty(i, new PropertyDescriptor(array[i], Fixed));
+        array.PreventExtensions();
+        return array;
+    }
+
+    /// <summary>
+    /// 렌더 함수의 두 번째 인자 <c>ctx</c>. <paramref name="settings"/>는 <see cref="CreateSettings"/>로 만든 <c>s</c>,
+    /// <paramref name="image"/>는 <c>img</c> 크기(다른 레이어 그림을 같은 크기·같은 자리로 맞춘다), <paramref name="colors"/>는 색 설정 읽기,
+    /// <paramref name="deferred"/>는 미루는 스크립트인지(<c>ctx.renderedFrameSource</c>를 줄지).
+    /// </summary>
     public static ObjectInstance CreateContext(ScriptSandbox sandbox, IReadOnlyList<ScriptSetting> schema, ObjectInstance settings,
-        Rectangle source, ScriptFrameContext frame)
+        Rectangle source, ScriptFrameContext frame, Size image, ScriptColors colors, bool deferred = false)
     {
         var engine = sandbox.Engine;
         var ctx = new JsObject(engine);
@@ -127,9 +162,18 @@ internal static class ScriptHostApi
         Define(pivot, "x", pivotX);
         Define(pivot, "y", pivotY);
         pivot.PreventExtensions();
+        // 효과 원본 가운데(그림 좌표): 피벗이 없을 때의 피벗 자리와 같다
+        var (centerX, centerY) = LayerEffects.PivotIn(null, source);
+        var center = new JsObject(engine);
+        Define(center, "x", centerX);
+        Define(center, "y", centerY);
+        center.PreventExtensions();
         ctx.DefineOwnProperty("source", new PropertyDescriptor(rect, Fixed));
         ctx.DefineOwnProperty("pivot", new PropertyDescriptor(pivot, Fixed));
+        ctx.DefineOwnProperty("center", new PropertyDescriptor(center, Fixed));
+        ctx.DefineOwnProperty("slice", new PropertyDescriptor(frame.Slice is { } border ? SliceObject(engine, border) : JsValue.Null, Fixed));
         Define(ctx, "t", frame.Time);
+        Define(ctx, "phase", frame.Phase);
         Define(ctx, "progress", frame.Progress);
         Define(ctx, "frame", frame.FrameIndex);
         Define(ctx, "step", frame.FrameStep);
@@ -140,22 +184,121 @@ internal static class ScriptHostApi
         Method(ctx, engine, "frameSource", 1, args =>
             frameSource?.Invoke(TypeConverter.ToInt32(Arg(args, 0))) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null);
 
-        // 색 설정: 지금은 단색. x, y는 그라데이션 색(EffectColorGradient)을 넣을 때 쓴다
-        Method(ctx, engine, "color", 3, args =>
+        // 다른 레이어(같은 부모 안 바로 아래·위): img와 같은 크기·같은 자리, 부를 때마다 새 사본. 프로젝트 밖 그리기는 null·빈 배열
+        var layers = frame.Layers;
+        JsValue Neighbor(int direction, bool withEffects)
+            => layers?.Neighbor(direction, withEffects, image.Width, image.Height, source) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null;
+        Method(ctx, engine, "layerBelow", 0, _ => Neighbor(-1, false));
+        Method(ctx, engine, "layerAbove", 0, _ => Neighbor(1, false));
+        Method(ctx, engine, "layerBelowWithEffects", 0, _ => Neighbor(-1, true));
+        Method(ctx, engine, "layerAboveWithEffects", 0, _ => Neighbor(1, true));
+        Method(ctx, engine, "layerEffectsByName", 1, args =>
+            Strings(engine, layers?.EffectsByName(TypeConverter.ToString(Arg(args, 0))) ?? []));
+        Method(ctx, engine, "layerEffectsAt", 1, args =>
+            Strings(engine, layers?.EffectsAt(TypeConverter.ToInt32(Arg(args, 0))) ?? []));
+
+        // 미루는 스크립트만: 다른 프레임에 이 레이어의 다른 효과를 입힌 그림 { image, offsetX, offsetY }(원본 대비 위치). 원본이 없거나 크기가 다르면 null
+        var rendered = frame.RenderedFrameSource;
+        Method(ctx, engine, "renderedFrameSource", 1, args =>
         {
-            var key = TypeConverter.ToString(Arg(args, 0));
-            if (!schema.Any(s => s.Type == ScriptSettingType.Color && s.Key == key))
-                throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_UnknownColorSetting(key: key));
-            return settings.Get(key);
+            if (!deferred || frameSource is null) return JsValue.Null;
+            int index = TypeConverter.ToInt32(Arg(args, 0));
+            if (frameSource(index) is not { } raw || raw.Width != source.Width || raw.Height != source.Height) return JsValue.Null;
+            var (picture, offsetX, offsetY) = rendered?.Invoke(index, raw) ?? (raw, 0, 0);
+            var result = new JsObject(engine);
+            result.DefineOwnProperty("image", new PropertyDescriptor(CreateImage(sandbox, picture).Image, Fixed));
+            Define(result, "offsetX", offsetX);
+            Define(result, "offsetY", offsetY);
+            result.PreventExtensions();
+            return result;
         });
 
-        // 무작위: 위치·시드 해시(프레임과 무관)와 프레임·시드 값. 계산 순서에 따라 바뀌는 생성기는 두지 않는다(12.4)
+        // 색 설정: 그라데이션이 없으면 s의 색 객체 그대로, 있으면 (x, y)에서 고른 새 색 객체(EffectGradientSampler — 기본 효과와 같은 계산)
+        int Setting(JsValue key, ScriptSettingType type, Func<string, string> unknown)
+        {
+            var name = TypeConverter.ToString(key);
+            int index = colors.IndexOf(name, type);
+            return index >= 0 ? index : throw new JavaScriptException(engine.Intrinsics.TypeError, unknown(name));
+        }
+        int Item(int setting, JsValue value)
+        {
+            double number = TypeConverter.ToNumber(value);
+            int item = number == Math.Floor(number) && number is >= int.MinValue and <= int.MaxValue ? (int)number : -1;
+            return colors.Has(setting, item) ? item
+                : throw new JavaScriptException(engine.Intrinsics.TypeError,
+                    DomainStrings.FormatScript_InvalidColorIndex(key: schema[setting].Key, index: TypeConverter.ToString(value)));
+        }
+        JsValue Sample(int setting, int item, bool to, JsValue[] args, int at, Func<JsValue> solid)
+        {
+            int x = TypeConverter.ToInt32(Arg(args, at)), y = TypeConverter.ToInt32(Arg(args, at + 1));
+            var boundsValue = Arg(args, at + 2);
+            Rectangle? bounds = boundsValue.IsUndefined() ? null : ReadBounds(engine, boundsValue);
+            if (!colors.HasGradient(setting, item, to)) return solid();
+            return ColorObject(engine, bounds is { } b ? colors.Sample(setting, item, to, x, y, b) : colors.Sample(setting, item, to, x, y), frozen: true);
+        }
+        Method(ctx, engine, "color", 3, args =>
+        {
+            int setting = Setting(Arg(args, 0), ScriptSettingType.Color, key => DomainStrings.FormatScript_UnknownColorSetting(key: key));
+            return Sample(setting, -1, false, args, 1, () => settings.Get(schema[setting].Key));
+        });
+        Method(ctx, engine, "colorAt", 4, args =>
+        {
+            int setting = Setting(Arg(args, 0), ScriptSettingType.ColorList, key => DomainStrings.FormatScript_UnknownColorListSetting(key: key));
+            int item = Item(setting, Arg(args, 1));
+            return Sample(setting, item, false, args, 2, () => ((ObjectInstance)settings.Get(schema[setting].Key)).Get(item.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        });
+        Method(ctx, engine, "pairColor", 5, args =>
+        {
+            int setting = Setting(Arg(args, 0), ScriptSettingType.ColorPairs, key => DomainStrings.FormatScript_UnknownColorPairSetting(key: key));
+            int item = Item(setting, Arg(args, 1));
+            var part = Arg(args, 2);
+            bool to = part is JsString && part.AsString() == "to";
+            if (!to && !(part is JsString && part.AsString() == "from"))
+                throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_InvalidPairPart(part: TypeConverter.ToString(part)));
+            return Sample(setting, item, to, args, 3, () => ((ObjectInstance)((ObjectInstance)settings.Get(schema[setting].Key))
+                .Get(item.ToString(System.Globalization.CultureInfo.InvariantCulture))).Get(to ? "to" : "from"));
+        });
+        // ctx.hasGradient("슬롯") 또는 목록 항목을 번호로: ctx.hasGradient("목록 키", 번호[, "from"|"to"]) — 정수 항목 번호가 아니면 false
+        Method(ctx, engine, "hasGradient", 1, args =>
+        {
+            var slot = TypeConverter.ToString(Arg(args, 0));
+            if (args.Length > 1 && !args[1].IsUndefined())
+            {
+                int list = colors.IndexOf(slot, ScriptSettingType.ColorList), pairs = colors.IndexOf(slot, ScriptSettingType.ColorPairs);
+                if (list < 0 && pairs < 0)
+                    throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_UnknownColorSlot(slot: slot));
+                var part = Arg(args, 2);
+                bool toPart = part is JsString && part.AsString() == "to";
+                if (pairs >= 0 ? !toPart && !(part is JsString && part.AsString() == "from") : !part.IsUndefined())
+                    throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_InvalidPairPart(part: TypeConverter.ToString(part)));
+                return Fast.JsOps.HasGradientAt(colors, Math.Max(list, pairs), TypeConverter.ToNumber(args[1]), toPart) ? JsBoolean.True : JsBoolean.False;
+            }
+            if (!ScriptColorSlots.TryParse(schema, slot, out var setting, out int item, out bool to))
+                throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_UnknownColorSlot(slot: slot));
+            int index = colors.IndexOf(setting.Key, setting.Type);
+            return colors.Has(index, item) && colors.HasGradient(index, item, to) ? JsBoolean.True : JsBoolean.False;
+        });
+
+        // 무작위: 위치·시드·용도(salt, 기본 0) 해시(프레임과 무관)와 프레임·시드 값. 계산 순서에 따라 바뀌는 생성기는 두지 않는다(12.4)
         Method(ctx, engine, "hash", 3, args => LayerEffects.Random(
-            TypeConverter.ToInt32(Arg(args, 2)), TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1)), 0));
+            TypeConverter.ToInt32(Arg(args, 2)), TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1)), TypeConverter.ToInt32(Arg(args, 3))));
         int frameIndex = frame.FrameIndex;
         Method(ctx, engine, "random", 1, args => LayerEffects.Random(TypeConverter.ToInt32(Arg(args, 0)), frameIndex, 0, 1));
+        // 순서 디더 문턱값(기본 효과의 Bayer와 같음): 2×2는 0~3, 4×4는 0~15
+        Method(ctx, engine, "bayer2", 2, args => Bayer.Threshold2(TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1))));
+        Method(ctx, engine, "bayer4", 2, args => Bayer.Threshold4(TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1))));
         ctx.PreventExtensions();
         return ctx;
+    }
+
+    // 그라데이션 범위 { x, y, w, h }(정수로 — ToInt32)
+    private static Rectangle ReadBounds(Engine engine, JsValue value)
+    {
+        if (value is not ObjectInstance obj || value.IsCallable())
+            throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.Script_InvalidBounds);
+        int x = TypeConverter.ToInt32(obj.Get("x")), y = TypeConverter.ToInt32(obj.Get("y"));
+        int w = TypeConverter.ToInt32(obj.Get("w")), h = TypeConverter.ToInt32(obj.Get("h"));
+        return new Rectangle(x, y, w, h);
     }
 
     private static ObjectInstance Image(ScriptSandbox sandbox, int width, int height, ArrayInstance data)
@@ -244,6 +387,26 @@ internal static class ScriptHostApi
         }
         if (frozen) obj.PreventExtensions();
         return obj;
+    }
+
+    // ctx.slice: 9-slice 테두리 { left, top, right, bottom }(고정된 객체)
+    private static ObjectInstance SliceObject(Engine engine, SpriteBorder border)
+    {
+        var obj = new JsObject(engine);
+        Define(obj, "left", border.Left);
+        Define(obj, "top", border.Top);
+        Define(obj, "right", border.Right);
+        Define(obj, "bottom", border.Bottom);
+        obj.PreventExtensions();
+        return obj;
+    }
+
+    // 문자열 배열(부를 때마다 새 배열)
+    private static ArrayInstance Strings(Engine engine, IReadOnlyList<string> values)
+    {
+        var items = new JsValue[values.Count];
+        for (int i = 0; i < items.Length; i++) items[i] = new JsString(values[i]);
+        return new JsArray(engine, items);
     }
 
     private static void Define(ObjectInstance obj, string name, double value)

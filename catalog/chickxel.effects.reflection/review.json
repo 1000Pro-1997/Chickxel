@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "summary": "Flips the image and reflects it below, above or to a side, fading gradually (water/floor/wall reflection).",
+  "tags": [
+    "effect",
+    "official",
+    "script"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

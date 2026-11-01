@@ -2,12 +2,45 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
-## 미배포
-### Effect Maker window
-- **Tools > Effect Maker…** makes and edits recipes (combinations of built-in effects) and script effects (JavaScript). On the left is your effect list, in the middle the editor, and on the right the same chick preview that is made when you publish (play, show without effect) and the status.
-- For a recipe you set the name, description, insert range and parameters, and **Edit effects…** opens the effects window with the effects on the preview chick. **From layer** makes a new recipe from the effect list of the current layer in the main window.
-- **Save** keeps it as a personal asset (Ctrl+S), **Insert into layer** adds it to the end of the main window's current layer (one undo step), and **Upload…** saves and opens the publish window with just this effect selected (the preview is made automatically).
-- The right-click menu of Custom tab tiles in the effects window and the details of personal recipes and scripts in the asset manager have **Edit in Effect Maker**.
+## v1.14.63 (2026-11-01)
+### Text effect and Text tool
+- New **Text** layer effect draws text in one color with a bundled pixel font (Galmuri 7, 9, 11, 11 Bold, 14; SIL OFL 1.1). Settings: multi-line text, font, color (gradients work), position, letter and line spacing, alignment and **Typewriter** (letters appear one by one over the effect range).
+- On an empty layer the effect works as a text layer: **Merge Down** or **Bake** turns it into pixels.
+- New **Text** tool (T): click the canvas, type, and press Enter (Shift+Enter = new line, Esc = cancel) to add a text layer above the current layer in the primary color and the font chosen in tool settings. Click on existing text to edit it.
+- The **Move** tool drags text layers (empty cel with a Text effect) by moving the text itself; the arrow keys nudge it. Each move is one undo step.
+- The Dithering tool no longer has a default shortcut (T now selects the Text tool); you can still assign one in Preferences.
+
+### Effects and presets, Store
+- The effect type panel in the effects window now has **Effects** and **Presets** tabs. The Effects tab shows every single effect in one grid: the app's effects, followed by script effects you made and effects from installed packages. An **Open Store** button at the bottom opens the Asset Manager's Store filtered to effects. The New script / Open JS file group is gone; make effects in Tools > Effect Maker.
+- Saved combinations of effects and values (custom effects/recipes) are now called **presets**. The Presets tab shows only presets and saves new ones with **Save Current Effects as Preset**.
+- The Asset Manager's Browse tab is now **Store**, with an **Open on Website** button that opens the chickxel.com assets page (on the tab for the selected kind).
+- Script effect color settings can be gradients like the built-in effects (`ctx.color` samples per pixel with the same math; custom bounds supported). New setting types `colorList` and `colorPairs` (add, remove and reorder items, each with its own gradient), `widget: "angle"` / `"point"` and `alpha: false`. Script API additions: a salt argument for `ctx.hash`, `ctx.bayer2`/`ctx.bayer4`, `ctx.hasGradient`, deferred effects (`deferred: true` draws after the other effects, like Afterimage) with `ctx.renderedFrameSource`, and a declared `easing` default. Preset parameters and the AI effect-settings tools work with script effect settings.
+- The built-in effects are now official script effects: Outline, Shadow and the other 21 effects come as official packages (`chickxel.effects.<id>`) that the app installs by default and updates when it ships a newer version. They look exactly like before (pixel-identical JavaScript ports) and appear first in the Effects tab, with the common script settings panel. Disabled official effects stay disabled and deleted ones are not reinstalled; **Asset Manager > Restore default effects** brings them back.
+- Projects, presets and packages with the old built-in effects open as the matching official script effects with identical pixels and are saved as script effects (older app versions open them as script effects too).
+- AI tools list and add the installed script effects by id (for example `outline`); the old built-in type ids still work.
+- Script effects can use `Float64Array`/`Int32Array`/`Uint8Array`, `ctx.phase`, `rgbToOklab`/`oklabToRgb`, `motion: false`, `clipsBySource`/`erasesSource`, and their limits (statements, time, memory) now grow with the image size, so effects finish on large canvases; the fast path has no image size cap.
+- Projects, presets and packages that carry an earlier version of an official effect script keep running without asking after the official script changes (the app remembers every official script hash it has shipped). On first run the default effect packages install in the background, so the window does not freeze; they appear in the Effects tab when the install finishes, and Restore default effects no longer blocks the window either.
+- On/off script settings show their name as the checkbox text, so long names no longer cut off the color and gradient rows. Official effect tiles no longer show the script marker, and packages with only official scripts no longer show the 'allow scripts' note. Package check: a script used by a rejected effect is no longer also reported as an unused script.
+
+### Gradient Pencil and symmetry around the pivot
+- Gradient Pencil tool: long-press the Pencil button or press Shift+B. Draws like the pencil (brush, pixel perfect, symmetry, selection, locked layers, right button = eraser), but each painted pixel's color comes from a gradient. In tool settings > Gradient, choose Whole stroke (on release the gradient spans the stroke from start to end by drawn length, with a live preview while drawing) or Repeat (restarts every N px). Pick a gradient preset with the Presets button, reset to black-to-white with Default, or edit the stops inline. Settings are remembered.
+- Symmetry drawing has **Around pivot**: mirrors around lines through the pivot (the selected part's pivot, otherwise the current frame's) instead of the canvas center, for every tool that mirrors. The guide lines move with it; also in the Tools menu.
+- While symmetry drawing is on, a grey ghost brush cursor shows at each mirrored position so you can see where the mirrored stroke will land.
+- The eraser remembers its own brush shape and size, separate from the pencil (the other brush tools keep sharing the pencil's). Both are saved for the next start.
+- The eraser has **Strength** (1-100%) and **Channels** (R, G, B) in tool settings. Below 100% each stroke makes pixels more transparent by that much (a pixel is reduced once per stroke; rub again to reduce what is left). With only some channels on, opacity stays and only those color channels are reduced (R alone removes red). The pencil's right-button eraser uses the same settings.
+
+### Effect Maker window (script effects)
+- **Tools > Effect Maker…** makes and edits script effects (JavaScript). On the left is the list of effects you made (**Show all** adds copies from packages and the script effects of installed packages) with the title and description fields below, in the middle the code, and on the right the same chick preview that is made when you publish (pick the chick by its picture, play, show without effect) and the status.
+- **New script** starts from a short skeleton (one setting and a loop over the pixels). The title, description and preview chick fields write `name`, `description` and `previewChick` into the source's declaration, so one source file stays one effect in any app.
+- **Check** runs the install-time source check and then the effect on every sample chick over the preview steps with the default settings, and lists run errors (click to jump to the line) and the slowest step. **Upload…** saves, runs the check and only then opens the publish window with just this effect selected (the preview is made automatically).
+- The Preview setting values header has **Reset** (back to the source defaults) and **Set as default** (writes the current values as each setting's default in the source, one undo step).
+- The preview can use 2-20 steps (**Frames** next to the play button, `previewFrames` in the declaration); the preview, the check and the uploaded preview use that count. An uploaded preview that would exceed the preview size limit merges pairs of frames (same loop length). A frame strip under the preview shows every step with its number; click one to pause on it.
+- Script effects can have their title, description and setting labels in several languages (`translations` in the declaration, **Languages** in the Effect Maker). The effects window, the layer effect list, the Asset Manager and the Effect Maker show the names for the app's UI language. The AI always adds English translations when it writes names in another language.
+- **Save** keeps it as a personal script effect (Ctrl+S) and **Insert into layer** adds it with the preview setting values to the end of the main window's current layer (one undo step). An effect opened from an installed package becomes a personal copy when you save it.
+- The right-click menu of script tiles in the effects window's Effects tab and the details of personal script effects in the asset manager have **Edit in Effect Maker**.
+- A **Rules** button next to "Info" shows the rules for writing an effect and the script API; **Copy** puts the guide (and the current source) on the clipboard to paste into another AI such as ChatGPT on the web.
+- An **AI** button next to "Preview" opens an AI panel on the right of the window: describe the effect and the AI (Claude Code or Codex, same login as the AI chat) writes source that follows the rules into the editor and checks it with the preview and Check. Undo in the editor reverts its changes.
+- The AI panel can look at the open drawing, its layers, effects and references but can't change them: the in-app MCP server gives the panel its own access key and blocks everything except read tools and editing the Effect Maker source. It can read the source of your other script effects (personal and from installed packages) as a reference ("like my X effect but ..."), and you can attach images as in the AI chat: image files, paste, drag and drop, the current canvas and the current preview frame.
 
 ### Script code editor: syntax colors, autocomplete, error underlines
 - The Effect Maker and the script editor of the effects window share one code editor: JavaScript syntax colors, line numbers, wavy underlines at errors and description tooltips over names.
@@ -15,7 +48,20 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 
 ### AI makes and saves effects
 - AI chat writes script effects for looks the built-in effects can't make (`write_script_effect` - with errors nothing changes and the line and column come back so it can fix them). It reads the API with `get_script_api` first.
-- `preview_effects` shows frames of effects on the chick or the layer's own image, and `save_effect_asset` saves a layer's effect bundle as a personal recipe and opens it in the Effect Maker. Publishing online is left to you.
+- `preview_effects` shows frames of effects on the chick or the layer's own image, and `save_script_effect` saves a layer's script effect as a personal script effect and opens it in the Effect Maker. Publishing online is left to you.
+- New AI tools `get_effect_maker_source`, `set_effect_maker_source` and `check_effect_maker` read, replace and check the Effect Maker's source while the window is open. `get_script_api` now returns the rules together with the API.
+- New read-only AI tools `list_script_effects` and `get_script_effect_source` list your script effects and return one's source, settings and execution path.
+
+### Script effects read other layers, center and 9-slice
+- `ctx.layerBelow()`/`ctx.layerAbove()` (without effects) and `ctx.layerBelowWithEffects()`/`ctx.layerAboveWithEffects()` (with that frame's effects) return the layer directly below/above in the same group and level, aligned to `img` (same size and position), or null. Hidden layers are included. Layers that read each other with effects render deterministically without loops (inside that render, effects that read other layers with effects are skipped one level).
+- `ctx.layerEffectsByName(name)` and `ctx.layerEffectsAt(offset)` return the names of the effects enabled on this frame on another layer, so a script can change its look depending on other layers.
+- `ctx.center` (center of the effect source) and `ctx.slice` (9-slice border of the canvas or part, or null). `ctx.center` also runs on the fast path.
+- Effects that read other layers re-render on the canvas, timeline, effects-window preview and export when a neighbor's pixels, effects, name, order or the border change.
+
+### Effect recipes are not published
+- Effects are published as script effects only. The publish window no longer lists effect recipes (combinations of built-in effects) and refuses them, and chickxel.com rejects packages that contain them. Saving recipes with the effects window's save-all-effects for use on your own computer works as before.
+- Script declarations can have a short `description` (up to 200 characters); it fills the short description in the publish window.
+- **Tools > Presets…** is gone; gradient presets are in the **Asset Manager** (the gradient editor's manage button still opens the presets window).
 
 ### Preview chicks and animated previews
 - The save custom effect window lets you pick one of 20 preview chicks; script effects name one in the declaration, like `previewChick: "knight"`.

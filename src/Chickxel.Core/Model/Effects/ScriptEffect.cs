@@ -18,5 +18,11 @@ public sealed record ScriptEffect : AnimatedEffect
     /// <summary>스크립트 설정값(값 비교, 저장 JSON 모양). 원문을 알면 그 schema에 맞춘 값이다.</summary>
     public ScriptSettingValues Settings { get; init; } = ScriptSettingValues.Empty;
 
+    /// <summary>
+    /// 그릴 때만: 효과 원본의 9-slice 테두리와 다른 레이어(<c>ctx.slice</c>, <c>ctx.layerBelow</c> 등 — <see cref="ScriptLayerContext"/>).
+    /// 프로젝트 렌더가 다른 레이어나 <c>ctx.slice</c>를 읽는 스크립트에만 채운다(<see cref="Edit.LayerEffects.WithScriptLayers"/>). 목록에 든 효과와 프로젝트 없는 그리기는 null.
+    /// </summary>
+    public ScriptLayerContext? Layers { get; init; }
+
     public override string DisplayName => ScriptLibrary.NameOf(ScriptHash) ?? Chickxel.Core.Localization.DomainStrings.Effect_Script;
 }

@@ -22,11 +22,11 @@ public readonly record struct CanvasView(int Zoom, double CenterX, double Center
 /// 방향키로 1px(Shift 8px) 옮기기, 더블클릭으로 그 부위 고르기.
 /// </para>
 /// </summary>
-public sealed class PixelCanvas : Control
+public sealed partial class PixelCanvas : Control
 {
     public static readonly int[] ZoomLevels = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
 
-    private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, Pivot, Arrange, Slice,
+    private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, MoveText, Pivot, Arrange, Slice,
         TransformMove, TransformScale, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove }
 
     /// <summary>변형 모드에서 화면 위치가 가리키는 것.</summary>
@@ -77,6 +77,9 @@ public sealed class PixelCanvas : Control
     private static readonly IPen CursorBlackPen = AppTheme.Pen(Color.FromArgb(200, 0, 0, 0));
     private static readonly IPen CursorOutlineBackPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(200, 0, 0, 0)), 3, null, PenLineCap.Square);
     private static readonly IPen CursorOutlineFrontPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(220, 255, 255, 255)), 1, null, PenLineCap.Square);
+    /// <summary>대칭 유령 커서: 실제 커서보다 옅은 회색 윤곽.</summary>
+    private static readonly IPen GhostOutlineBackPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(90, 0, 0, 0)), 3, null, PenLineCap.Square);
+    private static readonly IPen GhostOutlineFrontPen = new ImmutablePen(AppTheme.Brush(Color.FromArgb(150, 200, 200, 200)), 1, null, PenLineCap.Square);
     private static readonly IBrush DimBrush = AppTheme.Brush(Color.FromArgb(70, 0, 0, 0));
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
     private static readonly Cursor SizeAllCursor = new(StandardCursorType.SizeAll);
@@ -86,6 +89,7 @@ public sealed class PixelCanvas : Control
     private static readonly Cursor SizeNsCursor = new(StandardCursorType.SizeNorthSouth);
     private static readonly Cursor SizeNwseCursor = new(StandardCursorType.TopLeftCorner);
     private static readonly Cursor SizeNeswCursor = new(StandardCursorType.TopRightCorner);
+    private static readonly Cursor IbeamCursor = new(StandardCursorType.Ibeam);
     private static readonly Lazy<Cursor> RotateCursor = new(BuildRotateCursor);
     /// <summary>스포이드 커서(<see cref="BuildPickerCursor"/>) — 픽셀로 정리 창의 "원본에서 색 추가"도 쓴다.</summary>
     internal static readonly Lazy<Cursor> PickerCursor = new(BuildPickerCursor);
@@ -114,9 +118,16 @@ public sealed class PixelCanvas : Control
     private Point _startPx, _lastPx;
     private PixelImage? _strokeBase;
     private PixelPerfectStroke? _ppStroke;
+    /// <summary>그라데이션 연필로 칠하는 획(오른쪽 버튼 지우개면 null — 연필처럼 지움). 그라데이션·모드·간격은 누를 때 정해 끝까지 쓴다.</summary>
+    private GradientStroke? _gradientStroke;
+    private Chickxel.Core.IO.GradientPreset _strokeGradient = EditorContext.DefaultPencilGradient;
+    private GradientStrokeMode _strokeGradientMode;
+    private int _strokeGradientInterval = GradientStroke.DefaultInterval;
     private Color32 _strokeColor, _strokeColor2, _replaceTarget;
     private bool _strokeLighten;
     private HashSet<Point>? _visited;
+    /// <summary>이번 획이 강도·채널 지우기인지(<see cref="PartialErase"/>, 픽셀마다 한 번 — <see cref="_visited"/>로 셈).</summary>
+    private bool _partialErase;
     private ToolKind _strokeTool;
     /// <summary>도형 도구 획의 모양(누를 때 정해 끝까지 씀).</summary>
     private ShapeStyle _strokeShape;
@@ -941,20 +952,17 @@ public sealed class PixelCanvas : Control
         }
     }
 
+    /// <summary>대칭 축 안내선(캔버스 가운데, 피벗 기준이면 피벗을 지나는 선).</summary>
     private void DrawSymmetryGuides(DrawingContext g)
     {
         if (!_ctx.MirrorX && !_ctx.MirrorY) return;
         var r = ImageScreenRect;
+        var axes = _ctx.MirrorAxes;
+        var c = ImageToScreen(axes.X, axes.Y);
         if (_ctx.MirrorX)
-        {
-            double x = r.X + r.Width / 2.0;
-            g.DrawLine(MirrorPen, new Avalonia.Point(x, r.Top - 10), new Avalonia.Point(x, r.Bottom + 10));
-        }
+            g.DrawLine(MirrorPen, new Avalonia.Point(c.X, r.Top - 10), new Avalonia.Point(c.X, r.Bottom + 10));
         if (_ctx.MirrorY)
-        {
-            double y = r.Y + r.Height / 2.0;
-            g.DrawLine(MirrorPen, new Avalonia.Point(r.Left - 10, y), new Avalonia.Point(r.Right + 10, y));
-        }
+            g.DrawLine(MirrorPen, new Avalonia.Point(r.Left - 10, c.Y), new Avalonia.Point(r.Right + 10, c.Y));
     }
 
     /// <summary>부위 화면: 현재 부위의 9-slice 테두리 안내선(점선).</summary>
@@ -1211,12 +1219,12 @@ public sealed class PixelCanvas : Control
     }
 
     private static bool UsesBrush(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Shape
+        => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Shape
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
-    /// <summary>Shift+클릭이 마지막 점에서 직선을 긋는 브러시 도구(연필·지우개·밝게/어둡게·디더링·색 바꾸기).</summary>
+    /// <summary>Shift+클릭이 마지막 점에서 직선을 긋는 브러시 도구(연필·그라데이션 연필·지우개·밝게/어둡게·디더링·색 바꾸기).</summary>
     private static bool IsStrokeTool(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
+        => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
     /// <summary>
     /// 브러시 도구에서 Shift를 누르고 있으면 클릭했을 때 그어질 직선(마지막 획 끝 → 포인터, 브러시 두께·대칭 포함)을
@@ -1266,6 +1274,8 @@ public sealed class PixelCanvas : Control
     {
         if (_hoverPx is not { } p || _drag == DragMode.Pan || !UsesBrush(_ctx.Tool) || _ctx.IsGroupSelected || _ctx.IsTransforming) return;
         var brush = _ctx.Brush;
+        var cells = new HashSet<Point>(brush.Offsets.Select(o => new Point(p.X + o.X, p.Y + o.Y)));
+        DrawMirrorGhosts(g, cells);
         int size = brush.Size, start = brush.Start;
         if (brush.Shape == BrushShape.Square || size <= 2)
         {
@@ -1275,6 +1285,37 @@ public sealed class PixelCanvas : Control
             return;
         }
         // 원·마름모: 도장 바깥 경계선(칸 모서리를 따라)을 검은 테두리 위에 흰 선으로.
+        DrawCellOutline(g, cells, CursorOutlineBackPen, CursorOutlineFrontPen);
+    }
+
+    /// <summary>
+    /// 대칭 그리기 중: 브러시 자리(<paramref name="cells"/>)를 대칭 축으로 뒤집은 자리(좌우·상하, 둘 다면 대각선도)에
+    /// 회색 반투명 윤곽(유령 커서)을 그려 대칭 획이 칠해질 곳을 보인다. 캔버스 밖 칸과 실제 커서와 겹치는 자리는 뺀다.
+    /// </summary>
+    private void DrawMirrorGhosts(DrawingContext g, HashSet<Point> cells)
+    {
+        bool mx = _ctx.MirrorX, my = _ctx.MirrorY;
+        if (!mx && !my) return;
+        var axes = _ctx.MirrorAxes;
+        var shown = new List<HashSet<Point>> { cells };
+        foreach (var (fx, fy) in new[] { (true, false), (false, true), (true, true) })
+        {
+            if ((fx && !mx) || (fy && !my)) continue;
+            var ghost = new HashSet<Point>();
+            foreach (var c in cells)
+            {
+                var m = Wrap(axes.Flip(c, fx, fy));
+                if (m.X >= 0 && m.Y >= 0 && m.X < W && m.Y < H) ghost.Add(m);
+            }
+            if (ghost.Count == 0 || shown.Any(s => s.SetEquals(ghost))) continue;
+            shown.Add(ghost);
+            DrawCellOutline(g, ghost, GhostOutlineBackPen, GhostOutlineFrontPen);
+        }
+    }
+
+    /// <summary>픽셀 칸 묶음의 바깥 경계선(칸 모서리를 따라)을 뒤 펜 위에 앞 펜으로 그린다.</summary>
+    private void DrawCellOutline(DrawingContext g, HashSet<Point> cells, IPen back, IPen front)
+    {
         var geo = new StreamGeometry();
         using (var c = geo.Open())
         {
@@ -1284,18 +1325,18 @@ public sealed class PixelCanvas : Control
                 c.LineTo(new Avalonia.Point(x1, y1));
                 c.EndFigure(false);
             }
-            foreach (var o in brush.Offsets)
+            foreach (var m in cells)
             {
-                double x0 = _offset.X + (p.X + o.X) * _zoom + 0.5, y0 = _offset.Y + (p.Y + o.Y) * _zoom + 0.5;
+                double x0 = _offset.X + m.X * _zoom + 0.5, y0 = _offset.Y + m.Y * _zoom + 0.5;
                 double x1 = x0 + _zoom, y1 = y0 + _zoom;
-                if (!brush.Contains(o.X, o.Y - 1)) Seg(x0, y0, x1, y0);
-                if (!brush.Contains(o.X, o.Y + 1)) Seg(x0, y1, x1, y1);
-                if (!brush.Contains(o.X - 1, o.Y)) Seg(x0, y0, x0, y1);
-                if (!brush.Contains(o.X + 1, o.Y)) Seg(x1, y0, x1, y1);
+                if (!cells.Contains(new Point(m.X, m.Y - 1))) Seg(x0, y0, x1, y0);
+                if (!cells.Contains(new Point(m.X, m.Y + 1))) Seg(x0, y1, x1, y1);
+                if (!cells.Contains(new Point(m.X - 1, m.Y))) Seg(x0, y0, x0, y1);
+                if (!cells.Contains(new Point(m.X + 1, m.Y))) Seg(x1, y0, x1, y1);
             }
         }
-        g.DrawGeometry(null, CursorOutlineBackPen, geo);
-        g.DrawGeometry(null, CursorOutlineFrontPen, geo);
+        g.DrawGeometry(null, back, geo);
+        g.DrawGeometry(null, front, geo);
     }
 
     private void DrawOnionSkin(DrawingContext g)
@@ -1389,12 +1430,19 @@ public sealed class PixelCanvas : Control
     }
 
     private static bool IsPaintTool(ToolKind t)
-        => t is ToolKind.Pencil or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Shape
+        => t is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser or ToolKind.Fill or ToolKind.Gradient or ToolKind.Shape
             or ToolKind.Dodge or ToolKind.Dither or ToolKind.ReplaceBrush;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        // 글씨 입력 중(또는 방금 바깥을 눌러 확정함)이면 이 누르기는 입력을 끝내는 데만 쓴다.
+        if (ConsumeTextInputClick())
+        {
+            Focus();
+            e.Handled = true;
+            return;
+        }
         Focus();
         if (!_ctx.HasProject) return;
         var pt = e.GetCurrentPoint(this);
@@ -1478,14 +1526,16 @@ public sealed class PixelCanvas : Control
         switch (tool)
         {
             case ToolKind.Pencil:
+            case ToolKind.GradientPencil:
             case ToolKind.Eraser:
             case ToolKind.Dodge:
             case ToolKind.Dither:
             case ToolKind.ReplaceBrush:
                 BeginPixelStroke(tool, button, Wrap(px));
-                if ((mods & KeyModifiers.Shift) != 0 && _lastStrokeEnd is { } from)
-                    foreach (var p in Raster.Line(from, px)) StampAt(p);   // Shift+클릭: 마지막 점에서 직선
-                else StampAt(px);
+                // Shift+클릭: 마지막 점에서 직선
+                var strokeFrom = (mods & KeyModifiers.Shift) != 0 && _lastStrokeEnd is { } from ? from : px;
+                if (_gradientStroke is not null) StartGradientStroke(strokeFrom, px);
+                else foreach (var p in Raster.Line(strokeFrom, px)) StampAt(p);
                 _ctx.NotifyPixels();
                 _drag = DragMode.Stroke;
                 break;
@@ -1541,7 +1591,10 @@ public sealed class PixelCanvas : Control
             case ToolKind.Move:
                 if (button != MouseButton.Left) break;
                 if (_ctx.Selection.HasSelection) BeginMoveSelection();
-                else BeginMoveLayer();
+                else if (!BeginMoveText()) BeginMoveLayer();
+                break;
+            case ToolKind.Text:
+                if (button == MouseButton.Left) BeginTextInput(px);
                 break;
             case ToolKind.Slice:
                 if (button == MouseButton.Left) BeginSliceDrag(loc);
@@ -1594,7 +1647,8 @@ public sealed class PixelCanvas : Control
                 return;
             case DragMode.Stroke:
                 if (px == _lastPx) return;
-                foreach (var p in Raster.Line(_lastPx, px).Skip(1)) StampAt(p);
+                if (_gradientStroke is not null) ContinueGradientStroke(px);
+                else foreach (var p in Raster.Line(_lastPx, px).Skip(1)) StampAt(p);
                 _ctx.NotifyPixels();
                 break;
             case DragMode.Shape:
@@ -1631,6 +1685,10 @@ public sealed class PixelCanvas : Control
                 if (px == _lastPx) return;
                 PixelOps.Shift(_strokeBase!, _ctx.EditImage!, new Rectangle(0, 0, W, H), px.X - _startPx.X, px.Y - _startPx.Y, _ctx.MoveWrap);
                 _ctx.NotifyPixels();
+                break;
+            case DragMode.MoveText:
+                if (px == _lastPx) return;
+                PreviewTextMove(px.X - _startPx.X, px.Y - _startPx.Y);
                 break;
             case DragMode.Pivot:
                 DragPivot(loc);
@@ -1714,6 +1772,9 @@ public sealed class PixelCanvas : Control
             case DragMode.MoveLayer:
                 ShowCelShift(_ctx.CommitCelShift(UiStrings.S_PixelCanvas_EndDrag_685B820F08, _lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y, _ctx.MoveWrap));
                 _strokeBase = null;
+                break;
+            case DragMode.MoveText:
+                EndTextMove(_lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y);
                 break;
             case DragMode.Marquee:
                 if (!_dragMoved)
@@ -1807,15 +1868,23 @@ public sealed class PixelCanvas : Control
         _strokeColor = tool switch
         {
             ToolKind.Eraser => Color32.Transparent,
-            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.Shape or ToolKind.Fill
+            _ when right && _ctx.RightButtonErases && tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Shape or ToolKind.Fill
                 => Color32.Transparent,
             _ => right ? _ctx.Secondary : _ctx.Primary,
         };
         _strokeColor2 = right ? _ctx.Primary : _ctx.Secondary;
         _strokeLighten = !right;
         _replaceTarget = img.Get(start.X, start.Y);
-        _visited = tool == ToolKind.Dodge ? new HashSet<Point>() : null;
-        _ppStroke = tool is ToolKind.Pencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 ? new PixelPerfectStroke() : null;
+        // 지우개 강도·채널: 지우개(와 연필·그라데이션 연필의 오른쪽 버튼 지우개) 획이고 보통 지우기(100%·R·G·B)가 아니면 픽셀마다 한 번만 줄인다
+        _partialErase = _strokeColor.A == 0 && tool is ToolKind.Eraser or ToolKind.Pencil or ToolKind.GradientPencil
+                        && !PartialErase.IsFull(_ctx.EraserStrength, _ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
+        _visited = tool == ToolKind.Dodge || _partialErase ? new HashSet<Point>() : null;
+        _ppStroke = tool is ToolKind.Pencil or ToolKind.GradientPencil or ToolKind.Eraser && _ctx.PixelPerfect && _ctx.BrushSize == 1 ? new PixelPerfectStroke() : null;
+        // 그라데이션 연필: 오른쪽 버튼 = 지우개 설정이면 연필처럼 지우고, 아니면 (어느 버튼이든) 그라데이션으로 칠한다.
+        _gradientStroke = tool == ToolKind.GradientPencil && !(right && _ctx.RightButtonErases) ? new GradientStroke(start) : null;
+        _strokeGradient = _ctx.PencilGradient;
+        _strokeGradientMode = _ctx.PencilGradientMode;
+        _strokeGradientInterval = _ctx.PencilGradientInterval;
     }
 
     private void EndPixelStroke()
@@ -1823,6 +1892,7 @@ public sealed class PixelCanvas : Control
         var label = _strokeTool switch
         {
             ToolKind.Pencil => UiStrings.S_PixelCanvas_EndPixelStroke_CF98AEC3ED,
+            ToolKind.GradientPencil => UiStrings.GradientPencil_UndoLabel,
             ToolKind.Eraser => UiStrings.S_PixelCanvas_EndPixelStroke_8EFE7C05AE,
             ToolKind.Fill => UiStrings.S_PixelCanvas_EndPixelStroke_94045434EF,
             ToolKind.Gradient => UiStrings.S_PixelCanvas_EndPixelStroke_45906D38E1,
@@ -1832,9 +1902,10 @@ public sealed class PixelCanvas : Control
             _ => UiStrings.S_PixelCanvas_EndPixelStroke_E40CB15E95,
         };
         _ctx.CommitStroke(label);
-        if (_strokeTool is not (ToolKind.Eraser or ToolKind.Dodge or ToolKind.Gradient) && _strokeColor.A != 0) _ctx.PushRecentColor(_strokeColor);
+        if (_strokeTool is not (ToolKind.Eraser or ToolKind.Dodge or ToolKind.Gradient or ToolKind.GradientPencil) && _strokeColor.A != 0) _ctx.PushRecentColor(_strokeColor);
         _strokeBase = null;
         _ppStroke = null;
+        _gradientStroke = null;
         _visited = null;
     }
 
@@ -1858,14 +1929,58 @@ public sealed class PixelCanvas : Control
         _ctx.CancelStroke();
         _strokeBase = null;
         _ppStroke = null;
+        _gradientStroke = null;
         _visited = null;
         Message?.Invoke(this, UiStrings.S_PixelCanvas_CancelPixelStroke_53972D288A);
         InvalidateVisual();
     }
 
-    /// <summary>점들을 타일 모드 감기 → 대칭 순으로 바꾼다.</summary>
+    /// <summary>점들을 타일 모드 감기 → 대칭(축: <see cref="EditorContext.MirrorAxes"/>) 순으로 바꾼다. 타일 모드면 피벗 축 대칭으로 캔버스 밖에 나간 점도 다시 감는다.</summary>
     private List<Point> Targets(IEnumerable<Point> pts)
-        => Raster.Mirror(pts.Select(Wrap), W, H, _ctx.MirrorX, _ctx.MirrorY);
+    {
+        var list = Raster.Mirror(pts.Select(Wrap), _ctx.MirrorAxes, _ctx.MirrorX, _ctx.MirrorY);
+        return _tiledMode && (_ctx.MirrorX || _ctx.MirrorY) ? list.Select(Wrap).Distinct().ToList() : list;
+    }
+
+    /// <summary>
+    /// 그라데이션 연필 획의 첫 도장: <paramref name="from"/>(거리 0)에서 <paramref name="to"/>까지(Shift+클릭 직선, 같으면 점 하나).
+    /// </summary>
+    private void StartGradientStroke(Point from, Point to)
+    {
+        _gradientStroke = new GradientStroke(from);
+        StampGradient(from, 0);
+        ContinueGradientStroke(to);
+    }
+
+    /// <summary>그라데이션 연필 획을 <paramref name="to"/>까지 늘이고 기록한 픽셀을 모두 다시 칠한다(획 전체 모드는 지금 길이로 다시 나눈다).</summary>
+    private void ContinueGradientStroke(Point to)
+    {
+        var stroke = _gradientStroke!;
+        foreach (var (center, distance) in stroke.LineTo(to)) StampGradient(center, distance);
+        stroke.Render(_ctx.EditImage!, _strokeGradient, _strokeGradientMode, _strokeGradientInterval);
+    }
+
+    /// <summary>그라데이션 연필 도장 하나: 덮은 픽셀(대칭 포함, 선택 영역·캔버스 안)에 획 위 거리를 기록한다. 칠하기는 <see cref="GradientStroke.Render"/>.</summary>
+    private void StampGradient(Point p, double distance)
+    {
+        var img = _ctx.EditImage!;
+        var clip = _ctx.Selection.Clip;
+        var stroke = _gradientStroke!;
+        bool Inside(Point m) => (clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y);
+        if (_ppStroke is not null)
+        {
+            var (draw, restore) = _ppStroke.Add(p);
+            if (restore is { } r)
+            {
+                var back = Targets([r]).Where(Inside).ToList();
+                foreach (var m in back) img.Set(m.X, m.Y, _strokeBase!.Get(m.X, m.Y));
+                stroke.Forget(back);
+            }
+            if (draw is { } d) stroke.Record(Targets([d]).Where(Inside), distance);
+            return;
+        }
+        stroke.Record(Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)).Where(Inside), distance);
+    }
 
     private void StampAt(Point p)
     {
@@ -1893,6 +2008,24 @@ public sealed class PixelCanvas : Control
                         img.Set(m.X, m.Y, _strokeColor);
                 return;
         }
+        if (_partialErase)
+        {
+            if (_ppStroke is not null)
+            {
+                var (draw, restore) = _ppStroke.Add(p);
+                if (restore is { } r)
+                    foreach (var m in Targets([r]))
+                        if ((clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y))
+                        {
+                            img.Set(m.X, m.Y, _strokeBase!.Get(m.X, m.Y));
+                            _visited!.Remove(m);
+                        }
+                if (draw is { } d) EraseCells(Targets([d]));
+                return;
+            }
+            EraseCells(Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)));
+            return;
+        }
         if (_ppStroke is not null)
         {
             var (draw, restore) = _ppStroke.Add(p);
@@ -1903,6 +2036,14 @@ public sealed class PixelCanvas : Control
             return;
         }
         Raster.Plot(img, Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)), _strokeColor, clip);
+
+        // 강도·채널 지우기: 획 시작 때 색에서 한 번만 줄인다(한 획 안에서 겹쳐 문질러도 더 줄지 않음)
+        void EraseCells(IEnumerable<Point> cells)
+        {
+            foreach (var m in cells)
+                if ((clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y) && _visited!.Add(m))
+                    img.Set(m.X, m.Y, PartialErase.Apply(_strokeBase!.Get(m.X, m.Y), _ctx.EraserStrength, _ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue));
+        }
     }
 
     private void DrawShape(Point end)
@@ -2004,7 +2145,7 @@ public sealed class PixelCanvas : Control
         var sample = _ctx.FillSampleVisible ? _ctx.VisibleImage() : null;
         if (sample is not null && (sample.Width != img.Width || sample.Height != img.Height)) sample = null;
         int changed = 0;
-        foreach (var m in Raster.Mirror([p], W, H, _ctx.MirrorX, _ctx.MirrorY))
+        foreach (var m in Targets([p]))
             changed += Raster.FloodFill(img, m.X, m.Y, _strokeColor, _ctx.FillContiguous, _ctx.Selection.Clip,
                 _ctx.FillToleranceChannels, _ctx.FillDiagonal, sample);
         if (changed > 0) _ctx.NotifyPixels();
@@ -2100,6 +2241,7 @@ public sealed class PixelCanvas : Control
             return true;
         }
         if (_ctx.Tool != ToolKind.Move) return false;
+        if (NudgeText(dx, dy)) return true;
         _ctx.BeginStroke();
         var img = _ctx.EditImage!;
         var copy = img.Clone();
@@ -2703,6 +2845,7 @@ public sealed class PixelCanvas : Control
         Cursor = _ctx.Tool switch
         {
             ToolKind.Move => SizeAllCursor,
+            ToolKind.Text => IbeamCursor,
             ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso when _ctx.Selection.IsInside(px) => SizeAllCursor,
             ToolKind.Pivot => HandCursor,
             _ => CrossCursor,

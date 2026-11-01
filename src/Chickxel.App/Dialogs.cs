@@ -313,6 +313,7 @@ public sealed class ColorField : StackPanel
     private readonly SwatchBox _swatch;
     private readonly TextBox _hex;
     private Color32 _color;
+    private bool _opaque;
 
     /// <param name="hexWidth">HEX 입력 칸 너비(좁은 줄에 여럿 놓을 때 줄임).</param>
     public ColorField(Color32 color, int hexWidth = 90)
@@ -325,7 +326,7 @@ public sealed class ColorField : StackPanel
         {
             if (!e.GetCurrentPoint(_swatch).Properties.IsLeftButtonPressed) return;
             e.Handled = true;
-            var editor = new ColorPickerEditor(Color);
+            var editor = new ColorPickerEditor(Color) { Opaque = _opaque };
             editor.ColorChanged += (_, _) => Color = editor.Color;
             var flyout = new Flyout
             {
@@ -346,14 +347,26 @@ public sealed class ColorField : StackPanel
 
     public Color32 Color
     {
-        get => Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c) ? c : _color;
+        get => Color32.TryParseHex((_hex.Text ?? "").Trim(), out var c) ? _opaque ? c.WithAlpha(255) : c : _color;
         set
         {
+            if (_opaque) value = value.WithAlpha(255);
             bool changed = _color != value;
             _color = value;
             _hex.Text = value.ToHex();
             _swatch.InvalidateVisual();
             if (changed) ColorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>알파를 고르지 않는 색: 늘 알파 255로 맞추고 색 편집기의 알파 막대·A 칸을 숨긴다.</summary>
+    public bool Opaque
+    {
+        get => _opaque;
+        set
+        {
+            _opaque = value;
+            if (value) Color = _color;
         }
     }
 
@@ -508,6 +521,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_38E4E2F3CE, UiStrings.S_Dialogs_Shortcuts_F8F7C54D54),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "L", UiStrings.S_Dialogs_Shortcuts_63ADB1FB8F),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "R", UiStrings.S_Dialogs_Shortcuts_DAEB4ED541),
+        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "T", UiStrings.Shortcuts_TextTool),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "U", UiStrings.S_Dialogs_Shortcuts_094D63C9FA),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "M", UiStrings.S_Dialogs_Shortcuts_7E24CFF354),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "Q", UiStrings.S_Dialogs_Shortcuts_2C42C899BE),
@@ -515,7 +529,6 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_FCF789E683, UiStrings.S_Dialogs_Shortcuts_90C65F584D),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, UiStrings.S_Dialogs_Shortcuts_50CAA43D24, UiStrings.S_Dialogs_Shortcuts_4A05EA78E2),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "D", UiStrings.S_Dialogs_Shortcuts_BFE4A309E1),
-        (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "T", UiStrings.S_Dialogs_Shortcuts_A171E1ED26),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "C", UiStrings.S_Dialogs_Shortcuts_F2DB2601F2),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "K", UiStrings.S_Dialogs_Shortcuts_F892032BCA),
         (UiStrings.S_Dialogs_Shortcuts_6657ADE48E, "[ / ]", UiStrings.S_Dialogs_Shortcuts_A2ACEFDBE7),

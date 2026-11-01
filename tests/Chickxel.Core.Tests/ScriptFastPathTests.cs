@@ -89,7 +89,8 @@ public class ScriptFastPathTests
         var data = Data(image);
         try
         {
-            long statements = fast.Run(data, image.Width, image.Height, Source, Frame, program.NormalizeSettings(settings), CancellationToken.None);
+            long statements = fast.Run(data, image.Width, image.Height, Source, Frame, program.NormalizeSettings(settings), CancellationToken.None,
+                new ScriptColors(program.Settings, program.NormalizeSettings(settings), Frame, image, Source));
             return new(data, null, false, statements);
         }
         catch (ScriptEffectException ex)
@@ -112,7 +113,8 @@ public class ScriptFastPathTests
             {
                 var declaration = sandbox.Declare(program.PreparedScript);
                 var s = ScriptHostApi.CreateSettings(sandbox.Engine, program.Settings, values);
-                var ctx = ScriptHostApi.CreateContext(sandbox, program.Settings, s, Source, Frame);
+                var ctx = ScriptHostApi.CreateContext(sandbox, program.Settings, s, Source, Frame, new System.Drawing.Size(image.Width, image.Height),
+                    new ScriptColors(program.Settings, values, Frame, image, Source));
                 var (img, array) = ScriptHostApi.CreateImage(sandbox, image);
                 var constraint = sandbox.Engine.Constraints.Find<MaxStatementsConstraint>()!;
                 int saved = constraint.MaxStatements;
@@ -183,7 +185,7 @@ public class ScriptFastPathTests
     [Fact]
     public void Shine_template_runs_on_the_fast_path_and_matches_Jint_and_the_built_in_renderer()
     {
-        var program = Program(ScriptTemplates.Shine);
+        var program = Program(OfficialEffects.Source("shine"));
         Assert.Equal(new ScriptExecutionPath(true, null, 0, 0), program.ExecutionPath);
         var random = new Random(20261101);
         (int W, int H, int Margin)[] sizes = [(16, 16, 0), (48, 32, 3), (40, 40, 0), (9, 23, 2), (8, 8, 1), (1, 1, 0), (64, 64, 4)];
@@ -225,7 +227,7 @@ public class ScriptFastPathTests
     [Fact]
     public void Shine_template_matches_Jint_value_for_value_at_128()
     {
-        var program = Program(ScriptTemplates.Shine);
+        var program = Program(OfficialEffects.Source("shine"));
         var random = new Random(7);
         for (int n = 0; n < 4; n++)
         {
@@ -524,7 +526,7 @@ public class ScriptFastPathTests
     [Fact]
     public void Shine_template_stops_at_the_same_statement_as_Jint()
     {
-        var program = Program(ScriptTemplates.Shine);
+        var program = Program(OfficialEffects.Source("shine"));
         var (sprite, _) = Sprite(new Random(3), 6, 5, 1);
         var settings = new Dictionary<string, object> { ["angle"] = 30, ["width"] = 3, ["strength"] = 90, ["softness"] = 2 };
         AssertStopsAtTheSameStatement(program, sprite, settings, sweep: true);
@@ -538,7 +540,7 @@ public class ScriptFastPathTests
     [InlineData("const f = (x) => { return x + 1; };\nlet i = 0;\ndo { i = f(i); } while (true);")]
     public void Infinite_loops_stop_at_the_same_statement_and_position_on_both_paths(string body)
     {
-        var limits = Limits with { MaxStatements = 300_000 }; // 실행기를 만들 때 잠금 스크립트도 이 한도 안에서 돈다
+        var limits = Limits with { MaxStatements = 300_000, StatementsPerPixel = 0 }; // 실행기를 만들 때 잠금 스크립트도 이 한도 안에서 돈다(그림 크기 몫 없이)
         var program = Compiled(Script(body), limits);
         var image = Small();
         var jint = Jint(program, image, null);
@@ -610,7 +612,7 @@ public class ScriptFastPathTests
     [Fact]
     public void Compiled_render_gives_the_same_result_on_other_threads()
     {
-        var program = Program(ScriptTemplates.Shine);
+        var program = Program(OfficialEffects.Source("shine"));
         var (sprite, source) = Sprite(new Random(11), 40, 30, 2);
         var settings = new Dictionary<string, object> { ["angle"] = 200, ["width"] = 7, ["softness"] = 1 };
         var context = new ScriptFrameContext { Progress = 0.4, Time = 0.4 };
@@ -623,5 +625,71 @@ public class ScriptFastPathTests
             program.Render(results[i], source, context, settings);
         });
         Assert.All(results, r => Assert.True(expected.ContentEquals(r)));
+    }
+
+    // ───────────── 숫자 배열(typed array) ─────────────
+
+    private const string TypedBody = """
+            const d = img.data, n = d.length;
+            const f = new Float64Array(n), i32 = new Int32Array(8), u8 = new Uint8Array(img.data), copy = img.data.slice();
+            f.fill(0.5);
+            i32.fill(-3.7);
+            for (let i = 0; i < n; i++) { f[i] += d[i] * 1.5; u8[i] = d[i] * 3 - 200; }
+            for (let k = 0; k < 8; k++) { i32[k] = k * 1e9 + 0.5; i32[k]++; }
+            let t = 0;
+            for (let i = 0; i < n; i += 4) {
+              d[i] = u8[i]; d[i + 1] = f[i + 1] / 2; d[i + 2] = i32[(i / 4) % 8] & 255; t += copy[i + 3]; ++u8[i];
+              copy[i] = -1;
+            }
+            d[3] = t % 256; d[7] = i32.length + u8.length % 7 + f.length % 5 + copy[0];
+        """;
+
+    [Fact]
+    public void Typed_arrays_compile_and_match_Jint_values_and_statement_counts()
+    {
+        var program = Compiled(Script(TypedBody));
+        var image = Small(6, 5);
+        AssertSame(Jint(program, image, null), Fast(program, image, null), "typed arrays");
+        AssertStopsAtTheSameStatement(program, image, null, sweep: true);
+    }
+
+    [Theory]
+    [InlineData("const a = new Float64Array(4);\nimg.data[0] = 1;\nimg.data[1] = 2;")]
+    [InlineData("const c = img.data.slice();\nimg.data[0] = 1;\nimg.data[1] = 2;")]
+    [InlineData("const u = new Uint8Array(img.data);\nimg.data[0] = 1;\nimg.data[1] = 2;")]
+    [InlineData("const a = new Float64Array(4);\na.fill(2);\nimg.data[0] = 1;\nimg.data[1] = 2;")]
+    public void Typed_array_construction_and_fill_count_statements_like_Jint(string body)
+    {
+        var program = Compiled(Script(body));
+        AssertStopsAtTheSameStatement(program, Small(), null, sweep: true);
+    }
+
+    [Theory]
+    [InlineData("const a = new Float64Array(4); img.data[0] = a[4] === undefined ? 1 : 2;")] // 밖 읽기 → undefined
+    [InlineData("const a = new Uint8Array(4); a[4] = 1; img.data[0] = a.length;")] // 밖 쓰기는 무시
+    [InlineData("const a = new Int32Array(4); img.data[0] = a[1.5] === undefined ? 1 : 2;")]
+    public void Typed_array_edge_cases_hand_the_call_to_Jint_with_the_same_result(string body)
+    {
+        var program = Program(Script(body));
+        var image = Small();
+        var jint = image.Clone();
+        program.RenderOnJint(jint, Source, Frame, program.NormalizeSettings(null), CancellationToken.None);
+        var rendered = image.Clone();
+        program.Render(rendered, Source, Frame);
+        Assert.True(jint.ContentEquals(rendered));
+    }
+
+    [Theory]
+    [InlineData("new Float64Array(-1)")]
+    [InlineData("new Uint8Array(2.5)")]
+    [InlineData("new Int32Array(1e12)")]
+    [InlineData("new (new Float64Array(1).constructor)(1e12)")]
+    [InlineData("new Float64Array(1).buffer.byteLength")]
+    [InlineData("new Uint16Array(4)")]
+    public void Typed_array_sizes_are_checked_and_buffers_are_unreachable(string expression)
+    {
+        var program = Program(Script($"img.data[0] = ({expression}).length;"));
+        var image = Small();
+        Assert.Throws<ScriptEffectException>(() => program.Render(image, Source, Frame));
     }
 }

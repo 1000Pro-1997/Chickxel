@@ -48,7 +48,7 @@ public sealed class AssetPublishDialog : DialogBase
     /// </summary>
     public static async Task RunAsync(Window owner, IEnumerable<string> preselected)
     {
-        if (AppAssets.Catalog.Personal.Count == 0)
+        if (!Publishable.Any())
         {
             Ui.Info(owner, UiStrings.Publish_NoPersonal, UiStrings.Publish_Title);
             return;
@@ -57,6 +57,9 @@ public sealed class AssetPublishDialog : DialogBase
         if (await AppCommunity.RequireUserAsync(owner, UiStrings.Publish_LoginReason) is not { } user) return;
         new AssetPublishDialog(ids, user).ShowDialog(owner);
     }
+
+    /// <summary>올릴 수 있는 개인 에셋: 효과 레시피(기본 효과를 합친 것)는 올리지 않는다(<see cref="PublishIssueCode.RecipeNotPublishable"/>, 서버도 거부).</summary>
+    private static IEnumerable<AssetEntry> Publishable => AppAssets.Catalog.Personal.Where(e => e.Kind != AssetKinds.EffectRecipe);
 
     private AssetPublishDialog(HashSet<string> preselected, CommunityUser user) : base(UiStrings.Publish_Title, UiStrings.Publish_Upload)
     {
@@ -73,7 +76,7 @@ public sealed class AssetPublishDialog : DialogBase
         OkButton.FontWeight = FontWeight.Bold;
         _catalog = AppAssets.Remote.LoadCache()?.Packages ?? [];
 
-        var personal = AppAssets.Catalog.Personal;
+        var personal = Publishable.ToList();
         var record = _settings.Saved.FirstOrDefault(r => r.Assets.Any(preselected.Contains));
         var check = new HashSet<string>(preselected, StringComparer.Ordinal);
         if (record is not null) check.UnionWith(record.Assets);
@@ -91,7 +94,7 @@ public sealed class AssetPublishDialog : DialogBase
         _version.Width = 110;
         _summary = new TextBox
         {
-            Text = record?.Summary ?? "", Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
+            Text = record?.Summary ?? single?.Script?.Description ?? "", Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
             MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
         };
         _tags = Field(record is null ? "" : string.Join(", ", record.Tags), UiStrings.Publish_TagsHint);

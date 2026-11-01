@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "summary": "Adds depth by brightening the edge facing the light and darkening the opposite side.",
+  "tags": [
+    "effect",
+    "official",
+    "script"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

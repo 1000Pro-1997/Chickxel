@@ -78,7 +78,7 @@ public class ScriptEffectTests
     [Fact]
     public void Save_and_open_keeps_the_source_and_settings_and_drops_unused_sources()
     {
-        var source = Unique(ScriptTemplates.Shine);
+        var source = Unique(OfficialEffects.Source("shine"));
         var p = Project([]);
         var hash = p.AddScript(source);
         ScriptLibrary.SetTrust(hash, true);
@@ -90,7 +90,7 @@ public class ScriptEffectTests
             Frames = new FrameRange(1, 6), Easing = EffectEasing.EaseIn, Repeat = EffectRepeat.Loop, RepeatCount = 3, ClipToPrevious = false,
         };
         p.SetLayerEffects(0, [new OutlineEffect(), effect]);
-        var oldHash = p.AddScript(Unique(ScriptTemplates.Shine.Replace("빛 지나가기", "예전 원문")));
+        var oldHash = p.AddScript(Unique(OfficialEffects.Source("shine").Replace("빛 지나가기", "예전 원문")));
 
         var (loaded, warnings) = Reopen(p, out var json);
 
@@ -115,7 +115,7 @@ public class ScriptEffectTests
     [Fact]
     public void Reading_with_a_known_source_fits_the_settings_to_its_schema()
     {
-        var hash = Trusted(Unique(ScriptTemplates.Shine));
+        var hash = Trusted(Unique(OfficialEffects.Source("shine")));
         var json = JsonNode.Parse($$"""
             { "type": "{{ScriptDefinition.Id}}", "script": "{{hash}}",
               "settings": { "angle": 999, "width": 2.6, "color": "red?", "gone": 1, "repeat": "PingPong" } }
@@ -162,7 +162,7 @@ public class ScriptEffectTests
     [Fact]
     public void Untrusted_script_is_not_run_until_allowed()
     {
-        var hash = ScriptLibrary.Add(Unique(ScriptTemplates.Shine));
+        var hash = ScriptLibrary.Add(Unique(OfficialEffects.Source("shine")));
         var effect = new ScriptEffect { ScriptHash = hash, Settings = ShineSettings(30, 6, Color32.White, 100, 0) };
         var plain = Project([]);
         var p = Project([effect]);
@@ -245,7 +245,7 @@ public class ScriptEffectTests
     [Fact]
     public void Shine_script_effect_matches_the_built_in_shine_through_flatten()
     {
-        var hash = Trusted(Unique(ScriptTemplates.Shine));
+        var hash = Trusted(Unique(OfficialEffects.Source("shine")));
         var color = new Color32(255, 220, 64);
         var range = new FrameRange(1, 7);
         var outline = new OutlineEffect { Color = new Color32(30, 10, 60) };

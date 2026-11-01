@@ -5,6 +5,7 @@ using Chickxel.Core.Assets;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
@@ -40,22 +41,30 @@ public class EffectCompatibilityTests
         => Assert.Equal(expected.Select(e => EffectCodec.Write(e).ToJsonString()), actual.Select(e => EffectCodec.Write(e).ToJsonString()));
 
     [Fact]
-    public void OldProjectFixture_OpensWithTheSameEffectsAndPixels_AndResavesWithTypeIds()
+    public void OldProjectFixture_OpensAsOfficialScriptsWithTheSamePixels_AndResavesAsScripts()
     {
         var warnings = new List<string>();
         var old = ProjectIO.Load(Fixture("effects-v3.gpixel"), warnings);
         Assert.Empty(warnings);
-        var expected = EffectCharacterizationTests.SavedKinds();
-        AssertSameEffects(expected, old.Layers[0].Effects);
+        var expected = EffectCharacterizationTests.LegacySavedKinds();
+        // 예전 기본 효과는 같은 설정의 공식 스크립트로 열리고, 그림은 예전 기본 효과 그대로
+        var converted = expected.Select(e => LegacyEffects.Convert(e)).ToArray();
+        Assert.All(converted, e => Assert.IsType<ScriptEffect>(e));
+        AssertSameEffects(converted, old.Layers[0].Effects);
         Assert.Equal(EffectCharacterizationTests.Hash(EffectCharacterizationTests.Project(expected)), EffectCharacterizationTests.Hash(old));
 
+        // 다시 저장하면 스크립트 효과와 그 공식 원문 표
         using var stream = new MemoryStream();
         ProjectIO.Save(old, stream);
         var json = ProjectJson(stream);
         Assert.Equal(ProjectIO.CurrentVersion, json["version"]!.GetValue<int>());
-        Assert.All(json["layers"]![0]!["effects"]!.AsArray(), e => Assert.NotNull(EffectRegistry.Find(e!["type"]!.GetValue<string>())));
+        Assert.All(json["layers"]![0]!["effects"]!.AsArray(), e => Assert.Equal(ScriptDefinition.Id, e!["type"]!.GetValue<string>()));
+        var hashes = converted.Cast<ScriptEffect>().Select(s => s.ScriptHash).Distinct().Order(StringComparer.Ordinal);
+        var table = json["scripts"]!.AsObject();
+        Assert.Equal(hashes, table.Select(p => p.Key).Order(StringComparer.Ordinal));
+        Assert.All(table, p => Assert.Equal(OfficialEffects.Source(OfficialEffects.IdOfHash(p.Key)!), p.Value!.GetValue<string>()));
         stream.Position = 0;
-        AssertSameEffects(expected, ProjectIO.Load(stream).Layers[0].Effects);
+        AssertSameEffects(converted, ProjectIO.Load(stream).Layers[0].Effects);
     }
 
     [Fact]
@@ -75,7 +84,8 @@ public class EffectCompatibilityTests
         var loaded = ProjectIO.Load(stream, warnings);
         Assert.Empty(warnings);
         Assert.DoesNotContain(loaded.Layers[0].Effects, e => e is MissingEffect);
-        AssertSameEffects(expected, loaded.Layers[0].Effects);
+        // 예전 기본 효과는 같은 설정의 공식 스크립트로
+        AssertSameEffects(expected.Select(e => LegacyEffects.Convert(e)), loaded.Layers[0].Effects);
 
         using var resaved = new MemoryStream();
         ProjectIO.Save(loaded, resaved);
@@ -87,7 +97,7 @@ public class EffectCompatibilityTests
     public void OldPresetFixture_LoadsTheSameEffects()
     {
         var preset = Assert.Single(AssetMigration.ReadLegacyEffects(File.ReadAllText(Fixture("effect-presets-v1.json"))));
-        AssertSameEffects(EffectRecipe.Capture("", "all", EffectCharacterizationTests.SavedKinds()).Effects, preset.Effects);
+        AssertSameEffects(EffectRecipe.Capture("", "all", EffectCharacterizationTests.LegacySavedKinds()).Effects, preset.Effects);
     }
 
     [Fact]
@@ -130,7 +140,8 @@ public class EffectCompatibilityTests
         var effects = opened.Layers[0].Effects;
         Assert.Equal(["chickxel.effect.future", "sparkle", OutlineDefinition.Id],
             effects.OfType<MissingEffect>().Select(m => m.TypeId));
-        Assert.Equal(outline, effects[1]);
+        // 아는 예전 효과는 같은 설정의 공식 스크립트로
+        AssertSameEffects([LegacyEffects.Convert(outline)], [effects[1]]);
         Assert.Equal(new FrameRange(1, 2), effects[0].Frames);
         Assert.Equal((false, true), (effects[2].Enabled, effects[2].ClipToPrevious));
         Assert.Equal(3, warnings.Count);

@@ -20,18 +20,20 @@ internal sealed class FastRender
     private readonly IReadOnlyList<ScriptSetting> _settings;
     private readonly ScriptLimits _limits;
     private readonly int _slots;
+    private readonly bool _deferred;
 
-    public FastRender(FastRenderFn render, FastSite[] sites, IReadOnlyList<ScriptSetting> settings, ScriptLimits limits)
+    public FastRender(FastRenderFn render, FastSite[] sites, IReadOnlyList<ScriptSetting> settings, ScriptLimits limits, bool deferred = false)
     {
         _render = render;
         _sites = sites;
         _settings = settings;
         _limits = limits;
+        _deferred = deferred;
         _slots = FastCompiler.SlotCount(settings);
     }
 
-    /// <summary>같은 컴파일 결과를 다른 한도로 돌리는 사본(시험에서 한도를 바꿔 가며 멈추는 자리를 비교할 때).</summary>
-    public FastRender WithLimits(ScriptLimits limits) => new(_render, _sites, _settings, limits);
+    /// <summary>같은 컴파일 결과를 다른 한도로 돌리는 사본(그림 크기 비례 한도, 시험에서 한도를 바꿔 가며 멈추는 자리를 비교할 때).</summary>
+    public FastRender WithLimits(ScriptLimits limits) => new(_render, _sites, _settings, limits, _deferred);
 
     /// <summary>
     /// <paramref name="image"/>를 제자리에서 바꾼다. JS와 결과가 갈릴 자리에 닿으면 그림을 건드리지 않고 false(그 호출은 Jint로 다시 그린다).
@@ -40,9 +42,12 @@ internal sealed class FastRender
     public bool TryRender(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values, CancellationToken cancel)
     {
         var px = image.Pixels;
-        int length = px.Length * 4;
-        var data = t_buffer is { } buffer && buffer.Length == length ? buffer : new double[length];
-        if (length <= MaxReusedLength) t_buffer = data;
+        long length = (long)px.Length * 4;
+        // 스레드 버퍼는 한 번에 한 호출만: 렌더 중 호스트 콜백(ctx.renderedFrameSource가 다른 효과를 그림)이 같은 스레드에서 다시 들어오면 새 배열.
+        // 큰 그림(재사용 한도 밖)도 호출마다 새로 잡는다 — Jint 배열 한도와 관계없이 메모리가 허락하는 크기까지
+        bool reuse = !t_busy && length <= MaxReusedLength;
+        var data = reuse && t_buffer is { } buffer && buffer.Length == length ? buffer : new double[length];
+        if (reuse) t_buffer = data;
         for (int i = 0, j = 0; i < px.Length; i++, j += 4)
         {
             var c = px[i];
@@ -51,29 +56,37 @@ internal sealed class FastRender
             data[j + 2] = c.B;
             data[j + 3] = c.A;
         }
+        bool outer = !t_busy;
+        t_busy = true;
         try
         {
-            Run(data, image.Width, image.Height, source, context, values, cancel);
+            Run(data, image.Width, image.Height, source, context, values, cancel, new ScriptColors(_settings, values, context, image, source) { Deferred = _deferred });
         }
         catch (FastDeoptException)
         {
             return false;
+        }
+        finally
+        {
+            if (outer) t_busy = false;
         }
         for (int i = 0, j = 0; i < px.Length; i++, j += 4)
             px[i] = new Color32(Byte(data[j]), Byte(data[j + 1]), Byte(data[j + 2]), Byte(data[j + 3]));
         return true;
     }
 
+    [ThreadStatic] private static bool t_busy;
+
     /// <summary>
     /// <paramref name="data"/>(RGBA, 길이 = 너비 × 높이 × 4)에 render를 돌리고 센 문장 수를 돌려준다. <paramref name="values"/>는
-    /// <see cref="ScriptEffectProgram.NormalizeSettings"/>를 거친 값. 결과가 갈릴 자리에서 <see cref="FastDeoptException"/>.
+    /// <see cref="ScriptEffectProgram.NormalizeSettings"/>를 거친 값, <paramref name="colors"/>는 같은 값의 색 설정 읽기. 결과가 갈릴 자리에서 <see cref="FastDeoptException"/>.
     /// </summary>
     public long Run(double[] data, int width, int height, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values,
-        CancellationToken cancel)
+        CancellationToken cancel, ScriptColors colors)
     {
         cancel.ThrowIfCancellationRequested();
-        var budget = new FastBudget(_limits, _sites, cancel);
-        _render(data, Context(width, height, source, context), Settings(values), budget);
+        var budget = new FastBudget(_limits, _sites, cancel, data.Length);
+        _render(data, Context(width, height, source, context), Settings(values), budget, colors);
         return budget.Statements;
     }
 
@@ -88,6 +101,7 @@ internal sealed class FastRender
     {
         var cv = new double[FastCompiler.CtxLength];
         cv[FastCompiler.CtxT] = frame.Time;
+        cv[FastCompiler.CtxPhase] = frame.Phase;
         cv[FastCompiler.CtxProgress] = frame.Progress;
         cv[FastCompiler.CtxFrame] = frame.FrameIndex;
         cv[FastCompiler.CtxStep] = frame.FrameStep;
@@ -97,6 +111,7 @@ internal sealed class FastRender
         cv[FastCompiler.CtxSourceW] = source.Width;
         cv[FastCompiler.CtxSourceH] = source.Height;
         (cv[FastCompiler.CtxPivotX], cv[FastCompiler.CtxPivotY]) = LayerEffects.PivotIn(frame.Pivot, source);
+        (cv[FastCompiler.CtxCenterX], cv[FastCompiler.CtxCenterY]) = LayerEffects.PivotIn(null, source);
         cv[FastCompiler.CtxWidth] = width;
         cv[FastCompiler.CtxHeight] = height;
         return cv;
@@ -127,11 +142,17 @@ internal sealed class FastRender
                     sv[slot++] = c.B;
                     sv[slot++] = c.A;
                     break;
-                default:
+                case ScriptSettingType.Choice:
                     var choice = (string)value;
                     int index = 0;
                     while (setting.Choices[index].Value != choice) index++;
                     sv[slot++] = index;
+                    break;
+                case ScriptSettingType.ColorList:
+                    sv[slot++] = ((IReadOnlyList<Color32>)value).Count;
+                    break;
+                case ScriptSettingType.ColorPairs:
+                    sv[slot++] = ((IReadOnlyList<ScriptColorPair>)value).Count;
                     break;
             }
         }

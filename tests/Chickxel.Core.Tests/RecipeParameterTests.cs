@@ -3,6 +3,7 @@ using Chickxel.Core.Assets;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
@@ -65,6 +66,23 @@ public class RecipeParameterTests
         return cel;
     }
 
+    /// <summary>레시피의 예전 효과는 공식 스크립트로 바뀐다: 그 효과가 <paramref name="officialId"/> 스크립트인지 보고 돌려준다.</summary>
+    private static ScriptEffect Official(LayerEffect effect, string officialId)
+    {
+        var script = Assert.IsType<ScriptEffect>(effect);
+        Assert.Equal(OfficialEffects.HashOf(officialId), script.ScriptHash);
+        return script;
+    }
+
+    /// <summary>스크립트 효과의 색 설정(값은 16진수 글).</summary>
+    private static Color32 ColorOf(LayerEffect effect, string key = "color")
+    {
+        Assert.True(Color32.TryParseHex(Assert.IsType<string>(Assert.IsType<ScriptEffect>(effect).Settings[key]), out var color));
+        return color;
+    }
+
+    private static int IntOf(LayerEffect effect, string key) => Convert.ToInt32(Assert.IsType<ScriptEffect>(effect).Settings[key]);
+
     // ───────────── 패키지 검사 ─────────────
 
     [Fact]
@@ -77,10 +95,10 @@ public class RecipeParameterTests
         AssetSamples.AssertSameRecipe(recipe, read);
 
         var effects = read.Instantiate(new SpriteProject(4, 4), new FrameRange(1, 3));
-        var outline = Assert.IsType<OutlineEffect>(effects[0]);
-        var overlay = Assert.IsType<ColorOverlayEffect>(effects[2]);
-        Assert.Equal((Glow, 2, true), (outline.Color, outline.Thickness, outline.Diagonal));
-        Assert.Equal((Glow, EffectBlend.Screen, 60), (overlay.Color, overlay.Blend, overlay.Amount));
+        var outline = Official(effects[0], "outline");
+        var overlay = Official(effects[2], "coloroverlay");
+        Assert.Equal((Glow, 2, true), (ColorOf(outline), IntOf(outline, "thickness"), outline.Settings["diagonal"] is true));
+        Assert.Equal((Glow, "Screen", 60), (ColorOf(overlay), (string)overlay.Settings["blend"], IntOf(overlay, "amount")));
         // 세 효과가 같은 묶음(새 ID, 출처 = 레시피 ID)의 0·1·2번 자리
         Assert.Equal([0, 1, 2], effects.Select(e => e.Recipe!.Slot).ToArray());
         var instance = effects[0].Recipe!.Instance;
@@ -99,7 +117,14 @@ public class RecipeParameterTests
 
     [Fact]
     public void RecipeWithoutParameters_IsWrittenAsSchemaOne()
-        => Assert.Equal(1, (int)EffectRecipeFormat.Write(EffectRecipe.Capture("", "X", [new FadeEffect()]))["schemaVersion"]!);
+    {
+        // 매개변수도 스크립트도 없는 레시피 = 형식 1(공식 스크립트가 없는 C# 효과만 그대로 남는다)
+        var plain = EffectRegistry.Selectable.First().Create();
+        Assert.False(LegacyEffects.IsLegacy(plain));
+        Assert.Equal(1, (int)EffectRecipeFormat.Write(EffectRecipe.Capture("", "X", [plain]))["schemaVersion"]!);
+        // 예전 기본 효과는 공식 스크립트로 바뀌어 원문을 실으므로 스크립트 형식(3)
+        Assert.Equal(3, (int)EffectRecipeFormat.Write(EffectRecipe.Capture("", "X", [new FadeEffect()]))["schemaVersion"]!);
+    }
 
     public static TheoryData<string, AssetIssueCode, string> WrongBindings => new()
     {
@@ -108,8 +133,9 @@ public class RecipeParameterTests
             AssetIssueCode.RecipeBindingMissingEffect, "parameters[0].bindings[0]: effects[5]"
         },
         {
+            // 예전 외곽선은 공식 스크립트 효과로 읽히므로 종류 이름은 스크립트 효과의 것
             """{ "id": "a", "name": "A", "kind": "color", "default": "#FFFFFF", "bindings": [ { "effect": 0, "key": "glow" } ] }""",
-            AssetIssueCode.RecipeBindingUnknownKey, "parameters[0].bindings[0]: chickxel.effect.outline.glow"
+            AssetIssueCode.RecipeBindingUnknownKey, "parameters[0].bindings[0]: chickxel.effect.script.glow"
         },
         {
             """{ "id": "a", "name": "A", "kind": "color", "default": "#FFFFFF", "bindings": [ { "effect": 0, "key": "thickness" } ] }""",
@@ -200,31 +226,32 @@ public class RecipeParameterTests
 
         var changed = RecipeInstances.WithValue(list, instance.Id, "glow", RecipeValue.Of(Red));
         Assert.Same(plain, changed[0]);
-        Assert.Equal(Red, ((OutlineEffect)changed[1]).Color);
+        Assert.Equal(Red, ColorOf(Official(changed[1], "outline")));
         Assert.Same(list[2], changed[2]);
-        Assert.Equal(Red, ((ColorOverlayEffect)changed[3]).Color);
+        Assert.Equal(Red, ColorOf(Official(changed[3], "coloroverlay")));
         Assert.Equal(RecipeValue.Of(Red), RecipeInstances.ValueOf(changed, instance, instance.Parameters[0]));
 
         // 정수는 매개변수 범위(1~2)로 자른다
         var wide = RecipeInstances.WithValue(changed, instance.Id, "width", RecipeValue.Of(9));
-        Assert.Equal(2, ((OutlineEffect)wide[1]).Thickness);
+        Assert.Equal(2, IntOf(wide[1], "thickness"));
         var thin = RecipeInstances.WithValue(changed, instance.Id, "width", RecipeValue.Of(1));
-        Assert.Equal(1, ((OutlineEffect)thin[1]).Thickness);
+        Assert.Equal(1, IntOf(thin[1], "thickness"));
         // 내보내지 않은 고르기 값은 받지 않는다
         Assert.Same(changed, RecipeInstances.WithValue(changed, instance.Id, "blend", RecipeValue.OfChoice("Multiply")));
         Assert.Same(changed, RecipeInstances.WithValue(changed, instance.Id, "blend", RecipeValue.Of(3)));
-        Assert.Equal(EffectBlend.Normal, ((ColorOverlayEffect)RecipeInstances.WithValue(changed, instance.Id, "blend", RecipeValue.OfChoice("Normal"))[3]).Blend);
+        Assert.Equal("Screen", (string)((ScriptEffect)changed[3]).Settings["blend"]);
+        Assert.Equal("Normal", (string)((ScriptEffect)RecipeInstances.WithValue(changed, instance.Id, "blend", RecipeValue.OfChoice("Normal"))[3]).Settings["blend"]);
 
         // 구성 효과를 하나 지워도 남은 연결은 바뀐다
         IReadOnlyList<LayerEffect> without = [.. changed.Where((_, i) => i != 1)];
         var after = RecipeInstances.WithValue(without, instance.Id, "glow", RecipeValue.Of(Glow));
-        Assert.Equal(Glow, ((ColorOverlayEffect)after[2]).Color);
+        Assert.Equal(Glow, ColorOf(after[2]));
         Assert.Equal(RecipeValue.Of(Glow), RecipeInstances.ValueOf(after, instance, instance.Parameters[0]));
 
         // 묶음을 풀면 값은 그대로 두고 보통 효과가 된다
         var detached = RecipeInstances.Detach(changed, instance.Id);
         Assert.All(detached, e => Assert.Null(e.Recipe));
-        Assert.Equal(Red, ((OutlineEffect)detached[1]).Color);
+        Assert.Equal(Red, ColorOf(detached[1]));
     }
 
     // ───────────── 프로젝트 ─────────────
@@ -253,8 +280,8 @@ public class RecipeParameterTests
 
         // 패키지 없이 매개변수를 바꾸면 연결된 설정이 모두 바뀌고 그림도 바뀐다
         reloaded.SetLayerEffects(0, RecipeInstances.WithValue(effects, instance.Id, "glow", RecipeValue.Of(Red)));
-        Assert.Equal(Red, ((OutlineEffect)reloaded.Layers[0].Effects[0]).Color);
-        Assert.Equal(Red, ((ColorOverlayEffect)reloaded.Layers[0].Effects[2]).Color);
+        Assert.Equal(Red, ColorOf(reloaded.Layers[0].Effects[0]));
+        Assert.Equal(Red, ColorOf(reloaded.Layers[0].Effects[2]));
         Assert.NotEqual(expected, reloaded.Flatten(0).Pixels);
         // 같은 값을 손으로 넣은 효과와 그림이 같다
         var manual = new SpriteProject(24, 24);
@@ -279,7 +306,7 @@ public class RecipeParameterTests
 
         project.SetLayerEffects(0, RecipeInstances.WithValue(before, instance.Id, "glow", RecipeValue.Of(Red)));
         var after = project.Layers[0].Effects;
-        Assert.Equal([Red, Red], new[] { ((OutlineEffect)after[0]).Color, ((ColorOverlayEffect)after[2]).Color });
+        Assert.Equal([Red, Red], new[] { ColorOf(after[0]), ColorOf(after[2]) });
 
         Assert.True(project.Undo());
         Assert.Equal(before, project.Layers[0].Effects);

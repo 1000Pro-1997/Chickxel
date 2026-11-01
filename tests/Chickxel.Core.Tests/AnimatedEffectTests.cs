@@ -1,5 +1,6 @@
 using System.Drawing;
 using Chickxel.Core.Edit;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -157,6 +158,20 @@ public class AnimatedEffectTests
         p.SetLayerEffects(0, [new ShadowEffect()]);
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
+        const string stops = """[{ "position": 0, "color": "#FF0000" }, { "position": 0.3, "color": "#00FF00" }, { "position": 1, "color": "#0000FF80" }]""";
+        string[] oldJson =
+        [
+            $$"""
+            { "type": "gradient", "enabled": true, "frames": [1, 4], "amount": 65, "blend": "Screen",
+              "easing": "EaseIn", "repeat": "Loop", "repeatCount": 2, "mode": "ColorTransition",
+              "gradient": { "interpolation": "Smooth", "dither": "None", "stops": {{stops}} } }
+            """,
+            $$"""
+            { "type": "gradient", "enabled": false, "clipToPrevious": true, "amount": 40, "blend": "Multiply",
+              "easing": "EaseOut", "repeat": "PingPong", "repeatCount": 3, "mode": "RadialRotation", "angle": -720,
+              "gradient": { "dither": "Bayer2", "stops": {{stops}} } }
+            """,
+        ];
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
         {
             var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
@@ -164,25 +179,18 @@ public class AnimatedEffectTests
             using (var reader = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(reader)!;
             var effects = root["layers"]!.AsArray()[0]!["effects"]!.AsArray();
             effects.Clear();
-            const string stops = """[{ "position": 0, "color": "#FF0000" }, { "position": 0.3, "color": "#00FF00" }, { "position": 1, "color": "#0000FF80" }]""";
-            effects.Add(System.Text.Json.Nodes.JsonNode.Parse($$"""
-                { "type": "gradient", "enabled": true, "frames": [1, 4], "amount": 65, "blend": "Screen",
-                  "easing": "EaseIn", "repeat": "Loop", "repeatCount": 2, "mode": "ColorTransition",
-                  "gradient": { "interpolation": "Smooth", "dither": "None", "stops": {{stops}} } }
-                """));
-            effects.Add(System.Text.Json.Nodes.JsonNode.Parse($$"""
-                { "type": "gradient", "enabled": false, "clipToPrevious": true, "amount": 40, "blend": "Multiply",
-                  "easing": "EaseOut", "repeat": "PingPong", "repeatCount": 3, "mode": "RadialRotation", "angle": -720,
-                  "gradient": { "dither": "Bayer2", "stops": {{stops}} } }
-                """));
+            foreach (var json in oldJson) effects.Add(System.Text.Json.Nodes.JsonNode.Parse(json));
             entry.Delete();
             using var writer = new System.Text.Json.Utf8JsonWriter(zip.CreateEntry(ProjectIO.ProjectEntryName).Open());
             root.WriteTo(writer);
         }
         stream.Position = 0;
         var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+        // 예전 그라데이션 맵을 C# 모델로 읽으면 색 덮기가 되고, 프로젝트로 열면 그 색 덮기의 공식 스크립트가 된다
+        var stored = oldJson.Select(json => EffectCodec.ReadStored((System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse(json)!)).ToArray();
+        Assert.Equal(TestUtil.ConvertedJson(stored), TestUtil.EffectJson(loaded));
 
-        var transition = Assert.IsType<ColorOverlayEffect>(loaded[0]);
+        var transition = Assert.IsType<ColorOverlayEffect>(stored[0]);
         Assert.Equal((true, new FrameRange(1, 4), 65, EffectBlend.Screen, Red),
             (transition.Enabled, transition.Frames!.Value, transition.Amount, transition.Blend, transition.Color));
         var uniform = Assert.Single(transition.ColorGradients).Value;
@@ -207,9 +215,11 @@ public class AnimatedEffectTests
                 var expected = src.Pixels[i].A == 0 ? src.Pixels[i] : LayerEffects.Blend(src.Pixels[i], sampled, strength, EffectBlend.Screen);
                 Assert.Equal(expected, rendered.Pixels[i]);
             }
+            // 열린 스크립트 효과도 같은 그림
+            Assert.True(LayerEffects.RenderClipped(src, LayerEffects.At([loaded[0]], frame, 5)).ContentEquals(rendered), $"frame {frame}");
         }
 
-        var radial = Assert.IsType<ColorOverlayEffect>(loaded[1]);
+        var radial = Assert.IsType<ColorOverlayEffect>(stored[1]);
         Assert.Equal((false, true, (FrameRange?)null, 40, EffectBlend.Multiply),
             (radial.Enabled, radial.ClipToPrevious, radial.Frames, radial.Amount, radial.Blend));
         var angular = Assert.Single(radial.ColorGradients).Value;
@@ -228,8 +238,10 @@ public class AnimatedEffectTests
         ProjectIO.Save(p, stream);
         stream.Position = 0;
         var loaded = ProjectIO.Load(stream).Layers[0].Effects;
-        Assert.Equal(gradient, loaded[0].ColorGradients[nameof(ColorOverlayEffect.Color)]);
-        Assert.Equal(gradient with { Easing = EffectEasing.EaseInOut, PingPong = true }, loaded[1].ColorGradients[nameof(ColorOverlayEffect.Color)]);
+        // 열면 공식 스크립트 효과 — 그라데이션 슬롯은 스크립트 이름(Color → color)
+        Assert.All(loaded, e => Assert.IsType<ScriptEffect>(e));
+        Assert.Equal(gradient, loaded[0].ColorGradients[LegacyEffects.ScriptSlot(nameof(ColorOverlayEffect.Color))]);
+        Assert.Equal(gradient with { Easing = EffectEasing.EaseInOut, PingPong = true }, loaded[1].ColorGradients[LegacyEffects.ScriptSlot(nameof(ColorOverlayEffect.Color))]);
 
         using var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read, leaveOpen: true);
         using var reader = zip.GetEntry(ProjectIO.ProjectEntryName)!.Open();
@@ -502,7 +514,8 @@ public class AnimatedEffectTests
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
         stream.Position = 0;
-        Assert.Equal(fx, ProjectIO.Load(stream).Layers[0].Effects);
+        // 열면 같은 설정의 공식 스크립트 효과(그라데이션 사전은 참조로 비교되므로 저장 JSON으로)
+        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(ProjectIO.Load(stream).Layers[0].Effects));
 
         // 설정이 빠진 효과 = 그 종류의 기본값
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
@@ -520,23 +533,25 @@ public class AnimatedEffectTests
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        Assert.Equal([new ExplodeEffect(), new ShineEffect(), new SquashEffect()], ProjectIO.Load(stream).Layers[0].Effects);
+        Assert.Equal(TestUtil.ConvertedJson([new ExplodeEffect(), new ShineEffect(), new SquashEffect()]), TestUtil.EffectJson(ProjectIO.Load(stream).Layers[0].Effects));
 
         // 이전 프로젝트의 공통 세기는 두 축에 동일하게 적용한다.
+        var oldSquash = new System.Text.Json.Nodes.JsonObject { ["type"] = "squash", ["amount"] = 35 };
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
         {
             var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
             System.Text.Json.Nodes.JsonNode root;
             using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
-            root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[2] = new System.Text.Json.Nodes.JsonObject { ["type"] = "squash", ["amount"] = 35 };
+            root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[2] = oldSquash.DeepClone();
             entry.Delete();
             using var w = zip.CreateEntry(ProjectIO.ProjectEntryName).Open();
             using var writer = new System.Text.Json.Utf8JsonWriter(w);
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        var legacy = (SquashEffect)ProjectIO.Load(stream).Layers[0].Effects[2];
+        var legacy = Assert.IsType<SquashEffect>(EffectCodec.ReadStored(oldSquash));
         Assert.Equal((35, 35), (legacy.WidthAmount, legacy.HeightAmount));
+        Assert.Equal(TestUtil.ConvertedJson([legacy]), TestUtil.EffectJson([ProjectIO.Load(stream).Layers[0].Effects[2]]));
     }
 
     [Fact]
@@ -547,13 +562,14 @@ public class AnimatedEffectTests
         p.SetLayerEffects(0, [expected]);
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
-
+        System.Text.Json.Nodes.JsonObject oldExplode;
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
         {
             var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
             System.Text.Json.Nodes.JsonNode root;
             using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
             var explode = root["layers"]!.AsArray()[0]!["effects"]!.AsArray()[0]!.AsObject();
+            oldExplode = explode;
             Assert.False(explode.ContainsKey("distance"));
             explode.Remove("distanceX");
             explode.Remove("distanceY");
@@ -567,10 +583,16 @@ public class AnimatedEffectTests
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        var loaded = (ExplodeEffect)ProjectIO.Load(stream).Layers[0].Effects[0];
-        Assert.Equal(expected, loaded);
+        // 예전 공통 거리·퍼짐은 C# 모델로 읽을 때 두 축에 같게 들어가고, 프로젝트로 열면 그 효과의 공식 스크립트(같은 그림)
+        var stored = Assert.IsType<ExplodeEffect>(EffectCodec.ReadStored(oldExplode));
+        Assert.Equal(expected, stored);
+        var loaded = Assert.IsType<ScriptEffect>(ProjectIO.Load(stream).Layers[0].Effects[0]);
+        Assert.Equal(TestUtil.ConvertedJson([expected]), TestUtil.EffectJson([loaded]));
         var src = Filled(6, 6, Red);
-        Assert.True(At(src, expected, 2, 4).Image.ContentEquals(At(src, loaded, 2, 4).Image));
+        var want = At(src, expected, 2, 4).Image;
+        Assert.True(want.ContentEquals(At(src, stored, 2, 4).Image));
+        var e = loaded with { Frames = new FrameRange(0, 4) };
+        Assert.True(want.ContentEquals(LayerEffects.Render(src, LayerEffects.At([e], 2, 5)).Image));
     }
 
     // ───────────── 영구 적용 ─────────────

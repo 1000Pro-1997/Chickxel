@@ -8,7 +8,9 @@ namespace Chickxel.Core.Edit;
 /// <item>잔상 원본: 그룹의 다른 프레임 원본(부위 합성)과, 앞 프레임에 다른 효과를 입힌 그림 — 이웃 프레임을 그릴 때 다시 쓴다.</item>
 /// <item>중간 결과: 효과 1~k까지 입힌 그림 — k번째 효과 값만 바꾸면 k번째부터 다시 계산한다(<see cref="RenderPlanOptions"/>로 레이어를 정할 때만 담음).</item>
 /// </list>
-/// 열쇠에는 셀 이미지 참조와 효과 값이 들어가므로 효과만 바뀌면 그대로 써도 된다. 셀 픽셀·레이어 구조가 바뀌면 부르는 쪽이 <see cref="Clear"/>한다.
+/// 열쇠에는 셀 이미지 참조와 효과 값이 들어가므로 효과만 바뀌면 그대로 써도 된다. 다른 레이어·9-slice 테두리를 읽는 스크립트가 있는 단계는 그 내용
+/// (이웃 셀 참조·효과 목록·이름·테두리 — <see cref="ScriptLayerContext.Key"/>)도 단계 열쇠와 중간 결과 열쇠에 들어가 이웃이 바뀌면 열쇠가 달라진다.
+/// 셀 픽셀(이웃 셀 포함)·레이어 구조가 바뀌면 부르는 쪽이 <see cref="Clear"/>한다.
 /// 꺼낸 그림은 읽기만 한다.
 /// </summary>
 public sealed class EffectRenderCache
@@ -176,6 +178,8 @@ internal sealed class CacheKey : IEquatable<CacheKey>
 /// <summary>
 /// 효과 목록을 값으로 비교하는 열쇠. 그릴 때만 채우는 다른 프레임 원본 함수(<see cref="AnimatedEffect.FrameSource"/>·
 /// <see cref="AnimatedEffect.RenderedFrameSource"/>)는 빼고 비교한다 — 그 함수가 보는 셀이 바뀌면 캐시를 비우므로.
+/// 스크립트가 보는 다른 레이어(<see cref="ScriptEffect.Layers"/>, 렌더마다 새 객체)도 빼고 비교한다 — 그 내용(이웃 셀·효과 목록·이름·테두리)은
+/// 이 목록을 그리는 단계의 열쇠와 중간 결과 열쇠의 앞부분에 <see cref="ScriptLayerContext.Key"/>로 들어간다(<see cref="CelStep"/>·<see cref="GroupStep"/>).
 /// </summary>
 internal sealed class EffectListKey : IEquatable<EffectListKey>
 {
@@ -188,9 +192,14 @@ internal sealed class EffectListKey : IEquatable<EffectListKey>
         var h = new HashCode();
         for (int i = 0; i < count; i++)
         {
-            var e = effects[i] is AnimatedEffect { FrameSource: not null } or AnimatedEffect { RenderedFrameSource: not null }
-                ? ((AnimatedEffect)effects[i]) with { FrameSource = null, RenderedFrameSource = null }
-                : effects[i];
+            var e = effects[i] switch
+            {
+                ScriptEffect { FrameSource: not null } or ScriptEffect { RenderedFrameSource: not null } or ScriptEffect { Layers: not null }
+                    => (ScriptEffect)effects[i] with { FrameSource = null, RenderedFrameSource = null, Layers = null },
+                AnimatedEffect { FrameSource: not null } or AnimatedEffect { RenderedFrameSource: not null }
+                    => ((AnimatedEffect)effects[i]) with { FrameSource = null, RenderedFrameSource = null },
+                var other => other,
+            };
             _effects[i] = e;
             h.Add(e);
         }
@@ -236,7 +245,7 @@ internal sealed class EffectRunHooks
 /// <summary>
 /// 효과 1~k까지 입힌 중간 결과를 캐시에 담고 꺼낸다(<see cref="EffectRunHooks.CheckpointScope"/>가 있을 때만).
 /// k 다음 효과가 앞 효과에 맞춰 자르기(클리핑)가 아닌 자리만 담는다 — 그 자리에서는 그림 말고 이어받을 상태가 없다.
-/// 클리핑된 잔상이 있는 목록은 담지 않는다(목록 중간의 상태를 끝에서 쓴다).
+/// 클리핑된 미루는 효과(잔상 등 — <see cref="LayerEffects.IsDeferred"/>)가 있는 목록은 담지 않는다(목록 중간의 상태를 끝에서 쓴다).
 /// </summary>
 internal sealed class EffectCheckpoints
 {
@@ -266,7 +275,7 @@ internal sealed class EffectCheckpoints
     {
         if (hooks is not { CheckpointScope: { } scope, Cache: { } cache } || effects.Count < 2) return null;
         foreach (var e in effects)
-            if (e is AfterimageEffect { Enabled: true, ClipToPrevious: true }) return null;
+            if (e is { Enabled: true, ClipToPrevious: true } && LayerEffects.IsDeferred(e)) return null;
         return new EffectCheckpoints(cache, scope, effects, source, image.Width, image.Height, hooks);
     }
 
@@ -283,7 +292,7 @@ internal sealed class EffectCheckpoints
             saved.Pixels.AsSpan().CopyTo(image.Pixels);
             if (_hooks.EffectDone is { } done)
                 for (int k = 0; k <= i; k++)
-                    if (_effects[k] is { Enabled: true } and not AfterimageEffect) done(image);
+                    if (_effects[k].Enabled && !LayerEffects.IsDeferred(_effects[k])) done(image);
             return i + 1;
         }
         return 0;

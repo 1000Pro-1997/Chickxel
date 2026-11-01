@@ -7,7 +7,7 @@ using Chickxel.Core.Assets;
 namespace Chickxel.App;
 
 /// <summary>
-/// 사용자 정의 효과(레시피) 저장 창: 이름과 미리보기 병아리(<see cref="PreviewChicks"/>, 번호 = 목록 차례 + 1).
+/// 효과 프리셋(레시피) 저장 창: 이름과 미리보기 병아리(<see cref="PreviewChicks"/>, 번호 = 목록 차례 + 1).
 /// 고른 병아리는 레시피에 남아 온라인에 올릴 때 패키지 미리보기(<see cref="AssetPreview.Package"/>)가 된다.
 /// </summary>
 public sealed class RecipeSaveDialog : DialogBase

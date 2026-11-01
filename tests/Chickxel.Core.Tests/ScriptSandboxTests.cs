@@ -171,11 +171,11 @@ public class ScriptSandboxTests
     public void Padding_function_gets_settings_and_size_and_is_validated()
     {
         var program = Program("""
-            effect({ name: 'x', render() {}, settings: [{ key: "amp", type: "int", min: 0, max: 2000, default: 2 }],
+            effect({ name: 'x', render() {}, settings: [{ key: "amp", type: "int", min: 0, max: 20000, default: 2 }],
               padding: (s, w, h) => [0, s.amp, w, h] });
             """);
         Assert.Equal(new EffectPadding(0, 5, 7, 9), program.Padding(new Dictionary<string, object> { ["amp"] = 5 }, 7, 9));
-        var error = Assert.Throws<ScriptEffectException>(() => program.Padding(new Dictionary<string, object> { ["amp"] = 1500 }, 1, 1));
+        var error = Assert.Throws<ScriptEffectException>(() => program.Padding(new Dictionary<string, object> { ["amp"] = ScriptEffectProgram.MaxPadding + 1 }, 1, 1));
         Assert.Equal((ScriptErrorKind.Runtime, 2), (error.Kind, error.Line));
     }
 
@@ -236,9 +236,18 @@ public class ScriptSandboxTests
     {
         var limits = Small with { MaxStatements = int.MaxValue, Timeout = TimeSpan.FromSeconds(30) };
         var program = Program(WithRender("for (;;) {}"), limits);
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        // 스레드 풀 타이머(CancellationTokenSource(TimeSpan))가 아닌 따로 된 스레드로 취소한다 — 다른 시험이 풀을 바쁜 작업으로 채우면
+        // 타이머 콜백이 수십 초 늦어 시간 한도가 먼저 걸릴 수 있다(겹쳐 돌린 측정에서 18~21초 늦음)
+        using var cts = new CancellationTokenSource();
+        var canceller = new Thread(() =>
+        {
+            Thread.Sleep(100);
+            cts.Cancel();
+        }) { IsBackground = true };
+        canceller.Start();
         var image = Filled(2, 2, Color32.White);
         Assert.ThrowsAny<OperationCanceledException>(() => program.Render(image, image.Bounds, ScriptFrameContext.Still, null, cts.Token));
+        canceller.Join();
         AssertAlive();
     }
 
@@ -443,9 +452,15 @@ public class ScriptSandboxTests
         => Assert.Equal(ScriptErrorKind.Runtime, RenderFails(Program(WithRender(expression + ";"))).Kind);
 
     [Fact]
-    public void Image_over_the_array_limit_is_refused_before_running()
+    public void Image_over_the_array_limit_is_refused_on_Jint_but_drawn_on_the_fast_path()
     {
-        var program = Program(WithRender(""), Small with { MaxArrayLength = 1024 });
+        // Jint는 img.data가 JS 배열이라 배열 한도 밖 그림을 돌리지 않는다(ctx.slice를 읽어 Jint로만 도는 원문)
+        var program = Program(WithRender("const b = ctx.slice;"), Small with { MaxArrayLength = 1024 });
         Assert.Equal(ScriptErrorKind.Memory, RenderFails(program, new PixelImage(20, 13)).Kind);
+        // 빠른 경로는 그림 크기에 한도가 없다(기본 효과와 같음)
+        var fast = Program(WithRender("img.data[3] = 7;"), Small with { MaxArrayLength = 1024 });
+        var image = new PixelImage(20, 13);
+        fast.Render(image, new System.Drawing.Rectangle(0, 0, 20, 13), ScriptFrameContext.Still);
+        Assert.Equal(7, image[0, 0].A);
     }
 }

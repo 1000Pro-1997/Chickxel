@@ -49,22 +49,27 @@ public sealed partial class PixelTools
     /// <summary>그림 생성이 끝나 문서에 넣음. UI 스레드.</summary>
     public event Action<AiDrawOutcome>? AiDrawCompleted;
 
-    /// <summary>오래 걸리는 도구(MCP 서버가 SSE로 답하며 기다림).</summary>
-    public static bool IsLongRunning(string name) => name is GenerateTool or AskTool;
+    /// <summary>오래 걸리는 도구(MCP 서버가 SSE로 답하며 기다림). 효과 만들기 검증은 느린 원문이면 병아리·칸마다 몇 초씩 걸릴 수 있다.</summary>
+    public static bool IsLongRunning(string name) => name is GenerateTool or AskTool or CheckMakerTool;
 
     /// <summary>도는 그림 생성을 멈춘다(채팅의 멈춤).</summary>
     public void CancelAiDraw() => _aiDrawCts?.Cancel();
 
     /// <summary>
     /// 도구 하나를 실행한다(UI 스레드). 그림 생성은 기다리며 <paramref name="progress"/>로 진행을 알리고 <paramref name="ct"/>(클라이언트가 끊음)로 멈춘다.
-    /// 다른 도구는 <see cref="Call"/>과 같다. 예외는 밖으로 내보내지 않는다.
+    /// 효과 만들기 검증은 작업 스레드에서 도는 검증을 기다린다. 다른 도구는 <see cref="Call"/>과 같다. 예외는 밖으로 내보내지 않는다.
     /// </summary>
     public async Task<JsonObject> CallAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct)
     {
-        if (name is not (GenerateTool or AskTool)) return Call(name, arguments);
+        if (name is not (GenerateTool or AskTool or CheckMakerTool)) return Call(name, arguments);
         try
         {
-            return name == AskTool ? await AskUserAsync(arguments, ct) : await GeneratePixelArtAsync(arguments, progress, ct);
+            return name switch
+            {
+                AskTool => await AskUserAsync(arguments, ct),
+                CheckMakerTool => await CheckEffectMakerAsync(),
+                _ => await GeneratePixelArtAsync(arguments, progress, ct),
+            };
         }
         catch (ToolError e)
         {

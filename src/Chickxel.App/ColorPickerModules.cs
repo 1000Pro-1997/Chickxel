@@ -50,6 +50,13 @@ internal sealed class ColorPickerEditor : StackPanel
         get => _editor.Color;
         set => _editor.Color = value;
     }
+
+    /// <summary>알파를 고르지 않는 색(<see cref="ColorEditor.Opaque"/>).</summary>
+    public bool Opaque
+    {
+        get => _editor.Opaque;
+        set => _editor.Opaque = value;
+    }
 }
 
 /// <summary>색 편집기 오른쪽에서 앱 팔레트와 현재 프레임 스포이드를 제공하는 재사용 모듈.</summary>

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "summary": "Makes a glowing edge by blending color inward from the edges.",
+  "tags": [
+    "effect",
+    "official",
+    "script"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

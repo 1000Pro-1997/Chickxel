@@ -109,7 +109,7 @@ public static class ScriptEffectRuntime
                 if (record.Failures >= MaxConsecutiveFailures) return true;
         // 움직이지 않는 스크립트는 진행을 쓰지 않는다(프레임 번호와 다른 프레임 원본은 그대로 준다)
         var context = ScriptFrameContext.From(effect);
-        if (!program.Animated) context = context with { Time = 0, Progress = 0 };
+        if (!program.Animated) context = context with { Time = 0, Phase = 0, Progress = 0 };
         long started = Stopwatch.GetTimestamp();
         ScriptError? failure = ScriptLibrary.PaddingErrorOf(effect.ScriptHash, effect.Settings);
         if (failure is null)
@@ -154,7 +154,7 @@ public static class ScriptEffectRuntime
         return records.GetOrAdd(key, _ => new Record());
     }
 
-    // 목록에 든 값과 같아지게 그릴 때만 채운 값(프레임 위치·피벗·다른 프레임 원본)과 켜짐을 지운다
+    // 목록에 든 값과 같아지게 그릴 때만 채운 값(프레임 위치·피벗·다른 프레임 원본·다른 레이어)과 켜짐을 지운다
     private static ScriptEffect Key(ScriptEffect effect) => effect with
     {
         Enabled = true,
@@ -163,5 +163,6 @@ public static class ScriptEffectRuntime
         PivotPoint = null,
         FrameSource = null,
         RenderedFrameSource = null,
+        Layers = null,
     };
 }

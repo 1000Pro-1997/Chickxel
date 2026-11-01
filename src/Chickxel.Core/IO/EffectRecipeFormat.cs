@@ -43,12 +43,12 @@ public sealed record EffectRecipe : IAssetData
     private static readonly IReadOnlyDictionary<string, string> EmptyScripts = new SortedDictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
-    /// 프로젝트 효과 목록의 사본(프레임 범위와 묶음 정보를 지우고 첫 효과의 클리핑을 끔). 스크립트 효과의 원문은 <paramref name="project"/>의
-    /// 스크립트 표에서(없으면 앱이 아는 원문 <see cref="ScriptLibrary"/>에서) 가져온다.
+    /// 프로젝트 효과 목록의 사본(프레임 범위와 묶음 정보를 지우고 첫 효과의 클리핑을 끔, 예전 기본 효과는 공식 스크립트로 — <see cref="LegacyEffects"/>).
+    /// 스크립트 효과의 원문은 <paramref name="project"/>의 스크립트 표에서(없으면 앱이 아는 원문 <see cref="ScriptLibrary"/>에서) 가져온다.
     /// </summary>
     public static EffectRecipe Capture(string id, string name, IEnumerable<LayerEffect> effects, SpriteProject? project = null)
     {
-        var list = effects.Select((effect, index) => effect with
+        var list = effects.Select((effect, index) => LegacyEffects.Convert(effect) with
         {
             Frames = null,
             ClipToPrevious = index > 0 && effect.ClipToPrevious,
@@ -135,8 +135,10 @@ public static class EffectRecipeFormat
         // 효과가 쓰는 원문만(엄격 읽기가 쓰지 않는 원문을 거부하므로)
         var used = recipe.Effects.OfType<ScriptEffect>().Select(e => e.ScriptHash).ToHashSet(StringComparer.Ordinal);
         var scripts = new JsonObject();
-        foreach (var (hash, source) in recipe.Scripts.Where(pair => used.Contains(pair.Key)).OrderBy(pair => pair.Key, StringComparer.Ordinal))
-            scripts[hash] = source;
+        foreach (var hash in used.Order(StringComparer.Ordinal))
+            // 레시피 표에 없는 공식 효과 원문(예전 기본 효과를 바꾼 것)은 앱에 든 원문으로 채운다
+            if ((recipe.Scripts.GetValueOrDefault(hash) ?? (OfficialEffects.IdOfHash(hash) is { } official ? OfficialEffects.Source(official) : null)) is { } source)
+                scripts[hash] = source;
         bool chick = recipe.PreviewChick != PreviewChicks.Default;
         var json = new JsonObject
         {
@@ -209,6 +211,8 @@ public static class EffectRecipeFormat
         var scripts = o[ScriptsKey] is { } scriptsNode ? ReadScripts(scriptsNode, schema, context) : new Dictionary<string, RecipeScript>(StringComparer.Ordinal);
 
         var effects = new List<LayerEffect>();
+        // 효과 JSON이 가리키는 원문 해시(효과를 받지 않았어도 — 그 원문을 "쓰지 않는 원문"으로 한 번 더 알리지 않게)
+        var referenced = new HashSet<string>(StringComparer.Ordinal);
         if (o["effects"] is JsonArray list && list.Count > 0)
         {
             if (context.Strict && list.Count > context.Limits.MaxEffectsPerRecipe) context.Add(AssetIssueCode.TooManyItems, "effects");
@@ -220,6 +224,7 @@ public static class EffectRecipeFormat
                         context.Bad($"effects[{i}]");
                         continue;
                     }
+                    if (AssetJson.String(effectJson[ScriptDefinition.ScriptKey]) is { } referencedHash) referenced.Add(referencedHash);
                     if (context.Strict && !CheckEffect(effectJson, $"effects[{i}]", scripts, context)) continue;
                     var effect = EffectCodec.Read(effectJson);
                     if (context.Strict && effect is MissingEffect)
@@ -232,13 +237,21 @@ public static class EffectRecipeFormat
         }
         else context.Bad("effects");
 
+        // 예전 기본 효과는 공식 스크립트로 바뀌어 읽힌다(EffectCodec) — 그 원문을 레시피 표에 넣는다(넣을 때 프로젝트 표로 복사됨)
+        foreach (var script in effects.OfType<ScriptEffect>())
+            if (!scripts.ContainsKey(script.ScriptHash) && OfficialEffects.IdOfHash(script.ScriptHash) is { } officialId)
+                scripts[script.ScriptHash] = new RecipeScript(OfficialEffects.Source(officialId), OfficialEffects.Program(officialId));
+
         // 엄격 모드: 효과가 쓰지 않는 원문은 받지 않는다(설치 전 검사를 거치지 않는 원문을 실어 나르지 않게).
         var used = effects.OfType<ScriptEffect>().Select(e => e.ScriptHash).ToHashSet(StringComparer.Ordinal);
         if (context.Strict)
-            foreach (var hash in scripts.Keys.Where(hash => !used.Contains(hash)))
+            foreach (var hash in scripts.Keys.Where(hash => !used.Contains(hash) && !referenced.Contains(hash)))
                 context.Bad($"{ScriptsKey}.{ShortHash(hash)}");
 
-        var parameters = o["parameters"] is { } parametersNode ? ReadParameters(parametersNode, schema, effects, context, before) : [];
+        // 매개변수 연결·기본값: 스크립트 효과는 레시피에 실은 원문(엄격 모드면 해석함), 없으면 실행을 허락한 원문의 schema로 본다
+        ScriptEffectProgram? Program(string hash)
+            => scripts.TryGetValue(hash, out var script) && script.Program is { } program ? program : ScriptLibrary.Runnable(hash);
+        var parameters = o["parameters"] is { } parametersNode ? ReadParameters(parametersNode, schema, effects, Program, context, before) : [];
 
         if (context.Issues.Count > before) return null;
         var sources = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -251,9 +264,9 @@ public static class EffectRecipeFormat
             }
         return new EffectRecipe
         {
-            Id = id, Name = name.Trim(), Description = description, Effects = effects,
-            FrameRange = frameRange, PreviewFrames = previewFrames, PreviewChick = previewChick, Scripts = sources,
-        }.WithParameters(parameters);
+            Id = id, Name = name.Trim(), Description = description, FrameRange = frameRange, PreviewFrames = previewFrames, PreviewChick = previewChick,
+            Scripts = sources, Parameters = parameters, Effects = RecipeParameters.ApplyDefaults(effects, parameters, Program),
+        };
     }
 
     /// <summary>레시피 안 원문 하나: 정리한 원문과(엄격 모드면) 검사용으로 해석한 결과.</summary>
@@ -302,7 +315,8 @@ public static class EffectRecipeFormat
     /// 매개변수 목록(형식 2부터). 엄격 모드는 모양·한도·연결·범위 문제를 모두 남기고, 느슨한 모드(개인 에셋)는 틀린 매개변수만 조용히 뺀다.
     /// 연결 검사는 효과를 문제없이 읽었을 때만 한다(효과 번호가 맞아야 하므로).
     /// </summary>
-    private static List<RecipeParameter> ReadParameters(JsonNode node, int schema, IReadOnlyList<LayerEffect> effects, AssetReadContext context, int before)
+    private static List<RecipeParameter> ReadParameters(JsonNode node, int schema, IReadOnlyList<LayerEffect> effects,
+        Func<string, ScriptEffectProgram?> programs, AssetReadContext context, int before)
     {
         if (schema < 2)
         {
@@ -331,7 +345,7 @@ public static class EffectRecipeFormat
         var bad = RecipeParameters.Check(effects, parameters, (code, detail) =>
         {
             if (context.Strict) context.Add(code, detail);
-        });
+        }, programs);
         return context.Strict ? parameters : parameters.Where((_, i) => !bad.Contains(i)).ToList();
     }
 
@@ -402,7 +416,8 @@ public static class EffectRecipeFormat
             case JsonObject gradients:
                 foreach (var (slot, value) in gradients)
                 {
-                    if (!ValidSlot(definition, slot)) Bad($"colorGradients.{slot}");
+                    if (!(isScript ? program is null || ScriptColorSlots.TryParse(program.Settings, slot, out _, out _, out _) : ValidSlot(definition, slot)))
+                        Bad($"colorGradients.{slot}");
                     else if (!ValidGradient(value, context.Limits)) Bad($"colorGradients.{slot}");
                 }
                 break;
@@ -411,7 +426,7 @@ public static class EffectRecipeFormat
         return context.Issues.Count == before;
     }
 
-    /// <summary>설정 값이 schema의 모양과 범위에 맞는지(정수는 범위 안, 고르기는 정의된 값, 목록은 모든 칸이 맞고 한도 안).</summary>
+    /// <summary>설정 값이 schema의 모양과 범위에 맞는지(정수는 범위 안, 고르기는 정의된 값, 목록은 모든 칸이 맞고 한도 안, 글은 최대 글자 수 안).</summary>
     private static bool ValidSetting(EffectParameter parameter, JsonNode? value, AssetPackageLimits limits)
     {
         switch (parameter.Kind)
@@ -430,12 +445,17 @@ public static class EffectRecipeFormat
             case EffectParameterKind.ColorPairList:
                 return value is JsonArray pairs && pairs.Count <= limits.MaxListItems
                        && pairs.All(pair => pair is JsonArray { Count: 2 } p && ValidColor(p[0]) && ValidColor(p[1]));
+            case EffectParameterKind.Text:
+                return AssetJson.String(value) is { } text && (parameter.MaxLength is not { } maxLength || text.Length <= maxLength);
             default:
                 return false;
         }
     }
 
-    /// <summary>스크립트 설정 값이 선언한 schema에 맞는지(정수는 소수 없는 수, 숫자는 min~max 안, 색은 16진수, 고르기는 선언한 값).</summary>
+    /// <summary>
+    /// 스크립트 설정 값이 선언한 schema에 맞는지(정수는 소수 없는 수, 숫자는 min~max 안, 색은 16진수, 고르기는 선언한 값,
+    /// 색 목록·색 쌍 목록은 모든 칸이 맞고 항목 수가 선언의 min~max 안).
+    /// </summary>
     private static bool ValidScriptSetting(ScriptSetting setting, JsonNode? value)
     {
         switch (setting.Type)
@@ -448,10 +468,19 @@ public static class EffectRecipeFormat
                 return AssetJson.TryBool(value, out _);
             case ScriptSettingType.Color:
                 return ValidColor(value);
-            default:
+            case ScriptSettingType.ColorList:
+                return value is JsonArray colors && ValidCount(setting, colors.Count) && colors.All(ValidColor);
+            case ScriptSettingType.ColorPairs:
+                return value is JsonArray pairs && ValidCount(setting, pairs.Count)
+                       && pairs.All(pair => pair is JsonArray { Count: 2 } p && ValidColor(p[0]) && ValidColor(p[1]));
+            case ScriptSettingType.Choice:
                 return AssetJson.String(value) is { } choice && setting.Choices.Any(c => c.Value == choice);
+            default:
+                return false;
         }
     }
+
+    private static bool ValidCount(ScriptSetting setting, int count) => count >= (setting.Min ?? 0) && count <= (setting.Max ?? ScriptSetting.MaxListCount);
 
     private static bool ValidColor(JsonNode? node) => AssetJson.String(node) is { } hex && Color32.TryParseHex(hex, out _);
 

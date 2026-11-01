@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Chickxel.Core.Assets;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
@@ -16,8 +17,13 @@ public class AssetStoreTests
     private static string Package(TempDir dir, string version, int thickness)
         => AssetSamples.Save(dir.Path, AssetSamples.Build(AssetSamples.Header(version), AssetSamples.Recipe(thickness: thickness)), $"pack-{version}-{thickness}.chickxel-asset");
 
+    /// <summary>활성 레시피의 외곽선 두께(설치하면 예전 외곽선이 공식 외곽선 스크립트로 바뀐다).</summary>
     private static int ActiveThickness(AssetStore store)
-        => Assert.IsType<OutlineEffect>(Assert.Single(store.Catalog.Recipes, e => e.PackageId == Id).Recipe!.Effects[0]).Thickness;
+    {
+        var outline = Assert.IsType<ScriptEffect>(Assert.Single(store.Catalog.Recipes, e => e.PackageId == Id).Recipe!.Effects[0]);
+        Assert.Equal(OfficialEffects.HashOf("outline"), outline.ScriptHash);
+        return Convert.ToInt32(outline.Settings["thickness"]);
+    }
 
     private static string[] VersionFolders(AssetStore store)
     {

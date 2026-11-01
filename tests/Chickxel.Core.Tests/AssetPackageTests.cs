@@ -176,7 +176,8 @@ public class AssetPackageTests
         var readRecipe = Assert.IsType<EffectRecipe>(package.Items[0].Data);
         AssetSamples.AssertSameRecipe(recipe, readRecipe);
         Assert.Equal([false, true, true], readRecipe.Effects.Select(e => e.ClipToPrevious).ToArray());
-        Assert.Equal(AssetSamples.OverlayGradient.Stops, readRecipe.Effects[2].ColorGradients["Color"].Stops);
+        // 레시피의 색 덮기는 공식 스크립트 — 그라데이션 슬롯은 스크립트 이름(Color → color)
+        Assert.Equal(AssetSamples.OverlayGradient.Stops, readRecipe.Effects[2].ColorGradients[LegacyEffects.ScriptSlot("Color")].Stops);
         AssetSamples.AssertSameGradient(gradient, Assert.IsType<GradientAsset>(package.Items[1].Data).Gradient);
         // 미리보기와 효과 없는 원본은 패키지에 들어가 디코드된다
         string preview = package.Items[0].Entry.Preview!;
@@ -489,8 +490,10 @@ public class AssetPackageTests
         var stops = Rejects(bytes, new AssetValidationOptions(new AssetPackageLimits { MaxGradientStops = 2 }));
         AssertIssue(stops, AssetIssueCode.TooManyItems, gradientPath, "stops");
         AssertIssue(stops, AssetIssueCode.TooManyItems, gradientPath, "alphaStops");
-        // 레시피 효과의 색 슬롯 그라데이션도 정지점 한도를 따른다
-        AssertIssue(stops, AssetIssueCode.InvalidEffectSetting, recipePath, "effects[2].colorGradients.Color");
+        // 레시피 효과의 색 슬롯 그라데이션도 정지점 한도를 따른다(견본은 예전 색 덧칠을 바꾼 공식 스크립트라 슬롯 이름이 스크립트의 것)
+        AssertIssue(stops, AssetIssueCode.InvalidEffectSetting, recipePath, "effects[2].colorGradients.color");
+        // 받지 않은 효과가 가리키는 원문을 "쓰지 않는 원문"으로 또 알리지 않는다
+        Assert.DoesNotContain(stops, issue => issue.Detail?.StartsWith(EffectRecipeFormat.ScriptsKey + ".", StringComparison.Ordinal) == true);
         AssetPackageValidator.Read(new MemoryStream(bytes), new AssetValidationOptions(new AssetPackageLimits { MaxEffectsPerRecipe = 3, MaxGradientStops = 3 }));
     }
 
@@ -505,9 +508,14 @@ public class AssetPackageTests
               "colorGradients": { "Color": {{GoodGradient}} } }
             """;
         var package = AssetPackageValidator.Read(new MemoryStream(WithAsset(AssetKinds.EffectRecipe, "assets/effects/x.json", RecipeJson(effect))));
-        var outline = Assert.IsType<OutlineEffect>(Assert.Single(Assert.IsType<EffectRecipe>(Assert.Single(package.Items).Data).Effects));
-        Assert.Equal((3, OutlineColorMode.Shade, -100), (outline.Thickness, outline.ColorMode, outline.ShadeAmount));
-        Assert.Equal(2, outline.ColorGradients["Color"].Stops.Count);
+        // 예전 외곽선 JSON은 같은 설정의 공식 외곽선 스크립트로 읽히고(원문은 레시피 표에), 그라데이션 슬롯은 스크립트 이름
+        var recipe = Assert.IsType<EffectRecipe>(Assert.Single(package.Items).Data);
+        var outline = Assert.IsType<ScriptEffect>(Assert.Single(recipe.Effects));
+        Assert.Equal(Chickxel.Core.Scripting.OfficialEffects.HashOf("outline"), outline.ScriptHash);
+        Assert.Equal(Chickxel.Core.Scripting.OfficialEffects.Source("outline"), recipe.Scripts[outline.ScriptHash]);
+        Assert.Equal((3, "shade", -100),
+            (Convert.ToInt32(outline.Settings["thickness"]), ((string)outline.Settings["colorMode"]).ToLowerInvariant(), Convert.ToInt32(outline.Settings["shadeAmount"])));
+        Assert.Equal(2, outline.ColorGradients[LegacyEffects.ScriptSlot("Color")].Stops.Count);
     }
 
     [Theory]

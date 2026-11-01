@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Guide_Title" xml:space="preserve"><value>칙셀 스크립트 효과 만들기 규칙</value></data>
+  <data name="Guide_Intro" xml:space="preserve"><value>칙셀은 픽셀 아트 편집기입니다. 스크립트 효과는 레이어 그림을 프레임마다 바꾸는 작은 JavaScript 원문 하나입니다. 아래 규칙을 지켜 효과를 만들어 주세요. 규칙을 어기면 효과를 읽지 못하거나 그 프레임에서 효과를 건너뜁니다. 쓸 수 있는 이름은 뒤의 API 목록에 있는 것뿐입니다.</value></data>
+  <data name="Guide_RulesHeading" xml:space="preserve"><value>규칙</value></data>
+  <data name="Guide_RuleOneFile" xml:space="preserve"><value>완성된 JavaScript 원문 하나를 씁니다. 맨 위에서 `effect({ ... })`를 정확히 한 번 부르고, 그 밖에는 `const` 값과 `function` 선언만 둡니다(import·export·모듈 없음).</value></data>
+  <data name="Guide_RuleDeclaration" xml:space="preserve"><value>`name`(효과 이름, 1~{nameMax}자)은 꼭 적습니다. 효과를 한두 문장으로 설명하는 `description`({descriptionMax}자까지)과 효과가 잘 보이는 견본 `previewChick`(다음 중 하나: {chicks})도 적습니다. 움직이는 효과는 미리보기 칸 수 `previewFrames`({framesMin}~{framesMax}, 기본 {framesDefault})로 한 바퀴가 잘 보이게 할 수 있습니다.</value></data>
+  <data name="Guide_RuleRender" xml:space="preserve"><value>`render(img, ctx, s)`는 `img.data`(RGBA 0~255, 줄 차례대로 — 픽셀 (x, y)의 빨강은 `(y * img.width + x) * 4`번째)를 그 자리에서 고치고 아무것도 돌려주지 않습니다. 투명한 픽셀(알파 0)은 보통 건너뜁니다.</value></data>
+  <data name="Guide_RuleDeterministic" xml:space="preserve"><value>같은 그림·프레임·설정이면 언제나 같은 결과여야 합니다. `Date`, `Math.random`(대신 `ctx.hash(x, y, seed, salt?)`·`ctx.random(seed)`), `eval`·`Function`, 파일·네트워크·타이머·console은 쓸 수 없습니다.</value></data>
+  <data name="Guide_RuleLimits" xml:space="preserve"><value>한 프레임 한도: {seconds}초, 문장 {statements}개, 할당 {megabytes}MB에 그림 픽셀마다 문장 {pixelStatements}개·{pixelMicroseconds}µs·{pixelKilobytes}KB가 더해집니다(큰 그림일수록 그만큼 늘어남). 넘으면 그 프레임에서 효과를 건너뜁니다. 일의 양이 픽셀 수에 비례하게 짭니다(픽셀마다 큰 반복을 두지 않기).</value></data>
+  <data name="Guide_RuleSettings" xml:space="preserve"><value>사용자가 바꿀 값은 `settings: [{ key, label, type, ... }]`에 둡니다. type은 `int`·`number`(min, max, step, default), `bool`(default), `color`(default "#RRGGBB"), `choice`(choices: [{ value, label }], default는 value 하나), `colorList`(min·max 항목 수, default ["#RRGGBB", …]), `colorPairs`(default [{ from: "#RRGGBB", to: "#RRGGBB" }, …])입니다. render에서는 `s.키`로 읽습니다. 효과 창에서 색을 그라데이션으로 고를 수 있으므로 색은 픽셀마다 `ctx.color(키, x, y)`(목록 항목은 `ctx.colorAt`·`ctx.pairColor`)로 읽습니다.</value></data>
+  <data name="Guide_RuleAnimated" xml:space="preserve"><value>시간에 따라 모습이 바뀌면 `animated: true`를 적고 `ctx.progress`(효과 범위에서 0~1)나 `ctx.t`를 씁니다. 움직이지 않는 효과는 모든 프레임에서 같아야 합니다. 레이어 밖으로 번지는 효과(빛·그림자·흔들기)는 `padding`으로 자리를 늘립니다.</value></data>
+  <data name="Guide_RuleFast" xml:space="preserve"><value>빠르게 돌게 하려면 render를 숫자와 참거짓으로만 짭니다: `let`·`const` 숫자, 반복, `if`, `Math`, `lerp`, 숫자를 받는 도우미 함수, `img.data` 읽고 쓰기. 문자열·객체·배열·클로저·재귀를 쓰거나 `let` 숫자와 `img.data` 말고 다른 것에 값을 넣으면 느린 Jint로 돕니다(결과는 같고 느림). 효과 만들기 창이 어느 길로 도는지와 그 까닭을 보여 줍니다.</value></data>
+  <data name="Guide_RuleLanguage" xml:space="preserve"><value>이름·설명·설정 이름(label)과 고르기 항목 이름은 사용자의 언어로 씁니다. 사용자의 언어가 영어가 아니면 언제나 `translations.en`에 영어 `name`·`description`과 모든 설정·고르기 항목의 `labels`(`labels: { 키: "…", "키.항목값": "…" }`)를 함께 적습니다. 이름·설명·설정·고르기 항목을 바꿀 때마다 `translations.en`과 이미 있는 다른 번역도 모두 맞게 고칩니다.</value></data>
+  <data name="Guide_AnswerHeading" xml:space="preserve"><value>답하는 방식</value></data>
+  <data name="Guide_Answer" xml:space="preserve"><value>완성된 JavaScript 파일 하나를 코드 블록 하나(백틱 세 개와 js로 여는 블록)에 담아 답합니다(바뀐 부분이나 조각이 아니라 처음부터 끝까지). 설명은 그 뒤에 몇 문장만 씁니다. 사용자는 그 블록을 통째로 효과 만들기 편집기에 붙여 넣습니다.</value></data>
+  <data name="Guide_SourceHeading" xml:space="preserve"><value>지금 원문</value></data>
+  <data name="Guide_SourceNote" xml:space="preserve"><value>사용자가 효과 만들기에서 고치고 있는 원문입니다. 고쳐 달라는 부탁이면 이 원문에서 시작합니다.</value></data>
+</root>

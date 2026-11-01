@@ -57,8 +57,12 @@ public sealed class AppSettings
     public bool OnionTint { get; set; } = true;
 
     // 도구
+    /// <summary>연필 쪽 브러시(지우개가 아닌 브러시 도구가 같이 씀).</summary>
     public int BrushSize { get; set; } = 1;
     public BrushShape BrushShape { get; set; } = BrushShape.Square;
+    /// <summary>지우개 브러시(연필 쪽과 따로 기억).</summary>
+    public int EraserBrushSize { get; set; } = 1;
+    public BrushShape EraserBrushShape { get; set; } = BrushShape.Square;
     /// <summary>채우기 허용 오차(0~100%).</summary>
     public int FillTolerance { get; set; }
     public bool FillDiagonal { get; set; }
@@ -69,6 +73,13 @@ public sealed class AppSettings
     /// <summary>밝게/어둡게 세기(%).</summary>
     public int DodgeStrength { get; set; } = EditorContext.DefaultDodgeStrength;
     public DitherPattern DitherPattern { get; set; } = DitherPattern.Checker;
+    /// <summary>글씨 도구가 새 글씨 레이어에 쓰는 글꼴(마지막으로 고른 것).</summary>
+    public TextFont TextFont { get; set; } = TextFont.Galmuri11;
+    /// <summary>지우개 강도(1~100%)와 채널(R·G·B 모두 = 투명하게, 일부 = 그 색만 빼기).</summary>
+    public int EraserStrength { get; set; } = 100;
+    public bool EraserRed { get; set; } = true;
+    public bool EraserGreen { get; set; } = true;
+    public bool EraserBlue { get; set; } = true;
     public bool PixelPerfect { get; set; }
     public bool FillContiguous { get; set; } = true;
     public bool ShapeFilled { get; set; }
@@ -89,6 +100,18 @@ public sealed class AppSettings
     public GradientInterpolation GradientInterpolation { get; set; } = GradientInterpolation.Smooth;
     public GradientDither GradientDither { get; set; } = GradientDither.None;
     public GradientColorSpace? GradientColorSpace { get; set; } = Chickxel.Core.Edit.GradientColorSpace.OkLch;
+    /// <summary>그라데이션 연필 정지점(형식은 <see cref="GradientStops"/>와 같음). null = 기본(검정 → 흰색).</summary>
+    public List<string>? PencilGradientStops { get; set; }
+    /// <summary>그라데이션 연필 불투명도 정지점(형식은 <see cref="GradientAlphaStops"/>와 같음). null = 기본(100% → 100%).</summary>
+    public List<string>? PencilGradientAlphaStops { get; set; }
+    public GradientInterpolation PencilGradientInterpolation { get; set; } = GradientInterpolation.Smooth;
+    public GradientDither PencilGradientDither { get; set; } = GradientDither.None;
+    public GradientColorSpace PencilGradientColorSpace { get; set; } = Chickxel.Core.Edit.GradientColorSpace.OkLch;
+    /// <summary>그라데이션 연필 방식(획 전체·반복)과 반복 간격(px).</summary>
+    public GradientStrokeMode PencilGradientMode { get; set; } = GradientStrokeMode.WholeStroke;
+    public int PencilGradientInterval { get; set; } = GradientStroke.DefaultInterval;
+    /// <summary>대칭 그리기 축을 피벗에 둔다(좌우·상하 대칭 켜기 자체는 저장하지 않음).</summary>
+    public bool MirrorAtPivot { get; set; }
     public string PrimaryColor { get; set; } = "#000000";
     /// <summary>이미지를 열 때마다 캔버스를 화면에 맞춘다(위 막대 "맞추기" 토글).</summary>
     public bool AutoFit { get; set; } = true;

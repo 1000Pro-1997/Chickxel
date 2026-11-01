@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "summary": "Rotates the image (RotSprite — no new colors or translucency).",
+  "tags": [
+    "effect",
+    "official",
+    "script",
+    "animated"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

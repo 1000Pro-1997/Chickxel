@@ -18,6 +18,15 @@
   <data name="Tool_Pencil_Hint" xml:space="preserve">
     <value>왼쪽: 기본색 · 오른쪽: 보조색(또는 지우개) · Shift+클릭: 마지막 점에서 직선 · Alt+클릭: 색 집기</value>
   </data>
+  <data name="Tool_GradientPencil_Name" xml:space="preserve">
+    <value>그라데이션 연필</value>
+  </data>
+  <data name="Tool_GradientPencil_Hint" xml:space="preserve">
+    <value>연필처럼 그리고 색은 그라데이션에서(도구 설정: 스트로크 전체·반복) · Shift+클릭: 마지막 점에서 직선 · Alt+클릭: 색 집기</value>
+  </data>
+  <data name="Menu_Tools_MirrorAtPivot" xml:space="preserve">
+    <value>대칭: 피벗 기준</value>
+  </data>
   <data name="Tool_Eraser_Name" xml:space="preserve">
     <value>지우개</value>
   </data>
@@ -70,7 +79,7 @@
     <value>이동</value>
   </data>
   <data name="Tool_Move_Hint" xml:space="preserve">
-    <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션) · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
+    <value>선택이 있으면 선택 이동, 없으면 셀 전체 밀기(순환 옵션) · 글씨 레이어(빈 셀 + 글씨 효과)는 글씨 위치를 옮김 · 다른 도구에서도 Ctrl+드래그(누르는 동안 이동 도구)</value>
   </data>
   <data name="Tool_Dodge_Name" xml:space="preserve">
     <value>밝게/어둡게</value>
@@ -1099,4 +1108,6 @@
   <data name="Tool_Shape_Name" xml:space="preserve"><value>도형</value><comment>도구 이름: 사각형·원·삼각형·별 등을 그리는 도형 도구</comment></data>
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: 비율 고정 · U: 외곽/채움 · 모양은 도구 설정에서</value><comment>도형 도구 상태 줄 안내</comment></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>도형: 선</value><comment>단축키 이름: 도형 도구를 선 모양으로 고름(L)</comment></data>
+  <data name="Tool_Text_Name" xml:space="preserve"><value>글씨</value><comment>도구 이름: 캔버스를 눌러 글씨 레이어(글씨 효과가 붙은 빈 레이어)를 만드는 글씨 도구</comment></data>
+  <data name="Tool_Text_Hint" xml:space="preserve"><value>클릭: 새 글씨 레이어 · 글씨 위 클릭: 고치기 · Enter: 확정, Shift+Enter: 줄 바꿈, Esc: 취소 · 글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
 </root>

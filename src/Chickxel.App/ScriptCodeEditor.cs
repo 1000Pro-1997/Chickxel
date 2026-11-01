@@ -98,6 +98,22 @@ internal sealed class ScriptCodeEditor : UserControl
         _editor.TextArea.Focus();
     }
 
+    /// <summary>
+    /// 원문을 <paramref name="text"/>로 바꾸되 앞뒤가 같은 부분은 두고 달라진 가운데만 고친다(실행취소 한 단계, 커서·스크롤 유지 —
+    /// 정보 칸에서 선언의 이름·설명·병아리를 고칠 때). 새 원문을 열 때는 <see cref="Text"/>.
+    /// </summary>
+    public void Replace(string text)
+    {
+        var doc = _editor.Document;
+        string old = doc.Text;
+        if (old == text) return;
+        int start = 0, max = Math.Min(old.Length, text.Length);
+        while (start < max && old[start] == text[start]) start++;
+        int end = 0;
+        while (end < max - start && old[old.Length - 1 - end] == text[text.Length - 1 - end]) end++;
+        doc.Replace(start, old.Length - start - end, text.Substring(start, text.Length - start - end));
+    }
+
     // ───────────── 문법 색칠 ─────────────
 
     /// <summary>내장 JavaScript 정의의 색을 어두운 배경에 맞게 바꾼 것(한 번만).</summary>

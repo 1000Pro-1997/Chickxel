@@ -4,7 +4,7 @@ using Chickxel.Core.IO;
 namespace Chickxel.App;
 
 /// <summary>
-/// 둘러보기 상세의 원격 미리보기 PNG: 화면에 붙을 때만 <see cref="RemoteAssetClient.GetPreviewAsync"/>(디스크 cache 먼저)로 받아 decode하고,
+/// 상점 상세의 원격 미리보기 PNG: 화면에 붙을 때만 <see cref="RemoteAssetClient.GetPreviewAsync"/>(디스크 cache 먼저)로 받아 decode하고,
 /// 떨어지면 요청을 취소하고 비트맵을 버린다. 미리보기가 없거나 받지 못하면 빈 틀만 그린다.
 /// </summary>
 public sealed class RemotePreviewView : Control

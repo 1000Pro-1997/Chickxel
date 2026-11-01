@@ -251,6 +251,47 @@ public sealed partial class SpriteProject
     public bool IsCelEmpty(int layerIndex, int frameIndex) => !HasContent(GetCel(layerIndex, frameIndex));
 
     /// <summary>
+    /// 일반 레이어에 원본 없이 그림을 만드는 효과(<see cref="Chickxel.Core.Effects.EffectDefinition.GeneratesContent"/> — 글씨)가 프레임 <paramref name="frameIndex"/>에 켜져 있는지
+    /// (켜져 있고 범위 안). 그러면 그 프레임에 셀이 없어도 빈 그림 위에 효과를 그린다(합성·셀 썸네일·효과 원본·아래로 합치기·영구 적용·내보내기). 부위·그룹은 false.
+    /// </summary>
+    public bool HasContentEffect(int layerIndex, int frameIndex) => HasContentEffect(_layers[layerIndex], frameIndex);
+
+    /// <inheritdoc cref="HasContentEffect(int, int)"/>
+    public bool HasContentEffect(Layer layer, int frameIndex) => layer.Kind == LayerKind.Normal && LayerEffects.GeneratesContent(layer.Effects, frameIndex);
+
+    /// <summary>
+    /// 그릴 셀: 보이는 셀(<see cref="GetCel(Layer, Frame)"/>), 없으면 <see cref="HasContentEffect(Layer, int)"/>인 프레임의 빈 그림(함께 쓰는 사본 — 고치지 않는다).
+    /// </summary>
+    private PixelImage? RenderCel(Layer layer, int frameIndex)
+        => GetCel(layer, _frames[frameIndex]) ?? (HasContentEffect(layer, frameIndex) ? BlankCel() : null);
+
+    /// <summary>
+    /// 레이어의 저장된 셀(<see cref="CelsOf(Layer)"/>)에, 일반 레이어면 셀이 없지만 <paramref name="effects"/> 중 원본 없이 그리는 효과가 켜진 프레임의 빈 그림을 더한 목록
+    /// (아래로 합치기·영구 적용이 효과를 그려 넣을 셀).
+    /// </summary>
+    private List<(CelKey Key, PixelImage Cel)> CelsWithContentOf(Layer layer, IReadOnlyList<LayerEffect> effects)
+    {
+        var list = CelsOf(layer);
+        if (layer.Kind != LayerKind.Normal) return list;
+        for (int f = 0; f < _frames.Count; f++)
+        {
+            var key = new CelKey(layer, _frames[f], null);
+            if (!_cels.ContainsKey(key) && LayerEffects.GeneratesContent(effects, f)) list.Add((key, BlankCel()));
+        }
+        return list;
+    }
+
+    private PixelImage? _blankCel;
+
+    /// <summary>캔버스 크기 빈 그림(여러 곳에서 읽기만 하므로 하나를 같이 쓴다 — 렌더 캐시 열쇠도 같아진다). 캔버스 크기가 바뀌면 새로 만든다.</summary>
+    private PixelImage BlankCel()
+    {
+        var blank = _blankCel;
+        if (blank is null || blank.Width != _width || blank.Height != _height) _blankCel = blank = new PixelImage(_width, _height);
+        return blank;
+    }
+
+    /// <summary>
     /// 지금 스킨의 셀을 통째로 바꾼다(null = 비우기 — 첫 스킨이 아니면 다시 첫 스킨 셀을 물려받음, 실행취소됨).
     /// 이미지 크기는 캔버스(부위면 부위) 크기와 같아야 한다. 그룹이면 <see cref="InvalidOperationException"/>.
     /// </summary>
@@ -333,12 +374,13 @@ public sealed partial class SpriteProject
     public PixelImage FlattenGroup(Layer group, int frameIndex, Skin? skin = null) => PlanGroup(group, frameIndex, skin).Render();
 
     /// <summary>
-    /// 레이어 효과가 입혀질 그림(효과 미리보기용, 효과 없이): 일반 레이어·부위는 지금 보이는 셀, 그룹은 보이는 부위들을 부위 불투명도·부위 효과로 합친
-    /// 캔버스 크기 그림(그룹 효과·그룹 불투명도 없이). 빈 셀(그룹이면 그릴 부위 없음)이면 null.
+    /// 레이어 효과가 입혀질 그림(효과 미리보기용, 효과 없이): 일반 레이어·부위는 지금 보이는 셀(셀이 없어도 <see cref="HasContentEffect(Layer, int)"/>면 빈 그림),
+    /// 그룹은 보이는 부위들을 부위 불투명도·부위 효과로 합친 캔버스 크기 그림(그룹 효과·그룹 불투명도 없이). 빈 셀(그룹이면 그릴 부위 없음)이면 null.
+    /// 돌려준 그림은 고치지 않는다.
     /// </summary>
     public PixelImage? EffectSource(Layer layer, int frameIndex)
     {
-        if (!layer.IsGroup) return GetCel(layer, _frames[frameIndex]);
+        if (!layer.IsGroup) return RenderCel(layer, frameIndex);
         var plan = GroupSourcePlan(layer, frameIndex);
         return plan.IsEmpty ? null : plan.Render();
     }
@@ -346,22 +388,25 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 프레임 <paramref name="frameIndex"/>에 입힐 레이어 효과(<see cref="LayerEffects.At"/>): 범위 밖 효과를 빼고, 움직이는 효과는 그 프레임의 진행과
     /// 피벗(<see cref="EffectPivot"/>)을, 다른 프레임 그림을 쓰는 효과(잔상)가 있으면 다른 프레임 원본(<see cref="EffectFrameSource"/>)도 채운다.
-    /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(부위 아틀라스의 스킨별 셀).
+    /// 다른 레이어나 <c>ctx.slice</c>를 읽는 스크립트 효과에는 그 프레임의 배치·이웃 레이어(<see cref="ScriptLayersAt"/>)를 채운다.
+    /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(부위 아틀라스의 스킨별 셀 — 같은 그룹의 이웃 부위도 그 스킨으로).
     /// </summary>
     public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex, Skin? skin = null)
-        => EffectsAt(layer, layer.Effects, frameIndex, skin is null || layer.IsGroup ? null : f => GetSkinCel(layer, _frames[f], skin));
+        => EffectsAt(layer, layer.Effects, frameIndex, skin is null || layer.IsGroup ? null : f => GetSkinCel(layer, _frames[f], skin),
+            skin is null || layer.IsGroup ? null : (other, f) => other.IsPart && ReferenceEquals(other.Parent, layer.Parent) ? GetSkinCel(other, _frames[f], skin) : GetCel(other, _frames[f]));
 
     /// <summary>
     /// 레이어의 효과 목록 <paramref name="effects"/>를 프레임 <paramref name="frameIndex"/>에 맞춘다. 다른 프레임 원본은 <paramref name="cels"/>(프레임 번호 → 셀, null =
-    /// <see cref="EffectFrameSource"/>), 잔상이 없으면 넣지 않는다(만들 것 없음).
+    /// <see cref="EffectFrameSource"/>), 잔상이 없으면 넣지 않는다(만들 것 없음). 스크립트가 보는 이웃 레이어 셀은 <paramref name="neighborCels"/>(null = 지금 보이는 셀).
     /// </summary>
-    private IReadOnlyList<LayerEffect> EffectsAt(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, PixelImage?>? cels)
+    private IReadOnlyList<LayerEffect> EffectsAt(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, PixelImage?>? cels,
+        Func<Layer, int, PixelImage?>? neighborCels = null)
     {
         Func<int, PixelImage?>? source = !LayerEffects.UsesOtherFrames(effects) ? null
             : cels is null ? EffectFrameSource(layer)
             : f => (uint)f < (uint)_frames.Count ? cels(f) : null;
-        return LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source,
-            source is null ? null : f => EffectPivot(layer, f));
+        return LayerEffects.WithScriptLayers(LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source,
+            source is null ? null : f => EffectPivot(layer, f)), ScriptLayersOf(layer, frameIndex, effects, neighborCels ?? DefaultCels, nested: false));
     }
 
     /// <summary>
@@ -884,7 +929,7 @@ public sealed partial class SpriteProject
             throw new InvalidOperationException(DomainStrings.Project_CannotMergePartGroup);
         Edit(DomainStrings.Project_MergeDown, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
-            // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다.
+            // 효과(잔상)가 위 레이어의 다른 프레임 셀을 볼 수 있으므로 셀을 바꾸기 전에 모두 그려 둔다. 셀이 없어도 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 빈 그림에 그린다.
             (PixelImage Image, int OffsetX, int OffsetY) RenderUpper(CelKey key, PixelImage cel)
             {
                 var effects = EffectsAt(upper, _frames.IndexOf(key.Frame));
@@ -892,7 +937,7 @@ public sealed partial class SpriteProject
                     ? LayerEffects.Render(cel, effects, LayerEffects.Padding(upper.Effects, cel.Width, cel.Height))
                     : LayerEffects.Render(cel, effects);
             }
-            var rendered = CelsOf(upper).Select(c => (c.Key, Render: RenderUpper(c.Key, c.Cel))).ToList();
+            var rendered = CelsWithContentOf(upper, upper.Effects).Select(c => (c.Key, Render: RenderUpper(c.Key, c.Cel))).ToList();
             foreach (var (key, (image, dx, dy)) in rendered)
             {
                 var lowerKey = new CelKey(lower, key.Frame, null);
@@ -961,6 +1006,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 효과 영구 적용(실행취소 한 단계): <see cref="LayerEffects.BakeSet"/>의 효과(고른 효과 + 그 위의 켜진 효과)를 그 효과들이 입혀지는 프레임의
     /// 저장된 셀마다(부위면 모든 스킨 자신의 셀 — 물려받아 보이는 스킨 셀은 첫 스킨 셀이 구워지므로 그대로) 보이던 그대로 구워 넣고 목록에서 뺀다.
+    /// 일반 레이어에서 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 셀이 없어도 빈 그림에 구워 새 셀로 넣는다.
     /// 아래(뒤) 효과는 효과로 남는다. 일반 레이어는 캔버스 크기로 잘리고, 부위는 번진 그림이 들어가도록 부위 크기·위치를 넓힌다
     /// (모든 프레임·스킨 셀을 같이 옮기고, 피벗·테두리는 같은 그림 지점 — 자동 배치 그룹이면 다시 배치). 효과가 바꾸지 않는 프레임도 그대로 구운 것으로 친다.
     /// 그룹(효과가 여러 부위의 합성에 입혀짐)·잠긴 레이어는 <see cref="InvalidOperationException"/>.
@@ -990,12 +1036,14 @@ public sealed partial class SpriteProject
         var keep = new Rectangle(pad.Left, pad.Top, size.Width, size.Height); // 원래 셀 자리(넓힌 그림 기준)
         var rendered = new List<(CelKey Key, PixelImage Image)>();
         var area = keep;
-        foreach (var (key, cel) in CelsOf(layer))
+        // 셀이 없어도 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 빈 그림에 그려 새 셀로 넣는다
+        foreach (var (key, cel) in CelsWithContentOf(layer, baked))
         {
             int f = _frames.IndexOf(key.Frame);
-            // 잔상은 같은 스킨의 다른 프레임 셀(굽기 전 그대로)을 본다
+            // 잔상은 같은 스킨의 다른 프레임 셀(굽기 전 그대로, 셀이 없으면 그리는 것과 같이 빈 그림)을 본다
             var skinKey = key.Skin;
-            var effects = EffectsAt(layer, baked, f, other => ResolveCel(layer, _frames[other], skinKey));
+            var effects = EffectsAt(layer, baked, f,
+                other => ResolveCel(layer, _frames[other], skinKey) ?? (HasContentEffect(layer, other) ? BlankCel() : null));
             if (effects.Count == 0) continue;
             var (image, _, _) = LayerEffects.Render(cel, effects, pad);
             rendered.Add((key, image));
@@ -1541,20 +1589,21 @@ public sealed partial class SpriteProject
         var frame = _frames[frameIndex];
         bool Excluded(Layer layer) => excluded is { Count: > 0 } && excluded.Contains(layer);
         PixelImage? PartCel(Layer part) => ResolveCel(part, frame, SkinKey(part, SkinUnder(part, outfit)));
+        PixelImage? Cels(Layer layer, int f) => layer.IsPart ? ResolveCel(layer, _frames[f], SkinKey(layer, SkinUnder(layer, outfit))) : RenderCel(layer, f);
         var steps = new List<RenderStep>();
         foreach (var layer in _layers)
         {
             if (layer.IsGroup)
             {
                 if (layer.HasActiveEffectsAt(frameIndex) && layer.Visible && !Excluded(layer)
-                    && GroupStepOf(layer, frameIndex, part => part.Visible ? PartCel(part) : null) is { } group)
+                    && GroupStepOf(layer, frameIndex, part => part.Visible ? PartCel(part) : null, Cels, layer.Opacity) is { } group)
                     steps.Add(group);
                 continue;
             }
             if (layer.Parent is { IsGroup: true } pg && pg.HasActiveEffectsAt(frameIndex)) continue; // 그룹 차례에 함께 그린다
             if (!(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
             if (Excluded(layer) || (layer.Parent is { } g && Excluded(g))) continue;
-            if ((layer.IsPart ? PartCel(layer) : GetCel(layer, frame)) is { } cel) steps.Add(CelStepOf(layer, frameIndex, cel, DrawOpacity(layer)));
+            if ((layer.IsPart ? PartCel(layer) : RenderCel(layer, frameIndex)) is { } cel) steps.Add(CelStepOf(layer, frameIndex, cel, DrawOpacity(layer), Cels));
         }
         return new RenderPlan(_width, _height, steps).Render(cache is null ? null : new RenderPlanOptions { Cache = cache });
     }

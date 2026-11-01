@@ -361,6 +361,8 @@ public class CommunityClientTests
         Assert.Equal("https://chickxel.com/login?app=1&port=50123&challenge=abc_-&state=st", client.LoginUrl(50123, "abc_-", "st").AbsoluteUri);
         Assert.EndsWith("&provider=discord", client.LoginUrl(50123, "c", "s", "discord").AbsoluteUri);
         Assert.Equal("https://chickxel.com/gallery/u/pixel-cat", client.UserPageUrl("pixel-cat").AbsoluteUri);
+        Assert.Equal("https://chickxel.com/packages", client.PackagesPageUrl().AbsoluteUri);
+        Assert.Equal("https://chickxel.com/packages?kind=gradient", client.PackagesPageUrl("gradient").AbsoluteUri);
         Assert.Equal("https://chickxel.com/files/avatars/a.png", client.Resolve("/files/avatars/a.png")!.AbsoluteUri);
         Assert.Null(client.Resolve("http://elsewhere.example/a.png"));
     }

@@ -9,8 +9,11 @@ using ParameterExpression = System.Linq.Expressions.ParameterExpression;
 
 namespace Chickxel.Core.Scripting.Fast;
 
-/// <summary>컴파일한 render: <paramref name="data"/>는 RGBA <c>img.data</c>, <paramref name="ctx"/>는 <see cref="FastCompiler"/>의 Ctx 칸, <paramref name="settings"/>는 설정 칸.</summary>
-internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settings, FastBudget budget);
+/// <summary>
+/// 컴파일한 render: <paramref name="data"/>는 RGBA <c>img.data</c>, <paramref name="ctx"/>는 <see cref="FastCompiler"/>의 Ctx 칸, <paramref name="settings"/>는 설정 칸,
+/// <paramref name="colors"/>는 색 설정 읽기(<c>ctx.color</c> 등).
+/// </summary>
+internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settings, FastBudget budget, ScriptColors colors);
 
 /// <summary>
 /// 스크립트 효과 원문의 숫자 부분집합을 .NET 식 트리로 바꿔 컴파일한다(빠른 경로, 설계 8장). Jint가 해석한 나무(<see cref="Script"/>)를 그대로 읽는다.
@@ -24,8 +27,10 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 /// <item>전역: <c>Math</c>의 상수와 abs, acos, asin, atan, atan2, ceil, clz32, cos, cosh, exp, floor, fround, hypot(인자 3개까지), imul, log, log10, log2,
 /// max, min, pow, round, sign, sin, sinh, sqrt, tan, tanh, trunc(모두 Jint 구현 그대로 <see cref="JsOps"/>), <c>NaN</c>, <c>Infinity</c>, <c>lerp</c>,
 /// <c>hsvToRgb</c>, <c>rgbToHsv</c>.</item>
-/// <item>host: <c>img.width/height/data</c>, <c>d[i]</c> 읽기·쓰기, <c>d.length</c>, <c>s.키</c>(int·number·bool·color, choice는 문자열 리터럴과 같음 비교만),
-/// <c>ctx.t/progress/frame/step/span/source/pivot</c>, <c>ctx.color("키")</c>, <c>ctx.hash</c>, <c>ctx.random</c>.</item>
+/// <item>host: <c>img.width/height/data</c>, <c>d[i]</c> 읽기·쓰기, <c>d.length</c>, <c>s.키</c>(int·number·bool·color, choice는 문자열 리터럴과 같음 비교만,
+/// 색 목록·색 쌍 목록은 <c>s.키.length</c>만), <c>ctx.t/progress/frame/step/span/source/pivot/center</c>, <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>
+/// (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.hasGradient("슬롯")</c>, <c>ctx.hash</c>, <c>ctx.random</c>,
+/// <c>ctx.bayer2</c>, <c>ctx.bayer4</c>.</item>
 /// <item>함수: <c>const</c>에 묶은 화살표·<c>function</c>과 <c>function</c> 선언을 부르는 자리에 펼친다(재귀 불가, 함수를 돌려주기 불가).</item>
 /// </list>
 /// <para>
@@ -42,7 +47,7 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 internal sealed class FastCompiler
 {
     public const int CtxT = 0, CtxProgress = 1, CtxFrame = 2, CtxStep = 3, CtxSpan = 4, CtxSourceX = 5, CtxSourceY = 6, CtxSourceW = 7,
-        CtxSourceH = 8, CtxPivotX = 9, CtxPivotY = 10, CtxWidth = 11, CtxHeight = 12, CtxLength = 13;
+        CtxSourceH = 8, CtxPivotX = 9, CtxPivotY = 10, CtxCenterX = 11, CtxCenterY = 12, CtxWidth = 13, CtxHeight = 14, CtxPhase = 15, CtxLength = 16;
 
     // 펼친 함수 호출 수 한도: 넘으면 코드가 너무 커지므로 Jint로
     private const int MaxInlines = 4096;
@@ -54,6 +59,7 @@ internal sealed class FastCompiler
         Void,    // 값을 쓰지 않는 자리의 식
         Choice,  // 고르기 설정: Expr = 값의 칸 번호(double)
         Data,    // img.data
+        Typed,   // 숫자 배열(new Float64Array/Int32Array/Uint8Array, img.data.slice()): Expr = double[] 변수, Name = 종류(JsOps.Array*)
         Image,   // img
         Ctx,     // ctx
         Record,  // 숫자 필드만 있는 객체(s, 색, ctx.source …)
@@ -123,6 +129,8 @@ internal sealed class FastCompiler
     }
 
     private static readonly E Empty = E.Empty();
+    // null일 수 있는 객체 Val의 표시(ctx.renderedFrameSource 결과 — 조건 자리에서 null이 아닌지 본다)
+    private const string Nullable = "nullable";
     private static readonly E NaN = E.Constant(double.NaN);
     private static readonly MethodInfo RefillMethod = typeof(FastBudget).GetMethod(nameof(FastBudget.Refill))!;
     private static readonly MethodInfo FinishMethod = typeof(FastBudget).GetMethod(nameof(FastBudget.Finish))!;
@@ -131,6 +139,8 @@ internal sealed class FastCompiler
     private readonly ParameterExpression _cv = E.Parameter(typeof(double[]), "ctx");
     private readonly ParameterExpression _sv = E.Parameter(typeof(double[]), "settings");
     private readonly ParameterExpression _budget = E.Parameter(typeof(FastBudget), "budget");
+    private readonly ParameterExpression _colors = E.Parameter(typeof(ScriptColors), "colors");
+    private readonly IReadOnlyList<ScriptSetting> _schema;
     private readonly ParameterExpression _ticks = E.Variable(typeof(long), "ticks");
     private readonly List<ParameterExpression> _hoisted = []; // 호출 결과 객체의 필드: 별칭이 블록 밖까지 살 수 있어 맨 바깥에 둔다
     private readonly List<FastSite> _sites = [];
@@ -147,6 +157,7 @@ internal sealed class FastCompiler
     private FastCompiler(IReadOnlyList<ScriptSetting> settings, ScriptLimits limits)
     {
         _limits = limits;
+        _schema = settings;
         var fields = new Dictionary<string, Val>(StringComparer.Ordinal);
         int slot = 0;
         foreach (var setting in settings)
@@ -164,8 +175,13 @@ internal sealed class FastCompiler
                     fields[setting.Key] = Record(("r", Slot(_sv, slot)), ("g", Slot(_sv, slot + 1)), ("b", Slot(_sv, slot + 2)), ("a", Slot(_sv, slot + 3)));
                     slot += 4;
                     break;
-                default:
+                case ScriptSettingType.Choice:
                     fields[setting.Key] = new Val { Kind = Kind.Choice, Expr = Slot(_sv, slot++), Name = setting.Key, Choices = [.. setting.Choices.Select(c => c.Value)] };
+                    break;
+                // 색 목록·색 쌍 목록은 항목 수 한 칸: s.키.length만 읽는다(항목은 ctx.colorAt·ctx.pairColor로). 그 밖은 이름 오류 → Jint
+                case ScriptSettingType.ColorList:
+                case ScriptSettingType.ColorPairs:
+                    fields[setting.Key] = Record(("length", Slot(_sv, slot++)));
                     break;
             }
         }
@@ -176,25 +192,31 @@ internal sealed class FastCompiler
             Fields = new(StringComparer.Ordinal)
             {
                 ["t"] = Val.Num(Slot(_cv, CtxT)),
+                ["phase"] = Val.Num(Slot(_cv, CtxPhase)),
                 ["progress"] = Val.Num(Slot(_cv, CtxProgress)),
                 ["frame"] = Val.Num(Slot(_cv, CtxFrame)),
                 ["step"] = Val.Num(Slot(_cv, CtxStep)),
                 ["span"] = Val.Num(Slot(_cv, CtxSpan)),
                 ["source"] = Record(("x", Slot(_cv, CtxSourceX)), ("y", Slot(_cv, CtxSourceY)), ("w", Slot(_cv, CtxSourceW)), ("h", Slot(_cv, CtxSourceH))),
                 ["pivot"] = Record(("x", Slot(_cv, CtxPivotX)), ("y", Slot(_cv, CtxPivotY))),
+                // ctx.center는 늘 같은 모양의 숫자 객체라 빠른 경로도 읽는다. ctx.slice(null일 수 있음)·다른 레이어 함수는 이름 오류 → Jint
+                ["center"] = Record(("x", Slot(_cv, CtxCenterX)), ("y", Slot(_cv, CtxCenterY))),
             },
         };
     }
 
-    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호) = 1칸, 색 = r, g, b, a 4칸.</summary>
+    /// <summary>설정 칸 배치(선언 순서): 숫자·참거짓·고르기(값의 번호)·색 목록과 색 쌍 목록(항목 수) = 1칸, 색 = r, g, b, a 4칸.</summary>
     public static int SlotCount(IReadOnlyList<ScriptSetting> settings) => settings.Sum(s => s.Type == ScriptSettingType.Color ? 4 : 1);
 
-    /// <summary><paramref name="script"/>(해석한 원문)의 render를 컴파일한다. 부분집합 밖이면 <see cref="FastUnsupportedException"/>.</summary>
-    public static FastRender Compile(Script script, IReadOnlyList<ScriptSetting> settings, ScriptLimits limits)
+    /// <summary>
+    /// <paramref name="script"/>(해석한 원문)의 render를 컴파일한다. 부분집합 밖이면 <see cref="FastUnsupportedException"/>.
+    /// <paramref name="deferred"/>는 미루는 스크립트인지(<c>ctx.renderedFrameSource</c>가 그림을 줄지).
+    /// </summary>
+    public static FastRender Compile(Script script, IReadOnlyList<ScriptSetting> settings, ScriptLimits limits, bool deferred = false)
     {
         var compiler = new FastCompiler(settings, limits);
         var render = compiler.CompileScript(script);
-        return new FastRender(render, [.. compiler._sites], settings, limits);
+        return new FastRender(render, [.. compiler._sites], settings, limits, deferred);
     }
 
     private static E Slot(ParameterExpression array, int index) => E.ArrayIndex(array, E.Constant(index));
@@ -259,7 +281,7 @@ internal sealed class FastCompiler
         body.AddRange(prologue);
         body.Add(CompileRender(fn));
         body.Add(E.Call(_budget, FinishMethod, _ticks));
-        var lambda = E.Lambda<FastRenderFn>(E.Block(typeof(void), [_ticks, .. _hoisted, .. _scope.Vars], body), _data, _cv, _sv, _budget);
+        var lambda = E.Lambda<FastRenderFn>(E.Block(typeof(void), [_ticks, .. _hoisted, .. _scope.Vars], body), _data, _cv, _sv, _budget, _colors);
         return lambda.Compile();
     }
 
@@ -751,6 +773,8 @@ internal sealed class FastCompiler
                 return Unary(u);
             case AssignmentExpression a:
                 return Assign(a);
+            case NewExpression n:
+                return NewArray(n);
             case ConditionalExpression c:
             {
                 var test = Cond(c.Test);
@@ -798,7 +822,7 @@ internal sealed class FastCompiler
             "Math" => new Val { Kind = Kind.Math },
             "NaN" => Val.Num(NaN),
             "Infinity" => Val.Num(E.Constant(double.PositiveInfinity)),
-            "lerp" or "hsvToRgb" or "rgbToHsv" => new Val { Kind = Kind.Builtin, Name = id.Name },
+            "lerp" or "hsvToRgb" or "rgbToHsv" or "rgbToOklab" or "oklabToRgb" => new Val { Kind = Kind.Builtin, Name = id.Name },
             _ => throw NameError(id.Name, id),
         };
     }
@@ -810,7 +834,8 @@ internal sealed class FastCompiler
         string name;
         if (m.Computed)
         {
-            if (obj.Kind == Kind.Data) return WithPre(obj.Pre, Val.Num(ReadData(Number(Expr(m.Property), m.Property))));
+            if (obj.Kind is Kind.Data or Kind.Typed)
+                return WithPre(obj.Pre, Val.Num(ReadArray(ArrayOf(obj), Number(Expr(m.Property), m.Property))));
             name = m.Property is StringLiteral key ? key.Value : throw Syntax(m);
         }
         else
@@ -824,6 +849,15 @@ internal sealed class FastCompiler
     {
         switch (obj.Kind)
         {
+            case Kind.Image when obj.Expr is { } other:
+                // 다른 그림(img.blank, ctx.renderedFrameSource의 image): 크기와 data(JS 배열 — 바꾸지 않고 담음)
+                return name switch
+                {
+                    "width" => Val.Num(E.Convert(E.Field(other, nameof(FastImage.Width)), typeof(double))),
+                    "height" => Val.Num(E.Convert(E.Field(other, nameof(FastImage.Height)), typeof(double))),
+                    "data" => new Val { Kind = Kind.Typed, Expr = E.Field(other, nameof(FastImage.Data)), Name = "0" },
+                    _ => throw NameError(Describe(node), node),
+                };
             case Kind.Image:
                 return name switch
                 {
@@ -832,8 +866,8 @@ internal sealed class FastCompiler
                     "data" => new Val { Kind = Kind.Data },
                     _ => throw NameError(Describe(node), node),
                 };
-            case Kind.Data when name == "length":
-                return Val.Num(E.Convert(E.ArrayLength(_data), typeof(double)));
+            case Kind.Data or Kind.Typed when name == "length":
+                return Val.Num(E.Convert(E.ArrayLength(ArrayOf(obj)), typeof(double)));
             case Kind.Ctx or Kind.Record:
                 return obj.Fields!.TryGetValue(name, out var field) ? field : throw NameError(Describe(node), node);
             case Kind.Math:
@@ -855,36 +889,146 @@ internal sealed class FastCompiler
         }
     }
 
-    private E ReadData(E index)
+    // img.data는 _data, 숫자 배열은 그 변수
+    private E ArrayOf(Val obj) => obj.Kind == Kind.Data ? _data : obj.Expr!;
+
+    // 숫자 배열에 넣을 때 바꾸는 종류(JsOps.Array*): img.data와 JS 배열 사본은 그대로
+    private static int StoreKind(Val obj) => obj.Kind == Kind.Typed ? int.Parse(obj.Name!, CultureInfo.InvariantCulture) : JsOps.ArrayPlain;
+
+    private static E ReadArray(E array, E index)
     {
         var i = E.Variable(typeof(double), "i");
         var k = E.Variable(typeof(int), "k");
         return E.Block(typeof(double), [i, k],
             E.Assign(i, index),
             E.Assign(k, E.Convert(i, typeof(int))),
-            E.Condition(InRange(i, k), E.ArrayIndex(_data, k), E.Throw(E.New(typeof(FastDeoptException)), typeof(double))));
+            E.Condition(InRange(array, i, k), E.ArrayIndex(array, k), E.Throw(E.New(typeof(FastDeoptException)), typeof(double))));
     }
 
-    // 자리를 먼저 계산하고(JS 순서: 대상, 칸, 값), 칸이 배열 안 정수가 아니면 Jint로(그 밖 쓰기는 배열을 늘린다)
-    private E WriteData(E index, Func<E, E> value)
+    /// <summary>
+    /// 자리를 먼저 계산하고(JS 순서: 대상, 칸, 값), 칸이 배열 안 정수가 아니면 Jint로(img.data 밖 쓰기는 배열을 늘리고 typed array 밖 쓰기는 무시된다).
+    /// 식의 값은 넣은 값(바꾸기 전), 칸에는 typed array 종류(<paramref name="kind"/>)로 바꾼 값이 담긴다.
+    /// </summary>
+    private static E WriteArray(E array, int kind, E index, Func<E, E> value)
     {
         var i = E.Variable(typeof(double), "i");
         var k = E.Variable(typeof(int), "k");
         var v = E.Variable(typeof(double), "v");
-        var slot = E.ArrayAccess(_data, k);
+        var slot = E.ArrayAccess(array, k);
+        E stored = kind is JsOps.ArrayInt32 or JsOps.ArrayUint8 ? E.Call(Op(nameof(JsOps.Store)), v, E.Constant(kind)) : v;
         return E.Block(typeof(double), [i, k, v],
             E.Assign(i, index),
             E.Assign(k, E.Convert(i, typeof(int))),
-            E.IfThen(E.Not(InRange(i, k)), E.Throw(E.New(typeof(FastDeoptException)))),
+            E.IfThen(E.Not(InRange(array, i, k)), E.Throw(E.New(typeof(FastDeoptException)))),
             E.Assign(v, value(slot)),
-            E.Assign(slot, v),
+            E.Assign(slot, stored),
             v);
     }
 
     // 정수이고 0 ≤ k < 길이. double → int 변환은 포화(.NET 9 이상: NaN = 0, 넘치면 끝값)라 k == i가 소수·NaN·범위 밖을 걸러 낸다. -0은 0번 칸(JS도 같음)
-    private E InRange(ParameterExpression i, ParameterExpression k)
+    private static E InRange(E array, ParameterExpression i, ParameterExpression k)
         => E.AndAlso(E.Equal(E.Convert(k, typeof(double)), i),
-            E.LessThan(E.Convert(k, typeof(uint)), E.Convert(E.ArrayLength(_data), typeof(uint))));
+            E.LessThan(E.Convert(k, typeof(uint)), E.Convert(E.ArrayLength(array), typeof(uint))));
+
+    /// <summary>
+    /// <c>new Float64Array(n | img.data | 숫자 배열)</c>·<c>Int32Array</c>·<c>Uint8Array</c>: 호출 결과 변수에 담은 숫자 배열(종류에 맞게 바꾼 값).
+    /// 길이가 0~최대 정수가 아니거나 메모리 한도를 넘으면 Jint로(Jint가 오류를 낸다).
+    /// </summary>
+    private Val NewArray(NewExpression n)
+    {
+        if (n.Callee is not Identifier { Name: "Float64Array" or "Int32Array" or "Uint8Array" } callee || _scope.Find(callee.Name) is not null
+            || n.Arguments.Count != 1 || n.Arguments[0] is SpreadElement)
+            throw Syntax(n);
+        int kind = callee.Name switch { "Int32Array" => JsOps.ArrayInt32, "Uint8Array" => JsOps.ArrayUint8, _ => JsOps.ArrayFloat64 };
+        var argument = Expr(n.Arguments[0]);
+        E call = argument.Kind is Kind.Data or Kind.Typed
+            ? E.Call(Op(nameof(JsOps.CopyArray)), _budget, ArrayOf(argument), E.Constant(kind))
+            : E.Call(Op(nameof(JsOps.NewArray)), _budget, Number(argument, n.Arguments[0]), E.Constant(kind));
+        return TypedResult(argument.Kind is Kind.Data or Kind.Typed ? argument.Pre : null, call, kind);
+    }
+
+    private Val TypedResult(E? pre, E call, int kind)
+    {
+        var array = E.Variable(typeof(double[]), "array");
+        _hoisted.Add(array);
+        E assign = E.Assign(array, call);
+        return new Val
+        {
+            Kind = Kind.Typed, Expr = array, Name = kind.ToString(CultureInfo.InvariantCulture),
+            Pre = pre is null ? assign : E.Block(typeof(void), pre, assign),
+        };
+    }
+
+    /// <summary>숫자 배열의 메서드: <c>a.fill(v)</c>(인자 하나)만. <c>img.data.slice()</c>(인자 없음)는 JS 배열 사본.</summary>
+    private Val ArrayCall(Val target, string name, CallExpression c, MemberExpression callee)
+    {
+        if (target.Kind == Kind.Data)
+        {
+            if (name != "slice" || c.Arguments.Count != 0) throw NameError(Describe(callee), callee);
+            return TypedResult(null, E.Call(Op(nameof(JsOps.CopyArray)), _budget, _data, E.Constant(JsOps.ArrayPlain)), JsOps.ArrayPlain);
+        }
+        if (name != "fill" || c.Arguments.Count != 1 || c.Arguments[0] is SpreadElement) throw NameError(Describe(callee), callee);
+        var value = Number(Expr(c.Arguments[0]), c.Arguments[0]);
+        // Jint는 typed array fill 한 번을 문장 하나로 더 센다(배열 길이와 무관 — 측정)
+        return new Val
+        {
+            Kind = Kind.Typed, Expr = target.Expr, Name = target.Name,
+            Pre = E.Block(typeof(void), Charge(c), E.Call(Op(nameof(JsOps.Fill)), target.Expr!, value, E.Constant(StoreKind(target)))),
+        };
+    }
+
+    /// <summary>
+    /// 그림 메서드: <c>img.blank(w, h)</c>(호출 결과 변수의 새 그림), <c>dst.blendOver(src, x, y)</c>(src는 img나 다른 그림 — 같은 그림 dst를 돌려준다).
+    /// </summary>
+    private Val ImageCall(Val target, string name, CallExpression c, MemberExpression callee)
+    {
+        switch (name)
+        {
+            case "blank":
+            {
+                var values = Arguments(c.Arguments, 2, out var pre, out var temps);
+                var image = E.Variable(typeof(FastImage), "blank");
+                _hoisted.Add(image);
+                _hoisted.AddRange(temps);
+                E assign = E.Assign(image, E.Call(Op(nameof(JsOps.Blank)), _budget, values[0], values[1]));
+                return new Val { Kind = Kind.Image, Expr = image, Pre = pre is null ? assign : E.Block(typeof(void), pre, assign) };
+            }
+            case "blendOver":
+            {
+                if (c.Arguments.Count < 1) throw ValueError(c);
+                var src = Expr(c.Arguments[0]);
+                if (src.Kind != Kind.Image) throw ValueError(c.Arguments[0]);
+                var parts = new List<E>();
+                if (src.Pre is not null) parts.Add(src.Pre);
+                var temps = new List<ParameterExpression>();
+                E Coordinate(int index)
+                {
+                    if (index >= c.Arguments.Count) return NaN;
+                    var t = E.Variable(typeof(double), "at");
+                    temps.Add(t);
+                    parts.Add(E.Assign(t, Number(Expr(c.Arguments[index]), c.Arguments[index])));
+                    return t;
+                }
+                var x = Coordinate(1);
+                var y = Coordinate(2);
+                for (int i = 3; i < c.Arguments.Count; i++) parts.Add(Effect(Expr(c.Arguments[i]), c.Arguments[i]));
+                var (dst, dw, dh) = ImageParts(target);
+                var (from, sw, sh) = ImageParts(src);
+                parts.Add(E.Call(Op(nameof(JsOps.BlendOver)), dst, dw, dh, from, sw, sh, x, y));
+                _hoisted.AddRange(temps);
+                return new Val { Kind = Kind.Image, Expr = target.Expr, Pre = E.Block(typeof(void), parts) };
+            }
+            default:
+                throw NameError(Describe(callee), callee);
+        }
+    }
+
+    // 그림의 data·너비·높이 식(img는 data 배열과 ctx 칸)
+    private (E Data, E Width, E Height) ImageParts(Val image)
+        => image.Expr is { } other
+            ? (E.Field(other, nameof(FastImage.Data)), E.Convert(E.Field(other, nameof(FastImage.Width)), typeof(double)),
+                E.Convert(E.Field(other, nameof(FastImage.Height)), typeof(double)))
+            : (_data, Slot(_cv, CtxWidth), Slot(_cv, CtxHeight));
 
     private Val Call(CallExpression c, bool valueNeeded)
     {
@@ -898,6 +1042,8 @@ internal sealed class FastCompiler
             {
                 Kind.Math => MathCall(method.Name, c, callee),
                 Kind.Ctx => CtxCall(method.Name, c, callee),
+                Kind.Data or Kind.Typed => ArrayCall(target, method.Name, c, callee),
+                Kind.Image => ImageCall(target, method.Name, c, callee),
                 _ => throw NameError(Describe(callee), callee),
             };
             return WithPre(target.Pre, result);
@@ -910,6 +1056,8 @@ internal sealed class FastCompiler
             {
                 "lerp" => Lerp(c),
                 "hsvToRgb" => HsvToRgb(c),
+                "rgbToOklab" => RgbToOklab(c),
+                "oklabToRgb" => OklabToRgb(c),
                 _ => RgbToHsv(c),
             },
             _ => throw ValueError(c.Callee),
@@ -1011,24 +1159,164 @@ internal sealed class FastCompiler
         switch (name)
         {
             case "color":
+                return ColorCall(c, callee, ScriptSettingType.Color, hasIndex: false, hasPart: false);
+            case "colorAt":
+                return ColorCall(c, callee, ScriptSettingType.ColorList, hasIndex: true, hasPart: false);
+            case "pairColor":
+                return ColorCall(c, callee, ScriptSettingType.ColorPairs, hasIndex: true, hasPart: true);
+            case "hasGradient":
             {
-                // 색 설정 객체를 그대로 돌려준다(x, y는 그라데이션 색을 넣을 때 쓸 자리라 계산만)
-                if (c.Arguments.Count < 1 || c.Arguments[0] is not StringLiteral key) throw ValueError(c);
-                if (!_settings.Fields!.TryGetValue(key.Value, out var color) || color.Kind != Kind.Record)
-                    throw NameError(Describe(callee) + "(\"" + key.Value + "\")", c);
-                var effects = new List<E>();
-                for (int i = 1; i < c.Arguments.Count; i++) effects.Add(Effect(Expr(c.Arguments[i]), c.Arguments[i]));
-                if (effects.Count == 0) return color;
-                effects.Add(Empty);
-                return new Val { Kind = Kind.Record, Fields = color.Fields, Pre = E.Block(typeof(void), effects) };
+                // 슬롯 이름은 문자열 리터럴만(컴파일할 때 설정·항목을 정한다). 잘못된 이름은 Jint가 오류를 낸다
+                if (c.Arguments.Count < 1 || c.Arguments[0] is not StringLiteral slot) throw ValueError(c);
+                if (c.Arguments.Count >= 2)
+                {
+                    // 목록 항목을 번호로: hasGradient("목록 키", 번호[, "from"|"to"]) — 키·쌍 칸은 리터럴, 번호는 숫자 식
+                    int list = SchemaIndex(slot.Value);
+                    if (list < 0 || !_schema[list].IsList) throw NameError(Describe(callee) + "(\"" + slot.Value + "\")", c);
+                    bool pair = _schema[list].Type == ScriptSettingType.ColorPairs;
+                    if (pair ? c.Arguments.Count != 3 || c.Arguments[2] is not StringLiteral { Value: "from" or "to" } : c.Arguments.Count != 2) throw ValueError(c);
+                    bool toPart = pair && ((StringLiteral)c.Arguments[2]).Value == "to";
+                    var index = Number(Expr(c.Arguments[1]), c.Arguments[1]);
+                    return Val.Bool(E.Call(Op(nameof(JsOps.HasGradientAt)), _colors, E.Constant(list), index, E.Constant(toPart)));
+                }
+                if (!ScriptColorSlots.TryParse(_schema, slot.Value, out var setting, out int item, out bool to))
+                    throw NameError(Describe(callee) + "(\"" + slot.Value + "\")", c);
+                E call = E.Call(Op(nameof(JsOps.HasGradient)), _colors, E.Constant(SchemaIndex(setting.Key)), E.Constant(item), E.Constant(to));
+                return Val.Bool(call);
             }
             case "hash":
                 return CallNumber(Op(nameof(JsOps.Hash)), c.Arguments);
             case "random":
                 return CallNumber(Op(nameof(JsOps.FrameRandom)), c.Arguments, Slot(_cv, CtxFrame));
+            case "bayer2":
+                return CallNumber(Op(nameof(JsOps.Bayer2)), c.Arguments);
+            case "bayer4":
+                return CallNumber(Op(nameof(JsOps.Bayer4)), c.Arguments);
+            case "renderedFrameSource":
+            {
+                // 결과는 null일 수 있는 객체: if (!r)로 가린 뒤 r.image·r.offsetX·r.offsetY를 읽는다(null에서 읽으면 Jint로)
+                var values = Arguments(c.Arguments, 1, out var pre, out var temps);
+                var rendered = E.Variable(typeof(FastRendered), "rendered");
+                _hoisted.Add(rendered);
+                _hoisted.AddRange(temps);
+                E assign = E.Assign(rendered, E.Call(Op(nameof(JsOps.RenderedFrame)), _budget, _colors, values[0]));
+                var present = E.Call(Op(nameof(JsOps.Present)), rendered);
+                return new Val
+                {
+                    Kind = Kind.Record, Name = Nullable, Expr = rendered,
+                    Pre = pre is null ? assign : E.Block(typeof(void), pre, assign),
+                    Fields = new(StringComparer.Ordinal)
+                    {
+                        ["image"] = new Val { Kind = Kind.Image, Expr = E.Field(present, nameof(FastRendered.Image)) },
+                        ["offsetX"] = Val.Num(E.Convert(E.Field(present, nameof(FastRendered.OffsetX)), typeof(double))),
+                        ["offsetY"] = Val.Num(E.Convert(E.Field(present, nameof(FastRendered.OffsetY)), typeof(double))),
+                    },
+                };
+            }
             default:
                 throw NameError(Describe(callee), callee);
         }
+    }
+
+    private int SchemaIndex(string key)
+    {
+        for (int i = 0; i < _schema.Count; i++)
+            if (_schema[i].Key == key) return i;
+        return -1;
+    }
+
+    /// <summary>
+    /// <c>ctx.color(키, x, y[, 범위])</c>·<c>ctx.colorAt(키, 번호, x, y[, 범위])</c>·<c>ctx.pairColor(키, 번호, "from"|"to", x, y[, 범위])</c>:
+    /// 키와 쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 객체 리터럴이나 그 네 필드를 가진 숫자 객체(<c>ctx.source</c> 등).
+    /// 인자는 JS처럼 왼쪽부터 계산하고 고른 색을 호출 결과 변수에 담는다. 목록 번호가 항목 밖이면 Jint로(Jint가 오류를 낸다).
+    /// </summary>
+    private Val ColorCall(CallExpression c, MemberExpression callee, ScriptSettingType type, bool hasIndex, bool hasPart)
+    {
+        var args = c.Arguments;
+        if (args.Count < 1 || args[0] is not StringLiteral key) throw ValueError(c);
+        int setting = SchemaIndex(key.Value);
+        if (setting < 0 || _schema[setting].Type != type) throw NameError(Describe(callee) + "(\"" + key.Value + "\")", c);
+        int at = 1;
+        bool to = false;
+        var temps = new List<ParameterExpression>();
+        var parts = new List<E>();
+        E NumberArg(int index, string name)
+        {
+            if (index >= args.Count) return NaN;
+            var t = E.Variable(typeof(double), name);
+            temps.Add(t);
+            parts.Add(E.Assign(t, Number(Expr(args[index]), args[index])));
+            return t;
+        }
+        E item = hasIndex ? NumberArg(at++, "item") : E.Constant(-1.0);
+        if (hasPart)
+        {
+            if (at >= args.Count || args[at] is not StringLiteral { Value: "from" or "to" } part) throw ValueError(c);
+            to = part.Value == "to";
+            at++;
+        }
+        var x = NumberArg(at++, "x");
+        var y = NumberArg(at++, "y");
+        E[]? bounds = null;
+        if (at < args.Count)
+        {
+            bounds = new E[4];
+            string[] names = ["x", "y", "w", "h"];
+            if (args[at] is ObjectExpression literal)
+            {
+                // 속성을 쓴 차례대로 계산한다. 정확히 x, y, w, h 넷(겹치지 않음)만
+                if (literal.Properties.Count != 4) throw ValueError(args[at]);
+                foreach (var node in literal.Properties)
+                {
+                    if (node is not ObjectProperty { Kind: PropertyKind.Init, Computed: false, Method: false, Value: Expression value } property
+                        || PropertyName(property.Key) is not { } field)
+                        throw ValueError(args[at]);
+                    int slot = Array.IndexOf(names, field);
+                    if (slot < 0 || bounds[slot] is not null) throw ValueError(args[at]);
+                    var t = E.Variable(typeof(double), "bound" + field);
+                    temps.Add(t);
+                    parts.Add(E.Assign(t, Number(Expr(value), value)));
+                    bounds[slot] = t;
+                }
+            }
+            else
+            {
+                var record = Expr(args[at]);
+                if (record.Kind != Kind.Record || names.Any(n => record.Fields!.GetValueOrDefault(n) is not { Kind: Kind.Num })) throw ValueError(args[at]);
+                if (record.Pre is not null) parts.Add(record.Pre);
+                for (int i = 0; i < 4; i++)
+                {
+                    var t = E.Variable(typeof(double), "bound" + names[i]);
+                    temps.Add(t);
+                    parts.Add(E.Assign(t, record.Fields![names[i]].Expr!));
+                    bounds[i] = t;
+                }
+            }
+            at++;
+        }
+        for (int i = at; i < args.Count; i++) parts.Add(Effect(Expr(args[i]), args[i]));
+
+        var color = E.Variable(typeof(Color32), "color");
+        _hoisted.Add(color);
+        _hoisted.AddRange(temps);
+        E call = bounds is null
+            ? E.Call(Op(nameof(JsOps.SampleColor)), _colors, E.Constant(setting), item, E.Constant(to), x, y)
+            : E.Call(Op(nameof(JsOps.SampleColorIn)), [_colors, E.Constant(setting), item, E.Constant(to), x, y, .. bounds]);
+        parts.Add(E.Assign(color, call));
+        parts.Add(Empty);
+        E Channel(string property) => E.Convert(E.Property(color, property), typeof(double));
+        return new Val
+        {
+            Kind = Kind.Record,
+            Pre = E.Block(typeof(void), parts),
+            Fields = new(StringComparer.Ordinal)
+            {
+                ["r"] = Val.Num(Channel(nameof(Color32.R))),
+                ["g"] = Val.Num(Channel(nameof(Color32.G))),
+                ["b"] = Val.Num(Channel(nameof(Color32.B))),
+                ["a"] = Val.Num(Channel(nameof(Color32.A))),
+            },
+        };
     }
 
     // lerp는 잠금 단계에서 넣은 JS 화살표 함수(a, b, t) => a + (b - a) * t: 부를 때 식 몸통 하나를 센다
@@ -1062,6 +1350,51 @@ internal sealed class FastCompiler
         _hoisted.AddRange(temps);
         E call = E.Call(Op(nameof(JsOps.HsvToRgb)), values[0], values[1], values[2], E.Constant(count > 3), values[3]);
         var assign = E.Assign(color, call);
+        E Channel(string property) => E.Convert(E.Property(color, property), typeof(double));
+        return new Val
+        {
+            Kind = Kind.Record,
+            Pre = pre is null ? assign : E.Block(typeof(void), pre, assign),
+            Fields = new(StringComparer.Ordinal)
+            {
+                ["r"] = Val.Num(Channel(nameof(Color32.R))),
+                ["g"] = Val.Num(Channel(nameof(Color32.G))),
+                ["b"] = Val.Num(Channel(nameof(Color32.B))),
+                ["a"] = Val.Num(Channel(nameof(Color32.A))),
+            },
+        };
+    }
+
+    // rgbToOklab(r, g, b) → { l, a, b }(Pixelate.OkLab과 같은 float 계산)
+    private Val RgbToOklab(CallExpression c)
+    {
+        var values = Arguments(c.Arguments, 3, out var pre, out var temps);
+        var method = Op(nameof(JsOps.RgbToOklab));
+        var lab = E.Variable(method.ReturnType, "lab");
+        _hoisted.Add(lab);
+        _hoisted.AddRange(temps);
+        var assign = E.Assign(lab, E.Call(method, values));
+        return new Val
+        {
+            Kind = Kind.Record,
+            Pre = pre is null ? assign : E.Block(typeof(void), pre, assign),
+            Fields = new(StringComparer.Ordinal)
+            {
+                ["l"] = Val.Num(E.Field(lab, "Item1")),
+                ["a"] = Val.Num(E.Field(lab, "Item2")),
+                ["b"] = Val.Num(E.Field(lab, "Item3")),
+            },
+        };
+    }
+
+    // oklabToRgb(l, a, b) → { r, g, b, a }(sRGB 밖이면 채도만 줄임, 알파 255)
+    private Val OklabToRgb(CallExpression c)
+    {
+        var values = Arguments(c.Arguments, 3, out var pre, out var temps);
+        var color = E.Variable(typeof(Color32), "rgb");
+        _hoisted.Add(color);
+        _hoisted.AddRange(temps);
+        var assign = E.Assign(color, E.Call(Op(nameof(JsOps.OklabToRgb)), values));
         E Channel(string property) => E.Convert(E.Property(color, property), typeof(double));
         return new Val
         {
@@ -1222,12 +1555,14 @@ internal sealed class FastCompiler
             case MemberExpression { Computed: true, Optional: false } m:
             {
                 var obj = Expr(m.Object);
-                if (obj.Kind != Kind.Data) throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(m)), m);
+                if (obj.Kind is not (Kind.Data or Kind.Typed)) throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(m)), m);
                 var index = Number(Expr(m.Property), m.Property);
-                if (u.Prefix || !valueNeeded) return WithPre(obj.Pre, Val.Num(WriteData(index, slot => E.Add(slot, E.Constant(delta)))));
+                var array = ArrayOf(obj);
+                int kind = StoreKind(obj);
+                if (u.Prefix || !valueNeeded) return WithPre(obj.Pre, Val.Num(WriteArray(array, kind, index, slot => E.Add(slot, E.Constant(delta)))));
                 var old = E.Variable(typeof(double), "old");
                 return WithPre(obj.Pre, Val.Num(E.Block(typeof(double), [old],
-                    WriteData(index, slot => E.Add(E.Assign(old, slot), E.Constant(delta))), old)));
+                    WriteArray(array, kind, index, slot => E.Add(E.Assign(old, slot), E.Constant(delta))), old)));
             }
             default:
                 throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(u.Argument)), u.Argument);
@@ -1277,12 +1612,12 @@ internal sealed class FastCompiler
             case MemberExpression { Computed: true, Optional: false } m:
             {
                 var obj = Expr(m.Object);
-                if (obj.Kind != Kind.Data) throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(m)), m);
+                if (obj.Kind is not (Kind.Data or Kind.Typed)) throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(m)), m);
                 var index = Number(Expr(m.Property), m.Property);
                 var right = Expr(a.Right);
                 if (combine is null && right.Kind != Kind.Num) throw ValueError(a); // 숫자가 아닌 값을 넣으면 되쓰기가 달라진다
                 var value = Number(right, a.Right);
-                return WithPre(obj.Pre, Val.Num(WriteData(index, slot => combine is null ? value : combine(slot, value))));
+                return WithPre(obj.Pre, Val.Num(WriteArray(ArrayOf(obj), StoreKind(obj), index, slot => combine is null ? value : combine(slot, value))));
             }
             default:
                 throw new FastUnsupportedException(DomainStrings.FormatScript_FastAssign(name: Describe(a.Left)), a.Left);
@@ -1330,6 +1665,8 @@ internal sealed class FastCompiler
                 if (v.Expr is ParameterExpression p) return Truthy(p);
                 var t = E.Variable(typeof(double), "t");
                 return E.Block(typeof(bool), [t], E.Assign(t, v.Expr!), Truthy(t));
+            case Kind.Record when v.Name == Nullable:
+                return v.Pre is null ? E.NotEqual(v.Expr!, E.Constant(null)) : E.Block(typeof(bool), v.Pre, E.NotEqual(v.Expr!, E.Constant(null)));
             default:
                 throw ValueError(node);
         }

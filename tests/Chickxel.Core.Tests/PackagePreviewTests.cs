@@ -70,6 +70,58 @@ public class PackagePreviewTests
         Assert.Equal((Decode(preview.OriginalPng!).Width, Decode(preview.OriginalPng!).Height), (Decode(preview.Png).Width, Decode(preview.Png).Height));
     }
 
+    /// <summary>실행을 허락한 스크립트 에셋(원문 끝 주석으로 시험마다 다른 해시).</summary>
+    private static ScriptAsset TrustedScript(string source, string test)
+    {
+        var program = ScriptEffectProgram.Parse(source + "\n// " + test + "\n").Program!;
+        ScriptLibrary.Add(program.Source);
+        ScriptLibrary.SetTrust(program.ContentHash, true);
+        return ScriptAsset.From("", program);
+    }
+
+    [Fact]
+    public void ScriptPreview_RunsTheDeclaredPreviewFrames()
+    {
+        // 칸마다 빨강이 달라 합쳐지는 칸이 없다: 선언한 20칸 × 100ms
+        var script = TrustedScript("""
+            effect({ name: "Fade", animated: true, previewFrames: 20, render(img, ctx) {
+              const d = img.data; const v = Math.round(ctx.progress * 255);
+              for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0) d[i] = v;
+            } });
+            """, nameof(ScriptPreview_RunsTheDeclaredPreviewFrames));
+        Assert.Equal(20, script.PreviewFrames);
+        var chunks = Chunks(AssetPreview.Package(script)!.Png);
+        Assert.Equal(20, BinaryPrimitives.ReadInt32BigEndian(Assert.Single(chunks, chunk => chunk.Type == "acTL").Data));
+        Assert.Equal(20 * AssetPreview.PackageFrameMs, chunks.Where(chunk => chunk.Type == "fcTL").Sum(chunk => BinaryPrimitives.ReadUInt16BigEndian(chunk.Data.AsSpan(20))));
+    }
+
+    [Fact]
+    public void ScriptPreview_ThinsFramesToStayUnderThePreviewSizeLimit()
+    {
+        // 넓은 여백 전체를 칸마다 다른 잡음으로 채운다(잘 줄지 않음): 20칸이면 한도를 넘으므로 두 칸씩 합쳐 한도 안에, 한 바퀴 시간은 그대로
+        var script = TrustedScript("""
+            effect({ name: "Noise", animated: true, previewFrames: 20, padding: [60, 60, 60, 60], render(img, ctx) {
+              const d = img.data; const seed = Math.round(ctx.progress * 1000) * 4;
+              for (let y = 0; y < img.height; y++)
+                for (let x = 0; x < img.width; x++) {
+                  const i = (y * img.width + x) * 4;
+                  d[i] = Math.floor(ctx.hash(x, y, seed) * 256);
+                  d[i + 1] = Math.floor(ctx.hash(x, y, seed + 1) * 256);
+                  d[i + 2] = Math.floor(ctx.hash(x, y, seed + 2) * 256);
+                  d[i + 3] = 255;
+                }
+            } });
+            """, nameof(ScriptPreview_ThinsFramesToStayUnderThePreviewSizeLimit));
+        var png = AssetPreview.Package(script)!.Png;
+        Assert.InRange(png.Length, 1, AssetPackageLimits.Default.MaxPreviewBytes);
+        var chunks = Chunks(png);
+        Assert.InRange(BinaryPrimitives.ReadInt32BigEndian(Assert.Single(chunks, chunk => chunk.Type == "acTL").Data), 2, 19);
+        Assert.Equal(20 * AssetPreview.PackageFrameMs, chunks.Where(chunk => chunk.Type == "fcTL").Sum(chunk => BinaryPrimitives.ReadUInt16BigEndian(chunk.Data.AsSpan(20))));
+        var issues = new List<AssetIssue>();
+        AssetPackageValidator.CheckPreview("previews/noise.png", png, AssetPackageLimits.Default, issues);
+        Assert.Empty(issues);
+    }
+
     [Fact]
     public void Gradient_HasNoOriginal()
         => Assert.Null(AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient()))!.OriginalPng);

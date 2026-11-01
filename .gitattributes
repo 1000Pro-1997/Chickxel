@@ -3,3 +3,5 @@ tests/fixtures/** -text
 # 온라인 에셋 카탈로그는 CI가 바이트 그대로 다시 만들어 비교하므로(tools/CatalogBuilder --check) 줄 끝을 바꾸지 않는다.
 catalog/** -text
 docs/catalog/** -text
+# 공식 효과 원문은 SHA-256으로 신뢰·패키지를 맞추므로(Official/hashes.txt) 줄 끝을 바꾸지 않는다.
+src/Chickxel.Core/Scripting/Official/** -text

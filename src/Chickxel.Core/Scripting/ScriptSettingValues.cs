@@ -90,8 +90,17 @@ public sealed class ScriptSettingValues : IReadOnlyDictionary<string, object>, I
         Color32 c => c.ToHex(),
         ScriptRawValue raw => raw,
         JsonNode node => FromNode(node),
+        IReadOnlyList<Color32> colors => new ScriptRawValue(ColorsJson(colors).ToJsonString()),
+        IReadOnlyList<ScriptColorPair> pairs => new ScriptRawValue(PairsJson(pairs).ToJsonString()),
         _ => throw new ArgumentException(value.GetType().Name, nameof(value)),
     };
+
+    /// <summary>색 목록 설정의 저장 JSON: <c>["#RRGGBB", …]</c>.</summary>
+    public static JsonArray ColorsJson(IEnumerable<Color32> colors) => new([.. colors.Select(c => (JsonNode)JsonValue.Create(c.ToHex()))]);
+
+    /// <summary>색 쌍 목록 설정의 저장 JSON: <c>[["#바꿀 색", "#바뀐 색"], …]</c>.</summary>
+    public static JsonArray PairsJson(IEnumerable<ScriptColorPair> pairs)
+        => new([.. pairs.Select(p => (JsonNode)new JsonArray(JsonValue.Create(p.From.ToHex()), JsonValue.Create(p.To.ToHex())))]);
 
     private static object FromNode(JsonNode? node)
     {
@@ -99,7 +108,9 @@ public sealed class ScriptSettingValues : IReadOnlyDictionary<string, object>, I
         {
             switch (v.GetValueKind())
             {
-                case JsonValueKind.Number when v.TryGetValue(out double d) && double.IsFinite(d):
+                // 파일에서 읽은 수와 메모리에서 만든 수(JsonValue<int> 등 — double로 바로 읽히지 않음)를 같은 double로
+                case JsonValueKind.Number when (v.TryGetValue(out double d) || double.TryParse(v.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out d))
+                                               && double.IsFinite(d):
                     return d;
                 case JsonValueKind.True:
                 case JsonValueKind.False:

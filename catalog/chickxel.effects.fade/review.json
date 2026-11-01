@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "summary": "Gradually raises or lowers the opacity of the whole image over the frame range.",
+  "tags": [
+    "effect",
+    "official",
+    "script",
+    "animated"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

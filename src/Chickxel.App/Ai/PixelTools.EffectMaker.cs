@@ -10,20 +10,25 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App.Ai;
 
 /// <summary>
-/// 효과 만들기 도구(설계 7장): 스크립트 API 문서, 스크립트 효과 쓰기(해석 오류는 줄·칸으로 돌려주고 아무것도 바꾸지 않음), 효과 미리보기 그림,
-/// 레이어 효과 목록을 개인 레시피로 저장. 올리기 도구는 두지 않는다 — 올리기는 사람이 효과 만들기 창에서 누른다(설계 원칙 4).
+/// 효과 만들기 도구(설계 7장): 스크립트 효과 안내(규칙·API), 스크립트 효과 쓰기(해석 오류는 줄·칸으로 돌려주고 아무것도 바꾸지 않음), 효과 미리보기 그림,
+/// 레이어의 스크립트 효과를 개인 스크립트 에셋으로 저장. 올리기 도구는 두지 않는다 — 올리기는 사람이 효과 만들기 창에서 누른다(설계 원칙 4).
+/// 기본 효과를 합친 레시피는 저장·올리기 대상이 아니다(효과 만들기는 스크립트만).
+/// 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고(<c>get_effect_maker_source</c>) 바꾸고(<c>set_effect_maker_source</c>) 검증한다(<c>check_effect_maker</c>) —
+/// 문서는 건드리지 않으므로 "지금 그림만" 범위와 상관없이 쓸 수 있다(효과 만들기 AI 칸이 주로 쓰고, 채팅 창도 쓸 수 있음).
 /// AI가 쓴 원문은 이 컴퓨터에서 쓴 원문으로 보고 실행을 허락한다(실행은 다른 스크립트처럼 Jint 샌드박스·한도 안).
 /// </summary>
 public sealed partial class PixelTools
 {
     /// <summary>미리보기 그림에 넣는 칸 수(효과 범위를 고르게 나눠서).</summary>
     private const int PreviewStripFrames = 5;
+    private const string CheckMakerTool = "check_effect_maker";
 
     private static IEnumerable<JsonObject> EffectMakerToolDefinitions()
     {
         yield return Tool("get_script_api",
-            "Read the script effect API (JavaScript): the effect({...}) declaration, img/ctx/s objects, helpers, limits and an example. " +
-            "Read it before writing a script with write_script_effect. Built-in effects (list_effect_types) cover most needs; write a script only for looks they can't make.",
+            "Read the guide for writing a script effect (JavaScript): the rules every effect must follow (one effect({...}) call, render changes img.data in place, " +
+            "deterministic, run limits, setting types, fast path, answer format), then the API (declaration, img/ctx/s objects, helpers) and an example. " +
+            "Read it before writing a script with write_script_effect or set_effect_maker_source. The installed effects (list_effect_types: the official effects and any packages) cover most needs; write a script only for looks they can't make.",
             new JsonObject());
         yield return Tool("write_script_effect",
             "Write a script effect (JavaScript source calling effect({...}) once) and add it to a layer, or replace the source of an existing script effect. " +
@@ -50,21 +55,174 @@ public sealed partial class PixelTools
                 ["on"] = Enum("Draw on the preview chick (default; same as the published preview) or on the layer's own image.", "chick", "layer"),
                 ["chick"] = Str("Preview chick id when on = chick (default \"original\"; e.g. knight, wizard, ninja)."),
             });
-        yield return Tool("save_effect_asset",
-            "Save a layer's effect list (built-in and script effects) as a personal effect recipe with a name, description and preview chick, and open it in the Effect Maker " +
-            "window. Publishing online is done by the user from that window (there is no upload tool).",
+        yield return Tool("save_script_effect",
+            "Save a script effect of a layer as a personal script effect asset (its name, settings and preview chick come from the source's effect({...}) declaration) " +
+            "and open it in the Effect Maker window. Publishing online is done by the user from that window (there is no upload tool).",
             new JsonObject
             {
-                ["layer"] = Int("Layer index whose effects to save. Default: current.", 0),
-                ["name"] = Str("Recipe name."),
-                ["description"] = Str("Short description (optional)."),
-                ["chick"] = Str("Preview chick id for the published preview (optional, default \"original\")."),
-                ["all_frames"] = Bool("Insert over all frames instead of the effects window's add range (default false)."),
-            },
-            "name");
+                ["layer"] = Int("Layer index. Default: current.", 0),
+                ["effect"] = Int("Index of the script effect on that layer. Default: the last script effect.", 0),
+                ["chick"] = Str("Preview chick id to write into the declaration's previewChick before saving (optional; e.g. knight, wizard, ninja)."),
+            });
+        yield return Tool("get_effect_maker_source",
+            "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, description, previewChick, previewFrames and animated, " +
+            "the execution path (fast path, or Jint with the reason and line) and the preview setting values. Fails if the Effect Maker is closed or has no script open.",
+            new JsonObject());
+        yield return Tool("set_effect_maker_source",
+            "Replace the source in the Effect Maker editor with a complete JavaScript file (one undo step in the editor; the user's document is not changed). " +
+            "If no script is open, it opens as a new unsaved script. Returns parse errors with line and column (the source is still put in the editor so the user sees it), " +
+            "or the effect on the preview chick (several frames for animated effects), any run error and the execution path. Fails if the Effect Maker is closed.",
+            new JsonObject { ["source"] = Str("Full JavaScript source calling effect({...}) once.") },
+            "source");
+        yield return Tool(CheckMakerTool,
+            "Run the Effect Maker's Validate check on its current source (same as the Validate button): the install/source check, the name, and every preview chick at every " +
+            $"preview frame (the declared previewFrames, default {AssetPreview.PackageFrames}) with the declared default settings. Returns each problem (where, line and column) or the number of runs and the slowest frame, " +
+            "plus the execution path. Fails if the Effect Maker is closed or has no script open.",
+            new JsonObject());
+        yield return Tool("list_script_effects",
+            "List the user's script effects: personal script effects and the script effects of installed asset packages (id, name, description, origin personal/package, " +
+            "package name, and whether it is the one open in the Effect Maker). Read their code with get_script_effect_source, for example when the user says \"like the X effect but ...\". Doesn't change anything.",
+            new JsonObject());
+        yield return Tool("get_script_effect_source",
+            "Read one of the user's script effects (see list_script_effects) as a reference: its full source, name, description, settings schema and execution path. " +
+            "Read-only: to change the effect open in the Effect Maker use set_effect_maker_source.",
+            new JsonObject { ["effect"] = Str("Script effect id, or its name (case-insensitive).") },
+            "effect");
     }
 
-    private static JsonObject GetScriptApi() => TextResult(ScriptApiCatalog.ToMarkdown());
+    private static JsonObject GetScriptApi() => TextResult(ScriptEffectGuide.ToMarkdown(null));
+
+    /// <summary>사용자의 스크립트 효과(개인 에셋 다음 설치한 패키지 순, 꺼진 패키지 포함).</summary>
+    private static IEnumerable<(AssetEntry Entry, ScriptAsset Script)> ScriptEffects()
+        => AppAssets.Catalog.All.Where(e => e.Kind == AssetKinds.EffectScript && e.Data is ScriptAsset).Select(e => (e, (ScriptAsset)e.Data));
+
+    private static JsonObject ListScriptEffects()
+    {
+        string? open = EffectMakerWindow.Current?.ShownId;
+        var list = new JsonArray();
+        foreach (var (entry, script) in ScriptEffects())
+        {
+            var o = new JsonObject { ["id"] = entry.Id, ["name"] = script.Name };
+            if (script.Description is { } description) o["description"] = description;
+            o["origin"] = entry.Origin == AssetOrigin.Personal ? "personal" : "package";
+            if (entry.Origin != AssetOrigin.Personal) o["package"] = entry.PackageName ?? entry.PackageId;
+            if (entry.Id == open) o["open_in_effect_maker"] = true;
+            list.Add(o);
+        }
+        return TextResult(new JsonObject { ["script_effects"] = list }.ToJsonString(JsonOptions));
+    }
+
+    private static JsonObject GetScriptEffectSource(JsonObject? a)
+    {
+        string wanted = (OptString(a, "effect") ?? throw new ToolError(string.Format(CultureInfo.CurrentCulture, UiStrings.S_PixelTools_ReqIndex_6802669E97, "effect"))).Trim();
+        var effects = ScriptEffects().ToList();
+        // ID가 먼저, 없으면 이름(대소문자 무시 — 같은 이름이 여럿이면 목록의 처음 것)
+        var found = effects.FirstOrDefault(x => x.Entry.Id == wanted);
+        if (found.Entry is null) found = effects.FirstOrDefault(x => x.Script.Name.Trim().Equals(wanted, StringComparison.OrdinalIgnoreCase));
+        if (found.Entry is null) throw new ToolError(UiStrings.FormatAi_Script_UnknownEffect(effect: wanted));
+        var (entry, script) = found;
+        var o = new JsonObject { ["id"] = entry.Id, ["name"] = script.Name };
+        if (script.Description is { } description) o["description"] = description;
+        o["origin"] = entry.Origin == AssetOrigin.Personal ? "personal" : "package";
+        if (entry.Origin != AssetOrigin.Personal) o["package"] = entry.PackageName ?? entry.PackageId;
+        var settings = new JsonArray();
+        foreach (var s in script.Settings)
+        {
+            var setting = new JsonObject { ["key"] = s.Key, ["label"] = s.Label, ["type"] = s.Type.ToString().ToLowerInvariant() };
+            if (s.Min is { } min) setting["min"] = min;
+            if (s.Max is { } max) setting["max"] = max;
+            if (s.Step is { } step) setting["step"] = step;
+            setting["default"] = SettingJson(s.Default);
+            if (s.Choices.Count > 0) setting["choices"] = new JsonArray([.. s.Choices.Select(c => (JsonNode)new JsonObject { ["value"] = c.Value, ["label"] = c.Label })]);
+            settings.Add(setting);
+        }
+        o["settings"] = settings;
+        var parsed = ScriptEffectProgram.Parse(script.Source);
+        if (parsed.Success) o["execution_path"] = PathText(parsed.Program.ExecutionPath);
+        o["source"] = script.Source;
+        return TextResult(o.ToJsonString(JsonOptions));
+    }
+
+    // ───────────── 효과 만들기 창 ─────────────
+
+    /// <summary>열린 효과 만들기(<paramref name="script"/>면 열린 스크립트도 있어야 함). 없으면 도구 오류.</summary>
+    private static EffectMakerWindow RequireMaker(bool script)
+    {
+        var maker = EffectMakerWindow.Current ?? throw new ToolError(UiStrings.Ai_Maker_Closed);
+        if (script && !maker.HasScript) throw new ToolError(UiStrings.Ai_Maker_NoScript);
+        return maker;
+    }
+
+    private static JsonObject GetEffectMakerSource()
+    {
+        var maker = RequireMaker(script: true);
+        var parsed = ScriptEffectProgram.Parse(maker.Source);
+        var o = new JsonObject { ["source"] = maker.Source, ["unsaved"] = maker.IsDirty };
+        if (!parsed.Success)
+        {
+            o["parse_errors"] = new JsonArray(parsed.Errors.Select(e => (JsonNode)ErrorLine(e)).ToArray());
+            return TextResult(o.ToJsonString(JsonOptions));
+        }
+        var program = parsed.Program;
+        o["name"] = program.Name;
+        if (program.Description is { } description) o["description"] = description;
+        o["preview_chick"] = program.PreviewChick;
+        o["preview_frames"] = program.PreviewFrames;
+        o["animated"] = program.Animated;
+        o["execution_path"] = PathText(program.ExecutionPath);
+        var values = new JsonObject();
+        foreach (var (key, value) in maker.PreviewValues(program)) values[key] = SettingJson(value);
+        o["preview_settings"] = values;
+        return TextResult(o.ToJsonString(JsonOptions));
+    }
+
+    private static JsonObject SetEffectMakerSource(JsonObject? a)
+    {
+        string source = OptString(a, "source") ?? throw new ToolError(string.Format(CultureInfo.CurrentCulture, UiStrings.S_PixelTools_ReqIndex_6802669E97, "source"));
+        var maker = RequireMaker(script: false);
+        maker.SetSourceFromAi(source);
+        var parsed = ScriptEffectProgram.Parse(maker.Source);
+        if (!parsed.Success)
+            return TextResult(UiStrings.Ai_Maker_SetErrors + "\n" + string.Join("\n", parsed.Errors.Select(ErrorLine)), isError: true);
+        var program = parsed.Program;
+        if (maker.PreviewEffects() is not [ScriptEffect effect]) throw new ToolError(UiStrings.Ai_Maker_SetErrors);
+        string text = UiStrings.FormatAi_Maker_Set(name: program.Name) + "\n" + PathText(program.ExecutionPath);
+        if (RunError(program, effect, program.PreviewChick) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
+        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames), text);
+    }
+
+    /// <summary>효과 만들기의 검증(검증 단추와 같음)을 돌려 결과를 글로. 검증은 작업 스레드에서 돌고 결과는 창의 상태 칸에도 보인다.</summary>
+    private static async Task<JsonObject> CheckEffectMakerAsync()
+    {
+        var maker = RequireMaker(script: true);
+        var result = await maker.CheckAsync() ?? throw new ToolError(UiStrings.Ai_Maker_CheckInterrupted);
+        var lines = new List<string>();
+        if (result.Problems.Count == 0)
+            lines.Add(UiStrings.FormatAi_Maker_CheckOk(runs: result.Runs, ms: result.SlowestMs.ToString("0.00", CultureInfo.InvariantCulture), chick: result.SlowestChick));
+        else
+        {
+            lines.Add(UiStrings.FormatAi_Maker_CheckFailed(count: result.Problems.Count));
+            lines.AddRange(result.Problems.Select(p => p.Where is { } where ? $"{where} {ErrorLine(p.Error)}" : ErrorLine(p.Error)));
+        }
+        if (result.Path is { } path) lines.Add(PathText(path));
+        return TextResult(string.Join("\n", lines), isError: result.Problems.Count > 0);
+    }
+
+    /// <summary>실행 경로(모델이 읽음 — 영어): 빠른 경로, 또는 Jint로 도는 까닭과 줄.</summary>
+    private static string PathText(ScriptExecutionPath path)
+        => path.Compiled ? "Execution path: fast path."
+            : path.Line > 0 ? string.Create(CultureInfo.InvariantCulture, $"Execution path: Jint (slower), line {path.Line}: {path.Reason}")
+            : $"Execution path: Jint (slower): {path.Reason}";
+
+    /// <summary>스크립트 설정 값(C#)의 JSON 모양(색 = "#RRGGBB").</summary>
+    private static JsonNode? SettingJson(object value) => value switch
+    {
+        bool b => JsonValue.Create(b),
+        double d => JsonValue.Create(d),
+        int i => JsonValue.Create(i),
+        Color32 c => JsonValue.Create(c.ToHex()),
+        _ => JsonValue.Create(Convert.ToString(value, CultureInfo.InvariantCulture)),
+    };
 
     private JsonObject WriteScriptEffect(string tool, JsonObject? a)
     {
@@ -97,7 +255,7 @@ public sealed partial class PixelTools
         }
         else
         {
-            list.Add(new ScriptEffect { ScriptHash = hash, Settings = ScriptSettingValues.Normalized(program, given), Frames = NewRange(a, p) });
+            list.Add(program.CreateEffect(given) with { ScriptHash = hash, Frames = NewRange(a, p) });
             position = list.Count - 1;
         }
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerEffects(index, list));
@@ -107,7 +265,7 @@ public sealed partial class PixelTools
         string text = UiStrings.FormatAi_Script_Written(tool: tool, name: program.Name, effect: position, layer: index);
         if (RunError(program, effect, program.PreviewChick) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
         text += "\n" + EffectsJson(p, index).ToJsonString(JsonOptions);
-        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick)), text);
+        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames), text);
     }
 
     /// <summary>
@@ -172,44 +330,48 @@ public sealed partial class PixelTools
         return ImageResult(PreviewStrip(effects, PreviewChicks.Load(chick)), UiStrings.FormatAi_Preview_Chick(name: what, chick: chick));
     }
 
-    private JsonObject SaveEffectAsset(JsonObject? a)
+    private JsonObject SaveScriptEffect(JsonObject? a)
     {
         var p = RequireProject();
         int index = LayerIndex(a);
         var layer = p.Layers[index];
-        if (layer.Effects.Count == 0) throw new ToolError(UiStrings.FormatAi_Effect_NoEffects(layer: index, name: layer.Name));
-        string name = OptString(a, "name")?.Trim() ?? "";
-        if (!AssetManifest.IsValidName(name)) throw new ToolError(UiStrings.Ai_Asset_Name);
-        string chick = OptString(a, "chick")?.Trim() is { Length: > 0 } c && PreviewChicks.IsKnown(c) ? c : PreviewChicks.Default;
-        var recipe = EffectRecipe.Capture("", name, layer.Effects, p) with
+        int position = Arg(a, "effect") is null
+            ? layer.Effects.Select((e, i) => (e, i)).LastOrDefault(x => x.e is ScriptEffect, (null!, -1)).Item2
+            : EffectIndex(a, p, index);
+        if (position < 0) throw new ToolError(UiStrings.FormatAi_Script_NoScript(layer: index, name: layer.Name));
+        if (layer.Effects[position] is not ScriptEffect effect || !p.Scripts.TryGetValue(effect.ScriptHash, out var source))
+            throw new ToolError(UiStrings.FormatAi_Script_NotScript(effect: position, layer: index));
+        if (OptString(a, "chick")?.Trim() is { Length: > 0 } chick)
         {
-            Description = OptString(a, "description")?.Trim() is { Length: > 0 } d ? d : null,
-            PreviewChick = chick,
-            FrameRange = OptBool(a, "all_frames") == true ? RecipeFrameRange.AllFrames : RecipeFrameRange.AddRange,
-        };
+            if (!PreviewChicks.IsKnown(chick)) throw new ToolError(UiStrings.FormatAi_Script_UnknownChick(chick: chick, chicks: string.Join(", ", PreviewChicks.Ids)));
+            source = ScriptDeclarationEdit.SetPreviewChick(source, chick) ?? source;
+        }
         AssetEntry saved;
         try
         {
-            saved = AppAssets.Store.SavePersonalRecipe(recipe);
+            saved = AppAssets.Store.SavePersonalScript(source);
         }
         catch (Exception e) when (e is AssetPackageException or InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             throw new ToolError(string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_SaveError,
                 e is AssetPackageException package ? AppAssets.IssueText(package.Issues) : e.Message));
         }
-        foreach (var source in recipe.Scripts.Values) ScriptTrustStore.TrustLocal(ScriptLibrary.Add(source));
+        ScriptTrustStore.TrustLocal(ScriptLibrary.Add(source));
         // 효과 만들기는 편집기(메인 창)에 딸린 창으로 연다
         if (_host is Window owner) Dispatcher.UIThread.Post(() => EffectMakerWindow.Open(owner, Ctx, saved.Id));
-        return TextResult(UiStrings.FormatAi_Asset_Saved(name: name, id: saved.Id));
+        return TextResult(UiStrings.FormatAi_Asset_Saved(name: saved.Name, id: saved.Id));
     }
 
     // ───────────── 그림 ─────────────
 
-    /// <summary>효과를 병아리에 입힌 칸들(<see cref="AssetPreview.PackageFrames"/>칸 중 고르게 몇 칸)을 2px 사이를 두고 가로로 이어 키운 PNG(base64).</summary>
-    private static string PreviewStrip(IReadOnlyList<LayerEffect> effects, PixelImage chick)
+    /// <summary>
+    /// 효과를 병아리에 입힌 칸들(<paramref name="steps"/>칸 — 스크립트는 선언의 <c>previewFrames</c>, 그 밖은 <see cref="AssetPreview.PackageFrames"/> — 중
+    /// 고르게 몇 칸)을 2px 사이를 두고 가로로 이어 키운 PNG(base64).
+    /// </summary>
+    private static string PreviewStrip(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps = AssetPreview.PackageFrames)
     {
         bool animated = effects.Any(e => e is AnimatedEffect || e.ColorGradients.Values.Any(g => g.Animated));
-        int count = animated ? PreviewStripFrames : 1, steps = AssetPreview.PackageFrames;
+        int count = animated ? Math.Min(PreviewStripFrames, steps) : 1;
         var frames = Enumerable.Range(0, count)
             .Select(i => AssetPreview.Render(effects, chick, count == 1 ? 0 : (int)Math.Round(i * (steps - 1) / (double)(count - 1)), steps))
             .ToList();
@@ -245,14 +407,15 @@ public sealed partial class PixelTools
         return strip;
     }
 
-    /// <summary>병아리에 진행 0.5로 직접 한 번 돌려 본 실행 오류(없으면 null).</summary>
+    /// <summary>병아리에 진행 0.5로(미리보기 칸 수의 가운데 칸) 직접 한 번 돌려 본 실행 오류(없으면 null).</summary>
     private static ScriptError? RunError(ScriptEffectProgram program, ScriptEffect effect, string chickId)
     {
         var image = PreviewChicks.Load(chickId);
+        int span = program.PreviewFrames - 1, step = span / 2;
         try
         {
             program.Render(image, new Rectangle(0, 0, image.Width, image.Height),
-                new ScriptFrameContext { Time = 0.5, Progress = 0.5, FrameIndex = 5, FrameStep = 5, FrameSpan = 9 }, effect.Settings);
+                new ScriptFrameContext { Time = 0.5, Progress = 0.5, FrameIndex = step, FrameStep = step, FrameSpan = span }, effect.Settings);
             return null;
         }
         catch (ScriptEffectException e)

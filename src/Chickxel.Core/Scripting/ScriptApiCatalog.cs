@@ -52,14 +52,27 @@ public static class ScriptApiCatalog
     public const string SettingType = "setting.type";
     /// <summary>선언 <c>area</c>의 값.</summary>
     public const string Area = "effect.area";
+    /// <summary>선언 <c>easing</c>의 값.</summary>
+    public const string Easing = "effect.easing";
+    /// <summary>설정 항목 <c>widget</c>의 값.</summary>
+    public const string Widget = "setting.widget";
+    /// <summary>선언 <c>translations</c>의 언어 하나(<c>translations.en</c> 등)의 키.</summary>
+    public const string Translation = "translation";
     public const string Image = "img";
     public const string Context = "ctx";
     public const string Source = "ctx.source";
     public const string Pivot = "ctx.pivot";
+    public const string Center = "ctx.center";
+    /// <summary><c>ctx.slice</c>(9-slice 테두리, 없으면 null).</summary>
+    public const string Slice = "ctx.slice";
+    /// <summary><c>ctx.renderedFrameSource</c>가 돌려주는 객체.</summary>
+    public const string Rendered = "rendered";
     /// <summary>색 객체(<c>ctx.color</c>, <c>hsvToRgb</c>, 색 설정 <c>s.키</c>).</summary>
     public const string Color = "color";
     /// <summary><c>rgbToHsv</c>가 돌려주는 객체.</summary>
     public const string Hsv = "hsv";
+    /// <summary><c>rgbToOklab</c>가 돌려주는 객체.</summary>
+    public const string Oklab = "oklab";
     public const string MathScope = "Math";
     /// <summary><c>s</c>: 선언한 설정 키(원문에서 읽음 — 표에는 없음).</summary>
     public const string Settings = "s";
@@ -74,34 +87,61 @@ public static class ScriptApiCatalog
         M(Global, "lerp", ScriptApiKind.Function, "lerp(a, b, t)"),
         M(Global, "hsvToRgb", ScriptApiKind.Function, "hsvToRgb(h, s, v, a?) → { r, g, b, a }", Color),
         M(Global, "rgbToHsv", ScriptApiKind.Function, "rgbToHsv(r, g, b) → { h, s, v }", Hsv),
+        M(Global, "rgbToOklab", ScriptApiKind.Function, "rgbToOklab(r, g, b) → { l, a, b }", Oklab),
+        M(Global, "oklabToRgb", ScriptApiKind.Function, "oklabToRgb(l, a, b) → { r, g, b, a }", Color),
 
         M(Declaration, "name", ScriptApiKind.Key, "name: \"…\""),
         M(Declaration, "author", ScriptApiKind.Key, "author: \"…\""),
+        M(Declaration, "description", ScriptApiKind.Key, "description: \"…\""),
+        M(Declaration, "translations", ScriptApiKind.Key, "translations: { en: { name, description, labels: { key: \"…\", \"key.choiceValue\": \"…\" } } }", Translation),
         M(Declaration, "animated", ScriptApiKind.Key, "animated: true"),
+        M(Declaration, "deferred", ScriptApiKind.Key, "deferred: true"),
+        M(Declaration, "motion", ScriptApiKind.Key, "motion: false"),
+        M(Declaration, "clipsBySource", ScriptApiKind.Key, "clipsBySource: true"),
+        M(Declaration, "erasesSource", ScriptApiKind.Key, "erasesSource: true | \"boolSettingKey\""),
+        M(Declaration, "easing", ScriptApiKind.Key, "easing: \"Linear\" | \"EaseIn\" | \"EaseOut\" | \"EaseInOut\"", Easing),
         M(Declaration, "area", ScriptApiKind.Key, "area: \"global\" | \"local\"", Area),
-        M(Declaration, "radius", ScriptApiKind.Key, "radius: 0~1024"),
+        M(Declaration, "radius", ScriptApiKind.Key, "radius: 0~16384"),
         M(Declaration, "previewChick", ScriptApiKind.Key, "previewChick: \"knight\""),
-        M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices }]", Setting),
+        M(Declaration, "previewFrames", ScriptApiKind.Key, "previewFrames: 2~20"),
+        M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair }]", Setting),
         M(Declaration, "padding", ScriptApiKind.Key, "padding: [left, top, right, bottom] | padding(s, width, height) { ... }"),
         M(Declaration, "render", ScriptApiKind.Function, "render(img, ctx, s) { ... }"),
+
+        M(Translation, "name", ScriptApiKind.Key, "name: \"…\""),
+        M(Translation, "description", ScriptApiKind.Key, "description: \"…\""),
+        M(Translation, "labels", ScriptApiKind.Key, "labels: { key: \"…\", \"key.choiceValue\": \"…\" }"),
 
         M(Area, "global", ScriptApiKind.Literal, "\"global\""),
         M(Area, "local", ScriptApiKind.Literal, "\"local\""),
 
+        M(Easing, "Linear", ScriptApiKind.Literal, "\"Linear\""),
+        M(Easing, "EaseIn", ScriptApiKind.Literal, "\"EaseIn\""),
+        M(Easing, "EaseOut", ScriptApiKind.Literal, "\"EaseOut\""),
+        M(Easing, "EaseInOut", ScriptApiKind.Literal, "\"EaseInOut\""),
+
         M(Setting, "key", ScriptApiKind.Key, "key: \"strength\""),
         M(Setting, "label", ScriptApiKind.Key, "label: \"…\""),
-        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\"", SettingType),
+        M(Setting, "type", ScriptApiKind.Key, "type: \"int\" | \"number\" | \"bool\" | \"color\" | \"choice\" | \"colorList\" | \"colorPairs\"", SettingType),
         M(Setting, "min", ScriptApiKind.Key, "min: 0"),
         M(Setting, "max", ScriptApiKind.Key, "max: 100"),
         M(Setting, "step", ScriptApiKind.Key, "step: 0.1"),
         M(Setting, "default", ScriptApiKind.Key, "default: …"),
         M(Setting, "choices", ScriptApiKind.Key, "choices: [{ value: \"a\", label: \"…\" }]"),
+        M(Setting, "alpha", ScriptApiKind.Key, "alpha: false"),
+        M(Setting, "widget", ScriptApiKind.Key, "widget: \"angle\" | \"point\"", Widget),
+        M(Setting, "pair", ScriptApiKind.Key, "pair: \"centerY\""),
+
+        M(Widget, "angle", ScriptApiKind.Literal, "\"angle\""),
+        M(Widget, "point", ScriptApiKind.Literal, "\"point\""),
 
         M(SettingType, "int", ScriptApiKind.Literal, "\"int\""),
         M(SettingType, "number", ScriptApiKind.Literal, "\"number\""),
         M(SettingType, "bool", ScriptApiKind.Literal, "\"bool\""),
         M(SettingType, "color", ScriptApiKind.Literal, "\"color\""),
         M(SettingType, "choice", ScriptApiKind.Literal, "\"choice\""),
+        M(SettingType, "colorList", ScriptApiKind.Literal, "\"colorList\""),
+        M(SettingType, "colorPairs", ScriptApiKind.Literal, "\"colorPairs\""),
 
         M(Image, "width", ScriptApiKind.Value, "img.width"),
         M(Image, "height", ScriptApiKind.Value, "img.height"),
@@ -110,16 +150,31 @@ public static class ScriptApiCatalog
         M(Image, "blendOver", ScriptApiKind.Function, "img.blendOver(src, x, y) → img", Image),
 
         M(Context, "t", ScriptApiKind.Value, "ctx.t"),
+        M(Context, "phase", ScriptApiKind.Value, "ctx.phase"),
         M(Context, "progress", ScriptApiKind.Value, "ctx.progress"),
         M(Context, "frame", ScriptApiKind.Value, "ctx.frame"),
         M(Context, "step", ScriptApiKind.Value, "ctx.step"),
         M(Context, "span", ScriptApiKind.Value, "ctx.span"),
         M(Context, "source", ScriptApiKind.Object, "ctx.source", Source),
         M(Context, "pivot", ScriptApiKind.Object, "ctx.pivot", Pivot),
-        M(Context, "color", ScriptApiKind.Function, "ctx.color(key, x, y) → { r, g, b, a }", Color),
-        M(Context, "hash", ScriptApiKind.Function, "ctx.hash(x, y, seed) → 0~1"),
+        M(Context, "center", ScriptApiKind.Object, "ctx.center", Center),
+        M(Context, "slice", ScriptApiKind.Object, "ctx.slice → { left, top, right, bottom } | null", Slice),
+        M(Context, "color", ScriptApiKind.Function, "ctx.color(key, x, y, bounds?) → { r, g, b, a }", Color),
+        M(Context, "colorAt", ScriptApiKind.Function, "ctx.colorAt(key, index, x, y, bounds?) → { r, g, b, a }", Color),
+        M(Context, "pairColor", ScriptApiKind.Function, "ctx.pairColor(key, index, \"from\" | \"to\", x, y, bounds?) → { r, g, b, a }", Color),
+        M(Context, "hasGradient", ScriptApiKind.Function, "ctx.hasGradient(\"key\" | \"key[i]\" | \"key[i].from\") | ctx.hasGradient(listKey, index, \"from\" | \"to\"?) → true | false"),
+        M(Context, "hash", ScriptApiKind.Function, "ctx.hash(x, y, seed, salt?) → 0~1"),
         M(Context, "random", ScriptApiKind.Function, "ctx.random(seed) → 0~1"),
+        M(Context, "bayer2", ScriptApiKind.Function, "ctx.bayer2(x, y) → 0~3"),
+        M(Context, "bayer4", ScriptApiKind.Function, "ctx.bayer4(x, y) → 0~15"),
         M(Context, "frameSource", ScriptApiKind.Function, "ctx.frameSource(frame) → img | null", Image),
+        M(Context, "renderedFrameSource", ScriptApiKind.Function, "ctx.renderedFrameSource(frame) → { image, offsetX, offsetY } | null", Rendered),
+        M(Context, "layerBelow", ScriptApiKind.Function, "ctx.layerBelow() → img | null", Image),
+        M(Context, "layerAbove", ScriptApiKind.Function, "ctx.layerAbove() → img | null", Image),
+        M(Context, "layerBelowWithEffects", ScriptApiKind.Function, "ctx.layerBelowWithEffects() → img | null", Image),
+        M(Context, "layerAboveWithEffects", ScriptApiKind.Function, "ctx.layerAboveWithEffects() → img | null", Image),
+        M(Context, "layerEffectsByName", ScriptApiKind.Function, "ctx.layerEffectsByName(layerName) → [effectName, ...]"),
+        M(Context, "layerEffectsAt", ScriptApiKind.Function, "ctx.layerEffectsAt(offset) → [effectName, ...]"),
 
         M(Source, "x", ScriptApiKind.Value, "ctx.source.x"),
         M(Source, "y", ScriptApiKind.Value, "ctx.source.y"),
@@ -127,6 +182,15 @@ public static class ScriptApiCatalog
         M(Source, "h", ScriptApiKind.Value, "ctx.source.h"),
         M(Pivot, "x", ScriptApiKind.Value, "ctx.pivot.x"),
         M(Pivot, "y", ScriptApiKind.Value, "ctx.pivot.y"),
+        M(Center, "x", ScriptApiKind.Value, "ctx.center.x"),
+        M(Center, "y", ScriptApiKind.Value, "ctx.center.y"),
+        M(Slice, "left", ScriptApiKind.Value, "ctx.slice.left"),
+        M(Slice, "top", ScriptApiKind.Value, "ctx.slice.top"),
+        M(Slice, "right", ScriptApiKind.Value, "ctx.slice.right"),
+        M(Slice, "bottom", ScriptApiKind.Value, "ctx.slice.bottom"),
+        M(Rendered, "image", ScriptApiKind.Object, "image", Image),
+        M(Rendered, "offsetX", ScriptApiKind.Value, "offsetX"),
+        M(Rendered, "offsetY", ScriptApiKind.Value, "offsetY"),
 
         M(Color, "r", ScriptApiKind.Value, "r"),
         M(Color, "g", ScriptApiKind.Value, "g"),
@@ -135,6 +199,9 @@ public static class ScriptApiCatalog
         M(Hsv, "h", ScriptApiKind.Value, "h"),
         M(Hsv, "s", ScriptApiKind.Value, "s"),
         M(Hsv, "v", ScriptApiKind.Value, "v"),
+        M(Oklab, "l", ScriptApiKind.Value, "l"),
+        M(Oklab, "a", ScriptApiKind.Value, "a"),
+        M(Oklab, "b", ScriptApiKind.Value, "b"),
 
         M(MathScope, "PI", ScriptApiKind.Value, "Math.PI"),
         M(MathScope, "E", ScriptApiKind.Value, "Math.E"),
@@ -176,9 +243,9 @@ public static class ScriptApiCatalog
         md.AppendLine("A script effect is one JavaScript file that calls `effect({...})` once. `render(img, ctx, s)` changes `img.data` (RGBA numbers, row by row) in place for one frame.");
         md.AppendLine("Values written to `img.data` are rounded and clamped to 0-255 like Uint8ClampedArray.");
         md.AppendLine();
-        md.AppendLine("Rules: strict mode; no eval/Function, no Date, no Math.random (use ctx.hash/ctx.random), no typed arrays, no file or network access.");
+        md.AppendLine("Rules: strict mode; no eval/Function, no Date, no Math.random (use ctx.hash/ctx.random), typed arrays only as Float64Array/Int32Array/Uint8Array, no file or network access.");
         md.AppendLine(string.Create(CultureInfo.InvariantCulture,
-            $"Limits per call: {limits.MaxStatements:N0} statements, {limits.Timeout.TotalSeconds:0.#} s, {limits.MemoryBytes / (1024 * 1024)} MB of allocations, call depth {limits.MaxRecursion}. Over a limit the effect is skipped for that frame."));
+            $"Limits per call: {limits.MaxStatements:N0} statements, {limits.Timeout.TotalSeconds:0.#} s, {limits.MemoryBytes / (1024 * 1024)} MB of allocations, call depth {limits.MaxRecursion}; render() gets {limits.StatementsPerPixel:N0} more statements, {limits.TimePerPixel.TotalMicroseconds:0} µs and {limits.MemoryPerPixel / 1024} KB more per pixel of the (padded) image. Over a limit the effect is skipped for that frame."));
         md.AppendLine("Keep render() numeric (numbers, loops, Math, img.data indexing) for speed.");
         md.AppendLine();
         foreach (var group in All.GroupBy(member => member.Scope))
@@ -189,7 +256,7 @@ public static class ScriptApiCatalog
         }
         md.AppendLine("## Example");
         md.AppendLine("```js");
-        md.Append(ScriptTemplates.Shine.TrimEnd());
+        md.Append(OfficialEffects.Source("shine").TrimEnd());
         md.AppendLine();
         md.AppendLine("```");
         return md.ToString();

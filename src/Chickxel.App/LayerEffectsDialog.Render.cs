@@ -189,10 +189,13 @@ public sealed partial class LayerEffectsDialog
         var all = VirtualEffects();
         var sources = new PixelImage?[count];
         var pivots = new System.Drawing.PointF[count];
+        // 다른 레이어·테두리를 읽는 스크립트가 볼 것(원래 프레임 기준) — 프로젝트를 읽으므로 여기서(UI 스레드) 담는다
+        var layers = new ScriptLayerContext?[count];
         for (int f = 0; f < count; f++)
         {
             sources[f] = VirtualSourceAt(f);
             pivots[f] = _project.EffectPivot(_layer, OriginalOf(f));
+            layers[f] = _project.ScriptLayersAt(_layer, OriginalOf(f), all);
         }
         bool others = LayerEffects.UsesOtherFrames(all);
         var job = new FrameRenders(count) { Sources = sources };
@@ -211,9 +214,9 @@ public sealed partial class LayerEffectsDialog
                     int f = (start + k) % count;
                     if (sources[f] is { } source)
                     {
-                        var effects = LayerEffects.At(all, f, count, pivots[f],
+                        var effects = LayerEffects.WithScriptLayers(LayerEffects.At(all, f, count, pivots[f],
                             others ? i => (uint)i < (uint)count ? sources[i] : null : null,
-                            i => pivots[Math.Clamp(i, 0, count - 1)], cache);
+                            i => pivots[Math.Clamp(i, 0, count - 1)], cache), layers[f]);
                         var (image, x, y) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height), layer, token);
                         var thumb = ImageUtil.ToBitmap(RenderService.Shrink(image, StripThumbMax));
                         Volatile.Write(ref job.Results[f], new FrameResult(image, x, y, LayerEffects.AnyEnabled(effects), thumb, image.GetOpaqueBounds()));

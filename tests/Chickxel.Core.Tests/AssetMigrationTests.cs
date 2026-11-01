@@ -3,6 +3,7 @@ using Chickxel.Core.Assets;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
@@ -79,8 +80,12 @@ public class AssetMigrationTests
             Assert.Equal(["번쩍 외곽선", "미래"], catalog.Recipes.Select(e => e.Name).ToArray());
             Assert.All(catalog.Recipes, e => Assert.Equal(AssetOrigin.Personal, e.Origin));
             for (int i = 0; i < 2; i++) Assert.Equal(Json(legacyEffects[i].Effects), Json(catalog.Recipes[i].Recipe!.Effects));
-            var shadow = Assert.IsType<ShadowEffect>(catalog.Recipes[0].Recipe!.Effects[1]);
-            Assert.Equal((false, true, -2, 3), (shadow.Enabled, shadow.ClipToPrevious, shadow.OffsetX, shadow.OffsetY));
+            // 예전 그림자는 같은 설정의 공식 스크립트로 옮겨지고, 레시피가 그 원문을 싣는다
+            var shadow = Assert.IsType<ScriptEffect>(catalog.Recipes[0].Recipe!.Effects[1]);
+            Assert.Equal(OfficialEffects.HashOf("shadow"), shadow.ScriptHash);
+            Assert.Equal(OfficialEffects.Source("shadow"), catalog.Recipes[0].Recipe!.Scripts[shadow.ScriptHash]);
+            Assert.Equal((false, true, -2, 3),
+                (shadow.Enabled, shadow.ClipToPrevious, Convert.ToInt32(shadow.Settings["offsetX"]), Convert.ToInt32(shadow.Settings["offsetY"])));
 
             Assert.Equal(["Dusk", "Plain"], catalog.Gradients.Select(e => e.Name).ToArray());
             Assert.Equal([true, false], catalog.Gradients.Select(e => e.Favorite).ToArray());
@@ -106,7 +111,7 @@ public class AssetMigrationTests
         var reopened = setup.Open();
         var recipe = Assert.Single(reopened.Catalog.Recipes);
         Assert.Equal("all", recipe.Name);
-        Assert.Equal(Json(EffectRecipe.Capture("", "all", EffectCharacterizationTests.SavedKinds()).Effects), Json(recipe.Recipe!.Effects));
+        Assert.Equal(Json(EffectRecipe.Capture("", "all", EffectCharacterizationTests.LegacySavedKinds()).Effects), Json(recipe.Recipe!.Effects));
         Assert.Equal(["Mine", "Fire", "Forest", "Grayscale"], reopened.Catalog.Gradients.Select(e => e.Name).ToArray());
         Assert.Equal([true, false, false, false], reopened.Catalog.Gradients.Select(e => e.Favorite).ToArray());
     }
@@ -216,7 +221,9 @@ public class AssetMigrationTests
         var missing = Assert.IsType<MissingEffect>(recipe.Effects[0]);
         Assert.Equal("chickxel.effect.future", missing.TypeId);
         Assert.Equal(original, Json(recipe.Effects)[0]);
-        Assert.True(Assert.IsType<FadeEffect>(recipe.Effects[1]).FadeOut);
+        var fade = Assert.IsType<ScriptEffect>(recipe.Effects[1]);
+        Assert.Equal(OfficialEffects.HashOf("fade"), fade.ScriptHash);
+        Assert.True(fade.Settings["fadeOut"] is true);
     }
 
     [Fact]

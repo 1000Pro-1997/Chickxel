@@ -90,7 +90,8 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_Source, SourceText(package.State.Source)),
             (UiStrings.Assets_InstalledAt, package.State.InstalledUtc == default ? null : package.State.InstalledUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)),
             (UiStrings.Assets_Contents, manifest is null ? null : ContentsText(package)));
-        if (package.Entries.Any(e => e.ScriptHashes.Count > 0)) ScriptNote();
+        // 실행 허락 안내는 아직 허락하지 않은 원문이 있을 때만(공식 효과 원문은 늘 허락 — 에셋 상세와 같은 기준)
+        if (package.Entries.Any(e => e.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))) ScriptNote();
         Issues(package.Issues);
 
         var toggle = Ui.Button(package.Enabled ? VectorIcon.EyeOff : VectorIcon.Eye, package.Enabled ? UiStrings.Assets_Disable : UiStrings.Assets_Enable,
@@ -113,6 +114,7 @@ public sealed partial class AssetManagerWindow
     {
         "file" => UiStrings.Assets_SourceFile,
         AppAssets.RemoteSource => UiStrings.Assets_SourceRemote,
+        OfficialEffectPackages.BundledSource => UiStrings.Assets_SourceBundled,
         _ => source,
     };
 
@@ -150,7 +152,7 @@ public sealed partial class AssetManagerWindow
 
     private void AssetDetail(AssetEntry entry)
     {
-        AddTitle(entry.Name);
+        AddTitle(entry.DisplayName);
         if (entry.Gradient is { } gradient)
             _detail.Children.Add(new GradientSwatch { Preset = gradient, Height = 48 });
         if (entry.EffectTemplate is not null || entry.PreviewPath is not null)
@@ -170,8 +172,15 @@ public sealed partial class AssetManagerWindow
             (UiStrings.Assets_ScriptRun, scripts.Count == 0 ? null : allowed ? UiStrings.Assets_ScriptRunAllowed : UiStrings.Assets_ScriptRunNotAllowed));
         if (scripts.Count > 0 && !allowed) ScriptNote();
         if (entry.Script is { } declared)
+        {
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            if (declared.DescriptionFor(culture) is { Length: > 0 } scriptDescription)
+                _detail.Children.Add(new TextBlock { Text = scriptDescription, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
             _detail.Children.Add(Dim(F(UiStrings.Assets_ScriptSettingCount, declared.Settings.Count)
-                                     + (declared.Settings.Count > 0 ? ": " + string.Join(", ", declared.Settings.Select(s => s.Label)) : "")));
+                                     + (declared.Settings.Count > 0
+                                         ? ": " + string.Join(", ", declared.Settings.Select(s => ScriptTranslations.LabelFor(declared.Translations, s, culture)))
+                                         : "")));
+        }
 
         if (entry.Recipe is { } recipe)
         {
@@ -196,7 +205,7 @@ public sealed partial class AssetManagerWindow
         if (entry.Origin == AssetOrigin.Personal)
             Actions(
                 favorite,
-                entry.Kind is AssetKinds.EffectRecipe or AssetKinds.EffectScript
+                entry.Kind == AssetKinds.EffectScript
                     ? Ui.Button(VectorIcon.Sparkles, UiStrings.EffectMaker_EditIn, (_, _) =>
                     {
                         // 에셋 관리자는 모달이라 닫고 효과 만들기(메인 창에 딸린 창)로 넘어간다
@@ -208,7 +217,8 @@ public sealed partial class AssetManagerWindow
                 entry.Recipe is null ? null
                     : Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.RecipeParams_Edit, (_, _) => RecipeParametersDialog.Edit(this, entry)).Tip(UiStrings.RecipeParams_EditTip),
                 Ui.Button(VectorIcon.Upload, UiStrings.Assets_Export, (_, _) => ExportPersonal(entry)),
-                Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishPersonal(entry)).Tip(UiStrings.Assets_PublishEntryTip),
+                entry.Kind == AssetKinds.EffectRecipe ? null
+                    : Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishPersonal(entry)).Tip(UiStrings.Assets_PublishEntryTip),
                 Ui.Button(VectorIcon.Trash, UiStrings.Assets_Delete, (_, _) => DeletePersonal(entry)));
         else
             Actions(
@@ -312,7 +322,9 @@ public sealed partial class AssetManagerWindow
 
     private void DeletePackage(InstalledPackage package)
     {
-        if (Ui.Ask(this, F(UiStrings.Assets_DeleteQuestion, package.Name, AssetStore.DeletedRetentionDays), UiStrings.Assets_Delete,
+        string question = F(UiStrings.Assets_DeleteQuestion, package.Name, AssetStore.DeletedRetentionDays);
+        if (OfficialEffectPackages.IsOfficial(package)) question += "\n\n" + UiStrings.Assets_DeleteOfficialNote;
+        if (Ui.Ask(this, question, UiStrings.Assets_Delete,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         Act(() => AppAssets.Store.Delete(package.Id));
     }

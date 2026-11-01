@@ -24,6 +24,7 @@ internal sealed class ColorEditor : UserControl
     private Color32 _color;
     private bool _updating;
     private float _h, _s, _v;
+    private bool _opaque;
 
     public ColorEditor(Color32 initial, IEnumerable<Color32>? recent = null)
     {
@@ -109,6 +110,19 @@ internal sealed class ColorEditor : UserControl
         set { if (value != _color) SetColor(value, fromHsv: false, notify: false); }
     }
 
+    /// <summary>알파를 고르지 않는 색(불투명만): 알파 막대를 숨기고 A 칸을 끄며, 고른 색은 늘 알파 255다.</summary>
+    public bool Opaque
+    {
+        get => _opaque;
+        set
+        {
+            _opaque = value;
+            _alpha.IsVisible = !value;
+            _a.IsEnabled = !value;
+            if (value && _color.A != 255) SetColor(_color, fromHsv: false, notify: false);
+        }
+    }
+
     public ColorPickerMode Mode
     {
         get => _modeTabs.SelectedIndex < 0 ? ColorPickerMode.Square : ColorPickerModes.All[_modeTabs.SelectedIndex];
@@ -138,6 +152,7 @@ internal sealed class ColorEditor : UserControl
 
     private void SetColor(Color32 color, bool fromHsv, bool notify)
     {
+        if (_opaque) color = color.WithAlpha(255);
         if (!fromHsv)
         {
             var (h, s, v) = color.ToHsv();

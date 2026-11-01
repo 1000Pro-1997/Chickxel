@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Chickxel.Core.Edit;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -59,7 +60,8 @@ public class UndoHistoryTests
         var alt = p.AddSkin(group, "갑옷");
         p.SetActiveSkin(group, alt);
         Draw(p, p.IndexOf(head), 0, 4, 4, new Color32(10, 10, 200));
-        p.SetLayerEffects(0, [new OutlineEffect { Color = new Color32(255, 0, 255), Thickness = 2 }]);
+        // 앱의 효과는 스크립트 효과(예전 외곽선을 바꾼 공식 스크립트 — 읽은 기록도 같은 효과로 돌아와야 함)
+        p.SetLayerEffects(0, [LegacyEffects.Convert(new OutlineEffect { Color = new Color32(255, 0, 255), Thickness = 2 })]);
         p.SaveOutfit("전투");
         p.AddFrame();
         Draw(p, 0, 1, 5, 5, Color32.White);

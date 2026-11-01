@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Acornima.Ast;
 using Chickxel.Core.Localization;
 using Jint;
+using Jint.Constraints;
 using Jint.Native;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
@@ -13,8 +14,9 @@ namespace Chickxel.Core.Scripting;
 /// 작업 스레드 하나의 Jint 실행기(13.3, 13.4). 같은 <see cref="ScriptLimits"/>면 스레드마다 하나를 만들어 계속 쓴다.
 /// <para>
 /// 격리: .NET 접근(<c>AllowClr</c>)은 켜지 않고, 문자열 코드 실행(<c>eval</c>, <c>Function</c>, <c>ShadowRealm</c>)을 막는다.
-/// <c>Math.random</c>, <c>Date</c>, <c>Intl</c>, <c>Temporal</c>, <c>WeakRef</c>, <c>FinalizationRegistry</c>와 typed array·<c>ArrayBuffer</c> 계열은 지운다
-/// (typed array는 한 번에 크게 할당해 메모리 한도를 건너뛸 수 있다). 남은 기본 객체는 모두 얼린다.
+/// <c>Math.random</c>, <c>Date</c>, <c>Intl</c>, <c>Temporal</c>, <c>WeakRef</c>, <c>FinalizationRegistry</c>와 <c>ArrayBuffer</c> 계열, 아래 셋을 뺀 typed array는 지운다
+/// (typed array는 한 번에 크게 할당해 메모리 한도를 건너뛸 수 있다). <c>Float64Array</c>·<c>Int32Array</c>·<c>Uint8Array</c>는 만들 때 길이를 검사하는 대리
+/// (<see cref="InstallTypedArrays"/>)로만 만들 수 있고 <c>buffer</c>로 <c>ArrayBuffer</c>에 닿지 못한다. 남은 기본 객체는 모두 얼린다.
 /// </para>
 /// <para>
 /// 결정론: 호출마다 처음 상태의 전역으로 되돌린 뒤(<c>RestoreGlobalSnapshot</c>) 해석해 둔 스크립트를 다시 실행해 선언을 새로 만든다.
@@ -25,16 +27,17 @@ internal sealed class ScriptSandbox
 {
     private const string FileName = "effect.js";
 
-    // 지울 전역: 시간·무작위·로캘·GC 관찰처럼 결과를 바꾸는 것, 문자열 코드 실행, 한 번에 크게 할당하는 버퍼
+    // 지울 전역: 시간·무작위·로캘·GC 관찰처럼 결과를 바꾸는 것, 문자열 코드 실행, 한 번에 크게 할당하는 버퍼(검사하는 typed array 셋은 남김)
     private const string Lockdown = """
         (() => {
           'use strict';
           for (const name of ['eval', 'Function', 'Date', 'Intl', 'Temporal', 'ShadowRealm', 'WeakRef', 'FinalizationRegistry',
-              'ArrayBuffer', 'SharedArrayBuffer', 'DataView', 'Atomics', 'Int8Array', 'Uint8Array', 'Uint8ClampedArray',
-              'Int16Array', 'Uint16Array', 'Int32Array', 'Uint32Array', 'Float16Array', 'Float32Array', 'Float64Array',
+              'ArrayBuffer', 'SharedArrayBuffer', 'DataView', 'Atomics', 'Int8Array', 'Uint8ClampedArray',
+              'Int16Array', 'Uint16Array', 'Uint32Array', 'Float16Array', 'Float32Array',
               'BigInt64Array', 'BigUint64Array']) {
             delete globalThis[name];
           }
+          delete Object.getPrototypeOf(Float64Array.prototype).buffer;
           delete Math.random;
           globalThis.lerp = (a, b, t) => a + (b - a) * t;
           // 문법으로만 닿는 기본 객체(생성기, async, 반복자)도 얼린다. Set은 돌면서 더한 값도 차례로 돈다
@@ -79,9 +82,8 @@ internal sealed class ScriptSandbox
             .DisableStringCompilation()
             .Culture(CultureInfo.InvariantCulture)
             .LocalTimeZone(TimeZoneInfo.Utc)
-            .TimeoutInterval(limits.Timeout)
             .RegexTimeoutInterval(limits.Timeout)
-            .MaxStatements(limits.MaxStatements)
+            .MaxStatements((int)Math.Min(int.MaxValue, limits.MaxStatements))
             .LimitMemory(limits.MemoryBytes)
             .LimitRecursion(limits.MaxRecursion)
             .MaxArraySize(limits.MaxArrayLength)
@@ -92,8 +94,37 @@ internal sealed class ScriptSandbox
             return JsValue.Undefined;
         }, 1));
         ImagePrototype = ScriptHostApi.Install(this);
+        InstallTypedArrays();
         Engine.Execute(Lockdown);
         _baseline = Engine.Advanced.CaptureGlobalSnapshot();
+    }
+
+    /// <summary>
+    /// <c>Float64Array</c>·<c>Int32Array</c>·<c>Uint8Array</c>를 길이를 검사하는 대리(<c>Proxy</c>의 construct가 호스트 함수 — 문장으로 세지 않음)로 바꾼다:
+    /// 길이(수 하나, 또는 배열·typed array 인자의 <c>length</c>)가 0~<see cref="ScriptLimits.MaxArrayLength"/> 정수이고 바이트가 메모리 한도 안이어야 한다.
+    /// 원형의 <c>constructor</c>도 대리라 <c>a.constructor</c>·<c>from</c>·<c>slice</c> 등으로 만드는 배열도 같은 검사를 거친다.
+    /// </summary>
+    private void InstallTypedArrays()
+    {
+        var wrap = Engine.Evaluate("(native, trap) => { const proxy = new Proxy(native, { construct: trap }); "
+                                   + "Object.defineProperty(native.prototype, 'constructor', { value: proxy, writable: false, enumerable: false, configurable: false }); return proxy; }");
+        foreach (var (name, bytes) in new[] { ("Float64Array", 8L), ("Int32Array", 4L), ("Uint8Array", 1L) })
+        {
+            var native = Engine.GetValue(name);
+            var trap = new ClrFunction(Engine, "construct", (_, args) =>
+            {
+                var list = args.Length > 1 ? args[1] as Jint.Native.Array.ArrayInstance : null;
+                var first = list is not null && ScriptHostApi.Length(list) > 0 ? list[0] : JsValue.Undefined;
+                double length = first is JsNumber number ? number.AsNumber()
+                    : first is Jint.Native.Object.ObjectInstance obj && !first.IsCallable() ? Jint.Runtime.TypeConverter.ToNumber(obj.Get("length"))
+                    : double.NaN;
+                if (!(length >= 0 && length <= Limits.MaxArrayLength && length == Math.Floor(length) && length * bytes <= Limits.MemoryBytes))
+                    throw new Jint.Runtime.JavaScriptException(Engine.Intrinsics.TypeError,
+                        DomainStrings.FormatScript_InvalidTypedArrayLength(name: name, max: Limits.MaxArrayLength));
+                return Engine.Construct(native, [first]);
+            }, 3);
+            Engine.SetValue(name, Engine.Invoke(wrap, native, trap));
+        }
     }
 
     public ScriptLimits Limits { get; }
@@ -106,23 +137,43 @@ internal sealed class ScriptSandbox
     /// 이 스레드의 실행기에서 <paramref name="body"/>를 돌린다. 한도 초과와 스크립트 오류는 <see cref="ScriptEffectException"/>으로,
     /// <paramref name="cancel"/> 취소는 <see cref="OperationCanceledException"/>으로 나간다.
     /// </summary>
-    public static T Run<T>(ScriptLimits limits, CancellationToken cancel, Func<ScriptSandbox, T> body)
+    public static T Run<T>(ScriptLimits limits, CancellationToken cancel, Func<ScriptSandbox, T> body) => Run(limits, limits, cancel, body);
+
+    /// <summary>
+    /// <see cref="Run{T}(ScriptLimits, CancellationToken, Func{ScriptSandbox, T})"/>를 이 호출만 <paramref name="call"/> 한도(문장·시간·메모리 —
+    /// 보통 <see cref="ScriptLimits.ForPixels"/>)로. 실행기는 <paramref name="limits"/>로 찾으므로 그림 크기마다 새로 만들지 않는다.
+    /// </summary>
+    public static T Run<T>(ScriptLimits limits, ScriptLimits call, CancellationToken cancel, Func<ScriptSandbox, T> body)
     {
         var sandboxes = t_sandboxes ??= [];
         if (!sandboxes.TryGetValue(limits, out var sandbox)) sandboxes[limits] = sandbox = new ScriptSandbox(limits, cached: true);
         // 렌더 중 호스트 콜백(ctx.frameSource 등)이 같은 스레드에서 다시 스크립트를 부르면 쓰던 상태를 건드리지 않게 따로 만든다
         if (sandbox._busy) sandbox = new ScriptSandbox(limits, cached: false);
-        return sandbox.Enter(cancel, body);
+        return sandbox.Enter(call, cancel, body);
     }
 
-    private T Enter<T>(CancellationToken cancel, Func<ScriptSandbox, T> body)
+    private static readonly System.Reflection.FieldInfo? MemoryLimitField =
+        typeof(MemoryLimitConstraint).GetField("_memoryLimit", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+    // 이 호출의 문장·메모리·시간 한도를 넣는다(실행기를 만들 때의 값이 바탕 — 끝나면 되돌림)
+    private void Apply(ScriptLimits call)
+    {
+        CallLimits = call;
+        if (Engine.Constraints.Find<MaxStatementsConstraint>() is { } statements) statements.MaxStatements = (int)Math.Min(int.MaxValue, call.MaxStatements);
+        if (Engine.Constraints.Find<MemoryLimitConstraint>() is { } memory) MemoryLimitField?.SetValue(memory, call.MemoryBytes);
+        _cancel.Timeout = call.Timeout;
+    }
+
+    private T Enter<T>(ScriptLimits call, CancellationToken cancel, Func<ScriptSandbox, T> body)
     {
         cancel.ThrowIfCancellationRequested();
         _busy = true;
         _cancel.Token = cancel;
+        Apply(call);
         try
         {
             Engine.Advanced.RestoreGlobalSnapshot(_baseline);
+            _cancel.Start();
             return body(this);
         }
         catch (OperationCanceledException) when (cancel.IsCancellationRequested)
@@ -139,12 +190,16 @@ internal sealed class ScriptSandbox
         }
         finally
         {
+            Apply(Limits);
             _cancel.Token = default;
             _declaration = JsValue.Undefined;
             _busy = false;
             if (!_cached) Engine.Dispose();
         }
     }
+
+    /// <summary>지금 호출의 한도(<see cref="Run{T}(ScriptLimits, ScriptLimits, CancellationToken, Func{ScriptSandbox, T})"/>의 call, 아니면 <see cref="Limits"/>).</summary>
+    public ScriptLimits CallLimits { get; private set; } = null!;
 
     /// <summary>스크립트 맨 위를 실행하고 <c>effect(...)</c>에 넘긴 선언 객체를 돌려준다.</summary>
     public Jint.Native.Object.ObjectInstance Declare(Prepared<Script> script)
@@ -183,15 +238,15 @@ internal sealed class ScriptSandbox
         switch (ex)
         {
             case StatementsCountOverflowException:
-                return StatementLimitError(Limits, line, column);
+                return StatementLimitError(CallLimits, line, column);
             case TimeoutException or RegexMatchTimeoutException:
-                return TimeoutError(Limits, line, column);
+                return TimeoutError(CallLimits, line, column);
         }
         var (kind, message) = ex switch
         {
             JavaScriptException js => (ScriptErrorKind.Runtime, DomainStrings.FormatScript_RuntimeError(detail: js.Message)),
             MemoryLimitExceededException or OutOfMemoryException => (ScriptErrorKind.Memory,
-                DomainStrings.FormatScript_MemoryLimit(megabytes: Limits.MemoryBytes >> 20, length: Limits.MaxArrayLength)),
+                DomainStrings.FormatScript_MemoryLimit(megabytes: CallLimits.MemoryBytes >> 20, length: CallLimits.MaxArrayLength)),
             RecursionDepthOverflowException or InsufficientExecutionStackException => (ScriptErrorKind.Recursion,
                 DomainStrings.FormatScript_RecursionLimit(depth: Limits.MaxRecursion)),
             _ => (ScriptErrorKind.Runtime, DomainStrings.FormatScript_RuntimeError(detail: ex.Message)),
@@ -208,12 +263,28 @@ internal sealed class ScriptSandbox
             : (0, 0);
     }
 
-    /// <summary>호출마다 바꾸는 취소 토큰(Jint 기본 취소 제약은 실행기를 만들 때 토큰이 정해진다).</summary>
+    /// <summary>
+    /// 호출마다 바꾸는 취소 토큰과 시간 한도(Jint 기본 제약은 실행기를 만들 때 값이 정해진다 — 시간 한도는 그림 크기에 따라 호출마다 다르다).
+    /// 시간은 64문장마다 본다.
+    /// </summary>
     private sealed class CallCancellation : Constraint
     {
         public CancellationToken Token;
+        public TimeSpan Timeout;
+        private long _deadline = long.MaxValue;
+        private int _count;
 
-        public override void Check() => Token.ThrowIfCancellationRequested();
+        public void Start()
+        {
+            _deadline = System.Diagnostics.Stopwatch.GetTimestamp() + (long)(Timeout.TotalSeconds * System.Diagnostics.Stopwatch.Frequency);
+            _count = 0;
+        }
+
+        public override void Check()
+        {
+            Token.ThrowIfCancellationRequested();
+            if ((++_count & 63) == 0 && System.Diagnostics.Stopwatch.GetTimestamp() > _deadline) throw new TimeoutException();
+        }
 
         public override void Reset()
         {

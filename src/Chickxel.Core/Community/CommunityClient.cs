@@ -82,6 +82,10 @@ public sealed class CommunityClient
 
     public Uri PackagePageUrl(string id) => new(BaseUrl, "packages/" + Uri.EscapeDataString(id));
 
+    /// <summary>에셋 목록 쪽 <c>/packages</c>. 사이트의 종류 탭(<c>effect</c>·<c>gradient</c>)을 주면 <c>?kind=</c>로 그 탭을 연다(null = 사이트 기본 탭).</summary>
+    public Uri PackagesPageUrl(string? siteKind = null)
+        => new(BaseUrl, siteKind is { Length: > 0 } ? "packages?kind=" + Uri.EscapeDataString(siteKind) : "packages");
+
     public Uri UserPageUrl(string handle) => new(BaseUrl, "gallery/u/" + Uri.EscapeDataString(handle));
 
     /// <summary>사이트 기준 경로(<c>/files/…</c>)나 절대 주소를 절대 주소로. HTTPS(또는 개발 서버와 같은 사이트)가 아니면 null.</summary>

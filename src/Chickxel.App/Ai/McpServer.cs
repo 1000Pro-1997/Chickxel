@@ -8,9 +8,20 @@ using Chickxel.App.Localization;
 
 namespace Chickxel.App.Ai;
 
+/// <summary>MCP 접근 범위: 어느 토큰으로 들어왔는지에 따라 쓸 수 있는 도구가 다르다.</summary>
+public enum McpScope
+{
+    /// <summary>모든 도구(AI 채팅 창·상태 점검).</summary>
+    Full,
+    /// <summary>효과 만들기 AI 칸: 읽기 도구와 효과 만들기 편집기 도구만(<see cref="PixelTools.EffectMakerScopeTools"/>).</summary>
+    EffectMaker,
+}
+
 /// <summary>
 /// 앱 안에서 도는 최소 MCP 서버(Streamable HTTP, <see cref="HttpListener"/>). 127.0.0.1의 빈 포트에서
 /// <c>POST /mcp</c>로 JSON-RPC 2.0 메시지(하나 또는 묶음)를 받고, Bearer 토큰이 맞아야 응답한다.
+/// 토큰은 범위(<see cref="McpScope"/>)마다 하나씩이다: 효과 만들기 토큰으로 들어오면 <c>tools/list</c>는 허락한 도구만 보이고
+/// 다른 도구의 <c>tools/call</c>은 실행하지 않고 도구 오류로 답한다(AI에게 알리는 것만으로는 막을 수 없으므로 서버에서 막음).
 /// <para>
 /// 요청마다 백그라운드 작업에서 처리하고, <c>tools/call</c>만 UI 스레드로 넘겨 <see cref="PixelTools.CallAsync"/>를 부른다. 오래 걸리는 도구(그림 생성)는
 /// 클라이언트가 받으면 SSE로 답해 기다리는 동안 신호·진행을 보낸다. 어떤 예외도 받기 루프 밖으로 나가지 않는다. 응답이 필요 없는 메시지(알림·응답)는 202, GET은 405, DELETE는 200.
@@ -36,8 +47,11 @@ public sealed class McpServer : IDisposable
     public McpServer(PixelTools tools)
     {
         _tools = tools;
-        Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        Token = NewToken();
+        EffectMakerToken = NewToken();
     }
+
+    private static string NewToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
 
     /// <summary>편집기 도구(차례마다 편집 범위를 정하려고 채팅 창이 씀).</summary>
     public PixelTools Tools => _tools;
@@ -45,8 +59,14 @@ public sealed class McpServer : IDisposable
     /// <summary>"http://127.0.0.1:포트/mcp"(시작 전이면 빈 문자열).</summary>
     public string Url => _port == 0 ? "" : $"http://{_host}:{_port}/mcp";
 
-    /// <summary>요청 헤더 <c>Authorization: Bearer …</c>에 넣어야 하는 무작위 토큰(32바이트 16진수).</summary>
+    /// <summary>요청 헤더 <c>Authorization: Bearer …</c>에 넣어야 하는 무작위 토큰(32바이트 16진수) — 모든 도구.</summary>
     public string Token { get; }
+
+    /// <summary>효과 만들기 범위(<see cref="McpScope.EffectMaker"/>)의 무작위 토큰.</summary>
+    public string EffectMakerToken { get; }
+
+    /// <summary><paramref name="scope"/>의 토큰.</summary>
+    public string TokenFor(McpScope scope) => scope == McpScope.EffectMaker ? EffectMakerToken : Token;
 
     /// <summary>지금까지 받은 /mcp 요청 수(진단용). 세션이 시작할 때 찍어 두고 나중에 비교한다.</summary>
     public McpCounters Counters => new(Interlocked.Read(ref _requests), Interlocked.Read(ref _unauthorized), Interlocked.Read(ref _toolLists));
@@ -127,7 +147,7 @@ public sealed class McpServer : IDisposable
     /// 동시에 상태 점검과 채팅이 시작되어도 서로 파일을 지우지 않도록 호출마다 고유 파일을 만들며,
     /// 토큰이 들어 있으므로 macOS·Linux에서는 본인만 읽을 수 있게 만든다.
     /// </summary>
-    public string WriteMcpConfigFile()
+    public string WriteMcpConfigFile(McpScope scope = McpScope.Full)
     {
         Start();
         var config = new JsonObject
@@ -138,7 +158,7 @@ public sealed class McpServer : IDisposable
                 {
                     ["type"] = "http",
                     ["url"] = Url,
-                    ["headers"] = new JsonObject { ["Authorization"] = "Bearer " + Token },
+                    ["headers"] = new JsonObject { ["Authorization"] = "Bearer " + TokenFor(scope) },
                 },
             },
         };
@@ -226,7 +246,7 @@ public sealed class McpServer : IDisposable
                 return;
             }
             Interlocked.Increment(ref _requests);
-            if (!Authorized(request))
+            if (Authorized(request) is not { } scope)
             {
                 Interlocked.Increment(ref _unauthorized);
                 response.StatusCode = 401;
@@ -236,7 +256,7 @@ public sealed class McpServer : IDisposable
             switch (request.HttpMethod)
             {
                 case "POST":
-                    await HandlePostAsync(request, response).ConfigureAwait(false);
+                    await HandlePostAsync(request, response, scope).ConfigureAwait(false);
                     break;
                 case "DELETE":
                     response.StatusCode = 200;
@@ -257,17 +277,23 @@ public sealed class McpServer : IDisposable
         }
     }
 
-    private bool Authorized(HttpListenerRequest request)
+    /// <summary>Bearer 토큰이 맞으면 그 범위, 아니면 null.</summary>
+    private McpScope? Authorized(HttpListenerRequest request)
     {
         var header = request.Headers["Authorization"]?.Trim();
         const string scheme = "Bearer ";
-        if (header is null || !header.StartsWith(scheme, StringComparison.OrdinalIgnoreCase)) return false;
+        if (header is null || !header.StartsWith(scheme, StringComparison.OrdinalIgnoreCase)) return null;
         var given = Encoding.UTF8.GetBytes(header[scheme.Length..].Trim());
-        var expected = Encoding.UTF8.GetBytes(Token);
-        return CryptographicOperations.FixedTimeEquals(given, expected);
+        // 두 토큰을 모두 견준다(어느 쪽이 맞았는지로 걸리는 시간이 달라지지 않게)
+        bool full = CryptographicOperations.FixedTimeEquals(given, Encoding.UTF8.GetBytes(Token));
+        bool maker = CryptographicOperations.FixedTimeEquals(given, Encoding.UTF8.GetBytes(EffectMakerToken));
+        return full ? McpScope.Full : maker ? McpScope.EffectMaker : null;
     }
 
-    private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response)
+    /// <summary><paramref name="scope"/>에서 <paramref name="name"/> 도구를 쓸 수 있는지.</summary>
+    public static bool Allows(McpScope scope, string name) => scope == McpScope.Full || PixelTools.EffectMakerScopeTools.Contains(name);
+
+    private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response, McpScope scope)
     {
         if (request.ContentLength64 > MaxBodyBytes)
         {
@@ -314,7 +340,7 @@ public sealed class McpServer : IDisposable
             foreach (var item in batch.ToList())
             {
                 initialize |= IsInitialize(item);
-                if (await ProcessAsync(item).ConfigureAwait(false) is { } reply) replies.Add(reply);
+                if (await ProcessAsync(item, scope).ConfigureAwait(false) is { } reply) replies.Add(reply);
             }
             if (initialize) response.AddHeader("Mcp-Session-Id", _sessionId);
             if (replies.Count == 0) response.StatusCode = 202;
@@ -322,12 +348,12 @@ public sealed class McpServer : IDisposable
         }
         else if (root is JsonObject single && IsLongToolCall(single) && AcceptsEventStream(request))
         {
-            await StreamToolCallAsync(single, response).ConfigureAwait(false);
+            await StreamToolCallAsync(single, response, scope).ConfigureAwait(false);
         }
         else
         {
             if (IsInitialize(root)) response.AddHeader("Mcp-Session-Id", _sessionId);
-            if (await ProcessAsync(root).ConfigureAwait(false) is { } reply) await WriteJsonAsync(response, 200, reply).ConfigureAwait(false);
+            if (await ProcessAsync(root, scope).ConfigureAwait(false) is { } reply) await WriteJsonAsync(response, 200, reply).ConfigureAwait(false);
             else response.StatusCode = 202;
         }
     }
@@ -345,7 +371,7 @@ public sealed class McpServer : IDisposable
     /// 요청에 progressToken이 있으면 <c>notifications/progress</c>(진행 글)를 보내고, 끝나면 결과 메시지 하나로 닫는다.
     /// 클라이언트가 끊으면(쓰기 실패) 도구를 취소한다.
     /// </summary>
-    private async Task StreamToolCallAsync(JsonObject message, HttpListenerResponse response)
+    private async Task StreamToolCallAsync(JsonObject message, HttpListenerResponse response, McpScope scope)
     {
         var id = message["id"];
         var parameters = message["params"] as JsonObject;
@@ -391,7 +417,7 @@ public sealed class McpServer : IDisposable
             };
             _ = Send("event: message\ndata: " + note.ToJsonString(PixelTools.JsonOptions) + "\n\n");
         };
-        var call = CallToolAsync(name, arguments, progress, cts.Token);
+        var call = CallToolAsync(name, arguments, progress, scope, cts.Token);
         while (await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(15))).ConfigureAwait(false) != call)
             await Send(": keepalive\n\n").ConfigureAwait(false);
         var reply = Result(id, await call.ConfigureAwait(false));
@@ -420,8 +446,8 @@ public sealed class McpServer : IDisposable
 
     // ───────────── JSON-RPC ─────────────
 
-    /// <summary>메시지 하나를 처리한다. 응답이 필요 없으면(알림·클라이언트 응답) null.</summary>
-    private async Task<JsonObject?> ProcessAsync(JsonNode? node)
+    /// <summary>메시지 하나를 처리한다(<paramref name="scope"/> = 토큰의 범위). 응답이 필요 없으면(알림·클라이언트 응답) null.</summary>
+    private async Task<JsonObject?> ProcessAsync(JsonNode? node, McpScope scope)
     {
         if (node is not JsonObject message) return ErrorResponse(null, -32600, "Invalid Request");
         bool hasId = message.TryGetPropertyValue("id", out var id);
@@ -450,14 +476,18 @@ public sealed class McpServer : IDisposable
                     return Result(id, new JsonObject());
                 case "tools/list":
                     Interlocked.Increment(ref _toolLists);
-                    return Result(id, new JsonObject { ["tools"] = _tools.ListTools() });
+                    var tools = _tools.ListTools();
+                    if (scope != McpScope.Full)
+                        foreach (var tool in tools.ToList())
+                            if (AsString(tool?["name"]) is not { } listed || !Allows(scope, listed)) tools.Remove(tool);
+                    return Result(id, new JsonObject { ["tools"] = tools });
                 case "tools/call":
                     var name = AsString(parameters?["name"]);
                     if (string.IsNullOrEmpty(name)) return ErrorResponse(id, -32602, "Invalid params: tool name is required");
                     if (parameters!["arguments"] is { } argNode && argNode is not JsonObject)
                         return ErrorResponse(id, -32602, "Invalid params: arguments must be an object");
                     var arguments = parameters["arguments"] as JsonObject;
-                    return Result(id, await CallToolAsync(name, arguments, null, CancellationToken.None).ConfigureAwait(false));
+                    return Result(id, await CallToolAsync(name, arguments, null, scope, CancellationToken.None).ConfigureAwait(false));
                 default:
                     return ErrorResponse(id, -32601, $"Method not found: {method}");
             }
@@ -470,10 +500,17 @@ public sealed class McpServer : IDisposable
 
     /// <summary>
     /// 도구를 UI 스레드에서 실행한다(오래 걸리는 도구는 UI 스레드에서 기다리며 진행을 알림). 예외는 isError 결과로 바꾼다.
+    /// <paramref name="scope"/>에서 쓸 수 없는 도구는 실행하지 않고 도구 오류로 답한다.
     /// 저장·열기 덮개가 떠 있으면(작업 스레드가 프로젝트를 읽는 중) 끝난 뒤에 실행한다.
     /// </summary>
-    private async Task<JsonObject> CallToolAsync(string name, JsonObject? arguments, Action<string>? progress, CancellationToken ct)
+    private async Task<JsonObject> CallToolAsync(string name, JsonObject? arguments, Action<string>? progress, McpScope scope, CancellationToken ct)
     {
+        if (!Allows(scope, name))
+            return new JsonObject
+            {
+                ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = UiStrings.FormatAi_Scope_EffectMakerOnly(tool: name) }),
+                ["isError"] = true,
+            };
         try
         {
             return await Dispatcher.UIThread.InvokeAsync(async () =>

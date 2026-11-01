@@ -1,9 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 using Chickxel.App.Localization;
 
 namespace Chickxel.App.Ai;
@@ -19,16 +21,17 @@ public sealed partial class PixelTools
 
     private static IEnumerable<JsonObject> EffectToolDefinitions()
     {
-        var typeIds = EffectRegistry.BuiltIn.Select(d => d.TypeId).ToArray();
         yield return Tool("list_effect_types",
             "List the layer effects you can add with add_effect. Layer effects are non-destructive: they never change pixels, are drawn on top of a " +
-            "layer's (or a group's composite) image in stack order, and can be changed, disabled or removed at any time. Use them for outlines, drop shadows, " +
-            "rim light, glow, color overlay/adjust/palette swap, reflections, and animated effects over a frame range such as hit flash, blink, shake, " +
-            "bob, appear/disappear, fade, squash, explode, melt, rotate, afterimage, color cycle, shockwave, shine and hologram. " +
-            "Returns every type id with its display name and description (user's UI language), whether it animates over its frame range, its settings with " +
-            "default values (keys and value formats of the .chickxel file), allowed values of choice settings, [min, max] of clamped numbers, and the user's " +
-            "effect recipes available in the active asset catalog (the user's personal recipes and recipes of enabled installed asset packages; each is a stack of " +
-            "effects with order and clipping — the built-in presets are the effect types themselves). Works without an open project.",
+            "layer's (or a group's composite) image in stack order, and can be changed, disabled or removed at any time. The effects are the script effects " +
+            "installed in the user's asset catalog: the official Chickxel effects (installed by default; ids like \"outline\", \"shadow\", \"rimlight\", " +
+            "\"coloroverlay\", \"innerglow\", \"paletteswap\", \"coloradjust\", \"reflection\", \"explode\", \"shine\", \"squash\", \"hitflash\", \"blink\", " +
+            "\"shake\", \"bob\", \"appear\", \"fade\", \"melt\", \"rotate\", \"afterimage\", \"colorcycle\", \"shockwave\", \"hologram\"), effects from other " +
+            "enabled packages and the user's own script effects (ids = asset ids), plus app effects without a script (e.g. text). " +
+            "Returns every effect id with its display name and description (user's UI language), its source, whether it animates over its frame range, " +
+            "whether the user allowed its script to run, its settings with default values (keys and value formats of the .chickxel file), allowed values of " +
+            "choice settings, [min, max] of clamped numbers, and the user's effect recipes (presets: the user's personal recipes and recipes of enabled installed " +
+            "asset packages; each is a stack of effects with order and clipping). Works without an open project.",
             new JsonObject());
         yield return Tool("get_effects",
             "List the effects of a layer or group in stack order (index 0 is applied first): index, type, name, enabled, frames (\"all\" or {from,to} " +
@@ -37,13 +40,14 @@ public sealed partial class PixelTools
             new JsonObject { ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0) });
         yield return Tool("add_effect",
             "Add a layer effect (or an effect recipe stack) to a normal, part or group layer. Non-destructive; one undo step. " +
-            "Pass either `type` with optional partial `settings` (only the keys you want to change; the rest keep the type's defaults from list_effect_types), " +
+            "Pass either `type` (an effect id from list_effect_types; the old built-in type ids such as \"chickxel.effect.outline\" also work and add the " +
+            "official script effect) with optional partial `settings` (only the keys you want to change; the rest keep the effect's defaults from list_effect_types), " +
             "or `preset` (an effect recipe name or id from list_effect_types; its effect values are copied into the layer). Animated effects play across their frame range, so choose from_frame/to_frame " +
             "for the moment it should happen (e.g. a hit flash on frames 3-4). " + FrameRangeNote + " Returns the new effect indices and the layer's effects.",
             new JsonObject
             {
                 ["layer"] = Int("Layer index (normal, part or group). Default: current.", 0),
-                ["type"] = Enum("Effect type id (see list_effect_types).", typeIds),
+                ["type"] = Str("Effect id from list_effect_types (e.g. \"outline\")."),
                 ["preset"] = Str("Effect recipe name or id from list_effect_types (instead of type)."),
                 ["settings"] = EffectSettingsProp(),
                 ["from_frame"] = Int("First frame index of the effect's range (default 0).", 0),
@@ -111,29 +115,95 @@ public sealed partial class PixelTools
 
     // ───────────── 읽기 ─────────────
 
+    /// <summary>
+    /// AI가 넣을 수 있는 효과 하나: 도구 ID(공식 효과는 짧은 ID <c>outline</c>, 다른 스크립트는 에셋 ID, 앱 효과는 종류 ID), 화면 이름·설명, 출처,
+    /// 기본 설정 효과, 넣을 때 스크립트 원문을 함께 복사할 레시피(앱 효과는 null), 움직이는지, 실행을 허락했는지.
+    /// </summary>
+    private sealed record EffectChoice(string Id, string Name, string? Description, string Source, LayerEffect Effect, EffectRecipe? Template,
+        bool Animated, bool Allowed);
+
+    /// <summary>넣을 수 있는 효과(효과 창 효과 탭과 같은 차례): 켜진 공식 효과, 고를 수 있는 앱 효과(글씨), 다른 패키지·개인 스크립트 효과.</summary>
+    private static List<EffectChoice> EffectChoices()
+    {
+        var culture = global::System.Globalization.CultureInfo.CurrentUICulture;
+        var result = new List<EffectChoice>();
+        var scripts = AppAssets.Catalog.EffectScripts;
+        int officialCount = scripts.TakeWhile(entry => AssetCatalog.OfficialIdOf(entry) is not null).Count();
+        void AddScript(AssetEntry entry)
+        {
+            var asset = entry.Script!;
+            var template = asset.ToRecipe();
+            var official = AssetCatalog.OfficialIdOf(entry);
+            result.Add(new EffectChoice(official ?? entry.Id, entry.DisplayName, asset.DescriptionFor(culture), official is not null ? "official" : entry.PackageId ?? "personal",
+                template.Effects[0], template, asset.Animated, ScriptLibrary.TrustOf(asset.Hash) == ScriptTrust.Trusted));
+        }
+        foreach (var entry in scripts.Take(officialCount)) AddScript(entry);
+        foreach (var definition in EffectRegistry.Selectable)
+        {
+            var ui = LayerEffectsDialog.UiOf(definition);
+            result.Add(new EffectChoice(definition.TypeId, ui.Name, ui.Description, "app", definition.Create(), null, definition.Animated, true));
+        }
+        foreach (var entry in scripts.Skip(officialCount)) AddScript(entry);
+        return result;
+    }
+
+    /// <summary>
+    /// 도구 인자의 효과: 목록 ID(대소문자 무시), 공식 효과의 다른 이름(예전 기본 효과 종류 ID·짧은 ID, 공식 패키지·에셋 ID — 공식 패키지를 껐거나 지웠으면
+    /// 앱에 든 원문으로), 화면 이름 차례로 찾는다. 없으면 null.
+    /// </summary>
+    private static EffectChoice? ResolveEffect(IReadOnlyList<EffectChoice> choices, string name)
+    {
+        var key = name.Trim();
+        if (choices.FirstOrDefault(c => c.Id.Equals(key, StringComparison.OrdinalIgnoreCase)) is { } exact) return exact;
+        if (OfficialEffects.Resolve(key) is { } official)
+        {
+            if (choices.FirstOrDefault(c => c.Id == official) is { } installed) return installed;
+            var program = OfficialEffects.Program(official);
+            var template = ScriptAsset.From(OfficialEffectPackages.AssetId(official), program).ToRecipe();
+            return new EffectChoice(official, program.NameFor(global::System.Globalization.CultureInfo.CurrentUICulture),
+                program.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture), "official", template.Effects[0], template, program.Animated, true);
+        }
+        return choices.FirstOrDefault(c => c.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// 도구 결과에 보일 효과 ID: 공식 스크립트 효과는 짧은 ID, 카탈로그에 있는 스크립트는 그 에셋 ID, 다른 스크립트·C# 효과는 종류 ID(모르는 효과는 원본의 ID).
+    /// </summary>
+    private static string EffectIdOf(LayerEffect effect)
+        => effect is ScriptEffect script
+            ? OfficialEffects.IdOfHash(script.ScriptHash)
+              ?? AppAssets.Catalog.EffectScripts.FirstOrDefault(entry => entry.Script!.Hash == script.ScriptHash)?.Id
+              ?? EffectRegistry.TypeIdOf(effect)
+            : EffectRegistry.TypeIdOf(effect);
+
     private JsonObject ListEffectTypes()
     {
         var types = new JsonArray();
-        foreach (var definition in EffectRegistry.BuiltIn)
+        foreach (var choice in EffectChoices())
         {
-            var ui = LayerEffectsDialog.UiOf(definition);
             var settings = new JsonObject();
             var choices = new JsonObject();
             var ranges = new JsonObject();
-            foreach (var p in definition.Parameters)
-            {
-                settings[p.Key] = p.DefaultValue;
-                if (p.Choices is { } names) choices[p.Key] = Strings(names.ToArray());
-                if (p.Min is not null || p.Max is not null) ranges[p.Key] = new JsonArray(JsonValue.Create(p.Min), JsonValue.Create(p.Max));
-            }
+            var parameters = EffectRegistry.ParametersOf(choice.Effect, null, out bool complete);
+            if (complete)
+                foreach (var p in parameters)
+                {
+                    settings[p.Key] = p.DefaultValue;
+                    if (p.Choices is { } names) choices[p.Key] = Strings(names.ToArray());
+                    if (p.Min is not null || p.Max is not null) ranges[p.Key] = new JsonArray(JsonValue.Create(p.Min), JsonValue.Create(p.Max));
+                }
+            else if (choice.Effect is ScriptEffect script)
+                settings = script.Settings.ToJson(); // 실행을 허락하지 않은 스크립트: 선언의 기본값만
             var o = new JsonObject
             {
-                ["type"] = definition.TypeId,
-                ["name"] = ui.Name,
-                ["description"] = ui.Description,
-                ["animated"] = definition.Animated,
+                ["type"] = choice.Id,
+                ["name"] = choice.Name,
+                ["source"] = choice.Source,
+                ["animated"] = choice.Animated,
                 ["settings"] = settings,
             };
+            if (choice.Description is { Length: > 0 } description) o["description"] = description;
+            if (!choice.Allowed) o["allowed"] = false;
             if (choices.Count > 0) o["choices"] = choices;
             if (ranges.Count > 0) o["ranges"] = ranges;
             types.Add(o);
@@ -149,7 +219,7 @@ public sealed partial class PixelTools
                 ["id"] = entry.Id,
                 ["source"] = entry.PackageId ?? "personal",
                 ["frameRange"] = recipe.FrameRange == RecipeFrameRange.AllFrames ? "allFrames" : "addRange",
-                ["effects"] = Strings(recipe.Effects.Select(EffectRegistry.TypeIdOf).ToArray()),
+                ["effects"] = Strings(recipe.Effects.Select(EffectIdOf).ToArray()),
             });
         }
         var doc = new JsonObject
@@ -157,8 +227,10 @@ public sealed partial class PixelTools
             ["types"] = types,
             ["presets"] = presets,
             ["notes"] = "Effects render in stack order (index 0 first) and never change pixels. Pass only the settings you want to change (null resets one). " +
-                        "Color cycle colors = [\"#RRGGBB\", ...]; palette swap pairs = [[\"#from\", \"#to\"], ...]. Every type also accepts colorGradients " +
-                        "(advanced: per color key gradient objects in the .chickxel format). Animated effects run once over their frame range; easing, repeat and repeatCount change that.",
+                        "Color list settings = [\"#RRGGBB\", ...]; color pair settings = [[\"#from\", \"#to\"], ...]. Every effect also accepts colorGradients " +
+                        "(advanced: per color key gradient objects in the .chickxel format). Animated effects run once over their frame range; easing, repeat and repeatCount change that. " +
+                        "Effects with \"allowed\": false are scripts the user has not allowed to run yet: they can be added but are not drawn until the user allows them " +
+                        "in the effects window, and only their declared default settings are known.",
         };
         if (error is not null) doc["presetsError"] = error;
         return TextResult(doc.ToJsonString(JsonOptions));
@@ -181,7 +253,7 @@ public sealed partial class PixelTools
             effects.Add(new JsonObject
             {
                 ["index"] = i,
-                ["type"] = EffectRegistry.TypeIdOf(e),
+                ["type"] = EffectIdOf(e),
                 ["name"] = e.DisplayName,
                 ["enabled"] = e.Enabled,
                 ["frames"] = e.Frames is { } r ? new JsonObject { ["from"] = r.From, ["to"] = r.To } : (JsonNode)"all",
@@ -218,9 +290,12 @@ public sealed partial class PixelTools
         IReadOnlyList<string> clamped = [];
         if (!string.IsNullOrEmpty(type))
         {
-            var definition = EffectRegistry.Resolve(type)
-                             ?? throw new ToolError(UiStrings.FormatAi_Effect_UnknownType(type: type, types: string.Join(", ", EffectRegistry.BuiltIn.Select(d => d.TypeId))));
-            var (effect, adjusted) = MergeSettings(definition.Create(), settings);
+            var choices = EffectChoices();
+            var choice = ResolveEffect(choices, type)
+                         ?? throw new ToolError(UiStrings.FormatAi_Effect_UnknownType(type: type, types: string.Join(", ", choices.Select(c => c.Id))));
+            // 스크립트 효과는 레시피로 넣어 원문을 프로젝트 스크립트 표에 복사한다(효과 창 상자와 같음)
+            var created = choice.Template is { } template ? template.Instantiate(p, range)[0] : choice.Effect;
+            var (effect, adjusted) = MergeSettings(created, settings);
             clamped = adjusted;
             added = [effect with { Frames = range, Enabled = enabled, ClipToPrevious = clip }];
         }
@@ -248,7 +323,7 @@ public sealed partial class PixelTools
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerEffects(index, list));
         Ctx.SetCurrentLayer(index);
         var indices = added.Count == 1 ? $"{at}" : $"{at}-{at + added.Count - 1}";
-        var what = string.Join(", ", added.Select(EffectRegistry.TypeIdOf));
+        var what = string.Join(", ", added.Select(EffectIdOf));
         return EffectResult(UiStrings.FormatAi_Effect_Added(tool: tool, effects: what, layer: index, name: layer.Name, indices: indices) + ClampedNote(clamped), p, index);
     }
 
@@ -291,7 +366,7 @@ public sealed partial class PixelTools
         }
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerEffects(index, list));
         Ctx.SetCurrentLayer(index);
-        return EffectResult(UiStrings.FormatAi_Effect_Changed(tool: tool, effect: position, type: EffectRegistry.TypeIdOf(changed), layer: index, name: layer.Name)
+        return EffectResult(UiStrings.FormatAi_Effect_Changed(tool: tool, effect: position, type: EffectIdOf(changed), layer: index, name: layer.Name)
                             + ClampedNote(clamped), p, index);
     }
 
@@ -306,7 +381,7 @@ public sealed partial class PixelTools
         var list = EffectStack.Remove(layer.Effects, new HashSet<int> { e });
         p.Edit(Label(tool), ProjectChange.Layers, () => p.SetLayerEffects(index, list));
         Ctx.SetCurrentLayer(index);
-        return EffectResult(UiStrings.FormatAi_Effect_Removed(tool: tool, effect: e, type: EffectRegistry.TypeIdOf(removed), layer: index, name: layer.Name), p, index);
+        return EffectResult(UiStrings.FormatAi_Effect_Removed(tool: tool, effect: e, type: EffectIdOf(removed), layer: index, name: layer.Name), p, index);
     }
 
     private JsonObject ApplyEffects(string tool, JsonObject? a)
@@ -383,7 +458,7 @@ public sealed partial class PixelTools
     // ───────────── 인자·결과 ─────────────
 
     /// <summary>
-    /// 활성 카탈로그의 효과 레시피(효과 창 커스텀 탭과 같은 목록 — 개인 에셋과 켜진 패키지). 개인 에셋을 읽지 못했으면 그 까닭도 준다
+    /// 활성 카탈로그의 효과 레시피(효과 창 프리셋 탭과 같은 목록 — 개인 에셋과 켜진 패키지). 개인 에셋을 읽지 못했으면 그 까닭도 준다
     /// (설치 패키지의 레시피는 그대로 쓸 수 있음).
     /// </summary>
     private static IReadOnlyList<Chickxel.Core.Assets.AssetEntry> LoadEffectRecipes(out string? error)
@@ -464,7 +539,7 @@ public sealed partial class PixelTools
             var key = e.Key;
             throw new ToolError(e.Error switch
             {
-                EffectSettingError.UnknownKey => UiStrings.FormatAi_Effect_SettingUnknown(key: key, type: EffectRegistry.TypeIdOf(effect), keys: e.Detail),
+                EffectSettingError.UnknownKey => UiStrings.FormatAi_Effect_SettingUnknown(key: key, type: EffectIdOf(effect), keys: e.Detail),
                 EffectSettingError.ReservedKey => UiStrings.FormatAi_Effect_SettingReserved(key: key),
                 EffectSettingError.WrongType => UiStrings.FormatAi_Effect_SettingWrongType(key: key, example: SettingExample(effect, key)),
                 EffectSettingError.NotAChoice => UiStrings.FormatAi_Effect_SettingChoice(key: key, choices: e.Detail),

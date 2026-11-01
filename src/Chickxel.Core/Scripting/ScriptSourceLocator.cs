@@ -81,6 +81,30 @@ internal static class ScriptSourceLocator
         return false;
     }
 
+    /// <summary>
+    /// 첫 <c>effect({...})</c> 객체의 <c>translations</c>에 글자 그대로 적은 언어별 이름(<c>translations.언어.name</c> 문자열 literal, 언어 코드 모양인 것만).
+    /// 실행하지 않고 읽으므로 신뢰하기 전 화면 이름에 쓴다. 없으면 빈 표.
+    /// </summary>
+    public static IReadOnlyDictionary<string, ScriptTranslation> DeclaredTranslatedNames(Script program)
+    {
+        var calls = EffectCalls(program);
+        if (calls.Count == 0 || calls[0].Arguments.Count == 0 || calls[0].Arguments[0] is not ObjectExpression obj) return ScriptTranslations.Empty;
+        var result = new Dictionary<string, ScriptTranslation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var node in obj.Properties)
+        {
+            if (node is not Property { Value: ObjectExpression translations } property || KeyName(property) != "translations") continue;
+            foreach (var entryNode in translations.Properties)
+            {
+                if (entryNode is not Property { Value: ObjectExpression entry } language || KeyName(language) is not { } code
+                    || !ScriptTranslations.IsLanguageCode(code)) continue;
+                foreach (var field in entry.Properties)
+                    if (field is Property { Value: StringLiteral name } nameProperty && KeyName(nameProperty) == "name" && name.Value.Trim() is { Length: > 0 } text)
+                        result[code] = new ScriptTranslation(text, null, new Dictionary<string, string>());
+            }
+        }
+        return result;
+    }
+
     private static string? KeyName(Property property) => property switch
     {
         { Computed: false, Key: Identifier id } => id.Name,

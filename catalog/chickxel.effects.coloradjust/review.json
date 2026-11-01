@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "summary": "Changes colors with grayscale, sepia, hue shift, brightness, contrast, and saturation (image unchanged).",
+  "tags": [
+    "effect",
+    "official",
+    "script"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

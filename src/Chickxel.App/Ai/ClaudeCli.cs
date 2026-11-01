@@ -135,7 +135,7 @@ public sealed partial class ClaudeProvider : AiProvider
         return true;
     }
 
-    public override IChatSession CreateSession(string path, McpServer mcp) => new ClaudeSession(path, mcp);
+    public override IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope) => new ClaudeSession(path, mcp, systemPrompt, scope);
 
     /// <summary>Claude Code 설정 폴더(<c>$CLAUDE_CONFIG_DIR</c> 또는 <c>~/.claude</c>).</summary>
     private static string ConfigDir()
@@ -248,6 +248,8 @@ public sealed class ClaudeSession : IChatSession
 
     private readonly string _claudePath;
     private readonly McpServer _mcp;
+    private readonly string _systemPrompt;
+    private readonly McpScope _scope;
     private Process? _process;
     private StreamWriter? _stdin;
     private Task _writes = Task.CompletedTask;
@@ -261,10 +263,12 @@ public sealed class ClaudeSession : IChatSession
     /// <summary>Claude Code가 init에서 알려 준 chickxel 서버 상태("connected"·"pending"·"failed" 등, 목록에 없으면 "목록에 없음").</summary>
     private string? _mcpStatus;
 
-    public ClaudeSession(string claudePath, McpServer mcp)
+    public ClaudeSession(string claudePath, McpServer mcp, string systemPrompt, McpScope scope)
     {
         _claudePath = claudePath;
         _mcp = mcp;
+        _systemPrompt = systemPrompt;
+        _scope = scope;
     }
 
     /// <summary>모델 별칭(null = Claude Code 기본값). 다음에 프로세스를 띄울 때 적용된다.</summary>
@@ -372,9 +376,9 @@ public sealed class ClaudeSession : IChatSession
             "--include-partial-messages",
             "--disable-slash-commands",
             "--setting-sources", "user",
-            "--system-prompt-file", WriteSystemPromptFile(),
+            "--system-prompt-file", WriteSystemPromptFile(_systemPrompt),
             "--strict-mcp-config",
-            "--mcp-config", _mcp.WriteMcpConfigFile(),
+            "--mcp-config", _mcp.WriteMcpConfigFile(_scope),
             "--allowedTools", "mcp__" + McpServer.ServerName,
             "--tools", "",
         };
@@ -402,12 +406,14 @@ public sealed class ClaudeSession : IChatSession
         reader.Start();
     }
 
-    private static string WriteSystemPromptFile()
+    /// <summary>시스템 프롬프트 파일(프롬프트마다 이름이 달라 채팅 창과 효과 만들기 AI 칸이 서로 덮어쓰지 않음).</summary>
+    private static string WriteSystemPromptFile(string prompt)
     {
         var dir = Path.Combine(Path.GetTempPath(), "chickxel-claude");
         Directory.CreateDirectory(dir);
-        var file = Path.Combine(dir, "system-prompt.txt");
-        File.WriteAllText(file, AiCli.SystemPrompt, new UTF8Encoding(false));
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(prompt)))[..12];
+        var file = Path.Combine(dir, $"system-prompt-{hash}.txt");
+        File.WriteAllText(file, prompt, new UTF8Encoding(false));
         return file;
     }
 

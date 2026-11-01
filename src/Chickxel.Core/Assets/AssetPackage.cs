@@ -90,11 +90,12 @@ public sealed class AssetPackageBuilder(AssetManifest header)
     /// <summary>
     /// 에셋 하나를 더하고 새 에셋 ID를 돌려준다. <paramref name="preview"/>가 있으면 <c>previews/&lt;조각&gt;.png</c>를 미리보기로 넣고,
     /// 효과 없는 원본이 있으면 <see cref="OriginalPreviewPath"/> 자리에 같이 넣는다(manifest는 가리키지 않음 — 웹 비교용).
+    /// <paramref name="segment"/>를 주면 이름 대신 그 조각을 ID·파일 이름에 쓴다(공식 패키지처럼 ID를 정해 둘 때 — 소문자·숫자·하이픈).
     /// </summary>
-    public string Add(string kind, IAssetData value, PackagePreview? preview = null)
+    public string Add(string kind, IAssetData value, PackagePreview? preview = null, string? segment = null)
     {
         var definition = AssetKinds.Find(kind) ?? throw new ArgumentException(kind, nameof(kind));
-        string segment = UniqueSegment(Slug(value.Name, kind));
+        segment = UniqueSegment(segment is null ? Slug(value.Name, kind) : Slug(segment, kind));
         string id = Header.Id + "." + segment;
         string path = definition.Folder + segment + definition.Extensions[0];
         _files[path] = definition.Write(value, id).ToArray();

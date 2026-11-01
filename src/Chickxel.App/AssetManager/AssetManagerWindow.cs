@@ -4,11 +4,19 @@ using Chickxel.Core.Assets;
 
 namespace Chickxel.App;
 
+/// <summary>에셋 관리자의 탭(탭 칸 차례와 같음).</summary>
+public enum AssetManagerTab
+{
+    Installed,
+    Store,
+    Updates,
+}
+
 /// <summary>
-/// 에셋 관리자(계획 8장): 설치됨·둘러보기·업데이트 탭. 설치됨 탭은 왼쪽에 개인 에셋, 설치한 패키지(와 그 에셋), 최근 삭제한 패키지 목록,
+/// 에셋 관리자(계획 8장): 설치됨·상점·업데이트 탭. 설치됨 탭은 왼쪽에 개인 에셋, 설치한 패키지(와 그 에셋), 최근 삭제한 패키지 목록,
 /// 오른쪽에 고른 항목의 상세(미리보기, 작성자, 버전, 호환 앱 버전, 출처)와 동작(켜기·끄기, 내보내기, 되돌리기, 파일 위치, 삭제 …)을 둔다.
-/// 종류 거르기(전체·효과·그라데이션)와 이름 검색은 메모리 카탈로그에서 한다. 둘러보기·업데이트는 온라인 카탈로그(<c>.Browse</c>)를 쓴다.
-/// 모달이며, 효과 창·그라데이션 프리셋 창에서도 종류 거르기를 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>) 목록을 다시 만든다.
+/// 종류 거르기(전체·효과·그라데이션)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
+/// 모달이며, 효과 창·그라데이션 프리셋 창에서도 종류 거르기와 처음 탭을 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>) 목록을 다시 만든다.
 /// </summary>
 public sealed partial class AssetManagerWindow : DialogBase
 {
@@ -25,14 +33,17 @@ public sealed partial class AssetManagerWindow : DialogBase
     /// <summary>목록 한 줄: 머리글, 패키지, 에셋, 삭제한 패키지.</summary>
     private sealed record Row(string Key, InstalledPackage? Package = null, AssetEntry? Asset = null, DeletedPackage? Deleted = null);
 
-    /// <summary>에셋 관리자를 연다. <paramref name="kind"/>는 처음 종류 거르기(<see cref="AssetKinds"/>, null = 전체), <paramref name="selectAssetId"/>는 처음 고를 에셋.</summary>
-    public static void Open(Window owner, string? kind = null, string? selectAssetId = null)
+    /// <summary>
+    /// 에셋 관리자를 연다. <paramref name="kind"/>는 처음 종류 거르기(<see cref="AssetKinds"/>, null = 전체 — 설치됨·상점 탭이 같이 씀),
+    /// <paramref name="selectAssetId"/>는 처음 고를 에셋, <paramref name="tab"/>은 처음 보일 탭(상점·업데이트면 온라인 목록을 바로 받는다).
+    /// </summary>
+    public static void Open(Window owner, string? kind = null, string? selectAssetId = null, AssetManagerTab tab = AssetManagerTab.Installed)
     {
         AppAssets.ShowProblems(owner);
-        new AssetManagerWindow(kind, selectAssetId).ShowDialog(owner);
+        new AssetManagerWindow(kind, selectAssetId, tab).ShowDialog(owner);
     }
 
-    private AssetManagerWindow(string? kind, string? selectAssetId) : base(UiStrings.Assets_Title)
+    private AssetManagerWindow(string? kind, string? selectAssetId, AssetManagerTab tab) : base(UiStrings.Assets_Title)
     {
         CloseOnly();
         CancelButtonControl.IsDefault = false;
@@ -56,8 +67,10 @@ public sealed partial class AssetManagerWindow : DialogBase
         var exportPersonal = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportPersonal, (_, _) => ExportPersonal(null));
         ToolTip.SetTip(exportPersonal, UiStrings.Assets_ExportPersonalTip);
         var publish = Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishPersonal(null)).Tip(UiStrings.Assets_PublishTip);
+        var restore = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
+            .Tip(UiStrings.Assets_RestoreOfficialTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
-        toolbar.Children.AddRange([_filter, _search, import, exportPersonal, publish]);
+        toolbar.Children.AddRange([_filter, _search, import, exportPersonal, publish, restore]);
         foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);
 
         _list.SelectionChanged += (_, _) =>
@@ -74,13 +87,15 @@ public sealed partial class AssetManagerWindow : DialogBase
 
         _updatesTab = new TabItem { Header = UiStrings.Assets_TabUpdates, Content = UpdatesTab() };
         _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabInstalled, Content = installed });
-        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabBrowse, Content = BrowseTab(_filter.SelectedIndex) });
+        _tabs.Items.Add(new TabItem { Header = UiStrings.Assets_TabStore, Content = StoreTab(_filter.SelectedIndex) });
         _tabs.Items.Add(_updatesTab);
-        // 온라인 목록은 둘러보기·업데이트 탭을 처음 열 때 받는다(관리자를 열기만 해서는 요청하지 않음).
+        // 온라인 목록은 상점·업데이트 탭을 처음 열 때 받는다(관리자를 열기만 해서는 요청하지 않음).
         _tabs.SelectionChanged += (_, _) =>
         {
             if (_tabs.SelectedIndex > 0 && !_remoteStarted) LoadRemote();
         };
+        _tabs.SelectedIndex = (int)tab;
+        if (tab != AssetManagerTab.Installed && !_remoteStarted) LoadRemote();
 
         var root = (DockPanel)Content!;
         root.Children.Remove(Body);
@@ -100,9 +115,40 @@ public sealed partial class AssetManagerWindow : DialogBase
         Refresh();
     }
 
+    /// <summary>
+    /// 기본 효과 되돌리기: 지운 공식 효과 패키지를 다시 설치하고, 끈 것은 켜고, 낮은 버전은 앱에 든 버전으로 올린다(<see cref="AppAssets.SyncBundledAsync"/> —
+    /// 패키지를 만들고 설치하는 동안 단추를 끄고 백그라운드에서, 목록은 <see cref="AppAssets.Changed"/>로 다시 만들어진다).
+    /// </summary>
+    private async void RestoreOfficialEffects(Control button)
+    {
+        button.IsEnabled = false;
+        OfficialEffectPackages.SyncResult result;
+        try
+        {
+            result = await AppAssets.SyncBundledAsync(restore: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            if (!_closing.IsCancellationRequested) Ui.Error(this, F(UiStrings.Assets_RestoreOfficialError, ex.Message));
+            return;
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+        if (_closing.IsCancellationRequested) return;
+        if (result.Errors.Count > 0)
+            Ui.Warn(this, F(UiStrings.Assets_RestoreOfficialError, string.Join(Environment.NewLine, result.Errors.Select(e => $"{e.PackageId}: {e.Error}"))),
+                UiStrings.Assets_RestoreOfficial);
+        else
+            Ui.Info(this, result.Changed
+                ? F(UiStrings.Assets_RestoreOfficialDone, result.Installed.Count, result.Updated.Count + result.Enabled.Count)
+                : UiStrings.Assets_RestoreOfficialNothing, UiStrings.Assets_RestoreOfficial);
+    }
+
     private Row? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as Row;
 
-    /// <summary>종류 거르기 칸 번호의 에셋 종류(효과 = 효과 레시피와 스크립트 효과, null = 전체). 둘러보기 탭도 같은 칸을 쓴다.</summary>
+    /// <summary>종류 거르기 칸 번호의 에셋 종류(효과 = 효과 레시피와 스크립트 효과, null = 전체). 상점 탭도 같은 칸을 쓴다.</summary>
     private static string[]? FilterKinds(int index) => index switch
     {
         1 => [AssetKinds.EffectRecipe, AssetKinds.EffectScript],
@@ -117,6 +163,7 @@ public sealed partial class AssetManagerWindow : DialogBase
         if (KindFilter is { } kinds && !kinds.Contains(entry.Kind)) return false;
         string query = _search.Text?.Trim() ?? "";
         return query.Length == 0 || entry.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                                 || entry.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                                  || (entry.PackageName?.Contains(query, StringComparison.CurrentCultureIgnoreCase) ?? false);
     }
 
@@ -203,7 +250,7 @@ public sealed partial class AssetManagerWindow : DialogBase
             AssetKinds.EffectScript => VectorIcon.Code,
             _ => VectorIcon.Sparkles,
         }, 13));
-        name.Children.Add(new TextBlock { Text = entry.Name, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+        name.Children.Add(new TextBlock { Text = entry.DisplayName, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
         var panel = new StackPanel { Margin = new Thickness(indent ? 18 : 0, 0, 0, 0), Children = { name } };
         if (entry.Gradient is { } gradient)
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });

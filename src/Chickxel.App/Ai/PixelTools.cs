@@ -55,17 +55,22 @@ public sealed partial class PixelTools
     /// </summary>
     public EditScope? Scope { get; set; }
 
-    /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음). 참고 자료 읽기 도구 포함.</summary>
+    /// <summary>문서도 편집기 상태도 바꾸지 않는 도구(범위 밖 문서가 열려 있어도 쓸 수 있음). 참고 자료 읽기·효과 만들기 원문 읽기·검증 포함.</summary>
     private static readonly HashSet<string> ReadTools =
     [
         "get_document", "get_image", "get_pixels", "list_skins", "list_outfits", "list_effect_types", "get_effects",
-        "get_script_api", "preview_effects",
+        "get_script_api", "preview_effects", "get_effect_maker_source", "check_effect_maker", "list_script_effects", "get_script_effect_source",
         "search_references", "get_reference", "get_style_rules",
     ];
-    /// <summary>문서 밖(참고 자료 보관소·개인 에셋)에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
-    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_effect_asset"];
+    /// <summary>문서 밖(참고 자료 보관소·개인 에셋·효과 만들기 편집기)에만 쓰는 도구(문서를 고치지 않으므로 "지금 그림만"이어도 됨).</summary>
+    private static readonly HashSet<string> LibraryTools = ["add_reference", "set_reference_info", "save_script_effect", "set_effect_maker_source"];
     /// <summary>다른 문서를 열거나 만드는 도구(범위가 있으면 거부).</summary>
     private static readonly HashSet<string> FileSwitchTools = ["open_file", "new_project"];
+    /// <summary>
+    /// 효과 만들기 AI 칸(<see cref="McpScope.EffectMaker"/>)이 쓸 수 있는 도구: 읽기 도구(<see cref="ReadTools"/> — 문서·참고 자료를 보기만 함,
+    /// 효과 만들기 원문 읽기·검증 포함)와 효과 만들기 편집기 원문 바꾸기. 문서·파일·팔레트·참고 자료·에셋을 바꾸는 도구는 MCP 서버가 막는다.
+    /// </summary>
+    public static readonly IReadOnlySet<string> EffectMakerScopeTools = new HashSet<string>([.. ReadTools, "set_effect_maker_source"], StringComparer.Ordinal);
 
     private EditorContext Ctx => _host.Context;
 
@@ -506,7 +511,11 @@ public sealed partial class PixelTools
                 "get_script_api" => GetScriptApi(),
                 "write_script_effect" => WriteScriptEffect(name, a),
                 "preview_effects" => PreviewEffects(a),
-                "save_effect_asset" => SaveEffectAsset(a),
+                "save_script_effect" => SaveScriptEffect(a),
+                "get_effect_maker_source" => GetEffectMakerSource(),
+                "set_effect_maker_source" => SetEffectMakerSource(a),
+                "list_script_effects" => ListScriptEffects(),
+                "get_script_effect_source" => GetScriptEffectSource(a),
                 "resize_canvas" => ResizeCanvas(name, a),
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),

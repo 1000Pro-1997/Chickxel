@@ -1,5 +1,6 @@
 using Chickxel.Core.Assets;
 using Chickxel.Core.Model;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Effects;
 
@@ -11,7 +12,7 @@ public static class RecipeParameters
 {
     public const int MaxIdLength = 64;
 
-    /// <summary>설정 종류에 맞는 매개변수 종류(색 목록처럼 값 하나가 아닌 설정은 null).</summary>
+    /// <summary>설정 종류에 맞는 매개변수 종류(색 목록처럼 값 하나가 아닌 설정, 스크립트의 실수 설정은 null).</summary>
     public static RecipeParameterKind? KindOf(EffectParameterKind kind) => kind switch
     {
         EffectParameterKind.Color => RecipeParameterKind.Color,
@@ -24,34 +25,38 @@ public static class RecipeParameters
     /// <summary>매개변수로 내보낼 수 있는 설정인지(값 하나짜리 색·정수·켜고 끄기·고르기).</summary>
     public static bool CanExpose(EffectParameter setting) => setting.Exposed && KindOf(setting.Kind) is not null;
 
-    /// <summary>효과 schema의 설정 <paramref name="key"/>(없거나 모르는 효과면 null).</summary>
-    public static EffectParameter? SettingOf(LayerEffect effect, string key)
-        => EffectRegistry.Of(effect)?.Parameters.FirstOrDefault(p => p.Key == key);
+    /// <summary>
+    /// 효과 schema(<c>EffectRegistry.ParametersOf</c>)의 설정 <paramref name="key"/>(없거나 모르는 효과면 null).
+    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 실행을 허락한 원문)가 선언한 설정이다.
+    /// </summary>
+    public static EffectParameter? SettingOf(LayerEffect effect, string key, Func<string, ScriptEffectProgram?>? programs = null)
+        => EffectRegistry.ParametersOf(effect, programs).FirstOrDefault(p => p.Key == key);
 
     /// <summary>효과의 설정 <paramref name="key"/> 지금 값(내보낼 수 없는 설정이면 null).</summary>
-    public static RecipeValue? ValueOf(LayerEffect effect, string key)
-        => SettingOf(effect, key) is { } setting && KindOf(setting.Kind) is { } kind && RecipeValue.TryRead(kind, setting.Write(effect), out var value)
+    public static RecipeValue? ValueOf(LayerEffect effect, string key, Func<string, ScriptEffectProgram?>? programs = null)
+        => SettingOf(effect, key, programs) is { } setting && KindOf(setting.Kind) is { } kind && RecipeValue.TryRead(kind, setting.Write(effect), out var value)
             ? value
             : null;
 
-    /// <summary>설정 <paramref name="key"/>에 <paramref name="value"/>를 넣은 새 효과(종류가 맞지 않으면 효과 그대로). 범위 밖 정수는 모델이 자른다.</summary>
-    public static LayerEffect With(LayerEffect effect, string key, RecipeValue value)
-        => SettingOf(effect, key) is { } setting && KindOf(setting.Kind) == value.Kind && setting.TryRead(effect, value.ToJson(), out var result)
+    /// <summary>설정 <paramref name="key"/>에 <paramref name="value"/>를 넣은 새 효과(종류가 맞지 않으면 효과 그대로). 범위 밖 정수는 모델(스크립트는 그 schema)이 자른다.</summary>
+    public static LayerEffect With(LayerEffect effect, string key, RecipeValue value, Func<string, ScriptEffectProgram?>? programs = null)
+        => SettingOf(effect, key, programs) is { } setting && KindOf(setting.Kind) == value.Kind && setting.TryRead(effect, value.ToJson(), out var result)
             ? result
             : effect;
 
     /// <summary>연결 <paramref name="binding"/>이 가리키는 설정(레시피 효과 목록 기준, 없으면 null).</summary>
-    public static EffectParameter? SettingOf(IReadOnlyList<LayerEffect> effects, RecipeBinding binding)
-        => binding.Effect >= 0 && binding.Effect < effects.Count ? SettingOf(effects[binding.Effect], binding.Key) : null;
+    public static EffectParameter? SettingOf(IReadOnlyList<LayerEffect> effects, RecipeBinding binding, Func<string, ScriptEffectProgram?>? programs = null)
+        => binding.Effect >= 0 && binding.Effect < effects.Count ? SettingOf(effects[binding.Effect], binding.Key, programs) : null;
 
     /// <summary>연결된 정수 설정이 모두 받는 범위(schema 범위의 겹침). 정수 설정이 없거나 겹치지 않으면 null.</summary>
-    public static (int Min, int Max)? IntRange(IReadOnlyList<LayerEffect> effects, IEnumerable<RecipeBinding> bindings)
+    public static (int Min, int Max)? IntRange(IReadOnlyList<LayerEffect> effects, IEnumerable<RecipeBinding> bindings,
+        Func<string, ScriptEffectProgram?>? programs = null)
     {
         int min = int.MinValue, max = int.MaxValue;
         bool any = false;
         foreach (var binding in bindings)
         {
-            if (SettingOf(effects, binding) is not { Kind: EffectParameterKind.Int } setting) continue;
+            if (SettingOf(effects, binding, programs) is not { Kind: EffectParameterKind.Int } setting) continue;
             any = true;
             min = Math.Max(min, setting.Min ?? int.MinValue);
             max = Math.Min(max, setting.Max ?? int.MaxValue);
@@ -60,33 +65,36 @@ public static class RecipeParameters
     }
 
     /// <summary>연결된 고르기 설정이 모두 받는 저장 ID(첫 설정의 순서). 없으면 빈 목록.</summary>
-    public static IReadOnlyList<string> CommonChoices(IReadOnlyList<LayerEffect> effects, IEnumerable<RecipeBinding> bindings)
+    public static IReadOnlyList<string> CommonChoices(IReadOnlyList<LayerEffect> effects, IEnumerable<RecipeBinding> bindings,
+        Func<string, ScriptEffectProgram?>? programs = null)
     {
         List<string>? common = null;
         foreach (var binding in bindings)
         {
-            if (SettingOf(effects, binding) is not { Kind: EffectParameterKind.Choice, Choices: { } choices }) continue;
+            if (SettingOf(effects, binding, programs) is not { Kind: EffectParameterKind.Choice, Choices: { } choices }) continue;
             common = common is null ? [.. choices] : common.Where(choice => choices.Contains(choice, StringComparer.Ordinal)).ToList();
         }
         return common ?? [];
     }
 
     /// <summary>레시피 효과 목록에 매개변수 값을 넣은 새 목록(값은 <see cref="RecipeParameter.Clamp"/>로 맞춤, 없는 연결은 건너뜀).</summary>
-    public static IReadOnlyList<LayerEffect> Apply(IReadOnlyList<LayerEffect> effects, RecipeParameter parameter, RecipeValue value)
+    public static IReadOnlyList<LayerEffect> Apply(IReadOnlyList<LayerEffect> effects, RecipeParameter parameter, RecipeValue value,
+        Func<string, ScriptEffectProgram?>? programs = null)
     {
         value = parameter.Clamp(value);
         var result = effects.ToArray();
         foreach (var binding in parameter.Bindings)
             if (binding.Effect >= 0 && binding.Effect < result.Length)
-                result[binding.Effect] = With(result[binding.Effect], binding.Key, value);
+                result[binding.Effect] = With(result[binding.Effect], binding.Key, value, programs);
         return result;
     }
 
     /// <summary>모든 매개변수의 기본값을 넣은 레시피 효과 목록.</summary>
-    public static IReadOnlyList<LayerEffect> ApplyDefaults(IReadOnlyList<LayerEffect> effects, IReadOnlyList<RecipeParameter> parameters)
+    public static IReadOnlyList<LayerEffect> ApplyDefaults(IReadOnlyList<LayerEffect> effects, IReadOnlyList<RecipeParameter> parameters,
+        Func<string, ScriptEffectProgram?>? programs = null)
     {
         var result = effects;
-        foreach (var parameter in parameters) result = Apply(result, parameter, parameter.Default);
+        foreach (var parameter in parameters) result = Apply(result, parameter, parameter.Default, programs);
         return result;
     }
 
@@ -98,8 +106,11 @@ public static class RecipeParameters
     /// 매개변수를 레시피 효과 목록(<paramref name="effects"/>)의 schema로 검사한다. 문제마다 <paramref name="add"/>(종류, 필드 경로와 기술 값)를 부르고,
     /// 문제가 있는 매개변수 번호를 돌려준다. 규칙: ID 모양·중복, 이름, 연결이 하나 이상, 연결마다 있는 효과 번호·schema 키·같은 종류의 내보낼 수 있는 설정,
     /// 같은 설정을 두 번 잇지 않음, 정수 범위·기본값이 연결된 모든 설정의 schema 범위 안, 고를 수 있는 값이 연결된 모든 설정에서 고를 수 있고 기본값이 그중 하나.
+    /// 스크립트 효과는 <paramref name="programs"/>(해시 → 해석 결과, 없으면 실행을 허락한 원문)가 선언한 설정으로 본다. 원문을 찾지 못한 스크립트 효과의
+    /// 스크립트 설정 연결은 맞는지 알 수 없어 문제로 치지 않는다(중복만 본다).
     /// </summary>
-    public static IReadOnlySet<int> Check(IReadOnlyList<LayerEffect> effects, IReadOnlyList<RecipeParameter> parameters, Action<AssetIssueCode, string> add)
+    public static IReadOnlySet<int> Check(IReadOnlyList<LayerEffect> effects, IReadOnlyList<RecipeParameter> parameters, Action<AssetIssueCode, string> add,
+        Func<string, ScriptEffectProgram?>? programs = null)
     {
         var bad = new HashSet<int>();
         var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -131,8 +142,14 @@ public static class RecipeParameters
                     continue;
                 }
                 string where = $"effects[{binding.Effect}].{binding.Key}";
-                if (definition.Parameters.FirstOrDefault(p => p.Key == binding.Key) is not { } setting)
+                var schema = EffectRegistry.ParametersOf(effects[binding.Effect], programs, out bool complete);
+                if (schema.FirstOrDefault(p => p.Key == binding.Key) is not { } setting)
                 {
+                    if (!complete)
+                    {
+                        if (!bound.Add(binding)) Report(AssetIssueCode.RecipeBindingDuplicate, $"{at}: {where}");
+                        continue;
+                    }
                     Report(AssetIssueCode.RecipeBindingUnknownKey, $"{at}: {definition.TypeId}.{binding.Key}");
                     continue;
                 }

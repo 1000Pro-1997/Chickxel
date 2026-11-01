@@ -27,31 +27,33 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private static readonly (ToolKind Tool, string Id, string Name, string Key, string Hint)[] ToolDefs =
     [
         (ToolKind.Pencil, "연필", MainStrings.Tool_Pencil_Name, "B", MainStrings.Tool_Pencil_Hint),
+        (ToolKind.GradientPencil, "그라데이션 연필", MainStrings.Tool_GradientPencil_Name, "Shift+B", MainStrings.Tool_GradientPencil_Hint),
         (ToolKind.Eraser, "지우개", MainStrings.Tool_Eraser_Name, "E", MainStrings.Tool_Eraser_Hint),
         (ToolKind.Fill, "채우기", MainStrings.Tool_Fill_Name, "G", MainStrings.Tool_Fill_Hint),
         (ToolKind.Gradient, "그라데이션", MainStrings.Tool_Gradient_Name, "F", MainStrings.Tool_Gradient_Hint),
         (ToolKind.Picker, "스포이드", MainStrings.Tool_Picker_Name, "I", MainStrings.Tool_Picker_Hint),
         (ToolKind.Shape, "도형", MainStrings.Tool_Shape_Name, "R", MainStrings.Tool_Shape_Hint),
+        (ToolKind.Text, "글씨", MainStrings.Tool_Text_Name, "T", MainStrings.Tool_Text_Hint),
         (ToolKind.Select, "사각 선택", MainStrings.Tool_Select_Name, "", MainStrings.Tool_Select_Hint),
         (ToolKind.EllipseSelect, "원 선택", MainStrings.Tool_EllipseSelect_Name, "", MainStrings.Tool_EllipseSelect_Hint),
         (ToolKind.Lasso, "자유 선택", MainStrings.Tool_Lasso_Name, "Q", MainStrings.Tool_Lasso_Hint),
         (ToolKind.MagicWand, "스마트 선택", MainStrings.Tool_MagicWand_Name, "W", MainStrings.Tool_MagicWand_Hint),
         (ToolKind.Move, "이동", MainStrings.Tool_Move_Name, "V", MainStrings.Tool_Move_Hint),
         (ToolKind.Dodge, "밝게/어둡게", MainStrings.Tool_Dodge_Name, "D", MainStrings.Tool_Dodge_Hint),
-        (ToolKind.Dither, "디더링", MainStrings.Tool_Dither_Name, "T", MainStrings.Tool_Dither_Hint),
+        (ToolKind.Dither, "디더링", MainStrings.Tool_Dither_Name, "", MainStrings.Tool_Dither_Hint),
         (ToolKind.ReplaceBrush, "색 바꾸기 브러시", MainStrings.Tool_ReplaceBrush_Name, "C", MainStrings.Tool_ReplaceBrush_Hint),
         (ToolKind.Pivot, "피벗", MainStrings.Tool_Pivot_Name, "K", MainStrings.Tool_Pivot_Hint),
         (ToolKind.Slice, "9-slice", "9-slice", "S", MainStrings.Ui_035),
     ];
 
     /// <summary>
-    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
+    /// 도구 막대 칸(위에서부터). 한 칸의 도구는 서로 바꿔 쓰는 변형이다: 연필(연필·그라데이션 연필), 채우기(채우기·그라데이션), 선택(사각·원·자유·스마트).
     /// 칸은 마지막으로 고른 도구를 보이고, 길게 누르거나 오른쪽 클릭하면 옆에 펼쳐 바꾼다(<see cref="ToolSlotButton"/>).
     /// </summary>
     private static readonly ToolKind[][] ToolSlots =
     [
-        [ToolKind.Pencil], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
-        [ToolKind.Shape],
+        [ToolKind.Pencil, ToolKind.GradientPencil], [ToolKind.Eraser], [ToolKind.Fill, ToolKind.Gradient], [ToolKind.Picker],
+        [ToolKind.Shape], [ToolKind.Text],
         [ToolKind.Select, ToolKind.EllipseSelect, ToolKind.Lasso, ToolKind.MagicWand],
         [ToolKind.Move], [ToolKind.Dodge], [ToolKind.Dither], [ToolKind.ReplaceBrush], [ToolKind.Pivot], [ToolKind.Slice],
     ];
@@ -112,7 +114,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
     private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
-        _miRightErase = null!, _miWrap = null!;
+        _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!;
     private readonly List<MenuItem> _docItems = new();
     private MenuItem _miPlayTest = null!, _miRevert = null!;
     private readonly Dictionary<ToolKind, MenuItem> _toolMenuItems = new();
@@ -719,7 +721,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         {
             var t = tool;
             // 이미 고른 도구를 다시 눌러도 메뉴 체크가 풀린 채로 남지 않게 UI를 다시 맞춘다.
-            (Key, KeyModifiers)[] keys = key.Length > 0 ? [(Enum.Parse<Key>(key), NoMods)] : [];
+            (Key, KeyModifiers)[] keys = Shortcuts.Parse(key) is { } chord ? [(chord.Key, chord.Mods)] : [];
             var mi = Checkable(Cmd(id, name, () => { _ctx.Tool = t; UpdateToolUi(); }, null, KeyScope.NotInText, keys));
             mi.Icon = IconImage(Icons.For(tool), 16);
             _toolMenuItems[tool] = mi;
@@ -735,18 +737,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miPixelPerfect = Checkable(Cmd("픽셀 퍼펙트", MainStrings.Menu_Tools_PixelPerfect_206, () => _ctx.PixelPerfect = !_ctx.PixelPerfect, "P", KeyScope.NotInText, (Key.P, NoMods)));
         _miMirrorX = Checkable(Cmd("좌우 대칭 그리기", MainStrings.Menu_Tools_MirrorX_208, () => _ctx.MirrorX = !_ctx.MirrorX, "Shift+X", KeyScope.NotInText, (Key.X, Shift)));
         _miMirrorY = Checkable(Cmd("상하 대칭 그리기", MainStrings.Menu_Tools_MirrorY_210, () => _ctx.MirrorY = !_ctx.MirrorY, "Shift+Y", KeyScope.NotInText, (Key.Y, Shift)));
+        _miMirrorAtPivot = Checkable(Cmd("대칭: 피벗 기준", MainStrings.Menu_Tools_MirrorAtPivot, () => _ctx.MirrorAtPivot = !_ctx.MirrorAtPivot));
         _miRightErase = Checkable(Cmd("오른쪽 버튼 = 지우개", MainStrings.Menu_Tools_RightButtonErases_212, () => _ctx.RightButtonErases = !_ctx.RightButtonErases));
         _miWrap = Checkable(Cmd("이동: 순환", MainStrings.Menu_Tools_MoveWrap_214, () => _ctx.MoveWrap = !_ctx.MoveWrap));
         AddItems(tools,
             new Separator(),
-            _miFilled, _miGlobalFill, _miPixelPerfect, _miMirrorX, _miMirrorY, _miRightErase, _miWrap,
+            _miFilled, _miGlobalFill, _miPixelPerfect, _miMirrorX, _miMirrorY, _miMirrorAtPivot, _miRightErase, _miWrap,
             new Separator(),
             Cmd("브러시 크게", MainStrings.Menu_Tools_BrushSize_216, () => _ctx.BrushSize++, "]", KeyScope.NotInText, (Key.OemCloseBrackets, NoMods)),
             Cmd("브러시 작게", MainStrings.Menu_Tools_BrushSize_218, () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
             Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
-        // 프리셋 종류가 늘어도 한 창의 탭으로 모은다.
-        AddItems(tools, new Separator(), Cmd("프리셋", UiStrings.Presets_Menu, () => PresetsWindow.Open(this)),
-            WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
+        // 그라데이션 프리셋은 에셋 관리자에서 보고 고친다(그라데이션 편집기의 관리 단추는 프리셋 창을 그대로 연다).
+        AddItems(tools, new Separator(), WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
         // 효과를 만드는 사람은 적으므로 효과 넣기 흐름과 따로, 도구 메뉴 맨 아래 별도 항목으로 둔다(설계 3.1).
         AddItems(tools, new Separator(), WithIcon(Cmd("효과 만들기", UiStrings.EffectMaker_Menu, () => EffectMakerWindow.Open(this, _ctx)), VectorIcon.Sparkles));
 
@@ -1105,14 +1107,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.OnionAfter = s.OnionAfter;
         _canvas.OnionOpacity = s.OnionOpacity;
         _canvas.OnionTint = s.OnionTint;
-        _ctx.BrushSize = s.BrushSize;
-        _ctx.BrushShape = s.BrushShape;
+        _ctx.PencilBrush = (s.BrushSize, s.BrushShape);
+        _ctx.EraserBrush = (s.EraserBrushSize, s.EraserBrushShape);
         _ctx.FillTolerance = s.FillTolerance;
         _ctx.FillDiagonal = s.FillDiagonal;
         _ctx.FillSampleVisible = s.FillSampleVisible;
         _ctx.PickerSampleVisible = s.PickerSampleVisible;
         _ctx.DodgeStrength = s.DodgeStrength;
+        _ctx.EraserStrength = s.EraserStrength;
+        (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue) = (s.EraserRed, s.EraserGreen, s.EraserBlue);
         _ctx.DitherPattern = s.DitherPattern;
+        _ctx.TextFont = s.TextFont;
         _ctx.PixelPerfect = s.PixelPerfect;
         _ctx.FillContiguous = s.FillContiguous;
         _ctx.ShapeFilled = s.ShapeFilled;
@@ -1129,6 +1134,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.GradientInterpolation = s.GradientInterpolation;
         _ctx.GradientDither = s.GradientDither;
         _ctx.GradientColorSpace = s.GradientColorSpace ?? GradientColorSpace.Rgb;
+        _ctx.PencilGradient = new GradientPreset
+        {
+            Stops = ParseGradientStops(s.PencilGradientStops) ?? [.. EditorContext.DefaultPencilGradient.Stops],
+            AlphaStops = ParseGradientAlphaStops(s.PencilGradientAlphaStops) ?? [.. EditorContext.DefaultPencilGradient.AlphaStops],
+            Interpolation = Enum.IsDefined(s.PencilGradientInterpolation) ? s.PencilGradientInterpolation : GradientInterpolation.Smooth,
+            Dither = Enum.IsDefined(s.PencilGradientDither) ? s.PencilGradientDither : GradientDither.None,
+            ColorSpace = Enum.IsDefined(s.PencilGradientColorSpace) ? s.PencilGradientColorSpace : GradientColorSpace.OkLch,
+        };
+        _ctx.PencilGradientMode = s.PencilGradientMode;
+        _ctx.PencilGradientInterval = s.PencilGradientInterval;
+        _ctx.MirrorAtPivot = s.MirrorAtPivot;
         _ctx.Primary = ColorParse.ParseOr(s.PrimaryColor, Color32.Black);
         _ctx.Secondary = ColorParse.ParseOr(s.SecondaryColor, Color32.Transparent);
         foreach (var hex in s.RecentColors.AsEnumerable().Reverse())
@@ -1246,14 +1262,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.OnionAfter = _canvas.OnionAfter;
         s.OnionOpacity = _canvas.OnionOpacity;
         s.OnionTint = _canvas.OnionTint;
-        s.BrushSize = _ctx.BrushSize;
-        s.BrushShape = _ctx.BrushShape;
+        (s.BrushSize, s.BrushShape) = _ctx.PencilBrush;
+        (s.EraserBrushSize, s.EraserBrushShape) = _ctx.EraserBrush;
         s.FillTolerance = _ctx.FillTolerance;
         s.FillDiagonal = _ctx.FillDiagonal;
         s.FillSampleVisible = _ctx.FillSampleVisible;
         s.PickerSampleVisible = _ctx.PickerSampleVisible;
         s.DodgeStrength = _ctx.DodgeStrength;
+        s.EraserStrength = _ctx.EraserStrength;
+        (s.EraserRed, s.EraserGreen, s.EraserBlue) = (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         s.DitherPattern = _ctx.DitherPattern;
+        s.TextFont = _ctx.TextFont;
         s.PixelPerfect = _ctx.PixelPerfect;
         s.FillContiguous = _ctx.FillContiguous;
         s.ShapeFilled = _ctx.ShapeFilled;
@@ -1270,6 +1289,15 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.GradientInterpolation = _ctx.GradientInterpolation;
         s.GradientDither = _ctx.GradientDither;
         s.GradientColorSpace = _ctx.GradientColorSpace;
+        var pencilGradient = _ctx.PencilGradient;
+        s.PencilGradientStops = pencilGradient.Stops.Select(g => FormattableString.Invariant($"{g.Position:0.####}:{g.Color.ToHex()}")).ToList();
+        s.PencilGradientAlphaStops = pencilGradient.AlphaStops.Select(g => FormattableString.Invariant($"{g.Position:0.####}:{g.Alpha}")).ToList();
+        s.PencilGradientInterpolation = pencilGradient.Interpolation;
+        s.PencilGradientDither = pencilGradient.Dither;
+        s.PencilGradientColorSpace = pencilGradient.ColorSpace;
+        s.PencilGradientMode = _ctx.PencilGradientMode;
+        s.PencilGradientInterval = _ctx.PencilGradientInterval;
+        s.MirrorAtPivot = _ctx.MirrorAtPivot;
         s.PrimaryColor = _ctx.Primary.ToHex();
         s.SecondaryColor = _ctx.Secondary.ToHex();
         s.RecentColors = _ctx.RecentColors.Select(c => c.ToHex()).ToList();
@@ -1544,6 +1572,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miWrap.IsChecked = _ctx.MoveWrap;
         _miMirrorX.IsChecked = _ctx.MirrorX;
         _miMirrorY.IsChecked = _ctx.MirrorY;
+        _miMirrorAtPivot.IsChecked = _ctx.MirrorAtPivot;
         _cbGrid.IsChecked = _miGrid.IsChecked = _canvas.ShowPixelGrid;
         _cbTiles.IsChecked = _miTiles.IsChecked = _canvas.ShowTileGrid;
         _cbTiled.IsChecked = _miTiled.IsChecked = _canvas.TiledMode;
@@ -2877,6 +2906,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _chat = chat;
         chat.Show(this);
     }
+
+    /// <summary>효과 만들기의 AI 칸이 쓰는 편집기 MCP 서버(처음이면 만들어 시작). 시작하지 못하면 <paramref name="owner"/>에 알리고 null.</summary>
+    internal Ai.McpServer? EnsureAiServer(Visual owner) => EnsureMcp(owner) ? _mcp : null;
+
+    /// <summary>AI 채팅 창을 연다(효과 만들기 AI 칸에서 CLI 설치·로그인을 하러 갈 때).</summary>
+    internal void ShowAiChat() => ToggleChat();
 
     /// <summary>AI 참고 자료 창을 연다(이미 열려 있으면 앞으로). 자료 폴더를 열 수 없으면 알린다.</summary>
     private void ShowReferences()

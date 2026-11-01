@@ -10,20 +10,6 @@
   <data name="EffectShared_Title" xml:space="preserve"><value>Common settings</value></data>
   <data name="EffectShared_FrameExtend" xml:space="preserve"><value>Extend frames</value></data>
   <data name="EffectShared_Target" xml:space="preserve"><value>Base: {0} · frames {1}–{2}</value></data>
-  <data name="Fade_Name" xml:space="preserve"><value>Fade in/out</value></data>
-  <data name="Fade_Description" xml:space="preserve"><value>Gradually raises or lowers the opacity of the whole image over the frame range.</value></data>
-  <data name="Fade_Direction" xml:space="preserve"><value>Direction</value></data>
-  <data name="Fade_In" xml:space="preserve"><value>Fade in</value></data>
-  <data name="Fade_Out" xml:space="preserve"><value>Fade out</value></data>
-  <data name="Reflection_Left" xml:space="preserve"><value>Left (wall)</value></data>
-  <data name="Reflection_Right" xml:space="preserve"><value>Right (wall)</value></data>
-  <data name="Reflection_Width" xml:space="preserve"><value>  Width</value></data>
-  <data name="Reflection_WaveColumns" xml:space="preserve"><value>px (shifts each column vertically, 0 = off)</value></data>
-  <data name="Reflection_HintHorizontal" xml:space="preserve"><value>Flips the frame image horizontally and places it behind, offset by the gap (width = what % of the image width is reflected).</value></data>
-  <data name="Reflection_OpacityHintHorizontal" xml:space="preserve"><value> The column nearest the image uses the start opacity, the far column the end opacity. Tint opacity = tint strength (0 = no tint).</value></data>
-  <data name="Reflection_SummaryLeft" xml:space="preserve"><value>Left</value></data>
-  <data name="Reflection_SummaryRight" xml:space="preserve"><value>Right</value></data>
-  <data name="Explode_DistanceYTip" xml:space="preserve"><value>Even with Y distance 0, nonzero gravity still moves pixels up and down. To stop vertical movement, set gravity to 0 too.</value></data>
   <data name="Language_Title" xml:space="preserve"><value>Language</value></data>
   <data name="Language_Label" xml:space="preserve"><value>Display language</value></data>
   <data name="Language_WithCsv" xml:space="preserve"><value>{name} (edited by CSV)</value></data>
@@ -58,15 +44,6 @@
   <data name="S_AboutDialog_AboutDialog_BE04412652" xml:space="preserve"><value>Chickxel Source-Available License (free to use, including commercial work; no redistribution) · Copyright © 2026 천성훈 (1000Pro-1997)</value></data>
   <data name="S_AboutDialog_AboutDialog_D59819BEBD" xml:space="preserve"><value>Settings file: </value></data>
   <data name="S_AboutDialog_AboutDialog_E3F28341F4" xml:space="preserve"><value>License</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_29E836BF07" xml:space="preserve"><value>frames</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_3D694F080C" xml:space="preserve"><value>% (nearest afterimage; farther ones fade more)</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_88FF7125A4" xml:space="preserve"><value>Opacity</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_932239C718" xml:space="preserve"><value>afterimages</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_9CBFACCDD7" xml:space="preserve"><value>Draws earlier frames, with other effects applied as of those frames, behind the current image, fading progressively. The afterimage itself is not applied repeatedly, and only frames within the effect range are used.</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_A7E10C304E" xml:space="preserve"><value>Count</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_ABB66D8551" xml:space="preserve"><value> The tint color's opacity sets the tint strength.</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_D0BC4AE314" xml:space="preserve"><value>Tint</value></data>
-  <data name="S_AfterimagePanel_AfterimagePanel_F16DC92644" xml:space="preserve"><value>  Spacing</value></data>
   <data name="S_AiCli_OpenLoginTerminal_25DFAA69B9" xml:space="preserve"><value>No terminal program was found. Run "{0} {1}" in a terminal yourself.</value></data>
   <data name="S_AiCli_OpenMacTerminal_6A443C19FB" xml:space="preserve"><value>Couldn't open Terminal.</value></data>
   <data name="S_AiCli_PollAsync_306BEB327B" xml:space="preserve"><value>Login hasn't finished.</value></data>
@@ -131,53 +108,11 @@ goto end
 :failed
 echo __LOGIN_FAILED__
 :end</value></data>
-  <data name="S_AppearPanel_AppearPanel_098B9035F3" xml:space="preserve"><value>Hard</value></data>
-  <data name="S_AppearPanel_AppearPanel_43B9AEFDD3" xml:space="preserve"><value>Appear starts with an empty first frame and ends with the full image on the last frame; disappear is the reverse. Dither, scatter, and wipe only turn pixels on or off (no translucency), which suits pixel art.</value></data>
-  <data name="S_AppearPanel_AppearPanel_4E8113A1CD" xml:space="preserve"><value>Dither 2px</value></data>
-  <data name="S_AppearPanel_AppearPanel_5B6934AD2F" xml:space="preserve"><value>Edge</value></data>
-  <data name="S_AppearPanel_AppearPanel_90162B77C1" xml:space="preserve"><value>Appear</value></data>
-  <data name="S_AppearPanel_AppearPanel_9968F0C72F" xml:space="preserve"><value>Wipe from</value></data>
-  <data name="S_AppearPanel_AppearPanel_A482C10A17" xml:space="preserve"><value>Style</value></data>
-  <data name="S_AppearPanel_AppearPanel_B64448AEFD" xml:space="preserve"><value>Seed</value></data>
-  <data name="S_AppearPanel_AppearPanel_BBFA2D6AB2" xml:space="preserve"><value>Disappear</value></data>
-  <data name="S_AppearPanel_AppearPanel_C98C9F62B6" xml:space="preserve"><value>Different scatter (random seed)</value></data>
-  <data name="S_AppearPanel_AppearPanel_EDC4509A6B" xml:space="preserve"><value> Wipe starts from the chosen side (when disappearing, erasing starts from that side).</value></data>
-  <data name="S_AppearPanel_AppearPanel_F80AD5770E" xml:space="preserve"><value>Mode</value></data>
-  <data name="S_AppearPanel_AppearPanel_FD5AFA1D94" xml:space="preserve"><value>Dither 1px</value></data>
-  <data name="S_AppearPanel_AppearStyles_46BC34F4A2" xml:space="preserve"><value>Wipe</value></data>
-  <data name="S_AppearPanel_AppearStyles_9CC60E3158" xml:space="preserve"><value>Pixel scatter</value></data>
-  <data name="S_AppearPanel_AppearStyles_E0D9F50D27" xml:space="preserve"><value>Opacity</value></data>
-  <data name="S_AppearPanel_AppearStyles_ECD851BCD0" xml:space="preserve"><value>Dither (4×4 Bayer)</value></data>
-  <data name="S_AppearPanel_WipeFroms_0918652A12" xml:space="preserve"><value>Bottom</value></data>
-  <data name="S_AppearPanel_WipeFroms_958C17A305" xml:space="preserve"><value>Left</value></data>
-  <data name="S_AppearPanel_WipeFroms_A2A7C74FBD" xml:space="preserve"><value>Right</value></data>
-  <data name="S_AppearPanel_WipeFroms_EB53C9C591" xml:space="preserve"><value>Top</value></data>
   <data name="S_AppTrash_Describe_11EBAE0E3E" xml:space="preserve"><value>Keep {0} days</value></data>
   <data name="S_AppTrash_Describe_715BEC5E40" xml:space="preserve"><value>No size limit</value></data>
   <data name="S_AppTrash_Describe_E7FB7A8909" xml:space="preserve"><value>Up to {0}</value></data>
   <data name="S_AppTrash_Describe_ED0D38DA1D" xml:space="preserve"><value>No time limit</value></data>
   <data name="S_AppTrash_Restore_022042A106" xml:space="preserve"><value>Not restored because a file with the same name already exists: {0}</value></data>
-  <data name="S_BlinkPanel_BlinkHides_0C5348FA14" xml:space="preserve"><value>Dither 50%</value></data>
-  <data name="S_BlinkPanel_BlinkHides_C91D2F76FA" xml:space="preserve"><value>Fully transparent</value></data>
-  <data name="S_BlinkPanel_BlinkHides_E8E64BF447" xml:space="preserve"><value>Translucent</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_00777F6ABC" xml:space="preserve"><value>frames</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_00D4A1F5DF" xml:space="preserve"><value>Hidden</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_18B5987758" xml:space="preserve"><value>Visible</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_6222AF2B15" xml:space="preserve"><value>Interval</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_641BB97285" xml:space="preserve"><value>Count</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_731F9E2133" xml:space="preserve"><value>times (in range)</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_940515B7F4" xml:space="preserve"><value>By frame count</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_A857BB6D37" xml:space="preserve"><value> Dither 50% keeps only checkerboard cells (the pattern stays put when the image moves).</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_BE811F0ADD" xml:space="preserve"><value>By frame count: from the first frame of the range, repeats N visible frames → M hidden frames. By count: splits the range evenly into visible/hidden slots and hides that many times (the first frame is visible).</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_E2A918DFFF" xml:space="preserve"><value>Hide style</value></data>
-  <data name="S_BlinkPanel_BlinkPanel_ED3105570F" xml:space="preserve"><value>By count in range</value></data>
-  <data name="S_BobPanel_BobPanel_178B12E7C6" xml:space="preserve"><value>Up/down</value></data>
-  <data name="S_BobPanel_BobPanel_58A5A73C75" xml:space="preserve"><value>Height</value></data>
-  <data name="S_BobPanel_BobPanel_62AE6AF173" xml:space="preserve"><value>times</value></data>
-  <data name="S_BobPanel_BobPanel_817E586669" xml:space="preserve"><value>Direction</value></data>
-  <data name="S_BobPanel_BobPanel_93ECFDAAAF" xml:space="preserve"><value>  Count</value></data>
-  <data name="S_BobPanel_BobPanel_A229A39E90" xml:space="preserve"><value>Rises and falls smoothly on a sine curve (height px up and down from center, whole pixels). The range starts and ends the same, so it loops seamlessly — the last frame of the range looks the same as the first.</value></data>
-  <data name="S_BobPanel_BobPanel_EC9342821C" xml:space="preserve"><value>Left/right</value></data>
   <data name="S_ChatWindow_AddAttachment_1F581E4392" xml:space="preserve"><value>Remove attachment</value></data>
   <data name="S_ChatWindow_AddSnapshot_C5F0084B6D" xml:space="preserve"><value>Undo this step</value></data>
   <data name="S_ChatWindow_AttachCanvas_F7C294FC0C" xml:space="preserve"><value>No drawing is open.</value></data>
@@ -310,37 +245,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_CodexCli_RestartFresh_C0DA978EB6" xml:space="preserve"><value>Couldn't continue the previous conversation, so it was sent as a new one.</value></data>
   <data name="S_CodexCli_ResultText_5FD63B1BE7" xml:space="preserve"><value>(image)</value></data>
   <data name="S_CodexCli_Send_08F762A264" xml:space="preserve"><value>(image)</value></data>
-  <data name="S_ColorAdjustPanel_AdjustModes_0FF6A836A6" xml:space="preserve"><value>Brightness/contrast</value></data>
-  <data name="S_ColorAdjustPanel_AdjustModes_2C243D40ED" xml:space="preserve"><value>Grayscale</value></data>
-  <data name="S_ColorAdjustPanel_AdjustModes_66B88ADD3C" xml:space="preserve"><value>Saturation</value></data>
-  <data name="S_ColorAdjustPanel_AdjustModes_7D62C1B761" xml:space="preserve"><value>Sepia</value></data>
-  <data name="S_ColorAdjustPanel_AdjustModes_C19765AF80" xml:space="preserve"><value>Hue shift</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_001F11B58B" xml:space="preserve"><value>  Contrast</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_1F1978AFAD" xml:space="preserve"><value>Style</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_65D7B7FC26" xml:space="preserve"><value>Changes only the color of visible pixels (opacity unchanged). Cel drawings stay untouched, so you can turn it off or revert anytime.</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_703B3CD995" xml:space="preserve"><value>Amount</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_7292A6B699" xml:space="preserve"><value>Hue</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_8395FE49C9" xml:space="preserve"><value>Brightness</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_B92B34DA64" xml:space="preserve"><value>Saturation</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_DFBB738FE0" xml:space="preserve"><value>% (−100 = grayscale)</value></data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_F55E326D7F" xml:space="preserve"><value>° rotate</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_01F3077949" xml:space="preserve"><value>{0} colors used in this frame (most used first) — click to add to the cycle colors (up to {1}).</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_0B215E7023" xml:space="preserve"><value>Up to {0} colors.</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_0EEDA7D564" xml:space="preserve"><value>This frame has no drawing.</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_2547771D95" xml:space="preserve"><value>Add color</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_445502367F" xml:space="preserve"><value>Pick colors used in the image.</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_616BE6A276" xml:space="preserve"><value>Remove this color</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_642EDB4627" xml:space="preserve"><value>Reverse</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_68BE16C6B6" xml:space="preserve"><value>A pixel with the i-th color in the image becomes the (i + steps)-th color. Gradient colors are sampled per pixel position. Colors and opacity not in the list stay unchanged. If the step count is a multiple of the color count ({0}), the end of the range matches the start, so it loops seamlessly (water, fire, neon).</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_6FEDC6C546" xml:space="preserve"><value>Steps</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_8143B75ED5" xml:space="preserve"><value>Color</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_8226D4FEF2" xml:space="preserve"><value>Import colors from image</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_83D3EFAB2B" xml:space="preserve"><value>Steps (shifts over the range)</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_CABADA1123" xml:space="preserve"><value>Direction</value></data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_F617CA003E" xml:space="preserve"><value>Forward (1 → 2 → …)</value></data>
-  <data name="S_ColorCyclePanel_StepsKind_1B32549397" xml:space="preserve"><value>Steps</value></data>
-  <data name="S_ColorCyclePanel_StepsKind_AD2B00B33A" xml:space="preserve"><value>{0} steps</value></data>
-  <data name="S_ColorCyclePanel_StepsKind_B56274D955" xml:space="preserve"><value>{0} steps ({1} loops)</value></data>
   <data name="S_ColorEditor_ColorEditor_2156C5C575" xml:space="preserve"><value>Recent colors</value></data>
   <data name="S_ColorEditor_ColorEditor_551150B3F7" xml:space="preserve"><value>Color</value></data>
   <data name="S_ColorEditor_ColorEditor_FA32B6E89E" xml:space="preserve"><value>Pick color: {0}</value></data>
@@ -542,7 +446,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_946C7D8FC7" xml:space="preserve"><value>Fill (Shift+G: toggle fill all same color)</value></data>
   <data name="S_Dialogs_Shortcuts_9A0AAD2E25" xml:space="preserve"><value>Increase / decrease brush (pen) size</value></data>
   <data name="S_Dialogs_Shortcuts_A069FAB880" xml:space="preserve"><value>Frames</value></data>
-  <data name="S_Dialogs_Shortcuts_A171E1ED26" xml:space="preserve"><value>Dithering (checker pattern)</value></data>
   <data name="S_Dialogs_Shortcuts_A2ACEFDBE7" xml:space="preserve"><value>Decrease / increase brush size</value></data>
   <data name="S_Dialogs_Shortcuts_B509609DFC" xml:space="preserve"><value>Rename layer</value></data>
   <data name="S_Dialogs_Shortcuts_B672785A4E" xml:space="preserve"><value>Flip horizontal / vertical (selection, or current cell if none)</value></data>
@@ -864,51 +767,6 @@ Export: </value></data>
   <data name="S_GroupLayoutDialog_Refresh_B49F4A4010" xml:space="preserve"><value>Top left</value></data>
   <data name="S_GroupLayoutDialog_Refresh_D30DD7ACE5" xml:space="preserve"><value>Right</value></data>
   <data name="S_GroupLayoutDialog_Refresh_EBE829199A" xml:space="preserve"><value>Left</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_0327FF94F2" xml:space="preserve"><value>  Count</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_18EE8BF22A" xml:space="preserve"><value>Red</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_229E2DBA32" xml:space="preserve"><value>times</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_22EFA1DDB7" xml:space="preserve"><value>Quick solid color</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_5F33353139" xml:space="preserve"><value>Visible pixels flash that color starting from the first frame of the range (opacity unchanged), repeat the set number of times, and the last frame shows the original image.</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_87C0FCC7BF" xml:space="preserve"><value>Color</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_9185899AD1" xml:space="preserve"><value>Fade out gradually</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_99AEB41746" xml:space="preserve"><value>Strength</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_9FA01E0FEA" xml:space="preserve"><value>Shape</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_A0E4CF80CE" xml:space="preserve"><value>White</value></data>
-  <data name="S_HitFlashPanel_HitFlashPanel_B8D805778F" xml:space="preserve"><value>Solid (on, then off)</value></data>
-  <data name="S_HologramPanel_HologramPanel_07629FDFDF" xml:space="preserve"><value>Transparent</value></data>
-  <data name="S_HologramPanel_HologramPanel_13DAB2BCA6" xml:space="preserve"><value>Strength</value></data>
-  <data name="S_HologramPanel_HologramPanel_1BF34BE317" xml:space="preserve"><value>Opacity</value></data>
-  <data name="S_HologramPanel_HologramPanel_1FC95DFB01" xml:space="preserve"><value>Color strength</value></data>
-  <data name="S_HologramPanel_HologramPanel_22ACBFBD6E" xml:space="preserve"><value>Seed</value></data>
-  <data name="S_HologramPanel_HologramPanel_2A2020E4D9" xml:space="preserve"><value>Bright band</value></data>
-  <data name="S_HologramPanel_HologramPanel_359C86A8C6" xml:space="preserve"><value>Blink and glitch are determined by the seed and the frame number within the range (same settings give the same canvas, export, and GIF). Glitch frames shift 1–3 horizontal slices (1–3px) left or right, so</value></data>
-  <data name="S_HologramPanel_HologramPanel_389F58CAAE" xml:space="preserve"><value>Red and blue are offset by 1px on glitch frames.</value></data>
-  <data name="S_HologramPanel_HologramPanel_412239FF25" xml:space="preserve"><value>Edge glow</value></data>
-  <data name="S_HologramPanel_HologramPanel_48D9F3060D" xml:space="preserve"><value>  Max shift</value></data>
-  <data name="S_HologramPanel_HologramPanel_6178D2E678" xml:space="preserve"><value>  Strength</value></data>
-  <data name="S_HologramPanel_HologramPanel_7898EACDA1" xml:space="preserve"><value>Adds a 1px glowing border around the image.</value></data>
-  <data name="S_HologramPanel_HologramPanel_8BEC9DAD82" xml:space="preserve"><value>A sci-fi hologram that tints visible pixels a single color while keeping their brightness (shading and shape preserved). Each scanline is darkened or made transparent; with Scroll, the lines move down by one spacing over the range.</value></data>
-  <data name="S_HologramPanel_HologramPanel_966D3D0180" xml:space="preserve"><value>Scroll</value></data>
-  <data name="S_HologramPanel_HologramPanel_972F2E71DA" xml:space="preserve"><value>Lines</value></data>
-  <data name="S_HologramPanel_HologramPanel_9B9738A14C" xml:space="preserve"><value>% (0 = off)</value></data>
-  <data name="S_HologramPanel_HologramPanel_9F93A9BB2A" xml:space="preserve"><value>Thickness</value></data>
-  <data name="S_HologramPanel_HologramPanel_A5CD9BF54F" xml:space="preserve"><value>RGB split (red and blue offset by 1px)</value></data>
-  <data name="S_HologramPanel_HologramPanel_AF6E8C1272" xml:space="preserve"><value>Mode</value></data>
-  <data name="S_HologramPanel_HologramPanel_B535B6DA1C" xml:space="preserve"><value>Different blink/glitch (randomize seed)</value></data>
-  <data name="S_HologramPanel_HologramPanel_BAED2225EC" xml:space="preserve"><value>Dither (Bayer pattern instead of translucency)</value></data>
-  <data name="S_HologramPanel_HologramPanel_BB87A93F94" xml:space="preserve"><value>Darken</value></data>
-  <data name="S_HologramPanel_HologramPanel_C49A6BC313" xml:space="preserve"><value>Blink frequency</value></data>
-  <data name="S_HologramPanel_HologramPanel_CEBC71D120" xml:space="preserve"><value> padding equal to the max shift is added on the left and right, plus 1px on all sides with edge glow.</value></data>
-  <data name="S_HologramPanel_HologramPanel_D3554CA8CE" xml:space="preserve"><value> The bright band enters from above the image at the start of the range and exits below at the end (speed and repeat apply to the scanline scroll and the band).</value></data>
-  <data name="S_HologramPanel_HologramPanel_E28C969851" xml:space="preserve"><value>Color</value></data>
-  <data name="S_HologramPanel_HologramPanel_E9515F56FA" xml:space="preserve"><value>Glitch frequency</value></data>
-  <data name="S_HologramPanel_HologramPanel_F5867029B4" xml:space="preserve"><value>Scanline spacing</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_4E24CB6117" xml:space="preserve"><value>Color</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_71F36E8E3A" xml:space="preserve"><value>  Strength</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_960F2D4C03" xml:space="preserve"><value>Weaker toward the inside (stepped)</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_A12FD928D4" xml:space="preserve"><value>Blend</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_E8C879B3C5" xml:space="preserve"><value>Blends color inward from the image edges by the thickness (8-direction distance including corners; original pixel opacity unchanged).</value></data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_F17849B03D" xml:space="preserve"><value>Thickness</value></data>
   <data name="S_LayerEffectsDialog_AddMotionEditors_610C3B2627" xml:space="preserve"><value>Currently moves over {0} frames (frames {1}–{2}) — a longer range is slower, a shorter one faster.</value></data>
   <data name="S_LayerEffectsDialog_AddMotionEditors_9BD880B938" xml:space="preserve"><value> With a single frame, it doesn't move.</value></data>
   <data name="S_LayerEffectsDialog_AddRangeEditor_1629B10BDB" xml:space="preserve"><value>All frames</value></data>
@@ -916,9 +774,6 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_AddTimingEditors_433F81EB07" xml:space="preserve"><value>times</value></data>
   <data name="S_LayerEffectsDialog_AddTimingEditors_E1B19358AF" xml:space="preserve"><value>Speed</value></data>
   <data name="S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B" xml:space="preserve"><value>Repeat</value></data>
-  <data name="S_LayerEffectsDialog_Anchors_0EC3ED31B9" xml:space="preserve"><value>Bottom center (feet fixed)</value></data>
-  <data name="S_LayerEffectsDialog_Anchors_1F3A9869CE" xml:space="preserve"><value>Center</value></data>
-  <data name="S_LayerEffectsDialog_Anchors_6466116779" xml:space="preserve"><value>Pivot</value></data>
   <data name="S_LayerEffectsDialog_Bake_D0F7807D90" xml:space="preserve"><value>Expand canvas · bake effects</value></data>
   <data name="S_LayerEffectsDialog_Bake_D15392AB9F" xml:space="preserve"><value>Bake effects</value></data>
   <data name="S_LayerEffectsDialog_Bake_E014268BBB" xml:space="preserve"><value>Extend frames and canvas · bake effects</value></data>
@@ -930,9 +785,6 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_BakeSummary_76F41482A1" xml:space="preserve"><value>, {0} cells)</value></data>
   <data name="S_LayerEffectsDialog_BakeSummary_E38062A45D" xml:space="preserve"><value>Frame {0}</value></data>
   <data name="S_LayerEffectsDialog_BakeSummary_E39243C108" xml:space="preserve"><value> · part size expanded to {0}×{1}</value></data>
-  <data name="S_LayerEffectsDialog_Blends_1725732230" xml:space="preserve"><value>Multiply</value></data>
-  <data name="S_LayerEffectsDialog_Blends_5260B3BD7E" xml:space="preserve"><value>Screen</value></data>
-  <data name="S_LayerEffectsDialog_Blends_69D924C609" xml:space="preserve"><value>Overlay</value></data>
   <data name="S_LayerEffectsDialog_CanBake_235F1CD0DC" xml:space="preserve"><value>Can't bake effects on a locked layer.</value></data>
   <data name="S_LayerEffectsDialog_CanBake_F0B223C43A" xml:space="preserve"><value>Group effects can't be baked — apply them to parts.</value></data>
   <data name="S_LayerEffectsDialog_Canvas_CanvasExpansionSummary_332F7D70DF" xml:space="preserve"><value>Canvas expanded from {0}×{1} to {2}×{3}</value></data>
@@ -943,21 +795,6 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_CenterKind_6FC4EF0158" xml:space="preserve"><value>{0} px (center)</value></data>
   <data name="S_LayerEffectsDialog_CenterKind_7529E535E3" xml:space="preserve"><value>Bottom edge</value></data>
   <data name="S_LayerEffectsDialog_CenterKind_DE4F2D8B9E" xml:space="preserve"><value>Right edge</value></data>
-  <data name="S_LayerEffectsDialog_Centers_17A9293CA6" xml:space="preserve"><value>Center</value></data>
-  <data name="S_LayerEffectsDialog_Centers_4EEB98A21E" xml:space="preserve"><value>Bottom center</value></data>
-  <data name="S_LayerEffectsDialog_Centers_7CA53FB898" xml:space="preserve"><value>Pivot</value></data>
-  <data name="S_LayerEffectsDialog_Centers_8D791DFBBE" xml:space="preserve"><value>Custom (X, Y)</value></data>
-  <data name="S_LayerEffectsDialog_Copies_54ACB79D5D" xml:space="preserve"><value>copies</value></data>
-  <data name="S_LayerEffectsDialog_Count_A61CE50C3B" xml:space="preserve"><value>times</value></data>
-  <data name="S_LayerEffectsDialog_Directions_2D3F13D6AD" xml:space="preserve"><value>Bottom left</value></data>
-  <data name="S_LayerEffectsDialog_Directions_38A213C040" xml:space="preserve"><value>Top left</value></data>
-  <data name="S_LayerEffectsDialog_Directions_53073620AC" xml:space="preserve"><value>Up</value></data>
-  <data name="S_LayerEffectsDialog_Directions_73A07AC9E0" xml:space="preserve"><value>Bottom right</value></data>
-  <data name="S_LayerEffectsDialog_Directions_87DE11F0BD" xml:space="preserve"><value>Left</value></data>
-  <data name="S_LayerEffectsDialog_Directions_A573091255" xml:space="preserve"><value>Right</value></data>
-  <data name="S_LayerEffectsDialog_Directions_B1DECE0B86" xml:space="preserve"><value>Down</value></data>
-  <data name="S_LayerEffectsDialog_Directions_E2ADEEE3AD" xml:space="preserve"><value>Top right</value></data>
-  <data name="S_LayerEffectsDialog_Dithers_19C7C4899C" xml:space="preserve"><value>None (smooth)</value></data>
   <data name="S_LayerEffectsDialog_Easings_4FA414FBAC" xml:space="preserve"><value>Fast start</value></data>
   <data name="S_LayerEffectsDialog_Easings_503369007B" xml:space="preserve"><value>Slow start</value></data>
   <data name="S_LayerEffectsDialog_Easings_7665ED231C" xml:space="preserve"><value>Slow start and end</value></data>
@@ -988,68 +825,15 @@ Export: </value></data>
   <data name="S_LayerEffectsDialog_Extend_SyncExtendEditor_37065AF08C" xml:space="preserve"><value>No frames after — use another method to add</value></data>
   <data name="S_LayerEffectsDialog_Extend_SyncExtendEditor_A62BFC8D52" xml:space="preserve"><value>Keep added · {0} frames total</value></data>
   <data name="S_LayerEffectsDialog_Extend_SyncExtendEditor_B069C0BD72" xml:space="preserve"><value>{0} frames after</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_08EF532DFB" xml:space="preserve"><value>Vanish</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_0AB9179C30" xml:space="preserve"><value>Paints the light color for the given number of cells from the lit edge and the shade color on the opposite side (alpha = strength, 0 = no paint).</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_1192DC8149" xml:space="preserve"><value>Angle</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_12D0C7E74E" xml:space="preserve"><value>Select an effect.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_1381B5CF89" xml:space="preserve"><value>Light color</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_171EBAB542" xml:space="preserve"><value>The first frame of the range is the original image; after that, visible pixels burst outward from the center and vanish. Cell images are unchanged.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_1C82F0E839" xml:space="preserve"><value>  Gravity</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_2118984CA5" xml:space="preserve"><value>A band of light enters from just outside one side of the image and exits the other. Only visible pixels brighten (screen); transparent areas and opacity are unchanged.</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_24136B66D0" xml:space="preserve"><value>No effects — pick one on the left to add.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_288AED0ECC" xml:space="preserve"><value>Flash</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_28DDBC6B0B" xml:space="preserve"><value>Hard</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_3029688617" xml:space="preserve"><value>Horizontal strength</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_3CA6157165" xml:space="preserve"><value>Range</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_4147FCFCA9" xml:space="preserve"><value>Sideways first (flat → tall)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_4165F7C464" xml:space="preserve"><value>Anchor</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_4331838592" xml:space="preserve"><value>Inside (edge pixels)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_48FAB42CF8" xml:space="preserve"><value>Softness</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_4D51C71D99" xml:space="preserve"><value>Order</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_541ACE652F" xml:space="preserve"><value>Edge 2px</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_5522C8DF65" xml:space="preserve"><value>Amount</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_5C5C39442A" xml:space="preserve"><value>Center</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_5DD23B47AC" xml:space="preserve"><value>Blend</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_5F8BA1F369" xml:space="preserve"><value>Frames</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_62FD728E7C" xml:space="preserve"><value>Outside (beyond the image)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_66BE69E8AB" xml:space="preserve"><value>Light direction</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_6C80368CF6" xml:space="preserve"><value>  Strength</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_6D8B67BF59" xml:space="preserve"><value>Flash color</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_6E13AD4474" xml:space="preserve"><value>Shade color</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_7049E2D1FE" xml:space="preserve"><value>Keep original (a copy flies off)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_7AEF607F6B" xml:space="preserve"><value>Direction</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_7D4825E02A" xml:space="preserve"><value>Bounce</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_85BBD645E0" xml:space="preserve"><value>4 directions (cross)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_880B57A4CE" xml:space="preserve"><value>Smaller toward the end</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_9577438EC7" xml:space="preserve"><value>A hard shadow that copies the image shape (alpha = darkness). Choosing a dither lays opaque color in a pattern of that density (50% = checkerboard) instead of translucency.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_9691881EA3" xml:space="preserve"><value>Wobbles with separate horizontal and vertical strengths. An axis at 0% stays fixed, and pixels stay crisp when stretched or squashed.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_98D374602B" xml:space="preserve"><value>Fly distance</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_9926E8F548" xml:space="preserve"><value>times</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_9E6E8E6EFE" xml:space="preserve"><value>Random variation</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_A81FAFD1EE" xml:space="preserve"><value>Thickness</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_A89FB839CA" xml:space="preserve"><value>px (from original top-left)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_AB233EA745" xml:space="preserve"><value>Edge 1px</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_B8F02D5B5D" xml:space="preserve"><value>Upward first (tall → flat)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_BD67E1B5C4" xml:space="preserve"><value>Tints visible pixels toward a single color or a gradient (100% = silhouette, opacity unchanged). The gradient's "Whole sprite, one color" mode shifts the whole image through the stop colors over the effect's time range.</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_BE76D99E55" xml:space="preserve"><value>Different random variation (randomize seed)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_C4DC26AC14" xml:space="preserve"><value>° (travel direction, 45 = ↗)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_CD2E150E76" xml:space="preserve"><value> Each frame in the range shatters its own image (frames with no image have nothing to burst).</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_D2ECBA6FD8" xml:space="preserve"><value>8 directions (incl. corners)</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_D370965ED0" xml:space="preserve"><value>Width</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_DA003AD5F5" xml:space="preserve"><value>  Vertical strength</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_E1CC351651" xml:space="preserve"><value>Fragment size</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_E37116317A" xml:space="preserve"><value>Seed</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_E78408846D" xml:space="preserve"><value>Position</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_E831CF80BB" xml:space="preserve"><value>Fades out toward the end (start = progress % where fading begins).</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_E8E9684F4B" xml:space="preserve"><value>Start</value></data>
   <data name="S_LayerEffectsDialog_FillSettings_F6DB7C3B67" xml:space="preserve"><value>Color</value></data>
-  <data name="S_LayerEffectsDialog_FillSettings_FEA25AE8B2" xml:space="preserve"><value>Dither</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_36C0AD1206" xml:space="preserve"><value>Current</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_5E664EA7C3" xml:space="preserve"><value>Start</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_D50B47CDF3" xml:space="preserve"><value>{0} {1}</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_F07F8BC693" xml:space="preserve"><value>Current · {0}</value></data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_FC90F137FF" xml:space="preserve"><value>End</value></data>
-  <data name="S_LayerEffectsDialog_Frames_656538CC7F" xml:space="preserve"><value>Frames</value></data>
   <data name="S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70" xml:space="preserve"><value>Click to view a frame, drag to set the frame range. With an effect selected, drag past the last cell to extend frames (dashed cells).</value></data>
   <data name="S_LayerEffectsDialog_Intro_03C1A71EB9" xml:space="preserve"><value>
 In part atlases, the sprite grows by the spread amount and the pivot points to the same spot.</value></data>
@@ -1060,50 +844,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_Intro_AA476847D8" xml:space="preserve"><value>Effects don't modify the image; they're applied only on display (including to things drawn later). They apply in order from the top.
 </value></data>
   <data name="S_LayerEffectsDialog_Intro_C71F0948BE" xml:space="preserve"><value>The preview shows only effects whose range includes the selected frame. Selecting an effect plays its range right away; turning off 'Selected effect range only' plays all frames after extending. Frame strip below: click for that frame, drag for the selected effect's frame range.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_02A04E0B04" xml:space="preserve"><value>Changes colors with grayscale, sepia, hue shift, brightness, contrast, and saturation (image unchanged).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_03AE924348" xml:space="preserve"><value>Tints visible pixels with a single color or a spatial gradient (100% = silhouette).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_043CDEE3B8" xml:space="preserve"><value>The whole image jitters pixel by pixel.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_10CD6603BC" xml:space="preserve"><value>Shadow</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_126136E630" xml:space="preserve"><value>Edge light and shade</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_1725C3F28A" xml:space="preserve"><value>Hit flash</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_174D9850CC" xml:space="preserve"><value>Light sweep</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_1ABE2A05EE" xml:space="preserve"><value>Cycles through chosen colors in turn (flowing colors like water, fire, neon).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_1B49B1765C" xml:space="preserve"><value>Pixels drip down with each column at a different speed.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_20C2A2DCF6" xml:space="preserve"><value>Color replace</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_23A9E57A2F" xml:space="preserve"><value>Color cycle</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_2576225185" xml:space="preserve"><value>Casts a copy of the image shape diagonally behind it as a shadow.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_25FE384908" xml:space="preserve"><value>Inner glow</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_2B322D7A38" xml:space="preserve"><value>Hologram</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_2C5AB3754D" xml:space="preserve"><value>Shake</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_34F6760645" xml:space="preserve"><value>Rotates the image (RotSprite — no new colors or translucency).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_361470DFA9" xml:space="preserve"><value>Gently floats up and down (idle motion).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_4230F44F0C" xml:space="preserve"><value>Adds depth by brightening the edge facing the light and darkening the opposite side.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_45261BC59C" xml:space="preserve"><value>Draws an outline around the image (outside = beyond the image, inside = on edge pixels). The line is a fixed color or the touching pixels' color made darker or lighter (shade from neighbors).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_4A3575A660" xml:space="preserve"><value>Melt</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_4E3A3D50CE" xml:space="preserve"><value>Swaps chosen colors for other colors (palette swap — the same image in different colors).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_4E942C831D" xml:space="preserve"><value>Repeatedly shows and hides (e.g. to indicate invincibility frames).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_510993AD9E" xml:space="preserve"><value>Blink</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_5627BD3D9D" xml:space="preserve"><value>Reflection</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_5C190C1C74" xml:space="preserve"><value>Outline</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_6134E7833F" xml:space="preserve"><value>Makes a glowing edge by blending color inward from the edges.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_69C80DA119" xml:space="preserve"><value>Leaves fading copies of previous frames behind for a sense of fast motion.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_6A331276D8" xml:space="preserve"><value>Flips the image and reflects it below, above or to a side, fading gradually (water/floor/wall reflection).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_71D60FCC7E" xml:space="preserve"><value>Shockwave ring</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_792E7BADCE" xml:space="preserve"><value>Squash and stretch</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_7C6C1B6117" xml:space="preserve"><value>Wobbles horizontally and vertically like jelly, then returns to its original shape.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_91F153F61A" xml:space="preserve"><value>Pixels shatter and fly outward as they disappear.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_993BDE3846" xml:space="preserve"><value>The image flashes a single color, as if hit.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_AC8A98B707" xml:space="preserve"><value>Explode</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_B65A656A1B" xml:space="preserve"><value>Rotate</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_C29C82BC8E" xml:space="preserve"><value>Color overlay</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_C41906B546" xml:space="preserve"><value>Afterimage</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_CA9E953421" xml:space="preserve"><value>Hue adjust</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_CB2F9D0913" xml:space="preserve"><value>A pixel circle ring spreads out from the center.</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_E97AB47F1D" xml:space="preserve"><value>A band of light sweeps across the image from one side to the other (shine).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_EF5C5A3497" xml:space="preserve"><value>Tints like a single-color projection and adds scanlines, bright bands, blink and glitch (sci-fi hologram).</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_F5A6D8375C" xml:space="preserve"><value>Bob</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_F6C9786974" xml:space="preserve"><value>Appear / disappear</value></data>
-  <data name="S_LayerEffectsDialog_KindTable_FFF387B9B9" xml:space="preserve"><value>The image appears or disappears via dither, scatter, wipe or opacity.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_0500474F59" xml:space="preserve"><value>On playback, loops straight back to the first frame without holding the last frame (as it loops in game).</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_2138B1E743" xml:space="preserve"><value>On: plays only frames the selected effect applies to. Off: plays all frames, including those added by extending.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_3DC0585476" xml:space="preserve"><value>Play</value></data>
@@ -1130,7 +870,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_FE8FEDFCFF" xml:space="preserve"><value>Down</value></data>
   <data name="S_LayerEffectsDialog_Palette_BuildPalette_164E2EA098" xml:space="preserve"><value>
 Moving effect — animates over the frame range.</value></data>
-  <data name="S_LayerEffectsDialog_Palette_BuildPalette_938E8B22DD" xml:space="preserve"><value>Double-click or drag onto the effect list to add (dropping inserts at that spot).</value></data>
   <data name="S_LayerEffectsDialog_Palette_BuildPalette_F3EEB77504" xml:space="preserve"><value>Effect types</value></data>
   <data name="S_LayerEffectsDialog_RefreshPreview_19220A5382" xml:space="preserve"><value> · progress {0:0}%</value></data>
   <data name="S_LayerEffectsDialog_RefreshPreview_64659703DD" xml:space="preserve"><value>Frame {0}{1}{2}</value></data>
@@ -1146,53 +885,7 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_LayerEffectsDialog_Repeats_3E39AFFB4A" xml:space="preserve"><value>Once</value></data>
   <data name="S_LayerEffectsDialog_Repeats_466235A991" xml:space="preserve"><value>Ping-pong</value></data>
   <data name="S_LayerEffectsDialog_Repeats_753C57FE3B" xml:space="preserve"><value>Loop</value></data>
-  <data name="S_LayerEffectsDialog_ScanGap_5A028BD5A6" xml:space="preserve"><value>lines</value></data>
-  <data name="S_LayerEffectsDialog_ShadowDithers_85A6B2AD26" xml:space="preserve"><value>None (semi-transparent)</value></data>
-  <data name="S_LayerEffectsDialog_ShadowDithers_BC77BAD2B0" xml:space="preserve"><value>50% (checkerboard)</value></data>
-  <data name="S_LayerEffectsDialog_Summary_0080B38202" xml:space="preserve"><value>Blink · </value></data>
-  <data name="S_LayerEffectsDialog_Summary_009BCE5A4C" xml:space="preserve"><value>8 directions</value></data>
-  <data name="S_LayerEffectsDialog_Summary_055B04E8E0" xml:space="preserve"><value>Color cycle · {0} colors · {1} steps</value></data>
-  <data name="S_LayerEffectsDialog_Summary_0B62ABBEE2" xml:space="preserve"><value>Edge light/shade · {0} · {1}px</value></data>
-  <data name="S_LayerEffectsDialog_Summary_192DBA1F7C" xml:space="preserve"><value>Inside</value></data>
-  <data name="S_LayerEffectsDialog_Summary_1BF53EA7E5" xml:space="preserve"><value> · fade</value></data>
-  <data name="S_LayerEffectsDialog_Summary_1D40117C02" xml:space="preserve"><value> · shrink</value></data>
-  <data name="S_LayerEffectsDialog_Summary_2629FC9A9D" xml:space="preserve"><value>4 directions</value></data>
-  <data name="S_LayerEffectsDialog_Summary_30757AF9AF" xml:space="preserve"><value> · keep original</value></data>
-  <data name="S_LayerEffectsDialog_Summary_3722634F0B" xml:space="preserve"><value>Left-right</value></data>
-  <data name="S_LayerEffectsDialog_Summary_4AD4C2E7D2" xml:space="preserve"><value>Rotate · {0}° · {1}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_4BF321B781" xml:space="preserve"><value>Afterimage · {0} · spacing {1} · {2}%</value></data>
-  <data name="S_LayerEffectsDialog_Summary_4DA5BACD5A" xml:space="preserve"><value> · regular</value></data>
-  <data name="S_LayerEffectsDialog_Summary_53B3F1206A" xml:space="preserve"><value>Color swap · {0} pairs</value></data>
-  <data name="S_LayerEffectsDialog_Summary_54368CD4DD" xml:space="preserve"><value>Reflection · {0} · gap {1}px · {2}% · {3}→{4}%</value></data>
   <data name="S_LayerEffectsDialog_Summary_58CF9C9156" xml:space="preserve"><value> · frame {0}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_62017EE627" xml:space="preserve"><value>Hue adjust · {0}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_78B20FF1F4" xml:space="preserve"><value>Outside</value></data>
-  <data name="S_LayerEffectsDialog_Summary_7B535BB782" xml:space="preserve"><value> · glitch {0}%</value></data>
-  <data name="S_LayerEffectsDialog_Summary_7D1229802B" xml:space="preserve"><value>{0}×</value></data>
-  <data name="S_LayerEffectsDialog_Summary_823544BC03" xml:space="preserve"><value> · dither</value></data>
-  <data name="S_LayerEffectsDialog_Summary_855D00FD34" xml:space="preserve"><value>Visible {0} / hidden {1} frames</value></data>
-  <data name="S_LayerEffectsDialog_Summary_8FC3C16840" xml:space="preserve"><value>Hologram · {0} · {1}% · opacity {2}%</value></data>
-  <data name="S_LayerEffectsDialog_Summary_92D1EF3203" xml:space="preserve"><value>Shake · {0} · {1}px · {2}×</value></data>
-  <data name="S_LayerEffectsDialog_Summary_963828451F" xml:space="preserve"><value>Squash and stretch · H {0}% · V {1}% · {2}×</value></data>
-  <data name="S_LayerEffectsDialog_Summary_99CAC4A07E" xml:space="preserve"><value>Top</value></data>
-  <data name="S_LayerEffectsDialog_Summary_A9AB403D93" xml:space="preserve"><value>Hit flash · {0}× · {1}% · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_B8FE86B3A0" xml:space="preserve"><value>Inner glow · {0}px · {1}% · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_BBAD57A076" xml:space="preserve"><value>Bob · {0} · {1}px · {2}×</value></data>
-  <data name="S_LayerEffectsDialog_Summary_BC26FFFDAA" xml:space="preserve"><value>Front</value></data>
-  <data name="S_LayerEffectsDialog_Summary_C36AC46BAE" xml:space="preserve"><value> · from {0}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_D07B4E5446" xml:space="preserve"><value>Shockwave ring · {0}px · thickness {1} · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_D6E8941524" xml:space="preserve"><value> · reversed</value></data>
-  <data name="S_LayerEffectsDialog_Summary_DA48E085AF" xml:space="preserve"><value>Melt · {0}px · irregularity {1}%</value></data>
-  <data name="S_LayerEffectsDialog_Summary_DE0B23D063" xml:space="preserve"><value>Explode · X {0}px Y {1}px · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_E233F2401C" xml:space="preserve"><value>Shadow · ({0}, {1}) · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_E3B52B00EB" xml:space="preserve"><value>Back</value></data>
-  <data name="S_LayerEffectsDialog_Summary_E77A16477B" xml:space="preserve"><value> · tolerance {0}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_E7A8C83171" xml:space="preserve"><value>Outline · {0} {1}px · {2} · {3}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_EFCA029C51" xml:space="preserve"><value>Up-down</value></data>
-  <data name="S_LayerEffectsDialog_Summary_F451DAAC0A" xml:space="preserve"><value>Light sweep · {0}° · {1}px · {2}%</value></data>
-  <data name="S_LayerEffectsDialog_Summary_F724879C11" xml:space="preserve"><value>Bottom</value></data>
-  <data name="S_LayerEffectsDialog_Summary_F824955A0D" xml:space="preserve"><value>Color overlay · {0} · {1}% · {2}</value></data>
-  <data name="S_LayerEffectsDialog_Summary_FDDC95CFEA" xml:space="preserve"><value> · dither {0}</value></data>
   <data name="S_LayerEffectsDialog_SyncPlayback_1100994439" xml:space="preserve"><value>Play</value></data>
   <data name="S_LayerEffectsDialog_SyncPlayback_61EB6DFDA0" xml:space="preserve"><value>Pause</value></data>
   <data name="S_LayerEffectsDialog_UpdateButtons_ADC8E0220B" xml:space="preserve"><value>Bakes the selected effect into the cel pixels and removes it from the effects (one undo step; closes the window).</value></data>
@@ -1257,16 +950,6 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_McpServer_DescribeProblem_BEA0D8C5FE" xml:space="preserve"><value>Couldn't connect to chickxel MCP (CLI status: {0})</value></data>
   <data name="S_McpServer_DescribeProblem_EDC6AA4CA7" xml:space="preserve"><value>{0}. No request reached Chickxel's internal server ({1}). Check whether a proxy (HTTP_PROXY/HTTPS_PROXY environment variables), VPN or security software is blocking local connections (127.0.0.1), and that the CLI is up to date.</value></data>
   <data name="S_McpServer_Start_FF0B0F6631" xml:space="preserve"><value>Couldn't start the MCP server: {0}</value></data>
-  <data name="S_MeltPanel_MeltPanel_05D178E28F" xml:space="preserve"><value>Drip (leaves trails)</value></data>
-  <data name="S_MeltPanel_MeltPanel_51CBEF5EB8" xml:space="preserve"><value>Irregularity</value></data>
-  <data name="S_MeltPanel_MeltPanel_54B1D35C64" xml:space="preserve"><value>% (later/slower per column)</value></data>
-  <data name="S_MeltPanel_MeltPanel_6EDA79E298" xml:space="preserve"><value>px (distance to the bottom)</value></data>
-  <data name="S_MeltPanel_MeltPanel_A67CF586F8" xml:space="preserve"><value>Vanish</value></data>
-  <data name="S_MeltPanel_MeltPanel_B26E6FC89A" xml:space="preserve"><value>Different melt pattern (random seed)</value></data>
-  <data name="S_MeltPanel_MeltPanel_C1680743FF" xml:space="preserve"><value> The range's first frame is the image as is, with margin added below by the distance.</value></data>
-  <data name="S_MeltPanel_MeltPanel_CB59847BAC" xml:space="preserve"><value>Pixels drip downward at slightly different times and speeds per column (with Drip, lower parts travel further and leave trails); with Vanish, they fade out as they finish.</value></data>
-  <data name="S_MeltPanel_MeltPanel_E8772786EA" xml:space="preserve"><value>Seed</value></data>
-  <data name="S_MeltPanel_MeltPanel_F9F8B83973" xml:space="preserve"><value>Distance</value></data>
   <data name="S_MergeDialog_MergeDialog_0A7DC12A34" xml:space="preserve"><value>As skins</value></data>
   <data name="S_MergeDialog_MergeDialog_0D1516342C" xml:space="preserve"><value>Merge mode</value></data>
   <data name="S_MergeDialog_MergeDialog_23AA50B513" xml:space="preserve"><value>Up (earlier)</value></data>
@@ -1334,20 +1017,6 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="S_PaletteSection_PaletteSection_5C40417A3E" xml:space="preserve"><value>Collapse/expand</value></data>
   <data name="S_PaletteSection_PaletteSection_B4F1EEF45C" xml:space="preserve"><value>Double-click to rename · right-click = menu</value></data>
   <data name="S_PaletteSection_PaletteSection_CF481ADEDA" xml:space="preserve"><value>Click a palette color to select it</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_17E5DDE5F7" xml:space="preserve"><value>(0 = exact color only)</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_2DE0DA2A3A" xml:space="preserve"><value>Pick colors used in the image to add as pairs.</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_303CA10FC1" xml:space="preserve"><value>This frame has no drawing.</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_3C2DFB743B" xml:space="preserve"><value> Swapped color opacity = original opacity × target color opacity (swapping to transparent erases).</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_3C34A2519A" xml:space="preserve"><value>No color pairs to swap — add one below.</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_62C7E01DDC" xml:space="preserve"><value>Tolerance</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_6A0B119B5E" xml:space="preserve"><value>Add pair</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_9A0CDB44A5" xml:space="preserve"><value>Target</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A0FD948BEA" xml:space="preserve"><value>Pick colors from drawing</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A4E05A1C7D" xml:space="preserve"><value>Visible pixels matching a source color (R·G·B difference within tolerance) are replaced with the target color. If a gradient is selected, source and target colors are sampled per pixel position. Pairs higher in the list win, and each pixel is swapped only once.</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A5869DACA1" xml:space="preserve"><value>Remove this pair</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_AF44DD45FB" xml:space="preserve"><value>{0} source</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_F438B961E1" xml:space="preserve"><value>{0} colors used in this frame's drawing (most used first) — click one to add a pair that swaps it.</value></data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_F5BECD6FF3" xml:space="preserve"><value>Add all</value></data>
   <data name="S_PixelCanvas_BeginArrange_28B8E5E745" xml:space="preserve"><value>Deselect part</value></data>
   <data name="S_PixelCanvas_BeginArrange_32D63E2C46" xml:space="preserve"><value>Turned off auto layout for group "{0}" — you can now drag parts</value></data>
   <data name="S_PixelCanvas_BeginArrange_914451A106" xml:space="preserve"><value>Selected part "{0}"</value></data>
@@ -1418,13 +1087,13 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Locked_Outfit" xml:space="preserve"><value>Wearing outfit "{outfit}" would change locked layers: {layers} — ask the user to unlock them</value></data>
   <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>Group "{group}" uses auto layout, so this change could move locked part {index} "{name}" — ask the user to unlock it or turn off auto layout</value></data>
   <data name="Ai_Effect_What" xml:space="preserve"><value>effect</value></data>
-  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>Pass either type (an effect type from list_effect_types) or preset (an effect recipe name or id), not both</value></data>
+  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>Pass either type (an effect type from list_effect_types) or preset (an effect preset name or id), not both</value></data>
   <data name="Ai_Effect_ClipFirst" xml:space="preserve"><value>clip_to_above: the first effect (index 0) has no effect above it to clip to</value></data>
   <data name="Ai_Effect_UnknownType" xml:space="preserve"><value>type: unknown effect type "{type}" — types: {types}</value></data>
   <data name="Ai_Effect_PresetSettings" xml:space="preserve"><value>settings can't be combined with preset — add the preset, then change its effects with set_effect</value></data>
-  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: couldn't read the personal effect recipes: {error}</value></data>
-  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: there are no effect recipes available — add an effect type instead (see list_effect_types)</value></data>
-  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: no effect recipe "{name}" — available: {presets}</value></data>
+  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: couldn't read the personal effect presets: {error}</value></data>
+  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: there are no effect presets available — add an effect type instead (see list_effect_types)</value></data>
+  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: no effect preset "{name}" — available: {presets}</value></data>
   <data name="Ai_Effect_Added" xml:space="preserve"><value>{tool}: added {effects} to layer {layer} "{name}" as effect {indices}</value></data>
   <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>Pass at least one of settings, from_frame/to_frame/all_frames, enabled, clip_to_above or move_to</value></data>
   <data name="Ai_Effect_Unchanged" xml:space="preserve"><value>{tool}: effect {effect} of layer {layer} is already like that — nothing changed</value></data>
@@ -1676,47 +1345,6 @@ Remove it from that command and assign it here?</value></data>
   <data name="S_PreviewPanel_RebuildOutfit_12AE9802EA" xml:space="preserve"><value>Skin manager: switch, add, duplicate, rename, delete skins via cards; choose per part</value></data>
   <data name="S_PreviewPanel_RebuildOutfit_E5D30D48F5" xml:space="preserve"><value>Outfit</value></data>
   <data name="S_PreviewPanel_SetScale_EBF1B9D1AA" xml:space="preserve"><value>Fit</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_0B2DCDD256" xml:space="preserve"><value>Direction</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_11BC092C2F" xml:space="preserve"><value>Flips the frame image vertically and places it behind, offset by the gap (height = what % of the image height is reflected).</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_15D1419195" xml:space="preserve"><value>Up (ceiling)</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_316A07F4E0" xml:space="preserve"><value> The row nearest the image uses the start opacity, the far row the end opacity. Tint opacity = tint strength (0 = no tint).</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_3775129E0B" xml:space="preserve"><value>Opacity</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_436371597D" xml:space="preserve"><value>  Height</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_4FE25252B7" xml:space="preserve"><value>Down (floor/water)</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_5E956839D2" xml:space="preserve"><value>Gap</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_61D47D3F6B" xml:space="preserve"><value>Fade with dithering (pattern instead of semi-transparency)</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_742EB29F31" xml:space="preserve"><value>Tint</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_B7DC6AC8F7" xml:space="preserve"><value>px (shifts each row horizontally, 0 = off)</value></data>
-  <data name="S_ReflectionPanel_ReflectionPanel_F203E882CA" xml:space="preserve"><value>Ripple</value></data>
-  <data name="S_RotatePanel_RotatePanel_32751BEF8A" xml:space="preserve"><value>° (negative = counterclockwise, 360 = full turn)</value></data>
-  <data name="S_RotatePanel_RotatePanel_BE26BAB163" xml:space="preserve"><value>Angle</value></data>
-  <data name="S_RotatePanel_RotatePanel_C002C942CF" xml:space="preserve"><value>Pivot</value></data>
-  <data name="S_RotatePanel_RotatePanel_C0881989CD" xml:space="preserve"><value> The part sprite gets padding as far as the rotated image can reach.</value></data>
-  <data name="S_RotatePanel_RotatePanel_CF8C27D904" xml:space="preserve"><value>Rotates using RotSprite (upscales 8× with Scale2x, rotates, then scales back — fewer broken lines, no new colors or semi-transparency). Multiples of 90° are lossless, and the end of a full turn matches the original.</value></data>
-  <data name="S_ShakePanel_Axes_0BA14E7C64" xml:space="preserve"><value>Both</value></data>
-  <data name="S_ShakePanel_Axes_53CC4B039D" xml:space="preserve"><value>Horizontal</value></data>
-  <data name="S_ShakePanel_Axes_8ACB726509" xml:space="preserve"><value>Vertical</value></data>
-  <data name="S_ShakePanel_ShakePanel_06FDF78CFA" xml:space="preserve"><value>Strength</value></data>
-  <data name="S_ShakePanel_ShakePanel_129203CA72" xml:space="preserve"><value>Shakes the whole image by whole pixels (at most Strength px). The start and end frames stay in place, and the part sprite gets padding as far as it shakes.</value></data>
-  <data name="S_ShakePanel_ShakePanel_2DBC91C1A8" xml:space="preserve"><value>  Count</value></data>
-  <data name="S_ShakePanel_ShakePanel_39DA4FC0D1" xml:space="preserve"><value>Random (seed)</value></data>
-  <data name="S_ShakePanel_ShakePanel_3A0EE81AC1" xml:space="preserve"><value>times</value></data>
-  <data name="S_ShakePanel_ShakePanel_84B7AD2C03" xml:space="preserve"><value>Seed</value></data>
-  <data name="S_ShakePanel_ShakePanel_96BBC223BF" xml:space="preserve"><value>Direction</value></data>
-  <data name="S_ShakePanel_ShakePanel_9C336915F0" xml:space="preserve"><value>Different shake (randomize seed)</value></data>
-  <data name="S_ShakePanel_ShakePanel_C4C270EF23" xml:space="preserve"><value>Decay (weaker toward the end)</value></data>
-  <data name="S_ShakePanel_ShakePanel_C65B0A22CA" xml:space="preserve"><value>Regular (sine)</value></data>
-  <data name="S_ShakePanel_ShakePanel_F0EB0186CC" xml:space="preserve"><value>Motion</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_005BCC51DE" xml:space="preserve"><value>Center</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_0E8726B50C" xml:space="preserve"><value>Behind image (below)</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_2DDDFC38DA" xml:space="preserve"><value>A ring expands from the center pixel up to the max radius (1px thickness = midpoint circle — a pixel circle with no gaps or overlaps). The first frame of the range has radius 0 and is invisible; padding equal to the radius is added on all sides.</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_61134FA980" xml:space="preserve"><value>  Thickness</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_632117D3C6" xml:space="preserve"><value>Position</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_8A907D46C9" xml:space="preserve"><value>px (from the source's top-left)</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_B5365A0F6F" xml:space="preserve"><value>In front of image (above)</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_CBB90B0ACA" xml:space="preserve"><value>Max radius</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_D20485811B" xml:space="preserve"><value>Color</value></data>
-  <data name="S_ShockwavePanel_ShockwavePanel_DF8C5BBEB2" xml:space="preserve"><value>Fade out (fades as it spreads)</value></data>
   <data name="S_Shortcuts_FromJson_86871DD6CC" xml:space="preserve"><value>No "shortcuts" entry.</value></data>
   <data name="S_Shortcuts_FromJson_F9C402A341" xml:space="preserve"><value>Not a JSON object.</value></data>
   <data name="S_SkinManagerWindow__filter_019CB16352" xml:space="preserve"><value>Group skins</value></data>
@@ -2644,16 +2272,8 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>Installation or login failed. Check the error above.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>Expand keeping center</value></data>
   <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>Hide original (outline only)</value></data>
-  <data name="EffectOutline_HideOriginalTip" xml:space="preserve"><value>Erases the picture the outline is drawn around so only the line remains (inside: only the edge ring). Effects clipped to this outline apply to the line only.</value></data>
-  <data name="EffectOutline_HideOriginalSummary" xml:space="preserve"><value> · outline only</value></data>
   <data name="EffectMissing_Note" xml:space="preserve"><value>This effect ({0}) is a kind this version of Chickxel does not know, so it is not drawn and cannot be edited. Saving keeps its original settings, and a Chickxel that knows it can use it again.</value></data>
-  <data name="EffectOutline_ColorMode" xml:space="preserve"><value>Color mode</value></data>
-  <data name="EffectOutline_ModeFixed" xml:space="preserve"><value>Fixed color</value></data>
   <data name="EffectOutline_ModeShade" xml:space="preserve"><value>Shade from neighbors</value></data>
-  <data name="EffectOutline_ModeTip" xml:space="preserve"><value>Fixed color: paints the whole line one color (or a gradient). Shade from neighbors: paints each line pixel with the color of the sprite pixel it touches, made darker or lighter, so the line next to blue is dark blue and next to grey is dark grey.</value></data>
-  <data name="EffectOutline_ShadeAmount" xml:space="preserve"><value>Shade</value></data>
-  <data name="EffectOutline_ShadeAmountTip" xml:space="preserve"><value>Negative = darker than the neighboring pixel (−100 = black), positive = lighter (100 = white). Hue is kept; only lightness changes.</value></data>
-  <data name="EffectOutline_ShadeSummary" xml:space="preserve"><value>shade {0}%</value></data>
   <data name="GradientPreset_ManageMenu" xml:space="preserve"><value>Manage Gradient Presets…</value></data>
   <data name="GradientPreset_Category" xml:space="preserve"><value>Gradients</value></data>
   <data name="GradientPreset_SaveCurrent" xml:space="preserve"><value>Save current gradient…</value></data>
@@ -2674,7 +2294,6 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="GradientPreset_SaveChangesQuestion" xml:space="preserve"><value>Save changes to gradient preset '{0}'?</value></data>
   <data name="GradientPreset_SelectHint" xml:space="preserve"><value>Select a preset from the list.</value></data>
   <data name="Presets_Title" xml:space="preserve"><value>Presets</value></data>
-  <data name="Presets_Menu" xml:space="preserve"><value>Presets…</value></data>
   <data name="Presets_OptimizerTab" xml:space="preserve"><value>Auto optimize (Pixelate)</value></data>
   <data name="Presets_Prefs_Tab" xml:space="preserve"><value>Presets</value></data>
   <data name="Presets_Prefs_Title" xml:space="preserve"><value>Restore built-in presets</value></data>
@@ -2684,26 +2303,30 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Presets_RestoreGradients" xml:space="preserve"><value>Restore gradient presets</value></data>
   <data name="Presets_RestoreGradientsQuestion" xml:space="preserve"><value>Restore the built-in gradient presets? Deleted built-in presets come back, and presets you made stay.</value></data>
   <data name="Presets_Restored" xml:space="preserve"><value>Built-in presets restored.</value></data>
-  <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>Built-in</value></data>
-  <data name="EffectPreset_CustomTab" xml:space="preserve"><value>Custom</value></data>
+  <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>Effects</value></data>
+  <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>Presets</value></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>The Effects tab has every effect you add one at a time: the official effects the app installs by default (Outline, Shadow and so on), then ones you made and ones from installed packages. The Presets tab has presets: several effects saved together with their values and clipping. Double-click or drag onto the effect list to add (dropping inserts at that spot). Get new effects from the Store or make your own in Tools > Effect Maker. Bring back deleted official effects with "Restore default effects" in the Asset Manager.</value></data>
+  <data name="EffectPreset_OpenStore" xml:space="preserve"><value>Open Store</value></data>
+  <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>Find and install effects made by others in the Asset Manager's Store. Installed effects show up in this tab.</value></data>
+  <data name="EffectPreset_SavePreset" xml:space="preserve"><value>Save Current Effects as Preset</value></data>
   <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>Save all effects</value></data>
-  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>Saves all effects in the current list and their clipping relationships as a custom effect.</value></data>
-  <data name="EffectPreset_CustomHelp" xml:space="preserve"><value>Set up values and clipping relationships in the effect list, then save them as a bundle.</value></data>
-  <data name="EffectPreset_Empty" xml:space="preserve"><value>No saved custom effects.</value></data>
-  <data name="EffectPreset_TileTip" xml:space="preserve"><value>A bundle of {0} effects. Double-click or drag into the effect list. Right-click to rename or delete.</value></data>
-  <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>Save custom effect</value></data>
-  <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>Effect name</value></data>
+  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>Saves every effect in the current list with its values and clipping relationships as a preset.</value></data>
+  <data name="EffectPreset_PresetsHelp" xml:space="preserve"><value>Set up effects, values and clipping in the effect list, then save them as a preset. Adding a preset inserts all of those effects at once.</value></data>
+  <data name="EffectPreset_Empty" xml:space="preserve"><value>No saved presets.</value></data>
+  <data name="EffectPreset_TileTip" xml:space="preserve"><value>A preset of {0} effects. Double-click or drag into the effect list. Right-click to rename or delete.</value></data>
+  <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>Save preset</value></data>
+  <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>Preset name</value></data>
   <data name="EffectPreset_PreviewChick" xml:space="preserve"><value>Preview chick</value></data>
   <data name="EffectPreset_PreviewChickHint" xml:space="preserve"><value>When you publish it, a preview of the effect on this chick (animated for moving effects) is made automatically.</value></data>
   <data name="EffectPreset_PreviewChickTip" xml:space="preserve"><value>Chick {0}</value></data>
-  <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>Custom effect '{0}' already exists. Overwrite it?</value></data>
+  <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>Preset '{0}' already exists. Overwrite it?</value></data>
   <data name="EffectPreset_Rename" xml:space="preserve"><value>Rename</value></data>
-  <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>Rename custom effect</value></data>
+  <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>Rename preset</value></data>
   <data name="EffectPreset_Delete" xml:space="preserve"><value>Delete</value></data>
-  <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>Delete custom effect '{0}'?</value></data>
-  <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>A custom effect named '{0}' already exists.</value></data>
-  <data name="EffectPreset_LoadError" xml:space="preserve"><value>Couldn't read custom effects: {0}</value></data>
-  <data name="EffectPreset_SaveError" xml:space="preserve"><value>Couldn't save custom effect: {0}</value></data>
+  <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>Delete '{0}'?</value></data>
+  <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>A preset named '{0}' already exists.</value></data>
+  <data name="EffectPreset_LoadError" xml:space="preserve"><value>Couldn't read your personal effects and presets: {0}</value></data>
+  <data name="EffectPreset_SaveError" xml:space="preserve"><value>Couldn't save the change: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>Apply to</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>Clip to effect above</value></data>
   <data name="EffectPreset_ClipTip" xml:space="preserve"><value>Applies based on the pixels changed by the preceding non-clipped effect. Reflection and afterimage also show moved pixels.</value></data>
@@ -3531,7 +3154,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ManagerButton" xml:space="preserve"><value>Asset Manager</value></data>
   <data name="Assets_ManagerTip" xml:space="preserve"><value>Turn installed packages and personal assets on or off, import, export or delete them.</value></data>
   <data name="Assets_TabInstalled" xml:space="preserve"><value>Installed</value></data>
+  <data name="Assets_TabStore" xml:space="preserve"><value>Store</value></data>
   <data name="Assets_TabBrowse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Assets_OpenWebsite" xml:space="preserve"><value>Open on Website</value></data>
+  <data name="Assets_OpenWebsiteTip" xml:space="preserve"><value>Opens the assets page of chickxel.com in your browser (on the effects or gradients tab when that kind is filtered).</value></data>
   <data name="Assets_TabUpdates" xml:space="preserve"><value>Updates</value></data>
   <data name="Assets_FilterAll" xml:space="preserve"><value>All</value></data>
   <data name="Assets_FilterEffects" xml:space="preserve"><value>Effects</value></data>
@@ -3552,8 +3178,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_PublishTip" xml:space="preserve"><value>Bundles the selected personal asset (or, with none selected, the personal assets shown in the list) into a public package, checks it and uploads it with your Chickxel account.</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Starts a public package with this asset and uploads it with your Chickxel account. You can add other personal assets in the publish window.</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>Publish Online</value></data>
-  <data name="Publish_Intro" xml:space="preserve"><value>Enter the license and package details; once the checks pass, the package is uploaded with your Chickxel account. Uploaded packages appear right away in Browse and on the assets page of chickxel.com.</value></data>
-  <data name="Publish_NoPersonal" xml:space="preserve"><value>There are no personal assets to publish. Save some from the effects window or the gradient preset window first.</value></data>
+  <data name="Publish_Intro" xml:space="preserve"><value>Enter the license and package details; once the checks pass, the package is uploaded with your Chickxel account. Uploaded packages appear right away in the Store and on the assets page of chickxel.com.</value></data>
+  <data name="Publish_NoPersonal" xml:space="preserve"><value>There are no personal assets to publish. Save a script effect in the Effect Maker or a gradient in the gradient preset window first (effect presets aren't published).</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>Author</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>Author ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Your Chickxel account handle is the author ID. It becomes the first part of the package ID; you can change the handle in Help > Chickxel Account (not after you have uploaded a package).</value></data>
@@ -3569,7 +3195,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_VersionPrevious" xml:space="preserve"><value>Last version of this ID: {0} (online list or uploaded from this computer). Suggested next version: {1}.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>Use suggested version</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Short description</value></data>
-  <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in Browse (up to 200 characters)</value></data>
+  <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in the Store (up to 200 characters)</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>Tags</value></data>
   <data name="Publish_TagsHint" xml:space="preserve"><value>Comma-separated (e.g. neon, hit)</value></data>
   <data name="Publish_License" xml:space="preserve"><value>License</value></data>
@@ -3590,7 +3216,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Assets" xml:space="preserve"><value>Included assets</value></data>
   <data name="Publish_AssetsCount" xml:space="preserve"><value>{0} of {1} personal assets</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>List preview</value></data>
-  <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Browse list and details. Pick one of the included assets' previews or replace it with a PNG (up to 512×512, 1 MB).</value></data>
+  <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Store list and details. Pick one of the included assets' previews or replace it with a PNG (up to 512×512, 1 MB).</value></data>
   <data name="Publish_PreviewReplace" xml:space="preserve"><value>Replace with Image File…</value></data>
   <data name="Publish_PreviewAuto" xml:space="preserve"><value>Use Asset Preview</value></data>
   <data name="Publish_PreviewCustom" xml:space="preserve"><value>Chosen image: {0}</value></data>
@@ -3629,7 +3255,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_DeletedAt" xml:space="preserve"><value>Deleted</value></data>
   <data name="Assets_Contents" xml:space="preserve"><value>Contents</value></data>
   <data name="Assets_Kind" xml:space="preserve"><value>Kind</value></data>
-  <data name="Assets_KindEffect" xml:space="preserve"><value>Effect recipe</value></data>
+  <data name="Assets_KindEffect" xml:space="preserve"><value>Effect preset</value></data>
   <data name="Assets_KindGradient" xml:space="preserve"><value>Gradient</value></data>
   <data name="Assets_EffectCount" xml:space="preserve"><value>{0} effects</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>Inserted on: all frames</value></data>
@@ -3692,19 +3318,24 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>Couldn't install the downloaded package: {0}</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>Couldn't download the package: {0}</value></data>
   <data name="Assets_SourceRemote" xml:space="preserve"><value>Online catalog</value></data>
-  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect recipes: {0}</value></data>
+  <data name="Assets_SourceBundled" xml:space="preserve"><value>Installed with the app</value></data>
+  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>This is an official effect the app installs by default. Once deleted it is not installed again; bring it back with "Restore default effects" in the Installed tab.</value></data>
+  <data name="Assets_RestoreOfficial" xml:space="preserve"><value>Restore default effects</value></data>
+  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>Reinstalls the official effects that come with the app (Outline, Shadow and so on) that you deleted, turns disabled ones back on and updates older versions to the app's version. Your own effects and other packages stay as they are.</value></data>
+  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>Reinstalled {0} official effects and turned on or updated {1}.</value></data>
+  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>All official effects are installed and turned on.</value></data>
+  <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>Couldn't restore the official effects: {0}</value></data>
+  <data name="Assets_BundledError" xml:space="preserve"><value>Couldn't install the official effects that come with the app (retried on the next start): {0}</value></data>
+  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect presets: {0}</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
-  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>A stack of {1} effects from the {0} package. Double-click or drag it into the effect list.</value></data>
+  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>A preset of {1} effects from the {0} package. Double-click or drag it into the effect list.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>Script effect</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>An effect you write in JavaScript. Its source is saved with the project.</value></data>
   <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>Script effects</value></data>
-  <data name="ScriptEffect_PaletteHelp" xml:space="preserve"><value>Write your own effect in JavaScript. Declare effect({ name, settings, render(img, ctx, s) { … } }) and the settings panel is built for you; previews, the timeline and exports draw it exactly like built-in effects. Scripts run in an isolated engine with no file or network access, and if a frame takes over 2 seconds or uses too much memory, only this effect is skipped on that frame.</value></data>
   <data name="ScriptEffect_New" xml:space="preserve"><value>New script</value></data>
-  <data name="ScriptEffect_NewTip" xml:space="preserve"><value>Adds a script effect starting from the light sweep example and opens the editor.</value></data>
   <data name="ScriptEffect_OpenFile" xml:space="preserve"><value>Open JS file…</value></data>
-  <data name="ScriptEffect_OpenFileTip" xml:space="preserve"><value>Adds a JavaScript effect file (.js) as a script effect.</value></data>
   <data name="ScriptEffect_ReplaceFileTip" xml:space="preserve"><value>Replaces this effect's source with a JavaScript file (.js). Settings with the same key keep their values.</value></data>
   <data name="ScriptEffect_OpenFileTitle" xml:space="preserve"><value>Open script effect file</value></data>
   <data name="ScriptEffect_FileFilter" xml:space="preserve"><value>JavaScript effect</value></data>
@@ -3724,6 +3355,16 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptEffect_ErrorAt" xml:space="preserve"><value>Line {line}, column {column}: {message}</value></data>
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>Line {line}: {message}</value></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>This script has no settings.</value></data>
+  <data name="ScriptSetting_AddColor" xml:space="preserve"><value>Add color</value></data>
+  <data name="ScriptSetting_AddPair" xml:space="preserve"><value>Add pair</value></data>
+  <data name="ScriptSetting_RemoveItem" xml:space="preserve"><value>Remove this item</value></data>
+  <data name="ScriptSetting_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="ScriptSetting_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="ScriptSetting_ListRange" xml:space="preserve"><value>{min} to {max} items</value></data>
+  <data name="ScriptSetting_ListEmpty" xml:space="preserve"><value>No items.</value></data>
+  <data name="ScriptSetting_PairTo" xml:space="preserve"><value>Replacement: the color above becomes this color.</value></data>
+  <data name="ScriptSetting_AngleTip" xml:space="preserve"><value>Click or drag to set the angle (0° = right, 90° = up). Hold Shift to snap to 15°.</value></data>
+  <data name="ScriptSetting_PointTip" xml:space="preserve"><value>Click or drag to set X and Y together (top left is the smallest value).</value></data>
   <data name="ScriptEffect_Hint" xml:space="preserve"><value>The script source is stored once in the project by its hash. Editing the source switches the effect to the new source, and old sources no longer used are dropped when you save. If a frame goes over the limits (2 seconds, 50 million statements, 256 MB of memory), only this effect is skipped on that frame; after 3 failures in a row it stops until you turn it on again.</value></data>
   <data name="ScriptEditor_Title" xml:space="preserve"><value>Edit script - {name}</value></data>
   <data name="ScriptEditor_Hint" xml:space="preserve"><value>Declare effect({ name, settings: [...], render(img, ctx, s) { ... } }). img.data is an RGBA number array, and ctx has the progress, frame and source rectangle. Add previewChick: "knight" to pick the chick used for the preview when you publish (default "original"). Applying shows the result in the effects window and on the canvas right away.</value></data>
@@ -3737,17 +3378,17 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptTrust_DontRun" xml:space="preserve"><value>Don't run</value></data>
   <data name="ScriptTrust_NoAuthor" xml:space="preserve"><value>No author</value></data>
   <data name="ScriptTrust_Unnamed" xml:space="preserve"><value>Unnamed script</value></data>
-  <data name="EffectRecipe_GroupRow" xml:space="preserve"><value>{0} · recipe, {1} effects</value></data>
-  <data name="EffectRecipe_GroupTip" xml:space="preserve"><value>Parameter recipe: changing a value updates every linked effect setting together. Expand it to edit the effects inside.</value></data>
-  <data name="EffectRecipe_PanelHint" xml:space="preserve"><value>Adjust this recipe with the values below. One value changes all of its linked effect settings together.</value></data>
+  <data name="EffectRecipe_GroupRow" xml:space="preserve"><value>{0} · preset, {1} effects</value></data>
+  <data name="EffectRecipe_GroupTip" xml:space="preserve"><value>Parameter preset: changing a value updates every linked effect setting together. Expand it to edit the effects inside.</value></data>
+  <data name="EffectRecipe_PanelHint" xml:space="preserve"><value>Adjust this preset with the values below. One value changes all of its linked effect settings together.</value></data>
   <data name="EffectRecipe_Source" xml:space="preserve"><value>Source: {0}</value></data>
   <data name="EffectRecipe_Expand" xml:space="preserve"><value>Show effects</value></data>
   <data name="EffectRecipe_Collapse" xml:space="preserve"><value>Hide effects</value></data>
   <data name="EffectRecipe_Detach" xml:space="preserve"><value>Ungroup</value></data>
-  <data name="EffectRecipe_DetachTip" xml:space="preserve"><value>Ungroups the recipe into ordinary effects. Current values stay; the parameters go away.</value></data>
-  <data name="RecipeParams_Title" xml:space="preserve"><value>Recipe parameters - {0}</value></data>
+  <data name="EffectRecipe_DetachTip" xml:space="preserve"><value>Ungroups the preset into ordinary effects. Current values stay; the parameters go away.</value></data>
+  <data name="RecipeParams_Title" xml:space="preserve"><value>Preset parameters - {0}</value></data>
   <data name="RecipeParams_Edit" xml:space="preserve"><value>Edit parameters</value></data>
-  <data name="RecipeParams_EditTip" xml:space="preserve"><value>Choose which values this recipe exposes. An inserted recipe shows as one item in the effect list with only these values.</value></data>
+  <data name="RecipeParams_EditTip" xml:space="preserve"><value>Choose which values this preset exposes. An inserted preset shows as one item in the effect list with only these values.</value></data>
   <data name="RecipeParams_Parameters" xml:space="preserve"><value>Parameters</value></data>
   <data name="RecipeParams_Add" xml:space="preserve"><value>Add</value></data>
   <data name="RecipeParams_Remove" xml:space="preserve"><value>Remove</value></data>
@@ -3765,7 +3406,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="RecipeParams_KindInt" xml:space="preserve"><value>integer {0} to {1}</value></data>
   <data name="RecipeParams_KindBool" xml:space="preserve"><value>on/off</value></data>
   <data name="RecipeParams_KindChoice" xml:space="preserve"><value>choice</value></data>
-  <data name="RecipeParams_SaveError" xml:space="preserve"><value>Couldn't save the recipe parameters: {0}</value></data>
+  <data name="RecipeParams_SaveError" xml:space="preserve"><value>Couldn't save the preset parameters: {0}</value></data>
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>Script effect</value></data>
@@ -3776,10 +3417,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ScriptHash" xml:space="preserve"><value>Source hash</value></data>
   <data name="Assets_ScriptSettingCount" xml:space="preserve"><value>{0} settings</value></data>
   <data name="EffectPreset_ScriptTileNote" xml:space="preserve"><value>Contains script effects ({0}). They don't draw until you allow them to run.</value></data>
-  <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>A script effect. Double-click or drag into the effect list.</value></data>
-  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>A script effect from the {0} package. Double-click or drag into the effect list.</value></data>
+  <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>An effect you made. Double-click or drag into the effect list. Right-click to edit it in the Effect Maker or delete it.</value></data>
+  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>An effect from the {0} package. Double-click or drag into the effect list.</value></data>
   <data name="ScriptEffect_SaveAsset" xml:space="preserve"><value>Save as asset</value></data>
-  <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>Saves this source as a personal script asset you can reuse from the Custom tab and the asset manager and export in a package.</value></data>
+  <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>Saves this source as a personal script asset you can reuse from the Effects tab of the effects window and the Asset Manager, and export in a package.</value></data>
   <data name="ScriptEffect_SaveAssetNeedsTrust" xml:space="preserve"><value>Only scripts you allowed to run can be saved as personal assets.</value></data>
   <data name="ScriptEffect_SaveAssetError" xml:space="preserve"><value>Couldn't save the script as an asset: {0}</value></data>
   <data name="Busy_EffectBounds" xml:space="preserve"><value>Measuring effect bounds</value></data>
@@ -3872,27 +3513,33 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_Title" xml:space="preserve"><value>Effect Maker</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>Effect Maker - {0}</value></data>
   <data name="EffectMaker_MyEffects" xml:space="preserve"><value>My effects</value></data>
-  <data name="EffectMaker_NewRecipe" xml:space="preserve"><value>New recipe</value></data>
-  <data name="EffectMaker_FromLayer" xml:space="preserve"><value>From layer</value></data>
-  <data name="EffectMaker_FromLayerTip" xml:space="preserve"><value>Makes a new recipe from the effect list of the current layer in the main window.</value></data>
   <data name="EffectMaker_NewScript" xml:space="preserve"><value>New script</value></data>
-  <data name="EffectMaker_NewRecipeName" xml:space="preserve"><value>New effect</value></data>
-  <data name="EffectMaker_Empty" xml:space="preserve"><value>Pick an effect on the left, or make a new recipe (a combination of built-in effects) or a new script (JavaScript). What you make becomes a personal asset; Upload publishes it online.</value></data>
-  <data name="EffectMaker_Name" xml:space="preserve"><value>Name</value></data>
-  <data name="EffectMaker_Description" xml:space="preserve"><value>Description</value></data>
-  <data name="EffectMaker_Range" xml:space="preserve"><value>Insert range</value></data>
-  <data name="EffectMaker_RangeAdd" xml:space="preserve"><value>Effects window add range</value></data>
-  <data name="EffectMaker_RangeAll" xml:space="preserve"><value>Always all frames</value></data>
-  <data name="EffectMaker_Effects" xml:space="preserve"><value>Effects</value></data>
-  <data name="EffectMaker_EditEffects" xml:space="preserve"><value>Edit effects…</value></data>
-  <data name="EffectMaker_EditEffectsTip" xml:space="preserve"><value>Opens the effects window with these effects on the preview chick. OK updates the recipe.</value></data>
-  <data name="EffectMaker_RecipeHint" xml:space="preserve"><value>A recipe bundles built-in effects (and script effects) with their values, order and clipping. With parameters, a few values adjust the whole bundle after you insert it.</value></data>
-  <data name="EffectMaker_NoEffects" xml:space="preserve"><value>No effects yet. Add some with Edit effects.</value></data>
-  <data name="EffectMaker_Off" xml:space="preserve"><value>(off)</value></data>
-  <data name="EffectMaker_ParametersDropped" xml:space="preserve"><value>Parameters that no longer match the changed effect list were removed. Set them again if needed.</value></data>
+  <data name="EffectMaker_Empty" xml:space="preserve"><value>Pick a script on the left, or make a new script (JavaScript). Saving makes it a personal asset; Upload publishes it online.</value></data>
   <data name="EffectMaker_PreviewSettings" xml:space="preserve"><value>Preview setting values</value></data>
+  <data name="EffectMaker_ResetValues" xml:space="preserve"><value>Reset</value></data>
+  <data name="EffectMaker_ResetValuesTip" xml:space="preserve"><value>Sets the preview values back to the defaults written in the source (the source is unchanged).</value></data>
+  <data name="EffectMaker_SetDefaults" xml:space="preserve"><value>Set as default</value></data>
+  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>Writes the current preview values into the source as each setting's default. You can undo it in the editor.</value></data>
   <data name="EffectMaker_Preview" xml:space="preserve"><value>Preview</value></data>
-  <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>Same image as the preview made when you upload (chosen chick, 10 steps).</value></data>
+  <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>Same image as the preview made when you upload (chosen chick, as many steps as the frame count).</value></data>
+  <data name="EffectMaker_FrameCount" xml:space="preserve"><value>Frames</value></data>
+  <data name="EffectMaker_FrameCountTip" xml:space="preserve"><value>Number of steps the effect runs in the preview, the check and the uploaded preview (2-20). Changes previewFrames in the source's declaration.</value></data>
+  <data name="EffectMaker_FrameThumbTip" xml:space="preserve"><value>Step {0} - click to pause on this step.</value></data>
+  <data name="EffectMaker_Languages" xml:space="preserve"><value>Languages</value></data>
+  <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>Writes the title, description and setting labels in other languages (translations in the source's declaration). The one for the app's UI language is shown, otherwise the title and description written here.</value></data>
+  <data name="ScriptLanguages_Title" xml:space="preserve"><value>Languages</value></data>
+  <data name="ScriptLanguages_Hint" xml:space="preserve"><value>Write a title, description and setting labels per language; people using the app in that language see them. Empty fields show the values written in the source (the Effect Maker's title and description, each setting's label).</value></data>
+  <data name="ScriptLanguages_Empty" xml:space="preserve"><value>No other languages yet. Click Add language.</value></data>
+  <data name="ScriptLanguages_Add" xml:space="preserve"><value>Add language</value></data>
+  <data name="ScriptLanguages_Remove" xml:space="preserve"><value>Remove this language</value></data>
+  <data name="ScriptLanguages_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="ScriptLanguages_OtherCode" xml:space="preserve"><value>Other language code…</value></data>
+  <data name="ScriptLanguages_CodeHint" xml:space="preserve"><value>e.g. pt-BR</value></data>
+  <data name="ScriptLanguages_Name" xml:space="preserve"><value>Title</value></data>
+  <data name="ScriptLanguages_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="ScriptLanguages_Labels" xml:space="preserve"><value>Setting labels</value></data>
+  <data name="ScriptLanguages_BadCode" xml:space="preserve"><value>'{0}' is not a language code (e.g. en, ja, zh-Hans, pt-BR).</value></data>
+  <data name="ScriptLanguages_DuplicateCode" xml:space="preserve"><value>Language '{0}' appears twice. Remove one.</value></data>
   <data name="EffectMaker_Play" xml:space="preserve"><value>Play</value></data>
   <data name="EffectMaker_Pause" xml:space="preserve"><value>Pause</value></data>
   <data name="EffectMaker_ShowOriginal" xml:space="preserve"><value>Show without effect</value></data>
@@ -3904,18 +3551,32 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_RunFailed" xml:space="preserve"><value>The effect was skipped because of a run error.</value></data>
   <data name="EffectMaker_FixSourceFirst" xml:space="preserve"><value>Fix the errors in the source first.</value></data>
   <data name="EffectMaker_Save" xml:space="preserve"><value>Save</value></data>
-  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>Saves it as a personal asset (Ctrl+S). It shows in the Custom tab of the effects window and in the Asset Manager.</value></data>
+  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>Saves it as a personal script effect (Ctrl+S). It shows in the Effects tab of the effects window and in the Asset Manager.</value></data>
   <data name="EffectMaker_Discard" xml:space="preserve"><value>Discard</value></data>
   <data name="EffectMaker_SaveError" xml:space="preserve"><value>Couldn't save the effect: {0}</value></data>
-  <data name="EffectMaker_NeedName" xml:space="preserve"><value>Enter a name.</value></data>
   <data name="EffectMaker_UnsavedQuestion" xml:space="preserve"><value>Save your changes to '{0}'?</value></data>
   <data name="EffectMaker_Insert" xml:space="preserve"><value>Insert into layer</value></data>
-  <data name="EffectMaker_InsertTip" xml:space="preserve"><value>Adds it to the end of the current layer's effects in the main window (one undo step).</value></data>
+  <data name="EffectMaker_InsertTip" xml:space="preserve"><value>Adds it with the preview setting values to the end of the current layer's effects in the main window (one undo step).</value></data>
   <data name="EffectMaker_InsertUndo" xml:space="preserve"><value>Insert effect: {0}</value></data>
   <data name="EffectMaker_LayerLocked" xml:space="preserve"><value>The current layer is locked.</value></data>
-  <data name="EffectMaker_NoLayerEffects" xml:space="preserve"><value>The current layer in the main window has no effects.</value></data>
   <data name="EffectMaker_Upload" xml:space="preserve"><value>Upload…</value></data>
-  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves, then opens the publish window. Enter the name, description, tags, license and version to upload; the preview is made automatically.</value></data>
+  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves and, if the check passes, opens the publish window. Enter tags, license and version to upload; the preview is made automatically.</value></data>
+  <data name="EffectMaker_ShowAll" xml:space="preserve"><value>Show all</value></data>
+  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>Off: only the script effects you made. On: also copies from packages and script effects of installed packages. Saving an edited package effect makes a personal copy.</value></data>
+  <data name="EffectMaker_Info" xml:space="preserve"><value>Info</value></data>
+  <data name="EffectMaker_TitleLabel" xml:space="preserve"><value>Title</value></data>
+  <data name="EffectMaker_TitleHint" xml:space="preserve"><value>Name shown in the effect list and the Store</value></data>
+  <data name="EffectMaker_DescriptionLabel" xml:space="preserve"><value>Description</value></data>
+  <data name="EffectMaker_DescriptionHint" xml:space="preserve"><value>A sentence or two about the effect (optional, up to 200 characters)</value></data>
+  <data name="EffectMaker_Validate" xml:space="preserve"><value>Check</value></data>
+  <data name="EffectMaker_ValidateTip" xml:space="preserve"><value>Pre-upload check: checks the source (as installing does) and the title, then runs it with the default settings on every sample chick x every preview step (the frame count) to find run errors and the slowest step.</value></data>
+  <data name="EffectMaker_Validating" xml:space="preserve"><value>Checking…</value></data>
+  <data name="EffectMaker_ValidateOk" xml:space="preserve"><value>Check passed: {0} runs without errors, slowest step {1} ms (chick {2}).</value></data>
+  <data name="EffectMaker_ValidateOkNote" xml:space="preserve"><value>Upload publishes this source.</value></data>
+  <data name="EffectMaker_ValidateFailed" xml:space="preserve"><value>Check failed (problems: {0}). Click one to go to that place in the source.</value></data>
+  <data name="EffectMaker_ValidateName" xml:space="preserve"><value>Enter a title of 1-100 characters.</value></data>
+  <data name="EffectMaker_ValidateWhere" xml:space="preserve"><value>Chick {0}, step {1}:</value></data>
+  <data name="EffectMaker_ValidateFirst" xml:space="preserve"><value>The check must pass before uploading. Fix the problems in the status box and try again.</value></data>
   <data name="EffectMaker_Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="EffectMaker_DeleteQuestion" xml:space="preserve"><value>Delete '{0}' from your personal assets?</value></data>
   <data name="EffectMaker_EditIn" xml:space="preserve"><value>Edit in Effect Maker</value></data>
@@ -3926,17 +3587,99 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_PathTip" xml:space="preserve"><value>Sources that use only numbers, loops, Math and img.data are converted by the app and run fast. Anything else (strings, objects and arrays, img.blank and so on) runs on Jint with the same result.</value></data>
   <data name="Ai_Script_Errors" xml:space="preserve"><value>{tool}: the source has errors, so nothing changed. Fix them and call again.</value></data>
   <data name="Ai_Script_NotScript" xml:space="preserve"><value>Effect {effect} of layer {layer} isn't a script effect.</value></data>
+  <data name="Ai_Script_NoScript" xml:space="preserve"><value>Layer {layer} "{name}" has no script effect - add one with write_script_effect first.</value></data>
+  <data name="Ai_Script_UnknownChick" xml:space="preserve"><value>Unknown chick '{chick}'. Chicks: {chicks}</value></data>
   <data name="Ai_Script_UnknownSetting" xml:space="preserve"><value>The script has no setting '{key}'. Declared settings: {keys}</value></data>
   <data name="Ai_Script_BadSetting" xml:space="preserve"><value>The value of setting '{key}' doesn't fit its {type} kind (a number / true or false / "#RRGGBB" / a choice value).</value></data>
   <data name="Ai_Script_Written" xml:space="preserve"><value>{tool}: added script effect "{name}" as effect {effect} of layer {layer}.</value></data>
   <data name="Ai_Script_RunError" xml:space="preserve"><value>Run error (the effect is skipped on that frame): {error}</value></data>
-  <data name="Ai_Preview_RecipeOnChick" xml:space="preserve"><value>A saved recipe can only be previewed on the chick (on = chick).</value></data>
+  <data name="Ai_Preview_RecipeOnChick" xml:space="preserve"><value>A saved preset can only be previewed on the chick (on = chick).</value></data>
   <data name="Ai_Preview_Layer" xml:space="preserve"><value>Frames of layer {layer} "{name}" with its effects (left to right, first to last).</value></data>
   <data name="Ai_Preview_Chick" xml:space="preserve"><value>"{name}" effects on chick {chick} (animated: left to right, first to last; same as the published preview).</value></data>
   <data name="Ai_Preview_Empty" xml:space="preserve"><value>This layer has no frame with an image to draw.</value></data>
-  <data name="Ai_Asset_Name" xml:space="preserve"><value>name needs a recipe name (non-empty, up to 100 characters).</value></data>
-  <data name="Ai_Asset_Saved" xml:space="preserve"><value>Saved as personal recipe "{name}" ({id}) and opened it in the Effect Maker. The user publishes it online with Upload in that window.</value></data>
+  <data name="Ai_Asset_Saved" xml:space="preserve"><value>Saved as personal script effect "{name}" ({id}) and opened it in the Effect Maker. The user publishes it online with Upload in that window.</value></data>
   <data name="Chat_Help_GroupEffectMaker" xml:space="preserve"><value>Effect making</value></data>
-  <data name="Chat_Help_GroupEffectMaker_Text" xml:space="preserve"><value>Writes script effects (JavaScript) for looks the built-in effects can't make and checks them on the preview chick. Saves a layer's effect bundle as a personal recipe and opens it in the Effect Maker (you upload it yourself).</value></data>
-  <data name="Chat_Help_ExampleEffectMaker" xml:space="preserve"><value>Make a script effect that flashes red and scatters into pieces when hit, and save it as a recipe.</value></data>
+  <data name="Chat_Help_GroupEffectMaker_Text" xml:space="preserve"><value>Writes script effects (JavaScript) for looks the installed effects (the official effects and your packages) can't make and checks them on the preview chick. Saves a finished script as a personal script effect and opens it in the Effect Maker (you upload it yourself). While the Effect Maker is open it can read, rewrite and validate the source in its editor.</value></data>
+  <data name="Chat_Help_ExampleEffectMaker" xml:space="preserve"><value>Make a script effect that flashes red and scatters into pieces when hit, and save it to my effects.</value></data>
+  <data name="EffectMaker_Rules" xml:space="preserve"><value>Rules</value></data>
+  <data name="EffectMaker_RulesTip" xml:space="preserve"><value>Shows the rules for writing an effect and the available API. Copy them into another AI (for example ChatGPT on the web) to ask it for an effect.</value></data>
+  <data name="EffectRules_Title" xml:space="preserve"><value>Effect writing rules</value></data>
+  <data name="EffectRules_Hint" xml:space="preserve"><value>Copy this guide into another AI (for example ChatGPT on the web) and describe the effect you want. Paste the code block from its answer into the Effect Maker editor as a whole.</value></data>
+  <data name="EffectRules_IncludeSource" xml:space="preserve"><value>Include the current source</value></data>
+  <data name="EffectRules_IncludeSourceTip" xml:space="preserve"><value>Adds the editor's current source at the end of the guide (to ask for changes to this effect). Not available when no script is open.</value></data>
+  <data name="EffectRules_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="EffectRules_Copied" xml:space="preserve"><value>Copied the guide.</value></data>
+  <data name="EffectRules_CopiedWithSource" xml:space="preserve"><value>Copied the guide and the current source.</value></data>
+  <data name="EffectMakerAi_Button" xml:space="preserve"><value>AI</value></data>
+  <data name="EffectMakerAi_ButtonTip" xml:space="preserve"><value>Opens or closes the AI panel on the right. Describe the effect you want and the AI writes source that follows the rules into the editor (same Claude Code or Codex login as the AI chat).</value></data>
+  <data name="EffectMakerAi_Title" xml:space="preserve"><value>Effect Maker AI</value></data>
+  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>Close the AI panel (the conversation stays until you close the window)</value></data>
+  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>Forget the conversation and start a new one (the editor source stays).</value></data>
+  <data name="EffectMakerAi_Intro" xml:space="preserve"><value>Describe the effect you want or what to change. The AI writes the editor source following the effect rules and checks it with the preview and Check. You can attach images (file, paste, canvas, current preview) or point to another of your effects ("like my X effect"). The AI only looks at the open drawing and never changes it. Undo (Ctrl+Z) in the editor reverts its changes; you save, insert and upload with the buttons below yourself.</value></data>
+  <data name="EffectMakerAi_Watermark" xml:space="preserve"><value>For example: a light that runs once around the outline (Enter to send, Shift+Enter for a new line)</value></data>
+  <data name="EffectMakerAi_NoCli" xml:space="preserve"><value>Couldn't find {product}. The AI chat window shows how to install it. Press Check again after installing.</value></data>
+  <data name="EffectMakerAi_NeedLogin" xml:space="preserve"><value>You need to log in to {product}. Log in from the AI chat window, then press Check again.</value></data>
+  <data name="EffectMakerAi_OpenChat" xml:space="preserve"><value>Open AI chat</value></data>
+  <data name="EffectMakerAi_Recheck" xml:space="preserve"><value>Check again</value></data>
+  <data name="EffectMakerAi_Working" xml:space="preserve"><value>Thinking… {seconds}s</value></data>
+  <data name="Ai_Maker_Closed" xml:space="preserve"><value>The Effect Maker window isn't open. Ask the user to open the Effect Maker.</value></data>
+  <data name="Ai_Maker_NoScript" xml:space="preserve"><value>No script is open in the Effect Maker. Ask the user to pick or create one, or put a new source in with set_effect_maker_source.</value></data>
+  <data name="Ai_Maker_SetErrors" xml:space="preserve"><value>The source is in the editor but it has errors, so there is no preview. Fix them and set it again:</value></data>
+  <data name="Ai_Maker_Set" xml:space="preserve"><value>Put the source in the Effect Maker editor (one undo step in the editor; the document is unchanged): {name}</value></data>
+  <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>The check stopped because the source changed before it finished. Call it again.</value></data>
+  <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>Check passed: {runs} runs, slowest frame {ms} ms (chick {chick}).</value></data>
+  <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>The check found {count} problem(s):</value></data>
+  <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: not available in the Effect Maker AI. The Effect Maker AI can only look at the document and change the Effect Maker's source.</value></data>
+  <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>Couldn't find the script effect "{effect}". Check ids and names with list_script_effects.</value></data>
+  <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>Attach the current frame of the open drawing (reference).</value></data>
+  <data name="EffectMakerAi_AttachPreviewTip" xml:space="preserve"><value>Attach the frame now shown in the preview (the chick with the effect).</value></data>
+  <data name="EffectMakerAi_NoPreview" xml:space="preserve"><value>There is no preview to attach. Fix the source errors first.</value></data>
+  <data name="GradientPencil_UndoLabel" xml:space="preserve"><value>Gradient pencil</value></data>
+  <data name="GradientPencil_Mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="GradientPencil_ModeWhole" xml:space="preserve"><value>Whole stroke</value></data>
+  <data name="GradientPencil_ModeWholeTip" xml:space="preserve"><value>When you release, spreads the gradient from the stroke start (first color) to its end (last color) by length along the drawn path. While drawing, it previews over the length so far.</value></data>
+  <data name="GradientPencil_ModeRepeat" xml:space="preserve"><value>Repeat</value></data>
+  <data name="GradientPencil_ModeRepeatTip" xml:space="preserve"><value>Restarts the gradient every interval (px) along the drawn path.</value></data>
+  <data name="GradientPencil_Interval" xml:space="preserve"><value>Interval</value></data>
+  <data name="GradientPencil_IntervalTip" xml:space="preserve"><value>Repeat: stroke length (px) of one pass through the gradient</value></data>
+  <data name="GradientPencil_Presets" xml:space="preserve"><value>Presets</value></data>
+  <data name="GradientPencil_PresetsTip" xml:space="preserve"><value>Pick a gradient preset (personal and enabled packages) or save the current gradient.</value></data>
+  <data name="GradientPencil_Reset" xml:space="preserve"><value>Default</value></data>
+  <data name="GradientPencil_ResetTip" xml:space="preserve"><value>Resets to a black → white gradient.</value></data>
+  <data name="GradientPencil_Info" xml:space="preserve"><value>Draws like the pencil (brush, pixel perfect, symmetry, selection) but takes each painted pixel's color from the gradient. Whole stroke = once from the stroke start to its end; Repeat = again every interval. Opacity stops are painted as-is, like the pencil color (transparent erases what is below). Edit the bar, or pick a preset by right-clicking it or with the Presets button.</value></data>
+  <data name="Mirror_AtPivot" xml:space="preserve"><value>Around pivot</value></data>
+  <data name="Mirror_AtPivotTip" xml:space="preserve"><value>Mirrors around lines through the pivot (set with the Pivot tool, K) instead of the canvas center. Uses the selected part's pivot, otherwise the current frame's pivot.</value></data>
+  <data name="Eraser_Group" xml:space="preserve"><value>Erase</value></data>
+  <data name="Eraser_Strength" xml:space="preserve"><value>Strength</value></data>
+  <data name="Eraser_StrengthTip" xml:space="preserve"><value>How much one pass removes. 100% erases completely; lower values make pixels a little more transparent. Within one stroke a pixel is reduced only once even if you rub over it again; release and rub again to reduce what is left.</value></data>
+  <data name="Eraser_Channels" xml:space="preserve"><value>Channels</value></data>
+  <data name="Eraser_ChannelsTip" xml:space="preserve"><value>With R, G and B all on, it erases toward transparent by the strength. With only some on, opacity stays and only those color channels are reduced by the strength (for example R alone removes red).</value></data>
+  <data name="TextEffect_Name" xml:space="preserve"><value>Text</value></data>
+  <data name="TextEffect_Description" xml:space="preserve"><value>Draws text in one color with a pixel font (Galmuri). On an empty layer it works as a text layer; merge down or bake to turn it into pixels.</value></data>
+  <data name="TextEffect_Summary" xml:space="preserve"><value>Text · {0} · {1}</value></data>
+  <data name="TextEffect_SummaryTypewriter" xml:space="preserve"><value> · typewriter</value></data>
+  <data name="TextEffect_SummaryEmpty" xml:space="preserve"><value>(empty)</value></data>
+  <data name="TextEffect_FontGalmuri11Bold" xml:space="preserve"><value>Galmuri 11 Bold</value></data>
+  <data name="TextEffect_AlignLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="TextEffect_AlignCenter" xml:space="preserve"><value>Center</value></data>
+  <data name="TextEffect_AlignRight" xml:space="preserve"><value>Right</value></data>
+  <data name="TextEffect_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TextEffect_Font" xml:space="preserve"><value>Font</value></data>
+  <data name="TextEffect_Position" xml:space="preserve"><value>Position</value></data>
+  <data name="TextEffect_LetterSpacing" xml:space="preserve"><value>Letter spacing</value></data>
+  <data name="TextEffect_LineSpacing" xml:space="preserve"><value>  Line spacing</value></data>
+  <data name="TextEffect_Align" xml:space="preserve"><value>Alignment</value></data>
+  <data name="TextEffect_Typewriter" xml:space="preserve"><value>Typewriter (one letter at a time)</value></data>
+  <data name="TextEffect_TypewriterTip" xml:space="preserve"><value>Letters appear one by one from the start as the effect range progresses (empty on the first frame, complete on the last). Follows the easing and repeat settings.</value></data>
+  <data name="TextEffect_Hint" xml:space="preserve"><value>On an empty layer this works as a text layer. Create one directly by clicking the canvas with the Text tool (T), and move it by dragging with the Move tool or with the arrow keys. Merge down or bake to turn it into pixels. X is the left end, center or right end of each line depending on alignment; Y is the top of the first line (from the original top-left). Anything outside the image is clipped. Font: Galmuri (SIL OFL 1.1).</value></data>
+  <data name="TextTool_Group" xml:space="preserve"><value>Text</value></data>
+  <data name="TextTool_FontTip" xml:space="preserve"><value>Font for new text layers. After creating one, change it in the Text settings of the layer effects window.</value></data>
+  <data name="TextTool_Info" xml:space="preserve"><value>Click the canvas to open a text box there. Press Enter to commit: a text layer (an empty layer with a Text effect) is added above the current layer, in the primary color. Shift+Enter = new line, Esc = cancel, clicking outside the box commits. Click on existing text to edit it. Move it with the Move tool, change size, color and spacing in the layer effects window, and merge down to turn it into pixels.</value></data>
+  <data name="TextTool_Locked" xml:space="preserve"><value>Text on a locked layer can't be edited.</value></data>
+  <data name="TextTool_Watermark" xml:space="preserve"><value>Type text · Enter commit · Shift+Enter new line · Esc cancel</value></data>
+  <data name="TextTool_AddLabel" xml:space="preserve"><value>Add text</value></data>
+  <data name="TextTool_EditLabel" xml:space="preserve"><value>Edit text</value></data>
+  <data name="TextTool_MoveLabel" xml:space="preserve"><value>Move text</value></data>
+  <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>Text</value></data>
+  <data name="Shortcuts_TextTool" xml:space="preserve"><value>Text (adds a text layer where you click)</value></data>
 </root>

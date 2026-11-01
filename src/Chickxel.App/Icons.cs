@@ -14,6 +14,7 @@ public static class Icons
     private static readonly Dictionary<ToolKind, string> Files = new()
     {
         [ToolKind.Pencil] = "pencil",
+        [ToolKind.GradientPencil] = "gradient_pencil",
         [ToolKind.Eraser] = "eraser",
         [ToolKind.Fill] = "fill",
         [ToolKind.Gradient] = "gradient",
@@ -29,6 +30,7 @@ public static class Icons
         [ToolKind.ReplaceBrush] = "replace",
         [ToolKind.Pivot] = "pivot",
         [ToolKind.Slice] = "slice",
+        [ToolKind.Text] = "text",
     };
 
     private static readonly Dictionary<string, Bitmap> Cache = new();

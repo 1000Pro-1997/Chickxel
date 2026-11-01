@@ -1,4 +1,5 @@
 using Chickxel.Core.Edit;
+using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 using Chickxel.Core.Scripting;
 using Chickxel.App.Localization;
@@ -9,6 +10,8 @@ namespace Chickxel.App;
 public enum ToolKind
 {
     Pencil,
+    /// <summary>그라데이션 연필: 연필처럼 그리되 픽셀 색을 획을 따라 잰 거리로 그라데이션에서 고른다(획 전체 / 반복, 도구 설정).</summary>
+    GradientPencil,
     Eraser,
     Fill,
     /// <summary>선형 그라데이션: 끌어서 시작점 → 끝점(색 정지점·보간·디더링은 도구 설정).</summary>
@@ -35,6 +38,8 @@ public enum ToolKind
     Pivot,
     /// <summary>9-slice 테두리(Unity Sprite Border) 초록 선 끌기.</summary>
     Slice,
+    /// <summary>글씨: 캔버스를 눌러 글을 쓰면 글씨 효과(<see cref="Chickxel.Core.Model.TextEffect"/>)가 붙은 빈 레이어를 만든다(글씨 레이어 위를 누르면 그 글을 고침).</summary>
+    Text,
 }
 
 /// <summary>
@@ -114,8 +119,12 @@ public sealed class EditorContext
             if (_tool == value) return;
             // 변형·캔버스 크기 모드면 어떤 도구로 바꾸든 먼저 적용한다.
             if (IsTransforming || IsCanvasResizing || (!IsSelectionTool(value) && value != ToolKind.Move)) CommitFloating();
+            // 지우개는 브러시(모양·크기)를 따로 기억한다: 지우개 ↔ 다른 도구로 바뀌면 쓰던 브러시를 맞바꾼다
+            bool swap = UsesEraserBrush(_tool) != UsesEraserBrush(value);
             _tool = value;
+            if (swap) (_brushSize, _brushShape, _otherBrush) = (_otherBrush.Size, _otherBrush.Shape, (_brushSize, _brushShape));
             ToolChanged?.Invoke(this, EventArgs.Empty);
+            if (swap) OptionsChanged();
         }
     }
 
@@ -160,7 +169,41 @@ public sealed class EditorContext
         set { value = Math.Clamp(value, 1, BrushFootprint.MaxSize); if (_brushSize == value) return; _brushSize = value; OptionsChanged(); }
     }
 
-    private bool _pixelPerfect, _fillContiguous = true, _shapeFilled, _mirrorX, _mirrorY, _rightErases, _moveWrap = true;
+    /// <summary>지금 도구가 아닌 쪽 브러시(지금 지우개면 연필 쪽, 아니면 지우개 쪽).</summary>
+    private (int Size, BrushShape Shape) _otherBrush = (1, BrushShape.Square);
+
+    /// <summary>지우개 브러시를 쓰는 도구인지(나머지 도구 — 연필·그라데이션 연필·밝게/어둡게·디더링·색 바꾸기·도형 외곽 — 는 연필 브러시를 같이 씀).</summary>
+    private static bool UsesEraserBrush(ToolKind tool) => tool == ToolKind.Eraser;
+
+    /// <summary>연필 쪽 브러시(모양·크기): 지우개가 아닌 브러시 도구가 같이 쓴다. 설정 저장·불러오기용.</summary>
+    public (int Size, BrushShape Shape) PencilBrush
+    {
+        get => UsesEraserBrush(_tool) ? _otherBrush : (_brushSize, _brushShape);
+        set => SetBrushSlot(eraser: false, value);
+    }
+
+    /// <summary>지우개 브러시(모양·크기). 설정 저장·불러오기용.</summary>
+    public (int Size, BrushShape Shape) EraserBrush
+    {
+        get => UsesEraserBrush(_tool) ? (_brushSize, _brushShape) : _otherBrush;
+        set => SetBrushSlot(eraser: true, value);
+    }
+
+    private void SetBrushSlot(bool eraser, (int Size, BrushShape Shape) brush)
+    {
+        var value = (Math.Clamp(brush.Size, 1, BrushFootprint.MaxSize), Enum.IsDefined(brush.Shape) ? brush.Shape : BrushShape.Square);
+        if (UsesEraserBrush(_tool) == eraser)
+        {
+            BrushSize = value.Item1;
+            BrushShape = value.Item2;
+        }
+        else
+        {
+            _otherBrush = value;
+        }
+    }
+
+    private bool _pixelPerfect, _fillContiguous = true, _shapeFilled, _mirrorX, _mirrorY, _mirrorAtPivot, _rightErases, _moveWrap = true;
     private bool _fillDiagonal, _fillSampleVisible, _pickerSampleVisible = true;
     private BrushShape _brushShape = BrushShape.Square;
     private int _fillTolerance, _dodgeStrength = DefaultDodgeStrength;
@@ -202,11 +245,34 @@ public sealed class EditorContext
         get => _dodgeStrength;
         set { value = Math.Clamp(value, 1, MaxDodgeStrength); if (_dodgeStrength == value) return; _dodgeStrength = value; OptionsChanged(); }
     }
+
+    private int _eraserStrength = 100;
+    private bool _eraserRed = true, _eraserGreen = true, _eraserBlue = true;
+
+    /// <summary>지우개 강도(1~100%): 한 획에 픽셀마다 한 번 줄이는 정도(<see cref="PartialErase"/>). 100%면 완전히 지움.</summary>
+    public int EraserStrength
+    {
+        get => _eraserStrength;
+        set { value = Math.Clamp(value, 1, 100); if (_eraserStrength == value) return; _eraserStrength = value; OptionsChanged(); }
+    }
+    /// <summary>지우개 채널: R·G·B를 모두 고르면 투명하게, 일부만 고르면 그 색 채널만 줄인다.</summary>
+    public bool EraserRed { get => _eraserRed; set { _eraserRed = value; OptionsChanged(); } }
+    public bool EraserGreen { get => _eraserGreen; set { _eraserGreen = value; OptionsChanged(); } }
+    public bool EraserBlue { get => _eraserBlue; set { _eraserBlue = value; OptionsChanged(); } }
     /// <summary>디더링 무늬.</summary>
     public DitherPattern DitherPattern
     {
         get => _ditherPattern;
         set { if (!Enum.IsDefined(value)) value = DitherPattern.Checker; if (_ditherPattern == value) return; _ditherPattern = value; OptionsChanged(); }
+    }
+
+    private TextFont _textFont = TextFont.Galmuri11;
+
+    /// <summary>글씨 도구가 새 글씨 레이어에 쓰는 글꼴(마지막으로 고른 것).</summary>
+    public TextFont TextFont
+    {
+        get => _textFont;
+        set { if (!Enum.IsDefined(value)) value = TextFont.Galmuri11; if (_textFont == value) return; _textFont = value; OptionsChanged(); }
     }
     /// <summary>도형: 채움(true) / 외곽(false). 나선은 늘 선(<see cref="Shapes.CanFill"/>).</summary>
     public bool ShapeFilled { get => _shapeFilled; set { _shapeFilled = value; OptionsChanged(); } }
@@ -247,10 +313,58 @@ public sealed class EditorContext
     public bool MirrorX { get => _mirrorX; set { _mirrorX = value; OptionsChanged(); } }
     /// <summary>대칭 그리기: 상하.</summary>
     public bool MirrorY { get => _mirrorY; set { _mirrorY = value; OptionsChanged(); } }
+    /// <summary>
+    /// 대칭 그리기 축을 캔버스 가운데 대신 지금 피벗(<see cref="Pivot"/>: 부위면 부위 피벗, 아니면 현재 프레임 피벗)을 지나는 선으로 둔다.
+    /// </summary>
+    public bool MirrorAtPivot { get => _mirrorAtPivot; set { if (_mirrorAtPivot == value) return; _mirrorAtPivot = value; OptionsChanged(); } }
+    /// <summary>지금 대칭 축(캔버스 좌표): 피벗 기준이면 피벗을 지나는 반 픽셀 단위 선, 아니면 캔버스 가운데.</summary>
+    public MirrorAxes MirrorAxes
+    {
+        get
+        {
+            if (!_mirrorAtPivot) return MirrorAxes.Center(CanvasWidth, CanvasHeight);
+            var (x, y) = Pivot.ToLocalPixel(CanvasWidth, CanvasHeight);
+            return MirrorAxes.Through(x, y);
+        }
+    }
     /// <summary>오른쪽 버튼으로 보조색 대신 지운다(연필·도형·채우기).</summary>
     public bool RightButtonErases { get => _rightErases; set { _rightErases = value; OptionsChanged(); } }
     /// <summary>이동 도구로 셀 내용을 옮길 때 밖으로 나간 픽셀을 반대편으로 돌린다.</summary>
     public bool MoveWrap { get => _moveWrap; set { _moveWrap = value; OptionsChanged(); } }
+
+    /// <summary>그라데이션 연필 기본 그라데이션(검정 → 흰색, 불투명). 아래 그라데이션 기본값보다 앞에 있어 정지점을 따로 적는다.</summary>
+    public static readonly GradientPreset DefaultPencilGradient = new()
+    {
+        Stops = [new(0, Color32.Black), new(1, Color32.White)],
+        AlphaStops = [new(0, 255), new(1, 255)],
+    };
+    private GradientPreset _pencilGradient = DefaultPencilGradient;
+    private GradientStrokeMode _pencilGradientMode = GradientStrokeMode.WholeStroke;
+    private int _pencilGradientInterval = GradientStroke.DefaultInterval;
+
+    /// <summary>그라데이션 연필이 칠하는 그라데이션(색·불투명도 정지점, 보간, 색 공간, 디더링만 씀).</summary>
+    public GradientPreset PencilGradient
+    {
+        get => _pencilGradient;
+        set
+        {
+            if (value.Stops.Count < 2) throw new ArgumentException(UiStrings.S_EditorContext_GradientStops_B89D363377, nameof(value));
+            _pencilGradient = value;
+            OptionsChanged();
+        }
+    }
+    /// <summary>그라데이션 연필: 획 전체 / 반복.</summary>
+    public GradientStrokeMode PencilGradientMode
+    {
+        get => _pencilGradientMode;
+        set { if (!Enum.IsDefined(value)) value = GradientStrokeMode.WholeStroke; if (_pencilGradientMode == value) return; _pencilGradientMode = value; OptionsChanged(); }
+    }
+    /// <summary>그라데이션 연필 반복 간격(px, <see cref="GradientStroke.MinInterval"/>~<see cref="GradientStroke.MaxInterval"/>).</summary>
+    public int PencilGradientInterval
+    {
+        get => _pencilGradientInterval;
+        set { value = Math.Clamp(value, GradientStroke.MinInterval, GradientStroke.MaxInterval); if (_pencilGradientInterval == value) return; _pencilGradientInterval = value; OptionsChanged(); }
+    }
 
     /// <summary>그라데이션 기본 정지점(검정 → 흰색).</summary>
     public static readonly IReadOnlyList<GradientStop> DefaultGradientStops = [new(0, Color32.Black), new(1, Color32.White)];
@@ -400,8 +514,9 @@ public sealed class EditorContext
         var p = Project!;
         // 스트로크 중에는 현재 셀만 바뀐다. 그 밖의 변경은 바뀐 것을 보고 결과를 무효로 한다(효과만 바뀐 레이어면 그 레이어가 들어간 결과만).
         // 결과 키(레이어, 프레임)는 그룹의 지금 스킨 기준이므로 스킨이 바뀌면(Layers | Pixels) 모두 무효로 한다.
+        // 다른 레이어·테두리를 읽는 스크립트가 있으면 설정(프로젝트 9-slice 테두리)만 바뀌어도 결과가 바뀔 수 있다.
         if (e.Change == ProjectChange.Pixels && p.IsStrokeActive) InvalidateCurrent(stroking: true);
-        else if ((e.Change & ~ProjectChange.Path & ~ProjectChange.Settings) != 0)
+        else if ((e.Change & ~ProjectChange.Path & ~ProjectChange.Settings) != 0 || (e.Change & ProjectChange.Settings) != 0 && p.UsesOtherLayers)
         {
             InvalidateRenders(p, e.Change);
             SyncCanvasResize();
@@ -1216,7 +1331,8 @@ public sealed class EditorContext
     /// <summary>
     /// 스트로크가 아닌 변경: 캔버스 크기가 바뀌면 모두 버리고, 셀 픽셀·프레임·레이어 구조가 바뀌면 모두 무효로 한다(그림은 다시 계산될 때까지 보임).
     /// 레이어 속성만 바뀌었으면 바뀐 레이어(와 그 그룹)의 셀·썸네일과 프레임 합성만 무효로 하고, 효과 목록만 바뀌었으면 효과 결과 캐시도 그대로 쓴다.
-    /// 이름·잠금처럼 그리기와 관계없는 변경은 아무것도 무효로 하지 않는다.
+    /// 이름·잠금처럼 그리기와 관계없는 변경은 아무것도 무효로 하지 않는다 — 다만 다른 레이어나 9-slice 테두리를 읽는 스크립트 효과가 있으면
+    /// (<see cref="SpriteProject.UsesOtherLayers"/>) 어느 변경이든 모든 결과를 무효로 한다(이름·순서·이웃 효과·테두리가 다른 레이어 결과를 바꿈).
     /// </summary>
     private void InvalidateRenders(SpriteProject p, ProjectChange change)
     {
@@ -1247,11 +1363,18 @@ public sealed class EditorContext
             if (before[i].Layer.Parent is { } parent) changed.Add(parent);
             effectsOnly &= before[i].SameExceptEffects(_layerStates[i]);
         }
-        if (changed.Count == 0) return;
+        // 다른 레이어·9-slice 테두리를 읽는 스크립트 효과가 있으면 이름·순서·이웃의 효과·테두리만 바뀌어도 다른 레이어 결과가 바뀔 수 있다 — 결과를 모두 무효로 한다
+        // (효과 결과 캐시는 그 내용을 열쇠에 담으므로 그대로 써도 된다 — ScriptLayerContext.Key)
+        bool layered = p.UsesOtherLayers;
+        if (changed.Count == 0)
+        {
+            if (layered) _renders.InvalidateAll();
+            return;
+        }
         if (!effectsOnly) _renders.Effects.Clear();
         // 효과만 바뀐 레이어 하나(효과 창에서 값을 바꾸는 중): 지금 프레임 합성에서 효과 1~k 중간 결과를 담아 다음 변경 때 이어 그린다.
         _renders.CheckpointLayer = effectsOnly ? changed.FirstOrDefault(l => before.Any(s => ReferenceEquals(s.Layer, l) && !ReferenceEquals(s.Effects, l.Effects))) : null;
-        _renders.Invalidate(k => k.Kind is RenderKind.Composite or RenderKind.Context || k.Layer is { } l && changed.Contains(l));
+        _renders.Invalidate(k => layered || k.Kind is RenderKind.Composite or RenderKind.Context || k.Layer is { } l && changed.Contains(l));
     }
 
     /// <summary>
@@ -1279,13 +1402,15 @@ public sealed class EditorContext
         var layer = p.Layers[_layer];
         var group = layer.Parent;
         bool others = !stroking && (LayerEffects.UsesOtherFrames(layer.Effects) || group is not null && LayerEffects.UsesOtherFrames(group.Effects));
+        // 다른 레이어를 읽는 스크립트가 있으면 이 프레임의 다른 레이어 결과(셀·썸네일·이 레이어를 뺀 합성)도 이 셀을 본다
+        bool layered = p.UsesOtherLayers;
         _renders.Effects.Clear();
         _renders.CheckpointLayer = null;
         _renders.Invalidate(k => k.Kind switch
         {
             RenderKind.Composite => others || ReferenceEquals(k.Frame, frame),
-            RenderKind.Context => ReferenceEquals(k.Frame, frame) && !ReferenceEquals(k.Layer, layer),
-            _ => ReferenceEquals(k.Frame, frame) && (ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group))
+            RenderKind.Context => ReferenceEquals(k.Frame, frame) && (layered || !ReferenceEquals(k.Layer, layer)),
+            _ => ReferenceEquals(k.Frame, frame) && (layered || ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group))
                  || others && (ReferenceEquals(k.Layer, layer) || group is not null && ReferenceEquals(k.Layer, group)),
         });
     }

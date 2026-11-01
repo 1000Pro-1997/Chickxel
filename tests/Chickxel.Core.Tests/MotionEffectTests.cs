@@ -484,6 +484,9 @@ public class MotionEffectTests
         using var stream = new MemoryStream();
         ProjectIO.Save(p, stream);
         stream.Position = 0;
-        Assert.Equal(fx, ProjectIO.Load(stream).Layers[0].Effects);
+        // 열면 같은 설정의 공식 스크립트 효과
+        var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+        Assert.All(loaded, e => Assert.IsType<ScriptEffect>(e));
+        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(loaded));
     }
 }

@@ -18,19 +18,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>가운데(효과 목록·설정) 칸 폭.</summary>
     private const int SettingsWidth = 350;
 
-    private static readonly (LightDirection Dir, string Name)[] Directions =
-    [
-        (LightDirection.TopLeft, UiStrings.S_LayerEffectsDialog_Directions_38A213C040), (LightDirection.Top, UiStrings.S_LayerEffectsDialog_Directions_53073620AC), (LightDirection.TopRight, UiStrings.S_LayerEffectsDialog_Directions_E2ADEEE3AD),
-        (LightDirection.Left, UiStrings.S_LayerEffectsDialog_Directions_87DE11F0BD), (LightDirection.Right, UiStrings.S_LayerEffectsDialog_Directions_A573091255),
-        (LightDirection.BottomLeft, UiStrings.S_LayerEffectsDialog_Directions_2D3F13D6AD), (LightDirection.Bottom, UiStrings.S_LayerEffectsDialog_Directions_B1DECE0B86), (LightDirection.BottomRight, UiStrings.S_LayerEffectsDialog_Directions_73A07AC9E0),
-    ];
-
     private static readonly string[] Easings = [UiStrings.S_LayerEffectsDialog_Easings_4FA414FBAC, UiStrings.S_LayerEffectsDialog_Easings_BDEEAEDE46, UiStrings.S_LayerEffectsDialog_Easings_503369007B, UiStrings.S_LayerEffectsDialog_Easings_7665ED231C];
     private static readonly string[] Repeats = [UiStrings.S_LayerEffectsDialog_Repeats_3E39AFFB4A, UiStrings.S_LayerEffectsDialog_Repeats_753C57FE3B, UiStrings.S_LayerEffectsDialog_Repeats_466235A991];
-    private static readonly string[] Centers = [UiStrings.S_LayerEffectsDialog_Centers_17A9293CA6, UiStrings.S_LayerEffectsDialog_Centers_7CA53FB898, UiStrings.S_LayerEffectsDialog_Centers_4EEB98A21E, UiStrings.S_LayerEffectsDialog_Centers_8D791DFBBE];
-    private static readonly string[] Anchors = [UiStrings.S_LayerEffectsDialog_Anchors_0EC3ED31B9, UiStrings.S_LayerEffectsDialog_Anchors_1F3A9869CE, UiStrings.S_LayerEffectsDialog_Anchors_6466116779];
-    private static readonly string[] Blends = [UiStrings.S_LayerEffectsDialog_Blends_69D924C609, UiStrings.S_LayerEffectsDialog_Blends_1725732230, UiStrings.S_LayerEffectsDialog_Blends_5260B3BD7E];
-    private static readonly string[] Dithers = [UiStrings.S_LayerEffectsDialog_Dithers_19C7C4899C, "2×2 Bayer", "4×4 Bayer"];
 
     /// <summary>숫자 칸 종류: 우클릭 예시 값(칸 범위 밖 값은 빠짐), 단위(메뉴 글자), 최근 값 묶음 이름. <paramref name="Format"/>가 있으면 단위 대신 그 글자.</summary>
     private sealed record NumKind(string Key, string Unit, decimal[] Values, Func<decimal, string>? Format = null);
@@ -38,54 +27,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>효과 설정의 숫자 칸 종류(같은 종류끼리 최근 값을 나눔).</summary>
     private static class NumKinds
     {
-        /// <summary>지나가는·바뀌는 방향(0~359°).</summary>
-        public static readonly NumKind Angle = new("effect.angle", "°", [0, 15, 30, 45, 60, 90, 120, 135, 180, 225, 270, 315]);
-        /// <summary>범위 동안 도는 전체 각도(양수 시계 방향, 음수 반시계 방향).</summary>
-        public static readonly NumKind Rotation = new("effect.rotation", "°", [-1440, -720, -540, -360, -270, -180, -90, -45, -30, -15, 0, 15, 30, 45, 90, 180, 270, 360, 540, 720, 1080, 1440]);
-        /// <summary>색상 돌리기(−180~180°).</summary>
-        public static readonly NumKind Hue = new("effect.hue", "°", [-180, -120, -90, -60, -30, 0, 30, 60, 90, 120, 180]);
-        /// <summary>세기·양(0~100%).</summary>
-        public static readonly NumKind Strength = new("effect.strength", "%", [0, 10, 25, 33, 50, 66, 75, 90, 100]);
-        /// <summary>불투명도(0~100%).</summary>
-        public static readonly NumKind Opacity = new("effect.opacity", "%", [0, 10, 20, 25, 33, 40, 50, 60, 75, 90, 100]);
-        /// <summary>밝기·대비·채도(−100~100%).</summary>
-        public static readonly NumKind Adjust = new("effect.adjust", "%", [-100, -75, -50, -25, -10, 0, 10, 25, 50, 75, 100]);
-        /// <summary>빈도(프레임 중 몇 %).</summary>
-        public static readonly NumKind Rate = new("effect.rate", "%", [0, 5, 10, 15, 20, 25, 33, 50, 75, 100]);
-        /// <summary>무작위 변화·불규칙함(0~100%).</summary>
-        public static readonly NumKind Random = new("effect.random", "%", [0, 10, 20, 25, 33, 50, 66, 75, 90, 100]);
-        /// <summary>진행 중 시작 시점(0~100%).</summary>
-        public static readonly NumKind Progress = new("effect.progress", "%", [0, 10, 20, 25, 33, 40, 50, 60, 66, 75, 90]);
-        /// <summary>그림 크기의 몇 %(반사 높이).</summary>
-        public static readonly NumKind Portion = new("effect.portion", "%", [10, 20, 25, 33, 40, 50, 60, 66, 75, 100]);
-        /// <summary>늘었다 줄기 세기(1~50%).</summary>
-        public static readonly NumKind Squash = new("effect.squash", "%", [5, 10, 15, 20, 25, 30, 40, 50]);
-        /// <summary>작은 픽셀 거리(폭·높이·흔들림·간격·밀림).</summary>
-        public static readonly NumKind Px = new("effect.px", "px", [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]);
-        /// <summary>선·띠·고리 두께.</summary>
-        public static readonly NumKind Thickness = new("effect.thickness", "px", [1, 2, 3, 4, 5, 6, 8, 12, 16]);
-        /// <summary>그림자 X·Y 옮김(음수 = 왼쪽·위).</summary>
-        public static readonly NumKind Offset = new("effect.offset", "px", [-8, -4, -3, -2, -1, 0, 1, 2, 3, 4, 8]);
-        /// <summary>날아가는·흘러내리는 거리, 고리 반지름.</summary>
-        public static readonly NumKind Distance = new("effect.distance", "px", [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]);
-        /// <summary>중력(음수 = 위로).</summary>
-        public static readonly NumKind Gravity = new("effect.gravity", "px", [-16, -8, -4, -2, 0, 2, 4, 6, 8, 16, 32]);
-        /// <summary>터지기 조각 크기(1~4px).</summary>
-        public static readonly NumKind Piece = new("effect.piece", "px", [1, 2, 3, 4]);
-        /// <summary>범위 안 횟수(튕김·번쩍임·깜빡임·흔들림·오르내림).</summary>
-        public static readonly NumKind Count = new("effect.count", UiStrings.S_LayerEffectsDialog_Count_A61CE50C3B, [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
         /// <summary>움직임 반복 횟수.</summary>
         public static readonly NumKind Repeat = new("effect.repeat", UiStrings.S_LayerEffectsDialog_Repeat_ABB1AFE73B, [1, 2, 3, 4, 5, 6, 8]);
-        /// <summary>프레임 수(보임·숨김·번쩍임·잔상 간격).</summary>
-        public static readonly NumKind Frames = new("effect.frames", UiStrings.S_LayerEffectsDialog_Frames_656538CC7F, [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16]);
-        /// <summary>잔상 개수.</summary>
-        public static readonly NumKind Copies = new("effect.copies", UiStrings.S_LayerEffectsDialog_Copies_54ACB79D5D, [1, 2, 3, 4, 5, 6, 8]);
-        /// <summary>주사선 간격(줄).</summary>
-        public static readonly NumKind ScanGap = new("effect.scanGap", UiStrings.S_LayerEffectsDialog_ScanGap_5A028BD5A6, [2, 3, 4, 5, 6]);
-        /// <summary>무작위 시드.</summary>
-        public static readonly NumKind Seed = new("effect.seed", "", [1, 2, 3, 7, 42, 1234]);
-        /// <summary>색 허용 차이(R·G·B 0~255).</summary>
-        public static readonly NumKind Tolerance = new("effect.tolerance", "", [0, 4, 8, 16, 24, 32, 48, 64, 96, 128]);
+        /// <summary>글씨 글자·줄 간격(음수 = 좁힘).</summary>
+        public static readonly NumKind TextSpacing = new("effect.textSpacing", "px", [-2, -1, 0, 1, 2, 3, 4, 6, 8]);
     }
 
     private readonly SpriteProject _project;
@@ -368,7 +313,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
     {
         if (templates.Count == 0) return;
         int n = _project.Frames.Count;
-        bool animated = templates.Any(effect => effect is AnimatedEffect);
+        // 움직이는 효과만 움직임 범위를 먼저 쓴다 — 스크립트는 선언의 animated(실행할 수 없는 원문은 모르므로 움직인다고 봄)
+        bool animated = templates.Any(effect => effect is ScriptEffect script
+            ? Chickxel.Core.Scripting.ScriptLibrary.Runnable(script.ScriptHash)?.Animated ?? true
+            : effect is AnimatedEffect);
         var range = !_addRangeTouched && animated ? _motionRange
             : _addAll.On() ? null : FrameRange.Of((int)_addFrom.NumValue() - 1, (int)_addTo.NumValue() - 1, n);
         var added = recipe?.Instantiate(_project, range) ?? templates.Select((effect, index) => effect with
@@ -687,7 +635,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         var effect = _effects[i];
         int anchor = i - 1;
         while (anchor >= 0 && _effects[anchor].ClipToPrevious) anchor--;
-        bool canClip = anchor >= 0 && _effects[anchor] is not AfterimageEffect;
+        bool canClip = anchor >= 0 && !LayerEffects.IsDeferred(_effects[anchor]);
         var clip = Ui.Check(UiStrings.EffectPreset_ClipToPrevious, effect.ClipToPrevious);
         clip.IsEnabled = canClip;
         ToolTip.SetTip(clip, canClip ? UiStrings.EffectPreset_ClipTip : UiStrings.EffectPreset_ClipUnavailableTip);

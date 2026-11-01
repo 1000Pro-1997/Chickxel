@@ -81,7 +81,7 @@ public sealed class ShotKit
 
     /// <summary>
     /// 메인 창을 띄운다. <paramref name="open"/> = 열 파일(.chickxel·이미지), <paramref name="folder"/> = 파일 브라우저 폴더.
-    /// 기본 크기 1600×900(가이드 그림 기준 크기).
+    /// 기본 크기 1600×900(가이드 그림 기준 크기). 새 설정 폴더라 공식 효과 패키지를 백그라운드에서 설치하므로 끝날 때까지 기다린다(효과 탭에 보이게).
     /// </summary>
     public MainForm Main(string? open = null, string? folder = null, int width = 1600, int height = 900)
     {
@@ -89,7 +89,23 @@ public sealed class ShotKit
         main.Show();
         MainWindow = main;
         Settle(400);
+        WaitBundledEffects();
         return main;
+    }
+
+    /// <summary>공식 효과 패키지의 백그라운드 설치(<see cref="AppAssets.BundledReady"/>)가 끝날 때까지 대기열을 돌린다(1분 넘으면 실패).</summary>
+    public void WaitBundledEffects()
+    {
+        var ready = AppAssets.BundledReady;
+        var sw = Stopwatch.StartNew();
+        while (!ready.IsCompleted)
+        {
+            if (sw.Elapsed > TimeSpan.FromMinutes(1)) throw new TimeoutException("official effect packages were not installed");
+            Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(10);
+        }
+        ready.GetAwaiter().GetResult();
+        Settle(50);
     }
 
     /// <summary>예시 그림을 <see cref="WorkDir"/>에 <paramref name="name"/>으로 복사해 경로를 돌려준다(파일 브라우저·열기용).</summary>

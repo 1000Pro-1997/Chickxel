@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "summary": "Wobbles horizontally and vertically like jelly, then returns to its original shape.",
+  "tags": [
+    "effect",
+    "official",
+    "script",
+    "animated"
+  ],
+  "review": "official",
+  "published": "2026-11-01",
+  "updated": "2026-11-01"
+}

@@ -137,5 +137,9 @@ public abstract class AiProvider
     /// <summary>세션이 알려 준 실제 모델을 기억한다(<paramref name="requested"/> = 보낸 값, null = 기본값). 목록 이름이 바뀌면 true.</summary>
     public virtual bool RememberResolved(AppSettings settings, string? requested, string actual) => false;
 
-    public abstract IChatSession CreateSession(string path, McpServer mcp);
+    /// <summary>
+    /// 대화를 만든다. <paramref name="systemPrompt"/>: 채팅 창은 <see cref="AiCli.SystemPrompt"/>, 효과 만들기 AI 칸은 <see cref="AiCli.EffectMakerSystemPrompt"/>.
+    /// <paramref name="scope"/>: CLI에 넘길 MCP 토큰의 범위(효과 만들기 AI 칸 = <see cref="McpScope.EffectMaker"/> — 서버가 도구를 막음).
+    /// </summary>
+    public abstract IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope);
 }

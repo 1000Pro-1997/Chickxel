@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Chickxel.Core.Assets;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -18,8 +19,17 @@ public class EffectPresetTests
         return read!;
     }
 
+    /// <summary>
+    /// 예전 사용자 정의 효과 파일(프리셋 하나)의 효과를 C# 모델로 읽은 것(예전 읽기 길). 앱이 읽은 결과(<see cref="AssetMigration.ReadLegacyEffects"/>)는
+    /// 그 효과들의 공식 스크립트인지도 본다.
+    /// </summary>
     private static IReadOnlyList<LayerEffect> LegacySingle(string json)
-        => Assert.Single(AssetMigration.ReadLegacyEffects(json)).Effects;
+    {
+        var read = Assert.Single(AssetMigration.ReadLegacyEffects(json)).Effects;
+        var stored = JsonNode.Parse(json)!["presets"]![0]!["effects"]!.AsArray().Select(e => EffectCodec.ReadStored(e!.AsObject())).ToArray();
+        Assert.Equal(TestUtil.ConvertedJson(stored), TestUtil.EffectJson(read));
+        return stored;
+    }
 
     [Fact]
     public void CaptureSerializeParseInstantiate_PreservesStackAndResetsFrames()
@@ -70,7 +80,8 @@ public class EffectPresetTests
         Assert.Equal(2, effects.Count);
         var unknown = Assert.IsType<MissingEffect>(effects[0]);
         Assert.Equal("future", unknown.TypeId);
-        Assert.Equal(3, Assert.IsType<ShadowEffect>(effects[1]).OffsetX);
+        // 아는 예전 효과는 같은 설정의 공식 스크립트로 읽힌다
+        Assert.Equal(TestUtil.ConvertedJson([new ShadowEffect { OffsetX = 3 }]), TestUtil.EffectJson([effects[1]]));
 
         // 개인 레시피로 다시 저장해도 모르는 효과의 원본 설정이 남는다
         var again = RoundTrip(EffectRecipe.Capture("personal.b", legacy[0].Name, effects));
@@ -91,7 +102,7 @@ public class EffectPresetTests
             """;
         var item = Assert.Single(AssetMigration.ReadLegacyEffects(json));
         Assert.Equal("남음", item.Name);
-        Assert.True(Assert.IsType<FadeEffect>(Assert.Single(item.Effects)).FadeOut);
+        Assert.Equal(TestUtil.ConvertedJson([new FadeEffect { FadeOut = true }]), TestUtil.EffectJson(item.Effects));
 
         Assert.Throws<InvalidDataException>(() => AssetMigration.ReadLegacyEffects("{ \"version\": 2, \"presets\": ["));
         Assert.Throws<InvalidDataException>(() => AssetMigration.ReadLegacyEffects("""{ "version": 3, "presets": [] }"""));

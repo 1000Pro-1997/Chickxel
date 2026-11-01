@@ -11,11 +11,13 @@ public class AssetPublishTests
 {
     private static readonly DateOnly Today = new(2026, 10, 28);
 
-    /// <summary>개인 레시피 하나와 그라데이션 하나가 든 저장소.</summary>
+    private const string NeonHit = "effect({ name: \"Neon Hit\", previewChick: \"knight\", render(img) { const d = img.data; for (let i = 0; i < d.length; i += 4) d[i] = 255 - d[i]; } });";
+
+    /// <summary>개인 스크립트 효과 하나와 그라데이션 하나가 든 저장소(효과 레시피는 올리지 않음).</summary>
     private static AssetStore PersonalStore(TempDir dir)
     {
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        store.SavePersonalRecipe(AssetSamples.Recipe());
+        store.SavePersonalScript(NeonHit);
         store.SavePersonalGradient(null, AssetSamples.Gradient());
         return store;
     }
@@ -70,6 +72,7 @@ public class AssetPublishTests
         ["bad-tag"] = r => r with { Tags = ["Neon!"] },
         ["bad-version"] = r => r with { Version = "1.0" },
         ["no-assets"] = r => r with { Assets = [] },
+        ["recipe"] = r => r with { Assets = [.. r.Assets, new PublishAsset(AssetKinds.EffectRecipe, AssetSamples.Recipe(), AssetPreview.Package(AssetSamples.Recipe()))] },
     };
 
     public static TheoryData<string, string> BadRequestCodes => new()
@@ -86,6 +89,7 @@ public class AssetPublishTests
         { "bad-tag", nameof(PublishIssueCode.Tags) },
         { "bad-version", nameof(PublishIssueCode.Version) },
         { "no-assets", nameof(PublishIssueCode.NoAssets) },
+        { "recipe", nameof(PublishIssueCode.RecipeNotPublishable) },
     };
 
     [Theory]
@@ -147,7 +151,7 @@ public class AssetPublishTests
         var result = Check(Request(store) with { CustomPreview = customPreview });
         Assert.True(result.Ok, string.Join("\n", result.Issues));
         Assert.Empty(result.Issues);
-        // 직접 고른 그림은 효과 없는 원본과 짝이 맞지 않으므로 첫 에셋(레시피)의 원본은 빠진다(서버가 크기가 다른 원본을 거부함).
+        // 직접 고른 그림은 효과 없는 원본과 짝이 맞지 않으므로 첫 에셋(스크립트 효과)의 원본은 빠진다(서버가 크기가 다른 원본을 거부함).
         Assert.DoesNotContain(Read(result.Package!).Files.Keys, path => path.EndsWith(".original.png", StringComparison.Ordinal));
         Assert.Equal("pixel-cat.neon-1.0.0.chickxel-asset", result.PackageFileName);
 
@@ -175,13 +179,13 @@ public class AssetPublishTests
         byte[] published = File.ReadAllBytes(Path.Combine(output, entry.Package.Url));
         Assert.Equal(result.Package, published);
 
-        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 레시피·그라데이션이 생긴다.
+        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 스크립트 효과·그라데이션이 생긴다.
         var other = AssetStore.Open(Path.Combine(dir.Path, "other", "Assets"));
         var installed = other.Install(AssetSamples.Save(dir.Path, published, "downloaded.chickxel-asset"));
         Assert.Equal(("pixel-cat.neon", "1.0.0", false), (installed.Id, installed.Version, installed.IsBroken));
-        var recipe = Assert.Single(other.Catalog.Recipes);
-        Assert.Equal(("Neon Hit", "pixel-cat.neon.neon-hit"), (recipe.Name, recipe.Id));
-        AssetSamples.AssertSameRecipe(store.Catalog.Personal.Single(e => e.Recipe is not null).Recipe!, recipe.Recipe!);
+        var script = Assert.Single(other.Catalog.Available(AssetKinds.EffectScript));
+        Assert.Equal(("Neon Hit", "pixel-cat.neon.neon-hit"), (script.Name, script.Id));
+        Assert.Equal(store.Catalog.Personal.Single(e => e.Script is not null).Script!.Hash, script.Script!.Hash);
         var gradient = Assert.Single(other.Catalog.Gradients);
         AssetSamples.AssertSameGradient(AssetSamples.Gradient(), gradient.Gradient!);
         Assert.Contains("CC0-1.0", File.ReadAllText(Path.Combine(installed.Folder, AssetPublishCheck.LicenseFileName)));
@@ -242,7 +246,7 @@ public class AssetPublishTests
         Assert.Equal(first.Package, again.Package);
 
         // 내용을 바꾸고 같은 버전 → 거부, 낮은 버전 → 거부, 제안 버전 → 통과(게시 날짜는 처음 날짜를 이음).
-        store.SavePersonalRecipe(AssetSamples.Recipe(thickness: 3) with { Id = store.Catalog.Personal.Single(e => e.Recipe is not null).Id });
+        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), store.Catalog.Personal.Single(e => e.Script is not null).Id);
         Assert.Contains(Check(Request(store, "1.2.0"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         Assert.Contains(Check(Request(store, "1.1.9"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         string next = AssetPublishCheck.SuggestVersion(AssetPublishCheck.LatestVersion("pixel-cat.neon", online, []));

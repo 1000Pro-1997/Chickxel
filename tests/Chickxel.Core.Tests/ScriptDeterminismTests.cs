@@ -8,7 +8,7 @@ namespace Chickxel.Core.Tests;
 /// <summary>스크립트 효과의 결과가 실행기·스레드와 무관하게 같고, JS로 옮긴 빛 지나가기가 C# 렌더러와 픽셀 단위로 같다.</summary>
 public class ScriptDeterminismTests
 {
-    private static readonly string Shine = ScriptTemplates.Shine;
+    private static readonly string Shine = OfficialEffects.Source("shine");
 
     private static ScriptEffectProgram Program(string source)
     {

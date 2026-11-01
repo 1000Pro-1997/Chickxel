@@ -212,12 +212,12 @@ internal abstract class RenderStep
         return false;
     }
 
-    /// <summary>효과를 거치는 픽셀 수 어림(잔상은 앞 프레임을 다른 효과로 그리는 몫까지).</summary>
+    /// <summary>효과를 거치는 픽셀 수 어림(잔상은 앞 프레임을 다른(미루지 않는) 효과로 그리는 몫까지).</summary>
     protected static long EffectWork(IReadOnlyList<LayerEffect> effects, int frame, long pixels)
     {
         int others = 0;
         foreach (var e in effects)
-            if (e.Enabled && e.AppliesTo(frame) && e is not AfterimageEffect) others++;
+            if (e.Enabled && e.AppliesTo(frame) && !LayerEffects.IsDeferred(e)) others++;
         long work = 0;
         foreach (var e in effects)
         {
@@ -264,22 +264,23 @@ internal sealed class FrameSources
 /// <summary>
 /// 셀 하나를 그 레이어 효과(이 프레임 범위 안인 것)까지 입혀 (x, y)에 불투명도로 합성한다.
 /// <paramref name="clip"/>이면 합성 대신 셀 크기로 잘라 그대로 옮긴다(<see cref="LayerEffects.RenderClipped"/>와 같음 — 셀 썸네일).
+/// <paramref name="layers"/>는 스크립트 효과가 보는 배치·다른 레이어(없으면 null) — 그 내용은 열쇠에 들어간다.
 /// </summary>
 internal sealed class CelStep(Layer layer, PixelImage cel, IReadOnlyList<LayerEffect> layerEffects, int frame, int frameCount, PointF pivot,
-    FrameSources? sources, byte opacity, int x, int y, bool clip = false) : RenderStep
+    FrameSources? sources, ScriptLayerContext? layers, byte opacity, int x, int y, bool clip = false) : RenderStep
 {
     public override int Units { get; } = (clip ? 0 : 1) + ActiveUnits(layerEffects, frame);
 
     public override long Work { get; } = (long)cel.Width * cel.Height + EffectWork(layerEffects, frame, (long)cel.Width * cel.Height);
 
-    public override CacheKey Key { get; } = new(layer, cel, layerEffects, frame, frameCount, pivot, opacity, x, y, clip);
+    public override CacheKey Key { get; } = new(layer, cel, layerEffects, frame, frameCount, pivot, opacity, x, y, clip, layers?.Key);
 
     public override bool RunsScripts { get; } = HasScripts(layerEffects, frame);
 
     public override void Run(RenderRun run, PixelImage target, int ox, int oy, Action? present)
     {
-        var effects = LayerEffects.At(layerEffects, frame, frameCount, pivot, sources?.SourceFor(run),
-            sources is null ? null : f => sources.PivotAt(f), run.Cache);
+        var effects = LayerEffects.WithScriptLayers(LayerEffects.At(layerEffects, frame, frameCount, pivot, sources?.SourceFor(run),
+            sources is null ? null : f => sources.PivotAt(f), run.Cache), layers?.Bind(run));
         int px = ox + x, py = oy + y;
         if (clip)
         {
@@ -307,28 +308,29 @@ internal sealed class CelStep(Layer layer, PixelImage cel, IReadOnlyList<LayerEf
     }
 
     private object? CheckpointScope(RenderRun run)
-        => ReferenceEquals(run.CheckpointLayer, layer) ? new CacheKey("cel", layer, cel, frame) : null;
+        => ReferenceEquals(run.CheckpointLayer, layer) ? new CacheKey("cel", layer, cel, frame, layers?.Key) : null;
 }
 
 /// <summary>
 /// 효과가 켜진 그룹: 부위들을 효과 여백만큼 넓힌 캔버스에 먼저 합친 뒤 그룹 효과(이 프레임 범위 안인 것)를 입혀 그룹 불투명도로 그린다
-/// (캔버스 밖은 잘림).
+/// (캔버스 밖은 잘림). <paramref name="layers"/>는 그룹 효과의 스크립트가 보는 배치·다른 레이어(없으면 null).
 /// </summary>
 internal sealed class GroupStep(Layer group, IReadOnlyList<CelStep> parts, IReadOnlyList<LayerEffect> groupEffects, int frame, int frameCount,
-    PointF pivot, FrameSources? sources, byte opacity, int width, int height) : RenderStep
+    PointF pivot, FrameSources? sources, ScriptLayerContext? layers, byte opacity, int width, int height) : RenderStep
 {
     public override int Units { get; } = parts.Sum(p => p.Units) + ActiveUnits(groupEffects, frame) + 1;
 
     public override long Work { get; } = parts.Sum(p => p.Work) + EffectWork(groupEffects, frame, (long)width * height);
 
-    public override CacheKey Key { get; } = new([group, groupEffects, frame, frameCount, pivot, opacity, width, height, .. parts.Select(p => (object?)p.Key)]);
+    public override CacheKey Key { get; } = new([group, groupEffects, frame, frameCount, pivot, opacity, width, height, layers?.Key,
+        .. parts.Select(p => (object?)p.Key)]);
 
     public override bool RunsScripts { get; } = HasScripts(groupEffects, frame) || parts.Any(p => p.RunsScripts);
 
     public override void Run(RenderRun run, PixelImage target, int ox, int oy, Action? present)
     {
-        var effects = LayerEffects.At(groupEffects, frame, frameCount, pivot, sources?.SourceFor(run),
-            sources is null ? null : f => sources.PivotAt(f), run.Cache);
+        var effects = LayerEffects.WithScriptLayers(LayerEffects.At(groupEffects, frame, frameCount, pivot, sources?.SourceFor(run),
+            sources is null ? null : f => sources.PivotAt(f), run.Cache), layers?.Bind(run));
         var pad = LayerEffects.Padding(LayerEffects.UsesOtherFrames(effects) ? groupEffects : effects, width, height);
         var buffer = new PixelImage(width + pad.Left + pad.Right, height + pad.Top + pad.Bottom);
         int bx = ox - pad.Left, by = oy - pad.Top;
@@ -338,7 +340,9 @@ internal sealed class GroupStep(Layer group, IReadOnlyList<CelStep> parts, IRead
             run.Cancellation.ThrowIfCancellationRequested();
             part.Run(run, buffer, pad.Left, pad.Top, show);
         }
-        var scope = ReferenceEquals(run.CheckpointLayer, group) ? new CacheKey("group", group, frame, new CacheKey([.. parts.Select(p => (object?)p.Key)])) : null;
+        var scope = ReferenceEquals(run.CheckpointLayer, group)
+            ? new CacheKey("group", group, frame, layers?.Key, new CacheKey([.. parts.Select(p => (object?)p.Key)]))
+            : null;
         LayerEffects.Apply(buffer, effects, new Rectangle(pad.Left, pad.Top, width, height), run.Hooks(_ => show(), scope, group));
         target.Composite(buffer, bx, by, opacity);
         if (present is null) run.SetInProgress(null, 0, 0, 0);

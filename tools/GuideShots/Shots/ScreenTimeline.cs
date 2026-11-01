@@ -321,7 +321,7 @@ internal static class ScreenTimelineShots
     [Shot("screen-layer-effects")]
     public static void LayerEffects(ShotKit k)
     {
-        // 커스텀 탭에 보일 개인 효과 레시피 둘.
+        // 프리셋 탭에 보일 개인 효과 프리셋 둘.
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
         var main = OpenTall(k, 370);
@@ -339,7 +339,7 @@ internal static class ScreenTimelineShots
         SaveMenu(k, main, "screen-layer-effects", fxBadge,
             [MenuItem(UiStrings.S_TimelinePanel_ShowLayerMenu_4C4B49E76B), PadLeft(fxBadge, 14)], 1);
 
-        // 2~5: 효과 창(색 설정 = 2, 색 팝업 = 3, 전체 = 4, 커스텀 탭 = 5)
+        // 2~5: 효과 창(색 설정 = 2, 색 팝업 = 3, 전체 = 4, 프리셋 탭 = 5)
         k.Dialog(() => ShotKit.Call(Timeline(main), "EditLayerEffects", body, -1, null, null), w => EffectsDialog(k, w), settleMs: 900);
 
         // 6: 타임라인의 효과 줄
@@ -367,12 +367,12 @@ internal static class ScreenTimelineShots
         SaveMenu(k, main, "screen-layer-effects-9", empty, [extra], 20);
     }
 
-    /// <summary>효과 창: 색 설정(-2, ③~⑤), 색 팝업(-3), 전체(-4, ⑥~⑭), 커스텀 탭(-5, ⑮), 프레임 줄 지우기 칸(-10 끄는 중 ㉑, -11 놓은 뒤 ㉒).</summary>
+    /// <summary>효과 창: 색 설정(-2, ③~⑤), 색 팝업(-3), 전체(-4, ⑥~⑭), 프리셋 탭(-5, ⑮), 프레임 줄 지우기 칸(-10 끄는 중 ㉑, -11 놓은 뒤 ㉒).</summary>
     private static void EffectsDialog(ShotKit k, Window w)
     {
         ShotKit.Pump(600);
         var tabs = ShotKit.Find<TabControl>(w);
-        var custom = (TabItem)tabs.Items[1]!;
+        var presets = (TabItem)tabs.Items[1]!;
         var tiles = (Control)((TabItem)tabs.Items[0]!).Content!;
         var list = ShotKit.Get<ListBox>(w, "_list");
         var settings = ShotKit.Get<Control>(w, "_settings");
@@ -392,7 +392,7 @@ internal static class ScreenTimelineShots
         k.Save(w, "screen-layer-effects-4", marks:
         [
             tiles,
-            custom,
+            presets,
             PadLeft(InWindow(w, addRow), 10),
             Union(w, list, buttons),
             GroupOf(settings, list),
@@ -429,12 +429,12 @@ internal static class ScreenTimelineShots
         PopupMenus.CloseAll();
         ShotKit.Pump(300);
 
-        // 5: 커스텀 탭 — 전체 효과 저장
+        // 5: 프리셋 탭 — 현재 효과 프리셋 저장
         tabs.SelectedIndex = 1;
         ShotKit.Pump(500);
-        var save = ShotKit.FindText(w, UiStrings.EffectPreset_SaveGroup, ancestorControl: true);
+        var save = ShotKit.FindText(w, UiStrings.EffectPreset_SavePreset, ancestorControl: true);
         var palette = ShotKit.Bounds((Control)tabs.Parent!, w);
-        var last = ShotKit.Get<Panel>(w, "_customWrap").Children.Select(c => ShotKit.Bounds(c, w).Bottom).DefaultIfEmpty(palette.Y + 200).Max();
+        var last = ShotKit.Get<Panel>(w, "_presetWrap").Children.Select(c => ShotKit.Bounds(c, w).Bottom).DefaultIfEmpty(palette.Y + 200).Max();
         k.Save(w, "screen-layer-effects-5", crop: new Rect(palette.X, palette.Y, palette.Width, last - palette.Y).Inflate(10).Intersect(new Rect(w.ClientSize)),
             marks: [save], firstNumber: 15);
     }
@@ -525,15 +525,14 @@ internal static class ScreenTimelineShots
         => AppAssets.Store.Install(Path.Combine(ShotKit.Root, "docs", "catalog", "packages", fileName));
 
     /// <summary>
-    /// 효과 레시피: 1 = 커스텀 탭(① 에셋 관리자 ② 개인 레시피 ③ 패키지 레시피 ④ 스크립트 상자), 2 = 매개변수 창(⑤ 목록 ⑥ 이름 ⑦ 연결할 설정 ⑧ 범위·기본값),
-    /// 3 = 효과 창의 레시피 묶음(⑨ 묶음 줄 ⑩ 매개변수 ⑪ 펼치기·묶음 풀기).
+    /// 효과 프리셋: 1 = 프리셋 탭(① 현재 효과 프리셋 저장 ② 개인 프리셋 ③ 패키지 프리셋), 2 = 매개변수 창(⑤ 목록 ⑥ 이름 ⑦ 연결할 설정 ⑧ 범위·기본값),
+    /// 3 = 효과 창의 프리셋 묶음(⑨ 묶음 줄 ⑩ 매개변수 ⑪ 펼치기·묶음 풀기).
     /// </summary>
     [Shot("screen-effect-recipes")]
     public static void EffectRecipes(ShotKit k)
     {
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
         var hurt = AppAssets.Store.SavePersonalRecipe(HurtRecipe());
-        AppAssets.Store.SavePersonalScript(PulseScript);
         InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.1.chickxel-asset");
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
@@ -561,20 +560,19 @@ internal static class ScreenTimelineShots
             ShotKit.Pump(600);
             var tabs = ShotKit.Find<TabControl>(w);
 
-            // 1: 커스텀 탭
+            // 1: 프리셋 탭
             tabs.SelectedIndex = 1;
             ShotKit.Pump(700);
-            var wrap = ShotKit.Get<Panel>(w, "_customWrap");
+            var wrap = ShotKit.Get<Panel>(w, "_presetWrap");
             var tiles = wrap.Children.OfType<Control>().ToList();
             AssetEntry? EntryOf(Control c) => ShotKit.Get<AssetEntry?>(c, "Entry");
-            var personal = tiles.Where(t => EntryOf(t) is { Origin: AssetOrigin.Personal, Script: null }).ToList();
+            var personal = tiles.Where(t => EntryOf(t) is { Origin: AssetOrigin.Personal }).ToList();
             var package = tiles.First(t => EntryOf(t) is { Origin: AssetOrigin.Package });
-            var script = tiles.First(t => EntryOf(t) is { Script: not null });
-            var manager = ShotKit.FindText(w, UiStrings.Assets_ManagerButton, ancestorControl: true);
+            var save = ShotKit.FindText(w, UiStrings.EffectPreset_SavePreset, ancestorControl: true);
             var palette = ShotKit.Bounds((Control)tabs.Parent!, w);
             var last = tiles.Select(c => ShotKit.Bounds(c, w).Bottom).DefaultIfEmpty(palette.Y + 200).Max();
             k.Save(w, "screen-effect-recipes", crop: new Rect(palette.X, palette.Y, palette.Width, last - palette.Y).Inflate(10).Intersect(new Rect(w.ClientSize)),
-                marks: [manager, Union(w, [.. personal]), package, script]);
+                marks: [save, Union(w, [.. personal]), package]);
 
             // 3: 레시피를 넣고 묶음 줄을 고른다
             var recipe = AppAssets.Catalog.Find(hurt.Id)!.Recipe!;
@@ -603,12 +601,13 @@ internal static class ScreenTimelineShots
     }
 
     /// <summary>
-    /// 스크립트 효과: 1 = 효과 창(① 스크립트 효과 묶음 ② 이름·상태 ③ 편집·파일 열기 ④ 에셋으로 저장 ⑤ 설정 칸),
+    /// 스크립트 효과: 1 = 효과 창(① 효과 탭의 개인 스크립트 효과 상자 ② 이름·상태 ③ 편집·파일 열기 ④ 에셋으로 저장 ⑤ 설정 칸),
     /// 2 = 편집 창(⑥ 안내 ⑦ 원문 ⑧ 오류 목록 ⑨ 적용·닫기), 3 = 실행 확인 창(⑩ 스크립트 목록 ⑪ 실행·실행 안 함).
     /// </summary>
     [Shot("screen-script-effects")]
     public static void ScriptEffects(ShotKit k)
     {
+        AppAssets.Store.SavePersonalScript(PulseScript);
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
         int body = LayerIndex(main, "Body");
@@ -626,13 +625,10 @@ internal static class ScreenTimelineShots
             ShotKit.Call(w, "AddScriptEffect", hash);
             ShotKit.Pump(1500);
 
-            // 1: 기본 탭 맨 아래 스크립트 효과 묶음 + 설정 칸
-            var create = ShotKit.FindText(w, UiStrings.ScriptEffect_New, ancestorControl: true);
-            create.BringIntoView();
+            // 1: 효과 탭 끝(앱에 든 효과 뒤)의 개인 스크립트 효과 상자 + 설정 칸
+            var tile = ShotKit.Get<Panel>(w, "_effectsWrap").Children.OfType<Control>().Last(c => ShotKit.Get<AssetEntry?>(c, "Entry") is { Script: not null });
+            tile.BringIntoView();
             ShotKit.Pump(500);
-            var title = ShotKit.FindText(w, UiStrings.ScriptEffect_PaletteTitle);
-            var open = ShotKit.All<Button>(w).First(b => b.IsEffectivelyVisible && ShotKit.All<TextBlock>(b).Any(t => t.Text == UiStrings.ScriptEffect_OpenFile)
-                                                         && ShotKit.Bounds(b, w).Y > ShotKit.Bounds(title, w).Y && ShotKit.Bounds(b, w).X < ShotKit.Bounds(create, w).Right + 200);
             var settings = ShotKit.Get<Panel>(w, "_settings");
             var children = settings.Children.ToList();
             var status = ShotKit.Get<Control>(w, "_scriptStatus");
@@ -643,7 +639,7 @@ internal static class ScreenTimelineShots
             var fields = children.Skip(statusAt + 3).Take(children.Count - statusAt - 4).ToArray();
             k.Save(w, "screen-script-effects", marks:
             [
-                PadLeft(Union(w, title, create, open), 10),
+                PadLeft(InWindow(w, tile), 10),
                 PadLeft(Union(w, head, status), 10),
                 PadLeft(InWindow(w, editRow), 10),
                 PadLeft(InWindow(w, saveRow), 10),

@@ -68,3 +68,5 @@ dotnet run --project tools/CatalogBuilder -- --check # 검사만, docs/catalog/�
 ```
 
 `docs/catalog/`의 `index.json`(다음 쪽은 `index-2.json` …, 쪽마다 50개), `packages/`, `previews/`는 손으로 고치지 않습니다.
+
+공식 효과 패키지(`chickxel.effects.<효과 ID>`, 앱에 든 `src/Chickxel.Core/Scripting/Official/<ID>.js` 원문)는 CatalogBuilder가 지금 버전 파일이 없을 때 만듭니다. 원문을 고치면 `OfficialEffectPackages`의 버전을 올립니다(올리지 않으면 `--check`가 실패). CatalogBuilder는 지금 원문과 이 폴더·`docs/catalog/packages/`의 공식 효과 패키지(모든 버전) 원문의 해시를 `src/Chickxel.Core/Scripting/Official/hashes.txt`에 더하고, `--check`는 빠진 해시가 있으면 실패합니다. 앱은 이 목록의 원문을 묻지 않고 실행하므로, 예전 공식 원문을 담은 프로젝트·레시피도 원문이 바뀐 뒤에 그대로 열립니다. 목록의 줄은 지우지 않습니다.

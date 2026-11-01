@@ -8,6 +8,7 @@ using Jint;
 using Jint.Native;
 using Jint.Native.Array;
 using Jint.Native.Object;
+using Jint.Runtime;
 
 namespace Chickxel.Core.Scripting;
 
@@ -41,6 +42,11 @@ internal static partial class ScriptDeclarationReader
         string? author = authorValue is JsString && authorValue.AsString().Trim() is { Length: > 0 } a ? a : null;
         if (!authorValue.IsUndefined() && authorValue is not JsString) Fail(DomainStrings.Script_InvalidAuthor, "author");
 
+        var descriptionValue = declaration.Get("description");
+        string? description = descriptionValue is JsString && descriptionValue.AsString().Trim() is { Length: > 0 } d ? d : null;
+        if ((!descriptionValue.IsUndefined() && descriptionValue is not JsString) || description?.Length > ScriptEffectProgram.MaxDescriptionLength)
+            Fail(DomainStrings.FormatScript_InvalidDescription(max: ScriptEffectProgram.MaxDescriptionLength), "description");
+
         var animatedValue = declaration.Get("animated");
         bool animated = animatedValue.IsBoolean() && animatedValue.AsBoolean();
         if (!animatedValue.IsUndefined() && !animatedValue.IsBoolean()) Fail(DomainStrings.Script_InvalidAnimated, "animated");
@@ -48,6 +54,14 @@ internal static partial class ScriptDeclarationReader
         var chickValue = declaration.Get("previewChick");
         string? previewChick = chickValue is JsString && chickValue.AsString() is { Length: > 0 and <= 32 } chick && ChickId().IsMatch(chick) ? chick : null;
         if (!chickValue.IsUndefined() && previewChick is null) Fail(DomainStrings.Script_InvalidPreviewChick, "previewChick");
+
+        var framesValue = declaration.Get("previewFrames");
+        int previewFrames = AssetPreview.PackageFrames;
+        if (!framesValue.IsUndefined())
+        {
+            if (Whole(framesValue) is { } f and >= ScriptEffectProgram.MinPreviewFrames and <= ScriptEffectProgram.MaxPreviewFrames) previewFrames = (int)f;
+            else Fail(DomainStrings.FormatScript_InvalidPreviewFrames(min: ScriptEffectProgram.MinPreviewFrames, max: ScriptEffectProgram.MaxPreviewFrames), "previewFrames");
+        }
 
         var areaValue = declaration.Get("area");
         var area = ScriptEffectArea.Global;
@@ -86,11 +100,124 @@ internal static partial class ScriptDeclarationReader
         {
             Fail(DomainStrings.Script_InvalidSettings, "settings");
         }
+        // 점 고르기의 Y 설정: 다른 int 설정이고, 그 자신은 모양을 정하지 않았고, 두 X가 같은 Y를 나눠 갖지 않는다
+        for (int i = 0; i < settings.Count; i++)
+        {
+            if (settings[i].Pair is not { } pairKey) continue;
+            var y = settings.FirstOrDefault(s => s.Key == pairKey);
+            if (y is not { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.None } || settings.Count(s => s.Pair == pairKey) > 1)
+                Fail(DomainStrings.FormatScript_InvalidSettingWidget(key: settings[i].Key), "settings", i, "pair");
+        }
+
+        var deferredValue = declaration.Get("deferred");
+        bool deferred = deferredValue.IsBoolean() && deferredValue.AsBoolean();
+        if (!deferredValue.IsUndefined() && !deferredValue.IsBoolean()) Fail(DomainStrings.Script_InvalidDeferred, "deferred");
+
+        // motion: false = 빠르기 곡선·반복을 쓰지 않는 움직이는 효과(편집기에서 숨김, 저장 값은 그대로)
+        var motionValue = declaration.Get("motion");
+        bool motion = !motionValue.IsBoolean() || motionValue.AsBoolean();
+        if (!motionValue.IsUndefined() && !motionValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMotion, "motion");
+
+        var clipsValue = declaration.Get("clipsBySource");
+        bool clipsBySource = clipsValue.IsBoolean() && clipsValue.AsBoolean();
+        if (!clipsValue.IsUndefined() && !clipsValue.IsBoolean()) Fail(DomainStrings.Script_InvalidClipsBySource, "clipsBySource");
+
+        // 원본 지우기: true(늘) 또는 bool 설정 키(그 설정이 참일 때)
+        var erasesValue = declaration.Get("erasesSource");
+        bool erasesSource = erasesValue.IsBoolean() && erasesValue.AsBoolean();
+        string? erasesSourceSetting = null;
+        if (erasesValue is JsString erasesKey && settings.Any(s => s.Key == erasesKey.ToString() && s.Type == ScriptSettingType.Bool))
+            erasesSourceSetting = erasesKey.ToString();
+        else if (!erasesValue.IsUndefined() && !erasesValue.IsBoolean()) Fail(DomainStrings.Script_InvalidErasesSource, "erasesSource");
+
+        var easingValue = declaration.Get("easing");
+        var easing = EffectEasing.Linear;
+        if (!easingValue.IsUndefined())
+        {
+            if (easingValue is JsString && Enum.TryParse<EffectEasing>(easingValue.AsString(), ignoreCase: false, out var parsedEasing)
+                && Enum.IsDefined(parsedEasing) && easingValue.AsString() == parsedEasing.ToString())
+                easing = parsedEasing;
+            else Fail(DomainStrings.FormatScript_InvalidEasing(names: string.Join(", ", Enum.GetNames<EffectEasing>())), "easing");
+        }
+
+        var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
 
         return errors.Count > 0
             ? new(null, errors)
-            : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, animated, area, radius, settings, fixedPadding,
-                previewChick ?? PreviewChicks.Default), []);
+            : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
+                previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting) { Motion = motion }, []);
+    }
+
+    /// <summary>
+    /// <c>translations: { "언어 코드": { name?, description?, labels?: { 설정키: "이름", "설정키.항목값": "이름" } } }</c>.
+    /// 언어 코드는 BCP-47 모양(대소문자를 가리지 않고 겹치지 않음), 이름은 1~<see cref="AssetManifest.MaxNameLength"/>자, 설명은
+    /// <see cref="ScriptEffectProgram.MaxDescriptionLength"/>자까지, 설정 이름은 선언한 설정 키·고르기 항목만 1~<see cref="ScriptTranslations.MaxLabelLength"/>자.
+    /// 언어 항목 안의 모르는 키는 다음 버전을 위해 무시한다. 없으면 빈 표.
+    /// </summary>
+    private static IReadOnlyDictionary<string, ScriptTranslation> ReadTranslations(JsValue value, IReadOnlyList<ScriptSetting> settings, Action<string, object[]> fail)
+    {
+        if (value.IsUndefined()) return ScriptTranslations.Empty;
+        if (value is not ObjectInstance all || value.IsCallable() || value is ArrayInstance)
+        {
+            fail(DomainStrings.FormatScript_InvalidTranslations(max: ScriptTranslations.MaxLanguages), ["translations"]);
+            return ScriptTranslations.Empty;
+        }
+        var codes = all.GetOwnPropertyKeys(Types.String);
+        if (codes.Count > ScriptTranslations.MaxLanguages)
+        {
+            fail(DomainStrings.FormatScript_InvalidTranslations(max: ScriptTranslations.MaxLanguages), ["translations"]);
+            return ScriptTranslations.Empty;
+        }
+        var labelKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var setting in settings)
+        {
+            labelKeys.Add(setting.Key);
+            foreach (var choice in setting.Choices) labelKeys.Add(ScriptTranslation.ChoiceKey(setting.Key, choice.Value));
+        }
+        static string? Text(JsValue v, int max) => v is JsString && v.AsString().Trim() is { Length: > 0 } t && t.Length <= max ? t : null;
+
+        var result = new Dictionary<string, ScriptTranslation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var codeKey in codes)
+        {
+            string code = codeKey.AsString();
+            if (!ScriptTranslations.IsLanguageCode(code) || result.ContainsKey(code))
+            {
+                fail(DomainStrings.FormatScript_InvalidTranslationLanguage(code: code), ["translations", code]);
+                continue;
+            }
+            if (all.Get(codeKey) is not ObjectInstance entry || entry.IsCallable() || entry is ArrayInstance)
+            {
+                fail(DomainStrings.FormatScript_InvalidTranslation(code: code), ["translations", code]);
+                continue;
+            }
+            var nameValue = entry.Get("name");
+            string? name = Text(nameValue, AssetManifest.MaxNameLength);
+            if (!nameValue.IsUndefined() && name is null)
+                fail(DomainStrings.FormatScript_InvalidTranslationName(code: code, max: AssetManifest.MaxNameLength), ["translations", code, "name"]);
+            var descriptionValue = entry.Get("description");
+            string? description = Text(descriptionValue, ScriptEffectProgram.MaxDescriptionLength);
+            if (!descriptionValue.IsUndefined() && description is null)
+                fail(DomainStrings.FormatScript_InvalidTranslationDescription(code: code, max: ScriptEffectProgram.MaxDescriptionLength), ["translations", code, "description"]);
+
+            var labels = new Dictionary<string, string>(StringComparer.Ordinal);
+            var labelsValue = entry.Get("labels");
+            if (labelsValue is ObjectInstance labelObject && !labelsValue.IsCallable() && labelsValue is not ArrayInstance)
+            {
+                foreach (var labelKey in labelObject.GetOwnPropertyKeys(Types.String))
+                {
+                    string key = labelKey.AsString();
+                    if (labelKeys.Contains(key) && Text(labelObject.Get(labelKey), ScriptTranslations.MaxLabelLength) is { } label) labels[key] = label;
+                    else fail(DomainStrings.FormatScript_InvalidTranslationLabel(code: code, key: key, max: ScriptTranslations.MaxLabelLength),
+                        ["translations", code, "labels", key]);
+                }
+            }
+            else if (!labelsValue.IsUndefined())
+            {
+                fail(DomainStrings.FormatScript_InvalidTranslation(code: code), ["translations", code, "labels"]);
+            }
+            result[code] = new ScriptTranslation(name, description, labels);
+        }
+        return result;
     }
 
     /// <summary><c>[왼, 위, 오른, 아래]</c>(0~<see cref="ScriptEffectProgram.MaxPadding"/> 정수 네 개). 아니면 null.</summary>
@@ -143,6 +270,8 @@ internal static partial class ScriptDeclarationReader
             "bool" => ScriptSettingType.Bool,
             "color" => ScriptSettingType.Color,
             "choice" => ScriptSettingType.Choice,
+            "colorList" => ScriptSettingType.ColorList,
+            "colorPairs" => ScriptSettingType.ColorPairs,
             _ => null,
         } : null;
         if (type is null)
@@ -151,6 +280,28 @@ internal static partial class ScriptDeclarationReader
             return null;
         }
 
+        // alpha: 색이 든 설정만(기본 true). widget: int만 — "angle"이나 "point"(pair = Y 설정 키, 짝 검사는 모든 설정을 읽은 뒤)
+        bool isColor = type is ScriptSettingType.Color or ScriptSettingType.ColorList or ScriptSettingType.ColorPairs;
+        var alphaValue = setting.Get("alpha");
+        bool alpha = !alphaValue.IsBoolean() || alphaValue.AsBoolean();
+        if (!alphaValue.IsUndefined() && (!isColor || !alphaValue.IsBoolean()))
+            fail(DomainStrings.FormatScript_InvalidSettingAlpha(key: key), ["settings", index, "alpha"]);
+        var widgetValue = setting.Get("widget");
+        var pairValue = setting.Get("pair");
+        var widget = ScriptSettingWidget.None;
+        string? pair = null;
+        if (!widgetValue.IsUndefined() || !pairValue.IsUndefined())
+        {
+            string? name = widgetValue is JsString ? widgetValue.AsString() : null;
+            if (type == ScriptSettingType.Int && name == "angle" && pairValue.IsUndefined()) widget = ScriptSettingWidget.Angle;
+            else if (type == ScriptSettingType.Int && name == "point" && pairValue is JsString pairKey && pairKey.AsString() != key)
+            {
+                widget = ScriptSettingWidget.Point;
+                pair = pairKey.AsString();
+            }
+            else fail(DomainStrings.FormatScript_InvalidSettingWidget(key: key), ["settings", index, widgetValue.IsUndefined() ? "pair" : "widget"]);
+        }
+        ScriptSetting Done(ScriptSetting result) => result with { Alpha = alpha, Widget = widget, Pair = pair };
         var defaultValue = setting.Get("default");
         void BadDefault() => fail(DomainStrings.FormatScript_InvalidSettingDefault(key: key), ["settings", index, "default"]);
         switch (type)
@@ -186,7 +337,7 @@ internal static partial class ScriptDeclarationReader
                     }
                     number = defaultValue.AsNumber();
                 }
-                return new(key, label, type.Value, min, max, step, whole ? (int)number : (object)number, []);
+                return Done(new(key, label, type.Value, min, max, step, whole ? (int)number : (object)number, []));
             }
             case ScriptSettingType.Bool:
                 if (!defaultValue.IsUndefined() && !defaultValue.IsBoolean())
@@ -194,7 +345,7 @@ internal static partial class ScriptDeclarationReader
                     BadDefault();
                     return null;
                 }
-                return new(key, label, type.Value, null, null, null, defaultValue.IsBoolean() && defaultValue.AsBoolean(), []);
+                return Done(new(key, label, type.Value, null, null, null, defaultValue.IsBoolean() && defaultValue.AsBoolean(), []));
             case ScriptSettingType.Color:
             {
                 var color = Color32.White;
@@ -203,7 +354,42 @@ internal static partial class ScriptDeclarationReader
                     BadDefault();
                     return null;
                 }
-                return new(key, label, type.Value, null, null, null, color, []);
+                return Done(new(key, label, type.Value, null, null, null, alpha ? color : color.WithAlpha(255), []));
+            }
+            case ScriptSettingType.ColorList:
+            case ScriptSettingType.ColorPairs:
+            {
+                // 항목 수 범위: 0~MaxListCount 정수, 기본 0~DefaultMaxListCount
+                int? Count(string field, int fallback, out bool ok)
+                {
+                    var bound = setting.Get(field);
+                    ok = bound.IsUndefined() || Whole(bound) is >= 0 and <= ScriptSetting.MaxListCount;
+                    return !ok ? null : bound.IsUndefined() ? fallback : (int)bound.AsNumber();
+                }
+                var minCount = Count("min", 0, out bool minOk);
+                var maxCount = Count("max", ScriptSetting.DefaultMaxListCount, out bool maxOk);
+                if (!minOk || !maxOk || minCount > maxCount)
+                {
+                    fail(DomainStrings.FormatScript_InvalidSettingCount(key: key, max: ScriptSetting.MaxListCount), ["settings", index, !minOk ? "min" : "max"]);
+                    return null;
+                }
+                object list;
+                if (defaultValue.IsUndefined())
+                {
+                    list = type == ScriptSettingType.ColorList
+                        ? Array.AsReadOnly(Enumerable.Repeat(Color32.White, minCount!.Value).ToArray())
+                        : Array.AsReadOnly(Enumerable.Repeat(new ScriptColorPair(Color32.White, Color32.White), minCount!.Value).ToArray());
+                }
+                else if (ReadColorList(defaultValue, type.Value, alpha) is { } read && ListCount(read) >= minCount && ListCount(read) <= maxCount)
+                {
+                    list = read;
+                }
+                else
+                {
+                    BadDefault();
+                    return null;
+                }
+                return Done(new(key, label, type.Value, minCount, maxCount, null, list, []));
             }
             default:
             {
@@ -223,9 +409,44 @@ internal static partial class ScriptDeclarationReader
                     }
                     choice = defaultValue.AsString();
                 }
-                return new(key, label, type.Value, null, null, null, choice, choices);
+                return Done(new(key, label, type.Value, null, null, null, choice, choices));
             }
         }
+    }
+
+    private static int ListCount(object list) => list switch
+    {
+        IReadOnlyList<Color32> colors => colors.Count,
+        IReadOnlyList<ScriptColorPair> pairs => pairs.Count,
+        _ => -1,
+    };
+
+    // 목록 기본값: 색 목록은 ["#RRGGBB", …], 색 쌍 목록은 [{ from: "#…", to: "#…" }, …]. 틀리면 null
+    private static object? ReadColorList(JsValue value, ScriptSettingType type, bool alpha)
+    {
+        if (value is not ArrayInstance array) return null;
+        uint count = ScriptHostApi.Length(array);
+        if (count > ScriptSetting.MaxListCount) return null;
+        static Color32? Hex(JsValue v, bool alpha)
+            => v is JsString && Color32.TryParseHex(v.AsString(), out var c) ? alpha ? c : c.WithAlpha(255) : null;
+        if (type == ScriptSettingType.ColorList)
+        {
+            var colors = new Color32[count];
+            for (uint i = 0; i < count; i++)
+            {
+                if (Hex(array[i], alpha) is not { } c) return null;
+                colors[i] = c;
+            }
+            return Array.AsReadOnly(colors);
+        }
+        var pairs = new ScriptColorPair[count];
+        for (uint i = 0; i < count; i++)
+        {
+            if (array[i] is not ObjectInstance item || item.IsCallable() || Hex(item.Get("from"), alpha) is not { } from || Hex(item.Get("to"), alpha) is not { } to)
+                return null;
+            pairs[i] = new(from, to);
+        }
+        return Array.AsReadOnly(pairs);
     }
 
     // 문자열이나 { value, label } 목록. 값은 비지 않고 겹치지 않아야 한다

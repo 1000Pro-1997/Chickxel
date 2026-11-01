@@ -84,7 +84,9 @@ public sealed class AssetStore
 
     /// <summary>
     /// 저장소를 연다(폴더가 없으면 만든다). 중간에 끊긴 설치·삭제를 정리한다: Staging 비우기, 상태에 없는 버전 폴더 지우기,
-    /// 보관함으로 옮긴 뒤 상태를 쓰지 못한 삭제 마무리, 오래된 보관함 지우기. 상태 파일이 손상돼도 예외 없이 열고 <see cref="LoadErrors"/>에 남긴다.
+    /// 보관함으로 옮긴 뒤 상태를 쓰지 못한 삭제 마무리, 오래된 보관함 지우기. 정리는 잠금 파일을 바로 잡을 수 있을 때만 한다 — 다른 앱이나 같은 폴더의
+    /// 다른 저장소 객체가 설치하는 중이면 그 Staging·새 폴더를 지우지 않게 건너뛴다(다음에 열 때 정리).
+    /// 상태 파일이 손상돼도 예외 없이 열고 <see cref="LoadErrors"/>에 남긴다.
     /// </summary>
     public static AssetStore Open(string root, AssetValidationOptions? options = null, DateTime? nowUtc = null)
     {
@@ -97,11 +99,34 @@ public sealed class AssetStore
     {
         foreach (var dir in new[] { Root, PackagesDirectory, PersonalDirectory, StagingDirectory, DeletedDirectory, CacheDirectory })
             Directory.CreateDirectory(dir);
-        TryDeleteContents(StagingDirectory);
+        using var cleanup = TryLockNow();
+        if (cleanup is not null) TryDeleteContents(StagingDirectory);
         LoadInstalled();
         LoadPersonal();
-        if (PackagesError is null) Repair(nowUtc);
+        if (PackagesError is null && cleanup is not null) Repair(nowUtc);
         Rebuild(notify: false);
+    }
+
+    // 잠금 파일을 기다리지 않고 잡아 본다(다른 쪽이 쥐고 있으면 null)
+    private FileStream? TryLockNow()
+    {
+        try
+        {
+            return new FileStream(LockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 다른 앱이나 같은 폴더의 다른 저장소 객체(예: 백그라운드 공식 효과 설치)가 바꾼 상태 파일을 다시 읽는다(바뀌었으면 <see cref="Changed"/>).
+    /// 그쪽이 바꾸는 중이면 끝날 때까지 기다린다.
+    /// </summary>
+    public void Refresh()
+    {
+        using var change = BeginChange();
     }
 
     // ───────────── 상태 파일 ─────────────
@@ -466,9 +491,10 @@ public sealed class AssetStore
     /// <summary>
     /// 로컬 <c>.chickxel-asset</c>을 설치한다(계획 7.3). 다른 버전이 설치돼 있으면 업데이트이고, 이전 활성 버전은 되돌리기용으로 남긴다.
     /// 같은 ID·버전이 같은 내용으로 있으면 그 버전을 켜고 활성으로 둔다. 다른 내용이면 <see cref="AssetIssueCode.VersionConflict"/>.
+    /// <paramref name="keepEnabled"/>면 업데이트가 지금 켜짐 상태를 그대로 둔다(앱에 든 공식 패키지의 조용한 업데이트 — 끈 패키지를 다시 켜지 않음).
     /// 검사에 실패하면 <see cref="AssetPackageException"/>, 디스크 오류는 IO 예외 — 어느 경우에도 지금 설치 상태는 그대로다.
     /// </summary>
-    public InstalledPackage Install(string packagePath, string source = "file", CancellationToken cancellation = default)
+    public InstalledPackage Install(string packagePath, string source = "file", CancellationToken cancellation = default, bool keepEnabled = false)
     {
         using var change = BeginChange();
         if (PackagesError is { } error) throw new InvalidOperationException(error);
@@ -529,7 +555,7 @@ public sealed class AssetStore
             {
                 Id = manifest.Id,
                 Version = manifest.Version,
-                Enabled = true,
+                Enabled = !keepEnabled || (current?.Enabled ?? true),
                 Source = source,
                 InstalledUtc = DateTime.UtcNow,
                 AutoUpdate = current?.AutoUpdate ?? false,

@@ -25,15 +25,45 @@ public static class ScriptDefinition
             // 실패한 실행의 결과(효과를 건너뛴 그림)는 중간 결과·잔상 캐시에 담지 않게 알린다
             if (!ScriptEffectRuntime.Render(image, effect, source, hooks?.Owner, hooks?.Cancellation ?? CancellationToken.None)) hooks?.ReportScriptFailure();
         },
-        Padding, UsesOtherFrames, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
+        Padding, UsesOtherFrames, ClipsBySource, ErasesSource, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
 
     // 여백 함수가 실패하면 넓히지 않는다 — 실패는 기억해 두고 렌더러가 그 효과의 실패로 센다(ScriptEffectRuntime.Render)
     private static EffectPadding Padding(ScriptEffect effect, int width, int height)
         => ScriptLibrary.Runnable(effect.ScriptHash) is { } program ? ScriptLibrary.Padding(effect.ScriptHash, program, effect.Settings, width, height) : default;
 
-    // 실행하는 스크립트가 ctx.frameSource를 쓰면 다른 프레임 원본을 넘긴다(원문에 그 이름이 나오는지로 정함)
+    // 실행하는 스크립트가 ctx.frameSource나 ctx.renderedFrameSource를 쓰면 다른 프레임 원본을 넘긴다(원문에 그 이름이 나오는지로 정함)
     private static bool UsesOtherFrames(ScriptEffect effect)
-        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsOtherFrames: true };
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted
+           && ScriptLibrary.InfoOf(effect.ScriptHash) is { } info && (info.ReadsOtherFrames || info.ReadsRenderedFrames);
+
+    // 클리핑 방식과 원본 지우기는 선언(clipsBySource·erasesSource)을 따른다. 실행할 수 없는 원문은 그리지 않으므로 기본 방식
+    private static bool ClipsBySource(ScriptEffect effect) => ScriptLibrary.Runnable(effect.ScriptHash) is { ClipsBySource: true };
+
+    private static bool ErasesSource(ScriptEffect effect)
+        => ScriptLibrary.Runnable(effect.ScriptHash) is { } program && program.ErasesSourceWith(effect.Settings);
+
+    /// <summary>
+    /// 실행할 수 있는 스크립트가 <c>deferred: true</c>를 선언했는지 — 다른 효과를 모두 입힌 뒤에 그린다(<see cref="LayerEffects.IsDeferred"/>).
+    /// 선언을 알아야 하므로 실행할 수 있는 원문만 해석 결과로 본다(아니면 그리지 않는 효과라 차례가 상관없음).
+    /// </summary>
+    public static bool IsDeferred(ScriptEffect effect) => ScriptLibrary.Runnable(effect.ScriptHash) is { Deferred: true };
+
+    /// <summary>실행하는 스크립트가 <c>ctx.renderedFrameSource</c>를 쓰는지 — 미루는 스크립트면 다른 프레임에 다른 효과를 입힌 그림을 넘긴다.</summary>
+    internal static bool ReadsRenderedFrames(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedFrames: true };
+
+    /// <summary>실행하는 스크립트가 다른 레이어(<c>ctx.layerBelow</c> 등)나 <c>ctx.slice</c>를 읽는지 — 그릴 때 <see cref="ScriptLayerContext"/>를 넘긴다.</summary>
+    public static bool UsesOtherLayers(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted
+           && ScriptLibrary.InfoOf(effect.ScriptHash) is { } info && (info.ReadsOtherLayers || info.ReadsSlice);
+
+    /// <summary>실행하는 스크립트가 다른 레이어 함수(<c>ctx.layerBelow</c>·<c>ctx.layerEffectsAt</c> 등)를 쓰는지.</summary>
+    internal static bool ReadsOtherLayers(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsOtherLayers: true };
+
+    /// <summary>실행하는 스크립트가 다른 레이어를 효과까지 입혀 읽는지(<c>ctx.layerBelowWithEffects</c>·<c>ctx.layerAboveWithEffects</c>).</summary>
+    internal static bool ReadsRenderedLayers(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedLayers: true };
 
     private static JsonObject WriteSettings(LayerEffect effect) => ((ScriptEffect)effect).Settings.ToJson();
 

@@ -27,10 +27,21 @@
   <ItemGroup>
     <!-- AI 참고 자료: 기본 그림 규칙과 사용자 rules.md 틀(언어별). 이름의 .ko/.en을 언어로 보지 않게 WithCulture=false. -->
     <EmbeddedResource Include="References\Assets\*.md" LogicalName="Chickxel.References.%(Filename)%(Extension)" WithCulture="false" />
-    <!-- 스크립트 효과 틀: 효과 창 "새 스크립트"의 처음 원문(빛 지나가기를 JS로 옮긴 것 — C# 결과와 픽셀 단위로 같음). -->
+    <!-- 스크립트 효과 틀: 효과 만들기 "새 스크립트"의 처음 원문. -->
     <EmbeddedResource Include="Scripting\Templates\*.js" LogicalName="Chickxel.Scripting.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 공식 스크립트 효과: 기본 효과를 JS로 옮긴 원문(파일 이름 = 효과 ID, C# 결과와 픽셀 단위로 같음 — OfficialEffects). -->
+    <EmbeddedResource Include="Scripting\Official\*.js" LogicalName="Chickxel.Scripting.Official.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 내보낸 공식 원문의 해시 목록(예전 공식 원문도 묻지 않고 실행 — OfficialEffects.ShippedHashes, CatalogBuilder가 더하고 검사함). -->
+    <EmbeddedResource Include="Scripting\Official\hashes.txt" LogicalName="Chickxel.Scripting.Official.hashes.txt" WithCulture="false" />
     <!-- 미리보기 병아리: 효과 패키지 미리보기의 견본 그림(docs/assets/mascot의 원래 크기 그림, 8배 그림은 빼고). -->
     <EmbeddedResource Include="..\..\docs\assets\mascot\chick-*.png" Exclude="..\..\docs\assets\mascot\*@8x.png" LogicalName="Chickxel.Mascot.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 글씨 효과의 도트 글꼴: Galmuri BDF(gzip, SIL OFL 1.1 — Text/Fonts/Galmuri-LICENSE.txt). 처음 쓸 때 한 번 읽는다(PixelFonts). -->
+    <EmbeddedResource Include="Text\Fonts\*.bdf.gz" LogicalName="Chickxel.Fonts.%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 글꼴 라이선스(SIL OFL 1.1은 글꼴과 함께 배포해야 함): 앱 폴더의 Licenses/에 복사. -->
+    <Content Include="Text\Fonts\Galmuri-LICENSE.txt" Link="Licenses\Galmuri-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

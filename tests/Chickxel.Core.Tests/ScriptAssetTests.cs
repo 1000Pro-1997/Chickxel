@@ -86,7 +86,7 @@ public class ScriptAssetTests
     [Fact]
     public void Package_script_installs_as_an_untrusted_tile_that_renders_after_allow()
     {
-        var program = ScriptEffectProgram.Parse(Unique(ScriptTemplates.Shine)).Program!;
+        var program = ScriptEffectProgram.Parse(Unique(OfficialEffects.Source("shine"))).Program!;
         byte[] bytes = Package(builder => builder.Add(AssetKinds.EffectScript, ScriptAsset.From("", program)));
         // 패키지 안에는 UTF-8 원문 그대로(이름이 한국어라 ID 조각은 종류 이름)
         var file = Assert.Single(AssetSamples.Unzip(bytes), entry => entry.Name.StartsWith("assets/scripts/", StringComparison.Ordinal));
@@ -123,7 +123,7 @@ public class ScriptAssetTests
     [Fact]
     public void Personal_script_asset_round_trips_and_same_source_is_not_duplicated()
     {
-        var source = Unique(ScriptTemplates.Shine);
+        var source = Unique(OfficialEffects.Source("shine"));
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
         var saved = store.SavePersonalScript(source);
@@ -141,7 +141,7 @@ public class ScriptAssetTests
     [Fact]
     public void Editing_a_personal_script_keeps_its_id_and_replaces_the_source()
     {
-        var source = Unique(ScriptTemplates.Shine);
+        var source = Unique(OfficialEffects.Source("shine"));
         var edited = source.Replace("빛 지나가기", "고친 빛");
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
@@ -161,7 +161,7 @@ public class ScriptAssetTests
     [Fact]
     public void Recipe_with_a_script_round_trips_through_personal_store_and_package_and_renders_in_a_fresh_project()
     {
-        var source = Unique(ScriptTemplates.Shine);
+        var source = Unique(OfficialEffects.Source("shine"));
         var p = Project([]);
         var hash = p.AddScript(source);
         ScriptLibrary.SetTrust(hash, true);
@@ -173,7 +173,10 @@ public class ScriptAssetTests
         };
         p.SetLayerEffects(0, [new OutlineEffect { Color = new Color32(30, 10, 60) }, script]);
         var recipe = EffectRecipe.Capture("", "Shine outline", p.Layers[0].Effects, p);
-        Assert.Equal([KeyValuePair.Create(hash, program.Source)], recipe.Scripts);
+        // 예전 외곽선은 공식 외곽선 스크립트로 바뀌어 그 원문도 레시피 표에 들어간다
+        var outlineHash = OfficialEffects.HashOf("outline");
+        Assert.Equal(new[] { KeyValuePair.Create(hash, program.Source), KeyValuePair.Create(outlineHash, OfficialEffects.Source("outline")) }
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal), recipe.Scripts);
 
         using var dir = new TempDir();
         var personal = AssetStore.Open(dir.File("A"));
@@ -207,8 +210,10 @@ public class ScriptAssetTests
     [Fact]
     public void Recipe_without_scripts_keeps_its_old_schema_and_lenient_read_drops_a_mismatched_source()
     {
-        Assert.Equal(1, EffectRecipeFormat.Write(AssetSamples.Recipe())["schemaVersion"]!.GetValue<int>());
-        Assert.Null(EffectRecipeFormat.Write(AssetSamples.Recipe())["scripts"]);
+        // 스크립트 효과가 없는 레시피(공식 스크립트가 없는 C# 효과만 그대로 남는다 — 예전 기본 효과는 공식 스크립트로 바뀌어 원문을 실음)
+        var plain = EffectRecipe.Capture("", "X", [EffectRegistry.Selectable.First().Create()]);
+        Assert.Equal(1, EffectRecipeFormat.Write(plain)["schemaVersion"]!.GetValue<int>());
+        Assert.Null(EffectRecipeFormat.Write(plain)["scripts"]);
 
         var source = Unique("effect({ name: 'x', render() {} });");
         var hash = ScriptEffectProgram.HashOf(source);
@@ -223,8 +228,8 @@ public class ScriptAssetTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        store.SavePersonalRecipe(AssetSamples.Recipe());
-        store.SavePersonalScript(Unique(ScriptTemplates.Shine));
+        store.SavePersonalGradient(null, AssetSamples.Gradient());
+        store.SavePersonalScript(Unique(OfficialEffects.Source("shine")));
         var result = AssetPublishCheck.Check(new PublishRequest
         {
             Author = new AssetAuthor("pixel-cat", "Pixel Cat", "https://example.com/cat"),
@@ -247,7 +252,7 @@ public class ScriptAssetTests
         var build = RemoteCatalogBuilder.Build(catalog, output);
         Assert.True(build.Ok, string.Join("\n", build.Issues));
         var entry = Assert.Single(build.Entries);
-        Assert.Equal([KeyValuePair.Create(AssetKinds.EffectRecipe, 1), KeyValuePair.Create(AssetKinds.EffectScript, 1)],
+        Assert.Equal([KeyValuePair.Create(AssetKinds.EffectScript, 1), KeyValuePair.Create(AssetKinds.Gradient, 1)],
             entry.Kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal));
         Assert.Null(entry.IncompatibleReason(null));
     }
@@ -256,7 +261,7 @@ public class ScriptAssetTests
     public void Bad_script_sources_are_rejected_before_install()
     {
         const string recipePath = "assets/effects/x.json", scriptPath = "assets/scripts/x.js";
-        var good = Unique(ScriptTemplates.Shine);
+        var good = Unique(OfficialEffects.Source("shine"));
         var hash = ScriptEffectProgram.HashOf(good);
         const string syntax = "effect({ name: 'x', render( {} });";
         var syntaxHash = ScriptEffectProgram.HashOf(syntax);
@@ -302,7 +307,7 @@ public class ScriptAssetTests
     public void Long_script_source_in_a_recipe_is_measured_by_the_script_limit()
     {
         // 문자열 한도(4096자)보다 긴 원문도 원문 한도(64KiB) 안이면 받는다
-        var source = Unique(ScriptTemplates.Shine) + "// " + new string('a', 6000) + "\n";
+        var source = Unique(OfficialEffects.Source("shine")) + "// " + new string('a', 6000) + "\n";
         var hash = ScriptEffectProgram.HashOf(source);
         var package = AssetPackageValidator.Read(new MemoryStream(WithAsset(AssetKinds.EffectRecipe, "assets/effects/x.json",
             ScriptRecipe(hash, "", Table((hash, source))))));
@@ -321,8 +326,8 @@ public class ScriptAssetTests
         using var tmp = new TempDir();
         var file = tmp.File("a.chickxel");
         var dir = tmp.File("history");
-        var v1 = Unique(ScriptTemplates.Shine);
-        var v2 = Unique(ScriptTemplates.Shine.Replace("const amount", "const unused = 1;\n    const amount"));
+        var v1 = Unique(OfficialEffects.Source("shine"));
+        var v2 = Unique(OfficialEffects.Source("shine").Replace("const amount", "const unused = 1;\n    const amount"));
         var p = Project([]);
         var h1 = p.AddScript(v1);
         var h2 = p.AddScript(v2);

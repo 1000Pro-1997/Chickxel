@@ -6,16 +6,19 @@ namespace Chickxel.App;
 
 public sealed partial class LayerEffectsDialog
 {
-    /// <summary>Solid color picker plus spatial gradient mode for one effect color slot.</summary>
-    private Control EffectColorEditor(LayerEffect effect, string slot, ColorField field,
-        Action<Func<LayerEffect, LayerEffect>> set)
+    /// <summary>
+    /// Solid color picker plus spatial gradient mode for one effect color slot. <paramref name="trailing"/> (e.g. list item buttons)
+    /// stays on the first row next to the mode picker in both modes.
+    /// </summary>
+    internal static Control EffectColorEditor(LayerEffect effect, string slot, ColorField field,
+        Action<Func<LayerEffect, LayerEffect>> set, Control? trailing = null)
     {
         bool gradientMode = effect.ColorGradients.ContainsKey(slot);
         EffectColorGradient? savedGradient = effect.ColorGradients.TryGetValue(slot, out var currentGradient)
             ? currentGradient : null;
         var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1);
         var editor = new GradientEditor(spatialAngle: true) { Width = 280 };
-        var body = Ui.Stack(Ui.Row(field, mode), editor);
+        var body = Ui.Stack(trailing is null ? Ui.Row(field, mode) : Ui.Row(field, mode, trailing), editor);
         body.Margin = new Thickness(0);
 
         EffectColorGradient InitialGradient()
@@ -91,9 +94,12 @@ public sealed partial class LayerEffectsDialog
         return body;
     }
 
-    /// <summary>Keep gradient slots aligned with surviving entries after deleting an indexed color.</summary>
-    private static IReadOnlyDictionary<string, EffectColorGradient> RemoveIndexedGradient(
-        IReadOnlyDictionary<string, EffectColorGradient> gradients, string prefix, int removed)
+    /// <summary>
+    /// Move indexed gradient slots (<c>prefix[i]…</c>) to <paramref name="newIndex"/>(i); a negative result drops the slot.
+    /// Other slots are kept as they are.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, EffectColorGradient> ReindexGradients(
+        IReadOnlyDictionary<string, EffectColorGradient> gradients, string prefix, Func<int, int> newIndex)
     {
         var result = new Dictionary<string, EffectColorGradient>(StringComparer.Ordinal);
         string start = prefix + "[";
@@ -105,13 +111,15 @@ public sealed partial class LayerEffectsDialog
                 continue;
             }
             int close = key.IndexOf(']', start.Length);
-            if (close < 0 || !int.TryParse(key.AsSpan(start.Length, close - start.Length), out int index))
+            if (close < 0 || !int.TryParse(key.AsSpan(start.Length, close - start.Length), System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out int index))
             {
                 result[key] = value;
                 continue;
             }
-            if (index == removed) continue;
-            result[index > removed ? $"{start}{index - 1}{key[close..]}" : key] = value;
+            int moved = newIndex(index);
+            if (moved < 0) continue;
+            result[string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{start}{moved}{key[close..]}")] = value;
         }
         return result;
     }

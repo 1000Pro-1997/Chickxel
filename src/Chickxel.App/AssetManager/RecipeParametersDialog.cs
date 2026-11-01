@@ -52,7 +52,7 @@ public sealed class RecipeParametersDialog : DialogBase
     /// <summary>확인했을 때의 매개변수(<see cref="EffectRecipe.WithParameters"/>에 넘김).</summary>
     public IReadOnlyList<RecipeParameter> Parameters => _parameters;
 
-    /// <summary>개인 레시피의 매개변수를 고치고 확인하면 개인 에셋에 저장한다(효과 창 커스텀 탭·에셋 관리자 상세에서).</summary>
+    /// <summary>개인 레시피의 매개변수를 고치고 확인하면 개인 에셋에 저장한다(효과 창 프리셋 탭·에셋 관리자 상세에서).</summary>
     public static void Edit(Visual owner, AssetEntry entry)
     {
         if (entry is not { Origin: AssetOrigin.Personal, Recipe: { } recipe }) return;
@@ -144,8 +144,9 @@ public sealed class RecipeParametersDialog : DialogBase
         for (int e = 0; e < _effects.Count; e++)
         {
             if (EffectRegistry.Of(_effects[e]) is not { } definition) continue;
-            string effectName = LayerEffectsDialog.UiOf(definition).Name;
-            foreach (var setting in definition.Parameters.Where(RecipeParameters.CanExpose))
+            // 스크립트 효과는 원문이 선언한 설정까지(EffectRegistry.ParametersOf), 이름은 스크립트 이름
+            string effectName = _effects[e] is ScriptEffect ? _effects[e].DisplayName : LayerEffectsDialog.UiOf(definition).Name;
+            foreach (var setting in EffectRegistry.ParametersOf(_effects[e]).Where(RecipeParameters.CanExpose))
             {
                 var binding = new RecipeBinding(e, setting.Key);
                 int owner = _parameters.FindIndex(p => p.Bindings.Contains(binding));

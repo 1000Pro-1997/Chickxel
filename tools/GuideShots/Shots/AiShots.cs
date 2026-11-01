@@ -405,7 +405,7 @@ internal static class AiShots
         k.Settle(300);
 
         // ⑩⑪ 입력란의 그림 칩과 마우스를 올린 미리보기.
-        var chip = ShotKit.Get<Canvas>(tab, "_chipLayer").Children.OfType<Border>().First(c => c.IsVisible);
+        var chip = ShotKit.Get<Canvas>(ShotKit.Get<object>(tab, "_imageInput"), "_chipLayer").Children.OfType<Border>().First(c => c.IsVisible);
         // 풍선을 조금 오른쪽으로 띄워 칩 위 왼쪽에 번호 자리를 남긴다.
         OpenTip(k, chip, PlacementMode.Top, dx: 40);
         var tipRect = TipRect(chip, w);

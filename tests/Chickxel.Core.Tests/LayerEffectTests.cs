@@ -558,8 +558,9 @@ public class LayerEffectTests
         var warnings = new List<string>();
         var back = ProjectIO.Load(path, warnings);
         Assert.Empty(warnings);
-        Assert.Equal(groupFx, back.Layers.Single(l => l.IsGroup).Effects);
-        Assert.Equal([new OutlineEffect()], back.Layers.Single(l => l.Name == "왼").Effects);
+        // 열면 같은 설정의 공식 스크립트 효과(같은 그림 — 아래 합성 비교)
+        Assert.Equal(TestUtil.ConvertedJson(groupFx), TestUtil.EffectJson(back.Layers.Single(l => l.IsGroup).Effects));
+        Assert.Equal(TestUtil.ConvertedJson([new OutlineEffect()]), TestUtil.EffectJson(back.Layers.Single(l => l.Name == "왼").Effects));
         Assert.Empty(back.Layers.Single(l => l.Name == "오른").Effects);
         Assert.True(back.Flatten(0).ContentEquals(p.Flatten(0)));
     }
@@ -790,7 +791,8 @@ public class LayerEffectTests
         ProjectIO.Save(p, stream);
 
         stream.Position = 0;
-        Assert.Equal(fx, ProjectIO.Load(stream).Layers.Single(l => l.IsGroup).Effects);
+        // 열면 같은 설정·범위의 공식 스크립트 효과
+        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(ProjectIO.Load(stream).Layers.Single(l => l.IsGroup).Effects));
 
         // 예전 파일(범위 없음) = 모든 프레임, 프레임 수 밖 범위는 안으로(모든 프레임을 덮으면 모든 프레임)
         using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))

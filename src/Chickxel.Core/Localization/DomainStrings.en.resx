@@ -29,6 +29,7 @@
   <data name="Effect_Rotate" xml:space="preserve"><value>Rotate</value></data>
   <data name="Effect_Shake" xml:space="preserve"><value>Shake</value></data>
   <data name="Effect_Shockwave" xml:space="preserve"><value>Shockwave ring</value></data>
+  <data name="Effect_Text" xml:space="preserve"><value>Text</value></data>
   <data name="Frames_InvalidRange" xml:space="preserve"><value>Invalid frame range: {from}–{to}</value></data>
   <data name="Frames_TooFew" xml:space="preserve"><value>Frame count ({count}) is less than the range length ({length}) — shrinking isn't supported.</value></data>
   <data name="Frames_TooMany" xml:space="preserve"><value>Up to {max} frames are allowed.</value></data>
@@ -233,7 +234,22 @@
   <data name="Script_DeclarationNotObject" xml:space="preserve"><value>effect() needs an object describing the effect.</value></data>
   <data name="Script_InvalidName" xml:space="preserve"><value>name must be a non-empty string.</value></data>
   <data name="Script_InvalidAnimated" xml:space="preserve"><value>animated must be true or false.</value></data>
+  <data name="Script_InvalidDeferred" xml:space="preserve"><value>deferred must be true or false.</value></data>
+  <data name="Script_InvalidMotion" xml:space="preserve"><value>motion must be true or false.</value></data>
+  <data name="Script_InvalidClipsBySource" xml:space="preserve"><value>clipsBySource must be true or false.</value></data>
+  <data name="Script_InvalidErasesSource" xml:space="preserve"><value>erasesSource must be true, false or the key of a bool setting.</value></data>
+  <data name="Script_InvalidEasing" xml:space="preserve"><value>easing must be one of: {names}</value></data>
+  <data name="Script_InvalidSettingAlpha" xml:space="preserve"><value>alpha of setting {key} is only for color, colorList and colorPairs settings and must be true or false.</value></data>
+  <data name="Script_InvalidSettingWidget" xml:space="preserve"><value>widget of setting {key} is invalid. Use "angle" on an int setting, or "point" with pair naming another int setting that has no widget.</value></data>
+  <data name="Script_InvalidSettingCount" xml:space="preserve"><value>min and max of list setting {key} must be whole numbers from 0 to {max}, with min ≤ max.</value></data>
   <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick must be a chick ID string (lowercase letters, digits and dashes, e.g. "knight").</value></data>
+  <data name="Script_InvalidPreviewFrames" xml:space="preserve"><value>previewFrames must be a whole number from {min} to {max}.</value></data>
+  <data name="Script_InvalidTranslations" xml:space="preserve"><value>translations must be an object keyed by language code (e.g. "en", "ja", "zh-Hans") whose values hold that language's name, description and labels (up to {max} languages).</value></data>
+  <data name="Script_InvalidTranslationLanguage" xml:space="preserve"><value>'{code}' in translations is not a language code (e.g. "en", "ja", "zh-Hans") or is repeated.</value></data>
+  <data name="Script_InvalidTranslation" xml:space="preserve"><value>translations.{code} must be an object holding name, description and labels (labels is an object too).</value></data>
+  <data name="Script_InvalidTranslationName" xml:space="preserve"><value>translations.{code}.name must be a string of 1-{max} characters.</value></data>
+  <data name="Script_InvalidTranslationDescription" xml:space="preserve"><value>translations.{code}.description must be a string of up to {max} characters.</value></data>
+  <data name="Script_InvalidTranslationLabel" xml:space="preserve"><value>'{key}' in translations.{code}.labels must be a declared setting key or "settingKey.choiceValue", with a string of 1-{max} characters.</value></data>
   <data name="Script_InvalidArea" xml:space="preserve"><value>area must be "global" or "local".</value></data>
   <data name="Script_InvalidRadius" xml:space="preserve"><value>When area is "local", radius must be a whole number from 0 to {max}.</value></data>
   <data name="Script_MissingRender" xml:space="preserve"><value>A render(img, ctx, s) function is required.</value></data>
@@ -243,7 +259,7 @@
   <data name="Script_InvalidSettingKey" xml:space="preserve"><value>settings[{index}].key must start with a letter or _ and use only letters, digits and _.</value></data>
   <data name="Script_DuplicateSettingKey" xml:space="preserve"><value>Duplicate setting key: {key}</value></data>
   <data name="Script_InvalidSettingLabel" xml:space="preserve"><value>label of setting {key} must be a string.</value></data>
-  <data name="Script_InvalidSettingType" xml:space="preserve"><value>type of setting {key} must be int, number, bool, color or choice.</value></data>
+  <data name="Script_InvalidSettingType" xml:space="preserve"><value>type of setting {key} must be int, number, bool, color, choice, colorList or colorPairs.</value></data>
   <data name="Script_InvalidSettingRange" xml:space="preserve"><value>min, max or step of setting {key} is invalid (numbers, min ≤ max, step &gt; 0, whole numbers for int).</value></data>
   <data name="Script_InvalidSettingDefault" xml:space="preserve"><value>default of setting {key} doesn't match its type or range.</value></data>
   <data name="Script_InvalidSettingChoices" xml:space="preserve"><value>choices of setting {key} must list unique strings or objects with value and label.</value></data>
@@ -252,6 +268,13 @@
   <data name="Script_InvalidBlankSize" xml:space="preserve"><value>img.blank width and height must be whole numbers from 1 to {max}, with at most {pixels} pixels.</value></data>
   <data name="Script_InvalidImageArgument" xml:space="preserve"><value>Expected an image made by img.blank or ctx.frameSource.</value></data>
   <data name="Script_UnknownColorSetting" xml:space="preserve"><value>Not a color setting: {key}</value></data>
+  <data name="Script_InvalidTypedArrayLength" xml:space="preserve"><value>The length for new {name} (a number, or the length of an array argument) must be a whole number from 0 to {max} within the memory limit.</value></data>
+  <data name="Script_UnknownColorListSetting" xml:space="preserve"><value>Not a color list setting: {key}</value></data>
+  <data name="Script_UnknownColorPairSetting" xml:space="preserve"><value>Not a color pair setting: {key}</value></data>
+  <data name="Script_InvalidColorIndex" xml:space="preserve"><value>Setting {key} has no item {index}.</value></data>
+  <data name="Script_InvalidPairPart" xml:space="preserve"><value>The part of a color pair must be "from" or "to": {part}</value></data>
+  <data name="Script_UnknownColorSlot" xml:space="preserve"><value>Not a color setting slot: {slot}</value></data>
+  <data name="Script_InvalidBounds" xml:space="preserve"><value>Gradient bounds must be an object with numbers x, y, w and h.</value></data>
   <data name="Script_FastSyntax" xml:space="preserve"><value>Not supported on the fast path: {construct}</value></data>
   <data name="Script_FastName" xml:space="preserve"><value>Name not available on the fast path: {name}</value></data>
   <data name="Script_FastValue" xml:space="preserve"><value>The fast path only computes numbers and booleans (no strings, objects, arrays, undefined or mixed kinds): {construct}</value></data>
@@ -295,6 +318,7 @@
   <data name="Asset_Issue_VersionConflict" xml:space="preserve"><value>The same version is already installed with different content: {detail}</value></data>
   <data name="Effect_Script" xml:space="preserve"><value>Script effect</value></data>
   <data name="Script_InvalidAuthor" xml:space="preserve"><value>author must be a string.</value></data>
+  <data name="Script_InvalidDescription" xml:space="preserve"><value>description must be a string of up to {max} characters.</value></data>
   <data name="Script_ReservedSettingKey" xml:space="preserve"><value>{key} cannot be a setting key ({keys} are used by the effect motion settings).</value></data>
   <data name="Project_BadScript" xml:space="preserve"><value>A script in the script table does not match its hash and was not loaded: {hash}</value></data>
   <data name="Project_MissingScript" xml:space="preserve"><value>The script source for a script effect on layer "{layer}" is missing from the file, so it is not drawn ({hash}). The effect is kept when you save.</value></data>
@@ -340,9 +364,10 @@
   <data name="Publish_License" xml:space="preserve"><value>Choose a license (an SPDX ID or an ID starting with LicenseRef-).</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Enter a short description of 1–200 characters (no line breaks).</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>Up to 8 tags, each up to 32 lowercase letters, digits and hyphens.</value></data>
-  <data name="Publish_NoTags" xml:space="preserve"><value>Without tags the package is hard to find in Browse.</value></data>
+  <data name="Publish_NoTags" xml:space="preserve"><value>Without tags the package is hard to find in the Store.</value></data>
   <data name="Publish_UnknownLicense" xml:space="preserve"><value>{detail} is not a common SPDX ID. Check the spelling; a license you wrote yourself should start with LicenseRef-.</value></data>
   <data name="Publish_VersionNotNewer" xml:space="preserve"><value>Enter a version higher than {detail}, which is already published. Published versions can't change, so the same or a lower version can't be uploaded.</value></data>
+  <data name="Publish_RecipeNotPublishable" xml:space="preserve"><value>Effect presets (several effects saved with their values) can't be published. Only script effects are published as effects.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>Unnamed effect {number}</value></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>Unnamed gradient {number}</value></data>
   <data name="Community_Error_Unauthorized" xml:space="preserve"><value>You need to sign in. If your session ended, sign in again.</value></data>

@@ -1,4 +1,5 @@
 using Chickxel.Core.Edit;
+using Chickxel.Core.Effects;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 
@@ -293,27 +294,22 @@ public class StaticEffectTests
         ProjectIO.Save(p, stream);
         stream.Position = 0;
         var roundTrip = ProjectIO.Load(stream).Layers[0].Effects;
-        Assert.Equal(fx.Skip(1), roundTrip.Skip(1));
-        var overlay = Assert.IsType<ColorOverlayEffect>(roundTrip[0]);
+        // 열면 같은 설정의 공식 스크립트 효과(그라데이션 사전은 참조로 비교되므로 저장 JSON으로)
+        Assert.Equal(TestUtil.ConvertedJson(fx), TestUtil.EffectJson(roundTrip));
+        Assert.All(roundTrip, e => Assert.IsType<ScriptEffect>(e));
         var savedOverlay = (ColorOverlayEffect)fx[0];
-        Assert.Equal((savedOverlay.Amount, savedOverlay.Blend), (overlay.Amount, overlay.Blend));
-        Assert.Equal(savedOverlay.ColorGradients[nameof(ColorOverlayEffect.Color)], Assert.Single(overlay.ColorGradients).Value);
+        Assert.Equal(savedOverlay.ColorGradients[nameof(ColorOverlayEffect.Color)], roundTrip[0].ColorGradients[LegacyEffects.ScriptSlot(nameof(ColorOverlayEffect.Color))]);
 
         // 예전 파일: 디더 칸이 없는 그림자 = 반투명 그림자, 다른 새 효과도 설정이 빠지면 기본값
-        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        var oldEffects = new List<System.Text.Json.Nodes.JsonObject>
         {
-            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
-            System.Text.Json.Nodes.JsonNode root;
-            using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
-            var effects = root["layers"]!.AsArray()[0]!["effects"]!.AsArray();
-            effects.Clear();
-            effects.Add(new System.Text.Json.Nodes.JsonObject { ["type"] = "shadow", ["enabled"] = true, ["color"] = "#00000080", ["x"] = 2, ["y"] = 1 });
-            effects.Add(new System.Text.Json.Nodes.JsonObject
+            new() { ["type"] = "shadow", ["enabled"] = true, ["color"] = "#00000080", ["x"] = 2, ["y"] = 1 },
+            new()
             {
                 ["type"] = "gradient", ["color"] = "#010203", ["color2"] = "#04050607",
                 ["angle"] = 45, ["amount"] = 60, ["blend"] = "Multiply", ["dither"] = "Bayer2",
-            });
-            effects.Add(System.Text.Json.Nodes.JsonNode.Parse("""
+            },
+            (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""
                 {
                   "type": "gradient",
                   "amount": 40,
@@ -333,16 +329,27 @@ public class StaticEffectTests
                     }
                   }
                 }
-                """));
-            foreach (var type in new[] { "innerglow", "swap", "adjust", "reflection" })
-                effects.Add(new System.Text.Json.Nodes.JsonObject { ["type"] = type });
+                """)!,
+        };
+        foreach (var type in new[] { "innerglow", "swap", "adjust", "reflection" })
+            oldEffects.Add(new System.Text.Json.Nodes.JsonObject { ["type"] = type });
+        using (var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true))
+        {
+            var entry = zip.GetEntry(ProjectIO.ProjectEntryName)!;
+            System.Text.Json.Nodes.JsonNode root;
+            using (var r = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(r)!;
+            var effects = root["layers"]!.AsArray()[0]!["effects"]!.AsArray();
+            effects.Clear();
+            foreach (var old in oldEffects) effects.Add(old.DeepClone());
             entry.Delete();
             using var w = zip.CreateEntry(ProjectIO.ProjectEntryName).Open();
             using var writer = new System.Text.Json.Utf8JsonWriter(w);
             root.WriteTo(writer);
         }
         stream.Position = 0;
-        var loaded = ProjectIO.Load(stream).Layers[0].Effects;
+        // 예전 효과 읽기(C# 모델) — 프로젝트로 열면 그 효과들의 공식 스크립트
+        var loaded = oldEffects.Select(EffectCodec.ReadStored).ToArray();
+        Assert.Equal(TestUtil.ConvertedJson(loaded), TestUtil.EffectJson(ProjectIO.Load(stream).Layers[0].Effects));
         Assert.Equal(new ShadowEffect { Color = Black.WithAlpha(128), OffsetX = 2, OffsetY = 1 }, loaded[0]);
         var migrated = Assert.IsType<ColorOverlayEffect>(loaded[1]);
         Assert.Equal((new Color32(1, 2, 3), 60, EffectBlend.Multiply), (migrated.Color, migrated.Amount, migrated.Blend));

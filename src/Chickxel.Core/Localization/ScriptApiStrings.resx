@@ -10,52 +10,100 @@
   <data name="Api_global_lerp" xml:space="preserve"><value>a에서 b까지 t(0~1)만큼 간 값: a + (b − a) × t.</value></data>
   <data name="Api_global_hsvToRgb" xml:space="preserve"><value>색상 h(0~360)·채도 s·명도 v(0~1)로 색 { r, g, b, a }(0~255)를 만듭니다. a는 선택(기본 255).</value></data>
   <data name="Api_global_rgbToHsv" xml:space="preserve"><value>r·g·b(0~255)를 { h(0~360), s, v(0~1) }로 바꿉니다.</value></data>
+  <data name="Api_global_rgbToOklab" xml:space="preserve"><value>r·g·b(0~255)를 OKLab { l(밝기 0~1), a, b }로 바꿉니다(앱의 OKLab 계산과 같은 값).</value></data>
+  <data name="Api_global_oklabToRgb" xml:space="preserve"><value>OKLab l·a·b를 색 { r, g, b, a }로 바꿉니다. sRGB 밖이면 밝기·색상은 두고 채도만 줄입니다(알파 255).</value></data>
   <data name="Api_effect_name" xml:space="preserve"><value>효과 이름(효과 목록·에셋에 보임). 꼭 필요합니다.</value></data>
   <data name="Api_effect_author" xml:space="preserve"><value>작성자 이름(선택). 실행 확인 창에 보입니다.</value></data>
+  <data name="Api_effect_description" xml:space="preserve"><value>짧은 설명(선택, 200자까지). 효과 만들기의 설명 칸과 올릴 때 짧은 설명에 쓰입니다.</value></data>
+  <data name="Api_effect_translations" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름(언어 코드 → { name, description, labels }). 화면 언어에 맞는 것이 보이고, 없으면 선언에 적은 값.</value></data>
+  <data name="Api_translation_name" xml:space="preserve"><value>그 언어의 효과 이름(1~100자).</value></data>
+  <data name="Api_translation_description" xml:space="preserve"><value>그 언어의 짧은 설명(200자까지).</value></data>
+  <data name="Api_translation_labels" xml:space="preserve"><value>그 언어의 설정 이름: 설정 키 → 이름, 고르기 항목은 "키.항목값" → 이름(각 100자까지).</value></data>
   <data name="Api_effect_animated" xml:space="preserve"><value>프레임 진행(ctx.progress)에 따라 모습이 바뀌면 true. 빠르기 곡선·반복 설정이 생깁니다.</value></data>
   <data name="Api_effect_area" xml:space="preserve"><value>계산 범위: "global"(기본, 프레임마다 한 번) 또는 "local"(조각마다, radius만큼 여유).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>area가 "local"일 때 조각 둘레에 붙일 여유 px.</value></data>
   <data name="Api_effect_previewChick" xml:space="preserve"><value>온라인에 올릴 때 미리보기에 쓸 병아리 ID(기본 "original").</value></data>
+  <data name="Api_effect_previewFrames" xml:space="preserve"><value>미리보기·올릴 때 미리보기에서 효과를 돌리는 칸 수(2~20, 기본 10).</value></data>
   <data name="Api_effect_settings" xml:space="preserve"><value>효과 창에 보일 설정 칸 목록. 값은 render의 s.키로 읽습니다.</value></data>
   <data name="Api_effect_padding" xml:space="preserve"><value>효과가 그림 밖으로 넓히는 여백: 고정 [왼, 위, 오른, 아래] 또는 설정·크기로 계산하는 함수.</value></data>
   <data name="Api_effect_render" xml:space="preserve"><value>프레임마다 불려 img.data를 제자리에서 바꿉니다. 같은 입력이면 늘 같은 결과여야 합니다.</value></data>
+  <data name="Api_effect_deferred" xml:space="preserve"><value>true면 목록 자리와 관계없이 다른 효과를 모두 입힌 뒤에 그립니다(잔상처럼). 이런 효과만 ctx.renderedFrameSource로 다른 프레임에 다른 효과를 입힌 그림을 받습니다.</value></data>
+  <data name="Api_effect_motion" xml:space="preserve"><value>false면 움직이는 효과라도 빠르기 곡선·반복을 쓰지 않습니다(프레임 수로 정하는 깜빡임 등): 효과 창에서 그 칸을 숨깁니다(기본 true).</value></data>
+  <data name="Api_effect_clipsBySource" xml:space="preserve"><value>true면 앞 효과에 클리핑됐을 때 img에 앞 효과가 바꾼 픽셀만 받고, 그 영역 밖에 생긴 결과는 그림 뒤에 남깁니다(반사처럼 픽셀을 옮기는 효과). 클리핑돼도 여백을 넓힙니다. 아니면 영역 안의 결과만 남습니다.</value></data>
+  <data name="Api_effect_erasesSource" xml:space="preserve"><value>true나 bool 설정 키(그 설정이 켜졌을 때만): 원본을 지워 선만 남기는 효과입니다(원본 지우기 외곽선처럼). 투명하게 지운 자리는 뒤따르는 클리핑 효과의 영역에서 빠집니다.</value></data>
+  <data name="Api_effect_easing" xml:space="preserve"><value>새로 넣는 효과의 빠르기 곡선 처음 값(기본 "Linear").</value></data>
+  <data name="Api_effect_easing_Linear" xml:space="preserve"><value>고르게.</value></data>
+  <data name="Api_effect_easing_EaseIn" xml:space="preserve"><value>천천히 시작.</value></data>
+  <data name="Api_effect_easing_EaseOut" xml:space="preserve"><value>천천히 끝남.</value></data>
+  <data name="Api_effect_easing_EaseInOut" xml:space="preserve"><value>천천히 시작하고 천천히 끝남.</value></data>
   <data name="Api_effect_area_global" xml:space="preserve"><value>프레임마다 그림 전체로 한 번 부릅니다.</value></data>
   <data name="Api_effect_area_local" xml:space="preserve"><value>조각마다 부릅니다(radius만큼 둘레를 같이 넘김).</value></data>
   <data name="Api_setting_key" xml:space="preserve"><value>저장 키(영문자나 _로 시작). render에서 s.키로 읽습니다.</value></data>
   <data name="Api_setting_label" xml:space="preserve"><value>설정 칸 이름.</value></data>
-  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice".</value></data>
-  <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number).</value></data>
-  <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number).</value></data>
+  <data name="Api_setting_type" xml:space="preserve"><value>값 종류: "int", "number", "bool", "color", "choice", "colorList", "colorPairs".</value></data>
+  <data name="Api_setting_min" xml:space="preserve"><value>가장 작은 값(int·number). colorList·colorPairs는 가장 적은 항목 수(기본 0).</value></data>
+  <data name="Api_setting_max" xml:space="preserve"><value>가장 큰 값(int·number). colorList·colorPairs는 가장 많은 항목 수(기본 16, 64까지).</value></data>
   <data name="Api_setting_step" xml:space="preserve"><value>슬라이더 간격(number).</value></data>
-  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, 색은 "#ff8800").</value></data>
+  <data name="Api_setting_default" xml:space="preserve"><value>처음 값(종류에 맞게, 색은 "#ff8800", colorList는 ["#ff8800", …], colorPairs는 [{ from: "#000000", to: "#ffffff" }, …]).</value></data>
   <data name="Api_setting_choices" xml:space="preserve"><value>choice의 항목: [{ value, label }].</value></data>
+  <data name="Api_setting_alpha" xml:space="preserve"><value>false면 색·색 목록·색 쌍 목록의 알파를 고르지 않고 늘 불투명(255)입니다(기본 true).</value></data>
+  <data name="Api_setting_widget" xml:space="preserve"><value>효과 창 편집기 모양(int만): "angle"은 각도 다이얼, "point"는 pair의 설정과 함께 X·Y 점 고르기.</value></data>
+  <data name="Api_setting_pair" xml:space="preserve"><value>widget "point"의 Y 설정 키(다른 int 설정). 이 설정이 X이고 Y 설정은 같은 칸에서 고칩니다.</value></data>
+  <data name="Api_setting_widget_angle" xml:space="preserve"><value>각도 다이얼(0 = 오른쪽, 90 = 위).</value></data>
+  <data name="Api_setting_widget_point" xml:space="preserve"><value>X·Y 점 고르기(pair에 Y 설정 키).</value></data>
   <data name="Api_setting_type_int" xml:space="preserve"><value>정수: 슬라이더와 숫자 칸.</value></data>
   <data name="Api_setting_type_number" xml:space="preserve"><value>실수: 슬라이더와 숫자 칸(step 자리까지).</value></data>
   <data name="Api_setting_type_bool" xml:space="preserve"><value>켜고 끄기: 체크 상자.</value></data>
   <data name="Api_setting_type_color" xml:space="preserve"><value>색: 색 칸. s.키는 { r, g, b, a }.</value></data>
   <data name="Api_setting_type_choice" xml:space="preserve"><value>목록에서 고르기: s.키는 고른 value 문자열.</value></data>
+  <data name="Api_setting_type_colorList" xml:space="preserve"><value>색 목록(더하기·빼기·순서 바꾸기): s.키는 [{ r, g, b, a }, …]. 항목 색은 ctx.colorAt으로(그라데이션 포함).</value></data>
+  <data name="Api_setting_type_colorPairs" xml:space="preserve"><value>색 쌍 목록(바꿀 색 → 바뀐 색): s.키는 [{ from, to }, …]. 항목 색은 ctx.pairColor로(그라데이션 포함).</value></data>
   <data name="Api_img_width" xml:space="preserve"><value>그림 너비(px, 여백 포함).</value></data>
   <data name="Api_img_height" xml:space="preserve"><value>그림 높이(px, 여백 포함).</value></data>
   <data name="Api_img_data" xml:space="preserve"><value>RGBA 숫자 배열(길이 = 너비 × 높이 × 4). 바꾸면 그림이 바뀝니다.</value></data>
   <data name="Api_img_blank" xml:space="preserve"><value>같은 형식의 빈(투명) 그림을 만듭니다.</value></data>
   <data name="Api_img_blendOver" xml:space="preserve"><value>src를 이 그림의 (x, y)에 알파 합성으로 겹칩니다.</value></data>
   <data name="Api_ctx_t" xml:space="preserve"><value>효과 범위 안 진행(0~1, 반복·빠르기 곡선 전).</value></data>
+  <data name="Api_ctx_phase" xml:space="preserve"><value>반복을 넣고 빠르기 곡선은 넣기 전 진행(0~1).</value></data>
   <data name="Api_ctx_progress" xml:space="preserve"><value>반복·빠르기 곡선을 넣은 진행(0~1). 움직이는 효과는 보통 이것을 씁니다.</value></data>
   <data name="Api_ctx_frame" xml:space="preserve"><value>그리는 프레임 번호(0부터).</value></data>
   <data name="Api_ctx_step" xml:space="preserve"><value>효과 범위 첫 프레임부터 몇 프레임째인지(0부터).</value></data>
   <data name="Api_ctx_span" xml:space="preserve"><value>효과 범위 길이 − 1.</value></data>
   <data name="Api_ctx_source" xml:space="preserve"><value>여백을 넣은 그림 안의 원본 자리 { x, y, w, h }.</value></data>
   <data name="Api_ctx_pivot" xml:space="preserve"><value>피벗 자리 { x, y }(그림 좌표).</value></data>
-  <data name="Api_ctx_color" xml:space="preserve"><value>색 설정 key의 색 { r, g, b, a }. x, y는 나중의 그라데이션 색용.</value></data>
-  <data name="Api_ctx_hash" xml:space="preserve"><value>위치·시드로 정해지는 0 이상 1 미만의 수(프레임과 무관, 늘 같음).</value></data>
+  <data name="Api_ctx_color" xml:space="preserve"><value>색 설정 key의 (x, y) 색 { r, g, b, a }. 그라데이션이 없으면 단색 그대로, 있으면 효과 전 그림의 불투명 범위(bounds { x, y, w, h }를 주면 그 범위)로 공식 효과와 같게 고릅니다.</value></data>
+  <data name="Api_ctx_colorAt" xml:space="preserve"><value>색 목록 설정 key의 index번 항목의 (x, y) 색(ctx.color와 같은 그라데이션 규칙).</value></data>
+  <data name="Api_ctx_pairColor" xml:space="preserve"><value>색 쌍 목록 설정 key의 index번 쌍의 "from"(바꿀 색)이나 "to"(바뀐 색)의 (x, y) 색(ctx.color와 같은 그라데이션 규칙).</value></data>
+  <data name="Api_ctx_hasGradient" xml:space="preserve"><value>색 슬롯에 그라데이션이 있는지: "키", 목록 항목 "키[0]", 쌍 "키[0].from"·"키[0].to". 목록 항목은 번호로도 고릅니다: ctx.hasGradient("목록 키", 번호, "from"|"to"(쌍만)) — 항목이 없으면 false.</value></data>
+  <data name="Api_ctx_hash" xml:space="preserve"><value>위치·시드·용도(salt, 기본 0)로 정해지는 0 이상 1 미만의 수(프레임과 무관, 늘 같음). salt가 다르면 서로 다른 값이 나옵니다.</value></data>
+  <data name="Api_ctx_bayer2" xml:space="preserve"><value>2×2 순서 디더 문턱값 0~3(좌표가 음수여도 무늬가 이어짐).</value></data>
+  <data name="Api_ctx_bayer4" xml:space="preserve"><value>4×4 순서 디더 문턱값 0~15(좌표가 음수여도 무늬가 이어짐).</value></data>
   <data name="Api_ctx_random" xml:space="preserve"><value>프레임·시드로 정해지는 0 이상 1 미만의 수(늘 같음).</value></data>
   <data name="Api_ctx_frameSource" xml:space="preserve"><value>다른 프레임의 효과 원본(효과 없이, 같은 크기). 없으면 null.</value></data>
+  <data name="Api_ctx_renderedFrameSource" xml:space="preserve"><value>deferred 효과만: 다른 프레임에 이 레이어의 다른(미루지 않는) 효과를 입힌 그림 { image, offsetX, offsetY }(원본 대비 위치). 원본이 없거나 크기가 다르거나 deferred가 아니면 null.</value></data>
+  <data name="Api_rendered_image" xml:space="preserve"><value>효과를 입힌 그림(여백 포함, 부를 때마다 새 사본).</value></data>
+  <data name="Api_rendered_offsetX" xml:space="preserve"><value>그 그림 왼쪽 위의 X(원본 왼쪽 위 기준, 여백만큼 음수).</value></data>
+  <data name="Api_rendered_offsetY" xml:space="preserve"><value>그 그림 왼쪽 위의 Y(원본 왼쪽 위 기준, 여백만큼 음수).</value></data>
   <data name="Api_ctx_source_x" xml:space="preserve"><value>원본 왼쪽 px.</value></data>
   <data name="Api_ctx_source_y" xml:space="preserve"><value>원본 위쪽 px.</value></data>
   <data name="Api_ctx_source_w" xml:space="preserve"><value>원본 너비 px.</value></data>
   <data name="Api_ctx_source_h" xml:space="preserve"><value>원본 높이 px.</value></data>
   <data name="Api_ctx_pivot_x" xml:space="preserve"><value>피벗 X(그림 좌표).</value></data>
   <data name="Api_ctx_pivot_y" xml:space="preserve"><value>피벗 Y(그림 좌표).</value></data>
+  <data name="Api_ctx_center" xml:space="preserve"><value>효과 원본(캔버스, 부위면 부위 칸)의 가운데 { x, y }(그림 좌표). 피벗과 달리 늘 가운데입니다.</value></data>
+  <data name="Api_ctx_center_x" xml:space="preserve"><value>원본 가운데 X(그림 좌표).</value></data>
+  <data name="Api_ctx_center_y" xml:space="preserve"><value>원본 가운데 Y(그림 좌표).</value></data>
+  <data name="Api_ctx_slice" xml:space="preserve"><value>효과 원본의 9-slice 테두리 { left, top, right, bottom }(원본 가장자리부터 px; 캔버스면 프로젝트 테두리, 부위면 부위 테두리). 테두리가 없거나 맞지 않거나 프로젝트 밖이면 null.</value></data>
+  <data name="Api_ctx_slice_left" xml:space="preserve"><value>왼쪽 테두리 px.</value></data>
+  <data name="Api_ctx_slice_top" xml:space="preserve"><value>위쪽 테두리 px.</value></data>
+  <data name="Api_ctx_slice_right" xml:space="preserve"><value>오른쪽 테두리 px.</value></data>
+  <data name="Api_ctx_slice_bottom" xml:space="preserve"><value>아래쪽 테두리 px.</value></data>
+  <data name="Api_ctx_layerBelow" xml:space="preserve"><value>바로 아래 레이어(같은 그룹·같은 단계, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로(밖은 투명). 레이어나 셀이 없거나 프로젝트 밖이면 null.</value></data>
+  <data name="Api_ctx_layerAbove" xml:space="preserve"><value>바로 위 레이어의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로. 없으면 null.</value></data>
+  <data name="Api_ctx_layerBelowWithEffects" xml:space="preserve"><value>바로 아래 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
+  <data name="Api_ctx_layerAboveWithEffects" xml:space="preserve"><value>바로 위 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다. 없으면 null.</value></data>
+  <data name="Api_ctx_layerEffectsByName" xml:space="preserve"><value>이름이 같은 레이어(여럿이면 가장 가까운 것)에서 이 프레임에 켜진 효과 이름 배열(목록 순서). 없으면 빈 배열.</value></data>
+  <data name="Api_ctx_layerEffectsAt" xml:space="preserve"><value>같은 그룹·같은 단계에서 offset칸 떨어진 레이어(−1 = 바로 아래, 1 = 바로 위, 0 = 이 레이어)에서 이 프레임에 켜진 효과 이름 배열. 없으면 빈 배열.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>빨강(0~255).</value></data>
   <data name="Api_color_g" xml:space="preserve"><value>초록(0~255).</value></data>
   <data name="Api_color_b" xml:space="preserve"><value>파랑(0~255).</value></data>
@@ -63,6 +111,9 @@
   <data name="Api_hsv_h" xml:space="preserve"><value>색상(0~360).</value></data>
   <data name="Api_hsv_s" xml:space="preserve"><value>채도(0~1).</value></data>
   <data name="Api_hsv_v" xml:space="preserve"><value>명도(0~1).</value></data>
+  <data name="Api_oklab_l" xml:space="preserve"><value>밝기(0~1).</value></data>
+  <data name="Api_oklab_a" xml:space="preserve"><value>초록(−)~빨강(+) 축.</value></data>
+  <data name="Api_oklab_b" xml:space="preserve"><value>파랑(−)~노랑(+) 축.</value></data>
   <data name="Api_Math_PI" xml:space="preserve"><value>원주율 π.</value></data>
   <data name="Api_Math_E" xml:space="preserve"><value>자연로그의 밑 e.</value></data>
   <data name="Api_Math_abs" xml:space="preserve"><value>절댓값.</value></data>

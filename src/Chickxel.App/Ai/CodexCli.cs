@@ -103,7 +103,7 @@ public sealed partial class CodexProvider : AiProvider
         return list;
     }
 
-    public override IChatSession CreateSession(string path, McpServer mcp) => new CodexSession(path, mcp);
+    public override IChatSession CreateSession(string path, McpServer mcp, string systemPrompt, McpScope scope) => new CodexSession(path, mcp, systemPrompt, scope);
 
     /// <summary>Codex 설정 폴더(<c>$CODEX_HOME</c> 또는 <c>~/.codex</c>).</summary>
     internal static string CodexHome
@@ -196,6 +196,8 @@ public sealed class CodexSession : IChatSession
 
     private readonly string _codexPath;
     private readonly McpServer _mcp;
+    private readonly string _systemPrompt;
+    private readonly McpScope _scope;
     private readonly HashSet<string> _shownNotices = new(StringComparer.Ordinal);
     private Process? _process;
     /// <summary>프로세스 세대. 끝낸 프로세스에서 늦게 온 이벤트를 걸러 낸다.</summary>
@@ -207,10 +209,12 @@ public sealed class CodexSession : IChatSession
     private McpCounters _mcpSince;
     private bool _mcpProblemShown;
 
-    public CodexSession(string codexPath, McpServer mcp)
+    public CodexSession(string codexPath, McpServer mcp, string systemPrompt, McpScope scope)
     {
         _codexPath = codexPath;
         _mcp = mcp;
+        _systemPrompt = systemPrompt;
+        _scope = scope;
     }
 
     public string? Model { get; set; }
@@ -308,7 +312,7 @@ public sealed class CodexSession : IChatSession
         args.Add("-"); // 메시지는 표준 입력으로
 
         var psi = AiCli.CreateStartInfo(_codexPath, args, work, true);
-        psi.Environment[TokenVariable] = _mcp.Token;
+        psi.Environment[TokenVariable] = _mcp.TokenFor(_scope);
         var p = new Process { StartInfo = psi };
         var stderr = new StringBuilder();
         _mcpSince = _mcp.Counters;
@@ -347,7 +351,7 @@ public sealed class CodexSession : IChatSession
         yield return "web_search=\"disabled\"";
         yield return "notify=[]";
         yield return "project_doc_max_bytes=0";
-        yield return "developer_instructions=" + TomlString(AiCli.SystemPrompt);
+        yield return "developer_instructions=" + TomlString(_systemPrompt);
         foreach (var feature in FeatureOverrides(_codexPath, imageGeneration: false)) yield return feature;
     }
 

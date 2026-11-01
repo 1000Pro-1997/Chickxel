@@ -18,20 +18,6 @@
   <data name="EffectShared_Title" xml:space="preserve"><value>공통 설정</value></data>
   <data name="EffectShared_FrameExtend" xml:space="preserve"><value>프레임 늘리기</value></data>
   <data name="EffectShared_Target" xml:space="preserve"><value>기준: {0} · 프레임 {1}~{2}</value></data>
-  <data name="Fade_Name" xml:space="preserve"><value>페이드 인·아웃</value></data>
-  <data name="Fade_Description" xml:space="preserve"><value>프레임 범위 동안 그림 전체의 투명도를 점차 높이거나 낮춥니다.</value></data>
-  <data name="Fade_Direction" xml:space="preserve"><value>방향</value></data>
-  <data name="Fade_In" xml:space="preserve"><value>페이드 인</value></data>
-  <data name="Fade_Out" xml:space="preserve"><value>페이드 아웃</value></data>
-  <data name="Reflection_Left" xml:space="preserve"><value>왼쪽 (벽)</value></data>
-  <data name="Reflection_Right" xml:space="preserve"><value>오른쪽 (벽)</value></data>
-  <data name="Reflection_Width" xml:space="preserve"><value>  너비</value></data>
-  <data name="Reflection_WaveColumns" xml:space="preserve"><value>px (열마다 세로로 흔듦, 0 = 끔)</value></data>
-  <data name="Reflection_HintHorizontal" xml:space="preserve"><value>그 프레임 그림을 좌우로 뒤집어 간격만큼 띄워 뒤에 깝니다(너비 = 그림 너비의 몇 %가 비칠지).</value></data>
-  <data name="Reflection_OpacityHintHorizontal" xml:space="preserve"><value> 그림 쪽 열이 시작 불투명도, 끝 열이 끝 불투명도입니다. 색 입히기의 투명도 = 물드는 세기(0 = 안 물들임).</value></data>
-  <data name="Reflection_SummaryLeft" xml:space="preserve"><value>왼쪽</value><comment>효과 목록 요약 "반사 · 왼쪽 · 간격 …"의 방향.</comment></data>
-  <data name="Reflection_SummaryRight" xml:space="preserve"><value>오른쪽</value><comment>효과 목록 요약 "반사 · 오른쪽 · 간격 …"의 방향.</comment></data>
-  <data name="Explode_DistanceYTip" xml:space="preserve"><value>Y 거리가 0이어도 중력이 0이 아니면 위아래로 움직입니다. 수직 이동을 멈추려면 중력도 0으로 설정하세요.</value></data>
   <data name="Language_Title" xml:space="preserve"><value>언어 (Language)</value><comment>환경 설정 맨 위 묶음 제목. 다른 언어 사용자도 찾도록 영어 단어를 함께 적음.</comment></data>
   <data name="Language_Label" xml:space="preserve"><value>화면 언어</value></data>
   <data name="Language_WithCsv" xml:space="preserve"><value>{name} (CSV로 고침)</value><comment>name = 내장 언어 이름. 언어 폴더의 CSV가 내장 문구 위에 덮어쓸 때 목록에 보이는 이름.</comment></data>
@@ -110,42 +96,6 @@
   <data name="S_AboutDialog_AboutDialog_E3F28341F4" xml:space="preserve">
     <value>라이선스</value>
     <comment>src/Chickxel.App\AboutDialog.cs:31 · AboutDialog · "라이선스"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_29E836BF07" xml:space="preserve">
-    <value>프레임</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:12 · AfterimagePanel · "프레임"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_3D694F080C" xml:space="preserve">
-    <value>% (가장 가까운 잔상, 멀수록 옅게)</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:13 · AfterimagePanel · "% (가장 가까운 잔상, 멀수록 옅게)"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_88FF7125A4" xml:space="preserve">
-    <value>불투명도</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:13 · AfterimagePanel · "불투명도"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_932239C718" xml:space="preserve">
-    <value>개</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:11 · AfterimagePanel · "개"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_9CBFACCDD7" xml:space="preserve">
-    <value>앞 프레임에 다른 효과를 그 프레임의 진행대로 적용한 모습을 지금 그림 뒤에 점점 옅게 깝니다. 잔상 자체는 반복 적용하지 않고 효과 범위 안 프레임만 씁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:23 · AfterimagePanel · "앞 프레임에 다른 효과를 그 프레임의 진행대로 적용한 모습을 지금 그림 뒤에 점점 옅게 깝니다. 잔상 자체는 반복 적용하지 않고 효과 범위 안 프레임만 씁니다."</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_A7E10C304E" xml:space="preserve">
-    <value>개수</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:11 · AfterimagePanel · "개수"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_ABB66D8551" xml:space="preserve">
-    <value> 색 입히기 색의 투명도 = 물들이는 세기.</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:24 · AfterimagePanel · " 색 입히기 색의 투명도 = 물들이는 세기."</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_D0BC4AE314" xml:space="preserve">
-    <value>색 입히기</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:17 · AfterimagePanel · "색 입히기"</comment>
-  </data>
-  <data name="S_AfterimagePanel_AfterimagePanel_F16DC92644" xml:space="preserve">
-    <value>  간격</value>
-    <comment>src/Chickxel.App\EffectPanels\AfterimagePanel.cs:12 · AfterimagePanel · "  간격"</comment>
   </data>
   <data name="S_AiCli_OpenLoginTerminal_25DFAA69B9" xml:space="preserve">
     <value>터미널 프로그램을 찾지 못했습니다. 터미널에서 직접 "{0} {1}"을 실행하세요.</value>
@@ -259,90 +209,6 @@ echo __LOGIN_FAILED__
 :end</value>
     <comment>src/Chickxel.App\Ai\AiInstaller.cs:68 · WindowsScript · """           @echo off           chcp 65001 &gt;nul           powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"           if errorlevel 1 goto failed           set "PATH=%USERPROFILE%\.local\bin;%PATH%"           where claude &gt;nul 2&gt;nul           if errorlevel 1 goto failed           call claude auth login           if errorlevel 1 goto failed           echo 로그인 완료. Chickxel로 돌아가세요.           goto end           :failed           echo 설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.           :end           """</comment>
   </data>
-  <data name="S_AppearPanel_AppearPanel_098B9035F3" xml:space="preserve">
-    <value>딱딱하게</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:16 · AppearPanel · "딱딱하게"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_43B9AEFDD3" xml:space="preserve">
-    <value>나타나기는 범위 첫 프레임이 비어 있고 마지막 프레임이 그림 그대로, 사라지기는 그 반대입니다. 디더·흩어짐·쓸기는 픽셀이 켜지고 꺼지기만 해서(반투명 없음) 픽셀 아트에 어울립니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:34 · AppearPanel · "나타나기는 범위 첫 프레임이 비어 있고 마지막 프레임이 그림 그대로, 사라지기는 그 반대입니다. 디더·흩어짐·쓸기는 픽셀이 켜지고 꺼지기만 해서(반투명 없음) 픽셀 아트에 어울립니다."</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_4E8113A1CD" xml:space="preserve">
-    <value>디더 2px</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:16 · AppearPanel · "디더 2px"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_5B6934AD2F" xml:space="preserve">
-    <value>가장자리</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:31 · AppearPanel · "가장자리"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_90162B77C1" xml:space="preserve">
-    <value>나타나기</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:14 · AppearPanel · "나타나기"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_9968F0C72F" xml:space="preserve">
-    <value>쓸기 시작</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:30 · AppearPanel · "쓸기 시작"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_A482C10A17" xml:space="preserve">
-    <value>방식</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:25 · AppearPanel · "방식"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_B64448AEFD" xml:space="preserve">
-    <value>시드</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:32 · AppearPanel · "시드"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_BBFA2D6AB2" xml:space="preserve">
-    <value>사라지기</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:14 · AppearPanel · "사라지기"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_C98C9F62B6" xml:space="preserve">
-    <value>다른 흩어짐(시드를 무작위로)</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:18 · AppearPanel · "다른 흩어짐(시드를 무작위로)"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_EDC4509A6B" xml:space="preserve">
-    <value> 쓸기는 고른 쪽에서 시작합니다(사라지기면 그 쪽부터 지워짐).</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:35 · AppearPanel · " 쓸기는 고른 쪽에서 시작합니다(사라지기면 그 쪽부터 지워짐)."</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_F80AD5770E" xml:space="preserve">
-    <value>모드</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:14 · AppearPanel · "모드"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearPanel_FD5AFA1D94" xml:space="preserve">
-    <value>디더 1px</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:16 · AppearPanel · "디더 1px"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearStyles_46BC34F4A2" xml:space="preserve">
-    <value>쓸기</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:7 · AppearStyles · "쓸기"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearStyles_9CC60E3158" xml:space="preserve">
-    <value>픽셀 흩어짐</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:7 · AppearStyles · "픽셀 흩어짐"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearStyles_E0D9F50D27" xml:space="preserve">
-    <value>투명도</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:7 · AppearStyles · "투명도"</comment>
-  </data>
-  <data name="S_AppearPanel_AppearStyles_ECD851BCD0" xml:space="preserve">
-    <value>디더 (4×4 Bayer)</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:7 · AppearStyles · "디더 (4×4 Bayer)"</comment>
-  </data>
-  <data name="S_AppearPanel_WipeFroms_0918652A12" xml:space="preserve">
-    <value>아래</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:8 · WipeFroms · "아래"</comment>
-  </data>
-  <data name="S_AppearPanel_WipeFroms_958C17A305" xml:space="preserve">
-    <value>왼쪽</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:8 · WipeFroms · "왼쪽"</comment>
-  </data>
-  <data name="S_AppearPanel_WipeFroms_A2A7C74FBD" xml:space="preserve">
-    <value>오른쪽</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:8 · WipeFroms · "오른쪽"</comment>
-  </data>
-  <data name="S_AppearPanel_WipeFroms_EB53C9C591" xml:space="preserve">
-    <value>위</value>
-    <comment>src/Chickxel.App\EffectPanels\AppearPanel.cs:8 · WipeFroms · "위"</comment>
-  </data>
   <data name="S_AppTrash_Describe_11EBAE0E3E" xml:space="preserve">
     <value>{0}일 보관</value>
     <comment>src/Chickxel.App\AppTrash.cs:22 · Describe · $"{Days}일 보관"</comment>
@@ -362,90 +228,6 @@ echo __LOGIN_FAILED__
   <data name="S_AppTrash_Restore_022042A106" xml:space="preserve">
     <value>같은 이름의 파일이 이미 있어 되살리지 않았습니다: {0}</value>
     <comment>src/Chickxel.App\AppTrash.cs:105 · Restore · $"같은 이름의 파일이 이미 있어 되살리지 않았습니다: {string.Join(", ", conflicts.Select(Path.GetFileName))}"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkHides_0C5348FA14" xml:space="preserve">
-    <value>디더 50%</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:7 · BlinkHides · "디더 50%"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkHides_C91D2F76FA" xml:space="preserve">
-    <value>완전 투명</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:7 · BlinkHides · "완전 투명"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkHides_E8E64BF447" xml:space="preserve">
-    <value>반투명</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:7 · BlinkHides · "반투명"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_00777F6ABC" xml:space="preserve">
-    <value>프레임</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:27 · BlinkPanel · "프레임"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_00D4A1F5DF" xml:space="preserve">
-    <value>숨김</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:27 · BlinkPanel · "숨김"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_18B5987758" xml:space="preserve">
-    <value>보임</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:27 · BlinkPanel · "보임"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_6222AF2B15" xml:space="preserve">
-    <value>간격</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:22 · BlinkPanel · "간격"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_641BB97285" xml:space="preserve">
-    <value>횟수</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:28 · BlinkPanel · "횟수"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_731F9E2133" xml:space="preserve">
-    <value>번 (범위 안)</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:28 · BlinkPanel · "번 (범위 안)"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_940515B7F4" xml:space="preserve">
-    <value>프레임 수로</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:22 · BlinkPanel · "프레임 수로"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_A857BB6D37" xml:space="preserve">
-    <value> 디더 50%는 바둑판 칸만 남깁니다(그림을 옮겨도 무늬가 그대로).</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:38 · BlinkPanel · " 디더 50%는 바둑판 칸만 남깁니다(그림을 옮겨도 무늬가 그대로)."</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_BE811F0ADD" xml:space="preserve">
-    <value>프레임 수로: 범위 첫 프레임부터 보임 N프레임 → 숨김 M프레임을 되풀이합니다. 횟수로: 범위의 프레임을 보임·숨김 칸으로 고르게 나눠 그 횟수만큼 숨습니다(첫 프레임은 보임).</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:37 · BlinkPanel · "프레임 수로: 범위 첫 프레임부터 보임 N프레임 → 숨김 M프레임을 되풀이합니다. 횟수로: 범위의 프레임을 보임·숨김 칸으로 고르게 나눠 그 횟수만큼 숨습니다(첫 프레임은 보임)."</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_E2A918DFFF" xml:space="preserve">
-    <value>숨김 방식</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:31 · BlinkPanel · "숨김 방식"</comment>
-  </data>
-  <data name="S_BlinkPanel_BlinkPanel_ED3105570F" xml:space="preserve">
-    <value>범위 안 횟수로</value>
-    <comment>src/Chickxel.App\EffectPanels\BlinkPanel.cs:22 · BlinkPanel · "범위 안 횟수로"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_178B12E7C6" xml:space="preserve">
-    <value>위아래</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:13 · BobPanel · "위아래"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_58A5A73C75" xml:space="preserve">
-    <value>높이</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:11 · BobPanel · "높이"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_62AE6AF173" xml:space="preserve">
-    <value>번</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:12 · BobPanel · "번"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_817E586669" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:13 · BobPanel · "방향"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_93ECFDAAAF" xml:space="preserve">
-    <value>  횟수</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:12 · BobPanel · "  횟수"</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_A229A39E90" xml:space="preserve">
-    <value>사인 곡선으로 부드럽게 오르내립니다(가운데에서 위·아래로 높이 px, 정수 픽셀). 범위 처음과 끝이 같아서 되풀이해도 끊기지 않습니다 — 범위의 마지막 프레임은 첫 프레임과 같은 모습입니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:16 · BobPanel · "사인 곡선으로 부드럽게 오르내립니다(가운데에서 위·아래로 높이 px, 정수 픽셀). 범위 처음과 끝이 같아서 되풀이해도 끊기지 않습니다 — 범위의 마지막 프레임은 첫 프레임과 같은 모습입니다."</comment>
-  </data>
-  <data name="S_BobPanel_BobPanel_EC9342821C" xml:space="preserve">
-    <value>좌우</value>
-    <comment>src/Chickxel.App\EffectPanels\BobPanel.cs:13 · BobPanel · "좌우"</comment>
   </data>
   <data name="S_ChatWindow_AddAttachment_1F581E4392" xml:space="preserve">
     <value>첨부 빼기</value>
@@ -947,130 +729,6 @@ echo __LOGIN_FAILED__
   <data name="S_CodexCli_Send_08F762A264" xml:space="preserve">
     <value>(이미지)</value>
     <comment>src/Chickxel.App\Ai\CodexCli.cs:232 · Send · "(이미지)"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_AdjustModes_0FF6A836A6" xml:space="preserve">
-    <value>밝기·대비</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:7 · AdjustModes · "밝기·대비"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_AdjustModes_2C243D40ED" xml:space="preserve">
-    <value>흑백</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:7 · AdjustModes · "흑백"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_AdjustModes_66B88ADD3C" xml:space="preserve">
-    <value>채도</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:7 · AdjustModes · "채도"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_AdjustModes_7D62C1B761" xml:space="preserve">
-    <value>세피아</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:7 · AdjustModes · "세피아"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_AdjustModes_C19765AF80" xml:space="preserve">
-    <value>색조 이동</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:7 · AdjustModes · "색조 이동"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_001F11B58B" xml:space="preserve">
-    <value>  대비</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:37 · ColorAdjustPanel · "  대비"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_1F1978AFAD" xml:space="preserve">
-    <value>방식</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:21 · ColorAdjustPanel · "방식"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_65D7B7FC26" xml:space="preserve">
-    <value>보이는 픽셀의 색만 바꿉니다(투명도는 그대로). 셀 그림은 그대로라 언제든 끄거나 되돌릴 수 있습니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:43 · ColorAdjustPanel · "보이는 픽셀의 색만 바꿉니다(투명도는 그대로). 셀 그림은 그대로라 언제든 끄거나 되돌릴 수 있습니다."</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_703B3CD995" xml:space="preserve">
-    <value>양</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:30 · ColorAdjustPanel · "양"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_7292A6B699" xml:space="preserve">
-    <value>색상</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:33 · ColorAdjustPanel · "색상"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_8395FE49C9" xml:space="preserve">
-    <value>밝기</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:36 · ColorAdjustPanel · "밝기"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_B92B34DA64" xml:space="preserve">
-    <value>채도</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:40 · ColorAdjustPanel · "채도"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_DFBB738FE0" xml:space="preserve">
-    <value>% (−100 = 흑백)</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:40 · ColorAdjustPanel · "% (−100 = 흑백)"</comment>
-  </data>
-  <data name="S_ColorAdjustPanel_ColorAdjustPanel_F55E326D7F" xml:space="preserve">
-    <value>° 돌리기</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorAdjustPanel.cs:33 · ColorAdjustPanel · "° 돌리기"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_01F3077949" xml:space="preserve">
-    <value>이 프레임 그림에 쓰인 색 {0}개(많이 쓰인 순) — 누르면 순환할 색에 넣습니다(최대 {1}개).</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:64 · ColorCyclePanel · $"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 순환할 색에 넣습니다(최대 {ColorCycleEffect.MaxColors}개)."</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_0B215E7023" xml:space="preserve">
-    <value>색은 {0}개까지입니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:73 · ColorCyclePanel · $"색은 {ColorCycleEffect.MaxColors}개까지입니다."</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_0EEDA7D564" xml:space="preserve">
-    <value>이 프레임에 그림이 없습니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:73 · ColorCyclePanel · "이 프레임에 그림이 없습니다."</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_2547771D95" xml:space="preserve">
-    <value>색 추가</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:52 · ColorCyclePanel · "색 추가"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_445502367F" xml:space="preserve">
-    <value>그림에 쓰인 색을 골라 넣습니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:73 · ColorCyclePanel · "그림에 쓰인 색을 골라 넣습니다."</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_616BE6A276" xml:space="preserve">
-    <value>이 색 빼기</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:45 · ColorCyclePanel · "이 색 빼기"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_642EDB4627" xml:space="preserve">
-    <value>거꾸로</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:75 · ColorCyclePanel · "거꾸로"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_68BE16C6B6" xml:space="preserve">
-    <value>그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다. 그라데이션 색은 픽셀 위치마다 샘플링합니다. 목록에 없는 색·투명도는 그대로입니다. 칸 수가 색 개수({0})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온).</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:77 · ColorCyclePanel · $"그림에서 i번째 색인 픽셀이 (i + 칸)번째 색이 됩니다. 그라데이션 색은 픽셀 위치마다 샘플링합니다. 목록에 없는 색·투명도는 그대로입니다. 칸 수가 색 개수({e.Colors.Count})의 배수면 범위 끝이 처음과 같아 되풀이해도 이어집니다(물·불·네온)."</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_6FEDC6C546" xml:space="preserve">
-    <value>칸 수</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:74 · ColorCyclePanel · "칸 수"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_8143B75ED5" xml:space="preserve">
-    <value>색</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:49 · ColorCyclePanel · "색"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_8226D4FEF2" xml:space="preserve">
-    <value>그림에서 색 가져오기</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:58 · ColorCyclePanel · "그림에서 색 가져오기"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_83D3EFAB2B" xml:space="preserve">
-    <value>칸 (범위 동안 넘어가는 횟수)</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:74 · ColorCyclePanel · "칸 (범위 동안 넘어가는 횟수)"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_CABADA1123" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:75 · ColorCyclePanel · "방향"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_ColorCyclePanel_F617CA003E" xml:space="preserve">
-    <value>앞으로 (1 → 2 → …)</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:75 · ColorCyclePanel · "앞으로 (1 → 2 → …)"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_StepsKind_1B32549397" xml:space="preserve">
-    <value>칸</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:85 · StepsKind · "칸"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_StepsKind_AD2B00B33A" xml:space="preserve">
-    <value>{0} 칸</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:85 · StepsKind · $"{v} 칸"</comment>
-  </data>
-  <data name="S_ColorCyclePanel_StepsKind_B56274D955" xml:space="preserve">
-    <value>{0} 칸 ({1}바퀴)</value>
-    <comment>src/Chickxel.App\EffectPanels\ColorCyclePanel.cs:85 · StepsKind · $"{v} 칸 ({v / colors}바퀴)"</comment>
   </data>
   <data name="S_ColorEditor_ColorEditor_2156C5C575" xml:space="preserve">
     <value>최근 색</value>
@@ -1860,10 +1518,6 @@ echo __LOGIN_FAILED__
   <data name="S_Dialogs_Shortcuts_A069FAB880" xml:space="preserve">
     <value>프레임</value>
     <comment>src/Chickxel.App\Dialogs.cs:483 · Shortcuts · "프레임"</comment>
-  </data>
-  <data name="S_Dialogs_Shortcuts_A171E1ED26" xml:space="preserve">
-    <value>디더링(체커 무늬)</value>
-    <comment>src/Chickxel.App\Dialogs.cs:517 · Shortcuts · "디더링(체커 무늬)"</comment>
   </data>
   <data name="S_Dialogs_Shortcuts_A2ACEFDBE7" xml:space="preserve">
     <value>브러시 크기 줄이기 / 늘리기</value>
@@ -3061,186 +2715,6 @@ echo __LOGIN_FAILED__
     <value>왼쪽</value>
     <comment>src/Chickxel.App\GroupLayoutDialog.cs:113 · Refresh · "왼쪽"</comment>
   </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_0327FF94F2" xml:space="preserve">
-    <value>  횟수</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:18 · HitFlashPanel · "  횟수"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_18EE8BF22A" xml:space="preserve">
-    <value>빨강</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:16 · HitFlashPanel · "빨강"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_229E2DBA32" xml:space="preserve">
-    <value>번</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:18 · HitFlashPanel · "번"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_22EFA1DDB7" xml:space="preserve">
-    <value>단색 빠른 선택</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:15 · HitFlashPanel · "단색 빠른 선택"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_5F33353139" xml:space="preserve">
-    <value>범위 첫 프레임에서 바로 보이는 픽셀이 그 색으로 번쩍이고(투명도는 그대로), 횟수만큼 되풀이한 뒤 마지막 프레임은 원래 그림입니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:21 · HitFlashPanel · "범위 첫 프레임에서 바로 보이는 픽셀이 그 색으로 번쩍이고(투명도는 그대로), 횟수만큼 되풀이한 뒤 마지막 프레임은 원래 그림입니다."</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_87C0FCC7BF" xml:space="preserve">
-    <value>색</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:14 · HitFlashPanel · "색"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_9185899AD1" xml:space="preserve">
-    <value>점점 엷어짐</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:19 · HitFlashPanel · "점점 엷어짐"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_99AEB41746" xml:space="preserve">
-    <value>세기</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:17 · HitFlashPanel · "세기"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_9FA01E0FEA" xml:space="preserve">
-    <value>모양</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:19 · HitFlashPanel · "모양"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_A0E4CF80CE" xml:space="preserve">
-    <value>흰색</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:15 · HitFlashPanel · "흰색"</comment>
-  </data>
-  <data name="S_HitFlashPanel_HitFlashPanel_B8D805778F" xml:space="preserve">
-    <value>꽉 채움 (켜졌다 꺼짐)</value>
-    <comment>src/Chickxel.App\EffectPanels\HitFlashPanel.cs:19 · HitFlashPanel · "꽉 채움 (켜졌다 꺼짐)"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_07629FDFDF" xml:space="preserve">
-    <value>투명하게</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:16 · HologramPanel · "투명하게"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_13DAB2BCA6" xml:space="preserve">
-    <value>세기</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:33 · HologramPanel · "세기"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_1BF34BE317" xml:space="preserve">
-    <value>투명도</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:23 · HologramPanel · "투명도"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_1FC95DFB01" xml:space="preserve">
-    <value>색 세기</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:13 · HologramPanel · "색 세기"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_22ACBFBD6E" xml:space="preserve">
-    <value>시드</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:36 · HologramPanel · "시드"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_2A2020E4D9" xml:space="preserve">
-    <value>밝은 띠</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:21 · HologramPanel · "밝은 띠"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_359C86A8C6" xml:space="preserve">
-    <value>깜빡임·글리치는 시드와 범위 안 프레임 번호로 정해집니다(같은 설정이면 캔버스·내보내기·GIF가 같음). 글리치 프레임엔 1~3개 가로 조각(1~3px)이 좌우로 밀리므로</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:40 · HologramPanel · "깜빡임·글리치는 시드와 범위 안 프레임 번호로 정해집니다(같은 설정이면 캔버스·내보내기·GIF가 같음). 글리치 프레임엔 1~3개 가로 조각(1~3px)이 좌우로 밀리므로"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_389F58CAAE" xml:space="preserve">
-    <value>글리치 프레임에 빨강·파랑이 1px 어긋납니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:29 · HologramPanel · "글리치 프레임에 빨강·파랑이 1px 어긋납니다."</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_412239FF25" xml:space="preserve">
-    <value>테두리 빛</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:32 · HologramPanel · "테두리 빛"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_48D9F3060D" xml:space="preserve">
-    <value>  최대 밀림</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:28 · HologramPanel · "  최대 밀림"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_6178D2E678" xml:space="preserve">
-    <value>  세기</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:15 · HologramPanel · "  세기"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_7898EACDA1" xml:space="preserve">
-    <value>그림 둘레 1px에 빛 테두리를 두릅니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:32 · HologramPanel · "그림 둘레 1px에 빛 테두리를 두릅니다."</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_8BEC9DAD82" xml:space="preserve">
-    <value>보이는 픽셀을 밝기 그대로 한 색으로 물들인(명암·모양 유지) SF 홀로그램입니다. 주사선 줄마다 어둡게·투명하게 하고, 흐르기면 범위 동안 한 간격 아래로 흐릅니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:38 · HologramPanel · "보이는 픽셀을 밝기 그대로 한 색으로 물들인(명암·모양 유지) SF 홀로그램입니다. 주사선 줄마다 어둡게·투명하게 하고, 흐르기면 범위 동안 한 간격 아래로 흐릅니다."</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_966D3D0180" xml:space="preserve">
-    <value>흐르기</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:17 · HologramPanel · "흐르기"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_972F2E71DA" xml:space="preserve">
-    <value>줄</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:14 · HologramPanel · "줄"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_9B9738A14C" xml:space="preserve">
-    <value>% (0 = 끔)</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:15 · HologramPanel · "% (0 = 끔)"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_9F93A9BB2A" xml:space="preserve">
-    <value>두께</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:22 · HologramPanel · "두께"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_A5CD9BF54F" xml:space="preserve">
-    <value>RGB 분리 (빨강·파랑 1px 어긋남)</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:29 · HologramPanel · "RGB 분리 (빨강·파랑 1px 어긋남)"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_AF6E8C1272" xml:space="preserve">
-    <value>방식</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:16 · HologramPanel · "방식"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_B535B6DA1C" xml:space="preserve">
-    <value>다른 깜빡임·글리치(시드를 무작위로)</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:35 · HologramPanel · "다른 깜빡임·글리치(시드를 무작위로)"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_BAED2225EC" xml:space="preserve">
-    <value>디더 (반투명 대신 Bayer 무늬)</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:24 · HologramPanel · "디더 (반투명 대신 Bayer 무늬)"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_BB87A93F94" xml:space="preserve">
-    <value>어둡게</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:16 · HologramPanel · "어둡게"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_C49A6BC313" xml:space="preserve">
-    <value>깜빡임 빈도</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:25 · HologramPanel · "깜빡임 빈도"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_CEBC71D120" xml:space="preserve">
-    <value> 좌우로 최대 밀림만큼, 테두리 빛이면 사방 1px 여백이 생깁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:41 · HologramPanel · " 좌우로 최대 밀림만큼, 테두리 빛이면 사방 1px 여백이 생깁니다."</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_D3554CA8CE" xml:space="preserve">
-    <value> 밝은 띠는 범위 처음에 그림 위에서 들어와 끝에 아래로 빠져나갑니다(빠르기·반복이 주사선 흐름과 띠에 쓰임).</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:39 · HologramPanel · " 밝은 띠는 범위 처음에 그림 위에서 들어와 끝에 아래로 빠져나갑니다(빠르기·반복이 주사선 흐름과 띠에 쓰임)."</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_E28C969851" xml:space="preserve">
-    <value>색</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:11 · HologramPanel · "색"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_E9515F56FA" xml:space="preserve">
-    <value>글리치 빈도</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:27 · HologramPanel · "글리치 빈도"</comment>
-  </data>
-  <data name="S_HologramPanel_HologramPanel_F5867029B4" xml:space="preserve">
-    <value>주사선 간격</value>
-    <comment>src/Chickxel.App\EffectPanels\HologramPanel.cs:14 · HologramPanel · "주사선 간격"</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_4E24CB6117" xml:space="preserve">
-    <value>색</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:11 · InnerGlowPanel · "색"</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_71F36E8E3A" xml:space="preserve">
-    <value>  세기</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:14 · InnerGlowPanel · "  세기"</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_960F2D4C03" xml:space="preserve">
-    <value>안쪽으로 갈수록 약하게 (계단식)</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:16 · InnerGlowPanel · "안쪽으로 갈수록 약하게 (계단식)"</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_A12FD928D4" xml:space="preserve">
-    <value>섞기</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:15 · InnerGlowPanel · "섞기"</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_E8C879B3C5" xml:space="preserve">
-    <value>그림 가장자리에서 안쪽으로 두께만큼 색을 섞습니다(모서리 포함 8방향 거리, 원래 픽셀의 투명도는 그대로).</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:17 · InnerGlowPanel · "그림 가장자리에서 안쪽으로 두께만큼 색을 섞습니다(모서리 포함 8방향 거리, 원래 픽셀의 투명도는 그대로)."</comment>
-  </data>
-  <data name="S_InnerGlowPanel_InnerGlowPanel_F17849B03D" xml:space="preserve">
-    <value>두께</value>
-    <comment>src/Chickxel.App\EffectPanels\InnerGlowPanel.cs:13 · InnerGlowPanel · "두께"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_AddMotionEditors_610C3B2627" xml:space="preserve">
     <value>지금 {0}프레임(프레임 {1}~{2}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:713 · AddMotionEditors · $"지금 {to - from + 1}프레임(프레임 {from + 1}~{to + 1}) 동안 움직입니다 — 범위를 늘리면 느려지고 줄이면 빨라집니다."</comment>
@@ -3268,18 +2742,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B" xml:space="preserve">
     <value>반복</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:722 · AddTimingEditors · "반복"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Anchors_0EC3ED31B9" xml:space="preserve">
-    <value>아래 가운데 (발 고정)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:72 · Anchors · "아래 가운데 (발 고정)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Anchors_1F3A9869CE" xml:space="preserve">
-    <value>가운데</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:72 · Anchors · "가운데"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Anchors_6466116779" xml:space="preserve">
-    <value>피벗</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:72 · Anchors · "피벗"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Bake_D0F7807D90" xml:space="preserve">
     <value>캔버스 확대 · 효과 영구 적용</value>
@@ -3325,18 +2787,6 @@ echo __LOGIN_FAILED__
     <value> · 부위 크기 {0}×{1}로 넓힘</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:507 · BakeSummary · $" · 부위 크기 {layer.PartSize.Width}×{layer.PartSize.Height}로 넓힘"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_Blends_1725732230" xml:space="preserve">
-    <value>곱하기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:74 · Blends · "곱하기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Blends_5260B3BD7E" xml:space="preserve">
-    <value>스크린</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:74 · Blends · "스크린"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Blends_69D924C609" xml:space="preserve">
-    <value>덮기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:74 · Blends · "덮기"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_CanBake_235F1CD0DC" xml:space="preserve">
     <value>잠긴 레이어에는 영구 적용할 수 없습니다.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:496 · CanBake · "잠긴 레이어에는 영구 적용할 수 없습니다."</comment>
@@ -3376,66 +2826,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_CenterKind_DE4F2D8B9E" xml:space="preserve">
     <value>오른쪽 끝</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:903 · CenterKind · "오른쪽 끝"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Centers_17A9293CA6" xml:space="preserve">
-    <value>가운데</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:71 · Centers · "가운데"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Centers_4EEB98A21E" xml:space="preserve">
-    <value>아래 가운데</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:71 · Centers · "아래 가운데"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Centers_7CA53FB898" xml:space="preserve">
-    <value>피벗</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:71 · Centers · "피벗"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Centers_8D791DFBBE" xml:space="preserve">
-    <value>직접 (X, Y)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:71 · Centers · "직접 (X, Y)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Copies_54ACB79D5D" xml:space="preserve">
-    <value>개</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:124 · Copies · "개"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Count_A61CE50C3B" xml:space="preserve">
-    <value>번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:118 · Count · "번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_2D3F13D6AD" xml:space="preserve">
-    <value>왼쪽 아래</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:66 · Directions · "왼쪽 아래"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_38A213C040" xml:space="preserve">
-    <value>왼쪽 위</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:64 · Directions · "왼쪽 위"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_53073620AC" xml:space="preserve">
-    <value>위</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:64 · Directions · "위"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_73A07AC9E0" xml:space="preserve">
-    <value>오른쪽 아래</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:66 · Directions · "오른쪽 아래"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_87DE11F0BD" xml:space="preserve">
-    <value>왼쪽</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:65 · Directions · "왼쪽"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_A573091255" xml:space="preserve">
-    <value>오른쪽</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:65 · Directions · "오른쪽"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_B1DECE0B86" xml:space="preserve">
-    <value>아래</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:66 · Directions · "아래"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Directions_E2ADEEE3AD" xml:space="preserve">
-    <value>오른쪽 위</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:64 · Directions · "오른쪽 위"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Dithers_19C7C4899C" xml:space="preserve">
-    <value>없음 (부드럽게)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:75 · Dithers · "없음 (부드럽게)"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Easings_4FA414FBAC" xml:space="preserve">
     <value>처음 빠르게</value>
@@ -3557,229 +2947,21 @@ echo __LOGIN_FAILED__
     <value>뒤에 프레임 {0}개 있음</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.Extend.cs:222 · SyncExtendEditor · $"뒤에 프레임 {after}개 있음"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_FillSettings_08EF532DFB" xml:space="preserve">
-    <value>사라짐</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:647 · FillSettings · "사라짐"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_0AB9179C30" xml:space="preserve">
-    <value>빛 쪽 가장자리에서 지정한 칸 수만큼 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:620 · FillSettings · "빛 쪽 가장자리에서 지정한 칸 수만큼 빛 색, 반대쪽에 그늘 색을 덧칠합니다(알파 = 세기, 0 = 안 칠함)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_1192DC8149" xml:space="preserve">
-    <value>각도</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:664 · FillSettings · "각도"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_FillSettings_12D0C7E74E" xml:space="preserve">
     <value>효과를 고르세요.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:587 · FillSettings · "효과를 고르세요."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_1381B5CF89" xml:space="preserve">
-    <value>빛 색</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:618 · FillSettings · "빛 색"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_171EBAB542" xml:space="preserve">
-    <value>범위 첫 프레임은 원래 그림 그대로, 그 뒤로 보이는 픽셀이 중심에서 바깥으로 튀어 나가며 사라집니다. 셀 그림은 그대로입니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:657 · FillSettings · "범위 첫 프레임은 원래 그림 그대로, 그 뒤로 보이는 픽셀이 중심에서 바깥으로 튀어 나가며 사라집니다. 셀 그림은 그대로입니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_1C82F0E839" xml:space="preserve">
-    <value>  중력</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:642 · FillSettings · "  중력"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_2118984CA5" xml:space="preserve">
-    <value>빛 띠가 그림 한쪽 바로 밖에서 들어와 반대쪽으로 빠져나갑니다. 보이는 픽셀만 밝아지고(스크린), 투명한 곳·투명도는 그대로입니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:670 · FillSettings · "빛 띠가 그림 한쪽 바로 밖에서 들어와 반대쪽으로 빠져나갑니다. 보이는 픽셀만 밝아지고(스크린), 투명한 곳·투명도는 그대로입니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_FillSettings_24136B66D0" xml:space="preserve">
     <value>효과가 없습니다 — 왼쪽에서 골라 추가하세요.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:587 · FillSettings · "효과가 없습니다 — 왼쪽에서 골라 추가하세요."</comment>
   </data>
-  <data name="S_LayerEffectsDialog_FillSettings_288AED0ECC" xml:space="preserve">
-    <value>번쩍임</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:649 · FillSettings · "번쩍임"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_28DDBC6B0B" xml:space="preserve">
-    <value>딱딱하게</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:668 · FillSettings · "딱딱하게"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_3029688617" xml:space="preserve">
-    <value>가로 세기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:676 · FillSettings · "가로 세기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_3CA6157165" xml:space="preserve">
-    <value>범위</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:616 · FillSettings · "범위"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_4147FCFCA9" xml:space="preserve">
-    <value>옆으로 먼저 (납작 → 길쭉)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:680 · FillSettings · "옆으로 먼저 (납작 → 길쭉)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_4165F7C464" xml:space="preserve">
-    <value>기준점</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:679 · FillSettings · "기준점"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_4331838592" xml:space="preserve">
-    <value>안쪽 (가장자리 픽셀)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:600 · FillSettings · "안쪽 (가장자리 픽셀)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_48FAB42CF8" xml:space="preserve">
-    <value>부드러움</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:668 · FillSettings · "부드러움"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_4D51C71D99" xml:space="preserve">
-    <value>순서</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:680 · FillSettings · "순서"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_541ACE652F" xml:space="preserve">
-    <value>가장자리 2px</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:668 · FillSettings · "가장자리 2px"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_5522C8DF65" xml:space="preserve">
-    <value>양</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:624 · FillSettings · "양"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_5C5C39442A" xml:space="preserve">
-    <value>중심</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:635 · FillSettings · "중심"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_5DD23B47AC" xml:space="preserve">
-    <value>섞기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:625 · FillSettings · "섞기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_5F8BA1F369" xml:space="preserve">
-    <value>프레임</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:649 · FillSettings · "프레임"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_62FD728E7C" xml:space="preserve">
-    <value>바깥 (그림 밖으로)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:600 · FillSettings · "바깥 (그림 밖으로)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_66BE69E8AB" xml:space="preserve">
-    <value>빛이 오는 쪽</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:613 · FillSettings · "빛이 오는 쪽"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_6C80368CF6" xml:space="preserve">
-    <value>  세기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:666 · FillSettings · "  세기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_6D8B67BF59" xml:space="preserve">
-    <value>번쩍임 색</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:650 · FillSettings · "번쩍임 색"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_6E13AD4474" xml:space="preserve">
-    <value>그늘 색</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:619 · FillSettings · "그늘 색"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_7049E2D1FE" xml:space="preserve">
-    <value>원본 남기기 (복사본이 날아감)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:651 · FillSettings · "원본 남기기 (복사본이 날아감)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_7AEF607F6B" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:599 · FillSettings · "방향"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_7D4825E02A" xml:space="preserve">
-    <value>튕김</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:678 · FillSettings · "튕김"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_85BBD645E0" xml:space="preserve">
-    <value>4방향 (십자)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:599 · FillSettings · "4방향 (십자)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_880B57A4CE" xml:space="preserve">
-    <value>끝으로 갈수록 작게</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:644 · FillSettings · "끝으로 갈수록 작게"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_9577438EC7" xml:space="preserve">
-    <value>그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기). 디더를 고르면 반투명 대신 불투명한 색을 그 밀도의 무늬(50% = 바둑판)로 깝니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:610 · FillSettings · "그림 모양 그대로 옮긴 단단한 그림자(알파 = 진하기). 디더를 고르면 반투명 대신 불투명한 색을 그 밀도의 무늬(50% = 바둑판)로 깝니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_9691881EA3" xml:space="preserve">
-    <value>가로·세로 세기를 따로 정해 출렁입니다. 0%인 축은 고정되고 픽셀은 늘이거나 줄여도 또렷합니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:682 · FillSettings · "가로·세로 세기를 따로 정해 출렁입니다. 0%인 축은 고정되고 픽셀은 늘이거나 줄여도 또렷합니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_98D374602B" xml:space="preserve">
-    <value>날아가는 거리</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs · FillSettings · "날아가는 거리"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_9926E8F548" xml:space="preserve">
-    <value>번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:678 · FillSettings · "번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_9E6E8E6EFE" xml:space="preserve">
-    <value>무작위 변화</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs · FillSettings · "무작위 변화"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_A81FAFD1EE" xml:space="preserve">
-    <value>두께</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:598 · FillSettings · "두께"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_FillSettings_A89FB839CA" xml:space="preserve">
     <value>px (원본 왼쪽 위 기준)</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:640 · FillSettings · "px (원본 왼쪽 위 기준)"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_FillSettings_AB233EA745" xml:space="preserve">
-    <value>가장자리 1px</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:668 · FillSettings · "가장자리 1px"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_B8F02D5B5D" xml:space="preserve">
-    <value>위로 먼저 (길쭉 → 납작)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:680 · FillSettings · "위로 먼저 (길쭉 → 납작)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_BD67E1B5C4" xml:space="preserve">
-    <value>보이는 픽셀을 한 색이나 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로). 그라데이션의 "전체 한 색" 모드는 효과 범위의 시간에 따라 그림 전체를 정지점 색으로 바꿉니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:626 · FillSettings · "보이는 픽셀을 한 색이나 공간 그라데이션 쪽으로 물들입니다(100% = 실루엣, 투명도는 그대로)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_BE76D99E55" xml:space="preserve">
-    <value>다른 무작위 변화(시드를 무작위로)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs · FillSettings · "다른 무작위 변화(시드를 무작위로)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_C4DC26AC14" xml:space="preserve">
-    <value>° (지나가는 방향, 45 = ↗)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:664 · FillSettings · "° (지나가는 방향, 45 = ↗)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_CD2E150E76" xml:space="preserve">
-    <value> 범위의 프레임마다 그 프레임 그림이 조각이 됩니다(그림이 없는 프레임은 터질 것도 없음).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:658 · FillSettings · " 범위의 프레임마다 그 프레임 그림이 조각이 됩니다(그림이 없는 프레임은 터질 것도 없음)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_D2ECBA6FD8" xml:space="preserve">
-    <value>8방향 (모서리 포함)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:599 · FillSettings · "8방향 (모서리 포함)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_D370965ED0" xml:space="preserve">
-    <value>폭</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:665 · FillSettings · "폭"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_DA003AD5F5" xml:space="preserve">
-    <value>  세로 세기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:677 · FillSettings · "  세로 세기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_E1CC351651" xml:space="preserve">
-    <value>조각 크기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:643 · FillSettings · "조각 크기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_E37116317A" xml:space="preserve">
-    <value>시드</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:655 · FillSettings · "시드"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_E78408846D" xml:space="preserve">
-    <value>위치</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:600 · FillSettings · "위치"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_E831CF80BB" xml:space="preserve">
-    <value>끝으로 갈수록 흐려지며 사라집니다(시작 = 흐려지기 시작하는 진행 %).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:647 · FillSettings · "끝으로 갈수록 흐려지며 사라집니다(시작 = 흐려지기 시작하는 진행 %)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_E8E9684F4B" xml:space="preserve">
-    <value>시작</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:648 · FillSettings · "시작"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_FillSettings_F6DB7C3B67" xml:space="preserve">
     <value>색</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:597 · FillSettings · "색"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_FillSettings_FEA25AE8B2" xml:space="preserve">
-    <value>디더</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:609 · FillSettings · "디더"</comment>
   </data>
   <data name="S_LayerEffectsDialog_FrameNumberKind_36C0AD1206" xml:space="preserve">
     <value>지금</value>
@@ -3800,10 +2982,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_FrameNumberKind_FC90F137FF" xml:space="preserve">
     <value>끝</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:882 · FrameNumberKind · "끝"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Frames_656538CC7F" xml:space="preserve">
-    <value>프레임</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:122 · Frames · "프레임"</comment>
   </data>
   <data name="S_LayerEffectsDialog_Frames_FrameStrip_2E9C335D70" xml:space="preserve">
     <value>누르면 그 프레임을 보고, 끌면 프레임 범위를 정합니다. 효과를 고른 채 마지막 칸 너머로 끌면 프레임을 늘립니다(점선 칸).</value>
@@ -3832,182 +3010,6 @@ echo __LOGIN_FAILED__
   <data name="S_LayerEffectsDialog_Intro_C71F0948BE" xml:space="preserve">
     <value>미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 효과를 고르면 그 범위를 바로 재생하고, '고른 효과 범위만'을 끄면 늘린 뒤 전체 프레임을 재생합니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 고른 효과의 프레임 범위.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:324 · Intro · "미리보기는 고른 프레임의 범위 안에 있는 효과만 보입니다. 효과를 고르면 그 범위를 바로 재생하고, '고른 효과 범위만'을 끄면 늘린 뒤 전체 프레임을 재생합니다. 아래 프레임 줄: 누르면 그 프레임, 끌면 고른 효과의 프레임 범위."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_02A04E0B04" xml:space="preserve">
-    <value>흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:31 · KindTable · "흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_03AE924348" xml:space="preserve">
-    <value>보이는 픽셀을 한 색이나 공간 그라데이션으로 물들입니다(100% = 실루엣).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:28 · KindTable · "보이는 픽셀을 한 색이나 공간 그라데이션으로 물들입니다(100% = 실루엣)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_043CDEE3B8" xml:space="preserve">
-    <value>그림 전체가 픽셀 단위로 덜덜 떱니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:39 · KindTable · "그림 전체가 픽셀 단위로 덜덜 떱니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_10CD6603BC" xml:space="preserve">
-    <value>그림자</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:26 · KindTable · "그림자"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_126136E630" xml:space="preserve">
-    <value>가장자리 빛·그늘</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:27 · KindTable · "가장자리 빛·그늘"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_1725C3F28A" xml:space="preserve">
-    <value>피격 번쩍임</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:37 · KindTable · "피격 번쩍임"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_174D9850CC" xml:space="preserve">
-    <value>빛 지나가기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:34 · KindTable · "빛 지나가기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_1ABE2A05EE" xml:space="preserve">
-    <value>정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:45 · KindTable · "정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_1B49B1765C" xml:space="preserve">
-    <value>픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:42 · KindTable · "픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_20C2A2DCF6" xml:space="preserve">
-    <value>색 바꾸기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:30 · KindTable · "색 바꾸기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_23A9E57A2F" xml:space="preserve">
-    <value>색 순환</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:45 · KindTable · "색 순환"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_2576225185" xml:space="preserve">
-    <value>그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:26 · KindTable · "그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_25FE384908" xml:space="preserve">
-    <value>안쪽 빛</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:29 · KindTable · "안쪽 빛"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_2B322D7A38" xml:space="preserve">
-    <value>홀로그램</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:47 · KindTable · "홀로그램"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_2C5AB3754D" xml:space="preserve">
-    <value>흔들기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:39 · KindTable · "흔들기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_34F6760645" xml:space="preserve">
-    <value>그림을 돌립니다(RotSprite — 새 색·반투명 없이).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:43 · KindTable · "그림을 돌립니다(RotSprite — 새 색·반투명 없이)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_361470DFA9" xml:space="preserve">
-    <value>위아래로 부드럽게 떠오르고 가라앉습니다(대기 동작).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:40 · KindTable · "위아래로 부드럽게 떠오르고 가라앉습니다(대기 동작)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_4230F44F0C" xml:space="preserve">
-    <value>빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:27 · KindTable · "빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_45261BC59C" xml:space="preserve">
-    <value>그림 둘레에 테두리 선을 두릅니다(바깥 = 그림 밖에, 안쪽 = 가장자리 픽셀에). 색은 지정 색 또는 맞닿은 픽셀보다 진하게·연하게(인접 픽셀 기준 명암).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:25 · KindTable · "그림 둘레에 테두리 선을 두릅니다(바깥 = 그림 밖에, 안쪽 = 가장자리 픽셀에)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_4A3575A660" xml:space="preserve">
-    <value>녹아내리기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:42 · KindTable · "녹아내리기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_4E3A3D50CE" xml:space="preserve">
-    <value>고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:30 · KindTable · "고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_4E942C831D" xml:space="preserve">
-    <value>보였다 숨었다를 되풀이합니다(무적 시간 표시 등).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:38 · KindTable · "보였다 숨었다를 되풀이합니다(무적 시간 표시 등)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_510993AD9E" xml:space="preserve">
-    <value>깜빡이기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:38 · KindTable · "깜빡이기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_5627BD3D9D" xml:space="preserve">
-    <value>반사</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:32 · KindTable · "반사"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_5C190C1C74" xml:space="preserve">
-    <value>외곽선</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:25 · KindTable · "외곽선"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_6134E7833F" xml:space="preserve">
-    <value>가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:29 · KindTable · "가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_69C80DA119" xml:space="preserve">
-    <value>앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:44 · KindTable · "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_6A331276D8" xml:space="preserve">
-    <value>그림을 뒤집어 아래·위·옆에 점점 옅게 비춥니다(물·바닥·벽 반사).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:32 · KindTable · "그림을 위아래로 뒤집어 아래에 점점 옅게 비춥니다(물·바닥 반사)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_71D60FCC7E" xml:space="preserve">
-    <value>충격파 고리</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:46 · KindTable · "충격파 고리"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_792E7BADCE" xml:space="preserve">
-    <value>늘었다 줄기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:35 · KindTable · "늘었다 줄기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_7C6C1B6117" xml:space="preserve">
-    <value>젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:35 · KindTable · "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_91F153F61A" xml:space="preserve">
-    <value>픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:33 · KindTable · "픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_993BDE3846" xml:space="preserve">
-    <value>맞았을 때처럼 그림이 한 색으로 번쩍입니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:37 · KindTable · "맞았을 때처럼 그림이 한 색으로 번쩍입니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_AC8A98B707" xml:space="preserve">
-    <value>터지기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:33 · KindTable · "터지기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_B65A656A1B" xml:space="preserve">
-    <value>회전</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:43 · KindTable · "회전"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_C29C82BC8E" xml:space="preserve">
-    <value>색 덮기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:28 · KindTable · "색 덮기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_C41906B546" xml:space="preserve">
-    <value>잔상</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:44 · KindTable · "잔상"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_CA9E953421" xml:space="preserve">
-    <value>색조 보정</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:31 · KindTable · "색조 보정"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_CB2F9D0913" xml:space="preserve">
-    <value>중심에서 픽셀 원 고리가 퍼져 나갑니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:46 · KindTable · "중심에서 픽셀 원 고리가 퍼져 나갑니다."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_E97AB47F1D" xml:space="preserve">
-    <value>빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:34 · KindTable · "빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_EF5C5A3497" xml:space="preserve">
-    <value>한 색의 투사 영상처럼 물들이고 주사선·밝은 띠·깜빡임·글리치를 더합니다(SF 홀로그램).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:47 · KindTable · "한 색의 투사 영상처럼 물들이고 주사선·밝은 띠·깜빡임·글리치를 더합니다(SF 홀로그램)."</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_F5A6D8375C" xml:space="preserve">
-    <value>둥실둥실</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:40 · KindTable · "둥실둥실"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_F6C9786974" xml:space="preserve">
-    <value>나타나기 / 사라지기</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:41 · KindTable · "나타나기 / 사라지기"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_KindTable_FFF387B9B9" xml:space="preserve">
-    <value>디더·흩어짐·쓸기·투명도로 그림이 나타나거나 사라집니다.</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:41 · KindTable · "디더·흩어짐·쓸기·투명도로 그림이 나타나거나 사라집니다."</comment>
   </data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_0500474F59" xml:space="preserve">
     <value>재생할 때 마지막 프레임을 더 보여 주지 않고 곧바로 첫 프레임으로 이어서 반복합니다(게임에서 반복 재생하는 모습).</value>
@@ -4110,10 +3112,6 @@ echo __LOGIN_FAILED__
 움직이는 효과 — 프레임 범위 동안 움직입니다.</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.Palette.cs:29 · BuildPalette · "\n움직이는 효과 — 프레임 범위 동안 움직입니다."</comment>
   </data>
-  <data name="S_LayerEffectsDialog_Palette_BuildPalette_938E8B22DD" xml:space="preserve">
-    <value>두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에).</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.Palette.cs:53 · BuildPalette · "두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에)."</comment>
-  </data>
   <data name="S_LayerEffectsDialog_Palette_BuildPalette_F3EEB77504" xml:space="preserve">
     <value>효과 종류</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.Palette.cs:53 · BuildPalette · "효과 종류"</comment>
@@ -4174,193 +3172,9 @@ echo __LOGIN_FAILED__
     <value>반복</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:70 · Repeats · "반복"</comment>
   </data>
-  <data name="S_LayerEffectsDialog_ScanGap_5A028BD5A6" xml:space="preserve">
-    <value>줄</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:126 · ScanGap · "줄"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_ShadowDithers_85A6B2AD26" xml:space="preserve">
-    <value>없음 (반투명)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:73 · ShadowDithers · "없음 (반투명)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_ShadowDithers_BC77BAD2B0" xml:space="preserve">
-    <value>50% (바둑판)</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:73 · ShadowDithers · "50% (바둑판)"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_0080B38202" xml:space="preserve">
-    <value>깜빡이기 · </value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:475 · Summary · $"깜빡이기 · "</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_009BCE5A4C" xml:space="preserve">
-    <value>8방향</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:462 · Summary · "8방향"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_055B04E8E0" xml:space="preserve">
-    <value>색 순환 · {0}색 · {1}칸</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:483 · Summary · $"색 순환 · {cycle.Colors.Count}색 · {cycle.Steps}칸"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_0B62ABBEE2" xml:space="preserve">
-    <value>가장자리 빛·그늘 · {0} · {1}px</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:464 · Summary · $"가장자리 빛·그늘 · {Directions.First(d =&gt; d.Dir == r.Direction).Name} · {r.Size}px"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_192DBA1F7C" xml:space="preserve">
-    <value>안쪽</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:462 · Summary · "안쪽"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_1BF53EA7E5" xml:space="preserve">
-    <value> · 엷어짐</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:474 · Summary · " · 엷어짐"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_1D40117C02" xml:space="preserve">
-    <value> · 줄어듦</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:477 · Summary · " · 줄어듦"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_2629FC9A9D" xml:space="preserve">
-    <value>4방향</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:462 · Summary · "4방향"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_30757AF9AF" xml:space="preserve">
-    <value> · 원본 남김</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:466 · Summary · " · 원본 남김"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_3722634F0B" xml:space="preserve">
-    <value>좌우</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:478 · Summary · "좌우"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_4AD4C2E7D2" xml:space="preserve">
-    <value>회전 · {0}° · {1}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs · Summary · 부호 있는 각도와 기준점</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_4BF321B781" xml:space="preserve">
-    <value>잔상 · {0}개 · 간격 {1} · {2}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:482 · Summary · $"잔상 · {after.Count}개 · 간격 {after.Interval} · {after.Opacity}%"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_4DA5BACD5A" xml:space="preserve">
-    <value> · 규칙적</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:477 · Summary · " · 규칙적"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_53B3F1206A" xml:space="preserve">
-    <value>색 바꾸기 · {0}쌍</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:471 · Summary · $"색 바꾸기 · {p.Pairs.Count}쌍"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_54368CD4DD" xml:space="preserve">
-    <value>반사 · {0} · 간격 {1}px · {2}% · {3}→{4}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:473 · Summary · $"반사 · {(m.Above ? "위" : "아래")} · 간격 {m.Gap}px · {m.Height}% · {m.OpacityStart}→{m.OpacityEnd}%"</comment>
-  </data>
   <data name="S_LayerEffectsDialog_Summary_58CF9C9156" xml:space="preserve">
     <value> · 프레임 {0}</value>
     <comment>src/Chickxel.App\LayerEffectsDialog.cs:488 · Summary · $" · 프레임 {f}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_62017EE627" xml:space="preserve">
-    <value>색조 보정 · {0}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:472 · Summary · $"색조 보정 · {AdjustSummary(c)}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_78B20FF1F4" xml:space="preserve">
-    <value>바깥</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:462 · Summary · "바깥"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_7B535BB782" xml:space="preserve">
-    <value> · 글리치 {0}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:486 · Summary · $" · 글리치 {holo.GlitchRate}%"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_7D1229802B" xml:space="preserve">
-    <value>{0}번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:475 · Summary · $"{blink.Count}번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_823544BC03" xml:space="preserve">
-    <value> · 디더</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:473 · Summary · " · 디더"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_855D00FD34" xml:space="preserve">
-    <value>보임 {0} / 숨김 {1}프레임</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:475 · Summary · $"보임 {blink.OnFrames} / 숨김 {blink.OffFrames}프레임"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_8FC3C16840" xml:space="preserve">
-    <value>홀로그램 · {0} · {1}% · 투명도 {2}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:485 · Summary · $"홀로그램 · {holo.Color.ToHex()} · {holo.TintStrength}% · 투명도 {holo.Opacity}%"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_92D1EF3203" xml:space="preserve">
-    <value>흔들기 · {0} · {1}px · {2}번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:477 · Summary · $"흔들기 · {Axes[(int)shake.Axis]} · {shake.Amount}px · {shake.Count}번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_963828451F" xml:space="preserve">
-    <value>늘었다 줄기 · 가로 {0}% · 세로 {1}% · {2}번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:468 · Summary · $"늘었다 줄기 · 가로 {q.WidthAmount}% · 세로 {q.HeightAmount}% · {q.Bounces}번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_99CAC4A07E" xml:space="preserve">
-    <value>위</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:473 · Summary · "위"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_A9AB403D93" xml:space="preserve">
-    <value>피격 번쩍임 · {0}번 · {1}% · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:474 · Summary · $"피격 번쩍임 · {hit.Count}번 · {hit.Strength}% · {hit.Color.ToHex()}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_B8FE86B3A0" xml:space="preserve">
-    <value>안쪽 빛 · {0}px · {1}% · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:470 · Summary · $"안쪽 빛 · {g.Size}px · {g.Strength}% · {g.Color.ToHex()}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_BBAD57A076" xml:space="preserve">
-    <value>둥실둥실 · {0} · {1}px · {2}번</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:478 · Summary · $"둥실둥실 · {(bob.Axis == EffectAxis.Horizontal ? "좌우" : "위아래")} · {bob.Height}px · {bob.Cycles}번"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_BC26FFFDAA" xml:space="preserve">
-    <value>앞</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:484 · Summary · "앞"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_C36AC46BAE" xml:space="preserve">
-    <value> · {0}부터</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:479 · Summary · $" · {WipeFroms[(int)appear.From]}부터"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_D07B4E5446" xml:space="preserve">
-    <value>충격파 고리 · {0}px · 두께 {1} · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:484 · Summary · $"충격파 고리 · {wave.Radius}px · 두께 {wave.Thickness} · {(wave.Behind ? "뒤" : "앞")}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_D6E8941524" xml:space="preserve">
-    <value> · 거꾸로</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:483 · Summary · " · 거꾸로"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_DA48E085AF" xml:space="preserve">
-    <value>녹아내리기 · {0}px · 불규칙 {1}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:480 · Summary · $"녹아내리기 · {melt.Distance}px · 불규칙 {melt.Irregularity}%"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_DE0B23D063" xml:space="preserve">
-    <value>터지기 · X {0}px Y {1}px · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs · Summary · "터지기 · X {0}px Y {1}px · {2}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_E233F2401C" xml:space="preserve">
-    <value>그림자 · ({0}, {1}) · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:463 · Summary · $"그림자 · ({s.OffsetX}, {s.OffsetY}) · {s.Color.ToHex()}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_E3B52B00EB" xml:space="preserve">
-    <value>뒤</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:484 · Summary · "뒤"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_E77A16477B" xml:space="preserve">
-    <value> · 허용 {0}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:471 · Summary · $" · 허용 {p.Tolerance}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_E7A8C83171" xml:space="preserve">
-    <value>외곽선 · {0} {1}px · {2} · {3}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:462 · Summary · $"외곽선 · {(o.Inside ? "안쪽" : "바깥")} {o.Thickness}px · {(o.Diagonal ? "8방향" : "4방향")} · {o.Color.ToHex()}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_EFCA029C51" xml:space="preserve">
-    <value>위아래</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:478 · Summary · "위아래"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_F451DAAC0A" xml:space="preserve">
-    <value>빛 지나가기 · {0}° · {1}px · {2}%</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:467 · Summary · $"빛 지나가기 · {s.Angle}° · {s.Width}px · {s.Strength}%"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_F724879C11" xml:space="preserve">
-    <value>아래</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:473 · Summary · "아래"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_F824955A0D" xml:space="preserve">
-    <value>색 덮기 · {0} · {1}% · {2}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:465 · Summary · $"색 덮기 · {Blends[(int)c.Blend]} · {c.Amount}% · {c.Color.ToHex()}"</comment>
-  </data>
-  <data name="S_LayerEffectsDialog_Summary_FDDC95CFEA" xml:space="preserve">
-    <value> · 디더 {0}</value>
-    <comment>src/Chickxel.App\LayerEffectsDialog.cs:463 · Summary · $" · 디더 {ShadowDithers[(int)s.Dither]}"</comment>
   </data>
   <data name="S_LayerEffectsDialog_SyncPlayback_1100994439" xml:space="preserve">
     <value>재생</value>
@@ -4605,46 +3419,6 @@ echo __LOGIN_FAILED__
   <data name="S_McpServer_Start_FF0B0F6631" xml:space="preserve">
     <value>MCP 서버를 시작하지 못했습니다: {0}</value>
     <comment>src/Chickxel.App\Ai\McpServer.cs:100 · Start · $"MCP 서버를 시작하지 못했습니다: {last?.Message}"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_05D178E28F" xml:space="preserve">
-    <value>늘어짐 (흘러내린 자국)</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:13 · MeltPanel · "늘어짐 (흘러내린 자국)"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_51CBEF5EB8" xml:space="preserve">
-    <value>불규칙함</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:12 · MeltPanel · "불규칙함"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_54B1D35C64" xml:space="preserve">
-    <value>% (열마다 늦게·느리게)</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:12 · MeltPanel · "% (열마다 늦게·느리게)"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_6EDA79E298" xml:space="preserve">
-    <value>px (끝까지 내려가는 거리)</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:11 · MeltPanel · "px (끝까지 내려가는 거리)"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_A67CF586F8" xml:space="preserve">
-    <value>사라짐</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:14 · MeltPanel · "사라짐"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_B26E6FC89A" xml:space="preserve">
-    <value>다른 녹는 모양(시드를 무작위로)</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:16 · MeltPanel · "다른 녹는 모양(시드를 무작위로)"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_C1680743FF" xml:space="preserve">
-    <value> 범위 첫 프레임은 그림 그대로, 아래로 거리만큼 여백이 생깁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:20 · MeltPanel · " 범위 첫 프레임은 그림 그대로, 아래로 거리만큼 여백이 생깁니다."</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_CB59847BAC" xml:space="preserve">
-    <value>픽셀이 열마다 조금씩 다른 때·빠르기로 아래로 흘러내리고(늘어짐이면 아래쪽일수록 더 내려가 자국이 남음), 사라짐이면 다 내려가면서 투명해집니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:19 · MeltPanel · "픽셀이 열마다 조금씩 다른 때·빠르기로 아래로 흘러내리고(늘어짐이면 아래쪽일수록 더 내려가 자국이 남음), 사라짐이면 다 내려가면서 투명해집니다."</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_E8772786EA" xml:space="preserve">
-    <value>시드</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:17 · MeltPanel · "시드"</comment>
-  </data>
-  <data name="S_MeltPanel_MeltPanel_F9F8B83973" xml:space="preserve">
-    <value>거리</value>
-    <comment>src/Chickxel.App\EffectPanels\MeltPanel.cs:11 · MeltPanel · "거리"</comment>
   </data>
   <data name="S_MergeDialog_MergeDialog_0A7DC12A34" xml:space="preserve">
     <value>스킨으로</value>
@@ -4911,62 +3685,6 @@ echo __LOGIN_FAILED__
     <value>팔레트 색을 누르면 선택됩니다</value>
     <comment>src/Chickxel.App\PaletteSection.cs:79 · PaletteSection · "팔레트 색을 누르면 선택됩니다"</comment>
   </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_17E5DDE5F7" xml:space="preserve">
-    <value>(0 = 정확히 같은 색만)</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:80 · PaletteSwapPanel · "(0 = 정확히 같은 색만)"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_2DE0DA2A3A" xml:space="preserve">
-    <value>그림에 쓰인 색을 골라 쌍으로 추가합니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:79 · PaletteSwapPanel · "그림에 쓰인 색을 골라 쌍으로 추가합니다."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_303CA10FC1" xml:space="preserve">
-    <value>이 프레임에 그림이 없습니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:79 · PaletteSwapPanel · "이 프레임에 그림이 없습니다."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_3C2DFB743B" xml:space="preserve">
-    <value> 바뀐 색의 투명도 = 원래 투명도 × 대상 색 투명도(투명으로 바꾸면 지워짐).</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:82 · PaletteSwapPanel · " 바뀐 색의 투명도 = 원래 투명도 × 대상 색 투명도(투명으로 바꾸면 지워짐)."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_3C34A2519A" xml:space="preserve">
-    <value>바꿀 색 쌍이 없습니다 — 아래에서 추가하세요.</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:32 · PaletteSwapPanel · "바꿀 색 쌍이 없습니다 — 아래에서 추가하세요."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_62C7E01DDC" xml:space="preserve">
-    <value>허용 차이</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:80 · PaletteSwapPanel · "허용 차이"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_6A0B119B5E" xml:space="preserve">
-    <value>쌍 추가</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:53 · PaletteSwapPanel · "쌍 추가"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_9A0CDB44A5" xml:space="preserve">
-    <value>대상</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:50 · PaletteSwapPanel · "대상"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A0FD948BEA" xml:space="preserve">
-    <value>그림에서 색 가져오기</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:59 · PaletteSwapPanel · "그림에서 색 가져오기"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A4E05A1C7D" xml:space="preserve">
-    <value>보이는 픽셀의 색이 원본 색과 같으면(R·G·B 차이가 허용 차이 이하) 대상 색으로 바꿉니다. 그라데이션을 선택하면 픽셀 위치마다 원본·대상 색을 샘플링합니다. 위의 쌍이 먼저이고 한 번만 바뀝니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:81 · PaletteSwapPanel · "보이는 픽셀의 색이 원본 색과 같으면(R·G·B 차이가 허용 차이 이하) 대상 색으로 바꿉니다. 그라데이션을 선택하면 픽셀 위치마다 원본·대상 색을 샘플링합니다. 위의 쌍이 먼저이고 한 번만 바뀝니다."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_A5869DACA1" xml:space="preserve">
-    <value>이 쌍 빼기</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:48 · PaletteSwapPanel · "이 쌍 빼기"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_AF44DD45FB" xml:space="preserve">
-    <value>{0} 원본</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:49 · PaletteSwapPanel · $"{k + 1} 원본"</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_F438B961E1" xml:space="preserve">
-    <value>이 프레임 그림에 쓰인 색 {0}개(많이 쓰인 순) — 누르면 그 색을 바꿀 쌍을 추가합니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:65 · PaletteSwapPanel · $"이 프레임 그림에 쓰인 색 {used.Count}개(많이 쓰인 순) — 누르면 그 색을 바꿀 쌍을 추가합니다."</comment>
-  </data>
-  <data name="S_PaletteSwapPanel_PaletteSwapPanel_F5BECD6FF3" xml:space="preserve">
-    <value>모두 추가</value>
-    <comment>src/Chickxel.App\EffectPanels\PaletteSwapPanel.cs:71 · PaletteSwapPanel · "모두 추가"</comment>
-  </data>
   <data name="S_PixelCanvas_BeginArrange_28B8E5E745" xml:space="preserve">
     <value>부위 선택 해제</value>
     <comment>src/Chickxel.App\PixelCanvas.cs:1925 · BeginArrange · "부위 선택 해제"</comment>
@@ -5223,13 +3941,13 @@ echo __LOGIN_FAILED__
   <data name="Ai_Locked_Outfit" xml:space="preserve"><value>착장 "{outfit}"을(를) 입히면 잠긴 레이어가 바뀝니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. outfit = 착장 이름, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>
   <data name="Ai_Locked_AutoLayout" xml:space="preserve"><value>그룹 "{group}"은(는) 자동 배치 중이라 이 변경은 잠긴 부위 {index} "{name}"을(를) 옮길 수 있습니다 — 사용자에게 잠금 해제나 자동 배치 끄기를 부탁하세요</value><comment>AI 도구 오류. group = 그룹 이름, index = 부위 레이어 번호, name = 부위 이름.</comment></data>
   <data name="Ai_Effect_What" xml:space="preserve"><value>효과</value><comment>AI 도구 오류의 번호 종류("effect 3: 효과 번호는 0~1 범위여야 합니다").</comment></data>
-  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>type(list_effect_types의 효과 종류)과 preset(효과 레시피 이름이나 ID) 중 하나만 주세요</value><comment>AI 도구 오류: add_effect에 둘 다 주거나 둘 다 빠짐.</comment></data>
+  <data name="Ai_Effect_TypeOrPreset" xml:space="preserve"><value>type(list_effect_types의 효과 종류)과 preset(효과 프리셋 이름이나 ID) 중 하나만 주세요</value><comment>AI 도구 오류: add_effect에 둘 다 주거나 둘 다 빠짐.</comment></data>
   <data name="Ai_Effect_ClipFirst" xml:space="preserve"><value>clip_to_above: 첫 효과(번호 0)는 위에 클리핑할 효과가 없습니다</value><comment>AI 도구 오류.</comment></data>
   <data name="Ai_Effect_UnknownType" xml:space="preserve"><value>type: 알 수 없는 효과 종류 "{type}" — 종류: {types}</value><comment>AI 도구 오류. type = 받은 이름, types = 효과 종류 이름 목록.</comment></data>
   <data name="Ai_Effect_PresetSettings" xml:space="preserve"><value>settings는 preset과 함께 쓸 수 없습니다 — 프리셋을 넣은 뒤 set_effect로 효과를 고치세요</value><comment>AI 도구 오류.</comment></data>
-  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: 개인 효과 레시피를 읽지 못했습니다: {error}</value><comment>AI 도구 오류. error = 원인.</comment></data>
-  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: 쓸 수 있는 효과 레시피가 없습니다 — 대신 효과 종류를 넣으세요(list_effect_types 참고)</value><comment>AI 도구 오류.</comment></data>
-  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: 효과 레시피 "{name}"이(가) 없습니다 — 있는 것: {presets}</value><comment>AI 도구 오류. name = 받은 이름, presets = 저장한 사용자 정의 효과 이름 목록.</comment></data>
+  <data name="Ai_Effect_PresetLoad" xml:space="preserve"><value>preset: 개인 효과 프리셋을 읽지 못했습니다: {error}</value><comment>AI 도구 오류. error = 원인.</comment></data>
+  <data name="Ai_Effect_NoPresets" xml:space="preserve"><value>preset: 쓸 수 있는 효과 프리셋이 없습니다 — 대신 효과 종류를 넣으세요(list_effect_types 참고)</value><comment>AI 도구 오류.</comment></data>
+  <data name="Ai_Effect_UnknownPreset" xml:space="preserve"><value>preset: 효과 프리셋 "{name}"이(가) 없습니다 — 있는 것: {presets}</value><comment>AI 도구 오류. name = 받은 이름, presets = 쓸 수 있는 효과 프리셋 이름 목록.</comment></data>
   <data name="Ai_Effect_Added" xml:space="preserve"><value>{tool}: 레이어 {layer} "{name}"에 {effects} 추가(효과 번호 {indices})</value><comment>AI 도구 결과. tool = 도구 이름, effects = 넣은 효과 종류 이름들, layer = 레이어 번호, name = 레이어 이름, indices = 효과 번호(또는 범위).</comment></data>
   <data name="Ai_Effect_NothingToChange" xml:space="preserve"><value>settings, from_frame/to_frame/all_frames, enabled, clip_to_above, move_to 중 하나는 주세요</value><comment>AI 도구 오류: set_effect에 바꿀 것이 없음.</comment></data>
   <data name="Ai_Effect_Unchanged" xml:space="preserve"><value>{tool}: 레이어 {layer}의 효과 {effect}은(는) 이미 그렇습니다 — 바뀐 것 없음</value><comment>AI 도구 결과. tool = 도구 이름, effect = 효과 번호, layer = 레이어 번호.</comment></data>
@@ -6152,170 +4870,6 @@ echo __LOGIN_FAILED__
   <data name="S_PreviewPanel_SetScale_EBF1B9D1AA" xml:space="preserve">
     <value>맞춤</value>
     <comment>src/Chickxel.App\PreviewPanel.cs:235 · SetScale · "맞춤"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_0B2DCDD256" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:11 · ReflectionPanel · "방향"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_11BC092C2F" xml:space="preserve">
-    <value>그 프레임 그림을 위아래로 뒤집어 간격만큼 띄워 뒤에 깝니다(높이 = 그림 높이의 몇 %가 비칠지).</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:20 · ReflectionPanel · "그 프레임 그림을 위아래로 뒤집어 간격만큼 띄워 뒤에 깝니다(높이 = 그림 높이의 몇 %가 비칠지)."</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_15D1419195" xml:space="preserve">
-    <value>위 (천장)</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:11 · ReflectionPanel · "위 (천장)"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_316A07F4E0" xml:space="preserve">
-    <value> 그림 쪽 줄이 시작 불투명도, 끝 줄이 끝 불투명도입니다. 색 입히기의 투명도 = 물드는 세기(0 = 안 물들임).</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:21 · ReflectionPanel · " 그림 쪽 줄이 시작 불투명도, 끝 줄이 끝 불투명도입니다. 색 입히기의 투명도 = 물드는 세기(0 = 안 물들임)."</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_3775129E0B" xml:space="preserve">
-    <value>불투명도</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:14 · ReflectionPanel · "불투명도"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_436371597D" xml:space="preserve">
-    <value>  높이</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:13 · ReflectionPanel · "  높이"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_4FE25252B7" xml:space="preserve">
-    <value>아래 (바닥·물)</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:11 · ReflectionPanel · "아래 (바닥·물)"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_5E956839D2" xml:space="preserve">
-    <value>간격</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:12 · ReflectionPanel · "간격"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_61D47D3F6B" xml:space="preserve">
-    <value>디더로 흐리기 (반투명 대신 무늬)</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:16 · ReflectionPanel · "디더로 흐리기 (반투명 대신 무늬)"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_742EB29F31" xml:space="preserve">
-    <value>색 입히기</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:17 · ReflectionPanel · "색 입히기"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_B7DC6AC8F7" xml:space="preserve">
-    <value>px (줄마다 가로로 흔듦, 0 = 끔)</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:19 · ReflectionPanel · "px (줄마다 가로로 흔듦, 0 = 끔)"</comment>
-  </data>
-  <data name="S_ReflectionPanel_ReflectionPanel_F203E882CA" xml:space="preserve">
-    <value>물결</value>
-    <comment>src/Chickxel.App\EffectPanels\ReflectionPanel.cs:19 · ReflectionPanel · "물결"</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_32751BEF8A" xml:space="preserve">
-    <value>° (음수 = 반시계 방향, 360 = 한 바퀴)</value>
-    <comment>src/Chickxel.App\EffectPanels\RotatePanel.cs · 부호 있는 회전 각도 안내</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_BE26BAB163" xml:space="preserve">
-    <value>각도</value>
-    <comment>src/Chickxel.App\EffectPanels\RotatePanel.cs:11 · RotatePanel · "각도"</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_C002C942CF" xml:space="preserve">
-    <value>기준점</value>
-    <comment>src/Chickxel.App\EffectPanels\RotatePanel.cs:13 · RotatePanel · "기준점"</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_C0881989CD" xml:space="preserve">
-    <value> 돌린 그림이 닿을 수 있는 만큼 부위 스프라이트에 여백이 생깁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\RotatePanel.cs:16 · RotatePanel · " 돌린 그림이 닿을 수 있는 만큼 부위 스프라이트에 여백이 생깁니다."</comment>
-  </data>
-  <data name="S_RotatePanel_RotatePanel_CF8C27D904" xml:space="preserve">
-    <value>RotSprite 방식으로 돌립니다(그림을 Scale2x로 8배 키워 돌린 뒤 원래 크기로 집음 — 새 색·반투명 없이 선이 덜 깨짐). 90°의 배수는 손실 없이, 한 바퀴 끝은 원래 그림과 같습니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\RotatePanel.cs:15 · RotatePanel · "RotSprite 방식으로 돌립니다(그림을 Scale2x로 8배 키워 돌린 뒤 원래 크기로 집음 — 새 색·반투명 없이 선이 덜 깨짐). 90°의 배수는 손실 없이, 한 바퀴 끝은 원래 그림과 같습니다."</comment>
-  </data>
-  <data name="S_ShakePanel_Axes_0BA14E7C64" xml:space="preserve">
-    <value>둘 다</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:7 · Axes · "둘 다"</comment>
-  </data>
-  <data name="S_ShakePanel_Axes_53CC4B039D" xml:space="preserve">
-    <value>가로</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:7 · Axes · "가로"</comment>
-  </data>
-  <data name="S_ShakePanel_Axes_8ACB726509" xml:space="preserve">
-    <value>세로</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:7 · Axes · "세로"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_06FDF78CFA" xml:space="preserve">
-    <value>세기</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:14 · ShakePanel · "세기"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_129203CA72" xml:space="preserve">
-    <value>그림 전체를 정수 픽셀만큼 옮겨 떱니다(많아야 세기 px). 시작·끝 프레임은 제자리이고, 흔들리는 만큼 부위 스프라이트에 여백이 생깁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:27 · ShakePanel · "그림 전체를 정수 픽셀만큼 옮겨 떱니다(많아야 세기 px). 시작·끝 프레임은 제자리이고, 흔들리는 만큼 부위 스프라이트에 여백이 생깁니다."</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_2DBC91C1A8" xml:space="preserve">
-    <value>  횟수</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:15 · ShakePanel · "  횟수"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_39DA4FC0D1" xml:space="preserve">
-    <value>무작위 (시드)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:20 · ShakePanel · "무작위 (시드)"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_3A0EE81AC1" xml:space="preserve">
-    <value>번</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:15 · ShakePanel · "번"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_84B7AD2C03" xml:space="preserve">
-    <value>시드</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:25 · ShakePanel · "시드"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_96BBC223BF" xml:space="preserve">
-    <value>방향</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:13 · ShakePanel · "방향"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_9C336915F0" xml:space="preserve">
-    <value>다른 흔들림(시드를 무작위로)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:18 · ShakePanel · "다른 흔들림(시드를 무작위로)"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_C4C270EF23" xml:space="preserve">
-    <value>줄어듦 (끝으로 갈수록 약하게)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:16 · ShakePanel · "줄어듦 (끝으로 갈수록 약하게)"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_C65B0A22CA" xml:space="preserve">
-    <value>규칙적 (사인)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:20 · ShakePanel · "규칙적 (사인)"</comment>
-  </data>
-  <data name="S_ShakePanel_ShakePanel_F0EB0186CC" xml:space="preserve">
-    <value>움직임</value>
-    <comment>src/Chickxel.App\EffectPanels\ShakePanel.cs:20 · ShakePanel · "움직임"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_005BCC51DE" xml:space="preserve">
-    <value>중심</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:14 · ShockwavePanel · "중심"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_0E8726B50C" xml:space="preserve">
-    <value>그림 뒤 (아래에)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:25 · ShockwavePanel · "그림 뒤 (아래에)"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_2DDDFC38DA" xml:space="preserve">
-    <value>중심 픽셀에서 고리가 최대 반지름까지 퍼집니다(두께 1px = 중점 원 — 빈틈·겹침 없는 픽셀 원). 범위 첫 프레임은 반지름 0이라 보이지 않고, 사방으로 반지름만큼 여백이 생깁니다.</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:27 · ShockwavePanel · "중심 픽셀에서 고리가 최대 반지름까지 퍼집니다(두께 1px = 중점 원 — 빈틈·겹침 없는 픽셀 원). 범위 첫 프레임은 반지름 0이라 보이지 않고, 사방으로 반지름만큼 여백이 생깁니다."</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_61134FA980" xml:space="preserve">
-    <value>  두께</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:21 · ShockwavePanel · "  두께"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_632117D3C6" xml:space="preserve">
-    <value>위치</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:25 · ShockwavePanel · "위치"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_8A907D46C9" xml:space="preserve">
-    <value>px (원본 왼쪽 위 기준)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:19 · ShockwavePanel · "px (원본 왼쪽 위 기준)"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_B5365A0F6F" xml:space="preserve">
-    <value>그림 앞 (위에)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:25 · ShockwavePanel · "그림 앞 (위에)"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_CBB90B0ACA" xml:space="preserve">
-    <value>최대 반지름</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:20 · ShockwavePanel · "최대 반지름"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_D20485811B" xml:space="preserve">
-    <value>색</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:22 · ShockwavePanel · "색"</comment>
-  </data>
-  <data name="S_ShockwavePanel_ShockwavePanel_DF8C5BBEB2" xml:space="preserve">
-    <value>사라짐 (퍼지며 옅어짐)</value>
-    <comment>src/Chickxel.App\EffectPanels\ShockwavePanel.cs:24 · ShockwavePanel · "사라짐 (퍼지며 옅어짐)"</comment>
   </data>
   <data name="S_Shortcuts_FromJson_86871DD6CC" xml:space="preserve">
     <value>"shortcuts" 항목이 없습니다.</value>
@@ -9598,16 +8152,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>설치 또는 로그인에 실패했습니다. 위 오류를 확인하세요.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>중심 유지 확대</value></data>
   <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>원본 지우기 (외곽선만 보기)</value></data>
-  <data name="EffectOutline_HideOriginalTip" xml:space="preserve"><value>선을 따라 그린 그림을 지워 선만 남깁니다(안쪽이면 가장자리 고리만). 이 외곽선에 클리핑한 효과는 선에만 입혀집니다.</value></data>
-  <data name="EffectOutline_HideOriginalSummary" xml:space="preserve"><value> · 선만</value></data>
   <data name="EffectMissing_Note" xml:space="preserve"><value>이 효과({0})는 이 버전의 Chickxel이 모르는 종류라 그리지 않고 고칠 수 없습니다. 저장하면 원래 설정 그대로 남고, 이 효과를 아는 Chickxel에서 열면 다시 쓸 수 있습니다.</value></data>
-  <data name="EffectOutline_ColorMode" xml:space="preserve"><value>색 방식</value></data>
-  <data name="EffectOutline_ModeFixed" xml:space="preserve"><value>지정 색</value></data>
   <data name="EffectOutline_ModeShade" xml:space="preserve"><value>인접 픽셀 기준 명암</value></data>
-  <data name="EffectOutline_ModeTip" xml:space="preserve"><value>지정 색: 선 전체를 한 색(또는 그라데이션)으로 칠합니다. 인접 픽셀 기준 명암: 선이 맞닿은 그림 픽셀의 색을 진하게·연하게 바꿔 칠해, 파란 부분 옆은 진한 파랑, 회색 부분 옆은 진한 회색이 됩니다.</value></data>
-  <data name="EffectOutline_ShadeAmount" xml:space="preserve"><value>명암</value></data>
-  <data name="EffectOutline_ShadeAmountTip" xml:space="preserve"><value>음수 = 인접 픽셀보다 진하게(−100 = 검정), 양수 = 연하게(100 = 흰색). 색상은 그대로 두고 밝기만 바꿉니다.</value></data>
-  <data name="EffectOutline_ShadeSummary" xml:space="preserve"><value>명암 {0}%</value></data>
   <data name="GradientPreset_ManageMenu" xml:space="preserve"><value>그라데이션 프리셋 관리…</value></data>
   <data name="GradientPreset_Category" xml:space="preserve"><value>그라데이션</value></data>
   <data name="GradientPreset_SaveCurrent" xml:space="preserve"><value>현재 그라데이션 저장…</value></data>
@@ -9628,7 +8174,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="GradientPreset_SaveChangesQuestion" xml:space="preserve"><value>그라데이션 프리셋 '{0}'의 바뀐 내용을 저장할까요?</value></data>
   <data name="GradientPreset_SelectHint" xml:space="preserve"><value>왼쪽 목록에서 프리셋을 고르세요.</value></data>
   <data name="Presets_Title" xml:space="preserve"><value>프리셋</value></data>
-  <data name="Presets_Menu" xml:space="preserve"><value>프리셋…</value></data>
   <data name="Presets_OptimizerTab" xml:space="preserve"><value>자동 최적화(픽셀로 정리)</value></data>
   <data name="Presets_Prefs_Tab" xml:space="preserve"><value>프리셋</value></data>
   <data name="Presets_Prefs_Title" xml:space="preserve"><value>기본 프리셋 되돌리기</value></data>
@@ -9638,26 +8183,30 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Presets_RestoreGradients" xml:space="preserve"><value>그라데이션 기본 프리셋 되돌리기</value></data>
   <data name="Presets_RestoreGradientsQuestion" xml:space="preserve"><value>그라데이션 기본 프리셋을 처음 상태로 되돌릴까요? 지운 기본 프리셋은 다시 들어가고, 직접 만든 프리셋은 그대로 남습니다.</value></data>
   <data name="Presets_Restored" xml:space="preserve"><value>기본 프리셋을 되돌렸습니다.</value></data>
-  <data name="EffectPreset_BuiltInTab" xml:space="preserve"><value>기본</value></data>
-  <data name="EffectPreset_CustomTab" xml:space="preserve"><value>커스텀</value></data>
-  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>전체 효과 저장</value></data>
-  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>현재 목록의 모든 효과와 클리핑 관계를 사용자 정의 효과로 저장합니다.</value></data>
-  <data name="EffectPreset_CustomHelp" xml:space="preserve"><value>효과 목록에서 값과 클리핑 관계를 만든 뒤 묶음으로 저장하세요.</value></data>
-  <data name="EffectPreset_Empty" xml:space="preserve"><value>저장한 사용자 정의 효과가 없습니다.</value></data>
-  <data name="EffectPreset_TileTip" xml:space="preserve"><value>효과 {0}개 묶음입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 이름을 바꾸거나 삭제합니다.</value></data>
-  <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>사용자 정의 효과 저장</value></data>
-  <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>효과 이름</value></data>
+  <data name="EffectPreset_EffectsTab" xml:space="preserve"><value>효과</value><comment>효과 창 종류 칸의 탭: 하나씩 넣는 효과 모두.</comment></data>
+  <data name="EffectPreset_PresetsTab" xml:space="preserve"><value>프리셋</value><comment>효과 창 종류 칸의 탭: 여러 효과와 값을 묶어 저장한 프리셋.</comment></data>
+  <data name="EffectPreset_PaletteHelp" xml:space="preserve"><value>효과 탭에는 하나씩 넣는 효과가 모두 있습니다: 앱이 기본으로 설치하는 공식 효과(외곽선·그림자 등) 다음에 직접 만들었거나 설치한 패키지의 효과. 프리셋 탭에는 여러 효과와 값, 클리핑 관계를 묶어 저장한 프리셋이 있습니다. 두 번 누르거나 효과 목록으로 끌어 놓으면 추가합니다(끌어 놓으면 놓은 자리에). 새 효과는 상점에서 받거나 도구 > 효과 만들기에서 만듭니다. 지운 공식 효과는 에셋 관리자의 "기본 효과 되돌리기"로 다시 넣습니다.</value></data>
+  <data name="EffectPreset_OpenStore" xml:space="preserve"><value>상점 보기</value></data>
+  <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>에셋 관리자의 상점에서 다른 사람이 만든 효과를 찾아 설치합니다. 설치한 효과는 이 탭에 함께 보입니다.</value></data>
+  <data name="EffectPreset_SavePreset" xml:space="preserve"><value>현재 효과 프리셋 저장</value></data>
+  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>전체 효과 저장</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 이름으로 가리킨다. 도움말을 반영할 때 EffectPreset_SavePreset으로 바꾸고 지운다.</comment></data>
+  <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>현재 목록의 모든 효과와 값, 클리핑 관계를 프리셋으로 저장합니다.</value></data>
+  <data name="EffectPreset_PresetsHelp" xml:space="preserve"><value>효과 목록에서 효과와 값, 클리핑 관계를 만든 뒤 프리셋으로 저장하세요. 프리셋을 넣으면 그 효과들이 한 번에 들어갑니다.</value></data>
+  <data name="EffectPreset_Empty" xml:space="preserve"><value>저장한 프리셋이 없습니다.</value></data>
+  <data name="EffectPreset_TileTip" xml:space="preserve"><value>효과 {0}개를 묶은 프리셋입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 이름을 바꾸거나 삭제합니다.</value></data>
+  <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>프리셋 저장</value></data>
+  <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>프리셋 이름</value></data>
   <data name="EffectPreset_PreviewChick" xml:space="preserve"><value>미리보기 병아리</value></data>
   <data name="EffectPreset_PreviewChickHint" xml:space="preserve"><value>에셋으로 올리면 이 병아리에 효과를 입힌 미리보기(움직이는 효과면 애니메이션)가 저절로 만들어집니다.</value></data>
   <data name="EffectPreset_PreviewChickTip" xml:space="preserve"><value>병아리 {0}번</value><comment>0 = 병아리 번호.</comment></data>
-  <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>사용자 정의 효과 '{0}'이(가) 이미 있습니다. 덮어쓸까요?</value></data>
+  <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>프리셋 '{0}'이(가) 이미 있습니다. 덮어쓸까요?</value></data>
   <data name="EffectPreset_Rename" xml:space="preserve"><value>이름 바꾸기</value></data>
-  <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>사용자 정의 효과 이름 바꾸기</value></data>
+  <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>프리셋 이름 바꾸기</value></data>
   <data name="EffectPreset_Delete" xml:space="preserve"><value>삭제</value></data>
-  <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>사용자 정의 효과 '{0}'을(를) 삭제할까요?</value></data>
-  <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 사용자 정의 효과가 이미 있습니다.</value></data>
-  <data name="EffectPreset_LoadError" xml:space="preserve"><value>사용자 정의 효과를 읽지 못했습니다: {0}</value></data>
-  <data name="EffectPreset_SaveError" xml:space="preserve"><value>사용자 정의 효과를 저장하지 못했습니다: {0}</value></data>
+  <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>'{0}'을(를) 삭제할까요?</value><comment>0 = 프리셋이나 개인 스크립트 효과 이름.</comment></data>
+  <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 프리셋이 이미 있습니다.</value></data>
+  <data name="EffectPreset_LoadError" xml:space="preserve"><value>개인 효과와 프리셋을 읽지 못했습니다: {0}</value></data>
+  <data name="EffectPreset_SaveError" xml:space="preserve"><value>바꾼 내용을 저장하지 못했습니다: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
   <data name="EffectPreset_ClipTip" xml:space="preserve"><value>앞의 비클리핑 효과가 바꾼 픽셀을 기준으로 적용합니다. 반사와 잔상은 이동한 픽셀도 표시합니다.</value></data>
@@ -10485,7 +9034,10 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_ManagerButton" xml:space="preserve"><value>에셋 관리자</value></data>
   <data name="Assets_ManagerTip" xml:space="preserve"><value>설치한 패키지와 개인 에셋을 켜고 끄거나, 가져오고 내보내고 지웁니다.</value></data>
   <data name="Assets_TabInstalled" xml:space="preserve"><value>설치됨</value></data>
-  <data name="Assets_TabBrowse" xml:space="preserve"><value>둘러보기</value></data>
+  <data name="Assets_TabStore" xml:space="preserve"><value>상점</value></data>
+  <data name="Assets_TabBrowse" xml:space="preserve"><value>둘러보기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 탭 이름으로 가리킨다. 도움말을 반영할 때 Assets_TabStore로 바꾸고 지운다.</comment></data>
+  <data name="Assets_OpenWebsite" xml:space="preserve"><value>홈페이지에서 보기</value></data>
+  <data name="Assets_OpenWebsiteTip" xml:space="preserve"><value>chickxel.com의 에셋 쪽을 브라우저에서 엽니다(효과나 그라데이션을 거르고 있으면 그 탭).</value></data>
   <data name="Assets_TabUpdates" xml:space="preserve"><value>업데이트</value></data>
   <data name="Assets_FilterAll" xml:space="preserve"><value>전체</value></data>
   <data name="Assets_FilterEffects" xml:space="preserve"><value>효과</value></data>
@@ -10506,8 +9058,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_PublishTip" xml:space="preserve"><value>목록에서 고른 개인 에셋(고른 것이 없으면 목록에 보이는 개인 에셋)을 공개 패키지로 묶어 검사하고 Chickxel 계정으로 올립니다.</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>이 에셋으로 시작해 공개 패키지를 만들고 Chickxel 계정으로 올립니다. 게시 창에서 다른 개인 에셋도 더할 수 있습니다.</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>온라인에 올리기</value></data>
-  <data name="Publish_Intro" xml:space="preserve"><value>라이선스와 패키지 정보를 넣고 검사를 통과하면 Chickxel 계정으로 올립니다. 올린 패키지는 바로 둘러보기 목록과 chickxel.com의 에셋 쪽에 실립니다.</value></data>
-  <data name="Publish_NoPersonal" xml:space="preserve"><value>올릴 개인 에셋이 없습니다. 효과 창이나 그라데이션 프리셋 창에서 먼저 저장하세요.</value></data>
+  <data name="Publish_Intro" xml:space="preserve"><value>라이선스와 패키지 정보를 넣고 검사를 통과하면 Chickxel 계정으로 올립니다. 올린 패키지는 바로 상점 목록과 chickxel.com의 에셋 쪽에 실립니다.</value></data>
+  <data name="Publish_NoPersonal" xml:space="preserve"><value>올릴 개인 에셋이 없습니다. 효과 만들기에서 스크립트 효과를 저장하거나 그라데이션 프리셋 창에서 먼저 저장하세요(효과 프리셋은 올리지 않습니다).</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>작성자</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>작성자 ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Chickxel 계정 핸들이 작성자 ID입니다. 패키지 ID의 첫 조각이 되며, 핸들은 도움말 > Chickxel 계정에서 바꿀 수 있습니다(패키지를 한 번 올리면 못 바꿈).</value></data>
@@ -10523,7 +9075,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_VersionPrevious" xml:space="preserve"><value>이 ID의 마지막 버전 {0}(온라인 목록이나 이 컴퓨터에서 올린 것). 다음 버전으로 {1}을(를) 권합니다.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>제안 버전 쓰기</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>짧은 설명</value></data>
-  <data name="Publish_SummaryHint" xml:space="preserve"><value>둘러보기 목록에 보일 한두 문장(200자 이하)</value></data>
+  <data name="Publish_SummaryHint" xml:space="preserve"><value>상점 목록에 보일 한두 문장(200자 이하)</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>태그</value></data>
   <data name="Publish_TagsHint" xml:space="preserve"><value>쉼표로 나눔(예: neon, hit)</value></data>
   <data name="Publish_License" xml:space="preserve"><value>라이선스</value></data>
@@ -10544,7 +9096,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_Assets" xml:space="preserve"><value>포함할 에셋</value></data>
   <data name="Publish_AssetsCount" xml:space="preserve"><value>개인 에셋 {1}개 중 {0}개</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>목록 미리보기</value></data>
-  <data name="Publish_PreviewTip" xml:space="preserve"><value>둘러보기 목록과 상세에 보일 그림. 포함한 에셋의 미리보기 중에서 고르거나 PNG(512×512, 1MB 이하)로 바꿉니다.</value></data>
+  <data name="Publish_PreviewTip" xml:space="preserve"><value>상점 목록과 상세에 보일 그림. 포함한 에셋의 미리보기 중에서 고르거나 PNG(512×512, 1MB 이하)로 바꿉니다.</value></data>
   <data name="Publish_PreviewReplace" xml:space="preserve"><value>그림 파일로 바꾸기…</value></data>
   <data name="Publish_PreviewAuto" xml:space="preserve"><value>에셋 미리보기 쓰기</value></data>
   <data name="Publish_PreviewCustom" xml:space="preserve"><value>고른 그림: {0}</value></data>
@@ -10583,7 +9135,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_DeletedAt" xml:space="preserve"><value>삭제 시각</value></data>
   <data name="Assets_Contents" xml:space="preserve"><value>내용</value></data>
   <data name="Assets_Kind" xml:space="preserve"><value>종류</value></data>
-  <data name="Assets_KindEffect" xml:space="preserve"><value>효과 레시피</value></data>
+  <data name="Assets_KindEffect" xml:space="preserve"><value>효과 프리셋</value></data>
   <data name="Assets_KindGradient" xml:space="preserve"><value>그라데이션</value></data>
   <data name="Assets_EffectCount" xml:space="preserve"><value>효과 {0}개</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>넣을 범위: 모든 프레임</value></data>
@@ -10646,19 +9198,24 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>내려받은 패키지를 설치하지 못했습니다: {0}</value></data>
   <data name="Assets_DownloadError" xml:space="preserve"><value>패키지를 내려받지 못했습니다: {0}</value></data>
   <data name="Assets_SourceRemote" xml:space="preserve"><value>온라인 카탈로그</value></data>
-  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>효과 레시피 {0}개</value></data>
+  <data name="Assets_SourceBundled" xml:space="preserve"><value>앱 기본 설치</value><comment>에셋 관리자 출처: 앱이 기본으로 설치한 공식 효과 패키지</comment></data>
+  <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>앱이 기본으로 설치한 공식 효과입니다. 지우면 다시 설치하지 않으며, 설치됨 탭의 "기본 효과 되돌리기"로 다시 넣을 수 있습니다.</value></data>
+  <data name="Assets_RestoreOfficial" xml:space="preserve"><value>기본 효과 되돌리기</value><comment>에셋 관리자 설치됨 탭 단추</comment></data>
+  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>앱에 든 공식 효과(외곽선·그림자 등) 중 지운 것을 다시 설치하고, 끈 것을 켜고, 예전 버전은 앱에 든 버전으로 올립니다. 내가 만든 효과와 다른 패키지는 그대로입니다.</value></data>
+  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>공식 효과 {0}개를 다시 설치하고 {1}개를 켜거나 업데이트했습니다.</value><comment>0 = 다시 설치한 패키지 수, 1 = 켜거나 업데이트한 패키지 수</comment></data>
+  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>공식 효과가 모두 설치돼 켜져 있습니다.</value></data>
+  <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>공식 효과를 되돌리지 못했습니다: {0}</value></data>
+  <data name="Assets_BundledError" xml:space="preserve"><value>앱에 든 공식 효과를 설치하지 못했습니다(다음 실행에 다시 시도): {0}</value></data>
+  <data name="Assets_ContentsRecipes" xml:space="preserve"><value>효과 프리셋 {0}개</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>그라데이션 {0}개</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0} {1}개</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>에셋 관리자에서 보기</value></data>
-  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>{0} 패키지의 효과 {1}개 묶음입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
+  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>{0} 패키지의 효과 {1}개를 묶은 프리셋입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>스크립트 효과</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>JavaScript로 직접 쓴 효과입니다. 원문은 프로젝트에 함께 저장됩니다.</value></data>
-  <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>스크립트 효과</value></data>
-  <data name="ScriptEffect_PaletteHelp" xml:space="preserve"><value>JavaScript로 효과를 직접 만듭니다. effect({ name, settings, render(img, ctx, s) { … } })를 선언하면 설정 칸이 자동으로 생기고, 미리보기·타임라인·내보내기가 기본 효과와 똑같이 그립니다. 실행은 파일·네트워크에 닿지 못하는 격리된 실행기에서 하고, 한 프레임이 2초를 넘거나 메모리를 너무 쓰면 그 프레임에서 이 효과만 건너뜁니다.</value></data>
-  <data name="ScriptEffect_New" xml:space="preserve"><value>새 스크립트</value></data>
-  <data name="ScriptEffect_NewTip" xml:space="preserve"><value>빛 지나가기 예제 원문으로 스크립트 효과를 더하고 편집 창을 엽니다.</value></data>
+  <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>스크립트 효과</value><comment>앱에서는 쓰지 않음(효과 창의 스크립트 효과 묶음은 없어짐) — 도움말이 예전 화면을 설명하며 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
+  <data name="ScriptEffect_New" xml:space="preserve"><value>새 스크립트</value><comment>앱에서는 쓰지 않음(효과 창의 새 스크립트 단추는 없어짐) — 도움말이 예전 화면을 설명하며 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
   <data name="ScriptEffect_OpenFile" xml:space="preserve"><value>JS 파일 열기…</value></data>
-  <data name="ScriptEffect_OpenFileTip" xml:space="preserve"><value>JavaScript 효과 파일(.js)을 스크립트 효과로 더합니다.</value></data>
   <data name="ScriptEffect_ReplaceFileTip" xml:space="preserve"><value>이 효과의 원문을 JavaScript 파일(.js) 내용으로 바꿉니다. 같은 이름의 설정 값은 그대로 이어 씁니다.</value></data>
   <data name="ScriptEffect_OpenFileTitle" xml:space="preserve"><value>스크립트 효과 파일 열기</value></data>
   <data name="ScriptEffect_FileFilter" xml:space="preserve"><value>JavaScript 효과</value></data>
@@ -10678,6 +9235,16 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="ScriptEffect_ErrorAt" xml:space="preserve"><value>줄 {line}, 칸 {column}: {message}</value><comment>line, column = 원문 위치(1부터); message = 오류 설명.</comment></data>
   <data name="ScriptEffect_ErrorAtLine" xml:space="preserve"><value>줄 {line}: {message}</value><comment>line = 원문 줄(1부터); message = 오류 설명.</comment></data>
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>이 스크립트에는 설정이 없습니다.</value></data>
+  <data name="ScriptSetting_AddColor" xml:space="preserve"><value>색 추가</value></data>
+  <data name="ScriptSetting_AddPair" xml:space="preserve"><value>쌍 추가</value></data>
+  <data name="ScriptSetting_RemoveItem" xml:space="preserve"><value>이 항목 빼기</value></data>
+  <data name="ScriptSetting_MoveUp" xml:space="preserve"><value>위로 옮기기</value></data>
+  <data name="ScriptSetting_MoveDown" xml:space="preserve"><value>아래로 옮기기</value></data>
+  <data name="ScriptSetting_ListRange" xml:space="preserve"><value>항목 {min}~{max}개</value><comment>min, max = 색 목록·색 쌍 목록 설정의 최소·최대 항목 수.</comment></data>
+  <data name="ScriptSetting_ListEmpty" xml:space="preserve"><value>항목이 없습니다.</value></data>
+  <data name="ScriptSetting_PairTo" xml:space="preserve"><value>바뀐 색: 위의 색을 이 색으로 바꿉니다.</value></data>
+  <data name="ScriptSetting_AngleTip" xml:space="preserve"><value>누르거나 끌어 각도를 고릅니다(0° = 오른쪽, 90° = 위). Shift를 누르면 15°씩.</value></data>
+  <data name="ScriptSetting_PointTip" xml:space="preserve"><value>누르거나 끌어 X·Y를 함께 고릅니다(왼쪽 위가 가장 작은 값).</value></data>
   <data name="ScriptEffect_Hint" xml:space="preserve"><value>스크립트 원문은 프로젝트에 해시로 한 번만 저장됩니다. 원문을 고치면 새 원문으로 바뀌고, 쓰지 않게 된 예전 원문은 저장할 때 빠집니다. 한 프레임 계산이 한도(2초, 문장 5천만 개, 메모리 256MB)를 넘으면 그 프레임에서 이 효과만 건너뛰고, 연속 3번 실패하면 다시 켤 때까지 멈춥니다.</value></data>
   <data name="ScriptEditor_Title" xml:space="preserve"><value>스크립트 편집 - {name}</value><comment>name = 스크립트 효과 이름.</comment></data>
   <data name="ScriptEditor_Hint" xml:space="preserve"><value>effect({ name, settings: [...], render(img, ctx, s) { ... } })를 선언합니다. img.data는 RGBA 숫자 배열이고, ctx에는 진행(progress)·프레임·원본 자리가 있습니다. previewChick: "knight"처럼 온라인에 올릴 때 미리보기에 쓸 병아리 ID를 적을 수 있습니다(기본 "original"). 적용하면 효과 창과 캔버스에 바로 보입니다.</value></data>
@@ -10691,17 +9258,17 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="ScriptTrust_DontRun" xml:space="preserve"><value>실행 안 함</value></data>
   <data name="ScriptTrust_NoAuthor" xml:space="preserve"><value>작성자 없음</value></data>
   <data name="ScriptTrust_Unnamed" xml:space="preserve"><value>이름 없는 스크립트</value></data>
-  <data name="EffectRecipe_GroupRow" xml:space="preserve"><value>{0} · 레시피 효과 {1}개</value></data>
-  <data name="EffectRecipe_GroupTip" xml:space="preserve"><value>매개변수 레시피: 값을 바꾸면 연결된 효과 설정이 함께 바뀝니다. 펼치면 구성 효과를 따로 고칠 수 있습니다.</value></data>
-  <data name="EffectRecipe_PanelHint" xml:space="preserve"><value>이 레시피는 아래 값으로 조절합니다. 값 하나가 연결된 여러 효과 설정을 함께 바꿉니다.</value></data>
+  <data name="EffectRecipe_GroupRow" xml:space="preserve"><value>{0} · 프리셋 효과 {1}개</value></data>
+  <data name="EffectRecipe_GroupTip" xml:space="preserve"><value>매개변수 프리셋: 값을 바꾸면 연결된 효과 설정이 함께 바뀝니다. 펼치면 구성 효과를 따로 고칠 수 있습니다.</value></data>
+  <data name="EffectRecipe_PanelHint" xml:space="preserve"><value>이 프리셋은 아래 값으로 조절합니다. 값 하나가 연결된 여러 효과 설정을 함께 바꿉니다.</value></data>
   <data name="EffectRecipe_Source" xml:space="preserve"><value>출처: {0}</value></data>
   <data name="EffectRecipe_Expand" xml:space="preserve"><value>구성 효과 펼치기</value></data>
   <data name="EffectRecipe_Collapse" xml:space="preserve"><value>구성 효과 접기</value></data>
   <data name="EffectRecipe_Detach" xml:space="preserve"><value>묶음 풀기</value></data>
-  <data name="EffectRecipe_DetachTip" xml:space="preserve"><value>레시피 묶음을 풀어 구성 효과를 보통 효과로 둡니다. 지금 값은 그대로 남고 매개변수는 사라집니다.</value></data>
-  <data name="RecipeParams_Title" xml:space="preserve"><value>레시피 매개변수 - {0}</value></data>
+  <data name="EffectRecipe_DetachTip" xml:space="preserve"><value>프리셋 묶음을 풀어 구성 효과를 보통 효과로 둡니다. 지금 값은 그대로 남고 매개변수는 사라집니다.</value></data>
+  <data name="RecipeParams_Title" xml:space="preserve"><value>프리셋 매개변수 - {0}</value></data>
   <data name="RecipeParams_Edit" xml:space="preserve"><value>매개변수 편집</value></data>
-  <data name="RecipeParams_EditTip" xml:space="preserve"><value>이 레시피에서 사용자에게 내보낼 값을 고릅니다. 레시피를 넣으면 효과 목록에 한 항목으로 보이고 이 값만 조절합니다.</value></data>
+  <data name="RecipeParams_EditTip" xml:space="preserve"><value>이 프리셋에서 사용자에게 내보낼 값을 고릅니다. 프리셋을 넣으면 효과 목록에 한 항목으로 보이고 이 값만 조절합니다.</value></data>
   <data name="RecipeParams_Parameters" xml:space="preserve"><value>매개변수</value></data>
   <data name="RecipeParams_Add" xml:space="preserve"><value>추가</value></data>
   <data name="RecipeParams_Remove" xml:space="preserve"><value>삭제</value></data>
@@ -10719,7 +9286,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="RecipeParams_KindInt" xml:space="preserve"><value>정수 {0}~{1}</value></data>
   <data name="RecipeParams_KindBool" xml:space="preserve"><value>켜고 끄기</value></data>
   <data name="RecipeParams_KindChoice" xml:space="preserve"><value>고르기</value></data>
-  <data name="RecipeParams_SaveError" xml:space="preserve"><value>레시피 매개변수를 저장하지 못했습니다: {0}</value></data>
+  <data name="RecipeParams_SaveError" xml:space="preserve"><value>프리셋 매개변수를 저장하지 못했습니다: {0}</value></data>
   <data name="RecipeParams_Count" xml:space="preserve"><value>매개변수 {0}개</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>스크립트 효과 {0}개</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>스크립트 효과</value></data>
@@ -10730,10 +9297,10 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_ScriptHash" xml:space="preserve"><value>원문 해시</value></data>
   <data name="Assets_ScriptSettingCount" xml:space="preserve"><value>설정 {0}개</value></data>
   <data name="EffectPreset_ScriptTileNote" xml:space="preserve"><value>스크립트 효과 {0}개가 들어 있습니다. 실행을 허용하기 전에는 그리지 않습니다.</value></data>
-  <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>스크립트 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
-  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>{0} 패키지의 스크립트 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
+  <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>직접 만든 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 효과 만들기에서 고치거나 삭제합니다.</value></data>
+  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>{0} 패키지의 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_SaveAsset" xml:space="preserve"><value>에셋으로 저장</value></data>
-  <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>이 원문을 개인 스크립트 에셋으로 저장합니다. 효과 창 커스텀 탭과 에셋 관리자에서 다시 쓰고 패키지로 내보낼 수 있습니다.</value></data>
+  <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>이 원문을 개인 스크립트 에셋으로 저장합니다. 효과 창 효과 탭과 에셋 관리자에서 다시 쓰고 패키지로 내보낼 수 있습니다.</value></data>
   <data name="ScriptEffect_SaveAssetNeedsTrust" xml:space="preserve"><value>실행을 허용한 스크립트만 개인 에셋으로 저장할 수 있습니다.</value></data>
   <data name="ScriptEffect_SaveAssetError" xml:space="preserve"><value>스크립트를 에셋으로 저장하지 못했습니다: {0}</value></data>
   <data name="Busy_EffectBounds" xml:space="preserve"><value>효과 범위 재는 중</value><comment>효과 창 확인: 캔버스를 늘릴 크기를 정하려고 모든 프레임의 효과 결과를 기다리는 동안의 덮개 제목</comment></data>
@@ -10826,27 +9393,33 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_Title" xml:space="preserve"><value>효과 만들기</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>효과 만들기 - {0}</value><comment>0 = 고치는 효과 이름(저장하지 않았으면 끝에 *).</comment></data>
   <data name="EffectMaker_MyEffects" xml:space="preserve"><value>내 효과</value></data>
-  <data name="EffectMaker_NewRecipe" xml:space="preserve"><value>새 레시피</value></data>
-  <data name="EffectMaker_FromLayer" xml:space="preserve"><value>지금 레이어로</value></data>
-  <data name="EffectMaker_FromLayerTip" xml:space="preserve"><value>메인 창 지금 레이어의 효과 목록으로 새 레시피를 만듭니다.</value></data>
   <data name="EffectMaker_NewScript" xml:space="preserve"><value>새 스크립트</value></data>
-  <data name="EffectMaker_NewRecipeName" xml:space="preserve"><value>새 효과</value></data>
-  <data name="EffectMaker_Empty" xml:space="preserve"><value>왼쪽에서 효과를 고르거나 새 레시피(기본 효과 조합)·새 스크립트(JavaScript)를 만드세요. 만든 효과는 개인 에셋이 되고, 올리기를 누르면 온라인에 올립니다.</value></data>
-  <data name="EffectMaker_Name" xml:space="preserve"><value>이름</value></data>
-  <data name="EffectMaker_Description" xml:space="preserve"><value>설명</value></data>
-  <data name="EffectMaker_Range" xml:space="preserve"><value>넣을 범위</value></data>
-  <data name="EffectMaker_RangeAdd" xml:space="preserve"><value>효과 창의 추가 범위</value></data>
-  <data name="EffectMaker_RangeAll" xml:space="preserve"><value>늘 모든 프레임</value></data>
-  <data name="EffectMaker_Effects" xml:space="preserve"><value>효과 목록</value></data>
-  <data name="EffectMaker_EditEffects" xml:space="preserve"><value>효과 편집…</value></data>
-  <data name="EffectMaker_EditEffectsTip" xml:space="preserve"><value>미리보기 병아리에 이 효과들을 입힌 효과 창을 엽니다. 확인하면 레시피에 반영됩니다.</value></data>
-  <data name="EffectMaker_RecipeHint" xml:space="preserve"><value>레시피는 기본 효과(와 스크립트 효과)의 값·순서·클리핑을 묶은 것입니다. 매개변수를 정하면 넣은 뒤 값 몇 개로 묶음 전체를 조절합니다.</value></data>
-  <data name="EffectMaker_NoEffects" xml:space="preserve"><value>효과가 없습니다. 효과 편집…으로 더하세요.</value></data>
-  <data name="EffectMaker_Off" xml:space="preserve"><value>(꺼짐)</value></data>
-  <data name="EffectMaker_ParametersDropped" xml:space="preserve"><value>바뀐 효과 목록과 맞지 않는 매개변수를 뺐습니다. 필요하면 매개변수를 다시 정하세요.</value></data>
+  <data name="EffectMaker_Empty" xml:space="preserve"><value>왼쪽에서 스크립트를 고르거나 새 스크립트(JavaScript)를 만드세요. 저장하면 개인 에셋이 되고, 올리기를 누르면 온라인에 올립니다.</value></data>
   <data name="EffectMaker_PreviewSettings" xml:space="preserve"><value>미리보기 설정 값</value></data>
+  <data name="EffectMaker_ResetValues" xml:space="preserve"><value>초기화</value></data>
+  <data name="EffectMaker_ResetValuesTip" xml:space="preserve"><value>미리보기 설정 값을 원문에 적힌 기본값으로 되돌립니다(원문은 그대로).</value></data>
+  <data name="EffectMaker_SetDefaults" xml:space="preserve"><value>기본값으로</value></data>
+  <data name="EffectMaker_SetDefaultsTip" xml:space="preserve"><value>지금 미리보기 설정 값을 원문 선언의 각 설정 기본값(default)으로 씁니다. 편집기에서 실행 취소할 수 있습니다.</value></data>
   <data name="EffectMaker_Preview" xml:space="preserve"><value>미리보기</value></data>
-  <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>올릴 때 만들어지는 미리보기와 같은 그림입니다(고른 병아리, 10칸).</value></data>
+  <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>올릴 때 만들어지는 미리보기와 같은 그림입니다(고른 병아리, 프레임 수만큼의 칸).</value></data>
+  <data name="EffectMaker_FrameCount" xml:space="preserve"><value>프레임 수</value></data>
+  <data name="EffectMaker_FrameCountTip" xml:space="preserve"><value>미리보기·검증·올릴 때 미리보기에서 효과를 돌리는 칸 수(2~20)입니다. 원문 선언의 previewFrames를 고칩니다.</value></data>
+  <data name="EffectMaker_FrameThumbTip" xml:space="preserve"><value>{0}번째 칸 — 누르면 재생을 멈추고 이 칸을 봅니다.</value><comment>0 = 미리보기 칸 번호(1부터).</comment></data>
+  <data name="EffectMaker_Languages" xml:space="preserve"><value>언어 설정</value></data>
+  <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름을 적습니다(원문 선언의 translations). 앱 화면 언어에 맞는 것이 보이고, 없으면 여기 적은 제목·설명이 보입니다.</value></data>
+  <data name="ScriptLanguages_Title" xml:space="preserve"><value>언어 설정</value></data>
+  <data name="ScriptLanguages_Hint" xml:space="preserve"><value>언어마다 제목·설명·설정 이름을 적으면 앱을 그 언어로 쓰는 사람에게 그것이 보입니다. 비워 둔 칸은 원문에 적은 값(효과 만들기의 제목·설명, 설정의 label)으로 보입니다.</value></data>
+  <data name="ScriptLanguages_Empty" xml:space="preserve"><value>아직 다른 언어가 없습니다. 언어 추가를 누르세요.</value></data>
+  <data name="ScriptLanguages_Add" xml:space="preserve"><value>언어 추가</value></data>
+  <data name="ScriptLanguages_Remove" xml:space="preserve"><value>이 언어 빼기</value></data>
+  <data name="ScriptLanguages_Language" xml:space="preserve"><value>언어</value></data>
+  <data name="ScriptLanguages_OtherCode" xml:space="preserve"><value>다른 언어 코드…</value></data>
+  <data name="ScriptLanguages_CodeHint" xml:space="preserve"><value>예: pt-BR</value></data>
+  <data name="ScriptLanguages_Name" xml:space="preserve"><value>제목</value></data>
+  <data name="ScriptLanguages_Description" xml:space="preserve"><value>설명</value></data>
+  <data name="ScriptLanguages_Labels" xml:space="preserve"><value>설정 이름</value></data>
+  <data name="ScriptLanguages_BadCode" xml:space="preserve"><value>'{0}'은(는) 언어 코드가 아닙니다(예: en, ja, zh-Hans, pt-BR).</value><comment>0 = 적은 언어 코드.</comment></data>
+  <data name="ScriptLanguages_DuplicateCode" xml:space="preserve"><value>'{0}' 언어가 두 번 있습니다. 하나를 빼세요.</value><comment>0 = 언어 코드.</comment></data>
   <data name="EffectMaker_Play" xml:space="preserve"><value>재생</value></data>
   <data name="EffectMaker_Pause" xml:space="preserve"><value>멈춤</value></data>
   <data name="EffectMaker_ShowOriginal" xml:space="preserve"><value>효과 없이 보기</value></data>
@@ -10858,18 +9431,32 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_RunFailed" xml:space="preserve"><value>실행 중 오류가 나서 효과를 건너뛰었습니다.</value></data>
   <data name="EffectMaker_FixSourceFirst" xml:space="preserve"><value>원문의 오류를 먼저 고치세요.</value></data>
   <data name="EffectMaker_Save" xml:space="preserve"><value>저장</value></data>
-  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>개인 에셋으로 저장합니다(Ctrl+S). 효과 창 커스텀 탭과 에셋 관리자에 보입니다.</value></data>
+  <data name="EffectMaker_SaveTip" xml:space="preserve"><value>개인 스크립트 효과로 저장합니다(Ctrl+S). 효과 창 효과 탭과 에셋 관리자에 보입니다.</value></data>
   <data name="EffectMaker_Discard" xml:space="preserve"><value>버리기</value></data>
   <data name="EffectMaker_SaveError" xml:space="preserve"><value>효과를 저장하지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
-  <data name="EffectMaker_NeedName" xml:space="preserve"><value>이름을 적으세요.</value></data>
   <data name="EffectMaker_UnsavedQuestion" xml:space="preserve"><value>'{0}'의 고친 내용을 저장할까요?</value><comment>0 = 효과 이름.</comment></data>
   <data name="EffectMaker_Insert" xml:space="preserve"><value>지금 레이어에 넣기</value></data>
-  <data name="EffectMaker_InsertTip" xml:space="preserve"><value>메인 창의 지금 레이어 효과 목록 끝에 넣습니다(실행취소 한 단계).</value></data>
+  <data name="EffectMaker_InsertTip" xml:space="preserve"><value>미리보기 설정 값 그대로 메인 창의 지금 레이어 효과 목록 끝에 넣습니다(실행취소 한 단계).</value></data>
   <data name="EffectMaker_InsertUndo" xml:space="preserve"><value>효과 넣기: {0}</value><comment>0 = 효과 이름(실행취소 기록).</comment></data>
   <data name="EffectMaker_LayerLocked" xml:space="preserve"><value>지금 레이어가 잠겨 있습니다.</value></data>
-  <data name="EffectMaker_NoLayerEffects" xml:space="preserve"><value>메인 창의 지금 레이어에 효과가 없습니다.</value></data>
   <data name="EffectMaker_Upload" xml:space="preserve"><value>올리기…</value></data>
-  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>저장한 뒤 온라인에 올리기 창을 엽니다. 이름·설명·태그·라이선스·버전을 적어 올리고, 미리보기는 저절로 만들어집니다.</value></data>
+  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>저장하고 검증을 통과하면 온라인에 올리기 창을 엽니다. 태그·라이선스·버전을 적어 올리고, 미리보기는 저절로 만들어집니다.</value></data>
+  <data name="EffectMaker_ShowAll" xml:space="preserve"><value>모두 보기</value></data>
+  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>끄면 내가 만든 스크립트 효과만, 켜면 패키지에서 복사한 것과 설치한 패키지의 스크립트 효과도 보입니다. 패키지의 효과는 고쳐 저장하면 개인 사본이 됩니다.</value></data>
+  <data name="EffectMaker_Info" xml:space="preserve"><value>정보</value></data>
+  <data name="EffectMaker_TitleLabel" xml:space="preserve"><value>제목</value></data>
+  <data name="EffectMaker_TitleHint" xml:space="preserve"><value>효과 목록과 상점에 보일 이름</value></data>
+  <data name="EffectMaker_DescriptionLabel" xml:space="preserve"><value>설명</value></data>
+  <data name="EffectMaker_DescriptionHint" xml:space="preserve"><value>어떤 효과인지 한두 문장(선택, 200자까지)</value></data>
+  <data name="EffectMaker_Validate" xml:space="preserve"><value>검증</value></data>
+  <data name="EffectMaker_ValidateTip" xml:space="preserve"><value>올리기 전 검사: 원문 검사(설치할 때와 같음)와 제목을 보고, 기본 설정으로 병아리 견본 모두 × 미리보기 칸(프레임 수)을 돌려 실행 오류와 가장 느린 칸을 찾습니다.</value></data>
+  <data name="EffectMaker_Validating" xml:space="preserve"><value>검증하는 중…</value></data>
+  <data name="EffectMaker_ValidateOk" xml:space="preserve"><value>검증 통과: {0}번 돌려 오류 없음, 가장 느린 칸 {1}ms(병아리 {2}번).</value><comment>0 = 돌린 횟수, 1 = 밀리초, 2 = 병아리 번호.</comment></data>
+  <data name="EffectMaker_ValidateOkNote" xml:space="preserve"><value>올리기를 누르면 이 원문으로 올립니다.</value></data>
+  <data name="EffectMaker_ValidateFailed" xml:space="preserve"><value>검증 실패: 문제 {0}개. 누르면 원문의 그 자리로 갑니다.</value><comment>0 = 문제 수.</comment></data>
+  <data name="EffectMaker_ValidateName" xml:space="preserve"><value>제목을 1~100자로 적으세요.</value></data>
+  <data name="EffectMaker_ValidateWhere" xml:space="preserve"><value>병아리 {0}번 {1}칸:</value><comment>0 = 병아리 번호, 1 = 미리보기 칸 번호(1부터).</comment></data>
+  <data name="EffectMaker_ValidateFirst" xml:space="preserve"><value>검증을 통과해야 올릴 수 있습니다. 상태 칸의 문제를 고친 뒤 다시 누르세요.</value></data>
   <data name="EffectMaker_Delete" xml:space="preserve"><value>삭제</value></data>
   <data name="EffectMaker_DeleteQuestion" xml:space="preserve"><value>'{0}'을(를) 개인 에셋에서 지울까요?</value><comment>0 = 효과 이름.</comment></data>
   <data name="EffectMaker_EditIn" xml:space="preserve"><value>효과 만들기에서 편집</value></data>
@@ -10880,17 +9467,99 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_PathTip" xml:space="preserve"><value>숫자·반복문·Math·img.data만 쓰는 원문은 앱이 변환해 빠르게 돌립니다. 그 밖(문자열, 객체·배열, img.blank 등)을 쓰면 같은 결과로 Jint가 돌립니다.</value></data>
   <data name="Ai_Script_Errors" xml:space="preserve"><value>{tool}: 원문에 오류가 있어 아무것도 바꾸지 않았습니다. 고쳐서 다시 부르세요.</value><comment>AI 도구 결과. tool = 도구 이름. 다음 줄부터 "line 줄, column 칸: 오류" 목록.</comment></data>
   <data name="Ai_Script_NotScript" xml:space="preserve"><value>레이어 {layer}의 효과 {effect}은(는) 스크립트 효과가 아닙니다.</value><comment>effect = 효과 번호, layer = 레이어 번호.</comment></data>
+  <data name="Ai_Script_NoScript" xml:space="preserve"><value>레이어 {layer} "{name}"에 스크립트 효과가 없습니다 — write_script_effect로 먼저 넣으세요.</value><comment>layer = 레이어 번호, name = 레이어 이름.</comment></data>
+  <data name="Ai_Script_UnknownChick" xml:space="preserve"><value>모르는 병아리 '{chick}'. 고를 수 있는 병아리: {chicks}</value><comment>chick = 받은 ID, chicks = 병아리 ID 목록.</comment></data>
   <data name="Ai_Script_UnknownSetting" xml:space="preserve"><value>스크립트에 설정 '{key}'이(가) 없습니다. 선언한 설정: {keys}</value><comment>key = 받은 키, keys = 선언의 설정 키 목록.</comment></data>
   <data name="Ai_Script_BadSetting" xml:space="preserve"><value>설정 '{key}'의 값이 {type} 종류에 맞지 않습니다(숫자 / true·false / "#RRGGBB" / 고르기 항목 값).</value><comment>key = 설정 키, type = 선언의 종류(int, number, bool, color, choice).</comment></data>
   <data name="Ai_Script_Written" xml:space="preserve"><value>{tool}: 스크립트 효과 "{name}"을(를) 레이어 {layer}의 효과 {effect}(으)로 넣었습니다.</value><comment>tool = 도구 이름, name = 선언의 이름, effect = 효과 번호, layer = 레이어 번호.</comment></data>
   <data name="Ai_Script_RunError" xml:space="preserve"><value>실행 오류(이 효과는 그 프레임에서 건너뜀): {error}</value><comment>error = 오류 줄.</comment></data>
-  <data name="Ai_Preview_RecipeOnChick" xml:space="preserve"><value>저장한 레시피는 병아리(on = chick)에만 그려 볼 수 있습니다.</value></data>
+  <data name="Ai_Preview_RecipeOnChick" xml:space="preserve"><value>저장한 프리셋은 병아리(on = chick)에만 그려 볼 수 있습니다.</value></data>
   <data name="Ai_Preview_Layer" xml:space="preserve"><value>레이어 {layer} "{name}"에 효과를 입힌 프레임(왼쪽부터 처음 → 끝).</value><comment>layer = 레이어 번호, name = 레이어 이름.</comment></data>
   <data name="Ai_Preview_Chick" xml:space="preserve"><value>"{name}" 효과를 병아리 {chick}에 입힌 모습(움직이면 왼쪽부터 처음 → 끝, 올릴 때 미리보기와 같음).</value><comment>name = 레이어·레시피 이름, chick = 병아리 ID.</comment></data>
   <data name="Ai_Preview_Empty" xml:space="preserve"><value>이 레이어에는 그릴 그림이 있는 프레임이 없습니다.</value></data>
-  <data name="Ai_Asset_Name" xml:space="preserve"><value>name에 레시피 이름(비어 있지 않은 글, 100자까지)이 필요합니다.</value></data>
-  <data name="Ai_Asset_Saved" xml:space="preserve"><value>개인 레시피 "{name}"({id})으로 저장하고 효과 만들기 창에서 열었습니다. 온라인에 올리는 것은 사용자가 그 창의 올리기로 합니다.</value><comment>name = 레시피 이름, id = 개인 에셋 ID.</comment></data>
+  <data name="Ai_Asset_Saved" xml:space="preserve"><value>개인 스크립트 효과 "{name}"({id})으로 저장하고 효과 만들기 창에서 열었습니다. 온라인에 올리는 것은 사용자가 그 창의 올리기로 합니다.</value><comment>name = 효과 이름, id = 개인 에셋 ID.</comment></data>
   <data name="Chat_Help_GroupEffectMaker" xml:space="preserve"><value>효과 만들기</value></data>
-  <data name="Chat_Help_GroupEffectMaker_Text" xml:space="preserve"><value>기본 효과로 안 되는 모습은 스크립트 효과(JavaScript)로 직접 짜서 넣고, 병아리에 입힌 미리보기로 확인합니다. 레이어 효과 묶음을 개인 레시피로 저장해 효과 만들기 창에서 엽니다(올리기는 직접).</value></data>
-  <data name="Chat_Help_ExampleEffectMaker" xml:space="preserve"><value>맞으면 빨갛게 번쩍이면서 조각으로 흩어지는 효과를 스크립트로 만들어서 레시피로 저장해 줘.</value></data>
+  <data name="Chat_Help_GroupEffectMaker_Text" xml:space="preserve"><value>설치된 효과(공식 효과와 내 패키지)로 안 되는 모습은 스크립트 효과(JavaScript)로 직접 짜서 넣고, 병아리에 입힌 미리보기로 확인합니다. 다 만든 스크립트는 개인 스크립트 효과로 저장해 효과 만들기 창에서 엽니다(올리기는 직접). 효과 만들기 창이 열려 있으면 그 편집기의 원문을 읽고 고치고 검증합니다.</value></data>
+  <data name="Chat_Help_ExampleEffectMaker" xml:space="preserve"><value>맞으면 빨갛게 번쩍이면서 조각으로 흩어지는 효과를 스크립트로 만들어서 내 효과로 저장해 줘.</value></data>
+  <data name="EffectMaker_Rules" xml:space="preserve"><value>규칙</value></data>
+  <data name="EffectMaker_RulesTip" xml:space="preserve"><value>효과를 만들 때 지킬 규칙과 쓸 수 있는 API를 봅니다. 복사해 다른 AI(예: 웹의 ChatGPT)에 붙여 넣고 효과를 부탁할 수 있습니다.</value></data>
+  <data name="EffectRules_Title" xml:space="preserve"><value>효과 만들기 규칙</value></data>
+  <data name="EffectRules_Hint" xml:space="preserve"><value>이 안내를 복사해 다른 AI(예: 웹의 ChatGPT)에 붙여 넣고 원하는 효과를 부탁하세요. 답으로 받은 코드 블록을 통째로 효과 만들기 편집기에 붙여 넣으면 됩니다.</value></data>
+  <data name="EffectRules_IncludeSource" xml:space="preserve"><value>지금 원문 포함</value></data>
+  <data name="EffectRules_IncludeSourceTip" xml:space="preserve"><value>켜면 편집기의 지금 원문을 안내 끝에 붙입니다(지금 효과를 고쳐 달라고 할 때). 열린 스크립트가 없으면 쓸 수 없습니다.</value></data>
+  <data name="EffectRules_Copy" xml:space="preserve"><value>복사</value></data>
+  <data name="EffectRules_Copied" xml:space="preserve"><value>안내를 복사했습니다.</value></data>
+  <data name="EffectRules_CopiedWithSource" xml:space="preserve"><value>안내와 지금 원문을 복사했습니다.</value></data>
+  <data name="EffectMakerAi_Button" xml:space="preserve"><value>AI</value></data>
+  <data name="EffectMakerAi_ButtonTip" xml:space="preserve"><value>창 오른쪽에 AI 칸을 열고 닫습니다. 만들고 싶은 효과를 말로 부탁하면 AI가 규칙에 맞는 원문을 편집기에 써 줍니다(AI 채팅과 같은 Claude Code·Codex 로그인).</value></data>
+  <data name="EffectMakerAi_Title" xml:space="preserve"><value>효과 만들기 AI</value></data>
+  <data name="EffectMakerAi_CloseTip" xml:space="preserve"><value>AI 칸 닫기(대화는 창을 닫을 때까지 남음)</value></data>
+  <data name="EffectMakerAi_NewChatTip" xml:space="preserve"><value>대화를 잊고 새로 시작합니다(편집기 원문은 그대로).</value></data>
+  <data name="EffectMakerAi_Intro" xml:space="preserve"><value>만들고 싶은 효과나 고칠 점을 적어 보내세요. AI가 효과 규칙에 맞게 편집기의 원문을 쓰고, 미리보기와 검증으로 확인합니다. 그림(파일·붙여넣기·캔버스·지금 미리보기)을 붙여 보여 주거나 "내 X 효과처럼"이라고 다른 효과를 가리킬 수 있습니다. AI는 열린 그림을 보기만 하고 고치지 않습니다. 바뀐 원문은 편집기에서 실행취소(Ctrl+Z)로 되돌릴 수 있고, 저장·넣기·올리기는 아래 단추로 직접 합니다.</value></data>
+  <data name="EffectMakerAi_Watermark" xml:space="preserve"><value>예: 테두리를 따라 빛이 한 바퀴 도는 효과 (Enter 보내기, Shift+Enter 줄바꿈)</value></data>
+  <data name="EffectMakerAi_NoCli" xml:space="preserve"><value>{product}를 찾지 못했습니다. AI 채팅 창에서 설치 방법을 안내합니다. 설치한 뒤 다시 확인을 누르세요.</value></data>
+  <data name="EffectMakerAi_NeedLogin" xml:space="preserve"><value>{product}에 로그인해야 합니다. AI 채팅 창에서 로그인한 뒤 다시 확인을 누르세요.</value></data>
+  <data name="EffectMakerAi_OpenChat" xml:space="preserve"><value>AI 채팅 열기</value></data>
+  <data name="EffectMakerAi_Recheck" xml:space="preserve"><value>다시 확인</value></data>
+  <data name="EffectMakerAi_Working" xml:space="preserve"><value>생각 중… {seconds}초</value></data>
+  <data name="Ai_Maker_Closed" xml:space="preserve"><value>효과 만들기 창이 열려 있지 않습니다. 사용자에게 효과 만들기를 열어 달라고 하세요.</value></data>
+  <data name="Ai_Maker_NoScript" xml:space="preserve"><value>효과 만들기에 열린 스크립트가 없습니다. 목록에서 효과를 고르거나 새로 만들어 달라고 하거나, set_effect_maker_source로 새 원문을 넣으세요.</value></data>
+  <data name="Ai_Maker_SetErrors" xml:space="preserve"><value>편집기에 원문을 넣었지만 해석 오류가 있어 미리보기가 없습니다. 고쳐서 다시 넣으세요:</value></data>
+  <data name="Ai_Maker_Set" xml:space="preserve"><value>효과 만들기 편집기에 원문을 넣었습니다(편집기 실행취소 한 단계, 문서는 그대로): {name}</value></data>
+  <data name="Ai_Maker_CheckInterrupted" xml:space="preserve"><value>검증이 끝나기 전에 원문이 바뀌어 멈췄습니다. 다시 부르세요.</value></data>
+  <data name="Ai_Maker_CheckOk" xml:space="preserve"><value>검증 통과: {runs}번 실행, 가장 느린 칸 {ms}ms(병아리 {chick}).</value></data>
+  <data name="Ai_Maker_CheckFailed" xml:space="preserve"><value>검증에서 문제 {count}개를 찾았습니다:</value></data>
+  <data name="Ai_Scope_EffectMakerOnly" xml:space="preserve"><value>{tool}: 효과 만들기 AI에서는 쓸 수 없는 도구입니다. 효과 만들기 AI는 문서를 보기만 하고 효과 만들기 편집기의 원문만 고칠 수 있습니다.</value></data>
+  <data name="Ai_Script_UnknownEffect" xml:space="preserve"><value>스크립트 효과 "{effect}"를 찾지 못했습니다. list_script_effects로 ID와 이름을 확인하세요.</value></data>
+  <data name="EffectMakerAi_AttachCanvasTip" xml:space="preserve"><value>열린 그림의 지금 프레임을 첨부합니다(참고 그림).</value></data>
+  <data name="EffectMakerAi_AttachPreviewTip" xml:space="preserve"><value>미리보기에 지금 보이는 칸(효과를 입힌 병아리)을 첨부합니다.</value></data>
+  <data name="EffectMakerAi_NoPreview" xml:space="preserve"><value>첨부할 미리보기가 없습니다. 원문 오류를 먼저 고치세요.</value></data>
+  <data name="GradientPencil_UndoLabel" xml:space="preserve"><value>그라데이션 연필</value><comment>실행취소 이름</comment></data>
+  <data name="GradientPencil_Mode" xml:space="preserve"><value>방식</value><comment>그라데이션 연필 방식 줄 이름</comment></data>
+  <data name="GradientPencil_ModeWhole" xml:space="preserve"><value>스트로크 전체</value><comment>그라데이션 연필: 획 처음부터 끝까지 한 번</comment></data>
+  <data name="GradientPencil_ModeWholeTip" xml:space="preserve"><value>손을 떼면 획의 시작(처음 색)부터 끝(마지막 색)까지 그린 길을 따라 잰 길이로 그라데이션을 펼칩니다. 그리는 동안에는 지금까지의 길이로 미리 보입니다.</value></data>
+  <data name="GradientPencil_ModeRepeat" xml:space="preserve"><value>반복</value><comment>그라데이션 연필: 간격마다 다시</comment></data>
+  <data name="GradientPencil_ModeRepeatTip" xml:space="preserve"><value>그린 길을 따라 간격(px)마다 그라데이션을 처음부터 다시 칠합니다.</value></data>
+  <data name="GradientPencil_Interval" xml:space="preserve"><value>간격</value><comment>그라데이션 연필 반복 간격 줄 이름</comment></data>
+  <data name="GradientPencil_IntervalTip" xml:space="preserve"><value>반복: 그라데이션 한 번이 차지하는 획 길이(px)</value></data>
+  <data name="GradientPencil_Presets" xml:space="preserve"><value>프리셋</value><comment>그라데이션 프리셋 메뉴 단추</comment></data>
+  <data name="GradientPencil_PresetsTip" xml:space="preserve"><value>그라데이션 프리셋(개인·켜진 패키지)에서 고르거나 지금 그라데이션을 저장합니다.</value></data>
+  <data name="GradientPencil_Reset" xml:space="preserve"><value>기본값</value><comment>그라데이션 연필 그라데이션 되돌리기 단추</comment></data>
+  <data name="GradientPencil_ResetTip" xml:space="preserve"><value>검정 → 흰색 그라데이션으로 되돌립니다.</value></data>
+  <data name="GradientPencil_Info" xml:space="preserve"><value>연필처럼 그리되(브러시·픽셀 퍼펙트·대칭·선택 영역) 칠하는 픽셀의 색을 그라데이션에서 고릅니다. 스트로크 전체 = 획의 시작부터 끝까지 한 번, 반복 = 간격마다 다시. 불투명도 정지점도 연필 색처럼 그대로 칠합니다(투명하면 아래를 지움). 막대를 고치거나 우클릭·프리셋 단추로 프리셋을 고릅니다.</value></data>
+  <data name="Mirror_AtPivot" xml:space="preserve"><value>피벗 기준</value><comment>대칭 그리기: 축을 피벗에</comment></data>
+  <data name="Mirror_AtPivotTip" xml:space="preserve"><value>대칭 축을 캔버스 가운데 대신 피벗(피벗 도구 K로 정함)을 지나는 선으로 둡니다. 부위를 고르면 그 부위의 피벗, 아니면 현재 프레임의 피벗을 씁니다.</value></data>
+  <data name="Eraser_Group" xml:space="preserve"><value>지우기</value><comment>도구 설정: 지우개 강도·채널 묶음</comment></data>
+  <data name="Eraser_Strength" xml:space="preserve"><value>강도</value></data>
+  <data name="Eraser_StrengthTip" xml:space="preserve"><value>한 번 문지를 때 줄이는 정도입니다. 100%면 완전히 지우고, 낮으면 조금씩 투명해집니다. 한 획 안에서는 겹쳐 문질러도 한 번만 줄고, 손을 뗐다가 다시 문지르면 남은 값에서 또 줄어듭니다.</value></data>
+  <data name="Eraser_Channels" xml:space="preserve"><value>채널</value></data>
+  <data name="Eraser_ChannelsTip" xml:space="preserve"><value>R·G·B를 모두 고르면 강도만큼 투명하게 지웁니다. 일부만 고르면 투명도는 그대로 두고 고른 색 채널만 강도만큼 줄입니다(예: R만 고르면 빨강만 뺌).</value></data>
+  <data name="TextEffect_Name" xml:space="preserve"><value>글씨</value><comment>효과 종류 이름: 도트 글꼴로 글을 그리는 글씨 효과</comment></data>
+  <data name="TextEffect_Description" xml:space="preserve"><value>도트 글꼴(Galmuri)로 글을 한 색으로 그립니다. 빈 레이어에 붙이면 글씨 레이어처럼 쓰고, 아래로 합치기·영구 적용으로 픽셀이 됩니다.</value><comment>효과 종류 한 줄 설명</comment></data>
+  <data name="TextEffect_Summary" xml:space="preserve"><value>글씨 · {0} · {1}</value><comment>효과 목록 요약: {0} = 글 첫 줄(16자까지), {1} = 글꼴 이름</comment></data>
+  <data name="TextEffect_SummaryTypewriter" xml:space="preserve"><value> · 한 글자씩</value><comment>효과 목록 요약 뒤: 한 글자씩 나타나기를 켰을 때</comment></data>
+  <data name="TextEffect_SummaryEmpty" xml:space="preserve"><value>(빈 글)</value><comment>효과 목록 요약: 글이 비었을 때</comment></data>
+  <data name="TextEffect_FontGalmuri11Bold" xml:space="preserve"><value>Galmuri 11 굵게</value><comment>글꼴 이름: Galmuri 11의 굵은 글꼴</comment></data>
+  <data name="TextEffect_AlignLeft" xml:space="preserve"><value>왼쪽</value><comment>글씨 줄 맞춤</comment></data>
+  <data name="TextEffect_AlignCenter" xml:space="preserve"><value>가운데</value><comment>글씨 줄 맞춤</comment></data>
+  <data name="TextEffect_AlignRight" xml:space="preserve"><value>오른쪽</value><comment>글씨 줄 맞춤</comment></data>
+  <data name="TextEffect_Text" xml:space="preserve"><value>글</value><comment>글씨 효과 설정: 그릴 글(여러 줄 입력 칸)</comment></data>
+  <data name="TextEffect_Font" xml:space="preserve"><value>글꼴</value><comment>글씨 효과·글씨 도구 설정: 도트 글꼴 고르기</comment></data>
+  <data name="TextEffect_Position" xml:space="preserve"><value>위치</value><comment>글씨 효과 설정: 기준점 X·Y</comment></data>
+  <data name="TextEffect_LetterSpacing" xml:space="preserve"><value>글자 간격</value><comment>글씨 효과 설정: 글자 사이에 더할 px</comment></data>
+  <data name="TextEffect_LineSpacing" xml:space="preserve"><value>  줄 간격</value><comment>글씨 효과 설정: 줄 사이에 더할 px(같은 줄의 둘째 칸)</comment></data>
+  <data name="TextEffect_Align" xml:space="preserve"><value>줄 맞춤</value><comment>글씨 효과 설정: 여러 줄 맞춤</comment></data>
+  <data name="TextEffect_Typewriter" xml:space="preserve"><value>한 글자씩 나타나기</value><comment>글씨 효과 설정: 타자기처럼 앞 글자부터 하나씩</comment></data>
+  <data name="TextEffect_TypewriterTip" xml:space="preserve"><value>효과 범위의 진행에 따라 앞 글자부터 하나씩 나타납니다(첫 프레임은 빈 글, 마지막 프레임은 전부). 빠르기 곡선·반복도 따릅니다.</value></data>
+  <data name="TextEffect_Hint" xml:space="preserve"><value>빈 레이어에 붙이면 글씨 레이어처럼 씁니다. 글씨 도구(T)로 캔버스를 눌러 바로 만들 수 있고, 이동 도구로 끌거나 방향키로 옮깁니다. 아래로 합치기나 영구 적용을 하면 픽셀이 됩니다. X는 줄 맞춤에 따라 줄의 왼쪽 끝·가운데·오른쪽 끝, Y는 첫 줄 위쪽 끝입니다(원본 왼쪽 위 기준). 이미지 밖은 잘립니다. 글꼴: Galmuri(SIL OFL 1.1).</value><comment>글씨 효과 설정 칸 설명(정보 풍선)</comment></data>
+  <data name="TextTool_Group" xml:space="preserve"><value>글씨</value><comment>도구 설정: 글씨 도구 묶음 제목</comment></data>
+  <data name="TextTool_FontTip" xml:space="preserve"><value>새 글씨 레이어에 쓸 글꼴입니다. 만든 뒤에는 레이어 효과 창의 글씨 설정에서 바꿉니다.</value></data>
+  <data name="TextTool_Info" xml:space="preserve"><value>캔버스를 누르면 그 자리에 글 입력 칸이 뜹니다. Enter로 확정하면 현재 레이어 위에 글씨 레이어(글씨 효과가 붙은 빈 레이어)가 생기고, 색은 기본색입니다. Shift+Enter = 줄 바꿈, Esc = 취소, 칸 밖을 누르면 확정합니다. 글씨 위를 누르면 그 글을 고칩니다. 옮기기는 이동 도구, 크기·색·간격은 레이어 효과 창, 픽셀로 만들기는 아래로 합치기입니다.</value><comment>도구 설정 제목 줄 정보 풍선: 글씨 도구 쓰는 법</comment></data>
+  <data name="TextTool_Locked" xml:space="preserve"><value>잠긴 레이어의 글씨는 고칠 수 없습니다.</value><comment>상태 표시줄 알림</comment></data>
+  <data name="TextTool_Watermark" xml:space="preserve"><value>글 입력 · Enter 확정 · Shift+Enter 줄 바꿈 · Esc 취소</value><comment>글씨 도구 입력 칸의 빈 칸 안내</comment></data>
+  <data name="TextTool_AddLabel" xml:space="preserve"><value>글씨 쓰기</value><comment>실행취소 기록 이름: 글씨 도구로 새 글씨 레이어</comment></data>
+  <data name="TextTool_EditLabel" xml:space="preserve"><value>글씨 고치기</value><comment>실행취소 기록 이름: 글씨 도구로 글 고침</comment></data>
+  <data name="TextTool_MoveLabel" xml:space="preserve"><value>글씨 옮기기</value><comment>실행취소 기록 이름: 이동 도구로 글씨 레이어의 글씨를 옮김</comment></data>
+  <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>글씨</value><comment>새 글씨 레이어 이름(글 첫 줄이 비었을 때)</comment></data>
+  <data name="Shortcuts_TextTool" xml:space="preserve"><value>글씨(누른 곳에 글씨 레이어)</value><comment>단축키 도움말 창: 글씨 도구</comment></data>
 </root>
