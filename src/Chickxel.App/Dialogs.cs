@@ -7,18 +7,21 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 새 프로젝트: 캔버스 가로·세로, 시작 방식(일반 레이어 1 / 부위로 시작 = 그룹 + 첫 부위의 이름·크기), 배경(투명/보조색),
-/// 파일 브라우저에서 만들 때는 파일 이름도.
+/// 파일 브라우저에서 만들 때는 파일 이름도. 클립보드에 그림이 있으면 그 그림을 첫 레이어에 붙여넣고 시작할 수 있다(캔버스 크기를 그림 크기로 맞춤).
 /// </summary>
 public sealed class NewImageDialog : DialogBase
 {
     private readonly NumericUpDown _w, _h, _partW, _partH;
     private readonly CheckBox _transparent;
+    private readonly CheckBox? _paste;
+    private readonly PixelImage? _clipboard;
     private readonly TextBox? _name;
     private readonly TextBox _partName;
     private readonly RadioButton _normal, _parts;
     private readonly StackPanel _partRow;
 
-    public NewImageDialog(int width, int height, string? fileName = null) : base(UiStrings.S_Dialogs_NewImageDialog_7A2F4AE34E, UiStrings.S_Dialogs_NewImageDialog_7D347172F9)
+    /// <param name="clipboard">클립보드 그림(없거나 너무 크면 null — 붙여넣기 줄을 보이지 않음).</param>
+    public NewImageDialog(int width, int height, string? fileName = null, PixelImage? clipboard = null) : base(UiStrings.S_Dialogs_NewImageDialog_7A2F4AE34E, UiStrings.S_Dialogs_NewImageDialog_7D347172F9)
     {
         _w = Ui.Num(1, PixelImage.MaxSize, width, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
         _h = Ui.Num(1, PixelImage.MaxSize, height, 80).Presets(Ui.SpriteSizes).Unit("px").RecentKey("canvas.size");
@@ -35,6 +38,31 @@ public sealed class NewImageDialog : DialogBase
         {
             _name = Ui.Text(fileName, 220);
             Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_BF763338DC), _name, Ui.Label(SpriteProject.FileExtension)));
+        }
+        if (clipboard is not null)
+        {
+            // 클립보드 그림: 켜면 캔버스를 그림 크기로 맞추고(바꿀 수 있음 — 그림은 왼쪽 위에 놓임) 일반 레이어로 시작한다.
+            _clipboard = clipboard;
+            _paste = Ui.Check(UiStrings.FormatNewImage_PasteClipboard(width: clipboard.Width, height: clipboard.Height));
+            ToolTip.SetTip(_paste, UiStrings.NewImage_PasteClipboardTip);
+            var thumb = new Image
+            {
+                Source = ImageUtil.ToBitmap(clipboard),
+                MaxWidth = 48, MaxHeight = 48, Stretch = Avalonia.Media.Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center,
+            };
+            RenderOptions.SetBitmapInterpolationMode(thumb, Avalonia.Media.Imaging.BitmapInterpolationMode.None);
+            _paste.IsCheckedChanged += (_, _) =>
+            {
+                bool on = _paste.On();
+                if (on)
+                {
+                    _w.Value = clipboard.Width;
+                    _h.Value = clipboard.Height;
+                    _normal.IsChecked = true;
+                }
+                _parts.IsEnabled = !on;
+            };
+            Body.Children.Add(Ui.Row(thumb, _paste));
         }
         Body.Children.Add(Ui.Row(Ui.Label(UiStrings.S_Dialogs_NewImageDialog_3231BB27CA), Ui.Label(UiStrings.S_Dialogs_NewImageDialog_D02D24EC7E), _w, Ui.Label(UiStrings.S_Dialogs_NewImageDialog_03DEAAFD72), _h, Ui.Label("px")));
         var presets = Ui.Row();
@@ -66,6 +94,8 @@ public sealed class NewImageDialog : DialogBase
     public int ImageWidth => (int)_w.NumValue();
     public int ImageHeight => (int)_h.NumValue();
     public bool Transparent => _transparent.On();
+    /// <summary>첫 레이어에 붙여넣을 클립보드 그림(고르지 않았으면 null).</summary>
+    public PixelImage? PasteImage => _paste?.On() == true ? _clipboard : null;
     public string FileName => _name?.Text?.Trim() ?? "";
     /// <summary>그룹 + 첫 부위로 시작(아니면 일반 레이어 1).</summary>
     public bool StartWithParts => _parts.On();

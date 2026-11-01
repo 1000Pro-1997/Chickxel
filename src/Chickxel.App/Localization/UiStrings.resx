@@ -9475,6 +9475,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectMaker_PathJint" xml:space="preserve"><value>Jint로 계산합니다(느림): {0}</value><comment>0 = 빠른 경로로 바꾸지 못한 까닭.</comment></data>
   <data name="EffectMaker_PathJintAt" xml:space="preserve"><value>Jint로 계산합니다(느림) — 줄 {0}: {1}</value><comment>0 = 줄 번호, 1 = 빠른 경로로 바꾸지 못한 까닭.</comment></data>
   <data name="EffectMaker_PathTip" xml:space="preserve"><value>숫자·반복문·Math·img.data만 쓰는 원문은 앱이 변환해 빠르게 돌립니다. 그 밖(문자열, 객체·배열, img.blank 등)을 쓰면 같은 결과로 Jint가 돌립니다.</value></data>
+  <data name="NewImage_PasteClipboard" xml:space="preserve"><value>클립보드 그림 붙여넣기({width}×{height})</value><comment>width·height = 클립보드 그림 크기(px).</comment></data>
+  <data name="NewImage_PasteClipboardTip" xml:space="preserve"><value>클립보드 그림을 첫 레이어에 넣고 시작하며 캔버스를 그림 크기로 맞춥니다. 크기를 바꾸면 그림은 왼쪽 위에 놓입니다.</value></data>
   <data name="EffectMaker_StatusTip" xml:space="preserve"><value>누르면 자세한 상태(오류·실행 경로·검증 결과)를 봅니다. 초록 = 문제 없음, 빨강 = 오류, 노랑 = 경고만.</value></data>
   <data name="EffectMaker_StatusOk" xml:space="preserve"><value>정상</value></data>
   <data name="EffectMaker_StatusPassed" xml:space="preserve"><value>검증 통과</value></data>

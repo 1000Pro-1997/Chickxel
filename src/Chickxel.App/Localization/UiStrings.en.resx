@@ -3595,6 +3595,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_PathJint" xml:space="preserve"><value>Runs on Jint (slower): {0}</value></data>
   <data name="EffectMaker_PathJintAt" xml:space="preserve"><value>Runs on Jint (slower) - line {0}: {1}</value></data>
   <data name="EffectMaker_PathTip" xml:space="preserve"><value>Sources that use only numbers, loops, Math and img.data are converted by the app and run fast. Anything else (strings, objects and arrays, img.blank and so on) runs on Jint with the same result.</value></data>
+  <data name="NewImage_PasteClipboard" xml:space="preserve"><value>Paste the clipboard image ({width}×{height})</value></data>
+  <data name="NewImage_PasteClipboardTip" xml:space="preserve"><value>Starts with the clipboard image on the first layer and sets the canvas to its size. If you change the size, the image stays at the top left.</value></data>
   <data name="EffectMaker_StatusTip" xml:space="preserve"><value>Click to see the full status (errors, execution path, check results). Green = no problems, red = errors, yellow = warnings only.</value></data>
   <data name="EffectMaker_StatusOk" xml:space="preserve"><value>OK</value></data>
   <data name="EffectMaker_StatusPassed" xml:space="preserve"><value>Check passed</value></data>

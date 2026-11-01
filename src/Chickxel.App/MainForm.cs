@@ -2117,7 +2117,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void NewProject(string? folder)
     {
         var defaults = _ctx.HasProject ? (_ctx.CanvasWidth, _ctx.CanvasHeight) : (32, 32);
-        var dlg = new NewImageDialog(defaults.Item1, defaults.Item2, folder is null ? null : "new_sprite");
+        // 클립보드 그림이 있으면 그것으로 시작할 수 있게(캔버스 한도를 넘는 그림은 빼고)
+        var clip = ReadClipboard() is { Width: <= PixelImage.MaxSize, Height: <= PixelImage.MaxSize } c ? c : null;
+        var dlg = new NewImageDialog(defaults.Item1, defaults.Item2, folder is null ? null : "new_sprite", clip);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         string? path = null;
         if (folder is not null)
@@ -2131,7 +2133,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             }
         }
         var p = BuildProject(dlg.ImageWidth, dlg.ImageHeight, dlg.Transparent ? null : _ctx.Secondary,
-            dlg.StartWithParts, dlg.PartName, dlg.PartWidth, dlg.PartHeight);
+            dlg.StartWithParts, dlg.PartName, dlg.PartWidth, dlg.PartHeight, dlg.PasteImage);
         OpenInNewTab(new OpenDocument(p, null));
         SelectFirstPart(p);
         if (path is null)
@@ -2146,20 +2148,22 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>
     /// 새 프로젝트(기록 없음). <paramref name="background"/>가 있으면 첫 레이어 셀을 그 색으로 채운다.
+    /// <paramref name="startImage"/>가 있으면 첫 레이어 왼쪽 위에 그 그림을 놓는다(배경색 위에 겹쳐서, 캔버스 밖은 잘림).
     /// <paramref name="startWithParts"/>면 그룹 + 첫 부위를 만들고 그 부위를 현재 레이어로 고른다(<see cref="SelectFirstPart"/>).
     /// </summary>
     private SpriteProject BuildProject(int width, int height, Color32? background,
-        bool startWithParts = false, string? partName = null, int partWidth = 0, int partHeight = 0)
+        bool startWithParts = false, string? partName = null, int partWidth = 0, int partHeight = 0, PixelImage? startImage = null)
     {
         var p = new SpriteProject(width, height);
         p.Edit(MainStrings.Ui_295, ProjectChange.Settings | ProjectChange.Pixels, () =>
         {
             p.Sprite.PixelsPerUnit = _settings.LastPpu;
-            if (background is { } c)
+            if (background is not null || startImage is not null)
             {
-                var bg = new PixelImage(p.Width, p.Height);
-                bg.Clear(c);
-                p.SetCel(0, 0, bg);
+                var cel = new PixelImage(p.Width, p.Height);
+                if (background is { } c) cel.Clear(c);
+                if (startImage is not null) cel.Composite(startImage);
+                p.SetCel(0, 0, cel);
             }
         });
         if (startWithParts)

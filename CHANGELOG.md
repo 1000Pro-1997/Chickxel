@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.68 (2026-11-01)
+### Start a new project from the clipboard image
+- When the clipboard holds an image, the New project window shows it with **Paste the clipboard image (W×H)**. Turning it on sets the canvas to the image size and puts the image on the first layer.
+- You can still change the size (the image stays at the top left); starting with parts is off while pasting.
+
 ## v1.14.67 (2026-11-01)
 ### No red error line when Claude misnames a tool
 - When Claude calls a Chickxel tool without its MCP prefix, Claude Code rejects it ("No such tool available") and Claude calls it again correctly. The AI chat and the Effect Maker AI no longer show that rejected call as a red error line; real tool errors still show.
