@@ -44,7 +44,7 @@ public class ScriptLanguageTests
         Assert.Equal(("en", "Shine", "반짝임", "세기"), (asset.Language, asset.NameFor(C("en")), asset.NameFor(C("ko")), asset.LabelFor(program.Settings[0], C("ko"))));
 
         // language가 없으면 예전처럼 번역이 먼저
-        var plain = ScriptEffectProgram.Parse(Source.Replace("  language: \"en\",\n", "", StringComparison.Ordinal)).Program!;
+        var plain = ScriptEffectProgram.Parse(Source.Replace("  language: \"en\",", "", StringComparison.Ordinal)).Program!;
         Assert.Null(plain.Language);
         Assert.Null(ScriptAsset.From("", plain).Language);
         Assert.Equal("Old English name", plain.NameFor(C("en")));
