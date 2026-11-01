@@ -2,6 +2,7 @@
 // 미루는 효과(deferred): 이 레이어의 다른 효과를 모두 그린 뒤에 그리고, 앞 프레임은 다른 효과를 입힌 그림(ctx.renderedFrameSource)을 쓴다.
 effect({
   name: "잔상",
+  language: "ko",
   description: "앞 프레임 그림을 뒤에 점점 옅게 남겨 빠르게 움직이는 느낌을 줍니다.",
   translations: {
     ko: {

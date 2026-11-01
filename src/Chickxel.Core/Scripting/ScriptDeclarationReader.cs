@@ -141,11 +141,57 @@ internal static partial class ScriptDeclarationReader
         }
 
         var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
+        var tags = ReadTags(declaration.Get("tags"), Fail);
+
+        // language: 선언에 적은 이름·설명·설정 이름의 언어(번역 키와 같은 언어 코드 모양)
+        var languageValue = declaration.Get("language");
+        string? language = languageValue is JsString && ScriptTranslations.IsLanguageCode(languageValue.AsString()) ? languageValue.AsString() : null;
+        if (!languageValue.IsUndefined() && language is null) Fail(DomainStrings.Script_InvalidLanguage, "language");
 
         return errors.Count > 0
             ? new(null, errors)
             : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
-                previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting) { Motion = motion }, []);
+                previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
+            { Motion = motion, Tags = tags, Language = language }, []);
+    }
+
+    /// <summary>
+    /// <c>tags: ["neon", "glow"]</c>: 올릴 때 쓸 목록 태그. 문자열 배열이고 <see cref="RemoteCatalogFormat.MaxTags"/>개까지.
+    /// 각각 앞뒤 공백과 맨 앞 '#'을 떼고 소문자로 바꾼 뒤 <see cref="RemoteCatalogFormat.IsValidTag"/>를 지켜야 하고, 바꾼 뒤 겹치면 안 된다. 없으면 빈 목록.
+    /// </summary>
+    private static IReadOnlyList<string> ReadTags(JsValue value, Action<string, object[]> fail)
+    {
+        if (value.IsUndefined()) return [];
+        if (value is not ArrayInstance list || ScriptHostApi.Length(list) > RemoteCatalogFormat.MaxTags)
+        {
+            fail(DomainStrings.FormatScript_InvalidTags(max: RemoteCatalogFormat.MaxTags), ["tags"]);
+            return [];
+        }
+        var tags = new List<string>();
+        for (uint i = 0, count = ScriptHostApi.Length(list); i < count; i++)
+        {
+            var item = list[i];
+            if (item is not JsString)
+            {
+                fail(DomainStrings.FormatScript_InvalidTags(max: RemoteCatalogFormat.MaxTags), ["tags", (int)i]);
+                continue;
+            }
+            string tag = NormalizeTag(item.AsString());
+            if (!RemoteCatalogFormat.IsValidTag(tag))
+                fail(DomainStrings.FormatScript_InvalidTag(tag: item.AsString(), max: RemoteCatalogFormat.MaxTagLength), ["tags", (int)i]);
+            else if (tags.Contains(tag))
+                fail(DomainStrings.FormatScript_DuplicateTag(tag: tag), ["tags", (int)i]);
+            else tags.Add(tag);
+        }
+        return tags;
+    }
+
+    /// <summary>태그 한 개 정리: 앞뒤 공백, 맨 앞 '#' 하나, 대문자를 없앤다(<c>" #Neon "</c> → <c>"neon"</c>).</summary>
+    internal static string NormalizeTag(string tag)
+    {
+        var text = tag.Trim();
+        if (text.StartsWith('#')) text = text[1..].Trim();
+        return text.ToLowerInvariant();
     }
 
     /// <summary>

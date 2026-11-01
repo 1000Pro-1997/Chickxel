@@ -1,6 +1,7 @@
 // 터지기(ExplodeRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "터지기",
+  language: "ko",
   description: "픽셀이 조각나 바깥으로 튀어 날아가며 사라집니다.",
   translations: {
     ko: {

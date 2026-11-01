@@ -1,6 +1,7 @@
 // 색 덮기(ColorOverlayRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "색 덮기",
+  language: "ko",
   description: "보이는 픽셀을 한 색이나 공간 그라데이션으로 물들입니다(100% = 실루엣).",
   translations: {
     ko: {

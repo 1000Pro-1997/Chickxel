@@ -1,5 +1,6 @@
 effect({
   name: "새 효과",
+  language: "ko",
   settings: [
     { key: "strength", label: "세기", type: "int", min: 0, max: 100, default: 50 },
   ],

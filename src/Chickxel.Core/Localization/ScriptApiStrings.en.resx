@@ -14,6 +14,8 @@
   <data name="Api_effect_name" xml:space="preserve"><value>Effect name (shown in the effect list and assets). Required.</value></data>
   <data name="Api_effect_author" xml:space="preserve"><value>Author name (optional). Shown in the run confirmation window.</value></data>
   <data name="Api_effect_description" xml:space="preserve"><value>Short description (optional, up to 200 characters). Used by the Effect Maker's description field and as the short description when you publish.</value></data>
+  <data name="Api_effect_language" xml:space="preserve"><value>Language code of the declared name, description and setting labels (optional, e.g. "ko", "en", "zh-Hans"). When the UI is in this language the declared values are shown instead of a translation.</value></data>
+  <data name="Api_effect_tags" xml:space="preserve"><value>Catalog tags (optional, up to 8 lowercase English words, e.g. ["neon", "glow"]). Used as the tags when you publish.</value></data>
   <data name="Api_effect_translations" xml:space="preserve"><value>Name, description and setting labels in other languages (language code → { name, description, labels }). The one for the UI language is shown, else the declared values.</value></data>
   <data name="Api_translation_name" xml:space="preserve"><value>Effect name in that language (1-100 characters).</value></data>
   <data name="Api_translation_description" xml:space="preserve"><value>Short description in that language (up to 200 characters).</value></data>

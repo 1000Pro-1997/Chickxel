@@ -29,6 +29,9 @@ public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFra
     /// <summary>선언 <c>translations</c>의 언어별 이름(글자 그대로 적은 문자열만 — 설명·설정 이름은 읽지 않음). 해석 전 화면 이름에 쓴다.</summary>
     public IReadOnlyDictionary<string, ScriptTranslation> Translations { get; init; } = ScriptTranslations.Empty;
 
+    /// <summary>선언 <c>language</c>(글자 그대로 적은 언어 코드 문자열만, 없거나 틀리면 null). 해석 전 화면 이름에 쓴다.</summary>
+    public string? Language { get; init; }
+
     /// <summary>
     /// 원문에 <c>renderedFrameSource</c>가 나오는지: 미루는 스크립트(<c>deferred: true</c>)면 그릴 때 다른 프레임 원본과 그 프레임에 다른 효과를 입힌 그림을
     /// 넘긴다(잔상과 같은 캐시·무효화).
@@ -103,7 +106,7 @@ public static class ScriptLibrary
         if (!s_entries.TryGetValue(hash, out var e)) return null;
         var culture = CultureInfo.CurrentUICulture;
         if (e.Parsed.IsValueCreated && e.Parsed.Value.Program is { } program) return program.NameFor(culture);
-        return e.Info.Name is { } name ? ScriptTranslations.NameFor(e.Info.Translations, name, culture) : null;
+        return e.Info.Name is { } name ? ScriptTranslations.NameFor(e.Info.Translations, name, culture, e.Info.Language) : null;
     }
 
     /// <summary>해시의 신뢰 결정. 공식 효과 원문(<see cref="OfficialEffects.IsOfficialHash"/> — 지금 앱에 든 것과 예전 앱이 내보낸 것)은 늘 허락한다.</summary>
@@ -211,6 +214,7 @@ public static class ScriptLibrary
             ScriptSourceLocator.Mentions(program, "slice"))
         {
             Translations = ScriptSourceLocator.DeclaredTranslatedNames(program),
+            Language = ScriptSourceLocator.DeclaredString(program, "language") is { } language && ScriptTranslations.IsLanguageCode(language) ? language : null,
             ReadsRenderedFrames = ScriptSourceLocator.Mentions(program, "renderedFrameSource"),
         };
     }

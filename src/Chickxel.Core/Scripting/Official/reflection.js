@@ -1,6 +1,7 @@
 // 반사(ReflectionRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "반사",
+  language: "ko",
   description: "그림을 뒤집어 아래·위·옆에 점점 옅게 비춥니다(물·바닥·벽 반사).",
   translations: {
     ko: {

@@ -77,8 +77,8 @@ public sealed partial class AssetManagerWindow
     private void PackageDetail(InstalledPackage package)
     {
         var manifest = package.Manifest;
-        AddTitle(package.Name);
-        if (manifest?.Description is { Length: > 0 } description)
+        AddTitle(package.DisplayName);
+        if (package.DisplayDescription is { Length: > 0 } description)
             _detail.Children.Add(new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
         Facts(
             (UiStrings.Assets_Status, package.IsBroken ? UiStrings.Assets_Broken : package.Enabled ? UiStrings.Assets_Enabled : UiStrings.Assets_Disabled),
@@ -178,7 +178,7 @@ public sealed partial class AssetManagerWindow
                 _detail.Children.Add(new TextBlock { Text = scriptDescription, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
             _detail.Children.Add(Dim(F(UiStrings.Assets_ScriptSettingCount, declared.Settings.Count)
                                      + (declared.Settings.Count > 0
-                                         ? ": " + string.Join(", ", declared.Settings.Select(s => ScriptTranslations.LabelFor(declared.Translations, s, culture)))
+                                         ? ": " + string.Join(", ", declared.Settings.Select(s => declared.LabelFor(s, culture)))
                                          : "")));
         }
 
@@ -274,7 +274,8 @@ public sealed partial class AssetManagerWindow
     /// <summary>
     /// 개인 에셋을 새 패키지로 내보낸다(개인 백업·전달용, 온라인 카탈로그에는 올릴 수 없음): <paramref name="single"/>이 있으면 그것만,
     /// 없으면 지금 종류 거르기에 맞는 개인 에셋 전부. 패키지 이름만 묻고, ID는 <c>personal.이름</c>, 버전 1.0.0, 라이선스 <c>LicenseRef-Personal</c>,
-    /// 작성자는 개인(<c>personal</c>) + 게시 창에 기억한 표시 이름(없으면 이 컴퓨터 사용자 이름). 공개 게시는 <see cref="PublishPersonal"/>.
+    /// 작성자는 개인(<c>personal</c>) + 로그인한 계정의 표시 이름(로그아웃이면 게시 창이 기억한 이름, 그것도 없으면 이 컴퓨터 사용자 이름).
+    /// 공개 게시는 <see cref="PublishPersonal"/>.
     /// </summary>
     private void ExportPersonal(AssetEntry? single)
     {
@@ -288,7 +289,7 @@ public sealed partial class AssetManagerWindow
         if (name is null) return;
         string slug = AssetPackageBuilder.Slug(name, "assets");
         if (Ui.SaveFile(this, UiStrings.Assets_ExportTitle, null, slug + AssetPackage.Extension, AssetPackage.Extension, PackageFilter) is not { } path) return;
-        string profile = App.Settings.AssetPublish.AuthorName;
+        string profile = AppCommunity.Client.User?.Name ?? App.Settings.AssetPublish.AuthorName;
         string user = AssetManifest.IsValidName(profile) ? profile.Trim()
             : Environment.UserName is { Length: > 0 } u && AssetManifest.IsValidName(u) ? u : "Chickxel";
         var header = new AssetManifest
@@ -309,15 +310,21 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 온라인에 올리기(게시 창, 로그인 필요): <paramref name="single"/>이 있으면 그것을, 없으면 목록에서 고른 개인 에셋(고른 것이 없으면 목록에 보이는 개인 에셋 전부)을
-    /// 처음 체크해 연다. 게시 창 안에서 포함할 에셋을 더 고를 수 있다.
+    /// 온라인에 올리기(게시 창, 로그인 필요): 에셋 하나를 패키지 하나로 올린다. <paramref name="single"/>이 있으면 그것을, 없으면 목록에서 고른 개인 에셋을
+    /// (고른 것이 없고 목록에 보이는 올릴 수 있는 개인 에셋이 하나뿐이면 그것을) 연다. 그 밖에는 하나를 고르라고 알린다.
     /// </summary>
     private async void PublishPersonal(AssetEntry? single)
     {
-        var preselected = single is not null ? [single]
-            : Selected?.Asset is { Origin: AssetOrigin.Personal } selected ? [selected]
-            : AppAssets.Catalog.Personal.Where(Matches).ToList();
-        await AssetPublishDialog.RunAsync(this, preselected.Select(entry => entry.Id).ToList());
+        var shown = AppAssets.Catalog.Personal.Where(e => Matches(e) && e.Kind != AssetKinds.EffectRecipe).ToList();
+        var asset = single
+                    ?? (Selected?.Asset is { Origin: AssetOrigin.Personal } selected ? selected : null)
+                    ?? (shown.Count == 1 ? shown[0] : null);
+        if (asset is null)
+        {
+            Ui.Info(this, shown.Count == 0 ? UiStrings.Publish_NoPersonal : UiStrings.Publish_ChooseAsset, UiStrings.Publish_Title);
+            return;
+        }
+        await AssetPublishDialog.RunAsync(this, asset.Id);
     }
 
     private void DeletePackage(InstalledPackage package)

@@ -92,7 +92,9 @@ public static class ScriptApiCatalog
 
         M(Declaration, "name", ScriptApiKind.Key, "name: \"…\""),
         M(Declaration, "author", ScriptApiKind.Key, "author: \"…\""),
+        M(Declaration, "language", ScriptApiKind.Key, "language: \"en\""),
         M(Declaration, "description", ScriptApiKind.Key, "description: \"…\""),
+        M(Declaration, "tags", ScriptApiKind.Key, "tags: [\"neon\", \"glow\"]"),
         M(Declaration, "translations", ScriptApiKind.Key, "translations: { en: { name, description, labels: { key: \"…\", \"key.choiceValue\": \"…\" } } }", Translation),
         M(Declaration, "animated", ScriptApiKind.Key, "animated: true"),
         M(Declaration, "deferred", ScriptApiKind.Key, "deferred: true"),
@@ -256,7 +258,9 @@ public static class ScriptApiCatalog
         }
         md.AppendLine("## Example");
         md.AppendLine("```js");
-        md.Append(OfficialEffects.Source("shine").TrimEnd());
+        // 공식 원문(목록 태그는 패키지가 따로 정함)에 AI가 늘 적어야 하는 tags를 넣어 보인다 — 공식 원문·해시는 그대로
+        var example = OfficialEffects.Source("shine");
+        md.Append((ScriptDeclarationEdit.SetTags(example, ["shine", "light", "sweep", "sparkle"]) ?? example).TrimEnd());
         md.AppendLine();
         md.AppendLine("```");
         return md.ToString();

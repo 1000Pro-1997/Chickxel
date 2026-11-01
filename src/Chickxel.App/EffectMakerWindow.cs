@@ -33,6 +33,12 @@ public sealed class EffectMakerWindow : Window
     private readonly ListBox _list = new() { Margin = new Thickness(3) };
     private readonly CheckBox _showAll;
     private readonly TextBox _title, _description;
+    /// <summary>제목·설명 칸이 고치는 언어 이름(기본 선언 값이 아닌 번역을 고칠 때, 또는 선언에 <c>language</c>가 있을 때).</summary>
+    private readonly TextBlock _titleLanguage = LanguageCaption(), _descriptionLanguage = LanguageCaption();
+    /// <summary>선언 <c>tags</c>(올릴 때 태그) 칩 편집기.</summary>
+    private readonly TagChipEditor _tags = new(double.NaN);
+    /// <summary>제목·설명 칸이 고치는 번역 언어(<see cref="ScriptTranslations.EditLanguage"/>). null이면 선언의 기본 name·description.</summary>
+    private string? _infoLanguage;
     private readonly ContentControl _center = new();
     private readonly ScriptCodeEditor _code = new();
     private readonly StackPanel _scriptSettings = new() { Spacing = 2 };
@@ -129,18 +135,20 @@ public sealed class EffectMakerWindow : Window
         header.Children.Add(_showAll);
         header.Children.Add(Ui.Label(UiStrings.EffectMaker_MyEffects, bold: true));
         _title = new TextBox { Margin = new Thickness(3), MaxLength = 100, Watermark = UiStrings.EffectMaker_TitleHint };
-        _title.TextChanged += (_, _) => InfoEdited("name", _title.Text?.Trim() ?? "");
+        _title.TextChanged += (_, _) => InfoEdited("name", _title.Text?.Trim() is { Length: > 0 } t ? t : _infoLanguage is null ? "" : null);
         _description = new TextBox
         {
             Height = 72, Margin = new Thickness(3), AcceptsReturn = false, TextWrapping = TextWrapping.Wrap,
             MaxLength = ScriptEffectProgram.MaxDescriptionLength, Watermark = UiStrings.EffectMaker_DescriptionHint,
         };
         _description.TextChanged += (_, _) => InfoEdited("description", _description.Text?.Trim() is { Length: > 0 } d ? d : null);
+        _tags.TagsChanged += (_, _) => TagsEdited();
         // 제목·설명 아래: 다른 언어의 제목·설명·설정 이름(선언의 translations)
         _languages = Ui.Button(VectorIcon.Languages, UiStrings.EffectMaker_Languages, (_, _) => EditTranslations()).Tip(UiStrings.EffectMaker_LanguagesTip);
         var info = Ui.Group(UiStrings.EffectMaker_Info, Ui.Stack(
-            Ui.Label(UiStrings.EffectMaker_TitleLabel), _title,
-            Ui.Label(UiStrings.EffectMaker_DescriptionLabel), _description,
+            InfoLabel(UiStrings.EffectMaker_TitleLabel, _titleLanguage), _title,
+            InfoLabel(UiStrings.EffectMaker_DescriptionLabel, _descriptionLanguage), _description,
+            Ui.Row(Ui.Label(UiStrings.EffectMaker_TagsLabel), Ui.InfoBadge(UiStrings.EffectMaker_TagsTip)), _tags,
             _languages));
         // "정보" 제목 줄 오른쪽에 규칙 단추(효과를 만들 때 지킬 규칙·API — 복사해 다른 AI에 붙여 넣음)
         var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip);
@@ -426,7 +434,7 @@ public sealed class EffectMakerWindow : Window
         _preview.SetFrames([], null);
         _status.Text = "";
         _errors.Children.Clear();
-        SetInfo(null, null);
+        SetInfo(null);
         SelectInList(null);
         UpdateButtons();
     }
@@ -437,7 +445,7 @@ public sealed class EffectMakerWindow : Window
         _insert.IsEnabled = _open && _ctx.Project is not null;
         _validate.IsEnabled = _open;
         _upload.IsEnabled = _open;
-        _title.IsEnabled = _description.IsEnabled = _open;
+        _title.IsEnabled = _description.IsEnabled = _tags.IsEnabled = _open;
         _frameCount.IsEnabled = _languages.IsEnabled = _open && _program is not null;
         UpdateValueButtons();
         Title = _open ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_TitleWith, CurrentName() + (Dirty ? " *" : "")) : UiStrings.EffectMaker_Title;
@@ -476,14 +484,18 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>
     /// 제목·설명 칸을 고치면 원문 선언의 그 값을 고친다(편집기는 달라진 곳만 바뀜). 선언을 찾지 못하는 원문이면 원문 오류를 보인다.
+    /// 화면 언어가 선언의 기본 언어(<c>language</c>)와 다르면 기본 값 대신 그 언어의 번역(<c>translations[화면 언어]</c>)을 고친다 — 비우면 그 번역 값을 뺀다.
     /// 칸 값이 지금 선언과 같으면 아무것도 하지 않는다 — 글 상자의 TextChanged는 값을 넣은 뒤 늦게 올 수 있어(<see cref="SetInfo"/>가 넣은 값),
     /// 그때 원문을 다시 쓰면 따옴표 모양만 바뀌어도 고친 것으로 보인다.
     /// </summary>
     private void InfoEdited(string key, string? value)
     {
         if (_syncingInfo || _loading || !_open) return;
-        if (_program is not null && value == (key == "name" ? _program.Name.Trim() : _program.Description)) return;
-        if (ScriptDeclarationEdit.SetString(_source, key, value) is not { } edited)
+        if (_program is not null && value == InfoValue(_program, _infoLanguage, key)) return;
+        string? edited = _infoLanguage is { } language
+            ? ScriptDeclarationEdit.SetTranslationField(_source, language, key, value)
+            : ScriptDeclarationEdit.SetString(_source, key, value);
+        if (edited is null)
         {
             _status.Text = UiStrings.EffectMaker_FixSourceFirst;
             return;
@@ -491,14 +503,64 @@ public sealed class EffectMakerWindow : Window
         _code.Replace(edited); // TextChanged → Edited → 다시 그리기
     }
 
-    /// <summary>해석한 선언 값을 제목·설명 칸에 보인다(그 칸에서 치는 중이면 건드리지 않음 — 커서가 튀지 않게).</summary>
-    private void SetInfo(string? name, string? description)
+    /// <summary>선언에서 제목·설명 칸이 보이는 값: <paramref name="language"/>가 null이면 기본 name·description, 아니면 그 언어 번역(없으면 null).</summary>
+    private static string? InfoValue(ScriptEffectProgram program, string? language, string key)
+    {
+        if (language is null) return key == "name" ? program.Name.Trim() : program.Description;
+        if (!program.Translations.TryGetValue(language, out var translation)) return null;
+        return key == "name" ? translation.Name : translation.Description;
+    }
+
+    /// <summary>
+    /// 해석한 선언 값을 제목·설명·태그 칸에 보인다(그 칸에서 치는 중이면 건드리지 않음 — 커서가 튀지 않게). 화면 언어가 기본 언어와 다르면
+    /// 그 언어 번역을 보이고(없으면 빈 칸 — 흐린 글로 기본 값), 칸 이름 옆에 고치는 언어를 적는다. <paramref name="program"/>이 null이면 비운다.
+    /// </summary>
+    private void SetInfo(ScriptEffectProgram? program)
     {
         _syncingInfo = true;
+        _infoLanguage = program is null ? null : ScriptTranslations.EditLanguage(program.Language, CultureInfo.CurrentUICulture);
+        string? name = program is null ? null : InfoValue(program, _infoLanguage, "name");
+        string? description = program is null ? null : InfoValue(program, _infoLanguage, "description");
         if (!_title.IsFocused && (_title.Text ?? "") != (name ?? "")) _title.Text = name ?? "";
         if (!_description.IsFocused && (_description.Text ?? "") != (description ?? "")) _description.Text = description ?? "";
+        bool translating = _infoLanguage is not null;
+        _title.Watermark = translating ? program!.Name : UiStrings.EffectMaker_TitleHint;
+        _description.Watermark = translating && program!.Description is { Length: > 0 } baseDescription ? baseDescription : UiStrings.EffectMaker_DescriptionHint;
+        string? caption = (_infoLanguage ?? program?.Language) is { } code ? LanguagePicker.NativeName(code) : null;
+        foreach (var label in new[] { _titleLanguage, _descriptionLanguage })
+        {
+            label.Text = caption ?? "";
+            label.IsVisible = caption is not null;
+        }
+        if (!_tags.IsKeyboardFocusWithin) _tags.SetTags(program?.Tags ?? []);
         _syncingInfo = false;
     }
+
+    /// <summary>태그 칩을 바꾸면 선언의 <c>tags</c>를 고친다(규칙에 맞지 않는 태그가 있으면 칩 아래 까닭만 보이고 원문은 그대로).</summary>
+    private void TagsEdited()
+    {
+        if (_syncingInfo || _loading || !_open || !_tags.IsValid) return;
+        if (_program is not null && _program.Tags.SequenceEqual(_tags.Tags)) return;
+        if (ScriptDeclarationEdit.SetTags(_source, _tags.Tags) is not { } edited)
+        {
+            _status.Text = UiStrings.EffectMaker_FixSourceFirst;
+            return;
+        }
+        _code.Replace(edited);
+    }
+
+    /// <summary>정보 칸 이름 줄: 이름 + 고치는 언어(작은 흐린 글).</summary>
+    private static Control InfoLabel(string text, TextBlock language)
+    {
+        var label = Ui.Label(text);
+        label.VerticalAlignment = language.VerticalAlignment = VerticalAlignment.Center;
+        return Ui.Row(label, language);
+    }
+
+    private static TextBlock LanguageCaption() => new()
+    {
+        Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(4, 0, 0, 0), IsVisible = false,
+    };
 
     // ───────────── 미리보기 ─────────────
 
@@ -655,7 +717,7 @@ public sealed class EffectMakerWindow : Window
         // 선언에 없는 색 슬롯(지운 설정·줄어든 최대 항목 수)의 그라데이션은 버린다
         foreach (var slot in _previewGradients.Keys.ToList())
             if (!ScriptColorSlots.TryParse(_program.Settings, slot, out _, out _, out _)) _previewGradients.Remove(slot);
-        SetInfo(_program.Name, _program.Description);
+        SetInfo(_program);
         _loading = true;
         _chick.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(_program.PreviewChick));
         _loading = false;
@@ -1004,7 +1066,7 @@ public sealed class EffectMakerWindow : Window
             Ui.Info(this, UiStrings.EffectMaker_ValidateFirst, UiStrings.EffectMaker_Title);
             return;
         }
-        await AssetPublishDialog.RunAsync(this, [id]);
+        await AssetPublishDialog.RunAsync(this, id);
     }
 
     /// <summary>저장하지 않은 고침이 있으면 저장·버림·취소를 묻는다. 계속해도 되면 true.</summary>

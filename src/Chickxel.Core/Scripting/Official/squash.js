@@ -1,6 +1,7 @@
 // 늘었다 줄기(SquashRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "늘었다 줄기",
+  language: "ko",
   description: "젤리처럼 가로·세로로 출렁이다 원래 모양으로 돌아옵니다.",
   translations: {
     ko: {

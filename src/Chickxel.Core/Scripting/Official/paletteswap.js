@@ -1,6 +1,7 @@
 // 색 바꾸기(PaletteSwapRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "색 바꾸기",
+  language: "ko",
   description: "고른 색을 다른 색으로 바꿉니다(팔레트 스왑 — 같은 그림의 색만 다른 버전).",
   translations: {
     ko: {

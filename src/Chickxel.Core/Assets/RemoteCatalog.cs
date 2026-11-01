@@ -33,6 +33,8 @@ public sealed record RemoteCatalogEntry
     public string Version { get; init; } = "";
     public string Name { get; init; } = "";
     public string Summary { get; init; } = "";
+    /// <summary>언어별 이름·짧은 설명(manifest의 <c>translations</c>, 없으면 빈 묶음). 화면에는 <see cref="DisplayName"/>·<see cref="DisplaySummary"/>로 보인다.</summary>
+    public IReadOnlyDictionary<string, AssetTranslation> Translations { get; init; } = AssetTranslations.Empty;
     public IReadOnlyList<string> Tags { get; init; } = [];
     public AssetAuthor Author { get; init; } = new("", "");
     public string License { get; init; } = "";
@@ -47,6 +49,12 @@ public sealed record RemoteCatalogEntry
     public string Review { get; init; } = RemoteReview.Reviewed;
 
     public SemVersion SemanticVersion => SemVersion.TryParse(Version, out var v) ? v : new SemVersion(0, 0, 0);
+
+    /// <summary>화면 언어의 이름(번역 → <see cref="Name"/>).</summary>
+    public string DisplayName => AssetTranslations.Find(Translations, CultureInfo.CurrentUICulture, t => t.Name) ?? Name;
+
+    /// <summary>화면 언어의 짧은 설명(번역 → <see cref="Summary"/>).</summary>
+    public string DisplaySummary => AssetTranslations.Find(Translations, CultureInfo.CurrentUICulture, t => t.Summary) ?? Summary;
 
     /// <summary>
     /// 이 앱에 설치할 수 없는 정확한 까닭(지금 UI 언어). 설치할 수 있으면 null.
@@ -136,6 +144,7 @@ public static class RemoteCatalogFormat
         if (!AssetManifest.IsValidName(name)) throw Bad(field + ".name");
         string summary = AssetJson.String(o["summary"]) ?? "";
         if (!IsValidSummary(summary)) throw Bad(field + ".summary");
+        if (!AssetTranslations.TryRead(o["translations"], out var translations, out string? badTranslation)) throw Bad(field + "." + badTranslation);
 
         var tags = new List<string>();
         if (o["tags"] is not JsonArray tagList || tagList.Count > MaxTags) throw Bad(field + ".tags");
@@ -175,7 +184,7 @@ public static class RemoteCatalogFormat
 
         return new RemoteCatalogEntry
         {
-            Id = id, Version = version, Name = name.Trim(), Summary = summary.Trim(), Tags = tags,
+            Id = id, Version = version, Name = name.Trim(), Summary = summary.Trim(), Translations = translations, Tags = tags,
             Author = new AssetAuthor(authorId, authorName.Trim(), authorUrl), License = license, Kinds = kinds, MinAppVersion = minApp,
             Package = package, Preview = preview, Published = published, Updated = updated, Review = review,
         };
@@ -224,13 +233,14 @@ public static class RemoteCatalogFormat
             ["version"] = entry.Version,
             ["name"] = entry.Name,
             ["summary"] = entry.Summary,
-            ["tags"] = new JsonArray(entry.Tags.Select(tag => (JsonNode)JsonValue.Create(tag)!).ToArray()),
-            ["author"] = author,
-            ["license"] = entry.License,
-            ["kinds"] = kinds,
-            ["minAppVersion"] = entry.MinAppVersion,
-            ["package"] = WriteFile(entry.Package),
         };
+        if (AssetTranslations.Write(entry.Translations) is { } translations) json["translations"] = translations;
+        json["tags"] = new JsonArray(entry.Tags.Select(tag => (JsonNode)JsonValue.Create(tag)!).ToArray());
+        json["author"] = author;
+        json["license"] = entry.License;
+        json["kinds"] = kinds;
+        json["minAppVersion"] = entry.MinAppVersion;
+        json["package"] = WriteFile(entry.Package);
         if (entry.Preview is { } preview) json["preview"] = WriteFile(preview);
         json["published"] = entry.Published.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         json["updated"] = entry.Updated.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

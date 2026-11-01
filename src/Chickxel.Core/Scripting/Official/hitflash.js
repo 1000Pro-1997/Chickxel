@@ -1,6 +1,7 @@
 // 피격 번쩍임(HitFlashRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "피격 번쩍임",
+  language: "ko",
   description: "맞았을 때처럼 그림이 한 색으로 번쩍입니다.",
   translations: {
     ko: {

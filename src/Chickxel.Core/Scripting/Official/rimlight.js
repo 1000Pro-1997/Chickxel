@@ -1,6 +1,7 @@
 // 가장자리 빛·그늘(RimLightRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "가장자리 빛·그늘",
+  language: "ko",
   description: "빛이 오는 쪽 가장자리를 밝게, 반대쪽을 어둡게 덧칠해 입체감을 줍니다.",
   translations: {
     ko: {

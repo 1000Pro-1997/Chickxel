@@ -15,6 +15,8 @@
   <data name="Api_effect_name" xml:space="preserve"><value>효과 이름(효과 목록·에셋에 보임). 꼭 필요합니다.</value></data>
   <data name="Api_effect_author" xml:space="preserve"><value>작성자 이름(선택). 실행 확인 창에 보입니다.</value></data>
   <data name="Api_effect_description" xml:space="preserve"><value>짧은 설명(선택, 200자까지). 효과 만들기의 설명 칸과 올릴 때 짧은 설명에 쓰입니다.</value></data>
+  <data name="Api_effect_language" xml:space="preserve"><value>선언에 적은 name·description·설정 이름의 언어 코드(선택, 예: "ko", "en", "zh-Hans"). 화면 언어가 이 언어면 번역 대신 선언 값이 보입니다.</value></data>
+  <data name="Api_effect_tags" xml:space="preserve"><value>목록 태그(선택, 영어 소문자 낱말 8개까지, 예: ["neon", "glow"]). 올릴 때 태그로 쓰입니다.</value></data>
   <data name="Api_effect_translations" xml:space="preserve"><value>다른 언어의 제목·설명·설정 이름(언어 코드 → { name, description, labels }). 화면 언어에 맞는 것이 보이고, 없으면 선언에 적은 값.</value></data>
   <data name="Api_translation_name" xml:space="preserve"><value>그 언어의 효과 이름(1~100자).</value></data>
   <data name="Api_translation_description" xml:space="preserve"><value>그 언어의 짧은 설명(200자까지).</value></data>

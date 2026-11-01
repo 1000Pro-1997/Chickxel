@@ -319,6 +319,13 @@
   <data name="Effect_Script" xml:space="preserve"><value>Script effect</value></data>
   <data name="Script_InvalidAuthor" xml:space="preserve"><value>author must be a string.</value></data>
   <data name="Script_InvalidDescription" xml:space="preserve"><value>description must be a string of up to {max} characters.</value></data>
+  <data name="Script_InvalidTags" xml:space="preserve"><value>tags must be an array of up to {max} strings (e.g. ["neon", "glow"]).</value></data>
+  <data name="Script_InvalidTag" xml:space="preserve"><value>Tag '{tag}' must be up to {max} characters of lowercase English letters, digits and inner hyphens (e.g. "neon", "pixel-art").</value></data>
+  <data name="Script_DuplicateTag" xml:space="preserve"><value>Tag '{tag}' is repeated (case and a leading # are ignored).</value></data>
+  <data name="Script_InvalidLanguage" xml:space="preserve"><value>language must be the language code of the declared name and description (e.g. "ko", "en", "zh-Hans").</value></data>
+  <data name="Script_StarterName" xml:space="preserve"><value>New effect</value></data>
+  <data name="Script_StarterStrength" xml:space="preserve"><value>Strength</value></data>
+  <data name="Script_StarterLanguage" xml:space="preserve"><value>en</value></data>
   <data name="Script_ReservedSettingKey" xml:space="preserve"><value>{key} cannot be a setting key ({keys} are used by the effect motion settings).</value></data>
   <data name="Project_BadScript" xml:space="preserve"><value>A script in the script table does not match its hash and was not loaded: {hash}</value></data>
   <data name="Project_MissingScript" xml:space="preserve"><value>The script source for a script effect on layer "{layer}" is missing from the file, so it is not drawn ({hash}). The effect is kept when you save.</value></data>
@@ -354,18 +361,15 @@
   <data name="Asset_Issue_ScriptHashMismatch" xml:space="preserve"><value>Script source doesn't match its hash: {detail}</value></data>
   <data name="Asset_Issue_MissingScript" xml:space="preserve"><value>The recipe doesn't include the source of a script effect: {detail}</value></data>
   <data name="CatalogBuild_MissingPreview" xml:space="preserve"><value>No list preview (an asset with a preview or a preview in review.json is required).</value></data>
-  <data name="Publish_NoAssets" xml:space="preserve"><value>Choose at least one asset to include.</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>The author ID must be 1–64 lowercase letters, digits and inner hyphens (e.g. pixel-cat).</value></data>
   <data name="Publish_AuthorName" xml:space="preserve"><value>Enter an author display name of 1–100 characters.</value></data>
-  <data name="Publish_AuthorUrl" xml:space="preserve"><value>The author web address must start with https:// (it can be left empty).</value></data>
   <data name="Publish_PackageId" xml:space="preserve"><value>The package ID must look like "author-id.name" (two or more dot-separated parts of lowercase letters, digits and hyphens, up to 100 characters).</value></data>
   <data name="Publish_Version" xml:space="preserve"><value>The version must be SemVer "major.minor.patch" (e.g. 1.2.0).</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>Enter a package name of 1–100 characters.</value></data>
-  <data name="Publish_License" xml:space="preserve"><value>Choose a license (an SPDX ID or an ID starting with LicenseRef-).</value></data>
+  <data name="Publish_Translations" xml:space="preserve"><value>Check the language settings: language codes (e.g. en, ja, zh-Hans) must not repeat, and each language needs a name (1–100 characters) or a short description (1–200 characters, no line breaks) (up to 64 languages).</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Enter a short description of 1–200 characters (no line breaks).</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>Up to 8 tags, each up to 32 lowercase letters, digits and hyphens.</value></data>
   <data name="Publish_NoTags" xml:space="preserve"><value>Without tags the package is hard to find in the Store.</value></data>
-  <data name="Publish_UnknownLicense" xml:space="preserve"><value>{detail} is not a common SPDX ID. Check the spelling; a license you wrote yourself should start with LicenseRef-.</value></data>
   <data name="Publish_VersionNotNewer" xml:space="preserve"><value>Enter a version higher than {detail}, which is already published. Published versions can't change, so the same or a lower version can't be uploaded.</value></data>
   <data name="Publish_RecipeNotPublishable" xml:space="preserve"><value>Effect presets (several effects saved with their values) can't be published. Only script effects are published as effects.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>Unnamed effect {number}</value></data>

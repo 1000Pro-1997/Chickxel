@@ -191,7 +191,9 @@ public sealed partial class AssetManagerWindow
         string query = _remoteSearch.Text?.Trim() ?? "";
         return query.Length == 0
                || entry.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+               || entry.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                || entry.Summary.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+               || entry.DisplaySummary.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                || entry.Author.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                || entry.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
                || entry.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase));
@@ -211,7 +213,7 @@ public sealed partial class AssetManagerWindow
             _remoteList.Items.Clear();
             var shown = _snapshot.Packages.Where(RemoteMatches)
                 .OrderBy(e => e.Review == RemoteReview.Official ? 0 : 1)
-                .ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+                .ThenBy(e => e.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
             foreach (var entry in shown)
                 _remoteList.Items.Add(new ListBoxItem { Content = RemoteRow(entry), Tag = entry, HorizontalContentAlignment = HorizontalAlignment.Stretch });
             if (shown.Count == 0)
@@ -255,7 +257,7 @@ public sealed partial class AssetManagerWindow
     {
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         name.Children.Add(Ui.Icon(VectorIcon.Package, 14));
-        name.Children.Add(Ui.Label(entry.Name, bold: true));
+        name.Children.Add(Ui.Label(entry.DisplayName, bold: true));
         var panel = new StackPanel { Children = { name, Dim(string.Join(" · ", entry.Version, entry.Author.Name, RemoteContents(entry))) } };
         if (RemoteState(entry) is { } state)
         {
@@ -274,9 +276,9 @@ public sealed partial class AssetManagerWindow
             _remoteDetail.Children.Add(Dim(UiStrings.Assets_SelectHint));
             return;
         }
-        _remoteDetail.Children.Add(TitleText(entry.Name));
+        _remoteDetail.Children.Add(TitleText(entry.DisplayName));
         if (entry.Preview is not null) _remoteDetail.Children.Add(new RemotePreviewView(entry));
-        _remoteDetail.Children.Add(new TextBlock { Text = entry.Summary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
+        _remoteDetail.Children.Add(new TextBlock { Text = entry.DisplaySummary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
         var installed = AppAssets.Catalog.FindPackage(entry.Id);
         _remoteDetail.Children.Add(FactsGrid(
             (UiStrings.Assets_Id, entry.Id),
@@ -351,10 +353,10 @@ public sealed partial class AssetManagerWindow
         {
             var remote = update.Remote;
             var info = new StackPanel { Spacing = 2 };
-            var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { Ui.Icon(VectorIcon.Package, 14), Ui.Label(update.Installed.Name, bold: true) } };
+            var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { Ui.Icon(VectorIcon.Package, 14), Ui.Label(remote.DisplayName, bold: true) } };
             info.Children.Add(name);
             info.Children.Add(Dim(F(UiStrings.Assets_UpdateRow, update.Installed.Version, remote.Version)));
-            info.Children.Add(new TextBlock { Text = remote.Summary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
+            info.Children.Add(new TextBlock { Text = remote.DisplaySummary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
             if (remote.IncompatibleReason(AppVersion) is { } reason)
                 info.Children.Add(new TextBlock { Text = F(UiStrings.Assets_Incompatible, reason), Foreground = AppTheme.WarningBrush, TextWrapping = TextWrapping.Wrap });
             Control action = _downloadId == remote.Id ? DownloadRow() : InstallButton(remote, VectorIcon.Download, F(UiStrings.Assets_UpdateTo, remote.Version));

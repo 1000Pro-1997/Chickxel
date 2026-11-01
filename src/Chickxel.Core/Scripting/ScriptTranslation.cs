@@ -21,6 +21,8 @@ public sealed record ScriptTranslation(string? Name, string? Description, IReadO
 /// <summary>
 /// 스크립트 효과의 여러 언어 이름: 화면 언어(<see cref="CultureInfo"/>)에 맞는 번역을 고른다. 찾는 차례는 그 언어 코드 그대로(<c>zh-Hans</c>),
 /// 그 위 언어들(<c>zh-Hans-CN</c> → <c>zh-Hans</c> → <c>zh</c>, <c>en-US</c> → <c>en</c>), 그다음 선언에 적은 값이다. 항목(이름·설명·설정 이름)마다 따로 찾는다.
+/// 선언의 <c>language</c>(선언에 적은 값의 언어)를 주면, 찾는 차례에서 그 언어에 먼저 닿을 때 번역 대신 선언 값을 쓴다
+/// (같은 단계에서는 선언 값이 먼저 — 그 언어의 원본은 선언이다).
 /// </summary>
 public static partial class ScriptTranslations
 {
@@ -38,24 +40,63 @@ public static partial class ScriptTranslations
     /// <summary>BCP-47 모양의 언어 코드인지(<c>en</c>, <c>ja</c>, <c>zh-Hans</c>, <c>pt-BR</c> 등, 35자까지).</summary>
     public static bool IsLanguageCode(string code) => code.Length <= 35 && LanguageCode().IsMatch(code);
 
-    /// <summary><paramref name="culture"/>에 맞는 번역 값(<paramref name="pick"/>이 null이 아닌 첫 번역). 없으면 null(선언 값을 씀).</summary>
-    public static string? Find(IReadOnlyDictionary<string, ScriptTranslation> translations, CultureInfo culture, Func<ScriptTranslation, string?> pick)
+    /// <summary>
+    /// <paramref name="culture"/>에 맞는 번역 값(<paramref name="pick"/>이 null이 아닌 첫 번역). 없거나, 그보다 먼저 <paramref name="baseLanguage"/>
+    /// (선언 값의 언어)에 닿으면 null(선언 값을 씀).
+    /// </summary>
+    public static string? Find(IReadOnlyDictionary<string, ScriptTranslation> translations, CultureInfo culture, Func<ScriptTranslation, string?> pick,
+        string? baseLanguage = null)
     {
         if (translations.Count == 0) return null;
         for (var c = culture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+        {
+            if (baseLanguage is not null && string.Equals(c.Name, baseLanguage, StringComparison.OrdinalIgnoreCase)) return null;
             if (translations.TryGetValue(c.Name, out var translation) && pick(translation) is { } value) return value;
+        }
         return null;
     }
 
-    public static string NameFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string declared, CultureInfo culture)
-        => Find(translations, culture, t => t.Name) ?? declared;
+    /// <summary>화면 언어 <paramref name="culture"/>가 선언 값의 언어 <paramref name="baseLanguage"/>(또는 그 아래 언어)인지: 찾는 차례에 그 언어가 있는지.</summary>
+    public static bool Matches(string? baseLanguage, CultureInfo culture)
+    {
+        if (baseLanguage is null) return false;
+        for (var c = culture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+            if (string.Equals(c.Name, baseLanguage, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
 
-    public static string? DescriptionFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string? declared, CultureInfo culture)
-        => Find(translations, culture, t => t.Description) ?? declared;
+    /// <summary>
+    /// 번역 키로 쓸 <paramref name="culture"/>의 언어 코드: 맨 위 중립 언어(<c>en-US</c> → <c>en</c>, <c>ko-KR</c> → <c>ko</c>). 중국어는 글자 체계까지
+    /// (<c>zh-CN</c> → <c>zh-Hans</c>, <c>zh-TW</c> → <c>zh-Hant</c> — <c>zh</c> 하나로는 간체·번체를 가를 수 없음). 고정 문화권이면 null.
+    /// </summary>
+    public static string? LanguageOf(CultureInfo culture)
+    {
+        string? top = null, below = null;
+        for (var c = culture; !string.IsNullOrEmpty(c.Name); c = c.Parent)
+        {
+            below = top;
+            top = c.Name;
+        }
+        return top is "zh" && below is not null ? below : top;
+    }
 
-    public static string LabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, ScriptSetting setting, CultureInfo culture)
-        => Find(translations, culture, t => t.Labels.GetValueOrDefault(setting.Key)) ?? setting.Label;
+    /// <summary>
+    /// 화면 언어 <paramref name="culture"/>에서 정보 칸(이름·설명)이 고칠 곳: 선언 값이면 null(<paramref name="baseLanguage"/>가 없거나 화면 언어가 그 언어일 때),
+    /// 아니면 고칠 번역의 언어 코드(<see cref="LanguageOf"/>). 고정 문화권이면 null.
+    /// </summary>
+    public static string? EditLanguage(string? baseLanguage, CultureInfo culture)
+        => baseLanguage is null || Matches(baseLanguage, culture) ? null : LanguageOf(culture);
 
-    public static string ChoiceLabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, ScriptSetting setting, ScriptChoice choice, CultureInfo culture)
-        => Find(translations, culture, t => t.Labels.GetValueOrDefault(ScriptTranslation.ChoiceKey(setting.Key, choice.Value))) ?? choice.Label;
+    public static string NameFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string declared, CultureInfo culture, string? baseLanguage = null)
+        => Find(translations, culture, t => t.Name, baseLanguage) ?? declared;
+
+    public static string? DescriptionFor(IReadOnlyDictionary<string, ScriptTranslation> translations, string? declared, CultureInfo culture, string? baseLanguage = null)
+        => Find(translations, culture, t => t.Description, baseLanguage) ?? declared;
+
+    public static string LabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, ScriptSetting setting, CultureInfo culture, string? baseLanguage = null)
+        => Find(translations, culture, t => t.Labels.GetValueOrDefault(setting.Key), baseLanguage) ?? setting.Label;
+
+    public static string ChoiceLabelFor(IReadOnlyDictionary<string, ScriptTranslation> translations, ScriptSetting setting, ScriptChoice choice, CultureInfo culture,
+        string? baseLanguage = null)
+        => Find(translations, culture, t => t.Labels.GetValueOrDefault(ScriptTranslation.ChoiceKey(setting.Key, choice.Value)), baseLanguage) ?? choice.Label;
 }

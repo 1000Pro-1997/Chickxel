@@ -72,6 +72,13 @@ public sealed record InstalledPackage(InstalledPackageState State, string Folder
     public string Version => State.Version;
     public bool Enabled => State.Enabled;
     public string Name => Manifest?.Name ?? State.Id;
+
+    /// <summary>화면 언어의 이름(manifest 번역 → <see cref="Name"/>).</summary>
+    public string DisplayName => Manifest is { } m ? AssetTranslations.Find(m.Translations, CultureInfo.CurrentUICulture, t => t.Name) ?? m.Name : State.Id;
+
+    /// <summary>화면 언어의 짧은 설명(manifest 번역 → manifest 설명, 없으면 null).</summary>
+    public string? DisplayDescription => Manifest is { } m ? AssetTranslations.Find(m.Translations, CultureInfo.CurrentUICulture, t => t.Summary) ?? m.Description : null;
+
     public bool IsBroken => Manifest is null || Issues.Count > 0;
 }
 

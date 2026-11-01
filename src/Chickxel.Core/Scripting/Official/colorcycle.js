@@ -1,6 +1,7 @@
 // 색 순환(ColorCycleRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "색 순환",
+  language: "ko",
   description: "정한 색들을 차례로 돌려 바꿉니다(물·불·네온처럼 흐르는 색).",
   translations: {
     ko: {

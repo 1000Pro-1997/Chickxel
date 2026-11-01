@@ -173,7 +173,8 @@ public sealed partial class AssetManagerWindow : DialogBase
         if (shownEntries > 0) return true;
         bool kindOk = package.Entries.Count == 0 ? KindFilter is null : KindFilter is not { } kinds || package.Entries.Any(e => kinds.Contains(e.Kind));
         string query = _search.Text?.Trim() ?? "";
-        return kindOk && (query.Length == 0 || package.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
+        return kindOk && (query.Length == 0 || package.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                                            || package.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase));
     }
 
     /// <summary>카탈로그에서 목록을 다시 만들고 <see cref="_selectKey"/>를 고른다(없으면 첫 항목).</summary>
@@ -262,7 +263,7 @@ public sealed partial class AssetManagerWindow : DialogBase
     {
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         name.Children.Add(Ui.Icon(VectorIcon.Package, 14));
-        name.Children.Add(Ui.Label(package.Name, bold: true));
+        name.Children.Add(Ui.Label(package.DisplayName, bold: true));
         string status = package.IsBroken ? UiStrings.Assets_Broken : package.Enabled ? "" : UiStrings.Assets_Disabled;
         var sub = Dim(string.Join(" · ", new[] { package.Version, package.Manifest?.Author.Name, status }.Where(s => !string.IsNullOrEmpty(s))));
         if (package.IsBroken) sub.Foreground = AppTheme.WarningBrush;

@@ -1,6 +1,7 @@
 // 페이드 인·아웃(FadeRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "페이드 인·아웃",
+  language: "ko",
   description: "프레임 범위 동안 그림 전체의 투명도를 점차 높이거나 낮춥니다.",
   translations: {
     ko: {

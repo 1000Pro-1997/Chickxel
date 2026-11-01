@@ -3175,17 +3175,17 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_DefaultPackageName" xml:space="preserve"><value>My Assets</value></data>
   <data name="Assets_PersonalExportEmpty" xml:space="preserve"><value>There are no personal assets to export.</value></data>
   <data name="Assets_Publish" xml:space="preserve"><value>Publish Online…</value></data>
-  <data name="Assets_PublishTip" xml:space="preserve"><value>Bundles the selected personal asset (or, with none selected, the personal assets shown in the list) into a public package, checks it and uploads it with your Chickxel account.</value></data>
-  <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Starts a public package with this asset and uploads it with your Chickxel account. You can add other personal assets in the publish window.</value></data>
+  <data name="Assets_PublishTip" xml:space="preserve"><value>Uploads the selected personal asset as a public package with your Chickxel account (one asset per package).</value></data>
+  <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Uploads this asset as a public package with your Chickxel account.</value></data>
   <data name="Publish_Title" xml:space="preserve"><value>Publish Online</value></data>
-  <data name="Publish_Intro" xml:space="preserve"><value>Enter the license and package details; once the checks pass, the package is uploaded with your Chickxel account. Uploaded packages appear right away in the Store and on the assets page of chickxel.com.</value></data>
+  <data name="Publish_Intro" xml:space="preserve"><value>Each asset is uploaded as its own package. Enter the package details; once the checks pass, it is uploaded with your Chickxel account. Uploaded packages appear right away in the Store and on the assets page of chickxel.com.</value></data>
+  <data name="Publish_ChooseAsset" xml:space="preserve"><value>Select the personal asset to publish in the list. Assets are uploaded one at a time.</value></data>
   <data name="Publish_NoPersonal" xml:space="preserve"><value>There are no personal assets to publish. Save a script effect in the Effect Maker or a gradient in the gradient preset window first (effect presets aren't published).</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>Author</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>Author ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Your Chickxel account handle is the author ID. It becomes the first part of the package ID; you can change the handle in Help > Chickxel Account (not after you have uploaded a package).</value></data>
   <data name="Publish_AuthorName" xml:space="preserve"><value>Display name</value></data>
-  <data name="Publish_AuthorUrl" xml:space="preserve"><value>Website (optional)</value></data>
-  <data name="Publish_AuthorNote" xml:space="preserve"><value>The display name and website are remembered on this computer for your next publish and for personal exports.</value></data>
+  <data name="Publish_AuthorFromAccount" xml:space="preserve"><value>The handle and display name of the Chickxel account you are signed in with are used. Change them in Help > Chickxel Account.</value></data>
   <data name="Publish_Package" xml:space="preserve"><value>Package</value></data>
   <data name="Publish_Name" xml:space="preserve"><value>Name</value></data>
   <data name="Publish_Id" xml:space="preserve"><value>Package ID</value></data>
@@ -3196,27 +3196,24 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>Use suggested version</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Short description</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in the Store (up to 200 characters)</value></data>
+  <data name="Publish_LanguagesLabel" xml:space="preserve"><value>Other languages</value></data>
+  <data name="Publish_Languages" xml:space="preserve"><value>Languages…</value></data>
+  <data name="Publish_LanguagesTip" xml:space="preserve"><value>Enter the package name and short description per language. People who view the Store or chickxel.com in that language see them.</value></data>
+  <data name="Publish_LanguagesNone" xml:space="preserve"><value>None (the name and description above are shown in every language)</value></data>
   <data name="Publish_Tags" xml:space="preserve"><value>Tags</value></data>
-  <data name="Publish_TagsHint" xml:space="preserve"><value>Comma-separated (e.g. neon, hit)</value></data>
+  <data name="Publish_TagsTip" xml:space="preserve"><value>Type a tag like #neon and press Space, Enter or comma to add it. Up to 8 tags of lowercase English letters, digits and hyphens.</value></data>
   <data name="Publish_License" xml:space="preserve"><value>License</value></data>
-  <data name="Publish_LicenseChoose" xml:space="preserve"><value>Choose a license</value></data>
+  <data name="Publish_LicenseFixed" xml:space="preserve"><value>Anyone may copy, change and use this asset for any purpose without conditions, including commercial use and without credit.</value></data>
   <data name="Publish_LicenseCustom" xml:space="preserve"><value>Custom</value></data>
-  <data name="Publish_LicenseId" xml:space="preserve"><value>License ID</value></data>
-  <data name="Publish_LicenseIdHint" xml:space="preserve"><value>LicenseRef-MyTerms or an SPDX ID</value></data>
-  <data name="Publish_LicenseText" xml:space="preserve"><value>License text (the package's LICENSE.txt)</value></data>
-  <data name="Publish_LicenseNone" xml:space="preserve"><value>Decides how others may use these assets. Packages without a license can't be published.</value></data>
-  <data name="Publish_LicenseCustomNote" xml:space="preserve"><value>A license you wrote yourself needs an ID starting with LicenseRef- and its full text.</value></data>
-  <data name="Publish_LicenseFile" xml:space="preserve"><value>A LICENSE.txt naming the license and linking its SPDX text is added to the package.</value></data>
-  <data name="Publish_License_CC0" xml:space="preserve"><value>Anyone may use and modify it without conditions (public domain dedication).</value></data>
-  <data name="Publish_License_CCBY" xml:space="preserve"><value>Use and modification, including commercial, with credit to the author.</value></data>
-  <data name="Publish_License_CCBYSA" xml:space="preserve"><value>With credit; modified versions must be shared under the same license.</value></data>
-  <data name="Publish_License_CCBYNC" xml:space="preserve"><value>With credit, for non-commercial use only.</value></data>
-  <data name="Publish_License_MIT" xml:space="preserve"><value>Free use as long as the copyright notice and license text are kept.</value></data>
-  <data name="Publish_License_Apache" xml:space="preserve"><value>Like MIT, plus a patent grant and a notice of changes.</value></data>
   <data name="Publish_Assets" xml:space="preserve"><value>Included assets</value></data>
-  <data name="Publish_AssetsCount" xml:space="preserve"><value>{0} of {1} personal assets</value></data>
+  <data name="Publish_Asset" xml:space="preserve"><value>Asset</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>List preview</value></data>
-  <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Store list and details. Pick one of the included assets' previews or replace it with a PNG (up to 512×512, 1 MB).</value></data>
+  <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Store list and details: the asset's preview, or a PNG you choose (up to 512×512, 1 MB).</value></data>
+  <data name="PublishLanguages_Hint" xml:space="preserve"><value>Write a package name and short description per language; people who view the Store or chickxel.com in that language see them. Empty fields show the name and description of the publish window.</value></data>
+  <data name="TagChips_Hint" xml:space="preserve"><value>Type #tag, then Space</value></data>
+  <data name="TagChips_Remove" xml:space="preserve"><value>Remove #{0}</value></data>
+  <data name="TagChips_Invalid" xml:space="preserve"><value>#{0}: tags use lowercase English letters, digits and inner hyphens, up to {1} characters.</value></data>
+  <data name="TagChips_TooMany" xml:space="preserve"><value>Up to {0} tags.</value></data>
   <data name="Publish_PreviewReplace" xml:space="preserve"><value>Replace with Image File…</value></data>
   <data name="Publish_PreviewAuto" xml:space="preserve"><value>Use Asset Preview</value></data>
   <data name="Publish_PreviewCustom" xml:space="preserve"><value>Chosen image: {0}</value></data>
@@ -3560,7 +3557,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_InsertUndo" xml:space="preserve"><value>Insert effect: {0}</value></data>
   <data name="EffectMaker_LayerLocked" xml:space="preserve"><value>The current layer is locked.</value></data>
   <data name="EffectMaker_Upload" xml:space="preserve"><value>Upload…</value></data>
-  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves and, if the check passes, opens the publish window. Enter tags, license and version to upload; the preview is made automatically.</value></data>
+  <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves and, if the check passes, opens the publish window. Check the tags, languages and version there to upload; the preview is made automatically.</value></data>
   <data name="EffectMaker_ShowAll" xml:space="preserve"><value>Show all</value></data>
   <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>Off: only the script effects you made. On: also copies from packages and script effects of installed packages. Saving an edited package effect makes a personal copy.</value></data>
   <data name="EffectMaker_Info" xml:space="preserve"><value>Info</value></data>
@@ -3568,6 +3565,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_TitleHint" xml:space="preserve"><value>Name shown in the effect list and the Store</value></data>
   <data name="EffectMaker_DescriptionLabel" xml:space="preserve"><value>Description</value></data>
   <data name="EffectMaker_DescriptionHint" xml:space="preserve"><value>A sentence or two about the effect (optional, up to 200 characters)</value></data>
+  <data name="EffectMaker_TagsLabel" xml:space="preserve"><value>Tags</value></data>
+  <data name="EffectMaker_TagsTip" xml:space="preserve"><value>Tags used when you upload (tags in the source's declaration). Type a tag like #neon and press Space, Enter or comma; up to 8 tags of lowercase English letters, digits and hyphens.</value></data>
   <data name="EffectMaker_Validate" xml:space="preserve"><value>Check</value></data>
   <data name="EffectMaker_ValidateTip" xml:space="preserve"><value>Pre-upload check: checks the source (as installing does) and the title, then runs it with the default settings on every sample chick x every preview step (the frame count) to find run errors and the slowest step.</value></data>
   <data name="EffectMaker_Validating" xml:space="preserve"><value>Checking…</value></data>

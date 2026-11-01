@@ -37,6 +37,8 @@
     <EmbeddedResource Include="..\..\docs\assets\mascot\chick-*.png" Exclude="..\..\docs\assets\mascot\*@8x.png" LogicalName="Chickxel.Mascot.%(Filename)%(Extension)" WithCulture="false" />
     <!-- 글씨 효과의 도트 글꼴: Galmuri BDF(gzip, SIL OFL 1.1 — Text/Fonts/Galmuri-LICENSE.txt). 처음 쓸 때 한 번 읽는다(PixelFonts). -->
     <EmbeddedResource Include="Text\Fonts\*.bdf.gz" LogicalName="Chickxel.Fonts.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 게시 패키지의 고정 라이선스 원문(CC0 1.0 법률 문구 — AssetPublishCheck.LicenseText가 LICENSE.txt로 넣음). -->
+    <EmbeddedResource Include="Assets\Licenses\*.txt" LogicalName="Chickxel.Licenses.%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
   <ItemGroup>

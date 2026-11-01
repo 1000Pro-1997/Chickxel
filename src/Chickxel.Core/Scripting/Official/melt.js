@@ -1,6 +1,7 @@
 // 녹아내리기(MeltRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "녹아내리기",
+  language: "ko",
   description: "픽셀이 열마다 다른 빠르기로 아래로 흘러내립니다.",
   translations: {
     ko: {

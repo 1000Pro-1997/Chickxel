@@ -1,6 +1,7 @@
 // 나타나기·사라지기(AppearRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "나타나기 / 사라지기",
+  language: "ko",
   description: "디더·흩어짐·쓸기·투명도로 그림이 나타나거나 사라집니다.",
   translations: {
     ko: {

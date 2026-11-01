@@ -90,18 +90,24 @@ public sealed class ScriptEffectProgram
     /// </summary>
     public IReadOnlyDictionary<string, ScriptTranslation> Translations { get; }
 
-    /// <summary><paramref name="culture"/>(보통 화면 언어)의 제목: 그 언어 → 중립 언어 → 선언의 <c>name</c>.</summary>
-    public string NameFor(CultureInfo culture) => ScriptTranslations.NameFor(Translations, Name, culture);
+    /// <summary>
+    /// 선언의 <c>language</c>(선택, 없으면 null): 선언에 적은 <c>name</c>·<c>description</c>·설정 이름의 언어 코드(<see cref="ScriptTranslations.IsLanguageCode"/>).
+    /// 화면 언어가 이 언어면 번역보다 선언 값을 쓴다(<see cref="ScriptTranslations.Find"/>).
+    /// </summary>
+    public string? Language { get; init; }
 
-    /// <summary><paramref name="culture"/>의 설명: 그 언어 → 중립 언어 → 선언의 <c>description</c>.</summary>
-    public string? DescriptionFor(CultureInfo culture) => ScriptTranslations.DescriptionFor(Translations, Description, culture);
+    /// <summary><paramref name="culture"/>(보통 화면 언어)의 제목: 그 언어 → 중립 언어 → 선언의 <c>name</c>(<see cref="Language"/>에 먼저 닿으면 선언 값).</summary>
+    public string NameFor(CultureInfo culture) => ScriptTranslations.NameFor(Translations, Name, culture, Language);
+
+    /// <summary><paramref name="culture"/>의 설명: 그 언어 → 중립 언어 → 선언의 <c>description</c>(<see cref="Language"/>에 먼저 닿으면 선언 값).</summary>
+    public string? DescriptionFor(CultureInfo culture) => ScriptTranslations.DescriptionFor(Translations, Description, culture, Language);
 
     /// <summary><paramref name="culture"/>의 설정 이름: 번역의 <c>labels[키]</c> → 선언의 <c>label</c>.</summary>
-    public string LabelFor(ScriptSetting setting, CultureInfo culture) => ScriptTranslations.LabelFor(Translations, setting, culture);
+    public string LabelFor(ScriptSetting setting, CultureInfo culture) => ScriptTranslations.LabelFor(Translations, setting, culture, Language);
 
     /// <summary><paramref name="culture"/>의 고르기 항목 이름: 번역의 <c>labels["키.값"]</c> → 선언의 항목 <c>label</c>.</summary>
     public string ChoiceLabelFor(ScriptSetting setting, ScriptChoice choice, CultureInfo culture)
-        => ScriptTranslations.ChoiceLabelFor(Translations, setting, choice, culture);
+        => ScriptTranslations.ChoiceLabelFor(Translations, setting, choice, culture, Language);
 
     /// <summary>render가 도는 길: 빠른 경로인지, 아니면 Jint로 도는 까닭과 위치. 처음 읽을 때 한 번 바꿔 보고 그 결과를 계속 쓴다.</summary>
     public ScriptExecutionPath ExecutionPath => _fast.Value.Path;
@@ -131,6 +137,12 @@ public sealed class ScriptEffectProgram
 
     /// <summary>선언 <c>description</c>의 최대 길이(올릴 때 짧은 설명 한도와 같음).</summary>
     public const int MaxDescriptionLength = 200;
+
+    /// <summary>
+    /// 선언의 <c>tags</c>(선택, 없으면 빈 목록): 올릴 때 목록 태그의 처음 값. 정리한 값이다 — 소문자·숫자·안쪽 하이픈,
+    /// <see cref="Assets.RemoteCatalogFormat.MaxTags"/>개까지, 겹치지 않음, 선언 순서.
+    /// </summary>
+    public IReadOnlyList<string> Tags { get; init; } = [];
 
     /// <summary>선언의 <c>animated</c>(기본 false): 프레임 진행에 따라 모습이 바뀌는지.</summary>
     public bool Animated { get; }

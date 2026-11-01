@@ -36,4 +36,35 @@ public class ScriptEffectGuideTests
             ScriptGuideStrings.Culture = saved;
         }
     }
+
+    [Theory]
+    [InlineData("ko")]
+    [InlineData("en")]
+    public void Guide_rules_ask_for_description_and_tags_and_the_example_declares_tags(string culture)
+    {
+        var saved = ScriptGuideStrings.Culture;
+        ScriptGuideStrings.Culture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            string guide = ScriptEffectGuide.ToMarkdown(null);
+            // 선언 규칙과 바꿀 때 규칙 둘 다 설명·태그를 말한다
+            foreach (var rule in new[] { ScriptGuideStrings.Guide_RuleDeclaration, ScriptGuideStrings.Guide_RuleLanguage })
+            {
+                Assert.Contains("`description`", rule, StringComparison.Ordinal);
+                Assert.Contains("`tags`", rule, StringComparison.Ordinal);
+            }
+            Assert.Contains("`language`", ScriptGuideStrings.Guide_RuleLanguage, StringComparison.Ordinal);
+            Assert.Contains("`tags`", guide, StringComparison.Ordinal);
+            // 예제(공식 빛 지나가기)에 language·description·tags가 들어 있고 그대로 해석된다
+            var example = MiniMarkdown.Parse(guide).Last(b => b.Kind == MdBlockKind.Code).Code;
+            var program = ScriptEffectProgram.Parse(example).Program!;
+            Assert.InRange(program.Tags.Count, 3, 6);
+            Assert.NotNull(program.Description);
+            Assert.Equal("ko", program.Language);
+        }
+        finally
+        {
+            ScriptGuideStrings.Culture = saved;
+        }
+    }
 }

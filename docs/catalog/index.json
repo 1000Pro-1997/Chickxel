@@ -7,7 +7,7 @@
   "packages": [
     {
       "id": "chickxel.effects.afterimage",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Afterimage",
       "summary": "Leaves fading copies of previous frames behind for a sense of fast motion.",
       "tags": [
@@ -27,12 +27,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.afterimage-1.0.0.chickxel-asset",
-        "size": 7296,
-        "sha256": "94878adc5de4a4812a7cf55e89b85aba3b1cab526ed6a98bdec70157569aaaba"
+        "url": "packages/chickxel.effects.afterimage-1.0.1.chickxel-asset",
+        "size": 7309,
+        "sha256": "569e3d80a417000b6aaeb2a3126db82744ba791bdd283cfe2ea0380a2bbbdb3d"
       },
       "preview": {
-        "url": "previews/chickxel.effects.afterimage-1.0.0.png",
+        "url": "previews/chickxel.effects.afterimage-1.0.1.png",
         "size": 4081,
         "sha256": "3782be506790206a3974ed5f87ab463aa74edb81873a1329c98a1e9d34841bcd"
       },
@@ -42,7 +42,7 @@
     },
     {
       "id": "chickxel.effects.appear",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Appear / disappear",
       "summary": "The image appears or disappears via dither, scatter, wipe or opacity.",
       "tags": [
@@ -62,12 +62,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.appear-1.0.0.chickxel-asset",
-        "size": 7222,
-        "sha256": "de0a5fb9ab623a8b5e9e7688faa04f67bf7a32a4a0a1057e5f2afb656da0abd8"
+        "url": "packages/chickxel.effects.appear-1.0.1.chickxel-asset",
+        "size": 7232,
+        "sha256": "8163663e4a7e0debbd59f3d080ec0795370a1bd7f11ebd455b4b6864a53bd1f4"
       },
       "preview": {
-        "url": "previews/chickxel.effects.appear-1.0.0.png",
+        "url": "previews/chickxel.effects.appear-1.0.1.png",
         "size": 3928,
         "sha256": "37c7841beb9723c75ad5b811bcae51da48fb24aa23d52816a6174b343a5dd514"
       },
@@ -77,7 +77,7 @@
     },
     {
       "id": "chickxel.effects.blink",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Blink",
       "summary": "Repeatedly shows and hides (e.g. to indicate invincibility frames).",
       "tags": [
@@ -97,12 +97,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.blink-1.0.0.chickxel-asset",
-        "size": 4681,
-        "sha256": "6e60b7c474319212ca0159ea41d25f392118f4d71f49a2b90e288b410b9b3950"
+        "url": "packages/chickxel.effects.blink-1.0.1.chickxel-asset",
+        "size": 4691,
+        "sha256": "450f62e7d6ba4cbbec570ac9580a0ee5eab5b71497442aa47f148fff3ac1168c"
       },
       "preview": {
-        "url": "previews/chickxel.effects.blink-1.0.0.png",
+        "url": "previews/chickxel.effects.blink-1.0.1.png",
         "size": 2936,
         "sha256": "3d4d35da00852effa3b85934d21ce121d0f5d687c8263cdb6b099715bf9affe3"
       },
@@ -112,7 +112,7 @@
     },
     {
       "id": "chickxel.effects.bob",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Bob",
       "summary": "Gently floats up and down (idle motion).",
       "tags": [
@@ -132,12 +132,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.bob-1.0.0.chickxel-asset",
-        "size": 5890,
-        "sha256": "4d46f8f86a074985b189a2bb2632c75210253b6d15005e668195f36152373880"
+        "url": "packages/chickxel.effects.bob-1.0.1.chickxel-asset",
+        "size": 5900,
+        "sha256": "2d00cade44f22d7801f480be931ba7932010eeeb2c4ad243935b755145f5f2f8"
       },
       "preview": {
-        "url": "previews/chickxel.effects.bob-1.0.0.png",
+        "url": "previews/chickxel.effects.bob-1.0.1.png",
         "size": 4139,
         "sha256": "007b42974235e0bb72487e7c9a719f94f412be185ba06ae989b4bddaaf2c2168"
       },
@@ -147,7 +147,7 @@
     },
     {
       "id": "chickxel.effects.coloradjust",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Color adjustment",
       "summary": "Changes colors with grayscale, sepia, hue shift, brightness, contrast, and saturation (image unchanged).",
       "tags": [
@@ -166,12 +166,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.coloradjust-1.0.0.chickxel-asset",
-        "size": 4749,
-        "sha256": "d8cff6a86698fe888ada708129f9c2f7eb5f8936bd007e248e8fceb8b6b8b8c1"
+        "url": "packages/chickxel.effects.coloradjust-1.0.1.chickxel-asset",
+        "size": 4762,
+        "sha256": "0abf2198682f9fe5c891af316c42b88501375a13051af814a4b70e4b5a78786a"
       },
       "preview": {
-        "url": "previews/chickxel.effects.coloradjust-1.0.0.png",
+        "url": "previews/chickxel.effects.coloradjust-1.0.1.png",
         "size": 493,
         "sha256": "04ee59a9a885c4c6c3238b0680ca806c3bc321c12877e3be021fac72f9521666"
       },
@@ -181,7 +181,7 @@
     },
     {
       "id": "chickxel.effects.colorcycle",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Color cycle",
       "summary": "Cycles through chosen colors in turn (flowing colors like water, fire, neon).",
       "tags": [
@@ -201,12 +201,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.colorcycle-1.0.0.chickxel-asset",
-        "size": 4099,
-        "sha256": "7e4eeff7d9fba40c50d31eee8b02f5659d1673bc89e0ffa5b1471e8555c197c7"
+        "url": "packages/chickxel.effects.colorcycle-1.0.1.chickxel-asset",
+        "size": 4112,
+        "sha256": "96d3df41f52f403310fdba9b7f341c8a1f558a03d533e7045b7a3b0526446745"
       },
       "preview": {
-        "url": "previews/chickxel.effects.colorcycle-1.0.0.png",
+        "url": "previews/chickxel.effects.colorcycle-1.0.1.png",
         "size": 445,
         "sha256": "90e7c43725ae1a4a783770302a1fe352ba15f1d707a214c78765db49e2a8ba3d"
       },
@@ -216,7 +216,7 @@
     },
     {
       "id": "chickxel.effects.coloroverlay",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Color overlay",
       "summary": "Tints visible pixels with a single color or a spatial gradient (100% = silhouette).",
       "tags": [
@@ -235,12 +235,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.coloroverlay-1.0.0.chickxel-asset",
-        "size": 3976,
-        "sha256": "b0d485e7f6ae261aeec8d43cbd049a2b4fa15805b30b23a484703df22aa503b7"
+        "url": "packages/chickxel.effects.coloroverlay-1.0.1.chickxel-asset",
+        "size": 3986,
+        "sha256": "8366a49b7410d6e0fc6ea4d56c93e6c1fee662dccc1cfc03439a4b254a644f3e"
       },
       "preview": {
-        "url": "previews/chickxel.effects.coloroverlay-1.0.0.png",
+        "url": "previews/chickxel.effects.coloroverlay-1.0.1.png",
         "size": 326,
         "sha256": "6cf2da06167937cb49bb0cea138104a9b27b3e5b581d3ef1071cf34c499e5328"
       },
@@ -250,7 +250,7 @@
     },
     {
       "id": "chickxel.effects.explode",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Explode",
       "summary": "Pixels shatter and fly outward as they disappear.",
       "tags": [
@@ -270,12 +270,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.explode-1.0.0.chickxel-asset",
-        "size": 10770,
-        "sha256": "c748a5ab5ae68ced4decdec0b841d2a2494cb37919d515e68c621898f058fa36"
+        "url": "packages/chickxel.effects.explode-1.0.1.chickxel-asset",
+        "size": 10780,
+        "sha256": "8e71f9c40f78eee9152378b23b2ec89739898cac4948eabb1a25ac0a2a7ffae7"
       },
       "preview": {
-        "url": "previews/chickxel.effects.explode-1.0.0.png",
+        "url": "previews/chickxel.effects.explode-1.0.1.png",
         "size": 5224,
         "sha256": "a9c91802c84b087dd2b42e445646e411a64fc429ca6dfcc43fa74066bfdf81a4"
       },
@@ -285,7 +285,7 @@
     },
     {
       "id": "chickxel.effects.fade",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Fade in \u00B7 out",
       "summary": "Gradually raises or lowers the opacity of the whole image over the frame range.",
       "tags": [
@@ -305,12 +305,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.fade-1.0.0.chickxel-asset",
-        "size": 5491,
-        "sha256": "75fee1f8b7222fe739315cefa4c7c6c7f0994ca22ae31d48aa70ab4544ce430d"
+        "url": "packages/chickxel.effects.fade-1.0.1.chickxel-asset",
+        "size": 5504,
+        "sha256": "a15244f5a1c69b60a99b4f1ca56bf7f0256b4fb1c8f101676a360148f6b5ced9"
       },
       "preview": {
-        "url": "previews/chickxel.effects.fade-1.0.0.png",
+        "url": "previews/chickxel.effects.fade-1.0.1.png",
         "size": 4187,
         "sha256": "29e629eb2067f7e23e29ab4cbd5713c1bacaf145f46fdc90335a5f1fffd61d6e"
       },
@@ -354,7 +354,7 @@
     },
     {
       "id": "chickxel.effects.hitflash",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Hit flash",
       "summary": "The image flashes a single color, as if hit.",
       "tags": [
@@ -374,12 +374,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.hitflash-1.0.0.chickxel-asset",
-        "size": 4867,
-        "sha256": "b910f7b22a241a2ed0fa9c6c47b8a42d89af508bfc2a34587ca2e0de606bae0a"
+        "url": "packages/chickxel.effects.hitflash-1.0.1.chickxel-asset",
+        "size": 4873,
+        "sha256": "82634d9a3b3b52257442a756c3eb8139a49e64fd21a653e8424d045797142db5"
       },
       "preview": {
-        "url": "previews/chickxel.effects.hitflash-1.0.0.png",
+        "url": "previews/chickxel.effects.hitflash-1.0.1.png",
         "size": 1953,
         "sha256": "ba766973cec377af92a9e59c59f5e87414181a224727c46353588927dc7b5951"
       },
@@ -389,7 +389,7 @@
     },
     {
       "id": "chickxel.effects.hologram",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Hologram",
       "summary": "Tints like a single-color projection and adds scanlines, bright bands, blink and glitch (sci-fi hologram).",
       "tags": [
@@ -409,12 +409,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.hologram-1.0.0.chickxel-asset",
-        "size": 12079,
-        "sha256": "d51c0a5ea2f45a8013dbb70a77ac41ffccdbfb526a129ebe877a8619a9e161cf"
+        "url": "packages/chickxel.effects.hologram-1.0.1.chickxel-asset",
+        "size": 12087,
+        "sha256": "b5c4910d12720e1a028f8dea3846a6e74312a545e8658b8e445397f4ef10ebd9"
       },
       "preview": {
-        "url": "previews/chickxel.effects.hologram-1.0.0.png",
+        "url": "previews/chickxel.effects.hologram-1.0.1.png",
         "size": 6126,
         "sha256": "fefd9cf95aadaff140877e049226b199ecfdfafcc7c1f7ddd3b6b4d1873f0d3f"
       },
@@ -424,7 +424,7 @@
     },
     {
       "id": "chickxel.effects.innerglow",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Inner glow",
       "summary": "Makes a glowing edge by blending color inward from the edges.",
       "tags": [
@@ -443,12 +443,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.innerglow-1.0.0.chickxel-asset",
-        "size": 4848,
-        "sha256": "1d074d5b54b38c6363bc654a64f0a0bafc2d2771527ab23dfe8be99abd22e3b0"
+        "url": "packages/chickxel.effects.innerglow-1.0.1.chickxel-asset",
+        "size": 4856,
+        "sha256": "26f1b800675c2aaa1a7a8901433699d1e531e1d57365cb9e7f66db552b464741"
       },
       "preview": {
-        "url": "previews/chickxel.effects.innerglow-1.0.0.png",
+        "url": "previews/chickxel.effects.innerglow-1.0.1.png",
         "size": 529,
         "sha256": "2de6e4f8a1417a20a49c31474c19e4b318f02b8d03c564c9331e074e52b536e0"
       },
@@ -458,7 +458,7 @@
     },
     {
       "id": "chickxel.effects.melt",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Melt",
       "summary": "Pixels drip down with each column at a different speed.",
       "tags": [
@@ -478,12 +478,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.melt-1.0.0.chickxel-asset",
-        "size": 7323,
-        "sha256": "f6f8e2c92f9f6f0dc0235a4b8d097f70fa9621064e721c0e6e9c297bfd8453f9"
+        "url": "packages/chickxel.effects.melt-1.0.1.chickxel-asset",
+        "size": 7337,
+        "sha256": "c5c72219fe4bb6e3265baa4d8f92b53c730b848857acaf610ea3233053f8e2fd"
       },
       "preview": {
-        "url": "previews/chickxel.effects.melt-1.0.0.png",
+        "url": "previews/chickxel.effects.melt-1.0.1.png",
         "size": 3768,
         "sha256": "32ea6d9850ba5887491740499cd85c9cd0e6b3770b47fa7745c173e4a73cf4c3"
       },
@@ -493,7 +493,7 @@
     },
     {
       "id": "chickxel.effects.outline",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Outline",
       "summary": "Draws an outline around the image (outside = beyond the image, inside = on edge pixels). The line is a fixed color or the touching pixels\u0027 color made darker or lighter (shade from neighbors).",
       "tags": [
@@ -512,12 +512,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.outline-1.0.0.chickxel-asset",
-        "size": 6131,
-        "sha256": "8d0d305079d73bf96ccd32826236ebdc0bd78b93af3b1df59fbe01df99e840cd"
+        "url": "packages/chickxel.effects.outline-1.0.1.chickxel-asset",
+        "size": 6144,
+        "sha256": "757372fdcd7f99f1998a689317851f048ba9717ee56cea8a4b020959f01623b8"
       },
       "preview": {
-        "url": "previews/chickxel.effects.outline-1.0.0.png",
+        "url": "previews/chickxel.effects.outline-1.0.1.png",
         "size": 490,
         "sha256": "c81bba8656f4d577cfd9cb75bf243321607d4e296a0d3711144b83fe7ecedb92"
       },
@@ -561,7 +561,7 @@
     },
     {
       "id": "chickxel.effects.paletteswap",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Palette swap",
       "summary": "Swaps chosen colors for other colors (palette swap \u2014 the same image in different colors).",
       "tags": [
@@ -580,12 +580,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.paletteswap-1.0.0.chickxel-asset",
-        "size": 4007,
-        "sha256": "0c8bddb21435e11eafb13288be7e0eda5ecc3b023d38e2a0509eec92587f9c6b"
+        "url": "packages/chickxel.effects.paletteswap-1.0.1.chickxel-asset",
+        "size": 4015,
+        "sha256": "5e67fb9084e12e7db95d9d22c994b186cdd57d1297677c19cb679a220fb6d8c3"
       },
       "preview": {
-        "url": "previews/chickxel.effects.paletteswap-1.0.0.png",
+        "url": "previews/chickxel.effects.paletteswap-1.0.1.png",
         "size": 445,
         "sha256": "90e7c43725ae1a4a783770302a1fe352ba15f1d707a214c78765db49e2a8ba3d"
       },
@@ -595,7 +595,7 @@
     },
     {
       "id": "chickxel.effects.reflection",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Reflection",
       "summary": "Flips the image and reflects it below, above or to a side, fading gradually (water/floor/wall reflection).",
       "tags": [
@@ -614,12 +614,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.reflection-1.0.0.chickxel-asset",
-        "size": 5697,
-        "sha256": "121edbe3b27d5e179925d841da134d8e04578f1c4a6c72b1b037d333f66af4a2"
+        "url": "packages/chickxel.effects.reflection-1.0.1.chickxel-asset",
+        "size": 5709,
+        "sha256": "13d19466edeb86c3dcb713b85943bcc6bbf407c7184c9142f4c6e16cd2fe387f"
       },
       "preview": {
-        "url": "previews/chickxel.effects.reflection-1.0.0.png",
+        "url": "previews/chickxel.effects.reflection-1.0.1.png",
         "size": 466,
         "sha256": "4fb7b16b179e9470bcfac696a247ebb767561566b1a8ac16359bed5e896dae90"
       },
@@ -629,7 +629,7 @@
     },
     {
       "id": "chickxel.effects.rimlight",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Edge light \u00B7 shade",
       "summary": "Adds depth by brightening the edge facing the light and darkening the opposite side.",
       "tags": [
@@ -648,12 +648,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.rimlight-1.0.0.chickxel-asset",
-        "size": 4496,
-        "sha256": "13ef0e7ecba9a49e3e4bc237701f8e11843376cc3b535202f9de8092e1282a39"
+        "url": "packages/chickxel.effects.rimlight-1.0.1.chickxel-asset",
+        "size": 4507,
+        "sha256": "1b30fdd9adae8adb312c84f1fe347e9acdc43b9e7ebd3dc6c9b716a2a141d3c9"
       },
       "preview": {
-        "url": "previews/chickxel.effects.rimlight-1.0.0.png",
+        "url": "previews/chickxel.effects.rimlight-1.0.1.png",
         "size": 491,
         "sha256": "393e53694680fdf024c558b2e8c923f6b4090f885dd0ed445afbbff672ec2c3b"
       },
@@ -663,7 +663,7 @@
     },
     {
       "id": "chickxel.effects.rotate",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Rotate",
       "summary": "Rotates the image (RotSprite \u2014 no new colors or translucency).",
       "tags": [
@@ -683,12 +683,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.rotate-1.0.0.chickxel-asset",
-        "size": 8061,
-        "sha256": "ec4ebe3fea544fe7171dda7ca65f7c850f076f626d81d60578e63b389c748bdc"
+        "url": "packages/chickxel.effects.rotate-1.0.1.chickxel-asset",
+        "size": 8069,
+        "sha256": "7d81ae53092e69c70ab0c6ac8e7a1d79d9901649c24c56bac0517dec7c7076d9"
       },
       "preview": {
-        "url": "previews/chickxel.effects.rotate-1.0.0.png",
+        "url": "previews/chickxel.effects.rotate-1.0.1.png",
         "size": 3433,
         "sha256": "33d1058f2aa21b997cc0e3c474540e182c1de366106f5548a25f5457c7090cd9"
       },
@@ -698,7 +698,7 @@
     },
     {
       "id": "chickxel.effects.shadow",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Shadow",
       "summary": "Casts a copy of the image shape diagonally behind it as a shadow.",
       "tags": [
@@ -717,12 +717,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.shadow-1.0.0.chickxel-asset",
-        "size": 4829,
-        "sha256": "ac8e327b3924f2c0adc43421f8a06c5bf1b2babb6f7e5d97510ecc8d294f679c"
+        "url": "packages/chickxel.effects.shadow-1.0.1.chickxel-asset",
+        "size": 4839,
+        "sha256": "b6001afb4eeb01ae66a715e91856fd60453d9092443eb75216394b5687840908"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shadow-1.0.0.png",
+        "url": "previews/chickxel.effects.shadow-1.0.1.png",
         "size": 463,
         "sha256": "fe4758a69edc2db2831f2ad4ebaa89acec104eb4e1b90390b33caeae59b5b507"
       },
@@ -732,7 +732,7 @@
     },
     {
       "id": "chickxel.effects.shake",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Shake",
       "summary": "The whole image jitters pixel by pixel.",
       "tags": [
@@ -752,12 +752,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.shake-1.0.0.chickxel-asset",
-        "size": 5616,
-        "sha256": "17f9e6db482cb3c837ad7d10160326813b530b909e4642e81aea29535ad9379a"
+        "url": "packages/chickxel.effects.shake-1.0.1.chickxel-asset",
+        "size": 5628,
+        "sha256": "d1edac1432814f37dd15bb2af6011120ee34ece4bc00c9e0ed697d798533d269"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shake-1.0.0.png",
+        "url": "previews/chickxel.effects.shake-1.0.1.png",
         "size": 1968,
         "sha256": "275d0a9760c14545a02b2a80b7b4db60486ca0120f647c09e4e5a8732ffc7f67"
       },
@@ -767,7 +767,7 @@
     },
     {
       "id": "chickxel.effects.shine",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Light sweep",
       "summary": "A band of light sweeps across the image from one side to the other (shine).",
       "tags": [
@@ -787,12 +787,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.shine-1.0.0.chickxel-asset",
-        "size": 6883,
-        "sha256": "f5aa3fb7a708d8ce7cbbc3be07afb734eb9a300c338088c6d6c8c1da9229c7b9"
+        "url": "packages/chickxel.effects.shine-1.0.1.chickxel-asset",
+        "size": 6893,
+        "sha256": "d28a54cdaf75adcf8c30104e082bf3554b9e5e2c7ca208e074c98f2a3a0f0b29"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shine-1.0.0.png",
+        "url": "previews/chickxel.effects.shine-1.0.1.png",
         "size": 4060,
         "sha256": "ae1dfe335ac50bf0c556e484246e3fd9a1650f26a4f6a57f93256057b4311b31"
       },
@@ -836,7 +836,7 @@
     },
     {
       "id": "chickxel.effects.shockwave",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Shockwave ring",
       "summary": "A pixel circle ring spreads out from the center.",
       "tags": [
@@ -856,12 +856,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.shockwave-1.0.0.chickxel-asset",
-        "size": 8439,
-        "sha256": "a06a309d12f3e58d4e0745e44004b4931a4c88ce3321a1a7b02711b01b66d75e"
+        "url": "packages/chickxel.effects.shockwave-1.0.1.chickxel-asset",
+        "size": 8446,
+        "sha256": "aa20a6ad79cfe6c107a4a54c8f08798ac3232ad40bbb33f3a830b07bf79ab3ba"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shockwave-1.0.0.png",
+        "url": "previews/chickxel.effects.shockwave-1.0.1.png",
         "size": 4015,
         "sha256": "6b4a2af0038d3b0e5733b6fa1b239220a166008ec663b60cdf2ce0f199300a84"
       },
@@ -871,7 +871,7 @@
     },
     {
       "id": "chickxel.effects.squash",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Squash \u0026 stretch",
       "summary": "Wobbles horizontally and vertically like jelly, then returns to its original shape.",
       "tags": [
@@ -891,12 +891,12 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.squash-1.0.0.chickxel-asset",
-        "size": 6296,
-        "sha256": "6570cf6153f87103e67bd64068e7abfa1b7c8cadb92fa51d7becc70eb9f8e0dc"
+        "url": "packages/chickxel.effects.squash-1.0.1.chickxel-asset",
+        "size": 6307,
+        "sha256": "5ecc53ac83b07e2ec008b0df2a2430b6bd482ef2692b907021e31868f0c67a99"
       },
       "preview": {
-        "url": "previews/chickxel.effects.squash-1.0.0.png",
+        "url": "previews/chickxel.effects.squash-1.0.1.png",
         "size": 2673,
         "sha256": "9f4891fe7c22a2fef3ab82351b89f2d4176b20ecf616cc72631549d5a31d4919"
       },

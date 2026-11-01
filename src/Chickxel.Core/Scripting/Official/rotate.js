@@ -3,6 +3,7 @@
 // 거꾸로 돌려 키운 그림에서 최근접으로 집는다. 90°의 배수는 키우지 않는다(손실 없음).
 effect({
   name: "회전",
+  language: "ko",
   description: "그림을 돌립니다(RotSprite — 새 색·반투명 없이).",
   translations: {
     ko: {

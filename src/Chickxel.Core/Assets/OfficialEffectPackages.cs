@@ -37,7 +37,14 @@ public static class OfficialEffectPackages
     /// 처음 버전(<see cref="FirstVersion"/>)이 아닌 공식 효과의 패키지 버전. 원문(<c>Scripting/Official/&lt;ID&gt;.js</c>)을 고치면 그 효과의 버전을 올린다 —
     /// <c>tools/CatalogBuilder --check</c>가 카탈로그의 같은 버전 패키지 원문과 다르면 실패한다.
     /// </summary>
-    private static readonly Dictionary<string, string> Versions = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> Versions = new(StringComparer.Ordinal)
+    {
+        // 1.0.1: 선언에 language: "ko"를 더함(원문의 이름·설명·설정 이름이 한국어임을 밝힘)
+        ["afterimage"] = "1.0.1", ["appear"] = "1.0.1", ["blink"] = "1.0.1", ["bob"] = "1.0.1", ["coloradjust"] = "1.0.1", ["colorcycle"] = "1.0.1",
+        ["coloroverlay"] = "1.0.1", ["explode"] = "1.0.1", ["fade"] = "1.0.1", ["hitflash"] = "1.0.1", ["hologram"] = "1.0.1", ["innerglow"] = "1.0.1",
+        ["melt"] = "1.0.1", ["outline"] = "1.0.1", ["paletteswap"] = "1.0.1", ["reflection"] = "1.0.1", ["rimlight"] = "1.0.1", ["rotate"] = "1.0.1",
+        ["shadow"] = "1.0.1", ["shake"] = "1.0.1", ["shine"] = "1.0.1", ["shockwave"] = "1.0.1", ["squash"] = "1.0.1",
+    };
 
     /// <summary>공식 효과 <paramref name="id"/>의 패키지 버전.</summary>
     public static string VersionOf(string id) => Versions.GetValueOrDefault(id, FirstVersion);

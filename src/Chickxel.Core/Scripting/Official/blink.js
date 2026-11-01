@@ -1,6 +1,7 @@
 // 깜빡이기(BlinkRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "깜빡이기",
+  language: "ko",
   description: "보였다 숨었다를 되풀이합니다(무적 시간 표시 등).",
   translations: {
     ko: {

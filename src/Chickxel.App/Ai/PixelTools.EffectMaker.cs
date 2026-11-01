@@ -34,7 +34,7 @@ public sealed partial class PixelTools
             "Write a script effect (JavaScript source calling effect({...}) once) and add it to a layer, or replace the source of an existing script effect. " +
             "If the source has syntax or declaration errors nothing changes and the errors come back with line and column; fix and call again. " +
             "On success the result shows the effect on the preview chick (several frames for animated effects) and any run error. One undo step. " +
-            FrameRangeNote,
+            DeclarationNote + FrameRangeNote,
             new JsonObject
             {
                 ["source"] = Str("Full JavaScript source."),
@@ -65,13 +65,13 @@ public sealed partial class PixelTools
                 ["chick"] = Str("Preview chick id to write into the declaration's previewChick before saving (optional; e.g. knight, wizard, ninja)."),
             });
         yield return Tool("get_effect_maker_source",
-            "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, description, previewChick, previewFrames and animated, " +
+            "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewFrames and animated, " +
             "the execution path (fast path, or Jint with the reason and line) and the preview setting values. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("set_effect_maker_source",
             "Replace the source in the Effect Maker editor with a complete JavaScript file (one undo step in the editor; the user's document is not changed). " +
             "If no script is open, it opens as a new unsaved script. Returns parse errors with line and column (the source is still put in the editor so the user sees it), " +
-            "or the effect on the preview chick (several frames for animated effects), any run error and the execution path. Fails if the Effect Maker is closed.",
+            "or the effect on the preview chick (several frames for animated effects), any run error and the execution path. Fails if the Effect Maker is closed. " + DeclarationNote,
             new JsonObject { ["source"] = Str("Full JavaScript source calling effect({...}) once.") },
             "source");
         yield return Tool(CheckMakerTool,
@@ -84,11 +84,16 @@ public sealed partial class PixelTools
             "package name, and whether it is the one open in the Effect Maker). Read their code with get_script_effect_source, for example when the user says \"like the X effect but ...\". Doesn't change anything.",
             new JsonObject());
         yield return Tool("get_script_effect_source",
-            "Read one of the user's script effects (see list_script_effects) as a reference: its full source, name, description, settings schema and execution path. " +
+            "Read one of the user's script effects (see list_script_effects) as a reference: its full source, name, language, description, tags, settings schema and execution path. " +
             "Read-only: to change the effect open in the Effect Maker use set_effect_maker_source.",
             new JsonObject { ["effect"] = Str("Script effect id, or its name (case-insensitive).") },
             "effect");
     }
+
+    /// <summary>스크립트를 쓰는 도구 설명에 붙이는 선언 규칙: 언어·설명·태그를 늘 적고 효과와 맞춘다(<see cref="ScriptEffectGuide"/>의 규칙과 같음).</summary>
+    private const string DeclarationNote =
+        "Always declare language (the language code of the declared name, description and labels, e.g. \"ko\" or \"en\"), description (one short sentence) " +
+        "and tags (3-6 lowercase English tags, e.g. tags: [\"neon\", \"glow\"]), and keep them, translations.en and other translations in sync whenever the effect changes. ";
 
     private static JsonObject GetScriptApi() => TextResult(ScriptEffectGuide.ToMarkdown(null));
 
@@ -122,7 +127,9 @@ public sealed partial class PixelTools
         if (found.Entry is null) throw new ToolError(UiStrings.FormatAi_Script_UnknownEffect(effect: wanted));
         var (entry, script) = found;
         var o = new JsonObject { ["id"] = entry.Id, ["name"] = script.Name };
+        if (script.Language is { } language) o["language"] = language;
         if (script.Description is { } description) o["description"] = description;
+        o["tags"] = new JsonArray([.. script.Tags.Select(t => (JsonNode?)t)]);
         o["origin"] = entry.Origin == AssetOrigin.Personal ? "personal" : "package";
         if (entry.Origin != AssetOrigin.Personal) o["package"] = entry.PackageName ?? entry.PackageId;
         var settings = new JsonArray();
@@ -165,7 +172,9 @@ public sealed partial class PixelTools
         }
         var program = parsed.Program;
         o["name"] = program.Name;
+        if (program.Language is { } language) o["language"] = language;
         if (program.Description is { } description) o["description"] = description;
+        o["tags"] = new JsonArray([.. program.Tags.Select(t => (JsonNode?)t)]);
         o["preview_chick"] = program.PreviewChick;
         o["preview_frames"] = program.PreviewFrames;
         o["animated"] = program.Animated;

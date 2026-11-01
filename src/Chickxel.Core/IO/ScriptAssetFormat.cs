@@ -20,6 +20,8 @@ public sealed record ScriptAsset : IAssetData
     public string? Author { get; init; }
     /// <summary>선언의 <c>description</c>(선택).</summary>
     public string? Description { get; init; }
+    /// <summary>선언의 <c>tags</c>(<see cref="ScriptEffectProgram.Tags"/>, 없으면 빈 목록): 올릴 때 목록 태그의 처음 값.</summary>
+    public IReadOnlyList<string> Tags { get; init; } = [];
     /// <summary>정리한 원문(<see cref="ScriptEffectProgram.NormalizeSource"/>).</summary>
     public string Source { get; init; } = "";
     public string Hash { get; init; } = "";
@@ -34,19 +36,24 @@ public sealed record ScriptAsset : IAssetData
     public IReadOnlyList<ScriptSetting> Settings { get; init; } = [];
     /// <summary>선언의 <c>translations</c>(<see cref="ScriptEffectProgram.Translations"/>). 화면에는 <see cref="NameFor"/>·<see cref="DescriptionFor"/>로 보인다.</summary>
     public IReadOnlyDictionary<string, ScriptTranslation> Translations { get; init; } = ScriptTranslations.Empty;
+    /// <summary>선언의 <c>language</c>(<see cref="ScriptEffectProgram.Language"/>, 없으면 null): 선언 값의 언어.</summary>
+    public string? Language { get; init; }
 
     /// <summary><paramref name="culture"/>(보통 화면 언어)의 제목(번역 → 선언의 <see cref="Name"/>). 정체·중복 판정에는 <see cref="Name"/>을 쓴다.</summary>
-    public string NameFor(CultureInfo culture) => ScriptTranslations.NameFor(Translations, Name, culture);
+    public string NameFor(CultureInfo culture) => ScriptTranslations.NameFor(Translations, Name, culture, Language);
 
     /// <summary><paramref name="culture"/>의 설명(번역 → 선언의 <see cref="Description"/>).</summary>
-    public string? DescriptionFor(CultureInfo culture) => ScriptTranslations.DescriptionFor(Translations, Description, culture);
+    public string? DescriptionFor(CultureInfo culture) => ScriptTranslations.DescriptionFor(Translations, Description, culture, Language);
+
+    /// <summary><paramref name="culture"/>의 설정 이름(번역 → 선언의 <c>label</c>).</summary>
+    public string LabelFor(ScriptSetting setting, CultureInfo culture) => ScriptTranslations.LabelFor(Translations, setting, culture, Language);
 
     /// <summary>원문으로 만든 값(이름·작성자·schema는 <paramref name="program"/>의 선언).</summary>
     public static ScriptAsset From(string id, ScriptEffectProgram program) => new()
     {
-        Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description, Source = program.Source, Hash = program.ContentHash,
-        Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick, PreviewFrames = program.PreviewFrames, Settings = program.Settings,
-        Translations = program.Translations,
+        Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description, Tags = program.Tags, Source = program.Source,
+        Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick, PreviewFrames = program.PreviewFrames,
+        Settings = program.Settings, Translations = program.Translations, Language = program.Language,
     };
 
     /// <summary>

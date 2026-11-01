@@ -2,6 +2,19 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.64 (2026-11-01)
+### Publish one asset with languages, tags and a fixed license
+- The Publish Online window uploads one asset as its own package; the included-assets checklist is gone. The suggested package ID is "handle.asset-name" (a short hash when the name has no English letters).
+- Author ID and display name come from your signed-in Chickxel account and can't be edited. The website field was removed.
+- Published packages use a fixed license: CC0 1.0 (anyone may copy, change and use without conditions), with the CC0 legal code as LICENSE.txt.
+- **Languages…** sets the package name and short description per language; the Store, the Asset Manager and chickxel.com show them in the viewer's language (script effects are prefilled from their declaration translations). In the language windows, languages that already have text show in green with a check mark.
+- Tags are entered as `#neon` chips: Space, Enter or comma adds a tag, X removes it, Backspace in the empty box removes the last one. The Effect Maker's Info group has the same chips, written to the declaration's `tags`.
+
+### Effect Maker follows the UI language
+- Title and Description show and edit the UI language: when it differs from the declaration's `language`, they edit that translation (empty if there is none), with the language shown next to the labels.
+- Script declarations accept `tags` (up to 8 lowercase English tags) and `language` (the language of the name and description). New scripts start in the UI language and declare it. The Effect Maker AI and the rules guide always set `language`, `description` and 3-6 English tags.
+- Official effect packages are now 1.0.1 (their declarations include `language: "ko"`).
+
 ## v1.14.63 (2026-11-01)
 ### Text effect and Text tool
 - New **Text** layer effect draws text in one color with a bundled pixel font (Galmuri 7, 9, 11, 11 Bold, 14; SIL OFL 1.1). Settings: multi-line text, font, color (gradients work), position, letter and line spacing, alignment and **Typewriter** (letters appear one by one over the effect range).

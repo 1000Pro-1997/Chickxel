@@ -1,6 +1,7 @@
 // 그림자(ShadowRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "그림자",
+  language: "ko",
   description: "그림 모양 그대로의 그림자를 비스듬히 옮겨 뒤에 깝니다.",
   translations: {
     ko: {

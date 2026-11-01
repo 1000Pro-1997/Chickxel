@@ -47,6 +47,15 @@ public static class ScriptDeclarationEdit
     }
 
     /// <summary>
+    /// 선언의 <c>tags</c>를 문자열 배열 리터럴 <c>["a", "b"]</c>(<paramref name="tags"/> 순서 그대로, 값은 고치지 않음)로 바꾼다. 없으면 <c>description</c> 다음에
+    /// (없으면 <c>name</c> 다음에, 그것도 없으면 선언 맨 앞에) 더한다. <paramref name="tags"/>가 비었으면 그 속성을 지운다(없으면 그대로).
+    /// 원문을 해석하지 못하거나 선언 객체를 찾지 못하면 null(<see cref="SetString"/>과 같음).
+    /// </summary>
+    public static string? SetTags(string source, IReadOnlyList<string> tags)
+        => SetLiteral(source, "tags", tags.Count == 0 ? null : "[" + string.Join(", ", tags.Select(t => JsonSerializer.Serialize(t, LiteralOptions))) + "]",
+            ["description", "name"]);
+
+    /// <summary>
     /// <c>settings</c> 목록에서 <c>key</c>가 <paramref name="key"/>인 항목의 <c>default</c> 값을 <paramref name="value"/>로 바꾼다
     /// (<c>default</c>가 없으면 그 항목의 마지막 속성 다음에 더함 — 여러 줄 항목이면 같은 들여쓰기의 새 줄로).
     /// 값은 설정 종류의 C# 값이다: <see cref="bool"/>은 <c>true</c>·<c>false</c>, 정수(<see cref="int"/>·<see cref="long"/>)는 정수, 다른 수는 불변 문화권의 짧은 꼴,
@@ -229,6 +238,43 @@ public static class ScriptDeclarationEdit
             edited = changed;
         }
         return edited;
+    }
+
+    /// <summary>
+    /// 선언 <c>translations</c>의 언어 <paramref name="language"/> 항목에서 <paramref name="field"/>(<c>"name"</c> 또는 <c>"description"</c>) 하나만 바꾼다
+    /// — 그 항목의 다른 키(<c>labels</c>, 모르는 키)와 다른 언어는 글자 그대로 둔다. 있으면 값만 바꾸고, 없으면 항목의 마지막 속성 다음에 더하고(<c>description</c>은
+    /// <c>name</c> 다음에), 항목이 없으면 <see cref="SetTranslation"/>처럼 새로 만든다. <paramref name="value"/>가 null이거나 공백뿐이면 그 키를 지우고,
+    /// 항목이 비면 항목을(마지막 언어면 <c>translations</c>째로) 지운다. 값은 앞뒤 공백을 뗀다.
+    /// 원문을 해석하지 못하거나, 언어 코드·키가 틀리거나, <c>translations</c>나 그 항목이 객체 리터럴이 아니면 null.
+    /// </summary>
+    public static string? SetTranslationField(string source, string language, string field, string? value)
+    {
+        if (field is not ("name" or "description") || !ScriptTranslations.IsLanguageCode(language) || Declaration(source) is not { } declaration) return null;
+        string? text = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        var property = declaration.Properties.OfType<ObjectProperty>().FirstOrDefault(p => KeyName(p) == "translations");
+        if (property is not null && property.Value is not ObjectExpression) return null;
+        var existing = (property?.Value as ObjectExpression)?.Properties.OfType<ObjectProperty>()
+            .FirstOrDefault(p => string.Equals(KeyName(p), language, StringComparison.OrdinalIgnoreCase));
+        if (existing is null)
+        {
+            if (text is null) return source;
+            return SetTranslation(source, language, new ScriptTranslation(field == "name" ? text : null, field == "description" ? text : null,
+                new Dictionary<string, string>(StringComparer.Ordinal)));
+        }
+        if (existing.Value is not ObjectExpression entry) return null;
+        var keys = entry.Properties.OfType<ObjectProperty>().ToList();
+        var current = keys.FirstOrDefault(p => KeyName(p) == field);
+        if (text is null)
+        {
+            if (current is null) return source;
+            // 이 키뿐이면 항목째(마지막 언어면 translations째로) 지운다
+            return entry.Properties.Count == 1 ? SetTranslation(source, language, null) : Remove(source, current);
+        }
+        string literal = JsonSerializer.Serialize(text, LiteralOptions);
+        if (current is not null) return string.Concat(source.AsSpan(0, current.Value.Start), literal, source.AsSpan(current.Value.End));
+        if (entry.Properties.Count == 0) return string.Concat(source.AsSpan(0, entry.Start), "{ " + field + ": " + literal + " }", source.AsSpan(entry.End));
+        var anchor = field == "description" ? keys.FirstOrDefault(p => KeyName(p) == "name") ?? entry.Properties[^1] : entry.Properties[^1];
+        return InsertAfter(source, entry, anchor, field + ": " + literal);
     }
 
     /// <summary>번역 항목 리터럴 <c>{ name: "…", description: "…", labels: { 키: "…", "키.값": "…" } }</c>(빈 것은 뺌).</summary>

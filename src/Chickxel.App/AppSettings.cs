@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.IO;
 using Chickxel.Core.Model;
@@ -263,7 +264,7 @@ public sealed class AppSettings
     public Dictionary<string, bool> ScriptTrust { get; set; } = new();
 
     // 에셋 게시
-    /// <summary>에셋 게시 창이 기억하는 작성자 표시 이름·주소와 이 컴퓨터에서 올린 패키지(<see cref="AssetPublishDialog"/>).</summary>
+    /// <summary>에셋 게시 창이 기억하는 계정 표시 이름과 이 컴퓨터에서 올린 패키지(<see cref="AssetPublishDialog"/>).</summary>
     public AssetPublishSettings AssetPublish { get; set; } = new();
 
     /// <summary>처음 실행할 때 쓰는 기본 팔레트(DawnBringer 32).</summary>
@@ -379,7 +380,7 @@ public sealed class PaletteSetting
 }
 
 /// <summary>
-/// 에셋 게시 창의 작성자 표시 이름·주소(다음 게시에 다시 채움 — 작성자 ID는 계정 핸들)와 이 컴퓨터에서 올린 패키지
+/// 에셋 게시: 마지막으로 게시 창을 연 계정의 표시 이름(개인 내보내기의 작성자 이름 — 로그인하지 않았을 때 씀)과 이 컴퓨터에서 올린 패키지
 /// (최근 것부터, 다음 버전 제안·같은 에셋 다시 올리기).
 /// </summary>
 public sealed class AssetPublishSettings
@@ -387,11 +388,10 @@ public sealed class AssetPublishSettings
     public const int MaxSaved = 50;
 
     public string AuthorName { get; set; } = "";
-    public string AuthorUrl { get; set; } = "";
     public List<AssetPublishRecord> Saved { get; set; } = new();
 }
 
-/// <summary>올린 패키지 하나: 패키지 정보와 포함한 개인 에셋 ID, 패키지 SHA-256.</summary>
+/// <summary>올린 패키지 하나: 패키지 정보(언어별 이름·짧은 설명 포함)와 올린 개인 에셋 ID, 패키지 SHA-256.</summary>
 public sealed class AssetPublishRecord
 {
     public string Id { get; set; } = "";
@@ -400,9 +400,7 @@ public sealed class AssetPublishRecord
     public string Name { get; set; } = "";
     public string Summary { get; set; } = "";
     public List<string> Tags { get; set; } = new();
-    public string License { get; set; } = "";
-    /// <summary>직접 입력한 라이선스의 글(흔한 SPDX 라이선스는 null — 저장할 때 다시 만든다).</summary>
-    public string? LicenseText { get; set; }
+    public Dictionary<string, AssetTranslation> Translations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<string> Assets { get; set; } = new();
     public DateTime SavedUtc { get; set; }
 }

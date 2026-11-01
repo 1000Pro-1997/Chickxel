@@ -1,6 +1,7 @@
 // 둥실둥실(ShakeRender의 BobEffect 부분)을 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "둥실둥실",
+  language: "ko",
   description: "위아래로 부드럽게 떠오르고 가라앉습니다(대기 동작).",
   translations: {
     ko: {

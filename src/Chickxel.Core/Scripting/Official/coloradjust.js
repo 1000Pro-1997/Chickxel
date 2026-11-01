@@ -1,6 +1,7 @@
 // 색조 보정(ColorAdjustRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "색조 보정",
+  language: "ko",
   description: "흑백·세피아·색조 이동·밝기·대비·채도로 색을 바꿉니다(그림은 그대로).",
   translations: {
     ko: {

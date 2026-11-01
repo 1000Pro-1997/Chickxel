@@ -228,15 +228,14 @@ public class ScriptAssetTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        store.SavePersonalGradient(null, AssetSamples.Gradient());
         store.SavePersonalScript(Unique(OfficialEffects.Source("shine")));
+        var script = store.Catalog.Personal.Single(entry => entry.Script is not null);
         var result = AssetPublishCheck.Check(new PublishRequest
         {
-            Author = new AssetAuthor("pixel-cat", "Pixel Cat", "https://example.com/cat"),
-            Id = "pixel-cat.shine", Version = "1.0.0", Name = "Shine Set", Summary = "빛 지나가기 스크립트",
-            Tags = AssetPublishCheck.ParseTags("shine"), License = "CC0-1.0",
-            LicenseText = AssetPublishCheck.LicenseNotice("CC0-1.0", "Shine Set", "Pixel Cat", 2026),
-            Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Package(entry.Data))).ToArray(),
+            Author = new AssetAuthor("pixel-cat", "Pixel Cat"),
+            Id = "pixel-cat.shine", Version = "1.0.0", Name = "Shine", Summary = "빛 지나가기 스크립트",
+            Tags = AssetPublishCheck.ParseTags("#shine"),
+            Asset = new PublishAsset(script.Kind, script.Data, AssetPreview.Package(script.Data)),
             MinAppVersion = "1.14.55",
         }, [], []);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
@@ -252,8 +251,7 @@ public class ScriptAssetTests
         var build = RemoteCatalogBuilder.Build(catalog, output);
         Assert.True(build.Ok, string.Join("\n", build.Issues));
         var entry = Assert.Single(build.Entries);
-        Assert.Equal([KeyValuePair.Create(AssetKinds.EffectScript, 1), KeyValuePair.Create(AssetKinds.Gradient, 1)],
-            entry.Kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal));
+        Assert.Equal([KeyValuePair.Create(AssetKinds.EffectScript, 1)], entry.Kinds);
         Assert.Null(entry.IncompatibleReason(null));
     }
 
@@ -341,7 +339,8 @@ public class ScriptAssetTests
 
         var manifest = JsonNode.Parse(UndoHistoryIO.Decompress(File.ReadAllBytes(Path.Combine(dir, UndoHistoryIO.ManifestName))))!;
         Assert.Equal(UndoHistoryIO.FormatVersion, manifest["version"]!.GetValue<int>());
-        Assert.Equal([h1, h2], manifest["scripts"]!.AsObject().Select(pair => pair.Key));
+        // 표 차례는 해시 차례라 원문에 따라 바뀐다 — 두 원문이 다 있는지만 본다
+        Assert.Equal(new[] { h1, h2 }.Order(StringComparer.Ordinal), manifest["scripts"]!.AsObject().Select(pair => pair.Key).Order(StringComparer.Ordinal));
 
         // 새 실행: 프로젝트 파일에는 지금 원문만 있고, 기록을 읽으면 예전 원문이 표에 돌아온다
         var q = ProjectIO.Load(file);

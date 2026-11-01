@@ -3,13 +3,16 @@ using Chickxel.App.Localization;
 using Chickxel.Core.Assets;
 using Chickxel.Core.Community;
 using Chickxel.Core.IO;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.App;
 
 /// <summary>
-/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 개인 에셋을 공개 패키지로 묶어 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
-/// 왼쪽은 작성자 정보(작성자 ID = 계정 핸들, 표시 이름·주소는 설정에 기억), 패키지 ID(핸들.이름)·버전(전에 올린 버전에서 다음 버전 제안)·이름·짧은 설명·태그,
-/// 라이선스(흔한 SPDX ID나 직접 입력한 ID + 글), 오른쪽은 포함할 에셋, 목록 미리보기(에셋 미리보기 중 고르거나 PNG로 바꿈), 올리기 전 검사 결과.
+/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 개인 에셋 하나를 공개 패키지로 묶어 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
+/// 왼쪽은 작성자(로그인한 계정의 핸들·표시 이름, 고칠 수 없음), 패키지 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 패키지 ID(핸들.이름 조각)·
+/// 버전(전에 올린 버전에서 다음 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
+/// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
+/// 스크립트 효과는 선언의 이름·설명·번역·태그로 채우고, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
 /// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
 /// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
@@ -19,23 +22,23 @@ public sealed class AssetPublishDialog : DialogBase
 
     private readonly AssetPublishSettings _settings = App.Settings.AssetPublish;
     private readonly IReadOnlyList<RemoteCatalogEntry> _catalog;
-    private readonly List<(AssetEntry Entry, CheckBox Box)> _assets = [];
-    private readonly Dictionary<string, PackagePreview?> _previews = new(StringComparer.Ordinal);
-    private readonly TextBox _authorId, _authorName, _authorUrl, _id, _version, _name, _summary, _tags, _licenseId, _licenseText;
-    private readonly ComboBox _license;
-    private readonly ComboBox _previewChoice = Ui.Combo(220);
-    private readonly TextBlock _versionHint = Note(""), _licenseNote = Note(""), _assetsTitle = Ui.Label("", bold: true), _checksSummary = Note(""), _previewNote = Note("");
+    private readonly AssetEntry _asset;
+    private readonly PackagePreview? _assetPreview;
+    private CommunityUser _user;
+    private readonly TextBox _id, _version, _name, _summary;
+    private readonly TagChipEditor _tags;
+    private readonly SelectableTextBlock _authorId, _authorName;
+    private readonly TextBlock _versionHint = Note(""), _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
     private readonly Button _useSuggestion, _previewAuto;
-    private readonly Control _customLicense;
     private readonly StackPanel _checks = new() { Spacing = 4 };
-    private readonly PngView _preview = new() { Height = 150 };
+    private readonly PngView _preview = new() { Height = 170 };
     private readonly DispatcherTimer _recheck = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, Height = 4, MinHeight = 4, Width = 220, Foreground = AppTheme.AccentBrush };
     private readonly TextBlock _progressText = Note("");
     private readonly StackPanel _progressRow;
     private readonly Control _columns;
-    /// <summary>미리보기 목록 항목 순서의 에셋(= 포함한 에셋).</summary>
-    private List<AssetEntry> _previewEntries = [];
+    /// <summary>언어별 이름·짧은 설명(언어 설정 창에서 고침, 언어 차례).</summary>
+    private IReadOnlyList<KeyValuePair<string, AssetTranslation>> _translations;
     private byte[]? _customPreview;
     private bool _idEdited, _versionEdited, _filling = true;
     private string _suggested = "1.0.0";
@@ -43,30 +46,31 @@ public sealed class AssetPublishDialog : DialogBase
     private CancellationTokenSource? _upload;
 
     /// <summary>
-    /// 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창. <paramref name="preselected"/>는 처음 체크할 개인 에셋 ID
-    /// (전에 같은 에셋으로 올린 기록이 있으면 그 패키지 정보와 에셋을 다시 채움).
+    /// 개인 에셋 <paramref name="assetId"/>의 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창.
+    /// 효과 레시피(기본 효과를 합친 것)는 올리지 않는다(<see cref="PublishIssueCode.RecipeNotPublishable"/>, 서버도 거부).
     /// </summary>
-    public static async Task RunAsync(Window owner, IEnumerable<string> preselected)
+    public static async Task RunAsync(Window owner, string assetId)
     {
-        if (!Publishable.Any())
+        if (AppAssets.Catalog.Personal.FirstOrDefault(e => e.Id == assetId) is not { } asset)
         {
             Ui.Info(owner, UiStrings.Publish_NoPersonal, UiStrings.Publish_Title);
             return;
         }
-        var ids = preselected.ToHashSet(StringComparer.Ordinal);
+        if (asset.Kind == AssetKinds.EffectRecipe)
+        {
+            Ui.Info(owner, Chickxel.Core.Localization.DomainStrings.Publish_RecipeNotPublishable, UiStrings.Publish_Title);
+            return;
+        }
         if (await AppCommunity.RequireUserAsync(owner, UiStrings.Publish_LoginReason) is not { } user) return;
-        new AssetPublishDialog(ids, user).ShowDialog(owner);
+        new AssetPublishDialog(asset, user).ShowDialog(owner);
     }
 
-    /// <summary>올릴 수 있는 개인 에셋: 효과 레시피(기본 효과를 합친 것)는 올리지 않는다(<see cref="PublishIssueCode.RecipeNotPublishable"/>, 서버도 거부).</summary>
-    private static IEnumerable<AssetEntry> Publishable => AppAssets.Catalog.Personal.Where(e => e.Kind != AssetKinds.EffectRecipe);
-
-    private AssetPublishDialog(HashSet<string> preselected, CommunityUser user) : base(UiStrings.Publish_Title, UiStrings.Publish_Upload)
+    private AssetPublishDialog(AssetEntry asset, CommunityUser user) : base(UiStrings.Publish_Title, UiStrings.Publish_Upload)
     {
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
-        Width = 1000;
-        Height = 760;
+        Width = 980;
+        Height = 740;
         MinWidth = 820;
         MinHeight = 560;
         OkButton.Width = double.NaN;
@@ -75,50 +79,53 @@ public sealed class AssetPublishDialog : DialogBase
         OkButton.Foreground = Brushes.White;
         OkButton.FontWeight = FontWeight.Bold;
         _catalog = AppAssets.Remote.LoadCache()?.Packages ?? [];
+        _asset = asset;
+        _user = user;
+        _assetPreview = AssetPreview.Package(asset.Data);
+        // 개인 내보내기의 작성자 이름(로그인하지 않았을 때)으로 계정 표시 이름을 기억한다.
+        _settings.AuthorName = user.Name;
 
-        var personal = Publishable.ToList();
-        var record = _settings.Saved.FirstOrDefault(r => r.Assets.Any(preselected.Contains));
-        var check = new HashSet<string>(preselected, StringComparer.Ordinal);
-        if (record is not null) check.UnionWith(record.Assets);
+        // 채울 값: 스크립트 효과는 선언(이름·설명·번역·태그), 그 밖은 전에 올린 기록이나 에셋 이름.
+        var record = _settings.Saved.FirstOrDefault(r => r.Assets.Contains(asset.Id));
+        string name, summary;
+        IReadOnlyList<string> tags;
+        if (asset.Script is { } script)
+        {
+            name = script.Name;
+            summary = script.Description ?? "";
+            _translations = ScriptTranslationsOf(script);
+            tags = script.Tags.Count > 0 ? script.Tags : record?.Tags ?? [];
+        }
+        else
+        {
+            name = record?.Name ?? asset.Name;
+            summary = record?.Summary ?? "";
+            _translations = record?.Translations.ToList() ?? [];
+            tags = record?.Tags ?? [];
+        }
 
         // ── 왼쪽: 작성자·패키지·라이선스 ──
-        // 작성자 ID = 계정 핸들(서버가 패키지 ID 첫 조각·작성자 ID를 핸들과 맞춰 봄). 핸들은 계정 창에서 바꾼다.
-        _authorId = Field(user.Handle);
-        _authorId.IsReadOnly = true;
-        _authorName = Field(AssetManifest.IsValidName(_settings.AuthorName) ? _settings.AuthorName : user.Name);
-        _authorUrl = Field(_settings.AuthorUrl, "https://");
-        var single = personal.Where(e => check.Contains(e.Id)).ToList() is [var only] ? only : null;
-        _name = Field(record?.Name ?? single?.Name ?? UiStrings.Assets_DefaultPackageName);
+        // 작성자 ID = 계정 핸들(서버가 패키지 ID 첫 조각·작성자 ID를 핸들과 맞춰 봄), 표시 이름 = 계정 이름. 둘 다 계정 창에서 바꾼다.
+        _authorId = ReadOnlyText(user.Handle);
+        _authorName = ReadOnlyText(user.Name);
+        _name = Field(name);
+        _name.MaxLength = AssetManifest.MaxNameLength;
+        _summary = new TextBox
+        {
+            Text = summary, Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
+            MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
+        };
+        var languages = Ui.Button(VectorIcon.Languages, UiStrings.Publish_Languages, (_, _) => EditLanguages()).Tip(UiStrings.Publish_LanguagesTip);
         _id = Field(record?.Id is { } recordId && recordId.StartsWith(user.Handle + ".", StringComparison.Ordinal) ? recordId : "");
         _version = Field("1.0.0");
         _version.Width = 110;
-        _summary = new TextBox
-        {
-            Text = record?.Summary ?? single?.Script?.Description ?? "", Width = FieldWidth, Height = 56, Margin = new Thickness(3), TextWrapping = TextWrapping.Wrap,
-            MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
-        };
-        _tags = Field(record is null ? "" : string.Join(", ", record.Tags), UiStrings.Publish_TagsHint);
+        _tags = new TagChipEditor(FieldWidth);
+        _tags.SetTags(tags);
         _useSuggestion = Ui.Button(UiStrings.Publish_UseSuggestion, (_, _) =>
         {
             _versionEdited = false;
             _version.Text = _suggested;
         });
-
-        string[] licenseItems = [UiStrings.Publish_LicenseChoose, .. AssetPublishCheck.CommonLicenses, UiStrings.Publish_LicenseCustom];
-        _license = Ui.Combo(FieldWidth, licenseItems);
-        _licenseId = Field("", UiStrings.Publish_LicenseIdHint);
-        _licenseText = new TextBox { Width = FieldWidth, Height = 110, Margin = new Thickness(3), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
-        _customLicense = Ui.Stack(Rows((UiStrings.Publish_LicenseId, _licenseId, null)), Ui.Label(UiStrings.Publish_LicenseText), _licenseText);
-        if (record is { License.Length: > 0 } saved)
-        {
-            int common = AssetPublishCheck.CommonLicenses.ToList().IndexOf(saved.License);
-            _license.SelectedIndex = common >= 0 ? common + 1 : licenseItems.Length - 1;
-            if (common < 0)
-            {
-                _licenseId.Text = saved.License;
-                _licenseText.Text = saved.LicenseText ?? "";
-            }
-        }
         if (string.IsNullOrEmpty(_id.Text)) _id.Text = DerivedId();
         _idEdited = _id.Text != DerivedId();
 
@@ -130,42 +137,26 @@ public sealed class AssetPublishDialog : DialogBase
                 Note(UiStrings.Publish_Intro),
                 Ui.Group(UiStrings.Publish_Author, Ui.Stack(
                     Rows((UiStrings.Publish_AuthorId, _authorId, UiStrings.Publish_AuthorIdTip),
-                        (UiStrings.Publish_AuthorName, _authorName, null),
-                        (UiStrings.Publish_AuthorUrl, _authorUrl, null)),
-                    Note(UiStrings.Publish_AuthorNote))),
+                        (UiStrings.Publish_AuthorName, _authorName, null)),
+                    Note(UiStrings.Publish_AuthorFromAccount))),
                 Ui.Group(UiStrings.Publish_Package, Ui.Stack(
                     Rows((UiStrings.Publish_Name, _name, null),
+                        (UiStrings.Publish_Summary, _summary, null),
+                        (UiStrings.Publish_LanguagesLabel, Ui.Stack(languages, _languages), null),
                         (UiStrings.Publish_Id, _id, UiStrings.Publish_IdTip),
                         (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null)),
                     _versionHint,
-                    Rows((UiStrings.Publish_Summary, _summary, null),
-                        (UiStrings.Publish_Tags, _tags, null)))),
-                Ui.Group(UiStrings.Publish_License, Ui.Stack(_license, _licenseNote, _customLicense)),
+                    Rows((UiStrings.Publish_Tags, _tags, UiStrings.Publish_TagsTip)))),
+                Ui.Group(UiStrings.Publish_License, Ui.Stack(
+                    Ui.Row(Ui.Icon(VectorIcon.Check, 13), Ui.Label(AssetPublishCheck.License, bold: true)),
+                    Note(UiStrings.Publish_LicenseFixed))),
             },
         };
 
         // ── 오른쪽: 에셋·미리보기·검사 ──
-        var assetList = new StackPanel { Spacing = 0 };
-        // 체크한 에셋을 위에(긴 목록에서도 무엇이 들어가는지 바로 보이게), 나머지는 개인 에셋 순서.
-        foreach (var entry in personal.OrderBy(e => check.Contains(e.Id) ? 0 : 1))
-        {
-            string kind = AssetManagerWindow.KindText(entry.Kind);
-            var box = Ui.Check($"{entry.Name}  ·  {kind}", check.Contains(entry.Id));
-            box.IsCheckedChanged += (_, _) =>
-            {
-                RefreshPreviewChoices();
-                Changed();
-            };
-            _assets.Add((entry, box));
-            assetList.Children.Add(box);
-        }
-        var assetScroll = new ScrollViewer { Content = assetList, MaxHeight = 170, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-
-        _previewChoice.SelectionChanged += (_, _) =>
-        {
-            ShowPreview();
-            Changed();
-        };
+        var assetRow = Ui.Row(Ui.Icon(asset.Kind == AssetKinds.Gradient ? VectorIcon.SlidersHorizontal : VectorIcon.Code, 14),
+            Ui.Label(asset.DisplayName, bold: true), Ui.Label("·  " + AssetManagerWindow.KindText(asset.Kind)));
+        foreach (var child in assetRow.Children) child.VerticalAlignment = VerticalAlignment.Center;
         var replace = Ui.Button(VectorIcon.Image, UiStrings.Publish_PreviewReplace, (_, _) => ChoosePreview());
         _previewAuto = Ui.Button(UiStrings.Publish_PreviewAuto, (_, _) =>
         {
@@ -180,12 +171,12 @@ public sealed class AssetPublishDialog : DialogBase
             Spacing = 2,
             Children =
             {
-                Ui.Group(UiStrings.Publish_Assets, Ui.Stack(_assetsTitle, assetScroll)),
+                Ui.Group(UiStrings.Publish_Asset, Ui.Stack(assetRow)),
                 new Border
                 {
                     BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3),
                     Padding = new Thickness(6, 4, 6, 6), Margin = new Thickness(2, 4, 2, 2),
-                    Child = new StackPanel { Spacing = 2, Children = { previewHeader, _preview, new WrapPanel { Children = { _previewChoice, replace, _previewAuto } }, _previewNote } },
+                    Child = new StackPanel { Spacing = 2, Children = { previewHeader, _preview, new WrapPanel { Children = { replace, _previewAuto } }, _previewNote } },
                 },
                 Ui.Group(UiStrings.Publish_Checks, Ui.Stack(_checksSummary, _checks)),
             },
@@ -208,10 +199,13 @@ public sealed class AssetPublishDialog : DialogBase
         root.Children.Add(_progressRow);
         root.Children.Add(columns);
 
-        foreach (var box in new[] { _authorId, _authorName, _authorUrl, _name, _summary, _tags, _licenseId, _licenseText })
-            box.TextChanged += (_, _) => Changed();
-        _authorId.TextChanged += (_, _) => UpdateId();
-        _name.TextChanged += (_, _) => UpdateId();
+        _summary.TextChanged += (_, _) => Changed();
+        _tags.TagsChanged += (_, _) => Changed();
+        _name.TextChanged += (_, _) =>
+        {
+            UpdateId();
+            Changed();
+        };
         // TextChanged는 값을 넣은 뒤 늦게 올 수 있어(코드로 넣은 값 포함) "손댔는지"는 지금 값과 자동 값을 비교해 정한다.
         _id.TextChanged += (_, _) =>
         {
@@ -223,11 +217,6 @@ public sealed class AssetPublishDialog : DialogBase
         {
             _versionEdited = _version.Text != _suggested;
             _useSuggestion.IsVisible = _versionEdited;
-            Changed();
-        };
-        _license.SelectionChanged += (_, _) =>
-        {
-            UpdateLicenseNote();
             Changed();
         };
         _recheck.Tick += (_, _) =>
@@ -250,21 +239,35 @@ public sealed class AssetPublishDialog : DialogBase
         {
             _recheck.Stop();
             _upload?.Cancel();
-            RememberAuthor();
             App.Settings.Save();
         };
 
-        RefreshPreviewChoices();
-        UpdateLicenseNote();
+        ShowLanguages();
+        ShowPreview();
         UpdateVersion();
         _filling = false;
         RunCheck();
     }
 
+    /// <summary>스크립트 선언의 번역에서 이름·설명이 있는 언어만(설정 이름만 있는 언어는 뺌, 패키지 규칙에 맞지 않는 값도 뺌).</summary>
+    private static List<KeyValuePair<string, AssetTranslation>> ScriptTranslationsOf(ScriptAsset script)
+        => script.Translations
+            .Select(pair => new KeyValuePair<string, AssetTranslation>(pair.Key, new AssetTranslation(
+                AssetManifest.IsValidName(pair.Value.Name) ? pair.Value.Name!.Trim() : null,
+                RemoteCatalogFormat.IsValidSummary(pair.Value.Description) ? pair.Value.Description!.Trim() : null)))
+            .Where(pair => pair.Value.Name is not null || pair.Value.Summary is not null)
+            .Take(AssetTranslations.MaxLanguages)
+            .ToList();
+
     // ───────────── 입력 ─────────────
 
     private static TextBox Field(string value, string? watermark = null)
         => new() { Text = value, Width = FieldWidth, Margin = new Thickness(3), Watermark = watermark };
+
+    private static SelectableTextBlock ReadOnlyText(string value) => new()
+    {
+        Text = value, Foreground = AppTheme.TextBrush, Margin = new Thickness(3, 6, 3, 3), FontWeight = FontWeight.SemiBold,
+    };
 
     private static TextBlock Note(string text) => new()
     {
@@ -283,7 +286,7 @@ public sealed class AssetPublishDialog : DialogBase
             Control label = rows[i].Tip is { } tip ? Ui.Row(text, Ui.InfoBadge(tip)) : text;
             label.MinWidth = 96;
             label.VerticalAlignment = VerticalAlignment.Top;
-            label.Margin = new Thickness(0, 3, 6, 0);
+            label.Margin = new Thickness(0, 6, 6, 0);
             rows[i].Field.HorizontalAlignment = HorizontalAlignment.Left;
             Grid.SetRow(label, i);
             Grid.SetRow(rows[i].Field, i);
@@ -295,8 +298,6 @@ public sealed class AssetPublishDialog : DialogBase
     }
 
     private static string F(string format, params object?[] args) => string.Format(CultureInfo.CurrentCulture, format, args);
-
-    private List<AssetEntry> Included => _assets.Where(a => a.Box.On()).Select(a => a.Entry).ToList();
 
     private void Changed()
     {
@@ -311,11 +312,11 @@ public sealed class AssetPublishDialog : DialogBase
         if (!_idEdited) _id.Text = DerivedId();
     }
 
+    /// <summary>자동 패키지 ID: 이름, 영어 이름, 에셋 이름 중 ASCII 조각이 나오는 첫 것(없으면 이름의 짧은 해시).</summary>
     private string DerivedId()
     {
-        string author = _authorId.Text?.Trim() ?? "";
-        string slug = AssetPackageBuilder.Slug(_name.Text ?? "", "assets");
-        return author.Length > 0 ? author + "." + slug : slug;
+        string? english = _translations.FirstOrDefault(pair => string.Equals(pair.Key, "en", StringComparison.OrdinalIgnoreCase)).Value?.Name;
+        return AssetPublishCheck.DefaultId(_user.Handle, _name.Text, english, _asset.Name);
     }
 
     private IEnumerable<PublishedVersion> SavedVersions => _settings.Saved.Select(r => new PublishedVersion(r.Id, r.Version, r.Sha256));
@@ -331,69 +332,26 @@ public sealed class AssetPublishDialog : DialogBase
         _useSuggestion.IsVisible = _version.Text != _suggested;
     }
 
-    private bool CustomLicense => _license.SelectedIndex == _license.ItemCount - 1;
-
-    private string LicenseId => _license.SelectedIndex switch
+    /// <summary>언어 설정 창으로 언어별 이름·짧은 설명을 고친다.</summary>
+    private void EditLanguages()
     {
-        <= 0 => "",
-        _ when CustomLicense => _licenseId.Text?.Trim() ?? "",
-        var i => AssetPublishCheck.CommonLicenses[i - 1],
-    };
-
-    private void UpdateLicenseNote()
-    {
-        _customLicense.IsVisible = CustomLicense;
-        _licenseNote.Text = _license.SelectedIndex switch
-        {
-            <= 0 => UiStrings.Publish_LicenseNone,
-            _ when CustomLicense => UiStrings.Publish_LicenseCustomNote,
-            var i => LicenseDescription(AssetPublishCheck.CommonLicenses[i - 1]) + " " + UiStrings.Publish_LicenseFile,
-        };
+        if (PackageTranslationsDialog.Ask(this, _name.Text ?? "", _summary.Text ?? "", _translations) is not { } edited) return;
+        _translations = edited;
+        ShowLanguages();
+        UpdateId();
+        Changed();
     }
 
-    private static string LicenseDescription(string spdx) => spdx switch
-    {
-        "CC0-1.0" => UiStrings.Publish_License_CC0,
-        "CC-BY-4.0" => UiStrings.Publish_License_CCBY,
-        "CC-BY-SA-4.0" => UiStrings.Publish_License_CCBYSA,
-        "CC-BY-NC-4.0" => UiStrings.Publish_License_CCBYNC,
-        "MIT" => UiStrings.Publish_License_MIT,
-        "Apache-2.0" => UiStrings.Publish_License_Apache,
-        _ => spdx,
-    };
+    private void ShowLanguages()
+        => _languages.Text = _translations.Count == 0 ? UiStrings.Publish_LanguagesNone
+            : string.Join(", ", _translations.Select(pair => LanguagePicker.NativeName(pair.Key)));
 
     // ───────────── 미리보기 ─────────────
 
-    private PackagePreview? PreviewOf(AssetEntry entry)
-    {
-        if (!_previews.TryGetValue(entry.Id, out var preview)) _previews[entry.Id] = preview = AssetPreview.Package(entry.Data);
-        return preview;
-    }
-
-    /// <summary>미리보기 목록을 포함한 에셋으로 다시 만든다(고른 에셋이 남아 있으면 그대로).</summary>
-    private void RefreshPreviewChoices()
-    {
-        var included = Included;
-        int selected = _previewChoice.SelectedIndex;
-        string? keep = selected >= 0 && selected < _previewEntries.Count ? _previewEntries[selected].Id : null;
-        bool filling = _filling;
-        _filling = true;
-        _previewChoice.Items.Clear();
-        foreach (var entry in included) _previewChoice.Items.Add(entry.Name);
-        _previewEntries = included;
-        _previewChoice.SelectedIndex = included.Count == 0 ? -1 : Math.Max(0, included.FindIndex(e => e.Id == keep));
-        _filling = filling;
-        _assetsTitle.Text = F(UiStrings.Publish_AssetsCount, included.Count, _assets.Count);
-        ShowPreview();
-    }
-
     private void ShowPreview()
     {
-        var included = Included;
-        int index = _previewChoice.SelectedIndex;
-        _previewChoice.IsEnabled = _customPreview is null && included.Count > 0;
         _previewNote.IsVisible = _previewAuto.IsVisible = _customPreview is not null;
-        _preview.Show(_customPreview ?? (index >= 0 && index < included.Count ? PreviewOf(included[index])?.Png : null));
+        _preview.Show(_customPreview ?? _assetPreview?.Png);
     }
 
     private void ChoosePreview()
@@ -419,24 +377,19 @@ public sealed class AssetPublishDialog : DialogBase
 
     private PublishRequest BuildRequest()
     {
-        string license = LicenseId;
-        string name = _name.Text ?? "";
-        string authorName = _authorName.Text ?? "";
-        string? licenseText = CustomLicense ? _licenseText.Text
-            : license.Length > 0 ? AssetPublishCheck.LicenseNotice(license, name, authorName, DateTime.Now.Year) : null;
+        var translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (code, translation) in _translations) translations.TryAdd(code, translation);
         return new PublishRequest
         {
-            Author = new AssetAuthor(_authorId.Text?.Trim() ?? "", authorName, _authorUrl.Text?.Trim()),
+            Author = new AssetAuthor(_user.Handle, _user.Name),
             Id = _id.Text?.Trim() ?? "",
             Version = _version.Text?.Trim() ?? "",
-            Name = name,
+            Name = _name.Text ?? "",
             Summary = _summary.Text ?? "",
-            Tags = AssetPublishCheck.ParseTags(_tags.Text),
-            License = license,
-            LicenseText = licenseText,
-            Assets = Included.Select(entry => new PublishAsset(entry.Kind, entry.Data, PreviewOf(entry))).ToArray(),
+            Translations = translations,
+            Tags = _tags.Tags,
+            Asset = new PublishAsset(_asset.Kind, _asset.Data, _assetPreview),
             CustomPreview = _customPreview,
-            PreviewAsset = Math.Max(0, _previewChoice.SelectedIndex),
             MinAppVersion = AppInfo.IsDevBuild ? "0.0.0" : AppInfo.VersionText,
         };
     }
@@ -473,6 +426,7 @@ public sealed class AssetPublishDialog : DialogBase
     {
         if (_upload is not null) return;
         _recheck.Stop();
+        _tags.Commit(); // 입력 중이던 태그까지
         RunCheck(); // 입력 중이던 값까지 다시 검사
         if (_result is not { Ok: true } result) return;
         var manifest = result.Manifest!;
@@ -498,13 +452,24 @@ public sealed class AssetPublishDialog : DialogBase
             Ui.Error(this, ex.DisplayText, UiStrings.Publish_Title);
             if (ex.Code == CommunityErrorCode.Unauthorized && AccountDialog.Show(this, UiStrings.Publish_LoginReason)
                                                            && AppCommunity.Client.User is { } user)
-                _authorId.Text = user.Handle;
+                UseAccount(user);
         }
         finally
         {
             _upload = null;
             SetUploading(false);
         }
+    }
+
+    /// <summary>다시 로그인한 계정으로 작성자와 자동 패키지 ID를 바꾼다.</summary>
+    private void UseAccount(CommunityUser user)
+    {
+        _user = user;
+        _settings.AuthorName = user.Name;
+        _authorId.Text = user.Handle;
+        _authorName.Text = user.Name;
+        UpdateId();
+        Changed();
     }
 
     /// <summary>서버가 거절한 까닭을 검사 목록 끝에 오류 줄로 더한다(다음 검사에서 지워짐).</summary>
@@ -532,7 +497,6 @@ public sealed class AssetPublishDialog : DialogBase
     private void Remember(PublishResult result)
     {
         var manifest = result.Manifest!;
-        RememberAuthor();
         _settings.Saved.RemoveAll(r => r.Id == manifest.Id && r.Version == manifest.Version);
         _settings.Saved.Insert(0, new AssetPublishRecord
         {
@@ -542,19 +506,12 @@ public sealed class AssetPublishDialog : DialogBase
             Name = manifest.Name,
             Summary = manifest.Description ?? "",
             Tags = [.. result.Tags],
-            License = manifest.License,
-            LicenseText = CustomLicense ? _licenseText.Text : null,
-            Assets = [.. Included.Select(entry => entry.Id)],
+            Translations = new Dictionary<string, AssetTranslation>(manifest.Translations, StringComparer.OrdinalIgnoreCase),
+            Assets = [_asset.Id],
             SavedUtc = DateTime.UtcNow,
         });
         if (_settings.Saved.Count > AssetPublishSettings.MaxSaved) _settings.Saved.RemoveRange(AssetPublishSettings.MaxSaved, _settings.Saved.Count - AssetPublishSettings.MaxSaved);
         App.Settings.Save();
-    }
-
-    private void RememberAuthor()
-    {
-        _settings.AuthorName = _authorName.Text?.Trim() ?? "";
-        _settings.AuthorUrl = _authorUrl.Text?.Trim() ?? "";
     }
 
     /// <summary>PNG 바이트 하나를 정수 배로 키워 체커 위에 그린다(목록 미리보기).</summary>

@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Chickxel.Core.IO;
 using Chickxel.Core.Localization;
 
@@ -14,24 +16,20 @@ public enum PublishSeverity
 /// <summary>앱 게시 창의 입력 칸 문제(문구는 <c>DomainStrings</c>의 <c>Publish_{종류}</c>). CI 규칙 문제는 <see cref="CatalogBuildIssueCode"/>.</summary>
 public enum PublishIssueCode
 {
-    /// <summary>포함할 에셋이 없음.</summary>
-    NoAssets,
     AuthorId,
     AuthorName,
-    AuthorUrl,
     PackageId,
     Version,
     Name,
-    License,
     Summary,
+    /// <summary>언어별 이름·짧은 설명이 규칙(<see cref="AssetTranslations"/>)에 맞지 않음.</summary>
+    Translations,
     Tags,
     /// <summary>경고: 태그가 없음(상점에서 찾기 어려움).</summary>
     NoTags,
-    /// <summary>경고: 흔한 SPDX ID도 <c>LicenseRef-</c>도 아님(철자 확인).</summary>
-    UnknownLicense,
     /// <summary>버전이 이미 올린 가장 높은 버전(온라인 목록·이 컴퓨터의 기록)보다 높지 않음. 올린 버전은 바꿀 수 없으므로 같은 버전도 안 된다.</summary>
     VersionNotNewer,
-    /// <summary>효과 레시피(기본 효과를 합친 것)가 들어 있음. 지금은 효과로 스크립트 효과만 올린다(서버도 받지 않음).</summary>
+    /// <summary>효과 레시피(기본 효과를 합친 것)임. 지금은 효과로 스크립트 효과만 올린다(서버도 받지 않음).</summary>
     RecipeNotPublishable,
 }
 
@@ -55,16 +53,15 @@ public sealed record PublishIssue(PublishSeverity Severity, string Message)
     public override string ToString() => Message;
 }
 
-/// <summary>게시 창에 넣을 에셋 하나: 종류, 값, 미리보기(효과면 원본 포함, 없으면 null).</summary>
+/// <summary>게시할 에셋: 종류, 값, 미리보기(효과면 원본 포함, 없으면 null).</summary>
 public sealed record PublishAsset(string Kind, IAssetData Data, PackagePreview? Preview);
 
 /// <summary>이 컴퓨터에서 올린 패키지(다음 버전은 이 기록과 온라인 목록 중 가장 높은 버전보다 높아야 함, 다음 버전 제안).</summary>
 public sealed record PublishedVersion(string Id, string Version, string Sha256);
 
 /// <summary>
-/// 게시 창 입력: 작성자, 패키지 ID·버전·이름, 짧은 설명(manifest 설명과 목록 요약), 태그, 라이선스(SPDX ID나 <c>LicenseRef-…</c>)와
-/// <c>LICENSE.txt</c> 글, 에셋, 목록 미리보기(직접 고른 PNG, 없으면 <see cref="PreviewAsset"/>번째 에셋의 미리보기), 최소 앱 버전.
-/// 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓰므로, 고른 에셋을 맨 앞에 두고 직접 고른 PNG는 그 에셋의 미리보기로 넣는다.
+/// 게시 창 입력: 작성자(계정 핸들·표시 이름), 패키지 ID·버전·이름, 짧은 설명(manifest 설명과 목록 요약), 언어별 이름·짧은 설명, 태그,
+/// 올릴 에셋 하나, 목록 미리보기(직접 고른 PNG, 없으면 에셋 미리보기), 최소 앱 버전. 라이선스는 고정(<see cref="AssetPublishCheck.License"/>).
 /// </summary>
 public sealed record PublishRequest
 {
@@ -73,13 +70,10 @@ public sealed record PublishRequest
     public string Version { get; init; } = "1.0.0";
     public string Name { get; init; } = "";
     public string Summary { get; init; } = "";
+    public IReadOnlyDictionary<string, AssetTranslation> Translations { get; init; } = AssetTranslations.Empty;
     public IReadOnlyList<string> Tags { get; init; } = [];
-    public string License { get; init; } = "";
-    /// <summary><c>LICENSE.txt</c> 내용. 비어 있으면 넣지 않는다(공개 규칙 <see cref="CatalogBuildIssueCode.MissingLicense"/>).</summary>
-    public string? LicenseText { get; init; }
-    public IReadOnlyList<PublishAsset> Assets { get; init; } = [];
+    public required PublishAsset Asset { get; init; }
     public byte[]? CustomPreview { get; init; }
-    public int PreviewAsset { get; init; }
     public string MinAppVersion { get; init; } = "0.0.0";
 }
 
@@ -114,11 +108,26 @@ public sealed record PublishResult(IReadOnlyList<PublishIssue> Issues, byte[]? P
 /// </summary>
 public static class AssetPublishCheck
 {
-    /// <summary>게시 창 라이선스 목록의 흔한 SPDX ID(직접 입력은 <c>LicenseRef-…</c>나 다른 SPDX ID).</summary>
-    public static readonly IReadOnlyList<string> CommonLicenses = ["CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "MIT", "Apache-2.0"];
+    /// <summary>
+    /// 게시 패키지의 고정 라이선스(지금은 누구나 조건 없이 복사·변경·사용할 수 있는 CC0 1.0). 바꿀 때는 이 값과
+    /// <c>Assets/Licenses/&lt;ID&gt;.txt</c> 원문, 게시 창의 설명 문구(<c>Publish_LicenseFixed</c>)를 같이 바꾼다.
+    /// </summary>
+    public const string License = "CC0-1.0";
 
-    public const string LicenseRefPrefix = "LicenseRef-";
     public const string LicenseFileName = "LICENSE.txt";
+
+    private static string? _licenseText;
+
+    /// <summary><see cref="License"/>의 법률 원문(패키지 <c>LICENSE.txt</c>). 해시가 컴퓨터마다 같도록 줄 끝은 LF로 맞춘다. 파일 내용이라 번역하지 않는다.</summary>
+    public static string LicenseText => _licenseText ??= LoadLicenseText();
+
+    private static string LoadLicenseText()
+    {
+        using var stream = typeof(AssetPublishCheck).Assembly.GetManifestResourceStream($"Chickxel.Licenses.{License}.txt")
+                           ?? throw new InvalidOperationException(License);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd().ReplaceLineEndings("\n");
+    }
 
     // ───────────── CI와 같이 쓰는 공개 규칙 ─────────────
 
@@ -171,10 +180,25 @@ public static class AssetPublishCheck
 
     // ───────────── 게시 창 ─────────────
 
-    /// <summary>입력한 태그 글(쉼표·공백으로 나눔)을 소문자로 바꾸고 빈 것과 중복을 뺀다. 형식 검사는 <see cref="Check"/>가 한다.</summary>
+    /// <summary>
+    /// 입력한 태그 글을 태그 목록으로: 쉼표·공백·<c>#</c>으로 나누고 소문자로 바꾸며 빈 것과 중복을 뺀다(<c>"#Neon #hit"</c> → neon, hit).
+    /// 형식 검사는 <see cref="Check"/>가 한다.
+    /// </summary>
     public static IReadOnlyList<string> ParseTags(string? text)
-        => (text ?? "").Split([',', ' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        => (text ?? "").Split([',', ' ', '\t', '\n', '\r', '#'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(tag => tag.ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// 처음 제안하는 패키지 ID <c>&lt;작성자 ID&gt;.&lt;이름 조각&gt;</c>: <paramref name="names"/> 중 ASCII 글자·숫자가 있는 첫 이름의 조각
+    /// (<see cref="AssetPackageBuilder.Slug"/>), 모두 없으면(한국어 이름 등) 첫 이름 SHA-256의 앞 8자리.
+    /// </summary>
+    public static string DefaultId(string authorId, params IEnumerable<string?> names)
+    {
+        var list = names.Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name!.Trim()).ToList();
+        string segment = list.Select(name => AssetPackageBuilder.Slug(name, "")).FirstOrDefault(slug => slug.Length > 0)
+                         ?? Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(list.FirstOrDefault() ?? "")))[..8];
+        return authorId.Length > 0 ? authorId + "." + segment : segment;
+    }
 
     /// <summary>
     /// 다음 버전 제안: 전에 게시한 버전이 없으면 1.0.0, 프리릴리스(1.2.0-beta)면 그 정식 버전(1.2.0), 아니면 부 버전을 올린다(1.2.3 → 1.3.0).
@@ -198,15 +222,8 @@ public static class AssetPublishCheck
             .FirstOrDefault();
 
     /// <summary>
-    /// 흔한 SPDX 라이선스의 <c>LICENSE.txt</c>: 패키지 이름·작성자·연도와 SPDX ID, 라이선스 원문 주소(원문은 SPDX 목록이 기준).
-    /// 파일 내용이라 번역하지 않는다.
-    /// </summary>
-    public static string LicenseNotice(string spdxId, string packageName, string authorName, int year)
-        => string.Create(CultureInfo.InvariantCulture,
-            $"{packageName.Trim()}\nCopyright (c) {year} {authorName.Trim()}\n\nLicensed under {spdxId} (SPDX-License-Identifier: {spdxId}).\nFull license text: https://spdx.org/licenses/{spdxId}.html\n");
-
-    /// <summary>
-    /// 게시 창 입력을 검사한다. 입력 칸이 맞으면 패키지를 만들어 설치와 같은 엄격 검사, 공개 규칙(<see cref="PackageRules"/>,
+    /// 게시 창 입력을 검사한다. 입력 칸이 맞으면 에셋 하나로 패키지를 만들어(라이선스 <see cref="License"/>, <c>LICENSE.txt</c>는 그 원문)
+    /// 설치와 같은 엄격 검사, 공개 규칙(<see cref="PackageRules"/>,
     /// <see cref="ReviewRules"/>, 짧은 설명·태그)과 이름 겹침을 보고, 버전은 온라인 목록(<paramref name="catalog"/>, 마지막으로 받은 목록)과
     /// 이 컴퓨터에서 올린 기록(<paramref name="saved"/>) 중 가장 높은 버전보다 높아야 한다. 검토 상태는 서버와 같이 작성자 <c>chickxel</c>이면
     /// <c>official</c>, 아니면 <c>community</c>다.
@@ -217,47 +234,35 @@ public static class AssetPublishCheck
         void Error(PublishIssueCode code) => issues.Add(PublishIssue.Field(PublishSeverity.Error, code));
         void Warn(PublishIssueCode code, string? detail = null) => issues.Add(PublishIssue.Field(PublishSeverity.Warning, code, detail));
 
-        string? url = string.IsNullOrWhiteSpace(request.Author.Url) ? null : request.Author.Url.Trim();
-        if (request.Assets.Count == 0) Error(PublishIssueCode.NoAssets);
-        if (request.Assets.Any(asset => asset.Kind == AssetKinds.EffectRecipe)) Error(PublishIssueCode.RecipeNotPublishable);
+        if (request.Asset.Kind == AssetKinds.EffectRecipe) Error(PublishIssueCode.RecipeNotPublishable);
         if (!AssetManifest.IsValidSegment(request.Author.Id)) Error(PublishIssueCode.AuthorId);
         if (!AssetManifest.IsValidName(request.Author.Name)) Error(PublishIssueCode.AuthorName);
-        if (url is not null && !AssetManifest.IsHttpsUrl(url)) Error(PublishIssueCode.AuthorUrl);
         if (!AssetManifest.IsValidId(request.Id)) Error(PublishIssueCode.PackageId);
         if (!AssetManifest.IsValidVersion(request.Version)) Error(PublishIssueCode.Version);
         if (!AssetManifest.IsValidName(request.Name)) Error(PublishIssueCode.Name);
-        if (!AssetManifest.IsValidLicense(request.License)) Error(PublishIssueCode.License);
         if (!RemoteCatalogFormat.IsValidSummary(request.Summary)) Error(PublishIssueCode.Summary);
+        if (!AssetTranslations.IsValid(request.Translations)) Error(PublishIssueCode.Translations);
         if (!IsValidTags(request.Tags)) Error(PublishIssueCode.Tags);
         if (request.Tags.Count == 0) Warn(PublishIssueCode.NoTags);
-        if (AssetManifest.IsValidLicense(request.License) && !request.License.StartsWith(LicenseRefPrefix, StringComparison.Ordinal)
-                                                          && !CommonLicenses.Contains(request.License))
-            Warn(PublishIssueCode.UnknownLicense, request.License);
         if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null);
 
-        string summary = request.Summary.Trim();
+        var translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (code, translation) in request.Translations) translations[code] = new AssetTranslation(translation.Name?.Trim(), translation.Summary?.Trim());
         var builder = new AssetPackageBuilder(new AssetManifest
         {
             Id = request.Id,
             Version = request.Version,
             Name = request.Name.Trim(),
-            Description = summary,
-            Author = new AssetAuthor(request.Author.Id, request.Author.Name.Trim(), url),
-            License = request.License,
+            Description = request.Summary.Trim(),
+            Translations = translations,
+            Author = new AssetAuthor(request.Author.Id, request.Author.Name.Trim()),
+            License = License,
             MinAppVersion = request.MinAppVersion,
         });
-        // 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓴다: 고른 에셋을 맨 앞에, 직접 고른 PNG는 그 에셋의 미리보기로.
-        var assets = request.Assets.ToList();
-        if (request.PreviewAsset > 0 && request.PreviewAsset < assets.Count)
-        {
-            var chosen = assets[request.PreviewAsset];
-            assets.RemoveAt(request.PreviewAsset);
-            assets.Insert(0, chosen);
-        }
-        // 직접 고른 PNG는 효과 없는 원본과 짝이 맞지 않으므로 원본 없이 넣는다.
-        if (request.CustomPreview is { Length: > 0 } custom && assets.Count > 0) assets[0] = assets[0] with { Preview = new PackagePreview(custom, null) };
-        foreach (var asset in assets) builder.Add(asset.Kind, asset.Data, asset.Preview);
-        if (!string.IsNullOrWhiteSpace(request.LicenseText)) builder.AddDocument(LicenseFileName, request.LicenseText);
+        // 직접 고른 PNG는 효과 없는 원본과 짝이 맞지 않으므로 원본 없이 넣는다(서버는 첫 에셋의 미리보기를 목록 미리보기로 씀).
+        var preview = request.CustomPreview is { Length: > 0 } custom ? new PackagePreview(custom, null) : request.Asset.Preview;
+        builder.Add(request.Asset.Kind, request.Asset.Data, preview);
+        builder.AddDocument(LicenseFileName, LicenseText);
         byte[] bytes;
         AssetManifest manifest;
         using (var buffer = new MemoryStream())

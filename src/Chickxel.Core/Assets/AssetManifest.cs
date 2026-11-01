@@ -28,6 +28,8 @@ public sealed record AssetManifest
     public string Version { get; init; } = "1.0.0";
     public string Name { get; init; } = "";
     public string? Description { get; init; }
+    /// <summary>언어별 이름·짧은 설명(<see cref="AssetTranslations"/>, 없으면 빈 묶음). 화면 언어에 맞는 것을 <see cref="AssetTranslations.Find"/>로 고른다.</summary>
+    public IReadOnlyDictionary<string, AssetTranslation> Translations { get; init; } = AssetTranslations.Empty;
     public AssetAuthor Author { get; init; } = new("", "");
     /// <summary>SPDX 식별자(<c>CC0-1.0</c>, <c>LicenseRef-…</c>).</summary>
     public string License { get; init; } = "";
@@ -95,6 +97,7 @@ public sealed record AssetManifest
         if (!IsValidName(name)) Bad("name");
         string? description = AssetJson.String(o["description"]);
         if (o["description"] is not null && (description is null || description.Length > MaxDescriptionLength)) Bad("description");
+        if (!AssetTranslations.TryRead(o["translations"], out var translations, out string? badTranslation)) Bad(badTranslation!);
 
         AssetAuthor author = new("", "");
         if (o["author"] is JsonObject a)
@@ -153,7 +156,7 @@ public sealed record AssetManifest
         if (issues.Count > before) return null;
         return new AssetManifest
         {
-            SchemaVersion = schema, Id = id, Version = version, Name = name.Trim(), Description = description,
+            SchemaVersion = schema, Id = id, Version = version, Name = name.Trim(), Description = description, Translations = translations,
             Author = author, License = license, MinAppVersion = minApp, Assets = assets, Files = files,
         };
     }
@@ -180,6 +183,7 @@ public sealed record AssetManifest
             ["name"] = Name,
         };
         if (Description is { Length: > 0 } description) json["description"] = description;
+        if (AssetTranslations.Write(Translations) is { } translations) json["translations"] = translations;
         json["author"] = author;
         json["license"] = License;
         json["minAppVersion"] = MinAppVersion;

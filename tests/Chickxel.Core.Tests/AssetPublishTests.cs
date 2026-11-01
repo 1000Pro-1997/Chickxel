@@ -4,8 +4,9 @@ using Chickxel.Core.IO;
 namespace Chickxel.Core.Tests;
 
 /// <summary>
-/// 게시 흐름(5단계): 게시 창 검사가 공개 규칙(예전 카탈로그 CI와 같은 함수)으로 작성자·라이선스 없는 패키지를 막고, 앱이 만든 패키지가
-/// 그대로 예전 정적 카탈로그 만들기·최신 확인을 통과하며 다른 컴퓨터(새 저장소)에 설치되는지, 목록 미리보기 순서, 버전 제안과 게시 버전 규칙.
+/// 게시 흐름(5단계): 게시 창 검사가 공개 규칙(예전 카탈로그 CI와 같은 함수)으로 작성자 없는 패키지를 막고, 앱이 만든 패키지(에셋 하나, 고정 라이선스 CC0-1.0과
+/// 그 원문 LICENSE.txt, 언어별 이름·설명)가 그대로 예전 정적 카탈로그 만들기·최신 확인을 통과하며 다른 컴퓨터(새 저장소)에 설치되는지,
+/// 목록 미리보기, 패키지 ID 제안, 버전 제안과 게시 버전 규칙.
 /// </summary>
 public class AssetPublishTests
 {
@@ -22,17 +23,24 @@ public class AssetPublishTests
         return store;
     }
 
-    private static PublishRequest Request(AssetStore store, string version = "1.0.0", string license = "CC0-1.0") => new()
+    private static AssetEntry ScriptEntry(AssetStore store) => store.Catalog.Personal.Single(e => e.Script is not null);
+
+    private static PublishAsset Asset(AssetEntry entry) => new(entry.Kind, entry.Data, AssetPreview.Package(entry.Data));
+
+    private static PublishRequest Request(AssetStore store, string version = "1.0.0") => new()
     {
-        Author = new AssetAuthor("pixel-cat", "Pixel Cat", "https://example.com/cat"),
+        Author = new AssetAuthor("pixel-cat", "Pixel Cat"),
         Id = "pixel-cat.neon",
         Version = version,
-        Name = "Neon Set",
-        Summary = "네온 외곽선 효과와 파란 그라데이션",
-        Tags = AssetPublishCheck.ParseTags("Neon, effect gradient"),
-        License = license,
-        LicenseText = AssetPublishCheck.LicenseNotice(license, "Neon Set", "Pixel Cat", 2026),
-        Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Package(entry.Data))).ToArray(),
+        Name = "Neon Hit",
+        Summary = "네온처럼 색을 뒤집는 효과",
+        Translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new("Neon Hit", "Inverts colors like neon."),
+            ["ja"] = new("ネオンヒット", null),
+        },
+        Tags = AssetPublishCheck.ParseTags("#Neon #effect, hit"),
+        Asset = Asset(ScriptEntry(store)),
         MinAppVersion = "1.14.55",
     };
 
@@ -61,34 +69,34 @@ public class AssetPublishTests
     private static readonly Dictionary<string, Func<PublishRequest, PublishRequest>> BadRequests = new()
     {
         ["no-author"] = r => r with { Author = new AssetAuthor("", "") },
-        ["bad-author-url"] = r => r with { Author = r.Author with { Url = "http://example.com" } },
-        ["no-license"] = r => r with { License = "", LicenseText = null },
-        ["license-without-text"] = r => r with { License = "LicenseRef-MyTerms", LicenseText = "  " },
-        ["personal-license"] = r => r with { License = "LicenseRef-Personal", LicenseText = "personal" },
+        ["no-author-name"] = r => r with { Author = new AssetAuthor("pixel-cat", " ") },
         ["personal-author"] = r => r with { Author = new AssetAuthor("personal", "Me"), Id = "personal.neon" },
         ["other-author-namespace"] = r => r with { Id = "chickxel.neon" },
-        ["no-preview"] = r => r with { Assets = r.Assets.Select(a => a with { Preview = null }).ToArray() },
+        ["no-preview"] = r => r with { Asset = r.Asset with { Preview = null } },
         ["no-summary"] = r => r with { Summary = " " },
         ["bad-tag"] = r => r with { Tags = ["Neon!"] },
+        ["too-many-tags"] = r => r with { Tags = ["a", "b", "c", "d", "e", "f", "g", "h", "i"] },
         ["bad-version"] = r => r with { Version = "1.0" },
-        ["no-assets"] = r => r with { Assets = [] },
-        ["recipe"] = r => r with { Assets = [.. r.Assets, new PublishAsset(AssetKinds.EffectRecipe, AssetSamples.Recipe(), AssetPreview.Package(AssetSamples.Recipe()))] },
+        ["bad-language"] = r => r with { Translations = new Dictionary<string, AssetTranslation> { ["english!"] = new("Neon", null) } },
+        ["empty-translation"] = r => r with { Translations = new Dictionary<string, AssetTranslation> { ["en"] = new(null, null) } },
+        ["long-translated-summary"] = r => r with { Translations = new Dictionary<string, AssetTranslation> { ["en"] = new(null, new string('a', 201)) } },
+        ["recipe"] = r => r with { Asset = new PublishAsset(AssetKinds.EffectRecipe, AssetSamples.Recipe(), AssetPreview.Package(AssetSamples.Recipe())) },
     };
 
     public static TheoryData<string, string> BadRequestCodes => new()
     {
         { "no-author", nameof(PublishIssueCode.AuthorId) },
-        { "bad-author-url", nameof(PublishIssueCode.AuthorUrl) },
-        { "no-license", nameof(PublishIssueCode.License) },
-        { "license-without-text", nameof(CatalogBuildIssueCode.MissingLicense) },
-        { "personal-license", nameof(CatalogBuildIssueCode.MissingLicense) },
+        { "no-author-name", nameof(PublishIssueCode.AuthorName) },
         { "personal-author", nameof(CatalogBuildIssueCode.MissingAuthor) },
         { "other-author-namespace", nameof(CatalogBuildIssueCode.AuthorMismatch) },
         { "no-preview", nameof(CatalogBuildIssueCode.MissingPreview) },
         { "no-summary", nameof(PublishIssueCode.Summary) },
         { "bad-tag", nameof(PublishIssueCode.Tags) },
+        { "too-many-tags", nameof(PublishIssueCode.Tags) },
         { "bad-version", nameof(PublishIssueCode.Version) },
-        { "no-assets", nameof(PublishIssueCode.NoAssets) },
+        { "bad-language", nameof(PublishIssueCode.Translations) },
+        { "empty-translation", nameof(PublishIssueCode.Translations) },
+        { "long-translated-summary", nameof(PublishIssueCode.Translations) },
         { "recipe", nameof(PublishIssueCode.RecipeNotPublishable) },
     };
 
@@ -113,21 +121,22 @@ public class AssetPublishTests
     }
 
     [Fact]
-    public void SubmissionsWithoutLicenseOrAuthor_AreRejectedByTheCatalogBuilderToo()
+    public void SubmissionsWithoutLicenseOrAuthor_AreRejectedByTheCatalogBuilder_WhileAppPackagesAlwaysCarryTheFixedLicense()
     {
-        // 게시 창이 CI 규칙(패키지가 만들어진 뒤의 규칙)으로 막는 패키지는 카탈로그 만들기도 같은 문제로 거부한다.
+        // 게시 창은 라이선스를 고정(CC0-1.0 + 원문 LICENSE.txt)하므로 라이선스 문제가 생기지 않는다. 직접 만든 패키지는 카탈로그 만들기가 거부한다.
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        foreach (var (label, code) in new[] { ("license-without-text", CatalogBuildIssueCode.MissingLicense), ("personal-author", CatalogBuildIssueCode.MissingAuthor) })
+        foreach (var (label, author, id, license, code) in new[]
+                 {
+                     ("no-license-file", new AssetAuthor("pixel-cat", "Pixel Cat"), "pixel-cat.neon", "LicenseRef-MyTerms", CatalogBuildIssueCode.MissingLicense),
+                     ("personal-license", new AssetAuthor("pixel-cat", "Pixel Cat"), "pixel-cat.neon", "LicenseRef-Personal", CatalogBuildIssueCode.MissingLicense),
+                     ("personal-author", new AssetAuthor("personal", "Me"), "personal.neon", "CC0-1.0", CatalogBuildIssueCode.MissingAuthor),
+                 })
         {
-            var request = BadRequests[label](Request(store));
-            var header = new AssetManifest
-            {
-                Id = request.Id, Version = request.Version, Name = request.Name, Author = request.Author, License = request.License, MinAppVersion = "1.0.0",
-            };
+            var header = new AssetManifest { Id = id, Version = "1.0.0", Name = "Neon", Author = author, License = license, MinAppVersion = "1.0.0" };
             using var package = new MemoryStream();
             store.ExportPersonal(store.Catalog.Personal.Select(e => e.Id), header, package, entry => AssetPreview.Package(entry.Data));
-            string folder = Path.Combine(dir.Path, label, "catalog", request.Id);
+            string folder = Path.Combine(dir.Path, label, "catalog", id);
             Directory.CreateDirectory(folder);
             File.WriteAllBytes(Path.Combine(folder, "pack" + AssetPackage.Extension), package.ToArray());
             File.WriteAllBytes(Path.Combine(folder, RemoteCatalogBuilder.ReviewFileName),
@@ -136,32 +145,43 @@ public class AssetPublishTests
             var build = RemoteCatalogBuilder.Build(Path.GetDirectoryName(folder)!);
             Assert.False(build.Ok, label);
             Assert.Contains(build.Issues, issue => issue.Code == code);
-            Assert.Contains(Check(request).Issues, issue => issue.CatalogCode == code);
         }
+        var app = Check(Request(store));
+        Assert.True(app.Ok, string.Join("\n", app.Issues));
+        Assert.DoesNotContain(app.Issues, issue => issue.CatalogCode == CatalogBuildIssueCode.MissingLicense);
     }
 
     // ───────────── 앱이 만든 패키지: CI 통과와 다른 컴퓨터 설치 ─────────────
 
     [Fact]
-    public void AppMadePackage_PassesCatalogBuildAndCheck_AndInstallsIntoAFreshStore()
+    public void AppMadePackage_HasOneAssetFixedLicenseAndTranslations_PassesCatalogBuild_AndInstallsIntoAFreshStore()
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        byte[] customPreview = AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient("Cover")))!.Png;
-        var result = Check(Request(store) with { CustomPreview = customPreview });
+        var result = Check(Request(store));
         Assert.True(result.Ok, string.Join("\n", result.Issues));
         Assert.Empty(result.Issues);
-        // 직접 고른 그림은 효과 없는 원본과 짝이 맞지 않으므로 첫 에셋(스크립트 효과)의 원본은 빠진다(서버가 크기가 다른 원본을 거부함).
-        Assert.DoesNotContain(Read(result.Package!).Files.Keys, path => path.EndsWith(".original.png", StringComparison.Ordinal));
         Assert.Equal("pixel-cat.neon-1.0.0.chickxel-asset", result.PackageFileName);
+
+        // 패키지: 에셋 하나, 라이선스 CC0-1.0과 CC0 1.0 원문, 작성자 주소 없음, 언어별 이름·설명.
+        var package = Read(result.Package!);
+        var manifest = package.Manifest;
+        Assert.Equal(AssetKinds.EffectScript, Assert.Single(manifest.Assets).Kind);
+        Assert.Equal(("CC0-1.0", new AssetAuthor("pixel-cat", "Pixel Cat")), (manifest.License, manifest.Author));
+        string license = System.Text.Encoding.UTF8.GetString(package.Files[AssetPublishCheck.LicenseFileName]);
+        Assert.Equal(AssetPublishCheck.LicenseText, license);
+        Assert.Contains("CC0 1.0 Universal", license, StringComparison.Ordinal);
+        Assert.DoesNotContain('\r', license);
+        Assert.Equal(["en", "ja"], manifest.Translations.Keys);
+        Assert.Equal(new AssetTranslation("Neon Hit", "Inverts colors like neon."), manifest.Translations["EN"]);
+        Assert.Equal(new AssetTranslation("ネオンヒット", null), manifest.Translations["ja"]);
+        Assert.Equal(["neon", "effect", "hit"], result.Tags);
 
         // 관리자 흐름: 패키지를 catalog/에 두고 만들기 → 쓰기 → --check(다시 만들어 최신인지).
         string catalog = Path.Combine(dir.Path, "repo", "catalog");
         string output = Path.Combine(dir.Path, "repo", "docs", "catalog");
         Directory.CreateDirectory(catalog);
         Unpack(result, catalog);
-        Assert.Equal(["pixel-cat.neon-1.0.0.chickxel-asset", RemoteCatalogBuilder.ReviewFileName],
-            Directory.GetFiles(Path.Combine(catalog, "pixel-cat.neon")).Select(file => Path.GetFileName(file)!).Order(StringComparer.Ordinal).ToArray());
         var build = RemoteCatalogBuilder.Build(catalog, output);
         Assert.True(build.Ok, string.Join("\n", build.Issues));
         RemoteCatalogBuilder.Write(build, output);
@@ -170,46 +190,85 @@ public class AssetPublishTests
         Assert.Empty(RemoteCatalogBuilder.Stale(check, output));
 
         var entry = Assert.Single(build.Entries);
-        Assert.Equal(("pixel-cat.neon", "1.0.0", "Neon Set", "네온 외곽선 효과와 파란 그라데이션", "CC0-1.0", RemoteReview.Reviewed),
+        Assert.Equal(("pixel-cat.neon", "1.0.0", "Neon Hit", "네온처럼 색을 뒤집는 효과", "CC0-1.0", RemoteReview.Reviewed),
             (entry.Id, entry.Version, entry.Name, entry.Summary, entry.License, entry.Review));
-        Assert.Equal(["neon", "effect", "gradient"], entry.Tags);
-        Assert.Equal(new AssetAuthor("pixel-cat", "Pixel Cat", "https://example.com/cat"), entry.Author);
-        Assert.Equal((Today, Today), (entry.Published, entry.Updated));
-        Assert.Equal(customPreview, File.ReadAllBytes(Path.Combine(output, entry.Preview!.Url)));
+        Assert.Equal(new AssetTranslation("Neon Hit", "Inverts colors like neon."), entry.Translations["en"]);
+        Assert.Equal(new AssetAuthor("pixel-cat", "Pixel Cat"), entry.Author);
+        // index 파일을 다시 읽어도 번역이 남는다.
+        var page = RemoteCatalogFormat.Read(File.ReadAllBytes(Path.Combine(output, RemoteCatalogFormat.FirstPageName)));
+        Assert.Equal(new AssetTranslation("ネオンヒット", null), Assert.Single(page.Packages).Translations["ja"]);
         byte[] published = File.ReadAllBytes(Path.Combine(output, entry.Package.Url));
         Assert.Equal(result.Package, published);
 
-        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 스크립트 효과·그라데이션이 생긴다.
+        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 스크립트 효과가 생기고 패키지 이름은 화면 언어로 보인다.
         var other = AssetStore.Open(Path.Combine(dir.Path, "other", "Assets"));
         var installed = other.Install(AssetSamples.Save(dir.Path, published, "downloaded.chickxel-asset"));
         Assert.Equal(("pixel-cat.neon", "1.0.0", false), (installed.Id, installed.Version, installed.IsBroken));
         var script = Assert.Single(other.Catalog.Available(AssetKinds.EffectScript));
         Assert.Equal(("Neon Hit", "pixel-cat.neon.neon-hit"), (script.Name, script.Id));
-        Assert.Equal(store.Catalog.Personal.Single(e => e.Script is not null).Script!.Hash, script.Script!.Hash);
-        var gradient = Assert.Single(other.Catalog.Gradients);
-        AssetSamples.AssertSameGradient(AssetSamples.Gradient(), gradient.Gradient!);
-        Assert.Contains("CC0-1.0", File.ReadAllText(Path.Combine(installed.Folder, AssetPublishCheck.LicenseFileName)));
+        Assert.Equal(ScriptEntry(store).Script!.Hash, script.Script!.Hash);
+        Assert.Equal(AssetPublishCheck.LicenseText, File.ReadAllText(Path.Combine(installed.Folder, AssetPublishCheck.LicenseFileName)));
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("ja-JP");
+            Assert.Equal(("ネオンヒット", "네온처럼 색을 뒤집는 효과"), (installed.DisplayName, installed.DisplayDescription));
+            Assert.Equal(("ネオンヒット", "네온처럼 색을 뒤집는 효과"), (page.Packages[0].DisplayName, page.Packages[0].DisplaySummary));
+            System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("en-US");
+            Assert.Equal("Inverts colors like neon.", page.Packages[0].DisplaySummary);
+            System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("fr-FR");
+            Assert.Equal(("Neon Hit", "네온처럼 색을 뒤집는 효과"), (page.Packages[0].DisplayName, page.Packages[0].DisplaySummary));
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
     }
 
     [Fact]
-    public void PreviewChoice_PutsTheChosenAssetFirst_AndACustomImageBecomesItsPreview()
+    public void ListPreview_IsTheAssetPreview_AndACustomImageReplacesIt()
     {
-        // 서버는 첫 에셋의 미리보기를 목록 미리보기로 쓴다.
+        // 서버는 첫(유일한) 에셋의 미리보기를 목록 미리보기로 쓴다.
         using var dir = new TempDir();
-        var request = Request(PersonalStore(dir)) with { PreviewAsset = 1 };
+        var store = PersonalStore(dir);
+        var gradient = store.Catalog.Personal.Single(e => e.Gradient is not null);
+        var request = Request(store) with { Asset = Asset(gradient) };
         var result = Check(request);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
         var package = Read(result.Package!);
-        Assert.Equal(request.Assets[1].Kind, package.Manifest.Assets[0].Kind);
-        Assert.Equal(request.Assets[1].Preview!.Png, package.Files[AssetPublishCheck.ListPreview(package.Manifest, null)!]);
+        Assert.Equal(AssetKinds.Gradient, Assert.Single(package.Manifest.Assets).Kind);
+        Assert.Equal(request.Asset.Preview!.Png, package.Files[AssetPublishCheck.ListPreview(package.Manifest, null)!]);
 
+        // 직접 고른 그림은 효과 없는 원본과 짝이 맞지 않으므로 스크립트 효과의 원본은 빠진다(서버가 크기가 다른 원본을 거부함).
         byte[] custom = AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient("Cover")))!.Png;
-        var withCustom = Check(request with { CustomPreview = custom });
+        var withCustom = Check(Request(store) with { CustomPreview = custom });
         Assert.True(withCustom.Ok, string.Join("\n", withCustom.Issues));
         var customPackage = Read(withCustom.Package!);
-        Assert.Equal(request.Assets[1].Kind, customPackage.Manifest.Assets[0].Kind);
-        Assert.Equal(custom, customPackage.Files[customPackage.Manifest.Assets[0].Preview!]);
-        Assert.Equal(["neon", "effect", "gradient"], withCustom.Tags);
+        Assert.Equal(custom, customPackage.Files[Assert.Single(customPackage.Manifest.Assets).Preview!]);
+        Assert.DoesNotContain(customPackage.Files.Keys, path => path.EndsWith(".original.png", StringComparison.Ordinal));
+    }
+
+    // ───────────── 태그·패키지 ID ─────────────
+
+    [Fact]
+    public void ParseTags_SplitsOnHashCommaAndSpace_LowercasesAndDropsDuplicates()
+        => Assert.Equal(["neon", "hit", "glow"], AssetPublishCheck.ParseTags(" #Neon #hit,glow#NEON\n#"));
+
+    [Theory]
+    [InlineData("Neon Hit", null, "pixel-cat.neon-hit")]
+    [InlineData("늘었다 줄기", "Stretch & Squash", "pixel-cat.stretch-squash")]
+    [InlineData("  ", "Glow", "pixel-cat.glow")]
+    public void DefaultId_IsHandleDotSlugOfTheFirstAsciiName(string name, string? english, string expected)
+        => Assert.Equal(expected, AssetPublishCheck.DefaultId("pixel-cat", name, english));
+
+    [Fact]
+    public void DefaultId_WithoutAsciiLetters_FallsBackToAShortStableHash()
+    {
+        string id = AssetPublishCheck.DefaultId("pixel-cat", "늘었다 줄기");
+        Assert.Matches("^pixel-cat\\.[0-9a-f]{8}$", id);
+        Assert.True(AssetManifest.IsValidId(id));
+        Assert.Equal(id, AssetPublishCheck.DefaultId("pixel-cat", "늘었다 줄기", null));
+        Assert.NotEqual(id, AssetPublishCheck.DefaultId("pixel-cat", "반짝이"));
     }
 
     // ───────────── 버전 ─────────────

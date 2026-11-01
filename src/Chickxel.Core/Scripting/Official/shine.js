@@ -1,6 +1,7 @@
 // 빛 지나가기(ShineRender)를 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "빛 지나가기",
+  language: "ko",
   description: "빛 띠가 그림을 한쪽에서 반대쪽으로 훑고 지나갑니다(반짝임).",
   translations: {
     ko: {

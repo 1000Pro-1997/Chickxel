@@ -148,6 +148,7 @@ public static class RemoteCatalogBuilder
                 Version = manifest.Version,
                 Name = manifest.Name,
                 Summary = review.Summary,
+                Translations = manifest.Translations,
                 Tags = review.Tags,
                 Author = manifest.Author,
                 License = manifest.License,

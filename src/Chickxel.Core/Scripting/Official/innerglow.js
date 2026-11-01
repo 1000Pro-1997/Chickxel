@@ -1,6 +1,7 @@
 // 안쪽 빛(InnerGlowRender)을 JS로 옮긴 공식 스크립트 효과. 같은 설정·그라데이션이면 C# 결과와 픽셀 단위로 같아야 한다.
 effect({
   name: "안쪽 빛",
+  language: "ko",
   description: "가장자리에서 안쪽으로 색을 번지듯 섞어 빛나는 테두리를 만듭니다.",
   translations: {
     ko: {

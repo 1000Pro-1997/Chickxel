@@ -470,7 +470,7 @@ public sealed class AssetStore
                     {
                         PackageId = state.Id,
                         PackageVersion = state.Version,
-                        PackageName = manifest.Name,
+                        PackageName = AssetTranslations.Find(manifest.Translations, CultureInfo.CurrentUICulture, t => t.Name) ?? manifest.Name,
                         Enabled = state.Enabled,
                         Favorite = _favorites.Contains(entry.Id),
                         PreviewPath = preview,
