@@ -49,13 +49,30 @@ pre code { background: none; border: 0; padding: 0; }
 .nav a { padding: 9px 14px; border-radius: 999px; color: var(--muted); white-space: nowrap; transition: background-color .2s, color .2s; }
 .nav a:hover { background: var(--soft); color: var(--ink); text-decoration: none; }
 .nav a[aria-current="page"] { background: var(--ink-deep); color: #111216; }
-.nav a.discord { color: #5865f2; }
-.nav a.discord:hover { color: #7983f5; }
-.nav a.discord .icon { fill: currentColor; stroke: none; }
-.lang { position: relative; display: flex; align-items: center; color: var(--muted); }
-.lang .icon { position: absolute; left: 12px; width: 15px; height: 15px; pointer-events: none; }
-.lang select { appearance: none; -webkit-appearance: none; background: var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6f7e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center / 14px; color: var(--ink); border: 1px solid var(--line-soft); border-radius: 999px; padding: 8px 30px 8px 34px; font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer; }
-.lang select:hover, .lang select:focus { border-color: var(--line); background-color: var(--hover); outline: none; }
+/* 계정 메뉴(에셋 사이트 site.css와 같은 모양) */
+.account-menu { position: relative; flex: none; }
+.account-menu [hidden] { display: none !important; }
+.account-btn { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line-soft); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.account-btn:hover, .account-btn[aria-expanded="true"] { background: var(--hover); border-color: var(--line); }
+.account-btn .chev { width: 14px; height: 14px; color: #6b6f7e; }
+.account-icon { display: inline-grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #2a2c34; color: var(--muted); }
+.account-icon .icon { width: 16px; height: 16px; }
+.account-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 240px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px var(--shadow); }
+.menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px; }
+.menu-head .account-icon { width: 36px; height: 36px; }
+.menu-head > div { min-width: 0; line-height: 1.35; }
+.menu-head strong, .menu-head > div > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-head strong { color: var(--ink-deep); font-size: 14px; }
+.menu-head > div > span { color: var(--muted); font-size: 12.5px; }
+.menu-sep { height: 1px; margin: 6px 4px; background: var(--line-soft); }
+.menu-label { padding: 6px 10px 2px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px; background: none; color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 600; text-align: left; cursor: pointer; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--hover); text-decoration: none; outline: none; }
+.menu-item .icon { width: 16px; height: 16px; color: var(--muted); }
+.menu-item .tick { margin-left: auto; color: var(--accent); visibility: hidden; }
+.menu-item[aria-current="true"] .tick { visibility: visible; }
+.menu-item.discord .icon { color: #5865f2; fill: currentColor; stroke: none; }
 
 /* 단추 */
 .buttons { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -243,8 +260,8 @@ td { color: var(--body); }
   .brand-text { display: none; }
   .nav { gap: 2px; font-size: 13px; }
   .nav a { padding: 8px 10px; }
-  .nav .hide-sm { display: none; }
-  .lang select { padding: 7px 26px 7px 30px; font-size: 13px; }
+  .account-btn { padding: 3px; gap: 4px; }
+  .account-btn .label, .account-btn .chev { display: none; }
   .hero { padding: 48px 0 48px; }
   .features, .downloads, .core-grid { grid-template-columns: 1fr; }
   .section { padding: 52px 0; }

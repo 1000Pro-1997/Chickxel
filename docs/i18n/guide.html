@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="en" href="https://1000pro-1997.github.io/Chickxel/en/guide.html">
 <link rel="icon" href="{{root}}assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="{{root}}style.css?v=20261027g">
+<link rel="stylesheet" href="{{root}}style.css?v=20261101">
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -28,12 +28,28 @@
 <header class="top">
 <div class="bar">
 <a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="{{root}}assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
-<nav class="nav">{{head.8}}<svg class="icon" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> Discord</a>
+<nav class="nav" aria-label="{{nav.main}}">
+<a href="index.html">{{nav.home}}</a>
+<a href="https://chickxel.com/gallery">{{nav.gallery}}</a>
+<a href="https://chickxel.com/packages">{{nav.assets}}</a>
+<a href="guide.html" aria-current="page">{{nav.guide}}</a>
 </nav>
-<label class="lang" title="{{head.9.title}}"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><select id="lang-select" aria-label="{{lang-select.1.aria-label}}">
-<option value="ko"{{selected:ko}}>한국어</option>
-<option value="en"{{selected:en}}>English</option>
-</select></label>
+<div class="account-menu" id="account-menu">
+<button class="account-btn" type="button" aria-expanded="false" aria-controls="account-dropdown"><span class="account-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="label">{{nav.account}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<div class="menu" id="account-dropdown" hidden>
+<div class="menu-head" data-when="in" hidden><span class="account-icon"></span><div><strong></strong><span></span></div></div>
+<a class="menu-item" data-when="in" href="https://chickxel.com/me" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{{nav.me}}</a>
+<a class="menu-item" data-when="admin" href="https://chickxel.com/admin" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>{{nav.admin}}</a>
+<a class="menu-item" data-when="out" href="https://chickxel.com/login"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>{{nav.login}}</a>
+<div class="menu-sep"></div>
+<div class="menu-label">{{nav.language}}</div>
+<a class="menu-item" href="{{root}}guide.html" data-lang="ko" hreflang="ko" lang="ko"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>한국어<svg class="icon tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></a>
+<a class="menu-item" href="{{root}}en/guide.html" data-lang="en" hreflang="en" lang="en"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>English<svg class="icon tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></a>
+<div class="menu-sep"></div>
+<a class="menu-item discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>Discord</a>
+<button class="menu-item" type="button" data-when="in" data-logout hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>{{nav.logout}}</button>
+</div>
+</div>
 </div>
 </header>
 
@@ -2104,15 +2120,7 @@ Start-Process "$d\Chickxel.exe"</code></pre>
 <footer>
 <div class="wrap">{{language-fix.6}}</div>
 </footer>
-<script>
-// 언어 고르기: 고른 언어를 기억하고 같은 쪽의 그 언어 페이지로.
-document.getElementById('lang-select').addEventListener('change', function (e) {
-  var to = e.target.value;
-  try { localStorage.setItem('chickxel-lang', to); } catch (err) {}
-  var page = location.pathname.split('/').pop() || '';
-{{language-fix.7.script}}
-});
-</script>
+<script src="{{root}}nav.js?v=20261101"></script>
 <script src="{{root}}guide.js?v=20261027b"></script>
 </body>
 </html>

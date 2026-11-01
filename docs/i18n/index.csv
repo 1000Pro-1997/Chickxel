@@ -6,19 +6,17 @@ head.4.content,Chickxel — 게임용 픽셀 아트 편집기,Chickxel — Pixel
 head.5.content,Chickxel은 Unity 2D 게임을 위한 무료 픽셀 아트 편집기입니다. 프레임·레이어·부위·스킨을 그리고 저장할 때 PNG 스프라이트 시트와 Unity .meta를 함께 내보냅니다. Windows·macOS.,"Chickxel is a free pixel art editor for Unity 2D games. Draw frames, layers, parts and skins, and export a PNG sprite sheet with Unity .meta every time you save. Windows and macOS."
 head.6.content,https://1000pro-1997.github.io/Chickxel/assets/screenshot.png,https://1000pro-1997.github.io/Chickxel/assets/screenshot-en.png
 head.7.script,  if (want !== 'ko') location.replace('en/' + '' + location.hash);,  if (want !== 'en') location.replace('../' + '' + location.hash);
-head.8,"
-<a href=""index.html"" aria-current=""page"">홈</a>
-<a href=""https://chickxel.com/gallery"">갤러리</a>
-<a href=""guide.html"">사용 가이드</a>
-<a class=""hide-sm"" href=""index.html#download"">다운로드</a>
-<a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">","
-<a href=""index.html"" aria-current=""page"">Home</a>
-<a href=""https://chickxel.com/gallery"">Gallery</a>
-<a href=""guide.html"">Guide</a>
-<a class=""hide-sm"" href=""index.html#download"">Download</a>
-<a class=""hide-sm discord"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">"
-head.9.title,언어,Language
-lang-select.1.aria-label,언어,Language
+nav.main,주 메뉴,Main menu
+nav.home,홈,Home
+nav.gallery,갤러리,Gallery
+nav.assets,에셋,Assets
+nav.guide,가이드,Guide
+nav.account,계정,Account
+nav.me,내 계정,My account
+nav.admin,관리,Admin
+nav.login,로그인,Sign in
+nav.logout,로그아웃,Sign out
+nav.language,언어,Language
 lang-select.2,"게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for games.</span>"
 lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다.","Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside."
 lang-select.4,"<span>다운로드</span></a>
@@ -111,4 +109,3 @@ download.8,"
 <span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">Source-available license</a> · © 2026 천성훈 (1000Pro-1997)</span>
 <span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">Report an issue</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">Open source notices</a></span>
 "
-download.9.script,  location.href = ('en/') + page + location.hash;,  location.href = ('../') + page + location.hash;
