@@ -28,6 +28,10 @@ internal sealed class EffectMakerAiPanel : Border
     private readonly Action _openChat;
     private readonly Func<PixelImage?> _canvasImage, _previewFrame;
     private readonly TabStrip _providers;
+    /// <summary>모델 칸(보내기 왼쪽, <see cref="_modelChoices"/> 순서). AI 채팅 창과 같은 설정 값(<see cref="AiProvider.GetModel"/>)을 읽고 쓴다.</summary>
+    private readonly ComboBox _model;
+    private IReadOnlyList<ModelChoice> _modelChoices = [];
+    private bool _fillingModels;
     private readonly TextBlock _status;
     private readonly Button _newChat;
     private readonly Border _body = new();
@@ -106,7 +110,17 @@ internal sealed class EffectMakerAiPanel : Border
         _send = Ui.Button(VectorIcon.ArrowUp, UiStrings.S_ChatWindow_ChatTab_CF5843D1B0, (_, _) => Send()).Tip("Enter");
         _stop = Ui.Button(VectorIcon.Square, UiStrings.S_ChatWindow_ChatTab_1CB431966C, (_, _) => StopTurn());
         _stop.IsVisible = false;
-        var sendButtons = Ui.Row(_send, _stop);
+        _model = new ComboBox
+        {
+            MaxWidth = 180,
+            VerticalAlignment = VerticalAlignment.Center,
+            // 좁으면 고른 모델 이름은 말줄임(보내기 단추가 밀려 잘리지 않게).
+            SelectionBoxItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>(
+                (label, _) => new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis }, supportsRecycling: false),
+        };
+        _model.SelectionChanged += (_, _) => OnModelChanged();
+        FillModels();
+        var sendButtons = Ui.Row(_model, _send, _stop);
         var buttons = new DockPanel { Margin = new Thickness(0, 4, 0, 0) };
         DockPanel.SetDock(sendButtons, Dock.Right);
         buttons.Children.Add(sendButtons);
@@ -229,7 +243,7 @@ internal sealed class EffectMakerAiPanel : Border
         Margin = new Thickness(12),
     };
 
-    /// <summary>Claude ↔ Codex: 도는 차례를 멈추고 세션을 버린 뒤 새 AI로 다시 확인한다(새 대화).</summary>
+    /// <summary>Claude ↔ Codex: 도는 차례를 멈추고 세션을 버린 뒤 새 AI로 다시 확인한다(새 대화). 고른 AI는 설정에 바로 남긴다(다음에 열 때 그 AI).</summary>
     private void OnProviderChanged()
     {
         if (_providers.SelectedIndex < 0 || _shutdown) return;
@@ -238,9 +252,54 @@ internal sealed class EffectMakerAiPanel : Border
         StopTurn();
         DropSession();
         _provider = provider;
+        _settings.ChatProvider = provider.Id;
+        _settings.Save();
+        FillModels();
         ClearTranscript();
         _started = true;
         _ = CheckAsync();
+    }
+
+    private string? CurrentModel()
+        => _modelChoices.Count == 0 ? null : _modelChoices[Math.Clamp(_model.SelectedIndex, 0, _modelChoices.Count - 1)].Value;
+
+    /// <summary>모델 칸을 지금 AI의 목록으로 채우고 설정에 남은 모델을 고른다(이름에 실제 버전이 붙으면 다시 부름).</summary>
+    private void FillModels()
+    {
+        _fillingModels = true;
+        try
+        {
+            _modelChoices = _provider.Models(_settings);
+            _model.Items.Clear();
+            foreach (var c in _modelChoices)
+            {
+                var item = new ComboBoxItem { Content = c.Label };
+                if (c.Tip is { Length: > 0 } tip) item.Tip(tip);
+                _model.Items.Add(item);
+            }
+            var saved = _provider.GetModel(_settings);
+            _model.SelectedIndex = Math.Max(0, _modelChoices.ToList().FindIndex(c => c.Value == saved));
+            _model.Tip(string.Format(CultureInfo.CurrentCulture, UiStrings.S_ChatWindow_FillModels_B806D71CEE, _provider.Name, _provider.ProductName));
+        }
+        finally
+        {
+            _fillingModels = false;
+        }
+    }
+
+    /// <summary>모델을 바꿈: 설정에 바로 남기고, 세션이 있으면 같은 대화를 이어 다음 메시지부터 새 모델로 띄운다.</summary>
+    private void OnModelChanged()
+    {
+        if (_fillingModels || _model.SelectedIndex < 0) return;
+        var model = CurrentModel();
+        if (_provider.GetModel(_settings) == model) return;
+        _provider.SetModel(_settings, model);
+        _settings.Save();
+        if (_session is null) return;
+        StopTurn();
+        _session.Model = model;
+        _session.Restart();
+        AddLine(string.Format(CultureInfo.CurrentCulture, UiStrings.S_ChatWindow_OnModelChanged_C640BCC05A, _modelChoices[_model.SelectedIndex].Label), error: false);
     }
 
     private void DropSession()
@@ -323,7 +382,7 @@ internal sealed class EffectMakerAiPanel : Border
         };
         s.ModelResolved += model =>
         {
-            if (ReferenceEquals(s, _session)) _provider.RememberResolved(_settings, s.Model, model);
+            if (ReferenceEquals(s, _session) && _provider.RememberResolved(_settings, s.Model, model)) FillModels();
         };
     }
 
@@ -372,7 +431,7 @@ internal sealed class EffectMakerAiPanel : Border
             _ = CheckAsync();
             return;
         }
-        session.Model = _provider.GetModel(_settings);
+        session.Model = CurrentModel();
         var modelText = ChatImageTokens.ToModel(text);
         var message = _primed ? modelText : AiCli.EffectMakerGuidePrefix() + modelText;
         try

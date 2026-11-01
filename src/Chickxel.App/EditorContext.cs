@@ -584,10 +584,9 @@ public sealed class EditorContext
         }
     }
 
-    /// <summary>재생할 태그: 고른 태그가 현재 프레임을 포함하면 그것, 아니면 현재 프레임이 속한 첫 태그.</summary>
+    /// <summary>재생할 태그: 타임라인에서 누른 태그(고른 태그가 없으면 null = 모든 프레임 재생).</summary>
     public AnimationTag? ActiveTag
-        => Project is null ? null
-            : _selectedTag is { } t && Project.Tags.Contains(t) && t.Contains(_frame) ? t : Project.TagOfFrame(_frame);
+        => Project is { } p && _selectedTag is { } t && p.Tags.Contains(t) ? t : null;
 
     /// <summary>재생 순서(태그가 있으면 그 방향대로, 없으면 모든 프레임).</summary>
     public List<int> PlaybackOrder() => ActiveTag?.GetPlaybackOrder() ?? Enumerable.Range(0, FrameCount).ToList();

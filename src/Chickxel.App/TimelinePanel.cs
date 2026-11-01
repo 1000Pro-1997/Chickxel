@@ -3043,6 +3043,8 @@ public sealed class TimelinePanel : UserControl
                 _owner.HintSelection();
                 return;
             }
+            // 태그 밖의 프레임 영역을 누르면 태그 고르기를 푼다(재생은 다시 모든 프레임).
+            if (left && pos.X >= NameW) Ctx.SelectedTag = null;
             int f = FrameAt(pos.X), l = LayerAt(pos.Y);
             bool inHeader = pos.Y >= TagH && pos.Y < TagH + HeadH;
             bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0, cmd = Ui.HasCommand(e.KeyModifiers);

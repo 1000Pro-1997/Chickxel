@@ -311,13 +311,14 @@ public sealed partial class ChatWindow : Window
 
     // ───────────── 탭 ─────────────
 
-    /// <summary>Claude ↔ Codex 단추: 보이는 탭만 바꾼다(어느 탭의 세션·차례도 멈추지 않음).</summary>
+    /// <summary>Claude ↔ Codex 단추: 보이는 탭만 바꾼다(어느 탭의 세션·차례도 멈추지 않음). 고른 AI는 설정에 바로 남긴다.</summary>
     private void OnProviderToggled()
     {
         if (_providerToggle.SelectedIndex < 0) return;
         var tab = _tabs[_providerToggle.SelectedIndex];
         if (ReferenceEquals(tab, _visible)) return;
         ShowTab(tab);
+        _settings.Save();
     }
 
     /// <summary>탭을 보이게 한다: 몸통·모델 칸·머리줄 상태를 그 탭 것으로. 창이 열려 있으면 처음 볼 때 확인을 시작한다.</summary>
@@ -1534,6 +1535,7 @@ public sealed partial class ChatWindow : Window
             var model = CurrentModel();
             if (Provider.GetModel(_w._settings) == model) return;
             Provider.SetModel(_w._settings, model);
+            _w._settings.Save();
             if (_session is null) return;
             if (_turn is not null) StopTurn();
             _session.Model = model;

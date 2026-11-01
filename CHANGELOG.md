@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.66 (2026-11-01)
+### Preview plays the clicked tag, otherwise all frames
+- Playing the preview loops only the tag you clicked in the timeline; with no tag selected it plays all frames, even when the current frame is inside a tag.
+- Clicking the frame area outside a tag (frame header, cels, effect rows, empty tag row) clears the tag selection. Only the selected tag has a white outline.
+
+### AI picks are remembered; model picker in the Effect Maker AI
+- The AI chat and the Effect Maker AI save the AI you pick (Claude or Codex) and its model right away, so the next time either opens it starts with your last choice.
+- The Effect Maker AI has a model list next to **Send**. Changing it applies from the next message and keeps the conversation; the AI chat and the Effect Maker AI share the same saved model per AI.
+
 ## v1.14.65 (2026-11-01)
 ### Effects follow gradients on color settings
 - The Effect Maker rules (Rules window and AI guide) now recommend picking color settings per pixel with `ctx.color("key", x, y)` (lists: `ctx.colorAt`, `ctx.pairColor`), with a short example, so a color switched to a gradient varies across pixels. The AI does this by default and keeps a flat color only when an effect really needs one solid color.
