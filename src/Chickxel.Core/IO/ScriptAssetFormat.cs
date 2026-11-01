@@ -9,7 +9,7 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.Core.IO;
 
 /// <summary>
-/// 스크립트 효과 에셋(<c>effect-script</c>, 계획 13.2): JS 원문 하나 = 효과 하나. 이름·작성자·움직임·설정 schema는 원문의 <c>effect({...})</c> 선언에서 읽고,
+/// 스크립트 효과 에셋(<c>effect-script</c>, 계획 13.2): JS 원문 하나 = 효과 하나. 이름·작성자·움직임·미리보기 병아리·설정 schema는 원문의 <c>effect({...})</c> 선언에서 읽고,
 /// 정체는 원문 해시(<see cref="ScriptEffectProgram.HashOf"/>)다. 넣을 때는 <see cref="ToRecipe"/>로 기본 설정 효과 하나짜리 레시피가 된다.
 /// </summary>
 public sealed record ScriptAsset : IAssetData
@@ -22,6 +22,8 @@ public sealed record ScriptAsset : IAssetData
     public string Source { get; init; } = "";
     public string Hash { get; init; } = "";
     public bool Animated { get; init; }
+    /// <summary>선언의 <c>previewChick</c>: 패키지 미리보기 병아리(<see cref="PreviewChicks"/>의 ID).</summary>
+    public string PreviewChick { get; init; } = PreviewChicks.Default;
     /// <summary>선언의 설정 schema(선언 순서).</summary>
     public IReadOnlyList<ScriptSetting> Settings { get; init; } = [];
 
@@ -29,7 +31,7 @@ public sealed record ScriptAsset : IAssetData
     public static ScriptAsset From(string id, ScriptEffectProgram program) => new()
     {
         Id = id, Name = program.Name.Trim(), Author = program.Author, Source = program.Source, Hash = program.ContentHash,
-        Animated = program.Animated, Settings = program.Settings,
+        Animated = program.Animated, PreviewChick = program.PreviewChick, Settings = program.Settings,
     };
 
     /// <summary>

@@ -20,7 +20,7 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly AssetPublishSettings _settings = App.Settings.AssetPublish;
     private readonly IReadOnlyList<RemoteCatalogEntry> _catalog;
     private readonly List<(AssetEntry Entry, CheckBox Box)> _assets = [];
-    private readonly Dictionary<string, byte[]?> _previews = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PackagePreview?> _previews = new(StringComparer.Ordinal);
     private readonly TextBox _authorId, _authorName, _authorUrl, _id, _version, _name, _summary, _tags, _licenseId, _licenseText;
     private readonly ComboBox _license;
     private readonly ComboBox _previewChoice = Ui.Combo(220);
@@ -361,10 +361,10 @@ public sealed class AssetPublishDialog : DialogBase
 
     // ───────────── 미리보기 ─────────────
 
-    private byte[]? PreviewOf(AssetEntry entry)
+    private PackagePreview? PreviewOf(AssetEntry entry)
     {
-        if (!_previews.TryGetValue(entry.Id, out var png)) _previews[entry.Id] = png = AssetPreview.Png(entry.Data);
-        return png;
+        if (!_previews.TryGetValue(entry.Id, out var preview)) _previews[entry.Id] = preview = AssetPreview.Package(entry.Data);
+        return preview;
     }
 
     /// <summary>미리보기 목록을 포함한 에셋으로 다시 만든다(고른 에셋이 남아 있으면 그대로).</summary>
@@ -390,7 +390,7 @@ public sealed class AssetPublishDialog : DialogBase
         int index = _previewChoice.SelectedIndex;
         _previewChoice.IsEnabled = _customPreview is null && included.Count > 0;
         _previewNote.IsVisible = _previewAuto.IsVisible = _customPreview is not null;
-        _preview.Show(_customPreview ?? (index >= 0 && index < included.Count ? PreviewOf(included[index]) : null));
+        _preview.Show(_customPreview ?? (index >= 0 && index < included.Count ? PreviewOf(included[index])?.Png : null));
     }
 
     private void ChoosePreview()

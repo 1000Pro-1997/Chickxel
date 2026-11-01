@@ -233,6 +233,7 @@
   <data name="Script_DeclarationNotObject" xml:space="preserve"><value>effect() needs an object describing the effect.</value></data>
   <data name="Script_InvalidName" xml:space="preserve"><value>name must be a non-empty string.</value></data>
   <data name="Script_InvalidAnimated" xml:space="preserve"><value>animated must be true or false.</value></data>
+  <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick must be a chick ID string (lowercase letters, digits and dashes, e.g. "knight").</value></data>
   <data name="Script_InvalidArea" xml:space="preserve"><value>area must be "global" or "local".</value></data>
   <data name="Script_InvalidRadius" xml:space="preserve"><value>When area is "local", radius must be a whole number from 0 to {max}.</value></data>
   <data name="Script_MissingRender" xml:space="preserve"><value>A render(img, ctx, s) function is required.</value></data>

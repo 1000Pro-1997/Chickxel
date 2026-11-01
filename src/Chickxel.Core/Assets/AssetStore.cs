@@ -851,7 +851,7 @@ public sealed class AssetStore
     /// <paramref name="preview"/>는 에셋마다 미리보기 PNG를 만드는 함수(null이면 넣지 않음).
     /// 만든 패키지는 검사를 다시 통과해야 쓴다 — 통과하지 못하면 <see cref="AssetPackageException"/>이고 <paramref name="output"/>에는 쓰지 않는다.
     /// </summary>
-    public AssetManifest ExportPersonal(IEnumerable<string> ids, AssetManifest header, Stream output, Func<AssetEntry, byte[]?>? preview = null)
+    public AssetManifest ExportPersonal(IEnumerable<string> ids, AssetManifest header, Stream output, Func<AssetEntry, PackagePreview?>? preview = null)
     {
         var builder = new AssetPackageBuilder(header);
         foreach (var id in ids)

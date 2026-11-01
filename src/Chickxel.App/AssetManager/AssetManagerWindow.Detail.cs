@@ -285,7 +285,7 @@ public sealed partial class AssetManagerWindow
         Act(() =>
         {
             using var buffer = new MemoryStream();
-            AppAssets.Store.ExportPersonal(entries.Select(e => e.Id), header, buffer, entry => AssetPreview.Png(entry.Data));
+            AppAssets.Store.ExportPersonal(entries.Select(e => e.Id), header, buffer, entry => AssetPreview.Package(entry.Data));
             File.WriteAllBytes(path, buffer.ToArray());
         });
     }

@@ -93,7 +93,7 @@ public class RemoteCatalogTests
         var header = AssetSamples.Header(version, id) with { Name = name, License = license, MinAppVersion = minApp, Author = new AssetAuthor(author, "Author") };
         var builder = new AssetPackageBuilder(header);
         var recipe = AssetSamples.Recipe(thickness: version == "1.0.0" ? 2 : 3);
-        builder.Add(recipe, AssetPreview.Png(recipe));
+        builder.Add(recipe, AssetPreview.Package(recipe));
         builder.Add(AssetSamples.Gradient());
         if (licenseFile) builder.AddDocument("LICENSE.txt", "CC0");
         using var stream = new MemoryStream();

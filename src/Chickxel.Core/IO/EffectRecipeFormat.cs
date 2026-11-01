@@ -31,6 +31,8 @@ public sealed record EffectRecipe : IAssetData
     public RecipeFrameRange FrameRange { get; init; } = RecipeFrameRange.AddRange;
     /// <summary>미리보기 애니메이션에 권장하는 프레임 수.</summary>
     public int PreviewFrames { get; init; } = DefaultPreviewFrames;
+    /// <summary>패키지 미리보기에서 효과를 입힐 병아리(<see cref="PreviewChicks"/>의 ID).</summary>
+    public string PreviewChick { get; init; } = PreviewChicks.Default;
     /// <summary>사용자에게 내보낸 매개변수(없으면 효과 목록 전체를 그대로 복사해 넣음). <see cref="WithParameters"/>로 바꾼다.</summary>
     public IReadOnlyList<RecipeParameter> Parameters { get; init; } = [];
     /// <summary>스크립트 효과의 원문(해시 → 정리한 원문, 해시 순서). 효과가 쓰는 해시 중 원문을 아는 것만 있다.</summary>
@@ -90,13 +92,14 @@ public sealed record EffectRecipe : IAssetData
 
 /// <summary>
 /// 효과 레시피 JSON(계획 6.3) — 패키지의 <c>assets/effects/*.json</c>과 개인 에셋이 같이 쓴다:
-/// <code>{ "schemaVersion": 3, "id": "…", "name": "Neon Hit", "description": "…", "frameRange": "addRange", "previewFrames": 12,
+/// <code>{ "schemaVersion": 4, "id": "…", "name": "Neon Hit", "description": "…", "frameRange": "addRange", "previewFrames": 12, "previewChick": "knight",
 ///   "effects": [ { "type": "chickxel.effect.outline", "version": 1, "enabled": true, "clipToPrevious": false, "settings": { … } },
 ///                { "type": "chickxel.effect.script", "settings": { … }, "script": "&lt;SHA-256&gt;" } ],
 ///   "parameters": [ { "id": "glow", "name": "빛 색", "kind": "color", "default": "#00FFC8", "bindings": [ { "effect": 0, "key": "color" } ] } ],
 ///   "scripts": { "&lt;SHA-256&gt;": "effect({ … })" } }</code>
 /// 효과 하나는 프로젝트와 같은 <see cref="EffectCodec"/> 형식이고(<c>frames</c>는 쓰지 않음), 순서 = 목록 순서, 클리핑 = <c>clipToPrevious</c>.
-/// 매개변수(<see cref="RecipeParameterFormat"/>)는 형식 2부터, 스크립트 원문 <c>scripts</c>(해시 → 정리한 원문, 해시 순서)는 형식 3부터다 —
+/// 매개변수(<see cref="RecipeParameterFormat"/>)는 형식 2부터, 스크립트 원문 <c>scripts</c>(해시 → 정리한 원문, 해시 순서)는 형식 3부터,
+/// 미리보기 병아리 <c>previewChick</c>(기본 병아리가 아닐 때만 씀, 모르는 ID는 기본 병아리로 그림)는 형식 4부터다 —
 /// 그것이 없으면 낮은 형식으로 써서 예전 앱도 읽는다. 원문 글은 문자열 한도 대신 <see cref="AssetPackageLimits.MaxScriptBytes"/>로 잰다.
 /// 엄격 모드는 효과를 등록된 schema로 검사한다: 등록된 종류 ID와 지원 버전, 모르는 설정 키 없음, 값 모양·범위·고를 수 있는 값,
 /// 색 슬롯에 맞는 그라데이션. 스크립트 효과는 원문이 레시피에 있어야 하고, 원문은 해시가 맞고 해석되어야 하며(<see cref="ScriptAssetFormat.Check"/>),
@@ -106,12 +109,15 @@ public sealed record EffectRecipe : IAssetData
 /// </summary>
 public static class EffectRecipeFormat
 {
-    public const int SchemaVersion = 3;
+    public const int SchemaVersion = 4;
 
     /// <summary>스크립트 원문 표의 맨 위 키.</summary>
     public const string ScriptsKey = "scripts";
 
-    private static readonly HashSet<string> Keys = ["schemaVersion", "id", "name", "description", "frameRange", "previewFrames", "effects", "parameters", ScriptsKey];
+    private static readonly HashSet<string> Keys = ["schemaVersion", "id", "name", "description", "frameRange", "previewFrames", "previewChick", "effects", "parameters", ScriptsKey];
+
+    /// <summary>병아리 ID 모양(소문자·숫자·하이픈, 32자까지).</summary>
+    private static readonly System.Text.RegularExpressions.Regex ChickId = new("^[a-z0-9]+(-[a-z0-9]+)*$");
 
     private static readonly HashSet<string> EffectKeys =
     [
@@ -131,15 +137,17 @@ public static class EffectRecipeFormat
         var scripts = new JsonObject();
         foreach (var (hash, source) in recipe.Scripts.Where(pair => used.Contains(pair.Key)).OrderBy(pair => pair.Key, StringComparer.Ordinal))
             scripts[hash] = source;
+        bool chick = recipe.PreviewChick != PreviewChicks.Default;
         var json = new JsonObject
         {
-            ["schemaVersion"] = scripts.Count > 0 ? SchemaVersion : recipe.Parameters.Count > 0 ? 2 : 1,
+            ["schemaVersion"] = chick ? SchemaVersion : scripts.Count > 0 ? 3 : recipe.Parameters.Count > 0 ? 2 : 1,
             ["id"] = recipe.Id,
             ["name"] = recipe.Name.Trim(),
         };
         if (recipe.Description is { Length: > 0 } description) json["description"] = description;
         json["frameRange"] = recipe.FrameRange == RecipeFrameRange.AllFrames ? "allFrames" : "addRange";
         json["previewFrames"] = recipe.PreviewFrames;
+        if (chick) json["previewChick"] = recipe.PreviewChick;
         json["effects"] = effects;
         if (recipe.Parameters.Count > 0) json["parameters"] = RecipeParameterFormat.Write(recipe.Parameters);
         if (scripts.Count > 0) json[ScriptsKey] = scripts;
@@ -191,6 +199,12 @@ public static class EffectRecipeFormat
             context.Bad("previewFrames");
             previewFrames = EffectRecipe.DefaultPreviewFrames;
         }
+        string previewChick = PreviewChicks.Default;
+        if (o["previewChick"] is { } chickNode)
+        {
+            if (AssetJson.String(chickNode) is { Length: > 0 and <= 32 } chickId && ChickId.IsMatch(chickId)) previewChick = chickId;
+            else context.Bad("previewChick");
+        }
 
         var scripts = o[ScriptsKey] is { } scriptsNode ? ReadScripts(scriptsNode, schema, context) : new Dictionary<string, RecipeScript>(StringComparer.Ordinal);
 
@@ -238,7 +252,7 @@ public static class EffectRecipeFormat
         return new EffectRecipe
         {
             Id = id, Name = name.Trim(), Description = description, Effects = effects,
-            FrameRange = frameRange, PreviewFrames = previewFrames, Scripts = sources,
+            FrameRange = frameRange, PreviewFrames = previewFrames, PreviewChick = previewChick, Scripts = sources,
         }.WithParameters(parameters);
     }
 

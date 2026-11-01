@@ -241,6 +241,7 @@
   <data name="Script_DeclarationNotObject" xml:space="preserve"><value>effect에는 효과 정보를 담은 객체를 넘겨야 합니다.</value></data>
   <data name="Script_InvalidName" xml:space="preserve"><value>name에 효과 이름(비어 있지 않은 문자열)이 필요합니다.</value></data>
   <data name="Script_InvalidAnimated" xml:space="preserve"><value>animated는 true나 false여야 합니다.</value></data>
+  <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick은 병아리 ID 문자열(소문자·숫자·하이픈, 예: "knight")이어야 합니다.</value></data>
   <data name="Script_InvalidArea" xml:space="preserve"><value>area는 "global"이나 "local"이어야 합니다.</value></data>
   <data name="Script_InvalidRadius" xml:space="preserve"><value>area가 "local"이면 radius에 0~{max} 정수가 필요합니다.</value><comment>max = 반경 최대 px.</comment></data>
   <data name="Script_MissingRender" xml:space="preserve"><value>render(img, ctx, s) 함수가 필요합니다.</value></data>

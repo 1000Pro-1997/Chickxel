@@ -87,27 +87,34 @@ public sealed class AssetPackageBuilder(AssetManifest header)
 
     public int Count => _entries.Count;
 
-    /// <summary>에셋 하나를 더하고 새 에셋 ID를 돌려준다. <paramref name="previewPng"/>가 있으면 미리보기로 넣는다.</summary>
-    public string Add(string kind, IAssetData value, byte[]? previewPng = null)
+    /// <summary>
+    /// 에셋 하나를 더하고 새 에셋 ID를 돌려준다. <paramref name="preview"/>가 있으면 <c>previews/&lt;조각&gt;.png</c>를 미리보기로 넣고,
+    /// 효과 없는 원본이 있으면 <see cref="OriginalPreviewPath"/> 자리에 같이 넣는다(manifest는 가리키지 않음 — 웹 비교용).
+    /// </summary>
+    public string Add(string kind, IAssetData value, PackagePreview? preview = null)
     {
         var definition = AssetKinds.Find(kind) ?? throw new ArgumentException(kind, nameof(kind));
         string segment = UniqueSegment(Slug(value.Name, kind));
         string id = Header.Id + "." + segment;
         string path = definition.Folder + segment + definition.Extensions[0];
         _files[path] = definition.Write(value, id).ToArray();
-        string? preview = null;
-        if (previewPng is { Length: > 0 })
+        string? previewPath = null;
+        if (preview is { Png.Length: > 0 })
         {
-            preview = "previews/" + segment + ".png";
-            _files[preview] = previewPng;
+            previewPath = "previews/" + segment + ".png";
+            _files[previewPath] = preview.Png;
+            if (preview.OriginalPng is { Length: > 0 } original) _files[OriginalPreviewPath(previewPath)] = original;
         }
-        _entries.Add(new AssetManifestEntry(id, kind, path, preview));
+        _entries.Add(new AssetManifestEntry(id, kind, path, previewPath));
         return id;
     }
 
-    public string Add(EffectRecipe recipe, byte[]? previewPng = null) => Add(AssetKinds.EffectRecipe, recipe, previewPng);
+    public string Add(EffectRecipe recipe, PackagePreview? preview = null) => Add(AssetKinds.EffectRecipe, recipe, preview);
 
-    public string Add(GradientPreset gradient, byte[]? previewPng = null) => Add(AssetKinds.Gradient, new GradientAsset("", gradient), previewPng);
+    public string Add(GradientPreset gradient, PackagePreview? preview = null) => Add(AssetKinds.Gradient, new GradientAsset("", gradient), preview);
+
+    /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 효과 없는 원본 자리 <c>previews/&lt;이름&gt;.original.png</c>(서버가 이 이름으로 찾는다).</summary>
+    public static string OriginalPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".original.png";
 
     /// <summary>뿌리 문서(<c>LICENSE.txt</c>, <c>README.md</c>).</summary>
     public void AddDocument(string name, string text) => _files[name] = Encoding.UTF8.GetBytes(text);

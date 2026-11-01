@@ -9647,6 +9647,9 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectPreset_TileTip" xml:space="preserve"><value>효과 {0}개 묶음입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 이름을 바꾸거나 삭제합니다.</value></data>
   <data name="EffectPreset_SaveTitle" xml:space="preserve"><value>사용자 정의 효과 저장</value></data>
   <data name="EffectPreset_NamePrompt" xml:space="preserve"><value>효과 이름</value></data>
+  <data name="EffectPreset_PreviewChick" xml:space="preserve"><value>미리보기 병아리</value></data>
+  <data name="EffectPreset_PreviewChickHint" xml:space="preserve"><value>에셋으로 올리면 이 병아리에 효과를 입힌 미리보기(움직이는 효과면 애니메이션)가 저절로 만들어집니다.</value></data>
+  <data name="EffectPreset_PreviewChickTip" xml:space="preserve"><value>병아리 {0}번</value><comment>0 = 병아리 번호.</comment></data>
   <data name="EffectPreset_OverwriteQuestion" xml:space="preserve"><value>사용자 정의 효과 '{0}'이(가) 이미 있습니다. 덮어쓸까요?</value></data>
   <data name="EffectPreset_Rename" xml:space="preserve"><value>이름 바꾸기</value></data>
   <data name="EffectPreset_RenameTitle" xml:space="preserve"><value>사용자 정의 효과 이름 바꾸기</value></data>
@@ -10677,7 +10680,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="ScriptEffect_NoSettings" xml:space="preserve"><value>이 스크립트에는 설정이 없습니다.</value></data>
   <data name="ScriptEffect_Hint" xml:space="preserve"><value>스크립트 원문은 프로젝트에 해시로 한 번만 저장됩니다. 원문을 고치면 새 원문으로 바뀌고, 쓰지 않게 된 예전 원문은 저장할 때 빠집니다. 한 프레임 계산이 한도(2초, 문장 5천만 개, 메모리 256MB)를 넘으면 그 프레임에서 이 효과만 건너뛰고, 연속 3번 실패하면 다시 켤 때까지 멈춥니다.</value></data>
   <data name="ScriptEditor_Title" xml:space="preserve"><value>스크립트 편집 - {name}</value><comment>name = 스크립트 효과 이름.</comment></data>
-  <data name="ScriptEditor_Hint" xml:space="preserve"><value>effect({ name, settings: [...], render(img, ctx, s) { ... } })를 선언합니다. img.data는 RGBA 숫자 배열이고, ctx에는 진행(progress)·프레임·원본 자리가 있습니다. 적용하면 효과 창과 캔버스에 바로 보입니다.</value></data>
+  <data name="ScriptEditor_Hint" xml:space="preserve"><value>effect({ name, settings: [...], render(img, ctx, s) { ... } })를 선언합니다. img.data는 RGBA 숫자 배열이고, ctx에는 진행(progress)·프레임·원본 자리가 있습니다. previewChick: "knight"처럼 온라인에 올릴 때 미리보기에 쓸 병아리 ID를 적을 수 있습니다(기본 "original"). 적용하면 효과 창과 캔버스에 바로 보입니다.</value></data>
   <data name="ScriptEditor_Apply" xml:space="preserve"><value>적용</value></data>
   <data name="ScriptEditor_ApplyTip" xml:space="preserve"><value>원문을 해석해 효과에 적용합니다(Ctrl+Enter).</value></data>
   <data name="ScriptEditor_Applied" xml:space="preserve"><value>적용했습니다.</value></data>

@@ -168,15 +168,14 @@ public sealed partial class LayerEffectsDialog
     {
         if (_effects.Count == 0) return;
         var personal = PersonalRecipes.ToList();
-        var name = InputDialog.Ask(this, UiStrings.EffectPreset_SaveTitle, UiStrings.EffectPreset_NamePrompt,
-            _effects[0].DisplayName, personal.Select(entry => entry.Name))?.Trim();
-        if (string.IsNullOrEmpty(name)) return;
+        if (RecipeSaveDialog.Ask(this, _effects[0].DisplayName, PreviewChicks.Default, personal.Select(entry => entry.Name)) is not { } saved) return;
+        var (name, chick) = saved;
 
         var duplicate = personal.FirstOrDefault(entry => entry.Name == name);
         if (duplicate is not null && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,
                 UiStrings.EffectPreset_OverwriteQuestion, name), UiStrings.EffectPreset_SaveTitle,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-        var recipe = EffectRecipe.Capture(duplicate?.Id ?? "", name, _effects, _project);
+        var recipe = EffectRecipe.Capture(duplicate?.Id ?? "", name, _effects, _project) with { PreviewChick = chick };
         PersistRecipe(() => AppAssets.Store.SavePersonalRecipe(recipe));
     }
 

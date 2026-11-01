@@ -58,8 +58,8 @@ internal static class AssetSamples
         var builder = new AssetPackageBuilder(header ?? Header());
         var r = recipe ?? Recipe();
         var g = gradient ?? Gradient();
-        builder.Add(r, previews ? AssetPreview.Png(r) : null);
-        builder.Add(g, previews ? AssetPreview.Png(new GradientAsset("", g)) : null);
+        builder.Add(r, previews ? AssetPreview.Package(r) : null);
+        builder.Add(g, previews ? AssetPreview.Package(new GradientAsset("", g)) : null);
         builder.AddDocument("LICENSE.txt", "CC0");
         more?.Invoke(builder);
         using var stream = new MemoryStream();
@@ -178,9 +178,11 @@ public class AssetPackageTests
         Assert.Equal([false, true, true], readRecipe.Effects.Select(e => e.ClipToPrevious).ToArray());
         Assert.Equal(AssetSamples.OverlayGradient.Stops, readRecipe.Effects[2].ColorGradients["Color"].Stops);
         AssetSamples.AssertSameGradient(gradient, Assert.IsType<GradientAsset>(package.Items[1].Data).Gradient);
-        // 미리보기는 패키지에 들어가 디코드된다
+        // 미리보기와 효과 없는 원본은 패키지에 들어가 디코드된다
         string preview = package.Items[0].Entry.Preview!;
-        Assert.Equal(AssetPreview.Png(recipe), package.Files[preview]);
+        var expected = AssetPreview.Package(recipe)!;
+        Assert.Equal(expected.Png, package.Files[preview]);
+        Assert.Equal(expected.OriginalPng, package.Files[AssetPackageBuilder.OriginalPreviewPath(preview)]);
         Assert.Contains("LICENSE.txt", package.Files.Keys);
 
         // 설치하면 디스크의 파일에서 같은 값을 다시 읽는다
@@ -191,7 +193,7 @@ public class AssetPackageTests
         var entry = Assert.Single(store.Catalog.Recipes);
         AssetSamples.AssertSameRecipe(recipe, entry.Recipe!);
         AssetSamples.AssertSameGradient(gradient, Assert.Single(store.Catalog.Gradients).Gradient!);
-        Assert.Equal(AssetPreview.Png(recipe), File.ReadAllBytes(entry.PreviewPath!));
+        Assert.Equal(expected.Png, File.ReadAllBytes(entry.PreviewPath!));
     }
 
     [Fact]
@@ -357,8 +359,8 @@ public class AssetPackageTests
     [Fact]
     public void FutureRecipeAndGradientSchemas_AreRejectedPerAsset()
     {
-        AssertIssue(Rejects(WithAsset(AssetKinds.EffectRecipe, "assets/effects/x.json", RecipeJson("""{ "type": "chickxel.effect.fade" }""", schema: 4))),
-            AssetIssueCode.FutureSchema, "assets/effects/x.json", "4");
+        AssertIssue(Rejects(WithAsset(AssetKinds.EffectRecipe, "assets/effects/x.json", RecipeJson("""{ "type": "chickxel.effect.fade" }""", schema: 5))),
+            AssetIssueCode.FutureSchema, "assets/effects/x.json", "5");
         AssertIssue(Rejects(WithAsset(AssetKinds.Gradient, "assets/gradients/x.json", GradientJson(schema: 5))),
             AssetIssueCode.FutureSchema, "assets/gradients/x.json", "5");
     }
@@ -470,10 +472,10 @@ public class AssetPackageTests
     [Fact]
     public void TooManyFilesOrAssets_AreRejected()
     {
-        byte[] bytes = AssetSamples.Build(); // manifest, 레시피, 그라데이션, 미리보기 2, LICENSE = 6개
-        AssertIssue(Rejects(bytes, new AssetValidationOptions(new AssetPackageLimits { MaxFiles = 5 })), AssetIssueCode.TooManyFiles, detail: "5");
+        byte[] bytes = AssetSamples.Build(); // manifest, 레시피, 그라데이션, 미리보기 2, 레시피 미리보기의 원본, LICENSE = 7개
+        AssertIssue(Rejects(bytes, new AssetValidationOptions(new AssetPackageLimits { MaxFiles = 6 })), AssetIssueCode.TooManyFiles, detail: "6");
         AssertIssue(Rejects(bytes, new AssetValidationOptions(new AssetPackageLimits { MaxAssets = 1 })), AssetIssueCode.TooManyItems, AssetManifest.FileName, "assets");
-        AssetPackageValidator.Read(new MemoryStream(bytes), new AssetValidationOptions(new AssetPackageLimits { MaxFiles = 6, MaxAssets = 2 }));
+        AssetPackageValidator.Read(new MemoryStream(bytes), new AssetValidationOptions(new AssetPackageLimits { MaxFiles = 7, MaxAssets = 2 }));
     }
 
     [Fact]

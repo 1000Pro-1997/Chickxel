@@ -53,8 +53,8 @@ public sealed record PublishIssue(PublishSeverity Severity, string Message)
     public override string ToString() => Message;
 }
 
-/// <summary>게시 창에 넣을 에셋 하나: 종류, 값, 미리보기 PNG(없으면 null).</summary>
-public sealed record PublishAsset(string Kind, IAssetData Data, byte[]? Preview);
+/// <summary>게시 창에 넣을 에셋 하나: 종류, 값, 미리보기(효과면 원본 포함, 없으면 null).</summary>
+public sealed record PublishAsset(string Kind, IAssetData Data, PackagePreview? Preview);
 
 /// <summary>이 컴퓨터에서 올린 패키지(같은 ID·버전을 다른 내용으로 다시 올리려 하면 경고, 다음 버전 제안).</summary>
 public sealed record PublishedVersion(string Id, string Version, string Sha256);
@@ -251,7 +251,8 @@ public static class AssetPublishCheck
             assets.RemoveAt(request.PreviewAsset);
             assets.Insert(0, chosen);
         }
-        if (request.CustomPreview is { Length: > 0 } custom && assets.Count > 0) assets[0] = assets[0] with { Preview = custom };
+        // 직접 고른 PNG는 효과 없는 원본과 짝이 맞지 않으므로 원본 없이 넣는다.
+        if (request.CustomPreview is { Length: > 0 } custom && assets.Count > 0) assets[0] = assets[0] with { Preview = new PackagePreview(custom, null) };
         foreach (var asset in assets) builder.Add(asset.Kind, asset.Data, asset.Preview);
         if (!string.IsNullOrWhiteSpace(request.LicenseText)) builder.AddDocument(LicenseFileName, request.LicenseText);
         byte[] bytes;

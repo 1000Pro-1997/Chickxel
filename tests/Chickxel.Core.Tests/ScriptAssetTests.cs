@@ -213,7 +213,7 @@ public class ScriptAssetTests
             Id = "pixel-cat.shine", Version = "1.0.0", Name = "Shine Set", Summary = "빛 지나가기 스크립트",
             Tags = AssetPublishCheck.ParseTags("shine"), License = "CC0-1.0",
             LicenseText = AssetPublishCheck.LicenseNotice("CC0-1.0", "Shine Set", "Pixel Cat", 2026),
-            Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Png(entry.Data))).ToArray(),
+            Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Package(entry.Data))).ToArray(),
             MinAppVersion = "1.14.55",
         }, [], []);
         Assert.True(result.Ok, string.Join("\n", result.Issues));

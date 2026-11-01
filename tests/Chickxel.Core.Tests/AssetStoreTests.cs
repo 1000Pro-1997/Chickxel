@@ -512,7 +512,7 @@ public class AssetStoreTests
         Assert.Equal("새 이름", AssetStore.Open(store.Root).Catalog.Recipes.Single().Name);
 
         using var exported = new MemoryStream();
-        var manifest = store.ExportPersonal([recipe.Id, gradient.Id], AssetSamples.Header() with { Id = "me.exported" }, exported, e => AssetPreview.Png(e.Data));
+        var manifest = store.ExportPersonal([recipe.Id, gradient.Id], AssetSamples.Header() with { Id = "me.exported" }, exported, e => AssetPreview.Package(e.Data));
         // 한국어 이름은 ID 조각이 되지 못해 종류 이름을 쓴다
         Assert.Equal(["me.exported.effect-recipe", "me.exported.mine"], manifest.Assets.Select(a => a.Id).ToArray());
 

@@ -29,6 +29,8 @@
     <EmbeddedResource Include="References\Assets\*.md" LogicalName="Chickxel.References.%(Filename)%(Extension)" WithCulture="false" />
     <!-- 스크립트 효과 틀: 효과 창 "새 스크립트"의 처음 원문(빛 지나가기를 JS로 옮긴 것 — C# 결과와 픽셀 단위로 같음). -->
     <EmbeddedResource Include="Scripting\Templates\*.js" LogicalName="Chickxel.Scripting.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- 미리보기 병아리: 효과 패키지 미리보기의 견본 그림(docs/assets/mascot의 원래 크기 그림, 8배 그림은 빼고). -->
+    <EmbeddedResource Include="..\..\docs\assets\mascot\chick-*.png" Exclude="..\..\docs\assets\mascot\*@8x.png" LogicalName="Chickxel.Mascot.%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
 </Project>

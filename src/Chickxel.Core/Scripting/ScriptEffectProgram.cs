@@ -26,7 +26,7 @@ public sealed record ScriptParseResult(ScriptEffectProgram? Program, IReadOnlyLi
 }
 
 /// <summary>
-/// 해석한 스크립트 효과 하나(13.2): <c>effect({ name, author, animated, area, radius, settings, padding, render })</c>를 선언한 JS 파일.
+/// 해석한 스크립트 효과 하나(13.2): <c>effect({ name, author, animated, previewChick, area, radius, settings, padding, render })</c>를 선언한 JS 파일.
 /// 불변이고 여러 스레드에서 같이 써도 된다. 실행은 부른 스레드의 <see cref="ScriptSandbox"/>에서 <see cref="Limits"/> 안에서 한다.
 /// <para>
 /// 스크립트 정체는 <see cref="ContentHash"/>(정리한 원문의 SHA-256)다(13.5). 효과 TypeId <c>chickxel.effect.script</c>와 이 해시, 설정값으로 효과 하나가 정해진다.
@@ -46,7 +46,7 @@ public sealed class ScriptEffectProgram
     public static IReadOnlyList<string> ReservedSettingKeys { get; } = ["easing", "repeat", "repeatCount"];
 
     internal ScriptEffectProgram(Prepared<Script> script, string source, string contentHash, ScriptLimits limits, string name, string? author,
-        bool animated, ScriptEffectArea area, int radius, IReadOnlyList<ScriptSetting> settings, EffectPadding? fixedPadding)
+        bool animated, ScriptEffectArea area, int radius, IReadOnlyList<ScriptSetting> settings, EffectPadding? fixedPadding, string previewChick)
     {
         _script = script;
         Source = source;
@@ -59,6 +59,7 @@ public sealed class ScriptEffectProgram
         Radius = radius;
         Settings = settings;
         _fixedPadding = fixedPadding;
+        PreviewChick = previewChick;
     }
 
     /// <summary>정리한 원문(<see cref="NormalizeSource"/>). 오류의 줄·칸은 이 글 기준이다.</summary>
@@ -77,6 +78,9 @@ public sealed class ScriptEffectProgram
 
     /// <summary>선언의 <c>animated</c>(기본 false): 프레임 진행에 따라 모습이 바뀌는지.</summary>
     public bool Animated { get; }
+
+    /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
+    public string PreviewChick { get; }
 
     /// <summary>선언의 <c>area</c>(기본 <see cref="ScriptEffectArea.Global"/>).</summary>
     public ScriptEffectArea Area { get; }

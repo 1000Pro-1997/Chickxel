@@ -534,7 +534,7 @@ internal static class ScreenTimelineShots
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
         var hurt = AppAssets.Store.SavePersonalRecipe(HurtRecipe());
         AppAssets.Store.SavePersonalScript(PulseScript);
-        InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.0.chickxel-asset");
+        InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.1.chickxel-asset");
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
         int body = LayerIndex(main, "Body");

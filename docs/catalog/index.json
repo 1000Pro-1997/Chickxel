@@ -7,7 +7,7 @@
   "packages": [
     {
       "id": "chickxel.effects.hit-reaction",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Hit Reaction",
       "summary": "A white flash with a decaying shake for the frames where a character takes damage.",
       "tags": [
@@ -26,22 +26,22 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/chickxel.effects.hit-reaction-1.0.0.chickxel-asset",
-        "size": 2452,
-        "sha256": "b613ec4415ce8d50b8708ca91711ddce9ce0c33954af7edcfdcc68bbb25fbb0c"
+        "url": "packages/chickxel.effects.hit-reaction-1.0.1.chickxel-asset",
+        "size": 4596,
+        "sha256": "7fb5e9b50e70fa0f0a079d5484ec52a4aba197de05102e0b664e74f4b43b13ed"
       },
       "preview": {
-        "url": "previews/chickxel.effects.hit-reaction-1.0.0.png",
-        "size": 272,
-        "sha256": "c4bcc4a9cd6ecc2d221177c703a67abbc0586d05687f12030eee71a551d49502"
+        "url": "previews/chickxel.effects.hit-reaction-1.0.1.png",
+        "size": 2202,
+        "sha256": "79a60a480c04d7854ee35a8a8a59463eb2be6692cf4162f013aefa76a2335577"
       },
       "published": "2026-10-28",
-      "updated": "2026-10-28",
+      "updated": "2026-11-01",
       "review": "official"
     },
     {
       "id": "chickxel.effects.outlined-drop-shadow",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Outlined Drop Shadow",
       "summary": "A black outline with a soft drop shadow \u2014 a quick way to make a sprite read on any background.",
       "tags": [
@@ -60,22 +60,22 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/chickxel.effects.outlined-drop-shadow-1.0.0.chickxel-asset",
-        "size": 2683,
-        "sha256": "6be54ba21c2e269df82feba18181d0cac10d56d17c2057bfcb7e6f3e948fec17"
+        "url": "packages/chickxel.effects.outlined-drop-shadow-1.0.1.chickxel-asset",
+        "size": 3644,
+        "sha256": "4445cd90fdd9238caec2f8016206fe05fd82071fd7e5f3437b36d5e6347b6267"
       },
       "preview": {
-        "url": "previews/chickxel.effects.outlined-drop-shadow-1.0.0.png",
-        "size": 411,
-        "sha256": "fa998ee061e50d4decdb771ac35f9944769c3f12281d67d1730b79834c1b5c68"
+        "url": "previews/chickxel.effects.outlined-drop-shadow-1.0.1.png",
+        "size": 608,
+        "sha256": "48d4c74d3ef39512020a5fe46328fdeb9cb54629b97c6ba49f8e5310d94302f7"
       },
       "published": "2026-10-28",
-      "updated": "2026-10-28",
+      "updated": "2026-11-01",
       "review": "official"
     },
     {
       "id": "chickxel.effects.shiny-pickup",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Shiny Pickup",
       "summary": "A warm outline, a light sweep and a gentle bob for coins and items.",
       "tags": [
@@ -94,17 +94,17 @@
       },
       "minAppVersion": "1.14.55",
       "package": {
-        "url": "packages/chickxel.effects.shiny-pickup-1.0.0.chickxel-asset",
-        "size": 2807,
-        "sha256": "ef180180d56ed469fd6ffd903f86009ee6d649991c58580abefd3a5e4c76ee3f"
+        "url": "packages/chickxel.effects.shiny-pickup-1.0.1.chickxel-asset",
+        "size": 8715,
+        "sha256": "34e260a374d8a4af5f9d740a22b403c1adac8d55951cf18e4f2560fe05b83662"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shiny-pickup-1.0.0.png",
-        "size": 540,
-        "sha256": "daaa07595fa19dd23fb8e3a92905844ea505198a5387f4dc3bafa45322a72c6c"
+        "url": "previews/chickxel.effects.shiny-pickup-1.0.1.png",
+        "size": 7082,
+        "sha256": "864f208f79fe63e81e3438bc6e819adafd9d5339509fd76a97c7fdc0462639b0"
       },
       "published": "2026-10-28",
-      "updated": "2026-10-28",
+      "updated": "2026-11-01",
       "review": "official"
     },
     {

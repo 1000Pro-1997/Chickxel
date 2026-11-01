@@ -44,8 +44,8 @@ internal static class ScreenAssetShots
     {
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
         AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
-        ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.0.chickxel-asset");
-        ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.hit-reaction-1.0.0.chickxel-asset");
+        ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.1.chickxel-asset");
+        ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.hit-reaction-1.0.1.chickxel-asset");
         ScreenTimelineShots.InstallCatalogPackage("chickxel.gradients.sunset-1.0.0.chickxel-asset");
     }
 

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Acornima.Ast;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Edit;
 using Chickxel.Core.Localization;
 using Chickxel.Core.Model;
@@ -18,6 +19,9 @@ internal static partial class ScriptDeclarationReader
 {
     [GeneratedRegex("^[A-Za-z_][A-Za-z0-9_]*$")]
     private static partial Regex SettingKey();
+
+    [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*$")]
+    private static partial Regex ChickId();
 
     public static ScriptParseResult Read(ScriptSandbox sandbox, Prepared<Script> script, string source, string hash)
     {
@@ -40,6 +44,10 @@ internal static partial class ScriptDeclarationReader
         var animatedValue = declaration.Get("animated");
         bool animated = animatedValue.IsBoolean() && animatedValue.AsBoolean();
         if (!animatedValue.IsUndefined() && !animatedValue.IsBoolean()) Fail(DomainStrings.Script_InvalidAnimated, "animated");
+
+        var chickValue = declaration.Get("previewChick");
+        string? previewChick = chickValue is JsString && chickValue.AsString() is { Length: > 0 and <= 32 } chick && ChickId().IsMatch(chick) ? chick : null;
+        if (!chickValue.IsUndefined() && previewChick is null) Fail(DomainStrings.Script_InvalidPreviewChick, "previewChick");
 
         var areaValue = declaration.Get("area");
         var area = ScriptEffectArea.Global;
@@ -81,7 +89,8 @@ internal static partial class ScriptDeclarationReader
 
         return errors.Count > 0
             ? new(null, errors)
-            : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, animated, area, radius, settings, fixedPadding), []);
+            : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, animated, area, radius, settings, fixedPadding,
+                previewChick ?? PreviewChicks.Default), []);
     }
 
     /// <summary><c>[왼, 위, 오른, 아래]</c>(0~<see cref="ScriptEffectProgram.MaxPadding"/> 정수 네 개). 아니면 null.</summary>

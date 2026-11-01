@@ -6,6 +6,9 @@ using Chickxel.Core.Localization;
 
 namespace Chickxel.Core.IO;
 
+/// <summary>움직이는 PNG의 프레임 하나와 보여 줄 시간(밀리초).</summary>
+public readonly record struct PngFrame(PixelImage Image, int DurationMs);
+
 /// <summary>
 /// 순수 C# PNG 읽기/쓰기. 모든 표준 PNG(회색·RGB·팔레트·알파, 1~16비트, 인터레이스)를 RGBA로 읽고,
 /// 8비트 RGBA PNG로 무손실 저장한다. 감마(gAMA) 등 색 보정은 적용하지 않아 픽셀 값이 그대로 유지된다.
@@ -69,9 +72,68 @@ public static class PngIO
     /// <param name="stage">진행(단위: 픽셀, 모두 <c>Width × Height</c>).</param>
     internal static void Save(PixelImage image, Stream stream, WorkStage? stage)
     {
-        int w = image.Width, h = image.Height, stride = w * 4;
         stream.Write(Signature);
+        WriteHeader(stream, image.Width, image.Height);
+        int rowBytes = image.Width * 4 + 1;
+        if ((long)rowBytes * image.Height <= ParallelMinBytes)
+        {
+            using var compressed = Compress(image, stage);
+            WriteChunk(stream, "IDAT", compressed.GetBuffer().AsSpan(0, (int)compressed.Length));
+        }
+        else WriteChunk(stream, "IDAT", CompressParallel(image, rowBytes, stage));
+        WriteChunk(stream, "IEND", ReadOnlySpan<byte>.Empty);
+    }
 
+    /// <summary>
+    /// 움직이는 PNG(APNG)로 저장한다: 같은 크기의 프레임을 통째로 바꿔 가며(겹치기·지우기 없음) 끝없이 되풀이한다.
+    /// 첫 프레임이 기본 그림(IDAT)이라 APNG를 모르는 읽기(<see cref="Load(Stream)"/> 포함)는 첫 프레임을 본다. 프레임이 하나면 보통 PNG로 쓴다.
+    /// 작은 그림(미리보기)용이라 나눠 압축하지 않는다.
+    /// </summary>
+    public static void SaveAnimated(IReadOnlyList<PngFrame> frames, Stream stream)
+    {
+        if (frames.Count == 0) throw new ArgumentException("No frames.", nameof(frames));
+        int w = frames[0].Image.Width, h = frames[0].Image.Height;
+        if (frames.Any(frame => frame.Image.Width != w || frame.Image.Height != h))
+            throw new ArgumentException("Frames must have the same size.", nameof(frames));
+        if (frames.Count == 1)
+        {
+            Save(frames[0].Image, stream, null);
+            return;
+        }
+        stream.Write(Signature);
+        WriteHeader(stream, w, h);
+        Span<byte> actl = stackalloc byte[8];
+        BinaryPrimitives.WriteInt32BigEndian(actl, frames.Count);
+        BinaryPrimitives.WriteInt32BigEndian(actl[4..], 0); // 끝없이
+        WriteChunk(stream, "acTL", actl);
+        Span<byte> fctl = stackalloc byte[26];
+        int sequence = 0;
+        for (int i = 0; i < frames.Count; i++)
+        {
+            fctl.Clear();
+            BinaryPrimitives.WriteInt32BigEndian(fctl, sequence++);
+            BinaryPrimitives.WriteInt32BigEndian(fctl[4..], w);
+            BinaryPrimitives.WriteInt32BigEndian(fctl[8..], h);
+            BinaryPrimitives.WriteUInt16BigEndian(fctl[20..], (ushort)Math.Clamp(frames[i].DurationMs, 1, ushort.MaxValue));
+            BinaryPrimitives.WriteUInt16BigEndian(fctl[22..], 1000); // 지연 단위: 1/1000초
+            WriteChunk(stream, "fcTL", fctl); // 오프셋 0, dispose_op 0(그대로), blend_op 0(덮어쓰기)
+            using var compressed = Compress(frames[i].Image, null);
+            var data = compressed.GetBuffer().AsSpan(0, (int)compressed.Length);
+            if (i == 0)
+            {
+                WriteChunk(stream, "IDAT", data);
+                continue;
+            }
+            var fdat = new byte[4 + data.Length];
+            BinaryPrimitives.WriteInt32BigEndian(fdat, sequence++);
+            data.CopyTo(fdat.AsSpan(4));
+            WriteChunk(stream, "fdAT", fdat);
+        }
+        WriteChunk(stream, "IEND", ReadOnlySpan<byte>.Empty);
+    }
+
+    private static void WriteHeader(Stream stream, int w, int h)
+    {
         Span<byte> ihdr = stackalloc byte[13];
         BinaryPrimitives.WriteInt32BigEndian(ihdr, w);
         BinaryPrimitives.WriteInt32BigEndian(ihdr[4..], h);
@@ -81,29 +143,28 @@ public static class PngIO
         ihdr[11] = 0; // adaptive filter
         ihdr[12] = 0; // no interlace
         WriteChunk(stream, "IHDR", ihdr);
+    }
 
-        int rowBytes = stride + 1;
-        if ((long)rowBytes * h <= ParallelMinBytes)
+    /// <summary>줄마다 걸러 한 번에 zlib으로 압축한 그림 데이터.</summary>
+    private static MemoryStream Compress(PixelImage image, WorkStage? stage)
+    {
+        int w = image.Width, stride = w * 4;
+        var compressed = new MemoryStream();
+        using (var z = new ZLibStream(compressed, CompressionLevel.SmallestSize, leaveOpen: true))
         {
-            using var compressed = new MemoryStream();
-            using (var z = new ZLibStream(compressed, CompressionLevel.SmallestSize, leaveOpen: true))
+            var prev = new byte[stride];
+            var cur = new byte[stride];
+            var candidate = new byte[stride];
+            var best = new byte[stride + 1];
+            for (int y = 0; y < image.Height; y++)
             {
-                var prev = new byte[stride];
-                var cur = new byte[stride];
-                var candidate = new byte[stride];
-                var best = new byte[rowBytes];
-                for (int y = 0; y < h; y++)
-                {
-                    FilterRow(image.Pixels, w, y, prev, cur, candidate, best);
-                    z.Write(best);
-                    (prev, cur) = (cur, prev);
-                    stage?.Step(w);
-                }
+                FilterRow(image.Pixels, w, y, prev, cur, candidate, best);
+                z.Write(best);
+                (prev, cur) = (cur, prev);
+                stage?.Step(w);
             }
-            WriteChunk(stream, "IDAT", compressed.GetBuffer().AsSpan(0, (int)compressed.Length));
         }
-        else WriteChunk(stream, "IDAT", CompressParallel(image, rowBytes, stage));
-        WriteChunk(stream, "IEND", ReadOnlySpan<byte>.Empty);
+        return compressed;
     }
 
     /// <summary>

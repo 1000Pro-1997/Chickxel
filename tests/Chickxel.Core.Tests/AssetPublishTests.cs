@@ -30,7 +30,7 @@ public class AssetPublishTests
         Tags = AssetPublishCheck.ParseTags("Neon, effect gradient"),
         License = license,
         LicenseText = AssetPublishCheck.LicenseNotice(license, "Neon Set", "Pixel Cat", 2026),
-        Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Png(entry.Data))).ToArray(),
+        Assets = store.Catalog.Personal.Select(entry => new PublishAsset(entry.Kind, entry.Data, AssetPreview.Package(entry.Data))).ToArray(),
         MinAppVersion = "1.14.55",
     };
 
@@ -122,7 +122,7 @@ public class AssetPublishTests
                 Id = request.Id, Version = request.Version, Name = request.Name, Author = request.Author, License = request.License, MinAppVersion = "1.0.0",
             };
             using var package = new MemoryStream();
-            store.ExportPersonal(store.Catalog.Personal.Select(e => e.Id), header, package, entry => AssetPreview.Png(entry.Data));
+            store.ExportPersonal(store.Catalog.Personal.Select(e => e.Id), header, package, entry => AssetPreview.Package(entry.Data));
             string folder = Path.Combine(dir.Path, label, "catalog", request.Id);
             Directory.CreateDirectory(folder);
             File.WriteAllBytes(Path.Combine(folder, "pack" + AssetPackage.Extension), package.ToArray());
@@ -143,10 +143,12 @@ public class AssetPublishTests
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        byte[] customPreview = AssetPreview.Png(new GradientAsset("", AssetSamples.Gradient("Cover")))!;
+        byte[] customPreview = AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient("Cover")))!.Png;
         var result = Check(Request(store) with { CustomPreview = customPreview });
         Assert.True(result.Ok, string.Join("\n", result.Issues));
         Assert.Empty(result.Issues);
+        // 직접 고른 그림은 효과 없는 원본과 짝이 맞지 않으므로 첫 에셋(레시피)의 원본은 빠진다(서버가 크기가 다른 원본을 거부함).
+        Assert.DoesNotContain(Read(result.Package!).Files.Keys, path => path.EndsWith(".original.png", StringComparison.Ordinal));
         Assert.Equal("pixel-cat.neon-1.0.0.chickxel-asset", result.PackageFileName);
 
         // 관리자 흐름: 패키지를 catalog/에 두고 만들기 → 쓰기 → --check(다시 만들어 최신인지).
@@ -195,9 +197,9 @@ public class AssetPublishTests
         Assert.True(result.Ok, string.Join("\n", result.Issues));
         var package = Read(result.Package!);
         Assert.Equal(request.Assets[1].Kind, package.Manifest.Assets[0].Kind);
-        Assert.Equal(request.Assets[1].Preview, package.Files[AssetPublishCheck.ListPreview(package.Manifest, null)!]);
+        Assert.Equal(request.Assets[1].Preview!.Png, package.Files[AssetPublishCheck.ListPreview(package.Manifest, null)!]);
 
-        byte[] custom = AssetPreview.Png(new GradientAsset("", AssetSamples.Gradient("Cover")))!;
+        byte[] custom = AssetPreview.Package(new GradientAsset("", AssetSamples.Gradient("Cover")))!.Png;
         var withCustom = Check(request with { CustomPreview = custom });
         Assert.True(withCustom.Ok, string.Join("\n", withCustom.Issues));
         var customPackage = Read(withCustom.Package!);
