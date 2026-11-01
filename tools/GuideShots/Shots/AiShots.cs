@@ -591,7 +591,7 @@ internal static class AiShots
         // ⑱⑲ 생성 결과 카드: 새 빈 그림에 "늑대귀 모험가"를 생성해 넣은 차례.
         var wolf = Wolf(chat);
         var host = (IAiHost)main;
-        host.CreateProject(64, 112, null, null, out _);
+        host.CreateProject(64, 112, null, null, null, out _);
         k.Settle(400);
         var tab = chat.Tab(Codex);
         chat.Send(Codex, "Draw a wolf-eared adventurer: silver hair, navy jacket", new Script()
@@ -687,7 +687,7 @@ internal static class AiShots
         var chat = AiChat.Open(k, main, Codex, 470, 640);
         var w = chat.Window;
         var wolf = Wolf(chat);
-        ((IAiHost)main).CreateProject(32, 32, null, null, out _);
+        ((IAiHost)main).CreateProject(32, 32, null, null, null, out _);
         k.Settle(400);
         var tab = chat.Tab(Codex);
         chat.Send(Codex, "Draw a wolf-eared adventurer: silver hair, navy jacket", new Script()

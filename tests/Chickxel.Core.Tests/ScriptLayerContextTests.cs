@@ -7,8 +7,8 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.Core.Tests;
 
 /// <summary>
-/// 스크립트가 다른 레이어와 효과 원본 배치를 읽는 API(<c>ctx.layerBelow</c>·<c>ctx.layerAbove</c>·<c>…WithEffects</c>, <c>ctx.layerEffectsByName</c>·<c>ctx.layerEffectsAt</c>,
-/// <c>ctx.center</c>·<c>ctx.slice</c>): 프로젝트 렌더에서의 픽셀·자리, 겹침 규칙, 이름, 캐시 무효, 빠른 경로.
+/// 스크립트가 다른 레이어와 효과 원본 배치를 읽는 API(<c>ctx.layerBelow</c>·<c>ctx.layerAbove</c>·<c>…WithEffects</c>, <c>ctx.layerByName</c>·<c>…WithEffects</c>,
+/// <c>ctx.layerEffectsByName</c>·<c>ctx.layerEffectsAt</c>, <c>ctx.center</c>·<c>ctx.slice</c>): 프로젝트 렌더에서의 픽셀·자리, 겹침 규칙, 이름, 캐시 무효, 빠른 경로.
 /// 신뢰 결정은 프로세스 전체 상태라 시험마다 원문 끝에 주석을 붙여 해시를 따로 쓴다.
 /// </summary>
 public class ScriptLayerContextTests
@@ -24,23 +24,23 @@ public class ScriptLayerContextTests
         return hash;
     }
 
-    /// <summary><c>ctx.CALL()</c>의 그림을 img에 그대로 옮기는 효과(여백 2px). 없으면(null) 모든 값을 7로.</summary>
-    private static ScriptEffect Copier(string call, [CallerMemberName] string test = "") => new()
+    /// <summary><c>ctx.CALL(ARGS)</c>의 그림을 img에 그대로 옮기는 효과(여백 2px). 없으면(null) 모든 값을 7로.</summary>
+    private static ScriptEffect Copier(string call, string args = "", [CallerMemberName] string test = "") => new()
     {
         ScriptHash = Trusted($$"""
             effect({ name: "copy {{call}}", padding: [{{Pad}}, {{Pad}}, {{Pad}}, {{Pad}}], render(img, ctx, s) {
-              const o = ctx.{{call}}();
+              const o = ctx.{{call}}({{args}});
               for (let i = 0; i < img.data.length; i++) img.data[i] = o ? o.data[i] : 7;
             } });
             """, test),
     };
 
-    /// <summary><c>ctx.CALL()</c> 그림이 불투명한 자리를 표시 색으로 칠하는 효과(여백 없음).</summary>
-    private static ScriptEffect Marker(string call, [CallerMemberName] string test = "") => new()
+    /// <summary><c>ctx.CALL(ARGS)</c> 그림이 불투명한 자리를 표시 색으로 칠하는 효과(여백 없음).</summary>
+    private static ScriptEffect Marker(string call, string args = "", [CallerMemberName] string test = "") => new()
     {
         ScriptHash = Trusted($$"""
             effect({ name: "mark {{call}}", render(img, ctx, s) {
-              const o = ctx.{{call}}();
+              const o = ctx.{{call}}({{args}});
               if (!o) return;
               for (let i = 0; i < img.data.length; i += 4)
                 if (o.data[i + 3] > 0) { img.data[i] = 255; img.data[i + 1] = 0; img.data[i + 2] = 255; img.data[i + 3] = 255; }
@@ -293,8 +293,8 @@ public class ScriptLayerContextTests
     {
         var program = ScriptLibrary.Runnable(Trusted("""
             effect({ name: "alone", render(img, ctx, s) {
-              img.data[0] = ctx.layerBelow() === null && ctx.layerAbove() === null ? 1 : 2;
-              img.data[1] = ctx.layerBelowWithEffects() === null && ctx.layerAboveWithEffects() === null ? 1 : 2;
+              img.data[0] = ctx.layerBelow() === null && ctx.layerAbove() === null && ctx.layerByName("a") === null ? 1 : 2;
+              img.data[1] = ctx.layerBelowWithEffects() === null && ctx.layerAboveWithEffects() === null && ctx.layerByNameWithEffects("a") === null ? 1 : 2;
               img.data[2] = ctx.layerEffectsByName("a").length + ctx.layerEffectsAt(-1).length;
               img.data[3] = ctx.slice === null ? 1 : 2;
               img.data[4] = ctx.center.x * 10; img.data[5] = ctx.center.y * 10; img.data[6] = 0; img.data[7] = 0;
@@ -324,7 +324,9 @@ public class ScriptLayerContextTests
         Assert.Equal(new Color32(25, 20, 0, 255), fast[0, 0]);
 
         foreach (var (name, body) in new[] { ("ctx.slice", "img.data[0] = ctx.slice ? 1 : 0;"), ("ctx.layerBelow", "img.data[0] = ctx.layerBelow() ? 1 : 0;"),
-                     ("ctx.layerEffectsAt", "img.data[0] = ctx.layerEffectsAt(1).length;") })
+                     ("ctx.layerEffectsAt", "img.data[0] = ctx.layerEffectsAt(1).length;"),
+                     ("ctx.layerByName", "img.data[0] = ctx.layerByName(\"a\") ? 1 : 0;"),
+                     ("ctx.layerByNameWithEffects", "img.data[0] = ctx.layerByNameWithEffects(\"a\") ? 1 : 0;") })
         {
             var program = ScriptLibrary.Runnable(Trusted($$"""effect({ name: "x", render(img, ctx, s) { {{body}} } });"""))!;
             Assert.False(program.ExecutionPath.Compiled);
@@ -379,5 +381,160 @@ public class ScriptLayerContextTests
         var after = p.Flatten(0);
         Assert.Equal(Mark, after[5, 3]);
         Assert.Equal(0, after[2, 2].A);
+    }
+
+    [Fact]
+    public void By_name_reads_the_nearest_other_layer_with_that_name_aligned_like_layer_below()
+    {
+        var p = new SpriteProject(W, H);
+        var reader = p.AddLayer(name: "reader");
+        p.AddLayer(name: "x2");
+        p.AddLayer(name: "x3");
+        var green = new Color32(0, 255, 0);
+        p.SetLayerProperties(0, name: "ground");
+        p.SetLayerProperties(2, name: "ground"); // 읽는 레이어(1)에서 0과 2가 같은 거리 — 아래쪽(0)
+        p.SetLayerProperties(3, name: "ground");
+        p.SetCel(0, 0, Dot(W, H, 1, 1, Red));
+        p.SetCel(1, 0, new PixelImage(W, H));
+        p.SetCel(2, 0, Dot(W, H, 5, 2, Blue));
+        p.SetCel(3, 0, Dot(W, H, 6, 4, green));
+        // 찾은 레이어 효과는 원본 읽기에 들어가지 않는다
+        p.SetLayerEffects(0, [new ColorOverlayEffect { Color = Blue, Amount = 100 }]);
+
+        var copier = Copier("layerByName", "\"ground\"");
+        Assert.True(ScriptLibrary.InfoOf(copier.ScriptHash) is { ReadsOtherLayers: true, ReadsNamedLayers: true });
+        p.SetLayerEffects(1, [copier]);
+        var image = Rendered(p, reader);
+        Assert.Equal((W + 2 * Pad, H + 2 * Pad), (image.Width, image.Height));
+        Assert.True(Aligned(Dot(W, H, 1, 1, Red), image.Width, image.Height, new Point(Pad, Pad)).ContentEquals(image));
+
+        // 가장 가까운 것이 이름을 바꾸면 다음으로 가까운 것, 숨겨도 센다
+        p.SetLayerProperties(0, name: "base");
+        p.SetLayerProperties(2, visible: false);
+        Assert.True(Aligned(Dot(W, H, 5, 2, Blue), image.Width, image.Height, new Point(Pad, Pad)).ContentEquals(Rendered(p, reader)));
+
+        // 없는 이름은 null
+        p.SetLayerEffects(1, [Copier("layerByName", "\"nobody\"")]);
+        Assert.All(Rendered(p, reader).Pixels, c => Assert.Equal(new Color32(7, 7, 7, 7), c));
+
+        // 자기 레이어는 찾지 않는다: 같은 이름의 다른 레이어가 생겨야 그것을 준다
+        p.SetLayerEffects(1, [Copier("layerByName", "\"reader\"")]);
+        Assert.All(Rendered(p, reader).Pixels, c => Assert.Equal(new Color32(7, 7, 7, 7), c));
+        p.SetLayerProperties(3, name: "reader");
+        var same = Rendered(p, reader);
+        Assert.Equal(green, same[Pad + 6, Pad + 4]);
+        Assert.Equal(1, same.Pixels.Count(c => c.A != 0));
+    }
+
+    [Fact]
+    public void By_name_finds_groups_and_parts_but_not_the_group_holding_the_reader()
+    {
+        var p = new SpriteProject(W, H);
+        var group = p.AddGroup("g");
+        var lower = p.AddPart(group, "lower", 3, 3, new Point(1, 1));
+        var upper = p.AddPart(group, "upper", 3, 3, new Point(4, 2));
+        p.SetCel(p.IndexOf(lower), 0, Dot(3, 3, 2, 0, Red)); // 캔버스 (3, 1)
+        p.SetCel(p.IndexOf(upper), 0, Dot(3, 3, 0, 0, Blue)); // 캔버스 (4, 2)
+        var reader = p.AddLayer(name: "reader");
+        p.SetCel(p.IndexOf(reader), 0, new PixelImage(W, H));
+
+        // 최상위 레이어가 그룹을 이름으로: 보이는 부위를 합친 효과 없는 그림
+        p.SetLayerEffects(p.IndexOf(reader), [Copier("layerByName", "\"g\"")]);
+        var image = Rendered(p, reader);
+        Assert.Equal(Red, image[Pad + 3, Pad + 1]);
+        Assert.Equal(Blue, image[Pad + 4, Pad + 2]);
+        Assert.Equal(2, image.Pixels.Count(c => c.A != 0));
+
+        // 부위가 다른 부위를 이름으로: 부위 자리를 거쳐 맞춘다(upper 원본 왼쪽 위 = 캔버스 (4, 2) = 그림 (2, 2))
+        p.SetLayerEffects(p.IndexOf(upper), [Copier("layerByName", "\"lower\"")]);
+        var part = Rendered(p, upper);
+        Assert.Equal(Red, part[1, 1]);
+        Assert.Equal(1, part.Pixels.Count(c => c.A != 0));
+
+        // 자기를 담은 그룹은 찾지 않는다(그 그림에 자기가 들어 있음)
+        p.SetLayerEffects(p.IndexOf(upper), [Copier("layerByName", "\"g\"")]);
+        Assert.All(Rendered(p, upper).Pixels, c => Assert.Equal(new Color32(7, 7, 7, 7), c));
+        Assert.NotNull(p.Flatten(0));
+    }
+
+    [Fact]
+    public void By_name_with_effects_renders_the_layer_effects_and_follows_the_no_recursion_rule()
+    {
+        var p = new SpriteProject(W, H);
+        var ground = p.Layers[0];
+        p.AddLayer(name: "middle");
+        var reader = p.AddLayer(name: "reader");
+        p.SetLayerProperties(0, name: "ground");
+        p.SetCel(0, 0, Dot(W, H, 1, 1, Red));
+        p.SetCel(2, 0, new PixelImage(W, H));
+        var outline = new OutlineEffect { Color = new Color32(10, 20, 30) };
+        p.SetLayerEffects(0, [outline]);
+        p.SetLayerEffects(2, [Copier("layerByNameWithEffects", "\"ground\"")]);
+
+        var image = Rendered(p, reader);
+        var (fx, dx, dy) = LayerEffects.Render(p.GetCel(ground, p.Frames[0])!, p.EffectsAt(ground, 0));
+        var expected = new PixelImage(image.Width, image.Height);
+        expected.Composite(fx, Pad + dx, Pad + dy);
+        Assert.True(expected.ContentEquals(image));
+        Assert.Equal(outline.Color, image[Pad + 0, Pad + 1]); // 셀 밖으로 번진 외곽선도 같은 자리에
+
+        // 서로를 이름으로 효과까지 읽는 두 레이어(사이에 다른 레이어): 상대의 읽는 효과는 건너뛴다
+        var q = new SpriteProject(W, H);
+        var a = q.Layers[0];
+        q.AddLayer(name: "between");
+        var b = q.AddLayer(name: "b");
+        q.SetLayerProperties(0, name: "a");
+        q.SetCel(0, 0, Dot(W, H, 1, 1, Red));
+        q.SetCel(2, 0, Dot(W, H, 6, 4, Blue));
+        q.SetLayerEffects(0, [new ColorOverlayEffect { Color = new Color32(0, 200, 0), Amount = 100 }, Marker("layerByNameWithEffects", "\"b\"")]);
+        q.SetLayerEffects(2, [Marker("layerByNameWithEffects", "\"a\"")]);
+
+        var seenByB = Rendered(q, b);
+        Assert.Equal(Mark, seenByB[1, 1]);
+        Assert.Equal(Blue, seenByB[6, 4]);
+        Assert.Equal(2, seenByB.Pixels.Count(c => c.A != 0));
+        var seenByA = Rendered(q, a);
+        Assert.Equal(Mark, seenByA[6, 4]);
+        Assert.NotEqual(Mark, seenByA[1, 1]);
+        Assert.Equal(2, seenByA.Pixels.Count(c => c.A != 0));
+        var first = q.Flatten(0);
+        Assert.True(first.ContentEquals(q.Flatten(0)));
+        Assert.Equal(Mark, first[1, 1]);
+    }
+
+    [Fact]
+    public void Render_cache_does_not_serve_stale_results_when_the_named_layer_cel_or_effects_change()
+    {
+        var p = new SpriteProject(W, H);
+        var ground = p.Layers[0];
+        p.AddLayer(name: "middle"); // 바로 아래가 아닌 레이어를 이름으로 읽는다
+        var reader = p.AddLayer(name: "reader");
+        p.SetLayerProperties(0, name: "ground");
+        p.SetCel(0, 0, Dot(W, H, 1, 1, Red));
+        p.SetCel(2, 0, Dot(W, H, 6, 4, Blue));
+        // 읽는 효과 뒤에 효과가 하나 더 있어야 중간 결과(효과 1까지)가 캐시에 담긴다
+        p.SetLayerEffects(2, [Marker("layerByNameWithEffects", "\"ground\""), new OutlineEffect { Color = new Color32(1, 2, 3) }]);
+        var cache = new EffectRenderCache(64L << 20);
+        PixelImage Cached() => p.PlanFrame(0).Render(new RenderPlanOptions { Cache = cache, CheckpointLayer = reader });
+
+        var before = Cached();
+        Assert.True(before.ContentEquals(Cached()));
+        Assert.True(cache.Bytes > 0);
+        Assert.Equal(Mark, before[1, 1]);
+
+        // 이름으로 읽는 레이어의 효과만 바뀜(앱은 이때 효과 결과 캐시를 비우지 않는다)
+        p.SetLayerEffects(0, [new OutlineEffect { Color = new Color32(9, 9, 9) }]);
+        var afterEffects = Cached();
+        Assert.False(before.ContentEquals(afterEffects));
+        Assert.True(p.Flatten(0).ContentEquals(afterEffects));
+        Assert.Equal(Mark, afterEffects[0, 1]);
+
+        // 이름으로 읽는 레이어의 셀이 새 그림으로 바뀜
+        p.SetCel(0, 0, Dot(W, H, 3, 3, Red));
+        var afterCel = Cached();
+        Assert.False(afterEffects.ContentEquals(afterCel));
+        Assert.True(p.Flatten(0).ContentEquals(afterCel));
+        Assert.Equal(Mark, afterCel[3, 3]);
+        Assert.Same(ground, p.Layers[0]);
     }
 }

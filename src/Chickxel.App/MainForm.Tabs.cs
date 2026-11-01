@@ -150,6 +150,31 @@ public sealed partial class MainForm
         else OpenInNewTab(doc);
     }
 
+    /// <summary>
+    /// 메모리 속 프로젝트를 저장하지 않는 문서(<see cref="OpenDocument.IsDetached"/> — 효과 만들기의 미리보기 장면)로 새 탭에 열고 메인 창을 앞으로.
+    /// 탭 제목은 <paramref name="title"/>, 탭이 닫히면(문서를 놓을 때) <paramref name="closed"/>를 부른다. 닫을 때 저장을 묻지 않는다.
+    /// </summary>
+    internal void OpenDetachedDocument(SpriteProject project, string title, Action closed)
+    {
+        OpenInNewTab(new OpenDocument(project, null) { DetachedTitle = title, Closed = closed });
+        Activate();
+    }
+
+    /// <summary><paramref name="project"/>를 연 탭이 있으면 고르고 메인 창을 앞으로 가져온다. 탭이 없으면 false.</summary>
+    internal bool ShowDetachedDocument(SpriteProject project)
+    {
+        if (_tabs.All.FirstOrDefault(t => ReferenceEquals(t.Doc.Project, project)) is not { } tab) return false;
+        ActivateTab(tab);
+        Activate();
+        return true;
+    }
+
+    /// <summary><paramref name="project"/>를 연 저장하지 않는 문서의 탭을 닫는다(묻지 않음, 탭이 없으면 아무것도 안 함).</summary>
+    internal void CloseDetachedDocument(SpriteProject project)
+    {
+        if (_tabs.All.FirstOrDefault(t => t.Doc.IsDetached && ReferenceEquals(t.Doc.Project, project)) is { } tab) CloseTab(tab);
+    }
+
     private void ActivateTab(DocumentTab tab)
     {
         if (!_tabs.Activate(tab)) return;
@@ -295,9 +320,11 @@ public sealed partial class MainForm
     private static DocumentTabInfo TabInfo(DocumentTab tab)
     {
         var doc = tab.Doc;
-        bool dirty = doc.Project.IsDirty;
+        // 저장하지 않는 문서(미리보기 장면)는 주인이 정한 제목, 수정됨 점 없음
+        bool dirty = doc.Project.IsDirty && !doc.IsDetached;
         var path = doc.DiskPath;
-        var title = path is null ? MainStrings.Ui_286 : Path.GetFileName(path);
+        // 저장한 적 없는 새 프로젝트는 임시 제목(없으면 "새 프로젝트" — SpriteProject.DisplayName)
+        var title = doc.DetachedTitle ?? (path is null ? doc.Project.DisplayName : Path.GetFileName(path));
         var tip = path ?? title;
         if (dirty) tip += "\n" + MainStrings.Tabs_UnsavedTip;
         return new DocumentTabInfo(title, tip, dirty);
@@ -319,6 +346,8 @@ public sealed partial class MainForm
     {
         var old = doc.Project;
         old.DirtyChanged -= OnDocumentDirtyChanged;
+        // 저장한 적 없는 문서를 새 인스턴스로 바꿔도(프레임 나누기 등) 임시 제목은 그대로
+        if (project.Path is null && old.Path is null) project.TempTitle ??= old.TempTitle;
         doc.Project = project;
         project.DirtyChanged += OnDocumentDirtyChanged;
         if (ReferenceEquals(_ctx.Project, old))
@@ -362,7 +391,7 @@ public sealed partial class MainForm
         if (_tabs.GroupOf(tab) < 0) return false;
         var doc = tab.Doc;
         if (ReferenceEquals(tab, _activeTab)) _ctx.CommitFloating();
-        if (doc.Project.IsDirty && !ConfirmCloseDocument(doc)) return false;
+        if (doc.Project.IsDirty && !doc.IsDetached && !ConfirmCloseDocument(doc)) return false;
         if (ReferenceEquals(tab, _activeTab)) _activeTab = null;
         _tabs.Remove(tab);
         ForgetDocument(doc);
@@ -422,11 +451,12 @@ public sealed partial class MainForm
         }
     }
 
-    /// <summary>마지막 탭을 닫은 문서: 저장한 그대로면 실행취소 기록을 남기고 수정됨 알림을 끊는다.</summary>
+    /// <summary>마지막 탭을 닫은 문서: 저장한 그대로면 실행취소 기록을 남기고 수정됨 알림을 끊고, 문서 주인(<see cref="OpenDocument.Closed"/>)에게 알린다.</summary>
     private void ForgetDocument(OpenDocument doc)
     {
         doc.Project.DirtyChanged -= OnDocumentDirtyChanged;
         _history.Leaving(doc.Project);
+        doc.Closed?.Invoke();
     }
 
     // ───────────── 나누기 ─────────────
@@ -446,7 +476,7 @@ public sealed partial class MainForm
     /// <summary>탭을 다른 쪽으로 옮길 수 있는지: 그 묶음에 다른 탭도 있어야 한다.</summary>
     private bool CanMoveTab(DocumentTab tab) => _tabs.GroupOf(tab) is var g and >= 0 && _tabs.Tabs(g).Count > 1;
 
-    /// <summary>탭 우클릭 메뉴: 닫기·다른 탭 닫기·다른 쪽으로 옮기기.</summary>
+    /// <summary>탭 우클릭 메뉴: (저장한 적 없는 새 프로젝트면) 임시 제목·닫기·다른 탭 닫기·다른 쪽으로 옮기기.</summary>
     private IEnumerable<object> TabMenu(DocumentTab tab)
     {
         int g = _tabs.GroupOf(tab);
@@ -455,7 +485,25 @@ public sealed partial class MainForm
         others.IsEnabled = g >= 0 && _tabs.Tabs(g).Count > 1;
         var moveItem = MenuAction(MainStrings.Tabs_MoveToOther, () => MoveTabToOtherPane(tab), VectorIcon.Columns2);
         moveItem.IsEnabled = CanMoveTab(tab);
-        return [close, others, new Separator(), moveItem];
+        if (!tab.Doc.CanHaveTempTitle) return [close, others, new Separator(), moveItem];
+        var titleItem = MenuAction(MainStrings.Tabs_TempTitle, () => EditTempTitle(tab.Doc), VectorIcon.Pencil);
+        return [titleItem, new Separator(), close, others, new Separator(), moveItem];
+    }
+
+    /// <summary>
+    /// 탭 메뉴 "임시 제목…": 저장한 적 없는 새 프로젝트의 임시 제목을 묻는다(비우면 지워 "새 프로젝트"로).
+    /// 임시 제목은 탭·창 제목에 보이고 처음 저장할 때 제안하는 파일 이름이 된다.
+    /// </summary>
+    private void EditTempTitle(OpenDocument doc)
+    {
+        if (!doc.CanHaveTempTitle || TabOf(doc) is null) return;
+        var dlg = new InputDialog(MainStrings.Tabs_TempTitle_DialogTitle, MainStrings.Tabs_TempTitle_Prompt, doc.Project.TempTitle ?? "");
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        // 묻는 동안 탭이 닫혔거나 문서에 파일이 생겼으면 그대로 둔다
+        if (!doc.CanHaveTempTitle || TabOf(doc) is null) return;
+        doc.Project.TempTitle = dlg.Value;
+        // 지금 문서면 프로젝트 변경 알림이 탭·창 제목을 맞추지만, 다른 탭의 문서는 여기서
+        RefreshPanes();
     }
 
     private static MenuItem MenuAction(string text, Action action, VectorIcon? icon = null)

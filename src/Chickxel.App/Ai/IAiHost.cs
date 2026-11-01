@@ -18,8 +18,15 @@ public interface IAiHost
     /// <summary>
     /// 새 프로젝트를 새 탭으로 만든다(열린 문서는 다른 탭에 그대로 남는다).
     /// <paramref name="fileName"/>이 있으면 <see cref="CurrentFolder"/>에 저장한다(같은 이름 파일이 있으면 실패).
+    /// 없으면 저장하지 않은 새 프로젝트로 두고 <paramref name="title"/>을 임시 제목(<see cref="SpriteProject.TempTitle"/>)으로 정한다.
     /// </summary>
-    bool CreateProject(int width, int height, string? fileName, Color32? background, out string message);
+    bool CreateProject(int width, int height, string? fileName, string? title, Color32? background, out string message);
+
+    /// <summary>
+    /// 지금 문서의 임시 제목을 바꾼다(빈 값이면 지운다). 저장한 적 없는 새 프로젝트만 — 파일이 있는(저장했거나 파일에서 연) 문서와
+    /// 저장하지 않는 문서(효과 만들기 미리보기 장면)는 실패.
+    /// </summary>
+    bool SetDocumentTitle(string? title, out string message);
 
     /// <summary>열린 프로젝트를 지금 경로에 저장(+설정대로 시트 내보내기). 경로가 없으면 실패.</summary>
     bool SaveProject(out string message);

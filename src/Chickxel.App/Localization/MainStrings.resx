@@ -579,9 +579,6 @@
   <data name="Ui_284" xml:space="preserve">
     <value>저장한 내용으로 되돌리기</value>
   </data>
-  <data name="Ui_286" xml:space="preserve">
-    <value>새 프로젝트</value>
-  </data>
   <data name="Ui_287" xml:space="preserve">
     <value>저장 위치를 고릅니다</value>
   </data>
@@ -1086,6 +1083,14 @@
   <data name="Tabs_Reloaded" xml:space="preserve"><value>밖에서 바뀐 파일을 다시 읽었습니다: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>지난번 탭 {count}개를 다시 열었습니다</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · 열 수 없는 파일 {count}개는 건너뜀</value></data>
+  <data name="Tabs_TempTitle" xml:space="preserve"><value>임시 제목…</value></data>
+  <data name="Tabs_TempTitle_DialogTitle" xml:space="preserve"><value>임시 제목</value></data>
+  <data name="Tabs_TempTitle_Prompt" xml:space="preserve"><value>저장하기 전까지 탭에 보일 이름입니다. 처음 저장할 때 파일 이름으로 제안합니다(비우면 지움).</value></data>
+  <data name="Ai_TempTitle_Set" xml:space="preserve"><value>임시 제목을 "{title}"(으)로 정했습니다(처음 저장할 때 파일 이름으로 제안).</value><comment>title = 정한 임시 제목.</comment></data>
+  <data name="Ai_TempTitle_Cleared" xml:space="preserve"><value>임시 제목을 지웠습니다.</value></data>
+  <data name="Ai_TempTitle_HasFile" xml:space="preserve"><value>"{name}"은(는) 이미 파일이 있는 문서라 임시 제목을 붙일 수 없습니다(이름은 파일 이름).</value><comment>name = 문서 이름(파일 이름).</comment></data>
+  <data name="Ai_TempTitle_Detached" xml:space="preserve"><value>효과 만들기 미리보기 장면에는 임시 제목을 붙일 수 없습니다.</value></data>
+  <data name="Ai_NewProjectTitled" xml:space="preserve"><value>새 프로젝트 "{title}" {width}×{height} — 아직 저장 위치 없음</value><comment>title = 임시 제목; width·height = 캔버스 크기.</comment></data>
   <data name="Place_TransformHint" xml:space="preserve"><value> — 변형 모드: 안쪽 끌기 = 옮기기, 손잡이 = 크기, 바깥 = 회전, Enter = 적용(그때 캔버스 밖이 잘림), Esc = 넣은 그대로</value></data>
   <data name="Place_MultiFrameHint" xml:space="preserve"><value> — 여러 프레임 그림이라 변형 모드 없이 넣었습니다(프레임마다 Ctrl+T로 옮길 수 있음)</value></data>
   <data name="Open_FilterSupported" xml:space="preserve"><value>열 수 있는 모든 파일</value></data>

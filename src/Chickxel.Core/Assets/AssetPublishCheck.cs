@@ -31,6 +31,10 @@ public enum PublishIssueCode
     VersionNotNewer,
     /// <summary>효과 레시피(기본 효과를 합친 것)임. 지금은 효과로 스크립트 효과만 올린다(서버도 받지 않음).</summary>
     RecipeNotPublishable,
+    /// <summary>다른 레이어를 읽는 스크립트(<see cref="ScriptAsset.ReadsOtherLayers"/>)인데 태그에 <see cref="ScriptAsset.LayerReferenceTag"/>가 없음.</summary>
+    LayerReferenceTag,
+    /// <summary>다른 레이어를 읽는 스크립트인데 <see cref="ScriptAsset.LayerReferenceTag"/>를 더하면 태그가 <see cref="RemoteCatalogFormat.MaxTags"/>개를 넘음(태그를 하나 빼야 함).</summary>
+    LayerReferenceTagFull,
 }
 
 /// <summary>
@@ -293,6 +297,9 @@ public static class AssetPublishCheck
         if (!AssetTranslations.IsValid(request.Translations)) Error(PublishIssueCode.Translations);
         if (!IsValidTags(request.Tags)) Error(PublishIssueCode.Tags);
         if (request.Tags.Count == 0) Warn(PublishIssueCode.NoTags);
+        // 다른 레이어를 읽는 효과는 layer-reference 태그가 꼭 있어야 한다(상점에서 이런 효과를 따로 찾게)
+        if (request.Asset.Data is ScriptAsset { ReadsOtherLayers: true } && !request.Tags.Contains(ScriptAsset.LayerReferenceTag))
+            Error(request.Tags.Count >= RemoteCatalogFormat.MaxTags ? PublishIssueCode.LayerReferenceTagFull : PublishIssueCode.LayerReferenceTag);
         if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null);
 
         var translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase);

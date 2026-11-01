@@ -66,7 +66,8 @@ public sealed partial class PixelTools
             });
         yield return Tool("get_effect_maker_source",
             "Read the script open in the Effect Maker window: its full source, unsaved flag, parse errors (line and column), the declared name, language, description, tags, previewChick, previewFrames and animated, " +
-            "the execution path (fast path, or Jint with the reason and line) and the preview setting values. Fails if the Effect Maker is closed or has no script open.",
+            "the execution path (fast path, or Jint with the reason and line), the preview setting values and the preview scene: the layers drawn around the preview chick (names bottom to top and which layers the chick sits between), " +
+            "which ctx.layerBelow/layerAbove/layerByName and the other layer functions read in the preview, Check and the upload preview. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("set_effect_maker_source",
             "Replace the source in the Effect Maker editor with a complete JavaScript file (one undo step in the editor; the user's document is not changed). " +
@@ -190,7 +191,27 @@ public sealed partial class PixelTools
         var values = new JsonObject();
         foreach (var (key, value) in maker.PreviewValues(program)) values[key] = SettingJson(value);
         o["preview_settings"] = values;
+        if (maker.Scene is { } scene) o["preview_scene"] = SceneJson(scene);
+        else if (ScriptLibrary.InfoOf(ScriptLibrary.Add(maker.Source)) is { ReadsOtherLayers: true })
+            o["preview_scene"] = "none: the preview chick is drawn alone, so the layer functions return null in the preview. The user can add a scene with \"Edit in main editor\" in the Effect Maker.";
         return TextResult(o.ToJsonString(JsonOptions));
+    }
+
+    /// <summary>미리보기 장면(모델이 읽음 — 영어): 크기·프레임 수, 레이어 이름(아래에서 위로, 병아리 자리 표시)과 병아리 위아래 레이어.</summary>
+    private static JsonObject SceneJson(PreviewScene scene)
+    {
+        const string Chick = "<chick: the layer this effect is on>";
+        var o = new JsonObject
+        {
+            ["width"] = scene.Width,
+            ["height"] = scene.Height,
+            ["frames"] = scene.FrameCount,
+            ["layers_bottom_to_top"] = new JsonArray([.. EffectMakerWindow.SceneLayerNames(scene, Chick).Select(n => (JsonNode?)n)]),
+        };
+        string below = scene.ChickIndex > 0 ? $"\"{scene.Layers[scene.ChickIndex - 1].Name}\"" : "nothing";
+        string above = scene.ChickIndex < scene.Layers.Count ? $"\"{scene.Layers[scene.ChickIndex].Name}\"" : "nothing";
+        o["chick_position"] = $"The chick layer sits above {below} and below {above}; ctx.layerByName(name) reads a scene layer by its exact name.";
+        return o;
     }
 
     private static JsonObject SetEffectMakerSource(JsonObject? a)
@@ -203,10 +224,12 @@ public sealed partial class PixelTools
             return TextResult(UiStrings.Ai_Maker_SetErrors + "\n" + string.Join("\n", parsed.Errors.Select(ErrorLine)), isError: true);
         var program = parsed.Program;
         if (maker.PreviewEffects() is not [ScriptEffect effect]) throw new ToolError(UiStrings.Ai_Maker_SetErrors);
+        // 미리보기 장면이 있으면 장면 위에서(다른 레이어 함수가 장면 레이어를 읽음)
+        var scene = maker.Scene;
         string text = UiStrings.FormatAi_Maker_Set(name: program.Name) + "\n" + PathText(program.ExecutionPath);
-        if (RunError(program, effect, program.PreviewChick) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
+        if (RunError(program, effect, program.PreviewChick, scene) is { } error) text += "\n" + UiStrings.FormatAi_Script_RunError(error: ErrorLine(error));
         text += GradientHintText(ScriptGradientCheck.Static(program).Select(h => h.Message));
-        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames), text);
+        return ImageResult(PreviewStrip([effect], PreviewChicks.Load(program.PreviewChick), program.PreviewFrames, scene), text);
     }
 
     /// <summary>그라데이션 안내 줄들(머리 줄 + 안내마다 한 줄, 앞에 줄바꿈). 없으면 빈 글.</summary>
@@ -375,7 +398,7 @@ public sealed partial class PixelTools
         AssetEntry saved;
         try
         {
-            saved = AppAssets.Store.SavePersonalScript(source);
+            saved = AppAssets.Store.SavePersonalScript(source, null, null);
         }
         catch (Exception e) when (e is AssetPackageException or InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
@@ -392,14 +415,16 @@ public sealed partial class PixelTools
 
     /// <summary>
     /// 효과를 병아리에 입힌 칸들(<paramref name="steps"/>칸 — 스크립트는 선언의 <c>previewFrames</c>, 그 밖은 <see cref="AssetPreview.PackageFrames"/> — 중
-    /// 고르게 몇 칸)을 2px 사이를 두고 가로로 이어 키운 PNG(base64).
+    /// 고르게 몇 칸)을 2px 사이를 두고 가로로 이어 키운 PNG(base64). <paramref name="scene"/>이 있으면 장면 위에서 그린 칸(<see cref="PreviewSceneRender"/>).
     /// </summary>
-    private static string PreviewStrip(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps = AssetPreview.PackageFrames)
+    private static string PreviewStrip(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps = AssetPreview.PackageFrames, PreviewScene? scene = null)
     {
         bool animated = effects.Any(e => e is AnimatedEffect || e.ColorGradients.Values.Any(g => g.Animated));
         int count = animated ? Math.Min(PreviewStripFrames, steps) : 1;
+        var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, steps);
         var frames = Enumerable.Range(0, count)
-            .Select(i => AssetPreview.Render(effects, chick, count == 1 ? 0 : (int)Math.Round(i * (steps - 1) / (double)(count - 1)), steps))
+            .Select(i => count == 1 ? 0 : (int)Math.Round(i * (steps - 1) / (double)(count - 1)))
+            .Select(step => render?.Render(step) ?? AssetPreview.Render(effects, chick, step, steps))
             .ToList();
         return Enlarge(SideBySide(frames), null).Base64;
     }
@@ -433,11 +458,16 @@ public sealed partial class PixelTools
         return strip;
     }
 
-    /// <summary>병아리에 진행 0.5로(미리보기 칸 수의 가운데 칸) 직접 한 번 돌려 본 실행 오류(없으면 null).</summary>
-    private static ScriptError? RunError(ScriptEffectProgram program, ScriptEffect effect, string chickId)
+    /// <summary>
+    /// 병아리에 진행 0.5로(미리보기 칸 수의 가운데 칸) 직접 한 번 돌려 본 실행 오류(없으면 null). <paramref name="scene"/>이 있으면 장면 위의 병아리 레이어에서
+    /// (같은 img·ctx — 다른 레이어 함수가 장면 레이어를 읽음).
+    /// </summary>
+    private static ScriptError? RunError(ScriptEffectProgram program, ScriptEffect effect, string chickId, PreviewScene? scene = null)
     {
         var image = PreviewChicks.Load(chickId);
         int span = program.PreviewFrames - 1, step = span / 2;
+        if (scene is not null)
+            return EffectMakerWindow.ProbeError(new PreviewSceneRender(scene, [effect], image, program.PreviewFrames).Probe(program, effect.Settings, step, default));
         try
         {
             program.Render(image, new Rectangle(0, 0, image.Width, image.Height),

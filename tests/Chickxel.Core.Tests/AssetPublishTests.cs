@@ -18,7 +18,7 @@ public class AssetPublishTests
     private static AssetStore PersonalStore(TempDir dir)
     {
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        store.SavePersonalScript(NeonHit);
+        store.SavePersonalScript(NeonHit, null, null);
         store.SavePersonalGradient(null, AssetSamples.Gradient());
         return store;
     }
@@ -118,6 +118,33 @@ public class AssetPublishTests
         using var dir = new TempDir();
         var result = Check(Request(PersonalStore(dir)) with { Author = new AssetAuthor("chickxel", "Chickxel"), Id = "chickxel.neon" });
         Assert.True(result.Ok, string.Join("\n", result.Issues));
+    }
+
+    [Fact]
+    public void LayerReadingScript_MustCarryTheLayerReferenceTag()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
+        var saved = store.SavePersonalScript(
+            "effect({ name: \"Ground Glow\", tags: [\"glow\"], render(img, ctx) { const g = ctx.layerBelow(); if (g) img.data[0] = g.data[0]; } });", null, null);
+        // 저장한 에셋의 태그(게시 창의 처음 값)에는 강제 태그가 붙어 있다
+        Assert.Equal(["glow", ScriptAsset.LayerReferenceTag], saved.Script!.Tags);
+        var request = Request(store) with { Id = "pixel-cat.ground-glow", Name = "Ground Glow", Translations = AssetTranslations.Empty, Asset = Asset(saved) };
+        PublishIssueCode? Code(IReadOnlyList<string> tags)
+            => Check(request with { Tags = tags }).Issues.FirstOrDefault(i => i.Code is PublishIssueCode.LayerReferenceTag or PublishIssueCode.LayerReferenceTagFull)?.Code;
+
+        Assert.Equal(PublishIssueCode.LayerReferenceTag, Code(["glow"]));
+        Assert.Equal(PublishIssueCode.LayerReferenceTag, Code([]));
+        // 이미 8개면 더할 자리가 없다: 태그를 하나 빼라는 오류
+        Assert.Equal(PublishIssueCode.LayerReferenceTagFull, Code([.. Enumerable.Range(1, 8).Select(i => "t" + i)]));
+        Assert.Null(Code(["glow", ScriptAsset.LayerReferenceTag]));
+        var ok = Check(request with { Tags = saved.Script!.Tags });
+        Assert.True(ok.Ok, string.Join("\n", ok.Issues));
+
+        // 다른 레이어를 읽지 않는 스크립트는 그 태그가 없어도 된다
+        using var other = new TempDir();
+        Assert.DoesNotContain(Check(Request(PersonalStore(other)) with { Tags = ["neon"] }).Issues,
+            i => i.Code is PublishIssueCode.LayerReferenceTag or PublishIssueCode.LayerReferenceTagFull);
     }
 
     [Fact]
@@ -299,7 +326,7 @@ public class AssetPublishTests
         Assert.Equal("pixel-cat.old-name", copy.Package!.Id);
 
         // 원문을 고쳐 해시가 달라도 선언 이름이 같으면 그 패키지
-        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), ScriptEntry(store).Id);
+        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), ScriptEntry(store).Id, null);
         var edited = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
         Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackageCopy), (edited.Id, edited.Source));
 
@@ -372,7 +399,7 @@ public class AssetPublishTests
         Assert.Equal(first.Package, again.Package);
 
         // 내용을 바꾸고 같은 버전 → 거부, 낮은 버전 → 거부, 제안 버전 → 통과(게시 날짜는 처음 날짜를 이음).
-        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), store.Catalog.Personal.Single(e => e.Script is not null).Id);
+        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), store.Catalog.Personal.Single(e => e.Script is not null).Id, null);
         Assert.Contains(Check(Request(store, "1.2.0"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         Assert.Contains(Check(Request(store, "1.1.9"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         string next = AssetPublishCheck.SuggestVersion(AssetPublishCheck.LatestVersion("pixel-cat.neon", online, []));

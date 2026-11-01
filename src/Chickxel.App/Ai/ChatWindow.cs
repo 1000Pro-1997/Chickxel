@@ -742,7 +742,7 @@ public sealed partial class ChatWindow : Window
             ["get_script_api", "write_script_effect", "preview_effects", "save_script_effect", "list_script_effects", "get_script_effect_source",
              "get_effect_maker_source", "set_effect_maker_source", "check_effect_maker"]),
         (UiStrings.Chat_Help_GroupCanvas, UiStrings.Chat_Help_GroupCanvas_Text, ["resize_canvas", "set_palette", "set_colors"]),
-        (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "save_project", "open_file"]),
+        (UiStrings.Chat_Help_GroupFiles, UiStrings.Chat_Help_GroupFiles_Text, ["new_project", "set_document_title", "save_project", "open_file"]),
         (UiStrings.Chat_Help_GroupReferences, UiStrings.Chat_Help_GroupReferences_Text,
             ["search_references", "get_reference", "get_style_rules", "add_reference", "set_reference_info"]),
     ];

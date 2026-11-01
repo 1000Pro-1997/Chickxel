@@ -20,7 +20,7 @@ public static class ImageWriter
         {
             using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 Save(image, fs, format, jpegQuality, stage);
-            File.Move(temp, full, overwrite: true);
+            FileReplace.Commit(temp, full);
         }
         finally
         {

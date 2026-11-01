@@ -11,6 +11,7 @@ namespace Chickxel.Core.Assets;
 /// installed.json                 설치 상태(버전, 켜짐, 출처, 설치 시각, 자동 업데이트, 이전 버전)
 /// Packages/&lt;id&gt;/&lt;version&gt;/       설치한 패키지 원본(읽기 전용 — manifest.json, assets/, previews/, 문서)
 /// Personal/personal-assets.json  개인 에셋(효과 레시피·그라데이션)과 즐겨찾기
+/// Personal/scenes/&lt;id&gt;.png     개인 스크립트의 미리보기 장면(<see cref="PreviewScene.ToPng"/>)
 /// Deleted/&lt;id&gt;@&lt;시각&gt;/          삭제한 패키지 보관함(30일 뒤 지움, 되돌리기 가능)
 /// Staging/                       설치 중 임시 파일(열 때 비움)
 /// Cache/                         원격 카탈로그 cache(<see cref="RemoteAssetClient"/> — 목록, 미리보기, 내려받는 중인 파일)
@@ -58,6 +59,8 @@ public sealed class AssetStore
     public string CacheDirectory => Path.Combine(Root, "Cache");
     public string InstalledPath => Path.Combine(Root, InstalledFileName);
     public string PersonalPath => Path.Combine(PersonalDirectory, PersonalFileName);
+    /// <summary>개인 스크립트의 미리보기 장면 파일 폴더(<c>Personal/scenes/&lt;에셋 ID&gt;.png</c> — <see cref="PreviewScene.ToPng"/>).</summary>
+    public string ScenesDirectory => Path.Combine(PersonalDirectory, "scenes");
 
     /// <summary>개인 에셋 파일이 있는지(없으면 예전 프리셋 migration 전 — <see cref="AssetMigration"/>).</summary>
     public bool HasPersonalFile => File.Exists(PersonalPath);
@@ -215,6 +218,7 @@ public sealed class AssetStore
                     var context = new AssetReadContext(id, strict: false) { AssetId = id };
                     data = definition.ReadPersonal(json, context);
                     if (data is not null && data.Id != id) data = WithId(data, id);
+                    if (data is ScriptAsset script) data = WithPersonalScene(script, id);
                 }
                 records.Add(new PersonalRecord(id, kind, created, data, data is null ? (JsonObject)o.DeepClone() : null));
             }
@@ -425,6 +429,7 @@ public sealed class AssetStore
         string folder = VersionFolder(state.Id, state.Version);
         var limits = _options.EffectiveLimits;
         var issues = new List<AssetIssue>();
+        var warnings = new List<AssetIssue>();
         AssetManifest? manifest = null;
         var entries = new List<AssetEntry>();
         try
@@ -460,6 +465,7 @@ public sealed class AssetStore
                     }
                     var value = kind.Read(data, new AssetReadContext(entry.Path, strict: true, limits, issues) { AssetId = entry.Id });
                     if (value is null) continue;
+                    value = AssetPackageValidator.WithScene(value, ReadPackageScene(folder, manifest, entry.Path, limits, warnings), entry.Path, warnings);
                     string? preview = null;
                     if (entry.Preview is { } p && AssetPackageValidator.CheckPath(p, limits, []))
                     {
@@ -483,7 +489,22 @@ public sealed class AssetStore
             issues.Add(new AssetIssue(AssetIssueCode.MissingFile, null, ex.Message));
         }
         if (issues.Count > 0) entries.Clear();
-        return new InstalledPackage(state, folder, manifest, entries, issues);
+        return new InstalledPackage(state, folder, manifest, entries, issues) { Warnings = warnings };
+    }
+
+    /// <summary>
+    /// 설치 폴더의 미리보기 장면 파일(<see cref="AssetPackageBuilder.ScenePath"/>) 바이트. 없으면 null, manifest 해시와 다르거나 너무 크면 경고를 남기고 null.
+    /// </summary>
+    private static byte[]? ReadPackageScene(string folder, AssetManifest manifest, string assetPath, AssetPackageLimits limits, List<AssetIssue> warnings)
+    {
+        string path = AssetPackageBuilder.ScenePath(assetPath);
+        if (!manifest.Files.TryGetValue(path, out var hash)) return null;
+        string file = Path.Combine(folder, path.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(file)) return null;
+        byte[]? data = new FileInfo(file).Length <= limits.MaxPreviewBytes ? File.ReadAllBytes(file) : null;
+        if (data is not null && AssetPackageWriter.Hash(data) == hash) return data;
+        warnings.Add(new AssetIssue(AssetIssueCode.InvalidPreviewScene, path, data is null ? "size" : "sha256"));
+        return null;
     }
 
     // ───────────── 설치·업데이트 ─────────────
@@ -768,22 +789,65 @@ public sealed class AssetStore
 
     /// <summary>
     /// 스크립트 원문을 개인 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 설치와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
-    /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 개인 스크립트면 그 자리의 원문을 바꾸고(효과 만들기에서 고쳐 저장 —
-    /// 게시 기록이 에셋 ID로 이어짐), 아니면 같은 원문(해시)의 개인 스크립트가 있을 때 새로 더하지 않고 그 항목을 돌려준다.
-    /// 실행 허락은 앱이 정한다(이 컴퓨터에서 쓴 원문).
+    /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 개인 스크립트면 그 자리의 원문과 미리보기 장면을 바꾸고(효과 만들기에서 고쳐 저장 —
+    /// 게시 기록이 에셋 ID로 이어짐, <paramref name="scene"/>이 null이면 장면을 지움), 아니면 같은 원문(해시)의 개인 스크립트가 있을 때 새로 더하지 않고
+    /// 그 항목을 돌려준다 — <paramref name="scene"/>이 있고 그 항목의 장면과 다르면 그 항목의 장면만 바꾼다(null이면 그 항목의 장면을 그대로 둠).
+    /// 장면은 <see cref="ScenesDirectory"/>에 파일로 둔다. 실행 허락은 앱이 정한다(이 컴퓨터에서 쓴 원문).
     /// </summary>
-    public AssetEntry SavePersonalScript(string source, string? id = null)
+    public AssetEntry SavePersonalScript(string source, string? id, PreviewScene? scene)
     {
         var issues = new List<AssetIssue>();
         var context = new AssetReadContext(AssetKinds.EffectScript, strict: true, _options.EffectiveLimits, issues);
         if (ScriptAssetFormat.Check(source, "source", context) is not { } program) throw new AssetPackageException(issues);
-        if (id is not null && Catalog.Personal.Any(e => e.Id == id && e.Kind == AssetKinds.EffectScript))
-            return SavePersonalData(AssetKinds.EffectScript, ScriptAsset.From(id, program), favorite: null);
-        if (Catalog.Personal.FirstOrDefault(e => e.Data is ScriptAsset s && s.Hash == program.ContentHash) is { } existing) return existing;
-        return SavePersonalData(AssetKinds.EffectScript, ScriptAsset.From("", program), favorite: null);
+        var asset = ScriptAsset.From("", program) with { Scene = scene };
+        if (id is not null && Catalog.Personal.Any(e => e.Id == id && e.Kind == AssetKinds.EffectScript)) return SavePersonalScriptData(asset with { Id = id });
+        if (Catalog.Personal.FirstOrDefault(e => e.Data is ScriptAsset s && s.Hash == program.ContentHash) is { } existing)
+            return scene is null || SameScene(existing.Script!.Scene, scene) ? existing : SavePersonalScriptData(asset with { Id = existing.Id });
+        return SavePersonalScriptData(asset);
     }
 
-    private AssetEntry SavePersonalData(string kind, IAssetData data, bool? favorite)
+    // 장면 파일은 개인 에셋 파일보다 먼저 쓴다(다른 앱이 바뀐 개인 에셋 파일을 다시 읽을 때 새 장면을 보게)
+    private AssetEntry SavePersonalScriptData(ScriptAsset asset)
+        => SavePersonalData(AssetKinds.EffectScript, asset, favorite: null, id => WritePersonalScene(id, asset.Scene));
+
+    private static bool SameScene(PreviewScene? a, PreviewScene b) => a is not null && a.ToPng().AsSpan().SequenceEqual(b.ToPng());
+
+    /// <summary>개인 에셋 <paramref name="id"/>의 장면 파일 경로(파일 이름으로 쓸 수 없는 ID면 null — 앱이 만든 ID는 늘 쓸 수 있음).</summary>
+    private string? PersonalScenePath(string id)
+        => id is { Length: > 0 and <= 128 } && id[0] != '.' && id.All(c => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '.' or '-' or '_')
+            ? Path.Combine(ScenesDirectory, id + ".png")
+            : null;
+
+    private void WritePersonalScene(string id, PreviewScene? scene)
+    {
+        var path = PersonalScenePath(id);
+        if (scene is null)
+        {
+            if (path is not null && File.Exists(path)) File.Delete(path);
+            return;
+        }
+        if (path is null) throw new InvalidDataException(new AssetIssue(AssetIssueCode.InvalidField, null, "id").Message);
+        Directory.CreateDirectory(ScenesDirectory);
+        AtomicFile.Write(path, scene.ToPng());
+    }
+
+    /// <summary>개인 스크립트에 장면 파일을 붙인다(없으면 그대로). 읽지 못하면 장면 없이 두고 <see cref="LoadErrors"/>에 남긴다.</summary>
+    private ScriptAsset WithPersonalScene(ScriptAsset script, string id)
+    {
+        if (PersonalScenePath(id) is not { } path || !File.Exists(path)) return script;
+        try
+        {
+            return script with { Scene = PreviewScene.FromPng(File.ReadAllBytes(path)) };
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            _loadErrors.Add($"{path}: {ex.Message}");
+            return script;
+        }
+    }
+
+    /// <summary>개인 에셋을 저장한다. <paramref name="files"/>는 정한 ID로 딸린 파일(장면)을 개인 에셋 파일보다 먼저 쓴다.</summary>
+    private AssetEntry SavePersonalData(string kind, IAssetData data, bool? favorite, Action<string>? files = null)
     {
         using var change = BeginChange();
         if (PersonalError is { } error) throw new InvalidOperationException(error);
@@ -797,11 +861,12 @@ public sealed class AssetStore
         var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
         if (favorite == true) favorites.Add(id);
         else if (favorite == false) favorites.Remove(id);
+        files?.Invoke(id);
         SavePersonal(records, favorites);
         return Catalog.Find(id)!;
     }
 
-    /// <summary>개인 에셋을 지운다(설치 패키지와 무관).</summary>
+    /// <summary>개인 에셋을 지운다(설치 패키지와 무관). 딸린 장면 파일도 지운다.</summary>
     public void RemovePersonal(string id)
     {
         using var change = BeginChange();
@@ -811,6 +876,7 @@ public sealed class AssetStore
         var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
         favorites.Remove(id);
         SavePersonal(records, favorites);
+        if (PersonalScenePath(id) is { } scene) TryDeleteFile(scene);
     }
 
     /// <summary>개인·설치 에셋의 즐겨찾기를 켜거나 끈다(컴퓨터별 상태라 개인 에셋 파일에 둔다).</summary>
@@ -971,7 +1037,7 @@ internal static class AtomicFile
                 stream.Write(data);
                 stream.Flush(flushToDisk: true);
             }
-            File.Move(temporary, path, overwrite: true);
+            FileReplace.Commit(temporary, path);
         }
         finally
         {

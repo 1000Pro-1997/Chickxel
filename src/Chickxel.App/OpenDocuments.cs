@@ -26,8 +26,26 @@ internal sealed class OpenDocument(SpriteProject project, string? sourcePath)
     /// <summary>보이지 않는 동안 디스크 파일이 밖에서 바뀌었다(수정이 없으면 다음에 보일 때 다시 읽는다).</summary>
     public bool ChangedOnDisk { get; set; }
 
+    /// <summary>
+    /// 저장하지 않는 문서(효과 만들기의 미리보기 장면 — 장면은 효과와 함께 저장됨)의 탭 제목. null이면 보통 문서.
+    /// 이런 문서는 닫을 때·끝낼 때 저장을 묻지 않고, 탭에 수정됨 점을 보이지 않는다.
+    /// </summary>
+    public string? DetachedTitle { get; init; }
+
+    /// <summary>저장하지 않는 문서인지(<see cref="DetachedTitle"/>).</summary>
+    public bool IsDetached => DetachedTitle is not null;
+
+    /// <summary>탭을 닫아 문서를 놓을 때 부른다(저장하지 않는 문서의 주인에게 알림). 없으면 null.</summary>
+    public Action? Closed { get; init; }
+
     /// <summary>문서의 디스크 파일: 프로젝트 파일이 있으면 그것, 아니면 연 PNG(둘 다 없으면 프로젝트 경로).</summary>
     public string? DiskPath => Project.Path is { } p && File.Exists(p) ? p : SourcePath ?? Project.Path;
+
+    /// <summary>
+    /// 임시 제목(<see cref="SpriteProject.TempTitle"/>)을 붙일 수 있는지: 디스크 파일이 없는(저장한 적 없고 파일에서 열지도 않은) 보통 문서만.
+    /// 저장하지 않는 문서(<see cref="IsDetached"/>)는 주인이 정한 제목을 쓴다.
+    /// </summary>
+    public bool CanHaveTempTitle => !IsDetached && DiskPath is null;
 
     /// <summary>이 문서를 가리키는 파일 경로들(프로젝트 경로, 연 파일).</summary>
     public IEnumerable<string> Paths => PathsOf(Project, SourcePath);

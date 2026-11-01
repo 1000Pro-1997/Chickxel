@@ -126,8 +126,8 @@ public class ScriptAssetTests
         var source = Unique(OfficialEffects.Source("shine"));
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var saved = store.SavePersonalScript(source);
-        Assert.Equal(saved.Id, store.SavePersonalScript(source.ReplaceLineEndings("\r\n")).Id);
+        var saved = store.SavePersonalScript(source, null, null);
+        Assert.Equal(saved.Id, store.SavePersonalScript(source.ReplaceLineEndings("\r\n"), null, null).Id);
 
         var reopened = AssetStore.Open(dir.File("Assets"));
         var entry = Assert.Single(reopened.Catalog.Personal);
@@ -135,7 +135,7 @@ public class ScriptAssetTests
         var data = JsonNode.Parse(File.ReadAllText(reopened.PersonalPath))!["assets"]![0]!["data"]!;
         Assert.Equal(ScriptEffectProgram.NormalizeSource(source), data["source"]!.GetValue<string>());
 
-        Assert.Throws<AssetPackageException>(() => store.SavePersonalScript("effect({ name: 'x', render( {} });"));
+        Assert.Throws<AssetPackageException>(() => store.SavePersonalScript("effect({ name: 'x', render( {} });", null, null));
     }
 
     [Fact]
@@ -145,14 +145,14 @@ public class ScriptAssetTests
         var edited = source.Replace("빛 지나가기", "고친 빛");
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var saved = store.SavePersonalScript(source);
+        var saved = store.SavePersonalScript(source, null, null);
 
-        var replaced = store.SavePersonalScript(edited, saved.Id);
+        var replaced = store.SavePersonalScript(edited, saved.Id, null);
 
         var entry = Assert.Single(store.Catalog.Personal);
         Assert.Equal((saved.Id, saved.Id, "고친 빛", ScriptEffectProgram.HashOf(edited)), (replaced.Id, entry.Id, entry.Name, entry.Script!.Hash));
         // 모르는 ID면 새 항목(같은 원문이 있으면 그 항목)
-        Assert.NotEqual(saved.Id, store.SavePersonalScript(source, "personal.missing").Id);
+        Assert.NotEqual(saved.Id, store.SavePersonalScript(source, "personal.missing", null).Id);
         Assert.Equal(2, store.Catalog.Personal.Count);
     }
 
@@ -228,7 +228,7 @@ public class ScriptAssetTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        store.SavePersonalScript(Unique(OfficialEffects.Source("shine")));
+        store.SavePersonalScript(Unique(OfficialEffects.Source("shine")), null, null);
         var script = store.Catalog.Personal.Single(entry => entry.Script is not null);
         var result = AssetPublishCheck.Check(new PublishRequest
         {

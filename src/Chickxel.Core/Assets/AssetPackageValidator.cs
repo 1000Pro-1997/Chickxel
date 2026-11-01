@@ -16,7 +16,8 @@ public sealed record AssetValidationOptions(AssetPackageLimits? Limits = null, S
 /// 압축 크기 → ZIP 경로(절대 경로, <c>..</c>, 중복, 대소문자 충돌, symlink·특수 파일, 허용 확장자·자리) → 선언된 압축 해제 크기 →
 /// 한도를 넘지 않게 끊어 읽으며 실제 크기 → manifest schema와 앱 호환성 → manifest에 없는 파일·없는 파일·SHA-256 →
 /// 모든 에셋을 종류별로 실제로 읽고 schema 검사(스크립트 원문은 해석까지 — <see cref="ScriptAssetFormat.Check"/>) → 미리보기 PNG 크기와 디코드.
-/// 문제는 모두 모아 <see cref="AssetPackageException"/>으로 던진다(앞 단계가 실패하면 뒤 단계는 보지 않음).
+/// 스크립트 에셋의 미리보기 장면 파일(<see cref="AssetPackageBuilder.ScenePath"/>)은 평범한 미리보기 PNG로 검사하고, 장면으로 읽지 못하면 패키지를 막지 않고
+/// <see cref="AssetPackage.Warnings"/>에 남긴다. 문제는 모두 모아 <see cref="AssetPackageException"/>으로 던진다(앞 단계가 실패하면 뒤 단계는 보지 않음).
 /// </summary>
 public static class AssetPackageValidator
 {
@@ -230,6 +231,7 @@ public static class AssetPackageValidator
         if (issues.Count > 0) throw new AssetPackageException(issues);
 
         var items = new List<AssetPackageItem>();
+        var warnings = new List<AssetIssue>();
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var paths = new HashSet<string>(StringComparer.Ordinal);
         var previews = new HashSet<string>(StringComparer.Ordinal);
@@ -268,7 +270,8 @@ public static class AssetPackageValidator
                 context.Bad("id");
                 continue;
             }
-            items.Add(new AssetPackageItem(entry, value));
+            files.TryGetValue(AssetPackageBuilder.ScenePath(entry.Path), out var scene);
+            items.Add(new AssetPackageItem(entry, WithScene(value, scene, entry.Path, warnings)));
         }
         // 미리보기로 적히지 않은 PNG도 디코드해 손상 여부를 본다(허용된 파일이지만 쓰이지 않는 그림).
         foreach (var path in files.Keys.Where(path => IsPreviewPath(path) && !previews.Contains(path)))
@@ -276,7 +279,25 @@ public static class AssetPackageValidator
         if (issues.Count > 0) throw new AssetPackageException(issues);
 
         var content = files.Where(pair => pair.Key != AssetManifest.FileName).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        return new AssetPackage(manifest, content, items);
+        return new AssetPackage(manifest, content, items, warnings);
+    }
+
+    /// <summary>
+    /// 스크립트 에셋에 미리보기 장면(<see cref="AssetPackageBuilder.ScenePath"/> 파일, 없으면 null)을 붙인다. 장면 메타데이터를 읽지 못하면 패키지를 막지 않고
+    /// 장면 없이 두며 <paramref name="warnings"/>에 <see cref="AssetIssueCode.InvalidPreviewScene"/>을 남긴다(PNG 자체는 미리보기 검사가 따로 본다).
+    /// </summary>
+    internal static IAssetData WithScene(IAssetData value, byte[]? scene, string assetPath, List<AssetIssue> warnings)
+    {
+        if (value is not ScriptAsset script || scene is null) return value;
+        try
+        {
+            return script with { Scene = PreviewScene.FromPng(scene) };
+        }
+        catch (InvalidDataException ex)
+        {
+            warnings.Add(new AssetIssue(AssetIssueCode.InvalidPreviewScene, AssetPackageBuilder.ScenePath(assetPath), ex.Message));
+            return value;
+        }
     }
 
     /// <summary>미리보기 PNG: 머리(IHDR)의 폭·높이를 먼저 보고(큰 그림을 풀지 않음), 그다음 실제로 디코드한다.</summary>

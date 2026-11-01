@@ -38,12 +38,24 @@ public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFra
     /// </summary>
     public bool ReadsRenderedFrames { get; init; }
 
+    /// <summary>
+    /// 원문에 이름 찾기 그림 함수(<see cref="NamedLayerNames"/>)가 나오는지: 그릴 때 프로젝트의 이름마다 레이어 하나씩 담는다(<see cref="Model.ScriptLayerContext"/>).
+    /// <see cref="ReadsOtherLayers"/>에도 들어간다.
+    /// </summary>
+    public bool ReadsNamedLayers { get; init; }
+
     /// <summary>다른 레이어를 읽는 <c>ctx</c> 함수 이름.</summary>
     public static IReadOnlyList<string> OtherLayerNames { get; } =
-        ["layerBelow", "layerAbove", "layerBelowWithEffects", "layerAboveWithEffects", "layerEffectsByName", "layerEffectsAt"];
+    [
+        "layerBelow", "layerAbove", "layerBelowWithEffects", "layerAboveWithEffects", "layerByName", "layerByNameWithEffects", "layerEffectsByName",
+        "layerEffectsAt",
+    ];
 
     /// <summary>다른 레이어를 효과까지 입혀 읽는 <c>ctx</c> 함수 이름(겹쳐 그릴 때 건너뛰는 효과 — <see cref="Model.ScriptLayerContext"/>).</summary>
-    public static IReadOnlyList<string> RenderedLayerNames { get; } = ["layerBelowWithEffects", "layerAboveWithEffects"];
+    public static IReadOnlyList<string> RenderedLayerNames { get; } = ["layerBelowWithEffects", "layerAboveWithEffects", "layerByNameWithEffects"];
+
+    /// <summary>이름으로 레이어 그림을 찾는 <c>ctx</c> 함수 이름.</summary>
+    public static IReadOnlyList<string> NamedLayerNames { get; } = ["layerByName", "layerByNameWithEffects"];
 }
 
 /// <summary>
@@ -216,6 +228,7 @@ public static class ScriptLibrary
             Translations = ScriptSourceLocator.DeclaredTranslatedNames(program),
             Language = ScriptSourceLocator.DeclaredString(program, "language") is { } language && ScriptTranslations.IsLanguageCode(language) ? language : null,
             ReadsRenderedFrames = ScriptSourceLocator.Mentions(program, "renderedFrameSource"),
+            ReadsNamedLayers = ScriptInfo.NamedLayerNames.Any(n => ScriptSourceLocator.Mentions(program, n)),
         };
     }
 }

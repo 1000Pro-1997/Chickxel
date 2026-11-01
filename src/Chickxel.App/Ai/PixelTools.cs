@@ -79,7 +79,8 @@ public sealed partial class PixelTools
     /// <summary>tools/list용 도구 설명: { name, description, inputSchema }. 부를 때마다 새 배열을 만든다(노드는 부모가 하나뿐).</summary>
     public JsonArray ListTools() => new([
         Tool("get_document",
-            "Describe the open document as JSON: file path, canvas (frame) width/height, frames [{index,durationMs,name}], " +
+            "Describe the open document as JSON: file path (null for a never-saved new project), tempTitle (never-saved projects only: temporary title or null, see set_document_title), " +
+            "canvas (frame) width/height, frames [{index,durationMs,name}], " +
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
             "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)}] (bottom to top; a group's parts are the layers " +
@@ -383,15 +384,22 @@ public sealed partial class PixelTools
             }),
         Tool("new_project",
             "Create a new empty project and open it (the previous document stays open with its edits; fails only if it is a never-saved new project with changes). With file_name the project " +
-            "is saved as a .chickxel file in the current folder (fails if that file exists).",
+            "is saved as a .chickxel file in the current folder (fails if that file exists). Without file_name it stays unsaved; pass `title` to give it a temporary title " +
+            "shown on its tab and suggested as the file name when the user first saves it.",
             new JsonObject
             {
                 ["width"] = Int("Canvas width in pixels.", 1, PixelImage.MaxSize),
                 ["height"] = Int("Canvas height in pixels.", 1, PixelImage.MaxSize),
                 ["file_name"] = Str("File name to save in the current folder (optional)."),
+                ["title"] = Str("Temporary title of the unsaved project, short and in the user's language (optional; ignored with file_name)."),
                 ["background"] = ColorProp("Background fill color (default transparent)."),
             },
             "width", "height"),
+        Tool("set_document_title",
+            "Set the temporary title of the open document: a never-saved new project shows it on its tab instead of \"New project\", and it is suggested as the file name " +
+            "when the user first saves it. An empty title clears it. Fails if the document already has a file (saved or opened from a file); then its name is the file name.",
+            new JsonObject { ["title"] = Str("Short title in the user's language (empty = clear).") },
+            "title"),
         Tool("save_project",
             "Save the open project to its file (and export the sheet if the project is set up to). Fails if it has never been saved.",
             new JsonObject()),
@@ -520,6 +528,7 @@ public sealed partial class PixelTools
                 "set_palette" => SetPalette(name, a),
                 "set_colors" => SetColors(name, a),
                 "new_project" => NewProject(name, a),
+                "set_document_title" => SetDocumentTitle(name, a),
                 "save_project" => SaveProject(name),
                 "open_file" => OpenFile(name, a),
                 "search_references" => SearchReferences(a),
@@ -571,6 +580,7 @@ public sealed partial class PixelTools
             doc["open"] = true;
             doc["path"] = p.Path;
             doc["name"] = p.DisplayName;
+            if (p.Path is null) doc["tempTitle"] = p.TempTitle;
             doc["width"] = p.Width;
             doc["height"] = p.Height;
             var frames = new JsonArray();
@@ -1356,7 +1366,14 @@ public sealed partial class PixelTools
         var fileName = OptString(a, "file_name");
         if (string.IsNullOrWhiteSpace(fileName)) fileName = null;
         Color32? background = OptColor(a, "background") is { A: > 0 } bg ? Paint(bg) : null;
-        bool ok = _host.CreateProject(width, height, fileName?.Trim(), background, out var message);
+        bool ok = _host.CreateProject(width, height, fileName?.Trim(), OptString(a, "title"), background, out var message);
+        return TextResult($"{tool}: {message}", isError: !ok);
+    }
+
+    private JsonObject SetDocumentTitle(string tool, JsonObject? a)
+    {
+        RequireProject();
+        bool ok = _host.SetDocumentTitle(ReqString(a, "title"), out var message);
         return TextResult($"{tool}: {message}", isError: !ok);
     }
 

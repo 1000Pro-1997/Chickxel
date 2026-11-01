@@ -180,22 +180,29 @@ public sealed partial class SpriteProject
     /// 레이어 <paramref name="layer"/>의 효과 <paramref name="effects"/>에 든 스크립트가 프레임 <paramref name="frameIndex"/>에서 볼 배치·다른 레이어를 담는다
     /// (<see cref="ScriptLayerContext"/> — 이웃 셀은 <paramref name="cels"/>로 고른다). 다른 레이어나 <c>ctx.slice</c>를 읽는 켜진 스크립트 효과가 없으면 null,
     /// 다른 레이어 함수를 쓰는 효과가 없으면 테두리만, 효과까지 읽는 효과가 없거나 <paramref name="nested"/>면 이웃의 효과 그리기 단계는 만들지 않는다.
+    /// 이름 찾기 함수(<c>ctx.layerByName</c>·<c>…WithEffects</c>)를 쓰는 효과가 있을 때만 이름마다 레이어를 담는다(<see cref="NamedNeighborsOf"/>).
     /// </summary>
     private ScriptLayerContext? ScriptLayersOf(Layer layer, int frameIndex, IReadOnlyList<LayerEffect> effects, Func<Layer, int, PixelImage?> cels, bool nested)
     {
-        bool any = false, reads = false, rendered = false;
+        bool any = false, reads = false, rendered = false, named = false, namedRendered = false;
         foreach (var e in effects)
         {
             if (e is not ScriptEffect { Enabled: true } script || !ScriptDefinition.UsesOtherLayers(script)) continue;
             any = true;
-            reads |= ScriptDefinition.ReadsOtherLayers(script);
-            rendered |= !nested && ScriptDefinition.ReadsRenderedLayers(script);
+            bool readsLayers = ScriptDefinition.ReadsOtherLayers(script);
+            bool readsRendered = !nested && ScriptDefinition.ReadsRenderedLayers(script);
+            bool readsByName = readsLayers && Scripting.ScriptLibrary.InfoOf(script.ScriptHash) is { ReadsNamedLayers: true };
+            reads |= readsLayers;
+            rendered |= readsRendered;
+            named |= readsByName;
+            namedRendered |= readsByName && readsRendered;
         }
         if (!any) return null;
         var (border, size) = layer.IsPart ? (layer.PartBorder, layer.PartSize) : (Sprite.Border, Size);
         SpriteBorder? slice = NineSlice.Applies(border, size.Width, size.Height) ? border : null;
         var origin = layer.IsPart ? layer.PartOffset : Point.Empty;
-        if (!reads) return new ScriptLayerContext(slice, origin, null, null, [], 0, new Dictionary<string, string[]>());
+        if (!reads)
+            return new ScriptLayerContext(slice, origin, null, null, [], 0, new Dictionary<string, string[]>(), new Dictionary<string, LayerNeighbor>());
 
         IReadOnlyList<Layer> siblings = layer.Parent is { } parent ? ChildrenOf(parent) : [.. _layers.Where(l => l.Parent is null)];
         int self = IndexOfReference(siblings, layer);
@@ -213,7 +220,30 @@ public sealed partial class SpriteProject
             if (!nearest.TryGetValue(_layers[i].Name, out var known) || distance < known.Distance) nearest[_layers[i].Name] = (distance, _layers[i]);
         }
         var byName = nearest.ToDictionary(p => p.Key, p => ActiveEffectNames(p.Value.Layer, frameIndex), StringComparer.Ordinal);
-        return new ScriptLayerContext(slice, origin, below, above, names, Math.Max(0, self), byName);
+        var namedLayers = named ? NamedNeighborsOf(layer, frameIndex, cels, namedRendered, nested) : new Dictionary<string, LayerNeighbor>();
+        return new ScriptLayerContext(slice, origin, below, above, names, Math.Max(0, self), byName, namedLayers);
+    }
+
+    /// <summary>
+    /// 이름 찾기 그림(<c>ctx.layerByName</c>·<c>…WithEffects</c>)이 볼 레이어: 프로젝트에 있는 이름마다 레이어 목록에서 가장 가까운 레이어 하나(같은 거리면 아래쪽).
+    /// <paramref name="layer"/> 자신과 그 레이어를 담은 그룹은 찾지 않는다(자기 그림은 img, 담은 그룹 그림에는 자기가 들어 있음). <paramref name="nested"/>면
+    /// 찾은 레이어가 그룹인 이름은 담지 않는다 — 그룹 원본의 부위 효과가 다시 그룹을 이름으로 찾는 되풀이를 끊는다(<see cref="ScriptLayerContext"/>).
+    /// </summary>
+    private Dictionary<string, LayerNeighbor> NamedNeighborsOf(Layer layer, int frameIndex, Func<Layer, int, PixelImage?> cels, bool withEffects, bool nested)
+    {
+        int me = IndexOfReference(_layers, layer);
+        var nearest = new Dictionary<string, (int Distance, Layer Layer)>(StringComparer.Ordinal);
+        for (int i = 0; i < _layers.Count; i++)
+        {
+            var candidate = _layers[i];
+            if (ReferenceEquals(candidate, layer) || ReferenceEquals(candidate, layer.Parent)) continue;
+            int distance = Math.Abs(i - me);
+            if (!nearest.TryGetValue(candidate.Name, out var known) || distance < known.Distance) nearest[candidate.Name] = (distance, candidate);
+        }
+        var named = new Dictionary<string, LayerNeighbor>(nearest.Count, StringComparer.Ordinal);
+        foreach (var (name, found) in nearest)
+            if (!(nested && found.Layer.IsGroup)) named[name] = NeighborOf(found.Layer, frameIndex, cels, withEffects);
+        return named;
     }
 
     /// <summary>스크립트가 보는 이웃 레이어 하나: 효과 없는 원본과(<paramref name="withEffects"/>면) 효과까지 그리는 단계(불투명도 255, 겹침 규칙 적용).</summary>

@@ -193,7 +193,6 @@
   <data name="Message_278" xml:space="preserve"><value>Alpha (#RRGGBBAA) sets the intensity.</value></data>
   <data name="Ui_280" xml:space="preserve"><value>Undo history</value></data>
   <data name="Ui_284" xml:space="preserve"><value>Revert to saved</value></data>
-  <data name="Ui_286" xml:space="preserve"><value>New project</value></data>
   <data name="Ui_287" xml:space="preserve"><value>Choose a save location</value></data>
   <data name="Message_289" xml:space="preserve"><value>Choose the root folder containing the images to edit.</value></data>
   <data name="Message_290" xml:space="preserve"><value>Open</value></data>
@@ -370,6 +369,14 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
+  <data name="Tabs_TempTitle" xml:space="preserve"><value>Temporary title…</value></data>
+  <data name="Tabs_TempTitle_DialogTitle" xml:space="preserve"><value>Temporary title</value></data>
+  <data name="Tabs_TempTitle_Prompt" xml:space="preserve"><value>Shown on the tab until you save, and suggested as the file name the first time you save (leave empty to clear).</value></data>
+  <data name="Ai_TempTitle_Set" xml:space="preserve"><value>Set the temporary title to "{title}" (suggested as the file name the first time it is saved).</value></data>
+  <data name="Ai_TempTitle_Cleared" xml:space="preserve"><value>Cleared the temporary title.</value></data>
+  <data name="Ai_TempTitle_HasFile" xml:space="preserve"><value>"{name}" already has a file, so it can't have a temporary title (its name is the file name).</value></data>
+  <data name="Ai_TempTitle_Detached" xml:space="preserve"><value>The Effect Maker preview scene can't have a temporary title.</value></data>
+  <data name="Ai_NewProjectTitled" xml:space="preserve"><value>New project "{title}" {width}×{height} — no save location yet</value></data>
   <data name="Place_TransformHint" xml:space="preserve"><value> — Transform mode: drag inside = move, handles = size, outside = rotate, Enter = apply (parts outside the canvas are cut then), Esc = keep as inserted</value></data>
   <data name="Place_MultiFrameHint" xml:space="preserve"><value> — inserted without transform mode because the image has several frames (move each frame with Ctrl+T)</value></data>
   <data name="Open_FilterSupported" xml:space="preserve"><value>All supported files</value></data>

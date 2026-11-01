@@ -132,7 +132,7 @@ public static class SpriteLibraryAssetWriter
         try
         {
             File.WriteAllText(temp, text, new UTF8Encoding(false));
-            File.Move(temp, path, overwrite: true);
+            FileReplace.Commit(temp, path);
         }
         finally
         {

@@ -115,7 +115,7 @@ public static class UndoHistoryIO
         try
         {
             File.WriteAllBytes(temp, data);
-            File.Move(temp, path, overwrite: true);
+            FileReplace.Commit(temp, path);
         }
         finally
         {

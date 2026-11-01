@@ -5,7 +5,8 @@ namespace Chickxel.Core.Model;
 
 /// <summary>
 /// 스크립트 효과가 그리는 프레임에서 보는 효과 원본 배치와 다른 레이어(<c>ctx.slice</c>, <c>ctx.layerBelow</c>·<c>ctx.layerAbove</c>,
-/// <c>ctx.layerBelowWithEffects</c>·<c>ctx.layerAboveWithEffects</c>, <c>ctx.layerEffectsByName</c>·<c>ctx.layerEffectsAt</c>).
+/// <c>ctx.layerBelowWithEffects</c>·<c>ctx.layerAboveWithEffects</c>, <c>ctx.layerByName</c>·<c>ctx.layerByNameWithEffects</c>,
+/// <c>ctx.layerEffectsByName</c>·<c>ctx.layerEffectsAt</c>).
 /// 프로젝트 렌더가 순서표를 만들 때(부르는 스레드에서) 프로젝트 상태를 담아 두므로, 다른 스레드에서 그려도 프로젝트를 읽지 않는다.
 /// <para>
 /// 이웃: 같은 부모 안(최상위끼리, 그룹의 부위끼리)에서 합성 순서로 바로 아래·위 레이어. 숨긴 레이어도 건너뛰지 않는다(보이기와 관계없이
@@ -24,19 +25,26 @@ namespace Chickxel.Core.Model;
 /// 효과 이름: 그 레이어의 효과 중 이 프레임에 켜진(켜져 있고 프레임 범위 안, 아는 효과) 것의 화면 이름(<see cref="LayerEffect.DisplayName"/> —
 /// 스크립트 효과는 선언 이름, 기본 효과는 앱 언어 이름), 목록 순서. 이름으로 찾을 때 같은 이름 레이어가 여럿이면 레이어 목록에서 가장 가까운 것(같으면 아래쪽).
 /// </para>
+/// <para>
+/// 이름으로 찾는 그림(<c>ctx.layerByName</c>·<c>…WithEffects</c>): 같은 규칙(레이어 목록에서 가장 가까운 것, 같으면 아래쪽)이되 이 효과의 레이어와 그 레이어를 담은 그룹은
+/// 찾지 않는다 — 자기 그림은 이미 <c>img</c>이고 담은 그룹 그림에는 자기가 들어 있어 되풀이가 된다. 그래서 자기 이름으로 찾으면 같은 이름의 다른 레이어가 있을 때만 그것을 준다.
+/// 그림·맞춤·숨긴 레이어·겹침 규칙은 바로 아래·위와 같다. 다른 레이어를 그리는 안쪽(겹침 규칙의 한 단계 안)에서는 그룹을 이름으로 찾지 않는다(null — 그룹 원본이 다시
+/// 이름 찾기를 부르는 되풀이를 끊는다). 이름 찾기 함수를 쓰는 스크립트가 있을 때만 프로젝트의 이름마다 레이어 하나씩 담는다.
+/// </para>
 /// </summary>
 public sealed class ScriptLayerContext
 {
     private readonly Point _origin;
     private readonly LayerNeighbor? _below, _above;
+    private readonly IReadOnlyDictionary<string, LayerNeighbor> _named;
     private readonly string[]?[] _siblings;
     private readonly int _self;
     private readonly IReadOnlyDictionary<string, string[]> _byName;
     private readonly RenderPlanOptions _options;
-    private readonly Dictionary<(int Direction, bool Effects, int Width, int Height, Rectangle Source), PixelImage?> _images = [];
+    private readonly Dictionary<(int Direction, string? Name, bool Effects, int Width, int Height, Rectangle Source), PixelImage?> _images = [];
 
     internal ScriptLayerContext(SpriteBorder? slice, Point origin, LayerNeighbor? below, LayerNeighbor? above, string[]?[] siblings, int self,
-        IReadOnlyDictionary<string, string[]> byName)
+        IReadOnlyDictionary<string, string[]> byName, IReadOnlyDictionary<string, LayerNeighbor> named)
     {
         Slice = slice;
         _origin = origin;
@@ -45,6 +53,7 @@ public sealed class ScriptLayerContext
         _siblings = siblings;
         _self = self;
         _byName = byName;
+        _named = named;
         _options = RenderPlanOptions.Default;
         var items = new List<object?> { "layers", slice, origin, below?.Key, above?.Key, self, siblings.Length };
         foreach (var names in siblings)
@@ -58,6 +67,11 @@ public sealed class ScriptLayerContext
             items.Add(effects.Length);
             items.AddRange(effects);
         }
+        foreach (var (name, neighbor) in named.OrderBy(p => p.Key, StringComparer.Ordinal))
+        {
+            items.Add(name);
+            items.Add(neighbor.Key);
+        }
         Key = new CacheKey([.. items]);
     }
 
@@ -70,6 +84,7 @@ public sealed class ScriptLayerContext
         _siblings = from._siblings;
         _self = from._self;
         _byName = from._byName;
+        _named = from._named;
         Key = from.Key;
         _options = options;
     }
@@ -77,7 +92,7 @@ public sealed class ScriptLayerContext
     /// <summary>효과 원본의 9-slice 테두리(<c>ctx.slice</c>, px). 없거나 원본 크기에 맞지 않으면 null.</summary>
     public SpriteBorder? Slice { get; }
 
-    /// <summary>담은 내용(테두리·이웃 셀과 효과·이름) 열쇠 — 이 내용이 바뀌면 이 레이어 효과 결과의 캐시 열쇠도 바뀐다.</summary>
+    /// <summary>담은 내용(테두리·이웃 셀과 효과·이름·이름으로 찾는 레이어) 열쇠 — 이 내용이 바뀌면 이 레이어 효과 결과의 캐시 열쇠도 바뀐다.</summary>
     internal CacheKey Key { get; }
 
     /// <summary>렌더링 한 번(<paramref name="run"/>의 취소·캐시)에 쓰는 사본. 효과까지 입힌 이웃 그림은 이 사본 안에서 한 번만 그린다.</summary>
@@ -88,13 +103,21 @@ public sealed class ScriptLayerContext
     /// 맞춘 것 — 이 효과의 원본은 그 그림의 <paramref name="source"/>에 있다. 이웃이나 셀이 없으면 null. 돌려준 그림은 읽기만 한다.
     /// </summary>
     internal PixelImage? Neighbor(int direction, bool withEffects, int width, int height, Rectangle source)
+        => Aligned(direction < 0 ? _below : _above, (direction < 0 ? -1 : 1, null, withEffects, width, height, source));
+
+    /// <summary>
+    /// 이름이 <paramref name="name"/>인 레이어(여럿이면 가장 가까운 것, 이 효과의 레이어와 담은 그룹은 빼고) 그림을 <see cref="Neighbor"/>처럼 맞춘 것.
+    /// 그런 레이어나 셀이 없으면 null. 돌려준 그림은 읽기만 한다.
+    /// </summary>
+    internal PixelImage? Named(string name, bool withEffects, int width, int height, Rectangle source)
+        => Aligned(_named.GetValueOrDefault(name), (0, name, withEffects, width, height, source));
+
+    private PixelImage? Aligned(LayerNeighbor? neighbor, (int Direction, string? Name, bool Effects, int Width, int Height, Rectangle Source) key)
     {
-        var neighbor = direction < 0 ? _below : _above;
         if (neighbor is null) return null;
-        var key = (direction < 0 ? -1 : 1, withEffects, width, height, source);
         lock (_images)
             if (_images.TryGetValue(key, out var known)) return known;
-        var image = neighbor.Render(withEffects, width, height, source.X - _origin.X, source.Y - _origin.Y, _options);
+        var image = neighbor.Render(key.Effects, key.Width, key.Height, key.Source.X - _origin.X, key.Source.Y - _origin.Y, _options);
         lock (_images) _images[key] = image;
         return image;
     }

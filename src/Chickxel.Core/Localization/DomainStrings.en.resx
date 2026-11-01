@@ -57,6 +57,8 @@
   <data name="Document_IgnoreSidecar" xml:space="preserve"><value>Couldn't read the edit info file (.gpixel.json), so it was ignored: {error}</value></data>
   <data name="Document_NoSavePath" xml:space="preserve"><value>No save path.</value></data>
   <data name="File_NameExists" xml:space="preserve"><value>A file with the same name already exists: {name}</value></data>
+  <data name="File_ReadOnly" xml:space="preserve"><value>Couldn't overwrite {name}: the file is read-only. Turn off read-only in the file's properties, or save under another name.</value></data>
+  <data name="File_InUse" xml:space="preserve"><value>Couldn't overwrite {name}: another program has the file open and won't let it be changed. Close that program (image viewer, game engine, sync app…) or save under another name.</value></data>
   <data name="Preset_ReadFailed" xml:space="preserve"><value>Couldn't read the export preset file: {error}</value></data>
   <data name="Preset_NewerVersion" xml:space="preserve"><value>This preset file is from a newer Chickxel (format version {version}).</value></data>
   <data name="Gif_NoFrames" xml:space="preserve"><value>No frames to write to GIF.</value></data>
@@ -361,6 +363,7 @@
   <data name="Asset_Issue_InvalidScript" xml:space="preserve"><value>Can't read the script: {detail}</value></data>
   <data name="Asset_Issue_ScriptHashMismatch" xml:space="preserve"><value>Script source doesn't match its hash: {detail}</value></data>
   <data name="Asset_Issue_MissingScript" xml:space="preserve"><value>The recipe doesn't include the source of a script effect: {detail}</value></data>
+  <data name="Asset_Issue_InvalidPreviewScene" xml:space="preserve"><value>Can't read the preview scene, so it is left out: {detail}</value></data>
   <data name="CatalogBuild_MissingPreview" xml:space="preserve"><value>No list preview (an asset with a preview or a preview in review.json is required).</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>The author ID must be 1–64 lowercase letters, digits and inner hyphens (e.g. pixel-cat).</value></data>
   <data name="Publish_AuthorName" xml:space="preserve"><value>Enter an author display name of 1–100 characters.</value></data>
@@ -373,6 +376,11 @@
   <data name="Publish_NoTags" xml:space="preserve"><value>Without tags the package is hard to find in the Store.</value></data>
   <data name="Publish_VersionNotNewer" xml:space="preserve"><value>Enter a version higher than {detail}, which is already published. Published versions can't change, so the same or a lower version can't be uploaded.</value></data>
   <data name="Publish_RecipeNotPublishable" xml:space="preserve"><value>Effect presets (several effects saved with their values) can't be published. Only script effects are published as effects.</value></data>
+  <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>Effects that read other layers must have the layer-reference tag.</value></data>
+  <data name="Publish_LayerReferenceTagFull" xml:space="preserve"><value>Effects that read other layers need the layer-reference tag, but there are already 8 tags. Remove a tag.</value></data>
+  <data name="PreviewScene_Invalid" xml:space="preserve"><value>Invalid preview scene value: {detail}</value></data>
+  <data name="PreviewScene_TooLarge" xml:space="preserve"><value>The preview scene is too large: it has {cells} layer × frame cells, but only {max} fit at this size. Use fewer layers or frames, or a smaller canvas.</value></data>
+  <data name="PreviewScene_NoChick" xml:space="preserve"><value>The preview scene has no chick layer, or the chick is empty in the first frame.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>Unnamed effect {number}</value></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>Unnamed gradient {number}</value></data>
   <data name="Community_Error_Unauthorized" xml:space="preserve"><value>You need to sign in. If your session ended, sign in again.</value></data>

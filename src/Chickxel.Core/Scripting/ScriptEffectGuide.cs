@@ -6,7 +6,8 @@ using Chickxel.Core.Localization;
 namespace Chickxel.Core.Scripting;
 
 /// <summary>
-/// 스크립트 효과를 만드는 사람·AI에게 주는 안내(Markdown): 지킬 규칙(선언 하나, 제자리 고치기, 결정론, 실행 한도, 설정 종류, 그라데이션을 따르는 색(권장), 빠른 경로, 설명·견본 병아리),
+/// 스크립트 효과를 만드는 사람·AI에게 주는 안내(Markdown): 지킬 규칙(선언 하나, 제자리 고치기, 결정론, 실행 한도, 설정 종류, 그라데이션을 따르는 색(권장), 빠른 경로,
+/// 다른 레이어 읽기(미리보기 장면·<c>layer-reference</c> 태그), 설명·견본 병아리),
 /// 답하는 방식, <see cref="ScriptApiCatalog.ToMarkdown"/>의 API 목록, 그리고 주면 지금 원문.
 /// 규칙 글은 지금 화면 언어(<see cref="ScriptGuideStrings"/>), API 목록은 늘 영어다.
 /// 효과 만들기의 "규칙" 창(복사해 다른 AI에 붙여 넣음)과 AI 도구(<c>get_script_api</c>, 효과 만들기 AI 칸)가 같이 쓴다.
@@ -45,6 +46,7 @@ public static class ScriptEffectGuide
         Rule(md, ScriptGuideStrings.Guide_RuleGradient);
         Rule(md, ScriptGuideStrings.Guide_RuleAnimated);
         Rule(md, ScriptGuideStrings.Guide_RuleFast);
+        Rule(md, ScriptGuideStrings.FormatGuide_RuleLayers(tag: IO.ScriptAsset.LayerReferenceTag));
         Rule(md, ScriptGuideStrings.Guide_RuleLanguage);
         md.AppendLine();
         md.Append("## ").AppendLine(ScriptGuideStrings.Guide_AnswerHeading);

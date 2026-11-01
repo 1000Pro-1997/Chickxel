@@ -48,6 +48,7 @@ public sealed partial class SpriteProject
     private readonly Dictionary<CelKey, PixelImage> _cels = new();
     private int _width, _height;
     private string? _path;
+    private string? _tempTitle;
     private bool _isDirty;
     private int _editDepth;
     private StrokeState? _stroke;
@@ -140,7 +141,41 @@ public sealed partial class SpriteProject
         }
     }
 
-    public string DisplayName => _path is null ? UntitledName : System.IO.Path.GetFileName(_path);
+    /// <summary>파일 이름(확장자 포함). 저장 전이면 임시 제목(<see cref="TempTitle"/>), 없으면 <see cref="UntitledName"/>.</summary>
+    public string DisplayName => _path is null ? _tempTitle ?? UntitledName : System.IO.Path.GetFileName(_path);
+
+    /// <summary>임시 제목 최대 길이(넘으면 자른다).</summary>
+    public const int MaxTempTitleLength = 100;
+
+    /// <summary>
+    /// 저장한 적 없는 새 프로젝트의 임시 제목(사용자가 탭 메뉴로, AI가 도구로 정함): 경로가 없는 동안 <see cref="DisplayName"/>(탭·창 제목)에
+    /// "새 프로젝트" 대신 보이고, 처음 저장할 때 제안하는 파일 이름이 된다. 파일에 쓰지 않고 실행취소 대상도 아니다.
+    /// 줄바꿈 같은 제어 문자는 빈칸으로 바꾸고 앞뒤 공백을 없애며 <see cref="MaxTempTitleLength"/>자로 자른다. 비면 null(없음).
+    /// </summary>
+    public string? TempTitle
+    {
+        get => _tempTitle;
+        set
+        {
+            var title = CleanTempTitle(value);
+            if (_tempTitle == title) return;
+            _tempTitle = title;
+            // 이름이 바뀐 것과 같이 알린다(탭·창 제목) — 수정됨 표시는 켜지 않는다.
+            NotifyChanged(ProjectChange.Path, markDirty: false);
+        }
+    }
+
+    private static string? CleanTempTitle(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var chars = value.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+            if (char.IsControl(chars[i])) chars[i] = ' ';
+        var title = new string(chars).Trim();
+        if (title.Length > MaxTempTitleLength)
+            title = title[..(char.IsHighSurrogate(title[MaxTempTitleLength - 1]) ? MaxTempTitleLength - 1 : MaxTempTitleLength)].TrimEnd();
+        return title.Length == 0 ? null : title;
+    }
 
     /// <summary>확장자 뺀 파일 이름(칸 이름 규칙 <c>{파일}</c>). 저장 전이면 "sprite".</summary>
     public string BaseName => _path is null ? "sprite" : System.IO.Path.GetFileNameWithoutExtension(_path);

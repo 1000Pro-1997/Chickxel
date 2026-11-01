@@ -50,7 +50,7 @@ public static class PngIO
         {
             using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 Save(image, fs);
-            File.Move(temp, full, overwrite: true);
+            FileReplace.Commit(temp, full);
         }
         finally
         {
@@ -59,6 +59,68 @@ public static class PngIO
     }
 
     public static void Save(PixelImage image, Stream stream) => Save(image, stream, null);
+
+    /// <summary>
+    /// 8비트 RGBA PNG에 글 덩어리 하나(tEXt: <paramref name="keyword"/> + NUL + <paramref name="text"/>, Latin-1)를 IHDR 바로 뒤에 붙여 쓴다.
+    /// 글은 ASCII여야 한다(그 밖의 글자는 <see cref="ArgumentException"/> — JSON이면 \u 이스케이프로 넣는다). 같은 입력은 늘 같은 바이트다.
+    /// </summary>
+    public static void SaveWithText(PixelImage image, Stream stream, string keyword, string text)
+    {
+        if (keyword.Length is < 1 or > 79 || keyword.Any(c => c is < ' ' or > '~') || text.Any(c => c > '~' || (c < ' ' && c != '\n')))
+            throw new ArgumentException("PNG text must be printable ASCII.", nameof(text));
+        var data = new byte[keyword.Length + 1 + text.Length];
+        Encoding.ASCII.GetBytes(keyword, data);
+        Encoding.ASCII.GetBytes(text, data.AsSpan(keyword.Length + 1));
+        Save(image, stream, null, data);
+    }
+
+    /// <summary>
+    /// PNG 바이트에서 글 덩어리(tEXt, 또는 압축하지 않은 iTXt) 중 <paramref name="keyword"/>인 첫 것의 글(tEXt는 Latin-1, iTXt는 UTF-8)을 읽는다. 없으면 null.
+    /// 덩어리 구조(길이·CRC)가 틀리거나 글이 <paramref name="maxBytes"/>를 넘으면 <see cref="InvalidDataException"/>. 그림은 풀지 않는다.
+    /// </summary>
+    public static string? ReadText(ReadOnlySpan<byte> png, string keyword, int maxBytes)
+    {
+        if (png.Length < Signature.Length || !png[..Signature.Length].SequenceEqual(Signature)) throw new InvalidDataException(CoreStrings.Png_InvalidFile);
+        int at = Signature.Length;
+        while (at + 12 <= png.Length)
+        {
+            int length = BinaryPrimitives.ReadInt32BigEndian(png[at..]);
+            if (length < 0 || length > png.Length - at - 12) throw new InvalidDataException(CoreStrings.Png_InvalidChunkLength);
+            var type = png.Slice(at + 4, 4);
+            var data = png.Slice(at + 8, length);
+            uint crc = Crc32.Update(Crc32.Update(0xFFFFFFFFu, type), data) ^ 0xFFFFFFFFu;
+            if (crc != BinaryPrimitives.ReadUInt32BigEndian(png[(at + 8 + length)..])) throw new InvalidDataException(CoreStrings.Png_InvalidFile);
+            at += 12 + length;
+            if (type.SequenceEqual("IEND"u8)) break;
+            bool plain = type.SequenceEqual("tEXt"u8);
+            if (!plain && !type.SequenceEqual("iTXt"u8)) continue;
+            int nul = data.IndexOf((byte)0);
+            if (nul < 0 || !Encoding.Latin1.GetString(data[..nul]).Equals(keyword, StringComparison.Ordinal)) continue;
+            var rest = data[(nul + 1)..];
+            if (!plain)
+            {
+                // iTXt: 압축 표시(0만 읽음)·압축 방법, 언어 태그 NUL, 번역 키워드 NUL, UTF-8 글
+                if (rest.Length < 2 || rest[0] != 0) throw new InvalidDataException(CoreStrings.Png_InvalidFile);
+                rest = rest[2..];
+                for (int skip = 0; skip < 2; skip++)
+                {
+                    int end = rest.IndexOf((byte)0);
+                    if (end < 0) throw new InvalidDataException(CoreStrings.Png_InvalidFile);
+                    rest = rest[(end + 1)..];
+                }
+            }
+            if (rest.Length > maxBytes) throw new InvalidDataException(CoreStrings.Png_InvalidChunkLength);
+            try
+            {
+                return plain ? Encoding.Latin1.GetString(rest) : new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(rest);
+            }
+            catch (DecoderFallbackException)
+            {
+                throw new InvalidDataException(CoreStrings.Png_InvalidFile);
+            }
+        }
+        return null;
+    }
 
     /// <summary>
     /// 거른 데이터가 이보다 크면 줄 묶음(<see cref="ChunkBytes"/>)마다 나눠 여러 코어에서 거르고 압축한다. 묶음마다 압축 사전이 새로 시작해
@@ -70,10 +132,11 @@ public static class PngIO
     private const int ChunkBytes = 2 << 20;
 
     /// <param name="stage">진행(단위: 픽셀, 모두 <c>Width × Height</c>).</param>
-    internal static void Save(PixelImage image, Stream stream, WorkStage? stage)
+    internal static void Save(PixelImage image, Stream stream, WorkStage? stage, byte[]? text = null)
     {
         stream.Write(Signature);
         WriteHeader(stream, image.Width, image.Height);
+        if (text is not null) WriteChunk(stream, "tEXt", text);
         int rowBytes = image.Width * 4 + 1;
         if ((long)rowBytes * image.Height <= ParallelMinBytes)
         {

@@ -94,27 +94,38 @@ public static class AssetPreview
     /// 패키지에 넣을 미리보기. 레시피·스크립트 에셋(기본 설정 효과 하나)은 고른 병아리(<see cref="PreviewChicks"/>)에 효과를
     /// 칸 수(레시피는 <see cref="PackageFrames"/>, 스크립트는 선언의 <see cref="ScriptAsset.PreviewFrames"/>)만큼 돌려 입힌 그림을 정수 배로 키운 APNG
     /// — 앞 칸과 같은 칸은 그 칸의 시간에 더해 빼므로 움직이지 않는 효과는 한 장짜리 PNG가 된다 — 와 첫 칸 자리의 원본이고, 그라데이션은 띠 하나다.
+    /// 미리보기 장면(<see cref="ScriptAsset.Scene"/>)이 있는 스크립트는 장면 캔버스 전체(<see cref="PreviewSceneRender"/>)를 같은 규칙으로 그린다.
     /// 스크립트는 실행을 허락한 원문만 그린다. 모르는 종류면 null.
     /// </summary>
     public static PackagePreview? Package(IAssetData data) => data switch
     {
         EffectRecipe recipe => EffectPreview(recipe.Effects, PreviewChicks.Load(recipe.PreviewChick), PackageFrames),
+        ScriptAsset { Scene: { } scene } script => ScenePreview(scene, script.ToRecipe().Effects, PreviewChicks.Load(script.PreviewChick), script.PreviewFrames),
         ScriptAsset script => EffectPreview(script.ToRecipe().Effects, PreviewChicks.Load(script.PreviewChick), script.PreviewFrames),
         GradientAsset gradient => new PackagePreview(Encode([new PngFrame(RenderGradient(gradient.Gradient, PngMaxSize, 16), PackageFrameMs)]), null),
         _ => null,
     };
 
-    /// <summary>
-    /// 효과 미리보기 APNG. 칸마다 무늬가 달라 잘 줄지 않는 효과(칸마다 다른 잡음 등)는 칸이 많으면 패키지의 미리보기 크기 한도
-    /// (<see cref="AssetPackageLimits.MaxPreviewBytes"/>)를 넘을 수 있으므로, 넘으면 두 칸씩 합쳐(앞 칸을 두 칸 시간만큼) 한도 안에 들 때까지 칸을 줄인다 —
-    /// 한 바퀴 시간은 그대로다.
-    /// </summary>
     private static PackagePreview EffectPreview(IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps)
+        => Animation(step => Render(effects, chick, step, steps), Original(effects, chick, 0, steps), steps);
+
+    private static PackagePreview ScenePreview(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps)
+    {
+        var render = new PreviewSceneRender(scene, effects, chick, steps);
+        return Animation(render.Render, render.Original(0), steps);
+    }
+
+    /// <summary>
+    /// 효과 미리보기 APNG(<paramref name="frame"/> = 칸마다 그림, <paramref name="original"/> = 효과 없는 첫 칸). 칸마다 무늬가 달라 잘 줄지 않는 효과(칸마다 다른 잡음 등)는
+    /// 칸이 많으면 패키지의 미리보기 크기 한도(<see cref="AssetPackageLimits.MaxPreviewBytes"/>)를 넘을 수 있으므로, 넘으면 두 칸씩 합쳐(앞 칸을 두 칸 시간만큼)
+    /// 한도 안에 들 때까지 칸을 줄인다 — 한 바퀴 시간은 그대로다.
+    /// </summary>
+    private static PackagePreview Animation(Func<int, PixelImage> frame, PixelImage original, int steps)
     {
         var frames = new List<PngFrame>();
         for (int step = 0; step < steps; step++)
         {
-            var image = Upscale(Render(effects, chick, step, steps), PngMaxSize);
+            var image = Upscale(frame(step), PngMaxSize);
             if (frames.Count > 0 && frames[^1].Image.ContentEquals(image))
                 frames[^1] = frames[^1] with { DurationMs = frames[^1].DurationMs + PackageFrameMs };
             else frames.Add(new PngFrame(image, PackageFrameMs));
@@ -127,8 +138,7 @@ public static class AssetPreview
                 .ToList();
             png = Encode(frames);
         }
-        var original = Upscale(Original(effects, chick, 0, steps), PngMaxSize);
-        return new PackagePreview(png, Encode([new PngFrame(original, PackageFrameMs)]));
+        return new PackagePreview(png, Encode([new PngFrame(Upscale(original, PngMaxSize), PackageFrameMs)]));
     }
 
     private static byte[] Encode(IReadOnlyList<PngFrame> frames)

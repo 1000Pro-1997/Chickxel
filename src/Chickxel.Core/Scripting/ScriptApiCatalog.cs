@@ -175,6 +175,8 @@ public static class ScriptApiCatalog
         M(Context, "layerAbove", ScriptApiKind.Function, "ctx.layerAbove() → img | null", Image),
         M(Context, "layerBelowWithEffects", ScriptApiKind.Function, "ctx.layerBelowWithEffects() → img | null", Image),
         M(Context, "layerAboveWithEffects", ScriptApiKind.Function, "ctx.layerAboveWithEffects() → img | null", Image),
+        M(Context, "layerByName", ScriptApiKind.Function, "ctx.layerByName(layerName) → img | null", Image),
+        M(Context, "layerByNameWithEffects", ScriptApiKind.Function, "ctx.layerByNameWithEffects(layerName) → img | null", Image),
         M(Context, "layerEffectsByName", ScriptApiKind.Function, "ctx.layerEffectsByName(layerName) → [effectName, ...]"),
         M(Context, "layerEffectsAt", ScriptApiKind.Function, "ctx.layerEffectsAt(offset) → [effectName, ...]"),
 

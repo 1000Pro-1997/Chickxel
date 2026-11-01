@@ -184,14 +184,18 @@ internal static class ScriptHostApi
         Method(ctx, engine, "frameSource", 1, args =>
             frameSource?.Invoke(TypeConverter.ToInt32(Arg(args, 0))) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null);
 
-        // 다른 레이어(같은 부모 안 바로 아래·위): img와 같은 크기·같은 자리, 부를 때마다 새 사본. 프로젝트 밖 그리기는 null·빈 배열
+        // 다른 레이어(같은 부모 안 바로 아래·위, 이름으로 찾은 레이어): img와 같은 크기·같은 자리, 부를 때마다 새 사본. 프로젝트 밖 그리기는 null·빈 배열
         var layers = frame.Layers;
-        JsValue Neighbor(int direction, bool withEffects)
-            => layers?.Neighbor(direction, withEffects, image.Width, image.Height, source) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null;
+        JsValue Copy(PixelImage? other) => other is not null ? CreateImage(sandbox, other).Image : JsValue.Null;
+        JsValue Neighbor(int direction, bool withEffects) => Copy(layers?.Neighbor(direction, withEffects, image.Width, image.Height, source));
+        JsValue Named(JsValue[] args, bool withEffects)
+            => Copy(layers?.Named(TypeConverter.ToString(Arg(args, 0)), withEffects, image.Width, image.Height, source));
         Method(ctx, engine, "layerBelow", 0, _ => Neighbor(-1, false));
         Method(ctx, engine, "layerAbove", 0, _ => Neighbor(1, false));
         Method(ctx, engine, "layerBelowWithEffects", 0, _ => Neighbor(-1, true));
         Method(ctx, engine, "layerAboveWithEffects", 0, _ => Neighbor(1, true));
+        Method(ctx, engine, "layerByName", 1, args => Named(args, false));
+        Method(ctx, engine, "layerByNameWithEffects", 1, args => Named(args, true));
         Method(ctx, engine, "layerEffectsByName", 1, args =>
             Strings(engine, layers?.EffectsByName(TypeConverter.ToString(Arg(args, 0))) ?? []));
         Method(ctx, engine, "layerEffectsAt", 1, args =>

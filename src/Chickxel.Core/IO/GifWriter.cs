@@ -53,7 +53,7 @@ public static class GifWriter
             using (var stage = progress?.Begin(frames.Count))
             using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 info = Write(frames, fs, options, stage);
-            File.Move(temp, full, overwrite: true);
+            FileReplace.Commit(temp, full);
             return info;
         }
         finally

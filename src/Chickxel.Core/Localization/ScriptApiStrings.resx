@@ -104,6 +104,8 @@
   <data name="Api_ctx_layerAbove" xml:space="preserve"><value>바로 위 레이어의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로. 없으면 null.</value></data>
   <data name="Api_ctx_layerBelowWithEffects" xml:space="preserve"><value>바로 아래 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
   <data name="Api_ctx_layerAboveWithEffects" xml:space="preserve"><value>바로 위 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다. 없으면 null.</value></data>
+  <data name="Api_ctx_layerByName" xml:space="preserve"><value>이름이 같은 레이어(여럿이면 가장 가까운 것, 이 레이어와 이 레이어를 담은 그룹은 빼고, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로. 레이어나 셀이 없거나 프로젝트 밖이면 null.</value></data>
+  <data name="Api_ctx_layerByNameWithEffects" xml:space="preserve"><value>이름이 같은 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
   <data name="Api_ctx_layerEffectsByName" xml:space="preserve"><value>이름이 같은 레이어(여럿이면 가장 가까운 것)에서 이 프레임에 켜진 효과 이름 배열(목록 순서). 없으면 빈 배열.</value></data>
   <data name="Api_ctx_layerEffectsAt" xml:space="preserve"><value>같은 그룹·같은 단계에서 offset칸 떨어진 레이어(−1 = 바로 아래, 1 = 바로 위, 0 = 이 레이어)에서 이 프레임에 켜진 효과 이름 배열. 없으면 빈 배열.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>빨강(0~255).</value></data>

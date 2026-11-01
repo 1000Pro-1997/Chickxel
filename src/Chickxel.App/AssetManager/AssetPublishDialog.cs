@@ -14,6 +14,7 @@ namespace Chickxel.App;
 /// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
 /// 내 설치 패키지의 에셋은 그 패키지 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
+/// 다른 레이어를 읽는 스크립트 효과는 <see cref="ScriptAsset.LayerReferenceTag"/> 태그 칩을 미리 넣고 뺄 수 없다(빼면 다시 넣음 — 태그 8개 한도에 셈).
 /// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
 /// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
@@ -28,6 +29,8 @@ public sealed class AssetPublishDialog : DialogBase
     private CommunityUser _user;
     private readonly TextBox _version, _name, _summary;
     private readonly TagChipEditor _tags;
+    /// <summary>다른 레이어를 읽는 스크립트라 <see cref="ScriptAsset.LayerReferenceTag"/> 태그를 꼭 달아야 하는지.</summary>
+    private readonly bool _forceLayerTag;
     private readonly SelectableTextBlock _authorId, _authorName, _idText;
     private readonly TextBlock _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
     /// <summary>패키지 묶음 맨 위의 모드 줄(새 패키지 / 업데이트 / 확인 중 / 확인 못 함)과 그 아래 덧붙임.</summary>
@@ -142,7 +145,10 @@ public sealed class AssetPublishDialog : DialogBase
         _version = Field("1.0.0");
         _version.Width = 110;
         _tags = new TagChipEditor(FieldWidth);
-        _tags.SetTags(tags);
+        _forceLayerTag = asset.Script is { ReadsOtherLayers: true };
+        _tags.SetTags(WithForcedTag(tags));
+        var forcedTagNote = Note(UiStrings.Publish_LayerReferenceTag);
+        forcedTagNote.IsVisible = _forceLayerTag;
         _useSuggestion = Ui.Button(UiStrings.Publish_UseSuggestion, (_, _) =>
         {
             _versionEdited = false;
@@ -174,7 +180,7 @@ public sealed class AssetPublishDialog : DialogBase
                         (UiStrings.Publish_LanguagesLabel, Ui.Stack(languages, _languages), null),
                         (UiStrings.Publish_Id, _idText, UiStrings.Publish_IdTip),
                         (UiStrings.Publish_Version, Ui.Row(_version, _useSuggestion), null),
-                        (UiStrings.Publish_Tags, _tags, UiStrings.Publish_TagsTip)))),
+                        (UiStrings.Publish_Tags, new StackPanel { Children = { _tags, forcedTagNote } }, UiStrings.Publish_TagsTip)))),
                 Ui.Group(UiStrings.Publish_License, Ui.Stack(
                     Ui.Row(Ui.Icon(VectorIcon.Check, 13), Ui.Label(AssetPublishCheck.License, bold: true)),
                     Note(UiStrings.Publish_LicenseFixed))),
@@ -228,7 +234,12 @@ public sealed class AssetPublishDialog : DialogBase
         root.Children.Add(columns);
 
         _summary.TextChanged += (_, _) => Changed();
-        _tags.TagsChanged += (_, _) => Changed();
+        _tags.TagsChanged += (_, _) =>
+        {
+            // 꼭 달아야 하는 태그를 빼면 다시 넣는다
+            if (_forceLayerTag && !_tags.Tags.Contains(ScriptAsset.LayerReferenceTag)) _tags.SetTags(WithForcedTag(_tags.Tags));
+            Changed();
+        };
         _name.TextChanged += (_, _) =>
         {
             UpdateTarget();
@@ -271,6 +282,10 @@ public sealed class AssetPublishDialog : DialogBase
         _filling = false;
         RunCheck();
     }
+
+    /// <summary>꼭 달아야 하는 태그(<see cref="ScriptAsset.LayerReferenceTag"/>)가 없으면 끝에 더한 태그.</summary>
+    private IReadOnlyList<string> WithForcedTag(IReadOnlyList<string> tags)
+        => !_forceLayerTag || tags.Contains(ScriptAsset.LayerReferenceTag) ? tags : [.. tags, ScriptAsset.LayerReferenceTag];
 
     /// <summary>스크립트 선언의 번역에서 이름·설명이 있는 언어만(설정 이름만 있는 언어는 뺌, 패키지 규칙에 맞지 않는 값도 뺌).</summary>
     private static List<KeyValuePair<string, AssetTranslation>> ScriptTranslationsOf(ScriptAsset script)

@@ -160,7 +160,7 @@ public sealed partial class LayerEffectsDialog
     private void SaveScriptAsset(ScriptEffect effect)
     {
         if (ScriptLibrary.SourceOf(effect.ScriptHash) is not { } source || ScriptLibrary.TrustOf(effect.ScriptHash) != ScriptTrust.Trusted) return;
-        AppAssets.Try(this, () => AppAssets.Store.SavePersonalScript(source), UiStrings.ScriptEffect_SaveAssetError);
+        AppAssets.Try(this, () => AppAssets.Store.SavePersonalScript(source, null, null), UiStrings.ScriptEffect_SaveAssetError);
     }
 
     /// <summary>효과 줄마다 스크립트 효과가 그리지 못하는 상태면 경고 아이콘과 원인 풍선을 붙인다(묶음 머리 줄은 건너뜀).</summary>

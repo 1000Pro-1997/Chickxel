@@ -210,7 +210,7 @@ public static class UnityMeta
         try
         {
             File.WriteAllText(temp, text, new UTF8Encoding(false));
-            File.Move(temp, metaPath, overwrite: true);
+            FileReplace.Commit(temp, metaPath);
         }
         finally
         {

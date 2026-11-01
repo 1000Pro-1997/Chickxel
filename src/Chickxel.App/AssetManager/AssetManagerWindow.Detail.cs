@@ -393,7 +393,7 @@ public sealed partial class AssetManagerWindow
             {
                 if (entry.Recipe is { } recipe) saved = AppAssets.Store.SavePersonalRecipe(recipe with { Id = "" });
                 else if (entry.Gradient is { } gradient) saved = AppAssets.Store.SavePersonalGradient(null, gradient with { Favorite = false });
-                else if (entry.Script is { } script) saved = AppAssets.Store.SavePersonalScript(script.Source);
+                else if (entry.Script is { } script) saved = AppAssets.Store.SavePersonalScript(script.Source, null, script.Scene);
             }) || saved is null) return;
         _selectKey = "asset:" + saved.Id;
         Refresh();

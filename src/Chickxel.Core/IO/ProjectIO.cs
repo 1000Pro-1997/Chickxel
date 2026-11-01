@@ -85,7 +85,7 @@ public static partial class ProjectIO
         {
             using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 Save(project, fs, full, stage);
-            File.Move(temp, full, overwrite: true);
+            FileReplace.Commit(temp, full);
         }
         finally
         {
@@ -487,7 +487,7 @@ public static partial class ProjectIO
                     from.CopyTo(to);
                 }
             }
-            File.Move(temp, newFull, overwrite: true);
+            FileReplace.Commit(temp, newFull);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {

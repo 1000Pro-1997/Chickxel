@@ -2,6 +2,29 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.67 (2026-11-01)
+### No red error line when Claude misnames a tool
+- When Claude calls a Chickxel tool without its MCP prefix, Claude Code rejects it ("No such tool available") and Claude calls it again correctly. The AI chat and the Effect Maker AI no longer show that rejected call as a red error line; real tool errors still show.
+
+### Saving over a file another program has open
+- Saves that replace an existing file (Save frame as PNG and the other right-click saves, project save, exports) failed with "Access to the path is denied" when another program kept the file open, for example a sync app, Explorer's preview, an image viewer or a game engine. Chickxel now retries briefly and then writes into the existing file.
+- If the file is read-only, or the other program doesn't allow changes at all, the message now says so instead of "Access to the path is denied"; the old file is left as it was.
+
+### Temporary titles and free save names for new projects
+- Right-click the tab of a never-saved new project and choose **Temporary title…** to name it. The tab and window title show it instead of "New project"; leave it empty to clear it.
+- The first time you save a new project, the Save dialog suggests the temporary title as the file name (characters files can't use are removed), or `sprite` without one. If that name already exists in the folder the dialog opens in, it suggests `sprite_1.chickxel`, `sprite_2.chickxel`, and so on.
+- When the AI chat draws into a new unsaved project without a temporary title, it gives it a short title in your language (`title` on `new_project`, new tool `set_document_title`).
+
+### Effect Maker preview scene for effects that read other layers
+- When a script reads other layers, the Effect Maker shows **Preview scene**: **Edit in main editor** opens the scene (layers around the preview chick, a `ground` layer to start) as a tab in the main editor, where you can draw with every tool; the Effect Maker preview follows your edits.
+- The scene is saved with the effect and goes into exported and uploaded packages; Check, the Effect Maker AI and the uploaded preview image all render the effect in the scene.
+- New script functions `ctx.layerByName(name)` and `ctx.layerByNameWithEffects(name)` read the nearest layer with that name (e.g. `"ground"`), aligned like `ctx.layerBelow()`.
+- Effects that read other layers always carry the `layer-reference` tag; the Publish window keeps it and counts it toward the 8 tags.
+
+### Effect Maker status button and compact preview controls
+- The status box is now a button next to **Insert into layer**: green when everything is fine, yellow with warnings only, red with errors. Click it for the details; clicking an error line still jumps to the code.
+- Play/pause and "show without effect" are icon buttons on one row with the frame count.
+
 ## v1.14.66 (2026-11-01)
 ### Preview plays the clicked tag, otherwise all frames
 - Playing the preview loops only the tag you clicked in the timeline; with no tag selected it plays all frames, even when the current frame is inside a tag.

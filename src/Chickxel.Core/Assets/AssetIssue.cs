@@ -73,6 +73,8 @@ public enum AssetIssueCode
     ScriptHashMismatch,
     /// <summary>스크립트 효과가 가리키는 원문이 레시피에 없음(<see cref="AssetIssue.Detail"/> = 효과 필드와 해시 앞부분).</summary>
     MissingScript,
+    /// <summary>경고: 미리보기 장면 파일(<c>previews/&lt;조각&gt;.scene.png</c>)의 장면을 읽지 못해 장면 없이 둠(<see cref="AssetIssue.Detail"/> = 까닭). 패키지는 막지 않는다.</summary>
+    InvalidPreviewScene,
 }
 
 /// <summary>

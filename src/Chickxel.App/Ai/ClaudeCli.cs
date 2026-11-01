@@ -262,6 +262,11 @@ public sealed class ClaudeSession : IChatSession
     private bool _mcpChecked;
     /// <summary>Claude Code가 init에서 알려 준 chickxel 서버 상태("connected"·"pending"·"failed" 등, 목록에 없으면 "목록에 없음").</summary>
     private string? _mcpStatus;
+    /// <summary>
+    /// MCP 접두어 없이 부른 도구 호출 id. 기본 도구를 모두 끄므로(<c>--tools ""</c>) Claude Code가 늘 "No such tool"로 돌려보내고
+    /// 모델이 곧 제 이름으로 다시 부른다 — 사용자에게는 오류 줄로만 보이므로 호출·결과를 모두 알리지 않는다.
+    /// </summary>
+    private readonly HashSet<string> _rejectedToolIds = new(StringComparer.Ordinal);
 
     public ClaudeSession(string claudePath, McpServer mcp, string systemPrompt, McpScope scope)
     {
@@ -585,8 +590,13 @@ public sealed class ClaudeSession : IChatSession
                             break;
                         case "tool_use":
                             var name = AiCli.Str(part["name"]) ?? "?";
-                            if (name.StartsWith(ToolPrefix, StringComparison.Ordinal)) name = name[ToolPrefix.Length..];
-                            ToolUse?.Invoke(new ToolUseInfo(AiCli.Str(part["id"]) ?? "", name, part["input"] as JsonObject));
+                            var id = AiCli.Str(part["id"]) ?? "";
+                            if (!name.StartsWith(ToolPrefix, StringComparison.Ordinal))
+                            {
+                                _rejectedToolIds.Add(id);
+                                break;
+                            }
+                            ToolUse?.Invoke(new ToolUseInfo(id, name[ToolPrefix.Length..], part["input"] as JsonObject));
                             break;
                     }
                 }
@@ -596,8 +606,9 @@ public sealed class ClaudeSession : IChatSession
                 foreach (var r in results.OfType<JsonObject>())
                 {
                     if (AiCli.Str(r["type"]) != "tool_result") continue;
-                    ToolResult?.Invoke(new ToolResultInfo(AiCli.Str(r["tool_use_id"]) ?? "", AiCli.Bool(r["is_error"]) ?? false,
-                        ResultText(r["content"])));
+                    var resultId = AiCli.Str(r["tool_use_id"]) ?? "";
+                    if (_rejectedToolIds.Remove(resultId)) continue;
+                    ToolResult?.Invoke(new ToolResultInfo(resultId, AiCli.Bool(r["is_error"]) ?? false, ResultText(r["content"])));
                 }
                 break;
             case "result":

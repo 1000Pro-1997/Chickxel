@@ -80,6 +80,9 @@ public sealed record InstalledPackage(InstalledPackageState State, string Folder
     public string? DisplayDescription => Manifest is { } m ? AssetTranslations.Find(m.Translations, CultureInfo.CurrentUICulture, t => t.Summary) ?? m.Description : null;
 
     public bool IsBroken => Manifest is null || Issues.Count > 0;
+
+    /// <summary>패키지를 막지 않는 문제(읽지 못해 건너뛴 미리보기 장면 — <see cref="AssetIssueCode.InvalidPreviewScene"/>).</summary>
+    public IReadOnlyList<AssetIssue> Warnings { get; init; } = [];
 }
 
 /// <summary>되돌릴 수 있게 보관한 삭제 패키지(<c>Deleted/</c>).</summary>

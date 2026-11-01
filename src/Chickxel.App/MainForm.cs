@@ -1052,8 +1052,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             () => _ctx.Project is { } p ? p.Flatten(_ctx.CurrentFrame) : null,
             _colors.PickerMode, mode => _colors.PickerMode = mode);
 
-        // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(열린 모든 탭의 문서).
-        CrashGuard.UnsavedProjects = () => OpenDocs.Where(d => d.Project.IsDirty).Select(d => d.Project);
+        // 앱이 끝나는 예외에서 비상 저장할 수정된 문서(열린 모든 탭의 문서 — 저장하지 않는 미리보기 장면은 빼고).
+        CrashGuard.UnsavedProjects = () => OpenDocs.Where(d => d.Project.IsDirty && !d.IsDetached).Select(d => d.Project);
 
         // 숫자 상자를 끄는 동안의 값 변화(프로젝트 설정 등)는 실행취소 한 단계로 묶는다. Claude 차례처럼 이미 열린 묶음이 있으면 그 안에 둔다.
         SpriteProject? scrubProject = null;
@@ -1470,6 +1470,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void UpdateTitle()
     {
         var p = _ctx.Project;
+        // 저장하지 않는 문서(효과 만들기의 미리보기 장면)는 주인이 정한 제목, 수정됨 표시 없음
+        if (_activeTab?.Doc is { DetachedTitle: { } detached } && ReferenceEquals(_activeTab.Doc.Project, p))
+        {
+            Title = $"{detached} — Chickxel";
+            return;
+        }
         Title = p is null
             ? "Chickxel"
             : $"{p.DisplayName}{(p.IsDirty ? " ●" : "")} — Chickxel" + (p.Path is { } path ? $"  ({Path.GetDirectoryName(path)})" : "");
@@ -1851,8 +1857,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     // ───────────── 열린 문서(탭) ─────────────
 
-    /// <summary>저장 안 한 변경이 있는 열린 문서 수.</summary>
-    private int UnsavedCount => OpenDocs.Count(d => d.Project.IsDirty);
+    /// <summary>저장 안 한 변경이 있는 열린 문서 수(저장하지 않는 미리보기 장면은 빼고).</summary>
+    private int UnsavedCount => OpenDocs.Count(d => d.Project.IsDirty && !d.IsDetached);
 
     /// <summary>상태 표시줄 문구에 덧붙일 " · 저장 안 한 파일 N개"(없으면 빈 문자열).</summary>
     private string UnsavedSuffix => UnsavedCount is var n and > 0 ? MainStrings.FormatMessage_344(n: n) : "";
@@ -1930,7 +1936,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private bool ConfirmCloseAll()
     {
         _ctx.CommitFloating();
-        var files = OpenDocs.Where(d => d.Project.IsDirty)
+        var files = OpenDocs.Where(d => d.Project.IsDirty && !d.IsDetached)
             .Select(d => DescribeUnsaved(d.Project, d.SourcePath, d.Thumbnail ?? d.Project.Flatten(0))).ToList();
         if (files.Count == 0) return true;
         var dlg = new UnsavedChangesDialog(files);
@@ -1959,7 +1965,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private static UnsavedFile DescribeUnsaved(SpriteProject p, string? source, PixelImage thumbnail)
     {
         var shown = source ?? p.Path;
-        if (shown is null) return new UnsavedFile(p, MainStrings.Ui_286, null, thumbnail, MainStrings.Ui_287);
+        if (shown is null) return new UnsavedFile(p, p.DisplayName, null, thumbnail, MainStrings.Ui_287);
         string? note = p.Path is { } path && !string.Equals(path, shown, StringComparison.OrdinalIgnoreCase)
             ? MainStrings.FormatMessage_350(value: Path.GetFileName(path)) : null;
         return new UnsavedFile(p, Path.GetFileName(shown), Path.GetDirectoryName(shown), thumbnail, note);
@@ -2276,10 +2282,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         p ??= _ctx.Project;
         if (p is null) return false;
-        var path = Ui.SaveFile(this, MainStrings.Message_296,
-            p.Path is null ? _browser.CurrentFolder ?? _settings.LastFolder : Path.GetDirectoryName(p.Path),
-            p.Path is null ? "sprite" + SpriteProject.FileExtension : Path.ChangeExtension(Path.GetFileName(p.Path), SpriteProject.FileExtension),
-            SpriteProject.FileExtension,
+        var folder = p.Path is null ? _browser.CurrentFolder ?? _settings.LastFolder : Path.GetDirectoryName(p.Path);
+        // 저장한 적 없는 프로젝트는 임시 제목(없으면 "sprite")을 대화상자가 열릴 폴더에 없는 이름으로(겹치면 _1, _2 …).
+        var name = p.Path is null ? ProjectFileName.Suggest(p.TempTitle, folder) : Path.ChangeExtension(Path.GetFileName(p.Path), SpriteProject.FileExtension);
+        var path = Ui.SaveFile(this, MainStrings.Message_296, folder, name, SpriteProject.FileExtension,
             new FileFilter(MainStrings.Ui_297, "*" + SpriteProject.FileExtension));
         if (path is null) return false;
         return SaveDocument(p, path, interactive: true, out _);
@@ -2964,7 +2970,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     void Ai.IAiHost.SetPalette(IReadOnlyList<Color32> colors) => _colors.SetActivePalette(colors);
 
-    bool Ai.IAiHost.CreateProject(int width, int height, string? fileName, Color32? background, out string message)
+    bool Ai.IAiHost.CreateProject(int width, int height, string? fileName, string? title, Color32? background, out string message)
     {
         if (width < 1 || height < 1 || width > PixelImage.MaxSize || height > PixelImage.MaxSize)
         {
@@ -2995,11 +3001,15 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             }
         }
         var p = BuildProject(width, height, background);
+        // 파일 없이 만들면 임시 제목(탭에 보이고, 저장할 때 파일 이름으로 제안)
+        if (path is null) p.TempTitle = title;
         OpenInNewTab(new OpenDocument(p, null));
         if (path is null)
         {
             p.IsDirty = true;
-            message = MainStrings.FormatMessage_398(width: width, height: height);
+            message = p.TempTitle is { } t
+                ? MainStrings.FormatAi_NewProjectTitled(title: t, width: width, height: height)
+                : MainStrings.FormatMessage_398(width: width, height: height);
             ShowMessage(message);
             return true;
         }
@@ -3011,6 +3021,23 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _browser.RefreshFile(path);
         _browser.SelectFile(path);
         message = MainStrings.FormatMessage_400(width: width, height: height, path: path);
+        return true;
+    }
+
+    bool Ai.IAiHost.SetDocumentTitle(string? title, out string message)
+    {
+        if (CurrentDoc is not { } doc)
+        {
+            message = MainStrings.Message_334;
+            return false;
+        }
+        if (!doc.CanHaveTempTitle)
+        {
+            message = doc.IsDetached ? MainStrings.Ai_TempTitle_Detached : MainStrings.FormatAi_TempTitle_HasFile(name: doc.Project.DisplayName);
+            return false;
+        }
+        doc.Project.TempTitle = title;
+        message = doc.Project.TempTitle is { } t ? MainStrings.FormatAi_TempTitle_Set(title: t) : MainStrings.Ai_TempTitle_Cleared;
         return true;
     }
 

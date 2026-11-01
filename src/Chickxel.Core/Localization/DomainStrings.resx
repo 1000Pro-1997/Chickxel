@@ -65,6 +65,8 @@
   <data name="Document_IgnoreSidecar" xml:space="preserve"><value>편집 정보 파일(.gpixel.json)을 읽지 못해 무시했습니다: {error}</value><comment>error = 파일을 읽을 때 발생한 오류 메시지.</comment></data>
   <data name="Document_NoSavePath" xml:space="preserve"><value>저장할 경로가 없습니다.</value></data>
   <data name="File_NameExists" xml:space="preserve"><value>이미 같은 이름의 파일이 있습니다: {name}</value><comment>name = 충돌한 파일 이름.</comment></data>
+  <data name="File_ReadOnly" xml:space="preserve"><value>{name}을(를) 덮어쓰지 못했습니다: 읽기 전용 파일입니다. 파일 속성에서 읽기 전용을 끄거나 다른 이름으로 저장하세요.</value><comment>name = 덮어쓰려던 파일 이름.</comment></data>
+  <data name="File_InUse" xml:space="preserve"><value>{name}을(를) 덮어쓰지 못했습니다: 다른 프로그램이 파일을 열어 두고 바꾸지 못하게 합니다. 그 프로그램(이미지 뷰어, 게임 엔진, 동기화 앱 등)을 닫거나 다른 이름으로 저장하세요.</value><comment>name = 덮어쓰려던 파일 이름.</comment></data>
   <data name="Preset_ReadFailed" xml:space="preserve"><value>내보내기 설정 프리셋 파일을 읽지 못했습니다: {error}</value><comment>error = 프리셋 JSON을 읽을 때 발생한 오류 메시지.</comment></data>
   <data name="Preset_NewerVersion" xml:space="preserve"><value>더 새로운 Chickxel의 프리셋 파일입니다(형식 버전 {version}).</value><comment>version = 프리셋 파일 형식 버전.</comment></data>
   <data name="Gif_NoFrames" xml:space="preserve"><value>GIF로 쓸 프레임이 없습니다.</value></data>
@@ -369,6 +371,7 @@
   <data name="Asset_Issue_InvalidScript" xml:space="preserve"><value>스크립트를 해석할 수 없습니다: {detail}</value></data>
   <data name="Asset_Issue_ScriptHashMismatch" xml:space="preserve"><value>스크립트 원문이 적힌 해시와 다릅니다: {detail}</value></data>
   <data name="Asset_Issue_MissingScript" xml:space="preserve"><value>스크립트 효과의 원문이 레시피에 없습니다: {detail}</value></data>
+  <data name="Asset_Issue_InvalidPreviewScene" xml:space="preserve"><value>미리보기 장면을 읽을 수 없어 장면 없이 둡니다: {detail}</value><comment>경고(패키지는 설치됨). detail = 기술적인 까닭.</comment></data>
   <data name="CatalogBuild_MissingPreview" xml:space="preserve"><value>목록 미리보기가 없습니다(미리보기가 있는 에셋이나 review.json의 preview가 필요합니다).</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>작성자 ID는 소문자·숫자와 가운데 하이픈으로 1~64자여야 합니다(예: pixel-cat).</value></data>
   <data name="Publish_AuthorName" xml:space="preserve"><value>작성자 표시 이름을 1~100자로 넣으세요.</value></data>
@@ -381,6 +384,11 @@
   <data name="Publish_NoTags" xml:space="preserve"><value>태그가 없으면 상점에서 찾기 어렵습니다.</value></data>
   <data name="Publish_VersionNotNewer" xml:space="preserve"><value>이미 올린 버전 {detail}보다 높은 버전을 적으세요. 올린 버전은 바꿀 수 없어서 같거나 낮은 버전은 올릴 수 없습니다.</value><comment>detail = 이미 올린 가장 높은 버전.</comment></data>
   <data name="Publish_RecipeNotPublishable" xml:space="preserve"><value>효과 프리셋(여러 효과와 값을 묶은 것)은 올릴 수 없습니다. 효과는 스크립트 효과만 올립니다.</value></data>
+  <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>다른 레이어를 읽는 효과에는 layer-reference 태그가 있어야 합니다.</value><comment>layer-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
+  <data name="Publish_LayerReferenceTagFull" xml:space="preserve"><value>다른 레이어를 읽는 효과에는 layer-reference 태그가 붙어야 하는데 태그가 이미 8개입니다. 태그를 하나 빼세요.</value><comment>layer-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
+  <data name="PreviewScene_Invalid" xml:space="preserve"><value>미리보기 장면 값이 올바르지 않습니다: {detail}</value><comment>detail = 틀린 값 이름(기술 값, 번역하지 않음).</comment></data>
+  <data name="PreviewScene_TooLarge" xml:space="preserve"><value>미리보기 장면이 너무 큽니다: 레이어 × 프레임 칸이 {cells}개인데 이 크기에서는 {max}개까지 저장할 수 있습니다. 레이어나 프레임을 줄이거나 캔버스를 작게 하세요.</value><comment>cells = 레이어 수 × 프레임 수, max = 이 캔버스 크기에서 저장 그림(512×512)에 들어가는 칸 수.</comment></data>
+  <data name="PreviewScene_NoChick" xml:space="preserve"><value>미리보기 장면에 병아리 레이어가 없거나 첫 프레임의 병아리가 비어 있습니다.</value></data>
   <data name="AssetMigration_UnnamedRecipe" xml:space="preserve"><value>이름 없는 효과 {number}</value><comment>예전 사용자 정의 효과 이름이 제어 문자뿐이라 비었을 때 개인 에셋으로 옮기며 붙이는 이름. number = 목록 순번(1부터).</comment></data>
   <data name="AssetMigration_UnnamedGradient" xml:space="preserve"><value>이름 없는 그라데이션 {number}</value><comment>예전 그라데이션 프리셋 이름이 비었을 때 붙이는 이름. number = 목록 순번(1부터).</comment></data>
   <data name="Community_Error_Unauthorized" xml:space="preserve"><value>로그인이 필요합니다. 로그인이 끝났으면 다시 로그인하세요.</value></data>

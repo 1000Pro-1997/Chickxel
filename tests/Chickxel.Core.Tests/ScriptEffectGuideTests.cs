@@ -67,4 +67,26 @@ public class ScriptEffectGuideTests
             ScriptGuideStrings.Culture = saved;
         }
     }
+
+    [Theory]
+    [InlineData("ko")]
+    [InlineData("en")]
+    public void Guide_explains_layer_reading_with_the_forced_tag_and_the_preview_scene_names(string culture)
+    {
+        var saved = ScriptGuideStrings.Culture;
+        ScriptGuideStrings.Culture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            string guide = ScriptEffectGuide.ToMarkdown(null);
+            string rule = ScriptGuideStrings.FormatGuide_RuleLayers(tag: Chickxel.Core.IO.ScriptAsset.LayerReferenceTag);
+            Assert.Contains("- " + rule, guide, StringComparison.Ordinal);
+            Assert.Contains("`layer-reference`", rule, StringComparison.Ordinal);
+            Assert.Contains("ctx.layerByName(\"ground\")", rule, StringComparison.Ordinal);
+            Assert.Contains("null", rule, StringComparison.Ordinal);
+        }
+        finally
+        {
+            ScriptGuideStrings.Culture = saved;
+        }
+    }
 }

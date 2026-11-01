@@ -18,11 +18,13 @@ public sealed class AssetPackage
     /// <summary>앱 이름이 Gpixel이던 때의 패키지 확장자. 내용 형식이 같아 가져오기는 되고, 내보내기는 늘 <see cref="Extension"/>.</summary>
     public const string LegacyExtension = ".gpixel-asset";
 
-    internal AssetPackage(AssetManifest manifest, IReadOnlyDictionary<string, byte[]> files, IReadOnlyList<AssetPackageItem> items)
+    internal AssetPackage(AssetManifest manifest, IReadOnlyDictionary<string, byte[]> files, IReadOnlyList<AssetPackageItem> items,
+        IReadOnlyList<AssetIssue>? warnings = null)
     {
         Manifest = manifest;
         Files = files;
         Items = items;
+        Warnings = warnings ?? [];
     }
 
     public AssetManifest Manifest { get; }
@@ -32,6 +34,9 @@ public sealed class AssetPackage
 
     /// <summary>manifest 순서의 에셋.</summary>
     public IReadOnlyList<AssetPackageItem> Items { get; }
+
+    /// <summary>패키지를 막지 않는 문제(읽지 못해 건너뛴 미리보기 장면 — <see cref="AssetIssueCode.InvalidPreviewScene"/>).</summary>
+    public IReadOnlyList<AssetIssue> Warnings { get; }
 
     /// <summary>같은 패키지 파일 집합인지(manifest의 경로·해시가 모두 같음).</summary>
     public bool SameContent(AssetManifest other)
@@ -90,6 +95,7 @@ public sealed class AssetPackageBuilder(AssetManifest header)
     /// <summary>
     /// 에셋 하나를 더하고 새 에셋 ID를 돌려준다. <paramref name="preview"/>가 있으면 <c>previews/&lt;조각&gt;.png</c>를 미리보기로 넣고,
     /// 효과 없는 원본이 있으면 <see cref="OriginalPreviewPath"/> 자리에 같이 넣는다(manifest는 가리키지 않음 — 웹 비교용).
+    /// 미리보기 장면이 있는 스크립트 에셋(<see cref="ScriptAsset.Scene"/>)은 그 저장 PNG를 <see cref="ScenePath"/> 자리에 넣는다(manifest는 가리키지 않음).
     /// <paramref name="segment"/>를 주면 이름 대신 그 조각을 ID·파일 이름에 쓴다(공식 패키지처럼 ID를 정해 둘 때 — 소문자·숫자·하이픈).
     /// </summary>
     public string Add(string kind, IAssetData value, PackagePreview? preview = null, string? segment = null)
@@ -106,6 +112,7 @@ public sealed class AssetPackageBuilder(AssetManifest header)
             _files[previewPath] = preview.Png;
             if (preview.OriginalPng is { Length: > 0 } original) _files[OriginalPreviewPath(previewPath)] = original;
         }
+        if (value is ScriptAsset { Scene: { } scene }) _files[ScenePath(path)] = scene.ToPng();
         _entries.Add(new AssetManifestEntry(id, kind, path, previewPath));
         return id;
     }
@@ -116,6 +123,17 @@ public sealed class AssetPackageBuilder(AssetManifest header)
 
     /// <summary>미리보기 <c>previews/&lt;이름&gt;.png</c>의 효과 없는 원본 자리 <c>previews/&lt;이름&gt;.original.png</c>(서버가 이 이름으로 찾는다).</summary>
     public static string OriginalPreviewPath(string previewPath) => previewPath[..^".png".Length] + ".original.png";
+
+    /// <summary>
+    /// 에셋 파일 <paramref name="assetPath"/>(<c>assets/scripts/&lt;조각&gt;.js</c>)의 미리보기 장면 자리 <c>previews/&lt;조각&gt;.scene.png</c>
+    /// (<see cref="PreviewScene.ToPng"/>). 예전 앱에는 쓰이지 않는 평범한 미리보기 PNG다.
+    /// </summary>
+    public static string ScenePath(string assetPath)
+    {
+        string name = assetPath[(assetPath.LastIndexOf('/') + 1)..];
+        int dot = name.LastIndexOf('.');
+        return AssetPackageValidator.PreviewFolder + (dot > 0 ? name[..dot] : name) + ".scene.png";
+    }
 
     /// <summary>뿌리 문서(<c>LICENSE.txt</c>, <c>README.md</c>).</summary>
     public void AddDocument(string name, string text) => _files[name] = Encoding.UTF8.GetBytes(text);

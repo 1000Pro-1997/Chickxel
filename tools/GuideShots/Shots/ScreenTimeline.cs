@@ -607,7 +607,7 @@ internal static class ScreenTimelineShots
     [Shot("screen-script-effects")]
     public static void ScriptEffects(ShotKit k)
     {
-        AppAssets.Store.SavePersonalScript(PulseScript);
+        AppAssets.Store.SavePersonalScript(PulseScript, null, null);
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
         int body = LayerIndex(main, "Body");
