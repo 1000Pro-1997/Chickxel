@@ -9601,7 +9601,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="TextEffect_FontMissing" xml:space="preserve"><value>{0} (없음)</value><comment>글꼴 목록: 이 컴퓨터에 없는 글꼴, {0} = 글꼴 이름</comment></data>
   <data name="TextEffect_FontMissingTip" xml:space="preserve"><value>이 컴퓨터에 없는 글꼴이라 기본 글꼴(Galmuri 11)로 그립니다. 같은 글꼴 파일을 더하면 원래 글꼴로 그립니다.</value></data>
   <data name="TextEffect_Size" xml:space="preserve"><value>크기</value><comment>글씨 설정: 글자 크기(px)</comment></data>
-  <data name="TextEffect_SizeTip" xml:space="preserve"><value>글자 크기(px)입니다. 0이면 글꼴 기본 크기입니다. 도트 글꼴은 기본 크기의 정수 배로 커집니다.</value></data>
+  <data name="TextEffect_SizeTip" xml:space="preserve"><value>글자 크기(px)입니다. 0이면 글꼴 기본 크기입니다. 도트 글꼴은 줄 높이가 이 크기가 되게 늘이거나 줄입니다. 캔버스에서 글상자를 끌면 상자 높이에 맞는 크기가 됩니다.</value></data>
   <data name="TextEffect_Bold" xml:space="preserve"><value>굵게</value><comment>글씨 설정: 굵게(아이콘 단추 풍선·체크 상자)</comment></data>
   <data name="TextEffect_Italic" xml:space="preserve"><value>기울임</value><comment>글씨 설정: 기울임(아이콘 단추 풍선·체크 상자)</comment></data>
   <data name="TextEffect_Smooth" xml:space="preserve"><value>매끄럽게</value><comment>글씨 설정: 벡터 글꼴 가장자리를 반투명 픽셀로</comment></data>

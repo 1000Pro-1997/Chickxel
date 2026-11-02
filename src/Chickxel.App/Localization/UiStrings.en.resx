@@ -3727,7 +3727,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="TextEffect_FontMissing" xml:space="preserve"><value>{0} (missing)</value></data>
   <data name="TextEffect_FontMissingTip" xml:space="preserve"><value>This font is not on this computer, so the text is drawn with the default font (Galmuri 11). Add the same font file to draw it with the original font.</value></data>
   <data name="TextEffect_Size" xml:space="preserve"><value>Size</value></data>
-  <data name="TextEffect_SizeTip" xml:space="preserve"><value>Text size in pixels. 0 uses the font's default size. Pixel fonts grow in whole multiples of their default size.</value></data>
+  <data name="TextEffect_SizeTip" xml:space="preserve"><value>Text size in pixels. 0 uses the font's default size. Pixel fonts are stretched or shrunk so a line is this tall. Dragging a text box on the canvas sets the size to fit the box height.</value></data>
   <data name="TextEffect_Bold" xml:space="preserve"><value>Bold</value></data>
   <data name="TextEffect_Italic" xml:space="preserve"><value>Italic</value></data>
   <data name="TextEffect_Smooth" xml:space="preserve"><value>Smooth</value></data>

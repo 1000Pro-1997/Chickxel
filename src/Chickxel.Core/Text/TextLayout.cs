@@ -19,6 +19,28 @@ public static class TextLayout
 
     /// <summary>모든 글자(타자기 진행과 관계없이)의 잉크 사각형을 합친 사각형. 찍히는 글자가 없으면 <see cref="Rectangle.Empty"/>.</summary>
     public static Rectangle Bounds(TextEffect e) => Measure(e).Ink;
+
+    /// <summary>
+    /// 글 전체(상자 너비에서 바뀌는 줄까지)가 높이 <paramref name="height"/> px 안에 드는 가장 큰 글자 크기(1~<see cref="TextEffect.MaxSize"/>, 1에서도 넘치면 1).
+    /// 빈 글은 한 줄로 잰다. 캔버스 글씨 도구가 끈 상자 높이로 크기를 정할 때 쓴다.
+    /// </summary>
+    public static int FitSize(TextEffect e, int height)
+    {
+        e = e with { BoxHeight = 0 };
+        int fit = 1, lo = 2, hi = TextEffect.MaxSize;
+        while (lo <= hi)
+        {
+            int mid = (lo + hi) / 2;
+            var probe = e with { Size = mid };
+            if (new TextLayoutResult(probe, TextFace.Uncached(probe)).Frame.Height <= height)
+            {
+                fit = mid;
+                lo = mid + 1;
+            }
+            else hi = mid - 1;
+        }
+        return fit;
+    }
 }
 
 /// <summary>

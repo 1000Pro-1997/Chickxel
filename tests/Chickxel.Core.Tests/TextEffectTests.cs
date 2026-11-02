@@ -47,15 +47,30 @@ public class TextEffectTests
         Assert.Equal((14, 2, 16), (font.Ascent, font.Descent, font.LineHeight));
         Assert.Same(font, FontLibrary.Default.Font);
         Assert.True(font.Contains('가') && font.Contains('A') && font.Contains(0xFFFD));
-        string[] builtIns = ["Galmuri7", "Galmuri9", "Galmuri11", "Galmuri11Bold", "Galmuri14"];
-        Assert.Equal(builtIns, FontLibrary.List().Where(f => f.BuiltIn).Select(f => f.Name));
-        foreach (var name in builtIns)
-        {
-            var info = FontLibrary.Find(name.ToLowerInvariant())!;
-            Assert.Equal((name, FontKind.Bitmap, true), (info.Name, info.Kind, info.BuiltIn));
-            Assert.Equal(TextLayout.Measure(new TextEffect { FontName = name }).Lines[0].Height, info.NativeSize);
-        }
         Assert.Equal(16, FontLibrary.Find(FontLibrary.DefaultName)!.NativeSize);
+    }
+
+    [Fact]
+    public void BuiltInFonts_LoadAndDrawCrispHangulAndLatin()
+    {
+        var builtIns = FontLibrary.List().Where(f => f.BuiltIn).ToList();
+        Assert.Contains(builtIns, f => f.Kind == FontKind.Vector);
+        foreach (var info in builtIns)
+        {
+            Assert.Equal(info, FontLibrary.Find(info.Name.ToLowerInvariant()));
+            Assert.Equal(info.Name, new TextEffect { FontName = info.Name.ToUpperInvariant() }.FontName);
+            var e = new TextEffect { FontName = info.Name, Text = "A", Color = Red };
+            int line = TextLayout.Measure(e).Lines[0].Height;
+            if (info.Kind == FontKind.Bitmap) Assert.Equal(line, info.NativeSize);
+            else Assert.True(info.NativeSize > 0 && line >= info.NativeSize, $"{info.Name}: {info.NativeSize}, line {line}");
+            // 글꼴에 없는 한글은 기본 글꼴로 채움(대신 글자가 아님)
+            var hangul = Ink(Draw(e with { Text = "가" }, 80, 80));
+            Assert.NotEqual(Ink(Draw(e with { Text = "\uFFFD" }, 80, 80)), hangul);
+            // 크기 0: 도트 모양 벡터 글꼴도 도트가 칸에 맞아 부드럽게 그려도 반투명 픽셀이 없음
+            var image = Draw(e with { Text = "Ag가", Smooth = true }, 120, 80);
+            Assert.NotEmpty(Ink(image));
+            Assert.All(Ink(image), p => Assert.Equal(255, image[p.X, p.Y].A));
+        }
     }
 
     [Fact]
@@ -337,7 +352,6 @@ public class TextEffectTests
     [Theory]
     [InlineData(0, 1)]
     [InlineData(16, 1)]
-    [InlineData(20, 1)]
     [InlineData(32, 2)]
     [InlineData(48, 3)]
     public void Size_ScalesBitmapFontsByAWholeFactor(int size, int factor)
@@ -347,6 +361,37 @@ public class TextEffectTests
         Assert.Equal(16 * factor, TextLayout.Measure(e).Lines[0].Height);
         Assert.Equal(10 * factor * factor, Ink(Draw(e, 60, 200)).Length);
         Assert.Equal(4 * factor, TextLayout.Measure(e with { Text = "!!" }).CaretRect(1).X);
+    }
+
+    [Theory]
+    [InlineData(8, 2)]
+    [InlineData(12, 3)]
+    [InlineData(20, 5)]
+    [InlineData(24, 6)]
+    public void Size_BetweenWholeFactors_ScalesBitmapFontsToThatLineHeight(int size, int advance)
+    {
+        // Galmuri11 줄 높이 16 → 크기 그대로의 줄 높이, "!" 펜 이동 4 × 크기/16
+        var e = Bang with { Size = size };
+        Assert.Equal(size, TextLayout.Measure(e).Lines[0].Height);
+        Assert.Equal(advance, TextLayout.Measure(e with { Text = "!!" }).CaretRect(1).X);
+        int ink = Ink(Draw(e, 60, 200)).Length, native = Ink(Draw(Bang, 60, 200)).Length;
+        Assert.True(size < 16 ? ink < native : ink > native);
+    }
+
+    [Fact]
+    public void FitSize_IsTheLargestSizeWhoseTextFitsTheHeight()
+    {
+        var empty = Bang with { Text = "", BoxWidth = 40, BoxHeight = 500 };
+        Assert.Equal(8, TextLayout.FitSize(empty, 8));
+        Assert.Equal(37, TextLayout.FitSize(empty, 37));
+        Assert.Equal(1, TextLayout.FitSize(empty, 0));
+        // 두 줄 + 줄 간격 2: 2 × 크기 + 2 ≤ 40
+        Assert.Equal(19, TextLayout.FitSize(empty with { Text = "!\n!", LineSpacing = 2 }, 40));
+        // 상자 너비에서 바뀌는 줄까지 셈: 크기가 크면 "!! !!"가 두 줄이 되어 더 작은 크기가 맞음
+        var wrapped = Bang with { Text = "!! !!", BoxWidth = 30 };
+        int size = TextLayout.FitSize(wrapped, 40);
+        Assert.True(TextLayout.Measure(wrapped with { Size = size }).Frame.Height <= 40);
+        Assert.True(TextLayout.Measure(wrapped with { Size = size + 1 }).Frame.Height > 40);
     }
 
     [Fact]

@@ -2,6 +2,23 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.77 (2026-11-02)
+### Text size really changes, and dragging sets it
+- Pixel fonts now draw at any size: a line becomes exactly as tall as the Size value (Galmuri 11 at 8 px is half size). Before, sizes were rounded to whole multiples, so most values looked the same.
+- Dragging a new text box picks the size that fits one line into the box height, and the Size box follows.
+- Dragging the top or bottom handle resizes the text so all of it fits the new height; the side handles only change the width.
+- Text saved in v1.14.76 with a pixel-font size that isn't a whole multiple now draws at that size.
+
+### More built-in fonts
+- Added Galmuri 11 Condensed, Galmuri Mono 7/9/11, NeoDunggeunmo, NeoDunggeunmo Code, NeoDunggeunmo Pro, Unifont, Cozette and Spleen 5×8/6×12/8×16.
+- NeoDunggeunmo fonts are pixel-shaped TTFs; at size 0 they draw at 16 px, where the dots line up with the pixel grid.
+- Korean in fonts without Hangul (Cozette, Spleen) is filled in with Galmuri 11.
+- All fonts are free (SIL OFL 1.1, MIT or BSD); text you draw with them needs no credit. Their license texts ship in the app's `Licenses` folder.
+
+### Shorter Tools menu
+- The four selection tools are in a Select submenu, which is checked while a selection tool is active.
+- Filled shapes, contiguous fill, pixel perfect, the mirror options, right button erases, move wrap, brush size and swap colors are in a Drawing options submenu. Their shortcuts are unchanged.
+
 ## v1.14.76 (2026-11-02)
 ### Type text right on the canvas
 - The Text tool works like Aseprite: drag to make a text box (words wrap inside it) or click for one-line text, then type directly on the canvas; the letters appear as real pixels while you type.

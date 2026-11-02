@@ -10,7 +10,7 @@ public sealed record TextStyle
 {
     public string FontName { get; init; } = FontLibrary.DefaultName;
 
-    /// <summary>px, 0 = 도트 글꼴은 원래 크기, 벡터 글꼴은 12(0~<see cref="TextEffect.MaxSize"/>).</summary>
+    /// <summary>px, 0 = 글꼴 기본 크기(<see cref="TextEffect.Size"/>, 0~<see cref="TextEffect.MaxSize"/>).</summary>
     public int Size { get; init; }
 
     public bool Bold { get; init; }

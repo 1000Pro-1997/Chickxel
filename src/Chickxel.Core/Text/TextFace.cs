@@ -46,7 +46,7 @@ internal abstract class TextFace
 
     protected abstract RasterGlyph? Render(int codePoint);
 
-    /// <summary>글씨 효과 <paramref name="e"/>를 그릴 면(없는 글꼴은 기본 글꼴).</summary>
+    /// <summary>글씨 효과 <paramref name="e"/>를 그릴 면(없는 글꼴은 기본 글꼴). 같은 설정이면 그려 둔 면을 나눠 쓴다.</summary>
     public static TextFace For(TextEffect e)
     {
         var source = FontLibrary.Source(e.FontName);
@@ -54,12 +54,7 @@ internal abstract class TextFace
         var key = new FaceKey(source.Key, e.Size, e.Bold, e.Italic, vector && e.Smooth, e.ScaleX, e.ScaleY);
         lock (CacheGate)
             if (Cache.TryGetValue(key, out var face)) return face;
-        TextFace created = source switch
-        {
-            VectorSource v => new VectorFace(v.Typeface, e.Size == 0 ? VectorFace.DefaultSize : e.Size, e.Bold, e.Italic, e.Smooth, e.ScaleX, e.ScaleY),
-            BitmapSource b => BitmapFace.Create(b, e.Size, e.Bold, e.Italic, e.ScaleX, e.ScaleY),
-            _ => throw new InvalidOperationException(),
-        };
+        var created = Create(source, e);
         lock (CacheGate)
         {
             if (Cache.TryGetValue(key, out var face)) return face;
@@ -68,6 +63,16 @@ internal abstract class TextFace
         }
         return created;
     }
+
+    /// <summary>캐시에 넣지 않는 면(크기를 여러 번 재 볼 때 — 그려 둔 면을 밀어내지 않음).</summary>
+    internal static TextFace Uncached(TextEffect e) => Create(FontLibrary.Source(e.FontName), e);
+
+    private static TextFace Create(FontSource source, TextEffect e) => source switch
+    {
+        VectorSource v => new VectorFace(v.Typeface, e.Size != 0 ? e.Size : v.PixelSize > 0 ? v.PixelSize : VectorFace.DefaultSize, e.Bold, e.Italic, e.Smooth, e.ScaleX, e.ScaleY),
+        BitmapSource b => BitmapFace.Create(b, e.Size, e.Bold, e.Italic, e.ScaleX, e.ScaleY),
+        _ => throw new InvalidOperationException(),
+    };
 
     /// <summary>글꼴 목록이 바뀌면(사용자 글꼴 더하기·지우기) 그려 둔 면을 버린다.</summary>
     internal static void ClearCache()
@@ -84,29 +89,36 @@ internal abstract class TextFace
     /// 사용자 글꼴에 없는 글자를 대신 그릴 기본 글꼴(Galmuri11) 면: 정수 배 <c>round(<paramref name="pixels"/> / <paramref name="native"/>)</c>(최소 1), 같은 비율·굵게·기울임.
     /// </summary>
     protected static BitmapFace FallbackFor(double pixels, double native, bool bold, bool italic, int scaleX, int scaleY)
-        => new(FontLibrary.Default.Font, Math.Max(1, (int)Math.Round(pixels / native)), bold, italic, scaleX, scaleY, null);
+    {
+        var font = FontLibrary.Default.Font;
+        int line = Math.Max(1, font.LineHeight);
+        return new(font, Math.Max(1, (int)Math.Round(pixels / native)) * line, line, bold, italic, scaleX, scaleY, null);
+    }
 
     private readonly record struct FaceKey(string Source, int Size, bool Bold, bool Italic, bool Smooth, int ScaleX, int ScaleY);
 }
 
 /// <summary>
-/// 도트 글꼴 면: 정수 배(<c>round(크기 / 원래 줄 높이)</c>, 최소 1) 다음 가로·세로 비율로 가장 가까운 칸 늘리기.
+/// 도트 글꼴 면: 크기 / 원래 줄 높이 배(크기 0 = 1배, 원래보다 작게도 됨) 다음 가로·세로 비율로 가장 가까운 칸 늘리기·줄이기.
 /// 굵게 = 원래 글자에서 오른쪽으로 1도트 넓힘(펜 이동도 1도트 더), 기울임 = 원래 도트 줄마다 밀기(<see cref="TextFace.ItalicShift"/>) 다음 늘리기.
-/// 원래 칸 (u, v)(펜·기준선 기준)는 늘린 뒤 [⌊u·sx⌋, ⌊(u+1)·sx⌋) × [⌊v·sy⌋, ⌊(v+1)·sy⌋)를 채운다.
+/// 원래 칸 (u, v)(펜·기준선 기준)는 늘린 뒤 [⌊u·sx⌋, ⌊(u+1)·sx⌋) × [⌊v·sy⌋, ⌊(v+1)·sy⌋)를 채운다(줄일 때 빈 범위가 된 칸은 빠짐).
 /// </summary>
 internal sealed class BitmapFace : TextFace
 {
     private readonly PixelFont _font;
-    private readonly int _mulX, _mulY;
+    /// <summary>배율 = <see cref="_numX"/>(<see cref="_numY"/>) / <see cref="_den"/>: 줄 높이 px × 비율 % / (원래 줄 높이 × 100).</summary>
+    private readonly long _numX, _numY, _den;
     private readonly bool _bold, _italic;
     private readonly BitmapFace? _fallback;
 
-    /// <param name="fallback">이 글꼴에 없는 글자를 그릴 면(사용자 도트 글꼴만 — 기본 글꼴은 자기 대신 글자 U+FFFD).</param>
-    internal BitmapFace(PixelFont font, int factor, bool bold, bool italic, int scaleX, int scaleY, BitmapFace? fallback)
+    /// <param name="pixels">원래 줄 높이 <paramref name="native"/>를 몇 px로 그릴지(배율 = pixels / native, 그다음 가로·세로 비율).</param>
+    /// <param name="fallback">이 글꼴에 없는 글자를 그릴 면(기본 글꼴은 없음 — 자기 대신 글자 U+FFFD).</param>
+    internal BitmapFace(PixelFont font, int pixels, int native, bool bold, bool italic, int scaleX, int scaleY, BitmapFace? fallback)
     {
         _font = font;
-        _mulX = factor * scaleX;
-        _mulY = factor * scaleY;
+        _numX = (long)pixels * scaleX;
+        _numY = (long)pixels * scaleY;
+        _den = (long)native * 100;
         _bold = bold;
         _italic = italic;
         _fallback = fallback;
@@ -117,16 +129,17 @@ internal sealed class BitmapFace : TextFace
     public static BitmapFace Create(BitmapSource source, int size, bool bold, bool italic, int scaleX, int scaleY)
     {
         var font = source.Font;
-        int factor = size <= 0 ? 1 : Math.Max(1, (int)Math.Round(size / (double)Math.Max(1, font.LineHeight)));
-        var fallback = source.Key.StartsWith("builtin:", StringComparison.Ordinal)
+        int native = Math.Max(1, font.LineHeight);
+        int pixels = size <= 0 ? native : size;
+        var fallback = ReferenceEquals(source, FontLibrary.Default)
             ? null
-            : FallbackFor(font.LineHeight * factor, FontLibrary.Default.Font.LineHeight, bold, italic, scaleX, scaleY);
-        return new BitmapFace(font, factor, bold, italic, scaleX, scaleY, fallback);
+            : FallbackFor(pixels, FontLibrary.Default.Font.LineHeight, bold, italic, scaleX, scaleY);
+        return new BitmapFace(font, pixels, native, bold, italic, scaleX, scaleY, fallback);
     }
 
-    private int X(int u) => FloorDiv((long)u * _mulX, 100);
+    private int X(int u) => FloorDiv(u * _numX, _den);
 
-    private int Y(int v) => FloorDiv((long)v * _mulY, 100);
+    private int Y(int v) => FloorDiv(v * _numY, _den);
 
     public override bool Has(int codePoint) => _font.Contains(codePoint);
 

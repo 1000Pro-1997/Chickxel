@@ -52,7 +52,10 @@ public sealed record TextEffect : AnimatedEffect
         }
     }
 
-    /// <summary>글자 크기 px(0~<see cref="MaxSize"/>, 0 = 도트 글꼴은 원래 크기, 벡터 글꼴은 12). 도트 글꼴은 원래 줄 높이의 정수 배로 반올림.</summary>
+    /// <summary>
+    /// 글자 크기 px(0~<see cref="MaxSize"/>, 0 = 도트 글꼴은 원래 크기, 앱에 든 도트 모양 벡터 글꼴은 도트가 칸에 맞는 크기, 그 밖의 벡터 글꼴은 12).
+    /// 도트 글꼴은 줄 높이가 이 크기가 되게 칸 단위로 늘이거나 줄인다.
+    /// </summary>
     public int Size { get => _size; init => _size = Math.Clamp(value, 0, MaxSize); }
 
     public bool Bold { get; init; }

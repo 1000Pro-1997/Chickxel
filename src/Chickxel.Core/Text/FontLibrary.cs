@@ -12,13 +12,15 @@ public enum FontKind
 }
 
 /// <summary>
-/// 글꼴 하나. <see cref="Name"/> = 프로젝트에 저장하는 ID(기본 글꼴은 "Galmuri11" 같은 이름 — 예전 글꼴 열거 이름과 같음, 사용자 글꼴은 글꼴 폴더 안 파일 이름).
-/// <see cref="DisplayName"/> = 글꼴에서 읽은 이름(가족 + 굵기·기울기) 또는 파일 이름. <see cref="NativeSize"/> = 도트 글꼴의 원래 줄 높이(px, ascent + descent), 벡터는 0.
+/// 글꼴 하나. <see cref="Name"/> = 프로젝트에 저장하는 ID(앱에 든 글꼴은 "Galmuri11" 같은 이름 — 예전 글꼴 열거 이름과 같음, 사용자 글꼴은 글꼴 폴더 안 파일 이름).
+/// <see cref="DisplayName"/> = 글꼴에서 읽은 이름(가족 + 굵기·기울기) 또는 파일 이름. <see cref="NativeSize"/> = 도트 글꼴의 원래 줄 높이(px, ascent + descent),
+/// 앱에 든 도트 모양 벡터 글꼴은 도트가 칸에 맞는 크기(px), 그 밖의 벡터 글꼴은 0.
 /// </summary>
 public sealed record FontInfo(string Name, string DisplayName, FontKind Kind, int NativeSize, bool BuiltIn);
 
 /// <summary>
-/// 글씨 효과의 글꼴 목록: 앱에 든 Galmuri BDF(어셈블리 리소스) + 사용자 글꼴 폴더(<see cref="UserFolder"/>)의 .ttf .otf .ttc .bdf 파일.
+/// 글씨 효과의 글꼴 목록: 앱에 든 글꼴(어셈블리 리소스 — 도트 BDF와 도트 모양 TTF, 라이선스는 <c>Text/Fonts/*-LICENSE.txt</c>)
+/// + 사용자 글꼴 폴더(<see cref="UserFolder"/>)의 .ttf .otf .ttc .bdf 파일.
 /// 사용자 글꼴은 그 폴더에만 두고 프로젝트에는 이름만 저장한다 — 없는 글꼴은 <see cref="DefaultName"/>로 그린다.
 /// 폴더가 바뀌었는지는 <see cref="List"/>는 부를 때마다, 그리기(<see cref="Find"/> 등)는 1초에 한 번까지 살핀다. 여러 스레드에서 불러도 된다.
 /// </summary>
@@ -32,22 +34,39 @@ public static class FontLibrary
     /// <summary>그리기 쪽 폴더 확인 간격(ms).</summary>
     private const long RescanInterval = 1000;
 
-    /// <summary>앱에 든 글꼴: 저장 이름, 표시 이름, 리소스 이름(<c>Chickxel.Fonts.{리소스}.bdf.gz</c>).</summary>
-    private static readonly (string Name, string Display, string Resource)[] BuiltInFonts =
+    /// <summary>
+    /// 앱에 든 글꼴: 저장 이름, 표시 이름, 리소스 파일(<c>Chickxel.Fonts.{파일}.gz</c> — .bdf = 도트, .ttf = 도트 모양 벡터),
+    /// 벡터 글꼴의 도트가 칸에 맞는 크기(px — 크기 0이면 이 크기로 그림, 도트 글꼴은 0). 모두 원본 그대로(압축만) 넣는다.
+    /// </summary>
+    private static readonly (string Name, string Display, string File, int PixelSize)[] BuiltInFonts =
     [
-        ("Galmuri7", "Galmuri 7", "Galmuri7"),
-        ("Galmuri9", "Galmuri 9", "Galmuri9"),
-        ("Galmuri11", "Galmuri 11", "Galmuri11"),
-        ("Galmuri11Bold", "Galmuri 11 Bold", "Galmuri11-Bold"),
-        ("Galmuri14", "Galmuri 14", "Galmuri14"),
+        ("Galmuri7", "Galmuri 7", "Galmuri7.bdf", 0),
+        ("Galmuri9", "Galmuri 9", "Galmuri9.bdf", 0),
+        ("Galmuri11", "Galmuri 11", "Galmuri11.bdf", 0),
+        ("Galmuri11Bold", "Galmuri 11 Bold", "Galmuri11-Bold.bdf", 0),
+        ("Galmuri11Condensed", "Galmuri 11 Condensed", "Galmuri11-Condensed.bdf", 0),
+        ("Galmuri14", "Galmuri 14", "Galmuri14.bdf", 0),
+        ("GalmuriMono7", "Galmuri Mono 7", "GalmuriMono7.bdf", 0),
+        ("GalmuriMono9", "Galmuri Mono 9", "GalmuriMono9.bdf", 0),
+        ("GalmuriMono11", "Galmuri Mono 11", "GalmuriMono11.bdf", 0),
+        ("NeoDunggeunmo", "NeoDunggeunmo", "NeoDunggeunmo.ttf", 16),
+        ("NeoDunggeunmoCode", "NeoDunggeunmo Code", "NeoDunggeunmoCode.ttf", 16),
+        ("NeoDunggeunmoPro", "NeoDunggeunmo Pro", "NeoDunggeunmoPro.ttf", 16),
+        ("Unifont", "Unifont", "Unifont.bdf", 0),
+        ("Cozette", "Cozette", "Cozette.bdf", 0),
+        ("Spleen5x8", "Spleen 5×8", "Spleen-5x8.bdf", 0),
+        ("Spleen6x12", "Spleen 6×12", "Spleen-6x12.bdf", 0),
+        ("Spleen8x16", "Spleen 8×16", "Spleen-8x16.bdf", 0),
     ];
 
-    /// <summary>앱에 든 글꼴의 목록 칸(머리만 읽음)과 글꼴 원본(처음 쓸 때 한 번 다 읽음).</summary>
+    /// <summary>앱에 든 글꼴의 목록 칸(도트 글꼴은 머리만 읽음)과 글꼴 원본(처음 쓸 때 한 번 다 읽음).</summary>
     private static readonly Lazy<FontInfo[]> BuiltInInfos = new(() =>
-        [.. BuiltInFonts.Select(f => new FontInfo(f.Name, f.Display, FontKind.Bitmap, ReadBuiltIn(f.Resource, PixelFont.ReadHeader).LineHeight, true))]);
+        [.. BuiltInFonts.Select(f => IsBitmap(f.File)
+            ? new FontInfo(f.Name, f.Display, FontKind.Bitmap, ReadBuiltIn(f.File, PixelFont.ReadHeader).LineHeight, true)
+            : new FontInfo(f.Name, f.Display, FontKind.Vector, f.PixelSize, true))]);
 
-    private static readonly Lazy<BitmapSource>[] BuiltInSources =
-        [.. BuiltInFonts.Select(f => new Lazy<BitmapSource>(() => new BitmapSource(ReadBuiltIn(f.Resource, PixelFont.Parse), "builtin:" + f.Name)))];
+    private static readonly Lazy<FontSource>[] BuiltInSources =
+        [.. BuiltInFonts.Select(f => new Lazy<FontSource>(() => LoadBuiltIn(f.Name, f.File, f.PixelSize)))];
 
     private static readonly object Gate = new();
     private static string? _folder;
@@ -175,7 +194,7 @@ public static class FontLibrary
     }
 
     /// <summary>기본 글꼴(Galmuri11) 원본 — 없는 글꼴·사용자 글꼴에 없는 글자를 대신 그림.</summary>
-    internal static BitmapSource Default => BuiltInSources[BuiltInIndex(DefaultName)].Value;
+    internal static BitmapSource Default => (BitmapSource)BuiltInSources[BuiltInIndex(DefaultName)].Value;
 
     /// <summary>앱에 든 글꼴 이름이면 그 정식 이름(대소문자를 맞춤), 아니면 null.</summary>
     internal static string? BuiltInName(string name) => BuiltInIndex(name) is int i and >= 0 ? BuiltInFonts[i].Name : null;
@@ -311,14 +330,34 @@ public static class FontLibrary
         return data is null ? null : SKTypeface.FromData(data, 0);
     }
 
-    private static T ReadBuiltIn<T>(string resource, Func<TextReader, T> read)
+    private static bool IsBitmap(string file) => file.EndsWith(".bdf", StringComparison.Ordinal);
+
+    /// <summary>앱에 든 글꼴 원본(리소스를 풀어 읽음). 벡터 글꼴은 <paramref name="pixelSize"/>를 크기 0일 때의 크기로 쓴다.</summary>
+    private static FontSource LoadBuiltIn(string name, string file, int pixelSize)
     {
-        var name = $"Chickxel.Fonts.{resource}.bdf.gz";
-        using var stream = typeof(FontLibrary).Assembly.GetManifestResourceStream(name)
-                           ?? throw new InvalidOperationException($"Missing font resource: {name}");
-        using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-        using var reader = new StreamReader(gzip);
+        var key = "builtin:" + name;
+        if (IsBitmap(file)) return new BitmapSource(ReadBuiltIn(file, PixelFont.Parse), key);
+        using var stream = OpenBuiltIn(file);
+        using var bytes = new MemoryStream();
+        stream.CopyTo(bytes);
+        using var data = SKData.CreateCopy(bytes.GetBuffer().AsSpan(0, (int)bytes.Length));
+        var typeface = SKTypeface.FromData(data, 0) ?? throw new InvalidOperationException($"Unreadable font resource: {file}");
+        return new VectorSource(typeface, key, pixelSize);
+    }
+
+    private static T ReadBuiltIn<T>(string file, Func<TextReader, T> read)
+    {
+        using var reader = new StreamReader(OpenBuiltIn(file));
         return read(reader);
+    }
+
+    /// <summary>앱에 든 글꼴 리소스(<c>Chickxel.Fonts.{파일}.gz</c>)를 푼 스트림.</summary>
+    private static GZipStream OpenBuiltIn(string file)
+    {
+        var name = $"Chickxel.Fonts.{file}.gz";
+        var stream = typeof(FontLibrary).Assembly.GetManifestResourceStream(name)
+                     ?? throw new InvalidOperationException($"Missing font resource: {name}");
+        return new GZipStream(stream, CompressionMode.Decompress);
     }
 
     /// <summary>폴더 안에서 겹치지 않는 경로("이름.ttf" → "이름 (2).ttf" …).</summary>
@@ -347,7 +386,10 @@ internal sealed class BitmapSource(PixelFont font, string key) : FontSource(key)
     public PixelFont Font { get; } = font;
 }
 
-internal sealed class VectorSource(SKTypeface typeface, string key) : FontSource(key)
+/// <param name="pixelSize">크기 0일 때 그릴 크기(px, 앱에 든 도트 모양 글꼴은 도트가 칸에 맞는 크기). 0 = <see cref="VectorFace.DefaultSize"/>.</param>
+internal sealed class VectorSource(SKTypeface typeface, string key, int pixelSize = 0) : FontSource(key)
 {
     public SKTypeface Typeface { get; } = typeface;
+
+    public int PixelSize { get; } = pixelSize;
 }

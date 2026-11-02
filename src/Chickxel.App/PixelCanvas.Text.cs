@@ -11,9 +11,9 @@ namespace Chickxel.App;
 /// <summary>
 /// 글씨 도구(Aseprite처럼 캔버스에서 바로 쓰기)와 이동 도구의 글씨 레이어 옮기기.
 /// <para>
-/// 글씨 도구로 끌면 그 사각형이 글 상자(상자 너비에서 줄 바꿈)인, 누르기만 하면 그 자리에서 자동 너비인 새 글씨 레이어를
+/// 글씨 도구로 끌면 그 사각형이 글 상자(상자 너비에서 줄 바꿈, 한 줄이 상자 높이에 드는 글자 크기)인, 누르기만 하면 그 자리에서 자동 너비인 새 글씨 레이어를
 /// 현재 레이어(부위면 그 그룹) 바로 위에 만들고 바로 고치기 시작한다. 글씨가 있는 곳을 누르면 그 글씨를 고친다(누른 글자 틈에 커서).
-/// 고치는 동안 친 글이 레이어 효과 미리보기로 바로 픽셀로 보이고, 커서·고른 글·점선 상자 테두리와 손잡이 8개(끌면 상자 크기, 자동 너비는 상자가 됨)·
+/// 고치는 동안 친 글이 레이어 효과 미리보기로 바로 픽셀로 보이고, 커서·고른 글·점선 상자 테두리와 손잡이 8개(끌면 상자 크기 — 위·아래 변은 글자 크기도, 자동 너비는 상자가 됨)·
 /// 테두리 끌기(옮기기)를 캔버스 위에 그린다. 입력기(한글 조합)는 캔버스의 입력기 연결(<see cref="CanvasTextInput"/>)로 조합 중인 글자를 그 자리에 보인다.
 /// </para>
 /// <para>
@@ -232,7 +232,8 @@ public sealed partial class PixelCanvas
     }
 
     /// <summary>
-    /// 새 글씨 끌기를 놓음: 끈 사각형(2px 넘게 넓으면)은 상자, 아니면 누른 점에 자동 너비 글씨. 글꼴 등은 도구 설정, 색은 기본색(투명이면 검정).
+    /// 새 글씨 끌기를 놓음: 끈 사각형(2px 넘게 넓으면)은 상자이고 글자 크기는 한 줄이 상자 높이에 드는 크기(도구 설정 크기도 그 값으로),
+    /// 아니면 누른 점에 자동 너비 글씨(크기는 도구 설정). 글꼴 등은 도구 설정, 색은 기본색(투명이면 검정).
     /// 부위 화면의 좌표는 부위 안 좌표이므로 새 레이어(프레임 캔버스)에서는 부위 위치만큼 옮긴다.
     /// </summary>
     private void EndTextCreate()
@@ -250,6 +251,11 @@ public sealed partial class PixelCanvas
             BoxWidth = box ? r.Width : 0,
             BoxHeight = box ? r.Height : 0,
         });
+        if (box)
+        {
+            effect = effect with { Size = TextLayout.FitSize(effect, r.Height) };
+            _ctx.TextStyle = TextStyle.From(effect);
+        }
         BeginNewText(p, current, effect);
     }
 
@@ -503,7 +509,8 @@ public sealed partial class PixelCanvas
 
     /// <summary>
     /// 글씨 상자 끌기: 손잡이면 잡은 변을 옮겨 상자 크기를 바꾸고(자동 너비 글씨는 지금 틀 그대로의 상자가 됨 — X·Y = 상자 왼쪽 위),
-    /// 테두리면 글씨를 옮긴다. 둘 다 같은 세션(실행취소 한 단계)에 들어간다.
+    /// 위·아래 변을 옮기면 글 전체가 새 높이에 드는 크기로 글자 크기도 바꾼다(도구 설정 크기도 따라감). 테두리면 글씨를 옮긴다.
+    /// 모두 같은 세션(실행취소 한 단계)에 들어간다.
     /// </summary>
     private void DragTextBox(Point px)
     {
@@ -528,6 +535,20 @@ public sealed partial class PixelCanvas
                 BoxWidth = r - l,
                 BoxHeight = _textHy != 0 ? b - t : e0.BoxHeight,
             };
+            if (_textHy != 0)
+            {
+                s.Effect = s.Effect with { Size = TextLayout.FitSize(s.Effect, b - t) };
+                // 세션이 바꾼 설정이므로 고치는 글씨에 다시 넣지 않는다(TextStyleChanged).
+                _textBusy = true;
+                try
+                {
+                    _ctx.TextStyle = TextStyle.From(s.Effect);
+                }
+                finally
+                {
+                    _textBusy = false;
+                }
+            }
         }
         ApplyTextPreview(s);
     }
