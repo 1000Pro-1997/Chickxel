@@ -6,9 +6,9 @@ namespace Chickxel.Core.Community;
 
 /// <summary>
 /// 커뮤니티 계정 하나(<c>User</c> JSON): ID, 핸들(에셋 패키지 작성자 ID와 같음), 표시 이름, 프로필 그림 주소(없으면 null),
-/// 만든 때(ISO 8601), 관리자인지(내 정보일 때만 옴).
+/// 만든 때(ISO 8601), 관리자인지·핸들이 잠겼는지(에셋 패키지를 올린 뒤 — 서버가 핸들 바꾸기를 거절함)(둘 다 내 정보일 때만 옴).
 /// </summary>
-public sealed record CommunityUser(string Id, string Handle, string Name, string? AvatarUrl, string CreatedAt, bool IsAdmin)
+public sealed record CommunityUser(string Id, string Handle, string Name, string? AvatarUrl, string CreatedAt, bool IsAdmin, bool HandleLocked = false)
 {
     internal static CommunityUser Read(JsonNode? node)
     {
@@ -16,13 +16,18 @@ public sealed record CommunityUser(string Id, string Handle, string Name, string
         return new CommunityUser(
             CommunityJson.Required(o, "id"), CommunityJson.Required(o, "handle"), CommunityJson.Required(o, "name"),
             CommunityJson.String(o["avatarUrl"]), CommunityJson.String(o["createdAt"]) ?? "",
-            o["isAdmin"] is JsonValue admin && admin.TryGetValue(out bool isAdmin) && isAdmin);
+            Flag(o["isAdmin"]), Flag(o["handleLocked"]));
     }
+
+    private static bool Flag(JsonNode? node) => node is JsonValue value && value.TryGetValue(out bool on) && on;
 
     /// <summary><see cref="Read"/>가 다시 읽는 모양(저장한 계정 목록에 씀).</summary>
     internal JsonObject ToJson()
     {
-        var o = new JsonObject { ["id"] = Id, ["handle"] = Handle, ["name"] = Name, ["createdAt"] = CreatedAt, ["isAdmin"] = IsAdmin };
+        var o = new JsonObject
+        {
+            ["id"] = Id, ["handle"] = Handle, ["name"] = Name, ["createdAt"] = CreatedAt, ["isAdmin"] = IsAdmin, ["handleLocked"] = HandleLocked,
+        };
         if (AvatarUrl is not null) o["avatarUrl"] = AvatarUrl;
         return o;
     }

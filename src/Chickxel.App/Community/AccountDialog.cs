@@ -56,12 +56,12 @@ public sealed class AccountDialog : DialogBase
     }
 
     /// <summary>
-    /// 지금 계정을 아직 확인하지 않았으면 서버에 내 정보를 물어 다시 그린다(끝난 세션이면 안내하고 로그인 단추로).
+    /// 로그인해 있으면 서버에 내 정보를 다시 물어 그린다(이름·핸들 잠김이 새것이 되게; 끝난 세션이면 안내하고 로그인 단추로).
     /// 로그인이 필요해서 열린 창이면 확인되자마자 닫는다.
     /// </summary>
     private async void Refresh()
     {
-        if (!Client.IsSignedIn || Client.User is not null || _busy) return;
+        if (!Client.IsSignedIn || _busy) return;
         _busy = true;
         SetStatus(UiStrings.Account_Loading);
         Build();
@@ -176,12 +176,16 @@ public sealed class AccountDialog : DialogBase
         _view.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { avatar, names } });
 
         var name = new TextBox { Text = user.Name, Width = 240, MaxLength = CommunityRules.MaxNameLength };
-        var handle = new TextBox { Text = user.Handle, Width = 240, MaxLength = CommunityRules.MaxHandleLength };
+        // 에셋 패키지를 올린 뒤에는 서버가 핸들을 바꾸지 않으므로(패키지 ID·작성자 ID가 핸들) 고칠 수 없는 칸으로 보인다.
+        var handle = new TextBox { Text = user.Handle, Width = 240, MaxLength = CommunityRules.MaxHandleLength, IsEnabled = !user.HandleLocked };
         var save = Ui.Button(VectorIcon.Save, UiStrings.Account_SaveProfile, (_, _) => SaveProfile(name.Text, handle.Text));
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), RowDefinitions = new RowDefinitions("Auto,Auto") };
         AddRow(grid, 0, UiStrings.Account_Name, name);
         AddRow(grid, 1, UiStrings.Account_Handle, handle, UiStrings.Account_HandleTip);
-        _view.Children.Add(Ui.Group(UiStrings.Account_Profile, Ui.Stack(grid, save)));
+        var profile = Ui.Stack(grid);
+        if (user.HandleLocked) profile.Children.Add(Dim(UiStrings.Account_HandleLocked));
+        profile.Children.Add(save);
+        _view.Children.Add(Ui.Group(UiStrings.Account_Profile, profile));
 
         var page = Ui.Button(VectorIcon.ExternalLink, UiStrings.Account_OpenPage, (_, _) => AppCommunity.Open(this, Client.UserPageUrl(user.Handle)));
         var logout = Ui.Button(VectorIcon.LogOut, UiStrings.Account_SignOut, (_, _) => SignOut(null));

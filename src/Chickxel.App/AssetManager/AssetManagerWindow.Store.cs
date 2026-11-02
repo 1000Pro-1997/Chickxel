@@ -444,8 +444,8 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 패키지를 내려받아(SHA-256 확인) 저장소에 설치한다. 다른 버전이 있으면 업데이트이고 이전 버전은 되돌리기용으로 남는다.
-    /// 취소하면 아무것도 바뀌지 않는다. 받은 파일은 설치 뒤 지운다.
+    /// 패키지를 내려받아(SHA-256 확인) 저장소에 설치한다(<see cref="AppAssets.InstallRemoteAsync"/>). 내려받는 동안 진행 막대와 취소 단추를 보이고,
+    /// 설치하면 설치됨 탭에서 고를 항목을 그 패키지로 둔다.
     /// </summary>
     private async void InstallRemote(RemoteCatalogEntry entry)
     {
@@ -460,31 +460,13 @@ public sealed partial class AssetManagerWindow
         _downloadId = entry.Id;
         _downloadFraction = 0;
         RefreshRemoteViews();
-        string? file = null;
         try
         {
-            file = await AppAssets.Remote.DownloadPackageAsync(entry, new Progress<double>(ReportDownload), cancel.Token);
-            if (!cancel.IsCancellationRequested)
-            {
-                InstalledPackage? installed = null;
-                if (AppAssets.Try(this, () => installed = AppAssets.Store.Install(file, AppAssets.RemoteSource), UiStrings.Assets_InstallRemoteError) && installed is not null)
-                    _selectKey = "pkg:" + installed.Id;
-            }
-        }
-        catch (OperationCanceledException) { }
-        catch (RemoteAssetException ex)
-        {
-            Ui.Error(this, F(UiStrings.Assets_DownloadError, ex.Message));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Ui.Error(this, F(UiStrings.Assets_DownloadError, ex.Message));
+            if (await AppAssets.InstallRemoteAsync(this, entry, new Progress<double>(ReportDownload), cancel.Token) is { } installed)
+                _selectKey = "pkg:" + installed.Id;
         }
         finally
         {
-            if (file is not null)
-                try { File.Delete(file); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
             _download = null;
             _downloadId = null;
             _downloadViews.Clear();

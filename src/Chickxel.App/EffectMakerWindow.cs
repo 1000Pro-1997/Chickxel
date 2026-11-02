@@ -77,7 +77,15 @@ public sealed class EffectMakerWindow : Window
     };
     private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(AssetPreview.PackageFrameMs) };
-    private readonly Action _onAssetsChanged;
+    private readonly Action _onAssetsChanged, _onAccountsChanged;
+    /// <summary>창을 닫으면 취소(올린 효과 목록 받기·내려받기).</summary>
+    private readonly CancellationTokenSource _closing = new();
+    /// <summary>이 계정으로 올렸지만 이 컴퓨터에 설치하지 않은 스크립트 효과(온라인 목록에서, 목록 아래 회색 줄).</summary>
+    private IReadOnlyList<RemoteCatalogEntry> _uploads = [];
+    /// <summary><see cref="_uploads"/>를 찾은 계정의 핸들(바뀌면 다시 찾음).</summary>
+    private string? _uploadsHandle;
+    /// <summary>지금 내려받는 올린 효과의 패키지 ID(그 줄의 단추를 끔).</summary>
+    private string? _downloadingId;
     /// <summary>"AI" 단추(켜짐 = AI 칸 열림)와 AI 칸 자리. 칸은 처음 열 때 만들고 창을 닫을 때까지 둔다(대화·세션 유지).</summary>
     private readonly ToggleButton _aiToggle;
     private readonly Border _aiHost;
@@ -337,6 +345,14 @@ public sealed class EffectMakerWindow : Window
         };
         _onAssetsChanged = () => Dispatcher.UIThread.Post(RebuildList);
         AppAssets.Changed += _onAssetsChanged;
+        // 계정을 바꾸거나 로그인하면 "내가 올린 효과"가 달라진다.
+        _onAccountsChanged = () => Dispatcher.UIThread.Post(() =>
+        {
+            // 다른 계정이 되었을 때만 목록을 새로 받는다(같은 계정의 정보 확인마다 받지 않게).
+            if (MyHandle != _uploadsHandle) LoadUploads(fetch: true);
+            else RebuildList();
+        });
+        AppCommunity.Client.AccountsChanged += _onAccountsChanged;
         Closing += (_, e) =>
         {
             if (!ConfirmDiscard()) e.Cancel = true;
@@ -344,6 +360,8 @@ public sealed class EffectMakerWindow : Window
         Closed += (_, _) =>
         {
             AppAssets.Changed -= _onAssetsChanged;
+            AppCommunity.Client.AccountsChanged -= _onAccountsChanged;
+            _closing.Cancel();
             _render?.Cancel();
             _check?.Cancel();
             _timer.Stop();
@@ -354,13 +372,22 @@ public sealed class EffectMakerWindow : Window
             s_window = null;
         };
         RebuildList();
+        LoadUploads(fetch: true);
         UpdateButtons();
     }
 
     // ───────────── 목록 ─────────────
 
+    /// <summary>로그인한(또는 저장해 둔) 지금 계정의 핸들 — 패키지 작성자 ID와 견줘 "내가 올린 것"을 알아본다. 로그아웃이면 null.</summary>
+    private static string? MyHandle => AppCommunity.Client.User?.Handle ?? AppCommunity.Client.Saved.Current?.User?.Handle;
+
+    /// <summary>설치한 패키지가 지금 계정으로 올린 것인지(작성자 ID = 핸들 — 서버가 올릴 때 확인하고, 올린 뒤에는 핸들이 바뀌지 않음).</summary>
+    private static bool IsMine(InstalledPackage package)
+        => MyHandle is { } handle && package.Manifest?.Author.Id == handle && !package.IsBroken;
+
     /// <summary>
-    /// 목록 항목: 기본은 내가 만든 개인 스크립트(설치한 패키지의 원문을 그대로 복사한 것은 뺌), 모두 보기면 그 복사본과 설치한 패키지의 스크립트 효과까지.
+    /// 목록 항목: 기본은 내가 만든 개인 스크립트(설치한 패키지의 원문을 그대로 복사한 것은 뺌)와 이 계정으로 올린 설치 패키지의 스크립트 효과,
+    /// 모두 보기면 그 복사본과 설치한 패키지의 스크립트 효과 전부.
     /// </summary>
     private IEnumerable<AssetEntry> Entries()
     {
@@ -368,8 +395,9 @@ public sealed class EffectMakerWindow : Window
         var installed = catalog.Packages.SelectMany(p => p.Entries).Where(e => e.Kind == AssetKinds.EffectScript).ToList();
         var installedHashes = installed.Select(e => e.Script!.Hash).ToHashSet(StringComparer.Ordinal);
         var personal = catalog.Personal.Where(e => e.Kind == AssetKinds.EffectScript);
-        if (_showAll.On() != true) return personal.Where(e => !installedHashes.Contains(e.Script!.Hash));
-        return personal.Concat(installed);
+        if (_showAll.On() == true) return personal.Concat(installed);
+        var mine = catalog.Packages.Where(IsMine).SelectMany(p => p.Entries).Where(e => e.Kind == AssetKinds.EffectScript);
+        return personal.Where(e => !installedHashes.Contains(e.Script!.Hash)).Concat(mine);
     }
 
     private void RebuildList()
@@ -378,13 +406,95 @@ public sealed class EffectMakerWindow : Window
         _list.Items.Clear();
         foreach (var entry in Entries())
         {
-            Control content = entry.Origin == AssetOrigin.Personal
-                ? Ui.IconLabel(VectorIcon.Code, entry.DisplayName)
-                : Ui.Row(Ui.IconLabel(VectorIcon.Package, entry.DisplayName), new TextBlock { Text = entry.PackageName ?? entry.PackageId ?? "", Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
+            Control content;
+            if (entry.Origin == AssetOrigin.Personal) content = Ui.IconLabel(VectorIcon.Code, entry.DisplayName);
+            else
+            {
+                bool mine = entry.PackageId is { } packageId && AppAssets.Catalog.FindPackage(packageId) is { } package && IsMine(package);
+                string note = mine ? UiStrings.EffectMaker_Uploaded : entry.PackageName ?? entry.PackageId ?? "";
+                content = Ui.Row(Ui.IconLabel(VectorIcon.Package, entry.DisplayName), new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
+            }
             _list.Items.Add(new ListBoxItem { Content = content, Tag = entry.Id });
+        }
+        // 올렸지만 이 컴퓨터에 없는 효과: 회색 줄 + 오른쪽 내려받기 단추(누르면 설치하고 연다).
+        foreach (var upload in _uploads)
+        {
+            if (AppAssets.Catalog.FindPackage(upload.Id) is not null) continue;
+            var download = Ui.IconButton(VectorIcon.Download, UiStrings.EffectMaker_DownloadUploadedTip, (_, _) => DownloadUpload(upload), size: 13);
+            download.IsEnabled = _downloadingId is null;
+            download.Padding = new Thickness(5, 2);
+            download.MinHeight = 0;
+            download.VerticalAlignment = VerticalAlignment.Center;
+            var label = Ui.IconLabel(VectorIcon.Package, upload.DisplayName);
+            label.VerticalAlignment = VerticalAlignment.Center;
+            var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 };
+            DockPanel.SetDock(download, Dock.Right);
+            row.Children.Add(download);
+            row.Children.Add(label);
+            ToolTip.SetTip(row, UiStrings.EffectMaker_DownloadUploadedTip);
+            _list.Items.Add(new ListBoxItem { Content = row, Tag = upload, HorizontalContentAlignment = HorizontalAlignment.Stretch });
         }
         SelectInList(_shownId);
         _syncingList = false;
+    }
+
+    /// <summary>
+    /// 이 계정으로 올린 스크립트 효과 중 이 컴퓨터에 없는 것을 온라인 목록에서 찾는다. 먼저 받아 둔 목록(cache)으로 보이고,
+    /// <paramref name="fetch"/>면 목록을 새로 받아 다시 보인다(로그인하지 않았으면 받지 않음).
+    /// </summary>
+    private async void LoadUploads(bool fetch)
+    {
+        _uploadsHandle = MyHandle;
+        if (MyHandle is null)
+        {
+            _uploads = [];
+            RebuildList();
+            return;
+        }
+        if (AppAssets.Remote.LoadCache() is { } cached) ShowUploads(cached);
+        if (!fetch) return;
+        try
+        {
+            ShowUploads(await AppAssets.Remote.FetchCatalogAsync(_closing.Token));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void ShowUploads(RemoteCatalogSnapshot snapshot)
+    {
+        if (_closing.IsCancellationRequested) return;
+        string? handle = MyHandle;
+        _uploads = handle is null ? [] : snapshot.Packages
+            .Where(e => e.Author.Id == handle && e.Kinds.ContainsKey(AssetKinds.EffectScript))
+            .OrderBy(e => e.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
+        RebuildList();
+    }
+
+    /// <summary>올린 효과를 내려받아 설치하고(온라인 목록의 크기·SHA-256 확인) 연다(저장하지 않은 고침이 있으면 먼저 물음).</summary>
+    private async void DownloadUpload(RemoteCatalogEntry entry)
+    {
+        if (_downloadingId is not null) return;
+        if (entry.IncompatibleReason(AppAssets.Options.AppVersion) is { } reason)
+        {
+            Ui.Warn(this, reason, UiStrings.EffectMaker_Title);
+            return;
+        }
+        _downloadingId = entry.Id;
+        RebuildList();
+        InstalledPackage? installed;
+        try
+        {
+            installed = await AppAssets.InstallRemoteAsync(this, entry, null, _closing.Token);
+        }
+        finally
+        {
+            _downloadingId = null;
+        }
+        if (_closing.IsCancellationRequested) return;
+        RebuildList();
+        if (installed?.Entries.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript) is { } script && ConfirmDiscard()) TryOpen(script.Id);
     }
 
     private void SelectInList(string? id)
@@ -397,7 +507,14 @@ public sealed class EffectMakerWindow : Window
 
     private void OnListSelection()
     {
-        if (_syncingList || _list.SelectedItem is not ListBoxItem { Tag: string id } || id == _shownId) return;
+        if (_syncingList) return;
+        // 올렸지만 이 컴퓨터에 없는 효과 줄은 열 수 없다(오른쪽 단추로 내려받음) — 고른 것을 되돌린다.
+        if (_list.SelectedItem is ListBoxItem { Tag: RemoteCatalogEntry })
+        {
+            SelectInList(_shownId);
+            return;
+        }
+        if (_list.SelectedItem is not ListBoxItem { Tag: string id } || id == _shownId) return;
         if (!ConfirmDiscard())
         {
             SelectInList(_shownId);

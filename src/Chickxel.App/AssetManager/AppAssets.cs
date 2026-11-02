@@ -150,6 +150,37 @@ public static class AppAssets
         return false;
     }
 
+    /// <summary>
+    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 저장소에 설치한다(다른 버전이 있으면 업데이트 — 이전 버전은 되돌리기용으로 남음).
+    /// 실패하면 <paramref name="owner"/>에 알리고 null, 취소하면 아무것도 바꾸지 않고 null. 받은 임시 파일은 지운다.
+    /// </summary>
+    public static async Task<InstalledPackage?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        string? file = null;
+        try
+        {
+            file = await Remote.DownloadPackageAsync(entry, progress, cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return null;
+            InstalledPackage? installed = null;
+            return Try(owner, () => installed = Store.Install(file, RemoteSource), UiStrings.Assets_InstallRemoteError) ? installed : null;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception ex) when (ex is RemoteAssetException or IOException or UnauthorizedAccessException)
+        {
+            Ui.Error(owner, string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_DownloadError, ex.Message));
+            return null;
+        }
+        finally
+        {
+            if (file is not null)
+                try { File.Delete(file); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>문제 목록 글(처음 12개, 넘으면 "외 N개").</summary>
     public static string IssueText(IReadOnlyList<AssetIssue> issues)
     {

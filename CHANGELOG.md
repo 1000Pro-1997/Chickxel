@@ -2,6 +2,15 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.73 (2026-11-02)
+### Your published effects follow you to any computer
+- The Effect Maker's My effects list now includes installed script effects you published with the current account, marked Published (the package's author ID is your handle).
+- Effects you published that aren't on this computer show as gray rows with a download button: it downloads the package from the online list (size and SHA-256 checked), installs it and opens it. Saving and uploading continues the same package as a new version.
+- When signed in, the Effect Maker fetches the online list once on open (and when the account changes) to find them.
+
+### The handle field shows when it can't change
+- After you publish an asset package the server keeps your handle fixed; the account window now shows the handle field turned off with the reason, and the website's profile page does the same.
+
 ## v1.14.72 (2026-11-02)
 ### The Asset Manager opens on Effects
 - The kind filter is now Effects | Gradients (no "All"), and the Asset Manager opens on Effects unless it was opened for gradients. The Store tab uses the same two kinds.

@@ -203,9 +203,9 @@ public class CommunityClientTests
     public async Task Me_SendsTheBearerToken_AndUnauthorizedForgetsIt()
     {
         var (client, handler, tokens) = Make();
-        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.OK, UserJson);
+        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.OK, UserJson.Replace("\"isAdmin\": false", "\"isAdmin\": false, \"handleLocked\": true"));
         var me = await client.GetMeAsync();
-        Assert.Equal(new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", "https://cdn.example/a.png", "2026-11-01T00:00:00Z", false), me);
+        Assert.Equal(new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", "https://cdn.example/a.png", "2026-11-01T00:00:00Z", false, HandleLocked: true), me);
         var sent = Assert.Single(handler.Requests);
         Assert.Equal((HttpMethod.Get, "https://chickxel.com/api/me", "Bearer secret-token"), (sent.Method, sent.Url, sent.Authorization));
 
@@ -464,7 +464,7 @@ public class CommunityClientTests
         using var dir = new TempDir();
         var store = new CommunityAccountStore(dir.File(Path.Combine("sub", "session.bin")));
         Assert.Same(CommunityAccounts.Empty, store.Load());
-        var cat = new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", "/files/a.png", "2026-11-01T00:00:00Z", true);
+        var cat = new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", "/files/a.png", "2026-11-01T00:00:00Z", true, HandleLocked: true);
         store.Save(new([new CommunityAccount("token-value-123", cat), new CommunityAccount("token-value-456", null)], 1));
         var loaded = store.Load();
         Assert.Equal(1, loaded.Active);
