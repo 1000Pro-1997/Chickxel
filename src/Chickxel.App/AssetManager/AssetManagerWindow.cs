@@ -96,9 +96,10 @@ public sealed partial class AssetManagerWindow : DialogBase
         MinHeight = 460;
         _selectKey = selectAssetId is null ? null : "asset:" + selectAssetId;
 
-        _filter = new TabStrip(TabStripKind.Segmented, UiStrings.Assets_FilterAll, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients)
+        _filter = new TabStrip(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients)
         {
-            SelectedIndex = kind switch { AssetKinds.EffectRecipe or AssetKinds.EffectScript => 1, AssetKinds.Gradient => 2, _ => 0 },
+            // 처음 종류: 준 종류, 없으면 고를 에셋의 종류, 그것도 없으면 효과.
+            SelectedIndex = FilterIndex(kind ?? (selectAssetId is null ? null : AppAssets.Catalog.Find(selectAssetId)?.Kind)),
         };
         _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Refresh);
         _search = new TextBox { Width = 180, Watermark = UiStrings.Assets_Search };
@@ -190,30 +191,36 @@ public sealed partial class AssetManagerWindow : DialogBase
 
     private Row? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as Row;
 
-    /// <summary>종류 거르기 칸 번호의 에셋 종류(효과 = 효과 레시피와 스크립트 효과, null = 전체). 상점 탭도 같은 칸을 쓴다.</summary>
-    private static string[]? FilterKinds(int index) => index switch
-    {
-        1 => [AssetKinds.EffectRecipe, AssetKinds.EffectScript],
-        2 => [AssetKinds.Gradient],
-        _ => null,
-    };
+    /// <summary>종류 거르기 칸 번호의 에셋 종류: 0 = 효과(효과 레시피와 스크립트 효과), 1 = 그라데이션. 상점 탭도 같은 칸을 쓴다.</summary>
+    private static string[] FilterKinds(int index) => index == 1 ? [AssetKinds.Gradient] : [AssetKinds.EffectRecipe, AssetKinds.EffectScript];
 
-    private string[]? KindFilter => FilterKinds(_filter.SelectedIndex);
+    /// <summary>에셋 종류가 보이는 종류 거르기 칸 번호(모르는 종류는 효과 칸).</summary>
+    private static int FilterIndex(string? kind) => kind == AssetKinds.Gradient ? 1 : 0;
+
+    /// <summary>패키지가 보이는 종류 거르기 칸 번호(처음 나오는 효과·그라데이션 에셋 기준).</summary>
+    private static int FilterIndex(IEnumerable<string> kinds)
+        => FilterIndex(kinds.FirstOrDefault(k => k is AssetKinds.Gradient or AssetKinds.EffectRecipe or AssetKinds.EffectScript));
+
+    private string[] KindFilter => FilterKinds(_filter.SelectedIndex);
 
     private bool Matches(AssetEntry entry)
     {
-        if (KindFilter is { } kinds && !kinds.Contains(entry.Kind)) return false;
+        if (!KindFilter.Contains(entry.Kind)) return false;
         string query = _search.Text?.Trim() ?? "";
         return query.Length == 0 || entry.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                                  || entry.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                                  || (entry.PackageName?.Contains(query, StringComparison.CurrentCultureIgnoreCase) ?? false);
     }
 
-    /// <summary>패키지 줄을 보일지: 보이는 에셋이 있거나, 종류 거르기에 맞고 이름이 검색어에 맞을 때(읽지 못한 패키지는 "전체"에서만).</summary>
+    /// <summary>
+    /// 패키지 줄을 보일지: 보이는 에셋이 있거나, 종류 거르기에 맞고 이름이 검색어에 맞을 때.
+    /// 읽지 못한 패키지와 효과·그라데이션이 하나도 없는 패키지는 어느 칸에서나 보인다(지우거나 고칠 수 있게).
+    /// </summary>
     private bool PackageVisible(InstalledPackage package, int shownEntries)
     {
         if (shownEntries > 0) return true;
-        bool kindOk = package.Entries.Count == 0 ? KindFilter is null : KindFilter is not { } kinds || package.Entries.Any(e => kinds.Contains(e.Kind));
+        bool kindOk = package.Entries.Any(e => KindFilter.Contains(e.Kind))
+                      || !package.Entries.Any(e => e.Kind is AssetKinds.Gradient or AssetKinds.EffectRecipe or AssetKinds.EffectScript);
         string query = _search.Text?.Trim() ?? "";
         return kindOk && (query.Length == 0 || package.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                                             || package.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase));
@@ -247,7 +254,7 @@ public sealed partial class AssetManagerWindow : DialogBase
                 foreach (var entry in entries) AddRow(new Row("asset:" + entry.Id, Asset: entry), AssetRow(entry, indent: true));
             }
             var deleted = AppAssets.Store.DeletedPackages;
-            if (deleted.Count > 0 && KindFilter is null)
+            if (deleted.Count > 0)
             {
                 AddHeader(UiStrings.Assets_DeletedHeader);
                 foreach (var item in deleted) AddRow(new Row("deleted:" + item.Folder, Deleted: item), DeletedRow(item));

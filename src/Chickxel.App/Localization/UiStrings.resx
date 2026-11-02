@@ -9039,7 +9039,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_OpenWebsite" xml:space="preserve"><value>홈페이지에서 보기</value></data>
   <data name="Assets_OpenWebsiteTip" xml:space="preserve"><value>chickxel.com의 에셋 쪽을 브라우저에서 엽니다(효과나 그라데이션을 거르고 있으면 그 탭).</value></data>
   <data name="Assets_TabUpdates" xml:space="preserve"><value>업데이트</value></data>
-  <data name="Assets_FilterAll" xml:space="preserve"><value>전체</value></data>
   <data name="Assets_FilterEffects" xml:space="preserve"><value>효과</value></data>
   <data name="Assets_FilterGradients" xml:space="preserve"><value>그라데이션</value></data>
   <data name="Assets_Search" xml:space="preserve"><value>이름 검색</value></data>

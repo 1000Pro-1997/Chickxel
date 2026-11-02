@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.72 (2026-11-02)
+### The Asset Manager opens on Effects
+- The kind filter is now Effects | Gradients (no "All"), and the Asset Manager opens on Effects unless it was opened for gradients. The Store tab uses the same two kinds.
+- Opening a package from the website, installing a package file or "Show installed" switches to that package's kind so it is always visible. Packages that can't be read and recently deleted packages show under both kinds.
+
 ## v1.14.71 (2026-11-02)
 ### Open packages from the website straight into Chickxel
 - Package pages on chickxel.com now lead with **Open in Chickxel**: Chickxel comes to the front (or starts), opens the Asset Manager's Browse tab with a fresh online list and selects that package, ready for Install. If the Asset Manager is already open, it shows the package there.

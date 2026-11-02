@@ -273,6 +273,7 @@ public sealed partial class AssetManagerWindow
         _tabs.SelectedIndex = (int)AssetManagerTab.Installed;
         _selectKey = "pkg:" + installed.Id;
         _search.Text = "";
+        _filter.SelectedIndex = FilterIndex(installed.Entries.Select(e => e.Kind));
         Refresh();
     }
 

@@ -3159,7 +3159,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_OpenWebsite" xml:space="preserve"><value>Open on Website</value></data>
   <data name="Assets_OpenWebsiteTip" xml:space="preserve"><value>Opens the assets page of chickxel.com in your browser (on the effects or gradients tab when that kind is filtered).</value></data>
   <data name="Assets_TabUpdates" xml:space="preserve"><value>Updates</value></data>
-  <data name="Assets_FilterAll" xml:space="preserve"><value>All</value></data>
   <data name="Assets_FilterEffects" xml:space="preserve"><value>Effects</value></data>
   <data name="Assets_FilterGradients" xml:space="preserve"><value>Gradients</value></data>
   <data name="Assets_Search" xml:space="preserve"><value>Search by name</value></data>

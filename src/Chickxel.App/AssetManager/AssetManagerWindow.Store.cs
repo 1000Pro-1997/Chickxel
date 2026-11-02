@@ -16,7 +16,7 @@ public sealed partial class AssetManagerWindow
 {
     private readonly ListBox _remoteList = NewList();
     private readonly StackPanel _remoteDetail = new() { Spacing = 6 };
-    private readonly TabStrip _remoteFilter = new(TabStripKind.Segmented, UiStrings.Assets_FilterAll, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients);
+    private readonly TabStrip _remoteFilter = new(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients);
     private readonly TextBox _remoteSearch = new() { Width = 180, Watermark = UiStrings.Assets_Search };
     private readonly ComboBox _tagFilter = new() { MinWidth = 130 };
     private readonly TextBlock _remoteStatus = StatusText(), _updatesStatus = StatusText();
@@ -95,13 +95,8 @@ public sealed partial class AssetManagerWindow
         return panel;
     }
 
-    /// <summary>홈페이지의 에셋 목록 쪽(상점 종류 거르기가 효과·그라데이션이면 사이트의 그 탭, 전체면 기본 탭).</summary>
-    private Uri StoreWebsiteUrl() => AppCommunity.Client.PackagesPageUrl(_remoteFilter.SelectedIndex switch
-    {
-        1 => "effect",
-        2 => "gradient",
-        _ => null,
-    });
+    /// <summary>홈페이지의 에셋 목록 쪽(상점 종류 거르기의 탭 — 효과·그라데이션).</summary>
+    private Uri StoreWebsiteUrl() => AppCommunity.Client.PackagesPageUrl(_remoteFilter.SelectedIndex == 1 ? "gradient" : "effect");
 
     private Control UpdatesTab()
     {
@@ -190,8 +185,8 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 상점 탭에서 패키지 <paramref name="packageId"/>를 고른다(홈페이지 링크): 거르기·검색을 비우고 온라인 목록을 새로 받는다
-    /// (막 올린 패키지도 보이게). 받은 목록에도 없으면 상태 줄에 알린다.
+    /// 상점 탭에서 패키지 <paramref name="packageId"/>를 고른다(홈페이지 링크): 검색·태그를 비우고 온라인 목록을 새로 받는다
+    /// (막 올린 패키지도 보이게 — 종류 칸은 찾은 패키지의 종류로 바꿈). 받은 목록에도 없으면 상태 줄에 알린다.
     /// </summary>
     private void ShowRemotePackage(string packageId)
     {
@@ -202,7 +197,6 @@ public sealed partial class AssetManagerWindow
         _tabs.SelectedIndex = (int)AssetManagerTab.Store;
         _remoteSearch.Text = "";
         _tagFilter.SelectedIndex = 0;
-        _remoteFilter.SelectedIndex = 0;
         RefreshRemote();
     }
 
@@ -212,13 +206,13 @@ public sealed partial class AssetManagerWindow
 
     private RemoteCatalogEntry? SelectedRemote => (_remoteList.SelectedItem as ListBoxItem)?.Tag as RemoteCatalogEntry;
 
-    private string[]? RemoteKindFilter => FilterKinds(_remoteFilter.SelectedIndex);
+    private string[] RemoteKindFilter => FilterKinds(_remoteFilter.SelectedIndex);
 
     private string? TagFilter => _tagFilter.SelectedIndex > 0 ? _tagFilter.SelectedItem as string : null;
 
     private bool RemoteMatches(RemoteCatalogEntry entry)
     {
-        if (RemoteKindFilter is { } kinds && !kinds.Any(entry.Kinds.ContainsKey)) return false;
+        if (!RemoteKindFilter.Any(entry.Kinds.ContainsKey)) return false;
         if (TagFilter is { } tag && !entry.Tags.Contains(tag)) return false;
         string query = _remoteSearch.Text?.Trim() ?? "";
         return query.Length == 0
@@ -242,6 +236,9 @@ public sealed partial class AssetManagerWindow
             _tagFilter.ItemsSource = new[] { UiStrings.Assets_AllTags }.Concat(tags).ToArray();
             _tagFilter.SelectedIndex = tag is not null && tags.IndexOf(tag) is int index and >= 0 ? index + 1 : 0;
 
+            // 링크로 연 패키지가 지금 종류 칸에 없으면 그 패키지의 종류 칸으로 바꾼다.
+            if (_wantedPackageId is { } linked && _snapshot.Packages.FirstOrDefault(e => e.Id == linked) is { } linkedEntry && !RemoteMatches(linkedEntry))
+                _remoteFilter.SelectedIndex = FilterIndex(linkedEntry.Kinds.Keys);
             _remoteList.Items.Clear();
             var shown = _snapshot.Packages.Where(RemoteMatches)
                 .OrderBy(e => e.Review == RemoteReview.Official ? 0 : 1)
@@ -371,7 +368,7 @@ public sealed partial class AssetManagerWindow
     {
         _selectKey = "pkg:" + packageId;
         _search.Text = "";
-        _filter.SelectedIndex = 0;
+        if (AppAssets.Catalog.FindPackage(packageId) is { } package) _filter.SelectedIndex = FilterIndex(package.Entries.Select(e => e.Kind));
         if (_tabs is not null) _tabs.SelectedIndex = 0;
         Refresh();
     }
