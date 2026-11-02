@@ -1018,6 +1018,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
         _canvas.Message += (_, m) => ShowMessage(m);
         _timeline.Message += (_, m) => ShowMessage(m);
+        _timeline.CanvasSizeRequested += (_, _) => BeginCanvasResize();
         // 변형(Ctrl+T)·이동 도구는 타임라인에서 고른 셀들을 함께 바꾼다.
         _ctx.SelectedCels = _timeline.SelectedCelTargets;
         _preview.Message += (_, m) => ShowMessage(m);

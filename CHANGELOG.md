@@ -2,6 +2,18 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.79 (2026-11-02)
+### Pixels moved off the canvas are kept
+- Normal layers no longer lose pixels that go outside the canvas: moving the layer with the Move tool, dropping a selection past the edge, or pasting an image bigger than the canvas keeps the outside part, and moving it back brings it back.
+- With the Move tool, the current layer's outside pixels show faded around the canvas; while dragging, the whole moved image shows, and a floating selection's outside part is faded too.
+- Shrinking the canvas keeps the cut-off part, so enlarging it again restores it. The canvas size preview shows outside pixels that will come in.
+- The Move tool's Wrap option is now off by default (existing settings are switched off once); turn it on for the old wrap-around behavior.
+- Outside pixels are kept up to 4096 px beyond the canvas, are saved in the project and undo history, and follow duplicate, merge down, flip, rotate and resize. Parts still clip to their own box.
+
+### Canvas size in the timeline
+- The top-left corner of the timeline now shows the canvas size (for example "Canvas 64×48"). Click it to open canvas size mode, the same as Ctrl+Alt+C.
+- The old "Layer \ Frame" label is gone; the size updates as soon as the canvas changes.
+
 ## v1.14.78 (2026-11-02)
 ### Export scale
 - The sheet settings in the export window (below Power of two) have a new **Scale** (1–16×). It enlarges the frame sheet and part atlas images by a whole number with nearest neighbor, so pixels stay sharp.

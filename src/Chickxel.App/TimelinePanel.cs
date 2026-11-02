@@ -276,6 +276,11 @@ public sealed class TimelinePanel : UserControl
 
     private void Say(string text) => Message?.Invoke(this, text);
 
+    /// <summary>타임라인 왼쪽 위 캔버스 크기 칩을 눌렀다: 캔버스 크기 모드를 열어 달라는 요청.</summary>
+    public event EventHandler? CanvasSizeRequested;
+
+    private void RequestCanvasSize() => CanvasSizeRequested?.Invoke(this, EventArgs.Empty);
+
     /// <summary>머리글·이름 칸·셀 묶음을 고른 뒤: 무엇을 골랐고 Delete가 무엇을 할지 알린다(한 칸만 고른 셀 선택은 조용히).</summary>
     private void HintSelection()
     {
@@ -2471,6 +2476,23 @@ public sealed class TimelinePanel : UserControl
             VectorIcons.Draw(g, icon, r, 12, hovered ? AppTheme.TextBrush : AppTheme.DimTextBrush);
         }
 
+        /// <summary>왼쪽 위 모서리(프레임 머리글 줄)의 캔버스 크기 칩 자리.</summary>
+        private static readonly Rect CanvasChipRect = new(4, TagH + 5, 150, HeadH - 10);
+        private bool _canvasChipHover;
+
+        private static bool IsCanvasChipAt(Avalonia.Point pos) => CanvasChipRect.Contains(pos);
+
+        /// <summary>캔버스 크기 칩: 아이콘 + "캔버스 W×H". 누르면 캔버스 크기 모드.</summary>
+        private void DrawCanvasChip(DrawingContext g, SpriteProject p)
+        {
+            var r = CanvasChipRect;
+            if (_canvasChipHover) g.FillRectangle(GhostHoverBrush, r, 3);
+            var ink = _canvasChipHover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+            VectorIcons.Draw(g, VectorIcon.Maximize2, new Rect(r.X + 3, r.Y, 14, r.Height), 11, ink);
+            Text(g, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CanvasSize, p.Width, p.Height),
+                new Rect(r.X + 20, r.Y, r.Width - 22, r.Height), ink, small: true);
+        }
+
         /// <summary>배치의 행이 가리키는 레이어 번호(지워져 줄어드는 유령 행은 -1).</summary>
         private int LayerOf(SpriteProject p, Track.View row)
         {
@@ -2911,7 +2933,7 @@ public sealed class TimelinePanel : UserControl
 
             // 레이어 이름 열
             g.FillRectangle(AppTheme.PanelBrush, new Rect(0, 0, NameW, TagH + HeadH));
-            Text(g, UiStrings.S_TimelinePanel_Paint_E44BCB02E8, new Rect(4, TagH, NameW - 8, HeadH), AppTheme.DimTextBrush, small: true);
+            DrawCanvasChip(g, p);
             using (g.PushClip(namesClip))
             {
                 for (int rk = 0; rk < _rowT.SlotCount; rk++)
@@ -3022,6 +3044,7 @@ public sealed class TimelinePanel : UserControl
             var pos = pt.Position;
             bool left = pt.Properties.IsLeftButtonPressed, right = pt.Properties.IsRightButtonPressed;
             _press = pos;
+            if (left && IsCanvasChipAt(pos)) { _owner.RequestCanvasSize(); return; }
             if (left && e.ClickCount == 1 && TagEdgeAt(pos) is { } edge)
             {
                 _tagEdit = edge.Tag;
@@ -3556,7 +3579,9 @@ public sealed class TimelinePanel : UserControl
         /// <summary>누르면 바로 동작하는 작은 단추 위인지(손 모양 커서): 이름 칸의 눈·자물쇠·접기·fx·스킨 칩, 프레임 끝 열의 ⧉/＋, "다음 레이어" 줄의 ＋/⧉.</summary>
         private bool IsClickableAt(Avalonia.Point pos)
         {
-            if (Ctx.Project is not { } p || pos.Y < TagH) return false;
+            if (Ctx.Project is not { } p) return false;
+            if (IsCanvasChipAt(pos)) return true;
+            if (pos.Y < TagH) return false;
             if (GhostColumnAt(pos) is not null || GhostRowButtonAt(pos) != GhostRowButton.None) return true;
             if (pos.X >= NameW) return false;
             if (FxRowAt(pos.Y) is not null || LayerAt(pos.Y) is var l && l < 0) return false;
@@ -3577,7 +3602,7 @@ public sealed class TimelinePanel : UserControl
         /// <summary>도움말 풍선: ◆ 자동 배치 표시와 "다음 레이어" 줄 단추 위에서 바로 띄운다.</summary>
         private void UpdateTip()
         {
-            string? tip = _layoutBadgeHover is not null ? UiStrings.Timeline_LayoutBadgeTip : _rowHover switch
+            string? tip = _canvasChipHover ? UiStrings.Timeline_CanvasSizeTip : _layoutBadgeHover is not null ? UiStrings.Timeline_LayoutBadgeTip : _rowHover switch
             {
                 GhostRowButton.Add => UiStrings.Timeline_AddLayerTip,
                 GhostRowButton.Copy => UiStrings.Timeline_AppendLayerCopyTip,
@@ -3786,7 +3811,9 @@ public sealed class TimelinePanel : UserControl
         {
             (int, bool) hover = GhostColumnAt(pos) is { } header ? (Ctx.FrameCount, header) : (-1, false);
             var rowHover = GhostRowButtonAt(pos);
-            if (hover == _hover && rowHover == _rowHover) return;
+            bool chip = Ctx.Project is not null && IsCanvasChipAt(pos);
+            if (hover == _hover && rowHover == _rowHover && chip == _canvasChipHover) return;
+            _canvasChipHover = chip;
             _hover = hover;
             _rowHover = rowHover;
             InvalidateVisual();
@@ -3795,6 +3822,7 @@ public sealed class TimelinePanel : UserControl
         protected override void OnPointerExited(PointerEventArgs e)
         {
             base.OnPointerExited(e);
+            if (_canvasChipHover) { _canvasChipHover = false; InvalidateVisual(); }
             if (_tagHover is not null) { _tagHover = null; InvalidateVisual(); }
             if (_fxHover is not null) { _fxHover = null; InvalidateVisual(); }
             if (_layoutBadgeHover is not null) SetLayoutBadgeHover(null);

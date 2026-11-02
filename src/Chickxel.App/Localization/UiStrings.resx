@@ -5697,10 +5697,6 @@ echo __LOGIN_FAILED__
     <value> (1회)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:2645 · Paint · " (1회)"</comment>
   </data>
-  <data name="S_TimelinePanel_Paint_E44BCB02E8" xml:space="preserve">
-    <value>레이어 \ 프레임</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:2779 · Paint · "레이어 \\ 프레임"</comment>
-  </data>
   <data name="S_TimelinePanel_PartSkinMenuItems_179840054C" xml:space="preserve">
     <value>스킨 관리…</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:947 · PartSkinMenuItems · "스킨 관리…"</comment>
@@ -6378,7 +6374,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:97 · ToolOptionsPanel · $"브러시 크기 1~{BrushFootprint.MaxSize} — 좌우로 끌거나 [ / ]"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_07A907E085" xml:space="preserve">
-    <value>이동: 밖으로 나간 픽셀을 반대편으로</value>
+    <value>이동: 밖으로 나간 픽셀을 반대편으로. 끄면 캔버스 밖으로 나간 픽셀도 지워지지 않고 남아(흐리게 보임) 다시 옮겨 오면 보입니다.</value>
     <comment>src/Chickxel.App\ToolOptionsPanel.cs:165 · ToolOptionsPanel · "이동: 밖으로 나간 픽셀을 반대편으로"</comment>
   </data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_096C96B0A9" xml:space="preserve">
@@ -9646,4 +9642,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>남은 항목에도 적용</value></data>
   <data name="ExportSheet_Scale" xml:space="preserve"><value>배율</value><comment>내보내기 설정 시트 칸: 결과 이미지 배율(실행취소 이름에도 씀)</comment></data>
   <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>결과 이미지를 정수 배로 키웁니다(최근접 — 픽셀을 그대로 키움). 9-slice 테두리와 Unity PPU에도 같은 배율을 곱해 Unity에서 보이는 크기는 그대로입니다. 칸 사이 간격은 키운 뒤 px입니다.</value></data>
+  <data name="Timeline_CanvasSize" xml:space="preserve"><value>캔버스 {0}×{1}</value><comment>타임라인 왼쪽 위 칩: {0}=너비, {1}=높이(px)</comment></data>
+  <data name="Timeline_CanvasSizeTip" xml:space="preserve"><value>캔버스 크기 바꾸기 (Ctrl+Alt+C)</value></data>
 </root>

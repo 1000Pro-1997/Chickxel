@@ -96,7 +96,10 @@ public sealed class AppSettings
     public int SpiralTurns { get; set; } = 3;
     public bool ShapeOrthogonal { get; set; }
     public bool RightButtonErases { get; set; }
-    public bool MoveWrap { get; set; } = true;
+    /// <summary>이동 도구 순환(밖으로 나간 픽셀을 반대편으로). 끄면(기본) 일반 레이어는 캔버스 밖으로 나간 픽셀을 남긴다.</summary>
+    public bool MoveWrap { get; set; }
+    /// <summary>예전 기본 "순환 켬"을 새 기본 "끔"(캔버스 밖 그림 남기기)으로 한 번 옮겼는지(이후 사용자가 다시 켜도 보존).</summary>
+    public bool MoveKeepOutsideApplied { get; set; } = true;
     /// <summary>변형 모드(Ctrl+T) 리샘플링(기본 RotSprite).</summary>
     public ResampleMode TransformResample { get; set; } = ResampleMode.RotSprite;
     /// <summary>그라데이션 정지점("위치(0~1):#RRGGBBAA", 2개 이상). null = 기본(검정 → 흰색).</summary>
@@ -305,6 +308,9 @@ public sealed class AppSettings
                 if (document.RootElement.ValueKind == JsonValueKind.Object &&
                     !document.RootElement.TryGetProperty(nameof(AiDrawAutoDefaultApplied), out _))
                     settings.AiDrawAutoDefaultApplied = false;
+                if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                    !document.RootElement.TryGetProperty(nameof(MoveKeepOutsideApplied), out _))
+                    settings.MoveKeepOutsideApplied = false;
                 return Migrate(settings);
             }
         }
@@ -341,6 +347,11 @@ public sealed class AppSettings
         {
             if (s.AiDraw.Mode == Chickxel.Core.AiDraw.AiDrawMode.Generate) s.AiDraw.Mode = Chickxel.Core.AiDraw.AiDrawMode.Auto;
             s.AiDrawAutoDefaultApplied = true;
+        }
+        if (!s.MoveKeepOutsideApplied)
+        {
+            s.MoveWrap = false;
+            s.MoveKeepOutsideApplied = true;
         }
         s.AiDraw.FrameCounts ??= Chickxel.Core.AiDraw.AiDrawActions.DefaultFrameCounts();
         if (s.TextFont is { } font)

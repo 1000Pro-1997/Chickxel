@@ -31,6 +31,9 @@ public sealed partial class SpriteProject
         var snapshots = new HashSet<Snapshot>(ReferenceEqualityComparer.Instance);
         foreach (var img in _cels.Values)
             if (seen.Add(img)) images.Add((img, null));
+        // 지금 캔버스 밖 그림: 프로젝트 파일에 들어 있으므로 셀처럼 내용 없이 번호만.
+        foreach (var o in _overflow.Values)
+            if (seen.Add(o.Image)) images.Add((o.Image, null));
         void AddImage(PixelImage img)
         {
             if (seen.Add(img)) images.Add((img, (Color32[])img.Pixels.Clone()));
@@ -38,7 +41,10 @@ public sealed partial class SpriteProject
         void AddSnapshot(Snapshot s)
         {
             if (snapshots.Add(s))
+            {
                 foreach (var kv in s.Cels) AddImage(kv.Value);
+                foreach (var kv in s.Overflow) AddImage(kv.Value.Image);
+            }
         }
         void Visit(IUndoCommand c)
         {
@@ -192,6 +198,17 @@ public sealed partial class SpriteProject
             }
         }
         if (_cels.Keys.Any(k => !anchorKeys.Contains(k))) throw Mismatch();
+        // 기준 상태의 캔버스 밖 그림: 지금 프로젝트(방금 연 파일)의 것과 같아야 한다.
+        var anchorOverflow = anchor.Overflow ?? [];
+        if (anchorOverflow.Count != _overflow.Count) throw Mismatch();
+        foreach (var o in anchorOverflow)
+        {
+            if (o is not [var li, var fi, var ii, var ox, var oy]) throw Corrupt();
+            var key = new CelKey(r.Bound<Layer>(li), r.Bound<Frame>(fi), null);
+            if (!_overflow.TryGetValue(key, out var current) || current.Origin != new Point(ox, oy)) throw Mismatch();
+            if (r.Objects.TryGetValue(ii, out var bound) && !ReferenceEquals(bound, current.Image)) throw Mismatch();
+            if (!r.Objects.ContainsKey(ii)) r.Bind(ii, current.Image);
+        }
         // 지금 프로젝트에 없는 셀 그림: 쓰일 때 조각에서 읽는다.
         r.LoadImage = id => sizes.TryGetValue(id, out var s) && s.Blob is { } blob
             ? UndoHistoryIO.DecodeImage(blobs.Get(blob), s.W, s.H)
@@ -257,6 +274,8 @@ public sealed partial class SpriteProject
     {
         public KeyValuePair<CelKey, PixelImage>[] Cels => _cels;
 
+        public KeyValuePair<CelKey, CelOverflow>[] Overflow => _overflow;
+
         /// <summary>이 상태의 모든 레이어 효과.</summary>
         public IEnumerable<LayerEffect> Effects => _layers.SelectMany(s => s.Effects);
 
@@ -301,6 +320,9 @@ public sealed partial class SpriteProject
             // 번호 순(사전 순서는 편집 내력마다 달라서 — 같은 상태는 같은 조각이 되게).
             Cels = _cels.Select(kv => new[] { ids.Of(kv.Key.Layer), ids.Of(kv.Key.Frame), kv.Key.Skin is { } skin ? ids.Of(skin) : 0, ids.Of(kv.Value) })
                 .OrderBy(c => c[0]).ThenBy(c => c[1]).ThenBy(c => c[2]).ToList(),
+            Overflow = _overflow.Length == 0 ? null
+                : _overflow.Select(kv => new[] { ids.Of(kv.Key.Layer), ids.Of(kv.Key.Frame), ids.Of(kv.Value.Image), kv.Value.Origin.X, kv.Value.Origin.Y })
+                    .OrderBy(c => c[0]).ThenBy(c => c[1]).ToList(),
             Sprite = ProjectIO.UnityDto.From(_sprite),
             Export = ProjectIO.ExportDto.From(_export, null),
             CommonRefs = Refs(_export.Common, ids),
@@ -354,6 +376,9 @@ public sealed partial class SpriteProject
                     .ToArray(),
                 _cels = d.Cels.Select(c => c is [var li, var fi, var si, var ii]
                     ? KeyValuePair.Create(new CelKey(r.Layer(li), r.Frame(fi), si == 0 ? null : r.Skin(si)), r.Image(ii))
+                    : throw Corrupt()).ToArray(),
+                _overflow = (d.Overflow ?? []).Select(c => c is [var li, var fi, var ii, var x, var y]
+                    ? KeyValuePair.Create(new CelKey(r.Layer(li), r.Frame(fi), null), new CelOverflow(r.Image(ii), new Point(x, y)))
                     : throw Corrupt()).ToArray(),
                 _sprite = sprite,
                 _export = export,

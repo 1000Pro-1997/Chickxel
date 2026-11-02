@@ -86,6 +86,11 @@ public sealed class EditorContext
     {
         // 선택 영역 떼기·내려놓기는 셀 픽셀을 직접 바꾼다.
         Selection.Changed += (_, _) => InvalidateCurrent();
+        // 캔버스 밖으로 나간 떠 있는 픽셀(옮긴 선택, 캔버스보다 큰 붙여넣기)은 일반 레이어 셀의 캔버스 밖 그림으로 남긴다(같은 기록 단계).
+        Selection.AnchoringOutside = (image, floating, at) =>
+        {
+            if (Project is { IsStrokeActive: true } p && ReferenceEquals(image, _strokeImage)) p.AddStrokeOverflow(floating, at);
+        };
         _renders.Updated += () => RenderUpdated?.Invoke(this, EventArgs.Empty);
         // 스크립트 효과: 실행 허락·멈춤 해제로 같은 효과 값의 결과가 달라지면 다시 그리고, 실패 표시만 바뀌면 화면만 다시 그린다(작업 스레드에서도 옴).
         ScriptLibrary.Changed += () => Dispatcher.UIThread.Post(RerenderScripts);
@@ -204,7 +209,7 @@ public sealed class EditorContext
         }
     }
 
-    private bool _pixelPerfect, _fillContiguous = true, _shapeFilled, _mirrorX, _mirrorY, _mirrorAtPivot, _rightErases, _moveWrap = true;
+    private bool _pixelPerfect, _fillContiguous = true, _shapeFilled, _mirrorX, _mirrorY, _mirrorAtPivot, _rightErases, _moveWrap;
     private bool _fillDiagonal, _fillSampleVisible, _pickerSampleVisible = true;
     private BrushShape _brushShape = BrushShape.Square;
     private int _fillTolerance, _dodgeStrength = DefaultDodgeStrength;
@@ -350,7 +355,7 @@ public sealed class EditorContext
     }
     /// <summary>오른쪽 버튼으로 보조색 대신 지운다(연필·도형·채우기).</summary>
     public bool RightButtonErases { get => _rightErases; set { _rightErases = value; OptionsChanged(); } }
-    /// <summary>이동 도구로 셀 내용을 옮길 때 밖으로 나간 픽셀을 반대편으로 돌린다.</summary>
+    /// <summary>이동 도구로 셀 내용을 옮길 때 밖으로 나간 픽셀을 반대편으로 돌린다. 끄면 일반 레이어는 밖으로 나간 픽셀을 캔버스 밖 그림으로 남긴다.</summary>
     public bool MoveWrap { get => _moveWrap; set { _moveWrap = value; OptionsChanged(); } }
 
     /// <summary>그라데이션 연필 기본 그라데이션(검정 → 흰색, 불투명). 아래 그라데이션 기본값보다 앞에 있어 정지점을 따로 적는다.</summary>
@@ -667,13 +672,15 @@ public sealed class EditorContext
 
     /// <summary>
     /// 이동 도구로 지금 셀 전체를 (<paramref name="dx"/>, <paramref name="dy"/>) 민 스트로크를 확정한다. 타임라인에서 다른 셀도 함께 골라 두었으면
-    /// 그 셀들도 같은 만큼 밀어 실행취소 한 단계로 묶는다(<paramref name="wrap"/>이면 밖으로 나간 픽셀이 반대쪽으로; 그룹·빈 셀·잠긴 레이어는 건너뜀).
-    /// 함께 민 다른 셀 수를 돌려준다.
+    /// 그 셀들도 같은 만큼 밀어 실행취소 한 단계로 묶는다(그룹·빈 셀·잠긴 레이어는 건너뜀). <paramref name="wrap"/>이면 밖으로 나간 픽셀이 반대쪽으로,
+    /// 아니면 일반 레이어는 캔버스 밖 그림까지 통째로 옮겨 밖으로 나간 픽셀을 남긴다(<see cref="SpriteProject.ShiftCels"/>, 부위는 부위 칸 밖이 잘림).
+    /// 지금 셀이 일반 레이어이고 순환이 아니면 열린 스트로크(미리 보기)는 버리고 모델에서 다시 옮긴다. 함께 민 다른 셀 수를 돌려준다.
     /// </summary>
     public int CommitCelShift(string label, int dx, int dy, bool wrap)
     {
         if (Project is not { } p) return 0;
         var others = (SelectedCels?.Invoke() ?? []).Where(c => c.Layer != _layer || c.Frame != _frame).Distinct().ToList();
+        if (!wrap && p.Layers[_layer].Kind == LayerKind.Normal) return CommitCelShiftKeepingOutside(p, label, others, dx, dy);
         if (others.Count == 0 || (dx == 0 && dy == 0))
         {
             CommitStroke(label);
@@ -681,15 +688,7 @@ public sealed class EditorContext
         }
         int layer = _layer, frame = _frame;
         var after = TakeStrokeResult(p);
-        var moved = new List<(int Layer, int Frame, PixelImage Image)>();
-        foreach (var (l, f) in others)
-        {
-            if (l < 0 || l >= p.Layers.Count || f < 0 || f >= p.Frames.Count || p.Layers[l].IsGroup || p.IsLayerLocked(l) || p.IsCelEmpty(l, f)) continue;
-            var cel = p.GetCel(l, f)!;
-            var image = new PixelImage(cel.Width, cel.Height);
-            PixelOps.Shift(cel, image, cel.Bounds, dx, dy, wrap);
-            moved.Add((l, f, image));
-        }
+        var moved = ShiftedPixels(p, others, dx, dy, wrap);
         if (after is null && moved.Count == 0) return 0;
         p.Edit(label, ProjectChange.Pixels, () =>
         {
@@ -697,6 +696,45 @@ public sealed class EditorContext
             foreach (var (l, f, image) in moved) p.SetCel(l, f, image);
         });
         return moved.Count;
+    }
+
+    /// <summary>순환 없이 일반 레이어 지금 셀을 옮김: 일반 레이어 셀은 캔버스 밖 그림까지 옮기고, 함께 고른 부위 셀은 부위 칸 안에서 민다(실행취소 한 단계).</summary>
+    private int CommitCelShiftKeepingOutside(SpriteProject p, string label, List<(int Layer, int Frame)> others, int dx, int dy)
+    {
+        if (_strokeImage is not null)
+        {
+            _strokeImage = null;
+            p.CancelCelStroke();
+        }
+        InvalidateCurrent();
+        if (dx == 0 && dy == 0) return 0;
+        var normal = others.Where(c => c.Layer >= 0 && c.Layer < p.Layers.Count && p.Layers[c.Layer].Kind == LayerKind.Normal).Prepend((_layer, _frame)).ToList();
+        var parts = ShiftedPixels(p, others.Where(c => c.Layer >= 0 && c.Layer < p.Layers.Count && p.Layers[c.Layer].IsPart).ToList(), dx, dy, wrap: false);
+        bool current = !p.IsCelEmpty(_layer, _frame) || p.GetCelOverflow(_layer, _frame) is not null;
+        int shifted = 0;
+        if (parts.Count == 0) shifted = p.ShiftCels(label, normal, dx, dy);
+        else
+            p.Edit(label, ProjectChange.Pixels, () =>
+            {
+                shifted = p.ShiftCels(label, normal, dx, dy);
+                foreach (var (l, f, image) in parts) p.SetCel(l, f, image);
+            });
+        return Math.Max(0, shifted - (current ? 1 : 0)) + parts.Count;
+    }
+
+    /// <summary>셀들을 셀 칸 안에서 민 새 그림(그룹·빈 셀·잠긴 레이어는 건너뜀).</summary>
+    private static List<(int Layer, int Frame, PixelImage Image)> ShiftedPixels(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy, bool wrap)
+    {
+        var moved = new List<(int Layer, int Frame, PixelImage Image)>();
+        foreach (var (l, f) in cels)
+        {
+            if (l < 0 || l >= p.Layers.Count || f < 0 || f >= p.Frames.Count || p.Layers[l].IsGroup || p.IsLayerLocked(l) || p.IsCelEmpty(l, f)) continue;
+            var cel = p.GetCel(l, f)!;
+            var image = new PixelImage(cel.Width, cel.Height);
+            PixelOps.Shift(cel, image, cel.Bounds, dx, dy, wrap);
+            moved.Add((l, f, image));
+        }
+        return moved;
     }
 
     /// <summary>스트로크 중 픽셀이 바뀌었음을 알린다(다시 그리기).</summary>
@@ -1121,11 +1159,43 @@ public sealed class EditorContext
         CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접 — 9-slice면 프레임 칸 테두리로). 모드가 아니면 null. 호출자는 Dispose하지 않는다.</summary>
+    /// <summary>
+    /// 적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접 — 9-slice면 프레임 칸 테두리로). 보이는 일반 레이어의 캔버스 밖 그림 중 새 캔버스에 들어오는 부분도
+    /// (같은 비율로, 효과 없이) 그린다. 모드가 아니면 null. 호출자는 Dispose하지 않는다.
+    /// </summary>
     public WriteableBitmap? CanvasResizeBitmap
-        => _canvasResize is not { } s ? null
-            : s.Preview ??= ImageUtil.ToBitmap(ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image,
-                CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill));
+    {
+        get
+        {
+            if (_canvasResize is not { } s) return null;
+            if (s.Preview is null)
+            {
+                var preview = ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image,
+                    CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill);
+                AddOverflowPreview(preview, s);
+                s.Preview = ImageUtil.ToBitmap(preview);
+            }
+            return s.Preview;
+        }
+    }
+
+    /// <summary>보이는 일반 레이어의 캔버스 밖 그림을 새 캔버스 미리보기에 아래 레이어부터 겹친다(그림 크기 비율대로 최근접, 레이어 불투명도).</summary>
+    private void AddOverflowPreview(PixelImage preview, CanvasResizeSession s)
+    {
+        if (Project is not { } p) return;
+        double sx = (double)s.Image.Width / p.Width, sy = (double)s.Image.Height / p.Height;
+        int MapX(int x) => s.Image.X + (int)Math.Floor(x * sx + 0.5);
+        int MapY(int y) => s.Image.Y + (int)Math.Floor(y * sy + 0.5);
+        for (int l = 0; l < p.Layers.Count; l++)
+        {
+            if (p.Layers[l].Kind != LayerKind.Normal || !p.IsLayerVisible(l) || p.GetCelOverflow(l, _frame) is not { } o) continue;
+            int left = MapX(o.Origin.X), top = MapY(o.Origin.Y);
+            int w = Math.Clamp(MapX(o.Origin.X + o.Image.Width) - left, 1, PixelImage.MaxSize);
+            int h = Math.Clamp(MapY(o.Origin.Y + o.Image.Height) - top, 1, PixelImage.MaxSize);
+            var image = w == o.Image.Width && h == o.Image.Height ? o.Image : ImageTransform.ScaleNearest(o.Image, w, h);
+            preview.Composite(image, left, top, p.Layers[l].Opacity);
+        }
+    }
 
     /// <summary>
     /// 캔버스 크기 모드에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 프레임 합성 전체(부위를 골랐어도)를 미리보기로 보인다.

@@ -1556,7 +1556,6 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_TimelinePanel_NewTag_89C5F490AE" xml:space="preserve"><value>Add tag</value></data>
   <data name="S_TimelinePanel_Paint_5AB8DD426F" xml:space="preserve"><value> · Frame {0}</value></data>
   <data name="S_TimelinePanel_Paint_6A31D51450" xml:space="preserve"><value> (once)</value></data>
-  <data name="S_TimelinePanel_Paint_E44BCB02E8" xml:space="preserve"><value>Layer \ Frame</value></data>
   <data name="S_TimelinePanel_PartSkinMenuItems_179840054C" xml:space="preserve"><value>Manage skins…</value></data>
   <data name="S_TimelinePanel_PartSkinMenuItems_6C100EAA80" xml:space="preserve"><value>{0} (individual)</value></data>
   <data name="S_TimelinePanel_PartSkinMenuItems_AD14B32035" xml:space="preserve"><value>Skin for this part…</value></data>
@@ -1726,7 +1725,7 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_ToolOptionsPanel_SourceNames_06199A4484" xml:space="preserve"><value>All visible layers</value></data>
   <data name="S_ToolOptionsPanel_SourceNames_6198D7D9B6" xml:space="preserve"><value>Current layer</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_041B00982B" xml:space="preserve"><value>Brush size 1–{0} — drag left/right or [ / ]</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_07A907E085" xml:space="preserve"><value>Move: wrap pixels that go off the edge to the other side</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_07A907E085" xml:space="preserve"><value>Move: wrap pixels that go off the edge to the other side. When off, pixels moved off the canvas are kept (shown faded) and come back when you move them in again.</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_096C96B0A9" xml:space="preserve"><value>Fill</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_0A75032EF4" xml:space="preserve"><value>When off, picks all matching colors on screen (fill · smart selection) (Shift+G)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_0B9E51B984" xml:space="preserve"><value>Options</value></data>
@@ -3772,4 +3771,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>Apply to the remaining items</value></data>
   <data name="ExportSheet_Scale" xml:space="preserve"><value>Scale</value></data>
   <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>Enlarges the output images by a whole number (nearest neighbor — pixels stay sharp). 9-slice borders and Unity PPU are multiplied too, so sprites keep their size in Unity. Spacing between cells is in pixels after scaling.</value></data>
+  <data name="Timeline_CanvasSize" xml:space="preserve"><value>Canvas {0}×{1}</value></data>
+  <data name="Timeline_CanvasSizeTip" xml:space="preserve"><value>Change canvas size (Ctrl+Alt+C)</value></data>
 </root>

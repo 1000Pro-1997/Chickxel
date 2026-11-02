@@ -353,6 +353,8 @@ internal sealed class HistorySnapshotDto
     public List<HistoryOutfitDto> Outfits { get; set; } = [];
     /// <summary>셀: [레이어, 프레임, 스킨(0 = 없음), 그림].</summary>
     public List<int[]> Cels { get; set; } = [];
+    /// <summary>캔버스 밖 그림: [레이어, 프레임, 그림, 왼쪽 위 X, Y](없으면 생략).</summary>
+    public List<int[]>? Overflow { get; set; }
     public ProjectIO.UnityDto Sprite { get; set; } = new();
     /// <summary>내보내기 설정(시트의 스킨·착장·레이어 목록은 <see cref="CommonRefs"/>·<see cref="PartsRefs"/>).</summary>
     public ProjectIO.ExportDto Export { get; set; } = new();

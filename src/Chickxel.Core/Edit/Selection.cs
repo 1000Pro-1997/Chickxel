@@ -38,6 +38,12 @@ public sealed class Selection
     /// <summary>선택이나 떠 있는 픽셀이 바뀌면 발생.</summary>
     public event EventHandler? Changed;
 
+    /// <summary>
+    /// 떠 있는 픽셀을 내려놓을 때 이미지 밖으로 나간 부분이 있으면 먼저 부른다(내려놓을 이미지, 떠 있는 픽셀, 그 왼쪽 위 이미지 좌표) — 캔버스 밖 그림으로 남기는 데 씀.
+    /// 이미지 안 부분은 그다음 이미지에 내려놓는다.
+    /// </summary>
+    public Action<PixelImage, PixelImage, Point>? AnchoringOutside { get; set; }
+
     /// <summary>사각형을 선택한다(이미지 안으로 잘림). 떠 있는 픽셀이 있으면 먼저 내려놓는다.</summary>
     public void Select(PixelImage image, Rectangle rect) => Select(image, new PixelMask(rect));
 
@@ -113,6 +119,7 @@ public sealed class Selection
     {
         if (Floating is null) return;
         var f = Floating;
+        if (AnchoringOutside is { } outside && !image.Bounds.Contains(Bounds)) outside(image, f, Bounds.Location);
         for (int y = 0; y < f.Height; y++)
             for (int x = 0; x < f.Width; x++)
             {

@@ -118,6 +118,13 @@ public sealed partial class PixelCanvas : Control
     private Point _dragStartScreen, _lastScreen;
     private Point _startPx, _lastPx;
     private PixelImage? _strokeBase;
+    /// <summary>
+    /// 이동 도구로 일반 레이어 셀을 끄는 중(순환 끔): 캔버스 밖 그림까지 합친 셀 전체와 그 왼쪽 위(캔버스 좌표). 끄는 동안 셀 = 이 그림을 옮긴 자리의 캔버스 부분.
+    /// </summary>
+    private (PixelImage Image, Point Origin)? _moveFull;
+    /// <summary>캔버스 밖을 흐리게 그리는 그림(<see cref="_moveFull"/> 또는 지금 셀의 캔버스 밖 그림)과 그 원본(같으면 다시 만들지 않음).</summary>
+    private WriteableBitmap? _outsideBmp;
+    private PixelImage? _outsideSource;
     private PixelPerfectStroke? _ppStroke;
     /// <summary>그라데이션 연필로 칠하는 획(오른쪽 버튼 지우개면 null — 연필처럼 지움). 그라데이션·모드·간격은 누를 때 정해 끝까지 쓴다.</summary>
     private GradientStroke? _gradientStroke;
@@ -782,6 +789,8 @@ public sealed partial class PixelCanvas : Control
             }
             if (partView) DrawBitmapAt(g, bmp, 0, 0, W, H, checker: false);
             else DrawImageAt(g, bmp, 0, 0);
+            // 캔버스 밖 그림(이동 도구): 지금 레이어 셀이 캔버스 밖에 남긴 픽셀을 흐리게 — 끄는 중이면 옮긴 자리의 셀 전체.
+            if (!peek && !partView && !_tiledMode) DrawCelOutside(g);
             // 계산 중(작업 스레드)이면 회색 덮개 아래 중간 결과를 보이고, 그리는 중인 셀은 효과 없이 덮개 위에 바로 보인다.
             if (view.Overlay && dragged is null) DrawPendingFrame(g);
             if (dragged is not null) DrawDraggedPart(g, dragged, frame);
@@ -790,9 +799,7 @@ public sealed partial class PixelCanvas : Control
                 && !hp.IsLayerVisible(_ctx.CurrentLayer) && _ctx.CelBitmap(_ctx.CurrentLayer, frame) is { } hiddenCel)
                 using (g.PushOpacity(0.6))
                     DrawBitmapAt(g, hiddenCel, 0, 0, W, H, checker: false);
-            if (_floatingBmp is not null && !_peekPrevious)
-                g.DrawImage(_floatingBmp, new Rect(0, 0, _floatingBmp.PixelSize.Width, _floatingBmp.PixelSize.Height),
-                    ToRect(ImageToScreen(_ctx.Selection.Bounds)));
+            if (_floatingBmp is not null && !_peekPrevious) DrawFloating(g, _floatingBmp, _ctx.Selection.Bounds, clipToCanvas: !partView && !_tiledMode);
             if (!_peekPrevious) DrawOnionSkin(g);
         }
 
@@ -849,6 +856,63 @@ public sealed partial class PixelCanvas : Control
         ImageUtil.CopyToBitmap(cel, _strokeBmp);
         using (g.PushOpacity(p.Layers[_ctx.CurrentLayer].Opacity / 255.0))
             DrawBitmapAt(g, _strokeBmp, 0, 0, W, H, checker: false);
+    }
+
+    /// <summary>캔버스 밖 픽셀을 그리는 불투명도(캔버스 안은 그대로).</summary>
+    private const double OutsideOpacity = 0.4;
+
+    /// <summary>
+    /// 이동 도구일 때 지금 일반 레이어 셀의 캔버스 밖 그림을 흐리게 그린다. 셀 전체를 끄는 중이면 옮긴 자리의 셀 전체(캔버스 안은 이미 셀로 보임)를.
+    /// </summary>
+    private void DrawCelOutside(DrawingContext g)
+    {
+        if (_ctx.Project is not { } p || p.Layers[_ctx.CurrentLayer].Kind != LayerKind.Normal) return;
+        PixelImage? image = null;
+        var at = Point.Empty;
+        if (_drag == DragMode.MoveLayer && _moveFull is { } full)
+        {
+            image = full.Image;
+            at = new Point(full.Origin.X + _lastPx.X - _startPx.X, full.Origin.Y + _lastPx.Y - _startPx.Y);
+        }
+        else if (_ctx.Tool == ToolKind.Move && p.GetCelOverflow(_ctx.CurrentLayer, _ctx.CurrentFrame) is { } overflow)
+            (image, at) = overflow;
+        if (image is null) return;
+        if (!ReferenceEquals(image, _outsideSource) || _outsideBmp is null)
+        {
+            _outsideBmp?.Dispose();
+            _outsideBmp = ImageUtil.ToBitmap(image);
+            _outsideSource = image;
+        }
+        DrawOutsideCanvas(g, _outsideBmp, new Rectangle(at, image.Size));
+    }
+
+    /// <summary>떠 있는 픽셀: 캔버스 안은 그대로, 캔버스 밖으로 나간 부분은 흐리게(<paramref name="clipToCanvas"/>가 아니면 모두 그대로).</summary>
+    private void DrawFloating(DrawingContext g, Bitmap bmp, Rectangle bounds, bool clipToCanvas)
+    {
+        var src = new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+        var dest = ToRect(ImageToScreen(bounds));
+        if (!clipToCanvas || new Rectangle(0, 0, W, H).Contains(bounds))
+        {
+            g.DrawImage(bmp, src, dest);
+            return;
+        }
+        using (g.PushClip(ToRect(ImageScreenRect))) g.DrawImage(bmp, src, dest);
+        DrawOutsideCanvas(g, bmp, bounds);
+    }
+
+    /// <summary>그림을 이미지 좌표 <paramref name="at"/>에 그리되 캔버스 밖 부분만 흐리게 그린다.</summary>
+    private void DrawOutsideCanvas(DrawingContext g, Bitmap bmp, Rectangle at)
+    {
+        var dest = ToRect(ImageToScreen(at));
+        var view = new Rect(Bounds.Size);
+        var visible = dest.Intersect(view);
+        if (visible.Width <= 0 || visible.Height <= 0) return;
+        var outside = new GeometryGroup { FillRule = FillRule.EvenOdd };
+        outside.Children.Add(new RectangleGeometry(view));
+        outside.Children.Add(new RectangleGeometry(ToRect(ImageScreenRect)));
+        using (g.PushGeometryClip(outside))
+        using (g.PushOpacity(OutsideOpacity))
+            g.DrawImage(bmp, new Rect(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), dest);
     }
 
     /// <summary>캔버스 크기의 그림을 (ox,oy) 이미지 좌표만큼 옮긴 위치에 체커 배경과 함께 보이는 부분만 그린다(그림이 없으면 체커만).</summary>
@@ -1683,7 +1747,13 @@ public sealed partial class PixelCanvas : Control
                 break;
             case DragMode.MoveLayer:
                 if (px == _lastPx) return;
-                PixelOps.Shift(_strokeBase!, _ctx.EditImage!, new Rectangle(0, 0, W, H), px.X - _startPx.X, px.Y - _startPx.Y, _ctx.MoveWrap);
+                if (_moveFull is { } full)
+                {
+                    var cel = _ctx.EditImage!;
+                    cel.Clear();
+                    cel.Blit(full.Image, full.Origin.X + px.X - _startPx.X, full.Origin.Y + px.Y - _startPx.Y);
+                }
+                else PixelOps.Shift(_strokeBase!, _ctx.EditImage!, new Rectangle(0, 0, W, H), px.X - _startPx.X, px.Y - _startPx.Y, _ctx.MoveWrap);
                 _ctx.NotifyPixels();
                 break;
             case DragMode.MoveText:
@@ -1785,6 +1855,7 @@ public sealed partial class PixelCanvas : Control
             case DragMode.MoveLayer:
                 ShowCelShift(_ctx.CommitCelShift(UiStrings.S_PixelCanvas_EndDrag_685B820F08, _lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y, _ctx.MoveWrap));
                 _strokeBase = null;
+                _moveFull = null;
                 break;
             case DragMode.MoveText:
                 EndTextMove(_lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y);
@@ -2234,6 +2305,13 @@ public sealed partial class PixelCanvas : Control
         _ctx.CommitFloating();
         _ctx.BeginStroke();
         _strokeBase = _ctx.EditImage!.Clone();
+        // 일반 레이어(순환 끔): 캔버스 밖 그림까지 통째로 옮겨 보인다(놓으면 밖으로 나간 픽셀도 남음). 캔버스 밖 그림이 없으면 셀 사본 그대로.
+        _moveFull = null;
+        if (!_ctx.MoveWrap && _ctx.Project is { } p && p.Layers[_ctx.CurrentLayer].Kind == LayerKind.Normal)
+        {
+            var full = p.GetFullCel(_ctx.CurrentLayer, _ctx.CurrentFrame);
+            _moveFull = ReferenceEquals(full.Image, _ctx.EditImage) ? (_strokeBase, full.Origin) : full;
+        }
         _drag = DragMode.MoveLayer;
     }
 
@@ -2264,6 +2342,13 @@ public sealed partial class PixelCanvas : Control
         }
         if (_ctx.Tool != ToolKind.Move) return false;
         if (NudgeText(dx, dy)) return true;
+        // 일반 레이어(순환 끔): 캔버스 밖 그림까지 바로 옮긴다(실행취소 한 단계).
+        if (!_ctx.MoveWrap && _ctx.Project is { } project && project.Layers[_ctx.CurrentLayer].Kind == LayerKind.Normal)
+        {
+            _ctx.CommitFloating();
+            ShowCelShift(_ctx.CommitCelShift(UiStrings.S_PixelCanvas_Nudge_A41E3BE80E, dx, dy, wrap: false));
+            return true;
+        }
         _ctx.BeginStroke();
         var img = _ctx.EditImage!;
         var copy = img.Clone();

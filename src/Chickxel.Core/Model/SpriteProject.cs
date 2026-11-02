@@ -492,6 +492,8 @@ public sealed partial class SpriteProject
             seed = image.Clone();
         }
         _stroke = new StrokeState(key, image, before, created, seed);
+        _strokeOverflowChanged = false;
+        _strokeOverflowBefore = null;
         return image;
     }
 
@@ -501,6 +503,7 @@ public sealed partial class SpriteProject
         var s = _stroke;
         _stroke = null;
         if (s is null) return false;
+        if (_strokeOverflowChanged) return CommitOverflowStroke(s, label);
         var patch = s.Seed is not null && PixelPatch.Create(s.Seed, s.Image) is null ? null : PixelPatch.Create(s.Before, s.Image);
         if (patch is null)
         {
@@ -519,6 +522,7 @@ public sealed partial class SpriteProject
         var s = _stroke;
         _stroke = null;
         if (s is null) return;
+        RevertStrokeOverflow(s);
         s.Image.CopyFrom(s.Before);
         if (s.Created) _cels.Remove(s.Key);
         NotifyChanged(ProjectChange.Pixels, markDirty: false);
@@ -860,6 +864,8 @@ public sealed partial class SpriteProject
         if (src.SkinOverride is { } over) copy.SetSkinOverrideRaw(skinMap.TryGetValue(over, out var mappedOver) ? mappedOver : over);
         foreach (var (key, cel) in CelsOf(src))
             _cels[new(copy, key.Frame, key.Skin is { } s && skinMap.TryGetValue(s, out var mapped) ? mapped : key.Skin)] = cel.Clone();
+        foreach (var (key, overflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, src)).ToList())
+            _overflow[key with { Layer = copy }] = overflow;
         return copy;
     }
 
@@ -873,7 +879,10 @@ public sealed partial class SpriteProject
         Edit(DomainStrings.Project_DeleteLayer, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             foreach (var l in _layers.GetRange(start, count))
+            {
                 foreach (var (key, _) in CelsOf(l)) _cels.Remove(key);
+                RemoveOverflowOf(l);
+            }
             if (layer is { IsPart: true, Parent: { IsGroup: true } g })
                 g.ReplaceSkinsRaw(g.SkinList.Where(s => !ReferenceEquals(s.Owner, layer)).ToList());
             _layers.RemoveRange(start, count);
@@ -978,9 +987,25 @@ public sealed partial class SpriteProject
                 var lowerKey = new CelKey(lower, key.Frame, null);
                 var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom.Clone() : new PixelImage(_width, _height);
                 merged.Composite(image, dx, dy, upper.Opacity);
+                if (_overflow.TryGetValue(key, out var upperOverflow))
+                {
+                    var (cel, overflow) = MergeOverflow(lowerKey, merged, upperOverflow, upper.Opacity);
+                    merged = cel;
+                    SetOverflow(lowerKey, overflow);
+                }
                 _cels[lowerKey] = merged;
                 _cels.Remove(key);
             }
+            // 셀 없이 캔버스 밖 그림만 있는 프레임
+            foreach (var (key, upperOverflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, upper) && !rendered.Any(r => r.Key == kv.Key)).ToList())
+            {
+                var lowerKey = new CelKey(lower, key.Frame, null);
+                var merged = _cels.TryGetValue(lowerKey, out var bottom) ? bottom : new PixelImage(_width, _height);
+                var (cel, overflow) = MergeOverflow(lowerKey, merged, upperOverflow, upper.Opacity);
+                _cels[lowerKey] = cel;
+                SetOverflow(lowerKey, overflow);
+            }
+            RemoveOverflowOf(upper);
             _layers.RemoveAt(index);
         });
     }
@@ -1676,6 +1701,7 @@ public sealed partial class SpriteProject
         {
             _frames.Insert(index + 1, copy);
             foreach (var (key, cel) in CelsOf(src)) _cels[key with { Frame = copy }] = cel.Clone();
+            CopyOverflow(src, copy);
             foreach (var t in _tags)
             {
                 if (t.From > index) { t.From++; t.To++; }
@@ -1717,6 +1743,7 @@ public sealed partial class SpriteProject
                 }
                 var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
                 foreach (var (key, cel) in cels[s] ??= CelsOf(src)) _cels[key with { Frame = copy }] = cel.Clone();
+                CopyOverflow(src, copy);
                 result[k] = copy;
             }
             _frames.RemoveRange(x.From, x.Length);
@@ -1761,7 +1788,10 @@ public sealed partial class SpriteProject
         {
             _frames.RemoveRange(start, count);
             foreach (var frame in removed)
+            {
                 foreach (var (key, _) in CelsOf(frame).ToList()) _cels.Remove(key);
+                RemoveOverflowOf(frame);
+            }
             foreach (var t in _tags)
             {
                 if (Remap(t.From, t.To) is { } r) (t.From, t.To) = r;
@@ -1935,8 +1965,24 @@ public sealed partial class SpriteProject
         }).ToList();
         Edit(DomainStrings.Project_CanvasSize, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
-            foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).ToList())
-                _cels[key] = ImageTransform.ResizeCanvasScaled(_cels[key], width, height, image, border, fill);
+            var oldCanvas = new Size(oldW, oldH);
+            var newCanvas = new Size(width, height);
+            foreach (var key in _cels.Keys.Where(k => !k.Layer.IsPart).Concat(_overflow.Keys).Distinct().ToList())
+            {
+                var cel = _cels.GetValueOrDefault(key);
+                // 그림이 새 캔버스 안에 다 들어가고 캔버스 밖 그림이 없으면 예전처럼(빠름), 아니면 밖으로 나가는 픽셀을 캔버스 밖 그림으로 남긴다.
+                if (cel is not null && !_overflow.ContainsKey(key) && new Rectangle(0, 0, width, height).Contains(image))
+                {
+                    _cels[key] = ImageTransform.ResizeCanvasScaled(cel, width, height, image, border, fill);
+                    continue;
+                }
+                var source = cel ?? new PixelImage(oldW, oldH);
+                var scaled = image.Size == oldCanvas ? source
+                    : sliced ? NineSlice.Scale(source, image.Width, image.Height, border, fill) : ImageTransform.ScaleNearest(source, image.Width, image.Height);
+                var (newCel, overflow) = ResizeWithOverflow(key, scaled, image, oldCanvas, newCanvas);
+                _cels[key] = newCel;
+                SetOverflow(key, overflow);
+            }
             foreach (var (part, rect) in parts)
             {
                 var old = part.PartSize;
@@ -2017,6 +2063,8 @@ public sealed partial class SpriteProject
         Edit(label, ProjectChange.Canvas | ProjectChange.Pixels | ProjectChange.Frames | ProjectChange.Settings | ProjectChange.Layers, () =>
         {
             foreach (var key in _cels.Keys.ToList()) _cels[key] = transform(_cels[key]);
+            foreach (var (key, o) in _overflow.ToList())
+                _overflow[key] = new CelOverflow(transform(o.Image), partRectMap(o.Rect).Location);
             foreach (var part in _layers.Where(l => l.IsPart))
             {
                 var r = partRectMap(part.PartRect);
@@ -2259,6 +2307,7 @@ public sealed partial class SpriteProject
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
         private (Outfit Outfit, string Name, IReadOnlyList<OutfitSlot> Slots, IReadOnlyList<OutfitPart> Parts)[] _outfits = [];
         private KeyValuePair<CelKey, PixelImage>[] _cels = [];
+        private KeyValuePair<CelKey, CelOverflow>[] _overflow = [];
         private SpriteSettings _sprite = new();
         private ExportSettings _export = new();
 
@@ -2271,6 +2320,7 @@ public sealed partial class SpriteProject
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
             _outfits = p._outfits.Select(o => (o, o.Name, o.Slots, o.Parts)).ToArray(),
             _cels = p._cels.ToArray(),
+            _overflow = p._overflow.ToArray(),
             _sprite = p.Sprite.Clone(),
             _export = p.Export.Clone(),
         };
@@ -2310,6 +2360,8 @@ public sealed partial class SpriteProject
             }
             p._cels.Clear();
             foreach (var kv in _cels) p._cels[kv.Key] = kv.Value;
+            p._overflow.Clear();
+            foreach (var kv in _overflow) p._overflow[kv.Key] = kv.Value;
             p.Sprite.CopyFrom(_sprite);
             p.Export.CopyFrom(_export);
         }

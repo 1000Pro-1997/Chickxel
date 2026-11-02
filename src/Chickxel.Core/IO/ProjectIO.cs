@@ -50,6 +50,13 @@ public static partial class ProjectIO
     [GeneratedRegex(@"^cels/L(\d+)_F(\d+)(?:_S(\d+))?\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex CelEntry();
 
+    [GeneratedRegex(@"^overflow/L(\d+)_F(\d+)_X(-?\d+)_Y(-?\d+)\.png$", RegexOptions.IgnoreCase)]
+    private static partial Regex OverflowEntry();
+
+    /// <summary>일반 레이어 셀의 캔버스 밖 그림 PNG 이름(왼쪽 위 = 캔버스 좌표 (<paramref name="x"/>, <paramref name="y"/>)).</summary>
+    public static string OverflowEntryName(int layerIndex, int frameIndex, int x, int y)
+        => string.Create(CultureInfo.InvariantCulture, $"overflow/L{layerIndex}_F{frameIndex}_X{x}_Y{y}.png");
+
     [GeneratedRegex(@"^atlas/S(\d+)_L(\d+)\.png$", RegexOptions.IgnoreCase)]
     private static partial Regex AtlasEntry();
 
@@ -124,7 +131,7 @@ public static partial class ProjectIO
         }
     }
 
-    /// <summary>저장할 셀(이름, 그림) — 레이어 → 프레임 → 스킨 차례. 빈 셀도 들어 있다(<see cref="EncodeCel"/>이 거른다).</summary>
+    /// <summary>저장할 셀(이름, 그림) — 레이어 → 프레임 → 스킨 차례, 일반 레이어 셀 뒤에 그 셀의 캔버스 밖 그림. 빈 셀도 들어 있다(<see cref="EncodeCel"/>이 거른다).</summary>
     private static List<(string Name, PixelImage Cel)> CelsToWrite(SpriteProject project)
     {
         var list = new List<(string, PixelImage)>();
@@ -137,6 +144,8 @@ public static partial class ProjectIO
             {
                 var frame = project.Frames[fi];
                 if (project.GetCelRaw(layer, frame, null) is { } cel) list.Add((CelEntryName(li, fi), cel));
+                if (project.GetOverflowRaw(layer, frame) is { } overflow)
+                    list.Add((OverflowEntryName(li, fi, overflow.Origin.X, overflow.Origin.Y), overflow.Image));
                 for (int si = 1; si < skins.Count; si++)
                     if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) list.Add((CelEntryName(li, fi, si), skinCel));
             }
@@ -240,6 +249,8 @@ public static partial class ProjectIO
             {
                 var frame = project.Frames[fi];
                 if (project.GetCelRaw(layer, frame, null) is { } cel) cels.Add((fileLayers[li], copy.Frames[fi], null, cel));
+                // 캔버스 밖 그림은 고치지 않으므로 복사하지 않고 같이 쓴다.
+                if (project.GetOverflowRaw(layer, frame) is { } overflow) copy.SetOverflowRaw(fileLayers[li], copy.Frames[fi], overflow.Image, overflow.Origin);
                 for (int si = 1; si < skins.Count && si < copySkins.Count; si++)
                     if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) cels.Add((fileLayers[li], copy.Frames[fi], copySkins[si], skinCel));
             }
@@ -561,14 +572,26 @@ public static partial class ProjectIO
             var (project, fileLayers) = FromDto(dto, warnings);
             project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
             // 셀 PNG는 ZIP에서 차례대로 읽어 여러 코어에서 풀고, 프로젝트·경고에는 파일 차례대로 넣는다(한 번에 차례대로 읽은 것과 같다).
-            var slots = new List<(ZipArchiveEntry Entry, Layer? Layer, int Frame, Skin? Skin)>();
+            var slots = new List<(ZipArchiveEntry Entry, Layer? Layer, int Frame, Skin? Skin, Point? Overflow)>();
             foreach (var e in zip.Entries)
             {
-                if (CelEntry().Match(e.FullName.Replace('\\', '/')) is not { Success: true } m) continue;
+                var name = e.FullName.Replace('\\', '/');
+                if (OverflowEntry().Match(name) is { Success: true } om)
+                {
+                    // 캔버스 밖 그림: 일반 레이어 셀만(그 밖의 것은 쓰지 않는 항목으로 알림).
+                    if (TryIndex(om, 1, fileLayers.Count, out var oli) && TryIndex(om, 2, project.Frames.Count, out var ofi)
+                        && fileLayers[oli].Kind == LayerKind.Normal
+                        && int.TryParse(om.Groups[3].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ox)
+                        && int.TryParse(om.Groups[4].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var oy))
+                        slots.Add((e, fileLayers[oli], ofi, null, new Point(ox, oy)));
+                    else slots.Add((e, null, 0, null, null));
+                    continue;
+                }
+                if (CelEntry().Match(name) is not { Success: true } m) continue;
                 if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
                     || fileLayers[li].IsGroup || !TrySkin(m, fileLayers[li], out var skin))
-                    slots.Add((e, null, 0, null));
-                else slots.Add((e, fileLayers[li], fi, skin));
+                    slots.Add((e, null, 0, null, null));
+                else slots.Add((e, fileLayers[li], fi, skin, null));
             }
             var cels = new (PixelImage? Image, string? Warning)[slots.Count];
             var bytes = new byte[]?[slots.Count];
@@ -579,19 +602,23 @@ public static partial class ProjectIO
                 Parallel.For(0, slots.Count, i =>
                 {
                     if (bytes[i] is not { } png) return;
-                    cels[i] = DecodeCel(slots[i].Entry.FullName, png, project.CelSize(slots[i].Layer!));
+                    cels[i] = slots[i].Overflow is null
+                        ? DecodeCel(slots[i].Entry.FullName, png, project.CelSize(slots[i].Layer!))
+                        : DecodeCel(slots[i].Entry.FullName, png, null);
                     stage?.Step(png.Length);
                 });
             for (int i = 0; i < slots.Count; i++)
             {
-                var (e, layer, fi, skin) = slots[i];
+                var (e, layer, fi, skin, overflowAt) = slots[i];
                 if (layer is null)
                 {
                     warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_UnusedCell(name: e.FullName));
                     continue;
                 }
                 if (cels[i].Warning is { } warning) warnings?.Add(warning);
-                if (cels[i].Image is { } img) project.SetCelRaw(layer, project.Frames[fi], img, skin);
+                if (cels[i].Image is not { } img) continue;
+                if (overflowAt is { } at) project.SetOverflowRaw(layer, project.Frames[fi], img, at);
+                else project.SetCelRaw(layer, project.Frames[fi], img, skin);
             }
             project.NormalizeSkins();
             return project;
@@ -656,8 +683,10 @@ public static partial class ProjectIO
         }
     }
 
-    /// <summary>셀 PNG를 풀어 <paramref name="size"/>로 맞춘다(크기가 다르면 왼쪽 위에 맞추고 알림). 풀지 못하면 null과 알림. 아무 스레드에서나 불러도 된다.</summary>
-    private static (PixelImage? Image, string? Warning) DecodeCel(string name, byte[] png, Size size)
+    /// <summary>
+    /// 셀 PNG를 풀어 <paramref name="size"/>로 맞춘다(크기가 다르면 왼쪽 위에 맞추고 알림, null이면 크기 그대로). 풀지 못하면 null과 알림. 아무 스레드에서나 불러도 된다.
+    /// </summary>
+    private static (PixelImage? Image, string? Warning) DecodeCel(string name, byte[] png, Size? size)
     {
         PixelImage img;
         try
@@ -669,8 +698,8 @@ public static partial class ProjectIO
         {
             return (null, Chickxel.Core.Localization.DomainStrings.FormatProject_CellReadFailed(name: name, error: ex.Message));
         }
-        if (img.Size == size) return (img, null);
-        var fitted = new PixelImage(size.Width, size.Height);
+        if (size is not { } s || img.Size == s) return (img, null);
+        var fitted = new PixelImage(s.Width, s.Height);
         fitted.Blit(img, 0, 0);
         return (fitted, Chickxel.Core.Localization.DomainStrings.FormatProject_CellResized(name: name));
     }
