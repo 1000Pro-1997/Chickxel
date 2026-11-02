@@ -77,7 +77,7 @@ public sealed class PixelateOptions
     }
 
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 10;
+    public const int CurrentVersion = 11;
 
     /// <summary>
     /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
@@ -94,6 +94,7 @@ public sealed class PixelateOptions
     /// '같은 색상 계열'(<see cref="DefaultRepresentative"/>)로 옮긴다.
     /// 판 10 = 기본 프리셋의 디더링을 새 처음 값 '없음'으로(예전 처음 값 Bayer 2×2이거나 최적화가 써 넣은 디더). 디더링 '최적화 제외'(<see cref="OptimizePreset.KeepDither"/>)는
     /// 저장된 값이 없는 예전 프리셋이면 모두 켬으로 읽힌다.
+    /// 판 11 = 기본 프리셋 '같은 색상 계열'을 '기본' 바로 뒤로 옮긴다(둘 다 있을 때 — 후보 줄도 이 차례).
     /// </summary>
     public void Migrate(string? lastSettings = null, string? manualPresetsPath = null)
     {
@@ -113,12 +114,13 @@ public sealed class PixelateOptions
             }
             OptimizePreset.LocalizeBuiltIns(OptimizePresets);
             var builtIns = OptimizePreset.BuiltIns();
-            int insertAt = 0;
-            foreach (var builtIn in builtIns)
+            int front = OptimizePreset.FrontCount(builtIns), insertAt = 0;
+            for (int i = 0; i < builtIns.Count; i++)
             {
+                var builtIn = builtIns[i];
                 if (OptimizePresets.Any(p => p.BuiltIn == builtIn.BuiltIn || string.Equals(p.Name, builtIn.Name, StringComparison.OrdinalIgnoreCase))) continue;
-                // 설정 프리셋(최적화하는 칸 없음)은 앞에, 최적화 프리셋은 뒤에.
-                if (builtIn.Sections == 0) OptimizePresets.Insert(insertAt++, builtIn);
+                // 기본 프리셋 앞 묶음(설정 프리셋과 그 사이의 같은 색상 계열)은 앞에, 나머지 최적화 프리셋은 뒤에.
+                if (i < front) OptimizePresets.Insert(insertAt++, builtIn);
                 else OptimizePresets.Add(builtIn);
             }
             if (Version < 6 && manualPresetsPath is not null)
@@ -150,6 +152,11 @@ public sealed class PixelateOptions
                     if (start.Palette.Dither != PaletteDither.None)
                         p.Settings = OptimizePreset.Serialize(start with { Palette = start.Palette with { Dither = PaletteDither.None } });
                 }
+            if (Version < 11 && OptimizePresets.FirstOrDefault(p => p.BuiltIn == "shade") is { } moved && OptimizePresets.Any(p => p.BuiltIn == "plain"))
+            {
+                OptimizePresets.Remove(moved);
+                OptimizePresets.Insert(OptimizePresets.FindIndex(p => p.BuiltIn == "plain") + 1, moved);
+            }
             Version = CurrentVersion;
         }
         Legacy = null;
@@ -444,7 +451,8 @@ public sealed class OptimizePreset
 
     /// <summary>
     /// 기본 프리셋(처음 설치·'기본값으로 초기화' — 목록에서 지워도 되돌림): 앱에 들어 있는 <c>Assets/Pixelate/default-presets.json</c>(BuiltIn id·체크·칸별 최적화·예산·
-    /// 점수 기준·단계 설정 JSON 객체)을 읽는다. 이름은 화면 언어로(<see cref="BuiltInName"/>). 최적화하는 칸이 없는 것이 설정 프리셋(목록 앞).
+    /// 점수 기준·단계 설정 JSON 객체)을 그 차례로 읽는다. 이름은 화면 언어로(<see cref="BuiltInName"/>). 최적화하는 칸이 없는 것이 설정 프리셋이고,
+    /// 마지막 설정 프리셋까지가 목록 앞 묶음(<see cref="FrontCount"/> — '기본' 바로 뒤의 '같은 색상 계열'도 여기).
     /// </summary>
     public static List<OptimizePreset> BuiltIns()
     {
@@ -466,20 +474,25 @@ public sealed class OptimizePreset
         return presets;
     }
 
+    /// <summary><paramref name="builtIns"/>(<see cref="BuiltIns"/> 차례)에서 목록 앞에 둘 것의 수: 마지막 설정 프리셋(최적화하는 칸 없음)까지.</summary>
+    public static int FrontCount(List<OptimizePreset> builtIns) => builtIns.FindLastIndex(p => p.Sections == 0) + 1;
+
     /// <summary>
-    /// 기본 프리셋을 처음 값(체크 포함)으로 되돌리고 지운 것은 다시 넣는다(설정 프리셋은 앞, 최적화 프리셋은 뒤). 직접 만든 프리셋과 즐겨찾기 표시는 그대로 둔다.
+    /// 기본 프리셋을 처음 값(체크 포함)으로 되돌리고 지운 것은 다시 넣는다(앞 묶음(<see cref="FrontCount"/>)은 앞, 나머지 최적화 프리셋은 뒤).
+    /// 직접 만든 프리셋과 즐겨찾기 표시는 그대로 둔다.
     /// </summary>
     public static void RestoreBuiltIns(List<OptimizePreset> presets)
     {
         LocalizeBuiltIns(presets);
-        int insertAt = 0;
-        foreach (var builtIn in BuiltIns())
+        var builtIns = BuiltIns();
+        int front = FrontCount(builtIns), insertAt = 0;
+        for (int i = 0; i < builtIns.Count; i++)
         {
+            var builtIn = builtIns[i];
             int index = presets.FindIndex(p => p.BuiltIn == builtIn.BuiltIn);
-            bool plain = builtIn.Sections == 0;
             if (index < 0)
             {
-                if (plain) presets.Insert(insertAt++, builtIn);
+                if (i < front) presets.Insert(insertAt++, builtIn);
                 else presets.Add(builtIn);
             }
             else
@@ -487,7 +500,7 @@ public sealed class OptimizePreset
                 builtIn.Representative = presets[index].Representative;
                 builtIn.Favorite = presets[index].Favorite;
                 presets[index] = builtIn;
-                if (plain) insertAt = Math.Max(insertAt, index + 1);
+                if (i < front) insertAt = Math.Max(insertAt, index + 1);
             }
         }
     }

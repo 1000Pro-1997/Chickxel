@@ -111,6 +111,117 @@
     }
   },
   {
+    "BuiltIn": "shade",
+    "Enabled": true,
+    "Sections": 31,
+    "Trials": 10000,
+    "Seconds": 120,
+    "ScoreColorDistance": 1,
+    "ScoreHueWeight": 2,
+    "ScoreLightWeight": 1,
+    "ScoreChromaWeight": 1,
+    "ScoreTargetColors": 32,
+    "Weights": {
+      "Fidelity": 4,
+      "Orphans": 1,
+      "OutlineGaps": 0.5,
+      "Colors": 0.5,
+      "Consistency": 1,
+      "Grid": 2,
+      "OutlineThin": 4,
+      "ColorShift": 2,
+      "BlockRepetition": 2
+    },
+    "Settings": {
+      "background": {
+        "mode": "Auto",
+        "color": "#000000",
+        "tolerance": 24,
+        "autoTolerance": true,
+        "connectedOnly": true,
+        "keepExistingAlpha": true,
+        "alphaThreshold": 128,
+        "removeSpecks": 24,
+        "removeStickerBorder": true,
+        "keepBackground": false
+      },
+      "frames": {
+        "mode": "Auto",
+        "columns": 4,
+        "rows": 1,
+        "mergeSmallFraction": 0.12,
+        "mergeDistance": 48,
+        "expectedFrames": 0,
+        "align": "BottomCenter",
+        "commonCanvas": true
+      },
+      "grid": {
+        "mode": "Auto",
+        "scale": 8,
+        "offsetX": 0,
+        "offsetY": 0,
+        "scaleAdjust": -1.56,
+        "jitter": 0.15,
+        "source": "Auto",
+        "localCorrection": true,
+        "localMinCell": 2.94,
+        "localShift": 0.93,
+        "localBand": 1
+      },
+      "size": {
+        "mode": "FromScale",
+        "width": 32,
+        "height": 32,
+        "keepAspect": true,
+        "padding": 1,
+        "factor": 0.125
+      },
+      "downsample": {
+        "mode": "Median",
+        "borderFraction": 0.07,
+        "alphaThreshold": 0.67,
+        "snapStep": 40
+      },
+      "palette": {
+        "method": "KMeans",
+        "colors": 32,
+        "existingColors": [],
+        "shared": true,
+        "dither": "None",
+        "snapOutline": false,
+        "colorSource": "Mean",
+        "edgeWeight": 0.25,
+        "outlineDarkness": 0.23,
+        "excludedColors": [],
+        "pinnedColors": [],
+        "colorDistance": "OkLchHue",
+        "hueWeight": 6.22,
+        "preferShadeFamily": true,
+        "keepDistinctHues": true,
+        "distinctMinChroma": 0.04,
+        "distinctMinHue": 21,
+        "distinctMinArea": 4,
+        "okLchMaxL": 0.05,
+        "okLchMaxC": 0.05,
+        "okLchMaxH": 5
+      },
+      "cleanup": {
+        "removeOrphans": false,
+        "orphanMaxContrast": 0.18,
+        "fillHoles": true,
+        "outline": "None",
+        "outlineFit": "Off",
+        "reduceJaggies": false,
+        "vectorTolerance": 0.6,
+        "vectorBlobCells": 6
+      },
+      "consistency": {
+        "temporalMajority": false,
+        "maxContrast": 0.12
+      }
+    }
+  },
+  {
     "BuiltIn": "small32",
     "Enabled": false,
     "Sections": 0,
@@ -877,117 +988,6 @@
         "fillHoles": false,
         "outline": "None",
         "outlineFit": "Shrink",
-        "reduceJaggies": false,
-        "vectorTolerance": 0.6,
-        "vectorBlobCells": 6
-      },
-      "consistency": {
-        "temporalMajority": false,
-        "maxContrast": 0.12
-      }
-    }
-  },
-  {
-    "BuiltIn": "shade",
-    "Enabled": true,
-    "Sections": 31,
-    "Trials": 10000,
-    "Seconds": 120,
-    "ScoreColorDistance": 1,
-    "ScoreHueWeight": 2,
-    "ScoreLightWeight": 1,
-    "ScoreChromaWeight": 1,
-    "ScoreTargetColors": 32,
-    "Weights": {
-      "Fidelity": 4,
-      "Orphans": 1,
-      "OutlineGaps": 0.5,
-      "Colors": 0.5,
-      "Consistency": 1,
-      "Grid": 2,
-      "OutlineThin": 4,
-      "ColorShift": 2,
-      "BlockRepetition": 2
-    },
-    "Settings": {
-      "background": {
-        "mode": "Auto",
-        "color": "#000000",
-        "tolerance": 24,
-        "autoTolerance": true,
-        "connectedOnly": true,
-        "keepExistingAlpha": true,
-        "alphaThreshold": 128,
-        "removeSpecks": 24,
-        "removeStickerBorder": true,
-        "keepBackground": false
-      },
-      "frames": {
-        "mode": "Auto",
-        "columns": 4,
-        "rows": 1,
-        "mergeSmallFraction": 0.12,
-        "mergeDistance": 48,
-        "expectedFrames": 0,
-        "align": "BottomCenter",
-        "commonCanvas": true
-      },
-      "grid": {
-        "mode": "Auto",
-        "scale": 8,
-        "offsetX": 0,
-        "offsetY": 0,
-        "scaleAdjust": -1.56,
-        "jitter": 0.15,
-        "source": "Auto",
-        "localCorrection": true,
-        "localMinCell": 2.94,
-        "localShift": 0.93,
-        "localBand": 1
-      },
-      "size": {
-        "mode": "FromScale",
-        "width": 32,
-        "height": 32,
-        "keepAspect": true,
-        "padding": 1,
-        "factor": 0.125
-      },
-      "downsample": {
-        "mode": "Median",
-        "borderFraction": 0.07,
-        "alphaThreshold": 0.67,
-        "snapStep": 40
-      },
-      "palette": {
-        "method": "KMeans",
-        "colors": 32,
-        "existingColors": [],
-        "shared": true,
-        "dither": "None",
-        "snapOutline": false,
-        "colorSource": "Mean",
-        "edgeWeight": 0.25,
-        "outlineDarkness": 0.23,
-        "excludedColors": [],
-        "pinnedColors": [],
-        "colorDistance": "OkLchHue",
-        "hueWeight": 6.22,
-        "preferShadeFamily": true,
-        "keepDistinctHues": true,
-        "distinctMinChroma": 0.04,
-        "distinctMinHue": 21,
-        "distinctMinArea": 4,
-        "okLchMaxL": 0.05,
-        "okLchMaxC": 0.05,
-        "okLchMaxH": 5
-      },
-      "cleanup": {
-        "removeOrphans": false,
-        "orphanMaxContrast": 0.18,
-        "fillHoles": true,
-        "outline": "None",
-        "outlineFit": "Off",
         "reduceJaggies": false,
         "vectorTolerance": 0.6,
         "vectorBlobCells": 6

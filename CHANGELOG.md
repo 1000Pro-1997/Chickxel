@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.81 (2026-11-02)
+### "Same hue family" comes right after Default in Pixelate
+- In the Pixelate window, the built-in preset "Same hue family" now sits right after "Default" in the preset list, so its candidate shows second in the candidate row.
+- Existing preset lists are reordered once; your own presets and the other presets keep their places. Restoring default presets uses the same order.
+
 ## v1.14.80 (2026-11-02)
 ### Downloaded script effects run right away
 - Script effects installed from the Asset Manager (store downloads and `.chickxel-asset` files) now draw immediately; you no longer have to allow each one in the effects window. Installing is the permission.
