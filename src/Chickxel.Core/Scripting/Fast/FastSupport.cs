@@ -606,6 +606,30 @@ internal static class JsOps
     /// <summary>null인 <c>ctx.renderedFrameSource</c> 결과의 속성을 읽으면 Jint로(Jint가 TypeError를 낸다).</summary>
     public static FastRendered Present(FastRendered? rendered) => rendered ?? throw new FastDeoptException();
 
+    /// <summary>
+    /// <c>ctx.layer(key)</c>·<c>ctx.layerWithEffects(key)</c>: 고른 레이어(Jint와 같은 <see cref="ScriptColors.Layer"/>)를 숫자 배열 그림으로. 없으면 null.
+    /// 부를 때마다 새 사본이다(Jint와 같음 — 고쳐도 다음 호출에 닿지 않는다).
+    /// </summary>
+    public static FastImage? Layer(FastBudget budget, ScriptColors host, string key, bool withEffects)
+    {
+        if (host.Layer(key, withEffects) is not { } picture) return null;
+        var px = picture.Pixels;
+        budget.Allocate((long)px.Length * 4 * 8);
+        var data = new double[px.Length * 4];
+        for (int p = 0, j = 0; p < px.Length; p++, j += 4)
+        {
+            var c = px[p];
+            (data[j], data[j + 1], data[j + 2], data[j + 3]) = (c.R, c.G, c.B, c.A);
+        }
+        return new FastImage(data, picture.Width, picture.Height);
+    }
+
+    /// <summary>null일 수 있는 그림(<c>ctx.layer</c> 결과)의 속성을 읽으면: null이면 Jint로(Jint가 TypeError를 낸다).</summary>
+    public static FastImage PresentImage(FastImage? image) => image ?? throw new FastDeoptException();
+
+    /// <summary>null일 수 있는 숫자 배열(<c>layer ? layer.data : null</c>)을 읽거나 쓰면: null이면 Jint로.</summary>
+    public static double[] PresentArray(double[]? array) => array ?? throw new FastDeoptException();
+
     /// <summary><c>ctx.hasGradient("목록 키", 번호[, "from"|"to"])</c>: 번호가 정수 항목 번호가 아니면 false.</summary>
     public static bool HasGradientAt(ScriptColors colors, int setting, double item, bool to)
     {

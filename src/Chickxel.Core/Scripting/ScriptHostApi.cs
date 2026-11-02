@@ -186,23 +186,14 @@ internal static class ScriptHostApi
 
         // 다른 레이어: 레이어 고르기 설정(type: "layer")의 키로 그 설정에 고른 레이어를 읽는다. img와 같은 크기·같은 자리, 부를 때마다 새 사본.
         // 모르는 키·레이어 설정이 아닌 키·비운 값·없는 레이어·프로젝트 밖 그리기는 null(효과 이름은 빈 배열) — 오류를 내지 않는다
+        // 고른 이름·그리기는 빠른 경로와 같은 ScriptColors가 맡는다
         var layers = frame.Layers;
-        string? Chosen(JsValue key)
-        {
-            if (layers is null || key is not JsString) return null;
-            string name = key.AsString();
-            foreach (var setting in schema)
-                if (setting.Type == ScriptSettingType.Layer && setting.Key == name)
-                    return settings.Get(name) is JsString chosen && chosen.AsString() is { Length: > 0 } text ? text : null;
-            return null;
-        }
         JsValue Layer(JsValue[] args, bool withEffects)
-            => Chosen(Arg(args, 0)) is { } name && layers!.Named(name, withEffects, image.Width, image.Height, source) is { } other
-                ? CreateImage(sandbox, other).Image
-                : JsValue.Null;
+            => Arg(args, 0) is JsString key && colors.Layer(key.AsString(), withEffects) is { } other ? CreateImage(sandbox, other).Image : JsValue.Null;
         Method(ctx, engine, "layer", 1, args => Layer(args, false));
         Method(ctx, engine, "layerWithEffects", 1, args => Layer(args, true));
-        Method(ctx, engine, "layerEffects", 1, args => Strings(engine, Chosen(Arg(args, 0)) is { } name ? layers!.EffectsByName(name) : []));
+        Method(ctx, engine, "layerEffects", 1, args => Strings(engine,
+            layers is not null && Arg(args, 0) is JsString key && colors.ChosenLayer(key.AsString()) is { } name ? layers.EffectsByName(name) : []));
 
         // 미루는 스크립트만: 다른 프레임에 이 레이어의 다른 효과를 입힌 그림 { image, offsetX, offsetY }(원본 대비 위치). 원본이 없거나 크기가 다르면 null
         var rendered = frame.RenderedFrameSource;

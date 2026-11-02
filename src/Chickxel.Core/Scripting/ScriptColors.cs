@@ -29,6 +29,7 @@ internal sealed class ScriptColors
     }
 
     private readonly IReadOnlyList<ScriptSetting> _schema;
+    private readonly IReadOnlyDictionary<string, object> _values;
     private readonly Slot[]?[] _slots;
     private readonly int[] _counts;
     private readonly double _time;
@@ -45,6 +46,7 @@ internal sealed class ScriptColors
     public ScriptColors(IReadOnlyList<ScriptSetting> schema, IReadOnlyDictionary<string, object> values, ScriptFrameContext frame, PixelImage? image, Rectangle source)
     {
         _schema = schema;
+        _values = values;
         _slots = new Slot[]?[schema.Count];
         _counts = new int[schema.Count];
         _time = frame.GradientTime;
@@ -98,6 +100,25 @@ internal sealed class ScriptColors
 
     /// <summary>미루는 스크립트인지(<c>ctx.renderedFrameSource</c>를 줄지).</summary>
     public bool Deferred { get; init; }
+
+    /// <summary>
+    /// 레이어 고르기 설정 <paramref name="key"/>(<c>type: "layer"</c>)에 고른 레이어 이름. 모르는 키·레이어 설정이 아닌 키·비운 값이면 null.
+    /// Jint(<c>ctx.layer</c>·<c>ctx.layerEffects</c>)와 빠른 경로가 같은 것을 쓴다.
+    /// </summary>
+    public string? ChosenLayer(string key)
+    {
+        foreach (var setting in _schema)
+            if (setting.Key == key)
+                return setting.Type == ScriptSettingType.Layer && _values.TryGetValue(key, out var value) && value is string { Length: > 0 } name ? name : null;
+        return null;
+    }
+
+    /// <summary>
+    /// <c>ctx.layer(key)</c>·<c>ctx.layerWithEffects(key)</c>: 고른 레이어를 render 그림과 같은 크기·같은 자리로 그린 새 사본.
+    /// 고르지 않았거나 레이어가 없거나 프로젝트 밖 그리기면 null.
+    /// </summary>
+    public PixelImage? Layer(string key, bool withEffects)
+        => Frame.Layers is { } layers && _image is { } image && ChosenLayer(key) is { } name ? layers.Named(name, withEffects, image.Width, image.Height, Source) : null;
 
     /// <summary>설정 <paramref name="key"/>의 schema 번호(그 종류가 아니면 -1).</summary>
     public int IndexOf(string key, ScriptSettingType type)

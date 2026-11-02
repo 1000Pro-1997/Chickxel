@@ -78,6 +78,7 @@ internal sealed class FastCompiler
         public FuncDef? Fn;
         public string? Name;
         public IReadOnlyList<string>? Choices;
+        public bool MaybeNull; // null일 수 있는 숫자 배열(layer ? layer.data : null): 읽고 쓸 때 null이면 Jint로
 
         public static Val Num(E e) => new() { Kind = Kind.Num, Expr = e };
         public static Val Bool(E e) => new() { Kind = Kind.Bool, Expr = e };
@@ -779,6 +780,8 @@ internal sealed class FastCompiler
                 return Assign(a);
             case NewExpression n:
                 return NewArray(n);
+            case ConditionalExpression { Consequent: NullLiteral } or ConditionalExpression { Alternate: NullLiteral } when valueNeeded:
+                return NullableConditional((ConditionalExpression)node);
             case ConditionalExpression c:
             {
                 var test = Cond(c.Test);
@@ -834,7 +837,7 @@ internal sealed class FastCompiler
     private Val Member(MemberExpression m)
     {
         if (m.Optional) throw Syntax(m);
-        var obj = Expr(m.Object);
+        var obj = NonNull(Expr(m.Object));
         string name;
         if (m.Computed)
         {
@@ -847,6 +850,42 @@ internal sealed class FastCompiler
             name = m.Property is Identifier id ? id.Name : throw Syntax(m);
         }
         return WithPre(obj.Pre, Field(obj, name, m));
+    }
+
+    /// <summary>
+    /// 한쪽이 <c>null</c>인 조건 식(<c>layer ? layer.data : null</c>, <c>ok ? ctx.layer("k") : null</c>): 다른 쪽이 숫자 배열·그림이면 null일 수 있는 값으로
+    /// (변수에 한 번 담음 — 조건 자리에서 null인지 보고, 읽거나 쓸 때 null이면 Jint로). 그 밖은 Jint로.
+    /// </summary>
+    private Val NullableConditional(ConditionalExpression c)
+    {
+        if (c.Consequent is NullLiteral && c.Alternate is NullLiteral) throw ValueError(c);
+        var test = Cond(c.Test);
+        bool nullFirst = c.Consequent is NullLiteral;
+        var other = Expr(nullFirst ? c.Alternate : c.Consequent);
+        Val result;
+        E value;
+        switch (other)
+        {
+            case { Kind: Kind.Typed or Kind.Data }:
+            {
+                var array = E.Variable(typeof(double[]), "maybe");
+                result = new Val { Kind = Kind.Typed, Expr = array, Name = other.Kind == Kind.Data ? JsOps.ArrayPlain.ToString(CultureInfo.InvariantCulture) : other.Name, MaybeNull = true };
+                value = other.Kind == Kind.Data ? _data : other.Expr!;
+                break;
+            }
+            case { Kind: Kind.Image, Expr: not null }:
+                result = new Val { Kind = Kind.Image, Name = Nullable, Expr = E.Variable(typeof(FastImage), "maybe") };
+                value = other.Expr!;
+                break;
+            default:
+                throw ValueError(c);
+        }
+        var variable = (ParameterExpression)result.Expr!;
+        _hoisted.Add(variable);
+        E some = other.Pre is null ? value : E.Block(variable.Type, other.Pre, value);
+        E none = E.Constant(null, variable.Type);
+        result.Pre = E.Assign(variable, E.Condition(test, nullFirst ? none : some, nullFirst ? some : none));
+        return result;
     }
 
     private Val Field(Val obj, string name, MemberExpression node)
@@ -894,7 +933,7 @@ internal sealed class FastCompiler
     }
 
     // img.data는 _data, 숫자 배열은 그 변수
-    private E ArrayOf(Val obj) => obj.Kind == Kind.Data ? _data : obj.Expr!;
+    private E ArrayOf(Val obj) => obj.Kind == Kind.Data ? _data : obj.MaybeNull ? NonNull(obj).Expr! : obj.Expr!;
 
     // 숫자 배열에 넣을 때 바꾸는 종류(JsOps.Array*): img.data와 JS 배열 사본은 그대로
     private static int StoreKind(Val obj) => obj.Kind == Kind.Typed ? int.Parse(obj.Name!, CultureInfo.InvariantCulture) : JsOps.ArrayPlain;
@@ -1046,8 +1085,8 @@ internal sealed class FastCompiler
             {
                 Kind.Math => MathCall(method.Name, c, callee),
                 Kind.Ctx => CtxCall(method.Name, c, callee),
-                Kind.Data or Kind.Typed => ArrayCall(target, method.Name, c, callee),
-                Kind.Image => ImageCall(target, method.Name, c, callee),
+                Kind.Data or Kind.Typed => ArrayCall(NonNull(target), method.Name, c, callee),
+                Kind.Image => ImageCall(NonNull(target), method.Name, c, callee),
                 _ => throw NameError(Describe(callee), callee),
             };
             return WithPre(target.Pre, result);
@@ -1187,6 +1226,15 @@ internal sealed class FastCompiler
                     throw NameError(Describe(callee) + "(\"" + slot.Value + "\")", c);
                 E call = E.Call(Op(nameof(JsOps.HasGradient)), _colors, E.Constant(SchemaIndex(setting.Key)), E.Constant(item), E.Constant(to));
                 return Val.Bool(call);
+            }
+            case "layer" or "layerWithEffects":
+            {
+                // 레이어 고르기 설정 키는 문자열 리터럴 하나만(그 밖은 Jint). 결과는 null일 수 있는 그림: if (!g)·g ? … : …로 가린 뒤 g.data·g.width를 읽는다
+                if (c.Arguments.Count != 1 || c.Arguments[0] is not StringLiteral key) throw NameError(Describe(callee), c);
+                var layer = E.Variable(typeof(FastImage), "layer");
+                _hoisted.Add(layer);
+                E assign = E.Assign(layer, E.Call(Op(nameof(JsOps.Layer)), _budget, _colors, E.Constant(key.Value), E.Constant(name == "layerWithEffects")));
+                return new Val { Kind = Kind.Image, Name = Nullable, Expr = layer, Pre = assign };
             }
             case "hash":
                 return CallNumber(Op(nameof(JsOps.Hash)), c.Arguments);
@@ -1466,6 +1514,15 @@ internal sealed class FastCompiler
         var op = b.Operator;
         bool equality = op is Acornima.Operator.StrictEquality or Acornima.Operator.StrictInequality or Acornima.Operator.Equality or Acornima.Operator.Inequality;
         bool negate = op is Acornima.Operator.StrictInequality or Acornima.Operator.Inequality;
+        if (equality && (b.Left is NullLiteral || b.Right is NullLiteral))
+        {
+            // null 비교: null일 수 있는 그림·배열만(=== 와 == 가 같다 — undefined가 될 값은 없음). 그 밖은 Jint로
+            var target = Expr(b.Left is NullLiteral ? b.Right : b.Left);
+            if (!(target.Kind is Kind.Image or Kind.Record && target.Name == Nullable) && !(target.Kind == Kind.Typed && target.MaybeNull)) throw ValueError(b);
+            E isNull = E.Equal(target.Expr!, E.Constant(null));
+            if (target.Pre is not null) isNull = E.Block(typeof(bool), target.Pre, isNull);
+            return Val.Bool(negate ? E.Not(isNull) : isNull);
+        }
         if (equality && (b.Left is StringLiteral || b.Right is StringLiteral))
         {
             // 고르기 설정과 문자열 리터럴 비교: 값의 번호로(두 쪽 다 문자열이라 == 와 === 가 같다)
@@ -1669,8 +1726,12 @@ internal sealed class FastCompiler
                 if (v.Expr is ParameterExpression p) return Truthy(p);
                 var t = E.Variable(typeof(double), "t");
                 return E.Block(typeof(bool), [t], E.Assign(t, v.Expr!), Truthy(t));
-            case Kind.Record when v.Name == Nullable:
+            case Kind.Record or Kind.Image when v.Name == Nullable:
+            case Kind.Typed when v.MaybeNull:
                 return v.Pre is null ? E.NotEqual(v.Expr!, E.Constant(null)) : E.Block(typeof(bool), v.Pre, E.NotEqual(v.Expr!, E.Constant(null)));
+            case Kind.Image or Kind.Typed or Kind.Data:
+                // 그림·배열(객체)은 언제나 참
+                return v.Pre is null ? E.Constant(true) : E.Block(typeof(bool), v.Pre, E.Constant(true));
             default:
                 throw ValueError(node);
         }
@@ -1697,5 +1758,18 @@ internal sealed class FastCompiler
         return copy;
     }
 
-    private static Val WithoutPre(Val v) => new() { Kind = v.Kind, Expr = v.Expr, Fields = v.Fields, Fn = v.Fn, Name = v.Name, Choices = v.Choices };
+    private static Val WithoutPre(Val v) => new() { Kind = v.Kind, Expr = v.Expr, Fields = v.Fields, Fn = v.Fn, Name = v.Name, Choices = v.Choices, MaybeNull = v.MaybeNull };
+
+    /// <summary>
+    /// null일 수 있는 그림(<c>ctx.layer</c> 결과)·숫자 배열을 쓰는 자리: null이면 Jint로 넘기는 검사를 씌운 값(JS는 null의 속성을 읽으면 TypeError).
+    /// 그 밖의 값은 그대로.
+    /// </summary>
+    private static Val NonNull(Val v)
+    {
+        if (v.Kind == Kind.Image && v.Name == Nullable && v.Expr is { } image)
+            return new Val { Kind = Kind.Image, Expr = E.Call(Op(nameof(JsOps.PresentImage)), image), Pre = v.Pre };
+        if (v.Kind == Kind.Typed && v.MaybeNull)
+            return new Val { Kind = Kind.Typed, Expr = E.Call(Op(nameof(JsOps.PresentArray)), v.Expr!), Name = v.Name, Pre = v.Pre };
+        return v;
+    }
 }

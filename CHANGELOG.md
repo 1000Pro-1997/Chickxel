@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.75 (2026-11-02)
+### Effects that read another layer run fast
+- Script effects using `ctx.layer` or `ctx.layerWithEffects` (collisions, landing on terrain) no longer drop to the slow Jint interpreter: the fast path now reads the chosen layer and handles the usual null checks (`if (!g)`, `g ? g.data : null`, `g === null`).
+- The result is the same as before, only faster; the Effect Maker's status no longer warns "running on Jint" for these effects. `ctx.layerEffects` still runs on Jint.
+
 ## v1.14.74 (2026-11-02)
 ### Send messages while the AI is working
 - In the AI chat and the Effect Maker AI, Enter and Send now work during a turn: the message waits in a Queued row above the input box and goes out as soon as the current turn ends (also when you stop it).

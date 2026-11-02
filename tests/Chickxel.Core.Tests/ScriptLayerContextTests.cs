@@ -460,7 +460,7 @@ public class ScriptLayerContextTests
     }
 
     [Fact]
-    public void Fast_path_reads_center_and_falls_back_to_jint_for_slice_layer_functions_and_layer_setting_values()
+    public void Fast_path_reads_center_and_falls_back_to_jint_for_slice_layer_effect_names_and_layer_setting_values()
     {
         var center = ScriptLibrary.Runnable(Trusted("""
             effect({ name: "center", render(img, ctx, s) {
@@ -493,8 +493,8 @@ public class ScriptLayerContextTests
         foreach (var (name, body) in new[]
                  {
                      ("ctx.slice", "img.data[0] = ctx.slice ? 1 : 0;"),
-                     ("ctx.layer", "img.data[0] = ctx.layer(\"path\") ? 1 : 0;"),
-                     ("ctx.layerWithEffects", "img.data[0] = ctx.layerWithEffects(\"path\") ? 1 : 0;"),
+                     // 키가 문자열 리터럴이 아니면 컴파일할 때 설정을 정할 수 없다
+                     ("ctx.layer", "img.data[0] = ctx.layer(\"path\", 1) ? 1 : 0;"),
                      ("ctx.layerEffects", "img.data[0] = ctx.layerEffects(\"path\").length;"),
                      ("s.path", "img.data[0] = s.path ? 1 : 0;"),
                  })
@@ -503,6 +503,48 @@ public class ScriptLayerContextTests
             Assert.False(program.ExecutionPath.Compiled, name);
             Assert.Contains(name, program.ExecutionPath.Reason);
         }
+    }
+
+    [Fact]
+    public void Fast_path_reads_the_chosen_layer_like_jint_with_null_checks_and_null_branches()
+    {
+        var p = new SpriteProject(W, H);
+        p.SetLayerProperties(0, name: "ground");
+        p.SetCel(0, 0, Dot(W, H, 2, 3, Red));
+        var reader = p.AddLayer(name: "reader");
+        var hash = Trusted("""
+            effect({ name: "fast layer", settings: [{ key: "target", type: "layer", default: "ground" }, { key: "other", type: "layer" }],
+              render(img, ctx, s) {
+                const g = ctx.layer("target");
+                const gd = g ? g.data : null;
+                const none = ctx.layerWithEffects("other");
+                function solid(i) { return !gd ? false : gd[i + 3] >= 128; }
+                for (let i = 0; i < img.data.length; i += 4) if (solid(i)) { img.data[i + 2] = 200; img.data[i + 3] = 255; }
+                img.data[0] = none === null ? 9 : 1;
+                img.data[1] = g !== null ? g.width : 0;
+                img.data[3] = !none && g ? 255 : 0;
+              } });
+            """);
+        var program = ScriptLibrary.Runnable(hash)!;
+        Assert.True(program.ExecutionPath.Compiled, program.ExecutionPath.Reason);
+        var context = ScriptFrameContext.Still with { Layers = p.ScriptLayersAt(reader, 0, [new ScriptEffect { ScriptHash = hash }]) };
+        var source = new Rectangle(0, 0, W, H);
+        var fast = new PixelImage(W, H);
+        var jint = new PixelImage(W, H);
+        program.Render(fast, source, context);
+        program.RenderOnJint(jint, source, context, program.NormalizeSettings(null), CancellationToken.None);
+        Assert.True(jint.ContentEquals(fast));
+        Assert.Equal(new Color32(9, W, 0, 255), fast[0, 0]);
+        Assert.Equal(new Color32(0, 0, 200, 255), fast[2, 3]);
+
+        // 레이어를 읽을 수 없으면(프로젝트 밖 그리기) null 쪽(배열을 읽지 않음) — 역시 Jint와 같다
+        var empty = ScriptFrameContext.Still;
+        fast = new PixelImage(W, H);
+        jint = new PixelImage(W, H);
+        program.Render(fast, source, empty);
+        program.RenderOnJint(jint, source, empty, program.NormalizeSettings(null), CancellationToken.None);
+        Assert.True(jint.ContentEquals(fast));
+        Assert.Equal(new Color32(9, 0, 0, 0), fast[0, 0]);
     }
 
     [Fact]
