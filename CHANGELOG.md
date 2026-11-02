@@ -11,6 +11,7 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 ### The Effect Maker AI uses seeded randomness
 - For explosions, debris, particles, sparks, glitches and other random looks, the AI now uses randomness freely and adds a Seed setting: each seed gives a different pattern and the same seed always looks the same.
 - Random values come from the seeded `ctx.hash`/`ctx.random`, keyed by stable things like the particle index, so pieces keep their path from frame to frame. The effect-writing guide has the same rule.
+- A script setting named `seed` (whole number) now has a dice button beside its number box in the effects window and the Effect Maker: each click picks another seed for a different random look. Official effects with a seed (Explode, Appear, Hologram, Melt, Shake) get it too.
 
 ## v1.14.73 (2026-11-02)
 ### Your published effects follow you to any computer

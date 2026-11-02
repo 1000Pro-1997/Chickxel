@@ -53,9 +53,12 @@ public sealed partial class LayerEffectsDialog
                 case ScriptSettingType.Int:
                 case ScriptSettingType.Number:
                     double number = Convert.ToDouble(values[key], CultureInfo.InvariantCulture);
-                    row(label, setting is { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.Angle }
-                        ? ScriptAngleEditor(setting, number, v => SetValue(key, v))
-                        : ScriptNumberEditor(setting, number, v => SetValue(key, v)), false);
+                    row(label, setting switch
+                    {
+                        { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.Angle } => ScriptAngleEditor(setting, number, v => SetValue(key, v)),
+                        _ when IsSeed(setting) => ScriptSeedEditor(setting, number, v => SetValue(key, v)),
+                        _ => ScriptNumberEditor(setting, number, v => SetValue(key, v)),
+                    }, false);
                     break;
                 case ScriptSettingType.Bool:
                     // 체크 상자 글로 이름을 보인다(이름 열에 두면 긴 이름이 모든 줄의 이름 열을 넓혀 색·그라데이션 줄이 잘림 — 예전 기본 효과 칸과 같은 모양)
@@ -114,6 +117,31 @@ public sealed partial class LayerEffectsDialog
         note.Foreground = AppTheme.DimTextBrush;
         note.FontSize = AppTheme.SmallFontSize;
         return new StackPanel { Spacing = 2, Children = { combo, note } };
+    }
+
+    /// <summary>
+    /// 시드 설정: 키가 <c>seed</c>인 정수 설정(공식 효과와 효과 만들기 AI가 쓰는 이름 — 선언에 새 표시를 두지 않아 예전 앱도 그대로 읽음).
+    /// 값이 무작위 모양을 정하므로 슬라이더 대신 숫자 칸과 주사위 단추를 둔다.
+    /// </summary>
+    private static bool IsSeed(ScriptSetting setting) => setting is { Type: ScriptSettingType.Int, Widget: ScriptSettingWidget.None, Key: "seed" };
+
+    /// <summary>시드 설정: 숫자 칸 + 주사위 단추(누르면 범위 안의 다른 값으로 — 다른 무작위 모양). 범위가 없으면 0~9999에서 고른다.</summary>
+    private static Control ScriptSeedEditor(ScriptSetting setting, double value, Action<double> changed)
+    {
+        int min = (int)Math.Max(int.MinValue / 2, setting.Min ?? 0), max = (int)Math.Min(int.MaxValue / 2, setting.Max ?? 9999);
+        if (max < min) max = min;
+        var number = Ui.Num(setting.Min is null ? -1_000_000_000 : min, setting.Max is null ? 1_000_000_000 : max, (decimal)value, 72, 0, 1);
+        number.ValueChanged += (_, _) => changed((double)number.NumValue());
+        var dice = Ui.IconButton(VectorIcon.Dice, UiStrings.ScriptSetting_SeedTip, (_, _) =>
+        {
+            if (max <= min) return;
+            int current = (int)number.NumValue(), next;
+            do next = Random.Shared.Next(min, max + 1);
+            while (next == current);
+            number.Value = next;
+        });
+        dice.VerticalAlignment = VerticalAlignment.Center;
+        return Ui.Row(number, dice);
     }
 
     /// <summary>각도 설정: 다이얼(끌어 고름) + 슬라이더·숫자 칸. 다이얼 각도는 설정 범위 안으로 맞춘다(예: -180~180이면 270° → -90).</summary>

@@ -3367,6 +3367,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ScriptSetting_ListEmpty" xml:space="preserve"><value>No items.</value></data>
   <data name="ScriptSetting_PairTo" xml:space="preserve"><value>Replacement: the color above becomes this color.</value></data>
   <data name="ScriptSetting_AngleTip" xml:space="preserve"><value>Click or drag to set the angle (0° = right, 90° = up). Hold Shift to snap to 15°.</value></data>
+  <data name="ScriptSetting_SeedTip" xml:space="preserve"><value>Another random look (new seed). A look you like stays fixed at that seed.</value></data>
   <data name="ScriptSetting_PointTip" xml:space="preserve"><value>Click or drag to set X and Y together (top left is the smallest value).</value></data>
   <data name="ScriptEffect_Hint" xml:space="preserve"><value>The script source is stored once in the project by its hash. Editing the source switches the effect to the new source, and old sources no longer used are dropped when you save. If a frame goes over the limits (2 seconds, 50 million statements, 256 MB of memory), only this effect is skipped on that frame; after 3 failures in a row it stops until you turn it on again.</value></data>
   <data name="ScriptEditor_Title" xml:space="preserve"><value>Edit script - {name}</value></data>
