@@ -262,8 +262,15 @@ public sealed partial class AssetManagerWindow
     {
         if (Ui.OpenFile(this, UiStrings.Assets_ImportTitle, null,
                 new FileFilter(UiStrings.Assets_FileType, "*" + AssetPackage.Extension, "*" + AssetPackage.LegacyExtension)) is not { } path) return;
+        InstallFile(path);
+    }
+
+    /// <summary>패키지 파일 <paramref name="path"/>를 설치하고(실패하면 알림) 설치됨 탭에서 그 패키지를 고른다.</summary>
+    private void InstallFile(string path)
+    {
         InstalledPackage? installed = null;
         if (!AppAssets.Try(this, () => installed = AppAssets.Store.Install(path), UiStrings.Assets_ImportError) || installed is null) return;
+        _tabs.SelectedIndex = (int)AssetManagerTab.Installed;
         _selectKey = "pkg:" + installed.Id;
         _search.Text = "";
         Refresh();

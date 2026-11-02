@@ -28,5 +28,55 @@
   <true/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
+  <!-- 홈페이지 "Chickxel에서 열기"(chickxel://asset/패키지 ID) -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.chickxel.editor.asset-link</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>chickxel</string>
+      </array>
+    </dict>
+  </array>
+  <!-- .chickxel-asset 더블클릭 = 에셋 관리자에서 설치 -->
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>Chickxel Asset Package</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>LSHandlerRank</key>
+      <string>Owner</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>com.chickxel.asset-package</string>
+      </array>
+    </dict>
+  </array>
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key>
+      <string>com.chickxel.asset-package</string>
+      <key>UTTypeDescription</key>
+      <string>Chickxel Asset Package</string>
+      <key>UTTypeConformsTo</key>
+      <array>
+        <string>public.data</string>
+      </array>
+      <key>UTTypeTagSpecification</key>
+      <dict>
+        <key>public.filename-extension</key>
+        <array>
+          <string>chickxel-asset</string>
+        </array>
+      </dict>
+    </dict>
+  </array>
 </dict>
 </plist>

@@ -3,12 +3,16 @@ using Avalonia.Styling;
 
 namespace Chickxel.App;
 
-/// <summary>명령줄 인수: <c>--open-folder &lt;폴더&gt;</c>, <c>--open &lt;파일&gt;</c>(.chickxel/.png). 경로만 주면 --open과 같다.</summary>
-public sealed record StartupArgs(string? OpenFolder, string? OpenFile)
+/// <summary>
+/// 명령줄 인수: <c>--open-folder &lt;폴더&gt;</c>, <c>--open &lt;파일&gt;</c>(.chickxel/.png). 경로만 주면 --open과 같다.
+/// <c>chickxel://asset/…</c> 주소나 <c>.chickxel-asset</c> 파일은 편집기에서 열지 않고 <see cref="Activation"/>으로 받는다(OS가 넘긴 일).
+/// </summary>
+public sealed record StartupArgs(string? OpenFolder, string? OpenFile, Activation? Activation = null)
 {
     public static StartupArgs Parse(string[] args)
     {
         string? folder = null, file = null;
+        Activation? activation = null;
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -21,11 +25,19 @@ public sealed record StartupArgs(string? OpenFolder, string? OpenFile)
                     break;
                 default:
                     // macOS는 Finder에서 실행할 때 -psn_… 인수를 붙일 수 있다.
-                    if (!args[i].StartsWith('-')) file ??= args[i];
+                    if (args[i].StartsWith('-')) break;
+                    if (Activation.Parse(args[i]) is { } parsed) activation ??= parsed;
+                    // 모르는 chickxel:// 주소(새 홈페이지가 보낸 다른 종류 등)는 편집기에서 열려 하지 않는다.
+                    else if (!args[i].StartsWith(Chickxel.Core.Assets.AssetLinks.Scheme + ":", StringComparison.OrdinalIgnoreCase)) file ??= args[i];
                     break;
             }
         }
-        return new StartupArgs(folder, file);
+        if (activation is null && Activation.Parse(file) is { } install)
+        {
+            activation = install;
+            file = null;
+        }
+        return new StartupArgs(folder, file, activation);
     }
 }
 
@@ -77,6 +89,8 @@ public sealed class App : Application
                     Dispatcher.UIThread.Post(main.Close);
                 });
             desktop.MainWindow = main;
+            AppActivation.Start(this);
+            if (Args.Activation is { } activation) AppActivation.Deliver(activation);
         }
         base.OnFrameworkInitializationCompleted();
     }
@@ -89,6 +103,8 @@ static class Program
     static int Main(string[] args)
     {
         App.Args = StartupArgs.Parse(args);
+        // 주소·패키지 파일로 띄워졌는데 이미 켜진 Chickxel이 있으면(Windows) 그쪽에 넘기고 끝낸다.
+        if (App.Args.Activation is { } activation && AppActivation.TryForward(activation)) return 0;
         Platform.MigrateLegacyFolders();
         // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.
         App.Settings = AppSettings.Load();

@@ -33,6 +33,9 @@ public sealed partial class AssetManagerWindow : DialogBase
     /// <summary>목록 한 줄: 머리글, 패키지, 에셋, 삭제한 패키지.</summary>
     private sealed record Row(string Key, InstalledPackage? Package = null, AssetEntry? Asset = null, DeletedPackage? Deleted = null);
 
+    /// <summary>열려 있는 에셋 관리자(모달이라 하나뿐). 없으면 null — 홈페이지 링크·패키지 파일이 열려 있는 창으로 가게.</summary>
+    private static AssetManagerWindow? s_current;
+
     /// <summary>
     /// 에셋 관리자를 연다. <paramref name="kind"/>는 처음 종류 거르기(<see cref="AssetKinds"/>, null = 전체 — 설치됨·상점 탭이 같이 씀),
     /// <paramref name="selectAssetId"/>는 처음 고를 에셋, <paramref name="tab"/>은 처음 보일 탭(상점·업데이트면 온라인 목록을 바로 받는다).
@@ -43,8 +46,46 @@ public sealed partial class AssetManagerWindow : DialogBase
         new AssetManagerWindow(kind, selectAssetId, tab).ShowDialog(owner);
     }
 
+    /// <summary>
+    /// 홈페이지 "Chickxel에서 열기": 상점 탭에서 온라인 목록을 새로 받아 패키지 <paramref name="packageId"/>를 고른다(거르기·검색은 비움).
+    /// 설치는 사용자가 상세의 설치 단추로 한다. 에셋 관리자가 이미 열려 있으면 그 창에서 보인다.
+    /// </summary>
+    public static void ShowRemotePackage(Window owner, string packageId)
+    {
+        if (s_current is { } open)
+        {
+            open.ShowRemotePackage(packageId);
+            open.Activate();
+            return;
+        }
+        AppAssets.ShowProblems(owner);
+        var window = new AssetManagerWindow(null, null, AssetManagerTab.Store);
+        window.ShowRemotePackage(packageId);
+        window.ShowDialog(owner);
+    }
+
+    /// <summary>
+    /// 패키지 파일 더블클릭: 에셋 관리자 설치됨 탭에서 <paramref name="path"/>를 설치하고(가져오기와 같음) 그 패키지를 고른다.
+    /// 에셋 관리자가 이미 열려 있으면 그 창에서 한다.
+    /// </summary>
+    public static void InstallPackageFile(Window owner, string path)
+    {
+        if (s_current is { } open)
+        {
+            open.Activate();
+            open.InstallFile(path);
+            return;
+        }
+        AppAssets.ShowProblems(owner);
+        var window = new AssetManagerWindow(null, null, AssetManagerTab.Installed);
+        // 창이 뜬 뒤에 설치해 오류 상자가 에셋 관리자 위에 뜨게 한다.
+        window.Opened += (_, _) => Dispatcher.UIThread.Post(() => window.InstallFile(path));
+        window.ShowDialog(owner);
+    }
+
     private AssetManagerWindow(string? kind, string? selectAssetId, AssetManagerTab tab) : base(UiStrings.Assets_Title)
     {
+        s_current = this;
         CloseOnly();
         CancelButtonControl.IsDefault = false;
         CanResize = true;
@@ -111,6 +152,7 @@ public sealed partial class AssetManagerWindow : DialogBase
         {
             AppAssets.Changed -= _onChanged;
             _closing.Cancel();
+            if (s_current == this) s_current = null;
         };
         Refresh();
     }

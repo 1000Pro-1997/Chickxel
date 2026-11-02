@@ -28,6 +28,10 @@ public sealed partial class AssetManagerWindow
     private RemoteCatalogSnapshot _snapshot = RemoteCatalogSnapshot.Empty(null);
     private bool _remoteStarted, _remoteLoading, _remoteRefreshing;
     private string? _remoteSelectId;
+    /// <summary>홈페이지 링크로 고를 패키지: 목록을 다 받을 때까지 고르려 한다(그 사이 사용자가 고르면 버림).</summary>
+    private string? _wantedPackageId;
+    /// <summary>링크로 고르려 했지만 받은 목록에 없던 패키지(상태 줄에 알림).</summary>
+    private string? _missingPackageId;
     private CancellationTokenSource? _download;
     private string? _downloadId;
     private double _downloadFraction;
@@ -75,6 +79,12 @@ public sealed partial class AssetManagerWindow
         {
             if (_remoteRefreshing) return;
             _remoteSelectId = SelectedRemote?.Id;
+            _wantedPackageId = null;
+            if (_missingPackageId is not null)
+            {
+                _missingPackageId = null;
+                UpdateStatus(_remoteStatus);
+            }
             ShowRemoteDetail();
         };
         var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _remoteList, DetailScroller(_remoteDetail) } };
@@ -159,7 +169,7 @@ public sealed partial class AssetManagerWindow
         RefreshUpdates();
     }
 
-    /// <summary>목록 상태 글: 받는 중, 받은 시각, 또는 연결 실패와 보이는 목록이 언제 것인지.</summary>
+    /// <summary>목록 상태 글: 받는 중, 받은 시각, 또는 연결 실패와 보이는 목록이 언제 것인지. 링크로 연 패키지가 목록에 없으면 그 알림.</summary>
     private void UpdateStatus(TextBlock status)
     {
         status.Foreground = AppTheme.DimTextBrush;
@@ -172,6 +182,28 @@ public sealed partial class AssetManagerWindow
                 : F(UiStrings.Assets_RemoteOfflineEmpty, error.Message);
         }
         else status.Text = _remoteStarted ? F(UiStrings.Assets_RemoteStatus, _snapshot.Packages.Count, FetchedText()) : "";
+        if (status == _remoteStatus && _missingPackageId is { } missing)
+        {
+            status.Foreground = AppTheme.WarningBrush;
+            status.Text = F(UiStrings.Assets_LinkNotFound, missing) + (status.Text.Length > 0 ? "\n" + status.Text : "");
+        }
+    }
+
+    /// <summary>
+    /// 상점 탭에서 패키지 <paramref name="packageId"/>를 고른다(홈페이지 링크): 거르기·검색을 비우고 온라인 목록을 새로 받는다
+    /// (막 올린 패키지도 보이게). 받은 목록에도 없으면 상태 줄에 알린다.
+    /// </summary>
+    private void ShowRemotePackage(string packageId)
+    {
+        _wantedPackageId = packageId;
+        _missingPackageId = null;
+        // 받기를 먼저 시작한다: 받는 동안의 다시 그리기는 아직 없다고 판단하지 않고, 받은 뒤에 고르거나 없다고 알린다.
+        LoadRemote();
+        _tabs.SelectedIndex = (int)AssetManagerTab.Store;
+        _remoteSearch.Text = "";
+        _tagFilter.SelectedIndex = 0;
+        _remoteFilter.SelectedIndex = 0;
+        RefreshRemote();
     }
 
     private string FetchedText() => _snapshot.FetchedUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
@@ -222,9 +254,18 @@ public sealed partial class AssetManagerWindow
                 _remoteList.Items.Add(new ListBoxItem { Content = Ui.Label(empty), IsEnabled = false });
             }
             var rows = _remoteList.Items.OfType<ListBoxItem>().Where(item => item.Tag is RemoteCatalogEntry).ToList();
-            var target = rows.FirstOrDefault(item => ((RemoteCatalogEntry)item.Tag!).Id == _remoteSelectId) ?? rows.FirstOrDefault();
+            string? want = _wantedPackageId ?? _remoteSelectId;
+            var wanted = rows.FirstOrDefault(item => ((RemoteCatalogEntry)item.Tag!).Id == want);
+            var target = wanted ?? rows.FirstOrDefault();
             _remoteList.SelectedItem = target;
             _remoteSelectId = (target?.Tag as RemoteCatalogEntry)?.Id;
+            // 링크로 연 패키지: 목록을 다 받은 뒤에도 없으면 알리고 그만 찾는다.
+            if (_wantedPackageId is { } link && !_remoteLoading)
+            {
+                if (wanted is null) _missingPackageId = link;
+                _wantedPackageId = null;
+            }
+            if (wanted is not null) _remoteList.ScrollIntoView(wanted);
         }
         finally { _remoteRefreshing = false; }
         UpdateStatus(_remoteStatus);

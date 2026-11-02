@@ -1198,6 +1198,28 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _updater.OnStartup();
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
+        // 홈페이지 링크·패키지 파일로 띄워졌으면 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
+        Dispatcher.UIThread.Post(() => AppActivation.SetHandler(HandleActivation), DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// OS가 넘긴 일(<see cref="Activation"/>): 창을 앞으로 가져오고, 홈페이지 "Chickxel에서 열기"는 에셋 관리자 상점에서 그 패키지를 보이고
+    /// (설치는 사용자가 누름), 패키지 파일은 에셋 관리자에서 설치한다. 다른 대화상자가 떠 있으면 그 위에 연다.
+    /// </summary>
+    private void HandleActivation(Activation activation)
+    {
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        var owner = (Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.Windows.LastOrDefault(w => w.IsVisible) ?? this;
+        owner.Activate();
+        switch (activation)
+        {
+            case Activation.OpenPackage open:
+                AssetManagerWindow.ShowRemotePackage(owner, open.Id);
+                break;
+            case Activation.InstallFile install:
+                AssetManagerWindow.InstallPackageFile(owner, install.Path);
+                break;
+        }
     }
 
     /// <summary>설정의 그라데이션 정지점("위치:#색")을 읽는다. 없거나 2개보다 적게 읽히면 null(기본값 유지).</summary>

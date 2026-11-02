@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.71 (2026-11-02)
+### Open packages from the website straight into Chickxel
+- Package pages on chickxel.com now lead with **Open in Chickxel**: Chickxel comes to the front (or starts), opens the Asset Manager's Browse tab with a fresh online list and selects that package, ready for Install. If the Asset Manager is already open, it shows the package there.
+- The link carries only the package ID; the package itself always comes from the online list with its size and SHA-256 checked, and nothing installs until you click Install. A package that isn't in the list is reported in the status line.
+- Double-clicking a downloaded `.chickxel-asset` file installs it in the Asset Manager, like Import.
+- macOS registers the link and file type through the app bundle. On Windows, Chickxel registers the current `Chickxel.exe` for your user each time it starts (no admin rights; moving the exe is picked up on the next start), and a second launch hands the link to the running Chickxel and exits.
+
 ## v1.14.70 (2026-11-02)
 ### Account button in the menu bar, with several accounts to switch between
 - The right end of the menu bar has an account button: your account's name (and its profile picture once checked), or "Sign In". It opens the account window, or the account menu once you have signed in.
