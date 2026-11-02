@@ -83,16 +83,16 @@ pre code { background: none; border: 0; padding: 0; }
 .btn.discord { background: #5865f2; border-color: #5865f2; color: #fff; }
 .btn.discord:hover { background: #4752c4; border-color: #4752c4; }
 .btn.discord .icon { fill: currentColor; stroke: none; }
-/* 아이콘만 보이다가 올리거나 고르면 옆으로 늘어나며 이름이 나옴 */
-.btn.expand { gap: 0; padding: 13px 13px; line-height: 22px; transition: background-color .2s, border-color .2s, filter .2s, padding .4s ease; }
+/* 아이콘만 보이다가 올리거나 고르면 옆으로 늘어나며 이름이 나옴(.open은 늘 펼침) */
+.btn.expand { gap: 0; padding: 12px; line-height: 22px; transition: background-color .2s, border-color .2s, filter .2s, padding .4s ease; }
 .btn.expand .icon { width: 22px; height: 22px; flex: none; }
 .btn.expand .label { max-width: 0; margin-left: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width .4s ease, margin-left .4s ease, opacity .3s ease; }
-.btn.expand:focus-visible .label { max-width: 8em; margin-left: 8px; opacity: 1; }
-.btn.expand:focus-visible { padding-right: 18px; }
+.btn.expand.open .label, .btn.expand:focus-visible .label { max-width: 8em; margin-left: 8px; opacity: 1; }
+.btn.expand.open, .btn.expand:focus-visible { padding-right: 16px; }
 /* 터치 화면은 누르면 바로 이동(눌린 채 늘어나 줄이 바뀌지 않게) */
 @media (hover: hover) {
   .btn.expand:hover .label { max-width: 8em; margin-left: 8px; opacity: 1; }
-  .btn.expand:hover { padding-right: 18px; }
+  .btn.expand:hover { padding-right: 16px; }
 }
 .btn.support { background: #ff813f; border-color: #ff813f; color: #fff; }
 .btn.support:hover { background: #e96f2f; border-color: #e96f2f; }
@@ -112,7 +112,10 @@ pre code { background: none; border: 0; padding: 0; }
 .hero h1 { margin: 0 0 24px; font-size: clamp(40px, 5vw, 64px); font-weight: 650; line-height: 1.06; letter-spacing: -.06em; color: var(--ink-deep); }
 .highlight { background: linear-gradient(transparent 70%, rgba(255, 208, 47, .55) 70%); }
 .hero .lead { margin: 0; max-width: 560px; font-size: 18px; line-height: 1.7; color: var(--lead); }
-.hero .buttons { margin-top: 30px; }
+.hero .buttons { margin-top: 30px; gap: 6px; }
+/* 다운로드 뒤 줄바꿈: 두 칸 화면에서 글 칸이 좁아 단추가 펼쳐지면 넘칠 때(961~1259px)와 휴대폰에서 아이콘 단추를 둘째 줄에 모음 */
+.hero .row-break { display: none; flex-basis: 100%; height: 0; }
+@media (min-width: 961px) and (max-width: 1259px) { .hero .row-break { display: block; } }
 @media (prefers-reduced-motion: reduce) { .btn.expand, .btn.expand .label { transition: none; } }
 .os-links { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
 .os-links a { color: var(--ink); font-weight: 650; border-bottom: 1px solid var(--line); }
@@ -281,7 +284,7 @@ td { color: var(--body); }
   .account-btn { padding: 3px; gap: 4px; }
   .account-btn .label, .account-btn .chev { display: none; }
   .hero { padding: 48px 0 48px; }
-  .hero .buttons { gap: 6px; }
+  .hero .row-break { display: block; }
   .btn.expand { padding: 10px; }
   .features, .downloads, .core-grid { grid-template-columns: 1fr; }
   .section { padding: 52px 0; }
