@@ -55,6 +55,8 @@ public static class AppAssets
                     AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle);
                     // 공식 효과: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭이 다시 그려진다
                     if (OfficialEffectPackages.NeedsSync(opened)) StartBundledSync();
+                    // 설치하면 바로 믿기 전에 받아 둔 에셋의 스크립트도 믿는다(설정 파일을 쓰므로 UI 스레드에서)
+                    Dispatcher.UIThread.Post(() => ScriptTrustStore.TrustStored(opened.Catalog.All));
                 }
                 return _store;
             }
@@ -233,18 +235,20 @@ public static class AppAssets
     /// <summary>
     /// 패키지 파일(<c>.chickxel-asset</c>)의 에셋을 하나씩 더한다(<see cref="AssetSources.File"/>). 이미 있는 에셋과 겹치면 하나마다 묻는다
     /// (<see cref="AssetImportPrompt"/>: 바꾸기·건너뛰기·둘 다 두기, "남은 항목에도 적용"이면 이 파일의 나머지에 같은 답).
-    /// 들어간 에셋(패키지 차례)을 돌려주고, 실패하면 알리고 null(아무것도 바뀌지 않음).
+    /// 들어간 에셋(패키지 차례)을 돌려주고 그 스크립트는 바로 믿는다(<see cref="ScriptTrustStore.TrustInstalled"/>). 실패하면 알리고 null(아무것도 바뀌지 않음).
     /// </summary>
     public static IReadOnlyList<AssetEntry>? InstallFile(Visual owner, string path)
     {
         var ask = Prompter(owner);
         IReadOnlyList<AssetEntry>? installed = null;
-        return Try(owner, () => installed = Store.Install(path, AssetSources.File, ask), UiStrings.Assets_ImportError) ? installed : null;
+        if (!Try(owner, () => installed = Store.Install(path, AssetSources.File, ask), UiStrings.Assets_ImportError) || installed is null) return null;
+        ScriptTrustStore.TrustInstalled(installed);
+        return installed;
     }
 
     /// <summary>
     /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 에셋을 저장소에 넣는다(<see cref="AssetSources.Remote"/>). 같은 상점 에셋은 말없이 새것으로 바꾸되
-    /// 내가 고친 내 에셋이면 묻고, 그 밖에 겹치는 것(같은 내용의 다른 에셋)도 묻는다. 들어간 에셋을 돌려준다.
+    /// 내가 고친 내 에셋이면 묻고, 그 밖에 겹치는 것(같은 내용의 다른 에셋)도 묻는다. 들어간 에셋을 돌려주고 그 스크립트는 바로 믿는다.
     /// 실패하면 <paramref name="owner"/>에 알리고 null, 취소하면 아무것도 바꾸지 않고 null. 받은 임시 파일은 지운다.
     /// </summary>
     public static async Task<IReadOnlyList<AssetEntry>?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
@@ -259,7 +263,9 @@ public static class AppAssets
                 => item.SameStoreAsset && !(item.Existing is { Modified: true } existing && IsMine(existing)) ? ImportChoice.Replace : ask(item);
             IReadOnlyList<AssetEntry>? installed = null;
             string path = file;
-            return Try(owner, () => installed = Store.Install(path, AssetSources.Remote, Choose), UiStrings.Assets_InstallRemoteError) ? installed : null;
+            if (!Try(owner, () => installed = Store.Install(path, AssetSources.Remote, Choose), UiStrings.Assets_InstallRemoteError) || installed is null) return null;
+            ScriptTrustStore.TrustInstalled(installed);
+            return installed;
         }
         catch (OperationCanceledException)
         {

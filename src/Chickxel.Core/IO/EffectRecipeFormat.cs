@@ -69,7 +69,7 @@ public sealed record EffectRecipe : IAssetData
     /// <paramref name="project"/>에 넣을 독립 효과 목록. <paramref name="addRange"/>는 부르는 쪽의 추가 범위이고,
     /// <see cref="RecipeFrameRange.AllFrames"/> 레시피는 그 대신 모든 프레임을 쓴다.
     /// 매개변수가 있으면 기본값을 넣고, 새 묶음(고유 ID + 매개변수 정의 사본)을 만들어 효과마다 레시피 안 자리와 함께 단다.
-    /// 스크립트 원문은 프로젝트 스크립트 표에 넣는다(실행 허락은 바꾸지 않음 — 패키지에서 온 원문은 효과 창에서 허용할 때까지 그리지 않는다).
+    /// 스크립트 원문은 프로젝트 스크립트 표에 넣는다(실행 허락은 바꾸지 않음 — 앱이 정한다: 에셋 관리자로 설치한 원문은 설치할 때 믿는다).
     /// </summary>
     public IReadOnlyList<LayerEffect> Instantiate(SpriteProject project, FrameRange? addRange)
     {

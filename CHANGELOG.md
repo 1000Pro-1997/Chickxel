@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.80 (2026-11-02)
+### Downloaded script effects run right away
+- Script effects installed from the Asset Manager (store downloads and `.chickxel-asset` files) now draw immediately; you no longer have to allow each one in the effects window. Installing is the permission.
+- Script effects you installed earlier but never allowed are allowed the next time the app starts. Scripts you chose not to run when opening a project stay blocked until you allow them or install the package again.
+- Opening a project that contains scripts you've never seen still asks first.
+- Scripts run in an isolated engine with no file, network or .NET access and per-frame time, statement and memory limits.
+
+### Tighter memory limit for script effects
+- The memory a script effect may allocate per frame now grows by 6 KB per pixel instead of 16 KB (512×512: 1.75 GB instead of 4.25 GB), so a bad script can grab much less memory on big canvases.
+- All built-in effects stay well inside the new limit, even at their maximum settings.
+
 ## v1.14.79 (2026-11-02)
 ### Pixels moved off the canvas are kept
 - Normal layers no longer lose pixels that go outside the canvas: moving the layer with the Move tool, dropping a selection past the edge, or pasting an image bigger than the canvas keeps the outside part, and moving it back brings it back.

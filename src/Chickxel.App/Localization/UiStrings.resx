@@ -9271,7 +9271,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="RecipeParams_Count" xml:space="preserve"><value>매개변수 {0}개</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>스크립트 효과 {0}개</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>스크립트 효과</value></data>
-  <data name="Assets_ScriptNote" xml:space="preserve"><value>스크립트 효과가 들어 있습니다. 받은 스크립트는 효과 창에서 실행을 허용할 때까지 그리지 않습니다(이 컴퓨터에서 쓰거나 내 에셋으로 저장한 스크립트는 바로 실행).</value></data>
+  <data name="Assets_ScriptNote" xml:space="preserve"><value>실행을 허용하지 않은 스크립트 효과가 들어 있습니다(프로젝트를 열 때 '실행 안 함'을 고른 스크립트). 효과 창의 스크립트 설정에서 허용하거나 패키지를 다시 설치하면 그립니다.</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>스크립트 실행</value></data>
   <data name="Assets_ScriptRunAllowed" xml:space="preserve"><value>허용함</value></data>
   <data name="Assets_ScriptRunNotAllowed" xml:space="preserve"><value>허용하지 않음 — 효과 창의 스크립트 설정에서 허용</value></data>

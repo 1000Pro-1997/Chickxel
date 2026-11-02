@@ -353,7 +353,7 @@ public class ScriptEngineFeatureTests
         var limits = ScriptLimits.Default;
         var big = limits.ForPixels(1024L * 1024);
         Assert.Equal(limits.MaxStatements + 500L * 1024 * 1024, big.MaxStatements);
-        Assert.Equal(limits.MemoryBytes + (16L << 10) * 1024 * 1024, big.MemoryBytes);
+        Assert.Equal(limits.MemoryBytes + (6L << 10) * 1024 * 1024, big.MemoryBytes);
         Assert.True(big.Timeout > limits.Timeout);
         // 최대 그림(16384²)에서도 long으로 넘치지 않는다
         Assert.Equal(limits.MaxStatements + 500L * 16384 * 16384, limits.ForPixels(16384L * 16384).MaxStatements);

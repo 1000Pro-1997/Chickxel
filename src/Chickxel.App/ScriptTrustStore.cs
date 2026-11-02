@@ -1,3 +1,4 @@
+using Chickxel.Core.Assets;
 using Chickxel.Core.Model;
 using Chickxel.Core.Scripting;
 
@@ -5,7 +6,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 스크립트 효과 신뢰 결정(13.5)을 앱 설정(<see cref="AppSettings.ScriptTrust"/>)에 두고 Core의 <see cref="ScriptLibrary"/>와 맞춘다.
-/// 다른 사람이 만든 프로젝트를 열면 처음 보는 스크립트를 묻고(<see cref="ScriptTrustDialog"/>), 이 컴퓨터에서 쓰거나 가져온 스크립트는 바로 믿는다.
+/// 다른 사람이 만든 프로젝트를 열면 처음 보는 스크립트를 묻고(<see cref="ScriptTrustDialog"/>), 이 컴퓨터에서 쓰거나 가져온 스크립트와
+/// 에셋 관리자로 설치한 에셋의 스크립트는 바로 믿는다(설치가 곧 허락 — 스크립트는 파일·네트워크에 닿지 못하는 실행기에서 한도 안에서만 돈다).
 /// 실행할 스크립트가 있으면 작업 스레드에서 실행기를 미리 띄운다(13.4).
 /// </summary>
 internal static class ScriptTrustStore
@@ -28,6 +30,19 @@ internal static class ScriptTrustStore
     {
         if (ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted) Decide(new Dictionary<string, bool> { [hash] = true });
     }
+
+    /// <summary>에셋 관리자로 설치한(파일·온라인) 에셋의 스크립트: 묻지 않고 믿는다. 예전에 실행 안 함으로 정한 원문도 다시 설치하면 믿는다.</summary>
+    public static void TrustInstalled(IEnumerable<AssetEntry> installed)
+        => Decide(installed.SelectMany(entry => entry.ScriptHashes).Where(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted)
+            .Distinct().ToDictionary(hash => hash, _ => true));
+
+    /// <summary>
+    /// 에셋 저장소를 연 뒤: 저장소에 든 에셋의 스크립트 중 아직 묻지 않은 것을 믿는다(설치하면 바로 믿기 전에 받아 둔 에셋 —
+    /// 프로젝트를 열 때 실행 안 함으로 정한 원문은 그대로).
+    /// </summary>
+    public static void TrustStored(IEnumerable<AssetEntry> entries)
+        => Decide(entries.SelectMany(entry => entry.ScriptHashes).Where(hash => ScriptLibrary.TrustOf(hash) == ScriptTrust.Unknown)
+            .Distinct().ToDictionary(hash => hash, _ => true));
 
     /// <summary>
     /// 프로젝트를 연 뒤: 원문이 있는데 아직 묻지 않은 스크립트를 묻고(<paramref name="interactive"/>일 때만 — 아니면 실행하지 않은 채로 두고

@@ -55,10 +55,11 @@ public sealed record ScriptLimits
     public TimeSpan TimePerPixel { get; init; } = TimeSpan.FromTicks(1000); // 100µs
 
     /// <summary>
-    /// render 한도에 그림 픽셀마다 더하는 할당 바이트(Jint는 호출 동안 할당한 양을 셈 — 버린 객체 포함). 공식 효과의 기본 설정에서
-    /// 가장 많이 할당한 것이 픽셀당 약 2.3KB(터지기, 512²)라 약 7배 둔다.
+    /// render 한도에 그림 픽셀마다 더하는 할당 바이트(Jint는 호출 동안 할당한 양을 셈 — 버린 객체 포함). 공식 효과를 Jint로 돌려 가장 많이 할당한 것이
+    /// 픽셀당 약 3KB(외곽선, 설정 최대, 512²)라 약 2배 둔다. 빠른 경로는 픽셀당 100B 아래다. 받은 스크립트가 큰 그림에서 메모리를 크게 잡지 못하게
+    /// 여유를 좁게 잡는다(<c>측정/2026-11-02-스크립트-할당-한도.md</c>).
     /// </summary>
-    public long MemoryPerPixel { get; init; } = 16L << 10;
+    public long MemoryPerPixel { get; init; } = 6L << 10;
 
     /// <summary>
     /// 여백을 넣은 그림 <paramref name="pixels"/>개에 render를 돌릴 때의 한도: 문장·시간·메모리에 픽셀 비례 몫을 더한다(모두 long — 16384²에서도 넘치지 않음).

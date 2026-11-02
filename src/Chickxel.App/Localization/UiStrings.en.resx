@@ -3400,7 +3400,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>Script effect</value></data>
-  <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects. Received scripts don't run until you allow them in the effects window (scripts you wrote or saved to your assets on this computer run right away).</value></data>
+  <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects that aren't allowed to run (you chose Don't run when opening a project). Allow them in the script settings of the effects window, or install the package again, to draw them.</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>Script run</value></data>
   <data name="Assets_ScriptRunAllowed" xml:space="preserve"><value>Allowed</value></data>
   <data name="Assets_ScriptRunNotAllowed" xml:space="preserve"><value>Not allowed — allow it in the script settings of the effects window</value></data>
