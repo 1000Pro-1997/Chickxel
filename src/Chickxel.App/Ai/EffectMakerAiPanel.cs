@@ -40,6 +40,8 @@ internal sealed class EffectMakerAiPanel : Border
     private readonly StackPanel _messages = new() { Spacing = 6, Margin = new Thickness(8, 8) };
     private readonly TextBlock _thinking;
     private readonly ChatImageInput _imageInput;
+    /// <summary>차례가 도는 동안 보낸 메시지(입력란 위 대기 줄) — 차례가 끝나면 차례로 보낸다.</summary>
+    private readonly PendingMessages _pending;
     private readonly Button _send, _stop;
     private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromMilliseconds(500) };
 
@@ -104,6 +106,7 @@ internal sealed class EffectMakerAiPanel : Border
         _thinking = new TextBlock { Foreground = AppTheme.DimTextBrush, FontStyle = FontStyle.Italic, Margin = new Thickness(2), TextWrapping = TextWrapping.Wrap };
         _imageInput = new ChatImageInput(UiStrings.EffectMakerAi_Watermark);
         _imageInput.Input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
+        _pending = new PendingMessages(_imageInput);
         var attachFile = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.S_ChatWindow_ChatTab_046C36A571, (_, _) => _imageInput.AttachFile());
         var attachCanvas = Ui.IconButton(VectorIcon.Image, UiStrings.EffectMakerAi_AttachCanvasTip, (_, _) => AttachCanvas());
         var attachPreview = Ui.IconButton(VectorIcon.Film, UiStrings.EffectMakerAi_AttachPreviewTip, (_, _) => AttachPreview());
@@ -120,18 +123,23 @@ internal sealed class EffectMakerAiPanel : Border
         };
         _model.SelectionChanged += (_, _) => OnModelChanged();
         FillModels();
-        var sendButtons = Ui.Row(_model, _send, _stop);
+        var sendButtons = Ui.Row(_send, _stop);
+        var attachButtons = Ui.Row(attachFile, attachCanvas, attachPreview);
+        // 모델 칸은 남는 폭만 쓴다(좁으면 이름 말줄임 — 차례 중에 보내기·멈춤이 함께 보여도 단추가 밀리지 않게).
+        _model.HorizontalAlignment = HorizontalAlignment.Right;
         var buttons = new DockPanel { Margin = new Thickness(0, 4, 0, 0) };
         DockPanel.SetDock(sendButtons, Dock.Right);
+        DockPanel.SetDock(attachButtons, Dock.Left);
         buttons.Children.Add(sendButtons);
-        buttons.Children.Add(Ui.Row(attachFile, attachCanvas, attachPreview));
+        buttons.Children.Add(attachButtons);
+        buttons.Children.Add(_model);
         var inputArea = new Border
         {
             Background = AppTheme.BackBrush,
             BorderBrush = AppTheme.BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
             Padding = new Thickness(6),
-            Child = new StackPanel { Children = { _imageInput, buttons } },
+            Child = new StackPanel { Children = { _pending, _imageInput, buttons } },
         };
         DockPanel.SetDock(inputArea, Dock.Bottom);
         _chatPanel = new DockPanel { Children = { inputArea, _scroll } };
@@ -419,17 +427,38 @@ internal sealed class EffectMakerAiPanel : Border
         _imageInput.AttachImage(image, pixelArt: true);
     }
 
+    /// <summary>입력란의 메시지를 보낸다. 차례가 도는 중이면 대기 줄에 넣고 차례가 끝나면 보낸다.</summary>
     private void Send()
     {
-        if (_session is not { } session || _running || _shutdown) return;
+        if (_session is null || _shutdown) return;
+        if (_running)
+        {
+            _pending.AddFromInput();
+            return;
+        }
         var text = _imageInput.StoredText();
         var attachments = _imageInput.Attachments.ToList();
         if (text.Length == 0 && attachments.Count == 0) return;
+        if (SendMessage(text, attachments)) _imageInput.Clear();
+    }
+
+    /// <summary>차례가 끝났으면 대기 줄의 다음 메시지를 보낸다(보내지 못하면 입력란이 비어 있을 때 그리로 되돌림).</summary>
+    private void SendQueued()
+    {
+        if (_running || _session is null || _shutdown || _pending.TakeNext() is not { } next) return;
+        if (!SendMessage(next.Text, next.Attachments) && _imageInput.StoredText().Length == 0 && _imageInput.Attachments.Count == 0)
+            _imageInput.Restore(next.Text, next.Attachments);
+    }
+
+    /// <summary>메시지 하나로 새 차례를 연다. 보냈으면 true.</summary>
+    private bool SendMessage(string text, IReadOnlyList<ChatAttachment> attachments)
+    {
+        if (_session is not { } session) return false;
         // 설정에서 CLI 경로를 바꿨으면 다시 확인한다(보내지 않음 — 확인 뒤 다시 보냄).
         if (_cliPath is not null && _cliPath != _provider.Locate(_settings))
         {
             _ = CheckAsync();
-            return;
+            return false;
         }
         session.Model = CurrentModel();
         var modelText = ChatImageTokens.ToModel(text);
@@ -441,10 +470,9 @@ internal sealed class EffectMakerAiPanel : Border
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException or UnauthorizedAccessException)
         {
             AddLine(string.Format(CultureInfo.CurrentCulture, UiStrings.S_ChatWindow_Send_E1ACACFBF7, _provider.Command, ex.Message), error: true);
-            return;
+            return false;
         }
         _primed = true;
-        _imageInput.Clear();
         AddItem(UserBubble(text, attachments));
         _running = true;
         _tools.Clear();
@@ -453,6 +481,7 @@ internal sealed class EffectMakerAiPanel : Border
         UpdateThinking();
         _clock.Start();
         UpdateInputState();
+        return true;
     }
 
     private void StopTurn()
@@ -477,11 +506,14 @@ internal sealed class EffectMakerAiPanel : Border
         parts.Add(Seconds(_turnClock.Elapsed));
         AddItem(new TextBlock { Text = string.Join(" · ", parts), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Right });
         UpdateInputState();
+        // 기다리던 메시지는 이 차례를 다 그린 뒤에 보낸다(멈춤으로 끝났어도 — 방향을 바꾸려고 멈춘 경우가 많음).
+        if (_pending.Count > 0) Dispatcher.UIThread.Post(SendQueued);
     }
 
     /// <summary>새 대화: 도는 차례를 멈추고 세션의 대화를 잊는다(다음 메시지에 규칙·API를 다시 붙임). 편집기 원문은 그대로.</summary>
     private void NewConversation()
     {
+        _pending.ClearAll();
         StopTurn();
         _session?.Reset();
         _primed = false;
@@ -492,8 +524,10 @@ internal sealed class EffectMakerAiPanel : Border
     private void UpdateInputState()
     {
         bool ready = _session is not null && !_shutdown;
-        _send.IsVisible = !_running;
+        // 도는 동안에도 보내기를 둔다(대기 줄에 넣음 — 좁은 칸이라 아이콘만).
         _stop.IsVisible = _running;
+        _send.Content = _running ? Ui.Icon(VectorIcon.ArrowUp) : Ui.IconLabel(VectorIcon.ArrowUp, UiStrings.S_ChatWindow_ChatTab_CF5843D1B0);
+        _send.Tip(_running ? UiStrings.Chat_SendQueuesTip : "Enter");
         _send.IsEnabled = ready;
         _newChat.IsEnabled = ready;
     }

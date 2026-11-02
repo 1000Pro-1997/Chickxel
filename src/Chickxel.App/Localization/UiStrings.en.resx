@@ -150,7 +150,6 @@ echo __LOGIN_FAILED__
   <data name="S_ChatWindow_RefreshStep_B7986869B0" xml:space="preserve"><value>Undo this step</value></data>
   <data name="S_ChatWindow_RefreshStep_B9AA5F8B5A" xml:space="preserve"><value>Later steps must be redone first</value></data>
   <data name="S_ChatWindow_RefreshStep_E659C76CB0" xml:space="preserve"><value>Reapply</value></data>
-  <data name="S_ChatWindow_Send_2A1D03CC20" xml:space="preserve"><value>{0} is working — send after it finishes (so you don't edit the same canvas at once).</value></data>
   <data name="S_ChatWindow_Send_9DB69B8394" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="S_ChatWindow_Send_A2D9AB8F67" xml:space="preserve"><value>(image)</value></data>
   <data name="S_ChatWindow_Send_E1ACACFBF7" xml:space="preserve"><value>Couldn't run {0}: {1}</value></data>
@@ -199,7 +198,6 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_ChatWindow_Summarize_473D2F6697" xml:space="preserve"><value>{0} lines</value></data>
   <data name="S_ChatWindow_ToggleStep_3758F11139" xml:space="preserve"><value>Also undoes {0} later edit steps. Continue?</value></data>
   <data name="S_ChatWindow_ToggleStep_579568A52F" xml:space="preserve"><value>Undo</value></data>
-  <data name="S_ChatWindow_UpdateInputState_25BD68A0C8" xml:space="preserve"><value>{0} is working — send after it finishes (so you don't edit the same canvas at once)</value></data>
   <data name="S_ChatWindow_UpdateProgress_07B7C8BA45" xml:space="preserve"><value>Running in editor: {0}</value></data>
   <data name="S_ChatWindow_UpdateProgress_46A1800CB1" xml:space="preserve"><value>Waiting for response…</value></data>
   <data name="S_ChatWindow_UpdateProgress_4C23FA2A5B" xml:space="preserve"><value>Writing tool call: {0} ({1})</value></data>
@@ -3495,6 +3493,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Account_Back" xml:space="preserve"><value>Back</value></data>
   <data name="Account_SessionEnded" xml:space="preserve"><value>This account's sign-in has ended and it was removed from the list. Sign in again.</value></data>
   <data name="Account_HandleLocked" xml:space="preserve"><value>The handle can't change after you publish an asset package.</value></data>
+  <data name="Chat_Pending" xml:space="preserve"><value>Queued</value></data>
+  <data name="Chat_PendingTip" xml:space="preserve"><value>Sent when the current turn finishes.</value></data>
+  <data name="Chat_Pending_Images" xml:space="preserve"><value>{0} images</value></data>
+  <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>Remove from the queue (back into the input box if it's empty)</value></data>
+  <data name="Chat_SendQueuesTip" xml:space="preserve"><value>Enter — sent when the current turn finishes</value></data>
   <data name="EffectMaker_Uploaded" xml:space="preserve"><value>Published</value></data>
   <data name="EffectMaker_DownloadUploadedTip" xml:space="preserve"><value>You published this effect with this account. It isn't on this computer yet; click to download, install and open it.</value></data>
   <data name="Assets_LinkNotFound" xml:space="preserve"><value>The package '{0}' opened from the website isn't in the online list. It may have been hidden or removed. If you downloaded it from the website, install it with Import.</value></data>

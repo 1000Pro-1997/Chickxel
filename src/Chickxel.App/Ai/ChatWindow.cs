@@ -361,6 +361,9 @@ public sealed partial class ChatWindow : Window
             t.UpdateInputState();
             t.RefreshSteps();
         }
+        // 차례가 모두 끝났으면 기다리던 메시지를 보낸다(보이는 탭 먼저, 이 차례를 다 그린 뒤에).
+        if (RunningTab is null && _tabs.OrderByDescending(t => ReferenceEquals(t, _visible)).FirstOrDefault(t => t.HasPending) is { } next)
+            Dispatcher.UIThread.Post(next.SendQueued);
     }
 
     private void OnProjectReplaced(object? sender, EventArgs e)
@@ -906,6 +909,8 @@ public sealed partial class ChatWindow : Window
         private readonly ChatImageInput _imageInput;
         private readonly TextBox _input;
         private readonly Button _sendButton, _stopButton;
+        /// <summary>차례가 도는 동안(이 탭이든 다른 탭이든) 보낸 메시지의 대기 줄 — 어느 탭의 차례도 돌지 않게 되면 차례로 보낸다.</summary>
+        private readonly PendingMessages _pending;
         private readonly ToggleButton _scopeToggle;
         private readonly StackPanel _questionHost;
         private TaskCompletionSource<string?>? _questionCompletion;
@@ -980,6 +985,7 @@ public sealed partial class ChatWindow : Window
             _imageInput = new ChatImageInput(Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC));
             _input = _imageInput.Input;
             _input.AddHandler(InputElement.KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
+            _pending = new PendingMessages(_imageInput);
             var imageButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_B428204BA3, (_, _) => _imageInput.AttachFile()).Tip(UiStrings.S_ChatWindow_ChatTab_046C36A571);
             var canvasButton = Ui.Button(UiStrings.S_ChatWindow_ChatTab_F9D4399092, (_, _) => AttachCanvas()).Tip(UiStrings.S_ChatWindow_ChatTab_B9C7852D0E);
             _scopeToggle = new ToggleButton
@@ -1012,7 +1018,7 @@ public sealed partial class ChatWindow : Window
                 BorderBrush = AppTheme.BorderBrush,
                 BorderThickness = new Thickness(0, 1, 0, 0),
                 Padding = new Thickness(8, 6),
-                Child = new StackPanel { Children = { _questionHost, _imageInput, buttons } },
+                Child = new StackPanel { Children = { _questionHost, _pending, _imageInput, buttons } },
             };
             DockPanel.SetDock(inputArea, Dock.Bottom);
             _list = new StackPanel { Spacing = 4, Margin = new Thickness(10, 8) };
@@ -1546,6 +1552,7 @@ public sealed partial class ChatWindow : Window
         /// <summary>"새 대화" 단추: 도는 차례를 멈추고 세션을 잊은 뒤 지난 대화 목록을 보인다(입력란에 쓰면 새 대화가 시작됨).</summary>
         public void NewConversation()
         {
+            _pending.ClearAll();
             if (_turn is not null) StopTurn();
             _session?.Reset();
             ClearTranscript();
@@ -1554,16 +1561,44 @@ public sealed partial class ChatWindow : Window
             FocusInput();
         }
 
+        /// <summary>
+        /// 입력란의 메시지를 보낸다. 어느 탭의 차례가 돌고 있으면 대기 줄에 넣고, 차례가 모두 끝나면 보낸다
+        /// (실행취소 묶음은 하나만 열 수 있어 차례는 모든 탭을 통틀어 하나만 돈다).
+        /// </summary>
         private void Send()
         {
-            if (_session is not { } session || _turn is not null || _w._shutdown) return;
+            if (_session is null || _w._shutdown) return;
+            if (_turn is not null || _w.RunningTab is not null)
+            {
+                _pending.AddFromInput();
+                return;
+            }
             var text = _imageInput.StoredText();
-            if (text.Length == 0 && _imageInput.Attachments.Count == 0) return;
+            var attachments = _imageInput.Attachments.ToList();
+            if (text.Length == 0 && attachments.Count == 0) return;
+            if (SendMessage(text, attachments)) _imageInput.Clear();
+        }
+
+        /// <summary>대기 줄에 메시지가 있는지(차례가 끝나면 창이 <see cref="SendQueued"/>를 부름).</summary>
+        public bool HasPending => _pending.Count > 0;
+
+        /// <summary>어느 탭의 차례도 돌지 않으면 대기 줄의 다음 메시지를 보낸다(보내지 못하면 입력란이 비어 있을 때 그리로 되돌림).</summary>
+        public void SendQueued()
+        {
+            if (_session is null || _w._shutdown || _turn is not null || _w.RunningTab is not null || _pending.TakeNext() is not { } next) return;
+            if (!SendMessage(next.Text, next.Attachments) && _imageInput.StoredText().Length == 0 && _imageInput.Attachments.Count == 0)
+                _imageInput.Restore(next.Text, next.Attachments);
+        }
+
+        /// <summary>메시지 하나로 새 차례를 연다. 보냈으면 true.</summary>
+        private bool SendMessage(string text, IReadOnlyList<ChatAttachment> attachments)
+        {
+            if (_session is not { } session) return false;
             if (_cliPath != Provider.Locate(_w._settings))
             {
                 AddSystemLine(UiStrings.Chat_CliPathChanged, error: false, record: false);
                 Recheck();
-                return;
+                return false;
             }
             // 제목·차례 이름에 쓸 보이는 글.
             var plain = ChatImageTokens.Plain(text, UiStrings.Chat_Image_Label).Trim();
@@ -1575,13 +1610,6 @@ public sealed partial class ChatWindow : Window
                 _chat = null;
                 ShowView(TabView.Chat);
             }
-            // 실행취소 묶음은 하나만 열 수 있으므로 다른 탭의 차례가 끝날 때까지 보내지 않는다.
-            if (_w.RunningTab is { } other)
-            {
-                AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_2A1D03CC20,other.Provider.Name), error: false, record: false);
-                return;
-            }
-            var attachments = _imageInput.Attachments.ToList();
             session.WorkingDirectory = _w.ProjectFolder();
             session.Model = CurrentModel();
             // "지금 그림만": 보내는 순간 열린 문서로 편집 범위를 정하고(도구가 막음), AI에게도 알린다.
@@ -1613,9 +1641,8 @@ public sealed partial class ChatWindow : Window
                 _w._mcp.Tools.Scope = null;
                 _w._mcp.Tools.TurnImages = [];
                 AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_Send_E1ACACFBF7,Provider.Command,ex.Message), error: true, record: false);
-                return;
+                return false;
             }
-            _imageInput.Clear();
             _follow = true;
             if (_chat is null)
             {
@@ -1659,6 +1686,7 @@ public sealed partial class ChatWindow : Window
             SetPhase("wait", null);
             _progressTimer.Start();
             _w.OnTurnsChanged();
+            return true;
         }
 
         public void StopTurn()
@@ -2015,16 +2043,12 @@ public sealed partial class ChatWindow : Window
             RefreshSteps();
         }
 
-        /// <summary>보내기/정지 단추. 다른 탭의 차례가 돌면 보내기 도움말로 알린다.</summary>
+        /// <summary>보내기/정지 단추. 차례가 돌면 보내기 도움말로 대기 줄에 들어간다고 알린다.</summary>
         public void UpdateInputState()
         {
-            bool running = _turn is not null;
-            _sendButton.IsVisible = !running;
-            _stopButton.IsVisible = running;
-            var other = _w.RunningTab;
-            _sendButton.Tip(other is null || ReferenceEquals(other, this)
-                ? "Enter"
-                : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_UpdateInputState_25BD68A0C8,other.Provider.Name));
+            // 차례가 도는 동안에도 보내기를 둔다(대기 줄에 넣음).
+            _stopButton.IsVisible = _turn is not null;
+            _sendButton.Tip(_w.RunningTab is null ? "Enter" : UiStrings.Chat_SendQueuesTip);
             RefreshTurnActions();
         }
 

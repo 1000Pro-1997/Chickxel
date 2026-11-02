@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.74 (2026-11-02)
+### Send messages while the AI is working
+- In the AI chat and the Effect Maker AI, Enter and Send now work during a turn: the message waits in a Queued row above the input box and goes out as soon as the current turn ends (also when you stop it).
+- Each queued row shows the first line and the image count; its remove button puts the message back into an empty input box. New chat clears the queue.
+- A message sent while another AI tab is working is also queued instead of refused.
+
 ## v1.14.73 (2026-11-02)
 ### Your published effects follow you to any computer
 - The Effect Maker's My effects list now includes installed script effects you published with the current account, marked Published (the package's author ID is your handle).
