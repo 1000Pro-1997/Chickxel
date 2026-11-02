@@ -18,8 +18,11 @@ public sealed record CommunityOptions
 /// <summary>
 /// Chickxel 커뮤니티 서비스(<c>https://chickxel.com</c>) client: 앱 로그인(브라우저 + 127.0.0.1 되돌아오기 + PKCE), 내 정보 보기·고치기,
 /// 로그아웃, 갤러리에 그림 올리기, 에셋 패키지 올리기. <see cref="HttpClient"/>는 부르는 쪽이 준다(test는 가짜 handler).
-/// - 로그인한 요청은 <c>Authorization: Bearer</c> 세션 토큰을 보내고, 토큰은 <see cref="ICommunityTokenStore"/>에 둔다(기록에 남기지 않음).
-/// - 실패는 <see cref="CommunityException"/>(서버의 <c>{ error, message, detail }</c>를 읽음). 401이면 저장한 토큰을 지운다.
+/// - 여러 계정으로 로그인해 두고 그중 하나(<see cref="Saved"/>의 지금 계정)를 쓴다(<see cref="SwitchAccount"/>). 계정마다 세션 토큰과 마지막으로 받은
+///   내 정보를 <see cref="ICommunityAccountStore"/>에 둔다(토큰은 기록에 남기지 않음).
+/// - 로그인한 요청은 지금 계정의 <c>Authorization: Bearer</c> 세션 토큰을 보낸다.
+/// - 실패는 <see cref="CommunityException"/>(서버의 <c>{ error, message, detail }</c>를 읽음). 401이면 그 토큰의 계정을 목록에서 지운다
+///   (지금 계정이었으면 다른 계정으로 저절로 바꾸지 않고 로그아웃 상태가 됨 — 모르는 사이 다른 계정으로 올리지 않게).
 /// - 올리기는 다시 시도하지 않는다(같은 그림이 두 번 올라가지 않게). 부르는 쪽의 취소는 <see cref="OperationCanceledException"/>.
 /// </summary>
 public sealed class CommunityClient
@@ -29,44 +32,85 @@ public sealed class CommunityClient
     public const int MaxResponseBytes = 1 << 20;
 
     private readonly HttpClient _http;
-    private readonly ICommunityTokenStore _tokens;
+    private readonly ICommunityAccountStore _store;
     private readonly CommunityOptions _options;
     private readonly string _userAgent;
-    private string? _token;
-    private bool _loaded;
+    private readonly Lock _gate = new();
+    private CommunityAccounts? _accounts;
 
     /// <param name="baseUrl">사이트 주소. HTTPS만(이 컴퓨터의 개발 서버 <c>http://localhost</c>·<c>127.0.0.1</c>는 됨).</param>
-    public CommunityClient(HttpClient http, Uri baseUrl, string userAgent, ICommunityTokenStore tokens, CommunityOptions? options = null)
+    public CommunityClient(HttpClient http, Uri baseUrl, string userAgent, ICommunityAccountStore store, CommunityOptions? options = null)
     {
         if (!baseUrl.IsAbsoluteUri || !(baseUrl.Scheme == Uri.UriSchemeHttps || (baseUrl.Scheme == Uri.UriSchemeHttp && baseUrl.IsLoopback)))
             throw new ArgumentException(baseUrl.ToString(), nameof(baseUrl));
         _http = http;
         BaseUrl = baseUrl.AbsoluteUri.EndsWith('/') ? baseUrl : new Uri(baseUrl.AbsoluteUri + "/");
         _userAgent = userAgent;
-        _tokens = tokens;
+        _store = store;
         _options = options ?? new CommunityOptions();
     }
 
     public Uri BaseUrl { get; }
 
-    /// <summary>저장한 세션 토큰이 있는지(서버에서 끝났을 수 있음 — <see cref="GetMeAsync"/>로 확인).</summary>
+    /// <summary>
+    /// 계정 목록, 지금 계정, 그 정보(<see cref="User"/>) 중 하나가 바뀜(로그인·전환·로그아웃·끝난 세션·내 정보 받기).
+    /// 요청을 마친 스레드에서 올 수 있다.
+    /// </summary>
+    public event Action? AccountsChanged;
+
+    /// <summary>저장한 계정들(로그인한 차례)과 지금 쓰는 계정 번호를 한꺼번에 본 것(바뀌면 새 값 — 목록과 번호가 서로 어긋나지 않음).</summary>
+    public CommunityAccounts Saved => State;
+
+    /// <summary>지금 쓰는 계정이 있는지(서버에서 세션이 끝났을 수 있음 — <see cref="GetMeAsync"/>로 확인).</summary>
     public bool IsSignedIn => Token is not null;
 
-    /// <summary>마지막으로 받은 내 정보(로그인·<see cref="GetMeAsync"/>·<see cref="UpdateMeAsync"/>). 모르면 null.</summary>
+    /// <summary>지금 계정에서 이번 실행 중 서버에게 받은 내 정보(로그인·<see cref="GetMeAsync"/>·<see cref="UpdateMeAsync"/>). 아직 확인하지 않았으면 null.</summary>
     public CommunityUser? User { get; private set; }
 
-    private string? Token
+    private CommunityAccounts State
     {
         get
         {
-            if (!_loaded)
-            {
-                _token = _tokens.Load();
-                _loaded = true;
-            }
-            return _token;
+            lock (_gate) return _accounts ??= _store.Load();
         }
     }
+
+    private string? Token => State.Current?.Token;
+
+    /// <summary>
+    /// 저장한 계정 목록을 바꾼다: <paramref name="change"/>가 새 목록을 주면(null = 그대로) 저장하고 <see cref="AccountsChanged"/>를 알린다.
+    /// <paramref name="change"/>는 잠금 안에서 불리므로 <see cref="User"/>도 함께 바꿀 수 있다.
+    /// </summary>
+    private void Update(Func<CommunityAccounts, CommunityAccounts?> change)
+    {
+        lock (_gate)
+        {
+            var next = change(_accounts ??= _store.Load());
+            if (next is null) return;
+            _accounts = next;
+            _store.Save(next);
+        }
+        AccountsChanged?.Invoke();
+    }
+
+    private static int IndexOf(CommunityAccounts accounts, string token)
+    {
+        for (int i = 0; i < accounts.List.Count; i++)
+            if (accounts.List[i].Token == token) return i;
+        return -1;
+    }
+
+    /// <summary>
+    /// 저장한 계정 <paramref name="account"/>(같은 토큰의 칸)로 바꾼다(서버에 묻지 않음 — <see cref="User"/>는 <see cref="GetMeAsync"/>로 다시 확인할 때까지 null).
+    /// 그 사이 목록에서 빠졌거나 이미 그 계정이면 아무것도 하지 않는다.
+    /// </summary>
+    public void SwitchAccount(CommunityAccount account) => Update(accounts =>
+    {
+        int index = IndexOf(accounts, account.Token);
+        if (index < 0 || index == accounts.Active) return null;
+        User = null;
+        return accounts with { Active = index };
+    });
 
     // ───────────── 주소 ─────────────
 
@@ -99,7 +143,7 @@ public sealed class CommunityClient
 
     /// <summary>
     /// 브라우저 로그인: 127.0.0.1 빈 포트에서 기다리고, <paramref name="openBrowser"/>로 로그인 쪽을 연 뒤 되돌아온 code를 PKCE verifier와 함께
-    /// 토큰으로 바꿔 저장한다. <paramref name="provider"/>(google·github·discord)는 로그인 쪽이 그 단추로 바로 가게 하는 힌트다.
+    /// 토큰으로 바꿔 저장한다(<see cref="ExchangeCodeAsync"/>). <paramref name="provider"/>(google·github·discord)는 로그인 쪽이 그 단추로 바로 가게 하는 힌트다.
     /// </summary>
     public async Task<CommunityUser> SignInAsync(string? provider, Action<Uri> openBrowser, CancellationToken cancellationToken = default)
     {
@@ -110,29 +154,46 @@ public sealed class CommunityClient
         return await ExchangeCodeAsync(code, verifier, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary><c>POST /api/auth/app/token</c> <c>{ code, verifier }</c> → 토큰을 저장하고 내 정보를 돌려준다.</summary>
+    /// <summary>
+    /// <c>POST /api/auth/app/token</c> <c>{ code, verifier }</c> → 계정을 저장하고 지금 계정으로 삼은 뒤 내 정보를 돌려준다.
+    /// 이미 저장한 계정이면 그 칸의 토큰을 새것으로 바꾸고 예전 세션은 서버에서 지운다(기다리지 않음).
+    /// </summary>
     public async Task<CommunityUser> ExchangeCodeAsync(string code, string verifier, CancellationToken cancellationToken = default)
     {
         var body = new JsonObject { ["code"] = code, ["verifier"] = verifier };
         var json = await SendAsync(HttpMethod.Post, "api/auth/app/token", Json(body), auth: false, _options.RequestTimeout, cancellationToken).ConfigureAwait(false);
-        string token = CommunityJson.String(json?["token"]) is { Length: > 0 and <= 512 } t && t.All(c => c is > ' ' and < (char)127)
-            ? t : throw CommunityJson.Bad("token");
+        string token = CommunityJson.String(json?["token"]) is { } t && CommunityAccounts.IsValidToken(t) ? t : throw CommunityJson.Bad("token");
         var user = CommunityUser.Read(json!["user"]);
-        _tokens.Save(token);
-        _token = token;
-        _loaded = true;
-        User = user;
+        string? replaced = null;
+        Update(accounts =>
+        {
+            var list = accounts.List.ToList();
+            int i = list.FindIndex(a => a.User?.Id == user.Id);
+            if (i >= 0)
+            {
+                replaced = list[i].Token;
+                list[i] = new CommunityAccount(token, user);
+            }
+            else
+            {
+                i = list.Count;
+                list.Add(new CommunityAccount(token, user));
+            }
+            User = user;
+            return new CommunityAccounts(list, i);
+        });
+        if (replaced is not null && replaced != token) _ = RevokeAsync(replaced);
         return user;
     }
 
-    /// <summary><c>GET /api/me</c>. 로그인하지 않았거나 세션이 끝났으면(401, 토큰을 지움) null.</summary>
+    /// <summary><c>GET /api/me</c>(지금 계정). 로그인하지 않았거나 세션이 끝났으면(401, 그 계정을 지움) null. 받은 정보는 저장한 계정에도 적는다.</summary>
     public async Task<CommunityUser?> GetMeAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsSignedIn) return null;
+        if (Token is not { } token) return null;
         try
         {
-            var json = await SendAsync(HttpMethod.Get, "api/me", null, auth: true, _options.RequestTimeout, cancellationToken).ConfigureAwait(false);
-            return User = CommunityUser.Read(json);
+            var json = await SendAsync(HttpMethod.Get, "api/me", null, auth: true, _options.RequestTimeout, cancellationToken, token).ConfigureAwait(false);
+            return Remember(token, CommunityUser.Read(json));
         }
         catch (CommunityException ex) when (ex.Code == CommunityErrorCode.Unauthorized)
         {
@@ -140,39 +201,75 @@ public sealed class CommunityClient
         }
     }
 
-    /// <summary><c>PATCH /api/me</c> <c>{ name?, handle? }</c>(null인 칸은 보내지 않음) → 바뀐 내 정보.</summary>
+    /// <summary><c>PATCH /api/me</c> <c>{ name?, handle? }</c>(null인 칸은 보내지 않음, 지금 계정) → 바뀐 내 정보.</summary>
     public async Task<CommunityUser> UpdateMeAsync(string? name, string? handle, CancellationToken cancellationToken = default)
     {
         var body = new JsonObject();
         if (name is not null) body["name"] = name.Trim();
         if (handle is not null) body["handle"] = handle.Trim();
-        var json = await SendAsync(HttpMethod.Patch, "api/me", Json(body), auth: true, _options.RequestTimeout, cancellationToken).ConfigureAwait(false);
-        return User = CommunityUser.Read(json);
+        string token = Token ?? throw new CommunityException(CommunityErrorCode.Unauthorized);
+        var json = await SendAsync(HttpMethod.Patch, "api/me", Json(body), auth: true, _options.RequestTimeout, cancellationToken, token).ConfigureAwait(false);
+        return Remember(token, CommunityUser.Read(json));
+    }
+
+    /// <summary>계정 <paramref name="token"/>의 새 정보를 저장한다(지금 계정이면 <see cref="User"/>도). 그 사이 지운 계정이면 저장하지 않는다.</summary>
+    private CommunityUser Remember(string token, CommunityUser user)
+    {
+        Update(accounts =>
+        {
+            int i = IndexOf(accounts, token);
+            if (i < 0) return null;
+            if (i == accounts.Active) User = user;
+            var list = accounts.List.ToArray();
+            list[i] = list[i] with { User = user };
+            return accounts with { List = list };
+        });
+        return user;
     }
 
     /// <summary>
-    /// 로그아웃: 서버 세션을 지우고(<c>POST /api/auth/logout</c> — 연결 문제나 이미 끝난 세션이어도 계속) 저장한 토큰을 지운다.
+    /// 지금 계정에서 로그아웃: 서버 세션을 지우고(<c>POST /api/auth/logout</c> — 연결 문제나 이미 끝난 세션이어도 계속) 저장한 계정에서 뺀다.
+    /// 다른 계정이 남아 있어도 저절로 바꾸지 않는다(로그아웃 상태).
     /// </summary>
-    public async Task SignOutAsync(CancellationToken cancellationToken = default)
+    public Task SignOutAsync(CancellationToken cancellationToken = default)
+        => Token is { } token ? SignOutAsync(token, cancellationToken) : Task.CompletedTask;
+
+    /// <summary>저장한 계정 하나에서 로그아웃(지금 계정이 아니어도 됨). 나머지는 <see cref="SignOutAsync(CancellationToken)"/>와 같다.</summary>
+    public Task SignOutAsync(CommunityAccount account, CancellationToken cancellationToken = default) => SignOutAsync(account.Token, cancellationToken);
+
+    private async Task SignOutAsync(string token, CancellationToken cancellationToken)
     {
         try
         {
-            if (IsSignedIn) await SendAsync(HttpMethod.Post, "api/auth/logout", null, auth: true, _options.RequestTimeout, cancellationToken).ConfigureAwait(false);
+            await SendAsync(HttpMethod.Post, "api/auth/logout", null, auth: true, _options.RequestTimeout, cancellationToken, token).ConfigureAwait(false);
         }
         catch (CommunityException) { }
         finally
         {
-            ForgetToken();
+            Forget(token);
         }
     }
 
-    private void ForgetToken()
+    /// <summary>바꿔 쓴 예전 세션을 서버에서 지운다(실패해도 그만 — 서버의 세션 기한이 끝내 줌).</summary>
+    private async Task RevokeAsync(string token)
     {
-        _tokens.Clear();
-        _token = null;
-        _loaded = true;
-        User = null;
+        try
+        {
+            await SendAsync(HttpMethod.Post, "api/auth/logout", null, auth: true, _options.RequestTimeout, CancellationToken.None, token).ConfigureAwait(false);
+        }
+        catch (CommunityException) { }
     }
+
+    /// <summary>토큰 <paramref name="token"/>의 계정을 목록에서 뺀다. 지금 계정이었으면 로그아웃 상태(다른 계정으로 바꾸지 않음).</summary>
+    private void Forget(string token) => Update(accounts =>
+    {
+        int i = IndexOf(accounts, token);
+        if (i < 0) return null;
+        var list = accounts.List.Where((_, k) => k != i).ToArray();
+        if (accounts.Active == i) User = null;
+        int active = accounts.Active == i ? -1 : accounts.Active > i ? accounts.Active - 1 : accounts.Active;
+        return new CommunityAccounts(list, active);
+    });
 
     // ───────────── 올리기 ─────────────
 
@@ -271,12 +368,16 @@ public sealed class CommunityClient
 
     // ───────────── HTTP ─────────────
 
-    /// <summary>요청 하나(다시 시도 없음). 성공이면 JSON 객체(본문이 없으면 null), 아니면 <see cref="CommunityException"/>.</summary>
-    private async Task<JsonObject?> SendAsync(HttpMethod method, string path, HttpContent? content, bool auth, TimeSpan timeout, CancellationToken cancellationToken)
+    /// <summary>
+    /// 요청 하나(다시 시도 없음). 성공이면 JSON 객체(본문이 없으면 null), 아니면 <see cref="CommunityException"/>.
+    /// <paramref name="auth"/>면 계정 토큰 <paramref name="account"/>(null = 지금 계정)를 보내고, 401이면 그 계정을 지운다.
+    /// </summary>
+    private async Task<JsonObject?> SendAsync(HttpMethod method, string path, HttpContent? content, bool auth, TimeSpan timeout, CancellationToken cancellationToken,
+        string? account = null)
     {
         using var owned = content;
         string? token = null;
-        if (auth && (token = Token) is null) throw new CommunityException(CommunityErrorCode.Unauthorized);
+        if (auth && (token = account ?? Token) is null) throw new CommunityException(CommunityErrorCode.Unauthorized);
         using var attempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         attempt.CancelAfter(timeout);
         try
@@ -290,7 +391,7 @@ public sealed class CommunityClient
             if (!response.IsSuccessStatusCode)
             {
                 var error = Error(response, body);
-                if (auth && error.Code == CommunityErrorCode.Unauthorized) ForgetToken();
+                if (token is not null && error.Code == CommunityErrorCode.Unauthorized) Forget(token);
                 throw error;
             }
             if (body.Length == 0 || response.StatusCode == HttpStatusCode.NoContent) return null;

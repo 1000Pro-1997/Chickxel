@@ -18,6 +18,14 @@ public sealed record CommunityUser(string Id, string Handle, string Name, string
             CommunityJson.String(o["avatarUrl"]), CommunityJson.String(o["createdAt"]) ?? "",
             o["isAdmin"] is JsonValue admin && admin.TryGetValue(out bool isAdmin) && isAdmin);
     }
+
+    /// <summary><see cref="Read"/>가 다시 읽는 모양(저장한 계정 목록에 씀).</summary>
+    internal JsonObject ToJson()
+    {
+        var o = new JsonObject { ["id"] = Id, ["handle"] = Handle, ["name"] = Name, ["createdAt"] = CreatedAt, ["isAdmin"] = IsAdmin };
+        if (AvatarUrl is not null) o["avatarUrl"] = AvatarUrl;
+        return o;
+    }
 }
 
 /// <summary>올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 그림 주소(사이트 기준 경로), 크기, 프레임 수, 형식(png·gif).</summary>

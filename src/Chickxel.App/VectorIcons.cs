@@ -133,6 +133,8 @@ public enum VectorIcon
     LogOut,
     /// <summary>원 안의 사람(계정 — Lucide circle-user).</summary>
     CircleUser,
+    /// <summary>사람과 더하기(다른 계정 추가 — Lucide user-plus).</summary>
+    UserPlus,
     /// <summary>글자 두 개와 화살표(효과 이름 번역 — Lucide languages).</summary>
     Languages,
     /// <summary>차양 달린 가게(에셋 상점 — Lucide store).</summary>
@@ -364,6 +366,7 @@ public static class VectorIcons
         VectorIcon.LogIn => ["m10 17 5-5-5-5", "M15 12H3", "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"],
         VectorIcon.LogOut => ["m16 17 5-5-5-5", "M21 12H9", "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"],
         VectorIcon.CircleUser => [Circle(12, 12, 10), Circle(12, 10, 3), "M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"],
+        VectorIcon.UserPlus => ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", Circle(9, 7, 4), "M19 8v6", "M22 11h-6"],
         VectorIcon.Languages => ["m5 8 6 6", "m4 14 6-6 2-3", "M2 5h12", "M7 2h1", "m22 22-5-10-5 10", "M14 18h6"],
         VectorIcon.Store =>
         [

@@ -217,13 +217,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Child = statusBar,
         };
 
-        var menu = BuildMenu();
+        // 메뉴 줄: 왼쪽 메뉴, 오른쪽 끝 계정 단추(로그인·계정 전환)
+        var account = new AccountButton(this);
+        var menuRow = new DockPanel { Background = AppTheme.PanelBrush };
+        DockPanel.SetDock(account, Dock.Right);
+        menuRow.Children.Add(account);
+        menuRow.Children.Add(BuildMenu());
         var contextBar = BuildContextBar();
         var root = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(menu, Dock.Top);
+        DockPanel.SetDock(menuRow, Dock.Top);
         DockPanel.SetDock(contextBar, Dock.Top);
         DockPanel.SetDock(status, Dock.Bottom);
-        root.Children.Add(menu);
+        root.Children.Add(menuRow);
         root.Children.Add(contextBar);
         root.Children.Add(status);
         root.Children.Add(_splitFiles);

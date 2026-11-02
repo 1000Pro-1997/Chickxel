@@ -6,32 +6,36 @@ using Chickxel.Core.Community;
 namespace Chickxel.App;
 
 /// <summary>
-/// Chickxel 계정 창(도움말 메뉴 > Chickxel 계정…, 로그인이 필요한 올리기에서도 열림).
+/// Chickxel 계정 창(메뉴 줄 오른쪽 계정 단추, 도움말 메뉴 > Chickxel 계정…, 로그인이 필요한 올리기에서도 열림).
 /// 로그인하지 않았으면 Google·GitHub·Discord 단추: 누르면 브라우저에 로그인 쪽을 열고(그 제공자를 골라 둠) 127.0.0.1 되돌아오기를 기다린다.
-/// 로그인했으면 프로필 그림·이름·핸들, 이름·핸들 고치기(<c>PATCH /api/me</c>), 내 갤러리 쪽 열기, 로그아웃.
-/// 창을 닫으면 기다리던 로그인은 취소된다.
+/// 로그인했으면 프로필 그림·이름·핸들, 이름·핸들 고치기(<c>PATCH /api/me</c>), 내 갤러리 쪽 열기, 로그아웃, 다른 계정 추가.
+/// 이 컴퓨터에 로그인해 둔 다른 계정은 아래 목록에서 바꾸거나 로그아웃한다. 창을 닫으면 기다리던 로그인은 취소된다.
 /// </summary>
 public sealed class AccountDialog : DialogBase
 {
-    private const int MaxAvatarBytes = 2 << 20;
-
     private readonly StackPanel _view = new() { Spacing = 6, Width = 380 };
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, IsVisible = false };
     private readonly string? _reason;
     private CancellationTokenSource? _work;
     private Uri? _loginUrl;
     private bool _busy;
+    /// <summary>지금 계정을 두고 다른 계정으로 로그인하는 중(로그인 단추 화면).</summary>
+    private bool _adding;
 
-    /// <summary>창을 띄운다(닫힐 때까지 기다림). <paramref name="reason"/>은 맨 위에 보일 안내(로그인이 필요한 까닭). 닫을 때 로그인돼 있으면 true.</summary>
-    public static bool Show(Window owner, string? reason = null)
+    /// <summary>
+    /// 창을 띄운다(닫힐 때까지 기다림). <paramref name="reason"/>은 맨 위에 보일 안내(로그인이 필요한 까닭).
+    /// <paramref name="addAccount"/>면 처음부터 다른 계정 추가 화면. 닫을 때 로그인돼 있으면 true.
+    /// </summary>
+    public static bool Show(Window owner, string? reason = null, bool addAccount = false)
     {
-        new AccountDialog(reason).ShowDialog(owner);
+        new AccountDialog(reason, addAccount).ShowDialog(owner);
         return AppCommunity.Client.User is not null;
     }
 
-    private AccountDialog(string? reason) : base(UiStrings.Account_Title)
+    private AccountDialog(string? reason, bool addAccount) : base(UiStrings.Account_Title)
     {
         _reason = reason;
+        _adding = addAccount;
         CloseOnly();
         Body.Children.Add(_view);
         Body.Children.Add(_status);
@@ -51,17 +55,20 @@ public sealed class AccountDialog : DialogBase
         _status.Foreground = error ? AppTheme.UnsavedBrush : AppTheme.DimTextBrush;
     }
 
-    /// <summary>저장한 세션이 있으면 서버에 내 정보를 물어 다시 그린다(끝난 세션이면 로그인 단추로).</summary>
+    /// <summary>
+    /// 지금 계정을 아직 확인하지 않았으면 서버에 내 정보를 물어 다시 그린다(끝난 세션이면 안내하고 로그인 단추로).
+    /// 로그인이 필요해서 열린 창이면 확인되자마자 닫는다.
+    /// </summary>
     private async void Refresh()
     {
-        if (!Client.IsSignedIn || _busy) return;
+        if (!Client.IsSignedIn || Client.User is not null || _busy) return;
         _busy = true;
         SetStatus(UiStrings.Account_Loading);
         Build();
         try
         {
-            await Client.GetMeAsync(Token());
-            SetStatus(null);
+            var user = await Client.GetMeAsync(Token());
+            SetStatus(user is null ? UiStrings.Account_SessionEnded : null, error: user is null);
         }
         catch (OperationCanceledException)
         {
@@ -76,6 +83,13 @@ public sealed class AccountDialog : DialogBase
             _busy = false;
         }
         Build();
+        CloseIfDone();
+    }
+
+    /// <summary>로그인이 필요해서 열린 창이면 확인된 계정이 생기자마자 닫고 하던 일로 돌아간다.</summary>
+    private void CloseIfDone()
+    {
+        if (_reason is not null && Client.User is not null && IsVisible) DialogResult = DialogResult.OK;
     }
 
     private CancellationToken Token()
@@ -93,14 +107,16 @@ public sealed class AccountDialog : DialogBase
         if (_reason is not null && Client.User is null)
             _view.Children.Add(new TextBlock { Text = _reason, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.WarningBrush });
         if (_loginUrl is not null) BuildWaiting();
+        else if (_adding) BuildSignIn(adding: true);
         else if (Client.User is { } user) BuildSignedIn(user);
         else if (Client.IsSignedIn) BuildChecking();
-        else BuildSignedOut();
+        else BuildSignIn(adding: false);
+        if (_loginUrl is null && !_adding) BuildOtherAccounts();
     }
 
-    private void BuildSignedOut()
+    private void BuildSignIn(bool adding)
     {
-        _view.Children.Add(Text(UiStrings.Account_Intro));
+        _view.Children.Add(Text(adding ? UiStrings.Account_AddIntro : UiStrings.Account_Intro));
         foreach (var (provider, icon, name) in new[]
                  {
                      ("google", VectorIcon.Google, "Google"),
@@ -116,6 +132,18 @@ public sealed class AccountDialog : DialogBase
             _view.Children.Add(button);
         }
         _view.Children.Add(Dim(UiStrings.Account_BrowserNote));
+        if (adding && Client.Saved.List.Count > 0)
+        {
+            var back = Ui.Button(VectorIcon.ChevronLeft, UiStrings.Account_Back, (_, _) =>
+            {
+                _adding = false;
+                SetStatus(null);
+                Build();
+                Refresh();
+            });
+            back.HorizontalAlignment = HorizontalAlignment.Left;
+            _view.Children.Add(back);
+        }
     }
 
     private void BuildWaiting()
@@ -133,13 +161,9 @@ public sealed class AccountDialog : DialogBase
 
     private void BuildSignedIn(CommunityUser user)
     {
-        var avatar = new Border
-        {
-            Width = 56, Height = 56, CornerRadius = new CornerRadius(28), ClipToBounds = true, Background = AppTheme.PanelBrush,
-            Child = new IconView(VectorIcon.CircleUser, AppTheme.DimTextBrush) { Width = 40, Height = 40 },
-            VerticalAlignment = VerticalAlignment.Top,
-        };
-        LoadAvatar(avatar, user.AvatarUrl);
+        var avatar = AppCommunity.Avatar(user, 56);
+        avatar.Background = AppTheme.PanelBrush;
+        avatar.VerticalAlignment = VerticalAlignment.Top;
         var names = new StackPanel
         {
             Spacing = 2, Margin = new Thickness(10, 4, 0, 0), VerticalAlignment = VerticalAlignment.Center,
@@ -160,8 +184,40 @@ public sealed class AccountDialog : DialogBase
         _view.Children.Add(Ui.Group(UiStrings.Account_Profile, Ui.Stack(grid, save)));
 
         var page = Ui.Button(VectorIcon.ExternalLink, UiStrings.Account_OpenPage, (_, _) => AppCommunity.Open(this, Client.UserPageUrl(user.Handle)));
-        var logout = Ui.Button(VectorIcon.LogOut, UiStrings.Account_SignOut, (_, _) => SignOut());
+        var logout = Ui.Button(VectorIcon.LogOut, UiStrings.Account_SignOut, (_, _) => SignOut(null));
+        var add = Ui.Button(VectorIcon.UserPlus, UiStrings.Account_AddAccount, (_, _) =>
+        {
+            _adding = true;
+            SetStatus(null);
+            Build();
+        });
         _view.Children.Add(Ui.Row(page, logout));
+        _view.Children.Add(Ui.Row(add));
+    }
+
+    /// <summary>이 컴퓨터에 로그인해 둔 다른 계정(지금 계정 빼고): 프로필 그림·이름·핸들, 전환, 로그아웃.</summary>
+    private void BuildOtherAccounts()
+    {
+        var saved = Client.Saved;
+        var rows = new StackPanel { Spacing = 4 };
+        for (int i = 0; i < saved.List.Count; i++)
+        {
+            if (i == saved.Active) continue;
+            var account = saved.List[i];
+            var names = new StackPanel { Spacing = 0, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            names.Children.Add(new TextBlock { Text = AppCommunity.DisplayName(account.User), Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (account.User is { } user) names.Children.Add(new TextBlock { Text = "@" + user.Handle, Foreground = AppTheme.DimTextBrush, FontSize = 11 });
+            var switchButton = Ui.Button(UiStrings.Account_Switch, (_, _) => SwitchTo(account));
+            var signOut = Ui.IconButton(VectorIcon.LogOut, F(UiStrings.Account_SignOutOf, AppCommunity.DisplayName(account.User)), (_, _) => SignOut(account));
+            var buttons = Ui.Row(switchButton, signOut);
+            buttons.VerticalAlignment = VerticalAlignment.Center;
+            var row = new DockPanel();
+            DockPanel.SetDock(buttons, Dock.Right);
+            row.Children.Add(buttons);
+            row.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { AppCommunity.Avatar(account.User, 28), names } });
+            rows.Children.Add(row);
+        }
+        if (rows.Children.Count > 0) _view.Children.Add(Ui.Group(UiStrings.Account_SavedAccounts, rows));
     }
 
     /// <summary>이름표 | 칸 한 줄(이름표 옆 풍선 도움말 선택).</summary>
@@ -183,29 +239,6 @@ public sealed class AccountDialog : DialogBase
 
     private static TextBlock Dim(string text) => new() { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush };
 
-    /// <summary>프로필 그림을 받아 둥근 칸에 넣는다(HTTPS·2 MiB 이하, 못 받으면 사람 아이콘 그대로).</summary>
-    private async void LoadAvatar(Border host, string? url)
-    {
-        if (Client.Resolve(url) is not { } uri) return;
-        try
-        {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            using var response = await AvatarHttp.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
-            if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaxAvatarBytes) return;
-            byte[] data = await response.Content.ReadAsByteArrayAsync(timeout.Token);
-            if (data.Length > MaxAvatarBytes) return;
-            using var stream = new MemoryStream(data, writable: false);
-            host.Child = new Image { Source = new Bitmap(stream), Stretch = Stretch.UniformToFill, Width = host.Width, Height = host.Height };
-        }
-        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or IOException or ArgumentException or InvalidOperationException
-                                       or NotSupportedException)
-        {
-            // 그림이 없어도 계정 창은 그대로 쓴다.
-        }
-    }
-
-    private static readonly HttpClient AvatarHttp = new() { Timeout = Timeout.InfiniteTimeSpan };
-
     // ───────────── 동작 ─────────────
 
     private async void SignIn(string provider)
@@ -224,6 +257,7 @@ public sealed class AccountDialog : DialogBase
                     Build();
                 });
             }, Token());
+            _adding = false;
         }
         catch (OperationCanceledException)
         {
@@ -245,6 +279,16 @@ public sealed class AccountDialog : DialogBase
         // 로그인이 필요해서 열린 창이면 로그인하자마자 닫고 하던 일로 돌아간다.
         if (_reason is not null && Client.User is not null && IsVisible) DialogResult = DialogResult.OK;
         else Activate();
+    }
+
+    /// <summary>저장한 계정 <paramref name="account"/>로 바꾸고 서버에 확인한다(끝난 세션이면 목록에서 빠지고 안내).</summary>
+    private void SwitchTo(CommunityAccount account)
+    {
+        if (_busy) return;
+        Client.SwitchAccount(account);
+        SetStatus(null);
+        Build();
+        Refresh();
     }
 
     private async void SaveProfile(string? name, string? handle)
@@ -285,13 +329,15 @@ public sealed class AccountDialog : DialogBase
         Build();
     }
 
-    private async void SignOut()
+    /// <summary>계정 <paramref name="account"/>(null = 지금 계정)에서 로그아웃한다. 다른 계정이 남아도 저절로 바꾸지 않는다.</summary>
+    private async void SignOut(CommunityAccount? account)
     {
         if (_busy) return;
         _busy = true;
         try
         {
-            await Client.SignOutAsync(Token());
+            if (account is null) await Client.SignOutAsync(Token());
+            else await Client.SignOutAsync(account, Token());
             SetStatus(UiStrings.Account_SignedOut);
         }
         catch (OperationCanceledException)

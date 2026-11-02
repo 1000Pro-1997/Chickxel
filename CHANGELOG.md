@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.70 (2026-11-02)
+### Account button in the menu bar, with several accounts to switch between
+- The right end of the menu bar has an account button: your account's name (and its profile picture once checked), or "Sign In". It opens the account window, or the account menu once you have signed in.
+- You can stay signed in to several accounts. Pick one in the account menu to switch to it (gallery and asset uploads go to that account), or use **Add Another Account…** to sign in to another one while keeping the current one.
+- Signing out removes only that account and never switches to another one by itself. The account window also lists the other accounts on this computer, each with Switch and sign-out buttons.
+- An account whose session has ended is dropped from the list with a prompt to sign in again. The account you signed in with in earlier versions carries over.
+
 ## v1.14.69 (2026-11-01)
 ### Script effects pick the layer they read from a dropdown
 - New script setting type `layer`: the effects window shows a dropdown of the document's layers (top to bottom, as in the timeline), and the Effect Maker lists the preview scene's layers. A saved name that isn't in the document stays in the list marked missing.

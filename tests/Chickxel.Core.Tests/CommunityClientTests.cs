@@ -34,12 +34,16 @@ public class CommunityClientTests
         }
     }
 
-    private sealed class MemoryTokens : ICommunityTokenStore
+    private sealed class MemoryAccounts : ICommunityAccountStore
     {
-        public string? Token;
-        public string? Load() => Token;
-        public void Save(string token) => Token = token;
-        public void Clear() => Token = null;
+        public CommunityAccounts Saved = CommunityAccounts.Empty;
+        /// <summary>저장한 지금 계정의 토큰.</summary>
+        public string? Token => Saved.Current?.Token;
+        public CommunityAccounts Load() => Saved;
+        public void Save(CommunityAccounts accounts) => Saved = accounts;
+
+        /// <summary>토큰 하나를 지금 계정으로 저장한 곳.</summary>
+        public static MemoryAccounts With(string token) => new() { Saved = new([new CommunityAccount(token, null)], 0) };
     }
 
     private static HttpResponseMessage Json(HttpStatusCode status, string json)
@@ -47,10 +51,10 @@ public class CommunityClientTests
 
     private const string UserJson = """{ "id": "abcdefghijklmnop", "handle": "pixel-cat", "name": "Pixel Cat", "avatarUrl": "https://cdn.example/a.png", "createdAt": "2026-11-01T00:00:00Z", "isAdmin": false }""";
 
-    private static (CommunityClient Client, FakeHandler Handler, MemoryTokens Tokens) Make(string? token = "secret-token")
+    private static (CommunityClient Client, FakeHandler Handler, MemoryAccounts Tokens) Make(string? token = "secret-token")
     {
         var handler = new FakeHandler();
-        var tokens = new MemoryTokens { Token = token };
+        var tokens = token is null ? new MemoryAccounts() : MemoryAccounts.With(token);
         return (new CommunityClient(new HttpClient(handler), Site, "Chickxel-test/1.0", tokens), handler, tokens);
     }
 
@@ -289,7 +293,7 @@ public class CommunityClientTests
         Assert.Equal("https://chickxel.com/api/assets/pixel-cat.missing", handler.Requests[^1].Url);
         Assert.Equal("secret-token", tokens.Token);
 
-        var broken = new CommunityClient(new HttpClient(new ThrowingHandler()), Site, "Chickxel-test/1.0", new MemoryTokens());
+        var broken = new CommunityClient(new HttpClient(new ThrowingHandler()), Site, "Chickxel-test/1.0", new MemoryAccounts());
         var error = await Assert.ThrowsAsync<CommunityException>(() => broken.GetPackageAsync("pixel-cat.neon"));
         Assert.Equal(CommunityErrorCode.Network, error.Code);
     }
@@ -304,6 +308,61 @@ public class CommunityClientTests
         Assert.Equal(("https://chickxel.com/api/auth/logout", "Bearer secret-token"), (sent.Url, sent.Authorization));
         Assert.Null(tokens.Token);
         Assert.False(client.IsSignedIn);
+    }
+
+    [Fact]
+    public async Task Accounts_SwitchSendsTheChosenToken_ExpiredSessionDoesNotFallBackToAnother_AndSigningInAgainReplacesTheSameUser()
+    {
+        var cat = new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", null, "", false);
+        var (client, handler, store) = Make();
+        store.Saved = new([new CommunityAccount("token-a", cat), new CommunityAccount("token-b", null)], 0);
+        int changes = 0;
+        client.AccountsChanged += () => changes++;
+
+        // 내 정보를 받으면 저장한 계정의 정보도 새것으로.
+        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.OK, UserJson.Replace("Pixel Cat", "Renamed Cat"));
+        Assert.Equal("Renamed Cat", (await client.GetMeAsync())!.Name);
+        Assert.Equal("Renamed Cat", store.Saved.List[0].User!.Name);
+
+        // 바꾸면 확인 전까지 User는 모름, 요청은 고른 계정의 토큰.
+        client.SwitchAccount(client.Saved.List[1]);
+        Assert.Equal((1, true), (client.Saved.Active, client.IsSignedIn));
+        Assert.Null(client.User);
+        Assert.Equal(1, store.Saved.Active);
+        handler.Routes["GET /api/me"] = _ => Json(HttpStatusCode.Unauthorized, """{ "error": "unauthorized" }""");
+        Assert.Null(await client.GetMeAsync());
+        Assert.Equal("Bearer token-b", handler.Requests[^1].Authorization);
+
+        // 끝난 세션의 계정만 빠지고, 남은 계정으로 저절로 바꾸지 않는다.
+        Assert.Equal("token-a", Assert.Single(client.Saved.List).Token);
+        Assert.Equal(-1, client.Saved.Active);
+        Assert.False(client.IsSignedIn);
+        var upload = await Assert.ThrowsAsync<CommunityException>(() => client.UploadArtAsync(new ArtUpload([1], CommunityArtType.Png, "t", "", [])));
+        Assert.Equal(CommunityErrorCode.Unauthorized, upload.Code);
+        Assert.Equal(3, changes);
+
+        // 같은 사용자로 다시 로그인하면 그 칸의 토큰만 바꾸고 예전 세션은 서버에서 지운다.
+        var revoked = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        handler.Routes["POST /api/auth/logout"] = sent =>
+        {
+            revoked.TrySetResult(sent.Authorization);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        };
+        handler.Routes["POST /api/auth/app/token"] = _ => Json(HttpStatusCode.OK, $$"""{ "token": "token-a2", "user": {{UserJson}} }""");
+        await client.ExchangeCodeAsync("code", "verifier");
+        Assert.Equal("Bearer token-a", await revoked.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(("token-a2", 0), (Assert.Single(store.Saved.List).Token, store.Saved.Active));
+        Assert.Equal("pixel-cat", client.User!.Handle);
+
+        // 다른 사용자는 목록 끝에 더해 지금 계정으로. 지금 계정이 아닌 계정에서도 로그아웃할 수 있다.
+        handler.Routes["POST /api/auth/app/token"] = _ => Json(HttpStatusCode.OK,
+            $$"""{ "token": "token-c", "user": {{UserJson.Replace("abcdefghijklmnop", "qrstuvwxyz012345").Replace("pixel-cat", "dot-dog")}} }""");
+        await client.ExchangeCodeAsync("code", "verifier");
+        Assert.Equal((2, 1), (client.Saved.List.Count, client.Saved.Active));
+        await client.SignOutAsync(client.Saved.List[0]);
+        Assert.Equal("Bearer token-a2", handler.Requests[^1].Authorization);
+        Assert.Equal(("token-c", 0), (Assert.Single(client.Saved.List).Token, client.Saved.Active));
+        Assert.Equal("dot-dog", client.User!.Handle);
     }
 
     // ───────────── 오류 ─────────────
@@ -355,23 +414,23 @@ public class CommunityClientTests
     [Fact]
     public async Task NetworkFailureAndTimeout_AreMapped_AndCallerCancelStaysCancel()
     {
-        var failing = new CommunityClient(new HttpClient(new ThrowingHandler()), Site, "t", new MemoryTokens { Token = "x" });
+        var failing = new CommunityClient(new HttpClient(new ThrowingHandler()), Site, "t", MemoryAccounts.With("x"));
         Assert.Equal(CommunityErrorCode.Network, (await Assert.ThrowsAsync<CommunityException>(() => failing.GetMeAsync())).Code);
 
-        var slow = new CommunityClient(new HttpClient(new HangingHandler()), Site, "t", new MemoryTokens { Token = "x" },
+        var slow = new CommunityClient(new HttpClient(new HangingHandler()), Site, "t", MemoryAccounts.With("x"),
             new CommunityOptions { RequestTimeout = TimeSpan.FromMilliseconds(100) });
         Assert.Equal(CommunityErrorCode.Timeout, (await Assert.ThrowsAsync<CommunityException>(() => slow.GetMeAsync())).Code);
 
         using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        var patient = new CommunityClient(new HttpClient(new HangingHandler()), Site, "t", new MemoryTokens { Token = "x" });
+        var patient = new CommunityClient(new HttpClient(new HangingHandler()), Site, "t", MemoryAccounts.With("x"));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => patient.GetMeAsync(cancel.Token));
     }
 
     [Fact]
     public void BaseUrl_MustBeHttpsExceptLocalDevelopment_AndLoginUrlCarriesTheAppFields()
     {
-        Assert.Throws<ArgumentException>(() => new CommunityClient(new HttpClient(), new Uri("http://chickxel.com/"), "t", new MemoryTokens()));
-        var local = new CommunityClient(new HttpClient(), new Uri("http://localhost:8787"), "t", new MemoryTokens());
+        Assert.Throws<ArgumentException>(() => new CommunityClient(new HttpClient(), new Uri("http://chickxel.com/"), "t", new MemoryAccounts()));
+        var local = new CommunityClient(new HttpClient(), new Uri("http://localhost:8787"), "t", new MemoryAccounts());
         Assert.Equal("http://localhost:8787/packages/a.b", local.PackagePageUrl("a.b").AbsoluteUri);
 
         var (client, _, _) = Make();
@@ -400,23 +459,31 @@ public class CommunityClientTests
     }
 
     [Fact]
-    public void TokenStore_RoundTrips_AndDoesNotWriteThePlainTokenOnWindows()
+    public void AccountStore_RoundTrips_ReadsTheOldSingleTokenFile_AndDoesNotWriteThePlainTokenOnWindows()
     {
         using var dir = new TempDir();
-        var store = new CommunityTokenStore(dir.File(Path.Combine("sub", "session.bin")));
-        Assert.Null(store.Load());
-        store.Save("token-value-123");
-        Assert.Equal("token-value-123", store.Load());
+        var store = new CommunityAccountStore(dir.File(Path.Combine("sub", "session.bin")));
+        Assert.Same(CommunityAccounts.Empty, store.Load());
+        var cat = new CommunityUser("abcdefghijklmnop", "pixel-cat", "Pixel Cat", "/files/a.png", "2026-11-01T00:00:00Z", true);
+        store.Save(new([new CommunityAccount("token-value-123", cat), new CommunityAccount("token-value-456", null)], 1));
+        var loaded = store.Load();
+        Assert.Equal(1, loaded.Active);
+        Assert.Equal(new[] { new CommunityAccount("token-value-123", cat), new CommunityAccount("token-value-456", null) }, loaded.List);
         byte[] raw = File.ReadAllBytes(store.Path);
         if (OperatingSystem.IsWindows()) Assert.DoesNotContain("token-value-123", Encoding.Latin1.GetString(raw));
         else Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(store.Path));
-        store.Clear();
-        Assert.Null(store.Load());
+        store.Save(CommunityAccounts.Empty);
+        Assert.Same(CommunityAccounts.Empty, store.Load());
         Assert.False(File.Exists(store.Path));
 
         // 손상된 파일은 로그인하지 않은 것으로 본다.
         File.WriteAllBytes(store.Path, [1, 2, 3]);
-        Assert.Null(store.Load());
+        Assert.Empty(store.Load().List);
+
+        // 예전 파일(토큰 글자만)은 그 토큰 하나를 쓰는 목록. 잘못된 칸을 버려도 지금 계정 번호는 같은 계정을 가리킨다.
+        Assert.Equal(new CommunityAccount("old-token", null), CommunityAccounts.Parse("old-token\n").Current);
+        var skipped = CommunityAccounts.Parse("""{ "active": 2, "accounts": [{ "token": "bad token" }, { "token": "a" }, { "token": "b" }] }""");
+        Assert.Equal(("b", 1), (skipped.Current!.Token, skipped.Active));
     }
 
     /// <summary>알림을 바로(같은 스레드에서) 받는 진행 표시(<see cref="Progress{T}"/>는 나중에 알림).</summary>
