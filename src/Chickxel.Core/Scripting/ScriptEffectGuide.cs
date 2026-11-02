@@ -35,6 +35,7 @@ public static class ScriptEffectGuide
             framesDefault: AssetPreview.PackageFrames.ToString(CultureInfo.InvariantCulture)));
         Rule(md, ScriptGuideStrings.Guide_RuleRender);
         Rule(md, ScriptGuideStrings.Guide_RuleDeterministic);
+        Rule(md, ScriptGuideStrings.Guide_RuleRandom);
         Rule(md, ScriptGuideStrings.FormatGuide_RuleLimits(
             seconds: limits.Timeout.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture),
             statements: limits.MaxStatements.ToString("N0", CultureInfo.InvariantCulture),

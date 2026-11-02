@@ -8,6 +8,10 @@ When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This 
 - Each queued row shows the first line and the image count; its remove button puts the message back into an empty input box. New chat clears the queue.
 - A message sent while another AI tab is working is also queued instead of refused.
 
+### The Effect Maker AI uses seeded randomness
+- For explosions, debris, particles, sparks, glitches and other random looks, the AI now uses randomness freely and adds a Seed setting: each seed gives a different pattern and the same seed always looks the same.
+- Random values come from the seeded `ctx.hash`/`ctx.random`, keyed by stable things like the particle index, so pieces keep their path from frame to frame. The effect-writing guide has the same rule.
+
 ## v1.14.73 (2026-11-02)
 ### Your published effects follow you to any computer
 - The Effect Maker's My effects list now includes installed script effects you published with the current account, marked Published (the package's author ID is your handle).
