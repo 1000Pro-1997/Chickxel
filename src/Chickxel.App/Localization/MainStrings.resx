@@ -27,6 +27,12 @@
   <data name="Menu_Tools_MirrorAtPivot" xml:space="preserve">
     <value>대칭: 피벗 기준</value>
   </data>
+  <data name="Menu_Tools_Selection" xml:space="preserve">
+    <value>선택</value>
+  </data>
+  <data name="Menu_Tools_DrawOptions" xml:space="preserve">
+    <value>그리기 옵션</value>
+  </data>
   <data name="Tool_Eraser_Name" xml:space="preserve">
     <value>지우개</value>
   </data>

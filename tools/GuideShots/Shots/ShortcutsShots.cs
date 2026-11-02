@@ -111,8 +111,28 @@ internal static class ShortcutsShots
     [Shot("shortcuts-transform")]
     public static void Transform(ShotKit k) => MenuShot(k, 1, ("Flip horizontal", "Canvas size"));
 
+    // 도구 메뉴: 도구 키(①)와 펼친 그리기 옵션 하위 메뉴의 옵션·브러시 키(②).
     [Shot("shortcuts-tools")]
-    public static void Tools(ShotKit k) => MenuShot(k, 4, ("Pencil", "9-slice"), ("Filled shapes", "Primary"));
+    public static void Tools(ShotKit k)
+    {
+        var main = Open(k);
+        CleanTitle(main);
+        var menu = StartMenus.Open(k, main, 4);
+        var options = StartMenus.Item(menu, "Drawing options");
+        options.IsSubMenuOpen = true;
+        k.Settle(400);
+        var first = StartMenus.Item(options, "Filled shapes");
+        var last = StartMenus.Item(options, "Primary");
+        var sub = StartMenus.Rows(options.Items.OfType<MenuItem>().First(), options.Items.OfType<MenuItem>().Last(), main).Inflate(6);
+        var crop = StartMenus.Crop(main, menu);
+        crop = crop.Union(new Rect(sub.X, sub.Y, sub.Width + 16, sub.Height + 12));
+        k.Save(main, crop: crop, marks:
+        [
+            StartMenus.Keys(menu, StartMenus.Item(menu, "Pencil"), StartMenus.Item(menu, "9-slice"), main),
+            StartMenus.Keys(options, first, last, main),
+        ]);
+        CloseMenu(k, main);
+    }
 
     [Shot("shortcuts-view")]
     public static void View(ShotKit k) => MenuShot(k, 2, ("Zoom in", "Onion skin"));

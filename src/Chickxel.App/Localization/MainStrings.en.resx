@@ -9,6 +9,8 @@
   <data name="Tool_GradientPencil_Name" xml:space="preserve"><value>Gradient Pencil</value></data>
   <data name="Tool_GradientPencil_Hint" xml:space="preserve"><value>Draws like the pencil with colors from a gradient (tool settings: whole stroke or repeat) · Shift+click: line from last point · Alt+click: pick color</value></data>
   <data name="Menu_Tools_MirrorAtPivot" xml:space="preserve"><value>Mirror around pivot</value></data>
+  <data name="Menu_Tools_Selection" xml:space="preserve"><value>Select</value></data>
+  <data name="Menu_Tools_DrawOptions" xml:space="preserve"><value>Drawing options</value></data>
   <data name="Tool_Eraser_Name" xml:space="preserve"><value>Eraser</value></data>
   <data name="Tool_Eraser_Hint" xml:space="preserve"><value>Erases to transparent</value></data>
   <data name="Tool_Fill_Name" xml:space="preserve"><value>Fill</value></data>

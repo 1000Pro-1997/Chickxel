@@ -114,7 +114,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
     private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
-        _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!;
+        _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!, _miSelectTools = null!;
     private readonly List<MenuItem> _docItems = new();
     private MenuItem _miPlayTest = null!, _miRevert = null!;
     private readonly Dictionary<ToolKind, MenuItem> _toolMenuItems = new();
@@ -722,8 +722,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             new Separator(),
             DocCmd("격자로 나눠 프레임 만들기(시트 → 프레임)…", MainStrings.Menu_FrameLayer_Command_198, SplitIntoFrames));
 
-        // 도구
+        // 도구: 선택 도구 넷은 "선택" 아래, 그리기 옵션과 브러시 명령은 "그리기 옵션" 아래에 넣어 메뉴를 짧게 둔다.
         var tools = TopMenu("도구(_T)", MainStrings.Menu_Tools);
+        _miSelectTools = new MenuItem { Header = MenuHeader(MainStrings.Menu_Tools_Selection, null), ToggleType = MenuItemToggleType.CheckBox, Icon = IconImage(Icons.For(ToolKind.Select), 16) };
         foreach (var (tool, id, name, key, _) in ToolDefs)
         {
             var t = tool;
@@ -732,7 +733,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             var mi = Checkable(Cmd(id, name, () => { _ctx.Tool = t; UpdateToolUi(); }, null, KeyScope.NotInText, keys));
             mi.Icon = IconImage(Icons.For(tool), 16);
             _toolMenuItems[tool] = mi;
-            tools.Items.Add(mi);
+            if (!EditorContext.IsSelectionTool(tool)) tools.Items.Add(mi);
+            else
+            {
+                if (_miSelectTools.Items.Count == 0) tools.Items.Add(_miSelectTools);
+                _miSelectTools.Items.Add(mi);
+            }
         }
         // M = 선택 칸: 칸의 지금 선택 도구, 이미 선택 도구면 다음 선택 도구.
         Bind("도구", SelectCycleName, MainStrings.ShortcutCategory_Tools, MainStrings.Shortcut_CycleSelection, KeyScope.NotInText, () => { CycleSelectionTool(); return true; }, (Key.M, NoMods));
@@ -747,13 +753,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miMirrorAtPivot = Checkable(Cmd("대칭: 피벗 기준", MainStrings.Menu_Tools_MirrorAtPivot, () => _ctx.MirrorAtPivot = !_ctx.MirrorAtPivot));
         _miRightErase = Checkable(Cmd("오른쪽 버튼 = 지우개", MainStrings.Menu_Tools_RightButtonErases_212, () => _ctx.RightButtonErases = !_ctx.RightButtonErases));
         _miWrap = Checkable(Cmd("이동: 순환", MainStrings.Menu_Tools_MoveWrap_214, () => _ctx.MoveWrap = !_ctx.MoveWrap));
-        AddItems(tools,
-            new Separator(),
+        var drawOptions = WithIcon(new MenuItem { Header = MenuHeader(MainStrings.Menu_Tools_DrawOptions, null) }, VectorIcon.SlidersHorizontal);
+        AddItems(drawOptions,
             _miFilled, _miGlobalFill, _miPixelPerfect, _miMirrorX, _miMirrorY, _miMirrorAtPivot, _miRightErase, _miWrap,
             new Separator(),
             Cmd("브러시 크게", MainStrings.Menu_Tools_BrushSize_216, () => _ctx.BrushSize++, "]", KeyScope.NotInText, (Key.OemCloseBrackets, NoMods)),
             Cmd("브러시 작게", MainStrings.Menu_Tools_BrushSize_218, () => _ctx.BrushSize--, "[", KeyScope.NotInText, (Key.OemOpenBrackets, NoMods)),
             Cmd("기본색 ↔ 보조색", MainStrings.Menu_Tools_SwapColors_220, _ctx.SwapColors, "X", KeyScope.NotInText, (Key.X, NoMods)));
+        AddItems(tools, new Separator(), drawOptions);
         // 그라데이션 프리셋은 에셋 관리자에서 보고 고친다(그라데이션 편집기의 관리 단추는 프리셋 창을 그대로 연다).
         AddItems(tools, new Separator(), WithIcon(Cmd("에셋 관리자", UiStrings.Assets_Menu, () => AssetManagerWindow.Open(this)), VectorIcon.Package));
         // 효과를 만드는 사람은 적으므로 효과 넣기 흐름과 따로, 도구 메뉴 맨 아래 별도 항목으로 둔다(설계 3.1).
@@ -1600,6 +1607,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             slot.IsChecked = slot.Current == tool;
         }
         foreach (var (t, mi) in _toolMenuItems) mi.IsChecked = t == tool;
+        _miSelectTools.IsChecked = EditorContext.IsSelectionTool(tool);
         var def = ToolDefs.First(d => d.Tool == tool);
         _cbToolName.Text = Ui.Shortcut(ToolKeyText(tool) is { Length: > 0 } key ? $"{def.Name} ({key})" : def.Name);
         _cbHint.Text = Ui.Shortcut(def.Hint);
