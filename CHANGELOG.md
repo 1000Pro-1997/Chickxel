@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.78 (2026-11-02)
+### Export scale
+- The sheet settings in the export window (below Power of two) have a new **Scale** (1–16×). It enlarges the frame sheet and part atlas images by a whole number with nearest neighbor, so pixels stay sharp.
+- Pixels Per Unit and 9-slice borders in the Unity `.meta` are multiplied too, so sprites keep their size in Unity (PPU 16 at 3× becomes 48).
+- Spacing between cells is in pixels of the scaled result: spacing 1 stays 1 px.
+- Single-mode frame sheets are scaled too. The scale is saved in the project and in export presets; the movement test still shows the original size.
+
 ## v1.14.77 (2026-11-02)
 ### Text size really changes, and dragging sets it
 - Pixel fonts now draw at any size: a line becomes exactly as tall as the Size value (Galmuri 11 at 8 px is half size). Before, sizes were rounded to whole multiples, so most values looked the same.

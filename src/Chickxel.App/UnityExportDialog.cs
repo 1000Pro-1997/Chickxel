@@ -676,6 +676,10 @@ public sealed class UnityExportDialog : DialogBase
             OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_0032A9731C, p => O(p).Trim, (p, v) => O(p).Trim = v));
         var pot = Setting(UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, UiStrings.S_UnityExportDialog_SheetRows_B34DD4CFD6,
             OnOff(u + UiStrings.S_UnityExportDialog_SheetRows_8BCD5F0C5E, p => O(p).PowerOfTwo, (p, v) => O(p).PowerOfTwo = v));
+        // Single 모드 프레임 시트도 키우므로 배치 설정 묶음 밖에 둔다.
+        var scale = Setting(UiStrings.ExportSheet_Scale, UiStrings.ExportSheet_ScaleTip,
+            Line(IntNum(u + UiStrings.ExportSheet_Scale, 1, SheetOptions.MaxScale, 54, p => O(p).Scale, (p, v) => O(p).Scale = v)
+                .Presets(1, 2, 3, 4, 6, 8).Unit("×").RecentKey("export.scale"), Ui.Label("×")));
 
         // 프레임 시트만 이 설정을 쓰는데 Single 모드면 배치 설정은 쓰이지 않는다(프레임 하나를 캔버스 크기 그대로).
         var layoutRows = Ui.Stack(layout, order, gridRow, maxWidthRow, packOrder, split, naming, namingWarning, spacing, trim, pot);
@@ -687,7 +691,7 @@ public sealed class UnityExportDialog : DialogBase
             SetEnabled(layoutRows, applies);
             singleNote.IsVisible = !applies && FramesUse(p);
         });
-        var rows = Ui.Stack(skinRow, splitSkins, singleNote, layoutRows);
+        var rows = Ui.Stack(skinRow, splitSkins, singleNote, layoutRows, scale);
         rows.Margin = new Thickness(0);
         return rows;
     }

@@ -2043,7 +2043,7 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_SheetRows_D967A479A6" xml:space="preserve"><value>Adds spacing between cells so neighboring colors don't bleed in Unity (default 1).</value></data>
   <data name="S_UnityExportDialog_SheetRows_DF2E272C7F" xml:space="preserve"><value>Max width of an auto-layout sheet. 0 = auto (about the square root of the total area, at least the widest cell).</value></data>
   <data name="S_UnityExportDialog_SheetRows_E0A76444ED" xml:space="preserve"><value>Cell spacing</value></data>
-  <data name="S_UnityExportDialog_SheetRows_E25EA4BF34" xml:space="preserve"><value>The frame sheet is in Single mode (Import Settings), so one frame is exported at canvas size — the layout settings below are not used.</value></data>
+  <data name="S_UnityExportDialog_SheetRows_E25EA4BF34" xml:space="preserve"><value>The frame sheet is in Single mode (Import Settings), so one frame is exported at canvas size (only the scale applies) — the layout settings below are not used.</value></data>
   <data name="S_UnityExportDialog_SheetRows_E287743C3B" xml:space="preserve"><value>Largest first</value></data>
   <data name="S_UnityExportDialog_SheetRows_E451F865FA" xml:space="preserve"><value>N rows</value></data>
   <data name="S_UnityExportDialog_SheetRows_E7664692A5" xml:space="preserve"><value>0 (auto)</value></data>
@@ -3770,4 +3770,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AssetImport_KeepBoth" xml:space="preserve"><value>Keep Both</value></data>
   <data name="AssetImport_Skip" xml:space="preserve"><value>Skip</value></data>
   <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>Apply to the remaining items</value></data>
+  <data name="ExportSheet_Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>Enlarges the output images by a whole number (nearest neighbor — pixels stay sharp). 9-slice borders and Unity PPU are multiplied too, so sprites keep their size in Unity. Spacing between cells is in pixels after scaling.</value></data>
 </root>

@@ -7619,7 +7619,7 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:672 · SheetRows · "칸 간격"</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_E25EA4BF34" xml:space="preserve">
-    <value>프레임 시트가 Single 모드(Import Settings)라 프레임 하나를 캔버스 크기 그대로 내보냅니다 — 아래 배치 설정은 쓰이지 않습니다.</value>
+    <value>프레임 시트가 Single 모드(Import Settings)라 프레임 하나를 캔버스 크기 그대로(배율만 적용) 내보냅니다 — 아래 배치 설정은 쓰이지 않습니다.</value>
     <comment>src/Chickxel.App\UnityExportDialog.cs:682 · SheetRows · "프레임 시트가 Single 모드(Import Settings)라 프레임 하나를 캔버스 크기 그대로 내보냅니다 — 아래 배치 설정은 쓰이지 않습니다."</comment>
   </data>
   <data name="S_UnityExportDialog_SheetRows_E287743C3B" xml:space="preserve">
@@ -9644,4 +9644,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="AssetImport_KeepBoth" xml:space="preserve"><value>둘 다 두기</value></data>
   <data name="AssetImport_Skip" xml:space="preserve"><value>건너뛰기</value></data>
   <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>남은 항목에도 적용</value></data>
+  <data name="ExportSheet_Scale" xml:space="preserve"><value>배율</value><comment>내보내기 설정 시트 칸: 결과 이미지 배율(실행취소 이름에도 씀)</comment></data>
+  <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>결과 이미지를 정수 배로 키웁니다(최근접 — 픽셀을 그대로 키움). 9-slice 테두리와 Unity PPU에도 같은 배율을 곱해 Unity에서 보이는 크기는 그대로입니다. 칸 사이 간격은 키운 뒤 px입니다.</value></data>
 </root>

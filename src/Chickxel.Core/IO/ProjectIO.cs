@@ -1142,7 +1142,7 @@ public static partial class ProjectIO
             int at = o.Keys.ToList().IndexOf(GridKey.Tag);
             return new GridOrder(o.Keys.Where(k => k != GridKey.Tag).ToList(), o.RowBreak - (at < o.RowBreak ? 1 : 0)).Normalized();
         }
-        if (a.Layout != b.Layout || a.Spacing != b.Spacing || a.Trim != b.Trim || a.PowerOfTwo != b.PowerOfTwo || a.SplitParts != b.SplitParts) return false;
+        if (a.Layout != b.Layout || a.Spacing != b.Spacing || a.Trim != b.Trim || a.PowerOfTwo != b.PowerOfTwo || a.Scale != b.Scale || a.SplitParts != b.SplitParts) return false;
         if (Effective(a.Order) != Effective(b.Order)) return false;
         if (a.Layout == SheetLayout.Grid && (a.Grid != b.Grid || (a.Grid != SheetGrid.Auto && a.GridCount != b.GridCount))) return false;
         if (a.Layout == SheetLayout.Packed && (a.MaxWidth != b.MaxWidth || a.PackOrder != b.PackOrder)) return false;
@@ -1539,6 +1539,8 @@ public static partial class ProjectIO
         public int Spacing { get; set; } = 1;
         public bool Trim { get; set; }
         public bool PowerOfTwo { get; set; }
+        /// <summary>결과 파일 배율(1이면 생략).</summary>
+        public int? Scale { get; set; }
         public int MaxWidth { get; set; }
         public AtlasPackOrder PackOrder { get; set; } = AtlasPackOrder.KeepOrder;
         public bool SplitTags { get; set; }
@@ -1562,6 +1564,7 @@ public static partial class ProjectIO
             Spacing = o.Spacing,
             Trim = o.Trim,
             PowerOfTwo = o.PowerOfTwo,
+            Scale = o.Scale == 1 ? null : o.Scale,
             MaxWidth = o.MaxWidth,
             PackOrder = o.PackOrder,
             SplitTags = o.SplitTags,
@@ -1593,6 +1596,7 @@ public static partial class ProjectIO
             o.Spacing = Spacing;
             o.Trim = Trim;
             o.PowerOfTwo = PowerOfTwo;
+            o.Scale = Scale ?? 1;
             o.MaxWidth = MaxWidth;
             o.PackOrder = Enum.IsDefined(PackOrder) ? PackOrder : AtlasPackOrder.KeepOrder;
             o.SplitTags = SplitTags;

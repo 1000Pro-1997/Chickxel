@@ -294,6 +294,75 @@ public class ExportGridSplitTests
         Assert.Empty(ProjectIO.SaveWithExport(loaded).Export!.Stale);
     }
 
+    // ───────────── 배율 ─────────────
+
+    [Fact]
+    public void Scale_EnlargesCellsKeepsSpacingInPixels_MultipliesPpuAndBorder_AndIsSaved()
+    {
+        using var dir = new TempDir();
+        var path = dir.File("hero.chickxel");
+        var p = Rig();
+        p.Export.WriteMeta = true;
+        p.Export.Common.Grid = SheetGrid.Columns;
+        p.Export.Common.GridCount = 10; // 프레임 시트 한 줄
+        var head = p.Layers.Single(l => l.Name == "Head");
+        head.PartBorder = new SpriteBorder(1, 0, 1, 0);
+        var frames1 = Assert.Single(ProjectExport.BuildFrameSheets(p, "hero")).Sheet;
+        var parts1 = Assert.Single(ProjectExport.BuildPartsSheets(p, "hero_parts")).Sheet;
+
+        p.Export.Common.Scale = 3;
+        var frames3 = Assert.Single(ProjectExport.BuildFrameSheets(p, "hero")).Sheet;
+        var parts3 = Assert.Single(ProjectExport.BuildPartsSheets(p, "hero_parts")).Sheet;
+        foreach (var (s1, s3) in new[] { (frames1, frames3), (parts1, parts3) })
+        {
+            Assert.Equal(s1.Entries.Select(e => e.Name), s3.Entries.Select(e => e.Name));
+            foreach (var (e1, e3) in s1.Entries.Zip(s3.Entries))
+            {
+                Assert.Equal(new Size(e1.Rect.Width * 3, e1.Rect.Height * 3), e3.Rect.Size);
+                Assert.Equal(e1.Pivot, e3.Pivot);
+                for (int y = 0; y < e1.Rect.Height; y++)
+                    for (int x = 0; x < e1.Rect.Width; x++)
+                    {
+                        var c = s1.Image[e1.Rect.X + x, e1.Rect.Y + y];
+                        Assert.Equal(c, s3.Image[e3.Rect.X + x * 3, e3.Rect.Y + y * 3]);
+                        Assert.Equal(c, s3.Image[e3.Rect.X + x * 3 + 2, e3.Rect.Y + y * 3 + 2]);
+                    }
+            }
+        }
+        // 간격은 키운 뒤 px 그대로(1)
+        var xs = frames3.Entries.Select(e => e.Rect.X).Order().ToList();
+        Assert.All(xs.Zip(xs.Skip(1)), t => Assert.Equal(frames3.CellSize.Width + 1, t.Second - t.First));
+        var headEntry = parts3.Entries.First(e => e.Part == head);
+        Assert.Equal(new SpriteBorder(3, 0, 3, 0), headEntry.Border);
+        // 미리보기·움직임 테스트용 한 장짜리 시트는 키우지 않는다
+        Assert.Equal(frames1.Image.Size, ProjectExport.BuildSheet(p, "hero").Image.Size);
+
+        var result = ProjectIO.SaveWithExport(p, path).Export!;
+        foreach (var file in result.Frames.Concat(result.Parts))
+        {
+            var meta = UnityMeta.Read(file.ImagePath + ".meta");
+            Assert.Equal(48f, meta.PixelsPerUnit); // 16 × 3: Unity에서 보이는 크기는 그대로
+            Assert.Equal(PngIO.Load(file.ImagePath).Size, file == result.Frames[0] ? frames3.Image.Size : parts3.Image.Size);
+        }
+        Assert.Equal(headEntry.Border, UnityMeta.Read(result.Parts[0].ImagePath + ".meta").Sprites.First(s => s.Name == headEntry.Name).Border);
+        Assert.Equal(3, ProjectIO.Load(path).Export.Common.Scale);
+    }
+
+    [Fact]
+    public void Scale_SingleMode_EnlargesFrameAndSpriteBorder()
+    {
+        using var dir = new TempDir();
+        var p = Frames(1, 4, 3);
+        p.Sprite.Mode = SpriteMode.Single;
+        p.Sprite.Border = new SpriteBorder(1, 1, 1, 1);
+        p.Export.WriteMeta = true;
+        p.Export.Common.Scale = 2;
+        var file = Assert.Single(ProjectIO.SaveWithExport(p, dir.File("one.chickxel")).Export!.Frames);
+        Assert.Equal(new Size(8, 6), PngIO.Load(file.ImagePath).Size);
+        var meta = UnityMeta.Read(file.ImagePath + ".meta");
+        Assert.Equal((32f, new SpriteBorder(2, 2, 2, 2)), (meta.PixelsPerUnit, meta.Border));
+    }
+
     [Fact]
     public void SplitExport_DuplicateFileNameIsRejected()
     {

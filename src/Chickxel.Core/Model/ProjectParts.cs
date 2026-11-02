@@ -484,10 +484,14 @@ public sealed class SheetOptions
     private int _gridCount = 4;
     private int _spacing = 1;
     private int _maxWidth;
+    private int _scale = 1;
     private GridOrder _order = GridOrder.ByPart;
 
     /// <summary>"가로 N칸"·"세로 N칸"의 최대 N.</summary>
     public const int MaxGridCount = 1024;
+
+    /// <summary><see cref="Scale"/>의 최대값.</summary>
+    public const int MaxScale = 16;
 
     /// <summary>배치(격자 / 자동 배치).</summary>
     public SheetLayout Layout { get; set; } = SheetLayout.Grid;
@@ -521,6 +525,16 @@ public sealed class SheetOptions
 
     /// <summary>시트 가로·세로를 2의 거듭제곱으로 맞춘다.</summary>
     public bool PowerOfTwo { get; set; }
+
+    /// <summary>
+    /// 결과 파일 배율(1~<see cref="MaxScale"/>, 최근접 — 픽셀을 그대로 키움). 칸을 잘라낸 뒤 키우고, 9-slice 테두리와 Unity PPU도 같은 배율을 곱해
+    /// Unity에서 보이는 크기는 그대로다. 칸 사이 간격·최대 가로는 키운 결과 기준 px. 미리보기·움직임 테스트용 한 장짜리 시트에는 쓰지 않는다.
+    /// </summary>
+    public int Scale
+    {
+        get => _scale;
+        set => _scale = Math.Clamp(value, 1, MaxScale);
+    }
 
     /// <summary>자동 배치 최대 가로(px). 0이면 자동(전체 넓이의 제곱근 정도, 가장 넓은 칸 이상).</summary>
     public int MaxWidth
@@ -577,6 +591,7 @@ public sealed class SheetOptions
         Spacing = other.Spacing;
         Trim = other.Trim;
         PowerOfTwo = other.PowerOfTwo;
+        Scale = other.Scale;
         MaxWidth = other.MaxWidth;
         PackOrder = other.PackOrder;
         SplitTags = other.SplitTags;

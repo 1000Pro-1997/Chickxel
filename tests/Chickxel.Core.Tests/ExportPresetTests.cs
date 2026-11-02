@@ -28,6 +28,7 @@ public class ExportPresetTests
         o.Spacing = 3 + seed;
         o.Trim = true;
         o.PowerOfTwo = true;
+        o.Scale = 2 + seed;
         o.MaxWidth = 512 + seed;
         o.PackOrder = AtlasPackOrder.LargestFirst;
         o.SplitTags = true;
@@ -47,6 +48,7 @@ public class ExportPresetTests
         Assert.Equal(expected.Spacing, actual.Spacing);
         Assert.Equal(expected.Trim, actual.Trim);
         Assert.Equal(expected.PowerOfTwo, actual.PowerOfTwo);
+        Assert.Equal(expected.Scale, actual.Scale);
         Assert.Equal(expected.MaxWidth, actual.MaxWidth);
         Assert.Equal(expected.PackOrder, actual.PackOrder);
         Assert.Equal(expected.SplitTags, actual.SplitTags);

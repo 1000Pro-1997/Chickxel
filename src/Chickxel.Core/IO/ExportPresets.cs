@@ -86,6 +86,7 @@ public sealed class PresetSheet
     public int Spacing { get; set; } = 1;
     public bool Trim { get; set; }
     public bool PowerOfTwo { get; set; }
+    public int Scale { get; set; } = 1;
     public int MaxWidth { get; set; }
     public AtlasPackOrder PackOrder { get; set; } = AtlasPackOrder.KeepOrder;
     public bool SplitTags { get; set; }
@@ -105,6 +106,7 @@ public sealed class PresetSheet
         Spacing = o.Spacing,
         Trim = o.Trim,
         PowerOfTwo = o.PowerOfTwo,
+        Scale = o.Scale,
         MaxWidth = o.MaxWidth,
         PackOrder = o.PackOrder,
         SplitTags = o.SplitTags,
@@ -125,6 +127,7 @@ public sealed class PresetSheet
         o.Spacing = Spacing;
         o.Trim = Trim;
         o.PowerOfTwo = PowerOfTwo;
+        o.Scale = Scale;
         o.MaxWidth = MaxWidth;
         o.PackOrder = Enum.IsDefined(PackOrder) ? PackOrder : AtlasPackOrder.KeepOrder;
         o.SplitTags = SplitTags;

@@ -19,8 +19,8 @@ namespace Chickxel.Core.IO;
 public sealed record SheetEntry(int FrameIndex, string Name, Rectangle Rect, Pivot Pivot, string? Tag, SpriteBorder Border = default, Layer? Part = null,
     Skin? Skin = null, FrameVariant? Variant = null);
 
-/// <summary>만들어진 시트 이미지와 칸 목록.</summary>
-public sealed record SheetResult(PixelImage Image, IReadOnlyList<SheetEntry> Entries, Size CellSize);
+/// <summary>만들어진 시트 이미지와 칸 목록. <paramref name="Scale"/>은 칸 그림을 키운 배율(<see cref="SheetOptions.Scale"/>, Unity PPU에도 곱함).</summary>
+public sealed record SheetResult(PixelImage Image, IReadOnlyList<SheetEntry> Entries, Size CellSize, int Scale = 1);
 
 /// <summary>결과 파일 하나의 시트: 파일 이름(확장자 없이)과 시트. 태그·부위·스킨마다 나눴으면 그 태그·부위·스킨(프레임 시트는 스킨 항목).</summary>
 public sealed record SheetFile(string Name, SheetResult Sheet, AnimationTag? Tag = null, Layer? Part = null, string? SkinName = null, FrameVariant? Variant = null);
@@ -429,6 +429,24 @@ public static class ProjectExport
         return (image.Crop(r), new Pivot((px - r.X) / r.Width, 1f - (py - r.Y) / r.Height), b);
     }
 
+    /// <summary>결과 파일 배율만큼 최근접으로 키운다(1이면 그대로).</summary>
+    private static PixelImage Enlarge(PixelImage image, int scale)
+        => scale == 1 ? image : ImageTransform.ScaleNearest(image, image.Width * scale, image.Height * scale);
+
+    private static SpriteBorder Enlarge(SpriteBorder border, int scale)
+        => scale == 1 || border.IsNone ? border : new SpriteBorder(border.Left * scale, border.Top * scale, border.Right * scale, border.Bottom * scale);
+
+    private static Rectangle Enlarge(Rectangle rect, int scale)
+        => new(rect.X * scale, rect.Y * scale, rect.Width * scale, rect.Height * scale);
+
+    /// <summary>키운 시트의 스프라이트 설정: PPU와 Single 테두리에 배율을 곱한다(Unity에서 보이는 크기는 그대로).</summary>
+    private static void ApplyScale(SpriteSettings sprite, int scale)
+    {
+        if (scale == 1) return;
+        sprite.PixelsPerUnit *= scale;
+        sprite.Border = Enlarge(sprite.Border, scale);
+    }
+
     /// <summary>
     /// 부위 아틀라스 스프라이트 하나: 부위 셀에 그 부위 자신의 효과(<see cref="Layer.Effects"/> 중 프레임 <paramref name="frameIndex"/>가 범위 안인 것)를 입힌 그림.
     /// 바깥 외곽선·그림자처럼 밖으로 번지는 효과가 있으면 스프라이트를 효과 여백만큼 넓히고 — 여백은 프레임 범위와 관계없이 켜진 모든 효과 기준이라
@@ -535,7 +553,7 @@ public static class ProjectExport
     }
 
     /// <summary>
-    /// 한 장짜리 프레임 시트(지금 착장, 나누기·스킨 항목 설정과 무관): 모든 프레임을 배치·정렬 설정대로. Single 모드이고 <paramref name="allFrames"/>가 false면 프레임 하나짜리 시트.
+    /// 한 장짜리 프레임 시트(지금 착장, 나누기·스킨 항목·배율 설정과 무관): 모든 프레임을 배치·정렬 설정대로. Single 모드이고 <paramref name="allFrames"/>가 false면 프레임 하나짜리 시트.
     /// 움직임 테스트·미리보기용. 뺀 레이어(<see cref="SheetOptions.ExcludedLayers"/>)는 합성하지 않는다.
     /// </summary>
     /// <param name="baseName">이름 규칙의 <c>{시트 이름}</c>(보통 내보낼 이미지 이름).</param>
@@ -543,30 +561,35 @@ public static class ProjectExport
     {
         FrameVariant current = new(null, null, null, null);
         var cache = NewCache();
-        if (!allFrames && project.Sprite.Mode == SpriteMode.Single) return SingleSheet(project, baseName, current, null, cache);
-        return FrameSheet(project, baseName, null, null, [current], null, cache);
+        if (!allFrames && project.Sprite.Mode == SpriteMode.Single) return SingleSheet(project, baseName, current, null, cache, 1);
+        return FrameSheet(project, baseName, null, null, [current], null, cache, 1);
     }
 
-    /// <summary>Single 모드 시트: <see cref="ExportSettings.SingleFrameIndex"/> 프레임 하나를 캔버스 크기 그대로(항목의 착장으로).</summary>
-    private static SheetResult SingleSheet(SpriteProject project, string baseName, FrameVariant variant, WorkStage? stage, EffectRenderCache cache)
+    /// <summary>Single 모드 시트: <see cref="ExportSettings.SingleFrameIndex"/> 프레임 하나를 캔버스 크기 그대로(항목의 착장으로) × <paramref name="scale"/>.</summary>
+    private static SheetResult SingleSheet(SpriteProject project, string baseName, FrameVariant variant, WorkStage? stage, EffectRenderCache cache, int scale)
     {
         int fi = Math.Clamp(project.Export.SingleFrameIndex, 0, project.Frames.Count - 1);
-        var image = Composite(project, fi, Dress(variant), cache);
+        var image = Enlarge(Composite(project, fi, Dress(variant), cache), scale);
         stage?.Step(CompositeUnits(project));
         var entry = new SheetEntry(fi, CleanSpriteName(baseName), image.Bounds, project.GetFramePivot(fi), null, Variant: variant);
-        return new SheetResult(image, [entry], image.Size);
+        return new SheetResult(image, [entry], image.Size, scale);
     }
 
-    /// <summary>결과 파일마다의 프레임 시트(스킨 항목·태그마다 나누기 설정대로). 칸 이름은 파일마다 같은 규칙이다.</summary>
+    /// <summary>결과 파일마다의 프레임 시트(스킨 항목·태그마다 나누기 설정대로, 배율 적용). 칸 이름은 파일마다 같은 규칙이다.</summary>
     /// <param name="baseName">시트 이름(나누면 파일 이름 앞부분, 칸 이름 <c>{시트 이름}_{프레임}</c>에도 씀).</param>
     public static IReadOnlyList<SheetFile> BuildFrameSheets(SpriteProject project, string baseName) => BuildFrameSheets(project, baseName, null, NewCache());
 
     private static IReadOnlyList<SheetFile> BuildFrameSheets(SpriteProject project, string baseName, WorkStage? stage, EffectRenderCache cache)
-        => FrameOutputs(project, baseName)
+    {
+        int scale = project.Export.Frames.Scale;
+        return FrameOutputs(project, baseName)
             .Select(o => new SheetFile(o.Name,
-                project.Sprite.Mode == SpriteMode.Single ? SingleSheet(project, baseName, o.Variants[0], stage, cache) : FrameSheet(project, baseName, o.Frames, o.Tag, o.Variants, stage, cache),
+                project.Sprite.Mode == SpriteMode.Single
+                    ? SingleSheet(project, baseName, o.Variants[0], stage, cache, scale)
+                    : FrameSheet(project, baseName, o.Frames, o.Tag, o.Variants, stage, cache, scale),
                 o.Tag, Variant: o.Variants.Count == 1 ? o.Variants[0] : null))
             .ToList();
+    }
 
     /// <summary>프레임 하나를 착장을 입혀 합성(내보내기에서 뺀 레이어 제외).</summary>
     private static PixelImage Composite(SpriteProject project, int frameIndex, Outfit? outfit, EffectRenderCache? cache)
@@ -595,10 +618,10 @@ public static class ProjectExport
 
     /// <summary>
     /// 프레임 시트 한 장: 스킨 항목 × 프레임(태그 기준이 정렬에 있으면 여러 태그에 든 프레임은 태그마다). <paramref name="frames"/>가 null이면 모든 프레임,
-    /// 아니면 그 프레임들(이름 태그 = <paramref name="fileTag"/>). 항목이 여럿이면(한 이미지에 모두) 칸 이름 뒤에 <c>@{항목}</c>.
+    /// 아니면 그 프레임들(이름 태그 = <paramref name="fileTag"/>). 항목이 여럿이면(한 이미지에 모두) 칸 이름 뒤에 <c>@{항목}</c>. 칸 그림은 잘라낸 뒤 <paramref name="scale"/>배.
     /// </summary>
     private static SheetResult FrameSheet(SpriteProject project, string baseName, IReadOnlyList<int>? frames, AnimationTag? fileTag, IReadOnlyList<FrameVariant> variants,
-        WorkStage? stage, EffectRenderCache cache)
+        WorkStage? stage, EffectRenderCache cache, int scale)
     {
         var o = project.Export.Frames;
         var (keys, rowBreak) = o.Order.For(hasParts: false);
@@ -631,7 +654,7 @@ public static class ProjectExport
             }
         }
 
-        // 2) 합성·잘라내기(항목 × 프레임마다 한 번)
+        // 2) 합성·잘라내기·키우기(항목 × 프레임마다 한 번)
         var content = new Dictionary<(int, int), (PixelImage Image, Pivot Pivot)>();
         var dresses = variants.Select(Dress).ToList();
         foreach (var (vi, fi, _, _, _) in cells)
@@ -639,7 +662,7 @@ public static class ProjectExport
             {
                 var (img, pivot, _) = TrimCel(Composite(project, fi, dresses[vi], cache), project.GetFramePivot(fi), default, o.Trim);
                 stage?.Step(CompositeUnits(project));
-                content[(vi, fi)] = (img, pivot);
+                content[(vi, fi)] = (Enlarge(img, scale), pivot);
             }
         var cell = new Size(content.Values.Max(c => c.Image.Width), content.Values.Max(c => c.Image.Height));
 
@@ -672,7 +695,7 @@ public static class ProjectExport
             sheet.Blit(img, rects[i].X, rects[i].Y);
             entries.Add(new SheetEntry(fi, names[i], rects[i], pivot, tag?.Name, Variant: variants[vi]));
         }
-        return new SheetResult(sheet, entries, cell);
+        return new SheetResult(sheet, entries, cell, scale);
     }
 
     // ───────────── 부위 아틀라스 ─────────────
@@ -824,17 +847,17 @@ public static class ProjectExport
     }
 
     /// <summary>
-    /// 한 장짜리 부위 아틀라스(나누기 설정과 무관): 부위 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나. 배치·정렬은 시트 설정대로.
+    /// 한 장짜리 부위 아틀라스(나누기·배율 설정과 무관): 부위 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나. 배치·정렬은 시트 설정대로.
     /// 부위가 없으면 칸 없는 1×1 시트.
     /// </summary>
     /// <param name="baseName">내보낼 부위 아틀라스 이름(칸 이름에는 쓰지 않음, <see cref="BuildSheet"/>와 같은 꼴).</param>
     public static SheetResult BuildPartsSheet(SpriteProject project, string baseName)
     {
         var cels = PartCels(project);
-        return cels.Count == 0 ? EmptySheet() : PartsSheet(project, cels, PartNames(project, cels), whole: true, tagFile: false, stage: null);
+        return cels.Count == 0 ? EmptySheet() : PartsSheet(project, cels, PartNames(project, cels), whole: true, tagFile: false, stage: null, scale: 1);
     }
 
-    /// <summary>결과 파일마다의 부위 아틀라스(부위·태그·스킨마다 나누기 설정대로). 내용 있는 부위가 없으면 빈 시트 한 장.</summary>
+    /// <summary>결과 파일마다의 부위 아틀라스(부위·태그·스킨마다 나누기 설정대로, 배율 적용). 내용 있는 부위가 없으면 빈 시트 한 장.</summary>
     public static IReadOnlyList<SheetFile> BuildPartsSheets(SpriteProject project, string baseName) => BuildPartsSheets(project, baseName, null);
 
     private static IReadOnlyList<SheetFile> BuildPartsSheets(SpriteProject project, string baseName, WorkStage? stage)
@@ -848,7 +871,8 @@ public static class ProjectExport
         {
             var idx = Enumerable.Range(0, cels.Count).Where(i => keys[i] == file.Key).ToList();
             var tag = file.Key.Tag >= 0 && file.Key.Tag < project.Tags.Count ? project.Tags[file.Key.Tag] : null;
-            var sheet = PartsSheet(project, idx.Select(i => cels[i]).ToList(), idx.Select(i => names[i]).ToList(), whole: file.Key.Part is null, tagFile: file.Key.Tag >= 0, stage);
+            var sheet = PartsSheet(project, idx.Select(i => cels[i]).ToList(), idx.Select(i => names[i]).ToList(), whole: file.Key.Part is null, tagFile: file.Key.Tag >= 0, stage,
+                project.Export.Parts.Scale);
             files.Add(new SheetFile(file.Name, sheet, tag, file.Key.Part, file.Key.SkinName));
         }
         return files;
@@ -858,7 +882,8 @@ public static class ProjectExport
 
     /// <param name="whole">부위마다 나누지 않은 파일이면 "원래 위치 유지"를 쓴다(부위마다 나눈 파일에서는 원래 칸 위치가 뜻이 없음).</param>
     /// <param name="tagFile">태그마다 나눈 파일이면 프레임 자리 값은 파일 안 프레임 순번.</param>
-    private static SheetResult PartsSheet(SpriteProject project, List<PartCel> cels, IReadOnlyList<string> names, bool whole, bool tagFile, WorkStage? stage)
+    /// <param name="scale">잘라낸 스프라이트를 키울 배율(9-slice 테두리·원래 위치도 같이 키움).</param>
+    private static SheetResult PartsSheet(SpriteProject project, List<PartCel> cels, IReadOnlyList<string> names, bool whole, bool tagFile, WorkStage? stage, int scale)
     {
         var o = project.Export.Parts;
         var (keys, rowBreak) = o.Order.For(hasParts: true);
@@ -867,14 +892,15 @@ public static class ProjectExport
         var untagged = Enumerable.Range(0, project.Frames.Count).Where(i => project.TagOfFrame(i) is null).ToList();
         var fileFrames = cels.Select(c => c.Frame).Distinct().Order().ToList();
 
-        // 그림(구워 넣는 칸이면 물려받은 첫 스킨 그림) + 부위 효과·잘라내기
+        // 그림(구워 넣는 칸이면 물려받은 첫 스킨 그림) + 부위 효과·잘라내기·키우기
         var images = new (PixelImage Image, Pivot Pivot, SpriteBorder Border)[cels.Count];
         for (int i = 0; i < cels.Count; i++)
         {
             var (part, skin, fi) = cels[i];
             var cel = skin is null ? project.GetCelRaw(part, project.Frames[fi], null) : project.GetSkinCel(part, project.Frames[fi], skin);
             var (image, pivot, border) = PartSprite(project, part, skin, cel!, fi);
-            images[i] = TrimCel(image, pivot, border, o.Trim);
+            var (trimmed, trimmedPivot, trimmedBorder) = TrimCel(image, pivot, border, o.Trim);
+            images[i] = (Enlarge(trimmed, scale), trimmedPivot, Enlarge(trimmedBorder, scale));
             stage?.Step(PartUnits(cel!));
         }
 
@@ -893,9 +919,9 @@ public static class ProjectExport
         }).ToList();
         var sizes = images.Select(t => t.Image.Size).ToList();
         IReadOnlyList<Rectangle?>? fixedRects = whole && project.Export.KeepImportedRects
-            ? cels.Select((c, i) => c.Frame == 0 && c.Skin is null && c.Part.PartSourceRect is { } r && r.Size == sizes[i] ? r : (Rectangle?)null).ToList()
+            ? cels.Select((c, i) => c.Frame == 0 && c.Skin is null && c.Part.PartSourceRect is { } r && Enlarge(r, scale).Size == sizes[i] ? Enlarge(r, scale) : (Rectangle?)null).ToList()
             : null;
-        var minSize = fixedRects is not null && fixedRects.Any(r => r is not null) ? project.Size : Size.Empty;
+        var minSize = fixedRects is not null && fixedRects.Any(r => r is not null) ? new Size(project.Width * scale, project.Height * scale) : Size.Empty;
         var (rects, size) = Arrange(o, keys, rowBreak, values, sizes, sizes, fixedRects, minSize);
 
         var sheet = new PixelImage(size.Width, size.Height);
@@ -907,7 +933,7 @@ public static class ProjectExport
             entries.Add(new SheetEntry(fi, names[i], rects[i], images[i].Pivot, null, images[i].Border, part, skin));
         }
         var cell = new Size(sizes.Max(s => s.Width), sizes.Max(s => s.Height));
-        return new SheetResult(sheet, entries, cell);
+        return new SheetResult(sheet, entries, cell, scale);
     }
 
     private static int IndexOf(IReadOnlyList<Skin> skins, Skin skin)
@@ -924,6 +950,7 @@ public static class ProjectExport
     {
         var doc = new Document(sheet.Image);
         doc.Sprite.CopyFrom(project.Sprite);
+        ApplyScale(doc.Sprite, sheet.Scale);
         doc.Sprite.Mode = SpriteMode.Multiple;
         int spacing = project.Export.Parts.Spacing;
         doc.Grid = new GridSettings { CellW = sheet.CellSize.Width, CellH = sheet.CellSize.Height, PadX = spacing, PadY = spacing };
@@ -946,6 +973,7 @@ public static class ProjectExport
     {
         var doc = new Document(sheet.Image);
         doc.Sprite.CopyFrom(project.Sprite);
+        ApplyScale(doc.Sprite, sheet.Scale);
         int spacing = project.Export.Frames.Spacing;
         doc.Grid = new GridSettings { CellW = sheet.CellSize.Width, CellH = sheet.CellSize.Height, PadX = spacing, PadY = spacing };
         if (!multiple)
@@ -1128,16 +1156,20 @@ public static class ProjectExport
         if (plan.FramePaths.Count > 0)
         {
             bool single = project.Sprite.Mode == SpriteMode.Single;
+            long scale = project.Export.Frames.Scale;
             foreach (var o in FrameOutputs(project, "sprite"))
-                units += (single ? 1 : (long)(o.Frames?.Count ?? project.Frames.Count) * o.Variants.Count) * (CompositeUnits(project) + px);
+                units += (single ? 1 : (long)(o.Frames?.Count ?? project.Frames.Count) * o.Variants.Count) * (CompositeUnits(project) + px * scale * scale);
         }
         if (plan.PartPaths.Count > 0)
+        {
+            long scale = project.Export.Parts.Scale;
             foreach (var (part, _, _) in PartCels(project))
             {
                 var size = project.CelSize(part);
                 long cel = (long)size.Width * size.Height;
-                units += cel * CompositeWeight + cel;
+                units += cel * CompositeWeight + cel * scale * scale;
             }
+        }
         return Math.Max(1, units);
     }
 
