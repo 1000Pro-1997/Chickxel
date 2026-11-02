@@ -83,6 +83,8 @@ public enum VectorIcon
     Coffee,
     /// <summary>3×3 칸 격자(AI 그림 픽셀로 정리).</summary>
     Grid3x3,
+    /// <summary>지우개(픽셀로 정리의 배경 지우기).</summary>
+    Eraser,
     /// <summary>필름(GIF로 저장).</summary>
     Film,
     /// <summary>아래 화살표가 붙은 그림(그림 파일로 저장).</summary>
@@ -326,6 +328,11 @@ public static class VectorIcons
         [
             "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
             "M3 9h18", "M3 15h18", "M9 3v18", "M15 3v18",
+        ],
+        VectorIcon.Eraser =>
+        [
+            "M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.828 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21",
+            "m5.082 11.09 8.828 8.828",
         ],
         VectorIcon.Film =>
         [

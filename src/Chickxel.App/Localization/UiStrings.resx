@@ -8588,7 +8588,12 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>첨부한 첫 그림은 원본(AI가 만든 픽셀풍 그림)이고, 그다음 {count}장은 그것을 픽셀 아트로 정리한 후보입니다(차례대로 {list} — 한 장에 프레임을 가로로 이었음). 외곽선이 끊기지 않았는지, 눈·얼굴이 읽히는지, 잡티가 없는지, 프레임끼리 색과 모양이 고른지 보고 가장 좋은 것부터 순위를 매겨 이유와 함께 알려 주세요. 더 좋게 만들 설정(칸 크기·색 수·정리)이 있으면 제안해 주세요.</value></data>
   <data name="Pixelate_Source" xml:space="preserve"><value>원본 {size}(휠: 확대, 프레임 안: 이동, 테두리: 크기, 빈 곳: 화면 이동)</value></data>
   <data name="Pixelate_ShowGrid" xml:space="preserve"><value>격자 보기</value></data>
-  <data name="Pixelate_ShowMask" xml:space="preserve"><value>배경 지운 모습</value></data>
+  <data name="Pixelate_ShowGridTip" xml:space="preserve"><value>격자 보기
+고른 후보가 실제로 쓴 칸 경계를 원본 위에 그립니다(크게 보기의 원본 칸에도).</value></data>
+  <data name="Pixelate_RemoveBgTip" xml:space="preserve"><value>배경 지우기
+켜면 1. 배경 지우기의 방식(자동·색 고르기)대로 배경을 지우고 변환하며, 원본에 배경을 지운 모습을 보입니다.
+끄면 배경을 지우지 않고 그대로 변환합니다(1. 배경 지우기의 '지우지 않음'과 같은 설정).
+바꾼 뒤 정리하기를 누르면 적용됩니다.</value></data>
   <data name="Pixelate_Bar_Size" xml:space="preserve"><value>결과 크기</value></data>
   <data name="Pixelate_Bar_AutoTip" xml:space="preserve"><value>켜면 결과 크기가 칸 크기대로(또는 4. 결과 크기의 배율대로) 정해집니다 — 회색 숫자는 지금 고른 결과 크기. 끄면 적은 가로×세로에 맞춥니다(4. 결과 크기와 같은 설정).</value></data>
   <data name="Pixelate_Bar_KeepAspectTip" xml:space="preserve"><value>비율 유지: 가로를 바꾸면 세로가(세로를 바꾸면 가로가) 지금 결과 비율대로 따라 바뀌고, 그림은 비율을 지킨 채 크기에 맞춰집니다.</value></data>

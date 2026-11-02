@@ -2717,7 +2717,12 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Ai_RankPrompt" xml:space="preserve"><value>The first attached image is the original (pixel-look art made by AI); the next {count} are candidates that pixelate it ({list}, in order — each image shows the frames side by side). Check whether outlines are unbroken, the eyes and face are readable, there are no stray pixels, and colors and shapes are consistent between frames, then rank them from best with reasons. Suggest settings (pixel size, color count, cleanup) that would improve them.</value></data>
   <data name="Pixelate_Source" xml:space="preserve"><value>Source {size} (wheel: zoom, frame: move, edge: resize, empty area: pan)</value></data>
   <data name="Pixelate_ShowGrid" xml:space="preserve"><value>Show grid</value></data>
-  <data name="Pixelate_ShowMask" xml:space="preserve"><value>Show background removed</value></data>
+  <data name="Pixelate_ShowGridTip" xml:space="preserve"><value>Show grid
+Draws the cell borders the selected candidate actually used over the source (also in the source pane of the large view).</value></data>
+  <data name="Pixelate_RemoveBgTip" xml:space="preserve"><value>Remove background
+On: removes the background with the method in 1. Background (Auto or Pick color) before converting, and shows the source with the background removed.
+Off: converts without removing the background (the same as Keep background in 1. Background).
+Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Bar_Size" xml:space="preserve"><value>Output size</value></data>
   <data name="Pixelate_Bar_AutoTip" xml:space="preserve"><value>On: the output size follows the pixel size (or the factor set in 4. Output size) — the grey numbers are the selected result's size. Off: fit to the width×height you enter (same setting as 4. Output size).</value></data>
   <data name="Pixelate_Bar_KeepAspectTip" xml:space="preserve"><value>Keep aspect: changing the width updates the height (and vice versa) by the current result's ratio, and the sprite keeps its ratio when fitted.</value></data>

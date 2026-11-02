@@ -506,8 +506,8 @@ internal static class PixelateShots
         ]);
 
         // 원본 아래 막대.
-        var showGrid = ShotKit.Get<CheckBox>(dlg, "_showGrid");
-        var showMask = ShotKit.Get<CheckBox>(dlg, "_showMask");
+        var showGrid = ShotKit.Get<ToggleButton>(dlg, "_showGrid");
+        var bgRemove = ShotKit.Get<ToggleButton>(dlg, "_bgRemove");
         var barAuto = ShotKit.Get<CheckBox>(dlg, "_barAuto");
         var barW = ShotKit.Get<Control>(dlg, "_barW");
         var barH = ShotKit.Get<Control>(dlg, "_barH");
@@ -516,7 +516,7 @@ internal static class PixelateShots
         var tb = ShotKit.Bounds(toolbar, dlg);
         k.Save(dlg, "pixelate-view-2", crop: new Rect(tb.X - 8, tb.Y - 36, tb.Width + 20, tb.Height + 46), marks:
         [
-            PixelateKit.UpBox(showMask, dlg),
+            PixelateKit.UpBox(bgRemove, dlg),
             PixelateKit.UpBox(barAuto, dlg),
             PixelateKit.UpBox(barW, dlg).Union(PixelateKit.UpBox(barH, dlg)),
             PixelateKit.UpBox(aspect, dlg),

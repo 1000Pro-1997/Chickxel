@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.82 (2026-11-02)
+### Pixelate: background removal on/off in the bar under the source
+- "Show background removed" is replaced by a **Remove background** toggle (eraser icon). Off converts without removing the background (the same as Keep background in 1. Background); on uses the last removal method (Auto at first).
+- While it's on, the source view shows the image with the background removed, and copying or saving the source from its right-click menu uses that image. Press Clean up to apply the change.
+- Replace source and Show grid are now icon buttons too; hover any of them for the name and a short explanation.
+- The bar is narrower, so the status text at its end is cut less often, and hovering it shows the whole text.
+
 ## v1.14.81 (2026-11-02)
 ### "Same hue family" comes right after Default in Pixelate
 - In the Pixelate window, the built-in preset "Same hue family" now sits right after "Default" in the preset list, so its candidate shows second in the candidate row.

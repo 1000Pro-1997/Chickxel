@@ -46,7 +46,6 @@ public sealed class PixelateOptions
     /// <summary>옵션 판(<see cref="Migrate"/>): 0 = 옛 설정 또는 새 옵션.</summary>
     public int Version { get; set; }
     public bool ShowGrid { get; set; } = true;
-    public bool ShowMask { get; set; }
     public int Width { get; set; } = 1320;
     public int Height { get; set; } = 860;
 
@@ -572,7 +571,13 @@ public sealed class PixelateDialog : DialogBase
     private readonly ZoomOverlay _zoom;
     private readonly WrapPanel _tiles;
     private readonly TextBlock _status, _selectedInfo, _breakdown, _largeWarning;
-    private readonly CheckBox _showGrid, _showMask;
+    /// <summary>
+    /// 원본 아래 막대의 아이콘 토글: 격자 보기, 배경 지우기(1단계 배경 방식과 같은 설정 — 끄면 '지우지 않음', 켜면 마지막으로 쓴 지우는 방식,
+    /// 켜져 있으면 원본 보기에 배경을 지운 모습). 1단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarBackground"/>가 맞춘다.
+    /// </summary>
+    private readonly ToggleButton _showGrid, _bgRemove;
+    /// <summary>배경 지우기를 다시 켤 때 돌아갈 방식(마지막으로 쓴, 지우지 않음이 아닌 방식).</summary>
+    private BackgroundMode _barBgMode = BackgroundMode.Auto;
     /// <summary>
     /// 원본 아래 막대의 결과 크기: 자동(= 4단계 방식이 고정 크기가 아님) · 가로×세로 · 비율 묶기.
     /// 4단계 칸과 같은 설정을 함께 쓴다 — 막대를 바꾸면 4단계 칸에 적고, 4단계 칸(불러오기 포함)이 바뀌면 <see cref="SyncBarSize"/>가 막대를 맞춘다.
@@ -1128,12 +1133,11 @@ public sealed class PixelateDialog : DialogBase
         _preview = new FramePreview();
         _strip = new FrameStrip();
         _zoomStrip = new FrameStrip();
-        _showGrid = Ui.Check(UiStrings.Pixelate_ShowGrid, _opt.ShowGrid);
-        _showMask = Ui.Check(UiStrings.Pixelate_ShowMask, _opt.ShowMask);
+        _showGrid = IconToggle(VectorIcon.Grid3x3, UiStrings.Pixelate_ShowGridTip, _opt.ShowGrid);
+        _bgRemove = IconToggle(VectorIcon.Eraser, UiStrings.Pixelate_RemoveBgTip, true);
         _showGrid.IsCheckedChanged += (_, _) => { _sourceView.ShowGrid = _showGrid.On(); };
-        _showMask.IsCheckedChanged += (_, _) => { _sourceView.ShowAlt = _showMask.On(); };
+        _bgRemove.IsCheckedChanged += (_, _) => BarBackgroundChanged();
         _sourceView.ShowGrid = _showGrid.On();
-        _sourceView.ShowAlt = _showMask.On();
         _sourceView.HoverChanged += h => _preview.SetHover(h);
         _sourceView.FrameEdited += OnFrameEdited;
         // 크게 보기: 큰 미리보기의 결과·원본 그림을 누르면 열림(대화상자를 덮는 겹판 — 같은 프레임 번호·재생·후보·격자 보기·뺀 색을 함께 씀).
@@ -1156,7 +1160,7 @@ public sealed class PixelateDialog : DialogBase
         _blink.Tick += OnBlink;
         // 원본에서 색 추가(스포이드): 왼쪽 큰 원본·큰 미리보기의 원본 칸·크게 보기의 원본 칸에서 칸을 누르면 고정 색으로.
         _sourceView.CellPicked += PickCell;
-        // 원본 우클릭: 보이는 모습(배경 지운 모습이면 그것) 복사·PNG로 저장. 스포이드 중에는 우클릭이 스포이드 취소라 메뉴 없음.
+        // 원본 우클릭: 보이는 모습(배경 지우기를 켰으면 배경 지운 모습) 복사·PNG로 저장. 스포이드 중에는 우클릭이 스포이드 취소라 메뉴 없음.
         PopupMenus.Attach(_sourceView, SourceMenu);
         _preview.CellPicked += PickCell;
         _zoom.View.CellPicked += PickCell;
@@ -1180,6 +1184,11 @@ public sealed class PixelateDialog : DialogBase
             e.Handled = true;
         };
         _status = new TextBlock { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+        // 상태 글이 막대 끝에서 잘리면 풍선으로 전부 보인다.
+        _status.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextBlock.TextProperty) ToolTip.SetTip(_status, string.IsNullOrEmpty(_status.Text) ? null : _status.Text);
+        };
         _selectedInfo = new TextBlock { Foreground = AppTheme.TextBrush, Margin = new Thickness(4, 2), TextTrimming = TextTrimming.CharacterEllipsis };
         _largeWarning = new TextBlock { Foreground = AppTheme.WarningBrush, Margin = new Thickness(4, 0, 4, 2), TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
         _breakdown = new TextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(4, 0, 4, 2), TextWrapping = TextWrapping.Wrap };
@@ -1206,7 +1215,7 @@ public sealed class PixelateDialog : DialogBase
         views.Children.Add(previewPanel);
 
         // 원본 바꾸기(원본이 있을 때): 파일 찾기 — 창에 끌어 놓거나 Ctrl+V로 붙여 넣어도 바뀐다.
-        _replaceSource = Ui.Button(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource, (_, _) => BrowseSource()).Tip(UiStrings.Pixelate_ReplaceSourceTip);
+        _replaceSource = Ui.IconButton(VectorIcon.FolderOpen, UiStrings.Pixelate_ReplaceSource + "\n" + UiStrings.Pixelate_ReplaceSourceTip, (_, _) => BrowseSource());
         // 결과 크기(4단계와 같은 설정): 자동이면 회색 숫자로 지금 결과 크기, 끄면 적은 가로×세로에 맞춤.
         _barAuto = Ui.Check(UiStrings.Pixelate_Auto, true).Tip(UiStrings.Pixelate_Bar_AutoTip);
         _barW = Ui.Num(4, 1024, 32, 58).Presets(16, 24, 32, 48, 64, 96, 128);
@@ -1226,7 +1235,7 @@ public sealed class PixelateDialog : DialogBase
         _barAspect.IsCheckedChanged += (_, _) => { if (!_barSyncing) _szAspect.IsChecked = _barAspect.On(); };
         var barLabel = Ui.Label(UiStrings.Pixelate_Bar_Size);
         barLabel.Margin = new Thickness(10, 3, 3, 3);
-        var toolbar = Ui.Row(_replaceSource, _showGrid, _showMask, barLabel, _barAuto, _barW, Ui.Label(UiStrings.Pixelate_Size_By), _barH, _barAspect);
+        var toolbar = Ui.Row(_replaceSource, _showGrid, _bgRemove, barLabel, _barAuto, _barW, Ui.Label(UiStrings.Pixelate_Size_By), _barH, _barAspect);
         var statusRow = new DockPanel { Margin = new Thickness(0, 2) };
         DockPanel.SetDock(toolbar, Dock.Left);
         statusRow.Children.Add(toolbar);
@@ -1936,6 +1945,7 @@ public sealed class PixelateDialog : DialogBase
         // 칸 맞추기 따로 최적화면 격자 칸은 그 체크로 최적화하므로 칸 머리의 '최적화'는 쓰지 않는다.
         if (_sectionToggles.TryGetValue(OptimizeSection.Grid, out var gridToggle)) gridToggle.IsEnabled = !_grFirst.On();
         SyncBarSize();
+        SyncBarBackground();
     }
 
     /// <summary>원본 아래 막대의 결과 크기를 4단계 칸(설정)과 고른 결과에 맞춘다(막대 이벤트는 무시).</summary>
@@ -1972,6 +1982,31 @@ public sealed class PixelateDialog : DialogBase
         {
             _barSyncing = false;
         }
+    }
+
+    /// <summary>원본 아래 막대의 배경 지우기를 1단계 배경 방식에 맞추고(막대 이벤트는 무시), 켜져 있으면 원본 보기에 배경을 지운 모습을 보인다.</summary>
+    private void SyncBarBackground()
+    {
+        var mode = At<BackgroundMode>(_bgMode);
+        bool on = mode != BackgroundMode.None;
+        if (on) _barBgMode = mode;
+        _barSyncing = true;
+        try
+        {
+            _bgRemove.IsChecked = on;
+        }
+        finally
+        {
+            _barSyncing = false;
+        }
+        _sourceView.ShowAlt = on;
+    }
+
+    /// <summary>막대의 배경 지우기를 바꿈: 켜면 마지막으로 쓴 지우는 방식(처음은 자동), 끄면 지우지 않음 — 1단계 배경 방식에 적는다.</summary>
+    private void BarBackgroundChanged()
+    {
+        if (_barSyncing) return;
+        _bgMode.SelectedIndex = Index(_bgRemove.On() ? _barBgMode : BackgroundMode.None);
     }
 
     /// <summary>막대의 "자동"을 바꿈: 켜면 마지막 자동 방식(칸 크기대로·배율), 끄면 지금 보이는 결과 크기에서 시작하는 고정 크기.</summary>
@@ -2463,13 +2498,13 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 원본 우클릭 메뉴: 보이는 모습(배경 지운 모습을 켰으면 배경을 지운 원본) 복사·PNG로 저장. 프레임 안을 오른쪽 클릭했으면 맨 위에 그 프레임만
+    /// 원본 우클릭 메뉴: 보이는 모습(배경 지우기를 켰으면 배경을 지운 원본) 복사·PNG로 저장. 프레임 안을 오른쪽 클릭했으면 맨 위에 그 프레임만
     /// 잘라 복사·저장(파일 이름 끝에 프레임 번호)을 더한다. 원본이 없거나 스포이드 중이면 없음.
     /// </summary>
     private IEnumerable<object>? SourceMenu()
     {
         if (_input is not { } input || _picking) return null;
-        bool cleaned = _showMask.On() && _prepared?.Cleaned is not null;
+        bool cleaned = _sourceView.ShowAlt && _prepared?.Cleaned is not null;
         var image = cleaned ? _prepared!.Cleaned! : input.Image;
         var baseName = cleaned ? $"{SaveBaseName()}_{UiStrings.Pixelate_Save_CleanedSuffix}" : SaveBaseName();
         var items = new List<object>();
@@ -2488,6 +2523,21 @@ public sealed class PixelateDialog : DialogBase
         items.Add(MenuCommand(UiStrings.Preview_Menu_CopyImage, VectorIcon.Copy, () => CopyImage(image)));
         items.Add(MenuCommand(UiStrings.Pixelate_Menu_SavePng, VectorIcon.ImageDown, () => SaveImage(image, ProjectExport.CleanFileName(baseName))));
         return items;
+    }
+
+    /// <summary>아이콘만 있는 켜고 끄는 단추(뜻은 풍선 <paramref name="tip"/>으로).</summary>
+    private static ToggleButton IconToggle(VectorIcon icon, string tip, bool on)
+    {
+        var iconView = Ui.Icon(icon, 14);
+        iconView.Margin = new Thickness(0, 1);
+        return new ToggleButton
+        {
+            Content = iconView,
+            IsChecked = on,
+            Margin = new Thickness(2, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(tip);
     }
 
     /// <summary>메뉴 항목: 누르면 메뉴가 닫힌 뒤에 한다(파일 대화상자가 메뉴 위에 뜨지 않게).</summary>
@@ -4198,7 +4248,6 @@ public sealed class PixelateDialog : DialogBase
         _opt.AiRankCount = (int)_aiRankCount.NumValue();
         _opt.AutoOptimizeOnLoad = _optAuto.On();
         _opt.ShowGrid = _showGrid.On();
-        _opt.ShowMask = _showMask.On();
         _opt.SettingsExpanded = _settingsExpanded;
         _opt.SelectedPreset = _current is { } chosen && !ReferenceEquals(chosen, _draft) ? chosen.Name : null;
         if (WindowState == WindowState.Normal)
@@ -4449,7 +4498,7 @@ public sealed class PixelateDialog : DialogBase
         /// <summary>스포이드 중 원본 둘레 강조 밝기(0~1, null = 그리지 않음 — <see cref="CutOverlay.DrawPickPulse"/>).</summary>
         public double? PickPulse { get => field; set { field = value; InvalidateVisual(); } }
 
-        /// <summary>지금 보이는 그림(배경 지운 모습을 켰으면 그것, 아니면 원본). 비었으면 null.</summary>
+        /// <summary>지금 보이는 그림(배경 지우기를 켜 배경 지운 모습이 있으면 그것, 아니면 원본). 비었으면 null.</summary>
         public PixelImage? ShownImage => ShowAlt && _altData is not null ? _altData : _imageData;
 
         public void SetImage(PixelImage image, PixelImage? alt)
