@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.85 (2026-11-03)
+### Pixelate: a fixed output size splits the source into that many cells
+- With the output size fixed (for example 64×64), the source is now divided into that many cells. With the default 1 px margin, the long side becomes 62 cells. Before, it kept the detected pixel size and only added margin, so a 1024 px illustration detected at 118 px became a tiny sprite in an empty 64×64 canvas.
+- If the detected pixel size is within 2% of the needed one, its boundaries are kept. Cells are never smaller than one source pixel.
+
 ## v1.14.84 (2026-11-03)
 ### Pixelate: the large preview's source matches the selected result
 - The Source pane next to the result (and in the enlarged view) now shows the source prepared with the selected result's own background settings. Before, while a preset was optimizing and you watched its running tile, it could show the background removed even though that run kept the background.

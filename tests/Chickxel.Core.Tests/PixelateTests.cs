@@ -1031,6 +1031,25 @@ public class PixelateTests
     }
 
     [Fact]
+    public void FixedSizeSplitsCoarseSourceIntoTargetCells()
+    {
+        // 16px 블록 체커(찾는 칸 = 16px, 8칸)를 고정 34×34(여백 1)로: 찾은 8칸에 여백만 붙이지 않고 원본을 32칸(4px)으로 나눈다.
+        var image = new PixelImage(128, 128);
+        for (int y = 0; y < 128; y++)
+            for (int x = 0; x < 128; x++)
+                image[x, y] = (x / 16 + y / 16) % 2 == 0 ? new Color32(230, 35, 35) : new Color32(35, 35, 230);
+        var s = new PixelateSettings
+        {
+            Background = new BackgroundSettings { Mode = BackgroundMode.None },
+            Size = new SizeSettings { Mode = OutputSizeMode.FixedSize, Width = 34, Height = 34, Padding = 1 },
+            Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
+        };
+        var frame = Assert.Single(Pixelator.Run(image, s).Frames);
+        Assert.Equal(new Size(34, 34), frame.Size);
+        Assert.Equal(new Rectangle(1, 1, 32, 32), frame.GetOpaqueBounds());
+    }
+
+    [Fact]
     public void ExistingPaletteAndKeepOriginal()
     {
         var source = Render([Sprite()]);
@@ -1276,7 +1295,8 @@ public class PixelateTests
             Background = new BackgroundSettings { Mode = BackgroundMode.None },
             Frames = new FrameSettings { ManualRegions = [new FrameSlot(0, 0, 48, 48), new FrameSlot(56, 0, 48, 48)] },
             Grid = new PixelGridSettings { LocalCorrection = false },
-            Size = new SizeSettings { Mode = sizeMode, Factor = 0.25, Width = sizeMode == OutputSizeMode.FixedSize ? 10 : 16, Height = sizeMode == OutputSizeMode.FixedSize ? 10 : 16 },
+            // 고정 크기는 원본을 여백을 뺀 칸 수로 나누므로, 칸(4px) 12개 + 여백 1px 양쪽 = 14로 두어 찾은 격자를 그대로 쓰게 한다.
+            Size = new SizeSettings { Mode = sizeMode, Factor = 0.25, Width = sizeMode == OutputSizeMode.FixedSize ? 14 : 16, Height = sizeMode == OutputSizeMode.FixedSize ? 14 : 16 },
             Cleanup = new CleanupSettings { OutlineFit = OutlineFit.Off },
         };
         var source = PixelateSource.Prepare(image, settings);
@@ -1306,7 +1326,7 @@ public class PixelateTests
             Assert.True(xCuts.Length >= 5 && yCuts.Length >= 5);
             Assert.All(xCuts, x => Assert.Equal(phaseX, x % 4));
             Assert.All(yCuts, y => Assert.Equal(phaseY, y % 4));
-            if (sizeMode == OutputSizeMode.FixedSize) Assert.Equal(new Size(10, 10), result.Frames[f].Size);
+            if (sizeMode == OutputSizeMode.FixedSize) Assert.Equal(new Size(14, 14), result.Frames[f].Size);
         }
     }
 

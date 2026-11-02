@@ -588,22 +588,26 @@ public static class Pixelator
             }
         }
 
+        // 고정 크기: 스프라이트가 여백을 뺀 가로×세로 칸에 꼭 맞게 원본을 그 칸 수로 나눈다 — 찾은 칸이 더 크면(결과가 작아 여백만 커짐) 쪼개고,
+        // 더 작으면(결과가 넘침) 합친다. 찾은 칸 크기가 목표와 2% 안이면 찾은 경계를 그대로 쓴다(덩어리 경계에 맞춘 선이 더 정확).
         if (size.Mode == OutputSizeMode.FixedSize)
         {
             int pad = Math.Max(0, size.Padding);
             int maxW = split.Frames.Max(f => f.Bounds.Width), maxH = split.Frames.Max(f => f.Bounds.Height);
-            double sx = maxW / (double)Math.Max(1, size.Width - 2 * pad - 2);
-            double sy = maxH / (double)Math.Max(1, size.Height - 2 * pad - 2);
+            double sx = maxW / (double)Math.Max(1, size.Width - 2 * pad);
+            double sy = maxH / (double)Math.Max(1, size.Height - 2 * pad);
             if (size.KeepAspect) sx = sy = Math.Max(sx, sy);
+            sx = Math.Max(sx, 1);
+            sy = Math.Max(sy, 1);
             double current = result.Max(g => g.Scale);
-            if (sx > current * 1.02 || sy > current * 1.02)
+            if (Math.Abs(sx - current) > current * 0.02 || Math.Abs(sy - current) > current * 0.02)
             {
                 for (int f = 0; f < nf; f++)
                 {
                     var b = split.Frames[f].Bounds;
                     var (ex, ey) = src.FrameProfiles(f);
-                    var xc = GridDetector.FitCuts(ex, b.Left, b.Right, Math.Max(sx, 1), 0);
-                    var yc = GridDetector.FitCuts(ey, b.Top, b.Bottom, Math.Max(sy, 1), 0);
+                    var xc = GridDetector.FitCuts(ex, b.Left, b.Right, sx, 0);
+                    var yc = GridDetector.FitCuts(ey, b.Top, b.Bottom, sy, 0);
                     double conf = 0.5 * (GridDetector.Confidence(ex, xc, b.Left, b.Right) + GridDetector.Confidence(ey, yc, b.Top, b.Bottom));
                     result[f] = new GridFit(xc, yc, 0.5 * (sx + sy), result[f].DetectedScale, conf);
                 }
