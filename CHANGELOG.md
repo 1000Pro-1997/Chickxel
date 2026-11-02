@@ -2,6 +2,16 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.84 (2026-11-03)
+### Pixelate: the large preview's source matches the selected result
+- The Source pane next to the result (and in the enlarged view) now shows the source prepared with the selected result's own background settings. Before, while a preset was optimizing and you watched its running tile, it could show the background removed even though that run kept the background.
+- When a result uses background settings no other candidate used yet, the Source pane stays empty for a moment while that source is prepared, instead of showing a different one.
+
+### Pixelate enlarged view: help in an info box, optimization info and score graph in the top bar
+- The long help line at the top of the enlarged view no longer gets cut off. It now sits behind an info box (the small "i" button); hover it to read the help, one item per line.
+- When you watch a preset that is still optimizing, the middle of the top bar shows its progress (pass, trials, best score), how long it has been running, and the same score graph as next to the Auto optimize button. The graph updates as the run goes on.
+- For a finished optimized result, the bar shows its result line (passes, start → best score, trials, seconds, why it stopped) and the score graph of that run.
+
 ## v1.14.83 (2026-11-02)
 ### Canvas size mode shows the whole image and scales it evenly
 - In canvas size mode, every part of the image that ends up outside the new canvas is shown faded around it. This includes pixels that were already outside the canvas because the image is bigger than the canvas.

@@ -2910,7 +2910,15 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>Added to the pixel size the auto grid finds (the auto optimizer changes the pixel size with this). It depends on the image, so Clean up uses it but presets don't save it (the same goes for the manual grid's start X/Y).</value></data>
   <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Left-click the result or the source image: enlarge · Right-click the result image: exclude/restore that pixel's color — in the enlarged view, Left-click: show where used and the color decision · Right-click: exclude/restore (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>Enlarged view</value></data>
-  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom · Drag: pan (both panes) · Result pixel Left-click: show where used and the color decision · Right-click: exclude/restore · Source cell Left-click: mark the cell in both panes and show the color decision · Double-click: fit · Space: play/pause · ←→: frames · Esc or click outside: close</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom
+Drag: pan (both panes)
+Result pixel left-click: show where used and the color decision
+Result pixel right-click: exclude/restore the color
+Source cell left-click: mark the cell in both panes and show the color decision
+Double-click: fit
+Space: play/pause · ←→: frames
+Esc or click outside: close</value></data>
+  <data name="Pixelate_Zoom_OptRunning" xml:space="preserve"><value>{progress} · {seconds} s</value></data>
   <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>Close (Esc)</value></data>
   <data name="Pixelate_Grid_Local" xml:space="preserve"><value>Local cell correction</value></data>
   <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>Re-fits image-wide cell boundaries per band to block edges. Bent boundaries appear on the source overlay. If the average cell is smaller than the chosen minimum or no boundary moves, the lines stay straight.</value></data>

@@ -556,6 +556,13 @@ public sealed class PixelateDialog : DialogBase
     private int _generation;
     private bool _loading;
     private PixelateSource? _prepared;
+    /// <summary>
+    /// 지금 원본으로 준비한 결과들(배경 지우기·프레임 나누기 설정마다 하나, <see cref="SourceFor"/>): 후보 준비·최적화·색 판정이 같은 설정이면 다시 쓰고,
+    /// 큰 미리보기의 원본 쪽은 고른 후보의 설정과 맞는 것을 보인다. 작업 스레드도 더하므로 잠가서 쓴다. 원본을 바꾸면 비운다.
+    /// </summary>
+    private readonly List<PixelateSource> _sources = [];
+    /// <summary>큰 미리보기의 원본 쪽을 위해 준비 중인 배경·나누기 설정(같은 설정을 겹쳐 준비하지 않게), 없으면 null.</summary>
+    private (BackgroundSettings Background, FrameSettings Frames)? _previewSourcePending;
     /// <summary>현재 원본에 마지막으로 적용한 나누기(슬롯은 원본 px). 화면의 나누기 입력과 별개이며 원본 교체·'프레임 나누기 적용'에서만 새로 만든다.</summary>
     private FrameSettings? _appliedFrames;
     /// <summary>화면 설정에 남길 직접 편집한 슬롯(null = 프레임 나누기 입력값만 저장).</summary>
@@ -601,7 +608,6 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>크게 보기의 색 판정 줄(<see cref="ShowTrace"/>)과 그 계산 취소, 판정에 쓴 준비 결과(같은 설정이면 다시 씀).</summary>
     private readonly PixelTraceRow _trace = new();
     private CancellationTokenSource? _traceCts;
-    private PixelateSource? _traceSource;
     /// <summary>
     /// 뺀 색(<see cref="PaletteSettings.ExcludedColors"/> — 왼쪽 칸에 없는 설정이라 불러오기·읽기로 함께 다닌다). 지금 결과의 뒤처리라 바꿔도 다시 돌리지 않고
     /// 후보마다 다시 뺀다(<see cref="ApplyPaletteEdits"/>).
@@ -759,6 +765,8 @@ public sealed class PixelateDialog : DialogBase
     private bool _livePreviewDirty;
     private readonly Stopwatch _livePreviewClock = Stopwatch.StartNew();
     private const double LivePreviewSeconds = 0.2;
+    /// <summary>지금 도는 프리셋을 시작한 뒤 흐른 시간(크게 보기의 최적화 정보).</summary>
+    private readonly Stopwatch _optPresetClock = new();
     /// <summary>
     /// 도는 칸을 눌러 그 칸의 지금까지 1위 결과를 위 미리보기에 보는 중인지(<see cref="WatchLive"/> — 1위가 바뀌면 따라 바뀌고, 색 빼기·고정 색은 막음),
     /// 그리고 보기 전에 고른 후보(결과 없이 끝나면 되돌림).
@@ -1436,6 +1444,8 @@ public sealed class PixelateDialog : DialogBase
         _appliedFrames = null;
         _input = input;
         _prepared = null;
+        lock (_sources) _sources.Clear();
+        _previewSourcePending = null;
         _detected = null;
         _excluded = [];
         _pinned = [];
@@ -1461,7 +1471,6 @@ public sealed class PixelateDialog : DialogBase
         RebuildTiles();
         _selected = null;
         ClearTrace();
-        _traceSource = null;
         _watchingLive = false;
         _beforeLive = null;
         _userPicked = false;
@@ -2110,7 +2119,6 @@ public sealed class PixelateDialog : DialogBase
         var cts = _cts = new CancellationTokenSource();
         int gen = ++_generation;
         var settings = WithAppliedFrames(ReadSettings());
-        var prepared = _prepared;
         StopOptimize();
         _candidates.Clear();
         _optimized.Clear();
@@ -2122,7 +2130,7 @@ public sealed class PixelateDialog : DialogBase
         {
             try
             {
-                var src = prepared is not null && prepared.Matches(settings) ? prepared : PixelateSource.Prepare(image, settings);
+                var src = SourceFor(image, settings);
                 cts.Token.ThrowIfCancellationRequested();
                 var auto = settings.Grid with { Mode = GridMode.Auto, ScaleAdjust = 0, Source = Pixelator.ScaleSourceFor(settings) };
                 var detected = src.Split.Frames.Count == 0 ? null : Pixelator.DetectGrid(src, auto, settings.Palette.OutlineDarkness);
@@ -2447,6 +2455,7 @@ public sealed class PixelateDialog : DialogBase
         foreach (var t in _tiles.Children.OfType<CandidateTile>()) t.IsSelected = false;
         if (_livePreview is { } best) Select(WithColorEdits(best));
         else _selectedInfo.Text = UiStrings.FormatPixelate_Live_Selected(name: _runningName ?? "") + " · " + UiStrings.Pixelate_Opt_Marker_Running;
+        UpdateZoomOptInfo();
     }
 
     /// <summary>도는 칸을 보는 중(<see cref="_watchingLive"/>)이면 색 빼기·고정 색을 막고 상태 줄에 알린다(true = 막음).</summary>
@@ -2599,6 +2608,7 @@ public sealed class PixelateDialog : DialogBase
     {
         ClearTrace();
         _selected = c;
+        UpdateZoomOptInfo();
         foreach (var t in _tiles.Children.OfType<CandidateTile>()) t.IsSelected = ReferenceEquals(t.Candidate, c);
         var r = c.Result;
         _selectedInfo.Text = UiStrings.FormatPixelate_Selected(
@@ -2633,7 +2643,9 @@ public sealed class PixelateDialog : DialogBase
         _largeWarning.Text = note ?? (_largeWarning.IsVisible ? UiStrings.FormatPixelate_Result_Large(width: r.Size.Width, height: r.Size.Height) : "");
         _palInfo.Text = UiStrings.FormatPixelate_Pal_Info(count: r.Palette.Count);
         var frames = r.CommonFrames();
-        _preview.SetFrames(frames, r.CommonExcludedFrames(), _prepared?.Cleaned, r.Maps, r.Frames.All(f => f.Size == r.Size));
+        var source = _input is { } input ? FindSource(input.Image, r.Settings) : null;
+        _preview.SetFrames(frames, r.CommonExcludedFrames(), source?.Cleaned, r.Maps, r.Frames.All(f => f.Size == r.Size));
+        if (source is null) LoadPreviewSource(r.Settings);
         // 썸네일은 한 번 만들어 두 띠가 함께 쓴다(옛 썸네일은 두 띠가 새것으로 바꾼 뒤 정리).
         var oldThumbs = _thumbs;
         _thumbs = frames.Select(f => ImageUtil.MakeThumbnail(f, FrameStrip.Thumb)).ToList();
@@ -2933,7 +2945,7 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 색 판정 줄: 고른 후보 결과의 픽셀 (<paramref name="x"/>, <paramref name="y"/>)(프레임 좌표)을 같은 설정으로 다시 돌려 단계별 색을 모은다
-    /// (<see cref="Pixelator.TracePixel"/> — 백그라운드, 새로 누르면 앞 계산은 취소). 준비 결과는 지금 원본 준비가 그 설정과 맞으면 그것, 아니면 새로 준비해 둔다.
+    /// (<see cref="Pixelator.TracePixel"/> — 백그라운드, 새로 누르면 앞 계산은 취소). 준비 결과는 그 설정과 맞는 준비 결과(<see cref="SourceFor"/>), 없으면 새로 준비해 둔다.
     /// 끝났을 때 고른 후보 결과가 바뀌었으면 보이지 않는다.
     /// </summary>
     private void ShowTrace(int frame, int x, int y)
@@ -2942,23 +2954,18 @@ public sealed class PixelateDialog : DialogBase
         _traceCts?.Cancel();
         var cts = _traceCts = new CancellationTokenSource();
         var r = sel.Result;
-        var prepared = _prepared;
-        var cached = _traceSource;
         var image = input.Image;
         _trace.ShowBusy(x, y);
         Task.Run(() =>
         {
             try
             {
-                var src = prepared is not null && prepared.Matches(r.Settings) ? prepared
-                    : cached is not null && cached.Matches(r.Settings) ? cached
-                    : PixelateSource.Prepare(image, r.Settings);
+                var src = SourceFor(image, r.Settings);
                 cts.Token.ThrowIfCancellationRequested();
                 var trace = Pixelator.TracePixel(src, r, frame, x, y, cts.Token);
                 Dispatcher.UIThread.Post(() =>
                 {
                     if (cts.IsCancellationRequested || !ReferenceEquals(_selected?.Result, r)) return;
-                    _traceSource = src;
                     _trace.Show(trace, r.Settings, x, y);
                 });
             }
@@ -2978,6 +2985,55 @@ public sealed class PixelateDialog : DialogBase
         _traceCts?.Cancel();
         _traceCts = null;
         _trace.Clear();
+    }
+
+    /// <summary><paramref name="image"/>(지금 원본)으로 <paramref name="s"/>의 배경 지우기·프레임 나누기 설정대로 준비한 결과(<see cref="_sources"/>), 없으면 null.</summary>
+    private PixelateSource? FindSource(PixelImage image, PixelateSettings s)
+    {
+        lock (_sources) return _sources.FirstOrDefault(x => ReferenceEquals(x.Original, image) && x.Matches(s));
+    }
+
+    /// <summary>
+    /// <paramref name="s"/>에 쓸 준비 결과: 이미 준비한 것이 있으면 그것, 없으면 준비해 <see cref="_sources"/>에 더한다(작업 스레드에서 불러도 됨 — 준비는 잠그지 않고 하므로
+    /// 같은 설정을 동시에 준비했으면 먼저 더한 쪽을 돌려준다).
+    /// </summary>
+    private PixelateSource SourceFor(PixelImage image, PixelateSettings s)
+    {
+        if (FindSource(image, s) is { } hit) return hit;
+        var made = PixelateSource.Prepare(image, s);
+        lock (_sources)
+        {
+            if (_sources.FirstOrDefault(x => ReferenceEquals(x.Original, image) && x.Matches(s)) is { } raced) return raced;
+            _sources.Add(made);
+        }
+        return made;
+    }
+
+    /// <summary>
+    /// 고른 후보의 배경 지우기·프레임 나누기 설정으로 준비한 결과가 아직 없을 때(최적화가 스티커 테두리 등을 바꿔 다시 준비한 시도): 뒤에서 준비해, 끝났을 때 고른 후보가
+    /// 여전히 그 설정이면 큰 미리보기의 원본 쪽을 그 그림으로 바꾼다. 그동안 원본 쪽은 비워 둔다(다른 설정의 원본을 보이지 않게).
+    /// </summary>
+    private void LoadPreviewSource(PixelateSettings s)
+    {
+        if (_input is not { } input || _previewSourcePending == (s.Background, s.Frames)) return;
+        _previewSourcePending = (s.Background, s.Frames);
+        var image = input.Image;
+        Task.Run(() =>
+        {
+            try
+            {
+                var src = SourceFor(image, s);
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (_previewSourcePending == (s.Background, s.Frames)) _previewSourcePending = null;
+                    if (ReferenceEquals(_input?.Image, image) && _selected is { } sel && src.Matches(sel.Result.Settings)) _preview.SetSource(src.Cleaned);
+                });
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException or AggregateException)
+            {
+                Dispatcher.UIThread.Post(() => { if (_previewSourcePending == (s.Background, s.Frames)) _previewSourcePending = null; });
+            }
+        });
     }
 
     /// <summary>보이는 결과 프레임의 픽셀 색을 강조(색 칸·같은 색 영역·누른 픽셀 표시)하고 그 색을 돌려준다(프레임이 다르거나 밖·투명이면 null).</summary>
@@ -3046,10 +3102,38 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>끝난(취소면 그때까지 돈) 프리셋 하나의 최적화: 돌린 것, 바꿔 본 항목, 준비한 원본, 결과.</summary>
     private sealed record OptimizeRun(PresetRun Spec, OptimizeParam Params, PixelateSource Source, PixelateOptimizeResult Result);
 
-    /// <summary>프리셋 후보 칸: 돌린 것(이름·값·속한 프리셋), 멈춘 까닭, 바꿔 본 항목(없으면 설정 그대로 한 번).</summary>
-    private sealed record OptimizedTile(PresetRun Spec, OptimizeStop Reason, OptimizeParam Params)
+    /// <summary>
+    /// 프리셋 후보 칸: 돌린 것(이름·값·속한 프리셋), 멈춘 까닭, 바꿔 본 항목(없으면 설정 그대로 한 번),
+    /// 최적화 결과 한 줄과 돌던 동안의 점수 그래프(설정 그대로면 둘 다 null).
+    /// </summary>
+    private sealed record OptimizedTile(PresetRun Spec, OptimizeStop Reason, OptimizeParam Params, string? Summary, GraphData? Graph)
     {
         public string Name => Spec.Name;
+
+        public static OptimizedTile Of(OptimizeRun run, GraphData? graph) => run.Spec.AsIs
+            ? new(run.Spec, run.Result.StoppedReason, run.Params, null, null)
+            : new(run.Spec, run.Result.StoppedReason, run.Params,
+                UiStrings.FormatPixelate_Opt_PresetLine(name: run.Spec.Name, summary: OptimizeDone(run.Result)), graph);
+    }
+
+    /// <summary>끝난 프리셋마다 돌던 동안의 점수 그래프(<see cref="OnOptimizePresetDone"/>가 남기고 <see cref="OnOptimizeFinished"/>가 칸에 붙인 뒤 비움).</summary>
+    private readonly Dictionary<OptimizeRun, GraphData> _runGraphs = new(ReferenceEqualityComparer.Instance);
+
+    /// <summary>
+    /// 크게 보기 위 줄 가운데의 최적화 정보: 도는 칸을 보는 중이면 진행 줄(돌림·시도·최고 점수)과 이 프리셋을 돈 시간, 점수 그래프(따라 그림),
+    /// 최적화로 얻은 후보면 그 결과 한 줄(돌림·점수·시도·시간·까닭)과 돌던 동안의 그래프, 아니면 비움.
+    /// </summary>
+    /// <param name="reloadGraph">그래프도 다시 넣는지(아니면 글만 — 도는 동안 그래프는 <see cref="ZoomOverlay.AddGraphPoint"/>로 한 점씩).</param>
+    private void UpdateZoomOptInfo(bool reloadGraph = true)
+    {
+        bool live = _watchingLive && _optCts is not null;
+        var tile = !live && _selected is { } c ? _optimized.GetValueOrDefault(c) : null;
+        string text = live
+            ? UiStrings.FormatPixelate_Zoom_OptRunning(progress: _optText.Text ?? "",
+                seconds: _optPresetClock.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture))
+            : tile?.Summary ?? "";
+        _zoom.SetOptimizeInfo(text);
+        if (reloadGraph) _zoom.SetGraph(live ? _optGraph.Snapshot() : tile?.Graph);
     }
 
     /// <summary>
@@ -3387,7 +3471,6 @@ public sealed class PixelateDialog : DialogBase
             if (r.Target is { } t) _optPresetBackup.TryAdd(t, t.Settings);
         _cts?.Cancel();
         _generation++;
-        var prepared = _prepared;
         var image = input.Image;
         var cts = _optCts = new CancellationTokenSource();
         // 프리셋마다 따로 멈출 수 있게(취소 단추 = 지금 도는 프리셋만, 모두 취소 = cts).
@@ -3421,16 +3504,7 @@ public sealed class PixelateDialog : DialogBase
         Task.Run(() =>
         {
             var done = new List<OptimizeRun>();
-            // 프리셋마다 시작 설정이 다를 수 있다: 배경 지우기·프레임 나누기가 같으면 준비한 원본을 함께 쓴다.
-            var sources = new List<PixelateSource>();
-            PixelateSource Source(PixelateSettings s)
-            {
-                if (prepared is not null && prepared.Matches(s)) return prepared;
-                if (sources.FirstOrDefault(x => x.Matches(s)) is { } hit) return hit;
-                var made = PixelateSource.Prepare(image, s);
-                sources.Add(made);
-                return made;
-            }
+            // 프리셋마다 시작 설정이 다를 수 있다: 배경 지우기·프레임 나누기가 같으면 준비한 원본을 함께 쓴다(SourceFor).
             try
             {
                 for (int k = 0; k < runs.Count && !cts.IsCancellationRequested; k++)
@@ -3443,7 +3517,7 @@ public sealed class PixelateDialog : DialogBase
                     PixelateOptimizeResult result;
                     try
                     {
-                        src = Source(run.Settings);
+                        src = SourceFor(image, run.Settings);
                         token.ThrowIfCancellationRequested();
                         if (src.Split.Frames.Count == 0)
                         {
@@ -3501,6 +3575,7 @@ public sealed class PixelateDialog : DialogBase
             foreach (var c in runCts) c.Dispose();
         _optRunCts = null;
         _runningName = null;
+        UpdateZoomOptInfo();
         // 미리보기를 그렸던 칸은 다시 그려 원래 썸네일로(취소·오류로 결과 없이 끝난 경우).
         bool rebuild = _optPending is not null || _singlePending is not null || _livePreview is not null
             || _tiles.Children.OfType<PendingTile>().Any(t => t.IsRunning);
@@ -3541,11 +3616,12 @@ public sealed class PixelateDialog : DialogBase
     /// <summary>모든 프리셋을 돌리는 중 프리셋 하나가 끝남: 그 1위를 기다리던 칸 자리에 넣고(사용자가 고르지 않았으면 첫 결과를 고름) 그 설정을 프리셋에 써 넣는다.</summary>
     private void OnOptimizePresetDone(OptimizeRun run)
     {
+        _runGraphs[run] = _optGraph.Snapshot();
         WriteOptimized(run.Spec.Target, run.Result.Best.Settings);
         if (_optPending is not { } pending) return;
         var c = WithColorEdits(run.Result.Best);
         _candidates.Add(c);
-        _optimized[c] = new OptimizedTile(run.Spec, run.Result.StoppedReason, run.Params);
+        _optimized[c] = OptimizedTile.Of(run, _runGraphs.GetValueOrDefault(run));
         if (pending.Count > 0) pending.RemoveAt(0);
         _runningName = pending.Count > 0 ? pending[0] : null;
         _livePreview = null;
@@ -3601,6 +3677,7 @@ public sealed class PixelateDialog : DialogBase
         _optLiveBest = double.NegativeInfinity;
         _optGridStage = false;
         _optDone = 0;
+        _optPresetClock.Restart();
         _optGraph.Clear();
         var text = UiStrings.FormatPixelate_Opt_PresetLine(name: running.Name, summary: UiStrings.Pixelate_Opt_Preparing);
         SetOptText(text);
@@ -3611,7 +3688,8 @@ public sealed class PixelateDialog : DialogBase
     private void OnOptimizeProgress(PixelateOptimizeProgress p)
     {
         _optDone = Math.Max(_optDone, p.Done);
-        if (p.GridStage != _optGridStage)
+        bool restarted = p.GridStage != _optGridStage;
+        if (restarted)
         {
             _optGridStage = p.GridStage;
             _optLiveBest = double.NegativeInfinity;
@@ -3640,6 +3718,11 @@ public sealed class PixelateDialog : DialogBase
         SetOptText(text);
         _status.Text = text;
         if (_optRunningMarker is { } marker) marker.Text = RunningMarker();
+        if (_watchingLive)
+        {
+            UpdateZoomOptInfo(reloadGraph: restarted);
+            if (!restarted) _zoom.AddGraphPoint(p.BestScore, p.Pass);
+        }
     }
 
     /// <summary>
@@ -3691,8 +3774,9 @@ public sealed class PixelateDialog : DialogBase
             else _candidates.Add(c);
             sourceOf[c] = run.Source;
             first ??= c;
-            _optimized[c] = new OptimizedTile(run.Spec, run.Result.StoppedReason, run.Params);
+            _optimized[c] = OptimizedTile.Of(run, _runGraphs.Remove(run, out var graph) ? graph : _optGraph.Snapshot());
         }
+        _runGraphs.Clear();
         // 고를 후보: 도는 동안 사용자가 고른 칸, 아니면 모든 프리셋을 돌렸으면 지금 열린 프리셋의 칸(없으면 첫 칸), 하나만 돌렸으면 그 칸.
         var opened = !single && _current is { } cur ? _candidates.FirstOrDefault(x => _optimized.TryGetValue(x, out var o) && ReferenceEquals(o.Spec.Owner, cur)) : null;
         var best = picked >= 0 && picked < _candidates.Count ? _candidates[picked] : opened ?? first!;
@@ -5161,22 +5245,29 @@ public sealed class PixelateDialog : DialogBase
             GridButton.IsCheckedChanged += (_, _) => _view.ShowGrid = GridButton.On();
             var closeButton = Ui.IconButton(VectorIcon.X, UiStrings.Pixelate_Zoom_Close, (_, _) => close());
             var title = new TextBlock { Text = UiStrings.Pixelate_Zoom_Title, Foreground = AppTheme.TextBrush, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
-            var hint = new TextBlock
+            // 위 줄: 제목·재생 단추·격자 보기·정보박스(조작 안내 풍선) | 가운데 최적화 정보(도는 칸·최적화한 후보일 때) | 닫기.
+            _optInfo = new TextBlock
             {
-                Text = UiStrings.Pixelate_Zoom_Hint,
                 Foreground = AppTheme.DimTextBrush,
                 FontSize = AppTheme.SmallFontSize,
                 VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 Margin = new Thickness(8, 0),
+                IsVisible = false,
             };
             var bar = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 4) };
             DockPanel.SetDock(closeButton, Dock.Right);
-            var controls = Ui.Row(title, prev, PlayButton, next, GridButton);
+            var controls = Ui.Row(title, prev, PlayButton, next, GridButton, Ui.InfoBadge(UiStrings.Pixelate_Zoom_Hint));
             DockPanel.SetDock(controls, Dock.Left);
             bar.Children.Add(closeButton);
             bar.Children.Add(controls);
-            bar.Children.Add(hint);
+            var graphBox = new DockPanel { Margin = new Thickness(8, 0) };
+            DockPanel.SetDock(_graph, Dock.Left);
+            graphBox.Children.Add(_graph);
+            graphBox.Children.Add(_optInfo);
+            bar.Children.Add(graphBox);
             // 아래 = 색 판정 줄 + 색 칸 묶음 + 프레임 띠(큰 미리보기와 같은 상태), 남는 자리 = 두 칸 그림.
             var content = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(bar, Dock.Top);
@@ -5217,6 +5308,32 @@ public sealed class PixelateDialog : DialogBase
 
         /// <summary>격자 보기 단추(눌림 = 원본 칸 경계 + 결과 픽셀 격자 — 대화상자가 "격자 보기" 체크와 서로 맞춤).</summary>
         public ToggleButton GridButton { get; }
+
+        private readonly TextBlock _optInfo;
+        /// <summary>위 줄 가운데 최적화 점수 그래프(큰 미리보기 옆 그래프와 같은 모양 — 도는 칸은 따라 그리고, 최적화한 후보는 돌던 동안의 그래프).</summary>
+        private readonly OptimizeGraph _graph = new() { Width = 180, Height = 26, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, IsVisible = false };
+
+        /// <summary>위 줄 가운데 최적화 정보(빈 글이면 숨김, 잘리면 풍선에 전부).</summary>
+        public void SetOptimizeInfo(string text)
+        {
+            _optInfo.Text = text;
+            _optInfo.IsVisible = text.Length > 0;
+            ToolTip.SetTip(_optInfo, text.Length > 0 ? text : null);
+        }
+
+        /// <summary>점수 그래프를 바꾼다(null이면 숨김).</summary>
+        public void SetGraph(GraphData? data)
+        {
+            _graph.IsVisible = data is not null;
+            if (data is not null) _graph.Load(data);
+            else _graph.Clear();
+        }
+
+        /// <summary>도는 칸을 보는 중: 큰 미리보기 옆 그래프에 더한 점을 그대로 더한다.</summary>
+        public void AddGraphPoint(double score, int pass)
+        {
+            if (_graph.IsVisible) _graph.Add(score, pass);
+        }
 
         /// <summary>보이고 결과를 가장 큰 정수 배율로 맞춘 뒤 키보드 초점을 받는다.</summary>
         public void Open()
@@ -5560,12 +5677,7 @@ public sealed class PixelateDialog : DialogBase
             _images = [.. frames];
             _excludedImages = excluded;
             _flashMasks = null;
-            if (!ReferenceEquals(source, _sourceImage))
-            {
-                _source?.Dispose();
-                _source = source is null ? null : ImageUtil.ToBitmap(source);
-                _sourceImage = source;
-            }
+            SetSource(source);
             _maps = maps;
             _sameCanvas = sameCanvas;
             _hover = null;
@@ -5573,6 +5685,16 @@ public sealed class PixelateDialog : DialogBase
             _index = Math.Min(_index, Math.Max(0, _frames.Count - 1));
             InvalidateVisual();
             IndexChanged?.Invoke(_index);
+        }
+
+        /// <summary>원본 쪽 그림(배경 지운 원본 — 고른 후보의 준비 결과, null = 비움)만 바꾼다.</summary>
+        public void SetSource(PixelImage? source)
+        {
+            if (ReferenceEquals(source, _sourceImage)) return;
+            _source?.Dispose();
+            _source = source is null ? null : ImageUtil.ToBitmap(source);
+            _sourceImage = source;
+            InvalidateVisual();
         }
 
         public void SetHover(CellHover? h)
@@ -5888,6 +6010,9 @@ public sealed class PixelateDialog : DialogBase
         }
     }
 
+    /// <summary>점수 그래프 한 장의 값(<see cref="OptimizeGraph.Snapshot"/> — 끝난 최적화 후보 칸에 붙여 크게 보기에서 다시 그림).</summary>
+    private sealed record GraphData(double[] Best, int[] PassStarts, int Pass);
+
     /// <summary>
     /// 최적화 진행 그래프: 시도마다 지금까지의 최고 점수를 꺾은선으로(오른쪽 아래에 최고 점수 — 끝난 뒤에도 남음). 새 찾기 돌림이 시작된 곳에 옅은 세로 선.
     /// </summary>
@@ -5904,6 +6029,20 @@ public sealed class PixelateDialog : DialogBase
         public int Pass { get; private set; } = 1;
 
         public bool HasData => _best.Count > 0;
+
+        /// <summary>지금 그래프 값의 사본.</summary>
+        public GraphData Snapshot() => new([.. _best], [.. _passStarts], Pass);
+
+        /// <summary><paramref name="data"/>를 그린다(앞 값은 버림).</summary>
+        public void Load(GraphData data)
+        {
+            _best.Clear();
+            _best.AddRange(data.Best);
+            _passStarts.Clear();
+            _passStarts.AddRange(data.PassStarts);
+            Pass = data.Pass;
+            InvalidateVisual();
+        }
 
         public void Clear()
         {

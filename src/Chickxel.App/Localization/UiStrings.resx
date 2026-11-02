@@ -8781,7 +8781,15 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>자동 격자가 찾은 칸 크기에 더할 값입니다(자동 최적화는 이 값으로 칸 크기를 바꿉니다). 그림마다 다른 값이라 정리하기에는 쓰지만 프리셋에는 저장하지 않습니다(수동 격자의 시작 X·Y도 같음).</value></data>
   <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>결과나 원본 그림을 좌클릭하면 크게 봅니다 · 결과 그림 우클릭: 그 픽셀 색 빼기/되살리기 — 크게 보기에서는 좌클릭: 쓰인 곳·색 판정 보기 · 우클릭: 이 색 빼기/되살리기(눌러도 키보드 초점은 여기 — Space 재생/멈춤, ←→ 프레임).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>크게 보기</value></data>
-  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>휠: 확대·축소 · 끌기: 이동(두 칸 함께) · 결과 픽셀 좌클릭: 쓰인 곳·색 판정 보기 · 우클릭: 이 색 빼기/되살리기 · 원본 칸 좌클릭: 두 칸에 파란 표시·색 판정 보기 · 두 번 누르기: 맞춤 · Space: 재생/멈춤 · ←→: 프레임 · Esc·바깥 누르기: 닫기</value></data>
+  <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>휠: 확대·축소
+끌기: 이동(두 칸 함께)
+결과 픽셀 좌클릭: 쓰인 곳·색 판정 보기
+결과 픽셀 우클릭: 이 색 빼기/되살리기
+원본 칸 좌클릭: 두 칸에 파란 표시·색 판정 보기
+두 번 누르기: 맞춤
+Space: 재생/멈춤 · ←→: 프레임
+Esc·바깥 누르기: 닫기</value></data>
+  <data name="Pixelate_Zoom_OptRunning" xml:space="preserve"><value>{progress} · {seconds}초째</value><comment>크게 보기 위 줄 가운데: 도는 칸을 볼 때. progress = 진행 줄(이름·돌림·시도·최고 점수), seconds = 이 프리셋을 돈 시간.</comment></data>
   <data name="Pixelate_Zoom_Close" xml:space="preserve"><value>닫기 (Esc)</value></data>
   <data name="Pixelate_Grid_Local" xml:space="preserve"><value>칸 경계 지역 보정</value></data>
   <data name="Pixelate_Grid_Local_Tip" xml:space="preserve"><value>그림 전체에 한 줄로 고른 칸 경계를 띠마다 덩어리 경계에 맞춰 다시 고릅니다. 원본 보기에 꺾인 경계가 보입니다. 평균 칸 크기가 설정한 최소값보다 작거나 움직일 경계가 없으면 곧은 선입니다.</value></data>
