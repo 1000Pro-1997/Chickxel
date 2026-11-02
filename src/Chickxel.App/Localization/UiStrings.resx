@@ -9572,28 +9572,52 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Eraser_Channels" xml:space="preserve"><value>채널</value></data>
   <data name="Eraser_ChannelsTip" xml:space="preserve"><value>R·G·B를 모두 고르면 강도만큼 투명하게 지웁니다. 일부만 고르면 투명도는 그대로 두고 고른 색 채널만 강도만큼 줄입니다(예: R만 고르면 빨강만 뺌).</value></data>
   <data name="TextEffect_Name" xml:space="preserve"><value>글씨</value><comment>효과 종류 이름: 도트 글꼴로 글을 그리는 글씨 효과</comment></data>
-  <data name="TextEffect_Description" xml:space="preserve"><value>도트 글꼴(Galmuri)로 글을 한 색으로 그립니다. 빈 레이어에 붙이면 글씨 레이어처럼 쓰고, 아래로 합치기·영구 적용으로 픽셀이 됩니다.</value><comment>효과 종류 한 줄 설명</comment></data>
+  <data name="TextEffect_Description" xml:space="preserve"><value>도트 글꼴(Galmuri)이나 더한 글꼴(TTF·OTF·BDF)로 글을 한 색으로 그립니다. 빈 레이어에 붙이면 글씨 레이어처럼 쓰고, 아래로 합치기·영구 적용으로 픽셀이 됩니다.</value><comment>효과 종류 한 줄 설명</comment></data>
   <data name="TextEffect_Summary" xml:space="preserve"><value>글씨 · {0} · {1}</value><comment>효과 목록 요약: {0} = 글 첫 줄(16자까지), {1} = 글꼴 이름</comment></data>
   <data name="TextEffect_SummaryTypewriter" xml:space="preserve"><value> · 한 글자씩</value><comment>효과 목록 요약 뒤: 한 글자씩 나타나기를 켰을 때</comment></data>
   <data name="TextEffect_SummaryEmpty" xml:space="preserve"><value>(빈 글)</value><comment>효과 목록 요약: 글이 비었을 때</comment></data>
-  <data name="TextEffect_FontGalmuri11Bold" xml:space="preserve"><value>Galmuri 11 굵게</value><comment>글꼴 이름: Galmuri 11의 굵은 글꼴</comment></data>
   <data name="TextEffect_AlignLeft" xml:space="preserve"><value>왼쪽</value><comment>글씨 줄 맞춤</comment></data>
   <data name="TextEffect_AlignCenter" xml:space="preserve"><value>가운데</value><comment>글씨 줄 맞춤</comment></data>
   <data name="TextEffect_AlignRight" xml:space="preserve"><value>오른쪽</value><comment>글씨 줄 맞춤</comment></data>
   <data name="TextEffect_Text" xml:space="preserve"><value>글</value><comment>글씨 효과 설정: 그릴 글(여러 줄 입력 칸)</comment></data>
-  <data name="TextEffect_Font" xml:space="preserve"><value>글꼴</value><comment>글씨 효과·글씨 도구 설정: 도트 글꼴 고르기</comment></data>
+  <data name="TextEffect_Font" xml:space="preserve"><value>글꼴</value><comment>글씨 효과·글씨 도구 설정: 글꼴 고르기(내장 도트 글꼴 다음 더한 글꼴)</comment></data>
   <data name="TextEffect_Position" xml:space="preserve"><value>위치</value><comment>글씨 효과 설정: 기준점 X·Y</comment></data>
   <data name="TextEffect_LetterSpacing" xml:space="preserve"><value>글자 간격</value><comment>글씨 효과 설정: 글자 사이에 더할 px</comment></data>
   <data name="TextEffect_LineSpacing" xml:space="preserve"><value>  줄 간격</value><comment>글씨 효과 설정: 줄 사이에 더할 px(같은 줄의 둘째 칸)</comment></data>
   <data name="TextEffect_Align" xml:space="preserve"><value>줄 맞춤</value><comment>글씨 효과 설정: 여러 줄 맞춤</comment></data>
   <data name="TextEffect_Typewriter" xml:space="preserve"><value>한 글자씩 나타나기</value><comment>글씨 효과 설정: 타자기처럼 앞 글자부터 하나씩</comment></data>
   <data name="TextEffect_TypewriterTip" xml:space="preserve"><value>효과 범위의 진행에 따라 앞 글자부터 하나씩 나타납니다(첫 프레임은 빈 글, 마지막 프레임은 전부). 빠르기 곡선·반복도 따릅니다.</value></data>
-  <data name="TextEffect_Hint" xml:space="preserve"><value>빈 레이어에 붙이면 글씨 레이어처럼 씁니다. 글씨 도구(T)로 캔버스를 눌러 바로 만들 수 있고, 이동 도구로 끌거나 방향키로 옮깁니다. 아래로 합치기나 영구 적용을 하면 픽셀이 됩니다. X는 줄 맞춤에 따라 줄의 왼쪽 끝·가운데·오른쪽 끝, Y는 첫 줄 위쪽 끝입니다(원본 왼쪽 위 기준). 이미지 밖은 잘립니다. 글꼴: Galmuri(SIL OFL 1.1).</value><comment>글씨 효과 설정 칸 설명(정보 풍선)</comment></data>
+  <data name="TextEffect_Hint" xml:space="preserve"><value>빈 레이어에 붙이면 글씨 레이어처럼 씁니다. 글씨 도구(T)로 캔버스를 눌러 바로 만들 수 있고, 이동 도구로 끌거나 방향키로 옮깁니다. 아래로 합치기나 영구 적용을 하면 픽셀이 됩니다. 상자 가로가 0(자동)이면 X는 줄 맞춤에 따라 줄의 왼쪽 끝·가운데·오른쪽 끝이고 줄을 바꾸지 않습니다. 상자 가로가 있으면 X·Y는 상자 왼쪽 위이고 상자 폭에 맞춰 줄을 바꿉니다. Y는 첫 줄 위쪽 끝입니다(원본 왼쪽 위 기준). 이미지 밖은 잘립니다. 프로젝트에는 글꼴 이름만 저장되므로, 더한 글꼴이 없는 컴퓨터에서는 기본 글꼴로 그립니다. 내장 글꼴: Galmuri(SIL OFL 1.1).</value><comment>글씨 효과 설정 칸 설명(정보 풍선)</comment></data>
   <data name="TextTool_Group" xml:space="preserve"><value>글씨</value><comment>도구 설정: 글씨 도구 묶음 제목</comment></data>
-  <data name="TextTool_FontTip" xml:space="preserve"><value>새 글씨 레이어에 쓸 글꼴입니다. 만든 뒤에는 레이어 효과 창의 글씨 설정에서 바꿉니다.</value></data>
-  <data name="TextTool_Info" xml:space="preserve"><value>캔버스를 누르면 그 자리에 글 입력 칸이 뜹니다. Enter로 확정하면 현재 레이어 위에 글씨 레이어(글씨 효과가 붙은 빈 레이어)가 생기고, 색은 기본색입니다. Shift+Enter = 줄 바꿈, Esc = 취소, 칸 밖을 누르면 확정합니다. 글씨 위를 누르면 그 글을 고칩니다. 옮기기는 이동 도구, 크기·색·간격은 레이어 효과 창, 픽셀로 만들기는 아래로 합치기입니다.</value><comment>도구 설정 제목 줄 정보 풍선: 글씨 도구 쓰는 법</comment></data>
+  <data name="TextTool_FontTip" xml:space="preserve"><value>새 글씨와 캔버스에서 고치는 글씨에 쓸 글꼴입니다. 내장 도트 글꼴 다음에 더한 글꼴이 보입니다.</value></data>
+  <data name="TextTool_AddFont" xml:space="preserve"><value>폰트 추가…</value><comment>글씨 도구 설정 단추: 글꼴 파일을 앱 글꼴 폴더에 더함</comment></data>
+  <data name="TextTool_AddFontTip" xml:space="preserve"><value>TTF·OTF·TTC·BDF 글꼴 파일을 앱 글꼴 폴더에 복사해 글꼴 목록에 더합니다. 프로젝트에는 글꼴 이름만 저장되므로 다른 컴퓨터에서는 같은 글꼴을 따로 더해야 합니다.</value></data>
+  <data name="TextTool_AddFontTitle" xml:space="preserve"><value>글꼴 파일 고르기</value><comment>파일 열기 창 제목</comment></data>
+  <data name="TextTool_FontFiles" xml:space="preserve"><value>글꼴 파일</value><comment>파일 열기 창 형식 이름</comment></data>
+  <data name="TextTool_AddFontFailed" xml:space="preserve"><value>글꼴을 더하지 못했습니다</value><comment>오류 창 제목: 글꼴 파일을 읽지 못함(내용은 원인)</comment></data>
+  <data name="TextTool_OpenFontFolder" xml:space="preserve"><value>폰트 폴더 열기</value><comment>글씨 도구 설정 단추: 앱 글꼴 폴더를 파일 관리자로 엶</comment></data>
+  <data name="TextTool_OpenFontFolderTip" xml:space="preserve"><value>더한 글꼴이 있는 폴더를 엽니다. 이 폴더에 넣거나 지운 글꼴은 목록에 바로 반영됩니다.</value></data>
+  <data name="TextTool_SizeNative" xml:space="preserve"><value>0 (글꼴 기본 크기)</value><comment>글자 크기 숫자 칸 예시 값: 0 = 글꼴 기본 크기</comment></data>
+  <data name="TextEffect_FontMissing" xml:space="preserve"><value>{0} (없음)</value><comment>글꼴 목록: 이 컴퓨터에 없는 글꼴, {0} = 글꼴 이름</comment></data>
+  <data name="TextEffect_FontMissingTip" xml:space="preserve"><value>이 컴퓨터에 없는 글꼴이라 기본 글꼴(Galmuri 11)로 그립니다. 같은 글꼴 파일을 더하면 원래 글꼴로 그립니다.</value></data>
+  <data name="TextEffect_Size" xml:space="preserve"><value>크기</value><comment>글씨 설정: 글자 크기(px)</comment></data>
+  <data name="TextEffect_SizeTip" xml:space="preserve"><value>글자 크기(px)입니다. 0이면 글꼴 기본 크기입니다. 도트 글꼴은 기본 크기의 정수 배로 커집니다.</value></data>
+  <data name="TextEffect_Bold" xml:space="preserve"><value>굵게</value><comment>글씨 설정: 굵게(아이콘 단추 풍선·체크 상자)</comment></data>
+  <data name="TextEffect_Italic" xml:space="preserve"><value>기울임</value><comment>글씨 설정: 기울임(아이콘 단추 풍선·체크 상자)</comment></data>
+  <data name="TextEffect_Smooth" xml:space="preserve"><value>매끄럽게</value><comment>글씨 설정: 벡터 글꼴 가장자리를 반투명 픽셀로</comment></data>
+  <data name="TextEffect_SmoothTip" xml:space="preserve"><value>벡터 글꼴(TTF·OTF)의 가장자리를 반투명 픽셀로 부드럽게 그립니다. 끄면 또렷한 픽셀(1비트)로 그립니다. 도트 글꼴에는 쓰지 않습니다.</value></data>
+  <data name="TextEffect_Scale" xml:space="preserve"><value>배율</value><comment>글씨 효과 설정: 가로·세로 배율(%)</comment></data>
+  <data name="TextEffect_ScaleX" xml:space="preserve"><value>가로 배율</value><comment>글씨 도구 설정: 글자 가로 배율(%)</comment></data>
+  <data name="TextEffect_ScaleY" xml:space="preserve"><value>세로 배율</value><comment>글씨 도구 설정: 글자 세로 배율(%)</comment></data>
+  <data name="TextEffect_ScaleXTip" xml:space="preserve"><value>글자를 가로로 늘이거나 줄입니다(25~400%, 100% = 그대로).</value></data>
+  <data name="TextEffect_ScaleYTip" xml:space="preserve"><value>글자를 세로로 늘이거나 줄입니다(25~400%, 100% = 그대로).</value></data>
+  <data name="TextEffect_Box" xml:space="preserve"><value>상자</value><comment>글씨 효과 설정: 글 상자 가로·세로(px)</comment></data>
+  <data name="TextEffect_BoxTip" xml:space="preserve"><value>글 상자 크기(px)입니다. 가로가 0(자동)이면 줄을 바꾸지 않고, 가로가 있으면 X·Y가 상자 왼쪽 위이고 상자 폭에 맞춰 줄을 바꿉니다. 세로는 상자의 최소 높이입니다(글은 잘리지 않음).</value></data>
+  <data name="TextEffect_BoxAuto" xml:space="preserve"><value>0 (자동)</value><comment>글 상자 크기 숫자 칸 예시 값: 0 = 자동</comment></data>
+  <data name="TextEffect_Width" xml:space="preserve"><value>가로</value><comment>글씨 효과 설정: 가로 숫자 칸 앞 이름</comment></data>
+  <data name="TextEffect_Height" xml:space="preserve"><value>세로</value><comment>글씨 효과 설정: 세로 숫자 칸 앞 이름</comment></data>
+  <data name="TextTool_Info" xml:space="preserve"><value>캔버스를 끌면 그 크기의 글 상자를, 누르면 자동 폭 글 상자를 만들고 캔버스에 바로 글을 씁니다(한글 조합 포함). 글씨 레이어(글씨 효과가 붙은 빈 레이어)가 현재 레이어 위에 생기고, 색은 기본색입니다. Enter = 줄 바꿈, Esc 또는 Ctrl+Enter = 마치기, 상자 밖을 누르면 확정합니다. 글씨 위를 누르면 그 글을 고치고, 상자 손잡이로 크기를 바꾸며, 고치는 동안 점선 테두리(손잡이가 아닌 곳)를 끌면 글씨를 옮깁니다. 글꼴·크기·굵게·기울임·간격·배율·줄 맞춤은 이 칸에서 바꾸며 고치는 글씨에 바로 반영됩니다. 옮기기는 이동 도구, 픽셀로 만들기는 아래로 합치기입니다.</value><comment>도구 설정 제목 줄 정보 풍선: 글씨 도구 쓰는 법</comment></data>
   <data name="TextTool_Locked" xml:space="preserve"><value>잠긴 레이어의 글씨는 고칠 수 없습니다.</value><comment>상태 표시줄 알림</comment></data>
-  <data name="TextTool_Watermark" xml:space="preserve"><value>글 입력 · Enter 확정 · Shift+Enter 줄 바꿈 · Esc 취소</value><comment>글씨 도구 입력 칸의 빈 칸 안내</comment></data>
   <data name="TextTool_AddLabel" xml:space="preserve"><value>글씨 쓰기</value><comment>실행취소 기록 이름: 글씨 도구로 새 글씨 레이어</comment></data>
   <data name="TextTool_EditLabel" xml:space="preserve"><value>글씨 고치기</value><comment>실행취소 기록 이름: 글씨 도구로 글 고침</comment></data>
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>글씨 옮기기</value><comment>실행취소 기록 이름: 이동 도구로 글씨 레이어의 글씨를 옮김</comment></data>

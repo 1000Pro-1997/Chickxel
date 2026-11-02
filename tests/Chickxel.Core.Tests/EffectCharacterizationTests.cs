@@ -69,7 +69,7 @@ public class EffectCharacterizationTests
         },
         new TextEffect
         {
-            Text = "가A\nb!?", Font = TextFont.Galmuri9, Color = new Color32(30, 200, 90, 220), X = 6, Y = -2, LetterSpacing = 1, LineSpacing = -4,
+            Text = "가A\nb!?", FontName = "Galmuri9", Color = new Color32(30, 200, 90, 220), X = 6, Y = -2, LetterSpacing = 1, LineSpacing = -4,
             Align = TextAlign.Center, Typewriter = true, Easing = EffectEasing.EaseOut,
             ColorGradients = new Dictionary<string, EffectColorGradient>
             {
@@ -150,7 +150,7 @@ public class EffectCharacterizationTests
         ["TextEffect"] = "6308595535962738",
     };
 
-    private const string ExpectedProjectJson = "3F10EE9C2AD4ED97";
+    private const string ExpectedProjectJson = "6191F7EB8B134290";
 
     /// <summary>저장 형식 고정과 예전 형식 fixture에 쓰는 목록: 모든 종류 + 꺼진 효과 하나 + 프레임 범위·클리핑이 있는 효과 하나.</summary>
     internal static LayerEffect[] SavedKinds()

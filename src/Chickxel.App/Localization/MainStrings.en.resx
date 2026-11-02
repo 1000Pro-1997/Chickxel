@@ -400,5 +400,5 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: keep proportions · U: outline/filled · pick the shape in Tool options</value></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
-  <data name="Tool_Text_Hint" xml:space="preserve"><value>Click: new text layer · Click on text: edit it · Enter: commit, Shift+Enter: new line, Esc: cancel · pick the font in Tool options</value></data>
+  <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
 </root>

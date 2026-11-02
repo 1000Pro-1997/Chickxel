@@ -401,4 +401,6 @@
   <data name="Community_Error_BadResponse" xml:space="preserve"><value>Couldn't read the Chickxel server's response.</value></data>
   <data name="Community_Error_LoginTimeout" xml:space="preserve"><value>Signing in in the browser didn't finish in time. Try again.</value></data>
   <data name="Community_Error_LoginFailed" xml:space="preserve"><value>Signing in in the browser failed.</value></data>
+  <data name="Font_Unsupported" xml:space="preserve"><value>This font file isn't supported. Choose a .ttf, .otf, .ttc or .bdf file.</value></data>
+  <data name="Font_Unreadable" xml:space="preserve"><value>Couldn't read the font file "{0}". It is damaged or in an unsupported format.</value></data>
 </root>

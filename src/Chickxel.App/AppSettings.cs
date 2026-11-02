@@ -74,8 +74,13 @@ public sealed class AppSettings
     /// <summary>밝게/어둡게 세기(%).</summary>
     public int DodgeStrength { get; set; } = EditorContext.DefaultDodgeStrength;
     public DitherPattern DitherPattern { get; set; } = DitherPattern.Checker;
-    /// <summary>글씨 도구가 새 글씨 레이어에 쓰는 글꼴(마지막으로 고른 것).</summary>
-    public TextFont TextFont { get; set; } = TextFont.Galmuri11;
+    /// <summary>글씨 도구 설정(글꼴 이름·크기·굵게·기울임·간격·배율·줄 맞춤, 마지막으로 쓴 것). null = 기본.</summary>
+    public Chickxel.Core.Text.TextStyle? TextStyle { get; set; }
+    /// <summary>
+    /// 예전 버전의 글씨 도구 글꼴(TextFont 열거형 번호 또는 이름 — 읽기만). <see cref="Load"/>가 <see cref="TextStyle"/>의 글꼴 이름으로 옮기고 다시 쓰지 않는다.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JsonElement? TextFont { get; set; }
     /// <summary>지우개 강도(1~100%)와 채널(R·G·B 모두 = 투명하게, 일부 = 그 색만 빼기).</summary>
     public int EraserStrength { get; set; } = 100;
     public bool EraserRed { get; set; } = true;
@@ -311,7 +316,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// 예전 형식을 옮긴다: 팔레트 하나(<see cref="Palette"/>) → <see cref="Palettes"/> 첫 항목 "팔레트 1",
-    /// 단축키 명령 "AI/Claude 채팅" → "AI/AI 채팅"(Codex가 더해져 이름이 바뀜).
+    /// 단축키 명령 "AI/Claude 채팅" → "AI/AI 채팅"(Codex가 더해져 이름이 바뀜), 글씨 도구 글꼴(<see cref="TextFont"/>) → <see cref="TextStyle"/>의 글꼴 이름.
     /// </summary>
     private static AppSettings Migrate(AppSettings s)
     {
@@ -338,7 +343,22 @@ public sealed class AppSettings
             s.AiDrawAutoDefaultApplied = true;
         }
         s.AiDraw.FrameCounts ??= Chickxel.Core.AiDraw.AiDrawActions.DefaultFrameCounts();
+        if (s.TextFont is { } font)
+        {
+            if (s.TextStyle is null && LegacyFontName(font) is { } name) s.TextStyle = new() { FontName = name };
+            s.TextFont = null;
+        }
         return s;
+    }
+
+    /// <summary>예전 TextFont 값(열거형 번호 0~4 또는 이름)의 글꼴 이름. 모르는 값이면 null(기본 글꼴).</summary>
+    private static string? LegacyFontName(JsonElement value)
+    {
+        string[] names = ["Galmuri7", "Galmuri9", "Galmuri11", "Galmuri11Bold", "Galmuri14"];
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int i) && i >= 0 && i < names.Length) return names[i];
+        if (value.ValueKind == JsonValueKind.String && value.GetString() is { } s)
+            return names.FirstOrDefault(n => string.Equals(n, s, StringComparison.OrdinalIgnoreCase));
+        return null;
     }
 
     /// <summary>설정 파일을 쓴다. 실패하면 false(설정 저장 실패는 작업을 막지 않는다).</summary>

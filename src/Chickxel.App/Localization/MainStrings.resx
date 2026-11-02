@@ -1114,5 +1114,5 @@
   <data name="Tool_Shape_Hint" xml:space="preserve"><value>Shift: 비율 고정 · U: 외곽/채움 · 모양은 도구 설정에서</value><comment>도형 도구 상태 줄 안내</comment></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>도형: 선</value><comment>단축키 이름: 도형 도구를 선 모양으로 고름(L)</comment></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>글씨</value><comment>도구 이름: 캔버스를 눌러 글씨 레이어(글씨 효과가 붙은 빈 레이어)를 만드는 글씨 도구</comment></data>
-  <data name="Tool_Text_Hint" xml:space="preserve"><value>클릭: 새 글씨 레이어 · 글씨 위 클릭: 고치기 · Enter: 확정, Shift+Enter: 줄 바꿈, Esc: 취소 · 글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
+  <data name="Tool_Text_Hint" xml:space="preserve"><value>드래그: 글상자 · 클릭: 한 줄 글씨 · 글씨 위 클릭: 고치기 · Enter: 줄 바꿈 · Esc / Ctrl+Enter / 바깥 클릭: 마침 · 크기·굵게·글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
 </root>

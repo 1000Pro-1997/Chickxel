@@ -51,6 +51,12 @@ public class EffectRegistryTests
         Assert.Equal(models.OrderBy(t => t.Name), EffectRegistry.All.Select(d => d.ModelType).OrderBy(t => t.Name));
     }
 
+    /// <summary>저장 키와 이름이 다른 모델 속성("효과 ID.키" → 속성 이름): 글씨 글꼴은 열거형에서 글꼴 이름(글)으로 바뀌었고 키 "font"는 그대로.</summary>
+    private static readonly Dictionary<string, string> RenamedProperties = new()
+    {
+        [$"{TextDefinition.Id}.font"] = nameof(TextEffect.FontName),
+    };
+
     [Theory]
     [MemberData(nameof(TypeIds))]
     public void Definition_CreatesItsModel_WithUniqueSchemaKeysBackedByProperties(string typeId)
@@ -65,8 +71,9 @@ public class EffectRegistryTests
         Assert.DoesNotContain(keys, k => Chickxel.Core.IO.EffectSettings.ReservedKeys.Contains(k) || k == EffectCodec.GradientsKey);
         foreach (var p in d.Parameters)
         {
-            // 키 = 모델 속성 이름(camelCase), 색 슬롯 = 그 속성 이름
-            var property = d.ModelType.GetProperty(char.ToUpperInvariant(p.Key[0]) + p.Key[1..]);
+            // 키 = 모델 속성 이름(camelCase), 색 슬롯 = 그 속성 이름. 키는 바꾸지 않으므로 속성 이름이 바뀐 설정은 따로 적는다.
+            var name = RenamedProperties.TryGetValue($"{typeId}.{p.Key}", out var renamed) ? renamed : char.ToUpperInvariant(p.Key[0]) + p.Key[1..];
+            var property = d.ModelType.GetProperty(name);
             Assert.True(property is not null, $"{typeId}.{p.Key}");
             var expected = p.Kind switch
             {

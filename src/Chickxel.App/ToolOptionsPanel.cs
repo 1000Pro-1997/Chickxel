@@ -1,6 +1,7 @@
 using Chickxel.Core.Edit;
 using Chickxel.Core.Model;
 using Chickxel.App.Localization;
+using Chickxel.Core.Text;
 
 namespace Chickxel.App;
 
@@ -45,6 +46,15 @@ public sealed class ToolOptionsPanel : UserControl
         (ShapeKind.Cube, VectorIcon.Cube, UiStrings.Shape_Cube, UiStrings.Shape_Cube_Hint),
     ];
     private static readonly string[] SourceNames = [UiStrings.S_ToolOptionsPanel_SourceNames_6198D7D9B6, UiStrings.S_ToolOptionsPanel_SourceNames_06199A4484];
+    /// <summary>글씨 줄 맞춤 단추(<see cref="TextAlign"/> 순서): 아이콘, 안내.</summary>
+    private static readonly (VectorIcon Icon, string Tip)[] TextAligns =
+    [
+        (VectorIcon.AlignLeft, UiStrings.TextEffect_AlignLeft),
+        (VectorIcon.AlignCenter, UiStrings.TextEffect_AlignCenter),
+        (VectorIcon.AlignRight, UiStrings.TextEffect_AlignRight),
+    ];
+    /// <summary>글씨 가로·세로 배율 예시(%).</summary>
+    private static readonly decimal[] TextScales = [25, 50, 75, 100, 125, 150, 200, 300, 400];
 
     /// <summary>도형 모양 이름(예: "별").</summary>
     internal static string ShapeName(ShapeKind kind) => ShapeDefs.First(d => d.Kind == kind).Name;
@@ -67,9 +77,19 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly NumericUpDown _tolNum, _dodgeNum, _eraserNum;
     private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY, _mirrorAtPivot;
     private readonly CheckBox _eraseRed, _eraseGreen, _eraseBlue;
-    private readonly ComboBox _fillSource, _pickSource, _ditherPattern, _textFont;
+    private readonly ComboBox _fillSource, _pickSource, _ditherPattern;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
+
+    // 글씨
+    private readonly FontPicker _textFont = new(170);
+    /// <summary>고른 글꼴이 이 컴퓨터에 없을 때 경고(기본 글꼴로 그림).</summary>
+    private readonly TextBlock _textMissing;
+    private readonly NumericUpDown _textSize, _textLetter, _textLine, _textScaleX, _textScaleY;
+    private readonly ToggleButton _textBold, _textItalic;
+    /// <summary>줄 맞춤(왼쪽·가운데·오른쪽 = <see cref="TextAlign"/> 순서). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private readonly TabStrip _textAlign = new(TabStripKind.Segmented) { Focusable = false, IsTabStop = false, Margin = default };
+    private readonly CheckBox _textSmooth;
 
     // 도형
     private readonly Border _shapeBox;
@@ -232,15 +252,54 @@ public sealed class ToolOptionsPanel : UserControl
         _ditherPattern.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_7D99E90556);
         _ditherBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_FC57CE224F, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_607280800B), _ditherPattern)));
 
-        // ── 글씨: 새 글씨 레이어의 글꼴
-        _textFont = Ui.Combo(150, LayerEffectsDialog.TextFontNames);
-        _textFont.SelectionChanged += (_, _) =>
+        // ── 글씨: 글꼴(더하기·폴더 열기)·크기·굵게·기울임·줄 맞춤·간격·배율·매끄럽게. 바꾸면 캔버스에서 고치는 글씨에도 바로 반영된다.
+        _textFont.Tip = UiStrings.TextTool_FontTip;
+        _textFont.Picked += name => SetTextStyle(s => s with { FontName = name });
+        _textFont.ListChanged += RefreshText;
+        var addFont = Ui.Button(VectorIcon.Plus, UiStrings.TextTool_AddFont, (_, _) =>
         {
-            if (_updating || _textFont.SelectedIndex < 0) return;
-            _ctx.TextFont = (TextFont)_textFont.SelectedIndex;
+            if (FontPicker.AddFont(this) is { } name) _ctx.TextStyle = _ctx.TextStyle with { FontName = name };
+        }).Tip(UiStrings.TextTool_AddFontTip);
+        var openFonts = Ui.Button(VectorIcon.FolderOpen, UiStrings.TextTool_OpenFontFolder, (_, _) => FontPicker.OpenFolder())
+            .Tip(UiStrings.TextTool_OpenFontFolderTip);
+        addFont.Focusable = openFonts.Focusable = false;
+        _textMissing = Dim(UiStrings.TextEffect_FontMissingTip);
+        _textMissing.Foreground = AppTheme.WarningBrush;
+        _textMissing.TextWrapping = TextWrapping.Wrap;
+        _textSize = NumBox(0, TextEffect.MaxSize, v => SetTextStyle(s => s with { Size = v }))
+            .Presets([0, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 32, 48, 64], [], v => v == 0 ? UiStrings.TextTool_SizeNative : $"{v} px")
+            .Unit("px").RecentKey("text.size");
+        _textSize.Tip(UiStrings.TextEffect_SizeTip);
+        _textBold = TextToggle(VectorIcon.Bold, UiStrings.TextEffect_Bold, v => SetTextStyle(s => s with { Bold = v }));
+        _textItalic = TextToggle(VectorIcon.Italic, UiStrings.TextEffect_Italic, v => SetTextStyle(s => s with { Italic = v }));
+        foreach (var (icon, tip) in TextAligns)
+            _textAlign.Add(null, (g, r, b) => VectorIcons.Draw(g, icon, r, 13, b), tip);
+        _textAlign.SelectionChanged += (_, _) =>
+        {
+            if (!_updating && _textAlign.SelectedIndex >= 0) SetTextStyle(s => s with { Align = (TextAlign)_textAlign.SelectedIndex });
         };
-        _textFont.Tip(UiStrings.TextTool_FontTip);
-        _textBox = Ui.Group(UiStrings.TextTool_Group, Ui.Stack(Ui.Row(Ui.Label(UiStrings.TextEffect_Font), _textFont)));
+        _textLetter = NumBox(TextEffect.MinLetterSpacing, TextEffect.MaxLetterSpacing, v => SetTextStyle(s => s with { LetterSpacing = v }))
+            .Presets(-2, -1, 0, 1, 2, 3, 4, 6, 8).Unit("px").RecentKey("effect.textSpacing");
+        _textLine = NumBox(TextEffect.MinLineSpacing, TextEffect.MaxLineSpacing, v => SetTextStyle(s => s with { LineSpacing = v }))
+            .Presets(-2, -1, 0, 1, 2, 3, 4, 6, 8).Unit("px").RecentKey("effect.textSpacing");
+        _textScaleX = NumBox(TextEffect.MinScale, TextEffect.MaxScale, v => SetTextStyle(s => s with { ScaleX = v }))
+            .Presets(TextScales).Unit("%").RecentKey("text.scale");
+        _textScaleX.Tip(UiStrings.TextEffect_ScaleXTip);
+        _textScaleY = NumBox(TextEffect.MinScale, TextEffect.MaxScale, v => SetTextStyle(s => s with { ScaleY = v }))
+            .Presets(TextScales).Unit("%").RecentKey("text.scale");
+        _textScaleY.Tip(UiStrings.TextEffect_ScaleYTip);
+        _textSmooth = Check(UiStrings.TextEffect_Smooth, UiStrings.TextEffect_SmoothTip, v => SetTextStyle(s => s with { Smooth = v }));
+        _textBox = Ui.Group(UiStrings.TextTool_Group, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.TextEffect_Font), _textFont.Combo),
+            Ui.Row(addFont, openFonts),
+            _textMissing,
+            Ui.Row(Ui.Label(UiStrings.TextEffect_Size), _textSize, Ui.Label("px"), _textBold, _textItalic),
+            Ui.Row(Ui.Label(UiStrings.TextEffect_Align), _textAlign),
+            Ui.Row(Ui.Label(UiStrings.TextEffect_LetterSpacing), _textLetter, Ui.Label("px")),
+            Ui.Row(Ui.Label(UiStrings.TextEffect_LineSpacing.Trim()), _textLine, Ui.Label("px")),
+            Ui.Row(Ui.Label(UiStrings.TextEffect_ScaleX), _textScaleX, Ui.Label("%")),
+            Ui.Row(Ui.Label(UiStrings.TextEffect_ScaleY), _textScaleY, Ui.Label("%")),
+            _textSmooth));
 
         // ── 그라데이션: 같은 정지점 편집기를 도구와 레이어 효과에 사용한다.
         _gradientEditor = new GradientEditor(() => _ctx.Primary);
@@ -537,6 +596,31 @@ public sealed class ToolOptionsPanel : UserControl
         return c;
     }
 
+    /// <summary>글씨 도구 설정 하나를 바꾼다(캔버스에서 고치는 글씨에도 바로 반영).</summary>
+    private void SetTextStyle(Func<TextStyle, TextStyle> change)
+    {
+        if (!_updating) _ctx.TextStyle = change(_ctx.TextStyle);
+    }
+
+    /// <summary>글씨 굵게·기울임처럼 켜고 끄는 아이콘 단추(뜻은 풍선). 클릭해도 캔버스 포커스를 빼앗지 않는다.</summary>
+    private ToggleButton TextToggle(VectorIcon icon, string tip, Action<bool> apply)
+    {
+        var b = new ToggleButton
+        {
+            Content = Ui.Icon(icon, 13),
+            Width = 26,
+            Height = 22,
+            Padding = new Thickness(0),
+            Margin = new Thickness(1),
+            MinHeight = 0,
+            Focusable = false,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        }.Tip(tip);
+        b.IsCheckedChanged += (_, _) => { if (!_updating) apply(b.On()); };
+        return b;
+    }
+
     private ComboBox Combo(Action<int> apply)
     {
         var c = Ui.Combo(150, SourceNames);
@@ -687,7 +771,7 @@ public sealed class ToolOptionsPanel : UserControl
             _eraseGreen.IsChecked = _ctx.EraserGreen;
             _eraseBlue.IsChecked = _ctx.EraserBlue;
             _ditherPattern.SelectedIndex = (int)_ctx.DitherPattern;
-            _textFont.SelectedIndex = (int)_ctx.TextFont;
+            RefreshText();
             _pixelPerfect.IsChecked = _ctx.PixelPerfect;
             _shapeFilled.IsChecked = _ctx.ShapeFilled;
             _rightErase.IsChecked = _ctx.RightButtonErases;
@@ -713,6 +797,33 @@ public sealed class ToolOptionsPanel : UserControl
         RefreshSlice();
         RefreshTransform();
         RefreshCanvasResize();
+    }
+
+    /// <summary>글씨 설정 칸에 글씨 도구 설정(<see cref="EditorContext.TextStyle"/>)을 보인다. 매끄럽게는 벡터 글꼴일 때만 쓸 수 있다.</summary>
+    private void RefreshText()
+    {
+        var s = _ctx.TextStyle;
+        bool wasUpdating = _updating;
+        _updating = true;
+        try
+        {
+            _textFont.Name = s.FontName;
+            _textMissing.IsVisible = _textFont.IsMissing;
+            _textSize.Value = s.Size;
+            _textBold.IsChecked = s.Bold;
+            _textItalic.IsChecked = s.Italic;
+            _textAlign.SelectedIndex = (int)s.Align;
+            _textLetter.Value = s.LetterSpacing;
+            _textLine.Value = s.LineSpacing;
+            _textScaleX.Value = s.ScaleX;
+            _textScaleY.Value = s.ScaleY;
+            _textSmooth.IsEnabled = _textFont.IsVector;
+            _textSmooth.IsChecked = s.Smooth;
+        }
+        finally
+        {
+            _updating = wasUpdating;
+        }
     }
 
     /// <summary>도형 모양 단추(고른 것 = 강조색, 채움이면 아이콘도 채움)·안내·모양별 개수 칸.</summary>

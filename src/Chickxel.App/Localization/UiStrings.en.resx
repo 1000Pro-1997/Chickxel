@@ -3698,11 +3698,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Eraser_Channels" xml:space="preserve"><value>Channels</value></data>
   <data name="Eraser_ChannelsTip" xml:space="preserve"><value>With R, G and B all on, it erases toward transparent by the strength. With only some on, opacity stays and only those color channels are reduced by the strength (for example R alone removes red).</value></data>
   <data name="TextEffect_Name" xml:space="preserve"><value>Text</value></data>
-  <data name="TextEffect_Description" xml:space="preserve"><value>Draws text in one color with a pixel font (Galmuri). On an empty layer it works as a text layer; merge down or bake to turn it into pixels.</value></data>
+  <data name="TextEffect_Description" xml:space="preserve"><value>Draws text in one color with a pixel font (Galmuri) or a font you added (TTF, OTF, BDF). On an empty layer it works as a text layer; merge down or bake to turn it into pixels.</value></data>
   <data name="TextEffect_Summary" xml:space="preserve"><value>Text · {0} · {1}</value></data>
   <data name="TextEffect_SummaryTypewriter" xml:space="preserve"><value> · typewriter</value></data>
   <data name="TextEffect_SummaryEmpty" xml:space="preserve"><value>(empty)</value></data>
-  <data name="TextEffect_FontGalmuri11Bold" xml:space="preserve"><value>Galmuri 11 Bold</value></data>
   <data name="TextEffect_AlignLeft" xml:space="preserve"><value>Left</value></data>
   <data name="TextEffect_AlignCenter" xml:space="preserve"><value>Center</value></data>
   <data name="TextEffect_AlignRight" xml:space="preserve"><value>Right</value></data>
@@ -3714,12 +3713,37 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="TextEffect_Align" xml:space="preserve"><value>Alignment</value></data>
   <data name="TextEffect_Typewriter" xml:space="preserve"><value>Typewriter (one letter at a time)</value></data>
   <data name="TextEffect_TypewriterTip" xml:space="preserve"><value>Letters appear one by one from the start as the effect range progresses (empty on the first frame, complete on the last). Follows the easing and repeat settings.</value></data>
-  <data name="TextEffect_Hint" xml:space="preserve"><value>On an empty layer this works as a text layer. Create one directly by clicking the canvas with the Text tool (T), and move it by dragging with the Move tool or with the arrow keys. Merge down or bake to turn it into pixels. X is the left end, center or right end of each line depending on alignment; Y is the top of the first line (from the original top-left). Anything outside the image is clipped. Font: Galmuri (SIL OFL 1.1).</value></data>
+  <data name="TextEffect_Hint" xml:space="preserve"><value>On an empty layer this works as a text layer. Create one directly by clicking the canvas with the Text tool (T), and move it by dragging with the Move tool or with the arrow keys. Merge down or bake to turn it into pixels. When the box width is 0 (auto), X is the left end, center or right end of each line depending on alignment and lines do not wrap. With a box width, X and Y are the top-left of the box and lines wrap to fit it. Y is the top of the first line (from the original top-left). Anything outside the image is clipped. Projects store only the font name, so on a computer without an added font the text is drawn with the default font. Built-in font: Galmuri (SIL OFL 1.1).</value></data>
   <data name="TextTool_Group" xml:space="preserve"><value>Text</value></data>
-  <data name="TextTool_FontTip" xml:space="preserve"><value>Font for new text layers. After creating one, change it in the Text settings of the layer effects window.</value></data>
-  <data name="TextTool_Info" xml:space="preserve"><value>Click the canvas to open a text box there. Press Enter to commit: a text layer (an empty layer with a Text effect) is added above the current layer, in the primary color. Shift+Enter = new line, Esc = cancel, clicking outside the box commits. Click on existing text to edit it. Move it with the Move tool, change size, color and spacing in the layer effects window, and merge down to turn it into pixels.</value></data>
+  <data name="TextTool_FontTip" xml:space="preserve"><value>Font for new text and for text you edit on the canvas. Fonts you added are listed after the built-in pixel fonts.</value></data>
+  <data name="TextTool_AddFont" xml:space="preserve"><value>Add Font…</value></data>
+  <data name="TextTool_AddFontTip" xml:space="preserve"><value>Copies a TTF, OTF, TTC or BDF font file into the app font folder and adds it to the font list. Projects store only the font name, so add the same font on other computers too.</value></data>
+  <data name="TextTool_AddFontTitle" xml:space="preserve"><value>Choose a Font File</value></data>
+  <data name="TextTool_FontFiles" xml:space="preserve"><value>Font files</value></data>
+  <data name="TextTool_AddFontFailed" xml:space="preserve"><value>Could Not Add the Font</value></data>
+  <data name="TextTool_OpenFontFolder" xml:space="preserve"><value>Open Font Folder</value></data>
+  <data name="TextTool_OpenFontFolderTip" xml:space="preserve"><value>Opens the folder that holds the fonts you added. Fonts you put in or delete from it show up in the list right away.</value></data>
+  <data name="TextTool_SizeNative" xml:space="preserve"><value>0 (font default size)</value></data>
+  <data name="TextEffect_FontMissing" xml:space="preserve"><value>{0} (missing)</value></data>
+  <data name="TextEffect_FontMissingTip" xml:space="preserve"><value>This font is not on this computer, so the text is drawn with the default font (Galmuri 11). Add the same font file to draw it with the original font.</value></data>
+  <data name="TextEffect_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="TextEffect_SizeTip" xml:space="preserve"><value>Text size in pixels. 0 uses the font's default size. Pixel fonts grow in whole multiples of their default size.</value></data>
+  <data name="TextEffect_Bold" xml:space="preserve"><value>Bold</value></data>
+  <data name="TextEffect_Italic" xml:space="preserve"><value>Italic</value></data>
+  <data name="TextEffect_Smooth" xml:space="preserve"><value>Smooth</value></data>
+  <data name="TextEffect_SmoothTip" xml:space="preserve"><value>Draws the edges of vector fonts (TTF, OTF) with semi-transparent pixels. When off, the text is drawn with crisp 1-bit pixels. Not used by pixel fonts.</value></data>
+  <data name="TextEffect_Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="TextEffect_ScaleX" xml:space="preserve"><value>Width scale</value></data>
+  <data name="TextEffect_ScaleY" xml:space="preserve"><value>Height scale</value></data>
+  <data name="TextEffect_ScaleXTip" xml:space="preserve"><value>Stretches or squeezes the text horizontally (25–400%, 100% = unchanged).</value></data>
+  <data name="TextEffect_ScaleYTip" xml:space="preserve"><value>Stretches or squeezes the text vertically (25–400%, 100% = unchanged).</value></data>
+  <data name="TextEffect_Box" xml:space="preserve"><value>Box</value></data>
+  <data name="TextEffect_BoxTip" xml:space="preserve"><value>Text box size in pixels. With width 0 (auto) lines do not wrap; with a width, X and Y are the top-left of the box and lines wrap to fit it. Height is the minimum box height (text is not clipped).</value></data>
+  <data name="TextEffect_BoxAuto" xml:space="preserve"><value>0 (auto)</value></data>
+  <data name="TextEffect_Width" xml:space="preserve"><value>W</value></data>
+  <data name="TextEffect_Height" xml:space="preserve"><value>H</value></data>
+  <data name="TextTool_Info" xml:space="preserve"><value>Drag on the canvas to make a text box of that size, or click for an auto-width box, then type right on the canvas (IME composition included). A text layer (an empty layer with a Text effect) is added above the current layer, in the primary color. Enter = new line, Esc or Ctrl+Enter = finish, clicking outside the box commits. Click on existing text to edit it, and drag the box handles to resize it; while editing, drag the dashed frame edge (away from the handles) to move the text. Font, size, bold, italic, spacing, scale and alignment are set here and apply live to the text you are editing. Move it with the Move tool, and merge down to turn it into pixels.</value></data>
   <data name="TextTool_Locked" xml:space="preserve"><value>Text on a locked layer can't be edited.</value></data>
-  <data name="TextTool_Watermark" xml:space="preserve"><value>Type text · Enter commit · Shift+Enter new line · Esc cancel</value></data>
   <data name="TextTool_AddLabel" xml:space="preserve"><value>Add text</value></data>
   <data name="TextTool_EditLabel" xml:space="preserve"><value>Edit text</value></data>
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>Move text</value></data>

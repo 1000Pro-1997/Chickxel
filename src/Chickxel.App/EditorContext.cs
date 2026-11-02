@@ -3,6 +3,7 @@ using Chickxel.Core.IO;
 using Chickxel.Core.Model;
 using Chickxel.Core.Scripting;
 using Chickxel.App.Localization;
+using Chickxel.Core.Text;
 
 namespace Chickxel.App;
 
@@ -266,13 +267,33 @@ public sealed class EditorContext
         set { if (!Enum.IsDefined(value)) value = DitherPattern.Checker; if (_ditherPattern == value) return; _ditherPattern = value; OptionsChanged(); }
     }
 
-    private TextFont _textFont = TextFont.Galmuri11;
+    private TextStyle _textStyle = new();
 
-    /// <summary>글씨 도구가 새 글씨 레이어에 쓰는 글꼴(마지막으로 고른 것).</summary>
-    public TextFont TextFont
+    /// <summary>
+    /// 글씨 도구 설정(글꼴·크기·굵게·기울임·매끄럽게·간격·가로/세로 배율·줄 맞춤): 새 글씨 레이어에 쓰고, 캔버스에서 고치는 글씨에는 바로 반영된다.
+    /// 글씨 레이어를 고치기 시작하면 그 레이어의 설정으로 바뀐다. 범위 밖 값은 글씨 효과 범위로 맞춰 넣고, 바뀌면 <see cref="TextStyleChanged"/>를 알린다.
+    /// </summary>
+    public TextStyle TextStyle
     {
-        get => _textFont;
-        set { if (!Enum.IsDefined(value)) value = TextFont.Galmuri11; if (_textFont == value) return; _textFont = value; OptionsChanged(); }
+        get => _textStyle;
+        set
+        {
+            value = NormalizeTextStyle(value);
+            if (_textStyle == value) return;
+            _textStyle = value;
+            TextStyleChanged?.Invoke(this, EventArgs.Empty);
+            OptionsChanged();
+        }
+    }
+    /// <summary><see cref="TextStyle"/>가 바뀜(캔버스가 고치는 글씨에 바로 반영).</summary>
+    public event EventHandler? TextStyleChanged;
+
+    /// <summary>글씨 효과에 한 번 넣었다 빼서 범위를 맞춘다(글꼴 이름이 비었으면 기본 글꼴).</summary>
+    private static TextStyle NormalizeTextStyle(TextStyle? style)
+    {
+        style ??= new();
+        if (string.IsNullOrWhiteSpace(style.FontName)) style = style with { FontName = FontLibrary.DefaultName };
+        return TextStyle.From(style.ApplyTo(new TextEffect()));
     }
     /// <summary>도형: 채움(true) / 외곽(false). 나선은 늘 선(<see cref="Shapes.CanFill"/>).</summary>
     public bool ShapeFilled { get => _shapeFilled; set { _shapeFilled = value; OptionsChanged(); } }
@@ -703,11 +724,12 @@ public sealed class EditorContext
 
     /// <summary>
     /// 떠 있는 픽셀을 내려놓고 열린 선택 편집 기록을 확정한다. 변형 중이면 변형을 적용한 뒤 내려놓고(실행취소 한 단계),
-    /// 캔버스 크기 모드면 그것을 적용한다(실행취소 한 단계).
+    /// 캔버스 크기 모드면 그것을 적용한다(실행취소 한 단계). 먼저 <see cref="CommittingEdits"/>를 알린다(캔버스 글씨 편집 확정).
     /// </summary>
     public void CommitFloating()
     {
         if (Project is not { } p) return;
+        CommittingEdits?.Invoke(this, EventArgs.Empty);
         ApplyCanvasResize();
         var transform = _transform;
         _transform = null;
@@ -777,6 +799,12 @@ public sealed class EditorContext
 
     private TransformSession? _transform;
     private ResampleMode _transformResample = ResampleMode.RotSprite;
+
+    /// <summary>
+    /// 열린 편집을 확정하기 직전(<see cref="CommitFloating"/> 맨 앞 — 저장·실행취소·레이어 바꾸기·구조 편집 앞):
+    /// 캔버스에서 고치던 글씨를 확정할 때 쓴다.
+    /// </summary>
+    public event EventHandler? CommittingEdits;
 
     /// <summary>변형 모드에 들어가거나 나옴, 변형 값·회전 중심·리샘플링이 바뀜.</summary>
     public event EventHandler? TransformChanged;

@@ -1,34 +1,6 @@
 using System.Drawing;
-using System.IO.Compression;
-using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Text;
-
-/// <summary>
-/// 글씨 효과의 도트 글꼴(어셈블리에 든 Galmuri BDF, gzip — <c>Text/Fonts</c>). 글꼴마다 처음 쓸 때 한 번 읽어 두고 계속 쓴다
-/// (여러 스레드에서 같이 불러도 한 번만 읽음).
-/// </summary>
-public static class PixelFonts
-{
-    private static readonly Lazy<PixelFont>[] Fonts = [.. Enum.GetValues<TextFont>().Select(font => new Lazy<PixelFont>(() => Load(font)))];
-
-    /// <summary>글꼴 <paramref name="font"/>(정의되지 않은 값이면 Galmuri11).</summary>
-    public static PixelFont Get(TextFont font) => Fonts[(uint)font < (uint)Fonts.Length ? (int)font : (int)TextFont.Galmuri11].Value;
-
-    /// <summary>어셈블리 리소스 이름(<c>Chickxel.Fonts.Galmuri11.bdf.gz</c>).</summary>
-    private static string ResourceName(TextFont font)
-        => $"Chickxel.Fonts.{(font == TextFont.Galmuri11Bold ? "Galmuri11-Bold" : font.ToString())}.bdf.gz";
-
-    private static PixelFont Load(TextFont font)
-    {
-        var name = ResourceName(font);
-        using var stream = typeof(PixelFonts).Assembly.GetManifestResourceStream(name)
-                           ?? throw new InvalidOperationException($"Missing font resource: {name}");
-        using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-        using var reader = new StreamReader(gzip);
-        return PixelFont.Parse(reader);
-    }
-}
 
 /// <summary>
 /// 도트 글꼴 하나(BDF 2.1에서 읽음): 글자마다 펜 이동 폭·잉크 사각형(BBX)·비트(줄마다 바이트 단위, 왼쪽 = 높은 비트)를 한 배열에 모아 둔다.
@@ -67,6 +39,9 @@ public sealed class PixelFont
 
     /// <summary>글꼴에 코드 포인트 <paramref name="codePoint"/>의 글자가 있는지(대신 그리는 글자 말고).</summary>
     public bool Contains(int codePoint) => _index.ContainsKey(codePoint);
+
+    /// <summary>글자 수(대신 그리는 글자 포함 — 글꼴 검사용).</summary>
+    internal int GlyphCount => _glyphs.Length;
 
     /// <summary>
     /// 여러 줄 글(<c>'\n'</c>으로 나눔)이 차지하는 크기: 너비 = 가장 넓은 줄(글자 폭 + <paramref name="letterSpacing"/>의 합 − 끝 글자 뒤 간격),
@@ -173,6 +148,38 @@ public sealed class PixelFont
         if (ascent < 0 || descent < 0) throw new InvalidDataException("BDF font without FONT_ASCENT/FONT_DESCENT");
         Array.Resize(ref bits, used);
         return new PixelFont(ascent, descent, index, [.. glyphs], bits);
+    }
+
+    /// <summary>
+    /// BDF 머리만 읽기(글자 앞까지): 줄 높이(<c>FONT_ASCENT</c> + <c>FONT_DESCENT</c>)와 표시 이름(<c>FAMILY_NAME</c> + 굵기·기울기 — 보통이면 뺌).
+    /// 글꼴 목록을 만들 때 큰 파일을 다 읽지 않으려고 쓴다. BDF가 아니거나 높이가 없으면 <see cref="InvalidDataException"/>.
+    /// </summary>
+    internal static (int LineHeight, string? DisplayName) ReadHeader(TextReader reader)
+    {
+        if (reader.ReadLine() is not { } first || !first.StartsWith("STARTFONT", StringComparison.Ordinal)) throw new InvalidDataException("Not a BDF font");
+        int ascent = -1, descent = -1;
+        string? family = null, weight = null, slant = null;
+        Span<int> numbers = stackalloc int[1];
+        while (reader.ReadLine() is { } text && !text.StartsWith("STARTCHAR", StringComparison.Ordinal) && !text.StartsWith("CHARS ", StringComparison.Ordinal))
+        {
+            var line = text.AsSpan();
+            if (line.StartsWith("FONT_ASCENT ")) ascent = Numbers(line[12..], numbers) > 0 ? numbers[0] : -1;
+            else if (line.StartsWith("FONT_DESCENT ")) descent = Numbers(line[13..], numbers) > 0 ? numbers[0] : -1;
+            else if (line.StartsWith("FAMILY_NAME ")) family = Quoted(line[12..]);
+            else if (line.StartsWith("WEIGHT_NAME ")) weight = Quoted(line[12..]);
+            else if (line.StartsWith("SLANT ")) slant = Quoted(line[6..]);
+        }
+        if (ascent < 0 || descent < 0) throw new InvalidDataException("BDF font without FONT_ASCENT/FONT_DESCENT");
+        if (string.IsNullOrWhiteSpace(family)) return (ascent + descent, null);
+        var name = family;
+        if (weight is { Length: > 0 } && !weight.Equals("Medium", StringComparison.OrdinalIgnoreCase) && !weight.Equals("Regular", StringComparison.OrdinalIgnoreCase)
+            && !weight.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+            name += " " + weight;
+        if (slant is "I" or "i") name += " Italic";
+        else if (slant is "O" or "o") name += " Oblique";
+        return (ascent + descent, name);
+
+        static string Quoted(ReadOnlySpan<char> value) => value.Trim().Trim('"').ToString();
     }
 
     /// <summary>공백으로 나뉜 정수들을 앞에서부터 <paramref name="into"/>에 채우고 읽은 개수를 돌려준다(숫자가 아닌 조각에서 멈춤).</summary>

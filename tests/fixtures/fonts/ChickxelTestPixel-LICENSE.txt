@@ -1,0 +1,8 @@
+ChickxelTestPixel.ttf — test fixture font for Chickxel's text tests (tests/Chickxel.Core.Tests/FontLibraryTests.cs).
+
+Made for this repository with fontTools (FontBuilder): em = 800 units, 1 dot = 100 units (1 dot = 1 px at size 8),
+ascent 700, descent 100. Glyphs: space, "A" (5×7 dot pattern), "I" (1×7 bar), "D" (a right triangle — a diagonal edge
+for antialiasing tests), .notdef. No other characters (missing glyphs test the fallback font).
+
+License: CC0 1.0 Universal (public domain dedication). To the extent possible under law, the Chickxel authors have waived
+all copyright and related or neighboring rights to this font file. https://creativecommons.org/publicdomain/zero/1.0/

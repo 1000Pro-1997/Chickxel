@@ -1,16 +1,8 @@
+using Chickxel.Core.Text;
+
 namespace Chickxel.Core.Model;
 
-/// <summary>글씨 효과의 도트 글꼴(앱에 든 Galmuri BDF — <see cref="Text.PixelFonts"/>).</summary>
-public enum TextFont
-{
-    Galmuri7,
-    Galmuri9,
-    Galmuri11,
-    Galmuri11Bold,
-    Galmuri14,
-}
-
-/// <summary>여러 줄 글씨의 줄 맞춤. 기준점(<see cref="TextEffect.X"/>)이 줄의 왼쪽 끝·가운데·오른쪽 끝이다.</summary>
+/// <summary>여러 줄 글씨의 줄 맞춤. 글 상자가 없으면 기준점(<see cref="TextEffect.X"/>)이 줄의 왼쪽 끝·가운데·오른쪽 끝, 있으면 상자 안에서 맞춘다.</summary>
 public enum TextAlign
 {
     Left,
@@ -19,16 +11,18 @@ public enum TextAlign
 }
 
 /// <summary>
-/// 글씨: 도트 글꼴로 글(<see cref="Text"/>)을 효과 원본 왼쪽 위 기준 (<see cref="X"/>, <see cref="Y"/>)에 한 색으로 그린다(그림 위에 덮음, 효과 원본 영역 밖은 잘림 — 여백 없음).
+/// 글씨: 글꼴(<see cref="FontName"/> — <see cref="FontLibrary"/>)로 글(<see cref="Text"/>)을 효과 원본 왼쪽 위 기준 (<see cref="X"/>, <see cref="Y"/>)에 한 색으로 그린다
+/// (그림 위에 덮음, 효과 원본 영역 밖은 잘림 — 여백 없음). 글 상자(<see cref="BoxWidth"/> &gt; 0)면 그 너비 안에서 낱말 단위로 줄을 바꾼다.
 /// 빈 레이어에 붙이면 글씨 레이어처럼 쓰고(셀이 없어도 빈 그림 위에 그림 — <see cref="SpriteProject.HasContentEffect(int, int)"/>), 아래로 합치기·영구 적용으로 픽셀이 된다.
 /// <see cref="Typewriter"/>면 효과 범위의 진행에 따라 앞 글자부터 하나씩 나타난다(첫 프레임은 빈 글, 마지막 프레임은 전부).
 /// </summary>
 public sealed record TextEffect : AnimatedEffect
 {
-    public const int MaxLength = 1000, MaxPosition = 4096, MinLetterSpacing = -4, MaxLetterSpacing = 16, MinLineSpacing = -8, MaxLineSpacing = 32;
+    public const int MaxLength = 1000, MaxPosition = 4096, MinLetterSpacing = -32, MaxLetterSpacing = 128, MinLineSpacing = -64, MaxLineSpacing = 256;
+    public const int MaxSize = 256, MinScale = 25, MaxScale = 400, MaxBoxSize = 4096, MaxFontNameLength = 255;
 
-    private readonly string _text = DefaultText;
-    private readonly int _x, _y, _letter, _line;
+    private readonly string _text = DefaultText, _font = FontLibrary.DefaultName;
+    private readonly int _x, _y, _letter, _line, _size, _scaleX = 100, _scaleY = 100, _boxWidth, _boxHeight;
 
     public const string DefaultText = "Text";
 
@@ -43,21 +37,58 @@ public sealed record TextEffect : AnimatedEffect
         }
     }
 
-    public TextFont Font { get; init; } = TextFont.Galmuri11;
+    /// <summary>
+    /// 글꼴 이름(<see cref="FontInfo.Name"/> — 기본 글꼴 "Galmuri11" 등, 사용자 글꼴은 글꼴 폴더 안 파일 이름). 비었으면 <see cref="FontLibrary.DefaultName"/>,
+    /// 기본 글꼴 이름은 대소문자를 맞춘다. 이 컴퓨터에 없는 글꼴이면 기본 글꼴로 그린다(이름은 그대로 둠).
+    /// </summary>
+    public string FontName
+    {
+        get => _font;
+        init
+        {
+            var name = (value ?? "").Trim();
+            if (name.Length > MaxFontNameLength) name = name[..MaxFontNameLength];
+            _font = name.Length == 0 ? FontLibrary.DefaultName : FontLibrary.BuiltInName(name) ?? name;
+        }
+    }
+
+    /// <summary>글자 크기 px(0~<see cref="MaxSize"/>, 0 = 도트 글꼴은 원래 크기, 벡터 글꼴은 12). 도트 글꼴은 원래 줄 높이의 정수 배로 반올림.</summary>
+    public int Size { get => _size; init => _size = Math.Clamp(value, 0, MaxSize); }
+
+    public bool Bold { get; init; }
+
+    public bool Italic { get; init; }
+
+    /// <summary>벡터 글꼴의 가장자리를 부드럽게(덮인 정도 → 반투명). 끄면 또렷하게(1비트). 도트 글꼴은 늘 또렷하다.</summary>
+    public bool Smooth { get; init; }
 
     public Color32 Color { get; init; } = Color32.Black;
 
-    /// <summary>기준점 X(맞춤에 따라 줄의 왼쪽 끝·가운데·오른쪽 끝, 효과 원본 왼쪽 위 기준 px), ±<see cref="MaxPosition"/>.</summary>
+    /// <summary>
+    /// 기준점 X(효과 원본 왼쪽 위 기준 px), ±<see cref="MaxPosition"/>. 글 상자가 있으면 상자 왼쪽 끝, 없으면 맞춤에 따라 줄의 왼쪽 끝·가운데·오른쪽 끝.
+    /// </summary>
     public int X { get => _x; init => _x = Math.Clamp(value, -MaxPosition, MaxPosition); }
 
-    /// <summary>첫 줄 위쪽 끝(글꼴 ascent 위) Y, ±<see cref="MaxPosition"/>.</summary>
+    /// <summary>첫 줄 위쪽 끝(글꼴 ascent 위, 글 상자면 상자 위쪽 끝) Y, ±<see cref="MaxPosition"/>.</summary>
     public int Y { get => _y; init => _y = Math.Clamp(value, -MaxPosition, MaxPosition); }
+
+    /// <summary>글 상자 너비 px(0~<see cref="MaxBoxSize"/>, 0 = 상자 없음 — 줄을 바꾸지 않음).</summary>
+    public int BoxWidth { get => _boxWidth; init => _boxWidth = Math.Clamp(value, 0, MaxBoxSize); }
+
+    /// <summary>글 상자 최소 높이 px(0~<see cref="MaxBoxSize"/>, 0 = 글 높이). 글은 잘리지 않는다.</summary>
+    public int BoxHeight { get => _boxHeight; init => _boxHeight = Math.Clamp(value, 0, MaxBoxSize); }
 
     /// <summary>글자 사이에 더할 px(<see cref="MinLetterSpacing"/>~<see cref="MaxLetterSpacing"/>).</summary>
     public int LetterSpacing { get => _letter; init => _letter = Math.Clamp(value, MinLetterSpacing, MaxLetterSpacing); }
 
     /// <summary>줄 사이에 더할 px(<see cref="MinLineSpacing"/>~<see cref="MaxLineSpacing"/>).</summary>
     public int LineSpacing { get => _line; init => _line = Math.Clamp(value, MinLineSpacing, MaxLineSpacing); }
+
+    /// <summary>가로 비율 %(<see cref="MinScale"/>~<see cref="MaxScale"/>).</summary>
+    public int ScaleX { get => _scaleX; init => _scaleX = Math.Clamp(value, MinScale, MaxScale); }
+
+    /// <summary>세로 비율 %(<see cref="MinScale"/>~<see cref="MaxScale"/>).</summary>
+    public int ScaleY { get => _scaleY; init => _scaleY = Math.Clamp(value, MinScale, MaxScale); }
 
     public TextAlign Align { get; init; } = TextAlign.Left;
 

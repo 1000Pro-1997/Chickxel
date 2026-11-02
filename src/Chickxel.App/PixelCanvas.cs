@@ -27,7 +27,8 @@ public sealed partial class PixelCanvas : Control
     public static readonly int[] ZoomLevels = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
 
     private enum DragMode { None, Pan, Stroke, Shape, Gradient, Fill, Picker, Marquee, Lasso, MoveSelection, MoveLayer, MoveText, Pivot, Arrange, Slice,
-        TransformMove, TransformScale, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove }
+        TransformMove, TransformScale, TransformRotate, TransformPivot, CanvasResizeEdge, CanvasResizeMove,
+        TextCreate, TextSelect, TextResize, TextMoveBox }
 
     /// <summary>변형 모드에서 화면 위치가 가리키는 것.</summary>
     private enum TransformHit { None, Move, Scale, Rotate, Pivot }
@@ -232,6 +233,7 @@ public sealed partial class PixelCanvas : Control
             if (_drag == DragMode.None) UpdateCursor();
             InvalidateVisual();
         };
+        InitTextEditing();
     }
 
     /// <summary>키·창 비활성 처리기를 단 창(캔버스를 다른 칸으로 옮기면 떼었다 다시 단다 — 탭 묶음 나누기).</summary>
@@ -251,7 +253,11 @@ public sealed partial class PixelCanvas : Control
         }
     }
 
-    private void OnWindowDeactivated(object? sender, EventArgs e) => EndTempMove();
+    private void OnWindowDeactivated(object? sender, EventArgs e)
+    {
+        EndTempMove();
+        FinishTextEditing();
+    }
 
     private void OnWindowKey(object? sender, KeyEventArgs e)
     {
@@ -279,12 +285,12 @@ public sealed partial class PixelCanvas : Control
 
     /// <summary>
     /// Ctrl(⌘)을 누르는 동안 이동 도구로 바꾼다(도구 막대의 이동 단추도 눌린 모습, 커서 = 이동). 떼면 원래 도구로.
-    /// 그룹 화면·변형 중·캔버스 크기 모드(Ctrl = 그림 크기도 함께)·글자 입력 중·끄는 중이거나 이미 이동 도구면 바꾸지 않는다.
+    /// 그룹 화면·변형 중·캔버스 크기 모드(Ctrl = 그림 크기도 함께)·글자 입력 중(캔버스 글씨 편집 포함)·끄는 중이거나 이미 이동 도구면 바꾸지 않는다.
     /// </summary>
     private void BeginTempMove()
     {
         if (_tempMoveFrom is not null || !_ctx.HasProject || _drag != DragMode.None || _ctx.IsGroupSelected || _ctx.IsTransforming || _ctx.IsCanvasResizing
-            || _ctx.Tool == ToolKind.Move || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
+            || _ctx.Tool == ToolKind.Move || _text is not null || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
             return;
         _tempMoveFrom = _ctx.Tool;
         _ctx.Tool = ToolKind.Move;
@@ -807,6 +813,7 @@ public sealed partial class PixelCanvas : Control
         if (_drag == DragMode.Lasso) DrawLasso(g);
         if (_drag == DragMode.Gradient) DrawGradientGuide(g);
         DrawStrokeLinePreview(g);
+        DrawTextEditing(g);
         DrawCurvePreview(g);
         DrawBrushCursor(g);
         DrawDropHint(g);
@@ -1436,13 +1443,6 @@ public sealed partial class PixelCanvas : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        // 글씨 입력 중(또는 방금 바깥을 눌러 확정함)이면 이 누르기는 입력을 끝내는 데만 쓴다.
-        if (ConsumeTextInputClick())
-        {
-            Focus();
-            e.Handled = true;
-            return;
-        }
         Focus();
         if (!_ctx.HasProject) return;
         var pt = e.GetCurrentPoint(this);
@@ -1594,7 +1594,7 @@ public sealed partial class PixelCanvas : Control
                 else if (!BeginMoveText()) BeginMoveLayer();
                 break;
             case ToolKind.Text:
-                if (button == MouseButton.Left) BeginTextInput(px);
+                if (button == MouseButton.Left) TextPointerPressed(loc, px, e.ClickCount, (mods & KeyModifiers.Shift) != 0);
                 break;
             case ToolKind.Slice:
                 if (button == MouseButton.Left) BeginSliceDrag(loc);
@@ -1690,6 +1690,19 @@ public sealed partial class PixelCanvas : Control
                 if (px == _lastPx) return;
                 PreviewTextMove(px.X - _startPx.X, px.Y - _startPx.Y);
                 break;
+            case DragMode.TextCreate:
+                if (px == _lastPx) return;
+                InvalidateVisual();
+                break;
+            case DragMode.TextSelect:
+                if (px == _lastPx) return;
+                DragTextSelect(px);
+                break;
+            case DragMode.TextResize:
+            case DragMode.TextMoveBox:
+                if (px == _lastPx) return;
+                DragTextBox(px);
+                break;
             case DragMode.Pivot:
                 DragPivot(loc);
                 break;
@@ -1775,6 +1788,15 @@ public sealed partial class PixelCanvas : Control
                 break;
             case DragMode.MoveText:
                 EndTextMove(_lastPx.X - _startPx.X, _lastPx.Y - _startPx.Y);
+                break;
+            case DragMode.TextCreate:
+                EndTextCreate();
+                break;
+            case DragMode.TextSelect:
+            case DragMode.TextResize:
+            case DragMode.TextMoveBox:
+                _textDragEffect = null;
+                UpdateCursor(ScreenToPixel(location));
                 break;
             case DragMode.Marquee:
                 if (!_dragMoved)
@@ -2840,6 +2862,11 @@ public sealed partial class PixelCanvas : Control
                && new Rectangle(0, 0, _ctx.CanvasWidth, _ctx.CanvasHeight).Contains(px))
         {
             Cursor = PickerCursor.Value;
+            return;
+        }
+        if (TextToolCursor(_mouseScreen) is { } textCursor)
+        {
+            Cursor = textCursor;
             return;
         }
         Cursor = _ctx.Tool switch

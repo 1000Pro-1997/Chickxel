@@ -3,11 +3,28 @@
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
 ## v1.14.76 (2026-11-02)
+### Type text right on the canvas
+- The Text tool works like Aseprite: drag to make a text box (words wrap inside it) or click for one-line text, then type directly on the canvas; the letters appear as real pixels while you type.
+- Korean IME composition shows at the caret, and the caret, selection, arrow/Home/End keys, copy/cut/paste, double-click word selection and mouse selection all work on the canvas.
+- Eight handles on the dashed frame resize the box (the text rewraps), and dragging the frame moves the text. Esc, Ctrl/Cmd+Enter or clicking outside finishes; one editing session is one undo step.
+
+### Real typography settings
+- Tool options now have size, bold, italic, alignment, letter spacing, line spacing, width and height scale, and Smooth (antialiased edges for vector fonts). Changes apply live to the text being edited; the text effect window has the same settings plus the box size.
+- Pixel fonts scale by whole steps; vector fonts are drawn crisp by default.
+
+### Add your own fonts
+- Add Font… takes .ttf, .otf, .ttc and .bdf files: the font is checked and copied to the app's Fonts folder, and Open Font Folder shows it.
+- Projects store only the font name; if a font is missing on another computer the text is drawn in Galmuri11 and the font list shows it as missing. Characters a font doesn't have are filled from Galmuri11.
+
 ### Assets are single items, not packages
 - Every effect, gradient and effect preset now stands on its own with its author, license and store version; packages are only the file format for moving assets. Importing or downloading a file adds the assets inside one by one.
 - The Asset Manager lists My assets and Received assets. Yours (made here, or published under your account, also when signed out) are edited in place; editing a received asset makes your own copy.
 - Updates compare each asset with the online store; if you edited your own published asset, you're asked before it is replaced. When an imported asset already exists you choose Replace, Keep both or Skip, optionally for the rest of the file.
 - Export… bundles the assets shown in the list with each one's author and store info. Package on/off, roll back to the previous version and the 30-day deleted list are gone; existing installs move to the new layout automatically.
+
+### One-asset packages take one row
+- In the Asset Manager's Installed tab, a package with a single asset is now one row: the asset's kind icon and name, with the package version, author and state underneath. Packages with several assets still list their assets below the package row.
+- Selecting that row shows the asset preview and description together with the package details, and the package buttons plus Copy to personal assets.
 
 ## v1.14.75 (2026-11-02)
 ### Effects that read another layer run fast

@@ -151,6 +151,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         _args = args;
         _settings = settings;
+        // 사용자가 더한 글꼴은 앱 설정 폴더의 Fonts에만 둔다(글씨를 그리기 전에 정해야 프로젝트의 글꼴 이름을 찾음).
+        Chickxel.Core.Text.FontLibrary.UserFolder = Path.Combine(Platform.AppFolder, "Fonts");
         ScriptTrustStore.Load(_settings);
         _history = new UndoHistoryKeeper(_settings);
         _history.Failed += m => Dispatcher.UIThread.Post(() => ShowMessage(MainStrings.FormatMessage_336(m: m)));
@@ -1122,7 +1124,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.EraserStrength = s.EraserStrength;
         (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue) = (s.EraserRed, s.EraserGreen, s.EraserBlue);
         _ctx.DitherPattern = s.DitherPattern;
-        _ctx.TextFont = s.TextFont;
+        _ctx.TextStyle = s.TextStyle ?? new();
         _ctx.PixelPerfect = s.PixelPerfect;
         _ctx.FillContiguous = s.FillContiguous;
         _ctx.ShapeFilled = s.ShapeFilled;
@@ -1299,7 +1301,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.EraserStrength = _ctx.EraserStrength;
         (s.EraserRed, s.EraserGreen, s.EraserBlue) = (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         s.DitherPattern = _ctx.DitherPattern;
-        s.TextFont = _ctx.TextFont;
+        s.TextStyle = _ctx.TextStyle;
         s.PixelPerfect = _ctx.PixelPerfect;
         s.FillContiguous = _ctx.FillContiguous;
         s.ShapeFilled = _ctx.ShapeFilled;
@@ -1464,14 +1466,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _canvas.EndTempMoveForShortcut(e.Key);
         if (e.Handled) return;
         var mods = e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt | KeyModifiers.Meta);
-        if (_keys.TryGetValue((e.Key, mods), out var entry) && CanRun(entry.Scope) && entry.Action())
+        if (_keys.TryGetValue((e.Key, mods), out var entry) && CanRun(entry.Scope, mods) && entry.Action())
             e.Handled = true;
     }
 
-    private bool CanRun(KeyScope scope)
+    private bool CanRun(KeyScope scope, KeyModifiers mods)
     {
-        if (scope == KeyScope.Global) return true;
         var focus = FocusManager?.GetFocusedElement();
+        // 캔버스에서 글씨를 치는 중이면 키는 캔버스가 받는다 — Ctrl(⌘)과 함께 누르는 전역 단축키(저장 등 — 고치던 글씨를 먼저 확정)만 돈다.
+        if (_canvas.IsEditingText && ReferenceEquals(focus, _canvas))
+            return scope == KeyScope.Global && (mods & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
+        if (scope == KeyScope.Global) return true;
         if (scope == KeyScope.Canvas) return ReferenceEquals(focus, _canvas);
         // 글자 입력란(숫자 상자·편집 가능한 콤보 상자 안쪽 입력란 포함)이면 그 입력란이 키를 받는다.
         return focus is not TextBox;
@@ -2232,7 +2237,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
     /// <summary>
     /// 자동 저장: 지금 문서를 Ctrl+S와 같이(내보내기 포함) 묻지 않고 저장한다. 디스크에 프로젝트 파일이 이미 있는 문서만 —
-    /// 저장한 적 없는 새 프로젝트·아직 .chickxel이 없는 PNG 가져오기는 저장하지 않는다. 그리는 중·끄는 중·떠 있는 선택·변형·묶음 기록(값 끌기, AI 차례) 중이면
+    /// 저장한 적 없는 새 프로젝트·아직 .chickxel이 없는 PNG 가져오기는 저장하지 않는다. 그리는 중·끄는 중·떠 있는 선택·변형·캔버스 글씨 편집·묶음 기록(값 끌기, AI 차례) 중이면
     /// 다시 기다린다. 결과·실패는 상태 표시줄에만 알린다.
     /// 지금 상태의 사본을 작업 스레드에서 쓰므로 저장하는 동안에도 편집을 막지 않는다(<see cref="StartAutoSave"/>). 셀이 아주 크면(사본 메모리가
     /// <see cref="MaxAutoSaveSnapshotBytes"/>를 넘음) 사본 없이 덮개를 띄우고 저장한다.
@@ -2241,7 +2246,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         _autoSave.Stop();
         if (!_settings.AutoSave || _ctx.Project is not { IsDirty: true, Path: { } path } p || !File.Exists(path)) return;
-        if (WorkOverlay.IsActive || _autoSaving is not null || p.IsStrokeActive || p.History.InGroup || _canvas.IsDragging
+        if (WorkOverlay.IsActive || _autoSaving is not null || p.IsStrokeActive || p.History.InGroup || _canvas.IsDragging || _canvas.IsEditingText
             || _ctx.Selection.IsFloating || _ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
             _autoSave.Start();
