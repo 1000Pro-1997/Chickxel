@@ -87,6 +87,14 @@ pre code { background: none; border: 0; padding: 0; }
 .btn.icon-only .icon { width: 22px; height: 22px; }
 .btn.support { background: #ff813f; border-color: #ff813f; color: #fff; }
 .btn.support:hover { background: #e96f2f; border-color: #e96f2f; }
+.btn.instagram, .btn.x, .btn.youtube { color: #fff; }
+.btn.instagram .icon, .btn.x .icon, .btn.youtube .icon { fill: currentColor; stroke: none; }
+.btn.instagram, .btn.instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888); border-color: transparent; }
+.btn.instagram:hover { filter: brightness(1.1); }
+.btn.x { background: #000; border-color: var(--line); }
+.btn.x:hover { background: #1c1d22; }
+.btn.youtube { background: #ff0000; border-color: #ff0000; }
+.btn.youtube:hover { background: #d90000; border-color: #d90000; }
 
 /* 첫 화면 */
 .hero { padding: 84px 0 72px; background: radial-gradient(60% 70% at 78% 30%, rgba(255, 208, 47, .07), transparent 70%), radial-gradient(50% 60% at 10% 0%, rgba(138, 160, 255, .08), transparent 70%); }
@@ -96,6 +104,7 @@ pre code { background: none; border: 0; padding: 0; }
 .highlight { background: linear-gradient(transparent 70%, rgba(255, 208, 47, .55) 70%); }
 .hero .lead { margin: 0; max-width: 560px; font-size: 18px; line-height: 1.7; color: var(--lead); }
 .hero .buttons { margin-top: 30px; }
+.hero .buttons + .buttons { margin-top: 10px; }
 .os-links { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
 .os-links a { color: var(--ink); font-weight: 650; border-bottom: 1px solid var(--line); }
 .os-links a:hover { text-decoration: none; border-color: var(--ink); }
