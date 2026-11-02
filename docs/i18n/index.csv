@@ -20,11 +20,8 @@ nav.logout,로그아웃,Sign out
 nav.language,언어,Language
 lang-select.2,"게임용<br><span class=""highlight"">픽셀 아트 편집기.</span>","A pixel art editor<br><span class=""highlight"">built for games.</span>"
 lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 PNG 스프라이트 시트와 Unity <code>.meta</code>가 함께 만들어집니다.","Draw frames, layers, parts and skins — every save writes a PNG sprite sheet and Unity <code>.meta</code> alongside."
-lang-select.4,"<span>다운로드</span></a>
-<a class=""btn"" href=""guide.html"">사용 가이드</a>
-<a class=""btn discord icon-only"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"" aria-label=""Discord"" title=""Discord"">","<span>Download</span></a>
-<a class=""btn"" href=""guide.html"">Guide</a>
-<a class=""btn discord icon-only"" href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"" aria-label=""Discord"" title=""Discord"">"
+lang-select.4,다운로드,Download
+hero.guide,사용 가이드,Guide
 hero.support,후원하기,Support
 lang-select.5,"바로 받기: <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"">macOS (Intel)</a>","Direct download: <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"">macOS (Intel)</a>"
 lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">소스 공개</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Source available</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Nothing to install</span>"
