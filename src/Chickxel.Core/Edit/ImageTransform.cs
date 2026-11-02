@@ -85,6 +85,56 @@ public static class ImageTransform
         return dst;
     }
 
+    /// <summary>
+    /// 캔버스 크기 바꾸기 + 크기 바꾸기에서 캔버스 밖까지 든 그림 하나: 원래 캔버스 좌표 <paramref name="origin"/>에 놓인 <paramref name="full"/>을
+    /// 원래 캔버스(<paramref name="oldCanvas"/>)가 새 캔버스 좌표 <paramref name="image"/> 자리에 그 크기로 놓이는 대응 하나로 옮긴다 —
+    /// 캔버스 안·밖을 함께 같은 배율로 늘이거나 줄여 이음매가 없다. 캔버스 안은 <see cref="ResizeCanvasScaled"/>와 같은 픽셀을 집고,
+    /// 밖은 같은 최근접 대응을 이어 쓴다(9-slice면 테두리처럼 1:1). <paramref name="clip"/>(새 캔버스 좌표) 밖은 계산하지 않고, 남는 칸이 없으면 null.
+    /// </summary>
+    public static (PixelImage Image, Point Origin)? ScaleWithCanvas(PixelImage full, Point origin, Size oldCanvas, Rectangle image, Rectangle clip,
+        SpriteBorder slice = default, NineSliceFill fill = NineSliceFill.Stretch)
+    {
+        bool sliced = NineSlice.Applies(slice, oldCanvas.Width, oldCanvas.Height);
+        var xs = NineSlice.SourceIndices(image.Width, oldCanvas.Width, slice.Left, slice.Right, fill, sliced);
+        var ys = NineSlice.SourceIndices(image.Height, oldCanvas.Height, slice.Top, slice.Bottom, fill, sliced);
+        var (x0, x1) = DestRange(origin.X, origin.X + full.Width, oldCanvas.Width, image.Width, sliced);
+        var (y0, y1) = DestRange(origin.Y, origin.Y + full.Height, oldCanvas.Height, image.Height, sliced);
+        var dest = Rectangle.Intersect(new Rectangle(image.X + x0, image.Y + y0, x1 - x0, y1 - y0), clip);
+        if (dest.Width <= 0 || dest.Height <= 0) return null;
+        var dst = new PixelImage(dest.Width, dest.Height);
+        var columns = new int[dest.Width];
+        for (int i = 0; i < dest.Width; i++) columns[i] = SourceAt(dest.X + i - image.X, xs, oldCanvas.Width, image.Width, sliced) - origin.X;
+        for (int j = 0; j < dest.Height; j++)
+        {
+            int sy = SourceAt(dest.Y + j - image.Y, ys, oldCanvas.Height, image.Height, sliced) - origin.Y;
+            if (sy < 0 || sy >= full.Height) continue;
+            int row = sy * full.Width, outRow = j * dest.Width;
+            for (int i = 0; i < dest.Width; i++)
+            {
+                int sx = columns[i];
+                if (sx >= 0 && sx < full.Width) dst.Pixels[outRow + i] = full.Pixels[row + sx];
+            }
+        }
+        return (dst, dest.Location);
+    }
+
+    /// <summary>새 그림 자리 기준 칸 <paramref name="d"/>가 집는 원래 캔버스 칸: 안은 <paramref name="inside"/>, 밖은 같은 최근접 대응(9-slice면 가장자리에서 1:1).</summary>
+    private static int SourceAt(int d, int[] inside, int srcLength, int dstLength, bool sliced)
+    {
+        if (d >= 0 && d < dstLength) return inside[d];
+        if (sliced) return d < 0 ? d : srcLength + d - dstLength;
+        return (int)Math.Floor((decimal)d * srcLength / dstLength);
+    }
+
+    /// <summary>원래 칸 [<paramref name="start"/>, <paramref name="end"/>)를 집는 새 칸 범위(새 그림 자리 기준, 넉넉하게).</summary>
+    private static (int From, int To) DestRange(int start, int end, int srcLength, int dstLength, bool sliced)
+    {
+        if (sliced)
+            return (start < 0 ? start : start < srcLength ? 0 : dstLength + start - srcLength,
+                end > srcLength ? dstLength + end - srcLength : end > 0 ? dstLength : end);
+        return ((int)Math.Ceiling((decimal)start * dstLength / srcLength), (int)Math.Ceiling((decimal)end * dstLength / srcLength));
+    }
+
     /// <summary>정수 배율 확대/축소(최근접). 축소는 각 칸의 왼쪽 위 픽셀을 쓴다.</summary>
     public static PixelImage ScaleNearest(PixelImage src, int width, int height)
     {

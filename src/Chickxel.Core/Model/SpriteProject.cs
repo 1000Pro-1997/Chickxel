@@ -1976,10 +1976,7 @@ public sealed partial class SpriteProject
                     _cels[key] = ImageTransform.ResizeCanvasScaled(cel, width, height, image, border, fill);
                     continue;
                 }
-                var source = cel ?? new PixelImage(oldW, oldH);
-                var scaled = image.Size == oldCanvas ? source
-                    : sliced ? NineSlice.Scale(source, image.Width, image.Height, border, fill) : ImageTransform.ScaleNearest(source, image.Width, image.Height);
-                var (newCel, overflow) = ResizeWithOverflow(key, scaled, image, oldCanvas, newCanvas);
+                var (newCel, overflow) = ResizeWithOverflow(key, cel, image, oldCanvas, newCanvas, border, fill);
                 _cels[key] = newCel;
                 SetOverflow(key, overflow);
             }

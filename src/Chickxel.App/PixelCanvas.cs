@@ -2759,8 +2759,8 @@ public sealed partial class PixelCanvas : Control
         => ImageToScreen(canvas.X + (hx + 1) * canvas.Width / 2.0, canvas.Y + (hy + 1) * canvas.Height / 2.0);
 
     /// <summary>
-    /// 캔버스 크기 모드: 원래 그림 전체(캔버스 밖으로 잘릴 부분 포함)는 흐리게, 새 캔버스 안은 체커 위에 적용될 모습 그대로.
-    /// 그림 자리(흰 점선), 캔버스 테두리(하늘색 점선)·손잡이 8개, 위에 크기 글.
+    /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함 — 캔버스 안·밖이 같은 배율)는 흐리게,
+    /// 새 캔버스 안은 체커 위에 적용될 모습 그대로. 그림 자리(흰 점선), 캔버스 테두리(하늘색 점선)·손잡이 8개, 위에 크기 글.
     /// </summary>
     private void DrawCanvasResize(DrawingContext g)
     {
@@ -2768,9 +2768,12 @@ public sealed partial class PixelCanvas : Control
         var imageScreen = ImageToScreen(image);
         using (ImageUtil.Pixelated(g))
         {
-            if (_ctx.FrameBitmap(_ctx.CurrentFrame) is { } source)
-                using (g.PushOpacity(0.35))
-                    g.DrawImage(source, new Rect(0, 0, source.PixelSize.Width, source.PixelSize.Height), ToRect(imageScreen));
+            if (_ctx.CanvasResizeOutside is { } outside)
+            {
+                var at = new Rectangle(outside.Rect.X + canvas.X, outside.Rect.Y + canvas.Y, outside.Rect.Width, outside.Rect.Height);
+                using (g.PushOpacity(OutsideOpacity))
+                    g.DrawImage(outside.Bitmap, new Rect(0, 0, outside.Bitmap.PixelSize.Width, outside.Bitmap.PixelSize.Height), ToRect(ImageToScreen(at)));
+            }
             DrawBitmapAt(g, _ctx.CanvasResizeBitmap, canvas.X, canvas.Y, canvas.Width, canvas.Height, checker: true);
         }
         var visible = VisibleSourceRect(canvas.X, canvas.Y, canvas.Width, canvas.Height);

@@ -101,6 +101,26 @@ public class CelOverflowTests
     }
 
     [Fact]
+    public void CanvasScale_ScalesInsideAndOutsideWithOneMapping()
+    {
+        // 8×3 그림을 3×3 캔버스로: 캔버스 밖 왼쪽 2열, 오른쪽 3열
+        var p = new SpriteProject(8, 3);
+        var original = TestUtil.RandomImage(8, 3, opaque: true);
+        p.SetCel(0, 0, original);
+        p.ResizeCanvasAndScale(3, 3, new Rectangle(-2, 0, 8, 3));
+
+        // 3 → 4배율: 캔버스 안·밖 모두 새 칸 d가 원래 칸 floor(d·3/4)를 집는다(밖을 따로 늘여 이음매가 생기지 않음)
+        p.ResizeCanvasAndScale(4, 4, new Rectangle(0, 0, 4, 4));
+        for (int y = 0; y < 4; y++)
+            for (int x = -4; x < 9; x++)
+            {
+                int sx = (int)Math.Floor(x * 3 / 4.0) + 2, sy = y * 3 / 4;
+                var expected = sx >= 0 && sx < original.Width ? original[sx, sy] : default;
+                Assert.True(expected == FullAt(p, x, y), $"({x}, {y})");
+            }
+    }
+
+    [Fact]
     public void DuplicateMergeAndFlip_CarryOutsidePixels()
     {
         var p = new SpriteProject(4, 4);

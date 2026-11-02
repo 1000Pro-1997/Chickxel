@@ -74,6 +74,17 @@ public sealed partial class MainForm
 
     void Ai.IAiHost.ShowPixelate(PixelateInput input, int sourceFrames, PixelateSettings settings) => ShowPixelate(input, sourceFrames, settings);
 
+    string Ai.IAiHost.InsertImage(string name, PixelImage image)
+    {
+        _ctx.CommitFloating();
+        InsertPixelated(name, [image], DefaultChatImageDurationMs, newDocument: _ctx.Project is null, interactive: true, out var message);
+        ShowMessage(message);
+        return message;
+    }
+
+    /// <summary>대화 속 그림을 새 문서로 열 때의 프레임 길이(ms).</summary>
+    private const int DefaultChatImageDurationMs = 100;
+
     Task<string?> Ai.IAiHost.AskUserAsync(string question, IReadOnlyList<string> options, CancellationToken ct)
         => _chat?.AskUserAsync(question, options, ct) ?? Task.FromResult<string?>(null);
 

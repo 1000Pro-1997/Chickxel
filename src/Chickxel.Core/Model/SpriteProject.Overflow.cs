@@ -1,4 +1,5 @@
 using System.Drawing;
+using Chickxel.Core.Edit;
 using Chickxel.Core.Localization;
 
 namespace Chickxel.Core.Model;
@@ -210,34 +211,17 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 캔버스 크기·그림 크기를 바꿀 때 일반 레이어 셀 하나: 지금 셀은 <paramref name="image"/>(새 캔버스 좌표)에 <paramref name="scaledCel"/>로,
-    /// 캔버스 밖 그림은 같은 비율로 늘이거나 줄여 옮긴 뒤 새 캔버스 안·밖으로 다시 나눈다(줄어든 캔버스 밖으로 나간 부분도 남음).
+    /// 캔버스 크기·그림 크기를 바꿀 때 일반 레이어 셀 하나: 셀과 캔버스 밖 그림을 합친 그림 전체를 원래 캔버스가 <paramref name="image"/>(새 캔버스 좌표)에
+    /// 놓이는 대응 하나로 늘이거나 줄여 옮긴 뒤(<see cref="ImageTransform.ScaleWithCanvas"/> — 캔버스 안·밖이 같은 배율이라 이음매 없음)
+    /// 새 캔버스 안·밖으로 다시 나눈다(줄어든 캔버스 밖으로 나간 부분도 남음).
     /// </summary>
-    private (PixelImage Cel, CelOverflow? Overflow) ResizeWithOverflow(CelKey key, PixelImage scaledCel, Rectangle image, Size oldCanvas, Size newCanvas)
+    private (PixelImage Cel, CelOverflow? Overflow) ResizeWithOverflow(CelKey key, PixelImage? cel, Rectangle image, Size oldCanvas, Size newCanvas,
+        SpriteBorder slice, NineSliceFill fill)
     {
-        var pieces = new List<(PixelImage Image, Point At)> { (scaledCel, image.Location) };
-        if (_overflow.TryGetValue(key, out var o))
-        {
-            double sx = (double)image.Width / oldCanvas.Width, sy = (double)image.Height / oldCanvas.Height;
-            int MapX(int x) => image.X + (int)Math.Floor(x * sx + 0.5);
-            int MapY(int y) => image.Y + (int)Math.Floor(y * sy + 0.5);
-            var r = o.Rect;
-            int left = MapX(r.Left), top = MapY(r.Top);
-            int w = Math.Clamp(MapX(r.Right) - left, 1, PixelImage.MaxSize), h = Math.Clamp(MapY(r.Bottom) - top, 1, PixelImage.MaxSize);
-            var scaled = w == r.Width && h == r.Height ? o.Image : Chickxel.Core.Edit.ImageTransform.ScaleNearest(o.Image, w, h);
-            pieces.Add((scaled, new Point(left, top)));
-        }
-        var area = OverflowArea(newCanvas);
-        var bounds = Rectangle.Empty;
-        foreach (var (img, at) in pieces)
-        {
-            var r = Rectangle.Intersect(new Rectangle(at, img.Size), area);
-            if (!r.IsEmpty) bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
-        }
-        bounds = bounds.IsEmpty ? new Rectangle(Point.Empty, newCanvas) : Rectangle.Union(bounds, new Rectangle(Point.Empty, newCanvas));
-        var full = new PixelImage(bounds.Width, bounds.Height);
-        foreach (var (img, at) in pieces) full.Blit(img, at.X - bounds.X, at.Y - bounds.Y, alphaBlend: true);
-        return Split(full, bounds.Location, newCanvas);
+        var (full, origin) = FullOf(key, cel, oldCanvas);
+        if (ImageTransform.ScaleWithCanvas(full, origin, oldCanvas, image, OverflowArea(newCanvas), slice, fill) is not { } moved)
+            return (new PixelImage(newCanvas.Width, newCanvas.Height), null);
+        return Split(moved.Image, moved.Origin, newCanvas);
     }
 
     /// <summary>위 레이어의 캔버스 밖 그림을 아래 레이어 셀(이미 합친 캔버스 안 셀 <paramref name="merged"/>)에 불투명도대로 합친다(아래로 합치기).</summary>

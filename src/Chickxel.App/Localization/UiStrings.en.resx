@@ -2997,6 +2997,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_ViewSettings_Tip" xml:space="preserve"><value>Opens the 'Pixelate AI image' window with the generated source image and the conversion settings used. Tweak them and insert again.</value></data>
   <data name="AiDraw_Error_NoPrevious" xml:space="preserve"><value>There is no previously generated image to attach as the reference.</value></data>
   <data name="Chat_Image_Label" xml:space="preserve"><value>Image</value></data>
+  <data name="Chat_InsertImage" xml:space="preserve"><value>Add as new layer</value></data>
+  <data name="Chat_InsertImage_Tip" xml:space="preserve"><value>Adds this image as a new layer on the current frame of the open document (centered on the canvas — move or resize it, then press Enter). With no document open, it opens as a new document in a new tab.</value></data>
+  <data name="Chat_InsertImage_Busy" xml:space="preserve"><value>Can't add it while the AI is working. Try again when it's done.</value></data>
+  <data name="Chat_InsertImage_Unreadable" xml:space="preserve"><value>This image couldn't be read, so it wasn't added.</value></data>
+  <data name="Chat_InsertImage_LayerName" xml:space="preserve"><value>AI chat image</value></data>
   <data name="AiDraw_Anim" xml:space="preserve"><value>Generation</value></data>
   <data name="AiDraw_Anim_Tip" xml:space="preserve"><value>How animation frames are generated.</value></data>
   <data name="AiDraw_Anim_Sheet" xml:space="preserve"><value>All on one sheet (recommended)</value></data>

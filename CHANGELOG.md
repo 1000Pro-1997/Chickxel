@@ -2,6 +2,17 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.83 (2026-11-02)
+### Canvas size mode shows the whole image and scales it evenly
+- In canvas size mode, every part of the image that ends up outside the new canvas is shown faded around it. This includes pixels that were already outside the canvas because the image is bigger than the canvas.
+- Changing the image size (Ctrl+drag, or the image width and height boxes) scales the part inside the canvas and the part outside it together, with one ratio based on the canvas. There are no more seams or doubled pixel rows where the two parts meet.
+- The preview and the applied result now match. With 9-slice on, the part outside the canvas keeps its pixel size, like the borders.
+
+### Add images from the AI chat as a new layer
+- Images in the AI chat (the picture after each answer, generated-art result cards, and images in past chats you reopen) have an **Add as new layer** button.
+- It adds the image as a new layer on the current frame, centered on the canvas, and enters transform mode so you can place it and press Enter. With no document open, it opens as a new document in a new tab.
+- A short note above the button and the status bar tell you what happened. It doesn't add anything while the AI is working.
+
 ## v1.14.82 (2026-11-02)
 ### Pixelate: background removal on/off in the bar under the source
 - "Show background removed" is replaced by a **Remove background** toggle (eraser icon). Off converts without removing the background (the same as Keep background in 1. Background); on uses the last removal method (Auto at first).

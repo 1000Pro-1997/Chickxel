@@ -1065,6 +1065,9 @@ public sealed class EditorContext
         public bool ResizeFromCenter { get; set; }
         /// <summary>결과 미리보기(새 캔버스 크기). 값이 바뀌면 버리고 그릴 때 다시 만든다.</summary>
         public WriteableBitmap? Preview { get; set; }
+        /// <summary>적용하면 될 그림 전체(캔버스 밖으로 나가는 부분 포함)와 그 자리(새 캔버스 좌표) — <see cref="Preview"/>와 함께 만들고 버린다.</summary>
+        public WriteableBitmap? Outside { get; set; }
+        public Rectangle OutsideRect { get; set; }
     }
 
     private CanvasResizeSession? _canvasResize;
@@ -1160,41 +1163,71 @@ public sealed class EditorContext
     }
 
     /// <summary>
-    /// 적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접 — 9-slice면 프레임 칸 테두리로). 보이는 일반 레이어의 캔버스 밖 그림 중 새 캔버스에 들어오는 부분도
-    /// (같은 비율로, 효과 없이) 그린다. 모드가 아니면 null. 호출자는 Dispose하지 않는다.
+    /// 적용하면 될 모습(새 캔버스 크기, 현재 프레임 합성을 최근접 — 9-slice면 프레임 칸 테두리로). 보이는 일반 레이어의 캔버스 밖 그림도
+    /// 같은 대응으로(효과 없이) 옮겨 새 캔버스에 들어오는 부분을 그린다. 모드가 아니면 null. 호출자는 Dispose하지 않는다.
     /// </summary>
     public WriteableBitmap? CanvasResizeBitmap
     {
         get
         {
             if (_canvasResize is not { } s) return null;
-            if (s.Preview is null)
-            {
-                var preview = ImageTransform.ResizeCanvasScaled(s.Source, s.Canvas.Width, s.Canvas.Height, s.Image,
-                    CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill);
-                AddOverflowPreview(preview, s);
-                s.Preview = ImageUtil.ToBitmap(preview);
-            }
+            EnsureCanvasResizePreview(s);
             return s.Preview;
         }
     }
 
-    /// <summary>보이는 일반 레이어의 캔버스 밖 그림을 새 캔버스 미리보기에 아래 레이어부터 겹친다(그림 크기 비율대로 최근접, 레이어 불투명도).</summary>
-    private void AddOverflowPreview(PixelImage preview, CanvasResizeSession s)
+    /// <summary>
+    /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함)와 그 자리(새 캔버스 좌표) — 화면이 캔버스 밖을 흐리게 그린다.
+    /// 모드가 아니거나 그림이 없으면 null. 호출자는 Dispose하지 않는다.
+    /// </summary>
+    public (WriteableBitmap Bitmap, Rectangle Rect)? CanvasResizeOutside
     {
-        if (Project is not { } p) return;
-        double sx = (double)s.Image.Width / p.Width, sy = (double)s.Image.Height / p.Height;
-        int MapX(int x) => s.Image.X + (int)Math.Floor(x * sx + 0.5);
-        int MapY(int y) => s.Image.Y + (int)Math.Floor(y * sy + 0.5);
+        get
+        {
+            if (_canvasResize is not { } s) return null;
+            EnsureCanvasResizePreview(s);
+            return s.Outside is { } bmp ? (bmp, s.OutsideRect) : null;
+        }
+    }
+
+    /// <summary>
+    /// 미리보기를 만든다: 현재 프레임 합성 + 캔버스 밖 그림 전체를 적용과 같은 대응 하나로 옮기고(<see cref="ImageTransform.ScaleWithCanvas"/> — 캔버스 안·밖이
+    /// 같은 배율), 새 캔버스 안은 <see cref="CanvasResizeSession.Preview"/>로, 전체는 <see cref="CanvasResizeSession.Outside"/>로 둔다.
+    /// </summary>
+    private void EnsureCanvasResizePreview(CanvasResizeSession s)
+    {
+        if (s.Preview is not null || Project is not { } p) return;
+        var (full, origin) = FrameWithOverflow(p, s.Source);
+        var canvas = s.Canvas.Size;
+        int m = SpriteProject.OverflowMargin;
+        var moved = ImageTransform.ScaleWithCanvas(full, origin, s.Source.Size, s.Image, new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m),
+            CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None, _canvasResizeSliceFill);
+        var preview = new PixelImage(canvas.Width, canvas.Height);
+        if (moved is { } mv)
+        {
+            preview.Blit(mv.Image, mv.Origin.X, mv.Origin.Y);
+            s.Outside = ImageUtil.ToBitmap(mv.Image);
+            s.OutsideRect = new Rectangle(mv.Origin, mv.Image.Size);
+        }
+        s.Preview = ImageUtil.ToBitmap(preview);
+    }
+
+    /// <summary>현재 프레임 합성(캔버스 안)에 보이는 일반 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).</summary>
+    private (PixelImage Image, Point Origin) FrameWithOverflow(SpriteProject p, PixelImage source)
+    {
+        var outside = new List<(PixelImage Image, Point Origin, byte Opacity)>();
+        var rect = new Rectangle(Point.Empty, source.Size);
         for (int l = 0; l < p.Layers.Count; l++)
         {
             if (p.Layers[l].Kind != LayerKind.Normal || !p.IsLayerVisible(l) || p.GetCelOverflow(l, _frame) is not { } o) continue;
-            int left = MapX(o.Origin.X), top = MapY(o.Origin.Y);
-            int w = Math.Clamp(MapX(o.Origin.X + o.Image.Width) - left, 1, PixelImage.MaxSize);
-            int h = Math.Clamp(MapY(o.Origin.Y + o.Image.Height) - top, 1, PixelImage.MaxSize);
-            var image = w == o.Image.Width && h == o.Image.Height ? o.Image : ImageTransform.ScaleNearest(o.Image, w, h);
-            preview.Composite(image, left, top, p.Layers[l].Opacity);
+            outside.Add((o.Image, o.Origin, p.Layers[l].Opacity));
+            rect = Rectangle.Union(rect, new Rectangle(o.Origin, o.Image.Size));
         }
+        if (outside.Count == 0) return (source, Point.Empty);
+        var full = new PixelImage(rect.Width, rect.Height);
+        full.Blit(source, -rect.X, -rect.Y);
+        foreach (var (image, at, opacity) in outside) full.Composite(image, at.X - rect.X, at.Y - rect.Y, opacity);
+        return (full, rect.Location);
     }
 
     /// <summary>
@@ -1274,6 +1307,8 @@ public sealed class EditorContext
     {
         s.Preview?.Dispose();
         s.Preview = null;
+        s.Outside?.Dispose();
+        s.Outside = null;
     }
 
     /// <summary>구조 편집(레이어·프레임·태그·설정) 전에 열린 그리기를 마무리한다.</summary>

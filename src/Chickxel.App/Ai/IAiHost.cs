@@ -48,6 +48,12 @@ public interface IAiHost
 
     /// <summary>AI 그림 픽셀로 정리 창을 이 원본(가로로 이은 <paramref name="sourceFrames"/>프레임)과 변환 설정으로 연다(다시 조정해 적용).</summary>
     void ShowPixelate(PixelateInput input, int sourceFrames, Chickxel.Core.Pixelate.PixelateSettings settings);
+
+    /// <summary>
+    /// 대화 속 그림 하나를 지금 문서의 현재 프레임에 새 레이어로 넣는다(캔버스 가운데, 넣은 뒤 변형 모드 — 떠 있는 선택·캔버스 크기 모드는 먼저 적용).
+    /// 열린 문서가 없으면 새 탭의 새 문서로 연다. 상태 표시줄에도 보인 알림 글을 돌려준다.
+    /// </summary>
+    string InsertImage(string name, PixelImage image);
 }
 
 public readonly record struct AiInsertResult(bool Inserted, string Message);

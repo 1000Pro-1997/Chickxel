@@ -442,18 +442,17 @@ public sealed partial class ChatWindow
         };
     }
 
-    /// <summary>AI 그리기 결과 칸: 결과 그림, 결과 글, "변환 설정 보기" 단추(기록이 있을 때).</summary>
+    /// <summary>AI 그리기 결과 칸: 결과 그림, 결과 글, "변환 설정 보기"(기록이 있을 때)·"새 레이어로 넣기"(그림이 있을 때) 단추.</summary>
     private Control AiDrawCard(Bitmap? image, string text, string? jobId)
     {
         var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) };
         if (image is not null) panel.Children.Add(SnapshotView(image));
         if (text.Length > 0) panel.Children.Add(new SelectableTextBlock { Text = text, Foreground = AppTheme.DimTextBrush, TextWrapping = TextWrapping.Wrap });
+        var buttons = new List<Control>();
         if (jobId is not null)
-        {
-            var button = Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.AiDraw_ViewSettings, (_, _) => OpenAiDrawJob(jobId)).Tip(UiStrings.AiDraw_ViewSettings_Tip);
-            button.HorizontalAlignment = HorizontalAlignment.Left;
-            panel.Children.Add(button);
-        }
+            buttons.Add(Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.AiDraw_ViewSettings, (_, _) => OpenAiDrawJob(jobId)).Tip(UiStrings.AiDraw_ViewSettings_Tip));
+        if (image is not null) buttons.Add(InsertImageButton(image));
+        if (buttons.Count > 0) panel.Children.Add(ButtonRow([.. buttons]));
         return panel;
     }
 }

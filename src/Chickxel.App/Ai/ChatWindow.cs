@@ -488,6 +488,38 @@ public sealed partial class ChatWindow : Window
         }, bmp);
     }
 
+    /// <summary>
+    /// 대화 속 그림 아래 "새 레이어로 넣기": 그 그림을 지금 문서의 현재 프레임에 새 레이어로(열린 문서가 없으면 새 탭의 새 문서로) 다시 넣는다.
+    /// 차례가 도는 동안은 넣지 않는다(그 차례의 실행취소 묶음에 섞이지 않게). 결과 알림은 단추 위 풍선으로도 보인다.
+    /// </summary>
+    private Button InsertImageButton(Bitmap bmp)
+    {
+        var button = Ui.Button(VectorIcon.Layers, UiStrings.Chat_InsertImage, null).Tip(UiStrings.Chat_InsertImage_Tip);
+        button.HorizontalAlignment = HorizontalAlignment.Left;
+        button.Click += (_, _) =>
+        {
+            string message = RunningTab is not null ? UiStrings.Chat_InsertImage_Busy
+                : ChatImages.ToPixelImage(bmp) is { } image ? _mcp.Tools.Host.InsertImage(UiStrings.Chat_InsertImage_LayerName, image)
+                : UiStrings.Chat_InsertImage_Unreadable;
+            if (message.Length == 0) return;
+            var flyout = new Flyout
+            {
+                Placement = PlacementMode.Top,
+                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 320, Foreground = AppTheme.TextBrush },
+            };
+            flyout.ShowAt(button);
+        };
+        return button;
+    }
+
+    /// <summary>그림 아래 단추 줄(왼쪽부터).</summary>
+    private static StackPanel ButtonRow(params Control[] buttons)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        foreach (var b in buttons) row.Children.Add(b);
+        return row;
+    }
+
     /// <summary>지금 프레임의 보이는 레이어 합성(그룹은 부위를 배치한 대로).</summary>
     private PixelImage? Composite(SpriteProject p)
     {
@@ -1887,7 +1919,7 @@ public sealed partial class ChatWindow : Window
                     break;
                 case ChatItemKind.Snapshot:
                     if (item.Images is [var png, ..] && DecodeImage(png) is { } shot)
-                        AddItem(new Border { Margin = new Thickness(2, 2, 0, 0), Child = SnapshotView(shot) });
+                        AddItem(new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0), Children = { SnapshotView(shot), _w.InsertImageButton(shot) } });
                     break;
                 case ChatItemKind.AiDraw:
                     AddItem(_w.AiDrawCard(item.Images is [var drawn, ..] ? DecodeImage(drawn) : null, item.Text,
@@ -2390,9 +2422,11 @@ public sealed partial class ChatWindow : Window
         private void AddSnapshot(SpriteProject project, IUndoCommand group)
         {
             var panel = new StackPanel { Spacing = 4, Margin = new Thickness(2, 2, 0, 0) };
+            Bitmap? shot = null;
             if (_w.Composite(project) is { } img)
             {
-                panel.Children.Add(SnapshotView(ImageUtil.ToBitmap(img)));
+                shot = ImageUtil.ToBitmap(img);
+                panel.Children.Add(SnapshotView(shot));
                 if (Math.Max(img.Width, img.Height) <= SavedSnapshotSide)
                 {
                     using var ms = new MemoryStream();
@@ -2406,7 +2440,7 @@ public sealed partial class ChatWindow : Window
             button.Click += (_, _) => ToggleStep(step);
             _steps.Add(step);
             if (_userTurns.Count > 0) _userTurns[^1].Step = step;
-            panel.Children.Add(button);
+            panel.Children.Add(shot is null ? button : ButtonRow(button, _w.InsertImageButton(shot)));
             AddItem(panel);
             RefreshStep(step);
         }
