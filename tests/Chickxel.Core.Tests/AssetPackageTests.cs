@@ -74,6 +74,10 @@ internal static class AssetSamples
         return path;
     }
 
+    /// <summary>패키지 파일을 가져온다(겹치는 기존 에셋이 있으면 실패 — 겹침을 보는 테스트는 <see cref="AssetStore.Install"/>을 직접 부른다).</summary>
+    public static IReadOnlyList<AssetEntry> InstallFile(this AssetStore store, string path, string source = AssetSources.File)
+        => store.Install(path, source, item => throw new Xunit.Sdk.XunitException($"뜻밖의 겹침: {item.DisplayName} ↔ {item.Existing?.Id}"));
+
     /// <summary>항목을 주어진 순서·이름 그대로 담은 ZIP(검사기가 막아야 할 모양도 만든다).</summary>
     public static byte[] Zip(IEnumerable<(string Name, byte[] Data)> entries, Action<string, ZipArchiveEntry>? tweak = null)
     {
@@ -189,8 +193,8 @@ public class AssetPackageTests
         // 설치하면 디스크의 파일에서 같은 값을 다시 읽는다
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        var installed = store.Install(AssetSamples.Save(dir.Path, bytes));
-        Assert.False(installed.IsBroken);
+        var installed = store.InstallFile(AssetSamples.Save(dir.Path, bytes));
+        Assert.Equal(2, installed.Count);
         var entry = Assert.Single(store.Catalog.Recipes);
         AssetSamples.AssertSameRecipe(recipe, entry.Recipe!);
         AssetSamples.AssertSameGradient(gradient, Assert.Single(store.Catalog.Gradients).Gradient!);
@@ -198,19 +202,21 @@ public class AssetPackageTests
     }
 
     [Fact]
-    public void Writer_IsDeterministic_AndExportedInstalledPackageValidatesAgain()
+    public void Writer_IsDeterministic_AndExportedInstalledAssetValidatesAgain()
     {
         byte[] first = AssetSamples.Build();
         Assert.Equal(first, AssetSamples.Build());
 
+        // 받은 에셋 하나를 내보내면 그 상점 패키지 정체 그대로(같은 ID·버전·라이선스 문서)
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        store.Install(AssetSamples.Save(dir.Path, first));
+        var installed = store.InstallFile(AssetSamples.Save(dir.Path, first));
         using var exported = new MemoryStream();
-        store.ExportPackage(AssetSamples.PackageId, exported);
+        store.Export([installed[1].Id], AssetSamples.Header(), exported);
         exported.Position = 0;
         var again = AssetPackageValidator.Read(exported);
-        Assert.Equal(AssetPackageValidator.Read(new MemoryStream(first)).Manifest.Files, again.Manifest.Files);
+        Assert.Equal((AssetSamples.PackageId, "1.0.0", installed[1].Store!.AssetId), (again.Manifest.Id, again.Manifest.Version, Assert.Single(again.Items).Entry.Id));
+        Assert.Equal(Encoding.UTF8.GetBytes("CC0"), again.Files["LICENSE.txt"]);
     }
 
     // ───────────── ZIP 경로 ─────────────
@@ -394,7 +400,7 @@ public class AssetPackageTests
         byte[] bomb = AssetSamples.Build(more: b => b.AddDocument("README.md", Spaces(1024 * 1024)));
         Assert.True(bomb.Length < 64 * 1024);
         AssertIssue(Rejects(bomb, new AssetValidationOptions(BombLimits)), AssetIssueCode.FileTooLarge, "README.md", (64 * 1024).ToString(CultureInfo.InvariantCulture));
-        var ex = Assert.Throws<AssetPackageException>(() => store.Install(AssetSamples.Save(dir.Path, bomb)));
+        var ex = Assert.Throws<AssetPackageException>(() => store.InstallFile(AssetSamples.Save(dir.Path, bomb)));
         AssertIssue(ex.Issues, AssetIssueCode.FileTooLarge, "README.md");
 
         // 하나하나는 한도 안이지만 합이 넘음
@@ -404,12 +410,12 @@ public class AssetPackageTests
             b.AddDocument("README.txt", Spaces(60 * 1024));
         });
         AssertIssue(Rejects(many, new AssetValidationOptions(BombLimits)), AssetIssueCode.ExpandedTooLarge);
-        Assert.Throws<AssetPackageException>(() => store.Install(AssetSamples.Save(dir.Path, many, "many.chickxel-asset")));
+        Assert.Throws<AssetPackageException>(() => store.InstallFile(AssetSamples.Save(dir.Path, many, "many.chickxel-asset")));
 
         AssertNothingInstalled(store);
         // 한도 안이면 같은 모양의 패키지가 설치된다(위 거부가 다른 까닭이 아님)
-        store.Install(AssetSamples.Save(dir.Path, AssetSamples.Build(more: b => b.AddDocument("README.md", Spaces(60 * 1024))), "ok.chickxel-asset"));
-        Assert.Single(store.Catalog.Packages);
+        store.InstallFile(AssetSamples.Save(dir.Path, AssetSamples.Build(more: b => b.AddDocument("README.md", Spaces(60 * 1024))), "ok.chickxel-asset"));
+        Assert.Equal(2, store.Catalog.All.Count);
     }
 
     /// <summary>ZIP 머리에 작은 크기를 거짓으로 적어도 한도보다 많이 풀어 받아들이지 않는다.</summary>
@@ -425,7 +431,7 @@ public class AssetPackageTests
         Assert.Contains(issues, i => i.Path == "README.md" && i.Code is AssetIssueCode.FileTooLarge or AssetIssueCode.HashMismatch or AssetIssueCode.NotZip);
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"), new AssetValidationOptions(BombLimits));
-        Assert.Throws<AssetPackageException>(() => store.Install(AssetSamples.Save(dir.Path, bomb)));
+        Assert.Throws<AssetPackageException>(() => store.InstallFile(AssetSamples.Save(dir.Path, bomb)));
         AssertNothingInstalled(store);
     }
 
@@ -455,10 +461,10 @@ public class AssetPackageTests
 
     private static void AssertNothingInstalled(AssetStore store)
     {
-        Assert.Empty(Directory.GetFileSystemEntries(store.PackagesDirectory));
+        Assert.Empty(Directory.GetFileSystemEntries(store.FilesDirectory));
         Assert.Empty(Directory.GetFileSystemEntries(store.StagingDirectory));
-        Assert.False(File.Exists(store.InstalledPath));
-        Assert.Empty(store.Catalog.Packages);
+        Assert.False(store.HasLibraryFile);
+        Assert.Empty(store.Catalog.All);
     }
 
     [Fact]

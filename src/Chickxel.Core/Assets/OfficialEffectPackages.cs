@@ -11,17 +11,17 @@ namespace Chickxel.Core.Assets;
 /// <c>chickxel.effects.outline.outline</c>, 작성자 <c>chickxel</c>, MIT, 이름·설명은 원문 선언의 영어 번역(없으면 선언 그대로 — 앱 화면에는 에셋의 번역 이름이 보임),
 /// 미리보기는 <see cref="AssetPreview.Package"/>(선언의 병아리에 입힌 APNG + 효과 없는 원본). 같은 원문·버전이면 같은 바이트다.
 /// <para>
-/// 앱은 이 패키지를 저장소에 기본 설치한다(<see cref="Sync"/> — 출처 <see cref="BundledSource"/>): 처음 실행에 모두 설치하고, 앱에 든 버전이 더 새로우면
-/// 켜짐 상태를 그대로 둔 채 업데이트한다. 사용자가 지운 패키지는 다시 설치하지 않고(한 번 설치한 패키지 ID를 <see cref="StateFileName"/>에 기억),
-/// "기본 효과 되돌리기"(<c>restore</c>)만 지운 것을 다시 설치하고 끈 것을 켠다. 정적 카탈로그 원본(<c>catalog/</c>)의 같은 패키지는 <c>tools/CatalogBuilder</c>가 이 코드로 만든다.
+/// 앱은 이 효과를 저장소에 기본으로 넣는다(<see cref="Sync"/> — 출처 <see cref="BundledSource"/>): 처음 실행에 모두 넣고, 앱에 든 버전이 더 새로우면
+/// 고치지 않은 것만 업데이트한다. 사용자가 지운 효과는 다시 넣지 않고(한 번 넣은 패키지 ID를 <see cref="StateFileName"/>에 기억),
+/// "기본 효과 되돌리기"(<c>restore</c>)만 지운 것을 다시 넣는다. 정적 카탈로그 원본(<c>catalog/</c>)의 같은 패키지는 <c>tools/CatalogBuilder</c>가 이 코드로 만든다.
 /// </para>
 /// </summary>
 public static class OfficialEffectPackages
 {
     public const string PackagePrefix = "chickxel.effects.";
 
-    /// <summary>앱에 든 공식 패키지를 설치한 출처 값(installed.json).</summary>
-    public const string BundledSource = "bundled";
+    /// <summary>앱에 든 공식 효과를 넣은 출처 값(<see cref="AssetEntry.Source"/>).</summary>
+    public const string BundledSource = AssetSources.Bundled;
 
     /// <summary>한 번 설치한 공식 패키지 ID를 기억하는 파일(저장소 뿌리).</summary>
     public const string StateFileName = "bundled-effects.json";
@@ -109,25 +109,23 @@ public static class OfficialEffectPackages
         return output.ToArray();
     }
 
-    /// <summary>기본 설치 결과: 새로 설치·업데이트·다시 켠 패키지 ID와 실패(패키지 ID, 까닭).</summary>
-    public sealed record SyncResult(IReadOnlyList<string> Installed, IReadOnlyList<string> Updated, IReadOnlyList<string> Enabled,
-        IReadOnlyList<(string PackageId, string Error)> Errors)
+    /// <summary>기본 설치 결과: 새로 넣은·업데이트한 패키지 ID와 실패(패키지 ID, 까닭).</summary>
+    public sealed record SyncResult(IReadOnlyList<string> Installed, IReadOnlyList<string> Updated, IReadOnlyList<(string PackageId, string Error)> Errors)
     {
-        public bool Changed => Installed.Count + Updated.Count + Enabled.Count > 0;
+        public bool Changed => Installed.Count + Updated.Count > 0;
     }
 
     /// <summary>
-    /// 공식 효과 패키지를 저장소에 맞춘다. 패키지를 만들고 설치하므로 처음 실행에는 수 초가 걸린다 — 앱은 UI 스레드가 아닌 곳에서 같은 폴더의 다른 저장소 객체로 부르고
+    /// 공식 효과를 저장소에 맞춘다. 패키지를 만들고 가져오므로 처음 실행에는 수 초가 걸린다 — 앱은 UI 스레드가 아닌 곳에서 같은 폴더의 다른 저장소 객체로 부르고
     /// (<see cref="NeedsSync"/>로 할 일이 있을 때만), 끝나면 앱의 저장소를 <see cref="AssetStore.Refresh"/>한다.
-    /// 없는 패키지는 처음이면 설치하고, 예전에 설치했던 것(사용자가 지움)은 <paramref name="restore"/>일 때만 설치한다.
-    /// 설치된 버전이 앱에 든 버전보다 낮으면 업데이트한다(켜짐 그대로 — <paramref name="restore"/>면 켬). 더 높은 버전(온라인에서 받음)은 그대로 둔다.
-    /// <paramref name="restore"/>면 끈 공식 패키지도 켠다. installed.json을 쓸 수 없으면 아무것도 하지 않는다.
+    /// 없는 효과는 처음이면 넣고, 예전에 넣었던 것(사용자가 지움)은 <paramref name="restore"/>일 때만 넣는다.
+    /// 저장소의 버전이 앱에 든 버전보다 낮으면 업데이트한다(고친 것은 그대로 둠). 더 높은 버전(온라인에서 받음)은 그대로 둔다. 저장소를 쓸 수 없으면 아무것도 하지 않는다.
     /// </summary>
     public static SyncResult Sync(AssetStore store, bool restore = false)
     {
-        List<string> installed = [], updated = [], enabled = [];
+        List<string> installed = [], updated = [];
         List<(string, string)> errors = [];
-        if (store.PackagesError is not null) return new SyncResult(installed, updated, enabled, errors);
+        if (store.LibraryError is not null) return new SyncResult(installed, updated, errors);
         var offered = ReadState(store);
         int offeredBefore = offered.Count;
         foreach (var id in OfficialEffects.Ordered)
@@ -138,19 +136,15 @@ public static class OfficialEffectPackages
                 switch (StepOf(store, offered, id, restore))
                 {
                     case Step.Install:
-                        Install(store, id, keepEnabled: false);
+                        Install(store, id);
                         installed.Add(packageId);
                         break;
                     case Step.Update:
-                        Install(store, id, keepEnabled: !restore);
+                        Install(store, id);
                         updated.Add(packageId);
                         break;
-                    case Step.Enable:
-                        store.SetEnabled(packageId, true);
-                        enabled.Add(packageId);
-                        break;
-                    case Step.None when store.Catalog.FindPackage(packageId) is null:
-                        continue; // 사용자가 지운 패키지
+                    case Step.None when store.Catalog.FromPackage(packageId).Count == 0:
+                        continue; // 사용자가 지운 효과
                 }
                 offered.Add(packageId);
             }
@@ -170,44 +164,45 @@ public static class OfficialEffectPackages
                 errors.Add((StateFileName, ex.Message));
             }
         }
-        return new SyncResult(installed, updated, enabled, errors);
+        return new SyncResult(installed, updated, errors);
     }
 
     /// <summary>
-    /// <see cref="Sync"/>가 할 일이 있는지(설치·업데이트·켜기, 처음 보는 공식 패키지 기억하기). 패키지를 만들지 않고 상태만 보므로 UI 스레드에서 불러도 된다.
+    /// <see cref="Sync"/>가 할 일이 있는지(넣기·업데이트, 처음 보는 공식 효과 기억하기). 패키지를 만들지 않고 상태만 보므로 UI 스레드에서 불러도 된다.
     /// </summary>
     public static bool NeedsSync(AssetStore store, bool restore = false)
     {
-        if (store.PackagesError is not null) return false;
+        if (store.LibraryError is not null) return false;
         var offered = ReadState(store);
         return OfficialEffects.Ordered.Any(id => StepOf(store, offered, id, restore) != Step.None);
     }
 
-    private enum Step { None, Install, Update, Enable, Remember }
+    private enum Step { None, Install, Update, Remember }
 
-    // 공식 효과 하나에 할 일(Remember = 이미 있는 패키지를 처음 봄 — 설치 기록에만 더함)
+    // 공식 효과 하나에 할 일(Remember = 이미 있는 효과를 처음 봄 — 설치 기록에만 더함)
     private static Step StepOf(AssetStore store, HashSet<string> offered, string id, bool restore)
     {
         string packageId = PackageId(id);
-        var current = store.Catalog.FindPackage(packageId);
+        var current = store.Catalog.FromPackage(packageId).FirstOrDefault(entry => entry.Store!.AssetId == AssetId(id));
         if (current is null) return offered.Contains(packageId) && !restore ? Step.None : Step.Install;
-        if (SemVersion.TryParse(current.Version, out var have) && SemVersion.TryParse(VersionOf(id), out var bundled) && have.CompareTo(bundled) < 0)
+        if (!current.Modified && SemVersion.TryParse(VersionOf(id), out var bundled) && current.Store!.SemanticVersion.CompareTo(bundled) < 0)
             return Step.Update;
-        if (restore && !current.Enabled) return Step.Enable;
         return offered.Contains(packageId) ? Step.None : Step.Remember;
     }
 
-    /// <summary>설치된 패키지가 앱에 든 공식 효과 패키지인지(ID로).</summary>
-    public static bool IsOfficial(InstalledPackage package) => IdOfPackage(package.Id) is not null;
+    /// <summary>에셋이 앱에 든 공식 효과인지(상점 연결로).</summary>
+    public static bool IsOfficial(AssetEntry entry) => AssetCatalog.OfficialIdOf(entry) is not null;
 
-    private static void Install(AssetStore store, string id, bool keepEnabled)
+    // 같은 공식 효과는 새 버전으로 바꾸되 고친 것(작성자가 이 컴퓨터의 계정일 때만 생김)은 그대로 두고, 내용만 같은 다른 에셋(직접 만든 사본)은 건드리지 않는다
+    private static void Install(AssetStore store, string id)
     {
         string file = Path.Combine(store.CacheDirectory, "bundled-" + id + AssetPackage.Extension);
         Directory.CreateDirectory(store.CacheDirectory);
         File.WriteAllBytes(file, Build(id));
         try
         {
-            store.Install(file, BundledSource, keepEnabled: keepEnabled);
+            store.Install(file, BundledSource, item => !item.SameStoreAsset ? ImportChoice.KeepBoth
+                : item.Existing!.Modified ? ImportChoice.Skip : ImportChoice.Replace);
         }
         finally
         {

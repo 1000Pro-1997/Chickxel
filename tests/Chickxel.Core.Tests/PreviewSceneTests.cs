@@ -398,13 +398,12 @@ public class PreviewSceneTests
 
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var installed = store.Install(AssetSamples.Save(dir.Path, bytes));
-        Assert.False(installed.IsBroken);
-        AssertSameScene(scene, Assert.Single(installed.Entries).Script!.Scene!);
-        AssertSameScene(scene, Assert.Single(AssetStore.Open(store.Root).Catalog.Packages).Entries[0].Script!.Scene!);
+        var installed = Assert.Single(store.InstallFile(AssetSamples.Save(dir.Path, bytes)));
+        AssertSameScene(scene, installed.Script!.Scene!);
+        AssertSameScene(scene, Assert.Single(AssetStore.Open(store.Root).Catalog.All).Script!.Scene!);
 
         using var exported = new MemoryStream();
-        store.ExportPackage(installed.Id, exported);
+        store.Export([installed.Id], AssetSamples.Header(), exported);
         AssertSameScene(scene, ((ScriptAsset)Read(exported.ToArray()).Items[0].Data).Scene!);
 
         // 장면이 있는 스크립트의 패키지 미리보기는 장면 캔버스 전체
@@ -469,12 +468,12 @@ public class PreviewSceneTests
         var publishedFiles = Read(published.Package!).Files;
         Assert.Equal(expected.SoloPng, publishedFiles[AssetPackageBuilder.SoloPreviewPath(Assert.Single(published.Manifest!.Assets).Preview!)]);
 
-        // 개인 내보내기
+        // 내 에셋 내보내기
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var saved = store.SavePersonalScript(HalfMarkSource + "\n// " + nameof(Packages_carry_the_solo_previews_and_pass_the_validator) + "\n", null, script.Scene);
+        var saved = store.SaveScript(HalfMarkSource + "\n// " + nameof(Packages_carry_the_solo_previews_and_pass_the_validator) + "\n", null, script.Scene);
         using var exported = new MemoryStream();
-        var exportedManifest = store.ExportPersonal([saved.Id], AssetSamples.Header(), exported, entry => AssetPreview.Package(entry.Data));
+        var exportedManifest = store.Export([saved.Id], AssetSamples.Header(), exported, preview: entry => AssetPreview.Package(entry.Data));
         var exportedFiles = Read(exported.ToArray()).Files;
         string exportedPreview = Assert.Single(exportedManifest.Assets).Preview!;
         Assert.Contains(AssetPackageBuilder.SoloPreviewPath(exportedPreview), exportedFiles.Keys);
@@ -523,10 +522,8 @@ public class PreviewSceneTests
 
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var installed = store.Install(AssetSamples.Save(dir.Path, broken.ToArray()));
-        Assert.False(installed.IsBroken);
-        Assert.Null(Assert.Single(installed.Entries).Script!.Scene);
-        Assert.Equal(AssetIssueCode.InvalidPreviewScene, Assert.Single(installed.Warnings).Code);
+        var installed = Assert.Single(store.InstallFile(AssetSamples.Save(dir.Path, broken.ToArray())));
+        Assert.Null(installed.Script!.Scene);
 
         // 장면이 없던 예전 패키지
         var (old, _) = Package(GroundScript("old package"));
@@ -536,48 +533,49 @@ public class PreviewSceneTests
         Assert.DoesNotContain(oldPackage.Files.Keys, path => path.EndsWith(".scene.png", StringComparison.Ordinal));
     }
 
-    // ───────────── 개인 저장소 ─────────────
+    // ───────────── 내 에셋 저장소 ─────────────
+
+    private static string[] SceneFiles(AssetStore store) => Directory.GetFiles(store.FilesDirectory, "scene.png", SearchOption.AllDirectories);
 
     [Fact]
-    public void Personal_scripts_save_load_replace_export_and_delete_their_scene()
+    public void Local_scripts_save_load_replace_export_and_delete_their_scene()
     {
         var scene = GroundScene(Chick);
-        var source = GroundSource + "\n// " + nameof(Personal_scripts_save_load_replace_export_and_delete_their_scene) + "\n";
+        var source = GroundSource + "\n// " + nameof(Local_scripts_save_load_replace_export_and_delete_their_scene) + "\n";
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
 
-        var saved = store.SavePersonalScript(source, null, scene);
-        string file = Path.Combine(store.ScenesDirectory, saved.Id + ".png");
-        Assert.True(File.Exists(file));
+        var saved = store.SaveScript(source, null, scene);
+        Assert.Single(SceneFiles(store));
         AssertSameScene(scene, saved.Script!.Scene!);
         AssertSameScene(scene, AssetStore.Open(store.Root).Catalog.Find(saved.Id)!.Script!.Scene!);
 
         // 장면 없이 같은 원문을 다시 저장하면(효과 창의 "에셋으로 저장") 그 항목 그대로 — 장면도 그대로
-        var same = store.SavePersonalScript(source, null, null);
+        var same = store.SaveScript(source, null, null);
         Assert.Equal(saved.Id, same.Id);
         Assert.NotNull(same.Script!.Scene);
-        Assert.True(File.Exists(file));
+        Assert.Single(SceneFiles(store));
 
-        // 개인 내보내기 패키지에도 장면이 들어간다
+        // 내보낸 패키지에도 장면이 들어간다
         using (var exported = new MemoryStream())
         {
-            store.ExportPersonal([saved.Id], AssetSamples.Header(), exported);
+            store.Export([saved.Id], AssetSamples.Header(), exported);
             AssertSameScene(scene, ((ScriptAsset)Read(exported.ToArray()).Items[0].Data).Scene!);
         }
 
         // 효과 만들기에서 장면을 지우고 저장 → 파일도 지움
-        var cleared = store.SavePersonalScript(source, saved.Id, null);
+        var cleared = store.SaveScript(source, saved.Id, null);
         Assert.Equal(saved.Id, cleared.Id);
         Assert.Null(cleared.Script!.Scene);
-        Assert.False(File.Exists(file));
+        Assert.Empty(SceneFiles(store));
         Assert.Null(AssetStore.Open(store.Root).Catalog.Find(saved.Id)!.Script!.Scene);
 
         // 같은 원문에 새 장면 → 그 항목의 장면만 바뀜, 지우면 파일도 지움
-        var again = store.SavePersonalScript(source, null, scene);
+        var again = store.SaveScript(source, null, scene);
         Assert.Equal(saved.Id, again.Id);
-        Assert.True(File.Exists(file));
-        store.RemovePersonal(saved.Id);
-        Assert.False(File.Exists(file));
+        Assert.Single(SceneFiles(store));
+        store.Remove(saved.Id);
+        Assert.Empty(Directory.GetFileSystemEntries(store.FilesDirectory));
         Assert.Empty(store.LoadErrors);
     }
 

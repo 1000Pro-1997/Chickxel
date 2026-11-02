@@ -2323,7 +2323,7 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectPreset_Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>Delete '{0}'?</value></data>
   <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>A preset named '{0}' already exists.</value></data>
-  <data name="EffectPreset_LoadError" xml:space="preserve"><value>Couldn't read your personal effects and presets: {0}</value></data>
+  <data name="EffectPreset_LoadError" xml:space="preserve"><value>Couldn't read the asset library: {0}</value></data>
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>Couldn't save the change: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>Apply to</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>Clip to effect above</value></data>
@@ -3150,7 +3150,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_Title" xml:space="preserve"><value>Asset Manager</value></data>
   <data name="Assets_Menu" xml:space="preserve"><value>Asset Manager…</value></data>
   <data name="Assets_ManagerButton" xml:space="preserve"><value>Asset Manager</value></data>
-  <data name="Assets_ManagerTip" xml:space="preserve"><value>Turn installed packages and personal assets on or off, import, export or delete them.</value></data>
+  <data name="Assets_ManagerTip" xml:space="preserve"><value>View, import, export and delete your assets and the assets you received.</value></data>
   <data name="Assets_TabInstalled" xml:space="preserve"><value>Installed</value></data>
   <data name="Assets_TabStore" xml:space="preserve"><value>Store</value></data>
   <data name="Assets_TabBrowse" xml:space="preserve"><value>Browse</value></data>
@@ -3161,18 +3161,16 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_FilterGradients" xml:space="preserve"><value>Gradients</value></data>
   <data name="Assets_Search" xml:space="preserve"><value>Search by name</value></data>
   <data name="Assets_Import" xml:space="preserve"><value>Import from File…</value></data>
-  <data name="Assets_ImportTip" xml:space="preserve"><value>Checks and installs a .chickxel-asset package file. A newer version of an installed package updates it.</value></data>
+  <data name="Assets_ImportTip" xml:space="preserve"><value>Checks a .chickxel-asset file and adds the assets in it one by one. If one matches an existing asset, you're asked whether to replace it, skip it or keep both.</value></data>
   <data name="Assets_ImportTitle" xml:space="preserve"><value>Import Asset Package</value></data>
-  <data name="Assets_ImportError" xml:space="preserve"><value>Couldn't install the package: {0}</value></data>
+  <data name="Assets_ImportError" xml:space="preserve"><value>Couldn't import the assets from the file: {0}</value></data>
   <data name="Assets_FileType" xml:space="preserve"><value>Chickxel asset package</value></data>
   <data name="Assets_ExportPersonal" xml:space="preserve"><value>Export Personal Assets…</value></data>
-  <data name="Assets_ExportPersonalTip" xml:space="preserve"><value>Bundles the personal assets shown in the list into one .chickxel-asset package file.</value></data>
   <data name="Assets_ExportTitle" xml:space="preserve"><value>Export as Package File</value></data>
   <data name="Assets_ExportNamePrompt" xml:space="preserve"><value>Package name</value></data>
   <data name="Assets_DefaultPackageName" xml:space="preserve"><value>My Assets</value></data>
-  <data name="Assets_PersonalExportEmpty" xml:space="preserve"><value>There are no personal assets to export.</value></data>
   <data name="Assets_Publish" xml:space="preserve"><value>Publish Online…</value></data>
-  <data name="Assets_PublishTip" xml:space="preserve"><value>Uploads the selected personal asset as a public package with your Chickxel account (one asset per package).</value></data>
+  <data name="Assets_PublishTip" xml:space="preserve"><value>Uploads the selected asset of yours as a public package with your Chickxel account (one asset per package).</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>Uploads this asset as a public package with your Chickxel account.</value></data>
   <data name="Assets_PublishNewVersion" xml:space="preserve"><value>Publish New Version…</value></data>
   <data name="Assets_PublishNewVersionTip" xml:space="preserve"><value>This is a package you uploaded. Uploads a new version with the same package ID (you can change the name, description, translations and tags).</value></data>
@@ -3180,6 +3178,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Intro" xml:space="preserve"><value>Each asset is uploaded as its own package. Enter the package details; once the checks pass, it is uploaded with your Chickxel account. Uploaded packages appear right away in the Store and on the assets page of chickxel.com.</value></data>
   <data name="Publish_ChooseAsset" xml:space="preserve"><value>Select the personal asset to publish in the list. Assets are uploaded one at a time.</value></data>
   <data name="Publish_NoPersonal" xml:space="preserve"><value>There are no personal assets to publish. Save a script effect in the Effect Maker or a gradient in the gradient preset window first (effect presets aren't published).</value></data>
+  <data name="Publish_NotMine" xml:space="preserve"><value>Received assets can't be published. Copy it to your assets first and publish the copy.</value></data>
+  <data name="Publish_LinkError" xml:space="preserve"><value>The package was uploaded, but its store link couldn't be saved to the asset: {0}</value></data>
   <data name="Publish_Author" xml:space="preserve"><value>Author</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>Author ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Your Chickxel account handle is the author ID. It becomes the first part of the package ID; you can change the handle in Help > Chickxel Account (not after you have uploaded a package).</value></data>
@@ -3195,7 +3195,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_ModeNew" xml:space="preserve"><value>Uploading as a new package</value></data>
   <data name="Publish_ModeUpdate" xml:space="preserve"><value>Update {0}: {1} → {2}</value></data>
   <data name="Publish_ModeSameName" xml:space="preserve"><value>A package of yours has the same name, so this becomes its new version. Rename it to upload a different package.</value></data>
-  <data name="Publish_ModeOwnCopy" xml:space="preserve"><value>This asset is from a package you uploaded (or a copy of it), so it becomes that package's new version even if you rename it.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>Use suggested version</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>Short description</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>One or two sentences shown in the Store (up to 200 characters)</value></data>
@@ -3232,15 +3231,11 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Uploaded" xml:space="preserve"><value>Uploaded {0} {1}. The package page is open in your browser.</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>Could not read the image file: {0}</value></data>
-  <data name="Assets_PersonalHeader" xml:space="preserve"><value>Personal assets</value></data>
+  <data name="Assets_PersonalHeader" xml:space="preserve"><value>My assets</value></data>
   <data name="Assets_PackagesHeader" xml:space="preserve"><value>Installed packages</value></data>
   <data name="Assets_DeletedHeader" xml:space="preserve"><value>Recently deleted packages</value></data>
-  <data name="Assets_EmptyInstalled" xml:space="preserve"><value>No installed packages or personal assets.</value></data>
+  <data name="Assets_EmptyInstalled" xml:space="preserve"><value>No assets to show.</value></data>
   <data name="Assets_SelectHint" xml:space="preserve"><value>Select an item in the list on the left.</value></data>
-  <data name="Assets_Enabled" xml:space="preserve"><value>On</value></data>
-  <data name="Assets_Disabled" xml:space="preserve"><value>Off</value></data>
-  <data name="Assets_Broken" xml:space="preserve"><value>Unreadable</value></data>
-  <data name="Assets_IssuesHeader" xml:space="preserve"><value>Why it can't be read:</value></data>
   <data name="Assets_MoreIssues" xml:space="preserve"><value>- and {0} more</value></data>
   <data name="Assets_Status" xml:space="preserve"><value>Status</value></data>
   <data name="Assets_Id" xml:space="preserve"><value>ID</value></data>
@@ -3251,9 +3246,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_Source" xml:space="preserve"><value>Source</value></data>
   <data name="Assets_SourceFile" xml:space="preserve"><value>Local file</value></data>
   <data name="Assets_SourcePersonal" xml:space="preserve"><value>Personal asset</value></data>
-  <data name="Assets_SourcePackage" xml:space="preserve"><value>Package {0} {1}</value></data>
-  <data name="Assets_InstalledAt" xml:space="preserve"><value>Installed</value></data>
-  <data name="Assets_DeletedAt" xml:space="preserve"><value>Deleted</value></data>
   <data name="Assets_Contents" xml:space="preserve"><value>Contents</value></data>
   <data name="Assets_Kind" xml:space="preserve"><value>Kind</value></data>
   <data name="Assets_KindEffect" xml:space="preserve"><value>Effect preset</value></data>
@@ -3263,9 +3255,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_FrameRangeAdd" xml:space="preserve"><value>Inserted on: the effects window's add range</value></data>
   <data name="Assets_Enable" xml:space="preserve"><value>Turn On</value></data>
   <data name="Assets_Disable" xml:space="preserve"><value>Turn Off</value></data>
-  <data name="Assets_ToggleTip" xml:space="preserve"><value>Assets of a package that is off are hidden from the effects window and gradient lists, but its files stay. Effects and gradients already inserted don't change.</value></data>
   <data name="Assets_Export" xml:space="preserve"><value>Export as Package File…</value></data>
-  <data name="Assets_Rollback" xml:space="preserve"><value>Roll Back to Previous Version ({0})</value></data>
   <data name="Assets_OpenFolder" xml:space="preserve"><value>Open File Location</value></data>
   <data name="Assets_WebPage" xml:space="preserve"><value>Open Web Page</value></data>
   <data name="Assets_ViewLicense" xml:space="preserve"><value>View License</value></data>
@@ -3273,18 +3263,15 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_Restore" xml:space="preserve"><value>Restore</value></data>
   <data name="Assets_Rename" xml:space="preserve"><value>Rename…</value></data>
   <data name="Assets_NamePrompt" xml:space="preserve"><value>Name</value></data>
-  <data name="Assets_DuplicateName" xml:space="preserve"><value>A personal asset named '{0}' already exists.</value></data>
-  <data name="Assets_CopyToPersonal" xml:space="preserve"><value>Copy to Personal Assets</value></data>
-  <data name="Assets_CopyToPersonalTip" xml:space="preserve"><value>Makes an editable personal copy and leaves the installed original as is.</value></data>
-  <data name="Assets_DeleteQuestion" xml:space="preserve"><value>Delete the package '{0}'? Effects and gradients already inserted into projects don't change. You can restore it from 'Recently deleted packages' for {1} days.</value></data>
-  <data name="Assets_DeletePersonalQuestion" xml:space="preserve"><value>Delete the personal asset '{0}'? Values already inserted into projects don't change.</value></data>
-  <data name="Assets_DeletedNote" xml:space="preserve"><value>Deleted packages are kept for {0} days, then removed.</value></data>
+  <data name="Assets_DuplicateName" xml:space="preserve"><value>You already have an asset named '{0}'.</value></data>
+  <data name="Assets_CopyToPersonal" xml:space="preserve"><value>Copy to My Assets</value></data>
+  <data name="Assets_CopyToPersonalTip" xml:space="preserve"><value>Makes an editable copy in your assets and leaves the received original as is.</value></data>
   <data name="Assets_ActionError" xml:space="preserve"><value>Couldn't complete the asset action: {0}</value></data>
   <data name="Assets_MigrationError" xml:space="preserve"><value>Couldn't move the old presets into personal assets. The old files are untouched and the move is retried on the next start: {0}</value></data>
-  <data name="Assets_SaveAsPersonal" xml:space="preserve"><value>Save as Personal Asset</value></data>
-  <data name="Assets_PackageGradientNote" xml:space="preserve"><value>This gradient comes from the {0} package. Saving edits leaves the original as is and stores a personal copy.</value></data>
+  <data name="Assets_SaveAsPersonal" xml:space="preserve"><value>Save to My Assets</value></data>
+  <data name="Assets_ReceivedGradientNote" xml:space="preserve"><value>A received gradient ({0}). Saving edits leaves the original as is and stores a copy in My Assets.</value></data>
   <data name="Assets_RemoteLoading" xml:space="preserve"><value>Loading the online list…</value></data>
-  <data name="Assets_RemoteStatus" xml:space="preserve"><value>{0} packages · list from {1}</value></data>
+  <data name="Assets_RemoteStatus" xml:space="preserve"><value>{0} assets · list from {1}</value></data>
   <data name="Assets_RemoteOffline" xml:space="preserve"><value>Couldn't reach the online list, so this is the list from {0}. Installed assets keep working. ({1})</value></data>
   <data name="Assets_RemoteOfflineEmpty" xml:space="preserve"><value>Couldn't reach the online list. Installed assets keep working. ({0})</value></data>
   <data name="Assets_Refresh" xml:space="preserve"><value>Refresh</value></data>
@@ -3310,10 +3297,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_UpdateTo" xml:space="preserve"><value>Update to {0}</value></data>
   <data name="Assets_ShowInstalled" xml:space="preserve"><value>Show in Installed</value></data>
   <data name="Assets_TabUpdatesCount" xml:space="preserve"><value>Updates ({0})</value></data>
-  <data name="Assets_NoUpdates" xml:space="preserve"><value>All installed packages are up to date.</value></data>
+  <data name="Assets_NoUpdates" xml:space="preserve"><value>All received assets are up to date.</value></data>
   <data name="Assets_UpdateRow" xml:space="preserve"><value>Installed {0} → new version {1}</value></data>
   <data name="Assets_CheckUpdates" xml:space="preserve"><value>Check for updates</value></data>
-  <data name="Assets_UpdatesNote" xml:space="preserve"><value>New versions are installed only when you click. The previous version is kept for rollback, and effects and gradients already in your projects don't change.</value></data>
+  <data name="Assets_UpdatesNote" xml:space="preserve"><value>New versions are installed only when you click. Effects and gradients already in your projects don't change, and you're asked before an asset you changed is replaced.</value></data>
   <data name="Assets_CancelDownload" xml:space="preserve"><value>Cancel</value></data>
   <data name="Assets_Downloading" xml:space="preserve"><value>Downloading {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>Couldn't install the downloaded package: {0}</value></data>
@@ -3322,16 +3309,16 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_SourceBundled" xml:space="preserve"><value>Installed with the app</value></data>
   <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>This is an official effect the app installs by default. Once deleted it is not installed again; bring it back with "Restore default effects" in the Installed tab.</value></data>
   <data name="Assets_RestoreOfficial" xml:space="preserve"><value>Restore default effects</value></data>
-  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>Reinstalls the official effects that come with the app (Outline, Shadow and so on) that you deleted, turns disabled ones back on and updates older versions to the app's version. Your own effects and other packages stay as they are.</value></data>
-  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>Reinstalled {0} official effects and turned on or updated {1}.</value></data>
-  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>All official effects are installed and turned on.</value></data>
+  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>Reinstalls the official effects that come with the app (Outline, Shadow and so on) that you deleted and updates older versions to the app's version (changed ones are left as is). Your own effects and other received assets stay as they are.</value></data>
+  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>Reinstalled {0} official effects and updated {1}.</value></data>
+  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>All official effects are installed and up to date.</value></data>
   <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>Couldn't restore the official effects: {0}</value></data>
   <data name="Assets_BundledError" xml:space="preserve"><value>Couldn't install the official effects that come with the app (retried on the next start): {0}</value></data>
   <data name="Assets_ContentsRecipes" xml:space="preserve"><value>Effect presets: {0}</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>Gradients: {0}</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>Show in Asset Manager</value></data>
-  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>A preset of {1} effects from the {0} package. Double-click or drag it into the effect list.</value></data>
+  <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>A received preset of {1} effects ({0}). Double-click or drag it into the effect list.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>Script effect</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>An effect you write in JavaScript. Its source is saved with the project.</value></data>
   <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>Script effects</value></data>
@@ -3414,7 +3401,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="RecipeParams_Count" xml:space="preserve"><value>{0} parameters</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>Script effects: {0}</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>Script effect</value></data>
-  <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects. Scripts from a package don't run until you allow them in the effects window (scripts you wrote or saved as personal assets on this computer run right away).</value></data>
+  <data name="Assets_ScriptNote" xml:space="preserve"><value>Contains script effects. Received scripts don't run until you allow them in the effects window (scripts you wrote or saved to your assets on this computer run right away).</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>Script run</value></data>
   <data name="Assets_ScriptRunAllowed" xml:space="preserve"><value>Allowed</value></data>
   <data name="Assets_ScriptRunNotAllowed" xml:space="preserve"><value>Not allowed — allow it in the script settings of the effects window</value></data>
@@ -3422,7 +3409,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ScriptSettingCount" xml:space="preserve"><value>{0} settings</value></data>
   <data name="EffectPreset_ScriptTileNote" xml:space="preserve"><value>Contains script effects ({0}). They don't draw until you allow them to run.</value></data>
   <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>An effect you made. Double-click or drag into the effect list. Right-click to edit it in the Effect Maker or delete it.</value></data>
-  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>An effect from the {0} package. Double-click or drag into the effect list.</value></data>
+  <data name="EffectPreset_ReceivedScriptTileTip" xml:space="preserve"><value>A received effect ({0}). Double-click or drag into the effect list.</value></data>
   <data name="ScriptEffect_SaveAsset" xml:space="preserve"><value>Save as asset</value></data>
   <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>Saves this source as a personal script asset you can reuse from the Effects tab of the effects window and the Asset Manager, and export in a package.</value></data>
   <data name="ScriptEffect_SaveAssetNeedsTrust" xml:space="preserve"><value>Only scripts you allowed to run can be saved as personal assets.</value></data>
@@ -3500,6 +3487,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>Remove from the queue (back into the input box if it's empty)</value></data>
   <data name="Chat_SendQueuesTip" xml:space="preserve"><value>Enter — sent when the current turn finishes</value></data>
   <data name="EffectMaker_Uploaded" xml:space="preserve"><value>Published</value></data>
+  <data name="EffectMaker_UploadedModified" xml:space="preserve"><value>Published · edited</value></data>
   <data name="EffectMaker_DownloadUploadedTip" xml:space="preserve"><value>You published this effect with this account. It isn't on this computer yet; click to download, install and open it.</value></data>
   <data name="Assets_LinkNotFound" xml:space="preserve"><value>The package '{0}' opened from the website isn't in the online list. It may have been hidden or removed. If you downloaded it from the website, install it with Import.</value></data>
   <data name="Gallery_Title" xml:space="preserve"><value>Upload to Gallery</value></data>
@@ -3737,4 +3725,25 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>Move text</value></data>
   <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>Text</value></data>
   <data name="Shortcuts_TextTool" xml:space="preserve"><value>Text (adds a text layer where you click)</value></data>
+  <data name="Assets_ReceivedHeader" xml:space="preserve"><value>Received assets</value></data>
+  <data name="Assets_SourceLocal" xml:space="preserve"><value>Made on this computer</value></data>
+  <data name="Assets_PublishedVersion" xml:space="preserve"><value>Published {0}</value></data>
+  <data name="Assets_ModifiedNote" xml:space="preserve"><value>modified</value></data>
+  <data name="Assets_StoreId" xml:space="preserve"><value>Store ID</value></data>
+  <data name="Assets_ModifiedFact" xml:space="preserve"><value>Changed since it was received or published</value></data>
+  <data name="Assets_AddedAt" xml:space="preserve"><value>Added</value></data>
+  <data name="Assets_ExportShown" xml:space="preserve"><value>Export…</value></data>
+  <data name="Assets_ExportShownTip" xml:space="preserve"><value>Bundles the assets shown in the list into one .chickxel-asset file (for backup or sharing). Received assets keep their author, license and store details.</value></data>
+  <data name="Assets_ExportEmpty" xml:space="preserve"><value>There are no assets in the list to export.</value></data>
+  <data name="Assets_DeleteAssetQuestion" xml:space="preserve"><value>Delete '{0}'? Effects and gradients already inserted into projects don't change.</value></data>
+  <data name="AssetImport_Title" xml:space="preserve"><value>Import Asset</value></data>
+  <data name="AssetImport_Question" xml:space="preserve"><value>An asset matching '{0}' already exists. What would you like to do?</value></data>
+  <data name="AssetImport_Incoming" xml:space="preserve"><value>Incoming</value></data>
+  <data name="AssetImport_Existing" xml:space="preserve"><value>Existing</value></data>
+  <data name="AssetImport_Modified" xml:space="preserve"><value>The existing asset was changed on this computer after it was received or published. Replacing it discards those changes.</value></data>
+  <data name="AssetImport_SameContent" xml:space="preserve"><value>The content is the same.</value></data>
+  <data name="AssetImport_Replace" xml:space="preserve"><value>Replace</value></data>
+  <data name="AssetImport_KeepBoth" xml:space="preserve"><value>Keep Both</value></data>
+  <data name="AssetImport_Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>Apply to the remaining items</value></data>
 </root>

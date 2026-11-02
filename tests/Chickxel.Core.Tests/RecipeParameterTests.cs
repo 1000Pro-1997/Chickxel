@@ -109,10 +109,10 @@ public class RecipeParameterTests
         // 개인 에셋도 매개변수를 저장하고, 잘못된 연결은 저장하지 않는다
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        var saved = store.SavePersonalRecipe(recipe);
+        var saved = store.SaveRecipe(recipe);
         Assert.Equal(recipe.Parameters, AssetStore.Open(store.Root).Catalog.Find(saved.Id)!.Recipe!.Parameters);
         var wrong = recipe with { Parameters = [recipe.Parameters[0] with { Bindings = [new RecipeBinding(9, "color")] }] };
-        Assert.Equal(AssetIssueCode.RecipeBindingMissingEffect, Assert.Single(Assert.Throws<AssetPackageException>(() => store.SavePersonalRecipe(wrong)).Issues).Code);
+        Assert.Equal(AssetIssueCode.RecipeBindingMissingEffect, Assert.Single(Assert.Throws<AssetPackageException>(() => store.SaveRecipe(wrong)).Issues).Code);
     }
 
     [Fact]
@@ -257,11 +257,11 @@ public class RecipeParameterTests
     // ───────────── 프로젝트 ─────────────
 
     [Fact]
-    public void InsertedRecipe_SurvivesSaveAndOpen_WithoutPackage_AndStillEditsAndRenders()
+    public void InsertedRecipe_SurvivesSaveAndOpen_WithoutTheAsset_AndStillEditsAndRenders()
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        store.Install(AssetSamples.Save(dir.Path, AssetSamples.Build(recipe: Recipe())));
+        store.InstallFile(AssetSamples.Save(dir.Path, AssetSamples.Build(recipe: Recipe())));
         var project = new SpriteProject(24, 24);
         project.SetCel(0, 0, Square());
         project.SetLayerEffects(0, store.Catalog.Recipes.Single().Recipe!.Instantiate(project, null));
@@ -270,7 +270,7 @@ public class RecipeParameterTests
         var instance = project.Layers[0].Effects[0].Recipe!.Instance;
         var expected = project.Flatten(0).Pixels.ToArray();
 
-        store.Delete(AssetSamples.PackageId);
+        foreach (var entry in store.Catalog.All) store.Remove(entry.Id);
         Assert.Empty(store.Catalog.Recipes);
         var reloaded = ProjectIO.Load(file);
         var effects = reloaded.Layers[0].Effects;

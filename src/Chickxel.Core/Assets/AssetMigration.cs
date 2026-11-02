@@ -9,17 +9,17 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Assets;
 
-/// <summary>migration 결과. <see cref="Ran"/>이 false면 이미 개인 에셋 파일이 있어 아무것도 하지 않았다.</summary>
+/// <summary>migration 결과. <see cref="Ran"/>이 false면 이미 옮겼거나 저장소를 쓸 수 없어 아무것도 하지 않았다.</summary>
 public sealed record AssetMigrationResult(bool Ran, int Recipes, int Gradients, IReadOnlyList<string> Backups, string? Error)
 {
     public static AssetMigrationResult Skipped { get; } = new(false, 0, 0, [], null);
 }
 
 /// <summary>
-/// 예전 사용자 데이터(<c>effect-presets.json</c>, <c>gradient-presets.json</c>)를 개인 에셋으로 한 번 옮긴다(계획 14장 2단계).
-/// 개인 에셋 파일이 없을 때만 돈다: 예전 두 파일을 모두 읽고(없는 그라데이션 파일 = 기본 그라데이션), 개인 에셋 파일을 원자적으로 만든 뒤,
-/// 예전 파일을 날짜가 붙은 backup(<c>effect-presets.backup-2026-10-28.json</c>)으로 이름을 바꾼다. 그 뒤 앱은 새 저장소만 읽고 쓴다.
-/// 예전 파일을 읽지 못하면 아무것도 쓰지 않고 개인 에셋 쓰기를 막는다(<see cref="AssetStore.PersonalError"/>) — 다음 실행에 다시 시도한다.
+/// 예전 사용자 데이터(<c>effect-presets.json</c>, <c>gradient-presets.json</c>)를 이 컴퓨터의 에셋으로 한 번 옮긴다(계획 14장 2단계).
+/// 저장소가 아직 옮기지 않았다고 할 때만 돈다(<see cref="AssetStore.LegacyPresetsMigrated"/>): 예전 두 파일을 모두 읽고(없는 그라데이션 파일 = 기본 그라데이션),
+/// 저장소 앞에 더한 뒤 예전 파일을 날짜가 붙은 backup(<c>effect-presets.backup-2026-10-28.json</c>)으로 이름을 바꾼다. 그 뒤 앱은 새 저장소만 읽고 쓴다.
+/// 예전 파일을 읽지 못하면 아무것도 쓰지 않고 까닭을 돌려준다 — 다음 실행에 다시 시도한다.
 /// 예전 형식 읽기는 이 파일에만 남는다.
 /// </summary>
 public static class AssetMigration
@@ -29,7 +29,7 @@ public static class AssetMigration
     /// <param name="legacyDirectory">예전 파일이 있던 앱 설정 폴더(<c>…/Chickxel</c>).</param>
     public static AssetMigrationResult Run(AssetStore store, string legacyDirectory, DateTime? nowUtc = null)
     {
-        if (store.HasPersonalFile) return AssetMigrationResult.Skipped;
+        if (store.LegacyPresetsMigrated || store.LibraryError is not null) return AssetMigrationResult.Skipped;
         var now = nowUtc ?? DateTime.UtcNow;
         string effectsPath = Path.Combine(legacyDirectory, EffectPresetsFileName);
         string gradientsPath = Path.Combine(legacyDirectory, GradientPresetsFileName);
@@ -43,7 +43,6 @@ public static class AssetMigration
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            store.BlockPersonal(ex.Message);
             return new AssetMigrationResult(true, 0, 0, [], ex.Message);
         }
 
@@ -52,8 +51,8 @@ public static class AssetMigration
             (IAssetData)EffectRecipe.Capture("", CleanName(r.Name, Localization.DomainStrings.FormatAssetMigration_UnnamedRecipe(number: i + 1)), r.Effects), false)));
         items.AddRange(gradients.Select((g, i) => (AssetKinds.Gradient,
             (IAssetData)new GradientAsset("", g with { Name = CleanName(g.Name, Localization.DomainStrings.FormatAssetMigration_UnnamedGradient(number: i + 1)), Favorite = false }), g.Favorite)));
-        // 같은 저장소를 쓰는 다른 앱이 먼저 옮겼으면(잠금을 잡은 뒤 개인 에셋 파일이 이미 있음) 그 결과를 쓴다
-        if (!store.TryCreatePersonal(items, now)) return AssetMigrationResult.Skipped;
+        // 같은 저장소를 쓰는 다른 앱이 먼저 옮겼으면(잠금을 잡은 뒤 이미 옮겼다고 적혀 있음) 그 결과를 쓴다
+        if (!store.TryAddLegacyPresets(items, now)) return AssetMigrationResult.Skipped;
 
         // 새 저장소가 완성된 뒤에만 예전 파일을 치운다. 이름 바꾸기에 실패해도 새 저장소가 기준이다(예전 파일은 다시 읽지 않음).
         var backups = new List<string>();

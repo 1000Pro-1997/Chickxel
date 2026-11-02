@@ -28,7 +28,7 @@ public sealed partial class PixelTools
         yield return Tool("get_script_api",
             "Read the guide for writing a script effect (JavaScript): the rules every effect must follow (one effect({...}) call, render changes img.data in place, " +
             "deterministic, run limits, setting types, colors that follow gradients, fast path, answer format), then the API (declaration, img/ctx/s objects, helpers) and an example. " +
-            "Read it before writing a script with write_script_effect or set_effect_maker_source. The installed effects (list_effect_types: the official effects and any packages) cover most needs; write a script only for looks they can't make.",
+            "Read it before writing a script with write_script_effect or set_effect_maker_source. The available effects (list_effect_types: the official effects and any the user made or received) cover most needs; write a script only for looks they can't make.",
             new JsonObject());
         yield return Tool("write_script_effect",
             "Write a script effect (JavaScript source calling effect({...}) once) and add it to a layer, or replace the source of an existing script effect. " +
@@ -56,7 +56,7 @@ public sealed partial class PixelTools
                 ["chick"] = Str("Preview chick id when on = chick (default \"original\"; e.g. knight, wizard, ninja)."),
             });
         yield return Tool("save_script_effect",
-            "Save a script effect of a layer as a personal script effect asset (its name, settings and preview chick come from the source's effect({...}) declaration) " +
+            "Save a script effect of a layer as the user's own script effect asset (its name, settings and preview chick come from the source's effect({...}) declaration) " +
             "and open it in the Effect Maker window. Publishing online is done by the user from that window (there is no upload tool).",
             new JsonObject
             {
@@ -83,8 +83,8 @@ public sealed partial class PixelTools
             "Gradient hints are recommendations, not problems; follow them unless the effect really needs one flat color. Fails if the Effect Maker is closed or has no script open.",
             new JsonObject());
         yield return Tool("list_script_effects",
-            "List the user's script effects: personal script effects and the script effects of installed asset packages (id, name, description, origin personal/package, " +
-            "package name, and whether it is the one open in the Effect Maker). Read their code with get_script_effect_source, for example when the user says \"like the X effect but ...\". Doesn't change anything.",
+            "List the user's script effects: the ones the user made and the ones received from the online store or files (id, name, description, origin mine/received, " +
+            "author and store package id when known, and whether it is the one open in the Effect Maker). Read their code with get_script_effect_source, for example when the user says \"like the X effect but ...\". Doesn't change anything.",
             new JsonObject());
         yield return Tool("get_script_effect_source",
             "Read one of the user's script effects (see list_script_effects) as a reference: its full source, name, language, description, tags, settings schema and execution path. " +
@@ -106,7 +106,7 @@ public sealed partial class PixelTools
 
     private static JsonObject GetScriptApi() => TextResult(ScriptEffectGuide.ToMarkdown(null));
 
-    /// <summary>사용자의 스크립트 효과(개인 에셋 다음 설치한 패키지 순, 꺼진 패키지 포함).</summary>
+    /// <summary>사용자의 스크립트 효과(라이브러리 차례 — 내 것과 받은 것).</summary>
     private static IEnumerable<(AssetEntry Entry, ScriptAsset Script)> ScriptEffects()
         => AppAssets.Catalog.All.Where(e => e.Kind == AssetKinds.EffectScript && e.Data is ScriptAsset).Select(e => (e, (ScriptAsset)e.Data));
 
@@ -118,8 +118,8 @@ public sealed partial class PixelTools
         {
             var o = new JsonObject { ["id"] = entry.Id, ["name"] = script.Name };
             if (script.Description is { } description) o["description"] = description;
-            o["origin"] = entry.Origin == AssetOrigin.Personal ? "personal" : "package";
-            if (entry.Origin != AssetOrigin.Personal) o["package"] = entry.PackageName ?? entry.PackageId;
+            o["origin"] = OriginOf(entry);
+            AddAssetCredits(o, entry);
             if (entry.Id == open) o["open_in_effect_maker"] = true;
             list.Add(o);
         }
@@ -139,8 +139,8 @@ public sealed partial class PixelTools
         if (script.Language is { } language) o["language"] = language;
         if (script.Description is { } description) o["description"] = description;
         o["tags"] = new JsonArray([.. script.Tags.Select(t => (JsonNode?)t)]);
-        o["origin"] = entry.Origin == AssetOrigin.Personal ? "personal" : "package";
-        if (entry.Origin != AssetOrigin.Personal) o["package"] = entry.PackageName ?? entry.PackageId;
+        o["origin"] = OriginOf(entry);
+        AddAssetCredits(o, entry);
         var settings = new JsonArray();
         foreach (var s in script.Settings)
         {
@@ -399,7 +399,7 @@ public sealed partial class PixelTools
         AssetEntry saved;
         try
         {
-            saved = AppAssets.Store.SavePersonalScript(source, null, null);
+            saved = AppAssets.Store.SaveScript(source, null, null);
         }
         catch (Exception e) when (e is AssetPackageException or InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {

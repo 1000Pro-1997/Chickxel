@@ -98,8 +98,10 @@ public sealed class AssetPackageBuilder(AssetManifest header)
     /// 장면 레이어를 숨긴 그림·원본이 둘 다 있으면 <see cref="SoloPreviewPath"/>·<see cref="SoloOriginalPreviewPath"/> 자리에 넣는다(manifest는 가리키지 않음 — 웹의 장면 레이어 숨기기용).
     /// 미리보기 장면이 있는 스크립트 에셋(<see cref="ScriptAsset.Scene"/>)은 그 저장 PNG를 <see cref="ScenePath"/> 자리에 넣는다(manifest는 가리키지 않음).
     /// <paramref name="segment"/>를 주면 이름 대신 그 조각을 ID·파일 이름에 쓴다(공식 패키지처럼 ID를 정해 둘 때 — 소문자·숫자·하이픈).
+    /// <paramref name="author"/>·<paramref name="license"/>·<paramref name="store"/>는 이 에셋만의 정보(여러 에셋을 묶어 내보낼 때 — <see cref="AssetManifestEntry"/>).
     /// </summary>
-    public string Add(string kind, IAssetData value, PackagePreview? preview = null, string? segment = null)
+    public string Add(string kind, IAssetData value, PackagePreview? preview = null, string? segment = null,
+        AssetAuthor? author = null, string? license = null, AssetStoreLink? store = null)
     {
         var definition = AssetKinds.Find(kind) ?? throw new ArgumentException(kind, nameof(kind));
         segment = UniqueSegment(segment is null ? Slug(value.Name, kind) : Slug(segment, kind));
@@ -119,7 +121,7 @@ public sealed class AssetPackageBuilder(AssetManifest header)
             }
         }
         if (value is ScriptAsset { Scene: { } scene }) _files[ScenePath(path)] = scene.ToPng();
-        _entries.Add(new AssetManifestEntry(id, kind, path, previewPath));
+        _entries.Add(new AssetManifestEntry(id, kind, path, previewPath) { Author = author, License = license, Store = store });
         return id;
     }
 

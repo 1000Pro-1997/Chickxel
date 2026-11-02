@@ -252,11 +252,11 @@ public sealed partial class LayerEffectsDialog
         _settings.Children.Add(Ui.Label(recipe.Name, bold: true));
         if (recipe.SourceId is { } source)
         {
-            // 출처 표시만: 개인 에셋이면 그렇게, 설치된 패키지에 아직 있으면 패키지 이름, 없으면 원래 ID(넣은 효과는 출처 없이도 편집된다)
-            string where = source.StartsWith(Chickxel.Core.Assets.AssetStore.PersonalIdPrefix, StringComparison.Ordinal) ? UiStrings.Assets_SourcePersonal
-                : AppAssets.Catalog.Find(source) is { PackageName: { } package } entry
-                    ? string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.Assets_SourcePackage, package, entry.PackageVersion)
-                    : source;
+            // 출처 표시만: 내 에셋이면 그렇게, 받은 에셋이면 상점 이름(없으면 만든 사람)과 판, 라이브러리에 없으면 원래 ID(넣은 효과는 출처 없이도 편집된다)
+            string where = AppAssets.Catalog.Find(source) is not { } entry ? source
+                : AppAssets.IsMine(entry) ? UiStrings.Assets_SourcePersonal
+                : entry.Store is { } store ? $"{store.DisplayName} {store.Version}"
+                : entry.Author!.Name;
             var origin = Ui.Label(string.Format(System.Globalization.CultureInfo.CurrentCulture, UiStrings.EffectRecipe_Source, where));
             origin.Foreground = AppTheme.DimTextBrush;
             _settings.Children.Add(origin);

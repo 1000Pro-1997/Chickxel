@@ -127,8 +127,8 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 효과 탭과 프리셋 탭 상자를 다시 만든다. 효과 탭: 켜진 공식 효과 패키지의 스크립트(예전 기본 효과 차례), 고를 수 있는 C# 효과,
-    /// 다른 켜진 패키지의 스크립트, 개인 스크립트. 프리셋 탭: 효과 레시피. 개인 에셋을 읽지 못했으면 두 탭에 그 까닭을 보인다.
+    /// 효과 탭과 프리셋 탭 상자를 다시 만든다. 효과 탭: 공식 효과 스크립트(예전 기본 효과 차례), 고를 수 있는 C# 효과,
+    /// 받은 스크립트, 내 스크립트. 프리셋 탭: 효과 레시피. 에셋 라이브러리를 읽지 못했으면 두 탭에 그 까닭을 보인다.
     /// </summary>
     private void ReloadAssetTiles()
     {
@@ -138,14 +138,14 @@ public sealed partial class LayerEffectsDialog
         _presetWrap.Children.Clear();
         var culture = global::System.Globalization.CultureInfo.CurrentCulture;
         var scripts = AppAssets.Catalog.EffectScripts;
-        // 공식 스크립트 → 고를 수 있는 C# 효과 → 다른 패키지·개인 스크립트
+        // 공식 스크립트 → 고를 수 있는 C# 효과 → 받은 스크립트·내 스크립트
         int officialCount = scripts.TakeWhile(entry => AssetCatalog.OfficialIdOf(entry) is not null).Count();
         foreach (var entry in scripts.Take(officialCount)) AddAssetTile(entry, culture);
         foreach (var builtIn in SelectableTiles()) AddPaletteTile(builtIn, _effectsWrap);
         foreach (var entry in scripts.Skip(officialCount)) AddAssetTile(entry, culture);
         var recipes = AppAssets.Catalog.Recipes;
         foreach (var entry in recipes) AddAssetTile(entry, culture);
-        string? error = AppAssets.Store.PersonalError is { } problem ? string.Format(culture, UiStrings.EffectPreset_LoadError, problem) : null;
+        string? error = AppAssets.Store.LibraryError is { } problem ? string.Format(culture, UiStrings.EffectPreset_LoadError, problem) : null;
         _effectsError.Text = error ?? "";
         _effectsError.IsVisible = error is not null;
         _presetEmpty.Text = error ?? UiStrings.EffectPreset_Empty;
@@ -158,12 +158,12 @@ public sealed partial class LayerEffectsDialog
         var recipe = entry.EffectTemplate!;
         bool script = entry.Kind == AssetKinds.EffectScript;
         var tile = new EffectTile(entry.DisplayName, recipe.Effects, entry, recipe);
-        string tip = (script, entry.Origin == AssetOrigin.Personal) switch
+        string tip = (script, AppAssets.IsMine(entry)) switch
         {
             (true, true) => UiStrings.EffectPreset_ScriptTileTip,
-            (true, false) => string.Format(culture, UiStrings.EffectPreset_PackageScriptTileTip, entry.PackageName),
+            (true, false) => string.Format(culture, UiStrings.EffectPreset_ReceivedScriptTileTip, ReceivedFrom(entry)),
             (false, true) => string.Format(culture, UiStrings.EffectPreset_TileTip, recipe.Effects.Count),
-            (false, false) => string.Format(culture, UiStrings.EffectPreset_PackageTileTip, entry.PackageName, recipe.Effects.Count),
+            (false, false) => string.Format(culture, UiStrings.EffectPreset_ReceivedTileTip, ReceivedFrom(entry), recipe.Effects.Count),
         };
         if (entry.Script?.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture) is { Length: > 0 } description) tip = description + "\n" + tip;
         if (entry.ScriptHashes.Any(hash => ScriptLibrary.TrustOf(hash) != ScriptTrust.Trusted))
@@ -171,6 +171,9 @@ public sealed partial class LayerEffectsDialog
         ToolTip.SetTip(tile, tip + (script ? MotionNote(tile) : ""));
         AddPaletteTile(tile, script ? _effectsWrap : _presetWrap);
     }
+
+    /// <summary>받은 에셋의 출처 이름: 상점 이름, 없으면 만든 사람.</summary>
+    private static string ReceivedFrom(AssetEntry entry) => entry.Store?.DisplayName ?? entry.Author?.Name ?? entry.Id;
 
     private IEnumerable<object> AssetTileMenu(AssetEntry entry)
     {
@@ -181,7 +184,7 @@ public sealed partial class LayerEffectsDialog
             return item;
         }
         var show = Item(UiStrings.EffectPreset_ShowInManager, VectorIcon.Package, () => AssetManagerWindow.Open(this, entry.Kind, entry.Id));
-        if (entry.Origin != AssetOrigin.Personal) return [show];
+        if (!AppAssets.IsMine(entry)) return [show];
         // 효과 만들기는 스크립트만 다룬다. 스크립트 에셋의 이름은 원문의 선언이라 여기서 바꾸지 않는다
         if (entry.Script is not null)
         {
@@ -198,12 +201,13 @@ public sealed partial class LayerEffectsDialog
         ];
     }
 
-    private IEnumerable<AssetEntry> PersonalRecipes => AppAssets.Catalog.Personal.Where(entry => entry.Recipe is not null);
+    /// <summary>내 효과 레시피(이름 겹침 검사·덮어쓰기 대상). 받은 레시피는 고치지 않는다.</summary>
+    private static IEnumerable<AssetEntry> MyRecipes => AppAssets.Catalog.Recipes.Where(AppAssets.IsMine);
 
     private void SavePresetGroup()
     {
         if (_effects.Count == 0) return;
-        var personal = PersonalRecipes.ToList();
+        var personal = MyRecipes.ToList();
         if (RecipeSaveDialog.Ask(this, _effects[0].DisplayName, PreviewChicks.Default, personal.Select(entry => entry.Name)) is not { } saved) return;
         var (name, chick) = saved;
 
@@ -212,13 +216,13 @@ public sealed partial class LayerEffectsDialog
                 UiStrings.EffectPreset_OverwriteQuestion, name), UiStrings.EffectPreset_SaveTitle,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         var recipe = EffectRecipe.Capture(duplicate?.Id ?? "", name, _effects, _project) with { PreviewChick = chick };
-        PersistRecipe(() => AppAssets.Store.SavePersonalRecipe(recipe));
+        PersistRecipe(() => AppAssets.Store.SaveRecipe(recipe));
     }
 
     private void RenamePreset(AssetEntry entry)
     {
-        if (entry.Recipe is not { } recipe) return;
-        var personal = PersonalRecipes.ToList();
+        if (!AppAssets.IsMine(entry) || entry.Recipe is not { } recipe) return;
+        var personal = MyRecipes.ToList();
         var name = InputDialog.Ask(this, UiStrings.EffectPreset_RenameTitle, UiStrings.EffectPreset_NamePrompt,
             recipe.Name, personal.Select(item => item.Name))?.Trim();
         if (string.IsNullOrEmpty(name) || name == recipe.Name) return;
@@ -228,7 +232,7 @@ public sealed partial class LayerEffectsDialog
                 UiStrings.EffectPreset_DuplicateName, name), UiStrings.EffectPreset_RenameTitle);
             return;
         }
-        PersistRecipe(() => AppAssets.Store.SavePersonalRecipe(recipe with { Name = name }));
+        PersistRecipe(() => AppAssets.Store.SaveRecipe(recipe with { Name = name }));
     }
 
     private void DeletePreset(AssetEntry entry)
@@ -236,10 +240,10 @@ public sealed partial class LayerEffectsDialog
         if (Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,
                 UiStrings.EffectPreset_DeleteQuestion, entry.Name), UiStrings.EffectPreset_Delete,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-        PersistRecipe(() => AppAssets.Store.RemovePersonal(entry.Id));
+        PersistRecipe(() => AppAssets.Store.Remove(entry.Id));
     }
 
-    /// <summary>개인 에셋을 바꾼다. 상자는 저장소 변경 알림(<see cref="ReloadAssetTiles"/>)으로 다시 만들어진다.</summary>
+    /// <summary>내 에셋을 바꾼다. 상자는 저장소 변경 알림(<see cref="ReloadAssetTiles"/>)으로 다시 만들어진다.</summary>
     private void PersistRecipe(Action change) => AppAssets.Try(this, change, UiStrings.EffectPreset_SaveError);
 
     /// <summary>미리보기 원본: 지금 프레임 그림(투명 여백을 잘라 냄). 비었거나 너무 크면 작은 견본 그림.</summary>

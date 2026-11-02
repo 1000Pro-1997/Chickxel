@@ -16,7 +16,7 @@ public abstract record Activation
         public override string Argument => AssetLinks.Url(Id);
     }
 
-    /// <summary><c>.chickxel-asset</c> 파일: 에셋 관리자에서 설치한다(가져오기와 같음).</summary>
+    /// <summary><c>.chickxel-asset</c> 파일: 에셋 관리자에서 안의 에셋을 하나씩 가져온다(가져오기와 같음 — <see cref="AppAssets.InstallFile"/>).</summary>
     public sealed record InstallFile(string Path) : Activation
     {
         public override string Argument => Path;

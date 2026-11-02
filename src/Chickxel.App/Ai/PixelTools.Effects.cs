@@ -24,14 +24,15 @@ public sealed partial class PixelTools
         yield return Tool("list_effect_types",
             "List the layer effects you can add with add_effect. Layer effects are non-destructive: they never change pixels, are drawn on top of a " +
             "layer's (or a group's composite) image in stack order, and can be changed, disabled or removed at any time. The effects are the script effects " +
-            "installed in the user's asset catalog: the official Chickxel effects (installed by default; ids like \"outline\", \"shadow\", \"rimlight\", " +
+            "in the user's asset library: the official Chickxel effects (installed by default; ids like \"outline\", \"shadow\", \"rimlight\", " +
             "\"coloroverlay\", \"innerglow\", \"paletteswap\", \"coloradjust\", \"reflection\", \"explode\", \"shine\", \"squash\", \"hitflash\", \"blink\", " +
-            "\"shake\", \"bob\", \"appear\", \"fade\", \"melt\", \"rotate\", \"afterimage\", \"colorcycle\", \"shockwave\", \"hologram\"), effects from other " +
-            "enabled packages and the user's own script effects (ids = asset ids), plus app effects without a script (e.g. text). " +
-            "Returns every effect id with its display name and description (user's UI language), its source, whether it animates over its frame range, " +
+            "\"shake\", \"bob\", \"appear\", \"fade\", \"melt\", \"rotate\", \"afterimage\", \"colorcycle\", \"shockwave\", \"hologram\"), effects the user " +
+            "received (from the online store or files) and the user's own script effects (ids = asset ids), plus app effects without a script (e.g. text). " +
+            "Returns every effect id with its display name and description (user's UI language), its source (official, app, mine = made by the user, " +
+            "received = from someone else; with author and store package id when known), whether it animates over its frame range, " +
             "whether the user allowed its script to run, its settings with default values (keys and value formats of the .chickxel file), allowed values of " +
-            "choice settings, [min, max] of clamped numbers, and the user's effect recipes (presets: the user's personal recipes and recipes of enabled installed " +
-            "asset packages; each is a stack of effects with order and clipping). Works without an open project.",
+            "choice settings, [min, max] of clamped numbers, and the user's effect recipes (presets, each with origin mine/received, author and store " +
+            "package id when known; each is a stack of effects with order and clipping). Works without an open project.",
             new JsonObject());
         yield return Tool("get_effects",
             "List the effects of a layer or group in stack order (index 0 is applied first): index, type, name, enabled, frames (\"all\" or {from,to} " +
@@ -116,13 +117,14 @@ public sealed partial class PixelTools
     // ───────────── 읽기 ─────────────
 
     /// <summary>
-    /// AI가 넣을 수 있는 효과 하나: 도구 ID(공식 효과는 짧은 ID <c>outline</c>, 다른 스크립트는 에셋 ID, 앱 효과는 종류 ID), 화면 이름·설명, 출처,
-    /// 기본 설정 효과, 넣을 때 스크립트 원문을 함께 복사할 레시피(앱 효과는 null), 움직이는지, 실행을 허락했는지.
+    /// AI가 넣을 수 있는 효과 하나: 도구 ID(공식 효과는 짧은 ID <c>outline</c>, 다른 스크립트는 에셋 ID, 앱 효과는 종류 ID), 화면 이름·설명,
+    /// 출처(official/app/mine/received), 라이브러리 에셋(앱 효과·라이브러리에 없는 공식 효과는 null), 기본 설정 효과,
+    /// 넣을 때 스크립트 원문을 함께 복사할 레시피(앱 효과는 null), 움직이는지, 실행을 허락했는지.
     /// </summary>
-    private sealed record EffectChoice(string Id, string Name, string? Description, string Source, LayerEffect Effect, EffectRecipe? Template,
+    private sealed record EffectChoice(string Id, string Name, string? Description, string Source, AssetEntry? Entry, LayerEffect Effect, EffectRecipe? Template,
         bool Animated, bool Allowed);
 
-    /// <summary>넣을 수 있는 효과(효과 창 효과 탭과 같은 차례): 켜진 공식 효과, 고를 수 있는 앱 효과(글씨), 다른 패키지·개인 스크립트 효과.</summary>
+    /// <summary>넣을 수 있는 효과(효과 창 효과 탭과 같은 차례): 공식 효과, 고를 수 있는 앱 효과(글씨), 받은 스크립트·내 스크립트 효과.</summary>
     private static List<EffectChoice> EffectChoices()
     {
         var culture = global::System.Globalization.CultureInfo.CurrentUICulture;
@@ -134,21 +136,21 @@ public sealed partial class PixelTools
             var asset = entry.Script!;
             var template = asset.ToRecipe();
             var official = AssetCatalog.OfficialIdOf(entry);
-            result.Add(new EffectChoice(official ?? entry.Id, entry.DisplayName, asset.DescriptionFor(culture), official is not null ? "official" : entry.PackageId ?? "personal",
+            result.Add(new EffectChoice(official ?? entry.Id, entry.DisplayName, asset.DescriptionFor(culture), official is not null ? "official" : OriginOf(entry), entry,
                 template.Effects[0], template, asset.Animated, ScriptLibrary.TrustOf(asset.Hash) == ScriptTrust.Trusted));
         }
         foreach (var entry in scripts.Take(officialCount)) AddScript(entry);
         foreach (var definition in EffectRegistry.Selectable)
         {
             var ui = LayerEffectsDialog.UiOf(definition);
-            result.Add(new EffectChoice(definition.TypeId, ui.Name, ui.Description, "app", definition.Create(), null, definition.Animated, true));
+            result.Add(new EffectChoice(definition.TypeId, ui.Name, ui.Description, "app", null, definition.Create(), null, definition.Animated, true));
         }
         foreach (var entry in scripts.Skip(officialCount)) AddScript(entry);
         return result;
     }
 
     /// <summary>
-    /// 도구 인자의 효과: 목록 ID(대소문자 무시), 공식 효과의 다른 이름(예전 기본 효과 종류 ID·짧은 ID, 공식 패키지·에셋 ID — 공식 패키지를 껐거나 지웠으면
+    /// 도구 인자의 효과: 목록 ID(대소문자 무시), 공식 효과의 다른 이름(예전 기본 효과 종류 ID·짧은 ID, 공식 패키지·에셋 ID — 공식 효과를 지웠으면
     /// 앱에 든 원문으로), 화면 이름 차례로 찾는다. 없으면 null.
     /// </summary>
     private static EffectChoice? ResolveEffect(IReadOnlyList<EffectChoice> choices, string name)
@@ -161,9 +163,19 @@ public sealed partial class PixelTools
             var program = OfficialEffects.Program(official);
             var template = ScriptAsset.From(OfficialEffectPackages.AssetId(official), program).ToRecipe();
             return new EffectChoice(official, program.NameFor(global::System.Globalization.CultureInfo.CurrentUICulture),
-                program.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture), "official", template.Effects[0], template, program.Animated, true);
+                program.DescriptionFor(global::System.Globalization.CultureInfo.CurrentUICulture), "official", null, template.Effects[0], template, program.Animated, true);
         }
         return choices.FirstOrDefault(c => c.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>에셋 출처 낱말: mine(<see cref="AppAssets.IsMine"/>) 또는 received.</summary>
+    private static string OriginOf(AssetEntry entry) => AppAssets.IsMine(entry) ? "mine" : "received";
+
+    /// <summary>에셋의 만든 사람 이름과 상점 패키지 ID를 결과에 적는다(있을 때만).</summary>
+    private static void AddAssetCredits(JsonObject o, AssetEntry entry)
+    {
+        if (entry.Author is { } author) o["author"] = author.Name;
+        if (entry.Store is { } store) o["store"] = store.PackageId;
     }
 
     /// <summary>
@@ -202,6 +214,7 @@ public sealed partial class PixelTools
                 ["animated"] = choice.Animated,
                 ["settings"] = settings,
             };
+            if (choice.Entry is { } asset) AddAssetCredits(o, asset);
             if (choice.Description is { Length: > 0 } description) o["description"] = description;
             if (!choice.Allowed) o["allowed"] = false;
             if (choices.Count > 0) o["choices"] = choices;
@@ -213,14 +226,16 @@ public sealed partial class PixelTools
         foreach (var entry in saved)
         {
             var recipe = entry.Recipe!;
-            presets.Add(new JsonObject
+            var o = new JsonObject
             {
                 ["name"] = recipe.Name,
                 ["id"] = entry.Id,
-                ["source"] = entry.PackageId ?? "personal",
+                ["origin"] = OriginOf(entry),
                 ["frameRange"] = recipe.FrameRange == RecipeFrameRange.AllFrames ? "allFrames" : "addRange",
                 ["effects"] = Strings(recipe.Effects.Select(EffectIdOf).ToArray()),
-            });
+            };
+            AddAssetCredits(o, entry);
+            presets.Add(o);
         }
         var doc = new JsonObject
         {
@@ -458,13 +473,12 @@ public sealed partial class PixelTools
     // ───────────── 인자·결과 ─────────────
 
     /// <summary>
-    /// 활성 카탈로그의 효과 레시피(효과 창 프리셋 탭과 같은 목록 — 개인 에셋과 켜진 패키지). 개인 에셋을 읽지 못했으면 그 까닭도 준다
-    /// (설치 패키지의 레시피는 그대로 쓸 수 있음).
+    /// 라이브러리의 효과 레시피(효과 창 프리셋 탭과 같은 목록 — 내 것과 받은 것). 에셋 라이브러리를 읽지 못했으면 그 까닭도 준다.
     /// </summary>
     private static IReadOnlyList<Chickxel.Core.Assets.AssetEntry> LoadEffectRecipes(out string? error)
     {
         var store = AppAssets.Store;
-        error = store.PersonalError;
+        error = store.LibraryError;
         return store.Catalog.Recipes;
     }
 

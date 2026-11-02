@@ -247,45 +247,48 @@ public class GradientPresetsTests
     }
 
     [Fact]
-    public void FailedPersonalSave_LeavesStoredGradientsIntact()
+    public void FailedSave_LeavesStoredGradientsIntact()
     {
         using var dir = new TempDir();
         var store = SeededStore(dir);
-        var saved = store.SavePersonalGradient(null, Example());
-        byte[] before = File.ReadAllBytes(store.PersonalPath);
+        var saved = store.SaveGradient(null, Example());
+        byte[] before = File.ReadAllBytes(store.LibraryPath);
 
-        Assert.Throws<InvalidDataException>(() => store.SavePersonalGradient(saved.Id, Example() with { Cycles = 17 }));
-        Assert.Throws<InvalidDataException>(() => store.SavePersonalGradient(null, Example() with { Name = "  " }));
-        Assert.Equal(before, File.ReadAllBytes(store.PersonalPath));
+        Assert.Throws<InvalidDataException>(() => store.SaveGradient(saved.Id, Example() with { Cycles = 17 }));
+        Assert.Throws<InvalidDataException>(() => store.SaveGradient(null, Example() with { Name = "  " }));
+        Assert.Equal(before, File.ReadAllBytes(store.LibraryPath));
         var reopened = AssetStore.Open(store.Root);
         var kept = Assert.Single(reopened.Catalog.Gradients, e => e.Id == saved.Id).Gradient!;
         Assert.Equal((4, "Evening", true), (kept.Cycles, kept.Name, kept.Favorite));
     }
 
-    /// <summary>기본값 되돌리기: 고친 기본 그라데이션은 처음 값(즐겨찾기는 유지), 지운 것은 다시 들어오고 직접 만든 것은 남는다.</summary>
+    /// <summary>기본값 되돌리기: 고친 기본 그라데이션은 처음 값(즐겨찾기는 유지), 지운 것은 다시 들어오고 직접 만든 것·받은 것은 남는다.</summary>
     [Fact]
-    public void RestoreBuiltIns_ResetsEditedAndReaddsDeletedKeepingCustom()
+    public void RestoreBuiltIns_ResetsEditedAndReaddsDeletedKeepingCustomAndReceived()
     {
         using var dir = new TempDir();
         var store = SeededStore(dir);
         var original = GradientPresets.BuiltIns();
         Assert.Equal(original.Select(p => p.Name), store.Catalog.Gradients.Select(e => e.Name));
 
-        store.RemovePersonal(store.Catalog.Gradients.Single(e => e.Name == "Ocean").Id);
+        store.Remove(store.Catalog.Gradients.Single(e => e.Name == "Ocean").Id);
         var sunset = store.Catalog.Gradients.Single(e => e.Name == "Sunset");
-        store.SavePersonalGradient(sunset.Id, sunset.Gradient! with
+        store.SaveGradient(sunset.Id, sunset.Gradient! with
         {
             Name = "sunset", Stops = [new(0, Color32.Black), new(1, Color32.Black)], Favorite = true,
         });
-        var mine = store.SavePersonalGradient(null, Example("Mine"));
+        var mine = store.SaveGradient(null, Example("Mine"));
+        // 기본 그라데이션과 이름이 같은 받은 그라데이션은 기본 그라데이션이 아니다
+        var received = store.InstallFile(AssetSamples.Save(dir.Path, AssetSamples.Build(gradient: AssetSamples.Gradient("Ocean")))).Single(e => e.Gradient is not null);
 
         store.RestoreBuiltInGradients();
         var restored = store.Catalog.Gradients.Single(e => e.Id == sunset.Id);
         Assert.Equal(original.Single(p => p.Name == "Sunset").Stops, restored.Gradient!.Stops);
         Assert.True(restored.Favorite);
-        Assert.Single(store.Catalog.Gradients, e => e.Name == "Ocean");
+        Assert.Equal(original.Single(p => p.Name == "Ocean").Stops, store.Catalog.Gradients.Single(e => e.Name == "Ocean" && e.Author is null).Gradient!.Stops);
+        Assert.Equal(AssetSamples.Gradient().Stops, store.Catalog.Find(received.Id)!.Gradient!.Stops);
         Assert.Equal(Example("Mine").Stops, store.Catalog.Gradients.Single(e => e.Id == mine.Id).Gradient!.Stops);
-        Assert.Equal(original.Count + 1, store.Catalog.Gradients.Count);
+        Assert.Equal(original.Count + 2, store.Catalog.Gradients.Count);
 
         // 되돌린 결과는 파일에 남는다
         var reopened = AssetStore.Open(store.Root);

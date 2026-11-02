@@ -31,8 +31,8 @@ public sealed record RemoteCatalogSnapshot(IReadOnlyList<RemoteCatalogEntry> Pac
     public RemoteCatalogEntry? Find(string id) => Packages.FirstOrDefault(entry => entry.Id == id);
 }
 
-/// <summary>설치된 패키지와 그보다 새 원격 버전.</summary>
-public sealed record RemoteUpdate(InstalledPackage Installed, RemoteCatalogEntry Remote);
+/// <summary>상점에서 받은(또는 올린) 에셋과 그보다 새 원격 버전.</summary>
+public sealed record RemoteUpdate(AssetEntry Installed, RemoteCatalogEntry Remote);
 
 /// <summary>
 /// 정적 원격 카탈로그 client(계획 9·10.2). 저장소(<see cref="AssetStore"/>)와 따로이고 <see cref="HttpClient"/>는 부르는 쪽이 준다(test는 가짜 handler).
@@ -257,14 +257,17 @@ public sealed class RemoteAssetClient
 
     // ───────────── 업데이트 ─────────────
 
-    /// <summary>설치된 패키지 중 원격 목록에 더 새 버전이 있는 것(설치 출처와 무관 — 파일로 설치했어도 같은 ID면 알림). 자동으로 설치하지 않는다.</summary>
+    /// <summary>
+    /// 상점 연결이 있는 에셋 중 원격 목록에 더 새 버전이 있는 것(들어온 길과 무관 — 파일로 가져왔어도 같은 상점 ID면 알림), 상점 패키지마다 하나.
+    /// 자동으로 설치하지 않는다.
+    /// </summary>
     public static IReadOnlyList<RemoteUpdate> FindUpdates(AssetCatalog catalog, IReadOnlyList<RemoteCatalogEntry> remote)
     {
         var updates = new List<RemoteUpdate>();
-        foreach (var package in catalog.Packages)
-            if (remote.FirstOrDefault(entry => entry.Id == package.Id) is { } entry
-                && SemVersion.TryParse(package.Version, out var installed) && entry.SemanticVersion > installed)
-                updates.Add(new RemoteUpdate(package, entry));
+        foreach (var entry in catalog.All)
+            if (entry.Store is { } store && updates.All(update => update.Remote.Id != store.PackageId)
+                && remote.FirstOrDefault(r => r.Id == store.PackageId) is { } newer && newer.SemanticVersion > store.SemanticVersion)
+                updates.Add(new RemoteUpdate(entry, newer));
         return updates;
     }
 

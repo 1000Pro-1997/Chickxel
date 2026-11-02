@@ -6,17 +6,15 @@ using Chickxel.Core.IO;
 namespace Chickxel.App;
 
 /// <summary>
-/// 앱이 쓰는 로컬 에셋 저장소 하나(<c>&lt;설정 폴더&gt;/Chickxel/Assets</c>). 처음 열 때 예전 프리셋 파일을 개인 에셋으로 한 번 옮기고,
-/// 앱에 든 공식 효과 패키지를 백그라운드에서 설치·업데이트한다(<see cref="SyncBundledAsync"/> — 처음 실행과 앱에 든 버전이 더 새로울 때만 패키지를 만든다.
-/// 끈 패키지는 켜짐 그대로, 지운 패키지는 다시 설치하지 않음 — 에셋 관리자의 "기본 효과 되돌리기"만 다시 넣는다).
+/// 앱이 쓰는 로컬 에셋 저장소 하나(<c>&lt;설정 폴더&gt;/Chickxel/Assets</c>). 처음 열 때 예전 프리셋 파일을 내 에셋으로 한 번 옮기고(예전 게시 기록은 그 에셋의
+/// 상점 연결로 한 번 잇는다), 앱에 든 공식 효과를 백그라운드에서 설치·업데이트한다(<see cref="SyncBundledAsync"/> — 처음 실행과 앱에 든 버전이 더 새로울 때만.
+/// 지운 공식 효과는 다시 넣지 않음 — 에셋 관리자의 "기본 효과 되돌리기"만 다시 넣는다).
 /// 효과 창, 그라데이션 메뉴·프리셋 창, 에셋 관리자, AI 도구가 같은 저장소와 카탈로그를 쓰고, 저장소를 바꾸면 <see cref="Changed"/>로 목록을 다시 만든다.
 /// 저장소를 바꾸는 호출은 UI 스레드에서 한다. 온라인 카탈로그 client(<see cref="Remote"/>)는 저장소와 따로이고 cache만 저장소 폴더에 둔다.
+/// 내 에셋(<see cref="IsMine"/>)은 이 컴퓨터에서 만들었거나 작성자 ID가 내 계정 핸들(<see cref="MyHandle"/>)인 것이다.
 /// </summary>
 public static class AppAssets
 {
-    /// <summary>원격에서 설치한 패키지의 출처 값(installed.json).</summary>
-    public const string RemoteSource = "remote";
-
     /// <summary>커뮤니티 서비스가 내는 온라인 카탈로그 첫 쪽(예전 홈페이지의 정적 <c>catalog/</c>와 같은 모양, 패키지·미리보기는 같은 사이트의 <c>/files/</c>).</summary>
     public static readonly Uri CatalogIndexUrl = new(AppInfo.WebsiteUrl + "api/catalog/" + RemoteCatalogFormat.FirstPageName);
 
@@ -51,14 +49,96 @@ public static class AppAssets
                     if (migration.Error is { } error)
                         problems.Add(string.Format(CultureInfo.CurrentCulture, UiStrings.Assets_MigrationError, error));
                     _notice = problems.Count > 0 ? string.Join(Environment.NewLine, problems) : null;
+                    LinkPublishRecords(opened);
                     _store = opened;
-                    // 공식 효과 패키지: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭이 다시 그려진다
+                    // 계정이 바뀌면 핸들을 기억한다(로그아웃한 뒤에도 내가 올린 에셋을 내 것으로 보게)
+                    AppCommunity.Client.AccountsChanged += () => Dispatcher.UIThread.Post(() => _ = MyHandle);
+                    // 공식 효과: 할 일이 있을 때만(처음 실행·앱 업데이트) 백그라운드에서 — 끝나면 Changed로 효과 탭이 다시 그려진다
                     if (OfficialEffectPackages.NeedsSync(opened)) StartBundledSync();
                 }
                 return _store;
             }
         }
     }
+
+    /// <summary>
+    /// 예전 게시 기록(<see cref="AssetPublishSettings.Saved"/>, 최근 것부터)을 그 에셋의 상점 연결로 한 번 잇는다: 기록의 에셋이 아직 이 컴퓨터에서 만든 것
+    /// (작성자·상점 연결 없음)이고 그 상점 ID에 연결된 에셋이 없을 때만 — 여러 번 불러도 같다. 맞지 않는 기록은 건너뛰고, 쓰지 못하면 다음 실행에 다시 한다.
+    /// </summary>
+    private static void LinkPublishRecords(AssetStore store)
+    {
+        if (store.LibraryError is not null) return;
+        var settings = App.Settings.AssetPublish;
+        foreach (var record in settings.Saved.ToList())
+        {
+            if (!AssetManifest.IsValidId(record.Id) || !AssetManifest.IsValidVersion(record.Version) || !AssetManifest.IsValidName(record.Name)) continue;
+            int dot = record.Id.IndexOf('.');
+            if (dot <= 0) continue;
+            string handle = record.Id[..dot];
+            if (!AssetManifest.IsValidSegment(handle)) continue;
+            string authorName = AssetManifest.IsValidName(settings.AuthorName) ? settings.AuthorName.Trim() : handle;
+            var translations = AssetTranslations.IsValid(record.Translations) ? record.Translations : AssetTranslations.Empty;
+            string? description = string.IsNullOrWhiteSpace(record.Summary) || record.Summary.Length > AssetManifest.MaxDescriptionLength ? null : record.Summary;
+            foreach (var id in record.Assets)
+            {
+                if (store.Catalog.Find(id) is not { Author: null, Store: null } entry || store.Catalog.FromPackage(record.Id).Count > 0) continue;
+                string assetId = record.Id + "." + AssetPackageBuilder.Slug(entry.Name, entry.Kind);
+                if (!AssetManifest.IsValidAssetId(record.Id, assetId)) continue;
+                try
+                {
+                    store.MarkPublished(id, new AssetAuthor(handle, authorName), AssetPublishCheck.License, new AssetStoreLink
+                    {
+                        PackageId = record.Id, AssetId = assetId, Version = record.Version, ContentHash = entry.ContentHash,
+                        Name = record.Name.Trim(), Description = description, Translations = translations, MinAppVersion = "0.0.0",
+                    });
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return; }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 내 계정 핸들: 로그인한 계정(이번 실행에 확인한 정보, 아니면 저장한 계정 정보), 로그아웃이면 마지막으로 알던 핸들(설정에 기억). 모르면 null.
+    /// 계정을 알 때마다 설정에 기억한다.
+    /// </summary>
+    public static string? MyHandle
+    {
+        get
+        {
+            var client = AppCommunity.Client;
+            if ((client.User?.Handle ?? client.Saved.Current?.User?.Handle) is { Length: > 0 } live)
+            {
+                RememberHandle(live);
+                return live;
+            }
+            return App.Settings.AssetPublish.LastHandle is { Length: > 0 } last ? last : null;
+        }
+    }
+
+    private static void RememberHandle(string handle)
+    {
+        if (App.Settings.AssetPublish.LastHandle == handle) return;
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(() => RememberHandle(handle));
+            return;
+        }
+        App.Settings.AssetPublish.LastHandle = handle;
+        App.Settings.Save();
+    }
+
+    /// <summary>내 에셋인지(이 컴퓨터에서 만들었거나 작성자 ID가 <see cref="MyHandle"/>) — 내 것은 그 자리에서 고치고, 아니면 고칠 때 사본을 만든다.</summary>
+    public static bool IsMine(AssetEntry entry) => entry.IsOwnedBy(MyHandle);
+
+    /// <summary>들어온 길(<see cref="AssetEntry.Source"/>)의 화면 글.</summary>
+    public static string SourceText(string source) => source switch
+    {
+        AssetSources.Local => UiStrings.Assets_SourceLocal,
+        AssetSources.File => UiStrings.Assets_SourceFile,
+        AssetSources.Remote => UiStrings.Assets_SourceRemote,
+        AssetSources.Bundled => UiStrings.Assets_SourceBundled,
+        _ => source,
+    };
 
     /// <summary>처음 열 때 시작한 공식 효과 패키지 맞추기(할 일이 없었으면 끝난 작업). 화면 그림 도구가 기다린다.</summary>
     public static Task BundledReady
@@ -114,7 +194,7 @@ public static class AppAssets
     public static RemoteAssetClient Remote
         => _remote ??= new RemoteAssetClient(RemoteHttp, CatalogIndexUrl, Store.CacheDirectory, $"{AppUpdate.UserAgent}/{AppInfo.VersionText}");
 
-    /// <summary>카탈로그가 바뀌었다(설치, 켜기·끄기, 삭제, 개인 에셋 저장).</summary>
+    /// <summary>카탈로그가 바뀌었다(가져오기, 저장, 삭제, 즐겨찾기).</summary>
     public static event Action? Changed
     {
         add => Store.Changed += value;
@@ -151,18 +231,35 @@ public static class AppAssets
     }
 
     /// <summary>
-    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 저장소에 설치한다(다른 버전이 있으면 업데이트 — 이전 버전은 되돌리기용으로 남음).
+    /// 패키지 파일(<c>.chickxel-asset</c>)의 에셋을 하나씩 더한다(<see cref="AssetSources.File"/>). 이미 있는 에셋과 겹치면 하나마다 묻는다
+    /// (<see cref="AssetImportPrompt"/>: 바꾸기·건너뛰기·둘 다 두기, "남은 항목에도 적용"이면 이 파일의 나머지에 같은 답).
+    /// 들어간 에셋(패키지 차례)을 돌려주고, 실패하면 알리고 null(아무것도 바뀌지 않음).
+    /// </summary>
+    public static IReadOnlyList<AssetEntry>? InstallFile(Visual owner, string path)
+    {
+        var ask = Prompter(owner);
+        IReadOnlyList<AssetEntry>? installed = null;
+        return Try(owner, () => installed = Store.Install(path, AssetSources.File, ask), UiStrings.Assets_ImportError) ? installed : null;
+    }
+
+    /// <summary>
+    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 에셋을 저장소에 넣는다(<see cref="AssetSources.Remote"/>). 같은 상점 에셋은 말없이 새것으로 바꾸되
+    /// 내가 고친 내 에셋이면 묻고, 그 밖에 겹치는 것(같은 내용의 다른 에셋)도 묻는다. 들어간 에셋을 돌려준다.
     /// 실패하면 <paramref name="owner"/>에 알리고 null, 취소하면 아무것도 바꾸지 않고 null. 받은 임시 파일은 지운다.
     /// </summary>
-    public static async Task<InstalledPackage?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
+    public static async Task<IReadOnlyList<AssetEntry>?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         string? file = null;
         try
         {
             file = await Remote.DownloadPackageAsync(entry, progress, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return null;
-            InstalledPackage? installed = null;
-            return Try(owner, () => installed = Store.Install(file, RemoteSource), UiStrings.Assets_InstallRemoteError) ? installed : null;
+            var ask = Prompter(owner);
+            ImportChoice Choose(AssetImportItem item)
+                => item.SameStoreAsset && !(item.Existing is { Modified: true } existing && IsMine(existing)) ? ImportChoice.Replace : ask(item);
+            IReadOnlyList<AssetEntry>? installed = null;
+            string path = file;
+            return Try(owner, () => installed = Store.Install(path, AssetSources.Remote, Choose), UiStrings.Assets_InstallRemoteError) ? installed : null;
         }
         catch (OperationCanceledException)
         {
@@ -179,6 +276,35 @@ public static class AppAssets
                 try { File.Delete(file); }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
+    }
+
+    /// <summary>파일 하나를 가져오는 동안 겹침마다 묻는 함수("남은 항목에도 적용"을 고르면 그 뒤로는 묻지 않고 같은 답).</summary>
+    private static Func<AssetImportItem, ImportChoice> Prompter(Visual owner)
+    {
+        ImportChoice? rest = null;
+        return item =>
+        {
+            if (rest is { } same) return same;
+            var (choice, applyToRest) = AssetImportPrompt.Ask(owner, item);
+            if (applyToRest) rest = choice;
+            return choice;
+        };
+    }
+
+    /// <summary>
+    /// 효과 프리셋·그라데이션·스크립트 효과를 내 에셋(작성자·상점 연결 없음)으로 복사한다 — 받은 에셋을 고칠 때 쓰는 사본. 원본은 그대로.
+    /// 만든(같은 원문의 내 스크립트가 있으면 그) 에셋을 돌려주고, 실패하면 알리고 null.
+    /// </summary>
+    public static AssetEntry? CopyAsMine(Visual owner, AssetEntry entry)
+    {
+        AssetEntry? saved = null;
+        return Try(owner, () => saved = entry switch
+        {
+            { Recipe: { } recipe } => Store.SaveRecipe(recipe with { Id = "" }),
+            { Gradient: { } gradient } => Store.SaveGradient(null, gradient with { Favorite = false }),
+            { Script: { } script } => Store.SaveScript(script.Source, null, script.Scene),
+            _ => null,
+        }, UiStrings.Assets_ActionError) ? saved : null;
     }
 
     /// <summary>문제 목록 글(처음 12개, 넘으면 "외 N개").</summary>

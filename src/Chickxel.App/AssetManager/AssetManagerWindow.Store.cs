@@ -281,12 +281,24 @@ public sealed partial class AssetManagerWindow
                 _ => F(UiStrings.Assets_ContentsOther, pair.Key, pair.Value),
             }));
 
+    /// <summary>상점 항목이 에셋 하나인지(지금 상점은 모두 그렇다 — 여럿이면 종류마다 개수로 보인다).</summary>
+    private static bool IsSingleAsset(RemoteCatalogEntry entry) => entry.Kinds.Count == 1 && entry.Kinds.First().Value == 1;
+
+    /// <summary>상점 항목의 종류 글: 에셋 하나면 그 종류("스크립트 효과"), 여럿이면 <see cref="RemoteContents"/>.</summary>
+    private static string RemoteKindText(RemoteCatalogEntry entry) => IsSingleAsset(entry) ? KindText(entry.Kinds.First().Key) : RemoteContents(entry);
+
+    /// <summary>상점 항목의 아이콘: 에셋 하나면 그 종류 아이콘, 여럿이면 묶음(패키지) 아이콘.</summary>
+    private static VectorIcon RemoteIcon(RemoteCatalogEntry entry) => IsSingleAsset(entry) ? KindIcon(entry.Kinds.First().Key) : VectorIcon.Package;
+
+    /// <summary>이 상점 패키지에서 받은(또는 그 ID로 올린) 첫 에셋(없으면 null).</summary>
+    private static AssetEntry? InstalledFrom(RemoteCatalogEntry entry) => AppAssets.Catalog.FromPackage(entry.Id).FirstOrDefault();
+
     /// <summary>설치 상태 한 줄: 설치 안 됨(null), 같은 버전 설치됨, 새 버전 있음, 설치할 수 없음.</summary>
     private static (string Text, IBrush Brush)? RemoteState(RemoteCatalogEntry entry)
     {
         if (entry.IncompatibleReason(AppVersion) is not null) return (UiStrings.Assets_CannotInstall, AppTheme.WarningBrush);
-        if (AppAssets.Catalog.FindPackage(entry.Id) is not { } installed) return null;
-        return SemVersion.TryParse(installed.Version, out var version) && entry.SemanticVersion > version
+        if (InstalledFrom(entry)?.Store is not { } installed) return null;
+        return entry.SemanticVersion > installed.SemanticVersion
             ? (F(UiStrings.Assets_UpdateAvailable, entry.Version), AppTheme.AccentBrush)
             : (F(UiStrings.Assets_InstalledVersion, installed.Version), AppTheme.DimTextBrush);
     }
@@ -294,9 +306,9 @@ public sealed partial class AssetManagerWindow
     private static Control RemoteRow(RemoteCatalogEntry entry)
     {
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        name.Children.Add(Ui.Icon(VectorIcon.Package, 14));
+        name.Children.Add(Ui.Icon(RemoteIcon(entry), 14));
         name.Children.Add(Ui.Label(entry.DisplayName, bold: true));
-        var panel = new StackPanel { Children = { name, Dim(string.Join(" · ", entry.Version, entry.Author.Name, RemoteContents(entry))) } };
+        var panel = new StackPanel { Children = { name, Dim(string.Join(" · ", entry.Version, entry.Author.Name, RemoteKindText(entry))) } };
         if (RemoteState(entry) is { } state)
         {
             var line = Dim(state.Text);
@@ -317,14 +329,14 @@ public sealed partial class AssetManagerWindow
         _remoteDetail.Children.Add(TitleText(entry.DisplayName));
         if (entry.Preview is not null) _remoteDetail.Children.Add(new RemotePreviewView(entry));
         _remoteDetail.Children.Add(new TextBlock { Text = entry.DisplaySummary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
-        var installed = AppAssets.Catalog.FindPackage(entry.Id);
+        var installed = InstalledFrom(entry)?.Store;
         _remoteDetail.Children.Add(FactsGrid(
             (UiStrings.Assets_Id, entry.Id),
             (UiStrings.Assets_Version, entry.Version),
             (UiStrings.Assets_InstalledColumn, installed?.Version),
             (UiStrings.Assets_Author, entry.Author.Name),
             (UiStrings.Assets_License, entry.License),
-            (UiStrings.Assets_Contents, RemoteContents(entry)),
+            (IsSingleAsset(entry) ? UiStrings.Assets_Kind : UiStrings.Assets_Contents, RemoteKindText(entry)),
             (UiStrings.Assets_MinApp, entry.MinAppVersion),
             (UiStrings.Assets_Size, SizeText(entry.Package.Size)),
             (UiStrings.Assets_Published, entry.Published.ToString("d", CultureInfo.CurrentCulture)),
@@ -348,9 +360,9 @@ public sealed partial class AssetManagerWindow
         }
         Control? main;
         if (installed is null) main = InstallButton(entry, VectorIcon.Download, UiStrings.Assets_Install);
-        else if (SemVersion.TryParse(installed.Version, out var version) && entry.SemanticVersion > version)
+        else if (entry.SemanticVersion > installed.SemanticVersion)
             main = InstallButton(entry, VectorIcon.Download, F(UiStrings.Assets_UpdateTo, entry.Version));
-        else main = Ui.Button(VectorIcon.Package, UiStrings.Assets_ShowInstalled, (_, _) => ShowInstalled(entry.Id));
+        else main = Ui.Button(RemoteIcon(entry), UiStrings.Assets_ShowInstalled, (_, _) => ShowInstalled(entry));
         _remoteDetail.Children.Add(ActionPanel(main, web));
     }
 
@@ -364,11 +376,15 @@ public sealed partial class AssetManagerWindow
     private static string SizeText(long bytes)
         => bytes < 1024 ? F(UiStrings.Assets_SizeBytes, bytes) : F(UiStrings.Assets_SizeKilobytes, Math.Ceiling(bytes / 1024.0));
 
-    private void ShowInstalled(string packageId)
+    /// <summary>설치됨 탭에서 이 상점 패키지에서 받은 첫 에셋을 고른다(검색은 비우고 종류 칸은 그 에셋의 종류로).</summary>
+    private void ShowInstalled(RemoteCatalogEntry entry)
     {
-        _selectKey = "pkg:" + packageId;
+        if (InstalledFrom(entry) is { } installed)
+        {
+            _selectKey = AssetKey(installed.Id);
+            _filter.SelectedIndex = FilterIndex(installed.Kind);
+        }
         _search.Text = "";
-        if (AppAssets.Catalog.FindPackage(packageId) is { } package) _filter.SelectedIndex = FilterIndex(package.Entries.Select(e => e.Kind));
         if (_tabs is not null) _tabs.SelectedIndex = 0;
         Refresh();
     }
@@ -391,9 +407,9 @@ public sealed partial class AssetManagerWindow
         {
             var remote = update.Remote;
             var info = new StackPanel { Spacing = 2 };
-            var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { Ui.Icon(VectorIcon.Package, 14), Ui.Label(remote.DisplayName, bold: true) } };
+            var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { Ui.Icon(RemoteIcon(remote), 14), Ui.Label(remote.DisplayName, bold: true) } };
             info.Children.Add(name);
-            info.Children.Add(Dim(F(UiStrings.Assets_UpdateRow, update.Installed.Version, remote.Version)));
+            info.Children.Add(Dim(F(UiStrings.Assets_UpdateRow, update.Installed.Store!.Version, remote.Version)));
             info.Children.Add(new TextBlock { Text = remote.DisplaySummary, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.TextBrush });
             if (remote.IncompatibleReason(AppVersion) is { } reason)
                 info.Children.Add(new TextBlock { Text = F(UiStrings.Assets_Incompatible, reason), Foreground = AppTheme.WarningBrush, TextWrapping = TextWrapping.Wrap });
@@ -444,8 +460,8 @@ public sealed partial class AssetManagerWindow
     }
 
     /// <summary>
-    /// 패키지를 내려받아(SHA-256 확인) 저장소에 설치한다(<see cref="AppAssets.InstallRemoteAsync"/>). 내려받는 동안 진행 막대와 취소 단추를 보이고,
-    /// 설치하면 설치됨 탭에서 고를 항목을 그 패키지로 둔다.
+    /// 패키지를 내려받아(SHA-256 확인) 에셋을 저장소에 넣는다(<see cref="AppAssets.InstallRemoteAsync"/>). 내려받는 동안 진행 막대와 취소 단추를 보이고,
+    /// 넣으면 설치됨 탭에서 고를 항목을 처음 들어간 에셋으로 둔다.
     /// </summary>
     private async void InstallRemote(RemoteCatalogEntry entry)
     {
@@ -462,8 +478,8 @@ public sealed partial class AssetManagerWindow
         RefreshRemoteViews();
         try
         {
-            if (await AppAssets.InstallRemoteAsync(this, entry, new Progress<double>(ReportDownload), cancel.Token) is { } installed)
-                _selectKey = "pkg:" + installed.Id;
+            if (await AppAssets.InstallRemoteAsync(this, entry, new Progress<double>(ReportDownload), cancel.Token) is [var first, ..])
+                _selectKey = AssetKey(first.Id);
         }
         finally
         {

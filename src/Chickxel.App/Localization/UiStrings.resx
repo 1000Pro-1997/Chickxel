@@ -8197,7 +8197,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="EffectPreset_Delete" xml:space="preserve"><value>삭제</value></data>
   <data name="EffectPreset_DeleteQuestion" xml:space="preserve"><value>'{0}'을(를) 삭제할까요?</value><comment>0 = 프리셋이나 개인 스크립트 효과 이름.</comment></data>
   <data name="EffectPreset_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 프리셋이 이미 있습니다.</value></data>
-  <data name="EffectPreset_LoadError" xml:space="preserve"><value>개인 효과와 프리셋을 읽지 못했습니다: {0}</value></data>
+  <data name="EffectPreset_LoadError" xml:space="preserve"><value>에셋 라이브러리를 읽지 못했습니다: {0}</value></data>
   <data name="EffectPreset_SaveError" xml:space="preserve"><value>바꾼 내용을 저장하지 못했습니다: {0}</value></data>
   <data name="EffectPreset_ApplyTarget" xml:space="preserve"><value>적용 대상</value></data>
   <data name="EffectPreset_ClipToPrevious" xml:space="preserve"><value>바로 위 효과에 클리핑</value></data>
@@ -9024,7 +9024,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_Title" xml:space="preserve"><value>에셋 관리자</value></data>
   <data name="Assets_Menu" xml:space="preserve"><value>에셋 관리자…</value></data>
   <data name="Assets_ManagerButton" xml:space="preserve"><value>에셋 관리자</value></data>
-  <data name="Assets_ManagerTip" xml:space="preserve"><value>설치한 패키지와 개인 에셋을 켜고 끄거나, 가져오고 내보내고 지웁니다.</value></data>
+  <data name="Assets_ManagerTip" xml:space="preserve"><value>내 에셋과 받은 에셋을 보고, 가져오고 내보내고 지웁니다.</value></data>
   <data name="Assets_TabInstalled" xml:space="preserve"><value>설치됨</value></data>
   <data name="Assets_TabStore" xml:space="preserve"><value>상점</value></data>
   <data name="Assets_TabBrowse" xml:space="preserve"><value>둘러보기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 탭 이름으로 가리킨다. 도움말을 반영할 때 Assets_TabStore로 바꾸고 지운다.</comment></data>
@@ -9035,18 +9035,16 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_FilterGradients" xml:space="preserve"><value>그라데이션</value></data>
   <data name="Assets_Search" xml:space="preserve"><value>이름 검색</value></data>
   <data name="Assets_Import" xml:space="preserve"><value>파일에서 가져오기…</value></data>
-  <data name="Assets_ImportTip" xml:space="preserve"><value>.chickxel-asset 패키지 파일을 검사하고 설치합니다. 같은 패키지의 새 버전이면 업데이트합니다.</value></data>
+  <data name="Assets_ImportTip" xml:space="preserve"><value>.chickxel-asset 파일을 검사하고 안의 에셋을 하나씩 더합니다. 이미 있는 에셋과 겹치면 바꿀지, 건너뛸지, 둘 다 둘지 묻습니다.</value></data>
   <data name="Assets_ImportTitle" xml:space="preserve"><value>에셋 패키지 가져오기</value></data>
-  <data name="Assets_ImportError" xml:space="preserve"><value>패키지를 설치하지 못했습니다: {0}</value></data>
+  <data name="Assets_ImportError" xml:space="preserve"><value>파일의 에셋을 가져오지 못했습니다: {0}</value></data>
   <data name="Assets_FileType" xml:space="preserve"><value>Chickxel 에셋 패키지</value></data>
-  <data name="Assets_ExportPersonal" xml:space="preserve"><value>개인 에셋 내보내기…</value></data>
-  <data name="Assets_ExportPersonalTip" xml:space="preserve"><value>목록에 보이는 개인 에셋을 .chickxel-asset 패키지 파일 하나로 묶습니다.</value></data>
+  <data name="Assets_ExportPersonal" xml:space="preserve"><value>개인 에셋 내보내기…</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
   <data name="Assets_ExportTitle" xml:space="preserve"><value>패키지 파일로 내보내기</value></data>
   <data name="Assets_ExportNamePrompt" xml:space="preserve"><value>패키지 이름</value></data>
   <data name="Assets_DefaultPackageName" xml:space="preserve"><value>내 에셋</value></data>
-  <data name="Assets_PersonalExportEmpty" xml:space="preserve"><value>내보낼 개인 에셋이 없습니다.</value></data>
   <data name="Assets_Publish" xml:space="preserve"><value>온라인에 올리기…</value></data>
-  <data name="Assets_PublishTip" xml:space="preserve"><value>목록에서 고른 개인 에셋을 공개 패키지로 만들어 Chickxel 계정으로 올립니다(에셋 하나에 패키지 하나).</value></data>
+  <data name="Assets_PublishTip" xml:space="preserve"><value>목록에서 고른 내 에셋을 공개 패키지로 만들어 Chickxel 계정으로 올립니다(에셋 하나에 패키지 하나).</value></data>
   <data name="Assets_PublishEntryTip" xml:space="preserve"><value>이 에셋을 공개 패키지로 만들어 Chickxel 계정으로 올립니다.</value></data>
   <data name="Assets_PublishNewVersion" xml:space="preserve"><value>새 버전 올리기…</value></data>
   <data name="Assets_PublishNewVersionTip" xml:space="preserve"><value>내가 올린 패키지입니다. 같은 패키지 ID로 새 버전을 올립니다(이름·설명·번역·태그를 고칠 수 있음).</value></data>
@@ -9054,6 +9052,8 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_Intro" xml:space="preserve"><value>에셋은 하나씩 패키지로 올립니다. 패키지 정보를 넣고 검사를 통과하면 Chickxel 계정으로 올립니다. 올린 패키지는 바로 상점 목록과 chickxel.com의 에셋 쪽에 실립니다.</value></data>
   <data name="Publish_ChooseAsset" xml:space="preserve"><value>올릴 개인 에셋을 목록에서 하나 고르세요. 에셋은 하나씩 올립니다.</value></data>
   <data name="Publish_NoPersonal" xml:space="preserve"><value>올릴 개인 에셋이 없습니다. 효과 만들기에서 스크립트 효과를 저장하거나 그라데이션 프리셋 창에서 먼저 저장하세요(효과 프리셋은 올리지 않습니다).</value></data>
+  <data name="Publish_NotMine" xml:space="preserve"><value>받은 에셋은 올릴 수 없습니다. 내 에셋으로 복사한 뒤 그 사본을 올리세요.</value></data>
+  <data name="Publish_LinkError" xml:space="preserve"><value>올렸지만 에셋에 상점 연결을 저장하지 못했습니다: {0}</value><comment>0 = 까닭.</comment></data>
   <data name="Publish_Author" xml:space="preserve"><value>작성자</value></data>
   <data name="Publish_AuthorId" xml:space="preserve"><value>작성자 ID</value></data>
   <data name="Publish_AuthorIdTip" xml:space="preserve"><value>Chickxel 계정 핸들이 작성자 ID입니다. 패키지 ID의 첫 조각이 되며, 핸들은 도움말 > Chickxel 계정에서 바꿀 수 있습니다(패키지를 한 번 올리면 못 바꿈).</value></data>
@@ -9069,7 +9069,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_ModeNew" xml:space="preserve"><value>새 패키지로 올립니다</value></data>
   <data name="Publish_ModeUpdate" xml:space="preserve"><value>{0} 업데이트: {1} → {2}</value><comment>0 = 올린 패키지 이름, 1 = 올라가 있는 버전, 2 = 이번 버전.</comment></data>
   <data name="Publish_ModeSameName" xml:space="preserve"><value>이름이 같은 내 패키지라 그 패키지의 새 버전으로 올라갑니다. 다른 패키지로 올리려면 이름을 바꾸세요.</value></data>
-  <data name="Publish_ModeOwnCopy" xml:space="preserve"><value>내가 올린 패키지의 에셋(또는 그 사본)이라 이름을 바꿔도 그 패키지의 새 버전으로 올라갑니다.</value></data>
   <data name="Publish_UseSuggestion" xml:space="preserve"><value>제안 버전 쓰기</value></data>
   <data name="Publish_Summary" xml:space="preserve"><value>짧은 설명</value></data>
   <data name="Publish_SummaryHint" xml:space="preserve"><value>상점 목록에 보일 한두 문장(200자 이하)</value></data>
@@ -9106,15 +9105,11 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Publish_Uploaded" xml:space="preserve"><value>{0} {1}을(를) 올렸습니다. 브라우저에 패키지 쪽을 열었습니다.</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>서버가 받지 않음: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>그림 파일을 읽지 못했습니다: {0}</value></data>
-  <data name="Assets_PersonalHeader" xml:space="preserve"><value>개인 에셋</value></data>
-  <data name="Assets_PackagesHeader" xml:space="preserve"><value>설치한 패키지</value></data>
-  <data name="Assets_DeletedHeader" xml:space="preserve"><value>최근 삭제한 패키지</value></data>
-  <data name="Assets_EmptyInstalled" xml:space="preserve"><value>설치한 패키지와 개인 에셋이 없습니다.</value></data>
+  <data name="Assets_PersonalHeader" xml:space="preserve"><value>내 에셋</value></data>
+  <data name="Assets_PackagesHeader" xml:space="preserve"><value>설치한 패키지</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
+  <data name="Assets_DeletedHeader" xml:space="preserve"><value>최근 삭제한 패키지</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
+  <data name="Assets_EmptyInstalled" xml:space="preserve"><value>보일 에셋이 없습니다.</value></data>
   <data name="Assets_SelectHint" xml:space="preserve"><value>왼쪽 목록에서 항목을 고르세요.</value></data>
-  <data name="Assets_Enabled" xml:space="preserve"><value>켜짐</value></data>
-  <data name="Assets_Disabled" xml:space="preserve"><value>꺼짐</value></data>
-  <data name="Assets_Broken" xml:space="preserve"><value>읽을 수 없음</value></data>
-  <data name="Assets_IssuesHeader" xml:space="preserve"><value>읽지 못한 까닭:</value></data>
   <data name="Assets_MoreIssues" xml:space="preserve"><value>- 외 {0}개</value></data>
   <data name="Assets_Status" xml:space="preserve"><value>상태</value></data>
   <data name="Assets_Id" xml:space="preserve"><value>ID</value></data>
@@ -9125,9 +9120,6 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_Source" xml:space="preserve"><value>출처</value></data>
   <data name="Assets_SourceFile" xml:space="preserve"><value>로컬 파일</value></data>
   <data name="Assets_SourcePersonal" xml:space="preserve"><value>개인 에셋</value></data>
-  <data name="Assets_SourcePackage" xml:space="preserve"><value>패키지 {0} {1}</value></data>
-  <data name="Assets_InstalledAt" xml:space="preserve"><value>설치 시각</value></data>
-  <data name="Assets_DeletedAt" xml:space="preserve"><value>삭제 시각</value></data>
   <data name="Assets_Contents" xml:space="preserve"><value>내용</value></data>
   <data name="Assets_Kind" xml:space="preserve"><value>종류</value></data>
   <data name="Assets_KindEffect" xml:space="preserve"><value>효과 프리셋</value></data>
@@ -9135,30 +9127,25 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_EffectCount" xml:space="preserve"><value>효과 {0}개</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>넣을 범위: 모든 프레임</value></data>
   <data name="Assets_FrameRangeAdd" xml:space="preserve"><value>넣을 범위: 효과 창의 추가 범위</value></data>
-  <data name="Assets_Enable" xml:space="preserve"><value>켜기</value></data>
-  <data name="Assets_Disable" xml:space="preserve"><value>끄기</value></data>
-  <data name="Assets_ToggleTip" xml:space="preserve"><value>끈 패키지의 에셋은 효과 창과 그라데이션 목록에서 빠지지만 파일은 남습니다. 이미 넣은 효과와 그라데이션은 바뀌지 않습니다.</value></data>
+  <data name="Assets_Enable" xml:space="preserve"><value>켜기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
+  <data name="Assets_Disable" xml:space="preserve"><value>끄기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
   <data name="Assets_Export" xml:space="preserve"><value>패키지 파일로 내보내기…</value></data>
-  <data name="Assets_Rollback" xml:space="preserve"><value>이전 버전으로 되돌리기({0})</value></data>
-  <data name="Assets_OpenFolder" xml:space="preserve"><value>파일 위치 열기</value></data>
+  <data name="Assets_OpenFolder" xml:space="preserve"><value>파일 위치 열기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
   <data name="Assets_WebPage" xml:space="preserve"><value>웹 페이지 열기</value></data>
   <data name="Assets_ViewLicense" xml:space="preserve"><value>라이선스 보기</value></data>
   <data name="Assets_Delete" xml:space="preserve"><value>삭제</value></data>
-  <data name="Assets_Restore" xml:space="preserve"><value>되돌리기</value></data>
+  <data name="Assets_Restore" xml:space="preserve"><value>되돌리기</value><comment>앱에서는 쓰지 않음 — 도움말(가이드)이 예전 에셋 관리자 화면으로 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
   <data name="Assets_Rename" xml:space="preserve"><value>이름 바꾸기…</value></data>
   <data name="Assets_NamePrompt" xml:space="preserve"><value>이름</value></data>
-  <data name="Assets_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 개인 에셋이 이미 있습니다.</value></data>
-  <data name="Assets_CopyToPersonal" xml:space="preserve"><value>개인 에셋으로 복사</value></data>
-  <data name="Assets_CopyToPersonalTip" xml:space="preserve"><value>설치한 원본은 그대로 두고 고칠 수 있는 개인 사본을 만듭니다.</value></data>
-  <data name="Assets_DeleteQuestion" xml:space="preserve"><value>패키지 '{0}'을(를) 삭제할까요? 이미 프로젝트에 넣은 효과와 그라데이션은 바뀌지 않습니다. {1}일 동안 '최근 삭제한 패키지'에서 되돌릴 수 있습니다.</value></data>
-  <data name="Assets_DeletePersonalQuestion" xml:space="preserve"><value>개인 에셋 '{0}'을(를) 삭제할까요? 이미 프로젝트에 넣은 값은 바뀌지 않습니다.</value></data>
-  <data name="Assets_DeletedNote" xml:space="preserve"><value>삭제한 패키지는 {0}일 동안 보관했다가 지웁니다.</value></data>
+  <data name="Assets_DuplicateName" xml:space="preserve"><value>'{0}' 이름의 내 에셋이 이미 있습니다.</value></data>
+  <data name="Assets_CopyToPersonal" xml:space="preserve"><value>내 에셋으로 복사</value></data>
+  <data name="Assets_CopyToPersonalTip" xml:space="preserve"><value>받은 원본은 그대로 두고 고칠 수 있는 내 사본을 만듭니다.</value></data>
   <data name="Assets_ActionError" xml:space="preserve"><value>에셋 작업을 하지 못했습니다: {0}</value></data>
   <data name="Assets_MigrationError" xml:space="preserve"><value>예전 프리셋을 개인 에셋으로 옮기지 못했습니다. 예전 파일은 그대로 있고 다음 실행에 다시 시도합니다: {0}</value></data>
-  <data name="Assets_SaveAsPersonal" xml:space="preserve"><value>개인 에셋으로 저장</value></data>
-  <data name="Assets_PackageGradientNote" xml:space="preserve"><value>{0} 패키지의 그라데이션입니다. 고쳐서 저장하면 원본은 그대로 두고 개인 에셋으로 복사합니다.</value></data>
+  <data name="Assets_SaveAsPersonal" xml:space="preserve"><value>내 에셋으로 저장</value></data>
+  <data name="Assets_ReceivedGradientNote" xml:space="preserve"><value>받은 그라데이션입니다({0}). 고쳐서 저장하면 원본은 그대로 두고 내 에셋으로 복사합니다.</value></data>
   <data name="Assets_RemoteLoading" xml:space="preserve"><value>온라인 목록을 불러오는 중…</value></data>
-  <data name="Assets_RemoteStatus" xml:space="preserve"><value>패키지 {0}개 · {1}에 받은 목록</value></data>
+  <data name="Assets_RemoteStatus" xml:space="preserve"><value>에셋 {0}개 · {1}에 받은 목록</value></data>
   <data name="Assets_RemoteOffline" xml:space="preserve"><value>온라인 목록에 연결하지 못해 {0}에 받은 목록을 보여 줍니다. 설치한 에셋은 그대로 쓸 수 있습니다. ({1})</value></data>
   <data name="Assets_RemoteOfflineEmpty" xml:space="preserve"><value>온라인 목록에 연결하지 못했습니다. 설치한 에셋은 그대로 쓸 수 있습니다. ({0})</value></data>
   <data name="Assets_Refresh" xml:space="preserve"><value>새로 고침</value></data>
@@ -9184,10 +9171,10 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_UpdateTo" xml:space="preserve"><value>{0}(으)로 업데이트</value></data>
   <data name="Assets_ShowInstalled" xml:space="preserve"><value>설치됨 탭에서 보기</value></data>
   <data name="Assets_TabUpdatesCount" xml:space="preserve"><value>업데이트 ({0})</value></data>
-  <data name="Assets_NoUpdates" xml:space="preserve"><value>설치한 패키지가 모두 최신입니다.</value></data>
+  <data name="Assets_NoUpdates" xml:space="preserve"><value>받은 에셋이 모두 최신입니다.</value></data>
   <data name="Assets_UpdateRow" xml:space="preserve"><value>설치됨 {0} → 새 버전 {1}</value></data>
   <data name="Assets_CheckUpdates" xml:space="preserve"><value>업데이트 확인</value></data>
-  <data name="Assets_UpdatesNote" xml:space="preserve"><value>새 버전은 직접 누를 때만 설치합니다. 이전 버전은 되돌리기용으로 남고, 이미 프로젝트에 넣은 효과와 그라데이션은 바뀌지 않습니다.</value></data>
+  <data name="Assets_UpdatesNote" xml:space="preserve"><value>새 버전은 직접 누를 때만 설치합니다. 이미 프로젝트에 넣은 효과와 그라데이션은 바뀌지 않고, 내가 고친 에셋은 바꾸기 전에 묻습니다.</value></data>
   <data name="Assets_CancelDownload" xml:space="preserve"><value>취소</value></data>
   <data name="Assets_Downloading" xml:space="preserve"><value>내려받는 중 {0}%</value></data>
   <data name="Assets_InstallRemoteError" xml:space="preserve"><value>내려받은 패키지를 설치하지 못했습니다: {0}</value></data>
@@ -9196,16 +9183,16 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_SourceBundled" xml:space="preserve"><value>앱 기본 설치</value><comment>에셋 관리자 출처: 앱이 기본으로 설치한 공식 효과 패키지</comment></data>
   <data name="Assets_DeleteOfficialNote" xml:space="preserve"><value>앱이 기본으로 설치한 공식 효과입니다. 지우면 다시 설치하지 않으며, 설치됨 탭의 "기본 효과 되돌리기"로 다시 넣을 수 있습니다.</value></data>
   <data name="Assets_RestoreOfficial" xml:space="preserve"><value>기본 효과 되돌리기</value><comment>에셋 관리자 설치됨 탭 단추</comment></data>
-  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>앱에 든 공식 효과(외곽선·그림자 등) 중 지운 것을 다시 설치하고, 끈 것을 켜고, 예전 버전은 앱에 든 버전으로 올립니다. 내가 만든 효과와 다른 패키지는 그대로입니다.</value></data>
-  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>공식 효과 {0}개를 다시 설치하고 {1}개를 켜거나 업데이트했습니다.</value><comment>0 = 다시 설치한 패키지 수, 1 = 켜거나 업데이트한 패키지 수</comment></data>
-  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>공식 효과가 모두 설치돼 켜져 있습니다.</value></data>
+  <data name="Assets_RestoreOfficialTip" xml:space="preserve"><value>앱에 든 공식 효과(외곽선·그림자 등) 중 지운 것을 다시 넣고, 예전 버전은 앱에 든 버전으로 올립니다(고친 것은 그대로). 내가 만든 효과와 받은 다른 에셋은 그대로입니다.</value></data>
+  <data name="Assets_RestoreOfficialDone" xml:space="preserve"><value>공식 효과 {0}개를 다시 설치하고 {1}개를 업데이트했습니다.</value><comment>0 = 다시 설치한 패키지 수, 1 = 켜거나 업데이트한 패키지 수</comment></data>
+  <data name="Assets_RestoreOfficialNothing" xml:space="preserve"><value>공식 효과가 모두 설치돼 있고 최신입니다.</value></data>
   <data name="Assets_RestoreOfficialError" xml:space="preserve"><value>공식 효과를 되돌리지 못했습니다: {0}</value></data>
   <data name="Assets_BundledError" xml:space="preserve"><value>앱에 든 공식 효과를 설치하지 못했습니다(다음 실행에 다시 시도): {0}</value></data>
   <data name="Assets_ContentsRecipes" xml:space="preserve"><value>효과 프리셋 {0}개</value></data>
   <data name="Assets_ContentsGradients" xml:space="preserve"><value>그라데이션 {0}개</value></data>
   <data name="Assets_ContentsOther" xml:space="preserve"><value>{0} {1}개</value></data>
   <data name="EffectPreset_ShowInManager" xml:space="preserve"><value>에셋 관리자에서 보기</value></data>
-  <data name="EffectPreset_PackageTileTip" xml:space="preserve"><value>{0} 패키지의 효과 {1}개를 묶은 프리셋입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
+  <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>받은 프리셋입니다({0}). 효과 {1}개를 묶었습니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>스크립트 효과</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>JavaScript로 직접 쓴 효과입니다. 원문은 프로젝트에 함께 저장됩니다.</value></data>
   <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>스크립트 효과</value><comment>앱에서는 쓰지 않음(효과 창의 스크립트 효과 묶음은 없어짐) — 도움말이 예전 화면을 설명하며 가리킨다. 도움말을 반영할 때 지운다.</comment></data>
@@ -9288,7 +9275,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="RecipeParams_Count" xml:space="preserve"><value>매개변수 {0}개</value></data>
   <data name="Assets_ContentsScripts" xml:space="preserve"><value>스크립트 효과 {0}개</value></data>
   <data name="Assets_KindScript" xml:space="preserve"><value>스크립트 효과</value></data>
-  <data name="Assets_ScriptNote" xml:space="preserve"><value>스크립트 효과가 들어 있습니다. 패키지에서 온 스크립트는 효과 창에서 실행을 허용할 때까지 그리지 않습니다(이 컴퓨터에서 쓰거나 개인 에셋으로 저장한 스크립트는 바로 실행).</value></data>
+  <data name="Assets_ScriptNote" xml:space="preserve"><value>스크립트 효과가 들어 있습니다. 받은 스크립트는 효과 창에서 실행을 허용할 때까지 그리지 않습니다(이 컴퓨터에서 쓰거나 내 에셋으로 저장한 스크립트는 바로 실행).</value></data>
   <data name="Assets_ScriptRun" xml:space="preserve"><value>스크립트 실행</value></data>
   <data name="Assets_ScriptRunAllowed" xml:space="preserve"><value>허용함</value></data>
   <data name="Assets_ScriptRunNotAllowed" xml:space="preserve"><value>허용하지 않음 — 효과 창의 스크립트 설정에서 허용</value></data>
@@ -9296,7 +9283,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Assets_ScriptSettingCount" xml:space="preserve"><value>설정 {0}개</value></data>
   <data name="EffectPreset_ScriptTileNote" xml:space="preserve"><value>스크립트 효과 {0}개가 들어 있습니다. 실행을 허용하기 전에는 그리지 않습니다.</value></data>
   <data name="EffectPreset_ScriptTileTip" xml:space="preserve"><value>직접 만든 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다. 우클릭하면 효과 만들기에서 고치거나 삭제합니다.</value></data>
-  <data name="EffectPreset_PackageScriptTileTip" xml:space="preserve"><value>{0} 패키지의 효과입니다. 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
+  <data name="EffectPreset_ReceivedScriptTileTip" xml:space="preserve"><value>받은 효과입니다({0}). 두 번 누르거나 효과 목록으로 끌어 넣습니다.</value></data>
   <data name="ScriptEffect_SaveAsset" xml:space="preserve"><value>에셋으로 저장</value></data>
   <data name="ScriptEffect_SaveAssetTip" xml:space="preserve"><value>이 원문을 개인 스크립트 에셋으로 저장합니다. 효과 창 효과 탭과 에셋 관리자에서 다시 쓰고 패키지로 내보낼 수 있습니다.</value></data>
   <data name="ScriptEffect_SaveAssetNeedsTrust" xml:space="preserve"><value>실행을 허용한 스크립트만 개인 에셋으로 저장할 수 있습니다.</value></data>
@@ -9374,6 +9361,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Chat_Pending_RemoveTip" xml:space="preserve"><value>대기에서 빼기(입력란이 비어 있으면 입력란으로 되돌림)</value></data>
   <data name="Chat_SendQueuesTip" xml:space="preserve"><value>Enter — 지금 차례가 끝나면 보냅니다</value></data>
   <data name="EffectMaker_Uploaded" xml:space="preserve"><value>올린 효과</value></data>
+  <data name="EffectMaker_UploadedModified" xml:space="preserve"><value>올린 효과 · 고침</value></data>
   <data name="EffectMaker_DownloadUploadedTip" xml:space="preserve"><value>이 계정으로 올린 효과입니다. 이 컴퓨터에는 아직 없어 누르면 내려받아 설치하고 엽니다.</value></data>
   <data name="Assets_LinkNotFound" xml:space="preserve"><value>홈페이지에서 연 패키지 '{0}'이(가) 온라인 목록에 없습니다. 숨겨졌거나 지워졌을 수 있습니다. 홈페이지에서 패키지를 내려받았다면 가져오기로 설치하세요.</value></data>
   <data name="Gallery_Title" xml:space="preserve"><value>갤러리에 올리기</value></data>
@@ -9611,4 +9599,25 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="TextTool_MoveLabel" xml:space="preserve"><value>글씨 옮기기</value><comment>실행취소 기록 이름: 이동 도구로 글씨 레이어의 글씨를 옮김</comment></data>
   <data name="TextTool_DefaultLayerName" xml:space="preserve"><value>글씨</value><comment>새 글씨 레이어 이름(글 첫 줄이 비었을 때)</comment></data>
   <data name="Shortcuts_TextTool" xml:space="preserve"><value>글씨(누른 곳에 글씨 레이어)</value><comment>단축키 도움말 창: 글씨 도구</comment></data>
+  <data name="Assets_ReceivedHeader" xml:space="preserve"><value>받은 에셋</value></data>
+  <data name="Assets_SourceLocal" xml:space="preserve"><value>이 컴퓨터에서 만듦</value></data>
+  <data name="Assets_PublishedVersion" xml:space="preserve"><value>올림 {0}</value></data>
+  <data name="Assets_ModifiedNote" xml:space="preserve"><value>고침</value></data>
+  <data name="Assets_StoreId" xml:space="preserve"><value>상점 ID</value></data>
+  <data name="Assets_ModifiedFact" xml:space="preserve"><value>받거나 올린 뒤 고침</value></data>
+  <data name="Assets_AddedAt" xml:space="preserve"><value>들어온 시각</value></data>
+  <data name="Assets_ExportShown" xml:space="preserve"><value>내보내기…</value></data>
+  <data name="Assets_ExportShownTip" xml:space="preserve"><value>목록에 보이는 에셋을 .chickxel-asset 파일 하나로 묶습니다(백업·전달용). 받은 에셋은 작성자·라이선스·상점 정보를 그대로 담습니다.</value></data>
+  <data name="Assets_ExportEmpty" xml:space="preserve"><value>목록에 내보낼 에셋이 없습니다.</value></data>
+  <data name="Assets_DeleteAssetQuestion" xml:space="preserve"><value>'{0}'을(를) 삭제할까요? 이미 프로젝트에 넣은 효과와 그라데이션은 바뀌지 않습니다.</value></data>
+  <data name="AssetImport_Title" xml:space="preserve"><value>에셋 가져오기</value></data>
+  <data name="AssetImport_Question" xml:space="preserve"><value>'{0}'과(와) 겹치는 에셋이 이미 있습니다. 어떻게 할까요?</value></data>
+  <data name="AssetImport_Incoming" xml:space="preserve"><value>가져오는 에셋</value></data>
+  <data name="AssetImport_Existing" xml:space="preserve"><value>있는 에셋</value></data>
+  <data name="AssetImport_Modified" xml:space="preserve"><value>있는 에셋은 받거나 올린 뒤 이 컴퓨터에서 고친 것입니다. 바꾸면 고친 내용이 사라집니다.</value></data>
+  <data name="AssetImport_SameContent" xml:space="preserve"><value>내용이 같습니다.</value></data>
+  <data name="AssetImport_Replace" xml:space="preserve"><value>바꾸기</value></data>
+  <data name="AssetImport_KeepBoth" xml:space="preserve"><value>둘 다 두기</value></data>
+  <data name="AssetImport_Skip" xml:space="preserve"><value>건너뛰기</value></data>
+  <data name="AssetImport_ApplyToRest" xml:space="preserve"><value>남은 항목에도 적용</value></data>
 </root>

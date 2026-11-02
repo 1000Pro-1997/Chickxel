@@ -1,4 +1,3 @@
-using System.Globalization;
 using Chickxel.App.Localization;
 using Chickxel.Core.Assets;
 
@@ -13,9 +12,9 @@ public enum AssetManagerTab
 }
 
 /// <summary>
-/// 에셋 관리자(계획 8장): 설치됨·상점·업데이트 탭. 설치됨 탭은 왼쪽에 개인 에셋, 설치한 패키지(와 그 에셋), 최근 삭제한 패키지 목록,
-/// 오른쪽에 고른 항목의 상세(미리보기, 작성자, 버전, 호환 앱 버전, 출처)와 동작(켜기·끄기, 내보내기, 되돌리기, 파일 위치, 삭제 …)을 둔다.
-/// 종류 거르기(전체·효과·그라데이션)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
+/// 에셋 관리자(계획 8장): 설치됨·상점·업데이트 탭. 설치됨 탭은 왼쪽에 에셋 목록(내 에셋 — <see cref="AppAssets.IsMine"/> — 과 받은 에셋),
+/// 오른쪽에 고른 에셋의 상세(미리보기, 작성자, 라이선스, 상점 ID·버전, 출처)와 동작(즐겨찾기, 고치기, 복사, 내보내기, 올리기, 삭제 …)을 둔다.
+/// 종류 거르기(효과·그라데이션)와 이름 검색은 메모리 카탈로그에서 한다. 상점·업데이트는 온라인 카탈로그(<c>.Store</c>)를 쓴다.
 /// 모달이며, 효과 창·그라데이션 프리셋 창에서도 종류 거르기와 처음 탭을 정해 연다. 저장소가 바뀌면(<see cref="AppAssets.Changed"/>) 목록을 다시 만든다.
 /// </summary>
 public sealed partial class AssetManagerWindow : DialogBase
@@ -26,18 +25,18 @@ public sealed partial class AssetManagerWindow : DialogBase
     private readonly TextBox _search;
     private readonly TabControl _tabs = new();
     private readonly Action _onChanged;
-    /// <summary>다시 만든 뒤 고를 항목(<see cref="RowKey"/>).</summary>
+    /// <summary>다시 만든 뒤 고를 항목(<see cref="AssetKey"/>).</summary>
     private string? _selectKey;
     private bool _refreshing;
 
-    /// <summary>목록 한 줄: 머리글, 패키지, 에셋, 삭제한 패키지.</summary>
-    private sealed record Row(string Key, InstalledPackage? Package = null, AssetEntry? Asset = null, DeletedPackage? Deleted = null);
+    /// <summary>목록 한 줄의 고를 키.</summary>
+    private static string AssetKey(string id) => "asset:" + id;
 
     /// <summary>열려 있는 에셋 관리자(모달이라 하나뿐). 없으면 null — 홈페이지 링크·패키지 파일이 열려 있는 창으로 가게.</summary>
     private static AssetManagerWindow? s_current;
 
     /// <summary>
-    /// 에셋 관리자를 연다. <paramref name="kind"/>는 처음 종류 거르기(<see cref="AssetKinds"/>, null = 전체 — 설치됨·상점 탭이 같이 씀),
+    /// 에셋 관리자를 연다. <paramref name="kind"/>는 처음 종류 거르기(<see cref="AssetKinds"/>, null = 고를 에셋의 종류 — 설치됨·상점 탭이 같이 씀),
     /// <paramref name="selectAssetId"/>는 처음 고를 에셋, <paramref name="tab"/>은 처음 보일 탭(상점·업데이트면 온라인 목록을 바로 받는다).
     /// </summary>
     public static void Open(Window owner, string? kind = null, string? selectAssetId = null, AssetManagerTab tab = AssetManagerTab.Installed)
@@ -65,8 +64,8 @@ public sealed partial class AssetManagerWindow : DialogBase
     }
 
     /// <summary>
-    /// 패키지 파일 더블클릭: 에셋 관리자 설치됨 탭에서 <paramref name="path"/>를 설치하고(가져오기와 같음) 그 패키지를 고른다.
-    /// 에셋 관리자가 이미 열려 있으면 그 창에서 한다.
+    /// 패키지 파일 더블클릭: 에셋 관리자 설치됨 탭에서 <paramref name="path"/>의 에셋을 가져오고(가져오기와 같음 — <see cref="AppAssets.InstallFile"/>)
+    /// 처음 들어간 에셋을 고른다. 에셋 관리자가 이미 열려 있으면 그 창에서 한다.
     /// </summary>
     public static void InstallPackageFile(Window owner, string path)
     {
@@ -78,7 +77,7 @@ public sealed partial class AssetManagerWindow : DialogBase
         }
         AppAssets.ShowProblems(owner);
         var window = new AssetManagerWindow(null, null, AssetManagerTab.Installed);
-        // 창이 뜬 뒤에 설치해 오류 상자가 에셋 관리자 위에 뜨게 한다.
+        // 창이 뜬 뒤에 가져와 묻는 창·오류 상자가 에셋 관리자 위에 뜨게 한다.
         window.Opened += (_, _) => Dispatcher.UIThread.Post(() => window.InstallFile(path));
         window.ShowDialog(owner);
     }
@@ -94,7 +93,7 @@ public sealed partial class AssetManagerWindow : DialogBase
         Height = 660;
         MinWidth = 720;
         MinHeight = 460;
-        _selectKey = selectAssetId is null ? null : "asset:" + selectAssetId;
+        _selectKey = selectAssetId is null ? null : AssetKey(selectAssetId);
 
         _filter = new TabStrip(TabStripKind.Segmented, UiStrings.Assets_FilterEffects, UiStrings.Assets_FilterGradients)
         {
@@ -104,21 +103,19 @@ public sealed partial class AssetManagerWindow : DialogBase
         _filter.SelectionChanged += (_, _) => Dispatcher.UIThread.Post(Refresh);
         _search = new TextBox { Width = 180, Watermark = UiStrings.Assets_Search };
         _search.TextChanged += (_, _) => Refresh();
-        var import = Ui.Button(VectorIcon.Download, UiStrings.Assets_Import, (_, _) => Import());
-        ToolTip.SetTip(import, UiStrings.Assets_ImportTip);
-        var exportPersonal = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportPersonal, (_, _) => ExportPersonal(null));
-        ToolTip.SetTip(exportPersonal, UiStrings.Assets_ExportPersonalTip);
-        var publish = Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishPersonal(null)).Tip(UiStrings.Assets_PublishTip);
+        var import = Ui.Button(VectorIcon.Download, UiStrings.Assets_Import, (_, _) => Import()).Tip(UiStrings.Assets_ImportTip);
+        var export = Ui.Button(VectorIcon.Upload, UiStrings.Assets_ExportShown, (_, _) => Export(Shown())).Tip(UiStrings.Assets_ExportShownTip);
+        var publish = Ui.Button(VectorIcon.Globe, UiStrings.Assets_Publish, (_, _) => PublishSelected()).Tip(UiStrings.Assets_PublishTip);
         var restore = Ui.Button(VectorIcon.Undo2, UiStrings.Assets_RestoreOfficial, (sender, _) => RestoreOfficialEffects((Control)sender!))
             .Tip(UiStrings.Assets_RestoreOfficialTip);
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
-        toolbar.Children.AddRange([_filter, _search, import, exportPersonal, publish, restore]);
+        toolbar.Children.AddRange([_filter, _search, import, export, publish, restore]);
         foreach (var child in toolbar.Children) child.Margin = new Thickness(0, 0, 8, 0);
 
         _list.SelectionChanged += (_, _) =>
         {
             if (_refreshing) return;
-            _selectKey = Selected?.Key;
+            _selectKey = Selected is { } entry ? AssetKey(entry.Id) : null;
             ShowDetail();
         };
         var split = new Grid { ColumnDefinitions = new ColumnDefinitions("340,*"), Children = { _list, DetailScroller(_detail) } };
@@ -159,8 +156,8 @@ public sealed partial class AssetManagerWindow : DialogBase
     }
 
     /// <summary>
-    /// 기본 효과 되돌리기: 지운 공식 효과 패키지를 다시 설치하고, 끈 것은 켜고, 낮은 버전은 앱에 든 버전으로 올린다(<see cref="AppAssets.SyncBundledAsync"/> —
-    /// 패키지를 만들고 설치하는 동안 단추를 끄고 백그라운드에서, 목록은 <see cref="AppAssets.Changed"/>로 다시 만들어진다).
+    /// 기본 효과 되돌리기: 지운 공식 효과를 다시 넣고, 낮은 버전(고치지 않은 것)은 앱에 든 버전으로 올린다(<see cref="AppAssets.SyncBundledAsync"/> —
+    /// 패키지를 만들고 넣는 동안 단추를 끄고 백그라운드에서, 목록은 <see cref="AppAssets.Changed"/>로 다시 만들어진다).
     /// </summary>
     private async void RestoreOfficialEffects(Control button)
     {
@@ -185,11 +182,11 @@ public sealed partial class AssetManagerWindow : DialogBase
                 UiStrings.Assets_RestoreOfficial);
         else
             Ui.Info(this, result.Changed
-                ? F(UiStrings.Assets_RestoreOfficialDone, result.Installed.Count, result.Updated.Count + result.Enabled.Count)
+                ? F(UiStrings.Assets_RestoreOfficialDone, result.Installed.Count, result.Updated.Count)
                 : UiStrings.Assets_RestoreOfficialNothing, UiStrings.Assets_RestoreOfficial);
     }
 
-    private Row? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as Row;
+    private AssetEntry? Selected => (_list.SelectedItem as ListBoxItem)?.Tag as AssetEntry;
 
     /// <summary>종류 거르기 칸 번호의 에셋 종류: 0 = 효과(효과 레시피와 스크립트 효과), 1 = 그라데이션. 상점 탭도 같은 칸을 쓴다.</summary>
     private static string[] FilterKinds(int index) => index == 1 ? [AssetKinds.Gradient] : [AssetKinds.EffectRecipe, AssetKinds.EffectScript];
@@ -203,73 +200,52 @@ public sealed partial class AssetManagerWindow : DialogBase
 
     private string[] KindFilter => FilterKinds(_filter.SelectedIndex);
 
+    /// <summary>종류 거르기에 맞고 검색어가 이름(보이는 이름·원래 이름), 작성자 이름, 상점 목록 이름 중 하나에 들었는지.</summary>
     private bool Matches(AssetEntry entry)
     {
         if (!KindFilter.Contains(entry.Kind)) return false;
         string query = _search.Text?.Trim() ?? "";
         return query.Length == 0 || entry.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                                  || entry.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-                                 || (entry.PackageName?.Contains(query, StringComparison.CurrentCultureIgnoreCase) ?? false);
+                                 || (entry.Author?.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase) ?? false)
+                                 || (entry.Store?.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ?? false);
     }
 
-    /// <summary>
-    /// 패키지 줄을 보일지: 보이는 에셋이 있거나, 종류 거르기에 맞고 이름이 검색어에 맞을 때.
-    /// 읽지 못한 패키지와 효과·그라데이션이 하나도 없는 패키지는 어느 칸에서나 보인다(지우거나 고칠 수 있게).
-    /// </summary>
-    private bool PackageVisible(InstalledPackage package, int shownEntries)
-    {
-        if (shownEntries > 0) return true;
-        bool kindOk = package.Entries.Any(e => KindFilter.Contains(e.Kind))
-                      || !package.Entries.Any(e => e.Kind is AssetKinds.Gradient or AssetKinds.EffectRecipe or AssetKinds.EffectScript);
-        string query = _search.Text?.Trim() ?? "";
-        return kindOk && (query.Length == 0 || package.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
-                                            || package.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase));
-    }
+    /// <summary>목록에 보이는 에셋(거르기·검색에 맞는 것, 저장소 순서).</summary>
+    private List<AssetEntry> Shown() => AppAssets.Catalog.All.Where(Matches).ToList();
 
-    /// <summary>카탈로그에서 목록을 다시 만들고 <see cref="_selectKey"/>를 고른다(없으면 첫 항목).</summary>
+    /// <summary>카탈로그에서 목록(내 에셋, 받은 에셋)을 다시 만들고 <see cref="_selectKey"/>를 고른다(없으면 첫 항목).</summary>
     private void Refresh()
     {
-        var catalog = AppAssets.Catalog;
+        string? handle = AppAssets.MyHandle;
         _refreshing = true;
         try
         {
             _list.Items.Clear();
-            var personal = catalog.Personal.Where(Matches).ToList();
-            if (personal.Count > 0)
+            var shown = Shown();
+            var mine = shown.Where(entry => entry.IsOwnedBy(handle)).ToList();
+            var received = shown.Where(entry => !entry.IsOwnedBy(handle)).ToList();
+            if (mine.Count > 0)
             {
                 AddHeader(UiStrings.Assets_PersonalHeader);
-                foreach (var entry in personal) AddRow(new Row("asset:" + entry.Id, Asset: entry), AssetRow(entry, indent: false));
+                foreach (var entry in mine) AddRow(entry, AssetRow(entry, mine: true));
             }
-            bool packagesHeader = false;
-            foreach (var package in catalog.Packages)
+            if (received.Count > 0)
             {
-                var entries = package.Entries.Where(Matches).ToList();
-                if (!PackageVisible(package, entries.Count)) continue;
-                if (!packagesHeader)
-                {
-                    AddHeader(UiStrings.Assets_PackagesHeader);
-                    packagesHeader = true;
-                }
-                AddRow(new Row("pkg:" + package.Id, Package: package), PackageRow(package));
-                foreach (var entry in entries) AddRow(new Row("asset:" + entry.Id, Asset: entry), AssetRow(entry, indent: true));
-            }
-            var deleted = AppAssets.Store.DeletedPackages;
-            if (deleted.Count > 0)
-            {
-                AddHeader(UiStrings.Assets_DeletedHeader);
-                foreach (var item in deleted) AddRow(new Row("deleted:" + item.Folder, Deleted: item), DeletedRow(item));
+                AddHeader(UiStrings.Assets_ReceivedHeader);
+                foreach (var entry in received) AddRow(entry, AssetRow(entry, mine: false));
             }
             if (_list.Items.Count == 0)
                 _list.Items.Add(new ListBoxItem { Content = Ui.Label(UiStrings.Assets_EmptyInstalled), IsEnabled = false });
 
-            var rows = _list.Items.OfType<ListBoxItem>().Where(item => item.Tag is Row).ToList();
-            var target = rows.FirstOrDefault(item => ((Row)item.Tag!).Key == _selectKey) ?? rows.FirstOrDefault();
+            var rows = _list.Items.OfType<ListBoxItem>().Where(item => item.Tag is AssetEntry).ToList();
+            var target = rows.FirstOrDefault(item => AssetKey(((AssetEntry)item.Tag!).Id) == _selectKey) ?? rows.FirstOrDefault();
             _list.SelectedItem = target;
-            _selectKey = (target?.Tag as Row)?.Key;
+            _selectKey = target?.Tag is AssetEntry selected ? AssetKey(selected.Id) : null;
         }
         finally { _refreshing = false; }
         ShowDetail();
-        if (_list.SelectedItem is { } selected) _list.ScrollIntoView(selected);
+        if (_list.SelectedItem is { } selectedItem) _list.ScrollIntoView(selectedItem);
     }
 
     private void AddHeader(string text)
@@ -279,8 +255,8 @@ public sealed partial class AssetManagerWindow : DialogBase
         _list.Items.Add(new ListBoxItem { Content = label, IsEnabled = false, Focusable = false });
     }
 
-    private void AddRow(Row row, Control content)
-        => _list.Items.Add(new ListBoxItem { Content = content, Tag = row, HorizontalContentAlignment = HorizontalAlignment.Stretch });
+    private void AddRow(AssetEntry entry, Control content)
+        => _list.Items.Add(new ListBoxItem { Content = content, Tag = entry, HorizontalContentAlignment = HorizontalAlignment.Stretch });
 
     private static TextBlock Dim(string text) => new()
     {
@@ -290,45 +266,32 @@ public sealed partial class AssetManagerWindow : DialogBase
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
 
-    private static Control AssetRow(AssetEntry entry, bool indent)
+    /// <summary>
+    /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래 흐린 글은 받은 에셋이면 작성자 · 상점 버전,
+    /// 올린 내 에셋이면 "올림 버전"(고쳤으면 "고침"도).
+    /// </summary>
+    private static Control AssetRow(AssetEntry entry, bool mine)
     {
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         if (entry.Favorite) name.Children.Add(Ui.Icon(VectorIcon.Star, 12, filled: true));
-        name.Children.Add(Ui.Icon(entry.Kind switch
-        {
-            AssetKinds.Gradient => VectorIcon.SlidersHorizontal,
-            AssetKinds.EffectScript => VectorIcon.Code,
-            _ => VectorIcon.Sparkles,
-        }, 13));
+        name.Children.Add(Ui.Icon(KindIcon(entry.Kind), 13));
         name.Children.Add(new TextBlock { Text = entry.DisplayName, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
-        var panel = new StackPanel { Margin = new Thickness(indent ? 18 : 0, 0, 0, 0), Children = { name } };
+        var panel = new StackPanel { Children = { name } };
         if (entry.Gradient is { } gradient)
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
-        if (!entry.Enabled) panel.Opacity = 0.55;
+        string?[] parts = mine
+            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
+            : [entry.Author?.Name, entry.Store?.Version];
+        string sub = string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)));
+        if (sub.Length > 0) panel.Children.Add(Dim(sub));
         return panel;
     }
 
-    private static Control PackageRow(InstalledPackage package)
+    /// <summary>에셋 종류 아이콘(그라데이션, 스크립트 효과, 효과 프리셋).</summary>
+    internal static VectorIcon KindIcon(string kind) => kind switch
     {
-        var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        name.Children.Add(Ui.Icon(VectorIcon.Package, 14));
-        name.Children.Add(Ui.Label(package.DisplayName, bold: true));
-        string status = package.IsBroken ? UiStrings.Assets_Broken : package.Enabled ? "" : UiStrings.Assets_Disabled;
-        var sub = Dim(string.Join(" · ", new[] { package.Version, package.Manifest?.Author.Name, status }.Where(s => !string.IsNullOrEmpty(s))));
-        if (package.IsBroken) sub.Foreground = AppTheme.WarningBrush;
-        var panel = new StackPanel { Children = { name, sub } };
-        if (!package.Enabled) panel.Opacity = 0.7;
-        return panel;
-    }
-
-    private static Control DeletedRow(DeletedPackage deleted)
-    {
-        var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        name.Children.Add(Ui.Icon(VectorIcon.Trash, 13));
-        name.Children.Add(new TextBlock { Text = deleted.Name, Foreground = AppTheme.DimTextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
-        return new StackPanel
-        {
-            Children = { name, Dim(deleted.Version + " · " + deleted.DeletedUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)) },
-        };
-    }
+        AssetKinds.Gradient => VectorIcon.SlidersHorizontal,
+        AssetKinds.EffectScript => VectorIcon.Code,
+        _ => VectorIcon.Sparkles,
+    };
 }

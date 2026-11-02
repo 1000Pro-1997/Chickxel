@@ -12,9 +12,9 @@ public enum PresetsTab
 }
 
 /// <summary>
-/// One window for every preset kind, one tab each. The gradient tab lists the asset catalog's gradients: personal gradients
-/// (editable — saved to the personal asset store) and gradients of enabled installed packages (read-only originals; saving an
-/// edited one stores a personal copy). It is modal; changes made from the asset manager opened here refresh the list.
+/// One window for every preset kind, one tab each. The gradient tab lists the asset library's gradients: mine
+/// (<see cref="AppAssets.IsMine"/>; editable in place) and received ones (read-only originals; saving an edited one stores a
+/// copy as mine). It is modal; changes made from the asset manager opened here refresh the list.
 /// </summary>
 public sealed class PresetsWindow : DialogBase
 {
@@ -74,7 +74,7 @@ public sealed class PresetsWindow : DialogBase
         var left = new DockPanel();
         DockPanel.SetDock(listButtons, Dock.Bottom);
         left.Children.Add(listButtons);
-        if (AppAssets.Store.PersonalError is { } error)
+        if (AppAssets.Store.LibraryError is { } error)
         {
             var warning = new TextBlock
             {
@@ -138,7 +138,7 @@ public sealed class PresetsWindow : DialogBase
                 Close();
             });
         };
-        // The asset manager opened from here can disable, delete or copy gradients: rebuild the list, keeping unsaved edits.
+        // The asset manager opened from here can delete or copy gradients: rebuild the list, keeping unsaved edits.
         _onAssetsChanged = () => Dispatcher.UIThread.Post(() => Refresh(_loaded?.Id, keepEdits: true));
         AppAssets.Changed += _onAssetsChanged;
         Closed += (_, _) =>
@@ -153,15 +153,18 @@ public sealed class PresetsWindow : DialogBase
 
     private static string Format(string format, params object?[] args) => string.Format(CultureInfo.CurrentCulture, format, args);
 
-    private static bool IsPersonal(AssetEntry? entry) => entry?.Origin == AssetOrigin.Personal;
+    private static bool IsMine(AssetEntry? entry) => entry is not null && AppAssets.IsMine(entry);
+
+    /// <summary>Where a received gradient came from: its store listing name, else its author. Null for mine.</summary>
+    private static string? ReceivedFrom(AssetEntry entry) => AppAssets.IsMine(entry) ? null : entry.Store?.DisplayName ?? entry.Author?.Name;
 
     private static Control Row(AssetEntry entry)
     {
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         if (entry.Favorite) name.Children.Add(Ui.Icon(VectorIcon.Star, 13, filled: true));
         name.Children.Add(Ui.Label(entry.Name));
-        if (entry.PackageName is { } package)
-            name.Children.Add(new TextBlock { Text = package, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center });
+        if (ReceivedFrom(entry) is { } from)
+            name.Children.Add(new TextBlock { Text = from, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, VerticalAlignment = VerticalAlignment.Center });
         var swatch = new GradientSwatch { Preset = entry.Gradient, Height = 14, Margin = new Thickness(0, 3, 0, 2) };
         return new StackPanel { Children = { name, swatch } };
     }
@@ -223,7 +226,7 @@ public sealed class PresetsWindow : DialogBase
         _loaded = entry;
         _dirty = false;
         _title.Text = entry?.Name ?? UiStrings.GradientPreset_SelectHint;
-        _note.Text = entry is { Origin: AssetOrigin.Package } ? Format(UiStrings.Assets_PackageGradientNote, entry.PackageName) : "";
+        _note.Text = entry is not null && ReceivedFrom(entry) is { } from ? Format(UiStrings.Assets_ReceivedGradientNote, from) : "";
         _note.IsVisible = _note.Text.Length > 0;
         _detail.IsEnabled = entry is not null;
         if (entry?.Gradient is { } gradient) _editor.LoadPreset(gradient);
@@ -243,21 +246,21 @@ public sealed class PresetsWindow : DialogBase
     {
         bool enabled = _loaded is not null;
         _favorite.IsEnabled = enabled;
-        _rename.IsEnabled = IsPersonal(_loaded);
-        _delete.IsEnabled = IsPersonal(_loaded);
+        _rename.IsEnabled = IsMine(_loaded);
+        _delete.IsEnabled = IsMine(_loaded);
         _save.IsEnabled = enabled && _dirty;
-        _save.Content = _loaded is null || IsPersonal(_loaded) ? UiStrings.GradientPreset_SaveChanges : UiStrings.Assets_SaveAsPersonal;
+        _save.Content = _loaded is null || IsMine(_loaded) ? UiStrings.GradientPreset_SaveChanges : UiStrings.Assets_SaveAsPersonal;
         _favorite.Content = Ui.IconLabel(VectorIcon.Star, _loaded?.Favorite == true
             ? UiStrings.GradientPreset_RemoveFavorite : UiStrings.GradientPreset_AddFavorite);
     }
 
     /// <summary>
-    /// Saves the editor's values: a personal gradient in place, a package gradient as a new personal copy (asks for its name; an
-    /// existing personal gradient of that name is overwritten after asking). Returns the saved entry, or null when cancelled or failed.
+    /// Saves the editor's values: my gradient in place, a received gradient as a new copy of mine (asks for its name; an
+    /// existing gradient of mine with that name is overwritten after asking). Returns the saved entry, or null when cancelled or failed.
     /// </summary>
     private AssetEntry? SaveEdits(AssetEntry entry)
     {
-        if (IsPersonal(entry)) return GradientPresetUi.Save(this, entry.Id, _editor.ToPreset(entry.Name, entry.Favorite));
+        if (IsMine(entry)) return GradientPresetUi.Save(this, entry.Id, _editor.ToPreset(entry.Name, entry.Favorite));
         var personal = GradientPresetUi.Personal;
         string? name = InputDialog.Ask(this, UiStrings.Assets_SaveAsPersonal, UiStrings.GradientPreset_NamePrompt, entry.Name,
             personal.Select(p => p.Name))?.Trim();
@@ -293,7 +296,7 @@ public sealed class PresetsWindow : DialogBase
 
     private void Rename()
     {
-        if (_loaded is not { } entry || !IsPersonal(entry) || entry.Gradient is not { } gradient) return;
+        if (_loaded is not { } entry || !IsMine(entry) || entry.Gradient is not { } gradient) return;
         var others = GradientPresetUi.Personal.Where(p => p.Id != entry.Id).ToList();
         string? name = InputDialog.Ask(this, UiStrings.GradientPreset_RenameTitle,
             UiStrings.GradientPreset_NamePrompt, entry.Name, others.Select(p => p.Name))?.Trim();
@@ -309,7 +312,7 @@ public sealed class PresetsWindow : DialogBase
 
     private void Delete()
     {
-        if (_loaded is not { } entry || !IsPersonal(entry)
+        if (_loaded is not { } entry || !IsMine(entry)
             || Ui.Ask(this, Format(UiStrings.GradientPreset_DeleteQuestion, entry.Name), UiStrings.GradientPreset_Delete,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         int row = _list.SelectedIndex;

@@ -396,19 +396,53 @@ public class RemoteCatalogTests
 
         string file = await client.DownloadPackageAsync(entry, new SyncProgress(reports.Add));
         Assert.Equal(1.0, reports[^1]);
-        store.Install(file, "remote");
+        var installed = store.InstallFile(file, AssetSources.Remote);
         File.Delete(file);
-        var installed = Assert.Single(store.Catalog.Packages);
-        Assert.Equal((entry.Id, "1.0.0", "remote"), (installed.Id, installed.Version, installed.State.Source));
+        Assert.Equal(2, installed.Count);
+        Assert.All(installed, e => Assert.Equal((entry.Id, "1.0.0", AssetSources.Remote), (e.Store!.PackageId, e.Store.Version, e.Source)));
         Assert.Empty(RemoteAssetClient.FindUpdates(store.Catalog, [entry]));
 
         File.WriteAllBytes(Directory.GetFiles(Path.Combine(f.CatalogSource, AssetSamples.PackageId), "*.chickxel-asset")[0], Pack("1.1.0"));
         f.Publish();
         var newer = (await client.FetchCatalogAsync()).Packages[0];
+        // 같은 상점 패키지에서 온 에셋이 둘이어도 업데이트는 하나(첫 에셋)
         var update = Assert.Single(RemoteAssetClient.FindUpdates(store.Catalog, [newer]));
-        Assert.Equal(("1.0.0", "1.1.0"), (update.Installed.Version, update.Remote.Version));
+        Assert.Equal((installed[0].Id, "1.0.0", "1.1.0"), (update.Installed.Id, update.Installed.Store!.Version, update.Remote.Version));
         // 확인만으로는 아무것도 바뀌지 않는다(자동 업데이트 없음).
-        Assert.Equal("1.0.0", Assert.Single(store.Catalog.Packages).Version);
+        Assert.All(store.Catalog.All, e => Assert.Equal("1.0.0", e.Store!.Version));
+    }
+
+    /// <summary>업데이트는 상점 연결(패키지 ID·버전)로만 찾는다: 들어온 길과 무관하고, 연결 없는 에셋·같거나 낮은 원격 버전은 빠진다.</summary>
+    [Fact]
+    public void FindUpdates_UsesStoreLinks_OnePerStorePackage()
+    {
+        static AssetEntry Gradient(string id, string? packageId, string version = "1.0.0", string source = AssetSources.File)
+        {
+            var data = new GradientAsset(id, AssetSamples.Gradient(id));
+            return new AssetEntry(id, AssetKinds.Gradient, data)
+            {
+                Source = source,
+                Store = packageId is null ? null : new AssetStoreLink
+                {
+                    PackageId = packageId, AssetId = packageId + ".g", Version = version, ContentHash = AssetContent.Hash(AssetKinds.Gradient, data), Name = "G",
+                },
+            };
+        }
+
+        var remote = Entry(); // author.neon-pack 1.2.0
+        var other = Entry() with { Id = "author.other", Version = "2.0.0" };
+        var catalog = new AssetCatalog(
+        [
+            Gradient("local", null),
+            Gradient("first", AssetSamples.PackageId, "1.0.0", AssetSources.Local),
+            Gradient("second", AssetSamples.PackageId, "1.1.0"),
+            Gradient("same", "author.other", "2.0.0"),
+            Gradient("unlisted", "author.unlisted"),
+        ]);
+        var update = Assert.Single(RemoteAssetClient.FindUpdates(catalog, [remote, other]));
+        Assert.Equal(("first", AssetSamples.PackageId, "1.2.0"), (update.Installed.Id, update.Remote.Id, update.Remote.Version));
+        // 원격이 더 낮으면 없음
+        Assert.Empty(RemoteAssetClient.FindUpdates(catalog, [remote with { Version = "0.9.0" }]));
     }
 
     [Fact]
@@ -432,8 +466,8 @@ public class RemoteCatalogTests
         Assert.Equal(RemoteIssueCode.SizeMismatch, (await Assert.ThrowsAsync<RemoteAssetException>(() => client.DownloadPackageAsync(entry))).Code);
 
         Assert.False(Directory.Exists(client.DownloadDirectory) && Directory.EnumerateFileSystemEntries(client.DownloadDirectory).Any());
-        Assert.Empty(store.Catalog.Packages);
-        Assert.False(File.Exists(store.InstalledPath));
+        Assert.Empty(store.Catalog.All);
+        Assert.False(store.HasLibraryFile);
     }
 
     [Fact]

@@ -154,13 +154,13 @@ public sealed partial class LayerEffectsDialog
     private int IndexOfEffect(LayerEffect effect) => _effects.FindIndex(e => ReferenceEquals(e, effect));
 
     /// <summary>
-    /// 고른 스크립트 효과의 원문을 개인 스크립트 에셋으로 저장한다(실행을 허용한 원문만 — 개인 에셋은 이 컴퓨터에서 믿는 스크립트다).
-    /// 같은 원문이 이미 개인 에셋이면 그대로 둔다. 효과 탭 상자는 저장소 변경 알림으로 다시 만들어진다.
+    /// 고른 스크립트 효과의 원문을 내 스크립트 에셋으로 저장한다(실행을 허용한 원문만 — 내 에셋은 이 컴퓨터에서 믿는 스크립트다).
+    /// 같은 원문이 이미 이 컴퓨터에서 만든 에셋이면 그대로 둔다. 효과 탭 상자는 저장소 변경 알림으로 다시 만들어진다.
     /// </summary>
     private void SaveScriptAsset(ScriptEffect effect)
     {
         if (ScriptLibrary.SourceOf(effect.ScriptHash) is not { } source || ScriptLibrary.TrustOf(effect.ScriptHash) != ScriptTrust.Trusted) return;
-        AppAssets.Try(this, () => AppAssets.Store.SavePersonalScript(source, null, null), UiStrings.ScriptEffect_SaveAssetError);
+        AppAssets.Try(this, () => AppAssets.Store.SaveScript(source, null, null), UiStrings.ScriptEffect_SaveAssetError);
     }
 
     /// <summary>효과 줄마다 스크립트 효과가 그리지 못하는 상태면 경고 아이콘과 원인 풍선을 붙인다(묶음 머리 줄은 건너뜀).</summary>

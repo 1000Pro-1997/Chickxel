@@ -8,15 +8,15 @@ using Chickxel.Core.Scripting;
 namespace Chickxel.App;
 
 /// <summary>
-/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 에셋 하나(개인 에셋이나 내가 만든 설치 패키지의 에셋)를 공개 패키지로 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
+/// 에셋 게시 창(계획 8.4, 9.3, 14장 5단계): 내 에셋 하나를 공개 패키지로 Chickxel 커뮤니티 서비스에 올린다(로그인 필요).
 /// 왼쪽은 작성자(로그인한 계정의 핸들·표시 이름, 고칠 수 없음), 패키지 묶음 맨 위의 모드 줄(서버에 물어 "새 패키지" / "이름 업데이트: 1.0.0 → 1.0.1"),
-/// 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내 패키지면 그 ID, 아니면 핸들.이름 조각),
+/// 이름·짧은 설명(언어 설정으로 언어별 이름·설명), 고칠 수 없는 패키지 ID(<see cref="AssetPublishCheck.ResolveTarget"/> — 내가 올린 에셋이면 그 상점 ID, 아니면 핸들.이름 조각),
 /// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
-/// 내 설치 패키지의 에셋은 그 패키지 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
+/// 내가 올린 에셋은 그 상점 목록 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
 /// 다른 레이어를 읽는 스크립트 효과는 <see cref="ScriptAsset.LayerReferenceTag"/> 태그 칩을 미리 넣고 뺄 수 없다(빼면 다시 넣음 — 태그 8개 한도에 셈).
 /// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
-/// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
+/// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 에셋을 그 상점 ID에 연결하고(<see cref="AssetStore.MarkPublished"/>) 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
 public sealed class AssetPublishDialog : DialogBase
 {
@@ -62,7 +62,7 @@ public sealed class AssetPublishDialog : DialogBase
     private sealed record Lookup(CommunityPackage? Package, bool Failed);
 
     /// <summary>
-    /// 에셋 <paramref name="assetId"/>(개인 에셋이나 내가 만든 설치 패키지의 에셋)의 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창.
+    /// 에셋 <paramref name="assetId"/>(내 에셋만 — 받은 에셋은 먼저 내 에셋으로 복사)의 게시 창을 연다. 로그인하지 않았으면 먼저 계정 창.
     /// 효과 레시피(기본 효과를 합친 것)는 올리지 않는다(<see cref="PublishIssueCode.RecipeNotPublishable"/>, 서버도 거부).
     /// </summary>
     public static async Task RunAsync(Window owner, string assetId)
@@ -78,6 +78,11 @@ public sealed class AssetPublishDialog : DialogBase
             return;
         }
         if (await AppCommunity.RequireUserAsync(owner, UiStrings.Publish_LoginReason) is not { } user) return;
+        if (!asset.IsOwnedBy(user.Handle))
+        {
+            Ui.Error(owner, UiStrings.Publish_NotMine, UiStrings.Publish_Title);
+            return;
+        }
         new AssetPublishDialog(asset, user).ShowDialog(owner);
     }
 
@@ -101,16 +106,17 @@ public sealed class AssetPublishDialog : DialogBase
         // 개인 내보내기의 작성자 이름(로그인하지 않았을 때)으로 계정 표시 이름을 기억한다.
         _settings.AuthorName = user.Name;
 
-        // 채울 값: 내 설치 패키지의 에셋은 그 패키지 정보(이름·설명·번역), 스크립트 효과는 선언(이름·설명·번역·태그),
+        // 채울 값: 내가 올린 에셋은 그 상점 목록 정보(이름·설명·번역), 스크립트 효과는 선언(이름·설명·번역·태그),
         // 그 밖은 전에 올린 기록이나 에셋 이름.
         var record = _settings.Saved.FirstOrDefault(r => r.Assets.Contains(asset.Id));
         string name, summary;
         IReadOnlyList<string> tags;
-        if (asset.Origin == AssetOrigin.Package && AppAssets.Catalog.FindPackage(asset.PackageId ?? "")?.Manifest is { } own && own.Author.Id == user.Handle)
+        if (AssetPublishCheck.IsOwnListed(asset, user.Handle))
         {
-            name = own.Name;
-            summary = own.Description ?? "";
-            _translations = own.Translations.ToList();
+            var store = asset.Store!;
+            name = store.Name;
+            summary = store.Description ?? "";
+            _translations = store.Translations.ToList();
             tags = asset.Script?.Tags.Count > 0 ? asset.Script.Tags : record?.Tags ?? [];
         }
         else if (asset.Script is { } script)
@@ -140,7 +146,7 @@ public sealed class AssetPublishDialog : DialogBase
             MaxLength = RemoteCatalogFormat.MaxSummaryLength, Watermark = UiStrings.Publish_SummaryHint,
         };
         var languages = Ui.Button(VectorIcon.Languages, UiStrings.Publish_Languages, (_, _) => EditLanguages()).Tip(UiStrings.Publish_LanguagesTip);
-        // 패키지 ID는 고칠 수 없다: 내 패키지(설치한 것이나 그 사본)면 그 ID, 아니면 "핸들.이름 조각"(UpdateTarget).
+        // 패키지 ID는 고칠 수 없다: 내가 올린 에셋이면 그 상점 ID, 아니면 "핸들.이름 조각"(UpdateTarget).
         _idText = new SelectableTextBlock { Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, Margin = new Thickness(3, 6, 3, 3) };
         _version = Field("1.0.0");
         _version.Width = 110;
@@ -380,10 +386,10 @@ public sealed class AssetPublishDialog : DialogBase
 
     private IEnumerable<PublishedVersion> SavedVersions => _settings.Saved.Select(r => new PublishedVersion(r.Id, r.Version, r.Sha256));
 
-    /// <summary>이미 올린 버전: 이 컴퓨터의 기록, 설치한 내 패키지, 서버가 알려 준 최신 버전.</summary>
+    /// <summary>이미 올린 버전: 이 컴퓨터의 기록, 그 상점 ID에 연결된 내 에셋, 서버가 알려 준 최신 버전.</summary>
     private IEnumerable<PublishedVersion> KnownVersions
         => SavedVersions
-            .Concat(_target.Package is { } package ? [new PublishedVersion(package.Id, package.Version, "")] : [])
+            .Concat(_target.Existing?.Store is { } store ? [new PublishedVersion(_target.Id, store.Version, "")] : [])
             .Concat(_lookups.Where(pair => pair.Value.Package is not null).Select(pair => new PublishedVersion(pair.Key, pair.Value.Package!.Version, "")));
 
     /// <summary>같은 ID로 전에 게시한 버전(서버·온라인 목록·이 컴퓨터)에서 다음 버전을 제안하고, 손대지 않았으면 채운다.</summary>
@@ -398,8 +404,7 @@ public sealed class AssetPublishDialog : DialogBase
 
     /// <summary>
     /// 모드 줄: 서버 조회가 끝나지 않았으면 "확인하는 중", 실패면 "확인하지 못함", 없으면 "새 패키지", 있으면 "이름 업데이트: 이전 → 새 버전".
-    /// 업데이트인데 ID가 이름에서 나왔으면(설치한 내 패키지의 에셋·사본이 아님) 이름이 같아 업데이트가 된다고 덧붙이고,
-    /// 내 패키지의 사본으로 알아봤으면 그 패키지를 업데이트한다고 덧붙인다.
+    /// 업데이트인데 ID가 이름에서 나왔으면(내가 올린 에셋이 아님) 이름이 같아 업데이트가 된다고 덧붙인다.
     /// </summary>
     private void ShowMode()
     {
@@ -427,12 +432,7 @@ public sealed class AssetPublishDialog : DialogBase
             _modeIcon.Icon = VectorIcon.Refresh;
             _modeIcon.Foreground = AppTheme.SavedBrush;
             _mode.Text = F(UiStrings.Publish_ModeUpdate, package.Name.Length > 0 ? package.Name : _target.Id, package.Version, _version.Text?.Trim() ?? "");
-            note = _target.Source switch
-            {
-                PublishIdSource.Derived => UiStrings.Publish_ModeSameName,
-                PublishIdSource.OwnPackageCopy => UiStrings.Publish_ModeOwnCopy,
-                _ => "",
-            };
+            note = _target.Source == PublishIdSource.Derived ? UiStrings.Publish_ModeSameName : "";
         }
         _modeNote.Text = note;
         _modeNote.IsVisible = note.Length > 0;
@@ -544,6 +544,7 @@ public sealed class AssetPublishDialog : DialogBase
             var package = await AppCommunity.Client.UploadPackageAsync(result.Package!, result.PackageFileName!, manifest.Description ?? manifest.Name,
                 result.Tags, new Progress<double>(ReportProgress), cancel.Token);
             Remember(result);
+            Link(result);
             AppCommunity.Open(this, AppCommunity.Client.PackagePageUrl(package.Id));
             Ui.Info(this, F(UiStrings.Publish_Uploaded, package.Name.Length > 0 ? package.Name : manifest.Name, package.Version), UiStrings.Publish_Title);
             _upload = null;
@@ -618,6 +619,14 @@ public sealed class AssetPublishDialog : DialogBase
         });
         if (_settings.Saved.Count > AssetPublishSettings.MaxSaved) _settings.Saved.RemoveRange(AssetPublishSettings.MaxSaved, _settings.Saved.Count - AssetPublishSettings.MaxSaved);
         App.Settings.Save();
+    }
+
+    /// <summary>올린 에셋을 그 상점 ID·버전에 연결하고 작성자·라이선스를 단다(창을 열 때의 에셋 내용 기준).</summary>
+    private void Link(PublishResult result)
+    {
+        var manifest = result.Manifest!;
+        AppAssets.Try(this, () => AppAssets.Store.MarkPublished(_asset.Id, new AssetAuthor(_user.Handle, _user.Name), AssetPublishCheck.License,
+            AssetStoreLink.FromManifest(manifest, manifest.Assets[0].Id, _asset.ContentHash)), UiStrings.Publish_LinkError);
     }
 
     /// <summary>PNG 바이트 하나를 정수 배로 키워 체커 위에 그린다(목록 미리보기).</summary>

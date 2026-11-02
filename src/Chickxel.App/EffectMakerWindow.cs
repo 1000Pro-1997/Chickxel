@@ -10,8 +10,8 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 효과 만들기(설계 <c>효과-만들기-설계.md</c>): 스크립트 효과(JS)를 만들고, 올릴 때 굽는 것과 같은 미리보기(<see cref="AssetPreview.Render"/>,
-/// 병아리 견본, 선언의 <c>previewFrames</c>칸 — 미리보기 아래 칸 띠에서 칸마다 볼 수 있음)로 확인하고, 개인 스크립트 에셋으로 저장·지금 레이어에 넣기·검증·올리기(게시 창으로 이어짐)를 한다.
-/// 세 칸: 왼쪽은 내가 만든 효과 목록(모두 보기를 켜면 복사본·설치한 패키지의 스크립트도)과 제목·설명 칸, 가운데는 원문, 오른쪽은 미리보기와 미리보기 장면.
+/// 병아리 견본, 선언의 <c>previewFrames</c>칸 — 미리보기 아래 칸 띠에서 칸마다 볼 수 있음)로 확인하고, 내 스크립트 에셋으로 저장·지금 레이어에 넣기·검증·올리기(게시 창으로 이어짐)를 한다.
+/// 세 칸: 왼쪽은 내 효과 목록(모두 보기를 켜면 복사본·받은 에셋의 스크립트도)과 제목·설명 칸, 가운데는 원문, 오른쪽은 미리보기와 미리보기 장면.
 /// 아래 줄 저장·넣기 옆의 상태 단추는 상태를 색(초록 = 문제 없음, 빨강 = 오류, 노랑 = 경고만)과 짧은 글로 보이고, 누르면 자세한 상태(오류 줄 — 누르면 원문의 그 자리로)를 띄운다.
 /// 제목·설명·병아리·프레임 수 칸은 원문 선언의 <c>name</c>·<c>description</c>·<c>previewChick</c>·<c>previewFrames</c>를 고친다(원문 하나가 효과 하나 — 어느 앱에서나 같은 효과).
 /// 미리보기 설정 값의 "기본값으로"는 지금 값을 선언 settings의 <c>default</c>로 쓰고, "초기화"는 값을 원문의 기본값으로 되돌린다.
@@ -96,9 +96,9 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>스크립트를 열어 두었는지(목록에서 고르거나 새로 만듦).</summary>
     private bool _open;
-    /// <summary>목록에서 고른 항목(개인 에셋·설치한 패키지 에셋 ID, 새 스크립트면 null).</summary>
+    /// <summary>목록에서 고른 항목(에셋 ID, 새 스크립트면 null).</summary>
     private string? _shownId;
-    /// <summary>저장할 때 덮어쓸 개인 스크립트(새 스크립트·설치한 패키지에서 연 것이면 null — 저장하면 새 개인 에셋).</summary>
+    /// <summary>저장할 때 덮어쓸 내 스크립트 에셋(새 스크립트·받은 에셋에서 연 것이면 null — 저장하면 새 내 에셋).</summary>
     private string? _entryId;
     private string _source = "";
     private ScriptEffectProgram? _program;
@@ -349,7 +349,7 @@ public sealed class EffectMakerWindow : Window
         _onAccountsChanged = () => Dispatcher.UIThread.Post(() =>
         {
             // 다른 계정이 되었을 때만 목록을 새로 받는다(같은 계정의 정보 확인마다 받지 않게).
-            if (MyHandle != _uploadsHandle) LoadUploads(fetch: true);
+            if (AppAssets.MyHandle != _uploadsHandle) LoadUploads(fetch: true);
             else RebuildList();
         });
         AppCommunity.Client.AccountsChanged += _onAccountsChanged;
@@ -378,26 +378,15 @@ public sealed class EffectMakerWindow : Window
 
     // ───────────── 목록 ─────────────
 
-    /// <summary>로그인한(또는 저장해 둔) 지금 계정의 핸들 — 패키지 작성자 ID와 견줘 "내가 올린 것"을 알아본다. 로그아웃이면 null.</summary>
-    private static string? MyHandle => AppCommunity.Client.User?.Handle ?? AppCommunity.Client.Saved.Current?.User?.Handle;
-
-    /// <summary>설치한 패키지가 지금 계정으로 올린 것인지(작성자 ID = 핸들 — 서버가 올릴 때 확인하고, 올린 뒤에는 핸들이 바뀌지 않음).</summary>
-    private static bool IsMine(InstalledPackage package)
-        => MyHandle is { } handle && package.Manifest?.Author.Id == handle && !package.IsBroken;
-
     /// <summary>
-    /// 목록 항목: 기본은 내가 만든 개인 스크립트(설치한 패키지의 원문을 그대로 복사한 것은 뺌)와 이 계정으로 올린 설치 패키지의 스크립트 효과,
-    /// 모두 보기면 그 복사본과 설치한 패키지의 스크립트 효과 전부.
+    /// 목록 항목: 기본은 내 스크립트 에셋(받은 에셋의 원문을 그대로 복사한 것은 뺌), 모두 보기면 스크립트 에셋 전부.
     /// </summary>
     private IEnumerable<AssetEntry> Entries()
     {
-        var catalog = AppAssets.Catalog;
-        var installed = catalog.Packages.SelectMany(p => p.Entries).Where(e => e.Kind == AssetKinds.EffectScript).ToList();
-        var installedHashes = installed.Select(e => e.Script!.Hash).ToHashSet(StringComparer.Ordinal);
-        var personal = catalog.Personal.Where(e => e.Kind == AssetKinds.EffectScript);
-        if (_showAll.On() == true) return personal.Concat(installed);
-        var mine = catalog.Packages.Where(IsMine).SelectMany(p => p.Entries).Where(e => e.Kind == AssetKinds.EffectScript);
-        return personal.Where(e => !installedHashes.Contains(e.Script!.Hash)).Concat(mine);
+        var all = AppAssets.Catalog.Available(AssetKinds.EffectScript);
+        if (_showAll.On() == true) return all;
+        var received = all.Where(e => !AppAssets.IsMine(e)).Select(e => e.Script!.Hash).ToHashSet(StringComparer.Ordinal);
+        return all.Where(e => AppAssets.IsMine(e) && !(e.Author is null && e.Store is null && received.Contains(e.Script!.Hash)));
     }
 
     private void RebuildList()
@@ -407,19 +396,21 @@ public sealed class EffectMakerWindow : Window
         foreach (var entry in Entries())
         {
             Control content;
-            if (entry.Origin == AssetOrigin.Personal) content = Ui.IconLabel(VectorIcon.Code, entry.DisplayName);
+            if (AppAssets.IsMine(entry) && entry.Store is null) content = Ui.IconLabel(VectorIcon.Code, entry.DisplayName);
             else
             {
-                bool mine = entry.PackageId is { } packageId && AppAssets.Catalog.FindPackage(packageId) is { } package && IsMine(package);
-                string note = mine ? UiStrings.EffectMaker_Uploaded : entry.PackageName ?? entry.PackageId ?? "";
-                content = Ui.Row(Ui.IconLabel(VectorIcon.Package, entry.DisplayName), new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
+                bool mine = AppAssets.IsMine(entry);
+                string note = mine
+                    ? entry.Modified ? UiStrings.EffectMaker_UploadedModified : UiStrings.EffectMaker_Uploaded
+                    : entry.Store?.DisplayName ?? entry.Author?.Name ?? "";
+                content = Ui.Row(Ui.IconLabel(mine ? VectorIcon.Code : VectorIcon.Package, entry.DisplayName), new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
             }
             _list.Items.Add(new ListBoxItem { Content = content, Tag = entry.Id });
         }
         // 올렸지만 이 컴퓨터에 없는 효과: 회색 줄 + 오른쪽 내려받기 단추(누르면 설치하고 연다).
         foreach (var upload in _uploads)
         {
-            if (AppAssets.Catalog.FindPackage(upload.Id) is not null) continue;
+            if (AppAssets.Catalog.FromPackage(upload.Id).Count > 0) continue;
             var download = Ui.IconButton(VectorIcon.Download, UiStrings.EffectMaker_DownloadUploadedTip, (_, _) => DownloadUpload(upload), size: 13);
             download.IsEnabled = _downloadingId is null;
             download.Padding = new Thickness(5, 2);
@@ -444,8 +435,8 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     private async void LoadUploads(bool fetch)
     {
-        _uploadsHandle = MyHandle;
-        if (MyHandle is null)
+        _uploadsHandle = AppAssets.MyHandle;
+        if (_uploadsHandle is null)
         {
             _uploads = [];
             RebuildList();
@@ -465,7 +456,7 @@ public sealed class EffectMakerWindow : Window
     private void ShowUploads(RemoteCatalogSnapshot snapshot)
     {
         if (_closing.IsCancellationRequested) return;
-        string? handle = MyHandle;
+        string? handle = AppAssets.MyHandle;
         _uploads = handle is null ? [] : snapshot.Packages
             .Where(e => e.Author.Id == handle && e.Kinds.ContainsKey(AssetKinds.EffectScript))
             .OrderBy(e => e.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -483,7 +474,7 @@ public sealed class EffectMakerWindow : Window
         }
         _downloadingId = entry.Id;
         RebuildList();
-        InstalledPackage? installed;
+        IReadOnlyList<AssetEntry>? installed;
         try
         {
             installed = await AppAssets.InstallRemoteAsync(this, entry, null, _closing.Token);
@@ -494,7 +485,7 @@ public sealed class EffectMakerWindow : Window
         }
         if (_closing.IsCancellationRequested) return;
         RebuildList();
-        if (installed?.Entries.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript) is { } script && ConfirmDiscard()) TryOpen(script.Id);
+        if (installed?.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript) is { } script && ConfirmDiscard()) TryOpen(script.Id);
     }
 
     private void SelectInList(string? id)
@@ -533,29 +524,29 @@ public sealed class EffectMakerWindow : Window
             if (_list.SelectedItem is ListBoxItem { Tag: string id }) AssetManagerWindow.Open(this, null, id);
         };
         var menu = new ContextMenu { Items = { delete, manager } };
-        // 설치한 패키지의 효과는 여기서 지우지 않는다(에셋 관리자에서 패키지째로)
-        menu.Opening += (_, _) => delete.IsEnabled = _list.SelectedItem is ListBoxItem { Tag: string id } && AppAssets.Catalog.Find(id)?.Origin == AssetOrigin.Personal;
+        // 받은 에셋은 여기서 지우지 않는다(에셋 관리자에서)
+        menu.Opening += (_, _) => delete.IsEnabled = _list.SelectedItem is ListBoxItem { Tag: string id } && AppAssets.Catalog.Find(id) is { } entry && AppAssets.IsMine(entry);
         return menu;
     }
 
     private void DeleteSelected()
     {
-        if (_list.SelectedItem is not ListBoxItem { Tag: string id } || AppAssets.Catalog.Find(id) is not { Origin: AssetOrigin.Personal } entry) return;
+        if (_list.SelectedItem is not ListBoxItem { Tag: string id } || AppAssets.Catalog.Find(id) is not { } entry || !AppAssets.IsMine(entry)) return;
         if (Ui.Ask(this, string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_DeleteQuestion, entry.DisplayName), UiStrings.EffectMaker_Title,
                 MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
-        if (!AppAssets.Try(this, () => AppAssets.Store.RemovePersonal(id), UiStrings.EffectMaker_SaveError)) return;
+        if (!AppAssets.Try(this, () => AppAssets.Store.Remove(id), UiStrings.EffectMaker_SaveError)) return;
         if (id == _shownId) CloseScript();
     }
 
     /// <summary>
-    /// 스크립트 효과를 연다(저장하지 않은 고침은 부르는 쪽이 이미 확인함). 개인 에셋이면 저장할 때 그 자리를 고치고, 설치한 패키지의 것이면 저장할 때 개인 사본을 만든다.
-    /// 목록에 보이지 않는 항목(모두 보기를 끈 채 복사본·패키지 효과를 열 때)이면 모두 보기를 켠다.
+    /// 스크립트 효과를 연다(저장하지 않은 고침은 부르는 쪽이 이미 확인함). 내 에셋이면 저장할 때 그 자리를 고치고, 받은 에셋이면 저장할 때 내 사본을 만든다.
+    /// 목록에 보이지 않는 항목(모두 보기를 끈 채 복사본·받은 효과를 열 때)이면 모두 보기를 켠다.
     /// </summary>
     private void TryOpen(string id)
     {
         if (AppAssets.Catalog.Find(id) is not { Data: ScriptAsset script } entry) return;
         _shownId = id;
-        _entryId = entry.Origin == AssetOrigin.Personal ? id : null;
+        _entryId = AppAssets.IsMine(entry) ? id : null;
         Load(script.Source, saved: true, script.Scene);
         if (!_list.Items.OfType<ListBoxItem>().Any(item => (string?)item.Tag == id)) _showAll.IsChecked = true;
         SelectInList(id);
@@ -1480,8 +1471,8 @@ public sealed class EffectMakerWindow : Window
     // ───────────── 저장·넣기·올리기 ─────────────
 
     /// <summary>
-    /// 개인 스크립트 에셋으로 저장한다(오류 없이 해석될 때만, 미리보기 장면도 함께 — 고치던 장면 탭이 있으면 마지막 고침까지 읽어서).
-    /// 설치한 패키지에서 연 것이면 개인 사본이 된다. 되면 true.
+    /// 내 스크립트 에셋으로 저장한다(오류 없이 해석될 때만, 미리보기 장면도 함께 — 고치던 장면 탭이 있으면 마지막 고침까지 읽어서).
+    /// 받은 에셋에서 연 것이면 내 사본이 된다. 되면 true.
     /// </summary>
     private bool Save()
     {
@@ -1495,7 +1486,7 @@ public sealed class EffectMakerWindow : Window
         var scene = _scene;
         ScriptTrustStore.TrustLocal(ScriptLibrary.Add(_source));
         AssetEntry? saved = null;
-        if (!AppAssets.Try(this, () => saved = AppAssets.Store.SavePersonalScript(_source, _entryId, scene), UiStrings.EffectMaker_SaveError) || saved is null)
+        if (!AppAssets.Try(this, () => saved = AppAssets.Store.SaveScript(_source, _entryId, scene), UiStrings.EffectMaker_SaveError) || saved is null)
             return false;
         _entryId = _shownId = saved.Id;
         _savedSource = _source;

@@ -14,16 +14,16 @@ public class AssetPublishTests
 
     private const string NeonHit = "effect({ name: \"Neon Hit\", previewChick: \"knight\", render(img) { const d = img.data; for (let i = 0; i < d.length; i += 4) d[i] = 255 - d[i]; } });";
 
-    /// <summary>개인 스크립트 효과 하나와 그라데이션 하나가 든 저장소(효과 레시피는 올리지 않음).</summary>
+    /// <summary>이 컴퓨터에서 만든 스크립트 효과 하나와 그라데이션 하나가 든 저장소(효과 레시피는 올리지 않음).</summary>
     private static AssetStore PersonalStore(TempDir dir)
     {
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        store.SavePersonalScript(NeonHit, null, null);
-        store.SavePersonalGradient(null, AssetSamples.Gradient());
+        store.SaveScript(NeonHit, null, null);
+        store.SaveGradient(null, AssetSamples.Gradient());
         return store;
     }
 
-    private static AssetEntry ScriptEntry(AssetStore store) => store.Catalog.Personal.Single(e => e.Script is not null);
+    private static AssetEntry ScriptEntry(AssetStore store) => store.Catalog.All.Single(e => e.Script is not null && e.Author is null);
 
     private static PublishAsset Asset(AssetEntry entry) => new(entry.Kind, entry.Data, AssetPreview.Package(entry.Data));
 
@@ -125,7 +125,7 @@ public class AssetPublishTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
-        var saved = store.SavePersonalScript(
+        var saved = store.SaveScript(
             "effect({ name: \"Ground Glow\", tags: [\"glow\"], settings: [{ key: \"ground\", type: \"layer\", default: \"ground\" }], "
             + "render(img, ctx) { const g = ctx.layer(\"ground\"); if (g) img.data[0] = g.data[0]; } });", null, null);
         // 저장한 에셋의 태그(게시 창의 처음 값)에는 강제 태그가 붙어 있다
@@ -163,7 +163,7 @@ public class AssetPublishTests
         {
             var header = new AssetManifest { Id = id, Version = "1.0.0", Name = "Neon", Author = author, License = license, MinAppVersion = "1.0.0" };
             using var package = new MemoryStream();
-            store.ExportPersonal(store.Catalog.Personal.Select(e => e.Id), header, package, entry => AssetPreview.Package(entry.Data));
+            store.Export(store.Catalog.All.Select(e => e.Id), header, package, preview: entry => AssetPreview.Package(entry.Data));
             string folder = Path.Combine(dir.Path, label, "catalog", id);
             Directory.CreateDirectory(folder);
             File.WriteAllBytes(Path.Combine(folder, "pack" + AssetPackage.Extension), package.ToArray());
@@ -228,19 +228,19 @@ public class AssetPublishTests
         byte[] published = File.ReadAllBytes(Path.Combine(output, entry.Package.Url));
         Assert.Equal(result.Package, published);
 
-        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 스크립트 효과가 생기고 패키지 이름은 화면 언어로 보인다.
+        // 다른 컴퓨터: 새 저장소에 게시된 파일을 설치하면 같은 스크립트 효과가 그 상점 패키지의 작성자·라이선스·연결을 달고 생기고, 목록 이름은 화면 언어로 보인다.
         var other = AssetStore.Open(Path.Combine(dir.Path, "other", "Assets"));
-        var installed = other.Install(AssetSamples.Save(dir.Path, published, "downloaded.chickxel-asset"));
-        Assert.Equal(("pixel-cat.neon", "1.0.0", false), (installed.Id, installed.Version, installed.IsBroken));
-        var script = Assert.Single(other.Catalog.Available(AssetKinds.EffectScript));
-        Assert.Equal(("Neon Hit", "pixel-cat.neon.neon-hit"), (script.Name, script.Id));
+        var script = Assert.Single(other.InstallFile(AssetSamples.Save(dir.Path, published, "downloaded.chickxel-asset"), AssetSources.Remote));
+        Assert.Equal(script, Assert.Single(other.Catalog.Available(AssetKinds.EffectScript)));
+        Assert.Equal(("Neon Hit", "pixel-cat.neon.neon-hit", "pixel-cat.neon", "1.0.0", AssetSources.Remote), (script.Name, script.Id, script.Store!.PackageId, script.Store.Version, script.Source));
+        Assert.Equal((new AssetAuthor("pixel-cat", "Pixel Cat"), "CC0-1.0", false), (script.Author, script.License, script.Modified));
         Assert.Equal(ScriptEntry(store).Script!.Hash, script.Script!.Hash);
-        Assert.Equal(AssetPublishCheck.LicenseText, File.ReadAllText(Path.Combine(installed.Folder, AssetPublishCheck.LicenseFileName)));
+        Assert.Equal(AssetPublishCheck.LicenseText, File.ReadAllText(script.LicenseFilePath!));
         var previous = System.Globalization.CultureInfo.CurrentUICulture;
         try
         {
             System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("ja-JP");
-            Assert.Equal(("ネオンヒット", "네온처럼 색을 뒤집는 효과"), (installed.DisplayName, installed.DisplayDescription));
+            Assert.Equal(("ネオンヒット", "네온처럼 색을 뒤집는 효과"), (script.Store.DisplayName, script.Store.DisplayDescription));
             Assert.Equal(("ネオンヒット", "네온처럼 색을 뒤집는 효과"), (page.Packages[0].DisplayName, page.Packages[0].DisplaySummary));
             System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("en-US");
             Assert.Equal("Inverts colors like neon.", page.Packages[0].DisplaySummary);
@@ -259,7 +259,7 @@ public class AssetPublishTests
         // 서버는 첫(유일한) 에셋의 미리보기를 목록 미리보기로 쓴다.
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        var gradient = store.Catalog.Personal.Single(e => e.Gradient is not null);
+        var gradient = store.Catalog.All.Single(e => e.Gradient is not null);
         var request = Request(store) with { Asset = Asset(gradient) };
         var result = Check(request);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
@@ -299,71 +299,74 @@ public class AssetPublishTests
         Assert.NotEqual(id, AssetPublishCheck.DefaultId("pixel-cat", "반짝이"));
     }
 
-    // ───────────── 패키지 ID 정하기(같은 핸들 + 같은 패키지 = 업데이트) ─────────────
+    // ───────────── 패키지 ID 정하기(같은 핸들 + 같은 상점 ID = 업데이트) ─────────────
 
-    /// <summary>요청으로 만든 패키지를 <paramref name="store"/>에 설치한다(다른 컴퓨터에서 내 패키지를 내려받은 것처럼).</summary>
-    private static InstalledPackage InstallPublished(AssetStore store, TempDir dir, PublishRequest request)
+    /// <summary>요청으로 만든 패키지를 <paramref name="store"/>에 설치한다(다른 컴퓨터에서 내 패키지를 내려받은 것처럼 — 같은 내용의 내 에셋과 따로 둠).</summary>
+    private static AssetEntry InstallPublished(AssetStore store, TempDir dir, PublishRequest request)
     {
         var result = Check(request);
         Assert.True(result.Ok, string.Join("\n", result.Issues));
-        return store.Install(AssetSamples.Save(dir.Path, result.Package!, request.Id + AssetPackage.Extension));
+        return Assert.Single(store.Install(AssetSamples.Save(dir.Path, result.Package!, request.Id + AssetPackage.Extension), AssetSources.Remote,
+            _ => ImportChoice.KeepBoth));
     }
 
     [Fact]
-    public void ResolveTarget_MyInstalledPackageAndItsCopies_KeepThatPackageId()
+    public void ResolveTarget_MyListedAsset_KeepsItsStoreId_EvenAfterEditingInPlace()
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        var package = InstallPublished(store, dir, Request(store) with { Id = "pixel-cat.old-name", Name = "Old name" });
+        var received = InstallPublished(store, dir, Request(store) with { Id = "pixel-cat.old-name", Name = "Old name" });
 
-        // 그 패키지의 에셋 자체 → 그 패키지 ID
-        var packaged = Assert.Single(package.Entries);
-        var own = AssetPublishCheck.ResolveTarget("pixel-cat", store.Catalog.Find(packaged.Id)!, store.Catalog, "Renamed");
-        Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackage), (own.Id, own.Source));
+        // 내 핸들로 상점에 올라간 에셋 → 그 상점 ID(이름을 바꿔도)
+        var own = AssetPublishCheck.ResolveTarget("pixel-cat", received, store.Catalog, "Renamed");
+        Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackage, received.Id), (own.Id, own.Source, own.Existing?.Id));
 
-        // 같은 원문(해시)의 개인 에셋 → 이름을 바꿔도 그 패키지 ID
-        var copy = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Renamed");
-        Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackageCopy), (copy.Id, copy.Source));
-        Assert.Equal("pixel-cat.old-name", copy.Package!.Id);
+        // 그 자리에서 고쳐도(고친 것으로 보임) 같은 상점 ID의 새 버전
+        var edited = store.SaveScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), received.Id, null);
+        Assert.True(edited.Modified);
+        Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackage), Pair(AssetPublishCheck.ResolveTarget("pixel-cat", edited, store.Catalog, "Neon Hit")));
 
-        // 원문을 고쳐 해시가 달라도 선언 이름이 같으면 그 패키지
-        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), ScriptEntry(store).Id, null);
-        var edited = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
-        Assert.Equal(("pixel-cat.old-name", PublishIdSource.OwnPackageCopy), (edited.Id, edited.Source));
+        // 이 컴퓨터에서 만든 같은 원문의 에셋은 상점 연결이 없다 → 핸들.이름
+        var local = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Renamed");
+        Assert.Equal(("pixel-cat.renamed", PublishIdSource.Derived, null), (local.Id, local.Source, local.Existing));
 
-        // 다른 핸들로 로그인하면 내 패키지가 아니다 → 그 핸들.이름
-        var other = AssetPublishCheck.ResolveTarget("dog", store.Catalog.Find(packaged.Id)!, store.Catalog, "Neon Hit");
-        Assert.Equal(("dog.neon-hit", PublishIdSource.Derived, null), (other.Id, other.Source, other.Package));
+        // 올린 뒤 연결을 붙이면 내 상점 에셋
+        var marked = store.MarkPublished(ScriptEntry(store).Id, new AssetAuthor("pixel-cat", "Pixel Cat"), AssetPublishCheck.License,
+            AssetStoreLink.FromManifest(Check(Request(store)).Manifest!, "pixel-cat.neon.neon-hit", ScriptEntry(store).ContentHash));
+        Assert.Equal((false, false), (marked.Modified, marked.IsOwnedBy("dog")));
+        Assert.Equal(("pixel-cat.neon", PublishIdSource.OwnPackage), Pair(AssetPublishCheck.ResolveTarget("pixel-cat", marked, store.Catalog, "Neon Hit")));
+
+        // 다른 핸들로 로그인하면 내 것이 아니다 → 그 핸들.이름
+        var other = AssetPublishCheck.ResolveTarget("dog", received, store.Catalog, "Neon Hit");
+        Assert.Equal(("dog.neon-hit", PublishIdSource.Derived, null), (other.Id, other.Source, other.Existing));
     }
 
+    private static (string, PublishIdSource) Pair(PublishTarget target) => (target.Id, target.Source);
+
     [Fact]
-    public void ResolveTarget_SomeoneElsesPackage_GetsMyHandle()
+    public void ResolveTarget_SomeoneElsesAsset_GetsMyHandle()
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
         var theirs = InstallPublished(store, dir, Request(store) with { Author = new AssetAuthor("other-cat", "Other Cat"), Id = "other-cat.neon" });
-        var entry = store.Catalog.Find(Assert.Single(theirs.Entries).Id)!;
-        var target = AssetPublishCheck.ResolveTarget("pixel-cat", entry, store.Catalog, entry.Name);
-        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, null), (target.Id, target.Source, target.Package));
-        // 그 패키지의 개인 사본도 내 패키지가 아니므로 핸들.이름
-        var copy = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
-        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived), (copy.Id, copy.Source));
+        Assert.False(theirs.IsOwnedBy("pixel-cat"));
+        var target = AssetPublishCheck.ResolveTarget("pixel-cat", theirs, store.Catalog, theirs.Name);
+        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, null), (target.Id, target.Source, target.Existing));
     }
 
     [Fact]
-    public void ResolveTarget_Otherwise_DerivesFromTheName_AndPointsAtMySameNamedPackage()
+    public void ResolveTarget_Otherwise_DerivesFromTheName_AndPointsAtMyAssetListedUnderThatId()
     {
         using var dir = new TempDir();
         var store = PersonalStore(dir);
-        var gradient = store.Catalog.Personal.Single(e => e.Gradient is not null);
+        var gradient = store.Catalog.All.Single(e => e.Gradient is not null);
         var fresh = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
-        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, null), (fresh.Id, fresh.Source, fresh.Package));
+        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, null), (fresh.Id, fresh.Source, fresh.Existing));
 
-        // 이름에서 나온 ID가 다른 내용의 내 패키지(그라데이션)와 같으면 그 패키지를 가리킨다(이름이 같아 업데이트 — 창이 알림).
+        // 이름에서 나온 ID가 다른 내용의 내 상점 에셋(그라데이션)과 같으면 그 에셋을 가리킨다(같은 ID라 업데이트 — 창이 알림).
         var mine = InstallPublished(store, dir, Request(store) with { Id = "pixel-cat.neon-hit", Asset = Asset(gradient) });
         var same = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
-        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived), (same.Id, same.Source));
-        Assert.Equal(mine.Id, same.Package!.Id);
+        Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, mine.Id), (same.Id, same.Source, same.Existing?.Id));
     }
 
     // ───────────── 버전 ─────────────
@@ -400,7 +403,7 @@ public class AssetPublishTests
         Assert.Equal(first.Package, again.Package);
 
         // 내용을 바꾸고 같은 버전 → 거부, 낮은 버전 → 거부, 제안 버전 → 통과(게시 날짜는 처음 날짜를 이음).
-        store.SavePersonalScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), store.Catalog.Personal.Single(e => e.Script is not null).Id, null);
+        store.SaveScript(NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal), ScriptEntry(store).Id, null);
         Assert.Contains(Check(Request(store, "1.2.0"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         Assert.Contains(Check(Request(store, "1.1.9"), online).Issues, i => i.Code == PublishIssueCode.VersionNotNewer);
         string next = AssetPublishCheck.SuggestVersion(AssetPublishCheck.LatestVersion("pixel-cat.neon", online, []));

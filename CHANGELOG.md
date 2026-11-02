@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.76 (2026-11-02)
+### Assets are single items, not packages
+- Every effect, gradient and effect preset now stands on its own with its author, license and store version; packages are only the file format for moving assets. Importing or downloading a file adds the assets inside one by one.
+- The Asset Manager lists My assets and Received assets. Yours (made here, or published under your account, also when signed out) are edited in place; editing a received asset makes your own copy.
+- Updates compare each asset with the online store; if you edited your own published asset, you're asked before it is replaced. When an imported asset already exists you choose Replace, Keep both or Skip, optionally for the rest of the file.
+- Export… bundles the assets shown in the list with each one's author and store info. Package on/off, roll back to the previous version and the 30-day deleted list are gone; existing installs move to the new layout automatically.
+
 ## v1.14.75 (2026-11-02)
 ### Effects that read another layer run fast
 - Script effects using `ctx.layer` or `ctx.layerWithEffects` (collisions, landing on terrain) no longer drop to the slow Jint interpreter: the fast path now reads the chosen layer and handles the usual null checks (`if (!g)`, `g ? g.data : null`, `g === null`).

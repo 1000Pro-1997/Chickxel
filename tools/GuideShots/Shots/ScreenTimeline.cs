@@ -322,8 +322,8 @@ internal static class ScreenTimelineShots
     public static void LayerEffects(ShotKit k)
     {
         // 프리셋 탭에 보일 개인 효과 프리셋 둘.
-        AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
-        AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
+        AppAssets.Store.SaveRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
+        AppAssets.Store.SaveRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
         var p = Project(main);
@@ -520,9 +520,10 @@ internal static class ScreenTimelineShots
         });
         """;
 
-    /// <summary>docs/catalog의 공식 패키지 하나를 파일에서 설치한다.</summary>
+    /// <summary>docs/catalog의 공식 패키지 하나를 파일에서 가져온다(같은 상점 에셋은 바꾸고, 내용만 같은 내 에셋은 그대로 둠).</summary>
     internal static void InstallCatalogPackage(string fileName)
-        => AppAssets.Store.Install(Path.Combine(ShotKit.Root, "docs", "catalog", "packages", fileName));
+        => AppAssets.Store.Install(Path.Combine(ShotKit.Root, "docs", "catalog", "packages", fileName), AssetSources.File,
+            item => item.SameStoreAsset ? ImportChoice.Replace : ImportChoice.KeepBoth);
 
     /// <summary>
     /// 효과 프리셋: 1 = 프리셋 탭(① 현재 효과 프리셋 저장 ② 개인 프리셋 ③ 패키지 프리셋), 2 = 매개변수 창(⑤ 목록 ⑥ 이름 ⑦ 연결할 설정 ⑧ 범위·기본값),
@@ -531,8 +532,8 @@ internal static class ScreenTimelineShots
     [Shot("screen-effect-recipes")]
     public static void EffectRecipes(ShotKit k)
     {
-        AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
-        var hurt = AppAssets.Store.SavePersonalRecipe(HurtRecipe());
+        AppAssets.Store.SaveRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
+        var hurt = AppAssets.Store.SaveRecipe(HurtRecipe());
         InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.1.chickxel-asset");
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
@@ -566,8 +567,8 @@ internal static class ScreenTimelineShots
             var wrap = ShotKit.Get<Panel>(w, "_presetWrap");
             var tiles = wrap.Children.OfType<Control>().ToList();
             AssetEntry? EntryOf(Control c) => ShotKit.Get<AssetEntry?>(c, "Entry");
-            var personal = tiles.Where(t => EntryOf(t) is { Origin: AssetOrigin.Personal }).ToList();
-            var package = tiles.First(t => EntryOf(t) is { Origin: AssetOrigin.Package });
+            var personal = tiles.Where(t => EntryOf(t) is { Author: null }).ToList();
+            var package = tiles.First(t => EntryOf(t) is { Author: not null });
             var save = ShotKit.FindText(w, UiStrings.EffectPreset_SavePreset, ancestorControl: true);
             var palette = ShotKit.Bounds((Control)tabs.Parent!, w);
             var last = tiles.Select(c => ShotKit.Bounds(c, w).Bottom).DefaultIfEmpty(palette.Y + 200).Max();
@@ -607,7 +608,7 @@ internal static class ScreenTimelineShots
     [Shot("screen-script-effects")]
     public static void ScriptEffects(ShotKit k)
     {
-        AppAssets.Store.SavePersonalScript(PulseScript, null, null);
+        AppAssets.Store.SaveScript(PulseScript, null, null);
         var main = OpenTall(k, 370);
         Build(k, main, effects: true);
         int body = LayerIndex(main, "Body");

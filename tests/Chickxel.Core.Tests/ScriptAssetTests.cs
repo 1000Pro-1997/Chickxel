@@ -94,7 +94,7 @@ public class ScriptAssetTests
 
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        store.Install(AssetSamples.Save(dir.Path, bytes));
+        store.InstallFile(AssetSamples.Save(dir.Path, bytes));
 
         var entry = Assert.Single(store.Catalog.EffectTemplates);
         var script = Assert.IsType<ScriptAsset>(entry.Data);
@@ -121,39 +121,40 @@ public class ScriptAssetTests
     }
 
     [Fact]
-    public void Personal_script_asset_round_trips_and_same_source_is_not_duplicated()
+    public void Local_script_asset_round_trips_and_same_source_is_not_duplicated()
     {
         var source = Unique(OfficialEffects.Source("shine"));
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var saved = store.SavePersonalScript(source, null, null);
-        Assert.Equal(saved.Id, store.SavePersonalScript(source.ReplaceLineEndings("\r\n"), null, null).Id);
+        var saved = store.SaveScript(source, null, null);
+        Assert.Equal(saved.Id, store.SaveScript(source.ReplaceLineEndings("\r\n"), null, null).Id);
 
         var reopened = AssetStore.Open(dir.File("Assets"));
-        var entry = Assert.Single(reopened.Catalog.Personal);
-        Assert.Equal((AssetKinds.EffectScript, saved.Id, ScriptEffectProgram.HashOf(source)), (entry.Kind, entry.Id, entry.Script!.Hash));
-        var data = JsonNode.Parse(File.ReadAllText(reopened.PersonalPath))!["assets"]![0]!["data"]!;
+        var entry = Assert.Single(reopened.Catalog.All);
+        Assert.Equal((AssetKinds.EffectScript, saved.Id, ScriptEffectProgram.HashOf(source), (AssetAuthor?)null, (AssetStoreLink?)null),
+            (entry.Kind, entry.Id, entry.Script!.Hash, entry.Author, entry.Store));
+        var data = JsonNode.Parse(File.ReadAllText(reopened.LibraryPath))!["assets"]![0]!["data"]!;
         Assert.Equal(ScriptEffectProgram.NormalizeSource(source), data["source"]!.GetValue<string>());
 
-        Assert.Throws<AssetPackageException>(() => store.SavePersonalScript("effect({ name: 'x', render( {} });", null, null));
+        Assert.Throws<AssetPackageException>(() => store.SaveScript("effect({ name: 'x', render( {} });", null, null));
     }
 
     [Fact]
-    public void Editing_a_personal_script_keeps_its_id_and_replaces_the_source()
+    public void Editing_a_local_script_keeps_its_id_and_replaces_the_source()
     {
         var source = Unique(OfficialEffects.Source("shine"));
         var edited = source.Replace("빛 지나가기", "고친 빛");
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        var saved = store.SavePersonalScript(source, null, null);
+        var saved = store.SaveScript(source, null, null);
 
-        var replaced = store.SavePersonalScript(edited, saved.Id, null);
+        var replaced = store.SaveScript(edited, saved.Id, null);
 
-        var entry = Assert.Single(store.Catalog.Personal);
+        var entry = Assert.Single(store.Catalog.All);
         Assert.Equal((saved.Id, saved.Id, "고친 빛", ScriptEffectProgram.HashOf(edited)), (replaced.Id, entry.Id, entry.Name, entry.Script!.Hash));
         // 모르는 ID면 새 항목(같은 원문이 있으면 그 항목)
-        Assert.NotEqual(saved.Id, store.SavePersonalScript(source, "personal.missing", null).Id);
-        Assert.Equal(2, store.Catalog.Personal.Count);
+        Assert.NotEqual(saved.Id, store.SaveScript(source, "personal.missing", null).Id);
+        Assert.Equal(2, store.Catalog.All.Count);
     }
 
     // ───────────── 원문을 실은 레시피 ─────────────
@@ -179,20 +180,20 @@ public class ScriptAssetTests
             .OrderBy(pair => pair.Key, StringComparer.Ordinal), recipe.Scripts);
 
         using var dir = new TempDir();
-        var personal = AssetStore.Open(dir.File("A"));
-        personal.SavePersonalRecipe(recipe);
+        var local = AssetStore.Open(dir.File("A"));
+        local.SaveRecipe(recipe);
         var reopened = AssetStore.Open(dir.File("A"));
         var entry = Assert.Single(reopened.Catalog.Recipes);
         Assert.Equal(recipe.Scripts, entry.Recipe!.Scripts);
-        var json = JsonNode.Parse(File.ReadAllText(reopened.PersonalPath))!["assets"]![0]!["data"]!;
+        var json = JsonNode.Parse(File.ReadAllText(reopened.LibraryPath))!["assets"]![0]!["data"]!;
         Assert.Equal(3, json["schemaVersion"]!.GetValue<int>());
         Assert.Equal(program.Source, json["scripts"]![hash]!.GetValue<string>());
 
-        // 개인 레시피를 패키지로 내보내 다른 저장소(다른 컴퓨터)에 설치
+        // 내 레시피를 패키지로 내보내 다른 저장소(다른 컴퓨터)에 설치
         using var buffer = new MemoryStream();
-        reopened.ExportPersonal([entry.Id], AssetSamples.Header(), buffer);
+        reopened.Export([entry.Id], AssetSamples.Header(), buffer);
         var other = AssetStore.Open(dir.File("B"));
-        other.Install(AssetSamples.Save(dir.Path, buffer.ToArray()));
+        other.InstallFile(AssetSamples.Save(dir.Path, buffer.ToArray()));
         var installed = Assert.Single(other.Catalog.Recipes).Recipe!;
         Assert.Equal(recipe.Scripts, installed.Scripts);
 
@@ -228,8 +229,7 @@ public class ScriptAssetTests
     {
         using var dir = new TempDir();
         var store = AssetStore.Open(dir.File("Assets"));
-        store.SavePersonalScript(Unique(OfficialEffects.Source("shine")), null, null);
-        var script = store.Catalog.Personal.Single(entry => entry.Script is not null);
+        var script = store.SaveScript(Unique(OfficialEffects.Source("shine")), null, null);
         var result = AssetPublishCheck.Check(new PublishRequest
         {
             Author = new AssetAuthor("pixel-cat", "Pixel Cat"),

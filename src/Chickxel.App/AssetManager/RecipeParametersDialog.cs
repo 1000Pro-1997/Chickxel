@@ -52,13 +52,13 @@ public sealed class RecipeParametersDialog : DialogBase
     /// <summary>확인했을 때의 매개변수(<see cref="EffectRecipe.WithParameters"/>에 넘김).</summary>
     public IReadOnlyList<RecipeParameter> Parameters => _parameters;
 
-    /// <summary>개인 레시피의 매개변수를 고치고 확인하면 개인 에셋에 저장한다(효과 창 프리셋 탭·에셋 관리자 상세에서).</summary>
+    /// <summary>내 레시피의 매개변수를 고치고 확인하면 그 자리에 저장한다(효과 창 프리셋 탭·에셋 관리자 상세에서). 받은 레시피는 고치지 않는다.</summary>
     public static void Edit(Visual owner, AssetEntry entry)
     {
-        if (entry is not { Origin: AssetOrigin.Personal, Recipe: { } recipe }) return;
+        if (!AppAssets.IsMine(entry) || entry.Recipe is not { } recipe) return;
         var dialog = new RecipeParametersDialog(recipe);
         if (dialog.ShowDialog(owner) != DialogResult.OK) return;
-        AppAssets.Try(owner, () => AppAssets.Store.SavePersonalRecipe(recipe.WithParameters(dialog.Parameters)), UiStrings.RecipeParams_SaveError);
+        AppAssets.Try(owner, () => AppAssets.Store.SaveRecipe(recipe.WithParameters(dialog.Parameters)), UiStrings.RecipeParams_SaveError);
     }
 
     private void RebuildList(int select)

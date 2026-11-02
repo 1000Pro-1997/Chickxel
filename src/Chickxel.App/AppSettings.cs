@@ -380,14 +380,15 @@ public sealed class PaletteSetting
 }
 
 /// <summary>
-/// 에셋 게시: 마지막으로 게시 창을 연 계정의 표시 이름(개인 내보내기의 작성자 이름 — 로그인하지 않았을 때 씀)과 이 컴퓨터에서 올린 패키지
-/// (최근 것부터, 다음 버전 제안·같은 에셋 다시 올리기).
+/// 에셋 게시: 마지막으로 게시 창을 연 계정의 표시 이름(개인 내보내기의 작성자 이름 — 로그인하지 않았을 때 씀), 마지막으로 알던 계정 핸들
+/// (로그아웃해도 내가 올린 에셋을 내 것으로 봄 — <see cref="AppAssets.MyHandle"/>)과 이 컴퓨터에서 올린 패키지(최근 것부터, 다음 버전 제안·같은 에셋 다시 올리기).
 /// </summary>
 public sealed class AssetPublishSettings
 {
     public const int MaxSaved = 50;
 
     public string AuthorName { get; set; } = "";
+    public string LastHandle { get; set; } = "";
     public List<AssetPublishRecord> Saved { get; set; } = new();
 }
 

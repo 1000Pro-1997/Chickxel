@@ -8,8 +8,17 @@ namespace Chickxel.Core.Assets;
 /// <summary>패키지 작성자. <see cref="Id"/>는 영구 ID 조각(소문자·숫자·하이픈), <see cref="Url"/>은 사용자가 눌렀을 때만 여는 HTTPS 주소.</summary>
 public sealed record AssetAuthor(string Id, string Name, string? Url = null);
 
-/// <summary>manifest의 에셋 한 줄: 영구 ID(패키지 ID + "." + 조각), 종류, 패키지 안 경로, 미리보기 PNG 경로(없으면 null).</summary>
-public sealed record AssetManifestEntry(string Id, string Kind, string Path, string? Preview = null);
+/// <summary>
+/// manifest의 에셋 한 줄: 영구 ID(패키지 ID + "." + 조각), 종류, 패키지 안 경로, 미리보기 PNG 경로(없으면 null).
+/// 여러 에셋을 묶어 내보낸 파일은 에셋마다 작성자·라이선스·상점 연결을 따로 적는다(<see cref="Author"/>·<see cref="License"/>·<see cref="Store"/> —
+/// 없으면 패키지의 것을 쓴다. 예전 앱은 이 필드를 읽지 않음).
+/// </summary>
+public sealed record AssetManifestEntry(string Id, string Kind, string Path, string? Preview = null)
+{
+    public AssetAuthor? Author { get; init; }
+    public string? License { get; init; }
+    public AssetStoreLink? Store { get; init; }
+}
 
 /// <summary>
 /// <c>.chickxel-asset</c>의 <c>manifest.json</c>(계획 6.2). 표시 이름은 바꿀 수 있지만 <see cref="Id"/>는 영구적이다.
@@ -99,18 +108,8 @@ public sealed record AssetManifest
         if (o["description"] is not null && (description is null || description.Length > MaxDescriptionLength)) Bad("description");
         if (!AssetTranslations.TryRead(o["translations"], out var translations, out string? badTranslation)) Bad(badTranslation!);
 
-        AssetAuthor author = new("", "");
-        if (o["author"] is JsonObject a)
-        {
-            string authorId = AssetJson.String(a["id"]) ?? "";
-            string authorName = AssetJson.String(a["name"]) ?? "";
-            string? url = AssetJson.String(a["url"]);
-            if (!IsValidSegment(authorId)) Bad("author.id");
-            if (!IsValidName(authorName)) Bad("author.name");
-            if (a["url"] is not null && !IsHttpsUrl(url)) Bad("author.url");
-            author = new AssetAuthor(authorId, authorName.Trim(), url);
-        }
-        else Bad("author");
+        AssetAuthor? author = ReadAuthor(o["author"], "author", Bad);
+        if (o["author"] is null) Bad("author");
 
         string license = AssetJson.String(o["license"]) ?? "";
         if (!IsValidLicense(license)) Bad("license");
@@ -136,7 +135,21 @@ public sealed record AssetManifest
                 if (kind.Length == 0) Bad(field + ".kind");
                 if (path.Length == 0) Bad(field + ".path");
                 if (entry["preview"] is not null && preview is null) Bad(field + ".preview");
-                assets.Add(new AssetManifestEntry(assetId, kind, path, preview));
+                var item = new AssetManifestEntry(assetId, kind, path, preview);
+                if (entry["author"] is not null) item = item with { Author = ReadAuthor(entry["author"], field + ".author", Bad) };
+                if (entry["license"] is not null)
+                {
+                    string? itemLicense = AssetJson.String(entry["license"]);
+                    if (!IsValidLicense(itemLicense)) Bad(field + ".license");
+                    item = item with { License = itemLicense };
+                }
+                if (entry["store"] is not null)
+                {
+                    var store = AssetStoreLink.Read(entry["store"], out string? badStore);
+                    if (store is null) Bad(field + "." + badStore);
+                    item = item with { Store = store };
+                }
+                assets.Add(item);
             }
         }
         else Bad("assets");
@@ -157,8 +170,33 @@ public sealed record AssetManifest
         return new AssetManifest
         {
             SchemaVersion = schema, Id = id, Version = version, Name = name.Trim(), Description = description, Translations = translations,
-            Author = author, License = license, MinAppVersion = minApp, Assets = assets, Files = files,
+            Author = author!, License = license, MinAppVersion = minApp, Assets = assets, Files = files,
         };
+    }
+
+    /// <summary>작성자 객체를 읽는다(맞지 않는 필드마다 <paramref name="bad"/>, 객체가 아니면 null).</summary>
+    internal static AssetAuthor? ReadAuthor(JsonNode? node, string field, Action<string> bad)
+    {
+        if (node is not JsonObject a)
+        {
+            if (node is not null) bad(field);
+            return null;
+        }
+        string authorId = AssetJson.String(a["id"]) ?? "";
+        string authorName = AssetJson.String(a["name"]) ?? "";
+        string? url = AssetJson.String(a["url"]);
+        if (!IsValidSegment(authorId)) bad(field + ".id");
+        if (!IsValidName(authorName)) bad(field + ".name");
+        if (a["url"] is not null && !IsHttpsUrl(url)) bad(field + ".url");
+        return new AssetAuthor(authorId, authorName.Trim(), url);
+    }
+
+    /// <summary>작성자 JSON(<c>url</c>은 있을 때만).</summary>
+    internal static JsonObject AuthorJson(AssetAuthor author)
+    {
+        var json = new JsonObject { ["id"] = author.Id, ["name"] = author.Name };
+        if (author.Url is { Length: > 0 } url) json["url"] = url;
+        return json;
     }
 
     /// <summary>에셋 ID: 패키지 ID + "." + 조각 하나.</summary>
@@ -173,8 +211,7 @@ public sealed record AssetManifest
     /// <summary>manifest JSON(필드 순서 고정, 지금 schema로만 쓴다).</summary>
     public JsonObject ToJson()
     {
-        var author = new JsonObject { ["id"] = Author.Id, ["name"] = Author.Name };
-        if (Author.Url is { Length: > 0 } url) author["url"] = url;
+        var author = AuthorJson(Author);
         var json = new JsonObject
         {
             ["schemaVersion"] = CurrentSchemaVersion,
@@ -192,6 +229,9 @@ public sealed record AssetManifest
         {
             var item = new JsonObject { ["id"] = entry.Id, ["kind"] = entry.Kind, ["path"] = entry.Path };
             if (entry.Preview is { Length: > 0 } preview) item["preview"] = preview;
+            if (entry.Author is { } entryAuthor) item["author"] = AuthorJson(entryAuthor);
+            if (entry.License is { } entryLicense) item["license"] = entryLicense;
+            if (entry.Store is { } store) item["store"] = store.ToJson();
             assets.Add(item);
         }
         json["assets"] = assets;

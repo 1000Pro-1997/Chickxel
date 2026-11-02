@@ -42,8 +42,8 @@ internal static class ScreenAssetShots
     /// <summary>개인 에셋 셋(레시피 둘·스크립트 하나)과 설치한 공식 패키지 셋.</summary>
     private static void Seed()
     {
-        AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
-        AppAssets.Store.SavePersonalRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
+        AppAssets.Store.SaveRecipe(EffectRecipe.Capture("", "Gold outline", [new OutlineEffect { Color = new Color32(255, 230, 120, 255) }]));
+        AppAssets.Store.SaveRecipe(EffectRecipe.Capture("", "Hurt", [new HitFlashEffect { Color = new Color32(255, 80, 80, 255) }, new ShakeEffect()]));
         ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.shiny-pickup-1.0.1.chickxel-asset");
         ScreenTimelineShots.InstallCatalogPackage("chickxel.effects.hit-reaction-1.0.1.chickxel-asset");
         ScreenTimelineShots.InstallCatalogPackage("chickxel.gradients.sunset-1.0.0.chickxel-asset");
@@ -69,7 +69,7 @@ internal static class ScreenAssetShots
         {
             ShotKit.Pump(500);
             var tabs = ShotKit.Get<TabControl>(w, "_tabs");
-            ShotKit.Set(w, "_selectKey", "pkg:chickxel.effects.shiny-pickup");
+            ShotKit.Set(w, "_selectKey", "asset:" + AppAssets.Catalog.FromPackage("chickxel.effects.shiny-pickup")[0].Id);
             ShotKit.Call(w, "Refresh");
             ShotKit.Pump(800);
             var filter = ShotKit.Get<Control>(w, "_filter");

@@ -7,7 +7,7 @@ using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
-/// <summary>예전 사용자 정의 효과·그라데이션 프리셋 → 개인 에셋 한 번 옮기기(계획 14장 2단계).</summary>
+/// <summary>예전 사용자 정의 효과·그라데이션 프리셋 → 이 컴퓨터의 에셋 한 번 옮기기(계획 14장 2단계).</summary>
 public class AssetMigrationTests
 {
     private static readonly DateTime Now = new(2026, 3, 15, 12, 0, 0, DateTimeKind.Utc);
@@ -54,7 +54,7 @@ public class AssetMigrationTests
     private static string[] Json(IEnumerable<LayerEffect> effects) => effects.Select(e => EffectCodec.Write(e).ToJsonString()).ToArray();
 
     [Fact]
-    public void Run_MovesLegacyPresetsIntoPersonalAssets_WithFavorites_AndDatedBackups()
+    public void Run_MovesLegacyPresetsIntoLocalAssets_WithFavorites_AndDatedBackups()
     {
         using var setup = new Setup();
         File.WriteAllText(setup.EffectsPath, Effects);
@@ -63,7 +63,7 @@ public class AssetMigrationTests
         var legacyGradients = AssetMigration.ReadLegacyGradients(Gradients);
 
         var store = setup.Open();
-        Assert.False(store.HasPersonalFile);
+        Assert.False(store.HasLibraryFile);
         var result = AssetMigration.Run(store, setup.Legacy, Now);
 
         Assert.Equal((true, 2, 2, (string?)null), (result.Ran, result.Recipes, result.Gradients, result.Error));
@@ -78,7 +78,7 @@ public class AssetMigrationTests
         foreach (var catalog in new[] { store.Catalog, setup.Open().Catalog })
         {
             Assert.Equal(["번쩍 외곽선", "미래"], catalog.Recipes.Select(e => e.Name).ToArray());
-            Assert.All(catalog.Recipes, e => Assert.Equal(AssetOrigin.Personal, e.Origin));
+            Assert.All(catalog.Recipes, e => Assert.Equal(((AssetAuthor?)null, (AssetStoreLink?)null, AssetSources.Local), (e.Author, e.Store, e.Source)));
             for (int i = 0; i < 2; i++) Assert.Equal(Json(legacyEffects[i].Effects), Json(catalog.Recipes[i].Recipe!.Effects));
             // 예전 그림자는 같은 설정의 공식 스크립트로 옮겨지고, 레시피가 그 원문을 싣는다
             var shadow = Assert.IsType<ScriptEffect>(catalog.Recipes[0].Recipe!.Effects[1]);
@@ -124,7 +124,7 @@ public class AssetMigrationTests
         File.WriteAllText(setup.GradientsPath, Gradients);
         var store = setup.Open();
         AssetMigration.Run(store, setup.Legacy, Now);
-        byte[] personal = File.ReadAllBytes(store.PersonalPath);
+        byte[] library = File.ReadAllBytes(store.LibraryPath);
 
         // 예전 앱이 파일을 다시 만들어도 옮기지 않는다
         File.WriteAllText(setup.EffectsPath, Effects);
@@ -132,7 +132,7 @@ public class AssetMigrationTests
         var reopened = setup.Open();
         Assert.Same(AssetMigrationResult.Skipped, AssetMigration.Run(reopened, setup.Legacy, Now.AddDays(1)));
 
-        Assert.Equal(personal, File.ReadAllBytes(store.PersonalPath));
+        Assert.Equal(library, File.ReadAllBytes(store.LibraryPath));
         Assert.Equal(2, reopened.Catalog.Recipes.Count);
         Assert.Equal(2, reopened.Catalog.Gradients.Count);
         Assert.Equal(Effects, File.ReadAllText(setup.EffectsPath));
@@ -148,7 +148,7 @@ public class AssetMigrationTests
 
         Assert.Equal((true, 0, GradientPresets.BuiltIns().Count, 0, (string?)null),
             (result.Ran, result.Recipes, result.Gradients, result.Backups.Count, result.Error));
-        Assert.True(store.HasPersonalFile);
+        Assert.True(store.HasLibraryFile);
         var reopened = setup.Open();
         Assert.Empty(reopened.Catalog.Recipes);
         Assert.Equal(GradientPresets.BuiltIns().Select(p => p.Name), reopened.Catalog.Gradients.Select(e => e.Name));
@@ -156,11 +156,11 @@ public class AssetMigrationTests
         Assert.Empty(Directory.GetFiles(setup.Legacy));
     }
 
-    /// <summary>예전 파일 하나라도 읽지 못하면 아무것도 쓰지 않고(빈 목록으로 덮지 않음) 개인 에셋 쓰기를 막는다. 고친 뒤 다음 실행에 다시 옮긴다.</summary>
+    /// <summary>예전 파일 하나라도 읽지 못하면 아무것도 쓰지 않는다(빈 목록으로 덮지 않음). 고친 뒤 다음 실행에 다시 옮긴다.</summary>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Run_WithUnreadableLegacyFile_WritesNothingAndBlocksPersonalWrites(bool corruptEffects)
+    public void Run_WithUnreadableLegacyFile_WritesNothing_AndRetriesNextRun(bool corruptEffects)
     {
         using var setup = new Setup();
         string effects = corruptEffects ? "{ \"version\": 2, \"presets\": [" : Effects;
@@ -173,22 +173,44 @@ public class AssetMigrationTests
         Assert.True(result.Ran);
         Assert.NotNull(result.Error);
         Assert.Empty(result.Backups);
-        Assert.False(store.HasPersonalFile);
-        Assert.NotNull(store.PersonalError);
-        Assert.Throws<InvalidOperationException>(() => store.SavePersonalGradient(null, AssetSamples.Gradient()));
-        Assert.False(store.HasPersonalFile);
+        Assert.False(store.HasLibraryFile);
+        Assert.Empty(store.Catalog.All);
         Assert.Equal(effects, File.ReadAllText(setup.EffectsPath));
         Assert.Equal(gradients, File.ReadAllText(setup.GradientsPath));
         Assert.Empty(Directory.GetFiles(setup.Legacy, "*.backup-*"));
 
-        // 다음 실행: 파일을 고쳤으면 옮긴다
+        // 그 사이 만든 에셋은 남고, 다음 실행에 파일을 고쳤으면 그 앞에 옮긴다
+        var mine = store.SaveGradient(null, AssetSamples.Gradient("그 사이"));
         File.WriteAllText(setup.EffectsPath, Effects);
         File.WriteAllText(setup.GradientsPath, Gradients);
         var next = setup.Open();
-        Assert.Null(next.PersonalError);
         Assert.Null(AssetMigration.Run(next, setup.Legacy, Now).Error);
-        Assert.Null(next.PersonalError);
+        Assert.Null(next.LibraryError);
         Assert.Equal(2, next.Catalog.Recipes.Count);
+        Assert.Equal(["Dusk", "Plain", "그 사이"], next.Catalog.Gradients.Select(e => e.Name).ToArray());
+        Assert.Equal(mine.Id, next.Catalog.Gradients[^1].Id);
+    }
+
+    /// <summary>예전 저장소(v1)에 개인 에셋 파일이 있었으면 프리셋은 그때 이미 옮겼다: 저장소를 옮긴 뒤에도 다시 옮기지 않는다. 개인 파일이 없던 저장소는 옮긴다.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Run_AfterVersionOneStoreMigration_RunsOnlyIfTheOldStoreHadNoPersonalFile(bool hadPersonalFile)
+    {
+        using var setup = new Setup();
+        File.WriteAllText(setup.EffectsPath, Effects);
+        var v1 = new Version1Layout(setup.Root);
+        if (hadPersonalFile) v1.Personal([]);
+        else v1.Installed([]);
+
+        var store = setup.Open();
+        Assert.True(store.HasLibraryFile);
+        var result = AssetMigration.Run(store, setup.Legacy, Now);
+        Assert.Equal(!hadPersonalFile, result.Ran);
+        Assert.Equal(hadPersonalFile ? 0 : 2, setup.Open().Catalog.Recipes.Count);
+        Assert.Equal(hadPersonalFile, File.Exists(setup.EffectsPath));
+        // 어느 쪽이든 한 번뿐
+        Assert.Same(AssetMigrationResult.Skipped, AssetMigration.Run(setup.Open(), setup.Legacy, Now));
     }
 
     [Fact]
@@ -215,7 +237,7 @@ public class AssetMigrationTests
         string original = Json(AssetMigration.ReadLegacyEffects(Effects)[1].Effects)[0];
 
         // 다른 개인 에셋을 저장해 파일을 다시 써도 모르는 효과의 원본이 남는다
-        store.SavePersonalGradient(null, AssetSamples.Gradient("새 그라데이션"));
+        store.SaveGradient(null, AssetSamples.Gradient("새 그라데이션"));
         var reopened = setup.Open();
         var recipe = reopened.Catalog.Recipes.Single(e => e.Name == "미래").Recipe!;
         var missing = Assert.IsType<MissingEffect>(recipe.Effects[0]);

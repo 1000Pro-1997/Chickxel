@@ -5,45 +5,73 @@ using Chickxel.Core.IO;
 
 namespace Chickxel.Core.Assets;
 
+/// <summary>가져오는 에셋이 이미 있는 에셋과 겹칠 때 할 일.</summary>
+public enum ImportChoice
+{
+    /// <summary>있는 에셋을 새것으로 바꾼다(ID·즐겨찾기는 그대로).</summary>
+    Replace,
+    /// <summary>가져오지 않는다.</summary>
+    Skip,
+    /// <summary>새 에셋으로 하나 더 둔다.</summary>
+    KeepBoth,
+}
+
+/// <summary>
+/// 가져오는 패키지 파일 안의 에셋 하나(<see cref="AssetStore.Install"/>가 겹칠 때 묻는 값): 읽은 값, 이 에셋의 작성자·라이선스·상점 연결,
+/// 겹치는 기존 에셋(같은 상점 에셋, 아니면 같은 종류·같은 내용 — 없으면 null).
+/// </summary>
+public sealed record AssetImportItem(string Kind, IAssetData Data, AssetAuthor? Author, string? License, AssetStoreLink? Store, AssetEntry? Existing)
+{
+    public string DisplayName => Data is ScriptAsset script ? script.NameFor(CultureInfo.CurrentUICulture) : Data.Name;
+
+    /// <summary>기존 에셋과 같은 상점 에셋인지(같은 패키지 ID·에셋 ID — 업데이트나 다시 설치).</summary>
+    public bool SameStoreAsset => Existing?.Store is { } have && Store is { } incoming && have.PackageId == incoming.PackageId && have.AssetId == incoming.AssetId;
+
+    /// <summary>기존 에셋과 내용이 같은지.</summary>
+    public bool SameContent => Existing is { } existing && existing.ContentHash == AssetContent.HashOf(Kind, Data);
+}
+
 /// <summary>
 /// 로컬 에셋 저장소(계획 7장). 앱 설정 폴더의 <c>Chickxel/Assets/</c> 아래:
 /// <code>
-/// installed.json                 설치 상태(버전, 켜짐, 출처, 설치 시각, 자동 업데이트, 이전 버전)
-/// Packages/&lt;id&gt;/&lt;version&gt;/       설치한 패키지 원본(읽기 전용 — manifest.json, assets/, previews/, 문서)
-/// Personal/personal-assets.json  개인 에셋(효과 레시피·그라데이션)과 즐겨찾기
-/// Personal/scenes/&lt;id&gt;.png     개인 스크립트의 미리보기 장면(<see cref="PreviewScene.ToPng"/>)
-/// Deleted/&lt;id&gt;@&lt;시각&gt;/          삭제한 패키지 보관함(30일 뒤 지움, 되돌리기 가능)
-/// Staging/                       설치 중 임시 파일(열 때 비움)
-/// Cache/                         원격 카탈로그 cache(<see cref="RemoteAssetClient"/> — 목록, 미리보기, 내려받는 중인 파일)
+/// library.json          모든 에셋(값, 작성자·라이선스·상점 연결, 들어온 길·시각, 딸린 파일 폴더)과 즐겨찾기
+/// Files/&lt;폴더&gt;/        에셋에 딸린 파일(preview.png 받은 미리보기, scene.png 미리보기 장면, LICENSE.txt|md 받은 라이선스 문서)
+/// Staging/              가져오는 중 임시 파일(열 때 비움)
+/// Cache/                원격 카탈로그 cache(<see cref="RemoteAssetClient"/>)
+/// v1-backup/            예전 저장소(설치 패키지 폴더·개인 에셋 파일)를 옮긴 뒤 남긴 원본
 /// </code>
-/// 설치·업데이트는 Staging에서 검사와 풀기를 끝낸 뒤 버전 폴더를 한 번에 옮기고(rename), 마지막에 installed.json을 임시 파일 + 바꿔치기로 쓴다.
-/// 어느 단계에서 프로세스가 죽어도 이전 상태 파일은 그대로이고, 다음에 열 때 반쯤 된 폴더를 치운다(<see cref="Open"/>).
-/// 네트워크는 다루지 않는다 — 원격 내려받기는 파일을 받은 뒤 <see cref="Install"/>을 부른다.
-/// 저장소를 바꾸는 메서드는 한 스레드(앱의 UI 스레드)에서 부른다. 앱을 여러 개 띄워 같은 저장소를 쓰면, 바꾸기 전에 잠금 파일을 잡고
-/// 다른 앱이 그 사이 쓴 상태 파일을 다시 읽은 뒤 바꾼다(한쪽이 다른 쪽의 설치·개인 에셋을 덮어 지우지 않게).
+/// 에셋 하나하나가 단위다: 패키지 파일(<c>.chickxel-asset</c>)은 옮길 때만 쓰고, 가져오면 안의 에셋을 하나씩 넣는다(<see cref="Install"/>).
+/// 딸린 파일은 바꿀 때마다 새 폴더에 쓰고 library.json을 임시 파일 + 바꿔치기로 쓴 뒤 옛 폴더를 지운다 — 어느 단계에서 끊겨도 이전 상태가 그대로이고,
+/// 쓰이지 않는 폴더는 다음에 열 때 치운다. 네트워크는 다루지 않는다. 저장소를 바꾸는 메서드는 한 스레드(앱의 UI 스레드)에서 부른다.
+/// 앱을 여러 개 띄워 같은 저장소를 쓰면, 바꾸기 전에 잠금 파일을 잡고 다른 앱이 그 사이 쓴 파일을 다시 읽은 뒤 바꾼다.
 /// </summary>
-public sealed class AssetStore
+public sealed partial class AssetStore
 {
-    public const string InstalledFileName = "installed.json", PersonalFileName = "personal-assets.json";
-    public const int InstalledSchemaVersion = 1, PersonalSchemaVersion = 1;
-    public const string PersonalIdPrefix = "personal.";
-    /// <summary>삭제한 패키지를 보관하는 날 수.</summary>
-    public const int DeletedRetentionDays = 30;
-    /// <summary>업데이트 뒤 되돌리기용으로 남기는 이전 버전 수.</summary>
-    public const int KeptPreviousVersions = 1;
+    public const string LibraryFileName = "library.json";
+    public const int LibrarySchemaVersion = 2;
+    /// <summary>이 컴퓨터에서 새로 만든 에셋 ID의 앞부분(뒤는 GUID).</summary>
+    public const string LocalIdPrefix = "personal.";
+    /// <summary>개인 내보내기 파일의 작성자 ID·패키지 ID 앞부분(<c>personal.</c>) — 가져올 때 작성자·상점 연결로 보지 않는다.</summary>
+    public const string PersonalAuthorId = "personal";
+
+    private const string PreviewFile = "preview.png", SceneFile = "scene.png";
 
     private readonly AssetValidationOptions _options;
-    private List<InstalledPackageState> _installed = [];
-    private List<PersonalRecord> _personal = [];
+    private List<Record> _records = [];
     private HashSet<string> _favorites = new(StringComparer.Ordinal);
     private readonly List<string> _loadErrors = [];
-    /// <summary>마지막으로 읽거나 쓴 상태 파일의 (수정 시각, 길이) — 다른 앱이 바꿨는지 볼 때 쓴다.</summary>
-    private (DateTime, long) _installedStamp, _personalStamp;
+    /// <summary>예전 프리셋 파일(<see cref="AssetMigration"/>)을 이미 옮겼는지(library.json의 <c>legacyPresets</c>).</summary>
+    private bool _legacyPresetsDone;
+    /// <summary>마지막으로 읽거나 쓴 library.json의 (수정 시각, 길이) — 다른 앱이 바꿨는지 볼 때 쓴다.</summary>
+    private (DateTime, long) _libraryStamp;
     private FileStream? _lock;
     private int _lockDepth;
 
-    /// <summary>개인 에셋 파일의 한 줄. 읽지 못한 줄(모르는 종류, 미래 schema)은 <see cref="Raw"/>를 그대로 다시 쓴다.</summary>
-    private sealed record PersonalRecord(string Id, string Kind, DateTime CreatedUtc, IAssetData? Data, JsonObject? Raw);
+    /// <summary>
+    /// library.json의 한 줄. <see cref="Files"/>는 딸린 파일 폴더 이름(<c>Files/</c> 아래, 없으면 null). 읽지 못한 줄(모르는 종류, 미래 형식)은 <see cref="Raw"/>를 그대로 다시 쓴다.
+    /// </summary>
+    private sealed record Record(string Id, string Kind, DateTime AddedUtc, string Source, IAssetData? Data, AssetAuthor? Author, string? License,
+        AssetStoreLink? Store, string? Files, JsonObject? Raw);
 
     private AssetStore(string root, AssetValidationOptions options)
     {
@@ -52,44 +80,35 @@ public sealed class AssetStore
     }
 
     public string Root { get; }
-    public string PackagesDirectory => Path.Combine(Root, "Packages");
-    public string PersonalDirectory => Path.Combine(Root, "Personal");
+    public string FilesDirectory => Path.Combine(Root, "Files");
     public string StagingDirectory => Path.Combine(Root, "Staging");
-    public string DeletedDirectory => Path.Combine(Root, "Deleted");
     public string CacheDirectory => Path.Combine(Root, "Cache");
-    public string InstalledPath => Path.Combine(Root, InstalledFileName);
-    public string PersonalPath => Path.Combine(PersonalDirectory, PersonalFileName);
-    /// <summary>개인 스크립트의 미리보기 장면 파일 폴더(<c>Personal/scenes/&lt;에셋 ID&gt;.png</c> — <see cref="PreviewScene.ToPng"/>).</summary>
-    public string ScenesDirectory => Path.Combine(PersonalDirectory, "scenes");
+    public string LibraryPath => Path.Combine(Root, LibraryFileName);
 
-    /// <summary>개인 에셋 파일이 있는지(없으면 예전 프리셋 migration 전 — <see cref="AssetMigration"/>).</summary>
-    public bool HasPersonalFile => File.Exists(PersonalPath);
+    /// <summary>library.json이 있는지.</summary>
+    public bool HasLibraryFile => File.Exists(LibraryPath);
 
     /// <summary>
-    /// 개인 에셋을 쓸 수 없는 까닭(파일이 손상됐거나 미래 schema, migration 실패). null이면 쓸 수 있다.
-    /// 쓸 수 없으면 개인 에셋을 바꾸는 메서드가 <see cref="InvalidOperationException"/>을 던진다 — 읽지 못한 파일을 빈 목록으로 덮어쓰지 않는다.
+    /// 저장소를 쓸 수 없는 까닭(파일이 손상됐거나 미래 형식, migration 실패). null이면 쓸 수 있다.
+    /// 쓸 수 없으면 바꾸는 메서드가 <see cref="InvalidOperationException"/>을 던진다 — 읽지 못한 파일을 빈 목록으로 덮어쓰지 않는다.
     /// </summary>
-    public string? PersonalError { get; private set; }
+    public string? LibraryError { get; private set; }
 
-    /// <summary>installed.json을 쓸 수 없는 까닭(손상·미래 schema). null이면 설치·삭제 가능.</summary>
-    public string? PackagesError { get; private set; }
-
-    /// <summary>열 때 만난 문제(손상된 상태 파일 등). 앱이 한 번 알린다.</summary>
+    /// <summary>열 때 만난 문제(손상된 파일, 옮기지 못한 예전 패키지 등). 앱이 한 번 알린다.</summary>
     public IReadOnlyList<string> LoadErrors => _loadErrors;
 
     public AssetCatalog Catalog { get; private set; } = AssetCatalog.Empty;
 
-    /// <summary>카탈로그가 바뀌었다(설치, 켜기·끄기, 삭제, 개인 에셋 저장). 바꾼 스레드에서 부른다.</summary>
+    /// <summary>카탈로그가 바뀌었다(가져오기, 저장, 삭제, 즐겨찾기). 바꾼 스레드에서 부른다.</summary>
     public event Action? Changed;
 
-    /// <summary>테스트용: 설치·삭제 단계 이름("staged", "extracted", "moved", "committed", "archived", "personal")마다 불린다.</summary>
+    /// <summary>테스트용: 단계 이름("staged", "files", "committed")마다 불린다.</summary>
     internal Action<string>? StepHook { get; set; }
 
     /// <summary>
-    /// 저장소를 연다(폴더가 없으면 만든다). 중간에 끊긴 설치·삭제를 정리한다: Staging 비우기, 상태에 없는 버전 폴더 지우기,
-    /// 보관함으로 옮긴 뒤 상태를 쓰지 못한 삭제 마무리, 오래된 보관함 지우기. 정리는 잠금 파일을 바로 잡을 수 있을 때만 한다 — 다른 앱이나 같은 폴더의
-    /// 다른 저장소 객체가 설치하는 중이면 그 Staging·새 폴더를 지우지 않게 건너뛴다(다음에 열 때 정리).
-    /// 상태 파일이 손상돼도 예외 없이 열고 <see cref="LoadErrors"/>에 남긴다.
+    /// 저장소를 연다(폴더가 없으면 만든다). 예전 저장소(설치 패키지 폴더·개인 에셋 파일)가 있고 library.json이 없으면 한 번 옮긴다.
+    /// 잠금 파일을 바로 잡을 수 있으면 Staging과 쓰이지 않는 딸린 파일 폴더를 치운다(다른 앱이 쓰는 중이면 건너뜀).
+    /// 파일이 손상돼도 예외 없이 열고 <see cref="LoadErrors"/>에 남긴다.
     /// </summary>
     public static AssetStore Open(string root, AssetValidationOptions? options = null, DateTime? nowUtc = null)
     {
@@ -100,13 +119,17 @@ public sealed class AssetStore
 
     private void Load(DateTime nowUtc)
     {
-        foreach (var dir in new[] { Root, PackagesDirectory, PersonalDirectory, StagingDirectory, DeletedDirectory, CacheDirectory })
+        foreach (var dir in new[] { Root, FilesDirectory, StagingDirectory, CacheDirectory })
             Directory.CreateDirectory(dir);
+        if (!HasLibraryFile && HasVersion1Files)
+        {
+            using var change = BeginChange();
+            if (!HasLibraryFile) MigrateVersion1(nowUtc);
+        }
         using var cleanup = TryLockNow();
         if (cleanup is not null) TryDeleteContents(StagingDirectory);
-        LoadInstalled();
-        LoadPersonal();
-        if (PackagesError is null && cleanup is not null) Repair(nowUtc);
+        LoadLibrary();
+        if (LibraryError is null && cleanup is not null) RemoveUnusedFiles();
         Rebuild(notify: false);
     }
 
@@ -124,7 +147,7 @@ public sealed class AssetStore
     }
 
     /// <summary>
-    /// 다른 앱이나 같은 폴더의 다른 저장소 객체(예: 백그라운드 공식 효과 설치)가 바꾼 상태 파일을 다시 읽는다(바뀌었으면 <see cref="Changed"/>).
+    /// 다른 앱이나 같은 폴더의 다른 저장소 객체(예: 백그라운드 공식 효과 설치)가 바꾼 파일을 다시 읽는다(바뀌었으면 <see cref="Changed"/>).
     /// 그쪽이 바꾸는 중이면 끝날 때까지 기다린다.
     /// </summary>
     public void Refresh()
@@ -132,118 +155,75 @@ public sealed class AssetStore
         using var change = BeginChange();
     }
 
-    // ───────────── 상태 파일 ─────────────
+    // ───────────── library.json ─────────────
 
-    private void LoadInstalled()
+    private void LoadLibrary()
     {
-        if (!File.Exists(InstalledPath)) return;
+        if (!HasLibraryFile) return;
         try
         {
             var issues = new List<AssetIssue>();
-            var node = AssetJson.Parse(File.ReadAllBytes(InstalledPath), InstalledFileName, 16, 4096, issues) as JsonObject
-                       ?? throw new InvalidDataException(issues.FirstOrDefault()?.Message ?? InstalledFileName);
-            if (!AssetJson.TryInt(node["schemaVersion"], out int schema) || schema < 1) throw new InvalidDataException(InstalledFileName);
-            if (schema > InstalledSchemaVersion) throw new InvalidDataException(new AssetIssue(AssetIssueCode.FutureSchema, InstalledFileName, schema.ToString(CultureInfo.InvariantCulture)).Message);
-            var list = new List<InstalledPackageState>();
-            foreach (var item in node["packages"] as JsonArray ?? [])
-            {
-                if (item is not JsonObject o) continue;
-                string id = AssetJson.String(o["id"]) ?? "", version = AssetJson.String(o["version"]) ?? "";
-                if (!AssetManifest.IsValidId(id) || !AssetManifest.IsValidVersion(version) || list.Any(p => p.Id == id)) continue;
-                list.Add(new InstalledPackageState
-                {
-                    Id = id,
-                    Version = version,
-                    Enabled = !AssetJson.TryBool(o["enabled"], out bool enabled) || enabled,
-                    Source = AssetJson.String(o["source"]) ?? "file",
-                    InstalledUtc = DateTime.TryParse(AssetJson.String(o["installedAt"]), CultureInfo.InvariantCulture,
-                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at) ? at : default,
-                    AutoUpdate = AssetJson.TryBool(o["autoUpdate"], out bool auto) && auto,
-                    PreviousVersions = (o["previousVersions"] as JsonArray ?? []).Select(AssetJson.String)
-                        .Where(v => AssetManifest.IsValidVersion(v) && v != version).Select(v => v!).Distinct().ToArray(),
-                });
-            }
-            _installed = list;
-            _installedStamp = StampOf(InstalledPath);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
-        {
-            PackagesError = ex.Message;
-            _loadErrors.Add($"{InstalledFileName}: {ex.Message}");
-        }
-    }
-
-    private void SaveInstalled(IReadOnlyList<InstalledPackageState> list)
-    {
-        if (PackagesError is { } error) throw new InvalidOperationException(error);
-        var packages = new JsonArray();
-        foreach (var state in list)
-            packages.Add(new JsonObject
-            {
-                ["id"] = state.Id,
-                ["version"] = state.Version,
-                ["enabled"] = state.Enabled,
-                ["source"] = state.Source,
-                ["installedAt"] = state.InstalledUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-                ["autoUpdate"] = state.AutoUpdate,
-                ["previousVersions"] = new JsonArray(state.PreviousVersions.Select(v => (JsonNode)JsonValue.Create(v)!).ToArray()),
-            });
-        AtomicFile.Write(InstalledPath, AssetJson.ToUtf8(new JsonObject { ["schemaVersion"] = InstalledSchemaVersion, ["packages"] = packages }));
-        _installed = list.ToList();
-        _installedStamp = StampOf(InstalledPath);
-    }
-
-    private void LoadPersonal()
-    {
-        if (!File.Exists(PersonalPath)) return;
-        try
-        {
-            var issues = new List<AssetIssue>();
-            var node = AssetJson.Parse(File.ReadAllBytes(PersonalPath), PersonalFileName, 64, 1 << 20, issues) as JsonObject
-                       ?? throw new InvalidDataException(issues.FirstOrDefault()?.Message ?? PersonalFileName);
-            if (!AssetJson.TryInt(node["schemaVersion"], out int schema) || schema < 1) throw new InvalidDataException(PersonalFileName);
-            if (schema > PersonalSchemaVersion) throw new InvalidDataException(new AssetIssue(AssetIssueCode.FutureSchema, PersonalFileName, schema.ToString(CultureInfo.InvariantCulture)).Message);
-            var records = new List<PersonalRecord>();
+            var node = AssetJson.Parse(File.ReadAllBytes(LibraryPath), LibraryFileName, 64, 1 << 20, issues) as JsonObject
+                       ?? throw new InvalidDataException(issues.FirstOrDefault()?.Message ?? LibraryFileName);
+            if (!AssetJson.TryInt(node["schemaVersion"], out int schema) || schema < LibrarySchemaVersion) throw new InvalidDataException(LibraryFileName);
+            if (schema > LibrarySchemaVersion) throw new InvalidDataException(new AssetIssue(AssetIssueCode.FutureSchema, LibraryFileName, schema.ToString(CultureInfo.InvariantCulture)).Message);
+            var records = new List<Record>();
             foreach (var item in node["assets"] as JsonArray ?? [])
-            {
-                if (item is not JsonObject o) continue;
-                string id = AssetJson.String(o["id"]) ?? "", kind = AssetJson.String(o["kind"]) ?? "";
-                if (id.Length == 0 || records.Any(r => r.Id == id)) continue;
-                DateTime created = DateTime.TryParse(AssetJson.String(o["createdAt"]), CultureInfo.InvariantCulture,
-                    DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at) ? at : default;
-                IAssetData? data = null;
-                if (AssetKinds.Find(kind) is { } definition && o["data"] is JsonObject json)
-                {
-                    // 개인 에셋은 앱이 쓴 데이터: 느슨하게 읽어 모르는 효과도 보존한다. 읽지 못한 줄은 원본 그대로 남긴다.
-                    var context = new AssetReadContext(id, strict: false) { AssetId = id };
-                    data = definition.ReadPersonal(json, context);
-                    if (data is not null && data.Id != id) data = WithId(data, id);
-                    if (data is ScriptAsset script) data = WithPersonalScene(script, id);
-                }
-                records.Add(new PersonalRecord(id, kind, created, data, data is null ? (JsonObject)o.DeepClone() : null));
-            }
-            _personal = records;
+                if (item is JsonObject o && ReadRecord(o) is { } record && records.All(r => r.Id != record.Id))
+                    records.Add(record);
+            _records = records;
             _favorites = new HashSet<string>((node["favorites"] as JsonArray ?? []).Select(AssetJson.String).OfType<string>(), StringComparer.Ordinal);
-            _personalStamp = StampOf(PersonalPath);
+            _legacyPresetsDone = AssetJson.TryBool(node["legacyPresets"], out bool legacy) && legacy;
+            _libraryStamp = StampOf(LibraryPath);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            PersonalError = ex.Message;
-            _loadErrors.Add($"{PersonalFileName}: {ex.Message}");
+            LibraryError = ex.Message;
+            _loadErrors.Add($"{LibraryFileName}: {ex.Message}");
         }
     }
 
-    private void SavePersonal(List<PersonalRecord> records, HashSet<string> favorites)
+    /// <summary>한 줄을 읽는다. 값을 읽지 못하면(모르는 종류·효과) 원본을 그대로 둔 줄, ID가 없으면 null.</summary>
+    private Record? ReadRecord(JsonObject o)
     {
-        if (PersonalError is { } error) throw new InvalidOperationException(error);
-        WritePersonalFile(records, favorites);
-        _personal = records;
+        string id = AssetJson.String(o["id"]) ?? "", kind = AssetJson.String(o["kind"]) ?? "";
+        if (id.Length == 0) return null;
+        DateTime added = DateTime.TryParse(AssetJson.String(o["addedAt"]), CultureInfo.InvariantCulture,
+            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at) ? at : default;
+        string source = AssetJson.String(o["source"]) ?? AssetSources.Local;
+        string? files = AssetJson.String(o["files"]);
+        if (files is not null && !IsFilesFolder(files)) files = null;
+        bool bad = false;
+        var author = o["author"] is null ? null : AssetManifest.ReadAuthor(o["author"], "author", _ => bad = true);
+        string? license = AssetJson.String(o["license"]);
+        if (license is not null && !AssetManifest.IsValidLicense(license)) bad = true;
+        var store = o["store"] is null ? null : AssetStoreLink.Read(o["store"], out _);
+        if (o["store"] is not null && store is null) bad = true;
+        IAssetData? data = null;
+        if (!bad && AssetKinds.Find(kind) is { } definition && o["data"] is JsonObject json)
+        {
+            // 저장소는 앱이 쓴 데이터: 느슨하게 읽어 모르는 효과도 보존한다. 읽지 못한 줄은 원본 그대로 남긴다.
+            var context = new AssetReadContext(id, strict: false) { AssetId = id };
+            data = definition.ReadPersonal(json, context);
+            if (data is not null && data.Id != id) data = WithId(data, id);
+            if (data is ScriptAsset script && files is not null) data = WithSceneFile(script, Path.Combine(FilesDirectory, files, SceneFile));
+        }
+        return data is null
+            ? new Record(id, kind, added, source, null, null, null, null, files, (JsonObject)o.DeepClone())
+            : new Record(id, kind, added, source, data, author, license, store, files, null);
+    }
+
+    private void SaveLibrary(List<Record> records, HashSet<string> favorites)
+    {
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        WriteLibraryFile(records, favorites);
+        _records = records;
         _favorites = favorites;
-        StepHook?.Invoke("personal");
+        StepHook?.Invoke("committed");
         Rebuild(notify: true);
     }
 
-    private void WritePersonalFile(List<PersonalRecord> records, HashSet<string> favorites)
+    private void WriteLibraryFile(List<Record> records, HashSet<string> favorites)
     {
         var assets = new JsonArray();
         foreach (var record in records)
@@ -253,28 +233,30 @@ public sealed class AssetStore
                 assets.Add(raw.DeepClone());
                 continue;
             }
-            var definition = AssetKinds.Find(record.Kind)!;
-            var data = definition.WritePersonal(record.Data!, record.Id);
-            assets.Add(new JsonObject
+            var json = new JsonObject
             {
                 ["id"] = record.Id,
                 ["kind"] = record.Kind,
-                ["createdAt"] = record.CreatedUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-                ["data"] = data,
-            });
+                ["addedAt"] = record.AddedUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+                ["source"] = record.Source,
+            };
+            if (record.Files is { } files) json["files"] = files;
+            if (record.Author is { } author) json["author"] = AssetManifest.AuthorJson(author);
+            if (record.License is { } license) json["license"] = license;
+            if (record.Store is { } store) json["store"] = store.ToJson();
+            json["data"] = AssetKinds.Find(record.Kind)!.WritePersonal(record.Data!, record.Id);
+            assets.Add(json);
         }
         var known = records.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
-        // 즐겨찾기는 개인 에셋과 설치 에셋 ID를 모두 담는다(패키지를 지웠다 다시 설치해도 남게 설치 에셋 ID는 지우지 않는다).
-        var favs = new JsonArray(favorites.Where(id => !id.StartsWith(PersonalIdPrefix, StringComparison.Ordinal) || known.Contains(id))
-            .Order(StringComparer.Ordinal).Select(id => (JsonNode)JsonValue.Create(id)!).ToArray());
-        Directory.CreateDirectory(PersonalDirectory);
-        AtomicFile.Write(PersonalPath, AssetJson.ToUtf8(new JsonObject
+        var favs = new JsonArray(favorites.Where(known.Contains).Order(StringComparer.Ordinal).Select(id => (JsonNode)JsonValue.Create(id)!).ToArray());
+        AtomicFile.Write(LibraryPath, AssetJson.ToUtf8(new JsonObject
         {
-            ["schemaVersion"] = PersonalSchemaVersion,
+            ["schemaVersion"] = LibrarySchemaVersion,
             ["assets"] = assets,
             ["favorites"] = favs,
+            ["legacyPresets"] = _legacyPresetsDone,
         }));
-        _personalStamp = StampOf(PersonalPath);
+        _libraryStamp = StampOf(LibraryPath);
     }
 
     // ───────────── 여러 앱 ─────────────
@@ -290,11 +272,11 @@ public sealed class AssetStore
 
     private string LockPath => Path.Combine(Root, LockFileName);
 
-    /// <summary>잠금 파일을 잡을 때까지 기다리는 최대 시간(다른 앱이 설치 중이면 끝날 때까지).</summary>
+    /// <summary>잠금 파일을 잡을 때까지 기다리는 최대 시간(다른 앱이 가져오는 중이면 끝날 때까지).</summary>
     private static readonly TimeSpan LockTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// 저장소를 바꾸기 시작: 잠금 파일을 잡고(다른 앱이 쥐고 있으면 기다림) 다른 앱이 쓴 상태 파일을 다시 읽는다. 돌려받은 것을 닫으면 잠금을 푼다.
+    /// 저장소를 바꾸기 시작: 잠금 파일을 잡고(다른 앱이 쥐고 있으면 기다림) 다른 앱이 쓴 library.json을 다시 읽는다. 돌려받은 것을 닫으면 잠금을 푼다.
     /// 바꾸는 메서드 안에서 다시 불러도 된다.
     /// </summary>
     private IDisposable BeginChange()
@@ -338,195 +320,66 @@ public sealed class AssetStore
         }
     }
 
-    /// <summary>다른 앱이 상태 파일을 바꿨으면 다시 읽는다(읽지 못하면 그 까닭을 남겨 덮어쓰지 않는다).</summary>
+    /// <summary>다른 앱이 library.json을 바꿨으면 다시 읽는다(읽지 못하면 그 까닭을 남겨 덮어쓰지 않는다).</summary>
     private void ReloadIfChanged()
     {
-        bool changed = false;
-        if (StampOf(InstalledPath) != _installedStamp)
-        {
-            PackagesError = null;
-            _installed = [];
-            LoadInstalled();
-            _installedStamp = StampOf(InstalledPath);
-            changed = true;
-        }
-        if (StampOf(PersonalPath) != _personalStamp && PersonalError is null)
-        {
-            _personal = [];
-            _favorites = new HashSet<string>(StringComparer.Ordinal);
-            LoadPersonal();
-            _personalStamp = StampOf(PersonalPath);
-            changed = true;
-        }
-        if (changed) Rebuild(notify: true);
-    }
-
-    // ───────────── 정리 ─────────────
-
-    /// <summary>끊긴 설치·삭제를 마무리하고 오래된 보관함을 지운다.</summary>
-    private void Repair(DateTime nowUtc)
-    {
-        // 보관함: package 폴더나 entry.json이 없는 것(옮기기 전에 끊긴 삭제)과 보관 기간이 지난 것을 지운다.
-        foreach (var archive in SafeDirectories(DeletedDirectory))
-        {
-            var deleted = ReadArchive(archive);
-            if (deleted is null || nowUtc - deleted.DeletedUtc > TimeSpan.FromDays(DeletedRetentionDays)) TryDeleteDirectory(archive);
-        }
-
-        // 활성 버전 폴더가 없는 상태 줄: 보관함으로 옮긴 뒤 상태를 쓰지 못한 삭제(또는 되돌리기 중 끊김)면 삭제를 마무리한다.
-        var archived = SafeDirectories(DeletedDirectory).Select(ReadArchive).OfType<DeletedPackage>().Select(d => d.Id).ToHashSet(StringComparer.Ordinal);
-        var states = _installed.ToList();
-        bool changed = states.RemoveAll(s => !Directory.Exists(VersionFolder(s.Id, s.Version)) && archived.Contains(s.Id)) > 0;
-        if (changed) TrySaveInstalled(states);
-
-        // 상태에 없는 패키지·버전 폴더는 반쯤 된 설치다(옮긴 뒤 상태를 쓰기 전에 끊김).
-        foreach (var packageDir in SafeDirectories(PackagesDirectory))
-        {
-            var state = _installed.FirstOrDefault(s => s.Id == Path.GetFileName(packageDir));
-            if (state is null)
-            {
-                TryDeleteDirectory(packageDir);
-                continue;
-            }
-            foreach (var versionDir in SafeDirectories(packageDir))
-            {
-                string version = Path.GetFileName(versionDir);
-                if (version != state.Version && !state.PreviousVersions.Contains(version)) TryDeleteDirectory(versionDir);
-            }
-        }
-    }
-
-    private void TrySaveInstalled(IReadOnlyList<InstalledPackageState> states)
-    {
-        try
-        {
-            SaveInstalled(states);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _loadErrors.Add($"{InstalledFileName}: {ex.Message}");
-        }
+        if (StampOf(LibraryPath) == _libraryStamp) return;
+        LibraryError = null;
+        _records = [];
+        _favorites = new HashSet<string>(StringComparer.Ordinal);
+        _legacyPresetsDone = false;
+        LoadLibrary();
+        _libraryStamp = StampOf(LibraryPath);
+        Rebuild(notify: true);
     }
 
     // ───────────── 카탈로그 ─────────────
 
     private void Rebuild(bool notify)
     {
-        var personal = _personal.Where(r => r.Data is not null)
-            .Select(r => new AssetEntry(r.Id, r.Kind, AssetOrigin.Personal, r.Data!) { Favorite = _favorites.Contains(r.Id) })
-            .ToArray();
-        var packages = _installed.Select(LoadPackage).ToArray();
-        Catalog = new AssetCatalog(personal, packages);
+        Catalog = new AssetCatalog(_records.Where(r => r.Data is not null).Select(ToEntry).ToArray());
         if (notify) Changed?.Invoke();
     }
 
-    /// <summary>
-    /// 설치된 패키지의 manifest와 에셋 JSON만 읽는다(미리보기·문서는 경로만 — 보이는 항목이 늦게 decode).
-    /// 에셋 파일의 해시와 schema를 다시 보므로, 디스크에서 바뀌었거나 앱이 그 효과를 더는 모르면 읽지 못한 패키지로 표시한다.
-    /// </summary>
-    private InstalledPackage LoadPackage(InstalledPackageState state)
+    private AssetEntry ToEntry(Record record)
     {
-        string folder = VersionFolder(state.Id, state.Version);
-        var limits = _options.EffectiveLimits;
-        var issues = new List<AssetIssue>();
-        var warnings = new List<AssetIssue>();
-        AssetManifest? manifest = null;
-        var entries = new List<AssetEntry>();
-        try
+        string? folder = record.Files is { } files ? Path.Combine(FilesDirectory, files) : null;
+        return new AssetEntry(record.Id, record.Kind, record.Data!)
         {
-            string manifestPath = Path.Combine(folder, AssetManifest.FileName);
-            if (!File.Exists(manifestPath)) issues.Add(new AssetIssue(AssetIssueCode.MissingManifest));
-            else if (new FileInfo(manifestPath).Length > limits.MaxJsonBytes) issues.Add(new AssetIssue(AssetIssueCode.FileTooLarge, AssetManifest.FileName));
-            else if (AssetJson.Parse(File.ReadAllBytes(manifestPath), AssetManifest.FileName, limits.MaxJsonDepth, limits.MaxStringLength, issues) is { } node)
-                manifest = AssetManifest.Read(node, issues);
-            if (manifest is not null && (manifest.Id != state.Id || manifest.Version != state.Version))
-                issues.Add(new AssetIssue(AssetIssueCode.InvalidField, AssetManifest.FileName, "id"));
-            if (manifest is not null && issues.Count == 0)
-            {
-                foreach (var entry in manifest.Assets)
-                {
-                    if (AssetKinds.Find(entry.Kind) is not { } kind)
-                    {
-                        issues.Add(new AssetIssue(AssetIssueCode.UnknownKind, AssetManifest.FileName, entry.Kind));
-                        continue;
-                    }
-                    if (!AssetPackageValidator.CheckPath(entry.Path, limits, issues) || !kind.Accepts(entry.Path)) continue;
-                    string file = Path.Combine(folder, entry.Path.Replace('/', Path.DirectorySeparatorChar));
-                    if (!File.Exists(file) || new FileInfo(file).Length > AssetPackageValidator.MaxBytes(entry.Path, limits))
-                    {
-                        issues.Add(new AssetIssue(AssetIssueCode.MissingFile, entry.Path));
-                        continue;
-                    }
-                    byte[] data = File.ReadAllBytes(file);
-                    if (!manifest.Files.TryGetValue(entry.Path, out var hash) || AssetPackageWriter.Hash(data) != hash)
-                    {
-                        issues.Add(new AssetIssue(AssetIssueCode.HashMismatch, entry.Path));
-                        continue;
-                    }
-                    var value = kind.Read(data, new AssetReadContext(entry.Path, strict: true, limits, issues) { AssetId = entry.Id });
-                    if (value is null) continue;
-                    value = AssetPackageValidator.WithScene(value, ReadPackageScene(folder, manifest, entry.Path, limits, warnings), entry.Path, warnings);
-                    string? preview = null;
-                    if (entry.Preview is { } p && AssetPackageValidator.CheckPath(p, limits, []))
-                    {
-                        string previewFile = Path.Combine(folder, p.Replace('/', Path.DirectorySeparatorChar));
-                        if (File.Exists(previewFile)) preview = previewFile;
-                    }
-                    entries.Add(new AssetEntry(entry.Id, entry.Kind, AssetOrigin.Package, value)
-                    {
-                        PackageId = state.Id,
-                        PackageVersion = state.Version,
-                        PackageName = AssetTranslations.Find(manifest.Translations, CultureInfo.CurrentUICulture, t => t.Name) ?? manifest.Name,
-                        Enabled = state.Enabled,
-                        Favorite = _favorites.Contains(entry.Id),
-                        PreviewPath = preview,
-                    });
-                }
-            }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            issues.Add(new AssetIssue(AssetIssueCode.MissingFile, null, ex.Message));
-        }
-        if (issues.Count > 0) entries.Clear();
-        return new InstalledPackage(state, folder, manifest, entries, issues) { Warnings = warnings };
+            Author = record.Author,
+            License = record.License,
+            Store = record.Store,
+            Source = record.Source,
+            AddedUtc = record.AddedUtc,
+            Favorite = _favorites.Contains(record.Id),
+            PreviewPath = folder is not null && File.Exists(Path.Combine(folder, PreviewFile)) ? Path.Combine(folder, PreviewFile) : null,
+            LicenseFilePath = folder is null ? null
+                : LicenseDocuments.Select(name => Path.Combine(folder, name)).FirstOrDefault(File.Exists),
+        };
     }
 
-    /// <summary>
-    /// 설치 폴더의 미리보기 장면 파일(<see cref="AssetPackageBuilder.ScenePath"/>) 바이트. 없으면 null, manifest 해시와 다르거나 너무 크면 경고를 남기고 null.
-    /// </summary>
-    private static byte[]? ReadPackageScene(string folder, AssetManifest manifest, string assetPath, AssetPackageLimits limits, List<AssetIssue> warnings)
-    {
-        string path = AssetPackageBuilder.ScenePath(assetPath);
-        if (!manifest.Files.TryGetValue(path, out var hash)) return null;
-        string file = Path.Combine(folder, path.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(file)) return null;
-        byte[]? data = new FileInfo(file).Length <= limits.MaxPreviewBytes ? File.ReadAllBytes(file) : null;
-        if (data is not null && AssetPackageWriter.Hash(data) == hash) return data;
-        warnings.Add(new AssetIssue(AssetIssueCode.InvalidPreviewScene, path, data is null ? "size" : "sha256"));
-        return null;
-    }
+    /// <summary>받은 패키지에서 에셋에 딸려 두는 라이선스 문서 이름.</summary>
+    private static readonly string[] LicenseDocuments = ["LICENSE.txt", "LICENSE.md"];
 
-    // ───────────── 설치·업데이트 ─────────────
+    // ───────────── 가져오기 ─────────────
 
     /// <summary>
-    /// 로컬 <c>.chickxel-asset</c>을 설치한다(계획 7.3). 다른 버전이 설치돼 있으면 업데이트이고, 이전 활성 버전은 되돌리기용으로 남긴다.
-    /// 같은 ID·버전이 같은 내용으로 있으면 그 버전을 켜고 활성으로 둔다. 다른 내용이면 <see cref="AssetIssueCode.VersionConflict"/>.
-    /// <paramref name="keepEnabled"/>면 업데이트가 지금 켜짐 상태를 그대로 둔다(앱에 든 공식 패키지의 조용한 업데이트 — 끈 패키지를 다시 켜지 않음).
-    /// 검사에 실패하면 <see cref="AssetPackageException"/>, 디스크 오류는 IO 예외 — 어느 경우에도 지금 설치 상태는 그대로다.
+    /// 패키지 파일(<c>.chickxel-asset</c>)의 에셋을 하나씩 넣는다(계획 7.3). 먼저 파일 전체를 검사하고(크기, 경로, manifest, 앱 호환성, 해시, 모든 에셋 값),
+    /// 실패하면 <see cref="AssetPackageException"/>이고 아무것도 바뀌지 않는다. 에셋마다 작성자·라이선스·상점 연결은 그 줄에 적힌 것, 없으면 패키지의 것이다
+    /// (개인 내보내기 파일 — 작성자 <see cref="PersonalAuthorId"/>, ID <c>personal.</c> — 의 것은 쓰지 않음).
+    /// 기존 에셋과 겹치면(같은 상점 에셋, 아니면 같은 종류·같은 내용) <paramref name="choose"/>에 물어 바꾸거나 건너뛰거나 하나 더 둔다.
+    /// 들어간(새로 넣거나 바꾼) 에셋을 패키지 순서로 돌려준다.
     /// </summary>
-    public InstalledPackage Install(string packagePath, string source = "file", CancellationToken cancellation = default, bool keepEnabled = false)
+    public IReadOnlyList<AssetEntry> Install(string packagePath, string source, Func<AssetImportItem, ImportChoice> choose, CancellationToken cancellation = default)
     {
         using var change = BeginChange();
-        if (PackagesError is { } error) throw new InvalidOperationException(error);
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
         string token = Guid.NewGuid().ToString("N");
         string stagedFile = Path.Combine(StagingDirectory, token + AssetPackage.Extension);
-        string stagedDir = Path.Combine(StagingDirectory, token);
-        // 이번 설치가 옮겨 놓은 버전 폴더(상태를 쓰기 전에 실패하면 지운다 — 끊긴 경우는 다음 Open이 지움).
-        string? moved = null;
+        var written = new List<string>();
+        bool committed = false;
         try
         {
-            // 1~2. Staging으로 옮기고 크기를 본다(원격 내려받기도 이 자리에 받는다).
             var limits = _options.EffectiveLimits;
             if (new FileInfo(packagePath).Length > limits.MaxPackageBytes)
                 throw new AssetPackageException(new AssetIssue(AssetIssueCode.PackageTooLarge, null, limits.MaxPackageBytes.ToString(CultureInfo.InvariantCulture)));
@@ -534,307 +387,322 @@ public sealed class AssetStore
             File.Copy(packagePath, stagedFile);
             StepHook?.Invoke("staged");
             cancellation.ThrowIfCancellationRequested();
-
-            // 3~6. 경로, manifest, 앱 호환성, 해시, 모든 에셋 JSON — 디스크에 쓰기 전에 끝낸다.
             var package = AssetPackageValidator.Read(stagedFile, _options);
-            var manifest = package.Manifest;
             cancellation.ThrowIfCancellationRequested();
 
-            var current = _installed.FirstOrDefault(s => s.Id == manifest.Id);
-            string target = VersionFolder(manifest.Id, manifest.Version);
-            bool referenced = current is not null && (current.Version == manifest.Version || current.PreviousVersions.Contains(manifest.Version));
-            if (referenced && Directory.Exists(target))
+            var manifest = package.Manifest;
+            bool personal = manifest.Author.Id == PersonalAuthorId;
+            bool listed = !manifest.Id.StartsWith(LocalIdPrefix, StringComparison.Ordinal);
+            byte[]? licenseDocument = null;
+            string? licenseName = LicenseDocuments.FirstOrDefault(package.Files.ContainsKey);
+            if (licenseName is not null) licenseDocument = package.Files[licenseName];
+
+            var records = _records.ToList();
+            var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+            var installed = new List<string>();
+            var removedFolders = new List<string>();
+            foreach (var (entry, data) in package.Items)
             {
-                if (!SameInstalledContent(target, manifest))
-                    throw new AssetPackageException(new AssetIssue(AssetIssueCode.VersionConflict, null, $"{manifest.Id} {manifest.Version}"));
-            }
-            else
-            {
-                // 7. Staging에 풀고 버전 폴더로 한 번에 옮긴다.
-                Directory.CreateDirectory(stagedDir);
-                File.WriteAllBytes(Path.Combine(stagedDir, AssetManifest.FileName), Encoding.UTF8.GetBytes(manifest.Serialize()));
-                foreach (var (path, data) in package.Files)
-                {
-                    cancellation.ThrowIfCancellationRequested();
-                    string file = Path.Combine(stagedDir, path.Replace('/', Path.DirectorySeparatorChar));
-                    Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-                    File.WriteAllBytes(file, data);
-                }
-                StepHook?.Invoke("extracted");
                 cancellation.ThrowIfCancellationRequested();
-                Directory.CreateDirectory(Path.Combine(PackagesDirectory, manifest.Id));
-                if (Directory.Exists(target)) Directory.Delete(target, recursive: true); // 상태에 없는 반쯤 된 폴더
-                Directory.Move(stagedDir, target);
-                moved = target;
-                StepHook?.Invoke("moved");
+                string hash = AssetContent.HashOf(entry.Kind, data);
+                var author = entry.Author ?? (personal ? null : manifest.Author);
+                if (author?.Id == PersonalAuthorId) author = null;
+                var license = entry.License ?? (personal ? null : manifest.License);
+                var store = entry.Store ?? (listed ? AssetStoreLink.FromManifest(manifest, entry.Id, hash) : null);
+                var existing = FindExisting(records, entry.Kind, hash, store);
+                var choice = existing is null ? ImportChoice.KeepBoth
+                    : choose(new AssetImportItem(entry.Kind, data, author, license, store, ToEntry(existing)));
+                if (choice == ImportChoice.Skip) continue;
+
+                bool replace = choice == ImportChoice.Replace && existing is not null;
+                string id = replace ? existing!.Id : NewId(records, store?.AssetId);
+                byte[]? preview = entry.Preview is { } p && package.Files.TryGetValue(p, out var png) ? png : null;
+                package.Files.TryGetValue(AssetPackageBuilder.ScenePath(entry.Path), out var scene);
+                if (data is not ScriptAsset { Scene: not null }) scene = null;
+                string? folder = WriteFiles(preview, scene, licenseName is null ? null : (licenseName, licenseDocument!));
+                if (folder is not null) written.Add(folder);
+                var record = new Record(id, entry.Kind, DateTime.UtcNow, source, WithId(data, id), author, license, store, folder, null);
+                if (replace)
+                {
+                    int index = records.FindIndex(r => r.Id == id);
+                    if (records[index].Files is { } old) removedFolders.Add(old);
+                    records[index] = record;
+                }
+                else records.Add(record);
+                installed.Add(id);
             }
-
-            // 8. 상태 파일을 바꿔치기한다 — 이 한 번의 rename이 설치의 완료 지점이다.
-            var previous = current is null ? []
-                : new[] { current.Version }.Concat(current.PreviousVersions).Where(v => v != manifest.Version).Distinct().Take(KeptPreviousVersions).ToArray();
-            var state = new InstalledPackageState
+            StepHook?.Invoke("files");
+            cancellation.ThrowIfCancellationRequested();
+            if (installed.Count > 0)
             {
-                Id = manifest.Id,
-                Version = manifest.Version,
-                Enabled = !keepEnabled || (current?.Enabled ?? true),
-                Source = source,
-                InstalledUtc = DateTime.UtcNow,
-                AutoUpdate = current?.AutoUpdate ?? false,
-                PreviousVersions = previous,
-            };
-            var states = _installed.ToList();
-            int index = states.FindIndex(s => s.Id == manifest.Id);
-            if (index >= 0) states[index] = state;
-            else states.Add(state);
-            SaveInstalled(states);
-            moved = null;
-            StepHook?.Invoke("committed");
-
-            // 9. 남길 버전 밖의 폴더를 치우고 카탈로그를 다시 만든다.
-            RemoveUnreferencedVersions(state);
-            Rebuild(notify: true);
-            return Catalog.FindPackage(manifest.Id)!;
+                SaveLibrary(records, favorites);
+                committed = true;
+                foreach (var old in removedFolders) TryDeleteDirectory(Path.Combine(FilesDirectory, old));
+            }
+            return installed.Select(id => Catalog.Find(id)!).ToArray();
         }
         finally
         {
             TryDeleteFile(stagedFile);
-            TryDeleteDirectory(stagedDir);
-            if (moved is not null) TryDeleteDirectory(moved);
+            if (!committed)
+                foreach (var folder in written) TryDeleteDirectory(Path.Combine(FilesDirectory, folder));
         }
     }
 
-    private static bool SameInstalledContent(string folder, AssetManifest manifest)
-    {
-        try
-        {
-            var issues = new List<AssetIssue>();
-            var node = AssetJson.Parse(File.ReadAllBytes(Path.Combine(folder, AssetManifest.FileName)), AssetManifest.FileName, 64, 1 << 20, issues);
-            return AssetManifest.Read(node, issues) is { } installed
-                   && installed.Files.Count == manifest.Files.Count
-                   && installed.Files.All(pair => manifest.Files.TryGetValue(pair.Key, out var hash) && hash == pair.Value);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
+    /// <summary>가져오는 에셋과 겹치는 기존 줄: 같은 상점 에셋(패키지 ID·에셋 ID), 아니면 같은 종류·같은 내용.</summary>
+    private static Record? FindExisting(List<Record> records, string kind, string hash, AssetStoreLink? store)
+        => (store is null ? null : records.FirstOrDefault(r => r.Data is not null && r.Store is { } s && s.PackageId == store.PackageId && s.AssetId == store.AssetId))
+           ?? records.FirstOrDefault(r => r.Data is not null && r.Kind == kind && AssetContent.HashOf(kind, r.Data) == hash);
 
-    private void RemoveUnreferencedVersions(InstalledPackageState state)
-    {
-        foreach (var dir in SafeDirectories(Path.Combine(PackagesDirectory, state.Id)))
-        {
-            string version = Path.GetFileName(dir);
-            if (version != state.Version && !state.PreviousVersions.Contains(version)) TryDeleteDirectory(dir);
-        }
-    }
-
-    /// <summary>패키지를 켜거나 끈다. 끈 패키지의 에셋은 고르는 목록에서 빠지지만 파일은 그대로다(계획 7.4).</summary>
-    public void SetEnabled(string packageId, bool enabled)
-    {
-        using var change = BeginChange();
-        var states = _installed.ToList();
-        int index = states.FindIndex(s => s.Id == packageId);
-        if (index < 0 || states[index].Enabled == enabled) return;
-        states[index] = states[index] with { Enabled = enabled };
-        SaveInstalled(states);
-        Rebuild(notify: true);
-    }
-
-    /// <summary>보관한 이전 버전으로 되돌린다(지금 버전은 이전 버전으로 남음). 이전 버전이 없으면 false.</summary>
-    public bool Rollback(string packageId)
-    {
-        using var change = BeginChange();
-        var states = _installed.ToList();
-        int index = states.FindIndex(s => s.Id == packageId);
-        if (index < 0) return false;
-        var state = states[index];
-        var target = state.PreviousVersions.FirstOrDefault(v => Directory.Exists(VersionFolder(packageId, v)));
-        if (target is null) return false;
-        states[index] = state with
-        {
-            Version = target,
-            PreviousVersions = new[] { state.Version }.Concat(state.PreviousVersions.Where(v => v != target)).Take(KeptPreviousVersions).ToArray(),
-        };
-        SaveInstalled(states);
-        Rebuild(notify: true);
-        return true;
-    }
-
-    // ───────────── 삭제·보관함 ─────────────
+    // ───────────── 내 에셋 저장 ─────────────
 
     /// <summary>
-    /// 패키지를 지운다: 패키지 폴더(모든 버전)를 보관함으로 옮긴 뒤 상태에서 뺀다. 프로젝트에 넣은 효과·그라데이션은 값 사본이라 바뀌지 않고,
-    /// 개인 에셋과도 무관하다. <see cref="DeletedRetentionDays"/>일 안에 <see cref="RestoreDeleted"/>로 되돌릴 수 있다.
-    /// </summary>
-    public void Delete(string packageId)
-    {
-        using var change = BeginChange();
-        var states = _installed.ToList();
-        int index = states.FindIndex(s => s.Id == packageId);
-        if (index < 0) return;
-        if (PackagesError is { } error) throw new InvalidOperationException(error);
-        var state = states[index];
-        string packageDir = Path.Combine(PackagesDirectory, packageId);
-        string name = Catalog.FindPackage(packageId)?.Name ?? packageId;
-        string archive = Path.Combine(DeletedDirectory, packageId + "@" + DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssfff", CultureInfo.InvariantCulture));
-        Directory.CreateDirectory(archive);
-        var entry = new JsonObject
-        {
-            ["id"] = state.Id,
-            ["version"] = state.Version,
-            ["name"] = name,
-            ["deletedAt"] = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-            ["enabled"] = state.Enabled,
-            ["source"] = state.Source,
-            ["previousVersions"] = new JsonArray(state.PreviousVersions.Select(v => (JsonNode)JsonValue.Create(v)!).ToArray()),
-        };
-        AtomicFile.Write(Path.Combine(archive, "entry.json"), AssetJson.ToUtf8(entry));
-        if (Directory.Exists(packageDir)) Directory.Move(packageDir, Path.Combine(archive, "package"));
-        else Directory.CreateDirectory(Path.Combine(archive, "package"));
-        StepHook?.Invoke("archived");
-        states.RemoveAt(index);
-        SaveInstalled(states);
-        StepHook?.Invoke("committed");
-        Rebuild(notify: true);
-    }
-
-    /// <summary>보관함의 삭제 패키지(최근 것 먼저).</summary>
-    public IReadOnlyList<DeletedPackage> DeletedPackages
-        => SafeDirectories(DeletedDirectory).Select(ReadArchive).OfType<DeletedPackage>().OrderByDescending(d => d.DeletedUtc).ToArray();
-
-    /// <summary>보관함의 패키지를 되돌린다. 같은 ID가 이미 설치돼 있으면 <see cref="AssetIssueCode.VersionConflict"/>.</summary>
-    public void RestoreDeleted(DeletedPackage deleted)
-    {
-        using var change = BeginChange();
-        if (PackagesError is { } error) throw new InvalidOperationException(error);
-        if (_installed.Any(s => s.Id == deleted.Id))
-            throw new AssetPackageException(new AssetIssue(AssetIssueCode.VersionConflict, null, $"{deleted.Id} {deleted.Version}"));
-        var entry = ReadArchiveEntry(deleted.Folder) ?? throw new DirectoryNotFoundException(deleted.Folder);
-        var state = new InstalledPackageState
-        {
-            Id = deleted.Id,
-            Version = deleted.Version,
-            Enabled = !AssetJson.TryBool(entry["enabled"], out bool enabled) || enabled,
-            Source = AssetJson.String(entry["source"]) ?? "file",
-            InstalledUtc = DateTime.UtcNow,
-            PreviousVersions = (entry["previousVersions"] as JsonArray ?? []).Select(AssetJson.String).OfType<string>().Where(AssetManifest.IsValidVersion).ToArray(),
-        };
-        // 상태를 먼저 쓴다: 옮기기 전에 끊기면 다음에 열 때 폴더 없는 줄을 지우고 보관함은 그대로 남는다.
-        SaveInstalled([.. _installed, state]);
-        Directory.Move(Path.Combine(deleted.Folder, "package"), Path.Combine(PackagesDirectory, deleted.Id));
-        TryDeleteDirectory(deleted.Folder);
-        Rebuild(notify: true);
-    }
-
-    private static JsonObject? ReadArchiveEntry(string archive)
-    {
-        try
-        {
-            string file = Path.Combine(archive, "entry.json");
-            if (!File.Exists(file) || !Directory.Exists(Path.Combine(archive, "package"))) return null;
-            return AssetJson.Parse(File.ReadAllBytes(file), "entry.json", 16, 4096, []) as JsonObject;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    private static DeletedPackage? ReadArchive(string archive)
-    {
-        if (ReadArchiveEntry(archive) is not { } o) return null;
-        string id = AssetJson.String(o["id"]) ?? "", version = AssetJson.String(o["version"]) ?? "";
-        if (!AssetManifest.IsValidId(id) || !AssetManifest.IsValidVersion(version)) return null;
-        if (!DateTime.TryParse(AssetJson.String(o["deletedAt"]), CultureInfo.InvariantCulture,
-                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at)) return null;
-        return new DeletedPackage(archive, id, version, AssetJson.String(o["name"]) ?? id, at);
-    }
-
-    // ───────────── 내보내기 ─────────────
-
-    /// <summary>설치된 패키지의 활성 버전을 <c>.chickxel-asset</c>으로 다시 묶는다(원본 파일과 해시 그대로).</summary>
-    public void ExportPackage(string packageId, Stream output)
-    {
-        var package = Catalog.FindPackage(packageId) ?? throw new ArgumentException(packageId, nameof(packageId));
-        if (package.Manifest is not { } manifest) throw new AssetPackageException(package.Issues);
-        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var path in manifest.Files.Keys)
-        {
-            if (!AssetPackageValidator.CheckPath(path, _options.EffectiveLimits, [])) continue;
-            files[path] = File.ReadAllBytes(Path.Combine(package.Folder, path.Replace('/', Path.DirectorySeparatorChar)));
-        }
-        AssetPackageWriter.Write(output, manifest, files);
-    }
-
-    // ───────────── 개인 에셋 ─────────────
-
-    /// <summary>
-    /// 개인 효과 레시피를 저장한다. <see cref="EffectRecipe.Id"/>가 있는 개인 에셋이면 그 자리를 바꾸고, 아니면 새 ID로 끝에 더한다.
+    /// 효과 레시피를 저장한다. <see cref="EffectRecipe.Id"/>가 있는 에셋이면 그 자리의 값을 바꾸고(작성자·상점 연결은 그대로 — 고친 것으로 보임), 아니면 이 컴퓨터의 새 에셋으로 끝에 더한다.
     /// 매개변수가 연결·범위 검사(<see cref="Effects.RecipeParameters.Check"/>)를 통과하지 않으면 <see cref="AssetPackageException"/>. 저장된 항목을 돌려준다.
     /// </summary>
-    public AssetEntry SavePersonalRecipe(EffectRecipe recipe)
+    public AssetEntry SaveRecipe(EffectRecipe recipe)
     {
         var issues = new List<AssetIssue>();
         Effects.RecipeParameters.Check(recipe.Effects, recipe.Parameters, (code, detail) => issues.Add(new AssetIssue(code, null, detail)));
         if (issues.Count > 0) throw new AssetPackageException(issues);
-        return SavePersonalData(AssetKinds.EffectRecipe, recipe, favorite: null);
+        return SaveData(AssetKinds.EffectRecipe, recipe, favorite: null, scene: null, sceneChanges: false);
     }
 
-    /// <summary>개인 그라데이션을 저장한다(<paramref name="id"/>가 개인 에셋이면 바꾸고, 아니면 새로 더함). 즐겨찾기는 <see cref="GradientPreset.Favorite"/>를 따른다.</summary>
-    public AssetEntry SavePersonalGradient(string? id, GradientPreset gradient)
+    /// <summary>그라데이션을 저장한다(<paramref name="id"/>가 그라데이션 에셋이면 바꾸고, 아니면 새로 더함). 즐겨찾기는 <see cref="GradientPreset.Favorite"/>를 따른다.</summary>
+    public AssetEntry SaveGradient(string? id, GradientPreset gradient)
     {
         GradientAssetFormat.Validate(gradient);
-        return SavePersonalData(AssetKinds.Gradient, new GradientAsset(id ?? "", gradient with { Favorite = false }), gradient.Favorite);
+        return SaveData(AssetKinds.Gradient, new GradientAsset(id ?? "", gradient with { Favorite = false }), gradient.Favorite, scene: null, sceneChanges: false);
     }
 
     /// <summary>
-    /// 스크립트 원문을 개인 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 설치와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
-    /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 개인 스크립트면 그 자리의 원문과 미리보기 장면을 바꾸고(효과 만들기에서 고쳐 저장 —
-    /// 게시 기록이 에셋 ID로 이어짐, <paramref name="scene"/>이 null이면 장면을 지움), 아니면 같은 원문(해시)의 개인 스크립트가 있을 때 새로 더하지 않고
-    /// 그 항목을 돌려준다 — <paramref name="scene"/>이 있고 그 항목의 장면과 다르면 그 항목의 장면만 바꾼다(null이면 그 항목의 장면을 그대로 둠).
-    /// 장면은 <see cref="ScenesDirectory"/>에 파일로 둔다. 실행 허락은 앱이 정한다(이 컴퓨터에서 쓴 원문).
+    /// 스크립트 원문을 스크립트 에셋으로 저장한다(이름·작성자는 원문의 선언). 패키지 가져오기와 같은 검사(<see cref="ScriptAssetFormat.Check"/>)를
+    /// 통과하지 못하면 <see cref="AssetPackageException"/>. <paramref name="id"/>가 스크립트 에셋이면 그 자리의 원문과 미리보기 장면을 바꾸고
+    /// (<paramref name="scene"/>이 null이면 장면을 지움), 아니면 이 컴퓨터에서 만든(작성자·상점 연결 없는) 같은 원문의 스크립트가 있을 때 새로 더하지 않고
+    /// 그 항목을 돌려준다 — <paramref name="scene"/>이 있고 그 항목의 장면과 다르면 그 항목의 장면만 바꾼다(null이면 그대로 둠). 실행 허락은 앱이 정한다.
     /// </summary>
-    public AssetEntry SavePersonalScript(string source, string? id, PreviewScene? scene)
+    public AssetEntry SaveScript(string source, string? id, PreviewScene? scene)
     {
         var issues = new List<AssetIssue>();
         var context = new AssetReadContext(AssetKinds.EffectScript, strict: true, _options.EffectiveLimits, issues);
         if (ScriptAssetFormat.Check(source, "source", context) is not { } program) throw new AssetPackageException(issues);
         var asset = ScriptAsset.From("", program) with { Scene = scene };
-        if (id is not null && Catalog.Personal.Any(e => e.Id == id && e.Kind == AssetKinds.EffectScript)) return SavePersonalScriptData(asset with { Id = id });
-        if (Catalog.Personal.FirstOrDefault(e => e.Data is ScriptAsset s && s.Hash == program.ContentHash) is { } existing)
-            return scene is null || SameScene(existing.Script!.Scene, scene) ? existing : SavePersonalScriptData(asset with { Id = existing.Id });
-        return SavePersonalScriptData(asset);
+        if (id is not null && Catalog.Find(id) is { Kind: AssetKinds.EffectScript }) return SaveData(AssetKinds.EffectScript, asset with { Id = id }, null, scene, sceneChanges: true);
+        if (Catalog.All.FirstOrDefault(e => e is { Author: null, Store: null } && e.Data is ScriptAsset s && s.Hash == program.ContentHash) is { } existing)
+            return scene is null || SameScene(existing.Script!.Scene, scene) ? existing : SaveData(AssetKinds.EffectScript, asset with { Id = existing.Id }, null, scene, sceneChanges: true);
+        return SaveData(AssetKinds.EffectScript, asset, null, scene, sceneChanges: true);
     }
-
-    // 장면 파일은 개인 에셋 파일보다 먼저 쓴다(다른 앱이 바뀐 개인 에셋 파일을 다시 읽을 때 새 장면을 보게)
-    private AssetEntry SavePersonalScriptData(ScriptAsset asset)
-        => SavePersonalData(AssetKinds.EffectScript, asset, favorite: null, id => WritePersonalScene(id, asset.Scene));
 
     private static bool SameScene(PreviewScene? a, PreviewScene b) => a is not null && a.ToPng().AsSpan().SequenceEqual(b.ToPng());
 
-    /// <summary>개인 에셋 <paramref name="id"/>의 장면 파일 경로(파일 이름으로 쓸 수 없는 ID면 null — 앱이 만든 ID는 늘 쓸 수 있음).</summary>
-    private string? PersonalScenePath(string id)
-        => id is { Length: > 0 and <= 128 } && id[0] != '.' && id.All(c => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '.' or '-' or '_')
-            ? Path.Combine(ScenesDirectory, id + ".png")
-            : null;
-
-    private void WritePersonalScene(string id, PreviewScene? scene)
+    /// <summary>
+    /// 에셋 값을 저장한다: <paramref name="data"/>의 ID가 같은 종류의 에셋이면 그 자리(작성자·라이선스·상점 연결·들어온 길은 그대로, 받은 미리보기는 지금 값과
+    /// 맞지 않으므로 뺌), 아니면 이 컴퓨터의 새 에셋. <paramref name="sceneChanges"/>면 딸린 장면을 <paramref name="scene"/>으로 바꾼다.
+    /// </summary>
+    private AssetEntry SaveData(string kind, IAssetData data, bool? favorite, PreviewScene? scene, bool sceneChanges)
     {
-        var path = PersonalScenePath(id);
-        if (scene is null)
+        using var change = BeginChange();
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        if (!AssetManifest.IsValidName(data.Name)) throw new InvalidDataException(new AssetIssue(AssetIssueCode.InvalidField, null, "name").Message);
+        var records = _records.ToList();
+        int index = records.FindIndex(r => r.Id == data.Id && r.Kind == kind && r.Data is not null);
+        var old = index >= 0 ? records[index] : null;
+        string id = old?.Id ?? NewId(records, null);
+        string? oldFolder = old?.Files;
+        byte[]? keptScene = sceneChanges ? scene?.ToPng() : ReadFile(oldFolder, SceneFile);
+        var license = ReadLicense(oldFolder);
+        string? folder = keptScene is null && license is null ? null : WriteFiles(null, keptScene, license);
+        try
         {
-            if (path is not null && File.Exists(path)) File.Delete(path);
-            return;
+            var record = old is null
+                ? new Record(id, kind, DateTime.UtcNow, AssetSources.Local, WithId(data, id), null, null, null, folder, null)
+                : old with { Data = WithId(data, id), Files = folder };
+            if (old is null) records.Add(record);
+            else records[index] = record;
+            var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+            if (favorite == true) favorites.Add(id);
+            else if (favorite == false) favorites.Remove(id);
+            SaveLibrary(records, favorites);
         }
-        if (path is null) throw new InvalidDataException(new AssetIssue(AssetIssueCode.InvalidField, null, "id").Message);
-        Directory.CreateDirectory(ScenesDirectory);
-        AtomicFile.Write(path, scene.ToPng());
+        catch
+        {
+            if (folder is not null) TryDeleteDirectory(Path.Combine(FilesDirectory, folder));
+            throw;
+        }
+        if (oldFolder is not null) TryDeleteDirectory(Path.Combine(FilesDirectory, oldFolder));
+        return Catalog.Find(id)!;
     }
 
-    /// <summary>개인 스크립트에 장면 파일을 붙인다(없으면 그대로). 읽지 못하면 장면 없이 두고 <see cref="LoadErrors"/>에 남긴다.</summary>
-    private ScriptAsset WithPersonalScene(ScriptAsset script, string id)
+    /// <summary>
+    /// 올린 뒤 에셋에 작성자·라이선스·상점 연결을 붙인다(게시 창이 올리기에 성공했을 때). 이 연결로 업데이트를 보고, 다른 컴퓨터에서 받은 것도 같은 에셋으로 알아본다.
+    /// </summary>
+    public AssetEntry MarkPublished(string id, AssetAuthor author, string license, AssetStoreLink link)
     {
-        if (PersonalScenePath(id) is not { } path || !File.Exists(path)) return script;
+        using var change = BeginChange();
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        var records = _records.ToList();
+        int index = records.FindIndex(r => r.Id == id && r.Data is not null);
+        if (index < 0) throw new ArgumentException(id, nameof(id));
+        records[index] = records[index] with { Author = author, License = license, Store = link };
+        SaveLibrary(records, new HashSet<string>(_favorites, StringComparer.Ordinal));
+        return Catalog.Find(id)!;
+    }
+
+    /// <summary>에셋을 지운다(딸린 파일도). 프로젝트에 넣은 효과·그라데이션은 값 사본이라 바뀌지 않는다.</summary>
+    public void Remove(string id)
+    {
+        using var change = BeginChange();
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        var records = _records.ToList();
+        var record = records.FirstOrDefault(r => r.Id == id);
+        if (record is null) return;
+        records.Remove(record);
+        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+        favorites.Remove(id);
+        SaveLibrary(records, favorites);
+        if (record.Files is { } folder) TryDeleteDirectory(Path.Combine(FilesDirectory, folder));
+    }
+
+    /// <summary>에셋의 즐겨찾기를 켜거나 끈다(컴퓨터별 상태).</summary>
+    public void SetFavorite(string assetId, bool favorite)
+    {
+        using var change = BeginChange();
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        if (_favorites.Contains(assetId) == favorite) return;
+        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+        if (favorite) favorites.Add(assetId);
+        else favorites.Remove(assetId);
+        SaveLibrary(_records.ToList(), favorites);
+    }
+
+    /// <summary>
+    /// 기본 그라데이션(<see cref="GradientPresets.BuiltIns"/>)을 처음 값으로 되돌리고 지운 것은 끝에 다시 넣는다(이 컴퓨터에서 만든 그라데이션을 이름으로 찾음, 대소문자 무시).
+    /// 받은 그라데이션, 직접 만든 다른 그라데이션과 즐겨찾기는 그대로 둔다.
+    /// </summary>
+    public void RestoreBuiltInGradients()
+    {
+        using var change = BeginChange();
+        if (LibraryError is { } error) throw new InvalidOperationException(error);
+        var records = _records.ToList();
+        foreach (var builtIn in GradientPresets.BuiltIns())
+        {
+            int index = records.FindIndex(r => r is { Kind: AssetKinds.Gradient, Author: null, Store: null } && r.Data is GradientAsset g
+                                               && string.Equals(g.Gradient.Name, builtIn.Name, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0) records[index] = records[index] with { Data = new GradientAsset(records[index].Id, builtIn) };
+            else
+            {
+                string id = NewId(records, null);
+                records.Add(new Record(id, AssetKinds.Gradient, DateTime.UtcNow, AssetSources.Local, new GradientAsset(id, builtIn), null, null, null, null, null));
+            }
+        }
+        SaveLibrary(records, new HashSet<string>(_favorites, StringComparer.Ordinal));
+    }
+
+    /// <summary>예전 프리셋 파일을 이미 옮겼는지(옮기지 않았으면 <see cref="AssetMigration"/>이 다음 실행에 다시 시도).</summary>
+    internal bool LegacyPresetsMigrated => _legacyPresetsDone;
+
+    /// <summary>
+    /// 예전 프리셋을 이 컴퓨터의 에셋으로 앞에 더하고 옮겼다고 적는다(<see cref="AssetMigration"/> 전용). 잠금을 잡은 뒤 이미 옮겼으면(같은 저장소를 쓰는
+    /// 다른 앱이 먼저 옮김) 다시 읽고 false. library.json을 읽지 못했으면 덮어쓰지 않고 false. <paramref name="items"/>는 (종류, 값, 즐겨찾기) 순서대로 새 ID를 받는다.
+    /// </summary>
+    internal bool TryAddLegacyPresets(IEnumerable<(string Kind, IAssetData Data, bool Favorite)> items, DateTime nowUtc)
+    {
+        using var change = BeginChange();
+        if (_legacyPresetsDone || LibraryError is not null) return false;
+        var records = _records.ToList();
+        var added = new List<Record>();
+        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+        foreach (var (kind, data, favorite) in items)
+        {
+            string id = NewId([.. records, .. added], null);
+            added.Add(new Record(id, kind, nowUtc, AssetSources.Local, WithId(data, id), null, null, null, null, null));
+            if (favorite) favorites.Add(id);
+        }
+        _legacyPresetsDone = true;
+        try
+        {
+            SaveLibrary([.. added, .. records], favorites);
+        }
+        catch
+        {
+            _legacyPresetsDone = false;
+            throw;
+        }
+        return true;
+    }
+
+    // ───────────── 내보내기 ─────────────
+
+    /// <summary>
+    /// 에셋을 패키지 파일 하나로 묶는다. 고치지 않은 상점 에셋 하나면 그 상점 패키지 그대로(ID·버전·목록 글·작성자·라이선스, 받은 라이선스 문서) 쓰고,
+    /// 그 밖에는 <paramref name="bundleHeader"/>(개인 내보내기 정보) 아래에 에셋마다 작성자·라이선스·상점 연결을 적는다 — 이 컴퓨터에서 만든 에셋의 작성자는
+    /// <paramref name="localAuthor"/>(로그인한 계정, 없으면 비움 — 받는 쪽에서 그 사람이 만든 것으로 보임).
+    /// <paramref name="preview"/>는 에셋마다 미리보기 PNG를 만드는 함수(null이면 넣지 않음). 만든 패키지는 검사를 다시 통과해야 쓴다 —
+    /// 통과하지 못하면 <see cref="AssetPackageException"/>이고 <paramref name="output"/>에는 쓰지 않는다.
+    /// </summary>
+    public AssetManifest Export(IEnumerable<string> ids, AssetManifest bundleHeader, Stream output, AssetAuthor? localAuthor = null,
+        Func<AssetEntry, PackagePreview?>? preview = null)
+    {
+        var entries = ids.Select(id => Catalog.Find(id) ?? throw new ArgumentException(id, nameof(ids))).ToList();
+        if (entries.Count == 0) throw new ArgumentException(null, nameof(ids));
+        AssetPackageBuilder builder;
+        if (entries is [{ Store: { } store, Author: { } author, License: { } license, Modified: false } single])
+        {
+            builder = new AssetPackageBuilder(new AssetManifest
+            {
+                Id = store.PackageId, Version = store.Version, Name = store.Name, Description = store.Description, Translations = store.Translations,
+                Author = author, License = license, MinAppVersion = store.MinAppVersion,
+            });
+            builder.Add(single.Kind, single.Data, preview?.Invoke(single), segment: store.AssetId[(store.PackageId.Length + 1)..]);
+            if (single.LicenseFilePath is { } path) builder.AddDocument(Path.GetFileName(path), File.ReadAllText(path, Encoding.UTF8));
+        }
+        else
+        {
+            builder = new AssetPackageBuilder(bundleHeader);
+            foreach (var entry in entries)
+                builder.Add(entry.Kind, entry.Data, preview?.Invoke(entry), author: entry.Author ?? localAuthor, license: entry.License, store: entry.Store);
+        }
+        using var buffer = new MemoryStream();
+        var manifest = builder.Write(buffer);
+        buffer.Position = 0;
+        AssetPackageValidator.Read(buffer, _options with { AppVersion = null });
+        buffer.Position = 0;
+        buffer.CopyTo(output);
+        return manifest;
+    }
+
+    // ───────────── 딸린 파일 ─────────────
+
+    /// <summary>딸린 파일을 새 폴더에 쓰고 그 이름을 돌려준다(쓸 것이 없으면 null).</summary>
+    private string? WriteFiles(byte[]? preview, byte[]? scene, (string Name, byte[] Data)? license)
+    {
+        if (preview is null && scene is null && license is null) return null;
+        string name = Guid.NewGuid().ToString("N");
+        string folder = Path.Combine(FilesDirectory, name);
+        Directory.CreateDirectory(folder);
+        if (preview is not null) File.WriteAllBytes(Path.Combine(folder, PreviewFile), preview);
+        if (scene is not null) File.WriteAllBytes(Path.Combine(folder, SceneFile), scene);
+        if (license is { } doc) File.WriteAllBytes(Path.Combine(folder, doc.Name), doc.Data);
+        return name;
+    }
+
+    private byte[]? ReadFile(string? folder, string name)
+    {
+        if (folder is null) return null;
+        string path = Path.Combine(FilesDirectory, folder, name);
+        return File.Exists(path) ? File.ReadAllBytes(path) : null;
+    }
+
+    private (string Name, byte[] Data)? ReadLicense(string? folder)
+        => LicenseDocuments.Select(name => ReadFile(folder, name) is { } data ? (name, data) : ((string, byte[])?)null).FirstOrDefault(doc => doc is not null);
+
+    /// <summary>딸린 파일 폴더 이름(<see cref="WriteFiles"/>가 만든 32자 16진수)인지.</summary>
+    private static bool IsFilesFolder(string name) => name is { Length: 32 } && name.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    /// <summary>스크립트에 장면 파일을 붙인다(없으면 그대로). 읽지 못하면 장면 없이 두고 <see cref="LoadErrors"/>에 남긴다.</summary>
+    private ScriptAsset WithSceneFile(ScriptAsset script, string path)
+    {
+        if (!File.Exists(path)) return script;
         try
         {
             return script with { Scene = PreviewScene.FromPng(File.ReadAllBytes(path)) };
@@ -846,132 +714,23 @@ public sealed class AssetStore
         }
     }
 
-    /// <summary>개인 에셋을 저장한다. <paramref name="files"/>는 정한 ID로 딸린 파일(장면)을 개인 에셋 파일보다 먼저 쓴다.</summary>
-    private AssetEntry SavePersonalData(string kind, IAssetData data, bool? favorite, Action<string>? files = null)
+    /// <summary>library.json이 가리키지 않는 딸린 파일 폴더(쓰다가 끊긴 것, 바꾼 뒤 지우지 못한 옛 폴더)를 지운다.</summary>
+    private void RemoveUnusedFiles()
     {
-        using var change = BeginChange();
-        if (PersonalError is { } error) throw new InvalidOperationException(error);
-        if (!AssetManifest.IsValidName(data.Name)) throw new InvalidDataException(new AssetIssue(AssetIssueCode.InvalidField, null, "name").Message);
-        var records = _personal.ToList();
-        int index = records.FindIndex(r => r.Id == data.Id && r.Kind == kind);
-        string id = index >= 0 ? data.Id : NewPersonalId();
-        var record = new PersonalRecord(id, kind, index >= 0 ? records[index].CreatedUtc : DateTime.UtcNow, WithId(data, id), null);
-        if (index >= 0) records[index] = record;
-        else records.Add(record);
-        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
-        if (favorite == true) favorites.Add(id);
-        else if (favorite == false) favorites.Remove(id);
-        files?.Invoke(id);
-        SavePersonal(records, favorites);
-        return Catalog.Find(id)!;
-    }
-
-    /// <summary>개인 에셋을 지운다(설치 패키지와 무관). 딸린 장면 파일도 지운다.</summary>
-    public void RemovePersonal(string id)
-    {
-        using var change = BeginChange();
-        if (PersonalError is { } error) throw new InvalidOperationException(error);
-        var records = _personal.ToList();
-        if (records.RemoveAll(r => r.Id == id) == 0) return;
-        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
-        favorites.Remove(id);
-        SavePersonal(records, favorites);
-        if (PersonalScenePath(id) is { } scene) TryDeleteFile(scene);
-    }
-
-    /// <summary>개인·설치 에셋의 즐겨찾기를 켜거나 끈다(컴퓨터별 상태라 개인 에셋 파일에 둔다).</summary>
-    public void SetFavorite(string assetId, bool favorite)
-    {
-        using var change = BeginChange();
-        if (PersonalError is { } error) throw new InvalidOperationException(error);
-        if (_favorites.Contains(assetId) == favorite) return;
-        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
-        if (favorite) favorites.Add(assetId);
-        else favorites.Remove(assetId);
-        SavePersonal(_personal.ToList(), favorites);
-    }
-
-    /// <summary>
-    /// 기본 그라데이션(<see cref="GradientPresets.BuiltIns"/>)을 처음 값으로 되돌리고 지운 것은 끝에 다시 넣는다(개인 그라데이션 이름으로 찾음, 대소문자 무시).
-    /// 직접 만든 그라데이션과 즐겨찾기는 그대로 둔다.
-    /// </summary>
-    public void RestoreBuiltInGradients()
-    {
-        using var change = BeginChange();
-        if (PersonalError is { } error) throw new InvalidOperationException(error);
-        var records = _personal.ToList();
-        foreach (var builtIn in GradientPresets.BuiltIns())
-        {
-            int index = records.FindIndex(r => r.Kind == AssetKinds.Gradient && r.Data is GradientAsset g
-                                               && string.Equals(g.Gradient.Name, builtIn.Name, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0) records[index] = records[index] with { Data = new GradientAsset(records[index].Id, builtIn) };
-            else
-            {
-                string id = NewPersonalId();
-                records.Add(new PersonalRecord(id, AssetKinds.Gradient, DateTime.UtcNow, new GradientAsset(id, builtIn), null));
-            }
-        }
-        SavePersonal(records, new HashSet<string>(_favorites, StringComparer.Ordinal));
-    }
-
-    /// <summary>
-    /// 개인 에셋 파일을 처음 만든다(<see cref="AssetMigration"/> 전용). 잠금을 잡은 뒤 이미 있으면(같은 저장소를 쓰는 다른 앱이 먼저 만듦) 다시 읽고 false.
-    /// <paramref name="items"/>는 (종류, 값, 즐겨찾기) 순서대로 새 ID를 받는다.
-    /// </summary>
-    internal bool TryCreatePersonal(IEnumerable<(string Kind, IAssetData Data, bool Favorite)> items, DateTime nowUtc)
-    {
-        using var change = BeginChange();
-        if (HasPersonalFile) return false;
-        var records = new List<PersonalRecord>();
-        var favorites = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var (kind, data, favorite) in items)
-        {
-            string id = NewPersonalId();
-            records.Add(new PersonalRecord(id, kind, nowUtc, WithId(data, id), null));
-            if (favorite) favorites.Add(id);
-        }
-        PersonalError = null;
-        WritePersonalFile(records, favorites);
-        _personal = records;
-        _favorites = favorites;
-        Rebuild(notify: true);
-        return true;
-    }
-
-    /// <summary>개인 에셋을 쓸 수 없게 막는다(migration 실패 — 예전 파일을 다시 읽을 수 있을 때까지 새 파일을 만들지 않음).</summary>
-    internal void BlockPersonal(string reason) => PersonalError = reason;
-
-    /// <summary>
-    /// 개인 에셋으로 새 패키지를 만든다. <paramref name="header"/>는 패키지 정보(ID, 버전, 이름, 작성자, 라이선스),
-    /// <paramref name="preview"/>는 에셋마다 미리보기 PNG를 만드는 함수(null이면 넣지 않음).
-    /// 만든 패키지는 검사를 다시 통과해야 쓴다 — 통과하지 못하면 <see cref="AssetPackageException"/>이고 <paramref name="output"/>에는 쓰지 않는다.
-    /// </summary>
-    public AssetManifest ExportPersonal(IEnumerable<string> ids, AssetManifest header, Stream output, Func<AssetEntry, PackagePreview?>? preview = null)
-    {
-        var builder = new AssetPackageBuilder(header);
-        foreach (var id in ids)
-        {
-            var entry = Catalog.Personal.FirstOrDefault(e => e.Id == id) ?? throw new ArgumentException(id, nameof(ids));
-            builder.Add(entry.Kind, entry.Data, preview?.Invoke(entry));
-        }
-        using var buffer = new MemoryStream();
-        var manifest = builder.Write(buffer);
-        buffer.Position = 0;
-        AssetPackageValidator.Read(buffer, _options with { AppVersion = null });
-        buffer.Position = 0;
-        buffer.CopyTo(output);
-        return manifest;
+        var used = _records.Select(r => r.Files).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        foreach (var dir in SafeDirectories(FilesDirectory))
+            if (!used.Contains(Path.GetFileName(dir))) TryDeleteDirectory(dir);
     }
 
     // ───────────── 도구 ─────────────
 
-    public string VersionFolder(string id, string version) => Path.Combine(PackagesDirectory, id, version);
-
-    private string NewPersonalId()
+    /// <summary>새 에셋 ID: <paramref name="preferred"/>(받은 에셋의 원래 ID)가 비어 있으면 그것, 아니면 <see cref="LocalIdPrefix"/> + GUID.</summary>
+    private static string NewId(List<Record> records, string? preferred)
     {
+        if (preferred is { Length: > 0 } && records.All(r => r.Id != preferred)) return preferred;
         string id;
-        do id = PersonalIdPrefix + Guid.NewGuid().ToString("N");
-        while (_personal.Any(r => r.Id == id));
+        do id = LocalIdPrefix + Guid.NewGuid().ToString("N");
+        while (records.Any(r => r.Id == id));
         return id;
     }
 
