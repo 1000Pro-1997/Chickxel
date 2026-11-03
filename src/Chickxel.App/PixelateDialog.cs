@@ -76,7 +76,7 @@ public sealed class PixelateOptions
     }
 
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 11;
+    public const int CurrentVersion = 12;
 
     /// <summary>
     /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
@@ -94,6 +94,7 @@ public sealed class PixelateOptions
     /// 판 10 = 기본 프리셋의 디더링을 새 처음 값 '없음'으로(예전 처음 값 Bayer 2×2이거나 최적화가 써 넣은 디더). 디더링 '최적화 제외'(<see cref="OptimizePreset.KeepDither"/>)는
     /// 저장된 값이 없는 예전 프리셋이면 모두 켬으로 읽힌다.
     /// 판 11 = 기본 프리셋 '같은 색상 계열'을 '기본' 바로 뒤로 옮긴다(둘 다 있을 때 — 후보 줄도 이 차례).
+    /// 판 12 = 배경 지우기의 처음 값이 '지우지 않음'이 되어, 프리셋의 배경 방식이 예전 처음 값 '자동'이면 '지우지 않음'으로(색 고르기로 정한 프리셋은 그대로).
     /// </summary>
     public void Migrate(string? lastSettings = null, string? manualPresetsPath = null)
     {
@@ -156,6 +157,13 @@ public sealed class PixelateOptions
                 OptimizePresets.Remove(moved);
                 OptimizePresets.Insert(OptimizePresets.FindIndex(p => p.BuiltIn == "plain") + 1, moved);
             }
+            if (Version < 12)
+                foreach (var p in OptimizePresets.Where(p => p.Settings is not null))
+                {
+                    var start = p.StartSettings();
+                    if (start.Background.Mode == BackgroundMode.Auto)
+                        p.Settings = OptimizePreset.Serialize(start with { Background = start.Background with { Mode = BackgroundMode.None } });
+                }
             Version = CurrentVersion;
         }
         Legacy = null;
@@ -320,7 +328,10 @@ public sealed class OptimizePreset
         & ~(KeepDither ? OptimizeParam.Dither : OptimizeParam.None);
 
     /// <summary>시작 단계 설정(없거나 읽을 수 없으면 기본 설정 — <see cref="Canonical"/> 모양이라 예전에 저장한 그림별 격자 값은 빠짐).</summary>
-    public PixelateSettings StartSettings() => Canonical(PixelatePresets.ParseSettings(Settings) ?? new PixelateSettings());
+    public PixelateSettings StartSettings() => Canonical(PixelatePresets.ParseSettings(Settings) ?? DefaultSettings);
+
+    /// <summary>픽셀로 정리 창의 처음 단계 설정: 엔진 기본값에서 배경 지우기만 '지우지 않음'(배경은 사용자가 켤 때만 지움 — 원본 아래 막대의 지우개 토글이나 1. 배경).</summary>
+    public static PixelateSettings DefaultSettings => new() { Background = new BackgroundSettings { Mode = BackgroundMode.None } };
 
     /// <summary>
     /// 프리셋에 담는 모양: 고정 색·뺀 색은 그 그림의 뒤처리라 빼고, 기존 팔레트 색·이름은 '기존 팔레트' 방식일 때만 남긴다(다른 방식에서는 쓰지 않음 —
@@ -466,7 +477,7 @@ public sealed class OptimizePreset
             var settings = obj["Settings"] is JsonObject s ? PixelatePresets.ParseSettings(s.ToJsonString()) : null;
             obj.Remove("Settings");
             var preset = obj.Deserialize<OptimizePreset>()!;
-            preset.Settings = Serialize(settings ?? new PixelateSettings());
+            preset.Settings = Serialize(settings ?? DefaultSettings);
             preset.Name = BuiltInName(preset.BuiltIn!);
             presets.Add(preset);
         }
@@ -819,7 +830,7 @@ public sealed class PixelateDialog : DialogBase
         ShowInTaskbar = true;
 
         // 기억한 마지막 설정은 다른 그림에 쓰므로 그림마다 다른 격자 값은 뺀다(AI 그리기의 '변환 설정 보기'는 같은 그림이라 그대로).
-        var initial = preset ?? (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? new PixelateSettings();
+        var initial = preset ?? (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? OptimizePreset.DefaultSettings;
         _presetGiven = preset is not null;
         if (sourceFrames > 1 && preset is null)
         {
@@ -5245,16 +5256,16 @@ public sealed class PixelateDialog : DialogBase
             GridButton.IsCheckedChanged += (_, _) => _view.ShowGrid = GridButton.On();
             var closeButton = Ui.IconButton(VectorIcon.X, UiStrings.Pixelate_Zoom_Close, (_, _) => close());
             var title = new TextBlock { Text = UiStrings.Pixelate_Zoom_Title, Foreground = AppTheme.TextBrush, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
-            // 위 줄: 제목·재생 단추·격자 보기·정보박스(조작 안내 풍선) | 가운데 최적화 정보(도는 칸·최적화한 후보일 때) | 닫기.
+            // 위 줄: 제목·재생 단추·격자 보기·정보박스(조작 안내 풍선) | 최적화 그래프와 그 바로 오른쪽 최적화 정보(도는 칸·최적화한 후보일 때, 왼쪽에 붙임) | 닫기.
             _optInfo = new TextBlock
             {
                 Foreground = AppTheme.DimTextBrush,
                 FontSize = AppTheme.SmallFontSize,
                 VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Margin = new Thickness(8, 0),
+                Margin = new Thickness(2, 0, 8, 0),
                 IsVisible = false,
             };
             var bar = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 4) };
@@ -5310,10 +5321,10 @@ public sealed class PixelateDialog : DialogBase
         public ToggleButton GridButton { get; }
 
         private readonly TextBlock _optInfo;
-        /// <summary>위 줄 가운데 최적화 점수 그래프(큰 미리보기 옆 그래프와 같은 모양 — 도는 칸은 따라 그리고, 최적화한 후보는 돌던 동안의 그래프).</summary>
+        /// <summary>위 줄 최적화 점수 그래프(큰 미리보기 옆 그래프와 같은 모양 — 도는 칸은 따라 그리고, 최적화한 후보는 돌던 동안의 그래프).</summary>
         private readonly OptimizeGraph _graph = new() { Width = 180, Height = 26, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, IsVisible = false };
 
-        /// <summary>위 줄 가운데 최적화 정보(빈 글이면 숨김, 잘리면 풍선에 전부).</summary>
+        /// <summary>위 줄 그래프 오른쪽 최적화 정보(빈 글이면 숨김, 잘리면 풍선에 전부).</summary>
         public void SetOptimizeInfo(string text)
         {
             _optInfo.Text = text;

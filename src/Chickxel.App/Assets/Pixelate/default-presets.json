@@ -23,7 +23,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -134,7 +134,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -245,7 +245,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -356,7 +356,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -467,7 +467,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -578,7 +578,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -689,7 +689,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -800,7 +800,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,
@@ -911,7 +911,7 @@
     },
     "Settings": {
       "background": {
-        "mode": "Auto",
+        "mode": "None",
         "color": "#000000",
         "tolerance": 24,
         "autoTolerance": true,

@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.89 (2026-11-03)
+### Pixelate: optimization info sits next to the score graph in the enlarged view
+- In the enlarged view's top bar, the optimization text (runs, score, tries, time) now starts right after the score graph instead of floating in the middle of the bar.
+- Long text still ends with an ellipsis and shows in full in a tooltip.
+### Pixelate: background removal is off by default
+- The settings you start from and every built-in preset now keep the background (Background: Keep). Turn removal on with the eraser button under the source or in 1. Background.
+- Existing presets that used Auto (the old default) switch to Keep once. Presets set to Pick color stay as they are.
+
 ## v1.14.88 (2026-11-03)
 ### Effects window: long setting names no longer push the settings off the panel
 - A script effect with a long setting name (for example "End image (frame in the range, 0 = last)") widened the name column of every row, so sliders, number fields, the frame range and the clip checkbox were cut off on the right.
