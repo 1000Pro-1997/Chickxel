@@ -1,0 +1,392 @@
+using System.Runtime.CompilerServices;
+using Chickxel.Core.Edit;
+using Chickxel.Core.Localization;
+
+namespace Chickxel.Core.Model;
+
+/// <summary>타임라인에 그릴 칸 하나의 링크 표시: <see cref="Group"/> = 행 안의 링크 묶음 번호(첫 프레임 차례, -1 = 링크 아님), <see cref="Color"/> = 묶음 색 번호.</summary>
+public readonly record struct CelLinkMark(int Group, int Color)
+{
+    public static readonly CelLinkMark None = new(-1, -1);
+    public bool IsLinked => Group >= 0;
+}
+
+// 링크된 셀: 같은 레이어(부위면 같은 스킨)의 여러 프레임 셀이 그림 하나(같은 PixelImage)를 같이 쓴다.
+// 스트로크는 그 그림을 그 자리에서 고치므로 링크된 셀이 모두 함께 바뀌고, 셀 내용을 새 그림으로 바꾸는 편집(SetCel·MapCels·옮기기·변형·
+// 캔버스·레이어 크기 등)도 링크된 셀 모두에 같은 새 그림을 넣어 링크를 지킨다. 캔버스 밖 그림도 링크된 셀끼리 같다.
+// 셀을 갈아 끼우거나(PlaceCel — 붙여넣기 등) 비우면 그 셀만 링크에서 빠진다. 실행취소 사본은 그림 참조를 담으므로 링크도 함께 돌아온다.
+// 링크 묶음 색은 묶음 그림에 붙은 표(_linkTags)에 있다: 묶을 때 그 행에서 아직 쓰지 않은 첫 색(묶은 차례대로)을 받고, 그림을 새 그림으로 바꿀 때 따라간다.
+// 색을 바꿀 때는 그림 사본에 새 색을 붙여 넣으므로(표는 고치지 않음) 실행취소로 예전 색이 돌아온다.
+public sealed partial class SpriteProject
+{
+    /// <summary>링크 묶음 색 이름(색 번호 차례 — 타임라인이 같은 차례의 색으로 그림). 묶을 때 그 행에서 쓰지 않은 첫 색부터 차례로 받는다.</summary>
+    public static readonly IReadOnlyList<string> LinkColorNames = ["blue", "orange", "green", "pink", "yellow", "purple", "teal"];
+
+    /// <summary>링크 묶음 그림의 색(그림은 바뀌지 않는 값으로 — 같은 표가 여러 그림에 붙어도 됨).</summary>
+    private sealed class LinkTag(int color)
+    {
+        public int Color { get; } = color;
+    }
+
+    private readonly ConditionalWeakTable<PixelImage, LinkTag> _linkTags = new();
+
+    /// <summary>링크 묶음 그림의 색(색이 붙지 않았으면 -1).</summary>
+    private int ColorOf(PixelImage image) => _linkTags.TryGetValue(image, out var tag) ? tag.Color : -1;
+
+    /// <summary><paramref name="image"/>에 색을 붙여 돌려준다. 이미 셀에 들어간 그림에는 쓰지 않는다(실행취소가 예전 색을 되돌리지 못함) — 새 그림·사본에만.</summary>
+    private PixelImage Tagged(PixelImage image, int color)
+    {
+        _linkTags.AddOrUpdate(image, new LinkTag(color));
+        return image;
+    }
+
+    /// <summary>링크 묶음 그림을 새 그림으로 바꿀 때 색을 따라가게 한다(새 그림에 이미 색이 있으면 그대로).</summary>
+    private void InheritLinkTag(PixelImage from, PixelImage to)
+    {
+        if (ReferenceEquals(from, to) || _linkTags.TryGetValue(to, out _)) return;
+        if (_linkTags.TryGetValue(from, out var tag)) _linkTags.AddOrUpdate(to, tag);
+    }
+
+    /// <summary><paramref name="key"/>와 같은 그림을 쓰는 셀 키(자신 포함, 프레임 차례). 셀이 없으면 <paramref name="key"/> 하나.</summary>
+    private List<CelKey> LinkedKeys(CelKey key)
+    {
+        if (!_cels.TryGetValue(key, out var image)) return [key];
+        var keys = new List<CelKey>();
+        foreach (var frame in _frames)
+        {
+            var k = key with { Frame = frame };
+            if (_cels.TryGetValue(k, out var other) && ReferenceEquals(other, image)) keys.Add(k);
+        }
+        if (!keys.Contains(key)) keys.Add(key);
+        return keys;
+    }
+
+    /// <summary>셀 내용을 새 그림으로 바꾼다: 링크된 셀 모두에(<see cref="Edit(string, ProjectChange, Action)"/> 안에서). 링크 색도 따라간다.</summary>
+    private void SetLinked(CelKey key, PixelImage image)
+    {
+        if (_cels.TryGetValue(key, out var old)) InheritLinkTag(old, image);
+        foreach (var k in LinkedKeys(key)) _cels[k] = image;
+    }
+
+    /// <summary><see cref="SetLinked(CelKey, PixelImage)"/>에 캔버스 밖 그림까지.</summary>
+    private void SetLinked(CelKey key, PixelImage image, CelOverflow? overflow)
+    {
+        if (_cels.TryGetValue(key, out var old)) InheritLinkTag(old, image);
+        foreach (var k in LinkedKeys(key))
+        {
+            _cels[k] = image;
+            SetOverflow(k, overflow);
+        }
+    }
+
+    /// <summary>그림마다 한 번만 바꾸는 함수: 같은 그림을 같이 쓰던 셀(링크)은 바꾼 뒤에도 같은 새 그림을 같이 쓰고, 링크 색도 따라간다.</summary>
+    private Func<PixelImage, PixelImage> OncePerImage(Func<PixelImage, PixelImage> map)
+    {
+        var done = new Dictionary<PixelImage, PixelImage>(ReferenceEqualityComparer.Instance);
+        return image =>
+        {
+            if (!done.TryGetValue(image, out var result))
+            {
+                done[image] = result = map(image);
+                InheritLinkTag(image, result);
+            }
+            return result;
+        };
+    }
+
+    /// <summary>
+    /// 셀마다 따로 계산한 새 그림을 넣는다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서, 캔버스 밖 그림은 먼저 넣어 둔다). 바꾸기 전 같은 그림을 쓰던 셀(링크)의
+    /// 새 그림·캔버스 밖 그림이 모두 같으면 하나를 같이 쓰게 해 링크(와 색)를 지키고, 다르면(프레임마다 달라지는 효과를 구웠을 때 등) 셀마다 따로 둔다.
+    /// </summary>
+    private void PutKeepingLinks(IReadOnlyList<(CelKey Key, PixelImage? Before, PixelImage After)> changes)
+    {
+        var shared = new Dictionary<PixelImage, (CelKey Key, PixelImage After)?>(ReferenceEqualityComparer.Instance);
+        foreach (var (key, before, after) in changes)
+        {
+            if (before is null) continue;
+            if (!shared.TryGetValue(before, out var first)) shared[before] = (key, after);
+            else if (first is { } f && !(f.After.ContentEquals(after) && SameOverflow(f.Key, key))) shared[before] = null;
+        }
+        foreach (var (before, same) in shared)
+            if (same is { } s) InheritLinkTag(before, s.After);
+        foreach (var (key, before, after) in changes)
+            _cels[key] = before is not null && shared[before] is { } same ? same.After : after;
+    }
+
+    private bool SameOverflow(CelKey a, CelKey b)
+    {
+        bool hasA = _overflow.TryGetValue(a, out var oa), hasB = _overflow.TryGetValue(b, out var ob);
+        return hasA == hasB && (!hasA || oa.Origin == ob.Origin && (ReferenceEquals(oa.Image, ob.Image) || oa.Image.ContentEquals(ob.Image)));
+    }
+
+    /// <summary>행(레이어·스킨)의 링크 묶음 그림(두 칸 이상이 같이 쓰는 그림, 묶음의 첫 프레임 차례)과 그 묶음의 프레임 번호들.</summary>
+    private List<(PixelImage Image, List<int> Frames)> LinkGroupsOf(Layer layer, Skin? skin)
+    {
+        var groups = new List<(PixelImage Image, List<int> Frames)>();
+        var index = new Dictionary<PixelImage, int>(ReferenceEqualityComparer.Instance);
+        for (int f = 0; f < _frames.Count; f++)
+        {
+            if (!_cels.TryGetValue(new(layer, _frames[f], skin), out var image)) continue;
+            if (!index.TryGetValue(image, out var i))
+            {
+                index[image] = i = groups.Count;
+                groups.Add((image, []));
+            }
+            groups[i].Frames.Add(f);
+        }
+        groups.RemoveAll(g => g.Frames.Count < 2);
+        return groups;
+    }
+
+    /// <summary>
+    /// 새 링크 묶음의 색: 그 행의 다른 링크 묶음(과 <paramref name="alsoUsed"/>)이 쓰지 않는 첫 색 — 묶은 차례대로 파랑·주황·초록… —, 모두 쓰면 묶음 수 차례로 돈다.
+    /// </summary>
+    private int NextLinkColor(Layer layer, Skin? skin, IEnumerable<int>? alsoUsed = null)
+    {
+        var groups = LinkGroupsOf(layer, skin);
+        var used = new HashSet<int>(alsoUsed ?? []);
+        foreach (var (image, _) in groups) used.Add(ColorOf(image));
+        for (int c = 0; c < LinkColorNames.Count; c++)
+            if (!used.Contains(c)) return c;
+        return groups.Count % LinkColorNames.Count;
+    }
+
+    /// <summary>지금 스킨 자신의 셀이 다른 프레임 셀과 링크되어(같은 그림을 같이 써) 있는지. 셀이 없거나 그룹이면 false.</summary>
+    public bool IsCelLinked(Layer layer, Frame frame)
+    {
+        var key = new CelKey(layer, frame, ActiveKey(layer));
+        return _cels.ContainsKey(key) && LinkedKeys(key).Count > 1;
+    }
+
+    /// <inheritdoc cref="IsCelLinked(Layer, Frame)"/>
+    public bool IsCelLinked(int layerIndex, int frameIndex) => IsCelLinked(_layers[layerIndex], _frames[frameIndex]);
+
+    /// <summary>두 프레임의 지금 스킨 자신의 셀이 서로 링크되어 있는지(같은 프레임이거나 셀이 없으면 false).</summary>
+    public bool AreCelsLinked(int layerIndex, int frameA, int frameB)
+    {
+        if (frameA == frameB) return false;
+        var layer = _layers[layerIndex];
+        var skin = ActiveKey(layer);
+        return _cels.TryGetValue(new(layer, _frames[frameA], skin), out var a)
+               && _cels.TryGetValue(new(layer, _frames[frameB], skin), out var b) && ReferenceEquals(a, b);
+    }
+
+    /// <summary>지금 스킨 자신의 셀과 링크된 프레임 번호(자신 포함, 오름차순). 셀이 없으면 빈 목록.</summary>
+    public IReadOnlyList<int> LinkedFrames(int layerIndex, int frameIndex)
+    {
+        var layer = _layers[layerIndex];
+        var key = new CelKey(layer, _frames[frameIndex], ActiveKey(layer));
+        return _cels.ContainsKey(key) ? LinkedKeys(key).Select(k => _frames.IndexOf(k.Frame)).ToList() : [];
+    }
+
+    /// <summary>두 프레임이 같은 그림을 쓰는지: 같은 프레임이거나 지금 스킨 자신의 셀이 서로 링크되어 있으면 true(효과 창 미리보기의 끝 모습 이어 가기).</summary>
+    public bool CelsShareDrawing(int layerIndex, int frameA, int frameB)
+        => frameA == frameB || ShareDrawing(_layers[layerIndex], ActiveKey(_layers[layerIndex]), frameA, frameB);
+
+    private bool ShareDrawing(Layer layer, Skin? skin, int frameA, int frameB)
+        => (uint)frameA < (uint)_frames.Count && (uint)frameB < (uint)_frames.Count
+           && _cels.TryGetValue(new(layer, _frames[frameA], skin), out var a) && _cels.TryGetValue(new(layer, _frames[frameB], skin), out var b) && ReferenceEquals(a, b);
+
+    /// <summary>
+    /// 그릴 효과 목록에 링크된 칸의 효과 끝 모습을 넣는다(<see cref="LayerEffects.HeldEnds"/>): 끝 모습 이어 가기를 켠 움직이는 효과의 범위가 이 프레임 앞에서 끝났고
+    /// 이 프레임 셀(셀 키 스킨 <paramref name="skin"/>)이 범위 끝 프레임 셀과 링크되어 있으면, 그 효과를 범위 끝 프레임의 조건 그대로(진행·피벗·다른 프레임·
+    /// 다른 레이어 <paramref name="cels"/>·태그) 맞춰 고정한 사본으로 바꾼다 — 범위 끝 프레임의 결과를 그대로 다시 그린다. 그룹은 셀이 없어 그대로.
+    /// </summary>
+    private IReadOnlyList<LayerEffect> WithHeldEnds(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Skin? skin,
+        Func<Layer, int, PixelImage?> cels, bool nested)
+    {
+        if (layer.IsGroup || effects.Count == 0) return effects;
+        if (LayerEffects.HeldEnds(effects, frameIndex, (a, b) => ShareDrawing(layer, skin, a, b)) is not { } held) return effects;
+        var list = effects.ToArray();
+        foreach (var (i, end) in held)
+        {
+            LayerEffect[] one = [effects[i]];
+            Func<int, PixelImage?>? source = LayerEffects.UsesOtherFrames(one) ? EffectFrameSource(layer) : null;
+            var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(
+                LayerEffects.At(one, end, _frames.Count, EffectPivot(layer, end), source, source is null ? null : f => EffectPivot(layer, f)),
+                ScriptLayersOf(layer, end, one, cels, nested)), FrameTagFor(one, end));
+            list[i] = LayerEffects.Pin(resolved[0]);
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// 레이어의 프레임마다 링크 표시(지금 스킨 자신의 셀 기준): 묶음 번호(묶음의 첫 프레임 차례로 0부터)와 묶음 색. 링크되지 않은 칸·그룹은 <see cref="CelLinkMark.None"/>.
+    /// 색이 붙지 않은 묶음(실행취소 기록에서 되살린 예전 그림 등)은 그 행에서 쓰지 않은 첫 색으로 보인다.
+    /// </summary>
+    public CelLinkMark[] LinkMarks(int layerIndex)
+    {
+        var marks = new CelLinkMark[_frames.Count];
+        Array.Fill(marks, CelLinkMark.None);
+        var layer = _layers[layerIndex];
+        if (layer.IsGroup) return marks;
+        var groups = LinkGroupsOf(layer, ActiveKey(layer));
+        var used = groups.Select(g => ColorOf(g.Image)).Where(c => c >= 0).ToHashSet();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            int color = ColorOf(groups[i].Image);
+            if (color < 0)
+            {
+                color = Enumerable.Range(0, LinkColorNames.Count).FirstOrDefault(c => !used.Contains(c), i % LinkColorNames.Count);
+                used.Add(color);
+            }
+            foreach (var f in groups[i].Frames) marks[f] = new CelLinkMark(i, color);
+        }
+        return marks;
+    }
+
+    /// <summary>레이어의 링크 묶음(프레임 번호들, 색 번호 — 첫 프레임 차례). AI 문서 설명에 쓴다.</summary>
+    public IReadOnlyList<(IReadOnlyList<int> Frames, int Color)> LinkGroups(int layerIndex)
+    {
+        var marks = LinkMarks(layerIndex);
+        return [.. Enumerable.Range(0, marks.Length).Where(f => marks[f].IsLinked).GroupBy(f => marks[f].Group)
+            .Select(g => ((IReadOnlyList<int>)g.ToList(), marks[g.First()].Color))];
+    }
+
+    /// <summary>
+    /// 셀 링크(실행취소 한 단계): 고른 셀(레이어 번호, 프레임 번호 — 떨어진 칸이어도 됨)을 레이어마다 묶어 그림 하나를 같이 쓰게 한다.
+    /// 같이 쓸 그림은 고른 셀 중 이미 링크된(다른 칸과 그림을 같이 쓰는) 그림 있는 첫 프레임 셀의 것 — 고른 칸이 그 링크 묶음(과 색)에 들어간다 —,
+    /// 없으면 그림이 있는 첫 프레임 셀(지금 스킨 자신의 셀)의 것으로 새 묶음을 만든다(색 = 그 행에서 아직 쓰지 않은 첫 색).
+    /// 나머지 셀의 그림(빈 셀 포함)은 그 그림으로 바뀌고, 일반 레이어면 캔버스 밖 그림도 같아진다.
+    /// 그룹·잠긴 레이어·그림 있는 셀이 없는 레이어는 건너뛴다. 새로 링크한 셀 수를 돌려준다(0이면 기록 없음).
+    /// </summary>
+    public int LinkCels(IEnumerable<(int Layer, int Frame)> cels)
+    {
+        var plan = new List<(CelKey Source, bool Join, List<CelKey> Keys)>();
+        int count = 0;
+        foreach (var row in cels.Where(c => c.Frame >= 0 && c.Frame < _frames.Count).Distinct().GroupBy(c => c.Layer))
+        {
+            int li = row.Key;
+            if (li < 0 || li >= _layers.Count || _layers[li].IsGroup || IsLayerLocked(li)) continue;
+            var layer = _layers[li];
+            var skin = ActiveKey(layer);
+            var keys = row.Select(c => c.Frame).Order().Select(f => new CelKey(layer, _frames[f], skin)).ToList();
+            int source = keys.FindIndex(k => HasContent(_cels.GetValueOrDefault(k)) && LinkedKeys(k).Count > 1);
+            bool join = source >= 0;
+            if (!join) source = keys.FindIndex(k => HasContent(_cels.GetValueOrDefault(k)));
+            if (source < 0) continue;
+            var image = _cels[keys[source]];
+            int added = keys.Count(k => !ReferenceEquals(_cels.GetValueOrDefault(k), image));
+            if (added == 0) continue;
+            plan.Add((keys[source], join, keys));
+            count += added;
+        }
+        if (count == 0) return 0;
+        Edit(DomainStrings.Project_LinkCels, ProjectChange.Pixels, () =>
+        {
+            foreach (var (source, join, keys) in plan)
+            {
+                // 새 묶음은 그림 사본에 새 색을 붙여 같이 쓴다(이미 셀에 있던 그림의 색 표를 고치지 않게 — 실행취소가 예전 색을 되돌림)
+                var image = join ? _cels[source] : Tagged(_cels[source].Clone(), NextLinkColor(source.Layer, source.Skin));
+                CelOverflow? overflow = _overflow.TryGetValue(source, out var o) ? o : null;
+                foreach (var key in keys)
+                {
+                    if (ReferenceEquals(_cels.GetValueOrDefault(key), image)) continue;
+                    _cels[key] = image;
+                    if (key.Layer.Kind == LayerKind.Normal) SetOverflow(key, overflow);
+                }
+            }
+        });
+        return count;
+    }
+
+    /// <summary>
+    /// 링크 묶음 색 바꾸기(실행취소 한 단계): 프레임 <paramref name="frameIndex"/>의 셀(지금 스킨 자신의 셀)이 든 링크 묶음의 색을 <paramref name="color"/>
+    /// (<see cref="LinkColorNames"/> 번호)로. 링크된 셀이 아니면 false(기록 없음). 그룹이면 <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public bool SetLinkColor(int layerIndex, int frameIndex, int color)
+    {
+        if ((uint)color >= (uint)LinkColorNames.Count) throw new ArgumentOutOfRangeException(nameof(color));
+        var key = CelKeyFor(layerIndex, frameIndex, null);
+        if (!_cels.TryGetValue(key, out var image) || LinkedKeys(key).Count < 2) return false;
+        if (ColorOf(image) == color) return true;
+        Edit(DomainStrings.Project_LinkColor, ProjectChange.Pixels, () => SetLinked(key, Tagged(image.Clone(), color)));
+        return true;
+    }
+
+    /// <summary>
+    /// 셀 링크 풀기(실행취소 한 단계): 고른 셀(지금 스킨 자신의 셀) 중 다른 셀과 링크된 것이 저마다 그림 사본을 갖게 한다(그림은 그대로).
+    /// 그룹·잠긴 레이어·빈 칸은 건너뛴다. 링크를 푼 셀 수를 돌려준다(0이면 기록 없음).
+    /// </summary>
+    public int UnlinkCels(IEnumerable<(int Layer, int Frame)> cels)
+    {
+        var keys = new List<CelKey>();
+        foreach (var (li, fi) in cels.Distinct())
+        {
+            if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count || _layers[li].IsGroup || IsLayerLocked(li)) continue;
+            var layer = _layers[li];
+            var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
+            if (_cels.ContainsKey(key) && LinkedKeys(key).Count > 1) keys.Add(key);
+        }
+        if (keys.Count == 0) return 0;
+        int count = 0;
+        Edit(DomainStrings.Project_UnlinkCels, ProjectChange.Pixels, () =>
+        {
+            // 하나씩 떼어 내면 묶음의 마지막 셀은 혼자 남으므로 사본이 필요 없다
+            foreach (var key in keys)
+            {
+                if (LinkedKeys(key).Count < 2) continue;
+                _cels[key] = _cels[key].Clone();
+                count++;
+            }
+        });
+        return count;
+    }
+
+    /// <summary>
+    /// 고른 셀(지금 스킨 자신의 셀)의 그림을 지운다(실행취소 한 단계). 링크된 셀은 링크를 남긴 채 묶음의 그림을 빈 그림으로 바꾸고(링크된 칸이 모두 비고 색도 그대로),
+    /// 링크되지 않은 셀은 비운다(<see cref="SetCel"/>에 null). 그룹·잠긴 레이어·빈 칸은 건너뛴다. 지운 셀 수를 돌려준다(0이면 기록 없음).
+    /// </summary>
+    public int EraseCels(IEnumerable<(int Layer, int Frame)> cels, string? label = null)
+    {
+        var keys = new List<(CelKey Key, bool Linked)>();
+        foreach (var (li, fi) in cels.Distinct())
+        {
+            if (li < 0 || li >= _layers.Count || fi < 0 || fi >= _frames.Count || _layers[li].IsGroup || IsLayerLocked(li)) continue;
+            var layer = _layers[li];
+            var key = new CelKey(layer, _frames[fi], ActiveKey(layer));
+            if (!HasContent(_cels.GetValueOrDefault(key))) continue;
+            keys.Add((key, LinkedKeys(key).Count > 1));
+        }
+        if (keys.Count == 0) return 0;
+        Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
+        {
+            foreach (var (key, linked) in keys)
+            {
+                if (!HasContent(_cels.GetValueOrDefault(key))) continue; // 같은 묶음을 이미 지움
+                if (linked)
+                {
+                    var size = CelSize(key.Layer);
+                    SetLinked(key, new PixelImage(size.Width, size.Height));
+                }
+                else _cels.Remove(key);
+            }
+        });
+        return keys.Count;
+    }
+
+    /// <summary>
+    /// 지금 스킨의 셀 하나만 새 그림으로 갈아 끼운다(null = 비우기, 실행취소됨): 링크된 셀이면 이 셀만 링크에서 빠지고 다른 셀은 그대로다
+    /// (타임라인 붙여넣기·옮기기처럼 셀 자체를 바꿀 때). 셀 내용을 고쳐 링크된 셀도 함께 바꾸려면 <see cref="SetCel"/>.
+    /// </summary>
+    public void PlaceCel(int layerIndex, int frameIndex, PixelImage? image, string? label = null)
+    {
+        var key = CelKeyFor(layerIndex, frameIndex, image);
+        Edit(label ?? DomainStrings.Project_ChangeCel, ProjectChange.Pixels, () =>
+        {
+            if (image is null) _cels.Remove(key);
+            else _cels[key] = image;
+        });
+    }
+
+    // ───────────── 파일 읽기·쓰기 ─────────────
+
+    /// <summary>파일 쓰기용: 링크 묶음 그림의 색(없으면 -1).</summary>
+    internal int LinkColorRaw(PixelImage image) => ColorOf(image);
+
+    /// <summary>파일 읽기·저장 사본용: 링크 묶음 그림에 색을 붙인다(셀에 넣기 전, 실행취소 기록 밖).</summary>
+    internal void SetLinkColorRaw(PixelImage image, int color)
+    {
+        if ((uint)color < (uint)LinkColorNames.Count) Tagged(image, color);
+    }
+}

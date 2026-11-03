@@ -21,6 +21,16 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/guide"/>
   </url>
   <url>
+    <loc>https://chickxel.com/download</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/download"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/download"/>
+  </url>
+  <url>
+    <loc>https://chickxel.com/en/download</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://chickxel.com/download"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://chickxel.com/en/download"/>
+  </url>
+  <url>
     <loc>https://chickxel.com/gallery</loc>
   </url>
   <url>

@@ -18,7 +18,7 @@ public sealed record ProjectSaveResult(string ProjectPath, ProjectExportResult? 
 /// <summary>
 /// <c>.chickxel</c> 프로젝트 파일 읽기/쓰기. 형식은 ZIP:
 /// <c>project.json</c>(버전 4, 캔버스·레이어(종류·그룹·스킨·부위 크기·위치·피벗·테두리·효과)·프레임·태그·Unity·내보내기 설정,
-/// 스크립트 효과가 있으면 스크립트 표 <c>scripts</c>: 원문 해시 → 원문) +
+/// 스크립트 효과가 있으면 스크립트 표 <c>scripts</c>: 원문 해시 → 원문, 링크된 셀이 있으면 <c>celLinks</c>: 같은 그림을 같이 쓰는 셀) +
 /// <c>cels/L{레이어 번호}_F{프레임 번호}.png</c>(셀, 부위 셀은 부위 크기 — 부위는 그룹의 첫 스킨 셀) +
 /// <c>cels/L{레이어}_F{프레임}_S{스킨 번호}.png</c>(부위의 첫 스킨이 아닌 스킨 셀, 스킨 번호 = 그룹 스킨 목록 번호 1~).
 /// 빈 셀은 생략, 번호는 0부터, 레이어 0 = 맨 아래.
@@ -110,19 +110,37 @@ public static partial class ProjectIO
         WriteProjectJson(zip, ToDto(project, projectPath));
 
         // 셀 PNG는 여러 코어에서 묶음씩 만들고 ZIP에는 정한 차례대로 쓴다(파일 내용은 차례대로 만든 것과 같다). 묶음만큼만 메모리에 둔다.
+        // 링크된 셀(같은 그림)은 한 번만 만들고 같은 바이트를 셀마다 쓴다.
         var cels = CelsToWrite(project);
+        var firstOf = new int[cels.Count];
+        var seen = new Dictionary<PixelImage, int>(ReferenceEqualityComparer.Instance);
+        var reused = new HashSet<int>();
+        for (int i = 0; i < cels.Count; i++)
+        {
+            firstOf[i] = seen.TryAdd(cels[i].Cel, i) ? i : seen[cels[i].Cel];
+            if (firstOf[i] != i) reused.Add(firstOf[i]);
+        }
+        var shared = new Dictionary<int, byte[]?>();
         int batch = Math.Max(1, Environment.ProcessorCount * 2);
         var encoded = new byte[]?[Math.Min(batch, cels.Count)];
         for (int start = 0; start < cels.Count; start += batch)
         {
             int count = Math.Min(batch, cels.Count - start), first = start;
-            Parallel.For(0, count, i => encoded[i] = EncodeCel(cels[first + i].Cel, stage));
+            Parallel.For(0, count, i =>
+            {
+                var cel = cels[first + i].Cel;
+                if (firstOf[first + i] == first + i) encoded[i] = EncodeCel(cel, stage);
+                else stage?.Step((long)cel.Width * cel.Height);
+            });
             for (int i = 0; i < count; i++)
             {
-                if (encoded[i] is { } png)
+                int index = first + i;
+                var png = firstOf[index] == index ? encoded[i] : shared[firstOf[index]];
+                if (reused.Contains(index)) shared[index] = png;
+                if (png is not null)
                 {
                     // PNG는 이미 압축되어 있으므로 ZIP 압축은 하지 않는다.
-                    var entry = zip.CreateEntry(cels[first + i].Name, CompressionLevel.NoCompression);
+                    var entry = zip.CreateEntry(cels[index].Name, CompressionLevel.NoCompression);
                     using var es = entry.Open();
                     es.Write(png);
                 }
@@ -255,10 +273,20 @@ public static partial class ProjectIO
                     if (project.GetCelRaw(layer, frame, skins[si]) is { } skinCel) cels.Add((fileLayers[li], copy.Frames[fi], copySkins[si], skinCel));
             }
         }
-        // 셀 복사는 새 메모리를 처음 건드리는 비용이 커서 여러 코어로 나눈다(부르는 쪽은 UI 스레드)
+        // 셀 복사는 새 메모리를 처음 건드리는 비용이 커서 여러 코어로 나눈다(부르는 쪽은 UI 스레드). 링크된 셀(같은 그림)은 사본도 하나를 같이 쓴다.
+        var firstOf = new int[cels.Count];
+        var seen = new Dictionary<PixelImage, int>(ReferenceEqualityComparer.Instance);
+        for (int i = 0; i < cels.Count; i++) firstOf[i] = seen.TryAdd(cels[i].Source, i) ? i : seen[cels[i].Source];
         var copies = new PixelImage[cels.Count];
-        Parallel.For(0, cels.Count, i => copies[i] = cels[i].Source.Clone());
-        for (int i = 0; i < cels.Count; i++) copy.SetCelRaw(cels[i].Layer, cels[i].Frame, copies[i], cels[i].Skin);
+        Parallel.For(0, cels.Count, i =>
+        {
+            if (firstOf[i] == i) copies[i] = cels[i].Source.Clone();
+        });
+        for (int i = 0; i < cels.Count; i++)
+        {
+            if (firstOf[i] == i && project.LinkColorRaw(cels[i].Source) is var color and >= 0) copy.SetLinkColorRaw(copies[i], color);
+            copy.SetCelRaw(cels[i].Layer, cels[i].Frame, copies[firstOf[i]], cels[i].Skin);
+        }
         copy.NormalizeSkins();
         copy.ExportedFiles = project.ExportedFiles;
         copy.Path = fullPath;
@@ -571,6 +599,9 @@ public static partial class ProjectIO
 
             var (project, fileLayers) = FromDto(dto, warnings);
             project.ExportedFiles = ResolveRecord(dto.Exported, fullPath);
+            // 링크된 셀은 같이 쓰는 앞 프레임 셀 그림을 쓰므로 그 셀의 PNG(예전 판이 읽도록 따로 든 것)는 풀지 않는다
+            var links = ReadCelLinks(dto.CelLinks, fileLayers, project.Frames.Count, warnings);
+            var linked = links.Select(l => (l.Layer, l.Frame, l.SkinIndex)).ToHashSet();
             // 셀 PNG는 ZIP에서 차례대로 읽어 여러 코어에서 풀고, 프로젝트·경고에는 파일 차례대로 넣는다(한 번에 차례대로 읽은 것과 같다).
             var slots = new List<(ZipArchiveEntry Entry, Layer? Layer, int Frame, Skin? Skin, Point? Overflow)>();
             foreach (var e in zip.Entries)
@@ -591,7 +622,8 @@ public static partial class ProjectIO
                 if (!TryIndex(m, 1, fileLayers.Count, out var li) || !TryIndex(m, 2, project.Frames.Count, out var fi)
                     || fileLayers[li].IsGroup || !TrySkin(m, fileLayers[li], out var skin))
                     slots.Add((e, null, 0, null, null));
-                else slots.Add((e, fileLayers[li], fi, skin, null));
+                else if (!linked.Contains((li, fi, m.Groups[3].Success ? int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture) : 0)))
+                    slots.Add((e, fileLayers[li], fi, skin, null));
             }
             var cels = new (PixelImage? Image, string? Warning)[slots.Count];
             var bytes = new byte[]?[slots.Count];
@@ -620,6 +652,8 @@ public static partial class ProjectIO
                 if (overflowAt is { } at) project.SetOverflowRaw(layer, project.Frames[fi], img, at);
                 else project.SetCelRaw(layer, project.Frames[fi], img, skin);
             }
+            ApplyCelLinks(project, fileLayers, links);
+            ApplyCelLinkColors(project, fileLayers, dto.CelLinkColors);
             project.NormalizeSkins();
             return project;
         }
@@ -869,7 +903,105 @@ public static partial class ProjectIO
         }).ToList(),
         Exported = ToRecordDto(p.ExportedFiles, projectPath),
         Scripts = p.ScriptsInUse() is { Count: > 0 } scripts ? scripts : null,
+        CelLinks = CelLinksOf(p, out var colors),
+        CelLinkColors = colors,
     };
+
+    /// <summary>
+    /// 링크된 셀 표(<see cref="ProjectDto.CelLinks"/>): 레이어 → 스킨 → 프레임 차례로 보며, 앞 프레임과 같은 그림을 쓰는 셀마다
+    /// [레이어, 프레임, 그 그림을 처음 쓴 프레임(, 스킨 번호 — 첫 스킨이면 생략)]. 링크가 없으면 null.
+    /// <paramref name="colors"/> = 색이 붙은 링크 묶음마다 [레이어, 묶음의 첫 프레임, 색 번호(, 스킨 번호)](<see cref="ProjectDto.CelLinkColors"/>).
+    /// </summary>
+    private static List<int[]>? CelLinksOf(SpriteProject p, out List<int[]>? colors)
+    {
+        var links = new List<int[]>();
+        var colorList = new List<int[]>();
+        var first = new Dictionary<PixelImage, int>(ReferenceEqualityComparer.Instance);
+        var colored = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
+        for (int li = 0; li < p.Layers.Count; li++)
+        {
+            var layer = p.Layers[li];
+            if (layer.IsGroup) continue;
+            var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
+            for (int si = 0; si < Math.Max(1, skins.Count); si++)
+            {
+                first.Clear();
+                for (int fi = 0; fi < p.Frames.Count; fi++)
+                {
+                    if (p.GetCelRaw(layer, p.Frames[fi], si == 0 ? null : skins[si]) is not { } cel) continue;
+                    if (first.TryAdd(cel, fi)) continue;
+                    int from = first[cel];
+                    links.Add(si == 0 ? [li, fi, from] : [li, fi, from, si]);
+                    // 묶음마다 한 번: 색
+                    if (colored.Add(cel) && p.LinkColorRaw(cel) is var color and >= 0)
+                        colorList.Add(si == 0 ? [li, from, color] : [li, from, color, si]);
+                }
+            }
+        }
+        colors = colorList.Count > 0 ? colorList : null;
+        return links.Count > 0 ? links : null;
+    }
+
+    /// <summary>읽은 링크 묶음에 파일의 색을 붙인다(맞지 않는 줄은 건너뜀 — 그 묶음은 행에서 쓰지 않은 색으로 보임).</summary>
+    private static void ApplyCelLinkColors(SpriteProject project, IReadOnlyList<Layer> fileLayers, List<int[]>? colors)
+    {
+        foreach (var c in colors ?? [])
+        {
+            if (c is not { Length: 3 or 4 } || c[0] < 0 || c[0] >= fileLayers.Count || fileLayers[c[0]].IsGroup || c[1] < 0 || c[1] >= project.Frames.Count
+                || !TrySkinIndex(fileLayers[c[0]], c.Length > 3 ? c[3] : 0, out var skin)) continue;
+            if (project.GetCelRaw(fileLayers[c[0]], project.Frames[c[1]], skin) is { } image) project.SetLinkColorRaw(image, c[2]);
+        }
+    }
+
+    /// <summary>
+    /// 파일의 링크된 셀 표에서 맞는 줄(레이어 번호, 프레임, 같이 쓰는 앞 프레임, 스킨 번호, 스킨). 맞지 않는 줄은 알리고 뺀다
+    /// (그 셀은 따로 들어 있는 PNG로 읽힌다).
+    /// </summary>
+    private static List<(int Layer, int Frame, int From, int SkinIndex, Skin? Skin)> ReadCelLinks(List<int[]>? links, IReadOnlyList<Layer> fileLayers, int frameCount,
+        ICollection<string>? warnings)
+    {
+        var list = new List<(int, int, int, int, Skin?)>();
+        foreach (var link in links ?? [])
+        {
+            if (link is { Length: 3 or 4 } && link[0] >= 0 && link[0] < fileLayers.Count && !fileLayers[link[0]].IsGroup
+                && link[1] >= 0 && link[1] < frameCount && link[2] >= 0 && link[2] < link[1]
+                && TrySkinIndex(fileLayers[link[0]], link.Length > 3 ? link[3] : 0, out var skin))
+                list.Add((link[0], link[1], link[2], link.Length > 3 ? link[3] : 0, skin));
+            else warnings?.Add(Chickxel.Core.Localization.DomainStrings.FormatProject_BadCelLink(link: string.Join(", ", link ?? [])));
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// 읽은 프로젝트에 링크를 넣는다: 셀마다 같은 레이어·스킨의 앞 프레임 셀 그림을 같이 쓰게 한다.
+    /// 앞 프레임 셀이 비었으면(빈 셀은 저장하지 않음) 빈 그림 하나를 같이 쓴다.
+    /// </summary>
+    private static void ApplyCelLinks(SpriteProject project, IReadOnlyList<Layer> fileLayers, List<(int Layer, int Frame, int From, int SkinIndex, Skin? Skin)> links)
+    {
+        foreach (var (li, fi, from, _, skin) in links.OrderBy(l => l.Frame))
+        {
+            var layer = fileLayers[li];
+            var source = project.GetCelRaw(layer, project.Frames[from], skin);
+            if (source is null)
+            {
+                var size = project.CelSize(layer);
+                source = new PixelImage(size.Width, size.Height);
+                project.SetCelRaw(layer, project.Frames[from], source, skin);
+            }
+            project.SetCelRaw(layer, project.Frames[fi], source, skin);
+        }
+    }
+
+    /// <summary>스킨 번호(0 = 첫 스킨·일반 레이어 → null)가 이 레이어에 맞는지.</summary>
+    private static bool TrySkinIndex(Layer layer, int index, out Skin? skin)
+    {
+        skin = null;
+        if (index == 0) return true;
+        var skins = layer is { IsPart: true, Parent: { IsGroup: true } g } ? g.AllSkins : [];
+        if (index < 0 || index >= skins.Count) return false;
+        skin = skins[index];
+        return true;
+    }
 
     /// <summary>알림에 보일 해시 앞부분(12자).</summary>
     private static string ShortHash(string? hash) => hash is null ? "" : hash.Length > 12 ? hash[..12] : hash;
@@ -1217,6 +1349,13 @@ public static partial class ProjectIO
         public List<OutfitDto>? Outfits { get; set; }
         /// <summary>스크립트 표: 원문 해시 → 원문(스크립트 효과가 쓰는 것만, 없으면 스크립트 효과 없음).</summary>
         public SortedDictionary<string, string>? Scripts { get; set; }
+        /// <summary>
+        /// 링크된 셀(같은 그림을 같이 쓰는 셀, 없으면 링크 없음 — 예전 파일): [레이어, 프레임, 같이 쓰는 앞 프레임(, 스킨 번호 — 첫 스킨이면 생략)].
+        /// 링크된 셀도 PNG를 따로 써서 이 표를 모르는 예전 판은 저마다의 셀로 읽는다.
+        /// </summary>
+        public List<int[]>? CelLinks { get; set; }
+        /// <summary>링크 묶음 색(없으면 행에서 쓰지 않은 색 차례로 보임): [레이어, 묶음의 첫 프레임, 색 번호(<see cref="SpriteProject.LinkColorNames"/>)(, 스킨 번호)].</summary>
+        public List<int[]>? CelLinkColors { get; set; }
     }
 
     /// <summary>착장 프리셋: 이름, 그룹마다 스킨(레이어 = 그룹 번호), 부위 재정의(레이어 = 부위 번호, 스킨 = 그 그룹의 스킨 번호).</summary>

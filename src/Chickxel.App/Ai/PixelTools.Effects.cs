@@ -59,7 +59,7 @@ public sealed partial class PixelTools
             });
         yield return Tool("set_effect",
             "Change one effect of a layer: partial `settings` (only the keys to change; null resets a key to its default), frame range, enabled, " +
-            "clip_to_above, and/or its stack position (move_to). One undo step.",
+            "clip_to_above, hold_end, and/or its stack position (move_to). One undo step.",
             new JsonObject
             {
                 ["layer"] = Int("Layer index. Default: current.", 0),
@@ -71,6 +71,8 @@ public sealed partial class PixelTools
                 ["enabled"] = Bool("Turn the effect on or off (off keeps it in the stack without drawing)."),
                 ["clip_to_above"] = Bool("Clip to the nearest non-clipped effect above (lower index)."),
                 ["move_to"] = Int("New stack index (counted after taking the effect out). Effects that were clipped to it, or to the effect now at the target, stop clipping.", 0),
+                ["hold_end"] = Bool("Animated effects with a frame range only: true = cels after the range that are linked to the range's last cel (see link_cels) " +
+                                    "show exactly the range's last-frame look (e.g. a throw on frames 0-17 keeps the thrown ball on linked frame 18). The timeline shows a faint tail."),
             },
             "effect");
         yield return Tool("remove_effect",
@@ -273,6 +275,7 @@ public sealed partial class PixelTools
                 ["enabled"] = e.Enabled,
                 ["frames"] = e.Frames is { } r ? new JsonObject { ["from"] = r.From, ["to"] = r.To } : (JsonNode)"all",
                 ["clipToAbove"] = e.ClipToPrevious,
+                ["holdEnd"] = e is AnimatedEffect { HoldEnd: true } ? true : null,
                 ["settings"] = EffectSettings.ToJson(e),
             });
         }
@@ -351,16 +354,19 @@ public sealed partial class PixelTools
         var settings = SettingsArg(a);
         bool? enabled = OptBool(a, "enabled");
         bool? clip = OptBool(a, "clip_to_above");
+        bool? holdEnd = OptBool(a, "hold_end");
         int? moveTo = OptInt(a, "move_to", 0, layer.Effects.Count - 1);
         var effect = layer.Effects[e];
         var (rangeGiven, range) = ChangedRange(a, p, effect.Frames);
-        if (settings is null && !rangeGiven && enabled is null && clip is null && moveTo is null)
+        if (settings is null && !rangeGiven && enabled is null && clip is null && holdEnd is null && moveTo is null)
             throw new ToolError(UiStrings.Ai_Effect_NothingToChange);
+        if (holdEnd is not null && effect is not AnimatedEffect) throw new ToolError(UiStrings.Ai_Effect_HoldEndNotAnimated);
         RequireUnlocked(p, index);
 
         var (changed, clamped) = MergeSettings(effect, settings);
         if (rangeGiven) changed = changed with { Frames = range };
         if (enabled is { } on) changed = changed with { Enabled = on };
+        if (holdEnd is { } hold && changed is AnimatedEffect animated) changed = animated with { HoldEnd = hold };
         var list = layer.Effects.ToList();
         list[e] = changed;
         int position = e;

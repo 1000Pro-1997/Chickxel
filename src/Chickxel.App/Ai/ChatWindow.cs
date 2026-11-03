@@ -767,7 +767,7 @@ public sealed partial class ChatWindow : Window
         (UiStrings.Chat_Help_GroupGenerate, UiStrings.Chat_Help_GroupGenerate_Text, ["generate_pixel_art"]),
         (UiStrings.Chat_Help_GroupView, UiStrings.Chat_Help_GroupView_Text, ["get_document", "get_image", "get_pixels"]),
         (UiStrings.Chat_Help_GroupDraw, UiStrings.Chat_Help_GroupDraw_Text, ["draw_pixels", "set_pixels", "draw_shape", "fill", "clear", "replace_color"]),
-        (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag"]),
+        (UiStrings.Chat_Help_GroupFrames, UiStrings.Chat_Help_GroupFrames_Text, ["add_frame", "delete_frame", "set_frame_duration", "add_tag", "link_cels", "unlink_cels", "set_link_color"]),
         (UiStrings.Chat_Help_GroupLayers, UiStrings.Chat_Help_GroupLayers_Text, ["add_layer", "set_layer", "set_current"]),
         (UiStrings.Chat_Help_GroupParts, UiStrings.Chat_Help_GroupParts_Text, ["add_group", "add_part", "set_part"]),
         (UiStrings.Chat_Help_GroupSkins, UiStrings.Chat_Help_GroupSkins_Text, ["list_skins", "add_skin", "set_skin", "list_outfits", "save_outfit", "apply_outfit"]),

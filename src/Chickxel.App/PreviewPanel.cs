@@ -11,7 +11,7 @@ namespace Chickxel.App;
 /// Piskel식 미리보기(오른쪽 위): 현재 태그(없으면 전체 프레임)를 실시간으로 재생한다.
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
 /// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
-/// 그림을 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
+/// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
 /// </summary>
 public sealed class PreviewPanel : UserControl
 {
@@ -128,6 +128,15 @@ public sealed class PreviewPanel : UserControl
         root.Children.Add(_outfitHost);
         root.Children.Add(_view);
         PopupMenus.Attach(_view, ViewMenu);
+        // 그림을 누르면 크기를 바꿀 수 있는 큰 창으로 본다(우클릭은 위 메뉴)
+        _view.Cursor = new Cursor(StandardCursorType.Hand);
+        _view.Tip(UiStrings.Preview_ZoomTip);
+        _view.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton != MouseButton.Left) return;
+            e.Handled = true;
+            OpenZoom();
+        };
         Content = root;
         SetScale(0);
 
@@ -136,11 +145,11 @@ public sealed class PreviewPanel : UserControl
         {
             Stop();
             RebuildOutfit();
-            _view.InvalidateVisual();
+            Redraw();
         };
-        ctx.ViewChanged += (_, _) => _view.InvalidateVisual();
-        ctx.RenderUpdated += (_, _) => _view.InvalidateVisual();
-        _busyTimer.Tick += (_, _) => _view.InvalidateVisual();
+        ctx.ViewChanged += (_, _) => Redraw();
+        ctx.RenderUpdated += (_, _) => Redraw();
+        _busyTimer.Tick += (_, _) => Redraw();
         // 재생 중에 태그를 만들거나 고르면 그 태그 안에서 반복하도록 순서를 바꾼다.
         ctx.CurrentChanged += (_, _) => RefreshOrder();
         ctx.ProjectChanged += (_, e) =>
@@ -252,7 +261,7 @@ public sealed class PreviewPanel : UserControl
     {
         _scale = scale;
         _scaleButton.Content = scale == 0 ? UiStrings.S_PreviewPanel_SetScale_EBF1B9D1AA : $"{scale}×";
-        _view.InvalidateVisual();
+        Redraw();
     }
 
     /// <summary>배율 설정값(0 = 맞춤).</summary>
@@ -285,7 +294,7 @@ public sealed class PreviewPanel : UserControl
                 _background.SelectedIndex = idx >= 0 ? idx : Backgrounds.Length - 1;
                 _suppressBackground = false;
             }
-            _view.InvalidateVisual();
+            Redraw();
         }
     }
 
@@ -300,7 +309,7 @@ public sealed class PreviewPanel : UserControl
             UpdateCustomOption();
         }
         else _bgColor = PresetColors[i];
-        _view.InvalidateVisual();
+        Redraw();
     }
 
     /// <summary>"사용자 색…" 항목의 견본을 현재 사용자 색으로 바꾼다(선택은 유지).</summary>
@@ -444,7 +453,7 @@ public sealed class PreviewPanel : UserControl
         _timer.Start();
         ((IconView)_play.Content!).Icon = VectorIcon.Pause;
         PlayingFrameChanged?.Invoke(this, ShownFrame);
-        _view.InvalidateVisual();
+        Redraw();
     }
 
     public void Stop()
@@ -453,7 +462,7 @@ public sealed class PreviewPanel : UserControl
         _timer.Stop();
         ((IconView)_play.Content!).Icon = VectorIcon.Play;
         PlayingFrameChanged?.Invoke(this, -1);
-        _view.InvalidateVisual();
+        Redraw();
     }
 
     /// <summary>재생 중이면 재생 순서(태그 범위)를 지금 상태로 다시 정한다.</summary>
@@ -504,12 +513,12 @@ public sealed class PreviewPanel : UserControl
         if (waiting != _waiting)
         {
             _waiting = waiting;
-            _view.InvalidateVisual();
+            Redraw();
         }
-        else if (waiting) _view.InvalidateVisual(); // 로딩 아이콘이 돈다
+        else if (waiting) Redraw(); // 로딩 아이콘이 돈다
         if (!changed) return;
         PlayingFrameChanged?.Invoke(this, ShownFrame);
-        _view.InvalidateVisual();
+        Redraw();
     }
 
     /// <summary>재생 중 다음 프레임 합성을 기다리는 중인지와 그 프레임.</summary>
@@ -518,12 +527,173 @@ public sealed class PreviewPanel : UserControl
     /// <summary>멈춰 있을 때 로딩 아이콘을 돌리려고 다시 그리는 타이머.</summary>
     private readonly DispatcherTimer _busyTimer = new() { Interval = RenderOverlay.FrameInterval };
 
-    /// <summary>미리보기를 그리는 영역.</summary>
+    /// <summary>열린 크게 보기 창(없으면 null).</summary>
+    private ZoomWindow? _zoom;
+
+    /// <summary>미리보기 그림을 다시 그린다(크게 보기 창이 열려 있으면 그쪽도).</summary>
+    private void Redraw()
+    {
+        _view.InvalidateVisual();
+        _zoom?.Redraw();
+    }
+
+    /// <summary>크게 보기 창을 연다(이미 열려 있으면 앞으로). 문서가 없으면 열지 않는다.</summary>
+    private void OpenZoom()
+    {
+        if (!_ctx.HasProject) return;
+        if (_zoom is { } open)
+        {
+            if (open.WindowState == WindowState.Minimized) open.WindowState = WindowState.Normal;
+            open.Activate();
+            return;
+        }
+        var w = new ZoomWindow(this);
+        _zoom = w;
+        w.Closed += (_, _) => { if (ReferenceEquals(_zoom, w)) _zoom = null; };
+        if ((Ui.MainWindow ?? Ui.Owner(this)) is { } main) w.Show(main);
+        else w.Show();
+    }
+
+    /// <summary>
+    /// 크게 보기: 미리보기와 같은 그림(재생·배경·착장·우클릭 메뉴 그대로)을 창 크기에 맞는 가장 큰 정수 배율로 보이는 창.
+    /// 휠 = 포인터 자리를 기준으로 확대·축소(정수 배율 1~64×), 끌기 = 옮기기, 두 번 누르기·0 = 다시 창에 맞춤.
+    /// 크기를 바꿀 수 있고(앱을 켜 둔 동안 마지막 크기 기억), Space = 재생/멈춤, Esc = 닫기.
+    /// </summary>
+    private sealed class ZoomWindow : Window
+    {
+        private static Avalonia.Size s_size = new(640, 640);
+        private readonly PreviewPanel _owner;
+        private readonly View _view;
+
+        public ZoomWindow(PreviewPanel owner)
+        {
+            _owner = owner;
+            Title = UiStrings.Preview_ZoomTitle;
+            ShowInTaskbar = false;
+            Width = s_size.Width;
+            Height = s_size.Height;
+            MinWidth = 160;
+            MinHeight = 160;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            Background = AppTheme.PanelBrush;
+            _view = new View(owner, fit: true);
+            PopupMenus.Attach(_view, owner.ViewMenu);
+            Content = _view;
+            Closing += (_, _) => s_size = ClientSize;
+            // Space·Esc를 받도록 창 자신에 키보드 초점(그림은 초점을 받지 않음)
+            Focusable = true;
+            Activated += (_, _) => Focus();
+        }
+
+        public void Redraw() => _view.InvalidateVisual();
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e.Handled) return;
+            if (e.Key == Key.Escape) Close();
+            else if (e.Key == Key.Space) _owner.TogglePlay();
+            else if (e.Key is Key.D0 or Key.NumPad0) _view.ResetZoom();
+            else return;
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// 미리보기를 그리는 영역. <c>fit</c>이면 배율 설정과 관계없이 맞춤으로 시작하고 휠 확대·끌어 옮기기를 받는다(크게 보기 창).
+    /// 영역 밖으로 그리지 않는다(<see cref="Visual.ClipToBounds"/>) — 배율을 키워 그림이 영역보다 커지면 아래 재생·배율·배경 단추 위로 넘쳐 그려지고,
+    /// 넘친 그림이 그 단추들의 누르기를 가로채 크게 보기 창이 열렸다.
+    /// </summary>
     private sealed class View : Control
     {
+        private const int MaxZoom = 64;
         private readonly PreviewPanel _owner;
+        private readonly bool _fit;
+        /// <summary>크게 보기 창의 배율(0 = 창에 맞춤)과 가운데에서 옮긴 만큼(화면 px).</summary>
+        private int _zoom;
+        private Vector _pan;
+        /// <summary>마지막으로 그린 그림 자리(휠 확대 기준).</summary>
+        private Rect _shown;
+        private Avalonia.Point? _drag;
 
-        public View(PreviewPanel owner) => _owner = owner;
+        public View(PreviewPanel owner, bool fit = false)
+        {
+            _owner = owner;
+            _fit = fit;
+            ClipToBounds = true;
+        }
+
+        /// <summary>창에 맞춤으로 되돌린다.</summary>
+        public void ResetZoom()
+        {
+            _zoom = 0;
+            _pan = default;
+            InvalidateVisual();
+        }
+
+        protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+        {
+            base.OnPointerWheelChanged(e);
+            if (!_fit || e.Delta.Y == 0 || _shown.Width <= 0 || _owner._ctx.FrameView(Math.Clamp(_owner.ShownFrame, 0, Math.Max(0, _owner._ctx.FrameCount - 1))).Bitmap is not { } bmp)
+                return;
+            double current = _shown.Width / bmp.PixelSize.Width;
+            int now = Math.Max(1, (int)Math.Round(current));
+            int next = e.Delta.Y > 0 ? Math.Max(now + 1, (int)Math.Round(now * 1.25)) : Math.Min(now - 1, (int)Math.Round(now / 1.25));
+            next = Math.Clamp(next, 1, MaxZoom);
+            if (next == now && _zoom != 0) return;
+            // 포인터 아래 그림 자리가 그대로 있도록 옮긴다
+            var p = e.GetPosition(this);
+            double u = (p.X - _shown.X) / current, v = (p.Y - _shown.Y) / current;
+            var area = Area(new Rect(Bounds.Size));
+            double w = bmp.PixelSize.Width * next, h = bmp.PixelSize.Height * next;
+            var centered = new Avalonia.Point(Math.Floor(area.X + (area.Width - w) / 2), Math.Floor(area.Y + (area.Height - h) / 2));
+            _pan = new Vector(Math.Round(p.X - u * next - centered.X), Math.Round(p.Y - v * next - centered.Y));
+            _zoom = next;
+            InvalidateVisual();
+            e.Handled = true;
+        }
+
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
+        {
+            base.OnPointerPressed(e);
+            if (!_fit || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            if (e.ClickCount == 2)
+            {
+                ResetZoom();
+                e.Handled = true;
+                return;
+            }
+            _drag = e.GetPosition(this);
+            e.Pointer.Capture(this);
+            e.Handled = true;
+        }
+
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+            if (_drag is not { } from) return;
+            var p = e.GetPosition(this);
+            if (_zoom == 0)
+            {
+                // 맞춤 상태에서 끌면 지금 배율로 고정해 옮긴다
+                if (_owner._ctx.FrameView(Math.Clamp(_owner.ShownFrame, 0, Math.Max(0, _owner._ctx.FrameCount - 1))).Bitmap is not { } bmp || _shown.Width <= 0) return;
+                _zoom = Math.Max(1, (int)Math.Round(_shown.Width / bmp.PixelSize.Width));
+            }
+            _pan += p - from;
+            _drag = p;
+            InvalidateVisual();
+        }
+
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
+        {
+            base.OnPointerReleased(e);
+            if (_drag is null) return;
+            _drag = null;
+            e.Pointer.Capture(null);
+        }
+
+        /// <summary>그림을 놓는 자리(아래 프레임 글자 줄을 뺀 영역).</summary>
+        private static Rect Area(Rect bounds) => new(4, 4, Math.Max(0, bounds.Width - 8), Math.Max(0, bounds.Height - 24));
 
         public override void Render(DrawingContext g)
         {
@@ -536,11 +706,22 @@ public sealed class PreviewPanel : UserControl
                 AppTheme.DrawChecker(g, bounds, 8);
             }
             if (!ctx.HasProject) return;
-            var area = new Rect(4, 4, Math.Max(0, bounds.Width - 8), Math.Max(0, bounds.Height - 24));
+            var area = Area(bounds);
             int frame = Math.Clamp(_owner.ShownFrame, 0, Math.Max(0, ctx.FrameCount - 1));
             var view = ctx.FrameView(frame);
             if (view.Bitmap is not { } bmp) return;
-            var shown = ImageUtil.DrawFitted(g, bmp, new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height), area, _owner._scale);
+            var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+            Rect shown;
+            if (_fit && _zoom > 0)
+            {
+                // 크게 보기 창에서 휠로 고른 배율: 가운데 + 옮긴 만큼
+                double w = src.Width * _zoom, h = src.Height * _zoom;
+                shown = new Rect(Math.Floor(area.X + (area.Width - w) / 2) + _pan.X, Math.Floor(area.Y + (area.Height - h) / 2) + _pan.Y, w, h);
+                using (ImageUtil.Pixelated(g))
+                    g.DrawImage(bmp, new Rect(0, 0, src.Width, src.Height), shown);
+            }
+            else shown = ImageUtil.DrawFitted(g, bmp, src, area, _fit ? 0 : _owner._scale);
+            _shown = shown;
             // 재생 중 다음 프레임을 기다리거나, 보이는 프레임을 다시 계산하는 중이면 로딩 아이콘(그림은 이전 것 그대로)
             var wait = _owner._waiting && _owner._waitFrame < ctx.FrameCount ? ctx.FrameView(_owner._waitFrame) : view;
             if (wait.Overlay) RenderOverlay.DrawBusy(g, shown.Intersect(bounds), wait.Progress);
@@ -552,7 +733,8 @@ public sealed class PreviewPanel : UserControl
                 else _owner._busyTimer.Stop();
             }
             var tag = ctx.ActiveTag;
-            string caption = $"{frame + 1}/{ctx.FrameCount} · {ctx.FrameDuration(frame)}ms" + (tag is null ? "" : $" · {tag.Name}");
+            string caption = $"{frame + 1}/{ctx.FrameCount} · {ctx.FrameDuration(frame)}ms" + (tag is null ? "" : $" · {tag.Name}")
+                             + (_fit && src.Width > 0 ? $" · {Math.Round(shown.Width / src.Width, 2)}×" : "");
             var textBrush = _owner._bgColor is { } c && Lightness(c) > 0.6 ? Brushes.Black : Brushes.White;
             AppTheme.DrawTextIn(g, caption, new Rect(4, bounds.Height - 18, Math.Max(1, bounds.Width - 8), 16), textBrush, AppTheme.SmallFontSize);
         }

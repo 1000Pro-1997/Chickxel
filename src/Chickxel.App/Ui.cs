@@ -247,6 +247,41 @@ public static class Ui
         };
     }
 
+    /// <summary>
+    /// <see cref="Group"/> 묶음 상자의 제목 줄 오른쪽에 접기 화살표를 달아, 제목 줄을 누르면 내용이 부드럽게 접히고 펴지게 한다(<see cref="FoldBody"/>).
+    /// 접으면 화살표가 오른쪽을, 펴면 아래를 가리킨다. 같은 상자를 돌려준다.
+    /// </summary>
+    public static Border Foldable(Border group)
+    {
+        var stack = (StackPanel)group.Child!;
+        var head = stack.Children[0];
+        var content = stack.Children[1];
+        stack.Children.Clear();
+        var body = new FoldBody(content);
+        var turn = new RotateTransform();
+        var arrow = Icon(VectorIcon.ChevronDown, 12);
+        arrow.Foreground = AppTheme.DimTextBrush;
+        arrow.RenderTransform = turn;
+        arrow.Margin = new Thickness(6, 0, 0, 0);
+        arrow.VerticalAlignment = VerticalAlignment.Center;
+        DockPanel.SetDock(arrow, Dock.Right);
+        var header = new DockPanel { Background = Brushes.Transparent, Cursor = new Cursor(StandardCursorType.Hand) };
+        header.Children.Add(arrow);
+        header.Children.Add(head);
+        ToolTip.SetTip(arrow, UiStrings.Fold_Collapse);
+        body.OpennessChanged += () => turn.Angle = -90 * (1 - body.Openness);
+        header.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(header).Properties.IsLeftButtonPressed) return;
+            body.SetOpen(!body.IsOpen, animate: true);
+            ToolTip.SetTip(arrow, body.IsOpen ? UiStrings.Fold_Collapse : UiStrings.Fold_Expand);
+            e.Handled = true;
+        };
+        stack.Children.Add(header);
+        stack.Children.Add(body);
+        return group;
+    }
+
     /// <summary>내용을 세로로 스크롤해 보여 주는 패널.</summary>
     public static ScrollViewer ScrollHost(Control content) => new()
     {

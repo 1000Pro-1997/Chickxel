@@ -1121,4 +1121,7 @@
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>도형: 선</value><comment>단축키 이름: 도형 도구를 선 모양으로 고름(L)</comment></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>글씨</value><comment>도구 이름: 캔버스를 눌러 글씨 레이어(글씨 효과가 붙은 빈 레이어)를 만드는 글씨 도구</comment></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>드래그: 글상자 · 클릭: 한 줄 글씨 · 글씨 위 클릭: 고치기 · Enter: 줄 바꿈 · Esc / Ctrl+Enter / 바깥 클릭: 마침 · 크기·굵게·글꼴은 도구 설정에서</value><comment>글씨 도구 상태 줄 안내</comment></data>
+  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>레이어 크기…</value><comment>편집 메뉴: 지금 레이어만 크기·자리 바꾸기(캔버스는 그대로)</comment></data>
+  <data name="Message_LayerResize" xml:space="preserve"><value>레이어 크기: 손잡이 = 레이어 크기(Shift 비율 유지, Alt 가운데 기준), 레이어 안쪽 = 옮기기 — Enter 확인, Esc 취소</value></data>
+  <data name="Message_LayerResizeCanceled" xml:space="preserve"><value>레이어 크기 취소</value></data>
 </root>

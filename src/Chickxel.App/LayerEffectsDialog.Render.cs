@@ -199,6 +199,10 @@ public sealed partial class LayerEffectsDialog
             layers[f] = _project.ScriptLayersAt(_layer, OriginalOf(f), all);
             tags[f] = _project.FrameTagFor(all, OriginalOf(f));
         }
+        // 링크된 칸의 효과 끝 모습(프로젝트를 읽으므로 여기서 — 다른 프레임 원본·피벗은 위에서 담은 것)
+        var frameEffects = new IReadOnlyList<LayerEffect>[count];
+        for (int f = 0; f < count; f++)
+            frameEffects[f] = HeldAt(all, f, i => (uint)i < (uint)count ? sources[i] : null, i => pivots[Math.Clamp(i, 0, count - 1)]);
         bool others = LayerEffects.UsesOtherFrames(all);
         var job = new FrameRenders(count) { Sources = sources };
         for (int f = 0; f < count; f++) job.HasSource[f] = sources[f] is not null;
@@ -216,7 +220,7 @@ public sealed partial class LayerEffectsDialog
                     int f = (start + k) % count;
                     if (sources[f] is { } source)
                     {
-                        var effects = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(all, f, count, pivots[f],
+                        var effects = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(frameEffects[f], f, count, pivots[f],
                             others ? i => (uint)i < (uint)count ? sources[i] : null : null,
                             i => pivots[Math.Clamp(i, 0, count - 1)], cache), layers[f]), tags[f]);
                         var (image, x, y) = LayerEffects.Render(source, effects, LayerEffects.Padding(all, source.Width, source.Height), layer, token);

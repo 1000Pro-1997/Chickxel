@@ -2,6 +2,47 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.91 (2026-11-03)
+### Timeline: copy cels as an image, exactly as shown
+- The cel right-click menu has 'Copy cels (as image with effects)' and 'Copy frame N as shown'. Both put a canvas-sized PNG on the system clipboard, ready to paste into other apps or onto the canvas.
+- Copy cels with effects takes only the selected cels of the clicked frame (group rows mean their parts), with layer and group effects and opacity applied.
+- Copy frame as shown is the whole frame with every visible layer in the current outfit, the same as the preview's 'Copy image'.
+### Preview: click for a large preview window
+- Click the preview picture at the top right to open it in a separate window. Resize the window and the picture scales with it in whole-number steps.
+- Playback, background and outfit follow the preview. In the window, Space plays or pauses, Esc closes it, and the right-click menu (copy, save, GIF) works the same.
+- In the window, the mouse wheel zooms around the pointer (1–64×), dragging moves the picture, and a double-click or 0 fits it to the window again.
+- Fixed: with a large preview zoom the picture spilled over the play, zoom and background buttons below it and blocked their clicks; it now stays inside its area.
+### Timeline: hold Shift while dragging to move layers into or out of groups
+- Press Shift while dragging a layer name to move it into or out of a group instead of reordering. A blue line marks the drop spot, the target group's name cell is highlighted, and releasing Shift goes back to reordering.
+- Drop on another group's row or one of its part rows to make the layer a part of that group; drop a part on a row outside its group (or the upper half of its own group's row) to turn it back into a normal layer.
+- Drawings stay at the same spot on the canvas. A normal layer becomes a part sized to wrap its drawings in every frame (including off-canvas pixels), keeping links and effects.
+- Moving a part out of its group or into another group keeps only the skin shown now, so Chickxel asks first if other skins have drawings. It is one undo step.
+### Tool settings: edit the selected effect right below the tool settings
+- Click one effect row in the timeline (for example Outline) and its settings appear at the bottom of the Tool settings dock: the same color, number, slider and choice fields as in the Effects window, plus speed and repeat for animated effects.
+- Changes go into the document at once and show on the canvas. Changes made in quick succession (dragging a slider or a color) are one undo step.
+- Frame range, clipping, script editing and baking stay in the Effects window; the Open in Effects… button opens it with that effect selected.
+- The section hides when you select something else in the timeline or select several effects. If a script effect can't run, the reason is shown above its settings.
+### Tool settings: every section folds
+- Each section in Tool settings (Brush, Options, Symmetry drawing, the effect section and the rest) has an arrow at the right of its title. Click the title to fold the section and click again to unfold it.
+- Folding and unfolding slide smoothly, and the arrow turns with the section.
+### Linked cels: several frames share one drawing
+- Select cels across frames in the timeline (drag, or Ctrl/⌘+click to add cels that aren't next to each other) and right-click Link cels: in each layer the selected cels share one drawing. If one of them is already linked, the others join that link; otherwise they take the drawing of the first cel that has pixels (empty cels too). Edit any of them and every linked cel changes.
+- Frames added by Extend frames in the Effects window are now linked to the frame they came from, so you fix the character once even when effects start on different frames. Duplicate frame (including copying the last frame) also puts linked cels into their link and copies only cels that aren't linked.
+- Linked cels show a chain icon, and a bar under the cels joins neighbours in the same link. Each new link gets the next color not yet used in that row, in the order you link them (blue, orange, green, pink…), and keeps it when saved. Unlink cels gives each selected cel its own copy; Delete on a linked cel clears the drawing but keeps the link, while pasting or copying the previous frame into a cel takes only that cel out of the link.
+- The AI can link and unlink cels and recolor links (link_cels, unlink_cels, set_link_color), and get_document lists each layer's links.
+- Links survive undo, moving cels in the same row, canvas and layer resizes, and saving. Linked cels are still written as separate images, so older versions open them as ordinary cels.
+### Effects: linked cels after the range can keep the effect's end look
+- Animated effects have a new Keep the end look check (Effects window and the Tool settings effect section). When it is on, a cel after the effect's range that is linked to the range's last cel looks exactly like that last frame, for example the ball of a throw stays where it landed.
+- It reuses everything the last frame saw (progress, pivot, other frames, other layers such as a collision layer, tag), so the result matches the last frame pixel for pixel. Turn the effect off or unlink the cel to see the plain drawing.
+- The effect row in the timeline shows a faint tail over those cels. The setting is saved with the effect, and the AI can set it with set_effect (hold_end).
+
+## v1.14.90 (2026-11-03)
+### Layer size mode (Ctrl+Shift+C): resize one layer without touching the canvas
+- Select a layer and press Ctrl+Shift+C (or Edit > Layer size…) to stretch, shrink or move just that layer. The canvas and the other layers stay as they are.
+- It works like canvas size mode: drag a handle to resize (corner + Shift keeps the ratio, Alt keeps the center), drag inside or use the arrow keys to move, or type the width, height and position in Tool settings.
+- A normal layer starts at the box around its drawing in every frame; a part starts at its part area. Enter applies to every frame of the layer in one undo step, Esc cancels.
+- Pixels pushed off the canvas are kept, like with the Move tool. Parts get the new position and size for every skin, with the 9-slice border scaled to match.
+
 ## v1.14.89 (2026-11-03)
 ### Pixelate: optimization info sits next to the score graph in the enlarged view
 - In the enlarged view's top bar, the optimization text (runs, score, tries, time) now starts right after the score graph instead of floating in the middle of the bar.

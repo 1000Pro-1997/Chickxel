@@ -1080,6 +1080,18 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>The user limited the AI to the current file, so other files can't be opened or created (the user can turn this off in the chat)</value></data>
   <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>The user limited the AI to the file that was open when this turn started, and another document is open now — everything is read-only (switch back to that file to edit it)</value></data>
   <data name="Ai_Locked_Layer" xml:space="preserve"><value>Layer {index} "{name}" (or its group) is locked and can't be changed — ask the user to unlock it</value></data>
+  <data name="Ai_Link_Group" xml:space="preserve"><value>Layer {index} "{name}" is a group and has no cels to link — pick a normal layer or a part</value></data>
+  <data name="Ai_Link_BadFrame" xml:space="preserve"><value>Invalid frame index: {value} (must be 0 to less than {count})</value></data>
+  <data name="Ai_Link_BadColor" xml:space="preserve"><value>Invalid link color: {value} — available colors: {colors}</value></data>
+  <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>Give at least two frames to link</value></data>
+  <data name="Ai_Link_Nothing" xml:space="preserve"><value>Nothing to link — the frames are already linked or none of them has pixels</value></data>
+  <data name="Ai_Link_NoneLinked" xml:space="preserve"><value>None of the given frames has a linked cel</value></data>
+  <data name="Ai_Link_NotLinked" xml:space="preserve"><value>The cel at layer {layer}, frame {frame} is not linked</value></data>
+  <data name="Effect_HoldEndRow" xml:space="preserve"><value>Linked cels after</value></data>
+  <data name="Effect_HoldEnd" xml:space="preserve"><value>Keep the end look</value></data>
+  <data name="Effect_HoldEndTip" xml:space="preserve"><value>If a cel after the range is linked to the range's last cel, it gets exactly the same look as that last cel (for example, a throw on frames 1–18: frame 19 linked to 18 stays where the throw ended). Turn the effect off or unlink the cel to see the plain drawing. The effect row in the timeline shows a faint tail there.</value></data>
+  <data name="Effect_HoldEndAllFramesTip" xml:space="preserve"><value>The effect covers every frame, so there is no cel after it. Set a frame range to use this.</value></data>
+  <data name="Ai_Effect_HoldEndNotAnimated" xml:space="preserve"><value>hold_end only applies to animated effects</value></data>
   <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>Frame {frame} can't be deleted because locked layers have drawings in it: {layers} — ask the user to unlock them</value></data>
   <data name="Ai_Locked_ResizeCanvas" xml:space="preserve"><value>The canvas can't be resized while layers are locked (resizing crops or shifts every layer): {layers} — ask the user to unlock them</value></data>
   <data name="Ai_Locked_Outfit" xml:space="preserve"><value>Wearing outfit "{outfit}" would change locked layers: {layers} — ask the user to unlock them</value></data>
@@ -2250,6 +2262,13 @@ Move Chickxel.app to the Applications folder or similar and relaunch it to use a
   <data name="Preview_PngFilter" xml:space="preserve"><value>PNG image</value></data>
   <data name="Preview_Saved" xml:space="preserve"><value>Saved {0} ({1}×{2})</value></data>
   <data name="Preview_SaveFailed" xml:space="preserve"><value>Couldn't save the frame.&#10;{0}</value></data>
+  <data name="Preview_ZoomTitle" xml:space="preserve"><value>Preview (large)</value></data>
+  <data name="Preview_ZoomTip" xml:space="preserve"><value>Click to open a large preview window (resize it to scale the picture, Space = play/pause, Esc = close). Right-click: copy and save</value></data>
+  <data name="Timeline_CopyRendered" xml:space="preserve"><value>Copy cels (as image with effects)</value></data>
+  <data name="Timeline_CopyFrameImage" xml:space="preserve"><value>Copy frame {0} as shown</value></data>
+  <data name="Timeline_CopiedRendered" xml:space="preserve"><value>Copied {1} layer(s) of frame {0} as an image with effects ({2}×{3}).</value></data>
+  <data name="Timeline_CopiedFrameImage" xml:space="preserve"><value>Copied frame {0} as an image ({1}×{2}).</value></data>
+  <data name="Timeline_CopyNothingVisible" xml:space="preserve"><value>Nothing is visible in frame {0}, so nothing was copied.</value></data>
   <data name="Image_SaveMenu" xml:space="preserve"><value>Save image…</value></data>
   <data name="Image_SaveTitle" xml:space="preserve"><value>Save image as PNG</value></data>
   <data name="Image_SaveFailed" xml:space="preserve"><value>Couldn't save the image.&#10;{0}</value></data>
@@ -2383,7 +2402,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Chat_Help_GroupDraw" xml:space="preserve"><value>Draw</value></data>
   <data name="Chat_Help_GroupDraw_Text" xml:space="preserve"><value>Paints blocks of pixels or single pixels, lines, rectangles, ellipses, fills, clears, and replaces colors.</value></data>
   <data name="Chat_Help_GroupFrames" xml:space="preserve"><value>Frames and animation</value></data>
-  <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>Adds frames (optionally as copies) or deletes them, and sets frame durations and animation tags.</value></data>
+  <data name="Chat_Help_GroupFrames_Text" xml:space="preserve"><value>Adds frames (optionally as copies) or deletes them, and sets frame durations and animation tags. Links cels across frames, unlinks them and recolors links.</value></data>
   <data name="Chat_Help_GroupLayers" xml:space="preserve"><value>Layers</value></data>
   <data name="Chat_Help_GroupLayers_Text" xml:space="preserve"><value>Adds layers, changes their name, visibility, and opacity, and picks the frame and layer shown in the editor.</value></data>
   <data name="Chat_Help_GroupParts" xml:space="preserve"><value>Groups and parts</value></data>
@@ -3796,4 +3815,28 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="ExportSheet_ScaleTip" xml:space="preserve"><value>Enlarges the output images by a whole number (nearest neighbor — pixels stay sharp). 9-slice borders and Unity PPU are multiplied too, so sprites keep their size in Unity. Spacing between cells is in pixels after scaling.</value></data>
   <data name="Timeline_CanvasSize" xml:space="preserve"><value>Canvas {0}×{1}</value></data>
   <data name="Timeline_CanvasSizeTip" xml:space="preserve"><value>Change canvas size (Ctrl+Alt+C)</value></data>
+  <data name="Timeline_LinkCels" xml:space="preserve"><value>Link cels</value></data>
+  <data name="Timeline_UnlinkCels" xml:space="preserve"><value>Unlink cels</value></data>
+  <data name="Timeline_LinkCels_Done" xml:space="preserve"><value>Linked {0} cels. Editing one cel changes all linked cels.</value></data>
+  <data name="Timeline_LinkCels_None" xml:space="preserve"><value>Nothing to link. Select two or more frames including a cel with pixels.</value></data>
+  <data name="Timeline_UnlinkCels_Done" xml:space="preserve"><value>Unlinked {0} cels. Each cel is now edited separately.</value></data>
+  <data name="Timeline_ScatteredCelsCopy" xml:space="preserve"><value>Cels picked one by one with Ctrl+click can't be copied. Drag to select neighbouring cels.</value></data>
+  <data name="LayerResize_Group" xml:space="preserve"><value>A group can't be resized as a layer. Select a part or a layer.</value></data>
+  <data name="LayerResize_Locked" xml:space="preserve"><value>The layer is locked and can't be resized.</value></data>
+  <data name="LayerResize_Empty" xml:space="preserve"><value>This layer has nothing drawn in any frame.</value></data>
+  <data name="LayerResize_Applied" xml:space="preserve"><value>Layer size: "{name}" {width}×{height} @{x},{y} (all frames)</value></data>
+  <data name="LayerResize_Label" xml:space="preserve"><value>{name} · {size} @{x},{y}</value></data>
+  <data name="LayerResize_PanelTitle" xml:space="preserve"><value>Tool settings · Layer size</value></data>
+  <data name="LayerResize_GroupTitle" xml:space="preserve"><value>Layer size</value></data>
+  <data name="LayerResize_Info" xml:space="preserve"><value>Stretches, shrinks or moves only the current layer. The canvas and the other layers stay as they are. Square handles = drag that edge (corner + Shift keeps the ratio, Alt keeps the center); drag inside the layer or use the arrow keys = move. A normal layer starts at the box around its drawing in every frame, a part at its part area. Applying changes every frame of the layer with nearest neighbor (pixels pushed off the canvas are kept). The preview is shown without layer effects.</value></data>
+  <data name="LayerResize_ApplyTip" xml:space="preserve"><value>Apply the layer size (Enter) — every frame of the layer, one undo step</value></data>
+  <data name="LayerResize_Shortcut" xml:space="preserve"><value>Layer size (canvas unchanged)</value></data>
+  <data name="Fold_Collapse" xml:space="preserve"><value>Collapse</value></data>
+  <data name="Fold_Expand" xml:space="preserve"><value>Expand</value></data>
+  <data name="EffectDock_Title" xml:space="preserve"><value>Effect · {name}</value></data>
+  <data name="EffectDock_Open" xml:space="preserve"><value>Open in Effects…</value></data>
+  <data name="EffectDock_OpenTip" xml:space="preserve"><value>Frame range, clipping, script editing, baking and the other settings are in the Effects window. Double-clicking the effect row in the timeline also opens it.</value></data>
+  <data name="Timeline_NestHint" xml:space="preserve"><value>Hold Shift while dragging to move into or out of a group (over another group's row = into, over a row outside the group = out).</value></data>
+  <data name="Timeline_NestLosesSkinsTitle" xml:space="preserve"><value>Other skins will be lost</value></data>
+  <data name="Timeline_NestLosesSkins" xml:space="preserve"><value>{0} will keep only the skin shown now; its other skin drawings and part-only skins will be removed (you can undo this). Continue?</value></data>
 </root>

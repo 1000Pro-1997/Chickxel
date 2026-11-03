@@ -112,31 +112,41 @@ public sealed class TimelinePanel : UserControl
     /// <summary>타임라인 선택 종류(한 번에 하나): 셀 묶음(기본 = 현재 칸) · 프레임(머리글) · 레이어(이름 칸) · 효과(효과 줄 이름·상자).</summary>
     private enum SelKind { Cels, Frames, Layers, Effects }
 
-    /// <summary>고른 프레임(오름차순): 프레임 선택이면 그 프레임들, 셀 묶음이면 그 프레임 범위, 아니면 현재 프레임.</summary>
+    /// <summary>고른 프레임(오름차순): 프레임 선택이면 그 프레임들, 셀 묶음이면 그 프레임 범위(떨어진 칸이면 그 칸들의 프레임), 아니면 현재 프레임.</summary>
     private List<int> SelectedFrames()
     {
         if (_grid.Kind == SelKind.Frames) return _grid.SelectedFrameList();
+        if (_grid.ScatteredCels) return [.. _grid.ScatteredCelList().Select(c => c.Frame).Distinct().Order()];
         var (a, b) = _grid.Range;
         return _grid.Kind == SelKind.Cels && a >= 0 ? Enumerable.Range(a, b - a + 1).ToList() : [_ctx.CurrentFrame];
     }
 
-    /// <summary>셀 동작(지우기·복사)의 대상 행(레이어 번호, 위→아래) × 프레임: 레이어 선택이면 그 레이어들의 모든 프레임, 아니면 셀 묶음.</summary>
+    /// <summary>
+    /// 셀 동작의 대상 행(레이어 번호, 위→아래) × 프레임: 레이어 선택이면 그 레이어들의 모든 프레임, 아니면 셀 묶음
+    /// (떨어진 칸 묶음이면 그 칸들이 걸친 행·프레임 — 칸 하나하나는 <see cref="SelectedCels"/>).
+    /// </summary>
     private (List<int> Rows, List<int> Frames) CelBlock()
         => _grid.Kind == SelKind.Layers
             ? (_grid.SelectedLayerList(), Enumerable.Range(0, _ctx.FrameCount).ToList())
-            : (_grid.SelectedRowLayers(), SelectedFrames());
+            : _grid.ScatteredCels
+                ? ([.. _grid.ScatteredCelList().Select(c => c.Layer).Distinct()], SelectedFrames())
+                : (_grid.SelectedRowLayers(), SelectedFrames());
 
-    /// <summary>
-    /// 변형(Ctrl+T)·이동 도구가 함께 바꿀 셀들(레이어 번호, 프레임 번호): 셀 묶음이면 그 칸들, 프레임 선택이면 현재 레이어의 그 프레임들,
-    /// 레이어 선택이면 그 레이어들의 모든 프레임(그룹 행은 그 부위들). 효과 선택이면 현재 칸 하나.
-    /// </summary>
-    public List<(int Layer, int Frame)> SelectedCelTargets()
+    /// <summary>고른 칸(레이어 번호, 프레임 번호 — 그룹 행 칸은 그 부위들): 떨어진 칸 묶음이면 그 칸들, 아니면 <see cref="CelBlock"/>의 행 × 프레임.</summary>
+    private List<(int Layer, int Frame)> SelectedCels()
     {
         if (P is not { } p) return [];
-        if (_grid.Kind == SelKind.Effects) return [(_ctx.CurrentLayer, _ctx.CurrentFrame)];
+        if (_grid.ScatteredCels) return [.. _grid.ScatteredCelList().SelectMany(c => CelLayers(p, [c.Layer]).Select(l => (l, c.Frame))).Distinct()];
         var (rows, frames) = CelBlock();
         return [.. CelLayers(p, rows).SelectMany(l => frames.Select(f => (l, f)))];
     }
+
+    /// <summary>
+    /// 변형(Ctrl+T)·이동 도구가 함께 바꿀 셀들(레이어 번호, 프레임 번호): 셀 묶음이면 그 칸들(떨어진 칸 포함), 프레임 선택이면 현재 레이어의 그 프레임들,
+    /// 레이어 선택이면 그 레이어들의 모든 프레임(그룹 행은 그 부위들). 효과 선택이면 현재 칸 하나.
+    /// </summary>
+    public List<(int Layer, int Frame)> SelectedCelTargets()
+        => _grid.Kind == SelKind.Effects ? [(_ctx.CurrentLayer, _ctx.CurrentFrame)] : SelectedCels();
 
     /// <summary>Delete 키 이름(macOS = ⌫).</summary>
     private static string DeleteKeyName => Platform.IsMac ? "⌫" : "Delete";
@@ -170,9 +180,10 @@ public sealed class TimelinePanel : UserControl
                 return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_1E6AFDB6EB,_grid.SelectedEffectList().Count);
             default:
                 var (rows, frames) = CelBlock();
-                return rows.Count * frames.Count == 1
+                int cels = _grid.ScatteredCels ? _grid.ScatteredCelList().Count : rows.Count * frames.Count;
+                return cels == 1
                     ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_859E808144,p.Layers[rows[0]].Name,frames[0] + 1)
-                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_23DBB6720C,rows.Count * frames.Count,rows.Count,FramesText(frames));
+                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_SelectionLabel_23DBB6720C,cels,rows.Count,FramesText(frames));
         }
     }
 
@@ -281,6 +292,36 @@ public sealed class TimelinePanel : UserControl
 
     private void RequestCanvasSize() => CanvasSizeRequested?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>
+    /// 효과 줄로 효과 하나만 고른 상태가 바뀜(오른쪽 독의 효과 설정이 따라감): 그 효과(레이어, 효과 번호), 아니면(효과를 안 골랐거나 여럿) null.
+    /// </summary>
+    public event EventHandler<(Layer Layer, int Index)?>? EffectFocusChanged;
+
+    private (Layer Layer, int Index)? _effectFocus;
+    private bool _effectFocusQueued;
+
+    /// <summary>효과 선택이 바뀌었을 수 있음: 이번 입력 처리가 끝난 뒤 한 번 보고, 고른 효과 하나가 달라졌으면 <see cref="EffectFocusChanged"/>.</summary>
+    private void QueueEffectFocus()
+    {
+        if (_effectFocusQueued) return;
+        _effectFocusQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _effectFocusQueued = false;
+            var chosen = _grid.Kind == SelKind.Effects ? _grid.SelectedEffectList() : [];
+            (Layer Layer, int Index)? focus = chosen.Count == 1 ? chosen[0] : null;
+            if (Nullable.Equals(focus, _effectFocus)) return;
+            _effectFocus = focus;
+            EffectFocusChanged?.Invoke(this, focus);
+        });
+    }
+
+    /// <summary>효과 창을 <paramref name="layer"/>의 <paramref name="index"/>번째 효과를 고른 채 연다(오른쪽 독 효과 설정의 "효과 창에서 열기").</summary>
+    public void OpenEffect(Layer layer, int index)
+    {
+        if (P is { } p) EditLayerEffects(p.IndexOf(layer), index);
+    }
+
     /// <summary>머리글·이름 칸·셀 묶음을 고른 뒤: 무엇을 골랐고 Delete가 무엇을 할지 알린다(한 칸만 고른 셀 선택은 조용히).</summary>
     private void HintSelection()
     {
@@ -381,14 +422,17 @@ public sealed class TimelinePanel : UserControl
         if (P is not { } p) return;
         int from = PreviousCelFrame(p, layer, frame);
         if (from < 0 || p.GetCel(layer, from) is not { } cel) return;
-        _ctx.Structural(() => p.SetCel(layer, frame, cel.Clone(), UiStrings.S_TimelinePanel_CopyCelFromPrevious_8B15F7626C));
+        _ctx.Structural(() => p.PlaceCel(layer, frame, cel.Clone(), UiStrings.S_TimelinePanel_CopyCelFromPrevious_8B15F7626C));
         _ctx.SetCurrent(layer, frame);
     }
 
     // ───────────── 셀 묶음(행 × 프레임) 옮기기·복사·붙여넣기 ─────────────
 
-    /// <summary>복사한 셀 한 행: 일반·부위 레이어는 프레임별 셀, 그룹은 부위마다(위→아래) 프레임별 셀.</summary>
-    private sealed record ClipRow(PixelImage?[] Cels, List<PixelImage?[]>? Children);
+    /// <summary>
+    /// 복사한 셀 한 행: 일반·부위 레이어는 프레임별 셀, 그룹은 부위마다(위→아래) 프레임별 셀. <see cref="Source"/>·<see cref="ChildSources"/>는
+    /// 셀을 담은 레이어(옮기기에서 같은 레이어에 놓으면 그림을 그대로 넣어 링크를 지킨다).
+    /// </summary>
+    private sealed record ClipRow(PixelImage?[] Cels, List<PixelImage?[]>? Children, Layer? Source, List<Layer>? ChildSources);
 
     /// <summary>
     /// 복사한 셀/프레임. <see cref="WholeFrames"/>면 프레임 전체(모든 레이어 + 길이, <see cref="Frames"/>),
@@ -404,11 +448,24 @@ public sealed class TimelinePanel : UserControl
 
     private static List<Layer> ChildrenTopDown(SpriteProject p, Layer group) => p.ChildrenOf(group).Reverse().ToList();
 
-    /// <summary>행(레이어 번호, 위→아래) × 프레임의 셀을 복제해 담는다.</summary>
-    private static List<ClipRow> CaptureCells(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames)
-        => rowLayers.Select(l => p.Layers[l] is { IsGroup: true } g
-            ? new ClipRow([], ChildrenTopDown(p, g).Select(c => frames.Select(f => p.GetCel(c, p.Frames[f])?.Clone()).ToArray()).ToList())
-            : new ClipRow(frames.Select(f => p.GetCel(l, f)?.Clone()).ToArray(), null)).ToList();
+    /// <summary>
+    /// 행(레이어 번호, 위→아래) × 프레임의 셀을 담는다. <paramref name="keep"/>이면(옮기기) 지금 스킨 자신의 셀 그림을 그대로(링크된 셀이면 그 그림),
+    /// 아니면 사본. 기본 스킨에서 물려받아 보이는 셀은 늘 사본이다.
+    /// </summary>
+    private static List<ClipRow> CaptureCells(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames, bool keep = false)
+    {
+        PixelImage? Take(Layer layer, int f)
+        {
+            var shown = p.GetCel(layer, p.Frames[f]);
+            return keep && ReferenceEquals(shown, p.GetOwnCel(layer, p.Frames[f])) ? shown : shown?.Clone();
+        }
+        return rowLayers.Select(l =>
+        {
+            if (p.Layers[l] is not { IsGroup: true } g) return new ClipRow(frames.Select(f => Take(p.Layers[l], f)).ToArray(), null, p.Layers[l], null);
+            var children = ChildrenTopDown(p, g);
+            return new ClipRow([], children.Select(c => frames.Select(f => Take(c, f)).ToArray()).ToList(), null, children);
+        }).ToList();
+    }
 
     /// <summary>
     /// 행(레이어 번호)을 셀이 있는 레이어로 펼친다(겹치면 한 번). 그룹 행은 그 부위들 — 단, 그 그룹의 부위 행이 하나라도 함께 골라져 있으면
@@ -422,35 +479,41 @@ public sealed class TimelinePanel : UserControl
             : [l]).Distinct();
     }
 
-    /// <summary>행 × 프레임의 셀을 비운다(그룹 행은 그 부위들). <see cref="SpriteProject.Edit"/> 안에서 부른다.</summary>
-    private static void ClearCells(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames)
+    /// <summary>행 × 프레임의 칸(그룹 행은 그 부위들).</summary>
+    private static List<(int Layer, int Frame)> BlockCels(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames)
+        => [.. CelLayers(p, rowLayers).SelectMany(l => frames.Select(f => (l, f)))];
+
+    /// <summary>칸들의 셀을 비운다. <see cref="SpriteProject.Edit"/> 안에서 부른다.</summary>
+    private static void ClearCells(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels)
     {
-        foreach (var l in CelLayers(p, rowLayers))
-            foreach (var f in frames)
-                if (!p.IsCelEmpty(l, f)) p.SetCel(l, f, null);
+        foreach (var (l, f) in cels)
+            if (!p.IsCelEmpty(l, f)) p.SetCel(l, f, null);
     }
 
-    /// <summary>행 × 프레임에 지울 그림(이 스킨 자신의 셀 — 기본 스킨에서 빌려 보이는 셀 말고)이 있는지.</summary>
-    private static bool HasOwnCels(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames)
-        => CelLayers(p, rowLayers).Any(l => frames.Any(f => !p.IsCelEmpty(l, f) && !p.IsCelInherited(l, f)));
+    /// <summary>칸들에 지울 그림(이 스킨 자신의 셀 — 기본 스킨에서 빌려 보이는 셀 말고)이 있는지.</summary>
+    private static bool HasOwnCels(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels)
+        => cels.Any(c => !p.IsCelEmpty(c.Layer, c.Frame) && !p.IsCelInherited(c.Layer, c.Frame));
 
     /// <summary>
     /// 담아 둔 셀 묶음을 보이는 행 <paramref name="topRow"/>·프레임 <paramref name="start"/>부터 쓴다(빈 셀은 비움, 모자라는 프레임은 붙임).
+    /// 놓는 칸은 그 셀만 갈아 끼운다(<see cref="SpriteProject.PlaceCel"/> — 링크된 칸이면 그 칸만 링크에서 빠짐). <paramref name="keep"/>이면(옮기기)
+    /// 담은 레이어와 같은 레이어에 놓는 그림은 사본 없이 그대로 넣어 링크를 지킨다.
     /// 셀 크기가 다르거나 그룹/일반이 맞지 않는 칸은 건너뛴다. 쓴 칸 수를 돌려준다. <see cref="SpriteProject.Edit"/> 안에서 부른다.
     /// </summary>
-    private static int WriteCells(SpriteProject p, IReadOnlyList<ClipRow> rows, int frameCount, IReadOnlyList<int> visibleRows, int topRow, int start)
+    private static int WriteCells(SpriteProject p, IReadOnlyList<ClipRow> rows, int frameCount, IReadOnlyList<int> visibleRows, int topRow, int start, bool keep = false)
     {
         while (p.Frames.Count < start + frameCount) p.AddFrame(p.Frames.Count);
         int written = 0;
-        void Put(Layer target, PixelImage?[] cels)
+        void Put(Layer target, PixelImage?[] cels, Layer? source)
         {
             int index = p.IndexOf(target);
+            bool same = keep && ReferenceEquals(source, target);
             for (int k = 0; k < cels.Length; k++)
             {
                 var image = cels[k];
                 if (image is not null && image.Size != p.CelSize(target)) continue;
                 if (image is null && p.IsCelEmpty(index, start + k)) { written++; continue; }
-                p.SetCel(index, start + k, image?.Clone());
+                p.PlaceCel(index, start + k, same ? image : image?.Clone());
                 written++;
             }
         }
@@ -462,12 +525,12 @@ public sealed class TimelinePanel : UserControl
             var row = rows[i];
             if (row.Children is null)
             {
-                if (!target.IsGroup) Put(target, row.Cels);
+                if (!target.IsGroup) Put(target, row.Cels, row.Source);
             }
             else if (target.IsGroup)
             {
                 var children = ChildrenTopDown(p, target);
-                for (int c = 0; c < Math.Min(children.Count, row.Children.Count); c++) Put(children[c], row.Children[c]);
+                for (int c = 0; c < Math.Min(children.Count, row.Children.Count); c++) Put(children[c], row.Children[c], row.ChildSources?[c]);
             }
         }
         return written;
@@ -493,14 +556,14 @@ public sealed class TimelinePanel : UserControl
                 return;
             }
         }
-        var data = CaptureCells(p, rowLayers, frames);
+        var data = CaptureCells(p, rowLayers, frames, keep: !copy);
         // 놓을 자리의 레이어(편집 뒤에도 같은 객체)
         var topLayer = p.Layers[visible[toRow]];
         var endLayer = p.Layers[visible[Math.Min(visible.Count - 1, toRow + rowLayers.Count - 1)]];
         _ctx.Structural(() => p.Edit(copy ? UiStrings.S_TimelinePanel_MoveBlock_5B9FB74E7C : UiStrings.S_TimelinePanel_MoveBlock_0DFDF5525C, ProjectChange.Pixels | ProjectChange.Frames, () =>
         {
-            if (!copy) ClearCells(p, rowLayers, frames);
-            WriteCells(p, data, frameCount, visible, toRow, toFrame);
+            if (!copy) ClearCells(p, BlockCels(p, rowLayers, frames));
+            WriteCells(p, data, frameCount, visible, toRow, toFrame, keep: !copy);
         }));
         _grid.SelectRect(p.IndexOf(topLayer), toFrame, endLayer, toFrame + frameCount - 1);
     }
@@ -518,19 +581,51 @@ public sealed class TimelinePanel : UserControl
 
     /// <summary>
     /// 고른 셀(셀 묶음, 레이어 선택이면 그 레이어들의 모든 프레임 — 그룹 행은 그 부위들)의 그림을 지운다(실행취소 한 단계).
-    /// 프레임·레이어는 그대로 둔다.
+    /// 링크된 칸은 링크를 남긴 채 그림만 지운다(같은 묶음의 칸이 모두 빔 — <see cref="SpriteProject.EraseCels"/>). 프레임·레이어는 그대로 둔다.
     /// </summary>
     private void ClearSelectedCels()
     {
         if (P is not { } p) return;
-        var (rows, frames) = CelBlock();
-        if (!HasOwnCels(p, rows, frames))
+        var cels = SelectedCels();
+        if (!HasOwnCels(p, cels))
         {
             Say(UiStrings.S_TimelinePanel_ClearSelectedCels_D1426A0A3D);
             return;
         }
-        _ctx.Structural(() => p.Edit(UiStrings.S_TimelinePanel_ClearSelectedCels_1EE69E248F, ProjectChange.Pixels, () => ClearCells(p, rows, frames)));
-        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ClearSelectedCels_C789A97AE4,rows.Count * frames.Count)));
+        int erased = 0;
+        _ctx.Structural(() => erased = p.EraseCels(cels, UiStrings.S_TimelinePanel_ClearSelectedCels_1EE69E248F));
+        Say(Ui.Shortcut(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ClearSelectedCels_C789A97AE4,erased)));
+    }
+
+    /// <summary>고른 칸에 링크할 것이 있는지: 한 레이어에서 두 프레임 이상이고 그중 그림이 있는 칸이 있어야 한다.</summary>
+    private static bool CanLinkCels(SpriteProject p, IReadOnlyList<(int Layer, int Frame)> cels)
+        => cels.GroupBy(c => c.Layer).Any(row => row.Select(c => c.Frame).Distinct().Count() > 1
+                                                  && row.Any(c => !p.IsCelEmpty(c.Layer, c.Frame) && !p.IsCelInherited(c.Layer, c.Frame)));
+
+    /// <summary>고른 칸 중 링크된 칸이 있는지.</summary>
+    private static bool HasLinkedCels(SpriteProject p, IReadOnlyList<(int Layer, int Frame)> cels)
+        => cels.Any(c => p.IsCelLinked(c.Layer, c.Frame));
+
+    /// <summary>
+    /// 고른 칸(떨어진 칸 포함)을 레이어마다 링크한다(실행취소 한 단계): 그림이 있는 첫 칸의 그림을 나머지 칸(빈 칸 포함)이 같이 써서, 한 칸을 고치면 모두 바뀐다.
+    /// </summary>
+    private void LinkSelectedCels()
+    {
+        if (P is not { } p) return;
+        var cels = SelectedCels();
+        int linked = 0;
+        _ctx.Structural(() => linked = p.LinkCels(cels));
+        Say(linked > 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_LinkCels_Done, linked) : UiStrings.Timeline_LinkCels_None);
+    }
+
+    /// <summary>고른 셀의 링크를 푼다(실행취소 한 단계): 링크된 칸마다 그림 사본을 갖게 해 따로 고칠 수 있게 한다.</summary>
+    private void UnlinkSelectedCels()
+    {
+        if (P is not { } p) return;
+        var cels = SelectedCels();
+        int unlinked = 0;
+        _ctx.Structural(() => unlinked = p.UnlinkCels(cels));
+        if (unlinked > 0) Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_UnlinkCels_Done, unlinked));
     }
 
     // ───────────── 셀·프레임 복사·붙여넣기(타임라인에 포커스가 있을 때 Ctrl/⌘+C·X·V) ─────────────
@@ -562,6 +657,12 @@ public sealed class TimelinePanel : UserControl
             if (cut) DeleteFrame();
             return;
         }
+        if (_grid.ScatteredCels)
+        {
+            // 떨어진 칸 묶음은 붙일 모양(행 × 프레임)이 없다
+            Say(Ui.Shortcut(UiStrings.Timeline_ScatteredCelsCopy));
+            return;
+        }
         var (rows, frames) = CelBlock();
         List<Layer>? sources = null;
         if (_grid.Kind == SelKind.Layers)
@@ -572,6 +673,47 @@ public sealed class TimelinePanel : UserControl
         }
         _clip = new CelClip(false, frames.Count, [], frames.Select(f => p.Frames[f].DurationMs).ToList(), CaptureCells(p, rows, frames), sources);
         if (cut) ClearSelectedCels();
+    }
+
+    /// <summary>"셀 복사 (효과 포함)"·"프레임 화면 복사": 보이는 그대로 만든 그림(캔버스 크기, 투명 유지)을 시스템·앱 클립보드에 올려 달라.</summary>
+    public event EventHandler<PixelImage>? ImageCopyRequested;
+
+    /// <summary>
+    /// 고른 셀 중 <paramref name="frame"/>의 칸들(그룹 행은 그 부위들, 고른 칸이 그 프레임에 없으면 <paramref name="layer"/>)만 캔버스에 보이는 그대로
+    /// (레이어·그룹 효과, 불투명도, 지금 착장 — 숨긴 레이어는 빼고) 합성해 그림으로 복사한다.
+    /// </summary>
+    private void CopyCelsRendered(int frame, int layer)
+    {
+        if (P is not { } p) return;
+        var picked = SelectedCels().Where(c => c.Frame == frame).Select(c => p.Layers[c.Layer]).ToList();
+        if (picked.Count == 0) picked = CelLayers(p, [layer]).Select(i => p.Layers[i]).ToList();
+        var include = picked.ToHashSet(ReferenceEqualityComparer.Instance);
+        var image = new PixelImage(p.Width, p.Height);
+        p.FlattenInto(image, frame, layerFilter: include.Contains);
+        PutImage(image, frame, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CopiedRendered, frame + 1, picked.Count, image.Width, image.Height));
+    }
+
+    /// <summary>프레임 <paramref name="frame"/>의 화면(미리보기 "이미지 복사"와 같은 합성)을 그림으로 복사한다.</summary>
+    private void CopyFrameImage(int frame)
+    {
+        if (_ctx.FrameImage(frame)?.Clone() is not { } image) return;
+        PutImage(image, frame, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CopiedFrameImage, frame + 1, image.Width, image.Height));
+    }
+
+    /// <summary>
+    /// 그림을 클립보드에 올리고 알린다. 다음 붙여넣기가 이 그림이 되도록 타임라인 셀·효과 복사는 비운다. 보이는 그림이 없으면 올리지 않고 알린다.
+    /// </summary>
+    private void PutImage(PixelImage image, int frame, string done)
+    {
+        if (image.GetOpaqueBounds().IsEmpty)
+        {
+            Say(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CopyNothingVisible, frame + 1));
+            return;
+        }
+        _clip = null;
+        _fxClip = null;
+        ImageCopyRequested?.Invoke(this, image);
+        Say(done);
     }
 
     /// <summary>
@@ -831,6 +973,43 @@ public sealed class TimelinePanel : UserControl
                 }
         }));
         _ctx.SetCurrentLayer(p.IndexOf(focus));
+    }
+
+    /// <summary>레이어를 끌기 시작함: 그룹이 있으면 Shift로 그룹에 넣거나 꺼낼 수 있다고 알린다.</summary>
+    private void HintNest()
+    {
+        if (P is { } p && p.Layers.Any(l => l.IsGroup)) Say(UiStrings.Timeline_NestHint);
+    }
+
+    /// <summary>
+    /// 끌어 놓기(Shift): <paramref name="block"/>을 <paramref name="group"/>의 부위로 넣거나(null이면 그룹 밖 일반 레이어로 꺼냄) <paramref name="slot"/> 자리에 둔다
+    /// (실행취소 한 단계). 부위의 보이지 않는 스킨 그림이 없어지면 먼저 묻는다. 접힌 그룹에 넣으면 펼친다. 현재 레이어는 <paramref name="focus"/>.
+    /// </summary>
+    private void NestLayers(IReadOnlyList<Layer> block, Layer? group, int slot, Layer focus)
+    {
+        if (P is not { } p) return;
+        // 포인터를 떼는 처리 중에 대화상자를 띄우지 않도록 다음 차례에
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!ReferenceEquals(P, p)) return;
+            var losing = block.Where(p.HasHiddenSkinContent).Select(l => l.Name).ToList();
+            if (losing.Count > 0 && Ui.Ask(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_NestLosesSkins, string.Join(", ", losing)),
+                    UiStrings.Timeline_NestLosesSkinsTitle, MessageButtons.OKCancel, MessageIcon.Warning) != DialogResult.OK) return;
+            try
+            {
+                _ctx.Structural(() =>
+                {
+                    if (group is null) p.MoveOutOfGroup(block, slot);
+                    else p.MoveIntoGroup(block, group, slot);
+                });
+                if (group is { Collapsed: true }) p.SetLayerCollapsed(p.IndexOf(group), false);
+                _ctx.SetCurrentLayer(p.IndexOf(focus));
+            }
+            catch (InvalidOperationException ex)
+            {
+                Ui.Info(this, ex.Message);
+            }
+        });
     }
 
     /// <summary>일반 레이어를 바로 아래 일반 레이어에만 병합할 수 있다.</summary>
@@ -1124,24 +1303,33 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var (rows, frames) = CelBlock();
+        var cels = SelectedCels();
+        bool scattered = _grid.ScatteredCels;
         string range = frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_4140F7A491,frames.Min() + 1,frames.Max() + 1) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F687732B1B,frames[0] + 1);
-        bool single = rows.Count * frames.Count == 1;
+        bool single = !scattered && rows.Count * frames.Count == 1;
         // 빌린 셀은 이 스킨 자신의 그림이 없어 지울 것이 없다(기본 스킨 셀은 기본 스킨에서 지움).
         bool borrowed = single && !p.Layers[layer].IsGroup && p.IsCelInherited(layer, frame);
         var items = new List<Control>
         {
             SelectionHeader(),
             new Separator(),
-            Item(borrowed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F4960F4C1A) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_470F8D50A4,DeleteKeyName), ClearSelectedCels, HasOwnCels(p, rows, frames)),
+            Item(borrowed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F4960F4C1A) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_470F8D50A4,DeleteKeyName), ClearSelectedCels, HasOwnCels(p, cels)),
         };
         if (single && !p.Layers[layer].IsGroup)
             items.Add(Item(UiStrings.S_TimelinePanel_ShowCelMenu_F578B13F0B, () => CopyCelFromPrevious(layer, frame), p.IsCelEmpty(layer, frame) && PreviousCelFrame(p, layer, frame) >= 0));
         items.AddRange(
         [
             new Separator(),
-            Item(UiStrings.S_TimelinePanel_ShowCelMenu_6618250E5A, () => CopySelection(false)),
-            Item(UiStrings.S_TimelinePanel_ShowCelMenu_8FF74D6DA3, () => CopySelection(true)),
+            // 떨어진 칸 묶음은 행 × 프레임 모양이 아니라 복사·잘라내기를 하지 않는다
+            Item(UiStrings.S_TimelinePanel_ShowCelMenu_6618250E5A, () => CopySelection(false), !scattered),
+            Item(UiStrings.S_TimelinePanel_ShowCelMenu_8FF74D6DA3, () => CopySelection(true), !scattered),
+            // 보이는 그대로(효과 포함) 그림으로: 고른 칸들만 / 그 프레임 화면 전체
+            Item(UiStrings.Timeline_CopyRendered, () => CopyCelsRendered(frame, layer)),
+            Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.Timeline_CopyFrameImage, frame + 1), () => CopyFrameImage(frame)),
             Item(_clip is { WholeFrames: true } ? UiStrings.S_TimelinePanel_ShowCelMenu_A934B99F70 : UiStrings.S_TimelinePanel_ShowCelMenu_8E28DA59DD, () => PasteSelection(), _clip is not null),
+            new Separator(),
+            Item(UiStrings.Timeline_LinkCels, LinkSelectedCels, CanLinkCels(p, cels)),
+            Item(UiStrings.Timeline_UnlinkCels, UnlinkSelectedCels, HasLinkedCels(p, cels)),
         ]);
         // 효과 창을 고른 칸들의 프레임 범위로 열어 거기서 종류·범위를 골라 추가한다.
         var effectRange = FrameRange.Of(frames.Min(), frames.Max(), p.Frames.Count);
@@ -1416,6 +1604,13 @@ public sealed class TimelinePanel : UserControl
 
         private static readonly IPen BorderPen = AppTheme.Pen(AppTheme.BorderColor);
         private static readonly IPen AccentPen = AppTheme.Pen(AppTheme.AccentColor, 2);
+        /// <summary>링크 묶음 색(<see cref="SpriteProject.LinkColorNames"/>와 같은 차례 — 파랑·주황·초록·분홍·노랑·보라·청록): 띠 펜과 사슬 아이콘 붓.</summary>
+        private static readonly (IPen Pen, IBrush Brush)[] LinkInks =
+        [.. new[]
+        {
+            AppTheme.AccentColor, Color.FromRgb(255, 160, 60), Color.FromRgb(110, 210, 110), Color.FromRgb(240, 110, 190),
+            Color.FromRgb(240, 215, 80), Color.FromRgb(170, 130, 255), Color.FromRgb(70, 210, 210),
+        }.Select(c => (AppTheme.Pen(Color.FromArgb(220, c.R, c.G, c.B), 2), AppTheme.Brush(c)))];
         private static readonly IPen WhitePen = AppTheme.Pen(Colors.White);
         /// <summary>프레임·레이어·효과 선택 중의 현재 칸 테두리(파랗지 않게, 흐린 흰색).</summary>
         private static readonly IPen CurrentCelPen = AppTheme.Pen(Color.FromArgb(110, 255, 255, 255));
@@ -1449,6 +1644,14 @@ public sealed class TimelinePanel : UserControl
         /// <summary>여러 개를 고른 채 그 안의 머리글·이름을 눌렀음(끌지 않고 떼면 그것 하나만 고름).</summary>
         private bool _collapseOnRelease;
         private IPointer? _dragPointer;
+        /// <summary>
+        /// 레이어를 끄는 중 Shift를 누르고 있음: 순서 바꾸기 대신 그룹에 넣기·꺼내기. 놓을 곳(null = 놓을 수 없는 자리)은 <see cref="NestTarget"/>.
+        /// </summary>
+        private bool _nestMode;
+        private NestDrop? _nestDrop;
+
+        /// <summary>그룹에 넣기·꺼내기로 놓을 곳: 그룹(null = 그룹 밖으로 꺼내기), 자리(아래에 둘 형제 수), 놓을 자리 표시 선의 y(화면).</summary>
+        private readonly record struct NestDrop(Layer? Group, int Slot, double LineY);
         private Avalonia.Point _press, _pressContent, _lastPointer;
         /// <summary>끄는 동안(순서 바꾸기·사각형 고르기) 가장자리 자동 스크롤: 좌우(프레임), 위아래(레이어).</summary>
         private readonly ReorderAutoScroll _scrollH, _scrollV;
@@ -1484,6 +1687,8 @@ public sealed class TimelinePanel : UserControl
         private int _marqueeAnchor;
         /// <summary>셀 선택의 끝 행(시작 행 = 현재 레이어). null이면 현재 레이어 한 행.</summary>
         private Layer? _rowEnd;
+        /// <summary>Ctrl/⌘+클릭으로 하나씩 고른 떨어진 칸들(비어 있으면 사각형 묶음 <see cref="_rangeA"/>·<see cref="_rowEnd"/>를 씀). 두 칸 이상일 때만 둔다.</summary>
+        private readonly HashSet<(Layer Layer, Frame Frame)> _selCels = [];
         /// <summary>셀 묶음 끌기: 옮길 행(레이어 번호, 위→아래)·프레임 범위, 잡은 칸(묶음 왼쪽 위 기준), 놓을 자리(보이는 행·프레임).</summary>
         private List<int>? _blockRows;
         private int _blockFrom, _blockCount, _grabRow, _grabFrame;
@@ -1907,10 +2112,12 @@ public sealed class TimelinePanel : UserControl
         {
             _rangeA = _rangeB = -1;
             _rowEnd = null;
+            _selCels.Clear();
             _selFrames.Clear();
             _selLayers.Clear();
             _selFx.Clear();
             _kind = SelKind.Cels;
+            _owner.QueueEffectFocus();
         }
 
         /// <summary>선택을 풀어 현재 칸 하나(셀 선택)로 돌아간다.</summary>
@@ -1960,6 +2167,7 @@ public sealed class TimelinePanel : UserControl
             _selFx.UnionWith(effects);
             if (_selFx.Count > 0) _kind = SelKind.Effects;
             InvalidateVisual();
+            _owner.QueueEffectFocus();
         }
 
         private bool IsEffectSelected(Layer layer, int index) => _kind == SelKind.Effects && _selFx.Contains((layer, index));
@@ -1984,6 +2192,7 @@ public sealed class TimelinePanel : UserControl
             }
             if (_selFx.Count == 0) ClearSelection();
             InvalidateVisual();
+            _owner.QueueEffectFocus();
         }
 
         /// <summary>보이는 행 [<paramref name="a"/>, <paramref name="b"/>](순서 상관없음)의 레이어를 고른다.</summary>
@@ -2056,9 +2265,62 @@ public sealed class TimelinePanel : UserControl
 
         private bool InRange(int f) => _rangeA >= 0 && f >= Math.Min(_rangeA, _rangeB) && f <= Math.Max(_rangeA, _rangeB);
 
-        /// <summary>셀 묶음에 든 칸인지(범위가 없으면 현재 칸).</summary>
+        /// <summary>셀 묶음에 든 칸인지(떨어진 칸이면 그 칸들, 범위가 없으면 현재 칸).</summary>
         private bool InCelSelection(int layer, int frame)
-            => _kind == SelKind.Cels && (_rangeA >= 0 ? InRange(frame) : frame == Ctx.CurrentFrame) && SelectedRowLayers().Contains(layer);
+        {
+            if (_kind != SelKind.Cels) return false;
+            if (_selCels.Count > 0)
+                return Ctx.Project is { } p && (uint)layer < (uint)p.Layers.Count && (uint)frame < (uint)p.Frames.Count
+                       && _selCels.Contains((p.Layers[layer], p.Frames[frame]));
+            return (_rangeA >= 0 ? InRange(frame) : frame == Ctx.CurrentFrame) && SelectedRowLayers().Contains(layer);
+        }
+
+        /// <summary>Ctrl/⌘+클릭으로 고른 떨어진 칸 묶음인지.</summary>
+        public bool ScatteredCels => _kind == SelKind.Cels && _selCels.Count > 0;
+
+        /// <summary>떨어진 칸 묶음의 칸(레이어 번호, 프레임 번호 — 위 행부터, 행 안은 프레임 차례). 떨어진 칸 묶음이 아니면 빈 목록.</summary>
+        public List<(int Layer, int Frame)> ScatteredCelList()
+        {
+            if (!ScatteredCels || Ctx.Project is not { } p) return [];
+            return [.. _selCels.Select(c => (Layer: p.IndexOf(c.Layer), Frame: p.IndexOf(c.Frame))).Where(c => c.Layer >= 0 && c.Frame >= 0)
+                .OrderByDescending(c => c.Layer).ThenBy(c => c.Frame)];
+        }
+
+        /// <summary>
+        /// Ctrl/⌘+클릭: 칸 하나를 셀 선택에 더하거나 뺀다(떨어진 칸도 됨). 지금 사각형 묶음(또는 현재 칸)에서 시작하고, 더한 칸이 현재 칸이 된다.
+        /// 한 칸만 남으면 그 칸 하나 선택으로 돌아간다.
+        /// </summary>
+        private void ToggleCel(int layer, int frame)
+        {
+            if (Ctx.Project is not { } p) return;
+            if (_kind != SelKind.Cels) ClearSelection();
+            if (_selCels.Count == 0)
+            {
+                var (a, b) = _rangeA >= 0 ? Range : (Ctx.CurrentFrame, Ctx.CurrentFrame);
+                foreach (var l in SelectedRowLayers())
+                    for (int f = a; f <= b; f++) _selCels.Add((p.Layers[l], p.Frames[f]));
+                _rangeA = _rangeB = -1;
+                _rowEnd = null;
+            }
+            var key = (p.Layers[layer], p.Frames[frame]);
+            if (_selCels.Add(key)) Ctx.SetCurrent(layer, frame);
+            else
+            {
+                _selCels.Remove(key);
+                if (layer == Ctx.CurrentLayer && frame == Ctx.CurrentFrame && _selCels.Count > 0)
+                {
+                    var next = ScatteredCelList()[0];
+                    Ctx.SetCurrent(next.Layer, next.Frame);
+                }
+            }
+            if (_selCels.Count == 1)
+            {
+                var only = ScatteredCelList()[0];
+                _selCels.Clear();
+                Ctx.SetCurrent(only.Layer, only.Frame);
+            }
+            InvalidateVisual();
+        }
 
         /// <summary>프로젝트·현재 칸이 바뀐 뒤: 없어진 프레임·레이어를 선택에서 빼고, 남은 것이 없으면 현재 칸으로.</summary>
         public void ClampRange()
@@ -2068,9 +2330,12 @@ public sealed class TimelinePanel : UserControl
             else if (_rowEnd is not null && p.IndexOf(_rowEnd) < 0) _rowEnd = null;
             _selFrames.RemoveWhere(f => f >= p.Frames.Count);
             _selLayers.RemoveWhere(l => p.IndexOf(l) < 0);
+            _selCels.RemoveWhere(c => p.IndexOf(c.Layer) < 0 || p.IndexOf(c.Frame) < 0);
+            if (_selCels.Count == 1) _selCels.Clear();
             _selFx.RemoveWhere(x => p.IndexOf(x.Layer) < 0 || x.Index >= x.Layer.Effects.Count);
             if ((_kind == SelKind.Frames && _selFrames.Count == 0) || (_kind == SelKind.Layers && _selLayers.Count == 0)
                 || (_kind == SelKind.Effects && _selFx.Count == 0)) ClearSelection();
+            _owner.QueueEffectFocus();
         }
 
         /// <summary>보이는 행의 레이어 번호(맨 위 레이어부터, 접힌 그룹의 부위는 뺌).</summary>
@@ -2522,16 +2787,21 @@ public sealed class TimelinePanel : UserControl
             var headerClip = new Rect(NameW, 0, Math.Max(0, width - NameW), TagH + HeadH);
             var namesClip = new Rect(0, TagH + HeadH, NameW, Math.Max(0, height - TagH - HeadH));
 
-            // 선택 바탕: 셀 묶음(두 칸 이상)은 고른 칸을 진하게, 프레임·레이어 선택은 그 열·행 칸을 옅게. 테두리는 아래에서 덩어리째 그린다.
-            var selRows = _kind == SelKind.Cels ? SelectedRowLayers() : [];
+            // 선택 바탕: 셀 묶음(두 칸 이상)은 고른 칸을 진하게, 프레임·레이어 선택은 그 열·행 칸을 옅게. 테두리는 아래에서 덩어리째 그린다(떨어진 칸은 칸마다).
+            bool scattered = ScatteredCels;
+            var selRows = _kind == SelKind.Cels && !scattered ? SelectedRowLayers() : [];
             var selRowSet = new HashSet<int>(selRows);
-            bool multiCel = _kind == SelKind.Cels && (selRows.Count > 1 || (ra >= 0 && rb > ra));
+            bool multiCel = _kind == SelKind.Cels && !scattered && (selRows.Count > 1 || (ra >= 0 && rb > ra));
             IBrush? CellTint(int layer, int frame) => _kind switch
             {
                 SelKind.Frames => _selFrames.Contains(frame) ? LightSelBrush : null,
                 SelKind.Layers => _selLayers.Contains(p.Layers[layer]) ? LightSelBrush : null,
+                _ when scattered => InCelSelection(layer, frame) ? RangeBrush : null,
                 _ => multiCel && selRowSet.Contains(layer) && (ra >= 0 ? frame >= ra && frame <= rb : frame == cur) ? RangeBrush : null,
             };
+            // 링크 표시(레이어 행마다 한 번 셈): 묶음마다 그 묶음 색으로 사슬·띠를 그린다
+            var linkMarks = new Dictionary<int, CelLinkMark[]>();
+            CelLinkMark[] LinkMarksOf(int layer) => linkMarks.TryGetValue(layer, out var marks) ? marks : linkMarks[layer] = p.LinkMarks(layer);
 
             // 셀 하나(그룹 행은 그룹 합성 썸네일, 지워져 줄어드는 행·열은 빈 칸)
             void DrawCell(int x, int y, int l, int f)
@@ -2563,7 +2833,22 @@ public sealed class TimelinePanel : UserControl
                     g.DrawEllipse(AppTheme.BorderBrush, null, new Rect(r.X + r.Width / 2 - 3, r.Y + r.Height / 2 - 3, 6, 6));
                 // 파란 테두리는 셀 선택일 때만: 프레임·레이어·효과를 고른 동안은 그 선택 외곽선이 파랗고, 현재 칸은 흐린 흰 테두리로만 표시
                 if (l == curLayer && f == cur) g.DrawRectangle(null, _kind == SelKind.Cels ? AccentPen : CurrentCelPen, r.Deflate(_kind == SelKind.Cels ? 1 : 0.5));
+                else if (scattered && InCelSelection(l, f)) g.DrawRectangle(null, AccentPen, r.Deflate(1));
                 else g.DrawRectangle(null, BorderPen, r.Deflate(0.5));
+                if (!p.Layers[l].IsGroup && LinkMarksOf(l) is var marks && (uint)f < (uint)marks.Length && marks[f].IsLinked) DrawLinkMark(r, x, marks, f);
+            }
+
+            // 링크된 셀: 오른쪽 아래 사슬 아이콘 + 아래 띠(바로 옆 프레임이 같은 묶음이면 그쪽 칸 끝까지 이어 그려 묶음이 한 줄로 보임). 색 = 묶음 색(묶은 차례대로, AI·파일에서 바뀜).
+            void DrawLinkMark(Rect r, int x, CelLinkMark[] marks, int f)
+            {
+                var mark0 = marks[f];
+                var (pen, brush) = LinkInks[mark0.Color % LinkInks.Length];
+                bool prev = f > 0 && marks[f - 1].Group == mark0.Group, next = f + 1 < marks.Length && marks[f + 1].Group == mark0.Group;
+                double y = r.Bottom - 1.5;
+                g.DrawLine(pen, new Avalonia.Point(prev ? x : r.X + 3, y), new Avalonia.Point(next ? x + CellW : r.Right - 3, y));
+                var mark = new Rect(r.Right - 15, r.Bottom - 15, 13, 12);
+                g.FillRectangle(AppTheme.BackBrush, mark, 3);
+                VectorIcons.Draw(g, VectorIcon.Link, mark, 10, brush);
             }
 
             // 효과 줄 하나(레이어 아래, 효과 하나): 프레임 칸 바탕 + 효과가 입혀지는 프레임에 걸친 둥근 상자(종류마다 색, 꺼진 효과는 흐리게).
@@ -2583,6 +2868,20 @@ public sealed class TimelinePanel : UserControl
                 if (x1 - x0 < 1) return;
                 var box = new Rect(x0, ry + 1, x1 - x0, FxH - 3);
                 var color = LayerEffectsDialog.TimelineColorOf(effect);
+                // 링크된 뒤 칸에 끝 모습 이어 가기: 범위 뒤 링크된 칸마다 흐린 꼬리(이어진 칸은 한 덩어리)
+                if (effect is AnimatedEffect { HoldEnd: true, Frames: { } held } && !layer.IsGroup && p.IndexOf(layer) is var li and >= 0)
+                {
+                    using (g.PushOpacity(effect.Enabled ? 0.35 : 0.15))
+                        for (int f = held.To + 1; f < frames; f++)
+                        {
+                            if (!p.CelsShareDrawing(li, f, held.To)) continue;
+                            int end = f;
+                            while (end + 1 < frames && p.CelsShareDrawing(li, end + 1, held.To)) end++;
+                            double tx0 = f == held.To + 1 ? x1 - 3 : FrameX(f) + 2;
+                            g.DrawRectangle(AppTheme.Brush(color), null, new Rect(tx0, ry + 3, FrameX(end) + FrameW(end) - 2 - tx0, FxH - 7), 2, 2);
+                            f = end;
+                        }
+                }
                 bool hovered = editing || (_fxHover is { } h && ReferenceEquals(h.Layer, layer) && h.Index == k);
                 IBrush ink = IsBright(color) ? Brushes.Black : Brushes.White;
                 using (g.PushOpacity(effect.Enabled ? 1 : 0.4))
@@ -2985,6 +3284,16 @@ public sealed class TimelinePanel : UserControl
                 using (g.PushClip(new Rect(0, TagH + HeadH, width, Math.Max(0, height - TagH - HeadH))))
                     g.DrawRectangle(RangeBrush, AccentPen, new Rect(1, y0 + 1, Math.Max(0, width - 2), Math.Max(0, h - 2)));
             }
+            // 그룹에 넣기·꺼내기(끄는 중 Shift): 넣을 그룹의 이름 칸을 강조색으로 덮고, 놓을 자리는 파란 선으로
+            if (_reordering && _nestMode && _nestDrop is { } nest)
+            {
+                using (g.PushClip(new Rect(0, TagH + HeadH, width, Math.Max(0, height - TagH - HeadH))))
+                {
+                    if (nest.Group is { } ng && p.IndexOf(ng) is var ngi && ngi >= 0)
+                        g.FillRectangle(RangeBrush, new Rect(0, LayerY(ngi), NameW, CellH));
+                    g.DrawLine(AccentPen, new Avalonia.Point(0, nest.LineY), new Avalonia.Point(width, nest.LineY));
+                }
+            }
             // 효과 이름 끌기: 옮길 효과 줄을 강조색으로 덮고(같은 레이어 안이면 포인터를 따라옴), 다른 레이어에 놓을 자리는 파란 선으로
             if (_fxReordering && _fxDragLayer is { } fxLayer && p.IndexOf(fxLayer) is var fli && fli >= 0)
             {
@@ -3242,10 +3551,17 @@ public sealed class TimelinePanel : UserControl
                 return;
             }
             if (!left) return;
+            if (cmd && !shift)
+            {
+                // Ctrl/⌘+클릭: 떨어진 칸도 하나씩 더하고 뺀다
+                ToggleCel(l, f);
+                _owner.HintSelection();
+                return;
+            }
             if (shift)
             {
-                // 시작 칸(현재 칸)은 그대로 두고 끝 칸(행·프레임)만 넓힌다.
-                if (_kind != SelKind.Cels) ClearSelection();
+                // 시작 칸(현재 칸)은 그대로 두고 끝 칸(행·프레임)만 넓힌다(떨어진 칸 묶음이었으면 현재 칸부터 다시).
+                if (_kind != SelKind.Cels || ScatteredCels) ClearSelection();
                 if (_rangeA < 0) _rangeA = Ctx.CurrentFrame;
                 _rangeB = f;
                 _rowEnd = l == Ctx.CurrentLayer ? null : p.Layers[l];
@@ -3704,15 +4020,68 @@ public sealed class TimelinePanel : UserControl
                 foreach (int u in ReorderCore.Order(units.Count, from, to)) sequence.AddRange(units[u]);
                 for (int i = spanEnd + 1; i < _rowT.Count; i++) sequence.Add(i);
                 _liftRows = units[from];
-                var lifted = new HashSet<int>(_liftRows);
-                _rowT.Preview(sequence, lifted.Contains, (int)Math.Round(offset), now);
                 _layerBlock = siblings.GetRange(ra, rb - ra + 1);
-                _layerSteps = from - to;
+                if (_nestMode)
+                {
+                    // Shift: 행은 제자리에 두고 넣을 그룹·꺼낼 자리를 선으로 보인다
+                    _rowT.ClearPreview(animate: true, now);
+                    _layerSteps = 0;
+                    _nestDrop = NestTarget(p, pos);
+                    Cursor = new Cursor(_nestDrop is null ? StandardCursorType.No : StandardCursorType.SizeNorthSouth);
+                }
+                else
+                {
+                    var lifted = new HashSet<int>(_liftRows);
+                    _rowT.Preview(sequence, lifted.Contains, (int)Math.Round(offset), now);
+                    _layerSteps = from - to;
+                    _nestDrop = null;
+                    Cursor = new Cursor(StandardCursorType.SizeNorthSouth);
+                }
                 _scrollV.Set(ReorderCore.EdgeSpeed(pos.Y, TagH + HeadH, ClientH));
             }
             if ((_rowT.Animating || _colT.Animating) && !_animTimer.IsEnabled) _animTimer.Start();
             InvalidateVisual();
         }
+
+        /// <summary>
+        /// 끄는 중 Shift일 때 놓을 곳. 포인터 아래 행이 다른 그룹(그룹 행·그 부위 행)이면 그 그룹에 넣기(그룹 행 = 맨 위 부위, 부위 행 = 행의 위·아래 절반에 따라
+        /// 그 부위 위·아래). 끄는 것이 부위이고 포인터가 그룹 밖 최상위 레이어 행, 자기 그룹 행의 위쪽 절반, 모든 행의 위·아래 바깥이면 그 자리로 꺼내기.
+        /// 그 밖(그룹을 끄는 중, 일반 레이어를 일반 레이어 위에, 자기 그룹 안, 잠긴 그룹)은 null.
+        /// </summary>
+        private NestDrop? NestTarget(SpriteProject p, Avalonia.Point pos)
+        {
+            var block = _layerBlock;
+            if (block.Count == 0 || block.Any(l => l.IsGroup)) return null;
+            var home = block[0].Parent;
+            var top = p.Layers.Where(l => l.Parent is null).ToList(); // 최상위(아래 → 위)
+            double y = ContentY(pos.Y);
+            int item = _rowT.IndexAt(y, exact: false);
+            if (item < 0 || item >= _rowT.Count)
+                return home is null ? null : OutDrop(item < 0 ? top.Count : 0);
+            var over = p.Layers[_rowT.Count - 1 - item];
+            if (block.Contains(over)) return null;
+            bool upper = y < _rowT.BasePos(item) + _rowT.Px(item) / 2.0;
+            var group = over.IsGroup ? over : over.Parent;
+            if (group is not null && !ReferenceEquals(group, home))
+            {
+                if (group.Locked) return null;
+                var kids = p.ChildrenOf(group).Where(l => !block.Contains(l)).ToList(); // 아래 → 위
+                int slot = over.IsGroup ? kids.Count : kids.IndexOf(over) + (upper ? 1 : 0);
+                double line = slot > 0 ? RowTop(p, kids[slot - 1]) : RowBottom(p, kids.Count > 0 ? kids[0] : group);
+                return new NestDrop(group, slot, line);
+            }
+            if (home is null) return null;
+            if (group is not null && !(over.IsGroup && upper)) return null; // 자기 그룹 안
+            return OutDrop(top.IndexOf(over) + (upper ? 1 : 0));
+
+            // 최상위 자리 k(아래에 둘 최상위 수)로 꺼내기: 선은 바로 아래 덩어리의 머리 행 위(맨 아래면 모든 행 아래)
+            NestDrop OutDrop(int k) => new(null, k, k > 0 ? RowTop(p, top[k - 1]) : TagH + HeadH + _rowT.Total - VValue);
+        }
+
+        /// <summary>레이어 행(효과 줄 포함)의 제자리 위·아래 y(화면, 순서 바꾸기 미리보기 밀림 뺌).</summary>
+        private double RowTop(SpriteProject p, Layer layer) => TagH + HeadH + _rowT.BasePos(RowItem(p.IndexOf(layer))) - VValue;
+
+        private double RowBottom(SpriteProject p, Layer layer) => RowTop(p, layer) + _rowT.Px(RowItem(p.IndexOf(layer)));
 
         /// <summary>끄는 동안(순서 바꾸기·사각형 고르기) 가장자리 자동 스크롤: <paramref name="bar"/>를 움직이고 놓을 자리·고른 범위를 다시 센다.</summary>
         private bool AutoScrollBy(ScrollBar bar, double delta)
@@ -3799,8 +4168,10 @@ public sealed class TimelinePanel : UserControl
                 if (!ReorderCore.Exceeded(_press, pos)) return;
                 _reordering = true;
                 Cursor = new Cursor(_dragFrom >= 0 ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth);
+                if (_layerDragFrom >= 0) _owner.HintNest();
             }
             _dragPointer = e.Pointer;
+            _nestMode = _layerDragFrom >= 0 && (e.KeyModifiers & KeyModifiers.Shift) != 0;
             UpdateReorder(pos);
         }
 
@@ -3926,10 +4297,12 @@ public sealed class TimelinePanel : UserControl
             int dragFrom = _dragFrom, a = _dragA, b = _dragB, dropTo = _dropTo, layerFrom = _layerDragFrom, steps = _layerSteps;
             var block = _layerBlock;
             bool reordering = _reordering, collapse = _collapseOnRelease;
+            var nest = _nestMode ? _nestDrop : null;
             _dragFrom = _dropTo = _layerDragFrom = -1;
             _layerSteps = 0;
             _layerBlock = new();
-            _reordering = _collapseOnRelease = false;
+            _reordering = _collapseOnRelease = _nestMode = false;
+            _nestDrop = null;
             _dragPointer = null;
             _liftRows = new();
             _scrollH.Set(0);
@@ -3950,6 +4323,15 @@ public sealed class TimelinePanel : UserControl
             long now = System.Diagnostics.Stopwatch.GetTimestamp();
             bool frames = dragFrom >= 0;
             var track = frames ? _colT : _rowT;
+            if (nest is { } drop)
+            {
+                // 행은 이미 제자리(Shift 동안 미리보기 없음): 넣기·꺼내기는 끝난 뒤 행 배치가 새 자리로 미끄러진다
+                track.ClearPreview(animate: true, now);
+                if (apply && block.Count > 0 && pressed is not null) _owner.NestLayers(block, drop.Group, drop.Slot, pressed);
+                if (track.Animating && !_animTimer.IsEnabled) _animTimer.Start();
+                InvalidateVisual();
+                return;
+            }
             bool move = apply && (frames ? dropTo >= 0 && dropTo != a : steps != 0 && block.Count > 0 && pressed is not null);
             if (!move) track.ClearPreview(animate: true, now);
             else
@@ -3993,6 +4375,11 @@ public sealed class TimelinePanel : UserControl
                 e.Handled = true;
                 return;
             }
+            if (e.Key is Key.LeftShift or Key.RightShift && SetNestMode(true))
+            {
+                e.Handled = true;
+                return;
+            }
             if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down && (e.KeyModifiers & ~KeyModifiers.Shift) == 0)
             {
                 bool dragging = _marquee is not null || _dragFrom >= 0 || _layerDragFrom >= 0 || _blockRows is not null || _fxDragLayer is not null || _fxLayer is not null;
@@ -4009,6 +4396,24 @@ public sealed class TimelinePanel : UserControl
                 e.Handled = true;
             }
             else if (e.Key == Key.F2) { _owner.BeginRenameLayer(); e.Handled = true; }
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            if (!e.Handled && e.Key is Key.LeftShift or Key.RightShift && SetNestMode(false)) e.Handled = true;
+        }
+
+        /// <summary>레이어를 끄는 중이면 Shift 누름·뗌으로 그룹에 넣기·꺼내기와 순서 바꾸기를 오간다(포인터를 움직이지 않아도). 끄는 중이 아니면 false.</summary>
+        private bool SetNestMode(bool on)
+        {
+            if (!_reordering || _layerDragFrom < 0) return false;
+            if (_nestMode != on)
+            {
+                _nestMode = on;
+                UpdateReorder(_lastPointer);
+            }
+            return true;
         }
 
         /// <summary>
@@ -4049,7 +4454,8 @@ public sealed class TimelinePanel : UserControl
             }
             else if (extend && _kind == SelKind.Cels)
             {
-                // 시작 칸(현재 칸)은 그대로 두고 끝 칸만 옮긴다.
+                // 시작 칸(현재 칸)은 그대로 두고 끝 칸만 옮긴다(떨어진 칸 묶음이었으면 현재 칸부터 다시).
+                if (ScatteredCels) ClearSelection();
                 int endFrame = _rangeA >= 0 ? _rangeB : Ctx.CurrentFrame;
                 int endRow = _rowEnd is { } re && rows.IndexOf(p.IndexOf(re)) is var ri && ri >= 0 ? ri : Math.Max(0, rows.IndexOf(Ctx.CurrentLayer));
                 endFrame = Math.Clamp(endFrame + dx, 0, lastFrame);

@@ -15,7 +15,8 @@ public readonly record struct CanvasView(int Zoom, double CenterX, double Center
 /// 픽셀 캔버스: 현재 프레임 한 장(보이는 레이어 합성)을 정수 배율(1~64)로 보여 주고, 현재 레이어의 셀에 그린다.
 /// 체커 배경, 픽셀/타일 격자, 타일 모드(5×5, 큰 그림은 3×3 반복), 대칭 안내선, 피벗, 9-slice 안내선(부위), 선택 영역, 양파 껍질,
 /// H 누르는 동안 이전 프레임 보기, 변형 모드(Ctrl+T)의 주황 테두리·손잡이(옮기기·크기·회전·회전 중심 끌기),
-/// 캔버스 크기 모드(Ctrl+Alt+C)의 하늘색 캔버스 테두리·손잡이(가장자리, Ctrl = 그림 크기도 함께)와 그림 옮기기.
+/// 캔버스 크기 모드(Ctrl+Alt+C)의 하늘색 캔버스 테두리·손잡이(가장자리, Ctrl = 그림 크기도 함께)와 그림 옮기기,
+/// 레이어 크기 모드(Ctrl+Shift+C)의 같은 테두리·손잡이(레이어 자리에 붙어 지금 레이어만 늘이고 줄임)와 레이어 옮기기.
 /// <para>
 /// 부위를 고르면 캔버스 = 그 부위(부위 크기, 부위 안 좌표로 그림)이고 프레임의 나머지는 흐리게 둘레에 보인다.
 /// 그룹을 고르면 프레임 합성을 보며 부위를 배치한다: 올린 부위 테두리·이름, 끌어서 옮기기(놓으면 실행취소 한 단계),
@@ -2754,9 +2755,16 @@ public sealed partial class PixelCanvas : Control
         return (canvas, image);
     }
 
-    /// <summary>캔버스 손잡이(-1/0/1)의 화면 위치.</summary>
-    private Avalonia.Point CanvasResizeHandleScreen(Rectangle canvas, int hx, int hy)
-        => ImageToScreen(canvas.X + (hx + 1) * canvas.Width / 2.0, canvas.Y + (hy + 1) * canvas.Height / 2.0);
+    /// <summary>손잡이 8개가 붙는 사각형(보이는 좌표): 캔버스 크기 모드면 새 캔버스, 레이어 크기 모드면 레이어 자리.</summary>
+    private Rectangle CanvasResizeHandleRect()
+    {
+        var (canvas, image) = CanvasResizeViewRects();
+        return _ctx.CanvasResizeLayer is null ? canvas : image;
+    }
+
+    /// <summary>손잡이(-1/0/1)의 화면 위치.</summary>
+    private Avalonia.Point CanvasResizeHandleScreen(Rectangle rect, int hx, int hy)
+        => ImageToScreen(rect.X + (hx + 1) * rect.Width / 2.0, rect.Y + (hy + 1) * rect.Height / 2.0);
 
     /// <summary>
     /// 캔버스 크기 모드: 적용하면 될 그림 전체(새 캔버스 밖으로 나가는 부분과 캔버스 밖 그림 포함 — 캔버스 안·밖이 같은 배율)는 흐리게,
@@ -2790,18 +2798,26 @@ public sealed partial class PixelCanvas : Control
         }
         var c = ImageToScreen(canvas);
         var border = new Rect(c.X - 0.5, c.Y - 0.5, c.Width + 1, c.Height + 1);
-        g.DrawRectangle(null, TransformBackPen, border);
-        g.DrawRectangle(null, CanvasResizePen, border);
+        var layer = _ctx.CanvasResizeLayer;
+        // 레이어 크기 모드: 캔버스는 그대로(보통 테두리), 하늘색 점선·손잡이는 레이어 자리에.
+        var handles = layer is null ? canvas : image;
+        var h0 = ImageToScreen(handles);
+        var frame = layer is null ? border : new Rect(h0.X - 0.5, h0.Y - 0.5, h0.Width + 1, h0.Height + 1);
+        if (layer is not null) g.DrawRectangle(null, BorderPen, border);
+        g.DrawRectangle(null, TransformBackPen, frame);
+        g.DrawRectangle(null, CanvasResizePen, frame);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = CanvasResizeHandleScreen(canvas, hx, hy);
+            var h = CanvasResizeHandleScreen(handles, hx, hy);
             g.DrawRectangle(CanvasResizeHandleBrush, CanvasResizeHandlePen, new Rect(Math.Round(h.X) - 4, Math.Round(h.Y) - 4, 8, 8));
         }
-        var label = CanvasResizeLabel(canvas.Size, image.Size, _ctx.CanvasResizeSource);
+        // 레이어 글의 위치는 프레임 좌표(부위 화면에서 보이는 좌표가 아니라).
+        var label = layer is null ? CanvasResizeLabel(canvas.Size, image.Size, _ctx.CanvasResizeSource) : LayerResizeLabel(layer.Name, _ctx.CanvasResizeImage, _ctx.CanvasResizeSource);
         var size = AppTheme.MeasureText(label, AppTheme.SmallFontSize);
-        double ly = c.Y - size.Height - 10 >= 0 ? c.Y - size.Height - 10 : c.Bottom + 8;
-        g.FillRectangle(LabelBrush, new Rect(c.X, ly, size.Width + 6, size.Height + 2));
-        AppTheme.DrawText(g, label, new Avalonia.Point(c.X + 3, ly + 1), Brushes.White, AppTheme.SmallFontSize);
+        var top = layer is null ? c : h0;
+        double ly = top.Y - size.Height - 10 >= 0 ? top.Y - size.Height - 10 : top.Bottom + 8;
+        g.FillRectangle(LabelBrush, new Rect(top.X, ly, size.Width + 6, size.Height + 2));
+        AppTheme.DrawText(g, label, new Avalonia.Point(top.X + 3, ly + 1), Brushes.White, AppTheme.SmallFontSize);
     }
 
     /// <summary>캔버스 크기 모드의 9-slice 선 하나(이미지 좌표 픽셀 경계).</summary>
@@ -2822,15 +2838,28 @@ public sealed partial class PixelCanvas : Control
         return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_CanvasResizeLabel_0D4B41243A,text,image.Width,image.Height,percent);
     }
 
+    /// <summary>레이어 크기 글: <c>레이어 1 · 32×16 (200%) @4,2</c>(크기가 그대로면 배율 없이).</summary>
+    private static string LayerResizeLabel(string name, Rectangle image, Size source)
+    {
+        var size = $"{image.Width}×{image.Height}";
+        if (image.Size != source)
+        {
+            double sx = Math.Round(image.Width * 100.0 / source.Width, 1), sy = Math.Round(image.Height * 100.0 / source.Height, 1);
+            size += sx == sy ? $" ({sx:0.#}%)" : $" ({sx:0.#}%×{sy:0.#}%)";
+        }
+        return UiStrings.FormatLayerResize_Label(name: name, size: size, x: image.X, y: image.Y);
+    }
+
     /// <summary>화면 위치가 가리키는 캔버스 크기 동작: 손잡이(가장 가까운 것, 가장자리) → 그림 안쪽(옮기기) 순. 없으면 <see cref="DragMode.None"/>.</summary>
     private (DragMode Mode, int Hx, int Hy) CanvasResizeHitAt(Point screen)
     {
-        var (canvas, image) = CanvasResizeViewRects();
+        var (_, image) = CanvasResizeViewRects();
+        var handles = CanvasResizeHandleRect();
         double best = double.MaxValue;
         (DragMode, int, int) hit = (DragMode.None, 0, 0);
         foreach (var (hx, hy) in TransformHandles)
         {
-            var h = CanvasResizeHandleScreen(canvas, hx, hy);
+            var h = CanvasResizeHandleScreen(handles, hx, hy);
             double dx = Math.Abs(screen.X - h.X), dy = Math.Abs(screen.Y - h.Y);
             if (dx > TransformHandleGrab || dy > TransformHandleGrab || dx + dy >= best) continue;
             best = dx + dy;
@@ -2869,6 +2898,7 @@ public sealed partial class PixelCanvas : Control
     /// 캔버스 크기 끌기(1px 단위): 그림 안쪽이면 그림을 옮기고, 손잡이면 그 캔버스 가장자리만 옮긴다(그림은 제자리 → 여백이 늘거나 잘림).
     /// Ctrl(⌘)이면 그림 가장자리도 함께 움직여 여백은 그대로 두고 그림 크기를 바꾼다(모서리 + Shift = 시작 때 그림 비율 유지). 크기는 1px 이상.
     /// 9-slice로 늘리기가 켜져 있어도 조작은 같고(<see cref="EditorContext.CanvasResizeUsesSlice"/>는 그림을 늘리는 방법만 바꿈), 그때 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다.
+    /// 레이어 크기 모드면 손잡이가 레이어 크기를 바꾼다(<see cref="DragLayerResize"/>).
     /// </summary>
     private void DragCanvasResize(Point screen)
     {
@@ -2878,6 +2908,11 @@ public sealed partial class PixelCanvas : Control
         if (_drag == DragMode.CanvasResizeMove)
         {
             _ctx.SetCanvasResize(c, new Rectangle(i.X + dx, i.Y + dy, i.Width, i.Height));
+            return;
+        }
+        if (_ctx.CanvasResizeLayer is not null)
+        {
+            DragLayerResize(c, i, dx, dy);
             return;
         }
         bool scale = Ui.HasCommand(_mods);
@@ -2908,6 +2943,29 @@ public sealed partial class PixelCanvas : Control
         var (cx, cw, ix, iw) = GrowAxis(_crHx, gx, c.X, c.Width, i.X, i.Width, scale);
         var (cy, ch, iy, ih) = GrowAxis(_crHy, gy, c.Y, c.Height, i.Y, i.Height, scale);
         _ctx.SetCanvasResize(new Rectangle(cx, cy, cw, ch), new Rectangle(ix, iy, iw, ih));
+    }
+
+    /// <summary>
+    /// 레이어 크기 모드 손잡이 끌기: 잡은 가장자리만 움직여 레이어 크기를 바꾼다(맞은편은 제자리). 모서리 + Shift = 시작 때 비율 유지,
+    /// Alt = 가운데를 고정하고 양쪽을 함께. 크기는 1px ~ 최대 크기, 캔버스는 그대로.
+    /// </summary>
+    private void DragLayerResize(Rectangle canvas, Rectangle i, int dx, int dy)
+    {
+        bool center = (_mods & KeyModifiers.Alt) != 0;
+        int k = center ? 2 : 1;
+        int gx = _crHx * dx * k, gy = _crHy * dy * k;
+        if ((_mods & KeyModifiers.Shift) != 0 && _crHx != 0 && _crHy != 0)
+        {
+            double kx = (i.Width + gx) / (double)i.Width, ky = (i.Height + gy) / (double)i.Height;
+            double s = Math.Abs(kx - 1) >= Math.Abs(ky - 1) ? kx : ky;
+            gx = (int)Math.Round(i.Width * s) - i.Width;
+            gy = (int)Math.Round(i.Height * s) - i.Height;
+        }
+        gx = Math.Clamp(gx, 1 - i.Width, PixelImage.MaxSize - i.Width);
+        gy = Math.Clamp(gy, 1 - i.Height, PixelImage.MaxSize - i.Height);
+        int x = center ? i.X - gx / 2 : _crHx < 0 ? i.X - gx : i.X;
+        int y = center ? i.Y - gy / 2 : _crHy < 0 ? i.Y - gy : i.Y;
+        _ctx.SetCanvasResize(canvas, new Rectangle(x, y, i.Width + gx, i.Height + gy));
     }
 
     /// <summary>

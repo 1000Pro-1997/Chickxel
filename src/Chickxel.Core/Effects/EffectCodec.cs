@@ -19,7 +19,7 @@ namespace Chickxel.Core.Effects;
 public static class EffectCodec
 {
     public const string TypeKey = "type", VersionKey = "version", EnabledKey = "enabled", ClipKey = "clipToPrevious", FramesKey = "frames",
-        SettingsKey = "settings", GradientsKey = "colorGradients";
+        SettingsKey = "settings", GradientsKey = "colorGradients", HoldEndKey = "holdEnd";
 
     /// <summary>효과의 저장 JSON. 정의가 없는 효과 타입이면 <see cref="NotSupportedException"/>.</summary>
     public static JsonObject Write(LayerEffect effect)
@@ -35,6 +35,8 @@ public static class EffectCodec
             [ClipKey] = effect.ClipToPrevious,
         };
         if (effect.Frames is { } f) json[FramesKey] = new JsonArray(f.From, f.To);
+        // 링크된 칸에 끝 모습 이어 가기: 켰을 때만(없으면 꺼짐 — 예전 파일·예전 판과 같은 JSON)
+        if (effect is AnimatedEffect { HoldEnd: true }) json[HoldEndKey] = true;
         json[SettingsKey] = definition.WriteSettings(effect);
         definition.WriteRoot(effect, json);
         if (effect.ColorGradients.Count > 0) json[GradientsKey] = WriteGradients(effect.ColorGradients);
@@ -70,12 +72,13 @@ public static class EffectCodec
         {
             TypeId = EffectJson.String(json[TypeKey]) ?? "", Json = json.ToJsonString(), Recipe = RecipeParameterFormat.ReadLink(json[RecipeParameterFormat.LinkKey]),
         };
-        return effect with
+        effect = effect with
         {
             Enabled = EffectJson.Bool(json[EnabledKey]) ?? true,
             ClipToPrevious = EffectJson.Bool(json[ClipKey]) ?? false,
             Frames = EffectJson.Frames(json[FramesKey]),
         };
+        return effect is AnimatedEffect animated && EffectJson.Bool(json[HoldEndKey]) == true ? animated with { HoldEnd = true } : effect;
     }
 
     private static LayerEffect? ReadKnown(JsonObject json)

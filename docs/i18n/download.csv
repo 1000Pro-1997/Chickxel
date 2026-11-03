@@ -1,0 +1,62 @@
+key,ko,en
+#name,한국어,English
+head.2,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — First launch
+head.3.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch."
+head.4.content,Chickxel 다운로드 — 처음 실행할 때,Download Chickxel — First launch
+head.5.content,"Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.","Download Chickxel and see, with pictures, how to get past the security warning Windows and macOS show on first launch."
+head.6.content,https://chickxel.com/assets/screenshot.png,https://chickxel.com/assets/screenshot-en.png
+head.canonical,https://chickxel.com/download,https://chickxel.com/en/download
+head.7.script,  if (want !== 'ko') location.replace('en/' + 'download.html' + location.search + location.hash);,  if (want !== 'en') location.replace('../' + 'download.html' + location.search + location.hash);
+nav.main,주 메뉴,Main menu
+nav.home,홈,Home
+nav.gallery,갤러리,Gallery
+nav.assets,에셋,Assets
+nav.guide,가이드,Guide
+nav.account,계정,Account
+nav.me,내 계정,My account
+nav.admin,관리,Admin
+nav.login,로그인,Sign in
+nav.logout,로그아웃,Sign out
+nav.language,언어,Language
+dl.title,Chickxel을 받아 주셔서 고맙습니다,Thanks for downloading Chickxel
+dl.starting,"<code id=""dl-file""></code> 다운로드가 시작됩니다. 시작되지 않으면 <a id=""dl-retry"" href=""#"">다시 받기</a>를 누르세요.","Your download of <code id=""dl-file""></code> is starting. If it doesn't, click <a id=""dl-retry"" href=""#"">Download again</a>."
+dl.pick,내 컴퓨터에 맞는 파일을 누르면 다운로드가 시작됩니다. Mac 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다.,"Click the file for your computer to start the download. To check your Mac's chip, open the Apple menu → About This Mac."
+dl.next,"다 받은 뒤에는 아래 안내대로 처음 실행하고, <a href=""guide.html#start-install"">사용 가이드</a>에서 첫 사용 흐름을 따라가 보세요.","Once it's downloaded, follow the steps below for the first launch, then try the first steps in the <a href=""guide.html#start-install"">guide</a>."
+win.title,처음 실행할 때 파란 경고 창이 뜨면,If a blue warning appears on first launch
+win.lead,Chickxel은 개인 개발자가 만든 앱이라 아직 코드 서명(Microsoft가 인정하는 게시자 인증서)이 없습니다. 그래서 Windows가 처음 보는 앱을 한 번 막습니다. 파일에 문제가 있다는 뜻은 아닙니다.,"Chickxel is made by an independent developer and isn't code-signed yet (no publisher certificate recognized by Microsoft), so Windows stops it once as an app it hasn't seen before. It doesn't mean anything is wrong with the file."
+win.unzip,"받은 <code>Chickxel-windows-x64.zip</code>을 우클릭해 <strong>모두 압축 풀기</strong>를 누르고, 풀린 폴더의 <code>Chickxel.exe</code>를 더블클릭합니다.","Right-click the downloaded <code>Chickxel-windows-x64.zip</code>, choose <strong>Extract All</strong>, and double-click <code>Chickxel.exe</code> in the extracted folder."
+ss.title,Windows의 PC 보호,Windows protected your PC
+ss.body,Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다. 이 앱을 실행하면 PC가 위험에 노출될 수 있습니다.,Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.
+ss.more,추가 정보,More info
+ss.app,앱:,App:
+ss.publisher,게시자:,Publisher:
+ss.unknown,알 수 없는 게시자,Unknown publisher
+ss.run,실행,Run anyway
+ss.dontrun,실행 안 함,Don't run
+win.fig1,처음 실행할 때 뜨는 Windows의 PC 보호 창(실제 창을 따라 그린 그림). ① 추가 정보,The Windows protected your PC window shown on first launch (redrawn from the real window). ① More info
+win.step1,<strong>Windows의 PC 보호</strong> 창이 뜨면 ① <strong>추가 정보</strong>를 누릅니다. <strong>실행 안 함</strong>을 누르면 창만 닫히고 Chickxel은 실행되지 않습니다.,"When <strong>Windows protected your PC</strong> appears, click ① <strong>More info</strong>. <strong>Don't run</strong> only closes the window without starting Chickxel."
+win.fig2,추가 정보를 누른 뒤의 창. ② 게시자 ③ 실행,The window after clicking More info. ② Publisher ③ Run anyway
+win.step2,"② 게시자가 <strong>알 수 없는 게시자</strong>로 나오는 것은 코드 서명이 없어서입니다. ③ <strong>실행</strong>을 누르면 Chickxel이 열리고, 다음부터는 이 창이 뜨지 않습니다.",② The publisher shows as <strong>Unknown publisher</strong> because the app isn't code-signed. Click ③ <strong>Run anyway</strong> to open Chickxel; the window won't appear again after that.
+win.unblock,"<strong>창이 아예 뜨지 않게 하려면</strong>: 압축을 풀기 전에 zip을 우클릭 → <strong>속성</strong>을 누르고, 아래쪽 <strong>차단 해제</strong>에 체크해 <strong>확인</strong>을 누른 뒤 압축을 풉니다.","<strong>To skip the window entirely</strong>: before extracting, right-click the zip → <strong>Properties</strong>, check <strong>Unblock</strong> at the bottom, click <strong>OK</strong>, then extract."
+win.edge,"<strong>Edge에서 다운로드가 멈추면</strong>: 다운로드 목록에 ""일반적으로 다운로드되지 않습니다""가 뜨면 그 줄의 <strong>기타 옵션</strong>(점 세 개) → <strong>유지</strong> → <strong>더 보기</strong> → <strong>그래도 계속</strong>을 누릅니다.","<strong>If Edge holds the download</strong>: when the downloads list says the file ""isn't commonly downloaded"", open that row's <strong>More actions</strong> menu (three dots) → <strong>Keep</strong> → <strong>Show more</strong> → <strong>Keep anyway</strong>."
+win.sac,"<strong>실행 단추 없이 막히면</strong>: <strong>스마트 앱 컨트롤</strong>이 켜진 PC는 서명 없는 앱을 실행하지 못하게 합니다. 이 기능을 끄는 것은 권하지 않으니 <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a>나 <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">문제 신고</a>로 알려 주세요.","<strong>If it's blocked with no Run button</strong>: PCs with <strong>Smart App Control</strong> turned on don't run unsigned apps. We don't recommend turning it off; let us know on <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> or in <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">Issues</a>."
+win.cmd.title,경고 없이 설치하기 (PowerShell),Install without the warning (PowerShell)
+win.cmd.text,"시작 메뉴에서 <strong>PowerShell</strong>을 열고 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. GitHub에서 최신 버전을 받아 <code>%LOCALAPPDATA%\Programs\Chickxel</code>에 설치하고, 시작 메뉴에 바로 가기를 만든 뒤 실행합니다. 브라우저로 받은 파일이 아니라서 Windows의 PC 보호 창이 뜨지 않습니다.","Open <strong>PowerShell</strong> from the Start menu, paste the line below and press Enter. It downloads the latest version from GitHub, installs it in <code>%LOCALAPPDATA%\Programs\Chickxel</code>, adds a Start menu shortcut and starts it. Because the file isn't downloaded by a browser, Windows protected your PC doesn't appear."
+mac.title,"처음 열 때 ""확인되지 않은 개발자"" 경고가 뜨면","If you see an ""unidentified developer"" warning"
+mac.lead,Apple 개발자 서명이 없어서 처음 한 번 경고가 뜹니다. 파일에 문제가 있다는 뜻은 아닙니다.,"Chickxel isn't signed with an Apple developer ID, so macOS warns you once. It doesn't mean anything is wrong with the file."
+mac.1,"받은 zip을 더블클릭해 풀고, <code>Chickxel.app</code>을 <strong>응용 프로그램</strong> 폴더로 옮깁니다.","Double-click the downloaded zip to extract it, then move <code>Chickxel.app</code> to the <strong>Applications</strong> folder."
+mac.2,"<code>Chickxel.app</code>을 우클릭해 <strong>열기</strong>를 누르고, 묻는 창에서 한 번 더 <strong>열기</strong>를 누릅니다.","Right-click <code>Chickxel.app</code>, choose <strong>Open</strong>, and click <strong>Open</strong> again in the dialog."
+mac.3,그래도 열리지 않으면 <strong>시스템 설정 → 개인정보 보호 및 보안</strong> 아래쪽의 <strong>그래도 열기</strong>를 누릅니다.,"If it still won't open, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> near the bottom."
+mac.cmd.title,경고 없이 설치하기 (터미널),Install without the warning (Terminal)
+mac.cmd.text,<strong>터미널</strong> 앱에 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. Mac 칩에 맞는 최신 버전을 GitHub에서 받아 <code>/Applications/Chickxel.app</code>에 설치하고 실행합니다.,"Paste the line below into the <strong>Terminal</strong> app and press Enter. It downloads the latest version for your Mac's chip from GitHub, installs it as <code>/Applications/Chickxel.app</code> and opens it."
+cmd.copy,복사,Copy
+safe.title,받은 파일이 원본인지 확인하려면,Check that the file is the original
+safe.text,"Chickxel은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub 릴리스</a>와 이 홈페이지에서만 배포합니다. 받은 zip의 SHA-256 값(Windows PowerShell <code>Get-FileHash 파일.zip</code>, macOS 터미널 <code>shasum -a 256 파일.zip</code>)이 릴리스에 함께 올린 <code>SHA256SUMS.txt</code>의 값과 같으면 원본 그대로입니다.","Chickxel is only published on <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">GitHub Releases</a> and this website. If the SHA-256 of the downloaded zip (Windows PowerShell <code>Get-FileHash file.zip</code>, macOS Terminal <code>shasum -a 256 file.zip</code>) matches the value in <code>SHA256SUMS.txt</code> on the release, the file is the original."
+safe.help,"설치가 안 되거나 Windows 보안이 파일을 격리했다면 알림에 나온 이름과 함께 <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a>로 알려 주세요.","If installing fails or Windows Security quarantines the file, tell us on <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> with the name shown in the notification."
+footer,"
+<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">문제 신고</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">오픈 소스 고지</a></span>
+","
+<span><strong>Chickxel</strong> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE"">Source-available license</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href=""https://github.com/1000Pro-1997/Chickxel"">GitHub</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> · <a href=""https://discord.gg/Avw7aUVxqr"" target=""_blank"" rel=""noopener"">Discord</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/issues"">Report an issue</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md"">Open source notices</a></span>
+"

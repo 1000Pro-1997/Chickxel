@@ -163,4 +163,41 @@ public class CelOverflowTests
         q.Redo();
         Assert.Equal(Red, FullAt(q, 11, -1));
     }
+
+    [Fact]
+    public void ScaleLayer_ScalesEveryFrameOfOneLayer_KeepsCanvasAndOtherLayers_PushedOffPixelsStay()
+    {
+        var p = new SpriteProject(6, 4);
+        var green = new Color32(0, 255, 0);
+        var blue = new Color32(0, 0, 255);
+        Draw(p, 0, 0, green);
+        p.AddLayer();
+        p.AddFrame();
+        Draw(p, 2, 1, Red, layer: 1);
+        Draw(p, 3, 1, blue, layer: 1);
+        Draw(p, 2, 2, Red, layer: 1, frame: 1);
+        Assert.Equal(new Rectangle(2, 1, 2, 2), p.LayerBounds(1));
+        int steps = p.History.UndoCount;
+
+        p.ScaleLayer(1, new Rectangle(2, 1, 2, 2), new Rectangle(2, 1, 4, 4));
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(new Size(6, 4), p.Size);
+        Assert.Equal(green, p.GetCel(0, 0)![0, 0]);
+        foreach (var (x, y) in new[] { (2, 1), (3, 2) }) Assert.Equal(Red, FullAt(p, x, y, layer: 1));
+        foreach (var (x, y) in new[] { (4, 1), (5, 2) }) Assert.Equal(blue, FullAt(p, x, y, layer: 1));
+        Assert.Equal(default, FullAt(p, 2, 3, layer: 1));
+        // 프레임 1: (2,2) → (2..3, 3..4) — 아래 줄은 캔버스 밖 그림으로 남는다.
+        Assert.Equal(Red, FullAt(p, 3, 3, layer: 1, frame: 1));
+        Assert.Equal(Red, FullAt(p, 2, 4, layer: 1, frame: 1));
+        Assert.NotNull(p.GetCelOverflow(1, 1));
+        Assert.Equal(new Rectangle(2, 1, 4, 4), p.LayerBounds(1));
+
+        p.Undo();
+        Assert.Equal(Red, FullAt(p, 2, 1, layer: 1));
+        Assert.Equal(blue, FullAt(p, 3, 1, layer: 1));
+        Assert.Equal(default, FullAt(p, 3, 2, layer: 1));
+        Assert.Null(p.GetCelOverflow(1, 1));
+        Assert.Throws<ArgumentException>(() => p.ScaleLayer(p.IndexOf(p.AddGroup()), new Rectangle(0, 0, 1, 1), new Rectangle(0, 0, 2, 2)));
+    }
 }

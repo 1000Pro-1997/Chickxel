@@ -403,4 +403,7 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Shortcut_ShapeLine" xml:space="preserve"><value>Shape: line</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
+  <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Layer size…</value></data>
+  <data name="Message_LayerResize" xml:space="preserve"><value>Layer size: handles = layer size (Shift keeps ratio, Alt keeps the center), inside the layer = move — Enter to confirm, Esc to cancel</value></data>
+  <data name="Message_LayerResizeCanceled" xml:space="preserve"><value>Layer resize canceled</value></data>
 </root>

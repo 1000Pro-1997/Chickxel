@@ -127,6 +127,10 @@
   <data name="Project_PartCelSizeMismatch" xml:space="preserve"><value>Cel size must match the part size.</value></data>
   <data name="Project_CanvasCelSizeMismatch" xml:space="preserve"><value>Cel size must match the canvas size.</value></data>
   <data name="Project_ChangeCel" xml:space="preserve"><value>Change cel</value></data>
+  <data name="Project_LinkCels" xml:space="preserve"><value>Link cels</value></data>
+  <data name="Project_UnlinkCels" xml:space="preserve"><value>Unlink cels</value></data>
+  <data name="Project_LinkColor" xml:space="preserve"><value>Link color</value></data>
+  <data name="Project_BadCelLink" xml:space="preserve"><value>Skipped an invalid linked cel entry: [{link}]</value></data>
   <data name="Project_Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Project_ChangedCelSizeMismatch" xml:space="preserve"><value>The changed cel image size differs from the original cel.</value></data>
   <data name="Project_TargetCanvasSizeMismatch" xml:space="preserve"><value>Target image size differs from the canvas.</value></data>
@@ -145,6 +149,8 @@
   <data name="Project_AutoLayout" xml:space="preserve"><value>Auto layout</value></data>
   <data name="Project_AutoLayoutSettings" xml:space="preserve"><value>Auto layout settings</value></data>
   <data name="Project_ResizePart" xml:space="preserve"><value>Part size</value></data>
+  <data name="Project_LayerSize" xml:space="preserve"><value>Layer size</value></data>
+  <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>A part's original rectangle must be its part area.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>Part pivot</value></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>Part border</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>Layer {number}</value></data>
@@ -159,6 +165,13 @@
   <data name="Project_CannotDeleteLastLayer" xml:space="preserve"><value>The last layer can't be deleted.</value></data>
   <data name="Project_DeleteLayer" xml:space="preserve"><value>Delete layer</value></data>
   <data name="Project_MoveLayer" xml:space="preserve"><value>Move layer</value></data>
+  <data name="Project_MoveIntoGroup" xml:space="preserve"><value>Move into group</value></data>
+  <data name="Project_MoveOutOfGroup" xml:space="preserve"><value>Move out of group</value></data>
+  <data name="Project_NoLayersToNest" xml:space="preserve"><value>No layers to move into or out of a group.</value></data>
+  <data name="Project_LayerNotInProject" xml:space="preserve"><value>Not a layer in this project.</value></data>
+  <data name="Project_AlreadyInGroup" xml:space="preserve"><value>Already a part of that group.</value></data>
+  <data name="Project_GroupCannotNest" xml:space="preserve"><value>A group can't go inside another group.</value></data>
+  <data name="Project_NestLocked" xml:space="preserve"><value>"{name}" is locked, so it can't be moved into or out of a group.</value></data>
   <data name="Project_NoLayerBelow" xml:space="preserve"><value>No layer below to merge with.</value></data>
   <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>Part and group layers can't be merged down.</value></data>
   <data name="Project_MergeDown" xml:space="preserve"><value>Merge down</value></data>

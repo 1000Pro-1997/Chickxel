@@ -71,7 +71,7 @@ public sealed partial class SpriteProject
         if (layer.IsGroup)
             return ChildrenOf(layer).Any(c => GetCel(c, frame) is not null) ? PlanGroup(layer, frameIndex) : null;
         if (RenderCel(layer, frameIndex) is not { } cel) return null;
-        IReadOnlyList<LayerEffect> effects = layer.IsPart ? [] : layer.Effects;
+        IReadOnlyList<LayerEffect> effects = layer.IsPart ? [] : WithHeldEnds(layer, layer.Effects, frameIndex, ActiveKey(layer), DefaultCels, nested: false);
         var step = new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex),
             layer.IsPart ? null : SourcesOf(layer, effects, frameIndex, nested: false),
             layer.IsPart ? null : ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false), FrameTagFor(effects, frameIndex), 255, 0, 0, clip: true);
@@ -121,7 +121,7 @@ public sealed partial class SpriteProject
     /// </summary>
     private CelStep CelStepOf(Layer layer, int frameIndex, PixelImage cel, byte opacity, Func<Layer, int, PixelImage?> cels, bool nested = false)
     {
-        var effects = nested ? LayerEffects.WithoutRenderedLayerReaders(layer.Effects) : layer.Effects;
+        var effects = WithHeldEnds(layer, nested ? LayerEffects.WithoutRenderedLayerReaders(layer.Effects) : layer.Effects, frameIndex, ActiveKey(layer), cels, nested);
         int x = layer.IsPart ? layer.PartOffset.X : 0, y = layer.IsPart ? layer.PartOffset.Y : 0;
         return new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), SourcesOf(layer, effects, frameIndex, nested),
             ScriptLayersOf(layer, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, x, y);

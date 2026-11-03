@@ -97,12 +97,14 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 일반 레이어 셀들의 내용을 캔버스 밖 그림까지 통째로 (<paramref name="dx"/>, <paramref name="dy"/>)만큼 옮긴다(실행취소 한 단계, 밖으로 나간 픽셀은 캔버스 밖 그림으로 남음).
-    /// 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. 옮긴 셀 수를 돌려준다(0이면 기록 없음).
+    /// 링크된 셀은 함께 옮겨지고(한 번만), 부위·그룹·잠긴 레이어·빈 셀은 건너뛴다. 옮긴 셀 수(고른 셀 기준)를 돌려준다(0이면 기록 없음).
     /// </summary>
     public int ShiftCels(string label, IEnumerable<(int Layer, int Frame)> cels, int dx, int dy)
     {
         if (_stroke is not null) CommitCelStroke(DomainStrings.Project_Edit);
         var changes = new List<(CelKey Key, PixelImage Cel, CelOverflow? Overflow)>();
+        var linked = new HashSet<PixelImage>(ReferenceEqualityComparer.Instance);
+        int count = 0;
         if (dx != 0 || dy != 0)
             foreach (var (li, fi) in cels.Distinct())
             {
@@ -112,6 +114,8 @@ public sealed partial class SpriteProject
                 var key = new CelKey(layer, _frames[fi], null);
                 var cel = _cels.GetValueOrDefault(key);
                 if (!HasContent(cel) && !_overflow.ContainsKey(key)) continue;
+                count++;
+                if (cel is not null && !linked.Add(cel)) continue; // 링크된 셀은 이미 옮김
                 var (full, origin) = FullOf(key, cel, Size);
                 var (moved, overflow) = Split(full, new Point(origin.X + dx, origin.Y + dy), Size);
                 changes.Add((key, moved, overflow));
@@ -119,13 +123,9 @@ public sealed partial class SpriteProject
         if (changes.Count == 0) return 0;
         Edit(label, ProjectChange.Pixels, () =>
         {
-            foreach (var (key, cel, overflow) in changes)
-            {
-                _cels[key] = cel;
-                SetOverflow(key, overflow);
-            }
+            foreach (var (key, cel, overflow) in changes) SetLinked(key, cel, overflow);
         });
-        return changes.Count;
+        return count;
     }
 
     /// <summary>
@@ -176,9 +176,12 @@ public sealed partial class SpriteProject
         _strokeOverflowBefore = null;
         Edit(label, ProjectChange.Pixels, () =>
         {
-            if (s.Created && !HasContent(after)) _cels.Remove(s.Key);
-            else _cels[s.Key] = after;
-            SetOverflow(s.Key, overflowAfter);
+            if (s.Created && !HasContent(after))
+            {
+                _cels.Remove(s.Key);
+                SetOverflow(s.Key, overflowAfter);
+            }
+            else SetLinked(s.Key, after, overflowAfter);
         });
         return true;
     }

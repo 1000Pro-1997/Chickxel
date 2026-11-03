@@ -1051,14 +1051,17 @@ public sealed class EditorContext
 
     // ───────────── 캔버스 크기 모드 ─────────────
 
-    /// <summary>캔버스 크기 모드 상태: 원래 그림(현재 프레임 합성), 새 캔버스 자리, 원래 그림이 놓일 사각형, 미리보기.</summary>
+    /// <summary>
+    /// 캔버스 크기 모드 상태: 원래 그림(현재 프레임 합성), 새 캔버스 자리, 원래 그림이 놓일 사각형, 미리보기.
+    /// 레이어 크기 모드(<see cref="Layer"/>가 있음)면 캔버스는 그대로이고, 원래 그림은 그 레이어의 현재 프레임 그림, 사각형은 레이어가 놓일 자리(캔버스 좌표)다.
+    /// </summary>
     private sealed class CanvasResizeSession(PixelImage source)
     {
-        /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음).</summary>
+        /// <summary>현재 프레임 합성(미리보기 원본 — 늘 이것에서 다시 그려 누적되지 않음). 레이어 크기 모드면 그 레이어의 현재 프레임 그림(캔버스 밖 그림 포함).</summary>
         public PixelImage Source { get; set; } = source;
-        /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게).</summary>
+        /// <summary>새 캔버스(원래 프레임 좌표: 가장자리를 끄는 동안 화면에서 제자리에 보이게). 레이어 크기 모드면 지금 캔버스 그대로.</summary>
         public Rectangle Canvas { get; set; } = new(0, 0, source.Width, source.Height);
-        /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기).</summary>
+        /// <summary>원래 그림이 놓일 사각형(새 캔버스 좌표, 크기 = 그림 크기). 레이어 크기 모드면 레이어가 놓일 자리.</summary>
         public Rectangle Image { get; set; } = new(0, 0, source.Width, source.Height);
         /// <summary>중심 기준 크기 조정의 고정된 캔버스 중심(픽셀 두 배 좌표).</summary>
         public Point Center2 { get; set; }
@@ -1068,6 +1071,16 @@ public sealed class EditorContext
         /// <summary>적용하면 될 그림 전체(캔버스 밖으로 나가는 부분 포함)와 그 자리(새 캔버스 좌표) — <see cref="Preview"/>와 함께 만들고 버린다.</summary>
         public WriteableBitmap? Outside { get; set; }
         public Rectangle OutsideRect { get; set; }
+
+        /// <summary>레이어 크기 모드(Ctrl+Shift+C)의 대상 레이어. 캔버스 크기 모드면 null.</summary>
+        public Layer? Layer { get; init; }
+        /// <summary>레이어 크기 모드: 레이어의 원래 자리(캔버스 좌표, <see cref="SpriteProject.LayerBounds"/>).</summary>
+        public Rectangle From { get; init; }
+        /// <summary>레이어 크기 모드: <see cref="Source"/>의 왼쪽 위(캔버스 좌표).</summary>
+        public Point SourceOrigin { get; set; }
+        /// <summary>레이어 크기 모드: 대상 레이어 아래·위 레이어들의 현재 프레임 합성(캔버스 크기, 위가 없으면 null).</summary>
+        public PixelImage? Below { get; set; }
+        public PixelImage? Above { get; set; }
     }
 
     private CanvasResizeSession? _canvasResize;
@@ -1078,11 +1091,17 @@ public sealed class EditorContext
     /// <summary>캔버스 크기 모드를 적용해 프로젝트가 바뀜(상태 표시줄 알림 글).</summary>
     public event EventHandler<string>? CanvasResized;
 
-    /// <summary>캔버스 크기 모드(Ctrl+Alt+C)인지.</summary>
+    /// <summary>레이어 크기 모드를 적용해 레이어가 바뀜(상태 표시줄 알림 글). 캔버스는 그대로다.</summary>
+    public event EventHandler<string>? LayerResized;
+
+    /// <summary>캔버스 크기 모드(Ctrl+Alt+C)나 레이어 크기 모드(Ctrl+Shift+C)인지 — 두 모드는 같은 손잡이·숫자를 쓴다.</summary>
     public bool IsCanvasResizing => _canvasResize is not null;
 
-    /// <summary>원래 캔버스(프레임) 크기.</summary>
-    public Size CanvasResizeSource => _canvasResize?.Source.Size ?? Size.Empty;
+    /// <summary>레이어 크기 모드(Ctrl+Shift+C)의 대상 레이어. 캔버스 크기 모드이거나 모드가 아니면 null.</summary>
+    public Layer? CanvasResizeLayer => _canvasResize?.Layer;
+
+    /// <summary>원래 그림 크기: 캔버스 크기 모드면 원래 캔버스(프레임) 크기, 레이어 크기 모드면 레이어의 원래 크기.</summary>
+    public Size CanvasResizeSource => _canvasResize is { } s ? s.Layer is null ? s.Source.Size : s.From.Size : Size.Empty;
 
     /// <summary>새 캔버스(원래 프레임 좌표, 크기 = 새 캔버스 크기). 모드가 아니면 빈 사각형.</summary>
     public Rectangle CanvasResizeCanvas => _canvasResize?.Canvas ?? Rectangle.Empty;
@@ -1140,8 +1159,11 @@ public sealed class EditorContext
     public bool CanvasResizeSliceAvailable
         => Project is { } p && (!CanvasResizeBorder.IsNone || p.Layers.Any(l => l.IsPart && NineSlice.Applies(l.PartBorder, l.PartSize.Width, l.PartSize.Height)));
 
-    /// <summary>캔버스 크기 모드가 그림 크기를 9-slice로 바꾸는지(켰고 쓸 테두리가 있음). 조작(Ctrl+끌기·그림 가로/세로)은 같고 늘리는 방법만 바뀐다.</summary>
-    public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && CanvasResizeSliceAvailable;
+    /// <summary>
+    /// 캔버스 크기 모드가 그림 크기를 9-slice로 바꾸는지(켰고 쓸 테두리가 있음). 조작(Ctrl+끌기·그림 가로/세로)은 같고 늘리는 방법만 바뀐다.
+    /// 레이어 크기 모드는 늘 최근접이다.
+    /// </summary>
+    public bool CanvasResizeUsesSlice => _canvasResizeNineSlice && _canvasResize?.Layer is null && CanvasResizeSliceAvailable;
 
     /// <summary>9-slice로 늘릴 때 그림의 가장 작은 크기: 프레임 칸 테두리 두 쪽 + 가운데 1px(테두리가 없으면 1).</summary>
     public Size CanvasResizeMinImage
@@ -1197,6 +1219,11 @@ public sealed class EditorContext
     private void EnsureCanvasResizePreview(CanvasResizeSession s)
     {
         if (s.Preview is not null || Project is not { } p) return;
+        if (s.Layer is not null)
+        {
+            EnsureLayerResizePreview(s);
+            return;
+        }
         var (full, origin) = FrameWithOverflow(p, s.Source);
         var canvas = s.Canvas.Size;
         int m = SpriteProject.OverflowMargin;
@@ -1210,6 +1237,50 @@ public sealed class EditorContext
             s.OutsideRect = new Rectangle(mv.Origin, mv.Image.Size);
         }
         s.Preview = ImageUtil.ToBitmap(preview);
+    }
+
+    /// <summary>
+    /// 레이어 크기 모드 미리보기: 아래 레이어 합성 위에 대상 레이어 그림(효과 없이, 레이어 불투명도)을 적용과 같은 대응으로 옮겨 놓고 위 레이어 합성을 덮는다.
+    /// 캔버스 밖으로 나가는 레이어 그림은 <see cref="CanvasResizeSession.Outside"/>로 둔다.
+    /// </summary>
+    private static void EnsureLayerResizePreview(CanvasResizeSession s)
+    {
+        var canvas = s.Canvas.Size;
+        var preview = s.Below?.Clone() ?? new PixelImage(canvas.Width, canvas.Height);
+        int m = SpriteProject.OverflowMargin;
+        var origin = new Point(s.SourceOrigin.X - s.From.X, s.SourceOrigin.Y - s.From.Y);
+        if (ImageTransform.ScaleWithCanvas(s.Source, origin, s.From.Size, s.Image, new Rectangle(-m, -m, canvas.Width + 2 * m, canvas.Height + 2 * m)) is { } mv)
+        {
+            preview.Composite(mv.Image, mv.Origin.X, mv.Origin.Y, s.Layer!.Opacity);
+            s.Outside = ImageUtil.ToBitmap(mv.Image);
+            s.OutsideRect = new Rectangle(mv.Origin, mv.Image.Size);
+        }
+        if (s.Above is { } above) preview.Composite(above, 0, 0, 255);
+        s.Preview = ImageUtil.ToBitmap(preview);
+    }
+
+    /// <summary>
+    /// 레이어 크기 모드 원본을 지금 프레임으로 맞춘다: 대상 레이어 그림(일반 레이어는 캔버스 밖 그림까지, 부위는 지금 보이는 스킨 셀)과
+    /// 그 아래·위 레이어 합성(부위면 그 부위만 뺀 합성을 아래로). 대상 레이어가 없어졌으면 false.
+    /// </summary>
+    private bool LoadLayerResizeSource(CanvasResizeSession s, SpriteProject p)
+    {
+        int index = s.Layer is { } layer ? p.IndexOf(layer) : -1;
+        if (index < 0 || _frame < 0 || _frame >= p.Frames.Count) return false;
+        var target = s.Layer!;
+        if (target.IsPart)
+        {
+            s.Source = p.GetCel(index, _frame) ?? new PixelImage(target.PartSize.Width, target.PartSize.Height);
+            s.SourceOrigin = target.PartOffset;
+            s.Below = p.PlanFrame(_frame, layerFilter: l => !ReferenceEquals(l, target)).Render();
+            s.Above = null;
+            return true;
+        }
+        (s.Source, s.SourceOrigin) = p.GetFullCel(index, _frame);
+        // 그룹과 그 부위는 레이어 목록에 이어 붙어 있어 일반 레이어의 같은 쪽에 함께 있다.
+        s.Below = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) < index).Render();
+        s.Above = p.PlanFrame(_frame, layerFilter: l => p.IndexOf(l) > index).Render();
+        return true;
     }
 
     /// <summary>현재 프레임 합성(캔버스 안)에 보이는 일반 레이어의 캔버스 밖 그림을 아래 레이어부터(레이어 불투명도) 겹친 그림과 왼쪽 위(캔버스 좌표).</summary>
@@ -1246,8 +1317,31 @@ public sealed class EditorContext
     }
 
     /// <summary>
+    /// 레이어 크기 모드(Ctrl+Shift+C)에 들어간다: 떠 있는 선택·변형을 먼저 적용하고, 현재 레이어(일반 레이어는 모든 프레임의 칠한 픽셀을 감싸는 자리,
+    /// 부위는 부위 영역)를 캔버스 크기 모드와 같은 손잡이·숫자로 늘이거나 줄이고 옮긴다. 캔버스와 다른 레이어는 그대로이고, 적용하면 그 레이어의 모든 프레임이 바뀐다.
+    /// 못 들어가면 상태 표시줄에 보일 이유, 들어갔으면(이미 모드여도) null.
+    /// </summary>
+    public string? BeginLayerResize()
+    {
+        if (Project is not { } p) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
+        if (_canvasResize is not null) return null;
+        CommitFloating();
+        if (CurrentLayerObject is not { } layer) return UiStrings.S_EditorContext_BeginCanvasResize_9D67D0C8F0;
+        if (layer.IsGroup) return UiStrings.LayerResize_Group;
+        if (p.IsLayerLocked(_layer)) return UiStrings.LayerResize_Locked;
+        if (_frame < 0 || _frame >= p.Frames.Count) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
+        var from = p.LayerBounds(_layer);
+        if (from.IsEmpty) return UiStrings.LayerResize_Empty;
+        var s = new CanvasResizeSession(new PixelImage(1, 1)) { Layer = layer, From = from, Canvas = p.Bounds, Image = from };
+        if (!LoadLayerResizeSource(s, p)) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
+        _canvasResize = s;
+        CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+        return null;
+    }
+
+    /// <summary>
     /// 새 캔버스(원래 프레임 좌표)와 그림 사각형(새 캔버스 좌표)을 바꾼다. 크기는 1~<see cref="PixelImage.MaxSize"/>로 맞추고,
-    /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>).
+    /// 9-slice로 늘이면 그림은 테두리 두 쪽 + 1px보다 작아지지 않는다(<see cref="CanvasResizeMinImage"/>). 레이어 크기 모드면 캔버스는 바뀌지 않는다.
     /// </summary>
     public void SetCanvasResize(Rectangle canvas, Rectangle image)
     {
@@ -1255,6 +1349,7 @@ public sealed class EditorContext
         static int Clamp(int v, int min = 1) => Math.Clamp(v, min, PixelImage.MaxSize);
         var min = CanvasResizeMinImage;
         canvas.Size = new Size(Clamp(canvas.Width), Clamp(canvas.Height));
+        if (s.Layer is not null) canvas = s.Canvas;
         image.Size = new Size(Clamp(image.Width, min.Width), Clamp(image.Height, min.Height));
         if (canvas == s.Canvas && image == s.Image) return;
         s.Canvas = canvas;
@@ -1280,6 +1375,15 @@ public sealed class EditorContext
         if (_canvasResize is not { } s || Project is not { } p) return;
         _canvasResize = null;
         DropCanvasResizePreview(s);
+        if (s.Layer is { } layer)
+        {
+            int index = p.IndexOf(layer);
+            bool moved = index >= 0 && !p.IsLayerLocked(index) && s.Image != s.From;
+            if (moved) p.ScaleLayer(index, s.From, s.Image);
+            CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+            if (moved) LayerResized?.Invoke(this, UiStrings.FormatLayerResize_Applied(name: layer.Name, width: s.Image.Width, height: s.Image.Height, x: s.Image.X, y: s.Image.Y));
+            return;
+        }
         var (canvas, image) = (s.Canvas.Size, s.Image);
         bool changed = canvas != p.Size || image != new Rectangle(Point.Empty, p.Size);
         if (changed) p.ResizeCanvasAndScale(canvas.Width, canvas.Height, image, CanvasResizeUsesSlice ? _canvasResizeSliceFill : null);
@@ -1289,10 +1393,23 @@ public sealed class EditorContext
         CanvasResized?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_EditorContext_ApplyCanvasResize_B3AC8F3521,canvas.Width,canvas.Height) + (scaled ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_EditorContext_ApplyCanvasResize_2F84F43E48,image.Width,image.Height) : ""));
     }
 
-    /// <summary>모드 중에 프로젝트가 바뀜(레이어 보이기 등): 캔버스 크기가 그대로면 미리보기 원본을 새 합성으로, 바뀌었으면 모드를 취소한다.</summary>
+    /// <summary>
+    /// 모드 중에 프로젝트가 바뀜(레이어 보이기 등): 캔버스 크기가 그대로면 미리보기 원본을 새 합성으로, 바뀌었으면 모드를 취소한다.
+    /// 레이어 크기 모드면 대상 레이어가 없어졌거나 부위 영역이 바뀌어도 취소한다.
+    /// </summary>
     private void SyncCanvasResize()
     {
         if (_canvasResize is not { } s || Project is not { } p) return;
+        if (s.Layer is { } layer)
+        {
+            if (p.Size != s.Canvas.Size || (layer.IsPart && layer.PartRect != s.From) || !LoadLayerResizeSource(s, p)) CancelCanvasResize();
+            else
+            {
+                DropCanvasResizePreview(s);
+                CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+            }
+            return;
+        }
         if (p.Size != s.Source.Size || FrameImage(_frame) is not { } image)
         {
             CancelCanvasResize();

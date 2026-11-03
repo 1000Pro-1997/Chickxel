@@ -274,19 +274,19 @@ public sealed partial class LayerEffectsDialog
             switch (parameter.Kind)
             {
                 case RecipeParameterKind.Color:
-                    SettingsRow(parameter.Name, ColorEditor(value.Color, c => Set(RecipeValue.Of(c))));
+                    _form.Row(parameter.Name, ColorEditor(value.Color, c => Set(RecipeValue.Of(c))));
                     break;
                 case RecipeParameterKind.Int:
                     var number = Ui.Num(parameter.Min, parameter.Max, value.Int, 56);
                     number.ValueChanged += (_, _) => Set(RecipeValue.Of((int)number.NumValue()));
-                    SettingsRow(parameter.Name, number, Ui.Label($"{parameter.Min}~{parameter.Max}"));
+                    _form.Row(parameter.Name, number, Ui.Label($"{parameter.Min}~{parameter.Max}"));
                     break;
                 case RecipeParameterKind.Bool:
-                    SettingsRow(parameter.Name, CheckEditor("", value.Bool, b => Set(RecipeValue.Of(b))));
+                    _form.Row(parameter.Name, CheckEditor("", value.Bool, b => Set(RecipeValue.Of(b))));
                     break;
                 case RecipeParameterKind.Choice:
                     var choices = parameter.Choices.ToArray();
-                    SettingsRow(parameter.Name, ChoiceEditor(choices, Array.IndexOf(choices, value.Choice), k => Set(RecipeValue.OfChoice(choices[k]))));
+                    _form.Row(parameter.Name, ChoiceEditor(choices, Array.IndexOf(choices, value.Choice), k => Set(RecipeValue.OfChoice(choices[k]))));
                     break;
             }
         }
@@ -296,7 +296,7 @@ public sealed partial class LayerEffectsDialog
             expanded ? UiStrings.EffectRecipe_Collapse : UiStrings.EffectRecipe_Expand, (_, _) => ToggleRecipeExpanded(recipe.Id, row.First));
         var detach = Ui.Button(UiStrings.EffectRecipe_Detach, (_, _) => DetachRecipe(recipe.Id, row.First));
         ToolTip.SetTip(detach, UiStrings.EffectRecipe_DetachTip);
-        SettingsRow("", toggle, detach);
+        _form.Row("", toggle, detach);
     }
 
     /// <summary>매개변수 값을 바꾼다: 연결된 구성 효과 설정을 모두 함께 바꾸고 캔버스·미리보기에 반영한다(확인하면 창 전체가 실행취소 한 단계).</summary>

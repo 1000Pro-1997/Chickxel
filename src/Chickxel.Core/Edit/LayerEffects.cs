@@ -96,13 +96,33 @@ public static class LayerEffects
         return false;
     }
 
-    /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 범위 안인) 효과가 하나라도 있는지.</summary>
+    /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 범위 안 — 또는 범위 끝 모습을 이어 가는) 효과가 하나라도 있는지.</summary>
     public static bool AnyActive(IReadOnlyList<LayerEffect> effects, int frameIndex)
     {
         for (int i = 0; i < effects.Count; i++)
-            if (effects[i].Enabled && effects[i].AppliesTo(frameIndex)) return true;
+            if (effects[i].Enabled && effects[i].ActiveAt(frameIndex)) return true;
         return false;
     }
+
+    /// <summary>
+    /// 링크된 칸에 효과 끝 모습 이어 가기(<see cref="AnimatedEffect.HoldEnd"/>): 프레임 <paramref name="frameIndex"/>에서 이어 갈 효과의 목록 자리와 그 효과의 범위 끝 프레임.
+    /// 켜져 있고 이어 가기를 켠 움직이는 효과 중 범위가 이 프레임 앞에서 끝났고, 이 프레임의 그림이 범위 끝 프레임과 같은(<paramref name="sameDrawing"/> — 링크된 셀) 것.
+    /// 없으면 null. 찾은 효과는 범위 끝 프레임의 조건(진행·피벗·다른 프레임·다른 레이어·태그)으로 맞춘 뒤 <see cref="Pin"/>해 이 프레임 목록의 그 자리에 넣는다 —
+    /// 그러면 범위 끝 프레임의 결과를 그대로 다시 그린다.
+    /// </summary>
+    public static List<(int Index, int End)>? HeldEnds(IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, int, bool> sameDrawing)
+    {
+        List<(int, int)>? held = null;
+        for (int i = 0; i < effects.Count; i++)
+        {
+            if (effects[i] is not AnimatedEffect { Enabled: true, HoldEnd: true, Frames: { } range } || frameIndex <= range.To || !sameDrawing(frameIndex, range.To)) continue;
+            (held ??= []).Add((i, range.To));
+        }
+        return held;
+    }
+
+    /// <summary>범위 끝 프레임에 맞춘(<see cref="At"/>의 결과) 효과를 다른 프레임 목록에 그대로 넣을 사본: <see cref="At"/>·<see cref="WithScriptLayers"/>·<see cref="WithFrameTag"/>가 다시 맞추지 않는다.</summary>
+    public static LayerEffect Pin(LayerEffect resolved) => resolved with { Pinned = true };
 
     /// <summary>
     /// 프레임 <paramref name="frameIndex"/>에 입혀질 효과 중 원본 없이 그림을 만드는 효과(<see cref="EffectDefinition.GeneratesContent"/>, 글씨 — 그리고
@@ -114,7 +134,7 @@ public static class LayerEffects
         for (int i = 0; i < effects.Count; i++)
         {
             var effect = effects[i];
-            if (!effect.Enabled || !effect.AppliesTo(frameIndex)) continue;
+            if (!effect.Enabled || !effect.ActiveAt(frameIndex)) continue;
             if (EffectRegistry.Of(effect) is { GeneratesContent: true } || effect is ScriptEffect script && ScriptDefinition.ReadsFrameSources(script)) return true;
         }
         return false;
@@ -153,7 +173,7 @@ public static class LayerEffects
         LayerEffect[]? copy = null;
         for (int i = 0; i < effects.Count; i++)
         {
-            if (effects[i] is not ScriptEffect { Enabled: true } script || !ScriptDefinition.UsesOtherLayers(script)) continue;
+            if (effects[i] is not ScriptEffect { Enabled: true, Pinned: false } script || !ScriptDefinition.UsesOtherLayers(script)) continue;
             copy ??= [.. effects];
             copy[i] = script with { Layers = layers };
         }
@@ -179,7 +199,7 @@ public static class LayerEffects
         LayerEffect[]? copy = null;
         for (int i = 0; i < effects.Count; i++)
         {
-            if (effects[i] is not ScriptEffect { Enabled: true } script || !ScriptDefinition.ReadsFrameTag(script)) continue;
+            if (effects[i] is not ScriptEffect { Enabled: true, Pinned: false } script || !ScriptDefinition.ReadsFrameTag(script)) continue;
             copy ??= [.. effects];
             copy[i] = script with { FrameTag = tag };
         }
@@ -231,10 +251,11 @@ public static class LayerEffects
     {
         bool preservePositions = inRangeOnly && effects.Any(e => e.ClipToPrevious);
         Func<int, PixelImage, (PixelImage Image, int OffsetX, int OffsetY)>? rendered = null;
-        if (frameSource is not null && effects.Any(e => e.Enabled && WantsRenderedFrames(e) && (!inRangeOnly || e.AppliesTo(frameIndex)))
+        if (frameSource is not null && effects.Any(e => e.Enabled && !e.Pinned && WantsRenderedFrames(e) && (!inRangeOnly || e.AppliesTo(frameIndex)))
             && effects.Any(e => e.Enabled && !IsDeferred(e)))
         {
-            var others = effects.Where(e => !IsDeferred(e)).ToArray();
+            // 다른 프레임 모습에는 이 프레임에만 넣은 끝 모습(Pin한 효과)을 넣지 않는다
+            var others = effects.Where(e => !IsDeferred(e) && !e.Pinned).ToArray();
             rendered = (f, raw) =>
             {
                 var previous = At(others, f, frameCount, framePivot?.Invoke(f) ?? pivot);
@@ -248,7 +269,8 @@ public static class LayerEffects
         for (int i = 0; i < effects.Count; i++)
         {
             var e = effects[i];
-            LayerEffect? r = inRangeOnly && !e.AppliesTo(frameIndex)
+            // Pin한 효과(범위 끝 프레임에 맞춘 끝 모습 — HeldEnds)는 다시 맞추지 않고 그대로
+            LayerEffect? r = e.Pinned ? e : inRangeOnly && !e.AppliesTo(frameIndex)
                 ? preservePositions ? e with { Enabled = false } : null
                 : e is AnimatedEffect animated && WantsRenderedFrames(e)
                     ? animated.AtFrame(frameIndex, frameCount, pivot, frameSource) with

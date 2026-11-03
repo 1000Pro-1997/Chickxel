@@ -288,6 +288,37 @@ public class PartsTests
     }
 
     [Fact]
+    public void ScaleLayer_Part_MovesAndScalesPartArea_AllFrames_BorderScaled_PivotRelative()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 0, 0, Red);
+        p.AddFrame();
+        Paint(p, pi, 1, 1, 1, Blue);
+        p.SetPartBorder(pi, new SpriteBorder(1, 0, 0, 0));
+        p.SetPartPivot(pi, Pivot.BottomCenter);
+        Assert.Equal(part.PartRect, p.LayerBounds(pi));
+        Assert.Throws<ArgumentException>(() => p.ScaleLayer(pi, new Rectangle(0, 0, 2, 2), new Rectangle(0, 0, 4, 4)));
+        int steps = p.History.UndoCount;
+
+        p.ScaleLayer(pi, part.PartRect, new Rectangle(4, 3, 4, 6));
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(new Rectangle(4, 3, 4, 6), part.PartRect);
+        Assert.Equal(new SpriteBorder(2, 0, 0, 0), part.PartBorder);
+        Assert.Equal(Pivot.BottomCenter, part.PartPivot);
+        Assert.Equal(Red, p.Flatten(0).Get(5, 5));
+        Assert.Equal(default, p.Flatten(0).Get(6, 6));
+        Assert.Equal(Blue, p.Flatten(1).Get(7, 8));
+
+        p.Undo();
+        Assert.Equal(new Rectangle(1, 1, 2, 2), part.PartRect);
+        Assert.Equal(Red, p.GetCel(pi, 0)!.Get(0, 0));
+    }
+
+    [Fact]
     public void ResizeCanvas_ShiftsPartOffsets_AndTransformsMatchCompositeTransform()
     {
         var p = new SpriteProject(10, 8);

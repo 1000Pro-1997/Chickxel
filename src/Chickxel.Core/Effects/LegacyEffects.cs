@@ -61,7 +61,7 @@ public static class LegacyEffects
             ColorGradients = builtIn.ColorGradients.Count == 0 ? builtIn.ColorGradients : builtIn.ColorGradients.ToDictionary(e => ScriptSlot(e.Key), e => e.Value),
         };
         return builtIn is AnimatedEffect animated
-            ? script with { Easing = animated.Easing, Repeat = animated.Repeat, RepeatCount = animated.RepeatCount }
+            ? script with { Easing = animated.Easing, Repeat = animated.Repeat, RepeatCount = animated.RepeatCount, HoldEnd = animated.HoldEnd }
             : script;
     }
 

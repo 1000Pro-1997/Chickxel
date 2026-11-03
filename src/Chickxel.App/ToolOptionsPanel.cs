@@ -1,6 +1,7 @@
 using Chickxel.Core.Edit;
 using Chickxel.Core.Model;
 using Chickxel.App.Localization;
+using Chickxel.Core.Scripting;
 using Chickxel.Core.Text;
 
 namespace Chickxel.App;
@@ -10,8 +11,11 @@ namespace Chickxel.App;
 /// 스포이드(기준), 밝게/어둡게(세기), 디더링(무늬), 글씨(글꼴), 그라데이션(색 정지점 바·보간·디더링), 그라데이션 연필(방식·반복 간격·프리셋·정지점 바), 도형(모양·꼭짓점/뿔/감은 수·채움), 이동(순환), 대칭(피벗 기준 포함), 피벗 도구(K)의 피벗(픽셀 단위), 9-slice 도구(S)의 테두리(L·T·R·B).
 /// 변형 모드(Ctrl+T) 중에는 변형 값(각도·가로·세로 %·중심 X/Y)·리샘플링·적용/취소만 보인다(캔버스 손잡이와 함께 움직임).
 /// 캔버스 크기 모드(Ctrl+Alt+C) 중에는 캔버스 가로·세로와 중심 기준, 그림 가로·세로(%)·위치, 그림 기준점 9방향, 비율 유지, 확인/취소를 보인다(캔버스 손잡이와 함께 움직임).
+/// 레이어 크기 모드(Ctrl+Shift+C)는 같은 묶음에서 캔버스 가로·세로·중심 기준·9-slice 줄을 숨기고 제목·설명만 바꾼다.
 /// 도구 설정은 <see cref="EditorContext"/>에 있고(실행취소 없음) 바뀌면 <see cref="EditorContext.ToolOptionsChanged"/>로 다시 맞춘다.
 /// 피벗 값 바꾸기는 프로젝트 편집이라 실행취소된다.
+/// 타임라인에서 효과 하나를 고르면 맨 아래에 그 효과의 설정이 보인다(<see cref="ShowEffect"/> — 바로 문서에 들어가고, 잠깐 사이에 이어 바꾼 값은 실행취소 한 단계).
+/// 묶음 상자는 제목 줄을 눌러 접고 편다(<see cref="Ui.Foldable"/>).
 /// </summary>
 public sealed class ToolOptionsPanel : UserControl
 {
@@ -131,13 +135,38 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly ComboBox _tfResample;
     private readonly TextBlock _tfInfo;
 
-    // 캔버스 크기 모드
+    // 캔버스 크기 모드(레이어 크기 모드도 같은 묶음 — 캔버스 줄·9-slice 줄을 숨기고 제목·설명을 바꿈)
     private readonly Border _canvasResizeBox;
     private readonly NumericUpDown _crWidth, _crHeight, _crImageWidth, _crImageHeight, _crX, _crY;
     private readonly TextBlock _crWidthPercent, _crHeightPercent;
     private readonly CheckBox _crKeepRatio, _crFromCenter, _crSlice;
     private readonly ComboBox _crSliceFill;
     private readonly AnchorPicker _crAnchor = new();
+    private readonly StackPanel _crCanvasRow, _crSliceRow;
+    private readonly TextBlock _crTitle;
+    private readonly Control _crInfo;
+    private readonly Button _crApply;
+
+    // 타임라인에서 고른 효과(하나만 골랐을 때)
+    private readonly Border _effectBox;
+    private readonly TextBlock _effectTitle;
+    private readonly Control _effectInfo;
+    /// <summary>스크립트 효과를 그리지 못할 때의 까닭(그 밖엔 비어 있음).</summary>
+    private readonly StackPanel _effectStatus = new() { Spacing = 2 };
+    private readonly StackPanel _effectSettings = new() { Spacing = 2 };
+    private readonly EffectForm _effectForm;
+    private Layer? _fxLayer;
+    private int _fxIndex = -1;
+    /// <summary>설정 칸을 만든(또는 독이 마지막으로 넣은) 효과 값 — 다른 곳(실행취소·효과 창·타임라인)에서 바뀌었는지 볼 때.</summary>
+    private LayerEffect? _fxShown;
+    /// <summary>독에서 이어 바꾼 값을 실행취소 한 단계로 묶는 중인 문서(<see cref="EffectEditPause"/> 동안 손대지 않거나 패널을 벗어나면 닫음).</summary>
+    private SpriteProject? _fxGroup;
+    private readonly DispatcherTimer _fxGroupTimer = new() { Interval = EffectEditPause };
+    /// <summary>독에서 효과 값을 이 시간 안에 이어 바꾸면 실행취소 한 단계로 묶는다(슬라이더·색 고르기 끌기 등).</summary>
+    private static readonly TimeSpan EffectEditPause = TimeSpan.FromMilliseconds(700);
+
+    /// <summary>"효과 창에서 열기": 그 레이어의 효과 창을 그 효과(번호)를 고른 채 열어 달라는 요청.</summary>
+    public event Action<Layer, int>? EffectDialogRequested;
 
     public ToolOptionsPanel(EditorContext ctx)
     {
@@ -519,20 +548,46 @@ public sealed class ToolOptionsPanel : UserControl
             var (x, y) = PixelImage.AnchorOffset(_ctx.CanvasResizeImage.Width, _ctx.CanvasResizeImage.Height, c.Width, c.Height, _crAnchor.Value);
             SetCanvasResizeImage(i => i with { X = x, Y = y });
         };
-        var crApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B, (_, _) => _ctx.CommitCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
+        _crApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B, (_, _) => _ctx.CommitCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
         var crCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_495785D5E4);
+        _crCanvasRow = Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight);
+        _crSliceRow = Ui.Row(_crSlice, _crSliceFill);
         _canvasResizeBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6, Ui.Stack(
-            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight),
+            _crCanvasRow,
             _crFromCenter,
-            Ui.Row(_crSlice, _crSliceFill),
+            _crSliceRow,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_42E9812F72), _crImageWidth, _crWidthPercent),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EA7C872715), _crImageHeight, _crHeightPercent),
             _crKeepRatio,
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_CD2CB5A3E8), _crX, Ui.Label("Y"), _crY),
             Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_2B00AF339B), _crAnchor),
-            Ui.Row(crApply, crCancel)));
+            Ui.Row(_crApply, crCancel)));
+        // InfoGroup 머리 줄 = (제목, 정보박스): 레이어 크기 모드에서 바꾼다.
+        var crHead = (StackPanel)((StackPanel)_canvasResizeBox.Child!).Children[0];
+        _crTitle = (TextBlock)crHead.Children[0];
+        _crInfo = crHead.Children[1];
 
-        var stack = Ui.Stack(_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox);
+        // ── 효과(타임라인에서 효과 하나를 고르면): 효과 창과 같은 효과 고유 설정 + 나머지 설정은 효과 창에서
+        _effectForm = new EffectForm(_effectSettings, this, stacked: true);
+        var openEffect = Ui.Button(VectorIcon.SlidersHorizontal, UiStrings.EffectDock_Open, (_, _) =>
+        {
+            if (_fxLayer is not { } layer) return;
+            EndEffectEdit();
+            EffectDialogRequested?.Invoke(layer, _fxIndex);
+        }).Tip(UiStrings.EffectDock_OpenTip);
+        openEffect.Focusable = false;
+        _effectBox = InfoGroup("", "", Ui.Stack(_effectStatus, _effectSettings, Ui.Row(openEffect)));
+        var effectHead = (StackPanel)((StackPanel)_effectBox.Child!).Children[0];
+        _effectTitle = (TextBlock)effectHead.Children[0];
+        _effectInfo = effectHead.Children[1];
+        _effectBox.IsVisible = false;
+        _fxGroupTimer.Tick += (_, _) => EndEffectEdit();
+        // 캔버스 등 다른 곳을 고치러 나가면 묶음을 닫는다(다른 편집이 효과 변경과 한 단계로 묶이지 않게).
+        PointerExited += (_, _) => EndEffectEdit();
+
+        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _effectBox];
+        foreach (var box in boxes) Ui.Foldable((Border)box);
+        var stack = Ui.Stack(boxes);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
         header.Child = null;
@@ -557,11 +612,15 @@ public sealed class ToolOptionsPanel : UserControl
             if (_canvasResizeBox.IsVisible != _ctx.IsCanvasResizing) Refresh();
             else RefreshCanvasResize();
         };
-        ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); };
-        ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
+        ctx.ProjectReplaced += (_, _) => { RefreshPivot(); RefreshSlice(); ShowEffect(null, -1); };
+        ctx.ProjectChanged += (_, _) => { RefreshPivot(); RefreshSlice(); SyncEffect(); };
         ctx.CurrentChanged += (_, _) => { RefreshPivot(); RefreshSlice(); };
-        // 피벗 도구로 끄는 동안(미리보기 값)에도 숫자가 따라가게.
-        ctx.ViewChanged += (_, _) => { if (_pivotBox.IsVisible) RefreshPivot(); };
+        // 피벗 도구로 끄는 동안(미리보기 값)에도 숫자가 따라가게. 스크립트 효과 실행 상태가 바뀌어도 여기로 온다.
+        ctx.ViewChanged += (_, _) =>
+        {
+            if (_pivotBox.IsVisible) RefreshPivot();
+            if (_effectBox.IsVisible) RefreshEffectStatus();
+        };
         Refresh();
     }
 
@@ -745,10 +804,18 @@ public sealed class ToolOptionsPanel : UserControl
         _hint.IsVisible = hint.Length > 0;
         _transformBox.IsVisible = _ctx.IsTransforming;
         _canvasResizeBox.IsVisible = _ctx.IsCanvasResizing;
+        _effectBox.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
             // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
-            _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
+            bool layer = _ctx.CanvasResizeLayer is not null;
+            _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B
+                : layer ? UiStrings.LayerResize_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
+            // 레이어 크기 모드: 캔버스는 그대로라 캔버스 크기·중심 기준·9-slice 줄을 숨긴다.
+            _crTitle.Text = layer ? UiStrings.LayerResize_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801;
+            ToolTip.SetTip(_crInfo, layer ? UiStrings.LayerResize_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6);
+            _crApply.Tip(layer ? UiStrings.LayerResize_ApplyTip : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
+            _crCanvasRow.IsVisible = _crFromCenter.IsVisible = _crSliceRow.IsVisible = !layer;
             foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -1045,6 +1112,111 @@ public sealed class ToolOptionsPanel : UserControl
         if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivot(f, pivot));
         else if (p.Sprite.DefaultPivot != pivot)
             _ctx.Structural(() => p.Edit(UiStrings.S_ToolOptionsPanel_ApplyPivot_4E8342E979, ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
+    }
+
+    // ───────────── 타임라인에서 고른 효과 ─────────────
+
+    /// <summary>
+    /// 타임라인에서 고른 효과 하나(<paramref name="layer"/>의 <paramref name="index"/>번째)의 설정을 맨 아래 묶음에 보인다. <paramref name="layer"/>가 null이면 묶음을 숨긴다.
+    /// </summary>
+    public void ShowEffect(Layer? layer, int index)
+    {
+        EndEffectEdit();
+        _fxLayer = layer;
+        _fxIndex = layer is null ? -1 : index;
+        BuildEffect();
+    }
+
+    /// <summary>문서가 바뀐 뒤: 고른 효과가 없어졌으면 숨기고, 다른 곳(실행취소·효과 창·타임라인 등)에서 값이 바뀌었으면 설정 칸을 다시 만든다.</summary>
+    private void SyncEffect()
+    {
+        if (_fxLayer is not null && !ReferenceEquals(CurrentEffect(), _fxShown)) BuildEffect();
+    }
+
+    /// <summary>고른 효과의 지금 값(레이어나 효과가 없어졌으면 null).</summary>
+    private LayerEffect? CurrentEffect()
+        => _fxLayer is { } layer && _ctx.Project is { } p && p.IndexOf(layer) >= 0 && _fxIndex >= 0 && _fxIndex < layer.Effects.Count
+            ? layer.Effects[_fxIndex]
+            : null;
+
+    /// <summary>고른 효과의 제목·설정 칸·설명(정보박스)·상태를 지금 값으로 다시 만든다. 효과가 없어졌으면 묶음을 숨긴다.</summary>
+    private void BuildEffect()
+    {
+        _effectSettings.Children.Clear();
+        var effect = CurrentEffect();
+        _fxShown = effect;
+        if (effect is null || _ctx.Project is not { } p)
+        {
+            _fxLayer = null;
+            _fxIndex = -1;
+            _fxStatusText = null;
+            _effectStatus.Children.Clear();
+            _effectBox.IsVisible = false;
+            return;
+        }
+        _effectTitle.Text = UiStrings.FormatEffectDock_Title(name: effect.DisplayName);
+        LayerEffectsDialog.AddDockSettings(_effectForm, p, _fxLayer!, effect, SetEffect, BuildEffect);
+        var hints = _effectForm.TakeHints();
+        ToolTip.SetTip(_effectInfo, string.Join("\n\n", hints));
+        _effectInfo.IsVisible = hints.Count > 0;
+        RefreshEffectStatus();
+        _effectBox.IsVisible = !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
+    }
+
+    /// <summary>
+    /// 독에서 고른 효과 값을 바꾼다: 곧바로 문서에 넣고(캔버스에 바로 보임), <see cref="EffectEditPause"/> 안에 이어 바꾼 값은 실행취소 한 단계로 묶는다.
+    /// 숫자 상자 끌기처럼 이미 묶음이 열려 있으면 그 묶음에 넣는다.
+    /// </summary>
+    private void SetEffect(Func<LayerEffect, LayerEffect> change)
+    {
+        if (CurrentEffect() is not { } old || _ctx.Project is not { } p) return;
+        var next = change(old);
+        if (next == old) return;
+        var layer = _fxLayer!;
+        var list = layer.Effects.ToArray();
+        list[_fxIndex] = next;
+        _fxShown = next;
+        if (_fxGroup is null && !p.History.InGroup)
+        {
+            p.History.BeginGroup(null);
+            _fxGroup = p;
+        }
+        if (_fxGroup is not null)
+        {
+            _fxGroupTimer.Stop();
+            _fxGroupTimer.Start();
+        }
+        _ctx.Structural(() => p.SetLayerEffects(p.IndexOf(layer), list));
+    }
+
+    /// <summary>독에서 이어 바꾸던 효과 값 묶음을 닫아 실행취소 한 단계로 기록한다(열린 묶음이 없으면 그대로).</summary>
+    private void EndEffectEdit()
+    {
+        _fxGroupTimer.Stop();
+        if (_fxGroup is not { } p) return;
+        _fxGroup = null;
+        p.History.EndGroup();
+    }
+
+    /// <summary>보이고 있는 상태 글(같으면 다시 만들지 않음).</summary>
+    private string? _fxStatusText;
+
+    /// <summary>고른 스크립트 효과를 그리지 못하면(원문 없음·허용 안 함·오류·멈춤) 그 까닭을 경고로 보인다. 실행 상태가 바뀔 때마다 부른다.</summary>
+    private void RefreshEffectStatus()
+    {
+        var status = _fxLayer is { } layer && CurrentEffect() is ScriptEffect script ? ScriptEffectRuntime.StatusOf(layer, script) : null;
+        string? text = status is { IsProblem: true } ? ScriptStatusText.Of(status) : null;
+        if (text == _fxStatusText) return;
+        _fxStatusText = text;
+        _effectStatus.Children.Clear();
+        if (text is null) return;
+        var icon = Ui.Icon(VectorIcon.CircleAlert, 13);
+        icon.Foreground = AppTheme.WarningBrush;
+        icon.VerticalAlignment = VerticalAlignment.Top;
+        icon.Margin = new Thickness(3, 2, 4, 0);
+        DockPanel.SetDock(icon, Dock.Left);
+        var label = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.WarningBrush };
+        _effectStatus.Children.Add(new DockPanel { Children = { icon, label } });
     }
 
     /// <summary>브러시 도장을 칸(픽셀)으로 그린 작은 미리보기.</summary>

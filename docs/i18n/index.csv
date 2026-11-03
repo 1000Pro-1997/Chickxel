@@ -23,7 +23,7 @@ lang-select.3,"프레임·레이어·부위·스킨을 그리고, 저장하면 P
 lang-select.4,다운로드,Download
 hero.guide,사용 가이드,Guide
 hero.support,후원하기,Support
-lang-select.5,"바로 받기: <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"">macOS (Intel)</a>","Direct download: <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"">Windows</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"">macOS (Apple Silicon)</a> · <a href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"">macOS (Intel)</a>"
+lang-select.5,"바로 받기: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a>","Direct download: <a href=""download.html?os=windows"">Windows</a> · <a href=""download.html?os=mac-arm64"">macOS (Apple Silicon)</a> · <a href=""download.html?os=mac-x64"">macOS (Intel)</a>"
 lang-select.6,"<span class=""fact"">무료</span><span class=""fact"">소스 공개</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">설치할 것 없음</span>","<span class=""fact"">Free</span><span class=""fact"">Source available</span><span class=""fact"">Windows 10/11</span><span class=""fact"">macOS 12+</span><span class=""fact"">Nothing to install</span>"
 lang-select.7.src,assets/screenshot.png,../assets/screenshot-en.png
 lang-select.8.alt,"Chickxel 편집 화면: 왼쪽 도구 막대와 팔레트, 가운데 캔버스, 아래 타임라인, 오른쪽 미리보기와 도구 설정","Chickxel editor: tool bar and palette on the left, canvas in the middle, timeline below, preview and tool settings on the right"
@@ -89,15 +89,19 @@ features.20,여러 효과를 레시피 하나로 묶고 필요한 설정만 매�
 download.1,다운로드,Download
 download.2,압축을 풀고 바로 실행합니다. 새 버전은 앱이 알려 주고 스스로 업데이트합니다.,Unzip and run. The app tells you about new versions and updates itself.
 download.3,"ZIP 다운로드</span></a>
-<a class=""download"" href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
-<a class=""download"" href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip""><strong>macOS · Apple Silicon</strong><span>M1 or later · macOS 12+</span><span class=""get"">"
+<a class=""download"" href=""download.html?os=mac-arm64""><strong>macOS · Apple Silicon</strong><span>M1 이후 Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
+<a class=""download"" href=""download.html?os=mac-arm64""><strong>macOS · Apple Silicon</strong><span>M1 or later · macOS 12+</span><span class=""get"">"
 download.4,"ZIP 다운로드</span></a>
-<a class=""download"" href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
-<a class=""download"" href=""https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">"
+<a class=""download"" href=""download.html?os=mac-x64""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">","Download zip</span></a>
+<a class=""download"" href=""download.html?os=mac-x64""><strong>macOS · Intel</strong><span>Intel Mac · macOS 12+</span><span class=""get"">"
 download.5,"ZIP 다운로드</span></a>
 ","Download zip</span></a>
 "
-download.6,"처음 실행할 때 서명 경고가 뜨면 사용 가이드의 <a href=""guide.html#start-first-run"">처음 실행할 때</a>를 보세요. 지난 버전과 바뀐 점은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a>에 있습니다.","If you see a signing warning on first launch, see <a href=""guide.html#start-first-run"">First launch</a> in the guide. What changed in each version is on the <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> page."
+download.6,"처음 실행할 때 경고가 뜨면 <a href=""download.html"">처음 실행 안내</a>를 보세요. 지난 버전과 바뀐 점은 <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">릴리스</a>에 있습니다.","If a warning appears on first launch, see the <a href=""download.html"">first launch help</a>. What changed in each version is on the <a href=""https://github.com/1000Pro-1997/Chickxel/releases"">Releases</a> page."
+install.title,터미널로 설치,Install from the terminal
+install.win,"<strong>PowerShell</strong>에 아래 한 줄을 붙여 넣고 Enter를 누르면 GitHub에서 최신 버전을 받아 설치하고 실행합니다. 브라우저로 받은 파일이 아니라서 Windows의 PC 보호 창이 뜨지 않습니다.","Paste the line below into <strong>PowerShell</strong> and press Enter to download the latest version from GitHub, install it and start it. Because the file isn't downloaded by a browser, Windows protected your PC doesn't appear."
+install.mac,"<strong>터미널</strong> 앱에 아래 한 줄을 붙여 넣고 Enter를 누르면 Mac 칩에 맞는 최신 버전을 GitHub에서 받아 <code>/Applications</code>에 설치하고 실행합니다.","Paste the line below into the <strong>Terminal</strong> app and press Enter to download the latest version for your Mac's chip from GitHub, install it in <code>/Applications</code> and open it."
+cmd.copy,복사,Copy
 download.7,<span>제보·아이디어는 Discord로</span></a>,<span>Bugs and ideas: join us on Discord</span></a>
 download.support,Chickxel 개발 후원하기,Support Chickxel development
 download.8,"

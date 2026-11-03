@@ -135,6 +135,10 @@
   <data name="Project_PartCelSizeMismatch" xml:space="preserve"><value>셀 크기는 부위 크기와 같아야 합니다.</value></data>
   <data name="Project_CanvasCelSizeMismatch" xml:space="preserve"><value>셀 크기는 캔버스 크기와 같아야 합니다.</value></data>
   <data name="Project_ChangeCel" xml:space="preserve"><value>셀 바꾸기</value></data>
+  <data name="Project_LinkCels" xml:space="preserve"><value>셀 링크</value></data>
+  <data name="Project_UnlinkCels" xml:space="preserve"><value>셀 링크 풀기</value></data>
+  <data name="Project_LinkColor" xml:space="preserve"><value>셀 링크 색</value></data>
+  <data name="Project_BadCelLink" xml:space="preserve"><value>링크된 셀 정보가 잘못되어 건너뛰었습니다: [{link}]</value><comment>link = project.json celLinks의 한 줄(숫자들).</comment></data>
   <data name="Project_Edit" xml:space="preserve"><value>편집</value></data>
   <data name="Project_ChangedCelSizeMismatch" xml:space="preserve"><value>바꾼 셀 이미지 크기가 원래 셀과 다릅니다.</value></data>
   <data name="Project_TargetCanvasSizeMismatch" xml:space="preserve"><value>대상 이미지 크기가 캔버스와 다릅니다.</value></data>
@@ -153,6 +157,8 @@
   <data name="Project_AutoLayout" xml:space="preserve"><value>자동 배치</value></data>
   <data name="Project_AutoLayoutSettings" xml:space="preserve"><value>자동 배치 설정</value></data>
   <data name="Project_ResizePart" xml:space="preserve"><value>부위 크기</value></data>
+  <data name="Project_LayerSize" xml:space="preserve"><value>레이어 크기</value><comment>실행취소 기록 이름: 레이어 하나의 그림 크기·자리 바꾸기(캔버스는 그대로)</comment></data>
+  <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>부위의 원래 자리는 부위 영역이어야 합니다.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>부위 피벗</value></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>부위 테두리</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>레이어 {number}</value><comment>number = 새 프로젝트에서 만든 레이어 번호. 기존 파일의 이름은 바꾸지 않음.</comment></data>
@@ -167,6 +173,13 @@
   <data name="Project_CannotDeleteLastLayer" xml:space="preserve"><value>마지막 레이어는 지울 수 없습니다.</value></data>
   <data name="Project_DeleteLayer" xml:space="preserve"><value>레이어 삭제</value></data>
   <data name="Project_MoveLayer" xml:space="preserve"><value>레이어 이동</value></data>
+  <data name="Project_MoveIntoGroup" xml:space="preserve"><value>그룹에 넣기</value></data>
+  <data name="Project_MoveOutOfGroup" xml:space="preserve"><value>그룹에서 꺼내기</value></data>
+  <data name="Project_NoLayersToNest" xml:space="preserve"><value>그룹에 넣거나 꺼낼 레이어가 없습니다.</value></data>
+  <data name="Project_LayerNotInProject" xml:space="preserve"><value>이 프로젝트의 레이어가 아닙니다.</value></data>
+  <data name="Project_AlreadyInGroup" xml:space="preserve"><value>이미 그 그룹의 부위입니다.</value></data>
+  <data name="Project_GroupCannotNest" xml:space="preserve"><value>그룹은 다른 그룹에 넣을 수 없습니다.</value></data>
+  <data name="Project_NestLocked" xml:space="preserve"><value>"{name}"이(가) 잠겨 있어 그룹에 넣거나 꺼낼 수 없습니다.</value><comment>name = 잠긴 레이어나 그룹 이름.</comment></data>
   <data name="Project_NoLayerBelow" xml:space="preserve"><value>아래에 병합할 레이어가 없습니다.</value></data>
   <data name="Project_CannotMergePartGroup" xml:space="preserve"><value>부위·그룹 레이어는 아래로 병합할 수 없습니다.</value></data>
   <data name="Project_MergeDown" xml:space="preserve"><value>아래 레이어와 병합</value></data>

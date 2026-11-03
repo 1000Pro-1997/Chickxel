@@ -42,6 +42,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
 
     private readonly ListBox _list;
     private readonly StackPanel _settings;
+    /// <summary>설정 칸(<see cref="_settings"/>)에 줄을 쌓는 도우미.</summary>
+    private readonly EffectForm _form;
     private readonly Button _remove, _up, _down, _bake, _play;
     private readonly CheckBox _effectOnly, _expandCanvas, _loop;
     /// <summary>크게 보기 창의 재생 단추·프레임 설명·재생 범위 체크(창이 닫혀 있으면 null).</summary>
@@ -128,7 +130,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             SyncStripRange();
         };
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
-        Grid.SetIsSharedSizeScope(_settings, true); // 설정 줄마다 이름 열 폭을 맞춘다(SettingsRow)
+        _form = new EffectForm(_settings, this);
 
         _expandCanvas = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_420801482E, true);
         _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
@@ -503,14 +505,13 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _extendFor = -1;
         FillSettings();
         ShowSharedExtendSettings();
-        var hints = _settings.Children.OfType<TextBlock>().Where(t => t.Classes.Contains(HintClass)).ToList();
-        if (hints.Count == 0 || _rangeRow is null) return;
-        foreach (var h in hints) _settings.Children.Remove(h);
-        _rangeRow.Children.Add(Ui.InfoBadge(string.Join("\n\n", hints.Select(h => h.Text))));
+        if (_rangeRow is null) return;
+        var hints = _form.TakeHints();
+        if (hints.Count > 0) _rangeRow.Children.Add(Ui.InfoBadge(string.Join("\n\n", hints)));
     }
 
     /// <summary>설정 칸의 프레임 범위 줄(설명 정보 표시를 붙일 곳).</summary>
-    private StackPanel? _rangeRow;
+    private Panel? _rangeRow;
 
     private void FillSettings()
     {
@@ -541,6 +542,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
         AddRangeEditor(i);
         AddClipEditor(i);
+        AddHoldEndEditor(_form, e, Set);
         ui.Panel(this, e, Set);
     }
 
@@ -551,18 +553,19 @@ public sealed partial class LayerEffectsDialog : DialogBase
     private void AddMotionEditors(int i, Action<Func<LayerEffect, LayerEffect>> set, bool timing = true)
     {
         var a = (AnimatedEffect)_effects[i];
-        if (timing) AddTimingEditors(a, set);
+        if (timing) AddTimingEditors(_form, a, set);
         var (from, to) = VRangeOf(a);
         _settings.Children.Add(Hint(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_LayerEffectsDialog_AddMotionEditors_610C3B2627,to - from + 1,from + 1,to + 1)
                                     + (from == to ? UiStrings.S_LayerEffectsDialog_AddMotionEditors_9BD880B938 : "")));
     }
 
-    private void AddTimingEditors(AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
+    /// <summary>움직이는 효과의 빠르기 곡선·반복(한 번/반복/왕복 + 횟수) 줄.</summary>
+    private static void AddTimingEditors(EffectForm form, AnimatedEffect a, Action<Func<LayerEffect, LayerEffect>> set)
     {
-        SettingsRow(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF, ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
+        form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF, ChoiceEditor(Easings, (int)a.Easing, k => set(o => (AnimatedEffect)o with { Easing = (EffectEasing)k })));
         var count = NumEditor(1, AnimatedEffect.MaxRepeatCount, a.RepeatCount, NumKinds.Repeat, v => set(o => (AnimatedEffect)o with { RepeatCount = v }));
         count.IsEnabled = a.Repeat != EffectRepeat.Once;
-        SettingsRow(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B, ChoiceEditor(Repeats, (int)a.Repeat, k =>
+        form.Row(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E8E7F0E20B, ChoiceEditor(Repeats, (int)a.Repeat, k =>
         {
             count.IsEnabled = (EffectRepeat)k != EffectRepeat.Once;
             set(o => (AnimatedEffect)o with { Repeat = (EffectRepeat)k });
@@ -626,7 +629,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
         };
         from.ValueChanged += (_, _) => Apply();
         to.ValueChanged += (_, _) => Apply();
-        _rangeRow = SettingsRow(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
+        _rangeRow = _form.Row(UiStrings.S_LayerEffectsDialog_AddRangeEditor_C773F4F9DC, all, from, Ui.Label("~"), to);
     }
 
     /// <summary>고른 효과를 앞의 비클리핑 효과가 만든 영역에만 적용한다.</summary>
@@ -645,80 +648,32 @@ public sealed partial class LayerEffectsDialog : DialogBase
             ReplaceEffect(i, _effects[i] with { ClipToPrevious = clip.On() });
             RebuildList(i);
         };
-        SettingsRow(UiStrings.EffectPreset_ApplyTarget, clip);
+        _form.Row(UiStrings.EffectPreset_ApplyTarget, clip);
     }
-
-    /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다(<see cref="LabelMaxWidth"/>까지).</summary>
-    private const string LabelColumn = "EffectSettingsLabel";
-    /// <summary>이름 열의 최대 폭. 긴 이름(스크립트 설정 이름 등)은 줄을 바꿔, 값 열(슬라이더·숫자 칸)이 칸 밖으로 밀려 잘리지 않게 한다.</summary>
-    private const double LabelMaxWidth = 84;
-    /// <summary>위 줄에 딸린 줄(<see cref="SettingsSubRow"/>)의 이름 들여쓰기.</summary>
-    private const double SubIndent = 12;
 
     /// <summary>
-    /// 설정 칸에 한 줄: 왼쪽 이름 열(모든 줄이 같은 폭, 왼쪽 맞춤)에 <paramref name="label"/>, 오른쪽 열에 컨트롤들(모든 줄이 같은 x에서 시작).
-    /// 이름이 ""면 오른쪽 열만. 오른쪽 열 줄을 돌려준다.
+    /// 움직이는 효과의 "링크된 뒤 칸에 끝 모습 이어 가기"(<see cref="AnimatedEffect.HoldEnd"/>) 줄 — 효과 창과 도구 설정 독이 같이 쓴다.
+    /// 범위가 "모든 프레임"이면 뒤 칸이 없어 켤 수 없다(켜져 있으면 끌 수만 있음). 움직이지 않는 스크립트(<c>animated: false</c>)에는 없다(꺼져 있으면).
     /// </summary>
-    private StackPanel SettingsRow(string label, params Control[] controls) => FormRow(label.Length == 0 ? null : Ui.Label(label), 0, controls);
-
-    /// <summary>위 줄에 딸린 줄(위 줄 고름에 따라 쓰이는 값): 이름을 조금 들여 쓴다.</summary>
-    private StackPanel SettingsSubRow(string label, params Control[] controls) => FormRow(Ui.Label(label), SubIndent, controls);
-
-    /// <summary>체크 상자가 이름인 줄(켜야 오른쪽 값을 씀): 체크 상자가 이름 열에 들어간다.</summary>
-    private StackPanel SettingsCheckRow(CheckBox head, params Control[] controls) => FormRow(head, 0, controls);
-
-    private StackPanel FormRow(Control? head, double indent, Control[] controls)
+    private static void AddHoldEndEditor(EffectForm form, LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
     {
-        if (head is not null)
-        {
-            head.VerticalAlignment = VerticalAlignment.Center;
-            head.Margin = new Thickness(head.Margin.Left + indent, head.Margin.Top, head.Margin.Right + 6, head.Margin.Bottom);
-        }
-        var row = Ui.Row(controls);
-        AddFormRow(head, row);
-        return row;
+        if (effect is not AnimatedEffect a) return;
+        if (!a.HoldEnd && a is ScriptEffect script && Chickxel.Core.Scripting.ScriptLibrary.Runnable(script.ScriptHash) is { Animated: false }) return;
+        var hold = Ui.Check(UiStrings.Effect_HoldEnd, a.HoldEnd);
+        hold.IsEnabled = a.Frames is not null || a.HoldEnd;
+        ToolTip.SetTip(hold, a.Frames is null ? UiStrings.Effect_HoldEndAllFramesTip : UiStrings.Effect_HoldEndTip);
+        hold.IsCheckedChanged += (_, _) => set(o => o is AnimatedEffect current && current.HoldEnd != hold.On() ? current with { HoldEnd = hold.On() } : o);
+        form.Row(UiStrings.Effect_HoldEndRow, hold);
     }
 
-    /// <summary>오른쪽 열에 한 덩어리(줄 바꿈 패널 등 — 열 폭에 맞춰 늘어남). 이름은 첫 줄 높이에 맞춘다.</summary>
-    private void SettingsBlock(string label, Control body)
-    {
-        var head = Ui.Label(label);
-        head.VerticalAlignment = VerticalAlignment.Top;
-        head.Margin = new Thickness(3, 6, 9, 3);
-        AddFormRow(head, body);
-    }
-
-    /// <summary>이름 열(<see cref="LabelColumn"/> 공유 폭, 왼쪽 맞춤) + 값 열 한 줄을 설정 칸에 넣는다.</summary>
-    private void AddFormRow(Control? head, Control body)
-    {
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = LabelColumn });
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        if (head is not null)
-        {
-            head.HorizontalAlignment = HorizontalAlignment.Left;
-            if (head is TextBlock text)
-            {
-                text.TextWrapping = TextWrapping.Wrap;
-                text.MaxWidth = LabelMaxWidth;
-            }
-            grid.Children.Add(head);
-        }
-        Grid.SetColumn(body, 1);
-        grid.Children.Add(body);
-        _settings.Children.Add(grid);
-    }
-
-    private const string HintClass = "effect-hint";
-
-    /// <summary>설명 글. 설정 칸에 넣으면 <see cref="ShowSettings"/>가 정보 표시 풍선으로 옮긴다(펼침 상자 안에서는 그대로 보임).</summary>
+    /// <summary>설명 글. 설정 칸에 넣으면 <see cref="EffectForm.TakeHints"/>로 모아 정보 표시 풍선으로 옮긴다(펼침 상자 안에서는 그대로 보임).</summary>
     private static TextBlock Hint(string text, double maxWidth = 290)
     {
         var t = Ui.Label(text);
         t.TextWrapping = TextWrapping.Wrap;
         t.MaxWidth = maxWidth;
         t.Foreground = AppTheme.DimTextBrush;
-        t.Classes.Add(HintClass);
+        t.Classes.Add(EffectForm.HintClass);
         return t;
     }
 
@@ -759,11 +714,16 @@ public sealed partial class LayerEffectsDialog : DialogBase
             v => names.TryGetValue(v, out var name) ? $"{v} ({name})" : $"{v}");
     }
 
-    /// <summary>중심 X·Y 칸(원본 왼쪽 위 기준 px) 예시: 0, 그림 가운데·끝(이름 붙임)과 흔한 거리.</summary>
+    /// <summary>중심 X·Y 칸(원본 왼쪽 위 기준 px) 예시: 지금 프레임 원본(없으면 캔버스) 크기로.</summary>
     private NumKind CenterKind(bool vertical)
     {
         var source = SourceAt(_frame);
-        int size = source is null ? vertical ? _project.Height : _project.Width : vertical ? source.Height : source.Width;
+        return CenterKind(source is null ? vertical ? _project.Height : _project.Width : vertical ? source.Height : source.Width, vertical);
+    }
+
+    /// <summary>중심 X·Y 칸(원본 왼쪽 위 기준 px) 예시: 0, 그림(크기 <paramref name="size"/>) 가운데·끝(이름 붙임)과 흔한 거리.</summary>
+    private static NumKind CenterKind(int size, bool vertical)
+    {
         decimal mid = size / 2, last = Math.Max(0, size - 1);
         var values = new SortedSet<decimal> { 0, mid, last };
         foreach (var v in new decimal[] { 4, 8, 16, 24, 32, 48, 64 })

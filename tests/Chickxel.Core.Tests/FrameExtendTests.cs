@@ -60,18 +60,20 @@ public class FrameExtendTests
     }
 
     [Fact]
-    public void ExtendFrames_CopiesAreDeep()
+    public void ExtendFrames_CopiesAreLinkedToTheirSource()
     {
         var p = FourFrames();
         p.ExtendFrames(1, 1, 3, FrameExtendMode.HoldLast); // 프레임 2를 세 번
         Assert.Equal([0, 1, 1, 1, 2, 3], Sources(p));
-        Assert.NotSame(p.GetCel(0, 1), p.GetCel(0, 2));
+        Assert.True(p.AreCelsLinked(0, 1, 3));
 
         var cel = p.BeginCelStroke(0, 2);
         cel.Set(1, 1, new Color32(0, 255, 0));
         p.CommitCelStroke("점");
-        Assert.Equal(Color32.Transparent, p.GetCel(0, 1)!.Get(1, 1));
-        Assert.Equal(Color32.Transparent, p.GetCel(0, 3)!.Get(1, 1));
+        Assert.Equal(new Color32(0, 255, 0), p.GetCel(0, 1)!.Get(1, 1));
+        Assert.Equal(new Color32(0, 255, 0), p.GetCel(0, 3)!.Get(1, 1));
+        Assert.Equal(Color32.Transparent, p.GetCel(0, 0)!.Get(1, 1));
+        Assert.Equal(Color32.Transparent, p.GetCel(1, 2)!.Get(1, 1)); // 다른 레이어의 링크는 따로
     }
 
     [Fact]

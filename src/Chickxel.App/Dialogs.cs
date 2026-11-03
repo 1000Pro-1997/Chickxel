@@ -524,6 +524,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+O", UiStrings.S_Dialogs_Shortcuts_669BA7D949),
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+R", UiStrings.S_Dialogs_Shortcuts_5F294C19DF),
         (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Alt+C", UiStrings.S_Dialogs_Shortcuts_F869736C79),
+        (UiStrings.S_Dialogs_Shortcuts_145FCAB3DD, "Ctrl+Shift+C", UiStrings.LayerResize_Shortcut),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Shift+Enter", UiStrings.S_Dialogs_Shortcuts_E5B5E47196),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, ", / .", UiStrings.S_Dialogs_Shortcuts_864C7AA661),
         (UiStrings.S_Dialogs_Shortcuts_A069FAB880, "Home / End", UiStrings.S_Dialogs_Shortcuts_D49FC130EF),

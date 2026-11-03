@@ -83,7 +83,8 @@ public sealed partial class PixelTools
             "canvas (frame) width/height, frames [{index,durationMs,name}], " +
             "layers [{index,name,kind (normal/group/part),parent (group layer index, parts only),visible,locked (also true for parts of a locked group; locked layers are never changed),opacity," +
             "partWidth,partHeight,partX,partY,skinOverride (parts only; skinOverride = skin this part wears instead of its group's, only when set)," +
-            "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)}] (bottom to top; a group's parts are the layers " +
+            "collapsed,skins,activeSkin (groups only),effects (layer effect type ids in stack order, only when the layer has effects; see get_effects)," +
+            "links (linked cels: [{frames, color}] — frames that share one drawing, only when the layer has links; see link_cels)}] (bottom to top; a group's parts are the layers " +
             "directly below it), tags, current {frame,layer}, editScope (only when the user limited this turn to the current file: change only this document, never open or create other files), " +
             "primary/secondary color, palette, dirty flag, selection bounds, current folder. " +
             "Call this first. Works without an open project.",
@@ -408,6 +409,7 @@ public sealed partial class PixelTools
             "or video (MP4, WebM, MOV, MKV, AVI; needs ffmpeg, default import settings) as a new unsaved document. Relative paths are resolved against the current folder.",
             new JsonObject { ["path"] = Str("File path.") },
             "path"),
+        .. LinkToolDefinitions(),
         .. EffectToolDefinitions(),
         .. EffectMakerToolDefinitions(),
         .. ReferenceToolDefinitions(),
@@ -496,6 +498,9 @@ public sealed partial class PixelTools
                 "add_frame" => AddFrame(name, a),
                 "delete_frame" => DeleteFrame(name, a),
                 "set_frame_duration" => SetFrameDuration(name, a),
+                "link_cels" => LinkCels(name, a),
+                "unlink_cels" => UnlinkCels(name, a),
+                "set_link_color" => SetLinkColor(name, a),
                 "add_layer" => AddLayer(name, a),
                 "set_layer" => SetLayer(name, a),
                 "set_current" => SetCurrent(name, a),
@@ -617,6 +622,7 @@ public sealed partial class PixelTools
                     if (l.AutoLayout is { } al) o["autoLayout"] = LayoutText(al);
                 }
                 if (l.Effects.Count > 0) o["effects"] = Strings(l.Effects.Select(EffectRegistry.TypeIdOf).ToArray());
+                if (LinksJson(p, i) is { } links) o["links"] = links;
                 layers.Add(o);
             }
             doc["layers"] = layers;

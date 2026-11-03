@@ -643,6 +643,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             DocCmd("색 바꾸기…", MainStrings.Menu_Edit_ReplaceColor_119, ReplaceColor, "Ctrl+Alt+R", KeyScope.NotInText, (Key.R, Ctrl | Alt)),
             new Separator(),
             DocCmd("캔버스 크기…", MainStrings.Menu_Edit_BeginCanvasResize_121, BeginCanvasResize, "Ctrl+Alt+C", KeyScope.Global, (Key.C, Ctrl | Alt)),
+            DocCmd("레이어 크기…", MainStrings.Menu_Edit_BeginLayerResize, BeginLayerResize, "Ctrl+Shift+C", KeyScope.NotInText, (Key.C, Ctrl | Shift)),
             DocCmd("캔버스 전체 좌우 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_123, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasHorizontal())),
             DocCmd("캔버스 전체 상하 뒤집기(모든 프레임)", MainStrings.Menu_Edit_Structural_125, () => _ctx.Structural(() => _ctx.Project!.FlipCanvasVertical())),
             DocCmd("이미지에서 팔레트 만들기", MainStrings.Menu_Edit_Command_127, _colors.PaletteFromImage),
@@ -1013,16 +1014,26 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             _canvas.FitToWindow();
             ShowMessage(message);
         };
+        // 레이어 크기 모드를 적용하면 캔버스는 그대로라 화면은 두고 알리기만 한다.
+        _ctx.LayerResized += (_, message) => ShowMessage(message);
 
         _canvas.ZoomChanged += (_, _) => { _settings.Zoom = _canvas.Zoom; UpdateStatus(); };
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
         _canvas.Message += (_, m) => ShowMessage(m);
         _timeline.Message += (_, m) => ShowMessage(m);
         _timeline.CanvasSizeRequested += (_, _) => BeginCanvasResize();
+        // 타임라인에서 효과 하나를 고르면 오른쪽 독 도구 설정 아래에 그 효과 설정을 보인다.
+        _timeline.EffectFocusChanged += (_, focus) => _toolOptions.ShowEffect(focus?.Layer, focus?.Index ?? -1);
+        _toolOptions.EffectDialogRequested += (layer, index) => _timeline.OpenEffect(layer, index);
         // 변형(Ctrl+T)·이동 도구는 타임라인에서 고른 셀들을 함께 바꾼다.
         _ctx.SelectedCels = _timeline.SelectedCelTargets;
         _preview.Message += (_, m) => ShowMessage(m);
         _preview.CopyRequested += (_, img) =>
+        {
+            _ctx.Clipboard = img;
+            PutOnSystemClipboard(img);
+        };
+        _timeline.ImageCopyRequested += (_, img) =>
         {
             _ctx.Clipboard = img;
             PutOnSystemClipboard(img);
@@ -2644,8 +2655,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return true;
         }
         if (!_ctx.IsCanvasResizing) return false;
+        bool layer = _ctx.CanvasResizeLayer is not null;
         _ctx.CancelCanvasResize();
-        ShowMessage(MainStrings.Message_311);
+        ShowMessage(layer ? MainStrings.Message_LayerResizeCanceled : MainStrings.Message_311);
         return true;
     }
 
@@ -2911,6 +2923,21 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return;
         }
         ShowMessage(MainStrings.Message_332);
+        _canvas.Focus();
+    }
+
+    /// <summary>
+    /// 레이어 크기 모드(Ctrl+Shift+C): 현재 레이어(일반 레이어는 모든 프레임의 칠한 픽셀을 감싸는 자리, 부위는 부위 영역)를 캔버스 크기 모드와 같은
+    /// 손잡이·숫자로 늘이거나 줄이고 옮긴다. 캔버스와 다른 레이어는 그대로. Enter·확인 = 적용(그 레이어의 모든 프레임), Esc·Ctrl+Z = 취소.
+    /// </summary>
+    private void BeginLayerResize()
+    {
+        if (_ctx.BeginLayerResize() is { } error)
+        {
+            ShowMessage(error);
+            return;
+        }
+        ShowMessage(MainStrings.Message_LayerResize);
         _canvas.Focus();
     }
 

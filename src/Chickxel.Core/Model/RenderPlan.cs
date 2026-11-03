@@ -200,7 +200,7 @@ internal abstract class RenderStep
     {
         int n = 0;
         foreach (var e in effects)
-            if (e.Enabled && e.AppliesTo(frame)) n++;
+            if (e.Enabled && e.ActiveAt(frame)) n++;
         return n;
     }
 
@@ -208,7 +208,7 @@ internal abstract class RenderStep
     protected static bool HasScripts(IReadOnlyList<LayerEffect> effects, int frame)
     {
         foreach (var e in effects)
-            if (e is ScriptEffect { Enabled: true } && e.AppliesTo(frame)) return true;
+            if (e is ScriptEffect { Enabled: true } && e.ActiveAt(frame)) return true;
         return false;
     }
 
@@ -217,11 +217,11 @@ internal abstract class RenderStep
     {
         int others = 0;
         foreach (var e in effects)
-            if (e.Enabled && e.AppliesTo(frame) && !LayerEffects.IsDeferred(e)) others++;
+            if (e.Enabled && e.ActiveAt(frame) && !LayerEffects.IsDeferred(e)) others++;
         long work = 0;
         foreach (var e in effects)
         {
-            if (!e.Enabled || !e.AppliesTo(frame)) continue;
+            if (!e.Enabled || !e.ActiveAt(frame)) continue;
             work += e is AfterimageEffect a ? pixels * a.Count * (1 + others) : pixels;
         }
         return work;

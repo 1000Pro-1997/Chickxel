@@ -37,8 +37,17 @@ public abstract record LayerEffect
     /// <summary>Render-only progress of an animated color gradient (0 at first frame, 1 at last); never saved.</summary>
     internal double GradientTime { get; init; }
 
+    /// <summary>
+    /// 그릴 때만(저장 안 함): 범위 끝 프레임에 맞춰 둔 효과를 다른 프레임에 그대로 쓰는 사본(<see cref="Edit.LayerEffects.Pin"/> — 링크된 칸의 효과 끝 모습).
+    /// 범위와 관계없이 입히고, 진행·피벗·다른 레이어·태그를 다시 맞추지 않는다.
+    /// </summary>
+    public bool Pinned { get; internal init; }
+
     /// <summary>프레임 <paramref name="frameIndex"/>가 범위 안인지(켜짐 여부와 무관).</summary>
     public bool AppliesTo(int frameIndex) => Frames is not { } r || r.Contains(frameIndex);
+
+    /// <summary>그릴 때 프레임 <paramref name="frameIndex"/>에 입히는지(켜짐 여부와 무관): 범위 안이거나 끝 모습을 이어 가는 사본(<see cref="Pinned"/>).</summary>
+    internal bool ActiveAt(int frameIndex) => Pinned || AppliesTo(frameIndex);
 
     internal bool HasAnimatedColorGradient()
     {
@@ -150,6 +159,12 @@ public abstract record AnimatedEffect : LayerEffect
 
     /// <summary>반복·왕복 횟수 1~<see cref="MaxRepeatCount"/>(한 번이면 쓰지 않음).</summary>
     public int RepeatCount { get => _repeatCount; init => _repeatCount = Math.Clamp(value, 1, MaxRepeatCount); }
+
+    /// <summary>
+    /// 링크된 칸에 끝 모습 이어 가기: 범위가 끝난 뒤 프레임의 셀이 범위 끝 프레임 셀과 링크되어 있으면 그 프레임에도 범위 끝 프레임과 똑같은 모습으로 입힌다
+    /// (예: 던지기 1~18, 19가 18과 링크면 19도 던져진 자리 — <see cref="Edit.LayerEffects.HeldEnds"/>). 범위가 "모든 프레임"이면 쓰지 않는다. 저장된다.
+    /// </summary>
+    public bool HoldEnd { get; init; }
 
     /// <summary>그릴 때만: 범위 첫 프레임부터 몇 프레임째인지(0부터).</summary>
     public int FrameStep { get => _step; init => _step = Math.Max(0, value); }

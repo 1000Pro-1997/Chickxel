@@ -1,0 +1,144 @@
+<!doctype html>
+<!-- tools/build-docs.py가 docs/i18n/download.html(틀)·download.csv(언어별 문구)로 만든 파일입니다. 이 파일을 직접 고치지 말고 docs/i18n을 고친 뒤 다시 만드세요. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chickxel 다운로드 — 처음 실행할 때</title>
+<meta name="description" content="Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.">
+<meta property="og:title" content="Chickxel 다운로드 — 처음 실행할 때">
+<meta property="og:description" content="Chickxel을 내려받고, Windows·macOS에서 처음 실행할 때 뜨는 보안 경고를 넘기는 법을 그림과 함께 안내합니다.">
+<meta property="og:image" content="https://chickxel.com/assets/screenshot.png">
+<meta property="og:url" content="https://chickxel.com/download">
+<link rel="canonical" href="https://chickxel.com/download">
+<link rel="alternate" hreflang="ko" href="https://chickxel.com/download">
+<link rel="alternate" hreflang="en" href="https://chickxel.com/en/download">
+<link rel="alternate" hreflang="x-default" href="https://chickxel.com/en/download">
+<link rel="icon" href="assets/icon-256.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="style.css?v=20261103">
+<script>
+// 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
+(function () {
+  // 검색 엔진은 넘기지 않는다(로봇은 브라우저 언어가 대개 영어라 한국어 쪽이 늘 영어로 넘어가 색인되지 않음 — 언어별 쪽은 hreflang으로 알려 줌)
+  if (/bot|crawl|spider|slurp|yeti|daum|mediapartners/i.test(navigator.userAgent || '')) return;
+  var saved = null;
+  try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
+  var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
+  if (want !== 'ko') location.replace('en/' + 'download.html' + location.search + location.hash);
+})();
+</script>
+</head>
+<body class="dl-page">
+<header class="top">
+<div class="bar">
+<a class="brand" href="index.html"><span class="brand-mark"><img class="pixel" src="assets/icon.png" alt=""></span><span class="brand-text">Chickxel</span></a>
+<nav class="nav" aria-label="주 메뉴">
+<a href="index.html">홈</a>
+<a href="https://chickxel.com/gallery">갤러리</a>
+<a href="https://chickxel.com/packages">에셋</a>
+<a href="guide.html">가이드</a>
+</nav>
+<div class="account-menu" id="account-menu">
+<button class="account-btn" type="button" aria-expanded="false" aria-controls="account-dropdown"><span class="account-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="label">계정</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<div class="menu" id="account-dropdown" hidden>
+<div class="menu-head" data-when="in" hidden><span class="account-icon"></span><div><strong></strong><span></span></div></div>
+<a class="menu-item" data-when="in" href="https://chickxel.com/me" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>내 계정</a>
+<a class="menu-item" data-when="admin" href="https://chickxel.com/admin" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>관리</a>
+<a class="menu-item" data-when="out" href="https://chickxel.com/login"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>로그인</a>
+<div class="menu-sep"></div>
+<div class="menu-label">언어</div>
+<a class="menu-item" href="download.html" data-lang="ko" hreflang="ko" lang="ko"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>한국어<svg class="icon tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></a>
+<a class="menu-item" href="en/download.html" data-lang="en" hreflang="en" lang="en"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>English<svg class="icon tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></a>
+<div class="menu-sep"></div>
+<a class="menu-item discord" href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>Discord</a>
+<button class="menu-item" type="button" data-when="in" data-logout hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>로그아웃</button>
+</div>
+</div>
+</div>
+</header>
+
+<main>
+<section class="hero dl-hero">
+<div class="wrap">
+<span class="eyebrow">Download</span>
+<h1>Chickxel을 받아 주셔서 고맙습니다</h1>
+<p class="lead" id="dl-start" hidden><code id="dl-file"></code> 다운로드가 시작됩니다. 시작되지 않으면 <a id="dl-retry" href="#">다시 받기</a>를 누르세요.</p>
+<p class="lead" id="dl-pick">내 컴퓨터에 맞는 파일을 누르면 다운로드가 시작됩니다. Mac 칩은 Apple 메뉴 → 이 Mac에 관하여에서 확인합니다.</p>
+<div class="buttons dl-files">
+<a class="btn" data-os="windows" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-windows-x64.zip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Windows</a>
+<a class="btn" data-os="mac-arm64" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-arm64.zip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>macOS · Apple Silicon</a>
+<a class="btn" data-os="mac-x64" href="https://github.com/1000Pro-1997/Chickxel/releases/latest/download/Chickxel-macos-x64.zip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>macOS · Intel</a>
+</div>
+<p class="note-line">다 받은 뒤에는 아래 안내대로 처음 실행하고, <a href="guide.html#start-install">사용 가이드</a>에서 첫 사용 흐름을 따라가 보세요.</p>
+</div>
+</section>
+
+<section class="section dl-os" id="windows">
+<div class="wrap dl-doc">
+<div class="section-title"><span class="eyebrow">Windows</span><h2>처음 실행할 때 파란 경고 창이 뜨면</h2><p>Chickxel은 개인 개발자가 만든 앱이라 아직 코드 서명(Microsoft가 인정하는 게시자 인증서)이 없습니다. 그래서 Windows가 처음 보는 앱을 한 번 막습니다. 파일에 문제가 있다는 뜻은 아닙니다.</p></div>
+<p>받은 <code>Chickxel-windows-x64.zip</code>을 우클릭해 <strong>모두 압축 풀기</strong>를 누르고, 풀린 폴더의 <code>Chickxel.exe</code>를 더블클릭합니다.</p>
+<figure class="mock">
+<div class="ss" aria-hidden="true">
+<svg class="ss-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+<div class="ss-title">Windows의 PC 보호</div>
+<p>Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다. 이 앱을 실행하면 PC가 위험에 노출될 수 있습니다.</p>
+<p><span class="ss-link">추가 정보</span><span class="mark">1</span></p>
+<div class="ss-buttons"><span class="ss-btn">실행 안 함</span></div>
+</div>
+<figcaption>처음 실행할 때 뜨는 Windows의 PC 보호 창(실제 창을 따라 그린 그림). ① 추가 정보</figcaption>
+</figure>
+<p><strong>Windows의 PC 보호</strong> 창이 뜨면 ① <strong>추가 정보</strong>를 누릅니다. <strong>실행 안 함</strong>을 누르면 창만 닫히고 Chickxel은 실행되지 않습니다.</p>
+<figure class="mock">
+<div class="ss" aria-hidden="true">
+<svg class="ss-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+<div class="ss-title">Windows의 PC 보호</div>
+<p>Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다. 이 앱을 실행하면 PC가 위험에 노출될 수 있습니다.</p>
+<p class="ss-info">앱: Chickxel.exe<br>게시자: 알 수 없는 게시자<span class="mark">2</span></p>
+<div class="ss-buttons"><span class="mark">3</span><span class="ss-btn">실행</span><span class="ss-btn">실행 안 함</span></div>
+</div>
+<figcaption>추가 정보를 누른 뒤의 창. ② 게시자 ③ 실행</figcaption>
+</figure>
+<p>② 게시자가 <strong>알 수 없는 게시자</strong>로 나오는 것은 코드 서명이 없어서입니다. ③ <strong>실행</strong>을 누르면 Chickxel이 열리고, 다음부터는 이 창이 뜨지 않습니다.</p>
+<div class="note"><p><strong>창이 아예 뜨지 않게 하려면</strong>: 압축을 풀기 전에 zip을 우클릭 → <strong>속성</strong>을 누르고, 아래쪽 <strong>차단 해제</strong>에 체크해 <strong>확인</strong>을 누른 뒤 압축을 풉니다.</p></div>
+<div class="note"><p><strong>Edge에서 다운로드가 멈추면</strong>: 다운로드 목록에 "일반적으로 다운로드되지 않습니다"가 뜨면 그 줄의 <strong>기타 옵션</strong>(점 세 개) → <strong>유지</strong> → <strong>더 보기</strong> → <strong>그래도 계속</strong>을 누릅니다.</p></div>
+<div class="note"><p><strong>실행 단추 없이 막히면</strong>: <strong>스마트 앱 컨트롤</strong>이 켜진 PC는 서명 없는 앱을 실행하지 못하게 합니다. 이 기능을 끄는 것은 권하지 않으니 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a>나 <a href="https://github.com/1000Pro-1997/Chickxel/issues">문제 신고</a>로 알려 주세요.</p></div>
+<h3>경고 없이 설치하기 (PowerShell)</h3>
+<p>시작 메뉴에서 <strong>PowerShell</strong>을 열고 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. GitHub에서 최신 버전을 받아 <code>%LOCALAPPDATA%\Programs\Chickxel</code>에 설치하고, 시작 메뉴에 바로 가기를 만든 뒤 실행합니다. 브라우저로 받은 파일이 아니라서 Windows의 PC 보호 창이 뜨지 않습니다.</p>
+<div class="cmd"><code>irm https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.ps1 | iex</code><button class="cmd-copy" type="button" title="복사" aria-label="복사"><svg class="icon copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+</div>
+</section>
+
+<section class="section alt dl-os" id="macos">
+<div class="wrap dl-doc">
+<div class="section-title"><span class="eyebrow">macOS</span><h2>처음 열 때 "확인되지 않은 개발자" 경고가 뜨면</h2><p>Apple 개발자 서명이 없어서 처음 한 번 경고가 뜹니다. 파일에 문제가 있다는 뜻은 아닙니다.</p></div>
+<ol>
+<li>받은 zip을 더블클릭해 풀고, <code>Chickxel.app</code>을 <strong>응용 프로그램</strong> 폴더로 옮깁니다.</li>
+<li><code>Chickxel.app</code>을 우클릭해 <strong>열기</strong>를 누르고, 묻는 창에서 한 번 더 <strong>열기</strong>를 누릅니다.</li>
+<li>그래도 열리지 않으면 <strong>시스템 설정 → 개인정보 보호 및 보안</strong> 아래쪽의 <strong>그래도 열기</strong>를 누릅니다.</li>
+</ol>
+<h3>경고 없이 설치하기 (터미널)</h3>
+<p><strong>터미널</strong> 앱에 아래 한 줄을 붙여 넣은 뒤 Enter를 누릅니다. Mac 칩에 맞는 최신 버전을 GitHub에서 받아 <code>/Applications/Chickxel.app</code>에 설치하고 실행합니다.</p>
+<div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/1000Pro-1997/Chickxel/main/install.sh | sh</code><button class="cmd-copy" type="button" title="복사" aria-label="복사"><svg class="icon copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+</div>
+</section>
+
+<section class="section" id="verify">
+<div class="wrap dl-doc">
+<div class="section-title"><h2>받은 파일이 원본인지 확인하려면</h2></div>
+<p>Chickxel은 <a href="https://github.com/1000Pro-1997/Chickxel/releases">GitHub 릴리스</a>와 이 홈페이지에서만 배포합니다. 받은 zip의 SHA-256 값(Windows PowerShell <code>Get-FileHash 파일.zip</code>, macOS 터미널 <code>shasum -a 256 파일.zip</code>)이 릴리스에 함께 올린 <code>SHA256SUMS.txt</code>의 값과 같으면 원본 그대로입니다.</p>
+<p>설치가 안 되거나 Windows 보안이 파일을 격리했다면 알림에 나온 이름과 함께 <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a>로 알려 주세요.</p>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+<span><strong>Chickxel</strong> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/LICENSE">소스 공개 라이선스</a> · © 2026 천성훈 (1000Pro-1997)</span>
+<span><a href="https://github.com/1000Pro-1997/Chickxel">GitHub</a> · <a href="https://github.com/1000Pro-1997/Chickxel/releases">릴리스</a> · <a href="https://discord.gg/Avw7aUVxqr" target="_blank" rel="noopener">Discord</a> · <a href="https://github.com/1000Pro-1997/Chickxel/issues">문제 신고</a> · <a href="https://github.com/1000Pro-1997/Chickxel/blob/main/THIRD-PARTY-NOTICES.md">오픈 소스 고지</a></span>
+</div>
+</footer>
+<script src="nav.js?v=20261101"></script>
+<script src="download.js?v=20261103"></script>
+</body>
+</html>
