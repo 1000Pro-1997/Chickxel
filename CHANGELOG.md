@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.88 (2026-11-03)
+### Effects window: long setting names no longer push the settings off the panel
+- A script effect with a long setting name (for example "End image (frame in the range, 0 = last)") widened the name column of every row, so sliders, number fields, the frame range and the clip checkbox were cut off on the right.
+- Setting names now wrap onto more lines past a fixed width, and script sliders are a little shorter, so every control fits in the panel.
+### Guide: brought up to date
+- The website guide and the F1 help now cover the Effect Maker (new page), the Chickxel account and gallery upload, the new project dialog, the text and move tools, preview motion, multi-frame effects and the current asset manager and publishing flow.
+- Every guide screenshot was retaken from the current app.
+
 ## v1.14.87 (2026-11-03)
 ### Effect Maker: set how the preview chick moves, frame by frame
 - A settings button next to Frames opens Preview motion. Pick None, Right, Left, Up or Down (1 px per frame), or Custom to type an X/Y offset for every preview frame. It is saved in the source as `previewMotion`.

@@ -330,6 +330,90 @@ internal static class ToolsShots
         if (ToolFileShotsMenus.OpenMenuRect(m) is { } list) crop = crop.Union(list.Inflate(8));
         k.Save(m, "tools-brush-4", crop: ToolFileHelp.Clamp(crop, m), marks: [Lead(Row(m, pattern))], firstNumber: 6);
         pattern.IsDropDownOpen = false;
+
+        // 5: 그라데이션 연필 — 방식·프리셋/기본값·정지점 편집기.
+        ToolFileHelp.Tool(k, "그라데이션 연필");
+        var pencilGradient = Opt<Control>(m, "_pencilGradientBox");
+        var gradientEditor = Opt<Control>(m, "_pencilGradientEditor");
+        var presetButton = ShotKit.FindText(pencilGradient, UiStrings.GradientPencil_Presets, ancestorControl: true);
+        k.Save(m, "tools-brush-5", crop: OptionsUpTo(m, pencilGradient), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_pencilGradientMode")), 4, 0), Lead(Row(m, presetButton), 4, 0), gradientEditor,
+        ], firstNumber: 7);
+
+        // 6: 지우개 — 강도·채널.
+        ToolFileHelp.Tool(k, "지우개");
+        var eraser = Opt<Control>(m, "_eraserBox");
+        k.Save(m, "tools-brush-6", crop: OptionsUpTo(m, eraser), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_eraserNum")), 4, 0), Lead(Row(m, Opt<Control>(m, "_eraseRed")), 4, 0),
+        ], firstNumber: 10);
+
+        // 7: 연필 — 대칭 그리기(좌우·상하·피벗 기준).
+        ToolFileHelp.Tool(k, "연필");
+        ctx.MirrorX = true;
+        k.Settle(200);
+        var mirror = Opt<Control>(m, "_mirrorBox");
+        var mx = Opt<Control>(m, "_mirrorX");
+        var my = Opt<Control>(m, "_mirrorY");
+        k.Save(m, "tools-brush-7", crop: R(m, mirror).Inflate(new Thickness(30, 8, 8, 8)), marks:
+        [
+            Lead(R(m, mx).Union(R(m, my)), 4, 0), Lead(m, Opt<Control>(m, "_mirrorAtPivot"), 4, 0),
+        ], firstNumber: 12);
+    }
+
+    // 글씨 도구: 1 = 캔버스에서 끌어 만든 글상자에 글을 치는 중(①) + 도구 설정 '글씨' 묶음(②~⑦), 2 = 글꼴 목록을 펼친 모습(⑧).
+    [Shot("tools-text")]
+    public static void Text(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k), timeline: 110);
+        ShotKit.Call(m, "SetPixelGrid", false);
+        var ctx = ToolFileHelp.Ctx(m);
+        // 글이 잘 보이게 그림 레이어는 숨기고(편집 중엔 흐리게 보임) 밝은 색으로 친다.
+        ctx.Structural(() => ctx.Project!.SetLayerProperties(0, visible: false));
+        ctx.Primary = new Color32(0xFF, 0xEC, 0x27);
+        k.Settle(200);
+        ToolFileHelp.Tool(k, "글씨");
+        var start = ToolFileHelp.At(m, 2.5, 62.5);
+        var end = ToolFileHelp.At(m, 46.5, 76.5);
+        m.MouseMove(start);
+        m.MouseDown(start, MouseButton.Left);
+        for (int i = 1; i <= 12; i++)
+        {
+            m.MouseMove(start + (end - start) * (i / 12.0));
+            k.Settle(10);
+        }
+        m.MouseUp(end, MouseButton.Left);
+        k.Settle(300);
+        k.Type(m, "Wolf");
+        k.Settle(400);
+        var box = new Rect(start, end).Inflate(6);
+        var options = ToolFileHelp.Options(m);
+        var text = Opt<Control>(m, "_textBox");
+        var combo = ShotKit.Get<ComboBox>(ShotKit.Get<object>(options, "_textFont"), "Combo");
+        var addFont = ShotKit.FindText(text, UiStrings.TextTool_AddFont, ancestorControl: true);
+        var o = R(m, options);
+        double top = Math.Min(box.Y - 40, o.Y), bottom = Math.Max(box.Bottom + 40, OptionsUpTo(m, text).Bottom);
+        k.Save(m, crop: ToolFileHelp.Clamp(new Rect(box.X - 40, top, o.Right - box.X + 48, bottom - top), m), marks:
+        [
+            box,
+            Lead(Row(m, combo), 4, 0),
+            Lead(Row(m, addFont), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_textSize")), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_textAlign")), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_textLetter")).Union(Row(m, Opt<Control>(m, "_textLine"))), 4, 0),
+            Lead(Row(m, Opt<Control>(m, "_textScaleX")).Union(Row(m, Opt<Control>(m, "_textScaleY"))).Union(R(m, Opt<Control>(m, "_textSmooth"))), 4, 0),
+        ]);
+        k.Key(m, Key.Escape);
+        k.Settle(300);
+
+        // 2: 글꼴 목록.
+        combo.IsDropDownOpen = true;
+        k.Settle(500);
+        var listCrop = OptionsUpTo(m, text);
+        if (ToolFileShotsMenus.OpenMenuRect(m) is { } list) listCrop = listCrop.Union(list.Inflate(8));
+        k.Save(m, "tools-text-2", crop: ToolFileHelp.Clamp(listCrop, m), marks: [Lead(R(m, combo), 4, 0)], firstNumber: 8);
+        combo.IsDropDownOpen = false;
     }
 
     [Shot("tools-shape")]

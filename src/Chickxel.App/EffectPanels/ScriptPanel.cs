@@ -102,7 +102,7 @@ public sealed partial class LayerEffectsDialog
             Minimum = min,
             Maximum = max,
             Value = value,
-            Width = 150,
+            Width = 130,
             SmallChange = step,
             LargeChange = Math.Max(step, (max - min) / 8),
             TickFrequency = step,

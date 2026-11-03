@@ -2306,7 +2306,6 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="EffectPreset_OpenStore" xml:space="preserve"><value>Open Store</value></data>
   <data name="EffectPreset_OpenStoreTip" xml:space="preserve"><value>Find and install effects made by others in the Asset Manager's Store. Installed effects show up in this tab.</value></data>
   <data name="EffectPreset_SavePreset" xml:space="preserve"><value>Save Current Effects as Preset</value></data>
-  <data name="EffectPreset_SaveGroup" xml:space="preserve"><value>Save all effects</value></data>
   <data name="EffectPreset_SaveGroupTip" xml:space="preserve"><value>Saves every effect in the current list with its values and clipping relationships as a preset.</value></data>
   <data name="EffectPreset_PresetsHelp" xml:space="preserve"><value>Set up effects, values and clipping in the effect list, then save them as a preset. Adding a preset inserts all of those effects at once.</value></data>
   <data name="EffectPreset_Empty" xml:space="preserve"><value>No saved presets.</value></data>
@@ -3170,7 +3169,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ManagerTip" xml:space="preserve"><value>View, import, export and delete your assets and the assets you received.</value></data>
   <data name="Assets_TabInstalled" xml:space="preserve"><value>Installed</value></data>
   <data name="Assets_TabStore" xml:space="preserve"><value>Store</value></data>
-  <data name="Assets_TabBrowse" xml:space="preserve"><value>Browse</value></data>
   <data name="Assets_OpenWebsite" xml:space="preserve"><value>Open on Website</value></data>
   <data name="Assets_OpenWebsiteTip" xml:space="preserve"><value>Opens the assets page of chickxel.com in your browser (on the effects or gradients tab when that kind is filtered).</value></data>
   <data name="Assets_TabUpdates" xml:space="preserve"><value>Updates</value></data>
@@ -3182,7 +3180,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_ImportTitle" xml:space="preserve"><value>Import Asset Package</value></data>
   <data name="Assets_ImportError" xml:space="preserve"><value>Couldn't import the assets from the file: {0}</value></data>
   <data name="Assets_FileType" xml:space="preserve"><value>Chickxel asset package</value></data>
-  <data name="Assets_ExportPersonal" xml:space="preserve"><value>Export Personal Assets…</value></data>
   <data name="Assets_ExportTitle" xml:space="preserve"><value>Export as Package File</value></data>
   <data name="Assets_ExportNamePrompt" xml:space="preserve"><value>Package name</value></data>
   <data name="Assets_DefaultPackageName" xml:space="preserve"><value>My Assets</value></data>
@@ -3225,8 +3222,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_FrameReferenceTag" xml:space="preserve"><value>This effect reads other frames, so it always carries the frame-reference tag (it can't be removed and counts toward the 8 tags).</value></data>
   <data name="Publish_License" xml:space="preserve"><value>License</value></data>
   <data name="Publish_LicenseFixed" xml:space="preserve"><value>Anyone may copy, change and use this asset for any purpose without conditions, including commercial use and without credit.</value></data>
-  <data name="Publish_LicenseCustom" xml:space="preserve"><value>Custom</value></data>
-  <data name="Publish_Assets" xml:space="preserve"><value>Included assets</value></data>
   <data name="Publish_Asset" xml:space="preserve"><value>Asset</value></data>
   <data name="Publish_Preview" xml:space="preserve"><value>List preview</value></data>
   <data name="Publish_PreviewTip" xml:space="preserve"><value>The image shown in the Store list and details: the asset's preview, or a PNG you choose (up to 512×512, 1 MB).</value></data>
@@ -3251,8 +3246,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>Could not read the image file: {0}</value></data>
   <data name="Assets_PersonalHeader" xml:space="preserve"><value>My assets</value></data>
-  <data name="Assets_PackagesHeader" xml:space="preserve"><value>Installed packages</value></data>
-  <data name="Assets_DeletedHeader" xml:space="preserve"><value>Recently deleted packages</value></data>
   <data name="Assets_EmptyInstalled" xml:space="preserve"><value>No assets to show.</value></data>
   <data name="Assets_SelectHint" xml:space="preserve"><value>Select an item in the list on the left.</value></data>
   <data name="Assets_MoreIssues" xml:space="preserve"><value>- and {0} more</value></data>
@@ -3272,14 +3265,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Assets_EffectCount" xml:space="preserve"><value>{0} effects</value></data>
   <data name="Assets_FrameRangeAll" xml:space="preserve"><value>Inserted on: all frames</value></data>
   <data name="Assets_FrameRangeAdd" xml:space="preserve"><value>Inserted on: the effects window's add range</value></data>
-  <data name="Assets_Enable" xml:space="preserve"><value>Turn On</value></data>
-  <data name="Assets_Disable" xml:space="preserve"><value>Turn Off</value></data>
   <data name="Assets_Export" xml:space="preserve"><value>Export as Package File…</value></data>
-  <data name="Assets_OpenFolder" xml:space="preserve"><value>Open File Location</value></data>
   <data name="Assets_WebPage" xml:space="preserve"><value>Open Web Page</value></data>
   <data name="Assets_ViewLicense" xml:space="preserve"><value>View License</value></data>
   <data name="Assets_Delete" xml:space="preserve"><value>Delete</value></data>
-  <data name="Assets_Restore" xml:space="preserve"><value>Restore</value></data>
   <data name="Assets_Rename" xml:space="preserve"><value>Rename…</value></data>
   <data name="Assets_NamePrompt" xml:space="preserve"><value>Name</value></data>
   <data name="Assets_DuplicateName" xml:space="preserve"><value>You already have an asset named '{0}'.</value></data>
@@ -3340,8 +3329,6 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectPreset_ReceivedTileTip" xml:space="preserve"><value>A received preset of {1} effects ({0}). Double-click or drag it into the effect list.</value></data>
   <data name="ScriptEffect_Name" xml:space="preserve"><value>Script effect</value></data>
   <data name="ScriptEffect_Description" xml:space="preserve"><value>An effect you write in JavaScript. Its source is saved with the project.</value></data>
-  <data name="ScriptEffect_PaletteTitle" xml:space="preserve"><value>Script effects</value></data>
-  <data name="ScriptEffect_New" xml:space="preserve"><value>New script</value></data>
   <data name="ScriptEffect_OpenFile" xml:space="preserve"><value>Open JS file…</value></data>
   <data name="ScriptEffect_ReplaceFileTip" xml:space="preserve"><value>Replaces this effect's source with a JavaScript file (.js). Settings with the same key keep their values.</value></data>
   <data name="ScriptEffect_OpenFileTitle" xml:space="preserve"><value>Open script effect file</value></data>

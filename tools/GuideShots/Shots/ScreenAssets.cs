@@ -55,7 +55,8 @@ internal static class ScreenAssetShots
     private static Rect PadLeft(Rect r, double dx) => new(r.X - dx, r.Y, r.Width + dx, r.Height);
 
     /// <summary>
-    /// 1 = 설치됨 탭(① 탭 ② 거르기·검색 ③ 가져오기·내보내기·올리기 ④ 목록 ⑤ 상세), 2 = 상점 탭(⑥ 거르기·검색·태그·새로 고침·홈페이지에서 보기 ⑦ 목록 ⑧ 상세).
+    /// 1 = 설치됨 탭(① 탭 ② 거르기·검색 ③ 가져오기·내보내기·올리기 ④ 목록 ⑤ 상세), 2 = 상점 탭(⑥ 거르기·검색·태그·새로 고침·홈페이지에서 보기 ⑦ 목록 ⑧ 상세),
+    /// 3 = 온라인에 올리기 창(⑨ 작성자 ⑩ 패키지 ⑪ 라이선스 ⑫ 올릴 에셋 ⑬ 목록 미리보기 ⑭ 올리기 전 검사).
     /// </summary>
     [Shot("screen-asset-manager")]
     public static void AssetManager(ShotKit k)
@@ -105,5 +106,49 @@ internal static class ScreenAssetShots
                 remoteDetail,
             ], firstNumber: 6);
         }, settleMs: 700);
+
+        // 3: 온라인에 올리기 창 — 로그인한 계정(가짜 서버)으로 내 스크립트 효과 하나를 연다
+        CommunityShots.UseFakeAccount(signedIn: true);
+        var script = AppAssets.Store.SaveScript(PulseScript, null, null);
+        k.Dialog(() => _ = AssetPublishDialog.RunAsync(main, script.Id), w =>
+        {
+            ShotKit.Pump(1200);
+            Control Group(string title) => ShotKit.All<Border>(w).First(b => b.Child is StackPanel { Children: [TextBlock t, ..] } && t.Text == title);
+            var preview = ShotKit.FindText(w, UiStrings.Publish_Preview).FindAncestorOfType<Border>()!;
+            k.Save(w, "screen-asset-manager-3", marks:
+            [
+                Group(UiStrings.Publish_Author),
+                Group(UiStrings.Publish_Package),
+                Group(UiStrings.Publish_License),
+                Group(UiStrings.Publish_Asset),
+                preview,
+                Group(UiStrings.Publish_Checks),
+            ], firstNumber: 9);
+        }, settleMs: 900);
     }
+
+    private const string PulseScript = """
+        effect({
+          name: "Color pulse",
+          description: "Pulses the sprite toward a color.",
+          language: "en",
+          tags: ["color", "flash"],
+          animated: true,
+          settings: [
+            { key: "color", label: "Color", type: "color", default: "#ff6060" },
+            { key: "strength", label: "Strength", type: "int", min: 0, max: 100, default: 60 },
+          ],
+          render(img, ctx, s) {
+            const c = ctx.color("color", 0, 0);
+            const k = s.strength / 100 * Math.sin(Math.PI * ctx.progress);
+            const d = img.data;
+            for (let i = 0; i < d.length; i += 4) {
+              if (d[i + 3] === 0) continue;
+              d[i] += Math.round((c.r - d[i]) * k);
+              d[i + 1] += Math.round((c.g - d[i + 1]) * k);
+              d[i + 2] += Math.round((c.b - d[i + 2]) * k);
+            }
+          },
+        });
+        """;
 }

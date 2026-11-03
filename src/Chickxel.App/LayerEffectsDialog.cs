@@ -648,8 +648,10 @@ public sealed partial class LayerEffectsDialog : DialogBase
         SettingsRow(UiStrings.EffectPreset_ApplyTarget, clip);
     }
 
-    /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다.</summary>
+    /// <summary>설정 칸 이름 열의 크기 공유 묶음 — 모든 줄의 이름 열이 가장 긴 이름에 맞춰 같은 폭이 된다(<see cref="LabelMaxWidth"/>까지).</summary>
     private const string LabelColumn = "EffectSettingsLabel";
+    /// <summary>이름 열의 최대 폭. 긴 이름(스크립트 설정 이름 등)은 줄을 바꿔, 값 열(슬라이더·숫자 칸)이 칸 밖으로 밀려 잘리지 않게 한다.</summary>
+    private const double LabelMaxWidth = 84;
     /// <summary>위 줄에 딸린 줄(<see cref="SettingsSubRow"/>)의 이름 들여쓰기.</summary>
     private const double SubIndent = 12;
 
@@ -695,6 +697,11 @@ public sealed partial class LayerEffectsDialog : DialogBase
         if (head is not null)
         {
             head.HorizontalAlignment = HorizontalAlignment.Left;
+            if (head is TextBlock text)
+            {
+                text.TextWrapping = TextWrapping.Wrap;
+                text.MaxWidth = LabelMaxWidth;
+            }
             grid.Children.Add(head);
         }
         Grid.SetColumn(body, 1);

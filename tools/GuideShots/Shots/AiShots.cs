@@ -354,7 +354,7 @@ internal static class AiShots
     public static void Tabs(ShotKit k)
     {
         var chat = OutlineChat(k, chatWidth: 520, chatHeight: 640);
-        // Codex 탭에서 일을 맡겨 둔 채(도는 중) Claude 탭으로 돌아와 또 보내 본다.
+        // Codex 탭에서 일을 맡겨 둔 채(도는 중) Claude 탭으로 돌아와 또 보내 본다 — 보낸 글은 입력란 위 대기 줄에 들어간다.
         chat.Show(Codex);
         chat.Send(Codex, "Draw 4 walking frames", new Script().Think(800).Writing("draw_pixels", 2600).Pause());
         chat.Show(Claude);
@@ -366,7 +366,8 @@ internal static class AiShots
         k.Settle(400);
         var toggle = ShotKit.Get<Control>(chat.Window, "_providerToggle");
         WidenGutter(k, chat, Claude);
-        k.Save(chat.Window, marks: [toggle, Room(LastMessage(chat, Claude), chat.Window, left: Gutter - 2, up: 0), Room(chat.Input(Claude), chat.Window)]);
+        var pending = chat.Field<Control>(Claude, "_pending");
+        k.Save(chat.Window, marks: [toggle, Room(pending, chat.Window)]);
     }
 
     [Shot("ai-chat")]
@@ -909,15 +910,17 @@ internal static class AiShots
         var chat = OutlineChat(k, 1280, 780, 430, 640);
         var button = StepButton(chat, Claude);
         var w = chat.Window;
-        var step = (Panel)button.GetVisualParent()!;
+        var row = (Panel)button.GetVisualParent()!;
+        var step = (Panel)row.GetVisualParent()!;
         var snapshot = step.Children[0];
+        var insert = row.Children[1];
         var bubble = (Control)LastActions(chat, Claude).GetVisualParent()!;
-        // ① 결과 그림 ② 이 단계 되돌리기.
-        k.Save(w, crop: Union(w, 10, bubble, step), titleBar: false, marks: [snapshot, button]);
+        // ① 결과 그림 ② 이 단계 되돌리기 ③ 새 레이어로 넣기.
+        k.Save(w, crop: Union(w, 10, bubble, step), titleBar: false, marks: [snapshot, button, insert]);
         k.Click(button, settleMs: 400);
         chat.Main.Title = MainTitle;
-        // ③ 다시 적용(누른 뒤 — 캔버스의 외곽선도 사라짐).
-        Composite(k, "ai-undo-2", chat.Main, [(chat.Window, ChatAt)], [button], firstNumber: 3);
+        // ④ 다시 적용(누른 뒤 — 캔버스의 외곽선도 사라짐).
+        Composite(k, "ai-undo-2", chat.Main, [(chat.Window, ChatAt)], [button], firstNumber: 4);
     }
 
     [Shot("ai-edit-last")]

@@ -59,7 +59,7 @@ internal static class ScreenTimelineShots
     }
 
     /// <summary>타임라인 칸을 높여(레이어 추가 줄·효과 줄까지 보이게) 연 메인 창.</summary>
-    private static MainForm OpenTall(ShotKit k, int bottom = 330)
+    internal static MainForm OpenTall(ShotKit k, int bottom = 330)
     {
         App.Settings.BottomHeight = bottom;
         return Open(k);
@@ -73,11 +73,11 @@ internal static class ScreenTimelineShots
 
     // ───────────── 열린 메뉴·팝업 ─────────────
 
-    private static List<Popup> OpenPopups()
+    internal static List<Popup> OpenPopups()
         => ((List<Popup>)typeof(ShotKit).GetField("s_popups", Any)!.GetValue(null)!).Where(p => p.IsOpen && p.Host is not null).ToList();
 
     /// <summary>팝업 안(또는 창 안) 컨트롤의 <paramref name="top"/> 창 좌표 사각형.</summary>
-    private static Rect InWindow(Window top, Control c)
+    internal static Rect InWindow(Window top, Control c)
     {
         var host = TopLevel.GetTopLevel(c) ?? throw new InvalidOperationException("detached");
         var local = ShotKit.Bounds(c, host);
@@ -87,7 +87,7 @@ internal static class ScreenTimelineShots
     }
 
     /// <summary>열린 팝업들을 모두 감싸는 창 좌표 사각형.</summary>
-    private static Rect? PopupArea(Window top)
+    internal static Rect? PopupArea(Window top)
     {
         Rect? all = null;
         foreach (var p in OpenPopups())
@@ -125,7 +125,7 @@ internal static class ScreenTimelineShots
     /// <summary>메뉴 맨 위의 선택 표시 줄.</summary>
     private static MenuItem SelectionLine() => MenuItems().First();
 
-    private static Rect Union(Window top, params Control[] controls)
+    internal static Rect Union(Window top, params Control[] controls)
         => controls.Select(c => InWindow(top, c)).Aggregate((a, b) => a.Union(b));
 
     /// <summary>
@@ -146,7 +146,7 @@ internal static class ScreenTimelineShots
     }
 
     /// <summary>번호 동그라미가 사각형 왼쪽 위에 붙으므로, 왼쪽을 <paramref name="dx"/>만큼 넓혀 동그라미가 표시한 것을 가리지 않게.</summary>
-    private static Rect PadLeft(Rect r, double dx) => new(r.X - dx, r.Y, r.Width + dx, r.Height);
+    internal static Rect PadLeft(Rect r, double dx) => new(r.X - dx, r.Y, r.Width + dx, r.Height);
 
     /// <summary>열린 메뉴 + 누른 곳 + 타임라인 왼쪽 위(어디인지 보이게)를 담아 저장하고 메뉴를 닫는다.</summary>
     private static void SaveMenu(ShotKit k, MainForm main, string name, Rect target, IEnumerable<Mark> marks, int firstNumber)
@@ -520,14 +520,47 @@ internal static class ScreenTimelineShots
         });
         """;
 
+    /// <summary>
+    /// 설정 칸 예시(-5): 색(단색·그라데이션), 색 목록, 각도 다이얼, 점 고르기(X·Y 짝), 시드(주사위), 레이어 고르기(맨 아래 — 목록을 펼쳐도 다른 줄을 가리지 않게). 영어 이름.
+    /// </summary>
+    private const string SparksScript = """
+        effect({
+          name: "Spark burst",
+          author: "pixel-cat",
+          settings: [
+            { key: "core", label: "Core color", type: "color", default: "#fff2a0" },
+            { key: "sparks", label: "Spark colors", type: "colorList", min: 1, max: 6, default: ["#ff6060", "#60c0ff", "#80ff90"] },
+            { key: "angle", label: "Direction", type: "int", widget: "angle", min: 0, max: 359, default: 45 },
+            { key: "x", label: "Origin", type: "int", widget: "point", pair: "y", min: 0, max: 100, default: 50 },
+            { key: "y", label: "Origin Y", type: "int", min: 0, max: 100, default: 30 },
+            { key: "seed", label: "Seed", type: "int", min: 0, max: 9999, default: 1234 },
+            { key: "behind", label: "Behind layer", type: "layer", default: "Shadow" },
+          ],
+          render(img, ctx, s) {
+            const d = img.data, w = img.width, h = img.height;
+            const ox = Math.round(s.x / 100 * (w - 1)), oy = Math.round(s.y / 100 * (h - 1));
+            const a = s.angle * Math.PI / 180;
+            for (let k = 0; k < 24; k++) {
+              const r = ctx.hash(k, 0, s.seed) * w / 2;
+              const t = a + ctx.hash(k, 1, s.seed) - 0.5;
+              const x = Math.round(ox + Math.cos(t) * r), y = Math.round(oy - Math.sin(t) * r);
+              if (x < 0 || y < 0 || x >= w || y >= h) continue;
+              const c = k === 0 ? ctx.color("core", x, y) : ctx.colorAt("sparks", k % s.sparks.length, x, y);
+              const i = (y * w + x) * 4;
+              d[i] = c.r; d[i + 1] = c.g; d[i + 2] = c.b; d[i + 3] = 255;
+            }
+          },
+        });
+        """;
+
     /// <summary>docs/catalog의 공식 패키지 하나를 파일에서 가져온다(같은 상점 에셋은 바꾸고, 내용만 같은 내 에셋은 그대로 둠).</summary>
     internal static void InstallCatalogPackage(string fileName)
         => AppAssets.Store.Install(Path.Combine(ShotKit.Root, "docs", "catalog", "packages", fileName), AssetSources.File,
             item => item.SameStoreAsset ? ImportChoice.Replace : ImportChoice.KeepBoth);
 
     /// <summary>
-    /// 효과 프리셋: 1 = 프리셋 탭(① 현재 효과 프리셋 저장 ② 개인 프리셋 ③ 패키지 프리셋), 2 = 매개변수 창(⑤ 목록 ⑥ 이름 ⑦ 연결할 설정 ⑧ 범위·기본값),
-    /// 3 = 효과 창의 프리셋 묶음(⑨ 묶음 줄 ⑩ 매개변수 ⑪ 펼치기·묶음 풀기).
+    /// 효과 프리셋: 1 = 프리셋 탭(① 현재 효과 프리셋 저장 ② 개인 프리셋 ③ 받은 프리셋 — 풍선에 받은 곳), 4 = 프리셋 저장 창(④ 이름 ⑤ 미리보기 병아리),
+    /// 2 = 매개변수 창(⑥ 목록 ⑦ 이름 ⑧ 연결할 설정 ⑨ 범위·기본값), 3 = 효과 창의 프리셋 묶음(⑩ 묶음 줄 ⑪ 매개변수 ⑫ 펼치기·묶음 풀기).
     /// </summary>
     [Shot("screen-effect-recipes")]
     public static void EffectRecipes(ShotKit k)
@@ -553,7 +586,7 @@ internal static class ScreenTimelineShots
                 rows[0],
                 InWindow(w, rows[1]).Union(InWindow(w, rows[3])),
                 InWindow(w, rows[4]).Union(InWindow(w, rows[^1])),
-            ], firstNumber: 5);
+            ], firstNumber: 6);
         }, settleMs: 700);
 
         k.Dialog(() => ShotKit.Call(Timeline(main), "EditLayerEffects", body, -1, null, null), w =>
@@ -572,8 +605,34 @@ internal static class ScreenTimelineShots
             var save = ShotKit.FindText(w, UiStrings.EffectPreset_SavePreset, ancestorControl: true);
             var palette = ShotKit.Bounds((Control)tabs.Parent!, w);
             var last = tiles.Select(c => ShotKit.Bounds(c, w).Bottom).DefaultIfEmpty(palette.Y + 200).Max();
-            k.Save(w, "screen-effect-recipes", crop: new Rect(palette.X, palette.Y, palette.Width, last - palette.Y).Inflate(10).Intersect(new Rect(w.ClientSize)),
+            // 받은 프리셋 아래에 풍선(받은 곳·효과 수)을 띄워 둔다
+            ToolTip.SetPlacement(package, PlacementMode.Bottom);
+            ToolTip.SetIsOpen(package, true);
+            ShotKit.Pump(600);
+            var tabArea = new Rect(palette.X, palette.Y, palette.Width, last - palette.Y);
+            if (PopupArea(w) is { } tip) tabArea = tabArea.Union(tip);
+            k.Save(w, "screen-effect-recipes", crop: tabArea.Inflate(10).Intersect(new Rect(w.ClientSize)),
                 marks: [save, Union(w, [.. personal]), package]);
+            ToolTip.SetIsOpen(package, false);
+            w.MouseMove(new Point(4, 4));
+            ShotKit.Pump(300);
+
+            // 4: 현재 효과 프리셋 저장 창 — 이름을 적고 미리보기 병아리를 고른 모습
+            k.Dialog(() => ShotKit.Call(w, "SavePresetGroup"), d =>
+            {
+                var name = ShotKit.Get<AutoCompleteBox>(d, "_name");
+                name.Text = "Golden hit";
+                ShotKit.Pump(100);
+                // 처음 이름을 모두 고른 표시가 남지 않게 커서를 끝으로
+                var nameBox = name.GetVisualDescendants().OfType<TextBox>().First();
+                nameBox.SelectionStart = nameBox.SelectionEnd = nameBox.CaretIndex = name.Text.Length;
+                var chicks = ShotKit.Get<ListBox>(d, "_chicks");
+                chicks.SelectedIndex = PreviewChicks.Ids.ToList().IndexOf("knight");
+                ShotKit.Pump(400);
+                var form = (Panel)name.Parent!;
+                var label = form.Children[form.Children.IndexOf(name) - 1];
+                k.Save(d, "screen-effect-recipes-4", marks: [Union(d, label, name), chicks], firstNumber: 4);
+            }, settleMs: 600);
 
             // 3: 레시피를 넣고 묶음 줄을 고른다
             var recipe = AppAssets.Catalog.Find(hurt.Id)!.Recipe!;
@@ -597,13 +656,14 @@ internal static class ScreenTimelineShots
                 PadLeft(InWindow(w, item), 10),
                 PadLeft(Union(w, [.. children.Skip(start).Take(children.Count - 1 - start)]), 10),
                 PadLeft(InWindow(w, children[^1]), 10),
-            ], firstNumber: 9);
+            ], firstNumber: 10);
         }, settleMs: 900);
     }
 
     /// <summary>
     /// 스크립트 효과: 1 = 효과 창(① 효과 탭의 개인 스크립트 효과 상자 ② 이름·상태 ③ 편집·파일 열기 ④ 에셋으로 저장 ⑤ 설정 칸),
-    /// 2 = 편집 창(⑥ 안내 ⑦ 원문 ⑧ 오류 목록 ⑨ 적용·닫기), 3 = 실행 확인 창(⑩ 스크립트 목록 ⑪ 실행·실행 안 함).
+    /// 5 = 여러 설정 종류의 설정 칸(⑥ 색 ⑦ 색 목록 ⑧ 각도 ⑨ 점 ⑩ 레이어 고르기(펼침) ⑪ 시드),
+    /// 2 = 편집 창(⑫ 안내 ⑬ 원문 ⑭ 오류 목록 ⑮ 적용·닫기), 4 = 자동 완성(⑯), 3 = 실행 확인 창(⑰ 스크립트 목록 ⑱ 실행·실행 안 함).
     /// </summary>
     [Shot("screen-script-effects")]
     public static void ScriptEffects(ShotKit k)
@@ -647,8 +707,8 @@ internal static class ScreenTimelineShots
                 PadLeft(Union(w, fields), 10),
             ]);
 
-            // 2: 편집 창 — 오류가 있는 원문을 적용한 모습
-            ShotKit.Call(w, "OpenScriptEditor", ShotKit.Get<System.Collections.IList>(w, "_effects").Count - 1, PulseScript.Replace("const k = s.strength", "const k = s.strength *"));
+            // 2: 편집 창 — 오류가 있는 원문을 적용한 모습(* 하나를 빠뜨려 "Math" 아래 물결선)
+            ShotKit.Call(w, "OpenScriptEditor", ShotKit.Get<System.Collections.IList>(w, "_effects").Count - 1, PulseScript.Replace("/ 100 * Math.sin", "/ 100 Math.sin"));
             ShotKit.Pump(800);
             var editor = ShotKit.Get<Window>(w, "_scriptEditor");
             ShotKit.Call(editor, "Apply");
@@ -658,9 +718,63 @@ internal static class ScreenTimelineShots
             var errors = ShotKit.Get<Control>(editor, "_errors");
             var apply = ShotKit.FindText(editor, UiStrings.ScriptEditor_Apply, ancestorControl: true);
             var buttons = (Control)apply.GetVisualAncestors().OfType<StackPanel>().First(s => s.Orientation == Orientation.Horizontal);
-            k.Save(editor, "screen-script-effects-2", marks: [hint, code, errors, buttons], firstNumber: 6);
+            k.Save(editor, "screen-script-effects-2", marks: [hint, code, errors, buttons], firstNumber: 12);
+
+            // 4: 자동 완성 — render 안 빈 줄에 "ctx."를 치고 첫 후보를 고른 모습(후보 옆에 한 줄 설명). 설명 풍선이 잘리지 않게 창을 넓힌다
+            editor.Width = 980;
+            ShotKit.Set(code, "Text", PulseScript.Replace("    const d = img.data;\n", "    const d = img.data;\n    \n"));
+            ShotKit.Call(editor, "ShowErrors", (IReadOnlyList<Chickxel.Core.Scripting.ScriptError>)[], false);
+            ShotKit.Pump(400);
+            ShotKit.Call(code, "GoTo", 13, 5);
+            ShotKit.Pump(200);
+            editor.KeyTextInput("ctx.");
+            ShotKit.Pump(500);
+            editor.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.None, null);
+            editor.KeyRelease(Key.Down, RawInputModifiers.None, PhysicalKey.None, null);
+            ShotKit.Pump(800);
+            var completion = PopupArea(editor) ?? throw new InvalidOperationException("no completion list");
+            var codeBox = InWindow(editor, code);
+            var shown = codeBox.Union(completion);
+            k.Save(editor, "screen-script-effects-4", crop: new Rect(shown.X - 8, codeBox.Y - 1, shown.Width + 16, shown.Bottom - codeBox.Y + 9).Intersect(new Rect(editor.ClientSize)),
+                // 번호 동그라미가 방금 친 "ctx."를 가리지 않게 테두리를 후보 목록 안쪽 빈칸에서 시작
+                marks: [new Rect(completion.X + 10, completion.Y, completion.Width - 10, completion.Height)], firstNumber: 16);
             editor.Close();
             ShotKit.Pump(300);
+
+            // 5: 여러 설정 종류의 설정 칸 — 레이어 고르기 목록을 펼친 모습(첫 항목 "(없음)", 그다음 문서 레이어 위→아래)
+            string sparks = project.AddScript(SparksScript);
+            trust.GetMethod("TrustLocal", Any)!.Invoke(null, [sparks]);
+            ShotKit.Call(w, "AddScriptEffect", sparks);
+            // 설정 칸 스크롤 높이 제한을 풀어 모든 설정 줄이 한 번에 보이게 하고, 맨 아래 레이어 고르기 목록이 아래로 펼쳐질 빈자리를 둔다
+            // (창 높이는 그대로라 그림 밖인 공통 설정 묶음을 잠시 숨겨 설정 칸을 위로 올리고, 창을 화면 위로 올려 목록이 화면 밖으로 넘지 않게)
+            var common = GroupOf((Control)ShotKit.Get<Control>(w, "_expandCanvas").Parent!, ShotKit.Get<ListBox>(w, "_list"));
+            common.IsVisible = false;
+            settings.GetVisualAncestors().OfType<ScrollViewer>().First().MaxHeight = double.PositiveInfinity;
+            settings.Margin = new Thickness(0, 0, 0, 170);
+            w.Position = new PixelPoint(w.Position.X, 0);
+            ShotKit.Pump(1500);
+            var rows = settings.Children.ToList();
+            Control RowOf(Control c) => c.GetVisualAncestors().OfType<Control>().Prepend(c).First(a => rows.Contains(a));
+            Control RowNamed(string label) => RowOf(ShotKit.All<TextBlock>(settings).First(t => t.Text == label && t.IsEffectivelyVisible));
+            var layerBox = ShotKit.All<ComboBox>(settings).First(c => c.Items.Contains(UiStrings.ScriptEffect_LayerNone));
+            var first = RowOf(ShotKit.All<ColorField>(settings).First());
+            var seed = RowNamed("Seed");
+            layerBox.IsDropDownOpen = true;
+            ShotKit.Pump(500);
+            var drop = PopupArea(w) ?? throw new InvalidOperationException("no layer list");
+            var layerRow = RowOf(layerBox);
+            var panel = Union(w, first, layerRow).Union(drop);
+            k.Save(w, "screen-script-effects-5", crop: PadLeft(panel, 14).Inflate(10).Intersect(new Rect(w.ClientSize)), marks:
+            [
+                PadLeft(InWindow(w, first), 10),
+                PadLeft(InWindow(w, RowNamed("Spark colors")), 10),
+                PadLeft(InWindow(w, RowNamed("Direction")), 10),
+                PadLeft(InWindow(w, RowNamed("Origin")), 10),
+                PadLeft(InWindow(w, layerRow).Union(drop), 10),
+                PadLeft(InWindow(w, seed), 10),
+            ], firstNumber: 6);
+            layerBox.IsDropDownOpen = false;
+            ShotKit.Pump(200);
         }, settleMs: 900);
 
         // 3: 실행 확인 창(처음 보는 스크립트가 든 프로젝트를 열 때)
@@ -670,11 +784,11 @@ internal static class ScreenTimelineShots
         {
             var list = ShotKit.All<ScrollViewer>(w).First(s => s.IsEffectivelyVisible && s.Content is StackPanel);
             var buttons = Union(w, ShotKit.Get<Control>(trustDialog, "OkButton"), ShotKit.Get<Control>(trustDialog, "CancelButtonControl"));
-            k.Save(w, "screen-script-effects-3", marks: [list, PadLeft(buttons, 10)], firstNumber: 10);
+            k.Save(w, "screen-script-effects-3", marks: [list, PadLeft(buttons, 10)], firstNumber: 17);
         }, settleMs: 600);
     }
 
     /// <summary><paramref name="c"/>를 담은 묶음(<paramref name="sibling"/>과 같은 세로 줄에 놓인 Ui.Group 테두리).</summary>
-    private static Control GroupOf(Control c, Control sibling)
+    internal static Control GroupOf(Control c, Control sibling)
         => c.GetVisualAncestors().OfType<Control>().First(a => ReferenceEquals(a.GetVisualParent(), sibling.GetVisualParent()));
 }

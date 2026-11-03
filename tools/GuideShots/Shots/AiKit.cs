@@ -184,7 +184,11 @@ internal sealed class AiChat
             using var icon = new Bitmap(stream);
             ctx.DrawImage(icon, new Rect(r.X + 10, r.Y + 8, 16, 16));
         }
-        var text = new FormattedText(title, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Malgun Gothic, Segoe UI"), 13, Brushes.Gainsboro);
+        // 좁은 창(작게 보기 등)이면 제목을 단추 자리 앞에서 말줄임
+        var text = new FormattedText(title, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Malgun Gothic, Segoe UI"), 13, Brushes.Gainsboro)
+        {
+            MaxTextWidth = Math.Max(1, r.Width - 34 - 140), MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis,
+        };
         ctx.DrawText(text, new Point(r.X + 34, r.Y + (r.Height - text.Height) / 2));
         var pen = new Pen(Brushes.Gainsboro, 1);
         double x = r.Right - 128;

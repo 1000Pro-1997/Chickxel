@@ -146,6 +146,26 @@ internal static class StartShots
         k.Save(main, marks: [Pad(openFolder, main, 8), Pad(recent, main, 12), new Rect(browser.X, browser.Y + 56, browser.Width, browser.Height - 56), new Rect(hubRect.X - 12, hubRect.Y, hubRect.Width + 12, hubRect.Height)]);
     }
 
+    // 새 프로젝트 창(클립보드에 그림이 있을 때): ① 클립보드 그림 붙여넣기 ② 캔버스 크기 ③ 시작 방식 ④ 배경 투명.
+    [Shot("start-new-project")]
+    public static void NewProject(ShotKit k)
+    {
+        var main = k.Main();
+        k.Settle(300);
+        var wolf = PngIO.Load(ShotKit.SamplePng);
+        k.Dialog(() => new NewImageDialog(32, 32, null, wolf).ShowDialog(main), w =>
+        {
+            var paste = ShotKit.Get<CheckBox>(w, "_paste");
+            paste.IsChecked = true;
+            ShotKit.Pump(200);
+            var size = (Control)ShotKit.Get<Control>(w, "_w").Parent!;
+            var normal = ShotKit.Get<Control>(w, "_normal");
+            var parts = ShotKit.Get<Control>(w, "_parts");
+            var transparent = ShotKit.Get<Control>(w, "_transparent");
+            k.Save(w, marks: [(Control)paste.Parent!, size, ShotKit.Bounds(normal, w).Union(ShotKit.Bounds(parts, w)), transparent]);
+        });
+    }
+
     private static Rect Pad(Control c, Visual top, double left)
     {
         var r = ShotKit.Bounds(c, top);
