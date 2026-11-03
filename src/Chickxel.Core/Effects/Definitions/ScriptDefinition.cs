@@ -52,6 +52,13 @@ public static class ScriptDefinition
     internal static bool ReadsRenderedFrames(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedFrames: true };
 
+    /// <summary>
+    /// 실행하는 스크립트가 <c>ctx.frameSource</c>로 다른 프레임 원본을 읽는지 — 셀이 없는 프레임에도 빈 그림 위에 그린다(<see cref="LayerEffects.GeneratesContent"/>:
+    /// 첫·끝 그림만 두고 사이를 비운 변신이 사이 프레임을 채움). <c>ctx.renderedFrameSource</c>만 쓰는 잔상은 그대로 셀이 있는 프레임에만 그린다.
+    /// </summary>
+    public static bool ReadsFrameSources(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsOtherFrames: true };
+
     /// <summary>실행하는 스크립트가 다른 레이어(<c>ctx.layer</c> 등)나 <c>ctx.slice</c>를 읽는지 — 그릴 때 <see cref="ScriptLayerContext"/>를 넘긴다.</summary>
     public static bool UsesOtherLayers(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted
@@ -64,6 +71,10 @@ public static class ScriptDefinition
     /// <summary>실행하는 스크립트가 다른 레이어를 효과까지 입혀 읽는지(<c>ctx.layerWithEffects</c>).</summary>
     internal static bool ReadsRenderedLayers(ScriptEffect effect)
         => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsRenderedLayers: true };
+
+    /// <summary>실행하는 스크립트가 <c>ctx.frameTag</c>를 읽는지 — 그릴 때 그 프레임이 든 태그 이름을 넘긴다(<see cref="LayerEffects.WithFrameTag"/>).</summary>
+    public static bool ReadsFrameTag(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { ReadsFrameTag: true };
 
     private static JsonObject WriteSettings(LayerEffect effect) => ((ScriptEffect)effect).Settings.ToJson();
 

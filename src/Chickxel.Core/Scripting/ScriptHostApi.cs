@@ -178,6 +178,9 @@ internal static class ScriptHostApi
         Define(ctx, "frame", frame.FrameIndex);
         Define(ctx, "step", frame.FrameStep);
         Define(ctx, "span", frame.FrameSpan);
+        Define(ctx, "rangeStart", frame.RangeStart);
+        Define(ctx, "rangeEnd", frame.RangeEnd);
+        ctx.DefineOwnProperty("frameTag", new PropertyDescriptor(new JsString(frame.FrameTag), Fixed));
 
         // 다른 프레임 원본: 부를 때마다 새 사본이라 고쳐도 원본과 다음 호출에 닿지 않는다
         var frameSource = frame.FrameSource;
@@ -207,6 +210,32 @@ internal static class ScriptHostApi
             result.DefineOwnProperty("image", new PropertyDescriptor(CreateImage(sandbox, picture).Image, Fixed));
             Define(result, "offsetX", offsetX);
             Define(result, "offsetY", offsetY);
+            result.PreventExtensions();
+            return result;
+        });
+
+        // 두 그림의 불투명 픽셀 짝 { count, data: [ax, ay, bx, by, …] }(ScriptPixelMatch — 빠른 경로와 같은 계산). 한쪽이 null·undefined면 null
+        Method(ctx, engine, "matchPixels", 2, args =>
+        {
+            var first = Arg(args, 0);
+            var second = Arg(args, 1);
+            if (first.IsNull() || first.IsUndefined() || second.IsNull() || second.IsUndefined()) return JsValue.Null;
+            var a = new JintPixels(engine, ReadImage(engine, first));
+            var b = new JintPixels(engine, ReadImage(engine, second));
+            var mode = Arg(args, 2);
+            var pairs = ScriptPixelMatch.Match(a, b, mode is JsString && mode.AsString() == ScriptPixelMatch.ColorMode);
+            var values = new JsValue[pairs.Count * 4];
+            for (int k = 0, j = 0; k < pairs.Count; k++, j += 4)
+            {
+                var (ax, ay, bx, by) = pairs[k];
+                values[j] = JsNumber.Create(ax);
+                values[j + 1] = JsNumber.Create(ay);
+                values[j + 2] = JsNumber.Create(bx);
+                values[j + 3] = JsNumber.Create(by);
+            }
+            var result = new JsObject(engine);
+            Define(result, "count", pairs.Count);
+            result.DefineOwnProperty("data", new PropertyDescriptor(new JsArray(engine, values), Fixed));
             result.PreventExtensions();
             return result;
         });
@@ -325,6 +354,23 @@ internal static class ScriptHostApi
     }
 
     private readonly record struct ImageView(int Width, int Height, ArrayInstance Data);
+
+    // ctx.matchPixels가 읽는 그림(칸 값은 ReadPixel처럼 — 숫자가 아니면 TypeError)
+    private readonly struct JintPixels(Engine engine, ImageView image) : IScriptPixels
+    {
+        public int Width => image.Width;
+        public int Height => image.Height;
+
+        public byte Alpha(int index)
+        {
+            uint at = (uint)index * 4 + 3;
+            return image.Data[at] is JsNumber n
+                ? ToByte(n.AsNumber())
+                : throw new JavaScriptException(engine.Intrinsics.TypeError, DomainStrings.FormatScript_InvalidImageData(length: Length(image.Data), index: at));
+        }
+
+        public Color32 Color(int index) => ReadPixel(engine, image.Data, (uint)index * 4);
+    }
 
     private static ImageView ReadImage(Engine engine, JsValue value)
     {

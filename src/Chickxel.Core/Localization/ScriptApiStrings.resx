@@ -25,6 +25,7 @@
   <data name="Api_effect_area" xml:space="preserve"><value>계산 범위: "global"(기본, 프레임마다 한 번) 또는 "local"(조각마다, radius만큼 여유).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>area가 "local"일 때 조각 둘레에 붙일 여유 px.</value></data>
   <data name="Api_effect_previewChick" xml:space="preserve"><value>온라인에 올릴 때 미리보기에 쓸 병아리 ID(기본 "original").</value></data>
+  <data name="Api_effect_previewEndChick" xml:space="preserve"><value>여러 프레임에 걸쳐 그림을 바꾸는 효과의 끝 그림 병아리 ID(선택). 미리보기의 마지막 칸이 이 병아리이고 ctx.frameSource(ctx.rangeEnd)로 읽습니다.</value></data>
   <data name="Api_effect_previewFrames" xml:space="preserve"><value>미리보기·올릴 때 미리보기에서 효과를 돌리는 칸 수(2~20, 기본 10).</value></data>
   <data name="Api_effect_settings" xml:space="preserve"><value>효과 창에 보일 설정 칸 목록. 값은 render의 s.키로 읽습니다.</value></data>
   <data name="Api_effect_padding" xml:space="preserve"><value>효과가 그림 밖으로 넓히는 여백: 고정 [왼, 위, 오른, 아래] 또는 설정·크기로 계산하는 함수.</value></data>
@@ -72,6 +73,9 @@
   <data name="Api_ctx_frame" xml:space="preserve"><value>그리는 프레임 번호(0부터).</value></data>
   <data name="Api_ctx_step" xml:space="preserve"><value>효과 범위 첫 프레임부터 몇 프레임째인지(0부터).</value></data>
   <data name="Api_ctx_span" xml:space="preserve"><value>효과 범위 길이 − 1.</value></data>
+  <data name="Api_ctx_rangeStart" xml:space="preserve"><value>효과 범위 첫 프레임 번호(0부터). 효과 만들기 미리보기에서는 0.</value></data>
+  <data name="Api_ctx_rangeEnd" xml:space="preserve"><value>효과 범위 마지막 프레임 번호(rangeStart + span). 효과 만들기 미리보기에서는 마지막 칸 번호.</value></data>
+  <data name="Api_ctx_frameTag" xml:space="preserve"><value>그리는 프레임이 든 애니메이션 태그 이름(태그가 겹치면 첫 태그). 태그 밖이거나 프로젝트 밖(미리보기)이면 "".</value></data>
   <data name="Api_ctx_source" xml:space="preserve"><value>여백을 넣은 그림 안의 원본 자리 { x, y, w, h }.</value></data>
   <data name="Api_ctx_pivot" xml:space="preserve"><value>피벗 자리 { x, y }(그림 좌표).</value></data>
   <data name="Api_ctx_color" xml:space="preserve"><value>색 설정 key의 (x, y) 색 { r, g, b, a }. 그라데이션이 없으면 단색 그대로, 있으면 효과 전 그림의 불투명 범위(bounds { x, y, w, h }를 주면 그 범위)로 공식 효과와 같게 고릅니다.</value></data>
@@ -84,9 +88,12 @@
   <data name="Api_ctx_random" xml:space="preserve"><value>프레임·시드로 정해지는 0 이상 1 미만의 수(늘 같음).</value></data>
   <data name="Api_ctx_frameSource" xml:space="preserve"><value>다른 프레임의 효과 원본(효과 없이, 같은 크기). 없으면 null.</value></data>
   <data name="Api_ctx_renderedFrameSource" xml:space="preserve"><value>deferred 효과만: 다른 프레임에 이 레이어의 다른(미루지 않는) 효과를 입힌 그림 { image, offsetX, offsetY }(원본 대비 위치). 원본이 없거나 크기가 다르거나 deferred가 아니면 null.</value></data>
+  <data name="Api_ctx_matchPixels" xml:space="preserve"><value>두 그림 a·b(img, ctx.frameSource·ctx.layer 결과 — 크기가 달라도 됨)의 불투명 픽셀(알파가 0보다 큼)을 짝지어 { count, data }로 줍니다. data는 짝마다 [ax, ay, bx, by](a와 b의 픽셀 좌표)를 이어 붙인 배열이고, count는 두 그림의 불투명 픽셀 수 중 큰 값(한쪽이 0이면 0)이라 적은 쪽 픽셀은 여러 번 쓰입니다(모이거나 갈라짐). 짝은 그림마다 불투명 범위를 같은 격자로 늘린 힐베르트 곡선 차례로 부위끼리 이어지고, mode가 "color"면 밝기 차례가 먼저입니다(기본 "position"). a나 b가 null이면 null.</value></data>
   <data name="Api_rendered_image" xml:space="preserve"><value>효과를 입힌 그림(여백 포함, 부를 때마다 새 사본).</value></data>
   <data name="Api_rendered_offsetX" xml:space="preserve"><value>그 그림 왼쪽 위의 X(원본 왼쪽 위 기준, 여백만큼 음수).</value></data>
   <data name="Api_rendered_offsetY" xml:space="preserve"><value>그 그림 왼쪽 위의 Y(원본 왼쪽 위 기준, 여백만큼 음수).</value></data>
+  <data name="Api_matched_count" xml:space="preserve"><value>짝 수(두 그림의 불투명 픽셀 수 중 큰 값, 한쪽이 0이면 0).</value></data>
+  <data name="Api_matched_data" xml:space="preserve"><value>짝 k의 a 좌표(ax, ay)와 b 좌표(bx, by)를 data[k * 4] ~ data[k * 4 + 3]에 담은 숫자 배열(길이 count × 4, 짝은 a 차례).</value></data>
   <data name="Api_ctx_source_x" xml:space="preserve"><value>원본 왼쪽 px.</value></data>
   <data name="Api_ctx_source_y" xml:space="preserve"><value>원본 위쪽 px.</value></data>
   <data name="Api_ctx_source_w" xml:space="preserve"><value>원본 너비 px.</value></data>

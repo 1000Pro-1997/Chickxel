@@ -35,9 +35,11 @@ public static class ScriptGradientCheck
 
     /// <summary>
     /// 그려 보는 안내(설정 차례). <paramref name="chicks"/>가 없으면 모든 견본 병아리(<see cref="PreviewChicks"/>). 칸은 선언의 <c>previewFrames</c>
-    /// (<see cref="ScriptFrameContext.PreviewStep"/>). 실행 오류가 난 견본은 건너뛴다(오류는 검증이 따로 알린다). 색 설정이 없으면 그리지 않는다.
+    /// (<see cref="ScriptFrameContext.PreviewStep"/>)이고 <paramref name="end"/>(끝 그림 병아리, 보통 선언의 <c>previewEndChick</c>)가 있으면 칸 원본·다른 프레임 원본은
+    /// 미리보기와 같다(<see cref="AssetPreview.ScriptFrame"/>). 실행 오류가 난 견본은 건너뛴다(오류는 검증이 따로 알린다). 색 설정이 없으면 그리지 않는다.
     /// </summary>
-    public static IReadOnlyList<ScriptGradientHint> Render(ScriptEffectProgram program, IReadOnlyList<PixelImage>? chicks = null, CancellationToken cancel = default)
+    public static IReadOnlyList<ScriptGradientHint> Render(ScriptEffectProgram program, IReadOnlyList<PixelImage>? chicks = null, PixelImage? end = null,
+        CancellationToken cancel = default)
     {
         var slots = Slots(program);
         if (slots.Count == 0) return [];
@@ -57,9 +59,9 @@ public static class ScriptGradientCheck
                 for (int step = 0; step < steps && !varies; step++)
                 {
                     cancel.ThrowIfCancellationRequested();
-                    var frame = ScriptFrameContext.PreviewStep(step, steps);
-                    if (Draw(program, chick, frame, solid, cancel) is not { } a
-                        || Draw(program, chick, frame with { Gradients = gradients }, solid, cancel) is not { } b) continue;
+                    var (source, frame) = AssetPreview.ScriptFrame(chick, end, step, steps);
+                    if (Draw(program, source, frame, solid, cancel) is not { } a
+                        || Draw(program, source, frame with { Gradients = gradients }, solid, cancel) is not { } b) continue;
                     if (!a.ContentEquals(b)) varies = true;
                     else flat.Add((chick, step, a));
                 }
@@ -70,7 +72,8 @@ public static class ScriptGradientCheck
             foreach (var (chick, step, image) in flat)
             {
                 cancel.ThrowIfCancellationRequested();
-                if (Draw(program, chick, ScriptFrameContext.PreviewStep(step, steps), other, cancel) is { } c && !c.ContentEquals(image))
+                var (source, frame) = AssetPreview.ScriptFrame(chick, end, step, steps);
+                if (Draw(program, source, frame, other, cancel) is { } c && !c.ContentEquals(image))
                 {
                     hints.Add(Hint(program, setting, slot));
                     break;

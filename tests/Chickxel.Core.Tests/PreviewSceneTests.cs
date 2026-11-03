@@ -594,6 +594,8 @@ public class PreviewSceneTests
         var plain = ScriptEffectProgram.Parse("effect({ name: 'x', tags: ['a'], render(img, ctx) { ctx.frameSource(0); } });").Program!;
         var asset = ScriptAsset.From("", plain);
         Assert.False(asset.ReadsOtherLayers);
-        Assert.Equal(["a"], asset.Tags);
+        Assert.True(asset.ReadsOtherFrames);
+        Assert.Equal(["a", ScriptAsset.FrameReferenceTag], asset.Tags);
+        Assert.False(reads.ReadsOtherFrames);
     }
 }

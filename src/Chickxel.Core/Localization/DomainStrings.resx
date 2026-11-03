@@ -253,6 +253,7 @@
   <data name="Script_InvalidSettingWidget" xml:space="preserve"><value>설정 {key}의 widget이 잘못되었습니다. int 설정에 "angle"을 쓰거나, "point"와 함께 pair에 모양을 정하지 않은 다른 int 설정 키를 적습니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingCount" xml:space="preserve"><value>목록 설정 {key}의 min, max는 0~{max} 정수여야 하고 min이 max보다 클 수 없습니다.</value><comment>key = 설정 키; max = 항목 수 한도.</comment></data>
   <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick은 병아리 ID 문자열(소문자·숫자·하이픈, 예: "knight")이어야 합니다.</value></data>
+  <data name="Script_InvalidPreviewEndChick" xml:space="preserve"><value>previewEndChick은 병아리 ID 문자열(소문자·숫자·하이픈, 예: "wizard")이어야 합니다.</value></data>
   <data name="Script_InvalidPreviewFrames" xml:space="preserve"><value>previewFrames는 {min}~{max} 정수여야 합니다.</value><comment>min·max = 미리보기 칸 수 범위.</comment></data>
   <data name="Script_InvalidTranslations" xml:space="preserve"><value>translations는 언어 코드(예: "en", "ja", "zh-Hans")를 키로, 그 언어의 name·description·labels를 값으로 둔 객체여야 합니다(언어 {max}개까지).</value><comment>max = 언어 수 한도.</comment></data>
   <data name="Script_InvalidTranslationLanguage" xml:space="preserve"><value>translations의 '{code}'는 언어 코드(예: "en", "ja", "zh-Hans")가 아니거나 겹칩니다.</value><comment>code = 적은 언어 코드.</comment></data>
@@ -387,6 +388,8 @@
   <data name="Publish_RecipeNotPublishable" xml:space="preserve"><value>효과 프리셋(여러 효과와 값을 묶은 것)은 올릴 수 없습니다. 효과는 스크립트 효과만 올립니다.</value></data>
   <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>다른 레이어를 읽는 효과에는 layer-reference 태그가 있어야 합니다.</value><comment>layer-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
   <data name="Publish_LayerReferenceTagFull" xml:space="preserve"><value>다른 레이어를 읽는 효과에는 layer-reference 태그가 붙어야 하는데 태그가 이미 8개입니다. 태그를 하나 빼세요.</value><comment>layer-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
+  <data name="Publish_FrameReferenceTag" xml:space="preserve"><value>다른 프레임을 읽는 효과에는 frame-reference 태그가 있어야 합니다.</value><comment>frame-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
+  <data name="Publish_FrameReferenceTagFull" xml:space="preserve"><value>다른 프레임을 읽는 효과에는 frame-reference 태그가 붙어야 하는데 태그가 8개를 넘습니다. 태그를 빼세요.</value><comment>frame-reference는 태그 이름 그대로(번역하지 않음).</comment></data>
   <data name="PreviewScene_Invalid" xml:space="preserve"><value>미리보기 장면 값이 올바르지 않습니다: {detail}</value><comment>detail = 틀린 값 이름(기술 값, 번역하지 않음).</comment></data>
   <data name="PreviewScene_TooLarge" xml:space="preserve"><value>미리보기 장면이 너무 큽니다: 레이어 × 프레임 칸이 {cells}개인데 이 크기에서는 {max}개까지 저장할 수 있습니다. 레이어나 프레임을 줄이거나 캔버스를 작게 하세요.</value><comment>cells = 레이어 수 × 프레임 수, max = 이 캔버스 크기에서 저장 그림(512×512)에 들어가는 칸 수.</comment></data>
   <data name="PreviewScene_NoChick" xml:space="preserve"><value>미리보기 장면에 병아리 레이어가 없거나 첫 프레임의 병아리가 비어 있습니다.</value></data>

@@ -13,7 +13,8 @@ namespace Chickxel.App;
 /// 병아리 견본, 선언의 <c>previewFrames</c>칸 — 미리보기 아래 칸 띠에서 칸마다 볼 수 있음)로 확인하고, 내 스크립트 에셋으로 저장·지금 레이어에 넣기·검증·올리기(게시 창으로 이어짐)를 한다.
 /// 세 칸: 왼쪽은 내 효과 목록(모두 보기를 켜면 복사본·받은 에셋의 스크립트도)과 제목·설명 칸, 가운데는 원문, 오른쪽은 미리보기와 미리보기 장면.
 /// 아래 줄 저장·넣기 옆의 상태 단추는 상태를 색(초록 = 문제 없음, 빨강 = 오류, 노랑 = 경고만)과 짧은 글로 보이고, 누르면 자세한 상태(오류 줄 — 누르면 원문의 그 자리로)를 띄운다.
-/// 제목·설명·병아리·프레임 수 칸은 원문 선언의 <c>name</c>·<c>description</c>·<c>previewChick</c>·<c>previewFrames</c>를 고친다(원문 하나가 효과 하나 — 어느 앱에서나 같은 효과).
+/// 제목·설명·병아리·끝 그림 병아리·프레임 수 칸은 원문 선언의 <c>name</c>·<c>description</c>·<c>previewChick</c>·<c>previewEndChick</c>·<c>previewFrames</c>를 고친다
+/// (원문 하나가 효과 하나 — 어느 앱에서나 같은 효과).
 /// 미리보기 설정 값의 "기본값으로"는 지금 값을 선언 settings의 <c>default</c>로 쓰고, "초기화"는 값을 원문의 기본값으로 되돌린다.
 /// 기본 효과를 합친 레시피는 여기서 만들지 않는다(효과 창의 "전체 효과 저장" — 내 컴퓨터에서만 쓰고 온라인에 올리지 않음).
 /// 창은 하나만 열리고(모달이 아님) 메인 편집기와 함께 쓴다.
@@ -30,6 +31,8 @@ public sealed class EffectMakerWindow : Window
     private const int AiPanelWidth = 380;
     /// <summary>AI 칸을 닫았을 때의 창 최소 너비(열면 칸 너비만큼 더함).</summary>
     private const int BaseMinWidth = 980;
+    /// <summary>작게 보기의 미리보기 크기(메인 편집기에서 장면을 고치는 동안).</summary>
+    private const int CompactPreviewBox = 200;
     private static EffectMakerWindow? s_window;
 
     private readonly EditorContext _ctx;
@@ -48,6 +51,8 @@ public sealed class EffectMakerWindow : Window
     private readonly Control _scriptPanel, _emptyPanel;
     private readonly MakerPreview _preview = new() { Width = PreviewBox, Height = PreviewBox };
     private readonly ComboBox _chick = new() { Width = 180, Margin = new Thickness(3) };
+    /// <summary>끝 그림 병아리(원문 선언의 <c>previewEndChick</c>): 첫 항목 = 없음, 그다음 <see cref="PreviewChicks.Ids"/> 차례.</summary>
+    private readonly ComboBox _endChick = new() { Width = 180, Margin = new Thickness(3) };
     private readonly Button _play, _resetValues, _setDefaults, _languages;
     /// <summary>효과 없이 보기(아이콘만 있는 켜고 끄기 단추).</summary>
     private readonly ToggleButton _original;
@@ -93,6 +98,12 @@ public sealed class EffectMakerWindow : Window
     /// <summary>AI 칸을 열며 창을 넓힌 너비(닫을 때 그만큼 줄임, 최대화 중이면 0).</summary>
     private double _aiGrowth;
     private Ai.ScriptGuideWindow? _rules;
+    /// <summary>창 전체 내용과 작게 보기 내용(미리보기만 — <see cref="Compact"/>). 미리보기는 둘 사이를 옮겨 다닌다.</summary>
+    private readonly Control _fullContent, _compactContent;
+    private readonly StackPanel _previewSlot;
+    private readonly Border _compactPreviewHost = new();
+    /// <summary>작게 보기 중이면 크게 돌아갈 때의 창 크기·자리·상태·최소 크기(크게 보기면 null).</summary>
+    private (double Width, double Height, PixelPoint Position, WindowState State, double MinWidth, double MinHeight)? _fullBounds;
 
     /// <summary>스크립트를 열어 두었는지(목록에서 고르거나 새로 만듦).</summary>
     private bool _open;
@@ -139,6 +150,7 @@ public sealed class EffectMakerWindow : Window
     {
         if (s_window is { } open)
         {
+            open.Expand();
             open.Activate();
             if (assetId is not null && open.ConfirmDiscard()) open.TryOpen(assetId);
             return;
@@ -223,6 +235,10 @@ public sealed class EffectMakerWindow : Window
         // ── 오른쪽: 미리보기·상태
         for (int i = 0; i < PreviewChicks.Ids.Count; i++) _chick.Items.Add(ChickItem(PreviewChicks.Ids[i], i + 1));
         _chick.SelectionChanged += (_, _) => ChickChanged();
+        _endChick.Items.Add(new ComboBoxItem { Content = new TextBlock { Text = UiStrings.EffectMaker_EndChickNone, VerticalAlignment = VerticalAlignment.Center } });
+        for (int i = 0; i < PreviewChicks.Ids.Count; i++) _endChick.Items.Add(ChickItem(PreviewChicks.Ids[i], i + 1));
+        _endChick.SelectedIndex = 0;
+        _endChick.SelectionChanged += (_, _) => EndChickChanged();
         ToolTip.SetTip(_preview, UiStrings.EffectMaker_PreviewHint);
         _play = Ui.IconButton(VectorIcon.Pause, UiStrings.EffectMaker_Pause, (_, _) => TogglePlay());
         var eye = Ui.Icon(VectorIcon.EyeOff, 14);
@@ -277,10 +293,11 @@ public sealed class EffectMakerWindow : Window
             previewHeader,
             _preview,
             _stripScroll,
-            Ui.Row(Ui.Label(UiStrings.EffectPreset_PreviewChick), _chick),
+            ChickRows(),
             playRow,
             _sceneRow);
         right.Width = PreviewBox + 24;
+        _previewSlot = right;
 
         // ── 아래 줄
         _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip);
@@ -325,7 +342,27 @@ public sealed class EffectMakerWindow : Window
         DockPanel.SetDock(bottom, Dock.Bottom);
         root.Children.Add(bottom);
         root.Children.Add(columns);
-        Content = root;
+        Content = _fullContent = root;
+
+        // ── 작게 보기(메인 편집기에서 장면을 고치는 동안): 미리보기와 크게 보기 단추만. 미리보기를 누르거나 단추를 누르면 원래 크기로
+        var expand = Ui.IconButton(VectorIcon.Maximize2, UiStrings.EffectMaker_ExpandTip, (_, _) => Expand());
+        var compactTitle = Ui.Label(UiStrings.EffectMaker_Preview, bold: true);
+        compactTitle.VerticalAlignment = VerticalAlignment.Center;
+        var compactHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
+        DockPanel.SetDock(expand, Dock.Right);
+        compactHeader.Children.Add(expand);
+        compactHeader.Children.Add(compactTitle);
+        _compactPreviewHost.Cursor = new Cursor(StandardCursorType.Hand);
+        _compactPreviewHost.PointerPressed += (_, e) =>
+        {
+            e.Handled = true;
+            Expand();
+        };
+        var compact = new DockPanel { Margin = new Thickness(8) };
+        DockPanel.SetDock(compactHeader, Dock.Top);
+        compact.Children.Add(compactHeader);
+        compact.Children.Add(_compactPreviewHost);
+        _compactContent = compact;
 
         _debounce.Tick += (_, _) =>
         {
@@ -488,11 +525,15 @@ public sealed class EffectMakerWindow : Window
         if (installed?.FirstOrDefault(e => e.Kind == AssetKinds.EffectScript) is { } script && ConfirmDiscard()) TryOpen(script.Id);
     }
 
+    /// <summary>목록에서 효과 <paramref name="id"/>의 줄(없거나 null이면 null). 올렸지만 이 컴퓨터에 없는 효과 줄은 Tag가 <see cref="RemoteCatalogEntry"/>라 건너뛴다.</summary>
+    private ListBoxItem? ListItem(string? id)
+        => id is null ? null : _list.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag is string tag && tag == id);
+
     private void SelectInList(string? id)
     {
         bool was = _syncingList;
         _syncingList = true;
-        _list.SelectedItem = _list.Items.OfType<ListBoxItem>().FirstOrDefault(item => (string?)item.Tag == id);
+        _list.SelectedItem = ListItem(id);
         _syncingList = was;
     }
 
@@ -548,7 +589,7 @@ public sealed class EffectMakerWindow : Window
         _shownId = id;
         _entryId = AppAssets.IsMine(entry) ? id : null;
         Load(script.Source, saved: true, script.Scene);
-        if (!_list.Items.OfType<ListBoxItem>().Any(item => (string?)item.Tag == id)) _showAll.IsChecked = true;
+        if (ListItem(id) is null) _showAll.IsChecked = true;
         SelectInList(id);
     }
 
@@ -586,6 +627,7 @@ public sealed class EffectMakerWindow : Window
         _loading = true;
         DropCheck();
         DetachScene(closeTab: true);
+        Expand();
         _source = ScriptEffectProgram.NormalizeSource(source);
         _code.Text = _source;
         _previewValues.Clear();
@@ -814,6 +856,7 @@ public sealed class EffectMakerWindow : Window
         _readsLayers = ScriptLibrary.InfoOf(((ScriptEffect)effects[0]).ScriptHash) is { ReadsOtherLayers: true };
         UpdateSceneRow();
         var chickId = _program!.PreviewChick;
+        var endId = _program.PreviewEndChick;
         var program = _program;
         var scene = _scene;
         int steps = program.PreviewFrames;
@@ -824,6 +867,7 @@ public sealed class EffectMakerWindow : Window
         Task.Run(() =>
         {
             var chick = PreviewChicks.Load(chickId);
+            var end = AssetPreview.EndChick(endId);
             ScriptError? runError = null;
             double? msPerFrame = null;
             // 빠른 경로 판정(첫 읽기에 변환·컴파일)을 먼저 해 두어 아래 시간에 컴파일이 섞이지 않게 한다
@@ -833,7 +877,7 @@ public sealed class EffectMakerWindow : Window
             if (scene is not null)
             {
                 // 장면 위: 병아리 레이어에 효과를 입혀 장면 레이어와 함께 그린다. 실행 오류·시간은 같은 img·ctx(레이어 포함)로 직접 돌려 본다
-                var render = new PreviewSceneRender(scene, effects, chick, steps);
+                var render = new PreviewSceneRender(scene, effects, chick, steps, end);
                 var probe = render.Probe(program, values, steps / 2, cancel.Token);
                 if (ProbeError(probe) is { } error) runError = error;
                 else msPerFrame = probe.Elapsed.TotalMilliseconds;
@@ -843,12 +887,13 @@ public sealed class EffectMakerWindow : Window
             }
             else
             {
-                // 실행 오류·시간은 효과를 거치지 않고 직접 한 번 돌려 본다(효과 렌더러는 오류를 삼키고 효과를 건너뛴다)
-                var probe = chick.Clone();
+                // 실행 오류·시간은 효과를 거치지 않고 직접 한 번 돌려 본다(효과 렌더러는 오류를 삼키고 효과를 건너뛴다). 원본·다른 프레임 원본은 미리보기와 같다
+                var (sample, context) = AssetPreview.ScriptFrame(chick, end, steps / 2, steps);
+                var probe = sample.Clone();
                 var watch = Stopwatch.StartNew();
                 try
                 {
-                    program.Render(probe, new Rectangle(0, 0, probe.Width, probe.Height), ScriptFrameContext.PreviewStep(steps / 2, steps), values, cancel.Token);
+                    program.Render(probe, new Rectangle(0, 0, probe.Width, probe.Height), context, values, cancel.Token);
                     msPerFrame = watch.Elapsed.TotalMilliseconds;
                 }
                 catch (ScriptEffectException ex)
@@ -856,8 +901,8 @@ public sealed class EffectMakerWindow : Window
                     runError = ex.Error;
                 }
                 for (int step = 0; step < steps && !cancel.IsCancellationRequested; step++)
-                    frames.Add(AssetPreview.Render(effects, chick, step, steps));
-                original = AssetPreview.Original(effects, chick, 0, steps);
+                    frames.Add(AssetPreview.Render(effects, chick, step, steps, end));
+                original = AssetPreview.Original(effects, chick, 0, steps, end);
             }
             return (frames, original, runError, msPerFrame, path);
         }, cancel.Token).ContinueWith(task =>
@@ -947,6 +992,7 @@ public sealed class EffectMakerWindow : Window
         SetInfo(_program);
         _loading = true;
         _chick.SelectedIndex = Math.Max(0, PreviewChicks.Ids.ToList().IndexOf(_program.PreviewChick));
+        _endChick.SelectedIndex = EndChickIndex(_program.PreviewEndChick);
         _loading = false;
         _syncingFrames = true;
         _frameCount.Value = _program.PreviewFrames;
@@ -1174,6 +1220,44 @@ public sealed class EffectMakerWindow : Window
         _code.Replace(edited); // TextChanged → Edited → 다시 그리기
     }
 
+    /// <summary>
+    /// 끝 그림 병아리는 원문 선언의 <c>previewEndChick</c>이 정한다: 고르면 원문을 고치고 "없음"이면 그 속성을 지운다(원문에 오류가 있으면 되돌리고 안내).
+    /// </summary>
+    private void EndChickChanged()
+    {
+        if (_loading || _endChick.SelectedIndex < 0 || !_open) return;
+        string? id = _endChick.SelectedIndex == 0 ? null : PreviewChicks.Ids[_endChick.SelectedIndex - 1];
+        if (_program is not null && _program.PreviewEndChick == id) return;
+        if (ScriptDeclarationEdit.SetPreviewEndChick(_source, id) is not { } edited)
+        {
+            Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
+            _loading = true;
+            _endChick.SelectedIndex = EndChickIndex(_program?.PreviewEndChick);
+            _loading = false;
+            return;
+        }
+        _code.Replace(edited); // TextChanged → Edited → 다시 그리기
+    }
+
+    /// <summary>끝 그림 병아리 칸의 차례(없거나 모르는 ID면 0 = 없음).</summary>
+    private static int EndChickIndex(string? id) => id is null ? 0 : PreviewChicks.Ids.ToList().IndexOf(id) + 1;
+
+    /// <summary>미리보기 병아리·끝 그림 병아리 두 줄(이름 칸 폭을 맞춰 고르기 칸이 나란히).</summary>
+    private Grid ChickRows()
+    {
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto"), RowDefinitions = new RowDefinitions("Auto,Auto") };
+        var endLabel = Ui.Row(Ui.Label(UiStrings.EffectMaker_EndChick), Ui.InfoBadge(UiStrings.EffectMaker_EndChickTip));
+        endLabel.VerticalAlignment = VerticalAlignment.Center;
+        Control[] cells = [Ui.Label(UiStrings.EffectPreset_PreviewChick), _chick, endLabel, _endChick];
+        for (int i = 0; i < cells.Length; i++)
+        {
+            Grid.SetRow(cells[i], i / 2);
+            Grid.SetColumn(cells[i], i % 2);
+            grid.Children.Add(cells[i]);
+        }
+        return grid;
+    }
+
     /// <summary>병아리 고르기 칸의 항목: 병아리 그림(2배)과 번호.</summary>
     private static ComboBoxItem ChickItem(string id, int number)
     {
@@ -1241,12 +1325,16 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>
     /// "메인 편집기에서 고치기": 장면(없으면 기본 장면을 만듦 — 고친 것으로 셈)을 지금 병아리와 함께 문서로 만들어 메인 편집기의 저장하지 않는 새 탭으로 연다.
-    /// 그 문서가 바뀌면 장면을 다시 읽어 그린다. 이미 탭이 열려 있으면 그 탭을 고른다.
+    /// 그 문서가 바뀌면 장면을 다시 읽어 그린다. 이미 탭이 열려 있으면 그 탭을 고른다. 고치는 동안 메인 편집기를 가리지 않게 이 창은 작게 보기(<see cref="Compact"/>)가 된다.
     /// </summary>
     private void EditScene()
     {
         if (!_open || MainEditor() is not { } main) return;
-        if (_sceneDoc is { } open && main.ShowDetachedDocument(open.Project)) return;
+        if (_sceneDoc is { } open && main.ShowDetachedDocument(open.Project))
+        {
+            Compact(main);
+            return;
+        }
         var chick = PreviewChicks.Load(_program?.PreviewChick ?? PreviewChicks.Default);
         bool created = _scene is null;
         var scene = _scene ??= PreviewScene.CreateDefault(chick);
@@ -1261,6 +1349,52 @@ public sealed class EffectMakerWindow : Window
             _debounce.Stop();
             Rerender();
         }
+        Compact(main);
+    }
+
+    /// <summary>
+    /// 작게 보기: 창 내용을 미리보기만으로 바꾸고 메인 편집기 오른쪽 위 구석의 작은 창이 된다(장면을 고치면 바로 다시 그려짐). 메인 편집기로 초점을 돌린다.
+    /// 미리보기나 크게 보기 단추를 누르거나 장면 탭을 닫으면 <see cref="Expand"/>로 돌아간다.
+    /// </summary>
+    private void Compact(MainForm main)
+    {
+        if (_fullBounds is null)
+        {
+            _fullBounds = (Width, Height, Position, WindowState, MinWidth, MinHeight);
+            if (WindowState != WindowState.Normal) WindowState = WindowState.Normal;
+            Content = _compactContent;
+            _previewSlot.Children.Remove(_preview);
+            _preview.Width = _preview.Height = CompactPreviewBox;
+            _compactPreviewHost.Child = _preview;
+            ToolTip.SetTip(_preview, UiStrings.EffectMaker_CompactTip);
+            MinWidth = MinHeight = 0;
+            Width = CompactPreviewBox + 16;
+            Height = CompactPreviewBox + 52;
+            CanResize = false;
+        }
+        double scale = main.DesktopScaling;
+        Position = new PixelPoint(main.Position.X + (int)((main.Bounds.Width - Width - 16) * scale), main.Position.Y + (int)(72 * scale));
+        main.Activate();
+    }
+
+    /// <summary>작게 보기에서 원래 창(크기·자리·최대화 상태)으로 돌아간다. 작게 보기가 아니면 아무것도 하지 않는다.</summary>
+    private void Expand()
+    {
+        if (_fullBounds is not { } full) return;
+        _fullBounds = null;
+        Content = _fullContent;
+        _compactPreviewHost.Child = null;
+        _preview.Width = _preview.Height = PreviewBox;
+        _previewSlot.Children.Insert(1, _preview); // 미리보기 제목 줄 바로 아래(만들 때의 자리)
+        ToolTip.SetTip(_preview, UiStrings.EffectMaker_PreviewHint);
+        CanResize = true;
+        MinWidth = full.MinWidth;
+        MinHeight = full.MinHeight;
+        Width = full.Width;
+        Height = full.Height;
+        Position = full.Position;
+        WindowState = full.State;
+        Activate();
     }
 
     /// <summary>장면 문서가 바뀜: 고친 것으로 보이고 잠시 뒤 장면을 다시 읽어 그린다(그리는 중 붓질마다 다시 읽지 않게).</summary>
@@ -1297,13 +1431,14 @@ public sealed class EffectMakerWindow : Window
         return null;
     }
 
-    /// <summary>장면 탭이 닫힘: 마지막 고침까지 장면에 담고 문서 알림을 끊는다.</summary>
+    /// <summary>장면 탭이 닫힘: 마지막 고침까지 장면에 담고 문서 알림을 끊고, 작게 보기였으면 원래 창으로 돌아간다.</summary>
     private void SceneTabClosed(SpriteProject project)
     {
         if (_sceneDoc is not { } doc || !ReferenceEquals(doc.Project, project)) return;
         string? error = _sceneStale ? RebuildScene() : null;
         project.Changed -= OnSceneChanged;
         _sceneDoc = null;
+        Expand();
         if (error is not null) AddNote(error, warning: true);
     }
 
@@ -1410,6 +1545,8 @@ public sealed class EffectMakerWindow : Window
 
         var seen = new HashSet<(string, int, int)>();
         var chicks = PreviewChicks.Ids.Select(PreviewChicks.Load).ToList();
+        // 끝 그림 병아리(선언의 previewEndChick)가 있으면 견본 병아리마다 마지막 칸이 그 병아리다(미리보기와 같음)
+        var end = AssetPreview.EndChick(program.PreviewEndChick);
         // 장면이 있으면 병아리 레이어에 기본 설정의 이 효과를 입힌 장면 위에서 돌린다(다른 레이어 함수가 장면 레이어를 읽음)
         IReadOnlyList<LayerEffect> effects = scene is null ? [] : [program.CreateEffect() with { ScriptHash = ScriptLibrary.Add(source) }];
         int runs = 0, slowestChick = 1;
@@ -1418,11 +1555,11 @@ public sealed class EffectMakerWindow : Window
         for (int c = 0; c < chicks.Count; c++)
         {
             var chick = chicks[c];
-            var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, program.PreviewFrames);
+            var render = scene is null ? null : new PreviewSceneRender(scene, effects, chick, program.PreviewFrames, end);
             for (int step = 0; step < program.PreviewFrames; step++)
             {
                 cancel.ThrowIfCancellationRequested();
-                var (error, ms) = render is null ? RunOnChick(program, chick, step, cancel) : RunInScene(render, program, step, cancel);
+                var (error, ms) = render is null ? RunOnChick(program, chick, end, step, cancel) : RunInScene(render, program, step, cancel);
                 if (error is null)
                 {
                     if (ms > slowest)
@@ -1440,18 +1577,19 @@ public sealed class EffectMakerWindow : Window
                 runs++;
             }
         }
-        IReadOnlyList<string> hints = runFailed ? [] : ScriptGradientCheck.Render(program, chicks, cancel).Select(h => h.Message).ToList();
+        IReadOnlyList<string> hints = runFailed ? [] : ScriptGradientCheck.Render(program, chicks, end, cancel).Select(h => h.Message).ToList();
         return new ValidationResult(problems, program.ExecutionPath, runs, slowest, slowestChick, hints);
     }
 
-    /// <summary>병아리 견본 하나에 한 칸을 직접 돌린다: 실행 오류(없으면 null)와 걸린 시간(ms).</summary>
-    private static (ScriptError? Error, double Ms) RunOnChick(ScriptEffectProgram program, PixelImage chick, int step, CancellationToken cancel)
+    /// <summary>병아리 견본 하나(끝 그림 병아리 <paramref name="end"/>, <see cref="AssetPreview.ScriptFrame"/>)에 한 칸을 직접 돌린다: 실행 오류(없으면 null)와 걸린 시간(ms).</summary>
+    private static (ScriptError? Error, double Ms) RunOnChick(ScriptEffectProgram program, PixelImage chick, PixelImage? end, int step, CancellationToken cancel)
     {
-        var image = chick.Clone();
+        var (sample, context) = AssetPreview.ScriptFrame(chick, end, step, program.PreviewFrames);
+        var image = sample.Clone();
         var watch = Stopwatch.StartNew();
         try
         {
-            program.Render(image, new Rectangle(0, 0, image.Width, image.Height), ScriptFrameContext.PreviewStep(step, program.PreviewFrames), null, cancel);
+            program.Render(image, new Rectangle(0, 0, image.Width, image.Height), context, null, cancel);
             return (null, watch.Elapsed.TotalMilliseconds);
         }
         catch (ScriptEffectException ex)
@@ -1492,7 +1630,7 @@ public sealed class EffectMakerWindow : Window
         _savedSource = _source;
         _savedScene = scene;
         RebuildList();
-        if (!_list.Items.OfType<ListBoxItem>().Any(item => (string?)item.Tag == saved.Id)) _showAll.IsChecked = true;
+        if (ListItem(saved.Id) is null) _showAll.IsChecked = true;
         SelectInList(saved.Id);
         UpdateButtons();
         return true;
@@ -1637,16 +1775,17 @@ public sealed class EffectMakerWindow : Window
     {
         if (PreviewEffects() is not { Count: > 0 } effects || _program is null) return null;
         var chick = PreviewChicks.Load(_program.PreviewChick);
+        var end = AssetPreview.EndChick(_program.PreviewEndChick);
         int steps = _program.PreviewFrames;
         int step = Math.Clamp(_preview.Index, 0, steps - 1);
         if (_scene is { } scene)
         {
-            var render = new PreviewSceneRender(scene, effects, chick, steps);
+            var render = new PreviewSceneRender(scene, effects, chick, steps, end);
             return _original.On() ? render.Original(0) : render.Render(step);
         }
         return _original.On()
-            ? AssetPreview.Original(effects, chick, 0, steps)
-            : AssetPreview.Render(effects, chick, step, steps);
+            ? AssetPreview.Original(effects, chick, 0, steps, end)
+            : AssetPreview.Render(effects, chick, step, steps, end);
     }
 
     /// <summary>편집기의 지금 원문(줄바꿈을 정리한 것).</summary>

@@ -172,6 +172,18 @@ public abstract record AnimatedEffect : LayerEffect
     /// <summary>그릴 때만: 그리는 프레임 번호(범위 시작 + <see cref="FrameStep"/>).</summary>
     public int FrameIndex => (Frames?.From ?? 0) + FrameStep;
 
+    /// <summary>그릴 때만: 범위 첫 프레임 번호.</summary>
+    public int RangeStart => Frames?.From ?? 0;
+
+    /// <summary>그릴 때만: 범위 마지막 프레임 번호(<see cref="RangeStart"/> + <see cref="FrameSpan"/>).</summary>
+    public int RangeEnd => RangeStart + FrameSpan;
+
+    /// <summary>
+    /// 그릴 때만: 그리는 프레임이 든 애니메이션 태그 이름(겹치면 첫 태그, 없으면 ""). <c>ctx.frameTag</c>를 읽는 스크립트에만 채운다
+    /// (<see cref="Edit.LayerEffects.WithFrameTag"/> — 다른 효과의 캐시 열쇠는 그대로).
+    /// </summary>
+    public string FrameTag { get; init; } = "";
+
     /// <summary>진행 t = (프레임 − 시작) / max(1, 끝 − 시작), 0~1.</summary>
     public double Time => Math.Clamp((double)FrameStep / Math.Max(1, FrameSpan), 0, 1);
 

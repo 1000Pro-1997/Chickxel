@@ -111,6 +111,29 @@ internal sealed class FastRendered(FastImage image, int offsetX, int offsetY)
     public readonly int OffsetX = offsetX, OffsetY = offsetY;
 }
 
+/// <summary>빠른 경로의 <c>ctx.matchPixels</c> 결과(없으면 null): 짝 수와 [ax, ay, bx, by, …] 숫자 배열.</summary>
+internal sealed class FastMatch(double[] data, int count)
+{
+    public readonly double[] Data = data;
+    public readonly int Count = count;
+}
+
+/// <summary><c>ctx.matchPixels</c>가 읽는 빠른 경로 그림(칸 값은 <see cref="ScriptHostApi.ToByte"/>로).</summary>
+internal readonly struct FastPixels(FastImage image) : IScriptPixels
+{
+    public int Width => image.Width;
+    public int Height => image.Height;
+
+    public byte Alpha(int index) => ScriptHostApi.ToByte(image.Data[index * 4 + 3]);
+
+    public Color32 Color(int index)
+    {
+        int i = index * 4;
+        return new Color32(ScriptHostApi.ToByte(image.Data[i]), ScriptHostApi.ToByte(image.Data[i + 1]), ScriptHostApi.ToByte(image.Data[i + 2]),
+            ScriptHostApi.ToByte(image.Data[i + 3]));
+    }
+}
+
 /// <summary>
 /// 컴파일한 코드가 부르는 JS 숫자 규칙. 결과가 Jint 4.17과 비트까지 같도록 Jint의 구현(<c>MathInstance</c>, <c>TypeConverter</c>,
 /// <c>JintBinaryExpression</c>)을 그대로 옮겼다. 규격보다 Jint가 기준이다: Jint 판을 올리면 비교 시험이 차이를 잡는다.
@@ -629,6 +652,47 @@ internal static class JsOps
 
     /// <summary>null일 수 있는 숫자 배열(<c>layer ? layer.data : null</c>)을 읽거나 쓰면: null이면 Jint로.</summary>
     public static double[] PresentArray(double[]? array) => array ?? throw new FastDeoptException();
+
+    /// <summary>
+    /// <c>ctx.frameSource(i)</c>: 그 프레임 효과 원본(<see cref="ScriptHostApi.CreateContext"/>와 같은 규칙 — 없거나 다른 프레임을 주지 않으면 null)을 숫자 배열 그림으로.
+    /// 부를 때마다 새 사본이다.
+    /// </summary>
+    public static FastImage? FrameSource(FastBudget budget, ScriptColors host, double index)
+    {
+        if (host.Frame.FrameSource?.Invoke(ToInt32(index)) is not { } picture) return null;
+        var px = picture.Pixels;
+        budget.Allocate((long)px.Length * 4 * 8);
+        var data = new double[px.Length * 4];
+        for (int p = 0, j = 0; p < px.Length; p++, j += 4)
+        {
+            var c = px[p];
+            (data[j], data[j + 1], data[j + 2], data[j + 3]) = (c.R, c.G, c.B, c.A);
+        }
+        return new FastImage(data, picture.Width, picture.Height);
+    }
+
+    /// <summary>
+    /// <c>ctx.matchPixels(a, b, mode)</c>: 두 그림의 불투명 픽셀 짝(<see cref="ScriptPixelMatch"/> — Jint와 같은 계산). 한쪽이 null이면 null.
+    /// 결과 배열이 배열 한도를 넘거나 메모리 한도에 걸리면 Jint로.
+    /// </summary>
+    public static FastMatch? MatchPixels(FastBudget budget, FastImage? a, FastImage? b, bool byColor)
+    {
+        if (a is null || b is null) return null;
+        var pairs = ScriptPixelMatch.Match(new FastPixels(a), new FastPixels(b), byColor);
+        long length = (long)pairs.Count * 4;
+        if (length > budget.MaxArrayLength) throw new FastDeoptException();
+        budget.Allocate(length * 8);
+        var data = new double[length];
+        for (int k = 0, j = 0; k < pairs.Count; k++, j += 4)
+        {
+            var (ax, ay, bx, by) = pairs[k];
+            (data[j], data[j + 1], data[j + 2], data[j + 3]) = (ax, ay, bx, by);
+        }
+        return new FastMatch(data, pairs.Count);
+    }
+
+    /// <summary>null인 <c>ctx.matchPixels</c> 결과의 속성을 읽으면 Jint로(Jint가 TypeError를 낸다).</summary>
+    public static FastMatch PresentMatch(FastMatch? match) => match ?? throw new FastDeoptException();
 
     /// <summary><c>ctx.hasGradient("목록 키", 번호[, "from"|"to"])</c>: 번호가 정수 항목 번호가 아니면 false.</summary>
     public static bool HasGradientAt(ScriptColors colors, int setting, double item, bool to)

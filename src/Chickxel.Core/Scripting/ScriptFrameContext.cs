@@ -5,8 +5,8 @@ namespace Chickxel.Core.Scripting;
 
 /// <summary>
 /// 렌더 함수의 <c>ctx</c>에 넘길 프레임 정보. 기본 효과가 <see cref="AnimatedEffect"/>에서 받는 값과 같다:
-/// <c>ctx.t</c> = <see cref="Time"/>, <c>ctx.progress</c> = <see cref="Progress"/>, <c>ctx.frame</c> = <see cref="FrameIndex"/>,
-/// <c>ctx.step</c> = <see cref="FrameStep"/>, <c>ctx.span</c> = <see cref="FrameSpan"/>, <c>ctx.pivot</c> = <see cref="Pivot"/>(그림 좌표로 바꿔서),
+/// <c>ctx.t</c> = <see cref="Time"/>, <c>ctx.progress</c> = <see cref="Progress"/>, <c>ctx.frame</c> = <see cref="FrameIndex"/>, <c>ctx.rangeStart</c>·<c>ctx.rangeEnd</c> = <see cref="RangeStart"/>·<see cref="RangeEnd"/>,
+/// <c>ctx.step</c> = <see cref="FrameStep"/>, <c>ctx.span</c> = <see cref="FrameSpan"/>, <c>ctx.frameTag</c> = <see cref="FrameTag"/>, <c>ctx.pivot</c> = <see cref="Pivot"/>(그림 좌표로 바꿔서),
 /// <c>ctx.frameSource(i)</c> = <see cref="FrameSource"/>, <c>ctx.renderedFrameSource(i)</c> = <see cref="RenderedFrameSource"/>, <c>ctx.slice</c> = <see cref="Slice"/>,
 /// 다른 레이어 함수(<c>ctx.layer</c> 등) = <see cref="Layers"/>, <c>ctx.color</c> 등의 그라데이션 = <see cref="Gradients"/>·<see cref="GradientTime"/>.
 /// </summary>
@@ -32,6 +32,15 @@ public sealed record ScriptFrameContext
 
     /// <summary>범위 길이 − 1.</summary>
     public int FrameSpan { get; init; }
+
+    /// <summary>효과 범위 첫 프레임 번호.</summary>
+    public int RangeStart { get; init; }
+
+    /// <summary>효과 범위 마지막 프레임 번호(<see cref="RangeStart"/> + <see cref="FrameSpan"/>).</summary>
+    public int RangeEnd { get; init; }
+
+    /// <summary>그리는 프레임이 든 애니메이션 태그 이름(겹치면 첫 태그). 태그 밖이거나 프로젝트 밖 그리기면 "".</summary>
+    public string FrameTag { get; init; } = "";
 
     /// <summary>피벗(효과 원본 왼쪽 위 기준 px). null이면 원본 가운데.</summary>
     public PointF? Pivot { get; init; }
@@ -67,7 +76,7 @@ public sealed record ScriptFrameContext
     {
         int span = steps - 1;
         double t = span == 0 ? 0 : step / (double)span;
-        return new ScriptFrameContext { Time = t, Progress = t, FrameIndex = step, FrameStep = step, FrameSpan = span };
+        return new ScriptFrameContext { Time = t, Progress = t, FrameIndex = step, FrameStep = step, FrameSpan = span, RangeStart = 0, RangeEnd = span };
     }
 
     /// <summary>그릴 때 채운 <paramref name="effect"/> 사본(<see cref="AnimatedEffect.AtFrame"/>)의 프레임 정보.</summary>
@@ -79,6 +88,9 @@ public sealed record ScriptFrameContext
         FrameIndex = effect.FrameIndex,
         FrameStep = effect.FrameStep,
         FrameSpan = effect.FrameSpan,
+        RangeStart = effect.RangeStart,
+        RangeEnd = effect.RangeEnd,
+        FrameTag = effect.FrameTag,
         Pivot = effect.PivotPoint,
         FrameSource = effect.FrameSource,
         RenderedFrameSource = effect.RenderedFrameSource,

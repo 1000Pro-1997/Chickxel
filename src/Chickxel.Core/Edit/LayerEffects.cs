@@ -105,13 +105,18 @@ public static class LayerEffects
     }
 
     /// <summary>
-    /// 프레임 <paramref name="frameIndex"/>에 입혀질 효과 중 원본 없이 그림을 만드는 효과(<see cref="EffectDefinition.GeneratesContent"/>, 글씨)가 있는지 —
+    /// 프레임 <paramref name="frameIndex"/>에 입혀질 효과 중 원본 없이 그림을 만드는 효과(<see cref="EffectDefinition.GeneratesContent"/>, 글씨 — 그리고
+    /// <c>ctx.frameSource</c>로 다른 프레임을 읽는 스크립트(<see cref="ScriptDefinition.ReadsFrameSources"/>, 변신처럼 빈 사이 프레임을 채움))가 있는지 —
     /// 있으면 셀이 없는 프레임도 빈 그림을 원본으로 그린다.
     /// </summary>
     public static bool GeneratesContent(IReadOnlyList<LayerEffect> effects, int frameIndex)
     {
         for (int i = 0; i < effects.Count; i++)
-            if (effects[i].Enabled && effects[i].AppliesTo(frameIndex) && EffectRegistry.Of(effects[i]) is { GeneratesContent: true }) return true;
+        {
+            var effect = effects[i];
+            if (!effect.Enabled || !effect.AppliesTo(frameIndex)) continue;
+            if (EffectRegistry.Of(effect) is { GeneratesContent: true } || effect is ScriptEffect script && ScriptDefinition.ReadsFrameSources(script)) return true;
+        }
         return false;
     }
 
@@ -151,6 +156,32 @@ public static class LayerEffects
             if (effects[i] is not ScriptEffect { Enabled: true } script || !ScriptDefinition.UsesOtherLayers(script)) continue;
             copy ??= [.. effects];
             copy[i] = script with { Layers = layers };
+        }
+        return copy ?? effects;
+    }
+
+    /// <summary>켜진 효과 중 그 프레임이 든 태그 이름(<c>ctx.frameTag</c> — <see cref="ScriptDefinition.ReadsFrameTag"/>)을 읽는 스크립트 효과가 있는지.</summary>
+    public static bool ReadsFrameTag(IReadOnlyList<LayerEffect> effects)
+    {
+        for (int i = 0; i < effects.Count; i++)
+            if (effects[i] is ScriptEffect { Enabled: true } script && ScriptDefinition.ReadsFrameTag(script)) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 그릴 효과 목록(<see cref="At"/>의 결과)의 켜진 스크립트 효과 중 <c>ctx.frameTag</c>를 읽는 것에 태그 이름 <paramref name="tag"/>를 채운 사본
+    /// (<see cref="AnimatedEffect.FrameTag"/>). <paramref name="tag"/>가 비었거나 바꿀 것이 없으면 <paramref name="effects"/> 그대로.
+    /// <paramref name="tag"/>는 <see cref="SpriteProject.FrameTagFor"/>로 그 프레임에 맞춰 얻는다.
+    /// </summary>
+    public static IReadOnlyList<LayerEffect> WithFrameTag(IReadOnlyList<LayerEffect> effects, string tag)
+    {
+        if (tag.Length == 0) return effects;
+        LayerEffect[]? copy = null;
+        for (int i = 0; i < effects.Count; i++)
+        {
+            if (effects[i] is not ScriptEffect { Enabled: true } script || !ScriptDefinition.ReadsFrameTag(script)) continue;
+            copy ??= [.. effects];
+            copy[i] = script with { FrameTag = tag };
         }
         return copy ?? effects;
     }

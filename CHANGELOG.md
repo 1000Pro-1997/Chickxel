@@ -2,6 +2,23 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.86 (2026-11-03)
+### Effect Maker: the list no longer locks up with uploaded effects that aren't on this computer
+- When you were signed in and had uploaded effects not installed on this computer (the gray rows with a download button), the Effect Maker could show an "InvalidCastException: Specified cast is not valid" error. After that, clicking another effect in the list didn't open it.
+- This was a bug in the app's list, not in your effect's code. The list now skips those rows when it looks for an effect, so opening, saving and switching effects work again.
+### Effect Maker: shrinks to a small preview while you edit the scene in the main editor
+- "Edit in main editor" in the preview scene now turns the Effect Maker into a small preview window in the top-right corner of the main editor, so it no longer covers the canvas. The main editor gets the focus.
+- The small preview updates as you edit the scene. Click it (or its expand button) to bring the Effect Maker back to its old size and place; closing the scene tab does the same.
+### Publish Online: the package page opens only when you ask
+- After an upload, the browser no longer opens the package page by itself. The "Uploaded" message now has an Open website button next to OK; click it if you want to see the page.
+- OK (and Enter or Esc) just closes the message.
+### Script effects: morphs and other effects that use several frames
+- New `ctx.rangeStart` and `ctx.rangeEnd` give the first and last frame numbers of the effect's range. `ctx.frameTag` gives the name of the frame tag the current frame is in ("" if none).
+- New `ctx.matchPixels(a, b)` pairs the opaque pixels of two images (`{ count, data }`, `[ax, ay, bx, by]` per pair; pass `"color"` to pair by brightness). It runs on the fast path, and `ctx.frameSource` does too now.
+- Effects that read other frames with `ctx.frameSource` now also draw on frames without a cel. Put images on only the first and last frames, apply a morph over the range, and the frames in between fill in.
+- The Effect Maker has an End chick picker (declaration `previewEndChick`). The preview, Check and the upload preview then show that chick on the last frame, so morphs can be seen and checked before saving.
+- Effects that read other frames always carry the `frame-reference` catalog tag when published, like `layer-reference` for effects that read other layers. The effect rules and the Effect Maker AI explain how to write a morph.
+
 ## v1.14.85 (2026-11-03)
 ### Pixelate: a fixed output size splits the source into that many cells
 - With the output size fixed (for example 64×64), the source is now divided into that many cells. With the default 1 px margin, the long side becomes 62 cells. Before, it kept the detected pixel size and only added margin, so a 1024 px illustration detected at 118 px became a tiny sprite in an empty 64×64 canvas.

@@ -30,8 +30,8 @@ public class ScriptCompletionTests
     }
 
     [Theory]
-    [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "source", "pivot", "center", "slice", "color", "colorAt", "pairColor",
-        "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource",
+    [InlineData("ctx.|", new[] { "t", "phase", "progress", "frame", "step", "span", "rangeStart", "rangeEnd", "frameTag", "source", "pivot", "center", "slice", "color",
+        "colorAt", "pairColor", "hasGradient", "hash", "random", "bayer2", "bayer4", "frameSource", "renderedFrameSource", "matchPixels",
         "layer", "layerWithEffects", "layerEffects" })]
     [InlineData("ctx.slice.|", new[] { "left", "top", "right", "bottom" })]
     [InlineData("ctx.pr|", new[] { "progress" })]
@@ -69,7 +69,7 @@ public class ScriptCompletionTests
 
     [Theory]
     [InlineData("effect({ na|", new[] { "name" })]
-    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewFrames" })]
+    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', ty|", new[] { "type" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"co|", new[] { "color", "colorList", "colorPairs" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer" })]
@@ -77,6 +77,7 @@ public class ScriptCompletionTests
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', widget: \"|", new[] { "angle", "point" })]
     [InlineData("effect({ name: 'x', area: \"lo|", new[] { "local" })]
     [InlineData("effect({ name: 'x', previewChick: \"kn|", new[] { "knight" })]
+    [InlineData("effect({ name: 'x', previewEndChick: \"wi|", new[] { "wizard" })]
     public void Declaration_and_setting_keys_and_values_are_offered_in_place(string text, string[] expected)
         => Assert.Equal(expected, At(text).Names);
 
@@ -136,6 +137,29 @@ public class ScriptDeclarationEditTests
         var edited = ScriptDeclarationEdit.SetPreviewChick(Chickxel.Core.Scripting.OfficialEffects.Source("shine"), "viking")!;
         Assert.Equal("viking", ScriptEffectProgram.Parse(edited).Program!.PreviewChick);
         Assert.Null(ScriptDeclarationEdit.SetPreviewChick("effect({ name: 'x', render( {} });", "ninja"));
+    }
+
+    [Fact]
+    public void Preview_end_chick_is_added_after_preview_chick_replaced_or_removed()
+    {
+        Assert.Equal("effect({ name: 'x', previewChick: 'knight', previewEndChick: \"wizard\", render() {} });",
+            ScriptDeclarationEdit.SetPreviewEndChick("effect({ name: 'x', previewChick: 'knight', render() {} });", "wizard"));
+        Assert.Equal("effect({\n  name: \"x\",\n  previewEndChick: \"wizard\",\n  render() {},\n});",
+            ScriptDeclarationEdit.SetPreviewEndChick("effect({\n  name: \"x\",\n  render() {},\n});", "wizard"));
+        Assert.Equal("effect({ name: 'x', previewEndChick: \"ninja\", render() {} });",
+            ScriptDeclarationEdit.SetPreviewEndChick("effect({ name: 'x', previewEndChick: 'wizard', render() {} });", "ninja"));
+
+        // null = 지움(한 줄이면 줄째로), 없으면 그대로
+        Assert.Equal("effect({ name: 'x', previewChick: 'knight', render() {} });",
+            ScriptDeclarationEdit.SetPreviewEndChick("effect({ name: 'x', previewChick: 'knight', previewEndChick: \"wizard\", render() {} });", null));
+        Assert.Equal("effect({\n  name: \"x\",\n  render() {},\n});",
+            ScriptDeclarationEdit.SetPreviewEndChick("effect({\n  name: \"x\",\n  previewEndChick: \"wizard\",\n  render() {},\n});", null));
+        Assert.Equal("effect({ name: 'x', render() {} });", ScriptDeclarationEdit.SetPreviewEndChick("effect({ name: 'x', render() {} });", null));
+        Assert.Null(ScriptDeclarationEdit.SetPreviewEndChick("effect({ name: 'x', render( {} });", "ninja"));
+
+        var edited = ScriptDeclarationEdit.SetPreviewEndChick(Chickxel.Core.Scripting.OfficialEffects.Source("shine"), "viking")!;
+        Assert.Equal("viking", ScriptEffectProgram.Parse(edited).Program!.PreviewEndChick);
+        Assert.Null(ScriptEffectProgram.Parse(ScriptDeclarationEdit.SetPreviewEndChick(edited, null)!).Program!.PreviewEndChick);
     }
 
     [Fact]

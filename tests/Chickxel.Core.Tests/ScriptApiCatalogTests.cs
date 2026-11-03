@@ -16,7 +16,7 @@ public class ScriptApiCatalogTests
     [Fact]
     public void Catalog_matches_the_objects_the_sandbox_hands_to_render()
     {
-        var (ctx, source, pivot, center, slice, image, color, hsv, math, globals, rendered) = ScriptSandbox.Run(ScriptLimits.Default, CancellationToken.None, sandbox =>
+        var (ctx, source, pivot, center, slice, image, color, hsv, math, globals, rendered, matched) = ScriptSandbox.Run(ScriptLimits.Default, CancellationToken.None, sandbox =>
         {
             var engine = sandbox.Engine;
             var settings = ScriptHostApi.CreateSettings(engine, [], new Dictionary<string, object>());
@@ -28,10 +28,11 @@ public class ScriptApiCatalogTests
             var math = (ObjectInstance)engine.Evaluate("Math");
             var globals = ScriptApiCatalog.In(ScriptApiCatalog.Global).Where(m => engine.Evaluate($"typeof {m.Name}").AsString() == "undefined").Select(m => m.Name).ToArray();
             var rendered = (ObjectInstance)engine.Invoke(ctx.Get("renderedFrameSource"), ctx, [0]);
+            var matched = (ObjectInstance)engine.Invoke(ctx.Get("matchPixels"), ctx, [img, img]);
             return (Keys(ctx), Keys((ObjectInstance)ctx.Get("source")), Keys((ObjectInstance)ctx.Get("pivot")),
                 Keys((ObjectInstance)ctx.Get("center")), Keys((ObjectInstance)ctx.Get("slice")),
                 Keys(img).Concat(Keys(img.Prototype!)).Order(StringComparer.Ordinal).ToArray(), Keys(color), Keys(hsv),
-                Keys(math).ToHashSet(StringComparer.Ordinal), globals, Keys(rendered));
+                Keys(math).ToHashSet(StringComparer.Ordinal), globals, Keys(rendered), Keys(matched));
         });
 
         Assert.Equal(Names(ScriptApiCatalog.Context), ctx);
@@ -43,6 +44,7 @@ public class ScriptApiCatalogTests
         Assert.Equal(Names(ScriptApiCatalog.Color), color);
         Assert.Equal(Names(ScriptApiCatalog.Hsv), hsv);
         Assert.Equal(Names(ScriptApiCatalog.Rendered), rendered);
+        Assert.Equal(Names(ScriptApiCatalog.Matched), matched);
         Assert.Empty(globals);
         Assert.All(Names(ScriptApiCatalog.MathScope), name => Assert.Contains(name, math));
         Assert.DoesNotContain("random", math);
@@ -53,7 +55,7 @@ public class ScriptApiCatalogTests
     {
         // 표의 선언 키를 모두 쓴 원문이 선언 오류 없이 읽힌다(이름이 틀리면 읽는 쪽이 무시하거나 오류를 낸다).
         var parsed = ScriptEffectProgram.Parse("""
-            effect({ name: "x", author: "a", animated: true, deferred: true, easing: "EaseOut", area: "local", radius: 2, previewChick: "knight", previewFrames: 16,
+            effect({ name: "x", author: "a", animated: true, deferred: true, easing: "EaseOut", area: "local", radius: 2, previewChick: "knight", previewEndChick: "wizard", previewFrames: 16,
               translations: { en: { name: "X", description: "D", labels: { k: "Kay", "c.a": "Ay" } } },
               settings: [{ key: "k", label: "K", type: "number", min: 0, max: 1, step: 0.5, default: 0 },
                          { key: "c", label: "C", type: "choice", choices: [{ value: "a", label: "A" }], default: "a" },
@@ -63,8 +65,8 @@ public class ScriptApiCatalogTests
             """);
         Assert.True(parsed.Success, string.Join("\n", parsed.Errors));
         var program = parsed.Program;
-        Assert.Equal(("a", true, true, EffectEasing.EaseOut, ScriptEffectArea.Local, 2, "knight", 16),
-            (program.Author, program.Animated, program.Deferred, program.Easing, program.Area, program.Radius, program.PreviewChick, program.PreviewFrames));
+        Assert.Equal(("a", true, true, EffectEasing.EaseOut, ScriptEffectArea.Local, 2, "knight", "wizard", 16),
+            (program.Author, program.Animated, program.Deferred, program.Easing, program.Area, program.Radius, program.PreviewChick, program.PreviewEndChick, program.PreviewFrames));
         Assert.Equal((false, ScriptSettingWidget.Point, "y"), (program.Settings[2].Alpha, program.Settings[3].Widget, program.Settings[3].Pair));
         var en = program.Translations["en"];
         Assert.Equal(("X", "D", "Kay", "Ay"), (en.Name, en.Description, en.Labels["k"], en.Labels["c.a"]));

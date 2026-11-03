@@ -3222,6 +3222,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_Tags" xml:space="preserve"><value>Tags</value></data>
   <data name="Publish_TagsTip" xml:space="preserve"><value>Type a tag like #neon and press Space, Enter or comma to add it. Up to 8 tags of lowercase English letters, digits and hyphens.</value></data>
   <data name="Publish_LayerReferenceTag" xml:space="preserve"><value>This effect reads other layers, so it always carries the layer-reference tag (it can't be removed and counts toward the 8 tags).</value></data>
+  <data name="Publish_FrameReferenceTag" xml:space="preserve"><value>This effect reads other frames, so it always carries the frame-reference tag (it can't be removed and counts toward the 8 tags).</value></data>
   <data name="Publish_License" xml:space="preserve"><value>License</value></data>
   <data name="Publish_LicenseFixed" xml:space="preserve"><value>Anyone may copy, change and use this asset for any purpose without conditions, including commercial use and without credit.</value></data>
   <data name="Publish_LicenseCustom" xml:space="preserve"><value>Custom</value></data>
@@ -3245,7 +3246,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_LoginReason" xml:space="preserve"><value>Sign in with your Chickxel account to upload assets. Your account handle becomes the package author ID.</value></data>
   <data name="Publish_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
   <data name="Publish_Uploading" xml:space="preserve"><value>Uploading… {0}%</value></data>
-  <data name="Publish_Uploaded" xml:space="preserve"><value>Uploaded {0} {1}. The package page is open in your browser.</value></data>
+  <data name="Publish_Uploaded" xml:space="preserve"><value>Uploaded {0} {1}. To see its package page, click Open website.</value></data>
+  <data name="Publish_OpenPage" xml:space="preserve"><value>Open website</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
   <data name="Publish_PreviewError" xml:space="preserve"><value>Could not read the image file: {0}</value></data>
   <data name="Assets_PersonalHeader" xml:space="preserve"><value>My assets</value></data>
@@ -3554,6 +3556,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_PreviewHint" xml:space="preserve"><value>Same image as the preview made when you upload (chosen chick, as many steps as the frame count).</value></data>
   <data name="EffectMaker_FrameCount" xml:space="preserve"><value>Frames</value></data>
   <data name="EffectMaker_FrameCountTip" xml:space="preserve"><value>Number of steps the effect runs in the preview, the check and the uploaded preview (2-20). Changes previewFrames in the source's declaration.</value></data>
+  <data name="EffectMaker_EndChick" xml:space="preserve"><value>End chick</value></data>
+  <data name="EffectMaker_EndChickNone" xml:space="preserve"><value>None</value></data>
+  <data name="EffectMaker_EndChickTip" xml:space="preserve"><value>For effects that turn one image into another over several frames (transform, morph). When set, the preview's last frame shows this chick, and the script reads it with ctx.frameSource(ctx.rangeEnd). Changes previewEndChick in the source's declaration.</value></data>
   <data name="EffectMaker_FrameThumbTip" xml:space="preserve"><value>Step {0} - click to pause on this step.</value></data>
   <data name="EffectMaker_Languages" xml:space="preserve"><value>Languages</value></data>
   <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>Writes the title, description and setting labels in other languages (translations in the source's declaration). The one for the app's UI language is shown, otherwise the title and description written here.</value></data>
@@ -3634,7 +3639,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_Scene" xml:space="preserve"><value>Preview scene</value></data>
   <data name="EffectMaker_SceneTip" xml:space="preserve"><value>Layers drawn around the chick (a ground to collide with, a path to follow and so on). Effects that read other layers (a layer setting read with ctx.layer and so on) pick from these layers in the preview, the check and the upload preview. Edit it in a main editor tab; it is saved with the effect.</value></data>
   <data name="EffectMaker_SceneEdit" xml:space="preserve"><value>Edit in main editor</value></data>
-  <data name="EffectMaker_SceneEditTip" xml:space="preserve"><value>Opens the scene in a new main editor tab (creates one with an empty ground layer if there is none). The preview updates as you edit. The tab itself isn't saved; the scene is saved when you save the effect.</value></data>
+  <data name="EffectMaker_SceneEditTip" xml:space="preserve"><value>Opens the scene in a new main editor tab (creates one with an empty ground layer if there is none). While you edit, the Effect Maker shrinks to a small preview window in the corner so it doesn't cover the editor; the preview updates as you edit. Click it to make it large again. The tab itself isn't saved; the scene is saved when you save the effect.</value></data>
+  <data name="EffectMaker_CompactTip" xml:space="preserve"><value>The Effect Maker is small while you edit the scene in the main editor. Click the preview to make it large again (closing the scene tab does too).</value></data>
+  <data name="EffectMaker_ExpandTip" xml:space="preserve"><value>Make the Effect Maker large again</value></data>
   <data name="EffectMaker_SceneRemove" xml:space="preserve"><value>Remove scene</value></data>
   <data name="EffectMaker_SceneRemoveTip" xml:space="preserve"><value>Removes the preview scene (saving removes it from the effect too).</value></data>
   <data name="EffectMaker_SceneRemoveQuestion" xml:space="preserve"><value>Remove the preview scene? Its editor tab closes too.</value></data>

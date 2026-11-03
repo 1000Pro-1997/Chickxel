@@ -28,9 +28,9 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 /// max, min, pow, round, sign, sin, sinh, sqrt, tan, tanh, trunc(모두 Jint 구현 그대로 <see cref="JsOps"/>), <c>NaN</c>, <c>Infinity</c>, <c>lerp</c>,
 /// <c>hsvToRgb</c>, <c>rgbToHsv</c>.</item>
 /// <item>host: <c>img.width/height/data</c>, <c>d[i]</c> 읽기·쓰기, <c>d.length</c>, <c>s.키</c>(int·number·bool·color, choice는 문자열 리터럴과 같음 비교만,
-/// 색 목록·색 쌍 목록은 <c>s.키.length</c>만), <c>ctx.t/progress/frame/step/span/source/pivot/center</c>, <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>
+/// 색 목록·색 쌍 목록은 <c>s.키.length</c>만), <c>ctx.t/progress/frame/step/span/rangeStart/rangeEnd/source/pivot/center</c>, <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>
 /// (키·쌍 칸은 문자열 리터럴, 범위는 <c>{ x, y, w, h }</c> 리터럴이나 숫자 객체), <c>ctx.hasGradient("슬롯")</c>, <c>ctx.hash</c>, <c>ctx.random</c>,
-/// <c>ctx.bayer2</c>, <c>ctx.bayer4</c>.</item>
+/// <c>ctx.bayer2</c>, <c>ctx.bayer4</c>, <c>ctx.frameSource</c>, <c>ctx.matchPixels</c>(모드는 문자열 리터럴).</item>
 /// <item>함수: <c>const</c>에 묶은 화살표·<c>function</c>과 <c>function</c> 선언을 부르는 자리에 펼친다(재귀 불가, 함수를 돌려주기 불가).</item>
 /// </list>
 /// <para>
@@ -47,7 +47,8 @@ internal delegate void FastRenderFn(double[] data, double[] ctx, double[] settin
 internal sealed class FastCompiler
 {
     public const int CtxT = 0, CtxProgress = 1, CtxFrame = 2, CtxStep = 3, CtxSpan = 4, CtxSourceX = 5, CtxSourceY = 6, CtxSourceW = 7,
-        CtxSourceH = 8, CtxPivotX = 9, CtxPivotY = 10, CtxCenterX = 11, CtxCenterY = 12, CtxWidth = 13, CtxHeight = 14, CtxPhase = 15, CtxLength = 16;
+        CtxSourceH = 8, CtxPivotX = 9, CtxPivotY = 10, CtxCenterX = 11, CtxCenterY = 12, CtxWidth = 13, CtxHeight = 14, CtxPhase = 15,
+        CtxRangeStart = 16, CtxRangeEnd = 17, CtxLength = 18;
 
     // 펼친 함수 호출 수 한도: 넘으면 코드가 너무 커지므로 Jint로
     private const int MaxInlines = 4096;
@@ -201,9 +202,11 @@ internal sealed class FastCompiler
                 ["frame"] = Val.Num(Slot(_cv, CtxFrame)),
                 ["step"] = Val.Num(Slot(_cv, CtxStep)),
                 ["span"] = Val.Num(Slot(_cv, CtxSpan)),
+                ["rangeStart"] = Val.Num(Slot(_cv, CtxRangeStart)),
+                ["rangeEnd"] = Val.Num(Slot(_cv, CtxRangeEnd)),
                 ["source"] = Record(("x", Slot(_cv, CtxSourceX)), ("y", Slot(_cv, CtxSourceY)), ("w", Slot(_cv, CtxSourceW)), ("h", Slot(_cv, CtxSourceH))),
                 ["pivot"] = Record(("x", Slot(_cv, CtxPivotX)), ("y", Slot(_cv, CtxPivotY))),
-                // ctx.center는 늘 같은 모양의 숫자 객체라 빠른 경로도 읽는다. ctx.slice(null일 수 있음)·다른 레이어 함수(ctx.layer 등)는 이름 오류 → Jint
+                // ctx.center는 늘 같은 모양의 숫자 객체라 빠른 경로도 읽는다. ctx.slice(null일 수 있음)·ctx.frameTag(문자열)는 이름 오류 → Jint
                 ["center"] = Record(("x", Slot(_cv, CtxCenterX)), ("y", Slot(_cv, CtxCenterY))),
             },
         };
@@ -1039,7 +1042,8 @@ internal sealed class FastCompiler
             case "blendOver":
             {
                 if (c.Arguments.Count < 1) throw ValueError(c);
-                var src = Expr(c.Arguments[0]);
+                // null일 수 있는 그림(ctx.layer·ctx.frameSource 결과)이 null이면 Jint로(Jint가 TypeError를 낸다)
+                var src = NonNull(Expr(c.Arguments[0]));
                 if (src.Kind != Kind.Image) throw ValueError(c.Arguments[0]);
                 var parts = new List<E>();
                 if (src.Pre is not null) parts.Add(src.Pre);
@@ -1236,6 +1240,18 @@ internal sealed class FastCompiler
                 E assign = E.Assign(layer, E.Call(Op(nameof(JsOps.Layer)), _budget, _colors, E.Constant(key.Value), E.Constant(name == "layerWithEffects")));
                 return new Val { Kind = Kind.Image, Name = Nullable, Expr = layer, Pre = assign };
             }
+            case "frameSource":
+            {
+                // 결과는 null일 수 있는 그림(ctx.layer와 같음): if (!f)·f ? … : …로 가린 뒤 f.data·f.width를 읽는다
+                var values = Arguments(c.Arguments, 1, out var pre, out var temps);
+                var frame = E.Variable(typeof(FastImage), "frameSource");
+                _hoisted.Add(frame);
+                _hoisted.AddRange(temps);
+                E assign = E.Assign(frame, E.Call(Op(nameof(JsOps.FrameSource)), _budget, _colors, values[0]));
+                return new Val { Kind = Kind.Image, Name = Nullable, Expr = frame, Pre = pre is null ? assign : E.Block(typeof(void), pre, assign) };
+            }
+            case "matchPixels":
+                return MatchPixels(c);
             case "hash":
                 return CallNumber(Op(nameof(JsOps.Hash)), c.Arguments);
             case "random":
@@ -1275,6 +1291,49 @@ internal sealed class FastCompiler
         for (int i = 0; i < _schema.Count; i++)
             if (_schema[i].Key == key) return i;
         return -1;
+    }
+
+    /// <summary>
+    /// <c>ctx.matchPixels(a, b[, "position" | "color"])</c>: a·b는 그림(img·다른 그림·null일 수 있는 그림 — null이면 결과도 null), 모드는 문자열 리터럴만(그 밖은 Jint).
+    /// 인자는 왼쪽부터 계산한다. 결과는 null일 수 있는 객체: if (!m)로 가린 뒤 m.count·m.data[i]를 읽는다(null에서 읽으면 Jint로).
+    /// </summary>
+    private Val MatchPixels(CallExpression c)
+    {
+        var args = c.Arguments;
+        if (args.Count < 2) throw ValueError(c);
+        if (args.Count > 2 && args[2] is not StringLiteral) throw ValueError(args[2]);
+        bool byColor = args.Count > 2 && ((StringLiteral)args[2]).Value == ScriptPixelMatch.ColorMode;
+        var parts = new List<E>();
+        var temps = new List<ParameterExpression>();
+        E Picture(int index)
+        {
+            var v = Expr(args[index]);
+            if (v.Kind != Kind.Image) throw ValueError(args[index]);
+            if (v.Pre is not null) parts.Add(v.Pre);
+            var t = E.Variable(typeof(FastImage), "picture");
+            temps.Add(t);
+            // img는 data 배열과 ctx 칸으로 그림을 만든다(크기는 늘 너비 × 높이 × 4)
+            parts.Add(E.Assign(t, v.Expr ?? E.New(typeof(FastImage).GetConstructors()[0], _data,
+                E.Convert(Slot(_cv, CtxWidth), typeof(int)), E.Convert(Slot(_cv, CtxHeight), typeof(int)))));
+            return t;
+        }
+        var a = Picture(0);
+        var b = Picture(1);
+        for (int i = 3; i < args.Count; i++) parts.Add(Effect(Expr(args[i]), args[i]));
+        var match = E.Variable(typeof(FastMatch), "match");
+        _hoisted.Add(match);
+        _hoisted.AddRange(temps);
+        parts.Add(E.Assign(match, E.Call(Op(nameof(JsOps.MatchPixels)), _budget, a, b, E.Constant(byColor))));
+        var present = E.Call(Op(nameof(JsOps.PresentMatch)), match);
+        return new Val
+        {
+            Kind = Kind.Record, Name = Nullable, Expr = match, Pre = E.Block(typeof(void), parts),
+            Fields = new(StringComparer.Ordinal)
+            {
+                ["count"] = Val.Num(E.Convert(E.Field(present, nameof(FastMatch.Count)), typeof(double))),
+                ["data"] = new Val { Kind = Kind.Typed, Expr = E.Field(present, nameof(FastMatch.Data)), Name = JsOps.ArrayPlain.ToString(CultureInfo.InvariantCulture) },
+            },
+        };
     }
 
     /// <summary>

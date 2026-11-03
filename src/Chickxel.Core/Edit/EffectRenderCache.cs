@@ -180,6 +180,7 @@ internal sealed class CacheKey : IEquatable<CacheKey>
 /// <see cref="AnimatedEffect.RenderedFrameSource"/>)는 빼고 비교한다 — 그 함수가 보는 셀이 바뀌면 캐시를 비우므로.
 /// 스크립트가 보는 다른 레이어(<see cref="ScriptEffect.Layers"/>, 렌더마다 새 객체)도 빼고 비교한다 — 그 내용(이웃 셀·효과 목록·이름·테두리)은
 /// 이 목록을 그리는 단계의 열쇠와 중간 결과 열쇠의 앞부분에 <see cref="ScriptLayerContext.Key"/>로 들어간다(<see cref="CelStep"/>·<see cref="GroupStep"/>).
+/// 그릴 때 채운 태그 이름(<see cref="AnimatedEffect.FrameTag"/>)은 결과를 바꾸므로 빼지 않는다.
 /// </summary>
 internal sealed class EffectListKey : IEquatable<EffectListKey>
 {

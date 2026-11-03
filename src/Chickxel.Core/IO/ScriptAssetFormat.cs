@@ -22,13 +22,17 @@ public sealed record ScriptAsset : IAssetData
     public string? Description { get; init; }
     /// <summary>
     /// 올릴 때 목록 태그의 처음 값: 선언의 <c>tags</c>(<see cref="ScriptEffectProgram.Tags"/>)에, 다른 레이어를 읽는 원문(<see cref="ReadsOtherLayers"/>)이면
-    /// <see cref="LayerReferenceTag"/>를 끝에 더한 것(이미 있으면 그대로).
+    /// <see cref="LayerReferenceTag"/>를, 다른 프레임을 읽는 원문(<see cref="ReadsOtherFrames"/>)이면 <see cref="FrameReferenceTag"/>를 끝에 더한 것(이미 있으면 그대로).
     /// </summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
     /// <summary>다른 레이어를 읽는 스크립트에 늘 붙는 목록 태그(<see cref="AssetPublishCheck"/>가 빠졌으면 막는다).</summary>
     public const string LayerReferenceTag = "layer-reference";
     /// <summary>원문이 다른 레이어 함수(<see cref="ScriptInfo.OtherLayerNames"/>)를 쓰는지(<see cref="ScriptInfo.ReadsOtherLayers"/>).</summary>
     public bool ReadsOtherLayers { get; init; }
+    /// <summary>다른 프레임을 읽는 스크립트에 늘 붙는 목록 태그(<see cref="AssetPublishCheck"/>가 빠졌으면 막는다).</summary>
+    public const string FrameReferenceTag = "frame-reference";
+    /// <summary>원문이 다른 프레임(<c>ctx.frameSource</c>·<c>ctx.renderedFrameSource</c>)을 읽는지(<see cref="ScriptInfo.ReadsOtherFrames"/>·<see cref="ScriptInfo.ReadsRenderedFrames"/>).</summary>
+    public bool ReadsOtherFrames { get; init; }
     /// <summary>효과 만들기의 미리보기 장면(병아리 둘레 레이어). 없으면 null — 병아리만 놓고 그린다.</summary>
     public PreviewScene? Scene { get; init; }
     /// <summary>정리한 원문(<see cref="ScriptEffectProgram.NormalizeSource"/>).</summary>
@@ -39,6 +43,8 @@ public sealed record ScriptAsset : IAssetData
     public EffectEasing Easing { get; init; } = EffectEasing.Linear;
     /// <summary>선언의 <c>previewChick</c>: 패키지 미리보기 병아리(<see cref="PreviewChicks"/>의 ID).</summary>
     public string PreviewChick { get; init; } = PreviewChicks.Default;
+    /// <summary>선언의 <c>previewEndChick</c>(없으면 null): 패키지 미리보기 마지막 칸의 끝 그림 병아리(<see cref="ScriptEffectProgram.PreviewEndChick"/>).</summary>
+    public string? PreviewEndChick { get; init; }
     /// <summary>선언의 <c>previewFrames</c>: 패키지 미리보기에서 효과를 돌리는 칸 수(<see cref="ScriptEffectProgram.PreviewFrames"/>).</summary>
     public int PreviewFrames { get; init; } = AssetPreview.PackageFrames;
     /// <summary>선언의 설정 schema(선언 순서).</summary>
@@ -60,13 +66,19 @@ public sealed record ScriptAsset : IAssetData
     /// <summary>원문으로 만든 값(이름·작성자·schema는 <paramref name="program"/>의 선언, 장면은 없음).</summary>
     public static ScriptAsset From(string id, ScriptEffectProgram program)
     {
-        bool layers = ScriptLibrary.InfoOf(ScriptLibrary.Add(program.Source)) is { ReadsOtherLayers: true };
+        var info = ScriptLibrary.InfoOf(ScriptLibrary.Add(program.Source));
+        bool layers = info is { ReadsOtherLayers: true };
+        bool frames = info is not null && (info.ReadsOtherFrames || info.ReadsRenderedFrames);
+        IReadOnlyList<string> tags = program.Tags;
+        if (layers && !tags.Contains(LayerReferenceTag)) tags = [.. tags, LayerReferenceTag];
+        if (frames && !tags.Contains(FrameReferenceTag)) tags = [.. tags, FrameReferenceTag];
         return new()
         {
             Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description,
-            Tags = layers && !program.Tags.Contains(LayerReferenceTag) ? [.. program.Tags, LayerReferenceTag] : program.Tags, ReadsOtherLayers = layers,
+            Tags = tags, ReadsOtherLayers = layers, ReadsOtherFrames = frames,
             Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick,
-            PreviewFrames = program.PreviewFrames, Settings = program.Settings, Translations = program.Translations, Language = program.Language,
+            PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, Settings = program.Settings, Translations = program.Translations,
+            Language = program.Language,
         };
     }
 

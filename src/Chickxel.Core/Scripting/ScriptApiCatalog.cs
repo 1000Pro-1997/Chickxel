@@ -67,6 +67,8 @@ public static class ScriptApiCatalog
     public const string Slice = "ctx.slice";
     /// <summary><c>ctx.renderedFrameSource</c>가 돌려주는 객체.</summary>
     public const string Rendered = "rendered";
+    /// <summary><c>ctx.matchPixels</c>가 돌려주는 객체.</summary>
+    public const string Matched = "matched";
     /// <summary>색 객체(<c>ctx.color</c>, <c>hsvToRgb</c>, 색 설정 <c>s.키</c>).</summary>
     public const string Color = "color";
     /// <summary><c>rgbToHsv</c>가 돌려주는 객체.</summary>
@@ -105,6 +107,7 @@ public static class ScriptApiCatalog
         M(Declaration, "area", ScriptApiKind.Key, "area: \"global\" | \"local\"", Area),
         M(Declaration, "radius", ScriptApiKind.Key, "radius: 0~16384"),
         M(Declaration, "previewChick", ScriptApiKind.Key, "previewChick: \"knight\""),
+        M(Declaration, "previewEndChick", ScriptApiKind.Key, "previewEndChick: \"wizard\""),
         M(Declaration, "previewFrames", ScriptApiKind.Key, "previewFrames: 2~20"),
         M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair }]", Setting),
         M(Declaration, "padding", ScriptApiKind.Key, "padding: [left, top, right, bottom] | padding(s, width, height) { ... }"),
@@ -158,6 +161,9 @@ public static class ScriptApiCatalog
         M(Context, "frame", ScriptApiKind.Value, "ctx.frame"),
         M(Context, "step", ScriptApiKind.Value, "ctx.step"),
         M(Context, "span", ScriptApiKind.Value, "ctx.span"),
+        M(Context, "rangeStart", ScriptApiKind.Value, "ctx.rangeStart"),
+        M(Context, "rangeEnd", ScriptApiKind.Value, "ctx.rangeEnd"),
+        M(Context, "frameTag", ScriptApiKind.Value, "ctx.frameTag"),
         M(Context, "source", ScriptApiKind.Object, "ctx.source", Source),
         M(Context, "pivot", ScriptApiKind.Object, "ctx.pivot", Pivot),
         M(Context, "center", ScriptApiKind.Object, "ctx.center", Center),
@@ -172,6 +178,7 @@ public static class ScriptApiCatalog
         M(Context, "bayer4", ScriptApiKind.Function, "ctx.bayer4(x, y) → 0~15"),
         M(Context, "frameSource", ScriptApiKind.Function, "ctx.frameSource(frame) → img | null", Image),
         M(Context, "renderedFrameSource", ScriptApiKind.Function, "ctx.renderedFrameSource(frame) → { image, offsetX, offsetY } | null", Rendered),
+        M(Context, "matchPixels", ScriptApiKind.Function, "ctx.matchPixels(a, b, mode?) → { count, data } | null", Matched),
         M(Context, "layer", ScriptApiKind.Function, "ctx.layer(key) → img | null", Image),
         M(Context, "layerWithEffects", ScriptApiKind.Function, "ctx.layerWithEffects(key) → img | null", Image),
         M(Context, "layerEffects", ScriptApiKind.Function, "ctx.layerEffects(key) → [effectName, ...]"),
@@ -191,6 +198,8 @@ public static class ScriptApiCatalog
         M(Rendered, "image", ScriptApiKind.Object, "image", Image),
         M(Rendered, "offsetX", ScriptApiKind.Value, "offsetX"),
         M(Rendered, "offsetY", ScriptApiKind.Value, "offsetY"),
+        M(Matched, "count", ScriptApiKind.Value, "count"),
+        M(Matched, "data", ScriptApiKind.Value, "data[k * 4 + 0~3] = ax, ay, bx, by"),
 
         M(Color, "r", ScriptApiKind.Value, "r"),
         M(Color, "g", ScriptApiKind.Value, "g"),

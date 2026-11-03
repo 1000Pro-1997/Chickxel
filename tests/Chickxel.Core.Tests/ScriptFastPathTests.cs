@@ -586,7 +586,7 @@ public class ScriptFastPathTests
     [InlineData("const d = img.data;\ntry { d[0] = 1; } catch (e) {}", 2, 1)]
     [InlineData("const d = img.data;\n  const label = 'x';", 2, 17)]
     [InlineData("const d = img.data;\nd[0] = later;\nconst later = 1;", 2, 8)]
-    [InlineData("const d = img.data;\nd[0] = ctx.frameSource(0);", 2, 8)]
+    [InlineData("const d = img.data;\nd[0] = ctx.layerEffects(\"k\");", 2, 8)]
     [InlineData("const f = (n) => n < 1 ? 0 : f(n - 1);\nimg.data[0] = f(3);", 1, 30)]
     public void Unsupported_script_reports_why_and_where(string body, int line, int column)
     {
@@ -603,8 +603,8 @@ public class ScriptFastPathTests
     {
         Assert.Equal(DomainStrings.FormatScript_FastSyntax(construct: "TryStatement"),
             Program(Script("try {} catch (e) {}")).ExecutionPath.Reason);
-        Assert.Equal(DomainStrings.FormatScript_FastName(name: "ctx.frameSource"),
-            Program(Script("ctx.frameSource(0);")).ExecutionPath.Reason);
+        Assert.Equal(DomainStrings.FormatScript_FastName(name: "ctx.layerEffects"),
+            Program(Script("ctx.layerEffects(\"k\");")).ExecutionPath.Reason);
         Assert.Equal(DomainStrings.FormatScript_FastBeforeDeclaration(name: "later"),
             Program(Script("img.data[0] = later;\nconst later = 1;")).ExecutionPath.Reason);
     }

@@ -14,7 +14,7 @@ namespace Chickxel.App;
 /// 버전(이미 올린 버전에서 다음 수 버전 제안)·태그(<see cref="TagChipEditor"/>), 고정 라이선스(<see cref="AssetPublishCheck.License"/>),
 /// 오른쪽은 올릴 에셋, 목록 미리보기(에셋 미리보기나 고른 PNG), 올리기 전 검사 결과.
 /// 내가 올린 에셋은 그 상점 목록 정보로, 스크립트 효과는 선언의 이름·설명·번역·태그로, 그라데이션은 전에 올린 기록(없으면 에셋 이름)으로 채운다.
-/// 다른 레이어를 읽는 스크립트 효과는 <see cref="ScriptAsset.LayerReferenceTag"/> 태그 칩을 미리 넣고 뺄 수 없다(빼면 다시 넣음 — 태그 8개 한도에 셈).
+/// 다른 레이어·프레임을 읽는 스크립트 효과는 <see cref="ScriptAsset.LayerReferenceTag"/>·<see cref="ScriptAsset.FrameReferenceTag"/> 태그 칩을 미리 넣고 뺄 수 없다(빼면 다시 넣음 — 태그 8개 한도에 셈).
 /// 입력이 바뀔 때마다 <see cref="AssetPublishCheck.Check"/>로 다시 검사하고, 오류가 없을 때만 올린다(진행 막대·취소).
 /// 서버가 거절하면 그 까닭을 검사 목록에 보이고, 올리면 에셋을 그 상점 ID에 연결하고(<see cref="AssetStore.MarkPublished"/>) 브라우저로 패키지 쪽(<c>/packages/&lt;ID&gt;</c>)을 연다.
 /// </summary>
@@ -29,8 +29,8 @@ public sealed class AssetPublishDialog : DialogBase
     private CommunityUser _user;
     private readonly TextBox _version, _name, _summary;
     private readonly TagChipEditor _tags;
-    /// <summary>다른 레이어를 읽는 스크립트라 <see cref="ScriptAsset.LayerReferenceTag"/> 태그를 꼭 달아야 하는지.</summary>
-    private readonly bool _forceLayerTag;
+    /// <summary>꼭 달아야 하는 태그: 다른 레이어를 읽으면 <see cref="ScriptAsset.LayerReferenceTag"/>, 다른 프레임을 읽으면 <see cref="ScriptAsset.FrameReferenceTag"/>.</summary>
+    private readonly string[] _forcedTags;
     private readonly SelectableTextBlock _authorId, _authorName, _idText;
     private readonly TextBlock _languages = Note(""), _checksSummary = Note(""), _previewNote = Note("");
     /// <summary>패키지 묶음 맨 위의 모드 줄(새 패키지 / 업데이트 / 확인 중 / 확인 못 함)과 그 아래 덧붙임.</summary>
@@ -151,10 +151,14 @@ public sealed class AssetPublishDialog : DialogBase
         _version = Field("1.0.0");
         _version.Width = 110;
         _tags = new TagChipEditor(FieldWidth);
-        _forceLayerTag = asset.Script is { ReadsOtherLayers: true };
+        var forced = new List<string>(2);
+        if (asset.Script is { ReadsOtherLayers: true }) forced.Add(ScriptAsset.LayerReferenceTag);
+        if (asset.Script is { ReadsOtherFrames: true }) forced.Add(ScriptAsset.FrameReferenceTag);
+        _forcedTags = [.. forced];
         _tags.SetTags(WithForcedTag(tags));
-        var forcedTagNote = Note(UiStrings.Publish_LayerReferenceTag);
-        forcedTagNote.IsVisible = _forceLayerTag;
+        var forcedTagNote = Note(string.Join("\n", _forcedTags.Select(tag => tag == ScriptAsset.LayerReferenceTag
+            ? UiStrings.Publish_LayerReferenceTag : UiStrings.Publish_FrameReferenceTag)));
+        forcedTagNote.IsVisible = _forcedTags.Length > 0;
         _useSuggestion = Ui.Button(UiStrings.Publish_UseSuggestion, (_, _) =>
         {
             _versionEdited = false;
@@ -243,7 +247,7 @@ public sealed class AssetPublishDialog : DialogBase
         _tags.TagsChanged += (_, _) =>
         {
             // 꼭 달아야 하는 태그를 빼면 다시 넣는다
-            if (_forceLayerTag && !_tags.Tags.Contains(ScriptAsset.LayerReferenceTag)) _tags.SetTags(WithForcedTag(_tags.Tags));
+            if (_forcedTags.Any(tag => !_tags.Tags.Contains(tag))) _tags.SetTags(WithForcedTag(_tags.Tags));
             Changed();
         };
         _name.TextChanged += (_, _) =>
@@ -289,9 +293,9 @@ public sealed class AssetPublishDialog : DialogBase
         RunCheck();
     }
 
-    /// <summary>꼭 달아야 하는 태그(<see cref="ScriptAsset.LayerReferenceTag"/>)가 없으면 끝에 더한 태그.</summary>
+    /// <summary>꼭 달아야 하는 태그(<see cref="_forcedTags"/>) 중 없는 것을 끝에 더한 태그.</summary>
     private IReadOnlyList<string> WithForcedTag(IReadOnlyList<string> tags)
-        => !_forceLayerTag || tags.Contains(ScriptAsset.LayerReferenceTag) ? tags : [.. tags, ScriptAsset.LayerReferenceTag];
+        => _forcedTags.All(tags.Contains) ? tags : [.. tags, .. _forcedTags.Where(tag => !tags.Contains(tag))];
 
     /// <summary>스크립트 선언의 번역에서 이름·설명이 있는 언어만(설정 이름만 있는 언어는 뺌, 패키지 규칙에 맞지 않는 값도 뺌).</summary>
     private static List<KeyValuePair<string, AssetTranslation>> ScriptTranslationsOf(ScriptAsset script)
@@ -545,8 +549,11 @@ public sealed class AssetPublishDialog : DialogBase
                 result.Tags, new Progress<double>(ReportProgress), cancel.Token);
             Remember(result);
             Link(result);
-            AppCommunity.Open(this, AppCommunity.Client.PackagePageUrl(package.Id));
-            Ui.Info(this, F(UiStrings.Publish_Uploaded, package.Name.Length > 0 ? package.Name : manifest.Name, package.Version), UiStrings.Publish_Title);
+            // 패키지 쪽은 바로 열지 않고, 보고 싶은 사람만 "홈페이지 열기"로 연다
+            var done = new MessageDialog(F(UiStrings.Publish_Uploaded, package.Name.Length > 0 ? package.Name : manifest.Name, package.Version),
+                UiStrings.Publish_Title, MessageButtons.OK, MessageIcon.Info);
+            done.AddChoice(UiStrings.Publish_OpenPage, DialogResult.Yes);
+            if (done.ShowDialog(this) == DialogResult.Yes) AppCommunity.Open(this, AppCommunity.Client.PackagePageUrl(package.Id));
             _upload = null;
             DialogResult = DialogResult.OK;
         }

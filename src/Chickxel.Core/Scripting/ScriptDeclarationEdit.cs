@@ -22,6 +22,13 @@ public static class ScriptDeclarationEdit
     public static string? SetPreviewChick(string source, string chickId) => SetString(source, "previewChick", chickId);
 
     /// <summary>
+    /// 선언의 <c>previewEndChick</c>을 <paramref name="chickId"/>로 바꾼다. 없으면 <c>previewChick</c> 다음에(없으면 <c>name</c> 다음에) 더하고,
+    /// null이면 그 속성을 지운다(<see cref="SetString"/>과 같은 모양). 원문을 해석하지 못하면 null.
+    /// </summary>
+    public static string? SetPreviewEndChick(string source, string? chickId)
+        => SetLiteral(source, "previewEndChick", chickId is null ? null : JsonSerializer.Serialize(chickId, LiteralOptions), ["previewChick", "name"]);
+
+    /// <summary>
     /// 선언의 <c>language</c>(선언에 적은 이름·설명·설정 이름의 언어)를 <paramref name="language"/>로 바꾼다(없으면 <c>name</c> 다음에 더함, <see cref="SetString"/>).
     /// 언어 코드 모양이 아니거나 원문을 해석하지 못하면 null.
     /// </summary>

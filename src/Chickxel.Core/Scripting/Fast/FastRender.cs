@@ -106,6 +106,8 @@ internal sealed class FastRender
         cv[FastCompiler.CtxFrame] = frame.FrameIndex;
         cv[FastCompiler.CtxStep] = frame.FrameStep;
         cv[FastCompiler.CtxSpan] = frame.FrameSpan;
+        cv[FastCompiler.CtxRangeStart] = frame.RangeStart;
+        cv[FastCompiler.CtxRangeEnd] = frame.RangeEnd;
         cv[FastCompiler.CtxSourceX] = source.X;
         cv[FastCompiler.CtxSourceY] = source.Y;
         cv[FastCompiler.CtxSourceW] = source.Width;

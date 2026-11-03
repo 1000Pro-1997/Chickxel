@@ -35,6 +35,10 @@ public enum PublishIssueCode
     LayerReferenceTag,
     /// <summary>다른 레이어를 읽는 스크립트인데 <see cref="ScriptAsset.LayerReferenceTag"/>를 더하면 태그가 <see cref="RemoteCatalogFormat.MaxTags"/>개를 넘음(태그를 하나 빼야 함).</summary>
     LayerReferenceTagFull,
+    /// <summary>다른 프레임을 읽는 스크립트(<see cref="ScriptAsset.ReadsOtherFrames"/>)인데 태그에 <see cref="ScriptAsset.FrameReferenceTag"/>가 없음.</summary>
+    FrameReferenceTag,
+    /// <summary>다른 프레임을 읽는 스크립트인데 꼭 달 태그(<see cref="ScriptAsset.FrameReferenceTag"/>, 빠졌으면 <see cref="ScriptAsset.LayerReferenceTag"/>도)를 더하면 태그가 <see cref="RemoteCatalogFormat.MaxTags"/>개를 넘음.</summary>
+    FrameReferenceTagFull,
 }
 
 /// <summary>
@@ -277,9 +281,16 @@ public static class AssetPublishCheck
         if (!AssetTranslations.IsValid(request.Translations)) Error(PublishIssueCode.Translations);
         if (!IsValidTags(request.Tags)) Error(PublishIssueCode.Tags);
         if (request.Tags.Count == 0) Warn(PublishIssueCode.NoTags);
-        // 다른 레이어를 읽는 효과는 layer-reference 태그가 꼭 있어야 한다(상점에서 이런 효과를 따로 찾게)
-        if (request.Asset.Data is ScriptAsset { ReadsOtherLayers: true } && !request.Tags.Contains(ScriptAsset.LayerReferenceTag))
-            Error(request.Tags.Count >= RemoteCatalogFormat.MaxTags ? PublishIssueCode.LayerReferenceTagFull : PublishIssueCode.LayerReferenceTag);
+        // 다른 레이어·프레임을 읽는 효과는 layer-reference·frame-reference 태그가 꼭 있어야 한다(상점에서 이런 효과를 따로 찾게)
+        if (request.Asset.Data is ScriptAsset script)
+        {
+            bool missLayer = script.ReadsOtherLayers && !request.Tags.Contains(ScriptAsset.LayerReferenceTag);
+            bool missFrame = script.ReadsOtherFrames && !request.Tags.Contains(ScriptAsset.FrameReferenceTag);
+            // 빠진 강제 태그를 모두 더해도 한도 안이어야 한다(layer-reference를 먼저 센다)
+            int count = request.Tags.Count + (missLayer ? 1 : 0);
+            if (missLayer) Error(count > RemoteCatalogFormat.MaxTags ? PublishIssueCode.LayerReferenceTagFull : PublishIssueCode.LayerReferenceTag);
+            if (missFrame) Error(count + 1 > RemoteCatalogFormat.MaxTags ? PublishIssueCode.FrameReferenceTagFull : PublishIssueCode.FrameReferenceTag);
+        }
         if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null);
 
         var translations = new Dictionary<string, AssetTranslation>(StringComparer.OrdinalIgnoreCase);

@@ -154,7 +154,7 @@ public static class ScriptEffectRuntime
         return records.GetOrAdd(key, _ => new Record());
     }
 
-    // 목록에 든 값과 같아지게 그릴 때만 채운 값(프레임 위치·피벗·다른 프레임 원본·다른 레이어)과 켜짐을 지운다
+    // 목록에 든 값과 같아지게 그릴 때만 채운 값(프레임 위치·피벗·다른 프레임 원본·다른 레이어·태그)과 켜짐을 지운다
     private static ScriptEffect Key(ScriptEffect effect) => effect with
     {
         Enabled = true,
@@ -164,5 +164,6 @@ public static class ScriptEffectRuntime
         FrameSource = null,
         RenderedFrameSource = null,
         Layers = null,
+        FrameTag = "",
     };
 }

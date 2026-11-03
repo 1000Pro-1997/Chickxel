@@ -28,7 +28,7 @@ public sealed record ScriptParseResult(ScriptEffectProgram? Program, IReadOnlyLi
 }
 
 /// <summary>
-/// 해석한 스크립트 효과 하나(13.2): <c>effect({ name, author, description, translations, animated, previewChick, previewFrames, area, radius, settings, padding, render })</c>를 선언한 JS 파일.
+/// 해석한 스크립트 효과 하나(13.2): <c>effect({ name, author, description, translations, animated, previewChick, previewEndChick, previewFrames, area, radius, settings, padding, render })</c>를 선언한 JS 파일.
 /// 불변이고 여러 스레드에서 같이 써도 된다. 실행은 부른 스레드의 <see cref="ScriptSandbox"/>에서 <see cref="Limits"/> 안에서 한다.
 /// <para>
 /// 스크립트 정체는 <see cref="ContentHash"/>(정리한 원문의 SHA-256)다(13.5). 효과 TypeId <c>chickxel.effect.script</c>와 이 해시, 설정값으로 효과 하나가 정해진다.
@@ -196,6 +196,12 @@ public sealed class ScriptEffectProgram
 
     /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
     public string PreviewChick { get; }
+
+    /// <summary>
+    /// 선언의 <c>previewEndChick</c>(없으면 null): 여러 칸에 걸쳐 그림을 바꾸는 효과의 끝 그림 병아리. 미리보기 마지막 칸이 이 병아리를 보인다
+    /// (<see cref="Assets.AssetPreview.Frame"/>).
+    /// </summary>
+    public string? PreviewEndChick { get; init; }
 
     /// <summary>
     /// 선언의 <c>previewFrames</c>(<see cref="MinPreviewFrames"/>~<see cref="MaxPreviewFrames"/>, 기본 <see cref="Assets.AssetPreview.PackageFrames"/>):

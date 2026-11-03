@@ -17,7 +17,7 @@ public sealed record ScriptSignatureHelp(ScriptApiMember Member, int Parameter, 
 /// <summary>
 /// 스크립트 코드 편집기의 자동 완성·매개변수 안내·설명 풍선(설계 4.3). 쓰는 중이라 문법이 깨져 있어도 동작하도록 해석기 대신
 /// 글자(문자열·주석을 뺀 코드)를 거꾸로 훑어 문맥을 정한다: <c>img.</c>·<c>ctx.</c>·<c>ctx.source.</c>·<c>Math.</c> 뒤 = 그 객체의 이름,
-/// <c>s.</c> 뒤 = 선언의 <c>settings</c>에서 읽은 키, 선언 객체·설정 항목의 키 자리 = 그 키, <c>type: "</c>·<c>area: "</c>·<c>previewChick: "</c>·
+/// <c>s.</c> 뒤 = 선언의 <c>settings</c>에서 읽은 키, 선언 객체·설정 항목의 키 자리 = 그 키, <c>type: "</c>·<c>area: "</c>·<c>previewChick: "</c>·<c>previewEndChick: "</c>·
 /// <c>ctx.color("</c> 안 = 정해진 값, 그 밖 = 전역·이 원문의 이름·키워드. 이름은 <see cref="ScriptApiCatalog"/> 한 벌을 쓴다.
 /// </summary>
 public static partial class ScriptCompletion
@@ -52,7 +52,7 @@ public static partial class ScriptCompletion
     [GeneratedRegex(@"\bwidget\s*:\s*$")]
     private static partial Regex BeforeWidget();
 
-    [GeneratedRegex(@"\bpreviewChick\s*:\s*$")]
+    [GeneratedRegex(@"\bpreview(End)?Chick\s*:\s*$")]
     private static partial Regex BeforeChick();
 
     [GeneratedRegex(@"\bsettings\s*:\s*$")]

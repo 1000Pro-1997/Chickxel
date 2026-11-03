@@ -55,6 +55,11 @@ internal static partial class ScriptDeclarationReader
         string? previewChick = chickValue is JsString && chickValue.AsString() is { Length: > 0 and <= 32 } chick && ChickId().IsMatch(chick) ? chick : null;
         if (!chickValue.IsUndefined() && previewChick is null) Fail(DomainStrings.Script_InvalidPreviewChick, "previewChick");
 
+        // 여러 칸에 걸쳐 그림을 바꾸는 효과의 끝 그림 병아리(미리보기 마지막 칸, 없으면 null)
+        var endChickValue = declaration.Get("previewEndChick");
+        string? previewEndChick = endChickValue is JsString && endChickValue.AsString() is { Length: > 0 and <= 32 } endChick && ChickId().IsMatch(endChick) ? endChick : null;
+        if (!endChickValue.IsUndefined() && previewEndChick is null) Fail(DomainStrings.Script_InvalidPreviewEndChick, "previewEndChick");
+
         var framesValue = declaration.Get("previewFrames");
         int previewFrames = AssetPreview.PackageFrames;
         if (!framesValue.IsUndefined())
@@ -152,7 +157,7 @@ internal static partial class ScriptDeclarationReader
             ? new(null, errors)
             : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
                 previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
-            { Motion = motion, Tags = tags, Language = language }, []);
+            { Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick }, []);
     }
 
     /// <summary>

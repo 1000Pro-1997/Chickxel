@@ -230,6 +230,13 @@ public sealed partial class SpriteProject
     /// <summary>프레임이 속한 첫 태그(없으면 null).</summary>
     public AnimationTag? TagOfFrame(int frameIndex) => _tags.Find(t => t.Contains(frameIndex));
 
+    /// <summary>
+    /// 효과 목록 <paramref name="effects"/>의 스크립트가 프레임 <paramref name="frameIndex"/>에서 볼 태그 이름(<c>ctx.frameTag</c> — 첫 태그, 없으면 "").
+    /// <c>ctx.frameTag</c>를 읽는 켜진 스크립트 효과가 없으면 늘 ""(다른 효과의 그리기·캐시 열쇠는 태그와 무관). <see cref="LayerEffects.WithFrameTag"/>로 넣는다.
+    /// </summary>
+    public string FrameTagFor(IReadOnlyList<LayerEffect> effects, int frameIndex)
+        => LayerEffects.ReadsFrameTag(effects) ? TagOfFrame(frameIndex)?.Name ?? "" : "";
+
     /// <summary>프레임의 실제 피벗(재정의가 없으면 기본 피벗).</summary>
     public Pivot GetFramePivot(int frameIndex) => _frames[frameIndex].Pivot ?? Sprite.DefaultPivot;
 
@@ -286,7 +293,7 @@ public sealed partial class SpriteProject
     public bool IsCelEmpty(int layerIndex, int frameIndex) => !HasContent(GetCel(layerIndex, frameIndex));
 
     /// <summary>
-    /// 일반 레이어에 원본 없이 그림을 만드는 효과(<see cref="Chickxel.Core.Effects.EffectDefinition.GeneratesContent"/> — 글씨)가 프레임 <paramref name="frameIndex"/>에 켜져 있는지
+    /// 일반 레이어에 원본 없이 그림을 만드는 효과(<see cref="LayerEffects.GeneratesContent"/> — 글씨, <c>ctx.frameSource</c>를 읽는 스크립트)가 프레임 <paramref name="frameIndex"/>에 켜져 있는지
     /// (켜져 있고 범위 안). 그러면 그 프레임에 셀이 없어도 빈 그림 위에 효과를 그린다(합성·셀 썸네일·효과 원본·아래로 합치기·영구 적용·내보내기). 부위·그룹은 false.
     /// </summary>
     public bool HasContentEffect(int layerIndex, int frameIndex) => HasContentEffect(_layers[layerIndex], frameIndex);
@@ -440,8 +447,9 @@ public sealed partial class SpriteProject
         Func<int, PixelImage?>? source = !LayerEffects.UsesOtherFrames(effects) ? null
             : cels is null ? EffectFrameSource(layer)
             : f => (uint)f < (uint)_frames.Count ? cels(f) : null;
-        return LayerEffects.WithScriptLayers(LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source,
-            source is null ? null : f => EffectPivot(layer, f)), ScriptLayersOf(layer, frameIndex, effects, neighborCels ?? DefaultCels, nested: false));
+        return LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), source,
+            source is null ? null : f => EffectPivot(layer, f)), ScriptLayersOf(layer, frameIndex, effects, neighborCels ?? DefaultCels, nested: false)),
+            FrameTagFor(effects, frameIndex));
     }
 
     /// <summary>

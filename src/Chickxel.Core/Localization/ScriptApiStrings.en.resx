@@ -24,6 +24,7 @@
   <data name="Api_effect_area" xml:space="preserve"><value>Work area: "global" (default, once per frame) or "local" (per tile, with radius px of margin).</value></data>
   <data name="Api_effect_radius" xml:space="preserve"><value>Margin in px around each tile when area is "local".</value></data>
   <data name="Api_effect_previewChick" xml:space="preserve"><value>Chick ID for the preview made when you publish (default "original").</value></data>
+  <data name="Api_effect_previewEndChick" xml:space="preserve"><value>Optional end chick ID for effects that turn one image into another over frames. The preview's last frame shows this chick; read it with ctx.frameSource(ctx.rangeEnd).</value></data>
   <data name="Api_effect_previewFrames" xml:space="preserve"><value>Number of frames the effect runs in the preview and the published preview (2-20, default 10).</value></data>
   <data name="Api_effect_settings" xml:space="preserve"><value>Settings shown in the effects window. Read the values as s.key in render.</value></data>
   <data name="Api_effect_padding" xml:space="preserve"><value>Margin the effect adds outside the image: fixed [left, top, right, bottom] or a function of the settings and size.</value></data>
@@ -71,6 +72,9 @@
   <data name="Api_ctx_frame" xml:space="preserve"><value>Index of the frame being drawn (from 0).</value></data>
   <data name="Api_ctx_step" xml:space="preserve"><value>Frames since the first frame of the effect range (from 0).</value></data>
   <data name="Api_ctx_span" xml:space="preserve"><value>Length of the effect range minus 1.</value></data>
+  <data name="Api_ctx_rangeStart" xml:space="preserve"><value>Frame number of the first frame of the effect range (from 0). 0 in the effect maker preview.</value></data>
+  <data name="Api_ctx_rangeEnd" xml:space="preserve"><value>Frame number of the last frame of the effect range (rangeStart + span). The last cell in the effect maker preview.</value></data>
+  <data name="Api_ctx_frameTag" xml:space="preserve"><value>Name of the animation tag containing the drawn frame (the first tag when tags overlap). "" outside any tag or outside a project (previews).</value></data>
   <data name="Api_ctx_source" xml:space="preserve"><value>Where the original sits inside the padded image: { x, y, w, h }.</value></data>
   <data name="Api_ctx_pivot" xml:space="preserve"><value>Pivot position { x, y } in image coordinates.</value></data>
   <data name="Api_ctx_color" xml:space="preserve"><value>Color { r, g, b, a } of the color setting key at (x, y). Without a gradient it is the solid color; with one it is sampled like the official effects over the opaque bounds of the image before the effect (or over bounds { x, y, w, h } when given).</value></data>
@@ -83,9 +87,12 @@
   <data name="Api_ctx_random" xml:space="preserve"><value>A number from 0 up to 1 fixed by frame and seed.</value></data>
   <data name="Api_ctx_frameSource" xml:space="preserve"><value>The effect source of another frame (without effects, same size), or null.</value></data>
   <data name="Api_ctx_renderedFrameSource" xml:space="preserve"><value>Deferred effects only: another frame with this layer's other (non-deferred) effects applied, as { image, offsetX, offsetY } (position relative to the original). null when the frame has no source, its size differs or the effect is not deferred.</value></data>
+  <data name="Api_ctx_matchPixels" xml:space="preserve"><value>Pairs the opaque pixels (alpha above 0) of two images a and b (img, ctx.frameSource or ctx.layer results; sizes may differ) as { count, data }. data holds [ax, ay, bx, by] (pixel coordinates in a and b) for each pair in turn; count is the larger of the two opaque pixel counts (0 when either is 0), so pixels of the smaller side are reused (converging or splitting). Pairs follow a Hilbert curve over each image's opaque bounds stretched to the same grid, so parts map to parts; mode "color" orders by brightness first (default "position"). null when a or b is null.</value></data>
   <data name="Api_rendered_image" xml:space="preserve"><value>The image with effects applied (including padding, a new copy on every call).</value></data>
   <data name="Api_rendered_offsetX" xml:space="preserve"><value>X of that image's top-left relative to the original's top-left (negative by the padding).</value></data>
   <data name="Api_rendered_offsetY" xml:space="preserve"><value>Y of that image's top-left relative to the original's top-left (negative by the padding).</value></data>
+  <data name="Api_matched_count" xml:space="preserve"><value>Number of pairs (the larger of the two opaque pixel counts, 0 when either is 0).</value></data>
+  <data name="Api_matched_data" xml:space="preserve"><value>Numbers with pair k's a coordinates (ax, ay) and b coordinates (bx, by) at data[k * 4] to data[k * 4 + 3] (length count × 4, pairs in a's order).</value></data>
   <data name="Api_ctx_source_x" xml:space="preserve"><value>Left of the original in px.</value></data>
   <data name="Api_ctx_source_y" xml:space="preserve"><value>Top of the original in px.</value></data>
   <data name="Api_ctx_source_w" xml:space="preserve"><value>Width of the original in px.</value></data>

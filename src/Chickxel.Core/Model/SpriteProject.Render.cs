@@ -74,7 +74,7 @@ public sealed partial class SpriteProject
         IReadOnlyList<LayerEffect> effects = layer.IsPart ? [] : layer.Effects;
         var step = new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex),
             layer.IsPart ? null : SourcesOf(layer, effects, frameIndex, nested: false),
-            layer.IsPart ? null : ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false), 255, 0, 0, clip: true);
+            layer.IsPart ? null : ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false), FrameTagFor(effects, frameIndex), 255, 0, 0, clip: true);
         return new RenderPlan(cel.Width, cel.Height, [step]);
     }
 
@@ -124,7 +124,7 @@ public sealed partial class SpriteProject
         var effects = nested ? LayerEffects.WithoutRenderedLayerReaders(layer.Effects) : layer.Effects;
         int x = layer.IsPart ? layer.PartOffset.X : 0, y = layer.IsPart ? layer.PartOffset.Y : 0;
         return new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), SourcesOf(layer, effects, frameIndex, nested),
-            ScriptLayersOf(layer, frameIndex, effects, cels, nested), opacity, x, y);
+            ScriptLayersOf(layer, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, x, y);
     }
 
     /// <summary>이 프레임에 효과가 켜진 그룹 단계(그릴 부위 셀이 없으면 null). <paramref name="celOf"/>는 그릴 부위 셀(보이기·걸러내기 반영).</summary>
@@ -137,7 +137,7 @@ public sealed partial class SpriteProject
         if (parts.Count == 0) return null;
         var effects = nested ? LayerEffects.WithoutRenderedLayerReaders(group.Effects) : group.Effects;
         return new GroupStep(group, parts, effects, frameIndex, _frames.Count, EffectPivot(group, frameIndex), SourcesOf(group, effects, frameIndex, nested),
-            ScriptLayersOf(group, frameIndex, effects, cels, nested), opacity, _width, _height);
+            ScriptLayersOf(group, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, _width, _height);
     }
 
     /// <summary>

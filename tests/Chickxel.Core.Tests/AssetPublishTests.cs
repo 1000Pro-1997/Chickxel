@@ -149,6 +149,37 @@ public class AssetPublishTests
     }
 
     [Fact]
+    public void FrameReadingScript_MustCarryTheFrameReferenceTag()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
+        var saved = store.SaveScript(
+            "effect({ name: \"Echo\", tags: [\"echo\"], render(img, ctx) { const f = ctx.renderedFrameSource(0); if (f) img.data[0] = f.data[0]; } });", null, null);
+        Assert.True(saved.Script!.ReadsOtherFrames);
+        Assert.False(saved.Script!.ReadsOtherLayers);
+        Assert.Equal(["echo", ScriptAsset.FrameReferenceTag], saved.Script!.Tags);
+        var request = Request(store) with { Id = "pixel-cat.echo", Name = "Echo", Translations = AssetTranslations.Empty, Asset = Asset(saved) };
+        PublishIssueCode? Code(IReadOnlyList<string> tags)
+            => Check(request with { Tags = tags }).Issues.FirstOrDefault(i => i.Code is PublishIssueCode.FrameReferenceTag or PublishIssueCode.FrameReferenceTagFull)?.Code;
+
+        Assert.Equal(PublishIssueCode.FrameReferenceTag, Code(["echo"]));
+        Assert.Equal(PublishIssueCode.FrameReferenceTagFull, Code([.. Enumerable.Range(1, 8).Select(i => "t" + i)]));
+        Assert.Null(Code(["echo", ScriptAsset.FrameReferenceTag]));
+        var ok = Check(request with { Tags = saved.Script!.Tags });
+        Assert.True(ok.Ok, string.Join("\n", ok.Issues));
+
+        // 레이어와 프레임을 둘 다 읽으면 두 태그가 다 붙고, 둘 다 빠졌을 때는 둘을 더할 자리가 있어야 한다
+        var both = store.SaveScript(
+            "effect({ name: \"Ground Echo\", tags: [\"echo\"], settings: [{ key: \"ground\", type: \"layer\", default: \"ground\" }], "
+            + "render(img, ctx) { const g = ctx.layer(\"ground\"); const f = ctx.frameSource(0); if (g && f) img.data[0] = g.data[0] + f.data[0]; } });", null, null);
+        Assert.Equal(["echo", ScriptAsset.LayerReferenceTag, ScriptAsset.FrameReferenceTag], both.Script!.Tags);
+        var bothRequest = request with { Id = "pixel-cat.ground-echo", Name = "Ground Echo", Asset = Asset(both) };
+        var seven = Check(bothRequest with { Tags = [.. Enumerable.Range(1, 7).Select(i => "t" + i)] }).Issues.Select(i => i.Code).ToList();
+        Assert.Contains(PublishIssueCode.LayerReferenceTag, seven);
+        Assert.Contains(PublishIssueCode.FrameReferenceTagFull, seven);
+    }
+
+    [Fact]
     public void SubmissionsWithoutLicenseOrAuthor_AreRejectedByTheCatalogBuilder_WhileAppPackagesAlwaysCarryTheFixedLicense()
     {
         // 게시 창은 라이선스를 고정(CC0-1.0 + 원문 LICENSE.txt)하므로 라이선스 문제가 생기지 않는다. 직접 만든 패키지는 카탈로그 만들기가 거부한다.

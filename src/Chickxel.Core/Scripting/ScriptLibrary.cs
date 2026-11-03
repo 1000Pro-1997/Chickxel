@@ -22,7 +22,8 @@ public enum ScriptTrust
 /// <see cref="ReadsRenderedFrames"/> = <c>ctx.renderedFrameSource</c>,
 /// <see cref="ReadsOtherLayers"/> = 다른 레이어 함수(<see cref="OtherLayerNames"/> — <c>layer</c>는 흔한 이름이라 속성 이름으로 나올 때만,
 /// <see cref="ScriptSourceLocator.MentionsProperty"/>), <see cref="ReadsRenderedLayers"/> = 그중 효과까지 입힌 그림을 보는 함수
-/// (<see cref="RenderedLayerNames"/>), <see cref="ReadsSlice"/> = <c>ctx.slice</c>(배열의 <c>slice</c>도 같은 이름이라 함께 걸린다 — 더 주기만 할 뿐 결과는 같다).
+/// (<see cref="RenderedLayerNames"/>), <see cref="ReadsSlice"/> = <c>ctx.slice</c>(배열의 <c>slice</c>도 같은 이름이라 함께 걸린다 — 더 주기만 할 뿐 결과는 같다),
+/// <see cref="ReadsFrameTag"/> = <c>ctx.frameTag</c>.
 /// </summary>
 public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFrames, bool ReadsOtherLayers = false, bool ReadsRenderedLayers = false,
     bool ReadsSlice = false)
@@ -38,6 +39,9 @@ public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFra
     /// 넘긴다(잔상과 같은 캐시·무효화).
     /// </summary>
     public bool ReadsRenderedFrames { get; init; }
+
+    /// <summary>원문에 <c>frameTag</c>가 나오는지: 그릴 때 그 프레임이 든 태그 이름을 넘긴다(<see cref="Model.AnimatedEffect.FrameTag"/>).</summary>
+    public bool ReadsFrameTag { get; init; }
 
     /// <summary>
     /// 다른 레이어를 읽는 <c>ctx</c> 함수 이름. 모두 레이어 고르기 설정(<c>type: "layer"</c>)의 키를 받아 그 설정으로 고른 레이어를 읽는다
@@ -219,6 +223,7 @@ public static class ScriptLibrary
             Translations = ScriptSourceLocator.DeclaredTranslatedNames(program),
             Language = ScriptSourceLocator.DeclaredString(program, "language") is { } language && ScriptTranslations.IsLanguageCode(language) ? language : null,
             ReadsRenderedFrames = ScriptSourceLocator.Mentions(program, "renderedFrameSource"),
+            ReadsFrameTag = ScriptSourceLocator.Mentions(program, "frameTag"),
         };
     }
 }

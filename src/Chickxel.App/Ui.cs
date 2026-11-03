@@ -617,6 +617,9 @@ internal sealed class MessageDialog : DialogBase
         if (_noButton is not null) _noButton.Content = text;
     }
 
+    /// <summary>확인 앞에 단추를 하나 더 둔다(누르면 <paramref name="result"/>로 닫힘 — Enter·Esc는 그대로 확인).</summary>
+    public void AddChoice(string text, DialogResult result) => AddButton(text, result, beforeOk: true);
+
     private Button? _noButton;
 
     /// <summary>메시지 상자 본문: 왼쪽 아이콘 동그라미(아이콘 없으면 생략) + 고를 수 있는 메시지 글.</summary>
