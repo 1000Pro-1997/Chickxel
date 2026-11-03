@@ -73,14 +73,13 @@ public class PreviewEndChickTests
     [Fact]
     public void Frames_put_both_chicks_bottom_centered_on_one_canvas_and_the_end_chick_last()
     {
-        var (first, frames) = AssetPreview.Frame(Start, End, 0, Steps);
-        Assert.NotNull(frames);
+        var (first, frames) = AssetPreview.Frame(Start, End, PreviewMotion.None, 0, Steps);
         var last = frames(Steps - 1)!;
         Assert.Equal((first.Width, first.Height), (last.Width, last.Height));
         Assert.Equal(Math.Max(Start.Width, End.Width), first.Width);
         Assert.True(first.ContentEquals(frames(0)!));
         Assert.True(first.ContentEquals(frames(Steps - 2)!));
-        Assert.True(last.ContentEquals(AssetPreview.Frame(Start, End, Steps - 1, Steps).Image));
+        Assert.True(last.ContentEquals(AssetPreview.Frame(Start, End, PreviewMotion.None, Steps - 1, Steps).Image));
         Assert.Null(frames(-1));
         Assert.Null(frames(Steps));
 
@@ -92,14 +91,15 @@ public class PreviewEndChickTests
     }
 
     [Fact]
-    public void Without_an_end_chick_frames_are_the_start_image_and_no_frame_source()
+    public void Without_an_end_chick_or_motion_every_frame_is_the_start_image()
     {
         var start = Start;
-        var (image, frames) = AssetPreview.Frame(start, null, Steps - 1, Steps);
+        var (image, frames) = AssetPreview.Frame(start, null, PreviewMotion.None, Steps - 1, Steps);
         Assert.Same(start, image);
-        Assert.Null(frames);
-        var (_, context) = AssetPreview.ScriptFrame(start, null, 2, Steps);
-        Assert.Null(context.FrameSource);
+        Assert.Same(start, frames(0));
+        Assert.Null(frames(Steps));
+        var (_, context) = AssetPreview.ScriptFrame(start, null, PreviewMotion.None, 2, Steps);
+        Assert.Same(start, context.FrameSource!(Steps - 1));
     }
 
     [Fact]
@@ -107,25 +107,20 @@ public class PreviewEndChickTests
     {
         IReadOnlyList<LayerEffect> effects = [CopyLast()];
         // 끝 그림 병아리: 첫 칸에서 읽은 마지막 칸 원본 = 끝 그림 병아리를 놓은 그림
-        var expected = AssetPreview.Frame(Start, End, Steps - 1, Steps).Image;
+        var expected = AssetPreview.Frame(Start, End, PreviewMotion.None, Steps - 1, Steps).Image;
         Assert.True(expected.ContentEquals(AssetPreview.Render(effects, Start, 0, Steps, End)));
         Assert.True(expected.ContentEquals(AssetPreview.Original(effects, Start, Steps - 1, Steps, End)));
-
-        // 없으면 전과 같음: 한 칸씩 오른쪽으로 가는 늘린 원본의 마지막 칸
-        var shifted = new PixelImage(Start.Width + Steps, Start.Height);
-        shifted.Blit(Start, Steps - 1, 0);
-        Assert.True(shifted.ContentEquals(AssetPreview.Render(effects, Start, 0, Steps)));
     }
 
     [Fact]
     public void Script_frame_context_reads_the_end_chick_at_the_range_end()
     {
-        var (image, context) = AssetPreview.ScriptFrame(Start, End, 1, Steps);
+        var (image, context) = AssetPreview.ScriptFrame(Start, End, PreviewMotion.None, 1, Steps);
         Assert.NotNull(context.FrameSource);
         Assert.Equal((1, Steps - 1), (context.FrameIndex, context.FrameSpan));
         var last = context.FrameSource(Steps - 1)!;
         Assert.Equal((image.Width, image.Height), (last.Width, last.Height));
-        Assert.True(last.ContentEquals(AssetPreview.Frame(Start, End, Steps - 1, Steps).Image));
+        Assert.True(last.ContentEquals(AssetPreview.Frame(Start, End, PreviewMotion.None, Steps - 1, Steps).Image));
     }
 
     [Fact]

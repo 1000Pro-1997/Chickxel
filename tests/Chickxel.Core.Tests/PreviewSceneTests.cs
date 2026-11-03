@@ -232,24 +232,27 @@ public class PreviewSceneTests
 
     // ───────────── 장면 위 렌더 ─────────────
 
-    /// <summary>병아리만 둔 장면의 칸 = 같은 칸의 <see cref="AssetPreview.Render"/>를 병아리 자리(움직이면 움직임 범위의 왼쪽)에 놓은 캔버스.</summary>
-    private static void AssertSameAsAssetPreview(IReadOnlyList<LayerEffect> effects, bool moves)
+    /// <summary>
+    /// 병아리만 둔 장면의 칸 = 같은 칸의 <see cref="AssetPreview.Render"/>를 병아리 자리 + 움직임 범위의 왼쪽 위(<paramref name="motion"/>의 가장 작은 자리)에 놓은 캔버스.
+    /// </summary>
+    private static void AssertSameAsAssetPreview(IReadOnlyList<LayerEffect> effects, PreviewMotion motion)
     {
         var chick = Chick;
         const int Steps = 6;
         var (w, h, anchor) = Canvas(chick);
         var scene = new PreviewScene(w, h, 1, [], 0, anchor);
-        var render = new PreviewSceneRender(scene, effects, chick, Steps);
+        var render = new PreviewSceneRender(scene, effects, chick, Steps, motion: motion);
         var at = scene.ChickOffset(chick);
-        int left = at.X - (moves ? (Steps - 1) / 2 : 0);
-        var padding = LayerEffects.Padding(effects, chick.Width + (moves ? Steps : 0), chick.Height);
+        var offsets = Enumerable.Range(0, Steps).Select(k => motion.OffsetAt(k, Steps)).Append(Point.Empty).ToList();
+        int minX = offsets.Min(o => o.X), maxX = offsets.Max(o => o.X), minY = offsets.Min(o => o.Y), maxY = offsets.Max(o => o.Y);
+        var padding = LayerEffects.Padding(effects, chick.Width + maxX - minX, chick.Height + maxY - minY);
         for (int step = 0; step < Steps; step++)
         {
             var expected = new PixelImage(w, h);
-            expected.Blit(AssetPreview.Render(effects, chick, step, Steps), left - padding.Left, at.Y - padding.Top);
+            expected.Blit(AssetPreview.Render(effects, chick, step, Steps, motion: motion), at.X + minX - padding.Left, at.Y + minY - padding.Top);
             Assert.True(expected.ContentEquals(render.Render(step)), $"step {step}");
             var original = new PixelImage(w, h);
-            original.Blit(AssetPreview.Original(effects, chick, step, Steps), left - padding.Left, at.Y - padding.Top);
+            original.Blit(AssetPreview.Original(effects, chick, step, Steps, motion: motion), at.X + minX - padding.Left, at.Y + minY - padding.Top);
             Assert.True(original.ContentEquals(render.Original(step)), $"original {step}");
         }
     }
@@ -257,13 +260,16 @@ public class PreviewSceneTests
     [Fact]
     public void Chick_only_scene_renders_the_same_pixels_as_the_chick_preview()
     {
-        AssertSameAsAssetPreview([Tint(), new OutlineEffect { Thickness = 1 }], moves: false);
+        AssertSameAsAssetPreview([Tint(), new OutlineEffect { Thickness = 1 }], PreviewMotion.None);
     }
 
     [Fact]
-    public void Chick_only_scene_moves_the_chick_like_the_chick_preview_for_afterimages()
+    public void Chick_only_scene_moves_the_chick_by_the_preview_motion_like_the_chick_preview()
     {
-        AssertSameAsAssetPreview([Tint(), new AfterimageEffect { Count = 2 }], moves: true);
+        // 다른 프레임을 쓰는 효과도 움직임이 없으면 제자리
+        AssertSameAsAssetPreview([Tint(), new AfterimageEffect { Count = 2 }], PreviewMotion.None);
+        AssertSameAsAssetPreview([Tint(), new AfterimageEffect { Count = 2 }], PreviewMotion.FromPreset("right")!);
+        AssertSameAsAssetPreview([Tint(), new AfterimageEffect { Count = 2 }], PreviewMotion.FromOffsets([new(0, 0), new(-2, -1), new(1, -3)])!);
     }
 
     /// <summary>바닥 4줄이 초록인 1프레임 장면(병아리는 바닥 위).</summary>

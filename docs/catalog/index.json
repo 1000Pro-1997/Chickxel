@@ -7,7 +7,7 @@
   "packages": [
     {
       "id": "chickxel.effects.afterimage",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "name": "Afterimage",
       "summary": "Leaves fading copies of previous frames behind for a sense of fast motion.",
       "tags": [
@@ -27,17 +27,17 @@
       },
       "minAppVersion": "1.14.63",
       "package": {
-        "url": "packages/chickxel.effects.afterimage-1.0.1.chickxel-asset",
-        "size": 7309,
-        "sha256": "569e3d80a417000b6aaeb2a3126db82744ba791bdd283cfe2ea0380a2bbbdb3d"
+        "url": "packages/chickxel.effects.afterimage-1.0.2.chickxel-asset",
+        "size": 7261,
+        "sha256": "b4ee8c850f262c2cda788b5b338b117c135530de9c39f539d57797c2bef9ecf8"
       },
       "preview": {
-        "url": "previews/chickxel.effects.afterimage-1.0.1.png",
-        "size": 4081,
-        "sha256": "3782be506790206a3974ed5f87ab463aa74edb81873a1329c98a1e9d34841bcd"
+        "url": "previews/chickxel.effects.afterimage-1.0.2.png",
+        "size": 4056,
+        "sha256": "cf7b90cd9cd8936f21e4081118b7111de5eaacbe4e045ca2ebf9778fe359914b"
       },
       "published": "2026-11-01",
-      "updated": "2026-11-01",
+      "updated": "2026-11-03",
       "review": "official"
     },
     {

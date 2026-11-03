@@ -40,7 +40,8 @@ public static class OfficialEffectPackages
     private static readonly Dictionary<string, string> Versions = new(StringComparer.Ordinal)
     {
         // 1.0.1: 선언에 language: "ko"를 더함(원문의 이름·설명·설정 이름이 한국어임을 밝힘)
-        ["afterimage"] = "1.0.1", ["appear"] = "1.0.1", ["blink"] = "1.0.1", ["bob"] = "1.0.1", ["coloradjust"] = "1.0.1", ["colorcycle"] = "1.0.1",
+        // afterimage 1.0.2: 선언에 previewMotion: "right"를 더함(미리보기 병아리가 움직여야 잔상이 보임)
+        ["afterimage"] = "1.0.2", ["appear"] = "1.0.1", ["blink"] = "1.0.1", ["bob"] = "1.0.1", ["coloradjust"] = "1.0.1", ["colorcycle"] = "1.0.1",
         ["coloroverlay"] = "1.0.1", ["explode"] = "1.0.1", ["fade"] = "1.0.1", ["hitflash"] = "1.0.1", ["hologram"] = "1.0.1", ["innerglow"] = "1.0.1",
         ["melt"] = "1.0.1", ["outline"] = "1.0.1", ["paletteswap"] = "1.0.1", ["reflection"] = "1.0.1", ["rimlight"] = "1.0.1", ["rotate"] = "1.0.1",
         ["shadow"] = "1.0.1", ["shake"] = "1.0.1", ["shine"] = "1.0.1", ["shockwave"] = "1.0.1", ["squash"] = "1.0.1",

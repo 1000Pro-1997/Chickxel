@@ -22,8 +22,8 @@ public sealed record ScriptProbeResult(Exception? Error, TimeSpan Elapsed);
 /// 다른 레이어 함수(<c>ctx.layer</c> 등 — 레이어 고르기 설정으로 고른 장면 레이어)는 장면 레이어를 본다. 합성은 프로젝트와 같다(<see cref="SpriteProject.Flatten"/> — 캔버스 밖은 잘림).
 /// </para>
 /// <para>
-/// <see cref="AssetPreview"/>와 맞춘 것: 다른 프레임을 쓰는 효과(잔상)가 있으면 병아리가 칸마다 한 칸씩 오른쪽으로 간다(<see cref="AssetPreview"/>의 늘린 원본처럼,
-/// 움직임 가운데가 병아리 자리). 프레임 피벗은 그 원본(움직이면 움직이는 범위 전체) 사각형의 가운데 — <see cref="AssetPreview"/>의 "피벗 없음 = 원본 가운데"와 같은 자리다
+/// <see cref="AssetPreview"/>와 맞춘 것: 병아리 레이어의 칸 k는 병아리를 장면 병아리 자리 + 미리보기 움직임(<see cref="PreviewMotion"/>)의 k칸 자리에 놓은 것이다.
+/// 프레임 피벗은 그 원본(움직이면 모든 칸의 자리를 합친 범위) 사각형의 가운데 — <see cref="AssetPreview"/>의 "피벗 없음 = 원본 가운데"와 같은 자리다
 /// (0~1 비율로 저장하므로 float 반올림만큼 다를 수 있음). 다른 것: 효과 원본(<c>img</c>)이 병아리 크기가 아니라 캔버스 크기라 크기를 쓰는 스크립트
 /// (<c>img.width</c>, <c>padding(w, h)</c>의 크기)는 다른 값을 받는다. 불투명 픽셀만 보는 효과는 병아리만 둔 장면에서 <see cref="AssetPreview.Render"/>와 같은 픽셀이다.
 /// </para>
@@ -37,20 +37,23 @@ public sealed class PreviewSceneRender
     private readonly PixelImage _chick;
     private readonly PixelImage? _end;
     private readonly int _steps;
-    private readonly bool _moves;
+    private readonly PreviewMotion _motion;
     private readonly SpriteProject _project;
     private readonly Layer _chickLayer;
     private (SpriteProject Project, Layer ChickLayer)? _original;
 
-    /// <summary><paramref name="end"/>(끝 그림 병아리)가 있으면 병아리 레이어의 마지막 칸은 그 병아리를 장면 병아리 자리에 놓은 것이다(병아리는 움직이지 않음).</summary>
-    public PreviewSceneRender(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end = null)
+    /// <summary>
+    /// <paramref name="end"/>(끝 그림 병아리)가 있으면 병아리 레이어의 마지막 칸은 그 병아리를 장면 병아리 자리(+ 그 칸의 움직임)에 놓은 것이다.
+    /// <paramref name="motion"/>이 null이면 효과 묶음에서 정한다(<see cref="AssetPreview.MotionOf"/>).
+    /// </summary>
+    public PreviewSceneRender(PreviewScene scene, IReadOnlyList<LayerEffect> effects, PixelImage chick, int steps, PixelImage? end = null, PreviewMotion? motion = null)
     {
         _scene = scene;
         _chick = chick;
         _end = end;
         _steps = Math.Max(1, steps);
-        _moves = end is null && effects.Any(effect => EffectRegistry.Of(effect) is { } definition && definition.UsesOtherFrames(effect));
-        (_project, _chickLayer) = Build(_moves);
+        _motion = motion ?? AssetPreview.MotionOf(effects);
+        (_project, _chickLayer) = Build();
         _project.SetLayerEffects(_scene.ChickIndex, [.. effects.Select(effect => effect with { Frames = null })]);
         _project.History.Clear();
     }
@@ -67,7 +70,7 @@ public sealed class PreviewSceneRender
     /// <summary><see cref="Render"/>와 같은 장면·병아리 자리에 효과 없이(<paramref name="hideSceneLayers"/>면 병아리 레이어만).</summary>
     public PixelImage Original(int step, bool hideSceneLayers = false)
     {
-        var (project, chickLayer) = _original ??= Build(_moves);
+        var (project, chickLayer) = _original ??= Build();
         return Flatten(project, chickLayer, step, hideSceneLayers);
     }
 
@@ -99,8 +102,8 @@ public sealed class PreviewSceneRender
         }
         var image = new PixelImage(width + padding.Left + padding.Right, height + padding.Top + padding.Bottom);
         if (_project.EffectSource(_chickLayer, frame) is { } cel) image.Blit(cel, padding.Left, padding.Top);
-        // 끝 그림 병아리가 있으면 다른 프레임 원본을 늘 준다(AssetPreview.Frame과 같음)
-        var source = _end is not null || LayerEffects.UsesOtherFrames([effect]) ? _project.EffectFrameSource(_chickLayer) : null;
+        // 끝 그림 병아리나 움직임이 있으면 다른 프레임 원본을 늘 준다(AssetPreview.Frame과 같음)
+        var source = _end is not null || !_motion.IsNone || LayerEffects.UsesOtherFrames([effect]) ? _project.EffectFrameSource(_chickLayer) : null;
         var drawn = (ScriptEffect)effect.AtFrame(frame, _steps, _project.EffectPivot(_chickLayer, frame), source)
             with { Layers = _project.ScriptLayersAt(_chickLayer, frame, [effect]) };
         var context = ScriptFrameContext.From(drawn);
@@ -120,24 +123,31 @@ public sealed class PreviewSceneRender
     private int Frame(int step) => Math.Clamp(step, 0, _steps - 1);
 
     /// <summary>
-    /// 렌더 프로젝트(효과 없음): 칸 수만큼 프레임, 병아리는 <paramref name="moves"/>면 칸마다 한 칸씩 오른쪽(움직임 가운데 = 병아리 자리),
-    /// 프레임 피벗은 병아리 원본 사각형(움직이면 움직이는 범위까지 넓힌 것)의 가운데. 끝 그림 병아리가 있으면 마지막 칸의 병아리 셀은 그 병아리를
-    /// 장면 병아리 자리(<see cref="PreviewScene.ChickOffset"/>)에 놓은 것이다.
+    /// 렌더 프로젝트(효과 없음): 칸 수만큼 프레임, 병아리 셀 k = 병아리를 장면 병아리 자리(<see cref="PreviewScene.ChickOffset"/>) + 움직임의 k칸 자리에 놓은 그림
+    /// (끝 그림 병아리가 있으면 마지막 칸은 그 병아리를 그 병아리의 장면 자리 + 마지막 칸 움직임에). 프레임 피벗은 병아리 원본 사각형을 모든 칸의 움직임만큼
+    /// 넓힌 범위의 가운데.
     /// </summary>
-    private (SpriteProject Project, Layer ChickLayer) Build(bool moves)
+    private (SpriteProject Project, Layer ChickLayer) Build()
     {
         var at = _scene.ChickOffset(_chick);
-        int span = moves ? _steps : 0, left = at.X - (moves ? (_steps - 1) / 2 : 0);
-        var project = _scene.Build(_steps, f => f, _chick, f => new Point(left + (moves ? Math.Clamp(f, 0, _steps - 1) : 0), at.Y), ChickLayerName, copy: false);
+        Point Offset(int f) => _motion.OffsetAt(f, _steps);
+        var project = _scene.Build(_steps, f => f, _chick, f => new Point(at.X + Offset(f).X, at.Y + Offset(f).Y), ChickLayerName, copy: false);
         if (_end is { } end)
         {
             var cel = new PixelImage(_scene.Width, _scene.Height);
             var endAt = _scene.ChickOffset(end);
-            cel.Blit(end, endAt.X, endAt.Y);
+            var last = Offset(_steps - 1);
+            cel.Blit(end, endAt.X + last.X, endAt.Y + last.Y);
             project.SetCel(_scene.ChickIndex, _steps - 1, cel.IsRegionEmpty(cel.Bounds) ? null : cel);
         }
-        // AssetPreview의 원본(병아리, 움직이면 폭 + 칸 수)과 같은 사각형의 가운데를 피벗으로
-        var pivot = Pivot.FromLocalPixel(left + (_chick.Width + span) / 2f, at.Y + _chick.Height / 2f, _scene.Width, _scene.Height);
+        // AssetPreview의 원본(병아리, 움직이면 모든 칸의 자리를 합친 범위)과 같은 사각형의 가운데를 피벗으로
+        int minX = 0, maxX = 0, minY = 0, maxY = 0;
+        for (int f = 0; f < _steps; f++)
+        {
+            var o = Offset(f);
+            (minX, maxX, minY, maxY) = (Math.Min(minX, o.X), Math.Max(maxX, o.X), Math.Min(minY, o.Y), Math.Max(maxY, o.Y));
+        }
+        var pivot = Pivot.FromLocalPixel(at.X + (_chick.Width + minX + maxX) / 2f, at.Y + (_chick.Height + minY + maxY) / 2f, _scene.Width, _scene.Height);
         for (int f = 0; f < _steps; f++) project.SetFramePivot(f, pivot);
         project.History.Clear();
         return (project, project.Layers[_scene.ChickIndex]);

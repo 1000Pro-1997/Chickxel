@@ -43,6 +43,15 @@ public static class ScriptDeclarationEdit
         => SetLiteral(source, "previewFrames", NumberLiteral(frames), ["previewChick", "name"]);
 
     /// <summary>
+    /// 선언의 <c>previewMotion</c>을 <paramref name="motion"/>(<see cref="Assets.PreviewMotion.Literal"/> — 이름은 문자열, 목록은 <c>[[0, 0], [1, 0]]</c>)으로 바꾼다.
+    /// 없으면 <c>previewFrames</c> 다음에(없으면 <c>previewEndChick</c>·<c>previewChick</c>·<c>name</c> 차례로) 더하고, null이나 <c>"none"</c>이면 그 속성을 지운다.
+    /// 원문을 해석하지 못하면 null.
+    /// </summary>
+    public static string? SetPreviewMotion(string source, Assets.PreviewMotion? motion)
+        => SetLiteral(source, "previewMotion", motion is null || motion.Preset == "none" ? null : motion.Literal,
+            ["previewFrames", "previewEndChick", "previewChick", "name"]);
+
+    /// <summary>
     /// 선언의 <paramref name="key"/> 값을 문자열 리터럴 <paramref name="value"/>로 바꾼다. 없으면 <c>name</c> 다음에(<c>name</c>을 더할 때나 <c>name</c>이 없으면
     /// 선언 맨 앞에) 더한다 — 여러 줄 선언이면 같은 들여쓰기의 새 줄로. <paramref name="value"/>가 null이면 그 속성을 지운다(없으면 그대로).
     /// 원문을 해석하지 못하거나 선언 객체를 찾지 못하면 null.

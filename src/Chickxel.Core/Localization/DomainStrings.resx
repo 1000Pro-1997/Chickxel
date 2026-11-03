@@ -255,6 +255,7 @@
   <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick은 병아리 ID 문자열(소문자·숫자·하이픈, 예: "knight")이어야 합니다.</value></data>
   <data name="Script_InvalidPreviewEndChick" xml:space="preserve"><value>previewEndChick은 병아리 ID 문자열(소문자·숫자·하이픈, 예: "wizard")이어야 합니다.</value></data>
   <data name="Script_InvalidPreviewFrames" xml:space="preserve"><value>previewFrames는 {min}~{max} 정수여야 합니다.</value><comment>min·max = 미리보기 칸 수 범위.</comment></data>
+  <data name="Script_InvalidPreviewMotion" xml:space="preserve"><value>previewMotion은 "none"·"right"·"left"·"up"·"down" 중 하나이거나, 칸마다 병아리 자리를 적은 정수 쌍 [x, y](각 -{max}~{max})를 1~{frames}개 담은 배열이어야 합니다.</value><comment>max = 자리 값 한도, frames = 목록 길이 한도.</comment></data>
   <data name="Script_InvalidTranslations" xml:space="preserve"><value>translations는 언어 코드(예: "en", "ja", "zh-Hans")를 키로, 그 언어의 name·description·labels를 값으로 둔 객체여야 합니다(언어 {max}개까지).</value><comment>max = 언어 수 한도.</comment></data>
   <data name="Script_InvalidTranslationLanguage" xml:space="preserve"><value>translations의 '{code}'는 언어 코드(예: "en", "ja", "zh-Hans")가 아니거나 겹칩니다.</value><comment>code = 적은 언어 코드.</comment></data>
   <data name="Script_InvalidTranslation" xml:space="preserve"><value>translations.{code}는 name·description·labels를 담은 객체여야 합니다(labels도 객체).</value><comment>code = 언어 코드.</comment></data>

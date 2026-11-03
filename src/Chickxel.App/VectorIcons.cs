@@ -93,6 +93,8 @@ public enum VectorIcon
     Maximize2,
     /// <summary>가로 슬라이더 세 줄(설정).</summary>
     SlidersHorizontal,
+    /// <summary>톱니바퀴(설정 — Lucide settings).</summary>
+    Settings,
     /// <summary>왼쪽으로 돌아가는 화살표(되돌리기).</summary>
     Undo2,
     /// <summary>원 안의 느낌표(경고 — Lucide circle-alert).</summary>
@@ -347,6 +349,11 @@ public static class VectorIcons
             Circle(9, 9, 2),
         ],
         VectorIcon.Maximize2 => ["M15 3h6v6", "m21 3-7 7", "m3 21 7-7", "M9 21H3v-6"],
+        VectorIcon.Settings =>
+        [
+            "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
+            Circle(12, 12, 3),
+        ],
         VectorIcon.SlidersHorizontal =>
         [
             "M21 4h-7", "M10 4H3", "M21 12h-9", "M8 12H3", "M21 20h-5", "M12 20H3",

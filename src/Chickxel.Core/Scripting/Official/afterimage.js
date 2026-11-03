@@ -20,6 +20,7 @@ effect({
   easing: "Linear",
   deferred: true,
   previewChick: "original",
+  previewMotion: "right",
   motion: false,
   settings: [
     { key: "count", label: "개수", type: "int", min: 1, max: 8, default: 3 },

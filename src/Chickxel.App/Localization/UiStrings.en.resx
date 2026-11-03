@@ -3559,6 +3559,17 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_EndChick" xml:space="preserve"><value>End chick</value></data>
   <data name="EffectMaker_EndChickNone" xml:space="preserve"><value>None</value></data>
   <data name="EffectMaker_EndChickTip" xml:space="preserve"><value>For effects that turn one image into another over several frames (transform, morph). When set, the preview's last frame shows this chick, and the script reads it with ctx.frameSource(ctx.rangeEnd). Changes previewEndChick in the source's declaration.</value></data>
+  <data name="EffectMaker_PreviewMotion" xml:space="preserve"><value>Preview motion</value></data>
+  <data name="EffectMaker_PreviewMotionTip" xml:space="preserve"><value>Preview motion: {motion}</value></data>
+  <data name="EffectMaker_PreviewMotionChoice" xml:space="preserve"><value>Motion</value></data>
+  <data name="EffectMaker_PreviewMotionNone" xml:space="preserve"><value>None</value></data>
+  <data name="EffectMaker_PreviewMotionRight" xml:space="preserve"><value>Right</value></data>
+  <data name="EffectMaker_PreviewMotionLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="EffectMaker_PreviewMotionUp" xml:space="preserve"><value>Up</value></data>
+  <data name="EffectMaker_PreviewMotionDown" xml:space="preserve"><value>Down</value></data>
+  <data name="EffectMaker_PreviewMotionCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="EffectMaker_PreviewMotionFrame" xml:space="preserve"><value>Frame</value></data>
+  <data name="EffectMaker_PreviewMotionHint" xml:space="preserve"><value>Places the preview chick at these offsets in each frame (px from its place, right and down are +) so effects that react to movement, such as afterimages and trails, can be seen. Only used for previews (Effect Maker, Check and the upload preview), not documents. Changes previewMotion in the source's declaration.</value></data>
   <data name="EffectMaker_FrameThumbTip" xml:space="preserve"><value>Step {0} - click to pause on this step.</value></data>
   <data name="EffectMaker_Languages" xml:space="preserve"><value>Languages</value></data>
   <data name="EffectMaker_LanguagesTip" xml:space="preserve"><value>Writes the title, description and setting labels in other languages (translations in the source's declaration). The one for the app's UI language is shown, otherwise the title and description written here.</value></data>

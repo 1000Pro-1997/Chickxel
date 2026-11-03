@@ -2,6 +2,13 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.87 (2026-11-03)
+### Effect Maker: set how the preview chick moves, frame by frame
+- A settings button next to Frames opens Preview motion. Pick None, Right, Left, Up or Down (1 px per frame), or Custom to type an X/Y offset for every preview frame. It is saved in the source as `previewMotion`.
+- The preview, Check, the AI preview and the upload preview all place the chick at those offsets, and `ctx.frameSource` returns the moved frames, so afterimages and trails can be seen.
+- The hidden rule that moved the chick 1 px right for every effect reading other frames is gone. Previews only move when `previewMotion` says so.
+- The official Afterimage effect (1.0.2) declares `previewMotion: "right"`, so its preview looks the same. Installed copies update automatically.
+
 ## v1.14.86 (2026-11-03)
 ### Effect Maker: the list no longer locks up with uploaded effects that aren't on this computer
 - When you were signed in and had uploaded effects not installed on this computer (the gray rows with a download button), the Effect Maker could show an "InvalidCastException: Specified cast is not valid" error. After that, clicking another effect in the list didn't open it.

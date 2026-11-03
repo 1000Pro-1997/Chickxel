@@ -68,6 +68,15 @@ internal static partial class ScriptDeclarationReader
             else Fail(DomainStrings.FormatScript_InvalidPreviewFrames(min: ScriptEffectProgram.MinPreviewFrames, max: ScriptEffectProgram.MaxPreviewFrames), "previewFrames");
         }
 
+        // 미리보기 칸마다 병아리를 옮기는 양(없으면 움직이지 않음)
+        var previewMotionValue = declaration.Get("previewMotion");
+        var previewMotion = PreviewMotion.None;
+        if (!previewMotionValue.IsUndefined())
+        {
+            if (ReadPreviewMotion(previewMotionValue) is { } m) previewMotion = m;
+            else Fail(DomainStrings.FormatScript_InvalidPreviewMotion(max: PreviewMotion.MaxOffset, frames: ScriptEffectProgram.MaxPreviewFrames), "previewMotion");
+        }
+
         var areaValue = declaration.Get("area");
         var area = ScriptEffectArea.Global;
         if (areaValue is JsString && areaValue.AsString() == "local") area = ScriptEffectArea.Local;
@@ -157,7 +166,23 @@ internal static partial class ScriptDeclarationReader
             ? new(null, errors)
             : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
                 previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
-            { Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick }, []);
+            { Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion }, []);
+    }
+
+    /// <summary><c>previewMotion</c>: 이름 문자열(<see cref="PreviewMotion.Presets"/>) 또는 정수 <c>[x, y]</c> 쌍의 배열(<see cref="PreviewMotion.FromOffsets"/>). 아니면 null.</summary>
+    private static PreviewMotion? ReadPreviewMotion(JsValue value)
+    {
+        if (value is JsString) return PreviewMotion.FromPreset(value.AsString());
+        if (value is not ArrayInstance list || ScriptHostApi.Length(list) is < 1 or > ScriptEffectProgram.MaxPreviewFrames) return null;
+        var offsets = new List<System.Drawing.Point>();
+        for (uint i = 0, count = ScriptHostApi.Length(list); i < count; i++)
+        {
+            if (list[i] is not ArrayInstance pair || ScriptHostApi.Length(pair) != 2
+                || Whole(pair[0]) is not { } x || Whole(pair[1]) is not { } y || Math.Abs(x) > PreviewMotion.MaxOffset || Math.Abs(y) > PreviewMotion.MaxOffset)
+                return null;
+            offsets.Add(new((int)x, (int)y));
+        }
+        return PreviewMotion.FromOffsets(offsets);
     }
 
     /// <summary>

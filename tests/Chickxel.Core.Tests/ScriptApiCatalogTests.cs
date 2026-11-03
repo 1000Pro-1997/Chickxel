@@ -55,7 +55,7 @@ public class ScriptApiCatalogTests
     {
         // 표의 선언 키를 모두 쓴 원문이 선언 오류 없이 읽힌다(이름이 틀리면 읽는 쪽이 무시하거나 오류를 낸다).
         var parsed = ScriptEffectProgram.Parse("""
-            effect({ name: "x", author: "a", animated: true, deferred: true, easing: "EaseOut", area: "local", radius: 2, previewChick: "knight", previewEndChick: "wizard", previewFrames: 16,
+            effect({ name: "x", author: "a", animated: true, deferred: true, easing: "EaseOut", area: "local", radius: 2, previewChick: "knight", previewEndChick: "wizard", previewFrames: 16, previewMotion: "left",
               translations: { en: { name: "X", description: "D", labels: { k: "Kay", "c.a": "Ay" } } },
               settings: [{ key: "k", label: "K", type: "number", min: 0, max: 1, step: 0.5, default: 0 },
                          { key: "c", label: "C", type: "choice", choices: [{ value: "a", label: "A" }], default: "a" },
@@ -68,6 +68,7 @@ public class ScriptApiCatalogTests
         Assert.Equal(("a", true, true, EffectEasing.EaseOut, ScriptEffectArea.Local, 2, "knight", "wizard", 16),
             (program.Author, program.Animated, program.Deferred, program.Easing, program.Area, program.Radius, program.PreviewChick, program.PreviewEndChick, program.PreviewFrames));
         Assert.Equal((false, ScriptSettingWidget.Point, "y"), (program.Settings[2].Alpha, program.Settings[3].Widget, program.Settings[3].Pair));
+        Assert.Equal("left", program.PreviewMotion.Preset);
         var en = program.Translations["en"];
         Assert.Equal(("X", "D", "Kay", "Ay"), (en.Name, en.Description, en.Labels["k"], en.Labels["c.a"]));
 

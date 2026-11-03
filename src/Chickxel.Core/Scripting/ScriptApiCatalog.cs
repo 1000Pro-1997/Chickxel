@@ -54,6 +54,8 @@ public static class ScriptApiCatalog
     public const string Area = "effect.area";
     /// <summary>선언 <c>easing</c>의 값.</summary>
     public const string Easing = "effect.easing";
+    /// <summary>선언 <c>previewMotion</c>의 이름 값.</summary>
+    public const string PreviewMotion = "effect.previewMotion";
     /// <summary>설정 항목 <c>widget</c>의 값.</summary>
     public const string Widget = "setting.widget";
     /// <summary>선언 <c>translations</c>의 언어 하나(<c>translations.en</c> 등)의 키.</summary>
@@ -109,6 +111,7 @@ public static class ScriptApiCatalog
         M(Declaration, "previewChick", ScriptApiKind.Key, "previewChick: \"knight\""),
         M(Declaration, "previewEndChick", ScriptApiKind.Key, "previewEndChick: \"wizard\""),
         M(Declaration, "previewFrames", ScriptApiKind.Key, "previewFrames: 2~20"),
+        M(Declaration, "previewMotion", ScriptApiKind.Key, "previewMotion: \"right\" | [[x, y], ...]", PreviewMotion),
         M(Declaration, "settings", ScriptApiKind.Key, "settings: [{ key, label, type, min, max, step, default, choices, alpha, widget, pair }]", Setting),
         M(Declaration, "padding", ScriptApiKind.Key, "padding: [left, top, right, bottom] | padding(s, width, height) { ... }"),
         M(Declaration, "render", ScriptApiKind.Function, "render(img, ctx, s) { ... }"),
@@ -124,6 +127,12 @@ public static class ScriptApiCatalog
         M(Easing, "EaseIn", ScriptApiKind.Literal, "\"EaseIn\""),
         M(Easing, "EaseOut", ScriptApiKind.Literal, "\"EaseOut\""),
         M(Easing, "EaseInOut", ScriptApiKind.Literal, "\"EaseInOut\""),
+
+        M(PreviewMotion, "none", ScriptApiKind.Literal, "\"none\""),
+        M(PreviewMotion, "right", ScriptApiKind.Literal, "\"right\""),
+        M(PreviewMotion, "left", ScriptApiKind.Literal, "\"left\""),
+        M(PreviewMotion, "up", ScriptApiKind.Literal, "\"up\""),
+        M(PreviewMotion, "down", ScriptApiKind.Literal, "\"down\""),
 
         M(Setting, "key", ScriptApiKind.Key, "key: \"strength\""),
         M(Setting, "label", ScriptApiKind.Key, "label: \"…\""),

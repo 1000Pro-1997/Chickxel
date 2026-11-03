@@ -69,7 +69,7 @@ public class ScriptCompletionTests
 
     [Theory]
     [InlineData("effect({ na|", new[] { "name" })]
-    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames" })]
+    [InlineData("effect({\n  name: \"x\",\n  pre|", new[] { "previewChick", "previewEndChick", "previewFrames", "previewMotion" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', ty|", new[] { "type" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"co|", new[] { "color", "colorList", "colorPairs" })]
     [InlineData("effect({ name: 'x', settings: [{ key: 'a', type: \"|", new[] { "int", "number", "bool", "color", "choice", "colorList", "colorPairs", "layer" })]
@@ -78,6 +78,7 @@ public class ScriptCompletionTests
     [InlineData("effect({ name: 'x', area: \"lo|", new[] { "local" })]
     [InlineData("effect({ name: 'x', previewChick: \"kn|", new[] { "knight" })]
     [InlineData("effect({ name: 'x', previewEndChick: \"wi|", new[] { "wizard" })]
+    [InlineData("effect({ name: 'x', previewMotion: \"|", new[] { "none", "right", "left", "up", "down" })]
     public void Declaration_and_setting_keys_and_values_are_offered_in_place(string text, string[] expected)
         => Assert.Equal(expected, At(text).Names);
 
