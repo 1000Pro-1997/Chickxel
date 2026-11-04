@@ -43,7 +43,7 @@ internal static class ShakeRender
     }
 
     /// <summary>그림을 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(밖으로 나간 부분은 잘리고 빈 자리는 투명).</summary>
-    private static void Shift(PixelImage image, int dx, int dy)
+    internal static void Shift(PixelImage image, int dx, int dy)
     {
         if (dx == 0 && dy == 0) return;
         int w = image.Width, h = image.Height;

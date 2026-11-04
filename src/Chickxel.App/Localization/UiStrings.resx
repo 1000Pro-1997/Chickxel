@@ -3926,9 +3926,9 @@ echo __LOGIN_FAILED__
   <data name="Ai_Link_Nothing" xml:space="preserve"><value>링크할 칸이 없습니다 — 이미 모두 링크되어 있거나 그림이 있는 칸이 없습니다</value></data>
   <data name="Ai_Link_NoneLinked" xml:space="preserve"><value>준 프레임 중 링크된 셀이 없습니다</value></data>
   <data name="Ai_Link_NotLinked" xml:space="preserve"><value>레이어 {layer} 프레임 {frame}의 셀은 링크되어 있지 않습니다</value><comment>AI 도구 오류(set_link_color). layer = 레이어 번호, frame = 프레임 번호.</comment></data>
-  <data name="Effect_HoldEndRow" xml:space="preserve"><value>링크된 뒤 칸</value><comment>효과 설정 줄 이름: 범위가 끝난 뒤의 링크된 칸</comment></data>
+  <data name="Effect_HoldEndRow" xml:space="preserve"><value>범위 뒤 칸</value><comment>효과 설정 줄 이름: 효과 범위가 끝난 뒤의 칸</comment></data>
   <data name="Effect_HoldEnd" xml:space="preserve"><value>끝 모습 이어 가기</value></data>
-  <data name="Effect_HoldEndTip" xml:space="preserve"><value>범위가 끝난 뒤의 칸이 범위 마지막 칸과 링크되어 있으면, 그 칸에도 마지막 칸과 똑같은 모습으로 입힙니다(예: 던지기 1~18, 19가 18과 링크면 19도 던져진 자리에 그대로). 효과를 끄거나 링크를 풀면 원래 그림대로 보입니다. 타임라인 효과 줄에 흐린 꼬리로 보입니다.</value></data>
+  <data name="Effect_HoldEndTip" xml:space="preserve"><value>범위가 끝난 뒤의 칸에도 효과의 끝 모습을 이어 갑니다. 범위 마지막 칸과 링크된 칸은 마지막 칸과 똑같은 모습이 되고(예: 던지기 1~18, 19가 18과 링크면 19도 던져진 자리에 그대로), 링크되지 않은 칸(다른 그림)은 그 그림을 효과가 옮긴 자리에 둡니다 — '중심(피벗) 같이 옮기기'를 켜면 뒤 효과의 중심도 그 자리를 따라갑니다(옮긴 거리를 알리는 효과만). 효과를 끄면 원래 그림대로 보입니다. 타임라인 효과 줄에 흐린 꼬리로 보입니다(옮긴 자리만 이어 가는 칸은 더 흐리게).</value></data>
   <data name="Effect_HoldEndAllFramesTip" xml:space="preserve"><value>효과가 모든 프레임에 입혀져 이어 갈 뒤 칸이 없습니다. 프레임 범위를 정하면 켤 수 있습니다.</value></data>
   <data name="Ai_Effect_HoldEndNotAnimated" xml:space="preserve"><value>hold_end는 움직이는 효과에만 쓸 수 있습니다</value><comment>AI 도구 오류(set_effect).</comment></data>
   <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>프레임 {frame}에 잠긴 레이어의 그림이 있어 지울 수 없습니다: {layers} — 사용자에게 잠금 해제를 부탁하세요</value><comment>AI 도구 오류. frame = 프레임 번호, layers = 잠긴 레이어 목록(번호 "이름", 쉼표로 구분).</comment></data>

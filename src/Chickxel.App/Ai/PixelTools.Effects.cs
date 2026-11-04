@@ -74,8 +74,10 @@ public sealed partial class PixelTools
                 ["enabled"] = Bool("Turn the effect on or off (off keeps it in the stack without drawing)."),
                 ["clip_to_above"] = Bool("Clip to the nearest non-clipped effect above (lower index)."),
                 ["move_to"] = Int("New stack index (counted after taking the effect out). Effects that were clipped to it, or to the effect now at the target, stop clipping.", 0),
-                ["hold_end"] = Bool("Animated effects with a frame range only: true = cels after the range that are linked to the range's last cel (see link_cels) " +
-                                    "show exactly the range's last-frame look (e.g. a throw on frames 0-17 keeps the thrown ball on linked frame 18). The timeline shows a faint tail."),
+                ["hold_end"] = Bool("Animated effects with a frame range only: true = cels after the range keep the effect's end. Cels linked to the range's last cel (see link_cels) " +
+                                    "show exactly the range's last-frame look (e.g. a throw on frames 0-17 keeps the thrown ball on linked frame 18); other cels (different drawings) are " +
+                                    "moved to where the effect moved the subject at the range end, and later effects' pivot follows when move_pivot is on (only effects that report " +
+                                    "their movement, see move_pivot). The timeline shows a faint tail."),
                 ["expand_canvas"] = Bool(ExpandCanvasNote),
                 ["move_pivot"] = Bool(MovePivotNote),
             },

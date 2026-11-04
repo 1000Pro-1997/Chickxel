@@ -199,9 +199,10 @@ public sealed partial class SpriteProject
            && _cels.TryGetValue(new(layer, _frames[frameA], skin), out var a) && _cels.TryGetValue(new(layer, _frames[frameB], skin), out var b) && ReferenceEquals(a, b);
 
     /// <summary>
-    /// 그릴 효과 목록에 링크된 칸의 효과 끝 모습을 넣는다(<see cref="LayerEffects.HeldEnds"/>): 끝 모습 이어 가기를 켠 움직이는 효과의 범위가 이 프레임 앞에서 끝났고
-    /// 이 프레임 셀(셀 키 스킨 <paramref name="skin"/>)이 범위 끝 프레임 셀과 링크되어 있으면, 그 효과를 범위 끝 프레임의 조건 그대로(진행·피벗·다른 프레임·
-    /// 다른 레이어 <paramref name="cels"/>·태그) 맞춰 고정한 사본으로 바꾼다 — 범위 끝 프레임의 결과를 그대로 다시 그린다. 그룹은 셀이 없어 그대로.
+    /// 그릴 효과 목록에 범위 뒤 칸의 효과 끝 모습을 넣는다(<see cref="LayerEffects.HeldEnds"/>): 끝 모습 이어 가기를 켠 움직이는 효과의 범위가 이 프레임 앞에서 끝났으면
+    /// 그 효과를 범위 끝 프레임의 조건 그대로(진행·피벗·다른 프레임·다른 레이어 <paramref name="cels"/>·태그) 맞춰 고정한 사본으로 바꾼다 — 이 프레임 셀(셀 키 스킨
+    /// <paramref name="skin"/>)이 범위 끝 프레임 셀과 링크되어 있으면 범위 끝 프레임의 결과를 그대로 다시 그리고, 아니면(옮긴 거리를 알리는 효과만) 범위 끝에서 옮긴 자리로
+    /// 이 셀을 옮긴다. 그룹은 셀이 없어 그대로.
     /// </summary>
     private IReadOnlyList<LayerEffect> WithHeldEnds(Layer layer, IReadOnlyList<LayerEffect> effects, int frameIndex, Skin? skin,
         Func<Layer, int, PixelImage?> cels, bool nested)
@@ -209,14 +210,14 @@ public sealed partial class SpriteProject
         if (layer.IsGroup || effects.Count == 0) return effects;
         if (LayerEffects.HeldEnds(effects, frameIndex, (a, b) => ShareDrawing(layer, skin, a, b)) is not { } held) return effects;
         var list = effects.ToArray();
-        foreach (var (i, end) in held)
+        foreach (var h in held)
         {
-            LayerEffect[] one = [effects[i]];
+            LayerEffect[] one = [effects[h.Index]];
             Func<int, PixelImage?>? source = LayerEffects.UsesOtherFrames(one) ? EffectFrameSource(layer) : null;
             var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(
-                LayerEffects.At(one, end, _frames.Count, EffectPivot(layer, end), source, source is null ? null : f => EffectPivot(layer, f)),
-                ScriptLayersOf(layer, end, one, cels, nested)), FrameTagFor(one, end));
-            list[i] = LayerEffects.Pin(resolved[0]);
+                LayerEffects.At(one, h.End, _frames.Count, EffectPivot(layer, h.End), source, source is null ? null : f => EffectPivot(layer, f)),
+                ScriptLayersOf(layer, h.End, one, cels, nested)), FrameTagFor(one, h.End));
+            if (LayerEffects.Pin(resolved[0], h, h.Linked ? null : cels(layer, h.End)) is { } pinned) list[h.Index] = pinned;
         }
         return list;
     }
@@ -405,9 +406,10 @@ public sealed partial class SpriteProject
     /// 셀 링크 풀기(실행취소 한 단계): 고른 셀(지금 스킨 자신의 셀) 중 다른 셀과 링크된 것이 저마다 그림 사본을 갖게 한다. 그룹 행의 칸이면 그 그룹의 부위마다
     /// 그 프레임 셀을 푼다. 잠긴 레이어·빈 칸은 건너뛰고, 묶음의 마지막 셀은 혼자 남으므로 사본이 필요 없다.
     /// <para>
-    /// 링크된 칸의 효과 끝 모습(<see cref="AnimatedEffect.HoldEnd"/>)은 링크로 보이던 것이라 풀면 사라진다. 그래서 풀기 전에 그 모습을 잃는 칸 —
-    /// 떼어 낸 칸, 그리고 범위 끝 프레임 칸을 떼어 내 끝 모습을 잃는 남은 칸 — 은 지금 보이는 그대로(그 레이어의 켜진 효과와 끝 모습, 셀 크기로 잘림,
-    /// 레이어 보이기·불투명도 없이) 그림에 넣는다. 그 프레임 범위 안인 켜진 효과가 있으면(효과가 그 위에 계속 입혀지므로) 그림 그대로 사본을 둔다.
+    /// 링크된 칸의 효과 끝 모습(<see cref="AnimatedEffect.HoldEnd"/>)은 링크로 보이던 것이라 풀면 사라진다(옮긴 거리를 알리는 효과면 옮긴 자리만 남는다). 그래서 풀기 전에
+    /// 그 모습을 잃고 이어 가는 끝 모습이 하나도 남지 않는 칸 — 떼어 낸 칸, 그리고 범위 끝 프레임 칸을 떼어 내 끝 모습을 잃는 남은 칸 — 은 지금 보이는 그대로
+    /// (그 레이어의 켜진 효과와 끝 모습, 셀 크기로 잘림, 레이어 보이기·불투명도 없이) 그림에 넣는다. 그 프레임 범위 안인 켜진 효과가 있거나 풀고 나서도 이어 가는 끝 모습
+    /// (남은 링크로 끝 모습 그대로, 또는 링크 없이 옮긴 자리만)이 있으면(효과가 그 위에 계속 입혀지므로) 그림 그대로 사본을 둔다.
     /// 남은 칸들이 같은 모습을 잃으면 묶음 그림을 그 모습으로 바꿔 링크를 지키고, 모습이 칸마다 다르면 그 칸들도 떼어 낸다.
     /// </para>
     /// 링크를 푼 셀 수와 그중 보이는 그대로 넣은 셀 수를 돌려준다(푼 셀이 0이면 기록 없음).
@@ -451,8 +453,8 @@ public sealed partial class SpriteProject
             int f = _frames.IndexOf(k.Frame);
             var effects = k.Layer.Effects;
             if (effects.Any(e => e.Enabled && e.AppliesTo(f))) continue; // 범위 안 효과는 풀어도 계속 입혀진다
-            if (LayerEffects.HeldEnds(effects, f, (a, b) => ShareDrawing(k.Layer, k.Skin, a, b)) is null) continue;
-            // 풀고 난 뒤에도 이어 가는 끝 모습이 있으면(남은 칸이 범위 끝 프레임과 계속 링크) 그 위에 계속 입혀지므로 그림 그대로
+            if (LayerEffects.HeldEnds(effects, f, (a, b) => ShareDrawing(k.Layer, k.Skin, a, b))?.Exists(h => h.Linked) != true) continue;
+            // 풀고 난 뒤에도 이어 가는 끝 모습이 있으면(남은 칸이 범위 끝 프레임과 계속 링크, 또는 링크 없이 옮긴 자리만) 그 위에 계속 입혀지므로 그림 그대로
             if (LayerEffects.HeldEnds(effects, f, (a, b) => SharesAfter(k, a, b)) is not null) continue;
             shown[k] = ClippedCelPlan(k.Layer, f, RenderCel(k.Layer, f) ?? _cels[k], withEffects: true).Render();
         }

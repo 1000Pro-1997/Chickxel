@@ -28,7 +28,8 @@ public sealed partial class PixelTools
         Tool("unlink_cels",
             "Unlink cels: each given frame of the layer (of every part, for a group layer) gets its own copy of the drawing so it can be edited alone. Pixels are unchanged, except: a cel that was showing " +
             "an animated effect's held end look only because it was linked to the effect range's last cel (holdEnd) gets that look baked into its drawing exactly as shown " +
-            "(enabled effects only, clipped to the cel; not when an enabled effect's range covers that frame — then it keeps the raw copy). " +
+            "(enabled effects only, clipped to the cel; not when an enabled effect's range covers that frame, or when a held end still applies after unlinking — e.g. an effect " +
+            "that reports its movement keeps moving the unlinked cel to the end position — then it keeps the raw copy). " +
             "If unlinking a range-end cel makes other still-linked cels lose the held look, those are baked too.",
             new JsonObject
             {

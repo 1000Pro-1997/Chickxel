@@ -1084,9 +1084,9 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Link_Nothing" xml:space="preserve"><value>Nothing to link — the frames are already linked or none of them has pixels</value></data>
   <data name="Ai_Link_NoneLinked" xml:space="preserve"><value>None of the given frames has a linked cel</value></data>
   <data name="Ai_Link_NotLinked" xml:space="preserve"><value>The cel at layer {layer}, frame {frame} is not linked</value></data>
-  <data name="Effect_HoldEndRow" xml:space="preserve"><value>Linked cels after</value></data>
+  <data name="Effect_HoldEndRow" xml:space="preserve"><value>Cels after the range</value></data>
   <data name="Effect_HoldEnd" xml:space="preserve"><value>Keep the end look</value></data>
-  <data name="Effect_HoldEndTip" xml:space="preserve"><value>If a cel after the range is linked to the range's last cel, it gets exactly the same look as that last cel (for example, a throw on frames 1–18: frame 19 linked to 18 stays where the throw ended). Turn the effect off or unlink the cel to see the plain drawing. The effect row in the timeline shows a faint tail there.</value></data>
+  <data name="Effect_HoldEndTip" xml:space="preserve"><value>Cels after the range keep the effect's end look. A cel linked to the range's last cel looks exactly like that last cel (for example, a throw on frames 1–18: frame 19 linked to 18 stays where the throw ended); a cel that isn't linked (a different drawing) is placed where the effect moved it, and with "Move pivot along" on, later effects' pivot follows (effects that report their movement only). Turn the effect off to see the plain drawing. The effect row in the timeline shows a faint tail there (fainter where only the position is kept).</value></data>
   <data name="Effect_HoldEndAllFramesTip" xml:space="preserve"><value>The effect covers every frame, so there is no cel after it. Set a frame range to use this.</value></data>
   <data name="Ai_Effect_HoldEndNotAnimated" xml:space="preserve"><value>hold_end only applies to animated effects</value></data>
   <data name="Ai_Locked_DeleteFrame" xml:space="preserve"><value>Frame {frame} can't be deleted because locked layers have drawings in it: {layers} — ask the user to unlock them</value></data>

@@ -3121,19 +3121,23 @@ public sealed class TimelinePanel : UserControl
                 if (x1 - x0 < 1) return;
                 var box = new Rect(x0, ry + 1, x1 - x0, FxH - 3);
                 var color = LayerEffectsDialog.TimelineColorOf(effect);
-                // 링크된 뒤 칸에 끝 모습 이어 가기: 범위 뒤 링크된 칸마다 흐린 꼬리(이어진 칸은 한 덩어리)
+                // 범위 뒤 칸에 끝 모습 이어 가기: 범위 뒤 칸마다 흐린 꼬리(같은 종류로 이어진 칸은 한 덩어리) — 범위 끝 칸과 링크된 칸은 끝 모습 그대로,
+                // 링크되지 않은 칸은 옮긴 자리만(옮긴 거리를 알리는 효과만) 이어 가므로 더 흐리게
                 if (effect is AnimatedEffect { HoldEnd: true, Frames: { } held } && !layer.IsGroup && p.IndexOf(layer) is var li and >= 0)
                 {
-                    using (g.PushOpacity(effect.Enabled ? 0.35 : 0.15))
-                        for (int f = held.To + 1; f < frames; f++)
-                        {
-                            if (!p.CelsShareDrawing(li, f, held.To)) continue;
-                            int end = f;
-                            while (end + 1 < frames && p.CelsShareDrawing(li, end + 1, held.To)) end++;
-                            double tx0 = f == held.To + 1 ? x1 - 3 : FrameX(f) + 2;
+                    bool moves = Chickxel.Core.Edit.LayerEffects.CanMovePivot(effect);
+                    double opacity = effect.Enabled ? 0.35 : 0.15;
+                    for (int f = held.To + 1; f < frames; f++)
+                    {
+                        bool linked = p.CelsShareDrawing(li, f, held.To);
+                        if (!linked && !moves) continue;
+                        int end = f;
+                        while (end + 1 < frames && p.CelsShareDrawing(li, end + 1, held.To) == linked) end++;
+                        double tx0 = f == held.To + 1 ? x1 - 3 : FrameX(f) + 2;
+                        using (g.PushOpacity(linked ? opacity : opacity / 2))
                             g.DrawRectangle(AppTheme.Brush(color), null, new Rect(tx0, ry + 3, FrameX(end) + FrameW(end) - 2 - tx0, FxH - 7), 2, 2);
-                            f = end;
-                        }
+                        f = end;
+                    }
                 }
                 bool hovered = editing || (_fxHover is { } h && ReferenceEquals(h.Layer, layer) && h.Index == k);
                 IBrush ink = IsBright(color) ? Brushes.Black : Brushes.White;

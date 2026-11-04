@@ -668,7 +668,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     }
 
     /// <summary>
-    /// 움직이는 효과의 "링크된 뒤 칸에 끝 모습 이어 가기"(<see cref="AnimatedEffect.HoldEnd"/>) 줄 — 효과 창과 도구 설정 독이 같이 쓴다.
+    /// 움직이는 효과의 "범위 뒤 칸에 끝 모습 이어 가기"(<see cref="AnimatedEffect.HoldEnd"/>) 줄 — 효과 창과 도구 설정 독이 같이 쓴다.
     /// 범위가 "모든 프레임"이면 뒤 칸이 없어 켤 수 없다(켜져 있으면 끌 수만 있음). 움직이지 않는 스크립트(<c>animated: false</c>)에는 없다(꺼져 있으면).
     /// </summary>
     private static void AddHoldEndEditor(EffectForm form, LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)

@@ -152,9 +152,10 @@ public sealed partial class LayerEffectsDialog
     }
 
     /// <summary>
-    /// 미리보기 프레임 <paramref name="frame"/>의 효과 목록에 링크된 칸의 효과 끝 모습을 넣는다(캔버스 그리기와 같게 — <see cref="LayerEffects.HeldEnds"/>):
-    /// 끝 모습 이어 가기를 켠 효과의 범위가 끝난 뒤 칸이 범위 끝 칸과 같은 그림(링크된 셀, 늘린 사본 칸은 그 원래 프레임)이면 그 효과를 범위 끝 칸의 조건으로 맞춰 고정한다.
-    /// 그룹은 셀이 없어 그대로. UI 스레드에서(프로젝트를 읽음) — 작업 스레드에서 그릴 목록이면 다른 프레임 원본·피벗을 미리 담은 <paramref name="frameSource"/>·<paramref name="framePivot"/>를 준다.
+    /// 미리보기 프레임 <paramref name="frame"/>의 효과 목록에 범위 뒤 칸의 효과 끝 모습을 넣는다(캔버스 그리기와 같게 — <see cref="LayerEffects.HeldEnds"/>):
+    /// 끝 모습 이어 가기를 켠 효과의 범위가 끝난 뒤 칸이면 그 효과를 범위 끝 칸의 조건으로 맞춰 고정한다 — 범위 끝 칸과 같은 그림(링크된 셀, 늘린 사본 칸은 그 원래 프레임)이면
+    /// 끝 모습 그대로, 아니면(옮긴 거리를 알리는 효과만) 범위 끝에서 옮긴 자리로 옮기기만. 그룹은 셀이 없어 그대로.
+    /// UI 스레드에서(프로젝트를 읽음) — 작업 스레드에서 그릴 목록이면 다른 프레임 원본·피벗을 미리 담은 <paramref name="frameSource"/>·<paramref name="framePivot"/>를 준다.
     /// </summary>
     private IReadOnlyList<LayerEffect> HeldAt(IReadOnlyList<LayerEffect> effects, int frame, Func<int, PixelImage?>? frameSource = null,
         Func<int, System.Drawing.PointF?>? framePivot = null)
@@ -166,13 +167,13 @@ public sealed partial class LayerEffectsDialog
         frameSource ??= VirtualSourceAt;
         framePivot ??= f => _project.EffectPivot(_layer, OriginalOf(f));
         var list = effects.ToArray();
-        foreach (var (i, end) in held)
+        foreach (var h in held)
         {
-            LayerEffect[] one = [effects[i]];
-            int original = OriginalOf(end);
-            var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(one, end, VirtualCount, _project.EffectPivot(_layer, original),
+            LayerEffect[] one = [effects[h.Index]];
+            int original = OriginalOf(h.End);
+            var resolved = LayerEffects.WithFrameTag(LayerEffects.WithScriptLayers(LayerEffects.At(one, h.End, VirtualCount, _project.EffectPivot(_layer, original),
                 LayerEffects.UsesOtherFrames(one) ? frameSource : null, framePivot), _project.ScriptLayersAt(_layer, original, one)), _project.FrameTagFor(one, original));
-            list[i] = LayerEffects.Pin(resolved[0]);
+            if (LayerEffects.Pin(resolved[0], h, h.Linked ? null : frameSource(h.End)) is { } pinned) list[h.Index] = pinned;
         }
         return list;
     }

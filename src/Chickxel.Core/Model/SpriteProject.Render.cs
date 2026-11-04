@@ -93,7 +93,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 레이어 <paramref name="layer"/>의 효과가 프레임 <paramref name="frameIndex"/>에서 그림을 옮겨 쌓은 피벗 이동(px, <see cref="LayerEffects.PivotShift"/> — 피벗 같이 옮기기가 켜진
-    /// 효과가 알린 거리의 합, 링크된 칸에 이어 가는 끝 모습 포함). 부위면 부위 효과의 이동에 그룹 효과의 이동을 더한다(그룹 효과가 부위가 든 그룹 합성을 옮기므로).
+    /// 효과가 알린 거리의 합, 범위 뒤 칸에 이어 가는 끝 모습(링크된 칸, 링크되지 않은 칸의 옮긴 자리) 포함). 부위면 부위 효과의 이동에 그룹 효과의 이동을 더한다(그룹 효과가 부위가 든 그룹 합성을 옮기므로).
     /// 캔버스는 피벗 표시를 정한 피벗 + 이 값에 그린다. 알릴 수 있는 효과가 없으면 그리지 않고 0, 있으면 그 레이어 효과를 그리므로 그만큼 걸린다.
     /// </summary>
     public PointF EffectPivotShift(Layer layer, int frameIndex)

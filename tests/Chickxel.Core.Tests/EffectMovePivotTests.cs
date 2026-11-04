@@ -178,6 +178,42 @@ public class EffectMovePivotTests
     }
 
     [Fact]
+    public void HeldEnd_OnUnlinkedCelsAfterRange_KeepsOnlyTheMovedPosition()
+    {
+        // 프레임 0~1이 한 그림(점 (4,4)), 옮기기 0~1(끝 모습 이어 가기). 2는 다른 그림(점 (4,2)) — 링크가 아니어도 옮긴 자리(+2,0)와 피벗 이동이 이어진다
+        var p = new SpriteProject(9, 9);
+        for (int i = 0; i < 3; i++) p.AddFrame();
+        p.SetCel(0, 0, Dot(4, 4));
+        p.LinkCels([(0, 0), (0, 1), (0, 3)]);
+        p.SetCel(0, 2, Dot(4, 2));
+        var slide = Slide() with { Frames = new FrameRange(0, 1), HoldEnd = true };
+        p.SetLayerEffects(0, [slide]);
+        Assert.Equal(new Point(6, 2), OnlyDot(p.PlanCel(0, 2)!.Render()));
+        Assert.Equal(new PointF(2, 0), p.EffectPivotShift(p.Layers[0], 2));
+
+        // 뒤 효과(회전, 프레임 2에서 진행 1)는 옮긴 자리를 돈다 — 피벗 같이 옮기기를 끄면 원래 피벗을 돈다
+        var rotate = Rotate90() with { Frames = new FrameRange(1, 2) };
+        p.SetLayerEffects(0, [slide, rotate]);
+        var rotatedAt = OnlyDot(p.PlanCel(0, 2)!.Render());
+        p.SetLayerEffects(0, [slide with { MovePivot = false }, rotate]);
+        var still = OnlyDot(p.PlanCel(0, 2)!.Render());
+        Assert.Equal(DotAfter(Dot(6, 2), [Rotate90()]), still);
+        Assert.NotEqual(still, rotatedAt);
+        Assert.Equal(PointF.Empty, p.EffectPivotShift(p.Layers[0], 2));
+
+        // 효과를 끄면 원래 자리
+        p.SetLayerEffects(0, [slide with { Enabled = false }]);
+        Assert.Equal(new Point(4, 2), OnlyDot(p.PlanCel(0, 2)!.Render()));
+
+        // 3을 풀면 끝 모습 대신 옮긴 자리만 남는다 — 그림에 넣지 않으므로 두 번 옮겨지지 않는다
+        p.SetLayerEffects(0, [slide]);
+        Assert.Equal(new Point(6, 4), OnlyDot(p.PlanCel(0, 3)!.Render()));
+        Assert.Equal(new UnlinkResult(1, 0), p.UnlinkCels([(0, 3)]));
+        Assert.Equal(new Point(4, 4), OnlyDot(p.GetCel(0, 3)!));
+        Assert.Equal(new Point(6, 4), OnlyDot(p.PlanCel(0, 3)!.Render()));
+    }
+
+    [Fact]
     public void PartInFrame_DrawsOnlyThatPartWithPartAndGroupEffects_AtFullOpacity()
     {
         var p = new SpriteProject(12, 12);

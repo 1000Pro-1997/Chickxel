@@ -121,24 +121,34 @@ public static class LayerEffects
     }
 
     /// <summary>
-    /// 링크된 칸에 효과 끝 모습 이어 가기(<see cref="AnimatedEffect.HoldEnd"/>): 프레임 <paramref name="frameIndex"/>에서 이어 갈 효과의 목록 자리와 그 효과의 범위 끝 프레임.
-    /// 켜져 있고 이어 가기를 켠 움직이는 효과 중 범위가 이 프레임 앞에서 끝났고, 이 프레임의 그림이 범위 끝 프레임과 같은(<paramref name="sameDrawing"/> — 링크된 셀) 것.
-    /// 없으면 null. 찾은 효과는 범위 끝 프레임의 조건(진행·피벗·다른 프레임·다른 레이어·태그)으로 맞춘 뒤 <see cref="Pin"/>해 이 프레임 목록의 그 자리에 넣는다 —
-    /// 그러면 범위 끝 프레임의 결과를 그대로 다시 그린다.
+    /// 범위 뒤 칸에 효과 끝 모습 이어 가기(<see cref="AnimatedEffect.HoldEnd"/>): 프레임 <paramref name="frameIndex"/>에서 이어 갈 효과의 목록 자리, 그 효과의 범위 끝 프레임,
+    /// 이 프레임의 그림이 범위 끝 프레임과 같은지(<paramref name="sameDrawing"/> — 링크된 셀). 켜져 있고 이어 가기를 켠 움직이는 효과 중 범위가 이 프레임 앞에서 끝난 것 —
+    /// 그림이 다르면 옮긴 거리를 알리는 효과(<see cref="CanMovePivot"/>)만. 없으면 null.
+    /// 찾은 효과는 범위 끝 프레임의 조건(진행·피벗·다른 프레임·다른 레이어·태그)으로 맞춘 뒤 <see cref="Pin"/>해 이 프레임 목록의 그 자리에 넣는다 —
+    /// 같은 그림이면 범위 끝 프레임의 결과를 그대로 다시 그리고, 다른 그림이면 범위 끝에서 옮긴 자리로 그 그림을 옮기기만 한다.
     /// </summary>
-    public static List<(int Index, int End)>? HeldEnds(IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, int, bool> sameDrawing)
+    public static List<HeldEnd>? HeldEnds(IReadOnlyList<LayerEffect> effects, int frameIndex, Func<int, int, bool> sameDrawing)
     {
-        List<(int, int)>? held = null;
+        List<HeldEnd>? held = null;
         for (int i = 0; i < effects.Count; i++)
         {
-            if (effects[i] is not AnimatedEffect { Enabled: true, HoldEnd: true, Frames: { } range } || frameIndex <= range.To || !sameDrawing(frameIndex, range.To)) continue;
-            (held ??= []).Add((i, range.To));
+            if (effects[i] is not AnimatedEffect { Enabled: true, HoldEnd: true, Frames: { } range } effect || frameIndex <= range.To) continue;
+            bool linked = sameDrawing(frameIndex, range.To);
+            if (!linked && !CanMovePivot(effect)) continue;
+            (held ??= []).Add(new HeldEnd(i, range.To, linked));
         }
         return held;
     }
 
-    /// <summary>범위 끝 프레임에 맞춘(<see cref="At"/>의 결과) 효과를 다른 프레임 목록에 그대로 넣을 사본: <see cref="At"/>·<see cref="WithScriptLayers"/>·<see cref="WithFrameTag"/>가 다시 맞추지 않는다.</summary>
-    public static LayerEffect Pin(LayerEffect resolved) => resolved with { Pinned = true };
+    /// <summary>
+    /// 범위 끝 프레임에 맞춘(<see cref="At"/>의 결과) 효과를 다른 프레임 목록에 넣을 사본: <see cref="At"/>·<see cref="WithScriptLayers"/>·<see cref="WithFrameTag"/>가 다시 맞추지 않는다.
+    /// <paramref name="held"/>가 링크된 칸이면 끝 모습 그대로, 아니면 범위 끝 프레임 원본 <paramref name="endSource"/>에서 알린 이동만큼 그림을 옮기는 사본
+    /// (<see cref="AnimatedEffect.HeldMoveSource"/>). 링크되지 않았는데 범위 끝 프레임 원본이 없으면 옮길 거리를 모르므로 null(이어 가지 않음).
+    /// </summary>
+    public static LayerEffect? Pin(LayerEffect resolved, HeldEnd held, PixelImage? endSource)
+        => held.Linked ? resolved with { Pinned = true }
+            : endSource is not null && resolved is AnimatedEffect animated ? animated with { Pinned = true, HeldMoveSource = endSource }
+            : null;
 
     /// <summary>
     /// 프레임 <paramref name="frameIndex"/>에 입혀질 효과 중 원본 없이 그림을 만드는 효과(<see cref="EffectDefinition.GeneratesContent"/>, 글씨 — 그리고
@@ -535,7 +545,7 @@ public static class LayerEffects
                         var moved = new PixelImage(image.Width, image.Height);
                         for (int i = 0; i < image.Pixels.Length; i++)
                             if (clipMask[i]) moved.Pixels[i] = image.Pixels[i];
-                        definition.Render(moved, Shifted(effect, moves.Shift, source), source, hooks);
+                        RenderOne(definition, moved, Shifted(effect, moves.Shift, source), source, hooks);
                         for (int i = 0; i < image.Pixels.Length; i++)
                             if (!clipMask[i] && moved.Pixels[i].A != 0)
                                 image.Pixels[i] = Color32.BlendOver(moved.Pixels[i], image.Pixels[i]);
@@ -543,7 +553,7 @@ public static class LayerEffects
                     else
                     {
                         var before = (Color32[])image.Pixels.Clone();
-                        definition.Render(image, Shifted(effect, moves.Shift, source), source, hooks);
+                        RenderOne(definition, image, Shifted(effect, moves.Shift, source), source, hooks);
                         for (int i = 0; i < before.Length; i++)
                             if (!clipMask[i]) image.Pixels[i] = before[i];
                     }
@@ -555,7 +565,7 @@ public static class LayerEffects
 
             bool hasClippedFollower = index + 1 < effects.Count && effects[index + 1].ClipToPrevious;
             Color32[]? anchorBefore = hasClippedFollower ? (Color32[])image.Pixels.Clone() : null;
-            var reported = definition.Render(image, Shifted(effect, moves.Shift, source), source, hooks);
+            var reported = RenderOne(definition, image, Shifted(effect, moves.Shift, source), source, hooks);
             moves = moves.Add(reported, effect.MovePivot);
             clipMask = anchorBefore is null ? null : ChangedPixels(anchorBefore, image.Pixels);
             // 원본을 지우는 효과(원본 지우기 외곽선): 지워진(투명해진) 원본 자리는 기준 영역이 아니다 — 클리핑된 효과는 남은 픽셀만 보고,
@@ -630,7 +640,19 @@ public static class LayerEffects
             AfterimageRender.Apply(image, after, source);
             return PointF.Empty;
         }
-        return EffectRegistry.Of(effect)?.Render(image, effect, source, hooks) ?? PointF.Empty;
+        return EffectRegistry.Of(effect) is { } definition ? RenderOne(definition, image, effect, source, hooks) : PointF.Empty;
+    }
+
+    /// <summary>
+    /// 효과 하나를 입히고 알린 이동(px)을 돌려준다. 링크되지 않은 범위 뒤 칸에 끝 모습의 자리만 이어 가는 사본(<see cref="AnimatedEffect.HeldMoveSource"/>)이면
+    /// 범위 끝 프레임 원본에 그 효과를 입혀 알린 이동만 재고, <paramref name="image"/>는 그 거리(가까운 정수 px)만큼 옮기기만 한다 — 알린 이동은 그대로 돌려준다.
+    /// </summary>
+    private static PointF RenderOne(EffectDefinition definition, PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks)
+    {
+        if (effect is not AnimatedEffect { HeldMoveSource: { } end }) return definition.Render(image, effect, source, hooks);
+        var moved = definition.Render(end.Clone(), effect, end.Bounds, hooks);
+        ShakeRender.Shift(image, (int)Math.Floor(moved.X + 0.5), (int)Math.Floor(moved.Y + 0.5));
+        return moved;
     }
 
     /// <summary>
@@ -761,6 +783,12 @@ public static class LayerEffects
         return new Color32(M(dst.R, color.R), M(dst.G, color.G), M(dst.B, color.B), dst.A);
     }
 }
+
+/// <summary>
+/// 프레임 하나에서 이어 갈 효과 끝 모습(<see cref="LayerEffects.HeldEnds"/>): 효과 목록 자리 <paramref name="Index"/>, 그 효과의 범위 끝 프레임 <paramref name="End"/>,
+/// 이 프레임 그림이 범위 끝 프레임과 같은지 <paramref name="Linked"/>(링크된 셀 — 끝 모습 그대로, 아니면 옮긴 자리만).
+/// </summary>
+public readonly record struct HeldEnd(int Index, int End, bool Linked);
 
 /// <summary>
 /// 효과들이 알린 이동(<see cref="LayerEffects.Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>): <see cref="Shift"/>는 피벗 같이 옮기기가 켜진 효과의 합(뒤 효과 피벗에 더함),

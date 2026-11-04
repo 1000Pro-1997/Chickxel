@@ -51,7 +51,7 @@ public abstract record LayerEffect
     internal double GradientTime { get; init; }
 
     /// <summary>
-    /// 그릴 때만(저장 안 함): 범위 끝 프레임에 맞춰 둔 효과를 다른 프레임에 그대로 쓰는 사본(<see cref="Edit.LayerEffects.Pin"/> — 링크된 칸의 효과 끝 모습).
+    /// 그릴 때만(저장 안 함): 범위 끝 프레임에 맞춰 둔 효과를 다른 프레임에 쓰는 사본(<see cref="Edit.LayerEffects.Pin"/> — 범위 뒤 칸의 효과 끝 모습).
     /// 범위와 관계없이 입히고, 진행·피벗·다른 레이어·태그를 다시 맞추지 않는다.
     /// </summary>
     public bool Pinned { get; internal init; }
@@ -174,10 +174,18 @@ public abstract record AnimatedEffect : LayerEffect
     public int RepeatCount { get => _repeatCount; init => _repeatCount = Math.Clamp(value, 1, MaxRepeatCount); }
 
     /// <summary>
-    /// 링크된 칸에 끝 모습 이어 가기: 범위가 끝난 뒤 프레임의 셀이 범위 끝 프레임 셀과 링크되어 있으면 그 프레임에도 범위 끝 프레임과 똑같은 모습으로 입힌다
-    /// (예: 던지기 1~18, 19가 18과 링크면 19도 던져진 자리 — <see cref="Edit.LayerEffects.HeldEnds"/>). 범위가 "모든 프레임"이면 쓰지 않는다. 저장된다.
+    /// 범위 뒤 칸에 끝 모습 이어 가기: 범위가 끝난 뒤 프레임에도 범위 끝 프레임의 모습을 이어 간다(<see cref="Edit.LayerEffects.HeldEnds"/>).
+    /// 그 칸의 셀이 범위 끝 프레임 셀과 링크되어 있으면 범위 끝 프레임과 똑같은 모습(예: 던지기 1~18, 19가 18과 링크면 19도 던져진 자리),
+    /// 링크되지 않은 칸(다른 그림)은 효과가 옮긴 자리만 — 옮긴 거리를 알리는 효과(<see cref="Edit.LayerEffects.CanMovePivot"/>)일 때 그 칸 그림을 범위 끝에서 알린 만큼 옮기고
+    /// 피벗 같이 옮기기(<see cref="LayerEffect.MovePivot"/>)가 켜져 있으면 뒤 효과의 피벗도 따라간다. 범위가 "모든 프레임"이면 쓰지 않는다. 저장된다.
     /// </summary>
     public bool HoldEnd { get; init; }
+
+    /// <summary>
+    /// 그릴 때만(저장 안 함): 링크되지 않은 범위 뒤 칸에 끝 모습의 자리만 이어 가는 사본(<see cref="Edit.LayerEffects.Pin"/>)이면 범위 끝 프레임의 효과 원본.
+    /// 있으면 이 효과를 이 원본에 입혀 알린 이동만 재고, 그리는 그림은 그 거리만큼 옮기기만 한다(알린 이동은 그대로 알림 — 뒤 효과의 피벗이 따라감).
+    /// </summary>
+    public PixelImage? HeldMoveSource { get; internal init; }
 
     /// <summary>그릴 때만: 범위 첫 프레임부터 몇 프레임째인지(0부터).</summary>
     public int FrameStep { get => _step; init => _step = Math.Max(0, value); }
