@@ -228,12 +228,11 @@ internal static class PartsShots
     public static void Skins(ShotKit k)
     {
         var main = Open(k);
-        int head = Index(main, "Head");
         int g = Index(main, GroupName);
         int gear = Index(main, GearName), weapon = Index(main, "Weapon");
         var area = ShotKit.Bounds(Canvas(main), main).Union(ShotKit.Bounds(Timeline(main), main)).Inflate(2);
-        // ① 그룹의 지금 스킨 ② 위에 겹치는 다른 그룹 ③ 물려받아 흐린 칸
-        k.Save(main, crop: area, marks: [ChipRect(main, g), RowRect(main, gear).Union(RowRect(main, weapon)), CellsRect(main, head, 0, 3)]);
+        // ① 그룹의 지금 스킨 ② 위에 겹치는 다른 그룹. 비어 있는 스킨 칸은 첫 스킨에서 빌려오지 않는다.
+        k.Save(main, crop: area, marks: [ChipRect(main, g), RowRect(main, gear).Union(RowRect(main, weapon))]);
     }
 
     [Shot("parts-per-part")]

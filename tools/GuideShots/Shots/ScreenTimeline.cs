@@ -380,7 +380,7 @@ internal static class ScreenTimelineShots
         var play = (Control)ShotKit.Get<Control>(w, "_play").Parent!;
         var preview = ShotKit.Get<Control>(w, "_preview");
         var strip = ShotKit.Get<Control>(w, "_strip");
-        var expandRow = (Control)ShotKit.Get<Control>(w, "_expandCanvas").Parent!;
+        var expandRow = (Control)ShotKit.Get<Control>(w, "_expandMode").Parent!;
         var expandNote = ShotKit.Get<Control>(w, "_expandNote");
         var extend = ShotKit.Get<Control>(w, "_extendPanel");
         var addRow = (Control)ShotKit.Get<Control>(w, "_addAll").Parent!;
