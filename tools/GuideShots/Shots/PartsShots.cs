@@ -382,7 +382,7 @@ internal static class PartsShots
             k.Save(w, marks: [B("Current outfit"), B("Selected skins"), B("Choose skins"), B("One image"), B("Separate files")]);
         });
         var p = Project(main);
-        k.Dialog(() => new SkinPickerWindow(p, p.Export.Common, partsOnly: false, showBake: true, 0).ShowDialog(main), w =>
+        k.Dialog(() => new SkinPickerWindow(p, p.Export.Common, partsOnly: false, 0).ShowDialog(main), w =>
         {
             foreach (var sv in ShotKit.All<ScrollViewer>(w)) sv.MaxHeight = double.PositiveInfinity;
             w.SizeToContent = SizeToContent.Height;
@@ -395,10 +395,8 @@ internal static class PartsShots
             // 묶음 테두리를 제목 위 빈틈까지 올려 번호가 제목 글자를 가리지 않게 한다.
             var skinArea = new Rect(skins.X, skins.Y - 14, right - skins.X, outfits.Y - 20 - skins.Y + 14);
             var outfitArea = new Rect(outfits.X, outfits.Y - 14, right - outfits.X, layers.Y - 6 - outfits.Y + 14);
-            var bake = ShotKit.All<CheckBox>(w).First(c => c.Content as string == UiStrings.S_SkinPickerWindow_SkinPickerWindow_D6CC3CF8C8);
-            var bakeArea = Heading("Part atlas").Union(ShotKit.Bounds(bake, w));
-            // ⑥ 스킨 ⑦ 착장 프리셋 ⑧ 물려받은 칸도 이 스킨 스프라이트로
-            k.Save(w, "parts-skin-export-2", marks: [skinArea, outfitArea, bakeArea], firstNumber: 6);
+            // ⑥ 스킨 ⑦ 착장 프리셋
+            k.Save(w, "parts-skin-export-2", marks: [skinArea, outfitArea], firstNumber: 6);
         });
     }
 
