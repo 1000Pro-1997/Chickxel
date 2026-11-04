@@ -19,7 +19,7 @@ namespace Chickxel.App;
 /// <para>
 /// 그룹은 스킨 슬롯이다: 그룹 행 이름 칸 오른쪽 칩에 지금 스킨 이름이, 부위 행 칩에는 그 부위가 보이는 스킨 이름(부위만 따로 고르면 강조)이
 /// 보이고, 칩을 누르면 스킨 관리 창(<see cref="SkinManagerWindow"/>)이 그 줄로 열린다. 우클릭 메뉴 "스킨"에서 추가·복제·이름·삭제·순서를,
-/// 부위는 "이 부위 스킨"에서 부위만 따로 입힐 스킨을 고른다. 지금 스킨에 자기 그림이 없어 기본 스킨 셀을 빌려 보이는 부위 셀은 흐리게 그린다.
+/// 부위는 "이 부위 스킨"에서 부위만 따로 입힐 스킨을 고른다.
 /// </para>
 /// </summary>
 public sealed class TimelinePanel : UserControl
@@ -94,7 +94,7 @@ public sealed class TimelinePanel : UserControl
             var layer = p.Layers[_ctx.CurrentLayer];
             var tag = _ctx.ActiveTag;
             int total = p.Frames.Sum(f => f.DurationMs);
-            string skin = SkinManagerWindow.SkinStatus(p, layer, _ctx.CurrentFrame);
+            string skin = SkinManagerWindow.SkinStatus(layer);
             string kind = layer.Kind switch
             {
                 LayerKind.Group => UiStrings.S_TimelinePanel_RefreshUi_974D2C80BE,
@@ -514,14 +514,14 @@ public sealed class TimelinePanel : UserControl
 
     /// <summary>
     /// 행(레이어 번호, 위→아래) × 프레임의 셀을 담는다. <paramref name="keep"/>이면(옮기기) 지금 스킨 자신의 셀 그림을 그대로(링크된 셀이면 그 그림),
-    /// 아니면 사본. 기본 스킨에서 물려받아 보이는 셀은 늘 사본이다.
+    /// 아니면 사본.
     /// </summary>
     private static List<ClipRow> CaptureCells(SpriteProject p, IReadOnlyList<int> rowLayers, IReadOnlyList<int> frames, bool keep = false)
     {
         PixelImage? Take(Layer layer, int f)
         {
-            var shown = p.GetCel(layer, p.Frames[f]);
-            return keep && ReferenceEquals(shown, p.GetOwnCel(layer, p.Frames[f])) ? shown : shown?.Clone();
+            var cel = p.GetCel(layer, p.Frames[f]);
+            return keep ? cel : cel?.Clone();
         }
         return rowLayers.Select(l =>
         {
@@ -554,9 +554,9 @@ public sealed class TimelinePanel : UserControl
             if (!p.IsCelEmpty(l, f)) p.SetCel(l, f, null);
     }
 
-    /// <summary>칸들에 지울 그림(이 스킨 자신의 셀 — 기본 스킨에서 빌려 보이는 셀 말고)이 있는지.</summary>
-    private static bool HasOwnCels(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels)
-        => cels.Any(c => !p.IsCelEmpty(c.Layer, c.Frame) && !p.IsCelInherited(c.Layer, c.Frame));
+    /// <summary>칸들에 지울 그림이 있는지.</summary>
+    private static bool HasCels(SpriteProject p, IEnumerable<(int Layer, int Frame)> cels)
+        => cels.Any(c => !p.IsCelEmpty(c.Layer, c.Frame));
 
     /// <summary>
     /// 담아 둔 셀 묶음을 보이는 행 <paramref name="topRow"/>·프레임 <paramref name="start"/>부터 쓴다(빈 셀은 비움, 모자라는 프레임은 붙임).
@@ -651,7 +651,7 @@ public sealed class TimelinePanel : UserControl
     {
         if (P is not { } p) return;
         var cels = SelectedCels();
-        if (!HasOwnCels(p, cels))
+        if (!HasCels(p, cels))
         {
             Say(UiStrings.S_TimelinePanel_ClearSelectedCels_D1426A0A3D);
             return;
@@ -662,8 +662,8 @@ public sealed class TimelinePanel : UserControl
     }
 
     /// <summary>
-    /// 고른 칸에 링크할 것이 있는지: 한 레이어에서 두 프레임 이상이고 그중 그림이 보이는 칸이 있어야 한다(부위의 지금 스킨이 첫 스킨 그림을 물려받아 보이는 칸도 —
-    /// 그 그림의 사본으로 이 스킨의 묶음을 만든다, <see cref="SpriteProject.LinkCels"/>). 그룹 행은 부위 중 하나라도 그림이 보이면.
+    /// 고른 칸에 링크할 것이 있는지: 한 레이어에서 두 프레임 이상이고 그중 그림이 보이는 칸이 있어야 한다(<see cref="SpriteProject.LinkCels"/>).
+    /// 그룹 행은 부위 중 하나라도 그림이 보이면.
     /// </summary>
     private static bool CanLinkCels(SpriteProject p, IReadOnlyList<(int Layer, int Frame)> cels)
         => cels.GroupBy(c => c.Layer).Any(row => row.Select(c => c.Frame).Distinct().Count() > 1 && row.Any(c => Shows(p, c.Layer, c.Frame)));
@@ -1406,13 +1406,11 @@ public sealed class TimelinePanel : UserControl
         bool scattered = _grid.ScatteredCels;
         string range = frames.Count > 1 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_4140F7A491,frames.Min() + 1,frames.Max() + 1) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F687732B1B,frames[0] + 1);
         bool single = !scattered && rows.Count * frames.Count == 1;
-        // 빌린 셀은 이 스킨 자신의 그림이 없어 지울 것이 없다(기본 스킨 셀은 기본 스킨에서 지움).
-        bool borrowed = single && !p.Layers[layer].IsGroup && p.IsCelInherited(layer, frame);
         var items = new List<Control>
         {
             SelectionHeader(),
             new Separator(),
-            Item(borrowed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_F4960F4C1A) : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_470F8D50A4,DeleteKeyName), ClearSelectedCels, HasOwnCels(p, cels)),
+            Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowCelMenu_470F8D50A4,DeleteKeyName), ClearSelectedCels, HasCels(p, cels)),
         };
         if (single && !p.Layers[layer].IsGroup)
             items.Add(Item(UiStrings.S_TimelinePanel_ShowCelMenu_F578B13F0B, () => CopyCelFromPrevious(layer, frame), p.IsCelEmpty(layer, frame) && PreviousCelFrame(p, layer, frame) >= 0));
@@ -1730,8 +1728,6 @@ public sealed class TimelinePanel : UserControl
         private const int ToggleX = 48, NameX = 64, Indent = 16;
         /// <summary>스킨 칩 폭: 최대(긴 스킨 이름은 …), 최소(이름이 길어도 이만큼은 보임). 이름이 먼저 자리를 차지한다.</summary>
         private const int SkinChipMaxW = 96, SkinChipMinW = 34;
-        /// <summary>기본 스킨 그림을 빌려 보이는 셀 썸네일의 불투명도.</summary>
-        private const double InheritedOpacity = 0.35;
         private static readonly IPen ChipAccentPen = AppTheme.Pen(AppTheme.AccentColor);
         private static readonly IBrush ChipAccentBrush = AppTheme.Brush(Color.FromArgb(90, AppTheme.AccentColor.R, AppTheme.AccentColor.G, AppTheme.AccentColor.B));
 
@@ -2966,22 +2962,11 @@ public sealed class TimelinePanel : UserControl
             => (uint)col.Index < (uint)p.Frames.Count && ReferenceEquals(p.Frames[col.Index], col.Item) ? col.Index : -1;
 
         /// <summary>
-        /// 간단히 보기의 점: 셀 <paramref name="l"/>×<paramref name="f"/>에 그림이 없으면 null, 있으면 기본 스킨 그림을 빌려 보이는지(흐리게).
-        /// 그룹 행은 부위 중 하나라도 그림이 있으면 점(모두 빌린 그림이면 흐리게). 썸네일을 만들지 않고 셀만 본다.
+        /// 간단히 보기의 점: 셀 <paramref name="l"/>×<paramref name="f"/>에 그림이 있는지. 그룹 행은 부위 중 하나라도 그림이 있으면 점.
+        /// 썸네일을 만들지 않고 셀만 본다.
         /// </summary>
-        private static bool? CelDot(SpriteProject p, int l, int f)
-        {
-            if (p.Layers[l] is not { IsGroup: true } group) return p.IsCelEmpty(l, f) ? null : p.IsCelInherited(l, f);
-            bool? dot = null;
-            foreach (var part in p.ChildrenOf(group))
-            {
-                int pi = p.IndexOf(part);
-                if (p.IsCelEmpty(pi, f)) continue;
-                if (!p.IsCelInherited(pi, f)) return false;
-                dot = true;
-            }
-            return dot;
-        }
+        private static bool CelDot(SpriteProject p, int l, int f)
+            => p.Layers[l] is { IsGroup: true } group ? p.ChildrenOf(group).Any(part => !p.IsCelEmpty(p.IndexOf(part), f)) : !p.IsCelEmpty(l, f);
 
         /// <summary>
         /// 행·열은 배치(<see cref="Track"/>)를 따라 그린다. 자라거나 줄어드는 칸은 그 크기만큼 잘라 보이고, 내용은 칸의 아래·오른쪽 끝에
@@ -3033,21 +3018,14 @@ public sealed class TimelinePanel : UserControl
                 if (CellTint(l, f) is { } tint) g.FillRectangle(tint, r);
                 if (!_thumbnails)
                 {
-                    // 간단히 보기: 썸네일 없이 그림이 있는 칸에만 흰 점(기본 스킨 그림을 빌려 보이는 칸은 흐리게)
-                    if (CelDot(p, l, f) is { } inherited)
-                        using (g.PushOpacity(inherited ? InheritedOpacity : 1))
-                            g.DrawEllipse(AppTheme.TextBrush, null, new Rect(r.X + r.Width / 2 - 2.5, r.Y + r.Height / 2 - 2.5, 5, 5));
+                    // 간단히 보기: 썸네일 없이 그림이 있는 칸에만 흰 점
+                    if (CelDot(p, l, f))
+                        g.DrawEllipse(AppTheme.TextBrush, null, new Rect(r.X + r.Width / 2 - 2.5, r.Y + r.Height / 2 - 2.5, 5, 5));
                 }
                 else if (Ctx.CelThumbnail(l, f) is { Bitmap: { } bmp } thumb)
                 {
                     var size = new Size(thumb.SourceWidth, thumb.SourceHeight);
-                    // 지금 스킨에 자기 그림이 없어 기본 스킨 셀을 물려받은 칸은 흐리게
-                    Rect shown;
-                    if (p.IsCelInherited(l, f))
-                    {
-                        using (g.PushOpacity(InheritedOpacity)) shown = ImageUtil.DrawFittedThumb(g, bmp, size, r.Deflate(3), checker: true);
-                    }
-                    else shown = ImageUtil.DrawFittedThumb(g, bmp, size, r.Deflate(3), checker: true);
+                    var shown = ImageUtil.DrawFittedThumb(g, bmp, size, r.Deflate(3), checker: true);
                     // 작업 스레드에서 다시 계산하는 중이면 이전 그림 위에 회색 덮개
                     if (thumb.Overlay) RenderOverlay.DrawVeil(g, shown);
                 }

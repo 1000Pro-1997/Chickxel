@@ -456,25 +456,23 @@ public class LinkedCelTests
     }
 
     [Fact]
-    public void LinkCels_PartInheritingBaseSkin_LinksACopyInTheCurrentSkin_BaseUntouched()
+    public void LinkCels_EmptyNonBaseSkin_HasNothingToLink_BaseUntouched()
     {
         var p = Frames(3);
         Draw(p, 1, 1, Green, frame: 1);
         var layer = p.Layers[0];
-        var g = p.AddSkinToLayer(layer, copy: false); // 새 빈 스킨이 지금 스킨: 모든 칸이 첫 스킨 그림을 물려받음
+        var g = p.AddSkinToLayer(layer, copy: false); // 새 빈 스킨이 지금 스킨: 모든 칸이 빈 칸(첫 스킨 그림을 빌리지 않음)
         int li = p.IndexOf(layer);
-        var baseCels = Enumerable.Range(0, 3).Select(f => p.GetSkinCel(layer, p.Frames[f], g.BaseSkin!)).ToList();
-        Assert.True(p.IsCelInherited(li, 1));
+        var baseCels = Enumerable.Range(0, 3).Select(f => p.GetOwnCel(layer, p.Frames[f], g.BaseSkin!)).ToList();
+        Assert.True(p.IsCelEmpty(li, 1));
 
-        // 누른 칸(프레임 1)의 보이는 그림으로 이 스킨의 새 묶음
-        Assert.Equal(3, p.LinkCels([(li, 0), (li, 1), (li, 2)], mainFrame: 1));
-        Assert.All([0, 1, 2], f => Assert.True(p.IsCelLinked(li, f)));
-        Assert.All([0, 1, 2], f => Assert.False(p.IsCelInherited(li, f)));
-        var shared = p.GetCel(li, 0)!;
-        Assert.Same(shared, p.GetCel(li, 2));
-        Assert.Equal(Green, shared[1 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+        // 이 스킨 자신의 그림이 없으므로 링크할 것이 없다(기록 없음)
+        int undo = p.History.UndoCount;
+        Assert.Equal(0, p.LinkCels([(li, 0), (li, 1), (li, 2)], mainFrame: 1));
+        Assert.Equal(undo, p.History.UndoCount);
+        Assert.All([0, 1, 2], f => Assert.False(p.IsCelLinked(li, f)));
         // 첫 스킨 그림은 그대로(링크도 없음)
-        for (int f = 0; f < 3; f++) Assert.Same(baseCels[f], p.GetSkinCel(layer, p.Frames[f], g.BaseSkin!));
+        for (int f = 0; f < 3; f++) Assert.Same(baseCels[f], p.GetOwnCel(layer, p.Frames[f], g.BaseSkin!));
     }
 
     [Fact]
@@ -488,16 +486,16 @@ public class LinkedCelTests
         int li = p.IndexOf(layer);
         var baseSkin = g.BaseSkin!;
 
-        // 빈 새 스킨: 첫 스킨과 같은 프레임끼리 같은 색으로 링크, 그림은 계속 물려받음
+        // 빈 새 스킨: 첫 스킨과 같은 프레임끼리 같은 색으로 링크, 그림은 빈 칸
         Assert.All([0, 1, 2], f => Assert.True(p.IsCelLinked(li, f)));
         Assert.False(p.IsCelLinked(li, 3));
         Assert.Equal(color, p.LinkMarks(li)[1].Color);
-        Assert.All([0, 1, 2], f => Assert.True(p.IsCelInherited(li, f)));
+        Assert.All([0, 1, 2], f => Assert.True(p.IsCelEmpty(li, f)));
 
         // 링크된 칸에 그리면 이 스킨의 묶음이 함께 바뀌고 첫 스킨은 그대로
         Draw(p, 0, 0, Green, layer: li, frame: 1); // 부위는 빨간 점 하나 크기
         Assert.All([0, 2], f => Assert.Equal(Green, p.GetCel(layer, p.Frames[f])![0, 0]));
-        Assert.All([0, 1, 2], f => Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[f], baseSkin)![0, 0]));
+        Assert.All([0, 1, 2], f => Assert.Equal(Red, p.GetOwnCel(layer, p.Frames[f], baseSkin)![0, 0]));
 
         // 복제한 스킨·부위 전용 빈 스킨도 원본 링크(색 포함)를 그대로
         var copy = p.AddSkin(g, null, g.ActiveSkin);

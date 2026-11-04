@@ -306,15 +306,15 @@ public sealed partial class PixelTools
         Tool("list_skins",
             "List every group with its skins (top to bottom like the timeline). A group is a skin slot: its skins are alternative " +
             "drawings of the same parts (e.g. outfits); only the active skin is visible, and groups stack in layer order. The first " +
-            "skin is the base: a part's empty cel in another skin shows the base skin's drawing. A part may wear a different skin than " +
+            "skin is the default. Each skin shows only its own cels: a part's empty cel in a skin is empty (nothing is borrowed from another skin). A part may wear a different skin than " +
             "its group (override, listed under `overrides`). A part may also own part-only skins (listed under `partSkins`, e.g. a hat " +
             "only for Head): no other part or the group list has them, and they are worn only as that part's override (set_skin with part). " +
             "All reading and drawing tools work on the part's shown skin (its override, " +
-            "else the group's active skin; drawing on a cel that shows the base drawing starts from a copy of it).",
+            "else the group's active skin).",
             new JsonObject()),
         Tool("add_skin",
             "Add a skin to a group; it becomes the group's active skin, so following drawing on its parts goes to the new skin. " +
-            "copy_active=true copies the active skin's own drawings; otherwise it starts empty (showing the base skin's drawing until you draw). " +
+            "copy_active=true copies the active skin's own drawings; otherwise it starts empty (its parts show nothing until you draw). " +
             "With `part`: add a part-only skin that only that part has (e.g. a hat for Head) and make the part wear it; copy_shown=true copies the part's shown drawing.",
             new JsonObject
             {

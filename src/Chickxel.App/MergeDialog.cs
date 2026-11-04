@@ -322,7 +322,7 @@ public sealed class MergeDialog : DialogBase
                 _rows.Add((name, layer.IsGroup, layer.IsPart, false, false, Thumbs(f => p.RenderCelThumbnail(index, f))));
                 if (layer is { IsPart: true, SkinChoices.Count: > 1 })
                     foreach (var skin in layer.SkinChoices)
-                        _rows.Add((skin.Name, false, false, true, skin.IsPartOnly, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));
+                        _rows.Add((skin.Name, false, false, true, skin.IsPartOnly, Thumbs(f => p.GetOwnCel(layer, p.Frames[f], skin))));
             }
             Width = NameW + p.Frames.Count * CellW + 4;
             Height = Top + _rows.Count * RowH + 2;

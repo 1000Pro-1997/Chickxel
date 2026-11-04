@@ -73,16 +73,16 @@ public class GroupNestTests
         Paint(p, arm, 0, 0, 0, Red);
         Assert.False(p.HasHiddenSkinContent(head));
         var hat = p.AddPartSkin(head, "모자"); // 입혀짐(재정의)
-        Assert.False(p.HasHiddenSkinContent(head)); // 모자 셀이 비어 첫 스킨을 물려받음
+        Assert.True(p.HasHiddenSkinContent(head)); // 모자 셀은 비어 있고 첫 스킨 빨강은 가려짐
         Paint(p, head, 0, 1, 1, Blue);
-        Assert.True(p.HasHiddenSkinContent(head)); // 첫 스킨 빨강이 가려짐
+        Assert.True(p.HasHiddenSkinContent(head));
         var outfit = p.SaveOutfit("모자 착장");
         Assert.Contains(outfit.Parts, e => e.Part == head);
 
         p.MoveOutOfGroup([head], 2); // 최상위: [레이어 1, 그룹, head]
         Assert.Equal([p.Layers[0], arm, g, head], p.Layers);
-        Assert.Equal(Blue, p.GetCel(head, p.Frames[0])![2, 1]); // 모자 그림(그릴 때 물려받은 빨강 포함)이 캔버스 같은 자리에
-        Assert.Equal(Red, p.GetCel(head, p.Frames[0])![1, 0]);
+        Assert.Equal(Blue, p.GetCel(head, p.Frames[0])![2, 1]); // 모자 그림이 캔버스 같은 자리에
+        Assert.Equal(Color32.Transparent, p.GetCel(head, p.Frames[0])![1, 0]); // 첫 스킨 빨강은 가져가지 않음
         Assert.DoesNotContain(hat, g.AllSkins);
         Assert.Empty(outfit.Parts);
 
@@ -91,7 +91,7 @@ public class GroupNestTests
         Assert.Contains(hat, g.AllSkins);
         Assert.Same(hat, head.SkinOverride);
         Assert.Contains(outfit.Parts, e => e.Part == head);
-        Assert.Equal(Red, p.GetSkinCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class GroupNestTests
         var high = p.AddPart(g2, "High", 1, 1);
         var winter = p.AddSkin(g1, "winter");
         p.SetActiveSkin(g1, winter);
-        Paint(p, x, 0, 1, 1, Blue);          // winter 셀: 물려받은 빨강 + 파랑
+        Paint(p, x, 0, 1, 1, Blue);          // winter 셀: 파랑만(빈 셀에서 시작)
         p.SetActiveSkin(g1, g1.BaseSkin!);
         Paint(p, x, 0, 0, 1, Green);         // 첫 스킨에만 초록
         p.SetActiveSkin(g1, winter);
@@ -116,8 +116,8 @@ public class GroupNestTests
         Assert.Equal([low, x, high], p.ChildrenOf(g2));
         Assert.Empty(p.ChildrenOf(g1));
         Assert.Equal(new Rectangle(0, 0, 2, 2), x.PartRect);
-        var cel = p.GetSkinCel(x, p.Frames[0], g2.BaseSkin!)!;
-        Assert.Equal((Red, Blue, default(Color32)), (cel[0, 0], cel[1, 1], cel[0, 1])); // 보이던 winter 그림만 첫 스킨으로
+        var cel = p.GetOwnCel(x, p.Frames[0], g2.BaseSkin!)!;
+        Assert.Equal((default(Color32), Blue, default(Color32)), (cel[0, 0], cel[1, 1], cel[0, 1])); // 보이던 winter 그림만 첫 스킨으로
     }
 
     [Fact]
@@ -169,9 +169,9 @@ public class GroupNestTests
         Assert.Equal([below, layer, g, above], p.Layers);
         Assert.Equal(2, g.Skins.Count);
         Assert.Same(g.Skins[1], g.ActiveSkin);
-        // 빈 새 스킨은 첫 스킨 그림을 물려받아 화면이 그대로, 지금 그림은 첫 스킨에
-        Assert.True(p.Flatten(0).ContentEquals(flat));
-        Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[0], g.BaseSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+        // 빈 새 스킨은 빈 칸(첫 스킨 그림을 빌리지 않음), 지금 그림은 첫 스킨에
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 1]);
+        Assert.Equal(Red, p.GetOwnCel(layer, p.Frames[0], g.BaseSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
         Assert.Equal(undoBefore + 1, p.History.UndoCount);
 
         p.Undo();
@@ -181,7 +181,7 @@ public class GroupNestTests
 
         // 복제: 새 스킨이 지금 그림을 자기 셀로 가짐
         var g2 = p.AddSkinToLayer(layer, copy: true);
-        Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[0], g2.ActiveSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+        Assert.Equal(Red, p.GetOwnCel(layer, p.Frames[0], g2.ActiveSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
 
         // 잠긴 레이어는 바꾸지 않는다
         above.Locked = true;

@@ -120,7 +120,7 @@ public sealed record MergeOptions(MergeMode Mode, int Width, int Height, Anchor 
 /// <see cref="MergeOptions.BlankCover"/>면 그 그룹의 부위를 모두 숨긴다.</item>
 /// <item>스킨: 스킨이 여럿인 첫 그룹(없으면 첫 그룹)에 그림 같은 파일마다 새 전체 스킨(이름 = 파일 이름)을 더한다. 그림은 크기가 같은 부위(없으면 가장 큰 부위)에,
 /// 부위보다 크면 부위를 기준점으로 키운다(원래 그림 자리 그대로). 다른 프로젝트의 그룹은 부위(이름·크기·위치·피벗·테두리·효과)가 같으면 그 스킨을 모두 더하고
-/// (빈 칸은 그 그룹 첫 스킨 그림으로 채워 보이는 그림 그대로), 다르면 옆에 그대로. 그룹 있는 프로젝트가 없으면 새 그룹에 부위 "부위" 하나(가장 큰 파일 크기), 파일마다 스킨 하나.
+/// (스킨마다 자신의 셀만), 다르면 옆에 그대로. 그룹 있는 프로젝트가 없으면 새 그룹에 부위 "부위" 하나(가장 큰 파일 크기), 파일마다 스킨 하나.
 /// 그림 같지 않은 그룹 없는 프로젝트는 옆에 레이어 그대로.</item>
 /// <item>프레임: 파일 순서대로 프레임을 이어 붙인다(태그·효과 범위도 그만큼 민다). 프로젝트의 레이어는 이미 있는 레이어와 이름·종류·설정(그룹이면 부위·첫 스킨까지)이 같으면
 /// 그 레이어에 이어 붙이고(스킨은 이름으로 합침), 아니면 새 레이어로 넣는다. 그림 같은 파일은 같은 이름의 레이어, 없으면 맨 위의 그릴 수 있는 일반 레이어, 그것도 없으면 새 레이어.
@@ -418,8 +418,7 @@ public static class ProjectMerge
         }
 
         /// <summary>
-        /// 다른 프로젝트 그룹의 스킨을 모두(부위 전용 포함) 대상 그룹에 새 스킨으로 더한다. 원래 그룹의 첫 스킨이 아니던 스킨의 빈 칸은
-        /// 원래 첫 스킨 그림으로 채워(대상 그룹에서는 다른 첫 스킨을 물려받게 되므로) 보이던 그림 그대로 둔다.
+        /// 다른 프로젝트 그룹의 스킨을 모두(부위 전용 포함) 대상 그룹에 새 스킨으로 더한다(스킨마다 자신의 셀만).
         /// </summary>
         private void AppendSkins(MergeSource s, Layer source, Layer group, List<Layer> parts)
         {
@@ -428,7 +427,6 @@ public static class ProjectMerge
             maps.Layers[source] = group;
             var srcParts = src.ChildrenOf(source);
             foreach (var sp in srcParts) maps.Layers[sp] = parts.First(x => x.Name == sp.Name);
-            var baseSkin = source.BaseSkin!;
             foreach (var skin in source.AllSkins)
             {
                 var owner = skin.Owner is { } o ? maps.Layers.GetValueOrDefault(o) : null;
@@ -438,7 +436,7 @@ public static class ProjectMerge
                 maps.Skins[skin] = copy;
                 foreach (var sp in srcParts)
                     if (skin.Owner is null || ReferenceEquals(skin.Owner, sp))
-                        CopyPartCels(src, sp, skin, maps.Layers[sp], copy, _frames, ReferenceEquals(skin, baseSkin) ? null : baseSkin);
+                        CopyPartCels(src, sp, skin, maps.Layers[sp], copy, _frames);
             }
         }
 
@@ -538,7 +536,7 @@ public static class ProjectMerge
                 for (int k = 0; k < srcParts.Count; k++)
                     foreach (var skin in top.AllSkins)
                         if (skin.Owner is null || ReferenceEquals(skin.Owner, srcParts[k]))
-                            CopyPartCels(s.Project, srcParts[k], skin, parts[k], maps.Skins[skin], frameMap, null);
+                            CopyPartCels(s.Project, srcParts[k], skin, parts[k], maps.Skins[skin], frameMap);
             }
         }
 
@@ -630,7 +628,7 @@ public static class ProjectMerge
                 if (part.SkinOverride is { } over) c.SetSkinOverrideRaw(maps.Skins[over]);
                 foreach (var skin in skins)
                     if (skin.Owner is null || ReferenceEquals(skin.Owner, part))
-                        CopyPartCels(src, part, skin, c, maps.Skins[skin], frameMap, null);
+                        CopyPartCels(src, part, skin, c, maps.Skins[skin], frameMap);
             }
             block.Add(copy);
             return block;
@@ -682,15 +680,14 @@ public static class ProjectMerge
             }
         }
 
-        /// <summary>부위 셀(한 스킨 자신의 것)을 복사한다. <paramref name="fillFrom"/>이 있으면 빈 칸은 그 스킨 셀로 채운다(물려받던 그림 굽기).</summary>
-        private void CopyPartCels(SpriteProject src, Layer srcPart, Skin srcSkin, Layer dstPart, Skin dstSkin, IReadOnlyList<Frame> frameMap, Skin? fillFrom)
+        /// <summary>부위 셀(한 스킨 자신의 것)을 복사한다.</summary>
+        private void CopyPartCels(SpriteProject src, Layer srcPart, Skin srcSkin, Layer dstPart, Skin dstSkin, IReadOnlyList<Frame> frameMap)
         {
             for (int i = 0; i < src.Frames.Count; i++)
             {
                 // 그 프레임만의 부위 피벗(먼저 넣은 파일의 것)
                 if (src.Frames[i].PartPivots.TryGetValue(srcPart, out var framePivot)) frameMap[i].PartPivots.TryAdd(dstPart, framePivot);
                 var cel = src.GetCelRaw(srcPart, src.Frames[i], srcSkin);
-                if (!HasContent(cel) && fillFrom is not null) cel = src.GetCelRaw(srcPart, src.Frames[i], fillFrom);
                 if (HasContent(cel)) _p.SetCelRaw(dstPart, frameMap[i], cel!.Clone(), dstSkin);
             }
         }

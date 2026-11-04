@@ -4903,8 +4903,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinManagerWindow.cs:892 · AddPartSkin · " 스킨"</comment>
   </data>
   <data name="S_SkinManagerWindow_AddPartSkin_56578CE0FC" xml:space="preserve">
-    <value>"{0}"에만 있는 새 스킨 이름(빈 칸은 기본 스킨 그림을 빌려 보임)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:895 · AddPartSkin · $"\"{part.Name}\"에만 있는 새 스킨 이름(빈 칸은 기본 스킨 그림을 빌려 보임)"</comment>
+    <value>"{0}"에만 있는 새 스킨 이름(그리기 전까지 빈 그림)</value>
+    <comment>src/Chickxel.App\SkinManagerWindow.cs · AddPartSkin · $"\"{part.Name}\"에만 있는 새 스킨 이름(그리기 전까지 빈 그림)"</comment>
   </data>
   <data name="S_SkinManagerWindow_AddPartSkin_F025057A5B" xml:space="preserve">
     <value>부위 스킨 복제</value>
@@ -5001,8 +5001,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinManagerWindow.cs:481 · GroupRow · "부위마다 따로 고른 스킨을 지우고 모두 그룹 스킨을 따르게 합니다"</comment>
   </data>
   <data name="S_SkinManagerWindow_GroupRow_DB88A91B7D" xml:space="preserve">
-    <value>빈 스킨 추가(빈 셀은 기본 스킨 그림을 빌려 보임)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:509 · GroupRow · "빈 스킨 추가(빈 셀은 기본 스킨 그림을 빌려 보임)"</comment>
+    <value>빈 스킨 추가(그리기 전까지 아무것도 보이지 않음)</value>
+    <comment>src/Chickxel.App\SkinManagerWindow.cs · GroupRow · "빈 스킨 추가(그리기 전까지 아무것도 보이지 않음)"</comment>
   </data>
   <data name="S_SkinManagerWindow_GroupRow_FC60E8F0BD" xml:space="preserve">
     <value>"{0}" 그룹에 "{1}" 입히기 · 끌어서 순서 바꾸기(맨 앞 = 기본) · 우클릭 = 메뉴</value>
@@ -5118,14 +5118,6 @@ echo __LOGIN_FAILED__
     <value>{0}: 부위만 따로 "{1}"</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:606 · PartRow · $"{part.Name}: 부위만 따로 \"{own.Name}\""</comment>
   </data>
-  <data name="S_SkinManagerWindow_PartRow_2CAE7078FD" xml:space="preserve">
-    <value>빌림</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:567 · PartRow · "빌림"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_474DBA2B91" xml:space="preserve">
-    <value>"{0}"만 "{1}" 입히기 — 이 스킨에 자기 그림이 없어 "{2}" 그림을 빌려 보임</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:569 · PartRow · $"\"{part.Name}\"만 \"{skin.Name}\" 입히기 — 이 스킨에 자기 그림이 없어 \"{baseSkin!.Name}\" 그림을 빌려 보임"</comment>
-  </data>
   <data name="S_SkinManagerWindow_PartRow_7B30E64531" xml:space="preserve">
     <value>없음</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:558 · PartRow · "없음"</comment>
@@ -5139,8 +5131,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinManagerWindow.cs:559 · PartRow · $"부위만 따로 입힌 스킨 없음 — 그룹 스킨(\"{group.ActiveSkin?.Name}\")을 그대로 보임"</comment>
   </data>
   <data name="S_SkinManagerWindow_PartRow_A8A111B223" xml:space="preserve">
-    <value>"{0}"에만 있는 새 스킨(개별 스킨) 추가 — 빈 칸은 기본 스킨 그림을 빌려 보임</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:590 · PartRow · $"\"{part.Name}\"에만 있는 새 스킨(개별 스킨) 추가 — 빈 칸은 기본 스킨 그림을 빌려 보임"</comment>
+    <value>"{0}"에만 있는 새 스킨(개별 스킨) 추가 — 빈 그림에서 시작</value>
+    <comment>src/Chickxel.App\SkinManagerWindow.cs · PartRow · $"\"{part.Name}\"에만 있는 새 스킨(개별 스킨) 추가 — 빈 그림에서 시작"</comment>
   </data>
   <data name="S_SkinManagerWindow_PartRow_CEF2198767" xml:space="preserve">
     <value>"{0}"만 "{1}" 입히기</value>
@@ -5169,11 +5161,6 @@ echo __LOGIN_FAILED__
   <data name="S_SkinManagerWindow_PartRow_F72FB89182" xml:space="preserve">
     <value>이 부위 스킨</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:589 · PartRow · "이 부위 스킨"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_PartRow_F7E946AD98" xml:space="preserve">
-    <value>
-이 스킨에 자기 그림이 없어 "{0}" 그림을 빌려 보임</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:584 · PartRow · $"\n이 스킨에 자기 그림이 없어 \"{baseSkin!.Name}\" 그림을 빌려 보임"</comment>
   </data>
   <data name="S_SkinManagerWindow_Rebuild_5A6FE8B9B0" xml:space="preserve">
     <value>열린 프로젝트가 없습니다.</value>
@@ -5251,10 +5238,6 @@ echo __LOGIN_FAILED__
     <value>부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:69 · SkinManagerWindow · "부위 하나에만 있는 개별 스킨만 보기(부위 줄을 모두 펼침)"</comment>
   </data>
-  <data name="S_SkinManagerWindow_SkinStatus_0ABBEAE3FA" xml:space="preserve">
-    <value> ({0}{1} {2}에서 빌림)</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:818 · SkinStatus · $" ({layer.Name}{Topic(layer.Name)} {baseSkin.Name}에서 빌림)"</comment>
-  </data>
   <data name="S_SkinManagerWindow_SkinStatus_24731B367D" xml:space="preserve">
     <value>스킨: {0}</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:814 · SkinStatus · $"스킨: {shown.Name}"</comment>
@@ -5267,14 +5250,6 @@ echo __LOGIN_FAILED__
     <value> · 부위만 따로</value>
     <comment>src/Chickxel.App\SkinManagerWindow.cs:816 · SkinStatus · " · 부위만 따로"</comment>
   </data>
-  <data name="S_SkinManagerWindow_Topic_2C1A9D8AE1" xml:space="preserve">
-    <value>은</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:826 · Topic · "은"</comment>
-  </data>
-  <data name="S_SkinManagerWindow_Topic_6393824600" xml:space="preserve">
-    <value>는</value>
-    <comment>src/Chickxel.App\SkinManagerWindow.cs:826 · Topic · "는"</comment>
-  </data>
   <data name="S_SkinPickerWindow_Badge_42A5136FFC" xml:space="preserve">
     <value>개별</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:197 · Badge · "개별"</comment>
@@ -5284,8 +5259,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\SkinPickerWindow.cs:34 · SkinPickerWindow · "체크한 스킨마다 프레임 시트 한 벌(그 그룹만 그 스킨, 나머지 그룹은 지금 착장)을 합성하고, 부위 아틀라스에는 그 스킨의 부위 스프라이트를 넣습니다."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_11E58C3A27" xml:space="preserve">
-    <value>"{0}"의 첫 스킨(기본) — 다른 스킨이 그리지 않은 칸은 이 그림을 물려받습니다</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:70 · SkinPickerWindow · $"\"{group.Name}\"의 첫 스킨(기본) — 다른 스킨이 그리지 않은 칸은 이 그림을 물려받습니다"</comment>
+    <value>"{0}"의 첫 스킨(기본)</value>
+    <comment>src/Chickxel.App\SkinPickerWindow.cs · SkinPickerWindow · $"\"{group.Name}\"의 첫 스킨(기본)"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_19FA73CDFF" xml:space="preserve">
     <value>모두 해제</value>
@@ -5294,10 +5269,6 @@ echo __LOGIN_FAILED__
   <data name="S_SkinPickerWindow_SkinPickerWindow_20A6248C03" xml:space="preserve">
     <value>{0} (기본)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:67 · SkinPickerWindow · $"{skin.Name} (기본)"</comment>
-  </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_275C0DD513" xml:space="preserve">
-    <value>부위 아틀라스</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:138 · SkinPickerWindow · "부위 아틀라스"</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08" xml:space="preserve">
     <value>내보낼 스킨 고르기</value>
@@ -5331,11 +5302,6 @@ echo __LOGIN_FAILED__
     <value>합성에 넣을 레이어</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:119 · SkinPickerWindow · "합성에 넣을 레이어"</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_7865C277F0" xml:space="preserve">
-    <value>첫 스킨을 체크하지 않아도 남은 스킨이 물려받는 칸의 첫 스킨 스프라이트는 남깁니다.
-</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:141 · SkinPickerWindow · "첫 스킨을 체크하지 않아도 남은 스킨이 물려받는 칸의 첫 스킨 스프라이트는 남깁니다.\n"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_8923EA543C" xml:space="preserve">
     <value>{0} (그룹)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:126 · SkinPickerWindow · $"{layer.Name} (그룹)"</comment>
@@ -5347,10 +5313,6 @@ echo __LOGIN_FAILED__
   <data name="S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55" xml:space="preserve">
     <value>"{0}" 그룹을 "{1}"으로</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:71 · SkinPickerWindow · $"\"{group.Name}\" 그룹을 \"{skin.Name}\"으로"</comment>
-  </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_945A308427" xml:space="preserve">
-    <value>켜면: 물려받는 칸도 스킨마다 {이름}@{스킨} 스프라이트로 따로 넣어 스킨마다 스스로 완결됩니다(스킨마다 따로 파일·.spriteLib 하나만 가져가도 됨, 시트가 커짐).</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:142 · SkinPickerWindow · "켜면: 물려받는 칸도 스킨마다 {이름}@{스킨} 스프라이트로 따로 넣어 스킨마다 스스로 완결됩니다(스킨마다 따로 파일·.spriteLib 하나만 가져가도 됨, 시트가 커짐)."</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_A307A08B56" xml:space="preserve">
     <value>지금은 "지금 착장"으로 내보냅니다 — 스킨·착장 체크는 "고른 스킨"일 때 쓰이고, 레이어 체크는 늘 쓰입니다.</value>
@@ -5368,10 +5330,6 @@ echo __LOGIN_FAILED__
     <value>부위 아틀라스 스킨 고르기</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:27 · SkinPickerWindow · "부위 아틀라스 스킨 고르기"</comment>
   </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_D6CC3CF8C8" xml:space="preserve">
-    <value>물려받은 칸도 이 스킨 스프라이트로</value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:139 · SkinPickerWindow · "물려받은 칸도 이 스킨 스프라이트로"</comment>
-  </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4" xml:space="preserve">
     <value>{0} (넣을 레이어에서 뺌)</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:59 · SkinPickerWindow · $"{group.Name} (넣을 레이어에서 뺌)"</comment>
@@ -5383,10 +5341,6 @@ echo __LOGIN_FAILED__
   <data name="S_SkinPickerWindow_SkinPickerWindow_EB479F1895" xml:space="preserve">
     <value>모두 선택</value>
     <comment>src/Chickxel.App\SkinPickerWindow.cs:47 · SkinPickerWindow · "모두 선택"</comment>
-  </data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_F0212A544D" xml:space="preserve">
-    <value>끄면(기본): 첫 스킨이 아닌 스킨이 직접 그리지 않아 첫 스킨 그림을 물려받는 칸은 첫 스킨 스프라이트를 같이 씁니다(Sprite Library도 그 스프라이트를 가리킴). </value>
-    <comment>src/Chickxel.App\SkinPickerWindow.cs:140 · SkinPickerWindow · "끄면(기본): 첫 스킨이 아닌 스킨이 직접 그리지 않아 첫 스킨 그림을 물려받는 칸은 첫 스킨 스프라이트를 같이 씁니다(Sprite Library도 그 스프라이트를 가리킴). "</comment>
   </data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1" xml:space="preserve">
     <value>프레임 시트만 — 체크한 착장마다 합성 한 벌(이름 뒤 @착장). 부위 아틀라스에는 쓰이지 않습니다.</value>
@@ -5875,10 +5829,6 @@ echo __LOGIN_FAILED__
   <data name="S_TimelinePanel_ShowCelMenu_A934B99F70" xml:space="preserve">
     <value>프레임 붙여넣기 (Ctrl+V)</value>
     <comment>src/Chickxel.App\TimelinePanel.cs:1097 · ShowCelMenu · "프레임 붙여넣기 (Ctrl+V)"</comment>
-  </data>
-  <data name="S_TimelinePanel_ShowCelMenu_F4960F4C1A" xml:space="preserve">
-    <value>셀 지우기 (기본 스킨 그림을 빌려 보이는 중)</value>
-    <comment>src/Chickxel.App\TimelinePanel.cs:1088 · ShowCelMenu · $"셀 지우기 (기본 스킨 그림을 빌려 보이는 중)"</comment>
   </data>
   <data name="S_TimelinePanel_ShowCelMenu_F578B13F0B" xml:space="preserve">
     <value>이전 프레임 그림 복사</value>
@@ -7043,8 +6993,8 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\UnityExportDialog.cs:410 · BuildExportSections · "내보낼 이름"</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_87AC546C92" xml:space="preserve">
-    <value>Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(물려받는 칸은 첫 스킨 스프라이트, "물려받은 칸도 이 스킨 스프라이트로"면 그 스킨 것). </value>
-    <comment>src/Chickxel.App\UnityExportDialog.cs:420 · BuildExportSections · "Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(물려받는 칸은 첫 스킨 스프라이트, \"물려받은 칸도 이 스킨 스프라이트로\"면 그 스킨 것). "</comment>
+    <value>Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(그 스킨이 그리지 않은 칸은 빈 항목). </value>
+    <comment>src/Chickxel.App\UnityExportDialog.cs · BuildExportSections · "Category = 부위, Label = 프레임(프레임 번호 또는 {태그}_{번호}), 스프라이트 = 그 스킨의 부위 스프라이트(그 스킨이 그리지 않은 칸은 빈 항목). "</comment>
   </data>
   <data name="S_UnityExportDialog_BuildExportSections_8C3B4A4899" xml:space="preserve">
     <value>(시트 이름_parts)</value>

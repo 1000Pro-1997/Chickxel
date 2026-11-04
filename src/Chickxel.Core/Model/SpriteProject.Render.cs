@@ -45,7 +45,7 @@ public sealed partial class SpriteProject
     public RenderPlan PlanGroup(Layer group, int frameIndex, Skin? skin = null)
     {
         if (!group.IsGroup) throw new ArgumentException(DomainStrings.Project_NotGroupLayer, nameof(group));
-        Func<Layer, int, PixelImage?> cels = skin is null ? DefaultCels : (layer, f) => GetSkinCel(layer, _frames[f], skin);
+        Func<Layer, int, PixelImage?> cels = skin is null ? DefaultCels : (layer, f) => GetOwnCel(layer, _frames[f], skin);
         PixelImage? CelOf(Layer part) => part.Visible ? cels(part, frameIndex) : null;
         var steps = new List<RenderStep>();
         if (group.HasActiveEffectsAt(frameIndex))
@@ -130,7 +130,7 @@ public sealed partial class SpriteProject
         {
             var steps = new List<RenderStep>();
             foreach (var part in ChildrenOf(layer))
-                if (part.Visible && (skin is null ? DefaultCels(part, frameIndex) : GetSkinCel(part, _frames[frameIndex], skin)) is { } partCel)
+                if (part.Visible && (skin is null ? DefaultCels(part, frameIndex) : GetOwnCel(part, _frames[frameIndex], skin)) is { } partCel)
                     steps.Add(RawStep(part, frameIndex, partCel, DrawOpacity(part)));
             return steps.Count == 0 ? null : new RenderPlan(_width, _height, steps);
         }

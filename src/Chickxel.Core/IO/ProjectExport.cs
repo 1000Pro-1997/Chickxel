@@ -72,7 +72,7 @@ public sealed record ExportPlan(string ProjectPath, IReadOnlyList<string> FrameP
 /// <item>배치: 격자(정렬 기준·줄바꿈 단위 <see cref="SheetOptions.Order"/> + 칸 수) 또는 자동 배치(<see cref="AtlasPacker"/>, 넣는 순서 = 정렬 기준).</item>
 /// <item>따로 파일: 태그마다 <c>_{태그}</c>(태그 없는 프레임 <c>_untagged</c>), 부위마다 <c>_{부위}</c>(부위 아틀라스), 스킨마다 <c>@{스킨}</c> — 조합 가능.</item>
 /// <item>부위 아틀라스(<c>{시트}_parts</c> 또는 <see cref="ExportSettings.PartsFileName"/>): 부위 × 내용 있는 프레임 × 내보낼 스킨마다 스프라이트 하나(항상 Multiple).
-/// 첫 스킨이 아닌 스킨은 직접 그린 셀만(물려받는 셀은 첫 스킨 스프라이트를 같이 씀, <see cref="SheetOptions.BakeInheritedSkins"/>면 구워 넣음).</item>
+/// 첫 스킨이 아닌 스킨은 그 스킨이 직접 그린 셀만(빈 셀은 다른 빈 셀처럼 스프라이트 없음).</item>
 /// <item>Sprite Library(<see cref="ExportSettings.WriteSpriteLibrary"/>): 그룹 × 내보낼 스킨마다 <c>{부위 아틀라스}_{그룹}@{스킨}.spriteLib</c>(+ <c>.meta</c>) —
 /// <see cref="SpriteLibraryAssetWriter"/> 참고.</item>
 /// </list>
@@ -726,35 +726,26 @@ public static class ProjectExport
     private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
 
     /// <summary>
-    /// 부위 아틀라스에 들어갈 스프라이트 목록(이름을 정하는 기본 순서): <see cref="PartLayers"/> 순서로 부위마다 첫 스킨의 내용 있는 프레임,
-    /// 그다음 내보낼 스킨 순서대로 그 스킨이 직접 그린 프레임(<see cref="SheetOptions.BakeInheritedSkins"/>면 물려받아 보이는 프레임도).
-    /// 첫 스킨을 내보내지 않아도 남은 스킨이 물려받는 프레임의 첫 스킨 스프라이트는 남긴다(구워 넣으면 남기지 않음).
+    /// 부위 아틀라스에 들어갈 스프라이트 목록(이름을 정하는 기본 순서): <see cref="PartLayers"/> 순서로 부위마다 첫 스킨의 내용 있는 프레임(첫 스킨을 내보낼 때),
+    /// 그다음 내보낼 스킨 순서대로 그 스킨이 직접 그린 프레임.
     /// </summary>
     private static List<PartCel> PartCels(SpriteProject project)
     {
         var o = project.Export.Parts;
-        bool bake = o.BakeInheritedSkins;
         var cels = new List<PartCel>();
         foreach (var part in PartLayers(project))
         {
             var group = part.Parent!;
             // 이 부위가 고를 수 있는 스킨(전체 스킨 + 이 부위 전용 스킨) 중 첫 스킨이 아닌 것
             var extras = part.SkinChoices.Skip(1).Where(s => Exported(o, part, s)).ToList();
-            bool baseExported = Exported(o, part, group.BaseSkin!);
-            for (int fi = 0; fi < project.Frames.Count; fi++)
-            {
-                var frame = project.Frames[fi];
-                if (!HasContent(project.GetCelRaw(part, frame, null))) continue;
-                if (baseExported || (!bake && extras.Any(s => !HasContent(project.GetCelRaw(part, frame, s)))))
-                    cels.Add(new PartCel(part, null, fi));
-            }
+            if (Exported(o, part, group.BaseSkin!))
+                for (int fi = 0; fi < project.Frames.Count; fi++)
+                    if (HasContent(project.GetCelRaw(part, project.Frames[fi], null)))
+                        cels.Add(new PartCel(part, null, fi));
             foreach (var skin in extras)
                 for (int fi = 0; fi < project.Frames.Count; fi++)
-                {
-                    var frame = project.Frames[fi];
-                    if (HasContent(project.GetCelRaw(part, frame, skin)) || (bake && HasContent(project.GetCelRaw(part, frame, null))))
+                    if (HasContent(project.GetCelRaw(part, project.Frames[fi], skin)))
                         cels.Add(new PartCel(part, skin, fi));
-                }
         }
         return cels;
     }
@@ -894,12 +885,12 @@ public static class ProjectExport
         var untagged = Enumerable.Range(0, project.Frames.Count).Where(i => project.TagOfFrame(i) is null).ToList();
         var fileFrames = cels.Select(c => c.Frame).Distinct().Order().ToList();
 
-        // 그림(구워 넣는 칸이면 물려받은 첫 스킨 그림) + 부위 효과·잘라내기·키우기
+        // 그림 + 부위 효과·잘라내기·키우기
         var images = new (PixelImage Image, Pivot Pivot, SpriteBorder Border)[cels.Count];
         for (int i = 0; i < cels.Count; i++)
         {
             var (part, skin, fi) = cels[i];
-            var cel = skin is null ? project.GetCelRaw(part, project.Frames[fi], null) : project.GetSkinCel(part, project.Frames[fi], skin);
+            var cel = project.GetCelRaw(part, project.Frames[fi], skin);
             var (image, pivot, border) = PartSprite(project, part, skin, cel!, fi);
             var (trimmed, trimmedPivot, trimmedBorder) = TrimCel(image, pivot, border, o.Trim);
             images[i] = (Enlarge(trimmed, scale), trimmedPivot, Enlarge(trimmedBorder, scale));
@@ -1120,8 +1111,8 @@ public static class ProjectExport
 
     /// <summary>
     /// 그룹 하나 × 스킨 하나의 Sprite Library 내용: 범주 = 그룹의 부위(위 부위부터, 어느 스킨에든 내용이 있는 부위만),
-    /// 라벨 = 그 부위에 어느 스킨이든 내용이 있는 프레임의 칸 열쇠(<see cref="FrameKey"/>). 스프라이트 = 이 스킨이 직접 그린(또는 구운) 스프라이트,
-    /// 없으면 첫 스킨 스프라이트(물려받기), 그것도 없으면 빈 항목(그 프레임에 이 스킨은 아무것도 안 보임). 같은 그룹의 모든 스킨 라이브러리는
+    /// 라벨 = 그 부위에 어느 스킨이든 내용이 있는 프레임의 칸 열쇠(<see cref="FrameKey"/>). 스프라이트 = 이 스킨이 직접 그린 스프라이트,
+    /// 없으면 빈 항목(그 프레임에 이 스킨은 아무것도 안 보임). 부위 전용 스킨의 라이브러리에서 주인이 아닌 부위는 첫 스킨 스프라이트. 같은 그룹의 모든 스킨 라이브러리는
     /// 범주·라벨이 같아서 Sprite Library 에셋만 바꿔 끼우면 Sprite Resolver 키프레임을 그대로 쓴 채 스킨이 바뀐다.
     /// </summary>
     private static List<SpriteLibraryAssetWriter.Category> BuildLibrary(SpriteProject project, Layer group, Skin skin,
@@ -1138,11 +1129,11 @@ public static class ProjectExport
             var part = children[c];
             var frames = Enumerable.Range(0, project.Frames.Count).Where(fi => skins.Any(s => sprites.ContainsKey((part, fi, s)))).ToList();
             if (frames.Count == 0) continue;
+            // 부위 전용 스킨은 주인 부위에만 있다 — 다른 부위는 그룹의 첫 스킨
+            Skin? partKey = key is not null && (skin.Owner is null || ReferenceEquals(skin.Owner, part)) ? key : null;
             var usedLabels = new HashSet<string>(StringComparer.Ordinal);
             var labels = frames.Select(fi => new SpriteLibraryAssetWriter.Label(
-                Unique(usedLabels, FrameKey(project, fi, byTag)),
-                key is not null && sprites.TryGetValue((part, fi, key), out var own) ? own
-                : sprites.TryGetValue((part, fi, null), out var inherited) ? inherited : null)).ToList();
+                Unique(usedLabels, FrameKey(project, fi, byTag)), sprites.GetValueOrDefault((part, fi, partKey)))).ToList();
             categories.Add(new SpriteLibraryAssetWriter.Category(Unique(usedCategories, CleanSpriteName(part.Name)), labels));
         }
         return categories;

@@ -73,7 +73,7 @@ public class ProjectMergeTests
     }
 
     [Fact]
-    public void Skins_OnePartWithSkinPerFile_MissingFramesInheritFirstSkin()
+    public void Skins_OnePartWithSkinPerFile_MissingFramesStayEmpty()
     {
         var p = ProjectMerge.Merge([Solid("red", 2, 2, Red, frames: 2), Solid("blue", 1, 1, Blue), Solid("red", 2, 2, Blue)],
             new MergeOptions(MergeMode.Skins, 4, 4, Anchor.BottomRight, "ore"));
@@ -87,10 +87,10 @@ public class ProjectMergeTests
         Assert.Equal(2, p.Frames.Count);
 
         var blue = group.Skins[1];
-        var cel = p.GetSkinCel(part, p.Frames[0], blue)!;
+        var cel = p.GetOwnCel(part, p.Frames[0], blue)!;
         Assert.Equal(Blue, cel[1, 1]);              // 1×1이 2×2 부위 안 오른쪽 아래
         Assert.Equal(default, cel[0, 0]);
-        Assert.Equal(Red, p.GetSkinCel(part, p.Frames[1], blue)![0, 0]); // 프레임 2는 없어서 첫 스킨을 물려받음
+        Assert.Null(p.GetOwnCel(part, p.Frames[1], blue)); // 프레임 2는 없어서 빈 칸(첫 스킨을 빌리지 않음)
         Assert.Equal(Red, p.Flatten(0)[2, 2]);
     }
 
@@ -146,7 +146,7 @@ public class ProjectMergeTests
     }
 
     /// <summary>
-    /// .chickxel 같은 원본(8×8): 그룹 "ore" = 부위 "rock"(4×4, (2,2)) + "shine"(2×2, (0,0)), 전체 스킨 "기본"(빨강)·"gold"(rock 파랑, shine은 물려받음),
+    /// .chickxel 같은 원본(8×8): 그룹 "ore" = 부위 "rock"(4×4, (2,2)) + "shine"(2×2, (0,0)), 전체 스킨 "기본"(빨강)·"gold"(rock 파랑, shine은 빈 칸),
     /// shine 전용 스킨 "sparkle"(초록, shine에 입힘), 지금 스킨 gold, 착장 "look"(gold + shine=sparkle). 일반 레이어 없음.
     /// </summary>
     private static SpriteProject OreProject(int frames = 1)
@@ -189,12 +189,12 @@ public class ProjectMergeTests
         Assert.Same(sparkle, shine.SkinOverride);
 
         var f0 = p.Frames[0];
-        Assert.Equal(Red, p.GetSkinCel(rock, f0, group.Skins[0])![0, 0]);
-        Assert.Equal(Blue, p.GetSkinCel(rock, f0, group.Skins[1])![0, 0]);
-        Assert.Equal(White, p.GetSkinCel(rock, f0, group.Skins[2])![0, 0]); // 4×4 그림 → 크기가 같은 rock
+        Assert.Equal(Red, p.GetOwnCel(rock, f0, group.Skins[0])![0, 0]);
+        Assert.Equal(Blue, p.GetOwnCel(rock, f0, group.Skins[1])![0, 0]);
+        Assert.Equal(White, p.GetOwnCel(rock, f0, group.Skins[2])![0, 0]); // 4×4 그림 → 크기가 같은 rock
         Assert.Equal(new Size(4, 4), rock.PartSize);
-        Assert.Equal(Red, p.GetSkinCel(shine, f0, group.Skins[2])![0, 0]);  // 새 스킨의 shine은 첫 스킨을 물려받음
-        Assert.Equal(Green, p.GetSkinCel(shine, f0, sparkle)![0, 0]);
+        Assert.Null(p.GetOwnCel(shine, f0, group.Skins[2]));  // 새 스킨의 shine은 빈 칸
+        Assert.Equal(Green, p.GetOwnCel(shine, f0, sparkle)![0, 0]);
 
         var look = Assert.Single(p.Outfits);
         Assert.Equal((group, group.Skins[1]), (look.Slots[0].Group, look.Slots[0].Skin)); // 착장은 복사본을 가리킨다
@@ -211,10 +211,10 @@ public class ProjectMergeTests
         var (group, rock) = (Named(p, "ore"), Named(p, "rock"));
         Assert.Equal(new Size(6, 6), rock.PartSize);
         Assert.Equal(new Point(1, 1), rock.PartOffset);
-        var red = p.GetSkinCel(rock, p.Frames[0], group.Skins[0])!;
+        var red = p.GetOwnCel(rock, p.Frames[0], group.Skins[0])!;
         Assert.Equal(default, red[0, 0]);
         Assert.Equal(Red, red[1, 1]); // 캔버스 (2,2) 그대로
-        Assert.Equal(White, p.GetSkinCel(rock, p.Frames[0], group.Skins[2])![0, 0]);
+        Assert.Equal(White, p.GetOwnCel(rock, p.Frames[0], group.Skins[2])![0, 0]);
     }
 
     [Fact]
@@ -229,8 +229,8 @@ public class ProjectMergeTests
         Assert.Contains(group.AllSkins, s => s.Name == "sparkle");
         var hat = Named(p, "hat");
         Assert.Equal((new Size(3, 3), new Point(0, 0)), (hat.PartSize, hat.PartOffset));
-        Assert.Equal(White, p.GetSkinCel(hat, p.Frames[0], group.Skins[0])![0, 0]);
-        Assert.Equal(Blue, p.GetSkinCel(Named(p, "rock"), p.Frames[0], group.Skins[1])![0, 0]);
+        Assert.Equal(White, p.GetOwnCel(hat, p.Frames[0], group.Skins[0])![0, 0]);
+        Assert.Equal(Blue, p.GetOwnCel(Named(p, "rock"), p.Frames[0], group.Skins[1])![0, 0]);
     }
 
     [Fact]
@@ -271,8 +271,8 @@ public class ProjectMergeTests
         Assert.Equal(["rock", "shine"], p.ChildrenOf(group).Select(l => l.Name));
         Assert.Equal(["기본", "gold", "sparkle"], group.AllSkins.Select(s => s.Name));
         var rock = Named(p, "rock");
-        Assert.Equal(Blue, p.GetSkinCel(rock, p.Frames[1], group.Skins[1])![0, 0]);
-        Assert.Null(p.GetSkinCel(rock, p.Frames[2], group.Skins[0]));
+        Assert.Equal(Blue, p.GetOwnCel(rock, p.Frames[1], group.Skins[1])![0, 0]);
+        Assert.Null(p.GetOwnCel(rock, p.Frames[2], group.Skins[0]));
         var stoneLayer = Assert.Single(p.Layers, l => l.Kind == LayerKind.Normal);
         Assert.Equal(White, p.GetCel(stoneLayer, p.Frames[2])![0, 0]);
         Assert.Null(p.GetCel(stoneLayer, p.Frames[0]));
@@ -299,7 +299,7 @@ public class ProjectMergeTests
             new MergeOptions(MergeMode.Frames, 8, 8, Anchor.Center, "x"));
         var group = Assert.Single(same.Layers, l => l.IsGroup);
         Assert.Equal(3, group.AllSkins.Count); // 스킨은 이름으로 합침
-        Assert.Equal(Green, same.GetSkinCel(Named(same, "shine"), same.Frames[3], group.AllSkins[2])![0, 0]);
+        Assert.Equal(Green, same.GetOwnCel(Named(same, "shine"), same.Frames[3], group.AllSkins[2])![0, 0]);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class ProjectMergeTests
     }
 
     [Fact]
-    public void Skins_SecondProjectWithSamePartsAppendsItsSkins_BakingInheritedCels()
+    public void Skins_SecondProjectWithSamePartsAppendsItsSkins_OwnCelsOnly()
     {
         var b = OreProject();
         b.SetCelRaw(b.Layers[0], b.Frames[0], Fill(4, 4, White), b.Layers[2].BaseSkin); // b의 기본 rock = 흰색
@@ -329,7 +329,7 @@ public class ProjectMergeTests
         Assert.Equal(["sparkle", "sparkle 2"], group.AllSkins.Where(s => s.IsPartOnly).Select(s => s.Name));
         var (rock, shine, f0) = (Named(p, "rock"), Named(p, "shine"), p.Frames[0]);
         Assert.Equal(White, p.GetOwnCel(rock, f0, group.Skins[2])![0, 0]);
-        Assert.Equal(Red, p.GetOwnCel(shine, f0, group.Skins[3])![0, 0]); // b의 gold shine은 b 기본을 물려받던 그림 → 구워 넣음
+        Assert.Null(p.GetOwnCel(shine, f0, group.Skins[3])); // b의 gold shine은 빈 칸 그대로(b 기본 그림으로 채우지 않음)
         Assert.Equal(2, p.Outfits.Count);
     }
 }

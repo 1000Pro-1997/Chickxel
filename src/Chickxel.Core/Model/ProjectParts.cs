@@ -134,7 +134,7 @@ public sealed class Layer
     /// <summary>그룹: 지금 보이는(편집·재생·합성하는) 전체 스킨. 그룹이 아니면 null.</summary>
     public Skin? ActiveSkin => IsGroup ? (_activeSkin is { Owner: null } s && _skins.Contains(s) ? s : SkinList[0]) : null;
 
-    /// <summary>그룹: 첫 스킨(기본 — 다른 스킨의 빈 셀이 이 스킨 셀을 물려받음, 늘 전체 스킨). 그룹이 아니면 null.</summary>
+    /// <summary>그룹: 첫 스킨(기본 스킨, 늘 전체 스킨). 그룹이 아니면 null.</summary>
     public Skin? BaseSkin => IsGroup ? SkinList[0] : null;
 
     /// <summary>지금 고른 스킨 값 그대로(목록에 없을 수도 있음, 실행취소 복원용).</summary>
@@ -173,8 +173,8 @@ public sealed class Layer
 
 /// <summary>
 /// 스킨(교체 변형): 그룹(스킨 슬롯) 안에서 이름 붙은 의상·체형 하나. 그룹의 부위 목록·크기·위치·피벗·테두리는 모든 스킨이 같이 쓰고,
-/// 셀만 스킨마다 따로다. 첫 스킨이 아닌 스킨의 빈 셀은 첫 스킨 셀을 물려받는다. 이름은 그룹 안에서(부위 전용 스킨까지) 겹치지 않는다.
-/// <see cref="Owner"/>가 있으면 그 부위에만 있는 "부위 전용(개별) 스킨"이다(예: Head에만 "모자") — 그 부위의 재정의로만 입히고, 빈 칸은 같은 규칙으로 첫 스킨을 빌린다.
+/// 셀만 스킨마다 따로다. 스킨의 빈 셀은 빈 칸으로 보인다(다른 스킨 셀로 채우지 않음). 이름은 그룹 안에서(부위 전용 스킨까지) 겹치지 않는다.
+/// <see cref="Owner"/>가 있으면 그 부위에만 있는 "부위 전용(개별) 스킨"이다(예: Head에만 "모자") — 그 부위의 재정의로만 입힌다.
 /// </summary>
 public sealed class Skin
 {
@@ -437,7 +437,7 @@ public enum SpriteNaming
 public enum SkinSource
 {
     /// <summary>
-    /// 지금 착장만: 프레임 시트는 지금 착장 합성 한 벌, 부위 아틀라스·Sprite Library는 부위마다 지금 보이는 스킨(빌려 보이는 칸의 첫 스킨 스프라이트 포함).
+    /// 지금 착장만: 프레임 시트는 지금 착장 합성 한 벌, 부위 아틀라스·Sprite Library는 부위마다 지금 보이는 스킨.
     /// </summary>
     Current,
     /// <summary>
@@ -579,12 +579,6 @@ public sealed class SheetOptions
     /// <summary>뺄 최상위 레이어(그룹 = 슬롯째, 일반 레이어): 프레임 시트 합성에서 빼고, 부위 아틀라스에서는 그 그룹의 부위를 뺀다.</summary>
     public IReadOnlyList<Layer> ExcludedLayers { get; set; } = [];
 
-    /// <summary>
-    /// 첫 스킨이 아닌 스킨이 물려받아 보이는 칸도 그 스킨 이름의 스프라이트(<c>{이름}@{스킨}</c>)로 구워 넣는다(부위 아틀라스 — 프레임 시트 합성은 늘 보이는 그림).
-    /// 끄면(기본) 물려받는 칸은 첫 스킨 스프라이트를 같이 쓰고, 첫 스킨을 빼도 그 스프라이트는 남긴다.
-    /// </summary>
-    public bool BakeInheritedSkins { get; set; }
-
     public SheetOptions Clone() => (SheetOptions)MemberwiseClone();
 
     /// <summary>다른 설정의 값을 모두 복사해 온다(목록은 바꿔 넣는 불변 목록이라 그대로 같이 씀).</summary>
@@ -608,7 +602,6 @@ public sealed class SheetOptions
         ExcludedSkins = other.ExcludedSkins;
         Outfits = other.Outfits;
         ExcludedLayers = other.ExcludedLayers;
-        BakeInheritedSkins = other.BakeInheritedSkins;
     }
 }
 

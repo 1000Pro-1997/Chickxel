@@ -529,11 +529,11 @@ public class PartsTests
         Assert.Equal(new SpriteBorder(2, 2, 2, 4), part.PartBorder);
         Assert.Equal(new Pivot(0.25f, 0f), part.PartPivot);
         AssertPivotAt(p.Sprite.DefaultPivot, 20, 18, 10, 17);
-        var baseCel = p.GetSkinCel(part, p.Frames[0], baseSkin)!;
+        var baseCel = p.GetOwnCel(part, p.Frames[0], baseSkin)!;
         Assert.Equal(new Size(4, 6), baseCel.Size);
         foreach (var (x, y) in new[] { (2, 0), (3, 0), (2, 1), (3, 1) }) Assert.Equal(Red, baseCel.Get(x, y));
         Assert.Equal(Color32.Transparent, baseCel.Get(1, 0));
-        var knightCel = p.GetSkinCel(part, p.Frames[0], knight)!;
+        var knightCel = p.GetOwnCel(part, p.Frames[0], knight)!;
         Assert.Equal(new Size(4, 6), knightCel.Size);
         foreach (var (x, y) in new[] { (0, 4), (1, 4), (0, 5), (1, 5) }) Assert.Equal(Blue, knightCel.Get(x, y));
         // 합성에서도 같은 자리: 원래 (2,2)의 빨강 → (2 + 2*2, 1 + 2*2)부터 2×2

@@ -13,8 +13,8 @@ namespace Chickxel.Core.Model;
 /// </para>
 /// <para>
 /// 그룹은 스킨 슬롯이다: 스킨(<see cref="Skin"/>) 목록을 갖고 그중 하나(<see cref="Layer.ActiveSkin"/>)만 보인다. 부위 셀은 스킨마다 따로이고,
-/// 첫 스킨이 아닌 스킨의 빈 셀(없거나 모두 투명)은 첫 스킨 셀을 물려받는다. 셀을 읽는 메서드(<see cref="GetCel(int, int)"/>·합성)는
-/// 지금 스킨 기준(물려받기 포함), 그리는 메서드(스트로크·<see cref="SetCel"/>)는 지금 스킨 자신의 셀을 고친다.
+/// 스킨의 빈 셀(없거나 모두 투명)은 다른 스킨 셀로 채우지 않고 빈 칸으로 보인다. 셀을 읽는 메서드(<see cref="GetCel(int, int)"/>·합성)와
+/// 그리는 메서드(스트로크·<see cref="SetCel"/>) 모두 지금 스킨 자신의 셀을 쓴다.
 /// </para>
 /// <para>
 /// 모든 구조 변경 메서드(레이어·프레임·태그·캔버스·설정)는 <see cref="History"/>에 기록되고
@@ -278,40 +278,20 @@ public sealed partial class SpriteProject
 
     private static bool HasContent(PixelImage? image) => image is not null && !image.IsRegionEmpty(image.Bounds);
 
-    /// <summary>스킨 셀(내용이 있으면), 아니면 첫 스킨 셀.</summary>
-    private PixelImage? ResolveCel(Layer layer, Frame frame, Skin? key)
-    {
-        if (key is not null && _cels.TryGetValue(new(layer, frame, key), out var own) && HasContent(own)) return own;
-        return _cels.GetValueOrDefault(new(layer, frame, null));
-    }
-
     /// <summary>
-    /// 보이는 셀 이미지(빈 셀이면 null): 부위면 지금 보이는 스킨(<see cref="Layer.ShownSkin"/> — 부위 재정의 → 그룹의 지금 스킨)의 셀,
-    /// 그 셀이 비면 첫 스킨 셀(물려받기). 부위 셀은 부위 크기, 그룹은 항상 null. 반환값을 직접 고치지 말고 스트로크로 고친다.
+    /// 보이는 셀 이미지(빈 셀이면 null): 부위면 지금 보이는 스킨(<see cref="Layer.ShownSkin"/> — 부위 재정의 → 그룹의 지금 스킨) 자신의 셀.
+    /// 부위 셀은 부위 크기, 그룹은 항상 null. 반환값을 직접 고치지 말고 스트로크로 고친다.
     /// </summary>
     public PixelImage? GetCel(int layerIndex, int frameIndex) => GetCel(_layers[layerIndex], _frames[frameIndex]);
 
     /// <inheritdoc cref="GetCel(int, int)"/>
-    public PixelImage? GetCel(Layer layer, Frame frame) => ResolveCel(layer, frame, ActiveKey(layer));
-
-    /// <summary>부위를 <paramref name="skin"/> 스킨으로 볼 때의 셀(그 스킨 셀이 비면 첫 스킨 셀). 일반 레이어면 스킨과 무관하게 그 셀.</summary>
-    public PixelImage? GetSkinCel(Layer layer, Frame frame, Skin skin) => ResolveCel(layer, frame, SkinKey(layer, skin));
+    public PixelImage? GetCel(Layer layer, Frame frame) => _cels.GetValueOrDefault(new(layer, frame, ActiveKey(layer)));
 
     /// <summary>
-    /// 스킨 자신의 셀(물려받지 않음, 빈 셀이면 null). <paramref name="skin"/>이 null이면 지금 보이는 스킨. 일반 레이어면 그 셀.
+    /// 스킨 자신의 셀(빈 셀이면 null — 다른 스킨 셀로 채우지 않음). <paramref name="skin"/>이 null이면 지금 보이는 스킨. 일반 레이어면 그 셀.
     /// </summary>
     public PixelImage? GetOwnCel(Layer layer, Frame frame, Skin? skin = null)
         => _cels.GetValueOrDefault(new(layer, frame, skin is null ? ActiveKey(layer) : SkinKey(layer, skin)));
-
-    /// <summary>지금 스킨 셀이 비어서 첫 스킨 셀을 물려받아 보이는지(타임라인에서 흐리게 그림).</summary>
-    public bool IsCelInherited(Layer layer, Frame frame)
-    {
-        if (ActiveKey(layer) is not { } key) return false;
-        return !HasContent(_cels.GetValueOrDefault(new(layer, frame, key))) && HasContent(_cels.GetValueOrDefault(new(layer, frame, null)));
-    }
-
-    /// <inheritdoc cref="IsCelInherited(Layer, Frame)"/>
-    public bool IsCelInherited(int layerIndex, int frameIndex) => IsCelInherited(_layers[layerIndex], _frames[frameIndex]);
 
     /// <summary>보이는 셀(<see cref="GetCel(int, int)"/>)이 없거나 모두 투명이면 true.</summary>
     public bool IsCelEmpty(int layerIndex, int frameIndex) => !HasContent(GetCel(layerIndex, frameIndex));
@@ -358,7 +338,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 지금 스킨의 셀 내용을 통째로 바꾼다(null = 비우기 — 첫 스킨이 아니면 다시 첫 스킨 셀을 물려받음, 실행취소됨). 링크된 셀이면 링크된 셀도 모두
+    /// 지금 스킨의 셀 내용을 통째로 바꾼다(null = 비우기, 실행취소됨). 링크된 셀이면 링크된 셀도 모두
     /// 같은 새 그림이 된다(비우기는 이 셀만 비우고 링크에서 뺀다 — 셀 자체를 갈아 끼우려면 <see cref="PlaceCel"/>).
     /// 이미지 크기는 캔버스(부위면 부위) 크기와 같아야 한다. 그룹이면 <see cref="InvalidOperationException"/>.
     /// </summary>
@@ -429,7 +409,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// <paramref name="target"/>(캔버스 크기)을 지우고 프레임을 합성해 넣는다(메모리 재사용).
-    /// 일반 레이어는 (0,0)에, 부위는 <see cref="Layer.PartOffset"/>에 불투명도 그룹×부위로 그린다(그룹의 지금 스킨, 빈 셀은 첫 스킨 셀). 숨긴 그룹은 부위도 숨긴다.
+    /// 일반 레이어는 (0,0)에, 부위는 <see cref="Layer.PartOffset"/>에 불투명도 그룹×부위로 그린다(부위마다 지금 보이는 스킨 자신의 셀). 숨긴 그룹은 부위도 숨긴다.
     /// 레이어 효과(<see cref="Layer.Effects"/>, 이 프레임이 범위 안인 것만)는 셀마다 입혀 그리고(밖으로 번진 부분은 캔버스에서 잘림), 이 프레임에 효과가 켜진 그룹은
     /// 부위들을 먼저 합친 그림에 그룹 효과를 입혀 그룹 불투명도로 한 번에 그린다. 순서표는 <see cref="PlanFrame"/>과 같다.
     /// <paramref name="layerFilter"/>가 있으면 그리는 레이어(일반·부위)마다 걸러낸다(보이기 여부는 <paramref name="includeHidden"/>로).
@@ -445,7 +425,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 그룹 하나의 보이는 부위만 합성한 캔버스 크기 이미지(썸네일용, 그룹 자신의 보이기 여부는 무시, 효과 포함). 부위마다 지금 보이는 스킨으로,
-    /// <paramref name="skin"/>을 주면 부위 재정의와 관계없이 모든 부위를 그 스킨으로 입혀 본다(빈 셀은 첫 스킨 셀).
+    /// <paramref name="skin"/>을 주면 부위 재정의와 관계없이 모든 부위를 그 스킨으로 입혀 본다(그 스킨의 빈 셀은 빈 칸).
     /// </summary>
     public PixelImage FlattenGroup(Layer group, int frameIndex, Skin? skin = null) => PlanGroup(group, frameIndex, skin).Render();
 
@@ -468,8 +448,8 @@ public sealed partial class SpriteProject
     /// <paramref name="skin"/>을 주면 다른 프레임도 그 스킨 셀로 본다(부위 아틀라스의 스킨별 셀 — 같은 그룹의 이웃 부위도 그 스킨으로).
     /// </summary>
     public IReadOnlyList<LayerEffect> EffectsAt(Layer layer, int frameIndex, Skin? skin = null)
-        => EffectsAt(layer, layer.Effects, frameIndex, skin is null ? ActiveKey(layer) : SkinKey(layer, skin), skin is null || layer.IsGroup ? null : f => GetSkinCel(layer, _frames[f], skin),
-            skin is null || layer.IsGroup ? null : (other, f) => other.IsPart && ReferenceEquals(other.Parent, layer.Parent) ? GetSkinCel(other, _frames[f], skin) : GetCel(other, _frames[f]));
+        => EffectsAt(layer, layer.Effects, frameIndex, skin is null ? ActiveKey(layer) : SkinKey(layer, skin), skin is null || layer.IsGroup ? null : f => GetOwnCel(layer, _frames[f], skin),
+            skin is null || layer.IsGroup ? null : (other, f) => other.IsPart && ReferenceEquals(other.Parent, layer.Parent) ? GetOwnCel(other, _frames[f], skin) : GetCel(other, _frames[f]));
 
     /// <summary>
     /// 레이어의 효과 목록 <paramref name="effects"/>를 프레임 <paramref name="frameIndex"/>에 맞춘다(링크된 칸의 효과 끝 모습 포함 — 셀 키 스킨 <paramref name="celSkin"/>).
@@ -509,8 +489,8 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 셀에 그리기 시작: 편집할 셀 이미지(없으면 투명 셀을 새로 만듦, 부위면 부위 크기)를 돌려준다. 이 이미지를 직접 고친 뒤
-    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 부위면 그룹의 지금 스킨 자신의 셀이고, 그 셀이 비어서
-    /// 첫 스킨 셀을 물려받아 보이던 중이면 보이던 그림(첫 스킨 셀)을 복사해 놓고 시작한다(바꾼 픽셀이 없으면 기록 없이 원래대로).
+    /// <see cref="CommitCelStroke"/>로 바뀐 픽셀을 한 단계로 기록한다. 부위면 지금 보이는 스킨 자신의 셀이다(비어 있으면 빈 셀에서 시작 —
+    /// 다른 스킨 그림을 복사하지 않음, 바꾼 픽셀이 없으면 기록 없이 원래대로).
     /// 잠긴 레이어(또는 잠긴 그룹의 부위)·그룹이면 <see cref="InvalidOperationException"/>.
     /// </summary>
     public PixelImage BeginCelStroke(int layerIndex, int frameIndex)
@@ -529,26 +509,20 @@ public sealed partial class SpriteProject
             _cels[key] = image;
         }
         var before = image!.Clone();
-        PixelImage? seed = null;
-        if (key.Skin is not null && !HasContent(image) && _cels.GetValueOrDefault(key with { Skin = null }) is { } inherited && HasContent(inherited))
-        {
-            image.CopyFrom(inherited);
-            seed = image.Clone();
-        }
-        _stroke = new StrokeState(key, image, before, created, seed);
+        _stroke = new StrokeState(key, image, before, created);
         _strokeOverflowChanged = false;
         _strokeOverflowBefore = null;
         return image;
     }
 
-    /// <summary>스트로크 확정. 바뀐 픽셀이 없으면(물려받은 그림을 복사해 시작했으면 그 그림에서 바뀐 것이 없으면) 기록하지 않고 false.</summary>
+    /// <summary>스트로크 확정. 바뀐 픽셀이 없으면 기록하지 않고 false.</summary>
     public bool CommitCelStroke(string label)
     {
         var s = _stroke;
         _stroke = null;
         if (s is null) return false;
         if (_strokeOverflowChanged) return CommitOverflowStroke(s, label);
-        var patch = s.Seed is not null && PixelPatch.Create(s.Seed, s.Image) is null ? null : PixelPatch.Create(s.Before, s.Image);
+        var patch = PixelPatch.Create(s.Before, s.Image);
         if (patch is null)
         {
             s.Image.CopyFrom(s.Before);
@@ -1338,7 +1312,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 효과 영구 적용(실행취소 한 단계): <see cref="LayerEffects.BakeSet"/>의 효과(고른 효과 + 그 위의 켜진 효과)를 그 효과들이 입혀지는 프레임의
-    /// 저장된 셀마다(부위면 모든 스킨 자신의 셀 — 물려받아 보이는 스킨 셀은 첫 스킨 셀이 구워지므로 그대로) 보이던 그대로 구워 넣고 목록에서 뺀다.
+    /// 저장된 셀마다(부위면 모든 스킨 자신의 셀) 보이던 그대로 구워 넣고 목록에서 뺀다.
     /// 일반 레이어에서 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 셀이 없어도 빈 그림에 구워 새 셀로 넣는다.
     /// 아래(뒤) 효과는 효과로 남는다. 일반 레이어는 캔버스 크기로 잘리고, 부위는 번진 그림이 들어가도록 부위 크기·위치를 넓힌다
     /// (모든 프레임·스킨 셀을 같이 옮기고, 피벗·테두리는 같은 그림 지점 — 자동 배치 그룹이면 다시 배치). 효과가 바꾸지 않는 프레임도 그대로 구운 것으로 친다.
@@ -1377,7 +1351,7 @@ public sealed partial class SpriteProject
             // 잔상은 같은 스킨의 다른 프레임 셀(굽기 전 그대로, 셀이 없으면 그리는 것과 같이 빈 그림)을 본다
             var skinKey = key.Skin;
             var effects = EffectsAt(layer, baked, f, skinKey,
-                other => ResolveCel(layer, _frames[other], skinKey) ?? (HasContentEffect(layer, other) ? BlankCel() : null));
+                other => _cels.GetValueOrDefault(new(layer, _frames[other], skinKey)) ?? (HasContentEffect(layer, other) ? BlankCel() : null));
             if (effects.Count == 0) continue;
             var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
             rendered.Add((key, image, new Point(dx, dy)));
@@ -1500,8 +1474,8 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 그룹에 전체 스킨을 하나 더 넣고(전체 스킨 끝) 지금 스킨으로 고른다. <paramref name="copyFrom"/>이 있으면 그 스킨 자신의 셀을 복사한다
-    /// (첫 스킨을 복사하면 모든 셀, 다른 스킨이면 그 스킨이 직접 그린 셀만 — 나머지는 똑같이 첫 스킨을 물려받음). 이름은 겹치지 않게 바뀐다.
-    /// 새 스킨은 처음에 링크도 원본(<paramref name="copyFrom"/>, 없으면 물려받는 첫 스킨)과 같다: 링크 묶음마다 그림 하나(빈 스킨이면 빈 그림)를 같은 색으로 같이 쓴다.
+    /// (첫 스킨을 복사하면 모든 셀, 다른 스킨이면 그 스킨이 직접 그린 셀만 — 나머지 칸은 빈 칸). 이름은 겹치지 않게 바뀐다.
+    /// 새 스킨은 처음에 링크도 원본(<paramref name="copyFrom"/>, 없으면 첫 스킨)과 같다: 링크 묶음마다 그림 하나(빈 스킨이면 빈 그림)를 같은 색으로 같이 쓴다.
     /// </summary>
     public Skin AddSkin(Layer group, string? name = null, Skin? copyFrom = null)
     {
@@ -1522,7 +1496,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 부위의 <paramref name="from"/> 스킨 자신의 셀을 <paramref name="to"/> 스킨 셀로 가져온다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서):
     /// <paramref name="pixels"/>면 그림이 있는 셀을 복사하고, 링크 묶음은 그림이 없어도(<paramref name="pixels"/>가 false면 늘) 빈 그림 하나를 같이 써
-    /// 새 스킨에서도 같은 프레임끼리 같은 색으로 링크된다. 빈 셀은 첫 스킨 그림을 물려받아 보이고, 그 칸에 그리면 링크된 칸이 함께 바뀐다.
+    /// 새 스킨에서도 같은 프레임끼리 같은 색으로 링크된다. 빈 셀은 빈 칸으로 보이고, 링크된 칸에 그리면 링크된 칸이 함께 바뀐다.
     /// </summary>
     private void CopySkinCels(Layer part, Skin from, Skin to, bool pixels)
     {
@@ -1556,7 +1530,7 @@ public sealed partial class SpriteProject
         return skin;
     }
 
-    /// <summary>부위 전용 스킨을 그룹 전체 스킨으로 올린다(다른 부위에서도 고를 수 있게 — 그 부위들은 빈 칸이라 첫 스킨을 빌림). 실행취소됨.</summary>
+    /// <summary>부위 전용 스킨을 그룹 전체 스킨으로 올린다(다른 부위에서도 고를 수 있게 — 그 부위들은 빈 칸). 실행취소됨.</summary>
     public void PromoteSkin(Layer group, Skin skin)
     {
         RequireSkin(group, skin);
@@ -1608,7 +1582,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 스킨 삭제(그 스킨의 셀도 지움). 첫 스킨을 지우면 다음 전체 스킨이 첫 스킨이 된다(그 스킨이 물려받던 빈 셀은 빈 셀이 됨).
+    /// 스킨 삭제(그 스킨의 셀도 지움). 첫 스킨을 지우면 다음 전체 스킨이 첫 스킨이 된다.
     /// 지금 스킨이었으면 바로 앞(없으면 새 첫) 스킨을 고른다. 마지막 전체 스킨은 지울 수 없다(<see cref="InvalidOperationException"/>).
     /// 부위 전용 스킨은 언제든 지울 수 있다.
     /// </summary>
@@ -1638,7 +1612,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 전체 스킨 순서 바꾸기(<see cref="Layer.Skins"/> 안 번호, <paramref name="to"/> = 옮긴 뒤 위치). 첫 스킨이 바뀌면 새 첫 스킨이 기본(다른 스킨의 빈 셀이 물려받는 셀)이 된다.
+    /// 전체 스킨 순서 바꾸기(<see cref="Layer.Skins"/> 안 번호, <paramref name="to"/> = 옮긴 뒤 위치). 첫 스킨이 바뀌면 새 첫 스킨이 기본 스킨이 된다.
     /// </summary>
     public void MoveSkin(Layer group, int from, int to)
     {
@@ -1950,8 +1924,8 @@ public sealed partial class SpriteProject
     {
         var frame = _frames[frameIndex];
         bool Excluded(Layer layer) => excluded is { Count: > 0 } && excluded.Contains(layer);
-        PixelImage? PartCel(Layer part) => ResolveCel(part, frame, SkinKey(part, SkinUnder(part, outfit)));
-        PixelImage? Cels(Layer layer, int f) => layer.IsPart ? ResolveCel(layer, _frames[f], SkinKey(layer, SkinUnder(layer, outfit))) : RenderCel(layer, f);
+        PixelImage? PartCel(Layer part) => _cels.GetValueOrDefault(new(part, frame, SkinKey(part, SkinUnder(part, outfit))));
+        PixelImage? Cels(Layer layer, int f) => layer.IsPart ? _cels.GetValueOrDefault(new(layer, _frames[f], SkinKey(layer, SkinUnder(layer, outfit)))) : RenderCel(layer, f);
         var steps = new List<RenderStep>();
         foreach (var layer in _layers)
         {
@@ -2489,7 +2463,7 @@ public sealed partial class SpriteProject
     /// <summary>파일 읽기·가져오기용: 셀 하나를 넣는다. <paramref name="skin"/>이 null이거나 첫 스킨이면 첫 스킨(일반 레이어) 셀.</summary>
     internal void SetCelRaw(Layer layer, Frame frame, PixelImage image, Skin? skin = null) => _cels[new(layer, frame, SkinKey(layer, skin))] = image;
 
-    /// <summary>파일 쓰기용: 스킨 자신의 셀(<paramref name="skin"/> null = 첫 스킨·일반 레이어), 물려받지 않음.</summary>
+    /// <summary>파일 쓰기용: 스킨 자신의 셀(<paramref name="skin"/> null = 첫 스킨·일반 레이어).</summary>
     internal PixelImage? GetCelRaw(Layer layer, Frame frame, Skin? skin) => _cels.GetValueOrDefault(new(layer, frame, SkinKey(layer, skin)));
 
     /// <summary>
@@ -2543,8 +2517,8 @@ public sealed partial class SpriteProject
 
     // ───────────── 실행취소 기록 ─────────────
 
-    /// <summary>열린 스트로크. <paramref name="Seed"/>: 물려받은 그림을 복사해 시작했으면 그 시작 그림(바뀐 것이 없는지 보는 데 씀).</summary>
-    private sealed record StrokeState(CelKey Key, PixelImage Image, PixelImage Before, bool Created, PixelImage? Seed);
+    /// <summary>열린 스트로크.</summary>
+    private sealed record StrokeState(CelKey Key, PixelImage Image, PixelImage Before, bool Created);
 
     private sealed class CelStrokeCommand(SpriteProject project, string label, StrokeState stroke, PixelPatch patch) : IUndoCommand
     {

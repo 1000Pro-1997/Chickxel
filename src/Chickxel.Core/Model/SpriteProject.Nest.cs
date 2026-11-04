@@ -100,19 +100,15 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 부위를 그룹에서 꺼내거나 다른 그룹으로 옮기면 없어질 그림이 있는지: 지금 보이는 스킨이 아닌 스킨 셀에 그림이 있으면 true
-    /// (첫 스킨 셀은 보이는 스킨이 그 프레임에서 물려받고 있으면 남으므로 셈하지 않음). 부위가 아니면 false.
+    /// 부위를 그룹에서 꺼내거나 다른 그룹으로 옮기면 없어질 그림이 있는지: 지금 보이는 스킨이 아닌 스킨 셀에 그림이 있으면 true.
+    /// 부위가 아니면 false.
     /// </summary>
     public bool HasHiddenSkinContent(Layer part)
     {
         if (!part.IsPart) return false;
         var shown = ActiveKey(part);
         foreach (var (key, cel) in CelsOf(part))
-        {
-            if (!HasContent(cel) || ReferenceEquals(key.Skin, shown)) continue;
-            if (key.Skin is null && !HasContent(_cels.GetValueOrDefault(new(part, key.Frame, shown)))) continue;
-            return true;
-        }
+            if (HasContent(cel) && !ReferenceEquals(key.Skin, shown)) return true;
         return false;
     }
 
@@ -132,7 +128,7 @@ public sealed partial class SpriteProject
     }
 
     /// <summary>
-    /// 부위의 지금 보이는 스킨 그림(비어서 물려받는 첫 스킨 그림 포함)을 프레임마다 돌려주고, 그 부위의 셀을 모두 빼고 그 부위 전용 스킨을 그룹에서 지운다
+    /// 부위의 지금 보이는 스킨 자신의 그림을 프레임마다 돌려주고, 그 부위의 셀을 모두 빼고 그 부위 전용 스킨을 그룹에서 지운다
     /// (<see cref="Edit(string, ProjectChange, Action)"/> 안에서, 부모를 바꾸기 전에).
     /// </summary>
     private List<(Frame Frame, PixelImage Cel)> TakeShownCels(Layer part)
@@ -140,7 +136,7 @@ public sealed partial class SpriteProject
         var shown = ActiveKey(part);
         var cels = new List<(Frame, PixelImage)>();
         foreach (var frame in _frames)
-            if (ResolveCel(part, frame, shown) is { } cel) cels.Add((frame, cel));
+            if (_cels.GetValueOrDefault(new(part, frame, shown)) is { } cel) cels.Add((frame, cel));
         foreach (var (key, _) in CelsOf(part)) _cels.Remove(key);
         if (part.Parent is { IsGroup: true } g) g.ReplaceSkinsRaw(g.SkinList.Where(s => !ReferenceEquals(s.Owner, part)).ToList());
         return cels;

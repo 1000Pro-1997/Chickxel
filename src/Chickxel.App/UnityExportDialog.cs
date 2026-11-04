@@ -595,7 +595,7 @@ public sealed class UnityExportDialog : DialogBase
             .SetTip(1, overrideBlock
                 ? UiStrings.S_UnityExportDialog_SheetRows_F2F5553CF3
                 : UiStrings.S_UnityExportDialog_SheetRows_7899007C04);
-        var pick = Ui.Button(UiStrings.S_UnityExportDialog_SheetRows_464CB34F8D, (_, _) => PickSkins(options, overrideBlock, PartsUse));
+        var pick = Ui.Button(UiStrings.S_UnityExportDialog_SheetRows_464CB34F8D, (_, _) => PickSkins(options, overrideBlock));
         pick.Tip(UiStrings.S_UnityExportDialog_SheetRows_6FEB1E8831);
         var skinRow = Setting(UiStrings.S_UnityExportDialog_SheetRows_4EAC72F29F, UiStrings.S_UnityExportDialog_SheetRows_2ADE7F7827, Line(skins, pick));
         var skinLabel = RowLabel(skinRow);
@@ -697,11 +697,10 @@ public sealed class UnityExportDialog : DialogBase
     }
 
     /// <summary>스킨 고르기 창을 열고, 확인하면 고른 것을 한 번에 반영(실행취소 1단계).</summary>
-    private void PickSkins(Func<SpriteProject, SheetOptions?> options, bool overrideBlock, Func<SpriteProject, bool> partsUse)
+    private void PickSkins(Func<SpriteProject, SheetOptions?> options, bool overrideBlock)
     {
         if (_ctx.Project is not { } p || options(p) is not { } o) return;
-        bool bake = partsUse(p) && (HasSkins(p) || o.BakeInheritedSkins);
-        var picker = new SkinPickerWindow(p, o, partsOnly: overrideBlock, showBake: bake, _ctx.CurrentFrame);
+        var picker = new SkinPickerWindow(p, o, partsOnly: overrideBlock, _ctx.CurrentFrame);
         if (picker.ShowDialog(this) != DialogResult.OK) return;
         EditSettings(overrideBlock ? UiStrings.S_UnityExportDialog_PickSkins_4F2869B2C4 : UiStrings.S_UnityExportDialog_PickSkins_3F9745EFAF,
             pr => options(pr) is { } x && picker.Differs(x), pr => picker.ApplyTo(options(pr)!));
@@ -720,9 +719,6 @@ public sealed class UnityExportDialog : DialogBase
                                UiStrings.S_UnityExportDialog_OrderRow_BE3BD0187B +
                                UiStrings.S_UnityExportDialog_OrderRow_8372486881, list);
     }
-
-    /// <summary>스킨이 둘 이상인(부위 전용 스킨 포함) 그룹이 있는지.</summary>
-    private static bool HasSkins(SpriteProject p) => p.Layers.Any(l => l.IsGroup && l.AllSkins.Count > 1);
 
     /// <summary>합성에서 켜고 끌 수 있는 최상위 레이어(그룹 = 스킨 칸째, 일반 레이어), 타임라인처럼 위→아래.</summary>
     private static List<Layer> TopLayers(SpriteProject p) => p.Layers.Where(l => !l.IsPart).Reverse().ToList();
@@ -1204,9 +1200,9 @@ public sealed class UnityExportDialog : DialogBase
         int layer = _ctx.CurrentLayer;
         foreach (var preview in _partsSection.Sheets)
         {
-            // 지금 스킨 칸, 물려받는 셀이면 그 셀이 가리키는 첫 스킨 칸
+            // 지금 스킨 칸
             var entries = _ctx.CurrentPart is null ? [] : preview.Sheet?.Entries.Where(e => e.FrameIndex == frame && PartLayerOf(p, e) == layer).ToList() ?? [];
-            preview.Highlight = (entries.FirstOrDefault(IsActiveSkinEntry) ?? entries.FirstOrDefault(e => e.Skin is null))?.Rect;
+            preview.Highlight = entries.FirstOrDefault(IsActiveSkinEntry)?.Rect;
         }
     }
 

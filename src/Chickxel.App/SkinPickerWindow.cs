@@ -6,7 +6,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 내보낼 스킨 고르기(내보내기 설정 창의 "스킨 고르기…"): 시트 설정 한 벌(공통 또는 부위 아틀라스 따로)의
 /// 스킨 체크(끄면 <see cref="SheetOptions.ExcludedSkins"/>), 착장 프리셋(<see cref="SheetOptions.Outfits"/>, 프레임 시트만),
-/// 넣을 최상위 레이어(끄면 <see cref="SheetOptions.ExcludedLayers"/>), 물려받은 칸 굽기(<see cref="SheetOptions.BakeInheritedSkins"/>).
+/// 넣을 최상위 레이어(끄면 <see cref="SheetOptions.ExcludedLayers"/>).
 /// 창 안에서는 고르기만 하고, 확인을 누르면 호출한 쪽이 <see cref="ApplyTo"/>로 한 번에 반영한다(실행취소 1단계).
 /// </summary>
 public sealed class SkinPickerWindow : DialogBase
@@ -16,15 +16,13 @@ public sealed class SkinPickerWindow : DialogBase
     private readonly List<(Skin Skin, CheckBox Box)> _skins = new();
     private readonly List<(Outfit Outfit, CheckBox Box)> _outfits = new();
     private readonly List<(Layer Layer, CheckBox Box)> _layers = new();
-    private readonly CheckBox? _bake;
     private readonly List<WriteableBitmap> _bitmaps = new();
 
     /// <param name="project">프로젝트(그룹·스킨·착장·레이어 목록과 썸네일).</param>
     /// <param name="options">처음 체크 상태를 읽을 시트 설정.</param>
     /// <param name="partsOnly">부위 아틀라스만 쓰는 설정(착장 프리셋 칸을 숨김).</param>
-    /// <param name="showBake">물려받은 칸 굽기를 보일지(부위 아틀라스가 이 설정을 쓰고 스킨이 둘 이상인 그룹이 있을 때).</param>
     /// <param name="frame">썸네일로 그릴 프레임 번호.</param>
-    public SkinPickerWindow(SpriteProject project, SheetOptions options, bool partsOnly, bool showBake, int frame)
+    public SkinPickerWindow(SpriteProject project, SheetOptions options, bool partsOnly, int frame)
         : base(partsOnly ? UiStrings.S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D : UiStrings.S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08)
     {
         frame = Math.Clamp(frame, 0, Math.Max(0, project.Frames.Count - 1));
@@ -89,7 +87,7 @@ public sealed class SkinPickerWindow : DialogBase
                     var f = project.Frames[frame];
                     foreach (var skin in own)
                     {
-                        var cel = project.GetSkinCel(part, f, skin);
+                        var cel = project.GetOwnCel(part, f, skin);
                         var thumb = ImageUtil.MakeThumbnail(cel ?? new PixelImage(Math.Max(1, part.PartSize.Width), Math.Max(1, part.PartSize.Height)), ThumbSize);
                         var box = SkinBox(thumb, skin.Name, options, skin, partOnly: true);
                         box.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_6068D0001B,part.Name,skin.Name,part.Name,skin.Name,skin.Name));
@@ -137,17 +135,7 @@ public sealed class SkinPickerWindow : DialogBase
             content.Children.Add(wrap);
         }
 
-        if (showBake)
-        {
-            content.Children.Add(Heading(UiStrings.S_SkinPickerWindow_SkinPickerWindow_275C0DD513));
-            _bake = Ui.Check(UiStrings.S_SkinPickerWindow_SkinPickerWindow_D6CC3CF8C8, options.BakeInheritedSkins);
-            _bake.Tip(UiStrings.S_SkinPickerWindow_SkinPickerWindow_F0212A544D +
-                      UiStrings.S_SkinPickerWindow_SkinPickerWindow_7865C277F0 +
-                      UiStrings.S_SkinPickerWindow_SkinPickerWindow_945A308427);
-            content.Children.Add(_bake);
-        }
-
-        if (!anyChoice && tops.Count == 0 && !showBake)
+        if (!anyChoice && tops.Count == 0)
             content.Children.Add(Note(UiStrings.S_SkinPickerWindow_SkinPickerWindow_3CDC91DE0A));
 
         Body.Children.Add(new ScrollViewer
@@ -212,7 +200,7 @@ public sealed class SkinPickerWindow : DialogBase
     /// <summary>고른 것이 <paramref name="options"/>와 다른지.</summary>
     public bool Differs(SheetOptions options)
         => !SameSet(Excluded(options), options.ExcludedSkins) || !SameSet(Outfits(options), options.Outfits)
-           || !SameSet(ExcludedLayers(options), options.ExcludedLayers) || (_bake is not null && _bake.On() != options.BakeInheritedSkins);
+           || !SameSet(ExcludedLayers(options), options.ExcludedLayers);
 
     /// <summary>고른 것을 <paramref name="options"/>에 넣는다(이 창에 없던 항목 — 지운 그룹의 스킨 등 — 은 그대로 둔다).</summary>
     public void ApplyTo(SheetOptions options)
@@ -220,7 +208,6 @@ public sealed class SkinPickerWindow : DialogBase
         options.ExcludedSkins = Excluded(options);
         options.Outfits = Outfits(options);
         options.ExcludedLayers = ExcludedLayers(options);
-        if (_bake is not null) options.BakeInheritedSkins = _bake.On();
     }
 
     private IReadOnlyList<Skin> Excluded(SheetOptions o)

@@ -6,7 +6,7 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Tests;
 
-/// <summary>스킨(그룹 = 스킨 슬롯): 물려받기·합성, 실행취소, 저장·읽기(예전 파일 포함), 부위 아틀라스 이름·나누기, Sprite Library 내보내기.</summary>
+/// <summary>스킨(그룹 = 스킨 슬롯): 빈 칸은 빈 칸·합성, 실행취소, 저장·읽기(예전 파일 포함), 부위 아틀라스 이름·나누기, Sprite Library 내보내기.</summary>
 public class SkinTests
 {
     private static readonly Color32 Red = new(255, 0, 0);
@@ -34,7 +34,7 @@ public class SkinTests
     // ───────────── 모델 ─────────────
 
     [Fact]
-    public void Flatten_UsesActiveSkin_EmptyCelsFallBackToFirstSkin()
+    public void Flatten_UsesActiveSkin_EmptyCelsStayEmpty()
     {
         var (p, g, head, arm) = Body();
         Assert.Equal([Layer.DefaultSkinName], g.Skins.Select(s => s.Name));
@@ -42,30 +42,34 @@ public class SkinTests
 
         var knight = p.AddSkin(g, "knight");
         Assert.Same(knight, g.ActiveSkin);
-        // 새 스킨은 비어 있어 첫 스킨 그림을 물려받는다
-        Assert.Equal(Red, p.Flatten(0)[0, 0]);
-        Assert.Equal(Red, p.Flatten(0)[2, 2]);
-        Assert.True(p.IsCelInherited(head, p.Frames[0]));
-        Assert.Null(p.GetOwnCel(head, p.Frames[0]));
+        // 새 스킨은 비어 있다: 첫 스킨 그림이 있어도 빌려 오지 않는다
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[0, 0]);
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]);
+        Assert.Null(p.GetCel(head, p.Frames[0]));
+        Assert.True(p.IsCelEmpty(p.IndexOf(head), 0));
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
 
-        // 물려받은 셀에 그리면 보이던 그림을 복사해 시작한다(copy-on-write)
-        Paint(p, head, 0, 1, 1, Blue);
+        // 빈 셀에 그리면 빈 그림에서 시작한다(첫 스킨 그림을 복사하지 않음)
+        var image = p.BeginCelStroke(p.IndexOf(head), 0);
+        Assert.True(image.IsRegionEmpty(image.Bounds));
+        image.Set(1, 1, Blue);
+        Assert.True(p.CommitCelStroke("점"));
         var own = p.GetOwnCel(head, p.Frames[0])!;
-        Assert.Equal((Red, Blue), (own[0, 0], own[1, 1]));
-        Assert.False(p.IsCelInherited(head, p.Frames[0]));
-        Assert.True(p.IsCelInherited(arm, p.Frames[0]));
-        Paint(p, head, 0, 0, 0, Blue);
-        Assert.Equal(Blue, p.Flatten(0)[0, 0]);
-        Assert.Equal(Red, p.Flatten(0)[2, 2]); // Arm은 계속 물려받음
-        Assert.Equal(Red, p.GetSkinCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
-        Assert.Equal(Blue, p.GetSkinCel(head, p.Frames[0], knight)![0, 0]);
+        Assert.Equal((Color32.Transparent, Blue), (own[0, 0], own[1, 1]));
+        Assert.Equal((Color32.Transparent, Blue), (p.Flatten(0)[0, 0], p.Flatten(0)[1, 1]));
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]); // Arm은 이 스킨에 그림이 없다
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
 
-        // 바꾼 것 없는 스트로크는 기록하지 않고 물려받기 그대로
+        // 투명한 자기 셀도 빈 칸(첫 스킨으로 대신하지 않음)
+        p.SetCel(p.IndexOf(arm), 0, new PixelImage(2, 2));
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[2, 2]);
+        Assert.True(p.IsCelEmpty(p.IndexOf(arm), 0));
+
+        // 바꾼 것 없는 스트로크는 기록하지 않는다
         int undo = p.History.UndoCount;
         p.BeginCelStroke(p.IndexOf(arm), 0);
         Assert.False(p.CommitCelStroke("빈"));
         Assert.Equal(undo, p.History.UndoCount);
-        Assert.True(p.IsCelInherited(arm, p.Frames[0]));
 
         // 착장 바꾸기: 실행취소 기록 없음, 수정됨 표시
         p.IsDirty = false;
@@ -74,11 +78,13 @@ public class SkinTests
         Assert.True(p.IsDirty);
         Assert.Equal(Red, p.Flatten(0)[0, 0]);
         Assert.Equal(Red, p.FlattenGroup(g, 0)[0, 0]);
+        Assert.Equal(Color32.Transparent, p.FlattenGroup(g, 0, knight)[0, 0]);
 
-        // 셀 비우기 = 다시 물려받기, 숨긴 그룹은 스킨째 숨김
+        // 셀 비우기 = 빈 칸, 숨긴 그룹은 스킨째 숨김
         p.SetActiveSkin(g, knight);
         p.SetCel(p.IndexOf(head), 0, null);
-        Assert.Equal(Red, p.Flatten(0)[0, 0]);
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[1, 1]);
+        p.SetActiveSkin(g, g.BaseSkin!);
         p.SetLayerProperties(p.IndexOf(g), visible: false);
         Assert.Equal(Color32.Transparent, p.Flatten(0)[0, 0]);
     }
@@ -157,7 +163,7 @@ public class SkinTests
         Assert.Same(a, g.ActiveSkin);
         Assert.Equal(Blue, p.Flatten(0)[0, 0]);
 
-        // 첫 스킨 삭제: 다음 스킨이 기본(물려받던 Arm은 빈 셀)
+        // 첫 스킨 삭제: 다음 스킨이 기본(그 스킨에 없는 Arm은 빈 셀)
         p.DeleteSkin(g, baseSkin);
         Assert.Same(a, g.BaseSkin);
         Assert.Equal((Blue, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
@@ -196,7 +202,7 @@ public class SkinTests
     }
 
     [Fact]
-    public void PartSkinOverride_CompositesFallsBackSavesAndIgnoresUndo()
+    public void PartSkinOverride_CompositesSavesAndIgnoresUndo()
     {
         using var dir = new TempDir();
         var (p, g, head, arm) = Body();
@@ -204,10 +210,10 @@ public class SkinTests
         var knight = p.AddSkin(g, "knight");
         Paint(p, head, 0, 0, 0, Blue);
         Paint(p, arm, 0, 0, 0, Green);
-        var zombie = p.AddSkin(g, "zombie"); // 비어 있음 → 모두 기본을 물려받음
-        Assert.Equal((Red, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
+        var zombie = p.AddSkin(g, "zombie"); // 비어 있음 → 아무것도 안 보임
+        Assert.Equal((Color32.Transparent, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
 
-        // 머리만 knight: 부위 재정의 → 그룹 스킨(zombie, 빈 셀 → 기본)
+        // 머리만 knight: 부위 재정의 → 그룹 스킨(zombie, 빈 셀은 빈 칸)
         int undo = p.History.UndoCount;
         p.IsDirty = false;
         p.SetPartSkin(head, knight);
@@ -217,11 +223,9 @@ public class SkinTests
         Assert.Same(knight, head.ShownSkin);
         Assert.Same(zombie, arm.ShownSkin);
         Assert.Null(arm.SkinOverride);
-        Assert.Equal((Blue, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
+        Assert.Equal((Blue, Color32.Transparent), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
         Assert.Equal(Blue, p.FlattenGroup(g, 0)[0, 0]);
-        Assert.Equal(Red, p.FlattenGroup(g, 0, zombie)[0, 0]); // 스킨을 주면 재정의 무시
-        Assert.False(p.IsCelInherited(head, p.Frames[0]));
-        Assert.True(p.IsCelInherited(arm, p.Frames[0]));
+        Assert.Equal(Color32.Transparent, p.FlattenGroup(g, 0, zombie)[0, 0]); // 스킨을 주면 재정의 무시
 
         // 그룹 스킨을 바꾸면 재정의 없는 부위만 따라감
         p.SetActiveSkin(g, knight);
@@ -229,10 +233,10 @@ public class SkinTests
         p.SetActiveSkin(g, baseSkin);
         Assert.Equal((Blue, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
 
-        // 재정의한 부위에 그리면 그 스킨 셀에 그린다(물려받은 셀이면 복사해 시작)
+        // 재정의한 부위에 그리면 그 스킨 셀에 그린다(빈 셀이면 빈 그림에서 시작)
         p.SetPartSkin(arm, zombie);
         Paint(p, arm, 0, 1, 1, Blue);
-        Assert.Equal((Red, Blue), (p.GetOwnCel(arm, p.Frames[0], zombie)![0, 0], p.GetOwnCel(arm, p.Frames[0], zombie)![1, 1]));
+        Assert.Equal((Color32.Transparent, Blue), (p.GetOwnCel(arm, p.Frames[0], zombie)![0, 0], p.GetOwnCel(arm, p.Frames[0], zombie)![1, 1]));
         Assert.Equal(Color32.Transparent, p.GetOwnCel(arm, p.Frames[0], baseSkin)![1, 1]); // 그룹 스킨(기본) 셀은 그대로
 
         // 저장 왕복
@@ -345,7 +349,7 @@ public class SkinTests
         Assert.Equal(Blue, back.GetOwnCel(bHead, back.Frames[0], bg.Skins[1])![1, 1]);
         Assert.Null(back.GetOwnCel(bHead, back.Frames[0], bg.Skins[2]));
         back.SetActiveSkin(bg, bg.Skins[2]);
-        Assert.Equal(Red, back.Flatten(0)[0, 0]); // 빈 스킨은 첫 스킨을 물려받음
+        Assert.Equal(Color32.Transparent, back.Flatten(0)[0, 0]); // 빈 스킨은 빈 칸
 
         // 예전(버전 2) 파일: 그룹마다 "기본" 스킨 하나, 없는 스킨 번호의 셀 파일은 무시
         var cel = new MemoryStream();
@@ -451,7 +455,7 @@ public class SkinTests
         Assert.Equal([dir.File("hero_parts_body@기본.spriteLib"), dir.File("hero_parts_body@knight.spriteLib")], result.Libraries.Select(r => r.ImagePath));
         Assert.All(result.Libraries, r => Assert.True(File.Exists(r.ImagePath + ".meta")));
 
-        foreach (var (lib, expectHead1) in result.Libraries.Zip(new[] { "Head_1", "Head_1@knight" }))
+        foreach (var (lib, expect) in result.Libraries.Zip(new (string? Head0, string Head1, string? Arm)[] { ("Head", "Head_1", "Arm"), (null, "Head_1@knight", null) }))
         {
             var root = MiniYaml.Parse(File.ReadAllText(lib.ImagePath))["MonoBehaviour"]!;
             var script = root["m_Script"]!;
@@ -462,17 +466,23 @@ public class SkinTests
             var head = categories[0]["m_OverrideEntries"]!.Items;
             Assert.Equal(["0", "1"], head.Select(e => e["m_Name"]!.Text));
             Assert.Equal("2", categories[0]["m_EntryOverrideCount"]!.Text);
-            void AssertRef(YamlNode label, string sprite)
+            void AssertRef(YamlNode label, string? sprite)
             {
+                // null = 빈 항목(이 스킨이 그리지 않은 칸 — 첫 스킨 스프라이트로 대신하지 않음)
+                if (sprite is null)
+                {
+                    Assert.Equal("0", label["m_SpriteOverride"]!["fileID"]!.Text);
+                    return;
+                }
                 foreach (var key in new[] { "m_Sprite", "m_SpriteOverride" })
                 {
                     var r = label[key]!;
                     Assert.Equal((Id(sprite).ToString(), meta.Guid, "3"), (r["fileID"]!.Text, r["guid"]!.Text, r["type"]!.Text));
                 }
             }
-            AssertRef(head[0], "Head"); // knight는 프레임 0을 물려받아 첫 스킨 스프라이트를 가리킴
-            AssertRef(head[1], expectHead1);
-            AssertRef(categories[1]["m_OverrideEntries"]!.Items.Single(), "Arm");
+            AssertRef(head[0], expect.Head0);
+            AssertRef(head[1], expect.Head1);
+            AssertRef(categories[1]["m_OverrideEntries"]!.Items.Single(), expect.Arm);
         }
 
         var libMeta = File.ReadAllText(result.Libraries[0].ImagePath + ".meta");

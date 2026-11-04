@@ -1361,7 +1361,7 @@ Remove it from that command and assign it here?</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_1B501B2226" xml:space="preserve"><value>Add part skin</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_2575BCDF95" xml:space="preserve"><value>Name for the part-only skin duplicated from "{1}" of "{0}"</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_36C8BCB7E0" xml:space="preserve"><value> skin</value></data>
-  <data name="S_SkinManagerWindow_AddPartSkin_56578CE0FC" xml:space="preserve"><value>Name for a new skin only in "{0}" (empty cells borrow the default skin's image)</value></data>
+  <data name="S_SkinManagerWindow_AddPartSkin_56578CE0FC" xml:space="preserve"><value>Name for a new skin only in "{0}" (starts empty)</value></data>
   <data name="S_SkinManagerWindow_AddPartSkin_F025057A5B" xml:space="preserve"><value>Duplicate part skin</value></data>
   <data name="S_SkinManagerWindow_ApplyOutfit_8925AE2CD4" xml:space="preserve"><value>Skipped in outfit "{0}": {1}</value></data>
   <data name="S_SkinManagerWindow_DemoteSkin_627652FF4A" xml:space="preserve"><value>
@@ -1387,7 +1387,7 @@ Continue?</value></data>
   <data name="S_SkinManagerWindow_GroupRow_A6B044A804" xml:space="preserve"><value>Duplicate</value></data>
   <data name="S_SkinManagerWindow_GroupRow_C9B42D4872" xml:space="preserve"><value>No parts — individual skins are created per part.</value></data>
   <data name="S_SkinManagerWindow_GroupRow_D93BDD8066" xml:space="preserve"><value>Clear per-part skin choices so all parts follow the group skin</value></data>
-  <data name="S_SkinManagerWindow_GroupRow_DB88A91B7D" xml:space="preserve"><value>Add empty skin (empty cells borrow the default skin's image)</value></data>
+  <data name="S_SkinManagerWindow_GroupRow_DB88A91B7D" xml:space="preserve"><value>Add empty skin (shows nothing until you draw)</value></data>
   <data name="S_SkinManagerWindow_GroupRow_FC60E8F0BD" xml:space="preserve"><value>Apply "{1}" to group "{0}" · drag to reorder (first = default) · right-click = menu</value></data>
   <data name="S_SkinManagerWindow_OutfitCardMenu_4992E182C5" xml:space="preserve"><value>Move forward</value></data>
   <data name="S_SkinManagerWindow_OutfitCardMenu_890201A7A6" xml:space="preserve"><value>Delete</value></data>
@@ -1418,12 +1418,10 @@ Unavailable items (skipped):
   <data name="S_SkinManagerWindow_PartOnlyCardMenu_A9D6CC16B0" xml:space="preserve"><value>Move forward</value></data>
   <data name="S_SkinManagerWindow_PartOnlyCardMenu_C1E4068EB0" xml:space="preserve"><value>Promote to full skin</value></data>
   <data name="S_SkinManagerWindow_PartRow_085BBE8C28" xml:space="preserve"><value>{0}: part only "{1}"</value></data>
-  <data name="S_SkinManagerWindow_PartRow_2CAE7078FD" xml:space="preserve"><value>Borrowed</value></data>
-  <data name="S_SkinManagerWindow_PartRow_474DBA2B91" xml:space="preserve"><value>Apply "{1}" to "{0}" only — this skin has no image of its own, so it borrows the "{2}" image</value></data>
   <data name="S_SkinManagerWindow_PartRow_7B30E64531" xml:space="preserve"><value>None</value></data>
   <data name="S_SkinManagerWindow_PartRow_85DEDD2457" xml:space="preserve"><value>Apply part-only (individual) skin "{1}" for "{0}" — not in other parts or the group list</value></data>
   <data name="S_SkinManagerWindow_PartRow_99B0FAABB1" xml:space="preserve"><value>No part-only skin — shows the group skin ("{0}") as is</value></data>
-  <data name="S_SkinManagerWindow_PartRow_A8A111B223" xml:space="preserve"><value>Add a new skin only in "{0}" (individual skin) — empty cells borrow the default skin's image</value></data>
+  <data name="S_SkinManagerWindow_PartRow_A8A111B223" xml:space="preserve"><value>Add a new skin only in "{0}" (individual skin) — starts empty</value></data>
   <data name="S_SkinManagerWindow_PartRow_CEF2198767" xml:space="preserve"><value>Apply "{1}" to "{0}" only</value></data>
   <data name="S_SkinManagerWindow_PartRow_D7A2D2C8A0" xml:space="preserve"><value>Duplicate the skin currently shown on "{0}" ("{1}") as a skin for this part only</value></data>
   <data name="S_SkinManagerWindow_PartRow_DA413B86D8" xml:space="preserve"><value>{0}: follows group skin</value></data>
@@ -1431,8 +1429,6 @@ Unavailable items (skipped):
   <data name="S_SkinManagerWindow_PartRow_E91B568A36" xml:space="preserve"><value>Duplicate</value></data>
   <data name="S_SkinManagerWindow_PartRow_EA54194A02" xml:space="preserve"><value> · right-click = menu</value></data>
   <data name="S_SkinManagerWindow_PartRow_F72FB89182" xml:space="preserve"><value>This part's skins</value></data>
-  <data name="S_SkinManagerWindow_PartRow_F7E946AD98" xml:space="preserve"><value>
-This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_SkinManagerWindow_Rebuild_5A6FE8B9B0" xml:space="preserve"><value>No project is open.</value></data>
   <data name="S_SkinManagerWindow_Rebuild_C420DB5CFC" xml:space="preserve"><value>No groups — create a new group (Ctrl+Shift+N) and add parts.</value></data>
   <data name="S_SkinManagerWindow_RenameOutfit_226D912006" xml:space="preserve"><value>Rename outfit</value></data>
@@ -1452,18 +1448,14 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_SkinManagerWindow_SkinManagerWindow_BDF2DCD897" xml:space="preserve"><value>Skin manager</value></data>
   <data name="S_SkinManagerWindow_SkinManagerWindow_E08E14A158" xml:space="preserve"><value>OK</value></data>
   <data name="S_SkinManagerWindow_SkinManagerWindow_FE001EBC56" xml:space="preserve"><value>Show only individual skins that exist in a single part (expands all part rows)</value></data>
-  <data name="S_SkinManagerWindow_SkinStatus_0ABBEAE3FA" xml:space="preserve"><value> (borrowed from {0}{1} {2})</value></data>
   <data name="S_SkinManagerWindow_SkinStatus_24731B367D" xml:space="preserve"><value>Skin: {0}</value></data>
   <data name="S_SkinManagerWindow_SkinStatus_A6C337D7ED" xml:space="preserve"><value> · part-only (individual)</value></data>
   <data name="S_SkinManagerWindow_SkinStatus_F066020B99" xml:space="preserve"><value> · part only</value></data>
-  <data name="S_SkinManagerWindow_Topic_2C1A9D8AE1" xml:space="preserve"><value></value></data>
-  <data name="S_SkinManagerWindow_Topic_6393824600" xml:space="preserve"><value></value></data>
   <data name="S_SkinPickerWindow_Badge_42A5136FFC" xml:space="preserve"><value>Individual</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_09AC71786E" xml:space="preserve"><value>For each checked skin, composites one frame sheet (that group in that skin, other groups in the current outfit), and puts that skin's part sprites in the part atlas.</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_11E58C3A27" xml:space="preserve"><value>First skin (default) of "{0}" — cells not drawn by other skins inherit this image</value></data>
+  <data name="S_SkinPickerWindow_SkinPickerWindow_11E58C3A27" xml:space="preserve"><value>First skin (default) of "{0}"</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_19FA73CDFF" xml:space="preserve"><value>Deselect all</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_20A6248C03" xml:space="preserve"><value>{0} (default)</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_275C0DD513" xml:space="preserve"><value>Part atlas</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_30B8F1EF08" xml:space="preserve"><value>Choose skins to export</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_3CDC91DE0A" xml:space="preserve"><value>No skins or layers to choose (adding parts to a group creates skins).</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_4B4DDD65E9" xml:space="preserve"><value>{0} only</value></data>
@@ -1472,21 +1464,16 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_6068D0001B" xml:space="preserve"><value>Part-only (individual) skin for "{0}" — only that part uses "{1}", the rest use the current outfit (part atlas: {2}@{3}, Sprite Library: default + {4})</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_6D5AE7FB88" xml:space="preserve"><value>Check all skins and outfit presets</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_76ACD5089E" xml:space="preserve"><value>Layers to composite</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_7865C277F0" xml:space="preserve"><value>Even if the first skin is unchecked, first-skin sprites for cells inherited by the remaining skins are kept.
-</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_8923EA543C" xml:space="preserve"><value>{0} (group)</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_8D6FC7397A" xml:space="preserve"><value>Unchecked layers are excluded from frame sheet compositing (groups as a whole skin slot), and for groups their parts are also excluded from the part atlas — e.g. keep only the gear group for a gear-only sheet.</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_91FAFEFE55" xml:space="preserve"><value>Group "{0}" as "{1}"</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_945A308427" xml:space="preserve"><value>When on: inherited cells are also added per skin as {Name}@{Skin} sprites, making each skin self-contained (you can take just one skin's files/.spriteLib; sheets get larger).</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_A307A08B56" xml:space="preserve"><value>Currently exporting with "Current outfit" — skin and outfit checks apply to "Selected skins", while layer checks always apply.</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_A3D6B146CF" xml:space="preserve"><value>Hidden layers are not composited even if checked</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_CB68D989C3" xml:space="preserve"><value>Parts of unchecked groups are excluded from the part atlas.</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_CDBDEDBE4D" xml:space="preserve"><value>Choose part atlas skins</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_D6CC3CF8C8" xml:space="preserve"><value>Use this skin's sprites for inherited cells too</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_E3EF38CCC4" xml:space="preserve"><value>{0} (excluded from layers)</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_E73FD24EBA" xml:space="preserve"><value>Outfit presets</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_EB479F1895" xml:space="preserve"><value>Select all</value></data>
-  <data name="S_SkinPickerWindow_SkinPickerWindow_F0212A544D" xml:space="preserve"><value>When off (default): cells that a non-first skin did not draw itself, inheriting the first skin's image, share the first skin's sprite (Sprite Library also points to that sprite). </value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_F5BB7790A1" xml:space="preserve"><value>Frame sheets only — one composite per checked outfit (@outfit after the name). Not used for the part atlas.</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_FC0997D1E7" xml:space="preserve"><value>Outfit presets saved in the skin manager appear here (frame sheets only).</value></data>
   <data name="S_SkinPickerWindow_SkinPickerWindow_FF0C503AFE" xml:space="preserve"><value>Uncheck all skins and outfit presets (if nothing is selected, exports the current outfit)</value></data>
@@ -1609,7 +1596,6 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_8FF74D6DA3" xml:space="preserve"><value>Cut cels (Ctrl+X)</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_A6F62B79BC" xml:space="preserve"><value>Create tag… ({0})</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_A934B99F70" xml:space="preserve"><value>Paste frames (Ctrl+V)</value></data>
-  <data name="S_TimelinePanel_ShowCelMenu_F4960F4C1A" xml:space="preserve"><value>Clear cel (showing borrowed default skin image)</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_F578B13F0B" xml:space="preserve"><value>Copy image from previous frame</value></data>
   <data name="S_TimelinePanel_ShowCelMenu_F687732B1B" xml:space="preserve"><value>Frame {0}</value></data>
   <data name="S_TimelinePanel_ShowEffectMenu_0C9DDBBB24" xml:space="preserve"><value>Delete ({0})</value></data>
@@ -1908,7 +1894,7 @@ Long press/right-click: {0}</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_801EC51603" xml:space="preserve"><value>JPG quality 1–100. Higher is cleaner and makes larger files.</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_810DBA0E4E" xml:space="preserve"><value>On</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_83949D2A49" xml:space="preserve"><value>Export name</value></data>
-  <data name="S_UnityExportDialog_BuildExportSections_87AC546C92" xml:space="preserve"><value>Category = part, Label = frame (frame number or {Tag}_{Number}), sprite = that skin's part sprite (inherited cells use the first skin's sprite, or that skin's if "Use this skin's sprite for inherited cells" is on). </value></data>
+  <data name="S_UnityExportDialog_BuildExportSections_87AC546C92" xml:space="preserve"><value>Category = part, Label = frame (frame number or {Tag}_{Number}), sprite = that skin's part sprite (cells that skin did not draw are empty entries). </value></data>
   <data name="S_UnityExportDialog_BuildExportSections_8C3B4A4899" xml:space="preserve"><value>(sheet name_parts)</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_8C604F71D0" xml:space="preserve"><value>Always writes the part atlas .meta so sprites can be referenced (requires the com.unity.2d.animation package).</value></data>
   <data name="S_UnityExportDialog_BuildExportSections_8F1FF0667F" xml:space="preserve"><value>Frame to export when Sprite Mode is Single (one image = one sprite, at canvas size).</value></data>

@@ -193,7 +193,7 @@ public class OutfitExportTests
     }
 
     [Fact]
-    public void PartsAtlas_SkinFilter_KeepsNeededBaseSprites_OrBakes()
+    public void PartsAtlas_SkinFilter_OnlyOwnCelsOfExportedSkins()
     {
         var (p, body, armor, bodyPart, plate, zombie, iron) = Rig();
         string[] Names() => ProjectExport.BuildPartsSheet(p, "x_parts").Entries.Select(e => e.Name).ToArray();
@@ -204,32 +204,24 @@ public class OutfitExportTests
         p.Export.Common.ExcludedSkins = [zombie];
         Assert.Equal(["Plate@iron", "Plate_1@iron", "Body", "Body_1"], Names());
 
-        // 첫 스킨을 빼도 남은 스킨이 물려받는 칸의 첫 스킨 스프라이트는 남는다
+        // 다른 스킨이 그리지 않은 칸은 빈 칸: 첫 스킨을 빼면 첫 스킨 스프라이트는 하나도 남지 않고, 대신 굽지도 않는다
         var hair = p.AddGroup("hair");
         var bangs = p.AddPart(hair, "Bangs", 1, 1);
         Paint(p, bangs, 0, Red);
         Paint(p, bangs, 1, Red);
         var curly = p.AddSkin(hair, "curly");
-        Paint(p, bangs, 1, Green); // curly는 프레임 1만 직접 그림, 프레임 0은 기본을 물려받음
+        Paint(p, bangs, 1, Green); // curly는 프레임 1만 직접 그림, 프레임 0은 빈 칸
         p.Export.Common.ExcludedSkins = [hair.BaseSkin!];
-        Assert.Equal(["Bangs", "Bangs_1@curly"], Names().Take(2));
-
-        // 구워 넣기: 물려받는 칸도 그 스킨 스프라이트로, 뺀 첫 스킨 스프라이트는 없음
-        p.Export.Common.BakeInheritedSkins = true;
         var names = Names();
-        Assert.Equal(["Bangs@curly", "Bangs_1@curly"], names.Take(2));
-        Assert.DoesNotContain("Bangs", names);
-        var baked = ProjectExport.BuildPartsSheet(p, "x_parts");
-        var e0 = baked.Entries.Single(e => e.Name == "Bangs@curly");
-        Assert.Equal(Red, baked.Image[e0.Rect.X, e0.Rect.Y]); // 물려받은 그림
-        Assert.Same(curly, e0.Skin);
+        Assert.Equal(["Bangs_1@curly"], names.Where(n => n.StartsWith("Bangs")));
+        var sheet = ProjectExport.BuildPartsSheet(p, "x_parts");
+        var e1 = sheet.Entries.Single(e => e.Name == "Bangs_1@curly");
+        Assert.Equal(Green, sheet.Image[e1.Rect.X, e1.Rect.Y]);
+        Assert.Same(curly, e1.Skin);
 
-        // 구워 넣으면 첫 스킨도 내보낼 때 다른 스킨이 모든 칸을 가진다
+        // 모두 내보내면 첫 스킨은 그린 칸 모두, 다른 스킨은 직접 그린 칸만
         p.Export.Common.ExcludedSkins = [];
-        Assert.Contains("Body@zombie", Names());
-        Assert.Contains("Plate@iron", Names());
-        Assert.Contains("Bangs@curly", Names());
-        Assert.Contains("Bangs", Names());
+        Assert.Equal(["Bangs", "Bangs_1", "Bangs_1@curly"], Names().Where(n => n.StartsWith("Bangs")));
     }
 
     [Fact]
@@ -278,13 +270,15 @@ public class OutfitExportTests
         o.Outfits = [knight];
         o.ExcludedLayers = [body];
         o.ExcludedSkins = [armor.BaseSkin!];
-        o.BakeInheritedSkins = true;
         o.Order = new GridOrder([GridKey.Skin, GridKey.Part, GridKey.Frame], 1);
         p.Export.PartsOverride = new SheetOptions { Layout = SheetLayout.Packed, Skins = SkinSource.Selected, ExcludedSkins = [zombie], ExcludedLayers = [armor] };
         var path = dir.File("o.chickxel");
         ProjectIO.Save(p, path);
+        AddLegacyBakeKey(path); // 예전 파일의 없어진 "물려받은 칸 굽기" 값은 무시하고 읽는다
 
-        var back = ProjectIO.Load(path);
+        var warnings = new List<string>();
+        var back = ProjectIO.Load(path, warnings);
+        Assert.Empty(warnings);
         var bBody = back.Layers.Single(l => l.Name == "body");
         var bArmor = back.Layers.Single(l => l.Name == "armor");
         var bPart = back.Layers.Single(l => l.Name == "Body");
@@ -299,7 +293,6 @@ public class OutfitExportTests
         Assert.Equal([bk], e.Outfits);
         Assert.Equal([bBody], e.ExcludedLayers);
         Assert.Equal([bArmor.BaseSkin!], e.ExcludedSkins);
-        Assert.True(e.BakeInheritedSkins);
         Assert.Equal(new GridOrder([GridKey.Skin, GridKey.Part, GridKey.Frame], 1), e.Order);
         var po = back.Export.PartsOverride!;
         Assert.Equal((SheetLayout.Packed, SkinSource.Selected), (po.Layout, po.Skins));
@@ -317,8 +310,32 @@ public class OutfitExportTests
         Assert.Empty(c.Outfits);
         Assert.Empty(c.ExcludedLayers);
         Assert.Empty(c.ExcludedSkins);
-        Assert.False(c.BakeInheritedSkins);
         Assert.Equal(GridOrder.ByPart, c.Order);
+    }
+
+    /// <summary>project.json의 시트 설정마다 예전 키 "bakeInheritedSkins": true를 넣는다.</summary>
+    private static void AddLegacyBakeKey(string path)
+    {
+        using var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Update);
+        var entry = zip.GetEntry("project.json")!;
+        System.Text.Json.Nodes.JsonNode root;
+        using (var s = entry.Open()) root = System.Text.Json.Nodes.JsonNode.Parse(s)!;
+        int added = 0;
+        void Walk(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject o)
+            {
+                if (o.ContainsKey("layout") && o.ContainsKey("order")) { o["bakeInheritedSkins"] = true; added++; }
+                foreach (var (_, v) in o.ToList()) Walk(v);
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray a)
+                foreach (var v in a) Walk(v);
+        }
+        Walk(root);
+        Assert.True(added > 0);
+        entry.Delete();
+        using var w = new StreamWriter(zip.CreateEntry("project.json").Open());
+        w.Write(root.ToJsonString());
     }
 }
 

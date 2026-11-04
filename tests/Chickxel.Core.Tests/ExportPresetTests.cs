@@ -36,7 +36,6 @@ public class ExportPresetTests
         o.SplitParts = true;
         o.Naming = SpriteNaming.FrameNumber;
         o.Skins = SkinSource.Selected;
-        o.BakeInheritedSkins = true;
     }
 
     private static void AssertSheetEqual(SheetOptions expected, SheetOptions actual)
@@ -56,7 +55,6 @@ public class ExportPresetTests
         Assert.Equal(expected.SplitParts, actual.SplitParts);
         Assert.Equal(expected.Naming, actual.Naming);
         Assert.Equal(expected.Skins, actual.Skins);
-        Assert.Equal(expected.BakeInheritedSkins, actual.BakeInheritedSkins);
     }
 
     /// <summary>프로젝트 의존 값을 뺀 모든 값을 기본값과 다르게 바꾼 설정(시트별 다르게 켬).</summary>

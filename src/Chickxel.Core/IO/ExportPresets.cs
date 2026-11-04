@@ -94,7 +94,6 @@ public sealed class PresetSheet
     public bool SplitParts { get; set; }
     public SpriteNaming Naming { get; set; } = SpriteNaming.ByTag;
     public SkinSource Skins { get; set; } = SkinSource.Current;
-    public bool BakeInheritedSkins { get; set; }
 
     public static PresetSheet From(SheetOptions o) => new()
     {
@@ -114,7 +113,6 @@ public sealed class PresetSheet
         SplitParts = o.SplitParts,
         Naming = o.Naming,
         Skins = o.Skins,
-        BakeInheritedSkins = o.BakeInheritedSkins,
     };
 
     /// <summary>시트 설정에 적용한다(고른 스킨·착장·뺀 레이어 목록은 그대로).</summary>
@@ -135,7 +133,6 @@ public sealed class PresetSheet
         o.SplitParts = SplitParts;
         o.Naming = Enum.IsDefined(Naming) ? Naming : SpriteNaming.ByTag;
         o.Skins = Enum.IsDefined(Skins) ? Skins : SkinSource.Current;
-        o.BakeInheritedSkins = BakeInheritedSkins;
     }
 
     public PresetSheet Clone()

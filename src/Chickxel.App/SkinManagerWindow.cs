@@ -542,7 +542,7 @@ public sealed class SkinManagerWindow : Window
     }
 
     /// <summary>
-    /// 부위 한 줄: 이름 + "없음" 카드 + 그룹 스킨 카드 + 이 부위 전용(개별) 스킨 카드(이 스킨 자기 그림이 없어 기본 스킨 그림을 빌리면 "빌림") + "＋ 이 부위 스킨"/"복제".
+    /// 부위 한 줄: 이름 + "없음" 카드 + 그룹 스킨 카드 + 이 부위 전용(개별) 스킨 카드 + "＋ 이 부위 스킨"/"복제".
     /// 거르기에 따라 그룹 스킨 쪽("없음" 포함)이나 개별 스킨 쪽만.
     /// </summary>
     private Control PartRow(SpriteProject p, Layer group, Layer part, int frame)
@@ -550,12 +550,10 @@ public sealed class SkinManagerWindow : Window
         var f = p.Frames[frame];
         var size = part.PartSize;
         var own = part.SkinOverride;
-        var baseSkin = group.BaseSkin;
-        bool baseHas = baseSkin is not null && HasContent(p.GetOwnCel(part, f, baseSkin));
 
         // 한 줄로(줄바꿈하지 않음) — 넘치면 그룹 상자째 가로로 끌어 본다.
         var cards = new StackPanel { Orientation = Orientation.Horizontal };
-        WriteableBitmap? Cel(Skin skin) => p.GetSkinCel(part, f, skin) is { } cel && HasContent(cel) ? Track(cel) : null;
+        WriteableBitmap? Cel(Skin skin) => p.GetOwnCel(part, f, skin) is { } cel && HasContent(cel) ? Track(cel) : null;
 
         if (ShowFull)
         {
@@ -568,11 +566,8 @@ public sealed class SkinManagerWindow : Window
             for (int i = 0; i < skins.Count; i++)
             {
                 var skin = skins[i];
-                bool borrowed = i > 0 && baseHas && !HasContent(p.GetOwnCel(part, f, skin));
-                var card = Card(Cel(skin), size, PartThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_E3B6A5EA65,skin.Name) : skin.Name, ReferenceEquals(skin, own), borrowed ? UiStrings.S_SkinManagerWindow_PartRow_2CAE7078FD : null);
-                card.Tip(borrowed
-                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_474DBA2B91,part.Name,skin.Name,baseSkin!.Name)
-                    : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_CEF2198767,part.Name,skin.Name));
+                var card = Card(Cel(skin), size, PartThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_E3B6A5EA65,skin.Name) : skin.Name, ReferenceEquals(skin, own), badge: null);
+                card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_CEF2198767,part.Name,skin.Name));
                 Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartCardMenu(group, part, skin));
                 cards.Children.Add(card);
             }
@@ -583,10 +578,8 @@ public sealed class SkinManagerWindow : Window
             for (int i = 0; i < ownSkins.Count; i++)
             {
                 var skin = ownSkins[i];
-                bool borrowed = baseHas && !HasContent(p.GetOwnCel(part, f, skin));
-                var card = Card(Cel(skin), size, PartThumb, skin.Name, ReferenceEquals(skin, own), borrowed ? UiStrings.S_SkinManagerWindow_PartRow_2CAE7078FD : null, partOnly: true);
-                card.Tip((string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_85DEDD2457,part.Name,skin.Name) +
-                          (borrowed ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_F7E946AD98,baseSkin!.Name) : "")) + UiStrings.S_SkinManagerWindow_PartRow_EA54194A02);
+                var card = Card(Cel(skin), size, PartThumb, skin.Name, ReferenceEquals(skin, own), badge: null, partOnly: true);
+                card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_PartRow_85DEDD2457,part.Name,skin.Name) + UiStrings.S_SkinManagerWindow_PartRow_EA54194A02);
                 int index = i, count = ownSkins.Count;
                 Clickable(card, () => _ctx.SetPartSkin(part, skin), () => PartOnlyCardMenu(group, part, skin, index, count));
                 cards.Children.Add(card);
@@ -810,25 +803,15 @@ public sealed class SkinManagerWindow : Window
     // ───────────── 상태 글 ─────────────
 
     /// <summary>
-    /// 레이어의 스킨 상태 한 줄(그룹·부위가 아니면 ""): "스킨: knight", 부위면 "스킨: knight · 부위만 따로",
-    /// 지금 셀이 첫 스킨 그림을 빌려 보이면 "(Head는 기본에서 빌림)"을 붙인다.
+    /// 레이어의 스킨 상태 한 줄(그룹·부위가 아니면 ""): "스킨: knight", 부위면 "스킨: knight · 부위만 따로".
     /// </summary>
-    public static string SkinStatus(SpriteProject p, Layer layer, int frameIndex)
+    public static string SkinStatus(Layer layer)
     {
         if (layer.ShownSkin is not { } shown) return "";
         var text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_SkinStatus_24731B367D,shown.Name);
         if (!layer.IsPart) return text;
         if (layer.SkinOverride is { } over) text += over.IsPartOnly ? UiStrings.S_SkinManagerWindow_SkinStatus_A6C337D7ED : UiStrings.S_SkinManagerWindow_SkinStatus_F066020B99;
-        if (frameIndex >= 0 && frameIndex < p.Frames.Count && layer.Parent?.BaseSkin is { } baseSkin && p.IsCelInherited(layer, p.Frames[frameIndex]))
-            text += string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_SkinStatus_0ABBEAE3FA,layer.Name,Topic(layer.Name),baseSkin.Name);
         return text;
-    }
-
-    /// <summary>이름 뒤 보조사(받침 있는 한글로 끝나면 "은", 아니면 "는").</summary>
-    private static string Topic(string name)
-    {
-        char c = name.Length > 0 ? name[^1] : ' ';
-        return c is >= '가' and <= '힣' && (c - '가') % 28 != 0 ? UiStrings.S_SkinManagerWindow_Topic_2C1A9D8AE1 : UiStrings.S_SkinManagerWindow_Topic_6393824600;
     }
 }
 

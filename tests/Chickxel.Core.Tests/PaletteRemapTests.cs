@@ -180,9 +180,9 @@ public class PaletteRemapTests
         var remap = new PaletteRemap([Red, Blue]);
         Assert.Equal(2, p.MapCels("팔레트 색으로", (_, _) => true, img => remap.Remapped(img)));
 
-        Assert.Equal(Red, p.GetSkinCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
+        Assert.Equal(Red, p.GetOwnCel(head, p.Frames[0], g.BaseSkin!)![0, 0]);
         var own = p.GetOwnCel(head, p.Frames[0], knight)!;
-        Assert.Equal((Red, Blue), (own[0, 0], own[1, 1]));
+        Assert.Equal((Color32.Transparent, Blue), (own[0, 0], own[1, 1]));
     }
 
     private static PixelImage Filled(Color32 c)

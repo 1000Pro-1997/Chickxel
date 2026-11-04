@@ -1229,7 +1229,6 @@ public static partial class ProjectIO
             SplitParts = e.SplitParts == true,
             Naming = SpriteNaming.ByTag,
             ExcludedLayers = (e.FrameExcludedLayers ?? []).Select(i => ResolveLayer(fileLayers, i)).OfType<Layer>().Where(l => !l.IsPart).Distinct().ToArray(),
-            BakeInheritedSkins = e.BakeInheritedSkins == true,
         };
         // 예전 프레임 시트: 태그마다 한 줄(줄바꿈 없음, 태그가 없던 파일은 격자와 같았음) / 격자(프레임 순, 칸 수 설정 — 설정이 없던 파일은 열 수 > 0 = 가로 N칸, 0 = 한 줄)
         if (string.Equals(e.Layout, "RowPerTag", StringComparison.OrdinalIgnoreCase) && p.Tags.Count > 0)
@@ -1288,7 +1287,6 @@ public static partial class ProjectIO
             Skins = SkinSource.Selected,
             ExcludedSkins = (e.ExcludedSkins ?? []).Select(r => ResolveSkin(fileLayers, r)).OfType<Skin>().Distinct().ToArray(),
             Outfits = frames.Outfits,
-            BakeInheritedSkins = frames.BakeInheritedSkins,
         };
 
         bool partsMatter = x.ExportParts && p.Layers.Any(l => l.IsPart);
@@ -1319,7 +1317,7 @@ public static partial class ProjectIO
         if (!a.ExcludedLayers.SequenceEqual(b.ExcludedLayers)) return false;
         if (skins)
         {
-            if (a.SplitSkins != b.SplitSkins || a.BakeInheritedSkins != b.BakeInheritedSkins || a.Skins != b.Skins) return false;
+            if (a.SplitSkins != b.SplitSkins || a.Skins != b.Skins) return false;
             if (a.Skins == SkinSource.Selected && !a.ExcludedSkins.ToHashSet().SetEquals(b.ExcludedSkins)) return false;
         }
         return true;
@@ -1691,7 +1689,6 @@ public static partial class ProjectIO
         public List<int>? FrameOutfits { get; set; }
         public List<int>? FrameExcludedLayers { get; set; }
         public List<SkinRefDto>? ExcludedSkins { get; set; }
-        public bool? BakeInheritedSkins { get; set; }
         public SpriteNaming? PartsNaming { get; set; }
 
         /// <param name="p">시트 설정의 스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 적지 않는다(실행취소 기록은 따로 적음).</param>
@@ -1737,7 +1734,6 @@ public static partial class ProjectIO
         public List<SkinRefDto>? ExcludedSkins { get; set; }
         public List<int>? Outfits { get; set; }
         public List<int>? ExcludedLayers { get; set; }
-        public bool? BakeInheritedSkins { get; set; }
 
         /// <param name="p">스킨·레이어·착장을 파일 안 번호로 적을 프로젝트. null이면 값만 적는다.</param>
         public static SheetDto From(SpriteProject? p, SheetOptions o) => new()
@@ -1761,7 +1757,6 @@ public static partial class ProjectIO
             ExcludedSkins = p is null ? null : NullIfEmpty(o.ExcludedSkins.Select(s => GroupSkinRef(p, s)).OfType<SkinRefDto>()),
             Outfits = p is null ? null : NullIfEmpty(o.Outfits.Select(x => IndexOf(p.Outfits, x)).Where(i => i >= 0)),
             ExcludedLayers = p is null ? null : NullIfEmpty(o.ExcludedLayers.Select(p.IndexOf).Where(i => i >= 0)),
-            BakeInheritedSkins = o.BakeInheritedSkins ? true : null,
         };
 
         public void ApplyTo(SheetOptions o, SpriteProject p, List<Layer> fileLayers)
@@ -1790,7 +1785,6 @@ public static partial class ProjectIO
             o.SplitParts = SplitParts;
             o.Naming = Enum.IsDefined(Naming) ? Naming : SpriteNaming.ByTag;
             o.Skins = Enum.IsDefined(Skins) ? Skins : SkinSource.Current;
-            o.BakeInheritedSkins = BakeInheritedSkins == true;
         }
     }
 

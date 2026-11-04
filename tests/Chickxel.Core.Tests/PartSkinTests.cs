@@ -5,7 +5,7 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.Core.Tests;
 
-/// <summary>부위 전용(개별) 스킨: 목록·입히기·합성·물려받기, 실행취소(추가·이름·삭제·순서·올리기·내리기), 부위·그룹 복제·삭제, 저장 왕복, 내보내기.</summary>
+/// <summary>부위 전용(개별) 스킨: 목록·입히기·합성·빈 칸, 실행취소(추가·이름·삭제·순서·올리기·내리기), 부위·그룹 복제·삭제, 저장 왕복, 내보내기.</summary>
 public class PartSkinTests
 {
     private static readonly Color32 Red = new(255, 0, 0);
@@ -58,17 +58,18 @@ public class PartSkinTests
         Assert.Same(baseSkin, g.ActiveSkin);
         Assert.Same(baseSkin, arm.ShownSkin);
 
-        // 빈 칸은 첫 스킨을 빌린다
-        Assert.True(p.IsCelInherited(head, p.Frames[0]));
-        Assert.Equal(Red, p.Flatten(0)[0, 0]);
+        // 빈 칸은 빈 칸(첫 스킨 그림을 빌리지 않음)
+        Assert.True(p.IsCelEmpty(p.IndexOf(head), 0));
+        Assert.Equal(Color32.Transparent, p.Flatten(0)[0, 0]);
+        Assert.Equal(Red, p.Flatten(0)[2, 2]);
 
-        // 그리면 그 부위 전용 스킨 셀에(복사해 시작)
+        // 그리면 그 부위 전용 스킨 셀에(빈 그림에서 시작)
         Paint(p, head, 0, 1, 1, Blue);
         var own = p.GetOwnCel(head, p.Frames[0], hat)!;
-        Assert.Equal((Red, Blue), (own[0, 0], own[1, 1]));
+        Assert.Equal((Color32.Transparent, Blue), (own[0, 0], own[1, 1]));
         Assert.Equal(Color32.Transparent, p.GetOwnCel(head, p.Frames[0], baseSkin)![1, 1]);
         Assert.Equal(Blue, p.Flatten(0)[1, 1]);
-        Assert.Equal((Red, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
+        Assert.Equal((Color32.Transparent, Red), (p.Flatten(0)[0, 0], p.Flatten(0)[2, 2]));
 
         // 재정의를 지우면 그룹 스킨
         p.SetPartSkin(head, null);
@@ -203,7 +204,7 @@ public class PartSkinTests
         var hat = p.AddPartSkin(head, "모자");
         Paint(p, head, 0, 1, 1, Blue);
 
-        // 올리기: 전체 스킨 끝에, 다른 부위는 빈 칸이라 첫 스킨을 빌림
+        // 올리기: 전체 스킨 끝에, 다른 부위는 빈 칸(첫 스킨을 빌리지 않음)
         var other = p.AddPartSkin(arm, "팔");
         p.PromoteSkin(g, hat);
         Assert.Null(hat.Owner);
@@ -212,7 +213,7 @@ public class PartSkinTests
         Assert.Contains(hat, arm.SkinChoices);
         Assert.Empty(head.OwnSkins);
         p.SetActiveSkin(g, hat);
-        Assert.Equal((Blue, Red), (p.Flatten(0)[1, 1], p.Flatten(0)[2, 2]));
+        Assert.Equal((Blue, Color32.Transparent), (p.Flatten(0)[1, 1], p.Flatten(0)[2, 2]));
         p.PromoteSkin(g, hat); // 이미 전체 스킨이면 아무 일 없음
         p.SetActiveSkin(g, baseSkin);
         p.SetPartSkin(head, hat);
@@ -418,7 +419,7 @@ public class PartSkinTests
         Assert.Same(hat, e.Skin);
         Assert.Same(head, e.Part);
         var sheet = ProjectExport.BuildPartsSheet(p, "x_parts");
-        Assert.Equal((Red, Green), (sheet.Image[e.Rect.X, e.Rect.Y], sheet.Image[e.Rect.X + 1, e.Rect.Y]));
+        Assert.Equal((Color32.Transparent, Green), (sheet.Image[e.Rect.X, e.Rect.Y], sheet.Image[e.Rect.X + 1, e.Rect.Y]));
 
         p.Export.Common.ExcludedSkins = [hat];
         Assert.Equal(["Head", "Head@knight", "Arm"], ProjectExport.BuildPartsSheet(p, "x_parts").Entries.Select(x => x.Name));
@@ -440,9 +441,9 @@ public class PartSkinTests
         var files = ProjectExport.BuildFrameSheets(p, "hero");
         Assert.Equal(["hero", "hero@knight", "hero@모자"], files.Select(f => f.Name));
         Color32 At(SheetFile f, int x, int y) => f.Sheet.Image[f.Sheet.Entries[0].Rect.X + x, f.Sheet.Entries[0].Rect.Y + y];
-        // 모자: Head는 모자(빨강 + 초록, 그 밖은 첫 스킨을 빌림), Arm은 지금 착장(knight → 첫 스킨 빨강)
+        // 모자: Head는 모자(초록만 — 첫 스킨을 빌리지 않음), Arm은 지금 착장(knight에 Arm 그림 없음 → 빈 칸)
         var hatFile = files[2];
-        Assert.Equal((Red, Green, Color32.Transparent, Red), (At(hatFile, 0, 0), At(hatFile, 1, 0), At(hatFile, 1, 1), At(hatFile, 2, 2)));
+        Assert.Equal((Color32.Transparent, Green, Color32.Transparent, Color32.Transparent), (At(hatFile, 0, 0), At(hatFile, 1, 0), At(hatFile, 1, 1), At(hatFile, 2, 2)));
         // knight 항목은 Head (1,1) 파랑, 모자 초록 없음
         Assert.Equal((Blue, Color32.Transparent), (At(files[1], 1, 1), At(files[1], 1, 0)));
         // 내보내기는 지금 착장을 바꾸지 않는다

@@ -243,7 +243,7 @@ public sealed partial class SpriteProject
             var patch = Patch(s.Patch);
             if (patch.Parts.Width != image.Width || patch.Parts.Height != image.Height) throw Corrupt();
             var key = new CelKey(r.Layer(s.Layer), r.Frame(s.Frame), s.Skin == 0 ? null : r.Skin(s.Skin));
-            return new CelStrokeCommand(this, s.Label, new StrokeState(key, image, image, s.Created, null), patch);
+            return new CelStrokeCommand(this, s.Label, new StrokeState(key, image, image, s.Created), patch);
         }
 
         var undoDtos = m.Undo.Count > History.Capacity ? m.Undo.Skip(m.Undo.Count - History.Capacity) : m.Undo;

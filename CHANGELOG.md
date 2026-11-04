@@ -2,6 +2,58 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.92 (2026-11-04)
+### Effects: later effects' pivot follows the move
+- Each effect has a new Move pivot along check in its Later effects row (on by default, in the Effects window and the Tool settings effect section). When an effect moves the image this frame, effects after it in the list, such as Rotate or Squash, turn around the moved pivot.
+- The row only shows for effects that report their movement: the official Shake and Bob (1.0.2) and script effects that call the new `ctx.movePivot(dx, dy)`.
+- Effects whose code calls `ctx.movePivot` get the `pivot-move` tag automatically when published. The AI tools add_effect and set_effect take move_pivot.
+### Effects: images moved far are no longer cut off
+- When an effect reports its movement, that frame is drawn in an area widened by the distance, so a ball following a long path stays whole, and baking grows the part to fit.
+- Effect Maker's Check suggests reporting the move when the result moved but the code has no `ctx.movePivot`.
+- In the part view with Effects on, the part is shown as it appears in the frame (part and group effects, at the moved spot), and the pivot mark sits where the effect moved it, the center later effects really turn around.
+### Effects: Keep the end look also covers unlinked cels after the range
+- Keep the end look now applies to every cel after the range, and its row is renamed Cels after the range.
+- Cels linked to the range's last cel still match it pixel for pixel. Cels that aren't linked (a different drawing) are placed where the effect moved the image at the end of the range, and later effects' pivot follows (effects that report their movement only).
+- Effects that move along another layer, such as a path layer, measure that move in the same area as the range's last frame, so even a small part stays where the range ended.
+- The timeline tail continues over unlinked cels, fainter. Unlinking bakes the held look into cels that showed it, except for move-only held ends, which keep the plain drawing so it isn't moved twice.
+### Effects: Expand canvas per effect
+- The single Expand canvas check in the Effects window's common settings is replaced by an Apply: expand canvas check on each effect (on by default; effects in older files read as on).
+- Check and Bake measure only the effects with it on; the others are cut at the canvas, and the part that would be cut is faded in the preview.
+- The AI tools add_effect and set_effect take expand_canvas.
+### Script effects: settings shown only when they apply, new declaration keys
+- A setting with `when: { facing: "rotate" }` shows only while an earlier choice or bool setting has that value. Hidden values are kept and still readable as `s.key`.
+- New declaration keys `repeat`, `repeatCount` and `movePivot` set the repeat and Move pivot along of newly added effects.
+- Effect Maker's preview settings show the same rows in the same order as the Tool settings dock, and Set as default also writes easing, repeat and Move pivot along into the declaration.
+### Pivot: per-frame part pivots
+- With a part selected, the Pivot tool shows Current frame only. Turn it on to give that part a different pivot on the current frame only.
+- The timeline cell gets an orange diamond in its top-left corner. The pivot is used by effects and by the part atlas export, and follows saving, undo, frame duplication, part resizing and merging.
+### Linked cels: based on the clicked cel, also on group rows
+- Link cels now takes the drawing of the cel you clicked (dark blue border). The other selected cels have a light blue fill and a border around each block.
+- Linking cels on a group row links the same frames in each of its parts, and the group row shows the chain and bar too.
+- A new skin starts with the links of the skin it came from.
+### Skins: an empty cel stays empty instead of borrowing the first skin
+- A cel left empty on a skin other than the first now shows nothing. It no longer borrows the first skin's drawing, on the canvas, preview, timeline, skin cards or in exports.
+- Drawing on such a cel starts from a blank cel. Part-only skins follow the same rule.
+- The export option that baked borrowed cels under the skin's name is gone, since there are no borrowed cels left. Existing files open as they are, so skins that relied on borrowing show those cels empty.
+### Timeline: thumbnails, cell size, adding several frames at once
+- Cell thumbnails show the editable drawing without effects, zoomed to the area the layer paints (part areas for group rows, the part size for parts). Skin manager, skin picker and merge thumbnails look the same.
+- The button at the right end of the title bar turns frame thumbnails off, making cells narrow and short so many more fit (cells with a drawing show a dot).
+- Drag the border between the name column and the frames to resize the name column (double-click restores it). Both are remembered.
+- Hold the add button in the next-frame cell and drag right to add as many frames as the cells you cover (Esc cancels, one undo step).
+### View: canvas effects toggle, Space to play, preview tab
+- The Effects button on the top bar (View menu, Ctrl+Shift+E) turns effects off on the canvas so it shows the editable drawing. Preview, timeline and export are unchanged.
+- A short tap on Space plays or pauses the preview. Holding Space and dragging still pans.
+- The button at the end of the preview title opens the preview as a tab on the side you aren't editing, with wheel zoom and drag to pan.
+- In split view the last tab of a side can also move to the other side, which merges the view back into one. Drag the bar between the preview and Tool settings to share the height.
+### Layer and canvas size modes, skins for normal layers
+- Layer size mode (Ctrl+Shift+C) zooms to the layer's area, and its handles work like canvas size mode: a plain drag changes only the layer area, Ctrl(⌘)+drag resizes the drawing too.
+- In both modes, holding Ctrl turns the border and handles yellow to show that the drawing will be resized.
+- Right-click a normal layer, Add skin (turn into group) puts the layer into a new group as a part and adds a new skin (empty or a copy of the drawing).
+### Tool settings and publishing
+- Click the Tool settings title to fold the whole section; the selected effect's settings have their own Effect title and fold separately.
+- The gradient editor fits narrow docks.
+- The publish button shows the upload progress and then Checking on the server…, and can't be pressed again meanwhile.
+
 ## v1.14.91 (2026-11-03)
 ### Timeline: copy cels as an image, exactly as shown
 - The cel right-click menu has 'Copy cels (as image with effects)' and 'Copy frame N as shown'. Both put a canvas-sized PNG on the system clipboard, ready to paste into other apps or onto the canvas.
