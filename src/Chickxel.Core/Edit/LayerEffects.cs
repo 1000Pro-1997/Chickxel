@@ -646,11 +646,15 @@ public static class LayerEffects
     /// <summary>
     /// 효과 하나를 입히고 알린 이동(px)을 돌려준다. 링크되지 않은 범위 뒤 칸에 끝 모습의 자리만 이어 가는 사본(<see cref="AnimatedEffect.HeldMoveSource"/>)이면
     /// 범위 끝 프레임 원본에 그 효과를 입혀 알린 이동만 재고, <paramref name="image"/>는 그 거리(가까운 정수 px)만큼 옮기기만 한다 — 알린 이동은 그대로 돌려준다.
+    /// 잴 때도 이 그림과 같은 여백으로 넓힌 자리에 원본을 둔다 — 다른 레이어(경로 등)를 원본 자리에 맞춰 읽는 효과는 넓힌 자리까지 보고 거리를 정하므로
+    /// 여백 없이 재면 범위 끝 프레임과 다른(대개 0) 거리를 알린다.
     /// </summary>
     private static PointF RenderOne(EffectDefinition definition, PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks)
     {
         if (effect is not AnimatedEffect { HeldMoveSource: { } end }) return definition.Render(image, effect, source, hooks);
-        var moved = definition.Render(end.Clone(), effect, end.Bounds, hooks);
+        var area = new PixelImage(end.Width + image.Width - source.Width, end.Height + image.Height - source.Height);
+        area.Blit(end, source.X, source.Y);
+        var moved = definition.Render(area, effect, new Rectangle(source.X, source.Y, end.Width, end.Height), hooks);
         ShakeRender.Shift(image, (int)Math.Floor(moved.X + 0.5), (int)Math.Floor(moved.Y + 0.5));
         return moved;
     }

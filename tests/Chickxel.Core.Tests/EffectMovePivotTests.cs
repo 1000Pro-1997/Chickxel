@@ -213,6 +213,41 @@ public class EffectMovePivotTests
         Assert.Equal(new Point(6, 4), OnlyDot(p.PlanCel(0, 3)!.Render()));
     }
 
+    /// <summary>여백 [0, 0, 6, 0]을 받아 넓힌 폭만큼(원본 폭 9 밖) 그림을 오른쪽으로 옮기고 알리는 스크립트 — 경로 레이어처럼 넓힌 자리를 봐야 거리가 정해진다.</summary>
+    private static ScriptEffect Reach([CallerMemberName] string test = "")
+    {
+        var program = EffectParity.Trusted(Unique("""
+            effect({ name: "reach", padding: [0, 0, 6, 0],
+              render(img, ctx, s) {
+                const w = img.width, h = img.height, d = img.data, k = w - 9;
+                for (let y = 0; y < h; y++)
+                  for (let x = w - 1; x >= 0; x--)
+                    for (let c = 0; c < 4; c++) {
+                      const o = (y * w + x) * 4 + c;
+                      d[o] = x >= k ? d[o - k * 4] : 0;
+                    }
+                ctx.movePivot(k, 0);
+              } });
+            """, test));
+        return new ScriptEffect { ScriptHash = program.ContentHash };
+    }
+
+    [Fact]
+    public void HeldEnd_OnUnlinkedCels_MeasuresTheMoveInTheSamePaddedAreaAsTheRangeEnd()
+    {
+        // 범위 끝(프레임 1)에서 6px 옮긴 효과는 링크되지 않은 프레임 2에서도 6px — 여백 없는 원본으로 재면 0px이라 제자리였다
+        var p = new SpriteProject(9, 9);
+        for (int i = 0; i < 2; i++) p.AddFrame();
+        p.SetCel(0, 0, Dot(1, 4));
+        p.LinkCels([(0, 0), (0, 1)]);
+        p.SetCel(0, 2, Dot(1, 2));
+        p.SetLayerEffects(0, [Reach() with { Frames = new FrameRange(0, 1), HoldEnd = true }]);
+        Assert.Equal(new PointF(6, 0), p.EffectPivotShift(p.Layers[0], 1));
+        Assert.Equal(new PointF(6, 0), p.EffectPivotShift(p.Layers[0], 2));
+        var end = OnlyDot(p.PlanCel(0, 1)!.Render());
+        Assert.Equal(new Point(end.X, end.Y - 2), OnlyDot(p.PlanCel(0, 2)!.Render()));
+    }
+
     [Fact]
     public void PartInFrame_DrawsOnlyThatPartWithPartAndGroupEffects_AtFullOpacity()
     {
