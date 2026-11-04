@@ -43,6 +43,9 @@ public sealed record ScriptInfo(string? Name, string? Author, bool ReadsOtherFra
     /// <summary>원문에 <c>frameTag</c>가 나오는지: 그릴 때 그 프레임이 든 태그 이름을 넘긴다(<see cref="Model.AnimatedEffect.FrameTag"/>).</summary>
     public bool ReadsFrameTag { get; init; }
 
+    /// <summary>원문에 <c>movePivot</c>이 나오는지: 그림을 옮긴 거리를 알릴 수 있는 효과(<c>ctx.movePivot</c>) — 아니면 피벗 이동을 재지 않는다.</summary>
+    public bool MovesPivot { get; init; }
+
     /// <summary>
     /// 다른 레이어를 읽는 <c>ctx</c> 함수 이름. 모두 레이어 고르기 설정(<c>type: "layer"</c>)의 키를 받아 그 설정으로 고른 레이어를 읽는다
     /// (<see cref="Model.ScriptLayerContext"/> — 그릴 때 고른 이름의 레이어만 담는다).
@@ -224,6 +227,8 @@ public static class ScriptLibrary
             Language = ScriptSourceLocator.DeclaredString(program, "language") is { } language && ScriptTranslations.IsLanguageCode(language) ? language : null,
             ReadsRenderedFrames = ScriptSourceLocator.Mentions(program, "renderedFrameSource"),
             ReadsFrameTag = ScriptSourceLocator.Mentions(program, "frameTag"),
+            // ctx.movePivot 호출만 센다(선언의 movePivot: false 같은 키는 아님)
+            MovesPivot = ScriptSourceLocator.MentionsProperty(program, "movePivot"),
         };
     }
 }

@@ -154,6 +154,27 @@ internal static partial class ScriptDeclarationReader
             else Fail(DomainStrings.FormatScript_InvalidEasing(names: string.Join(", ", Enum.GetNames<EffectEasing>())), "easing");
         }
 
+        // 새로 넣는 효과의 반복·반복 횟수·피벗 같이 옮기기 처음 값
+        var repeatValue = declaration.Get("repeat");
+        var repeat = EffectRepeat.Once;
+        if (!repeatValue.IsUndefined())
+        {
+            if (repeatValue is JsString && Enum.TryParse<EffectRepeat>(repeatValue.AsString(), ignoreCase: false, out var parsedRepeat)
+                && Enum.IsDefined(parsedRepeat) && repeatValue.AsString() == parsedRepeat.ToString())
+                repeat = parsedRepeat;
+            else Fail(DomainStrings.FormatScript_InvalidRepeat(names: string.Join(", ", Enum.GetNames<EffectRepeat>())), "repeat");
+        }
+        var repeatCountValue = declaration.Get("repeatCount");
+        int repeatCount = 1;
+        if (!repeatCountValue.IsUndefined())
+        {
+            if (Whole(repeatCountValue) is { } count and >= 1 and <= AnimatedEffect.MaxRepeatCount) repeatCount = (int)count;
+            else Fail(DomainStrings.FormatScript_InvalidRepeatCount(max: AnimatedEffect.MaxRepeatCount), "repeatCount");
+        }
+        var movePivotValue = declaration.Get("movePivot");
+        bool movePivot = !movePivotValue.IsBoolean() || movePivotValue.AsBoolean();
+        if (!movePivotValue.IsUndefined() && !movePivotValue.IsBoolean()) Fail(DomainStrings.Script_InvalidMovePivot, "movePivot");
+
         var translations = ReadTranslations(declaration.Get("translations"), settings, Fail);
         var tags = ReadTags(declaration.Get("tags"), Fail);
 
@@ -166,7 +187,10 @@ internal static partial class ScriptDeclarationReader
             ? new(null, errors)
             : new(new ScriptEffectProgram(script, source, hash, sandbox.Limits, name, author, description, animated, area, radius, settings, fixedPadding,
                 previewChick ?? PreviewChicks.Default, previewFrames, translations, deferred, easing, clipsBySource, erasesSource, erasesSourceSetting)
-            { Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion }, []);
+            {
+                Motion = motion, Tags = tags, Language = language, PreviewEndChick = previewEndChick, PreviewMotion = previewMotion,
+                Repeat = repeat, RepeatCount = repeatCount, MovePivot = movePivot,
+            }, []);
     }
 
     /// <summary><c>previewMotion</c>: 이름 문자열(<see cref="PreviewMotion.Presets"/>) 또는 정수 <c>[x, y]</c> 쌍의 배열(<see cref="PreviewMotion.FromOffsets"/>). 아니면 null.</summary>

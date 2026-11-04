@@ -200,4 +200,38 @@ public class CelOverflowTests
         Assert.Null(p.GetCelOverflow(1, 1));
         Assert.Throws<ArgumentException>(() => p.ScaleLayer(p.IndexOf(p.AddGroup()), new Rectangle(0, 0, 1, 1), new Rectangle(0, 0, 2, 2)));
     }
+
+    [Fact]
+    public void ResizeLayer_NormalLayer_CropsPixelsOutsideTheArea_InEveryFrameAndOffCanvas()
+    {
+        var p = new SpriteProject(6, 4);
+        var blue = new Color32(0, 0, 255);
+        p.AddLayer();
+        p.AddFrame();
+        Draw(p, 1, 1, Red, layer: 1);
+        Draw(p, 4, 2, blue, layer: 1);
+        Draw(p, 4, 1, blue, layer: 1, frame: 1);
+        p.ShiftCels("옮기기", [(1, 1)], 2, 0); // 프레임 1의 파랑 (6,1) — 캔버스 밖
+        var from = p.LayerBounds(1);
+        int steps = p.History.UndoCount;
+
+        // 자리를 왼쪽 반(0..2)으로: 오른쪽 그림은 모든 프레임에서 잘림
+        p.ResizeLayer(1, from, from, new Rectangle(0, 0, 3, 4));
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(Red, FullAt(p, 1, 1, layer: 1));
+        Assert.Equal(default, FullAt(p, 4, 2, layer: 1));
+        Assert.Equal(default, FullAt(p, 6, 1, layer: 1, frame: 1));
+        Assert.Null(p.GetCelOverflow(1, 1));
+        Assert.Equal(new Rectangle(1, 1, 1, 1), p.LayerBounds(1));
+
+        p.Undo();
+        Assert.Equal(blue, FullAt(p, 4, 2, layer: 1));
+        Assert.Equal(blue, FullAt(p, 6, 1, layer: 1, frame: 1));
+
+        // 자리를 넓히기만 하면 그림은 그대로(기록 없음이 아니라 같은 그림)
+        p.ResizeLayer(1, p.LayerBounds(1), p.LayerBounds(1), new Rectangle(-2, -2, 12, 8));
+        Assert.Equal(blue, FullAt(p, 4, 2, layer: 1));
+        Assert.Equal(Red, FullAt(p, 1, 1, layer: 1));
+    }
 }

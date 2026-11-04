@@ -118,6 +118,11 @@ public sealed class EffectMakerWindow : Window
     private readonly Dictionary<string, object> _previewValues = new(StringComparer.Ordinal);
     /// <summary>미리보기 효과의 색 그라데이션(슬롯 = <see cref="ScriptColorSlots"/>). 미리보기·지금 레이어에 넣기에만 쓰고 원문에는 쓰지 않는다.</summary>
     private readonly Dictionary<string, EffectColorGradient> _previewGradients = new(StringComparer.Ordinal);
+    /// <summary>
+    /// 미리보기 효과의 공통 값(빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기) 중 원문 선언과 다르게 고른 것(null = 선언 값을 따름).
+    /// 미리보기·지금 레이어에 넣기에 쓰고, 원문에는 "기본값으로"를 눌러야 쓴다(<see cref="ScriptDeclarationEdit.SetEffectDefaults"/>).
+    /// </summary>
+    private (EffectEasing? Easing, EffectRepeat? Repeat, int? RepeatCount, bool? MovePivot) _previewCommon;
     private bool _loading, _syncingList, _syncingInfo, _syncingFrames;
     /// <summary>
     /// 마지막으로 불러오거나 저장한 원문(새 스크립트면 null). 고친 것이 있는지는 이것과 견줘 정한다 — 편집기의 TextChanged는 값을 넣은 뒤에 늦게 올 수 있어
@@ -635,6 +640,7 @@ public sealed class EffectMakerWindow : Window
         _code.Text = _source;
         _previewValues.Clear();
         _previewGradients.Clear();
+        _previewCommon = default;
         _program = null;
         _loading = false;
         _savedSource = saved ? _source : null;
@@ -686,14 +692,18 @@ public sealed class EffectMakerWindow : Window
         Title = _open ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_TitleWith, CurrentName() + (Dirty ? " *" : "")) : UiStrings.EffectMaker_Title;
     }
 
-    /// <summary>"초기화"는 미리보기 설정 값이 원문의 기본값과 하나라도 다르거나 그라데이션이 있을 때, "기본값으로"는 값이 다를 때만 켠다.</summary>
+    /// <summary>"초기화"는 미리보기 설정 값·공통 값이 원문의 기본값과 하나라도 다르거나 그라데이션이 있을 때, "기본값으로"는 값이 다를 때만 켠다.</summary>
     private void UpdateValueButtons()
     {
         bool differs = _open && _program is { } program && program.NormalizeSettings(_previewValues) is var values
-                       && program.Settings.Any(s => !ScriptSetting.SameValue(values[s.Key], s.Default));
+                       && (program.Settings.Any(s => !ScriptSetting.SameValue(values[s.Key], s.Default)) || CommonDiffers(program, PreviewEffect(program)));
         _setDefaults.IsEnabled = differs;
         _resetValues.IsEnabled = differs || (_open && _previewGradients.Count > 0);
     }
+
+    /// <summary>미리보기 효과의 공통 값이 원문 선언의 처음 값과 다른지.</summary>
+    private static bool CommonDiffers(ScriptEffectProgram program, ScriptEffect effect)
+        => effect.Easing != program.Easing || effect.Repeat != program.Repeat || effect.RepeatCount != program.RepeatCount || effect.MovePivot != program.MovePivot;
 
     /// <summary>창 제목·묻는 글에 보일 이름: 화면 언어의 번역(없으면 선언의 <c>name</c>).</summary>
     private string CurrentName() => _program?.NameFor(CultureInfo.CurrentUICulture) ?? UiStrings.ScriptEffect_Name;
@@ -819,13 +829,23 @@ public sealed class EffectMakerWindow : Window
         return hash;
     }
 
-    /// <summary><paramref name="program"/>으로 만든 미리보기 설정 값·그라데이션의 새 효과(선언의 빠르기 곡선).</summary>
+    /// <summary><paramref name="program"/>으로 만든 미리보기 설정 값·그라데이션·공통 값의 새 효과(고르지 않은 공통 값은 선언의 처음 값).</summary>
     private ScriptEffect PreviewEffect(ScriptEffectProgram program)
-        => program.CreateEffect(_previewValues) with { ColorGradients = new Dictionary<string, EffectColorGradient>(_previewGradients, StringComparer.Ordinal) };
+    {
+        var effect = program.CreateEffect(_previewValues);
+        return effect with
+        {
+            ColorGradients = new Dictionary<string, EffectColorGradient>(_previewGradients, StringComparer.Ordinal),
+            Easing = _previewCommon.Easing ?? effect.Easing,
+            Repeat = _previewCommon.Repeat ?? effect.Repeat,
+            RepeatCount = _previewCommon.RepeatCount ?? effect.RepeatCount,
+            MovePivot = _previewCommon.MovePivot ?? effect.MovePivot,
+        };
+    }
 
     /// <summary>
-    /// 미리보기 설정 칸의 고치기(효과 창 설정 칸과 같은 모양 — <see cref="LayerEffectsDialog.AddScriptSettingRows"/>): 미리보기 효과에 <paramref name="change"/>를 입혀
-    /// 바뀐 설정 값과 그라데이션을 미리보기 값으로 옮기고 잠시 뒤 다시 그린다.
+    /// 미리보기 설정 칸의 고치기(오른쪽 독과 같은 줄 — <see cref="LayerEffectsDialog.AddScriptEffectRows"/>): 미리보기 효과에 <paramref name="change"/>를 입혀
+    /// 바뀐 설정 값·그라데이션·공통 값을 미리보기 값으로 옮기고 잠시 뒤 다시 그린다.
     /// </summary>
     private void ChangePreview(Func<LayerEffect, LayerEffect> change)
     {
@@ -837,10 +857,15 @@ public sealed class EffectMakerWindow : Window
             if (!ScriptSetting.SameValue(before[setting.Key], now[setting.Key])) _previewValues[setting.Key] = now[setting.Key];
         _previewGradients.Clear();
         foreach (var (slot, gradient) in after.ColorGradients) _previewGradients[slot] = gradient;
+        _previewCommon = (Unless(after.Easing, program.Easing), Unless(after.Repeat, program.Repeat), Unless(after.RepeatCount, program.RepeatCount),
+            Unless(after.MovePivot, program.MovePivot));
         UpdateValueButtons();
         _debounce.Stop();
         _debounce.Start();
     }
+
+    /// <summary>선언 값과 같으면 null(선언을 따름), 다르면 그 값.</summary>
+    private static T? Unless<T>(T value, T declared) where T : struct => EqualityComparer<T>.Default.Equals(value, declared) ? null : value;
 
     /// <summary>원문을 해석하고 미리보기 칸들을 작업 스레드에서 다시 그린다(미리보기 장면이 있으면 장면 위에서). 앞 계산은 취소한다.</summary>
     private void Rerender()
@@ -992,6 +1017,10 @@ public sealed class EffectMakerWindow : Window
         bool schemaChanged = _program is null || !_program.Settings.SequenceEqual(parsed.Program.Settings)
                              || _program.Translations.Count != parsed.Program.Translations.Count
                              || _program.Translations.Any(t => !parsed.Program.Translations.TryGetValue(t.Key, out var other) || !t.Value.SameAs(other));
+        // 공통 줄(빠르기 곡선·반복·피벗 같이 옮기기)이 생기거나 없어지거나 선언의 처음 값이 바뀌어도
+        var rows = CommonRows(parsed.Program);
+        schemaChanged |= rows != _commonRows;
+        _commonRows = rows;
         _program = parsed.Program;
         // 선언에 없는 색 슬롯(지운 설정·줄어든 최대 항목 수)의 그라데이션은 버린다
         foreach (var slot in _previewGradients.Keys.ToList())
@@ -1008,28 +1037,26 @@ public sealed class EffectMakerWindow : Window
         UpdateButtons();
     }
 
+    /// <summary>미리보기 설정 칸의 공통 줄을 정하는 선언 값(바뀌면 칸을 다시 만듦 — <see cref="ParseScript"/>).</summary>
+    private (bool Animated, bool Motion, EffectEasing Easing, EffectRepeat Repeat, int RepeatCount, bool MovePivot, bool Reports) _commonRows;
+
+    private (bool, bool, EffectEasing, EffectRepeat, int, bool, bool) CommonRows(ScriptEffectProgram program)
+        => (program.Animated, program.Motion, program.Easing, program.Repeat, program.RepeatCount, program.MovePivot,
+            Chickxel.Core.Edit.LayerEffects.CanMovePivot(new ScriptEffect { ScriptHash = PreviewHash(_source) }));
+
     /// <summary>
-    /// 미리보기 설정 칸: 선언의 settings로 만든 칸(효과 창 설정 칸과 같은 편집기 — 색 그라데이션, 색 목록·색 쌍 목록, 각도·점 포함).
-    /// 값은 미리보기·지금 레이어에 넣기에만 쓰고 원문의 default는 "기본값으로"를 눌러야 바뀐다.
+    /// 미리보기 설정 칸: 효과를 넣었을 때 오른쪽 독에 보이는 줄과 같은 줄·차례(<see cref="LayerEffectsDialog.AddScriptEffectRows"/> — 선언의 settings,
+    /// 움직이는 효과의 빠르기 곡선·반복, 옮긴 거리를 알리는 효과의 피벗 같이 옮기기, 끝 모습 이어 가기). 값은 미리보기·지금 레이어에 넣기에만 쓰고
+    /// 원문의 처음 값은 "기본값으로"를 눌러야 바뀐다. 끝 모습 이어 가기는 새로 넣는 효과(모든 프레임)처럼 꺼진 채 고칠 수 없다.
     /// </summary>
     private void BuildScriptSettings()
     {
         _scriptSettings.Children.Clear();
         if (_program is not { } program) return;
         if (program.Settings.Count == 0) _scriptSettings.Children.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-        LayerEffectsDialog.AddScriptSettingRows(program, PreviewEffect(program), ChangePreview, BuildScriptSettings, SceneLayerChoices(), (name, editor, block) =>
-        {
-            var label = Ui.Label(name);
-            label.Width = 110;
-            var line = Ui.Row(label, editor);
-            // 여러 줄 덩어리(색 목록 등)는 이름과 편집기를 위에 맞춤
-            if (block)
-            {
-                label.VerticalAlignment = editor.VerticalAlignment = VerticalAlignment.Top;
-                label.Margin = new Thickness(label.Margin.Left, 6, label.Margin.Right, label.Margin.Bottom);
-            }
-            _scriptSettings.Children.Add(line);
-        });
+        // 줄을 고를 때 원문 정보(피벗을 옮기는지 등)를 보므로 스크립트 목록에 올린 해시로
+        LayerEffectsDialog.AddScriptEffectRows(new EffectForm(_scriptSettings, this), program, PreviewEffect(program) with { ScriptHash = PreviewHash(_source) },
+            ChangePreview, BuildScriptSettings, SceneLayerChoices());
     }
 
     /// <summary>
@@ -1044,12 +1071,13 @@ public sealed class EffectMakerWindow : Window
     private static string[] SceneChoiceNames(PreviewScene scene)
         => [.. scene.Layers.Select(l => l.Name).Reverse().Where(n => ScriptSetting.LayerName(n) is { Length: > 0 } name && name == n).Distinct(StringComparer.Ordinal)];
 
-    /// <summary>미리보기 설정 값과 그라데이션을 원문의 기본값(그라데이션 없음)으로 되돌린다(원문은 그대로).</summary>
+    /// <summary>미리보기 설정 값·공통 값과 그라데이션을 원문의 기본값(그라데이션 없음)으로 되돌린다(원문은 그대로).</summary>
     private void ResetValues()
     {
         if (_program is null) return;
         _previewValues.Clear();
         _previewGradients.Clear();
+        _previewCommon = default;
         BuildScriptSettings();
         UpdateValueButtons();
         _debounce.Stop();
@@ -1057,8 +1085,8 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로
-    /// 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
+    /// 지금 미리보기 설정 값 중 기본값과 다른 것을 원문 선언의 각 설정 <c>default</c>로, 다른 공통 값은 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>로
+    /// 쓴다(편집기 실행취소 한 단계). 쓴 뒤 미리보기 값은 새 기본값과 같으므로 칸은 그대로 보인다. 선언을 고칠 수 없는 원문이면 원문 오류를 안내한다.
     /// </summary>
     private void SetDefaults()
     {
@@ -1066,13 +1094,20 @@ public sealed class EffectMakerWindow : Window
         var values = program.NormalizeSettings(_previewValues);
         var changed = program.Settings.Where(s => !ScriptSetting.SameValue(values[s.Key], s.Default))
             .Select(s => new KeyValuePair<string, object>(s.Key, values[s.Key])).ToList();
-        if (changed.Count == 0) return;
-        if (ScriptDeclarationEdit.SetSettingDefaults(_source, changed) is not { } edited)
+        var effect = PreviewEffect(program);
+        bool common = CommonDiffers(program, effect);
+        if (changed.Count == 0 && !common) return;
+        string? edited = changed.Count == 0 ? _source : ScriptDeclarationEdit.SetSettingDefaults(_source, changed);
+        if (edited is not null && common)
+            edited = ScriptDeclarationEdit.SetEffectDefaults(edited, Unless(effect.Easing, program.Easing), Unless(effect.Repeat, program.Repeat),
+                Unless(effect.RepeatCount, program.RepeatCount), Unless(effect.MovePivot, program.MovePivot));
+        if (edited is null)
         {
             SetStatus(UiStrings.EffectMaker_FixSourceFirst, problem: true);
             return;
         }
         _previewValues.Clear(); // 새 기본값 = 지금 값
+        _previewCommon = default;
         ApplyDeclarationEdit(edited);
     }
 
@@ -1601,8 +1636,30 @@ public sealed class EffectMakerWindow : Window
                 runs++;
             }
         }
-        IReadOnlyList<string> hints = runFailed ? [] : ScriptGradientCheck.Render(program, chicks, end, cancel).Select(h => h.Message).ToList();
+        List<string> hints = runFailed ? [] : ScriptGradientCheck.Render(program, chicks, end, cancel).Select(h => h.Message).ToList();
+        if (!runFailed && MovesWithoutReporting(program, source, chicks[0], end, cancel)) hints.Add(UiStrings.EffectMaker_MoveNotReported);
         return new ValidationResult(problems, program.ExecutionPath, runs, slowest, slowestChick, hints);
+    }
+
+    /// <summary>
+    /// 효과가 그림을 옮기는데(어느 칸에서 불투명 범위가 크기는 거의 그대로 2px 이상 옮겨 감 — 외곽선·빛처럼 둘레로 번지는 효과는 아님) 원문이
+    /// <c>ctx.movePivot</c>으로 옮긴 거리를 알리지 않는지(검증 안내 — 알려야 뒤 효과 중심이 따라오고 여백 밖으로 옮긴 그림도 잘리지 않음).
+    /// </summary>
+    private static bool MovesWithoutReporting(ScriptEffectProgram program, string source, PixelImage chick, PixelImage? end, CancellationToken cancel)
+    {
+        string hash = PreviewHash(source);
+        if (ScriptLibrary.InfoOf(hash) is not { MovesPivot: false }) return false;
+        IReadOnlyList<LayerEffect> template = [program.CreateEffect() with { ScriptHash = hash }];
+        for (int step = 0; step < program.PreviewFrames; step++)
+        {
+            cancel.ThrowIfCancellationRequested();
+            var before = AssetPreview.Original(template, chick, step, program.PreviewFrames, end, program.PreviewMotion).GetOpaqueBounds();
+            var after = AssetPreview.Render(template, chick, step, program.PreviewFrames, end, program.PreviewMotion).GetOpaqueBounds();
+            if (before.IsEmpty || after.IsEmpty || Math.Abs(after.Width - before.Width) > 2 || Math.Abs(after.Height - before.Height) > 2) continue;
+            float dx = (after.Left + after.Right - before.Left - before.Right) / 2f, dy = (after.Top + after.Bottom - before.Top - before.Bottom) / 2f;
+            if (Math.Abs(dx) >= 2 || Math.Abs(dy) >= 2) return true;
+        }
+        return false;
     }
 
     /// <summary>

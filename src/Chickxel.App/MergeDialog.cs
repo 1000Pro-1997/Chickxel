@@ -318,8 +318,8 @@ public sealed class MergeDialog : DialogBase
                 var layer = p.Layers[li];
                 string name = layer.IsPart ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_MergeDialog_SetProject_AB9B2445C1,layer.Name,layer.PartSize.Width,layer.PartSize.Height,(layer.Visible ? "" : UiStrings.S_MergeDialog_SetProject_00D4A9DF3D)) : layer.Name;
                 int index = li;
-                _rows.Add((name, layer.IsGroup, layer.IsPart, false, false,
-                    Thumbs(f => layer.IsGroup ? p.FlattenGroup(layer, f) : p.GetCel(index, f))));
+                // 타임라인 칸과 같은 썸네일(효과 없이, 그 레이어가 칠한 자리로 자름 — SpriteProject.RenderCelThumbnail)
+                _rows.Add((name, layer.IsGroup, layer.IsPart, false, false, Thumbs(f => p.RenderCelThumbnail(index, f))));
                 if (layer is { IsPart: true, SkinChoices.Count: > 1 })
                     foreach (var skin in layer.SkinChoices)
                         _rows.Add((skin.Name, false, false, true, skin.IsPartOnly, Thumbs(f => p.GetSkinCel(layer, p.Frames[f], skin))));

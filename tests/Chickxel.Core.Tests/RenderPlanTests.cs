@@ -128,9 +128,12 @@ public class RenderPlanTests
     }
 
     [Fact]
-    public void Cel_plans_match_cel_thumbnails()
+    public void Cel_plans_match_cels_and_thumbnails_show_the_raw_cel()
     {
         var p = Scene();
+        // 효과를 모두 뺀 같은 장면: 그룹 썸네일은 이 장면의 그룹 합성(부위·그룹 효과 없이)
+        var plain = Scene();
+        for (int l = 0; l < plain.Layers.Count; l++) plain.SetLayerEffects(l, []);
         for (int l = 0; l < p.Layers.Count; l++)
             for (int f = 0; f < p.Frames.Count; f++)
             {
@@ -141,7 +144,62 @@ public class RenderPlanTests
                     : p.GetCel(l, f) is { } cel ? LayerEffects.RenderClipped(cel, p.EffectsAt(layer, f)) : null;
                 Assert.Equal(expected is null, plan is null);
                 if (expected is not null) Assert.True(plan!.Render().ContentEquals(expected), $"{layer.Name} frame {f}");
+                // 타임라인 썸네일: 효과 없는 고칠 그림(일반 레이어는 셀, 부위는 부위 셀, 그룹은 효과 없는 부위 합성)
+                var thumb = p.PlanCelThumbnail(l, f);
+                var thumbExpected = layer.IsGroup ? (plan is null ? null : plain.FlattenGroup(plain.Layers[l], f)) : p.GetCel(l, f);
+                Assert.Equal(thumbExpected is null, thumb is null);
+                if (thumbExpected is not null) Assert.True(thumb!.Render().ContentEquals(thumbExpected), $"{layer.Name} frame {f} thumbnail");
             }
+    }
+
+    [Fact]
+    public void Raw_frame_plan_matches_the_scene_without_effects()
+    {
+        var p = Scene();
+        var plain = Scene();
+        for (int l = 0; l < plain.Layers.Count; l++) plain.SetLayerEffects(l, []);
+        for (int f = 0; f < p.Frames.Count; f++)
+        {
+            Assert.True(p.PlanFrameRaw(f).Render().ContentEquals(plain.Flatten(f)), $"frame {f}");
+            // 레이어 하나를 빼면 그 레이어만 빠진다
+            var bottom = p.Layers[0];
+            Assert.True(p.PlanFrameRaw(f, l => !ReferenceEquals(l, bottom)).Render()
+                .ContentEquals(plain.PlanFrame(f, layerFilter: l => !ReferenceEquals(l, plain.Layers[0])).Render()), $"frame {f} without bottom");
+        }
+    }
+
+    [Fact]
+    public void Thumbnail_bounds_cover_the_layer_in_every_frame_and_cropped_plans_match()
+    {
+        var p = Scene();
+        int moving = 0;
+        // 움직이는 레이어: 모든 프레임의 칠한 자리를 합친 곳(썸네일이 효과 없는 그림이라 효과 여백 없이)
+        var area = p.ThumbnailBounds(moving);
+        var painted = p.LayerBounds(moving);
+        Assert.Equal(painted, area);
+        Assert.True(new Rectangle(0, 0, p.Width, p.Height).Contains(area));
+        for (int f = 0; f < p.Frames.Count; f++)
+        {
+            var full = p.PlanCelThumbnail(moving, f)!.Render();
+            Assert.True(p.PlanCelThumbnail(moving, f)!.Cropped(area).Render().ContentEquals(full.Crop(area)), $"frame {f}");
+        }
+
+        // 그룹: 부위 영역을 합친 자리(효과 여백 없이), 부위는 자르지 않음
+        int group = p.IndexOf(p.Layers.First(l => l.IsGroup));
+        var groupArea = p.ThumbnailBounds(group);
+        Assert.False(groupArea.IsEmpty);
+        Assert.True(p.PlanCel(group, 2)!.Cropped(groupArea).Render().ContentEquals(p.FlattenGroup(p.Layers[group], 2).Crop(groupArea)));
+        Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(p.IndexOf(p.Layers.First(l => l.IsPart))));
+        // 타임라인 칸·스킨 카드가 같이 쓰는 썸네일 그림: 효과 없는 그룹 합성을 그 자리로 자른 것(스킨을 주면 그 스킨)
+        var plain = Scene();
+        for (int l = 0; l < plain.Layers.Count; l++) plain.SetLayerEffects(l, []);
+        var groupLayer = p.Layers[group];
+        var expected = plain.FlattenGroup(plain.Layers[group], 2).Crop(groupArea);
+        Assert.True(p.RenderCelThumbnail(group, 2)!.ContentEquals(expected));
+        Assert.True(p.RenderCelThumbnail(group, 2, groupLayer.BaseSkin)!.ContentEquals(expected));
+
+        // 칠한 픽셀이 없는 레이어는 자르지 않음
+        Assert.Equal(Rectangle.Empty, p.ThumbnailBounds(p.IndexOf(p.AddLayer(name: "빈"))));
     }
 
     private sealed class Recorder(bool snapshots) : IRenderObserver

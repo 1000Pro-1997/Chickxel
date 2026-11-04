@@ -9,7 +9,7 @@ namespace Chickxel.Core.Effects;
 /// 모두 <see cref="EffectCodec.Read"/>를 거치므로 거기서 바꾸고, 원문은 부르는 쪽이 자기 스크립트 표에 넣는다(<see cref="OfficialEffects.Source"/> — 저장하면 스크립트로 씀).
 /// <list type="bullet">
 /// <item>설정: 기본 효과의 저장 설정 JSON(<see cref="EffectDefinition.WriteSettings"/>)을 키 그대로 스크립트 설정으로(스크립트 설정 키 = 기본 효과 저장 키, 시험이 확인).</item>
-/// <item>켜짐·프레임 범위·클리핑·레시피 묶음 자리, 움직이는 효과의 빠르기 곡선·반복·반복 횟수.</item>
+/// <item>켜짐·프레임 범위·클리핑·캔버스 늘리기·피벗 같이 옮기기·레시피 묶음 자리, 움직이는 효과의 빠르기 곡선·반복·반복 횟수.</item>
 /// <item>색 그라데이션: 슬롯 이름을 <see cref="ScriptSlot"/>로(<c>Color</c> → <c>color</c>, <c>Colors[0]</c> → <c>colors[0]</c>, <c>Pairs[0].From</c> → <c>pairs[0].from</c>).</item>
 /// </list>
 /// 공식 원문이 없는 기본 효과(글씨 등)는 바꾸지 않는다.
@@ -56,6 +56,8 @@ public static class LegacyEffects
             Enabled = builtIn.Enabled,
             Frames = builtIn.Frames,
             ClipToPrevious = builtIn.ClipToPrevious,
+            ExpandCanvas = builtIn.ExpandCanvas,
+            MovePivot = builtIn.MovePivot,
             Recipe = builtIn.Recipe,
             // 그라데이션이 없으면 빈 표를 그대로(새 사전을 만들면 같은 효과 값이 달라 보임)
             ColorGradients = builtIn.ColorGradients.Count == 0 ? builtIn.ColorGradients : builtIn.ColorGradients.ToDictionary(e => ScriptSlot(e.Key), e => e.Value),

@@ -90,11 +90,40 @@ public class LinkedCelTests
     }
 
     [Fact]
+    public void LinkCels_MainFrame_IsSourceOverFirstAndExistingLink_EmptyMainFallsBack()
+    {
+        var p = Frames(5);
+        Draw(p, 2, 2, Blue, frame: 2);
+        Draw(p, 3, 3, Green, frame: 3);
+        Link(p, 3, 4); // 묶음 3~4(초록)
+        Assert.Equal(3, p.LinkCels([(0, 0), (0, 1), (0, 2), (0, 3)], mainFrame: 2)); // 첫 칸·이미 있는 묶음이 아니라 누른 칸(파랑)의 그림으로
+        Assert.All([0, 1, 3], f => Assert.True(p.AreCelsLinked(0, 2, f)));
+        Assert.All([0, 1, 3], f => Assert.Equal(Blue, At(p, f, 2, 2)));
+        Assert.Equal(default, At(p, 0, 0, 0));
+        Assert.False(p.AreCelsLinked(0, 3, 4));
+
+        var q = Frames(3);
+        Assert.Equal(2, q.LinkCels([(0, 0), (0, 1), (0, 2)], mainFrame: 1)); // 누른 칸이 비었으면 그림 있는 첫 칸으로
+        Assert.All([0, 1, 2], f => Assert.Equal(Red, At(q, f, 0, 0)));
+    }
+
+    [Fact]
+    public void LinkCels_LinkedMainFrame_OthersJoinItsLink()
+    {
+        var p = Frames(5);
+        Draw(p, 3, 3, Green, frame: 3);
+        Link(p, 3, 4); // 묶음 3~4(초록)
+        Assert.Equal(2, p.LinkCels([(0, 0), (0, 1), (0, 4)], mainFrame: 4));
+        Assert.All([0, 1, 3], f => Assert.True(p.AreCelsLinked(0, 4, f)));
+        Assert.Equal(Green, At(p, 0, 3, 3));
+    }
+
+    [Fact]
     public void UnlinkCels_EachCelEditedAlone()
     {
         var p = Frames(3);
         Link(p, 0, 1, 2);
-        Assert.Equal(2, p.UnlinkCels([(0, 0), (0, 1), (0, 2)])); // 마지막 셀은 혼자 남아 사본이 필요 없다
+        Assert.Equal(new UnlinkResult(2, 0), p.UnlinkCels([(0, 0), (0, 1), (0, 2)])); // 마지막 셀은 혼자 남아 사본이 필요 없다
         Assert.All([0, 1, 2], f => Assert.False(p.IsCelLinked(0, f)));
         Assert.All([0, 1, 2], f => Assert.Equal(Red, At(p, f, 0, 0)));
 
@@ -346,5 +375,179 @@ public class LinkedCelTests
         Assert.True(loaded.Flatten(1).ContentEquals(loaded.Flatten(2)));
         p.SetLayerEffects(1, [Probe(new FrameRange(0, 1), holdEnd: false)]);
         Assert.Equal(default, Cel(2)[0, 0]);
+    }
+
+    /// <summary>
+    /// 프레임 5개, 레이어 0의 프레임 <paramref name="linked"/>를 가로 막대(빨강 (0,0)·(1,0)·(2,0)) 그림 하나로 링크하고 끝 모습을 이어 가는 90° 돌리기 효과(범위 <paramref name="range"/>).
+    /// </summary>
+    private static SpriteProject HeldRotate(FrameRange range, bool enabled, params int[] linked)
+    {
+        var p = Frames(5);
+        var bar = p.GetCel(0, 0)!.Clone();
+        bar.Set(1, 0, Red);
+        bar.Set(2, 0, Red);
+        p.SetCel(0, linked[0], bar);
+        Link(p, linked);
+        p.SetLayerEffects(0, [new RotateEffect { Angle = 90, Anchor = SquashAnchor.Middle, Frames = range, HoldEnd = true, Enabled = enabled }]);
+        return p;
+    }
+
+    private static PixelImage Shown(SpriteProject p, int frame) => p.PlanCel(0, frame)!.Render(new RenderPlanOptions());
+
+    [Fact]
+    public void UnlinkCels_HeldEndLook_IsBakedAsShown()
+    {
+        // 0~2가 한 그림, 효과 0~1 → 2는 링크라 1의 끝 모습. 2를 풀면 그 모습이 그림에 들어가 화면이 그대로
+        var p = HeldRotate(new FrameRange(0, 1), enabled: true, 0, 1, 2);
+        var raw = p.GetCel(0, 2)!.Clone();
+        var shown = Shown(p, 2);
+        var flat = p.Flatten(2);
+        Assert.False(shown.ContentEquals(raw));
+
+        Assert.Equal(new UnlinkResult(1, 1), p.UnlinkCels([(0, 2)]));
+        Assert.True(p.GetCel(0, 2)!.ContentEquals(shown));
+        Assert.True(p.Flatten(2).ContentEquals(flat));
+        Assert.True(p.AreCelsLinked(0, 0, 1));
+        Assert.True(p.GetCel(0, 1)!.ContentEquals(raw));
+
+        p.Undo();
+        Assert.True(p.AreCelsLinked(0, 1, 2));
+        Assert.True(p.GetCel(0, 2)!.ContentEquals(raw));
+    }
+
+    [Fact]
+    public void UnlinkCels_RangeEndCel_RemainingCelsKeepHeldLook()
+    {
+        // 1~3이 한 그림, 효과 0~1: 범위 끝 1을 떼면 2·3이 끝 모습을 잃으므로 남은 묶음 그림을 그 모습으로(링크는 남음)
+        var p = HeldRotate(new FrameRange(0, 1), enabled: true, 1, 2, 3);
+        var flats = Enumerable.Range(0, 5).Select(f => p.Flatten(f)).ToList();
+        Assert.Equal(new UnlinkResult(1, 2), p.UnlinkCels([(0, 1)]));
+        Assert.True(p.AreCelsLinked(0, 2, 3));
+        Assert.False(p.IsCelLinked(0, 1));
+        Assert.All(Enumerable.Range(0, 5), f => Assert.True(p.Flatten(f).ContentEquals(flats[f])));
+
+        // 남은 칸 중 범위 안(0)과 밖(2)이 섞이면 밖의 칸만 떼어 그 모습으로
+        var q = HeldRotate(new FrameRange(0, 1), enabled: true, 0, 1, 2);
+        flats = Enumerable.Range(0, 5).Select(f => q.Flatten(f)).ToList();
+        Assert.Equal(new UnlinkResult(2, 1), q.UnlinkCels([(0, 1)]));
+        Assert.All([0, 1, 2], f => Assert.False(q.IsCelLinked(0, f)));
+        Assert.All(Enumerable.Range(0, 5), f => Assert.True(q.Flatten(f).ContentEquals(flats[f])));
+    }
+
+    [Fact]
+    public void UnlinkCels_DisabledHoldingEffect_IsRawCopy()
+    {
+        var p = HeldRotate(new FrameRange(0, 1), enabled: false, 0, 1, 2);
+        var raw = p.GetCel(0, 2)!.Clone();
+        Assert.Equal(new UnlinkResult(1, 0), p.UnlinkCels([(0, 2)]));
+        Assert.True(p.GetCel(0, 2)!.ContentEquals(raw));
+    }
+
+    [Fact]
+    public void UnlinkCels_CelInsideEffectRange_IsRawCopy()
+    {
+        // 2가 범위 안: 효과가 계속 입혀지므로 그림에 넣으면 두 번 입혀진다
+        var p = HeldRotate(new FrameRange(0, 2), enabled: true, 0, 1, 2);
+        var raw = p.GetCel(0, 2)!.Clone();
+        var flat = p.Flatten(2);
+        Assert.Equal(new UnlinkResult(1, 0), p.UnlinkCels([(0, 2)]));
+        Assert.True(p.GetCel(0, 2)!.ContentEquals(raw));
+        Assert.True(p.Flatten(2).ContentEquals(flat));
+    }
+
+    [Fact]
+    public void LinkCels_PartInheritingBaseSkin_LinksACopyInTheCurrentSkin_BaseUntouched()
+    {
+        var p = Frames(3);
+        Draw(p, 1, 1, Green, frame: 1);
+        var layer = p.Layers[0];
+        var g = p.AddSkinToLayer(layer, copy: false); // 새 빈 스킨이 지금 스킨: 모든 칸이 첫 스킨 그림을 물려받음
+        int li = p.IndexOf(layer);
+        var baseCels = Enumerable.Range(0, 3).Select(f => p.GetSkinCel(layer, p.Frames[f], g.BaseSkin!)).ToList();
+        Assert.True(p.IsCelInherited(li, 1));
+
+        // 누른 칸(프레임 1)의 보이는 그림으로 이 스킨의 새 묶음
+        Assert.Equal(3, p.LinkCels([(li, 0), (li, 1), (li, 2)], mainFrame: 1));
+        Assert.All([0, 1, 2], f => Assert.True(p.IsCelLinked(li, f)));
+        Assert.All([0, 1, 2], f => Assert.False(p.IsCelInherited(li, f)));
+        var shared = p.GetCel(li, 0)!;
+        Assert.Same(shared, p.GetCel(li, 2));
+        Assert.Equal(Green, shared[1 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+        // 첫 스킨 그림은 그대로(링크도 없음)
+        for (int f = 0; f < 3; f++) Assert.Same(baseCels[f], p.GetSkinCel(layer, p.Frames[f], g.BaseSkin!));
+    }
+
+    [Fact]
+    public void AddSkin_NewSkinStartsWithSourceLinks_DrawingFollowsLinks_BaseUntouched()
+    {
+        var p = Frames(4);
+        Link(p, 0, 1, 2);
+        int color = p.LinkMarks(0)[0].Color;
+        var layer = p.Layers[0];
+        var g = p.AddSkinToLayer(layer, copy: false);
+        int li = p.IndexOf(layer);
+        var baseSkin = g.BaseSkin!;
+
+        // 빈 새 스킨: 첫 스킨과 같은 프레임끼리 같은 색으로 링크, 그림은 계속 물려받음
+        Assert.All([0, 1, 2], f => Assert.True(p.IsCelLinked(li, f)));
+        Assert.False(p.IsCelLinked(li, 3));
+        Assert.Equal(color, p.LinkMarks(li)[1].Color);
+        Assert.All([0, 1, 2], f => Assert.True(p.IsCelInherited(li, f)));
+
+        // 링크된 칸에 그리면 이 스킨의 묶음이 함께 바뀌고 첫 스킨은 그대로
+        Draw(p, 0, 0, Green, layer: li, frame: 1); // 부위는 빨간 점 하나 크기
+        Assert.All([0, 2], f => Assert.Equal(Green, p.GetCel(layer, p.Frames[f])![0, 0]));
+        Assert.All([0, 1, 2], f => Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[f], baseSkin)![0, 0]));
+
+        // 복제한 스킨·부위 전용 빈 스킨도 원본 링크(색 포함)를 그대로
+        var copy = p.AddSkin(g, null, g.ActiveSkin);
+        Assert.Same(p.GetOwnCel(layer, p.Frames[0], copy), p.GetOwnCel(layer, p.Frames[2], copy));
+        Assert.NotSame(p.GetOwnCel(layer, p.Frames[0], copy), p.GetOwnCel(layer, p.Frames[0], g.Skins[1]));
+        Assert.Equal(color, p.LinkMarks(li)[0].Color);
+        p.AddPartSkin(layer, "hat");
+        Assert.True(p.AreCelsLinked(li, 0, 2));
+        Assert.False(p.IsCelLinked(li, 3));
+    }
+
+    [Fact]
+    public void LinkCels_GroupRow_LinksEveryPartFreshly_GroupWinsOverPartLinks_MarksAndUnlink()
+    {
+        var p = new SpriteProject(8, 8);
+        for (int i = 1; i < 4; i++) p.AddFrame();
+        var g = p.AddGroup("G");
+        var a = p.AddPart(g, "A", 2, 2, new Point(0, 0));
+        var b = p.AddPart(g, "B", 2, 2, new Point(4, 4));
+        int ai = p.IndexOf(a), bi = p.IndexOf(b), gi = p.IndexOf(g);
+        Draw(p, 0, 0, Red, layer: ai, frame: 1);
+        Draw(p, 1, 1, Blue, layer: bi, frame: 1);
+        // B만 따로 1·3을 링크해 둠(프레임 1 그림을 같이 씀)
+        p.LinkCels([(bi, 1), (bi, 3)], mainFrame: 1);
+        Assert.False(p.IsCelLinked(gi, 1));
+
+        // 그룹 행 0~2: 부위마다 누른 칸(1)의 그림으로 새 묶음, B의 프레임 1은 3과의 링크에서 빠짐(그룹이 먼저)
+        Assert.Equal(6, p.LinkCels([(gi, 0), (gi, 1), (gi, 2)], mainFrame: 1));
+        Assert.All([0, 1, 2], f => Assert.True(p.AreCelsLinked(ai, 1, f) || f == 1));
+        Assert.All([0, 2], f => Assert.True(p.AreCelsLinked(bi, 1, f)));
+        Assert.False(p.AreCelsLinked(bi, 1, 3));
+        Assert.False(p.IsCelLinked(bi, 3)); // 혼자 남은 프레임 3
+        Assert.Equal(Red, At(p, 2, 0, 0, ai));
+        Assert.Equal(Blue, At(p, 0, 1, 1, bi));
+        Assert.Equal(Blue, At(p, 3, 1, 1, bi)); // 프레임 3은 원래 그림 그대로
+        // 그룹 행 표시: 0~2가 한 묶음(부위들이 같은 색)
+        var marks = p.LinkMarks(gi);
+        Assert.All([0, 1, 2], f => Assert.True(marks[f].IsLinked));
+        Assert.False(marks[3].IsLinked);
+        Assert.Equal(p.LinkMarks(ai)[0].Color, p.LinkMarks(bi)[0].Color);
+        Assert.Equal(marks[0].Color, p.LinkMarks(ai)[0].Color);
+
+        // 부위 하나만 따로 고치면 그 프레임은 그룹 묶음이 아님
+        p.UnlinkCels([(ai, 2)]);
+        Assert.False(p.LinkMarks(gi)[2].IsLinked);
+        Assert.True(p.LinkMarks(gi)[0].IsLinked);
+
+        // 그룹 행 풀기: 모든 부위의 그 프레임
+        Assert.True(p.UnlinkCels([(gi, 0)]).Unlinked >= 2);
+        Assert.False(p.IsCelLinked(ai, 0));
+        Assert.False(p.IsCelLinked(bi, 0));
     }
 }

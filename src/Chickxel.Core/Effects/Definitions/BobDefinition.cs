@@ -13,5 +13,5 @@ public static class BobDefinition
         s.Int("height", 1, BobEffect.MaxHeight, e => e.Height, (e, v) => e with { Height = v }),
         s.Int("cycles", 1, BobEffect.MaxCycles, e => e.Cycles, (e, v) => e with { Cycles = v }, legacy: ["count"]),
         s.Choice("axis", e => e.Axis, (e, v) => e with { Axis = v }, choices: [EffectAxis.Vertical, EffectAxis.Horizontal]),
-    ], padding: ShakeRender.Padding);
+    ], padding: ShakeRender.Padding, moves: ShakeRender.Moved);
 }

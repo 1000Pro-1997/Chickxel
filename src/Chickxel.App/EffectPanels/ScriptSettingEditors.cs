@@ -340,13 +340,18 @@ public sealed partial class LayerEffectsDialog
         return true;
     }
 
-    /// <summary>목록 항목 한 줄: 왼쪽 좁은 머리(번호·화살표)를 색 칸 첫 줄 높이에 두고 오른쪽에 색 편집기(그라데이션이면 그 아래로 길어짐).</summary>
-    private static StackPanel ItemRow(Control lead, Control editor)
+    /// <summary>
+    /// 목록 항목 한 줄: 왼쪽 좁은 머리(번호·화살표)를 색 칸 첫 줄 높이에 두고 오른쪽에 색 편집기(그라데이션이면 그 아래로 길어짐).
+    /// 편집기는 남은 폭을 받는다(좁은 칸에서 그라데이션 편집기가 칸 밖으로 나가지 않게).
+    /// </summary>
+    private static Grid ItemRow(Control lead, Control editor)
     {
-        var row = Ui.Row(lead, editor);
-        row.Spacing = 0;
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
         lead.VerticalAlignment = VerticalAlignment.Top;
         editor.VerticalAlignment = VerticalAlignment.Top;
+        Grid.SetColumn(editor, 1);
+        row.Children.Add(lead);
+        row.Children.Add(editor);
         return row;
     }
 

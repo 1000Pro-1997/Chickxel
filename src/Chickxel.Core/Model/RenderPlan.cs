@@ -46,13 +46,17 @@ public sealed class RenderPlanOptions
 public sealed class RenderPlan
 {
     private readonly IReadOnlyList<RenderStep> _steps;
+    /// <summary>결과 그림의 왼쪽 위가 놓이는 원래 좌표(<see cref="Cropped"/> — 보통 0, 0).</summary>
+    private readonly int _originX, _originY;
     private CacheKey? _contentKey;
 
-    internal RenderPlan(int width, int height, IReadOnlyList<RenderStep> steps)
+    internal RenderPlan(int width, int height, IReadOnlyList<RenderStep> steps, int originX = 0, int originY = 0)
     {
         Width = width;
         Height = height;
         _steps = steps;
+        _originX = originX;
+        _originY = originY;
         int units = 0;
         long work = 0;
         foreach (var s in steps)
@@ -84,7 +88,14 @@ public sealed class RenderPlan
     public bool RunsScripts { get; }
 
     /// <summary>순서표 내용 열쇠(같은 셀 참조·같은 효과 목록·같은 자리면 같음) — 캐시용.</summary>
-    internal CacheKey ContentKey => _contentKey ??= new CacheKey([Width, Height, .. _steps.Select(s => (object?)s.Key)]);
+    internal CacheKey ContentKey => _contentKey ??= new CacheKey([Width, Height, _originX, _originY, .. _steps.Select(s => (object?)s.Key)]);
+
+    /// <summary>같은 그림의 <paramref name="area"/>(이 순서표의 결과 좌표) 부분만 그리는 순서표(밖은 잘림). 계산량 어림은 그대로 둔다.</summary>
+    public RenderPlan Cropped(Rectangle area)
+    {
+        if (area.Width < 1 || area.Height < 1) throw new ArgumentOutOfRangeException(nameof(area));
+        return new RenderPlan(area.Width, area.Height, _steps, _originX + area.X, _originY + area.Y);
+    }
 
     /// <summary>새 그림에 그린다.</summary>
     public PixelImage Render(RenderPlanOptions? options = null)
@@ -104,7 +115,7 @@ public sealed class RenderPlan
         foreach (var step in _steps)
         {
             run.Cancellation.ThrowIfCancellationRequested();
-            step.Run(run, target, 0, 0, null);
+            step.Run(run, target, -_originX, -_originY, null);
         }
         run.Finish();
     }

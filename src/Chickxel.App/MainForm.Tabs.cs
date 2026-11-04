@@ -35,12 +35,14 @@ public sealed partial class MainForm
     private DocumentTab? _activeTab;
     /// <summary>캔버스 쪽으로 끄는 중인 탭(끌기를 시작할 때 잡아 둔다 — 놓기 전에 순서가 바뀌어도 같은 탭).</summary>
     private DocumentTab? _draggedTab;
+    /// <summary>열린 미리보기 탭(하나만, 없으면 null — <see cref="OpenPreviewTab"/>).</summary>
+    private DocumentTab? _previewTab;
 
     /// <summary>지금 문서(편집기에 실린 탭의 문서).</summary>
     private OpenDocument? CurrentDoc => _activeTab?.Doc;
 
     /// <summary>열린 문서들(탭 순서 — 한 문서는 탭 하나에서만 연다).</summary>
-    private List<OpenDocument> OpenDocs => _tabs.All.Select(t => t.Doc).ToList();
+    private List<OpenDocument> OpenDocs => _tabs.All.Select(t => t.Doc).OfType<OpenDocument>().ToList();
 
     /// <summary>캔버스 자리: 묶음 칸 둘(나누지 않으면 하나)과 사이 나눔 막대, 시작 화면, 탭 끌기 강조.</summary>
     private Control BuildPaneArea()
@@ -70,10 +72,11 @@ public sealed partial class MainForm
             strip.TabDragMoved += (index, e) => DragTabOver(g, index, e);
             strip.TabDragEnded += (_, e) => DropTab(e);
             strip.MenuFor = index => TabAt(g, index) is { } t ? TabMenu(t) : null;
-            // 다른 묶음 칸을 누르면 그 묶음에 포커스(탭 줄은 탭을 누른 처리가 맡는다).
+            // 다른 묶음 칸을 누르면 그 묶음에 포커스(탭 줄은 탭을 누른 처리가 맡는다). 미리보기 탭을 보이는 칸은 편집 대상이 아니라 그대로(그림 끌기·휠 확대만).
             pane.AddHandler(PointerPressedEvent, (_, e) =>
             {
                 if (e.Source is Visual v && v.FindAncestorOfType<DocumentTabStrip>(includeSelf: true) is not null) return;
+                if (g < _tabs.GroupCount && _tabs.Active(g) is { IsPreview: true }) return;
                 FocusGroup(g);
             }, RoutingStrategies.Tunnel, handledEventsToo: true);
             Grid.SetColumn(pane, i * 2);
@@ -163,7 +166,7 @@ public sealed partial class MainForm
     /// <summary><paramref name="project"/>를 연 탭이 있으면 고르고 메인 창을 앞으로 가져온다. 탭이 없으면 false.</summary>
     internal bool ShowDetachedDocument(SpriteProject project)
     {
-        if (_tabs.All.FirstOrDefault(t => ReferenceEquals(t.Doc.Project, project)) is not { } tab) return false;
+        if (_tabs.All.FirstOrDefault(t => ReferenceEquals(t.Doc?.Project, project)) is not { } tab) return false;
         ActivateTab(tab);
         Activate();
         return true;
@@ -172,7 +175,7 @@ public sealed partial class MainForm
     /// <summary><paramref name="project"/>를 연 저장하지 않는 문서의 탭을 닫는다(묻지 않음, 탭이 없으면 아무것도 안 함).</summary>
     internal void CloseDetachedDocument(SpriteProject project)
     {
-        if (_tabs.All.FirstOrDefault(t => t.Doc.IsDetached && ReferenceEquals(t.Doc.Project, project)) is { } tab) CloseTab(tab);
+        if (_tabs.All.FirstOrDefault(t => t.Doc is { IsDetached: true } d && ReferenceEquals(d.Project, project)) is { } tab) CloseTab(tab);
     }
 
     private void ActivateTab(DocumentTab tab)
@@ -190,13 +193,49 @@ public sealed partial class MainForm
         _canvas.Focus();
     }
 
-    /// <summary>Ctrl+Tab / Ctrl+Shift+Tab: 포커스된 묶음의 다음·이전 탭. 탭이 없으면 false.</summary>
+    /// <summary>Ctrl+Tab / Ctrl+Shift+Tab: 포커스된 묶음의 다음·이전 탭(미리보기 탭은 건너뜀). 탭이 없으면 false.</summary>
     private bool CycleTab(int delta)
     {
         if (_tabs.Tabs(_tabs.Focused).Count == 0) return false;
         _tabs.Cycle(delta);
+        if (_tabs.FocusedActive is { IsPreview: true }) _tabs.Cycle(delta);
         ShowActiveTab();
         return true;
+    }
+
+    /// <summary>
+    /// 미리보기 제목 줄 "탭으로 열기": 미리보기 탭을 연다(이미 있으면 그 탭을 보인다 — 하나만). 처음 열 때만 편집하지 않는 쪽 묶음(보통 오른쪽)에,
+    /// 나누지 않았으면 오른쪽에 새 묶음을 만들어 나눠 연다 — 그다음부터는 보통 탭처럼 끌어 옮기거나 합칠 수 있다. 크게 보기 창은 닫는다(큰 미리보기는 하나만).
+    /// </summary>
+    private void OpenPreviewTab()
+    {
+        if (CurrentDoc is null) return;
+        _preview.CloseZoom();
+        if (_previewTab is { } open && _tabs.GroupOf(open) >= 0) _tabs.Activate(open);
+        else
+        {
+            _previewTab = DocumentTab.NewPreview();
+            _tabs.Add(_previewTab, _tabs.OtherGroup(_tabs.Focused), index: _tabs.IsSplit ? _tabs.Tabs(_tabs.OtherGroup(_tabs.Focused)).Count : 0);
+        }
+        ShowActiveTab();
+    }
+
+    /// <summary>
+    /// 미리보기 탭은 편집 대상이 아니다(<see cref="ShowActiveTab"/>가 먼저 부름): 나눈 상태에서 포커스된 묶음이 미리보기 탭을 고르고 있으면 다른 쪽 묶음에
+    /// 포커스를 준다(한 묶음에는 미리보기 탭이 하나뿐이라 다른 쪽이 고른 탭은 문서 탭). 나누지 않았으면 그 칸에 미리보기를 보이고 편집기는 하던 문서를 그대로 싣는다.
+    /// 문서 탭이 하나도 없으면 미리보기 탭을 닫는다.
+    /// </summary>
+    private void KeepPreviewAside()
+    {
+        if (_previewTab is not { } preview) return;
+        if (_tabs.GroupOf(preview) < 0) { _previewTab = null; return; }
+        if (!_tabs.All.Any(t => !t.IsPreview))
+        {
+            _tabs.Remove(preview);
+            _previewTab = null;
+            return;
+        }
+        if (ReferenceEquals(_tabs.FocusedActive, preview) && _tabs.IsSplit) _tabs.Focus(_tabs.OtherGroup(_tabs.GroupOf(preview)));
     }
 
     /// <summary>
@@ -205,9 +244,13 @@ public sealed partial class MainForm
     /// </summary>
     private void ShowActiveTab()
     {
-        var target = _tabs.FocusedActive;
+        KeepPreviewAside();
+        // 미리보기 탭을 보이는 한 칸(나누지 않음)이면 편집기는 하던 문서(없으면 첫 문서 탭)를 그대로 싣는다.
+        var target = _tabs.FocusedActive is { IsPreview: true }
+            ? _activeTab is { } editing && _tabs.GroupOf(editing) >= 0 ? editing : _tabs.All.FirstOrDefault(t => !t.IsPreview)
+            : _tabs.FocusedActive;
         // 실린 탭을 닫으면 _activeTab은 이미 null이라 같아 보여도, 편집기에 그 문서가 남아 있으면 바꾼다(마지막 탭을 닫으면 문서 없음 → 시작 화면).
-        bool changed = !ReferenceEquals(target, _activeTab) || !ReferenceEquals(_ctx.Project, target?.Doc.Project);
+        bool changed = !ReferenceEquals(target, _activeTab) || !ReferenceEquals(_ctx.Project, target?.Doc?.Project);
         if (changed)
         {
             StoreActiveView();
@@ -233,12 +276,13 @@ public sealed partial class MainForm
     /// <summary>편집기에 실린 탭의 보기 상태(레이어·프레임·확대율·위치·선택)를 탭에 저장한다. 떠 있는 선택은 먼저 내려놓는다.</summary>
     private void StoreActiveView()
     {
-        if (_activeTab is not { } tab || !ReferenceEquals(_ctx.Project, tab.Doc.Project)) return;
+        if (_activeTab?.Doc is not { } doc || !ReferenceEquals(_ctx.Project, doc.Project)) return;
+        var tab = _activeTab;
         _ctx.CommitFloating();
         tab.View = new DocumentView(_ctx.CurrentLayer, _ctx.CurrentFrame, _canvas.View);
         tab.Selection = _ctx.Selection.HasSelection ? _ctx.Selection.Save() : null;
         // 저장 안 한 문서는 파일 목록에 메모리 속 그림을 보인다.
-        if (tab.Doc.Project.IsDirty) tab.Doc.Thumbnail = tab.Doc.Project.Flatten(0);
+        if (doc.Project.IsDirty) doc.Thumbnail = doc.Project.Flatten(0);
     }
 
     private static readonly SelectionState NoSelection = new(Rectangle.Empty, null, null);
@@ -246,7 +290,7 @@ public sealed partial class MainForm
     /// <summary>탭의 문서를 편집기에 싣고 탭의 보기 상태를 되돌린다(처음 보이는 탭은 화면에 맞춤).</summary>
     private void LoadTab(DocumentTab tab)
     {
-        var doc = tab.Doc;
+        if (tab.Doc is not { } doc) return;
         // 안 보이는 동안 밖에서 바뀐 파일: 수정이 없으면 디스크에서 다시 읽는다.
         if (doc.ChangedOnDisk)
         {
@@ -265,9 +309,14 @@ public sealed partial class MainForm
             _ctx.Selection.Restore(s);
     }
 
-    /// <summary>캔버스를 묶음 칸으로 옮기고, 다른 묶음 칸에는 그 묶음이 고른 탭의 그림을 둔다.</summary>
+    /// <summary>캔버스를 묶음 칸으로 옮긴다(그 묶음이 미리보기 탭을 보이면 캔버스는 내려 둠 — 칸에는 미리보기가 달림). 다른 묶음 칸의 그림은 <see cref="RefreshPanes"/>가 맞춘다.</summary>
     private void MoveCanvasTo(int group)
     {
+        if (_tabs.Active(group) is { IsPreview: true })
+        {
+            (_canvas.Parent as Panel)?.Children.Remove(_canvas);
+            return;
+        }
         var host = _panes[group].Content;
         if (_canvas.Parent is Panel old && !ReferenceEquals(old, host))
         {
@@ -302,6 +351,9 @@ public sealed partial class MainForm
                 Dispatcher.UIThread.Post(_canvas.FitToWindow, DispatcherPriority.Loaded);
             }
         }
+        // 미리보기 탭이 고른 탭인 묶음 칸에는 미리보기 그림을 단다(하나뿐이라 그 칸으로 옮겨 단다).
+        var previewView = _preview.TabView;
+        Panel? previewHost = null;
         for (int g = 0; g < _panes.Length; g++)
         {
             var pane = _panes[g];
@@ -309,17 +361,25 @@ public sealed partial class MainForm
             var tabs = exists ? _tabs.Tabs(g) : [];
             pane.Strip.SetTabs(tabs.Select(TabInfo).ToList(), exists ? _tabs.ActiveIndex(g) : -1);
             bool focused = g == _tabs.Focused;
+            bool preview = exists && _tabs.Active(g) is { IsPreview: true };
+            if (preview) previewHost = pane.Content;
             pane.Strip.SetFocus(focused, split && focused);
-            pane.Passive.IsVisible = !focused;
+            pane.Passive.IsVisible = !focused && !preview;
             pane.Passive.AutoFit = _canvas.AutoFit;
-            pane.Passive.Tab = focused || !exists ? null : _tabs.Active(g);
-            if (!focused) pane.Passive.Refresh();
+            pane.Passive.Tab = focused || preview || !exists ? null : _tabs.Active(g);
+            if (!focused && !preview) pane.Passive.Refresh();
         }
+        if (!ReferenceEquals(previewView.Parent, previewHost))
+        {
+            (previewView.Parent as Panel)?.Children.Remove(previewView);
+            previewHost?.Children.Add(previewView);
+        }
+        _preview.TabOpen = _previewTab is not null;
     }
 
     private static DocumentTabInfo TabInfo(DocumentTab tab)
     {
-        var doc = tab.Doc;
+        if (tab.Doc is not { } doc) return new DocumentTabInfo(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D, MainStrings.Tabs_PreviewTip, false, Preview: true);
         // 저장하지 않는 문서(미리보기 장면)는 주인이 정한 제목, 수정됨 점 없음
         bool dirty = doc.Project.IsDirty && !doc.IsDetached;
         var path = doc.DiskPath;
@@ -389,7 +449,14 @@ public sealed partial class MainForm
     private bool CloseTab(DocumentTab tab)
     {
         if (_tabs.GroupOf(tab) < 0) return false;
-        var doc = tab.Doc;
+        if (tab.Doc is not { } doc)
+        {
+            // 미리보기 탭: 문서가 없어 묻지 않고 닫는다(묶음이 비면 나눔이 풀림).
+            _tabs.Remove(tab);
+            _previewTab = null;
+            ShowActiveTab();
+            return true;
+        }
         if (ReferenceEquals(tab, _activeTab)) _ctx.CommitFloating();
         if (doc.Project.IsDirty && !doc.IsDetached && !ConfirmCloseDocument(doc)) return false;
         if (ReferenceEquals(tab, _activeTab)) _activeTab = null;
@@ -463,7 +530,7 @@ public sealed partial class MainForm
 
     /// <summary>
     /// 탭을 다른 쪽 묶음 끝으로 옮긴다(나누지 않았으면 오른쪽에 새 묶음을 만들어 나눔). 한 문서는 탭 하나에서만 연다.
-    /// 원래 묶음에 탭이 하나뿐이면(옮기면 그 칸이 빔) 옮기지 않는다 — <see cref="CanMoveTab"/>.
+    /// 나눈 상태에서 묶음의 마지막 탭을 옮기면 그 묶음이 없어져 하나로 합쳐진다. 나누지 않은 하나뿐인 탭은 옮기지 않는다 — <see cref="CanMoveTab"/>.
     /// </summary>
     private void MoveTabToOtherPane(DocumentTab tab)
     {
@@ -473,20 +540,23 @@ public sealed partial class MainForm
         ShowActiveTab();
     }
 
-    /// <summary>탭을 다른 쪽으로 옮길 수 있는지: 그 묶음에 다른 탭도 있어야 한다.</summary>
-    private bool CanMoveTab(DocumentTab tab) => _tabs.GroupOf(tab) is var g and >= 0 && _tabs.Tabs(g).Count > 1;
+    /// <summary>
+    /// 탭을 다른 쪽으로 옮길 수 있는지(미리보기 탭도 같음): 나눈 상태(마지막 탭이면 합치기)거나, 그 묶음에 다른 탭도 있어야 한다(나누면 빈 쪽이 생기지 않게).
+    /// </summary>
+    private bool CanMoveTab(DocumentTab tab) => _tabs.GroupOf(tab) is var g and >= 0 && (_tabs.IsSplit || _tabs.Tabs(g).Count > 1);
 
-    /// <summary>탭 우클릭 메뉴: (저장한 적 없는 새 프로젝트면) 임시 제목·닫기·다른 탭 닫기·다른 쪽으로 옮기기.</summary>
+    /// <summary>탭 우클릭 메뉴: (저장한 적 없는 새 프로젝트면) 임시 제목·닫기·다른 탭 닫기·다른 쪽으로 옮기기. 미리보기 탭은 닫기·다른 쪽으로 옮기기만.</summary>
     private IEnumerable<object> TabMenu(DocumentTab tab)
     {
         int g = _tabs.GroupOf(tab);
         var close = MenuAction(KeyHint(MainStrings.Tabs_Close, "파일/닫기"), () => CloseTab(tab), VectorIcon.X);
-        var others = MenuAction(MainStrings.Tabs_CloseOthers, () => CloseOtherTabs(tab));
-        others.IsEnabled = g >= 0 && _tabs.Tabs(g).Count > 1;
         var moveItem = MenuAction(MainStrings.Tabs_MoveToOther, () => MoveTabToOtherPane(tab), VectorIcon.Columns2);
         moveItem.IsEnabled = CanMoveTab(tab);
-        if (!tab.Doc.CanHaveTempTitle) return [close, others, new Separator(), moveItem];
-        var titleItem = MenuAction(MainStrings.Tabs_TempTitle, () => EditTempTitle(tab.Doc), VectorIcon.Pencil);
+        if (tab.Doc is not { } doc) return [close, new Separator(), moveItem];
+        var others = MenuAction(MainStrings.Tabs_CloseOthers, () => CloseOtherTabs(tab));
+        others.IsEnabled = g >= 0 && _tabs.Tabs(g).Count > 1;
+        if (!doc.CanHaveTempTitle) return [close, others, new Separator(), moveItem];
+        var titleItem = MenuAction(MainStrings.Tabs_TempTitle, () => EditTempTitle(doc), VectorIcon.Pencil);
         return [titleItem, new Separator(), close, others, new Separator(), moveItem];
     }
 
@@ -541,7 +611,7 @@ public sealed partial class MainForm
     {
         _draggedTab ??= TabAt(group, index);
         if (_draggedTab is null) return;
-        // 묶음의 하나뿐인 탭은 옮기지 않으므로 놓을 자리도 보이지 않는다.
+        // 나누지 않은 하나뿐인 탭은 옮기지 않으므로 놓을 자리도 보이지 않는다.
         Rect area = default;
         var drop = CanMoveTab(_draggedTab) ? TabDropAt(group, e.GetPosition(_paneArea), out area) : TabDrop.None;
         _tabDropHint.IsVisible = drop != TabDrop.None;

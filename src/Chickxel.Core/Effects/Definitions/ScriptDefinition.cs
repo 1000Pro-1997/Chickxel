@@ -23,9 +23,14 @@ public static class ScriptDefinition
         (image, effect, source, hooks) =>
         {
             // 실패한 실행의 결과(효과를 건너뛴 그림)는 중간 결과·잔상 캐시에 담지 않게 알린다
-            if (!ScriptEffectRuntime.Render(image, effect, source, hooks?.Owner, hooks?.Cancellation ?? CancellationToken.None)) hooks?.ReportScriptFailure();
+            if (!ScriptEffectRuntime.Render(image, effect, source, hooks?.Owner, hooks?.Cancellation ?? CancellationToken.None, out var moved)) hooks?.ReportScriptFailure();
+            return moved;
         },
-        Padding, UsesOtherFrames, ClipsBySource, ErasesSource, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
+        Padding, UsesOtherFrames, ClipsBySource, ErasesSource, MayMovePivot, new EffectCodecHooks(WriteSettings, WriteRoot, Read));
+
+    // 원문에 movePivot이 나오는 실행할 수 있는 스크립트만 그림을 옮긴 거리를 알릴 수 있다
+    private static bool MayMovePivot(ScriptEffect effect)
+        => ScriptLibrary.TrustOf(effect.ScriptHash) == ScriptTrust.Trusted && ScriptLibrary.InfoOf(effect.ScriptHash) is { MovesPivot: true };
 
     // 여백 함수가 실패하면 넓히지 않는다 — 실패는 기억해 두고 렌더러가 그 효과의 실패로 센다(ScriptEffectRuntime.Render)
     private static EffectPadding Padding(ScriptEffect effect, int width, int height)

@@ -1,5 +1,6 @@
 using Chickxel.Core.Assets;
 using Chickxel.Core.IO;
+using Chickxel.Core.Scripting;
 
 namespace Chickxel.Core.Tests;
 
@@ -177,6 +178,32 @@ public class AssetPublishTests
         var seven = Check(bothRequest with { Tags = [.. Enumerable.Range(1, 7).Select(i => "t" + i)] }).Issues.Select(i => i.Code).ToList();
         Assert.Contains(PublishIssueCode.LayerReferenceTag, seven);
         Assert.Contains(PublishIssueCode.FrameReferenceTagFull, seven);
+    }
+
+    [Fact]
+    public void PivotMovingScript_GetsThePivotMoveTagFromItsCode_AndMustKeepIt()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
+        // 선언의 tags에 없어도 원문이 ctx.movePivot을 쓰면 저절로 붙는다
+        var saved = store.SaveScript(
+            "effect({ name: \"Hop\", tags: [\"jump\"], animated: true, render(img, ctx) { ctx.movePivot(0, -1); } });", null, null);
+        Assert.True(saved.Script!.MovesPivot);
+        Assert.Equal(["jump", ScriptAsset.PivotMoveTag], saved.Script!.Tags);
+        var request = Request(store) with { Id = "pixel-cat.hop", Name = "Hop", Translations = AssetTranslations.Empty, Asset = Asset(saved) };
+        PublishIssueCode? Code(IReadOnlyList<string> tags)
+            => Check(request with { Tags = tags }).Issues.FirstOrDefault(i => i.Code is PublishIssueCode.PivotMoveTag or PublishIssueCode.PivotMoveTagFull)?.Code;
+
+        Assert.Equal(PublishIssueCode.PivotMoveTag, Code(["jump"]));
+        Assert.Equal(PublishIssueCode.PivotMoveTagFull, Code([.. Enumerable.Range(1, 8).Select(i => "t" + i)]));
+        Assert.Null(Code(["jump", ScriptAsset.PivotMoveTag]));
+        var ok = Check(request with { Tags = saved.Script!.Tags });
+        Assert.True(ok.Ok, string.Join("\n", ok.Issues));
+
+        // 옮기지 않는 스크립트에는 붙지 않는다
+        using var other = new TempDir();
+        Assert.DoesNotContain(Check(Request(PersonalStore(other)) with { Tags = ["neon"] }).Issues,
+            i => i.Code is PublishIssueCode.PivotMoveTag or PublishIssueCode.PivotMoveTagFull);
     }
 
     [Fact]
@@ -398,6 +425,74 @@ public class AssetPublishTests
         var mine = InstallPublished(store, dir, Request(store) with { Id = "pixel-cat.neon-hit", Asset = Asset(gradient) });
         var same = AssetPublishCheck.ResolveTarget("pixel-cat", ScriptEntry(store), store.Catalog, "Neon Hit");
         Assert.Equal(("pixel-cat.neon-hit", PublishIdSource.Derived, mine.Id), (same.Id, same.Source, same.Existing?.Id));
+    }
+
+    /// <summary>요청으로 만든 패키지를 <paramref name="store"/>에 앱의 상점 받기 규칙(같은 상점 에셋이면 바꾸고, 아니면 하나 더 둠)으로 설치한다.</summary>
+    private static void Download(AssetStore store, TempDir dir, PublishResult result)
+    {
+        Assert.True(result.Ok, string.Join("\n", result.Issues));
+        store.Install(AssetSamples.Save(dir.Path, result.Package!, result.PackageFileName!), AssetSources.Remote,
+            item => item.SameStoreAsset ? ImportChoice.Replace : ImportChoice.KeepBoth);
+    }
+
+    [Fact]
+    public void NewVersion_KeepsTheAssetIdAfterRenaming_AndReplacesTheCopyOnAnotherComputer()
+    {
+        using var dir = new TempDir();
+        var store = PersonalStore(dir);
+        var request = Request(store);
+        var first = Check(request);
+        string assetId = first.Manifest!.Assets[0].Id;
+        var published = store.MarkPublished(ScriptEntry(store).Id, request.Author, AssetPublishCheck.License,
+            AssetStoreLink.FromManifest(first.Manifest, assetId, ScriptEntry(store).ContentHash));
+        var other = AssetStore.Open(Path.Combine(dir.Path, "Other"));
+        Download(other, dir, first);
+
+        // 이름을 바꿔 새 버전으로 올려도 에셋 ID는 지난 버전의 것
+        var renamed = store.SaveScript(NeonHit.Replace("Neon Hit", "Neon Flash", StringComparison.Ordinal), published.Id, null);
+        var target = AssetPublishCheck.ResolveTarget("pixel-cat", renamed, store.Catalog, "Neon Flash");
+        var next = request with { Version = "1.0.1", Name = "Neon Flash", Asset = Asset(renamed) };
+        var second = Check(next with { AssetSegment = AssetPublishCheck.AssetSegmentOf(target) });
+        Assert.Equal(assetId, second.Manifest!.Assets[0].Id);
+        Download(other, dir, second);
+        var updated = Assert.Single(other.Catalog.All);
+        Assert.Equal(("Neon Flash", "1.0.1", assetId), (updated.Name, updated.Store!.Version, updated.Store.AssetId));
+
+        // 예전 게시 창은 이름에서 에셋 ID를 다시 만들었다 — 그 패키지도 받은 것을 바꾼다(에셋 하나뿐인 패키지는 패키지 ID가 정체)
+        var legacy = Check(next with { Version = "1.0.2" });
+        Assert.NotEqual(assetId, legacy.Manifest!.Assets[0].Id);
+        Download(other, dir, legacy);
+        Assert.Equal((updated.Id, "1.0.2"), (Assert.Single(other.Catalog.All).Id, other.Catalog.All[0].Store!.Version));
+    }
+
+    [Fact]
+    public void AssetSegmentOf_OfficialPackageUsesTheBundledAssetId_FirstUploadUsesTheName()
+    {
+        Assert.Equal("outline", AssetPublishCheck.AssetSegmentOf(new PublishTarget(OfficialEffectPackages.PackageId("outline"), PublishIdSource.OwnPackage, null)));
+        Assert.Null(AssetPublishCheck.AssetSegmentOf(new PublishTarget("pixel-cat.neon", PublishIdSource.Derived, null)));
+    }
+
+    [Fact]
+    public void MarkPublished_SupersedesOtherCopiesOfThePackage_RemovingUneditedAndUnlinkingEdited()
+    {
+        using var dir = new TempDir();
+        var store = PersonalStore(dir);
+        var local = ScriptEntry(store);
+        var request = Request(store);
+        // 받아 둔 지난 버전 둘: 그대로인 것(즐겨찾기)과 그 자리에서 고친 것
+        var received = InstallPublished(store, dir, request);
+        store.SetFavorite(received.Id, true);
+        var copy = InstallPublished(store, dir, request);
+        string edited = NeonHit.Replace("255 - d[i]", "254 - d[i]", StringComparison.Ordinal);
+        Assert.True(store.SaveScript(edited, copy.Id, null).Modified);
+
+        var result = Check(request with { Version = "1.0.1" });
+        store.MarkPublished(local.Id, request.Author, AssetPublishCheck.License, AssetStoreLink.FromManifest(result.Manifest!, result.Manifest!.Assets[0].Id, local.ContentHash));
+        Assert.Equal(local.Id, Assert.Single(store.Catalog.FromPackage("pixel-cat.neon")).Id);
+        Assert.Null(store.Catalog.Find(received.Id));
+        Assert.True(store.Catalog.Find(local.Id)!.Favorite);
+        var kept = store.Catalog.Find(copy.Id)!;
+        Assert.Equal(((AssetStoreLink?)null, (AssetAuthor?)null, ScriptEffectProgram.HashOf(edited)), (kept.Store, kept.Author, kept.Script!.Hash));
     }
 
     // ───────────── 버전 ─────────────

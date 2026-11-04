@@ -460,9 +460,11 @@ public static class ProjectExport
         // 다른 프레임을 보는 효과(잔상)도 이 칸과 같은 스킨(없으면 첫 스킨)의 셀을 본다
         var effects = project.EffectsAt(part, frameIndex, skin ?? part.Parent?.SkinList.FirstOrDefault());
         var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
-        if (ReferenceEquals(image, cel)) return (cel, part.PartPivot, part.PartBorder);
+        // 그 프레임만의 피벗이 있으면 그것(Unity 스프라이트마다 피벗)
+        var partPivot = project.GetPartPivot(part, frameIndex);
+        if (ReferenceEquals(image, cel)) return (cel, partPivot, part.PartBorder);
         int left = -dx, top = -dy, right = image.Width - cel.Width - left, bottom = image.Height - cel.Height - top;
-        var (px, py) = part.PartPivot.ToLocalPixel(cel.Width, cel.Height);
+        var (px, py) = partPivot.ToLocalPixel(cel.Width, cel.Height);
         var pivot = new Pivot((px + left) / image.Width, 1f - (py + top) / image.Height);
         var border = part.PartBorder.IsNone ? part.PartBorder
             : new SpriteBorder(part.PartBorder.Left + left, part.PartBorder.Top + top, part.PartBorder.Right + right, part.PartBorder.Bottom + bottom);

@@ -12,8 +12,8 @@ public sealed class GradientEditor : StackPanel
     private readonly NumericUpDown _position;
     private readonly NumericUpDown _alpha;
     private readonly ColorField _color;
-    private readonly StackPanel _colorRow;
-    private readonly StackPanel _alphaRow;
+    private readonly Panel _colorRow;
+    private readonly Panel _alphaRow;
     private readonly Button _delete;
     private readonly ComboBox _interpolation;
     private readonly ComboBox _colorSpaceEditor;
@@ -70,10 +70,10 @@ public sealed class GradientEditor : StackPanel
         {
             if (!_updating) ChangeAlpha(s => s with { Alpha = (byte)Math.Round((double)_alpha.NumValue() * 255 / 100) });
         };
-        _colorRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_ABB8BC9619), _color);
+        _colorRow = Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_ABB8BC9619), _color);
         if (primaryColor is not null)
             _colorRow.Children.Add(Ui.Button(UiStrings.S_GradientEditor_GradientEditor_9E5B25FE7A, (_, _) => ChangeColor(s => s with { Color = primaryColor() })));
-        _alphaRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D945F5766C), _alpha, Ui.Label("%"));
+        _alphaRow = Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D945F5766C), _alpha, Ui.Label("%"));
         _delete = Ui.Button(UiStrings.S_GradientEditor_GradientEditor_01174C479B, (_, _) => _bar.DeleteSelected()).Tip(UiStrings.S_GradientEditor_GradientEditor_303D5EC437);
         _interpolation = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_E0FC6F50AE, UiStrings.S_GradientEditor_GradientEditor_07C7B1752B);
         _dither = Ui.Combo(150, UiStrings.S_GradientEditor_GradientEditor_C103727A20, "2×2 Bayer", "4×4 Bayer");
@@ -100,12 +100,12 @@ public sealed class GradientEditor : StackPanel
             Changed?.Invoke();
         };
         Children.Add(_bar);
-        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_3C9416C632), _position, Ui.Label("%"), _delete));
+        Children.Add(Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_3C9416C632), _position, Ui.Label("%"), _delete));
         Children.Add(_colorRow);
         Children.Add(_alphaRow);
-        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_554C6D3CFC), _interpolation));
-        Children.Add(Ui.Row(Ui.Label(UiStrings.GradientColorSpace_Label), _colorSpaceEditor));
-        Children.Add(Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_75C017194C), _dither));
+        Children.Add(Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_554C6D3CFC), _interpolation));
+        Children.Add(Row(Ui.Label(UiStrings.GradientColorSpace_Label), _colorSpaceEditor));
+        Children.Add(Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_75C017194C), _dither));
         if (spatialAngle)
         {
             _spatialMode = Ui.Combo(180,
@@ -124,7 +124,7 @@ public sealed class GradientEditor : StackPanel
                 UpdateRows();
                 Changed?.Invoke();
             };
-            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Mode), _spatialMode));
+            Children.Add(Row(Ui.Label(UiStrings.EffectGradient_Mode), _spatialMode));
             _direction = Ui.Combo(140);
             _direction.SelectionChanged += (_, _) =>
             {
@@ -132,7 +132,7 @@ public sealed class GradientEditor : StackPanel
                 _reverse = _direction.SelectedIndex == 1;
                 Changed?.Invoke();
             };
-            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Direction), _direction));
+            Children.Add(Row(Ui.Label(UiStrings.EffectGradient_Direction), _direction));
             _cyclesEditor = Ui.Num(1, 16, 1, 56, 1, 1m).RecentKey("effect.gradient.cycles");
             _cyclesEditor.FormatString = "0";
             _cyclesEditor.ValueChanged += (_, _) =>
@@ -141,7 +141,7 @@ public sealed class GradientEditor : StackPanel
                 _cycles = (int)_cyclesEditor.NumValue();
                 Changed?.Invoke();
             };
-            Children.Add(Ui.Row(Ui.Label(UiStrings.EffectGradient_Cycles), _cyclesEditor));
+            Children.Add(Row(Ui.Label(UiStrings.EffectGradient_Cycles), _cyclesEditor));
             _angleEditor = Ui.Num(0, 359, 0, 56, 1, 1m).Unit("°").RecentKey("effect.gradient.angle");
             _angleEditor.FormatString = "0";
             _angleEditor.ValueChanged += (_, _) =>
@@ -150,7 +150,7 @@ public sealed class GradientEditor : StackPanel
                 _angle = (int)_angleEditor.NumValue();
                 Changed?.Invoke();
             };
-            _angleRow = Ui.Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D5C20D5832), _angleEditor, Ui.Label(UiStrings.S_GradientEditor_GradientEditor_DEFF285651));
+            _angleRow = Row(Ui.Label(UiStrings.S_GradientEditor_GradientEditor_D5C20D5832), _angleEditor, Ui.Label(UiStrings.S_GradientEditor_GradientEditor_DEFF285651));
             Children.Add(_angleRow);
             _easingEditor = Ui.Combo(140, UiStrings.S_LayerEffectsDialog_Easings_4FA414FBAC, UiStrings.S_LayerEffectsDialog_Easings_BDEEAEDE46,
                 UiStrings.S_LayerEffectsDialog_Easings_503369007B, UiStrings.S_LayerEffectsDialog_Easings_7665ED231C);
@@ -167,10 +167,22 @@ public sealed class GradientEditor : StackPanel
                 _pingPong = _pingPongEditor.IsChecked == true;
                 Changed?.Invoke();
             };
-            _timingRow = Ui.Row(Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF), _easingEditor, _pingPongEditor);
+            _timingRow = Row(Ui.Label(UiStrings.S_LayerEffectsDialog_AddTimingEditors_E1B19358AF), _easingEditor, _pingPongEditor);
             Children.Add(_timingRow);
         }
         Load(_stops, _alphaStops, _mode, _ditherMode);
+    }
+
+    /// <summary>이름과 값 한 줄: 칸이 좁으면(오른쪽 독) 값을 다음 줄로 넘겨 칸 밖으로 나가지 않는다.</summary>
+    private static WrapPanel Row(params Control[] controls)
+    {
+        var row = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 2 };
+        foreach (var c in controls)
+        {
+            c.VerticalAlignment = VerticalAlignment.Center;
+            row.Children.Add(c);
+        }
+        return row;
     }
 
     /// <summary>막대 우클릭과 같은 프리셋 메뉴(지금 것 저장·즐겨찾기·프리셋 목록·관리)를 <paramref name="anchor"/> 아래에 연다.</summary>

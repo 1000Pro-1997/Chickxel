@@ -73,6 +73,8 @@ public enum VectorIcon
     FolderOpen,
     /// <summary>그림(사진 틀 + 산).</summary>
     Image,
+    /// <summary>그림 끔(사진 틀에 사선 — 타임라인 프레임 미리보기 끔, Lucide image-off).</summary>
+    ImageOff,
     /// <summary>반짝임(AI로 하기).</summary>
     Sparkles,
     /// <summary>Discord 로고(채운 도형, Simple Icons — 제보·아이디어 단추).</summary>
@@ -308,6 +310,15 @@ public static class VectorIcons
             "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
             Circle(9, 9, 2),
             "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+        ],
+        VectorIcon.ImageOff =>
+        [
+            "M2 2l20 20",
+            "M10.41 10.41a2 2 0 1 1-2.83-2.83",
+            "M13.5 13.5L6 21",
+            "M18 12l3 3",
+            "M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59",
+            "M21 15V5a2 2 0 0 0-2-2H9",
         ],
         VectorIcon.Sparkles =>
         [

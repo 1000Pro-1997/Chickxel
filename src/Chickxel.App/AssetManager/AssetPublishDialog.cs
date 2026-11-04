@@ -151,13 +151,18 @@ public sealed class AssetPublishDialog : DialogBase
         _version = Field("1.0.0");
         _version.Width = 110;
         _tags = new TagChipEditor(FieldWidth);
-        var forced = new List<string>(2);
+        var forced = new List<string>(3);
         if (asset.Script is { ReadsOtherLayers: true }) forced.Add(ScriptAsset.LayerReferenceTag);
         if (asset.Script is { ReadsOtherFrames: true }) forced.Add(ScriptAsset.FrameReferenceTag);
+        if (asset.Script is { MovesPivot: true }) forced.Add(ScriptAsset.PivotMoveTag);
         _forcedTags = [.. forced];
         _tags.SetTags(WithForcedTag(tags));
-        var forcedTagNote = Note(string.Join("\n", _forcedTags.Select(tag => tag == ScriptAsset.LayerReferenceTag
-            ? UiStrings.Publish_LayerReferenceTag : UiStrings.Publish_FrameReferenceTag)));
+        var forcedTagNote = Note(string.Join("\n", _forcedTags.Select(tag => tag switch
+        {
+            ScriptAsset.LayerReferenceTag => UiStrings.Publish_LayerReferenceTag,
+            ScriptAsset.FrameReferenceTag => UiStrings.Publish_FrameReferenceTag,
+            _ => UiStrings.Publish_PivotMoveTag,
+        })));
         forcedTagNote.IsVisible = _forcedTags.Length > 0;
         _useSuggestion = Ui.Button(UiStrings.Publish_UseSuggestion, (_, _) =>
         {
@@ -501,6 +506,7 @@ public sealed class AssetPublishDialog : DialogBase
             Asset = new PublishAsset(_asset.Kind, _asset.Data, _assetPreview),
             CustomPreview = _customPreview,
             MinAppVersion = AppInfo.IsDevBuild ? "0.0.0" : AppInfo.VersionText,
+            AssetSegment = AssetPublishCheck.AssetSegmentOf(_target),
         };
     }
 
@@ -593,10 +599,18 @@ public sealed class AssetPublishDialog : DialogBase
         foreach (var issue in ex.Issues) _checks.Children.Add(CheckRow(VectorIcon.X, AppTheme.UnsavedBrush, issue));
     }
 
+    /// <summary>
+    /// 올리기 진행: 아래 진행 줄과 올리기 단추에 보낸 비율을 보인다. 다 보낸 뒤(서버가 패키지를 검사·저장하는 동안)에는 비율 대신 "서버에서 확인하는 중"과
+    /// 끝을 모르는 막대.
+    /// </summary>
     private void ReportProgress(double fraction)
     {
+        bool sent = fraction >= 1;
+        _progress.IsIndeterminate = sent;
         _progress.Value = fraction;
-        _progressText.Text = F(UiStrings.Publish_Uploading, (int)Math.Round(fraction * 100));
+        var text = sent ? UiStrings.Publish_ServerChecking : F(UiStrings.Publish_Uploading, (int)Math.Round(fraction * 100));
+        _progressText.Text = text;
+        OkButton.Content = text;
     }
 
     private void SetUploading(bool on)
@@ -604,7 +618,14 @@ public sealed class AssetPublishDialog : DialogBase
         _columns.IsEnabled = !on;
         _progressRow.IsVisible = on;
         if (on) ReportProgress(0);
-        OkButton.IsEnabled = !on && _result is { Ok: true };
+        else
+        {
+            _progress.IsIndeterminate = false;
+            OkButton.Content = UiStrings.Publish_Upload;
+        }
+        // 올리는 동안 단추는 진행 글을 또렷하게 보이도록 끄지 않고 누름만 막는다(Enter로 눌려도 Submit이 무시함)
+        OkButton.IsHitTestVisible = !on;
+        OkButton.IsEnabled = on || _result is { Ok: true };
     }
 
     /// <summary>올린 기록을 남긴다(같은 에셋으로 다시 열 때 채우기, 다음 버전 제안, 같은 버전 내용 변경 경고).</summary>

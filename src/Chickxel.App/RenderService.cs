@@ -16,10 +16,18 @@ internal enum RenderKind
     Cel,
     /// <summary><see cref="Cel"/>과 같은 그림을 타임라인 칸 크기로 줄인 것.</summary>
     Thumb,
+    /// <summary>
+    /// 부위 화면의 효과 그림: 부위 하나(<see cref="RenderKey.Layer"/>)만 부위·그룹 효과까지 입혀 프레임 크기로(<see cref="SpriteProject.PlanPartInFrame"/>).
+    /// 무효로 하는 규칙은 <see cref="Cel"/>과 같고, 그룹이 바뀌어도 무효다.
+    /// </summary>
+    Part,
 }
 
-/// <summary>결과 하나의 열쇠(프레임·레이어는 객체로 — 순서가 바뀌어도 따라감).</summary>
-internal readonly record struct RenderKey(RenderKind Kind, Frame Frame, Layer? Layer = null);
+/// <summary>
+/// 결과 하나의 열쇠(프레임·레이어는 객체로 — 순서가 바뀌어도 따라감). <paramref name="Raw"/>면 캔버스에서 효과 보기를 끈 그림(효과 없이 —
+/// <see cref="SpriteProject.PlanFrameRaw"/>·<see cref="SpriteProject.PlanCelThumbnail"/>): 같은 종류·프레임·레이어의 효과 그림과 따로 담고 같은 때 무효가 된다.
+/// </summary>
+internal readonly record struct RenderKey(RenderKind Kind, Frame Frame, Layer? Layer = null, bool Raw = false);
 
 /// <summary>계산 차례(작을수록 먼저).</summary>
 public enum RenderPriority
@@ -232,7 +240,7 @@ internal sealed class RenderService
         {
             Cache = Effects,
             // 효과 1~k 중간 결과는 값을 바꾸며 보는 캔버스 프레임에만 담는다(재생·썸네일까지 담으면 복사 비용과 캐시 자리만 쓴다).
-            CheckpointLayer = entry.Key.Kind == RenderKind.Composite && live ? CheckpointLayer : null,
+            CheckpointLayer = entry.Key.Kind == RenderKind.Composite && !entry.Key.Raw && live ? CheckpointLayer : null,
         };
         var job = new Job(this, entry.Key, entry.Version, plan, options, live, priority, Interlocked.Increment(ref _sequence));
         entry.Job = job;

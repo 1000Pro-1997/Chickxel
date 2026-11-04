@@ -65,6 +65,7 @@ public class UndoHistoryTests
         p.SaveOutfit("전투");
         p.AddFrame();
         Draw(p, 0, 1, 5, 5, Color32.White);
+        p.SetPartFramePivot(p.IndexOf(head), 1, new Pivot(0.25f, 0.75f));
         p.AddTag("걷기", 0, 1);
         p.DeleteLayer(p.IndexOf(top));
         p.SetFrameDuration(1, 250);

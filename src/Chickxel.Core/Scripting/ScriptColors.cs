@@ -101,6 +101,21 @@ internal sealed class ScriptColors
     /// <summary>미루는 스크립트인지(<c>ctx.renderedFrameSource</c>를 줄지).</summary>
     public bool Deferred { get; init; }
 
+    private double _movedX, _movedY;
+
+    /// <summary>이 render가 <c>ctx.movePivot(dx, dy)</c>로 알린 이동 합(px, 그림 좌표 방향). Jint와 빠른 경로가 같은 것을 쓴다.</summary>
+    public PointF Moved => new((float)_movedX, (float)_movedY);
+
+    /// <summary>
+    /// <c>ctx.movePivot(dx, dy)</c>: 이번 프레임에 그림을 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮겼다고 알린다(여러 번 부르면 더한다).
+    /// 유한하지 않은 값(NaN·무한대, 빠진 인자)은 그 축만 0으로 본다.
+    /// </summary>
+    public void MovePivot(double dx, double dy)
+    {
+        if (double.IsFinite(dx)) _movedX += dx;
+        if (double.IsFinite(dy)) _movedY += dy;
+    }
+
     /// <summary>
     /// 레이어 고르기 설정 <paramref name="key"/>(<c>type: "layer"</c>)에 고른 레이어 이름. 모르는 키·레이어 설정이 아닌 키·비운 값이면 null.
     /// Jint(<c>ctx.layer</c>·<c>ctx.layerEffects</c>)와 빠른 경로가 같은 것을 쓴다.

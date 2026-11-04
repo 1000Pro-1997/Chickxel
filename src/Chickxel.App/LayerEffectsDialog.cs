@@ -45,7 +45,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
     /// <summary>설정 칸(<see cref="_settings"/>)에 줄을 쌓는 도우미.</summary>
     private readonly EffectForm _form;
     private readonly Button _remove, _up, _down, _bake, _play;
-    private readonly CheckBox _effectOnly, _expandCanvas, _loop;
+    private readonly CheckBox _effectOnly, _loop;
     /// <summary>크게 보기 창의 재생 단추·프레임 설명·재생 범위 체크(창이 닫혀 있으면 null).</summary>
     private Button? _largePlay;
     private TextBlock? _largeCaption;
@@ -132,25 +132,17 @@ public sealed partial class LayerEffectsDialog : DialogBase
         _settings = new StackPanel { Spacing = 2, MinHeight = 120, Width = SettingsWidth };
         _form = new EffectForm(_settings, this);
 
-        _expandCanvas = Ui.Check(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_420801482E, true);
         _expandMode = Ui.Combo(110, [UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_E64B4CB375, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_F7968CE40F, UiStrings.EffectCanvasExpand_KeepCenter]);
         _expandMode.SelectedIndex = (int)s_canvasExpandMode;
-        _expandMode.IsEnabled = true;
         _expandNote = Ui.Label("");
         _expandNote.Foreground = AppTheme.DimTextBrush;
         _expandNote.Margin = new Thickness(3, 0, 0, 2);
         _expandNote.TextWrapping = TextWrapping.Wrap;
         _expandNote.MaxWidth = SettingsWidth;
-        _expandNote.IsVisible = true;
-        ToolTip.SetTip(_expandCanvas, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_98461A52E4);
+        var expandLabel = Ui.Label(UiStrings.Effect_ExpandCanvas);
+        expandLabel.VerticalAlignment = VerticalAlignment.Center;
+        ToolTip.SetTip(expandLabel, UiStrings.EffectCanvasExpand_ModeTip);
         ToolTip.SetTip(_expandMode, UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4DF95CBC10);
-        _expandCanvas.IsCheckedChanged += (_, _) =>
-        {
-            _expandMode.IsEnabled = _expandCanvas.On();
-            _expandNote.IsVisible = _expandCanvas.On();
-            SyncCanvasExpansion();
-            RefreshPreview();
-        };
         _expandMode.SelectionChanged += (_, _) =>
         {
             if (_expandMode.SelectedIndex < 0) return;
@@ -161,7 +153,6 @@ public sealed partial class LayerEffectsDialog : DialogBase
         OkButton.Click += (_, _) =>
         {
             _confirmedCanvasExpansion = null;
-            if (!_expandCanvas.On()) return;
             try
             {
                 _confirmedCanvasExpansion = CanvasExpansion(VirtualEffects());
@@ -178,7 +169,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             : null;
         var rangeLabel = Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915);
         if (motionTip is not null) ToolTip.SetTip(rangeLabel, motionTip);
-        var canvasExpand = Ui.Stack(Ui.Row(_expandCanvas, _expandMode), _expandNote);
+        var canvasExpand = Ui.Stack(Ui.Row(expandLabel, _expandMode), _expandNote);
         var shared = Ui.Group(UiStrings.EffectShared_Title, Ui.Stack(canvasExpand, _extendPanel));
         var left = Ui.Stack(
             Ui.Row(rangeLabel, _addAll, Ui.Label(UiStrings.S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688), _addFrom, Ui.Label("~"), _addTo),
@@ -401,6 +392,7 @@ public sealed partial class LayerEffectsDialog : DialogBase
             else _project.PreviewLayerEffects(index, _effects);
         }
         RestartRenders();
+        SyncExpandControls();
     }
 
     private string EffectSummary(LayerEffect e)
@@ -449,8 +441,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         EffectCanvasExpansion? expansion = null;
         try
         {
-            if (_expandCanvas.On() && CanvasExpansion(list) is { } plan && !plan.IsNone(_project.Width, _project.Height))
-                expansion = plan;
+            var plan = CanvasExpansion(list);
+            if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
         }
         catch (InvalidOperationException ex)
         {
@@ -542,6 +534,8 @@ public sealed partial class LayerEffectsDialog : DialogBase
         void Set(Func<LayerEffect, LayerEffect> change) => Update(i, change(_effects[i]));
         AddRangeEditor(i);
         AddClipEditor(i);
+        AddExpandCanvasEditor(e, Set);
+        AddMovePivotEditor(_form, e, Set);
         AddHoldEndEditor(_form, e, Set);
         ui.Panel(this, e, Set);
     }
@@ -649,6 +643,28 @@ public sealed partial class LayerEffectsDialog : DialogBase
             RebuildList(i);
         };
         _form.Row(UiStrings.EffectPreset_ApplyTarget, clip);
+    }
+
+    /// <summary>확인·영구 적용할 때 이 효과 결과가 캔버스 밖으로 나가면 캔버스를 늘릴지(<see cref="LayerEffect.ExpandCanvas"/>). 늘리는 방식은 공통 설정.</summary>
+    private void AddExpandCanvasEditor(LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
+    {
+        var expand = Ui.Check(UiStrings.Effect_ExpandCanvas, effect.ExpandCanvas);
+        ToolTip.SetTip(expand, UiStrings.Effect_ExpandCanvasTip);
+        expand.IsCheckedChanged += (_, _) => set(o => o.ExpandCanvas != expand.On() ? o with { ExpandCanvas = expand.On() } : o);
+        _form.Row(UiStrings.Effect_ExpandCanvasRow, expand);
+    }
+
+    /// <summary>
+    /// 이 효과가 그림을 옮기면(알린 만큼) 뒤 효과의 피벗도 같이 옮길지(<see cref="LayerEffect.MovePivot"/>) — 효과 창과 도구 설정 독이 같이 쓴다.
+    /// 옮긴 거리를 알릴 수 있는 효과(<see cref="LayerEffects.CanMovePivot"/> — 흔들기·둥실둥실, 원문에 <c>ctx.movePivot</c>이 있는 스크립트)에만 보인다.
+    /// </summary>
+    private static void AddMovePivotEditor(EffectForm form, LayerEffect effect, Action<Func<LayerEffect, LayerEffect>> set)
+    {
+        if (!LayerEffects.CanMovePivot(effect)) return;
+        var move = Ui.Check(UiStrings.Effect_MovePivot, effect.MovePivot);
+        ToolTip.SetTip(move, UiStrings.Effect_MovePivotTip);
+        move.IsCheckedChanged += (_, _) => set(o => o.MovePivot != move.On() ? o with { MovePivot = move.On() } : o);
+        form.Row(UiStrings.Effect_MovePivotRow, move);
     }
 
     /// <summary>

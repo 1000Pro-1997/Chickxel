@@ -63,10 +63,21 @@ internal sealed class OpenDocument(SpriteProject project, string? sourcePath)
 /// <summary>
 /// 편집기 탭 하나: 보여 주는 문서와 탭마다의 보기 상태(레이어·프레임·확대율·위치, 선택 영역).
 /// 보기 상태는 탭을 떠날 때 저장하고 다시 고를 때 되돌린다(처음 보이는 탭은 null — 화면에 맞춤).
+/// 미리보기 탭(<see cref="IsPreview"/>, 하나만)은 문서가 없고 편집기에 실린 문서의 미리보기를 보인다 — 편집 대상이 되지 않는다.
 /// </summary>
-internal sealed class DocumentTab(OpenDocument doc)
+internal sealed class DocumentTab
 {
-    public OpenDocument Doc { get; } = doc;
+    public DocumentTab(OpenDocument doc) => Doc = doc;
+
+    private DocumentTab() { }
+
+    /// <summary>새 미리보기 탭(문서 없음).</summary>
+    public static DocumentTab NewPreview() => new();
+
+    /// <summary>보여 주는 문서(미리보기 탭이면 null).</summary>
+    public OpenDocument? Doc { get; }
+
+    public bool IsPreview => Doc is null;
 
     public DocumentView? View { get; set; }
 

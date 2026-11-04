@@ -62,10 +62,13 @@ public sealed class SkinPickerWindow : DialogBase
                 content.Children.Add(name);
                 var wrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 2) };
                 var skins = group.Skins;
+                int gi = project.IndexOf(group);
                 for (int i = 0; i < skins.Count; i++)
                 {
                     var skin = skins[i];
-                    var box = SkinBox(ImageUtil.MakeThumbnail(project.FlattenGroup(group, frame, skin), ThumbSize), i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_20A6248C03,skin.Name) : skin.Name,
+                    // 타임라인 그룹 칸·스킨 관리 카드와 같은 썸네일(효과 없이, 부위 자리로 자름)
+                    var picture = project.RenderCelThumbnail(gi, frame, skin) ?? new PixelImage(1, 1);
+                    var box = SkinBox(ImageUtil.MakeThumbnail(picture, ThumbSize), i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_20A6248C03,skin.Name) : skin.Name,
                         options, skin, partOnly: false);
                     box.Tip(i == 0
                         ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinPickerWindow_SkinPickerWindow_11E58C3A27,group.Name)

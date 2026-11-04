@@ -54,7 +54,13 @@ public static class AssetPreview
     {
         var (src, frames) = Source(template, source, end, motion, step, steps);
         var animated = LayerEffects.Animate(template, step, steps, null, frames);
-        return LayerEffects.Render(src, animated, LayerEffects.Padding(template, src.Width, src.Height)).Image;
+        var pad = LayerEffects.Padding(template, src.Width, src.Height);
+        var (image, x, y) = LayerEffects.Render(src, animated, pad);
+        // 미리보기 칸은 모두 같은 크기: 옮겨 간 만큼 넓혀 그렸으면 정한 여백 자리로 자른다
+        if (x == -pad.Left && y == -pad.Top) return image;
+        var fixedSize = new PixelImage(src.Width + pad.Left + pad.Right, src.Height + pad.Top + pad.Bottom);
+        fixedSize.Blit(image, pad.Left + x, pad.Top + y);
+        return fixedSize;
     }
 
     /// <summary><see cref="Render"/>의 <paramref name="step"/>칸 원본 자리에 효과 없이 놓은 견본(효과를 입힌 그림과 같은 크기).</summary>

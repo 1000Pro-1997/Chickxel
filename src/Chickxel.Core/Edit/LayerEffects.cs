@@ -96,6 +96,22 @@ public static class LayerEffects
         return false;
     }
 
+    /// <summary>
+    /// 캔버스를 늘릴 범위를 잴 목록: 켜진 효과 중 캔버스 늘리기(<see cref="LayerEffect.ExpandCanvas"/>)를 끈 것은 끈 셈으로 바꾼다(차례·나머지 값은 그대로).
+    /// 모두 켰으면 같은 목록.
+    /// </summary>
+    public static IReadOnlyList<LayerEffect> ExpandingOnly(IReadOnlyList<LayerEffect> effects)
+    {
+        LayerEffect[]? result = null;
+        for (int i = 0; i < effects.Count; i++)
+        {
+            if (effects[i] is not { Enabled: true, ExpandCanvas: false } e) continue;
+            result ??= [.. effects];
+            result[i] = e with { Enabled = false };
+        }
+        return result ?? effects;
+    }
+
     /// <summary>프레임 <paramref name="frameIndex"/>에 입혀질(켜져 있고 범위 안 — 또는 범위 끝 모습을 이어 가는) 효과가 하나라도 있는지.</summary>
     public static bool AnyActive(IReadOnlyList<LayerEffect> effects, int frameIndex)
     {
@@ -400,10 +416,57 @@ public static class LayerEffects
         EffectRunHooks? hooks)
     {
         if (padding.IsNone && !AnyEnabled(effects)) return (source, 0, 0);
-        var image = new PixelImage(source.Width + padding.Left + padding.Right, source.Height + padding.Top + padding.Bottom);
-        image.Blit(source, padding.Left, padding.Top);
-        Apply(image, effects, new Rectangle(padding.Left, padding.Top, source.Width, source.Height), hooks);
-        return (image, -padding.Left, -padding.Top);
+        var (image, x, y, _) = RenderMoves(source, effects, padding, hooks);
+        return (image, x, y);
+    }
+
+    /// <summary>여백을 넓혀 다시 그리는 최대 횟수(넓힌 자리에서 효과가 더 멀리 옮길 수 있음 — 경로 레이어가 더 보이는 등).</summary>
+    private const int MaxGrowPasses = 3;
+
+    /// <summary>
+    /// 여백을 넣어 효과를 입히고, 효과가 알린 이동(<c>ctx.movePivot</c>·흔들기 등)으로 그림이 여백보다 멀리 옮겨 갔으면 그 방향 여백을 이동 거리만큼 넓혀
+    /// 다시 그린다(옮겨 간 그림이 잘리지 않게 — 넓힐 필요가 없으면 한 번). 이동을 알리지 않는 효과는 정한 여백 그대로다.
+    /// 돌려주는 위치는 실제로 쓴 여백 기준이다(넓혔으면 정한 여백보다 크다).
+    /// </summary>
+    private static (PixelImage Image, int OffsetX, int OffsetY, EffectMoves Moves) RenderMoves(PixelImage source, IReadOnlyList<LayerEffect> effects,
+        EffectPadding padding, EffectRunHooks? hooks)
+    {
+        bool wasRepeating = hooks?.Repeating ?? false;
+        try
+        {
+            for (int pass = 0; ; pass++)
+            {
+                var image = new PixelImage(source.Width + padding.Left + padding.Right, source.Height + padding.Top + padding.Bottom);
+                image.Blit(source, padding.Left, padding.Top);
+                var moves = Apply(image, effects, new Rectangle(padding.Left, padding.Top, source.Width, source.Height), hooks);
+                if (pass == MaxGrowPasses || GrownFor(padding, moves, source.Width, source.Height) is not { } grown)
+                    return (image, -padding.Left, -padding.Top, moves);
+                padding = grown;
+                if (hooks is not null) hooks.Repeating = true;
+            }
+        }
+        finally
+        {
+            if (hooks is not null) hooks.Repeating = wasRepeating;
+        }
+    }
+
+    /// <summary>
+    /// 알린 이동이 여백보다 먼 방향만 여백을 이동 거리만큼 더 넓힌 여백(넓힐 방향이 없거나 이미지 최대 크기를 넘으면 null).
+    /// 여백은 효과가 정한 그림 크기·번짐을 담고 있으므로 이동 거리를 그 위에 더한다.
+    /// </summary>
+    private static EffectPadding? GrownFor(EffectPadding padding, EffectMoves moves, int width, int height)
+    {
+        static int Need(float distance) => distance > 0 ? (int)Math.Ceiling(distance) : 0;
+        int left = Need(-moves.MinX), right = Need(moves.MaxX), top = Need(-moves.MinY), bottom = Need(moves.MaxY);
+        var grown = new EffectPadding(
+            left > padding.Left ? padding.Left + left : padding.Left,
+            top > padding.Top ? padding.Top + top : padding.Top,
+            right > padding.Right ? padding.Right + right : padding.Right,
+            bottom > padding.Bottom ? padding.Bottom + bottom : padding.Bottom);
+        if (grown == padding) return null;
+        if (width + grown.Left + grown.Right > PixelImage.MaxSize || height + grown.Top + grown.Bottom > PixelImage.MaxSize) return null;
+        return grown;
     }
 
     /// <summary>효과를 입힌 그림을 원래 크기로 자른 것(밖으로 번진 부분은 버림). 켜진 효과가 없으면 <paramref name="source"/> 그대로.</summary>
@@ -418,20 +481,29 @@ public static class LayerEffects
     /// 켜진 효과를 차례로 <paramref name="image"/>에 바로 입힌다(크기는 그대로 — 번질 자리는 부르는 쪽이 미리 넓혀 둔다).
     /// <paramref name="source"/> = 효과 원본(셀, 그룹이면 캔버스)이 이 이미지 안에 놓인 자리: 터지기의 조각 격자·무작위와 직접 중심·피벗의 기준이다.
     /// 클리핑된 반사는 기준 효과의 픽셀만 뒤집어 원본 그림 뒤에 놓는다(이동한 픽셀은 기준 영역 밖에도 남는다).
+    /// <para>
+    /// 피벗 같이 옮기기: 켜진 효과가 그림을 옮겼다고 알리면(<see cref="EffectDefinition.Render"/>의 결과 — 스크립트의 <c>ctx.movePivot</c>) 그 효과의
+    /// <see cref="LayerEffect.MovePivot"/>가 켜져 있을 때 그 거리를 쌓아 두고, 뒤에 그리는 효과는 모두 피벗(<see cref="AnimatedEffect.PivotPoint"/>, 없으면 원본 가운데)에 쌓인 거리를 더해 그린다.
+    /// 클리핑된 효과는 쌓인 거리만큼 옮긴 피벗으로 그리지만 자기 이동은 쌓지 않는다(기준 효과의 픽셀만 옮기므로 대상은 그 자리). 미루는 효과는 미루지 않는 효과를 모두 그린 뒤의
+    /// 거리로 그리고, 클리핑되지 않은 미루는 효과의 이동은 그 뒤에 그리는 미루는 효과에 더한다. 아무 효과도 알리지 않으면 피벗은 그대로(결과도 그대로)다.
+    /// </para>
     /// </summary>
     public static void Apply(PixelImage image, IReadOnlyList<LayerEffect> effects, Rectangle source) => Apply(image, effects, source, null);
 
     /// <summary>
     /// <see cref="Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>에 <paramref name="hooks"/>를 끼운 것: 효과마다 취소를 확인하고,
     /// 켜진 효과(잔상 포함) 하나가 끝날 때마다 알리며, 중간 결과 열쇠가 있으면 효과 1~k까지의 결과를 캐시에서 꺼내 k+1번째부터 계산하고
-    /// 새로 계산한 중간 결과를 담는다. 결과 그림은 끼우지 않았을 때와 같다.
+    /// 새로 계산한 중간 결과를 담는다. 결과 그림은 끼우지 않았을 때와 같다. 돌려주는 값은 모든 효과를 그린 뒤까지 알린 이동(쌓인 피벗 이동 — <see cref="PivotShift"/>,
+    /// 그림이 옮겨 간 범위).
     /// </summary>
-    internal static void Apply(PixelImage image, IReadOnlyList<LayerEffect> effects, Rectangle source, EffectRunHooks? hooks)
+    internal static EffectMoves Apply(PixelImage image, IReadOnlyList<LayerEffect> effects, Rectangle source, EffectRunHooks? hooks)
     {
         var cancel = hooks?.Cancellation ?? CancellationToken.None;
-        var done = hooks?.EffectDone;
+        var done = hooks is { Repeating: false } ? hooks.EffectDone : null;
         var checkpoints = EffectCheckpoints.For(image, effects, source, hooks);
-        int start = checkpoints?.Restore(image) ?? 0;
+        // 앞 효과가 알린 이동(피벗 같이 옮기기는 뒤 효과의 피벗에 더하고, 그림이 옮겨 간 범위는 여백 넓히기에 쓴다). 중간 결과를 꺼내면 그 자리까지의 것도 같이 꺼낸다
+        var moves = default(EffectMoves);
+        int start = checkpoints?.Restore(image, out moves) ?? 0;
         // 미루는 효과(잔상·deferred 스크립트)는 효과마다 한 번 가린다(스크립트는 해석 결과를 찾는다)
         var deferred = new bool[effects.Count];
         for (int i = 0; i < deferred.Length; i++) deferred[i] = IsDeferred(effects[i]);
@@ -463,7 +535,7 @@ public static class LayerEffects
                         var moved = new PixelImage(image.Width, image.Height);
                         for (int i = 0; i < image.Pixels.Length; i++)
                             if (clipMask[i]) moved.Pixels[i] = image.Pixels[i];
-                        definition.Render(moved, effect, source, hooks);
+                        definition.Render(moved, Shifted(effect, moves.Shift, source), source, hooks);
                         for (int i = 0; i < image.Pixels.Length; i++)
                             if (!clipMask[i] && moved.Pixels[i].A != 0)
                                 image.Pixels[i] = Color32.BlendOver(moved.Pixels[i], image.Pixels[i]);
@@ -471,26 +543,27 @@ public static class LayerEffects
                     else
                     {
                         var before = (Color32[])image.Pixels.Clone();
-                        definition.Render(image, effect, source, hooks);
+                        definition.Render(image, Shifted(effect, moves.Shift, source), source, hooks);
                         for (int i = 0; i < before.Length; i++)
                             if (!clipMask[i]) image.Pixels[i] = before[i];
                     }
                 }
-                checkpoints?.Store(index, image);
+                checkpoints?.Store(index, image, moves);
                 done?.Invoke(image);
                 continue;
             }
 
             bool hasClippedFollower = index + 1 < effects.Count && effects[index + 1].ClipToPrevious;
             Color32[]? anchorBefore = hasClippedFollower ? (Color32[])image.Pixels.Clone() : null;
-            definition.Render(image, effect, source, hooks);
+            var reported = definition.Render(image, Shifted(effect, moves.Shift, source), source, hooks);
+            moves = moves.Add(reported, effect.MovePivot);
             clipMask = anchorBefore is null ? null : ChangedPixels(anchorBefore, image.Pixels);
             // 원본을 지우는 효과(원본 지우기 외곽선): 지워진(투명해진) 원본 자리는 기준 영역이 아니다 — 클리핑된 효과는 남은 픽셀만 보고,
             // 뒤따르는 클리핑되지 않은 효과는 원본이 지워진 결과를 그대로 받는다.
             if (clipMask is not null && definition.ErasesSource(effect))
                 for (int i = 0; i < clipMask.Length; i++)
                     if (image.Pixels[i].A == 0) clipMask[i] = false;
-            checkpoints?.Store(index, image);
+            checkpoints?.Store(index, image, moves);
             done?.Invoke(image);
         }
         // 미루는 효과는 다른 효과가 각 프레임에 적용된 모습 뒤에 합성한다. 목록 위치로 현재 프레임의 움직임을 다시 입히지 않는다.
@@ -499,7 +572,8 @@ public static class LayerEffects
             if (deferred[index] && effects[index] is { Enabled: true, ClipToPrevious: false } effect)
             {
                 cancel.ThrowIfCancellationRequested();
-                RenderDeferred(image, effect, source, hooks);
+                var reported = RenderDeferred(image, Shifted(effect, moves.Shift, source), source, hooks);
+                moves = moves.Add(reported, effect.MovePivot);
                 ghosts++;
                 done?.Invoke(image);
             }
@@ -507,21 +581,67 @@ public static class LayerEffects
             foreach (var effect in clippedDeferred)
             {
                 cancel.ThrowIfCancellationRequested();
-                RenderDeferred(image, effect, source, hooks);
+                RenderDeferred(image, Shifted(effect, moves.Shift, source), source, hooks);
                 ghosts++;
                 done?.Invoke(image);
             }
-        if (done is null) return;
-        // 기준 효과 영역이 없어 건너뛴 클리핑된 미루는 효과도 끝낸 것으로 센다
-        for (int index = 0; index < effects.Count; index++)
-            if (deferred[index] && effects[index].Enabled && --ghosts < 0) done(image);
+        if (done is not null)
+            // 기준 효과 영역이 없어 건너뛴 클리핑된 미루는 효과도 끝낸 것으로 센다
+            for (int index = 0; index < effects.Count; index++)
+                if (deferred[index] && effects[index].Enabled && --ghosts < 0) done(image);
+        return moves;
     }
 
-    // 미루는 효과 하나: 잔상은 잔상 렌더러, 스크립트는 효과 정의의 렌더러(실패 기록·알림 포함)
-    private static void RenderDeferred(PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks)
+    /// <summary>
+    /// 효과가 그림을 옮긴 거리를 알릴 수 있는지(<see cref="EffectDefinition.MayMovePivot"/> — 흔들기·둥실둥실, 원문에 <c>ctx.movePivot</c>이 있는 실행할 수 있는 스크립트).
+    /// 아니면 피벗 같이 옮기기(<see cref="LayerEffect.MovePivot"/>)가 아무 일도 하지 않으므로 설정 화면에 그 줄을 보이지 않는다.
+    /// </summary>
+    public static bool CanMovePivot(LayerEffect effect) => EffectRegistry.Of(effect) is { } definition && definition.MayMovePivot(effect);
+
+    /// <summary>
+    /// 켜진 효과 중 그림을 옮긴 거리를 알릴 수 있고(<see cref="EffectDefinition.MayMovePivot"/>) 피벗 같이 옮기기(<see cref="LayerEffect.MovePivot"/>)가 켜진,
+    /// 클리핑되지 않은 효과가 있는지 — 없으면 피벗 이동은 늘 0이라 <see cref="PivotShift"/>가 효과를 그리지 않는다.
+    /// </summary>
+    public static bool MayMovePivot(IReadOnlyList<LayerEffect> effects)
     {
-        if (effect is AfterimageEffect after) AfterimageRender.Apply(image, after, source);
-        else EffectRegistry.Of(effect)?.Render(image, effect, source, hooks);
+        for (int i = 0; i < effects.Count; i++)
+            if (effects[i] is { Enabled: true, MovePivot: true, ClipToPrevious: false } e && EffectRegistry.Of(e) is { } definition && definition.MayMovePivot(e))
+                return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 효과 목록(<see cref="At"/>의 결과 — 그 프레임에 맞춘 것)을 <paramref name="source"/>에 입혔을 때 끝에 쌓인 피벗 이동(px): 피벗 같이 옮기기가 켜진 효과들이 알린 거리의 합
+    /// (<see cref="Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>와 같은 규칙). 캔버스가 피벗 표시를 효과가 옮긴 자리에 그릴 때 쓴다.
+    /// 알릴 수 있는 효과가 없으면(<see cref="MayMovePivot"/>) 그리지 않고 0. 그리므로 효과 하나 그리기만큼 걸린다.
+    /// </summary>
+    public static PointF PivotShift(PixelImage source, IReadOnlyList<LayerEffect> effects, CancellationToken cancel = default)
+    {
+        if (!MayMovePivot(effects)) return PointF.Empty;
+        // 그리는 것과 같이 옮겨 간 만큼 넓혀서(좁은 여백에서 잘린 경로 등으로 이동이 달라지지 않게)
+        return RenderMoves(source, effects, Padding(effects, source.Width, source.Height), new EffectRunHooks { Cancellation = cancel }).Moves.Shift;
+    }
+
+    // 미루는 효과 하나: 잔상은 잔상 렌더러, 스크립트는 효과 정의의 렌더러(실패 기록·알림 포함). 알린 이동(px)을 돌려준다
+    private static PointF RenderDeferred(PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks)
+    {
+        if (effect is AfterimageEffect after)
+        {
+            AfterimageRender.Apply(image, after, source);
+            return PointF.Empty;
+        }
+        return EffectRegistry.Of(effect)?.Render(image, effect, source, hooks) ?? PointF.Empty;
+    }
+
+    /// <summary>
+    /// 앞 효과가 알린 이동 <paramref name="shift"/>만큼 피벗을 옮긴 사본(피벗이 있는 움직이는 효과만 — 피벗이 없으면 원본 가운데에서 옮긴다).
+    /// 옮길 것이 없으면 <paramref name="effect"/> 그대로.
+    /// </summary>
+    private static LayerEffect Shifted(LayerEffect effect, PointF shift, Rectangle source)
+    {
+        if (shift.IsEmpty || effect is not AnimatedEffect animated) return effect;
+        var pivot = animated.PivotPoint ?? new PointF(source.Width / 2f, source.Height / 2f);
+        return animated with { PivotPoint = new PointF(pivot.X + shift.X, pivot.Y + shift.Y) };
     }
 
     private static bool[] ChangedPixels(Color32[] before, Color32[] after)
@@ -639,5 +759,21 @@ public static class LayerEffects
         int keep = 255 - amount;
         byte M(byte d, byte c) => (byte)((d * keep + c * amount + 127) / 255);
         return new Color32(M(dst.R, color.R), M(dst.G, color.G), M(dst.B, color.B), dst.A);
+    }
+}
+
+/// <summary>
+/// 효과들이 알린 이동(<see cref="LayerEffects.Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>): <see cref="Shift"/>는 피벗 같이 옮기기가 켜진 효과의 합(뒤 효과 피벗에 더함),
+/// <see cref="MinX"/>~<see cref="MaxY"/>는 모든 효과가 알린 이동을 차례로 더해 가며 닿은 범위(그림이 원래 자리에서 옮겨 간 거리 — 여백 넓히기).
+/// </summary>
+internal readonly record struct EffectMoves(PointF Shift, PointF Sum, float MinX, float MinY, float MaxX, float MaxY)
+{
+    /// <summary>효과 하나가 알린 이동 <paramref name="reported"/>를 더한 것(<paramref name="movePivot"/>면 피벗 이동에도).</summary>
+    public EffectMoves Add(PointF reported, bool movePivot)
+    {
+        if (reported.IsEmpty) return this;
+        var sum = new PointF(Sum.X + reported.X, Sum.Y + reported.Y);
+        return new EffectMoves(movePivot ? new PointF(Shift.X + reported.X, Shift.Y + reported.Y) : Shift, sum,
+            Math.Min(MinX, sum.X), Math.Min(MinY, sum.Y), Math.Max(MaxX, sum.X), Math.Max(MaxY, sum.Y));
     }
 }

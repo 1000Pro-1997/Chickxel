@@ -388,8 +388,14 @@ public static class ProjectMerge
                 foreach (var skin in group.SkinList.Where(k => k.Owner is null || ReferenceEquals(k.Owner, part)))
                     if (_p.GetCelRaw(part, frame, skin) is { } cel)
                         _p.SetCelRaw(part, frame, cel.ResizeCanvas(width, height, options.Anchor), skin);
-            var (px, py) = part.PartPivot.ToLocalPixel(old.Width, old.Height);
-            part.PartPivot = new Pivot((px + ox) / width, 1f - (py + oy) / height);
+            Pivot Moved(Pivot pivot)
+            {
+                var (px, py) = pivot.ToLocalPixel(old.Width, old.Height);
+                return new Pivot((px + ox) / width, 1f - (py + oy) / height);
+            }
+            part.PartPivot = Moved(part.PartPivot);
+            foreach (var frame in _frames)
+                if (frame.PartPivots.TryGetValue(part, out var own)) frame.PartPivots[part] = Moved(own);
             part.PartOffset = new Point(part.PartOffset.X - ox, part.PartOffset.Y - oy);
             part.PartSize = new Size(width, height);
         }
@@ -681,6 +687,8 @@ public static class ProjectMerge
         {
             for (int i = 0; i < src.Frames.Count; i++)
             {
+                // 그 프레임만의 부위 피벗(먼저 넣은 파일의 것)
+                if (src.Frames[i].PartPivots.TryGetValue(srcPart, out var framePivot)) frameMap[i].PartPivots.TryAdd(dstPart, framePivot);
                 var cel = src.GetCelRaw(srcPart, src.Frames[i], srcSkin);
                 if (!HasContent(cel) && fillFrom is not null) cel = src.GetCelRaw(srcPart, src.Frames[i], fillFrom);
                 if (HasContent(cel)) _p.SetCelRaw(dstPart, frameMap[i], cel!.Clone(), dstSkin);

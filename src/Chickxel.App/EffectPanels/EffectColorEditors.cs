@@ -17,7 +17,8 @@ public sealed partial class LayerEffectsDialog
         EffectColorGradient? savedGradient = effect.ColorGradients.TryGetValue(slot, out var currentGradient)
             ? currentGradient : null;
         var mode = Ui.Combo(104, UiStrings.S_EffectColorEditors_EffectColorEditor_87B10DCF76, UiStrings.S_EffectColorEditors_EffectColorEditor_14AD8463A1);
-        var editor = new GradientEditor(spatialAngle: true) { Width = 280 };
+        // 넓은 칸에서는 띠 폭(GradientBar.PreferredWidth)까지, 좁은 칸(오른쪽 독)에서는 칸 폭에 맞춘다
+        var editor = new GradientEditor(spatialAngle: true) { MaxWidth = GradientBar.PreferredWidth, HorizontalAlignment = HorizontalAlignment.Left };
         var body = Ui.Stack(trailing is null ? Ui.Row(field, mode) : Ui.Row(field, mode, trailing), editor);
         body.Margin = new Thickness(0);
 

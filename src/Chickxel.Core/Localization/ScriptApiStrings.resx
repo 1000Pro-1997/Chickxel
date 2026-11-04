@@ -40,6 +40,9 @@
   <data name="Api_effect_easing_EaseIn" xml:space="preserve"><value>천천히 시작.</value></data>
   <data name="Api_effect_easing_EaseOut" xml:space="preserve"><value>천천히 끝남.</value></data>
   <data name="Api_effect_easing_EaseInOut" xml:space="preserve"><value>천천히 시작하고 천천히 끝남.</value></data>
+  <data name="Api_effect_repeat" xml:space="preserve"><value>새로 넣는 효과의 반복 처음 값: "Once"(한 번), "Loop"(반복), "PingPong"(왕복). 기본 "Once".</value></data>
+  <data name="Api_effect_repeatCount" xml:space="preserve"><value>새로 넣는 효과의 반복 횟수 처음 값(1~8, 기본 1). repeat이 "Loop"·"PingPong"일 때 씁니다.</value></data>
+  <data name="Api_effect_movePivot" xml:space="preserve"><value>false면 새로 넣는 효과의 "중심(피벗) 같이 옮기기"가 꺼진 채로 들어갑니다(기본 true). ctx.movePivot으로 옮긴 거리를 알리는 효과에만 뜻이 있습니다.</value></data>
   <data name="Api_effect_area_global" xml:space="preserve"><value>프레임마다 그림 전체로 한 번 부릅니다.</value></data>
   <data name="Api_effect_area_local" xml:space="preserve"><value>조각마다 부릅니다(radius만큼 둘레를 같이 넘김).</value></data>
   <data name="Api_effect_previewMotion_none" xml:space="preserve"><value>미리보기 병아리가 제자리에 있습니다.</value></data>
@@ -117,6 +120,7 @@
   <data name="Api_ctx_layer" xml:space="preserve"><value>레이어 고르기 설정(type: "layer") 키로 고른 레이어(같은 이름이 여럿이면 가장 가까운 것, 이 레이어와 이 레이어를 담은 그룹은 빼고, 숨겨도 셈)의 이 프레임 그림을 효과 없이, img와 같은 크기·같은 자리로(밖은 투명). 고르지 않았거나 레이어·셀이 없거나 레이어 설정이 아닌 키거나 프로젝트 밖이면 null.</value></data>
   <data name="Api_ctx_layerWithEffects" xml:space="preserve"><value>레이어 고르기 설정 키로 고른 레이어를 이 프레임 효과까지 입혀 img와 같은 크기·같은 자리로. 그 레이어에서 다른 레이어를 효과까지 읽는 효과는 건너뜁니다(되풀이 없음). 없으면 null.</value></data>
   <data name="Api_ctx_layerEffects" xml:space="preserve"><value>레이어 고르기 설정 키로 고른 레이어에서 이 프레임에 켜진 효과 이름 배열(목록 순서). 없으면 빈 배열.</value></data>
+  <data name="Api_ctx_movePivot" xml:space="preserve"><value>그림을 옮기는 효과(흔들기·둥실둥실·뛰기·던지기·밀려 들어오기 등)가 이번 프레임에 옮긴 거리 (dx, dy)(px, 그림 좌표 방향, 소수 가능)를 알립니다. 여러 번 부르면 더해집니다. 효과 목록에서 뒤에 오는 효과의 피벗(ctx.pivot·회전·찌그러지기 기준점)이 그만큼 따라 옮겨지고(사용자가 효과마다 끌 수 있음), 그리는 칸이 그만큼 넓어져 padding 밖으로 옮긴 그림도 잘리지 않습니다. 돌려주는 값은 없습니다.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>빨강(0~255).</value></data>
   <data name="Api_color_g" xml:space="preserve"><value>초록(0~255).</value></data>
   <data name="Api_color_b" xml:space="preserve"><value>파랑(0~255).</value></data>

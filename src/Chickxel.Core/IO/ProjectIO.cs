@@ -888,6 +888,8 @@ public static partial class ProjectIO
             DurationMs = f.DurationMs,
             Pivot = f.Pivot is { } fp ? PivotDto.From(fp) : null,
             Name = f.Name,
+            PartPivots = NullIfEmptyList(f.PartPivots.Where(kv => kv.Key.IsPart && p.IndexOf(kv.Key) >= 0)
+                .Select(kv => new FramePartPivotDto { Layer = p.IndexOf(kv.Key), Pivot = PivotDto.From(kv.Value) }).OrderBy(d => d.Layer).ToList()),
         }).ToList(),
         Tags = p.Tags.Select(t => new TagDto
         {
@@ -1110,12 +1112,18 @@ public static partial class ProjectIO
         if (p.Layers.Count == 0) p.AddLayerRaw(new Layer(p.NextLayerName()));
 
         foreach (var f in dto.Frames ?? [])
-            p.AddFrameRaw(new Frame
+        {
+            var frame = new Frame
             {
                 DurationMs = f.DurationMs,
                 Pivot = f.Pivot?.ToPivot(),
                 Name = string.IsNullOrWhiteSpace(f.Name) ? null : f.Name,
-            });
+            };
+            // 부위마다 이 프레임만의 피벗(부위가 아닌 레이어·없는 번호는 버림)
+            foreach (var pp in f.PartPivots ?? [])
+                if (ResolveLayer(fileLayers, pp.Layer) is { IsPart: true } part && pp.Pivot is { } pivot) frame.PartPivots[part] = pivot.ToPivot();
+            p.AddFrameRaw(frame);
+        }
         if (p.Frames.Count == 0) p.AddFrameRaw(new Frame());
         // 효과 프레임 범위는 프레임 수에 맞춘다(손상된 파일 대비 — 밖은 안으로, 모든 프레임을 덮으면 모든 프레임).
         foreach (var layer in p.Layers)
@@ -1536,7 +1544,17 @@ public static partial class ProjectIO
         public int DurationMs { get; set; } = Frame.DefaultDurationMs;
         public PivotDto? Pivot { get; set; }
         public string? Name { get; set; }
+        /// <summary>부위마다 이 프레임만의 피벗(레이어 번호, 없으면 null).</summary>
+        public List<FramePartPivotDto>? PartPivots { get; set; }
     }
+
+    private sealed class FramePartPivotDto
+    {
+        public int Layer { get; set; }
+        public PivotDto? Pivot { get; set; }
+    }
+
+    private static List<T>? NullIfEmptyList<T>(List<T> list) => list.Count == 0 ? null : list;
 
     private sealed class TagDto
     {

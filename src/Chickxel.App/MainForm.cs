@@ -107,12 +107,12 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     /// <summary>확대율 숫자 상자(%): 클릭 = 직접 입력, 좌우로 끌기 = 바꾸기, 우클릭 = 화면에 맞추기·대표 배율 목록.</summary>
     private NumericUpDown _cbZoom = null!;
     private bool _syncingZoom;
-    private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbFit = null!;
+    private ToggleButton _cbGrid = null!, _cbTiles = null!, _cbTiled = null!, _cbPivot = null!, _cbOnion = null!, _cbEffects = null!, _cbFit = null!;
     /// <summary>새 버전이 있을 때만 보이는 위 막대 단추(누르면 업데이트 창).</summary>
     private Button _cbUpdate = null!;
 
     private MenuItem _miUndo = null!, _miRedo = null!, _miRecentFolders = null!, _miRecentFiles = null!;
-    private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miFiles = null!;
+    private MenuItem _miGrid = null!, _miTiles = null!, _miTiled = null!, _miPivot = null!, _miOnion = null!, _miEffects = null!, _miFiles = null!;
     private MenuItem _miPixelPerfect = null!, _miFilled = null!, _miGlobalFill = null!, _miMirrorX = null!, _miMirrorY = null!,
         _miMirrorAtPivot = null!, _miRightErase = null!, _miWrap = null!, _miSelectTools = null!;
     private readonly List<MenuItem> _docItems = new();
@@ -181,7 +181,11 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         AttachWindowDrop();
 
         var s0 = _settings;
-        (_splitRightDock, _rowPreview, _) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
+        (_splitRightDock, _rowPreview, var previewSplitter) = MakeRowSplit(_preview, _toolOptions, fixedFirst: true, s0.PreviewHeight);
+        // 미리보기·도구 설정 사이 막대는 잡기 쉽게 위아래로 3px씩 더 넓힌다(보이는 선은 가운데 3px — 바깥은 패널 색).
+        previewSplitter.Height = previewSplitter.MinHeight = SplitterSize + 6;
+        previewSplitter.BorderThickness = new Thickness(0, 3);
+        previewSplitter.BorderBrush = AppTheme.PanelBrush;
         (_splitTimeline, _rowBottom, _) = MakeRowSplit(canvasHost, _timeline, fixedFirst: false, s0.BottomHeight);
         (_splitRight, _colRight, _) = MakeColumnSplit(_splitTimeline, _splitRightDock, fixedFirst: false, s0.RightWidth);
         (_splitPalette, _colPalette, _) = MakeColumnSplit(_colors, _splitRight, fixedFirst: true, s0.PaletteWidth);
@@ -238,6 +242,10 @@ public sealed partial class MainForm : Window, Ai.IAiHost
 
         KeyState.Attach(this);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(KeyDownEvent, OnSpaceKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(KeyUpEvent, OnSpaceKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerPressedEvent, (_, _) => _spaceTapStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Deactivated += (_, _) => (_spaceTapStart, _spaceHeld) = (null, false);
         // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다(공통 모듈).
         TextFocusRelease.SetFallback(this, () => _canvas);
         Opened += (_, _) => OnShown();
@@ -441,6 +449,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbTiled = Toggle(right, MainStrings.Ui_045, MainStrings.Ui_046, () => SetTiledMode(!_canvas.TiledMode));
         _cbPivot = Toggle(right, MainStrings.Ui_047, MainStrings.Ui_048, () => SetShowPivot(!_canvas.ShowPivot));
         _cbOnion = Toggle(right, MainStrings.Ui_049, MainStrings.Ui_050, () => _ctx.OnionSkin = !_ctx.OnionSkin);
+        _cbEffects = Toggle(right, MainStrings.Ui_CanvasEffects, MainStrings.Ui_CanvasEffectsTip, ToggleCanvasEffects);
         // 우클릭 = 그 보기의 설정 팝업(바꾸면 바로 적용, 꺼져 있으면 켬)
         foreach (var (button, flyout) in new (ToggleButton, Func<Flyout>)[] { (_cbGrid, PixelGridFlyout), (_cbTiles, TileGridFlyout), (_cbTiled, TiledModeFlyout), (_cbOnion, OnionFlyout) })
             button.ContextRequested += (_, e) =>
@@ -677,6 +686,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _miTiled = Checkable(Cmd("타일 모드(반복해 보기)", MainStrings.Menu_View_SetTiledMode_144, () => SetTiledMode(!_canvas.TiledMode), "Ctrl+Shift+T", KeyScope.Global, (Key.T, Ctrl | Shift)));
         _miPivot = Checkable(Cmd("피벗 표시", MainStrings.Menu_View_SetShowPivot_146, () => SetShowPivot(!_canvas.ShowPivot)));
         _miOnion = Checkable(DocCmd("양파 껍질", MainStrings.Menu_View_OnionSkin_148, () => _ctx.OnionSkin = !_ctx.OnionSkin, "Ctrl+J", KeyScope.Global, (Key.J, Ctrl)));
+        _miEffects = Checkable(DocCmd("캔버스에 효과 보기", MainStrings.Menu_View_CanvasEffects, ToggleCanvasEffects, "Ctrl+Shift+E", KeyScope.NotInText, (Key.E, Ctrl | Shift)));
         _miFiles = Checkable(Cmd("파일 브라우저", MainStrings.Menu_View_SetFilesVisible_150, () => SetFilesVisible(!_filesShown, animate: true), "F8", KeyScope.Global, (Key.F8, NoMods)));
         AddItems(view,
             Cmd("확대", MainStrings.Menu_View_ZoomStep_152, () => _canvas.ZoomStep(1), "Ctrl+=", KeyScope.NotInText, (Key.OemPlus, Ctrl), (Key.Add, Ctrl)),
@@ -684,7 +694,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             Cmd("화면에 맞추기", MainStrings.Menu_View_FitToWindow_156, _canvas.FitToWindow, "Ctrl+0", KeyScope.Global, (Key.D0, Ctrl), (Key.NumPad0, Ctrl)),
             Cmd("실제 크기(1배)", MainStrings.Menu_View_SetZoom_158, () => _canvas.SetZoom(1), "Ctrl+1", KeyScope.Global, (Key.D1, Ctrl), (Key.NumPad1, Ctrl)),
             new Separator(),
-            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion,
+            _miGrid, _miTiles, _miTiled, _miPivot, _miOnion, _miEffects,
             Cmd("격자 설정…", MainStrings.Menu_View_Command_160, GridSettings),
             new Separator(),
             DocCmd("다음 탭", MainStrings.Tabs_Next, () => CycleTab(1), "Ctrl+Tab", KeyScope.Global, (Key.Tab, Ctrl)),
@@ -1016,6 +1026,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         // 레이어 크기 모드를 적용하면 캔버스는 그대로라 화면은 두고 알리기만 한다.
         _ctx.LayerResized += (_, message) => ShowMessage(message);
+        // 레이어 크기 모드가 끝나면(적용·취소) 들어가기 전 보기로 되돌린다(같은 문서일 때만).
+        _ctx.CanvasResizeChanged += (_, _) =>
+        {
+            if (_ctx.IsCanvasResizing || _viewBeforeLayerResize is not { } before) return;
+            _viewBeforeLayerResize = null;
+            if (ReferenceEquals(_ctx.Project, before.Project)) _canvas.RestoreView(before.View);
+        };
 
         _canvas.ZoomChanged += (_, _) => { _settings.Zoom = _canvas.Zoom; UpdateStatus(); };
         _canvas.HoverChanged += (_, p) => UpdateHover(p);
@@ -1040,6 +1057,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         };
         _preview.GifExportRequested += (_, _) => ExportGif();
         _preview.FileSaved += (_, path) => _browser.RefreshFile(path);
+        _preview.TabRequested += (_, _) => OpenPreviewTab();
 
         _browser.SpriteDefaults = () => new SpriteSettings { PixelsPerUnit = _settings.LastPpu, Mode = SpriteMode.Multiple };
         _browser.FindOpenDocument = path => TryGetOpenDocument(path, out var doc) ? doc : null;
@@ -1117,6 +1135,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         }
         if (s.Maximized) WindowState = WindowState.Maximized;
 
+        _timeline.Thumbnails = s.TimelineThumbnails;
+        _timeline.NameWidth = s.TimelineNameWidth;
         _canvas.InitZoom(s.Zoom);
         _canvas.ShowPixelGrid = s.ShowPixelGrid;
         _canvas.ShowPivot = s.ShowPivot;
@@ -1293,6 +1313,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             s.PreviewHeight = (int)Math.Round(_rowPreview.ActualHeight);
             s.BrowserTreeHeight = _browser.TreeHeight;
         }
+        s.TimelineThumbnails = _timeline.Thumbnails;
+        s.TimelineNameWidth = _timeline.NameWidth;
         s.Zoom = _canvas.Zoom;
         s.ShowPixelGrid = _canvas.ShowPixelGrid;
         s.ShowPivot = _canvas.ShowPivot;
@@ -1358,8 +1380,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.PreviewZoom = _preview.ZoomSetting;
         s.PreviewFps = _preview.FpsSetting;
         s.PreviewBackground = _preview.BackgroundSetting;
-        // 다음에 켤 때 다시 열 탭(프로젝트 경로가 없는 문서 — 저장한 적 없는 새 문서·영상 등에서 만든 문서 — 는 빼고).
-        s.OpenTabs = _tabs.ToSession(t => t.Doc.Project.Path is null ? null : t.Doc.DiskPath);
+        // 다음에 켤 때 다시 열 탭(프로젝트 경로가 없는 문서 — 저장한 적 없는 새 문서·영상 등에서 만든 문서 — 와 미리보기 탭은 빼고).
+        s.OpenTabs = _tabs.ToSession(t => t.Doc is not { } d || d.Project.Path is null ? null : d.DiskPath);
         s.Save();
     }
 
@@ -1501,6 +1523,44 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         return focus is not TextBox;
     }
 
+    /// <summary>Space를 이만큼 안에 눌렀다 떼면 미리보기 재생/정지(더 오래 누르면 화면 이동만 하려던 것으로 본다).</summary>
+    private const long SpaceTapMs = 400;
+    /// <summary>재생/정지로 칠 수 있는 Space를 누른 때(<see cref="Environment.TickCount64"/>). 다른 키·마우스 단추를 누르면(Space+끌기 = 화면 이동) null.</summary>
+    private long? _spaceTapStart;
+    /// <summary>Space가 눌려 있는지(길게 누를 때 반복해서 오는 누름을 새 누름으로 보지 않음).</summary>
+    private bool _spaceHeld;
+
+    /// <summary>
+    /// Space 누름: 글자 입력란·단추(Space가 그 단추를 누름)·콤보 상자에 포커스가 없을 때만 재생/정지 후보로 둔다. 길게 눌러 끄는 화면 이동(캔버스)은 그대로다.
+    /// 다른 키를 누르면 후보에서 뺀다.
+    /// </summary>
+    private void OnSpaceKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Space)
+        {
+            _spaceTapStart = null;
+            return;
+        }
+        if (_spaceHeld) return;
+        _spaceHeld = true;
+        var focus = FocusManager?.GetFocusedElement();
+        if (e.KeyModifiers != KeyModifiers.None || !_ctx.HasProject || WorkOverlay.IsActive || !CanRun(KeyScope.NotInText, KeyModifiers.None)
+            || focus is Button or ComboBox)
+            return;
+        _spaceTapStart = Environment.TickCount64;
+    }
+
+    private void OnSpaceKeyUp(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Space) return;
+        _spaceHeld = false;
+        if (_spaceTapStart is not { } start) return;
+        _spaceTapStart = null;
+        if (Environment.TickCount64 - start > SpaceTapMs || !_ctx.HasProject) return;
+        _preview.TogglePlay();
+        e.Handled = true;
+    }
+
     // ───────────── 화면 갱신 ─────────────
 
     private void UpdateAll()
@@ -1522,7 +1582,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         var p = _ctx.Project;
         // 저장하지 않는 문서(효과 만들기의 미리보기 장면)는 주인이 정한 제목, 수정됨 표시 없음
-        if (_activeTab?.Doc is { DetachedTitle: { } detached } && ReferenceEquals(_activeTab.Doc.Project, p))
+        if (_activeTab?.Doc is { DetachedTitle: { } detached } doc && ReferenceEquals(doc.Project, p))
         {
             Title = $"{detached} — Chickxel";
             return;
@@ -1636,6 +1696,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _cbTiled.IsChecked = _miTiled.IsChecked = _canvas.TiledMode;
         _cbPivot.IsChecked = _miPivot.IsChecked = _canvas.ShowPivot;
         _cbOnion.IsChecked = _miOnion.IsChecked = _ctx.OnionSkin;
+        _cbEffects.IsChecked = _miEffects.IsChecked = _ctx.CanvasEffects;
         _cbFit.IsChecked = _canvas.AutoFit;
         _tbFiles.IsChecked = _miFiles.IsChecked = _filesShown;
     }
@@ -1645,6 +1706,14 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private void SetPixelGrid(bool on) { _canvas.ShowPixelGrid = on; UpdateToolUi(); }
     private void SetTileGrid(bool on) { _canvas.ShowTileGrid = on; UpdateToolUi(); }
     private void SetShowPivot(bool on) { _canvas.ShowPivot = on; UpdateToolUi(); }
+
+    /// <summary>캔버스에 레이어 효과 보기를 켜고 끈다(끄면 고칠 그림 그대로 — 미리보기·타임라인·내보내기는 그대로). 앱을 켜 둔 동안만 기억.</summary>
+    private void ToggleCanvasEffects()
+    {
+        _ctx.CanvasEffects = !_ctx.CanvasEffects;
+        UpdateToolUi();
+        ShowMessage(_ctx.CanvasEffects ? MainStrings.Message_CanvasEffectsOn : MainStrings.Message_CanvasEffectsOff);
+    }
 
     private void SetTiledMode(bool on)
     {
@@ -2938,8 +3007,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             return;
         }
         ShowMessage(MainStrings.Message_LayerResize);
+        // 레이어 자리를 화면에 크게(손잡이를 끌 여백을 두고) 보인다. 끝나면 지금 보기로 되돌린다(이미 모드였으면 그대로).
+        if (_viewBeforeLayerResize is null && _ctx.CanvasResizeLayer is not null)
+        {
+            _viewBeforeLayerResize = (_ctx.Project!, _canvas.View);
+            _canvas.FitToRect(_ctx.LayerResizeFrom);
+        }
         _canvas.Focus();
     }
+
+    /// <summary>레이어 크기 모드에 들어가기 전의 문서와 캔버스 보기(모드가 끝나면 되돌림). 모드가 아니면 null.</summary>
+    private (SpriteProject Project, CanvasView View)? _viewBeforeLayerResize;
 
     // ───────────── AI 채팅(Claude·Codex, AI 도구 호스트) ─────────────
 

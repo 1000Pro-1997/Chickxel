@@ -151,4 +151,41 @@ public class GroupNestTests
         p.MoveIntoGroup([layer], g, 0);
         Assert.Equal(new Rectangle(0, 0, 5, 3), layer.PartRect);
     }
+
+    [Fact]
+    public void AddSkinToLayer_WrapsTheLayerInAGroupAndAddsASkin_OneUndoStep()
+    {
+        var p = new SpriteProject(6, 4);
+        var below = p.Layers[0];
+        var layer = p.AddLayer(name: "몸");
+        var above = p.AddLayer(name: "위");
+        Paint(p, layer, 0, 2, 1, Red);
+        var flat = p.Flatten(0);
+        int undoBefore = p.History.UndoCount;
+
+        var g = p.AddSkinToLayer(layer, copy: false);
+        Assert.True(g.IsGroup);
+        Assert.Same(g, layer.Parent);
+        Assert.Equal([below, layer, g, above], p.Layers);
+        Assert.Equal(2, g.Skins.Count);
+        Assert.Same(g.Skins[1], g.ActiveSkin);
+        // 빈 새 스킨은 첫 스킨 그림을 물려받아 화면이 그대로, 지금 그림은 첫 스킨에
+        Assert.True(p.Flatten(0).ContentEquals(flat));
+        Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[0], g.BaseSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+        Assert.Equal(undoBefore + 1, p.History.UndoCount);
+
+        p.Undo();
+        Assert.False(layer.IsPart);
+        Assert.Equal([below, layer, above], p.Layers);
+        Assert.True(p.Flatten(0).ContentEquals(flat));
+
+        // 복제: 새 스킨이 지금 그림을 자기 셀로 가짐
+        var g2 = p.AddSkinToLayer(layer, copy: true);
+        Assert.Equal(Red, p.GetSkinCel(layer, p.Frames[0], g2.ActiveSkin!)![2 - layer.PartOffset.X, 1 - layer.PartOffset.Y]);
+
+        // 잠긴 레이어는 바꾸지 않는다
+        above.Locked = true;
+        Assert.Throws<InvalidOperationException>(() => p.AddSkinToLayer(above, copy: false));
+        Assert.False(above.IsPart);
+    }
 }

@@ -13,7 +13,7 @@ namespace Chickxel.Core.Effects;
 public sealed class EffectDefinition
 {
     private readonly Func<LayerEffect> _create;
-    private readonly Action<PixelImage, LayerEffect, Rectangle, EffectRunHooks?> _render;
+    private readonly Func<PixelImage, LayerEffect, Rectangle, EffectRunHooks?, PointF> _render;
     private readonly Func<LayerEffect, int, int, EffectPadding>? _padding;
     private readonly Func<LayerEffect, bool> _usesOtherFrames;
     private readonly Func<LayerEffect, bool> _clipsBySource;
@@ -21,12 +21,13 @@ public sealed class EffectDefinition
     private readonly Func<JsonObject, LayerEffect, LayerEffect>? _legacyFixup;
     private readonly IReadOnlyDictionary<string, Func<JsonObject, LayerEffect>> _legacyAliases;
     private readonly EffectCodecHooks? _codec;
+    private readonly Func<LayerEffect, bool>? _mayMovePivot;
 
     private EffectDefinition(string typeId, int version, Type modelType, string? legacyId, Func<LayerEffect> create,
-        Action<PixelImage, LayerEffect, Rectangle, EffectRunHooks?> render, Func<LayerEffect, int, int, EffectPadding>? padding,
+        Func<PixelImage, LayerEffect, Rectangle, EffectRunHooks?, PointF> render, Func<LayerEffect, int, int, EffectPadding>? padding,
         IReadOnlyList<EffectParameter> parameters, Func<LayerEffect, bool> usesOtherFrames, Func<LayerEffect, bool> clipsBySource, Func<LayerEffect, bool>? erasesSource,
         Func<JsonObject, LayerEffect, LayerEffect>? legacyFixup, IReadOnlyDictionary<string, Func<JsonObject, LayerEffect>> legacyAliases,
-        EffectCodecHooks? codec, bool generatesContent = false)
+        EffectCodecHooks? codec, bool generatesContent = false, Func<LayerEffect, bool>? mayMovePivot = null)
     {
         TypeId = typeId;
         Version = version;
@@ -42,6 +43,7 @@ public sealed class EffectDefinition
         _legacyFixup = legacyFixup;
         _legacyAliases = legacyAliases;
         _codec = codec;
+        _mayMovePivot = mayMovePivot;
         GeneratesContent = generatesContent;
         var defaults = create();
         foreach (var p in parameters) p.SetDefault(defaults);
@@ -142,9 +144,10 @@ public sealed class EffectDefinition
 
     /// <summary>
     /// <paramref name="image"/>에 효과를 바로 입힌다(<paramref name="source"/> = 효과 원본이 놓인 자리). <paramref name="hooks"/>는 렌더링의 취소와
-    /// 그리는 레이어(스크립트 효과의 실패 기록)다.
+    /// 그리는 레이어(스크립트 효과의 실패 기록)다. 돌려주는 값은 효과가 이번 프레임에 그림을 옮겼다고 알린 거리(px — 스크립트의 <c>ctx.movePivot</c> 합, 알리지 않으면 0):
+    /// 피벗 같이 옮기기(<see cref="LayerEffect.MovePivot"/>)가 켜져 있으면 뒤 효과의 피벗을 그만큼 옮긴다(<see cref="LayerEffects.Apply(PixelImage, IReadOnlyList{LayerEffect}, Rectangle)"/>).
     /// </summary>
-    internal void Render(PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks = null) => _render(image, effect, source, hooks);
+    internal PointF Render(PixelImage image, LayerEffect effect, Rectangle source, EffectRunHooks? hooks = null) => _render(image, effect, source, hooks);
 
     /// <summary>지금까지 넓힌 크기 <paramref name="width"/>×<paramref name="height"/>에 이 효과가 더하는 바깥 여백.</summary>
     internal EffectPadding Padding(LayerEffect effect, int width, int height) => _padding?.Invoke(effect, width, height) ?? default;
@@ -155,41 +158,53 @@ public sealed class EffectDefinition
     internal bool ErasesSource(LayerEffect effect) => _erasesSource?.Invoke(effect) == true;
 
     /// <summary>
+    /// 이 효과가 그림을 옮긴 거리를 알릴 수 있는지(<see cref="Render"/>가 0이 아닌 값을 돌려줄 수 있음 — 흔들기·둥실둥실, <c>ctx.movePivot</c>을 부르는 실행할 수 있는 스크립트).
+    /// 아니면 피벗 이동을 재려고 효과를 그리지 않는다(<see cref="LayerEffects.MayMovePivot"/>).
+    /// </summary>
+    internal bool MayMovePivot(LayerEffect effect) => _mayMovePivot?.Invoke(effect) == true;
+
+    /// <summary>
     /// 정의 만들기. <paramref name="schema"/>는 설정 목록, <paramref name="legacyId"/>는 예전 짧은 ID,
     /// <paramref name="legacyFixup"/>은 예전 형식에만 있던 키를 옮기는 보정, <paramref name="legacyAliases"/>는 이 효과로 바꿔 읽는 없어진 효과 ID와 그 변환,
-    /// <paramref name="generatesContent"/>는 원본 없이 그림을 만드는지(<see cref="GeneratesContent"/>)다.
+    /// <paramref name="generatesContent"/>는 원본 없이 그림을 만드는지(<see cref="GeneratesContent"/>), <paramref name="moves"/>는 그림을 옮기는 효과가 그 프레임에 옮긴 거리(px —
+    /// <see cref="Render"/>가 돌려줌, 없으면 0)다.
     /// </summary>
     internal static EffectDefinition Create<T>(string typeId, string legacyId, Action<PixelImage, T, Rectangle> render,
         Func<EffectSchema<T>, IEnumerable<EffectParameter>> schema, int version = 1, Func<T, int, int, EffectPadding>? padding = null,
         bool usesOtherFrames = false, bool clipsBySource = false, Func<T, bool>? erasesSource = null,
         Func<JsonObject, T, T>? legacyFixup = null, IReadOnlyDictionary<string, Func<JsonObject, LayerEffect>>? legacyAliases = null,
-        bool generatesContent = false)
+        bool generatesContent = false, Func<T, PointF>? moves = null)
         where T : LayerEffect, new()
     {
         var parameters = schema(new EffectSchema<T>()).ToList();
         if (typeof(AnimatedEffect).IsAssignableFrom(typeof(T))) parameters.AddRange(MotionParameters());
         return new EffectDefinition(typeId, version, typeof(T), legacyId, () => new T(),
-            (image, effect, source, _) => render(image, (T)effect, source),
+            (image, effect, source, _) =>
+            {
+                render(image, (T)effect, source);
+                return moves?.Invoke((T)effect) ?? PointF.Empty;
+            },
             padding is null ? null : (effect, width, height) => padding((T)effect, width, height),
             parameters, _ => usesOtherFrames, _ => clipsBySource,
             erasesSource is null ? null : effect => erasesSource((T)effect),
             legacyFixup is null ? null : (flat, effect) => legacyFixup(flat, (T)effect),
-            legacyAliases ?? new Dictionary<string, Func<JsonObject, LayerEffect>>(), null, generatesContent);
+            legacyAliases ?? new Dictionary<string, Func<JsonObject, LayerEffect>>(), null, generatesContent, moves is null ? null : _ => true);
     }
 
     /// <summary>
-    /// 효과 값마다 설정 schema가 다른 효과(스크립트 효과)의 정의. 렌더러는 렌더링 끼움(취소·레이어)을 받고, 다른 프레임을 쓰는지·클리핑 방식·원본을 지우는지도
-    /// 효과마다 정한다. 설정 JSON에는 <paramref name="codec"/>이 쓰는 효과 자신의 설정 뒤에 움직이는 효과 공통 설정이 붙는다. 예전 형식은 없다.
+    /// 효과 값마다 설정 schema가 다른 효과(스크립트 효과)의 정의. 렌더러는 렌더링 끼움(취소·레이어)을 받아 알린 이동(px)을 돌려주고, 다른 프레임을 쓰는지·클리핑 방식·원본을 지우는지·
+    /// 이동을 알릴 수 있는지도 효과마다 정한다. 설정 JSON에는 <paramref name="codec"/>이 쓰는 효과 자신의 설정 뒤에 움직이는 효과 공통 설정이 붙는다. 예전 형식은 없다.
     /// </summary>
-    internal static EffectDefinition CreateScripted<T>(string typeId, Action<PixelImage, T, Rectangle, EffectRunHooks?> render,
-        Func<T, int, int, EffectPadding> padding, Func<T, bool> usesOtherFrames, Func<T, bool> clipsBySource, Func<T, bool> erasesSource, EffectCodecHooks codec)
+    internal static EffectDefinition CreateScripted<T>(string typeId, Func<PixelImage, T, Rectangle, EffectRunHooks?, PointF> render,
+        Func<T, int, int, EffectPadding> padding, Func<T, bool> usesOtherFrames, Func<T, bool> clipsBySource, Func<T, bool> erasesSource, Func<T, bool> mayMovePivot,
+        EffectCodecHooks codec)
         where T : AnimatedEffect, new()
     {
         return new EffectDefinition(typeId, 1, typeof(T), null, () => new T(),
             (image, effect, source, hooks) => render(image, (T)effect, source, hooks),
             (effect, width, height) => padding((T)effect, width, height),
             MotionParameters(), effect => usesOtherFrames((T)effect), effect => clipsBySource((T)effect), effect => erasesSource((T)effect),
-            null, new Dictionary<string, Func<JsonObject, LayerEffect>>(), codec);
+            null, new Dictionary<string, Func<JsonObject, LayerEffect>>(), codec, mayMovePivot: effect => mayMovePivot((T)effect));
     }
 
     /// <summary>움직이는 효과 공통 설정(schema 끝): 빠르기 곡선·반복·반복 횟수.</summary>

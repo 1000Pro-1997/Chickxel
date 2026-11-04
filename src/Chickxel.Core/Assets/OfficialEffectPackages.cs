@@ -26,8 +26,20 @@ public static class OfficialEffectPackages
     /// <summary>한 번 설치한 공식 패키지 ID를 기억하는 파일(저장소 뿌리).</summary>
     public const string StateFileName = "bundled-effects.json";
 
-    /// <summary>공식 효과 패키지가 요구하는 앱 버전(공식 효과의 스크립트 API가 모두 든 첫 배포).</summary>
+    /// <summary>공식 효과 패키지가 요구하는 앱 버전(공식 효과의 스크립트 API가 모두 든 첫 배포). 더 새 API를 부르는 효과는 <see cref="MinAppVersionOf"/>.</summary>
     public const string MinAppVersion = "1.14.63";
+
+    /// <summary>
+    /// <see cref="MinAppVersion"/>보다 새 앱이 있어야 하는 공식 효과(그 뒤에 생긴 스크립트 API를 부름 — 예전 앱은 그 효과를 그리지 못함)와 그 앱 버전.
+    /// </summary>
+    private static readonly Dictionary<string, string> MinAppVersions = new(StringComparer.Ordinal)
+    {
+        // ctx.movePivot(뒤 효과의 피벗 같이 옮기기)을 부름
+        ["bob"] = "1.14.92", ["shake"] = "1.14.92",
+    };
+
+    /// <summary>공식 효과 <paramref name="id"/>의 패키지가 요구하는 앱 버전.</summary>
+    public static string MinAppVersionOf(string id) => MinAppVersions.GetValueOrDefault(id, MinAppVersion);
 
     public const string FirstVersion = "1.0.0", License = "MIT";
 
@@ -41,10 +53,11 @@ public static class OfficialEffectPackages
     {
         // 1.0.1: 선언에 language: "ko"를 더함(원문의 이름·설명·설정 이름이 한국어임을 밝힘)
         // afterimage 1.0.2: 선언에 previewMotion: "right"를 더함(미리보기 병아리가 움직여야 잔상이 보임)
-        ["afterimage"] = "1.0.2", ["appear"] = "1.0.1", ["blink"] = "1.0.1", ["bob"] = "1.0.1", ["coloradjust"] = "1.0.1", ["colorcycle"] = "1.0.1",
+        // bob·shake 1.0.2: 옮긴 거리를 ctx.movePivot으로 알림(뒤 효과의 피벗이 따라감, 그림은 그대로)
+        ["afterimage"] = "1.0.2", ["appear"] = "1.0.1", ["blink"] = "1.0.1", ["bob"] = "1.0.2", ["coloradjust"] = "1.0.1", ["colorcycle"] = "1.0.1",
         ["coloroverlay"] = "1.0.1", ["explode"] = "1.0.1", ["fade"] = "1.0.1", ["hitflash"] = "1.0.1", ["hologram"] = "1.0.1", ["innerglow"] = "1.0.1",
         ["melt"] = "1.0.1", ["outline"] = "1.0.1", ["paletteswap"] = "1.0.1", ["reflection"] = "1.0.1", ["rimlight"] = "1.0.1", ["rotate"] = "1.0.1",
-        ["shadow"] = "1.0.1", ["shake"] = "1.0.1", ["shine"] = "1.0.1", ["shockwave"] = "1.0.1", ["squash"] = "1.0.1",
+        ["shadow"] = "1.0.1", ["shake"] = "1.0.2", ["shine"] = "1.0.1", ["shockwave"] = "1.0.1", ["squash"] = "1.0.1",
     };
 
     /// <summary>공식 효과 <paramref name="id"/>의 패키지 버전.</summary>
@@ -93,7 +106,7 @@ public static class OfficialEffectPackages
     public static AssetManifest Header(string id, ScriptEffectProgram program) => new()
     {
         Id = PackageId(id), Version = VersionOf(id), Name = NameOf(program), Description = DescriptionOf(program),
-        Author = Author, License = License, MinAppVersion = MinAppVersion,
+        Author = Author, License = License, MinAppVersion = MinAppVersionOf(id),
     };
 
     /// <summary>공식 효과 <paramref name="id"/>의 패키지 바이트(<c>.chickxel-asset</c>). 미리보기를 그리므로 효과마다 수십~수백 ms.</summary>
@@ -180,11 +193,11 @@ public static class OfficialEffectPackages
 
     private enum Step { None, Install, Update, Remember }
 
-    // 공식 효과 하나에 할 일(Remember = 이미 있는 효과를 처음 봄 — 설치 기록에만 더함)
+    // 공식 효과 하나에 할 일(Remember = 이미 있는 효과를 처음 봄 — 설치 기록에만 더함). 패키지의 스크립트 효과가 그 공식 효과다(에셋 ID는 보지 않음 — AssetCatalog.OfficialIdOf)
     private static Step StepOf(AssetStore store, HashSet<string> offered, string id, bool restore)
     {
         string packageId = PackageId(id);
-        var current = store.Catalog.FromPackage(packageId).FirstOrDefault(entry => entry.Store!.AssetId == AssetId(id));
+        var current = store.Catalog.FromPackage(packageId).FirstOrDefault(entry => AssetCatalog.OfficialIdOf(entry) == id);
         if (current is null) return offered.Contains(packageId) && !restore ? Step.None : Step.Install;
         if (!current.Modified && SemVersion.TryParse(VersionOf(id), out var bundled) && current.Store!.SemanticVersion.CompareTo(bundled) < 0)
             return Step.Update;

@@ -314,6 +314,12 @@ internal static class ScriptHostApi
         // 순서 디더 문턱값(기본 효과의 Bayer와 같음): 2×2는 0~3, 4×4는 0~15
         Method(ctx, engine, "bayer2", 2, args => Bayer.Threshold2(TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1))));
         Method(ctx, engine, "bayer4", 2, args => Bayer.Threshold4(TypeConverter.ToInt32(Arg(args, 0)), TypeConverter.ToInt32(Arg(args, 1))));
+        // 그림을 옮긴 효과가 이번 프레임에 옮긴 거리(px)를 알린다: 뒤 효과의 피벗이 따라간다(LayerEffect.MovePivot). 여러 번 부르면 더한다 — 빠른 경로와 같은 ScriptColors
+        Method(ctx, engine, "movePivot", 2, args =>
+        {
+            colors.MovePivot(TypeConverter.ToNumber(Arg(args, 0)), TypeConverter.ToNumber(Arg(args, 1)));
+            return JsValue.Undefined;
+        });
         ctx.PreventExtensions();
         return ctx;
     }

@@ -12,6 +12,7 @@ namespace Chickxel.App;
 /// 자체 FPS(0 = 프레임 길이 사용), 배율 1×/2×/4×/맞춤, 배경색을 고를 수 있고, 멈춰 있으면 현재 프레임을 보여 준다.
 /// 그룹(스킨 슬롯)이 있으면 아래쪽 "착장" 줄에서 그룹마다(타임라인처럼 위→아래) 보일 스킨을 고르고, "관리…"로 스킨 관리 창을 연다.
 /// 그림을 누르면 크기를 바꿀 수 있는 크게 보기 창(<see cref="ZoomWindow"/>)이 열리고, 우클릭하면 보이는 프레임을 복사(1×·×4)·PNG로 저장하거나 GIF 내보내기 창을 연다.
+/// 제목 줄 오른쪽 끝 단추는 미리보기 탭(<see cref="TabView"/>를 메인 창이 나눈 칸에 닮)을 열어 달라고 알린다. 미리보기 탭이 열려 있으면 그림을 눌러도 그 탭을 보인다(큰 미리보기는 하나만).
 /// </summary>
 public sealed class PreviewPanel : UserControl
 {
@@ -54,6 +55,11 @@ public sealed class PreviewPanel : UserControl
     public event EventHandler? GifExportRequested;
     /// <summary>파일을 저장함(파일 목록 새로 고침용).</summary>
     public event EventHandler<string>? FileSaved;
+    /// <summary>"탭으로 열기"(제목 줄 오른쪽 끝 단추, 미리보기 탭이 열려 있으면 그림 누르기도): 미리보기 탭을 열거나 보여 달라.</summary>
+    public event EventHandler? TabRequested;
+
+    /// <summary>미리보기 탭이 열려 있는지(메인 창이 맞춤). 열려 있으면 그림을 눌러도 크게 보기 창 대신 그 탭을 보인다 — 큰 미리보기는 하나만.</summary>
+    public bool TabOpen { get; set; }
 
     /// <summary>"크게 복사"의 최근접 확대 배율.</summary>
     private const int EnlargedCopyScale = 4;
@@ -123,7 +129,13 @@ public sealed class PreviewPanel : UserControl
         };
         DockPanel.SetDock(_outfitHost, Dock.Bottom);
         var root = new DockPanel();
-        root.Children.Add(Ui.Header(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D));
+        var header = Ui.Header(UiStrings.S_PreviewPanel_PreviewPanel_015AD8431D);
+        var title = (Control)header.Child!;
+        header.Child = null;
+        var tabButton = HeaderIconButton(VectorIcon.Columns2, UiStrings.Preview_OpenTabTip, () => TabRequested?.Invoke(this, EventArgs.Empty));
+        DockPanel.SetDock(tabButton, Dock.Right);
+        header.Child = new DockPanel { Children = { tabButton, title } };
+        root.Children.Add(header);
         root.Children.Add(bar);
         root.Children.Add(_outfitHost);
         root.Children.Add(_view);
@@ -135,7 +147,8 @@ public sealed class PreviewPanel : UserControl
         {
             if (e.InitialPressMouseButton != MouseButton.Left) return;
             e.Handled = true;
-            OpenZoom();
+            if (TabOpen) TabRequested?.Invoke(this, EventArgs.Empty);
+            else OpenZoom();
         };
         Content = root;
         SetScale(0);
@@ -148,6 +161,8 @@ public sealed class PreviewPanel : UserControl
             Redraw();
         };
         ctx.ViewChanged += (_, _) => Redraw();
+        // 레이어 크기 모드에 들어가고 나올 때 보이는 자리가 바뀐다(그 레이어 자리만 크게)
+        ctx.CanvasResizeChanged += (_, _) => Redraw();
         ctx.RenderUpdated += (_, _) => Redraw();
         _busyTimer.Tick += (_, _) => Redraw();
         // 재생 중에 태그를 만들거나 고르면 그 태그 안에서 반복하도록 순서를 바꾼다.
@@ -529,12 +544,62 @@ public sealed class PreviewPanel : UserControl
 
     /// <summary>열린 크게 보기 창(없으면 null).</summary>
     private ZoomWindow? _zoom;
+    /// <summary>미리보기 탭에 둔 그림(처음 쓸 때 만듦).</summary>
+    private View? _tabView;
 
-    /// <summary>미리보기 그림을 다시 그린다(크게 보기 창이 열려 있으면 그쪽도).</summary>
+    /// <summary>
+    /// 미리보기 탭의 그림: 크게 보기 창과 같다(맞춤으로 시작, 휠 = 포인터 자리 기준 확대·축소, 끌기 = 옮기기, 두 번 누르기 = 다시 맞춤, 우클릭 = 미리보기 메뉴).
+    /// 하나만 만들어 두고 메인 창이 미리보기 탭을 보이는 칸에 옮겨 단다.
+    /// </summary>
+    public Control TabView
+    {
+        get
+        {
+            if (_tabView is null)
+            {
+                _tabView = new View(this, fit: true);
+                PopupMenus.Attach(_tabView, ViewMenu);
+            }
+            return _tabView;
+        }
+    }
+
+    /// <summary>미리보기 그림을 다시 그린다(크게 보기 창·미리보기 탭이 있으면 그쪽도).</summary>
     private void Redraw()
     {
         _view.InvalidateVisual();
         _zoom?.Redraw();
+        _tabView?.InvalidateVisual();
+    }
+
+    /// <summary>크게 보기 창을 닫는다(미리보기 탭을 열 때 — 큰 미리보기는 하나만).</summary>
+    public void CloseZoom() => _zoom?.Close();
+
+    /// <summary>제목 줄 오른쪽 끝의 납작한 아이콘 단추(마우스를 올리면 밝게).</summary>
+    private static Border HeaderIconButton(VectorIcon icon, string tip, Action onClick)
+    {
+        var ink = new IconView(icon, AppTheme.DimTextBrush) { Width = 14, Height = 14, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var b = new Border
+        {
+            Width = 22,
+            Height = 20,
+            Margin = new Thickness(0, 0, 3, 0),
+            CornerRadius = new CornerRadius(3),
+            Background = Brushes.Transparent,
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = ink,
+        };
+        ToolTip.SetTip(b, tip);
+        b.PointerEntered += (_, _) => { b.Background = AppTheme.HoverBrush; ink.Foreground = AppTheme.TextBrush; };
+        b.PointerExited += (_, _) => { b.Background = Brushes.Transparent; ink.Foreground = AppTheme.DimTextBrush; };
+        b.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(b).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            onClick();
+        };
+        return b;
     }
 
     /// <summary>크게 보기 창을 연다(이미 열려 있으면 앞으로). 문서가 없으면 열지 않는다.</summary>
@@ -711,6 +776,17 @@ public sealed class PreviewPanel : UserControl
             var view = ctx.FrameView(frame);
             if (view.Bitmap is not { } bmp) return;
             var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
+            // 레이어 크기 모드(Ctrl+Shift+C): 휠로 배율을 고르지 않았으면 그 레이어 자리만 칸에 맞춰 크게
+            bool layerFocus = false;
+            if (!(_fit && _zoom > 0) && ctx.LayerResizeFrom is { IsEmpty: false } from)
+            {
+                var focus = Rectangle.Intersect(from, src);
+                if (focus.Width > 0 && focus.Height > 0)
+                {
+                    src = focus;
+                    layerFocus = true;
+                }
+            }
             Rect shown;
             if (_fit && _zoom > 0)
             {
@@ -720,7 +796,7 @@ public sealed class PreviewPanel : UserControl
                 using (ImageUtil.Pixelated(g))
                     g.DrawImage(bmp, new Rect(0, 0, src.Width, src.Height), shown);
             }
-            else shown = ImageUtil.DrawFitted(g, bmp, src, area, _fit ? 0 : _owner._scale);
+            else shown = ImageUtil.DrawFitted(g, bmp, src, area, _fit || layerFocus ? 0 : _owner._scale);
             _shown = shown;
             // 재생 중 다음 프레임을 기다리거나, 보이는 프레임을 다시 계산하는 중이면 로딩 아이콘(그림은 이전 것 그대로)
             var wait = _owner._waiting && _owner._waitFrame < ctx.FrameCount ? ctx.FrameView(_owner._waitFrame) : view;

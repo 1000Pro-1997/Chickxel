@@ -143,11 +143,14 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly ComboBox _crSliceFill;
     private readonly AnchorPicker _crAnchor = new();
     private readonly StackPanel _crCanvasRow, _crSliceRow;
+    /// <summary>캔버스 크기 줄 앞 글(레이어 크기 모드에서는 "레이어 가로" — 그 줄이 적용 뒤 레이어 자리 크기).</summary>
+    private readonly TextBlock _crCanvasLabel;
     private readonly TextBlock _crTitle;
     private readonly Control _crInfo;
     private readonly Button _crApply;
 
-    // 타임라인에서 고른 효과(하나만 골랐을 때)
+    // 타임라인에서 고른 효과(하나만 골랐을 때): 도구 설정 아래 "효과" 제목 줄(접고 폄)과 그 효과 이름의 묶음 상자
+    private readonly StackPanel _effectSection;
     private readonly Border _effectBox;
     private readonly TextBlock _effectTitle;
     private readonly Control _effectInfo;
@@ -435,7 +438,13 @@ public sealed class ToolOptionsPanel : UserControl
         {
             if (_updating || _ctx.Project is not { } p) return;
             int f = _ctx.CurrentFrame;
-            _ctx.Structural(() => p.SetFramePivot(f, _framePivot.On() ? p.GetFramePivot(f) : null));
+            // 부위면 그 부위의 이 프레임만, 아니면 프로젝트의 이 프레임만(켤 때는 지금 피벗에서 시작)
+            if (_ctx.CurrentPart is { } part)
+            {
+                int index = p.IndexOf(part);
+                _ctx.Structural(() => p.SetPartFramePivot(index, f, _framePivot.On() ? p.GetPartPivot(part, f) : null));
+            }
+            else _ctx.Structural(() => p.SetFramePivot(f, _framePivot.On() ? p.GetFramePivot(f) : null));
         };
         _pivotTarget = Dim("");
         _pivotTarget.TextWrapping = TextWrapping.Wrap;
@@ -550,7 +559,8 @@ public sealed class ToolOptionsPanel : UserControl
         };
         _crApply = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B, (_, _) => _ctx.CommitCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
         var crCancel = Ui.Button(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED, (_, _) => _ctx.CancelCanvasResize()).Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_495785D5E4);
-        _crCanvasRow = Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9), _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight);
+        _crCanvasLabel = Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9);
+        _crCanvasRow = Ui.Row(_crCanvasLabel, _crWidth, Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_A5A2849291), _crHeight);
         _crSliceRow = Ui.Row(_crSlice, _crSliceFill);
         _canvasResizeBox = InfoGroup(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801, UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6, Ui.Stack(
             _crCanvasRow,
@@ -580,23 +590,27 @@ public sealed class ToolOptionsPanel : UserControl
         var effectHead = (StackPanel)((StackPanel)_effectBox.Child!).Children[0];
         _effectTitle = (TextBlock)effectHead.Children[0];
         _effectInfo = effectHead.Children[1];
-        _effectBox.IsVisible = false;
+        _effectSection = new StackPanel { IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
         _fxGroupTimer.Tick += (_, _) => EndEffectEdit();
         // 캔버스 등 다른 곳을 고치러 나가면 묶음을 닫는다(다른 편집이 효과 변경과 한 단계로 묶이지 않게).
         PointerExited += (_, _) => EndEffectEdit();
 
-        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _effectBox];
+        Control[] boxes = [_canvasResizeBox, _transformBox, _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox];
         foreach (var box in boxes) Ui.Foldable((Border)box);
-        var stack = Ui.Stack(boxes);
+        Ui.Foldable(_effectBox);
         var header = Ui.Header(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E39101186F);
         _title = (TextBlock)header.Child!;
         header.Child = null;
         var headerRow = Ui.Row(_title, _hint);
         headerRow.VerticalAlignment = VerticalAlignment.Center;
         header.Child = headerRow;
+        var toolBody = Ui.FoldableHeader(header, Ui.Stack(boxes));
+        var effectHeader = Ui.Header(UiStrings.EffectDock_Header);
+        _effectSection.Children.Add(effectHeader);
+        _effectSection.Children.Add(Ui.FoldableHeader(effectHeader, _effectBox));
         var root = new DockPanel();
         root.Children.Add(header);
-        root.Children.Add(Ui.ScrollHost(stack));
+        root.Children.Add(Ui.ScrollHost(new StackPanel { Children = { toolBody, _effectSection } }));
         Content = root;
 
         ctx.ToolChanged += (_, _) => Refresh();
@@ -619,7 +633,7 @@ public sealed class ToolOptionsPanel : UserControl
         ctx.ViewChanged += (_, _) =>
         {
             if (_pivotBox.IsVisible) RefreshPivot();
-            if (_effectBox.IsVisible) RefreshEffectStatus();
+            if (_effectSection.IsVisible) RefreshEffectStatus();
         };
         Refresh();
     }
@@ -718,11 +732,20 @@ public sealed class ToolOptionsPanel : UserControl
     private void SetCanvasResizeImage(Func<Rectangle, Rectangle> change)
         => _ctx.SetCanvasResize(_ctx.CanvasResizeCanvas, change(_ctx.CanvasResizeImage));
 
-    /// <summary>숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다.</summary>
+    /// <summary>
+    /// 숫자 크기 변경: 중심 기준이면 캔버스 원점을 함께 옮기고 그림의 화면 위치는 유지한다. 레이어 크기 모드면 적용 뒤 레이어 자리 크기(왼쪽 위 고정, 그림은 그대로 —
+    /// 밖으로 나간 그림은 잘림).
+    /// </summary>
     private void SetCanvasResizeSize(int? width, int? height)
     {
-        var c = _ctx.CanvasResizeCanvas;
         var image = _ctx.CanvasResizeImage;
+        if (_ctx.CanvasResizeLayer is not null)
+        {
+            var a = _ctx.LayerResizeArea;
+            _ctx.SetLayerResize(a with { Width = width ?? a.Width, Height = height ?? a.Height }, image);
+            return;
+        }
+        var c = _ctx.CanvasResizeCanvas;
         int x = _ctx.CanvasResizeFromCenter && width is not null ? (_ctx.CanvasResizeCenter2.X - width.Value) / 2 : c.X;
         int y = _ctx.CanvasResizeFromCenter && height is not null ? (_ctx.CanvasResizeCenter2.Y - height.Value) / 2 : c.Y;
         image.Offset(c.X - x, c.Y - y);
@@ -804,18 +827,19 @@ public sealed class ToolOptionsPanel : UserControl
         _hint.IsVisible = hint.Length > 0;
         _transformBox.IsVisible = _ctx.IsTransforming;
         _canvasResizeBox.IsVisible = _ctx.IsCanvasResizing;
-        _effectBox.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
+        _effectSection.IsVisible = _fxLayer is not null && !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
         if (_ctx.IsTransforming || _ctx.IsCanvasResizing)
         {
             // 변형·캔버스 크기 모드 중에는 그 값만 보인다.
             bool layer = _ctx.CanvasResizeLayer is not null;
             _title.Text = _ctx.IsTransforming ? UiStrings.S_ToolOptionsPanel_Refresh_DD7EA3035B
                 : layer ? UiStrings.LayerResize_PanelTitle : UiStrings.S_ToolOptionsPanel_Refresh_6281D2CC20;
-            // 레이어 크기 모드: 캔버스는 그대로라 캔버스 크기·중심 기준·9-slice 줄을 숨긴다.
+            // 레이어 크기 모드: 캔버스는 그대로라 중심 기준·9-slice 줄을 숨기고, 크기 줄은 적용 뒤 레이어 자리 크기.
             _crTitle.Text = layer ? UiStrings.LayerResize_GroupTitle : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_EDE86CE801;
             ToolTip.SetTip(_crInfo, layer ? UiStrings.LayerResize_Info : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8CE505E7D6);
             _crApply.Tip(layer ? UiStrings.LayerResize_ApplyTip : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_E905102901);
-            _crCanvasRow.IsVisible = _crFromCenter.IsVisible = _crSliceRow.IsVisible = !layer;
+            _crCanvasLabel.Text = layer ? UiStrings.LayerResize_AreaWidth : UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4ED6D3C2A9;
+            _crFromCenter.IsVisible = _crSliceRow.IsVisible = !layer;
             foreach (var box in new Control[] { _shapeBox, _brushBox, _pencilGradientBox, _fillBox, _gradientBox, _pickerBox, _dodgeBox, _eraserBox, _ditherBox, _textBox, _optionsBox, _mirrorBox, _pivotBox, _sliceBox, _hint })
                 box.IsVisible = false;
         }
@@ -959,8 +983,9 @@ public sealed class ToolOptionsPanel : UserControl
         _updating = true;
         try
         {
-            _crWidth.Value = c.Width;
-            _crHeight.Value = c.Height;
+            var size = _ctx.CanvasResizeLayer is not null ? _ctx.LayerResizeArea.Size : c.Size;
+            _crWidth.Value = size.Width;
+            _crHeight.Value = size.Height;
             _crFromCenter.IsChecked = _ctx.CanvasResizeFromCenter;
             bool available = _ctx.CanvasResizeSliceAvailable;
             _crSlice.IsEnabled = available;
@@ -1025,11 +1050,12 @@ public sealed class ToolOptionsPanel : UserControl
     private int TargetWidth => Math.Max(1, _ctx.CanvasWidth);
     private int TargetHeight => Math.Max(1, _ctx.CanvasHeight);
 
-    /// <summary>저장된 대상 피벗(부위 = 그 부위, 그 밖 = 현재 프레임/기본값).</summary>
+    /// <summary>저장된 대상 피벗(부위 = 그 부위의 현재 프레임 피벗, 그 밖 = 현재 프레임/기본값).</summary>
     private Pivot? TargetPivot()
     {
         if (_ctx.Project is not { } p) return null;
-        return _ctx.CurrentPart?.PartPivot ?? p.GetFramePivot(_ctx.CurrentFrame);
+        int f = _ctx.CurrentFrame;
+        return _ctx.CurrentPart is { } part ? p.GetPartPivot(part, f) : p.GetFramePivot(f);
     }
 
     /// <summary>
@@ -1059,14 +1085,19 @@ public sealed class ToolOptionsPanel : UserControl
         _updating = true;
         try
         {
+            int f = _ctx.CurrentFrame;
             if (_ctx.CurrentPart is { } part)
             {
-                _framePivot.IsVisible = false;
-                _pivotTarget.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ToolOptionsPanel_RefreshPivot_7752FB81E5,part.Name,part.PartSize.Width,part.PartSize.Height);
+                bool own = p.HasPartFramePivot(part, f);
+                _framePivot.IsVisible = true;
+                _framePivot.IsChecked = own;
+                var culture = global::System.Globalization.CultureInfo.CurrentCulture;
+                _pivotTarget.Text = own
+                    ? string.Format(culture, UiStrings.Pivot_PartFrameTarget, part.Name, f + 1, part.PartSize.Width, part.PartSize.Height)
+                    : string.Format(culture, UiStrings.S_ToolOptionsPanel_RefreshPivot_7752FB81E5, part.Name, part.PartSize.Width, part.PartSize.Height);
             }
             else
             {
-                int f = _ctx.CurrentFrame;
                 bool own = p.Frames[f].Pivot is not null;
                 _framePivot.IsVisible = true;
                 _framePivot.IsChecked = own;
@@ -1102,13 +1133,15 @@ public sealed class ToolOptionsPanel : UserControl
     private void ApplyPivot(Pivot pivot)
     {
         if (_updating || _ctx.Project is not { } p) return;
+        int f = _ctx.CurrentFrame;
         if (_ctx.CurrentPart is { } part)
         {
             int index = p.IndexOf(part);
-            if (part.PartPivot != pivot) _ctx.Structural(() => p.SetPartPivot(index, pivot));
+            if (p.HasPartFramePivot(part, f)) _ctx.Structural(() => p.SetPartFramePivot(index, f, pivot));
+            else if (part.PartPivot != pivot) _ctx.Structural(() => p.SetPartPivot(index, pivot));
             return;
         }
-        int f = _ctx.CurrentFrame;
+        // (프로젝트) 이 프레임만의 피벗이 있으면 그 프레임, 없으면 기본 피벗
         if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivot(f, pivot));
         else if (p.Sprite.DefaultPivot != pivot)
             _ctx.Structural(() => p.Edit(UiStrings.S_ToolOptionsPanel_ApplyPivot_4E8342E979, ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
@@ -1151,16 +1184,16 @@ public sealed class ToolOptionsPanel : UserControl
             _fxIndex = -1;
             _fxStatusText = null;
             _effectStatus.Children.Clear();
-            _effectBox.IsVisible = false;
+            _effectSection.IsVisible = false;
             return;
         }
-        _effectTitle.Text = UiStrings.FormatEffectDock_Title(name: effect.DisplayName);
+        _effectTitle.Text = effect.DisplayName;
         LayerEffectsDialog.AddDockSettings(_effectForm, p, _fxLayer!, effect, SetEffect, BuildEffect);
         var hints = _effectForm.TakeHints();
         ToolTip.SetTip(_effectInfo, string.Join("\n\n", hints));
         _effectInfo.IsVisible = hints.Count > 0;
         RefreshEffectStatus();
-        _effectBox.IsVisible = !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
+        _effectSection.IsVisible = !_ctx.IsTransforming && !_ctx.IsCanvasResizing;
     }
 
     /// <summary>

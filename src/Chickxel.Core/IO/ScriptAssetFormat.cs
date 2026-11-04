@@ -21,8 +21,9 @@ public sealed record ScriptAsset : IAssetData
     /// <summary>선언의 <c>description</c>(선택).</summary>
     public string? Description { get; init; }
     /// <summary>
-    /// 올릴 때 목록 태그의 처음 값: 선언의 <c>tags</c>(<see cref="ScriptEffectProgram.Tags"/>)에, 다른 레이어를 읽는 원문(<see cref="ReadsOtherLayers"/>)이면
-    /// <see cref="LayerReferenceTag"/>를, 다른 프레임을 읽는 원문(<see cref="ReadsOtherFrames"/>)이면 <see cref="FrameReferenceTag"/>를 끝에 더한 것(이미 있으면 그대로).
+    /// 올릴 때 목록 태그의 처음 값: 선언의 <c>tags</c>(<see cref="ScriptEffectProgram.Tags"/>)에 원문에서 정하는 태그를 끝에 더한 것(이미 있으면 그대로) —
+    /// 다른 레이어를 읽으면(<see cref="ReadsOtherLayers"/>) <see cref="LayerReferenceTag"/>, 다른 프레임을 읽으면(<see cref="ReadsOtherFrames"/>) <see cref="FrameReferenceTag"/>,
+    /// 옮긴 거리를 알리면(<see cref="MovesPivot"/>) <see cref="PivotMoveTag"/>.
     /// </summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
     /// <summary>다른 레이어를 읽는 스크립트에 늘 붙는 목록 태그(<see cref="AssetPublishCheck"/>가 빠졌으면 막는다).</summary>
@@ -33,6 +34,10 @@ public sealed record ScriptAsset : IAssetData
     public const string FrameReferenceTag = "frame-reference";
     /// <summary>원문이 다른 프레임(<c>ctx.frameSource</c>·<c>ctx.renderedFrameSource</c>)을 읽는지(<see cref="ScriptInfo.ReadsOtherFrames"/>·<see cref="ScriptInfo.ReadsRenderedFrames"/>).</summary>
     public bool ReadsOtherFrames { get; init; }
+    /// <summary>그림을 옮긴 거리를 알리는(피벗을 옮기는) 스크립트에 늘 붙는 목록 태그(<see cref="AssetPublishCheck"/>가 빠졌으면 막는다).</summary>
+    public const string PivotMoveTag = "pivot-move";
+    /// <summary>원문이 <c>ctx.movePivot</c>을 쓰는지(<see cref="ScriptInfo.MovesPivot"/>).</summary>
+    public bool MovesPivot { get; init; }
     /// <summary>효과 만들기의 미리보기 장면(병아리 둘레 레이어). 없으면 null — 병아리만 놓고 그린다.</summary>
     public PreviewScene? Scene { get; init; }
     /// <summary>정리한 원문(<see cref="ScriptEffectProgram.NormalizeSource"/>).</summary>
@@ -71,13 +76,15 @@ public sealed record ScriptAsset : IAssetData
         var info = ScriptLibrary.InfoOf(ScriptLibrary.Add(program.Source));
         bool layers = info is { ReadsOtherLayers: true };
         bool frames = info is not null && (info.ReadsOtherFrames || info.ReadsRenderedFrames);
+        bool pivot = info is { MovesPivot: true };
         IReadOnlyList<string> tags = program.Tags;
         if (layers && !tags.Contains(LayerReferenceTag)) tags = [.. tags, LayerReferenceTag];
         if (frames && !tags.Contains(FrameReferenceTag)) tags = [.. tags, FrameReferenceTag];
+        if (pivot && !tags.Contains(PivotMoveTag)) tags = [.. tags, PivotMoveTag];
         return new()
         {
             Id = id, Name = program.Name.Trim(), Author = program.Author, Description = program.Description,
-            Tags = tags, ReadsOtherLayers = layers, ReadsOtherFrames = frames,
+            Tags = tags, ReadsOtherLayers = layers, ReadsOtherFrames = frames, MovesPivot = pivot,
             Source = program.Source, Hash = program.ContentHash, Animated = program.Animated, Easing = program.Easing, PreviewChick = program.PreviewChick,
             PreviewEndChick = program.PreviewEndChick, PreviewFrames = program.PreviewFrames, PreviewMotion = program.PreviewMotion, Settings = program.Settings,
             Translations = program.Translations, Language = program.Language,

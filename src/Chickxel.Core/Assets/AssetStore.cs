@@ -18,14 +18,18 @@ public enum ImportChoice
 
 /// <summary>
 /// 가져오는 패키지 파일 안의 에셋 하나(<see cref="AssetStore.Install"/>가 겹칠 때 묻는 값): 읽은 값, 이 에셋의 작성자·라이선스·상점 연결,
-/// 겹치는 기존 에셋(같은 상점 에셋, 아니면 같은 종류·같은 내용 — 없으면 null).
+/// 겹치는 기존 에셋(같은 상점 에셋, 아니면 같은 종류·같은 내용 — 없으면 null), 패키지에 에셋이 이것 하나뿐인지.
 /// </summary>
-public sealed record AssetImportItem(string Kind, IAssetData Data, AssetAuthor? Author, string? License, AssetStoreLink? Store, AssetEntry? Existing)
+public sealed record AssetImportItem(string Kind, IAssetData Data, AssetAuthor? Author, string? License, AssetStoreLink? Store, AssetEntry? Existing, bool SingleAsset = false)
 {
     public string DisplayName => Data is ScriptAsset script ? script.NameFor(CultureInfo.CurrentUICulture) : Data.Name;
 
-    /// <summary>기존 에셋과 같은 상점 에셋인지(같은 패키지 ID·에셋 ID — 업데이트나 다시 설치).</summary>
-    public bool SameStoreAsset => Existing?.Store is { } have && Store is { } incoming && have.PackageId == incoming.PackageId && have.AssetId == incoming.AssetId;
+    /// <summary>
+    /// 기존 에셋과 같은 상점 에셋인지(업데이트나 다시 설치): 같은 패키지 ID·에셋 ID, 에셋이 하나뿐인 패키지(게시 패키지·공식 효과)면 같은 패키지 ID·종류
+    /// (예전 게시 창은 이름이 바뀌면 에셋 ID도 바꿨음).
+    /// </summary>
+    public bool SameStoreAsset => Existing?.Store is { } have && Store is { } incoming && have.PackageId == incoming.PackageId
+                                  && (have.AssetId == incoming.AssetId || (SingleAsset && Existing.Kind == Kind));
 
     /// <summary>기존 에셋과 내용이 같은지.</summary>
     public bool SameContent => Existing is { } existing && existing.ContentHash == AssetContent.HashOf(Kind, Data);
@@ -401,6 +405,7 @@ public sealed partial class AssetStore
             var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
             var installed = new List<string>();
             var removedFolders = new List<string>();
+            bool single = package.Items.Count == 1;
             foreach (var (entry, data) in package.Items)
             {
                 cancellation.ThrowIfCancellationRequested();
@@ -409,9 +414,9 @@ public sealed partial class AssetStore
                 if (author?.Id == PersonalAuthorId) author = null;
                 var license = entry.License ?? (personal ? null : manifest.License);
                 var store = entry.Store ?? (listed ? AssetStoreLink.FromManifest(manifest, entry.Id, hash) : null);
-                var existing = FindExisting(records, entry.Kind, hash, store);
+                var existing = FindExisting(records, entry.Kind, hash, store, single);
                 var choice = existing is null ? ImportChoice.KeepBoth
-                    : choose(new AssetImportItem(entry.Kind, data, author, license, store, ToEntry(existing)));
+                    : choose(new AssetImportItem(entry.Kind, data, author, license, store, ToEntry(existing), single));
                 if (choice == ImportChoice.Skip) continue;
 
                 bool replace = choice == ImportChoice.Replace && existing is not null;
@@ -449,9 +454,13 @@ public sealed partial class AssetStore
         }
     }
 
-    /// <summary>가져오는 에셋과 겹치는 기존 줄: 같은 상점 에셋(패키지 ID·에셋 ID), 아니면 같은 종류·같은 내용.</summary>
-    private static Record? FindExisting(List<Record> records, string kind, string hash, AssetStoreLink? store)
-        => (store is null ? null : records.FirstOrDefault(r => r.Data is not null && r.Store is { } s && s.PackageId == store.PackageId && s.AssetId == store.AssetId))
+    /// <summary>
+    /// 가져오는 에셋과 겹치는 기존 줄: 같은 상점 에셋(패키지 ID·에셋 ID — 에셋이 하나뿐인 패키지면 같은 패키지 ID·종류), 아니면 같은 종류·같은 내용.
+    /// </summary>
+    private static Record? FindExisting(List<Record> records, string kind, string hash, AssetStoreLink? store, bool single)
+        => (store is null ? null
+               : records.FirstOrDefault(r => r.Data is not null && r.Store is { } s && s.PackageId == store.PackageId && s.AssetId == store.AssetId)
+                 ?? (single ? records.FirstOrDefault(r => r.Data is not null && r.Kind == kind && r.Store?.PackageId == store.PackageId) : null))
            ?? records.FirstOrDefault(r => r.Data is not null && r.Kind == kind && AssetContent.HashOf(kind, r.Data) == hash);
 
     // ───────────── 내 에셋 저장 ─────────────
@@ -535,16 +544,31 @@ public sealed partial class AssetStore
 
     /// <summary>
     /// 올린 뒤 에셋에 작성자·라이선스·상점 연결을 붙인다(게시 창이 올리기에 성공했을 때). 이 연결로 업데이트를 보고, 다른 컴퓨터에서 받은 것도 같은 에셋으로 알아본다.
+    /// 게시 패키지는 에셋 하나라 같은 패키지에 연결된 같은 종류의 다른 에셋(받아 둔 지난 버전 등)은 이 에셋이 대신한다: 고치지 않은 것은 지우고(즐겨찾기는 이 에셋으로),
+    /// 고친 것은 연결을 끊어 이 컴퓨터의 사본으로 둔다 — 같은 상점 에셋이 둘이면 업데이트가 하나에만 들어가 효과가 둘로 남는다.
     /// </summary>
     public AssetEntry MarkPublished(string id, AssetAuthor author, string license, AssetStoreLink link)
     {
         using var change = BeginChange();
         if (LibraryError is { } error) throw new InvalidOperationException(error);
-        var records = _records.ToList();
-        int index = records.FindIndex(r => r.Id == id && r.Data is not null);
-        if (index < 0) throw new ArgumentException(id, nameof(id));
-        records[index] = records[index] with { Author = author, License = license, Store = link };
-        SaveLibrary(records, new HashSet<string>(_favorites, StringComparer.Ordinal));
+        var target = _records.FirstOrDefault(r => r.Id == id && r.Data is not null) ?? throw new ArgumentException(id, nameof(id));
+        var favorites = new HashSet<string>(_favorites, StringComparer.Ordinal);
+        var records = new List<Record>(_records.Count);
+        var removedFolders = new List<string>();
+        foreach (var record in _records)
+        {
+            if (record.Id == id) records.Add(record with { Author = author, License = license, Store = link });
+            else if (record.Data is null || record.Kind != target.Kind || record.Store is not { } other || other.PackageId != link.PackageId) records.Add(record);
+            else if (other.ContentHash != AssetContent.HashOf(record.Kind, record.Data))
+                records.Add(record with { Author = null, License = null, Store = null, Source = AssetSources.Local });
+            else
+            {
+                if (favorites.Remove(record.Id)) favorites.Add(id);
+                if (record.Files is { } folder) removedFolders.Add(folder);
+            }
+        }
+        SaveLibrary(records, favorites);
+        foreach (var folder in removedFolders) TryDeleteDirectory(Path.Combine(FilesDirectory, folder));
         return Catalog.Find(id)!;
     }
 

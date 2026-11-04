@@ -40,6 +40,8 @@ effect({
     const horizontal = s.axis === "Horizontal";
     const dx = horizontal ? shift : 0, dy = horizontal ? 0 : -shift;
     if (dx === 0 && dy === 0) return;
+    // 옮긴 만큼 알린다: 뒤 효과(회전·찌그러지기 등)의 피벗이 따라간다(효과마다 끌 수 있음)
+    ctx.movePivot(dx, dy);
 
     // 그림을 (dx, dy)px 옮긴다(밖으로 나간 부분은 잘리고 빈 자리는 투명). 아직 읽지 않은 칸을 덮지 않는 차례로 제자리에서
     const w = img.width, h = img.height, d = img.data;

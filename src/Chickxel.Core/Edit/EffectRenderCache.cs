@@ -139,11 +139,25 @@ public sealed class EffectRenderCache
         return value;
     }
 
-    /// <summary>효과 1~k까지 입힌 중간 결과.</summary>
-    internal bool TryCheckpoint(CacheKey key, out PixelImage image) => TryGet(key, out image);
+    /// <summary>효과 1~k까지 입힌 중간 결과와 그때까지 쌓인 피벗 이동(<see cref="LayerEffects.Apply(PixelImage, IReadOnlyList{LayerEffect}, System.Drawing.Rectangle)"/>).</summary>
+    internal bool TryCheckpoint(CacheKey key, out PixelImage image, out EffectMoves moves)
+    {
+        if (TryGet<Checkpoint>(key, out var found))
+        {
+            image = found.Image;
+            moves = found.Moves;
+            return true;
+        }
+        image = null!;
+        moves = default;
+        return false;
+    }
 
     /// <param name="generation">이 계산을 시작할 때의 <see cref="Generation"/>.</param>
-    internal void PutCheckpoint(CacheKey key, PixelImage image, long generation) => Put(key, image, BytesOf(image), generation);
+    internal void PutCheckpoint(CacheKey key, PixelImage image, EffectMoves moves, long generation)
+        => Put(key, new Checkpoint(image, moves), BytesOf(image), generation);
+
+    private sealed record Checkpoint(PixelImage Image, EffectMoves Moves);
 }
 
 /// <summary>
@@ -231,6 +245,12 @@ internal sealed class EffectRunHooks
     /// <summary>켜진 효과 하나(잔상 포함)를 끝낼 때마다: 지금 그림.</summary>
     public Action<PixelImage>? EffectDone { get; init; }
 
+    /// <summary>
+    /// 그림이 옮겨 간 만큼 여백을 넓혀 다시 그리는 중(<see cref="LayerEffects.Render(PixelImage, IReadOnlyList{LayerEffect}, EffectPadding)"/>):
+    /// 진행은 첫 번째에 이미 알렸으므로 <see cref="EffectDone"/>을 부르지 않는다.
+    /// </summary>
+    public bool Repeating { get; set; }
+
     /// <summary>중간 결과를 담고 꺼낼 열쇠의 앞부분(이 레이어·프레임·셀·여백). null이면 담지 않는다.</summary>
     public object? CheckpointScope { get; init; }
 
@@ -245,7 +265,7 @@ internal sealed class EffectRunHooks
 
 /// <summary>
 /// 효과 1~k까지 입힌 중간 결과를 캐시에 담고 꺼낸다(<see cref="EffectRunHooks.CheckpointScope"/>가 있을 때만).
-/// k 다음 효과가 앞 효과에 맞춰 자르기(클리핑)가 아닌 자리만 담는다 — 그 자리에서는 그림 말고 이어받을 상태가 없다.
+/// k 다음 효과가 앞 효과에 맞춰 자르기(클리핑)가 아닌 자리만 담는다 — 그 자리에서는 그림과 쌓인 피벗 이동(같이 담음) 말고 이어받을 상태가 없다.
 /// 클리핑된 미루는 효과(잔상 등 — <see cref="LayerEffects.IsDeferred"/>)가 있는 목록은 담지 않는다(목록 중간의 상태를 끝에서 쓴다).
 /// </summary>
 internal sealed class EffectCheckpoints
@@ -284,28 +304,32 @@ internal sealed class EffectCheckpoints
 
     private CacheKey KeyFor(int index) => new("prefix", _scope, _width, _height, _source, new EffectListKey(_effects, index + 1));
 
-    /// <summary>담긴 가장 긴 중간 결과를 <paramref name="image"/>에 옮기고 이어서 계산할 효과 번호를 돌려준다(없으면 0). 건너뛴 효과도 끝낸 것으로 알린다.</summary>
-    public int Restore(PixelImage image)
+    /// <summary>
+    /// 담긴 가장 긴 중간 결과를 <paramref name="image"/>에 옮기고 이어서 계산할 효과 번호를 돌려준다(없으면 0). 건너뛴 효과도 끝낸 것으로 알린다.
+    /// <paramref name="moves"/>는 그 자리까지 효과들이 알린 이동(없으면 0).
+    /// </summary>
+    public int Restore(PixelImage image, out EffectMoves moves)
     {
         for (int i = _effects.Count - 2; i >= 0; i--)
         {
-            if (!Boundary(i) || !_cache.TryCheckpoint(KeyFor(i), out var saved)) continue;
+            if (!Boundary(i) || !_cache.TryCheckpoint(KeyFor(i), out var saved, out moves)) continue;
             saved.Pixels.AsSpan().CopyTo(image.Pixels);
             if (_hooks.EffectDone is { } done)
                 for (int k = 0; k <= i; k++)
                     if (_effects[k].Enabled && !LayerEffects.IsDeferred(_effects[k])) done(image);
             return i + 1;
         }
+        moves = default;
         return 0;
     }
 
     /// <summary>
-    /// 효과 <paramref name="index"/>까지 입힌 그림을 담는다(마지막 효과·이어받을 상태가 있는 자리는 담지 않음).
+    /// 효과 <paramref name="index"/>까지 입힌 그림과 그때까지 알린 이동 <paramref name="moves"/>를 담는다(마지막 효과·이어받을 상태가 있는 자리는 담지 않음).
     /// 이 실행에서 스크립트 효과가 실패했으면 그 뒤로는 담지 않는다(건너뛴 결과가 효과 값 열쇠로 남지 않게).
     /// </summary>
-    public void Store(int index, PixelImage image)
+    public void Store(int index, PixelImage image, EffectMoves moves)
     {
         if (index >= _effects.Count - 1 || !Boundary(index) || _hooks.ScriptFailed) return;
-        _cache.PutCheckpoint(KeyFor(index), image.Clone(), _generation);
+        _cache.PutCheckpoint(KeyFor(index), image.Clone(), moves, _generation);
     }
 }

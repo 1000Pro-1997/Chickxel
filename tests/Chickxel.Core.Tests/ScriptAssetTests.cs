@@ -441,7 +441,7 @@ public class ScriptAssetTests
             var image = source.Clone();
             var rect = new Rectangle(0, 0, 12, 12);
             LayerEffects.Apply(image, effects, rect, new EffectRunHooks { Cache = cache, CheckpointScope = scope });
-            return cache.TryCheckpoint(new CacheKey("prefix", scope, 12, 12, rect, new EffectListKey(effects, index + 1)), out _);
+            return cache.TryCheckpoint(new CacheKey("prefix", scope, 12, 12, rect, new EffectListKey(effects, index + 1)), out _, out _);
         }
         Assert.True(Stored(fine, 0));
         Assert.True(Stored(fine, 1));

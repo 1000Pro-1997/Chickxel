@@ -3,8 +3,8 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.App;
 
-/// <summary>문서 탭 하나의 겉모습: 제목(파일 이름), 풍선 도움말(전체 경로), 저장 안 한 변경 표시.</summary>
-internal readonly record struct DocumentTabInfo(string Title, string Tip, bool Dirty);
+/// <summary>문서 탭 하나의 겉모습: 제목(파일 이름), 풍선 도움말(전체 경로), 저장 안 한 변경 표시, 미리보기 탭인지(다른 색·재생 아이콘).</summary>
+internal readonly record struct DocumentTabInfo(string Title, string Tip, bool Dirty, bool Preview = false);
 
 /// <summary>
 /// 캔버스 위 문서 탭 줄(편집기 묶음 하나): 탭마다 제목·저장 안 한 변경 점·닫기 X, 끝에 "+"(새 문서), 오른쪽 끝에 나눠 열기 단추.
@@ -17,6 +17,11 @@ internal sealed class DocumentTabStrip : Border
     private const double TabHeight = 28;
     private static readonly IBrush Clear = Brushes.Transparent;
     private static readonly IBrush TabHover = AppTheme.Brush(Color.FromArgb(18, 255, 255, 255));
+    /// <summary>미리보기 탭 색(문서 탭과 한눈에 구분되게): 글자·아이콘·위 선, 옅은 바탕.</summary>
+    private static readonly Color PreviewColor = Color.FromRgb(80, 200, 150);
+    private static readonly IImmutableSolidColorBrush PreviewBrush = AppTheme.Brush(PreviewColor);
+    private static readonly IBrush PreviewBack = AppTheme.Brush(Color.FromArgb(40, PreviewColor.R, PreviewColor.G, PreviewColor.B));
+    private static readonly IBrush PreviewActiveBack = AppTheme.Brush(Color.FromArgb(70, PreviewColor.R, PreviewColor.G, PreviewColor.B));
 
     private readonly StackPanel _row = new() { Orientation = Orientation.Horizontal };
     private readonly ScrollViewer _scroll;
@@ -182,7 +187,9 @@ internal sealed class DocumentTabStrip : Border
             BorderThickness = new Thickness(0, 2, 0, 0),
             Background = Clear,
             BorderBrush = Clear,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { title, dot, close } },
+            Child = info.Preview
+                ? new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { new IconView(VectorIcon.Play, PreviewBrush) { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center }, title, dot, close } }
+                : new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { title, dot, close } },
         };
         ToolTip.SetTip(box, info.Tip);
         box.PointerEntered += (_, _) => { _hover = index; UpdateVisuals(); };
@@ -260,10 +267,20 @@ internal sealed class DocumentTabStrip : Border
         for (int i = 0; i < _tabs.Count; i++)
         {
             var (box, title, close) = _tabs[i];
-            bool active = i == _active, hover = i == _hover;
-            box.Background = active ? AppTheme.BackBrush : hover ? TabHover : Clear;
-            box.BorderBrush = active ? (_focused ? AppTheme.AccentBrush : AppTheme.BorderBrush) : Clear;
-            title.Foreground = active || hover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+            bool active = i == _active, hover = i == _hover, preview = i < _infos.Count && _infos[i].Preview;
+            if (preview)
+            {
+                // 미리보기 탭: 늘 미리보기 색(고른 탭이면 더 진한 바탕 + 위 선)
+                box.Background = active ? PreviewActiveBack : PreviewBack;
+                box.BorderBrush = active ? PreviewBrush : Clear;
+                title.Foreground = PreviewBrush;
+            }
+            else
+            {
+                box.Background = active ? AppTheme.BackBrush : hover ? TabHover : Clear;
+                box.BorderBrush = active ? (_focused ? AppTheme.AccentBrush : AppTheme.BorderBrush) : Clear;
+                title.Foreground = active || hover ? AppTheme.TextBrush : AppTheme.DimTextBrush;
+            }
             // 닫기 X는 고른 탭·마우스를 올린 탭에만(자리는 늘 잡아 두어 탭 너비가 흔들리지 않게).
             bool showClose = active || hover;
             close.Opacity = showClose ? 1 : 0;
@@ -346,7 +363,7 @@ internal sealed class DocumentPaneView : Control
 
     private void Sync()
     {
-        var project = IsAttached ? _tab?.Doc.Project : null;
+        var project = IsAttached ? _tab?.Doc?.Project : null;
         if (ReferenceEquals(project, _project)) return;
         if (_project is not null) _project.Changed -= OnProjectChanged;
         _project = project;

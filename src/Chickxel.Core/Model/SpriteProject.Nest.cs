@@ -9,6 +9,25 @@ namespace Chickxel.Core.Model;
 public sealed partial class SpriteProject
 {
     /// <summary>
+    /// 일반 레이어에 스킨을 단다(실행취소 한 단계): 레이어 자리에 그 이름의 새 그룹을 만들어 레이어를 부위로 넣고(그림·효과는 제자리 — <see cref="MoveIntoGroup"/>,
+    /// 지금 그림은 첫 스킨 "기본"), 그룹에 새 스킨을 더해 지금 스킨으로 고른다(<paramref name="copy"/>면 지금 그림을 복제, 아니면 빈 스킨).
+    /// 만든 그룹을 돌려준다. 일반 레이어가 아니면 <see cref="ArgumentException"/>, 잠겼으면 <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public Layer AddSkinToLayer(Layer layer, bool copy)
+    {
+        if (!_layers.Contains(layer) || layer.Kind != LayerKind.Normal) throw new ArgumentException(DomainStrings.Project_AddSkinRequiresGroup, nameof(layer));
+        if (layer.Locked) throw new InvalidOperationException(DomainStrings.FormatProject_NestLocked(name: layer.Name));
+        Layer group = null!;
+        Edit(DomainStrings.Project_AddSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            group = AddGroup(layer.Name, _layers.IndexOf(layer) + 1);
+            MoveIntoGroup([layer], group, 0);
+            AddSkin(group, null, copy ? group.BaseSkin : null);
+        });
+        return group;
+    }
+
+    /// <summary>
     /// 레이어들(일반 레이어, 또는 다른 그룹의 부위)을 <paramref name="group"/>의 부위로 넣는다(실행취소 한 단계). <paramref name="slot"/> = 넣을 자리
     /// (그룹의 나머지 부위 중 아래에 둘 부위 수, 0 = 맨 아래). 넣는 레이어끼리의 순서는 그대로다.
     /// 일반 레이어는 모든 프레임 그림(캔버스 밖 그림 포함)을 감싸는 영역이 부위가 되어 그림이 제자리에 남는다(빈 레이어나 원본 없이 그리는 효과가 있으면
@@ -69,6 +88,7 @@ public sealed partial class SpriteProject
                 part.PartSize = default;
                 part.PartOffset = default;
                 part.PartPivot = Pivot.Center;
+                foreach (var f in _frames) f.PartPivots.Remove(part);
                 part.PartBorder = default;
                 part.PartSourceRect = null;
             }
@@ -178,6 +198,7 @@ public sealed partial class SpriteProject
         layer.PartSize = area.Size;
         layer.PartOffset = area.Location;
         layer.PartPivot = Pivot.Center;
+        foreach (var f in _frames) f.PartPivots.Remove(layer);
         layer.PartBorder = default;
         layer.PartSourceRect = null;
     }

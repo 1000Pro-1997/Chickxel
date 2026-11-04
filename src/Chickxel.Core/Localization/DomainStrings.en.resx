@@ -152,6 +152,7 @@
   <data name="Project_LayerSize" xml:space="preserve"><value>Layer size</value></data>
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>A part's original rectangle must be its part area.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>Part pivot</value></data>
+  <data name="Project_PartFramePivot" xml:space="preserve"><value>Part frame pivot</value></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>Part border</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>Layer {number}</value></data>
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>Group</value></data>
@@ -254,6 +255,9 @@
   <data name="Script_InvalidClipsBySource" xml:space="preserve"><value>clipsBySource must be true or false.</value></data>
   <data name="Script_InvalidErasesSource" xml:space="preserve"><value>erasesSource must be true, false or the key of a bool setting.</value></data>
   <data name="Script_InvalidEasing" xml:space="preserve"><value>easing must be one of: {names}</value></data>
+  <data name="Script_InvalidRepeat" xml:space="preserve"><value>repeat must be one of: {names}</value></data>
+  <data name="Script_InvalidRepeatCount" xml:space="preserve"><value>repeatCount must be a whole number from 1 to {max}.</value></data>
+  <data name="Script_InvalidMovePivot" xml:space="preserve"><value>movePivot must be true or false.</value></data>
   <data name="Script_InvalidSettingAlpha" xml:space="preserve"><value>alpha of setting {key} is only for color, colorList and colorPairs settings and must be true or false.</value></data>
   <data name="Script_InvalidSettingWidget" xml:space="preserve"><value>widget of setting {key} is invalid. Use "angle" on an int setting, or "point" with pair naming another int setting that has no widget.</value></data>
   <data name="Script_InvalidSettingCount" xml:space="preserve"><value>min and max of list setting {key} must be whole numbers from 0 to {max}, with min ≤ max.</value></data>
@@ -420,4 +424,6 @@
   <data name="Community_Error_LoginFailed" xml:space="preserve"><value>Signing in in the browser failed.</value></data>
   <data name="Font_Unsupported" xml:space="preserve"><value>This font file isn't supported. Choose a .ttf, .otf, .ttc or .bdf file.</value></data>
   <data name="Font_Unreadable" xml:space="preserve"><value>Couldn't read the font file "{0}". It is damaged or in an unsupported format.</value></data>
+  <data name="Publish_PivotMoveTag" xml:space="preserve"><value>Effects that report how far they move the drawing (move the pivot) must have the pivot-move tag.</value></data>
+  <data name="Publish_PivotMoveTagFull" xml:space="preserve"><value>Effects that move the pivot need the pivot-move tag, but that would make more than 8 tags. Remove a tag.</value></data>
 </root>

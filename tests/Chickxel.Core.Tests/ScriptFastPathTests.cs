@@ -213,7 +213,7 @@ public class ScriptFastPathTests
                 var jint = sprite.Clone();
                 program.RenderOnJint(jint, source, context, program.NormalizeSettings(settings), CancellationToken.None);
                 var fast = sprite.Clone();
-                Assert.True(program.Fast!.TryRender(fast, source, context, program.NormalizeSettings(settings), CancellationToken.None));
+                Assert.True(program.Fast!.TryRender(fast, source, context, program.NormalizeSettings(settings), CancellationToken.None, out _));
                 Assert.True(expected.ContentEquals(jint), $"Jint {w}x{h} case {n}");
                 Assert.True(expected.ContentEquals(fast), $"fast {w}x{h} case {n}");
                 cases++;
@@ -568,7 +568,7 @@ public class ScriptFastPathTests
         var program = Compiled(Script("const d = img.data;\n" + body));
         var image = Small();
         var before = image.Clone();
-        Assert.False(program.Fast!.TryRender(image, Source, Frame, program.NormalizeSettings(null), CancellationToken.None));
+        Assert.False(program.Fast!.TryRender(image, Source, Frame, program.NormalizeSettings(null), CancellationToken.None, out _));
         Assert.True(before.ContentEquals(image));
 
         var expected = image.Clone();

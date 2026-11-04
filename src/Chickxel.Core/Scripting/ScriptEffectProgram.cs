@@ -156,6 +156,18 @@ public sealed class ScriptEffectProgram
     /// <summary>선언의 <c>easing</c>(기본 <see cref="EffectEasing.Linear"/>): 새로 넣는 효과의 빠르기 곡선 처음 값(<see cref="CreateEffect"/>).</summary>
     public EffectEasing Easing { get; }
 
+    /// <summary>선언의 <c>repeat</c>(기본 <see cref="EffectRepeat.Once"/>): 새로 넣는 효과의 반복 처음 값(<see cref="CreateEffect"/>).</summary>
+    public EffectRepeat Repeat { get; init; } = EffectRepeat.Once;
+
+    /// <summary>선언의 <c>repeatCount</c>(1~<see cref="AnimatedEffect.MaxRepeatCount"/>, 기본 1): 새로 넣는 효과의 반복 횟수 처음 값(<see cref="CreateEffect"/>).</summary>
+    public int RepeatCount { get; init; } = 1;
+
+    /// <summary>
+    /// 선언의 <c>movePivot</c>(기본 true): 새로 넣는 효과의 "중심(피벗) 같이 옮기기"(<see cref="LayerEffect.MovePivot"/>) 처음 값(<see cref="CreateEffect"/>).
+    /// 원문이 <c>ctx.movePivot</c>으로 옮긴 거리를 알릴 때만 뜻이 있다.
+    /// </summary>
+    public bool MovePivot { get; init; } = true;
+
     /// <summary>
     /// 선언의 <c>motion</c>(기본 true): false면 움직이는 효과라도 빠르기 곡선·반복을 쓰지 않으므로(프레임 수로 정하는 깜빡임 등) 효과 창·효과 만들기에서
     /// 그 편집기를 숨긴다. 저장되는 움직임 설정은 그대로다.
@@ -188,11 +200,15 @@ public sealed class ScriptEffectProgram
     }
 
     /// <summary>
-    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선은 선언의 <c>easing</c>.
-    /// 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
+    /// 이 스크립트를 쓰는 새 효과: 설정은 <paramref name="values"/>를 schema에 맞춘 값(null이면 기본값), 빠르기 곡선·반복·반복 횟수·피벗 같이 옮기기는
+    /// 선언의 <c>easing</c>·<c>repeat</c>·<c>repeatCount</c>·<c>movePivot</c>. 원문은 부르는 쪽이 프로젝트 스크립트 표에 넣는다.
     /// </summary>
     public ScriptEffect CreateEffect(IReadOnlyDictionary<string, object>? values = null)
-        => new() { ScriptHash = ContentHash, Settings = ScriptSettingValues.Normalized(this, values), Easing = Easing };
+        => new()
+        {
+            ScriptHash = ContentHash, Settings = ScriptSettingValues.Normalized(this, values), Easing = Easing, Repeat = Repeat, RepeatCount = RepeatCount,
+            MovePivot = MovePivot,
+        };
 
     /// <summary>선언의 <c>previewChick</c>(기본 <see cref="Assets.PreviewChicks.Default"/>): 패키지 미리보기에서 효과를 입힐 병아리.</summary>
     public string PreviewChick { get; }
@@ -302,14 +318,15 @@ public sealed class ScriptEffectProgram
     /// <paramref name="source"/>는 여백을 넣은 그림 안의 원본 자리(<c>ctx.source</c>). 실패하면 그림은 그대로 두고
     /// <see cref="ScriptEffectException"/>을, 취소되면 <see cref="OperationCanceledException"/>을 던진다.
     /// 빠른 경로가 JS와 결과가 갈릴 자리에 닿으면 그 호출만 Jint로 다시 그린다. 한도는 그림 크기에 비례한다(<see cref="ScriptLimits.ForPixels"/> — 두 길이 같은 값).
+    /// 돌려주는 값은 render가 <c>ctx.movePivot(dx, dy)</c>로 알린 이번 프레임의 이동 합(px, 부르지 않았으면 0).
     /// </summary>
-    public void Render(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object>? settings = null,
+    public PointF Render(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object>? settings = null,
         CancellationToken cancel = default)
     {
         var values = NormalizeSettings(settings);
         // 빠른 경로는 그림 크기에 제한이 없다(메모리가 허락하는 만큼 — 기본 효과와 같음). Jint는 JS 배열 한도(MaxArrayLength) 안의 그림만
-        if (!t_jintOnly && Fast is { } fast && fast.WithLimits(CallLimits(image)).TryRender(image, source, context, values, cancel)) return;
-        RenderOnJint(image, source, context, values, cancel);
+        if (!t_jintOnly && Fast is { } fast && fast.WithLimits(CallLimits(image)).TryRender(image, source, context, values, cancel, out var moved)) return moved;
+        return RenderOnJint(image, source, context, values, cancel);
     }
 
     [ThreadStatic] private static TimeSpan? t_timeout;
@@ -350,14 +367,14 @@ public sealed class ScriptEffectProgram
         public void Dispose() => restore();
     }
 
-    /// <summary>Jint로 render(<paramref name="values"/>는 <see cref="NormalizeSettings"/>를 거친 값).</summary>
-    internal void RenderOnJint(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values,
+    /// <summary>Jint로 render(<paramref name="values"/>는 <see cref="NormalizeSettings"/>를 거친 값). <c>ctx.movePivot</c>으로 알린 이동 합(px)을 돌려준다.</summary>
+    internal PointF RenderOnJint(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values,
         CancellationToken cancel)
     {
         if ((long)image.Width * image.Height * 4 > Limits.MaxArrayLength)
             throw new ScriptEffectException(new(ScriptErrorKind.Memory,
                 DomainStrings.FormatScript_ImageTooLarge(width: image.Width, height: image.Height), 0, 0));
-        ScriptSandbox.Run(Limits, CallLimits(image), cancel, sandbox =>
+        return ScriptSandbox.Run(Limits, CallLimits(image), cancel, sandbox =>
         {
             var declaration = sandbox.Declare(_script);
             var s = ScriptHostApi.CreateSettings(sandbox.Engine, Settings, values);
@@ -366,7 +383,7 @@ public sealed class ScriptEffectProgram
             var (img, data) = ScriptHostApi.CreateImage(sandbox, image);
             sandbox.Engine.Invoke(declaration.Get("render"), declaration, [img, ctx, s]);
             ScriptHostApi.CopyBack(data, image);
-            return true;
+            return colors.Moved;
         });
     }
 

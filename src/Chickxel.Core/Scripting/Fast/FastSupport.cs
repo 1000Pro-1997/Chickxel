@@ -503,6 +503,9 @@ internal static class JsOps
     /// <summary><c>ctx.bayer4(x, y)</c>: 0~15.</summary>
     public static double Bayer4(double x, double y) => Bayer.Threshold4(ToInt32(x), ToInt32(y));
 
+    /// <summary><c>ctx.movePivot(dx, dy)</c>: 이번 프레임에 옮긴 거리를 더한다(<see cref="ScriptColors.MovePivot"/> — Jint와 같은 것).</summary>
+    public static void MovePivot(ScriptColors colors, double dx, double dy) => colors.MovePivot(dx, dy);
+
     /// <summary>
     /// <c>ctx.color</c>·<c>ctx.colorAt</c>·<c>ctx.pairColor</c>의 색(기본 범위). 목록 번호(<paramref name="item"/>, 색은 -1)가 정수 항목 번호가 아니면
     /// Jint로 다시 그린다(Jint가 오류를 낸다).

@@ -9,7 +9,8 @@ namespace Chickxel.Core.Effects;
 /// 효과 하나의 저장 JSON(프로젝트, 사용자 정의 효과, 실행취소 기록이 같이 씀):
 /// <code>{ "type": "chickxel.effect.outline", "version": 1, "enabled": true, "clipToPrevious": false, "frames": [0, 3],
 ///   "settings": { "color": "#000000", "thickness": 1, … }, "colorGradients": { "Color": { … } } }</code>
-/// <c>frames</c>는 범위가 있을 때만, <c>colorGradients</c>는 그라데이션이 있을 때만, <c>recipe</c>는 매개변수 레시피 묶음의 구성 효과일 때만 쓴다
+/// <c>frames</c>는 범위가 있을 때만, <c>holdEnd</c>는 켰을 때만, <c>expandCanvas</c>·<c>movePivot</c>은 껐을 때만(<c>false</c>), <c>colorGradients</c>는 그라데이션이 있을 때만,
+/// <c>recipe</c>는 매개변수 레시피 묶음의 구성 효과일 때만 쓴다
 /// (<see cref="RecipeParameterFormat"/> — 프로젝트 형식 4의 선택 필드, 모르는 앱은 무시하고 보통 효과로 읽음). 스크립트 효과는 원문 해시 <c>script</c>가 붙는다(<see cref="ScriptDefinition"/>).
 /// <para>
 /// 읽기: 등록된 종류 ID면 새 형식, 예전 짧은 ID("outline")면 설정이 효과 객체에 바로 있는 예전 형식(프로젝트 형식 3 이하, 사용자 정의 효과 형식 1)으로 읽는다.
@@ -19,7 +20,7 @@ namespace Chickxel.Core.Effects;
 public static class EffectCodec
 {
     public const string TypeKey = "type", VersionKey = "version", EnabledKey = "enabled", ClipKey = "clipToPrevious", FramesKey = "frames",
-        SettingsKey = "settings", GradientsKey = "colorGradients", HoldEndKey = "holdEnd";
+        SettingsKey = "settings", GradientsKey = "colorGradients", HoldEndKey = "holdEnd", ExpandCanvasKey = "expandCanvas", MovePivotKey = "movePivot";
 
     /// <summary>효과의 저장 JSON. 정의가 없는 효과 타입이면 <see cref="NotSupportedException"/>.</summary>
     public static JsonObject Write(LayerEffect effect)
@@ -37,6 +38,10 @@ public static class EffectCodec
         if (effect.Frames is { } f) json[FramesKey] = new JsonArray(f.From, f.To);
         // 링크된 칸에 끝 모습 이어 가기: 켰을 때만(없으면 꺼짐 — 예전 파일·예전 판과 같은 JSON)
         if (effect is AnimatedEffect { HoldEnd: true }) json[HoldEndKey] = true;
+        // 확인할 때 캔버스 늘리기: 껐을 때만(없으면 켜짐 — 예전 파일·예전 판과 같은 JSON)
+        if (!effect.ExpandCanvas) json[ExpandCanvasKey] = false;
+        // 뒤 효과의 피벗 같이 옮기기: 껐을 때만(없으면 켜짐 — 예전 파일·예전 판과 같은 JSON)
+        if (!effect.MovePivot) json[MovePivotKey] = false;
         json[SettingsKey] = definition.WriteSettings(effect);
         definition.WriteRoot(effect, json);
         if (effect.ColorGradients.Count > 0) json[GradientsKey] = WriteGradients(effect.ColorGradients);
@@ -76,6 +81,8 @@ public static class EffectCodec
         {
             Enabled = EffectJson.Bool(json[EnabledKey]) ?? true,
             ClipToPrevious = EffectJson.Bool(json[ClipKey]) ?? false,
+            ExpandCanvas = EffectJson.Bool(json[ExpandCanvasKey]) ?? true,
+            MovePivot = EffectJson.Bool(json[MovePivotKey]) ?? true,
             Frames = EffectJson.Frames(json[FramesKey]),
         };
         return effect is AnimatedEffect animated && EffectJson.Bool(json[HoldEndKey]) == true ? animated with { HoldEnd = true } : effect;
@@ -123,13 +130,15 @@ public static class EffectCodec
         => JsonSerializer.SerializeToNode(gradients.ToDictionary(entry => entry.Key, entry => ProjectIO.ColorGradientDto.From(entry.Value)), ProjectIO.Options)!;
 
     /// <summary>
-    /// 모르는 효과: 원본 JSON에서 켜짐·클리핑·프레임 범위·레시피 묶음 자리만 지금 값으로 바꾼다(원본에 없던 기본값 키는 더하지 않음).
+    /// 모르는 효과: 원본 JSON에서 켜짐·클리핑·캔버스 늘리기·피벗 같이 옮기기·프레임 범위·레시피 묶음 자리만 지금 값으로 바꾼다(원본에 없던 기본값 키는 더하지 않음).
     /// </summary>
     private static JsonObject WriteMissing(MissingEffect missing)
     {
         var json = JsonNode.Parse(missing.Json) as JsonObject ?? [];
         if (json.ContainsKey(EnabledKey) || !missing.Enabled) json[EnabledKey] = missing.Enabled;
         if (json.ContainsKey(ClipKey) || missing.ClipToPrevious) json[ClipKey] = missing.ClipToPrevious;
+        if (json.ContainsKey(ExpandCanvasKey) || !missing.ExpandCanvas) json[ExpandCanvasKey] = missing.ExpandCanvas;
+        if (json.ContainsKey(MovePivotKey) || !missing.MovePivot) json[MovePivotKey] = missing.MovePivot;
         if (missing.Frames is { } f) json[FramesKey] = new JsonArray(f.From, f.To);
         else json.Remove(FramesKey);
         if (missing.Recipe is { } link) json[RecipeParameterFormat.LinkKey] = RecipeParameterFormat.WriteLink(link);

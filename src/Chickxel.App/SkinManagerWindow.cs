@@ -496,11 +496,15 @@ public sealed class SkinManagerWindow : Window
             var drag = new DragReorder(Orientation.Horizontal);
             drag.Moved += (from, to) => Dispatcher.UIThread.Post(() => SkinOps.MoveSkin(_ctx, group, from, to));
             var skins = group.Skins;
+            // 카드 그림 = 타임라인 그룹 칸과 같은 썸네일(효과 없이, 부위 자리로 자름 — SpriteProject.RenderCelThumbnail)
+            int gi = p.IndexOf(group);
+            var area = p.ThumbnailBounds(gi);
+            var cardSize = area.IsEmpty ? p.Size : area.Size;
             for (int i = 0; i < skins.Count; i++)
             {
                 var skin = skins[i];
-                var bmp = Track(p.FlattenGroup(group, frame, skin));
-                var card = Card(bmp, p.Size, GroupThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4,skin.Name) : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null);
+                var bmp = p.RenderCelThumbnail(gi, frame, skin) is { } thumb ? Track(thumb) : null;
+                var card = Card(bmp, cardSize, GroupThumb, i == 0 ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_3C53E562C4,skin.Name) : skin.Name, ReferenceEquals(skin, group.ActiveSkin), badge: null);
                 card.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_SkinManagerWindow_GroupRow_FC60E8F0BD,group.Name,skin.Name));
                 int index = i;
                 Clickable(card, () => _ctx.SetActiveSkin(group, skin), () => GroupCardMenu(group, skin, index), onRelease: true);

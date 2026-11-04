@@ -216,9 +216,13 @@ public sealed class AssetCatalog
         }
     }
 
-    /// <summary>스크립트 효과 에셋이 앱에 든 공식 효과(상점 연결이 공식 패키지의 그 효과)면 그 공식 효과 ID(<c>outline</c>), 아니면 null.</summary>
+    /// <summary>
+    /// 스크립트 효과 에셋이 앱에 든 공식 효과(상점 연결이 공식 패키지 — 스크립트 효과 하나뿐이므로 에셋 ID는 보지 않음: 예전 게시 창이 올린 버전은
+    /// <c>.effect-script</c>였음)면 그 공식 효과 ID(<c>outline</c>), 아니면 null.
+    /// </summary>
     public static string? OfficialIdOf(AssetEntry entry)
-        => entry.Store is { } store && OfficialEffectPackages.IdOfPackage(store.PackageId) is { } official && store.AssetId == OfficialEffectPackages.AssetId(official)
+        => entry is { Kind: AssetKinds.EffectScript, Store: { } store } && OfficialEffectPackages.IdOfPackage(store.PackageId) is { } official
+           && store.PackageId == OfficialEffectPackages.PackageId(official)
             ? official : null;
 
     public IReadOnlyList<AssetEntry> Gradients => Available(AssetKinds.Gradient);

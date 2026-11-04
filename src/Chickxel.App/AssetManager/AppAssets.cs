@@ -65,7 +65,8 @@ public static class AppAssets
 
     /// <summary>
     /// 예전 게시 기록(<see cref="AssetPublishSettings.Saved"/>, 최근 것부터)을 그 에셋의 상점 연결로 한 번 잇는다: 기록의 에셋이 아직 이 컴퓨터에서 만든 것
-    /// (작성자·상점 연결 없음)이고 그 상점 ID에 연결된 에셋이 없을 때만 — 여러 번 불러도 같다. 맞지 않는 기록은 건너뛰고, 쓰지 못하면 다음 실행에 다시 한다.
+    /// (작성자·상점 연결 없음)이고 그 상점 ID에 연결된 에셋이 없을 때만 — 여러 번 불러도 같다. 그 상점 ID의 에셋이 이미 있고(예전 저장소에서 받아 둔 것을 옮김)
+    /// 내용까지 같으면 기록의 에셋은 겹친 사본이라 지운다(즐겨찾기는 받은 쪽으로). 맞지 않는 기록은 건너뛰고, 쓰지 못하면 다음 실행에 다시 한다.
     /// </summary>
     private static void LinkPublishRecords(AssetStore store)
     {
@@ -83,16 +84,29 @@ public static class AppAssets
             string? description = string.IsNullOrWhiteSpace(record.Summary) || record.Summary.Length > AssetManifest.MaxDescriptionLength ? null : record.Summary;
             foreach (var id in record.Assets)
             {
-                if (store.Catalog.Find(id) is not { Author: null, Store: null } entry || store.Catalog.FromPackage(record.Id).Count > 0) continue;
+                if (store.Catalog.Find(id) is not { Author: null, Store: null } entry) continue;
+                var linked = store.Catalog.FromPackage(record.Id);
+                AssetEntry? same = null;
                 string assetId = record.Id + "." + AssetPackageBuilder.Slug(entry.Name, entry.Kind);
-                if (!AssetManifest.IsValidAssetId(record.Id, assetId)) continue;
+                if (linked.Count > 0)
+                {
+                    same = linked.FirstOrDefault(e => e.Kind == entry.Kind && e.ContentHash == entry.ContentHash);
+                    if (same is null) continue;
+                }
+                else if (!AssetManifest.IsValidAssetId(record.Id, assetId)) continue;
                 try
                 {
-                    store.MarkPublished(id, new AssetAuthor(handle, authorName), AssetPublishCheck.License, new AssetStoreLink
+                    if (same is not null)
                     {
-                        PackageId = record.Id, AssetId = assetId, Version = record.Version, ContentHash = entry.ContentHash,
-                        Name = record.Name.Trim(), Description = description, Translations = translations, MinAppVersion = "0.0.0",
-                    });
+                        if (entry.Favorite) store.SetFavorite(same.Id, true);
+                        store.Remove(id);
+                    }
+                    else
+                        store.MarkPublished(id, new AssetAuthor(handle, authorName), AssetPublishCheck.License, new AssetStoreLink
+                        {
+                            PackageId = record.Id, AssetId = assetId, Version = record.Version, ContentHash = entry.ContentHash,
+                            Name = record.Name.Trim(), Description = description, Translations = translations, MinAppVersion = "0.0.0",
+                        });
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return; }
             }

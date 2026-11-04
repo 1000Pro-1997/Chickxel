@@ -99,9 +99,11 @@ public static class ScriptEffectRuntime
     /// <paramref name="image"/>에 효과를 입힌다(효과 정의의 렌더러). 실행할 수 없거나 멈춘 효과는 그대로 두고, 실패하면 그림을 바꾸지 않고 기록한다.
     /// 같은 설정의 <c>padding</c>이 실패했으면(<see cref="ScriptLibrary.Padding"/>이 넓히지 않음) <c>render</c>를 부르지 않고 그 실패를 같은 기록에 센다.
     /// 실패했으면 false — 이번 결과는 효과 값만으로 다시 얻을 수 없으므로 부르는 쪽은 캐시에 담지 않는다. 취소는 <see cref="OperationCanceledException"/>으로 나가고 실패로 세지 않는다.
+    /// <paramref name="moved"/>는 성공한 render가 <c>ctx.movePivot</c>으로 알린 이동 합(px, 그리지 않았거나 실패했으면 0).
     /// </summary>
-    internal static bool Render(PixelImage image, ScriptEffect effect, Rectangle source, Layer? owner, CancellationToken cancel)
+    internal static bool Render(PixelImage image, ScriptEffect effect, Rectangle source, Layer? owner, CancellationToken cancel, out PointF moved)
     {
+        moved = PointF.Empty;
         if (ScriptLibrary.Runnable(effect.ScriptHash) is not { } program) return true;
         var record = owner is null ? null : RecordOf(owner, effect);
         if (record is not null)
@@ -115,7 +117,7 @@ public static class ScriptEffectRuntime
         if (failure is null)
             try
             {
-                program.Render(image, source, context, effect.Settings, cancel);
+                moved = program.Render(image, source, context, effect.Settings, cancel);
             }
             catch (ScriptEffectException ex)
             {

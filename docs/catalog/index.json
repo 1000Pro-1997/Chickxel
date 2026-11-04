@@ -112,7 +112,7 @@
     },
     {
       "id": "chickxel.effects.bob",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "name": "Bob",
       "summary": "Gently floats up and down (idle motion).",
       "tags": [
@@ -130,19 +130,19 @@
       "kinds": {
         "effect-script": 1
       },
-      "minAppVersion": "1.14.63",
+      "minAppVersion": "1.14.92",
       "package": {
-        "url": "packages/chickxel.effects.bob-1.0.1.chickxel-asset",
-        "size": 5900,
-        "sha256": "2d00cade44f22d7801f480be931ba7932010eeeb2c4ad243935b755145f5f2f8"
+        "url": "packages/chickxel.effects.bob-1.0.2.chickxel-asset",
+        "size": 5993,
+        "sha256": "b43b4af9af2311b15eacfe9974c5218176cde52b81f849a999e1c00d161547a8"
       },
       "preview": {
-        "url": "previews/chickxel.effects.bob-1.0.1.png",
+        "url": "previews/chickxel.effects.bob-1.0.2.png",
         "size": 4139,
         "sha256": "007b42974235e0bb72487e7c9a719f94f412be185ba06ae989b4bddaaf2c2168"
       },
       "published": "2026-11-01",
-      "updated": "2026-11-01",
+      "updated": "2026-11-04",
       "review": "official"
     },
     {
@@ -732,7 +732,7 @@
     },
     {
       "id": "chickxel.effects.shake",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "name": "Shake",
       "summary": "The whole image jitters pixel by pixel.",
       "tags": [
@@ -750,19 +750,19 @@
       "kinds": {
         "effect-script": 1
       },
-      "minAppVersion": "1.14.63",
+      "minAppVersion": "1.14.92",
       "package": {
-        "url": "packages/chickxel.effects.shake-1.0.1.chickxel-asset",
-        "size": 5628,
-        "sha256": "d1edac1432814f37dd15bb2af6011120ee34ece4bc00c9e0ed697d798533d269"
+        "url": "packages/chickxel.effects.shake-1.0.2.chickxel-asset",
+        "size": 5723,
+        "sha256": "9bfa4c5cc2d6ed2fa9050aaefee925429d5eaf43855e78c1f590c5414ddc167a"
       },
       "preview": {
-        "url": "previews/chickxel.effects.shake-1.0.1.png",
+        "url": "previews/chickxel.effects.shake-1.0.2.png",
         "size": 1968,
         "sha256": "275d0a9760c14545a02b2a80b7b4db60486ca0120f647c09e4e5a8732ffc7f67"
       },
       "published": "2026-11-01",
-      "updated": "2026-11-01",
+      "updated": "2026-11-04",
       "review": "official"
     },
     {

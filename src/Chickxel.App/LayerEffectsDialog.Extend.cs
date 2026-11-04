@@ -546,11 +546,8 @@ public sealed partial class LayerEffectsDialog
         EffectCanvasExpansion? expansion = null;
         try
         {
-            if (_expandCanvas.On())
-            {
-                var plan = _confirmedCanvasExpansion ?? CanvasExpansion(list);
-                if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
-            }
+            var plan = _confirmedCanvasExpansion ?? CanvasExpansion(list);
+            if (!plan.IsNone(_project.Width, _project.Height)) expansion = plan;
         }
         catch (InvalidOperationException ex)
         {

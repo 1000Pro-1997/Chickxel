@@ -28,6 +28,20 @@ internal static class ShakeRender
         Shift(image, dx, dy);
     }
 
+    /// <summary>이 프레임에 그림을 옮긴 거리(px — 뒤 효과의 피벗이 따라감, <see cref="LayerEffect.MovePivot"/>).</summary>
+    public static System.Drawing.PointF Moved(ShakeEffect e)
+    {
+        var (dx, dy) = e.Offset(e.Progress);
+        return new(dx, dy);
+    }
+
+    /// <inheritdoc cref="Moved(ShakeEffect)"/>
+    public static System.Drawing.PointF Moved(BobEffect e)
+    {
+        var (dx, dy) = e.Offset(e.Progress);
+        return new(dx, dy);
+    }
+
     /// <summary>그림을 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(밖으로 나간 부분은 잘리고 빈 자리는 투명).</summary>
     private static void Shift(PixelImage image, int dx, int dy)
     {

@@ -39,6 +39,12 @@ public sealed class GradientBar : Control
         Cursor = new Cursor(StandardCursorType.Hand);
     }
 
+    /// <summary>폭 제한이 없을 때(가로 줄 안)의 폭. 제한이 있으면 받은 폭을 다 쓴다(좁은 독에서 칸 밖으로 나가지 않게).</summary>
+    public const double PreferredWidth = 280;
+
+    protected override Avalonia.Size MeasureOverride(Avalonia.Size availableSize)
+        => new(double.IsInfinity(availableSize.Width) ? PreferredWidth : availableSize.Width, 0);
+
     /// <summary>색 정지점이 바뀌었다(추가·이동·삭제). 새 목록(편집 순서 유지)을 넘긴다.</summary>
     public event Action<IReadOnlyList<GradientStop>>? StopsChanged;
     /// <summary>불투명도 정지점이 바뀌었다(추가·이동·삭제).</summary>

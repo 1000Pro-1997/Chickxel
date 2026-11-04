@@ -258,6 +258,29 @@ public static class Ui
         var content = stack.Children[1];
         stack.Children.Clear();
         var body = new FoldBody(content);
+        stack.Children.Add(FoldHeader(head, body));
+        stack.Children.Add(body);
+        return group;
+    }
+
+    /// <summary>
+    /// 패널 제목 줄(<see cref="Header"/>)에 <see cref="Foldable"/>과 같은 접기 화살표를 달아, 제목 줄을 누르면 <paramref name="content"/>가 접히고 펴지게 한다.
+    /// 돌려준 칸(내용을 담은 <see cref="FoldBody"/>)을 제목 줄 아래 놓는다.
+    /// </summary>
+    public static Control FoldableHeader(Border header, Control content)
+    {
+        var body = new FoldBody(content);
+        var head = header.Child!;
+        header.Child = null;
+        var row = FoldHeader(head, body);
+        row.Margin = new Thickness(0, 0, 6, 0);
+        header.Child = row;
+        return body;
+    }
+
+    /// <summary>오른쪽에 접기 화살표를 단 제목 줄: 누르면 <paramref name="body"/>를 접고 편다. 접으면 화살표가 오른쪽을, 펴면 아래를 가리킨다.</summary>
+    private static DockPanel FoldHeader(Control head, FoldBody body)
+    {
         var turn = new RotateTransform();
         var arrow = Icon(VectorIcon.ChevronDown, 12);
         arrow.Foreground = AppTheme.DimTextBrush;
@@ -277,9 +300,7 @@ public static class Ui
             ToolTip.SetTip(arrow, body.IsOpen ? UiStrings.Fold_Collapse : UiStrings.Fold_Expand);
             e.Handled = true;
         };
-        stack.Children.Add(header);
-        stack.Children.Add(body);
-        return group;
+        return header;
     }
 
     /// <summary>내용을 세로로 스크롤해 보여 주는 패널.</summary>

@@ -196,6 +196,10 @@ public class TextEffectTests
         Assert.Equal(expected, Ink(p.Flatten(1)));
         Assert.Equal(expected, Ink(p.FlattenOutfit(1, null)));
         Assert.Equal(Points(BangAt(4, 5), BangAt(8, 5)), Ink(p.PlanCel(1, 0)!.Render()));
+        // 셀에 칠한 픽셀이 없으면 타임라인 썸네일도 글씨(효과)까지 그린다
+        Assert.Equal(Points(BangAt(4, 5), BangAt(8, 5)), Ink(p.PlanCelThumbnail(1, 0)!.Render()));
+        // 효과를 끈 캔버스 합성에서도 칠한 픽셀이 없는 글씨 레이어는 글씨까지 보인다
+        Assert.Equal(expected, Ink(p.PlanFrameRaw(1).Render()));
         Assert.NotNull(p.EffectSource(p.Layers[1], 0));
 
         // 꺼진 효과·범위 밖 프레임은 셀이 없으면 그리지 않는다

@@ -368,6 +368,7 @@ Reloading will discard your current edits. Reload?</value></data>
   <data name="Tabs_Previous" xml:space="preserve"><value>Previous tab</value></data>
   <data name="Tabs_DropSplit" xml:space="preserve"><value>Drop to move to a right pane</value></data>
   <data name="Tabs_DropMove" xml:space="preserve"><value>Drop to move here</value></data>
+  <data name="Tabs_PreviewTip" xml:space="preserve"><value>Preview tab: shows the document you are editing with the preview's playback, background and outfit (wheel = zoom, drag = pan, double-click = fit, right-click = copy and save)</value></data>
   <data name="Tabs_Reloaded" xml:space="preserve"><value>Reloaded a file changed outside the app: {name}</value></data>
   <data name="Tabs_Restored" xml:space="preserve"><value>Reopened {count} tabs from last time</value></data>
   <data name="Tabs_RestoredMissing" xml:space="preserve"><value> · skipped {count} files that couldn't be opened</value></data>
@@ -404,6 +405,11 @@ Open all frames, or only the first {limit}?</value></data>
   <data name="Tool_Text_Name" xml:space="preserve"><value>Text</value></data>
   <data name="Tool_Text_Hint" xml:space="preserve"><value>Drag: text box · Click: one-line text · Click on text: edit it · Enter: new line · Esc / Ctrl+Enter / click outside: done · size, bold, fonts in Tool options</value></data>
   <data name="Menu_Edit_BeginLayerResize" xml:space="preserve"><value>Layer size…</value></data>
-  <data name="Message_LayerResize" xml:space="preserve"><value>Layer size: handles = layer size (Shift keeps ratio, Alt keeps the center), inside the layer = move — Enter to confirm, Esc to cancel</value></data>
+  <data name="Message_LayerResize" xml:space="preserve"><value>Layer size: handles = layer box (outside is cropped), Ctrl+handles = resize the drawing too, Shift keeps ratio, Alt keeps the center, inside the layer = move — Enter to confirm, Esc to cancel</value></data>
   <data name="Message_LayerResizeCanceled" xml:space="preserve"><value>Layer resize canceled</value></data>
+  <data name="Ui_CanvasEffects" xml:space="preserve"><value>Effects</value></data>
+  <data name="Ui_CanvasEffectsTip" xml:space="preserve"><value>Show layer effects on the canvas (Ctrl+Shift+E) · off = the pixels you edit (preview, timeline and export unchanged)</value></data>
+  <data name="Menu_View_CanvasEffects" xml:space="preserve"><value>Show effects on canvas</value></data>
+  <data name="Message_CanvasEffectsOn" xml:space="preserve"><value>Effects shown on the canvas</value></data>
+  <data name="Message_CanvasEffectsOff" xml:space="preserve"><value>Effects hidden on the canvas; showing the pixels you edit (the preview still shows effects)</value></data>
 </root>

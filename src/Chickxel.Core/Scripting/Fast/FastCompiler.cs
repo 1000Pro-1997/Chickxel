@@ -1260,6 +1260,13 @@ internal sealed class FastCompiler
                 return CallNumber(Op(nameof(JsOps.Bayer2)), c.Arguments);
             case "bayer4":
                 return CallNumber(Op(nameof(JsOps.Bayer4)), c.Arguments);
+            case "movePivot":
+            {
+                // 값이 없는 호출(undefined): 문장으로만 쓴다 — 값으로 쓰면(Void) 컴파일하지 않고 Jint로
+                var values = Arguments(c.Arguments, 2, out var pre, out var temps);
+                E call = E.Call(Op(nameof(JsOps.MovePivot)), _colors, values[0], values[1]);
+                return Val.Void(pre is null ? call : E.Block(typeof(void), temps, pre, call));
+            }
             case "renderedFrameSource":
             {
                 // 결과는 null일 수 있는 객체: if (!r)로 가린 뒤 r.image·r.offsetX·r.offsetY를 읽는다(null에서 읽으면 Jint로)

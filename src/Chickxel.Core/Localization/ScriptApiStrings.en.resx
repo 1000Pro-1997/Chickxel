@@ -39,6 +39,9 @@
   <data name="Api_effect_easing_EaseIn" xml:space="preserve"><value>Starts slowly.</value></data>
   <data name="Api_effect_easing_EaseOut" xml:space="preserve"><value>Ends slowly.</value></data>
   <data name="Api_effect_easing_EaseInOut" xml:space="preserve"><value>Starts and ends slowly.</value></data>
+  <data name="Api_effect_repeat" xml:space="preserve"><value>Initial repeat of a newly added effect: "Once", "Loop" or "PingPong". Default "Once".</value></data>
+  <data name="Api_effect_repeatCount" xml:space="preserve"><value>Initial repeat count of a newly added effect (1-8, default 1), used when repeat is "Loop" or "PingPong".</value></data>
+  <data name="Api_effect_movePivot" xml:space="preserve"><value>When false, a newly added effect starts with "Move pivot along" off (default true). Only matters for effects that report their movement with ctx.movePivot.</value></data>
   <data name="Api_effect_area_global" xml:space="preserve"><value>Called once per frame with the whole image.</value></data>
   <data name="Api_effect_area_local" xml:space="preserve"><value>Called per tile (with radius px around it).</value></data>
   <data name="Api_effect_previewMotion_none" xml:space="preserve"><value>The preview chick stays in place.</value></data>
@@ -116,6 +119,7 @@
   <data name="Api_ctx_layer" xml:space="preserve"><value>The layer chosen in the layer setting (type: "layer") with this key (the nearest one if several layers share the name, excluding this layer and the group containing it; hidden layers count) on this frame without its effects, aligned to img (same size and position, transparent outside). null when nothing is chosen, the layer or cel doesn't exist, the key isn't a layer setting, or outside a project.</value></data>
   <data name="Api_ctx_layerWithEffects" xml:space="preserve"><value>The layer chosen in the layer setting with this key, with its effects for this frame, aligned to img. Effects of that layer that read other layers with effects are skipped (no cycles). null when there is none.</value></data>
   <data name="Api_ctx_layerEffects" xml:space="preserve"><value>Names of the effects enabled on this frame (list order) of the layer chosen in the layer setting with this key. Empty array when there is none.</value></data>
+  <data name="Api_ctx_movePivot" xml:space="preserve"><value>Reports how far an effect that moves the image (shake, bob, jump, throw, slide-in…) moved the subject on this frame: (dx, dy) in pixels, image-coordinate directions, fractions allowed. Calls add up. Later effects in the list get their pivot (ctx.pivot, the rotation/squash anchor) moved by that much (the user can turn this off per effect), and the drawing area widens by that much so a subject moved past padding is not cut off. Returns nothing.</value></data>
   <data name="Api_color_r" xml:space="preserve"><value>Red (0-255).</value></data>
   <data name="Api_color_g" xml:space="preserve"><value>Green (0-255).</value></data>
   <data name="Api_color_b" xml:space="preserve"><value>Blue (0-255).</value></data>

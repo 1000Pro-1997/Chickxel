@@ -160,6 +160,7 @@
   <data name="Project_LayerSize" xml:space="preserve"><value>레이어 크기</value><comment>실행취소 기록 이름: 레이어 하나의 그림 크기·자리 바꾸기(캔버스는 그대로)</comment></data>
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>부위의 원래 자리는 부위 영역이어야 합니다.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>부위 피벗</value></data>
+  <data name="Project_PartFramePivot" xml:space="preserve"><value>부위 프레임 피벗</value><comment>실행취소 이름: 부위의 한 프레임만 다른 피벗으로 두거나 되돌림</comment></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>부위 테두리</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>레이어 {number}</value><comment>number = 새 프로젝트에서 만든 레이어 번호. 기존 파일의 이름은 바꾸지 않음.</comment></data>
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>그룹</value></data>
@@ -262,6 +263,9 @@
   <data name="Script_InvalidClipsBySource" xml:space="preserve"><value>clipsBySource는 true나 false여야 합니다.</value></data>
   <data name="Script_InvalidErasesSource" xml:space="preserve"><value>erasesSource는 true나 false이거나 bool 설정의 키여야 합니다.</value></data>
   <data name="Script_InvalidEasing" xml:space="preserve"><value>easing은 다음 중 하나여야 합니다: {names}</value><comment>names = 빠르기 곡선 이름들(영어, 쉼표로 구분).</comment></data>
+  <data name="Script_InvalidRepeat" xml:space="preserve"><value>repeat은 다음 중 하나여야 합니다: {names}</value><comment>names = 반복 방식 이름들(영어, 쉼표로 구분).</comment></data>
+  <data name="Script_InvalidRepeatCount" xml:space="preserve"><value>repeatCount는 1~{max} 사이의 정수여야 합니다.</value><comment>max = 반복 횟수 최댓값.</comment></data>
+  <data name="Script_InvalidMovePivot" xml:space="preserve"><value>movePivot은 true나 false여야 합니다.</value><comment>효과 선언의 movePivot(새로 넣는 효과의 피벗 같이 옮기기 처음 값)이 참거짓이 아님.</comment></data>
   <data name="Script_InvalidSettingAlpha" xml:space="preserve"><value>설정 {key}의 alpha는 색·색 목록·색 쌍 목록 설정에만 쓰고 true나 false여야 합니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingWidget" xml:space="preserve"><value>설정 {key}의 widget이 잘못되었습니다. int 설정에 "angle"을 쓰거나, "point"와 함께 pair에 모양을 정하지 않은 다른 int 설정 키를 적습니다.</value><comment>key = 설정 키.</comment></data>
   <data name="Script_InvalidSettingCount" xml:space="preserve"><value>목록 설정 {key}의 min, max는 0~{max} 정수여야 하고 min이 max보다 클 수 없습니다.</value><comment>key = 설정 키; max = 항목 수 한도.</comment></data>
@@ -428,4 +432,6 @@
   <data name="Community_Error_LoginFailed" xml:space="preserve"><value>브라우저에서 로그인하지 못했습니다.</value></data>
   <data name="Font_Unsupported" xml:space="preserve"><value>지원하지 않는 글꼴 파일입니다. .ttf .otf .ttc .bdf 파일을 고르세요.</value><comment>글꼴 더하기 오류: 확장자가 맞지 않을 때</comment></data>
   <data name="Font_Unreadable" xml:space="preserve"><value>글꼴 파일 "{0}"을(를) 읽을 수 없습니다. 깨졌거나 지원하지 않는 형식입니다.</value><comment>글꼴 더하기 오류: {0} = 파일 이름</comment></data>
+  <data name="Publish_PivotMoveTag" xml:space="preserve"><value>그림을 옮긴 거리를 알리는(피벗을 옮기는) 효과에는 pivot-move 태그가 있어야 합니다.</value><comment>pivot-move는 태그 이름 그대로(번역하지 않음).</comment></data>
+  <data name="Publish_PivotMoveTagFull" xml:space="preserve"><value>피벗을 옮기는 효과에는 pivot-move 태그가 붙어야 하는데 태그가 8개를 넘습니다. 태그를 빼세요.</value><comment>pivot-move는 태그 이름 그대로(번역하지 않음).</comment></data>
 </root>

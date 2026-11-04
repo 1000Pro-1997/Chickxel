@@ -15,19 +15,24 @@ public sealed partial class PixelTools
             "Link cels of one layer so the given frames share ONE drawing: editing any linked cel (drawing, clear, fill…) changes all of them. " +
             "Frames need not be adjacent. If one of the frames is already linked, the others join that link (and its color); otherwise the first frame that has pixels " +
             "becomes the shared drawing and the other frames' pixels are replaced (empty frames too). New links get the next unused timeline color " +
-            "in the order links are made (" + LinkColorList + "); pass `color` to choose it. get_document lists each layer's links.",
+            "in the order links are made (" + LinkColorList + "); pass `color` to choose it. A group layer links every part of the group: each part gets one new link of " +
+            "exactly those frames (its drawing in `frames[0]`, or the first frame showing one), taken out of any other link of those cels — group links win over part links. " +
+            "get_document lists each layer's links (a group lists the frames where all its parts are linked together).",
             new JsonObject
             {
-                ["layer"] = Int("Normal or part layer index (0 = bottom). Default: current.", 0),
+                ["layer"] = Int("Layer index (0 = bottom): normal, part or group layer. Default: current.", 0),
                 ["frames"] = IntArray("Frame indices to link (at least 2)."),
                 ["color"] = Enum("Timeline color of the link (default: keep / next unused).", [.. SpriteProject.LinkColorNames]),
             },
             "frames"),
         Tool("unlink_cels",
-            "Unlink cels: each given frame of the layer gets its own copy of the drawing (pixels unchanged) so it can be edited alone.",
+            "Unlink cels: each given frame of the layer (of every part, for a group layer) gets its own copy of the drawing so it can be edited alone. Pixels are unchanged, except: a cel that was showing " +
+            "an animated effect's held end look only because it was linked to the effect range's last cel (holdEnd) gets that look baked into its drawing exactly as shown " +
+            "(enabled effects only, clipped to the cel; not when an enabled effect's range covers that frame — then it keeps the raw copy). " +
+            "If unlinking a range-end cel makes other still-linked cels lose the held look, those are baked too.",
             new JsonObject
             {
-                ["layer"] = Int("Normal or part layer index (0 = bottom). Default: current.", 0),
+                ["layer"] = Int("Layer index (0 = bottom): normal, part or group layer. Default: current.", 0),
                 ["frames"] = IntArray("Frame indices to unlink."),
             },
             "frames"),
@@ -49,11 +54,10 @@ public sealed partial class PixelTools
         ["description"] = description,
     };
 
-    /// <summary>링크 도구의 레이어: 그룹·잠긴 레이어면 도구 오류.</summary>
+    /// <summary>링크 도구의 레이어(그룹이면 그 부위들에 적용): 잠긴 레이어면 도구 오류.</summary>
     private int LinkLayer(SpriteProject p, JsonObject? a)
     {
         int layer = LayerIndex(a);
-        if (p.Layers[layer].IsGroup) throw new ToolError(UiStrings.FormatAi_Link_Group(index: layer, name: p.Layers[layer].Name));
         RequireUnlocked(p, layer);
         return layer;
     }
@@ -87,7 +91,7 @@ public sealed partial class PixelTools
 
     /// <summary>get_document 레이어 항목의 링크 묶음(없으면 null).</summary>
     private static JsonArray? LinksJson(SpriteProject p, int layer)
-        => p.Layers[layer].IsGroup || p.LinkGroups(layer) is not { Count: > 0 } groups ? null
+        => p.LinkGroups(layer) is not { Count: > 0 } groups ? null
             : new JsonArray([.. groups.Select(g => (JsonNode)new JsonObject
             {
                 ["frames"] = new JsonArray([.. g.Frames.Select(f => (JsonNode)f)]),
@@ -119,14 +123,15 @@ public sealed partial class PixelTools
         var p = BeginMutation();
         int layer = LinkLayer(p, a);
         var frames = ReqFrames(a, "frames", p.Frames.Count);
-        int unlinked = 0;
+        UnlinkResult result = default;
         p.Edit(Label(tool), ProjectChange.Pixels, () =>
         {
-            unlinked = p.UnlinkCels(frames.Select(f => (layer, f)));
-            if (unlinked == 0) throw new ToolError(UiStrings.Ai_Link_NoneLinked);
+            result = p.UnlinkCels(frames.Select(f => (layer, f)));
+            if (result.Unlinked == 0) throw new ToolError(UiStrings.Ai_Link_NoneLinked);
         });
         Ctx.SetCurrent(layer, frames[0]);
-        return TextResult($"{tool}: layer {layer} — {unlinked} cel(s) unlinked. {LinksText(p, layer)}");
+        string baked = result.Baked > 0 ? $", {result.Baked} cel(s) baked with the effect's held end look as shown" : "";
+        return TextResult($"{tool}: layer {layer} — {result.Unlinked} cel(s) unlinked{baked}. {LinksText(p, layer)}");
     }
 
     private JsonObject SetLinkColor(string tool, JsonObject? a)

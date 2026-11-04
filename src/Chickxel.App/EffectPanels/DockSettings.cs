@@ -9,7 +9,7 @@ public sealed partial class LayerEffectsDialog
 {
     /// <summary>
     /// 오른쪽 독(<see cref="ToolOptionsPanel"/>)의 효과 설정 줄: 효과 창과 같은 효과 고유 설정(글씨 설정, 스크립트 schema 설정 + 움직이는 스크립트는 빠르기 곡선·반복)과
-    /// 움직이는 효과의 "링크된 뒤 칸에 끝 모습 이어 가기". 프레임 범위·클리핑·스크립트 원문 편집처럼 효과 목록 전체를 보는 설정은 효과 창에만 있다.
+    /// 뒤 효과의 피벗 같이 옮기기, 움직이는 효과의 "링크된 뒤 칸에 끝 모습 이어 가기". 프레임 범위·클리핑·스크립트 원문 편집처럼 효과 목록 전체를 보는 설정은 효과 창에만 있다.
     /// 설명 글은 <see cref="EffectForm.TakeHints"/>로 모을 수 있게 넣는다.
     /// 고칠 수 없는 효과는 모르는 효과면 그 설명만 넣는다(실행할 수 없는 스크립트의 까닭은 독의 상태 줄이 보임).
     /// </summary>
@@ -23,14 +23,13 @@ public sealed partial class LayerEffectsDialog
             case TextEffect text:
                 var size = layer.IsPart ? layer.PartSize : new Size(project.Width, project.Height);
                 AddTextFields(form, text, set, CenterKind(size.Width, vertical: false), CenterKind(size.Height, vertical: true));
+                AddMovePivotEditor(form, text, set);
                 AddHoldEndEditor(form, text, set);
                 form.Add(Hint(UiStrings.TextEffect_Hint));
                 return;
             case ScriptEffect script when ScriptLibrary.Runnable(script.ScriptHash) is { } program:
                 if (program.Settings.Count == 0) form.Add(Hint(UiStrings.ScriptEffect_NoSettings));
-                AddScriptSettingRows(program, script, set, rebuild, LayerChoices(project, layer), form.ScriptRow);
-                if (program.Animated && program.Motion) AddTimingEditors(form, script, set);
-                AddHoldEndEditor(form, script, set);
+                AddScriptEffectRows(form, program, script, set, rebuild, LayerChoices(project, layer));
                 form.Add(Hint(UiStrings.ScriptEffect_Hint));
                 return;
             case MissingEffect missing:
@@ -40,5 +39,18 @@ public sealed partial class LayerEffectsDialog
                 form.Add(note);
                 return;
         }
+    }
+
+    /// <summary>
+    /// 스크립트 효과 하나의 설정 줄을 독과 같은 차례로 넣는다: schema 설정 → 움직이는 효과의 빠르기 곡선·반복 → 뒤 효과의 피벗 같이 옮기기 → 링크된 뒤 칸에
+    /// 끝 모습 이어 가기. 오른쪽 독과 효과 만들기의 미리보기 설정 칸이 같이 쓴다(넣었을 때와 같은 모습).
+    /// </summary>
+    internal static void AddScriptEffectRows(EffectForm form, ScriptEffectProgram program, ScriptEffect script, Action<Func<LayerEffect, LayerEffect>> set,
+        Action rebuild, ScriptLayerChoices choices)
+    {
+        AddScriptSettingRows(program, script, set, rebuild, choices, form.ScriptRow);
+        if (program.Animated && program.Motion) AddTimingEditors(form, script, set);
+        AddMovePivotEditor(form, script, set);
+        AddHoldEndEditor(form, script, set);
     }
 }

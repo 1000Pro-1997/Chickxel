@@ -288,6 +288,50 @@ public class PartsTests
     }
 
     [Fact]
+    public void PartFramePivot_OverridesOnlyThatFrame_AndFollowsUndoSaveDuplicateResize()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 4, 4, new Point(3, 3));
+        int pi = p.IndexOf(part);
+        p.AddFrame();
+        p.AddFrame();
+        var topLeft = new Pivot(0, 1);
+        p.SetPartPivot(pi, Pivot.BottomCenter);
+        p.SetPartFramePivot(pi, 1, topLeft);
+        Assert.Equal([Pivot.BottomCenter, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 3).Select(f => p.GetPartPivot(part, f)));
+        Assert.Equal(new PointF(0, 0), p.EffectPivot(part, 1)); // 효과의 피벗도 그 프레임 것
+        // 부위 피벗을 바꿔도 그 프레임은 따로
+        p.SetPartPivot(pi, Pivot.Center);
+        Assert.Equal(topLeft, p.GetPartPivot(part, 1));
+        p.Undo();
+        p.Undo();
+        Assert.False(p.HasPartFramePivot(part, 1));
+        p.Redo();
+        Assert.Equal(topLeft, p.GetPartPivot(part, 1));
+
+        // 프레임 복제는 그 프레임의 부위 피벗도 복사
+        p.DuplicateFrame(1);
+        Assert.Equal(topLeft, p.GetPartPivot(part, 2));
+
+        // 저장·읽기
+        using var stream = new MemoryStream();
+        ProjectIO.Save(p, stream);
+        stream.Position = 0;
+        var loaded = ProjectIO.Load(stream);
+        var lp = loaded.Layers[pi];
+        Assert.Equal([Pivot.BottomCenter, topLeft, topLeft, Pivot.BottomCenter], Enumerable.Range(0, 4).Select(f => loaded.GetPartPivot(lp, f)));
+
+        // 부위 크기를 바꾸면 그 프레임 피벗도 같은 픽셀을 가리킨다
+        p.ResizePart(pi, 6, 5, Anchor.TopRight); // 그림이 (2,0)만큼 옮겨짐
+        Assert.Equal((2f, 0f), p.GetPartPivot(part, 1).ToLocalPixel(6, 5));
+
+        // 끄면 다시 부위 피벗
+        p.SetPartFramePivot(pi, 1, null);
+        Assert.Equal(part.PartPivot, p.GetPartPivot(part, 1));
+    }
+
+    [Fact]
     public void ScaleLayer_Part_MovesAndScalesPartArea_AllFrames_BorderScaled_PivotRelative()
     {
         var p = new SpriteProject(10, 10);
@@ -316,6 +360,42 @@ public class PartsTests
         p.Undo();
         Assert.Equal(new Rectangle(1, 1, 2, 2), part.PartRect);
         Assert.Equal(Red, p.GetCel(pi, 0)!.Get(0, 0));
+    }
+
+    [Fact]
+    public void ResizeLayer_Part_CropsAndExtendsPartArea_KeepsPixelsInPlace_PivotAndBorderFollow()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 4, 4, new Point(2, 2));
+        int pi = p.IndexOf(part);
+        Paint(p, pi, 0, 0, 0, Red);   // (2,2)
+        Paint(p, pi, 0, 3, 3, Blue);  // (5,5)
+        p.SetPartBorder(pi, new SpriteBorder(1, 1, 1, 1));
+        p.SetPartPivot(pi, Pivot.FromLocalPixel(1, 1, 4, 4)); // 캔버스 (3,3)
+        var flat = p.Flatten(0);
+        int steps = p.History.UndoCount;
+
+        // 그림 크기 그대로, 자리만: 왼쪽 위 1칸 잘라내고 오른쪽 아래로 2칸 넓힘
+        p.ResizeLayer(pi, part.PartRect, part.PartRect, new Rectangle(3, 3, 5, 5));
+
+        Assert.Equal(steps + 1, p.History.UndoCount);
+        Assert.Equal(new Rectangle(3, 3, 5, 5), part.PartRect);
+        Assert.Equal(default, p.Flatten(0).Get(2, 2));          // 잘린 빨강
+        Assert.Equal(Blue, p.Flatten(0).Get(5, 5));              // 제자리
+        var (px, py) = part.PartPivot.ToLocalPixel(5, 5);
+        Assert.Equal((0f, 0f), (px, py));                       // 같은 캔버스 지점 (3,3)
+        Assert.Equal(new SpriteBorder(0, 0, 3, 3), part.PartBorder); // 같은 그림 경계(왼쪽 위 경계는 잘린 자리)
+
+        p.Undo();
+        Assert.Equal(new Rectangle(2, 2, 4, 4), part.PartRect);
+        Assert.True(p.Flatten(0).ContentEquals(flat));
+
+        // 그림을 두 배로 늘리고 자리는 왼쪽 위 4×4만 남김
+        p.ResizeLayer(pi, part.PartRect, new Rectangle(2, 2, 8, 8), new Rectangle(2, 2, 4, 4));
+        Assert.Equal(new Rectangle(2, 2, 4, 4), part.PartRect);
+        Assert.Equal(Red, p.Flatten(0).Get(3, 3));
+        Assert.Equal(default, p.Flatten(0).Get(5, 5));
     }
 
     [Fact]

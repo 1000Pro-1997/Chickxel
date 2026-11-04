@@ -286,12 +286,15 @@ public sealed class LegacyEffectMigrationTests
         }
     }
 
-    /// <summary>패키지 버전만 <paramref name="version"/>인 공식 효과 패키지 파일(앱에 든 것보다 낮은 버전이 설치된 상태를 만든다).</summary>
-    private static string OldOfficialPackage(TempDir dir, string id, string version)
+    /// <summary>
+    /// 패키지 버전만 <paramref name="version"/>인 공식 효과 패키지 파일(앱에 든 것보다 낮은 버전이 설치된 상태를 만든다). <paramref name="segment"/>는 에셋 ID 끝 조각
+    /// (예전 게시 창은 공식 효과도 <c>effect-script</c>로 올렸음).
+    /// </summary>
+    private static string OldOfficialPackage(TempDir dir, string id, string version, string? segment = null)
     {
         var program = OfficialEffects.Program(id);
         var builder = new AssetPackageBuilder(OfficialEffectPackages.Header(id, program) with { Version = version });
-        builder.Add(AssetKinds.EffectScript, ScriptAsset.From("", program), AssetPreview.Package(ScriptAsset.From("", program)), segment: id);
+        builder.Add(AssetKinds.EffectScript, ScriptAsset.From("", program), AssetPreview.Package(ScriptAsset.From("", program)), segment: segment ?? id);
         builder.AddDocument("LICENSE.txt", OfficialEffectPackages.LicenseText);
         var path = Path.Combine(dir.Path, $"{id}-{version}.chickxel-asset");
         using (var output = File.Create(path)) builder.Write(output);
@@ -357,6 +360,32 @@ public sealed class LegacyEffectMigrationTests
         Assert.Empty(restore.Updated);
         Assert.True(store.Catalog.Find(outlineId)!.Modified);
         Assert.Equal(OfficialEffects.Ordered, store.Catalog.EffectScripts.Select(e => AssetCatalog.OfficialIdOf(e)));
+    }
+
+    /// <summary>
+    /// 예전 게시 창이 공식 효과의 새 버전을 다른 에셋 ID(<c>.effect-script</c>)로 올렸다: 받으면 앱에 든 것을 바꾸고(둘이 되지 않음), 공식 효과로 남으며,
+    /// 기본 효과 맞추기·되돌리기가 더 높은 그 버전을 다시 넣거나 내리지 않는다.
+    /// </summary>
+    [Fact]
+    public void OnlineVersionUnderAnotherAssetId_ReplacesTheBundledOne_AndStaysOfficial()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(Path.Combine(dir.Path, "Assets"));
+        Assert.Empty(OfficialEffectPackages.Sync(store).Errors);
+        string packageId = OfficialEffectPackages.PackageId("coloroverlay");
+
+        // 앱의 상점 받기와 같은 규칙: 같은 상점 에셋이면 바꾸고, 아니면 하나 더 둠
+        var installed = Assert.Single(store.Install(OldOfficialPackage(dir, "coloroverlay", "9.0.0", "effect-script"), AssetSources.Remote,
+            item => item.SameStoreAsset ? ImportChoice.Replace : ImportChoice.KeepBoth));
+        var only = Assert.Single(store.Catalog.FromPackage(packageId));
+        Assert.Equal((OfficialEffectPackages.AssetId("coloroverlay"), packageId + ".effect-script", "9.0.0"), (only.Id, only.Store!.AssetId, only.Store.Version));
+        Assert.Equal(installed.Id, only.Id);
+        Assert.Equal("coloroverlay", AssetCatalog.OfficialIdOf(only));
+        Assert.Equal(OfficialEffects.Ordered, store.Catalog.EffectScripts.Select(e => AssetCatalog.OfficialIdOf(e)));
+
+        Assert.False(OfficialEffectPackages.NeedsSync(store, restore: true));
+        Assert.False(OfficialEffectPackages.Sync(store, restore: true).Changed);
+        Assert.Equal("9.0.0", Assert.Single(store.Catalog.FromPackage(packageId)).Store!.Version);
     }
 
     /// <summary>

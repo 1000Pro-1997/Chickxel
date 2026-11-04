@@ -395,6 +395,15 @@ internal sealed class HistoryFrameDto
     public int DurationMs { get; set; }
     public ProjectIO.PivotDto? Pivot { get; set; }
     public string? Name { get; set; }
+    /// <summary>부위마다 이 프레임만의 피벗(없으면 null).</summary>
+    public List<HistoryPartPivotDto>? PartPivots { get; set; }
+}
+
+/// <summary>프레임 하나에서 부위 하나만의 피벗(편집 기록).</summary>
+internal sealed class HistoryPartPivotDto
+{
+    public int Layer { get; set; }
+    public ProjectIO.PivotDto Pivot { get; set; } = new();
 }
 
 internal sealed class HistoryTagDto

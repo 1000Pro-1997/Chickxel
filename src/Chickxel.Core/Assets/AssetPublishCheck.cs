@@ -39,6 +39,10 @@ public enum PublishIssueCode
     FrameReferenceTag,
     /// <summary>다른 프레임을 읽는 스크립트인데 꼭 달 태그(<see cref="ScriptAsset.FrameReferenceTag"/>, 빠졌으면 <see cref="ScriptAsset.LayerReferenceTag"/>도)를 더하면 태그가 <see cref="RemoteCatalogFormat.MaxTags"/>개를 넘음.</summary>
     FrameReferenceTagFull,
+    /// <summary>그림을 옮긴 거리를 알리는 스크립트(<see cref="ScriptAsset.MovesPivot"/>)인데 태그에 <see cref="ScriptAsset.PivotMoveTag"/>가 없음.</summary>
+    PivotMoveTag,
+    /// <summary>그림을 옮긴 거리를 알리는 스크립트인데 꼭 달 태그를 모두 더하면 태그가 <see cref="RemoteCatalogFormat.MaxTags"/>개를 넘음.</summary>
+    PivotMoveTagFull,
 }
 
 /// <summary>
@@ -95,6 +99,11 @@ public sealed record PublishRequest
     public required PublishAsset Asset { get; init; }
     public byte[]? CustomPreview { get; init; }
     public string MinAppVersion { get; init; } = "0.0.0";
+    /// <summary>
+    /// 에셋 ID의 끝 조각(<see cref="AssetPublishCheck.AssetSegmentOf"/> — 새 버전이면 지난 버전의 것). null이면 이름에서 만든다. 버전마다 바뀌면 받은 컴퓨터가
+    /// 업데이트를 다른 에셋으로 보므로 고정한다.
+    /// </summary>
+    public string? AssetSegment { get; init; }
 }
 
 /// <summary>
@@ -233,6 +242,18 @@ public static class AssetPublishCheck
         return new PublishTarget(id, PublishIdSource.Derived, catalog.FromPackage(id).FirstOrDefault(entry => IsOwnListed(entry, handle)));
     }
 
+    /// <summary>
+    /// 게시 패키지의 에셋 ID 끝 조각: 공식 효과 패키지(<c>chickxel.effects.&lt;ID&gt;</c>)는 앱에 든 패키지와 같은 효과 ID, 아니면 그 상점 ID에 연결된 내 에셋
+    /// (<see cref="PublishTarget.Existing"/>)의 것(새 버전이 같은 에셋 ID를 쓰게 — 이름이 바뀌어도). 처음 올리면 null(이름에서 만듦).
+    /// </summary>
+    public static string? AssetSegmentOf(PublishTarget target)
+    {
+        if (OfficialEffectPackages.IdOfPackage(target.Id) is { } official && target.Id == OfficialEffectPackages.PackageId(official)) return official;
+        return target.Existing?.Store is { } link && link.PackageId == target.Id && link.AssetId.Length > target.Id.Length + 1
+            ? link.AssetId[(target.Id.Length + 1)..]
+            : null;
+    }
+
     /// <summary><paramref name="handle"/>의 이름으로 상점에 올라간 에셋인지(작성자 ID가 같고 상점 연결이 있음) — 게시 창이 그 ID로 새 버전을 올린다.</summary>
     public static bool IsOwnListed(AssetEntry asset, string? handle)
         => handle is { Length: > 0 } && asset.Store is not null && asset.Author?.Id == handle;
@@ -281,15 +302,17 @@ public static class AssetPublishCheck
         if (!AssetTranslations.IsValid(request.Translations)) Error(PublishIssueCode.Translations);
         if (!IsValidTags(request.Tags)) Error(PublishIssueCode.Tags);
         if (request.Tags.Count == 0) Warn(PublishIssueCode.NoTags);
-        // 다른 레이어·프레임을 읽는 효과는 layer-reference·frame-reference 태그가 꼭 있어야 한다(상점에서 이런 효과를 따로 찾게)
+        // 다른 레이어·프레임을 읽거나 피벗을 옮기는 효과는 layer-reference·frame-reference·pivot-move 태그가 꼭 있어야 한다(상점에서 이런 효과를 따로 찾게)
         if (request.Asset.Data is ScriptAsset script)
         {
             bool missLayer = script.ReadsOtherLayers && !request.Tags.Contains(ScriptAsset.LayerReferenceTag);
             bool missFrame = script.ReadsOtherFrames && !request.Tags.Contains(ScriptAsset.FrameReferenceTag);
-            // 빠진 강제 태그를 모두 더해도 한도 안이어야 한다(layer-reference를 먼저 센다)
+            bool missPivot = script.MovesPivot && !request.Tags.Contains(ScriptAsset.PivotMoveTag);
+            // 빠진 강제 태그를 모두 더해도 한도 안이어야 한다(layer-reference, frame-reference, pivot-move 차례로 센다)
             int count = request.Tags.Count + (missLayer ? 1 : 0);
             if (missLayer) Error(count > RemoteCatalogFormat.MaxTags ? PublishIssueCode.LayerReferenceTagFull : PublishIssueCode.LayerReferenceTag);
-            if (missFrame) Error(count + 1 > RemoteCatalogFormat.MaxTags ? PublishIssueCode.FrameReferenceTagFull : PublishIssueCode.FrameReferenceTag);
+            if (missFrame) Error(++count > RemoteCatalogFormat.MaxTags ? PublishIssueCode.FrameReferenceTagFull : PublishIssueCode.FrameReferenceTag);
+            if (missPivot) Error(++count > RemoteCatalogFormat.MaxTags ? PublishIssueCode.PivotMoveTagFull : PublishIssueCode.PivotMoveTag);
         }
         if (issues.Any(issue => issue.IsError)) return new PublishResult(issues, null, null);
 
@@ -308,7 +331,7 @@ public static class AssetPublishCheck
         });
         // 직접 고른 PNG는 효과 없는 원본·장면 레이어를 숨긴 그림과 짝이 맞지 않으므로 그것들 없이 넣는다(서버는 첫 에셋의 미리보기를 목록 미리보기로 씀).
         var preview = request.CustomPreview is { Length: > 0 } custom ? new PackagePreview(custom, null) : request.Asset.Preview;
-        builder.Add(request.Asset.Kind, request.Asset.Data, preview);
+        builder.Add(request.Asset.Kind, request.Asset.Data, preview, segment: request.AssetSegment);
         builder.AddDocument(LicenseFileName, LicenseText);
         byte[] bytes;
         AssetManifest manifest;

@@ -71,10 +71,118 @@ public sealed partial class SpriteProject
         if (layer.IsGroup)
             return ChildrenOf(layer).Any(c => GetCel(c, frame) is not null) ? PlanGroup(layer, frameIndex) : null;
         if (RenderCel(layer, frameIndex) is not { } cel) return null;
-        IReadOnlyList<LayerEffect> effects = layer.IsPart ? [] : WithHeldEnds(layer, layer.Effects, frameIndex, ActiveKey(layer), DefaultCels, nested: false);
+        return ClippedCelPlan(layer, frameIndex, cel, withEffects: !layer.IsPart);
+    }
+
+    /// <summary>
+    /// 부위 하나만 프레임에 보이는 모습 그대로 그린 프레임 크기 순서표(부위 화면에서 효과를 볼 때 — 캔버스가 부위 위치만큼 옮겨 그린다): 부위 셀에 부위 효과를,
+    /// 그 그룹에 이 프레임에 켜진 효과가 있으면 이 부위만 든 그룹 합성에 그룹 효과까지 입힌다(다른 부위는 빼므로 다른 부위를 보는 그룹 효과는 실제 합성과 다를 수 있음).
+    /// 부위·그룹 불투명도와 숨김은 보지 않는다(고치는 부위라 늘 다 보이게). 셀이 없으면(원본 없이 그리는 효과도 없으면) 빈 순서표.
+    /// </summary>
+    public RenderPlan PlanPartInFrame(Layer part, int frameIndex)
+    {
+        if (!part.IsPart || part.Parent is not { IsGroup: true } group) throw new ArgumentException(DomainStrings.Project_NotPartLayer, nameof(part));
+        var steps = new List<RenderStep>();
+        if (RenderCel(part, frameIndex) is { } cel)
+        {
+            if (!group.HasActiveEffectsAt(frameIndex)) steps.Add(CelStepOf(part, frameIndex, cel, 255, DefaultCels));
+            else if (GroupStepOf(group, frameIndex, other => ReferenceEquals(other, part) ? cel : null, DefaultCels, 255, partOpacity: 255) is { } step) steps.Add(step);
+        }
+        return new RenderPlan(_width, _height, steps);
+    }
+
+    /// <summary>
+    /// 레이어 <paramref name="layer"/>의 효과가 프레임 <paramref name="frameIndex"/>에서 그림을 옮겨 쌓은 피벗 이동(px, <see cref="LayerEffects.PivotShift"/> — 피벗 같이 옮기기가 켜진
+    /// 효과가 알린 거리의 합, 링크된 칸에 이어 가는 끝 모습 포함). 부위면 부위 효과의 이동에 그룹 효과의 이동을 더한다(그룹 효과가 부위가 든 그룹 합성을 옮기므로).
+    /// 캔버스는 피벗 표시를 정한 피벗 + 이 값에 그린다. 알릴 수 있는 효과가 없으면 그리지 않고 0, 있으면 그 레이어 효과를 그리므로 그만큼 걸린다.
+    /// </summary>
+    public PointF EffectPivotShift(Layer layer, int frameIndex)
+    {
+        if ((uint)frameIndex >= (uint)_frames.Count) return PointF.Empty;
+        var shift = OwnPivotShift(layer, frameIndex);
+        if (layer.IsPart && layer.Parent is { IsGroup: true } group)
+        {
+            var more = OwnPivotShift(group, frameIndex);
+            shift = new PointF(shift.X + more.X, shift.Y + more.Y);
+        }
+        return shift;
+    }
+
+    // 레이어 자신의 효과만의 피벗 이동(그룹이면 부위 합성에 그룹 효과)
+    private PointF OwnPivotShift(Layer layer, int frameIndex)
+    {
+        if (!LayerEffects.MayMovePivot(layer.Effects)) return PointF.Empty;
+        var effects = EffectsAt(layer, frameIndex);
+        if (!LayerEffects.MayMovePivot(effects) || EffectSource(layer, frameIndex) is not { } source) return PointF.Empty;
+        return LayerEffects.PivotShift(source, effects);
+    }
+
+    /// <summary>
+    /// 셀 썸네일 순서표(타임라인 칸·스킨 관리 카드가 같이 씀): 고칠 그림 그대로(효과 없이 — 효과 모습은 캔버스·미리보기에서 본다). 일반 레이어는 셀, 부위는 부위 셀,
+    /// 그룹은 보이는 부위 셀을 제자리에 합친 것(부위·그룹 효과 없이, 불투명도는 반영 — <paramref name="skin"/>이 있으면 그 스킨으로, 없으면 지금 스킨·부위 재정의대로).
+    /// 다만 일반 레이어 셀에 칠한 픽셀이 없는데 효과가 그림을 만들면(글씨 효과 등) 효과까지 그린다. 빈 셀(그룹이면 그릴 부위 셀이 하나도 없음)이면 null.
+    /// </summary>
+    public RenderPlan? PlanCelThumbnail(int layerIndex, int frameIndex, Skin? skin = null)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.IsPart) return PlanCel(layerIndex, frameIndex);
+        if (layer.IsGroup)
+        {
+            var steps = new List<RenderStep>();
+            foreach (var part in ChildrenOf(layer))
+                if (part.Visible && (skin is null ? DefaultCels(part, frameIndex) : GetSkinCel(part, _frames[frameIndex], skin)) is { } partCel)
+                    steps.Add(RawStep(part, frameIndex, partCel, DrawOpacity(part)));
+            return steps.Count == 0 ? null : new RenderPlan(_width, _height, steps);
+        }
+        if (RenderCel(layer, frameIndex) is not { } cel) return null;
+        return ClippedCelPlan(layer, frameIndex, cel, withEffects: !HasContent(cel));
+    }
+
+    /// <summary>
+    /// 셀 썸네일 그림(<see cref="PlanCelThumbnail"/>을 <see cref="ThumbnailBounds"/>로 자른 것 — 타임라인 칸과 같은 그림·자리). 빈 셀이면 null.
+    /// 바로 그리므로 UI 스레드에서는 작은 그림·적은 칸에만(타임라인은 같은 순서표를 작업 스레드에서 그린다).
+    /// </summary>
+    public PixelImage? RenderCelThumbnail(int layerIndex, int frameIndex, Skin? skin = null)
+    {
+        if (PlanCelThumbnail(layerIndex, frameIndex, skin) is not { } plan) return null;
+        var area = ThumbnailBounds(layerIndex);
+        return (area.IsEmpty ? plan : plan.Cropped(area)).Render();
+    }
+
+    /// <summary>
+    /// 효과를 끈 프레임 합성 순서표(캔버스에서 효과 보기를 끈 화면 — 고칠 그림 그대로): 보이는 레이어·부위 셀을 제자리에 불투명도로 겹치고
+    /// 레이어·부위·그룹 효과는 그리지 않는다. 다만 칠한 픽셀이 없는 일반 레이어 셀에 효과가 그림을 만들면(글씨 효과 등) 그 레이어는 효과까지
+    /// (<see cref="PlanCelThumbnail"/>와 같은 규칙). <paramref name="layerFilter"/>가 false인 레이어는 뺀다.
+    /// </summary>
+    public RenderPlan PlanFrameRaw(int frameIndex, Func<Layer, bool>? layerFilter = null)
+    {
+        var steps = new List<RenderStep>();
+        foreach (var layer in _layers)
+        {
+            if (layer.IsGroup || layerFilter is not null && !layerFilter(layer) || !(layer.Visible && (layer.Parent?.Visible ?? true))) continue;
+            if (RenderCel(layer, frameIndex) is not { } cel) continue;
+            steps.Add(!layer.IsPart && !HasContent(cel)
+                ? CelStepOf(layer, frameIndex, cel, DrawOpacity(layer), DefaultCels)
+                : RawStep(layer, frameIndex, cel, DrawOpacity(layer)));
+        }
+        return new RenderPlan(_width, _height, steps);
+    }
+
+    /// <summary>효과 없이 셀 하나를 제자리(부위면 부위 위치)에 <paramref name="opacity"/>로 그리는 단계.</summary>
+    private CelStep RawStep(Layer layer, int frameIndex, PixelImage cel, byte opacity)
+        => new(layer, cel, [], frameIndex, _frames.Count, EffectPivot(layer, frameIndex), null, null, FrameTagFor([], frameIndex), opacity,
+            layer.IsPart ? layer.PartOffset.X : 0, layer.IsPart ? layer.PartOffset.Y : 0);
+
+    /// <summary>
+    /// 셀 <paramref name="cel"/>(레이어 <paramref name="layer"/>, 프레임 <paramref name="frameIndex"/>)을 셀 크기로 잘라 그리는 순서표: <paramref name="withEffects"/>면
+    /// 그 프레임에 입혀지는 레이어 효과(링크된 칸의 효과 끝 모습 포함, 꺼진 효과 빼고)까지, 불투명도·위치 없이.
+    /// </summary>
+    private RenderPlan ClippedCelPlan(Layer layer, int frameIndex, PixelImage cel, bool withEffects)
+    {
+        IReadOnlyList<LayerEffect> effects = withEffects ? WithHeldEnds(layer, layer.Effects, frameIndex, ActiveKey(layer), DefaultCels, nested: false) : [];
         var step = new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex),
-            layer.IsPart ? null : SourcesOf(layer, effects, frameIndex, nested: false),
-            layer.IsPart ? null : ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false), FrameTagFor(effects, frameIndex), 255, 0, 0, clip: true);
+            withEffects ? SourcesOf(layer, effects, frameIndex, nested: false) : null,
+            withEffects ? ScriptLayersOf(layer, frameIndex, effects, DefaultCels, nested: false) : null, FrameTagFor(effects, frameIndex), 255, 0, 0, clip: true);
         return new RenderPlan(cel.Width, cel.Height, [step]);
     }
 
@@ -127,13 +235,16 @@ public sealed partial class SpriteProject
             ScriptLayersOf(layer, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, x, y);
     }
 
-    /// <summary>이 프레임에 효과가 켜진 그룹 단계(그릴 부위 셀이 없으면 null). <paramref name="celOf"/>는 그릴 부위 셀(보이기·걸러내기 반영).</summary>
+    /// <summary>
+    /// 이 프레임에 효과가 켜진 그룹 단계(그릴 부위 셀이 없으면 null). <paramref name="celOf"/>는 그릴 부위 셀(보이기·걸러내기 반영),
+    /// <paramref name="partOpacity"/>는 부위 불투명도 대신 쓸 값(null이면 부위마다 자기 값).
+    /// </summary>
     private GroupStep? GroupStepOf(Layer group, int frameIndex, Func<Layer, PixelImage?> celOf, Func<Layer, int, PixelImage?> cels, byte opacity,
-        bool nested = false)
+        bool nested = false, byte? partOpacity = null)
     {
         var parts = new List<CelStep>();
         foreach (var part in ChildrenOf(group))
-            if (celOf(part) is { } cel) parts.Add(CelStepOf(part, frameIndex, cel, part.Opacity, cels, nested));
+            if (celOf(part) is { } cel) parts.Add(CelStepOf(part, frameIndex, cel, partOpacity ?? part.Opacity, cels, nested));
         if (parts.Count == 0) return null;
         var effects = nested ? LayerEffects.WithoutRenderedLayerReaders(group.Effects) : group.Effects;
         return new GroupStep(group, parts, effects, frameIndex, _frames.Count, EffectPivot(group, frameIndex), SourcesOf(group, effects, frameIndex, nested),

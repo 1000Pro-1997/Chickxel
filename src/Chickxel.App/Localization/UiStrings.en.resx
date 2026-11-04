@@ -400,7 +400,7 @@ Run "{1}" in a terminal yourself, then click "Check again".</value></data>
   <data name="S_Dialogs_Shortcuts_39DA072B09" xml:space="preserve"><value>Motion test</value></data>
   <data name="S_Dialogs_Shortcuts_3DBB46587D" xml:space="preserve"><value>Delete selected frames (range) / frame duration</value></data>
   <data name="S_Dialogs_Shortcuts_42916C914B" xml:space="preserve"><value>Tile mode (5×5 / 3×3 for large images)</value></data>
-  <data name="S_Dialogs_Shortcuts_4433121F4C" xml:space="preserve"><value>Duplicate last frame / add empty frame</value></data>
+  <data name="S_Dialogs_Shortcuts_4433121F4C" xml:space="preserve"><value>Duplicate last frame / add empty frame (drag right and release to add several)</value></data>
   <data name="S_Dialogs_Shortcuts_45DD7D9C62" xml:space="preserve"><value>Zoom in / out (1–64x)</value></data>
   <data name="S_Dialogs_Shortcuts_45F476C257" xml:space="preserve"><value>Save (.chickxel) + export PNG sheet and .meta</value></data>
   <data name="S_Dialogs_Shortcuts_48AD2BB98E" xml:space="preserve"><value>Zoom in / out</value></data>
@@ -845,7 +845,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_0500474F59" xml:space="preserve"><value>On playback, loops straight back to the first frame without holding the last frame (as it loops in game).</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_2138B1E743" xml:space="preserve"><value>On: plays only frames the selected effect applies to. Off: plays all frames, including those added by extending.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_3DC0585476" xml:space="preserve"><value>Play</value></data>
-  <data name="S_LayerEffectsDialog_LayerEffectsDialog_420801482E" xml:space="preserve"><value>Expand canvas to fit effects</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_42089F3C1D" xml:space="preserve"><value>No project is open.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_46C6465E13" xml:space="preserve"><value>Plays the selected effect's range, or all frames after extending.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_4782D0C688" xml:space="preserve"><value>Frame</value></data>
@@ -857,7 +856,6 @@ Group effects apply to the combined shape of the parts and appear only in frame 
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_769C41A711" xml:space="preserve"><value>Apply permanently</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_7E8F1A60E2" xml:space="preserve"><value>Layer effects — {0}</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_96BC2CE00E" xml:space="preserve"><value>Loop end to start</value></data>
-  <data name="S_LayerEffectsDialog_LayerEffectsDialog_98461A52E4" xml:space="preserve"><value>On OK, expands the canvas so this layer's enabled effects aren't clipped. Image size is unchanged; all layers, parts and pivots move together.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_A48FBAD60B" xml:space="preserve"><value>Drag rows to reorder (applied top to bottom). Delete = delete selected effect.</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_BEC5ADB6D1" xml:space="preserve"><value>Selected effect range only</value></data>
   <data name="S_LayerEffectsDialog_LayerEffectsDialog_CE6B076915" xml:space="preserve"><value>Add range</value></data>
@@ -1080,7 +1078,6 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Scope_FileOnly" xml:space="preserve"><value>The user limited the AI to the current file, so other files can't be opened or created (the user can turn this off in the chat)</value></data>
   <data name="Ai_Scope_OtherDocument" xml:space="preserve"><value>The user limited the AI to the file that was open when this turn started, and another document is open now — everything is read-only (switch back to that file to edit it)</value></data>
   <data name="Ai_Locked_Layer" xml:space="preserve"><value>Layer {index} "{name}" (or its group) is locked and can't be changed — ask the user to unlock it</value></data>
-  <data name="Ai_Link_Group" xml:space="preserve"><value>Layer {index} "{name}" is a group and has no cels to link — pick a normal layer or a part</value></data>
   <data name="Ai_Link_BadFrame" xml:space="preserve"><value>Invalid frame index: {value} (must be 0 to less than {count})</value></data>
   <data name="Ai_Link_BadColor" xml:space="preserve"><value>Invalid link color: {value} — available colors: {colors}</value></data>
   <data name="Ai_Link_TwoFrames" xml:space="preserve"><value>Give at least two frames to link</value></data>
@@ -1111,7 +1108,7 @@ Alpha is kept and fully transparent pixels are unchanged. One undo step.</value>
   <data name="Ai_Effect_Removed" xml:space="preserve"><value>{tool}: removed effect {effect} ({type}) from layer {layer} "{name}"</value></data>
   <data name="Ai_Effect_NoEffects" xml:space="preserve"><value>Layer {layer} "{name}" has no effects — check with get_effects</value></data>
   <data name="Ai_Effect_NoneToBake" xml:space="preserve"><value>Layer {layer} "{name}" has no enabled effects to apply</value></data>
-  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: no enabled effects to fit — nothing changed</value></data>
+  <data name="Ai_Effect_ExpandNoEffects" xml:space="preserve"><value>{tool}: no enabled effects with expand canvas on to fit — nothing changed</value></data>
   <data name="Ai_Effect_ExpandNone" xml:space="preserve"><value>{tool}: the effects already fit in the {width}x{height} canvas — nothing changed</value></data>
   <data name="Ai_Effect_Expanded" xml:space="preserve"><value>{tool}: canvas {oldWidth}x{oldHeight} → {width}x{height} (the drawing moved by {x},{y})</value></data>
   <data name="Ai_Effect_SettingsObject" xml:space="preserve"><value>settings: must be a JSON object of setting keys and values (see list_effect_types)</value></data>
@@ -1721,6 +1718,7 @@ This skin has no image of its own, so it borrows the "{0}" image</value></data>
   <data name="S_ToolOptionsPanel_Refresh_FB6D406AF9" xml:space="preserve"><value>Drag to paint from start point → end point. One undo step at a time.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_FD736DAE6B" xml:space="preserve"><value>Line width · pen shape</value></data>
   <data name="S_ToolOptionsPanel_RefreshPivot_7752FB81E5" xml:space="preserve"><value>Target: part "{0}" ({1}×{2}, part atlas)</value></data>
+  <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>Target: part "{0}", frame {1} only ({2}×{3}, part atlas)</value></data>
   <data name="S_ToolOptionsPanel_RefreshPivot_880B20EF26" xml:space="preserve"><value>Target: project default pivot (all frames)</value></data>
   <data name="S_ToolOptionsPanel_RefreshPivot_DC250333A2" xml:space="preserve"><value>Target: frame {0} only</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_0CBE78E12F" xml:space="preserve"><value>Target: all cells of the frame sheet ({0}×{1})</value></data>
@@ -2264,6 +2262,7 @@ Move Chickxel.app to the Applications folder or similar and relaunch it to use a
   <data name="Preview_SaveFailed" xml:space="preserve"><value>Couldn't save the frame.&#10;{0}</value></data>
   <data name="Preview_ZoomTitle" xml:space="preserve"><value>Preview (large)</value></data>
   <data name="Preview_ZoomTip" xml:space="preserve"><value>Click to open a large preview window (resize it to scale the picture, Space = play/pause, Esc = close). Right-click: copy and save</value></data>
+  <data name="Preview_OpenTabTip" xml:space="preserve"><value>Open as a tab: show the preview in a tab on the right side (splits the view if needed; only one preview tab)</value></data>
   <data name="Timeline_CopyRendered" xml:space="preserve"><value>Copy cels (as image with effects)</value></data>
   <data name="Timeline_CopyFrameImage" xml:space="preserve"><value>Copy frame {0} as shown</value></data>
   <data name="Timeline_CopiedRendered" xml:space="preserve"><value>Copied {1} layer(s) of frame {0} as an image with effects ({2}×{3}).</value></data>
@@ -2287,6 +2286,13 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="AiInstaller_LoginComplete" xml:space="preserve"><value>Login complete. Return to Chickxel.</value></data>
   <data name="AiInstaller_LoginFailed" xml:space="preserve"><value>Installation or login failed. Check the error above.</value></data>
   <data name="EffectCanvasExpand_KeepCenter" xml:space="preserve"><value>Expand keeping center</value></data>
+  <data name="EffectCanvasExpand_ModeTip" xml:space="preserve"><value>On OK or when applying permanently, if the result of an effect with "Expand canvas" on goes past the canvas, the canvas grows the chosen way. Turn it on or off per effect in its settings (on by default). Image size is unchanged; all layers, parts and pivots move together.</value></data>
+  <data name="Effect_ExpandCanvasRow" xml:space="preserve"><value>On OK</value></data>
+  <data name="Effect_ExpandCanvas" xml:space="preserve"><value>Expand canvas</value></data>
+  <data name="Effect_ExpandCanvasTip" xml:space="preserve"><value>On OK or when applying permanently, if this effect's result goes past the canvas, the canvas grows to fit it (the way it grows is chosen in Common settings). Turn it off to clip this effect to the canvas — the part that will be cut off shows faded in the preview.</value></data>
+  <data name="Effect_MovePivotRow" xml:space="preserve"><value>Later effects</value></data>
+  <data name="Effect_MovePivot" xml:space="preserve"><value>Move pivot along</value></data>
+  <data name="Effect_MovePivotTip" xml:space="preserve"><value>When an effect that moves the image (shake, bob, jump, throw…) moves it, the pivot (center) of the effects after it in the list (rotate, squash…) follows by the same amount. The effect has to report how far it moved: the official Shake and Bob do, and your own script effects report it with ctx.movePivot(dx, dy). Turn it off to move only the image and keep the later effects' pivot where it was.</value></data>
   <data name="EffectOutline_HideOriginal" xml:space="preserve"><value>Hide original (outline only)</value></data>
   <data name="EffectMissing_Note" xml:space="preserve"><value>This effect ({0}) is a kind this version of Chickxel does not know, so it is not drawn and cannot be edited. Saving keeps its original settings, and a Chickxel that knows it can use it again.</value></data>
   <data name="EffectOutline_ModeShade" xml:space="preserve"><value>Shade from neighbors</value></data>
@@ -2364,6 +2370,9 @@ Please download it from the release page and replace it manually.</value></data>
   <data name="Help_ToggleChapter" xml:space="preserve"><value>Expand or collapse</value></data>
   <data name="Timeline_AddLayerTip" xml:space="preserve"><value>Add new layer</value></data>
   <data name="Timeline_AppendLayerCopyTip" xml:space="preserve"><value>Add a copy of the last layer</value></data>
+  <data name="Timeline_AppendFrameTip" xml:space="preserve"><value>Add empty frame (drag right and release to add several)</value></data>
+  <data name="Timeline_AppendFrameCopyTip" xml:space="preserve"><value>Add a copy of the last frame (drag right and release to add several)</value></data>
+  <data name="Timeline_ThumbnailsTip" xml:space="preserve"><value>Show or hide frame thumbnails (when off, frame columns get narrow and a dot marks cels with pixels)</value></data>
   <data name="Shortcuts_NextLayerRowButtons" xml:space="preserve"><value>Plus / copy button in next layer row</value></data>
   <data name="Shortcuts_NextLayerRowActions" xml:space="preserve"><value>Add empty layer / add a copy of the last layer</value></data>
   <data name="Chat_NewChat_Tip" xml:space="preserve"><value>Show past chats. Type a message below to start a new chat.</value></data>
@@ -3260,6 +3269,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Publish_LoginReason" xml:space="preserve"><value>Sign in with your Chickxel account to upload assets. Your account handle becomes the package author ID.</value></data>
   <data name="Publish_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
   <data name="Publish_Uploading" xml:space="preserve"><value>Uploading… {0}%</value></data>
+  <data name="Publish_ServerChecking" xml:space="preserve"><value>Checking on the server…</value></data>
   <data name="Publish_Uploaded" xml:space="preserve"><value>Uploaded {0} {1}. To see its package page, click Open website.</value></data>
   <data name="Publish_OpenPage" xml:space="preserve"><value>Open website</value></data>
   <data name="Publish_ServerRejected" xml:space="preserve"><value>Rejected by the server: {0}</value></data>
@@ -3631,6 +3641,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_Validating" xml:space="preserve"><value>Checking…</value></data>
   <data name="EffectMaker_ValidateOk" xml:space="preserve"><value>Check passed: {0} runs without errors, slowest step {1} ms (chick {2}).</value></data>
   <data name="EffectMaker_ValidateOkNote" xml:space="preserve"><value>Upload publishes this source.</value></data>
+  <data name="EffectMaker_MoveNotReported" xml:space="preserve"><value>This effect seems to move the image. Report the distance inside render with ctx.movePivot(dx, dy) — then later effects (rotation and so on) follow the moved subject, and a subject moved past the padding is not cut off.</value></data>
   <data name="EffectMaker_ValidateFailed" xml:space="preserve"><value>Check failed (problems: {0}). Click one to go to that place in the source.</value></data>
   <data name="EffectMaker_ValidateName" xml:space="preserve"><value>Enter a title of 1-100 characters.</value></data>
   <data name="EffectMaker_ValidateWhere" xml:space="preserve"><value>Chick {0}, step {1}:</value></data>
@@ -3820,6 +3831,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Timeline_LinkCels_Done" xml:space="preserve"><value>Linked {0} cels. Editing one cel changes all linked cels.</value></data>
   <data name="Timeline_LinkCels_None" xml:space="preserve"><value>Nothing to link. Select two or more frames including a cel with pixels.</value></data>
   <data name="Timeline_UnlinkCels_Done" xml:space="preserve"><value>Unlinked {0} cels. Each cel is now edited separately.</value></data>
+  <data name="Timeline_UnlinkCels_DoneBaked" xml:space="preserve"><value>Unlinked {0} cels ({1} cel(s) showing an effect's held end look were baked into the drawing as shown).</value></data>
   <data name="Timeline_ScatteredCelsCopy" xml:space="preserve"><value>Cels picked one by one with Ctrl+click can't be copied. Drag to select neighbouring cels.</value></data>
   <data name="LayerResize_Group" xml:space="preserve"><value>A group can't be resized as a layer. Select a part or a layer.</value></data>
   <data name="LayerResize_Locked" xml:space="preserve"><value>The layer is locked and can't be resized.</value></data>
@@ -3828,15 +3840,20 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="LayerResize_Label" xml:space="preserve"><value>{name} · {size} @{x},{y}</value></data>
   <data name="LayerResize_PanelTitle" xml:space="preserve"><value>Tool settings · Layer size</value></data>
   <data name="LayerResize_GroupTitle" xml:space="preserve"><value>Layer size</value></data>
-  <data name="LayerResize_Info" xml:space="preserve"><value>Stretches, shrinks or moves only the current layer. The canvas and the other layers stay as they are. Square handles = drag that edge (corner + Shift keeps the ratio, Alt keeps the center); drag inside the layer or use the arrow keys = move. A normal layer starts at the box around its drawing in every frame, a part at its part area. Applying changes every frame of the layer with nearest neighbor (pixels pushed off the canvas are kept). The preview is shown without layer effects.</value></data>
+  <data name="LayerResize_Info" xml:space="preserve"><value>Changes the size and position of only the current layer. The canvas and the other layers stay as they are. Same controls as canvas size (Ctrl+Alt+C): square handles = drag that edge of the layer box (the drawing stays — growing adds empty space, shrinking crops what falls outside), Ctrl (⌘) + handle = resize the drawing too (nearest neighbor), corner + Shift keeps the ratio, Alt keeps the center, drag inside the layer or use the arrow keys = move. A normal layer starts at the box around its drawing in every frame, a part at its part area. Applying changes every frame of the layer (a normal layer just keeps its drawing when the box grows; a part changes its part size). The preview is shown without layer effects; pixels that will be cropped are faded.</value></data>
   <data name="LayerResize_ApplyTip" xml:space="preserve"><value>Apply the layer size (Enter) — every frame of the layer, one undo step</value></data>
   <data name="LayerResize_Shortcut" xml:space="preserve"><value>Layer size (canvas unchanged)</value></data>
   <data name="Fold_Collapse" xml:space="preserve"><value>Collapse</value></data>
   <data name="Fold_Expand" xml:space="preserve"><value>Expand</value></data>
-  <data name="EffectDock_Title" xml:space="preserve"><value>Effect · {name}</value></data>
+  <data name="EffectDock_Header" xml:space="preserve"><value>Effect</value></data>
   <data name="EffectDock_Open" xml:space="preserve"><value>Open in Effects…</value></data>
   <data name="EffectDock_OpenTip" xml:space="preserve"><value>Frame range, clipping, script editing, baking and the other settings are in the Effects window. Double-clicking the effect row in the timeline also opens it.</value></data>
   <data name="Timeline_NestHint" xml:space="preserve"><value>Hold Shift while dragging to move into or out of a group (over another group's row = into, over a row outside the group = out).</value></data>
   <data name="Timeline_NestLosesSkinsTitle" xml:space="preserve"><value>Other skins will be lost</value></data>
   <data name="Timeline_NestLosesSkins" xml:space="preserve"><value>{0} will keep only the skin shown now; its other skin drawings and part-only skins will be removed (you can undo this). Continue?</value></data>
+  <data name="Timeline_AddSkinToLayer" xml:space="preserve"><value>Add skin (turns into a group)</value></data>
+  <data name="Timeline_AddSkinToLayer_Copy" xml:space="preserve"><value>Duplicate current drawing</value></data>
+  <data name="Timeline_AddSkinToLayer_Done" xml:space="preserve"><value>Moved "{0}" into the new group "{1}" as a part and added skin "{2}". The current drawing is in skin "{3}".</value></data>
+  <data name="LayerResize_AreaWidth" xml:space="preserve"><value>Layer width</value></data>
+  <data name="Publish_PivotMoveTag" xml:space="preserve"><value>This effect reports how far it moves the drawing (ctx.movePivot), so it always carries the pivot-move tag (it can't be removed and counts toward the 8 tags).</value></data>
 </root>

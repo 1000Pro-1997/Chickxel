@@ -34,6 +34,10 @@ public sealed class AppSettings
     public int BottomHeight { get; set; } = 280;
     public int BrowserTreeHeight { get; set; } = 180;
     public int PreviewHeight { get; set; } = 230;
+    /// <summary>타임라인 프레임 미리보기(셀 썸네일). 끄면 프레임 칸이 좁아지고 그림이 있는 칸에 점만 보인다.</summary>
+    public bool TimelineThumbnails { get; set; } = true;
+    /// <summary>타임라인 레이어 이름 칸 폭(px). 이름 칸과 프레임 칸 사이 경계선을 끌어 바꾼다.</summary>
+    public int TimelineNameWidth { get; set; } = 270;
 
     // 보기
     public int Zoom { get; set; } = 8;

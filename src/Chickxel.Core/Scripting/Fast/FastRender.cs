@@ -38,9 +38,12 @@ internal sealed class FastRender
     /// <summary>
     /// <paramref name="image"/>를 제자리에서 바꾼다. JS와 결과가 갈릴 자리에 닿으면 그림을 건드리지 않고 false(그 호출은 Jint로 다시 그린다).
     /// 한도 초과는 <see cref="ScriptEffectException"/>, 취소는 <see cref="OperationCanceledException"/>(그림은 그대로).
+    /// <paramref name="moved"/>는 성공했을 때 render가 <c>ctx.movePivot</c>으로 알린 이동 합(px, 아니면 0).
     /// </summary>
-    public bool TryRender(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values, CancellationToken cancel)
+    public bool TryRender(PixelImage image, Rectangle source, ScriptFrameContext context, IReadOnlyDictionary<string, object> values, CancellationToken cancel,
+        out PointF moved)
     {
+        moved = PointF.Empty;
         var px = image.Pixels;
         long length = (long)px.Length * 4;
         // 스레드 버퍼는 한 번에 한 호출만: 렌더 중 호스트 콜백(ctx.renderedFrameSource가 다른 효과를 그림)이 같은 스레드에서 다시 들어오면 새 배열.
@@ -60,7 +63,9 @@ internal sealed class FastRender
         t_busy = true;
         try
         {
-            Run(data, image.Width, image.Height, source, context, values, cancel, new ScriptColors(_settings, values, context, image, source) { Deferred = _deferred });
+            var colors = new ScriptColors(_settings, values, context, image, source) { Deferred = _deferred };
+            Run(data, image.Width, image.Height, source, context, values, cancel, colors);
+            moved = colors.Moved;
         }
         catch (FastDeoptException)
         {

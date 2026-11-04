@@ -106,6 +106,9 @@ public static class ScriptApiCatalog
         M(Declaration, "clipsBySource", ScriptApiKind.Key, "clipsBySource: true"),
         M(Declaration, "erasesSource", ScriptApiKind.Key, "erasesSource: true | \"boolSettingKey\""),
         M(Declaration, "easing", ScriptApiKind.Key, "easing: \"Linear\" | \"EaseIn\" | \"EaseOut\" | \"EaseInOut\"", Easing),
+        M(Declaration, "repeat", ScriptApiKind.Key, "repeat: \"Once\" | \"Loop\" | \"PingPong\""),
+        M(Declaration, "repeatCount", ScriptApiKind.Key, "repeatCount: 1~8"),
+        M(Declaration, "movePivot", ScriptApiKind.Key, "movePivot: false"),
         M(Declaration, "area", ScriptApiKind.Key, "area: \"global\" | \"local\"", Area),
         M(Declaration, "radius", ScriptApiKind.Key, "radius: 0~16384"),
         M(Declaration, "previewChick", ScriptApiKind.Key, "previewChick: \"knight\""),
@@ -191,6 +194,7 @@ public static class ScriptApiCatalog
         M(Context, "layer", ScriptApiKind.Function, "ctx.layer(key) → img | null", Image),
         M(Context, "layerWithEffects", ScriptApiKind.Function, "ctx.layerWithEffects(key) → img | null", Image),
         M(Context, "layerEffects", ScriptApiKind.Function, "ctx.layerEffects(key) → [effectName, ...]"),
+        M(Context, "movePivot", ScriptApiKind.Function, "ctx.movePivot(dx, dy)"),
 
         M(Source, "x", ScriptApiKind.Value, "ctx.source.x"),
         M(Source, "y", ScriptApiKind.Value, "ctx.source.y"),

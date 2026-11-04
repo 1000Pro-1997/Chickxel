@@ -16,5 +16,5 @@ public static class ShakeDefinition
         s.Bool("decay", e => e.Decay, (e, v) => e with { Decay = v }),
         s.Bool("regular", e => e.Regular, (e, v) => e with { Regular = v }),
         s.Int("seed", 0, ShakeEffect.MaxSeed, e => e.Seed, (e, v) => e with { Seed = v }),
-    ], padding: ShakeRender.Padding);
+    ], padding: ShakeRender.Padding, moves: ShakeRender.Moved);
 }

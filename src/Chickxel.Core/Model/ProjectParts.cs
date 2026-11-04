@@ -242,6 +242,12 @@ public sealed class Frame
     /// <summary>이 프레임만의 피벗(캔버스 기준 0~1, 아래 왼쪽 원점). null이면 프로젝트 기본 피벗.</summary>
     public Pivot? Pivot { get; set; }
 
+    /// <summary>
+    /// 부위마다 이 프레임만의 피벗(부위 기준 0~1, 아래 왼쪽 원점). 없는 부위는 그 부위의 피벗(<see cref="Layer.PartPivot"/>)을 쓴다.
+    /// 읽을 때는 <see cref="SpriteProject.GetPartPivot"/>, 바꿀 때는 <see cref="SpriteProject.SetPartFramePivot"/>로. 지운 레이어의 항목은 남아도 쓰이지 않는다.
+    /// </summary>
+    internal Dictionary<Layer, Pivot> PartPivots { get; } = [];
+
     /// <summary>내보낼 때 쓸 칸 이름. null이면 이름 규칙(<c>{태그}_{번호}</c> / <c>{파일}_{프레임}</c>).</summary>
     public string? Name { get; set; }
 }

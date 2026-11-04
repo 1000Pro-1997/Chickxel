@@ -240,6 +240,30 @@ public sealed partial class SpriteProject
     /// <summary>프레임의 실제 피벗(재정의가 없으면 기본 피벗).</summary>
     public Pivot GetFramePivot(int frameIndex) => _frames[frameIndex].Pivot ?? Sprite.DefaultPivot;
 
+    /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 피벗(부위 기준): 그 프레임만의 피벗이 있으면 그것, 없으면 부위 피벗.</summary>
+    public Pivot GetPartPivot(Layer part, int frameIndex)
+        => (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartPivots.TryGetValue(part, out var own) ? own : part.PartPivot;
+
+    /// <summary>부위 <paramref name="part"/>가 프레임 <paramref name="frameIndex"/>에서 다른 프레임과 다른 피벗을 쓰는지(<see cref="SetPartFramePivot"/>).</summary>
+    public bool HasPartFramePivot(Layer part, int frameIndex)
+        => (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartPivots.ContainsKey(part);
+
+    /// <summary>프레임 사본(표시 시간·피벗·부위별 프레임 피벗 — 이름은 빼고).</summary>
+    private static Frame CopyFrame(Frame src)
+    {
+        var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
+        foreach (var (part, pivot) in src.PartPivots) copy.PartPivots[part] = pivot;
+        return copy;
+    }
+
+    /// <summary>부위 피벗과 그 부위의 프레임별 피벗을 모두 <paramref name="map"/>으로 바꾼다(부위 크기·자리를 바꿀 때 같은 그림 지점을 가리키게). Edit 안에서.</summary>
+    private void MapPartPivots(Layer part, Func<Pivot, Pivot> map)
+    {
+        part.PartPivot = map(part.PartPivot);
+        foreach (var f in _frames)
+            if (f.PartPivots.TryGetValue(part, out var own)) f.PartPivots[part] = map(own);
+    }
+
     // ───────────── 셀 ─────────────
 
     /// <summary>셀 키(스킨 = 첫 스킨이 아닌 부위 스킨, 아니면 null).</summary>
@@ -474,7 +498,7 @@ public sealed partial class SpriteProject
     public PointF EffectPivot(Layer layer, int frameIndex)
     {
         var (x, y) = layer.IsPart
-            ? layer.PartPivot.ToLocalPixel(layer.PartSize.Width, layer.PartSize.Height)
+            ? GetPartPivot(layer, Math.Clamp(frameIndex, 0, _frames.Count - 1)).ToLocalPixel(layer.PartSize.Width, layer.PartSize.Height)
             : GetFramePivot(Math.Clamp(frameIndex, 0, _frames.Count - 1)).ToLocalPixel(_width, _height);
         return new PointF(x, y);
     }
@@ -772,8 +796,11 @@ public sealed partial class SpriteProject
         var old = part.PartSize;
         if (old.Width == width && old.Height == height) return;
         var (ox, oy) = PixelImage.AnchorOffset(old.Width, old.Height, width, height, anchor);
-        var (px, py) = part.PartPivot.ToLocalPixel(old.Width, old.Height);
-        var pivot = new Pivot((px + ox) / width, 1f - (py + oy) / height);
+        Pivot Moved(Pivot p)
+        {
+            var (px, py) = p.ToLocalPixel(old.Width, old.Height);
+            return new Pivot((px + ox) / width, 1f - (py + oy) / height);
+        }
         var offset = new Point(part.PartOffset.X - ox, part.PartOffset.Y - oy);
         Edit(DomainStrings.Project_ResizePart, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
@@ -781,7 +808,7 @@ public sealed partial class SpriteProject
             foreach (var (key, cel) in CelsOf(part)) _cels[key] = resize(cel);
             part.PartSize = new Size(width, height);
             part.PartOffset = offset;
-            part.PartPivot = pivot;
+            MapPartPivots(part, Moved);
         });
     }
 
@@ -804,6 +831,32 @@ public sealed partial class SpriteProject
             bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
         }
         return bounds;
+    }
+
+    /// <summary>
+    /// 타임라인 칸 썸네일로 보일 자리(캔버스 좌표 — 그 레이어가 칸에 크게 보이게, 썸네일이 효과 없는 그림이라 효과 여백 없이): 일반 레이어는 <see cref="LayerBounds"/>,
+    /// 그룹은 부위 영역들을 합친 사각형을 캔버스 안으로 자른 것. 모든 프레임에서 같으므로 칸마다 같은 자리·배율이다.
+    /// 부위(썸네일이 이미 부위 크기)·칠한 픽셀이 없음·캔버스 전체면 <see cref="Rectangle.Empty"/>(자르지 않음).
+    /// </summary>
+    public Rectangle ThumbnailBounds(int layerIndex)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.IsPart) return Rectangle.Empty;
+        Rectangle bounds;
+        if (layer.IsGroup)
+        {
+            bounds = Rectangle.Empty;
+            foreach (var part in ChildrenOf(layer))
+            {
+                var r = part.PartRect;
+                if (r.Width < 1 || r.Height < 1) continue;
+                bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
+            }
+        }
+        else bounds = LayerBounds(layerIndex);
+        if (bounds.IsEmpty) return Rectangle.Empty;
+        bounds = Rectangle.Intersect(bounds, new Rectangle(0, 0, _width, _height));
+        return bounds.Width < 1 || bounds.Height < 1 || bounds.Size == Size ? Rectangle.Empty : bounds;
     }
 
     /// <summary>
@@ -874,15 +927,114 @@ public sealed partial class SpriteProject
         });
     }
 
+    /// <summary>
+    /// 레이어 크기 모드 적용(캔버스는 그대로, 실행취소 한 단계): 레이어 그림의 <paramref name="from"/> 자리를 <paramref name="image"/> 자리로 늘이거나 줄여 옮기고
+    /// (<see cref="ScaleLayer"/>), 레이어 자리를 <paramref name="area"/>로 바꾼다 — 그 밖으로 나간 픽셀은 잘려 없어진다(캔버스 크기 바꾸기와 같은 방식).
+    /// 부위는 위치·크기가 <paramref name="area"/>가 되고(넓히면 빈 칸), 피벗은 같은 그림 지점을, 9-slice 테두리는 같은 그림 경계를 가리킨다
+    /// (새 크기에 맞지 않으면 테두리 없음). 일반 레이어는 셀과 캔버스 밖 그림에서 <paramref name="area"/> 밖 픽셀을 지운다(넓혀도 그림은 그대로).
+    /// 그룹이면 <see cref="ArgumentException"/>.
+    /// </summary>
+    public void ResizeLayer(int layerIndex, Rectangle from, Rectangle image, Rectangle area)
+    {
+        var layer = _layers[layerIndex];
+        if (layer.IsGroup) throw new ArgumentException(GroupHasNoCelsMessage, nameof(layerIndex));
+        if (area.Width < 1 || area.Height < 1 || area.Width > PixelImage.MaxSize || area.Height > PixelImage.MaxSize)
+            throw new ArgumentOutOfRangeException(nameof(area), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: area.Width, height: area.Height));
+        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            ScaleLayer(layerIndex, from, image);
+            if (layer.IsPart) CropPart(layer, area);
+            else CropNormalLayer(layer, area);
+        });
+    }
+
+    /// <summary>부위 자리를 <paramref name="area"/>로(모든 스킨 셀을 그 크기로 자르거나 넓힘, 그림은 캔버스의 같은 자리). <see cref="Edit(string, ProjectChange, Action)"/> 안에서.</summary>
+    private void CropPart(Layer part, Rectangle area)
+    {
+        var cur = part.PartRect;
+        if (cur == area) return;
+        int ox = cur.X - area.X, oy = cur.Y - area.Y; // 새 셀 안 지금 셀 자리
+        var moved = OncePerImage(cel =>
+        {
+            var next = new PixelImage(area.Width, area.Height);
+            next.Blit(cel, ox, oy);
+            return next;
+        });
+        foreach (var (key, cel) in CelsOf(part)) _cels[key] = moved(cel);
+        MapPartPivots(part, p =>
+        {
+            var (px, py) = p.ToLocalPixel(cur.Width, cur.Height);
+            return new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
+        });
+        if (!part.PartBorder.IsNone)
+        {
+            var b = part.PartBorder;
+            var next = new SpriteBorder(b.Left + ox, b.Top + oy, b.Right + area.Right - cur.Right, b.Bottom + area.Bottom - cur.Bottom);
+            bool fits = next.Left >= 0 && next.Top >= 0 && next.Right >= 0 && next.Bottom >= 0
+                        && next.Left + next.Right < area.Width && next.Top + next.Bottom < area.Height;
+            part.PartBorder = fits ? next : SpriteBorder.None;
+        }
+        part.PartOffset = area.Location;
+        part.PartSize = area.Size;
+    }
+
+    /// <summary>일반 레이어의 셀과 캔버스 밖 그림에서 <paramref name="area"/>(캔버스 좌표) 밖 픽셀을 지운다. <see cref="Edit(string, ProjectChange, Action)"/> 안에서.</summary>
+    private void CropNormalLayer(Layer layer, Rectangle area)
+    {
+        var canvas = Size;
+        var done = new Dictionary<PixelImage, (PixelImage Cel, CelOverflow? Overflow)>(ReferenceEqualityComparer.Instance);
+        foreach (var key in LayerCelKeys(layer))
+        {
+            var cel = _cels.GetValueOrDefault(key);
+            if (cel is not null && done.TryGetValue(cel, out var same))
+            {
+                _cels[key] = same.Cel;
+                SetOverflow(key, same.Overflow);
+                continue;
+            }
+            var (full, origin) = FullOf(key, cel, canvas);
+            var bounds = new Rectangle(origin, full.Size);
+            var opaque = full.GetOpaqueBounds();
+            opaque.Offset(origin);
+            if (opaque.IsEmpty || area.Contains(opaque)) continue; // 잘릴 픽셀이 없음
+            var kept = Rectangle.Intersect(bounds, area);
+            var result = kept.Width > 0 && kept.Height > 0
+                ? Split(full.Crop(new Rectangle(kept.X - origin.X, kept.Y - origin.Y, kept.Width, kept.Height)), kept.Location, canvas)
+                : (new PixelImage(canvas.Width, canvas.Height), null);
+            if (cel is not null)
+            {
+                done[cel] = result;
+                InheritLinkTag(cel, result.Cel);
+            }
+            _cels[key] = result.Cel;
+            SetOverflow(key, result.Overflow);
+        }
+    }
+
     /// <summary>일반 레이어의 셀 키(셀이 있거나 캔버스 밖 그림만 있는 프레임, 겹치면 한 번).</summary>
     private List<CelKey> LayerCelKeys(Layer layer)
         => _cels.Keys.Where(k => ReferenceEquals(k.Layer, layer)).Concat(_overflow.Keys.Where(k => ReferenceEquals(k.Layer, layer))).Distinct().ToList();
 
-    /// <summary>부위 피벗(부위 기준 0~1, 아래 왼쪽 원점). 부위 아틀라스 내보내기에 쓴다.</summary>
+    /// <summary>부위 피벗(부위 기준 0~1, 아래 왼쪽 원점) — 그 프레임만의 피벗이 없는 프레임에 쓴다. 부위 아틀라스 내보내기·효과의 피벗에 쓴다.</summary>
     public void SetPartPivot(int layerIndex, Pivot pivot)
     {
         var part = RequirePart(layerIndex);
         Edit(DomainStrings.Project_PartPivot, ProjectChange.Layers, () => part.PartPivot = pivot);
+    }
+
+    /// <summary>
+    /// 부위의 프레임 <paramref name="frameIndex"/>만의 피벗(부위 기준 0~1): 다른 프레임과 다르게 둔다. null이면 그 프레임도 부위 피벗(<see cref="Layer.PartPivot"/>)을 따른다.
+    /// </summary>
+    public void SetPartFramePivot(int layerIndex, int frameIndex, Pivot? pivot)
+    {
+        var part = RequirePart(layerIndex);
+        var frame = _frames[frameIndex];
+        if (pivot is { } p ? frame.PartPivots.TryGetValue(part, out var cur) && cur == p : !frame.PartPivots.ContainsKey(part)) return;
+        Edit(DomainStrings.Project_PartFramePivot, ProjectChange.Layers, () =>
+        {
+            if (pivot is { } value) frame.PartPivots[part] = value;
+            else frame.PartPivots.Remove(part);
+        });
     }
 
     /// <summary>부위 9-slice 테두리(px). 부위 아틀라스 내보내기에 쓴다.</summary>
@@ -979,6 +1131,8 @@ public sealed partial class SpriteProject
         var clone = OncePerImage(cel => cel.Clone()); // 링크된 셀은 사본에서도 링크
         foreach (var (key, cel) in CelsOf(src))
             _cels[new(copy, key.Frame, key.Skin is { } s && skinMap.TryGetValue(s, out var mapped) ? mapped : key.Skin)] = clone(cel);
+        foreach (var f in _frames)
+            if (f.PartPivots.TryGetValue(src, out var own)) f.PartPivots[copy] = own;
         foreach (var (key, overflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, src)).ToList())
             _overflow[key with { Layer = copy }] = overflow;
         return copy;
@@ -1212,8 +1366,9 @@ public sealed partial class SpriteProject
 
         var size = CelSize(layer);
         var pad = layer.IsPart ? LayerEffects.Padding(baked, size.Width, size.Height) : default;
-        var keep = new Rectangle(pad.Left, pad.Top, size.Width, size.Height); // 원래 셀 자리(넓힌 그림 기준)
-        var rendered = new List<(CelKey Key, PixelImage Image)>();
+        // 자리는 원래 셀 왼쪽 위 기준(그림마다 여백이 다를 수 있음 — 옮겨 간 만큼 넓혀 그린 프레임)
+        var keep = new Rectangle(0, 0, size.Width, size.Height);
+        var rendered = new List<(CelKey Key, PixelImage Image, Point Offset)>();
         var area = keep;
         // 셀이 없어도 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 빈 그림에 그려 새 셀로 넣는다
         foreach (var (key, cel) in CelsWithContentOf(layer, baked))
@@ -1224,9 +1379,13 @@ public sealed partial class SpriteProject
             var effects = EffectsAt(layer, baked, f, skinKey,
                 other => ResolveCel(layer, _frames[other], skinKey) ?? (HasContentEffect(layer, other) ? BlankCel() : null));
             if (effects.Count == 0) continue;
-            var (image, _, _) = LayerEffects.Render(cel, effects, pad);
-            rendered.Add((key, image));
-            if (layer.IsPart && image.GetOpaqueBounds() is { IsEmpty: false } b) area = Rectangle.Union(area, b);
+            var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
+            rendered.Add((key, image, new Point(dx, dy)));
+            if (layer.IsPart && image.GetOpaqueBounds() is { IsEmpty: false } b)
+            {
+                b.Offset(dx, dy);
+                area = Rectangle.Union(area, b);
+            }
         }
         bool grow = area != keep;
         if (grow) ValidatePartSize(area.Width, area.Height);
@@ -1255,8 +1414,11 @@ public sealed partial class SpriteProject
                     return moved;
                 });
                 foreach (var (key, cel) in CelsOf(layer)) _cels[key] = grown(cel);
-                var (px, py) = layer.PartPivot.ToLocalPixel(size.Width, size.Height);
-                layer.PartPivot = new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
+                MapPartPivots(layer, p =>
+                {
+                    var (px, py) = p.ToLocalPixel(size.Width, size.Height);
+                    return new Pivot((px + ox) / area.Width, 1f - (py + oy) / area.Height);
+                });
                 if (!layer.PartBorder.IsNone)
                 {
                     var b = layer.PartBorder;
@@ -1265,7 +1427,13 @@ public sealed partial class SpriteProject
                 layer.PartOffset = new Point(layer.PartOffset.X - ox, layer.PartOffset.Y - oy);
                 layer.PartSize = area.Size;
             }
-            PutKeepingLinks(plan.Rendered.Select(r => (r.Key, before.GetValueOrDefault(r.Key), r.Image.Crop(area))).ToList());
+            PutKeepingLinks(plan.Rendered.Select(r =>
+            {
+                // 구운 그림을 새 셀 자리(area, 원래 셀 기준)에 놓는다 — 밖은 버림
+                var placed = new PixelImage(area.Width, area.Height);
+                placed.Blit(r.Image, r.Offset.X - area.X, r.Offset.Y - area.Y);
+                return (r.Key, before.GetValueOrDefault(r.Key), placed);
+            }).ToList());
             layer.Effects = plan.Rest;
         });
         return (plan.Baked, plan.Frames, plan.Rendered.Count, grow);
@@ -1275,7 +1443,7 @@ public sealed partial class SpriteProject
     public sealed class BakePlan
     {
         internal BakePlan(Layer layer, IReadOnlyList<LayerEffect> baked, IReadOnlyList<LayerEffect> rest, FrameRange? frames, Size size,
-            Rectangle keep, Rectangle area, IReadOnlyList<(CelKey Key, PixelImage Image)> rendered)
+            Rectangle keep, Rectangle area, IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> rendered)
         {
             Layer = layer;
             Baked = baked;
@@ -1292,9 +1460,12 @@ public sealed partial class SpriteProject
         internal IReadOnlyList<LayerEffect> Rest { get; }
         internal FrameRange? Frames { get; }
         internal Size Size { get; }
+        /// <summary>원래 셀 자리(원래 셀 왼쪽 위 기준 — 늘 (0, 0, 셀 크기)).</summary>
         internal Rectangle Keep { get; }
+        /// <summary>구운 셀이 차지할 자리(원래 셀 왼쪽 위 기준, 부위면 결과를 모두 감쌈).</summary>
         internal Rectangle Area { get; }
-        internal IReadOnlyList<(CelKey Key, PixelImage Image)> Rendered { get; }
+        /// <summary>셀마다 효과를 입힌 그림과 그 그림 왼쪽 위의 자리(원래 셀 왼쪽 위 기준).</summary>
+        internal IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> Rendered { get; }
     }
 
     // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
@@ -1330,6 +1501,7 @@ public sealed partial class SpriteProject
     /// <summary>
     /// 그룹에 전체 스킨을 하나 더 넣고(전체 스킨 끝) 지금 스킨으로 고른다. <paramref name="copyFrom"/>이 있으면 그 스킨 자신의 셀을 복사한다
     /// (첫 스킨을 복사하면 모든 셀, 다른 스킨이면 그 스킨이 직접 그린 셀만 — 나머지는 똑같이 첫 스킨을 물려받음). 이름은 겹치지 않게 바뀐다.
+    /// 새 스킨은 처음에 링크도 원본(<paramref name="copyFrom"/>, 없으면 물려받는 첫 스킨)과 같다: 링크 묶음마다 그림 하나(빈 스킨이면 빈 그림)를 같은 색으로 같이 쓴다.
     /// </summary>
     public Skin AddSkin(Layer group, string? name = null, Skin? copyFrom = null)
     {
@@ -1339,27 +1511,34 @@ public sealed partial class SpriteProject
         Edit(copyFrom is null ? DomainStrings.Project_AddSkin : DomainStrings.Project_DuplicateSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             group.SkinList.Insert(GroupSkinCount(group), skin);
-            if (copyFrom is not null)
-                foreach (var part in ChildrenOf(group))
-                    if (copyFrom.Owner is null || ReferenceEquals(copyFrom.Owner, part))
-                        CopySkinCels(part, copyFrom, skin);
+            foreach (var part in ChildrenOf(group))
+                if (copyFrom is null || copyFrom.Owner is null || ReferenceEquals(copyFrom.Owner, part))
+                    CopySkinCels(part, copyFrom ?? group.SkinList[0], skin, pixels: copyFrom is not null);
             group.SetActiveSkinRaw(skin);
         });
         return skin;
     }
 
-    /// <summary>부위의 <paramref name="from"/> 스킨 자신의 셀을 <paramref name="to"/> 스킨 셀로 복사한다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서).</summary>
-    private void CopySkinCels(Layer part, Skin from, Skin to)
+    /// <summary>
+    /// 부위의 <paramref name="from"/> 스킨 자신의 셀을 <paramref name="to"/> 스킨 셀로 가져온다(<see cref="Edit(string, ProjectChange, Action)"/> 안에서):
+    /// <paramref name="pixels"/>면 그림이 있는 셀을 복사하고, 링크 묶음은 그림이 없어도(<paramref name="pixels"/>가 false면 늘) 빈 그림 하나를 같이 써
+    /// 새 스킨에서도 같은 프레임끼리 같은 색으로 링크된다. 빈 셀은 첫 스킨 그림을 물려받아 보이고, 그 칸에 그리면 링크된 칸이 함께 바뀐다.
+    /// </summary>
+    private void CopySkinCels(Layer part, Skin from, Skin to, bool pixels)
     {
-        var clone = OncePerImage(cel => cel.Clone()); // 링크된 셀은 새 스킨에서도 링크
-        foreach (var frame in _frames)
-            if (_cels.TryGetValue(new(part, frame, SkinKey(part, from)), out var cel) && HasContent(cel))
-                _cels[new(part, frame, to)] = clone(cel);
+        var fromKey = SkinKey(part, from);
+        var size = CelSize(part);
+        var take = OncePerImage(cel => pixels && HasContent(cel) ? cel.Clone() : new PixelImage(size.Width, size.Height));
+        var linked = new HashSet<int>(LinkGroupsOf(part, fromKey).SelectMany(g => g.Frames));
+        for (int f = 0; f < _frames.Count; f++)
+            if (_cels.TryGetValue(new(part, _frames[f], fromKey), out var cel) && (linked.Contains(f) || pixels && HasContent(cel)))
+                _cels[new(part, _frames[f], to)] = take(cel);
     }
 
     /// <summary>
     /// 부위 하나에만 있는 스킨(부위 전용·개별 스킨, 예: Head에만 "모자")을 만들고 그 부위에 입힌다(재정의). 다른 부위·그룹 목록에는 나타나지 않는다.
     /// <paramref name="copyFrom"/>(그 부위가 고를 수 있는 스킨)이 있으면 그 부위의 그 스킨 셀을 복사한다. 이름은 그룹 안에서 겹치지 않게 바뀐다. 실행취소됨.
+    /// 링크는 처음에 원본(없으면 첫 스킨)과 같다(<see cref="AddSkin"/>).
     /// </summary>
     public Skin AddPartSkin(Layer part, string? name = null, Skin? copyFrom = null)
     {
@@ -1370,7 +1549,7 @@ public sealed partial class SpriteProject
         Edit(copyFrom is null ? DomainStrings.Project_AddPartSkin : DomainStrings.Project_DuplicatePartSkin, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             group.SkinList.Add(skin);
-            if (copyFrom is not null) CopySkinCels(part, copyFrom, skin);
+            CopySkinCels(part, copyFrom ?? group.SkinList[0], skin, pixels: copyFrom is not null);
         });
         part.SetSkinOverrideRaw(skin);
         NotifyChanged(ProjectChange.Layers | ProjectChange.Pixels);
@@ -1822,7 +2001,7 @@ public sealed partial class SpriteProject
     public Frame DuplicateFrame(int index)
     {
         var src = _frames[index];
-        var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
+        var copy = CopyFrame(src);
         Edit(DomainStrings.Project_DuplicateFrame, ProjectChange.Frames | ProjectChange.Tags | ProjectChange.Pixels, () =>
         {
             _frames.Insert(index + 1, copy);
@@ -1887,7 +2066,7 @@ public sealed partial class SpriteProject
                     result[k] = src;
                     continue;
                 }
-                var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
+                var copy = CopyFrame(src);
                 // 사본 셀은 원래 프레임 셀과 링크(그림을 같이 씀): 원래 셀을 고치면 사본도 함께 바뀐다
                 foreach (var (key, cel) in cels[s] ??= LinkSources(src)) _cels[key with { Frame = copy }] = cel;
                 CopyOverflow(src, copy);
@@ -2226,7 +2405,7 @@ public sealed partial class SpriteProject
                 var r = partRectMap(part.PartRect);
                 part.PartOffset = r.Location;
                 part.PartSize = r.Size;
-                part.PartPivot = pivotMap(part.PartPivot);
+                MapPartPivots(part, pivotMap);
                 part.PartBorder = borderMap(part.PartBorder);
             }
             _width = probe.Width;
@@ -2459,7 +2638,7 @@ public sealed partial class SpriteProject
     {
         private int _w, _h;
         private LayerState[] _layers = [];
-        private (Frame Frame, int Ms, Pivot? Pivot, string? Name)[] _frames = [];
+        private (Frame Frame, int Ms, Pivot? Pivot, string? Name, KeyValuePair<Layer, Pivot>[] PartPivots)[] _frames = [];
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
         private (Outfit Outfit, string Name, IReadOnlyList<OutfitSlot> Slots, IReadOnlyList<OutfitPart> Parts)[] _outfits = [];
         private KeyValuePair<CelKey, PixelImage>[] _cels = [];
@@ -2472,7 +2651,8 @@ public sealed partial class SpriteProject
             _w = p._width,
             _h = p._height,
             _layers = p._layers.Select(LayerState.Of).ToArray(),
-            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name)).ToArray(),
+            // 지운 레이어의 프레임 피벗은 빼고(쓰이지 않음 — 편집 기록 파일에 없는 레이어가 남지 않게)
+            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name, f.PartPivots.Where(kv => p._layers.Contains(kv.Key)).ToArray())).ToArray(),
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
             _outfits = p._outfits.Select(o => (o, o.Name, o.Slots, o.Parts)).ToArray(),
             _cels = p._cels.ToArray(),
@@ -2488,11 +2668,13 @@ public sealed partial class SpriteProject
             p._layers.Clear();
             foreach (var state in _layers) p._layers.Add(state.Apply());
             p._frames.Clear();
-            foreach (var (frame, ms, pivot, name) in _frames)
+            foreach (var (frame, ms, pivot, name, partPivots) in _frames)
             {
                 frame.DurationMs = ms;
                 frame.Pivot = pivot;
                 frame.Name = name;
+                frame.PartPivots.Clear();
+                foreach (var (part, partPivot) in partPivots) frame.PartPivots[part] = partPivot;
                 p._frames.Add(frame);
             }
             p._tags.Clear();
