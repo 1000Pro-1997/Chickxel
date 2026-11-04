@@ -60,6 +60,7 @@
   <data name="Api_setting_alpha" xml:space="preserve"><value>When false, colors of a color, colorList or colorPairs setting have no alpha choice and are always opaque (255). Default true.</value></data>
   <data name="Api_setting_widget" xml:space="preserve"><value>Editor shape in the effects window (int only): "angle" shows an angle dial, "point" an X/Y point picker together with the setting named by pair.</value></data>
   <data name="Api_setting_pair" xml:space="preserve"><value>Y setting key (another int setting) of widget "point". This setting is X; the Y setting is edited in the same row.</value></data>
+  <data name="Api_setting_when" xml:space="preserve"><value>When this setting is shown: while an earlier choice setting has that value ({ facing: "rotate" }, several values as ["rotate", "flip"]) or an earlier bool setting has that value ({ closePath: true }). With several conditions all must match. A hidden setting keeps its value and is still readable as s.key.</value></data>
   <data name="Api_setting_widget_angle" xml:space="preserve"><value>Angle dial (0 = right, 90 = up).</value></data>
   <data name="Api_setting_widget_point" xml:space="preserve"><value>X/Y point picker (Y setting key in pair).</value></data>
   <data name="Api_setting_type_int" xml:space="preserve"><value>Integer: slider and number field.</value></data>

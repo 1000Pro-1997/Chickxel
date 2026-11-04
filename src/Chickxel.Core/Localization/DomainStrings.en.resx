@@ -260,6 +260,7 @@
   <data name="Script_InvalidMovePivot" xml:space="preserve"><value>movePivot must be true or false.</value></data>
   <data name="Script_InvalidSettingAlpha" xml:space="preserve"><value>alpha of setting {key} is only for color, colorList and colorPairs settings and must be true or false.</value></data>
   <data name="Script_InvalidSettingWidget" xml:space="preserve"><value>widget of setting {key} is invalid. Use "angle" on an int setting, or "point" with pair naming another int setting that has no widget.</value></data>
+  <data name="Script_InvalidSettingWhen" xml:space="preserve"><value>when of setting {key} is invalid. Use an object {{ key: value }} whose keys are choice or bool settings declared before this one and whose values are one of their values (a choice value string, or true/false for bool) or a list of them.</value></data>
   <data name="Script_InvalidSettingCount" xml:space="preserve"><value>min and max of list setting {key} must be whole numbers from 0 to {max}, with min ≤ max.</value></data>
   <data name="Script_InvalidPreviewChick" xml:space="preserve"><value>previewChick must be a chick ID string (lowercase letters, digits and dashes, e.g. "knight").</value></data>
   <data name="Script_InvalidPreviewEndChick" xml:space="preserve"><value>previewEndChick must be a chick ID string (lowercase letters, digits and dashes, e.g. "wizard").</value></data>

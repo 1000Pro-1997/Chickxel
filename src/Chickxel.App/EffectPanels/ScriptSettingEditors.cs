@@ -36,13 +36,19 @@ public sealed partial class LayerEffectsDialog
                 points[setting.Key] = y;
                 paired.Add(y.Key);
             }
+        // 다른 설정의 보이는 조건(when)이 가리키는 설정: 값을 바꾸면 칸을 다시 만들어 보일 설정을 맞춘다
+        var controls = program.Settings.SelectMany(s => s.When).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
         foreach (var setting in program.Settings)
         {
-            if (paired.Contains(setting.Key)) continue;
+            if (paired.Contains(setting.Key) || !program.IsShown(setting, values)) continue;
             string key = setting.Key;
             string label = program.LabelFor(setting, culture);
             void SetValue(string k, object value)
-                => set(o => o is ScriptEffect e ? e with { Settings = ScriptSettingValues.Normalized(program, e.Settings.With(k, value)) } : o);
+            {
+                set(o => o is ScriptEffect e ? e with { Settings = ScriptSettingValues.Normalized(program, e.Settings.With(k, value)) } : o);
+                // 바꾸는 중인 칸의 이벤트가 끝난 뒤에
+                if (controls.Contains(k)) Dispatcher.UIThread.Post(rebuild);
+            }
             switch (setting.Type)
             {
                 case ScriptSettingType.Int when points.TryGetValue(key, out var y):

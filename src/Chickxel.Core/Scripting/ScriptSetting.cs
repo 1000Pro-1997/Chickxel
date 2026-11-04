@@ -49,6 +49,19 @@ public enum ScriptSettingWidget
     Point,
 }
 
+/// <summary>
+/// 설정 하나가 보이는 조건 하나(선언의 <c>when: { 키: 값 }</c>): 앞에 선언한 고르기·참거짓 설정 <see cref="Key"/>의 값이 <see cref="Values"/> 중 하나일 때.
+/// 값은 고르기면 항목 값 문자열, 참거짓이면 <see cref="bool"/>.
+/// </summary>
+public sealed record ScriptSettingCondition(string Key, IReadOnlyList<object> Values)
+{
+    public bool Matches(object? value) => value is not null && Values.Contains(value);
+
+    public bool Equals(ScriptSettingCondition? other) => other is not null && Key == other.Key && Values.SequenceEqual(other.Values);
+
+    public override int GetHashCode() => HashCode.Combine(Key, Values.Count);
+}
+
 /// <summary>고르기 설정의 항목 하나. <see cref="Value"/>는 저장 ID, <see cref="Label"/>은 화면 이름.</summary>
 public sealed record ScriptChoice(string Value, string Label);
 
@@ -98,6 +111,12 @@ public sealed record ScriptSetting(
     /// <summary><see cref="ScriptSettingWidget.Point"/>의 Y 설정 키(선언의 <c>pair</c>). 아니면 null.</summary>
     public string? Pair { get; init; }
 
+    /// <summary>
+    /// 보이는 조건(선언의 <c>when</c>, 없으면 빈 목록 = 늘 보임): 모두 맞을 때만 설정 칸에 보인다(<see cref="ScriptEffectProgram.IsShown"/>).
+    /// 숨겨도 값은 그대로 저장되고 render에서 읽힌다.
+    /// </summary>
+    public IReadOnlyList<ScriptSettingCondition> When { get; init; } = [];
+
     /// <summary>색이 들어 있는 설정(색·색 목록·색 쌍 목록) — 그라데이션 슬롯을 가진다(<see cref="ScriptColorSlots"/>).</summary>
     public bool IsColor => Type is ScriptSettingType.Color or ScriptSettingType.ColorList or ScriptSettingType.ColorPairs;
 
@@ -108,7 +127,7 @@ public sealed record ScriptSetting(
     public bool Equals(ScriptSetting? other)
         => other is not null && Key == other.Key && Label == other.Label && Type == other.Type && Min == other.Min && Max == other.Max
             && Step == other.Step && SameValue(Default, other.Default) && Choices.SequenceEqual(other.Choices)
-            && Alpha == other.Alpha && Widget == other.Widget && Pair == other.Pair;
+            && Alpha == other.Alpha && Widget == other.Widget && Pair == other.Pair && When.SequenceEqual(other.When);
 
     public override int GetHashCode() => HashCode.Combine(Key, Label, Type, Min, Max, Step, Choices.Count, HashCode.Combine(Alpha, Widget, Pair));
 

@@ -61,6 +61,7 @@
   <data name="Api_setting_alpha" xml:space="preserve"><value>false면 색·색 목록·색 쌍 목록의 알파를 고르지 않고 늘 불투명(255)입니다(기본 true).</value></data>
   <data name="Api_setting_widget" xml:space="preserve"><value>효과 창 편집기 모양(int만): "angle"은 각도 다이얼, "point"는 pair의 설정과 함께 X·Y 점 고르기.</value></data>
   <data name="Api_setting_pair" xml:space="preserve"><value>widget "point"의 Y 설정 키(다른 int 설정). 이 설정이 X이고 Y 설정은 같은 칸에서 고칩니다.</value></data>
+  <data name="Api_setting_when" xml:space="preserve"><value>이 설정이 보이는 조건: 앞에 선언한 choice 설정이 그 값일 때({ facing: "rotate" }, 여러 값은 ["rotate", "flip"]), bool 설정이 그 값일 때({ closePath: true }). 조건이 여럿이면 모두 맞아야 보입니다. 숨겨도 값은 그대로 저장되고 s.키로 읽힙니다.</value></data>
   <data name="Api_setting_widget_angle" xml:space="preserve"><value>각도 다이얼(0 = 오른쪽, 90 = 위).</value></data>
   <data name="Api_setting_widget_point" xml:space="preserve"><value>X·Y 점 고르기(pair에 Y 설정 키).</value></data>
   <data name="Api_setting_type_int" xml:space="preserve"><value>정수: 슬라이더와 숫자 칸.</value></data>

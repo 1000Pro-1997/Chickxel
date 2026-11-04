@@ -527,4 +527,37 @@ public class ScriptEngineFeatureTests
         plain.Render(image, new Rectangle(0, 0, 1, 1), new ScriptFrameContext { FrameSource = _ => new PixelImage(1, 1) });
         Assert.Equal(1, image[0, 0].R);
     }
+
+    [Fact]
+    public void When_ShowsASettingOnlyForMatchingEarlierChoiceOrBool_AndChainsThroughHiddenOnes()
+    {
+        var program = Parse(Unique("""
+            effect({ name: "w", settings: [
+              { key: "facing", type: "choice", default: "none", choices: [{ value: "none", label: "-" }, { value: "flip", label: "f" }, { value: "rotate", label: "r" }] },
+              { key: "baseAngle", type: "int", min: 0, max: 359, default: 90, when: { facing: "rotate" } },
+              { key: "snap", type: "bool", default: false, when: { facing: ["rotate", "flip"] } },
+              { key: "step", type: "int", min: 0, max: 90, default: 0, when: { snap: true } },
+            ], render() {} });
+            """));
+        bool Shown(string key, params (string Key, object Value)[] values)
+            => program.IsShown(program.Settings.Single(s => s.Key == key), values.ToDictionary(v => v.Key, v => v.Value));
+
+        Assert.False(Shown("baseAngle")); // 기본값 none
+        Assert.True(Shown("baseAngle", ("facing", "rotate")));
+        Assert.True(Shown("snap", ("facing", "flip")));
+        Assert.True(Shown("step", ("facing", "flip"), ("snap", true)));
+        // 조건 설정이 숨겨지면 그 설정을 따르는 설정도 숨는다
+        Assert.False(Shown("step", ("facing", "none"), ("snap", true)));
+
+        // 앞에 없는 설정·choice/bool이 아닌 설정·없는 값·자기 자신은 선언 오류
+        foreach (var bad in new[] { "{ later: true }", "{ n: 1 }", "{ c: \"zzz\" }", "{ x: true }", "[\"c\"]", "{ c: [] }" })
+            Assert.Contains(ScriptEffectProgram.Parse("""
+                effect({ name: "w", settings: [
+                  { key: "c", type: "choice", default: "a", choices: [{ value: "a", label: "a" }] },
+                  { key: "n", type: "int", min: 0, max: 1, default: 0 },
+                  { key: "x", type: "bool", default: false, when: WHEN },
+                  { key: "later", type: "bool", default: false },
+                ], render() {} });
+                """.Replace("WHEN", bad)).Errors, e => e.Kind == ScriptErrorKind.Declaration);
+    }
 }

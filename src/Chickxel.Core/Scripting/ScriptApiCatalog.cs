@@ -148,6 +148,7 @@ public static class ScriptApiCatalog
         M(Setting, "alpha", ScriptApiKind.Key, "alpha: false"),
         M(Setting, "widget", ScriptApiKind.Key, "widget: \"angle\" | \"point\"", Widget),
         M(Setting, "pair", ScriptApiKind.Key, "pair: \"centerY\""),
+        M(Setting, "when", ScriptApiKind.Key, "when: { choiceKey: \"value\" | [\"a\", \"b\"], boolKey: true }"),
 
         M(Widget, "angle", ScriptApiKind.Literal, "\"angle\""),
         M(Widget, "point", ScriptApiKind.Literal, "\"point\""),

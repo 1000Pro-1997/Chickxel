@@ -123,6 +123,21 @@ internal static partial class ScriptDeclarationReader
                 Fail(DomainStrings.FormatScript_InvalidSettingWidget(key: settings[i].Key), "settings", i, "pair");
         }
 
+        // 보이는 조건: 앞에 선언한 고르기·참거짓 설정의 있는 값만(자기 자신·뒤 설정을 가리키면 돌 수 있어 막는다)
+        for (int i = 0; i < settings.Count; i++)
+            foreach (var condition in settings[i].When)
+            {
+                int at = settings.FindIndex(s => s.Key == condition.Key);
+                var target = at >= 0 && at < i ? settings[at] : null;
+                bool ok = target switch
+                {
+                    { Type: ScriptSettingType.Choice } choice => condition.Values.All(v => v is string text && choice.Choices.Any(c => c.Value == text)),
+                    { Type: ScriptSettingType.Bool } => condition.Values.All(v => v is bool),
+                    _ => false,
+                };
+                if (!ok) Fail(DomainStrings.FormatScript_InvalidSettingWhen(key: settings[i].Key), "settings", i, "when");
+            }
+
         var deferredValue = declaration.Get("deferred");
         bool deferred = deferredValue.IsBoolean() && deferredValue.AsBoolean();
         if (!deferredValue.IsUndefined() && !deferredValue.IsBoolean()) Fail(DomainStrings.Script_InvalidDeferred, "deferred");
@@ -402,7 +417,31 @@ internal static partial class ScriptDeclarationReader
             }
             else fail(DomainStrings.FormatScript_InvalidSettingWidget(key: key), ["settings", index, widgetValue.IsUndefined() ? "pair" : "widget"]);
         }
-        ScriptSetting Done(ScriptSetting result) => result with { Alpha = alpha, Widget = widget, Pair = pair };
+        // when: { 키: 값 | [값, …] } — 보이는 조건(가리키는 설정·값 검사는 모든 설정을 읽은 뒤)
+        var whenValue = setting.Get("when");
+        var when = new List<ScriptSettingCondition>();
+        if (!whenValue.IsUndefined())
+        {
+            if (whenValue is ObjectInstance whenObject && whenValue is not ArrayInstance && !whenValue.IsCallable())
+            {
+                foreach (var property in whenObject.GetOwnPropertyKeys(Types.String))
+                {
+                    var raw = whenObject.Get(property);
+                    var items = raw is ArrayInstance array
+                        ? Enumerable.Range(0, (int)ScriptHostApi.Length(array)).Select(i => array[(uint)i]).ToList()
+                        : [raw];
+                    var values = items.Select(v => v is JsString ? v.AsString() : v.IsBoolean() ? v.AsBoolean() : (object?)null).ToList();
+                    if (values.Count == 0 || values.Contains(null))
+                    {
+                        fail(DomainStrings.FormatScript_InvalidSettingWhen(key: key), ["settings", index, "when"]);
+                        continue;
+                    }
+                    when.Add(new ScriptSettingCondition(property.AsString(), values.Select(v => v!).ToArray()));
+                }
+            }
+            else fail(DomainStrings.FormatScript_InvalidSettingWhen(key: key), ["settings", index, "when"]);
+        }
+        ScriptSetting Done(ScriptSetting result) => result with { Alpha = alpha, Widget = widget, Pair = pair, When = when };
         var defaultValue = setting.Get("default");
         void BadDefault() => fail(DomainStrings.FormatScript_InvalidSettingDefault(key: key), ["settings", index, "default"]);
         switch (type)

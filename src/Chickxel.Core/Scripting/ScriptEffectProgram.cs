@@ -244,6 +244,22 @@ public sealed class ScriptEffectProgram
     public IReadOnlyList<ScriptSetting> Settings { get; }
 
     /// <summary>
+    /// 설정 <paramref name="setting"/>이 <paramref name="values"/>(빠지거나 틀린 값은 기본값)에서 보이는지: 조건(<see cref="ScriptSetting.When"/>)이 모두 맞고,
+    /// 조건이 가리키는 설정도 보일 때(조건은 앞에 선언한 설정만 가리키므로 돌지 않는다).
+    /// </summary>
+    public bool IsShown(ScriptSetting setting, IReadOnlyDictionary<string, object>? values)
+    {
+        foreach (var condition in setting.When)
+        {
+            if (Settings.FirstOrDefault(s => s.Key == condition.Key) is not { } other) return false;
+            object? value = null;
+            values?.TryGetValue(other.Key, out value);
+            if (!condition.Matches(Coerce(other, value) ?? other.Default) || !IsShown(other, values)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
     /// <paramref name="source"/>를 해석하고 맨 위를 한 번 실행해 선언을 검사한다. 문법 오류, 잘못된 선언, 맨 위 실행의 한도 초과와 오류는
     /// 줄·칸이 붙은 <see cref="ScriptParseResult.Errors"/>로 돌려준다(던지지 않는다).
     /// </summary>
