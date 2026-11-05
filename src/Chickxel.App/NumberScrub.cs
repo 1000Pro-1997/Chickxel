@@ -1,4 +1,5 @@
 using Avalonia.Controls.Primitives;
+using Avalonia.VisualTree;
 
 namespace Chickxel.App;
 
@@ -32,6 +33,7 @@ public static class NumberScrub
     }
 
     private static readonly Cursor ScrubCursor = new(StandardCursorType.SizeWestEast);
+    private static readonly Cursor EditCursor = new(StandardCursorType.Ibeam);
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<NumericUpDown, State> States = new();
 
     /// <summary>앱 시작 때 한 번: 모든 숫자 상자에 붙인다.</summary>
@@ -52,7 +54,14 @@ public static class NumberScrub
             if (text is not null)
             {
                 decimal? editingValue = n.Value;
-                void UpdateCursor() => text.Cursor = text.IsKeyboardFocusWithin ? null : ScrubCursor;
+                void UpdateCursor()
+                {
+                    var cursor = text.IsKeyboardFocusWithin ? EditCursor : ScrubCursor;
+                    n.Cursor = text.Cursor = cursor;
+                    // 템플릿 속 TextPresenter·ScrollContentPresenter는 Ibeam을 따로 지정한다.
+                    foreach (var child in text.GetVisualDescendants())
+                        if (child is Control control) control.Cursor = cursor;
+                }
                 void CommitExpression(bool enter)
                 {
                     if (!expression.IsArithmeticInput(text.Text)) return;
@@ -76,6 +85,8 @@ public static class NumberScrub
                 {
                     if (e.Key == Key.Enter) CommitExpression(true);
                 };
+                text.TemplateApplied += (_, _) => UpdateCursor();
+                text.PointerEntered += (_, _) => UpdateCursor();
                 UpdateCursor();
             }
             if (alreadyInstalled) return;

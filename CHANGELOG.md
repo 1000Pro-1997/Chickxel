@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.96 (2026-11-06)
+### Number fields: pointer shows whether dragging or typing
+- Hovering over a number field shows the horizontal drag cursor even directly over the digits, not only its border.
+- Clicking without dragging enters text editing and switches to the text cursor; leaving the field restores the drag cursor.
+- The numeric field's right-click preset list uses the ordinary arrow cursor when hovering over and choosing entries.
+
 ## v1.14.95 (2026-11-05)
 ### Pixelate: unlimited optimization budgets
 - Set the trial count or time limit to 0 to remove that limit; both fields now accept 0 and offer it as a preset.

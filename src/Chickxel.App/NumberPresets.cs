@@ -22,6 +22,7 @@ public static class NumberPresets
     private static readonly ConditionalWeakTable<NumericUpDown, string> Keys = new();
     /// <summary>묶음마다 마지막으로 정한 값(앱을 켜 둔 동안).</summary>
     private static readonly Dictionary<string, decimal> Recent = new();
+    private static readonly Cursor MenuCursor = new(StandardCursorType.Arrow);
 
     private const int MaxItems = 12;
 
@@ -111,7 +112,8 @@ public static class NumberPresets
             items.Add(item);
         }
         if (items.Count == 0) return;
-        PopupMenus.Show(n, items, e);
+        var menu = PopupMenus.Show(n, items, e);
+        if (menu is not null) menu.Cursor = MenuCursor; // 숫자 칸의 좌우 끌기 커서를 팝업 항목에 물려주지 않는다.
     }
 
     /// <summary>보여 줄 예시 값(오름차순, 범위 안, 최대 <see cref="MaxItems"/>개).</summary>
