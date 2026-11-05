@@ -274,8 +274,8 @@ public sealed class OptimizePreset
     public const OptimizeParam DefaultParams = OptimizeParam.SelectAll;
     public const int DefaultTrials = 2000;
     public const int DefaultSeconds = 120;
-    /// <summary>시도 수·초 칸의 최소.</summary>
-    public const int MinBudget = 5;
+    /// <summary>시도 수·초 칸의 최소. 0은 해당 예산 제한 없음.</summary>
+    public const int MinBudget = 0;
     public const int MaxTrials = 10000;
     public const int MaxSeconds = 600;
 
@@ -869,8 +869,8 @@ public sealed class PixelateDialog : DialogBase
         ToolTip.SetShowOnDisabled(_runButton, true);
 
         // ── 0. 최적화 기준(프리셋에 함께 저장): 예산·점수용 색 거리·점수 항목별 비중
-        _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).Presets(100, 200, 500, 1000, 2000, 5000, 10000);
-        _crSeconds = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxSeconds, OptimizePreset.DefaultSeconds, 64, 0, 5).Presets(15, 30, 60, 120, 300, 600);
+        _crTrials = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxTrials, OptimizePreset.DefaultTrials, 64, 0, 10).Presets(0, 100, 200, 500, 1000, 2000, 5000, 10000).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
+        _crSeconds = Ui.Num(OptimizePreset.MinBudget, OptimizePreset.MaxSeconds, OptimizePreset.DefaultSeconds, 64, 0, 5).Presets(0, 15, 30, 60, 120, 300, 600).Tip(UiStrings.Pixelate_Opt_UnlimitedTip);
         _crDistance = Ui.Combo(170, UiStrings.Pixelate_Pal_Distance_OkLab, UiStrings.Pixelate_Pal_Distance_Ciede2000, UiStrings.Pixelate_Pal_Distance_OkLchHue);
         // OKLCh 색상 가중일 때 밝기·채도·색상 차마다 가중치(나머지 거리 방식에서는 흐리게).
         NumericUpDown LchWeight(decimal value, string tip) => Ui.Num((decimal)PixelateRanges.HueWeight.Min, (decimal)PixelateRanges.HueWeight.Max, value, 64, 2, 0.25m).Tip(tip);
@@ -3793,7 +3793,7 @@ public sealed class PixelateDialog : DialogBase
             count: _optRunning.Count,
             pass: _optGraph.Pass,
             done: _optDone,
-            total: p.Budget,
+            total: p.Budget == 0 ? UiStrings.Pixelate_Opt_Unlimited : p.Budget.ToString(CultureInfo.CurrentCulture),
             score: _optGraph.Best.ToString("0.0", CultureInfo.CurrentCulture));
         SetOptText(text);
         _status.Text = text;

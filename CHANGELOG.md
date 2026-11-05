@@ -2,6 +2,11 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.95 (2026-11-05)
+### Pixelate: unlimited optimization budgets
+- Set the trial count or time limit to 0 to remove that limit; both fields now accept 0 and offer it as a preset.
+- An unlimited trial count also works when optimizing the grid first. Progress shows "unlimited" instead of a zero trial budget.
+
 ## v1.14.94 (2026-11-05)
 ### Pixelate: longer built-in preset time budget
 - Built-in presets now start with a 300-second optimization limit instead of 120 seconds; Quick Check keeps its 30-second limit.

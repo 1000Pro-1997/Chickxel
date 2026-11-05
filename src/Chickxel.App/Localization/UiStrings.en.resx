@@ -2826,6 +2826,8 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Opt_SnapOutline" xml:space="preserve"><value>Snap outline color</value></data>
   <data name="Pixelate_Opt_Trials" xml:space="preserve"><value>Trials</value></data>
   <data name="Pixelate_Opt_Seconds" xml:space="preserve"><value>Seconds</value></data>
+  <data name="Pixelate_Opt_Unlimited" xml:space="preserve"><value>unlimited</value></data>
+  <data name="Pixelate_Opt_UnlimitedTip" xml:space="preserve"><value>Set to 0 to remove this limit. With both trials and seconds at 0, optimization runs until it stops improving.</value></data>
   <data name="Pixelate_Opt_Settings" xml:space="preserve"><value>Choose presets for Auto optimize, history</value></data>
   <data name="Pixelate_Opt_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Pixelate_Opt_CancelTip" xml:space="preserve"><value>Stops only the preset that is running (its best result so far stays in its tile) and moves on to the next preset. To stop the remaining presets too, right-click → Cancel all.</value></data>

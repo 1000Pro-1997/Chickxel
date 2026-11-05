@@ -94,7 +94,7 @@ public enum OptimizeStop
 }
 
 /// <summary>
-/// 자동 최적화 설정: 바꿔 볼 항목, 예산(시도 수·시간 중 먼저 닿는 쪽 — 모든 돌림을 합친 예산), 점수 가중치, 돌림 수 상한(1 = 다시 돌리지 않음).
+/// 자동 최적화 설정: 바꿔 볼 항목, 예산(시도 수·시간 중 먼저 닿는 쪽 — 모든 돌림을 합친 예산, 0은 해당 제한 없음), 점수 가중치, 돌림 수 상한(1 = 다시 돌리지 않음).
 /// </summary>
 public sealed record PixelateOptimizeOptions
 {
@@ -251,7 +251,7 @@ public static class PixelateOptimizer
             Params = rest,
             GridFirst = false,
             // 시작점은 이어받으므로(돌리지 않음) 남은 시도 수 + 1.
-            MaxTrials = Math.Max(0, options.MaxTrials - done) + 1,
+            MaxTrials = options.MaxTrials == 0 ? 0 : Math.Max(0, options.MaxTrials - done) + 1,
             MaxTime = left,
         };
         Action<PixelateOptimizeProgress>? relay = onProgress is null ? null
@@ -297,7 +297,7 @@ public static class PixelateOptimizer
         {
             Params = options.Params & OptimizeParam.Grid,
             GridFirst = false,
-            MaxTrials = shared ? Math.Max(1, (int)(options.MaxTrials * GridShare)) : options.MaxTrials,
+            MaxTrials = shared && options.MaxTrials > 0 ? Math.Max(1, (int)(options.MaxTrials * GridShare)) : options.MaxTrials,
             MaxTime = shared && Timed(options.MaxTime) ? options.MaxTime * GridShare : options.MaxTime,
         };
         Action<PixelateOptimizeProgress>? relay = onProgress is null ? null : p => onProgress(p with { Budget = options.MaxTrials, GridStage = true });
@@ -444,7 +444,7 @@ public static class PixelateOptimizer
             Commit(_start.Key(), startTrial);
 
             _axes = BuildAxes(first);
-            if (_opt.MaxTrials <= 1) StopWith(OptimizeStop.Trials);
+            if (_opt.MaxTrials == 1) StopWith(OptimizeStop.Trials);
             var passes = new List<PixelateOptimizePass>();
             int stale = 0;
             for (int pass = 1; ; pass++)
@@ -639,7 +639,7 @@ public static class PixelateOptimizer
                 todo.Add((key, s));
             }
             if (todo.Count == 0 || Stopped) return;
-            int room = _opt.MaxTrials - _reserved;
+            int room = _opt.MaxTrials == 0 ? int.MaxValue : _opt.MaxTrials - _reserved;
             bool cut = todo.Count > room;
             if (cut)
             {
