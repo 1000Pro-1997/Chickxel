@@ -76,7 +76,7 @@ public sealed class PixelateOptions
     }
 
     /// <summary>지금 옵션 판.</summary>
-    public const int CurrentVersion = 12;
+    public const int CurrentVersion = 13;
 
     /// <summary>
     /// 예전 판에서 저장한 값을 한 번만 옮기고 프리셋이 하나 이상 있게 한다. 판 1 = 자동 최적화 항목·예산을 새 기본값(외곽선 맞추기 방식만 빼고 모두, 2000번, 120초)으로.
@@ -95,6 +95,7 @@ public sealed class PixelateOptions
     /// 저장된 값이 없는 예전 프리셋이면 모두 켬으로 읽힌다.
     /// 판 11 = 기본 프리셋 '같은 색상 계열'을 '기본' 바로 뒤로 옮긴다(둘 다 있을 때 — 후보 줄도 이 차례).
     /// 판 12 = 배경 지우기의 처음 값이 '지우지 않음'이 되어, 프리셋의 배경 방식이 예전 처음 값 '자동'이면 '지우지 않음'으로(색 고르기로 정한 프리셋은 그대로).
+    /// 판 13 = 기본 프리셋의 예전 기본 제한 시간(120초)을 300초로(빠른 확인의 30초와 사용자 지정 시간은 유지).
     /// </summary>
     public void Migrate(string? lastSettings = null, string? manualPresetsPath = null)
     {
@@ -164,6 +165,12 @@ public sealed class PixelateOptions
                     if (start.Background.Mode == BackgroundMode.Auto)
                         p.Settings = OptimizePreset.Serialize(start with { Background = start.Background with { Mode = BackgroundMode.None } });
                 }
+            if (Version < 13)
+            {
+                var updatedIds = OptimizePreset.BuiltIns().Where(p => p.Seconds == 300).Select(p => p.BuiltIn).ToHashSet();
+                foreach (var p in OptimizePresets.Where(p => p.Seconds == 120 && updatedIds.Contains(p.BuiltIn)))
+                    p.Seconds = 300;
+            }
             Version = CurrentVersion;
         }
         Legacy = null;
@@ -720,6 +727,8 @@ public sealed class PixelateDialog : DialogBase
     private readonly Button _optRun;
     /// <summary>최적화 전 설정으로 되돌리기(한 번 돌린 뒤 그래프 옆).</summary>
     private readonly Button _optRevert;
+    /// <summary>고른 후보가 시간·시도 예산에서 멈췄을 때 그래프 오른쪽에서 그 후보의 1위로 새 예산을 시작한다.</summary>
+    private readonly Button _optContinue;
     /// <summary>그래프 옆 한 줄: 도는 동안 진행(프리셋 이름·k/n·돌림 번호), 끝나면 "프리셋 k/n개 · t초"(풍선에 프리셋마다 결과 한 줄).</summary>
     private readonly TextBlock _optText;
     /// <summary>지금 도는 프리셋의 시도마다 최고 점수(프리셋이 바뀌면 새로).</summary>
@@ -767,6 +776,8 @@ public sealed class PixelateDialog : DialogBase
     private string? _singlePending;
     /// <summary>지금 도는 칸 이름(그 칸 테두리가 노랗게 깜빡임). 돌지 않으면 null.</summary>
     private string? _runningName;
+    /// <summary>이어 돌리는 동안 이름 대신 정확히 표시할 후보 칸.</summary>
+    private OptimizedTile? _runningTile;
     /// <summary>도는 칸 테두리 깜빡임 시계와 주기(초).</summary>
     private readonly DispatcherTimer _blink = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly Stopwatch _blinkClock = new();
@@ -1309,10 +1320,16 @@ public sealed class PixelateDialog : DialogBase
         _optRevert = Ui.IconButton(VectorIcon.Undo2, UiStrings.Pixelate_Opt_RevertTip, (_, _) => RevertOptimize());
         _optText = new TextBlock { Foreground = AppTheme.TextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0), TextTrimming = TextTrimming.CharacterEllipsis };
         _optGraph = new OptimizeGraph { Width = 180, Height = 26, Margin = new Thickness(3), VerticalAlignment = VerticalAlignment.Center };
+        _optContinue = Ui.IconButton(VectorIcon.Refresh, UiStrings.Pixelate_Opt_ContinueTip, (_, _) => ContinueOptimize());
+        AutomationProperties.SetName(_optContinue, UiStrings.Pixelate_Opt_ContinueName);
+        _optContinue.Background = AppTheme.FavoriteBrush;
+        _optContinue.Foreground = Brushes.Black;
+        _optContinue.IsVisible = false;
+        KeepFillOnHover(_optContinue);
         ToolTip.SetTip(_optGraph, UiStrings.Pixelate_Opt_GraphTip);
         _optTable = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), Margin = new Thickness(2) };
         var optBar = new DockPanel { LastChildFill = true };
-        foreach (var c in new Control[] { _optRun, optSettings, _optGraph, _optRevert })
+        foreach (var c in new Control[] { _optRun, optSettings, _optGraph, _optContinue, _optRevert })
         {
             c.VerticalAlignment = VerticalAlignment.Center;
             DockPanel.SetDock(c, Dock.Left);
@@ -1481,6 +1498,7 @@ public sealed class PixelateDialog : DialogBase
         _optimized.Clear();
         RebuildTiles();
         _selected = null;
+        UpdateContinueButton();
         ClearTrace();
         _watchingLive = false;
         _beforeLive = null;
@@ -2133,6 +2151,9 @@ public sealed class PixelateDialog : DialogBase
         StopOptimize();
         _candidates.Clear();
         _optimized.Clear();
+        _optGraph.Clear();
+        _optGraph.IsVisible = false;
+        UpdateContinueButton();
         RebuildTiles();
         _userPicked = false;
         _status.Text = UiStrings.Pixelate_Opt_Preparing;
@@ -2412,7 +2433,9 @@ public sealed class PixelateDialog : DialogBase
         foreach (var tile in _tiles.Children.OfType<TileBase>())
         {
             string? name = tile is CandidateTile ct ? _optimized.GetValueOrDefault(ct.Candidate)?.Name : ((PendingTile)tile).PresetName;
-            tile.IsRunning = _runningName is not null && name == _runningName && (tile is PendingTile || _singlePending is null);
+            tile.IsRunning = _runningName is not null && (_runningTile is { } selectedTile
+                ? tile is CandidateTile selectedCandidate && ReferenceEquals(_optimized.GetValueOrDefault(selectedCandidate.Candidate), selectedTile)
+                : name == _runningName && (tile is PendingTile || _singlePending is null));
             any |= tile.IsRunning;
             if (tile is PendingTile)
             {
@@ -3108,6 +3131,8 @@ public sealed class PixelateDialog : DialogBase
     {
         /// <summary>시도 기록 표의 열쇠: 속한 목록 프리셋(없으면 돌린 값).</summary>
         public OptimizePreset HistoryKey => Owner ?? Values;
+        /// <summary>이어 돌릴 때 바꿀 바로 그 칸(같은 이름의 다른 후보는 그대로 둔다).</summary>
+        public OptimizedTile? Replace { get; init; }
     }
 
     /// <summary>끝난(취소면 그때까지 돈) 프리셋 하나의 최적화: 돌린 것, 바꿔 본 항목, 준비한 원본, 결과.</summary>
@@ -3121,10 +3146,14 @@ public sealed class PixelateDialog : DialogBase
     {
         public string Name => Spec.Name;
 
-        public static OptimizedTile Of(OptimizeRun run, GraphData? graph) => run.Spec.AsIs
-            ? new(run.Spec, run.Result.StoppedReason, run.Params, null, null)
-            : new(run.Spec, run.Result.StoppedReason, run.Params,
-                UiStrings.FormatPixelate_Opt_PresetLine(name: run.Spec.Name, summary: OptimizeDone(run.Result)), graph);
+        public static OptimizedTile Of(OptimizeRun run, GraphData? graph)
+        {
+            var spec = run.Spec with { Replace = null };
+            return spec.AsIs
+                ? new(spec, run.Result.StoppedReason, run.Params, null, null)
+                : new(spec, run.Result.StoppedReason, run.Params,
+                    UiStrings.FormatPixelate_Opt_PresetLine(name: spec.Name, summary: OptimizeDone(run.Result)), graph);
+        }
     }
 
     /// <summary>끝난 프리셋마다 돌던 동안의 점수 그래프(<see cref="OnOptimizePresetDone"/>가 남기고 <see cref="OnOptimizeFinished"/>가 칸에 붙인 뒤 비움).</summary>
@@ -3143,8 +3172,44 @@ public sealed class PixelateDialog : DialogBase
             ? UiStrings.FormatPixelate_Zoom_OptRunning(progress: _optText.Text ?? "",
                 seconds: _optPresetClock.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.CurrentCulture))
             : tile?.Summary ?? "";
+        // 바깥 그래프도 고른 후보의 그래프를 보인다. 진행 중에는 실행 그래프를 건드리지 않는다.
+        if (_optCts is null)
+        {
+            var selectedGraph = _selected is { } chosen && _candidates.Contains(chosen)
+                ? _optimized.GetValueOrDefault(chosen)?.Graph : null;
+            if (selectedGraph is { } data) _optGraph.Load(data);
+            else _optGraph.Clear();
+            _optGraph.IsVisible = selectedGraph is not null;
+        }
+        UpdateContinueButton();
         _zoom.SetOptimizeInfo(text);
         if (reloadGraph) _zoom.SetGraph(live ? _optGraph.Snapshot() : tile?.Graph);
+    }
+
+    /// <summary>현재 원본에 속한 고른 후보가 실제 최적화 예산을 다 쓴 경우만 이어 돌릴 수 있다.</summary>
+    private (PixelateCandidate Candidate, OptimizedTile Tile)? ContinueCandidate()
+    {
+        if (_input is null || _appliedFrames is null || _optCts is not null || _selected is not { } c
+            || !_candidates.Contains(c) || !_optimized.TryGetValue(c, out var tile)
+            || tile.Reason is not (OptimizeStop.Trials or OptimizeStop.Time)
+            || tile.Params == OptimizeParam.None || tile.Spec.AsIs) return null;
+        return (c, tile);
+    }
+
+    private void UpdateContinueButton()
+    {
+        _optContinue.IsVisible = _optContinue.IsEnabled = ContinueCandidate() is not null;
+    }
+
+    /// <summary>고른 후보의 1위 설정에서 동일한 프리셋의 최적화 항목·점수 기준·시간·시도 예산으로 새 돌림을 시작한다(이전 시도 캐시는 이어 쓰지 않음).</summary>
+    private void ContinueOptimize()
+    {
+        if (ContinueCandidate() is not { } chosen) return;
+        var (candidate, tile) = chosen;
+        var spec = tile.Spec;
+        // 목록 프리셋의 결과만 다시 저장한다. 변경한 후보와 지운 프리셋의 결과는 프리셋을 건드리지 않는다.
+        var target = !spec.Modified && spec.Owner is { } owner && _opt.OptimizePresets.Contains(owner) ? owner : null;
+        StartOptimize([spec with { Settings = candidate.Settings, Target = target, Replace = tile }], single: true);
     }
 
     /// <summary>
@@ -3355,6 +3420,7 @@ public sealed class PixelateDialog : DialogBase
             _optRun.ClearValue(ForegroundProperty);
         }
         _optGraph.IsVisible = running || _optGraph.HasData;
+        UpdateContinueButton();
         _optRevert.IsVisible = !running && _optRevertTo is not null;
         if (_optPresetList is not null) _optPresetList.IsEnabled = !running;
         if (_optResetButton is not null) _optResetButton.IsEnabled = !running;
@@ -3499,6 +3565,7 @@ public sealed class PixelateDialog : DialogBase
         _status.Text = UiStrings.Pixelate_Opt_Preparing;
         UpdateOptimizeButtons();
         _runningName = runs[0].Name;
+        _runningTile = runs[0].Replace;
         if (!single)
         {
             _optRankBackup = [.. _candidates.Where(_optimized.ContainsKey).Select(c => (c, _optimized[c]))];
@@ -3508,7 +3575,8 @@ public sealed class PixelateDialog : DialogBase
             _optPending = [.. runs.Select(r => r.Name)];
         }
         // 하나만 돌리는데 같은 이름 칸이 없으면 맨 앞에 빈 칸을 먼저 만든다 — 체크한 프리셋의 '돌리지 않음' 칸이 있으면 그 칸이 돈다.
-        else _singlePending = _candidates.Any(c => _optimized.TryGetValue(c, out var o) && o.Name == runs[0].Name) || IdlePresets().Any(p => p.Name == runs[0].Name)
+        else _singlePending = runs[0].Replace is not null
+            || _candidates.Any(c => _optimized.TryGetValue(c, out var o) && o.Name == runs[0].Name) || IdlePresets().Any(p => p.Name == runs[0].Name)
             ? null : runs[0].Name;
         RebuildTiles();
         var clock = Stopwatch.StartNew();
@@ -3586,6 +3654,7 @@ public sealed class PixelateDialog : DialogBase
             foreach (var c in runCts) c.Dispose();
         _optRunCts = null;
         _runningName = null;
+        _runningTile = null;
         UpdateZoomOptInfo();
         // 미리보기를 그렸던 칸은 다시 그려 원래 썸네일로(취소·오류로 결과 없이 끝난 경우).
         bool rebuild = _optPending is not null || _singlePending is not null || _livePreview is not null
@@ -3774,7 +3843,9 @@ public sealed class PixelateDialog : DialogBase
             _optResults[run.Spec.HistoryKey] = (run.Result, run.Params);
             lines.Add(UiStrings.FormatPixelate_Opt_PresetLine(name: run.Spec.Name, summary: OptimizeDone(run.Result)));
             var c = WithColorEdits(run.Result.Best);
-            int at = single ? _candidates.FindIndex(x => _optimized.TryGetValue(x, out var o) && o.Name == run.Spec.Name) : -1;
+            int at = single && run.Spec.Replace is { } replacing
+                ? _candidates.FindIndex(x => _optimized.TryGetValue(x, out var o) && ReferenceEquals(o, replacing))
+                : single ? _candidates.FindIndex(x => _optimized.TryGetValue(x, out var o) && o.Name == run.Spec.Name) : -1;
             if (at >= 0)
             {
                 _optimized.Remove(_candidates[at]);
@@ -5224,7 +5295,7 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 크게 보기 겹판: 대화상자 전체를 덮는 어두운 바탕 위의 판 — 위 줄(제목, 이전·재생/멈춤·다음·격자 보기, 도움말, 닫기 ✕), 가운데 <see cref="ZoomPairView"/>(결과 | 원본),
+    /// 크게 보기 겹판: 대화상자 전체를 덮는 어두운 바탕 위의 판 — 위 줄(제목, 이전·재생/멈춤·다음·격자 보기·그림 맞춤, 도움말, 닫기), 가운데 <see cref="ZoomPairView"/>(결과 | 원본),
     /// 아래 색 판정 줄(<see cref="PixelTraceRow"/> — 픽셀을 누르면 보임), 색 칸 묶음(<see cref="ColorsBlock"/>)과 프레임 띠(프레임이 하나면 숨김).
     /// 프레임 번호·재생·FPS·격자 보기·뺀 색은 큰 미리보기(<see cref="FramePreview"/>)와 같이 쓰고, 고른 후보(색 빼기 포함)가 바뀌면 함께 바뀐다.
     /// 판 밖(어두운 바탕)을 누르거나 Esc·닫기 단추로 닫고, Space = 재생/멈춤, ←→ = 이전·다음 프레임.
@@ -5254,9 +5325,10 @@ public sealed class PixelateDialog : DialogBase
                 VerticalContentAlignment = VerticalAlignment.Center,
             }.Tip(UiStrings.Pixelate_ShowGrid);
             GridButton.IsCheckedChanged += (_, _) => _view.ShowGrid = GridButton.On();
+            var fitButton = Ui.IconButton(VectorIcon.Maximize2, UiStrings.Pixelate_Zoom_Fit, (_, _) => _view.FitToPane());
             var closeButton = Ui.IconButton(VectorIcon.X, UiStrings.Pixelate_Zoom_Close, (_, _) => close());
             var title = new TextBlock { Text = UiStrings.Pixelate_Zoom_Title, Foreground = AppTheme.TextBrush, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center };
-            // 위 줄: 제목·재생 단추·격자 보기·정보박스(조작 안내 풍선) | 최적화 그래프와 그 바로 오른쪽 최적화 정보(도는 칸·최적화한 후보일 때, 왼쪽에 붙임) | 닫기.
+            // 위 줄: 제목·재생 단추·격자 보기·그림 맞춤·정보박스(조작 안내 풍선) | 최적화 그래프와 그 바로 오른쪽 최적화 정보(도는 칸·최적화한 후보일 때, 왼쪽에 붙임) | 닫기.
             _optInfo = new TextBlock
             {
                 Foreground = AppTheme.DimTextBrush,
@@ -5270,7 +5342,7 @@ public sealed class PixelateDialog : DialogBase
             };
             var bar = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 4) };
             DockPanel.SetDock(closeButton, Dock.Right);
-            var controls = Ui.Row(title, prev, PlayButton, next, GridButton, Ui.InfoBadge(UiStrings.Pixelate_Zoom_Hint));
+            var controls = Ui.Row(title, prev, PlayButton, next, GridButton, fitButton, Ui.InfoBadge(UiStrings.Pixelate_Zoom_Hint));
             DockPanel.SetDock(controls, Dock.Left);
             bar.Children.Add(closeButton);
             bar.Children.Add(controls);
@@ -5368,7 +5440,7 @@ public sealed class PixelateDialog : DialogBase
     /// 크게 보기의 두 칸: 왼쪽 = 지금 프레임 결과(처음엔 칸에 들어가는 가장 큰 정수 배율, 체커), 오른쪽 = 같은 프레임의 원본(배경 지운 모습)을 결과와 같은 화면 크기로
     /// — 결과 픽셀 하나 자리에 그 칸의 원본이 온다. 격자 보기면 결과엔 픽셀마다 한 칸인 격자, 원본엔 실제 칸 경계. 색 칸을 좌클릭하면 결과 칸에도 그 색이 쓰인 곳을 강조.
     /// 결과 픽셀 좌클릭 = 쓰인 곳 보기(<see cref="ResultPixelClicked"/>), 우클릭 = 그 색 빼기/되살리기(<see cref="ResultPixelRightClicked"/>), 원본 칸 좌클릭 = <see cref="SourceCellClicked"/>.
-    /// 휠 = 포인터 자리를 축으로 확대·축소(1배 이상은 정수 배율), 끌기 = 이동, 두 번 누르기 = 다시 맞춤 — 두 칸이 함께 움직인다.
+    /// 휠 = 포인터 자리를 축으로 세밀하게 확대·축소, 끌기 = 이동, 두 번 누르기 = 정수 배율로 다시 맞춤 — 두 칸이 함께 움직인다.
     /// 스포이드 중(<see cref="Picking"/>)이면 오른쪽 원본 칸이 스포이드 커서·올린 칸 강조, 왼쪽 클릭 = 그 칸 고르기(<see cref="CellPicked"/>), 오른쪽 클릭 = 그만.
     /// </summary>
     private sealed class ZoomPairView : Control
@@ -5378,6 +5450,7 @@ public sealed class PixelateDialog : DialogBase
         private double _zoom = 1;
         private Vector _offset;
         private bool _fitted;
+        private bool _fitExact;
         private PixelSize _fittedSize;
         private Avalonia.Point? _drag;
 
@@ -5459,8 +5532,18 @@ public sealed class PixelateDialog : DialogBase
             return CutOverlay.HitFrame(map, _preview.Index, m.Sx0 + (p.X - m.Dest.X) / m.Kx, m.Sy0 + (p.Y - m.Dest.Y) / m.Ky);
         }
 
+        /// <summary>처음 열 때·두 번 눌렀을 때의 정수 배율 맞춤.</summary>
         public void Refit()
         {
+            _fitExact = false;
+            _fitted = false;
+            InvalidateVisual();
+        }
+
+        /// <summary>두 칸을 같은 배율로, 비율을 유지하며 칸의 가로나 세로에 딱 맞춘다.</summary>
+        public void FitToPane()
+        {
+            _fitExact = true;
             _fitted = false;
             InvalidateVisual();
         }
@@ -5472,8 +5555,11 @@ public sealed class PixelateDialog : DialogBase
         {
             var pane = LeftPane;
             if (size.Width <= 0 || size.Height <= 0 || pane.Width <= 0 || pane.Height <= 0) return;
-            double fit = Math.Min((pane.Width - 8) / size.Width, (pane.Height - 8) / size.Height);
-            _zoom = fit >= 1 ? Math.Floor(fit) : Math.Max(0.05, fit);
+            double fit = _fitExact
+                ? Math.Min(pane.Width / size.Width, pane.Height / size.Height)
+                : Math.Min((pane.Width - 8) / size.Width, (pane.Height - 8) / size.Height);
+            if (fit <= 0) return;
+            _zoom = _fitExact ? fit : fit >= 1 ? Math.Floor(fit) : Math.Max(0.05, fit);
             _offset = new Vector((pane.Width - size.Width * _zoom) / 2, (pane.Height - size.Height * _zoom) / 2);
             _fitted = true;
             _fittedSize = size;
@@ -5489,11 +5575,9 @@ public sealed class PixelateDialog : DialogBase
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
         {
             var p = PaneLocal(e.GetPosition(this));
-            bool up = e.Delta.Y > 0;
-            // 1배 이상은 정수 배율(결과 픽셀이 고르게), 1배 아래는 0.8배씩.
-            double z = up
-                ? (_zoom >= 1 ? Math.Min(128, _zoom + Math.Max(1, Math.Floor(_zoom / 4))) : Math.Min(1, _zoom * 1.25))
-                : (_zoom > 1 ? Math.Max(1, _zoom - Math.Max(1, Math.Floor(_zoom / 5))) : Math.Max(0.05, _zoom * 0.8));
+            double z = ImageUtil.ZoomWheelStep(_zoom, e.Delta.Y > 0, 128);
+            if (z == _zoom) { e.Handled = true; return; }
+            _fitExact = false;
             _offset = new Vector(p.X - (p.X - _offset.X) * z / _zoom, p.Y - (p.Y - _offset.Y) * z / _zoom);
             _zoom = z;
             InvalidateVisual();
@@ -5573,7 +5657,7 @@ public sealed class PixelateDialog : DialogBase
             if (!_fitted || size != _fittedSize) Fit(size);
             var left = LeftPane;
             var right = RightPane;
-            string zoom = _zoom >= 1 ? "×" + _zoom.ToString("0", CultureInfo.CurrentCulture) : "×" + _zoom.ToString("0.##", CultureInfo.CurrentCulture);
+            string zoom = "×" + _zoom.ToString("0.##", CultureInfo.CurrentCulture);
             AppTheme.DrawTextIn(g, UiStrings.FormatPixelate_Preview_Result(index: _preview.Index + 1, count: _preview.FrameCount)
                 + " · " + ZoomImageView.SizeText(size.Width, size.Height) + "  " + zoom,
                 new Rect(4, 0, left.Width - 8, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, bold: true);
@@ -5639,7 +5723,7 @@ public sealed class PixelateDialog : DialogBase
     }
 
     /// <summary>
-    /// 고른 후보 크게 보기: 왼쪽은 지금 프레임(정수 배율, 체커), 오른쪽은 같은 프레임의 원본(배경 지운 모습, 칸 선은 왼쪽 큰 원본 보기에만).
+    /// 고른 후보 크게 보기: 왼쪽은 지금 프레임(휠로 세밀하게 확대, 체커), 오른쪽은 같은 프레임의 원본(배경 지운 모습, 칸 선은 왼쪽 큰 원본 보기에만).
     /// 원본 보기에서 칸에 마우스를 올리면 그 프레임에 멈추고 결과의 같은 픽셀을 강조한다. 프레임은 <see cref="Index"/>로 바꾼다.
     /// 누르면 키보드 초점(Space·←→)을 받고, 결과·원본 그림을 끌지 않고 좌클릭하면 <see cref="OpenRequested"/>(크게 보기 — <see cref="ZoomOverlay"/>),
     /// 결과 그림을 우클릭하면 <see cref="ResultPixelRightClicked"/>(그 픽셀 색 빼기/되살리기).

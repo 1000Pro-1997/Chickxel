@@ -54,6 +54,20 @@ public static class ImageUtil
         return dest;
     }
 
+    /// <summary>그림 크게 보기 휠 한 눈금: 1~2배는 0.25, 2~4배는 0.5씩; 그 위는 두 배 구간마다 간격을 두 배로 한다.</summary>
+    public static double ZoomWheelStep(double current, bool zoomIn, double maxZoom)
+    {
+        if (current < 1 || (current == 1 && !zoomIn))
+            return Math.Clamp(current * (zoomIn ? 1.25 : 0.8), 0.05, maxZoom);
+        double step = 0.25, boundary = 2;
+        while (zoomIn ? current >= boundary : current > boundary)
+        {
+            step *= 2;
+            boundary *= 2;
+        }
+        return Math.Clamp(current + (zoomIn ? step : -step), 0.05, maxZoom);
+    }
+
     /// <summary>
     /// 원래 <paramref name="source"/> 크기 그림을 <see cref="DrawFitted"/>와 같은 자리·크기에 그리되, 줄인 썸네일 <paramref name="thumb"/>을 쓴다
     /// (최근접 — 원본을 줄여 그린 것과 같은 모양). 그린 화면 사각형을 돌려준다.

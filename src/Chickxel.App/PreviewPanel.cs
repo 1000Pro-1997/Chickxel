@@ -675,7 +675,7 @@ public sealed class PreviewPanel : UserControl
         private readonly PreviewPanel _owner;
         private readonly bool _fit;
         /// <summary>크게 보기 창의 배율(0 = 창에 맞춤)과 가운데에서 옮긴 만큼(화면 px).</summary>
-        private int _zoom;
+        private double _zoom;
         private Vector _pan;
         /// <summary>마지막으로 그린 그림 자리(휠 확대 기준).</summary>
         private Rect _shown;
@@ -701,11 +701,9 @@ public sealed class PreviewPanel : UserControl
             base.OnPointerWheelChanged(e);
             if (!_fit || e.Delta.Y == 0 || _shown.Width <= 0 || _owner._ctx.FrameView(Math.Clamp(_owner.ShownFrame, 0, Math.Max(0, _owner._ctx.FrameCount - 1))).Bitmap is not { } bmp)
                 return;
-            double current = _shown.Width / bmp.PixelSize.Width;
-            int now = Math.Max(1, (int)Math.Round(current));
-            int next = e.Delta.Y > 0 ? Math.Max(now + 1, (int)Math.Round(now * 1.25)) : Math.Min(now - 1, (int)Math.Round(now / 1.25));
-            next = Math.Clamp(next, 1, MaxZoom);
-            if (next == now && _zoom != 0) return;
+            double current = _zoom > 0 ? _zoom : _shown.Width / bmp.PixelSize.Width;
+            double next = ImageUtil.ZoomWheelStep(current, e.Delta.Y > 0, MaxZoom);
+            if (next == current) { e.Handled = true; return; }
             // 포인터 아래 그림 자리가 그대로 있도록 옮긴다
             var p = e.GetPosition(this);
             double u = (p.X - _shown.X) / current, v = (p.Y - _shown.Y) / current;
@@ -742,7 +740,7 @@ public sealed class PreviewPanel : UserControl
             {
                 // 맞춤 상태에서 끌면 지금 배율로 고정해 옮긴다
                 if (_owner._ctx.FrameView(Math.Clamp(_owner.ShownFrame, 0, Math.Max(0, _owner._ctx.FrameCount - 1))).Bitmap is not { } bmp || _shown.Width <= 0) return;
-                _zoom = Math.Max(1, (int)Math.Round(_shown.Width / bmp.PixelSize.Width));
+                _zoom = Math.Max(0.05, _shown.Width / bmp.PixelSize.Width);
             }
             _pan += p - from;
             _drag = p;

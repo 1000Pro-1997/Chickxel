@@ -2831,6 +2831,8 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Opt_CancelTip" xml:space="preserve"><value>Stops only the preset that is running (its best result so far stays in its tile) and moves on to the next preset. To stop the remaining presets too, right-click → Cancel all.</value></data>
   <data name="Pixelate_Opt_CancelAll" xml:space="preserve"><value>Cancel all</value></data>
   <data name="Pixelate_Opt_RevertTip" xml:space="preserve"><value>Restores the settings from before the run.</value></data>
+  <data name="Pixelate_Opt_ContinueName" xml:space="preserve"><value>Continue optimizing selected candidate</value></data>
+  <data name="Pixelate_Opt_ContinueTip" xml:space="preserve"><value>Run the selected candidate's preset again from its best settings, with a fresh trial and time budget. Previous trials are not reused; other candidates remain unchanged.</value></data>
   <data name="Pixelate_Opt_Progress" xml:space="preserve"><value>{name} ({index}/{count}) · pass {pass} · trial {done}/{total} · best {score}</value></data>
   <data name="Pixelate_Opt_Note" xml:space="preserve"><value>All candidates use the same scoring rules. Scoring color distance affects only Major color shift and cell-by-cell Fidelity, not palette conversion.</value></data>
   <data name="Pixelate_Opt_SettingsTitle" xml:space="preserve"><value>Auto Optimize Settings</value></data>
@@ -2923,6 +2925,7 @@ Press Clean up to apply the change.</value></data>
   <data name="Pixelate_Grid_Adjust_Tip" xml:space="preserve"><value>Added to the pixel size the auto grid finds (the auto optimizer changes the pixel size with this). It depends on the image, so Clean up uses it but presets don't save it (the same goes for the manual grid's start X/Y).</value></data>
   <data name="Pixelate_Zoom_OpenTip" xml:space="preserve"><value>Left-click the result or the source image: enlarge · Right-click the result image: exclude/restore that pixel's color — in the enlarged view, Left-click: show where used and the color decision · Right-click: exclude/restore (the click also gives this preview keyboard focus — Space play/pause, ←→ frames).</value></data>
   <data name="Pixelate_Zoom_Title" xml:space="preserve"><value>Enlarged view</value></data>
+  <data name="Pixelate_Zoom_Fit" xml:space="preserve"><value>Fit image: fill the width or height of each pane without stretching</value></data>
   <data name="Pixelate_Zoom_Hint" xml:space="preserve"><value>Wheel: zoom
 Drag: pan (both panes)
 Result pixel left-click: show where used and the color decision

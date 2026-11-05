@@ -2,6 +2,23 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.94 (2026-11-05)
+### Pixelate: longer built-in preset time budget
+- Built-in presets now start with a 300-second optimization limit instead of 120 seconds; Quick Check keeps its 30-second limit.
+- Saved built-in presets still at the former 120-second default are updated once. Other saved limits and custom presets remain unchanged.
+
+### Image previews: finer zoom and an exact-fit button
+- The enlarged Pixelate comparison and the editor's enlarged preview now zoom in smaller steps: 1×, 1.25×, 1.5×, 1.75×, then 2×. Dragging and wheel zoom keep the image point under the pointer.
+- Next to Grid in the Pixelate enlarged view, Fit image scales both panes equally to fill the available width or height without stretching; double-click still restores the initial integer fit.
+
+### Number fields: enter arithmetic
+- Integer and decimal fields accept addition, subtraction, multiplication and division expressions such as `256*2`, then display the computed value.
+- Integer results truncate fractional remainders toward zero. Invalid expressions, overflow and division by zero leave the preceding value unchanged.
+
+### Pixelate: continue from a budget-stopped result
+- A yellow icon next to the outer optimization graph appears for the selected candidate when it stops at the time or trial limit. Click it to start a fresh budget from that candidate's best settings.
+- Only that candidate is replaced; other candidates stay. Past trials are not cached across runs, and the new graph and result describe the new run.
+
 ## v1.14.93 (2026-11-05)
 ### Projects: open saved files by double-clicking
 - Windows registers `.chickxel` with the portable executable when it starts; the macOS app bundle declares the project document type.

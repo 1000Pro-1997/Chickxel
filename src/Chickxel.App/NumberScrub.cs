@@ -40,20 +40,45 @@ public static class NumberScrub
         TemplatedControl.TemplateAppliedEvent.AddClassHandler<NumericUpDown>((n, e) =>
         {
             n.ShowButtonSpinner = false;
+            // Install on the control, not Ui.Num: independently-created numeric fields use the same input path.
+            var expression = n.TextConverter as NumberExpression ?? new NumberExpression(n);
+            n.TextConverter = expression;
             var text = e.NameScope.Find<TextBox>("PART_TextBox");
-            if (States.TryGetValue(n, out var existing))
-            {
-                existing.Text = text;
-                return;
-            }
-            States.Add(n, new State { Text = text });
+            bool alreadyInstalled = States.TryGetValue(n, out var state);
+            state ??= new State();
+            if (alreadyInstalled && ReferenceEquals(state.Text, text)) return;
+            state.Text = text;
+            if (!alreadyInstalled) States.Add(n, state);
             if (text is not null)
             {
+                decimal? editingValue = n.Value;
                 void UpdateCursor() => text.Cursor = text.IsKeyboardFocusWithin ? null : ScrubCursor;
-                text.GotFocus += (_, _) => UpdateCursor();
-                text.LostFocus += (_, _) => { UpdateCursor(); NumberPresets.Remember(n); }; // 입력을 마친 값 = 최근 값
+                void CommitExpression(bool enter)
+                {
+                    if (!expression.IsArithmeticInput(text.Text)) return;
+                    if (!expression.IsExpression(text.Text))
+                    {
+                        n.Value = editingValue;
+                    }
+                    else if (!enter) return; // NumericUpDown formats the result itself on focus loss.
+                    text.Text = expression.ConvertBack(n.Value, typeof(string), null,
+                        System.Globalization.CultureInfo.CurrentCulture)?.ToString();
+                    if (enter) editingValue = n.Value;
+                }
+                text.GotFocus += (_, _) => { editingValue = n.Value; UpdateCursor(); };
+                text.LostFocus += (_, _) =>
+                {
+                    CommitExpression(false);
+                    UpdateCursor();
+                    NumberPresets.Remember(n);
+                };
+                text.KeyDown += (_, e) =>
+                {
+                    if (e.Key == Key.Enter) CommitExpression(true);
+                };
                 UpdateCursor();
             }
+            if (alreadyInstalled) return;
             n.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             n.AddHandler(InputElement.PointerMovedEvent, OnMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
             n.AddHandler(InputElement.PointerReleasedEvent, OnReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
