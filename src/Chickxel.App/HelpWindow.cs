@@ -59,6 +59,9 @@ public sealed class HelpWindow : Window
     /// <summary>지금 쪽을 그리며 처음 칠한 글 줄(그리로 스크롤).</summary>
     private Control? _firstHit;
     private Control? _currentTocRow;
+    private Control? _requestedRow;
+    private int? _requestedToolRow;
+    private int _renderVersion;
 
     /// <summary>
     /// 앱 명령 id(예: "편집/실행취소")의 지금 단축키(사용자가 바꾼 것 우선, 지웠으면 빈 목록, 모르는 명령이면 null).
@@ -396,27 +399,29 @@ public sealed class HelpWindow : Window
 
     // ───────────── 쪽 ─────────────
 
-    /// <summary>쪽을 연다(모르는 id면 그대로).</summary>
-    public void ShowPage(string pageId)
+    /// <summary>쪽을 열고, 지정한 그림이나 도구 목록 행이 있으면 그 자리로 이동한다.</summary>
+    public void ShowPage(string pageId, string? shot = null, int? toolRow = null)
     {
-        if (_byId.TryGetValue(pageId, out var page)) Show(page);
+        if (_byId.TryGetValue(pageId, out var page)) Show(page, shot, toolRow);
     }
 
-    private void Show(HelpPage page)
+    private void Show(HelpPage page, string? shot = null, int? toolRow = null)
     {
         _page = page;
         _lastPageId = page.Id;
         _expanded.Clear();
         _expanded.Add(page.Chapter.Id);
         RenderToc();
-        RenderPage();
+        RenderPage(shot, toolRow);
     }
 
-    private void RenderPage()
+    private void RenderPage(string? shot = null, int? toolRow = null)
     {
         var page = _page;
         _terms = string.IsNullOrWhiteSpace(Query) ? [] : HelpSearch.ResolveTerms(page.Title + "\n" + page.Text, HelpSearch.HighlightTerms(Query));
         _firstHit = null;
+        _requestedRow = null;
+        _requestedToolRow = page.Id == "tools-list" ? toolRow : null;
         _body.Children.Clear();
 
         if (page.Chapter.HasSubPages)
@@ -445,13 +450,21 @@ public sealed class HelpWindow : Window
         title.Margin = new Thickness(0, 0, 0, 14);
         _body.Children.Add(title);
 
-        foreach (var block in page.Blocks) _body.Children.Add(Block(block, BodyBrush));
+        Control? target = null;
+        foreach (var block in page.Blocks)
+        {
+            var control = Block(block, BodyBrush);
+            _body.Children.Add(control);
+            if (block.Type == "shot" && block.Src == shot) target = control;
+        }
 
         _body.Children.Add(Pager(page));
 
-        var hit = _firstHit;
+        var hit = target ?? _requestedRow ?? _firstHit;
+        int version = ++_renderVersion;
         Dispatcher.UIThread.Post(() =>
         {
+            if (version != _renderVersion) return;
             if (hit is not null && hit.TranslatePoint(default, _body) is { } at)
                 _pageScroll.Offset = new Vector(0, Math.Max(0, at.Y + _body.Margin.Top - 60));
             else
@@ -620,6 +633,8 @@ public sealed class HelpWindow : Window
                 Grid.SetRow(cell, r);
                 Grid.SetColumn(cell, c);
                 grid.Children.Add(cell);
+                if (c == 0 && _requestedToolRow is { } targetRow && r == targetRow + (b.Head is { Length: > 0 } ? 1 : 0))
+                    _requestedRow = cell;
             }
         }
         return new Border

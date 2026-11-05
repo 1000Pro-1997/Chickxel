@@ -7,7 +7,7 @@ using Chickxel.Core.Assets;
 
 namespace Chickxel.App;
 
-/// <summary>OS가 앱에 넘긴 일: 홈페이지 "Chickxel에서 열기" 주소, 또는 더블클릭한 에셋 패키지 파일.</summary>
+/// <summary>OS가 앱에 넘긴 일: 홈페이지 주소, 더블클릭한 에셋 패키지 또는 프로젝트 파일.</summary>
 public abstract record Activation
 {
     /// <summary><c>chickxel://asset/ID</c>: 에셋 관리자 상점에서 패키지를 보인다(설치는 사용자가 누름).</summary>
@@ -22,16 +22,23 @@ public abstract record Activation
         public override string Argument => Path;
     }
 
+    /// <summary><c>.chickxel</c> 파일: 편집기의 문서 탭으로 연다.</summary>
+    public sealed record OpenProject(string Path) : Activation
+    {
+        public override string Argument => Path;
+    }
+
     /// <summary>이 일을 다른 Chickxel에 넘길 때 쓰는 명령줄 인수 하나.</summary>
     public abstract string Argument { get; }
 
-    /// <summary>명령줄 인수나 OS가 준 주소·경로 하나. 앱이 맡을 일이 아니면 null(편집기에서 여는 파일 등).</summary>
+    /// <summary>명령줄 인수나 OS가 준 주소·경로 하나. 앱이 맡을 일이 아니면 null.</summary>
     public static Activation? Parse(string? text)
     {
         if (AssetLinks.PackageId(text) is { } id) return new OpenPackage(id);
         if (string.IsNullOrWhiteSpace(text)) return null;
         string path = text.Trim();
-        if (!path.EndsWith(AssetPackage.Extension, StringComparison.OrdinalIgnoreCase)
+        bool project = path.EndsWith(".chickxel", StringComparison.OrdinalIgnoreCase);
+        if (!project && !path.EndsWith(AssetPackage.Extension, StringComparison.OrdinalIgnoreCase)
             && !path.EndsWith(AssetPackage.LegacyExtension, StringComparison.OrdinalIgnoreCase)) return null;
         try
         {
@@ -41,7 +48,7 @@ public abstract record Activation
         {
             return null;
         }
-        return File.Exists(path) ? new InstallFile(path) : null;
+        return !File.Exists(path) ? null : project ? new OpenProject(path) : new InstallFile(path);
     }
 }
 

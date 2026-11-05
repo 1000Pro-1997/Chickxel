@@ -3842,4 +3842,8 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Timeline_AddSkinToLayer_Done" xml:space="preserve"><value>Moved "{0}" into the new group "{1}" as a part and added skin "{2}". The current drawing is in skin "{3}".</value></data>
   <data name="LayerResize_AreaWidth" xml:space="preserve"><value>Layer width</value></data>
   <data name="Publish_PivotMoveTag" xml:space="preserve"><value>This effect reports how far it moves the drawing (ctx.movePivot), so it always carries the pivot-move tag (it can't be removed and counts toward the 8 tags).</value></data>
+  <data name="Help_SelectTarget" xml:space="preserve"><value>Choose help on screen</value></data>
+  <data name="Help_SelectHint" xml:space="preserve"><value>Click an area to see its help. Esc, F1 or right-click cancels.</value></data>
+  <data name="Help_NoTarget" xml:space="preserve"><value>No help is linked to this area. Search the user guide from the Help menu.</value></data>
+  <data name="Project_FileType" xml:space="preserve"><value>Chickxel Project</value></data>
 </root>

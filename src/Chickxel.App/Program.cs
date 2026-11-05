@@ -5,7 +5,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// 명령줄 인수: <c>--open-folder &lt;폴더&gt;</c>, <c>--open &lt;파일&gt;</c>(.chickxel/.png). 경로만 주면 --open과 같다.
-/// <c>chickxel://asset/…</c> 주소나 <c>.chickxel-asset</c> 파일은 편집기에서 열지 않고 <see cref="Activation"/>으로 받는다(OS가 넘긴 일).
+/// <c>chickxel://asset/…</c> 주소나 <c>.chickxel-asset</c> 파일, <c>.chickxel</c> 파일은 <see cref="Activation"/>으로 받는다.
 /// </summary>
 public sealed record StartupArgs(string? OpenFolder, string? OpenFile, Activation? Activation = null)
 {
@@ -103,7 +103,7 @@ static class Program
     static int Main(string[] args)
     {
         App.Args = StartupArgs.Parse(args);
-        // 주소·패키지 파일로 띄워졌는데 이미 켜진 Chickxel이 있으면(Windows) 그쪽에 넘기고 끝낸다.
+        // OS가 연결한 주소·파일로 띄워졌는데 이미 켜진 Chickxel이 있으면 그 창에 넘기고 끝낸다(Windows).
         if (App.Args.Activation is { } activation && AppActivation.TryForward(activation)) return 0;
         Platform.MigrateLegacyFolders();
         // 문구를 읽기 전에(창·정적 필드보다 먼저) 화면 언어를 정한다. 처음 켤 때(또는 고른 언어의 CSV를 지웠으면) 컴퓨터 언어로 고른다.

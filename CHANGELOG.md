@@ -2,6 +2,14 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
 
+## v1.14.93 (2026-11-05)
+### Projects: open saved files by double-clicking
+- Windows registers `.chickxel` with the portable executable when it starts; the macOS app bundle declares the project document type.
+- Double-clicking a project opens it in the running editor when possible, or starts Chickxel and opens it in a document tab.
+### Help: choose a screen area with F1
+- F1 changes the pointer to help mode; clicking a toolbar control or editor area opens the matching guide page without activating that control. Esc, F1 and right-click cancel the mode.
+- The guide scrolls to the chosen tool's row or view control's illustration. The Help menu still opens the full searchable user guide.
+
 ## v1.14.92 (2026-11-04)
 ### Effects: later effects' pivot follows the move
 - Each effect has a new Move pivot along check in its Later effects row (on by default, in the Effects window and the Tool settings effect section). When an effect moves the image this frame, effects after it in the list, such as Rotate or Squash, turn around the moved pivot.

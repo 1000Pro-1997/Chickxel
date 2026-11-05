@@ -579,7 +579,7 @@ public sealed class ShortcutHelpDialog : DialogBase
         (UiStrings.S_Dialogs_Shortcuts_CBA6A95A08, "F8", UiStrings.S_Dialogs_Shortcuts_BC85BDFD60),
         (UiStrings.S_Dialogs_Shortcuts_249FBBC3DD, "F5", UiStrings.S_Dialogs_Shortcuts_39DA072B09),
         ("AI", "Ctrl+L", UiStrings.S_Dialogs_Shortcuts_D8744C6D64),
-        (UiStrings.S_Dialogs_Shortcuts_8FC1214E44, "F1", UiStrings.Help_Guide),
+        (UiStrings.S_Dialogs_Shortcuts_8FC1214E44, "F1", UiStrings.Help_SelectTarget),
         (UiStrings.S_Dialogs_Shortcuts_3577B85684, UiStrings.S_Dialogs_Shortcuts_F0B0D29737, UiStrings.S_Dialogs_Shortcuts_C65D718314),
     ];
 

@@ -138,6 +138,18 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     private bool _settingsApplied;
     private bool _closeConfirmed, _closePending;
     private Ai.McpServer? _mcp;
+    private readonly Border _helpPicker = new()
+    {
+        Background = Brushes.Transparent,
+        Cursor = new Cursor(StandardCursorType.Help),
+        IsVisible = false,
+        Focusable = true,
+    };
+    private Control? _helpPreviousFocus;
+    private string? _helpPreviousMessage;
+    private HelpTarget? _helpPickedPage;
+    private bool _helpClickPending;
+    private Control _helpMenuRow = null!, _helpContextBar = null!, _helpStatus = null!;
     private Ai.ChatWindow? _chat;
     /// <summary>AI 참고 자료 보관소(처음 쓸 때 연다, 폴더 설정을 바꾸면 다시 연다).</summary>
     private Chickxel.Core.References.ReferenceLibrary? _refs;
@@ -230,6 +242,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         menuRow.Children.Add(account);
         menuRow.Children.Add(BuildMenu());
         var contextBar = BuildContextBar();
+        _helpMenuRow = menuRow;
+        _helpContextBar = contextBar;
+        _helpStatus = status;
         var root = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(menuRow, Dock.Top);
         DockPanel.SetDock(contextBar, Dock.Top);
@@ -238,14 +253,17 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         root.Children.Add(contextBar);
         root.Children.Add(status);
         root.Children.Add(_splitFiles);
-        Content = root;
+        var surface = new Grid { Children = { root, _helpPicker } };
+        _helpPicker.PointerPressed += OnHelpPickerPressed;
+        _helpPicker.PointerReleased += OnHelpPickerReleased;
+        Content = surface;
 
         KeyState.Attach(this);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         AddHandler(KeyDownEvent, OnSpaceKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(KeyUpEvent, OnSpaceKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerPressedEvent, (_, _) => _spaceTapStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
-        Deactivated += (_, _) => (_spaceTapStart, _spaceHeld) = (null, false);
+        Deactivated += (_, _) => { (_spaceTapStart, _spaceHeld) = (null, false); StopHelpPicker(); };
         // 숫자·글자 입력란(도구 설정의 크기 등) 밖을 누르면 입력 상태를 끝내고 캔버스로 포커스를 돌린다(공통 모듈).
         TextFocusRelease.SetFallback(this, () => _canvas);
         Opened += (_, _) => OnShown();
@@ -799,7 +817,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         discord.Foreground = AppTheme.DiscordBrush;
         discord.Icon = new IconView(VectorIcon.Discord, AppTheme.DiscordBrush) { Width = 14, Height = 14, VerticalAlignment = VerticalAlignment.Center };
         AddItems(help,
-            Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this), "F1", KeyScope.Global, (Key.F1, NoMods)),
+            Cmd("대상 도움말", UiStrings.Help_SelectTarget, ToggleHelpPicker, "F1", KeyScope.Global, (Key.F1, NoMods)),
+            Cmd("사용 가이드", MainStrings.Menu_Help_Guide, () => HelpWindow.Open(this)),
             website,
             WithIcon(Cmd("Chickxel 계정", UiStrings.Account_Menu, () => AccountDialog.Show(this)), VectorIcon.CircleUser),
             Cmd("단축키 목록", MainStrings.Menu_Help_ShowShortcuts_230, ShowShortcuts),
@@ -1239,13 +1258,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _updater.OnStartup();
         // 에셋 저장소를 열어 첫 실행의 예전 프리셋 migration을 끝내고, 손상된 상태 파일이 있으면 한 번 알린다.
         Dispatcher.UIThread.Post(() => AppAssets.ShowProblems(this), DispatcherPriority.Background);
-        // 홈페이지 링크·패키지 파일로 띄워졌으면 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
+        // OS가 넘긴 주소·패키지·프로젝트 파일은 시작을 마친 뒤에 처리한다(그 뒤에 온 것도 바로).
         Dispatcher.UIThread.Post(() => AppActivation.SetHandler(HandleActivation), DispatcherPriority.Background);
     }
 
     /// <summary>
-    /// OS가 넘긴 일(<see cref="Activation"/>): 창을 앞으로 가져오고, 홈페이지 "Chickxel에서 열기"는 에셋 관리자 상점에서 그 패키지를 보이고
-    /// (설치는 사용자가 누름), 패키지 파일은 에셋 관리자에서 설치한다. 다른 대화상자가 떠 있으면 그 위에 연다.
+    /// OS가 넘긴 일: 창을 앞으로 가져오고, 홈페이지 링크·패키지는 에셋 관리자에서, 프로젝트는 문서 탭에서 연다.
+    /// 다른 대화상자가 떠 있으면 패키지 창은 그 위에 연다.
     /// </summary>
     private void HandleActivation(Activation activation)
     {
@@ -1259,6 +1278,9 @@ public sealed partial class MainForm : Window, Ai.IAiHost
                 break;
             case Activation.InstallFile install:
                 AssetManagerWindow.InstallPackageFile(owner, install.Path);
+                break;
+            case Activation.OpenProject project:
+                OpenFile(project.Path);
                 break;
         }
     }
@@ -1502,7 +1524,13 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             e.Handled = true;
             return;
         }
-        // Ctrl(⌘)을 누르는 동안의 임시 이동 도구는 단축키(⌘T·⌘V 등)를 누르는 순간 먼저 원래 도구로 되돌린다 —
+        if (_helpPicker.IsVisible)
+        {
+            if (e.Key == Key.Escape || (e.Key == Key.F1 && e.KeyModifiers == KeyModifiers.None))
+                StopHelpPicker();
+            e.Handled = true;
+            return;
+        }
         // 단축키가 시작한 변형·붙여넣기가 ⌘를 뗄 때의 도구 되돌리기에 적용(취소)되지 않게.
         _canvas.EndTempMoveForShortcut(e.Key);
         if (e.Handled) return;

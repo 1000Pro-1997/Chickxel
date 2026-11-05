@@ -47,6 +47,18 @@
   <array>
     <dict>
       <key>CFBundleTypeName</key>
+      <string>Chickxel Project</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>LSHandlerRank</key>
+      <string>Owner</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>com.chickxel.project</string>
+      </array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key>
       <string>Chickxel Asset Package</string>
       <key>CFBundleTypeRole</key>
       <string>Viewer</string>
@@ -60,6 +72,23 @@
   </array>
   <key>UTExportedTypeDeclarations</key>
   <array>
+    <dict>
+      <key>UTTypeIdentifier</key>
+      <string>com.chickxel.project</string>
+      <key>UTTypeDescription</key>
+      <string>Chickxel Project</string>
+      <key>UTTypeConformsTo</key>
+      <array>
+        <string>public.data</string>
+      </array>
+      <key>UTTypeTagSpecification</key>
+      <dict>
+        <key>public.filename-extension</key>
+        <array>
+          <string>chickxel</string>
+        </array>
+      </dict>
+    </dict>
     <dict>
       <key>UTTypeIdentifier</key>
       <string>com.chickxel.asset-package</string>

@@ -9671,4 +9671,8 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="Timeline_AddSkinToLayer_Done" xml:space="preserve"><value>'{0}'을(를) 그룹 '{1}'의 부위로 넣고 스킨 '{2}'를 더했습니다. 지금 그림은 스킨 '{3}'에 있습니다.</value><comment>{0}=레이어 이름, {1}=새 그룹 이름, {2}=새 스킨 이름, {3}=첫 스킨 이름</comment></data>
   <data name="LayerResize_AreaWidth" xml:space="preserve"><value>레이어 가로</value><comment>레이어 크기 모드 도구 설정: 적용 뒤 레이어 자리 가로(다음 칸 세로)</comment></data>
   <data name="Publish_PivotMoveTag" xml:space="preserve"><value>그림을 옮긴 거리를 알리는(ctx.movePivot) 효과라 pivot-move 태그가 꼭 붙습니다(뺄 수 없고 8개에 셉니다).</value></data>
+  <data name="Help_SelectTarget" xml:space="preserve"><value>화면에서 도움말 선택</value></data>
+  <data name="Help_SelectHint" xml:space="preserve"><value>도움말을 볼 곳을 클릭하세요. Esc·F1·오른쪽 클릭으로 취소합니다.</value></data>
+  <data name="Help_NoTarget" xml:space="preserve"><value>이곳에 연결된 도움말은 없습니다. 도움말 메뉴의 사용 가이드에서 검색할 수 있습니다.</value></data>
+  <data name="Project_FileType" xml:space="preserve"><value>Chickxel 프로젝트</value></data>
 </root>
