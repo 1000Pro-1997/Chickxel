@@ -40,8 +40,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 릴리스 설명 = CHANGELOG.md(영어)의 이 버전 절, 이어서 구분선·"## 한국어" 아래 CHANGELOG.ko.md의 같은 절(영어 절이 없으면 한국어만,
-          # 둘 다 없으면 GitHub 자동 노트). CHANGELOG.md·CHANGELOG.ko.md는 파일로도 올려 앱 업데이트 창이 API 없이 읽는다.
+          # 릴리스 설명 = CHANGELOG.md(영어)의 이 버전 절, 이어서 구분선·"## 한국어" 아래 CHANGELOG.ko.md의 같은 절.
+          # CHANGELOG.*.md 언어별 파일도 자산으로 올려 앱 업데이트 창이 화면 언어의 절을 읽고, 없으면 영어 절로 채운다.
           section() {
             [ -f "$1" ] || return 0
             awk -v tag="$GITHUB_REF_NAME" '
@@ -59,7 +59,7 @@ jobs:
             printf '%s\n' "$KO" >> dist/RELEASE_NOTES.md
           fi
           if [ -s dist/RELEASE_NOTES.md ]; then NOTES=(--notes-file dist/RELEASE_NOTES.md); else NOTES=(--generate-notes); fi
-          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md CHANGELOG.ko.md --title "Chickxel $GITHUB_REF_NAME" "${NOTES[@]}"
+          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS.txt CHANGELOG.md CHANGELOG.*.md --title "Chickxel $GITHUB_REF_NAME" "${NOTES[@]}"
 
   announce:
     needs: build

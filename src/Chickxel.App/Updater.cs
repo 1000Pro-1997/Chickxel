@@ -206,21 +206,20 @@ public sealed class Updater
     }
 
     /// <summary>
-    /// 새 버전 릴리스의 바뀐 점 파일에서 지금 버전보다 높은 절들(없거나 못 읽으면 null). 언어 규칙은 "화면 언어가 한국어(ko)인가" 하나:
-    /// 한국어 화면은 <c>CHANGELOG.ko.md</c>를 쓰고(그 파일이 없는 예전 릴리스면 그때 한국어였던 <c>CHANGELOG.md</c>), 그 밖의 모든 화면 언어
-    /// (영어, CSV로 더한 일본어 등)는 영어 <c>CHANGELOG.md</c>를 쓰며 영어 절이 없는 버전(v1.14.22 이하의 옛 버전)만 <c>CHANGELOG.ko.md</c>의 한국어 절로 채운다.
+    /// 화면 언어의 <c>CHANGELOG.&lt;code&gt;.md</c> 절을 우선 쓰고, 없는 버전은 영어 <c>CHANGELOG.md</c>로 채운다.
+    /// 영어 절이 없던 예전 릴리스만 한국어로 채워 기존 업데이트 기록도 잃지 않는다.
     /// </summary>
     private async Task<string?> ChangelogNotesAsync(ReleaseInfo release)
     {
-        if (UiLanguage.Current == UiLanguage.Korean)
-            return (await ChangelogFileAsync(release, ChangelogNotes.KoreanAssetName) ?? await ChangelogFileAsync(release, ChangelogNotes.EnglishAssetName)) is { } korean
-                ? ChangelogNotes.Between(korean, AppInfo.Version, release.Version)
-                : null;
+        var language = UiLanguage.Current;
         var englishTask = ChangelogFileAsync(release, ChangelogNotes.EnglishAssetName);
         var koreanTask = ChangelogFileAsync(release, ChangelogNotes.KoreanAssetName);
-        string? english = await englishTask, fallback = await koreanTask;
-        if (english is null && fallback is null) return null;
-        return ChangelogNotes.Between(english, AppInfo.Version, release.Version, fallback);
+        Task<string?>? localizedTask = language is not (UiLanguage.Korean or UiLanguage.English)
+            ? ChangelogFileAsync(release, $"CHANGELOG.{language}.md")
+            : null;
+        string? english = await englishTask, korean = await koreanTask;
+        string? localized = localizedTask is null ? null : await localizedTask;
+        return ChangelogNotes.ForLanguage(language, localized, english, korean, AppInfo.Version, release.Version);
     }
 
     /// <summary>새 버전 릴리스에 함께 올린 파일 <paramref name="assetName"/>의 글(없거나 못 읽으면 null).</summary>

@@ -186,6 +186,8 @@ public sealed class AppSettings
     public int ChatWidth { get; set; } = 420;
     public int ChatHeight { get; set; } = 640;
     public bool ChatOpen { get; set; }
+    /// <summary>AI 채팅을 열거나 다시 앞으로 가져올 때 메인 창 가운데에 둔다.</summary>
+    public bool ChatCenterOnOpen { get; set; } = true;
     /// <summary>AI 그리기 설정(채팅의 설정 칸 — 그리는 방식, 생성·변환 옵션).</summary>
     public Chickxel.Core.AiDraw.AiDrawSettings AiDraw { get; set; } = new();
     /// <summary>예전 기본 "그림 생성"을 새 기본 "자동"으로 한 번 옮겼는지(이후 사용자가 다시 그림 생성을 골라도 보존).</summary>

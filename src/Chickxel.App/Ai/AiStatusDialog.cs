@@ -17,6 +17,7 @@ internal sealed class AiStatusDialog : DialogBase
     private readonly TextBlock _message;
     private readonly ProgressBar _progress;
     private readonly CheckBox _hideUntilChange;
+    private readonly CheckBox _centerChat;
     private readonly Button _recheck;
     private readonly CancellationTokenSource _closed = new();
     private readonly DispatcherTimer _loginPoll;
@@ -62,6 +63,10 @@ internal sealed class AiStatusDialog : DialogBase
         _hideUntilChange = Ui.Check(UiStrings.AiStatus_DontShowUntilChange,
             string.Equals(settings.AiStatusDismissedFingerprint, AiStatusProbe.Fingerprint(settings), StringComparison.Ordinal));
         _hideUntilChange.Margin = new Thickness(4, 8, 4, 0);
+        _centerChat = Ui.Check(UiStrings.AiStatus_CenterChat, settings.ChatCenterOnOpen);
+        _centerChat.Margin = new Thickness(16, 8, 4, 0);
+        var options = new StackPanel { Orientation = Orientation.Horizontal };
+        options.Children.AddRange([_hideUntilChange, _centerChat]);
         var note = Ui.Label(UiStrings.AiStatus_DontShowNote);
         note.TextWrapping = TextWrapping.Wrap;
         note.Foreground = AppTheme.DimTextBrush;
@@ -69,13 +74,14 @@ internal sealed class AiStatusDialog : DialogBase
 
         _recheck = Ui.Button(VectorIcon.Refresh, UiStrings.AiStatus_Recheck, async (_, _) => await CheckAllAsync());
         _recheck.HorizontalAlignment = HorizontalAlignment.Left;
-        Body.Children.AddRange([intro, _progress, serverGroup, Ui.ScrollHost(cards), _message, _hideUntilChange, note, _recheck]);
+        Body.Children.AddRange([intro, _progress, serverGroup, Ui.ScrollHost(cards), _message, options, note, _recheck]);
 
         OkButton.IsEnabled = false;
         Opened += async (_, _) => await CheckAllAsync();
         Closing += (_, _) =>
         {
             _settings.AiStatusDismissedFingerprint = _hideUntilChange.On() ? AiStatusProbe.Fingerprint(_settings) : null;
+            _settings.ChatCenterOnOpen = _centerChat.On();
             _closed.Cancel();
         };
 

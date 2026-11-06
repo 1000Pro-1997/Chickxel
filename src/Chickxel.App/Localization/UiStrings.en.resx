@@ -941,10 +941,10 @@ Moving effect — animates over the frame range.</value></data>
   <data name="S_LospecPaletteDialog_UsePalette_DDD1C3B449" xml:space="preserve"><value>Using '{0}' as the palette.</value></data>
   <data name="S_McpServer_CallToolAsync_526F48F779" xml:space="preserve"><value>{0} failed: {1}</value></data>
   <data name="S_McpServer_DescribeProblem_23C0F2EB81" xml:space="preserve"><value>Couldn't connect to chickxel MCP</value></data>
-  <data name="S_McpServer_DescribeProblem_7D8C7E9591" xml:space="preserve"><value>{0}. The request arrived but disconnected before receiving the tool list. Update the CLI to the latest version and retry in a new conversation.</value></data>
-  <data name="S_McpServer_DescribeProblem_AB4BF0B540" xml:space="preserve"><value>{0}. The request arrived but the auth token didn't match. The CLI may not have sent the auth header from the MCP config; update the CLI to the latest version.</value></data>
+  <data name="S_McpServer_DescribeProblem_7D8C7E9591" xml:space="preserve"><value>{0}. A request reached the server, but tools/list did not. Inspect the HTTP steps and status below. GET 405 normally means no SSE stream; even POST initialize 200 does not prove the CLI accepted the response.</value></data>
+  <data name="S_McpServer_DescribeProblem_AB4BF0B540" xml:space="preserve"><value>{0}. A request arrived but the auth token did not match. Check whether the authorization header in the temporary MCP config passed to the CLI was applied.</value></data>
   <data name="S_McpServer_DescribeProblem_BEA0D8C5FE" xml:space="preserve"><value>Couldn't connect to chickxel MCP (CLI status: {0})</value></data>
-  <data name="S_McpServer_DescribeProblem_EDC6AA4CA7" xml:space="preserve"><value>{0}. No request reached Chickxel's internal server ({1}). Check whether a proxy (HTTP_PROXY/HTTPS_PROXY environment variables), VPN or security software is blocking local connections (127.0.0.1), and that the CLI is up to date.</value></data>
+  <data name="S_McpServer_DescribeProblem_EDC6AA4CA7" xml:space="preserve"><value>{0}. No request reached Chickxel's internal server ({1}). Check whether a proxy (HTTP_PROXY/HTTPS_PROXY/NO_PROXY), VPN, or Windows security software blocks loopback. The app passes a temporary MCP config independently of CLI user settings.</value></data>
   <data name="S_McpServer_Start_FF0B0F6631" xml:space="preserve"><value>Couldn't start the MCP server: {0}</value></data>
   <data name="S_MergeDialog_MergeDialog_0A7DC12A34" xml:space="preserve"><value>As skins</value></data>
   <data name="S_MergeDialog_MergeDialog_0D1516342C" xml:space="preserve"><value>Merge mode</value></data>
@@ -3090,6 +3090,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiStatus_ChickxelConnection" xml:space="preserve"><value>Chickxel Internal Connection</value></data>
   <data name="AiStatus_McpServer" xml:space="preserve"><value>MCP server</value></data>
   <data name="AiStatus_DontShowUntilChange" xml:space="preserve"><value>Don't show again</value></data>
+  <data name="AiStatus_CenterChat" xml:space="preserve"><value>Open in center</value></data>
   <data name="AiStatus_DontShowNote" xml:space="preserve"><value>This appears again only if an AI CLI location or custom path changes, not after app or CLI updates. Open it anytime from AI &gt; Open AI Status or Preferences &gt; AI Status.</value></data>
   <data name="AiStatus_Recheck" xml:space="preserve"><value>Check all again</value></data>
   <data name="AiStatus_Checking" xml:space="preserve"><value>Checking AI installation and connections…</value></data>

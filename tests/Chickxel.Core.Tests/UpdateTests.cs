@@ -288,6 +288,23 @@ public class UpdateTests
     }
 
     [Fact]
+    public void Changelog_ForLanguage_PrefersAvailableLanguagePerVersion_ThenEnglish_ThenLegacyKorean()
+    {
+        const string japanese = "## v1.13.0\n- 新機能";
+        const string english = "## v1.13.0\n- New feature\n\n## v1.12.0\n- Fix";
+        const string korean = "## v1.13.0\n- 새 기능\n\n## v1.11.0\n- 옛 기록";
+        var current = new SemVersion(1, 10, 0);
+        var latest = new SemVersion(1, 13, 0);
+
+        Assert.Equal("## v1.13.0\n- 新機能\n\n## v1.12.0\n- Fix\n\n## v1.11.0\n- 옛 기록",
+            ChangelogNotes.ForLanguage("ja", japanese, english, korean, current, latest));
+        Assert.Equal("## v1.13.0\n- New feature\n\n## v1.12.0\n- Fix\n\n## v1.11.0\n- 옛 기록",
+            ChangelogNotes.ForLanguage("fr", null, english, korean, current, latest));
+        Assert.Equal("## v1.13.0\n- 새 기능\n\n## v1.12.0\n- Fix\n\n## v1.11.0\n- 옛 기록",
+            ChangelogNotes.ForLanguage("ko", null, english, korean, current, latest));
+    }
+
+    [Fact]
     public void Changelog_AssetNames_EnglishIsMainFile_KoreanIsKoFile()
     {
         // 릴리스 워크플로가 올리는 파일 이름과 같아야 한다(.github/workflows/release.yml).

@@ -3080,6 +3080,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         if (_chat is not null)
         {
             if (_chat.WindowState == WindowState.Minimized) _chat.WindowState = WindowState.Normal;
+            if (_settings.ChatCenterOnOpen) _chat.CenterOn(this);
             _chat.Activate();
             return;
         }

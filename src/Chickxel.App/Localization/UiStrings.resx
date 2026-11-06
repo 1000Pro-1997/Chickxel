@@ -3385,20 +3385,20 @@ echo __LOGIN_FAILED__
     <comment>src/Chickxel.App\Ai\McpServer.cs:60 · DescribeProblem · "chickxel MCP에 연결하지 못했습니다"</comment>
   </data>
   <data name="S_McpServer_DescribeProblem_7D8C7E9591" xml:space="preserve">
-    <value>{0}. 요청은 왔지만 도구 목록을 받기 전에 끊겼습니다. CLI를 최신 버전으로 업데이트한 뒤 새 대화로 다시 시도하세요.</value>
-    <comment>src/Chickxel.App\Ai\McpServer.cs:65 · DescribeProblem · $"{head}. 요청은 왔지만 도구 목록을 받기 전에 끊겼습니다. CLI를 최신 버전으로 업데이트한 뒤 새 대화로 다시 시도하세요."</comment>
+    <value>{0}. 서버에 요청이 도착했지만 tools/list는 받지 못했습니다. 아래 HTTP 단계와 상태를 확인하세요. GET 405는 SSE 미지원의 정상 응답이며, POST initialize 200이어도 CLI가 초기화 응답을 거부할 수 있습니다.</value>
+    <comment>src/Chickxel.App\Ai\McpServer.cs · DescribeProblem · 요청 단계 진단</comment>
   </data>
   <data name="S_McpServer_DescribeProblem_AB4BF0B540" xml:space="preserve">
-    <value>{0}. 요청은 왔지만 인증 토큰이 맞지 않았습니다. CLI가 MCP 설정의 인증 헤더를 보내지 않았을 수 있으니 CLI를 최신 버전으로 업데이트하세요.</value>
-    <comment>src/Chickxel.App\Ai\McpServer.cs:64 · DescribeProblem · $"{head}. 요청은 왔지만 인증 토큰이 맞지 않았습니다. CLI가 MCP 설정의 인증 헤더를 보내지 않았을 수 있으니 CLI를 최신 버전으로 업데이트하세요."</comment>
+    <value>{0}. 요청은 왔지만 인증 토큰이 맞지 않았습니다. CLI에 전달한 임시 MCP 설정의 인증 헤더가 적용되지 않았는지 확인하세요.</value>
+    <comment>src/Chickxel.App\Ai\McpServer.cs · DescribeProblem · 인증 단계 진단</comment>
   </data>
   <data name="S_McpServer_DescribeProblem_BEA0D8C5FE" xml:space="preserve">
     <value>chickxel MCP에 연결하지 못했습니다(CLI 상태: {0})</value>
     <comment>src/Chickxel.App\Ai\McpServer.cs:60 · DescribeProblem · $"chickxel MCP에 연결하지 못했습니다(CLI 상태: {cliStatus})"</comment>
   </data>
   <data name="S_McpServer_DescribeProblem_EDC6AA4CA7" xml:space="preserve">
-    <value>{0}. Chickxel 내부 서버({1})로 요청이 오지 않았습니다. 프록시(HTTP_PROXY·HTTPS_PROXY 환경 변수)·VPN·보안 프로그램이 이 PC 안 연결(127.0.0.1)을 막는지, CLI가 최신 버전인지 확인하세요.</value>
-    <comment>src/Chickxel.App\Ai\McpServer.cs:62 · DescribeProblem · $"{head}. Chickxel 내부 서버({Url})로 요청이 오지 않았습니다. 프록시(HTTP_PROXY·HTTPS_PROXY 환경 변수)·VPN·보안 프로그램이 이 PC 안 연결(127.0.0.1)을 막는지, CLI가 최신 버전인지 확인하세요."</comment>
+    <value>{0}. Chickxel 내부 서버({1})로 요청이 오지 않았습니다. 프록시(HTTP_PROXY·HTTPS_PROXY·NO_PROXY), VPN 또는 Windows 보안 프로그램이 이 PC의 루프백 연결을 막는지 확인하세요. CLI의 사용자 설정과 별개로 앱이 임시 MCP 설정을 전달합니다.</value>
+    <comment>src/Chickxel.App\Ai\McpServer.cs · DescribeProblem · 연결 단계 진단</comment>
   </data>
   <data name="S_McpServer_Start_FF0B0F6631" xml:space="preserve">
     <value>MCP 서버를 시작하지 못했습니다: {0}</value>
@@ -8919,6 +8919,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="AiStatus_ChickxelConnection" xml:space="preserve"><value>Chickxel 내부 연결</value></data>
   <data name="AiStatus_McpServer" xml:space="preserve"><value>MCP 서버</value></data>
   <data name="AiStatus_DontShowUntilChange" xml:space="preserve"><value>다시 표시하지 않기</value></data>
+  <data name="AiStatus_CenterChat" xml:space="preserve"><value>가운데에 띄우기</value></data>
   <data name="AiStatus_DontShowNote" xml:space="preserve"><value>AI CLI 위치나 직접 지정한 경로가 바뀌면 다시 표시됩니다. 앱이나 CLI를 업데이트해서는 다시 표시되지 않습니다. AI &gt; AI 상태 열기 또는 환경 설정 &gt; AI 상태에서 언제든 열 수 있습니다.</value></data>
   <data name="AiStatus_Recheck" xml:space="preserve"><value>모두 다시 확인</value></data>
   <data name="AiStatus_Checking" xml:space="preserve"><value>AI 설치와 연결 상태를 확인하고 있습니다…</value></data>

@@ -108,9 +108,9 @@ public sealed partial class ChatWindow : Window
         MinHeight = 360;
         Width = Math.Clamp(settings.ChatWidth, WindowMinWidth, 3000);
         Height = Math.Clamp(settings.ChatHeight, 360, 3000);
-        // 기억한 위치가 지금 어느 화면에도 걸치지 않으면(모니터 분리 등) 메인 창 가운데로.
+        // 가운데 열기가 켜져 있거나 기억한 위치가 어느 화면에도 걸치지 않으면 메인 창 가운데로.
         var bounds = new PixelRect(settings.ChatX, settings.ChatY, (int)Width, (int)Height);
-        if (settings.ChatX >= 0 && settings.ChatY >= 0 && Screens.All.Any(sc => sc.WorkingArea.Intersects(bounds)))
+        if (!settings.ChatCenterOnOpen && settings.ChatX >= 0 && settings.ChatY >= 0 && Screens.All.Any(sc => sc.WorkingArea.Intersects(bounds)))
         {
             WindowStartupLocation = WindowStartupLocation.Manual;
             Position = new PixelPoint(settings.ChatX, settings.ChatY);
@@ -230,6 +230,24 @@ public sealed partial class ChatWindow : Window
         };
         ShowTab(_visible);
         _ready = true;
+    }
+
+    /// <summary>이미 열려 있는 대화창을 메인 창 가운데로 다시 가져온다.</summary>
+    internal void CenterOn(Window owner)
+    {
+        double scale = owner.DesktopScaling;
+        var screen = owner.Screens.ScreenFromWindow(owner) ?? owner.Screens.Primary;
+        var area = screen?.WorkingArea;
+        int width = (int)Math.Ceiling((FrameSize?.Width ?? Bounds.Width) * scale);
+        int height = (int)Math.Ceiling((FrameSize?.Height ?? Bounds.Height) * scale);
+        int x = owner.Position.X + (int)Math.Round((owner.Bounds.Width * scale - width) / 2);
+        int y = owner.Position.Y + (int)Math.Round((owner.Bounds.Height * scale - height) / 2);
+        if (area is { } work)
+        {
+            x = Math.Clamp(x, work.X, Math.Max(work.X, work.Right - width));
+            y = Math.Clamp(y, work.Y, Math.Max(work.Y, work.Bottom - height));
+        }
+        Position = new PixelPoint(x, y);
     }
 
     /// <summary>

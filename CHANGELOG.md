@@ -1,8 +1,22 @@
 # Changes
 
-When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes (English, then Korean) and the app's update window (Korean for the Korean UI, English for every other UI language) read that version's section from these two files.
+When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
+
+## v1.14.97 (2026-11-06)
+### Localized update notes
+- The in-app update dialog now uses a `CHANGELOG.<language>.md` release asset when one exists for the selected UI language, falling back to English for missing versions.
+- Releases upload available language-specific changelog files alongside English and Korean; old releases without English sections retain their Korean fallback.
+
+### AI MCP connection diagnostics
+- When Claude cannot list Chickxel tools, the status window and chat now show the recent MCP HTTP request methods, protocol steps, response codes, and server exception types without exposing request bodies or tokens.
+- The guidance distinguishes requests that never reached Chickxel (where proxy, loopback, VPN, or security software may intervene) from rejected authorization and initialization responses; it no longer assumes an outdated CLI.
+
+### AI chat: center the window on open
+- AI Status and Settings now offers Open in center next to Don't show again; it is enabled by default and remembers the choice.
+- Opening AI chat centers it on the editor, including when an existing chat window is brought forward. Turn it off to keep the last window position.
 
 ## v1.14.96 (2026-11-06)
+
 ### Number fields: pointer shows whether dragging or typing
 - Hovering over a number field shows the horizontal drag cursor even directly over the digits, not only its border.
 - Clicking without dragging enters text editing and switches to the text cursor; leaving the field restores the drag cursor.

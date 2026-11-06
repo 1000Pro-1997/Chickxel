@@ -257,17 +257,28 @@ public static class AppUpdate
 }
 
 /// <summary>
-/// 저장소의 바뀐 점에서 버전 절을 고른다: <c>CHANGELOG.md</c>(영어, 원본 — v1.14.23부터)와 <c>CHANGELOG.ko.md</c>(한국어, 모든 버전 — 머리는 영어와 같음).
-/// 절 머리는 <c>## v1.2.3 (날짜)</c>이고, 범위로 쓴 절(<c>## v1.10.x</c>, <c>## v1.0.0 ~ v1.5.x</c>)은 머리의 가장 높은 버전으로 본다
-/// (<c>x</c> = 그 부 버전의 끝). 두 파일 모두 릴리스마다 함께 올려 업데이트 창이 API 한도 없이 읽는다. 어느 파일을 쓸지는 앱이 정한다.
+/// 저장소의 언어별 바뀐 점에서 버전 절을 고른다: <c>CHANGELOG.md</c>(영어 원본),
+/// <c>CHANGELOG.ko.md</c>(한국어), 선택적으로 <c>CHANGELOG.&lt;언어 코드&gt;.md</c>.
+/// 절 머리는 <c>## v1.2.3 (날짜)</c>이고, 범위 절은 머리의 가장 높은 버전으로 본다.
+/// 릴리스 자산으로 올린 파일을 앱이 화면 언어에 맞춰 읽는다.
 /// </summary>
 public static class ChangelogNotes
 {
-    /// <summary>릴리스에 함께 올리는 영어 바뀐 점 파일 이름(<see cref="KoreanAssetName"/>이 생기기 전 예전 릴리스에서는 이 이름이 한국어 파일).</summary>
+    /// <summary>릴리스에 함께 올리는 영어 바뀐 점 파일 이름(옛 릴리스에서는 한국어 파일).</summary>
     public const string EnglishAssetName = "CHANGELOG.md";
 
     /// <summary>릴리스에 함께 올리는 한국어 바뀐 점 파일 이름.</summary>
     public const string KoreanAssetName = "CHANGELOG.ko.md";
+
+    /// <summary>화면 언어 절을 먼저 쓰고 없는 버전은 영어 절로 채운다. 영어 절도 없는 옛 버전은 한국어를 쓴다.</summary>
+    public static string ForLanguage(string language, string? localized, string? english, string? korean, SemVersion current, SemVersion latest)
+    {
+        if (string.Equals(language, "ko", StringComparison.OrdinalIgnoreCase))
+            return Between(korean, current, latest, english);
+        var fallback = Between(english, current, latest, korean);
+        return string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
+            ? fallback : Between(localized, current, latest, fallback);
+    }
 
     private static readonly System.Text.RegularExpressions.Regex VersionToken =
         new(@"v?(\d+)\.(\d+)(?:\.(\d+|x))?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);

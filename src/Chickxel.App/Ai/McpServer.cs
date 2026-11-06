@@ -43,6 +43,10 @@ public sealed class McpServer : IDisposable
     private readonly HashSet<string> _configPaths = new(StringComparer.Ordinal);
     private volatile bool _disposed;
     private long _requests, _unauthorized, _toolLists;
+    private readonly object _traceGate = new();
+    private readonly Queue<(long Sequence, string Operation, int Status, string? Failure)> _recentRequests = new();
+    private const int MaxRecentRequests = 8;
+
 
     public McpServer(PixelTools tools)
     {
@@ -78,12 +82,35 @@ public sealed class McpServer : IDisposable
     public string DescribeProblem(McpCounters since, string? cliStatus)
     {
         var now = Counters;
-        var head = cliStatus is null ? UiStrings.S_McpServer_DescribeProblem_23C0F2EB81 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_BEA0D8C5FE,cliStatus);
+        var head = cliStatus is null ? UiStrings.S_McpServer_DescribeProblem_23C0F2EB81 : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_McpServer_DescribeProblem_BEA0D8C5FE, cliStatus);
         if (now.Requests == since.Requests)
-            return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_EDC6AA4CA7,head,Url);
-        if (now.Unauthorized > since.Unauthorized)
-            return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_AB4BF0B540,head);
-        return string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_McpServer_DescribeProblem_7D8C7E9591,head);
+            return string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_McpServer_DescribeProblem_EDC6AA4CA7, head, Url);
+        var problem = now.Unauthorized > since.Unauthorized
+            ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_McpServer_DescribeProblem_AB4BF0B540, head)
+            : string.Format(global::System.Globalization.CultureInfo.CurrentCulture, UiStrings.S_McpServer_DescribeProblem_7D8C7E9591, head);
+        lock (_traceGate)
+        {
+            var recent = _recentRequests.Where(entry => entry.Sequence > since.Requests)
+                .Select(entry => $"{entry.Operation}: HTTP {entry.Status}" + (entry.Failure is null ? "" : $" ({entry.Failure})"));
+            var trace = string.Join(", ", recent);
+            return trace.Length == 0 ? problem : problem + "\n" + trace;
+        }
+    }
+
+    private sealed class RequestTrace(long sequence, string operation)
+    {
+        internal long Sequence { get; } = sequence;
+        internal string Operation { get; set; } = operation;
+        internal string? Failure { get; set; }
+    }
+
+    private void RecordRequest(RequestTrace trace, int status)
+    {
+        lock (_traceGate)
+        {
+            _recentRequests.Enqueue((trace.Sequence, trace.Operation, status, trace.Failure));
+            if (_recentRequests.Count > MaxRecentRequests) _recentRequests.Dequeue();
+        }
     }
 
     /// <summary>빈 포트를 찾아 듣기 시작한다. 이미 시작했으면 아무것도 안 한다.</summary>
@@ -236,6 +263,7 @@ public sealed class McpServer : IDisposable
     private async Task HandleAsync(HttpListenerContext context)
     {
         var response = context.Response;
+        RequestTrace? trace = null;
         try
         {
             var request = context.Request;
@@ -245,7 +273,7 @@ public sealed class McpServer : IDisposable
                 response.StatusCode = 404;
                 return;
             }
-            Interlocked.Increment(ref _requests);
+            trace = new RequestTrace(Interlocked.Increment(ref _requests), request.HttpMethod);
             if (Authorized(request) is not { } scope)
             {
                 Interlocked.Increment(ref _unauthorized);
@@ -256,7 +284,7 @@ public sealed class McpServer : IDisposable
             switch (request.HttpMethod)
             {
                 case "POST":
-                    await HandlePostAsync(request, response, scope).ConfigureAwait(false);
+                    await HandlePostAsync(request, response, scope, trace).ConfigureAwait(false);
                     break;
                 case "DELETE":
                     response.StatusCode = 200;
@@ -267,12 +295,14 @@ public sealed class McpServer : IDisposable
                     break;
             }
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            if (trace is not null) trace.Failure = e.GetType().Name;
             try { response.StatusCode = 500; } catch { /* 이미 헤더를 보냄 */ }
         }
         finally
         {
+            if (trace is not null) RecordRequest(trace, response.StatusCode);
             try { response.Close(); } catch { /* 연결이 끊김 */ }
         }
     }
@@ -293,7 +323,7 @@ public sealed class McpServer : IDisposable
     /// <summary><paramref name="scope"/>에서 <paramref name="name"/> 도구를 쓸 수 있는지.</summary>
     public static bool Allows(McpScope scope, string name) => scope == McpScope.Full || PixelTools.EffectMakerScopeTools.Contains(name);
 
-    private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response, McpScope scope)
+    private async Task HandlePostAsync(HttpListenerRequest request, HttpListenerResponse response, McpScope scope, RequestTrace trace)
     {
         if (request.ContentLength64 > MaxBodyBytes)
         {
@@ -327,6 +357,9 @@ public sealed class McpServer : IDisposable
             await WriteJsonAsync(response, 400, ErrorResponse(null, -32700, "Parse error")).ConfigureAwait(false);
             return;
         }
+        var method = root is JsonObject message ? AsString(message["method"]) : null;
+        trace.Operation = method is "initialize" or "notifications/initialized" or "tools/list" or "ping" or "tools/call"
+            ? "POST " + method : root is JsonArray ? "POST batch" : "POST other";
 
         if (root is JsonArray batch)
         {
