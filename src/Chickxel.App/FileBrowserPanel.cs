@@ -23,7 +23,7 @@ public sealed class FileBrowserPanel : UserControl
     private readonly TreeView _tree;
     private readonly ListBox _list;
     private readonly Grid _split;
-    private readonly DispatcherTimer _watchTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private readonly UiDebouncer _watchTimer;
     private readonly HashSet<string> _pendingChanges = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, (DateTime Stamp, WriteableBitmap Thumb)> _thumbCache = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>지금 목록에 있는 항목(경로 → 항목).</summary>
@@ -181,7 +181,7 @@ public sealed class FileBrowserPanel : UserControl
         root.Children.Add(_split);
         Content = root;
 
-        _watchTimer.Tick += (_, _) => FlushWatcherChanges();
+        _watchTimer = new UiDebouncer(TimeSpan.FromMilliseconds(400), FlushWatcherChanges);
     }
 
     /// <summary>
@@ -1319,14 +1319,12 @@ public sealed class FileBrowserPanel : UserControl
         {
             _pendingChanges.Add(path);
             _structureChanged |= structure;
-            _watchTimer.Stop();
-            _watchTimer.Start();
+            _watchTimer.Restart();
         });
     }
 
     private void FlushWatcherChanges()
     {
-        _watchTimer.Stop();
         var changed = _pendingChanges.ToList();
         _pendingChanges.Clear();
         var stale = new List<WriteableBitmap>();

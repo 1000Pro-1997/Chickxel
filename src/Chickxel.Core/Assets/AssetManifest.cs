@@ -5,8 +5,9 @@ using Chickxel.Core.IO;
 
 namespace Chickxel.Core.Assets;
 
-/// <summary>패키지 작성자. <see cref="Id"/>는 영구 ID 조각(소문자·숫자·하이픈), <see cref="Url"/>은 사용자가 눌렀을 때만 여는 HTTPS 주소.</summary>
-public sealed record AssetAuthor(string Id, string Name, string? Url = null);
+/// <summary>패키지 작성자. <see cref="Id"/>는 영구 ID 조각, <see cref="Url"/>은 사용자가 눌렀을 때만 여는 HTTPS 주소.
+/// <see cref="AvatarUrl"/>은 게시 시 계정에서 받은 프로필 그림 주소(없을 수 있음)다.</summary>
+public sealed record AssetAuthor(string Id, string Name, string? Url = null, string? AvatarUrl = null);
 
 /// <summary>
 /// manifest의 에셋 한 줄: 영구 ID(패키지 ID + "." + 조각), 종류, 패키지 안 경로, 미리보기 PNG 경로(없으면 null).
@@ -188,7 +189,9 @@ public sealed record AssetManifest
         if (!IsValidSegment(authorId)) bad(field + ".id");
         if (!IsValidName(authorName)) bad(field + ".name");
         if (a["url"] is not null && !IsHttpsUrl(url)) bad(field + ".url");
-        return new AssetAuthor(authorId, authorName.Trim(), url);
+        string? avatarUrl = AssetJson.String(a["avatarUrl"]);
+        if (a["avatarUrl"] is not null && !IsHttpsUrl(avatarUrl)) bad(field + ".avatarUrl");
+        return new AssetAuthor(authorId, authorName.Trim(), url, avatarUrl);
     }
 
     /// <summary>작성자 JSON(<c>url</c>은 있을 때만).</summary>
@@ -196,6 +199,7 @@ public sealed record AssetManifest
     {
         var json = new JsonObject { ["id"] = author.Id, ["name"] = author.Name };
         if (author.Url is { Length: > 0 } url) json["url"] = url;
+        if (author.AvatarUrl is { Length: > 0 } avatarUrl) json["avatarUrl"] = avatarUrl;
         return json;
     }
 

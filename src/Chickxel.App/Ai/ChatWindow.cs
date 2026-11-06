@@ -989,8 +989,8 @@ public sealed partial class ChatWindow : Window
         private string? _cliPath;
         private IChatSession? _session;
         private CliLogin? _login;
-        /// <summary>모델 목록 칸(<see cref="Model"/>의 항목 순서).</summary>
-        private IReadOnlyList<ModelChoice> _modelChoices = [];
+        /// <summary>모델 칸(<see cref="Model"/>)의 목록·고르기·설정 저장.</summary>
+        private readonly ChatModelSelector _models;
         private Turn? _turn;
         /// <summary>가운데에 보이는 것.</summary>
         private TabView _view = TabView.List;
@@ -999,7 +999,7 @@ public sealed partial class ChatWindow : Window
         /// <summary>지금 대화에 그린 줄(저장할 내용).</summary>
         private List<ChatItem> _items = new();
         /// <summary><see cref="_started"/>: 처음 보일 때 확인을 시작했음(다시 볼 때는 확인하지 않음). <see cref="_restored"/>: 마지막으로 보던 대화를 되살렸음.</summary>
-        private bool _follow = true, _checking, _polling, _installChecking, _started, _fillingModels, _restored;
+        private bool _follow = true, _checking, _polling, _installChecking, _started, _restored;
 
         public ChatTab(ChatWindow w, AiProvider provider, int index)
         {
@@ -1016,8 +1016,7 @@ public sealed partial class ChatWindow : Window
                 SelectionBoxItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>(
                     (label, _) => new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis }, supportsRecycling: false),
             };
-            Model.SelectionChanged += (_, _) => OnModelChanged();
-            FillModels();
+            _models = new ChatModelSelector(Model, w._settings, () => Provider, OnModelChanged);
 
             // ── 채팅 화면
             _messages = new StackPanel { Spacing = 6, Margin = new Thickness(10, 8) };
@@ -1431,7 +1430,7 @@ public sealed partial class ChatWindow : Window
         private void AttachSession(IChatSession session)
         {
             _session = session;
-            session.Model = CurrentModel();
+            session.Model = _models.Current;
             HookSession(session);
             if (_chat?.SessionId is { } id) session.Resume(id, _chat.SessionDirectory);
         }
@@ -1552,51 +1551,20 @@ public sealed partial class ChatWindow : Window
             s.McpProblem += text => AddSystemLine(text + "\n" + UiStrings.FormatChat_McpCliPath(path: sessionPath ?? UiStrings.AiStatus_Unknown), error: true);
             s.ModelResolved += model =>
             {
-                if (ReferenceEquals(s, _session) && Provider.RememberResolved(_w._settings, s.Model, model)) FillModels();
+                if (ReferenceEquals(s, _session) && Provider.RememberResolved(_w._settings, s.Model, model)) _models.Fill();
             };
         }
 
         // ───────────── 보내기·차례 ─────────────
 
-        private string? CurrentModel()
-            => _modelChoices.Count == 0 ? null : _modelChoices[Math.Clamp(Model.SelectedIndex, 0, _modelChoices.Count - 1)].Value;
-
-        /// <summary>모델 목록을 이 AI의 칸으로 채우고 설정에 저장된 모델을 고른다(이름에 실제 버전이 붙으면 다시 부름).</summary>
-        private void FillModels()
+        /// <summary>모델을 바꿈(설정에는 이미 남음): 세션이 있으면 도는 차례를 멈추고 같은 대화를 이어 다음 메시지부터 새 모델로 띄운다.</summary>
+        private void OnModelChanged(string? model, string notice)
         {
-            _fillingModels = true;
-            try
-            {
-                _modelChoices = Provider.Models(_w._settings);
-                Model.Items.Clear();
-                foreach (var c in _modelChoices)
-                {
-                    var item = new ComboBoxItem { Content = c.Label };
-                    if (c.Tip is { Length: > 0 } tip) item.Tip(tip);
-                    Model.Items.Add(item);
-                }
-                var saved = Provider.GetModel(_w._settings);
-                Model.SelectedIndex = Math.Max(0, _modelChoices.ToList().FindIndex(c => c.Value == saved));
-                Model.Tip(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_FillModels_B806D71CEE,Provider.Name,Provider.ProductName));
-            }
-            finally
-            {
-                _fillingModels = false;
-            }
-        }
-
-        private void OnModelChanged()
-        {
-            if (_fillingModels || Model.SelectedIndex < 0) return;
-            var model = CurrentModel();
-            if (Provider.GetModel(_w._settings) == model) return;
-            Provider.SetModel(_w._settings, model);
-            _w._settings.Save();
             if (_session is null) return;
             if (_turn is not null) StopTurn();
             _session.Model = model;
             _session.Restart();
-            AddSystemLine(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_ChatWindow_OnModelChanged_C640BCC05A,_modelChoices[Model.SelectedIndex].Label), error: false);
+            AddSystemLine(notice, error: false);
         }
 
         /// <summary>"새 대화" 단추: 도는 차례를 멈추고 세션을 잊은 뒤 지난 대화 목록을 보인다(입력란에 쓰면 새 대화가 시작됨).</summary>
@@ -1661,7 +1629,7 @@ public sealed partial class ChatWindow : Window
                 ShowView(TabView.Chat);
             }
             session.WorkingDirectory = _w.ProjectFolder();
-            session.Model = CurrentModel();
+            session.Model = _models.Current;
             // "지금 그림만": 보내는 순간 열린 문서로 편집 범위를 정하고(도구가 막음), AI에게도 알린다.
             var ctx = _w._ctx;
             var scope = _w._settings.AiCurrentFileOnly && ctx.Project is { } sp ? new EditScope(sp) : null;
@@ -1769,13 +1737,8 @@ public sealed partial class ChatWindow : Window
             if (error is not null) AddSystemLine(error, error: true);
             if (group is not null && project is not null) AddSnapshot(project, group);
 
-            var parts = new List<string>();
-            if (cancelled) parts.Add(UiStrings.S_ChatWindow_EndTurn_D19A601695);
-            double cost = turn.EarlierCostUsd + (result?.CostUsd ?? 0);
-            if (cost > 0) parts.Add("$" + cost.ToString("0.000", CultureInfo.InvariantCulture));
             double ms = turn.ReviewRequested ? turn.Clock.Elapsed.TotalMilliseconds : result?.DurationMs ?? turn.Clock.Elapsed.TotalMilliseconds;
-            parts.Add((ms / 1000).ToString("0.0", CultureInfo.InvariantCulture) + UiStrings.S_ChatWindow_EndTurn_7EEAC40074);
-            var footer = string.Join(" · ", parts);
+            var footer = ChatTurnFooter.Text(cancelled, turn.EarlierCostUsd + (result?.CostUsd ?? 0), ms / 1000);
             AddItem(FooterLine(footer));
             Record(new ChatItem { Kind = ChatItemKind.Footer, Text = footer });
             SaveChat();
@@ -1872,10 +1835,10 @@ public sealed partial class ChatWindow : Window
             _chat = chat;
             _items = chat.Items;
             foreach (var item in chat.Items) RenderSaved(item);
-            SelectModel(chat.Model);
+            _models.Select(chat.Model);
             if (_session is { } s)
             {
-                s.Model = CurrentModel();
+                s.Model = _models.Current;
                 if (chat.SessionId is { } sid) s.Resume(sid, chat.SessionDirectory);
                 else s.Reset();
             }
@@ -1885,31 +1848,6 @@ public sealed partial class ChatWindow : Window
             ShowView(TabView.Chat);
             Dispatcher.UIThread.Post(() => _scroll.ScrollToEnd(), DispatcherPriority.Background);
             FocusInput();
-        }
-
-        /// <summary>
-        /// 모델 칸을 <paramref name="model"/>로 고르고 설정에도 저장한다. 목록에 없는 모델(예전 별칭·직접 넣은 이름)이면
-        /// 설정에 넣고 목록을 다시 채운다(AI마다 설정에 저장된 모델은 목록에 더해 보임).
-        /// </summary>
-        private void SelectModel(string? model)
-        {
-            if (CurrentModel() == model) return;
-            Provider.SetModel(_w._settings, model);
-            int index = _modelChoices.ToList().FindIndex(c => c.Value == model);
-            if (index < 0)
-            {
-                FillModels();
-                return;
-            }
-            _fillingModels = true;
-            try
-            {
-                Model.SelectedIndex = index;
-            }
-            finally
-            {
-                _fillingModels = false;
-            }
         }
 
         /// <summary>저장한 줄 하나를 그린다.</summary>
@@ -2066,7 +2004,7 @@ public sealed partial class ChatWindow : Window
 
         /// <summary>모델 값(null = 기본값)의 목록 이름.</summary>
         private string ModelLabel(string? model)
-            => _modelChoices.FirstOrDefault(m => m.Value == model)?.Label ?? model ?? _modelChoices.FirstOrDefault()?.Label ?? "";
+            => _models.Choices.FirstOrDefault(m => m.Value == model)?.Label ?? model ?? _models.Choices.FirstOrDefault()?.Label ?? "";
 
         /// <summary>
         /// 입력란에 글을 넣고(보내지 않음) 입력란에 포커스. 이미 넣은 그림 칩은 앞에 그대로 둔다(정리 창이 그림을 붙인 뒤 부탁 글을 채움).

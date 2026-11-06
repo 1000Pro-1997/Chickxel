@@ -88,9 +88,10 @@ public class RemoteCatalogTests
         => $$"""{ "schemaVersion": 1, "summary": "{{summary}}", "tags": ["neon", "effect"], "review": "{{status}}", "published": "2026-10-01", "updated": "2026-10-28"{{extra}} }""";
 
     private static byte[] Pack(string version = "1.0.0", string id = AssetSamples.PackageId, string name = "Neon Pack", string license = "CC0-1.0",
-        string minApp = "0.1.0", string author = "author", bool licenseFile = true)
+        string minApp = "0.1.0", string author = "author", bool licenseFile = true, string? avatarUrl = null)
     {
-        var header = AssetSamples.Header(version, id) with { Name = name, License = license, MinAppVersion = minApp, Author = new AssetAuthor(author, "Author") };
+        var header = AssetSamples.Header(version, id) with { Name = name, License = license, MinAppVersion = minApp,
+            Author = new AssetAuthor(author, "Author", AvatarUrl: avatarUrl) };
         var builder = new AssetPackageBuilder(header);
         var recipe = AssetSamples.Recipe(thickness: version == "1.0.0" ? 2 : 3);
         builder.Add(recipe, AssetPreview.Package(recipe));
@@ -302,6 +303,34 @@ public class RemoteCatalogTests
         Assert.True(cached.FromCache);
         Assert.Equal(snapshot.Packages.Select(RemoteCatalogFormat.WriteEntry).Select(j => j.ToJsonString()),
             cached.Packages.Select(RemoteCatalogFormat.WriteEntry).Select(j => j.ToJsonString()));
+    }
+
+    [Fact]
+    public async Task PublishedAvatar_RemainsWithAuthorInOfflineCatalog()
+    {
+        const string avatar = "https://example.test/files/avatars/author.png";
+        using var f = new Fixture();
+        f.Submit(Pack(avatarUrl: avatar));
+        var build = f.Publish();
+        Assert.Equal(avatar, Assert.Single(build.Entries).Author.AvatarUrl);
+        var online = await f.Client().FetchCatalogAsync();
+        Assert.Equal(avatar, Assert.Single(online.Packages).Author.AvatarUrl);
+        f.Handler.Routes.Clear();
+        var offline = await f.Client().FetchCatalogAsync();
+        Assert.True(offline.FromCache);
+        Assert.Equal(("Author", avatar), (Assert.Single(offline.Packages).Author.Name, offline.Packages[0].Author.AvatarUrl));
+    }
+
+    [Theory]
+    [InlineData("\"http://example.test/avatar.png\"")]
+    [InlineData("\"not-a-url\"")]
+    [InlineData("123")]
+    public void Index_RejectsInvalidAvatarUrl(string value)
+    {
+        var page = OnePage(Entry());
+        page["packages"]![0]!["author"]!["avatarUrl"] = JsonNode.Parse(value);
+        var ex = Assert.Throws<RemoteAssetException>(() => RemoteCatalogFormat.Read(PageBytes(page)));
+        Assert.Equal("packages[0].author.avatarUrl", ex.Detail);
     }
 
     [Fact]

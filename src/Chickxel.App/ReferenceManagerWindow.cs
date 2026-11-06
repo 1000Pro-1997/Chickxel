@@ -26,7 +26,7 @@ public sealed class ReferenceManagerWindow : Window
     private readonly Border _notice;
     private readonly TextBlock _noticeText;
     private readonly TextBlock _status;
-    private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    private readonly UiDebouncer _debounce;
     /// <summary>썸네일(id → 내용 해시와 비트맵). 내용이 바뀌면 다시 만든다.</summary>
     private readonly Dictionary<string, (string Hash, WriteableBitmap Bitmap)> _thumbs = new();
     private ReferencePreview? _preview;
@@ -81,16 +81,8 @@ public sealed class ReferenceManagerWindow : Window
 
         // 왼쪽: 검색 + 종류 + 목록
         _search = new TextBox { Watermark = UiStrings.Refs_SearchWatermark, Margin = new Thickness(8, 6, 8, 4) };
-        _search.TextChanged += (_, _) =>
-        {
-            _debounce.Stop();
-            _debounce.Start();
-        };
-        _debounce.Tick += (_, _) =>
-        {
-            _debounce.Stop();
-            Reload();
-        };
+        _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(200), Reload);
+        _search.TextChanged += (_, _) => _debounce.Restart();
         _kindFilter = Ui.Combo(160, [UiStrings.Refs_KindAll, .. ReferenceKinds.All.Select(AppReferences.KindLabel)]);
         _kindFilter.Margin = new Thickness(8, 0, 8, 6);
         _kindFilter.SelectionChanged += (_, _) => Reload();
@@ -139,7 +131,7 @@ public sealed class ReferenceManagerWindow : Window
         Closed += (_, _) =>
         {
             _lib.Changed -= OnLibraryChanged;
-            _debounce.Stop();
+            _debounce.Cancel();
             _preview?.Stop();
             foreach (var (_, t) in _thumbs) t.Bitmap.Dispose();
             _thumbs.Clear();

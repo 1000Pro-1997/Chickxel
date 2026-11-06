@@ -48,7 +48,7 @@ public sealed class HelpWindow : Window
     private readonly ScrollViewer _pageScroll;
     /// <summary>쪽 내용(창이 넓으면 읽기 좋은 폭으로 가운데).</summary>
     private readonly StackPanel _body = new() { Margin = new Thickness(32, 20, 32, 28), MaxWidth = 800 };
-    private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(150) };
+    private readonly UiDebouncer _debounce;
     private readonly HashSet<string> _expanded = new();
 
     private HelpPage _page;
@@ -136,18 +136,13 @@ public sealed class HelpWindow : Window
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(10, 10, 10, 6),
         };
+        _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(150), RunSearch);
         _query.TextChanged += (_, _) =>
         {
             _clear.IsVisible = !string.IsNullOrEmpty(_query.Text);
-            _debounce.Stop();
-            _debounce.Start();
+            _debounce.Restart();
         };
         _query.AddHandler(KeyDownEvent, OnQueryKey, RoutingStrategies.Tunnel);
-        _debounce.Tick += (_, _) =>
-        {
-            _debounce.Stop();
-            RunSearch();
-        };
         _sideScroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
@@ -200,7 +195,7 @@ public sealed class HelpWindow : Window
             else Close();
         };
         Opened += (_, _) => _query.Focus();
-        Closed += (_, _) => _debounce.Stop();
+        Closed += (_, _) => _debounce.Cancel();
 
         Show(_page);
     }

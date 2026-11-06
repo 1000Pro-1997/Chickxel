@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Chickxel.Core.Assets;
+using Chickxel.Core.IO;
 
 namespace Chickxel.Core.Community;
 

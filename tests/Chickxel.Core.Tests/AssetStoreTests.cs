@@ -163,6 +163,96 @@ public class AssetStoreTests
         Assert.Equal(store.Catalog.All.Select(e => e.Id), AssetStore.Open(store.Root).Catalog.All.Select(e => e.Id));
     }
 
+    [Fact]
+    public void InstallRemote_HigherVersion_ReplacesModifiedLinkedEffect_AndRemovesDuplicateLinks()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(RootOf(dir));
+        var first = store.InstallRemote(Package(dir, "1.0.0", 2), Id, "1.0.0");
+        store.SetFavorite(first[0].Id, true);
+        var duplicate = store.Install(Package(dir, "1.0.0", 2), AssetSources.File, _ => ImportChoice.KeepBoth);
+        Assert.NotEqual(first[0].Id, duplicate[0].Id);
+        var edited = store.SaveRecipe(AssetSamples.Recipe(thickness: 1) with { Id = first[0].Id });
+        Assert.True(edited.Modified);
+        Assert.Equal(1, Thickness(store.Catalog.Find(first[0].Id)!));
+
+        var updated = store.InstallRemote(Package(dir, "1.1.0", 3), Id, "1.1.0", _ => throw new Xunit.Sdk.XunitException("Linked remote updates must not prompt."));
+        Assert.Equal(first.Select(e => e.Id), updated.Select(e => e.Id));
+        Assert.Equal(2, store.Catalog.FromPackage(Id).Count);
+        Assert.Equal(3, ReceivedThickness(store));
+        Assert.Equal(("1.1.0", AssetSources.Remote, true, false),
+            (updated[0].Store!.Version, updated[0].Source, updated[0].Favorite, updated[0].Modified));
+        Assert.Null(store.Catalog.Find(duplicate[0].Id));
+        Assert.Null(store.Catalog.Find(duplicate[1].Id));
+        Assert.Equal(UsedFolders(store), FileFolders(store));
+
+        var before = Tree(store.Root);
+        Assert.Empty(store.InstallRemote(Package(dir, "1.1.0", 4), Id, "1.1.0"));
+        Assert.Empty(store.InstallRemote(Package(dir, "1.0.0", 2), Id, "1.0.0"));
+        Assert.Equal(before, Tree(store.Root));
+        Assert.Equal(3, ReceivedThickness(store));
+    }
+
+    [Fact]
+    public void InstallRemote_RejectsCatalogIdentityOrVersionMismatch_WithoutChangingLibrary()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(RootOf(dir));
+        string file = Package(dir, "1.0.0", 2);
+        var before = Tree(store.Root);
+        Assert.Throws<InvalidDataException>(() => store.InstallRemote(file, "author.other-pack", "1.0.0"));
+        Assert.Throws<InvalidDataException>(() => store.InstallRemote(file, Id, "1.1.0"));
+        Assert.Equal(before, Tree(store.Root));
+        Assert.Empty(store.Catalog.All);
+    }
+
+    [Fact]
+    public void InstallRemote_SameOrLowerVersion_CleansOldLinksWithoutRollingBackNewerContent()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(RootOf(dir));
+        var current = store.InstallRemote(Package(dir, "1.1.0", 3), Id, "1.1.0");
+        var older = store.Install(Package(dir, "1.0.0", 2), AssetSources.File, _ => ImportChoice.KeepBoth);
+        store.SetFavorite(older[0].Id, true);
+        store.SaveRecipe(AssetSamples.Recipe(thickness: 1) with { Id = current[0].Id });
+
+        Assert.Empty(store.InstallRemote(Package(dir, "1.0.0", 2), Id, "1.0.0",
+            _ => throw new Xunit.Sdk.XunitException("Linked remote versions must not prompt.")));
+        Assert.Equal(2, store.Catalog.FromPackage(Id).Count);
+        var retained = store.Catalog.Find(current[0].Id)!;
+        Assert.Equal(("1.1.0", true, true, 1),
+            (retained.Store!.Version, retained.Favorite, retained.Modified, Thickness(retained)));
+        Assert.Null(store.Catalog.Find(older[0].Id));
+        Assert.Equal(UsedFolders(store), FileFolders(store));
+
+        var before = Tree(store.Root);
+        Assert.Empty(store.InstallRemote(Package(dir, "1.1.0", 4), Id, "1.1.0"));
+        Assert.Equal(before, Tree(store.Root));
+        Assert.Equal(1, ReceivedThickness(store));
+    }
+
+    [Fact]
+    public void InstallRemote_SingleAssetRenamedInNewVersion_KeepsLocalId()
+    {
+        using var dir = new TempDir();
+        var store = AssetStore.Open(RootOf(dir));
+        string PackageWithName(string version, string name, int thickness)
+        {
+            var builder = new AssetPackageBuilder(AssetSamples.Header(version));
+            builder.Add(AssetSamples.Recipe(name, thickness));
+            using var output = new MemoryStream();
+            builder.Write(output);
+            return AssetSamples.Save(dir.Path, output.ToArray(), $"single-{version}.chickxel-asset");
+        }
+
+        var first = Assert.Single(store.InstallRemote(PackageWithName("1.0.0", "Old name", 2), Id, "1.0.0"));
+        store.SetFavorite(first.Id, true);
+        var updated = Assert.Single(store.InstallRemote(PackageWithName("1.1.0", "New name", 3), Id, "1.1.0"));
+        Assert.Equal((first.Id, "New name", true, "1.1.0"), (updated.Id, updated.Name, updated.Favorite, updated.Store!.Version));
+        Assert.Equal(3, Thickness(updated));
+        Assert.Single(store.Catalog.FromPackage(Id));
+    }
+
     /// <summary>상점 연결이 없는 가져오기(개인 내보내기 파일)는 같은 종류·같은 내용의 에셋과 겹친다.</summary>
     [Fact]
     public void Install_SameContentWithoutStoreLink_IsASameContentConflict()

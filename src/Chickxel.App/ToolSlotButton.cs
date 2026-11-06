@@ -19,7 +19,7 @@ public sealed class ToolSlotButton : ToggleButton
     /// <summary>도구 단축키 표기(사용자 설정 단축키, 없으면 빈 문자열).</summary>
     private readonly Func<ToolKind, string> _keyText;
     private readonly Image _icon;
-    private readonly DispatcherTimer _hold = new() { Interval = TimeSpan.FromMilliseconds(LongPressMs) };
+    private readonly UiDebouncer _hold;
     /// <summary>길게 눌러 목록을 펼쳤으면 이번 누름의 클릭(도구 고르기)은 버린다.</summary>
     private bool _suppressClick;
 
@@ -50,12 +50,11 @@ public sealed class ToolSlotButton : ToggleButton
         MinHeight = 0;
         HorizontalAlignment = HorizontalAlignment.Center;
         Focusable = false;
-        _hold.Tick += (_, _) =>
+        _hold = new UiDebouncer(TimeSpan.FromMilliseconds(LongPressMs), () =>
         {
-            _hold.Stop();
             _suppressClick = true;
             ShowGroup();
-        };
+        });
         RefreshTip();
     }
 
@@ -112,14 +111,14 @@ public sealed class ToolSlotButton : ToggleButton
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         _suppressClick = false;
-        _hold.Stop();
+        _hold.Cancel();
         base.OnPointerPressed(e);
-        if (IsGroup && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) _hold.Start();
+        if (IsGroup && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) _hold.Restart();
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        _hold.Stop();
+        _hold.Cancel();
         if (IsGroup && e.InitialPressMouseButton == MouseButton.Right)
         {
             e.Handled = true;
@@ -131,7 +130,7 @@ public sealed class ToolSlotButton : ToggleButton
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
-        _hold.Stop();
+        _hold.Cancel();
         base.OnPointerCaptureLost(e);
     }
 

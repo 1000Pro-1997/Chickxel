@@ -177,7 +177,7 @@ public sealed class ChatHistoryStore(string root)
         var provider = chat.Provider;
         var file = FileOf(provider, chat.Id);
         Directory.CreateDirectory(DirectoryOf(provider));
-        UndoHistoryIO.WriteAtomic(file, JsonSerializer.SerializeToUtf8Bytes(chat, Options));
+        AtomicFile.Write(file, JsonSerializer.SerializeToUtf8Bytes(chat, Options), flushToDisk: false);
         var list = List(provider).Where(c => c.Id != chat.Id).ToList();
         list.Add(chat.Summary());
         var evicted = SelectEvict(list, MaxChats, chat.Id);
@@ -196,7 +196,7 @@ public sealed class ChatHistoryStore(string root)
         if (Load(provider, id) is not { } chat) return false;
         if (chat.Favorite == favorite) return true;
         chat.Favorite = favorite;
-        UndoHistoryIO.WriteAtomic(FileOf(provider, id), JsonSerializer.SerializeToUtf8Bytes(chat, Options));
+        AtomicFile.Write(FileOf(provider, id), JsonSerializer.SerializeToUtf8Bytes(chat, Options), flushToDisk: false);
         var list = List(provider).Select(c => c.Id == id ? c with { Favorite = favorite } : c);
         WriteIndex(provider, Order(list));
         return true;
@@ -239,7 +239,7 @@ public sealed class ChatHistoryStore(string root)
     }
 
     private void WriteIndex(string provider, List<ChatSummary> list)
-        => UndoHistoryIO.WriteAtomic(Path.Combine(DirectoryOf(provider), IndexName), JsonSerializer.SerializeToUtf8Bytes(list, Options));
+        => AtomicFile.Write(Path.Combine(DirectoryOf(provider), IndexName), JsonSerializer.SerializeToUtf8Bytes(list, Options), flushToDisk: false);
 
     private void TryWriteIndex(string provider, List<ChatSummary> list)
     {

@@ -17,7 +17,7 @@ internal sealed class ScriptGuideWindow : Window
     private readonly MarkdownView _view = new(MonoFont, AiCli.OpenUrl);
     private readonly CheckBox _includeSource;
     private readonly TextBlock _copied = new() { Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0) };
-    private readonly DispatcherTimer _copiedTimer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly UiDebouncer _copiedTimer;
 
     /// <param name="currentSource">효과 만들기 편집기의 지금 원문(열린 스크립트가 없으면 null).</param>
     public ScriptGuideWindow(Func<string?> currentSource)
@@ -50,13 +50,9 @@ internal sealed class ScriptGuideWindow : Window
         DockPanel.SetDock(bottom, Dock.Bottom);
 
         Content = new DockPanel { Margin = new Thickness(10), Children = { hint, bottom, body } };
-        _copiedTimer.Tick += (_, _) =>
-        {
-            _copiedTimer.Stop();
-            _copied.Text = "";
-        };
+        _copiedTimer = new UiDebouncer(TimeSpan.FromSeconds(3), () => _copied.Text = "");
         Activated += (_, _) => Refresh();
-        Closed += (_, _) => _copiedTimer.Stop();
+        Closed += (_, _) => _copiedTimer.Cancel();
         Refresh();
     }
 
@@ -78,7 +74,6 @@ internal sealed class ScriptGuideWindow : Window
         bool withSource = _includeSource.On() && _source() is not null;
         await clipboard.SetTextAsync(GuideText());
         _copied.Text = withSource ? UiStrings.EffectRules_CopiedWithSource : UiStrings.EffectRules_Copied;
-        _copiedTimer.Stop();
-        _copiedTimer.Start();
+        _copiedTimer.Restart();
     }
 }

@@ -132,7 +132,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     };
 
     private PlayTestForm? _play;
-    private readonly DispatcherTimer _playRefresh = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    /// <summary>움직임 테스트 창: 편집이 잠시(400ms) 멈추면 문서를 다시 읽게 한다.</summary>
+    private readonly UiDebouncer _playRefresh;
     /// <summary>자동 저장: 편집할 때마다 다시 재는 한 번짜리 타이머(<see cref="RestartAutoSave"/>, <see cref="AutoSaveTick"/>).</summary>
     private readonly DispatcherTimer _autoSave = new();
     private bool _settingsApplied;
@@ -163,6 +164,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
     {
         _args = args;
         _settings = settings;
+        _playRefresh = new UiDebouncer(TimeSpan.FromMilliseconds(400), () => _play?.DocumentChanged());
         // 사용자가 더한 글꼴은 앱 설정 폴더의 Fonts에만 둔다(글씨를 그리기 전에 정해야 프로젝트의 글꼴 이름을 찾음).
         Chickxel.Core.Text.FontLibrary.UserFolder = Path.Combine(Platform.AppFolder, "Fonts");
         ScriptTrustStore.Load(_settings);
@@ -1023,13 +1025,8 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             // 이름·경로가 바뀌면(다른 이름으로 저장 등) 탭 제목과 파일 목록 점도.
             if ((e.Change & ProjectChange.Path) != 0) { RefreshPanes(); SyncUnsaved(); }
             // 움직임 테스트 창은 편집이 잠시 멈추면 다시 읽는다(스트로크 중에는 미룸).
-            if (_play is not null && !_ctx.Project!.IsStrokeActive)
-            {
-                _playRefresh.Stop();
-                _playRefresh.Start();
-            }
+            if (_play is not null && !_ctx.Project!.IsStrokeActive) _playRefresh.Restart();
         };
-        _playRefresh.Tick += (_, _) => { _playRefresh.Stop(); _play?.DocumentChanged(); };
         _ctx.CurrentChanged += (_, _) => { UpdateStatus(); UpdateToolUi(); };
         // 실행취소 기록이 바뀔 때마다(편집·실행취소·다시 실행, 문서 바꿈) 자동 저장 타이머를 처음부터 다시 잰다.
         _ctx.UndoChanged += (_, _) => { UpdateUndoItems(); RestartAutoSave(); };

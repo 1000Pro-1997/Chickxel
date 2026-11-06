@@ -261,8 +261,8 @@ public static class AppAssets
     }
 
     /// <summary>
-    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 에셋을 저장소에 넣는다(<see cref="AssetSources.Remote"/>). 같은 상점 에셋은 말없이 새것으로 바꾸되
-    /// 내가 고친 내 에셋이면 묻고, 그 밖에 겹치는 것(같은 내용의 다른 에셋)도 묻는다. 들어간 에셋을 돌려주고 그 스크립트는 바로 믿는다.
+    /// 온라인 목록의 패키지를 내려받아(크기·SHA-256 확인) 에셋을 저장소에 넣는다(<see cref="AssetSources.Remote"/>).
+    /// 목록과 패키지의 ID·버전을 확인하고, 연결된 에셋의 새 버전은 고친 내용도 묻지 않고 교체한다(다른 내용 겹침은 묻는다).
     /// 실패하면 <paramref name="owner"/>에 알리고 null, 취소하면 아무것도 바꾸지 않고 null. 받은 임시 파일은 지운다.
     /// </summary>
     public static async Task<IReadOnlyList<AssetEntry>?> InstallRemoteAsync(Visual owner, RemoteCatalogEntry entry, IProgress<double>? progress, CancellationToken cancellationToken)
@@ -273,11 +273,9 @@ public static class AppAssets
             file = await Remote.DownloadPackageAsync(entry, progress, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return null;
             var ask = Prompter(owner);
-            ImportChoice Choose(AssetImportItem item)
-                => item.SameStoreAsset && !(item.Existing is { Modified: true } existing && IsMine(existing)) ? ImportChoice.Replace : ask(item);
             IReadOnlyList<AssetEntry>? installed = null;
             string path = file;
-            if (!Try(owner, () => installed = Store.Install(path, AssetSources.Remote, Choose), UiStrings.Assets_InstallRemoteError) || installed is null) return null;
+            if (!Try(owner, () => installed = Store.InstallRemote(path, entry.Id, entry.Version, ask, cancellationToken), UiStrings.Assets_InstallRemoteError) || installed is null) return null;
             ScriptTrustStore.TrustInstalled(installed);
             return installed;
         }

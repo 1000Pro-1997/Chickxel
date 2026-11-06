@@ -120,24 +120,10 @@ public static class SpriteLibraryAssetWriter
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         var text = Generate(categories);
-        if (!File.Exists(path) || File.ReadAllText(path) != text) WriteAtomic(path, text);
+        if (!File.Exists(path) || File.ReadAllText(path) != text) AtomicFile.WriteText(path, text);
         var metaPath = UnityMeta.GetMetaPath(path);
         if (!File.Exists(metaPath) || UnityMeta.TryRead(metaPath)?.Guid is null)
-            WriteAtomic(metaPath, GenerateMeta(UnityMeta.NewGuid()));
-    }
-
-    private static void WriteAtomic(string path, string text)
-    {
-        var temp = path + ".chickxel-tmp";
-        try
-        {
-            File.WriteAllText(temp, text, new UTF8Encoding(false));
-            FileReplace.Commit(temp, path);
-        }
-        finally
-        {
-            if (File.Exists(temp)) File.Delete(temp);
-        }
+            AtomicFile.WriteText(metaPath, GenerateMeta(UnityMeta.NewGuid()));
     }
 
     private static string Reference(SpriteRef? sprite)

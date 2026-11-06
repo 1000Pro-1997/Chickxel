@@ -308,7 +308,12 @@ public sealed partial class AssetManagerWindow
         var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         name.Children.Add(Ui.Icon(RemoteIcon(entry), 14));
         name.Children.Add(Ui.Label(entry.DisplayName, bold: true));
-        var panel = new StackPanel { Children = { name, Dim(string.Join(" · ", entry.Version, entry.Author.Name, RemoteKindText(entry))) } };
+        var by = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 5,
+            Children = { AuthorAvatarView.Create(entry.Author, 16), Dim(string.Join(" · ", entry.Author.Name, entry.Version, RemoteKindText(entry))) },
+        };
+        var panel = new StackPanel { Children = { name, by } };
         if (RemoteState(entry) is { } state)
         {
             var line = Dim(state.Text);

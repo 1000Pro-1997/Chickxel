@@ -78,7 +78,8 @@ public sealed record RemoteCatalogPage(int Page, int PageCount, int TotalCount, 
 /// 정적 원격 카탈로그 index 형식(계획 9). 첫 쪽은 <c>catalog/index.json</c>, 다음 쪽은 <c>index-2.json</c> …이고 쪽마다 같은 모양이다:
 /// <code>{ "schemaVersion": 1, "page": 1, "pageCount": 1, "totalCount": 2, "next": null,
 ///   "packages": [ { "id": "chickxel.basic-gradients", "version": "1.0.0", "name": "…", "summary": "…", "tags": ["gradient"],
-///     "author": { "id": "chickxel", "name": "Chickxel", "url": "https://…" }, "license": "MIT", "kinds": { "gradient": 8 },
+///     "author": { "id": "chickxel", "name": "Chickxel", "url": "https://…", "avatarUrl": "https://…"(선택) },
+///     "license": "MIT", "kinds": { "gradient": 8 },
 ///     "minAppVersion": "1.14.55",
 ///     "package": { "url": "packages/chickxel.basic-gradients-1.0.0.chickxel-asset", "size": 4321, "sha256": "…" },
 ///     "preview": { "url": "previews/chickxel.basic-gradients-1.0.0.png", "size": 321, "sha256": "…" },
@@ -158,6 +159,8 @@ public static class RemoteCatalogFormat
         if (o["author"] is not JsonObject a) throw Bad(field + ".author");
         string authorId = AssetJson.String(a["id"]) ?? "", authorName = AssetJson.String(a["name"]) ?? "";
         string? authorUrl = AssetJson.String(a["url"]);
+        string? avatarUrl = AssetJson.String(a["avatarUrl"]);
+        if (a["avatarUrl"] is not null && !IsHttps(avatarUrl)) throw Bad(field + ".author.avatarUrl");
         if (!AssetManifest.IsValidSegment(authorId) || !AssetManifest.IsValidName(authorName)) throw Bad(field + ".author");
         if (a["url"] is not null && !IsHttps(authorUrl)) throw Bad(field + ".author.url");
 
@@ -185,7 +188,7 @@ public static class RemoteCatalogFormat
         return new RemoteCatalogEntry
         {
             Id = id, Version = version, Name = name.Trim(), Summary = summary.Trim(), Translations = translations, Tags = tags,
-            Author = new AssetAuthor(authorId, authorName.Trim(), authorUrl), License = license, Kinds = kinds, MinAppVersion = minApp,
+            Author = new AssetAuthor(authorId, authorName.Trim(), authorUrl, avatarUrl), License = license, Kinds = kinds, MinAppVersion = minApp,
             Package = package, Preview = preview, Published = published, Updated = updated, Review = review,
         };
     }
@@ -225,6 +228,7 @@ public static class RemoteCatalogFormat
     {
         var author = new JsonObject { ["id"] = entry.Author.Id, ["name"] = entry.Author.Name };
         if (entry.Author.Url is { Length: > 0 } url) author["url"] = url;
+        if (entry.Author.AvatarUrl is { Length: > 0 } avatarUrl) author["avatarUrl"] = avatarUrl;
         var kinds = new JsonObject();
         foreach (var (kind, count) in entry.Kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) kinds[kind] = count;
         var json = new JsonObject

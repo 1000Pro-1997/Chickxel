@@ -181,7 +181,7 @@ public sealed class LospecFavoriteStore
     private void Commit(List<LospecFavorite> items)
     {
         Directory.CreateDirectory(Root);
-        UndoHistoryIO.WriteAtomic(FilePath, JsonSerializer.SerializeToUtf8Bytes(items, Options));
+        AtomicFile.Write(FilePath, JsonSerializer.SerializeToUtf8Bytes(items, Options), flushToDisk: false);
         _items = items;
     }
 
@@ -217,7 +217,7 @@ public sealed class LospecFavoriteStore
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            UndoHistoryIO.WriteAtomic(path, data);
+            AtomicFile.Write(path, data, flushToDisk: false);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

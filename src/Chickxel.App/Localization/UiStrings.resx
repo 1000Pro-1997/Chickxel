@@ -9448,7 +9448,7 @@ Esc·바깥 누르기: 닫기</value></data>
   <data name="EffectMaker_Upload" xml:space="preserve"><value>올리기…</value></data>
   <data name="EffectMaker_UploadTip" xml:space="preserve"><value>저장하고 검증을 통과하면 온라인에 올리기 창을 엽니다. 거기서 태그·언어·버전을 확인해 올리고, 미리보기는 저절로 만들어집니다.</value></data>
   <data name="EffectMaker_ShowAll" xml:space="preserve"><value>모두 보기</value></data>
-  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>끄면 내가 만든 스크립트 효과만, 켜면 패키지에서 복사한 것과 설치한 패키지의 스크립트 효과도 보입니다. 패키지의 효과는 고쳐 저장하면 개인 사본이 됩니다.</value></data>
+  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>끄면 내 스크립트 효과만, 켜면 받은 효과도 보입니다. 남의 효과는 읽기 전용이며 '내 에셋으로 복사'한 뒤 고칠 수 있습니다.</value></data>
   <data name="EffectMaker_Info" xml:space="preserve"><value>정보</value></data>
   <data name="EffectMaker_TitleLabel" xml:space="preserve"><value>제목</value></data>
   <data name="EffectMaker_TitleHint" xml:space="preserve"><value>효과 목록과 상점에 보일 이름</value></data>

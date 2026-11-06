@@ -3619,7 +3619,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="EffectMaker_Upload" xml:space="preserve"><value>Upload…</value></data>
   <data name="EffectMaker_UploadTip" xml:space="preserve"><value>Saves and, if the check passes, opens the publish window. Check the tags, languages and version there to upload; the preview is made automatically.</value></data>
   <data name="EffectMaker_ShowAll" xml:space="preserve"><value>Show all</value></data>
-  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>Off: only the script effects you made. On: also copies from packages and script effects of installed packages. Saving an edited package effect makes a personal copy.</value></data>
+  <data name="EffectMaker_ShowAllTip" xml:space="preserve"><value>Off: only your script effects. On: also show received effects. Others' effects are read-only; use Copy to My Assets before editing.</value></data>
   <data name="EffectMaker_Info" xml:space="preserve"><value>Info</value></data>
   <data name="EffectMaker_TitleLabel" xml:space="preserve"><value>Title</value></data>
   <data name="EffectMaker_TitleHint" xml:space="preserve"><value>Name shown in the effect list and the Store</value></data>

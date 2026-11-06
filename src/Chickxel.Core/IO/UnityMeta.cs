@@ -205,17 +205,7 @@ public static class UnityMeta
     {
         var metaPath = GetMetaPath(pngPath);
         var existing = TryRead(metaPath);
-        var text = Generate(doc, existing);
-        var temp = metaPath + ".chickxel-tmp";
-        try
-        {
-            File.WriteAllText(temp, text, new UTF8Encoding(false));
-            FileReplace.Commit(temp, metaPath);
-        }
-        finally
-        {
-            if (File.Exists(temp)) File.Delete(temp);
-        }
+        AtomicFile.WriteText(metaPath, Generate(doc, existing));
     }
 
     /// <summary>

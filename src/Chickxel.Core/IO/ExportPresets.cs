@@ -223,9 +223,7 @@ public static class ExportPresets
     {
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-        var temp = path + ".tmp";
-        File.WriteAllText(temp, Serialize(presets), new System.Text.UTF8Encoding(false));
-        FileReplace.Commit(temp, path);
+        AtomicFile.WriteText(path, Serialize(presets));
     }
 
     /// <summary>가져온 프리셋을 목록에 합친다: 같은 이름은 덮어쓰고 나머지는 끝에. 기본 제공 프리셋 이름이면 " (가져옴)"을 붙인다.</summary>

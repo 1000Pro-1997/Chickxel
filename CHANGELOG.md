@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.98 (2026-11-06)
+### Effects: predictable ownership and remote updates
+- Received effects are read-only in Effect Maker until copied to My Assets; own published effects retain their account-linked package ID.
+- Downloading a higher store version replaces even unpublished local changes in the linked effect, keeps its local ID and favorite, and removes duplicate linked entries. Equal or older versions do not roll it back.
+- Effect lists show the author's name and a small locally cached profile image when the catalog provides a same-site avatar URL; otherwise they use a vector user icon. Effects already embedded in projects remain unchanged.
+
 ## v1.14.97 (2026-11-06)
 ### Localized update notes
 - The in-app update dialog now uses a `CHANGELOG.<language>.md` release asset when one exists for the selected UI language, falling back to English for missing versions.

@@ -56,7 +56,7 @@ public sealed class LospecPaletteDialog : DialogBase
     /// <summary>내려받은 예시 그림(창을 닫으면 버림).</summary>
     private readonly Dictionary<Uri, Bitmap?> _exampleCache = new();
     private readonly Button _use, _add, _save, _web;
-    private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private readonly UiDebouncer _debounce;
 
     private CancellationTokenSource? _cts;
     private LospecQuery _query = new();
@@ -89,6 +89,7 @@ public sealed class LospecPaletteDialog : DialogBase
         MinWidth = 520;
         MinHeight = 440;
 
+        _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(350), Search);
         // ── 거르기 줄
         _sort = Ui.Combo(100, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_C6B4CAD5AA, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_02A80D18D3, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_1C3280FE06, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_6859F79425, UiStrings.Lospec_Sort_Favorites);
         _filter = Ui.Combo(84, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_07EB862B40, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_06F3644153, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_E2D53DCDA5, UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_A394BB00BB);
@@ -106,8 +107,7 @@ public sealed class LospecPaletteDialog : DialogBase
             SortChanged?.Invoke(SortKey);
         };
         _filter.SelectionChanged += (_, _) => { _count.IsEnabled = _filter.SelectedIndex > 0; Search(); };
-        _count.ValueChanged += (_, _) => { if (_filter.SelectedIndex > 0) { _debounce.Stop(); _debounce.Start(); } };
-        _debounce.Tick += (_, _) => { _debounce.Stop(); Search(); };
+        _count.ValueChanged += (_, _) => { if (_filter.SelectedIndex > 0) _debounce.Restart(); };
         var search = Ui.Button(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_0D176B4714, (_, _) => Search(), 60);
         var filters = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var c in new Control[] { Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_EE68758A30), _sort, Gap(), Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_F66FE6E7DA), _filter, _count, Gap(), Ui.Label(UiStrings.S_LospecPaletteDialog_LospecPaletteDialog_ECD11E2F35), _tag, search })
@@ -268,7 +268,7 @@ public sealed class LospecPaletteDialog : DialogBase
 
     protected override void OnClosed(EventArgs e)
     {
-        _debounce.Stop();
+        _debounce.Cancel();
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
@@ -291,7 +291,7 @@ public sealed class LospecPaletteDialog : DialogBase
     /// <summary>지금 조건으로 처음부터 다시 찾는다(진행 중인 요청은 취소).</summary>
     private void Search()
     {
-        _debounce.Stop();
+        _debounce.Cancel();
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = new CancellationTokenSource();

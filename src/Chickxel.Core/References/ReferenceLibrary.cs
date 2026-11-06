@@ -185,7 +185,7 @@ public sealed partial class ReferenceLibrary
     {
         var dto = new IndexDto { Items = _items, Removed = _removed };
         Directory.CreateDirectory(Root);
-        UndoHistoryIO.WriteAtomic(IndexPath, JsonSerializer.SerializeToUtf8Bytes(dto, Json));
+        AtomicFile.Write(IndexPath, JsonSerializer.SerializeToUtf8Bytes(dto, Json), flushToDisk: false);
         _dirty = false;
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -466,7 +466,7 @@ public sealed partial class ReferenceLibrary
         if (!File.Exists(UserRulesPath))
         {
             Directory.CreateDirectory(Root);
-            UndoHistoryIO.WriteAtomic(UserRulesPath, System.Text.Encoding.UTF8.GetBytes(BuiltInReferences.RulesTemplate(_options.Korean)));
+            AtomicFile.Write(UserRulesPath, System.Text.Encoding.UTF8.GetBytes(BuiltInReferences.RulesTemplate(_options.Korean)), flushToDisk: false);
         }
         return UserRulesPath;
     }

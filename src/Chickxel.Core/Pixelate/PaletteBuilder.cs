@@ -113,13 +113,29 @@ public static class PaletteBuilder
     {
         float da = Lab.Distance(p, a), db = Lab.Distance(p, b);
         if (Math.Min(da, db) < BlendFar) return false;
-        float abl = b.L - a.L, aba = b.A - a.A, abb = b.B - a.B;
-        float len2 = abl * abl + aba * aba + abb * abb;
-        if (len2 <= 1e-9f) return false;
-        float t = ((p.L - a.L) * abl + (p.A - a.A) * aba + (p.B - a.B) * abb) / len2;
-        if (t <= 0 || t >= 1) return false;
-        var q = new Lab(a.L + t * abl, a.A + t * aba, a.B + t * abb);
-        return Lab.Distance(p, q) <= BlendNear;
+        return ProjectOnSegment(p, a, b, out float t, out var q) && t > 0 && t < 1 && Lab.Distance(p, q) <= BlendNear;
+    }
+
+    /// <summary>
+    /// <paramref name="p"/>를 선분 <paramref name="a"/>–<paramref name="b"/>(OKLab)를 잇는 직선에 내린 자리: <paramref name="t"/>는 a에서 b 쪽 비율, <paramref name="q"/>는 그 점.
+    /// 두 끝이 거의 같으면 false.
+    /// </summary>
+    private static bool ProjectOnSegment(in Lab p, in Lab a, in Lab b, out float t, out Lab q)
+    {
+        float dl = b.L - a.L, da = b.A - a.A, db = b.B - a.B;
+        float len2 = dl * dl + da * da + db * db;
+        if (len2 <= 1e-9f) { t = 0; q = default; return false; }
+        t = ((p.L - a.L) * dl + (p.A - a.A) * da + (p.B - a.B) * db) / len2;
+        q = new Lab(a.L + t * dl, a.A + t * da, a.B + t * db);
+        return true;
+    }
+
+    /// <summary>히스토그램 번호 <paramref name="indices"/>의 OKLab 평균(쓰인 수로 가중)을 색으로.</summary>
+    private static Color32 WeightedLabMean(List<int> indices, Lab[] pts, IReadOnlyList<(Color32 Color, double Count)> hist)
+    {
+        double sl = 0, sa = 0, sb = 0, sw = 0;
+        foreach (int j in indices) { sl += pts[j].L * hist[j].Count; sa += pts[j].A * hist[j].Count; sb += pts[j].B * hist[j].Count; sw += hist[j].Count; }
+        return OkLab.ToColor(new Lab((float)(sl / sw), (float)(sa / sw), (float)(sb / sw)));
     }
 
     /// <summary>
@@ -177,14 +193,7 @@ public static class PaletteBuilder
         {
             if (result.Count >= max) break;
             var near = Enumerable.Range(0, pts.Length).Where(j => Lab.DistanceSquared(pts[p], pts[j]) <= r2).ToList();
-            Color32 c;
-            if (members is not null) c = Representative(near, pts, hist, members, metric);
-            else
-            {
-                double sl = 0, sa = 0, sb = 0, sw = 0;
-                foreach (int j in near) { sl += pts[j].L * hist[j].Count; sa += pts[j].A * hist[j].Count; sb += pts[j].B * hist[j].Count; sw += hist[j].Count; }
-                c = OkLab.ToColor(new Lab((float)(sl / sw), (float)(sa / sw), (float)(sb / sw)));
-            }
+            Color32 c = members is not null ? Representative(near, pts, hist, members, metric) : WeightedLabMean(near, pts, hist);
             var lab = OkLab.FromColor(c);
             if (labs.Count > 0 && labs.Min(l => Lab.Distance(l, lab)) <= MajorLimit) continue;
             result.Add(c);
@@ -280,14 +289,7 @@ public static class PaletteBuilder
                 if (area > clusterArea) (cluster, clusterArea) = (near, area);
             }
             if (cluster is null) break;
-            Color32 add;
-            if (members is not null) add = Representative(cluster, pts, hist, members, metric);
-            else
-            {
-                double sl = 0, sa = 0, sb = 0, sw = 0;
-                foreach (int j in cluster) { sl += pts[j].L * hist[j].Count; sa += pts[j].A * hist[j].Count; sb += pts[j].B * hist[j].Count; sw += hist[j].Count; }
-                add = OkLab.ToColor(new Lab((float)(sl / sw), (float)(sa / sw), (float)(sb / sw)));
-            }
+            Color32 add = members is not null ? Representative(cluster, pts, hist, members, metric) : WeightedLabMean(cluster, pts, hist);
             if (result.Contains(add)) break;
             if (!replace)
             {
@@ -342,13 +344,9 @@ public static class PaletteBuilder
         for (int j = 0; j < pal.Length; j++)
         {
             if (j == near) continue;
-            var b = pal[j].Ok;
-            float dl = b.L - a.L, da = b.A - a.A, db = b.B - a.B;
-            float len2 = dl * dl + da * da + db * db;
-            if (len2 <= 1e-9f) continue;
-            float t = ((c.L - a.L) * dl + (c.A - a.A) * da + (c.B - a.B) * db) / len2;
+            if (!ProjectOnSegment(c, a, pal[j].Ok, out float t, out var q)) continue;
             if (t < 0.1f || t > 0.9f) continue;
-            if (Lab.Distance(c, new Lab(a.L + t * dl, a.A + t * da, a.B + t * db)) <= PaletteBlendNear) return true;
+            if (Lab.Distance(c, q) <= PaletteBlendNear) return true;
         }
         return false;
     }
@@ -657,9 +655,7 @@ public static class PaletteBuilder
         {
             if (g.Count == 0) continue;
             if (members is not null) { result.Add(Representative(g, pts, hist, members, metric)); continue; }
-            double sl = 0, sa = 0, sb = 0, sw = 0;
-            foreach (int j in g) { sl += pts[j].L * hist[j].Count; sa += pts[j].A * hist[j].Count; sb += pts[j].B * hist[j].Count; sw += hist[j].Count; }
-            result.Add(OkLab.ToColor(new Lab((float)(sl / sw), (float)(sa / sw), (float)(sb / sw))));
+            result.Add(WeightedLabMean(g, pts, hist));
         }
         return result.Distinct().ToList();
     }

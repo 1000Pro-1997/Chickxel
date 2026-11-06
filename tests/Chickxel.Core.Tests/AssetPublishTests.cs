@@ -237,6 +237,18 @@ public class AssetPublishTests
         Assert.DoesNotContain(app.Issues, issue => issue.CatalogCode == CatalogBuildIssueCode.MissingLicense);
     }
 
+    [Fact]
+    public void Publish_EmbedsTrustedAccountAvatarInValidatedPackage()
+    {
+        using var dir = new TempDir();
+        var store = PersonalStore(dir);
+        const string avatar = "https://chickxel.com/files/avatars/pixel-cat.png";
+        var request = Request(store) with { Author = new AssetAuthor("pixel-cat", "Pixel Cat", AvatarUrl: avatar) };
+        var result = Check(request);
+        Assert.True(result.Ok, string.Join("\n", result.Issues));
+        Assert.Equal(avatar, Read(result.Package!).Manifest.Author.AvatarUrl);
+    }
+
     // ───────────── 앱이 만든 패키지: CI 통과와 다른 컴퓨터 설치 ─────────────
 
     [Fact]

@@ -65,7 +65,7 @@ public sealed class EffectMakerWindow : Window
     private readonly ScrollViewer _stripScroll;
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, MaxWidth = PreviewBox };
     private readonly StackPanel _errors = new() { Spacing = 2 };
-    private readonly Button _save, _insert, _validate, _upload;
+    private readonly Button _save, _copy, _insert, _validate, _upload;
     /// <summary>아래 줄의 상태 단추(아이콘 + 짧은 글, 상태 색). 누르면 <see cref="_statusFlyout"/>에 자세한 상태(<see cref="_status"/>·<see cref="_errors"/>).</summary>
     private readonly Button _statusButton;
     private readonly IconView _statusIcon = Ui.Icon(VectorIcon.Info, 14);
@@ -82,7 +82,8 @@ public sealed class EffectMakerWindow : Window
     {
         TextWrapping = TextWrapping.Wrap, Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, MaxWidth = PreviewBox, Margin = new Thickness(3, 0),
     };
-    private readonly DispatcherTimer _debounce = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    /// <summary>원문·장면·값을 고친 뒤 조용해지면(300ms) 다시 그린다(고치던 장면이 있으면 먼저 다시 읽음).</summary>
+    private readonly UiDebouncer _debounce;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(AssetPreview.PackageFrameMs) };
     private readonly Action _onAssetsChanged, _onAccountsChanged;
     /// <summary>창을 닫으면 취소(올린 효과 목록 받기·내려받기).</summary>
@@ -111,8 +112,9 @@ public sealed class EffectMakerWindow : Window
     private bool _open;
     /// <summary>목록에서 고른 항목(에셋 ID, 새 스크립트면 null).</summary>
     private string? _shownId;
-    /// <summary>저장할 때 덮어쓸 내 스크립트 에셋(새 스크립트·받은 에셋에서 연 것이면 null — 저장하면 새 내 에셋).</summary>
+    /// <summary>저장할 때 덮어쓸 내 스크립트 에셋(새 스크립트면 null).</summary>
     private string? _entryId;
+    private string? _shownVersion, _shownPackageId;
     private string _source = "";
     private ScriptEffectProgram? _program;
     private readonly Dictionary<string, object> _previewValues = new(StringComparer.Ordinal);
@@ -144,6 +146,8 @@ public sealed class EffectMakerWindow : Window
     private bool _readsLayers;
 
     private bool Dirty => _open && (_savedSource is null || _source != _savedSource || _sceneStale || !ReferenceEquals(_scene, _savedScene));
+    private bool Foreign => _shownId is { } id && AppAssets.Catalog.Find(id) is { } entry && !AppAssets.IsMine(entry);
+
 
     /// <summary>메인 창에 딸린 효과 만들기를 연다(효과 창 커스텀 탭·에셋 관리자처럼 메인 창 밖에서).</summary>
     public static void OpenFromAnywhere(string? assetId)
@@ -173,6 +177,13 @@ public sealed class EffectMakerWindow : Window
     private EffectMakerWindow(EditorContext ctx)
     {
         _ctx = ctx;
+        _debounce = new UiDebouncer(TimeSpan.FromMilliseconds(300), () =>
+        {
+            // 고치던 장면이 있으면 먼저 다시 읽는다(못 읽으면 앞 장면으로 그리고 까닭을 상태 칸에)
+            string? sceneError = _sceneStale ? RebuildScene() : null;
+            Rerender();
+            if (sceneError is not null) AddNote(sceneError, warning: true);
+        });
         Title = UiStrings.EffectMaker_Title;
         Width = 1240;
         Height = 780;
@@ -308,6 +319,7 @@ public sealed class EffectMakerWindow : Window
         _previewSlot = right;
 
         // ── 아래 줄
+        _copy = Ui.Button(VectorIcon.Copy, UiStrings.Assets_CopyToPersonal, (_, _) => CopySelected()).Tip(UiStrings.Assets_CopyToPersonalTip);
         _save = Ui.Button(VectorIcon.Save, UiStrings.EffectMaker_Save, (_, _) => Save()).Tip(UiStrings.EffectMaker_SaveTip);
         _insert = Ui.Button(VectorIcon.Plus, UiStrings.EffectMaker_Insert, (_, _) => InsertIntoLayer()).Tip(UiStrings.EffectMaker_InsertTip);
         _validate = Ui.Button(VectorIcon.Check, UiStrings.EffectMaker_Validate, async (_, _) => await ValidateAsync()).Tip(UiStrings.EffectMaker_ValidateTip);
@@ -335,7 +347,7 @@ public sealed class EffectMakerWindow : Window
         var rightButtons = Ui.Row(_validate, _upload, close);
         DockPanel.SetDock(rightButtons, Dock.Right);
         bottom.Children.Add(rightButtons);
-        bottom.Children.Add(Ui.Row(_save, _insert, _statusButton));
+        bottom.Children.Add(Ui.Row(_save, _copy, _insert, _statusButton));
 
         _aiHost = new Border { Width = AiPanelWidth, Margin = new Thickness(8, 0, 0, 0), IsVisible = false };
         var columns = new DockPanel { LastChildFill = true };
@@ -372,14 +384,6 @@ public sealed class EffectMakerWindow : Window
         compact.Children.Add(_compactPreviewHost);
         _compactContent = compact;
 
-        _debounce.Tick += (_, _) =>
-        {
-            _debounce.Stop();
-            // 고치던 장면이 있으면 먼저 다시 읽는다(못 읽으면 앞 장면으로 그리고 까닭을 상태 칸에)
-            string? sceneError = _sceneStale ? RebuildScene() : null;
-            Rerender();
-            if (sceneError is not null) AddNote(sceneError, warning: true);
-        };
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -388,7 +392,17 @@ public sealed class EffectMakerWindow : Window
                 Save();
             }
         };
-        _onAssetsChanged = () => Dispatcher.UIThread.Post(RebuildList);
+        _onAssetsChanged = () => Dispatcher.UIThread.Post(() =>
+        {
+            if (_shownId is { } id && _shownPackageId is { } packageId && _shownVersion is { } version
+                && SemVersion.TryParse(version, out var previous))
+            {
+                var updated = AppAssets.Catalog.Find(id) ?? AppAssets.Catalog.FromPackage(packageId).FirstOrDefault();
+                if (updated?.Store is { } link && link.SemanticVersion > previous) TryOpen(updated.Id);
+            }
+            RebuildList();
+            UpdateButtons();
+        });
         AppAssets.Changed += _onAssetsChanged;
         // 계정을 바꾸거나 로그인하면 "내가 올린 효과"가 달라진다.
         _onAccountsChanged = () => Dispatcher.UIThread.Post(() =>
@@ -396,6 +410,9 @@ public sealed class EffectMakerWindow : Window
             // 다른 계정이 되었을 때만 목록을 새로 받는다(같은 계정의 정보 확인마다 받지 않게).
             if (AppAssets.MyHandle != _uploadsHandle) LoadUploads(fetch: true);
             else RebuildList();
+            if (_shownId is { } id && AppAssets.Catalog.Find(id) is { } entry)
+                _entryId = AppAssets.IsMine(entry) ? id : null;
+            UpdateButtons();
         });
         AppCommunity.Client.AccountsChanged += _onAccountsChanged;
         Closing += (_, e) =>
@@ -410,7 +427,7 @@ public sealed class EffectMakerWindow : Window
             _render?.Cancel();
             _check?.Cancel();
             _timer.Stop();
-            _debounce.Stop();
+            _debounce.Cancel();
             DetachScene(closeTab: true);
             _aiPanel?.Shutdown();
             _rules?.Close();
@@ -445,10 +462,12 @@ public sealed class EffectMakerWindow : Window
             else
             {
                 bool mine = AppAssets.IsMine(entry);
-                string note = mine
-                    ? entry.Modified ? UiStrings.EffectMaker_UploadedModified : UiStrings.EffectMaker_Uploaded
-                    : entry.Store?.DisplayName ?? entry.Author?.Name ?? "";
-                content = Ui.Row(Ui.IconLabel(mine ? VectorIcon.Code : VectorIcon.Package, entry.DisplayName), new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center });
+                string note = entry.Author?.Name ?? (mine ? entry.Modified ? UiStrings.EffectMaker_UploadedModified : UiStrings.EffectMaker_Uploaded : "");
+                var label = Ui.IconLabel(mine ? VectorIcon.Code : VectorIcon.Package, entry.DisplayName);
+                var name = new TextBlock { Text = note, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center };
+                content = entry.Author is { } author
+                    ? Ui.Row(AuthorAvatarView.Create(author, 20), label, name)
+                    : Ui.Row(label, name);
             }
             _list.Items.Add(new ListBoxItem { Content = content, Tag = entry.Id });
         }
@@ -466,7 +485,8 @@ public sealed class EffectMakerWindow : Window
             var row = new DockPanel { Opacity = _downloadingId == upload.Id ? 0.8 : 0.5 };
             DockPanel.SetDock(download, Dock.Right);
             row.Children.Add(download);
-            row.Children.Add(label);
+            row.Children.Add(Ui.Row(AuthorAvatarView.Create(upload.Author, 20), label,
+                new TextBlock { Text = upload.Author.Name, Foreground = AppTheme.DimTextBrush, VerticalAlignment = VerticalAlignment.Center }));
             ToolTip.SetTip(row, UiStrings.EffectMaker_DownloadUploadedTip);
             _list.Items.Add(new ListBoxItem { Content = row, Tag = upload, HorizontalContentAlignment = HorizontalAlignment.Stretch });
         }
@@ -588,7 +608,7 @@ public sealed class EffectMakerWindow : Window
     }
 
     /// <summary>
-    /// 스크립트 효과를 연다(저장하지 않은 고침은 부르는 쪽이 이미 확인함). 내 에셋이면 저장할 때 그 자리를 고치고, 받은 에셋이면 저장할 때 내 사본을 만든다.
+    /// 스크립트 효과를 연다(저장하지 않은 고침은 부르는 쪽이 이미 확인함). 남의 에셋은 읽기 전용이며 명시적으로 복사해야 편집할 수 있다.
     /// 목록에 보이지 않는 항목(모두 보기를 끈 채 복사본·받은 효과를 열 때)이면 모두 보기를 켠다.
     /// </summary>
     private void TryOpen(string id)
@@ -597,9 +617,16 @@ public sealed class EffectMakerWindow : Window
         _shownId = id;
         _entryId = AppAssets.IsMine(entry) ? id : null;
         Load(script.Source, saved: true, script.Scene);
+        (_shownVersion, _shownPackageId) = (entry.Store?.Version, entry.Store?.PackageId);
         if (ListItem(id) is null) _showAll.IsChecked = true;
         SelectInList(id);
     }
+    private void CopySelected()
+    {
+        if (!Foreign || AppAssets.Catalog.Find(_shownId!) is not { } entry) return;
+        if (AppAssets.CopyAsMine(this, entry) is { } copy) TryOpen(copy.Id);
+    }
+
 
     // ───────────── 새로 만들기·불러오기 ─────────────
 
@@ -659,6 +686,7 @@ public sealed class EffectMakerWindow : Window
         _open = false;
         _shownId = null;
         _entryId = null;
+        _shownVersion = _shownPackageId = null;
         _savedSource = null;
         _render?.Cancel();
         DropCheck();
@@ -677,17 +705,24 @@ public sealed class EffectMakerWindow : Window
 
     private void UpdateButtons()
     {
-        _save.IsEnabled = _open;
+        bool editable = _open && !Foreign;
+        _code.IsReadOnly = !editable;
+        _save.IsEnabled = editable;
+        _copy.IsVisible = Foreign;
         _insert.IsEnabled = _open && _ctx.Project is not null;
         _validate.IsEnabled = _open;
-        _upload.IsEnabled = _open;
-        _title.IsEnabled = _description.IsEnabled = _tags.IsEnabled = _open;
-        _frameCount.IsEnabled = _languages.IsEnabled = _previewMotion.IsEnabled = _open && _program is not null;
+        _upload.IsEnabled = editable;
+        _title.IsEnabled = _description.IsEnabled = _tags.IsEnabled = editable;
+        _frameCount.IsEnabled = _languages.IsEnabled = _previewMotion.IsEnabled = editable && _program is not null;
+        _chick.IsEnabled = _endChick.IsEnabled = editable;
         ToolTip.SetTip(_previewMotion, _program is { } shown
             ? UiStrings.FormatEffectMaker_PreviewMotionTip(motion: PreviewMotionDialog.Describe(shown.PreviewMotion))
             : UiStrings.EffectMaker_PreviewMotion);
         _statusButton.IsEnabled = _open;
         UpdateValueButtons();
+        _sceneEdit.IsEnabled = editable;
+        _sceneRemove.IsEnabled = editable && _scene is not null;
+        _aiToggle.IsEnabled = editable;
         UpdateStatusButton();
         Title = _open ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_TitleWith, CurrentName() + (Dirty ? " *" : "")) : UiStrings.EffectMaker_Title;
     }
@@ -697,7 +732,7 @@ public sealed class EffectMakerWindow : Window
     {
         bool differs = _open && _program is { } program && program.NormalizeSettings(_previewValues) is var values
                        && (program.Settings.Any(s => !ScriptSetting.SameValue(values[s.Key], s.Default)) || CommonDiffers(program, PreviewEffect(program)));
-        _setDefaults.IsEnabled = differs;
+        _setDefaults.IsEnabled = differs && !Foreign;
         _resetValues.IsEnabled = differs || (_open && _previewGradients.Count > 0);
     }
 
@@ -714,8 +749,7 @@ public sealed class EffectMakerWindow : Window
         _source = _code.Text;
         DropCheck(); // 원문이 바뀌면 검증 결과는 낡음
         UpdateButtons();
-        _debounce.Stop();
-        _debounce.Start();
+        _debounce.Restart();
     }
 
     /// <summary>검증(진행 중이거나 보이는 결과)을 버린다. 다음 다시 그리기가 상태 칸을 채운다.</summary>
@@ -735,7 +769,7 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     private void InfoEdited(string key, string? value)
     {
-        if (_syncingInfo || _loading || !_open) return;
+        if (_syncingInfo || _loading || !_open || Foreign) return;
         if (_program is not null && value == InfoValue(_program, _infoLanguage, key)) return;
         string? edited = _infoLanguage is { } language
             ? ScriptDeclarationEdit.SetTranslationField(_source, language, key, value)
@@ -786,7 +820,7 @@ public sealed class EffectMakerWindow : Window
     /// <summary>태그 칩을 바꾸면 선언의 <c>tags</c>를 고친다(규칙에 맞지 않는 태그가 있으면 칩 아래 까닭만 보이고 원문은 그대로).</summary>
     private void TagsEdited()
     {
-        if (_syncingInfo || _loading || !_open || !_tags.IsValid) return;
+        if (_syncingInfo || _loading || !_open || Foreign || !_tags.IsValid) return;
         if (_program is not null && _program.Tags.SequenceEqual(_tags.Tags)) return;
         if (ScriptDeclarationEdit.SetTags(_source, _tags.Tags) is not { } edited)
         {
@@ -860,8 +894,7 @@ public sealed class EffectMakerWindow : Window
         _previewCommon = (Unless(after.Easing, program.Easing), Unless(after.Repeat, program.Repeat), Unless(after.RepeatCount, program.RepeatCount),
             Unless(after.MovePivot, program.MovePivot));
         UpdateValueButtons();
-        _debounce.Stop();
-        _debounce.Start();
+        _debounce.Restart();
     }
 
     /// <summary>선언 값과 같으면 null(선언을 따름), 다르면 그 값.</summary>
@@ -1080,7 +1113,7 @@ public sealed class EffectMakerWindow : Window
         _previewCommon = default;
         BuildScriptSettings();
         UpdateValueButtons();
-        _debounce.Stop();
+        _debounce.Cancel();
         Rerender();
     }
 
@@ -1169,7 +1202,7 @@ public sealed class EffectMakerWindow : Window
     {
         _code.Replace(edited);
         if (_source != _code.Text) Edited(); // 편집기의 TextChanged가 늦게 오는 경우
-        _debounce.Stop();
+        _debounce.Cancel();
         Rerender();
     }
 
@@ -1265,7 +1298,7 @@ public sealed class EffectMakerWindow : Window
     /// <summary>병아리는 원문 선언의 <c>previewChick</c>이 정한다: 고르면 원문을 고친다(원문에 오류가 있으면 되돌리고 안내).</summary>
     private void ChickChanged()
     {
-        if (_loading || _chick.SelectedIndex < 0 || !_open) return;
+        if (_loading || _chick.SelectedIndex < 0 || !_open || Foreign) return;
         string id = PreviewChicks.Ids[_chick.SelectedIndex];
         if (_program?.PreviewChick == id) return;
         if (ScriptDeclarationEdit.SetPreviewChick(_source, id) is not { } edited)
@@ -1284,7 +1317,7 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     private void EndChickChanged()
     {
-        if (_loading || _endChick.SelectedIndex < 0 || !_open) return;
+        if (_loading || _endChick.SelectedIndex < 0 || !_open || Foreign) return;
         string? id = _endChick.SelectedIndex == 0 ? null : PreviewChicks.Ids[_endChick.SelectedIndex - 1];
         if (_program is not null && _program.PreviewEndChick == id) return;
         if (ScriptDeclarationEdit.SetPreviewEndChick(_source, id) is not { } edited)
@@ -1361,7 +1394,7 @@ public sealed class EffectMakerWindow : Window
     private void UpdateSceneRow()
     {
         _sceneRow.IsVisible = _open && (_scene is not null || _readsLayers);
-        _sceneRemove.IsEnabled = _scene is not null;
+        _sceneRemove.IsEnabled = _scene is not null && !Foreign;
         _sceneLayers.Text = _scene is { } scene
             ? string.Format(CultureInfo.CurrentCulture, UiStrings.EffectMaker_SceneLayers, string.Join(", ", SceneLayerNames(scene, "[" + UiStrings.EffectMaker_SceneChickLayer + "]")))
             : UiStrings.EffectMaker_SceneNone;
@@ -1388,7 +1421,7 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     private void EditScene()
     {
-        if (!_open || MainEditor() is not { } main) return;
+        if (!_open || Foreign || MainEditor() is not { } main) return;
         if (_sceneDoc is { } open && main.ShowDetachedDocument(open.Project))
         {
             Compact(main);
@@ -1405,7 +1438,7 @@ public sealed class EffectMakerWindow : Window
         UpdateButtons();
         if (created)
         {
-            _debounce.Stop();
+            _debounce.Cancel();
             Rerender();
         }
         Compact(main);
@@ -1467,8 +1500,7 @@ public sealed class EffectMakerWindow : Window
         if (_sceneDoc is not { } doc || !ReferenceEquals(sender, doc.Project)) return;
         _sceneStale = true;
         UpdateButtons();
-        _debounce.Stop();
-        _debounce.Start();
+        _debounce.Restart();
     }
 
     /// <summary>장면 문서에서 장면을 다시 읽는다. 못 읽으면 앞 장면을 그대로 두고 까닭(상태 칸에 보일 글)을 돌려준다.</summary>
@@ -1514,13 +1546,13 @@ public sealed class EffectMakerWindow : Window
     /// <summary>"장면 빼기": 묻고 장면을 뺀다(열린 장면 탭도 닫음 — 저장하면 효과에서도 빠짐).</summary>
     private void RemoveScene()
     {
-        if (!_open || _scene is null) return;
+        if (!_open || Foreign || _scene is null) return;
         if (Ui.Ask(this, UiStrings.EffectMaker_SceneRemoveQuestion, UiStrings.EffectMaker_Title, MessageButtons.YesNo, MessageIcon.Question) != DialogResult.Yes) return;
         DetachScene(closeTab: true);
         _scene = null;
         UpdateSceneRow();
         UpdateButtons();
-        _debounce.Stop();
+        _debounce.Cancel();
         Rerender();
     }
 
@@ -1541,8 +1573,8 @@ public sealed class EffectMakerWindow : Window
     {
         if (!_open) return null;
         // 미뤄 둔 다시 그리기가 있으면 먼저(미리보기를 지금 원문·장면에 맞춤 — 검증 중이라 상태 칸은 건드리지 않음)
-        bool pending = _debounce.IsEnabled;
-        _debounce.Stop();
+        bool pending = _debounce.IsPending;
+        _debounce.Cancel();
         _check?.Cancel();
         var cancel = new CancellationTokenSource();
         _check = cancel;
@@ -1693,11 +1725,11 @@ public sealed class EffectMakerWindow : Window
 
     /// <summary>
     /// 내 스크립트 에셋으로 저장한다(오류 없이 해석될 때만, 미리보기 장면도 함께 — 고치던 장면 탭이 있으면 마지막 고침까지 읽어서).
-    /// 받은 에셋에서 연 것이면 내 사본이 된다. 되면 true.
+    /// 받은 에셋은 먼저 내 에셋으로 복사해야 한다. 되면 true.
     /// </summary>
     private bool Save()
     {
-        if (!_open) return false;
+        if (!_open || Foreign) return false;
         if (_program is null)
         {
             Ui.Info(this, UiStrings.EffectMaker_FixSourceFirst, UiStrings.EffectMaker_Title);
@@ -1889,6 +1921,7 @@ public sealed class EffectMakerWindow : Window
     /// </summary>
     internal void SetSourceFromAi(string source)
     {
+        if (Foreign) throw new InvalidOperationException(UiStrings.Assets_CopyToPersonalTip);
         source = ScriptEffectProgram.NormalizeSource(source);
         if (!_open)
         {
@@ -1900,7 +1933,7 @@ public sealed class EffectMakerWindow : Window
         }
         _code.Replace(source);
         if (_source != _code.Text) Edited(); // 편집기의 TextChanged가 늦게 오는 경우
-        _debounce.Stop();
+        _debounce.Cancel();
         Rerender();
     }
 

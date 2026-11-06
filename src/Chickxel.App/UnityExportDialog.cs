@@ -41,7 +41,7 @@ public sealed class UnityExportDialog : DialogBase
     private readonly Control _importPage;
     private readonly Expander _advanced;
     private readonly PreviewSection _framesSection, _partsSection;
-    private readonly DispatcherTimer _rebuild = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    private readonly UiDebouncer _rebuild;
     private readonly EventHandler _onReplaced, _onCurrent;
     private readonly EventHandler<ProjectChangedEventArgs> _onChanged;
     private bool _updating, _previewDirty = true, _customPivot;
@@ -51,6 +51,7 @@ public sealed class UnityExportDialog : DialogBase
     /// <param name="ppuChanged">사용자가 PPU를 바꿨을 때(마지막 PPU 기억용).</param>
     public UnityExportDialog(EditorContext ctx, AppSettings settings, Action<float>? ppuChanged = null) : base(UiStrings.S_UnityExportDialog_UnityExportDialog_91724FB578)
     {
+        _rebuild = new UiDebouncer(TimeSpan.FromMilliseconds(300), RebuildPreview);
         _ctx = ctx;
         _settings = settings;
         _ppuChanged = ppuChanged;
@@ -153,7 +154,6 @@ public sealed class UnityExportDialog : DialogBase
         root.Children.Remove(Body);
         root.Children.Add(_tabs);
 
-        _rebuild.Tick += (_, _) => { _rebuild.Stop(); RebuildPreview(); };
         _onReplaced = (_, _) => { _customPivot = false; RememberAtOpen(); RefreshAll(); ScheduleRebuild(); };
         _onChanged = (_, e) =>
         {
@@ -225,7 +225,7 @@ public sealed class UnityExportDialog : DialogBase
         _ctx.ProjectReplaced -= _onReplaced;
         _ctx.ProjectChanged -= _onChanged;
         _ctx.CurrentChanged -= _onCurrent;
-        _rebuild.Stop();
+        _rebuild.Cancel();
         _framesSection.Clear();
         _partsSection.Clear();
         base.OnClosed(e);
@@ -1128,13 +1128,12 @@ public sealed class UnityExportDialog : DialogBase
     {
         _previewDirty = true;
         if (_tabs.SelectedIndex != MainPage) return;
-        _rebuild.Stop();
-        _rebuild.Start();
+        _rebuild.Restart();
     }
 
     private void RebuildPreview()
     {
-        _rebuild.Stop();
+        _rebuild.Cancel();
         _previewDirty = false;
         if (_ctx.Project is not { } p)
         {

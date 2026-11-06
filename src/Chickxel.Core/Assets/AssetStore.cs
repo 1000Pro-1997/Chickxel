@@ -368,6 +368,19 @@ public sealed partial class AssetStore
     // ───────────── 가져오기 ─────────────
 
     /// <summary>
+    /// 온라인 카탈로그에서 받은 패키지를 설치한다. 목록의 ID·버전과 파일의 manifest가 같아야 한다.
+    /// 같은 패키지의 연결된 에셋은 더 높은 버전일 때만 고친 내용까지 교체하고 중복 연결을 하나로 합친다.
+    /// 파일에서 직접 가져오는 <see cref="Install"/>의 겹침 선택에는 영향을 주지 않는다.
+    /// </summary>
+    public IReadOnlyList<AssetEntry> InstallRemote(string packagePath, string packageId, string version,
+        Func<AssetImportItem, ImportChoice>? choose = null, CancellationToken cancellation = default)
+    {
+        if (!AssetManifest.IsValidId(packageId) || !AssetManifest.IsValidVersion(version))
+            throw new ArgumentException("Invalid remote package identity.");
+        return InstallCore(packagePath, AssetSources.Remote, choose, (packageId, version), cancellation);
+    }
+
+    /// <summary>
     /// 패키지 파일(<c>.chickxel-asset</c>)의 에셋을 하나씩 넣는다(계획 7.3). 먼저 파일 전체를 검사하고(크기, 경로, manifest, 앱 호환성, 해시, 모든 에셋 값),
     /// 실패하면 <see cref="AssetPackageException"/>이고 아무것도 바뀌지 않는다. 에셋마다 작성자·라이선스·상점 연결은 그 줄에 적힌 것, 없으면 패키지의 것이다
     /// (개인 내보내기 파일 — 작성자 <see cref="PersonalAuthorId"/>, ID <c>personal.</c> — 의 것은 쓰지 않음).
@@ -375,6 +388,10 @@ public sealed partial class AssetStore
     /// 들어간(새로 넣거나 바꾼) 에셋을 패키지 순서로 돌려준다.
     /// </summary>
     public IReadOnlyList<AssetEntry> Install(string packagePath, string source, Func<AssetImportItem, ImportChoice> choose, CancellationToken cancellation = default)
+        => InstallCore(packagePath, source, choose, null, cancellation);
+
+    private IReadOnlyList<AssetEntry> InstallCore(string packagePath, string source, Func<AssetImportItem, ImportChoice>? choose,
+        (string Id, string Version)? remote, CancellationToken cancellation)
     {
         using var change = BeginChange();
         if (LibraryError is { } error) throw new InvalidOperationException(error);
@@ -395,6 +412,13 @@ public sealed partial class AssetStore
             cancellation.ThrowIfCancellationRequested();
 
             var manifest = package.Manifest;
+            if (remote is { } expected && (manifest.Id != expected.Id || manifest.Version != expected.Version))
+                throw new InvalidDataException("Downloaded package identity or version does not match the catalog.");
+            if (remote is not null && package.Items.Any(item => item.Entry.Store is { } link
+                    && (link.PackageId != manifest.Id || link.Version != manifest.Version || link.AssetId != item.Entry.Id)))
+                throw new InvalidDataException("Downloaded package contains a mismatched store link.");
+            if (remote is not null && manifest.Id.StartsWith(LocalIdPrefix, StringComparison.Ordinal))
+                throw new InvalidDataException("A personal export cannot be installed from the remote catalog.");
             bool personal = manifest.Author.Id == PersonalAuthorId;
             bool listed = !manifest.Id.StartsWith(LocalIdPrefix, StringComparison.Ordinal);
             byte[]? licenseDocument = null;
@@ -406,6 +430,21 @@ public sealed partial class AssetStore
             var installed = new List<string>();
             var removedFolders = new List<string>();
             bool single = package.Items.Count == 1;
+            bool deduplicated = false;
+            void RemoveLinkedDuplicates(Record[] group, string retainedId)
+            {
+                if (group.Length <= 1) return;
+                bool favorite = group.Any(r => favorites.Contains(r.Id));
+                foreach (var duplicate in group)
+                {
+                    if (duplicate.Id == retainedId) continue;
+                    records.Remove(duplicate);
+                    favorites.Remove(duplicate.Id);
+                    if (duplicate.Files is { } old) removedFolders.Add(old);
+                    deduplicated = true;
+                }
+                if (favorite) favorites.Add(retainedId);
+            }
             foreach (var (entry, data) in package.Items)
             {
                 cancellation.ThrowIfCancellationRequested();
@@ -413,10 +452,29 @@ public sealed partial class AssetStore
                 var author = entry.Author ?? (personal ? null : manifest.Author);
                 if (author?.Id == PersonalAuthorId) author = null;
                 var license = entry.License ?? (personal ? null : manifest.License);
-                var store = entry.Store ?? (listed ? AssetStoreLink.FromManifest(manifest, entry.Id, hash) : null);
-                var existing = FindExisting(records, entry.Kind, hash, store, single);
-                var choice = existing is null ? ImportChoice.KeepBoth
-                    : choose(new AssetImportItem(entry.Kind, data, author, license, store, ToEntry(existing), single));
+                var store = remote is not null ? AssetStoreLink.FromManifest(manifest, entry.Id, hash)
+                    : entry.Store ?? (listed ? AssetStoreLink.FromManifest(manifest, entry.Id, hash) : null);
+                var matches = remote is null || store is null ? null : records.Where(r => r.Data is not null && r.Kind == entry.Kind
+                    && r.Store is { } link && link.PackageId == store.PackageId
+                    && (link.AssetId == store.AssetId || single)).ToArray();
+                if (matches is { Length: > 0 } && matches.Any(r => r.Store!.SemanticVersion.CompareTo(manifest.SemanticVersion) >= 0))
+                {
+                    if (matches.Length > 1)
+                    {
+                        var newest = matches[0];
+                        foreach (var candidate in matches)
+                            if (candidate.Store!.SemanticVersion.CompareTo(newest.Store!.SemanticVersion) > 0) newest = candidate;
+                        RemoveLinkedDuplicates(matches, newest.Id);
+                    }
+                    continue;
+                }
+                var existing = matches is { Length: > 0 }
+                    ? matches.FirstOrDefault(r => r.Store!.AssetId == store!.AssetId) ?? matches[0]
+                    : remote is null ? FindExisting(records, entry.Kind, hash, store, single)
+                    : choose is null ? null : records.FirstOrDefault(r => r.Data is not null && r.Kind == entry.Kind && AssetContent.HashOf(entry.Kind, r.Data) == hash);
+                var sameRemote = matches is { Length: > 0 };
+                var choice = sameRemote ? ImportChoice.Replace : existing is null ? ImportChoice.KeepBoth
+                    : choose!(new AssetImportItem(entry.Kind, data, author, license, store, ToEntry(existing), single));
                 if (choice == ImportChoice.Skip) continue;
 
                 bool replace = choice == ImportChoice.Replace && existing is not null;
@@ -434,11 +492,12 @@ public sealed partial class AssetStore
                     records[index] = record;
                 }
                 else records.Add(record);
+                if (matches is { Length: > 1 }) RemoveLinkedDuplicates(matches, id);
                 installed.Add(id);
             }
             StepHook?.Invoke("files");
             cancellation.ThrowIfCancellationRequested();
-            if (installed.Count > 0)
+            if (installed.Count > 0 || deduplicated)
             {
                 SaveLibrary(records, favorites);
                 committed = true;
@@ -804,27 +863,5 @@ public sealed partial class AssetStore
             if (File.Exists(file)) File.Delete(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-    }
-}
-
-/// <summary>임시 파일에 쓰고 원자적으로 바꿔치기(같은 폴더 안 rename). 쓰는 도중 끊겨도 이전 파일은 그대로다.</summary>
-internal static class AtomicFile
-{
-    public static void Write(string path, byte[] data)
-    {
-        string temporary = $"{path}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            {
-                stream.Write(data);
-                stream.Flush(flushToDisk: true);
-            }
-            FileReplace.Commit(temporary, path);
-        }
-        finally
-        {
-            if (File.Exists(temporary)) File.Delete(temporary);
-        }
     }
 }

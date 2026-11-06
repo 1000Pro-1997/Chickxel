@@ -40,7 +40,7 @@ public sealed class AssetPublishDialog : DialogBase
     private readonly Button _useSuggestion, _previewAuto;
     private readonly StackPanel _checks = new() { Spacing = 4 };
     private readonly PngView _preview = new() { Height = 170 };
-    private readonly DispatcherTimer _recheck = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private readonly UiDebouncer _recheck;
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, Height = 4, MinHeight = 4, Width = 220, Foreground = AppTheme.AccentBrush };
     private readonly TextBlock _progressText = Note("");
     private readonly StackPanel _progressRow;
@@ -88,6 +88,7 @@ public sealed class AssetPublishDialog : DialogBase
 
     private AssetPublishDialog(AssetEntry asset, CommunityUser user) : base(UiStrings.Publish_Title, UiStrings.Publish_Upload)
     {
+        _recheck = new UiDebouncer(TimeSpan.FromMilliseconds(250), RunCheck);
         CanResize = true;
         SizeToContent = SizeToContent.Manual;
         Width = 980;
@@ -267,11 +268,6 @@ public sealed class AssetPublishDialog : DialogBase
             ShowMode();
             Changed();
         };
-        _recheck.Tick += (_, _) =>
-        {
-            _recheck.Stop();
-            RunCheck();
-        };
         OkButton.Click += (_, _) =>
         {
             DialogResult = DialogResult.None; // 올린 뒤에 닫는다
@@ -285,7 +281,7 @@ public sealed class AssetPublishDialog : DialogBase
         };
         Closed += (_, _) =>
         {
-            _recheck.Stop();
+            _recheck.Cancel();
             _upload?.Cancel();
             _closing.Cancel();
             App.Settings.Save();
@@ -355,8 +351,7 @@ public sealed class AssetPublishDialog : DialogBase
     private void Changed()
     {
         if (_filling) return;
-        _recheck.Stop();
-        _recheck.Start();
+        _recheck.Restart();
     }
 
     /// <summary>
@@ -496,7 +491,7 @@ public sealed class AssetPublishDialog : DialogBase
         foreach (var (code, translation) in _translations) translations.TryAdd(code, translation);
         return new PublishRequest
         {
-            Author = new AssetAuthor(_user.Handle, _user.Name),
+            Author = new AssetAuthor(_user.Handle, _user.Name, AvatarUrl: AppCommunity.PublishAvatarUrl(_user)),
             Id = _target.Id,
             Version = _version.Text?.Trim() ?? "",
             Name = _name.Text ?? "",
@@ -541,7 +536,7 @@ public sealed class AssetPublishDialog : DialogBase
     private async void Submit()
     {
         if (_upload is not null) return;
-        _recheck.Stop();
+        _recheck.Cancel();
         _tags.Commit(); // 입력 중이던 태그까지
         RunCheck(); // 입력 중이던 값까지 다시 검사
         if (_result is not { Ok: true } result) return;
@@ -653,7 +648,7 @@ public sealed class AssetPublishDialog : DialogBase
     private void Link(PublishResult result)
     {
         var manifest = result.Manifest!;
-        AppAssets.Try(this, () => AppAssets.Store.MarkPublished(_asset.Id, new AssetAuthor(_user.Handle, _user.Name), AssetPublishCheck.License,
+        AppAssets.Try(this, () => AppAssets.Store.MarkPublished(_asset.Id, manifest.Author, AssetPublishCheck.License,
             AssetStoreLink.FromManifest(manifest, manifest.Assets[0].Id, _asset.ContentHash)), UiStrings.Publish_LinkError);
     }
 

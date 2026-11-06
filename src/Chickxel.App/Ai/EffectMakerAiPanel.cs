@@ -28,10 +28,10 @@ internal sealed class EffectMakerAiPanel : Border
     private readonly Action _openChat;
     private readonly Func<PixelImage?> _canvasImage, _previewFrame;
     private readonly TabStrip _providers;
-    /// <summary>모델 칸(보내기 왼쪽, <see cref="_modelChoices"/> 순서). AI 채팅 창과 같은 설정 값(<see cref="AiProvider.GetModel"/>)을 읽고 쓴다.</summary>
+    /// <summary>모델 칸(보내기 왼쪽). AI 채팅 창과 같은 설정 값(<see cref="AiProvider.GetModel"/>)을 읽고 쓴다.</summary>
     private readonly ComboBox _model;
-    private IReadOnlyList<ModelChoice> _modelChoices = [];
-    private bool _fillingModels;
+    /// <summary>모델 칸(<see cref="_model"/>)의 목록·고르기·설정 저장.</summary>
+    private readonly ChatModelSelector _models;
     private readonly TextBlock _status;
     private readonly Button _newChat;
     private readonly Border _body = new();
@@ -121,8 +121,7 @@ internal sealed class EffectMakerAiPanel : Border
             SelectionBoxItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>(
                 (label, _) => new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis }, supportsRecycling: false),
         };
-        _model.SelectionChanged += (_, _) => OnModelChanged();
-        FillModels();
+        _models = new ChatModelSelector(_model, settings, () => _provider, OnModelChanged);
         var sendButtons = Ui.Row(_send, _stop);
         var attachButtons = Ui.Row(attachFile, attachCanvas, attachPreview);
         // 모델 칸은 남는 폭만 쓴다(좁으면 이름 말줄임 — 차례 중에 보내기·멈춤이 함께 보여도 단추가 밀리지 않게).
@@ -262,52 +261,20 @@ internal sealed class EffectMakerAiPanel : Border
         _provider = provider;
         _settings.ChatProvider = provider.Id;
         _settings.Save();
-        FillModels();
+        _models.Fill();
         ClearTranscript();
         _started = true;
         _ = CheckAsync();
     }
 
-    private string? CurrentModel()
-        => _modelChoices.Count == 0 ? null : _modelChoices[Math.Clamp(_model.SelectedIndex, 0, _modelChoices.Count - 1)].Value;
-
-    /// <summary>모델 칸을 지금 AI의 목록으로 채우고 설정에 남은 모델을 고른다(이름에 실제 버전이 붙으면 다시 부름).</summary>
-    private void FillModels()
+    /// <summary>모델을 바꿈(설정에는 이미 남음): 세션이 있으면 같은 대화를 이어 다음 메시지부터 새 모델로 띄운다.</summary>
+    private void OnModelChanged(string? model, string notice)
     {
-        _fillingModels = true;
-        try
-        {
-            _modelChoices = _provider.Models(_settings);
-            _model.Items.Clear();
-            foreach (var c in _modelChoices)
-            {
-                var item = new ComboBoxItem { Content = c.Label };
-                if (c.Tip is { Length: > 0 } tip) item.Tip(tip);
-                _model.Items.Add(item);
-            }
-            var saved = _provider.GetModel(_settings);
-            _model.SelectedIndex = Math.Max(0, _modelChoices.ToList().FindIndex(c => c.Value == saved));
-            _model.Tip(string.Format(CultureInfo.CurrentCulture, UiStrings.S_ChatWindow_FillModels_B806D71CEE, _provider.Name, _provider.ProductName));
-        }
-        finally
-        {
-            _fillingModels = false;
-        }
-    }
-
-    /// <summary>모델을 바꿈: 설정에 바로 남기고, 세션이 있으면 같은 대화를 이어 다음 메시지부터 새 모델로 띄운다.</summary>
-    private void OnModelChanged()
-    {
-        if (_fillingModels || _model.SelectedIndex < 0) return;
-        var model = CurrentModel();
-        if (_provider.GetModel(_settings) == model) return;
-        _provider.SetModel(_settings, model);
-        _settings.Save();
         if (_session is null) return;
         StopTurn();
         _session.Model = model;
         _session.Restart();
-        AddLine(string.Format(CultureInfo.CurrentCulture, UiStrings.S_ChatWindow_OnModelChanged_C640BCC05A, _modelChoices[_model.SelectedIndex].Label), error: false);
+        AddLine(notice, error: false);
     }
 
     private void DropSession()
@@ -362,7 +329,7 @@ internal sealed class EffectMakerAiPanel : Border
                 tool.Line.Foreground = ErrorBrush;
                 if (info.Text.Length > 0) tool.Line.Text += $" - {info.Text}";
             }
-            tool.Line.Text += $" ({Seconds(Stopwatch.GetElapsedTime(tool.Started))})";
+            tool.Line.Text += $" ({ChatTurnFooter.Seconds(Stopwatch.GetElapsedTime(tool.Started).TotalSeconds)})";
         };
         s.TurnCompleted += r =>
         {
@@ -390,7 +357,7 @@ internal sealed class EffectMakerAiPanel : Border
         };
         s.ModelResolved += model =>
         {
-            if (ReferenceEquals(s, _session) && _provider.RememberResolved(_settings, s.Model, model)) FillModels();
+            if (ReferenceEquals(s, _session) && _provider.RememberResolved(_settings, s.Model, model)) _models.Fill();
         };
     }
 
@@ -460,7 +427,7 @@ internal sealed class EffectMakerAiPanel : Border
             _ = CheckAsync();
             return false;
         }
-        session.Model = CurrentModel();
+        session.Model = _models.Current;
         var modelText = ChatImageTokens.ToModel(text);
         var message = _primed ? modelText : AiCli.EffectMakerGuidePrefix() + modelText;
         try
@@ -500,11 +467,7 @@ internal sealed class EffectMakerAiPanel : Border
         FinishStream();
         _messages.Children.Remove(_thinking);
         if (error is not null) AddLine(error, error: true);
-        var parts = new List<string>();
-        if (cancelled) parts.Add(UiStrings.S_ChatWindow_EndTurn_D19A601695);
-        if (result?.CostUsd is double cost and > 0) parts.Add("$" + cost.ToString("0.000", CultureInfo.InvariantCulture));
-        parts.Add(Seconds(_turnClock.Elapsed));
-        AddItem(new TextBlock { Text = string.Join(" · ", parts), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Right });
+        AddItem(new TextBlock { Text = ChatTurnFooter.Text(cancelled, result?.CostUsd ?? 0, _turnClock.Elapsed.TotalSeconds), Foreground = AppTheme.DimTextBrush, FontSize = AppTheme.SmallFontSize, HorizontalAlignment = HorizontalAlignment.Right });
         UpdateInputState();
         // 기다리던 메시지는 이 차례를 다 그린 뒤에 보낸다(멈춤으로 끝났어도 — 방향을 바꾸려고 멈춘 경우가 많음).
         if (_pending.Count > 0) Dispatcher.UIThread.Post(SendQueued);
@@ -618,7 +581,4 @@ internal sealed class EffectMakerAiPanel : Border
     }
 
     private static void OpenLink(string url) => AiCli.OpenUrl(url);
-
-    private static string Seconds(TimeSpan elapsed)
-        => elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + UiStrings.S_ChatWindow_EndTurn_7EEAC40074;
 }

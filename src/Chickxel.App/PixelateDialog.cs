@@ -5748,6 +5748,7 @@ public sealed class PixelateDialog : DialogBase
         {
             ClipToBounds = true;
             Focusable = true;
+            _flashTimer = new UiDebouncer(TimeSpan.FromMilliseconds(1200), EndFlash);
         }
 
         public int Index
@@ -5801,7 +5802,7 @@ public sealed class PixelateDialog : DialogBase
 
         /// <summary>강조할 자리(프레임마다 픽셀 순서) — 없으면 강조하지 않음.</summary>
         private bool[][]? _flashMasks;
-        private readonly DispatcherTimer _flashTimer = new() { Interval = TimeSpan.FromMilliseconds(1200) };
+        private readonly UiDebouncer _flashTimer;
         private List<PixelImage> _images = [];
         private IReadOnlyList<PixelImage> _excludedImages = [];
 
@@ -5829,17 +5830,13 @@ public sealed class PixelateDialog : DialogBase
                 }
                 _flashMasks[f] = mask;
             }
-            _flashTimer.Stop();
-            _flashTimer.Tick -= EndFlash;
-            _flashTimer.Tick += EndFlash;
-            _flashTimer.Start();
+            _flashTimer.Restart();
             InvalidateVisual();
             FlashChanged?.Invoke();
         }
 
-        private void EndFlash(object? sender, EventArgs e)
+        private void EndFlash()
         {
-            _flashTimer.Stop();
             _flashMasks = null;
             Marked = null;
             InvalidateVisual();

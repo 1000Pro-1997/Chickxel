@@ -69,7 +69,7 @@ public static class PixelatePresets
     {
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-        File.WriteAllText(path, Serialize(presets));
+        AtomicFile.WriteText(path, Serialize(presets));
     }
 
     /// <summary>JSON에서 빠진(null) 묶음을 기본값으로.</summary>

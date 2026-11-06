@@ -384,7 +384,7 @@ public sealed class AppSettings
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, Options));
+            AtomicFile.WriteText(FilePath, JsonSerializer.Serialize(this, Options));
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

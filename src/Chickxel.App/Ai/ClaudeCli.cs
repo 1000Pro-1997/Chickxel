@@ -407,8 +407,8 @@ public sealed class ClaudeSession : IChatSession
         _resuming = SessionId is not null;
         _sawInit = false;
         if (SessionId is null) _sessionCwd = cwd;
-        var reader = new Thread(() => ReadLoop(p, gen, stderr, stderrDone)) { IsBackground = true, Name = "claude-stdout" };
-        reader.Start();
+        AiCli.StartJsonLineReader(p, "claude-stdout", stderr, stderrDone, stripAnsi: false,
+            obj => Handle(gen, obj), (code, tail) => OnExit(gen, code, tail));
     }
 
     /// <summary>시스템 프롬프트 파일(프롬프트마다 이름이 달라 채팅 창과 효과 만들기 AI 칸이 서로 덮어쓰지 않음).</summary>
@@ -447,52 +447,6 @@ public sealed class ClaudeSession : IChatSession
         _process = null;
         _stdin = null;
         if (p is not null) AiCli.Kill(p);
-    }
-
-    /// <summary>표준 출력 JSONL을 읽는 스레드. 한 줄씩 파싱해 UI 스레드로 넘긴다.</summary>
-    private void ReadLoop(Process p, int gen, StringBuilder stderr, Task stderrDone)
-    {
-        try
-        {
-            var stdout = p.StandardOutput;
-            string? line;
-            while ((line = stdout.ReadLine()) is not null)
-            {
-                if (line.Length == 0 || line[0] != '{') continue;
-                JsonObject? obj;
-                try
-                {
-                    obj = JsonNode.Parse(line) as JsonObject;
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (obj is not null) Dispatcher.UIThread.Post(() => Handle(gen, obj));
-            }
-        }
-        catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
-        {
-        }
-        int code;
-        try
-        {
-            p.WaitForExit();
-            code = p.ExitCode;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
-        {
-            code = -1;
-        }
-        // 표준 오류를 끝까지 읽을 때까지(잠깐만) 기다린 뒤 끝부분을 이유로.
-        stderrDone.Wait(TimeSpan.FromSeconds(2));
-        string tail;
-        lock (stderr) tail = AiCli.Tail(stderr.ToString().Trim(), 1500);
-        Dispatcher.UIThread.Post(() =>
-        {
-            p.Dispose();
-            OnExit(gen, code, tail);
-        });
     }
 
     private void OnExit(int gen, int code, string stderrTail)

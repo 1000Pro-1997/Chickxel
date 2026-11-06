@@ -19,7 +19,7 @@ namespace Chickxel.App;
 /// </summary>
 public sealed partial class LayerEffectsDialog
 {
-    private const int TileWidth = 88, TileHeight = 96, ThumbSteps = AssetPreview.Steps, ThumbHold = 4, ThumbMaxSize = 128;
+    private const int TileWidth = 88, TileHeight = 110, ThumbSteps = AssetPreview.Steps, ThumbHold = 4, ThumbMaxSize = 128;
     /// <summary>효과 종류 칸의 한 줄 상자 수.</summary>
     private const int PaletteColumns = 4;
 
@@ -356,10 +356,21 @@ public sealed partial class LayerEffectsDialog
             // 스크립트 표시는 공식 효과가 아닌 원문이 든 상자에만(공식 효과는 예전 기본 효과 상자처럼 보임)
             _codeMark = template?.Scripts.Keys.Any(hash => !OfficialEffects.IsOfficialHash(hash)) == true;
             _frames = new WriteableBitmap?[effects.Any(effect => Moves(effect, entry)) ? ThumbSteps : 1];
+            if (entry?.Author is not null) LoadAvatar(entry.Author);
             Cursor = new Cursor(StandardCursorType.Hand);
         }
 
         private readonly bool _codeMark;
+        private Bitmap? _avatar;
+        private bool _disposed;
+
+        private async void LoadAvatar(AssetAuthor author)
+        {
+            var bitmap = await AuthorAvatarView.LoadAsync(author);
+            if (_disposed) return;
+            _avatar = bitmap;
+            InvalidateVisual();
+        }
 
         /// <summary>
         /// 효과가 진행에 따라 바뀌는지: 움직이는 그라데이션, 선언이 <c>animated</c>인 스크립트(에셋의 선언, 없으면 실행할 수 있는 원문 — 모르면 움직인다고 봄),
@@ -412,12 +423,23 @@ public sealed partial class LayerEffectsDialog
             g.DrawRectangle(new Pen(AppTheme.BorderBrush, 1), b.Deflate(0.5));
             if (_frames[_shown] is { } bmp)
             {
-                var area = new Rect(5, 5, b.Width - 10, b.Height - 28);
+                var area = new Rect(5, 5, b.Width - 10, b.Height - (Entry?.Author is null ? 28 : 45));
                 var src = new Rectangle(0, 0, bmp.PixelSize.Width, bmp.PixelSize.Height);
                 double fit = Math.Min(area.Width / src.Width, area.Height / src.Height);
                 ImageUtil.DrawFitted(g, bmp, src, area, fit >= 1 ? (int)Math.Floor(fit) : 0, checker: true);
             }
-            AppTheme.DrawTextIn(g, Title, new Rect(2, b.Height - 21, b.Width - 4, 18), AppTheme.TextBrush, AppTheme.SmallFontSize, center: true);
+            AppTheme.DrawTextIn(g, Title, new Rect(2, b.Height - (Entry?.Author is null ? 21 : 36), b.Width - 4, 18),
+                AppTheme.TextBrush, AppTheme.SmallFontSize, center: true);
+            if (Entry?.Author is { } author)
+            {
+                var icon = new Rect(3, b.Height - 17, 13, 13);
+                if (_avatar is { } avatar)
+                    g.DrawImage(avatar, new Rect(0, 0, avatar.PixelSize.Width, avatar.PixelSize.Height), icon);
+                else
+                    VectorIcons.Draw(g, VectorIcon.CircleUser, icon, 12, AppTheme.DimTextBrush);
+                AppTheme.DrawTextIn(g, author.Name, new Rect(17, b.Height - 19, b.Width - 20, 17),
+                    AppTheme.DimTextBrush, AppTheme.SmallFontSize);
+            }
             // 공식 효과가 아닌 스크립트 효과가 든 상자: 오른쪽 위에 코드 표시
             if (_codeMark)
                 VectorIcons.Draw(g, VectorIcon.Code, new Rect(b.Width - 17, 3, 14, 14), 12, AppTheme.DimTextBrush);
@@ -425,6 +447,7 @@ public sealed partial class LayerEffectsDialog
 
         public void Dispose()
         {
+            _disposed = true;
             for (int i = 0; i < _frames.Length; i++)
             {
                 _frames[i]?.Dispose();

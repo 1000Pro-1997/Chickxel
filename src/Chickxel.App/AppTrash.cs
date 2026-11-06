@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Chickxel.App.Localization;
+using Chickxel.Core.IO;
 
 namespace Chickxel.App;
 
@@ -86,7 +87,7 @@ public sealed class AppTrash
         }
         finally
         {
-            if (entry.Files.Count > 0) File.WriteAllText(Path.Combine(dir, ManifestName), JsonSerializer.Serialize(entry, Options));
+            if (entry.Files.Count > 0) AtomicFile.WriteText(Path.Combine(dir, ManifestName), JsonSerializer.Serialize(entry, Options));
             else Directory.Delete(dir, recursive: true);
         }
         return entry.Files.Count > 0 ? entry : null;

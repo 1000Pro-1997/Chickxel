@@ -668,7 +668,7 @@ public sealed class TimelinePanel : UserControl
     private static bool CanLinkCels(SpriteProject p, IReadOnlyList<(int Layer, int Frame)> cels)
         => cels.GroupBy(c => c.Layer).Any(row => row.Select(c => c.Frame).Distinct().Count() > 1 && row.Any(c => Shows(p, c.Layer, c.Frame)));
 
-    /// <summary>칸에 그림이 보이는지(그룹 행이면 부위 중 하나라도).</summary>
+    /// <summary>칸에 그림이 보이는지(그룹 행이면 부위 중 하나라도). 간단히 보기의 점도 이것으로 정한다(썸네일 없이 셀만 봄).</summary>
     private static bool Shows(SpriteProject p, int layer, int frame)
         => p.Layers[layer] is { IsGroup: true } group ? p.ChildrenOf(group).Any(part => !p.IsCelEmpty(p.IndexOf(part), frame)) : !p.IsCelEmpty(layer, frame);
 
@@ -2962,13 +2962,6 @@ public sealed class TimelinePanel : UserControl
             => (uint)col.Index < (uint)p.Frames.Count && ReferenceEquals(p.Frames[col.Index], col.Item) ? col.Index : -1;
 
         /// <summary>
-        /// 간단히 보기의 점: 셀 <paramref name="l"/>×<paramref name="f"/>에 그림이 있는지. 그룹 행은 부위 중 하나라도 그림이 있으면 점.
-        /// 썸네일을 만들지 않고 셀만 본다.
-        /// </summary>
-        private static bool CelDot(SpriteProject p, int l, int f)
-            => p.Layers[l] is { IsGroup: true } group ? p.ChildrenOf(group).Any(part => !p.IsCelEmpty(p.IndexOf(part), f)) : !p.IsCelEmpty(l, f);
-
-        /// <summary>
         /// 행·열은 배치(<see cref="Track"/>)를 따라 그린다. 자라거나 줄어드는 칸은 그 크기만큼 잘라 보이고, 내용은 칸의 아래·오른쪽 끝에
         /// 붙여 그려 앞 칸 밑에서 밀려 나오고 들어가듯 보인다.
         /// </summary>
@@ -3019,7 +3012,7 @@ public sealed class TimelinePanel : UserControl
                 if (!_thumbnails)
                 {
                     // 간단히 보기: 썸네일 없이 그림이 있는 칸에만 흰 점
-                    if (CelDot(p, l, f))
+                    if (Shows(p, l, f))
                         g.DrawEllipse(AppTheme.TextBrush, null, new Rect(r.X + r.Width / 2 - 2.5, r.Y + r.Height / 2 - 2.5, 5, 5));
                 }
                 else if (Ctx.CelThumbnail(l, f) is { Bitmap: { } bmp } thumb)

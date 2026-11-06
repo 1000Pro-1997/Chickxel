@@ -44,7 +44,7 @@ public static class UndoHistoryIO
         Directory.CreateDirectory(Path.Combine(directory, BlobFolder));
         var blobs = new HistoryBlobs(directory);
         var manifest = capture.Project.BuildHistoryManifest(capture, blobs);
-        WriteAtomic(Path.Combine(directory, ManifestName), Compress(JsonSerializer.SerializeToUtf8Bytes(manifest, Json)));
+        AtomicFile.Write(Path.Combine(directory, ManifestName), Compress(JsonSerializer.SerializeToUtf8Bytes(manifest, Json)), flushToDisk: false);
         blobs.DeleteUnused();
         return new UndoHistoryWriteResult(capture.UndoCount, capture.RedoCount, DirectorySize(directory));
     }
@@ -105,21 +105,6 @@ public static class UndoHistoryIO
         catch (InvalidDataException ex)
         {
             throw new InvalidDataException(Chickxel.Core.Localization.DomainStrings.FormatHistory_CorruptChunkMessage(error: ex.Message), ex);
-        }
-    }
-
-    /// <summary>임시 파일에 쓴 뒤 바꿔치기한다.</summary>
-    internal static void WriteAtomic(string path, byte[] data)
-    {
-        var temp = $"{path}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            File.WriteAllBytes(temp, data);
-            FileReplace.Commit(temp, path);
-        }
-        finally
-        {
-            if (File.Exists(temp)) File.Delete(temp);
         }
     }
 
@@ -265,7 +250,7 @@ internal sealed class HistoryBlobs(string directory)
     {
         var hash = HashOf(payload);
         if (TryUse(hash)) return hash;
-        UndoHistoryIO.WriteAtomic(PathOf(hash), UndoHistoryIO.Compress(payload));
+        AtomicFile.Write(PathOf(hash), UndoHistoryIO.Compress(payload), flushToDisk: false);
         _used.Add(hash);
         return hash;
     }

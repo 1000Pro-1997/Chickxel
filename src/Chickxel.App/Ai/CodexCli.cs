@@ -337,8 +337,8 @@ public sealed class CodexSession : IChatSession
                 // 프로세스가 죽었으면 읽기 스레드가 끝을 알린다.
             }
         });
-        var reader = new Thread(() => ReadLoop(p, gen, stderr, stderrDone)) { IsBackground = true, Name = "codex-stdout" };
-        reader.Start();
+        AiCli.StartJsonLineReader(p, "codex-stdout", stderr, stderrDone, stripAnsi: true,
+            obj => Handle(gen, obj), (code, tail) => OnExit(gen, code, tail));
     }
 
     /// <summary><c>-c</c> 설정: 편집기 MCP 서버만, MCP 도구는 묻지 않고 허용(그림 생성처럼 오래 걸리는 도구도 기다림), 읽기 전용, 웹 검색·알림·AGENTS.md 끔, 시스템 프롬프트.</summary>
@@ -398,52 +398,6 @@ public sealed class CodexSession : IChatSession
             }
         }
         _pendingImages = [];
-    }
-
-    /// <summary>표준 출력 JSONL을 읽는 스레드. 한 줄씩 파싱해 UI 스레드로 넘긴다.</summary>
-    private void ReadLoop(Process p, int gen, StringBuilder stderr, Task stderrDone)
-    {
-        try
-        {
-            var stdout = p.StandardOutput;
-            string? line;
-            while ((line = stdout.ReadLine()) is not null)
-            {
-                if (line.Length == 0 || line[0] != '{') continue;
-                JsonObject? obj;
-                try
-                {
-                    obj = JsonNode.Parse(line) as JsonObject;
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (obj is not null) Dispatcher.UIThread.Post(() => Handle(gen, obj));
-            }
-        }
-        catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
-        {
-        }
-        int code;
-        try
-        {
-            p.WaitForExit();
-            code = p.ExitCode;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
-        {
-            code = -1;
-        }
-        // 표준 오류를 끝까지 읽을 때까지(잠깐만) 기다린 뒤 끝부분을 이유로.
-        stderrDone.Wait(TimeSpan.FromSeconds(2));
-        string tail;
-        lock (stderr) tail = AiCli.Tail(AiCli.StripAnsi(stderr.ToString()).Trim(), 1500);
-        Dispatcher.UIThread.Post(() =>
-        {
-            p.Dispose();
-            OnExit(gen, code, tail);
-        });
     }
 
     /// <summary>프로세스가 끝남: 차례가 끝나지 않았으면 이어 가기 실패(새 대화로 다시) 또는 오류로 마친다.</summary>

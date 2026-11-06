@@ -346,6 +346,68 @@ public static class AiCli
         }
     });
 
+    /// <summary>
+    /// 표준 출력 JSONL을 읽는 배경 스레드(이름 <paramref name="threadName"/>)를 띄운다. 한 줄씩 JSON 객체로 파싱해 UI 스레드에서 <paramref name="onLine"/>에 넘기고,
+    /// 출력이 끝나면 프로세스가 끝나기를 기다려 UI 스레드에서 프로세스를 정리한 뒤 <paramref name="onExit"/>(종료 코드, 표준 오류 끝부분)를 부른다.
+    /// <paramref name="stderr"/>·<paramref name="stderrDone"/>은 <see cref="CollectErrorTail"/>로 모은 것이며, <paramref name="stripAnsi"/>이면 끝부분에서 ANSI 제어 문자를 뺀다.
+    /// </summary>
+    public static void StartJsonLineReader(Process p, string threadName, StringBuilder stderr, Task stderrDone, bool stripAnsi,
+        Action<JsonObject> onLine, Action<int, string> onExit)
+    {
+        var reader = new Thread(() => ReadJsonLines(p, stderr, stderrDone, stripAnsi, onLine, onExit)) { IsBackground = true, Name = threadName };
+        reader.Start();
+    }
+
+    /// <summary><see cref="StartJsonLineReader"/>의 읽기 스레드 본문.</summary>
+    private static void ReadJsonLines(Process p, StringBuilder stderr, Task stderrDone, bool stripAnsi, Action<JsonObject> onLine, Action<int, string> onExit)
+    {
+        try
+        {
+            var stdout = p.StandardOutput;
+            string? line;
+            while ((line = stdout.ReadLine()) is not null)
+            {
+                if (line.Length == 0 || line[0] != '{') continue;
+                JsonObject? obj;
+                try
+                {
+                    obj = JsonNode.Parse(line) as JsonObject;
+                }
+                catch (JsonException)
+                {
+                    continue;
+                }
+                if (obj is not null) Dispatcher.UIThread.Post(() => onLine(obj));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+        }
+        int code;
+        try
+        {
+            p.WaitForExit();
+            code = p.ExitCode;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
+        {
+            code = -1;
+        }
+        // 표준 오류를 끝까지 읽을 때까지(잠깐만) 기다린 뒤 끝부분을 이유로.
+        stderrDone.Wait(TimeSpan.FromSeconds(2));
+        string tail;
+        lock (stderr)
+        {
+            var text = stderr.ToString();
+            tail = Tail((stripAnsi ? StripAnsi(text) : text).Trim(), 1500);
+        }
+        Dispatcher.UIThread.Post(() =>
+        {
+            p.Dispose();
+            onExit(code, tail);
+        });
+    }
+
     /// <summary>창 없이 한 번 실행한 결과(<see cref="Error"/>: 실행 실패·시간 초과).</summary>
     public sealed record RunResult(int ExitCode, string Stdout, string Stderr, string? Error);
 
@@ -553,7 +615,7 @@ public sealed class CliLogin : IDisposable
     private readonly StringBuilder _output = new();
     private readonly HashSet<string> _urls = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _pollTimer = new() { Interval = TimeSpan.FromSeconds(2) };
-    private readonly DispatcherTimer _urlTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private readonly UiDebouncer _urlTimer;
     private Process? _process;
     private bool _polling, _done;
 
@@ -562,11 +624,7 @@ public sealed class CliLogin : IDisposable
         _provider = provider;
         _path = cliPath;
         _pollTimer.Tick += async (_, _) => await PollAsync(final: false);
-        _urlTimer.Tick += (_, _) =>
-        {
-            _urlTimer.Stop();
-            ScanUrls(includeTrailing: true);
-        };
+        _urlTimer = new UiDebouncer(TimeSpan.FromMilliseconds(400), () => ScanUrls(includeTrailing: true));
     }
 
     /// <summary>로그인 주소(브라우저가 저절로 안 열렸을 때 사용자가 누를 주소).</summary>
@@ -618,8 +676,7 @@ public sealed class CliLogin : IDisposable
         if (_done) return;
         _output.Append(AiCli.StripAnsi(chunk));
         ScanUrls(includeTrailing: false);
-        _urlTimer.Stop();
-        _urlTimer.Start();
+        _urlTimer.Restart();
         var lines = _output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (lines.LastOrDefault(l => l.Length > 0) is { } last) OutputLine?.Invoke(last);
     }
@@ -695,7 +752,7 @@ public sealed class CliLogin : IDisposable
     {
         _done = true;
         _pollTimer.Stop();
-        _urlTimer.Stop();
+        _urlTimer.Cancel();
         if (_process is { } p) AiCli.Kill(p);
     }
 

@@ -325,7 +325,8 @@ public static class AssetPublishCheck
             Name = request.Name.Trim(),
             Description = request.Summary.Trim(),
             Translations = translations,
-            Author = new AssetAuthor(request.Author.Id, request.Author.Name.Trim()),
+            Author = new AssetAuthor(request.Author.Id, request.Author.Name.Trim(),
+                AvatarUrl: AssetManifest.IsHttpsUrl(request.Author.AvatarUrl) ? request.Author.AvatarUrl : null),
             License = License,
             MinAppVersion = request.MinAppVersion,
         });

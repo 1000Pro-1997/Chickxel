@@ -164,7 +164,7 @@ public sealed class ToolOptionsPanel : UserControl
     private LayerEffect? _fxShown;
     /// <summary>독에서 이어 바꾼 값을 실행취소 한 단계로 묶는 중인 문서(<see cref="EffectEditPause"/> 동안 손대지 않거나 패널을 벗어나면 닫음).</summary>
     private SpriteProject? _fxGroup;
-    private readonly DispatcherTimer _fxGroupTimer = new() { Interval = EffectEditPause };
+    private readonly UiDebouncer _fxGroupTimer;
     /// <summary>독에서 효과 값을 이 시간 안에 이어 바꾸면 실행취소 한 단계로 묶는다(슬라이더·색 고르기 끌기 등).</summary>
     private static readonly TimeSpan EffectEditPause = TimeSpan.FromMilliseconds(700);
 
@@ -174,6 +174,7 @@ public sealed class ToolOptionsPanel : UserControl
     public ToolOptionsPanel(EditorContext ctx)
     {
         _ctx = ctx;
+        _fxGroupTimer = new UiDebouncer(EffectEditPause, EndEffectEdit);
         Background = AppTheme.PanelBrush;
 
         // ── 브러시: 모양 단추 + 크기(슬라이더·숫자) + 미리보기
@@ -591,7 +592,6 @@ public sealed class ToolOptionsPanel : UserControl
         _effectTitle = (TextBlock)effectHead.Children[0];
         _effectInfo = effectHead.Children[1];
         _effectSection = new StackPanel { IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
-        _fxGroupTimer.Tick += (_, _) => EndEffectEdit();
         // 캔버스 등 다른 곳을 고치러 나가면 묶음을 닫는다(다른 편집이 효과 변경과 한 단계로 묶이지 않게).
         PointerExited += (_, _) => EndEffectEdit();
 
@@ -1214,18 +1214,14 @@ public sealed class ToolOptionsPanel : UserControl
             p.History.BeginGroup(null);
             _fxGroup = p;
         }
-        if (_fxGroup is not null)
-        {
-            _fxGroupTimer.Stop();
-            _fxGroupTimer.Start();
-        }
+        if (_fxGroup is not null) _fxGroupTimer.Restart();
         _ctx.Structural(() => p.SetLayerEffects(p.IndexOf(layer), list));
     }
 
     /// <summary>독에서 이어 바꾸던 효과 값 묶음을 닫아 실행취소 한 단계로 기록한다(열린 묶음이 없으면 그대로).</summary>
     private void EndEffectEdit()
     {
-        _fxGroupTimer.Stop();
+        _fxGroupTimer.Cancel();
         if (_fxGroup is not { } p) return;
         _fxGroup = null;
         p.History.EndGroup();

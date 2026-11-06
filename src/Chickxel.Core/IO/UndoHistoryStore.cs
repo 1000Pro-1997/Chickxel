@@ -98,7 +98,7 @@ public sealed class UndoHistoryStore(string root)
     }
 
     private void WriteEntry(UndoHistoryEntry e)
-        => UndoHistoryIO.WriteAtomic(Path.Combine(DirectoryOf(e.Key), EntryName), JsonSerializer.SerializeToUtf8Bytes(e, Options));
+        => AtomicFile.Write(Path.Combine(DirectoryOf(e.Key), EntryName), JsonSerializer.SerializeToUtf8Bytes(e, Options), flushToDisk: false);
 
     /// <summary>
     /// <paramref name="path"/> 문서의 기록을 쓴다(<paramref name="stamp"/> = 기록이 맞는 프로젝트 파일 표시). 단계가 없으면 기록을 지우고 null.

@@ -203,7 +203,7 @@ public sealed class AiDrawJobStore(string root)
         var dir = DirectoryOf(job.Id);
         Directory.CreateDirectory(dir);
         PngIO.Save(source, Path.Combine(dir, SourceFile));
-        File.WriteAllText(Path.Combine(dir, JobFile), JsonSerializer.Serialize(job, Json));
+        AtomicFile.WriteText(Path.Combine(dir, JobFile), JsonSerializer.Serialize(job, Json));
         Prune(MaxJobs, job.Id);
     }
 

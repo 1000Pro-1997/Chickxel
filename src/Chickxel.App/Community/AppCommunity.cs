@@ -1,4 +1,5 @@
 using Chickxel.App.Localization;
+using Chickxel.Core.Assets;
 using Chickxel.Core.Community;
 using Chickxel.Core.IO;
 
@@ -33,6 +34,14 @@ public static class AppCommunity
            && (url.Scheme == Uri.UriSchemeHttps || (url.Scheme == Uri.UriSchemeHttp && url.IsLoopback))
             ? url
             : new Uri(AppInfo.WebsiteUrl);
+    /// <summary>계정 응답의 프로필 주소를 게시 메타데이터에 쓸 HTTPS 같은 사이트 주소로 제한한다.</summary>
+    public static string? PublishAvatarUrl(CommunityUser user)
+    {
+        if (Client.Resolve(user.AvatarUrl) is not { } uri || !AssetManifest.IsHttpsUrl(uri.AbsoluteUri)) return null;
+        var site = Client.BaseUrl;
+        return uri.Scheme == site.Scheme && uri.Host.Equals(site.Host, StringComparison.OrdinalIgnoreCase)
+               && uri.Port == site.Port && uri.UserInfo.Length == 0 ? uri.AbsoluteUri : null;
+    }
 
     /// <summary>
     /// 로그인한 내 정보. 저장한 세션이 있으면 서버에 확인하고(끝났으면 계정 창), 없으면 <paramref name="reason"/>을 보이며 계정 창을 연다.

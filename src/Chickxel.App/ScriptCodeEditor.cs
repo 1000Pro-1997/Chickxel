@@ -73,6 +73,12 @@ internal sealed class ScriptCodeEditor : UserControl
             _editor.TextArea.Caret.Offset = 0;
         }
     }
+    public bool IsReadOnly
+    {
+        get => _editor.IsReadOnly;
+        set => _editor.IsReadOnly = value;
+    }
+
 
     /// <summary>오류 자리(줄·칸, 1부터)와 글. 위치가 없는 오류(0)는 밑줄을 긋지 않는다.</summary>
     public void SetErrors(IEnumerable<ScriptError> errors)

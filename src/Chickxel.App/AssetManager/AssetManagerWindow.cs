@@ -280,10 +280,16 @@ public sealed partial class AssetManagerWindow : DialogBase
         if (entry.Gradient is { } gradient)
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
         string?[] parts = mine
-            ? [entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
+            ? [entry.Author?.Name, entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
             : [entry.Author?.Name, entry.Store?.Version];
         string sub = string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)));
-        if (sub.Length > 0) panel.Children.Add(Dim(sub));
+        if (entry.Author is { } author && entry.Kind is AssetKinds.EffectRecipe or AssetKinds.EffectScript)
+            panel.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 5,
+                Children = { AuthorAvatarView.Create(author, 16), Dim(sub.Length > 0 ? sub : author.Name) },
+            });
+        else if (sub.Length > 0) panel.Children.Add(Dim(sub));
         return panel;
     }
 
