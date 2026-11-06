@@ -43,7 +43,7 @@ internal static class PixelateKit
     /// </summary>
     public static string MakeAiImage(ShotKit k)
     {
-        var src = PixelateDialog.LoadImage(ShotKit.SamplePng) ?? throw new InvalidOperationException("sample unreadable");
+        var src = PngIO.Load(ShotKit.SamplePng);
         const double scale = 7.4;
         const int margin = 44;
         int[] MapAxis(int cells, out int size)

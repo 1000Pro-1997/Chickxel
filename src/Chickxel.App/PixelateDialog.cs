@@ -523,8 +523,39 @@ public sealed class OptimizePreset
     }
 }
 
-/// <summary>정리할 그림: 픽셀, 이름(레이어·팔레트 이름에 씀), 파일 경로(파일에서 왔으면).</summary>
-public sealed record PixelateInput(PixelImage Image, string Name, string? Path);
+/// <summary>
+/// 정리할 그림: 픽셀, 이름(레이어·팔레트 이름에 씀), 파일 경로(파일에서 왔으면), 프레임 수.
+/// <paramref name="Frames"/>가 2 이상이면 같은 크기 프레임을 가로 <paramref name="Columns"/> × 세로 <paramref name="Rows"/> 칸에 행 우선으로 한 칸씩 이어 붙인 그림이고
+/// (<see cref="FromFrames"/>), 창은 프레임 나누기를 그 격자로 맞춘다.
+/// </summary>
+public sealed record PixelateInput(PixelImage Image, string Name, string? Path, int Frames = 1, int Columns = 1, int Rows = 1)
+{
+    /// <summary>프레임 격자의 가로·세로 칸 수 최대(프레임 나누기 칸 수의 최대와 같음).</summary>
+    public const int MaxGridCells = 64;
+
+    /// <summary>
+    /// 같은 크기 프레임들(움직이는 그림·레이어의 프레임)을 가로세로 길이가 비슷한 격자로 이어 붙인다(행 우선, 프레임마다 한 칸). 한 장이면 그대로.
+    /// 격자(칸 수 <see cref="MaxGridCells"/>, 크기 <see cref="PixelImage.MaxSize"/>)에 다 들어가지 않으면 앞쪽 프레임만 넣는다(<see cref="Frames"/> = 넣은 수).
+    /// </summary>
+    public static PixelateInput FromFrames(IReadOnlyList<PixelImage> frames, string name, string? path)
+    {
+        if (frames.Count == 1) return new PixelateInput(frames[0], name, path);
+        int w = frames[0].Width, h = frames[0].Height;
+        int maxCols = Math.Min(MaxGridCells, PixelImage.MaxSize / w), maxRows = Math.Min(MaxGridCells, PixelImage.MaxSize / h);
+        int count = Math.Min(frames.Count, maxCols * maxRows);
+        int cols = Math.Clamp((int)Math.Round(Math.Sqrt(count * (double)h / w)), 1, Math.Min(count, maxCols));
+        int rows = (count + cols - 1) / cols;
+        if (rows > maxRows)
+        {
+            // 세로가 넘치면 열을 늘린다(count ≤ maxCols × maxRows라 열은 넘치지 않음).
+            cols = (count + maxRows - 1) / maxRows;
+            rows = (count + cols - 1) / cols;
+        }
+        var sheet = new PixelImage(cols * w, rows * h);
+        for (int i = 0; i < count; i++) sheet.Blit(frames[i], i % cols * w, i / cols * h);
+        return new PixelateInput(sheet, name, path, count, cols, rows);
+    }
+}
 
 /// <summary>적용: 고른 결과와 넣는 방법·AI 다듬기 설정.</summary>
 public sealed record PixelateOutcome(
@@ -560,11 +591,13 @@ public sealed class PixelateDialog : DialogBase
     private readonly Action<string, string, IReadOnlyList<PixelImage>> _askAi;
     /// <summary>파일 찾기의 처음 폴더(주 창 파일 브라우저의 폴더, 없으면 마지막 폴더).</summary>
     private readonly Func<string?> _browseFolder;
+    /// <summary>그림 파일을 원본으로 풀기(주 창의 캔버스 끌어 놓기와 같은 길 — 움직이는 그림은 프레임마다 한 칸, 못 읽으면 알리고 null). 인자 = 알림 창 주인, 경로.</summary>
+    private readonly Func<Visual, string, PixelateInput?> _loadSource;
     /// <summary>클립보드 그림 읽기(주 창의 붙여넣기와 같은 길 — PNG·비트맵, 없으면 앱 안 클립보드).</summary>
     private readonly Func<PixelImage?> _readClipboardImage;
     /// <summary>그림 복사(주 창의 복사와 같은 길 — 앱 안 클립보드와 시스템 클립보드에 PNG로).</summary>
     private readonly Action<PixelImage> _copyImage;
-    /// <summary>레이어 여러 프레임을 이은 원본이면 기억한 프레임 나누기 설정(닫거나 원본을 바꿀 때 되돌림).</summary>
+    /// <summary>여러 프레임을 이은 원본이면 기억한 프레임 나누기 설정(닫거나 원본을 바꿀 때 되돌림).</summary>
     private FrameSettings? _restoreFrames;
     /// <summary>처음 설정을 받아 열었음(채팅의 "변환 설정 보기"): 닫을 때 단계 설정을 기억하지 않는다(사용자가 기억한 설정 그대로).</summary>
     private readonly bool _presetGiven;
@@ -813,11 +846,13 @@ public sealed class PixelateDialog : DialogBase
 
     /// <param name="input">원본(null = 빈 창 — 끌어 놓기·붙여 넣기·파일 찾기로 넣음).</param>
     /// <param name="browseFolder">파일 찾기의 처음 폴더.</param>
+    /// <param name="loadSource">그림 파일을 원본으로 풀기(못 읽으면 알리고 null).</param>
     /// <param name="readClipboardImage">클립보드 그림(없으면 null).</param>
     /// <param name="preset">처음 단계 설정(AI 그리기 결과를 다시 조정 — 그 설정으로 후보를 만들고 자동 최적화는 다시 돌리지 않음). null = 기억한 설정.</param>
     public PixelateDialog(AppSettings settings, PixelateInput? input, IEnumerable<NamedPalette> palettes, bool canInsertLayer,
         Action<PixelateOutcome> apply, Action<string, string, IReadOnlyList<PixelImage>> askAi,
-        Func<string?> browseFolder, Func<PixelImage?> readClipboardImage, Action<PixelImage> copyImage, int sourceFrames = 1, PixelateSettings? preset = null)
+        Func<string?> browseFolder, Func<Visual, string, PixelateInput?> loadSource, Func<PixelImage?> readClipboardImage, Action<PixelImage> copyImage,
+        PixelateSettings? preset = null)
         : base(TitleFor(input), UiStrings.Pixelate_Apply)
     {
         _settings = settings;
@@ -828,6 +863,7 @@ public sealed class PixelateDialog : DialogBase
         _apply = apply;
         _askAi = askAi;
         _browseFolder = browseFolder;
+        _loadSource = loadSource;
         _readClipboardImage = readClipboardImage;
         _copyImage = copyImage;
         _palettes = BuildPalettes(palettes);
@@ -843,11 +879,11 @@ public sealed class PixelateDialog : DialogBase
         // 기억한 마지막 설정은 다른 그림에 쓰므로 그림마다 다른 격자 값은 뺀다(AI 그리기의 '변환 설정 보기'는 같은 그림이라 그대로).
         var initial = preset ?? (PixelatePresets.ParseSettings(settings.PixelateSettings) is { } last ? OptimizePreset.WithoutImageGrid(last) : null) ?? OptimizePreset.DefaultSettings;
         _presetGiven = preset is not null;
-        if (sourceFrames > 1 && preset is null)
+        if (input is { Frames: > 1 } && preset is null)
         {
-            // 레이어의 여러 프레임을 가로로 이은 그림: 칸마다 한 프레임(기억한 나누기 설정은 닫을 때 되돌림).
+            // 여러 프레임을 이은 그림: 칸마다 한 프레임(기억한 나누기 설정은 닫을 때 되돌림).
             _restoreFrames = initial.Frames;
-            initial = initial with { Frames = initial.Frames with { Mode = FrameSplitMode.Grid, Columns = sourceFrames, Rows = 1, ManualRegions = null } };
+            initial = initial with { Frames = SourceGrid(initial.Frames, input) };
         }
 
         // ── 프리셋(설정 칸 맨 위에 고정): 고르기 · 저장(빨강 = 저장 안 된 변경, 저장한 그대로면 꺼짐) · 이름 바꾸기 · 복사 · 지우기(빨강) · 정리하기(초록, 아이콘만)
@@ -940,8 +976,8 @@ public sealed class PixelateDialog : DialogBase
 
         // ── 2. 프레임
         _frMode = Ui.Combo(170, UiStrings.Pixelate_Frames_Single, UiStrings.Pixelate_Frames_Auto, UiStrings.Pixelate_Frames_Grid);
-        _frCols = Num(1, 64, 4, 0);
-        _frRows = Num(1, 64, 1, 0);
+        _frCols = Num(1, PixelateInput.MaxGridCells, 4, 0);
+        _frRows = Num(1, PixelateInput.MaxGridCells, 1, 0);
         _frMerge = Num(0, 100, 12, 0);
         _frMergeDist = Num(0, 4096, 48, 0);
         _frAlign = Ui.Combo(130, UiStrings.Pixelate_Align_BottomCenter, UiStrings.Pixelate_Align_Center, UiStrings.Pixelate_Align_Keep);
@@ -1456,17 +1492,24 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>
     /// 원본을 넣거나 바꾼다(끌어 놓기·붙여 넣기·파일 찾기): 돌던 일을 멈추고 원본에서 나온 모든 것(준비한 원본·후보·미리보기·최적화 결과·뺀 색)을 비운 뒤
-    /// 다시 돌린다. 레이어 여러 프레임을 이은 원본이었으면 프레임 나누기를 기억한 설정으로 되돌린다(새 원본은 그림 한 장).
+    /// 다시 돌린다. 여러 프레임을 이은 원본이었으면 프레임 나누기를 기억한 설정으로 되돌리고, 새 원본이 여러 프레임이면 그 격자로 맞춘다.
     /// </summary>
     private void SetSource(PixelateInput input)
     {
         _cts?.Cancel();
         _generation++;
         StopOptimize();
-        if (_restoreFrames is { } frames)
+        if (_restoreFrames is not null || input.Frames > 1)
         {
+            var s = ReadSettings();
+            if (_restoreFrames is { } frames) s = s with { Frames = frames with { ManualRegions = null } };
             _restoreFrames = null;
-            LoadSettings(ReadSettings() with { Frames = frames with { ManualRegions = null } });
+            if (input.Frames > 1)
+            {
+                _restoreFrames = s.Frames;
+                s = s with { Frames = SourceGrid(s.Frames, input) };
+            }
+            LoadSettings(s);
         }
         _manualRegions = null;
         _appliedFrames = null;
@@ -1523,16 +1566,15 @@ public sealed class PixelateDialog : DialogBase
         UpdatePlayIcon();
     }
 
-    /// <summary>그림 파일을 원본으로(못 읽으면 알림).</summary>
+    /// <summary>그림 파일을 원본으로(움직이는 그림은 프레임마다 한 칸 — 못 읽으면 알림).</summary>
     private void LoadSourceFile(string path)
     {
-        if (LoadImage(path) is not { } image)
-        {
-            Ui.Error(this, UiStrings.FormatPixelate_Unreadable(name: Path.GetFileName(path)));
-            return;
-        }
-        SetSource(new PixelateInput(image, Path.GetFileNameWithoutExtension(path), path));
+        if (_loadSource(this, path) is { } input) SetSource(input);
     }
+
+    /// <summary>여러 프레임을 이은 원본(<see cref="PixelateInput.FromFrames"/>)의 프레임 나누기: 그 격자의 칸마다 한 프레임.</summary>
+    private static FrameSettings SourceGrid(FrameSettings frames, PixelateInput input)
+        => frames with { Mode = FrameSplitMode.Grid, Columns = input.Columns, Rows = input.Rows, ManualRegions = null };
 
     /// <summary>파일 찾기(처음 폴더 = 주 창 파일 브라우저의 폴더).</summary>
     private void BrowseSource()
@@ -1626,20 +1668,6 @@ public sealed class PixelateDialog : DialogBase
 
     /// <summary>파일 확장자가 넣을 수 있는 그림(PNG·JPG·BMP·GIF·WebP)인지.</summary>
     public static bool IsImageFile(string path) => ImageExtensions.Any(e => path.EndsWith(e, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>그림 파일의 첫 프레임(PNG는 PNG 읽기, 나머지는 SkiaSharp). 못 읽으면 null.</summary>
-    public static PixelImage? LoadImage(string path)
-    {
-        try
-        {
-            if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) return PngIO.Load(path);
-            return ImageUtil.DecodeFrames(path) is { Images.Count: > 0 } f ? f.Images[0] : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
-        {
-            return null;
-        }
-    }
 
     /// <summary>쓸 수 있는 팔레트: 팔레트 열의 팔레트와 Lospec 즐겨찾기(이름 앞에 "Lospec:").</summary>
     private static List<(string Name, IReadOnlyList<Color32> Colors)> BuildPalettes(IEnumerable<NamedPalette> palettes)
@@ -1745,8 +1773,8 @@ public sealed class PixelateDialog : DialogBase
             var fr = s.Frames;
             _manualRegions = fr.ManualRegions;
             _frMode.SelectedIndex = Index(fr.Mode);
-            _frCols.Value = Math.Clamp(fr.Columns, 1, 64);
-            _frRows.Value = Math.Clamp(fr.Rows, 1, 64);
+            _frCols.Value = Math.Clamp(fr.Columns, 1, PixelateInput.MaxGridCells);
+            _frRows.Value = Math.Clamp(fr.Rows, 1, PixelateInput.MaxGridCells);
             _frMerge.Value = (decimal)Math.Clamp(fr.MergeSmallFraction * 100, 0, 100);
             _frMergeDist.Value = Math.Clamp(fr.MergeDistance, 0, 4096);
             _frAlign.SelectedIndex = Index(fr.Align);

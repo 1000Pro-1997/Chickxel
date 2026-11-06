@@ -807,7 +807,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
             WithIcon(Cmd("AI 상태 열기…", UiStrings.AiStatus_OpenMenu, () => ShowAiStatus(this)), VectorIcon.Info),
             refs,
             new Separator(),
-            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null, 1)), VectorIcon.Grid3x3),
+            WithIcon(Cmd("AI 그림 픽셀로 정리…", MainStrings.Menu_Ai_Pixelate, () => ShowPixelate(null)), VectorIcon.Grid3x3),
             WithIcon(DocCmd("현재 레이어를 픽셀로 정리…", MainStrings.Menu_Ai_PixelateLayer, PixelateCurrentLayer), VectorIcon.Grid3x3));
 
         // 도움말

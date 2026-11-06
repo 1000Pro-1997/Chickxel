@@ -94,7 +94,7 @@ public sealed partial class MainForm
         var unreadable = new List<string>();
         foreach (var path in paths)
         {
-            if (DecodeMedia(path, interactive: true, out _, out bool cancelled) is { } anim)
+            if (DecodeMedia(this, path, interactive: true, out _, out bool cancelled) is { } anim)
                 images.Add(new DroppedImage(Path.GetFileNameWithoutExtension(path), anim.Images, anim.DurationsMs));
             else if (!cancelled) unreadable.Add(Path.GetFileName(path));
         }

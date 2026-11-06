@@ -384,7 +384,7 @@ public sealed partial class ChatWindow
             return;
         }
         var (job, source) = loaded;
-        _mcp.Tools.Host.ShowPixelate(new PixelateInput(source, job.Name, null), job.Frames, job.ReadSettings());
+        _mcp.Tools.Host.ShowPixelate(new PixelateInput(source, job.Name, null), job.ReadSettings());
     }
 
     /// <summary>보낸 질문 한 줄을 눌러 Codex 이미지 생성에 전달한 프롬프트 전문을 보는 카드.</summary>

@@ -2,6 +2,12 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.99 (2026-11-06)
+### Pixelate: animated GIFs split into frames
+- Dropping, browsing, pasting a file path, or right-clicking a GIF (also animated PNG/WebP) in Pixelate AI image now decodes every frame the same way as dropping it on the canvas, including the prompt for more than 300 frames.
+- The frames are tiled one per cell into a near-square grid and Frames switches to that grid, so each source frame becomes one result frame. Replacing it with a single image restores the remembered frame split.
+- Pixelate current layer uses the same grid instead of one long row, so layers with more than 64 frames or very wide strips no longer split wrongly or fail.
+
 ## v1.14.98 (2026-11-06)
 ### Effects: predictable ownership and remote updates
 - Received effects are read-only in Effect Maker until copied to My Assets; own published effects retain their account-linked package ID.

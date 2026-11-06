@@ -21,15 +21,32 @@ public sealed partial class MainForm
     /// <summary>그림 파일을 원본으로 연다(파일 브라우저 우클릭).</summary>
     private void PixelateFile(string path)
     {
-        if (PixelateDialog.LoadImage(path) is not { } image)
-        {
-            Ui.Error(this, UiStrings.FormatPixelate_Unreadable(name: Path.GetFileName(path)));
-            return;
-        }
-        ShowPixelate(new PixelateInput(image, Path.GetFileNameWithoutExtension(path), path), 1);
+        if (LoadPixelateSource(this, path) is { } input) ShowPixelate(input);
     }
 
-    /// <summary>현재 레이어를 원본으로 연다: 그림이 있는 프레임이 여럿이면 가로로 이어 붙이고(프레임마다 한 칸) 격자로 나눈다.</summary>
+    /// <summary>
+    /// 그림 파일을 정리할 원본으로 푼다: 캔버스 끌어 놓기와 같은 <see cref="DecodeMedia"/>(많은 프레임이면 묻기·진행 창)로 풀고, 움직이는 그림(GIF·APNG·WebP)은
+    /// 프레임마다 한 칸으로 이어 붙인다(<see cref="PixelateInput.FromFrames"/>). 못 읽으면 알리고(그만두면 알리지 않고) null. 창은 <paramref name="owner"/> 위에.
+    /// </summary>
+    private PixelateInput? LoadPixelateSource(Visual owner, string path)
+    {
+        if (DecodeMedia(owner, path, interactive: true, out var message, out bool cancelled) is not { } anim)
+        {
+            if (!cancelled) Ui.Error(owner, message);
+            return null;
+        }
+        var input = PixelateInput.FromFrames(anim.Images, Path.GetFileNameWithoutExtension(path), path);
+        WarnTrimmedFrames(owner, input, anim.FrameCount);
+        return input;
+    }
+
+    /// <summary>프레임이 너무 많아 원본 격자에 앞쪽만 넣었으면 알린다.</summary>
+    private static void WarnTrimmedFrames(Visual owner, PixelateInput input, int total)
+    {
+        if (input.Frames < total) Ui.Warn(owner, UiStrings.FormatPixelate_FramesTrimmed(used: input.Frames, total: total));
+    }
+
+    /// <summary>현재 레이어를 원본으로 연다: 그림이 있는 프레임이 여럿이면 프레임마다 한 칸으로 이어 붙이고(<see cref="PixelateInput.FromFrames"/>) 그 격자로 나눈다.</summary>
     private void PixelateCurrentLayer()
     {
         if (_ctx.Project is not { } p) return;
@@ -48,31 +65,25 @@ public sealed partial class MainForm
             ShowMessage(MainStrings.Pixelate_EmptyLayer);
             return;
         }
-        PixelImage image;
-        if (cels.Count == 1) image = cels[0].Clone();
-        else
-        {
-            int w = cels[0].Width, h = cels[0].Height;
-            image = new PixelImage(w * cels.Count, h);
-            for (int i = 0; i < cels.Count; i++) image.Blit(cels[i], i * w, 0);
-        }
-        ShowPixelate(new PixelateInput(image, current.Name, null), cels.Count);
+        var input = PixelateInput.FromFrames(cels.Count == 1 ? [cels[0].Clone()] : cels, current.Name, null);
+        WarnTrimmedFrames(this, input, cels.Count);
+        ShowPixelate(input);
     }
 
     /// <summary>창을 연다(<paramref name="input"/>이 null이면 빈 창 — 창에서 끌어 놓기·붙여 넣기·파일 찾기로 원본을 넣음).</summary>
     /// <param name="preset">처음 단계 설정(채팅의 "변환 설정 보기" — 그 설정을 기억한 설정 대신 쓰고, 다시 최적화하지 않음). null = 기억한 설정.</param>
-    private void ShowPixelate(PixelateInput? input, int sourceFrames, PixelateSettings? preset = null)
+    private void ShowPixelate(PixelateInput? input, PixelateSettings? preset = null)
     {
         _pixelate?.Close();
         var dlg = new PixelateDialog(_settings, input, _colors.Palettes, _ctx.Project is not null && !_ctx.IsCanvasResizing,
-            ApplyPixelate, AskAiAboutCandidates, () => _browser.CurrentFolder ?? _settings.LastFolder, ReadClipboard,
-            img => { _ctx.Clipboard = img; PutOnSystemClipboard(img); }, sourceFrames, preset);
+            ApplyPixelate, AskAiAboutCandidates, () => _browser.CurrentFolder ?? _settings.LastFolder, LoadPixelateSource, ReadClipboard,
+            img => { _ctx.Clipboard = img; PutOnSystemClipboard(img); }, preset);
         dlg.Closed += (_, _) => { if (ReferenceEquals(_pixelate, dlg)) _pixelate = null; };
         _pixelate = dlg;
         dlg.Show(this);
     }
 
-    void Ai.IAiHost.ShowPixelate(PixelateInput input, int sourceFrames, PixelateSettings settings) => ShowPixelate(input, sourceFrames, settings);
+    void Ai.IAiHost.ShowPixelate(PixelateInput input, PixelateSettings settings) => ShowPixelate(input, settings);
 
     string Ai.IAiHost.InsertImage(string name, PixelImage image)
     {

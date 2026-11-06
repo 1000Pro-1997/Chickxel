@@ -109,7 +109,7 @@ public sealed partial class MainForm
             _settings.RecentFiles.Remove(full);
             return false;
         }
-        if (DecodeMedia(full, interactive, out message, out bool cancelled) is not { } anim)
+        if (DecodeMedia(this, full, interactive, out message, out bool cancelled) is not { } anim)
         {
             if (!cancelled && interactive) Ui.Error(this, message);
             return false;
@@ -127,11 +127,11 @@ public sealed partial class MainForm
     }
 
     /// <summary>
-    /// 그림·움직이는 그림·영상을 프레임으로 푼다. 실패하면 null과 <paramref name="message"/>(오류 창은 부른 쪽이 띄움).
+    /// 그림·움직이는 그림·영상을 프레임으로 푼다(파일 열기·캔버스 끌어 놓기·픽셀로 정리 원본이 함께 씀). 실패하면 null과 <paramref name="message"/>(오류 창은 부른 쪽이 띄움).
     /// 사용자가 그만두면(많은 프레임 묻기·영상 설정·진행 취소, ffmpeg 없음 안내) null과 <paramref name="cancelled"/> = true.
-    /// <paramref name="interactive"/>가 false면(AI 도구) 묻지 않고 기본 설정으로 모두 푼다.
+    /// <paramref name="interactive"/>가 false면(AI 도구) 묻지 않고 기본 설정으로 모두 푼다. 묻는 창·진행 창은 <paramref name="owner"/> 위에 띄운다.
     /// </summary>
-    private DecodedAnimation? DecodeMedia(string path, bool interactive, out string message, out bool cancelled)
+    private DecodedAnimation? DecodeMedia(Visual owner, string path, bool interactive, out string message, out bool cancelled)
     {
         message = "";
         cancelled = false;
@@ -139,12 +139,12 @@ public sealed partial class MainForm
         try
         {
             if (MediaFormats.NeedsFfmpeg(path) && !(MediaFormats.KindOf(path) == MediaKind.Image && ImageUtil.CountFrames(path) > 0))
-                return DecodeVideo(path, interactive, out message, out cancelled);
+                return DecodeVideo(owner, path, interactive, out message, out cancelled);
             int count = ImageUtil.CountFrames(path);
             int max = int.MaxValue;
             if (interactive && count > ManyFrames)
             {
-                switch (Ui.Ask(this, MainStrings.FormatOpen_ManyFrames(name: name, count: count, limit: ManyFrames), MainStrings.Message_290,
+                switch (Ui.Ask(owner, MainStrings.FormatOpen_ManyFrames(name: name, count: count, limit: ManyFrames), MainStrings.Message_290,
                             MessageButtons.YesNoCancel, MessageIcon.Question, MainStrings.Open_AllFrames, null,
                             MainStrings.FormatOpen_FirstFrames(limit: ManyFrames)))
                 {
@@ -159,7 +159,7 @@ public sealed partial class MainForm
                 }
             }
             var anim = count > BackgroundDecodeFrames && interactive
-                ? ProgressDialog<DecodedAnimation>.Run(this, MainStrings.Open_DecodingTitle, MainStrings.FormatOpen_Decoding(name: name), 0,
+                ? ProgressDialog<DecodedAnimation>.Run(owner, MainStrings.Open_DecodingTitle, MainStrings.FormatOpen_Decoding(name: name), 0,
                     (_, _) => ImageUtil.DecodeAnimation(path, max) ?? throw new InvalidDataException(MainStrings.FormatOpen_Unreadable(name: name)))
                 : ImageUtil.DecodeAnimation(path, max);
             if (anim is null)
@@ -178,7 +178,7 @@ public sealed partial class MainForm
     }
 
     /// <summary>ffmpeg로 프레임을 뽑는다: 정보 읽기 → 가져오기 설정(정지 그림이면 묻지 않음) → 진행 창. ffmpeg가 없으면 안내하고 취소로 본다.</summary>
-    private DecodedAnimation? DecodeVideo(string path, bool interactive, out string message, out bool cancelled)
+    private DecodedAnimation? DecodeVideo(Visual owner, string path, bool interactive, out string message, out bool cancelled)
     {
         message = "";
         cancelled = false;
@@ -188,7 +188,7 @@ public sealed partial class MainForm
             message = UiStrings.Ffmpeg_MissingShort;
             if (interactive)
             {
-                FfmpegTool.ShowMissing(this);
+                FfmpegTool.ShowMissing(owner);
                 cancelled = true;
             }
             return null;
@@ -203,7 +203,7 @@ public sealed partial class MainForm
         else if (interactive)
         {
             var dlg = new VideoImportDialog(name, info);
-            if (dlg.ShowDialog(this) != DialogResult.OK)
+            if (dlg.ShowDialog(owner) != DialogResult.OK)
             {
                 cancelled = true;
                 return null;
@@ -211,7 +211,7 @@ public sealed partial class MainForm
             options = dlg.Options;
         }
         else options = VideoImportPlan.Defaults(info);
-        var anim = ProgressDialog<DecodedAnimation>.Run(this, UiStrings.Video_DecodingTitle, MainStrings.FormatOpen_Decoding(name: name),
+        var anim = ProgressDialog<DecodedAnimation>.Run(owner, UiStrings.Video_DecodingTitle, MainStrings.FormatOpen_Decoding(name: name),
             VideoImportPlan.EstimateFrames(info, options), (progress, token) => FfmpegTool.Decode(ffmpeg, path, info, options, progress, token));
         if (anim is null) cancelled = true;
         return anim;

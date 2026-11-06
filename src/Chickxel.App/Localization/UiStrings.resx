@@ -8352,7 +8352,7 @@ Chickxel.app을 응용 프로그램 폴더 등으로 옮긴 뒤 다시 실행하
   <data name="Pixelate_Apply" xml:space="preserve"><value>적용</value></data>
   <data name="Pixelate_OpenTitle" xml:space="preserve"><value>정리할 그림 고르기</value></data>
   <data name="Pixelate_ImageFilter" xml:space="preserve"><value>그림</value></data>
-  <data name="Pixelate_Unreadable" xml:space="preserve"><value>그림을 읽을 수 없습니다: {name}</value></data>
+  <data name="Pixelate_FramesTrimmed" xml:space="preserve"><value>프레임이 너무 많아 {total}프레임 중 앞 {used}프레임만 원본으로 넣었습니다.</value></data>
   <data name="Pixelate_Empty" xml:space="preserve"><value>그림을 끌어 놓거나, Ctrl+V로 붙여 넣거나, 파일을 찾아 여세요</value></data>
   <data name="Pixelate_Browse" xml:space="preserve"><value>파일 찾기…</value></data>
   <data name="Pixelate_ReplaceSource" xml:space="preserve"><value>원본 바꾸기</value></data>

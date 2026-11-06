@@ -2523,7 +2523,7 @@ Press the question mark button at the top right to see what the AI can do, with 
   <data name="Pixelate_Apply" xml:space="preserve"><value>Apply</value></data>
   <data name="Pixelate_OpenTitle" xml:space="preserve"><value>Choose an image to pixelate</value></data>
   <data name="Pixelate_ImageFilter" xml:space="preserve"><value>Images</value></data>
-  <data name="Pixelate_Unreadable" xml:space="preserve"><value>Couldn't read the image: {name}</value></data>
+  <data name="Pixelate_FramesTrimmed" xml:space="preserve"><value>Too many frames: only the first {used} of {total} frames were used as the source.</value></data>
   <data name="Pixelate_Empty" xml:space="preserve"><value>Drop an image, paste with Ctrl+V, or browse for a file</value></data>
   <data name="Pixelate_Browse" xml:space="preserve"><value>Browse…</value></data>
   <data name="Pixelate_ReplaceSource" xml:space="preserve"><value>Replace source</value></data>
