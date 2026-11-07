@@ -13,10 +13,9 @@ namespace Chickxel.App.Ai;
 public sealed record AiDrawOutcome(AiDrawJob Job, PixelImage Preview, string Message);
 
 /// <summary>
-/// 그림 생성 도구(<c>generate_pixel_art</c>): 사용자의 Codex CLI 이미지 생성으로 그림을 만들고(애니메이션은 프레임마다 하나씩 — 첫 프레임·앞 프레임을
-/// 함께 보내 같은 캐릭터로), 프레임을 이어 한 원본으로 픽셀 아트 변환(자동 최적화, 공유 팔레트, 외곽선 1px)한 뒤 문서에 넣는다(새 레이어 = 차례의
-/// 실행취소 한 단계, 또는 새 문서). 기록은 <see cref="AiDrawJobStore"/>에 남겨 채팅의 "변환 설정 보기"로 정리 창에서 다시 연다.
-/// 이 도구만 비동기다(<see cref="CallAsync"/> — UI 스레드에서 기다리며 진행을 알림).
+/// 그림 생성 도구(<c>generate_pixel_art</c>): Codex 이미지 생성으로 그림을 만들고, 애니메이션 자동 모드는 프레임을
+/// 이어 GIF로 저장한 뒤 각 프레임을 이미지→픽셀 변환한다. 수동 생성 모드는 설정대로 시트 또는 프레임별로 만든다.
+/// 변환 결과는 새 레이어 또는 새 문서에 넣고, 기록은 <see cref="AiDrawJobStore"/>에 남긴다.
 /// </summary>
 public sealed partial class PixelTools
 {
@@ -45,6 +44,8 @@ public sealed partial class PixelTools
     public event Action<string>? AiDrawProgress;
     /// <summary>Codex 이미지 생성에 실제로 보낼 지시(프레임 번호·전체 생성 횟수 포함). UI 스레드.</summary>
     public event Action<string, int, int>? AiDrawPromptReady;
+    /// <summary>변환 중 최선 결과의 첫 프레임(채팅의 작은 미리보기). UI 스레드.</summary>
+    public event Action<PixelImage>? AiDrawPreview;
 
     /// <summary>그림 생성이 끝나 문서에 넣음. UI 스레드.</summary>
     public event Action<AiDrawOutcome>? AiDrawCompleted;
@@ -92,13 +93,12 @@ public sealed partial class PixelTools
     private static IEnumerable<JsonObject> GenerateToolDefinitions()
     {
         yield return Tool(GenerateTool,
-            "Draw new pixel art the high-quality way: the app generates the image(s) with Codex image generation (the user's own Codex login) and " +
-            "converts them to clean pixel art (auto-optimized grid and palette, 1px outline, background removed), then inserts the result into the " +
-            "document as a new layer or a new document (per the user's settings) as one undo step. For animations it plans the frames (default count " +
-            "from the user's settings) and, by default, generates all frames at once as one sprite sheet so the character stays identical (the user can " +
-            "switch to one image per frame), then splits and converts all frames together with one shared grid and palette. Takes about 30-90 seconds per " +
-            "image plus up to about 2 minutes of conversion auto-optimization. Returns the converted result as an image and a summary; if the conversion fails " +
-            "(empty result — wrong pixel size detected) nothing is inserted and an error is returned.",
+            "Draw new pixel art with Codex image generation (the user's own Codex login), convert it with the image-to-pixel pipeline " +
+            "(auto-optimized grid and palette, 1px outline, background removed), then insert as a new layer or document. In automatic " +
+            "mode, animations are requested as coherent pixel-art GIF frames: the image generator outputs PNG frames, so the app assembles " +
+            "them into an animated GIF, decodes its frames, and converts them together. In manual generation mode the user's animation " +
+            "method (sprite sheet or individual frames) applies. The app plans poses and frame counts unless specified. " +
+            "Generation takes about 30-90 seconds per image plus conversion time. An empty or failed conversion inserts nothing.",
             new JsonObject
             {
                 ["subject"] = Str("What to draw, in English, with concrete visual details: who/what it is, body shape and proportions, outfit, colors, " +
@@ -214,6 +214,7 @@ public sealed partial class PixelTools
         }
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _aiDrawCts = cts;
+        bool previewOpen = true;
         try
         {
             var generator = new CodexImageGenerator(codexPath, _host.Settings.CodexModel);
@@ -239,7 +240,8 @@ public sealed partial class PixelTools
             var firstFiles = new List<string>();
             if (subjectFile is not null) { firstRoles.Add(AiDrawImageRole.Subject); firstFiles.Add(subjectFile); }
             if (styleFile is not null) { firstRoles.Add(AiDrawImageRole.Style); firstFiles.Add(styleFile); }
-            bool sheet = count > 1 && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
+            bool animatedGif = count > 1 && options.Mode == AiDrawMode.Auto && Scope is null;
+            bool sheet = count > 1 && !animatedGif && options.AnimationMethod == AiDrawAnimationMethod.SingleSheet;
             bool keepOffsets = animation == AiDrawActions.Jump;
             var pixelate = _host.Settings.Pixelate ??= new PixelateOptions();
             pixelate.Migrate(_host.Settings);
@@ -280,7 +282,7 @@ public sealed partial class PixelTools
                         files.Add(_jobs.FramePath(jobId, 0));
                         if (f.Index > 1) { roles.Add(AiDrawImageRole.PreviousFrame); files.Add(_jobs.FramePath(jobId, f.Index - 1)); }
                     }
-                    var prompt = AiDrawPrompts.Frame(request, f, roles);
+                    var prompt = animatedGif ? AiDrawPrompts.GifFrame(request, f, roles) : AiDrawPrompts.Frame(request, f, roles);
                     prompts.Add(prompt);
                     var output = _jobs.FramePath(jobId, f.Index);
                     var instruction = AiDrawPrompts.CodexInstruction(prompt, request.Transparent, files.Count);
@@ -289,14 +291,40 @@ public sealed partial class PixelTools
                     images.Add(LoadGenerated(output));
                 }
                 firstImage = _jobs.FramePath(jobId, 0);
-                source = AiDrawConversion.Combine([.. images.Select(i => AiDrawConversion.Downscale(i, AiDrawConversion.MaxFrameSide))]);
+                if (animatedGif)
+                {
+                    // 이미지 생성 도구는 PNG만 반환한다. 프레임을 움짤로 묶어 저장하고, 그 움짤을 다시 풀어
+                    // 이미지→픽셀 변환기에 보낸다(프레임 순서·공유 팔레트 유지).
+                    var gifPath = Path.Combine(dir, "animation.gif");
+                    Report(progress, UiStrings.AiDraw_Progress_Converting);
+                    source = await Task.Run(() =>
+                    {
+                        var gifFrames = images.Select(i => new GifFrame(AiDrawConversion.Downscale(i, AiDrawConversion.MaxFrameSide),
+                            AiDrawActions.DurationMs(animation))).ToArray();
+                        cts.Token.ThrowIfCancellationRequested();
+                        GifWriter.Save(gifFrames, gifPath, new GifOptions());
+                        cts.Token.ThrowIfCancellationRequested();
+                        var decoded = GifReader.Load(gifPath, count);
+                        if (decoded.Images.Count != count) throw new AiDrawException(UiStrings.AiDraw_Error_Read);
+                        return AiDrawConversion.Combine(decoded.Images);
+                    }, cts.Token);
+                }
+                else
+                    source = AiDrawConversion.Combine([.. images.Select(i => AiDrawConversion.Downscale(i, AiDrawConversion.MaxFrameSide))]);
             }
 
             Report(progress, options.AutoOptimize ? UiStrings.AiDraw_Progress_Optimizing : UiStrings.AiDraw_Progress_Converting);
             // AI 그림은 대표 프리셋에 저장한 단계 설정·칸별 최적화·예산·점수 기준으로 변환한다.
             // 진행: UI 스레드로(이 메서드의 동기화 문맥), 0.2초에 한 번쯤.
-            IProgress<PixelateOptimizeProgress> ui = new Progress<PixelateOptimizeProgress>(p => Report(progress, UiStrings.FormatAiDraw_Progress_OptimizeTrial(
-                pass: p.Pass, done: p.Done, total: p.Budget, score: p.BestScore.ToString("0.0", CultureInfo.CurrentCulture))));
+            IProgress<PixelateOptimizeProgress> ui = new Progress<PixelateOptimizeProgress>(p =>
+            {
+                if (!previewOpen) return;
+                Report(progress, UiStrings.FormatAiDraw_Progress_OptimizeTrial(
+                    pass: p.Pass, done: p.Done, total: p.Budget, score: p.BestScore.ToString("0.0", CultureInfo.CurrentCulture)));
+                if (!p.Latest.Result.Failed && p.Latest.InScale && p.Latest.Score.Total >= p.BestScore
+                    && p.Latest.Result.Frames is { Count: > 0 } frames)
+                    AiDrawPreview?.Invoke(frames[0]);
+            });
             var clock = System.Diagnostics.Stopwatch.StartNew();
             long lastReport = -1000;
             void OnProgress(PixelateOptimizeProgress p)
@@ -320,6 +348,7 @@ public sealed partial class PixelTools
                     reason: PixelateDialog.FailureReason(result.Failure), scale: result.DetectedScale.ToString("0.##", CultureInfo.CurrentCulture)));
             var outFrames = result.CommonFrames();
             if (outFrames.Count == 0) throw new AiDrawException(UiStrings.AiDraw_Error_NoSprite);
+            AiDrawPreview?.Invoke(outFrames[0]);
 
             // 생성하는 동안 사용자가 문서를 바꿨을 수 있다.
             if (Scope is { } scope && !ReferenceEquals(Ctx.Project, scope.Project)) throw new ToolError(UiStrings.Ai_Scope_OtherDocument);
@@ -355,7 +384,8 @@ public sealed partial class PixelTools
             if (!inserted.Inserted) throw new ToolError(message);
 
             var (png, zoom) = Enlarge(preview, null);
-            var summary = (sheet ? $"Generated one sprite sheet with {count} frames" : $"Generated {count} image(s)") + " with Codex image generation and converted it to pixel art: " + $"{outFrames.Count} frame(s) of " +
+            var summary = (animatedGif ? $"Generated {count} animation frames and assembled an animated GIF" : sheet ? $"Generated one sprite sheet with {count} frames" : $"Generated {count} image(s)") +
+                          " with Codex image generation and converted it to pixel art: " + $"{outFrames.Count} frame(s) of " +
                           $"{outFrames[0].Width}x{outFrames[0].Height} px, {result.Palette.Count} colors, inserted " +
                           (newDocument ? "as a new document" : "as a new layer in the open document") + $" (\"{name}\")" +
                           (style is not null ? $", pixel-art style reference: {style.Item.Id}" : "") +
@@ -365,6 +395,7 @@ public sealed partial class PixelTools
         }
         finally
         {
+            previewOpen = false;
             _aiDrawCts = null;
         }
     }

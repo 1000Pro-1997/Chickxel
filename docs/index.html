@@ -18,6 +18,7 @@
 <link rel="icon" href="assets/icon-256.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=20261103">
+<script src="/static/analytics.js" defer></script>
 <script>
 // 처음 온 사람은 브라우저 언어로(한국어가 아니면 영어). 고른 언어는 기억한다.
 (function () {
@@ -26,7 +27,7 @@
   var saved = null;
   try { saved = localStorage.getItem('chickxel-lang'); } catch (e) {}
   var want = saved || (/^ko\b/i.test(navigator.language || '') ? 'ko' : 'en');
-  if (want !== 'ko') location.replace('en/' + '' + location.hash);
+  if (want !== 'ko') location.replace('en/' + '' + location.search + location.hash);
 })();
 </script>
 </head>

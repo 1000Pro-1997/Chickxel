@@ -1,0 +1,79 @@
+key,ko,en
+#name,한국어,English
+language.1,언어,Language
+language.2,"Chickxel에는 한국어와 영어가 들어 있습니다. 다른 언어는 번역 CSV 파일로 직접 만들어 넣고, 들어 있는 문구도 CSV로 고칠 수 있습니다. 화면 언어는 환경 설정에서 바꾸며, 다시 시작해야 적용됩니다.","Chickxel includes Korean and English. You can add other languages yourself with a translation CSV file, and edit the built-in text with a CSV too. The display language is changed in Preferences and takes effect after a restart."
+language.3,쪽,Page
+language.4,이럴 때 읽기,Read it when
+language.5,한국어·영어나 넣어 둔 언어로 화면을 바꿀 때,"You switch the display to Korean, English or a language you added"
+language.6,목록에 없는 언어로 Chickxel을 번역할 때,You translate Chickxel into a language that isn't in the list
+language.7,"들어 있는 문구를 고치거나, 넣은 언어를 지울 때",You edit built-in text or remove a language you added
+language-change.1,화면 언어 바꾸기,Changing the display language
+language-change.overview,화면 언어는 <strong>편집 &gt; {{MainStrings.Menu_Edit_ShowPreferences_131}}</strong>의 <strong>일반</strong> 탭 맨 위에서 고릅니다. 바꾼 언어는 Chickxel을 다시 시작해야 적용됩니다.,Choose the display language at the top of the <strong>General</strong> tab in <strong>Edit &gt; {{MainStrings.Menu_Edit_ShowPreferences_131}}</strong>. A new language takes effect after Chickxel restarts.
+language-change.h-pick,언어 고르기,Choosing a language
+language-change.5.alt,편집 메뉴를 펼쳐 맨 아래 환경 설정… 항목을 표시한 모습,The Edit menu open with the Preferences… item at the bottom marked
+language-change.6,"① 편집 &gt; 환경 설정…(Preferences…, Ctrl+,)","① Edit &gt; Preferences… (Ctrl+,)"
+language-change.7.alt,"환경 설정 일반 탭: 맨 위 언어 부분에서 화면 언어 목록을 펼쳐 한국어·English가 보이고, 오른쪽 아래에 확인 단추","The General tab of Preferences: the Display language list in the Language part at the top is open showing 한국어 and English, with the OK button at the bottom right"
+language-change.8,② 언어(Language) 부분 · ③ 화면 언어(Display language) 목록 · ④ 확인(OK),② Language part · ③ Display language list · ④ OK
+language-change.2,① <strong>편집 &gt; 환경 설정…</strong>({{key:편집/환경 설정…}})을 엽니다. 맨 위에 ② <strong>언어</strong>가 있습니다.,Open ① <strong>Edit &gt; Preferences…</strong> ({{key:편집/환경 설정…}}). ② <strong>Language</strong> is at the top.
+language-change.3,"③ <strong>{{UiStrings.Language_Label}}</strong> 목록에서 고르고 ④ <strong>확인</strong>을 누릅니다. CSV로 넣은 언어는 <code>이름 (코드)</code>로, CSV로 고친 내장 언어는 <code>이름 (CSV로 고침)</code>으로 보입니다.","Choose from the ③ <strong>{{UiStrings.Language_Label}}</strong> list and click ④ <strong>OK</strong>. Languages added from a CSV appear as <code>Name (code)</code>, and built-in languages edited by a CSV as <code>Name (edited by CSV)</code>."
+language-change.h-restart,다시 시작해 적용하기,Restarting to apply
+language-change.9.alt,확인을 누른 뒤 뜨는 창: 화면 언어 설정을 바꿨으니 다시 시작해야 적용된다는 안내와 지금 다시 시작·나중에 단추,"The prompt after OK: language settings changed, restart Chickxel to apply them, with Restart now and Later buttons"
+language-change.10,⑤ 지금 다시 시작(Restart now) · ⑥ 나중에(Later),⑤ Restart now · ⑥ Later
+language-change.4,⑤ <strong>{{UiStrings.Language_RestartNow}}</strong>을 누르면 앱을 닫았다가 새 언어로 다시 켭니다. 저장하지 않은 문서가 있으면 닫을 때처럼 먼저 묻습니다. ⑥ <strong>나중에</strong>를 고르면 다음에 켤 때 적용됩니다.,"Click ⑤ <strong>{{UiStrings.Language_RestartNow}}</strong> to close the app and reopen it in the new language. If there are unsaved documents, you're asked first, just like when closing. Choose ⑥ <strong>Later</strong> to apply it the next time you launch."
+language-change.h-first,처음 켤 때 정해지는 언어,The language on first launch
+language-change.first,"처음 켤 때는 컴퓨터의 UI 언어와 맞는 언어를 고릅니다. 지역까지 맞는 언어를 먼저 찾고(예: <code>pt-BR</code>), 없으면 그 상위 언어(<code>pt</code>)를 찾습니다. 맞는 언어가 없으면 영어로 시작합니다. 고른 CSV 언어의 파일이 없어졌을 때도 같은 방법으로 다시 고릅니다.","On first launch Chickxel picks the language that matches your computer's UI language. It looks for an exact match including the region first (for example <code>pt-BR</code>), then the parent language (<code>pt</code>). If nothing matches, it starts in English. It picks again the same way if the file of the CSV language you chose has been removed."
+language-change.h-affects,언어에 따라 바뀌는 것,What the language changes
+language-change.col-what,대상,Item
+language-change.col-lang,보이는 언어,Language shown
+language-change.a-ui,메뉴·창·안내 글,"Menus, windows and messages"
+language-change.a-ui-d,"고른 언어. 번역이 빈 문구는 같은 내장 언어, 없으면 영어 문구","The chosen language; untranslated text uses the same built-in language, or English"
+language-change.a-guide,사용 가이드(F1),Guide (F1)
+language-change.a-guide-d,"한국어를 고르면 한국어, 그 밖에는 영어","Korean when Korean is chosen, otherwise English"
+language-change.a-update,업데이트 창의 바뀐 점,Changes in the update dialog
+language-change.a-update-d,"고른 언어의 기록, 없으면 영어(<a href=""#start-update"">업데이트</a>)","Notes in the chosen language, or English (see <a href=""#start-update"">Updates</a>)"
+language-change.a-web,<strong>도움말 &gt; {{MainStrings.Menu_Help_Website}}</strong>·정보 창의 홈페이지 단추,<strong>Help &gt; {{MainStrings.Menu_Help_Website}}</strong> and the Website button in the About window
+language-change.a-web-d,"한국어면 한국어 홈페이지, 그 밖에는 영어 홈페이지","The Korean website for Korean, otherwise the English website"
+language-change.a-format,숫자·날짜 형식,Number and date formats
+language-change.a-format-d,바뀌지 않음(컴퓨터 설정을 따름),Unchanged (they follow your computer's settings)
+language-make.1,새 언어 만들기,Creating a new language
+language-make.overview,"새 언어는 번역 CSV를 내보내 언어 열을 하나 더해 번역한 뒤 다시 넣어 만듭니다. CSV는 엑셀·구글 시트 같은 표 프로그램으로 고칩니다. 조금만 번역해도 넣을 수 있고, 빈 칸은 영어로 보입니다.","To make a new language, export the translation CSV, add a language column, translate it and add the file back. Edit the CSV in a spreadsheet such as Excel or Google Sheets. You can add a partial translation; empty cells show English."
+language-make.h-export,내보내고 번역하기,Exporting and translating
+language-make.6.alt,"환경 설정 일반 탭의 언어 부분: 화면 언어 목록, 번역 CSV로 내보내기…·CSV로 언어 추가…·언어 폴더 열기 단추와 안내 글","The Language part of the General tab in Preferences: the Display language list, the Export translation CSV…, Add language from CSV… and Open language folder buttons and the note"
+language-make.7,① 번역 CSV로 내보내기…(Export translation CSV…) · ② CSV로 언어 추가…(Add language from CSV…),① Export translation CSV… · ② Add language from CSV…
+language-make.2,환경 설정의 ① <strong>{{UiStrings.Language_Export}}</strong>로 CSV 파일을 저장합니다. 엑셀·구글 시트 등에서 열 수 있습니다.,"Save a CSV file with ① <strong>{{UiStrings.Language_Export}}</strong> in Preferences. You can open it in Excel, Google Sheets and so on."
+language-make.3,"첫 줄은 <code>key,ko,en</code>, 둘째 줄은 <code>#name,한국어,English</code>입니다. 맨 오른쪽에 새 열을 더해 첫 줄에 언어 코드(예: <code>ja</code>), 둘째 줄에 언어 이름(예: <code>日本語</code>)을 적습니다.","The first row is <code>key,ko,en</code> and the second row is <code>#name,한국어,English</code>. Add a new column at the far right with the language code in the first row (e.g. <code>ja</code>) and the language name in the second row (e.g. <code>日本語</code>)."
+language-make.4,"그 열에 문구를 번역합니다. <code>{0}</code>, <code>{name}</code> 같은 중괄호는 값이 들어갈 자리이니 그대로 두세요(순서는 바꿔도 됨).","Translate the text in that column. Braces such as <code>{0}</code> and <code>{name}</code> are placeholders for values, so keep them as they are (you may change their order)."
+language-make.h-format,CSV 모양,CSV layout
+language-make.col-row,줄,Row
+language-make.col-content,내용,Content
+language-make.f1,첫 줄,First row
+language-make.f1-d,"<code>key</code>와 언어 코드들(<code>key,ko,en,…</code>). 언어 코드는 영문자·숫자·<code>-</code>·<code>_</code>로 32자까지 씁니다.","<code>key</code> and the language codes (<code>key,ko,en,…</code>). A language code uses letters, digits, <code>-</code> and <code>_</code>, up to 32 characters."
+language-make.f2,둘째 줄,Second row
+language-make.f2-d,"<code>#name</code>과 언어마다 목록에 보일 이름(<code>#name,한국어,English,…</code>)","<code>#name</code> and the name shown in the list for each language (<code>#name,한국어,English,…</code>)"
+language-make.f3,나머지 줄,Other rows
+language-make.f3-d,"문구 키(<code>&lt;표&gt;.&lt;키&gt;</code>, 예: <code>UiStrings.Language_Label</code>)와 언어마다의 문구. 키는 고치지 않습니다.","The text key (<code>&lt;table&gt;.&lt;key&gt;</code>, e.g. <code>UiStrings.Language_Label</code>) and the text for each language. Don't change the keys."
+language-make.format-note,"내보낸 파일은 쉼표로 나눈 UTF-8(BOM 포함)입니다. 넣을 때는 쉼표·세미콜론·탭 구분을 모두 읽으므로, 지역 설정 때문에 엑셀이 세미콜론으로 저장해도 됩니다. 한 파일에 여러 언어 열을 함께 넣을 수 있습니다.","The exported file is comma-separated UTF-8 (with BOM). Importing reads comma, semicolon and tab separators, so it's fine if Excel saves with semicolons because of your regional settings. One file can contain several language columns."
+language-make.h-import,넣고 적용하기,Adding and applying it
+language-make.8.alt,일본어 열을 더한 CSV를 넣은 뒤 화면 언어 목록을 펼친 모습: 한국어·English 아래에 日本語 (ja)가 생기고 아래에 넣은 결과 글이 보임,"The Display language list open after adding a CSV with a Japanese column: 日本語 (ja) appears below 한국어 and English, with the import result below"
+language-make.9,③ CSV로 넣은 언어(예: 日本語 (ja)) — 목록 아래에 넣은 문구 수가 보임,③ The language added from the CSV (e.g. 日本語 (ja)); the number of imported strings is shown below the list
+language-make.5,② <strong>{{UiStrings.Language_Import}}</strong>로 그 파일을 고르면 ③ 언어 목록에 나타납니다. 새 언어를 하나만 넣었으면 목록에서 바로 골라 둡니다. 확인을 누르고 다시 시작하면 적용됩니다.,"Choose the file with ② <strong>{{UiStrings.Language_Import}}</strong> and it appears in the ③ language list. If you added just one new language, it is selected for you. Click OK and restart to apply it."
+language-make.r-count,"목록 아래에 언어마다 넣은 문구 수가 보입니다(""{{UiStrings.Language_Imported}}"").","The number of strings added for each language appears below the list (""{{UiStrings.Language_Imported}}"")."
+language-make.r-skip,"언어 코드로 쓸 수 없는 열은 건너뛰고, Chickxel에 없는 키는 무시하며 그 수를 알려 줍니다.",Columns that aren't valid language codes are skipped and keys Chickxel doesn't have are ignored; the counts are reported.
+language-make.10,빈 칸은 영어 문구로 보이므로 조금씩 번역해 가며 넣어도 됩니다. 같은 언어 코드를 다시 넣으면 덮어씁니다. 넣은 언어는 <code>&lt;설정 폴더&gt;/Chickxel/Languages/&lt;언어 코드&gt;.csv</code>에 저장됩니다.,"Empty cells show the English text, so you can add your translation bit by bit. Adding the same language code again overwrites it. Added languages are saved as <code>&lt;settings folder&gt;/Chickxel/Languages/&lt;language code&gt;.csv</code>."
+language-fix.1,내장 문구 고치기와 지우기,Editing and removing built-in text
+language-fix.overview,"한국어·영어 문구 중 마음에 들지 않는 것은 CSV로 고쳐 덮어쓸 수 있고, 넣은 언어나 고친 문구는 언어 폴더의 파일을 지워 되돌립니다.","You can override Korean or English text you don't like with a CSV, and undo added languages or edited text by deleting their file in the language folder."
+language-fix.h-edit,내장 문구 고치기,Editing built-in text
+language-fix.2,"내보낸 CSV에서 <code>ko</code>나 <code>en</code> 열을 고쳐 <strong>{{UiStrings.Language_Import}}</strong>로 넣으면, 내장 문구와 다른 칸만 저장되어 그 칸만 덮어씁니다. 고친 칸이 하나도 없으면 그 언어의 CSV를 지웁니다.","Edit the <code>ko</code> or <code>en</code> column in an exported CSV and add it with <strong>{{UiStrings.Language_Import}}</strong>: only the cells that differ from the built-in text are saved, and only those override it. If no cell differs, that language's CSV is removed."
+language-fix.h-remove,넣은 언어 지우기,Removing an added language
+language-fix.4.alt,환경 설정 일반 탭의 언어 부분에서 언어 폴더 열기 단추를 표시한 모습,The Language part of the General tab in Preferences with the Open language folder button marked
+language-fix.5,① 언어 폴더 열기(Open language folder),① Open language folder
+language-fix.3,"① <strong>{{UiStrings.Language_OpenFolder}}</strong>를 누르면 넣은 언어의 CSV 파일이 있는 폴더가 열립니다. 파일을 지우면 그 언어가 목록에서 없어지고, 내장 언어를 고친 파일이면 원래 문구로 돌아갑니다.","① <strong>{{UiStrings.Language_OpenFolder}}</strong> opens the folder containing the CSV files of added languages. Deleting a file removes that language from the list, or, for a file that edited a built-in language, restores the original text."
+term.display-language,화면 언어,display language
+term.display-language.to,language-change,language-change
+term.display-language.def,메뉴·창·안내 글에 쓰는 언어입니다. 바꾸면 다시 시작해야 적용됩니다.,"The language of menus, windows and messages; changing it takes effect after a restart."
+term.translation-csv,번역 CSV,translation CSV
+term.translation-csv.to,language-make,language-make
+term.translation-csv.def,모든 화면 문구를 키와 언어별 열로 담은 표 파일입니다. 열을 더해 새 언어를 만듭니다.,A spreadsheet file with every UI string as a key and one column per language; add a column to make a new language.
+term.language-folder,언어 폴더,language folder
+term.language-folder.to,language-fix,language-fix
+term.language-folder.def,CSV로 넣은 언어와 고친 문구가 저장되는 설정 폴더 안의 Languages 폴더입니다.,The Languages folder in the settings folder where added languages and edited text are stored.

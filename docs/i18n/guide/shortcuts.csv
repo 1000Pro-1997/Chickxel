@@ -1,0 +1,230 @@
+key,ko,en
+#name,한국어,English
+shortcuts.1,단축키,Shortcuts
+shortcuts.2,"앱의 모든 메뉴 명령과 메뉴에 없는 키를 메뉴별로 모았습니다. 표의 키는 기본 단축키이고, <strong>{{shortcuts.none}}</strong>은 기본 키가 없는 명령입니다. 어떤 명령이든 <a href=""#shortcuts-customize"">단축키 바꾸기</a>에서 원하는 키를 정할 수 있습니다.","Every menu command and every key outside the menus, grouped by menu. The keys in the tables are the defaults; <strong>{{shortcuts.none}}</strong> marks commands without a default key. You can assign any key to any command in <a href=""#shortcuts-customize"">Customizing shortcuts</a>."
+shortcuts.3,"앱 안 사용 가이드({{key:도움말/대상 도움말}} 또는 <strong>도움말 &gt; {{MainStrings.Menu_Help_Guide}}</strong>)는 이 표에 기본 키 대신 지금 쓰는 키를 보여 줍니다. macOS에서는 <kbd>Ctrl</kbd>을 <kbd>⌘</kbd>로, <kbd>Alt</kbd>를 <kbd>⌥</kbd>로 읽으세요.",The in-app guide ({{key:도움말/대상 도움말}} or <strong>Help &gt; {{MainStrings.Menu_Help_Guide}}</strong>) shows the keys you currently use instead of the defaults in these tables. On macOS read <kbd>Ctrl</kbd> as <kbd>⌘</kbd> and <kbd>Alt</kbd> as <kbd>⌥</kbd>.
+shortcuts.4,쪽,Page
+shortcuts.5,담은 키,Keys covered
+shortcuts.p0,키 바꾸기·내보내기·불러오기,"Changing, exporting and importing keys"
+shortcuts.p1,파일 메뉴,File menu
+shortcuts.p2,"편집 메뉴의 실행취소~선택 해제, 선택 내려놓기, 방향키 옮기기","Edit menu from Undo to Deselect, drop selection, arrow-key nudging"
+shortcuts.p3,"편집 메뉴의 뒤집기~환경 설정, 변형·크기 모드 적용과 취소","Edit menu from the flips to Preferences, applying and canceling transform and size modes"
+shortcuts.p4,"보기 메뉴, 확대·화면 이동 마우스 조작","View menu, mouse zoom and panning"
+shortcuts.p5,"프레임·레이어 메뉴, 타임라인 마우스 조작","Frame·Layer menu, timeline mouse actions"
+shortcuts.p6,"도구 메뉴(도구·선택·그리기 옵션), 그리면서 쓰는 보조 키","Tools menu (tools, selection, drawing options), modifier keys while drawing"
+shortcuts.p7,"AI 메뉴, 도움말 메뉴","AI menu, Help menu"
+shortcuts.none,없음,None
+shortcuts.col-cmd,명령,Command
+shortcuts.col-key,기본 키,Default key
+shortcuts.col-desc,하는 일,What it does
+shortcuts-customize.1,단축키 바꾸기,Customizing shortcuts
+shortcuts-customize.overview,"모든 단축키는 환경 설정의 단축키 탭에서 바꿉니다. 메뉴 명령뿐 아니라 도구, 그리기 옵션, 메뉴에 없는 키까지 바꿀 수 있고, 바꾼 키는 메뉴·도구 막대 도움말·앱 안 가이드에 바로 보입니다. 설정은 JSON 파일로 내보내 다른 컴퓨터에서 쓸 수 있습니다.","All shortcuts are changed in the Shortcuts tab of Preferences. Besides menu commands you can change tools, drawing options and keys that aren't in any menu, and changed keys show up right away in menus, toolbar tooltips and the in-app guide. You can export the settings to a JSON file and use them on another computer."
+shortcuts-customize.h-tab,단축키 탭,Shortcuts tab
+shortcuts-customize.8.alt,"환경 설정 단축키 탭: 검색 칸에 export를 넣어 거른 목록, GIF 애니메이션으로 내보내기 줄이 키를 기다리는 상태, 줄마다 바꾸기·추가·없음·기본값 단추, 아래 모두 기본값·내보내기(JSON)·불러오기(JSON) 단추","The Shortcuts tab of Preferences: the list filtered by typing export in the search box, the Export as animated GIF row waiting for a key, Change, Add, None and Default buttons on each row, and Reset all, Export (JSON) and Import (JSON) at the bottom"
+shortcuts-customize.9,① 단축키(Shortcuts) 탭 · ② 바꾸기(Change) · ③ 추가(Add) · ④ 없음(None) · ⑤ 기본값(Default) · ⑥ 키를 기다리는 줄(Press a key…) · ⑦ 검색 칸 · ⑧ 모두 기본값(Reset all) · ⑨ 내보내기(JSON)… · ⑩ 불러오기(JSON)…,① Shortcuts tab · ② Change · ③ Add · ④ None · ⑤ Default · ⑥ Row waiting for a key (Press a key…) · ⑦ Search box · ⑧ Reset all · ⑨ Export (JSON)… · ⑩ Import (JSON)…
+shortcuts-customize.2,"<strong>편집 &gt; 환경 설정…</strong>({{key:편집/환경 설정…}})의 ① <strong>단축키</strong> 탭에서 메뉴 명령·도구·도구 옵션은 물론, 메뉴에 없는 키(선택 내려놓기 {{key:편집/선택 내려놓기}}, 방향키 옮기기, 이전 프레임 보기 {{key:보기/이전 프레임 보기(누르고 있기)}}, 선택 칸 {{key:도구/선택 칸(다음 선택 도구)}} 등)까지 모두 바꿀 수 있습니다.","In the ① <strong>Shortcuts</strong> tab of <strong>Edit &gt; Preferences…</strong> ({{key:편집/환경 설정…}}) you can change not only menu commands, tools and tool options but also keys that aren't in any menu (drop selection {{key:편집/선택 내려놓기}}, arrow-key nudging, peek previous frame {{key:보기/이전 프레임 보기(누르고 있기)}}, selection slot {{key:도구/선택 칸(다음 선택 도구)}}, etc.)."
+shortcuts-customize.3,"줄마다 ② <strong>바꾸기</strong>(누른 키로 바꿈), ③ <strong>추가</strong>(키 하나 더), ④ <strong>없음</strong>, ⑤ <strong>기본값</strong>을 고릅니다. 바꾸기·추가를 누르면 그 줄이 ⑥ 키를 기다립니다(<kbd>Esc</kbd>는 취소).","For each row choose ② <strong>Change</strong> (use the key you press), ③ <strong>Add</strong> (one more key), ④ <strong>None</strong> or ⑤ <strong>Default</strong>. After Change or Add, the row ⑥ waits for a key (<kbd>Esc</kbd> cancels)."
+shortcuts-customize.4,"⑦ 명령·분류·키로 검색할 수 있고, ⑧ <strong>모두 기본값</strong>으로 한꺼번에 되돌립니다.","⑦ Search by command, category or key, and reset everything at once with ⑧ <strong>Reset all</strong>."
+shortcuts-customize.5,"⑨ <strong>내보내기(JSON)…</strong>로 지금 단축키를 파일로 저장하고, ⑩ <strong>불러오기(JSON)…</strong>로 다시 적용합니다. 같은 파일을 Windows와 macOS에서 함께 쓸 수 있습니다.","⑨ <strong>Export (JSON)…</strong> saves the current shortcuts to a file, and ⑩ <strong>Import (JSON)…</strong> applies them again. The same file works on both Windows and macOS."
+shortcuts-customize.h-conflict,겹치는 키,Keys already in use
+shortcuts-customize.10.alt,GIF 애니메이션으로 내보내기에 Ctrl+E를 누르자 그 키를 쓰는 파일/내보내기…에서 빼고 여기에 지정할지 묻는 단축키 겹침 창(예·아니요),"The Shortcut conflict prompt after pressing Ctrl+E for Export as animated GIF: the key is already used by File/Export…, remove it from that command and assign it here? with Yes and No"
+shortcuts-customize.11,"⑪ 겹치는 키 물음 — 예(Yes)면 그 명령에서 빼고 여기에 지정, 아니요(No)면 그대로","⑪ Conflict prompt: Yes moves the key here, No leaves everything as it was"
+shortcuts-customize.6,다른 명령이 쓰는 키를 지정하면 ⑪ 그 명령에서 빼도 되는지 묻습니다.,"If you assign a key used by another command, ⑪ you're asked whether to remove it from that command."
+shortcuts-customize.h-check,바꾼 키 확인하기,Checking changed keys
+shortcuts-customize.12.alt,파일 메뉴를 펼친 모습: GIF 애니메이션으로 내보내기 오른쪽에 바꾼 키 Ctrl+Alt+G가 보임,The File menu open: the changed key Ctrl+Alt+G is shown next to Export as animated GIF…
+shortcuts-customize.13,⑫ 바꾼 키(GIF 애니메이션으로 내보내기 = Ctrl+Alt+G)가 메뉴에 바로 보임,⑫ The changed key (Export as animated GIF… = Ctrl+Alt+G) shows up in the menu right away
+shortcuts-customize.14.alt,도움말 메뉴를 펼쳐 단축키 목록 항목을 표시한 모습,The Help menu open with the Shortcut list item marked
+shortcuts-customize.15,⑬ 도움말 &gt; 단축키 목록(Shortcut list),⑬ Help &gt; Shortcut list
+shortcuts-customize.7,"바꾼 키는 ⑫처럼 메뉴와 도구 막대 도움말, 앱 안 사용 가이드에 바로 반영됩니다. ⑬ <strong>도움말 &gt; {{MainStrings.Menu_Help_ShowShortcuts_230}}</strong>은 바꾼 키가 아니라 기본 키와 마우스 조작을 표로 보여 줍니다.","Changed keys appear right away in menus (see ⑫), toolbar tooltips and the in-app guide. ⑬ <strong>Help &gt; {{MainStrings.Menu_Help_ShowShortcuts_230}}</strong> shows a table of the default keys and mouse actions, not your changed keys."
+shortcuts-customize.16.alt,단축키 목록 창: 분류·키·동작 세 열로 기본 단축키를 모두 보여 주는 표,"The Shortcuts window: a table of all default shortcuts with Category, Key and Action columns"
+shortcuts-file.1,파일 메뉴,File menu
+shortcuts-file.overview,문서를 만들고 열고 저장하고 내보내는 <strong>파일</strong> 메뉴의 키입니다.,"Keys for the <strong>File</strong> menu, which creates, opens, saves and exports documents."
+shortcuts-file.h-cmd,메뉴 명령,Menu commands
+shortcuts-file.h-cmd.d1,"<a href=""#start-new-project"">새 프로젝트</a> 창을 엽니다.","Opens the <a href=""#start-new-project"">New project</a> dialog."
+shortcuts-file.h-cmd.d2,"<code>.chickxel</code> 프로젝트를 열거나 그림·GIF·영상을 새 문서로 가져옵니다(<a href=""#files-png-import"">PNG 열기(가져오기)</a>, <a href=""#files-open-media"">그림·움직이는 그림·영상 열기</a>).","Opens a <code>.chickxel</code> project or imports an image, GIF or video as a new document (see <a href=""#files-png-import"">Opening (importing) PNGs</a> and <a href=""#files-open-media"">Opening images, animations and videos</a>)."
+shortcuts-file.h-cmd.d3,파일 브라우저에 보일 폴더를 고릅니다.,Chooses the folder shown in the file browser.
+shortcuts-file.h-cmd.d4,Unity Hub 프로젝트 목록에서 골라 그 <code>Assets</code> 폴더를 엽니다.,Picks a project from the Unity Hub list and opens its <code>Assets</code> folder.
+shortcuts-file.h-cmd.d5,"<code>.chickxel</code>을 저장하고 PNG 시트·<code>.meta</code>를 함께 내보냅니다(<a href=""#files-save"">저장하기</a>).","Saves the <code>.chickxel</code> and exports the PNG sheet and <code>.meta</code> with it (see <a href=""#files-save"">Saving</a>)."
+shortcuts-file.h-cmd.d6,다른 이름·위치로 저장합니다.,Saves under a different name or location.
+shortcuts-file.h-cmd.d7,"마지막으로 저장한 상태로 되돌립니다(<a href=""#files-revert"">저장한 내용으로 되돌리기</a>).","Goes back to the last saved state (see <a href=""#files-revert"">Revert to saved</a>)."
+shortcuts-file.h-cmd.d8,"내보내기 창에서 시트 배치·파일 나누기·Unity 설정을 정합니다(<a href=""#screen-export"">내보내기 창</a>).","Sets the sheet layout, file splitting and Unity settings in the export dialog (see <a href=""#screen-export"">Export dialog</a>)."
+shortcuts-file.h-cmd.d9,"움직이는 GIF로 내보냅니다(<a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a>).","Exports an animated GIF (see <a href=""#screen-gif"">Export as animated GIF</a>)."
+shortcuts-file.h-cmd.d10,"chickxel.com 갤러리에 올립니다(<a href=""#screen-gallery"">갤러리에 올리기</a>).","Uploads to the chickxel.com gallery (see <a href=""#screen-gallery"">Upload to gallery</a>)."
+shortcuts-file.h-cmd.d11,지금 문서 탭을 닫습니다. 저장하지 않았으면 먼저 묻습니다.,"Closes the current document tab, asking first if it has unsaved changes."
+shortcuts-file.h-cmd.d12,"<a href=""#start-first-run"">시작 화면</a>을 다시 보입니다.","Shows the <a href=""#start-first-run"">start screen</a> again."
+shortcuts-file.h-cmd.d13,앱을 끝냅니다. 이 키는 운영체제가 처리하므로 단축키 탭에서 바꾸지 않습니다.,"Quits the app. The operating system handles this key, so it isn't changed in the Shortcuts tab."
+shortcuts-file.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-file.20.alt,파일 메뉴를 펼친 모습: 새 프로젝트…부터 닫기까지 명령 오른쪽에 Ctrl+N·Ctrl+O·Ctrl+Shift+O·Ctrl+Shift+U·Ctrl+S·Ctrl+Shift+S·Ctrl+E·Ctrl+W 키,"The File menu open: Ctrl+N, Ctrl+O, Ctrl+Shift+O, Ctrl+Shift+U, Ctrl+S, Ctrl+Shift+S, Ctrl+E and Ctrl+W to the right of New project… through Close"
+shortcuts-file.21,① 파일(File) 메뉴의 단축키,① Shortcuts in the File menu
+shortcuts-file.19,<strong>파일</strong> 메뉴를 펼치면 명령 오른쪽 ①에 지금 쓰는 키가 보입니다(바꾼 키도 바로 보임).,Open the <strong>File</strong> menu to see the current key to the right of each command at ① (changed keys show up there too).
+shortcuts-edit.1,편집과 선택,Editing and selection
+shortcuts-edit.overview,"<strong>편집</strong> 메뉴 위쪽의 실행취소·클립보드·선택 명령과, 메뉴에 없는 선택 내려놓기·방향키 옮기기 키입니다.","The undo, clipboard and selection commands at the top of the <strong>Edit</strong> menu, plus the drop-selection and arrow-key nudging keys that aren't in any menu."
+shortcuts-edit.h-cmd,메뉴 명령,Menu commands
+shortcuts-edit.h-cmd.d1,마지막 작업을 되돌립니다. 파일 목록에서는 마지막으로 지운 파일을 되살립니다.,Undoes the last action. In the file list it restores the last deleted file.
+shortcuts-edit.h-cmd.d2,되돌린 작업을 다시 합니다. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>도 됩니다.,Redoes an undone action. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> works too.
+shortcuts-edit.h-cmd.d3,선택 영역을 잘라 클립보드에 넣습니다.,Cuts the selection to the clipboard.
+shortcuts-edit.h-cmd.d4,선택 영역을 복사합니다. 선택이 없으면 프레임 전체를 복사합니다.,"Copies the selection, or the whole frame if nothing is selected."
+shortcuts-edit.h-cmd.d5,클립보드 그림을 떠 있는 선택으로 붙여 넣습니다.,Pastes the clipboard image as a floating selection.
+shortcuts-edit.h-cmd.d6,"선택 영역의 픽셀을 지웁니다. macOS는 <kbd class=""os-keep"">⌫</kbd>도 됩니다.","Clears the pixels in the selection. On macOS <kbd class=""os-keep"">⌫</kbd> works too."
+shortcuts-edit.h-cmd.d7,캔버스 전체를 고릅니다.,Selects the whole canvas.
+shortcuts-edit.h-cmd.d8,선택을 풉니다.,Removes the selection.
+shortcuts-edit.h-extra,메뉴에 없는 키,Keys outside the menus
+shortcuts-edit.h-extra.d1,떠 있는 선택(붙여 넣거나 옮긴 그림)을 그 자리에 내려놓습니다. 변형 중이면 적용합니다.,"Drops a floating selection (pasted or moved pixels) in place. While transforming, applies the transform."
+shortcuts-edit.h-extra.d2,"변형·크기 모드를 취소하거나, 아니면 선택을 풉니다.","Cancels a transform or size mode, otherwise removes the selection."
+shortcuts-edit.h-extra.d3,선택(이동 도구면 셀 그림)을 1픽셀 옮깁니다. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+방향키도 됩니다.,Moves the selection (the cel's pixels with the Move tool) by 1 pixel. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+arrow keys work too.
+shortcuts-edit.h-extra.d4,같은 대상을 8픽셀씩 옮깁니다.,Moves the same thing by 8 pixels.
+shortcuts-edit.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-edit.17.alt,편집 메뉴를 펼친 모습: 실행취소·다시 실행·잘라내기·복사·붙여넣기·지우기·모두 선택·선택 해제 오른쪽의 키,"The Edit menu open: the keys to the right of Undo, Redo, Cut, Copy, Paste, Delete, Select all and Deselect"
+shortcuts-edit.18,① 편집(Edit) 메뉴의 실행취소~선택 해제 키,"① Edit menu keys, Undo to Deselect"
+shortcuts-edit.15,"실행취소는 획 단위로 기본 1000단계이며, 환경 설정에서 최대 10000단계까지 늘릴 수 있습니다. 파일 목록에서 {{key:편집/실행취소}}를 누르면 마지막으로 삭제한 파일을 되살립니다.","Undo works per stroke with 1000 steps by default, which you can raise to up to 10000 in Preferences. Pressing {{key:편집/실행취소}} in the file list restores the last deleted file."
+shortcuts-edit.16,<strong>편집</strong> 메뉴를 펼치면 ① 실행취소부터 선택 해제까지의 키가 보입니다.,The <strong>Edit</strong> menu shows the keys from Undo to Deselect at ①.
+shortcuts-edit.nudge1,1px 옮기기(←→↑↓),Move 1px (←→↑↓)
+shortcuts-edit.nudge8,8px 옮기기(←→↑↓),Move 8px (←→↑↓)
+shortcuts-transform.1,변형과 이미지,Transform and image
+shortcuts-transform.overview,"<strong>편집</strong> 메뉴 아래쪽의 뒤집기·회전·변형·크기·팔레트 명령과, 변형·크기 모드를 끝내는 키입니다.","The flip, rotate, transform, size and palette commands in the lower part of the <strong>Edit</strong> menu, plus the keys that finish transform and size modes."
+shortcuts-transform.h-cmd,메뉴 명령,Menu commands
+shortcuts-transform.h-cmd.d1,선택을 뒤집습니다. 선택이 없으면 현재 셀을 뒤집습니다.,"Flips the selection, or the current cel if nothing is selected."
+shortcuts-transform.h-cmd.d2,선택을 돌립니다. 선택이 없으면 캔버스 전체를 돌립니다.,"Rotates the selection, or the whole canvas if nothing is selected."
+shortcuts-transform.h-cmd.d3,"손잡이로 돌리고 늘리고 옮기는 <a href=""#tools-transform"">변형 모드</a>를 시작합니다.","Starts <a href=""#tools-transform"">Transform mode</a> for rotating, scaling and moving with handles."
+shortcuts-transform.h-cmd.d4,그림 둘레에 기본색 1픽셀 외곽선을 그립니다.,Draws a 1-pixel outline in the primary color around the art.
+shortcuts-transform.h-cmd.d5,대각선 방향까지 채운 외곽선을 그립니다.,Draws an outline that also fills the diagonal corners.
+shortcuts-transform.h-cmd.d6,한 색을 다른 색으로 바꿉니다.,Replaces one color with another.
+shortcuts-transform.h-cmd.d7,"<a href=""#tools-canvas-size"">캔버스 크기 모드</a>를 시작합니다.","Starts <a href=""#tools-canvas-size"">Canvas size mode</a>."
+shortcuts-transform.h-cmd.d8,"캔버스는 그대로 두고 레이어(부위) 하나의 크기·위치를 바꾸는 <a href=""#tools-layer-size"">레이어 크기 모드</a>를 시작합니다.","Starts <a href=""#tools-layer-size"">Layer size mode</a>, which changes one layer's (part's) size and position while the canvas stays the same."
+shortcuts-transform.h-cmd.d9,모든 레이어·프레임을 함께 뒤집습니다.,Flips every layer and frame together.
+shortcuts-transform.h-cmd.d10,"지금 그림에 쓰인 색으로 팔레트를 만듭니다(<a href=""#screen-palette"">팔레트</a>).","Makes a palette from the colors used in the image (see <a href=""#screen-palette"">Palette</a>)."
+shortcuts-transform.h-cmd.d11,"그림의 색을 지금 팔레트의 가까운 색으로 바꿉니다(<a href=""#featured-palette-convert"">팔레트로 색 바꾸기</a>).","Converts the image's colors to the nearest colors of the current palette (see <a href=""#featured-palette-convert"">Recoloring with a palette</a>)."
+shortcuts-transform.h-cmd.d12,환경 설정 창을 엽니다. 단축키도 여기서 바꿉니다.,"Opens Preferences, where you also change shortcuts."
+shortcuts-transform.h-modes,변형·크기 모드에서,In transform and size modes
+shortcuts-transform.h-modes.d1,변형·캔버스 크기·레이어 크기 모드를 실행취소 한 단계로 적용합니다.,"Applies Transform, Canvas size or Layer size mode as one undo step."
+shortcuts-transform.h-modes.d2,적용하지 않고 원래대로 둡니다.,Leaves everything as it was.
+shortcuts-transform.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-transform.15.alt,"편집 메뉴를 펼친 모습: 좌우·상하 뒤집기, 90° 회전, 변형, 외곽선, 색 바꾸기, 캔버스 크기 오른쪽의 키","The Edit menu open: the keys to the right of Flip horizontal and vertical, Rotate 90°, Transform, Add outline, Replace color and Canvas size"
+shortcuts-transform.16,① 편집(Edit) 메뉴의 뒤집기~캔버스 크기 키,"① Edit menu keys, flips to Canvas size"
+shortcuts-transform.10,변형·캔버스/레이어 크기 모드 적용,Apply transform / canvas or layer size mode
+shortcuts-transform.11,변형·캔버스/레이어 크기 모드 취소,Cancel transform / canvas or layer size mode
+shortcuts-transform.13,"캔버스·레이어 크기 모드 모두 손잡이를 그냥 끌면 자리만 바뀌고 <kbd>Ctrl</kbd>+끌면 그림 크기도 함께 바뀝니다. 그림 안을 끌면 그림을 옮기며 Shift는 모서리 비율 유지, Alt는 중심 기준입니다.","In Canvas and Layer size modes, dragging a handle changes only the bounds and <kbd>Ctrl</kbd>+drag also resizes the art. Drag inside to move; Shift on a corner keeps aspect ratio and Alt uses the center as anchor."
+shortcuts-transform.14,<strong>편집</strong> 메뉴의 ① 뒤집기부터 캔버스 크기까지 오른쪽에도 같은 키가 보입니다.,"The same keys appear at ① in the <strong>Edit</strong> menu, from the flips to Canvas size."
+shortcuts-view.1,보기와 캔버스,View and canvas
+shortcuts-view.overview,"확대·격자·보기 옵션·탭·창을 다루는 <strong>보기</strong> 메뉴의 키와, 캔버스에서 쓰는 마우스 조작입니다.","Keys for the <strong>View</strong> menu, which handles zoom, grids, view options, tabs and panels, plus the mouse actions used on the canvas."
+shortcuts-view.h-cmd,메뉴 명령,Menu commands
+shortcuts-view.h-cmd.d1,캔버스를 한 단계 확대·축소합니다. 숫자판 <kbd>+</kbd>/<kbd>-</kbd>와 함께 눌러도 됩니다.,Zooms the canvas in or out one step. The numeric keypad <kbd>+</kbd>/<kbd>-</kbd> work too.
+shortcuts-view.h-cmd.d2,캔버스를 창에 맞추거나 1배로 봅니다.,Fits the canvas to the window or shows it at 1×.
+shortcuts-view.h-cmd.d3,"픽셀마다 선을 그립니다. 위 막대 단추를 우클릭하면 설정이 열립니다(<a href=""#screen-top-bar"">메뉴와 위 막대</a>).","Draws a line around every pixel. Right-click the top bar button for its settings (see <a href=""#screen-top-bar"">Menu and top bar</a>)."
+shortcuts-view.h-cmd.d4,정한 타일 크기마다 선을 그립니다.,Draws lines at every tile of the set size.
+shortcuts-view.h-cmd.d5,그림을 둘레에 반복해 보여 이음매를 확인합니다.,Repeats the image around itself so you can check the seams.
+shortcuts-view.h-cmd.d6,캔버스에 피벗 표시를 보이거나 숨깁니다.,Shows or hides the pivot marker on the canvas.
+shortcuts-view.h-cmd.d7,앞뒤 프레임을 반투명하게 겹쳐 봅니다.,Overlays neighboring frames translucently.
+shortcuts-view.h-cmd.d8,편집 캔버스에 레이어 효과를 보이거나 빼고 그림만 봅니다. 미리보기·내보내기는 그대로입니다.,Shows layer effects on the editing canvas or hides them to see only the pixels. The preview and export are unaffected.
+shortcuts-view.h-cmd.d9,픽셀 격자·타일 격자의 색과 타일 크기를 정합니다.,Sets the colors of the pixel and tile grids and the tile size.
+shortcuts-view.h-cmd.d10,다음·이전 문서 탭으로 갑니다. 환경 설정·내보내기 창에서는 그 창의 탭을 바꿉니다.,Goes to the next or previous document tab. In Preferences and the export dialog it switches that dialog's tabs.
+shortcuts-view.h-cmd.d11,"지금 탭을 나눈 화면의 다른 쪽으로 옮깁니다(<a href=""#screen-tabs"">문서 탭과 나누기</a>).","Moves the current tab to the other pane of the split view (see <a href=""#screen-tabs"">Document tabs and split view</a>)."
+shortcuts-view.h-cmd.d12,왼쪽 파일 브라우저를 보이거나 숨깁니다.,Shows or hides the file browser on the left.
+shortcuts-view.h-cmd.d13,태그 애니메이션으로 캐릭터를 움직여 보는 창을 엽니다.,Opens the window where you move a character around with its tag animations.
+shortcuts-view.h-extra,메뉴에 없는 키와 마우스,Keys outside the menus and the mouse
+shortcuts-view.h-extra.d1,누르고 있는 동안 캔버스에 이전 프레임을 보입니다.,Shows the previous frame on the canvas while held.
+shortcuts-view.h-extra.d2,1배부터 64배까지 확대·축소합니다.,Zooms between 1× and 64×.
+shortcuts-view.h-extra.d3,캔버스 위에서 브러시 크기를 키우고 줄입니다.,Changes the brush size over the canvas.
+shortcuts-view.h-extra.d4,캔버스를 끌어 화면을 옮깁니다.,Drags the view around.
+shortcuts-view.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-view.18.alt,보기 메뉴를 펼친 모습: 확대·축소·화면에 맞추기·실제 크기·픽셀 격자·타일 격자·타일 모드·양파 껍질 오른쪽의 키,"The View menu open: the keys to the right of Zoom in, Zoom out, Fit to window, Actual size, Pixel grid, Tile grid, Tiled mode and Onion skin"
+shortcuts-view.19,① 보기(View) 메뉴의 확대~양파 껍질 키,"① View menu keys, Zoom in to Onion skin"
+shortcuts-view.4,확대·축소,Zoom in/out
+shortcuts-view.5,휠,Wheel
+shortcuts-view.6,브러시(펜) 크기,Brush (pen) size
+shortcuts-view.7,<kbd>Ctrl</kbd>+휠,<kbd>Ctrl</kbd>+wheel
+shortcuts-view.8,화면 이동,Pan
+shortcuts-view.9,<kbd>Space</kbd>+드래그 또는 가운데 버튼 드래그,<kbd>Space</kbd>+drag or middle-button drag
+shortcuts-file.18,"탭 줄이나 끔/켬 같은 선택 묶음에 포커스가 있으면 <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Home</kbd>/<kbd>End</kbd>로도 바꿀 수 있습니다.","When a tab row or an option group such as off/on has focus, you can also switch with <kbd>←</kbd>/<kbd>→</kbd> and <kbd>Home</kbd>/<kbd>End</kbd>."
+shortcuts-view.17,<strong>보기</strong> 메뉴를 펼치면 ① 확대부터 양파 껍질까지의 키가 보입니다.,The <strong>View</strong> menu shows the keys from Zoom in to Onion skin at ①.
+shortcuts-timeline.1,타임라인·레이어·그룹,Timeline · layers · groups
+shortcuts-timeline.overview,프레임·레이어·그룹·스킨·태그를 다루는 <strong>프레임·레이어</strong> 메뉴의 키와 타임라인에서 쓰는 마우스 조작입니다.,"Keys for the <strong>Frame·Layer</strong> menu, which handles frames, layers, groups, skins and tags, plus the mouse actions used in the timeline."
+shortcuts-timeline.h-cmd,메뉴 명령,Menu commands
+shortcuts-timeline.h-cmd.d1,미리보기 재생을 시작하거나 멈춥니다.,Starts or stops preview playback.
+shortcuts-timeline.h-cmd.d2,한 프레임 앞뒤로 갑니다.,Steps one frame back or forward.
+shortcuts-timeline.h-cmd.d3,처음·끝 프레임으로 갑니다(캔버스에 포커스가 있을 때).,Goes to the first or last frame (when the canvas has focus).
+shortcuts-timeline.h-cmd.d4,빈 프레임을 더합니다.,Adds an empty frame.
+shortcuts-timeline.h-cmd.d5,지금 프레임을 복사해 더합니다.,Adds a copy of the current frame.
+shortcuts-timeline.h-cmd.d6,지금 프레임을 지웁니다.,Deletes the current frame.
+shortcuts-timeline.h-cmd.d7,빈 레이어를 더합니다.,Adds an empty layer.
+shortcuts-timeline.h-cmd.d8,"부위를 담을 그룹을 만듭니다(부위 <a href=""#parts-create"">만들기</a>).","Creates a group for parts (see <a href=""#parts-create"">Creating</a> parts)."
+shortcuts-timeline.h-cmd.d9,지금 그룹에 부위를 더합니다. 그룹이 없으면 그룹도 만듭니다.,"Adds a part to the current group, creating a group if there is none."
+shortcuts-timeline.h-cmd.d10,고른 부위의 크기를 바꿉니다.,Changes the size of the selected part.
+shortcuts-timeline.h-cmd.d11,지금 레이어 이름을 고칩니다. 이름을 더블클릭해도 됩니다.,Renames the current layer. Double-clicking the name works too.
+shortcuts-timeline.h-cmd.d12,지금 그룹(부위를 골랐으면 그 부위의 그룹)의 스킨을 바꿉니다. 실행취소 기록에 남지 않습니다.,Switches the skin of the current group (or the selected part's group). It isn't recorded in undo history.
+shortcuts-timeline.h-cmd.d13,"스킨 관리 창을 엽니다(<a href=""#parts-skin-manager"">스킨 관리 창</a>).","Opens the Skin manager (see <a href=""#parts-skin-manager"">Skin manager</a>)."
+shortcuts-timeline.h-cmd.d14,프레임 범위에 이름을 붙여 애니메이션 태그를 만듭니다.,Names a frame range as an animation tag.
+shortcuts-timeline.h-cmd.d15,스프라이트 시트 한 장을 칸마다 프레임으로 나눕니다.,Splits a sprite sheet into one frame per cell.
+shortcuts-timeline.h-extra,메뉴에 없는 키와 마우스,Keys outside the menus and the mouse
+shortcuts-timeline.h-extra.d1,<kbd>Space</kbd>를 짧게 눌렀다 떼면 미리보기를 재생·정지합니다. 누른 채 끌면 화면 이동입니다.,A short tap of <kbd>Space</kbd> plays or stops the preview; holding it while dragging pans the view.
+shortcuts-timeline.h-extra.d2,끈 칸 수만큼 빈 프레임을 한 번에 더합니다. 복사 단추는 마지막 프레임을 여러 번 복사합니다.,Adds that many empty frames at once. The copy button duplicates the last frame that many times.
+shortcuts-timeline.h-extra.d3,타임라인의 레이어 줄을 위아래로 넘깁니다.,Scrolls the timeline's layer rows.
+shortcuts-timeline.h-extra.d4,타임라인의 프레임을 좌우로 넘깁니다.,Scrolls the timeline's frames sideways.
+shortcuts-timeline.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-timeline.20.alt,프레임·레이어 메뉴를 펼친 모습: 재생/정지 Shift+Enter부터 이전·다음 스킨 Alt+[ Alt+]까지 오른쪽의 키,The Frame·Layer menu open: the keys to the right of Play / stop Shift+Enter through Previous and Next skin Alt+[ and Alt+]
+shortcuts-timeline.21,① 프레임·레이어(Frame·Layer) 메뉴의 단축키,① Shortcuts in the Frame·Layer menu
+shortcuts-timeline.14,레이어 위아래 스크롤(타임라인에서),Scroll layers up/down (in the timeline)
+shortcuts-timeline.15,휠,Wheel
+shortcuts-timeline.16,프레임 좌우 스크롤(타임라인에서),Scroll frames left/right (in the timeline)
+shortcuts-timeline.17,<kbd>Ctrl</kbd>+휠,<kbd>Ctrl</kbd>+wheel
+shortcuts-timeline.18,"스킨 바꾸기는 현재 그룹(부위를 골랐으면 그 부위의 그룹)에 적용되며 실행취소 기록에 남지 않습니다. 그룹·부위·스킨은 <a href=""#parts"">부위와 그룹</a> 장을 참고하세요.","Skin switching applies to the current group (or the selected part's group) and isn't recorded in undo history. For groups, parts and skins, see the <a href=""#parts"">Parts and groups</a> chapter."
+guide-new.shortcuts-space-label,Space로 미리보기 재생/정지,Tap Space to play/pause preview
+guide-new.frame-drag-shortcut,다음 프레임 칸에서 여러 프레임 추가,Add multiple frames from the next-frame cell
+guide-new.frame-drag-key,다음 프레임 추가 단추를 누른 채 오른쪽으로 끌었다 놓기,Drag the Add frame button right and release
+shortcuts-timeline.19,<strong>프레임·레이어</strong> 메뉴를 펼치면 ① 재생·정지부터 다음 스킨까지의 키가 보입니다.,The <strong>Frame·Layer</strong> menu shows the keys from Play / stop to Next skin at ①.
+shortcuts-tools.1,도구,Tools
+shortcuts-tools.overview,"<strong>도구</strong> 메뉴의 도구 키, <strong>{{MainStrings.Menu_Tools_Selection}}</strong>·<strong>{{MainStrings.Menu_Tools_DrawOptions}}</strong> 하위 메뉴의 키, 그리는 동안 함께 누르는 보조 키입니다. 도구 이름을 누르면 그 도구의 쪽으로 갑니다.","Tool keys in the <strong>Tools</strong> menu, keys in its <strong>{{MainStrings.Menu_Tools_Selection}}</strong> and <strong>{{MainStrings.Menu_Tools_DrawOptions}}</strong> submenus, and modifier keys you hold while drawing. Click a tool name to open its page."
+shortcuts-tools.h-tools,도구,Tools
+shortcuts-tools.h-select,선택 칸과 선,Selection slot and line
+shortcuts-tools.h-select.d1,다른 도구에서 누르면 선택 칸의 도구로 바꿉니다. 선택 도구를 쓰는 중에 10초 안에 다시 누를 때마다 사각 → 원 → 자유 → 스마트 선택 순으로 바뀝니다(10초가 지난 뒤 처음 누르면 안내만 나옴).,"From another tool it switches to the selection slot's tool. While using a selection tool, each press within 10 seconds cycles rectangle → ellipse → lasso → magic wand (the first press after 10 seconds only shows a hint)."
+shortcuts-tools.h-select.d2,도형 도구를 선 모양으로 고릅니다.,Picks the Shape tool with the line shape.
+shortcuts-tools.h-options,그리기 옵션,Drawing options
+shortcuts-tools.h-options.d1,도형을 외곽선만 그릴지 속까지 채울지 바꿉니다.,Toggles whether shapes are outlined or filled.
+shortcuts-tools.h-options.d2,"채우기가 이어진 곳만 칠할지, 같은 색 전체를 칠할지 바꿉니다.",Toggles whether Fill paints only the connected area or every pixel of the same color.
+shortcuts-tools.h-options.d3,크기 1로 그린 선의 계단 모서리 겹 픽셀을 뺍니다.,Removes doubled pixels at the corners of size-1 strokes.
+shortcuts-tools.h-options.d4,"반대쪽에도 함께 그립니다(<a href=""#tools-brush"">브러시 설정</a>).","Also draws on the opposite side (see <a href=""#tools-brush"">Brush settings</a>)."
+shortcuts-tools.h-options.d5,대칭 축을 캔버스 가운데 대신 피벗에 둡니다.,Puts the symmetry axis at the pivot instead of the canvas center.
+shortcuts-tools.h-options.d6,오른쪽 버튼으로 보조색 대신 지웁니다.,The right mouse button erases instead of painting the secondary color.
+shortcuts-tools.h-options.d7,이동 도구로 밀어낸 그림이 반대쪽에서 다시 나옵니다.,Pixels pushed off one edge with the Move tool come back on the opposite edge.
+shortcuts-tools.h-options.d8,브러시 크기를 1씩 줄이고 늘립니다.,Decreases or increases the brush size by 1.
+shortcuts-tools.h-options.d9,기본색과 보조색을 맞바꿉니다.,Swaps the primary and secondary colors.
+shortcuts-tools.h-windows,창,Windows
+shortcuts-tools.h-windows.d1,"효과·그라데이션 에셋을 설치·가져오기·올리기 하는 창을 엽니다(<a href=""#screen-asset-manager"">에셋 관리자</a>).","Opens the window for installing, importing and publishing effect and gradient assets (see <a href=""#screen-asset-manager"">Asset Manager</a>)."
+shortcuts-tools.h-windows.d2,"스크립트 효과를 쓰고 미리 보는 창을 엽니다(<a href=""#screen-effect-maker"">효과 만들기</a>).","Opens the window for writing and previewing script effects (see <a href=""#screen-effect-maker"">Effect Maker</a>)."
+shortcuts-tools.h-mods,그리면서 쓰는 보조 키,Modifier keys while drawing
+shortcuts-tools.h-mods.d1,"그리기 도구를 쓰는 중에 색을 집습니다(<a href=""#tools-picker"">스포이드</a>).","Picks a color while using a drawing tool (see <a href=""#tools-picker"">Eyedropper</a>)."
+shortcuts-tools.h-mods.d2,누르는 동안만 이동 도구로 그림을 옮깁니다.,Moves pixels with the Move tool only while held.
+shortcuts-tools.h-mods.d3,연필류 도구로 마지막 점에서 클릭한 곳까지 직선을 긋습니다.,"With pencil-type tools, draws a straight line from the last point to the click."
+shortcuts-tools.h-mods.d4,"선은 15°, 그라데이션은 45° 단위로 맞추고 도형은 비율을 고정합니다.","Snaps lines to 15° and gradients to 45° steps, and keeps shape proportions."
+shortcuts-tools.h-mods.d5,"묶음 도구(채우기·도형·선택 등)를 펼쳐 다른 도구로 바꿉니다(<a href=""#tools-groups"">도구 묶음</a>).","Opens a tool group (fill, shape, selection and so on) to switch tools (see <a href=""#tools-groups"">Tool groups</a>)."
+shortcuts-tools.h-menu,메뉴에서 키 확인,Keys in the menu
+shortcuts-tools.18.alt,"도구 메뉴를 펼친 모습: 연필 B·그라데이션 연필 Shift+B부터 글씨 T·9-slice S까지 도구 키, 선택 하위 메뉴, 펼친 그리기 옵션 하위 메뉴의 도형 채움 U·같은 색 전체 Shift+G·픽셀 퍼펙트 P·대칭 Shift+X/Y·브러시 크기 ] [·색 교환 X","The Tools menu opened: tool keys from Pencil B and Gradient pencil Shift+B to Text T and 9-slice S, the Selection submenu, and the opened Drawing options submenu with Shape fill U, Same color everywhere Shift+G, Pixel perfect P, Symmetry Shift+X/Y, brush size ] [ and swap colors X"
+shortcuts-tools.19,① 도구 키 · ② 그리기 옵션 하위 메뉴의 키,① Tool keys · ② Keys in the Drawing options submenu
+shortcuts-tools.14,묶음 도구(연필·채우기·선택) 펼쳐 바꾸기,"Open a tool group (pencil, fill, select) to switch"
+shortcuts-tools.15,도구 칸 길게 누르기 또는 오른쪽 클릭,Long-press or right-click the tool slot
+shortcuts-tools.17,"<strong>도구</strong> 메뉴를 펼치면 ① 도구의 키가 보입니다. 사각·원·자유·스마트 선택은 <strong>{{MainStrings.Menu_Tools_Selection}}</strong> 하위 메뉴에 있고(선택 도구를 쓰는 중이면 체크), 도형 채움·같은 색 전체·픽셀 퍼펙트·대칭·오른쪽 버튼 = 지우개·이동: 순환과 브러시 크게/작게·기본색 ↔ 보조색은 ② <strong>{{MainStrings.Menu_Tools_DrawOptions}}</strong> 하위 메뉴에 있습니다.","Open the <strong>Tools</strong> menu to see ① the tool keys. Rectangle, ellipse, lasso and magic wand selection are in the <strong>{{MainStrings.Menu_Tools_Selection}}</strong> submenu (checked while a selection tool is in use), and shape fill, same color everywhere, pixel perfect, symmetry, right button = eraser, move wrap, brush larger/smaller and primary ↔ secondary color are in the ② <strong>{{MainStrings.Menu_Tools_DrawOptions}}</strong> submenu."
+shortcuts-tools.click,클릭,click
+shortcuts-tools.drag,끌기,drag
+shortcuts-tools.m-pick,색 집기,Pick a color
+shortcuts-tools.m-move,잠깐 이동 도구,Temporary Move tool
+shortcuts-tools.m-line,직선 잇기,Straight line
+shortcuts-tools.m-shift,각도·비율 맞추기,Snap angle or ratio
+shortcuts-ai-help.1,AI와 도움말,AI and help
+shortcuts-ai-help.overview,<strong>AI</strong> 메뉴와 <strong>도움말</strong> 메뉴의 키입니다. 기본 키는 AI 채팅({{key:AI/AI 채팅}})과 화면에서 도움말 선택({{key:도움말/대상 도움말}})에만 있습니다.,Keys for the <strong>AI</strong> and <strong>Help</strong> menus. Only AI chat ({{key:AI/AI 채팅}}) and Choose help on screen ({{key:도움말/대상 도움말}}) have default keys.
+shortcuts-ai-help.h-ai,AI 메뉴,AI menu
+shortcuts-ai-help.h-ai.d1,"Claude·Codex에게 말로 그리기·고치기를 부탁하는 창을 열고 닫습니다(<a href=""#ai"">AI 채팅</a>).","Opens or closes the window where you ask Claude or Codex to draw and edit (see <a href=""#ai"">AI chat</a>)."
+shortcuts-ai-help.h-ai.d2,"AI 도구 설치·로그인·연결 상태를 확인합니다(<a href=""#ai-setup"">처음 한 번: 설치와 로그인</a>).","Checks AI tool installation, sign-in and connection (see <a href=""#ai-setup"">One-time setup</a>)."
+shortcuts-ai-help.h-ai.d3,"AI가 그리기 전에 찾아보는 참고 자료 보관소를 엽니다(<a href=""#ai-references"">참고 자료</a>).","Opens the reference library the AI consults before drawing (see <a href=""#ai-references"">References: teach the AI your style</a>)."
+shortcuts-ai-help.h-ai.d4,"그림을 넣어 픽셀 아트로 정리하는 창을 엽니다(<a href=""#pixelate"">AI 그림 픽셀로 정리</a>).","Opens the window that turns an image into pixel art (see <a href=""#pixelate"">Pixelate AI images</a>)."
+shortcuts-ai-help.h-ai.d5,지금 레이어의 그림을 원본으로 같은 창을 엽니다.,Opens the same window with the current layer as the source.
+shortcuts-ai-help.h-help,도움말 메뉴,Help menu
+shortcuts-ai-help.h-help.d1,"화면에서 클릭한 곳의 가이드 쪽을 엽니다(<a href=""#start-help"">도움말 보기</a>).","Opens the guide page for the area you click (see <a href=""#start-help"">Getting help</a>)."
+shortcuts-ai-help.h-help.d2,검색과 목차가 있는 사용 가이드 창을 엽니다.,Opens the guide window with search and contents.
+shortcuts-ai-help.h-help.d3,화면 언어에 맞는 Chickxel 홈페이지를 엽니다.,Opens the Chickxel website in your display language.
+shortcuts-ai-help.h-help.d4,"계정 창을 엽니다(<a href=""#start-account"">Chickxel 계정</a>).","Opens the account window (see <a href=""#start-account"">Chickxel account</a>)."
+shortcuts-ai-help.h-help.d5,기본 단축키와 마우스 조작을 모은 표를 엽니다.,Opens a table of the default shortcuts and mouse actions.
+shortcuts-ai-help.h-help.d6,"설정 파일이 있는 폴더를 엽니다(<a href=""#files-settings"">환경 설정</a>).","Opens the folder containing the settings file (see <a href=""#files-settings"">Preferences</a>)."
+shortcuts-ai-help.h-help.d7,"오류 로그가 있는 폴더를 엽니다(<a href=""#files-crash-log"">오류가 생겼을 때</a>).","Opens the folder with error logs (see <a href=""#files-crash-log"">When errors occur</a>)."
+shortcuts-ai-help.h-help.d8,"Chickxel Discord를 엽니다(<a href=""#start-feedback"">제보·아이디어</a>).","Opens the Chickxel Discord (see <a href=""#start-feedback"">Feedback</a>)."
+shortcuts-ai-help.h-help.d9,"새 버전을 바로 확인합니다(<a href=""#start-update"">업데이트</a>).","Checks for a new version now (see <a href=""#start-update"">Updates</a>)."
+shortcuts-ai-help.h-help.d10,버전·라이선스·링크가 있는 정보 창을 엽니다.,"Opens the About window with the version, license and links."

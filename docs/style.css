@@ -345,3 +345,7 @@ td { color: var(--body); }
   .ss-buttons { margin-top: 36px; }
   .ss-btn { min-width: 0; }
 }
+.content a.term { color: inherit; text-decoration: underline dotted; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+.content a.term:hover { color: var(--gold); }
+.glossary td:first-child { white-space: nowrap; font-weight: 700; }
+.glossary .term-aka { font-weight: 400; color: var(--muted); }

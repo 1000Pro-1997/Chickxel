@@ -35,7 +35,7 @@ public enum LayerKind
     Normal,
     /// <summary>그룹(합친 레이어): 셀이 없고, 바로 아래에 붙은 부위 레이어들을 묶는다.</summary>
     Group,
-    /// <summary>부위 레이어: 자기 크기의 셀을 프레임마다 갖고, 모든 프레임에 공통인 위치(<see cref="Layer.PartOffset"/>)에 그려진다.</summary>
+    /// <summary>부위 레이어: 자기 크기의 셀을 프레임마다 갖고, 부위 위치(<see cref="Layer.PartOffset"/> + 그 프레임에서 옮긴 거리)에 그려진다.</summary>
     Part,
 }
 
@@ -73,9 +73,12 @@ public sealed class Layer
 
     /// <summary>부위: 셀 크기(부위 셀은 정확히 이 크기).</summary>
     public Size PartSize { get; internal set; }
-    /// <summary>부위: 프레임 캔버스 안 왼쪽 위 위치(모든 프레임 공통, 캔버스 밖으로 나가도 됨).</summary>
+    /// <summary>
+    /// 부위: 프레임 캔버스 안 왼쪽 위 위치(기준 — 프레임마다 옮긴 거리 <see cref="Frame.PartShifts"/>를 더한 것이 그 프레임의 위치, 캔버스 밖으로 나가도 됨).
+    /// 프레임의 실제 위치는 <see cref="SpriteProject.GetPartOffset"/>로 읽는다.
+    /// </summary>
     public Point PartOffset { get; internal set; }
-    /// <summary>부위: 캔버스 안 영역.</summary>
+    /// <summary>부위: 캔버스 안 영역(기준 위치 — 프레임의 영역은 <see cref="SpriteProject.GetPartRect"/>).</summary>
     public Rectangle PartRect => new(PartOffset, PartSize);
     /// <summary>부위: 부위 아틀라스 내보내기 피벗(부위 기준 0~1, 아래 왼쪽 원점).</summary>
     public Pivot PartPivot { get; internal set; } = Pivot.Center;
@@ -247,6 +250,12 @@ public sealed class Frame
     /// 읽을 때는 <see cref="SpriteProject.GetPartPivot"/>, 바꿀 때는 <see cref="SpriteProject.SetPartFramePivot"/>로. 지운 레이어의 항목은 남아도 쓰이지 않는다.
     /// </summary>
     internal Dictionary<Layer, Pivot> PartPivots { get; } = [];
+
+    /// <summary>
+    /// 부위마다 이 프레임에서 기준 위치(<see cref="Layer.PartOffset"/>)에서 옮긴 거리(px, 0이 아닌 것만). 거리로 담으므로 기준 위치를 바꾸면(부위 옮기기·크기·자동 배치)
+    /// 이 프레임도 같이 따라간다. 읽을 때는 <see cref="SpriteProject.GetPartOffset"/>, 바꿀 때는 <see cref="SpriteProject.MovePartFrom"/>로.
+    /// </summary>
+    internal Dictionary<Layer, Point> PartShifts { get; } = [];
 
     /// <summary>내보낼 때 쓸 칸 이름. null이면 이름 규칙(<c>{태그}_{번호}</c> / <c>{파일}_{프레임}</c>).</summary>
     public string? Name { get; set; }

@@ -241,7 +241,7 @@ public sealed partial class PixelCanvas
         if (_ctx.Project is not { } p || _ctx.CurrentLayerObject is not { IsGroup: false } current) return;
         var r = TextCreateRect();
         bool box = _dragMoved && r.Width >= 2;
-        var offset = current.IsPart ? current.PartOffset : Point.Empty;
+        var offset = current.IsPart ? p.GetPartOffset(current, _ctx.CurrentFrame) : Point.Empty;
         var effect = _ctx.TextStyle.ApplyTo(new TextEffect
         {
             Text = "",

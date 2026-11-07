@@ -69,14 +69,16 @@ public sealed partial class SpriteProject
         {
             foreach (var part in moving)
             {
-                var origin = part.PartOffset;
-                var split = new Dictionary<PixelImage, (PixelImage Cel, CelOverflow? Overflow)>(ReferenceEqualityComparer.Instance);
+                // 프레임마다 옮긴 위치가 다를 수 있으므로 링크된 셀은 같은 자리일 때만 같은 그림을 같이 쓴다(링크 색은 첫 자리만 따라감)
+                var split = new Dictionary<PixelImage, Dictionary<Point, (PixelImage Cel, CelOverflow? Overflow)>>(ReferenceEqualityComparer.Instance);
                 foreach (var (frame, cel) in TakeShownCels(part))
                 {
-                    if (!split.TryGetValue(cel, out var s))
+                    var origin = GetPartOffset(part, _frames.IndexOf(frame));
+                    if (!split.TryGetValue(cel, out var at)) split[cel] = at = [];
+                    if (!at.TryGetValue(origin, out var s))
                     {
-                        split[cel] = s = Split(cel, origin, Size);
-                        InheritLinkTag(cel, s.Cel); // 링크된 셀은 꺼낸 뒤에도 같은 그림을 같이 씀
+                        at[origin] = s = Split(cel, origin, Size);
+                        if (at.Count == 1) InheritLinkTag(cel, s.Cel); // 링크된 셀은 꺼낸 뒤에도 같은 그림을 같이 씀
                     }
                     var key = new CelKey(part, frame, null);
                     _cels[key] = s.Cel;
@@ -88,7 +90,11 @@ public sealed partial class SpriteProject
                 part.PartSize = default;
                 part.PartOffset = default;
                 part.PartPivot = Pivot.Center;
-                foreach (var f in _frames) f.PartPivots.Remove(part);
+                foreach (var f in _frames)
+                {
+                    f.PartPivots.Remove(part);
+                    f.PartShifts.Remove(part);
+                }
                 part.PartBorder = default;
                 part.PartSourceRect = null;
             }
@@ -194,7 +200,11 @@ public sealed partial class SpriteProject
         layer.PartSize = area.Size;
         layer.PartOffset = area.Location;
         layer.PartPivot = Pivot.Center;
-        foreach (var f in _frames) f.PartPivots.Remove(layer);
+        foreach (var f in _frames)
+        {
+            f.PartPivots.Remove(layer);
+            f.PartShifts.Remove(layer);
+        }
         layer.PartBorder = default;
         layer.PartSourceRect = null;
     }

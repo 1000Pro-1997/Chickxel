@@ -41,6 +41,14 @@ public sealed class EffectMakerWindow : Window
     private readonly TextBox _title, _description;
     /// <summary>제목·설명 칸이 고치는 언어 이름(기본 선언 값이 아닌 번역을 고칠 때, 또는 선언에 <c>language</c>가 있을 때).</summary>
     private readonly TextBlock _titleLanguage = LanguageCaption(), _descriptionLanguage = LanguageCaption();
+    /// <summary>정보 제목 옆의 현재 효과 개발자(선택이 없을 때는 숨김).</summary>
+    private readonly StackPanel _authorHeader = new() { Orientation = Orientation.Horizontal, Spacing = 3, IsVisible = false };
+    private readonly ContentControl _authorAvatar = new() { Width = 18, Height = 18, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _authorName = new()
+    {
+        MaxWidth = 90, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center,
+        Foreground = AppTheme.DimTextBrush,
+    };
     /// <summary>선언 <c>tags</c>(올릴 때 태그) 칩 편집기.</summary>
     private readonly TagChipEditor _tags = new(double.NaN);
     /// <summary>제목·설명 칸이 고치는 번역 언어(<see cref="ScriptTranslations.EditLanguage"/>). null이면 선언의 기본 name·description.</summary>
@@ -220,6 +228,12 @@ public sealed class EffectMakerWindow : Window
             InfoLabel(UiStrings.EffectMaker_DescriptionLabel, _descriptionLanguage), _description,
             Ui.Row(Ui.Label(UiStrings.EffectMaker_TagsLabel), Ui.InfoBadge(UiStrings.EffectMaker_TagsTip)), _tags,
             _languages));
+        _authorHeader.Children.Add(_authorAvatar);
+        _authorHeader.Children.Add(_authorName);
+        var infoStack = (StackPanel)info.Child!;
+        var infoTitle = infoStack.Children[0];
+        infoStack.Children.RemoveAt(0);
+        infoStack.Children.Insert(0, Ui.Row(infoTitle, _authorHeader));
         // "정보" 제목 줄 오른쪽에 규칙 단추(효과를 만들 때 지킬 규칙·API — 복사해 다른 AI에 붙여 넣음)
         var rules = Ui.Button(VectorIcon.BookOpen, UiStrings.EffectMaker_Rules, (_, _) => ShowRules()).Tip(UiStrings.EffectMaker_RulesTip);
         rules.Padding = new Thickness(6, 1);
@@ -491,6 +505,7 @@ public sealed class EffectMakerWindow : Window
             _list.Items.Add(new ListBoxItem { Content = row, Tag = upload, HorizontalContentAlignment = HorizontalAlignment.Stretch });
         }
         SelectInList(_shownId);
+        UpdateAuthorIdentity();
         _syncingList = false;
     }
 
@@ -617,6 +632,7 @@ public sealed class EffectMakerWindow : Window
         _shownId = id;
         _entryId = AppAssets.IsMine(entry) ? id : null;
         Load(script.Source, saved: true, script.Scene);
+        UpdateAuthorIdentity();
         (_shownVersion, _shownPackageId) = (entry.Store?.Version, entry.Store?.PackageId);
         if (ListItem(id) is null) _showAll.IsChecked = true;
         SelectInList(id);
@@ -636,6 +652,7 @@ public sealed class EffectMakerWindow : Window
         _shownId = null;
         _entryId = null;
         Load(source, saved: false);
+        UpdateAuthorIdentity();
         SelectInList(null);
     }
 
@@ -697,10 +714,28 @@ public sealed class EffectMakerWindow : Window
         _preview.SetFrames([], null);
         SetStatus("");
         ClearStatusLines();
+        UpdateAuthorIdentity();
         SetInfo(null);
         SelectInList(null);
         UpdateSceneRow();
         UpdateButtons();
+    }
+
+    /// <summary>게시된 효과만 게시자 그림을 쓰고, 로컬 효과는 출처와 기본 사람 그림을 보인다.</summary>
+    private void UpdateAuthorIdentity()
+    {
+        _authorHeader.IsVisible = _open;
+        if (!_open)
+        {
+            _authorAvatar.Content = null;
+            _authorName.Text = "";
+            return;
+        }
+        var entry = _shownId is { } id ? AppAssets.Catalog.Find(id) : null;
+        var author = entry?.Store is not null ? entry.Author : null;
+        _authorAvatar.Content = AuthorAvatarView.Create(author, 18);
+        _authorName.Text = author?.Name ?? (entry?.Store is not null ? UiStrings.EffectMaker_Uploaded : UiStrings.Assets_SourceLocal);
+        ToolTip.SetTip(_authorName, _authorName.Text);
     }
 
     private void UpdateButtons()

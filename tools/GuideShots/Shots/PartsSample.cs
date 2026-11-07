@@ -53,11 +53,15 @@ internal static class PartsSample
 
         p.SetActiveSkin(group, group.Skins[0]);
         foreach (var (name, (part, img)) in parts) FillFrames(p, part, img, name == "Head");
+        // 스킨은 다른 스킨 그림을 빌려 오지 않으므로(빈 칸은 비어 보임) 스킨마다 모든 부위를 그린다.
         p.SetActiveSkin(group, knight);
+        FillFrames(p, head, parts["Head"].Image, true);
         FillFrames(p, parts["Body"].Part, Recolor(parts["Body"].Image, Knight), false);
         FillFrames(p, parts["Legs"].Part, Recolor(parts["Legs"].Image, Knight), false);
         p.SetActiveSkin(group, zombie);
         FillFrames(p, head, Recolor(parts["Head"].Image, Zombie), true);
+        FillFrames(p, parts["Body"].Part, Recolor(parts["Body"].Image, Zombie), false);
+        FillFrames(p, parts["Legs"].Part, Recolor(parts["Legs"].Image, Zombie), false);
         p.SetPartSkin(head, hat);
         FillFrames(p, head, DrawHat(parts["Head"].Image), true);
         p.SetPartSkin(head, null);

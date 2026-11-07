@@ -422,7 +422,7 @@ internal sealed class DocumentPaneView : Control
         {
             zoom = Math.Clamp(v.Zoom, 1, 64);
             // 부위 화면이면 캔버스 좌표는 부위 기준 — 프레임 좌표로 옮겨 같은 자리를 가운데에.
-            var origin = view.Value.Layer >= 0 && view.Value.Layer < p.Layers.Count && p.Layers[view.Value.Layer] is { IsPart: true } part ? part.PartOffset : Point.Empty;
+            var origin = view.Value.Layer >= 0 && view.Value.Layer < p.Layers.Count && p.Layers[view.Value.Layer] is { IsPart: true } part ? p.GetPartOffset(part, frame) : Point.Empty;
             ox = Math.Round(w / 2 - (v.CenterX + origin.X) * zoom);
             oy = Math.Round(h / 2 - (v.CenterY + origin.Y) * zoom);
         }

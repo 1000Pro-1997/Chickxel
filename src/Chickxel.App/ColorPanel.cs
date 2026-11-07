@@ -8,7 +8,7 @@ namespace Chickxel.App;
 
 /// <summary>
 /// Aseprite식 왼쪽 열: 위에 기본색/보조색, 가운데 팔레트 여러 개(위아래로 쌓이고 넘치면 스크롤), 아래에 색 고르기
-/// (채도·명도 상자 + 색상 막대 + 알파 막대, RGBA·HSV·HEX 입력, 최근 색 16개).
+/// (채도·명도 상자 + 색상 막대 + 알파 막대, RGBA·HSV·HEX 입력, 최근 색 16개), 맨 아래에 지금 레이어에 쓰인 색(<see cref="LayerColorsSection"/> — 접고 펼침).
 /// 팔레트마다 머리글(접기 ▾/▸, 이름 — 두 번 눌러 바꾸기, ≡ 메뉴)이 있고, 메뉴의 동작(색 추가·삭제·정렬, .hex 저장, .hex/.gpl 불러오기,
 /// 이미지에서 만들기, Lospec 웹, 팔레트 색으로 변환, 이름 바꾸기·위아래로·비우기·삭제)은 그 팔레트에 한다.
 /// 마지막으로 누르거나 고친 팔레트가 "활성 팔레트"(머리글 아래 파란 줄)이고, 편집 메뉴의 팔레트 명령과 Claude 도구는 활성 팔레트를 쓴다.
@@ -19,6 +19,7 @@ public sealed class ColorPanel : UserControl
     private readonly EditorContext _ctx;
     private readonly ColorSlot _primarySlot, _secondarySlot;
     private readonly ColorEditor _editor;
+    private readonly LayerColorsSection _layerColors;
     private readonly ScrollViewer _paletteHost;
     private readonly StackPanel _sectionsPanel;
     private readonly Button _addPalette;
@@ -82,12 +83,16 @@ public sealed class ColorPanel : UserControl
         };
         SetPalettes([]);
 
-        // ── 아래: 메인과 팝업이 똑같이 공유하는 색 편집기
+        // ── 아래: 메인과 팝업이 똑같이 공유하는 색 편집기, 그 아래 지금 레이어에 쓰인 색(메인에만)
+        _layerColors = new LayerColorsSection(ctx) { Margin = new Thickness(4, 0, 4, 4) };
+        _layerColors.ColorClicked += OnSwatchClicked;
+        DockPanel.SetDock(_layerColors, Dock.Bottom);
         DockPanel.SetDock(_editor, Dock.Bottom);
 
         var root = new DockPanel();
         root.Children.Add(header);
         root.Children.Add(slots);
+        root.Children.Add(_layerColors);
         root.Children.Add(_editor);
         root.Children.Add(_paletteHost);
         Content = root;
@@ -126,6 +131,13 @@ public sealed class ColorPanel : UserControl
     {
         get => _editor.Mode;
         set => _editor.Mode = value;
+    }
+
+    /// <summary>"레이어 색"이 접혀 있는지(설정 저장용).</summary>
+    public bool LayerColorsCollapsed
+    {
+        get => _layerColors.Collapsed;
+        set => _layerColors.Collapsed = value;
     }
 
     private void SyncFromContext()

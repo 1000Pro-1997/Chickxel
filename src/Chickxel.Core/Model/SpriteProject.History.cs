@@ -307,6 +307,8 @@ public sealed partial class SpriteProject
                 PartPivots = f.PartPivots.Length == 0 ? null
                     : f.PartPivots.Select(kv => new HistoryPartPivotDto { Layer = ids.Of(kv.Key), Pivot = ProjectIO.PivotDto.From(kv.Value) })
                         .OrderBy(d => d.Layer).ToList(),
+                PartShifts = f.PartShifts.Length == 0 ? null
+                    : f.PartShifts.Select(kv => new[] { ids.Of(kv.Key), kv.Value.X, kv.Value.Y }).OrderBy(s => s[0]).ToList(),
             }).ToList(),
             Tags = _tags.Select(t => new HistoryTagDto
             {
@@ -367,7 +369,8 @@ public sealed partial class SpriteProject
                     l.Effects?.Select(EffectCodec.Read).ToArray() ?? [],
                     l.AutoLayout?.ToLayout())).ToArray(),
                 _frames = d.Frames.Select(f => (r.Frame(f.Id), f.DurationMs, f.Pivot?.ToPivot(), f.Name,
-                    (f.PartPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToArray())).ToArray(),
+                    (f.PartPivots ?? []).Select(pp => KeyValuePair.Create(r.Layer(pp.Layer), pp.Pivot.ToPivot())).ToArray(),
+                    (f.PartShifts ?? []).Select(s => s is [var l, var x, var y] ? KeyValuePair.Create(r.Layer(l), new Point(x, y)) : throw Corrupt()).ToArray())).ToArray(),
                 _tags = d.Tags.Select(t => (r.Tag(t.Id), new AnimationTag(t.Name, t.From, t.To)
                 {
                     Direction = t.Direction,

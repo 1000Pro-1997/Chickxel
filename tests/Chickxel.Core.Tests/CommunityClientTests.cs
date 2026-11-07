@@ -250,6 +250,7 @@ public class CommunityClientTests
         var art = await client.UploadArtAsync(new ArtUpload(gif, CommunityArtType.Gif, " Idle ", "첫 줄\n둘째 줄", ["idle", "cat"]), new SyncProgress(reports.Add));
 
         Assert.Equal(new CommunityArt("art2345art2345ab", "Idle", "/files/art/art2345art2345ab.gif", 32, 16, 4, "gif"), art);
+        Assert.Null(art.Project); // 예전 서버: project 칸 없음
         Assert.Equal("https://chickxel.com/gallery/art2345art2345ab", client.ArtPageUrl(art.Id).AbsoluteUri);
         var sent = Assert.Single(handler.Requests);
         Assert.Equal((HttpMethod.Post, "Bearer secret-token"), (sent.Method, sent.Authorization));
@@ -260,8 +261,42 @@ public class CommunityClientTests
         Assert.Equal("Idle", Encoding.UTF8.GetString(parts["title"].Data));
         Assert.Equal("첫 줄\n둘째 줄", Encoding.UTF8.GetString(parts["description"].Data));
         Assert.Equal("idle,cat", Encoding.UTF8.GetString(parts["tags"].Data));
+        Assert.False(parts.ContainsKey("project"));
         Assert.True(reports.Count > 2, reports.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Assert.Equal(1.0, reports[^1]);
+    }
+
+    [Fact]
+    public async Task UploadArt_WithProject_SendsTheProjectPart_AndReadsTheProjectInfo()
+    {
+        var (client, handler, _) = Make();
+        handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
+            $$"""
+            { "id": "art2345art2345ab", "title": "Idle", "user": {{UserJson}},
+              "image": { "url": "/files/art/art2345art2345ab.png", "width": 8, "height": 8, "frames": 1, "bytes": 90, "type": "png" },
+              "project": { "url": "/files/projects/art2345art2345ab.chickxel", "bytes": 300000 } }
+            """);
+        byte[] png = [1, 2, 3];
+        byte[] project = Enumerable.Range(0, 300_000).Select(i => (byte)(i * 7)).ToArray();
+        var reports = new List<double>();
+        var art = await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", [], project), new SyncProgress(reports.Add));
+
+        Assert.Equal(new CommunityArtProject("/files/projects/art2345art2345ab.chickxel", 300_000), art.Project);
+        var parts = Parts(Assert.Single(handler.Requests));
+        Assert.Equal(("art.png", "image/png"), (parts["file"].FileName, parts["file"].Type));
+        Assert.Equal(png, parts["file"].Data);
+        Assert.Equal(("project.chickxel", "application/zip"), (parts["project"].FileName, parts["project"].Type));
+        Assert.Equal(project, parts["project"].Data);
+        Assert.True(reports.Count > 2, reports.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(1.0, reports[^1]);
+
+        // project가 null이거나 주소가 없으면 없음
+        handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
+            """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" }, "project": null }""");
+        Assert.Null((await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", []))).Project);
+        handler.Routes["POST /api/art"] = _ => Json(HttpStatusCode.Created,
+            """{ "id": "art2345art2345ab", "title": "Idle", "image": { "url": "/a.png" }, "project": { "bytes": 5 } }""");
+        Assert.Null((await client.UploadArtAsync(new ArtUpload(png, CommunityArtType.Png, "Idle", "", []))).Project);
     }
 
     [Fact]

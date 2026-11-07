@@ -476,7 +476,6 @@ public sealed partial class PixelTools
         bool any = false;
         foreach (var layer in targets)
         {
-            int ox = layer.IsPart ? layer.PartOffset.X : 0, oy = layer.IsPart ? layer.PartOffset.Y : 0;
             for (int frame = 0; frame < p.Frames.Count; frame++)
             {
                 if (p.EffectSource(layer, frame) is not { } source) continue;
@@ -487,7 +486,8 @@ public sealed partial class PixelTools
                 var (rendered, dx, dy) = LayerEffects.Render(source, effects);
                 var opaque = rendered.GetOpaqueBounds();
                 if (opaque.IsEmpty) continue;
-                opaque.Offset(ox + dx, oy + dy);
+                var at = layer.IsPart ? p.GetPartOffset(layer, frame) : Point.Empty;
+                opaque.Offset(at.X + dx, at.Y + dy);
                 bounds = Rectangle.Union(bounds, opaque);
             }
         }

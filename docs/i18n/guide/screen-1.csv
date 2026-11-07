@@ -1,0 +1,687 @@
+key,ko,en
+#name,한국어,English
+screen.1,화면 구성,Screen layout
+screen.2,"메인 창은 아래 11개 영역으로 나뉩니다. 영역마다 하는 일이 정해져 있고, 고른 문서·도구·레이어에 따라 내용이 바뀝니다. 표의 이름을 누르면 그 영역의 자세한 설명으로 갑니다.","The main window is divided into the 11 areas below. Each area has a fixed job, and its contents follow the current document, tool and layer. Click a name in the table to open the detailed page for that area."
+screen.3.alt,"전체 Chickxel 창: 위 막대, 도구 막대, 파일 브라우저, 팔레트, 색, 문서 탭, 캔버스, 타임라인, 미리보기, 도구 설정, 상태 표시줄","The whole Chickxel window: top bar, toolbar, file browser, palette, colors, document tabs, canvas, timeline, preview, tool options and status bar"
+screen.4,① 메뉴와 위 막대 · ② 도구 막대 · ③ 파일 브라우저 · ④ 팔레트 · ⑤ 색 · ⑥ 문서 탭 · ⑦ 캔버스 · ⑧ 타임라인 · ⑨ 미리보기 · ⑩ 도구 설정 · ⑪ 상태 표시줄,① Menu and top bar · ② Toolbar · ③ File browser · ④ Palette · ⑤ Colors · ⑥ Document tabs · ⑦ Canvas · ⑧ Timeline · ⑨ Preview · ⑩ Tool options · ⑪ Status bar
+screen.th-area,영역,Area
+screen.th-role,하는 일,What it does
+screen.area-top,"<a href=""#screen-top-bar"">① 메뉴와 위 막대</a>","<a href=""#screen-top-bar"">① Menu and top bar</a>"
+screen.area-top.d,"모든 명령이 든 메뉴, 지금 도구의 이름과 사용법, 보기 옵션, 확대율, AI 채팅 단추","Menus with every command, the current tool's name and hint, view options, zoom and the AI chat button"
+screen.area-toolbar,"<a href=""#screen-toolbar"">② 도구 막대</a>","<a href=""#screen-toolbar"">② Toolbar</a>"
+screen.area-toolbar.d,"그리기·선택·이동 같은 도구 고르기, 파일 브라우저 접기, 저장·되돌리기","Pick drawing, selection, move and other tools; collapse the file browser; save or revert"
+screen.area-browser,"<a href=""#screen-file-browser"">③ 파일 브라우저</a>","<a href=""#screen-file-browser"">③ File browser</a>"
+screen.area-browser.d,"폴더의 그림을 썸네일로 보고 열기, 새 파일·합치기·삭제","Browse a folder's images as thumbnails and open them; new file, merge, delete"
+screen.area-palette,"<a href=""#screen-palette"">④ 팔레트</a>","<a href=""#screen-palette"">④ Palette</a>"
+screen.area-palette.d,기본색·보조색과 쌓아 둔 팔레트,Primary and secondary colors and the stacked palettes
+screen.area-colors,"<a href=""#screen-color-picker"">⑤ 색</a>","<a href=""#screen-color-picker"">⑤ Colors</a>"
+screen.area-colors.d,"색 고르기, 최근 색, 지금 레이어에 쓰인 색","Color picker, recent colors and the colors used in the current layer"
+screen.area-tabs,"<a href=""#screen-tabs"">⑥ 문서 탭</a>","<a href=""#screen-tabs"">⑥ Document tabs</a>"
+screen.area-tabs.d,"열린 문서 바꾸기, 화면을 두 칸으로 나누기",Switch between open documents and split the view in two
+screen.area-canvas,"<a href=""#screen-canvas"">⑦ 캔버스</a>","<a href=""#screen-canvas"">⑦ Canvas</a>"
+screen.area-canvas.d,현재 프레임을 보며 현재 레이어에 그리기,Draw on the current layer while viewing the current frame
+screen.area-timeline,"<a href=""#screen-timeline"">⑧ 타임라인</a>","<a href=""#screen-timeline"">⑧ Timeline</a>"
+screen.area-timeline.d,프레임·레이어·셀·태그를 고르고 편집하기,"Select and edit frames, layers, cels and tags"
+screen.area-preview,"<a href=""#screen-preview"">⑨ 미리보기</a>","<a href=""#screen-preview"">⑨ Preview</a>"
+screen.area-preview.d,"애니메이션 재생, 착장 바꾸기, 프레임 복사·저장","Play the animation, switch outfits, copy or save frames"
+screen.area-options,"<a href=""#screen-tool-settings"">⑩ 도구 설정</a>","<a href=""#screen-tool-settings"">⑩ Tool options</a>"
+screen.area-options.d,지금 도구의 설정과 타임라인에서 고른 효과의 설정,Settings of the current tool and of the effect selected in the timeline
+screen.area-status,"<a href=""#screen-status-bar"">⑪ 상태 표시줄</a>","<a href=""#screen-status-bar"">⑪ Status bar</a>"
+screen.area-status.d,커서 좌표·색·크기·프레임·확대율·저장 상태와 안내,"Cursor coordinates, color, size, frame, zoom, save state and messages"
+screen.dialogs,"영역 말고도 여러 창에서 같이 쓰는 조작과, 메뉴로 여는 창은 다음 쪽에 있습니다.","Controls shared by many windows, and windows opened from the menus, are described on these pages:"
+screen.th-page,쪽,Page
+screen.page-controls,"<a href=""#screen-common-controls"">숫자 칸과 메뉴 다루기</a>","<a href=""#screen-common-controls"">Number fields and menus</a>"
+screen.page-controls.d,"끌어서 값 바꾸기, 계산식 입력, 우클릭 값 목록, 팝업 메뉴","Drag to change values, type expressions, right-click value lists, popup menus"
+screen.page-export,"<a href=""#screen-export"">내보내기 창</a>","<a href=""#screen-export"">Export dialog</a>"
+screen.page-export.d,프레임 시트·부위 아틀라스 PNG와 Unity 설정,Frame sheet and part atlas PNGs and Unity settings
+screen.page-gif,"<a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a>","<a href=""#screen-gif"">Export as animated GIF</a>"
+screen.page-gif.d,공유용 GIF 한 파일 만들기,Make a single GIF for sharing
+screen.page-gallery,"<a href=""#screen-gallery"">갤러리에 올리기</a>","<a href=""#screen-gallery"">Upload to gallery</a>"
+screen.page-gallery.d,chickxel.com 갤러리에 그림 올리기,Upload a picture to the chickxel.com gallery
+screen.layout,"패널 사이의 경계선을 끌면 크기가 바뀌고, 바꾼 크기는 다음 실행에도 남습니다. 파일 브라우저는 {{key:보기/파일 브라우저}}로 접고 펼칩니다.",Drag the borders between panels to resize them; the sizes are kept for the next launch. Collapse or expand the file browser with {{key:보기/파일 브라우저}}.
+screen-top-bar.1,메뉴와 위 막대,Menu and top bar
+screen-top-bar.6.alt,"메뉴 아래 위 막대: 도구 이름과 사용법, 보기 옵션, 확대율, 맞추기, AI 채팅 단추","Top bar below the menu: tool name and hint, view options, zoom, Fit and the AI chat button"
+screen-top-bar.7,① 도구 이름 · ② 사용법 · ③ 보기 옵션 · ④ 확대율 상자 · ⑤ 맞추기(Fit) · ⑥ AI 채팅,① Tool name · ② Usage hint · ③ View options · ④ Zoom box · ⑤ Fit · ⑥ AI chat
+screen-top-bar.2,"창 맨 위에는 메뉴 줄이 있고, 그 바로 아래 위 막대에는 지금 도구와 화면 보기에 관한 단추가 모여 있습니다. 위 막대 왼쪽에는 지금 고른 도구의 ① 이름(괄호 안은 단축키)과 ② 사용법 한 줄, 오른쪽에는 ③ 보기 옵션, ④ 확대율 상자, ⑤ 맞추기, ⑥ AI 채팅 단추가 있습니다.","The menu bar runs across the top of the window, and the top bar right below it gathers the buttons for the current tool and the view. The left side of the top bar shows the current tool's ① name (shortcut in parentheses) and ② a one-line usage hint; the right side has ③ view options, ④ the zoom box, ⑤ Fit and ⑥ the AI chat button."
+screen-top-bar.menus,메뉴,Menus
+screen-top-bar.menus-intro,"메뉴 줄에는 메뉴 7개가 있습니다. 메뉴 항목 오른쪽에 단축키가 보이고, 단축키는 <a href=""#shortcuts-customize"">환경 설정에서 바꿀 수 있습니다</a>.","The menu bar has seven menus. Each item shows its shortcut on the right; you can <a href=""#shortcuts-customize"">change shortcuts in Preferences</a>."
+screen-top-bar.th-menu,메뉴,Menu
+screen-top-bar.th-items,주요 항목,Main items
+screen-top-bar.menu-file,{{MainStrings.Menu_File}},{{MainStrings.Menu_File}}
+screen-top-bar.menu-file.d,"새 프로젝트, 열기, 폴더 열기, Unity 프로젝트 열기, 최근 폴더·최근 파일, 저장, 다른 이름으로 저장, 저장한 내용으로 되돌리기, <a href=""#screen-export"">내보내기</a>, <a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a>, <a href=""#screen-gallery"">갤러리에 올리기</a>, 닫기, 시작 화면, 끝내기(<a href=""#files"">파일</a> 장)","New project, Open, Open folder, Open Unity project, recent folders and files, Save, Save as, Revert to saved, <a href=""#screen-export"">Export</a>, <a href=""#screen-gif"">Export as animated GIF</a>, <a href=""#screen-gallery"">Upload to gallery</a>, Close, Start screen, Exit (<a href=""#files"">Files</a> chapter)"
+screen-top-bar.menu-edit,{{MainStrings.Menu_Edit}},{{MainStrings.Menu_Edit}}
+screen-top-bar.menu-edit.d,"실행취소·다시 실행, 잘라내기·복사·붙여넣기·지우기, 모두 선택·선택 해제, 뒤집기·회전·<a href=""#tools-transform"">변형</a>, 외곽선 추가, 색 바꾸기, <a href=""#tools-canvas-size"">캔버스 크기</a>·<a href=""#tools-layer-size"">레이어 크기</a>, 캔버스 전체 뒤집기, 이미지에서 팔레트 만들기, <a href=""#screen-palette"">팔레트 색으로 변환</a>, 환경 설정","Undo and redo; cut, copy, paste, delete; select all and deselect; flip, rotate and <a href=""#tools-transform"">transform</a>; add outline; replace color; <a href=""#tools-canvas-size"">canvas size</a> and <a href=""#tools-layer-size"">layer size</a>; flip the whole canvas; create palette from image; <a href=""#screen-palette"">convert to palette colors</a>; Preferences"
+screen-top-bar.menu-view,{{MainStrings.Menu_View}},{{MainStrings.Menu_View}}
+screen-top-bar.menu-view.d,"확대·축소·화면에 맞추기·실제 크기(1배), 픽셀 격자·타일 격자·타일 모드·피벗 표시·양파 껍질·캔버스에 효과 보기, 격자 설정, <a href=""#screen-tabs"">다음 탭·이전 탭·다른 쪽으로 옮기기</a>, 파일 브라우저, 움직임 테스트","Zoom in, zoom out, fit to window, actual size (1×); pixel grid, tile grid, tiled mode, show pivot, onion skin, show effects on canvas; grid settings; <a href=""#screen-tabs"">next tab, previous tab, move to the other pane</a>; file browser; movement test"
+screen-top-bar.menu-frame,{{MainStrings.Menu_FrameLayer}},{{MainStrings.Menu_FrameLayer}}
+screen-top-bar.menu-frame.d,"재생·정지, 이전·다음·첫·마지막 프레임, 새 빈 프레임·프레임 복제·프레임 삭제, 새 레이어·새 그룹·새 부위, 부위 크기, 레이어 이름 바꾸기, 이전·다음 스킨, 스킨 관리, 새 태그, 격자로 나눠 프레임 만들기(<a href=""#screen-timeline"">타임라인</a>, <a href=""#parts"">부위</a> 장)","Play and stop; previous, next, first and last frame; new empty frame, duplicate frame, delete frame; new layer, group and part; part size; rename layer; previous and next skin; manage skins; new tag; split a sheet into frames (<a href=""#screen-timeline"">Timeline</a>, <a href=""#parts"">Parts</a> chapter)"
+screen-top-bar.menu-tools,{{MainStrings.Menu_Tools}},{{MainStrings.Menu_Tools}}
+screen-top-bar.menu-tools.d,"도구마다 하나씩, 선택 도구 묶음, 그리기 옵션(도형 채움·같은 색 전체 채우기·픽셀 퍼펙트·대칭·오른쪽 버튼 = 지우개·이동 순환·브러시 크게/작게·기본색 ↔ 보조색), 에셋 관리자, 효과 만들기(<a href=""#tools"">도구</a> 장)","One item per tool, the selection tools, drawing options (fill shapes, fill all of the same color, pixel perfect, symmetry, right button = eraser, wrap when moving, larger/smaller brush, swap primary and secondary), Asset Manager and Effect Maker (<a href=""#tools"">Tools</a> chapter)"
+screen-top-bar.menu-ai,{{MainStrings.Menu_Category_Ai}},{{MainStrings.Menu_Category_Ai}}
+screen-top-bar.menu-ai.d,"AI 채팅, AI 상태 열기, 참고 자료, AI 그림 픽셀로 정리, 현재 레이어를 픽셀로 정리(<a href=""#ai"">AI</a>, <a href=""#pixelate"">픽셀로 정리</a> 장)","AI chat, Open AI status, References, Pixelate AI image, Pixelate current layer (<a href=""#ai"">AI</a> and <a href=""#pixelate"">Pixelate</a> chapters)"
+screen-top-bar.menu-help,{{MainStrings.Menu_Help}},{{MainStrings.Menu_Help}}
+screen-top-bar.menu-help.d,"화면에서 도움말 선택({{key:도움말/대상 도움말}}), 사용 가이드, 홈페이지, Chickxel 계정, 단축키 목록, 설정 파일 위치 열기, 오류 로그 폴더 열기, 제보·아이디어(Discord), 업데이트 확인, Chickxel 정보(<a href=""#start"">시작하기</a> 장)","Choose help on screen ({{key:도움말/대상 도움말}}), Guide, Website, Chickxel account, Shortcut list, Open settings file location, Open error log folder, Report a bug or idea (Discord), Check for updates, About Chickxel (<a href=""#start"">Getting started</a> chapter)"
+screen-top-bar.tool,도구 이름과 사용법,Tool name and hint
+screen-top-bar.tool-body,"도구를 바꾸면 ① 이름과 ② 사용법이 바로 바뀝니다. 사용법에는 그 도구의 마우스 조작과 보조 키가 한 줄로 적혀 있습니다. 더 자세한 설정은 오른쪽 <a href=""#screen-tool-settings"">도구 설정</a>에서 바꿉니다.","Switching tools updates ① the name and ② the hint right away. The hint sums up the tool's mouse actions and modifier keys in one line. More settings are in <a href=""#screen-tool-settings"">Tool options</a> on the right."
+screen-top-bar.zoom,확대율과 맞추기,Zoom and Fit
+screen-top-bar.8.alt,확대율 상자를 우클릭한 목록: 화면에 맞추기와 100%~6400%,Zoom box right-click list: Fit to screen and 100%–6400%
+screen-top-bar.9,"⑦ 확대율 상자 우클릭 목록(Fit to screen, 100%~6400%)",⑦ Zoom box right-click list
+screen-top-bar.zoom-intro,캔버스는 1배부터 64배까지 정수 배로만 확대합니다. 확대율은 앱을 끝낼 때 저장되어 다음 실행에 그대로 쓰입니다(처음 값 800%).,The canvas zooms only in whole steps from 1× to 64×. The zoom is saved when you quit and used again on the next launch (800% at first).
+screen-top-bar.th-control,조작,Control
+screen-top-bar.th-result,결과,Result
+screen-top-bar.zoom-box,④ <strong>확대율 상자</strong>,④ <strong>Zoom box</strong>
+screen-top-bar.zoom-box.d,"누르면 숫자를 입력하고(정수 배가 아니면 가까운 배율로 맞춤: 150% → 200%), 좌우로 끌면 한 배씩 바뀝니다. 우클릭하면 ⑦ <strong>화면에 맞추기</strong>와 100·200·400·800·1600·3200·6400% 목록이 열립니다.","Click to type a value (rounded to the nearest whole zoom: 150% → 200%), or drag left/right to change it one step at a time. Right-click for ⑦ <strong>Fit to window</strong> and a 100, 200, 400, 800, 1600, 3200, 6400% list."
+screen-top-bar.zoom-pm,상자 양옆 빼기·더하기 단추,Minus and plus buttons beside the box
+screen-top-bar.zoom-pm.d,"1·2·3·4·5·6·8·10·12·16·20·24·32·40·48·64배 단계로 축소·확대합니다({{key:보기/축소}}, {{key:보기/확대}}와 같음).","Zoom out or in through 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48 and 64× (same as {{key:보기/축소}} and {{key:보기/확대}})."
+screen-top-bar.zoom-fit,⑤ <strong>맞추기</strong>(Fit),⑤ <strong>Fit</strong>
+screen-top-bar.zoom-fit.d,"켜 두면 그림을 열 때마다 캔버스를 창에 맞추고, 켜는 순간에도 한 번 맞춥니다. 화면을 나누거나 합칠 때도 다시 맞춥니다. 처음에는 켜져 있고 상태는 다음 실행에도 남습니다.","When on, the canvas is fitted to the window every time you open an image, and once right when you turn it on. It also refits when you split or merge the view. On at first; the state is kept for the next launch."
+screen-top-bar.zoom-keys,단축키,Shortcuts
+screen-top-bar.zoom-keys.d,"{{key:보기/화면에 맞추기}} = 지금 화면에 맞추기, {{key:보기/실제 크기(1배)}} = 실제 크기(1배). 캔버스 위 마우스 휠 확대는 <a href=""#screen-canvas"">캔버스</a>를 보세요.","{{key:보기/화면에 맞추기}} = fit now, {{key:보기/실제 크기(1배)}} = actual size (1×). For zooming with the mouse wheel over the canvas, see <a href=""#screen-canvas"">Canvas</a>."
+screen-top-bar.view,보기 옵션,View options
+screen-top-bar.view-intro,"③ 보기 옵션 단추는 누를 때마다 켜고 끕니다. 설정이 있는 단추를 <strong>우클릭</strong>하면 설정 팝업이 뜨고, 값을 바꾸는 즉시 캔버스에 보입니다(꺼져 있었으면 함께 켜짐). 효과 보기를 뺀 모든 보기 옵션과 설정은 다음 실행에도 남습니다. 같은 명령이 <strong>{{MainStrings.Menu_View}}</strong> 메뉴에도 있고, <strong>격자 설정…</strong>에서 격자 색과 타일 크기를 한 번에 정할 수도 있습니다.","Each ③ view option button turns its view on or off. <strong>Right-click</strong> a button that has settings to open its popup; changes show on the canvas immediately (and turn that view on if it was off). Every view option and setting except the effects view is kept for the next launch. The same commands are in the <strong>{{MainStrings.Menu_View}}</strong> menu, where <strong>Grid settings…</strong> sets the grid colors and tile size in one place."
+screen-top-bar.20.alt,"격자 단추를 우클릭한 설정 팝업: 색, 보이기 시작하는 배율",Grid button right-click popup: color and the zoom it appears from
+screen-top-bar.21,⑧ 격자(Grid) 설정 팝업,⑧ Grid settings popup
+screen-top-bar.22.alt,"타일 격자 단추를 우클릭한 설정 팝업: 가로·세로, 8×8~64×64, 색","Tile grid button right-click popup: width, height, 8×8–64×64 and color"
+screen-top-bar.23,⑨ 타일 격자(Tile grid) 설정 팝업,⑨ Tile grid settings popup
+screen-top-bar.24.alt,"타일 모드 단추를 우클릭한 설정 팝업: 반복 크기, 가운데 둘레 어둡게",Tiled mode button right-click popup: repeat size and dim around the center
+screen-top-bar.25,⑩ 타일 모드(Tile mode) 설정 팝업,⑩ Tiled mode settings popup
+screen-top-bar.26.alt,"양파 단추를 우클릭한 설정 팝업: 앞·뒤 프레임 수, 진하기, 색 물들이기","Onion button right-click popup: previous/next frames, intensity and tint"
+screen-top-bar.27,⑪ 양파(Onion) 설정 팝업,⑪ Onion skin settings popup
+screen-top-bar.th-view,보기,View
+screen-top-bar.th-on,켜면,When on
+screen-top-bar.th-settings,우클릭 설정(처음 값),Right-click settings (initial value)
+screen-top-bar.v-grid,⑧ 픽셀 격자<br>{{key:보기/픽셀 격자}},⑧ Pixel grid<br>{{key:보기/픽셀 격자}}
+screen-top-bar.v-grid.on,픽셀마다 경계선을 그립니다. 정한 배율 이상으로 확대했을 때만 보입니다. 처음에는 켜져 있습니다.,"Draws a line around every pixel, only from the chosen zoom up. On at first."
+screen-top-bar.v-grid.set,"색(알파 = 진하기, 흰색 25%), 보이기 시작하는 배율 2·4·6·8·12·16배(6배)","Color (alpha = intensity; white at 25%), zoom it appears from: 2, 4, 6, 8, 12 or 16× (6×)"
+screen-top-bar.v-tiles,⑨ 타일 격자<br>{{key:보기/타일 격자}},⑨ Tile grid<br>{{key:보기/타일 격자}}
+screen-top-bar.v-tiles.on,타일 크기마다 선을 그어 타일 경계를 보여 줍니다.,Draws lines every tile so you can see tile borders.
+screen-top-bar.v-tiles.set,"타일 가로·세로 1~4096px(8·16·32·64 바로 고르기, 16×16), 색(하늘색)","Tile width and height 1–4096 px (quick picks 8, 16, 32, 64; 16×16), color (light blue)"
+screen-top-bar.v-tiled,⑩ 타일 모드<br>{{key:보기/타일 모드(반복해 보기)}},⑩ Tiled mode<br>{{key:보기/타일 모드(반복해 보기)}}
+screen-top-bar.v-tiled.on,그림을 둘레에 되풀이해 보여 줍니다. 가운데 칸에 그리면 둘레가 함께 바뀌어 이어지는 무늬를 확인할 수 있습니다.,"Repeats the image around itself. Drawing in the center tile updates the copies, so you can check seamless patterns."
+screen-top-bar.v-tiled.set,"반복 크기 자동·3×3·5×5·7×7(자동 = 그림이 128px보다 크면 3×3, 아니면 5×5), 가운데 둘레 어둡게(켬)","Repeat size Auto, 3×3, 5×5, 7×7 (Auto = 3×3 if the image is larger than 128 px, otherwise 5×5), dim around the center (on)"
+screen-top-bar.v-pivot,피벗 표시,Show pivot
+screen-top-bar.v-pivot.on,"<a href=""#screen-canvas"">피벗</a> 표시를 캔버스에 보입니다. 처음에는 켜져 있습니다. 피벗 도구를 쓰는 동안에는 꺼 두어도 보입니다.","Shows the <a href=""#screen-canvas"">pivot</a> marker on the canvas. On at first. It is shown while you use the Pivot tool even when this is off."
+screen-top-bar.v-pivot.set,없음,None
+screen-top-bar.v-onion,⑪ 양파 껍질<br>{{key:보기/양파 껍질}},⑪ Onion skin<br>{{key:보기/양파 껍질}}
+screen-top-bar.v-onion.on,앞뒤 프레임을 반투명하게 겹쳐 보여 줍니다. 움직임의 간격을 맞출 때 씁니다.,"Overlays the neighboring frames translucently, for spacing motion between frames."
+screen-top-bar.v-onion.set,"앞·뒤 프레임 수 0~5(1·1), 진하기 5~90%(30%, 멀수록 옅게), 색 물들이기(켬, 앞 빨강·뒤 파랑)","Previous/next frame count 0–5 (1 and 1), intensity 5–90% (30%, fainter with distance), tint (on; previous red, next blue)"
+screen-top-bar.v-effects,효과<br>{{key:보기/캔버스에 효과 보기}},Effects<br>{{key:보기/캔버스에 효과 보기}}
+screen-top-bar.v-effects.on,편집 캔버스에 레이어 효과를 입혀 보입니다. 아래 <strong>효과 보기</strong>를 보세요.,Shows layer effects on the editing canvas. See <strong>Effects view</strong> below.
+screen-top-bar.v-effects.set,없음,None
+screen-top-bar.cmp-grid.alt,"같은 부분을 8배로 확대한 캔버스 두 장: 왼쪽은 격자 없이, 오른쪽은 픽셀 격자와 하늘색 타일 격자를 켠 모습","The same area of the canvas at 8× twice: without grids on the left, with the pixel grid and the light blue tile grid on the right"
+screen-top-bar.cmp-grid,왼쪽: 격자 끔 · 오른쪽: 픽셀 격자와 타일 격자(16×16) 켬,Left: grids off · Right: pixel grid and tile grid (16×16) on
+screen-top-bar.cmp-onion.alt,"몸 레이어 5번 프레임의 캔버스 두 장: 왼쪽은 양파 껍질을 끈 모습, 오른쪽은 4번 프레임이 빨갛게, 6번 프레임이 파랗게 비치는 모습",The Body layer at frame 5 twice: onion skin off on the left; on the right frame 4 shows through in red and frame 6 in blue
+screen-top-bar.cmp-onion,"왼쪽: 양파 껍질 끔 · 오른쪽: 켬(앞 프레임 빨강, 뒤 프레임 파랑)","Left: onion skin off · Right: on (previous frame red, next frame blue)"
+screen-top-bar.fx,효과 보기,Effects view
+guide-shot.effects.alt,효과 단추를 끈 편집 캔버스와 효과를 계속 보여 주는 미리보기를 나란히 놓은 화면,Editing canvas with Effects switched off next to a preview that still renders effects
+guide-shot.effects.caption,⑫ 효과 끈 단추 · ⑬ 효과 없이 고치는 캔버스 · ⑭ 효과가 계속 보이는 미리보기,⑫ Effects off · ⑬ Editing canvas without effects · ⑭ Preview still showing effects
+guide-shot.effects.body,"위 막대의 ⑫ <strong>효과</strong> 단추를 끄면 ⑬ 캔버스는 고칠 그림 그대로 보이고, ⑭ 미리보기는 계속 효과가 입혀진 모습을 보입니다.",Turn off ⑫ <strong>Effects</strong> on the top bar: ⑬ the editing canvas shows the raw artwork while ⑭ the preview still renders effects.
+guide-new.view-effects,위 막대 '효과' 단추와 보기 메뉴 '캔버스에 효과 보기'(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd>)로 캔버스 효과를 켜고 끕니다. 앱을 켜 둔 동안만 기억하며 다음에 켜면 다시 효과를 보여 줍니다.,The top-bar Effects button and View → Show effects on canvas (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd>) toggle effects on the editing canvas. This setting lasts only until you quit; effects are shown again on next launch.
+guide-new.canvas-effects,효과를 끄면 캔버스에서 레이어·부위·그룹 효과를 빼고 고칠 그림 자체를 봅니다(그림 픽셀이 없고 효과로 그림을 만드는 글씨 레이어 등은 효과까지). 이전 프레임 보기(H)·양파 껍질·부위 주변·스포이드/채우기의 '보이는 그림'도 이 보기를 따릅니다. 미리보기·타임라인·내보내기는 영향받지 않습니다.,"With effects off, the canvas shows the editable art without layer, part or group effects (except layers with no painted pixels whose effects generate the image, such as text). Previous-frame peek (H), onion skin, the area around a part and the eyedropper/fill 'visible image' source use the same view. Preview, timeline and export do not change."
+screen-top-bar.ai,AI 채팅과 업데이트 단추,AI chat and Update buttons
+screen-top-bar.ai-body,"⑥ AI 채팅 단추는 <a href=""#ai-chat"">AI 채팅</a> 창을 열고 닫습니다({{key:AI/AI 채팅}}). 새 버전이 나왔을 때만 위 막대에 <strong>{{MainStrings.Ui_039}}</strong> 단추가 생기며, 누르면 바뀐 점을 보고 설치하는 창이 열립니다(<a href=""#start-update"">업데이트</a>).","⑥ The AI chat button opens and closes the <a href=""#ai-chat"">AI chat</a> window ({{key:AI/AI 채팅}}). An <strong>{{MainStrings.Ui_039}}</strong> button appears on the top bar only when a new version is available; click it to see what's new and install (<a href=""#start-update"">Updates</a>)."
+screen-common-controls.1,숫자 칸과 메뉴 다루기,Number fields and menus
+screen-common-controls.8.alt,"도구 설정의 크기 숫자 칸을 좌우로 끌어 바꾸고, 우클릭 목록에서 값을 고르고, 클릭해 숫자를 입력하는 모습","Dragging the Size number field in Tool options left and right, picking a value from the right-click list, and clicking to type a number"
+screen-common-controls.6.alt,도구 설정의 크기 숫자 칸을 우클릭해 연 자주 쓰는 값 목록(지금 값 4 px에 점),Common values list opened by right-clicking the Size field in tool options (dot at the current 4 px)
+screen-common-controls.7,① 숫자 칸(크기) · ② 우클릭 값 목록,① Number field (Size) · ② Right-click value list
+screen-common-controls.2,"앱 곳곳의 ① 숫자 칸과 우클릭·단추 메뉴는 어느 창에서나 같은 방법으로 다룹니다. 숫자 칸은 끌어서 바꾸거나, 눌러서 입력하거나, ② 우클릭 목록에서 고릅니다.","The ① number fields and the right-click and button menus throughout the app work the same way in every window. Change a number field by dragging it, clicking to type, or picking from ② its right-click list."
+screen-common-controls.drag,끌어서 바꾸기,Drag to change
+screen-common-controls.drag-intro,숫자 칸에는 위/아래 단추가 없습니다. 입력하기 전에는 칸 테두리뿐 아니라 숫자 글자 위에서도 마우스 커서가 좌우 화살표 모양이 되어 끌 수 있음을 알립니다.,"Number fields have no up/down buttons. Before you start typing, the cursor turns into a left-right arrow over the whole field, digits included, to show that you can drag it."
+screen-common-controls.th-do,조작,Action
+screen-common-controls.th-result,결과,Result
+screen-common-controls.d-drag,좌우로 끌기,Drag left/right
+screen-common-controls.d-drag.d,3픽셀 움직일 때마다 한 단계 바뀝니다. 칸마다 정한 최솟값·최댓값에서 멈춥니다.,Changes one step for every 3 pixels. Stops at the field's minimum and maximum.
+screen-common-controls.d-shift,<kbd>Shift</kbd>+끌기,<kbd>Shift</kbd>+drag
+screen-common-controls.d-shift.d,10배 느리게(30픽셀마다 한 단계) 바뀝니다.,Changes 10× slower (one step every 30 pixels).
+screen-common-controls.d-ctrl,<kbd>Ctrl</kbd>(macOS <kbd>⌘</kbd>)+끌기,<kbd>Ctrl</kbd> (macOS <kbd>⌘</kbd>)+drag
+screen-common-controls.d-ctrl.d,한 번에 10단계씩 바뀝니다. <kbd>Shift</kbd>와 같이 누를 수도 있습니다.,Changes 10 steps at a time. Can be combined with <kbd>Shift</kbd>.
+screen-common-controls.d-edge,화면 끝까지 끌기,Drag to the screen edge
+screen-common-controls.d-edge.d,커서가 반대편으로 넘어가 계속 끌 수 있습니다.,The cursor wraps to the other side so you can keep going.
+screen-common-controls.drag-note,끄는 도중 보조 키를 누르거나 떼도 값이 튀지 않고 그 자리부터 이어서 바뀝니다. 한 번 끈 변경은 실행취소 한 단계입니다(실행취소를 쓰는 칸에서).,Pressing or releasing a modifier mid-drag doesn't make the value jump; it continues from where it is. One drag is a single undo step (in fields that support undo).
+screen-common-controls.type,입력하기와 계산식,Typing and expressions
+screen-common-controls.3,"끌지 않고 한 번 누르면 숫자 전체가 골라진 채로 입력 상태가 되고 커서가 글자 커서로 바뀝니다. <kbd>Enter</kbd>를 누르거나 캔버스 등 다른 곳을 누르면 값이 확정되고, 다시 끌기 커서로 돌아갑니다.","Click once without dragging to start typing with the whole number selected; the cursor becomes a text cursor. Press <kbd>Enter</kbd> or click elsewhere (such as the canvas) to confirm, and the drag cursor comes back."
+screen-common-controls.expr,정수·실수 칸에는 <code>256*2</code>처럼 계산식을 적을 수 있습니다. <kbd>Enter</kbd>를 누르거나 다른 곳으로 옮기면 결과 값(512)으로 바뀝니다.,Integer and decimal fields accept arithmetic such as <code>256*2</code>. Press <kbd>Enter</kbd> or move the focus away and it becomes the result (512).
+screen-common-controls.expr-1,"더하기 <code>+</code>, 빼기 <code>-</code>, 곱하기 <code>*</code>, 나누기 <code>/</code>와 괄호, 음수 부호를 쓸 수 있고 곱하기·나누기가 먼저 계산됩니다.","You can use <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, parentheses and a minus sign; multiplication and division come first."
+screen-common-controls.expr-2,정수 칸에서 나머지는 0 쪽으로 버립니다(<code>7/2</code> → 3). 실수 칸은 칸이 보이는 자릿수로 반올림합니다.,Integer fields drop the fraction toward zero (<code>7/2</code> → 3). Decimal fields round to the number of decimals the field shows.
+screen-common-controls.expr-3,"잘못된 식, 0으로 나누기, 너무 커서 넘치는 값은 받지 않고 이전 값을 그대로 둡니다.","Invalid expressions, division by zero and values too large to hold are rejected, and the previous value stays."
+screen-common-controls.list,우클릭 값 목록,Right-click value list
+screen-common-controls.4,입력 중이 아닐 때 숫자 칸을 <strong>우클릭</strong>하면 ② 그 칸에 알맞은 값 목록이 뜹니다. 목록 위에서는 보통 화살표 커서입니다.,"When not typing, <strong>right-click</strong> a number field for ② a list of values suited to it. The cursor is a normal arrow over the list."
+screen-common-controls.list-1,값에는 단위(px·°·%·ms)가 붙고 지금 값 앞에 점이 찍힙니다.,"Values show their unit (px, °, %, ms), and the current value is marked with a dot."
+screen-common-controls.list-2,칸에 따라 맨 위에 동작이 있습니다(예: 확대율 상자의 <strong>화면에 맞추기</strong>).,Some fields have an action at the top (for example <strong>Fit to window</strong> in the zoom box).
+screen-common-controls.list-3,같은 종류의 칸에서 이번 실행 중 마지막으로 쓴 값이 <strong>최근: 값</strong>으로 따로 보입니다. 앱을 끄면 잊습니다.,The last value you used in fields of the same kind during this session appears separately as <strong>Recent: value</strong>. It is forgotten when you quit.
+screen-common-controls.list-4,입력 중에 우클릭하면 글자 편집 메뉴(잘라내기·복사·붙여넣기)가 뜹니다.,"Right-clicking while typing opens the text editing menu (cut, copy, paste) instead."
+screen-common-controls.menus,메뉴와 팝업,Menus and popups
+screen-common-controls.5,우클릭 메뉴와 단추로 여는 메뉴·팝업은 앱 전체에서 한 번에 하나만 열립니다(메뉴 안에서 연 하위 메뉴는 함께 열림). 다른 메뉴를 열면 앞 메뉴는 닫힙니다.,"Only one right-click menu, button menu or popup is open at a time across the app (submenus opened inside a menu stay open with it). Opening another menu closes the previous one."
+screen-common-controls.menus-close,"메뉴는 바깥을 누르거나 바깥에서 휠을 굴릴 때, <kbd>Esc</kbd>를 누를 때, 창을 옮기거나 크기를 바꾸거나 다른 창으로 바꿀 때 닫힙니다. 메뉴를 연 단추를 다시 눌러도 닫힙니다.","A menu closes when you click or scroll outside it, press <kbd>Esc</kbd>, move or resize the window, or switch to another window. Pressing the button that opened it again also closes it."
+screen-common-controls.info,정보박스와 접는 묶음,Info badges and collapsible groups
+screen-common-controls.info-body,"모서리가 둥근 작은 네모 안의 <strong>i</strong>(정보박스)에 마우스를 올리면 긴 설명 풍선이 뜹니다. 누를 필요는 없습니다. 제목 오른쪽에 화살표가 있는 묶음은 제목을 누르면 접히고 펼쳐집니다(접힘 = 오른쪽 화살표, 펼침 = 아래 화살표).","Hover the small rounded square with an <strong>i</strong> (info badge) to see a longer explanation; no click is needed. Groups with an arrow next to their title collapse and expand when you click the title (collapsed = right arrow, expanded = down arrow)."
+screen-toolbar.1,도구 막대,Toolbar
+screen-toolbar.2,"창 왼쪽 끝의 세로 막대입니다. 위에서부터 파일 브라우저 단추, 도구 칸, 저장·되돌리기 단추가 있습니다. 도구 아이콘에 마우스를 올리면 이름과 단축키가 보입니다. 창이 낮아 다 들어가지 않으면 도구 칸만 스크롤되고 위아래 단추는 그대로 있습니다.","The vertical bar on the far left of the window. From top to bottom it has the file browser button, the tool slots, and the Save and Revert buttons. Hover a tool icon to see its name and shortcut. If the window is too short, only the tool slots scroll; the buttons at the top and bottom stay put."
+screen-toolbar.6.alt,"왼쪽 도구 막대: 폴더 단추, 채우기 묶음 칸을 우클릭해 펼친 목록, 저장·되돌리기 단추","Toolbar: folder button, the fill slot expanded by right-click, Save and Revert buttons"
+screen-toolbar.7,① 폴더 단추 · ② 묶음 칸 · ③ 펼친 도구 목록 · ④ 저장 · ⑤ 저장한 내용으로 되돌리기,① Folder button · ② Grouped slot · ③ Expanded tool list · ④ Save · ⑤ Revert to saved
+screen-toolbar.slots,도구 칸,Tool slots
+screen-toolbar.slots-intro,"칸은 위에서부터 다음 순서입니다. 도구 이름을 누르면 그 도구의 설명으로 갑니다. 단축키는 바꿀 수 있고, 바꾸면 도움말 풍선도 바뀐 키를 보입니다.",The slots are in this order from the top. Click a tool name for its page. Shortcuts can be changed; tooltips then show the new keys.
+screen-toolbar.th-slot,칸,Slot
+screen-toolbar.th-tools,도구(단축키),Tools (shortcut)
+screen-toolbar.slot-1,"<a href=""#tools-pencil"">연필</a>({{key:도구/연필}}), <a href=""#tools-gradient-pencil"">그라데이션 연필</a>({{key:도구/그라데이션 연필}})","<a href=""#tools-pencil"">Pencil</a> ({{key:도구/연필}}), <a href=""#tools-gradient-pencil"">Gradient pencil</a> ({{key:도구/그라데이션 연필}})"
+screen-toolbar.slot-2,"<a href=""#tools-eraser"">지우개</a>({{key:도구/지우개}})","<a href=""#tools-eraser"">Eraser</a> ({{key:도구/지우개}})"
+screen-toolbar.slot-3,"<a href=""#tools-fill"">채우기</a>({{key:도구/채우기}}), <a href=""#tools-gradient"">그라데이션</a>({{key:도구/그라데이션}})","<a href=""#tools-fill"">Fill</a> ({{key:도구/채우기}}), <a href=""#tools-gradient"">Gradient</a> ({{key:도구/그라데이션}})"
+screen-toolbar.slot-4,"<a href=""#tools-picker"">스포이드</a>({{key:도구/스포이드}})","<a href=""#tools-picker"">Eyedropper</a> ({{key:도구/스포이드}})"
+screen-toolbar.slot-5,"<a href=""#tools-shape"">도형</a>({{key:도구/도형}})","<a href=""#tools-shape"">Shape</a> ({{key:도구/도형}})"
+screen-toolbar.slot-6,"<a href=""#tools-text"">글씨</a>({{key:도구/글씨}})","<a href=""#tools-text"">Text</a> ({{key:도구/글씨}})"
+screen-toolbar.slot-7,"<a href=""#tools-select"">사각 선택, 원 선택</a>({{key:도구/선택 칸(다음 선택 도구)}}), 자유 선택({{key:도구/자유 선택}}), 스마트 선택({{key:도구/스마트 선택}})","<a href=""#tools-select"">Rectangle select, Ellipse select</a> ({{key:도구/선택 칸(다음 선택 도구)}}), Lasso select ({{key:도구/자유 선택}}), Magic wand ({{key:도구/스마트 선택}})"
+screen-toolbar.slot-8,"<a href=""#tools-move"">이동</a>({{key:도구/이동}})","<a href=""#tools-move"">Move</a> ({{key:도구/이동}})"
+screen-toolbar.slot-9,"<a href=""#tools-dodge"">밝게/어둡게</a>({{key:도구/밝게/어둡게}})","<a href=""#tools-dodge"">Dodge/burn</a> ({{key:도구/밝게/어둡게}})"
+screen-toolbar.slot-10,"<a href=""#tools-dither"">디더링</a>(기본 단축키 없음)","<a href=""#tools-dither"">Dithering</a> (no default shortcut)"
+screen-toolbar.slot-11,"<a href=""#tools-replace-brush"">색 바꾸기 브러시</a>({{key:도구/색 바꾸기 브러시}})","<a href=""#tools-replace-brush"">Replace color brush</a> ({{key:도구/색 바꾸기 브러시}})"
+screen-toolbar.slot-12,"<a href=""#tools-pivot"">피벗</a>({{key:도구/피벗}})","<a href=""#tools-pivot"">Pivot</a> ({{key:도구/피벗}})"
+screen-toolbar.slot-13,"<a href=""#tools-nine-slice"">9-slice</a>({{key:도구/9-slice}})","<a href=""#tools-nine-slice"">9-slice</a> ({{key:도구/9-slice}})"
+screen-toolbar.groups,묶음 칸에서 도구 바꾸기,Switching tools in a grouped slot
+screen-toolbar.4,"도구가 둘 이상인 칸은 ② 오른쪽 아래에 작은 삼각형이 붙습니다. 칸을 그냥 누르면 칸에 보이는 도구를 고르고, 0.4초 넘게 누르고 있거나 우클릭하면 ③ 옆으로 목록이 펼쳐집니다. 목록에는 아이콘·이름·단축키가 보이고 지금 도구가 강조됩니다. 목록에서 고른 도구는 그 칸의 아이콘이 됩니다. 단축키나 메뉴로 도구를 골라도 칸 아이콘이 따라 바뀝니다.","A slot with more than one tool has ② a small triangle in its bottom-right corner. A plain click picks the tool shown in the slot; hold it for more than 0.4 seconds or right-click to ③ expand the list sideways. The list shows icons, names and shortcuts, with the current tool highlighted. The tool you pick becomes the slot's icon. Picking a tool by shortcut or menu also updates the slot icon."
+screen-toolbar.m-key,"선택 칸은 {{key:도구/선택 칸(다음 선택 도구)}}로 고릅니다. 처음 누르면 마지막에 쓴 선택 도구가 되고, 10초 안에 다시 누를 때마다 사각 선택 → 원 선택 → 자유 선택 → 스마트 선택 차례로 바뀝니다.",Pick the selection slot with {{key:도구/선택 칸(다음 선택 도구)}}. The first press picks the selection tool you used last; pressing again within 10 seconds cycles Rectangle → Ellipse → Lasso → Magic wand.
+screen-toolbar.ends,파일 브라우저·저장·되돌리기 단추,"File browser, Save and Revert buttons"
+screen-toolbar.3,맨 위 ① <strong>폴더 단추</strong>는 파일 브라우저를 접고 펼칩니다({{key:보기/파일 브라우저}}).,The ① <strong>folder button</strong> at the top collapses and expands the file browser ({{key:보기/파일 브라우저}}).
+screen-toolbar.5,"맨 아래에는 ④ <strong>저장</strong>({{key:파일/저장(+ 시트 내보내기)}}와 같음)과 ⑤ <strong>저장한 내용으로 되돌리기</strong> 단추가 있습니다. 저장은 지금 문서에 저장하지 않은 수정이 있을 때만 켜집니다. 되돌리기는 디스크에 되돌릴 파일(저장한 <code>.chickxel</code> 또는 연 PNG)이 있을 때만 켜지며, 확인을 받은 뒤 수정을 버리고 파일을 다시 읽습니다. 한 번도 저장하지 않은 새 프로젝트나 파일이 없어진 문서에서는 꺼져 있습니다(<a href=""#files-revert"">저장한 내용으로 되돌리기</a>).","At the bottom are ④ <strong>Save</strong> (same as {{key:파일/저장(+ 시트 내보내기)}}) and ⑤ <strong>Revert to saved</strong>. Save is enabled only when the current document has unsaved changes. Revert is enabled only when there is a file on disk to go back to (a saved <code>.chickxel</code> or an opened PNG); after you confirm, it discards your changes and reloads the file. It is disabled for a new project that has never been saved or when the file no longer exists (<a href=""#files-revert"">Revert to saved</a>)."
+screen-toolbar.persist,파일 브라우저를 접었는지는 다음 실행에도 남습니다.,Whether the file browser is collapsed is kept for the next launch.
+screen-file-browser.1,파일 브라우저,File browser
+screen-file-browser.9.alt,"파일 브라우저: 폴더 트리, 검색, 하위 폴더 포함, 썸네일 목록과 .chickxel 배지·빨간 점","File browser: folder tree, search, include subfolders, thumbnail list with the .chickxel badge and red dot"
+screen-file-browser.10,① 폴더 트리 · ② 썸네일 목록 · ③ 검색 · ④ 하위 폴더 포함 · ⑤ 새 픽셀 파일·새 폴더·새로 고침 · ⑥ .chickxel 배지 · ⑦ 저장 안 한 변경(빨간 점),"① Folder tree · ② Thumbnail list · ③ Search · ④ Include subfolders · ⑤ New pixel file, New folder, Refresh · ⑥ .chickxel badge · ⑦ Unsaved changes (red dot)"
+screen-file-browser.2,"왼쪽의 파일 브라우저는 고른 폴더의 그림을 썸네일로 보여 주고, 누르면 새 <a href=""#screen-tabs"">문서 탭</a>으로 엽니다. 위에서부터 ① 폴더 트리, ③ 검색 칸과 ④ 하위 폴더 포함, ② 썸네일 목록이 있습니다. 폴더 안 파일이 바뀌면 목록에 바로 반영됩니다.","The file browser on the left shows the images in the chosen folder as thumbnails and opens them in a new <a href=""#screen-tabs"">document tab</a> when clicked. From the top it has ① the folder tree, ③ the search box with ④ Include subfolders, and ② the thumbnail list. Changes to files in the folder show up in the list right away."
+screen-file-browser.folders,폴더 고르기,Choosing a folder
+screen-file-browser.folders-1,폴더는 {{key:파일/폴더 열기…}}로 엽니다. 마지막으로 연 폴더는 다음 실행에도 열립니다.,Open a folder with {{key:파일/폴더 열기…}}. The last folder you opened is opened again on the next launch.
+screen-file-browser.folders-2,"① 폴더 트리는 이름순이고, 숨김·시스템 폴더와 이름이 점으로 시작하는 폴더는 빼고 보여 줍니다. 트리와 목록 사이 경계선을 끌어 높이를 바꾸면 그 높이가 다음 실행에도 남습니다.",① The folder tree is sorted by name and hides hidden or system folders and folders whose names start with a dot. Drag the border between the tree and the list to change its height; the height is kept for the next launch.
+screen-file-browser.folders-3,④ <strong>하위 폴더 포함</strong>을 켜면 고른 폴더 아래 모든 폴더의 파일까지 한 목록에 보입니다. 처음에는 켜져 있고 상태는 다음 실행에도 남습니다.,Turn on ④ <strong>Include subfolders</strong> to list the files of every folder below the chosen one together. On at first; the state is kept for the next launch.
+screen-file-browser.unity,"Unity 프로젝트 열기({{key:파일/Unity 프로젝트 열기…}})는 Unity Hub에 등록된 프로젝트를 이름·Unity 버전·마지막 수정·경로와 함께 보여 줍니다. 즐겨찾기(별 표시)가 먼저, 그다음 최근 수정 순이고, 회색 줄은 경로가 없어진 프로젝트입니다. 두 번 누르거나 열기를 누르면 그 프로젝트의 <code>Assets</code> 폴더를 엽니다. Hub 목록이 없으면 <strong>폴더 직접 선택…</strong>으로 고릅니다(프로젝트 폴더를 고르면 <code>Assets</code>로 바꿔 엶).","Open Unity project ({{key:파일/Unity 프로젝트 열기…}}) lists the projects registered in Unity Hub with their name, Unity version, last modified date and path. Favorites (starred) come first, then the most recently modified; grayed-out rows are projects whose path is missing. Double-click or press Open to open that project's <code>Assets</code> folder. If there is no Hub list, use <strong>Choose folder manually…</strong> (picking a project folder opens its <code>Assets</code>)."
+screen-file-browser.list,목록과 검색,List and search
+screen-file-browser.list-1,목록은 경로 이름순이고 썸네일 크기는 정해져 있습니다. <code>.chickxel</code>(예전 <code>.gpixel</code> 포함)와 PNG를 보여 줍니다.,The list is sorted by path and the thumbnail size is fixed. It shows <code>.chickxel</code> (including older <code>.gpixel</code>) and PNG files.
+screen-file-browser.5,"JPG·BMP·GIF·WebP·APNG·ICO·AVIF·HEIC 그림과 영상(MP4·WebM·MOV·MKV·AVI 등)도 나열합니다(썸네일 = 첫 프레임). 영상은 필름 배지가 붙고 ffmpeg가 있으면 첫 프레임 썸네일을 만듭니다. 누르면 <a href=""#files-open-media"">그림·영상 열기</a>와 같이 새 탭으로 엽니다.","JPG, BMP, GIF, WebP, APNG, ICO, AVIF and HEIC images and videos (MP4, WebM, MOV, MKV, AVI, …) are listed too (thumbnail = first frame). Videos get a film badge, with a first-frame thumbnail when ffmpeg is available. Clicking one opens it in a new tab as in <a href=""#files-open-media"">Opening images, animations and videos</a>."
+screen-file-browser.4,"<code>.chickxel</code> 프로젝트는 썸네일 오른쪽 아래에 ⑥ 파란 레이어 배지가 붙습니다. 프로젝트가 내보낸 PNG(같은 이름 PNG, 프레임 시트, 부위 아틀라스)는 목록에서 빼고 <code>.chickxel</code> 하나로만 보여 줍니다. 마우스를 올리면 내보내는 파일 이름이 보이고, 그 이름으로 검색해도 찾아집니다.","<code>.chickxel</code> projects get ⑥ a blue layer badge in the bottom-right of the thumbnail. PNGs exported by a project (same-name PNG, frame sheet, part atlas) are hidden from the list so only the single <code>.chickxel</code> is shown. Hover it to see the exported file names; searching by those names also finds it."
+screen-file-browser.search,"③ 검색 칸은 입력할 때마다 목록을 거릅니다. 파일 이름(대소문자 무시)과 프로젝트가 내보내는 파일 이름에서 찾고, 폴더 경로나 파일 내용은 찾지 않습니다.","③ The search box filters the list as you type. It matches file names (ignoring case) and the names of files a project exports, not folder paths or file contents."
+screen-file-browser.new,새 파일과 새 폴더,New file and new folder
+screen-file-browser.3,"⑤ 제목 줄 오른쪽 아이콘 셋은 <strong>새 픽셀 파일</strong>, <strong>새 폴더</strong>, <strong>새로 고침</strong>입니다.","⑤ The three icons on the right of the title row are <strong>New pixel file</strong>, <strong>New folder</strong> and <strong>Refresh</strong>."
+screen-file-browser.new-file,"<strong>새 픽셀 파일</strong>은 새 프로젝트 창을 엽니다. 파일 이름(처음 <code>new_sprite</code>), 가로·세로(1~16384px, 16×16~256×256 바로 고르기), 배경 투명(켬), 일반(레이어 1) 또는 부위로 시작(그룹 + 첫 부위)을 정하고, 클립보드에 그림이 있으면 그 그림을 붙여 넣어 시작할 수도 있습니다. 확인하면 고른 폴더에 <code>.chickxel</code>로 저장해 엽니다. 같은 이름 파일이 있으면 덮어쓰지 않고 알려 줍니다.","<strong>New pixel file</strong> opens the new project dialog. Set the file name (<code>new_sprite</code> at first), width and height (1–16384 px, quick picks 16×16 to 256×256), transparent background (on), and Normal (Layer 1) or Start with parts (group + first part); if the clipboard has an image you can start by pasting it. Confirm to save it as a <code>.chickxel</code> in the selected folder and open it. If a file with that name exists, it isn't overwritten and you're told."
+screen-file-browser.select,고르기와 끌어 놓기,Selecting and dragging
+screen-file-browser.11.alt,파일 두 개를 고르고 우클릭한 메뉴,Right-click menu with two files selected
+screen-file-browser.12,⑧ 여러 개 고름 · ⑨ 우클릭 메뉴,⑧ Several files selected · ⑨ Right-click menu
+screen-file-browser.6,"그냥 클릭하면 하나만 골라 엽니다. <kbd>Ctrl</kbd>+클릭(하나씩 더하고 빼기), <kbd>Shift</kbd>+클릭(범위), 목록 위를 끌어 사각형으로 ⑧ 여러 개를 고를 수 있습니다(여럿을 고를 때는 열지 않음).","A plain click selects and opens one file. <kbd>Ctrl</kbd>+click (add/remove one at a time), <kbd>Shift</kbd>+click (range), or drag a rectangle over the list to ⑧ select several (multiple selections don't open)."
+screen-file-browser.ctrl-drag,<kbd>Ctrl</kbd>(macOS <kbd>⌘</kbd>)를 누른 채 사각형을 끌면 지금 선택에 더합니다. 목록 위아래 끝 밖으로 끌면 목록이 스크롤됩니다.,Hold <kbd>Ctrl</kbd> (macOS <kbd>⌘</kbd>) while dragging a rectangle to add to the selection. Drag past the top or bottom of the list to scroll it.
+screen-file-browser.7,"파일 칸을 눌러 목록 왼쪽·오른쪽 밖으로 끌면 파일 끌어 놓기가 됩니다(이미 고른 칸이면 고른 파일 모두). 캔버스에 놓으면 <a href=""#files-drop-layer"">새 레이어</a>로 들어가고, 탐색기·Finder나 다른 앱에 놓으면 파일이 복사됩니다.","Press a file and drag it out of the list to the left or right to drag the file itself (if the item was already selected, all selected files). Dropping it on the canvas adds it as a <a href=""#files-drop-layer"">new layer</a>; dropping it in Explorer, Finder or another app copies the file."
+screen-file-browser.menu,우클릭 메뉴,Right-click menu
+screen-file-browser.menu-intro,⑨ 파일을 우클릭하면 고른 파일에 맞는 메뉴가 뜹니다. 빈 곳을 우클릭하면 선택이 풀리고 지금 폴더에 대한 메뉴가 됩니다.,⑨ Right-click files for a menu that fits the selection. Right-clicking an empty spot clears the selection and the menu applies to the current folder.
+screen-file-browser.th-item,항목,Item
+screen-file-browser.th-does,하는 일,What it does
+screen-file-browser.m-new,<strong>새 프로젝트…</strong>,<strong>New project…</strong>
+screen-file-browser.m-new.d,지금 폴더에 새 <code>.chickxel</code>을 만듭니다(새 픽셀 파일과 같은 창).,Creates a new <code>.chickxel</code> in the current folder (same dialog as New pixel file).
+screen-file-browser.m-pixelate,<strong>AI 그림 픽셀로 정리…</strong>,<strong>Pixelate AI image…</strong>
+screen-file-browser.m-pixelate.d,"PNG·JPG·BMP·GIF·WebP 파일 하나를 골랐을 때만 보입니다. 그 그림으로 <a href=""#pixelate"">픽셀로 정리</a> 창을 엽니다.","Shown only when a single PNG, JPG, BMP, GIF or WebP file is selected. Opens <a href=""#pixelate"">Pixelate</a> with that image."
+screen-file-browser.m-merge,<strong>합치기…</strong>,<strong>Merge…</strong>
+screen-file-browser.m-merge.d,<code>.chickxel</code>·PNG를 2개 이상 고르면 켜집니다. 아래 <strong>합치기</strong>를 보세요.,Enabled when two or more <code>.chickxel</code> or PNG files are selected. See <strong>Merge</strong> below.
+screen-file-browser.m-rename,<strong>이름 바꾸기</strong>,<strong>Rename</strong>
+screen-file-browser.m-rename.d,파일 하나를 골랐을 때 켜집니다(<kbd>F2</kbd>). 아래 <strong>이름 바꾸기</strong>를 보세요.,Enabled with one file selected (<kbd>F2</kbd>). See <strong>Renaming</strong> below.
+screen-file-browser.m-reveal,<strong>탐색기/Finder에서 열기</strong>,<strong>Open in Explorer/Finder</strong>
+screen-file-browser.m-reveal.d,고른 파일(없으면 지금 폴더)을 운영체제 파일 관리자에서 보여 줍니다.,Shows the selected file (or the current folder) in the system file manager.
+screen-file-browser.m-imgfolder,<strong>이미지 폴더 선택</strong>,<strong>Select image folder</strong>
+screen-file-browser.m-imgfolder.d,하위 폴더 포함으로 보던 파일이 실제로 든 폴더를 트리에서 찾아 엽니다.,"When viewing with subfolders included, finds and opens the folder that actually contains the file in the tree."
+screen-file-browser.m-delete,<strong>삭제(휴지통)</strong>,<strong>Delete (trash)</strong>
+screen-file-browser.m-delete.d,"고른 파일을 앱 휴지통으로 보냅니다(<kbd>Delete</kbd>, macOS <kbd>⌘</kbd>+<kbd>Backspace</kbd>).","Sends the selected files to the app trash (<kbd>Delete</kbd>, macOS <kbd>⌘</kbd>+<kbd>Backspace</kbd>)."
+screen-file-browser.m-delproj,<strong>.chickxel 파일만 삭제(휴지통)</strong>,<strong>Delete .chickxel files only (trash)</strong>
+screen-file-browser.m-delproj.d,프로젝트를 골랐고 보통 삭제가 내보낸 PNG·<code>.meta</code>까지 지울 때만 보입니다. 프로젝트 파일만 보내고 내보낸 파일은 남깁니다.,Shown only when projects are selected and a normal delete would also remove their exported PNG and <code>.meta</code> files. Sends only the project files and keeps the exports.
+screen-file-browser.m-restore,<strong>마지막 삭제 되살리기</strong>,<strong>Restore last deleted</strong>
+screen-file-browser.m-restore.d,휴지통에 항목이 있을 때 켜집니다({{key:편집/실행취소}}).,Enabled when the trash has items ({{key:편집/실행취소}}).
+screen-file-browser.m-trash,<strong>앱 휴지통 보기…</strong>,<strong>View app trash…</strong>
+screen-file-browser.m-trash.d,앱 휴지통 창을 엽니다.,Opens the app trash window.
+screen-file-browser.rename,이름 바꾸기,Renaming
+screen-file-browser.rename-body,"파일 하나를 고르고 <kbd>F2</kbd>를 누르면 목록에서 바로 이름을 고칩니다. <kbd>Enter</kbd>나 다른 곳을 누르면 확정, <kbd>Esc</kbd>는 취소입니다. 확장자를 빼고 적으면 원래 확장자를 붙입니다. 프로젝트의 이름을 바꾸면 그 프로젝트가 내보낸 같은 이름 파일도 함께 바뀝니다. 쓸 수 없는 이름이나 이미 있는 이름이면 알려 줍니다.","Select one file and press <kbd>F2</kbd> to rename it in place. <kbd>Enter</kbd> or clicking elsewhere confirms; <kbd>Esc</kbd> cancels. If you leave out the extension, the original one is kept. Renaming a project also renames the files it exported under the same name. Invalid or existing names are reported."
+screen-file-browser.13,저장하지 않은 변경(빨간 점),Unsaved changes (red dot)
+screen-file-browser.14,"열린 문서는 모두 캔버스 위 <a href=""#screen-tabs"">문서 탭</a>에 있고, 다른 탭으로 바꿔도 저장할지 묻지 않습니다. 저장 안 한 변경이 있는 문서는 목록의 썸네일 <strong>왼쪽 위에 ⑦ 빨간 점</strong>이 붙고(탭 제목 옆에도), 이미 열린 파일을 다시 누르면 그 탭으로 갑니다. 상태 표시줄에는 ""저장 안 한 파일 N개""가 보입니다.","Every open document lives in a <a href=""#screen-tabs"">document tab</a> above the canvas, and switching tabs never asks you to save. A document with unsaved changes gets a <strong>⑦ red dot in the top-left</strong> of its thumbnail (and next to its tab title); clicking a file that's already open goes to its tab. The status bar shows ""N unsaved files""."
+screen-file-browser.15,"점이 붙은 파일의 이름을 바꾸면 따라가고, 휴지통으로 보내면 탭은 그대로 두고 수정됨으로 표시합니다(저장하면 다시 만듦).",Renaming a dotted file keeps track of it; sending it to the trash keeps the tab and marks it modified (saving recreates the file).
+screen-file-browser.16,"밖에서 그 파일이 바뀌면 지금 탭이면 다시 불러올지 묻고, 다른 탭이면 저장 안 한 변경이 있을 때 알리기만 합니다(없으면 그 탭을 고를 때 다시 읽음).","If the file changes outside the app, the current tab asks whether to reload; another tab only notifies you when it has unsaved changes (otherwise it reloads when you select it)."
+screen-file-browser.17,저장 안 한 문서의 탭을 닫을 때만 저장·저장 안 함·취소를 묻습니다.,Only closing the tab of a document with unsaved changes asks Save / Don't save / Cancel.
+screen-file-browser.18,합치기,Merge
+screen-file-browser.19,<code>.chickxel</code>·PNG 파일을 2개 이상 고르고 우클릭 <strong>합치기…</strong>를 고르면 여러 그림을 하나의 <code>.chickxel</code>로 묶습니다. 다른 그림 형식과 영상은 합칠 수 없습니다. 창에서 정하는 것:,Select two or more <code>.chickxel</code> or PNG files and choose <strong>Merge…</strong> from the right-click menu to combine them into one <code>.chickxel</code>. Other image formats and videos can't be merged. In the dialog you set:
+screen-file-browser.35.alt,"합치기 창: 순서, 이름, 방식, 캔버스, 미리보기, 타임라인 모양","Merge dialog: order, name, mode, canvas, preview and timeline layout"
+screen-file-browser.36,⑩ 순서 · ⑪ 이름 · ⑫ 방식 · ⑬ 캔버스 크기·기준점·원본 삭제 · ⑭ 미리보기 · ⑮ 타임라인에서는 이렇게 보입니다,"⑩ Order · ⑪ Name · ⑫ Mode · ⑬ Canvas size, anchor, delete originals · ⑭ Preview · ⑮ How it will look in the timeline"
+screen-file-browser.20,⑩ <strong>순서</strong>: 처음에는 고른 순서입니다. 줄을 끌거나 위/아래 단추로 바꿉니다(위 = 먼저). 줄마다 크기와 프레임 수가 보입니다.,⑩ <strong>Order</strong>: the order you selected the files in at first. Drag rows or use the up/down buttons (top = first). Each row shows its size and frame count.
+screen-file-browser.21,⑪ <strong>이름</strong>: 파일 이름에 공통인 단어로 자동 제안합니다(예: <code>potato_growing</code>·<code>potato_mature</code> → <code>potato</code>). 결과 파일이 이미 있으면 <code>_2</code>·<code>_3</code>을 붙여 제안합니다.,"⑪ <strong>Name</strong>: suggested automatically from words common to the file names (e.g. <code>potato_growing</code>, <code>potato_mature</code> → <code>potato</code>). If the result file already exists, <code>_2</code>, <code>_3</code> … is added to the suggestion."
+screen-file-browser.22,⑫ <strong>방식</strong>: 아래 표 참고(처음 = 레이어로). <strong>그룹으로</strong>일 때는 <strong>빈 대표 이미지</strong>를 켜서 부위를 숨긴 채 만들 수 있습니다.,"⑫ <strong>Mode</strong>: see the table below (As layers at first). With <strong>As a group</strong>, turn on <strong>Empty thumbnail</strong> to create it with the parts hidden."
+screen-file-browser.23,"⑬ <strong>캔버스 크기</strong>(처음 = 고른 파일 중 가장 큰 가로·세로, 1~16384px, <strong>가장 큰 크기</strong>로 되돌림), <strong>기준점</strong>(9방향), <strong>원본 삭제</strong>(처음 끔, 켜면 원본을 앱 휴지통으로).","⑬ <strong>Canvas size</strong> (at first the largest width and height among the files, 1–16384 px; <strong>Largest size</strong> resets it), <strong>anchor</strong> (9 directions), <strong>delete originals</strong> (off at first; when on, originals go to the app trash)."
+screen-file-browser.24,방식,Mode
+screen-file-browser.25,결과,Result
+screen-file-browser.26,레이어로,As layers
+screen-file-browser.27,파일마다 레이어 하나(첫 파일이 맨 위),One layer per file (first file on top)
+screen-file-browser.28,그룹으로,As a group
+screen-file-browser.29,그룹 하나에 파일마다 부위(파일 크기 그대로),One group with a part per file (file sizes kept)
+screen-file-browser.30,스킨으로,As skins
+screen-file-browser.31,한 그룹 안에서 파일마다 스킨(스킨 이름 = 파일 이름). 같은 자리에 바꿔 끼우는 타일·아이템 변형용,One skin per file within a single group (skin name = file name). For tile or item variants swapped in the same spot
+screen-file-browser.32,프레임으로,As frames
+screen-file-browser.33,파일 순서대로 프레임을 이어 붙임,Frames appended in file order
+screen-file-browser.34,"⑭ 미리보기(여러 프레임이면 재생)와 함께 ⑮ <strong>""타임라인에서는 이렇게 보입니다""</strong>에 결과의 타임라인 모양이 나오고, 무엇을 어떻게 유지하는지 안내도 보입니다. <code>.chickxel</code>의 레이어·그룹·스킨·효과·태그 같은 구조는 어느 방식이든 버리지 않고 옮깁니다. 결과는 첫 파일 폴더에 <code>&lt;이름&gt;.chickxel</code>로 저장되고 바로 열립니다. 결과 파일 이름이 다른 파일과 겹치면 합치지 않고 알려 줍니다(원본 삭제를 켰다면 원본과 같은 이름은 원본을 휴지통으로 보낸 뒤 씀).","Along with ⑭ a preview (played if there are several frames), ⑮ <strong>""How it will look in the timeline""</strong> shows the resulting timeline layout, plus notes on what is kept and how. Structure in <code>.chickxel</code> files such as layers, groups, skins, effects and tags is carried over in every mode. The result is saved as <code>&lt;name&gt;.chickxel</code> in the first file's folder and opened right away. If the result name collides with another file, nothing is merged and you're told (with Delete originals on, a name equal to an original is allowed: the original goes to the trash first)."
+screen-file-browser.37,삭제와 앱 휴지통,Deleting and the app trash
+screen-file-browser.38,"삭제(<kbd>Delete</kbd>, 여러 개 가능)와 합치기로 지운 원본은 묻지 않고 앱 자체 휴지통에 보관됩니다(딸린 PNG·<code>.meta</code> 포함).","Deleted files (<kbd>Delete</kbd>, multiple allowed) and originals removed by merging go to the app's own trash without asking (including their PNG and <code>.meta</code> files)."
+screen-file-browser.39,파일 목록에서 {{key:편집/실행취소}}를 누르면 마지막 삭제를 원래 자리에 되살립니다.,Press {{key:편집/실행취소}} in the file list to restore the last deletion to its original place.
+screen-file-browser.44.alt,"앱 휴지통 창: 보관 정책, 지운 파일 목록과 미리보기, 되살리기·영구 삭제·비우기","App trash window: retention policy, deleted files with preview, restore/delete/empty"
+screen-file-browser.45,⑯ 목록과 미리보기 · ⑰ 되살리기·영구 삭제·비우기 · ⑱ 보관 정책,"⑯ List and preview · ⑰ Restore, Delete permanently, Empty · ⑱ Retention policy"
+screen-file-browser.40,"우클릭 <strong>앱 휴지통 보기…</strong>에서 ⑯ 지운 때·설명·남은 날·크기와 미리보기(크기, 원래 폴더)를 보며 ⑰ 되살리기(더블클릭)·영구 삭제·비우기를 합니다. 여러 항목을 함께 고를 수 있고, 영구 삭제와 비우기는 확인을 받습니다. 원래 자리에 같은 이름 파일이 있으면 되살리지 않습니다.","In <strong>View app trash…</strong> on the right-click menu, ⑯ browse each item's deletion time, description, days left, size and a preview (size and original folder), and ⑰ restore (double-click), delete permanently or empty the trash. You can select several items; permanent deletion and emptying ask for confirmation. An item isn't restored if a file with the same name is already in its original place."
+screen-file-browser.41,"⑱ 보관 정책: <strong>기간 제한</strong>(처음 꺼짐, 켜면 1~3650일 중 정한 날이 지난 항목을 영구 삭제, 처음 30일), <strong>용량 제한</strong>(처음 켜짐 1GB, 0.1~1000GB, 넘치면 오래된 것부터 삭제). 휴지통 창이나 <strong>편집 &gt; 환경 설정…</strong>에서 바꿉니다.","⑱ Retention policy: <strong>Time limit</strong> (off at first; when on, items older than the chosen 1–3650 days are deleted permanently, 30 at first) and <strong>Size limit</strong> (on at 1 GB at first, 0.1–1000 GB; the oldest items are deleted first when exceeded). Change them in the trash window or <strong>Edit &gt; Preferences…</strong>."
+screen-palette.1,팔레트,Palette
+screen-palette.8.alt,"팔레트 패널: 기본색/보조색, DB32와 그림에서 만든 팔레트, 새 팔레트 단추","Palette panel: primary/secondary, DB32 and a palette made from the image, New palette button"
+screen-palette.9,① 기본색/보조색 · ② 쌓인 팔레트 · ③ 새 팔레트 · ④ 머리글 · ⑤ 활성 팔레트 파란 줄 · ⑥ 기본색 칸(흰 테두리) · ⑦ 보조색 칸(파란 테두리),① Primary/secondary · ② Stacked palette · ③ New palette · ④ Header · ⑤ Active palette blue line · ⑥ Primary swatch (white border) · ⑦ Secondary swatch (blue border)
+screen-palette.2,"색 패널 위쪽입니다. 맨 위에 ① 기본색/보조색 칸이 있고, 그 아래로 ② <strong>팔레트를 여러 개</strong> 쌓아 둘 수 있습니다(처음에는 DawnBringer 32 하나). 맨 아래 ③ <strong>새 팔레트</strong>로 빈 팔레트를 더합니다. 팔레트가 많아 넘치면 팔레트 부분만 스크롤됩니다.","The top of the color panel. The ① primary/secondary slots are at the top, and below them you can stack ② <strong>multiple palettes</strong> (DawnBringer 32 to begin with). ③ <strong>New palette</strong> at the bottom adds an empty one. When there are too many palettes, only the palette area scrolls."
+screen-palette.slots,기본색과 보조색,Primary and secondary colors
+screen-palette.slots-body,"① 기본색은 왼쪽 버튼, 보조색은 오른쪽 버튼으로 칠하는 색입니다(보조색 처음 값은 투명). 두 칸 중 하나를 누르면 그 칸이 강조되고 아래 <a href=""#screen-color-picker"">색 고르기</a>가 그 색을 고칩니다. 옆의 바꾸기 단추나 {{key:도구/기본색 ↔ 보조색}}는 두 색을 맞바꿉니다.","① The primary color is painted with the left mouse button and the secondary with the right (the secondary starts transparent). Click either slot to highlight it; the <a href=""#screen-color-picker"">color picker</a> below then edits that color. The swap button next to them, or {{key:도구/기본색 ↔ 보조색}}, swaps the two."
+screen-palette.swatches,색 칸 고르기,Picking swatches
+screen-palette.sw-1,"색 칸을 누르면 기본색, 우클릭하면 보조색이 됩니다(위에서 어느 칸을 강조했는지와 상관없음). 마우스를 올리면 HEX 값이 보입니다.","Click a swatch to make it the primary color, right-click to make it the secondary (regardless of which slot is highlighted). Hover to see its HEX value."
+screen-palette.6,"기본색과 같은 칸은 ⑥ 흰 테두리, 보조색과 같은 칸은 ⑦ 파란 테두리로 표시됩니다. 투명 칸은 첫 팔레트 맨 앞에만 있습니다.","The swatch matching the primary color has ⑥ a white border, and the one matching the secondary color ⑦ a blue border. The transparent swatch only appears at the start of the first palette."
+screen-palette.sw-2,같은 칸이 기본색이자 보조색이면 테두리가 흰색·파란색 반반입니다. 같은 색이 여러 칸에 있으면 앞 칸에 표시합니다.,"A swatch that is both primary and secondary gets a half-white, half-blue border. If the same color appears several times, the first swatch is marked."
+screen-palette.sw-3,색 칸을 끌어 순서를 바꾸거나 칸에서 바로 지우지는 않습니다. 지울 때는 그 색을 기본색으로 고른 뒤 메뉴의 <strong>{{UiStrings.S_ColorPanel_SectionMenu_E11BC26CCA}}</strong>를 고릅니다.,"Swatches can't be reordered by dragging or deleted directly. To remove one, make it the primary color and choose <strong>{{UiStrings.S_ColorPanel_SectionMenu_E11BC26CCA}}</strong> from the menu."
+screen-palette.stack,팔레트 쌓기와 활성 팔레트,Stacked palettes and the active palette
+screen-palette.3,"④ 팔레트마다 머리글에 접기 화살표, 이름(두 번 눌러 바꾸기), 색 수, 메뉴 단추가 있습니다.","④ Each palette's header has a collapse arrow, its name (double-click to rename), the color count and a menu button."
+screen-palette.header,"머리글을 우클릭해도 그 팔레트의 메뉴가 열립니다. 하나뿐인 팔레트는 지울 수 없고, 색이 든 팔레트를 지울 때는 확인을 받습니다.","Right-clicking the header also opens that palette's menu. The only palette can't be deleted, and deleting a palette that has colors asks for confirmation."
+screen-palette.5,마지막으로 누르거나 고친 팔레트가 <strong>활성 팔레트</strong>(⑤ 머리글 아래 파란 줄)입니다. 편집 메뉴의 팔레트 기능과 AI 팔레트 도구는 활성 팔레트를 씁니다.,The palette you last clicked or edited is the <strong>active palette</strong> (⑤ blue line under the header). Palette features in the Edit menu and the AI palette tools use the active palette.
+screen-palette.7,팔레트 목록(이름·색·접힘·순서)은 설정에 저장되어 다음에도 그대로입니다.,"The palette list (names, colors, collapsed state, order) is saved in the settings and kept next time."
+screen-palette.menu,팔레트 메뉴,Palette menu
+screen-palette.10.alt,팔레트 머리글의 메뉴 단추로 연 메뉴,Menu opened from the palette header menu button
+screen-palette.11,⑧ 팔레트 메뉴,⑧ Palette menu
+screen-palette.4,"⑧ 메뉴의 동작은 그 팔레트에 적용되고, 바꾼 내용은 실행취소할 수 있습니다.","⑧ Menu actions apply to that palette, and the changes can be undone."
+screen-palette.th-item,항목,Item
+screen-palette.th-does,하는 일,What it does
+screen-palette.m-add,{{UiStrings.S_ColorPanel_SectionMenu_6B5F562A33}},{{UiStrings.S_ColorPanel_SectionMenu_6B5F562A33}}
+screen-palette.m-add.d,지금 고치는 칸(기본색 또는 보조색)의 색을 끝에 더합니다. 이미 있는 색과 투명은 더하지 않습니다.,Adds the color of the slot you're editing (primary or secondary) at the end. Existing colors and transparent are skipped.
+screen-palette.m-remove,{{UiStrings.S_ColorPanel_SectionMenu_E11BC26CCA}},{{UiStrings.S_ColorPanel_SectionMenu_E11BC26CCA}}
+screen-palette.m-remove.d,기본색과 같은 첫 칸을 지웁니다.,Removes the first swatch that matches the primary color.
+screen-palette.m-sort,{{UiStrings.S_ColorPanel_SectionMenu_99C40336CD}},{{UiStrings.S_ColorPanel_SectionMenu_99C40336CD}}
+screen-palette.m-sort.d,"색상(15° 단위) 순으로, 같은 색상 안에서는 밝기 순으로 정렬합니다. 채도가 아주 낮은 회색은 맨 뒤에 모읍니다.","Sorts by hue (in 15° steps), then by brightness within a hue. Near-gray colors go to the end."
+screen-palette.m-load,{{UiStrings.S_ColorPanel_SectionMenu_F614342A09}},{{UiStrings.S_ColorPanel_SectionMenu_F614342A09}}
+screen-palette.m-load.d,<code>.hex</code>(줄마다 6자리 RGB 또는 8자리 RGBA)나 GIMP <code>.gpl</code> 파일의 색으로 팔레트를 <strong>바꿉니다</strong>(더하지 않음).,<strong>Replaces</strong> the palette with the colors of a <code>.hex</code> (6-digit RGB or 8-digit RGBA per line) or GIMP <code>.gpl</code> file (doesn't append).
+screen-palette.m-web,{{UiStrings.S_ColorPanel_SectionMenu_8C285D8080}},{{UiStrings.S_ColorPanel_SectionMenu_8C285D8080}}
+screen-palette.m-web.d,Lospec 팔레트 목록 창을 엽니다. 아래 <strong>팔레트 웹(Lospec)</strong>을 보세요.,Opens the Lospec palette list. See <strong>Palette web (Lospec)</strong> below.
+screen-palette.m-save,{{UiStrings.S_ColorPanel_SectionMenu_39B0AAF262}},{{UiStrings.S_ColorPanel_SectionMenu_39B0AAF262}}
+screen-palette.m-save.d,팔레트를 <code>.hex</code> 파일로 저장합니다(알파가 있으면 8자리).,Saves the palette as a <code>.hex</code> file (8 digits for colors with alpha).
+screen-palette.m-image,{{UiStrings.S_ColorPanel_SectionMenu_7B7D7BEB97}},{{UiStrings.S_ColorPanel_SectionMenu_7B7D7BEB97}}
+screen-palette.m-image.d,모든 프레임의 보이는 그림(캔버스 밖 부위 포함)에 쓰인 색을 많이 쓰인 순으로 최대 256개 모아 팔레트를 바꿉니다. 팔레트가 비어 있지 않으면 먼저 묻습니다.,"Collects up to 256 colors used in the visible image of every frame (including parts outside the canvas), most used first, and replaces the palette. Asks first if the palette isn't empty."
+screen-palette.m-convert,{{UiStrings.S_ColorPanel_SectionMenu_65C4F22AE2}},{{UiStrings.S_ColorPanel_SectionMenu_65C4F22AE2}}
+screen-palette.m-convert.d,그림의 색을 이 팔레트 색으로 바꿉니다. 아래 <strong>팔레트 색으로 변환</strong>을 보세요.,Converts the image's colors to this palette. See <strong>Convert to palette colors</strong> below.
+screen-palette.m-rename,{{UiStrings.S_ColorPanel_SectionMenu_64E969B02E}},{{UiStrings.S_ColorPanel_SectionMenu_64E969B02E}}
+screen-palette.m-rename.d,이름을 바꿉니다(머리글 이름을 두 번 눌러도 됨).,Renames the palette (or double-click the name in the header).
+screen-palette.m-up,{{UiStrings.S_ColorPanel_SectionMenu_4C7EB2DA21}},{{UiStrings.S_ColorPanel_SectionMenu_4C7EB2DA21}}
+screen-palette.m-up.d,팔레트를 한 칸 위로 옮깁니다.,Moves the palette up one place.
+screen-palette.m-down,{{UiStrings.S_ColorPanel_SectionMenu_299E405790}},{{UiStrings.S_ColorPanel_SectionMenu_299E405790}}
+screen-palette.m-down.d,팔레트를 한 칸 아래로 옮깁니다.,Moves the palette down one place.
+screen-palette.m-clear,{{UiStrings.S_ColorPanel_SectionMenu_8DA4CD616C}},{{UiStrings.S_ColorPanel_SectionMenu_8DA4CD616C}}
+screen-palette.m-clear.d,색을 모두 지웁니다.,Removes every color.
+screen-palette.m-delete,{{UiStrings.S_ColorPanel_SectionMenu_F324D27E74}},{{UiStrings.S_ColorPanel_SectionMenu_F324D27E74}}
+screen-palette.m-delete.d,팔레트를 지웁니다.,Deletes the palette.
+screen-palette.12,팔레트 색으로 변환,Convert to palette colors
+screen-palette.14.alt,"팔레트 색으로 변환 창: 대상, 디더링, 전·후 미리보기, 색 수","Convert to palette colors dialog: target, dithering, before/after preview, color count"
+screen-palette.15,⑨ 대상 · ⑩ 디더링 · ⑪ 전·후 미리보기 · ⑫ 색 수,⑨ Target · ⑩ Dithering · ⑪ Before/after preview · ⑫ Color count
+screen-palette.13,"그림의 색을 팔레트에서 가장 가까운 색으로 바꿉니다. ⑨ 대상은 <strong>현재 셀</strong>(선택 영역이 있으면 그 안만), <strong>현재 레이어의 모든 프레임</strong>, <strong>모든 레이어·프레임</strong>(잠긴 레이어는 건너뜀) 중에서 고르고, ⑩ 디더링은 <strong>없음</strong>(기본) 또는 <strong>순서 디더링(Bayer 4×4)</strong>입니다. 디더는 두 팔레트 색을 빛의 세기(선형광)로 섞은 색을 OKLab로 원본과 견줘 비율을 정하고(예: 검정·흰색 반반 무늬는 sRGB 188 회색), 섞은 색이 가장 가까운 한 색보다 무늬가 눈에 띄는 정도(밝기 차는 크게, 색조·채도 차는 절반만 셈)를 더해도 원본에 가까울 때만 씁니다. 팔레트 색과 겨우 알아볼 차이(OKLab 0.02) 안인 색은 디더하지 않습니다. ⑪ 전·후 미리보기와 ⑫ 색 수 변화를 보여 주며, 알파는 그대로 두고 완전 투명 픽셀은 건드리지 않습니다. 실행취소 한 단계입니다.","Replaces the colors in the image with the nearest colors in the palette. ⑨ Choose the target from <strong>current cel</strong> (only inside the selection, if any), <strong>all frames of the current layer</strong> or <strong>all layers and frames</strong> (locked layers are skipped), and ⑩ dithering from <strong>none</strong> (default) or <strong>ordered dithering (Bayer 4×4)</strong>. Dithering mixes two palette colors in light intensity (linear light) and compares the mix with the source in OKLab to set the ratio (e.g. a half black, half white pattern stands for sRGB 188 gray); it is used only when the mix is still closer to the source than the nearest single color after adding how visible the pattern is (lightness difference counts fully, hue and chroma differences half). Colors within a just-noticeable difference (OKLab 0.02) of a palette color are not dithered. ⑪ A before/after preview and ⑫ the change in color count are shown; alpha is kept and fully transparent pixels are left alone. It's a single undo step."
+screen-palette.cmp.alt,"부드럽게 칠한 공을 DawnBringer 32의 파란 계열 6색으로 바꾼 결과 세 장: 원본, 디더링 없음(색 띠), 순서 디더링(Bayer 4×4 무늬)","A smoothly shaded ball converted to six blue colors from DawnBringer 32, three times: original, no dithering (color bands) and ordered dithering (Bayer 4×4 pattern)"
+screen-palette.cmp,"왼쪽부터: 원본 · 디더링 없음 · 순서 디더링(Bayer 4×4) — 팔레트 6색, 6배 확대","From the left: original · no dithering · ordered dithering (Bayer 4×4) — 6-color palette, enlarged 6×"
+screen-palette.cmp-body,"디더링이 없으면 가까운 색끼리 띠가 생기고, 순서 디더링은 두 색을 무늬로 섞어 그 사이 밝기를 냅니다. 팔레트에 이미 있는 색은 디더링을 켜도 그대로입니다.","Without dithering, neighboring colors form bands; ordered dithering mixes two colors in a pattern to show the brightness between them. Colors already in the palette stay as they are even with dithering on."
+screen-palette.16,팔레트 웹(Lospec),Palette web (Lospec)
+screen-palette.17,"<a href=""https://lospec.com/palette-list"">lospec.com 팔레트 목록</a>을 앱 안에서 둘러봅니다(인터넷 필요).","Browse the <a href=""https://lospec.com/palette-list"">lospec.com palette list</a> inside the app (internet required)."
+screen-palette.18,"정렬(인기·다운로드순·최신·이름순), 색 수, 태그(예: <code>gameboy</code>, <code>pico8</code>)로 거릅니다. 태그 칸에 팔레트 이름을 넣으면 그 팔레트를 맨 위에 보여 줍니다.","Filter by sort order (popular, downloads, newest, name), color count and tag (e.g. <code>gameboy</code>, <code>pico8</code>). Entering a palette name in the tag field shows that palette at the top."
+screen-palette.19,팔레트를 고르면 색과 함께 그 팔레트로 그린 예시 그림이 보입니다.,Selecting a palette shows its colors along with example art made with it.
+screen-palette.20,"<strong>팔레트로 쓰기</strong>(지금 팔레트를 바꿈, 더블클릭과 같음), <strong>현재 팔레트에 추가</strong>(겹치는 색 제외), <strong>.hex로 저장</strong>, <strong>Lospec에서 보기</strong>.","<strong>Use as palette</strong> (replaces the current palette; same as double-click), <strong>Add to current palette</strong> (skips duplicate colors), <strong>Save as .hex</strong>, <strong>View on Lospec</strong>."
+screen-palette.21,<strong>즐겨찾기</strong>: 목록 줄 오른쪽이나 고른 팔레트 이름 옆의 별을 누르면 넣고 뺍니다. 즐겨찾기한 팔레트는 정보와 예시 그림까지 이 컴퓨터(<code>&lt;설정 폴더&gt;/Chickxel/Lospec</code>)에 남습니다.,"<strong>Favorites</strong>: click the star at the right of a list row or next to the selected palette's name to add or remove it. Favorite palettes, including their example art, are kept on your computer (<code>&lt;settings folder&gt;/Chickxel/Lospec</code>)."
+screen-palette.22,정렬에서 <strong>즐겨찾기</strong>를 고르면 즐겨찾기만 최근에 넣은 것부터 보입니다(인터넷 필요 없음). 색 수와 태그/이름 칸으로 거를 수 있습니다. 인터넷에 연결하지 못하면 오류 옆 <strong>{{UiStrings.Lospec_Favorites_View}}</strong>로 넘어갑니다.,"Choose <strong>Favorites</strong> in the sort box to show only your favorites, most recently added first (no internet needed). The color count and tag/name fields still filter them. If Lospec can't be reached, use <strong>{{UiStrings.Lospec_Favorites_View}}</strong> next to the error."
+screen-palette.23,마지막으로 고른 정렬은 다음에 창을 열 때도 그대로입니다.,The last sort you chose is kept the next time you open the window.
+screen-palette.24,팔레트 저작권은 각 작성자에게 있습니다.,Palette copyrights belong to their respective authors.
+screen-palette.lospec-more,"색 수는 <strong>전체</strong>·<strong>최대</strong>·<strong>최소</strong>·<strong>정확히</strong>와 1~256 숫자로 거릅니다. 목록 끝까지 내리거나 <strong>더 보기</strong>를 누르면 다음 목록을 불러옵니다. 창은 하나만 열리고, 다른 팔레트의 메뉴에서 다시 열면 <strong>팔레트로 쓰기</strong>·<strong>현재 팔레트에 추가</strong>가 마지막으로 연 팔레트에 적용됩니다.","Filter the color count with <strong>All</strong>, <strong>Max</strong>, <strong>Min</strong> or <strong>Exact</strong> and a number from 1 to 256. Scroll to the end of the list or press <strong>Load more</strong> to load the next page. Only one window opens; reopening it from another palette's menu makes <strong>Use as palette</strong> and <strong>Add to current palette</strong> apply to the palette it was last opened from."
+screen-color-picker.1,색 고르기,Color picker
+screen-color-picker.13.alt,"색 고르기 사각형 방식: 채도·명도 상자와 색상 막대, 알파 막대, 입력 칸, 최근 색","Color picker in Square mode: saturation/value box and hue bar, alpha bar, inputs, recent colors"
+screen-color-picker.14,① 알파 막대 · ② RGB · ③ HSV · ④ 알파(A)·HEX · ⑤ 최근 색 · ⑥ 방식 탭 · ⑦ 사각형,① Alpha bar · ② RGB · ③ HSV · ④ Alpha (A) and HEX · ⑤ Recent colors · ⑥ Mode tabs · ⑦ Square
+screen-color-picker.2,"팔레트 아래의 색 고르기는 지금 고치는 색(기본색 또는 보조색)을 바꿉니다. ① 알파 막대, ② RGB·③ HSV·④ 알파(A)·HEX 입력, ⑤ 최근 색이 있고, ""색"" 머리글 오른쪽 ⑥ 탭으로 고르는 방식을 바꿉니다(설정에 기억). 맨 아래에는 지금 레이어에 쓰인 색을 모은 <strong>{{UiStrings.LayerColors_Title}}</strong>이 있습니다.","The color picker below the palettes changes the color you're editing (primary or secondary). It has ① an alpha bar, ② RGB, ③ HSV and ④ alpha (A)/HEX inputs and ⑤ recent colors; switch picking modes with ⑥ the tabs on the right of the ""Color"" header (remembered in settings). At the very bottom, <strong>{{UiStrings.LayerColors_Title}}</strong> collects the colors used in the current layer."
+screen-color-picker.15.alt,색 고르기 벌집 방식,Color picker in Honeycomb mode
+screen-color-picker.16,⑧ 벌집,⑧ Honeycomb
+screen-color-picker.17.alt,색 고르기 색상환 방식,Color picker in Color wheel mode
+screen-color-picker.18,⑨ 색상환,⑨ Color wheel
+screen-color-picker.19.alt,색 고르기 슬라이더 방식,Color picker in Sliders mode
+screen-color-picker.20,⑩ 슬라이더,⑩ Sliders
+screen-color-picker.modes,고르는 방식,Picking modes
+screen-color-picker.3,방식,Mode
+screen-color-picker.4,모양,Layout
+screen-color-picker.5,⑦ 사각형(기본),⑦ Square (default)
+screen-color-picker.6,채도·명도 상자 + 세로 색상 막대,Saturation/value box + vertical hue bar
+screen-color-picker.7,⑧ 벌집,⑧ Honeycomb
+screen-color-picker.8,"육각형 칸 127개. 가운데 흰색에서 바깥으로 갈수록 진하고 어두운 색, 아래에 회색 13칸","127 hexagonal cells. White in the center, getting more saturated and darker toward the edge, with 13 gray cells below"
+screen-color-picker.9,⑨ 색상환,⑨ Color wheel
+screen-color-picker.10,"바깥 고리 = 색상, 안쪽 사각형 = 채도·명도","Outer ring = hue, inner square = saturation/value"
+screen-color-picker.11,⑩ 슬라이더,⑩ Sliders
+screen-color-picker.12,R·G·B·H·S·V 막대,"R, G, B, H, S, V bars"
+screen-color-picker.21,어느 방식이든 지금 고르는 색(기본색 또는 보조색)을 바꿉니다.,Every mode changes the color you're currently picking (primary or secondary).
+screen-color-picker.inputs,입력 칸,Input fields
+screen-color-picker.in-1,"R·G·B·A는 0~255, H는 0~360°, S·V는 0~100%입니다. 알파 막대와 HSV·슬라이더·벌집으로 바꿀 때는 지금 알파를 그대로 둡니다.","R, G, B and A are 0–255, H is 0–360°, S and V are 0–100%. Changing the color with the alpha bar, HSV, sliders or honeycomb keeps the current alpha."
+screen-color-picker.in-2,"HEX 칸은 <code>#RGB</code>, <code>#RGBA</code>, <code>#RRGGBB</code>, <code>#RRGGBBAA</code>(앞의 <code>#</code>나 <code>0x</code>는 빼도 됨)를 받습니다. 8자리면 마지막 두 자리가 알파입니다.","The HEX field accepts <code>#RGB</code>, <code>#RGBA</code>, <code>#RRGGBB</code> and <code>#RRGGBBAA</code> (the leading <code>#</code> or <code>0x</code> is optional). With 8 digits, the last two are alpha."
+screen-color-picker.in-3,"<kbd>Enter</kbd>를 누르거나 다른 곳으로 옮기면 확정되고, 잘못 적은 값은 원래 값으로 돌아갑니다.",Press <kbd>Enter</kbd> or move the focus away to confirm; invalid input reverts to the previous value.
+screen-color-picker.recent,최근 색,Recent colors
+screen-color-picker.recent-body,"⑤ 최근 색은 실제로 칠하기를 마친 색을 최근 것부터 16개까지 모읍니다(같은 색은 한 번만). 지우개·밝게/어둡게·그라데이션·그라데이션 연필로 칠한 색과 투명은 넣지 않습니다. 누르면 기본색, 우클릭하면 보조색이 되며 다음 실행에도 남습니다.","⑤ Recent colors collects up to 16 colors you actually finished painting with, newest first (each color once). Colors from the eraser, dodge/burn, gradient and gradient pencil, and transparent, aren't added. Click one for the primary color or right-click for the secondary; the list is kept for the next launch."
+screen-color-picker.layer,{{UiStrings.LayerColors_Title}},{{UiStrings.LayerColors_Title}}
+screen-color-picker.22.alt,색 패널 아래쪽: 색 고르기와 그 아래 펼친 레이어 색 목록(33색),Bottom of the color panel: the color picker and the expanded Layer colors list below it (33 colors)
+screen-color-picker.23,⑪ 레이어 색,⑪ Layer colors
+screen-color-picker.layer-1,⑪ <strong>{{UiStrings.LayerColors_Title}}</strong>은 지금 고른 레이어의 모든 프레임에 쓰인 색을 많이 쓰인 순으로 보여 줍니다(투명 제외). 머리글 옆 숫자는 색 수입니다.,"⑪ <strong>{{UiStrings.LayerColors_Title}}</strong> shows the colors used in every frame of the selected layer, most used first (transparent excluded). The number next to the header is the color count."
+screen-color-picker.th-layer,고른 레이어,Selected layer
+screen-color-picker.th-counts,세는 색,Colors counted
+screen-color-picker.l-normal,일반 레이어,Normal layer
+screen-color-picker.l-normal.d,모든 프레임의 그림. 캔버스 밖 그림의 색도 셉니다.,"The art in every frame, including pixels outside the canvas."
+screen-color-picker.l-group,그룹,Group
+screen-color-picker.l-group.d,그 그룹의 모든 부위,All of the group's parts
+screen-color-picker.l-part,부위,Part
+screen-color-picker.l-part.d,지금 보이는 스킨의 그림,The art of the skin currently shown
+screen-color-picker.layer-2,"칸을 누르면 기본색, 우클릭하면 보조색이 됩니다. 색이 다섯 줄을 넘으면 목록이 스크롤되고, 최대 1024색까지 보입니다. 더 많으면 머리글에 ""보이는 수 / 전체 수""가 적힙니다.","Click a swatch for the primary color, right-click for the secondary. More than five rows of colors scroll, and up to 1024 colors are shown; with more, the header reads ""shown / total""."
+screen-color-picker.layer-3,"머리글을 누르면 접고 펼칩니다. 접혀 있는 동안에는 색을 세지 않으며, 접은 상태는 다음 실행에도 남습니다. 그림을 고치거나 레이어·프레임을 바꾸면 잠깐 뒤에 다시 셉니다.","Click the header to collapse or expand the list. While collapsed it doesn't count colors, and the collapsed state is kept for the next launch. After you edit the art or change layers or frames, it recounts after a short moment."
+screen-color-picker.popup,다른 창의 색 고르기,Color pickers in other windows
+screen-color-picker.popup-body,"효과 설정처럼 다른 창에서 색 칸을 누르면 같은 네 방식의 색 고르기 팝업이 뜹니다(고른 방식은 색 패널과 같이 기억). 팝업 오른쪽에는 팔레트가 보이고, <strong>스포이드 — 그림에서 집기</strong>를 켜면 현재 프레임 그림에서 누르거나 끌어 색을 집습니다(투명한 곳은 집지 않음). 이 스포이드는 캔버스의 <a href=""#tools-picker"">스포이드 도구</a> 설정을 따르지 않고 늘 합친 그림에서 집습니다.","Clicking a color box in other windows, such as effect settings, opens a color picker popup with the same four modes (the chosen mode is shared with the color panel). The palettes are shown on the right of the popup; turn on <strong>Eyedropper — pick from image</strong> to pick by clicking or dragging on the current frame image (transparent areas aren't picked). This eyedropper always samples the combined image and doesn't follow the canvas <a href=""#tools-picker"">Eyedropper tool</a> settings."
+screen-canvas.1,캔버스,Canvas
+screen-canvas.2,"캔버스는 현재 프레임 한 장(보이는 레이어를 합친 모습)을 보여 주고, 도구로 현재 레이어의 셀에 그립니다. 확대·이동, 격자·피벗 같은 보기 표시, 부위 편집 화면을 이 쪽에서 설명합니다.","The canvas shows the current frame (all visible layers combined), and tools draw onto the current layer's cel. This page covers zooming and panning, view overlays such as grids and the pivot, and the part editing view."
+screen-canvas.nav,확대와 이동,Zoom and pan
+screen-canvas.th-do,조작,Action
+screen-canvas.th-result,결과,Result
+screen-canvas.n-wheel,마우스 휠,Mouse wheel
+screen-canvas.n-wheel.d,"커서 아래 지점을 중심으로 확대·축소합니다(1~64배, 위 막대의 빼기·더하기 단추와 같은 단계).","Zooms in or out around the point under the cursor (1–64×, the same steps as the minus and plus buttons on the top bar)."
+screen-canvas.n-ctrl,<kbd>Ctrl</kbd>(macOS <kbd>⌘</kbd>)+휠,<kbd>Ctrl</kbd> (macOS <kbd>⌘</kbd>)+wheel
+screen-canvas.n-ctrl.d,확대 대신 브러시 크기를 바꿉니다.,Changes the brush size instead of zooming.
+screen-canvas.n-pan,"<kbd>Space</kbd>+끌기, 가운데 버튼 끌기","<kbd>Space</kbd>+drag, middle-button drag"
+screen-canvas.n-pan.d,화면을 옮깁니다. <kbd>Space</kbd>를 누르는 동안 커서가 손 모양이 됩니다.,Pans the view. The cursor becomes a hand while <kbd>Space</kbd> is held.
+screen-canvas.n-keys,{{key:보기/확대}} · {{key:보기/축소}} · {{key:보기/화면에 맞추기}} · {{key:보기/실제 크기(1배)}},{{key:보기/확대}} · {{key:보기/축소}} · {{key:보기/화면에 맞추기}} · {{key:보기/실제 크기(1배)}}
+screen-canvas.n-keys.d,"확대 · 축소 · 화면에 맞추기 · 실제 크기(1배). 확대율 상자는 <a href=""#screen-top-bar"">메뉴와 위 막대</a>를 보세요.","Zoom in · zoom out · fit to window · actual size (1×). For the zoom box, see <a href=""#screen-top-bar"">Menu and top bar</a>."
+screen-canvas.n-peek,{{key:보기/이전 프레임 보기(누르고 있기)}} 누르고 있기,Hold {{key:보기/이전 프레임 보기(누르고 있기)}}
+screen-canvas.n-peek.d,"누르고 있는 동안 이전 프레임을 보여 주고 왼쪽 위에 ""이전 프레임 N 보는 중""이 뜹니다(첫 프레임이면 ""이전 프레임이 없습니다""). 떼면 돌아갑니다.","Shows the previous frame while held, with ""Viewing previous frame N"" at the top left (""No previous frame"" on the first frame). Release to go back."
+screen-canvas.overlays,보기 표시,View overlays
+screen-canvas.8.alt,"캔버스 보기 기능: 체커, 픽셀·타일 격자, 대칭 안내선, 피벗, 선택 영역, 양파 껍질","Canvas view features: checkerboard, pixel and tile grids, symmetry guide, pivot, selection, onion skin"
+screen-canvas.9,③ 체커 배경 · ④ 픽셀 격자 · ⑤ 타일 격자 · ⑥ 대칭 안내선 · ⑦ 피벗 · ⑧ 선택 영역 · ⑨ 양파 껍질,③ Checkerboard · ④ Pixel grid · ⑤ Tile grid · ⑥ Symmetry guide · ⑦ Pivot · ⑧ Selection · ⑨ Onion skin
+screen-canvas.ov-intro,"아래 표시는 <a href=""#screen-top-bar"">보기 옵션</a>으로 켜고 끄며 그림에는 들어가지 않습니다.","These overlays are turned on and off with the <a href=""#screen-top-bar"">view options</a> and are never part of the image."
+screen-canvas.th-mark,표시,Overlay
+screen-canvas.th-means,보이는 것,What it shows
+screen-canvas.o-checker,③ 체커 배경,③ Checkerboard
+screen-canvas.o-checker.d,투명한 곳을 회색 체커로 보여 줍니다.,Shows transparent areas as a gray checkerboard.
+screen-canvas.o-pixel,④ 픽셀 격자,④ Pixel grid
+screen-canvas.o-pixel.d,픽셀 경계. 정한 배율 이상에서만 보입니다.,"Pixel borders, shown only from the chosen zoom up."
+screen-canvas.o-tile,⑤ 타일 격자,⑤ Tile grid
+screen-canvas.o-tile.d,"타일 크기마다 선(처음 16×16, 하늘색).",A line every tile (16×16 and light blue at first).
+screen-canvas.o-mirror,⑥ 대칭 안내선,⑥ Symmetry guide
+screen-canvas.o-mirror.d,"<a href=""#tools-brush"">대칭 그리기</a>를 켰을 때만 보이는 축입니다. 축은 캔버스 가운데, <strong>대칭: 피벗 기준</strong>이면 피벗입니다. 브러시 커서 외곽선이 반대쪽에도 흐리게 보입니다.","The axis, shown only while <a href=""#tools-brush"">symmetry drawing</a> is on. It is the canvas center, or the pivot with <strong>Mirror around pivot</strong>. The brush cursor outline also appears faintly on the mirrored side."
+screen-canvas.o-pivot,⑦ 피벗,⑦ Pivot
+screen-canvas.o-pivot.d,회전·배치의 기준점(주황·흰 표시). 그룹 화면에서는 부위마다 작은 파란 피벗도 보입니다. 효과가 피벗을 옮기면 원래 자리가 점선으로 보입니다.,"The reference point for rotation and placement (orange and white marker). In group view each part also shows a small blue pivot. When an effect moves the pivot, the original spot is shown with a dashed line."
+screen-canvas.o-selection,⑧ 선택 영역,⑧ Selection
+screen-canvas.o-selection.d,선택 도구로 고른 범위의 점선 테두리.,The dashed outline of the area chosen with a selection tool.
+screen-canvas.o-onion,⑨ 양파 껍질,⑨ Onion skin
+screen-canvas.o-onion.d,앞뒤 프레임을 반투명하게 겹친 모습.,Neighboring frames overlaid translucently.
+screen-canvas.10.alt,타일 모드로 그림을 반복해 보여 주는 캔버스,"Canvas in tiled mode, repeating the image"
+screen-canvas.11,⑩ 타일 모드(가운데가 편집하는 칸),⑩ Tiled mode (the center is the tile you edit)
+screen-canvas.tiled,"⑩ 타일 모드에서는 가운데 칸이 편집하는 그림이고 둘레는 그 사본입니다. 둘레를 어둡게 할지, 몇 칸 반복할지는 타일 모드 단추를 우클릭해 정합니다.",⑩ In tiled mode the center tile is the image you edit and the surrounding tiles are copies. Right-click the tiled mode button to set how many tiles repeat and whether the surroundings are dimmed.
+screen-canvas.parts,부위와 그룹 편집,Editing parts and groups
+screen-canvas.6.alt,"보석 부위 레이어를 고른 캔버스: 부위만 자기 크기, 나머지는 반투명","Canvas with the Gem part layer selected: the part at its own size, the rest semi-transparent"
+screen-canvas.7,① 고른 부위 · ② 반투명하게 비치는 나머지,"① Selected part · ② Rest of the frame, semi-transparent"
+screen-canvas.3,"부위 레이어를 고르면 ① 그 부위만 자기 크기로 체커 위에 보이고, ② 프레임의 나머지는 <strong>반투명하게</strong> 비치며 프레임 경계는 점선으로 보여 위치를 맞춰 그릴 수 있습니다. 그룹 레이어를 고르면 부위마다 테두리가 보이고 부위를 끌어 배치합니다(<a href=""#parts"">부위(그룹) 레이어</a> 참고). 부위에 9-slice 테두리가 있으면 점선 안내선으로 보입니다.","Selecting a part layer shows ① only that part at its own size over the checkerboard, with ② the rest of the frame shown <strong>semi-transparently</strong> and the frame border dashed, so you can line things up. Selecting a group layer outlines each part, and you drag parts to arrange them (see <a href=""#parts"">Part (group) layers</a>). A part's 9-slice border appears as dashed guides."
+screen-canvas.editing,편집 중에만 보이는 것,Shown only while editing
+screen-canvas.ed-1,숨긴 일반 레이어를 고르면 그 레이어가 캔버스에만 반투명하게 보여 계속 그릴 수 있습니다. 미리보기·내보내기에는 나오지 않습니다.,"When a hidden normal layer is selected, it shows semi-transparently on the canvas only, so you can keep drawing on it. It doesn't appear in the preview or exports."
+screen-canvas.ed-2,"이동 도구를 쓰는 동안 캔버스 밖으로 밀려난 그림이 흐리게 보입니다(<a href=""#tools-move"">이동</a>).","While you use the Move tool, pixels pushed outside the canvas are shown dimmed (<a href=""#tools-move"">Move</a>)."
+screen-canvas.ed-3,"현재 레이어가 잠겨 있으면 왼쪽 아래에 ""현재 레이어가 잠겨 있어 그릴 수 없습니다""가 보입니다.","If the current layer is locked, ""The current layer is locked and can't be drawn on"" appears at the bottom left."
+screen-canvas.ed-4,브러시 도구는 커서 자리에 브러시 모양(사각·원·마름모)의 외곽선을 보입니다.,"Brush tools outline the brush shape (square, circle, diamond) at the cursor."
+screen-canvas.fx,효과 계산,Computing effects
+screen-canvas.12,"효과가 무거운 큰 그림이나 프레임이 많은 그림에서도 효과를 계산하는 동안 창이 멈추지 않습니다. 한 프레임 계산이 오래 걸리면 캔버스에 회색 반투명 덮개가 씌워지고 그 밑에 계산 중간 결과가 차례로 보이며, 그림 영역 오른쪽 위에 로딩 아이콘과 진행 막대가 나옵니다. 계산이 끝나면 덮개가 한 번에 걷힙니다. 그리는 중에 계산이 밀리면 새로 그은 선은 효과 없이 바로 보이고 효과는 뒤따라 입혀집니다. 가벼운 그림은 덮개 없이 바로 바뀝니다.","Even with heavy effects on large images or many frames, the window doesn't freeze while effects compute. When a frame takes a while, the canvas gets a gray semi-transparent veil with the partial result showing underneath as it is computed, plus a loading icon and progress bar at the top right of the image area. The veil lifts all at once when the frame is done. If computing falls behind while you draw, new strokes appear right away without effects and the effects catch up afterwards. Light images update immediately without a veil."
+screen-canvas.fx-view,"편집 캔버스에서 효과를 빼고 보려면 위 막대의 <a href=""#screen-top-bar"">효과</a> 단추를 끕니다.","To hide effects on the editing canvas, turn off the <a href=""#screen-top-bar"">Effects</a> button on the top bar."
+screen-tabs.1,문서 탭과 나누기,Document tabs and split view
+screen-tabs.16.alt,"탭을 끌어 순서를 바꾸고, 탭 하나를 캔버스 오른쪽 끝에 놓아 두 칸으로 나눈 뒤, 탭을 닫아 나눔을 푸는 모습","Dragging tabs to reorder them, dropping a tab on the right edge of the canvas to split it into two panes, and closing a tab to remove the split"
+screen-tabs.10.alt,"문서 탭 줄: 탭 제목, 빨간 점, 전체 경로 도움말, 닫기 X, 새 탭","Document tab strip: tab title, red dot, full path tooltip, close X, new tab"
+screen-tabs.11,① 탭 제목 · ② 빨간 점 · ③ 전체 경로 · ④ 닫기(X) · ⑤ 새 프로젝트(+),① Tab title · ② Red dot · ③ Full path · ④ Close (X) · ⑤ New project (+)
+screen-tabs.overview,"캔버스 위 탭 줄에는 열린 문서마다 탭이 하나씩 있습니다. 탭을 눌러 문서를 바꾸고, 탭을 옮겨 캔버스를 좌우 두 칸으로 나눠 두 문서를 나란히 볼 수 있습니다.","The tab strip above the canvas has one tab per open document. Click tabs to switch documents, and move a tab to split the canvas into left and right panes to see two documents side by side."
+screen-tabs.open,탭 열기·고르기·닫기,"Opening, switching and closing tabs"
+screen-tabs.2,"캔버스 위 탭 줄에 열린 문서마다 탭이 하나씩 있습니다(① 제목 = 파일 이름, 저장 안 한 변경이면 ② 빨간 점, 마우스를 올리면 ③ 전체 경로). 파일 브라우저에서 파일을 누르면 <strong>새 탭</strong>으로 열리고, 이미 열려 있으면(다른 칸에 있어도) 새로 열지 않고 그 탭으로 가며 그 칸에 포커스가 갑니다 — 한 문서는 한 탭에서만 엽니다. 열기·최근 파일·새 프로젝트·AI 도구도 새 탭으로 엽니다.","The tab strip above the canvas has one tab per open document (① title = file name, ② a red dot for unsaved changes, ③ full path on hover). Clicking a file in the file browser opens it in a <strong>new tab</strong>; if it's already open (even in the other pane), it isn't opened again — its tab is selected and that pane gets focus. A document is open in only one tab. Open, recent files, New project and AI tools also open new tabs."
+screen-tabs.3,탭을 누르면 그 문서로 바뀌고 타임라인·미리보기·레이어·실행취소(문서마다 따로)·창 제목·상태 표시줄이 따라갑니다. 확대율·위치·현재 프레임·레이어·선택 영역은 <strong>탭마다</strong> 기억합니다.,"Clicking a tab switches documents; the timeline, preview, layers, undo history (per document), window title and status bar follow. Zoom, position, current frame, layer and selection are remembered <strong>per tab</strong>."
+screen-tabs.4,"닫기: 탭의 ④ <strong>X</strong>, 가운데 클릭, {{key:파일/닫기}}. 줄 끝 ⑤ <strong>+</strong>는 새 프로젝트를 새 탭에 만듭니다.","Close with the tab's ④ <strong>X</strong>, a middle click or {{key:파일/닫기}}. The ⑤ <strong>+</strong> at the end of the strip creates a new project in a new tab."
+screen-tabs.close-next,"지금 탭을 닫으면 오른쪽 탭이, 없으면 왼쪽 탭이 골라집니다. 탭이 많아 줄을 넘치면 탭 줄 위에서 휠을 굴려 옆으로 넘깁니다.","Closing the current tab selects the tab to its right, or the one to its left if there is none. When the tabs overflow the strip, scroll the wheel over it to move sideways."
+screen-tabs.5,모든 탭을 닫으면 탭 줄 아래에 시작 화면이 뜹니다. 탭 줄에는 <strong>+</strong>만 남아 새 프로젝트를 새 탭으로 만들 수 있습니다.,"Closing every tab shows the start screen below the tab strip. Only <strong>+</strong> remains on the strip, so you can create a new project in a new tab."
+screen-tabs.menu,탭 메뉴와 탭 차례,Tab menu and tab order
+screen-tabs.12.alt,"탭을 우클릭한 메뉴: 닫기, 다른 탭 닫기, 다른 쪽으로 옮기기","Tab right-click menu: Close, Close other tabs, Move to the other pane"
+screen-tabs.13,⑥ 탭 우클릭 메뉴,⑥ Tab right-click menu
+screen-tabs.6,"탭을 좌우로 끌면 순서가 바뀝니다. {{key:보기/다음 탭}} / {{key:보기/이전 탭}}은 포커스된 칸의 탭만 돌아가며 고르고 미리보기 탭은 건너뜁니다. ⑥ 탭을 우클릭하면 <strong>{{MainStrings.Tabs_Close}}</strong>, <strong>{{MainStrings.Tabs_CloseOthers}}</strong>(그 칸에 탭이 하나면 꺼짐), <strong>{{MainStrings.Tabs_MoveToOther}}</strong>가 있습니다.","Drag tabs left and right to reorder them. {{key:보기/다음 탭}} / {{key:보기/이전 탭}} cycle through the tabs of the focused pane only, skipping the preview tab. ⑥ Right-click a tab for <strong>{{MainStrings.Tabs_Close}}</strong>, <strong>{{MainStrings.Tabs_CloseOthers}}</strong> (disabled when the pane has one tab) and <strong>{{MainStrings.Tabs_MoveToOther}}</strong>."
+screen-tabs.17,"저장한 적 없는 새 프로젝트 탭을 우클릭하면 맨 위에 <strong>{{MainStrings.Tabs_TempTitle}}</strong>이 있습니다. 적은 이름은 탭과 창 제목에 <strong>새 프로젝트</strong> 대신 보이고, 처음 저장할 때 파일 이름으로 미리 들어갑니다(<a href=""#files-save"">저장</a>). 파일에는 쓰지 않고 실행취소 대상도 아니며, 비우고 확인하면 지워집니다. 저장했거나 파일에서 연 문서에는 이 항목이 없습니다.","Right-clicking the tab of a never-saved new project shows <strong>{{MainStrings.Tabs_TempTitle}}</strong> at the top. The name you enter is shown on the tab and window title instead of <strong>New project</strong>, and is suggested as the file name the first time you save (<a href=""#files-save"">Saving</a>). It is not written to the file and is not undoable; confirm an empty name to clear it. Saved documents and documents opened from a file don't have this item."
+screen-tabs.split,화면 나누기,Splitting the view
+screen-tabs.14.alt,좌우 두 칸으로 나눈 캔버스,Canvas split into left and right panes
+screen-tabs.15,⑦ 다른 쪽으로 옮기기 단추 · ⑧ 오른쪽 칸 · ⑨ 포커스된 칸의 강조색 선,⑦ Move to the other pane button · ⑧ Right pane · ⑨ Focused pane accent line
+screen-tabs.7,"<strong>{{MainStrings.Tabs_MoveToOther}}</strong>(탭 우클릭, ⑦ 탭 줄 오른쪽 끝 옮기기 단추, 보기 메뉴)를 고르거나 탭을 캔버스 오른쪽 부분(오른쪽 40%)에 끌어 놓으면 그 탭이 ⑧ 오른쪽 칸으로 옮겨 가며 캔버스가 좌우 두 칸으로 나뉩니다. 끄는 동안 놓을 자리가 강조되고 ""놓으면 오른쪽 칸으로 옮김""이 보입니다. 이미 나뉘어 있으면 다른 칸 어디에나 놓아 옮깁니다.","Choose <strong>{{MainStrings.Tabs_MoveToOther}}</strong> (tab context menu, ⑦ the move button at the end of the tab strip, or the View menu), or drag a tab onto the right part of the canvas (the right 40%), to move that tab to the ⑧ right pane and split the canvas into two. While dragging, the drop area is highlighted with ""Drop to move to a right pane"". When already split, drop anywhere in the other pane to move the tab there."
+screen-tabs.divider,두 칸 사이 경계선을 끌어 폭을 나눕니다(새로 나누면 반반). 각 칸에는 탭 줄이 따로 있습니다.,Drag the divider between the panes to share the width (half and half when newly split). Each pane has its own tab strip.
+screen-tabs.8,<strong>포커스된 칸</strong>(⑨ 탭 줄 아래 강조색 선)의 문서가 타임라인·미리보기·패널의 대상입니다. 다른 칸을 누르면 그쪽으로 포커스가 옮겨 갑니다. 한쪽의 마지막 탭을 닫으면 나눔이 풀립니다.,"The <strong>focused pane</strong> (⑨ accent line under its tab strip) is the one the timeline, preview and panels work on; clicking the other pane focuses it. Closing the last tab of a pane removes the split."
+guide-new.tabs-merge,나눈 화면에서 한쪽의 마지막 탭도 다른 쪽으로 끌거나 '다른 쪽으로 옮기기'로 옮길 수 있습니다. 빈 쪽이 사라지며 한 화면으로 합쳐집니다. 한 화면의 문서 탭 하나만 남았다면 옮길 수 없습니다.,In split view you can drag even the last tab of a pane to the other pane or use Move to the other pane: the empty pane disappears and the views merge. You cannot move the only document tab when the view is not split.
+screen-tabs.ptab,미리보기 탭,Preview tab
+guide-shot.preview-tab.alt,오른쪽에 초록빛 미리보기 탭을 연 나눈 화면과 미리보기 제목 줄의 탭 열기 단추,Split view with a green preview tab on the right and the Open as tab control in the preview dock
+guide-shot.preview-tab.caption,⑩ 탭으로 열기 단추,⑩ Open as tab button
+guide-shot.preview-tab.body,미리보기 제목 줄의 ⑩ 단추를 누르면 편집 중인 그림을 다른 쪽의 미리보기 탭으로 엽니다.,Click ⑩ in the preview header to open the document being edited in a preview tab on the other side.
+guide-new.preview-tab,"미리보기 제목 줄의 '탭으로 열기'는 미리보기를 처음에는 편집하지 않는 쪽(보통 오른쪽)의 초록빛 탭에 엽니다(한 화면이면 화면을 나눔). 현재 편집 중인 문서를 미리보기와 같은 재생·배경·착장으로 보여 줍니다. 휠로 확대, 끌어서 이동, 더블클릭으로 맞춤, 우클릭은 미리보기 메뉴입니다. 탭은 하나만 열리며 다시 누르면 그 탭으로 갑니다. 열면 크게 보기 창은 닫히고 미리보기 그림을 눌러도 탭이 앞으로 옵니다. 이후 보통 탭처럼 옮기거나 합칠 수 있지만 편집 대상은 늘 다른 문서 탭입니다. 탭 우클릭에는 닫기·다른 쪽으로 옮기기만 있고 다음 실행 때 다시 열지 않습니다. 문서 탭을 모두 닫으면 미리보기 탭도 닫습니다. 미리보기와 도구 설정 사이 막대를 끌어 높이를 나눌 수 있고 그 높이는 다음 실행에도 남습니다.","The preview header's Open as tab opens a green-tinted preview tab on the non-editing side (usually right), splitting a single view first. It shows the document currently being edited with the same playback, background and outfit as the dock. Wheel zooms, drag pans, double-click fits and right-click opens the preview menu. Only one preview tab exists; clicking again focuses it. Opening it closes the enlarged-view window, and clicking the dock image focuses the tab. You can subsequently move or merge the tab like other tabs, but it never becomes the editing document. Its context menu only offers Close and Move to the other pane; it is not reopened at startup. Closing all document tabs also closes it. Drag the divider between Preview and Tool options to resize their heights; the split height persists across launches."
+screen-tabs.session,다음 실행 때 다시 열기,Reopening at the next launch
+screen-tabs.9,"앱을 끝낼 때 열려 있던 탭을 나눔·순서·칸마다 고른 탭·포커스된 칸까지 다음에 켤 때 다시 엽니다. 없어진 파일, 읽을 수 없는 파일, 저장한 적 없는 새 문서와 미리보기 탭은 빼고 엽니다.","Tabs open when you quit are reopened at the next launch, including the split, their order, the selected tab of each pane and the focused pane. Missing or unreadable files, never-saved new documents and the preview tab are skipped."
+screen-timeline.1,타임라인,Timeline
+screen-timeline.9.alt,"타임라인: 레이어 행(그룹·부위, 잠근 그림자 레이어), 프레임 6개, 태그 idle·hit, 재생 중인 4번 프레임","Timeline: layer rows (a group with parts, the locked Shadow layer), six frames, tags idle and hit, frame 4 playing"
+screen-timeline.10,① 눈 · ② 자물쇠(잠근 레이어) · ③ 불투명도 · ④ 그룹 접기 삼각형 · ⑤ 부위(들여쓰기) · ⑥ 프레임 번호·길이 · ⑦ 썸네일 · ⑧ 태그 띠 · ⑨ 빈 프레임 추가 · ⑩ 마지막 프레임 복사 · ⑪ 빈 레이어 추가 · ⑫ 맨 아래 레이어 복사 · ⑬ 재생 중인 프레임,① Eye · ② Lock (locked layer) · ③ Opacity · ④ Group collapse triangle · ⑤ Parts (indented) · ⑥ Frame number and duration · ⑦ Thumbnail · ⑧ Tag strip · ⑨ Add empty frame · ⑩ Copy last frame · ⑪ Add empty layer · ⑫ Copy bottom layer · ⑬ Frame being played
+screen-timeline.2,"화면 아래의 타임라인에서 행은 레이어, 열은 프레임, 칸 하나는 셀입니다. 맨 위 띠에는 태그가 보입니다. 누른 프레임·레이어가 캔버스에 보이는 현재 프레임·현재 레이어가 됩니다. 고르는 법은 <a href=""#screen-timeline-select"">타임라인에서 고르기</a>, 옮기기·복사는 <a href=""#screen-timeline-edit"">타임라인 편집</a>을 보세요.","In the timeline at the bottom of the screen, rows are layers, columns are frames and each cell is a cel. Tags appear in the strip at the top. The frame and layer you click become the current frame and layer shown on the canvas. For selecting see <a href=""#screen-timeline-select"">Selecting in the timeline</a>; for moving and copying see <a href=""#screen-timeline-edit"">Editing the timeline</a>."
+screen-timeline.rows,레이어 행,Layer rows
+screen-timeline.3,"<strong>레이어 행</strong>: ① 눈(보이기)·② 자물쇠(잠금) 아이콘과 이름이 있습니다. 불투명도가 100%가 아니면 이름 뒤에 ③ 퍼센트가 붙습니다. 그룹은 ④ 삼각형으로 접고 펼치며, ⑤ 부위는 그 아래 들여쓰기로 보입니다(부위 이름 옆에 크기).","<strong>Layer rows</strong> have ① an eye (visibility) and ② a lock icon and the name. If opacity isn't 100%, ③ a percentage follows the name. Groups collapse and expand with a ④ triangle, and their ⑤ parts appear indented below (with their size next to the name)."
+screen-timeline.row-icons,"효과가 있는 레이어에는 <strong>fx</strong> 표시가 붙고, 누르면 그 아래 효과 줄을 펼치거나 접습니다(<a href=""#screen-layer-effects"">레이어 효과</a>). 자동 배치를 쓰는 그룹에는 마름모 표시가 붙어 누르면 자동 배치 설정이 열리고, 그룹·부위의 스킨 칩을 누르면 스킨 관리 창이 열립니다.","Layers with effects get an <strong>fx</strong> badge; click it to expand or collapse the effect rows below (<a href=""#screen-layer-effects"">Layer effects</a>). Groups using auto layout get a diamond badge that opens the auto layout settings, and clicking a group's or part's skin chip opens the skin manager."
+screen-timeline.11,"잠근 레이어에는 그릴 수 없지만, 숨긴 레이어에는 그릴 수 있습니다. 숨긴 일반 레이어는 편집하는 동안 캔버스에만 반투명하게 보이고 미리보기·내보내기에는 나오지 않습니다.","You can't draw on a locked layer, but you can draw on a hidden one. A hidden normal layer appears semi-transparently on the canvas only while editing and doesn't appear in the preview or exports."
+screen-timeline.cols,프레임 열과 길이,Frame columns and durations
+screen-timeline.4,"<strong>프레임 열</strong>의 머리글에는 ⑥ 번호와 길이(ms)가 있고, 칸마다 ⑦ 썸네일이 보입니다. 썸네일은 효과 없이 고칠 그림을 보여 줍니다.","Each <strong>frame column</strong> header shows ⑥ its number and duration (ms), and each cel shows ⑦ a thumbnail of the editable art without effects."
+screen-timeline.duration,"프레임 번호를 더블클릭하거나 머리글 우클릭 <strong>길이…</strong>를 고르면 프레임 길이 창이 열립니다. 1~60000ms(바로 고르기 50·80·100·120·150·200)이고, 여러 프레임을 골랐으면 한꺼번에 바뀝니다. 새 프로젝트의 프레임은 100ms이고, 새로 더한 프레임은 앞 프레임의 길이를 이어받습니다.","Double-click a frame number or choose <strong>Duration…</strong> from the header's right-click menu to open the frame duration dialog: 1–60000 ms (quick picks 50, 80, 100, 120, 150, 200). With several frames selected, all change together. Frames in a new project are 100 ms, and newly added frames take the duration of the frame before them."
+guide-new.timeline-thumbnails,"일반 레이어의 칸 썸네일은 모든 프레임에 칠한 픽셀 영역(캔버스 안)을 같은 배율로 잘라 크게 보여 이동을 비교할 수 있습니다. 레이어 효과 없이 고칠 그림 그대로이며 효과 여백도 넣지 않습니다. 칠한 픽셀이 없지만 글씨 효과처럼 효과가 그림을 만드는 칸만 효과를 보여 줍니다. 그룹 행은 부위 그림을 제자리에 합친 그림(효과 제외)의 부위 영역 합집합, 부위 행은 지금 부위 크기입니다. 아무것도 칠하지 않은 일반 레이어는 캔버스 전체를 보며, 그리는 중에는 이전 영역을 유지하다 그리기를 끝내면 갱신합니다. 다른 스킨의 빈 칸은 첫 스킨 그림 없이 비어 있습니다.","A normal layer's cel thumbnails crop to the painted area across all frames (within the canvas), using a fixed scale and position so movement is visible. They show editable art without layer effects or effect padding. Only cels whose effects generate an image despite having no painted pixels (such as text) display their effects. Group rows combine visible parts in position (without part or group effects) and crop to the union of part bounds; part rows use the part's bounds. Empty normal layers use the whole canvas. While drawing, the old crop remains until the stroke ends. Empty cels in other skins do not display first-skin art."
+screen-timeline.strip,태그 띠·캔버스 크기 칩·재생 표시,"Tag strip, canvas size chip and playback marker"
+screen-timeline.5,"⑧ <strong>태그 띠</strong>는 색 괄호로 프레임 묶음을 보여 줍니다(<a href=""#screen-tags"">태그</a>).","⑧ The <strong>tag strip</strong> shows groups of frames as colored brackets (<a href=""#screen-tags"">Tags</a>)."
+screen-timeline.33,"왼쪽 위 모서리(프레임 번호 줄 왼쪽)의 캔버스 크기 칩은 지금 캔버스(프레임) 크기를 보여 줍니다(예: 캔버스 64×48). 누르면 <strong>편집 &gt; 캔버스 크기…</strong>({{key:편집/캔버스 크기…}})와 같은 <a href=""#tools-canvas-size"">캔버스 크기</a> 모드가 열리고, 크기를 바꾸면 칩 글자도 바로 바뀝니다.","The canvas size chip in the top-left corner (left of the frame-number row) shows the current canvas (frame) size, such as Canvas 64×48. Click it to open the same <a href=""#tools-canvas-size"">canvas size</a> mode as <strong>Edit &gt; Canvas size…</strong> ({{key:편집/캔버스 크기…}}); the chip updates as soon as the size changes."
+screen-timeline.8,미리보기를 재생하면 지금 보이는 프레임 열이 ⑬ 초록 외곽선으로 표시됩니다.,"While the preview plays, the frame column being shown gets a ⑬ green outline."
+screen-timeline.32,"효과 계산이 오래 걸리면 다시 계산하는 프레임 칸의 썸네일 위에 회색 덮개가 씌워집니다. 무거운 그림에서 효과 상자의 범위를 끄는 동안에는 상자만 움직이고, 캔버스는 놓을 때 바뀝니다.","When effects take a while to compute, thumbnails of frames being recomputed get a gray veil. On heavy images, dragging an effect box's range moves only the box, and the canvas updates when you release."
+screen-timeline.menus,우클릭 메뉴,Right-click menus
+screen-timeline.23.alt,프레임 1~3을 고르고 3번 프레임 머리글을 우클릭한 메뉴,"Frames 1 to 3 selected, right-click menu of the frame 3 header"
+screen-timeline.24,⑭ 메뉴 맨 위의 선택 표시 · ⑮ 우클릭한 프레임 머리글,⑭ Selection line at the top of the menu · ⑮ Right-clicked frame header
+screen-timeline.12,"별도 도구 단추 없이 <strong>우클릭 메뉴</strong>로 다룹니다. 메뉴 맨 위에 ⑭ 고른 것(예: ""프레임 1~3 선택됨"")이 보입니다.","There are no separate tool buttons; everything is in the <strong>right-click menu</strong>. The top of the menu shows ⑭ what's selected (e.g. ""Frames 1–3 selected"")."
+screen-timeline.25.alt,그림이 있는 셀(몸 레이어 4번 프레임)을 우클릭한 메뉴,"Right-click menu of a cel with an image (Body layer, frame 4)"
+screen-timeline.26,⑯ 우클릭한 셀,⑯ Right-clicked cel
+screen-timeline.27.alt,레이어 이름(몸)을 우클릭한 메뉴,Right-click menu of the Body layer name
+screen-timeline.28,⑰ 우클릭한 레이어 이름,⑰ Right-clicked layer name
+screen-timeline.30.alt,타임라인 왼쪽 위 빈 칸을 우클릭한 새로 만들기 메뉴,Create-new menu from right-clicking the empty top-left cell of the timeline
+screen-timeline.31,⑱ 우클릭한 빈 곳(왼쪽 위 칸),⑱ Right-clicked empty area (top-left cell)
+screen-timeline.13,우클릭한 곳,Where you right-click
+screen-timeline.14,주요 메뉴,Main menu items
+screen-timeline.16,"태그 만들기, 뒤에 빈 프레임({{key:프레임·레이어/새 빈 프레임}}), 프레임 복제({{key:프레임·레이어/프레임 복제}}), 삭제, 앞으로·뒤로 옮기기, 길이…, 프레임 복사·잘라내기·붙여넣기, 피벗을 기본값으로, 이 프레임만 피벗 따로 쓰기, 내보낼 칸 이름…","Create tag, Empty frame after ({{key:프레임·레이어/새 빈 프레임}}), Duplicate frame ({{key:프레임·레이어/프레임 복제}}), Delete, Move forward/back, Duration…, Copy/Cut/Paste frames, Reset pivot to default, Use a separate pivot for this frame only, Export cell name…"
+screen-timeline.18,"셀 지우기, 이전 프레임 그림 복사(빈 셀 하나), 셀 복사·잘라내기, 셀 복사(효과 포함 그림), 프레임 N 화면 복사, 셀 붙여넣기, <a href=""#screen-cel-links"">셀 링크·셀 링크 풀기</a>, 효과 추가…, 태그 만들기, 뒤에 빈 프레임, 프레임 복제, 길이…, 피벗·내보낼 칸 이름","Clear cels, Copy image from previous frame (one empty cel), Copy/Cut cels, Copy cels (as image with effects), Copy frame N as shown, Paste cels, <a href=""#screen-cel-links"">Link cels / Unlink cels</a>, Add effect…, Create tag, Empty frame after, Duplicate frame, Duration…, pivot and export cell name"
+screen-timeline.20,"이름 바꾸기, 불투명도…(0~255), 효과…, 효과 줄 펼치기/접기, 보이기/숨기기, 잠금/풀기, 새 레이어·새 그룹·새 부위, 복제, 위로·아래로, 아래와 병합(바로 아래가 일반 레이어일 때), 삭제. 일반 레이어는 <strong>스킨 추가 (그룹으로 바꿈)</strong>, 그룹은 부위 추가·접기·자동 배치·스킨, 부위는 부위 크기·위치·이 부위 스킨·그룹 스킨 메뉴가 더 있습니다(<a href=""#parts"">부위</a> 장).","Rename, Opacity… (0–255), Effects…, Expand/Collapse effect rows, Show/hide, Lock/unlock, New layer/group/part, Duplicate, Move up/down, Merge down (when the layer below is a normal layer), Delete. Normal layers also have <strong>Add skin (turns into a group)</strong>; groups have Add part, Expand/Collapse, Auto layout and Skin; parts have Part size, Position, Skin for this part and Group skin (<a href=""#parts"">Parts</a> chapter)."
+screen-timeline.22,"새 레이어({{key:프레임·레이어/새 레이어}}), 새 그룹, 새 부위({{key:프레임·레이어/새 부위…}}), 끝에 빈 프레임, 끝에 마지막 프레임 복사","New layer ({{key:프레임·레이어/새 레이어}}), New group, New part ({{key:프레임·레이어/새 부위…}}), Empty frame at end, Copy last frame to end"
+screen-timeline.15,⑮ 프레임 머리글,⑮ Frame header
+screen-timeline.17,⑯ 셀,⑯ Cel
+screen-timeline.19,⑰ 레이어 이름,⑰ Layer name
+screen-timeline.21,⑱ 빈 곳(왼쪽 위 칸 등),⑱ Empty area (such as the top-left cell)
+screen-timeline.tag-row,태그,Tag
+screen-timeline.tag-row.d,"태그 속성…, 이 태그 재생, 삭제(<a href=""#screen-tags"">태그</a>)","Tag properties…, Play this tag, Delete (<a href=""#screen-tags"">Tags</a>)"
+screen-timeline.fx-row,효과 줄,Effect row
+screen-timeline.fx-row.d,"효과 설정…, 범위 바꾸기(모든 프레임으로·이 프레임만·이 프레임부터 끝까지·처음부터 이 프레임까지·여기까지 늘리기), 끄기/켜기, 삭제, 효과 영구 적용, 효과 복사·붙여넣기(<a href=""#screen-layer-effects"">레이어 효과</a>)","Effect settings…, change the range (To all frames, This frame only, From this frame to end, From start to this frame, Extend to here), Turn off/on, Delete, Apply effect permanently, Copy/Paste effects (<a href=""#screen-layer-effects"">Layer effects</a>)"
+screen-timeline.menu-note,프레임 머리글과 셀 메뉴 끝의 피벗·칸 이름 항목은 고른 범위가 아니라 우클릭한 프레임에 적용됩니다. 쓸 수 없는 항목은 흐리게 보입니다.,"The pivot and cell name items at the end of the frame header and cel menus apply to the right-clicked frame, not the whole selection. Items that don't apply are grayed out."
+screen-timeline.29.alt,레이어 메뉴의 불투명도… 창(0~255),Layer opacity dialog from the layer menu (0-255)
+screen-timeline.add,프레임과 레이어 더하기,Adding frames and layers
+screen-timeline.6,"마지막 프레임 뒤 칸: 머리글의 ⑨ 더하기 아이콘 = 빈 프레임 추가, 아래 ⑩ 복사 아이콘 = 마지막 프레임 복사. 단추를 눌렀다 떼면 하나, 오른쪽으로 끌었다 놓으면 덮은 칸 수만큼(왼쪽으로 되돌리면 줄고 최소 하나) 추가합니다. 끄는 중 옅은 파란 미리보기·번호가 보이고 오른쪽 끝에서 자동 스크롤합니다. Esc는 취소, 놓으면 실행취소 한 단계이며 마지막 새 프레임이 현재 프레임입니다. 복사한 링크 칸은 원본 묶음에 들어갑니다.","After the last frame: ⑨ plus in the header adds a blank frame, ⑩ copy below duplicates the last frame. Press and release for one; drag right and release to add as many as the covered slots (move left to reduce, minimum one). A pale blue numbered preview appears while dragging and the view autoscrolls at the right edge. Esc cancels; releasing commits one undo step and selects the last new frame. Copies of linked cels join their source link groups."
+screen-timeline.7,"마지막 레이어 아래 줄: 이름 칸 전체가 ⑪ 더하기 단추 = 맨 아래에 빈 레이어 추가, 프레임 칸 전체가 ⑫ 복사 단추(10프레임마다 아이콘) = 맨 아래 레이어를 복사해 맨 아래에 추가(그룹은 부위까지).",Row below the last layer: the whole name cell is a ⑪ plus button = add an empty layer at the bottom; the whole frame area is one ⑫ copy button (icon every 10 frames) = add a copy of the bottom layer at the bottom (a group comes with its parts).
+guide-shot.add-drag.alt,다음 프레임 칸의 더하기를 오른쪽으로 끌어 파란 추가 프레임 미리보기가 보이는 타임라인,Timeline with the next-frame plus button dragged to the right and blue added-frame preview slots
+guide-shot.add-drag.caption,⑲ 더하기 단추와 새 프레임 미리보기,⑲ Plus button and preview of new frames
+guide-shot.add-drag.body,⑲ 추가 단추를 누른 채 오른쪽으로 끌면 놓기 전에 한꺼번에 추가할 프레임과 번호가 보입니다.,Drag ⑲ the Add frame button to the right to preview how many numbered frames will be appended when you release.
+guide-new.frame-drag,머리글의 빈 프레임 추가 단추를 오른쪽으로 서너 칸 끌면 파란 미리보기 칸과 추가 뒤 프레임 번호가 보이고 놓은 순간 그 수만큼 빈 프레임을 만듭니다. 셀 줄의 마지막 프레임 복사 단추는 같은 방식으로 마지막 프레임을 여러 번 복사합니다.,"Drag the Add blank frame button in the header several slots right to preview the new frames and their numbers in blue; release to append that many blank frames. The Copy last frame button in a cel row works the same way, repeatedly copying the last frame."
+guide-new.pivot-diamond,"프레임 머리글이나 부위 칸 왼쪽 위의 주황 마름모는 그 프레임에 따로 정한 피벗이 있다는 표시입니다. 피벗을 프레임마다 따로 정하는 법은 <a href=""#tools-pivot"">피벗</a>을 보세요.","An orange diamond at the top left of a frame header or part cel means that frame has its own pivot. See <a href=""#tools-pivot"">Pivot</a> for setting pivots per frame."
+screen-timeline.compact,간단히 보기와 스크롤,Compact view and scrolling
+guide-shot.compact.alt,프레임 썸네일을 끈 타임라인: 낮고 좁은 칸의 흰 점과 빈 칸,Timeline with frame previews disabled: narrow low rows containing white dots and blank cels
+guide-shot.compact.caption,⑳ 프레임 미리보기 단추 · ㉑ 낮고 좁은 프레임 칸,⑳ Frame-preview toggle · ㉑ Compact frame cels
+guide-shot.compact.body,⑳ 프레임 미리보기를 끄면 ㉑ 칸이 좁고 낮아지고 그림 있는 칸에는 흰 점만 보입니다.,"Switch off ⑳ frame previews to make ㉑ the cels narrower and lower, with only a white dot where art exists."
+guide-new.timeline-compact,"타임라인 제목 줄 오른쪽 끝 그림 단추로 프레임 미리보기를 켜고 끕니다(기본 켬, 다음 실행에도 기억). 끄면 프레임 칸과 레이어 행이 작아지고 그림이 있는 칸에만 흰 점, 빈 칸에는 아무것도 보이지 않습니다(그룹은 부위 중 하나라도 그림이 있으면 점). 머리글에는 번호만 보이고 링크된 칸은 사슬 없이 아래 색 띠만 남습니다. 고르기·끌기·다음 프레임 칸은 같습니다. 레이어 이름과 프레임 사이 경계선을 끌면 이름 폭이 140~600px 범위(또는 타임라인 절반까지)로 바뀌고, 더블클릭하면 기본 270px로 돌아갑니다. 폭도 기억합니다.","Toggle frame previews with the image button at the right end of the timeline header (on initially; persists across launches). Off makes frame columns and layer rows compact: a white dot marks a cel with art, empty cels stay blank (group dots mean any part has art). Headers show numbers only; linked cels keep the colored strip but not the chain icon. Selection, dragging and the next-frame column still work. Drag the boundary between layer names and frame cels to resize the names between 140 and 600 px (or half the timeline); double-click resets it to 270 px. The width is remembered."
+screen-timeline.scroll,"휠은 레이어 행을 위아래로, <kbd>Shift</kbd>+휠이나 <kbd>Ctrl</kbd>+휠은 프레임 열을 옆으로 스크롤합니다. 끌어서 고르거나 옮길 때 가장자리에 닿으면 저절로 스크롤됩니다. 타임라인 칸 크기는 확대하지 않습니다.",The wheel scrolls layer rows up and down; <kbd>Shift</kbd>+wheel or <kbd>Ctrl</kbd>+wheel scrolls frame columns sideways. Dragging a selection or a move to an edge scrolls automatically. Timeline cells can't be zoomed.
+screen-timeline-select.1,타임라인에서 고르기,Selecting in the timeline
+screen-timeline-select.12.alt,"셀 위를 끌어 사각형으로 여러 칸을 고르고, Shift+클릭으로 넓히고, 빈 곳을 눌러 선택을 푸는 모습","Dragging over cels to select a rectangle, extending it with Shift+click, and clicking an empty area to clear the selection"
+screen-timeline-select.2,"타임라인에서는 한 번에 한 종류(프레임, 레이어, 셀, 효과)만 고릅니다. 누른 것이 현재 프레임·레이어가 되고, 고른 종류에 따라 <kbd>Delete</kbd>·복사·붙여넣기가 할 일이 정해집니다.","In the timeline you select one kind of thing at a time (frames, layers, cels or effects). What you click becomes the current frame and layer, and the selected kind decides what <kbd>Delete</kbd>, copy and paste do."
+screen-timeline-select.8.alt,프레임 2~4를 고른 타임라인과 상태 표시줄,"Timeline with frames 2 to 4 selected, and the status bar"
+screen-timeline-select.9,① 고른 프레임 2~4,① Selected frames 2–4
+screen-timeline-select.10.alt,몸·그림자 레이어 × 프레임 2~3 셀 묶음을 고른 모습과 상태 표시줄 안내,A block of cels selected (Body and Shadow × frames 2–3) with the status bar hint
+screen-timeline-select.11,② 고른 셀 묶음 · ③ 상태 표시줄 안내,② Selected block of cels · ③ Status bar hint
+screen-timeline-select.how,고르는 방법,How to select
+screen-timeline-select.3,"① <strong>프레임 머리글</strong>을 누르면 그 프레임, <strong>레이어 이름</strong>을 누르면 그 레이어, ② <strong>셀</strong>을 누르면 그 칸이 파란 테두리로 골라집니다. 펼친 효과 줄에서 효과를 누르면 그 효과가 골라집니다.","Click a ① <strong>frame header</strong> to select that frame, a <strong>layer name</strong> for that layer, or a ② <strong>cel</strong> for that cell; the selection gets a blue border. Click an effect in an expanded effect row to select that effect."
+screen-timeline-select.th-do,조작,Action
+screen-timeline-select.th-result,결과,Result
+screen-timeline-select.s-drag,누른 채 끌기,Drag
+screen-timeline-select.s-drag.d,사각형에 닿는 것을 모두 고릅니다.,Selects everything the rectangle touches.
+screen-timeline-select.s-shift,<kbd>Shift</kbd>+클릭,<kbd>Shift</kbd>+click
+screen-timeline-select.s-shift.d,지금 고른 곳부터 누른 곳까지 범위로 넓힙니다.,Extends the selection to a range up to the clicked item.
+screen-timeline-select.s-ctrl,<kbd>Ctrl</kbd>(macOS <kbd>⌘</kbd>)+클릭,<kbd>Ctrl</kbd> (macOS <kbd>⌘</kbd>)+click
+screen-timeline-select.s-ctrl.d,하나씩 더하거나 뺍니다. 떨어진 칸도 고를 수 있습니다.,"Adds or removes one item at a time, even when not adjacent."
+screen-timeline-select.s-empty,빈 곳 누르기,Click an empty area
+screen-timeline-select.s-empty.d,선택을 풉니다.,Clears the selection.
+screen-timeline-select.s-icons,눈·자물쇠·접기 삼각형·fx 누르기,"Click the eye, lock, collapse triangle or fx"
+screen-timeline-select.s-icons.d,고르지 않고 그 아이콘의 동작만 합니다.,Only does the icon's own job; doesn't select.
+screen-timeline-select.7,③ 상태 표시줄에 고른 것과 <kbd>Delete</kbd>가 할 일이 나옵니다.,The ③ status bar shows what's selected and what <kbd>Delete</kbd> will do.
+screen-timeline-select.keys,키보드,Keyboard
+screen-timeline-select.5,"타임라인을 누른 뒤 <kbd>←</kbd><kbd>→</kbd>는 옆 프레임, <kbd>↑</kbd><kbd>↓</kbd>는 옆 레이어로 갑니다(처음·끝에서 멈춤). 프레임을 고른 채 좌우, 레이어를 고른 채 위아래로 움직이면 그 종류를 유지하고, 방향을 바꾸면 셀 선택이 됩니다. <kbd>Shift</kbd>+방향키는 선택을 넓힙니다.","After clicking the timeline, <kbd>←</kbd><kbd>→</kbd> go to the adjacent frame and <kbd>↑</kbd><kbd>↓</kbd> to the adjacent layer (stopping at the first and last). Moving left/right with frames selected, or up/down with layers selected, keeps that kind; moving the other way switches to cel selection. <kbd>Shift</kbd>+arrow extends the selection."
+screen-timeline-select.keys-2,"{{key:프레임·레이어/레이어 이름 바꾸기}} = 현재 레이어 이름 바꾸기, {{key:편집/지우기}} = 고른 것 지우기(macOS는 <kbd>Backspace</kbd>도), <kbd>Esc</kbd> = 끌어서 옮기기 취소. 프레임 이동 단축키는 <a href=""#shortcuts-timeline"">타임라인 단축키</a>를 보세요.","{{key:프레임·레이어/레이어 이름 바꾸기}} = rename the current layer, {{key:편집/지우기}} = delete the selection (also <kbd>Backspace</kbd> on macOS), <kbd>Esc</kbd> = cancel a drag. For frame navigation shortcuts see <a href=""#shortcuts-timeline"">Timeline shortcuts</a>."
+screen-timeline-select.multi,여러 칸을 고른 표시,How multiple selections look
+guide-shot.multiselect.alt,타임라인에서 여러 떨어진 셀을 골라 지금 칸과 나머지 칸이 다른 파란색으로 표시된 모습,"Disjoint selected timeline cels, with the clicked anchor and other cels shown in different blues"
+guide-shot.multiselect.caption,④ 지금 누른 칸 · ⑤ 다른 선택 칸 · ⑥ 떨어진 선택 칸,④ Clicked anchor cel · ⑤ Other selected cels · ⑥ Disjoint selected cels
+guide-shot.multiselect.body,"④ 지금 누른 칸은 진한 테두리, ⑤ 그 옆 선택 칸과 ⑥ 떨어져 고른 칸은 옅은 파란 바탕입니다.",④ The clicked anchor has a dark border; ⑤ the neighboring and ⑥ separately selected cels have pale blue backgrounds.
+guide-new.multiselect,"여러 셀을 고르면 지금 누른 칸은 진한 파란 테두리, 나머지는 옅은 파란 바탕과 묶음 둘레의 흐린 테두리입니다. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+클릭으로 떨어진 칸을 하나씩 더하거나 빼도 서로 맞닿으면 하나의 테두리로 합쳐집니다. 떨어진 칸을 Ctrl/⌘+클릭으로 골랐을 때는 셀 복사·잘라내기가 되지 않고 상태 표시줄에 까닭이 나옵니다.","With multiple cels selected, the clicked anchor has a dark blue border; others have a pale blue fill and a faint border around each contiguous block. Ctrl/⌘+click adds or removes individual cels even when separated, and touching cells share one block border. Copy and cut cels do not work on disjoint selections assembled with Ctrl/⌘+click; the status bar explains why."
+guide-new.cel-links-title,셀 링크,Linked cels
+screen-cel-links.overview,"셀 링크는 같은 레이어의 여러 칸이 그림 하나를 함께 쓰게 합니다. 한 칸에서 고치면 묶인 칸이 모두 바뀌므로, 같은 그림이 되풀이되는 프레임을 한 번에 고칠 때 씁니다.","Cel links make several cels of a layer share one image. Editing one cel changes every linked cel, so use links to edit a drawing that repeats across frames in one go."
+guide-shot.links.alt,연결된 셀들이 같은 색의 사슬 아이콘과 프레임 아래 이어지는 띠로 표시된 타임라인,Timeline with linked cels marked by matching chain icons and a continuous strip below their frames
+guide-shot.links.caption,① 연결된 셀과 같은 색 띠,① Linked cels and matching colored strip
+guide-shot.links.body,① 같은 묶음의 셀마다 사슬이 보이고 바로 이웃한 칸 아래에는 같은 색 띠가 이어집니다.,Each cel in ① the link group has a chain; the same-color strip continues under adjacent linked cels.
+screen-cel-links.make,링크 만들기,Linking cels
+guide-shot.links-menu.alt,링크된 셀의 사슬 표시와 셀 우클릭 메뉴의 링크·링크 풀기 항목,Linked cel chain markers and right-click menu entries for linking and unlinking
+guide-shot.links-menu.caption,② 링크된 셀 · ③ 셀 링크/셀 링크 풀기 메뉴,② Linked cels · ③ Link/Unlink cels menu
+guide-shot.links-menu.body,② 사슬이 달린 칸을 우클릭해 ③ 셀 링크 또는 셀 링크 풀기를 고릅니다.,Right-click ② chain-marked cels to use ③ Link cels or Unlink cels.
+guide-new.cel-links,"셀 우클릭 '셀 링크'는 고른 여러 칸(떨어진 칸도 가능)이 레이어마다 그림 하나를 함께 쓰게 합니다. 지금 누른 진한 테두리 칸에 그림이 있으면 그 그림을 기준으로 하고, 이미 링크됐으면 나머지도 그 묶음에 넣습니다. 누른 칸이 비었으면 고른 칸 중 기존 링크 묶음, 그마저 없으면 그림 있는 첫 칸을 기준으로 합니다. 어느 칸에서 그리거나 이동·변형·필터·캔버스/레이어 크기로 바꿔도 묶음 모두 바뀌고 실행취소는 한 단계입니다. 칸 오른쪽 아래 사슬과 나란한 링크 칸 아래 이어진 색 띠가 묶음을 알립니다. 행마다 아직 쓰지 않은 첫 색(파랑·주황·초록·분홍·노랑·보라·청록)을 차례로 쓰며, 기존 묶음에 넣으면 그 색을 따릅니다. 색과 링크는 .chickxel에 저장되고 예전 판에서는 보통 칸으로 열립니다. AI는 link_cels·unlink_cels·set_link_color로 묶기·풀기·색 바꾸기를 하며 get_document에서 레이어별 프레임·색을 읽습니다.","Right-click selected cels and choose Link cels to share one image per layer, even across disjoint frames and rows. The dark-bordered clicked cel is the source if it has art; if already linked the others join its group. If empty, an already-linked selected group is preferred, then the first selected cel with art. Painting, moving, transforming, filtering or resizing the canvas/layer in one cel updates all linked cels in one undo step. A chain at the cel's lower right and a continuous colored strip under adjacent linked frames show the group. Groups take the first unused color in that row in order (blue, orange, green, pink, yellow, purple, cyan); joining an existing group uses its color. Links and colors are saved in .chickxel; older app versions open them as ordinary cels. AI tools link_cels, unlink_cels and set_link_color manage links and colors, while get_document reports each layer's frames and colors."
+screen-cel-links.break,링크 풀기와 링크가 끊기는 경우,Unlinking and what breaks a link
+guide-new.cel-links-break,"'셀 링크 풀기'는 선택한 칸마다 그림 사본을 만듭니다. 링크된 칸에서 Delete로 그림을 지우면 링크·색은 그대로이고 묶음 전체가 빕니다. 타임라인 붙여넣기와 '이전 프레임 그림 복사'는 그 칸만 묶음에서 뺍니다. 같은 행의 묶음을 끌어 옮기면 링크는 남고 Alt로 복사하면 사본입니다. 범위 밖 끝 모습을 링크 때문에 보여 주던 칸을 풀면 켜진 효과로 지금 보이는 끝 모습을 그림에 넣어 그대로 보이게 합니다(셀 크기로 잘림, 보이기·불투명도 제외). 효과 범위 안의 칸 또는 끝 모습 효과를 끈 칸은 그림 그대로 사본이고, 이동 거리를 알리는 효과는 옮긴 위치를 계속 이어 가므로 이동을 굽지 않고 나머지 끝 모습만 사라집니다. 마지막 프레임 칸을 떼어 남은 링크 칸이 끝 모습을 잃게 되면 그 칸도 같은 규칙으로 보존하고, 모습이 다르면 각각 링크를 풉니다. 모두 한 번에 실행취소됩니다. 상태 표시줄과 AI unlink_cels 결과에는 풀린 칸 수와 그림에 넣은 끝 모습 수가 표시됩니다.","Unlink cels gives each selected cel its own image copy. Delete on a linked cel clears the shared image but leaves the link and color; timeline paste and Copy image from previous frame detach only that cel. Dragging a group within the same row retains its link, while Alt-copy makes copies. When unlinking a cel whose linked image was showing an animated effect's held end after its range, the currently visible end is baked into its art (enabled effects only, clipped to cel size, ignoring layer visibility/opacity) so it stays visually unchanged. Cels inside an active effect range or with the held-end effect disabled keep an ordinary art copy; an effect reporting movement continues to place the image at its final position, so that movement is not baked and other end-state effects may disappear. Detaching the range's last cel also preserves the remaining linked cels that would lose that end-state; if their appearances differ they split into separate cels. The operation is one undo step. The status bar and AI unlink_cels report both the number unlinked and the number of held appearances baked."
+screen-cel-links.group,그룹 행 링크,Links on group rows
+guide-shot.group-links.alt,그룹 행과 아래 두 부위 행의 연결 셀에 같은 색 띠와 사슬이 보이는 타임라인,Timeline with matching linked-cel chain icons and colored strips on a group row and its two part rows
+guide-shot.group-links.caption,④ 그룹 행의 링크 · ⑤ 두 부위 행의 같은 링크,④ Group-row links · ⑤ Matching links in two part rows
+guide-shot.group-links.body,④ 그룹 칸에서 링크한 프레임은 ⑤ 두 부위 칸에도 같은 프레임과 색의 링크로 표시됩니다.,Frames linked on ④ the group row show matching linked frames and colors in ⑤ both part rows.
+guide-new.cel-links-group,"그룹 행의 프레임 여러 칸에서 링크하면 잠기지 않은 부위마다 새 묶음을 만들고 색을 맞춥니다(이미 따로 링크돼 있던 부위 묶음에서 이 칸들은 빠짐). 그룹과 그 부위를 함께 골랐으면 그룹 링크가 먼저이며 기준 칸 또는 그림이 보이는 첫 칸을 각 부위의 그림 기준으로 씁니다. 모든 부위가 같은 프레임들에서 링크되면 그룹 행에도 사슬·띠가 보이고, 한 부위만 고치거나 풀면 해당 그룹 칸의 표시가 사라집니다. 그룹 행의 링크 풀기는 그 프레임 모든 부위 링크를 풀고 AI의 세 링크 도구도 그룹 레이어를 받습니다. 새 빈 스킨은 첫 스킨의 링크 프레임·색만 복사하고 그림은 비워 두며, 복제 스킨은 원본 스킨의 그림과 링크를 복사합니다. 부위 전용 스킨·일반 레이어에서 그룹으로 바꾸어 만든 스킨도 링크 구조를 복사하되 이후 묶기/풀기는 스킨마다 따로입니다.","Linking multiple frames on a group row creates a matching-color link group in each unlocked part (those frames leave any earlier independent part links). When both group and part rows are selected, group linking takes priority; each part uses its clicked cel or first visible painted cel as source. The group row shows the chain and strip only when every part links the same frames; changing or unlinking a single part removes that group-row indicator for the affected frames. Unlink on the group row unlinks every part at those frames, and the three AI link tools accept group layers. A new empty skin copies the first skin's linked frames and colors but no art; a cloned skin copies both the source skin's art and its links. Part-only skins and skins made by converting a normal layer also copy link structure; subsequent link edits are independent per skin."
+screen-timeline-edit.1,타임라인 편집,Editing the timeline
+screen-timeline-edit.19.alt,"고른 프레임 머리글을 끌어 다른 자리로 옮기고, 셀 묶음을 끌어 옮기고, Ctrl을 누른 채 놓아 복사하는 모습","Dragging selected frame headers to a new position, dragging a block of cels to move it, and holding Ctrl while dropping to copy it"
+screen-timeline-edit.overview,"타임라인에서 고른 프레임·레이어·셀·효과를 지우고, 순서를 바꾸고, 옮기고, 복사합니다. 모든 편집은 실행취소 한 단계입니다.","Delete, reorder, move and copy the frames, layers, cels and effects selected in the timeline. Every edit is a single undo step."
+screen-timeline-edit.14.alt,셀 묶음(몸·그림자 × 프레임 2~3)을 우클릭한 메뉴,Right-click menu of a block of cels (Body and Shadow × frames 2–3)
+screen-timeline-edit.15,① 고른 셀 묶음 · ② 셀 복사·잘라내기·붙여넣기,"① Selected block of cels · ② Copy, cut, paste cels"
+screen-timeline-edit.16.alt,빈 셀(그림자 3번 프레임)을 우클릭한 메뉴,"Right-click menu of an empty cel (Shadow, frame 3)"
+screen-timeline-edit.17,③ 우클릭한 빈 셀 · ④ 이전 프레임 그림 복사(Copy image from previous frame),③ Right-clicked empty cel · ④ Copy image from previous frame
+screen-timeline-edit.2,하고 싶은 일,To do this
+screen-timeline-edit.3,방법,How
+screen-timeline-edit.4,지우기,Delete
+screen-timeline-edit.5,"고른 뒤 <kbd>Delete</kbd>. 프레임 → 프레임 삭제, 레이어 → 레이어 삭제(그룹은 부위까지), 셀 → 그림만 지움, 효과 → 효과 삭제. 프레임·레이어를 하나도 남지 않게 지우지는 않습니다.","Select, then <kbd>Delete</kbd>. Frames → delete frames, layers → delete layers (groups include their parts), cels → clear the image only, effects → delete the effects. You can't delete every frame or layer."
+screen-timeline-edit.6,순서 바꾸기,Reorder
+screen-timeline-edit.7,"<strong>이미 고른</strong> 프레임 머리글이나 레이어 이름을 끌어 놓습니다. 다른 열·행이 비켜 서며 자리가 열리고, <kbd>Esc</kbd>로 취소합니다. 부위는 같은 그룹 안에서만 옮깁니다.",Drag an <strong>already selected</strong> frame header or layer name. Other columns/rows move aside to make room; <kbd>Esc</kbd> cancels. Parts move only within the same group.
+screen-timeline-edit.8,셀 묶음 옮기기·복사,Move or copy a block of cels
+screen-timeline-edit.9,"① 여러 칸을 고른 뒤 그 안을 다시 눌러 끌면 옮기고, <kbd>Ctrl</kbd>(또는 <kbd>Alt</kbd>)을 누른 채 놓으면 복사합니다. 크기·종류가 다른 행으로는 옮기지 않습니다.","① Select several cells, then click inside and drag to move; hold <kbd>Ctrl</kbd> (or <kbd>Alt</kbd>) when dropping to copy. Cels can't move to rows of a different size or type."
+screen-timeline-edit.10,복사·붙여넣기,Copy and paste
+screen-timeline-edit.11,"{{key:편집/복사}}·{{key:편집/잘라내기}} 뒤 {{key:편집/붙여넣기}}(우클릭 메뉴의 ② 복사·잘라내기·붙여넣기도 같음). 셀은 클릭한 칸을 왼쪽 위로 같은 모양으로 덮어쓰고, 프레임은 고른 프레임 뒤에 새 프레임으로, 레이어는 원래 레이어 위에 새 레이어로 붙습니다. <kbd>Ctrl</kbd>+클릭으로 떨어진 칸을 고른 셀은 복사·잘라내기를 할 수 없습니다.","{{key:편집/복사}} or {{key:편집/잘라내기}}, then {{key:편집/붙여넣기}} (or ② copy, cut, paste in the right-click menu). Cels overwrite the same shape with the clicked cell as top-left, frames are pasted as new frames after the selected frame, and layers as new layers above the original. Cels picked one by one with <kbd>Ctrl</kbd>+click across gaps can't be copied or cut."
+screen-timeline-edit.12,앞 프레임 그림 가져오기,Bring in the previous frame's image
+screen-timeline-edit.13,"③ 빈 셀 우클릭 ④ ""이전 프레임 그림 복사""","Right-click an ③ empty cel → ④ ""Copy image from previous frame"""
+screen-timeline-edit.dur,길이·이름 바꾸기,Change duration or name
+screen-timeline-edit.dur.d,"프레임 번호 더블클릭 = <a href=""#screen-timeline"">프레임 길이</a>, 레이어 이름 더블클릭 또는 {{key:프레임·레이어/레이어 이름 바꾸기}} = 그 자리에서 이름 고치기(<kbd>Enter</kbd> 확정, <kbd>Esc</kbd> 취소)","Double-click a frame number = <a href=""#screen-timeline"">frame duration</a>; double-click a layer name or {{key:프레임·레이어/레이어 이름 바꾸기}} = rename in place (<kbd>Enter</kbd> confirms, <kbd>Esc</kbd> cancels)"
+screen-timeline-edit.18,"복사로 만든 새 레이어 이름은 끝 숫자를 1 올립니다(<code>item_1</code> → <code>item_2</code>, <code>tile_009</code> → <code>tile_010</code>, 숫자가 없으면 <code>_1</code>). 레이어 메뉴의 <strong>복제</strong>도 같은 규칙입니다. 편집은 모두 실행취소 한 단계입니다.","New layers created by copying get their trailing number increased by 1 (<code>item_1</code> → <code>item_2</code>, <code>tile_009</code> → <code>tile_010</code>, or <code>_1</code> if there's no number). <strong>Duplicate</strong> in the layer menu follows the same rule. Every edit is a single undo step."
+screen-timeline-edit.image,셀을 그림으로 복사하기,Copying cels as an image
+guide-shot.copy-image.alt,셀 우클릭 메뉴에서 효과 포함 그림으로 셀 복사와 프레임 화면 복사가 보이는 모습,Cel right-click menu showing Copy cels as image with effects and Copy frame as image
+guide-shot.copy-image.caption,⑤ 우클릭한 칸 · ⑥ 그림 복사 메뉴,⑤ Right-clicked cel · ⑥ Image-copy commands
+guide-shot.copy-image.body,⑤ 셀을 우클릭하면 ⑥ 선택한 셀을 효과까지 그림으로 복사하거나 전체 프레임 화면을 그림으로 복사하는 항목이 나옵니다.,"Right-click ⑤ a cel to see ⑥ commands to copy the selected cels with effects, or the entire frame, as an image."
+guide-new.cel-copy,"셀을 우클릭한 '셀 복사 (효과 포함 그림)'은 해당 프레임에서 고른 칸(그룹 행이면 부위들)만 보이는 그대로 효과·불투명도·착장까지 합쳐 캔버스 크기 이미지로 클립보드에 넣습니다(숨긴 레이어 제외). '프레임 N 화면 복사'는 전체 프레임 합성 그림으로 미리보기의 '이미지 복사'와 같습니다. 다른 앱이나 캔버스에 그림으로 붙이고, 타임라인 셀 복사 내용은 비웁니다. 보이는 그림이 없으면 알립니다.","In a cel's right-click menu, Copy cels as image (with effects) copies only the selected cels at the clicked frame (all parts for a group row), composited as visible with effects, opacity and outfit, excluding hidden layers, into a canvas-sized clipboard image. Copy frame N as image copies the entire composited frame, like Copy image in Preview. Paste into another app or the canvas; this clears the timeline-cel clipboard. A notification appears if no visible image exists."
+screen-timeline-edit.groups,그룹에 넣고 빼기와 스킨 추가,Groups and Add skin
+screen-tags.1,태그,Tags
+screen-tags.12.alt,"프레임 1~4를 고르고 우클릭 태그 만들기로 태그를 만든 뒤, 태그 상자 끝을 끌어 범위를 바꾸고 재생하는 모습","Selecting frames 1–4 and creating a tag from the right-click menu, then dragging the end of the tag box to change its range and playing it"
+screen-tags.overview,"태그는 프레임 범위에 이름을 붙인 애니메이션 묶음(예: idle, run)입니다. 태그는 미리보기 재생 범위, GIF 범위, 내보내기의 칸 이름·파일 나누기에 쓰입니다.","A tag is a named frame range that groups an animation (for example idle or run). Tags set the preview playback range, the GIF range, and export cell names and file splits."
+screen-tags.6.alt,프레임 5~6을 고르고 머리글을 우클릭한 메뉴의 태그 만들기,"Frames 5 and 6 selected, Create tag in the frame header menu"
+screen-tags.7,① 고른 프레임 5~6 · ② 태그 만들기…(Create tag…),① Selected frames 5–6 · ② Create tag…
+screen-tags.8.alt,"새 태그 창: 이름 hit, 프레임 5~6, 방향 정방향, 반복, 색","New tag dialog: name hit, frames 5–6, direction Forward, Loop, color"
+screen-tags.9,③ 이름 · ④ 프레임 범위 · ⑤ 재생 방향·반복 · ⑥ 색,③ Name · ④ Frame range · ⑤ Direction and loop · ⑥ Color
+screen-tags.make,태그 만들기,Creating a tag
+screen-tags.2,"① 프레임 범위를 고르고 우클릭 ② <strong>태그 만들기</strong>로 묶습니다. 뜨는 창에서 ③ 이름, ④ 프레임 범위, ⑤ 재생 방향·반복, ⑥ 색을 정합니다.","① Select a range of frames and choose ② <strong>Create tag</strong> from the right-click menu. In the dialog, set the ③ name, ④ frame range, ⑤ playback direction and loop, and ⑥ color."
+screen-tags.th-field,항목,Field
+screen-tags.th-meaning,뜻(처음 값),Meaning (initial value)
+screen-tags.f-name,③ 이름,③ Name
+screen-tags.f-name.d,태그 이름. 비우거나 다른 태그와 같은 이름은 쓸 수 없습니다. idle_down·walk_left·run·jump·fall 같은 이름을 제안합니다(처음 = 아직 쓰지 않은 첫 제안).,"The tag name; it can't be empty or match another tag. Names such as idle_down, walk_left, run, jump and fall are suggested (initially the first unused one)."
+screen-tags.f-range,④ 프레임,④ Frames
+screen-tags.f-range.d,시작~끝 프레임(끝 포함). 끝이 시작보다 앞일 수 없습니다(처음 = 고른 범위).,Start and end frame (inclusive); the end can't come before the start (initially the selected range).
+screen-tags.f-dir,⑤ 방향,⑤ Direction
+screen-tags.f-dir.d,"<strong>정방향</strong>, <strong>역방향</strong>, <strong>왕복</strong>(끝에서 되돌아오며 양 끝 프레임은 한 번씩)(처음 = 정방향).","<strong>Forward</strong>, <strong>Reverse</strong> or <strong>Ping-pong</strong> (bounces back from the end, playing each end frame once) (initially Forward)."
+screen-tags.f-loop,⑤ 반복,⑤ Loop
+screen-tags.f-loop.d,끄면 미리보기에서 한 번 재생하고 멈춥니다(처음 = 켬).,"When off, the preview plays the tag once and stops (initially on)."
+screen-tags.f-color,⑥ 색,⑥ Color
+screen-tags.f-color.d,태그 띠 색. 색 칸을 눌러 고르거나 HEX를 적습니다(처음 = 새 태그마다 파랑·주황·초록·빨강·보라·청록·노랑·회색 차례).,"The tag strip color. Click the swatch or type a HEX value (initially blue, orange, green, red, purple, teal, yellow and gray in turn)."
+screen-tags.edit,태그 고치기와 재생,Editing and playing tags
+screen-tags.10.alt,idle 태그를 우클릭한 메뉴,Right-click menu of the idle tag
+screen-tags.11,⑦ 태그 상자 · ⑧ 태그 우클릭 메뉴(태그 속성…·이 태그 재생·삭제),"⑦ Tag box · ⑧ Tag right-click menu (Tag properties…, Play this tag, Delete)"
+screen-tags.3,"⑦ 태그 상자 안쪽 양 끝에 마우스를 대면 <code>↔</code> 모양이 되고, 끌어서 범위를 바꿉니다.","Hover near either inner end of a ⑦ tag box until the cursor becomes <code>↔</code>, then drag to change the range."
+screen-tags.4,"태그를 우클릭하면 나오는 ⑧ 메뉴에서 <strong>태그 속성…</strong>(만들 때와 같은 창, 태그를 두 번 눌러도 열림), <strong>이 태그 재생</strong>, <strong>삭제</strong>를 고릅니다.","Right-click a tag for the ⑧ menu with <strong>Tag properties…</strong> (the same dialog as when creating; double-clicking the tag also opens it), <strong>Play this tag</strong> and <strong>Delete</strong>."
+screen-tags.5,"태그를 누르면 흰 테두리로 골라지고, 미리보기는 그 태그의 방향대로 재생합니다(반복을 끈 태그는 한 번 재생하고 멈춤). 태그 밖의 프레임 영역(머리글·셀·효과 줄·태그 줄 빈 곳)을 누르면 고르기가 풀리고 미리보기는 다시 모든 프레임을 반복 재생합니다.","Clicking a tag selects it (white outline), and the preview plays that tag in its direction (a tag with Loop off plays once and stops). Clicking the frame area outside tags (headers, cels, effect rows or empty space on the tag strip) deselects it, and the preview loops all frames again."
+screen-tags.uses,"태그 이름은 <a href=""#screen-export"">내보내기</a>의 <strong>태그 기준</strong> 칸 이름과 태그마다 따로 파일, <a href=""#screen-gif"">GIF</a>의 범위에 쓰입니다. 태그는 <code>.chickxel</code>에 저장됩니다.","Tag names are used for <strong>By tag</strong> cell names and per-tag files in <a href=""#screen-export"">Export</a>, and for the range in <a href=""#screen-gif"">GIF export</a>. Tags are saved in the <code>.chickxel</code> file."
+term.frame,프레임,frame|frames
+term.frame.to,screen-timeline,
+term.frame.def,애니메이션의 한 장면입니다. 타임라인의 한 열이며 길이(ms)를 가집니다.,One picture of the animation: a timeline column with its own duration (ms).
+term.frame-duration,프레임 길이,frame duration
+term.frame-duration.to,screen-timeline,
+term.frame-duration.def,프레임 하나가 보이는 시간(ms)입니다.,How long one frame is shown (ms).
+term.frame-header,프레임 머리글,frame header|frame headers
+term.frame-header.to,screen-timeline,
+term.frame-header.def,타임라인 맨 위 줄의 프레임 번호 칸입니다. 누르면 그 프레임을 고릅니다.,The frame number cell in the timeline's top row; click it to select the frame.
+term.canvas,캔버스,canvas
+term.canvas.to,screen-canvas,
+term.canvas.def,현재 프레임을 보며 그리는 가운데 영역입니다.,The central area where you view the current frame and draw.
+term.top-bar,위 막대,top bar
+term.top-bar.to,screen-top-bar,
+term.top-bar.def,메뉴 아래에서 도구 이름·보기 옵션·확대율을 보이는 막대입니다.,"The bar below the menus with the tool name, view options and zoom."
+term.toolbar,도구 막대,toolbar
+term.toolbar.to,screen-toolbar,
+term.toolbar.def,창 왼쪽 끝의 도구 고르는 세로 막대입니다.,The vertical bar on the far left for picking tools.
+term.pixel-grid,픽셀 격자,pixel grid
+term.pixel-grid.to,screen-top-bar,
+term.pixel-grid.def,확대했을 때 픽셀마다 경계선을 보이는 보기 옵션입니다.,A view option that outlines every pixel when zoomed in.
+term.tile-grid,타일 격자,tile grid
+term.tile-grid.to,screen-top-bar,
+term.tile-grid.def,정한 타일 크기마다 선을 긋는 보기 옵션입니다.,A view option that draws a line every tile of the chosen size.
+term.tiled-mode,타일 모드,tiled mode
+term.tiled-mode.to,screen-top-bar,
+term.tiled-mode.def,그림을 둘레에 되풀이해 보여 이어지는 무늬를 확인하는 보기 옵션입니다.,A view option that repeats the image around itself to check seamless patterns.
+term.zoom,확대율,zoom level
+term.zoom.to,screen-top-bar,
+term.zoom.def,"캔버스를 몇 배로 보는지입니다(1~64배, 정수 배).","How much the canvas is magnified (1–64×, whole steps)."
+term.fit,화면에 맞추기,fit to window
+term.fit.to,screen-top-bar,
+term.fit.def,그림 전체가 캔버스 영역에 들어가는 가장 큰 배율로 바꾸는 명령입니다.,Switches to the largest zoom that fits the whole image in the canvas area.
+term.effects-view,캔버스에 효과 보기,show effects on canvas
+term.effects-view.to,screen-top-bar,
+term.effects-view.def,편집 캔버스에 레이어 효과를 입혀 볼지 정하는 보기 옵션입니다.,A view option that decides whether layer effects are shown on the editing canvas.
+term.peek-previous,이전 프레임 보기,peek previous frame
+term.peek-previous.to,screen-canvas,
+term.peek-previous.def,키를 누르고 있는 동안 캔버스에 이전 프레임을 보여 주는 기능입니다.,Shows the previous frame on the canvas while the key is held.
+term.active-palette,활성 팔레트,active palette
+term.active-palette.to,screen-palette,
+term.active-palette.def,마지막으로 누르거나 고친 팔레트입니다. 편집 메뉴와 AI 팔레트 도구가 씁니다.,The palette you last clicked or edited; Edit-menu and AI palette tools use it.
+term.palette-convert,팔레트 색으로 변환,convert to palette colors
+term.palette-convert.to,screen-palette,
+term.palette-convert.def,그림의 색을 팔레트에서 가장 가까운 색으로 바꾸는 명령입니다.,Replaces the image's colors with the nearest palette colors.
+term.lospec,팔레트 웹|Lospec,palette web|Lospec
+term.lospec.to,screen-palette,
+term.lospec.def,lospec.com 팔레트 목록을 앱 안에서 둘러보고 가져오는 창입니다.,A window for browsing and importing palettes from lospec.com.
+term.color-picker,색 고르기,color picker
+term.color-picker.to,screen-color-picker,
+term.color-picker.def,지금 고치는 색을 사각형·벌집·색상환·슬라이더로 정하는 패널입니다.,"The panel that sets the color being edited with a square, honeycomb, wheel or sliders."
+term.recent-colors,최근 색,recent colors
+term.recent-colors.to,screen-color-picker,
+term.recent-colors.def,칠하기에 쓴 색을 최근 것부터 16개까지 모은 목록입니다.,"The last 16 colors you painted with, newest first."
+term.layer-colors,레이어 색,layer colors
+term.layer-colors.to,screen-color-picker,
+term.layer-colors.def,지금 레이어의 모든 프레임에 쓰인 색을 많이 쓰인 순으로 모은 목록입니다.,"The colors used in every frame of the current layer, most used first."
+term.document-tab,문서 탭,document tab|document tabs
+term.document-tab.to,screen-tabs,
+term.document-tab.def,열린 문서마다 캔버스 위에 하나씩 생기는 탭입니다.,A tab above the canvas for each open document.
+term.split-view,나눈 화면|화면 나누기,split view
+term.split-view.to,screen-tabs,
+term.split-view.def,캔버스를 좌우 두 칸으로 나눠 두 문서를 나란히 보는 모습입니다.,The canvas divided into left and right panes showing two documents.
+term.preview-tab,미리보기 탭,preview tab
+term.preview-tab.to,screen-tabs,
+term.preview-tab.def,편집 중인 문서를 다른 칸에서 크게 재생하는 초록빛 탭입니다.,"A green-tinted tab that plays the document being edited, enlarged, in the other pane."
+term.ping-pong,왕복,ping-pong
+term.ping-pong.to,screen-tags,
+term.ping-pong.def,끝 프레임에서 되돌아오며 재생하는 태그 방향입니다.,A tag direction that plays to the end and back.
+term.merge-files,파일 합치기,merge files
+term.merge-files.to,screen-file-browser,
+term.merge-files.def,파일 브라우저에서 고른 여러 그림을 하나의 .chickxel로 묶는 기능입니다.,Combines several images selected in the file browser into one .chickxel.
+screen-timeline-edit.groups-body,"레이어 이름을 <kbd>Shift</kbd>를 누른 채 끌면 순서 바꾸기 대신 그룹에 넣거나 꺼냅니다. 일반 레이어를 우클릭해 <strong>{{UiStrings.Timeline_AddSkinToLayer}}</strong>를 고르면 그 레이어를 그룹으로 바꾸며 새 스킨을 더합니다. 놓는 자리마다의 결과와 바뀌는 그림·피벗은 <a href=""#parts-nest"">레이어를 그룹에 넣고 빼기</a>에 있습니다.","Hold <kbd>Shift</kbd> while dragging a layer name to move it into or out of a group instead of reordering. Right-click a normal layer and choose <strong>{{UiStrings.Timeline_AddSkinToLayer}}</strong> to turn it into a group with a new skin. What each drop spot does and how the art and pivot change are covered in <a href=""#parts-nest"">Moving layers into and out of groups</a>."

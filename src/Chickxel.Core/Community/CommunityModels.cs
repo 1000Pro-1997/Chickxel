@@ -33,8 +33,11 @@ public sealed record CommunityUser(string Id, string Handle, string Name, string
     }
 }
 
-/// <summary>올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 그림 주소(사이트 기준 경로), 크기, 프레임 수, 형식(png·gif).</summary>
-public sealed record CommunityArt(string Id, string Title, string ImageUrl, int Width, int Height, int Frames, string Type)
+/// <summary>
+/// 올린 그림 하나(<c>Art</c> JSON 중 앱이 쓰는 것): ID, 제목, 그림 주소(사이트 기준 경로), 크기, 프레임 수, 형식(png·gif),
+/// 같이 올린 <c>.chickxel</c> 파일(없거나 예전 서버면 null).
+/// </summary>
+public sealed record CommunityArt(string Id, string Title, string ImageUrl, int Width, int Height, int Frames, string Type, CommunityArtProject? Project = null)
 {
     internal static CommunityArt Read(JsonNode? node)
     {
@@ -42,8 +45,16 @@ public sealed record CommunityArt(string Id, string Title, string ImageUrl, int 
         var image = o["image"] as JsonObject;
         return new CommunityArt(CommunityJson.Required(o, "id"), CommunityJson.String(o["title"]) ?? "",
             CommunityJson.String(image?["url"]) ?? "", CommunityJson.Int(image?["width"]), CommunityJson.Int(image?["height"]),
-            CommunityJson.Int(image?["frames"]), CommunityJson.String(image?["type"]) ?? "");
+            CommunityJson.Int(image?["frames"]), CommunityJson.String(image?["type"]) ?? "", CommunityArtProject.Read(o["project"]));
     }
+}
+
+/// <summary>그림과 같이 올린 편집용 <c>.chickxel</c> 파일(<c>Art.project</c> JSON): 받을 주소(사이트 기준 경로), 바이트 수.</summary>
+public sealed record CommunityArtProject(string Url, int Bytes)
+{
+    /// <summary>없거나(<c>null</c>·예전 서버) 주소가 없으면 null.</summary>
+    internal static CommunityArtProject? Read(JsonNode? node)
+        => node is JsonObject o && CommunityJson.String(o["url"]) is { Length: > 0 } url ? new CommunityArtProject(url, CommunityJson.Int(o["bytes"])) : null;
 }
 
 /// <summary>올린 에셋 패키지(<c>AssetDetail</c> JSON 중 앱이 쓰는 것): 패키지 ID, 버전, 이름, 카탈로그 검토 값.</summary>
@@ -57,8 +68,11 @@ public sealed record CommunityPackage(string Id, string Version, string Name, st
     }
 }
 
-/// <summary>갤러리에 올릴 그림: 파일 바이트(PNG나 GIF), 형식, 제목, 설명, 태그.</summary>
-public sealed record ArtUpload(byte[] Data, CommunityArtType Type, string Title, string Description, IReadOnlyList<string> Tags);
+/// <summary>
+/// 갤러리에 올릴 그림: 파일 바이트(PNG나 GIF), 형식, 제목, 설명, 태그, 같이 올릴 편집용 <c>.chickxel</c> 바이트
+/// (<see cref="Chickxel.Core.IO.ProjectIO.SaveForSharing"/>, 없으면 null).
+/// </summary>
+public sealed record ArtUpload(byte[] Data, CommunityArtType Type, string Title, string Description, IReadOnlyList<string> Tags, byte[]? Project = null);
 
 public enum CommunityArtType
 {
@@ -73,6 +87,8 @@ public static partial class CommunityRules
     public const int MaxTitleLength = 100, MaxDescriptionLength = 2000, MaxTags = 8;
     public const int MaxArtBytes = 4 << 20, MaxArtSide = 2048, MaxArtFrames = 1000;
     public const int MaxPackageBytes = 8 << 20;
+    /// <summary>그림과 같이 올리는 <c>.chickxel</c> 파일 한도(서버와 같음).</summary>
+    public const int MaxProjectBytes = 8 * 1024 * 1024;
 
     /// <summary>로그인 제공자 값(<c>/login?provider=</c>, <c>/api/auth/{provider}/start</c>).</summary>
     public static readonly IReadOnlyList<string> Providers = ["google", "github", "discord"];

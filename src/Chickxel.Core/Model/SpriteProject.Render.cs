@@ -170,8 +170,10 @@ public sealed partial class SpriteProject
 
     /// <summary>효과 없이 셀 하나를 제자리(부위면 부위 위치)에 <paramref name="opacity"/>로 그리는 단계.</summary>
     private CelStep RawStep(Layer layer, int frameIndex, PixelImage cel, byte opacity)
-        => new(layer, cel, [], frameIndex, _frames.Count, EffectPivot(layer, frameIndex), null, null, FrameTagFor([], frameIndex), opacity,
-            layer.IsPart ? layer.PartOffset.X : 0, layer.IsPart ? layer.PartOffset.Y : 0);
+    {
+        var at = layer.IsPart ? GetPartOffset(layer, frameIndex) : Point.Empty;
+        return new(layer, cel, [], frameIndex, _frames.Count, EffectPivot(layer, frameIndex), null, null, FrameTagFor([], frameIndex), opacity, at.X, at.Y);
+    }
 
     /// <summary>
     /// 셀 <paramref name="cel"/>(레이어 <paramref name="layer"/>, 프레임 <paramref name="frameIndex"/>)을 셀 크기로 잘라 그리는 순서표: <paramref name="withEffects"/>면
@@ -230,9 +232,9 @@ public sealed partial class SpriteProject
     private CelStep CelStepOf(Layer layer, int frameIndex, PixelImage cel, byte opacity, Func<Layer, int, PixelImage?> cels, bool nested = false)
     {
         var effects = WithHeldEnds(layer, nested ? LayerEffects.WithoutRenderedLayerReaders(layer.Effects) : layer.Effects, frameIndex, ActiveKey(layer), cels, nested);
-        int x = layer.IsPart ? layer.PartOffset.X : 0, y = layer.IsPart ? layer.PartOffset.Y : 0;
+        var at = layer.IsPart ? GetPartOffset(layer, frameIndex) : Point.Empty;
         return new CelStep(layer, cel, effects, frameIndex, _frames.Count, EffectPivot(layer, frameIndex), SourcesOf(layer, effects, frameIndex, nested),
-            ScriptLayersOf(layer, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, x, y);
+            ScriptLayersOf(layer, frameIndex, effects, cels, nested), FrameTagFor(effects, frameIndex), opacity, at.X, at.Y);
     }
 
     /// <summary>
@@ -308,7 +310,7 @@ public sealed partial class SpriteProject
         if (!any) return null;
         var (border, size) = layer.IsPart ? (layer.PartBorder, layer.PartSize) : (Sprite.Border, Size);
         SpriteBorder? slice = NineSlice.Applies(border, size.Width, size.Height) ? border : null;
-        var origin = layer.IsPart ? layer.PartOffset : Point.Empty;
+        var origin = layer.IsPart ? GetPartOffset(layer, frameIndex) : Point.Empty;
         var named = new Dictionary<string, LayerNeighbor>(StringComparer.Ordinal);
         var effectNames = new Dictionary<string, string[]>(StringComparer.Ordinal);
         if (chosen is not null)
@@ -362,7 +364,7 @@ public sealed partial class SpriteProject
         }
         var cel = cels(neighbor, frameIndex);
         var rendered = withEffects && cel is not null ? CelStepOf(neighbor, frameIndex, cel, 255, cels, nested: true) : null;
-        return new LayerNeighbor(neighbor, frameIndex, cel, neighbor.IsPart ? neighbor.PartOffset : Point.Empty, null, rendered);
+        return new LayerNeighbor(neighbor, frameIndex, cel, neighbor.IsPart ? GetPartOffset(neighbor, frameIndex) : Point.Empty, null, rendered);
     }
 
     /// <summary>레이어 효과 중 프레임 <paramref name="frameIndex"/>에 켜진(켜져 있고 범위 안, 아는 효과) 것의 화면 이름(목록 순서).</summary>

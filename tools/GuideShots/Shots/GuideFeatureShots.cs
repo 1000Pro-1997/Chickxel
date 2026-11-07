@@ -73,7 +73,7 @@ internal static class GuideFeatureShots
         k.Settle(400);
         var section = ShotKit.Get<Control>(Options(m), "_effectSection");
         if (!section.IsVisible) throw new InvalidOperationException("selected effect did not open the effect dock");
-        k.Save(m, crop: R(m, Timeline(m)).Union(R(m, Options(m))), marks: [effect, R(m, section)]);
+        k.Save(m, crop: R(m, Timeline(m)).Union(R(m, Options(m))), marks: [effect, R(m, section)], firstNumber: 3);
     }
 
     [Shot("screen-timeline-links")]
@@ -103,7 +103,7 @@ internal static class GuideFeatureShots
         k.Click(m, Cel(m, body, 2).Center, mods: RawInputModifiers.Control);
         k.Click(m, Cel(m, shadow, 4).Center, mods: RawInputModifiers.Control);
         k.Settle(250);
-        k.Save(m, crop: R(m, Timeline(m)), marks: [Cel(m, body, 0), Cel(m, body, 2), Cel(m, shadow, 4)]);
+        k.Save(m, crop: R(m, Timeline(m)), marks: [Cel(m, body, 0), Cel(m, body, 2), Cel(m, shadow, 4)], firstNumber: 4);
     }
 
     [Shot("screen-timeline-compact")]
@@ -118,7 +118,7 @@ internal static class GuideFeatureShots
         var icon = ShotKit.Get<Control>(t, "_thumbIcon");
         var body = Row(m, Layer(m, "Body"));
         var dots = new Rect(body.X + 270, body.Y, 5 * 20, 22);
-        k.Save(m, crop: R(m, t), marks: [R(m, icon).Inflate(6), dots]);
+        k.Save(m, crop: R(m, t), marks: [R(m, icon).Inflate(6), dots], firstNumber: 20);
     }
 
     [Shot("screen-timeline-copy-image")]
@@ -129,7 +129,7 @@ internal static class GuideFeatureShots
         k.Click(m, cell.Center);
         k.Click(m, new Point(cell.Right - 5, cell.Bottom - 5), MouseButton.Right, settleMs: 450);
         var menu = ScreenTimelineShots.PopupArea(m) ?? throw new InvalidOperationException("context menu did not open");
-        k.Save(m, crop: cell.Union(menu).Inflate(15).Intersect(new Rect(m.ClientSize)), marks: [cell, menu]);
+        k.Save(m, crop: cell.Union(menu).Inflate(15).Intersect(new Rect(m.ClientSize)), marks: [cell, menu], firstNumber: 5);
     }
 
     [Shot("screen-preview-large")]
@@ -142,7 +142,7 @@ internal static class GuideFeatureShots
         window.Width = 750;
         window.Height = 750;
         k.Settle(400);
-        k.Save(window, marks: [ShotKit.Bounds((Control)window.Content!, window).Deflate(20)]);
+        k.Save(window, marks: [ShotKit.Bounds((Control)window.Content!, window).Deflate(20)], firstNumber: 7);
     }
 
     [Shot("screen-preview-tab")]
@@ -153,7 +153,7 @@ internal static class GuideFeatureShots
         var tabButton = ShotKit.All<Control>(p).First(c => ToolTip.GetTip(c) as string == Chickxel.App.Localization.UiStrings.Preview_OpenTabTip);
         ShotKit.Call(m, "OpenPreviewTab");
         k.Settle(500);
-        k.Save(m, crop: R(m, p).Union(R(m, Canvas(m))).Inflate(3).Intersect(new Rect(m.ClientSize)), marks: [R(m, tabButton).Inflate(4)]);
+        k.Save(m, crop: R(m, p).Union(R(m, Canvas(m))).Inflate(3).Intersect(new Rect(m.ClientSize)), marks: [R(m, tabButton).Inflate(4)], firstNumber: 10);
     }
 
     [Shot("screen-canvas-effects-toggle")]
@@ -164,7 +164,7 @@ internal static class GuideFeatureShots
         k.Command("캔버스에 효과 보기");
         k.Settle(500);
         k.Save(m, crop: R(m, Canvas(m)).Union(R(m, Preview(m))).Union(R(m, button)).Inflate(3).Intersect(new Rect(m.ClientSize)),
-            marks: [R(m, button).Inflate(5), R(m, Canvas(m)).Deflate(45), R(m, Preview(m)).Deflate(18)]);
+            marks: [R(m, button).Inflate(5), R(m, Canvas(m)).Deflate(45), R(m, Preview(m)).Deflate(18)], firstNumber: 12);
     }
 
     [Shot("parts-skin-blank-clone")]
@@ -221,7 +221,7 @@ internal static class GuideFeatureShots
         }, settleMs: 700);
         var row = Row(m, body);
         var strip = new Rect(row.X + 270 + 2 * 42, row.Bottom + 2, 4 * 42, 16);
-        k.Save(m, "screen-layer-effects-hold-end", crop: R(m, Timeline(m)), marks: [strip]);
+        k.Save(m, "screen-layer-effects-hold-end", crop: R(m, Timeline(m)), marks: [strip], firstNumber: 6);
     }
 
     [Shot("screen-timeline-add-drag")]
@@ -239,7 +239,7 @@ internal static class GuideFeatureShots
             k.Settle(25);
         }
         k.Settle(300);
-        k.Save(m, crop: R(m, Timeline(m)), marks: [ghost.Union(new Rect(end.X - 21, end.Y - 15, 42, 30))]);
+        k.Save(m, crop: R(m, Timeline(m)), marks: [ghost.Union(new Rect(end.X - 21, end.Y - 15, 42, 30))], firstNumber: 19);
         m.MouseUp(end, MouseButton.Left);
     }
 
@@ -271,7 +271,7 @@ internal static class GuideFeatureShots
         var children = p.ChildrenOf(group).Select(l => Row(m, p.IndexOf(l))).ToList();
         var groupCells = new Rect(r.X + 270, r.Y, 3 * 42, r.Height);
         var partCells = new Rect(children.Min(c => c.X) + 270, children.Min(c => c.Y), 3 * 42, children.Max(c => c.Bottom) - children.Min(c => c.Y));
-        k.Save(m, crop: R(m, Timeline(m)), marks: [groupCells, partCells]);
+        k.Save(m, crop: R(m, Timeline(m)), marks: [groupCells, partCells], firstNumber: 4);
     }
 
     [Shot("screen-timeline-group-drag")]

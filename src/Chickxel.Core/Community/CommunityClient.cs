@@ -274,17 +274,22 @@ public sealed class CommunityClient
     // ───────────── 올리기 ─────────────
 
     /// <summary>
-    /// 갤러리에 그림을 올린다(<c>POST /api/art</c> multipart: <c>file</c>, <c>title</c>, <c>description</c>, <c>tags</c> 쉼표 목록).
-    /// <paramref name="progress"/>는 보낸 비율 0~1.
+    /// 갤러리에 그림을 올린다(<c>POST /api/art</c> multipart: <c>file</c>, <c>title</c>, <c>description</c>, <c>tags</c> 쉼표 목록,
+    /// 편집용 파일이 있으면 <c>project</c>(<c>project.chickxel</c>, <c>application/zip</c>)).
+    /// <paramref name="progress"/>는 보낸 비율 0~1(본문 전체).
     /// </summary>
     public async Task<CommunityArt> UploadArtAsync(ArtUpload upload, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
         string extension = upload.Type == CommunityArtType.Gif ? "gif" : "png";
-        var form = Form(
+        var parts = new List<HttpContent>
+        {
             FilePart("file", "art." + extension, "image/" + extension, upload.Data),
             TextPart("title", upload.Title.Trim()),
             TextPart("description", upload.Description.Trim()),
-            TextPart("tags", string.Join(",", upload.Tags)));
+            TextPart("tags", string.Join(",", upload.Tags)),
+        };
+        if (upload.Project is { } project) parts.Add(FilePart("project", "project.chickxel", "application/zip", project));
+        var form = Form([.. parts]);
         var json = await SendAsync(HttpMethod.Post, "api/art", new ProgressContent(form, progress), auth: true, _options.UploadTimeout, cancellationToken).ConfigureAwait(false);
         return CommunityArt.Read(json);
     }

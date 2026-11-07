@@ -13,9 +13,20 @@ Sources (docs/i18n/):
                  {{MainStrings.Name}}  an app string (src/Chickxel.App/Localization or
                  {{UiStrings.Name}}    src/Chickxel.Core/Localization <Table>.resx / <Table>.<lang>.resx),
                                        so tool and menu names match the app
+                 {{toc:<section id>}}  <ol> of links to every <h3 id> in that <section class="doc"> (sidebar contents)
+                 {{glossary}}          table of every glossary term (term.* rows) with its link and definition
+               A line that is only {{include:<path>}} is replaced by docs/i18n/<path> (the guide keeps one file per
+               chapter in docs/i18n/guide/).
   <page>.csv   strings in the app's translation CSV format: first row `key,ko,en,...`,
                second row `#name,한국어,English,...`. Values may use {{root}} and app strings too.
-               An empty cell falls back to English, then Korean.
+               An empty cell falls back to English, then Korean. docs/i18n/<page>/*.csv rows are merged in
+               (a key may appear only once across all of them).
+  Glossary rows (any of those CSVs): term.<id> = aliases separated by "|" (the first is the shown name),
+               term.<id>.to = target anchor (no "#"; the Korean cell is used for every language),
+               term.<id>.def = one-sentence definition. On every guide page (h3) the first plain-text mention of a
+               term in a paragraph, list item or table cell links to its target, unless the target is on that page.
+               Text inside an element with class="nolink" (e.g. <span class="nolink">연필</span> for an icon name)
+               is never linked.
 
 Output: docs/<page>.html for Korean and docs/<lang>/<page>.html for every other column,
 then `tools/build-help.py` regenerates src/Chickxel.App/Assets/Help/help.<lang>.json.
@@ -45,6 +56,7 @@ DOCS = ROOT / "docs"
 RESX_DIRS = [ROOT / "src" / "Chickxel.App" / "Localization", ROOT / "src" / "Chickxel.Core" / "Localization"]
 BASE_LANG = "ko"
 PLACEHOLDER = re.compile(r"\{\{(key:[^{}]+|[\w.:\-]+)\}\}")
+INCLUDE = re.compile(r"^\{\{include:([\w./\-]+)\}\}[ \t]*\r?$", re.M)
 SHORTCUTS = SRC / "shortcuts.json"
 MODIFIERS = ("Ctrl", "Control", "Meta", "Alt", "Shift")
 
@@ -113,6 +125,61 @@ def read_strings(path: Path) -> tuple[list[str], dict[str, dict[str, str]]]:
     return langs, strings
 
 
+def page_strings(page: str) -> tuple[list[str], dict[str, dict[str, str]]]:
+    """<page>.csv에 docs/i18n/<page>/*.csv(장마다 나눈 문구)를 합친다. 같은 키가 두 번 나오면 실패."""
+    langs, strings = read_strings(SRC / f"{page}.csv")
+    parts = SRC / page
+    for part in sorted(parts.glob("*.csv")) if parts.is_dir() else []:
+        part_langs, part_strings = read_strings(part)
+        if part_langs != langs:
+            raise SystemExit(f"{part.relative_to(ROOT)}: languages {part_langs} differ from {page}.csv {langs}")
+        for key in part_strings:
+            if key in strings:
+                raise SystemExit(f"{part.relative_to(ROOT)}: duplicate key {key}")
+        strings.update(part_strings)
+    return langs, strings
+
+
+def load_template(path: Path) -> str:
+    """{{include:<경로>}} 줄을 docs/i18n/<경로> 내용으로 바꾼 틀."""
+    text = path.read_text(encoding="utf-8")
+
+    def include(m: re.Match) -> str:
+        part = SRC / m.group(1)
+        if not part.is_file():
+            raise SystemExit(f"{path.name}: include not found: {m.group(1)}")
+        return part.read_text(encoding="utf-8").rstrip("\r\n")
+
+    return INCLUDE.sub(include, text)
+
+
+TERM_KEY = re.compile(r"^term\.([\w\-]+)(\.to|\.def)?$")
+
+
+def glossary_terms(strings: dict[str, dict[str, str]], page: str) -> dict[str, dict[str, dict[str, str]]]:
+    """term.<id>(별칭) · term.<id>.to(목표 앵커) · term.<id>.def(뜻) → id → {"names"|"to"|"def": 언어별 값}."""
+    terms: dict[str, dict[str, dict[str, str]]] = {}
+    for key, cells in strings.items():
+        if m := TERM_KEY.match(key):
+            terms.setdefault(m.group(1), {})[{None: "names", ".to": "to", ".def": "def"}[m.group(2)]] = cells
+    for tid, t in terms.items():
+        missing = [part for part in ("names", "to", "def") if part not in t]
+        if missing:
+            raise SystemExit(f"{page}: glossary term {tid} is missing term.{tid}" + ", ".join(
+                "" if p == "names" else f".{p}" for p in missing))
+        if t["to"][BASE_LANG].startswith("#"):
+            raise SystemExit(f"{page}: term.{tid}.to must be an anchor id without '#'")
+    return terms
+
+
+def cell(cells: dict[str, str], lang: str) -> str:
+    return cells.get(lang) or cells.get("en") or cells.get(BASE_LANG, "")
+
+
+def term_names(t: dict[str, dict[str, str]], lang: str) -> list[str]:
+    return [n.strip() for n in cell(t["names"], lang).split("|") if n.strip()]
+
+
 def render(template: str, strings: dict[str, dict[str, str]], lang: str, page: str, used: set[str]) -> str:
     root = "" if lang == BASE_LANG else "../"
 
@@ -121,6 +188,10 @@ def render(template: str, strings: dict[str, dict[str, str]], lang: str, page: s
             return root
         if key == "lang":
             return lang
+        if key == "glossary":
+            return glossary_table()
+        if key.startswith("toc:"):
+            return f"<!--toc:{key[len('toc:'):]}-->"
         if key.startswith("key:"):
             return shortcut_html(key[len("key:"):], page)
         if key.startswith("selected:"):
@@ -134,14 +205,132 @@ def render(template: str, strings: dict[str, dict[str, str]], lang: str, page: s
         if key not in strings:
             raise SystemExit(f"{page}: unknown key {{{{{key}}}}}")
         used.add(key)
-        cells = strings[key]
-        text = cells.get(lang) or cells.get("en") or cells.get(BASE_LANG, "")
+        text = cell(strings[key], lang)
         return expand(text, depth + 1) if depth < 2 else text
 
     def expand(text: str, depth: int) -> str:
         return PLACEHOLDER.sub(lambda m: value(m.group(1), depth), text)
 
-    return expand(template, 0)
+    def glossary_table() -> str:
+        rows = []
+        for tid, t in terms.items():
+            names = term_names(t, lang)
+            if not names:
+                raise SystemExit(f"{page}: glossary term {tid} has no name in {lang}")
+            rows.append((names[0].casefold(), names, t))
+        out = []
+        for _, names, t in sorted(rows, key=lambda r: r[0]):
+            also = f' <span class="term-aka nolink">({html.escape(", ".join(names[1:]))})</span>' if len(names) > 1 else ""
+            out.append(f'<tr><td><a href="#{t["to"][BASE_LANG]}">{html.escape(names[0])}</a>{also}</td>'
+                       f'<td>{expand(cell(t["def"], lang), 1)}</td></tr>')
+        return "\n".join(out)
+
+    terms = glossary_terms(strings, page)
+    used.update(k for k in strings if TERM_KEY.match(k))
+    text = fill_toc(expand(template, 0), page)
+    return link_terms(text, terms, lang, page) if terms else text
+
+
+SECTION = re.compile(r'<section class="doc[^"]*" id="([\w\-]+)">(.*?)</section>', re.S)
+H3 = re.compile(r'<h3 id="([\w\-]+)"[^>]*>(.*?)</h3>', re.S)
+TAGS = re.compile(r"<[^>]+>")
+
+
+def fill_toc(text: str, page: str) -> str:
+    """<!--toc:<장 id>--> 자리에 그 장(section)의 h3 쪽 링크 목록."""
+    chapters = {m.group(1): H3.findall(m.group(2)) for m in SECTION.finditer(text)}
+
+    def toc(m: re.Match) -> str:
+        cid = m.group(1)
+        if not chapters.get(cid):
+            raise SystemExit(f"{page}: {{{{toc:{cid}}}}} — no <section class=\"doc\" id=\"{cid}\"> with <h3 id> pages")
+        return "<ol>" + "".join(f'<li><a href="#{pid}">{TAGS.sub("", title).strip()}</a></li>'
+                                for pid, title in chapters[cid]) + "</ol>"
+
+    return re.sub(r"<!--toc:([\w\-]+)-->", toc, text)
+
+
+TOKEN = re.compile(r"<!--.*?-->|<(/?)([a-zA-Z][\w-]*)((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>", re.S)
+ID_ATTR = re.compile(r"""\bid=["']([^"']+)["']""")
+CLASS_ATTR = re.compile(r"""\bclass=["']([^"']+)["']""")
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+# 이 안의 글은 링크하지 않는다(이미 링크, 코드·키, 제목, 그림 설명, 머리·목차·바닥).
+NO_LINK_TAGS = {"a", "code", "kbd", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "figcaption", "script", "style",
+                "button", "select", "option", "label", "textarea", "title", "head", "header", "footer", "nav", "aside"}
+LINK_IN_TAGS = {"p", "li", "td", "th", "dd"}
+
+
+def link_terms(text: str, terms: dict[str, dict[str, dict[str, str]]], lang: str, page: str) -> str:
+    """쪽(h3)마다 용어가 처음 나오는 평문을 그 용어의 쪽으로 링크한다(그 용어의 목표가 지금 쪽 안이면 두지 않음)."""
+    # 앵커 → 그 앵커가 들어 있는 쪽(장 머리말이면 장 id, 아니면 h3 id)
+    anchor_page: dict[str, str] = {}
+    cur = ""
+    for m in TOKEN.finditer(text):
+        if not m.group(2) or m.group(1):
+            continue
+        tag, attrs = m.group(2).lower(), m.group(3)
+        if (idm := ID_ATTR.search(attrs)) is None:
+            continue
+        if tag == "h3" or (tag == "section" and "doc" in (CLASS_ATTR.search(attrs) or ["", ""])[1].split()):
+            cur = idm.group(1)
+        anchor_page[idm.group(1)] = cur
+    alias_to: dict[str, str] = {}
+    for tid, t in terms.items():
+        target = t["to"][BASE_LANG]
+        if anchor_page.get(target) != target:
+            raise SystemExit(f"{page}: term.{tid}.to → #{target} must be a guide page (<h3 id>) or chapter "
+                             f"(<section id>) — the app's F1 guide can only open those")
+        for name in term_names(t, lang):
+            for variant in {name, name[:1].upper() + name[1:], name[:1].lower() + name[1:]}:
+                if alias_to.setdefault(variant, tid) != tid:
+                    raise SystemExit(f"{page}: glossary alias {variant!r} ({lang}) belongs to both "
+                                     f"term.{alias_to[variant]} and term.{tid}")
+    if not alias_to:
+        return text
+    word = r"0-9A-Za-z" + ("가-힣" if lang == "ko" else "")
+    alternatives = "|".join(re.escape(a) for a in sorted(alias_to, key=len, reverse=True))
+    pattern = re.compile(rf"(?<![{word}])(?:{alternatives})" + ("" if lang == "ko" else rf"(?![{word}])"))
+
+    out: list[str] = []
+    stack: list[tuple[str, bool]] = []  # (태그, class="nolink"인지)
+    cur, linked = "", set()
+    pos = 0
+
+    def link_text(chunk: str) -> str:
+        if (not any(t in LINK_IN_TAGS for t, _ in stack)
+                or any(t in NO_LINK_TAGS or off for t, off in stack)):
+            return chunk
+
+        def wrap(m: re.Match) -> str:
+            tid = alias_to[m.group(0)]
+            target = terms[tid]["to"][BASE_LANG]
+            if tid in linked or anchor_page[target] == cur:
+                return m.group(0)
+            linked.add(tid)
+            return f'<a class="term" href="#{target}">{m.group(0)}</a>'
+
+        return pattern.sub(wrap, chunk)
+
+    for m in TOKEN.finditer(text):
+        out.append(link_text(text[pos:m.start()]))
+        out.append(m.group(0))
+        pos = m.end()
+        if not m.group(2):
+            continue
+        tag = m.group(2).lower()
+        if m.group(1):
+            if any(t == tag for t, _ in stack):
+                while stack and stack.pop()[0] != tag:
+                    pass
+            continue
+        if (idm := ID_ATTR.search(m.group(3))) and (tag == "h3" or tag == "section"):
+            if anchor_page.get(idm.group(1)) == idm.group(1):
+                cur, linked = idm.group(1), set()
+        if tag not in VOID_TAGS and not m.group(3).rstrip().endswith("/"):
+            cls = CLASS_ATTR.search(m.group(3))
+            stack.append((tag, cls is not None and "nolink" in cls.group(1).split()))
+    out.append(link_text(text[pos:]))
+    return "".join(out)
 
 
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚"
@@ -233,8 +422,8 @@ def main() -> int:
     stale: list[str] = []
     for template_path in sorted(SRC.glob("*.html")):
         page = template_path.stem
-        langs, strings = read_strings(SRC / f"{page}.csv")
-        template = template_path.read_text(encoding="utf-8")
+        langs, strings = page_strings(page)
+        template = load_template(template_path)
         used: set[str] = set()
         for lang in langs:
             text = render(template, strings, lang, page, used)

@@ -53,7 +53,7 @@ public sealed partial class MainForm
             ShowMessage(UiStrings.Help_NoTarget);
             return;
         }
-        HelpWindow.Open(this).ShowPage(target.Value.PageId, target.Value.Shot, target.Value.ToolRow);
+        HelpWindow.Open(this).ShowPage(target.Value.PageId, target.Value.Shot);
     }
 
     private HelpTarget? HelpPageAt(Avalonia.Point position)
@@ -69,7 +69,7 @@ public sealed partial class MainForm
         if (Hit(_tbRevert)) return new("files-revert");
         if (Hit(_tbFiles) || Hit(_browser)) return new("screen-file-browser");
         foreach (var slot in _toolSlots)
-            if (Hit(slot)) return new("tools-list", ToolRow: ToolRow(slot.Current));
+            if (Hit(slot)) return new(ToolPage(slot.Current));
         if (Hit(_cbZoom) || Hit(_cbFit)) return new("screen-top-bar", "screen-top-bar-2");
         if (Hit(_cbGrid)) return new("screen-top-bar", "screen-top-bar-3");
         if (Hit(_cbTiles)) return new("screen-top-bar", "screen-top-bar-4");
@@ -79,7 +79,7 @@ public sealed partial class MainForm
         if (Hit(_cbPivot)) return new("screen-top-bar");
         if (Hit(_colors)) return new("screen-palette");
         if (Hit(_preview)) return new("screen-preview");
-        if (Hit(_toolOptions)) return new("screen-tool-settings");
+        if (Hit(_toolOptions)) return new(ToolPage(_ctx.Tool));
         if (Hit(_timeline)) return new("screen-timeline");
         if (Hit(_panes[0].Strip) || Hit(_panes[1].Strip)) return new("screen-tabs");
         if (Hit(_start)) return new("start-first-run");
@@ -89,28 +89,26 @@ public sealed partial class MainForm
         return null;
     }
 
-    // 도구 목록 표의 행 순서와 대응한다.
-    private static int ToolRow(ToolKind tool) => tool switch
+    /// <summary>도구마다 자세히 설명하는 가이드 쪽.</summary>
+    private static string ToolPage(ToolKind tool) => tool switch
     {
-        ToolKind.Pencil => 0,
-        ToolKind.GradientPencil => 1,
-        ToolKind.Eraser => 2,
-        ToolKind.Fill => 3,
-        ToolKind.Gradient => 4,
-        ToolKind.Picker => 5,
-        ToolKind.Shape => 6,
-        ToolKind.Text => 7,
-        ToolKind.Select or ToolKind.EllipseSelect => 8,
-        ToolKind.Lasso => 9,
-        ToolKind.MagicWand => 10,
-        ToolKind.Move => 11,
-        ToolKind.Dodge => 12,
-        ToolKind.Dither => 13,
-        ToolKind.ReplaceBrush => 14,
-        ToolKind.Pivot => 15,
-        ToolKind.Slice => 16,
+        ToolKind.Pencil => "tools-pencil",
+        ToolKind.GradientPencil => "tools-gradient-pencil",
+        ToolKind.Eraser => "tools-eraser",
+        ToolKind.Fill => "tools-fill",
+        ToolKind.Gradient => "tools-gradient",
+        ToolKind.Picker => "tools-picker",
+        ToolKind.Shape => "tools-shape",
+        ToolKind.Text => "tools-text",
+        ToolKind.Select or ToolKind.EllipseSelect or ToolKind.Lasso or ToolKind.MagicWand => "tools-select",
+        ToolKind.Move => "tools-move",
+        ToolKind.Dodge => "tools-dodge",
+        ToolKind.Dither => "tools-dither",
+        ToolKind.ReplaceBrush => "tools-replace-brush",
+        ToolKind.Pivot => "tools-pivot",
+        ToolKind.Slice => "tools-nine-slice",
         _ => throw new ArgumentOutOfRangeException(nameof(tool)),
     };
 
-    private readonly record struct HelpTarget(string PageId, string? Shot = null, int? ToolRow = null);
+    private readonly record struct HelpTarget(string PageId, string? Shot = null);
 }

@@ -218,6 +218,7 @@ public sealed partial class ChatWindow : Window
         _ctx.UndoChanged += OnUndoChanged;
         _mcp.Tools.AiDrawProgress += OnAiDrawProgress;
         _mcp.Tools.AiDrawPromptReady += OnAiDrawPromptReady;
+        _mcp.Tools.AiDrawPreview += OnAiDrawPreview;
         _mcp.Tools.AiDrawCompleted += OnAiDrawCompleted;
         _ctx.ProjectReplaced += OnProjectReplaced;
         PositionChanged += (_, _) => SaveBounds();
@@ -294,6 +295,7 @@ public sealed partial class ChatWindow : Window
         _ctx.UndoChanged -= OnUndoChanged;
         _mcp.Tools.AiDrawProgress -= OnAiDrawProgress;
         _mcp.Tools.AiDrawPromptReady -= OnAiDrawPromptReady;
+        _mcp.Tools.AiDrawPreview -= OnAiDrawPreview;
         _mcp.Tools.AiDrawCompleted -= OnAiDrawCompleted;
         _ctx.ProjectReplaced -= OnProjectReplaced;
     }
@@ -955,6 +957,9 @@ public sealed partial class ChatWindow : Window
         private readonly ScrollViewer _listScroll;
         private readonly StackPanel _list;
         private readonly TextBlock _thinking;
+        private readonly Image _conversionImage;
+        private readonly Border _conversionPreview;
+        private WriteableBitmap? _conversionBitmap;
         /// <summary>그림 칩이 들어가는 입력란(<see cref="ChatImageInput"/>)과 그 글 상자.</summary>
         private readonly ChatImageInput _imageInput;
         private readonly TextBox _input;
@@ -985,6 +990,7 @@ public sealed partial class ChatWindow : Window
         private int _phaseChars;
         /// <summary>그림 생성 도구가 알린 진행("프레임 2/6 생성 중") — 도구 실행 단계의 진행 줄에 보인다.</summary>
         private string? _aiDrawStatus;
+        private bool _previewClosed;
 
         private string? _cliPath;
         private IChatSession? _session;
@@ -1029,6 +1035,14 @@ public sealed partial class ChatWindow : Window
                 FontStyle = FontStyle.Italic,
                 Margin = new Thickness(2, 2),
                 TextWrapping = TextWrapping.Wrap,
+            };
+            _conversionImage = new Image { Stretch = Stretch.Uniform };
+            RenderOptions.SetBitmapInterpolationMode(_conversionImage, BitmapInterpolationMode.None);
+            _conversionPreview = new Border
+            {
+                Width = 96, Height = 96, HorizontalAlignment = HorizontalAlignment.Left,
+                BorderBrush = AppTheme.BorderBrush, BorderThickness = new Thickness(1),
+                Child = new ChatImages.CheckerBackground { Child = _conversionImage },
             };
 
             _imageInput = new ChatImageInput(Ui.Shortcut(UiStrings.S_ChatWindow_ChatTab_95FEEA4ADC));
@@ -1700,6 +1714,7 @@ public sealed partial class ChatWindow : Window
             }
             _turn = turn;
             _messages.Children.Add(_thinking);
+            _previewClosed = false;
             _turnStart = DateTime.UtcNow;
             SetPhase("wait", null);
             _progressTimer.Start();
@@ -1727,6 +1742,7 @@ public sealed partial class ChatWindow : Window
             _w._mcp.Tools.TurnImages = [];
             _aiDrawStatus = null;
             FinishStream(turn);
+            CloseConversionPreview();
             _messages.Children.Remove(_thinking);
             _progressTimer.Stop();
 
@@ -2076,9 +2092,42 @@ public sealed partial class ChatWindow : Window
         }
 
 
+        /// <summary>변환 최선 결과를 진행 줄 앞에 작게 표시한다. 완료·취소 시 제거한다.</summary>
+        public void OnAiDrawPreview(PixelImage frame)
+        {
+            if (_turn is null || _previewClosed) return;
+            if (_conversionBitmap is { } existing && existing.PixelSize.Width == frame.Width && existing.PixelSize.Height == frame.Height)
+            {
+                ImageUtil.CopyToBitmap(frame, existing);
+                _conversionImage.InvalidateVisual();
+            }
+            else
+            {
+                var bitmap = ImageUtil.ToBitmap(frame);
+                _conversionImage.Source = bitmap;
+                _conversionBitmap?.Dispose();
+                _conversionBitmap = bitmap;
+            }
+            if (!_messages.Children.Contains(_conversionPreview))
+            {
+                int idx = _messages.Children.IndexOf(_thinking);
+                _messages.Children.Insert(idx >= 0 ? idx : _messages.Children.Count, _conversionPreview);
+            }
+        }
+
+        private void CloseConversionPreview()
+        {
+            _previewClosed = true;
+            _messages.Children.Remove(_conversionPreview);
+            _conversionImage.Source = null;
+            _conversionBitmap?.Dispose();
+            _conversionBitmap = null;
+        }
+
         /// <summary>그림 생성 결과 칸(결과 그림·결과 글·"변환 설정 보기")을 붙이고 저장할 내용에 넣는다(그림이 너무 크면 그림은 남기지 않음).</summary>
         public void OnAiDrawCompleted(AiDrawOutcome o)
         {
+            CloseConversionPreview();
             string? png = null;
             if (Math.Max(o.Preview.Width, o.Preview.Height) <= SavedAiDrawSide)
             {

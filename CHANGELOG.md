@@ -2,6 +2,41 @@
 
 When releasing a new version, add a `## vX.Y.Z (date)` section at the top. This English file is the original; write the same section in Korean in `CHANGELOG.ko.md` with the same heading (`## vX.Y.Z (date)`). Optional `CHANGELOG.<language>.md` files use the same headings. Inside a section, give each change a one-line summary subheading (`### Subheading`) followed directly by two to five short bullet points (`- Sentence`). The release notes and the app's update window read these version sections, preferring the selected UI language and falling back to English.
 
+## v1.14.100 (2026-11-07)
+### Gallery: share the editable project file
+- File > Upload to Gallery can now attach the editable `.chickxel` project alongside the PNG or GIF image. The option is off by default.
+- The shared copy leaves out local folder paths such as the export folder; script effect source code is included, and people who open the project are asked before scripts run.
+- Gallery posts offer separate download buttons for the image and, when attached, the `.chickxel` file (up to 8 MiB).
+
+### Autosave defaults to off
+- New settings start with autosave disabled; save manually or enable it under Preferences.
+- Existing settings that explicitly enabled autosave remain enabled.
+
+### AI animations and live conversion preview
+- In Auto mode, Codex draws animation frames for an animated GIF; Chickxel assembles the GIF, reads its frames, and converts them together with one pixel grid and palette. The Generate mode still offers sprite-sheet and per-frame methods.
+- While AI image-to-pixel optimization runs, chat shows a small live preview of the current best converted frame; the preview disappears when the result is inserted, cancelled, or fails.
+
+### Pivot and part position from the current frame on
+- The pivot tool's "Current frame only" check is now "From current frame on": turning it on keeps the pivot (and a part's position) apart from this frame to the last frame, and changing the pivot then moves this frame and every later frame by the same amount while earlier frames stay put. Turning it off clears it from this frame to the end.
+- Moving a part in Layer size mode (Ctrl+Shift+C) without resizing it now moves it from the current frame to the end only; its pivot follows the part, and the check turns on by itself. Resizing still applies to every frame, and moving pixels with Ctrl-drag does not change the position or pivot.
+- Permanently applying an effect that moves the drawing with "Move pivot along" on (Shake, Bob, script effects reporting `ctx.movePivot`) to a part now moves the part's position frame by frame instead of baking the movement into its pixels, so the pivot follows and the part does not have to grow.
+- Frame-by-frame part positions are saved in the project, kept through undo history, duplicating frames and layers, merging, and canvas resize, flip and rotate.
+- Canvas size (Ctrl+Alt+C) and Layer size (Ctrl+Shift+C) modes now show the pivot where it will land, moving it with the image as you drag. Applying Layer size to a normal layer now moves the frame pivots (default and per-frame) along with the moved or scaled image.
+
+### Layer colors in the color panel
+- Below Recent colors, a new "Layer colors" list shows every color used in the selected layer across all frames, most used first (a group shows its parts, a part its shown skin; transparent pixels are skipped).
+- Click a swatch for the primary color, right-click for the secondary. Click the header to collapse or expand it; the state is remembered.
+- Long lists scroll within five rows, and at most 1024 colors are shown with the total count next to the title.
+
+### Developer profiles in installed assets and effects
+- Installed assets and the Effect Maker info header show the published author's name and profile image; unpublished local assets keep the default person icon.
+- Effect selection tiles show the published author's image and shorten names that do not fit with an ellipsis. Bundled Chickxel effects use the site's Chickxel image.
+
+### Dodge/burn color modes
+- The Dodge/burn tool settings have a new Mode list: Hue shift, Lightness only, HSV value, Mix white/black and Saturation.
+- Hue shift is the new default: it changes perceived lightness while turning the hue a little toward yellow when lightening and toward blue/purple when darkening, the usual pixel-art shading. Grays stay neutral.
+- Lightness only keeps the hue, HSV value is the previous behavior, Mix white/black blends each channel toward white or black, and Saturation makes colors more vivid (left button) or duller (right button) while keeping lightness and hue.
+
 ## v1.14.99 (2026-11-06)
 ### Pixelate: animated GIFs split into frames
 - Dropping, browsing, pasting a file path, or right-clicking a GIF (also animated PNG/WebP) in Pixelate AI image now decodes every frame the same way as dropping it on the canvas, including the prompt for more than 300 frames.

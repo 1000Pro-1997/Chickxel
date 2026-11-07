@@ -1176,6 +1176,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         _ctx.FillSampleVisible = s.FillSampleVisible;
         _ctx.PickerSampleVisible = s.PickerSampleVisible;
         _ctx.DodgeStrength = s.DodgeStrength;
+        _ctx.DodgeMode = s.DodgeMode;
         _ctx.EraserStrength = s.EraserStrength;
         (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue) = (s.EraserRed, s.EraserGreen, s.EraserBlue);
         _ctx.DitherPattern = s.DitherPattern;
@@ -1215,6 +1216,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         var palettes = s.Palettes ?? [new PaletteSetting { Name = AppSettings.DefaultPaletteName, Colors = [.. AppSettings.DefaultPalette] }];
         _colors.SetPalettes(palettes.Select(p => p.ToPalette()));
         _colors.PickerMode = s.ColorPickerMode;
+        _colors.LayerColorsCollapsed = s.LayerColorsCollapsed;
         _colors.LospecSort = s.LospecSort ?? LospecPaletteDialog.DefaultSortKey;
         _browser.IncludeSubfolders = s.IncludeSubfolders;
         _canvas.AutoFit = s.AutoFit;
@@ -1358,6 +1360,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.FillSampleVisible = _ctx.FillSampleVisible;
         s.PickerSampleVisible = _ctx.PickerSampleVisible;
         s.DodgeStrength = _ctx.DodgeStrength;
+        s.DodgeMode = _ctx.DodgeMode;
         s.EraserStrength = _ctx.EraserStrength;
         (s.EraserRed, s.EraserGreen, s.EraserBlue) = (_ctx.EraserRed, _ctx.EraserGreen, _ctx.EraserBlue);
         s.DitherPattern = _ctx.DitherPattern;
@@ -1392,6 +1395,7 @@ public sealed partial class MainForm : Window, Ai.IAiHost
         s.RecentColors = _ctx.RecentColors.Select(c => c.ToHex()).ToList();
         s.Palettes = _colors.Palettes.Select(PaletteSetting.From).ToList();
         s.ColorPickerMode = _colors.PickerMode;
+        s.LayerColorsCollapsed = _colors.LayerColorsCollapsed;
         s.LospecSort = _colors.LospecSort;
         s.IncludeSubfolders = _browser.IncludeSubfolders;
         s.LastFolder = _browser.RootFolder ?? s.LastFolder;

@@ -1,0 +1,386 @@
+<section class="doc" id="tools">
+<h2>{{tools.1}}</h2>
+<p>{{tools.intro.1}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools.intro.th1}}</th><th>{{tools.intro.th2}}</th><th>{{tools.intro.th3}}</th></tr></thead>
+<tbody>
+<tr><td>{{tools.intro.basics}}</td><td><a href="#tools-list">{{tools-list.1}}</a> · <a href="#tools-basics">{{tools-basics.1}}</a> · <a href="#tools-groups">{{tools-groups.1}}</a> · <a href="#tools-brush">{{tools-brush.1}}</a></td><td>{{tools.intro.basics-use}}</td></tr>
+<tr><td>{{tools.intro.draw}}</td><td><a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a> · <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a> · <a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a> · <a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a> · <a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{tools.intro.draw-use}}</td></tr>
+<tr><td>{{tools.intro.color}}</td><td><a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a> · <a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a> · <a href="#tools-picker">{{MainStrings.Tool_Picker_Name}}</a> · <a href="#tools-dodge">{{MainStrings.Tool_Dodge_Name}}</a> · <a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a> · <a href="#tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</a></td><td>{{tools.intro.color-use}}</td></tr>
+<tr><td>{{tools.intro.select}}</td><td><a href="#tools-select">{{tools.intro.select-tools}}</a> · <a href="#tools-move">{{MainStrings.Tool_Move_Name}}</a> · <a href="#tools-transform">{{tools.intro.transform}}</a> · <a href="#tools-canvas-size">{{tools.intro.canvas-size}}</a> · <a href="#tools-layer-size">{{tools.intro.layer-size}}</a></td><td>{{tools.intro.select-use}}</td></tr>
+<tr><td>{{tools.intro.unity}}</td><td><a href="#tools-pivot">{{MainStrings.Tool_Pivot_Name}}</a> · <a href="#tools-nine-slice">9-slice</a></td><td>{{tools.intro.unity-use}}</td></tr>
+</tbody>
+</table></div>
+<p>{{tools.intro.2}}</p>
+
+<h3 id="tools-list">{{tools-list.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-list.png" alt="{{tools-list.3.alt}}" width="1600" height="932" loading="lazy"><figcaption>{{tools-list.4}}</figcaption></figure>
+<p>{{tools-list.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-list-2.png" alt="{{tools-list.38.alt}}" width="104" height="556" loading="lazy"><figcaption>{{tools-list.39}}</figcaption></figure>
+<p>{{tools-list.intro-table}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-list.5}}</th><th>{{tools-list.6}}</th><th>{{tools-list.7}}</th></tr></thead>
+<tbody>
+<tr><td>③ <a href="#tools-pencil">{{MainStrings.Tool_Pencil_Name}}</a></td><td>{{key:도구/연필}}</td><td>{{tools-list.9}}</td></tr>
+<tr><td>③ <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a></td><td>{{key:도구/그라데이션 연필}}</td><td>{{tools-list.41}}</td></tr>
+<tr><td>④ <a href="#tools-eraser">{{MainStrings.Tool_Eraser_Name}}</a></td><td>{{key:도구/지우개}}</td><td>{{tools-list.11}}</td></tr>
+<tr><td>⑤ <a href="#tools-fill">{{MainStrings.Tool_Fill_Name}}</a></td><td>{{key:도구/채우기}}</td><td>{{tools-list.13}}</td></tr>
+<tr><td>⑤ <a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a></td><td>{{key:도구/그라데이션}}</td><td>{{tools-list.15}}</td></tr>
+<tr><td>⑥ <a href="#tools-picker">{{MainStrings.Tool_Picker_Name}}</a></td><td>{{tools-list.17}}</td><td>{{tools-list.18}}</td></tr>
+<tr><td>⑦ <a href="#tools-shape">{{MainStrings.Tool_Shape_Name}}</a></td><td>{{key:도구/도형}}</td><td>{{tools-list.20}}</td></tr>
+<tr><td>⑧ <a href="#tools-text">{{MainStrings.Tool_Text_Name}}</a></td><td>{{key:도구/글씨}}</td><td>{{tools-list.42}}</td></tr>
+<tr><td>⑨ <a href="#tools-select">{{MainStrings.Tool_Select_Name}} / {{MainStrings.Tool_EllipseSelect_Name}}</a></td><td>{{key:도구/선택 칸(다음 선택 도구)}}</td><td>{{tools-list.22}}</td></tr>
+<tr><td>⑨ <a href="#tools-select">{{MainStrings.Tool_Lasso_Name}}</a></td><td>{{key:도구/자유 선택}}</td><td>{{tools-list.24}}</td></tr>
+<tr><td>⑨ <a href="#tools-select">{{MainStrings.Tool_MagicWand_Name}}</a></td><td>{{key:도구/스마트 선택}}</td><td>{{tools-list.26}}</td></tr>
+<tr><td>⑩ <a href="#tools-move">{{MainStrings.Tool_Move_Name}}</a></td><td>{{key:도구/이동}}</td><td>{{tools-list.28}}</td></tr>
+<tr><td>⑪ <a href="#tools-dodge">{{MainStrings.Tool_Dodge_Name}}</a></td><td>{{key:도구/밝게/어둡게}}</td><td>{{tools-list.30}}</td></tr>
+<tr><td>⑫ <a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a></td><td>{{tools-list.no-key}}</td><td>{{tools-list.32}}</td></tr>
+<tr><td>⑬ <a href="#tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</a></td><td>{{key:도구/색 바꾸기 브러시}}</td><td>{{tools-list.34}}</td></tr>
+<tr><td>⑭ <a href="#tools-pivot">{{MainStrings.Tool_Pivot_Name}}</a></td><td>{{key:도구/피벗}}</td><td>{{tools-list.36}}</td></tr>
+<tr><td>⑮ <a href="#tools-nine-slice">9-slice</a></td><td>{{key:도구/9-slice}}</td><td>{{tools-list.37}}</td></tr>
+</tbody>
+</table></div>
+<p>{{tools-list.40}}</p>
+
+<h3 id="tools-basics">{{tools-basics.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-basics.png" alt="{{tools-basics.6.alt}}" width="1180" height="689" loading="lazy"><figcaption>{{tools-basics.7}}</figcaption></figure>
+<p>{{tools-basics.intro}}</p>
+<h4>{{tools-basics.buttons}}</h4>
+<ul>
+<li>{{tools-basics.2}}</li>
+<li>{{tools-basics.right-erase}}</li>
+<li>{{tools-basics.other-buttons}}</li>
+</ul>
+<h4>{{tools-basics.stroke}}</h4>
+<ul>
+<li>{{tools-basics.stroke-undo}}</li>
+<li>{{tools-basics.3}}</li>
+<li>{{tools-basics.recent}}</li>
+</ul>
+<h4>{{tools-basics.keys}}</h4>
+<p>{{tools-basics.hint}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-basics.key-col}}</th><th>{{tools-basics.does-col}}</th></tr></thead>
+<tbody>
+<tr><td><kbd>Shift</kbd>+{{tools-basics.click}}</td><td>{{tools-basics.4}}</td></tr>
+<tr><td><kbd>Alt</kbd></td><td>{{tools-basics.alt}}</td></tr>
+<tr><td><kbd>Ctrl</kbd></td><td>{{tools-basics.ctrl}}</td></tr>
+<tr><td><kbd>Ctrl</kbd>+{{tools-basics.wheel}}</td><td>{{tools-basics.ctrl-wheel}}</td></tr>
+<tr><td>{{key:도구/브러시 작게}} / {{key:도구/브러시 크게}}</td><td>{{tools-basics.brackets}}</td></tr>
+<tr><td>{{key:도구/기본색 ↔ 보조색}}</td><td>{{tools-basics.swap}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{tools-basics.where}}</h4>
+<ul>
+<li>{{tools-basics.selection}}</li>
+<li>{{tools-basics.symmetry}}</li>
+<li>{{tools-basics.tiled}}</li>
+<li>{{tools-basics.locked}}</li>
+</ul>
+<h4>{{tools-basics.edit-menu}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-basics-2.png" alt="{{tools-basics.8.alt}}" width="331" height="570" loading="lazy"><figcaption>{{tools-basics.9}}</figcaption></figure>
+<p>{{tools-basics.5}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-basics.cmd-col}}</th><th>{{tools-basics.does-col}}</th></tr></thead>
+<tbody>
+<tr><td>⑤ {{MainStrings.Menu_Edit_AddOutline_115}} ({{key:편집/외곽선 추가(기본색)}})<br>{{MainStrings.Menu_Edit_AddOutline_117}}</td><td>{{tools-basics.outline}}</td></tr>
+<tr><td>⑥ {{MainStrings.Menu_Edit_ReplaceColor_119}} ({{key:편집/색 바꾸기…}})</td><td>{{tools-basics.replace}}</td></tr>
+<tr><td>⑦ {{MainStrings.Menu_Edit_Flip_105}} ({{key:편집/좌우 뒤집기(선택/셀)}})<br>{{MainStrings.Menu_Edit_Flip_107}} ({{key:편집/상하 뒤집기(선택/셀)}})</td><td>{{tools-basics.flip}}</td></tr>
+<tr><td>⑦ {{MainStrings.Menu_Edit_Rotate_109}} ({{key:편집/90° 회전(선택/캔버스)}})<br>{{MainStrings.Menu_Edit_Rotate_111}} ({{key:편집/-90° 회전(선택/캔버스)}})</td><td>{{tools-basics.rotate}}</td></tr>
+<tr><td>⑧ {{MainStrings.Menu_Edit_BeginCanvasResize_121}} ({{key:편집/캔버스 크기…}})</td><td>{{tools-basics.canvas}}</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="tools-groups">{{tools-groups.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-groups.png" alt="{{tools-groups.5.alt}}" width="319" height="374" loading="lazy"><figcaption>{{tools-groups.6}}</figcaption></figure>
+<p>{{tools-groups.2}}</p>
+<ul>
+<li>{{tools-groups.3}}</li>
+<li>{{tools-groups.4}}</li>
+</ul>
+<p>{{tools-groups.remember}}</p>
+
+<h3 id="tools-brush">{{tools-brush.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush.png" alt="{{tools-brush.7.alt}}" width="338" height="156" loading="lazy"><figcaption>{{tools-brush.8}}</figcaption></figure>
+<p>{{tools-brush.2}}</p>
+<h4>{{tools-brush.shape-size}}</h4>
+<ul class="marks">
+<li>{{tools-brush.3}}</li>
+<li>{{tools-brush.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-compare.png" alt="{{tools-brush.compare.alt}}" width="602" height="308" loading="lazy"><figcaption>{{tools-brush.compare}}</figcaption></figure>
+<p>{{tools-brush.shapes-explained}}</p>
+<h4>{{tools-brush.share}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-2.png" alt="{{tools-brush.9.alt}}" width="338" height="283" loading="lazy"><figcaption>{{tools-brush.10}}</figcaption></figure>
+<ul>
+<li>{{tools-brush.share-pencil}}</li>
+<li>{{tools-brush.5}}</li>
+</ul>
+<h4>{{tools-brush.27}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-brush-3.png" alt="{{tools-brush.31.alt}}" width="354" height="144" loading="lazy"><figcaption>{{tools-brush.32}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-brush.28}}</li>
+<li>{{tools-brush.29}}</li>
+</ul>
+<p>{{tools-brush.30}}</p>
+
+<h3 id="tools-pencil">{{MainStrings.Tool_Pencil_Name}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-pencil.webp" alt="{{tools-pencil.1.alt}}" width="378" height="185" loading="lazy"></figure>
+<p>{{tools-pencil.2}}</p>
+<h4>{{tools-pencil.colors}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-pencil-colors.png" alt="{{tools-pencil.3.alt}}" width="213" height="73" loading="lazy"><figcaption>{{tools-pencil.4}}</figcaption></figure>
+<ul>
+<li>{{tools-pencil.5}}</li>
+<li>{{tools-pencil.6}}</li>
+<li>{{tools-pencil.7}}</li>
+</ul>
+<h4>{{tools-pencil.8}}</h4>
+<figure class="clip"><img src="{{root}}assets/guide/tools-pencil-line.webp" alt="{{tools-pencil.9.alt}}" width="378" height="185" loading="lazy"></figure>
+<p>{{tools-pencil.10}}</p>
+<h4>{{MainStrings.Menu_Tools_PixelPerfect_206}}</h4>
+<figure class="clip"><img src="{{root}}assets/guide/tools-pencil-perfect.webp" alt="{{tools-pencil.12.alt}}" width="378" height="185" loading="lazy"></figure>
+<p>{{tools-pencil.13}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-pencil-compare.png" alt="{{tools-pencil.compare.alt}}" width="924" height="224" loading="lazy"><figcaption>{{tools-pencil.compare}}</figcaption></figure>
+<p>{{tools-pencil.compare-text}}</p>
+<p>{{tools-pencil.14}}</p>
+<h4>{{tools-pencil.15}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-pencil-brush.png" alt="{{tools-pencil.16.alt}}" width="335" height="141" loading="lazy"><figcaption>{{tools-pencil.17}}</figcaption></figure>
+<p>{{tools-pencil.18}}</p>
+
+<h3 id="tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-gradient-pencil.webp" alt="{{tools-gradient-pencil.1.alt}}" width="378" height="185" loading="lazy"></figure>
+<p>{{tools-gradient-pencil.2}}</p>
+<ul>
+<li>{{tools-gradient-pencil.4}}</li>
+<li>{{tools-gradient-pencil.recent}}</li>
+</ul>
+<h4>{{tools-gradient-pencil.settings}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-pencil-settings.png" alt="{{tools-gradient-pencil.settings.alt}}" width="338" height="518" loading="lazy"><figcaption>{{tools-gradient-pencil.settings.cap}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-gradient-pencil.mode}}</li>
+<li>{{tools-gradient-pencil.interval}}</li>
+<li>{{tools-gradient-pencil.presets}}</li>
+<li>{{tools-gradient-pencil.editor}}</li>
+</ul>
+<h4>{{tools-gradient-pencil.how}}</h4>
+<p>{{tools-gradient-pencil.3}}</p>
+<p>{{tools-gradient-pencil.alpha}}</p>
+
+<h3 id="tools-eraser">{{MainStrings.Tool_Eraser_Name}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-eraser.webp" alt="{{tools-eraser.1.alt}}" width="378" height="185" loading="lazy"></figure>
+<p>{{tools-eraser.2}}</p>
+<ul>
+<li>{{tools-eraser.3}}</li>
+<li>{{tools-eraser.4}}</li>
+</ul>
+<h4>{{tools-eraser.5}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-eraser-settings.png" alt="{{tools-eraser.6.alt}}" width="328" height="111" loading="lazy"><figcaption>{{tools-eraser.7}}</figcaption></figure>
+<ul>
+<li>{{tools-eraser.8}}</li>
+<li>{{tools-eraser.9}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-eraser-compare.png" alt="{{tools-eraser.compare.alt}}" width="596" height="152" loading="lazy"><figcaption>{{tools-eraser.compare}}</figcaption></figure>
+<p>{{tools-eraser.compare-text}}</p>
+<figure class="clip"><img src="{{root}}assets/guide/tools-eraser-channels.webp" alt="{{tools-eraser.10.alt}}" width="376" height="186" loading="lazy"></figure>
+<p>{{tools-eraser.11}}</p>
+<h4>{{tools-eraser.other}}</h4>
+<p>{{tools-eraser.other-text}}</p>
+
+<h3 id="tools-shape">{{MainStrings.Tool_Shape_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape.png" alt="{{tools-shape.2.alt}}" width="338" height="430" loading="lazy"><figcaption>{{tools-shape.3}}</figcaption></figure>
+<p>{{tools-shape.1}}</p>
+<h4>{{tools-shape.settings}}</h4>
+<ul class="marks">
+<li>{{tools-shape.4}}</li>
+<li>{{tools-shape.5}}</li>
+<li>{{tools-shape.6}}</li>
+<li>{{tools-shape.7}}</li>
+</ul>
+<h4>{{tools-shape.kinds}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-shape.8}}</th><th>{{tools-shape.9}}</th></tr></thead>
+<tbody>
+<tr><td>{{UiStrings.Shape_Line}}</td><td>{{tools-shape.10}}</td></tr>
+<tr><td>{{UiStrings.Shape_Curve}}</td><td>{{tools-shape.11}}</td></tr>
+<tr><td>{{UiStrings.Shape_Rectangle}}</td><td>{{tools-shape.12}}</td></tr>
+<tr><td>{{UiStrings.Shape_Ellipse}}</td><td>{{tools-shape.13}}</td></tr>
+<tr><td>{{UiStrings.Shape_Triangle}}</td><td>{{tools-shape.14}}</td></tr>
+<tr><td>{{UiStrings.Shape_Isosceles}}</td><td>{{tools-shape.15}}</td></tr>
+<tr><td>{{UiStrings.Shape_Polygon}}</td><td>{{tools-shape.16}}</td></tr>
+<tr><td>{{UiStrings.Shape_Star}}</td><td>{{tools-shape.17}}</td></tr>
+<tr><td>{{UiStrings.Shape_Spiral}}</td><td>{{tools-shape.18}}</td></tr>
+<tr><td>{{UiStrings.Shape_Cylinder}}</td><td>{{tools-shape.19}}</td></tr>
+<tr><td>{{UiStrings.Shape_Cube}}</td><td>{{tools-shape.20}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{tools-shape.steps}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-2.png" alt="{{tools-shape.21.alt}}" width="338" height="204" loading="lazy"><figcaption>{{tools-shape.22}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-shape.23}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-shape-compare.png" alt="{{tools-shape.compare.alt}}" width="524" height="200" loading="lazy"><figcaption>{{tools-shape.compare}}</figcaption></figure>
+<p>{{tools-shape.compare-text}}</p>
+
+<h3 id="tools-text">{{MainStrings.Tool_Text_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-text.png" alt="{{tools-text.1.alt}}" width="897" height="355" loading="lazy"><figcaption>{{tools-text.2}}</figcaption></figure>
+<p>{{tools-text.3}}</p>
+<h4>{{tools-text.typing}}</h4>
+<ul>
+<li>{{tools-text.4}}</li>
+<li>{{tools-text.5}}</li>
+<li>{{tools-text.6}}</li>
+</ul>
+<h4>{{UiStrings.TextTool_Group}}</h4>
+<p>{{tools-text.7}}</p>
+<ul class="marks">
+<li>{{tools-text.8}}</li>
+<li>{{tools-text.9}}</li>
+<li>{{tools-text.10}}</li>
+<li>{{tools-text.11}}</li>
+<li>{{tools-text.12}}</li>
+<li>{{tools-text.13}}</li>
+</ul>
+<h4>{{tools-text.fonts}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-text-2.png" alt="{{tools-text.14.alt}}" width="338" height="572" loading="lazy"><figcaption>{{tools-text.15}}</figcaption></figure>
+<p>{{tools-text.16}}</p>
+<p>{{tools-text.17}}</p>
+<h4>{{tools-text.layer}}</h4>
+<p>{{tools-text.18}}</p>
+
+<h3 id="tools-fill">{{MainStrings.Tool_Fill_Name}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-fill.webp" alt="{{tools-fill.10.alt}}" width="376" height="186" loading="lazy"></figure>
+<p>{{tools-fill.11}}</p>
+<h4>{{tools-fill.settings}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill.png" alt="{{tools-fill.6.alt}}" width="338" height="259" loading="lazy"><figcaption>{{tools-fill.7}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-fill.2}}</li>
+<li>{{tools-fill.3}}</li>
+<li>{{tools-fill.4}}</li>
+<li>{{tools-fill.source}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-2.png" alt="{{tools-fill.8.alt}}" width="338" height="119" loading="lazy"><figcaption>{{tools-fill.9}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-fill.5}}</li>
+</ul>
+<h4>{{tools-fill.compare-title}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-compare.png" alt="{{tools-fill.compare.alt}}" width="460" height="104" loading="lazy"><figcaption>{{tools-fill.compare}}</figcaption></figure>
+<p>{{tools-fill.compare-text}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/tools-fill-compare-2.png" alt="{{tools-fill.compare-2.alt}}" width="300" height="144" loading="lazy"><figcaption>{{tools-fill.compare-2}}</figcaption></figure>
+<p>{{tools-fill.compare-2-text}}</p>
+<h4>{{tools-fill.more}}</h4>
+<ul>
+<li>{{tools-fill.symmetry}}</li>
+<li>{{tools-fill.same}}</li>
+</ul>
+
+<h3 id="tools-gradient">{{MainStrings.Tool_Gradient_Name}}</h3>
+<figure class="clip"><img src="{{root}}assets/guide/tools-gradient.webp" alt="{{tools-gradient.18.alt}}" width="376" height="186" loading="lazy"></figure>
+<p>{{tools-gradient.overview}}</p>
+<h4>{{tools-gradient.drag}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient.png" alt="{{tools-gradient.10.alt}}" width="906" height="668" loading="lazy"><figcaption>{{tools-gradient.11}}</figcaption></figure>
+<p>{{tools-gradient.2}}</p>
+<ul>
+<li>{{tools-gradient.3}}</li>
+<li>{{tools-gradient.4}}</li>
+<li>{{tools-gradient.5}}</li>
+<li>{{tools-gradient.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-compare.png" alt="{{tools-gradient.compare.alt}}" width="408" height="240" loading="lazy"><figcaption>{{tools-gradient.compare}}</figcaption></figure>
+<p>{{tools-gradient.compare-text}}</p>
+<h4>{{tools-gradient.presets}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-2.png" alt="{{tools-gradient.12.alt}}" width="396" height="463" loading="lazy"><figcaption>{{tools-gradient.13}}</figcaption></figure>
+<ul>
+<li>{{tools-gradient.7}}</li>
+<li>{{tools-gradient.8}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-gradient-3.png" alt="{{tools-gradient.14.alt}}" width="1000" height="712" loading="lazy"><figcaption>{{tools-gradient.15}}</figcaption></figure>
+<ul class="marks">
+<li>{{tools-gradient.9}}</li>
+<li>{{tools-gradient.16}}</li>
+</ul>
+<p>{{tools-gradient.17}}</p>
+
+<h3 id="tools-picker">{{MainStrings.Tool_Picker_Name}}</h3>
+<p>{{tools-picker.1}}</p>
+<h4>{{tools-picker.use}}</h4>
+<ul>
+<li>{{tools-picker.2}}</li>
+<li>{{tools-picker.3}}</li>
+<li>{{tools-picker.4}}</li>
+</ul>
+<h4>{{tools-picker.5}}</h4>
+<p>{{tools-picker.6}}</p>
+<ul>
+<li>{{tools-picker.7}}</li>
+<li>{{tools-picker.8}}</li>
+</ul>
+
+<h3 id="tools-dodge">{{MainStrings.Tool_Dodge_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-dodge.png" alt="{{tools-dodge.shot.alt}}" width="338" height="266" loading="lazy"><figcaption>{{tools-dodge.shot}}</figcaption></figure>
+<p>{{tools-dodge.overview}}</p>
+<ul>
+<li>{{tools-dodge.buttons}}</li>
+<li>{{tools-dodge.once}}</li>
+<li>{{tools-dodge.keeps}}</li>
+</ul>
+<h4>{{tools-dodge.settings}}</h4>
+<ul class="marks">
+<li>{{tools-dodge.mode}}</li>
+<li>{{tools-dodge.strength}}</li>
+</ul>
+<h4>{{tools-dodge.modes}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-dodge.th-mode}}</th><th>{{tools-dodge.th-left}}</th><th>{{tools-dodge.th-right}}</th></tr></thead>
+<tbody>
+<tr><td>{{UiStrings.DodgeMode_HueShift}}</td><td>{{tools-dodge.hue-left}}</td><td>{{tools-dodge.hue-right}}</td></tr>
+<tr><td>{{UiStrings.DodgeMode_Perceptual}}</td><td>{{tools-dodge.light-left}}</td><td>{{tools-dodge.light-right}}</td></tr>
+<tr><td>{{UiStrings.DodgeMode_Value}}</td><td>{{tools-dodge.value-left}}</td><td>{{tools-dodge.value-right}}</td></tr>
+<tr><td>{{UiStrings.DodgeMode_TintShade}}</td><td>{{tools-dodge.tint-left}}</td><td>{{tools-dodge.tint-right}}</td></tr>
+<tr><td>{{UiStrings.DodgeMode_Saturation}}</td><td>{{tools-dodge.sat-left}}</td><td>{{tools-dodge.sat-right}}</td></tr>
+</tbody>
+</table></div>
+<figure class="shot"><img src="{{root}}assets/guide/tools-dodge-compare.png" alt="{{tools-dodge.compare.alt}}" width="714" height="168" loading="lazy"><figcaption>{{tools-dodge.compare}}</figcaption></figure>
+<p>{{tools-dodge.compare-text}}</p>
+<h4>{{tools-dodge.undo}}</h4>
+<p>{{tools-dodge.undo-text}}</p>
+
+<h3 id="tools-dither">{{MainStrings.Tool_Dither_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-dither.png" alt="{{tools-dither.shot.alt}}" width="338" height="312" loading="lazy"><figcaption>{{tools-dither.shot}}</figcaption></figure>
+<p>{{tools-dither.overview}}</p>
+<ul>
+<li>{{tools-dither.buttons}}</li>
+<li>{{tools-dither.grid}}</li>
+<li>{{tools-dither.brush}}</li>
+</ul>
+<h4>{{tools-dither.patterns}}</h4>
+<ul class="marks">
+<li>{{tools-dither.pattern}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/tools-dither-compare.png" alt="{{tools-dither.compare.alt}}" width="400" height="136" loading="lazy"><figcaption>{{tools-dither.compare}}</figcaption></figure>
+<p>{{tools-dither.compare-text}}</p>
+<h4>{{tools-dither.what}}</h4>
+<p>{{tools-dither.what-text}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{tools-dither.th-where}}</th><th>{{tools-dither.th-how}}</th></tr></thead>
+<tbody>
+<tr><td><a href="#tools-dither">{{MainStrings.Tool_Dither_Name}}</a></td><td>{{tools-dither.where-tool}}</td></tr>
+<tr><td><a href="#tools-gradient">{{MainStrings.Tool_Gradient_Name}}</a> · <a href="#tools-gradient-pencil">{{MainStrings.Tool_GradientPencil_Name}}</a></td><td>{{tools-dither.where-gradient}}</td></tr>
+<tr><td><a href="#screen-palette">{{tools-dither.palette-convert}}</a></td><td>{{tools-dither.where-palette}}</td></tr>
+<tr><td><a href="#pixelate-settings">{{tools-dither.pixelate}}</a></td><td>{{tools-dither.where-pixelate}}</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="tools-replace-brush">{{MainStrings.Tool_ReplaceBrush_Name}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/tools-replace-brush-compare.png" alt="{{tools-replace-brush.compare.alt}}" width="514" height="124" loading="lazy"><figcaption>{{tools-replace-brush.compare}}</figcaption></figure>
+<p>{{tools-replace-brush.overview}}</p>
+<h4>{{tools-replace-brush.how}}</h4>
+<ul>
+<li>{{tools-replace-brush.target}}</li>
+<li>{{tools-replace-brush.exact}}</li>
+<li>{{tools-replace-brush.buttons}}</li>
+<li>{{tools-replace-brush.transparent}}</li>
+</ul>
+<h4>{{tools-replace-brush.common}}</h4>
+<p>{{tools-replace-brush.common-text}}</p>
+<h4>{{tools-replace-brush.vs}}</h4>
+<p>{{tools-replace-brush.vs-text}}</p>

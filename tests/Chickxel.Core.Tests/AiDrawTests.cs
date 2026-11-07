@@ -260,6 +260,41 @@ public class AiDrawTests
             AiDrawConversion.Run(blank, AiDrawConversion.Settings(new PixelateSettings(), 1, 0, true, false), false, new PixelateOptimizeOptions()));
     }
 
+    [Fact]
+    public void Generated_gif_frames_convert_in_order_with_shared_canvas()
+    {
+        using var dir = new TempDir();
+        var gif = Path.Combine(dir.Path, "animation.gif");
+        var originals = new[] { Generated(4, -2), Generated(4, 2) };
+        Chickxel.Core.IO.GifWriter.Save(originals.Select(f => new Chickxel.Core.IO.GifFrame(f, 120)).ToArray(),
+            gif, new Chickxel.Core.IO.GifOptions());
+        var decoded = Chickxel.Core.IO.GifReader.Load(gif, originals.Length);
+        Assert.Equal(2, decoded.Images.Count);
+        Assert.Equal(new[] { 120, 120 }, decoded.DurationsMs);
+        var source = AiDrawConversion.Combine(decoded.Images);
+        var settings = AiDrawConversion.Settings(new PixelateSettings(), 2, 0, removeBackground: true, keepOffsets: true);
+        var (result, _) = AiDrawConversion.Convert(source, settings, 2, sheet: false, keepOffsets: true,
+            optimize: false, new PixelateOptimizeOptions());
+        var frames = result.CommonFrames();
+        Assert.False(result.Failed);
+        Assert.Equal(2, frames.Count);
+        Assert.Equal(frames[0].Size, frames[1].Size);
+        Assert.False(frames[0].ContentEquals(frames[1]));
+    }
+
+    [Fact]
+    public void Gif_frame_prompt_describes_motion_and_single_image_output()
+    {
+        var request = new AiDrawRequest { Subject = "red fox with long ears", Action = "walk", SizeTarget = 32 };
+        var frames = AiDrawPlanner.Plan("walk", 2, null);
+        var prompt = AiDrawPrompts.GifFrame(request, frames[^1], [AiDrawImageRole.FirstFrame]);
+        Assert.Contains("frame 2 of 2", prompt);
+        Assert.Contains("seamless pixel-art animated GIF", prompt);
+        Assert.Contains("individual still image", prompt);
+        Assert.Contains("last frame back to the first", prompt);
+        Assert.Contains("Image 1: frame 1", prompt);
+    }
+
     // ───────────── 스프라이트 시트 ─────────────
 
     [Theory]

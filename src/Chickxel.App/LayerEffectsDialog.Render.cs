@@ -374,14 +374,13 @@ public sealed partial class LayerEffectsDialog
     {
         if (_renders is not { Complete: true } job) return null;
         var bounds = new Rectangle(0, 0, _project.Width, _project.Height);
-        int ox = _layer.IsPart ? _layer.PartOffset.X : 0;
-        int oy = _layer.IsPart ? _layer.PartOffset.Y : 0;
-        foreach (var r in job.Results)
+        for (int frame = 0; frame < job.Count; frame++)
         {
-            if (r is null) continue;
+            if (job.Results[frame] is not { } r) continue;
             var opaque = grow ? r.Grow : r.Output;
             if (opaque.IsEmpty) continue;
-            opaque.Offset(ox, oy);
+            var at = _layer.IsPart ? _project.GetPartOffset(_layer, frame) : Point.Empty;
+            opaque.Offset(at.X, at.Y);
             bounds = Rectangle.Union(bounds, opaque);
         }
         return bounds;

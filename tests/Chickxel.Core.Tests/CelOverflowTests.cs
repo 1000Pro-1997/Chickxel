@@ -234,4 +234,26 @@ public class CelOverflowTests
         Assert.Equal(blue, FullAt(p, 4, 2, layer: 1));
         Assert.Equal(Red, FullAt(p, 1, 1, layer: 1));
     }
+
+    [Fact]
+    public void ResizeLayer_NormalLayer_MovingOrScalingTheImage_MovesFramePivotsAlong()
+    {
+        var p = new SpriteProject(8, 8);
+        p.AddFrame();
+        Draw(p, 2, 2, Red);
+        p.Sprite.DefaultPivot = Pivot.FromLocalPixel(2, 2, 8, 8);
+        p.SetFramePivot(1, Pivot.FromLocalPixel(3, 3, 8, 8));
+        var from = new Rectangle(2, 2, 1, 1);
+
+        // (2,2) → (5,4)로 옮기기: 기본·프레임 피벗이 같은 거리만큼
+        p.ResizeLayer(0, from, new Rectangle(5, 4, 1, 1), new Rectangle(5, 4, 1, 1));
+        Assert.Equal((5f, 4f), p.GetFramePivot(0).ToLocalPixel(8, 8));
+        Assert.Equal((6f, 5f), p.GetFramePivot(1).ToLocalPixel(8, 8));
+        p.Undo();
+        Assert.Equal((2f, 2f), p.GetFramePivot(0).ToLocalPixel(8, 8));
+
+        // 자리만 바꾸면(그림 그대로) 피벗도 그대로
+        p.ResizeLayer(0, from, from, new Rectangle(0, 0, 4, 4));
+        Assert.Equal((3f, 3f), p.GetFramePivot(1).ToLocalPixel(8, 8));
+    }
 }

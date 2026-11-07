@@ -53,6 +53,13 @@ public static class AiDrawPrompts
 {
     /// <summary>프레임 하나의 생성 프롬프트. <paramref name="images"/> = 함께 보내는 그림의 역할(순서대로 Image 1, 2, …).</summary>
     public static string Frame(AiDrawRequest r, AiDrawFrame f, IReadOnlyList<AiDrawImageRole> images)
+        => FramePrompt(r, f, images, gif: false);
+
+    /// <summary>자동 모드의 움짤용 이미지 생성 프롬프트. 이미지 도구는 정지 PNG만 내므로 프레임을 따로 그려 앱에서 GIF로 묶는다.</summary>
+    public static string GifFrame(AiDrawRequest r, AiDrawFrame f, IReadOnlyList<AiDrawImageRole> images)
+        => FramePrompt(r, f, images, gif: true);
+
+    private static string FramePrompt(AiDrawRequest r, AiDrawFrame f, IReadOnlyList<AiDrawImageRole> images, bool gif)
     {
         var sb = new StringBuilder();
         AppendOpening(sb, r, sheet: false, HasSubjectImage(images));
@@ -62,6 +69,15 @@ public static class AiDrawPrompts
             sb.Append("Animation \"").Append(r.Action!.Trim()).Append("\", frame ").Append(f.Index + 1).Append(" of ").Append(f.Count).Append('.');
             if (f.Pose.Length > 0) sb.Append(" Pose in this frame: ").Append(f.Pose.TrimEnd('.')).Append('.');
             sb.AppendLine();
+            if (gif)
+            {
+                sb.Append("Draw this as frame ").Append(f.Index + 1).Append(" of a seamless pixel-art animated GIF, played at ")
+                  .Append(AiDrawActions.DurationMs(r.Action)).Append(" ms per frame. Output this frame as an individual still image; ")
+                  .AppendLine("the app will assemble the frames into a GIF and automatically convert the animated image to pixel art.");
+                sb.AppendLine(AiDrawActions.Loops(r.Action.Trim().ToLowerInvariant())
+                    ? "Make the motion flow smoothly into the next frame, including from the last frame back to the first."
+                    : "Make the motion flow smoothly into the next frame without changing the subject design.");
+            }
         }
         else if (f.Pose.Length > 0) sb.Append("Pose: ").Append(f.Pose.TrimEnd('.')).Append('.').AppendLine();
 

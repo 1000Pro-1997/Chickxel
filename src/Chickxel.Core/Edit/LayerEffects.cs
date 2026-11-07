@@ -430,6 +430,17 @@ public static class LayerEffects
         return (image, x, y);
     }
 
+    /// <summary>
+    /// <see cref="Render(PixelImage, IReadOnlyList{LayerEffect}, EffectPadding)"/>와 같은 그림과, 피벗 같이 옮기기가 켜진 효과들이 그림을 옮겼다고 알린 거리의 합
+    /// (<see cref="PivotShift"/>와 같은 값 — 굽기에서 그 거리만큼 그림 대신 부위 위치를 옮길 때 쓴다).
+    /// </summary>
+    internal static (PixelImage Image, int OffsetX, int OffsetY, PointF Shift) RenderWithShift(PixelImage source, IReadOnlyList<LayerEffect> effects, EffectPadding padding)
+    {
+        if (padding.IsNone && !AnyEnabled(effects)) return (source, 0, 0, PointF.Empty);
+        var (image, x, y, moves) = RenderMoves(source, effects, padding, null);
+        return (image, x, y, moves.Shift);
+    }
+
     /// <summary>여백을 넓혀 다시 그리는 최대 횟수(넓힌 자리에서 효과가 더 멀리 옮길 수 있음 — 경로 레이어가 더 보이는 등).</summary>
     private const int MaxGrowPasses = 3;
 

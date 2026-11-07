@@ -267,29 +267,33 @@ public sealed partial class AssetManagerWindow : DialogBase
     };
 
     /// <summary>
-    /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래 흐린 글은 받은 에셋이면 작성자 · 상점 버전,
-    /// 올린 내 에셋이면 "올림 버전"(고쳤으면 "고침"도).
+    /// 에셋 줄: 즐겨찾기 별, 종류 아이콘, 이름(그라데이션은 띠). 아래에는 작성자 아바타와 이름,
+    /// 받은 에셋의 상점 버전 또는 올린 내 에셋의 버전·고침 상태를 보인다.
     /// </summary>
     private static Control AssetRow(AssetEntry entry, bool mine)
     {
-        var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        if (entry.Favorite) name.Children.Add(Ui.Icon(VectorIcon.Star, 12, filled: true));
-        name.Children.Add(Ui.Icon(KindIcon(entry.Kind), 13));
-        name.Children.Add(new TextBlock { Text = entry.DisplayName, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+        var icons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        if (entry.Favorite) icons.Children.Add(Ui.Icon(VectorIcon.Star, 12, filled: true));
+        icons.Children.Add(Ui.Icon(KindIcon(entry.Kind), 13));
+        var name = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,6,*") };
+        name.Children.Add(icons);
+        var title = new TextBlock { Text = entry.DisplayName, Foreground = AppTheme.TextBrush, TextTrimming = TextTrimming.CharacterEllipsis };
+        Grid.SetColumn(title, 2);
+        name.Children.Add(title);
         var panel = new StackPanel { Children = { name } };
         if (entry.Gradient is { } gradient)
             panel.Children.Add(new GradientSwatch { Preset = gradient, Height = 10, Margin = new Thickness(0, 3, 0, 1) });
+        string authorName = entry.Author?.Name ?? (entry.Store is null ? UiStrings.Assets_SourceLocal : "");
         string?[] parts = mine
-            ? [entry.Author?.Name, entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
-            : [entry.Author?.Name, entry.Store?.Version];
+            ? [authorName, entry.Store is { } store ? F(UiStrings.Assets_PublishedVersion, store.Version) : null, entry.Modified ? UiStrings.Assets_ModifiedNote : null]
+            : [authorName, entry.Store?.Version];
         string sub = string.Join(" · ", parts.Where(s => !string.IsNullOrEmpty(s)));
-        if (entry.Author is { } author && entry.Kind is AssetKinds.EffectRecipe or AssetKinds.EffectScript)
-            panel.Children.Add(new StackPanel
-            {
-                Orientation = Orientation.Horizontal, Spacing = 5,
-                Children = { AuthorAvatarView.Create(author, 16), Dim(sub.Length > 0 ? sub : author.Name) },
-            });
-        else if (sub.Length > 0) panel.Children.Add(Dim(sub));
+        var by = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,5,*") };
+        by.Children.Add(AuthorAvatarView.Create(entry.Store is not null ? entry.Author : null, 16));
+        var caption = Dim(sub);
+        Grid.SetColumn(caption, 2);
+        by.Children.Add(caption);
+        panel.Children.Add(by);
         return panel;
     }
 

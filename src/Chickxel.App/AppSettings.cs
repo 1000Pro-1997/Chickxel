@@ -75,8 +75,9 @@ public sealed class AppSettings
     public bool FillSampleVisible { get; set; }
     /// <summary>스포이드 기준: 보이는 레이어 전체(false = 현재 레이어).</summary>
     public bool PickerSampleVisible { get; set; } = true;
-    /// <summary>밝게/어둡게 세기(%).</summary>
+    /// <summary>밝게/어둡게 세기(%)와 색을 바꾸는 방식.</summary>
     public int DodgeStrength { get; set; } = EditorContext.DefaultDodgeStrength;
+    public DodgeMode DodgeMode { get; set; } = DodgeBurn.DefaultMode;
     public DitherPattern DitherPattern { get; set; } = DitherPattern.Checker;
     /// <summary>글씨 도구 설정(글꼴 이름·크기·굵게·기울임·간격·배율·줄 맞춤, 마지막으로 쓴 것). null = 기본.</summary>
     public Chickxel.Core.Text.TextStyle? TextStyle { get; set; }
@@ -132,6 +133,8 @@ public sealed class AppSettings
     public List<string> RecentColors { get; set; } = new();
     /// <summary>색 고르기 방식(사각형·벌집·색상환·슬라이더).</summary>
     public ColorPickerMode ColorPickerMode { get; set; } = ColorPickerMode.Square;
+    /// <summary>색 패널 맨 아래 "레이어 색"을 접어 두었는지.</summary>
+    public bool LayerColorsCollapsed { get; set; }
     /// <summary>팔레트 열의 팔레트들(위 → 아래). null = 처음 실행(기본 팔레트 하나).</summary>
     public List<PaletteSetting>? Palettes { get; set; }
     /// <summary>예전 버전의 팔레트 하나(읽기만 — <see cref="Load"/>가 <see cref="Palettes"/> 첫 항목으로 옮기고 다시 쓰지 않음).</summary>
@@ -252,8 +255,8 @@ public sealed class AppSettings
     public Dictionary<string, List<string>>? Shortcuts { get; set; }
 
     // 저장(환경 설정 창)
-    /// <summary>자동 저장: 편집이 <see cref="AutoSaveIdleSeconds"/>초 동안 없으면 지금 문서를 Ctrl+S처럼 저장(파일이 있는 문서만).</summary>
-    public bool AutoSave { get; set; } = true;
+    /// <summary>자동 저장(기본 꺼짐): 편집이 <see cref="AutoSaveIdleSeconds"/>초 동안 없으면 지금 문서를 Ctrl+S처럼 저장(파일이 있는 문서만).</summary>
+    public bool AutoSave { get; set; }
     /// <summary>
     /// 자동 저장까지 기다리는 시간(초, <see cref="MinAutoSaveDelay"/>~<see cref="MaxAutoSaveDelay"/>). 기본값을 10초에서 3초로 바꾸면서
     /// 설정 이름도 바꿨다(예전 "AutoSaveDelaySeconds"에 저장된 옛 기본값 10은 읽지 않음).

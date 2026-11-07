@@ -44,7 +44,11 @@ public static class AuthorAvatarView
     /// <summary>효과 타일처럼 직접 그리는 화면도 같은 작은 그림을 읽는다. 주소가 없거나 허용되지 않으면 null.</summary>
     public static async Task<Bitmap?> LoadAsync(AssetAuthor? author)
     {
-        if (TrustedUrl(author?.AvatarUrl) is not { } uri) return null;
+        // Bundled official effects predate avatarUrl in their package manifests.
+        string? url = author?.AvatarUrl;
+        if (url is null && author?.Id == OfficialEffectPackages.Author.Id)
+            url = new Uri(AppCommunity.Client.BaseUrl, "static/chickxel.png").AbsoluteUri;
+        if (TrustedUrl(url) is not { } uri) return null;
         if (Memory.TryGetValue(uri, out var cached))
         {
             Recent.Remove(cached.Node);

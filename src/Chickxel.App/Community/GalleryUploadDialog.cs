@@ -9,6 +9,7 @@ namespace Chickxel.App;
 /// <summary>
 /// 파일 > 갤러리에 올리기: 지금 프레임을 PNG로, 또는 애니메이션 전체(모든 프레임, 프레임 길이 그대로, 무한 반복)를 GIF로 만들어
 /// 제목·설명·태그와 함께 Chickxel 갤러리에 올린다(그림은 프레임 시트·GIF 내보내기와 같이 합성 — 레이어 효과·지금 착장, 숨긴 레이어 제외).
+/// 고르면 편집용 <c>.chickxel</c> 파일(이 컴퓨터의 경로를 뺀 것, <see cref="ProjectIO.SaveForSharing"/>)도 같이 올린다(기본은 끔).
 /// 로그인하지 않았으면 올릴 때 계정 창을 연다. 올리는 동안 진행 막대와 취소, 끝나면 브라우저로 그 그림 쪽을 연다. 프로젝트는 바꾸지 않는다.
 /// </summary>
 public sealed class GalleryUploadDialog : DialogBase
@@ -18,6 +19,8 @@ public sealed class GalleryUploadDialog : DialogBase
     private readonly EditorContext _ctx;
     private readonly SpriteProject _project;
     private readonly RadioButton _png, _gif;
+    private readonly CheckBox _shareProject;
+    private readonly TextBlock _scriptsNote;
     private readonly NumericUpDown _scale;
     private readonly TextBox _title, _description, _tags;
     private readonly TextBlock _info = Note(""), _account = Note(""), _error, _progressText = Note("");
@@ -60,6 +63,11 @@ public sealed class GalleryUploadDialog : DialogBase
             Watermark = UiStrings.Gallery_DescriptionHint,
         };
         _tags = new TextBox { Width = FieldWidth, Watermark = UiStrings.Gallery_TagsHint };
+        _shareProject = Ui.Check(UiStrings.Gallery_ShareProject);
+        bool hasScripts = _project.ScriptsInUse().Count > 0;
+        _scriptsNote = Note(UiStrings.Gallery_ShareProjectScripts);
+        _scriptsNote.IsVisible = false;
+        _shareProject.IsCheckedChanged += (_, _) => _scriptsNote.IsVisible = hasScripts && ShareProject;
         _error = new TextBlock { Foreground = AppTheme.UnsavedBrush, TextWrapping = TextWrapping.Wrap, MaxWidth = 560, IsVisible = false };
         var cancelUpload = Ui.Button(VectorIcon.X, UiStrings.Gallery_CancelUpload, (_, _) => _upload?.Cancel());
         _progressRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, IsVisible = false, Children = { _progress, _progressText, cancelUpload } };
@@ -76,7 +84,8 @@ public sealed class GalleryUploadDialog : DialogBase
             Width = FieldWidth + 20,
             Children =
             {
-                Ui.Group(UiStrings.Gallery_What, Ui.Stack(_png, _gif, Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _info)),
+                Ui.Group(UiStrings.Gallery_What, Ui.Stack(_png, _gif, Ui.Row(Ui.Label(UiStrings.Gallery_Scale), _scale), _info,
+                    Ui.Row(_shareProject, Ui.InfoBadge(UiStrings.Gallery_ShareProjectTip)), _scriptsNote)),
                 Ui.Group(UiStrings.Gallery_Details, Ui.Stack(
                     Ui.Label(UiStrings.Gallery_TitleLabel), _title,
                     Ui.Label(UiStrings.Gallery_DescriptionLabel), _description,
@@ -122,6 +131,8 @@ public sealed class GalleryUploadDialog : DialogBase
     private bool AsGif => _gif.On();
 
     private int Scale => (int)_scale.NumValue();
+
+    private bool ShareProject => _shareProject.IsChecked == true;
 
     private void UpdateInfo()
     {
@@ -178,9 +189,10 @@ public sealed class GalleryUploadDialog : DialogBase
         UpdateAccount();
 
         byte[] data;
+        byte[]? projectFile;
         try
         {
-            data = Encode();
+            (data, projectFile) = Encode();
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException)
         {
@@ -198,7 +210,7 @@ public sealed class GalleryUploadDialog : DialogBase
         SetUploading(true);
         try
         {
-            var upload = new ArtUpload(data, AsGif ? CommunityArtType.Gif : CommunityArtType.Png, title, description, tags);
+            var upload = new ArtUpload(data, AsGif ? CommunityArtType.Gif : CommunityArtType.Png, title, description, tags, projectFile);
             var art = await AppCommunity.Client.UploadArtAsync(upload, new Progress<double>(ReportProgress), cancel.Token);
             AppCommunity.Open(this, AppCommunity.Client.ArtPageUrl(art.Id));
             Ui.Info(this, F(UiStrings.Gallery_Done, art.Title), UiStrings.Gallery_Title);
@@ -225,14 +237,26 @@ public sealed class GalleryUploadDialog : DialogBase
         }
     }
 
-    /// <summary>고른 형식·배율로 파일 바이트를 만든다(작업 스레드, 오래 걸리면 덮개).</summary>
-    private byte[] Encode()
+    /// <summary>
+    /// 고른 형식·배율로 그림 파일 바이트를, 공유를 골랐으면 편집용 <c>.chickxel</c> 바이트도 만든다(작업 스레드, 오래 걸리면 덮개 — 그동안 프로젝트를
+    /// 아무도 고치지 않으므로 두 파일이 같은 상태를 담는다). <c>.chickxel</c>이 한도를 넘으면 그림은 만들지 않고 알린다.
+    /// </summary>
+    private (byte[] Image, byte[]? Project) Encode()
     {
         var project = _project;
         int scale = Scale, frame = _ctx.CurrentFrame;
-        bool gif = AsGif;
+        bool gif = AsGif, share = ShareProject;
         return WorkOverlay.Run(this, UiStrings.Gallery_Encoding, progress =>
         {
+            byte[]? projectFile = null;
+            if (share)
+            {
+                using var file = new MemoryStream();
+                ProjectIO.SaveForSharing(project, file, progress);
+                if (file.Length > CommunityRules.MaxProjectBytes)
+                    throw new InvalidOperationException(F(UiStrings.Gallery_ProjectTooLarge, file.Length / (1024.0 * 1024), CommunityRules.MaxProjectBytes >> 20));
+                projectFile = file.ToArray();
+            }
             using var buffer = new MemoryStream();
             if (gif)
             {
@@ -246,7 +270,7 @@ public sealed class GalleryUploadDialog : DialogBase
                 if (scale > 1) image = Chickxel.Core.Edit.ImageTransform.ScaleNearest(image, image.Width * scale, image.Height * scale);
                 PngIO.Save(image, buffer);
             }
-            return buffer.ToArray();
+            return (buffer.ToArray(), projectFile);
         });
     }
 

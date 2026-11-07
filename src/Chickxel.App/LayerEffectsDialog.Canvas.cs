@@ -49,15 +49,14 @@ public sealed partial class LayerEffectsDialog
     private Rectangle EffectOutputBounds(IReadOnlyList<LayerEffect> all)
     {
         var bounds = new Rectangle(0, 0, _project.Width, _project.Height);
-        int ox = _layer.IsPart ? _layer.PartOffset.X : 0;
-        int oy = _layer.IsPart ? _layer.PartOffset.Y : 0;
         for (int frame = 0; frame < VirtualCount; frame++)
         {
             var (source, effects) = AnimateAt(frame, all);
             if (source is null || !LayerEffects.AnyEnabled(effects)) continue;
             var opaque = GrowingOutput(source, effects, LayerEffects.Padding(effects, source.Width, source.Height), null, CancellationToken.None);
             if (opaque.IsEmpty) continue;
-            opaque.Offset(ox, oy);
+            var at = _layer.IsPart ? _project.GetPartOffset(_layer, frame) : Point.Empty;
+            opaque.Offset(at.X, at.Y);
             bounds = Rectangle.Union(bounds, opaque);
         }
         return bounds;

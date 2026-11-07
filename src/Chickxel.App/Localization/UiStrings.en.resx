@@ -1704,9 +1704,10 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_Refresh_FB6D406AF9" xml:space="preserve"><value>Drag to paint from start point → end point. One undo step at a time.</value></data>
   <data name="S_ToolOptionsPanel_Refresh_FD736DAE6B" xml:space="preserve"><value>Line width · pen shape</value></data>
   <data name="S_ToolOptionsPanel_RefreshPivot_7752FB81E5" xml:space="preserve"><value>Target: part "{0}" ({1}×{2}, part atlas)</value></data>
-  <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>Target: part "{0}", frame {1} only ({2}×{3}, part atlas)</value></data>
+  <data name="Pivot_PartFrameTarget" xml:space="preserve"><value>Target: part "{0}", frame {1} to the end ({2}×{3}, part atlas)</value></data>
+  <data name="Pivot_FramesFromTip" xml:space="preserve"><value>When on, the pivot (and, for a part, its position) from this frame to the last frame is kept apart from the other frames. Changing the pivot while it is on changes this frame and every frame after it by the same amount; earlier frames stay as they are. It turns on by itself when you move a part in Layer size mode (Ctrl+Shift+C) or permanently apply an effect that moves the drawing. Turning it off clears what was kept apart from this frame to the end.</value></data>
   <data name="S_ToolOptionsPanel_RefreshPivot_880B20EF26" xml:space="preserve"><value>Target: project default pivot (all frames)</value></data>
-  <data name="S_ToolOptionsPanel_RefreshPivot_DC250333A2" xml:space="preserve"><value>Target: frame {0} only</value></data>
+  <data name="S_ToolOptionsPanel_RefreshPivot_DC250333A2" xml:space="preserve"><value>Target: frame {0} to the end</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_0CBE78E12F" xml:space="preserve"><value>Target: all cells of the frame sheet ({0}×{1})</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_4979FEE313" xml:space="preserve"><value>Group view: drag each part's green lines on the canvas. To set numbers, select a part in the timeline.</value></data>
   <data name="S_ToolOptionsPanel_RefreshSlice_6437D6774C" xml:space="preserve"><value>Target: part "{0}" ({1}×{2})</value></data>
@@ -1752,7 +1753,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_51B15B9385" xml:space="preserve"><value>Angle</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_571538645F" xml:space="preserve"><value>Width</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E" xml:space="preserve"><value>Nearest</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_5D33990D7E" xml:space="preserve"><value>Brightness change per pass (%) — each pixel changes only once per stroke</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_5D33990D7E" xml:space="preserve"><value>Amount of change per pass (%) — each pixel changes only once per stroke</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_607280800B" xml:space="preserve"><value>Pattern</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_63B49FC3F3" xml:space="preserve"><value>X of the image's top-left (relative to the new canvas; negative = left side cropped)</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4" xml:space="preserve"><value>Resampling</value></data>
@@ -1764,7 +1765,7 @@ Unavailable items (skipped):
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_7D99E90556" xml:space="preserve"><value>Share of the primary color (2×2 ordered dithering). The rest is the secondary color</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_810B27E1C0" xml:space="preserve"><value>Anchor</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_862EF0756D" xml:space="preserve"><value>Pixels from the left (0.5 steps)</value></data>
-  <data name="S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3" xml:space="preserve"><value>Current frame only</value></data>
+  <data name="S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3" xml:space="preserve"><value>From current frame on</value></data>
   <data name="S_ToolOptionsPanel_ToolOptionsPanel_8BE1DA620D" xml:space="preserve"><value>Horizontal symmetry</value></data>
   <data name="CanvasResize_FromCenter" xml:space="preserve"><value>Anchor at canvas center</value></data>
   <data name="CanvasResize_FromCenterTip" xml:space="preserve"><value>When on, resizing the canvas keeps the center fixed and moves both edges. The image stays in place.</value></data>
@@ -2961,9 +2962,9 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="AiDraw_Settings_Title" xml:space="preserve"><value>Drawing settings</value></data>
   <data name="AiDraw_Mode_Title" xml:space="preserve"><value>Drawing mode</value></data>
   <data name="AiDraw_Mode_Auto" xml:space="preserve"><value>Auto</value></data>
-  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, when the chat's "Current file only" is on, the current picture is edited with pixel tools; otherwise image generation → pixelate is tried first, and if generation fails (Codex error and so on) the same request is drawn with pixel tools. Claude draws pixels directly.</value></data>
+  <data name="AiDraw_Mode_Auto_Text" xml:space="preserve"><value>In Codex, "Current file only" edits pixels directly; otherwise image generation and pixel conversion are tried first. For animations, the generated frames are assembled into an animated GIF and automatically converted from the GIF to pixels. If generation fails, the same request is drawn with pixel tools. Claude draws pixels directly.</value></data>
   <data name="AiDraw_Mode_Generate" xml:space="preserve"><value>Generate image → pixelate</value></data>
-  <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates a high-quality image and Chickxel converts it to pixel art (background removal, grid and palette are automatic). Animations are drawn with all frames on one sprite sheet, then split and converted. Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
+  <data name="AiDraw_Mode_Generate_Text" xml:space="preserve"><value>Codex generates an image and Chickxel converts it to pixel art (background removal, grid and palette are automatic). Animations use the selected method below (default: one sprite sheet). Each image takes about 30 to 90 seconds. The Claude tab draws pixels directly; ask it to "let Codex do it" to generate just that drawing with Codex.</value></data>
   <data name="AiDraw_Mode_Direct" xml:space="preserve"><value>Draw pixels directly</value></data>
   <data name="AiDraw_Mode_Direct_Text" xml:space="preserve"><value>The AI places pixels one by one with the pixel tools. Best for small fixes and exact pixel-level edits.</value></data>
   <data name="AiDraw_Mode_ClaudeWarning" xml:space="preserve"><value>Claude can't create images, so it draws pixels directly. Image generation is available in the Codex tab.</value></data>
@@ -3029,7 +3030,7 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Chat_InsertImage_Unreadable" xml:space="preserve"><value>This image couldn't be read, so it wasn't added.</value></data>
   <data name="Chat_InsertImage_LayerName" xml:space="preserve"><value>AI chat image</value></data>
   <data name="AiDraw_Anim" xml:space="preserve"><value>Generation</value></data>
-  <data name="AiDraw_Anim_Tip" xml:space="preserve"><value>How animation frames are generated.</value></data>
+  <data name="AiDraw_Anim_Tip" xml:space="preserve"><value>Choose only in Generate mode. In Auto mode, animation frames are assembled into a GIF, decoded and converted to pixels.</value></data>
   <data name="AiDraw_Anim_Sheet" xml:space="preserve"><value>All on one sheet (recommended)</value></data>
   <data name="AiDraw_Anim_PerFrame" xml:space="preserve"><value>One image per frame</value></data>
   <data name="AiDraw_Anim_PerFrame_Warning" xml:space="preserve"><value>Generating each frame separately often changes the character's look and size between frames, and takes as long as the number of frames.</value></data>
@@ -3549,6 +3550,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Gallery_CancelUpload" xml:space="preserve"><value>Cancel Upload</value></data>
   <data name="Gallery_Cancelled" xml:space="preserve"><value>Upload cancelled.</value></data>
   <data name="Gallery_Done" xml:space="preserve"><value>Uploaded "{0}" to the gallery. Its page is open in your browser.</value></data>
+  <data name="Gallery_ShareProject" xml:space="preserve"><value>Also share the editable .chickxel file</value></data>
+  <data name="Gallery_ShareProjectTip" xml:space="preserve"><value>Uploads this project's .chickxel file with the picture. Anyone can download it from the picture's page and open and edit it in Chickxel. Folder paths on this computer, such as the export folder, are removed. If the project has script effects, their source code is included, and people are asked before it runs when they open the file.</value></data>
+  <data name="Gallery_ShareProjectScripts" xml:space="preserve"><value>The source code of script effects is uploaded too.</value></data>
+  <data name="Gallery_ProjectTooLarge" xml:space="preserve"><value>The .chickxel file is {0:0.##} MB, over the {1} MB limit. Turn off sharing the file to upload only the picture.</value></data>
   <data name="EffectMaker_Menu" xml:space="preserve"><value>Effect Maker…</value></data>
   <data name="EffectMaker_Title" xml:space="preserve"><value>Effect Maker</value></data>
   <data name="EffectMaker_TitleWith" xml:space="preserve"><value>Effect Maker - {0}</value></data>
@@ -3829,6 +3834,10 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="LayerResize_Locked" xml:space="preserve"><value>The layer is locked and can't be resized.</value></data>
   <data name="LayerResize_Empty" xml:space="preserve"><value>This layer has nothing drawn in any frame.</value></data>
   <data name="LayerResize_Applied" xml:space="preserve"><value>Layer size: "{name}" {width}×{height} @{x},{y} (all frames)</value></data>
+  <data name="LayerResize_MovedFrom" xml:space="preserve"><value>Part position: "{name}" @{x},{y} (frame {frame} to the end, pivot follows)</value></data>
+  <data name="LayerColors_Title" xml:space="preserve"><value>Layer colors</value></data>
+  <data name="LayerColors_Tip" xml:space="preserve"><value>Colors used in every frame of the selected layer (most used first, transparent excluded — a group shows its parts, a part its shown skin). Click a swatch for the primary color, right-click for the secondary. Click the header to collapse or expand.</value></data>
+  <data name="LayerColors_CountCapped" xml:space="preserve"><value>{0} / {1}</value></data>
   <data name="LayerResize_Label" xml:space="preserve"><value>{name} · {size} @{x},{y}</value></data>
   <data name="LayerResize_PanelTitle" xml:space="preserve"><value>Tool settings · Layer size</value></data>
   <data name="LayerResize_GroupTitle" xml:space="preserve"><value>Layer size</value></data>
@@ -3852,4 +3861,17 @@ Built-in presets get their original checkboxes, main preset and values back (inc
   <data name="Help_SelectHint" xml:space="preserve"><value>Click an area to see its help. Esc, F1 or right-click cancels.</value></data>
   <data name="Help_NoTarget" xml:space="preserve"><value>No help is linked to this area. Search the user guide from the Help menu.</value></data>
   <data name="Project_FileType" xml:space="preserve"><value>Chickxel Project</value></data>
+  <data name="DodgeMode_Label" xml:space="preserve"><value>Mode</value></data>
+  <data name="DodgeMode_HueShift" xml:space="preserve"><value>Hue shift</value></data>
+  <data name="DodgeMode_Perceptual" xml:space="preserve"><value>Lightness only</value></data>
+  <data name="DodgeMode_Value" xml:space="preserve"><value>HSV value</value></data>
+  <data name="DodgeMode_TintShade" xml:space="preserve"><value>Mix white/black</value></data>
+  <data name="DodgeMode_Saturation" xml:space="preserve"><value>Saturation</value></data>
+  <data name="DodgeMode_Tip" xml:space="preserve"><value>Hue shift (default): changes lightness while turning the hue a little toward yellow when lightening and toward blue/purple when darkening (pixel-art shading).
+Lightness only: keeps the hue and changes only the perceived lightness.
+HSV value: the old behavior. Adds or subtracts value; at full brightness it lowers saturation.
+Mix white/black: lightening mixes with white, darkening with black.
+Saturation: left makes colors more vivid, right duller (lightness and hue kept).</value></data>
+  <data name="DodgeMode_SaturateUndo" xml:space="preserve"><value>Saturate</value></data>
+  <data name="DodgeMode_DesaturateUndo" xml:space="preserve"><value>Desaturate</value></data>
 </root>

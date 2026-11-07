@@ -245,11 +245,18 @@ public sealed class EditorContext
     public bool FillSampleVisible { get => _fillSampleVisible; set { _fillSampleVisible = value; OptionsChanged(); } }
     /// <summary>스포이드(임시 스포이드 포함): 보이는 레이어 합성에서 집는다. false = 현재 레이어에서.</summary>
     public bool PickerSampleVisible { get => _pickerSampleVisible; set { _pickerSampleVisible = value; OptionsChanged(); } }
-    /// <summary>밝게/어둡게 한 번의 명도 변화(1~50%).</summary>
+    /// <summary>밝게/어둡게 한 번의 변화량(1~50%).</summary>
     public int DodgeStrength
     {
         get => _dodgeStrength;
         set { value = Math.Clamp(value, 1, MaxDodgeStrength); if (_dodgeStrength == value) return; _dodgeStrength = value; OptionsChanged(); }
+    }
+    private DodgeMode _dodgeMode = DodgeBurn.DefaultMode;
+    /// <summary>밝게/어둡게가 색을 바꾸는 방식(<see cref="DodgeBurn"/>).</summary>
+    public DodgeMode DodgeMode
+    {
+        get => _dodgeMode;
+        set { if (!Enum.IsDefined(value)) value = DodgeBurn.DefaultMode; if (_dodgeMode == value) return; _dodgeMode = value; OptionsChanged(); }
     }
 
     private int _eraserStrength = 100;
@@ -1223,6 +1230,27 @@ public sealed class EditorContext
     }
 
     /// <summary>
+    /// 캔버스·레이어 크기 모드를 적용하면 피벗이 놓일 자리(연속 좌표 — 캔버스 크기 모드는 새 캔버스 좌표의 지금 프레임 피벗, 레이어 크기 모드는 캔버스 좌표의
+    /// 부위 피벗이나 프레임 피벗). 피벗은 그림을 따라간다(<see cref="SpriteProject.MapResizedCanvasPoint"/>·<see cref="SpriteProject.MapLayerResizePoint"/>). 모드가 아니면 null.
+    /// </summary>
+    public System.Drawing.PointF? CanvasResizePivot
+    {
+        get
+        {
+            if (_canvasResize is not { } s || Project is not { } p || _frame < 0 || _frame >= p.Frames.Count) return null;
+            if (s.Layer is { } layer)
+            {
+                // 부위 피벗은 부위 기준, 일반 레이어는 프레임 피벗(캔버스 기준) — 둘 다 캔버스 좌표로
+                var (x, y) = layer.IsPart ? p.GetPartPivot(layer, _frame).ToLocalPixel(s.From.Width, s.From.Height) : p.GetFramePivot(_frame).ToLocalPixel(p.Width, p.Height);
+                var at = layer.IsPart ? new System.Drawing.PointF(s.From.X + x, s.From.Y + y) : new System.Drawing.PointF(x, y);
+                return SpriteProject.MapLayerResizePoint(at, s.From, s.Image);
+            }
+            var (fx, fy) = p.GetFramePivot(_frame).ToLocalPixel(s.Source.Width, s.Source.Height);
+            return SpriteProject.MapResizedCanvasPoint(new System.Drawing.PointF(fx, fy), s.Source.Size, s.Image, CanvasResizeUsesSlice ? CanvasResizeBorder : SpriteBorder.None);
+        }
+    }
+
+    /// <summary>
     /// 미리보기를 만든다: 현재 프레임 합성 + 캔버스 밖 그림 전체를 적용과 같은 대응 하나로 옮기고(<see cref="ImageTransform.ScaleWithCanvas"/> — 캔버스 안·밖이
     /// 같은 배율), 새 캔버스 안은 <see cref="CanvasResizeSession.Preview"/>로, 전체는 <see cref="CanvasResizeSession.Outside"/>로 둔다.
     /// </summary>
@@ -1292,7 +1320,7 @@ public sealed class EditorContext
         if (target.IsPart)
         {
             s.Source = p.GetCel(index, _frame) ?? new PixelImage(target.PartSize.Width, target.PartSize.Height);
-            s.SourceOrigin = target.PartOffset;
+            s.SourceOrigin = p.GetPartOffset(target, _frame);
             s.Below = p.PlanFrame(_frame, layerFilter: l => !ReferenceEquals(l, target)).Render();
             s.Above = null;
             return true;
@@ -1351,7 +1379,8 @@ public sealed class EditorContext
         if (layer.IsGroup) return UiStrings.LayerResize_Group;
         if (p.IsLayerLocked(_layer)) return UiStrings.LayerResize_Locked;
         if (_frame < 0 || _frame >= p.Frames.Count) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
-        var from = p.LayerBounds(_layer);
+        // 부위는 지금 프레임의 자리(프레임마다 옮긴 위치 — 옮기기만 하면 이 프레임부터 끝까지, 크기를 바꾸면 모든 프레임)
+        var from = layer.IsPart ? p.GetPartRect(layer, _frame) : p.LayerBounds(_layer);
         if (from.IsEmpty) return UiStrings.LayerResize_Empty;
         var s = new CanvasResizeSession(new PixelImage(1, 1)) { Layer = layer, From = from, Canvas = p.Bounds, Image = from, Area = from };
         if (!LoadLayerResizeSource(s, p)) return UiStrings.S_EditorContext_BeginCanvasResize_1378D58776;
@@ -1425,7 +1454,22 @@ public sealed class EditorContext
         {
             int index = p.IndexOf(layer);
             bool moved = index >= 0 && !p.IsLayerLocked(index) && (s.Image != s.From || s.Area != s.From);
-            if (moved) p.ResizeLayer(index, s.From, s.Image, s.Area);
+            // 부위를 옮기기만 했으면(크기·자리 안 그림 그대로) 이 프레임부터 끝까지 옮긴다(피벗은 부위 기준 비율이라 같이 따라감)
+            bool shiftOnly = moved && layer.IsPart && s.Area.Size == s.From.Size && s.Image == s.Area;
+            if (shiftOnly)
+            {
+                p.MovePartFrom(index, _frame, s.Area.X - s.From.X, s.Area.Y - s.From.Y);
+                CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
+                LayerResized?.Invoke(this, UiStrings.FormatLayerResize_MovedFrom(name: layer.Name, x: s.Area.X, y: s.Area.Y, frame: _frame + 1));
+                return;
+            }
+            if (moved)
+            {
+                // 크기 바꾸기는 모든 프레임: 지금 프레임 자리를 기준 위치로 옮겨 맞춘다(다른 프레임은 옮긴 거리만큼 그대로 따라감)
+                var shift = layer.IsPart ? p.GetPartOffset(layer, _frame) - (Size)layer.PartOffset : Point.Empty;
+                Rectangle Base(Rectangle r) => r with { X = r.X - shift.X, Y = r.Y - shift.Y };
+                p.ResizeLayer(index, Base(s.From), Base(s.Image), Base(s.Area));
+            }
             CanvasResizeChanged?.Invoke(this, EventArgs.Empty);
             if (moved) LayerResized?.Invoke(this, UiStrings.FormatLayerResize_Applied(name: layer.Name, width: s.Area.Width, height: s.Area.Height, x: s.Area.X, y: s.Area.Y));
             return;
@@ -1448,7 +1492,7 @@ public sealed class EditorContext
         if (_canvasResize is not { } s || Project is not { } p) return;
         if (s.Layer is { } layer)
         {
-            if (p.Size != s.Canvas.Size || (layer.IsPart && layer.PartRect != s.From) || !LoadLayerResizeSource(s, p)) CancelCanvasResize();
+            if (p.Size != s.Canvas.Size || (layer.IsPart && p.GetPartRect(layer, _frame) != s.From) || !LoadLayerResizeSource(s, p)) CancelCanvasResize();
             else
             {
                 DropCanvasResizePreview(s);
@@ -1495,15 +1539,19 @@ public sealed class EditorContext
     }
 
     /// <summary>
-    /// 부위를 옮긴다(실행취소 한 단계). 그룹이 자동 배치 중이면 같은 단계에서 자동 배치를 끈다 — 먼저 <see cref="GroupLayoutDialog.ConfirmManualMove"/>로 물어본 뒤 부른다.
+    /// 부위를 옮긴다(실행취소 한 단계): <paramref name="offset"/> = 지금 프레임에서 놓일 위치 — 기준 위치를 같은 만큼 옮기므로 모든 프레임이 같이 옮겨 간다
+    /// (프레임마다 옮긴 거리는 그대로). 그룹이 자동 배치 중이면 같은 단계에서 자동 배치를 끈다 — 먼저 <see cref="GroupLayoutDialog.ConfirmManualMove"/>로 물어본 뒤 부른다.
     /// </summary>
     public void MovePart(Layer part, Point offset)
     {
-        if (Project is not { } p || p.IndexOf(part) is var index && index < 0 || part.PartOffset == offset) return;
+        if (Project is not { } p || p.IndexOf(part) is var index && index < 0) return;
+        var shown = p.GetPartOffset(part, _frame);
+        var target = new Point(part.PartOffset.X + offset.X - shown.X, part.PartOffset.Y + offset.Y - shown.Y);
+        if (target == part.PartOffset) return;
         Structural(() => p.Edit(part.IsAutoLaidOut ? UiStrings.S_EditorContext_MovePart_9205E8CE1C : UiStrings.S_EditorContext_MovePart_B02E0EA2B6, ProjectChange.Layers | ProjectChange.Pixels, () =>
         {
             if (part.Parent is { AutoLayout: not null } group) p.SetGroupLayout(group, null);
-            p.SetPartOffset(index, offset);
+            p.SetPartOffset(index, target);
         }));
     }
 
@@ -1585,8 +1633,8 @@ public sealed class EditorContext
     }
 
     /// <summary>
-    /// 끌기를 마친 피벗을 기록한다. 부위면 그 부위에 이 프레임만의 피벗이 있으면 그 프레임만, 없으면 부위 피벗을,
-    /// 아니면 현재 프레임에 피벗 재정의가 있으면 그 프레임만, 없으면 프로젝트 기본 피벗을 바꾼다.
+    /// 끌기를 마친 피벗을 기록한다. 부위면 그 부위가 이 프레임에 따로 둔 피벗·위치가 있으면 이 프레임부터 끝까지, 없으면 부위 피벗을,
+    /// 아니면 현재 프레임에 피벗 재정의가 있으면 이 프레임부터 끝까지, 없으면 프로젝트 기본 피벗을 바꾼다.
     /// </summary>
     public void CommitPivot(Pivot before)
     {
@@ -1595,10 +1643,10 @@ public sealed class EditorContext
         if (after == before) { ViewChanged?.Invoke(this, EventArgs.Empty); return; }
         if (CurrentPart is { } part)
         {
-            if (p.HasPartFramePivot(part, _frame)) p.SetPartFramePivot(_layer, _frame, after);
+            if (p.HasPartFrameOverride(part, _frame)) p.SetPartPivotFrom(_layer, _frame, after);
             else p.SetPartPivot(_layer, after);
         }
-        else if (p.Frames[_frame].Pivot is not null) p.SetFramePivot(_frame, after);
+        else if (p.Frames[_frame].Pivot is not null) p.SetFramePivotFrom(_frame, after);
         else p.Edit(UiStrings.S_EditorContext_CommitPivot_463E10A971, ProjectChange.Settings, () => p.Sprite.DefaultPivot = after);
     }
 
@@ -1858,8 +1906,9 @@ public sealed class EditorContext
         {
             var c = EditImage is { } cel && cel.Contains(x, y) ? cel.Get(x, y) : Color32.Transparent;
             if (c.A != 0) return c;
-            x += part.PartOffset.X;
-            y += part.PartOffset.Y;
+            var at = Project?.GetPartOffset(part, _frame) ?? part.PartOffset;
+            x += at.X;
+            y += at.Y;
         }
         bool raw = !_canvasEffects;
         var image = Project is not { } p || _frame >= p.Frames.Count ? null
@@ -1884,11 +1933,12 @@ public sealed class EditorContext
             return img;
         }
         var cel = EditImage;
+        var at = Project!.GetPartOffset(part, _frame);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 var c = cel is not null && cel.Contains(x, y) ? cel.Get(x, y) : Color32.Transparent;
-                int fx = x + part.PartOffset.X, fy = y + part.PartOffset.Y;
+                int fx = x + at.X, fy = y + at.Y;
                 if (c.A == 0 && frame.Contains(fx, fy)) c = frame.Get(fx, fy);
                 img.Set(x, y, c);
             }

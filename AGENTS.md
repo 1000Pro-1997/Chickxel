@@ -18,13 +18,18 @@
 
 ## 도움말 변경은 대기 목록으로
 
-- 사용자가 반영하라고 하기 전에는 도움말(원본 `docs/i18n/guide.html`·`docs/i18n/guide.csv`와 거기서 만드는 `docs/guide.html`, `docs/en/guide.html`, `src/Chickxel.App/Assets/Help/*.json`)을 고치지 않습니다.
+- 사용자가 반영하라고 하기 전에는 도움말(원본 `docs/i18n/guide.html`·`guide.csv`와 장마다 나눈 `docs/i18n/guide/*.html`·`*.csv`, 거기서 만드는 `docs/guide.html`, `docs/en/guide.html`, `src/Chickxel.App/Assets/Help/*.json`)을 고치지 않습니다.
 - 도움말에 써야 할 변경은 저장소 루트의 `도움말-대기.md`에 한국어로 항목별로 적어 둡니다.
 - 반영하라고 하면 요청한 항목만 하나씩 `docs/i18n`(틀·언어별 문구 표)에 쓰고(`python tools/build-docs.py`로 홈페이지 HTML과 앱 도움말 JSON 다시 만들기), 반영한 항목은 `도움말-대기.md`에서 지웁니다.
 
 ## 사용 가이드 쓰기
 
-홈페이지·앱 F1 가이드(원본 `docs/i18n/guide.html`·`guide.csv`)는 이렇게 씁니다. `python tools/build-docs.py`(CI는 `--check`)가 어기면 실패시킵니다.
+홈페이지·앱 F1 가이드는 이렇게 씁니다. `python tools/build-docs.py`(CI는 `--check`)가 어기면 실패시킵니다.
+
+- **파일 위치**: `docs/i18n/guide.html`·`guide.csv`는 머리·목차·가이드 첫 화면·용어 모음 틀이고, 장 본문은 `docs/i18n/guide/<장>.html`·`<장>.csv`(틀의 `{{include:guide/<장>.html}}` 줄이 그 자리에 들어감)에 씁니다. 문구 키는 모든 CSV를 통틀어 하나뿐이어야 합니다. 목차의 세부 쪽 목록은 `{{toc:<장 id>}}`가 그 장의 `<h3 id>`로 만듭니다.
+- **개요 먼저, 세부는 아래**: 장(h2) 머리말은 그 장이 다루는 것과 쪽 안내(표), 쪽(h3)은 첫 문단에 무엇을·언제 쓰는지, 그 아래 `h4`로 세부를 나눕니다. 반복되는 항목–설명은 표로 씁니다.
+- **용어 링크**: 새 개념은 그 장 CSV에 `term.<id>`(별칭을 `|`로, 첫 것이 이름)·`term.<id>.to`(설명하는 쪽의 h3 또는 장 id, 한국어 칸만)·`term.<id>.def`(한 문장 뜻)로 더합니다. 빌드가 쪽마다 처음 나오는 용어를 그 쪽으로 링크하고 **용어 모음** 표를 만듭니다. 다른 뜻으로 쓴 같은 글자는 `class="nolink"` 요소로 감쌉니다. 별칭은 다른 용어와 겹치면 빌드가 실패하니 구체적으로 짓습니다.
+- **비교 그림**: 설정을 켰을 때와 껐을 때처럼 차이를 보이는 그림은 실제 코드 결과를 GuideShots로 한 장에 나란히 그립니다(`docs/assets/guide/<쪽 id>-compare*.png`, 그림 설명에 "왼쪽: … · 오른쪽: …").
 
 - **그림 먼저, 설명은 아래**: 화면 그림(`<figure class="shot">`)을 먼저 두고 그 그림을 설명하는 글을 바로 아래에 씁니다. 그림 번호(①②…)를 쓰는 글은 그 그림보다 앞에 오지 않습니다(장 머리말도 같음).
 - **번호는 그림 설명에서 정함**: ①②…는 그 그림의 `<figcaption>`에 적은 번호만 쓰고, 그림 설명에 적은 번호는 글에서 모두 씁니다(쪽마다 따로 셈).

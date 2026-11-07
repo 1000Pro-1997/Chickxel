@@ -81,7 +81,7 @@ public sealed class ToolOptionsPanel : UserControl
     private readonly NumericUpDown _tolNum, _dodgeNum, _eraserNum;
     private readonly CheckBox _contiguous, _diagonal, _pixelPerfect, _shapeFilled, _rightErase, _wrap, _mirrorX, _mirrorY, _mirrorAtPivot;
     private readonly CheckBox _eraseRed, _eraseGreen, _eraseBlue;
-    private readonly ComboBox _fillSource, _pickSource, _ditherPattern;
+    private readonly ComboBox _fillSource, _pickSource, _ditherPattern, _dodgeMode;
     /// <summary>제목 줄의 "i": 도구 쓰는 법(선택·이동·그라데이션 등, 없으면 숨김).</summary>
     private readonly Border _hint;
 
@@ -259,7 +259,17 @@ public sealed class ToolOptionsPanel : UserControl
         _dodgeNum = NumBox(1, EditorContext.MaxDodgeStrength, v => _ctx.DodgeStrength = v)
             .Presets(1, 2, 3, 5, 8, 10, 15, 20, 25, 33, 50).Unit("%").RecentKey("dodge.strength");
         _dodgeNum.Tip(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_5D33990D7E);
-        _dodgeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D0A7B65132, Ui.Stack(Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1), _dodgeNum, Ui.Label("%"))));
+        _dodgeMode = Ui.Combo(170, UiStrings.DodgeMode_HueShift, UiStrings.DodgeMode_Perceptual, UiStrings.DodgeMode_Value,
+            UiStrings.DodgeMode_TintShade, UiStrings.DodgeMode_Saturation);
+        _dodgeMode.SelectionChanged += (_, _) =>
+        {
+            if (_updating || _dodgeMode.SelectedIndex < 0) return;
+            _ctx.DodgeMode = (DodgeMode)_dodgeMode.SelectedIndex;
+        };
+        _dodgeMode.Tip(UiStrings.DodgeMode_Tip);
+        _dodgeBox = Ui.Group(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_D0A7B65132, Ui.Stack(
+            Ui.Row(Ui.Label(UiStrings.DodgeMode_Label), _dodgeMode),
+            Ui.Row(Ui.Label(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_43C9B223D1), _dodgeNum, Ui.Label("%"))));
 
         // ── 지우개: 강도와 채널
         _eraserNum = NumBox(1, 100, v => _ctx.EraserStrength = v)
@@ -435,17 +445,18 @@ public sealed class ToolOptionsPanel : UserControl
             ApplyPivot(new Pivot(cur.X, (float)(_pivotY.NumValue() / TargetHeight)));
         };
         _framePivot = Ui.Check(UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3);
+        _framePivot.Tip(UiStrings.Pivot_FramesFromTip);
         _framePivot.IsCheckedChanged += (_, _) =>
         {
             if (_updating || _ctx.Project is not { } p) return;
             int f = _ctx.CurrentFrame;
-            // 부위면 그 부위의 이 프레임만, 아니면 프로젝트의 이 프레임만(켤 때는 지금 피벗에서 시작)
+            // 부위면 그 부위의 이 프레임부터 끝까지(피벗·위치), 아니면 프로젝트의 이 프레임부터 끝까지(켤 때는 지금 피벗에서 시작)
             if (_ctx.CurrentPart is { } part)
             {
                 int index = p.IndexOf(part);
-                _ctx.Structural(() => p.SetPartFramePivot(index, f, _framePivot.On() ? p.GetPartPivot(part, f) : null));
+                _ctx.Structural(() => p.SetPartFramesFrom(index, f, _framePivot.On()));
             }
-            else _ctx.Structural(() => p.SetFramePivot(f, _framePivot.On() ? p.GetFramePivot(f) : null));
+            else _ctx.Structural(() => p.SetFramePivotsFrom(f, _framePivot.On()));
         };
         _pivotTarget = Dim("");
         _pivotTarget.TextWrapping = TextWrapping.Wrap;
@@ -857,6 +868,7 @@ public sealed class ToolOptionsPanel : UserControl
             _fillSource.SelectedIndex = _ctx.FillSampleVisible ? 1 : 0;
             _pickSource.SelectedIndex = _ctx.PickerSampleVisible ? 1 : 0;
             _dodgeNum.Value = _ctx.DodgeStrength;
+            _dodgeMode.SelectedIndex = (int)_ctx.DodgeMode;
             _eraserNum.Value = _ctx.EraserStrength;
             _eraseRed.IsChecked = _ctx.EraserRed;
             _eraseGreen.IsChecked = _ctx.EraserGreen;
@@ -1088,7 +1100,7 @@ public sealed class ToolOptionsPanel : UserControl
             int f = _ctx.CurrentFrame;
             if (_ctx.CurrentPart is { } part)
             {
-                bool own = p.HasPartFramePivot(part, f);
+                bool own = p.HasPartFrameOverride(part, f);
                 _framePivot.IsVisible = true;
                 _framePivot.IsChecked = own;
                 var culture = global::System.Globalization.CultureInfo.CurrentCulture;
@@ -1137,12 +1149,12 @@ public sealed class ToolOptionsPanel : UserControl
         if (_ctx.CurrentPart is { } part)
         {
             int index = p.IndexOf(part);
-            if (p.HasPartFramePivot(part, f)) _ctx.Structural(() => p.SetPartFramePivot(index, f, pivot));
+            if (p.HasPartFrameOverride(part, f)) _ctx.Structural(() => p.SetPartPivotFrom(index, f, pivot));
             else if (part.PartPivot != pivot) _ctx.Structural(() => p.SetPartPivot(index, pivot));
             return;
         }
-        // (프로젝트) 이 프레임만의 피벗이 있으면 그 프레임, 없으면 기본 피벗
-        if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivot(f, pivot));
+        // (프로젝트) 이 프레임에 따로 둔 피벗이 있으면 이 프레임부터 끝까지, 없으면 기본 피벗
+        if (p.Frames[f].Pivot is not null) _ctx.Structural(() => p.SetFramePivotFrom(f, pivot));
         else if (p.Sprite.DefaultPivot != pivot)
             _ctx.Structural(() => p.Edit(UiStrings.S_ToolOptionsPanel_ApplyPivot_4E8342E979, ProjectChange.Settings, () => p.Sprite.DefaultPivot = pivot));
     }

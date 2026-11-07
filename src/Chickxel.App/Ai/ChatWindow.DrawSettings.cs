@@ -1,11 +1,12 @@
 using Chickxel.Core.AiDraw;
+using Chickxel.Core.Model;
 using Chickxel.App.Localization;
 
 namespace Chickxel.App.Ai;
 
 // 그리기 설정 칸(머리줄 "?" 옆 슬라이더 단추): 도움말 칸과 같은 오른쪽 자리·움직임을 쓰고, 둘 중 하나만 열린다.
-// 자동(Codex: "지금 그림만"이면 직접 찍기, 아니면 그림 생성 먼저·안 되면 직접 찍기) / 그림 생성 → 픽셀 변환 / 직접 찍기와 각 방식의 하위 옵션을 고친다.
-// 자동을 고르면 생성·직접 찍기 옵션을 모두 보인다. 그림 생성은 Codex만 하므로 Claude 탭의 생성 선택지에는 경고를 붙인다.
+// 자동(Codex: "지금 그림만"이면 직접 찍기, 아니면 그림 생성 먼저·안 되면 직접 찍기) / 그림 생성 → 픽셀 변환 / 직접 찍기.
+// 자동 애니메이션은 GIF 프레임을 만들어 변환하므로 수동 생성 방식 선택은 그림 생성 모드에서만 쓴다.
 public sealed partial class ChatWindow
 {
     /// <summary>결과 크기 칸의 고정 값(0 = 자동, 마지막 칸은 직접 입력).</summary>
@@ -34,6 +35,7 @@ public sealed partial class ChatWindow
     /// <summary>그림 생성 진행·결과는 차례가 도는 탭에 붙인다(차례가 없으면 버림 — 멈춘 뒤 늦게 온 것).</summary>
     private void OnAiDrawProgress(string text) => RunningTab?.OnAiDrawProgress(text);
     private void OnAiDrawPromptReady(string instruction, int index, int count) => RunningTab?.OnAiDrawPromptReady(instruction, index, count);
+    private void OnAiDrawPreview(PixelImage frame) => RunningTab?.OnAiDrawPreview(frame);
 
     private void OnAiDrawCompleted(AiDrawOutcome outcome) => RunningTab?.OnAiDrawCompleted(outcome);
 
@@ -320,7 +322,8 @@ public sealed partial class ChatWindow
         _sizeCustom!.IsVisible = _sizeCombo!.SelectedIndex == SizeChoices.Length;
         _sizeRow!.IsEnabled = _resizeResult!.On();
         _styleRefCombo!.IsVisible = _styleCombo!.SelectedIndex == (int)AiDrawStyleReference.Specific;
-        _animWarning!.IsVisible = _animCombo!.SelectedIndex == 1;
+        _animCombo!.IsEnabled = mode == AiDrawMode.Generate;
+        _animWarning!.IsVisible = mode == AiDrawMode.Generate && _animCombo.SelectedIndex == 1;
     }
 
     private void OnDrawModeChanged()

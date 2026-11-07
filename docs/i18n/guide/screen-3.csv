@@ -1,0 +1,209 @@
+key,ko,en
+#name,한국어,English
+screen-preview.1,미리보기,Preview
+screen-preview.7.alt,"미리보기 패널: 재생 화면, FPS, 배율 단추, 배경","Preview panel: playback, FPS, zoom button, background"
+screen-preview.8,① 재생 화면 · ② FPS · ③ 배율 단추(Fit) · ④ 배경,① Playback · ② FPS · ③ Zoom button (Fit) · ④ Background
+screen-preview.overview,오른쪽 위의 미리보기는 효과까지 입힌 애니메이션을 실제 속도로 재생합니다. 편집하는 프레임과 따로 움직이므로 그리면서 움직임을 확인할 수 있습니다.,"The preview at the top right plays the animation, effects included, at real speed. It runs separately from the frame you're editing, so you can check the motion while drawing."
+screen-preview.14,번호,Number
+screen-preview.15,항목과 사용법,Item and use
+screen-preview.2,"재생 화면입니다. 타임라인에서 누른 태그가 있으면 그 태그의 방향과 반복 설정대로 재생하고(반복을 끈 태그는 한 번 재생하고 멈춤), 고른 태그가 없으면 모든 프레임을 반복 재생합니다. 그림을 누르면 크게 보기 창이 열립니다.","The playback view. If a tag is selected in the timeline, it plays that tag following its direction and loop settings (a tag with Loop off plays once and stops); with no tag selected it loops all frames. Click the image to open the enlarged view."
+screen-preview.3,"미리보기만의 FPS입니다(0~60). 0이면 프레임마다 정한 길이로 재생하고, 1 이상이면 모든 프레임을 그 속도로 재생합니다(처음 = 0).",The preview-only FPS (0–60). 0 plays each frame for its own duration; 1 or more plays every frame at that rate (0 at first).
+screen-preview.4,누르면 맞춤 → 1× → 2× → 4× 차례로 바뀌고 우클릭하면 거꾸로 바뀝니다.,Click to cycle fit → 1× → 2× → 4×; right-click to go in reverse.
+screen-preview.13,배경 단추입니다. 누르면 배경 목록이 열립니다.,The background button. Click it to open the background list.
+screen-preview.play,재생,Playback
+screen-preview.play-1,재생 단추나 {{key:프레임·레이어/재생 / 정지}}로 재생과 정지를 바꿉니다.,Toggle playback with the play button or {{key:프레임·레이어/재생 / 정지}}.
+guide-new.preview-space,메인 창에서 <kbd>Space</kbd>를 0.4초 안에 눌렀다 떼면 <kbd>Shift</kbd>+<kbd>Enter</kbd>처럼 미리보기를 재생·정지합니다. 누른 채 캔버스를 끌면 화면만 이동하고 재생은 바뀌지 않습니다. 입력란·단추·콤보 상자에 초점이 있거나 글씨 도구로 글을 치는 중에는 해당 입력이 Space를 받습니다.,"Tap <kbd>Space</kbd> for under 0.4 seconds in the main window to play/pause the preview, like <kbd>Shift</kbd>+<kbd>Enter</kbd>. Hold it while dragging to pan the canvas without changing playback. Focused text fields, buttons, combo boxes and active text editing receive Space instead."
+screen-preview.23,"효과 계산이 밀리면 재생은 다음 프레임이 준비될 때까지 지금 프레임을 그대로 보여 주며 기다리고(빈 프레임을 끼우지 않음), 기다리는 동안 로딩 아이콘이 보입니다.","If effect computing falls behind, playback keeps showing the current frame until the next one is ready (it never inserts blank frames), with a loading icon while it waits."
+screen-preview.persist,FPS·배율·배경은 프로젝트가 아니라 앱 설정이라 다음 실행과 다른 문서에도 그대로입니다.,"FPS, zoom and background are app settings, not project settings, so they carry over to other documents and the next launch."
+screen-preview.copy,복사와 저장,Copying and saving
+screen-preview.9.alt,"미리보기 그림 위 우클릭 메뉴: 이미지 복사, 크게 복사, 프레임 저장, GIF로 저장","Preview right-click menu: Copy image, Copy enlarged, Save frame, Save as GIF"
+screen-preview.10,⑤ 우클릭 메뉴,⑤ Right-click menu
+screen-preview.6,⑤ 미리보기 그림을 우클릭하면 복사와 저장 명령이 열립니다.,⑤ Right-click the preview image to open copy and save commands.
+screen-preview.16,명령,Command
+screen-preview.17,하는 일,What it does
+screen-preview.18,보이는 프레임을 미리보기 배경 없이 투명한 PNG 그대로 클립보드에 올립니다.,Copies the shown frame to the clipboard as a transparent PNG without the preview background.
+screen-preview.19,픽셀을 또렷하게 4배로 키운 PNG를 클립보드에 올립니다. Discord 같은 채팅에 붙여 넣을 때 알맞습니다.,Copies a PNG enlarged 4× with crisp pixels. This is useful for pasting into chats such as Discord.
+screen-preview.20,<code>&lt;문서&gt;_&lt;프레임 번호&gt;.png</code> 이름으로 보이는 프레임을 저장합니다.,Saves the shown frame as <code>&lt;document&gt;_&lt;frame number&gt;.png</code>.
+screen-preview.21,"<a href=""#screen-gif"">GIF 애니메이션으로 내보내기</a> 창을 엽니다.","Opens the <a href=""#screen-gif"">Export as animated GIF</a> dialog."
+screen-preview.22,재생 중이면 우클릭할 때 보이던 프레임을 복사하거나 저장하므로 재생을 멈출 필요가 없습니다.,During playback it copies or saves the frame that was visible when you right-clicked; you do not need to stop playback.
+screen-preview.bg,배경,Background
+screen-preview.11.alt,"미리보기 배경 목록: 체커, 검정, 흰색, 회색, 초록, 사용자 색","Preview background list: checker, black, white, gray, green, custom color"
+screen-preview.12,⑥ 배경 목록,⑥ Background list
+screen-preview.5,⑥ 배경 목록에서 체커·검정·흰색·회색·초록·사용자 색을 고릅니다.,"⑥ Choose checkerboard, black, white, gray, green, or a custom color from the background list."
+screen-preview.bg-note,배경은 미리보기에만 쓰이고 그림이나 내보내기에는 들어가지 않습니다. 이미지 복사·프레임 저장도 배경 없이 투명한 그대로입니다.,The background is for the preview only and never goes into the image or exports. Copy image and Save frame also stay transparent without it.
+screen-preview.outfit,착장,Outfit
+screen-preview.outfit-body,"<a href=""#parts-concept"">그룹</a>이 있는 프로젝트에서는 미리보기 아래에 <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5}}</strong> 줄이 생깁니다. 그룹마다 보일 스킨을 고르는 목록이 있고(스킨이 하나면 꺼짐, 첫 스킨에는 ""(기본)""), 고르면 그 그룹의 스킨이 바뀌며 부위마다 따로 고른 스킨은 그대로입니다. 그룹 이름 뒤 <code>*</code>는 따로 고른 스킨이 있는 부위가 있다는 표시입니다. 그룹 이름이나 <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_090268890B}}</strong>을 누르면 <a href=""#parts-skin-manager"">스킨 관리</a> 창이 열립니다.","In projects with <a href=""#parts-concept"">groups</a>, an <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_E5D30D48F5}}</strong> row appears below the preview. Each group has a list to choose the skin to show (disabled if it has one skin; the first skin is marked ""(default)""). Choosing one changes that group's skin while skins chosen for individual parts stay. A <code>*</code> after a group name means some parts use individually chosen skins. Click a group name or <strong>{{UiStrings.S_PreviewPanel_RebuildOutfit_090268890B}}</strong> to open the <a href=""#parts-skin-manager"">skin manager</a>."
+screen-preview.large,크게 보기와 미리보기 탭,Enlarged view and preview tab
+guide-shot.preview-large.alt,늑대귀 모험가를 크게 보여 주는 미리보기 크게 보기 창,Enlarged preview window showing the wolf-eared adventurer
+guide-shot.preview-large.caption,⑦ 미리보기 크게 보기 창,⑦ Enlarged preview window
+guide-shot.preview-large.body,⑦ 크게 보기 창은 미리보기의 재생 중인 그림과 착장·배경을 창에 맞는 정수 배율로 보여 줍니다.,"⑦ The enlarged preview shows the playing image, outfit and background at a whole-number zoom fitted to its window."
+guide-new.preview-large,"미리보기 그림 위 손 모양 커서로 누르면 크기 조절 가능한 '미리보기 크게 보기' 창이 열리고 같은 재생·배경·착장을 창에 들어가는 가장 큰 정수 배율로 보여 줍니다. 한 창만 열리며 다시 누르면 앞으로 옵니다. 창 크기는 앱을 켜 둔 동안 기억하고 창 안에서 Space는 재생/정지, Esc는 닫기, 우클릭은 미리보기 메뉴입니다. 미리보기 탭이 열린 동안에는 그림을 누르면 크게 보기 대신 그 탭으로 갑니다.","Click the hand-cursor preview image to open a resizable Enlarged preview window showing the same playback, background and outfit at the largest integer zoom that fits. Only one opens and clicking again brings it forward. Its size is remembered for the current app session. Inside, Space plays/pauses, Esc closes and right-click opens the preview menu. With a preview tab open, clicking the image focuses that tab instead."
+screen-preview.large-zoom,"크게 보기 창과 미리보기 탭에서는 휠로 커서 아래를 중심으로 확대하고(1~2배는 0.25배씩, 2~4배는 0.5배씩, 그 위로는 두 배 구간마다 간격이 두 배, 최대 64배) 끌어서 옮깁니다. 더블클릭하면 다시 창에 맞추고, 크게 보기 창에서는 <kbd>0</kbd>으로도 맞춥니다.","In the enlarged window and the preview tab, the wheel zooms around the cursor (0.25× steps from 1 to 2×, 0.5× steps from 2 to 4×, and the step doubles with every doubling above that, up to 64×), and dragging pans. Double-click to fit to the window again; in the enlarged window <kbd>0</kbd> also fits."
+guide-new.preview-tab-link,"미리보기 제목 줄의 '탭으로 열기'를 누르면 편집 문서를 <a href=""#screen-tabs"">나눈 화면의 미리보기 탭</a>으로 크게 볼 수 있습니다. 탭이 열린 동안 미리보기 그림을 누르면 그 탭을 앞으로 가져옵니다.","Use Open as tab in the preview header to show the editing document larger in a <a href=""#screen-tabs"">split-view preview tab</a>. While that tab is open, clicking the preview image brings the tab forward."
+screen-export.1,내보내기 창,Export dialog
+screen-export.5.alt,"내보내기 창: 왼쪽 설정, 오른쪽 결과 미리보기, 탭 두 개, 내보내기 단추","Export dialog: settings on the left, output preview on the right, two tabs and the Export button"
+screen-export.6,① 내보내기(Export) 단추 · ② 내보내기 탭 · ③ Import Settings 탭 · ④ 설정 · ⑤ 결과 미리보기 · ⑥ 나눔줄,① Export button · ② Export tab · ③ Import Settings tab · ④ Settings · ⑤ Output preview · ⑥ Divider
+screen-export.overview,"내보내기 창에서는 프로젝트를 Unity 등에서 쓸 PNG로 내보내는 방법을 정합니다. 결과는 프레임을 늘어놓은 <strong>프레임 시트</strong>와 부위 그림을 모은 <a href=""#parts-export"">부위 아틀라스</a> 두 가지이고, 설정은 프로젝트(<code>.chickxel</code>)에 저장됩니다.","The Export dialog sets how the project is exported as PNGs for Unity and other tools. There are two outputs, the <strong>frame sheet</strong> that lays out the frames and the <a href=""#parts-export"">part atlas</a> that packs part images, and the settings are saved in the project (<code>.chickxel</code>)."
+screen-export.open,창 열기와 구성,Opening and layout
+screen-export.2,"{{key:파일/내보내기…}} 또는 <strong>파일 &gt; 내보내기…</strong>로 엽니다. 설정은 바꾸는 즉시 적용되며(설정 하나마다 실행취소 한 단계), 아래 파란 ① <strong>내보내기</strong>(Export)를 누르면 창을 닫고 내보냅니다. 저장할 때 내보내기가 켜져 있으면 {{key:파일/저장(+ 시트 내보내기)}}만으로도 내보냅니다. 탭은 ② <strong>내보내기</strong>와 ③ <strong>Import Settings</strong> 두 개입니다.","Open it with {{key:파일/내보내기…}} or <strong>File &gt; Export…</strong>. Settings apply as soon as you change them (one undo step per setting), and the blue ① <strong>Export</strong> button at the bottom closes the dialog and exports. If export on save is on, {{key:파일/저장(+ 시트 내보내기)}} alone exports too. There are two tabs: ② <strong>Export</strong> and ③ <strong>Import Settings</strong>."
+screen-export.3,"④ <strong>왼쪽 = 설정</strong>, ⑤ <strong>오른쪽 = 결과 미리보기</strong>(파일마다 시트와 칸 이름 목록). ⑥ 가운데 경계를 끌어 폭을 나누고, 창 크기와 접은 묶음은 다음에도 그대로입니다.","④ <strong>Left = settings</strong>, ⑤ <strong>right = output preview</strong> (sheet and cell name list per file). Drag ⑥ the divider to split the width; the dialog size and collapsed sections are remembered."
+screen-export.window-note,창 위치·크기·나눔 비율과 접은 묶음은 앱 설정이라 다른 프로젝트에서도 그대로입니다.,"The window position, size, split ratio and collapsed sections are app settings, so they stay the same in other projects."
+screen-export.sections,설정 묶음,Setting sections
+screen-export.19.alt,내보내기 창의 설정 묶음을 모두 접은 모습,Export dialog with all setting sections collapsed
+screen-export.20,⑦ 공통 · ⑧ 파일 · ⑨ 프레임 시트 · ⑩ 부위 아틀라스 · ⑪ 고급,⑦ Common · ⑧ Files · ⑨ Frame sheet · ⑩ Part atlas · ⑪ Advanced
+screen-export.4,프레임 시트와 부위 아틀라스는 <strong>같은 시트 설정</strong>을 함께 씁니다. ⑪ <strong>고급 &gt; 시트별 다르게</strong>를 켜면 부위 아틀라스용 설정을 따로 둘 수 있습니다.,The frame sheet and part atlas share the <strong>same sheet settings</strong>. Turn on ⑪ <strong>Advanced &gt; Per sheet</strong> to keep separate settings for the part atlas.
+screen-export.7,묶음,Section
+screen-export.8,주요 설정,Main settings
+screen-export.9,⑦ 공통,⑦ Common
+screen-export.10,"내보낼 결과(프레임 시트·부위 아틀라스·둘 다), 스킨(지금 착장·고른 스킨), 스킨 담기, 배치(격자·자동 배치), 정렬, 칸 수, 따로 파일, 칸 이름, 칸 사이 간격, 테두리 잘라내기, 2의 거듭제곱, 배율","Output (frame sheet, part atlas, both), skins (current outfit, chosen skins), skin packing, layout (grid, auto layout), sort order, cell count, separate files, cell names, spacing between cells, trim borders, power of two, scale"
+screen-export.11,⑧ 파일,⑧ Files
+screen-export.12,"저장할 때 내보내기, 폴더, 파일 형식(PNG/JPG/TGA/BMP), Unity .meta(끔·자동·항상)","Export on save, folder, file format (PNG/JPG/TGA/BMP), Unity .meta (off, auto, always)"
+screen-export.13,⑨ 프레임 시트,⑨ Frame sheet
+screen-export.14,"이름, Single 프레임, 경로","Name, Single frame, path"
+screen-export.15,⑩ 부위 아틀라스,⑩ Part atlas
+screen-export.16,"이름, 원래 위치 유지, Sprite Library, 경로","Name, keep original positions, Sprite Library, path"
+screen-export.17,⑪ 고급,⑪ Advanced
+screen-export.18,시트별 다르게,Per sheet
+screen-export.common,공통 묶음,Common section
+screen-export.28.alt,내보내기 창의 공통 묶음,Common section of the Export dialog
+screen-export.29,⑫ 칸 수 · ⑬ 정렬 · ⑭ 따로 파일 · ⑮ 칸 이름 · ⑯ 스킨과 스킨 고르기,⑫ Cell count · ⑬ Order · ⑭ Separate files · ⑮ Cell names · ⑯ Skin and Choose skins
+screen-export.common-intro,"새 프로젝트는 프레임 시트만, 격자 배치, 지금 착장, 칸 수 자동, 칸 사이 간격 1px, 배율 1배로 시작합니다. 아래는 번호가 붙은 설정입니다.","A new project starts with the frame sheet only, grid layout, the current outfit, automatic cell count, 1 px spacing between cells and 1× scale. The numbered settings:"
+screen-export.21,"⑫ <strong>칸 수</strong>(격자 배치일 때): 자동(시트가 가장 작아지게), 가로 N칸, 세로 N칸(1~1024, 처음 4).","⑫ <strong>Cell count</strong> (grid layout): auto (smallest sheet), N columns or N rows (1–1024, 4 at first)."
+screen-export.22,"⑬ <strong>정렬</strong>: 부위·스킨·태그·프레임 줄을 끌거나 <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>로 순서를 바꾸고, 줄 사이 <strong>여기서 새 줄</strong>로 줄바꿈 위치를 정합니다. 정렬은 위치만 바꾸고 칸 이름은 그대로입니다.","⑬ <strong>Sort order</strong>: drag the part, skin, tag and frame rows or use <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> to reorder them, and use <strong>New row here</strong> between rows to set where lines break. Sorting changes only positions; cell names stay the same."
+screen-export.23,"⑭ <strong>따로 파일</strong>: 태그마다, 부위마다 파일을 나눕니다(같이 켤 수 있음). 스킨마다 나누기는 <strong>스킨 담기</strong>에서 고릅니다.",⑭ <strong>Separate files</strong>: split files per tag and per part (both can be on). Splitting per skin is chosen under <strong>Skin packing</strong>.
+screen-export.24,⑮ <strong>칸 이름</strong>: <strong>프레임 번호</strong> 또는 <strong>태그 기준</strong>(새 프로젝트 기본값). Unity <code>.meta</code>의 스프라이트 이름으로 쓰이므로 바꾸면 경고가 나옵니다.,"⑮ <strong>Cell names</strong>: <strong>Frame number</strong> or <strong>By tag</strong> (default for new projects). They're used as sprite names in Unity <code>.meta</code>, so changing them shows a warning."
+screen-export.25,"⑯ <strong>스킨 고르기…</strong>: 내보낼 스킨, 착장 프리셋, 합성에 넣을 레이어를 고릅니다.","⑯ <strong>Choose skins…</strong>: choose skins to export, outfit presets and layers to include in the composite."
+screen-export.th-setting,설정,Setting
+screen-export.th-does,하는 일,What it does
+screen-export.c-layout,<strong>배치</strong>,<strong>Layout</strong>
+screen-export.c-layout.d,"<strong>격자</strong>는 같은 크기 칸에 차례로 놓고, <strong>자동 배치</strong>는 칸 크기가 달라도 빈틈 없이 채웁니다.",<strong>Grid</strong> places cells of equal size in order; <strong>Auto layout</strong> packs cells of different sizes tightly.
+screen-export.c-maxw,<strong>최대 가로·넣는 순서(자동 배치일 때)</strong>,<strong>Max width and packing order (auto layout)</strong>
+screen-export.c-maxw.d,시트의 최대 가로(0 = 자동)와 칸을 넣는 순서(<strong>정렬 순서대로</strong> 또는 <strong>큰 것부터</strong>).,The sheet's maximum width (0 = auto) and the order cells are packed in (<strong>In sort order</strong> or <strong>Largest first</strong>).
+screen-export.c-spacing,<strong>칸 사이 간격</strong>,<strong>Spacing between cells</strong>
+screen-export.c-spacing.d,0~64px(처음 1px).,0–64 px (1 px at first).
+screen-export.c-trim,<strong>테두리 잘라내기</strong>,<strong>Trim borders</strong>
+screen-export.c-trim.d,칸마다 투명한 둘레를 잘라 냅니다(처음 끔).,Cuts the transparent border off each cell (off at first).
+screen-export.c-pot,<strong>2의 거듭제곱</strong>,<strong>Power of two</strong>
+screen-export.c-pot.d,시트 가로·세로를 2의 거듭제곱으로 맞춥니다(처음 끔).,Rounds the sheet width and height up to powers of two (off at first).
+screen-export.36,"<strong>배율</strong>(공통 묶음 맨 아래, 2의 거듭제곱 아래, 1~16배 — 숫자 칸이나 1·2·3·4·6·8 고르기): 프레임 시트와 부위 아틀라스 결과 이미지를 정수 배로 키웁니다(최근접이라 픽셀 그대로). 칸을 잘라 낸 뒤 키우므로 칸 사이 간격과 최대 가로는 키운 결과 기준 px입니다(간격 1이면 결과에서도 1px). 9-slice 테두리와 Unity PPU(<code>.meta</code>의 Pixels Per Unit)에도 같은 배율을 곱해 Unity에서 보이는 크기는 그대로이고(PPU 16 · 배율 3 → 48), 피벗은 같은 지점입니다. Single 프레임 시트도 캔버스 × 배율로 키웁니다. 오른쪽 미리보기는 키운 결과를 보이고, 움직임 테스트는 원래 크기로 보입니다. 공통 설정이라 두 결과가 같이 쓰고, 시트별 다르게를 켜면 부위 아틀라스 쪽에도 따로 있습니다. 프로젝트 파일과 내보내기 프리셋에 저장되며, <a href=""#screen-gif"">GIF 내보내기</a>의 배율은 따로입니다.","<strong>Scale</strong> (at the bottom of the Common group, below power of two; 1–16× — type a number or pick 1, 2, 3, 4, 6 or 8): enlarges the frame sheet and part atlas images by a whole number (nearest neighbor, so pixels stay crisp). Cells are cut out first and then enlarged, so cell spacing and maximum width are px in the enlarged result (spacing 1 stays 1px). 9-slice borders and the Unity PPU (Pixels Per Unit in the <code>.meta</code>) are multiplied by the same scale, so the size in Unity stays the same (PPU 16 · scale 3 → 48), and the pivot stays on the same spot. Single frame sheets are enlarged too (canvas × scale). The preview on the right shows the enlarged result; the motion test shows the original size. As a common setting both outputs use it; with per-sheet settings on, the part atlas has its own. It is saved in the project file and export presets; <a href=""#screen-gif"">GIF export</a> has its own scale."
+screen-export.files,파일과 결과별 설정,Files and per-output settings
+screen-export.files-1,"<strong>파일</strong> 묶음: 저장할 때 내보내기(처음 켬), 폴더(비우면 프로젝트 폴더), 파일 형식 PNG·JPG·TGA·BMP(JPG는 품질 1~100%, 처음 90), Unity <code>.meta</code> 끔·자동·항상(처음 자동 = Unity <code>Assets</code> 안이거나 <code>.meta</code>가 이미 있을 때만 씀).","<strong>Files</strong> section: export on save (on at first), folder (empty = the project folder), file format PNG, JPG, TGA or BMP (JPG quality 1–100%, 90 at first), Unity <code>.meta</code> off, auto or always (auto at first = written only inside a Unity <code>Assets</code> folder or where a <code>.meta</code> already exists)."
+screen-export.files-2,"<strong>프레임 시트</strong> 묶음: 이름(비우면 프로젝트 이름), 경로. <strong>Single 프레임</strong>은 Import Settings의 Sprite Mode가 Single일 때만 보이며, 고른 프레임 하나를 캔버스 크기 그대로(배율만 적용) 내보내고 공통 배치 설정은 쓰지 않습니다.",<strong>Frame sheet</strong> section: name (empty = the project name) and path. <strong>Single frame</strong> appears only when Sprite Mode in Import Settings is Single; it exports one chosen frame at canvas size (only the scale applies) and ignores the common layout settings.
+screen-export.files-3,"<strong>부위 아틀라스</strong> 묶음: 이름(비우면 프레임 시트 이름 + <code>_parts</code>), <strong>원래 위치 유지</strong>(자동 배치일 때, 처음 켬), <a href=""#parts-sprite-library"">Sprite Library</a>(켜면 부위 <code>.meta</code>도 씀), 경로.","<strong>Part atlas</strong> section: name (empty = the frame sheet name + <code>_parts</code>), <strong>Keep original positions</strong> (auto layout; on at first), <a href=""#parts-sprite-library"">Sprite Library</a> (also writes the part <code>.meta</code>) and path."
+screen-export.files-4,<strong>고급 &gt; 시트별 다르게</strong>를 켜면 지금 공통 값을 복사해 부위 아틀라스용 설정을 한 벌 더 둡니다.,Turning on <strong>Advanced &gt; Per sheet</strong> copies the current common values into a second set of settings for the part atlas.
+screen-export.presets,프리셋,Presets
+screen-export.30.alt,"프리셋 단추로 연 팝업: 지금 설정 저장, 불러오기, 관리, 기본 설정으로","Popup opened by the Preset button: save, load, manage, reset to defaults"
+screen-export.31,⑰ 프리셋(Preset) 팝업,⑰ Preset popup
+screen-export.26,"⑰ <strong>프리셋</strong>(탭 줄 오른쪽 끝): 지금 설정을 이름 붙여 앱 설정에 저장하고 다른 프로젝트에서 불러옵니다. 기본 제공 프리셋(""프레임 시트 기본"", ""부위 아틀라스 + Sprite Library"", ""스킨마다 따로 파일""), 기본 설정으로, 이름 바꾸기·덮어쓰기·삭제, JSON 내보내기/가져오기가 있습니다. 배율·JPG 품질·<code>.meta</code>·저장할 때 내보내기는 담고, 파일 이름·폴더, 고른 스킨·착장, 뺀 레이어, Single 프레임 번호, 원래 위치 유지처럼 프로젝트마다 다른 값은 담지 않습니다.","⑰ <strong>Preset</strong> (far right of the tab row): saves the current settings under a name in the app settings so you can load them in other projects. Includes built-in presets (""Frame sheet (default)"", ""Part atlas + Sprite Library"", ""Separate file per skin""), reset to defaults, rename, overwrite, delete, and JSON export/import. Scale, JPG quality, <code>.meta</code> and export on save are included; per-project values such as file names and folders, chosen skins and outfits, excluded layers, the Single frame number and Keep original positions are not."
+screen-export.import,Import Settings,Import Settings
+screen-export.32.alt,내보내기 창의 Import Settings 탭,Import Settings tab of the Export dialog
+screen-export.33,⑱ Import Settings 탭 설정,⑱ Import Settings tab
+screen-export.27,⑱ <strong>Import Settings</strong> 탭(<code>.meta</code>가 자동이나 항상일 때 보임): Unity Texture Importer와 같은 이름·값을 정합니다.,⑱ <strong>Import Settings</strong> tab (shown when <code>.meta</code> is Auto or Always): sets the same names and values as Unity's Texture Importer.
+screen-export.th-field,항목,Field
+screen-export.th-default,값(처음 값),Values (initial value)
+screen-export.i-mode,Sprite Mode,Sprite Mode
+screen-export.i-mode.d,Single·Multiple(Single). 프레임 시트에만 쓰고 부위 아틀라스는 늘 Multiple,Single or Multiple (Single). Frame sheet only; the part atlas is always Multiple
+screen-export.i-ppu,Pixels Per Unit,Pixels Per Unit
+screen-export.i-ppu.d,1~10000(16),1–10000 (16)
+screen-export.i-mesh,Mesh Type · Extrude Edges,Mesh Type · Extrude Edges
+screen-export.i-mesh.d,"Full Rect·Tight(Full Rect), Extrude Edges 0~32px(1, Tight일 때)","Full Rect or Tight (Full Rect); Extrude Edges 0–32 px (1, with Tight)"
+screen-export.i-pivot,Pivot,Pivot
+screen-export.i-pivot.d,9방향 또는 X·Y 0~1(가운데). Single일 때만,9 presets or custom X/Y 0–1 (center). Single only
+screen-export.i-physics,Generate Physics Shape,Generate Physics Shape
+screen-export.i-physics.d,켬,On
+screen-export.i-adv,Advanced,Advanced
+screen-export.i-adv.d,"sRGB(켬), Alpha Source(Input Texture Alpha), Alpha Is Transparency(켬), Read/Write(끔), Mip Maps(끔)","sRGB (on), Alpha Source (Input Texture Alpha), Alpha Is Transparency (on), Read/Write (off), Mip Maps (off)"
+screen-export.i-wrap,Wrap · Filter · Aniso,Wrap · Filter · Aniso
+screen-export.i-wrap.d,"Wrap Mode(Clamp), Filter Mode Point·Bilinear·Trilinear(Point), Aniso Level 0~16(1)","Wrap Mode (Clamp), Filter Mode Point, Bilinear or Trilinear (Point), Aniso Level 0–16 (1)"
+screen-export.i-platform,Default 플랫폼,Default platform
+screen-export.i-platform.d,"Max Size(자동 또는 32~16384), Resize Algorithm(Mitchell), Format(Automatic), Compression(None), Use Crunch(끔)","Max Size (auto or 32–16384), Resize Algorithm (Mitchell), Format (Automatic), Compression (None), Use Crunch (off)"
+screen-export.import-note,"처음 값은 픽셀 아트에 맞춘 값(Point, 압축 없음, 밉맵 끔, Clamp)입니다.","The initial values suit pixel art (Point, no compression, mipmaps off, Clamp)."
+screen-export.preview,결과 미리보기와 진행 표시,Output preview and progress
+screen-export.preview-1,"⑤ 결과 미리보기에는 파일마다 시트 크기와 칸 목록(스프라이트 이름, 원래 프레임, 시트 안 자리)이 보입니다. 목록 줄을 누르면 편집기가 그 프레임(부위면 그 부위와 스킨)으로 가고, 지금 칸이 강조됩니다. 꺼진 결과나 저장할 때 내보내기가 꺼진 경우도 적어 줍니다.","⑤ The output preview lists each file's sheet size and its cells (sprite name, source frame, position in the sheet). Clicking a row takes the editor to that frame (and part and skin, for parts), and the current cell is highlighted. Outputs that are off, or export on save being off, are noted too."
+screen-export.35,"내보내기가 오래 걸리면 끝날 때까지 창 전체가 검은 반투명 덮개로 덮입니다. 가운데 상자에 <strong>{{UiStrings.Busy_Exporting}}</strong>, 돌아가는 로딩 아이콘, 퍼센트와 진행 막대, <strong>{{UiStrings.Busy_Hint}}</strong> 안내가 보이며, 그동안 그리기·단축키·파일 끌어 놓기는 먹히지 않고 다른 창(AI 대화창 등)도 잠시 꺼집니다.","When an export takes a while, a dark translucent overlay covers the whole window until it finishes. A box in the middle shows <strong>{{UiStrings.Busy_Exporting}}</strong>, a spinning loading icon, the percentage with a progress bar and <strong>{{UiStrings.Busy_Hint}}</strong>; meanwhile drawing, shortcuts and file drops are ignored and other windows (such as the AI chat) are disabled."
+screen-export.34,"파일 저장과 Unity 연동은 <a href=""#files"">파일</a> 장도 보세요.","See also the <a href=""#files"">Files</a> chapter for saving and Unity integration."
+screen-gif.1,GIF 애니메이션으로 내보내기,Export as animated GIF
+screen-gif.2,<strong>파일 &gt; GIF 애니메이션으로 내보내기…</strong>는 공유용 GIF 한 파일을 만듭니다. 프로젝트와 내보내기 설정은 바뀌지 않습니다. 미리보기 그림 우클릭 <strong>GIF로 저장…</strong>도 같은 창을 엽니다.,<strong>File &gt; Export as animated GIF…</strong> creates a single GIF for sharing. The project and its export settings aren't changed. <strong>Save as GIF…</strong> in the preview's right-click menu opens the same dialog.
+screen-gif.8.alt,"GIF 애니메이션으로 내보내기 창: 범위, 배율, 반복, 배경, 미리보기, 결과 정보","Export as animated GIF dialog: range, zoom, loop, background, preview, result info"
+screen-gif.9,① 범위 · ② 배율(Zoom) · ③ 반복 · ④ 배경 · ⑤ 미리보기 · ⑥ 결과 크기·프레임 수·길이·색 수,"① Range · ② Zoom · ③ Loop · ④ Background · ⑤ Preview · ⑥ Output size, frames, duration, colors"
+screen-gif.10.alt,태그 고르기 목록을 연 모습,Choose tag list opened
+screen-gif.11,⑦ 태그 목록,⑦ Tag list
+screen-gif.settings,설정,Settings
+screen-gif.3,"① <strong>범위</strong>: 현재 태그(현재 프레임이 태그 안에 없으면 꺼짐), 모든 프레임, ⑦ 태그 고르기(태그가 없으면 꺼짐, 목록에 프레임 범위와 역방향·왕복 표시). 처음에는 현재 태그가 있으면 현재 태그, 없으면 모든 프레임이고, 태그의 방향대로 프레임을 늘어놓습니다.","① <strong>Range</strong>: current tag (disabled when the current frame isn't in a tag), all frames, or ⑦ choose a tag (disabled without tags; the list shows each tag's frames and reverse or ping-pong). It starts with the current tag if there is one, otherwise all frames, and frames follow the tag's direction."
+screen-gif.4,"② <strong>배율</strong>: 1~10배, 최근접으로 픽셀 그대로 키웁니다(처음 = 결과가 256px쯤 되는 배율).","② <strong>Zoom</strong>: 1–10×, nearest neighbor so pixels stay crisp (initially the zoom that makes the result about 256 px)."
+screen-gif.5,③ <strong>반복</strong>: 무한 반복 또는 1~100번 재생(1 = 한 번).,③ <strong>Loop</strong>: loop forever or play 1–100 times (1 = once).
+screen-gif.6,"④ <strong>배경</strong>: 투명(알파 50% 미만은 투명, 나머지는 불투명) 또는 배경색 위에 합성.","④ <strong>Background</strong>: transparent (alpha below 50% becomes transparent, the rest opaque) or composited over a background color."
+screen-gif.persist,"반복과 배경 설정은 앱 설정이라 다음에도 그대로이고, 범위와 배율은 열 때마다 다시 정해집니다.",Loop and background are app settings and stay the same next time; range and zoom are worked out again each time the dialog opens.
+screen-gif.result,미리보기와 저장,Preview and saving
+screen-gif.7,"오른쪽 ⑤ 미리보기가 프레임 길이대로 재생되고 ⑥ 결과 크기·프레임 수·길이·색 수가 보입니다. GIF의 프레임 길이는 1/100초 단위로 반올림되고 20ms보다 짧아지지 않습니다. 색이 적으면(투명이 있으면 255개, 없으면 256개 이하) 무손실로 저장되고, 더 많으면 프레임마다 팔레트를 따로 써서 색을 줄입니다(디더링 없음).","⑤ The preview on the right plays with the frame durations, and ⑥ shows the output size, frame count, duration and color count. GIF frame durations are rounded to hundredths of a second and never shorter than 20 ms. With few enough colors (255 with transparency, otherwise 256) the GIF is lossless; with more, each frame gets its own palette and colors are reduced (no dithering)."
+screen-gif.save,"<strong>내보내기…</strong>를 누르면 저장 창이 열립니다. 기본 이름은 프로젝트 옆 <code>&lt;프로젝트&gt;.gif</code>(태그면 <code>&lt;프로젝트&gt;_&lt;태그&gt;.gif</code>)이고, 저장한 적 없는 프로젝트는 마지막으로 쓴 폴더에 둡니다. 저장한 뒤에도 창은 열려 있어 파일 크기와 결과를 보여 주고, 설정을 바꿔 다시 저장할 수 있습니다(취소 단추가 <strong>닫기</strong>로 바뀜). 단축키는 <a href=""#shortcuts-customize"">환경 설정 &gt; 단축키</a>에서 정할 수 있습니다.","<strong>Export…</strong> opens a save dialog. The default name is <code>&lt;project&gt;.gif</code> next to the project (<code>&lt;project&gt;_&lt;tag&gt;.gif</code> for a tag); a never-saved project uses the last folder you used. After saving, the dialog stays open showing the file size and result, so you can change settings and save again (Cancel becomes <strong>Close</strong>). You can assign a shortcut in <a href=""#shortcuts-customize"">Preferences &gt; Shortcuts</a>."
+screen-gif.12,"미리보기 프레임을 합성하거나 GIF 파일을 쓰는 데 오래 걸리면 끝날 때까지 창 전체가 검은 반투명 덮개로 덮이고, 가운데 상자에 <strong>{{UiStrings.Busy_GifFrames}}</strong> 또는 <strong>{{UiStrings.Busy_GifSaving}}</strong>과 퍼센트·진행 막대가 보입니다.","If compositing the preview frames or writing the GIF takes a while, a dark translucent overlay covers the whole window until it finishes, with <strong>{{UiStrings.Busy_GifFrames}}</strong> or <strong>{{UiStrings.Busy_GifSaving}}</strong> and the percentage with a progress bar in a box in the middle."
+screen-gallery.1,갤러리에 올리기,Upload to gallery
+screen-gallery.2.alt,"갤러리에 올리기 창: 왼쪽 올릴 그림(지금 프레임·애니메이션 전체)과 배율, 제목·설명·태그, Chickxel 계정, 오른쪽 미리보기와 공개 안내","The Upload to Gallery window: picture (current frame or whole animation) and scale, title, description and tags, and Chickxel account on the left; preview and the public notice on the right"
+screen-gallery.3,① 올릴 그림·배율 · ② 설명 · ③ 계정 · ④ 미리보기와 안내,① Picture and scale · ② Details · ③ Account · ④ Preview and notice
+screen-gallery.4,<strong>파일 &gt; {{UiStrings.Gallery_Menu}}</strong>(GIF 내보내기 아래)로 지금 그림을 chickxel.com 갤러리에 올립니다.,<strong>File &gt; {{UiStrings.Gallery_Menu}}</strong> (below GIF export) uploads the current picture to the chickxel.com gallery.
+screen-gallery.5,"① <strong>{{UiStrings.Gallery_What}}</strong>: <strong>{{UiStrings.Gallery_KindPng}}</strong> 또는 <strong>애니메이션 전체(GIF)</strong>(모든 프레임, 프레임 길이 그대로, 무한 반복, 투명 배경 — GIF 내보내기와 같은 합성, 프레임이 하나면 꺼짐). <strong>{{UiStrings.Gallery_Scale}}</strong>는 1배부터 결과가 가로·세로 2048px를 넘지 않는 데까지, 최대 10배이고(처음 1배), 아래에 크기·프레임 정보가 보입니다. 원래 그림이 2048px보다 크면 올릴 수 없습니다.","① <strong>{{UiStrings.Gallery_What}}</strong>: <strong>{{UiStrings.Gallery_KindPng}}</strong> or <strong>Whole animation (GIF)</strong> (every frame with its duration, looping forever, transparent background — composed like GIF export; disabled for a single frame). <strong>{{UiStrings.Gallery_Scale}}</strong> goes from 1× up to the largest zoom that keeps the result within 2048 px wide and tall, at most 10× (1× at first), with the size and frame information below. Pictures larger than 2048 px can't be uploaded."
+screen-gallery.6,"② <strong>{{UiStrings.Gallery_Details}}</strong>: 제목(1~100자, 처음엔 파일 이름), 설명(선택, 2000자 이하), 태그(선택, 쉼표로 나눠 8개까지, 하나에 32자 이하의 소문자·숫자·하이픈).","② <strong>{{UiStrings.Gallery_Details}}</strong>: title (1–100 characters, the file name at first), description (optional, up to 2000 characters) and tags (optional, comma-separated, up to 8, each up to 32 lowercase letters, digits and hyphens)."
+screen-gallery.7,"③ 올릴 계정이 보이고 <strong>{{UiStrings.Account_Menu}}</strong>로 계정 창을 엽니다(<a href=""#start-account"">Chickxel 계정</a>).","③ Shows the account the picture goes to; <strong>{{UiStrings.Account_Menu}}</strong> opens the account window (see <a href=""#start-account"">Chickxel account</a>)."
+screen-gallery.8,"④ 지금 프레임의 정지 그림과, 올린 그림은 바로 공개되니 다른 사람의 그림을 올리지 말라는 안내입니다. 미리보기는 GIF나 배율을 골라도 바뀌지 않습니다.","④ A still image of the current frame, and a notice that uploads are public right away and that you shouldn't upload other people's work. The preview doesn't change when you choose GIF or a scale."
+screen-gallery.9,"<strong>{{UiStrings.Gallery_Upload}}</strong>를 누르면 로그인하지 않았을 때 먼저 계정 창이 열립니다. 그림을 만드는 동안 <strong>{{UiStrings.Gallery_Encoding}}</strong>이, 올리는 동안 진행 막대와 <strong>{{UiStrings.Gallery_CancelUpload}}</strong>가 보이고, 끝나면 브라우저에 그 그림 쪽(<code>chickxel.com/gallery/…</code>)이 열립니다. 파일이 4MB를 넘거나 GIF 프레임이 1000개를 넘으면 배율을 줄이거나 지금 프레임만 올리라고 알립니다. 하루 올리기 횟수 한도에 걸리면 몇 분 뒤에 다시 하라고 알립니다. 프로젝트는 바뀌지 않습니다.","Clicking <strong>{{UiStrings.Gallery_Upload}}</strong> first opens the account window if you aren't signed in. While the picture is being made, <strong>{{UiStrings.Gallery_Encoding}}</strong> is shown; while uploading, a progress bar and <strong>{{UiStrings.Gallery_CancelUpload}}</strong> appear; when done, the picture's page (<code>chickxel.com/gallery/…</code>) opens in your browser. A file over 4 MB or a GIF with more than 1000 frames is refused with a hint to lower the scale or upload just the current frame. If you hit the daily upload limit, you're asked to try again in a few minutes. The project isn't changed."
+screen-gallery.lead,올리기 전,Before uploading
+screen-gallery.after,올리기,Uploading
+screen-tool-settings.1,도구 설정,Tool options
+screen-tool-settings.3.alt,도구 설정 패널: 연필,Tool options panel for the Pencil
+screen-tool-settings.4,① 제목 줄 · ② 그 도구의 설정,① Title row · ② Settings of that tool
+screen-tool-settings.2,"오른쪽 미리보기 아래에 있습니다. ① 제목 줄에 고른 도구 이름(예: <code>도구 설정 · 연필</code>)이 보이고 ② 그 도구의 세부 설정만 나옵니다. 도구별 내용은 <a href=""#tools"">도구</a> 장에 있습니다. 미리보기와 도구 설정 사이 경계선을 끌어 높이를 나누면 다음 실행에도 남습니다.","Below the preview on the right. ① The title row shows the selected tool's name (e.g. <code>Tool settings · Pencil</code>) and ② only that tool's settings appear. Per-tool details are in the <a href=""#tools"">Tools</a> chapter. Drag the border between the preview and Tool options to share the height; it is kept for the next launch."
+screen-tool-settings.persist,도구 설정은 실행취소 대상이 아니며 다음 실행 때도 그대로입니다. 다만 좌우·상하 대칭 그리기를 켰는지는 저장하지 않습니다(대칭: 피벗 기준은 저장).,"Tool settings aren't part of undo and are kept for the next launch, except whether horizontal or vertical symmetry drawing is on (Mirror around pivot is kept)."
+screen-tool-settings.modes,변형·크기 모드일 때,During transform and resize modes
+screen-tool-settings.modes-body,"<a href=""#tools-transform"">변형</a>({{key:편집/변형(회전·크기)…}}), <a href=""#tools-canvas-size"">캔버스 크기</a>({{key:편집/캔버스 크기…}}), <a href=""#tools-layer-size"">레이어 크기</a>({{key:편집/레이어 크기…}}) 모드 동안에는 도구 설정과 효과 묶음 대신 그 모드의 숫자 칸과 적용·취소 단추가 나옵니다.","During <a href=""#tools-transform"">transform</a> ({{key:편집/변형(회전·크기)…}}), <a href=""#tools-canvas-size"">canvas size</a> ({{key:편집/캔버스 크기…}}) and <a href=""#tools-layer-size"">layer size</a> ({{key:편집/레이어 크기…}}) modes, the panel shows that mode's number fields and Apply/Cancel buttons instead of the tool settings and effect group."
+screen-tool-settings.fold,접기,Collapsing
+guide-new.dock-collapse,"오른쪽 독의 '도구 설정 · 도구 이름' 제목 줄을 누르면 도구 설정 패널 전체가 접히고 오른쪽 화살표로 표시됩니다. 효과 하나를 타임라인에서 고르면 아래 별도의 검은 '효과' 제목 줄과 '효과 · 이름' 묶음 상자가 나타나며 그 줄도 따로 접고 펼칩니다. 브러시·옵션·효과 이름처럼 묶음 상자의 제목 오른쪽 화살표는 접힘=오른쪽, 펼침=아래이며 제목을 누르면 부드럽게 접히거나 펴집니다. 접힌 묶음은 앱을 켜 둔 동안 유지됩니다.","Click the 'Tool options · tool name' title in the right dock to collapse the entire tool-options panel; the arrow points right when closed. Selecting exactly one timeline effect adds a separate black 'Effects' header below it and an 'Effect · name' group; that header collapses its panel independently. Each group (Brush, Options, effect name) also has a header arrow: right when collapsed, down when expanded. Click a group title to animate the fold; its state lasts for the app session."
+screen-tool-settings.effect,고른 효과 설정,Settings of the selected effect
+guide-shot.effect-dock.alt,타임라인에서 외곽선 효과를 골라 오른쪽 독에 별도 효과 패널과 효과 고유 설정이 보이는 모습,Outline effect selected in the timeline with a separate Effects panel and effect-specific settings in the right dock
+guide-shot.effect-dock.caption,③ 고른 외곽선 효과 · ④ 도구 설정 아래 효과 패널,③ Selected Outline effect · ④ Effects panel below Tool options
+guide-shot.effect-dock.body,타임라인의 ③ 외곽선 효과 하나를 고르면 ④ 오른쪽 도구 설정 아래에 따로 효과 설정 묶음이 나타납니다.,Select the single ③ Outline effect in the timeline to show its separate ④ Effects settings panel below Tool options.
+guide-new.dock-effect,"효과 하나를 고르면 도구 설정 독의 '효과 · 이름' 묶음에서 효과 창과 같은 고유 설정(색·숫자·슬라이더·선택, 움직임의 빠르기 곡선·반복·범위 뒤 끝 모습·뒤 효과 피벗 이동)을 바로 고칩니다. 문서에 즉시 반영되고 짧은 간격으로 이어 고친 값은 실행취소 한 단계입니다. 다른 것을 고르거나 효과를 여러 개 고르면 묶음이 사라집니다. 프레임 범위·클리핑·스크립트 편집·영구 적용은 '효과 창에서 열기…'로 그 효과를 고른 채 여는 효과 창에서 바꿉니다. 스크립트를 그릴 수 없으면 묶음에 그 까닭이 경고로 나옵니다.","Select one timeline effect to edit its specific settings directly in the 'Effect · name' group in the tool dock: colors, numbers, sliders, choices and animated easing, repeats, held end and pivot movement. Changes update the document immediately; rapid consecutive edits merge into one undo step. The group disappears on other selections or multiple selected effects. Use Open in Effects dialog… to open that effect selected for frame range, clipping, script editing or permanent application. If a script cannot render, its reason appears as a warning in the group."
+guide-new.dock-gradient,오른쪽 독 효과 설정의 그라데이션 색 띠·편집 줄과 색 목록 항목은 독 폭에 맞춰집니다. 폭이 좁으면 이름 옆의 값이 다음 줄로 넘어가며 옆으로 튀어나오지 않습니다. 효과 창과 효과 만들기처럼 넓은 곳에서는 원래 폭으로 보입니다.,"Gradient color strips, editing rows and color-list items in the right-dock effect settings fit the dock's width. At narrow widths the value wraps below its label instead of overflowing horizontally. In wider Effects and Effect Maker dialogs they keep their normal width."
+screen-tool-settings.pivot,"피벗 도구({{key:도구/피벗}})의 설정(5×5 단추, X·Y, <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong>)은 <a href=""#tools-pivot"">피벗</a>을 보세요.","For the Pivot tool ({{key:도구/피벗}}) settings (5×5 buttons, X/Y, <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong>), see <a href=""#tools-pivot"">Pivot</a>."
+screen-status-bar.1,상태 표시줄,Status bar
+screen-status-bar.3.alt,"상태 표시줄: 좌표, 색, 크기, 프레임/레이어, 확대율, 저장 상태, 안내","Status bar: coordinates, color, size, frame/layer, zoom, save state, hints"
+screen-status-bar.4,① 커서 좌표 · ② 색 · ③ 크기 · ④ 프레임/레이어 · ⑤ 확대율 · ⑥ 저장 상태 · ⑦ 안내,① Cursor coordinates · ② Color · ③ Size · ④ Frame/layer · ⑤ Zoom · ⑥ Save state · ⑦ Hints
+screen-status-bar.2,"화면 맨 아래 줄은 지금 상태를 칸마다 보여 주고, 오른쪽 끝에 ⑦ 마지막 안내가 나옵니다. 칸은 누를 수 없고 보기만 합니다.","The bottom line of the window shows the current state in cells, with ⑦ the latest message at the right end. The cells are for reading only; they can't be clicked."
+screen-status-bar.th-cell,칸,Cell
+screen-status-bar.th-shows,보이는 것,What it shows
+screen-status-bar.c-pos,① 커서 좌표,① Cursor coordinates
+screen-status-bar.c-pos.d,"캔버스 위 커서의 픽셀 좌표(<code>x, y</code>). 캔버스 밖이면 비웁니다.","The pixel under the cursor (<code>x, y</code>). Empty outside the canvas."
+screen-status-bar.c-color,② 색,② Color
+screen-status-bar.c-color.d,"커서 아래 합친 그림의 색(HEX). 투명이면 ""투명"".","The color of the combined image under the cursor (HEX), or ""Transparent""."
+screen-status-bar.c-size,③ 크기,③ Size
+screen-status-bar.c-size.d,캔버스 크기(가로×세로).,The canvas size (width × height).
+screen-status-bar.c-frame,④ 프레임/레이어,④ Frame/layer
+screen-status-bar.c-frame.d,"<code>프레임 현재/전체 · L번호 레이어 이름</code>. 부위면 부위 크기, 그룹이면 ""(그룹)""이 붙습니다.","<code>Frame current/total · L number layer name</code>, followed by the part size for a part or ""(group)"" for a group."
+screen-status-bar.c-zoom,⑤ 확대율,⑤ Zoom
+screen-status-bar.c-zoom.d,캔버스 확대율(%).,The canvas zoom (%).
+screen-status-bar.c-save,⑥ 저장 상태,⑥ Save state
+screen-status-bar.c-save.d,"저장 안 한 수정이 있으면 점과 ""수정됨"", 없으면 ""저장됨"".","A dot and ""Modified"" when there are unsaved changes, otherwise ""Saved""."
+screen-status-bar.c-msg,⑦ 안내,⑦ Messages
+screen-status-bar.c-msg.d,"마지막 동작의 결과와 안내(타임라인에서 고른 것과 <kbd>Delete</kbd>가 할 일, 저장·열기 결과 등). 새 안내가 나오면 바뀌며, 저장 안 한 파일이 있으면 ""저장 안 한 파일 N개""가 붙기도 합니다.","The result of the last action and hints (what's selected in the timeline and what <kbd>Delete</kbd> will do, save and open results, and so on). It changes with each new message and may end with ""N unsaved files""."
+screen-status-bar.busy,"오래 걸리는 작업의 진행은 상태 표시줄이 아니라 창 가운데 진행 상자에 보입니다(<a href=""#screen-export"">내보내기</a> 참고).","Progress for long tasks appears in a box in the middle of the window, not in the status bar (see <a href=""#screen-export"">Export</a>)."
+term.enlarged-preview,미리보기 크게 보기,enlarged preview
+term.enlarged-preview.to,screen-preview,
+term.enlarged-preview.def,미리보기를 크기 조절 가능한 창에서 크게 재생하는 창입니다.,A resizable window that plays the preview enlarged.
+term.export-dialog,내보내기 창,Export dialog
+term.export-dialog.to,screen-export,
+term.export-dialog.def,프레임 시트·부위 아틀라스 PNG와 Unity 설정을 정하는 창입니다.,The dialog that sets up frame sheet and part atlas PNGs and Unity settings.
+term.cell-name,칸 이름,cell name|cell names
+term.cell-name.to,screen-export,
+term.cell-name.def,시트 칸마다 붙는 스프라이트 이름입니다(프레임 번호 또는 태그 기준).,The sprite name of each sheet cell (by frame number or by tag).
+term.export-preset,내보내기 프리셋,export preset|export presets
+term.export-preset.to,screen-export,
+term.export-preset.def,내보내기 설정을 이름 붙여 다른 프로젝트에서 다시 쓰는 묶음입니다.,Named export settings you can reuse in other projects.
+term.import-settings,Import Settings,Import Settings
+term.import-settings.to,screen-export,
+term.import-settings.def,.meta 파일에 적는 Unity Texture Importer 설정입니다.,The Unity Texture Importer settings written to the .meta file.
+term.gif-export,GIF 애니메이션으로 내보내기,Export as animated GIF
+term.gif-export.to,screen-gif,
+term.gif-export.def,공유용 GIF 한 파일을 만드는 창입니다.,The dialog that makes a single GIF for sharing.
+term.gallery-upload,갤러리에 올리기,Upload to gallery
+term.gallery-upload.to,screen-gallery,
+term.gallery-upload.def,chickxel.com 갤러리에 그림을 올리는 창입니다.,The window that uploads a picture to the chickxel.com gallery.

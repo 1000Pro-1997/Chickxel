@@ -1,0 +1,146 @@
+key,ko,en
+#name,한국어,English
+term.primary-color,기본색,primary color|Primary
+term.primary-color.to,screen-palette,
+term.primary-color.def,왼쪽 버튼으로 칠하는 색입니다.,The color painted with the left mouse button.
+term.secondary-color,보조색,secondary color|Secondary
+term.secondary-color.to,screen-palette,
+term.secondary-color.def,오른쪽 버튼으로 칠하는 색입니다(오른쪽 버튼 = 지우개를 켜면 지움).,The color painted with the right mouse button (it erases when Right button = eraser is on).
+term.palette,팔레트,palette
+term.palette.to,screen-palette,
+term.palette.def,그림에 쓸 색을 모아 둔 목록입니다. 여러 개를 쌓아 두고 바꿔 쓸 수 있습니다.,A list of colors to paint with. You can stack several and switch between them.
+term.pixel-perfect,픽셀 퍼펙트,pixel perfect
+term.pixel-perfect.to,tools-pencil,
+term.pixel-perfect.def,크기 1로 그릴 때 계단 모서리의 ㄱ자 겹 픽셀을 빼서 한 픽셀 두께의 선을 남기는 옵션입니다.,"An option that removes the doubled L-shaped pixels at stair corners when drawing at size 1, leaving a one-pixel line."
+term.brush,브러시 모양|브러시 크기,brush shape|brush size
+term.brush.to,tools-brush,
+term.brush.def,연필·지우개 같은 브러시 도구가 한 번에 칠하는 모양(사각·원·마름모)과 크기(1~32)입니다.,"The shape (square, circle, diamond) and size (1–32) that brush tools such as the pencil and eraser paint at once."
+term.symmetry,대칭 그리기|좌우 대칭|상하 대칭,symmetry drawing|horizontal symmetry|vertical symmetry
+term.symmetry.to,tools-brush,
+term.symmetry.def,캔버스 가운데(또는 피벗)를 축으로 반대쪽에도 함께 그리는 옵션입니다.,An option that also draws on the opposite side of the canvas center (or pivot) axis.
+term.timeline,타임라인,timeline
+term.timeline.to,screen-timeline,
+term.timeline.def,프레임(열)과 레이어(행)를 칸으로 보여 주는 화면 아래쪽 패널입니다.,The bottom panel that shows frames (columns) and layers (rows) as cels.
+term.layer,레이어,layer|layers
+term.layer.to,screen-timeline,
+term.layer.def,겹쳐 그리는 한 장입니다. 타임라인의 한 행이며 위 레이어가 아래를 덮습니다.,One sheet you paint on. It is a timeline row; upper layers cover lower ones.
+term.cel,셀,cel|cels
+term.cel.to,screen-timeline,
+term.cel.def,"한 레이어의 한 프레임 그림, 곧 타임라인의 칸 하나입니다.",The drawing of one layer in one frame — a single timeline cell.
+term.tag,태그,tag|tags
+term.tag.to,screen-tags,
+term.tag.def,"프레임 범위에 이름을 붙인 애니메이션 묶음(예: idle, run)입니다.",A named frame range that groups an animation (for example idle or run).
+term.cel-link,셀 링크|링크된 셀,linked cels|cel link
+term.cel-link.to,screen-cel-links,
+term.cel-link.def,여러 칸이 그림 하나를 함께 쓰게 하는 연결입니다. 한 칸을 고치면 모두 바뀝니다.,A link that makes several cels share one drawing; editing one changes them all.
+term.onion-skin,양파 껍질,onion skin
+term.onion-skin.to,screen-top-bar,
+term.onion-skin.def,앞뒤 프레임을 반투명하게 겹쳐 보여 주는 보기 옵션입니다.,A view option that overlays neighboring frames translucently.
+term.pivot,피벗,pivot
+term.pivot.to,tools-pivot,
+term.pivot.def,회전·배치의 기준점입니다. Unity 스프라이트의 Pivot으로 내보냅니다.,"The reference point for rotation and placement, exported as the Unity sprite pivot."
+term.nine-slice,9-slice,9-slice
+term.nine-slice.to,tools-nine-slice,
+term.nine-slice.def,늘려도 모서리가 깨지지 않게 그림을 9칸으로 나누는 Unity 스프라이트 테두리입니다.,A Unity sprite border that splits an image into nine parts so its corners stay crisp when stretched.
+term.selection,선택 영역,selection
+term.selection.to,tools-select,
+term.selection.def,선택 도구로 고른 범위입니다. 칠하기·지우기·이동이 그 안에서만 됩니다.,"The area chosen with a selection tool; painting, erasing and moving stay inside it."
+term.transform,변형 모드,transform mode
+term.transform.to,tools-transform,
+term.transform.def,선택한 그림을 손잡이로 돌리고 늘리고 옮기는 모드입니다.,"A mode for rotating, scaling and moving the selected pixels with handles."
+term.canvas-size,캔버스 크기 모드,canvas size mode
+term.canvas-size.to,tools-canvas-size,
+term.canvas-size.def,캔버스 위에서 새 크기와 그림 자리를 정하는 모드입니다.,A mode for setting the new canvas size and image position directly on the canvas.
+term.layer-size,레이어 크기 모드,layer size mode
+term.layer-size.to,tools-layer-size,
+term.layer-size.def,레이어(부위) 하나의 크기와 위치를 캔버스 위에서 바꾸는 모드입니다.,A mode for changing the size and position of one layer (part) on the canvas.
+term.offcanvas,캔버스 밖 그림,pixels outside the canvas
+term.offcanvas.to,tools-move,
+term.offcanvas.def,캔버스 밖으로 밀려난 그림입니다. 지워지지 않고 남아 다시 들여올 수 있습니다.,Pixels pushed past the canvas edge. They are kept and can be brought back.
+term.layer-effect,레이어 효과,layer effect|layer effects
+term.layer-effect.to,screen-layer-effects,
+term.layer-effect.def,외곽선·그림자·번쩍임처럼 그림을 바꾸지 않고 덧입히는 효과입니다.,"Effects such as outline, shadow or flash that are layered on without changing the pixels."
+term.clipping,클리핑|바로 위 효과에 클리핑,clipping|clip to effect above
+term.clipping.to,screen-effect-colors,
+term.clipping.def,효과를 바로 위 효과가 만든 픽셀에만 입히는 설정입니다.,A setting that applies an effect only to the pixels made by the effect above it.
+term.effect-preset,효과 프리셋,effect preset|effect presets
+term.effect-preset.to,screen-effect-recipes,
+term.effect-preset.def,효과 여러 개와 그 값을 이름 붙여 묶은 것입니다.,Several effects and their values saved together under a name.
+term.script-effect,스크립트 효과,script effect|script effects
+term.script-effect.to,screen-script-effects,
+term.script-effect.def,JavaScript로 만든 효과입니다.,An effect written in JavaScript.
+term.effect-maker,효과 만들기,Effect Maker
+term.effect-maker.to,screen-effect-maker,
+term.effect-maker.def,스크립트 효과를 쓰고 미리 보며 올리는 창입니다.,"The window for writing, previewing and publishing script effects."
+term.asset-manager,에셋 관리자,Asset Manager
+term.asset-manager.to,screen-asset-manager,
+term.asset-manager.def,효과·그라데이션 같은 에셋을 설치·가져오기·올리기 하는 창입니다.,"The window for installing, importing and publishing assets such as effects and gradients."
+term.group,그룹,group layer|group layers
+term.group.to,parts-concept,
+term.group.def,부위 레이어를 묶어 한 캐릭터로 다루는 레이어입니다.,A layer that bundles part layers into one character.
+term.part,부위,part layer|part layers
+term.part.to,parts-concept,
+term.part.def,그룹 안에서 자기 크기를 가진 레이어(머리·몸통 등)입니다.,"A layer with its own size inside a group (head, body and so on)."
+term.skin,스킨,skin|skins
+term.skin.to,parts-skins,
+term.skin.def,같은 부위 구조에 다른 그림을 끼우는 한 벌(의상·체형 등)입니다.,"One set of drawings for the same part structure (outfit, body type and so on)."
+term.outfit,착장|착장 프리셋,outfit|outfit preset
+term.outfit.to,parts-outfits,
+term.outfit.def,그룹·부위마다 고른 스킨의 조합입니다. 프리셋으로 저장할 수 있습니다.,The combination of skins chosen per group and part; it can be saved as a preset.
+term.frame-sheet,프레임 시트,frame sheet
+term.frame-sheet.to,screen-export,
+term.frame-sheet.def,프레임을 한 장에 격자로 늘어놓아 내보낸 PNG입니다.,A PNG with every frame laid out in a grid.
+term.part-atlas,부위 아틀라스,part atlas
+term.part-atlas.to,parts-export,
+term.part-atlas.def,부위 그림을 칸마다 모아 내보낸 PNG입니다.,A PNG that packs part drawings one per cell.
+term.sprite-library,Sprite Library,Sprite Library
+term.sprite-library.to,parts-sprite-library,
+term.sprite-library.def,Unity에서 스킨을 바꿔 끼우는 데 쓰는 .spriteLib 에셋입니다.,The .spriteLib asset Unity uses to swap skins.
+term.app-trash,앱 휴지통,app trash
+term.app-trash.to,screen-file-browser,
+term.app-trash.def,지운 파일과 옛 내보내기 결과를 잠시 보관하는 Chickxel 자체 휴지통입니다.,Chickxel's own trash that keeps deleted files and old export outputs for a while.
+term.undo-history,실행취소 기록,undo history
+term.undo-history.to,files-history,
+term.undo-history.def,닫았다 열어도 남는 실행취소 단계 기록입니다.,Undo steps that survive closing and reopening a file.
+term.autosave,자동 저장,autosave
+term.autosave.to,files-autosave,
+term.autosave.def,잠시 손을 멈추면 저절로 저장하는 기능입니다.,Saves automatically after a short pause.
+term.pixelate,AI 그림 픽셀로 정리|픽셀로 정리,Pixelate AI image|Pixelate
+term.pixelate.to,pixelate,
+term.pixelate.def,AI가 만든 그림이나 큰 그림을 깔끔한 픽셀 아트로 바꾸는 창입니다.,The window that turns AI-made or large images into clean pixel art.
+term.ai-chat,AI 채팅,AI chat
+term.ai-chat.to,ai,
+term.ai-chat.def,Claude·Codex에게 말로 부탁해 그림을 고치는 창입니다.,The window where you ask Claude or Codex to edit the drawing.
+term.shortcut,단축키,keyboard shortcut|keyboard shortcuts
+term.shortcut.to,shortcuts-customize,
+term.shortcut.def,명령을 바로 실행하는 키입니다. 환경 설정에서 바꿀 수 있습니다.,Keys that run a command directly; you can change them in Preferences.
+term.tool-settings,도구 설정,Tool options|tool options
+term.tool-settings.to,screen-tool-settings,
+term.tool-settings.def,오른쪽 독에서 지금 도구의 설정을 바꾸는 패널입니다.,The right-dock panel where you change the current tool's settings.
+term.status-bar,상태 표시줄,status bar
+term.status-bar.to,screen-status-bar,
+term.status-bar.def,창 맨 아래에 좌표·색·크기·저장 상태를 보이는 줄입니다.,"The bottom line showing coordinates, color, size and save state."
+term.file-browser,파일 브라우저,file browser
+term.file-browser.to,screen-file-browser,
+term.file-browser.def,폴더의 그림을 썸네일로 보고 여는 왼쪽 패널입니다.,The left panel that shows a folder's images as thumbnails and opens them.
+term.number-field,숫자 칸,number field|number fields
+term.number-field.to,screen-common-controls,
+term.number-field.def,좌우로 끌거나 입력하거나 우클릭 목록으로 값을 바꾸는 칸입니다.,"A field you change by dragging left/right, typing, or picking from its right-click list."
+term.pencil,연필,pencil
+term.pencil.to,tools-pencil,
+term.pencil.def,브러시 모양대로 픽셀을 칠하는 기본 그리기 도구입니다.,The basic drawing tool that paints pixels in the brush shape.
+term.gradient-pencil,그라데이션 연필,gradient pencil
+term.gradient-pencil.to,tools-gradient-pencil,
+term.gradient-pencil.def,획을 따라 그라데이션 색으로 칠하는 연필입니다.,A pencil that paints along the stroke in gradient colors.
+term.eraser,지우개,eraser
+term.eraser.to,tools-eraser,
+term.eraser.def,픽셀을 투명하게(또는 강도·채널만큼) 지우는 도구입니다.,A tool that erases pixels to transparent (or by a strength and channels).
+term.eyedropper,스포이드,eyedropper
+term.eyedropper.to,tools-picker,
+term.eyedropper.def,캔버스의 색을 집어 기본색·보조색으로 정하는 도구입니다.,A tool that picks a canvas color into the primary or secondary color.
+term.gradient,그라데이션 도구,gradient tool
+term.gradient.to,tools-gradient,
+term.gradient.def,끌어서 선형 그라데이션을 칠하는 도구입니다.,A tool that paints a linear gradient by dragging.
+term.tolerance,허용 오차,tolerance
+term.tolerance.to,tools-fill,
+term.tolerance.def,채우기·스마트 선택이 같은 색으로 볼 색 차이의 한도입니다.,How different a color may be and still count as the same for fill and magic wand.

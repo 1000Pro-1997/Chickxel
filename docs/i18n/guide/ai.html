@@ -1,0 +1,436 @@
+<section class="doc" id="ai">
+<h2>{{ai.1}}</h2>
+<p>{{ai.intro.1}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai.intro.th1}}</th><th>{{ai.intro.th2}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai.intro.g1}}</td><td><a href="#ai-overview">{{ai-overview.1}}</a> · <a href="#ai-setup">{{ai-setup.1}}</a> · <a href="#ai-open">{{ai-open.1}}</a> · <a href="#ai-tabs">{{ai-tabs.1}}</a> · <a href="#ai-how">{{ai-how.1}}</a></td></tr>
+<tr><td>{{ai.intro.g2}}</td><td><a href="#ai-chat">{{ai-chat.1}}</a> · <a href="#ai-progress">{{ai-progress.1}}</a> · <a href="#ai-questions">{{ai-questions.1}}</a> · <a href="#ai-edit-last">{{ai-edit-last.1}}</a> · <a href="#ai-history">{{ai-history.1}}</a> · <a href="#ai-help">{{ai-help.1}}</a></td></tr>
+<tr><td>{{ai.intro.g3}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a> · <a href="#ai-generate">{{ai-generate.1}}</a> · <a href="#ai-effects">{{ai-effects.1}}</a> · <a href="#ai-references">{{ai-references.1}}</a></td></tr>
+<tr><td>{{ai.intro.g4}}</td><td><a href="#ai-undo">{{ai-undo.1}}</a> · <a href="#ai-file-only">{{ai-file-only.1}}</a> · <a href="#ai-locked">{{ai-locked.1}}</a></td></tr>
+<tr><td>{{ai.intro.g5}}</td><td><a href="#ai-troubleshoot">{{ai-troubleshoot.1}}</a></td></tr>
+</tbody>
+</table></div>
+<h4>{{ai.intro.safety-h}}</h4>
+<ul>
+<li>{{ai.intro.safety-1}}</li>
+<li>{{ai.intro.safety-2}}</li>
+<li>{{ai.intro.safety-3}}</li>
+<li>{{ai.intro.safety-4}}</li>
+</ul>
+
+<h3 id="ai-overview">{{ai-overview.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-overview.png" alt="{{ai-overview.4.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-overview.5}}</figcaption></figure>
+<p>{{ai-overview.2}}</p>
+<h4>{{ai-overview.h-tasks}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-overview.th-task}}</th><th>{{ai-overview.th-example}}</th><th>{{ai-overview.th-more}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-overview.t-draw}}</td><td>{{UiStrings.Chat_Help_Example1}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-gen}}</td><td>{{ai-overview.ex-gen}}</td><td><a href="#ai-generate">{{ai-generate.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-anim}}</td><td>{{UiStrings.Chat_Help_Example3}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-parts}}</td><td>{{UiStrings.Chat_Help_Example5}}</td><td><a href="#ai-edits">{{ai-edits.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-effects}}</td><td>{{UiStrings.Chat_Help_Example9}}</td><td><a href="#ai-effects">{{ai-effects.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-script}}</td><td>{{UiStrings.Chat_Help_ExampleEffectMaker}}</td><td><a href="#ai-effects">{{ai-effects.1}}</a></td></tr>
+<tr><td>{{ai-overview.t-refs}}</td><td>{{UiStrings.Chat_Help_Example10}}</td><td><a href="#ai-references">{{ai-references.1}}</a></td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-overview.h-need}}</h4>
+<p>{{ai-overview.3}}</p>
+
+<h3 id="ai-setup">{{ai-setup.1}}</h3>
+<p>{{ai-setup.lead}}</p>
+<h4>{{ai-setup.h-install}}</h4>
+<p>{{ai-setup.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup.png" alt="{{ai-setup.6.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-setup.7}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-2.png" alt="{{ai-setup.8.alt}}" width="514" height="192" loading="lazy"><figcaption>{{ai-setup.9}}</figcaption></figure>
+<ol>
+<li>{{ai-setup.3}}</li>
+<li>{{ai-setup.4}}</li>
+</ol>
+<ul>
+<li>{{ai-setup.12}}</li>
+<li>{{ai-setup.14}}</li>
+</ul>
+<h4>{{ai-setup.h-status}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-3.png" alt="{{ai-setup.10.alt}}" width="724" height="588" loading="lazy"><figcaption>{{ai-setup.11}}</figcaption></figure>
+<p>{{ai-setup.5}}</p>
+<p>{{ai-setup.status-open}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-row}}</th><th>{{ai-setup.th-check}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_McpServer}}</strong></td><td>{{ai-setup.row-server}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_CliVersion}}</strong></td><td>{{ai-setup.row-cli}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_LoginState}}</strong></td><td>{{ai-setup.row-login}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_McpConnection}}</strong></td><td>{{ai-setup.row-mcp}}</td></tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-button}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_InstallUpdate}}</strong></td><td>{{ai-setup.btn-install}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Login}}</strong></td><td>{{ai-setup.btn-login}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Logout}}</strong></td><td>{{ai-setup.btn-logout}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_ChangePath}}</strong></td><td>{{ai-setup.btn-path}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_AutomaticPath}}</strong></td><td>{{ai-setup.btn-auto}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_Recheck}}</strong></td><td>{{ai-setup.btn-recheck}}</td></tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-setup.th-option}}</th><th>{{ai-setup.th-does}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.AiStatus_DontShowUntilChange}}</strong></td><td>{{ai-setup.opt-dontshow}}</td></tr>
+<tr><td><strong>{{UiStrings.AiStatus_CenterChat}}</strong></td><td>{{ai-setup.opt-center}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-setup.h-login}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-4.png" alt="{{ai-setup.17.alt}}" width="520" height="200" loading="lazy"><figcaption>{{ai-setup.18}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-setup-5.png" alt="{{ai-setup.19.alt}}" width="760" height="37" loading="lazy"><figcaption>{{ai-setup.20}}</figcaption></figure>
+<p>{{ai-setup.13}}</p>
+<h4>{{ai-setup.h-path}}</h4>
+<ul>
+<li>{{ai-setup.path-1}}</li>
+<li>{{ai-setup.path-2}}</li>
+<li>{{ai-setup.15}}</li>
+<li>{{ai-setup.16}}</li>
+</ul>
+
+<h3 id="ai-open">{{ai-open.1}}</h3>
+<p>{{ai-open.lead}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-open.png" alt="{{ai-open.5.alt}}" width="1280" height="140" loading="lazy"><figcaption>{{ai-open.6}}</figcaption></figure>
+<ul>
+<li>{{ai-open.2}}</li>
+<li>{{ai-open.3}}</li>
+<li>{{ai-open.4}}</li>
+</ul>
+<p>{{ai-open.7}}</p>
+<p>{{ai-open.center}}</p>
+
+<h3 id="ai-tabs">{{ai-tabs.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-tabs.png" alt="{{ai-tabs.5.alt}}" width="520" height="672" loading="lazy"><figcaption>{{ai-tabs.6}}</figcaption></figure>
+<p>{{ai-tabs.2}}</p>
+<ul>
+<li>{{ai-tabs.3}}</li>
+<li>{{ai-tabs.4}}</li>
+</ul>
+
+<h3 id="ai-how">{{ai-how.1}}</h3>
+<p>{{ai-how.2}}</p>
+<ol>
+<li>{{ai-how.step1}}</li>
+<li>{{ai-how.step2}}</li>
+<li>{{ai-how.step3}}</li>
+<li>{{ai-how.step4}}</li>
+</ol>
+<h4>{{ai-how.h-server}}</h4>
+<p>{{ai-how.server-1}}</p>
+<p>{{ai-how.server-2}}</p>
+<h4>{{ai-how.h-limits}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-how.th-cli}}</th><th>{{ai-how.th-limits}}</th></tr></thead>
+<tbody>
+<tr><td>Claude Code</td><td>{{ai-how.limit-claude}}</td></tr>
+<tr><td>Codex CLI</td><td>{{ai-how.limit-codex}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{ai-how.limit-gen}}</li>
+<li>{{ai-how.limit-maker}}</li>
+</ul>
+<h4>{{ai-how.h-data}}</h4>
+<ul>
+<li>{{ai-how.data-1}}</li>
+<li>{{ai-how.data-2}}</li>
+</ul>
+
+<h3 id="ai-chat">{{ai-chat.1}}</h3>
+<p>{{ai-chat.lead}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat.png" alt="{{ai-chat.20.alt}}" width="520" height="752" loading="lazy"><figcaption>{{ai-chat.21}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-2.png" alt="{{ai-chat.22.alt}}" width="520" height="188" loading="lazy"><figcaption>{{ai-chat.23}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-chat.2}}</th><th>{{ai-chat.3}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-chat.4}}</td><td>{{ai-chat.5}}</td></tr>
+<tr><td>{{ai-chat.6}}</td><td>{{ai-chat.7}}</td></tr>
+<tr><td>{{ai-chat.8}}</td><td>{{ai-chat.9}}</td></tr>
+<tr><td>{{ai-chat.10}}</td><td>{{ai-chat.11}}</td></tr>
+<tr><td>{{ai-chat.12}}</td><td>{{ai-chat.13}}</td></tr>
+<tr><td>{{ai-chat.14}}</td><td>{{ai-chat.15}}</td></tr>
+<tr><td>{{ai-chat.16}}</td><td>{{ai-chat.17}}</td></tr>
+<tr><td>{{ai-chat.18}}</td><td>{{ai-chat.19}}</td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-chat.h-model}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-3.png" alt="{{ai-chat.25.alt}}" width="520" height="182" loading="lazy"><figcaption>{{ai-chat.26}}</figcaption></figure>
+<p>{{ai-chat.24}}</p>
+<h4>{{ai-chat.h-chips}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-4.png" alt="{{ai-chat.32.alt}}" width="520" height="256" loading="lazy"><figcaption>{{ai-chat.33}}</figcaption></figure>
+<p>{{ai-chat.27}}</p>
+<ul>
+<li>{{ai-chat.28}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-5.png" alt="{{ai-chat.34.alt}}" width="520" height="561" loading="lazy"><figcaption>{{ai-chat.35}}</figcaption></figure>
+<ul>
+<li>{{ai-chat.29}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-chat-6.png" alt="{{ai-chat.36.alt}}" width="322" height="121" loading="lazy"><figcaption>{{ai-chat.37}}</figcaption></figure>
+<ul>
+<li>{{ai-chat.30}}</li>
+<li>{{ai-chat.31}}</li>
+</ul>
+<h4>{{ai-chat.h-copy}}</h4>
+<ul>
+<li>{{ai-chat.38}}</li>
+<li>{{ai-chat.39}}</li>
+</ul>
+<h4>{{ai-chat.h-queue}}</h4>
+<p>{{ai-chat.40}}</p>
+
+<h3 id="ai-progress">{{ai-progress.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-progress.png" alt="{{ai-progress.3.alt}}" width="470" height="752" loading="lazy"><figcaption>{{ai-progress.4}}</figcaption></figure>
+<p>{{ai-progress.2}}</p>
+<div class="note">{{ai-progress.5}}</div>
+
+<h3 id="ai-questions">{{ai-questions.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-questions.png" alt="{{ai-questions.6.alt}}" width="470" height="672" loading="lazy"><figcaption>{{ai-questions.7}}</figcaption></figure>
+<p>{{ai-questions.2}}</p>
+<ul class="marks">
+<li>{{ai-questions.3}}</li>
+<li>{{ai-questions.4}}</li>
+<li>{{ai-questions.5}}</li>
+</ul>
+<h4>{{ai-questions.h-large}}</h4>
+<p>{{ai-questions.8}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-questions-2.png" alt="{{ai-questions.11.alt}}" width="590" height="592" loading="lazy"><figcaption>{{ai-questions.12}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-questions.9}}</li>
+<li>{{ai-questions.10}}</li>
+</ul>
+<div class="note"><p>{{ai-questions.13}}</p></div>
+
+<h3 id="ai-edit-last">{{ai-edit-last.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edit-last.png" alt="{{ai-edit-last.3.alt}}" width="468" height="129" loading="lazy"><figcaption>{{ai-edit-last.4}}</figcaption></figure>
+<p>{{ai-edit-last.2}}</p>
+<ul>
+<li>{{ai-edit-last.5}}</li>
+<li>{{ai-edit-last.6}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edit-last-2.png" alt="{{ai-edit-last.9.alt}}" width="345" height="126" loading="lazy"><figcaption>{{ai-edit-last.10}}</figcaption></figure>
+<ul>
+<li>{{ai-edit-last.7}}</li>
+<li>{{ai-edit-last.8}}</li>
+</ul>
+<div class="note"><p>{{ai-edit-last.11}}</p></div>
+
+<h3 id="ai-history">{{ai-history.1}}</h3>
+<p>{{ai-history.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-history.png" alt="{{ai-history.9.alt}}" width="470" height="592" loading="lazy"><figcaption>{{ai-history.10}}</figcaption></figure>
+<ul>
+<li>{{ai-history.3}}</li>
+<li>{{ai-history.4}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-history-2.png" alt="{{ai-history.11.alt}}" width="304" height="126" loading="lazy"><figcaption>{{ai-history.12}}</figcaption></figure>
+<ul>
+<li>{{ai-history.5}}</li>
+<li>{{ai-history.6}}</li>
+<li>{{ai-history.7}}</li>
+<li>{{ai-history.8}}</li>
+</ul>
+
+<h3 id="ai-help">{{ai-help.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-help.png" alt="{{ai-help.6.alt}}" width="810" height="752" loading="lazy"><figcaption>{{ai-help.7}}</figcaption></figure>
+<p>{{ai-help.2}}</p>
+<ul class="marks">
+<li>{{ai-help.3}}</li>
+</ul>
+<figure class="shot"><img src="{{root}}assets/guide/ai-help-2.png" alt="{{ai-help.8.alt}}" width="368" height="720" loading="lazy"><figcaption>{{ai-help.9}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-help.4}}</li>
+<li>{{ai-help.5}}</li>
+</ul>
+
+<h3 id="ai-edits">{{ai-edits.1}}</h3>
+<p>{{ai-edits.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-edits.png" alt="{{ai-edits.10.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-edits.11}}</figcaption></figure>
+<p>{{ai-edits.fig}}</p>
+<h4>{{ai-edits.h-tools}}</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-edits.th-group}}</th><th>{{ai-edits.th-does}}</th><th>{{ai-edits.th-tools}}</th></tr></thead>
+<tbody>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupView}}</strong></td><td>{{UiStrings.Chat_Help_GroupView_Text}}</td><td><code>get_document</code> <code>get_image</code> <code>get_pixels</code></td></tr>
+<tr><td><strong><a href="#ai-generate">{{UiStrings.Chat_Help_GroupGenerate}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupGenerate_Text}}</td><td><code>generate_pixel_art</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupDraw}}</strong></td><td>{{UiStrings.Chat_Help_GroupDraw_Text}}</td><td><code>draw_pixels</code> <code>set_pixels</code> <code>draw_shape</code> <code>fill</code> <code>clear</code> <code>replace_color</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupFrames}}</strong></td><td>{{UiStrings.Chat_Help_GroupFrames_Text}}</td><td><code>add_frame</code> <code>delete_frame</code> <code>set_frame_duration</code> <code>add_tag</code> <code>link_cels</code> <code>unlink_cels</code> <code>set_link_color</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupLayers}}</strong></td><td>{{UiStrings.Chat_Help_GroupLayers_Text}}</td><td><code>add_layer</code> <code>set_layer</code> <code>set_current</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupParts}}</strong></td><td>{{UiStrings.Chat_Help_GroupParts_Text}}</td><td><code>add_group</code> <code>add_part</code> <code>set_part</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupSkins}}</strong></td><td>{{UiStrings.Chat_Help_GroupSkins_Text}}</td><td><code>list_skins</code> <code>add_skin</code> <code>set_skin</code> <code>list_outfits</code> <code>save_outfit</code> <code>apply_outfit</code></td></tr>
+<tr><td><strong><a href="#ai-effects">{{UiStrings.Chat_Help_GroupEffects}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupEffects_Text}}</td><td><code>list_effect_types</code> <code>get_effects</code> <code>add_effect</code> <code>set_effect</code> <code>remove_effect</code> <code>apply_effects</code> <code>expand_canvas_for_effects</code></td></tr>
+<tr><td><strong><a href="#ai-effects">{{UiStrings.Chat_Help_GroupEffectMaker}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupEffectMaker_Text}}</td><td><code>get_script_api</code> <code>write_script_effect</code> <code>preview_effects</code> <code>save_script_effect</code> <code>list_script_effects</code> <code>get_script_effect_source</code> <code>get_effect_maker_source</code> <code>set_effect_maker_source</code> <code>check_effect_maker</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupCanvas}}</strong></td><td>{{UiStrings.Chat_Help_GroupCanvas_Text}}</td><td><code>resize_canvas</code> <code>set_palette</code> <code>set_colors</code></td></tr>
+<tr><td><strong>{{UiStrings.Chat_Help_GroupFiles}}</strong></td><td>{{UiStrings.Chat_Help_GroupFiles_Text}}</td><td><code>new_project</code> <code>set_document_title</code> <code>save_project</code> <code>open_file</code></td></tr>
+<tr><td><strong><a href="#ai-references">{{UiStrings.Chat_Help_GroupReferences}}</a></strong></td><td>{{UiStrings.Chat_Help_GroupReferences_Text}}</td><td><code>search_references</code> <code>get_reference</code> <code>get_style_rules</code> <code>add_reference</code> <code>set_reference_info</code></td></tr>
+<tr><td><strong><a href="#ai-questions">{{UiStrings.Chat_Help_GroupOther}}</a></strong></td><td>{{ai-edits.other}}</td><td><code>ask_user</code></td></tr>
+</tbody>
+</table></div>
+<h4>{{ai-edits.h-lines}}</h4>
+<p>{{ai-edits.13}}</p>
+<h4>{{ai-edits.h-links}}</h4>
+<p>{{guide-new.ai-links}}</p>
+<h4>{{ai-edits.h-save}}</h4>
+<p>{{ai-edits.12}}</p>
+
+<h3 id="ai-generate">{{ai-generate.1}}</h3>
+<p>{{ai-generate.2}}</p>
+<h4>{{ai-generate.h-panel}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate.png" alt="{{ai-generate.9.alt}}" width="810" height="259" loading="lazy"><figcaption>{{ai-generate.10}}</figcaption></figure>
+<ul>
+<li>{{ai-generate.3}}</li>
+<li>{{ai-generate.4}}</li>
+<li>{{ai-generate.5}}<ul><li>{{ai-generate.6}}</li></ul></li>
+<li>{{ai-generate.42}}</li>
+</ul>
+<h4>{{ai-generate.h-options}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-2.png" alt="{{ai-generate.29.alt}}" width="810" height="655" loading="lazy"><figcaption>{{ai-generate.30}}</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-generate.11}}</th><th>{{ai-generate.12}}</th></tr></thead>
+<tbody>
+<tr><td>⑧ <strong>{{UiStrings.AiDraw_ResizeResult}}</strong></td><td>{{ai-generate.14}}</td></tr>
+<tr><td>⑨ <strong>{{UiStrings.AiDraw_Size}}</strong></td><td>{{ai-generate.16}}</td></tr>
+<tr><td>⑩ <strong>{{UiStrings.AiDraw_RemoveBackground}}</strong></td><td>{{ai-generate.18}}</td></tr>
+<tr><td>⑪ <strong>{{UiStrings.AiDraw_AutoOptimize}}</strong></td><td>{{ai-generate.20}}</td></tr>
+<tr><td>{{ai-generate.21}}</td><td>{{ai-generate.22}}</td></tr>
+<tr><td>⑬ <strong>{{UiStrings.AiDraw_Style}}</strong></td><td>{{ai-generate.24}}</td></tr>
+<tr><td>{{ai-generate.25}}</td><td>{{ai-generate.26}}</td></tr>
+<tr><td>{{ai-generate.27}}</td><td>{{ai-generate.28}}</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>{{ai-generate.7}}</li>
+<li>{{ai-generate.8}}</li>
+<li>{{ai-generate.31}}</li>
+</ul>
+<h4>{{ai-generate.h-anim}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-3.png" alt="{{ai-generate.35.alt}}" width="470" height="212" loading="lazy"><figcaption>{{ai-generate.36}}</figcaption></figure>
+<ul>
+<li>{{ai-generate.32}}</li>
+<li>{{ai-generate.44}}</li>
+</ul>
+<h4>{{ai-generate.h-card}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-4.png" alt="{{ai-generate.37.alt}}" width="468" height="347" loading="lazy"><figcaption>{{ai-generate.38}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-generate.33}}</li>
+</ul>
+<h4>{{ai-generate.h-claude}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-5.png" alt="{{ai-generate.39.alt}}" width="438" height="185" loading="lazy"><figcaption>{{ai-generate.40}}</figcaption></figure>
+<p>{{ai-generate.34}}</p>
+<h4>{{ai-generate.h-prompt}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-generate-6.png" alt="{{ai-generate.45.alt}}" width="468" height="516" loading="lazy"><figcaption>{{ai-generate.46}}</figcaption></figure>
+<ul class="marks">
+<li>{{ai-generate.43}}</li>
+</ul>
+<div class="note"><p>{{ai-generate.41}}</p></div>
+
+<h3 id="ai-effects">{{ai-effects.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-effects.png" alt="{{ai-effects.9.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-effects.10}}</figcaption></figure>
+<p>{{ai-effects.2}}</p>
+<h4>{{ai-effects.h-ask}}</h4>
+<ul>
+<li>{{ai-effects.3}}</li>
+<li>{{ai-effects.4}}</li>
+<li>{{ai-effects.5}}</li>
+<li>{{ai-effects.6}}</li>
+<li>{{ai-effects.7}}</li>
+</ul>
+<p>{{ai-effects.8}}</p>
+<h4>{{ai-effects.11}}</h4>
+<p>{{ai-effects.12}}</p>
+<ul>
+<li>{{ai-effects.13}}</li>
+<li>{{ai-effects.14}}</li>
+<li>{{ai-effects.15}}</li>
+<li>{{ai-effects.16}}</li>
+<li>{{ai-effects.17}}</li>
+</ul>
+
+<h3 id="ai-references">{{ai-references.1}}</h3>
+<p>{{ai-references.2}}</p>
+<h4>{{ai-references.h-window}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references.png" alt="{{ai-references.22.alt}}" width="1000" height="912" loading="lazy"><figcaption>{{ai-references.23}}</figcaption></figure>
+<p>{{ai-references.6}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-references.7}}</th><th>{{ai-references.8}}</th></tr></thead>
+<tbody>
+<tr><td>⑦ <strong>{{UiStrings.Refs_AddFiles}}</strong></td><td>{{ai-references.10}}</td></tr>
+<tr><td>⑧ <strong>{{UiStrings.Refs_AddCanvas}}</strong></td><td>{{ai-references.12}}</td></tr>
+<tr><td>{{ai-references.13}}</td><td>{{ai-references.14}}</td></tr>
+<tr><td>⑩ <strong>{{UiStrings.Refs_OpenFolder}}</strong></td><td>{{ai-references.16}}</td></tr>
+<tr><td>⑪ <strong>{{UiStrings.Refs_EditRules}}</strong></td><td>{{ai-references.18}}</td></tr>
+<tr><td>⑫ <strong>{{UiStrings.Refs_CaptionWithAi}}</strong></td><td>{{ai-references.20}}</td></tr>
+</tbody>
+</table></div>
+<p>{{ai-references.21}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references-2.png" alt="{{ai-references.24.alt}}" width="328" height="304" loading="lazy"><figcaption>{{ai-references.25}}</figcaption></figure>
+<h4>{{ai-references.h-chat}}</h4>
+<ul>
+<li>{{ai-references.26}}</li>
+<li>{{ai-references.27}}</li>
+</ul>
+<h4>{{ai-references.h-folder}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-references-3.png" alt="{{ai-references.29.alt}}" width="673" height="301" loading="lazy"><figcaption>{{ai-references.30}}</figcaption></figure>
+<ul>
+<li>{{ai-references.3}}</li>
+<li>{{ai-references.4}}</li>
+<li>{{ai-references.5}}</li>
+<li>{{ai-references.28}}</li>
+</ul>
+<div class="note"><p>{{ai-references.31}}</p></div>
+
+<h3 id="ai-undo">{{ai-undo.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-undo.png" alt="{{ai-undo.3.alt}}" width="428" height="373" loading="lazy"><figcaption>{{ai-undo.4}}</figcaption></figure>
+<figure class="shot"><img src="{{root}}assets/guide/ai-undo-2.png" alt="{{ai-undo.5.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-undo.6}}</figcaption></figure>
+<p>{{ai-undo.2}}</p>
+<h4>{{ai-undo.h-insert}}</h4>
+<p>{{ai-undo.7}}</p>
+
+<h3 id="ai-file-only">{{ai-file-only.1}}</h3>
+<figure class="shot"><img src="{{root}}assets/guide/ai-file-only.png" alt="{{ai-file-only.6.alt}}" width="470" height="592" loading="lazy"><figcaption>{{ai-file-only.7}}</figcaption></figure>
+<p>{{ai-file-only.2}}</p>
+<ul>
+<li>{{ai-file-only.3}}</li>
+<li>{{ai-file-only.4}}</li>
+<li>{{ai-file-only.lib}}</li>
+<li>{{ai-file-only.switch}}</li>
+<li>{{ai-file-only.5}}</li>
+</ul>
+
+<h3 id="ai-locked">{{ai-locked.1}}</h3>
+<p>{{ai-locked.2}}</p>
+<figure class="shot"><img src="{{root}}assets/guide/ai-locked.png" alt="{{ai-locked.6.alt}}" width="1280" height="812" loading="lazy"><figcaption>{{ai-locked.7}}</figcaption></figure>
+<ul>
+<li>{{ai-locked.3}}</li>
+<li>{{ai-locked.4}}</li>
+<li>{{ai-locked.5}}</li>
+</ul>
+
+<h3 id="ai-troubleshoot">{{ai-troubleshoot.1}}</h3>
+<p>{{ai-troubleshoot.lead}}</p>
+<h4>{{ai-troubleshoot.h-mcp}}</h4>
+<figure class="shot"><img src="{{root}}assets/guide/ai-troubleshoot.png" alt="{{ai-troubleshoot.4.alt}}" width="470" height="552" loading="lazy"><figcaption>{{ai-troubleshoot.5}}</figcaption></figure>
+<p>{{ai-troubleshoot.2}}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>{{ai-troubleshoot.th-msg}}</th><th>{{ai-troubleshoot.th-means}}</th><th>{{ai-troubleshoot.th-todo}}</th></tr></thead>
+<tbody>
+<tr><td>{{ai-troubleshoot.s1-msg}}</td><td>{{ai-troubleshoot.s1-means}}</td><td>{{ai-troubleshoot.s1-todo}}</td></tr>
+<tr><td>{{ai-troubleshoot.s2-msg}}</td><td>{{ai-troubleshoot.s2-means}}</td><td>{{ai-troubleshoot.s2-todo}}</td></tr>
+<tr><td>{{ai-troubleshoot.s3-msg}}</td><td>{{ai-troubleshoot.s3-means}}</td><td>{{ai-troubleshoot.s3-todo}}</td></tr>
+</tbody>
+</table></div>
+<p>{{ai-troubleshoot.trace}}</p>
+<p>{{ai-troubleshoot.config}}</p>
+<h4>{{ai-troubleshoot.h-path}}</h4>
+<p>{{ai-troubleshoot.path}}</p>
+<h4>{{ai-troubleshoot.h-codex}}</h4>
+<p>{{ai-troubleshoot.3}}</p>
+<h4>{{ai-troubleshoot.h-policy}}</h4>
+<div class="note">{{ai-troubleshoot.6}}</div>
+</section>

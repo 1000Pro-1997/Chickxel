@@ -451,6 +451,61 @@ public class ProjectTests
     }
 
     [Fact]
+    public void ProjectIO_SaveForSharing_StripsLocalPaths_LeavesTheProjectAlone_AndLoadsBack()
+    {
+        using var dir = new TempDir();
+        var path = dir.File("hero.chickxel");
+        var p = MakeSample();
+        var folder = Path.Combine(dir.Path, "Unity", "Assets", "Sprites");
+        var exported = new[] { Path.Combine(folder, "hero.png") };
+        p.Edit("경로", ProjectChange.Settings, () =>
+        {
+            p.Export.Folder = folder;
+            p.Export.FileName = Path.Combine(dir.Path, "sheets", "hero_sheet");
+            p.Export.PartsFileName = @"C:\work\hero_parts";
+        });
+        ProjectIO.Save(p, path);
+        p.ExportedFiles = exported;
+        p.IsDirty = true;
+
+        using var shared = new MemoryStream();
+        ProjectIO.SaveForSharing(p, shared);
+
+        // 원래 프로젝트는 그대로(경로·수정됨·내보내기 설정·기록)
+        Assert.Equal(path, p.Path);
+        Assert.True(p.IsDirty);
+        Assert.Equal(folder, p.Export.Folder);
+        Assert.Equal(@"C:\work\hero_parts", p.Export.PartsFileName);
+        Assert.Same(exported, p.ExportedFiles);
+
+        shared.Position = 0;
+        using (var zip = new ZipArchive(shared, ZipArchiveMode.Read, leaveOpen: true))
+        {
+            Assert.Equal(["cels/L0_F0.png", "cels/L1_F2.png", "project.json"], zip.Entries.Select(e => e.FullName).OrderBy(n => n));
+            using var reader = new StreamReader(zip.GetEntry(ProjectIO.ProjectEntryName)!.Open());
+            var json = reader.ReadToEnd();
+            Assert.DoesNotContain(Path.GetFileName(dir.Path), json);
+            Assert.DoesNotContain("work", json);
+            var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
+            Assert.False(root.ContainsKey("exported"));
+            Assert.False(root["export"]!.AsObject().ContainsKey("folder"));
+        }
+
+        shared.Position = 0;
+        var back = ProjectIO.Load(shared);
+        Assert.Null(back.Path);
+        Assert.Null(back.ExportedFiles);
+        Assert.Equal(((string?)null, (string?)"hero_sheet", (string?)"hero_parts"), (back.Export.Folder, back.Export.FileName, back.Export.PartsFileName));
+        Assert.Equal(["레이어 1", "윤곽"], back.Layers.Select(l => l.Name));
+        Assert.Equal([100, 33, 100], back.Frames.Select(f => f.DurationMs));
+        Assert.Equal(32f, back.Sprite.PixelsPerUnit);
+        for (int l = 0; l < 2; l++)
+            for (int f = 0; f < 3; f++)
+                Assert.Equal(p.GetCel(l, f) is null, back.GetCel(l, f) is null);
+        Assert.True(p.GetCel(0, 0)!.ContentEquals(back.GetCel(0, 0)!));
+    }
+
+    [Fact]
     public void ProjectIO_RobustLoad_MissingCelsUnknownFieldsAndNewerVersion()
     {
         static MemoryStream Zip(string json, params (string Name, byte[] Data)[] files)

@@ -161,6 +161,7 @@
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>부위의 원래 자리는 부위 영역이어야 합니다.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>부위 피벗</value></data>
   <data name="Project_PartFramePivot" xml:space="preserve"><value>부위 프레임 피벗</value><comment>실행취소 이름: 부위의 한 프레임만 다른 피벗으로 두거나 되돌림</comment></data>
+  <data name="Project_PartFramesFrom" xml:space="preserve"><value>부위 프레임 위치·피벗</value><comment>실행취소 이름: 부위를 한 프레임부터 끝까지 따로 둔 위치·피벗으로 두거나 되돌림</comment></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>부위 테두리</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>레이어 {number}</value><comment>number = 새 프로젝트에서 만든 레이어 번호. 기존 파일의 이름은 바꾸지 않음.</comment></data>
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>그룹</value></data>

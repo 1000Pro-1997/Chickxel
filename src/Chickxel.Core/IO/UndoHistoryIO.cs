@@ -382,6 +382,8 @@ internal sealed class HistoryFrameDto
     public string? Name { get; set; }
     /// <summary>부위마다 이 프레임만의 피벗(없으면 null).</summary>
     public List<HistoryPartPivotDto>? PartPivots { get; set; }
+    /// <summary>부위마다 이 프레임에서 기준 위치에서 옮긴 거리 [부위, x, y](없으면 null).</summary>
+    public List<int[]>? PartShifts { get; set; }
 }
 
 /// <summary>프레임 하나에서 부위 하나만의 피벗(편집 기록).</summary>

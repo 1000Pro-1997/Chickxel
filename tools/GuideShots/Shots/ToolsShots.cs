@@ -316,50 +316,64 @@ internal static class ToolsShots
         ToolFileHelp.Tool(k, "도형");
         k.Save(m, "tools-brush-2", crop: OptionsUpTo(m, brushBox), marks: [brushBox], firstNumber: 4);
 
-        // 3: 밝게/어둡게 — 세기.
-        ToolFileHelp.Tool(k, "밝게/어둡게");
-        var dodge = Opt<Control>(m, "_dodgeNum");
-        k.Save(m, "tools-brush-3", crop: OptionsUpTo(m, Opt<Control>(m, "_dodgeBox")), marks: [Lead(Row(m, dodge))], firstNumber: 5);
-
-        // 4: 디더링 — 무늬 목록을 펼친 모습.
-        ToolFileHelp.Tool(k, "디더링");
-        var pattern = Opt<ComboBox>(m, "_ditherPattern");
-        pattern.IsDropDownOpen = true;
-        k.Settle(400);
-        var crop = OptionsUpTo(m, Opt<Control>(m, "_ditherBox"));
-        if (ToolFileShotsMenus.OpenMenuRect(m) is { } list) crop = crop.Union(list.Inflate(8));
-        k.Save(m, "tools-brush-4", crop: ToolFileHelp.Clamp(crop, m), marks: [Lead(Row(m, pattern))], firstNumber: 6);
-        pattern.IsDropDownOpen = false;
-
-        // 5: 그라데이션 연필 — 방식·프리셋/기본값·정지점 편집기.
-        ToolFileHelp.Tool(k, "그라데이션 연필");
-        var pencilGradient = Opt<Control>(m, "_pencilGradientBox");
-        var gradientEditor = Opt<Control>(m, "_pencilGradientEditor");
-        var presetButton = ShotKit.FindText(pencilGradient, UiStrings.GradientPencil_Presets, ancestorControl: true);
-        k.Save(m, "tools-brush-5", crop: OptionsUpTo(m, pencilGradient), marks:
-        [
-            Lead(Row(m, Opt<Control>(m, "_pencilGradientMode")), 4, 0), Lead(Row(m, presetButton), 4, 0), gradientEditor,
-        ], firstNumber: 7);
-
-        // 6: 지우개 — 강도·채널.
-        ToolFileHelp.Tool(k, "지우개");
-        var eraser = Opt<Control>(m, "_eraserBox");
-        k.Save(m, "tools-brush-6", crop: OptionsUpTo(m, eraser), marks:
-        [
-            Lead(Row(m, Opt<Control>(m, "_eraserNum")), 4, 0), Lead(Row(m, Opt<Control>(m, "_eraseRed")), 4, 0),
-        ], firstNumber: 10);
-
-        // 7: 연필 — 대칭 그리기(좌우·상하·피벗 기준).
+        // 3: 연필 — 대칭 그리기(좌우·상하·피벗 기준).
         ToolFileHelp.Tool(k, "연필");
         ctx.MirrorX = true;
         k.Settle(200);
         var mirror = Opt<Control>(m, "_mirrorBox");
         var mx = Opt<Control>(m, "_mirrorX");
         var my = Opt<Control>(m, "_mirrorY");
-        k.Save(m, "tools-brush-7", crop: R(m, mirror).Inflate(new Thickness(30, 8, 8, 8)), marks:
+        k.Save(m, "tools-brush-3", crop: R(m, mirror).Inflate(new Thickness(30, 8, 8, 8)), marks:
         [
             Lead(R(m, mx).Union(R(m, my)), 4, 0), Lead(m, Opt<Control>(m, "_mirrorAtPivot"), 4, 0),
-        ], firstNumber: 12);
+        ], firstNumber: 5);
+    }
+
+    /// <summary>그라데이션 연필 설정: ① 방식(반복을 골라 간격 줄이 보이게) ② 간격 ③ 프리셋·기본값 ④ 정지점 편집기.</summary>
+    [Shot("tools-gradient-pencil-settings")]
+    public static void GradientPencilSettings(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "그라데이션 연필");
+        var ctx = ToolFileHelp.Ctx(m);
+        ctx.PencilGradientMode = GradientStrokeMode.Repeat;
+        k.Settle(300);
+        var pencilGradient = Opt<Control>(m, "_pencilGradientBox");
+        var presetButton = ShotKit.FindText(pencilGradient, UiStrings.GradientPencil_Presets, ancestorControl: true);
+        k.Save(m, crop: OptionsUpTo(m, pencilGradient), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_pencilGradientMode")), 4, 0),
+            Lead(m, Opt<Control>(m, "_pencilIntervalRow"), 4, 0),
+            Lead(Row(m, presetButton), 4, 0),
+            Opt<Control>(m, "_pencilGradientEditor"),
+        ]);
+    }
+
+    /// <summary>밝게/어둡게 설정: ① 방식 ② 세기.</summary>
+    [Shot("tools-dodge")]
+    public static void Dodge(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "밝게/어둡게");
+        k.Save(m, crop: OptionsUpTo(m, Opt<Control>(m, "_dodgeBox")), marks:
+        [
+            Lead(Row(m, Opt<Control>(m, "_dodgeMode"))), Lead(Row(m, Opt<Control>(m, "_dodgeNum"))),
+        ]);
+    }
+
+    /// <summary>디더링 설정: ① 무늬 목록을 펼친 모습.</summary>
+    [Shot("tools-dither")]
+    public static void Dither(ShotKit k)
+    {
+        var m = Open(k, ToolFileHelp.Sample(k));
+        ToolFileHelp.Tool(k, "디더링");
+        var pattern = Opt<ComboBox>(m, "_ditherPattern");
+        pattern.IsDropDownOpen = true;
+        k.Settle(400);
+        var crop = OptionsUpTo(m, Opt<Control>(m, "_ditherBox"));
+        if (ToolFileShotsMenus.OpenMenuRect(m) is { } list) crop = crop.Union(list.Inflate(8));
+        k.Save(m, crop: ToolFileHelp.Clamp(crop, m), marks: [Lead(Row(m, pattern))]);
+        pattern.IsDropDownOpen = false;
     }
 
     // 글씨 도구: 1 = 캔버스에서 끌어 만든 글상자에 글을 치는 중(①) + 도구 설정 '글씨' 묶음(②~⑦), 2 = 글꼴 목록을 펼친 모습(⑧).
@@ -725,6 +739,44 @@ internal static class ToolsShots
             Lead(Row(m, sL).Union(Row(m, sB))),
             Lead(m, Opt<Control>(m, "_sliceClear"), 14, 0),
             Lead(TextRect(m, Opt<TextBlock>(m, "_sliceTarget")), 14, 0),
+        ]);
+    }
+
+    /// <summary>
+    /// 피벗 도구: 6프레임 예시에서 프레임 3에 '현재 프레임부터'를 켜고 피벗을 발밑(가로 1/2, 아래 끝)으로 옮긴 상태.
+    /// ① 캔버스의 피벗 표시 ② 5×5 단추 ③ X·Y ④ 현재 프레임부터 ⑤ 대상 ⑥ 타임라인 프레임 머리의 피벗 표시(프레임 3~6).
+    /// </summary>
+    [Shot("tools-pivot")]
+    public static void Pivot(ShotKit k)
+    {
+        App.Settings.BottomHeight = 300;
+        App.Settings.RightWidth = 330;
+        var m = ScreenDemo.Open(k, height: 1000);
+        ScreenDemo.Build(k, m, group: false);
+        ShotKit.Call(m, "SetPixelGrid", false);
+        var ctx = ToolFileHelp.Ctx(m);
+        var p = ctx.Project ?? throw new InvalidOperationException("no project");
+        ctx.Structural(() => p.SetFramePivotsFrom(2, true));
+        ctx.Structural(() => p.SetFramePivotFrom(2, new Chickxel.Core.Model.Pivot(0.5f, 0f)));
+        ctx.SetCurrent(ctx.CurrentLayer, 2);
+        ToolFileHelp.Tool(k, "피벗");
+        k.Settle(400);
+        var (px, py) = ctx.Pivot.ToLocalPixel(ctx.CanvasWidth, ctx.CanvasHeight);
+        var presets = ShotKit.Get<Button[]>(ToolFileHelp.Options(m), "_presetButtons");
+        var buttons = presets.Select(b => R(m, b)).Aggregate((a, b) => a.Union(b));
+        var timeline = ShotKit.Get<Control>(m, "_timeline");
+        var grid = ShotKit.Get<Control>(timeline, "_grid");
+        var heads = new Rect(grid.TranslatePoint(new Point(NameW + 2 * CellW, TagH), m)!.Value, new Size(4 * CellW, HeadH));
+        var crop = ToolFileHelp.CanvasRect(m).Union(ToolFileHelp.OptionsRect(m)).Union(R(m, timeline)).Intersect(new Rect(m.ClientSize));
+        crop = crop.WithHeight(heads.Bottom + 2 * CellH + 8 - crop.Y);
+        k.Save(m, crop: crop, marks:
+        [
+            Around(ToolFileHelp.At(m, px, py), 16),
+            buttons.Inflate(3),
+            Lead(Union(Row(m, Opt<Control>(m, "_pivotX")), Row(m, Opt<Control>(m, "_pivotY")))),
+            Lead(m, Opt<Control>(m, "_framePivot")),
+            Lead(TextRect(m, Opt<TextBlock>(m, "_pivotTarget")), 14, 0),
+            heads,
         ]);
     }
 }

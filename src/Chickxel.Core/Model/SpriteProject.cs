@@ -248,11 +248,29 @@ public sealed partial class SpriteProject
     public bool HasPartFramePivot(Layer part, int frameIndex)
         => (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartPivots.ContainsKey(part);
 
-    /// <summary>프레임 사본(표시 시간·피벗·부위별 프레임 피벗 — 이름은 빼고).</summary>
+    /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 위치(캔버스 안 왼쪽 위): 기준 위치 + 그 프레임에서 옮긴 거리(<see cref="MovePartFrom"/>).</summary>
+    public Point GetPartOffset(Layer part, int frameIndex)
+    {
+        var o = part.PartOffset;
+        return (uint)frameIndex < (uint)_frames.Count && _frames[frameIndex].PartShifts.TryGetValue(part, out var s) ? new Point(o.X + s.X, o.Y + s.Y) : o;
+    }
+
+    /// <summary>부위 <paramref name="part"/>의 프레임 <paramref name="frameIndex"/> 영역(캔버스 좌표, <see cref="GetPartOffset"/> + 부위 크기).</summary>
+    public Rectangle GetPartRect(Layer part, int frameIndex) => new(GetPartOffset(part, frameIndex), part.PartSize);
+
+    /// <summary>
+    /// 부위 <paramref name="part"/>가 프레임 <paramref name="frameIndex"/>에서 따로 둔 피벗이나 옮긴 위치가 있는지(도구 설정의 "현재 프레임부터" —
+    /// <see cref="SetPartFramesFrom"/>·<see cref="SetPartPivotFrom"/>·<see cref="MovePartFrom"/>).
+    /// </summary>
+    public bool HasPartFrameOverride(Layer part, int frameIndex)
+        => (uint)frameIndex < (uint)_frames.Count && (_frames[frameIndex].PartPivots.ContainsKey(part) || _frames[frameIndex].PartShifts.ContainsKey(part));
+
+    /// <summary>프레임 사본(표시 시간·피벗·부위별 프레임 피벗·위치 — 이름은 빼고).</summary>
     private static Frame CopyFrame(Frame src)
     {
         var copy = new Frame { DurationMs = src.DurationMs, Pivot = src.Pivot };
         foreach (var (part, pivot) in src.PartPivots) copy.PartPivots[part] = pivot;
+        foreach (var (part, shift) in src.PartShifts) copy.PartShifts[part] = shift;
         return copy;
     }
 
@@ -262,6 +280,20 @@ public sealed partial class SpriteProject
         part.PartPivot = map(part.PartPivot);
         foreach (var f in _frames)
             if (f.PartPivots.TryGetValue(part, out var own)) f.PartPivots[part] = map(own);
+    }
+
+    /// <summary>부위의 프레임마다 옮긴 거리를 모두 <paramref name="map"/>으로 바꾼다(0이 되면 지움 — 캔버스 뒤집기·회전·크기 바꾸기). Edit 안에서.</summary>
+    private void MapPartShifts(Layer part, Func<Point, Point> map)
+    {
+        foreach (var f in _frames)
+            if (f.PartShifts.TryGetValue(part, out var shift)) SetShift(f, part, map(shift));
+    }
+
+    /// <summary>프레임 <paramref name="frame"/>에서 부위가 옮긴 거리를 둔다(0이면 지움). Edit 안에서.</summary>
+    private static void SetShift(Frame frame, Layer part, Point shift)
+    {
+        if (shift.IsEmpty) frame.PartShifts.Remove(part);
+        else frame.PartShifts[part] = shift;
     }
 
     // ───────────── 셀 ─────────────
@@ -409,7 +441,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// <paramref name="target"/>(캔버스 크기)을 지우고 프레임을 합성해 넣는다(메모리 재사용).
-    /// 일반 레이어는 (0,0)에, 부위는 <see cref="Layer.PartOffset"/>에 불투명도 그룹×부위로 그린다(부위마다 지금 보이는 스킨 자신의 셀). 숨긴 그룹은 부위도 숨긴다.
+    /// 일반 레이어는 (0,0)에, 부위는 그 프레임의 부위 위치(<see cref="GetPartOffset"/>)에 불투명도 그룹×부위로 그린다(부위마다 지금 보이는 스킨 자신의 셀). 숨긴 그룹은 부위도 숨긴다.
     /// 레이어 효과(<see cref="Layer.Effects"/>, 이 프레임이 범위 안인 것만)는 셀마다 입혀 그리고(밖으로 번진 부분은 캔버스에서 잘림), 이 프레임에 효과가 켜진 그룹은
     /// 부위들을 먼저 합친 그림에 그룹 효과를 입혀 그룹 불투명도로 한 번에 그린다. 순서표는 <see cref="PlanFrame"/>과 같다.
     /// <paramref name="layerFilter"/>가 있으면 그리는 레이어(일반·부위)마다 걸러낸다(보이기 여부는 <paramref name="includeHidden"/>로).
@@ -708,7 +740,10 @@ public sealed partial class SpriteProject
         return part;
     }
 
-    /// <summary>부위 위치(캔버스 안 왼쪽 위, 모든 프레임 공통). 자동 배치 중인 그룹의 부위면 <see cref="InvalidOperationException"/>(먼저 <see cref="SetGroupLayout"/>로 끄기).</summary>
+    /// <summary>
+    /// 부위 기준 위치(캔버스 안 왼쪽 위 — 프레임마다 옮긴 거리는 그대로 두므로 모든 프레임이 같이 옮겨 감). 자동 배치 중인 그룹의 부위면
+    /// <see cref="InvalidOperationException"/>(먼저 <see cref="SetGroupLayout"/>로 끄기). 한 프레임부터만 옮기려면 <see cref="MovePartFrom"/>.
+    /// </summary>
     public void SetPartOffset(int layerIndex, Point offset)
     {
         var part = RequirePart(layerIndex);
@@ -809,7 +844,7 @@ public sealed partial class SpriteProject
 
     /// <summary>
     /// 타임라인 칸 썸네일로 보일 자리(캔버스 좌표 — 그 레이어가 칸에 크게 보이게, 썸네일이 효과 없는 그림이라 효과 여백 없이): 일반 레이어는 <see cref="LayerBounds"/>,
-    /// 그룹은 부위 영역들을 합친 사각형을 캔버스 안으로 자른 것. 모든 프레임에서 같으므로 칸마다 같은 자리·배율이다.
+    /// 그룹은 부위 영역들(프레임마다 옮긴 자리 모두)을 합친 사각형을 캔버스 안으로 자른 것. 모든 프레임에서 같으므로 칸마다 같은 자리·배율이다.
     /// 부위(썸네일이 이미 부위 크기)·칠한 픽셀이 없음·캔버스 전체면 <see cref="Rectangle.Empty"/>(자르지 않음).
     /// </summary>
     public Rectangle ThumbnailBounds(int layerIndex)
@@ -822,8 +857,10 @@ public sealed partial class SpriteProject
             bounds = Rectangle.Empty;
             foreach (var part in ChildrenOf(layer))
             {
+                if (part.PartSize.Width < 1 || part.PartSize.Height < 1) continue;
                 var r = part.PartRect;
-                if (r.Width < 1 || r.Height < 1) continue;
+                foreach (var f in _frames)
+                    if (f.PartShifts.TryGetValue(part, out var s)) r = Rectangle.Union(r, part.PartRect with { X = part.PartOffset.X + s.X, Y = part.PartOffset.Y + s.Y });
                 bounds = bounds.IsEmpty ? r : Rectangle.Union(bounds, r);
             }
         }
@@ -906,6 +943,7 @@ public sealed partial class SpriteProject
     /// (<see cref="ScaleLayer"/>), 레이어 자리를 <paramref name="area"/>로 바꾼다 — 그 밖으로 나간 픽셀은 잘려 없어진다(캔버스 크기 바꾸기와 같은 방식).
     /// 부위는 위치·크기가 <paramref name="area"/>가 되고(넓히면 빈 칸), 피벗은 같은 그림 지점을, 9-slice 테두리는 같은 그림 경계를 가리킨다
     /// (새 크기에 맞지 않으면 테두리 없음). 일반 레이어는 셀과 캔버스 밖 그림에서 <paramref name="area"/> 밖 픽셀을 지운다(넓혀도 그림은 그대로).
+    /// 일반 레이어는 프레임 피벗(기본 피벗과 프레임마다의 피벗)도 그림과 같은 대응(<see cref="MapLayerResizePoint"/>)으로 옮겨 같은 그림 지점을 가리킨다.
     /// 그룹이면 <see cref="ArgumentException"/>.
     /// </summary>
     public void ResizeLayer(int layerIndex, Rectangle from, Rectangle image, Rectangle area)
@@ -914,13 +952,47 @@ public sealed partial class SpriteProject
         if (layer.IsGroup) throw new ArgumentException(GroupHasNoCelsMessage, nameof(layerIndex));
         if (area.Width < 1 || area.Height < 1 || area.Width > PixelImage.MaxSize || area.Height > PixelImage.MaxSize)
             throw new ArgumentOutOfRangeException(nameof(area), DomainStrings.FormatProject_InvalidImageSize(max: PixelImage.MaxSize, width: area.Width, height: area.Height));
-        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        Edit(DomainStrings.Project_LayerSize, ProjectChange.Layers | ProjectChange.Pixels | (layer.IsPart || from == image ? ProjectChange.None : ProjectChange.Frames | ProjectChange.Settings), () =>
         {
             ScaleLayer(layerIndex, from, image);
             if (layer.IsPart) CropPart(layer, area);
-            else CropNormalLayer(layer, area);
+            else
+            {
+                CropNormalLayer(layer, area);
+                if (from != image)
+                {
+                    Pivot Map(Pivot p)
+                    {
+                        var (x, y) = p.ToLocalPixel(_width, _height);
+                        var at = MapLayerResizePoint(new PointF(x, y), from, image);
+                        return new Pivot(at.X / _width, 1f - at.Y / _height);
+                    }
+                    Sprite.DefaultPivot = Map(Sprite.DefaultPivot);
+                    foreach (var f in _frames)
+                        if (f.Pivot is { } fp) f.Pivot = Map(fp);
+                }
+            }
         });
     }
+
+    /// <summary>
+    /// 레이어 크기 모드의 그림 대응: <paramref name="from"/> 자리의 점 <paramref name="p"/>(캔버스 좌표, 연속)가 <paramref name="to"/> 자리로 늘이거나 줄여 옮긴 뒤 놓이는 곳.
+    /// 피벗이 그림을 따라가게 할 때 쓴다(<see cref="ResizeLayer"/> — 부위 피벗은 부위 기준 비율이라 저절로 같음).
+    /// </summary>
+    public static PointF MapLayerResizePoint(PointF p, Rectangle from, Rectangle to)
+        => new(to.X + (p.X - from.X) * to.Width / Math.Max(1, from.Width), to.Y + (p.Y - from.Y) * to.Height / Math.Max(1, from.Height));
+
+    /// <summary>
+    /// 캔버스 크기 바꾸기(<see cref="ResizeCanvasAndScale"/>)의 대응: 원래 캔버스(<paramref name="old"/>) 좌표의 점(연속)이 그림을 <paramref name="image"/>(새 캔버스 좌표)에 놓은 뒤
+    /// 놓이는 곳. <paramref name="border"/>가 있으면 9-slice(테두리 안은 그대로, 가운데만 비율대로), 없으면 전체를 비율대로.
+    /// </summary>
+    public static PointF MapResizedCanvasPoint(PointF p, Size old, Rectangle image, SpriteBorder border)
+        => new((float)MapResizedAxis(p.X, old.Width, border.Left, border.Right, image.X, image.Width, !border.IsNone),
+            (float)MapResizedAxis(p.Y, old.Height, border.Top, border.Bottom, image.Y, image.Height, !border.IsNone));
+
+    /// <summary>캔버스 크기 바꾸기의 한 축 대응(원래 좌표 <paramref name="v"/> → 새 캔버스 좌표, 그림 자리 <paramref name="pos"/>·<paramref name="size"/>).</summary>
+    private static double MapResizedAxis(double v, int old, int borderStart, int borderEnd, int pos, int size, bool sliced)
+        => pos + (sliced ? NineSlice.MapCoordinate(v, old, borderStart, borderEnd, size) : v * size / old);
 
     /// <summary>부위 자리를 <paramref name="area"/>로(모든 스킨 셀을 그 크기로 자르거나 넓힘, 그림은 캔버스의 같은 자리). <see cref="Edit(string, ProjectChange, Action)"/> 안에서.</summary>
     private void CropPart(Layer part, Rectangle area)
@@ -1009,6 +1081,117 @@ public sealed partial class SpriteProject
             if (pivot is { } value) frame.PartPivots[part] = value;
             else frame.PartPivots.Remove(part);
         });
+    }
+
+    /// <summary>
+    /// 부위를 프레임 <paramref name="fromFrame"/>부터 끝까지 따로 두거나(<paramref name="own"/> — 그 프레임들의 지금 피벗을 그 프레임만의 피벗으로, 모습은 그대로)
+    /// 되돌린다(그 프레임들에 따로 둔 피벗과 옮긴 위치를 지워 부위 피벗·기준 위치를 따름). 도구 설정의 "현재 프레임부터". 실행취소 한 단계, 바뀌는 것이 없으면 기록 없음.
+    /// </summary>
+    public void SetPartFramesFrom(int layerIndex, int fromFrame, bool own)
+    {
+        var part = RequirePart(layerIndex);
+        var frames = FramesFrom(fromFrame);
+        bool moves = !own && frames.Any(f => f.PartShifts.ContainsKey(part));
+        if (own ? frames.All(f => f.PartPivots.ContainsKey(part)) : !moves && !frames.Any(f => f.PartPivots.ContainsKey(part))) return;
+        Edit(DomainStrings.Project_PartFramesFrom, ProjectChange.Layers | ProjectChange.Frames | (moves ? ProjectChange.Pixels : ProjectChange.None), () =>
+        {
+            foreach (var f in frames)
+            {
+                if (own) f.PartPivots.TryAdd(part, part.PartPivot);
+                else
+                {
+                    f.PartPivots.Remove(part);
+                    f.PartShifts.Remove(part);
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// 부위 피벗을 프레임 <paramref name="fromFrame"/>부터 끝까지 바꾼다(실행취소 한 단계): <paramref name="fromFrame"/>의 피벗이 <paramref name="pivot"/>이 되고,
+    /// 뒤 프레임들도 같은 만큼 옮긴다(프레임마다 달랐던 차이는 그대로). 그 프레임들은 모두 그 프레임만의 피벗을 갖는다. 같으면 기록 없음.
+    /// </summary>
+    public void SetPartPivotFrom(int layerIndex, int fromFrame, Pivot pivot)
+    {
+        var part = RequirePart(layerIndex);
+        var frames = FramesFrom(fromFrame);
+        var start = GetPartPivot(part, fromFrame);
+        float dx = pivot.X - start.X, dy = pivot.Y - start.Y;
+        if (dx == 0 && dy == 0 && frames.All(f => f.PartPivots.ContainsKey(part))) return;
+        Edit(DomainStrings.Project_PartFramePivot, ProjectChange.Layers | ProjectChange.Frames, () =>
+        {
+            foreach (var f in frames)
+            {
+                var cur = f.PartPivots.TryGetValue(part, out var own) ? own : part.PartPivot;
+                f.PartPivots[part] = ReferenceEquals(f, frames[0]) ? pivot : new Pivot(cur.X + dx, cur.Y + dy);
+            }
+        });
+    }
+
+    /// <summary>
+    /// 부위를 프레임 <paramref name="fromFrame"/>부터 끝까지 (<paramref name="dx"/>, <paramref name="dy"/>)px 옮긴다(실행취소 한 단계). 피벗은 부위 기준 비율이라 부위와 같이 옮겨 간다.
+    /// 첫 프레임부터면 기준 위치를 옮기고(자동 배치 중인 그룹의 부위는 빼고), 아니면 그 프레임들에 옮긴 거리를 더한다(앞 프레임은 그대로).
+    /// </summary>
+    public void MovePartFrom(int layerIndex, int fromFrame, int dx, int dy)
+    {
+        var part = RequirePart(layerIndex);
+        var frames = FramesFrom(fromFrame);
+        if (dx == 0 && dy == 0) return;
+        Edit(DomainStrings.Project_MovePart, ProjectChange.Layers | ProjectChange.Pixels, () =>
+        {
+            if (fromFrame == 0 && !part.IsAutoLaidOut)
+            {
+                part.PartOffset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
+                return;
+            }
+            foreach (var f in frames)
+            {
+                var s = f.PartShifts.GetValueOrDefault(part);
+                SetShift(f, part, new Point(s.X + dx, s.Y + dy));
+            }
+        });
+    }
+
+    /// <summary>
+    /// 프레임 <paramref name="fromFrame"/>부터 끝까지 프레임 피벗을 따로 두거나(<paramref name="own"/> — 지금 피벗을 그 프레임만의 피벗으로, 모습은 그대로)
+    /// 되돌린다(기본 피벗을 따름). 도구 설정의 "현재 프레임부터". 실행취소 한 단계, 바뀌는 것이 없으면 기록 없음.
+    /// </summary>
+    public void SetFramePivotsFrom(int fromFrame, bool own)
+    {
+        var frames = FramesFrom(fromFrame);
+        if (frames.All(f => (f.Pivot is not null) == own)) return;
+        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () =>
+        {
+            foreach (var f in frames) f.Pivot = own ? f.Pivot ?? Sprite.DefaultPivot : null;
+        });
+    }
+
+    /// <summary>
+    /// 프레임 피벗을 프레임 <paramref name="fromFrame"/>부터 끝까지 바꾼다(실행취소 한 단계): <paramref name="fromFrame"/>의 피벗이 <paramref name="pivot"/>이 되고,
+    /// 뒤 프레임들도 같은 만큼 옮긴다(프레임마다 달랐던 차이는 그대로). 그 프레임들은 모두 그 프레임만의 피벗을 갖는다. 같으면 기록 없음.
+    /// </summary>
+    public void SetFramePivotFrom(int fromFrame, Pivot pivot)
+    {
+        var frames = FramesFrom(fromFrame);
+        var start = GetFramePivot(fromFrame);
+        float dx = pivot.X - start.X, dy = pivot.Y - start.Y;
+        if (dx == 0 && dy == 0 && frames.All(f => f.Pivot is not null)) return;
+        Edit(DomainStrings.Project_FramePivot, ProjectChange.Frames, () =>
+        {
+            foreach (var f in frames)
+            {
+                var cur = f.Pivot ?? Sprite.DefaultPivot;
+                f.Pivot = ReferenceEquals(f, frames[0]) ? pivot : new Pivot(cur.X + dx, cur.Y + dy);
+            }
+        });
+    }
+
+    /// <summary>프레임 <paramref name="fromFrame"/>부터 끝까지(범위 밖이면 <see cref="ArgumentOutOfRangeException"/>).</summary>
+    private List<Frame> FramesFrom(int fromFrame)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(fromFrame);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(fromFrame, _frames.Count);
+        return _frames.GetRange(fromFrame, _frames.Count - fromFrame);
     }
 
     /// <summary>부위 9-slice 테두리(px). 부위 아틀라스 내보내기에 쓴다.</summary>
@@ -1106,7 +1289,10 @@ public sealed partial class SpriteProject
         foreach (var (key, cel) in CelsOf(src))
             _cels[new(copy, key.Frame, key.Skin is { } s && skinMap.TryGetValue(s, out var mapped) ? mapped : key.Skin)] = clone(cel);
         foreach (var f in _frames)
+        {
             if (f.PartPivots.TryGetValue(src, out var own)) f.PartPivots[copy] = own;
+            if (f.PartShifts.TryGetValue(src, out var shift)) f.PartShifts[copy] = shift;
+        }
         foreach (var (key, overflow) in _overflow.Where(kv => ReferenceEquals(kv.Key.Layer, src)).ToList())
             _overflow[key with { Layer = copy }] = overflow;
         return copy;
@@ -1316,6 +1502,8 @@ public sealed partial class SpriteProject
     /// 일반 레이어에서 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 셀이 없어도 빈 그림에 구워 새 셀로 넣는다.
     /// 아래(뒤) 효과는 효과로 남는다. 일반 레이어는 캔버스 크기로 잘리고, 부위는 번진 그림이 들어가도록 부위 크기·위치를 넓힌다
     /// (모든 프레임·스킨 셀을 같이 옮기고, 피벗·테두리는 같은 그림 지점 — 자동 배치 그룹이면 다시 배치). 효과가 바꾸지 않는 프레임도 그대로 구운 것으로 친다.
+    /// 부위에서 피벗 같이 옮기기가 켜진 효과(흔들기·둥실둥실 등)가 그림을 옮긴 거리는 그림에 굽지 않고, 그 프레임의 부위 위치를 그만큼(반올림) 옮긴다
+    /// (<see cref="GetPartOffset"/> — 피벗은 부위 기준 비율이라 같이 따라가고, 그 프레임은 "현재 프레임부터" 따로 둔 프레임이 된다).
     /// 그룹(효과가 여러 부위의 합성에 입혀짐)·잠긴 레이어는 <see cref="InvalidOperationException"/>.
     /// </summary>
     /// <returns>구운 효과(목록 순서)와 그 프레임 범위(합, null = 모든 프레임), 바꾼 셀 수, 부위를 넓혔는지.</returns>
@@ -1343,6 +1531,8 @@ public sealed partial class SpriteProject
         // 자리는 원래 셀 왼쪽 위 기준(그림마다 여백이 다를 수 있음 — 옮겨 간 만큼 넓혀 그린 프레임)
         var keep = new Rectangle(0, 0, size.Width, size.Height);
         var rendered = new List<(CelKey Key, PixelImage Image, Point Offset)>();
+        // 부위: 프레임마다 효과가 옮긴 거리(반올림 — 그 프레임의 첫 셀 기준, 스킨이 달라도 같은 위치를 쓴다)
+        var shifts = new Dictionary<Frame, Point>();
         var area = keep;
         // 셀이 없어도 구울 효과 중 글씨처럼 원본 없이 그리는 효과가 켜진 프레임은 빈 그림에 그려 새 셀로 넣는다
         foreach (var (key, cel) in CelsWithContentOf(layer, baked))
@@ -1353,7 +1543,14 @@ public sealed partial class SpriteProject
             var effects = EffectsAt(layer, baked, f, skinKey,
                 other => _cels.GetValueOrDefault(new(layer, _frames[other], skinKey)) ?? (HasContentEffect(layer, other) ? BlankCel() : null));
             if (effects.Count == 0) continue;
-            var (image, dx, dy) = LayerEffects.Render(cel, effects, pad);
+            var (image, dx, dy, moved) = LayerEffects.RenderWithShift(cel, effects, pad);
+            if (layer.IsPart)
+            {
+                if (!shifts.TryGetValue(key.Frame, out var s))
+                    shifts[key.Frame] = s = new Point((int)MathF.Round(moved.X, MidpointRounding.AwayFromZero), (int)MathF.Round(moved.Y, MidpointRounding.AwayFromZero));
+                dx -= s.X;
+                dy -= s.Y;
+            }
             rendered.Add((key, image, new Point(dx, dy)));
             if (layer.IsPart && image.GetOpaqueBounds() is { IsEmpty: false } b)
             {
@@ -1361,9 +1558,10 @@ public sealed partial class SpriteProject
                 area = Rectangle.Union(area, b);
             }
         }
+        foreach (var (frame, s) in shifts.Where(kv => kv.Value.IsEmpty).ToList()) shifts.Remove(frame);
         bool grow = area != keep;
         if (grow) ValidatePartSize(area.Width, area.Height);
-        return new BakePlan(layer, baked, rest, range, size, keep, area, rendered);
+        return new BakePlan(layer, baked, rest, range, size, keep, area, rendered, shifts);
     }
 
     /// <summary>
@@ -1408,6 +1606,12 @@ public sealed partial class SpriteProject
                 placed.Blit(r.Image, r.Offset.X - area.X, r.Offset.Y - area.Y);
                 return (r.Key, before.GetValueOrDefault(r.Key), placed);
             }).ToList());
+            // 효과가 옮긴 거리만큼 그 프레임의 부위 위치를 옮긴다(넓혀 바뀐 기준 위치에 더하는 거리라 그대로 따라감)
+            foreach (var (frame, s) in plan.Shifts)
+            {
+                var cur = frame.PartShifts.GetValueOrDefault(layer);
+                SetShift(frame, layer, new Point(cur.X + s.X, cur.Y + s.Y));
+            }
             layer.Effects = plan.Rest;
         });
         return (plan.Baked, plan.Frames, plan.Rendered.Count, grow);
@@ -1417,7 +1621,7 @@ public sealed partial class SpriteProject
     public sealed class BakePlan
     {
         internal BakePlan(Layer layer, IReadOnlyList<LayerEffect> baked, IReadOnlyList<LayerEffect> rest, FrameRange? frames, Size size,
-            Rectangle keep, Rectangle area, IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> rendered)
+            Rectangle keep, Rectangle area, IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> rendered, IReadOnlyDictionary<Frame, Point> shifts)
         {
             Layer = layer;
             Baked = baked;
@@ -1427,6 +1631,7 @@ public sealed partial class SpriteProject
             Keep = keep;
             Area = area;
             Rendered = rendered;
+            Shifts = shifts;
         }
 
         internal Layer Layer { get; }
@@ -1438,8 +1643,10 @@ public sealed partial class SpriteProject
         internal Rectangle Keep { get; }
         /// <summary>구운 셀이 차지할 자리(원래 셀 왼쪽 위 기준, 부위면 결과를 모두 감쌈).</summary>
         internal Rectangle Area { get; }
-        /// <summary>셀마다 효과를 입힌 그림과 그 그림 왼쪽 위의 자리(원래 셀 왼쪽 위 기준).</summary>
+        /// <summary>셀마다 효과를 입힌 그림과 그 그림 왼쪽 위의 자리(원래 셀 왼쪽 위 기준, 부위면 <see cref="Shifts"/>만큼 되돌린 자리).</summary>
         internal IReadOnlyList<(CelKey Key, PixelImage Image, Point Offset)> Rendered { get; }
+        /// <summary>부위: 프레임마다 효과가 옮긴 거리(0이 아닌 것만) — 그림 대신 그 프레임의 부위 위치를 옮긴다.</summary>
+        internal IReadOnlyDictionary<Frame, Point> Shifts { get; }
     }
 
     // ───────────── 스킨(그룹 = 스킨 슬롯) ─────────────
@@ -2245,9 +2452,9 @@ public sealed partial class SpriteProject
         var fill = slice ?? NineSliceFill.Stretch;
         var border = slice is not null && NineSlice.Applies(Sprite.Border, oldW, oldH) ? Sprite.Border : SpriteBorder.None;
         bool sliced = !border.IsNone;
-        // 원래 캔버스 좌표(연속) → 새 캔버스 좌표: 9-slice면 테두리 안은 그대로·가운데만 비율대로, 아니면 전체를 비율대로.
-        double MapXF(double x) => image.X + (sliced ? NineSlice.MapCoordinate(x, oldW, border.Left, border.Right, image.Width) : x * image.Width / oldW);
-        double MapYF(double y) => image.Y + (sliced ? NineSlice.MapCoordinate(y, oldH, border.Top, border.Bottom, image.Height) : y * image.Height / oldH);
+        // 원래 캔버스 좌표(연속) → 새 캔버스 좌표(MapResizedCanvasPoint와 같은 대응).
+        double MapXF(double x) => MapResizedAxis(x, oldW, border.Left, border.Right, image.X, image.Width, sliced);
+        double MapYF(double y) => MapResizedAxis(y, oldH, border.Top, border.Bottom, image.Y, image.Height, sliced);
         Pivot Map(Pivot p)
         {
             var (px, py) = p.ToLocalPixel(oldW, oldH);
@@ -2294,6 +2501,9 @@ public sealed partial class SpriteProject
             foreach (var (part, rect) in parts)
             {
                 var old = part.PartSize;
+                var from = part.PartOffset;
+                // 프레임마다 옮긴 거리도 같은 대응으로(옮긴 왼쪽 위를 옮겨 본 자리 − 새 기준 위치)
+                MapPartShifts(part, s => new Point(MapX(from.X + s.X) - rect.X, MapY(from.Y + s.Y) - rect.Y));
                 part.PartOffset = rect.Location;
                 if (rect.Size == old) continue;
                 bool partSliced = slice is not null && NineSlice.Applies(part.PartBorder, old.Width, old.Height);
@@ -2376,7 +2586,13 @@ public sealed partial class SpriteProject
                 _overflow[key] = new CelOverflow(transform(o.Image), partRectMap(o.Rect).Location);
             foreach (var part in _layers.Where(l => l.IsPart))
             {
-                var r = partRectMap(part.PartRect);
+                var before = part.PartRect;
+                var r = partRectMap(before);
+                MapPartShifts(part, s =>
+                {
+                    var moved = partRectMap(before with { X = before.X + s.X, Y = before.Y + s.Y }).Location;
+                    return new Point(moved.X - r.X, moved.Y - r.Y);
+                });
                 part.PartOffset = r.Location;
                 part.PartSize = r.Size;
                 MapPartPivots(part, pivotMap);
@@ -2612,7 +2828,7 @@ public sealed partial class SpriteProject
     {
         private int _w, _h;
         private LayerState[] _layers = [];
-        private (Frame Frame, int Ms, Pivot? Pivot, string? Name, KeyValuePair<Layer, Pivot>[] PartPivots)[] _frames = [];
+        private (Frame Frame, int Ms, Pivot? Pivot, string? Name, KeyValuePair<Layer, Pivot>[] PartPivots, KeyValuePair<Layer, Point>[] PartShifts)[] _frames = [];
         private (AnimationTag Tag, AnimationTag State)[] _tags = [];
         private (Outfit Outfit, string Name, IReadOnlyList<OutfitSlot> Slots, IReadOnlyList<OutfitPart> Parts)[] _outfits = [];
         private KeyValuePair<CelKey, PixelImage>[] _cels = [];
@@ -2625,8 +2841,9 @@ public sealed partial class SpriteProject
             _w = p._width,
             _h = p._height,
             _layers = p._layers.Select(LayerState.Of).ToArray(),
-            // 지운 레이어의 프레임 피벗은 빼고(쓰이지 않음 — 편집 기록 파일에 없는 레이어가 남지 않게)
-            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name, f.PartPivots.Where(kv => p._layers.Contains(kv.Key)).ToArray())).ToArray(),
+            // 지운 레이어의 프레임 피벗·위치는 빼고(쓰이지 않음 — 편집 기록 파일에 없는 레이어가 남지 않게)
+            _frames = p._frames.Select(f => (f, f.DurationMs, f.Pivot, f.Name, f.PartPivots.Where(kv => p._layers.Contains(kv.Key)).ToArray(),
+                f.PartShifts.Where(kv => p._layers.Contains(kv.Key)).ToArray())).ToArray(),
             _tags = p._tags.Select(t => (t, t.Clone())).ToArray(),
             _outfits = p._outfits.Select(o => (o, o.Name, o.Slots, o.Parts)).ToArray(),
             _cels = p._cels.ToArray(),
@@ -2642,13 +2859,15 @@ public sealed partial class SpriteProject
             p._layers.Clear();
             foreach (var state in _layers) p._layers.Add(state.Apply());
             p._frames.Clear();
-            foreach (var (frame, ms, pivot, name, partPivots) in _frames)
+            foreach (var (frame, ms, pivot, name, partPivots, partShifts) in _frames)
             {
                 frame.DurationMs = ms;
                 frame.Pivot = pivot;
                 frame.Name = name;
                 frame.PartPivots.Clear();
                 foreach (var (part, partPivot) in partPivots) frame.PartPivots[part] = partPivot;
+                frame.PartShifts.Clear();
+                foreach (var (part, shift) in partShifts) frame.PartShifts[part] = shift;
                 p._frames.Add(frame);
             }
             p._tags.Clear();

@@ -98,7 +98,8 @@ public sealed class TimelinePanel : UserControl
             string kind = layer.Kind switch
             {
                 LayerKind.Group => UiStrings.S_TimelinePanel_RefreshUi_974D2C80BE,
-                LayerKind.Part => string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_FB257005C1,layer.PartSize.Width,layer.PartSize.Height,layer.PartOffset.X,layer.PartOffset.Y),
+                LayerKind.Part => p.GetPartOffset(layer, _ctx.CurrentFrame) is var at
+                    ? string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_FB257005C1,layer.PartSize.Width,layer.PartSize.Height,at.X,at.Y) : "",
                 _ => "",
             };
             _info.Text = string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_RefreshUi_4411E2A453,_ctx.CurrentFrame + 1,p.Frames.Count,layer.Name) + (kind.Length > 0 ? $" ({kind})" : "")
@@ -957,13 +958,17 @@ public sealed class TimelinePanel : UserControl
         _ctx.Structural(() => p.ResizePart(index, dlg.NewWidth, dlg.NewHeight, dlg.ImageAnchor));
     }
 
-    /// <summary>부위 위치(프레임 안 왼쪽 위 X·Y) 입력. 그룹이 자동 배치 중이면 옮기기 전에 자동 배치를 풀지 묻는다(풀기 + 옮기기 = 실행취소 한 단계).</summary>
+    /// <summary>
+    /// 부위 위치(지금 프레임에서 프레임 안 왼쪽 위 X·Y — 모든 프레임이 같은 만큼 옮겨 감) 입력. 그룹이 자동 배치 중이면 옮기기 전에 자동 배치를 풀지 묻는다
+    /// (풀기 + 옮기기 = 실행취소 한 단계).
+    /// </summary>
     private void SetPartPosition(int index)
     {
         if (P is not { } p || index < 0 || index >= p.Layers.Count || !p.Layers[index].IsPart) return;
         var part = p.Layers[index];
-        var dlg = new PartOffsetDialog(part.Name, part.PartOffset);
-        if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Offset == part.PartOffset) return;
+        var shown = p.GetPartOffset(part, _ctx.CurrentFrame);
+        var dlg = new PartOffsetDialog(part.Name, shown);
+        if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Offset == shown) return;
         if (!GroupLayoutDialog.ConfirmManualMove(this, part)) return;
         _ctx.MovePart(part, dlg.Offset);
     }
@@ -1477,7 +1482,8 @@ public sealed class TimelinePanel : UserControl
         {
             items.Add(new Separator());
             items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_66BE4C8AA7,layer.PartSize.Width,layer.PartSize.Height), () => ResizePartAt(index)));
-            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_73BDC86998,layer.PartOffset.X,layer.PartOffset.Y) + (layer.IsAutoLaidOut ? UiStrings.S_TimelinePanel_ShowLayerMenu_8A6B808B32 : ""), () => SetPartPosition(index)));
+            var at = p.GetPartOffset(layer, _ctx.CurrentFrame);
+            items.Add(Item(string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_TimelinePanel_ShowLayerMenu_73BDC86998,at.X,at.Y) + (layer.IsAutoLaidOut ? UiStrings.S_TimelinePanel_ShowLayerMenu_8A6B808B32 : ""), () => SetPartPosition(index)));
             if (layer.Parent is { IsGroup: true } owner)
             {
                 items.Add(new MenuItem
@@ -3030,8 +3036,8 @@ public sealed class TimelinePanel : UserControl
                 else if (l == curLayer && f == cur) g.DrawRectangle(null, _kind == SelKind.Cels ? AccentPen : CurrentCelPen, r.Deflate(_kind == SelKind.Cels ? 1 : 0.5));
                 else g.DrawRectangle(null, BorderPen, r.Deflate(0.5));
                 if (LinkMarksOf(l) is var marks && (uint)f < (uint)marks.Length && marks[f].IsLinked) DrawLinkMark(r, x, marks, f);
-                // 부위가 이 프레임만 다른 피벗을 쓰면 왼쪽 위에 피벗 표시(프레임 머리의 프레임 피벗 표시와 같은 모양)
-                if (p.Layers[l] is { IsPart: true } part && p.HasPartFramePivot(part, f))
+                // 부위가 이 프레임에 따로 둔 피벗·위치가 있으면 왼쪽 위에 피벗 표시(프레임 머리의 프레임 피벗 표시와 같은 모양)
+                if (p.Layers[l] is { IsPart: true } part && p.HasPartFrameOverride(part, f))
                 {
                     double size = _thumbnails ? 9 : 7;
                     VectorIcons.Draw(g, VectorIcon.Diamond, new Rect(r.X + 3, r.Y + 3, size + 1, size + 1), size, PivotBrush, filled: true);

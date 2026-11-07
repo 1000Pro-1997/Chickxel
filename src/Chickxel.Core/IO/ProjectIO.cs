@@ -103,11 +103,46 @@ public static partial class ProjectIO
     /// <summary>ZIP 내용을 스트림에 쓴다(경로·수정 여부는 바꾸지 않음). 경로를 모르므로 내보내기 기록(<see cref="SpriteProject.ExportedFiles"/>)은 쓰지 않는다.</summary>
     public static void Save(SpriteProject project, Stream stream) => Save(project, stream, null, null);
 
+    /// <summary>
+    /// 남에게 줄(갤러리에 같이 올릴) <c>.chickxel</c> 내용을 스트림에 쓴다. 프로젝트는 바꾸지 않는다(경로·수정됨·내보내기 기록 그대로).
+    /// 이 컴퓨터에서만 뜻이 있는 값은 빼고 쓴다: 내보내기 기록(<c>exported</c>), 내보내기 폴더(<see cref="ExportSettings.Folder"/> → 기본값 null =
+    /// 프로젝트 파일 옆), 내보내기 이름(<see cref="ExportSettings.FileName"/>·<see cref="ExportSettings.PartsFileName"/>)에 든 폴더·드라이브 부분(이름만 남김).
+    /// 스크립트 효과 원문은 그대로 넣는다(여는 쪽에서 실행 허락을 묻는다).
+    /// 구조·설정은 처음에 한 번 읽고 그다음 셀을 읽으므로 쓰는 동안 아무도 프로젝트를 고치지 않아야 한다(작업 덮개 안에서 부름).
+    /// </summary>
+    /// <param name="progress">진행(단위: 셀 픽셀).</param>
+    public static void SaveForSharing(SpriteProject project, Stream stream, WorkProgress? progress = null)
+    {
+        using var stage = progress?.Begin(CelUnits(project));
+        Save(project, stream, null, stage, StripLocalPaths);
+    }
+
+    /// <summary>남에게 줄 파일에서 이 컴퓨터의 경로를 뺀다(<see cref="SaveForSharing"/>).</summary>
+    private static void StripLocalPaths(ProjectDto dto)
+    {
+        dto.Exported = null;
+        if (dto.Export is not { } export) return;
+        export.Folder = null;
+        export.FileName = NameOnly(export.FileName);
+        export.PartsFileName = NameOnly(export.PartsFileName);
+    }
+
+    /// <summary>경로처럼 적은 이름의 마지막 조각(<c>/</c>·<c>\</c>·<c>:</c> 뒤). 남는 게 없으면 null(기본 이름).</summary>
+    private static string? NameOnly(string? name)
+    {
+        if (name is null) return null;
+        var last = name[(name.LastIndexOfAny(['/', '\\', ':']) + 1)..];
+        return string.IsNullOrWhiteSpace(last) ? null : last;
+    }
+
     /// <param name="projectPath">저장할 프로젝트 전체 경로(내보내기 기록을 이 파일 기준 상대 경로로 씀). null이면 기록을 쓰지 않는다.</param>
-    private static void Save(SpriteProject project, Stream stream, string? projectPath, WorkStage? stage)
+    /// <param name="adjust">쓰기 전에 <c>project.json</c> 내용을 고친다(남에게 줄 파일). null이면 그대로.</param>
+    private static void Save(SpriteProject project, Stream stream, string? projectPath, WorkStage? stage, Action<ProjectDto>? adjust = null)
     {
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
-        WriteProjectJson(zip, ToDto(project, projectPath));
+        var dto = ToDto(project, projectPath);
+        adjust?.Invoke(dto);
+        WriteProjectJson(zip, dto);
 
         // 셀 PNG는 여러 코어에서 묶음씩 만들고 ZIP에는 정한 차례대로 쓴다(파일 내용은 차례대로 만든 것과 같다). 묶음만큼만 메모리에 둔다.
         // 링크된 셀(같은 그림)은 한 번만 만들고 같은 바이트를 셀마다 쓴다.
@@ -890,6 +925,8 @@ public static partial class ProjectIO
             Name = f.Name,
             PartPivots = NullIfEmptyList(f.PartPivots.Where(kv => kv.Key.IsPart && p.IndexOf(kv.Key) >= 0)
                 .Select(kv => new FramePartPivotDto { Layer = p.IndexOf(kv.Key), Pivot = PivotDto.From(kv.Value) }).OrderBy(d => d.Layer).ToList()),
+            PartShifts = NullIfEmptyList(f.PartShifts.Where(kv => kv.Key.IsPart && p.IndexOf(kv.Key) >= 0)
+                .Select(kv => new FramePartShiftDto { Layer = p.IndexOf(kv.Key), X = kv.Value.X, Y = kv.Value.Y }).OrderBy(d => d.Layer).ToList()),
         }).ToList(),
         Tags = p.Tags.Select(t => new TagDto
         {
@@ -1122,6 +1159,9 @@ public static partial class ProjectIO
             // 부위마다 이 프레임만의 피벗(부위가 아닌 레이어·없는 번호는 버림)
             foreach (var pp in f.PartPivots ?? [])
                 if (ResolveLayer(fileLayers, pp.Layer) is { IsPart: true } part && pp.Pivot is { } pivot) frame.PartPivots[part] = pivot.ToPivot();
+            // 부위마다 이 프레임에서 옮긴 거리(부위가 아닌 레이어·없는 번호·0은 버림)
+            foreach (var ps in f.PartShifts ?? [])
+                if (ResolveLayer(fileLayers, ps.Layer) is { IsPart: true } part && (ps.X != 0 || ps.Y != 0)) frame.PartShifts[part] = new Point(ps.X, ps.Y);
             p.AddFrameRaw(frame);
         }
         if (p.Frames.Count == 0) p.AddFrameRaw(new Frame());
@@ -1544,12 +1584,21 @@ public static partial class ProjectIO
         public string? Name { get; set; }
         /// <summary>부위마다 이 프레임만의 피벗(레이어 번호, 없으면 null).</summary>
         public List<FramePartPivotDto>? PartPivots { get; set; }
+        /// <summary>부위마다 이 프레임에서 기준 위치에서 옮긴 거리(레이어 번호, 없으면 null).</summary>
+        public List<FramePartShiftDto>? PartShifts { get; set; }
     }
 
     private sealed class FramePartPivotDto
     {
         public int Layer { get; set; }
         public PivotDto? Pivot { get; set; }
+    }
+
+    private sealed class FramePartShiftDto
+    {
+        public int Layer { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 
     private static List<T>? NullIfEmptyList<T>(List<T> list) => list.Count == 0 ? null : list;

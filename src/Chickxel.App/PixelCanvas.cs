@@ -616,8 +616,14 @@ public sealed partial class PixelCanvas : Control
     private void CenterOffset()
         => _offset = new Point((ClientWidth - W * _zoom) / 2, (ClientHeight - H * _zoom) / 2);
 
-    /// <summary>캔버스 (0,0)이 프레임에서 놓인 곳: 부위 화면이면 부위 위치, 아니면 (0,0).</summary>
-    private Point ShownOrigin => _ctx.CurrentPart?.PartOffset ?? Point.Empty;
+    /// <summary>캔버스 (0,0)이 프레임에서 놓인 곳: 부위 화면이면 지금 프레임의 부위 위치, 아니면 (0,0).</summary>
+    private Point ShownOrigin => _ctx.CurrentPart is { } part ? FrameOffsetOf(part) : Point.Empty;
+
+    /// <summary>부위의 지금 프레임 위치(프레임마다 옮긴 거리 포함 — <see cref="SpriteProject.GetPartOffset"/>).</summary>
+    private Point FrameOffsetOf(Layer part) => _ctx.Project?.GetPartOffset(part, _ctx.CurrentFrame) ?? part.PartOffset;
+
+    /// <summary>부위의 지금 프레임 영역(캔버스 좌표).</summary>
+    private Rectangle FrameRectOf(Layer part) => new(FrameOffsetOf(part), part.PartSize);
 
     /// <summary>
     /// 보이는 대상이 바뀜: 프레임 크기가 바뀌면 가운데 다시 놓고, 부위 ↔ 프레임(또는 부위 위치)이 바뀌면
@@ -990,7 +996,8 @@ public sealed partial class PixelCanvas : Control
     private void DrawPartSurroundings(DrawingContext g, Layer part, int frame)
     {
         if (_ctx.Project is not { } p || _ctx.ContextBitmap(frame, part) is not { } around) return;
-        int ox = -part.PartOffset.X, oy = -part.PartOffset.Y;
+        var at = p.GetPartOffset(part, frame);
+        int ox = -at.X, oy = -at.Y;
         using (g.PushOpacity(0.35)) DrawBitmapAt(g, around, ox, oy, p.Width, p.Height, checker: false);
         var r = ImageToScreen(new Rectangle(ox, oy, p.Width, p.Height));
         g.DrawRectangle(null, FrameBoundsPen, new Rect(r.X - 0.5, r.Y - 0.5, r.Width + 1, r.Height + 1));
@@ -1000,7 +1007,8 @@ public sealed partial class PixelCanvas : Control
     private void DrawPartFrame(DrawingContext g, Bitmap? bmp)
     {
         if (_ctx.Project is not { } p || _ctx.CurrentPart is not { } part) return;
-        DrawBitmapAt(g, bmp, -part.PartOffset.X, -part.PartOffset.Y, p.Width, p.Height, checker: false);
+        var at = FrameOffsetOf(part);
+        DrawBitmapAt(g, bmp, -at.X, -at.Y, p.Width, p.Height, checker: false);
     }
 
     /// <summary>그룹 화면에서 끄는 부위를 옮긴 자리에 그린다(그룹·부위 불투명도 반영).</summary>
@@ -1021,12 +1029,12 @@ public sealed partial class PixelCanvas : Control
         foreach (var part in p.ChildrenOf(group))
         {
             if (ReferenceEquals(part, hover) || ReferenceEquals(part, selected) || !p.IsLayerVisible(p.IndexOf(part))) continue;
-            var r = ImageToScreen(part.PartRect);
+            var r = ImageToScreen(FrameRectOf(part));
             g.DrawRectangle(null, PartFaintPen, new Rect(r.X + 0.5, r.Y + 0.5, Math.Max(0, r.Width - 1), Math.Max(0, r.Height - 1)));
         }
         Rect ScreenRectOf(Layer part)
         {
-            var rect = part.PartRect;
+            var rect = FrameRectOf(part);
             if (ReferenceEquals(part, _arrangePart)) rect.Location = _arrangeOffset;
             var sr = ImageToScreen(rect);
             return new Rect(sr.X + 0.5, sr.Y + 0.5, Math.Max(0, sr.Width - 1), Math.Max(0, sr.Height - 1));
@@ -1037,7 +1045,7 @@ public sealed partial class PixelCanvas : Control
             g.DrawRectangle(null, PartHoverPen, ScreenRectOf(hover));
         var active = hover is not null && ReferenceEquals(hover.Parent, group) ? hover : selected;
         if (active is null) return;
-        var rect = active.PartRect;
+        var rect = FrameRectOf(active);
         if (ReferenceEquals(active, _arrangePart)) rect.Location = _arrangeOffset;
         var s = ImageToScreen(rect);
         var label = $"{active.Name}  {rect.Width}×{rect.Height}" + (ReferenceEquals(active, _arrangePart) || ReferenceEquals(active, selected) ? $"  ({rect.X}, {rect.Y})" : "");
@@ -1122,7 +1130,7 @@ public sealed partial class PixelCanvas : Control
         foreach (var part in p.ChildrenOf(group))
         {
             if (!p.IsLayerVisible(p.IndexOf(part))) continue;
-            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : part.PartOffset;
+            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : FrameOffsetOf(part);
             yield return new SliceTarget(part, new Rectangle(offset, part.PartSize), part.PartBorder);
         }
     }
@@ -1222,7 +1230,7 @@ public sealed partial class PixelCanvas : Control
         foreach (var part in p.ChildrenOf(group))
         {
             if (!p.IsLayerVisible(p.IndexOf(part))) continue;
-            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : part.PartOffset;
+            var offset = ReferenceEquals(part, _arrangePart) ? _arrangeOffset : FrameOffsetOf(part);
             var (lx, ly) = p.GetPartPivot(part, _ctx.CurrentFrame).ToLocalPixel(part.PartSize.Width, part.PartSize.Height);
             var shift = _ctx.EffectPivotShift(part, _ctx.CurrentFrame);
             var c = ImageToScreen(offset.X + lx + shift.X, offset.Y + ly + shift.Y);
@@ -1250,7 +1258,6 @@ public sealed partial class PixelCanvas : Control
         var shift = _ctx.CurrentLayerObject is { } layer ? _ctx.EffectPivotShift(layer, _ctx.CurrentFrame) : System.Drawing.PointF.Empty;
         var p = ImageToScreen(px + shift.X, py + shift.Y);
         var pen = _ctx.Tool == ToolKind.Pivot ? PivotActivePen : PivotPen;
-        const double r = 5;
         if (!shift.IsEmpty && _ctx.Tool == ToolKind.Pivot)
         {
             var origin = ImageToScreen(px, py);
@@ -1258,6 +1265,13 @@ public sealed partial class PixelCanvas : Control
             g.DrawEllipse(null, PivotBackPen, origin, 2.5, 2.5);
             g.DrawEllipse(null, PivotTrailPen, origin, 2.5, 2.5);
         }
+        DrawPivotMark(g, p, pen);
+    }
+
+    /// <summary>피벗 표시 하나(화면 좌표 <paramref name="p"/>): 원 + 십자.</summary>
+    private static void DrawPivotMark(DrawingContext g, Avalonia.Point p, IPen pen)
+    {
+        const double r = 5;
         g.DrawEllipse(null, PivotBackPen, p, r, r);
         g.DrawEllipse(null, pen, p, r, r);
         g.DrawLine(pen, new Avalonia.Point(p.X - r - 4, p.Y), new Avalonia.Point(p.X + r + 4, p.Y));
@@ -1491,7 +1505,12 @@ public sealed partial class PixelCanvas : Control
         if (!_ctx.OnionSkin) return;
         int i = _ctx.CurrentFrame;
         // 부위 화면의 효과 그림은 프레임 크기라 부위 위치만큼 옮겨 그린다
-        var at = _ctx.PartEffectsShown && _ctx.CurrentPart is { } part ? new Point(-part.PartOffset.X, -part.PartOffset.Y) : Point.Empty;
+        var at = Point.Empty;
+        if (_ctx.PartEffectsShown && _ctx.CurrentPart is { } part)
+        {
+            var o = FrameOffsetOf(part);
+            at = new Point(-o.X, -o.Y);
+        }
         // 먼 프레임부터 그려 가까운 프레임이 위에 오게. 멀어질수록 옅게(가장 먼 프레임 = 가까운 것의 약 40%).
         void Ghost(int d, int count)
         {
@@ -2072,6 +2091,7 @@ public sealed partial class PixelCanvas : Control
             ToolKind.Fill => UiStrings.S_PixelCanvas_EndPixelStroke_94045434EF,
             ToolKind.Gradient => UiStrings.S_PixelCanvas_EndPixelStroke_45906D38E1,
             ToolKind.Shape => ToolOptionsPanel.ShapeName(_strokeShape.Kind),
+            ToolKind.Dodge when _ctx.DodgeMode == DodgeMode.Saturation => _strokeLighten ? UiStrings.DodgeMode_SaturateUndo : UiStrings.DodgeMode_DesaturateUndo,
             ToolKind.Dodge => _strokeLighten ? UiStrings.S_PixelCanvas_EndPixelStroke_57BA62C92E : UiStrings.S_PixelCanvas_EndPixelStroke_D019BA28D7,
             ToolKind.Dither => UiStrings.S_PixelCanvas_EndPixelStroke_1C14189718,
             _ => UiStrings.S_PixelCanvas_EndPixelStroke_E40CB15E95,
@@ -2171,9 +2191,10 @@ public sealed partial class PixelCanvas : Control
             case ToolKind.Dodge:
             {
                 float amount = _ctx.DodgeStrength / 100f;
+                var mode = _ctx.DodgeMode;
                 foreach (var m in Targets(Raster.Brush(p.X, p.Y, _ctx.BrushSize, _ctx.BrushShape)))
                     if ((clip is null || clip.Value.Contains(m)) && img.Contains(m.X, m.Y) && _visited!.Add(m))
-                        img.Set(m.X, m.Y, PixelOps.Dodge(img.Get(m.X, m.Y), _strokeLighten, amount));
+                        img.Set(m.X, m.Y, DodgeBurn.Apply(img.Get(m.X, m.Y), _strokeLighten, amount, mode));
                 return;
             }
             case ToolKind.ReplaceBrush:
@@ -2478,8 +2499,9 @@ public sealed partial class PixelCanvas : Control
         {
             var part = parts[i];
             int index = p.IndexOf(part);
-            if (!p.IsLayerVisible(index) || !part.PartRect.Contains(px)) continue;
-            if (p.GetCel(index, _ctx.CurrentFrame) is { } cel && cel.Get(px.X - part.PartOffset.X, px.Y - part.PartOffset.Y).A != 0) return part;
+            var rect = FrameRectOf(part);
+            if (!p.IsLayerVisible(index) || !rect.Contains(px)) continue;
+            if (p.GetCel(index, _ctx.CurrentFrame) is { } cel && cel.Get(px.X - rect.X, px.Y - rect.Y).A != 0) return part;
             byRect ??= part;
         }
         return byRect;
@@ -2554,7 +2576,7 @@ public sealed partial class PixelCanvas : Control
         }
         _ctx.CommitFloating();
         _arrangePart = part;
-        _arrangeStart = _arrangeOffset = part.PartOffset;
+        _arrangeStart = _arrangeOffset = FrameOffsetOf(part);
         _drag = DragMode.Arrange;
         Cursor = SizeAllCursor;
     }
@@ -2585,7 +2607,8 @@ public sealed partial class PixelCanvas : Control
             Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_NudgePart_20E5A45EA7,part.Name));
             return true;
         }
-        var offset = new Point(part.PartOffset.X + dx, part.PartOffset.Y + dy);
+        var at = FrameOffsetOf(part);
+        var offset = new Point(at.X + dx, at.Y + dy);
         if (!GroupLayoutDialog.ConfirmManualMove(this, part))
         {
             Message?.Invoke(this, string.Format(global::System.Globalization.CultureInfo.CurrentCulture,UiStrings.S_PixelCanvas_NudgePart_61255F9462,group.Name));
@@ -2905,6 +2928,8 @@ public sealed partial class PixelCanvas : Control
             if (scaleLook) g.DrawGeometry(CanvasResizeScaleBrush, CanvasResizeArrowPen, OutwardArrow(at, hx, hy));
             else g.DrawRectangle(CanvasResizeHandleBrush, CanvasResizeHandlePen, new Rect(at.X - 4, at.Y - 4, 8, 8));
         }
+        // 적용하면 피벗이 놓일 자리(그림을 따라감 — 캔버스 크기 모드는 새 캔버스, 레이어 크기 모드는 캔버스 좌표라 둘 다 캔버스 자리만큼 옮김)
+        if (_ctx.CanvasResizePivot is { } pivot) DrawPivotMark(g, ImageToScreen(canvas.X + pivot.X, canvas.Y + pivot.Y), PivotPen);
         // 레이어 글의 위치는 프레임 좌표(부위 화면에서 보이는 좌표가 아니라).
         var label = layer is null ? CanvasResizeLabel(canvas.Size, image.Size, _ctx.CanvasResizeSource)
             : LayerResizeLabel(layer.Name, _ctx.LayerResizeArea, _ctx.CanvasResizeImage.Size, _ctx.CanvasResizeSource);

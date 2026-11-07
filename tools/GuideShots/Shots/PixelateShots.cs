@@ -41,10 +41,11 @@ internal static class PixelateKit
     /// <summary>
     /// 예시 그림(49×98)을 칸마다 7~8px로 들쭉날쭉하게 키우고, 밝은 단색 배경 위에 살짝 번지게 한 뒤 JPG로 저장한다(AI가 만든 "픽셀 느낌" 그림 흉내).
     /// </summary>
-    public static string MakeAiImage(ShotKit k)
+    public static string MakeAiImage(ShotKit k) => MakeAiImage(k, PngIO.Load(ShotKit.SamplePng), 7.4, SourceName);
+
+    /// <summary><paramref name="src"/>를 칸마다 약 <paramref name="scale"/>px로 들쭉날쭉하게 키우고 번지게 해 <paramref name="name"/>.jpg로 저장한다.</summary>
+    public static string MakeAiImage(ShotKit k, PixelImage src, double scale, string name)
     {
-        var src = PngIO.Load(ShotKit.SamplePng);
-        const double scale = 7.4;
         const int margin = 44;
         int[] MapAxis(int cells, out int size)
         {
@@ -92,7 +93,7 @@ internal static class PixelateKit
                 double n = rnd.NextDouble() * 6 - 3;
                 img[x, y] = new Color32(Byte(r / sum + n), Byte(g / sum + n), Byte(b / sum + n));
             }
-        var path = Path.Combine(k.WorkDir, SourceName + ".jpg");
+        var path = Path.Combine(k.WorkDir, name + ".jpg");
         ImageWriter.Save(img, path, ExportImageFormat.Jpg, 80);
         return path;
     }
@@ -330,15 +331,16 @@ internal static class PixelateShots
         }
 
         Pair("pixelate-settings-2", 2, UiStrings.Pixelate_Section_Background, UiStrings.Pixelate_Section_Frames, (a, b) => [a, b!]);
-        Pair("pixelate-settings-3", 4, UiStrings.Pixelate_Section_Grid, UiStrings.Pixelate_Section_Size, (a, b) => [a, b!]);
-        Pair("pixelate-settings-4", 6, UiStrings.Pixelate_Section_Downsample, UiStrings.Pixelate_Section_Palette, (a, b) =>
+        // 픽셀 격자 쪽(①②), 칸 색과 팔레트 쪽(①~④).
+        Pair("pixelate-grid", 1, UiStrings.Pixelate_Section_Grid, UiStrings.Pixelate_Section_Size, (a, b) => [a, b!]);
+        Pair("pixelate-palette", 1, UiStrings.Pixelate_Section_Downsample, UiStrings.Pixelate_Section_Palette, (a, b) =>
         {
             var distance = (Control)ShotKit.Get<ComboBox>(dlg, "_palDistance").Parent!;
             var shade = ShotKit.Get<CheckBox>(dlg, "_palShade");
             return [a, b!, PixelateKit.LeftBox(distance, dlg, 10), PixelateKit.LeftBox(shade, dlg, 10)];
         });
 
-        // 정리 단계 + 외곽선 1px 맞추기 목록을 펼친 모습.
+        // 정리와 외곽선 쪽: 정리 단계 + 외곽선 1px 맞추기 목록을 펼친 모습(①②), 프레임 맞추기(③).
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Cleanup);
         var cleanup = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Cleanup);
         PixelateKit.ScrollToTop(k, cleanup);
@@ -348,12 +350,12 @@ internal static class PixelateShots
         var list = PixelateKit.DropDownBounds(fit, dlg);
         var cb = ShotKit.Bounds(cleanup, dlg);
         var view = ShotKit.Bounds(cleanup.FindAncestorOfType<ScrollViewer>()!, dlg);
-        k.Save(dlg, "pixelate-settings-5", crop: new Rect(view.X - 8, cb.Y - 14, view.Width + 16, Math.Max(cb.Bottom, list.Bottom) - cb.Y + 24),
-            marks: [cleanup, list], firstNumber: 10);
+        k.Save(dlg, "pixelate-cleanup", crop: new Rect(view.X - 8, cb.Y - 14, view.Width + 16, Math.Max(cb.Bottom, list.Bottom) - cb.Y + 24),
+            marks: [cleanup, list]);
         fit.IsDropDownOpen = false;
         k.Settle(300);
 
-        Pair("pixelate-settings-6", 12, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
+        Pair("pixelate-cleanup-2", 3, UiStrings.Pixelate_Section_Consistency, null, (a, _) => [a]);
     }
 
     // 후보와 점수: 후보 칸·방식 이름·프리셋 이름·점수 내역(①~④)과 체크했지만 돌리지 않은 프리셋 칸(⑤), 후보 풍선의 점수 내역(⑥).
@@ -395,7 +397,8 @@ internal static class PixelateShots
         ToolTip.SetIsOpen(tip, false);
     }
 
-    // 자동 최적화: 끝난 뒤 막대(①~⑥), 도는 중의 취소·진행·프리셋 칸(⑦~⑩), 자동 최적화 설정 창(⑪~⑮), 0. 최적화 기준과 칸별 최적화 체크(⑯⑰).
+    // 자동 최적화 쪽: 끝난 뒤 막대(①~⑦ — ④ 이어서 최적화), 도는 중의 취소·진행·프리셋 칸(⑧~⑪).
+    // 자동 최적화 설정 창 쪽(①~⑤), 점수와 최적화 기준 쪽의 0. 최적화 기준과 칸별 최적화 체크(①②).
     [Shot("pixelate-optimize")]
     public static void Optimize(ShotKit k)
     {
@@ -423,12 +426,20 @@ internal static class PixelateShots
         var progress = PixelateKit.TextRect(text, dlg);
         k.Save(dlg, "pixelate-optimize-2", crop: new Rect(runningArea.X - 24, runningArea.Y - 32, runningArea.Width + 30, runningArea.Height + 38),
             marks: [PixelateKit.UpBox(run, dlg), new Rect(progress.X, progress.Y - 12, progress.Width, progress.Height + 12), PixelateKit.Box(pending[0], dlg, 2), PixelateKit.Box(pending[1], dlg, 2)],
-            firstNumber: 7);
+            firstNumber: 8);
 
         PixelateKit.WaitOptimize(k, dlg);
+        // 시도 수·시간 예산으로 끝난 후보를 골라 '이어서 최적화' 단추가 보이게 한다.
+        var continueButton = ShotKit.Get<Button>(dlg, "_optContinue");
+        string[] budgetStops = [UiStrings.Pixelate_Opt_Marker_Trials.Split('(')[0], UiStrings.Pixelate_Opt_Marker_Time.Split('(')[0]];
+        TextBlock Marker(Border t) => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Last();
+        if (!continueButton.IsVisible
+            && tiles.Children.OfType<Border>().FirstOrDefault(t => budgetStops.Any(s => Marker(t).Text?.StartsWith(s, StringComparison.Ordinal) == true)) is { } stopped)
+            k.Click(stopped, settleMs: 800);
+        if (!continueButton.IsVisible) throw new InvalidOperationException("no candidate stopped by the trial or time budget");
         var optimized = tiles.Children.OfType<Border>().FirstOrDefault(t => ((StackPanel)t.Child!).Children.OfType<TextBlock>().Any(x => x.Foreground == AppTheme.AccentBrush))
                         ?? throw new InvalidOperationException("no optimized tile");
-        var marker = ((StackPanel)optimized.Child!).Children.OfType<TextBlock>().Last();
+        var marker = Marker(optimized);
         var area = ShotKit.Bounds(bar, dlg).Union(ShotKit.Bounds(scroll, dlg));
         var line = PixelateKit.TextRect(text, dlg);
         k.Save(dlg, "pixelate-optimize", crop: new Rect(area.X - 24, area.Y - 32, area.Width + 30, area.Height + 38), marks:
@@ -436,8 +447,9 @@ internal static class PixelateShots
             PixelateKit.UpBox(run, dlg),
             PixelateKit.UpBox(settingsButton, dlg),
             PixelateKit.UpBox(graph, dlg),
-            new Rect(line.X, line.Y - 12, line.Width, line.Height + 12),
+            PixelateKit.UpBox(continueButton, dlg),
             PixelateKit.UpBox(revert, dlg),
+            new Rect(line.X, line.Y - 12, line.Width, line.Height + 12),
             PixelateKit.LeftBox(marker, dlg),
         ]);
 
@@ -454,14 +466,14 @@ internal static class PixelateShots
         var badge = ShotKit.All<Button>(presetList).First(b => b.Content as string == UiStrings.OptimizePreset_RepresentativeBadge && ReferenceEquals(b.Background, AppTheme.SavedBrush));
         var auto = ShotKit.Get<CheckBox>(dlg, "_optAuto");
         var reset = ShotKit.Get<Button>(dlg, "_optResetButton");
-        k.Save(win, "pixelate-optimize-3", marks:
+        k.Save(win, "pixelate-optimize-settings", marks:
         [
             PixelateKit.Box(presetList, win, 2),
             PixelateKit.Box(badge, win, 2),
             PixelateKit.Box(history, win, 2),
             PixelateKit.UpBox(auto, win, 10),
             PixelateKit.UpBox(reset, win, 10),
-        ], firstNumber: 11);
+        ]);
         win.Close();
         k.Settle(400);
 
@@ -476,11 +488,12 @@ internal static class PixelateShots
             .First(c => ReferenceEquals(c.FindAncestorOfType<Expander>(), background));
         var sections = ShotKit.Bounds(criteria, dlg).Union(ShotKit.Bounds(background, dlg));
         var view = ShotKit.Bounds(criteria.FindAncestorOfType<ScrollViewer>()!, dlg);
-        k.Save(dlg, "pixelate-optimize-4", crop: new Rect(view.X - 8, sections.Y - 14, view.Width + 16, Math.Min(sections.Bottom, view.Bottom) - sections.Y + 24),
-            marks: [criteria, PixelateKit.Box(toggle, dlg, 2)], firstNumber: 16);
+        k.Save(dlg, "pixelate-score", crop: new Rect(view.X - 8, sections.Y - 14, view.Width + 16, Math.Min(sections.Bottom, view.Bottom) - sections.Y + 24),
+            marks: [criteria, PixelateKit.Box(toggle, dlg, 2)]);
     }
 
-    // 원본과 미리보기: 전체 창(①~⑤), 원본 아래 막대(⑥~⑩), 칸 경계 지역 보정(⑪), 색 견본(⑫~⑭), 배경 남기기 설정(⑮⑯), 크게 보기와 색 판정 줄(⑰~㉑).
+    // 원본과 미리보기 쪽: 전체 창(①~⑤), 원본 아래 막대(⑥~⑩). 색 빼기와 고정 색 쪽(①~③), 크게 보기와 색 판정 쪽(①~⑥),
+    // 픽셀 격자 쪽의 칸 경계 지역 보정(③), 설정 단계 쪽의 스티커 테두리 지우기·배경 남기기(④⑤).
     [Shot("pixelate-view")]
     public static void View(ShotKit k)
     {
@@ -533,16 +546,16 @@ internal static class PixelateShots
         var excluded = swatches.Children.OfType<Control>().Where(c => !ReferenceEquals(c, add)).Last();
         var notice = ShotKit.Get<Control>(colors, "_notice");
         var area = ShotKit.Bounds(colors, dlg).Union(ShotKit.Bounds(strip, dlg));
-        k.Save(dlg, "pixelate-view-4", crop: new Rect(area.X - 34, area.Y - 40, Math.Min(area.Width, 420) + 46, area.Height + 48), marks:
+        k.Save(dlg, "pixelate-color-edit", crop: new Rect(area.X - 34, area.Y - 40, Math.Min(area.Width, 420) + 46, area.Height + 48), marks:
         [
             PixelateKit.UpBox(excluded, dlg, 34),
             PixelateKit.Union(dlg, [.. ((Panel)notice).Children]).Inflate(new Thickness(16, 2, 3, 2)),
             PixelateKit.UpBox(add, dlg, 6),
-        ], firstNumber: 12);
+        ]);
         ShotKit.Call(dlg, "RestoreAllColors");
         k.Settle(400);
 
-        // 크게 보기: 결과 칸·원본 칸·격자 보기 단추·색 견본, 결과 픽셀을 좌클릭해 연 색 판정 줄.
+        // 크게 보기: 결과 칸·원본 칸·격자 보기 단추·그림 맞춤 단추·색 견본, 결과 픽셀을 좌클릭해 연 색 판정 줄.
         ShotKit.Call(dlg, "OpenZoom");
         k.Settle(800);
         var zoom = ShotKit.Get<Control>(dlg, "_zoom");
@@ -551,6 +564,7 @@ internal static class PixelateShots
         var left = ShotKit.Get<Rect>(pair, "LeftPane").Translate(origin);
         var right = ShotKit.Get<Rect>(pair, "RightPane").Translate(origin);
         var gridButton = ShotKit.Get<ToggleButton>(zoom, "GridButton");
+        var fitButton = ShotKit.All<Button>(zoom).First(b => ToolTip.GetTip(b) as string == UiStrings.Pixelate_Zoom_Fit);
         var zoomColors = ShotKit.Get<Control>(dlg, "_zoomColors");
         var frameIndex = ShotKit.Get<int>(preview, "Index");
         var frameImage = ShotKit.Get<PixelImage>(preview, "FrameImage");
@@ -559,18 +573,19 @@ internal static class PixelateShots
         ShotKit.Call(dlg, "OnResultPixel", frameIndex, px, py);
         k.Settle(3000);
         var trace = ShotKit.Get<Control>(dlg, "_trace");
-        k.Save(dlg, "pixelate-view-6", marks:
+        k.Save(dlg, "pixelate-zoom", marks:
         [
             new Rect(left.X - 14, left.Y, left.Width - 6, left.Height),
             new Rect(right.X - 14, right.Y, right.Width + 14, right.Height),
             PixelateKit.Box(gridButton, dlg, 2),
+            PixelateKit.Box(fitButton, dlg, 2),
             PixelateKit.LeftBox(zoomColors, dlg, 12),
             PixelateKit.LeftBox(trace, dlg, 12),
-        ], firstNumber: 17);
+        ]);
         ShotKit.Call(dlg, "CloseZoom");
         k.Settle(300);
 
-        // 왼쪽 설정: 픽셀 격자의 칸 경계 지역 보정(⑪), 배경의 스티커 테두리 지우기·배경 남기기(⑮⑯).
+        // 왼쪽 설정: 픽셀 격자의 칸 경계 지역 보정(③), 배경의 스티커 테두리 지우기·배경 남기기(④⑤).
         ShotKit.Call(dlg, "SetSettingsExpanded", true, false);
         k.Settle(800);
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Grid);
@@ -578,12 +593,12 @@ internal static class PixelateShots
         PixelateKit.ScrollToTop(k, grid);
         var local = ShotKit.Get<CheckBox>(dlg, "_grLocal");
         var minCell = (Control)ShotKit.Get<Control>(dlg, "_grLocalMinCell").Parent!;
-        k.SaveControl(grid, "pixelate-view-3", pad: 14, marks: [PixelateKit.Union(dlg, local, minCell).Inflate(new Thickness(12, 4, 4, 4))], firstNumber: 11);
+        k.SaveControl(grid, "pixelate-grid-2", pad: 14, marks: [PixelateKit.Union(dlg, local, minCell).Inflate(new Thickness(12, 4, 4, 4))], firstNumber: 3);
 
         PixelateKit.OnlyExpand(k, dlg, UiStrings.Pixelate_Section_Background);
         var bg = PixelateKit.Section(dlg, UiStrings.Pixelate_Section_Background);
         PixelateKit.ScrollToTop(k, bg);
-        k.SaveControl(bg, "pixelate-view-5", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10)], firstNumber: 15);
+        k.SaveControl(bg, "pixelate-settings-3", pad: 14, marks: [PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgSticker"), dlg, 10), PixelateKit.LeftBox(ShotKit.Get<CheckBox>(dlg, "_bgKeep"), dlg, 10)], firstNumber: 4);
     }
 
     // 넣기: 넣기 단계(①~④) + 창 아래 단추(⑤⑥).

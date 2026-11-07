@@ -153,6 +153,7 @@
   <data name="Project_LayerSizeNotPartRect" xml:space="preserve"><value>A part's original rectangle must be its part area.</value></data>
   <data name="Project_PartPivot" xml:space="preserve"><value>Part pivot</value></data>
   <data name="Project_PartFramePivot" xml:space="preserve"><value>Part frame pivot</value></data>
+  <data name="Project_PartFramesFrom" xml:space="preserve"><value>Part frame position and pivot</value></data>
   <data name="Project_PartBorder" xml:space="preserve"><value>Part border</value></data>
   <data name="Project_DefaultLayerName" xml:space="preserve"><value>Layer {number}</value></data>
   <data name="Project_DefaultGroupName" xml:space="preserve"><value>Group</value></data>

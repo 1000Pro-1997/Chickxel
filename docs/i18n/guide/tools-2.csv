@@ -1,0 +1,274 @@
+key,ko,en
+#name,한국어,English
+tools-select.1,선택 도구,Selection tools
+tools-select.2,"선택 도구 네 가지는 모두 같은 <strong>선택 영역</strong>을 만듭니다. 선택이 있으면 잘라내기·복사·지우기·뒤집기·회전·변형·외곽선 추가가 그 안에만 적용되고, 연필·채우기·도형 같은 그리기도 그 안으로 제한됩니다. 네 도구는 도구 막대의 선택 묶음 칸 하나에 들어 있고, {{key:도구/선택 칸(다음 선택 도구)}}을 반복해 누르면 사각 → 원 → 자유 → 스마트 순으로 바뀝니다.","The four selection tools all create the same kind of <strong>selection</strong>. While a selection exists, cut, copy, delete, flip, rotate, transform and add outline apply only inside it, and drawing with the pencil, fill, shapes and so on is limited to it as well. The four tools share the select slot of the toolbar; pressing {{key:도구/선택 칸(다음 선택 도구)}} repeatedly cycles rectangle → ellipse → lasso → magic wand."
+tools-select.th-tool,도구,Tool
+tools-select.th-key,단축키,Shortcut
+tools-select.th-how,고르는 방법,How it selects
+tools-select.rect,끌어서 사각형을 고릅니다.,Drag to select a rectangle.
+tools-select.ellipse,끌어서 그 사각형에 꼭 맞는 원(타원)을 고릅니다.,Drag to select the circle (ellipse) that fits the dragged rectangle.
+tools-select.lasso,테두리를 그리면 놓을 때 닫힌 모양 안을 고릅니다.,Draw an outline; on release the closed shape is selected.
+tools-select.wand,클릭한 곳과 비슷한 색 영역을 고릅니다.,Selects the area of similar color around the clicked pixel.
+tools-select.no-key,없음,None
+tools-select.h-rect,사각 선택과 원 선택,Rectangle select and ellipse select
+tools-select.8.alt,사각 선택으로 캐릭터 머리를 고른 캔버스,Canvas with the character's head selected by rectangle select
+tools-select.9,① 사각 선택으로 고른 영역(점선 테두리),① Area selected with rectangle select (dotted border)
+tools-select.3,① 캔버스를 끄는 동안 고를 영역이 점선 테두리로 따라옵니다. <kbd>Shift</kbd>를 누른 채 끌면 정사각형(원 선택은 정원)이 됩니다.,"① While you drag on the canvas, a dotted border follows the area to select. Hold <kbd>Shift</kbd> while dragging for a square (a circle with ellipse select)."
+tools-select.rect-click,끌지 않고 클릭만 하면 선택이 풀립니다.,Clicking without dragging deselects.
+tools-select.rect-replace,새로 끌면 이전 선택 대신 새 선택이 됩니다. 선택을 더하거나 빼는 조합 키는 없습니다.,A new drag replaces the previous selection. There are no modifier keys for adding to or subtracting from a selection.
+tools-select.rect-move,선택 안쪽을 끌면(커서가 네 방향 화살표로 바뀜) 선택한 내용을 떼어 옮깁니다. 자세한 조작은 아래 <strong>선택 다루기</strong>에 있습니다.,Dragging inside the selection (the cursor becomes a four-way arrow) lifts the selected pixels and moves them. See <strong>Working with a selection</strong> below for details.
+tools-select.h-lasso,{{MainStrings.Tool_Lasso_Name}},{{MainStrings.Tool_Lasso_Name}}
+tools-select.10.alt,자유 선택으로 테두리를 그리는 중인 캔버스,Canvas while drawing an outline with lasso select
+tools-select.11,② 자유 선택을 끄는 중: 선택될 영역(파란 점선),② Lasso select while dragging: the area to be selected (blue dotted line)
+tools-select.4,② 마우스를 누른 채 테두리를 그리면 선택될 영역이 파란 점선으로 보입니다. 놓으면 마지막 점이 처음 점과 이어져 닫히고 그 안이 선택됩니다. 빠르게 끌어도 점 사이는 빈틈없이 이어집니다.,"② Hold the mouse button and draw an outline; the area to be selected is shown with a blue dotted line. On release the last point joins the first, and the closed shape is selected. Even fast drags leave no gaps between points."
+tools-select.lasso-click,"끌지 않고 클릭만 하면 선택이 풀리고, 선택 안쪽을 끌면 내용을 옮깁니다.",Clicking without dragging deselects; dragging inside the selection moves its pixels.
+tools-select.h-wand,{{MainStrings.Tool_MagicWand_Name}},{{MainStrings.Tool_MagicWand_Name}}
+tools-select.12.alt,스마트 선택으로 머리카락 영역을 고른 캔버스와 도구 설정,"Canvas with the hair selected by the magic wand, and its tool options"
+tools-select.13,③ 스마트 선택으로 고른 머리카락 영역 · ④ 스마트 선택 설정(채우기와 같음),③ Hair area selected with the magic wand · ④ Magic wand settings (same as Fill)
+tools-select.5,③ 클릭한 픽셀과 비슷한 색 영역을 한 번에 고릅니다. 상태 표시줄에 고른 픽셀 수와 영역 크기가 나옵니다.,③ Selects the area of similar color around the clicked pixel in one click. The status bar shows the number of selected pixels and the size of the area.
+tools-select.wand-settings,"④ 설정은 <a href=""#tools-fill"">채우기</a>와 같은 값을 함께 씁니다: <strong>허용 오차</strong>, <strong>이어진 영역만</strong>(끄면 캔버스 전체에서 맞는 색), <strong>대각선으로도 잇기</strong>, <strong>기준</strong>(현재 레이어 / 보이는 레이어 전체). 한쪽에서 바꾼 값이 다른 쪽에도 그대로 쓰입니다.","④ The settings are shared with <a href=""#tools-fill"">Fill</a>: <strong>Tolerance</strong>, <strong>Contiguous only</strong> (when off, matching colors anywhere on the canvas), <strong>Connect diagonally too</strong> and <strong>Source</strong> (current layer / all visible layers). A value changed in one tool is used by the other as well."
+tools-select.wand-move,스마트 선택은 안쪽을 끌어도 내용을 옮기지 않습니다. 옮기려면 이동 도구({{key:도구/이동}})나 방향키를 씁니다.,"Dragging inside a selection does not move it with the magic wand. To move the pixels, use the Move tool ({{key:도구/이동}}) or the arrow keys."
+tools-select.h-work,선택 다루기,Working with a selection
+tools-select.th-action,조작,Action
+tools-select.th-result,결과,Result
+tools-select.work-drag,"선택 안쪽 끌기(사각·원·자유 선택), 이동 도구로 끌기","Drag inside the selection (rectangle, ellipse, lasso), or drag with the Move tool"
+tools-select.work-drag-r,선택한 내용을 떼어 옮깁니다. 내려놓기 전의 이 상태를 <strong>떠 있는 선택</strong>이라고 합니다. 잠긴 레이어에서는 옮길 수 없습니다.,"Lifts the selected pixels and moves them. Until it is dropped, this is called a <strong>floating selection</strong>. Pixels on a locked layer can't be moved."
+tools-select.work-arrows,방향키 / <kbd>Shift</kbd>+방향키,Arrow keys / <kbd>Shift</kbd>+arrow keys
+tools-select.work-arrows-r,선택 도구나 이동 도구를 쓰는 동안 선택 내용을 1px / 8px 옮깁니다.,Moves the selected pixels by 1px / 8px while a selection tool or the Move tool is active.
+tools-select.work-commit-r,떠 있는 선택을 그 자리에 내려놓습니다.,Drops the floating selection where it is.
+tools-select.work-deselect,"선택 도구로 캔버스 우클릭, {{key:편집/선택 해제}}, {{key:편집/선택 해제(캔버스)}}","Right-click the canvas with a selection tool, {{key:편집/선택 해제}}, {{key:편집/선택 해제(캔버스)}}"
+tools-select.work-deselect-r,떠 있는 내용을 내려놓고 선택을 풉니다.,Drops any floating pixels and removes the selection.
+tools-select.work-all-r,캔버스 전체(부위를 고른 화면이면 부위 칸 전체)를 고릅니다. 선택 도구나 이동 도구가 아니면 사각 선택으로 바뀝니다.,"Selects the whole canvas (the whole part area when a part is selected). If neither a selection tool nor the Move tool is active, it switches to rectangle select."
+tools-select.h-commands,선택에 쓰는 명령,Commands that use the selection
+tools-select.th-command,명령,Command
+tools-select.th-with,선택이 있으면,With a selection
+tools-select.th-without,선택이 없으면,Without a selection
+tools-select.cmd-cut-with,선택 내용을 클립보드로 옮깁니다.,Moves the selected pixels to the clipboard.
+tools-select.cmd-cut-without,하지 않습니다(상태 표시줄에 안내).,Does nothing (a status bar message explains).
+tools-select.cmd-copy-with,선택 내용을 복사합니다.,Copies the selected pixels.
+tools-select.cmd-copy-without,"부위는 그 부위 칸, 그 밖에는 현재 프레임의 합성 그림 전체를 복사합니다.",Copies the part cel for a part; otherwise the whole composited image of the current frame.
+tools-select.cmd-paste-with,선택 자리의 왼쪽 위에 떠 있는 선택으로 붙여 넣습니다.,Pastes as a floating selection at the top left of the selection.
+tools-select.cmd-paste-without,캔버스에 보이는 영역의 왼쪽 위에 떠 있는 선택으로 붙여 넣습니다.,Pastes as a floating selection at the top left of the visible canvas area.
+tools-select.cmd-delete-with,선택 내용을 지웁니다(투명).,Clears the selected pixels (transparent).
+tools-select.cmd-delete-without,하지 않습니다.,Does nothing.
+tools-select.cmd-flip-with,선택 내용을 뒤집습니다.,Flips the selected pixels.
+tools-select.cmd-flip-without,현재 셀을 뒤집습니다.,Flips the current cel.
+tools-select.cmd-rotate-with,선택 내용을 90° 돌립니다.,Rotates the selected pixels by 90°.
+tools-select.cmd-rotate-without,캔버스 전체(모든 프레임)를 돌립니다.,Rotates the whole canvas (all frames).
+tools-select.cmd-transform-with,"선택 영역을 <a href=""#tools-transform"">변형 모드</a>로 엽니다.","Opens the selection in <a href=""#tools-transform"">transform mode</a>."
+tools-select.cmd-transform-without,현재 셀의 칠한 픽셀 전체를 엽니다.,Opens all painted pixels of the current cel.
+tools-select.cmd-outline-with,선택 안의 그림 둘레에 기본색으로 1px 외곽선을 더합니다.,Adds a 1px outline in the primary color around the drawing inside the selection.
+tools-select.cmd-outline-without,현재 셀 전체에서 더합니다.,Adds it across the whole current cel.
+tools-select.cmd-draw,그리기 도구(연필·채우기·도형·그라데이션 등),"Drawing tools (pencil, fill, shapes, gradient and so on)"
+tools-select.cmd-draw-with,선택 안에만 칠합니다.,Paint only inside the selection.
+tools-select.cmd-draw-without,캔버스 어디에나 칠합니다.,Paint anywhere on the canvas.
+tools-select.cmd-notes,붙여 넣으면 지금 도구가 사각·원·자유 선택이 아닐 때 사각 선택으로 바뀝니다. <strong>{{MainStrings.Menu_Edit_ReplaceColor_119}}</strong> 창은 선택이 있으면 <strong>{{UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295}}</strong>을 고를 수 있습니다.,"Pasting switches to rectangle select unless the rectangle, ellipse or lasso tool is active. With a selection, the <strong>{{MainStrings.Menu_Edit_ReplaceColor_119}}</strong> window offers <strong>{{UiStrings.S_Dialogs_ReplaceColorDialog_0B7DF97295}}</strong>."
+tools-move.1,이동 도구와 캔버스 밖 그림,Move tool and pixels outside the canvas
+tools-move.intro,"<strong>{{MainStrings.Tool_Move_Name}}</strong> 도구({{key:도구/이동}})는 선택이 있으면 선택 내용을, 없으면 현재 셀 전체를 옮깁니다. 일반 레이어에서 캔버스 밖으로 밀려난 픽셀은 지워지지 않고 <strong>캔버스 밖 그림</strong>으로 남아, 다시 안으로 옮기면 돌아옵니다.","The <strong>{{MainStrings.Tool_Move_Name}}</strong> tool ({{key:도구/이동}}) moves the selected pixels when there is a selection, and the whole current cel otherwise. On normal layers, pixels pushed past the canvas edge are not deleted; they are kept as <strong>pixels outside the canvas</strong> and come back when you move them in again."
+tools-move.h-use,옮기기,Moving
+tools-move.th-action,조작,Action
+tools-move.th-result,결과,Result
+tools-move.drag,캔버스 끌기,Drag on the canvas
+tools-move.drag-r,"선택이 있으면 어디를 끌어도 선택 내용을, 없으면 현재 셀 전체를 옮깁니다. 글씨 레이어는 글씨 자리를 옮깁니다(<a href=""#tools-text"">글씨</a>). 잠긴 레이어는 옮기지 않습니다.","With a selection, dragging anywhere moves the selected pixels; without one, it moves the whole current cel. On a text layer it moves the text (<a href=""#tools-text"">Text</a>). Locked layers are not moved."
+tools-move.arrows,방향키 / <kbd>Shift</kbd>+방향키,Arrow keys / <kbd>Shift</kbd>+arrow keys
+tools-move.arrows-r,1px / 8px 옮깁니다. 셀 전체를 밀 때는 한 번 누를 때마다 실행취소 한 단계입니다.,"Moves by 1px / 8px. When shifting the whole cel, each key press is one undo step."
+tools-move.ctrl,다른 도구에서 <kbd>Ctrl</kbd>(macOS는 ⌘)을 누른 채 끌기,Hold <kbd>Ctrl</kbd> (⌘ on macOS) and drag while using another tool
+tools-move.ctrl-r,"누르는 동안만 이동 도구가 되고, 떼면 원래 도구로 돌아옵니다. 그룹 화면, 변형·캔버스 크기 모드, 글자를 입력하는 중에는 바뀌지 않습니다.","The Move tool is active only while the key is held; releasing it returns to the previous tool. This doesn't happen in the group view, in transform or canvas size mode, or while typing text."
+tools-move.cels,타임라인에서 셀 여러 칸을 고른 뒤 끌기·방향키,"Select several cels in the timeline, then drag or use the arrow keys"
+tools-move.cels-r,"선택이 없을 때 고른 셀이 모두 같은 만큼 옮겨지고(실행취소 한 단계), 상태 표시줄에 함께 옮긴 셀 수가 나옵니다. 그룹·빈 셀·잠긴 레이어는 건너뜁니다.","Without a selection, every selected cel moves by the same amount (one undo step), and the status bar shows how many other cels moved. Groups, empty cels and locked layers are skipped."
+tools-move.h-wrap,{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92}},{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92}}
+tools-move.compare.alt,예시 그림을 오른쪽으로 20픽셀 민 결과를 순환 끔과 순환 켬으로 나란히 비교한 그림,"The sample image shifted 20 pixels to the right, compared side by side with wrap off and wrap on"
+tools-move.compare.caption,왼쪽: 순환 끔(밖으로 나간 부분이 캔버스 밖 그림으로 남아 흐리게 보임) · 오른쪽: 순환 켬(반대편으로 돌아옴). 하늘색 선은 캔버스 테두리입니다.,"Left: wrap off (the part pushed out is kept outside the canvas, shown faded) · Right: wrap on (it comes back on the other side). The light-blue line is the canvas border."
+tools-move.4,"이동 도구 설정의 <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92}}</strong>(메뉴 <strong>도구 → {{MainStrings.Menu_Tools_DrawOptions}} → {{MainStrings.Menu_Tools_MoveWrap_214}}</strong>)은 기본으로 꺼져 있습니다. 켜면 셀을 밀 때 한쪽으로 나간 픽셀이 반대편으로 들어와, 이어지는 무늬(타일)를 맞출 때 알맞습니다.","<strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_4AF6C42C92}}</strong> in the Move tool settings (menu <strong>Tools → {{MainStrings.Menu_Tools_DrawOptions}} → {{MainStrings.Menu_Tools_MoveWrap_214}}</strong>) is off by default. Turn it on to have pixels that leave one side of the cel come back on the other side, which helps when lining up seamless patterns (tiles)."
+tools-move.wrap-notes,"순환을 켜면 캔버스 밖 그림을 쓰지 않고, 부위는 부위 칸 안에서 돌아옵니다. 선택 내용을 옮길 때는 순환하지 않습니다.","With wrap on, pixels outside the canvas are not used, and a part wraps within its own part area. Moving a selection never wraps."
+tools-move.h-outside,캔버스 밖 그림,Pixels outside the canvas
+tools-move.2,"일반 레이어의 셀은 캔버스 밖으로 나간 픽셀을 셀마다 남겨 둡니다. 이동 도구로 레이어 내용을 캔버스 밖으로 끌거나 방향키로 밀 때, 선택을 캔버스 밖으로 옮겨 내려놓을 때, 캔버스보다 큰 그림을 붙여 넣어 내려놓을 때 밖으로 나간 부분이 남습니다. 캔버스 둘레 4096px까지 남고 더 멀리 나간 픽셀은 버립니다. 부위는 부위 칸 안만 씁니다.","Cels of normal layers keep the pixels that leave the canvas. The parts outside are kept when you drag or push layer contents off the canvas with the Move tool, drop a selection outside the canvas, or paste and drop an image larger than the canvas. Up to 4096px around the canvas is kept; pixels farther out are discarded. Parts use only their own part area."
+tools-move.3,"이동 도구를 고르면 지금 레이어의 캔버스 밖 그림이 캔버스 바깥에 흐리게(40%) 보입니다. 레이어 내용을 끄는 동안에는 옮긴 자리의 셀 전체가, 떠 있는 선택은 캔버스 밖 부분이 흐리게 보입니다. 합성·미리보기·내보내기·효과는 캔버스 안만 씁니다.","With the Move tool selected, the current layer's pixels outside the canvas are shown faded (40%) around the canvas. While dragging layer contents the whole moved cel is shown, and for a floating selection the part outside the canvas is shown faded. Compositing, the preview, exports and effects use only what is inside the canvas."
+tools-move.5,"레이어·프레임 복제는 캔버스 밖 그림도 복사하고, 아래로 합치기는 위 레이어의 캔버스 밖 그림도 합칩니다. <a href=""#tools-canvas-size"">캔버스 크기</a>를 줄여도 잘린 부분이 캔버스 밖 그림으로 남아 다시 키우면 돌아옵니다. 캔버스 밖 그림은 프로젝트 파일과 실행취소 기록에 저장됩니다(예전 버전의 Chickxel은 읽지 않음).","Duplicating a layer or frame copies pixels outside the canvas too, and merging down also merges the upper layer's pixels outside the canvas. Shrinking the <a href=""#tools-canvas-size"">canvas size</a> keeps the cut parts as pixels outside the canvas, so they come back when you enlarge it again. These pixels are saved in the project file and the undo history (older versions of Chickxel don't read them)."
+tools-transform.1,변형 모드 (회전·크기),Transform mode (rotate/size)
+tools-transform.25.alt,"Ctrl+T로 변형 모드에 들어가 테두리 바깥을 끌어 돌리고, 손잡이를 끌어 크기를 바꾸고, 안쪽을 끌어 옮기는 모습","Entering transform mode with Ctrl+T, dragging just outside the border to rotate, dragging the handles to resize, and dragging inside to move"
+tools-transform.2,"선택 영역(없으면 현재 셀의 칠한 픽셀 전체)을 손잡이로 돌리고, 늘리고, 옮깁니다. {{key:편집/변형(회전·크기)…}} 또는 편집 메뉴 <strong>{{MainStrings.Menu_Edit_BeginTransform_113}}</strong>로 들어가면 주황 점선 테두리와 손잡이가 나타납니다. 여러 번 끌어도 늘 원본에서 다시 그리므로 뭉개지지 않고, 적용하기 전에는 언제든 원래대로 되돌릴 수 있습니다.","Rotate, scale and move the selection (or, with none, all painted pixels of the current cel) with handles. Enter with {{key:편집/변형(회전·크기)…}} or <strong>{{MainStrings.Menu_Edit_BeginTransform_113}}</strong> in the Edit menu; an orange dotted border with handles appears. Dragging repeatedly always redraws from the original, so the pixels don't get mushy, and you can go back to the original at any time before applying."
+tools-transform.17.alt,머리를 선택해 18도 돌린 변형 모드의 캔버스와 도구 설정,"Transform mode with the head selected and rotated 18 degrees, and its tool options"
+tools-transform.18,① 안쪽(옮기기) · ② 네모 손잡이(크기) · ③ 테두리 바로 바깥(회전) · ④ 회전 중심 · ⑤ 적용(Apply) · ⑥ 취소(Cancel) · ⑦ 각도·가로/세로 %·중심 X/Y · ⑧ 리샘플링(Resampling),"① Inside (move) · ② Square handle (size) · ③ Just outside the border (rotate) · ④ Rotation center · ⑤ Apply · ⑥ Cancel · ⑦ Angle, width/height %, center X/Y · ⑧ Resampling"
+tools-transform.h-use,조작,Controls
+tools-transform.3,조작,Action
+tools-transform.4,결과,Result
+tools-transform.5,"① 안쪽 끌기, 방향키","① Drag inside, arrow keys"
+tools-transform.6,"옮기기(1픽셀 단위, <kbd>Shift</kbd>+방향키 = 8픽셀)",Move (1-pixel steps; <kbd>Shift</kbd>+arrow keys = 8 pixels)
+tools-transform.7,② 네모 손잡이 8개 끌기,② Drag one of the 8 square handles
+tools-transform.8,"크기 바꾸기(<kbd>Shift</kbd> = 비율 유지, <kbd>Alt</kbd> = 가운데 기준, 반대쪽을 넘기면 뒤집힘)","Resize (<kbd>Shift</kbd> = keep ratio, <kbd>Alt</kbd> = from center; dragging past the opposite side flips)"
+tools-transform.9,③ 테두리 바로 바깥 끌기,③ Drag just outside the border
+tools-transform.10,회전 중심을 축으로 돌리기(<kbd>Shift</kbd> = 15° 단위),Rotate around the rotation center (<kbd>Shift</kbd> = 15° steps)
+tools-transform.11,④ 주황 회전 중심 끌기 / 더블클릭,④ Drag / double-click the orange rotation center
+tools-transform.12,회전 중심 옮기기(반 픽셀 단위) / 그림 가운데로,Move the rotation center (half-pixel steps) / reset it to the middle of the image
+tools-transform.13,{{key:편집/선택 내려놓기}} 또는 ⑤ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5}}</strong>,{{key:편집/선택 내려놓기}} or ⑤ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8D7A9F13B5}}</strong>
+tools-transform.14,적용(실행취소 한 단계),Apply (one undo step)
+tools-transform.15,"{{key:편집/선택 해제(캔버스)}}, {{key:편집/실행취소}} 또는 ⑥ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED}}</strong>","{{key:편집/선택 해제(캔버스)}}, {{key:편집/실행취소}} or ⑥ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED}}</strong>"
+tools-transform.16,변형 전으로,Back to before the transform
+tools-transform.21,"도구를 바꾸거나 저장하는 등 다른 작업을 하면 먼저 적용됩니다. 그룹 화면, 잠긴 레이어, 빈 셀에서는 들어가지 않고 상태 표시줄에 까닭이 나옵니다. 캔버스 크기 모드 중에 들어가면 캔버스 크기를 먼저 적용합니다.","Doing something else, such as switching tools or saving, applies it first. It doesn't start in the group view, on a locked layer or on an empty cel; the status bar explains why. Entering it during canvas size mode applies the canvas size first."
+tools-transform.h-numbers,숫자로 정하기,Entering numbers
+tools-transform.19,"⑦ 도구 설정에서 <strong>각도</strong>(−180~180°, 시계 방향, 회전 중심 기준), <strong>가로/세로 %</strong>(−100% = 뒤집기), <strong>중심 X/Y</strong>(그림 가운데의 캔버스 위치)를 숫자로 넣을 수 있습니다. 그 아래에는 원본 크기와 지금 크기(<code>원본 W×H → W×H px</code>)가 보입니다.","⑦ In Tool options you can enter the <strong>angle</strong> (−180 to 180°, clockwise, around the rotation center), <strong>width/height %</strong> (−100% = flip) and <strong>center X/Y</strong> (the canvas position of the image's middle) as numbers. Below them the original and current sizes are shown (<code>Original W×H → W×H px</code>)."
+tools-transform.h-resample,{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4}},{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4}}
+tools-transform.20,⑧ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4}}</strong>은 돌리거나 늘린 픽셀의 색을 원본에서 집는 방법입니다. 두 방법 모두 색을 섞지 않으므로 원본에 없던 색은 생기지 않습니다.,"⑧ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_652CB69BF4}}</strong> is how the color of each rotated or scaled pixel is picked from the original. Neither method blends colors, so no colors that aren't in the original appear."
+tools-transform.compare.alt,예시 그림의 머리를 30도 돌린 결과를 최근접과 RotSprite로 나란히 비교한 그림,"The sample's head rotated 30 degrees, compared side by side with Nearest and RotSprite"
+tools-transform.compare.caption,같은 머리를 30° 돌린 결과 — 왼쪽: 최근접 · 오른쪽: RotSprite(기본),The same head rotated 30° — Left: Nearest · Right: RotSprite (default)
+tools-transform.th-method,방법,Method
+tools-transform.th-desc,집는 방법과 결과,How it samples and the result
+tools-transform.rotsprite,"원본을 Scale2x로 세 번(8배) 키운 그림에서 집습니다. 비스듬한 선과 모서리가 덜 깨지고 1픽셀 선이 끊기는 일이 줄어듭니다. 원본이 512×512px보다 넓으면 메모리를 아끼려고 최근접으로 집고, 도구 설정에 그 안내가 붙습니다.","Samples from a copy enlarged three times with Scale2x (8×). Diagonal lines and corners break less and 1-pixel lines are less likely to split. If the original is larger than 512×512px, it samples with Nearest to save memory, and Tool options says so."
+tools-transform.nearest,{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E}},{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_592987DB9E}}
+tools-transform.nearest-desc,"결과 픽셀의 가운데가 떨어지는 원본 픽셀을 그대로 집습니다. 계산이 가장 단순하고, 돌리면 선이 계단처럼 끊기거나 두꺼워질 수 있습니다.",Takes the original pixel under the center of each result pixel as is. It is the simplest method; rotated lines can break into steps or get thicker.
+tools-transform.axis,0°·90°·180°·270° 회전과 크기만 바꿀 때는 두 방법의 결과가 같습니다. 정수 픽셀 옮기기는 원본 그대로입니다.,"For 0°, 90°, 180° and 270° rotations and pure scaling the two methods give the same result. Moving by whole pixels keeps the original exactly."
+tools-transform.h-center,회전 중심,Rotation center
+tools-transform.center,"④ 주황 회전 중심은 처음에 지금 대상의 <a href=""#tools-pivot"">피벗</a> 자리(부위면 부위 피벗, 아니면 프레임 피벗)에 놓입니다. 끌어서 옮기면 반 픽셀 단위로 맞춰지고, 더블클릭하면 그림 가운데로 돌아옵니다. 회전 중심은 이번 변형에만 쓰이고 피벗 값은 바꾸지 않습니다.","④ The orange rotation center starts at the current target's <a href=""#tools-pivot"">pivot</a> (the part pivot for a part, otherwise the frame pivot). Dragging it snaps to half pixels, and double-clicking it moves it back to the middle of the image. The rotation center is used for this transform only and doesn't change the pivot."
+tools-transform.h-cels,여러 셀 함께 변형,Transforming several cels at once
+tools-transform.23.alt,프레임 4개를 머리글로 고르고 Ctrl+T를 누른 창,Window after selecting four frames by their headers and pressing Ctrl+T
+tools-transform.24,⑨ 프레임 머리글로 고른 셀 4칸 · ⑩ 모든 셀의 그림을 감싸는 손잡이 사각형 · ⑪ 상태 표시줄의 함께 변형하는 셀 수,⑨ Four cels selected by frame header · ⑩ Handle box around the drawings of all cels · ⑪ Number of cels transforming together in the status bar
+tools-transform.22,"타임라인에서 ⑨ 셀 여러 칸(예: 한 레이어의 프레임 1~6, 프레임 머리글·레이어 이름 칸 선택도 됨)을 골라 두고 {{key:편집/변형(회전·크기)…}}를 누르면 고른 셀이 모두 같은 회전·크기·옮김으로 바뀝니다. ⑩ 손잡이 사각형은 모든 셀의 그림을 감싸고, 캔버스에는 현재 셀이 움직이며, 다른 셀은 적용할 때 함께 바뀝니다(실행취소 한 단계, {{key:편집/선택 해제(캔버스)}}는 모두 취소). 빈 셀과 잠긴 레이어의 셀은 건너뜁니다. ⑪ 상태 표시줄에 함께 변형하는 셀 수가 나옵니다.","Select ⑨ several cels in the timeline (for example frames 1–6 of one layer; frame-header and layer-name selections work too) and press {{key:편집/변형(회전·크기)…}} — every selected cel gets the same rotation, scale and move. ⑩ The handle box surrounds the drawings of all those cels, the canvas shows the current cel moving, and the other cels change when you apply (one undo step; {{key:편집/선택 해제(캔버스)}} cancels all of them). Empty cels and cels on locked layers are skipped. ⑪ The status bar shows how many cels are transforming together."
+tools-canvas-size.1,캔버스 크기 모드,Canvas size mode
+tools-canvas-size.19.alt,"캔버스 크기 모드에서 손잡이를 끌어 캔버스를 넓히거나 줄여 자르고, 그림 안쪽을 끌어 옮기는 모습","In canvas size mode, dragging the handles to widen the canvas or shrink it to crop, and dragging inside the image to move it"
+tools-canvas-size.17.alt,캔버스를 69×88로 넓히고 아래를 잘라 내는 캔버스 크기 모드,Canvas size mode widening the canvas to 69×88 and cropping the bottom
+tools-canvas-size.18,① 새 캔버스 테두리(하늘색 점선) · ② 캔버스 밖으로 나갈 그림(흐리게) · ③ 손잡이 · ④ 그림 안쪽 · ⑤ 확인(OK) · ⑥ 취소(Cancel) · ⑦ 캔버스 가로/세로 · ⑧ 캔버스 중심 기준 · ⑨ 9-slice로 늘리기·가운데 채우기(예시 그림은 9-slice 테두리가 없어 꺼져 있음) · ⑩ 그림 가로/세로 · ⑪ 그림 비율 유지 · ⑫ 그림 위치 X/Y · ⑬ 기준점 9방향(Anchor),① New canvas border (light-blue dotted line) · ② Pixels going outside the canvas (faded) · ③ Handle · ④ Inside the image · ⑤ OK · ⑥ Cancel · ⑦ Canvas width/height · ⑧ Anchor at canvas center · ⑨ Stretch with 9-slice and middle fill (off here because the sample has no 9-slice borders) · ⑩ Image width/height · ⑪ Keep image ratio · ⑫ Image position X/Y · ⑬ 9-direction anchor
+tools-canvas-size.2,"모든 프레임·레이어의 캔버스 크기와 그 안의 그림 자리를 창 대신 캔버스 위에서 정합니다. {{key:편집/캔버스 크기…}} 또는 편집 메뉴 <strong>{{MainStrings.Menu_Edit_BeginCanvasResize_121}}</strong>로 들어갑니다. 캔버스 테두리는 ① 하늘색 점선, ② 새 캔버스 밖으로 나가는 그림(이미 캔버스 밖에 있던 그림 포함)은 흐리게(40%) 보이고, 새 캔버스 안은 적용될 모습(들어오는 캔버스 밖 그림 포함)으로 보입니다.","Set the canvas size of all frames and layers, and where the image sits in it, right on the canvas instead of in a dialog. Enter with {{key:편집/캔버스 크기…}} or <strong>{{MainStrings.Menu_Edit_BeginCanvasResize_121}}</strong> in the Edit menu. The canvas border is a ① light-blue dotted line and ② pixels that end up outside the new canvas (including pixels already outside the canvas) are shown faded (40%), while the inside of the new canvas shows the result, including pixels outside the canvas that come back in."
+tools-canvas-size.h-use,조작,Controls
+tools-canvas-size.3,조작,Action
+tools-canvas-size.4,결과,Result
+tools-canvas-size.5,③ 손잡이 끌기,③ Drag a handle
+tools-canvas-size.6,그쪽 캔버스 가장자리만 옮깁니다(여백이 늘거나 그림이 잘림). 그림 크기는 그대로입니다.,Moves only that canvas edge (adds margin or crops the image). The image keeps its size.
+tools-canvas-size.7,<kbd>Ctrl</kbd>+손잡이 끌기,<kbd>Ctrl</kbd>+drag a handle
+tools-canvas-size.8,그림 크기도 함께 바꿉니다(<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = 비율 유지). <strong>{{UiStrings.CanvasResize_NineSlice}}</strong>가 켜져 있으면 9-slice로 늘이고 줄입니다.,"Also resizes the image (<kbd>Ctrl</kbd>+<kbd>Shift</kbd> = keep ratio). With <strong>{{UiStrings.CanvasResize_NineSlice}}</strong> on, the image is stretched or shrunk with 9-slice."
+tools-canvas-size.9,"④ 그림 안쪽 끌기, 방향키","④ Drag inside the image, arrow keys"
+tools-canvas-size.10,캔버스 안에서 그림을 옮깁니다(<kbd>Shift</kbd>+방향키 = 8픽셀).,Moves the image within the canvas (<kbd>Shift</kbd>+arrow keys = 8 pixels).
+tools-canvas-size.11,{{key:편집/선택 내려놓기}} 또는 ⑤ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B}}</strong>,{{key:편집/선택 내려놓기}} or ⑤ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_666F59D00B}}</strong>
+tools-canvas-size.12,적용(실행취소 한 단계),Apply (one undo step)
+tools-canvas-size.13,"{{key:편집/선택 해제(캔버스)}}, {{key:편집/실행취소}} 또는 ⑥ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED}}</strong>","{{key:편집/선택 해제(캔버스)}}, {{key:편집/실행취소}} or ⑥ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_BDB140E2ED}}</strong>"
+tools-canvas-size.14,바꾸지 않고 끝,Exit without changes
+tools-canvas-size.h-options,도구 설정,Tool options
+tools-canvas-size.15,"⑦ 캔버스 가로/세로, ⑧ <strong>{{UiStrings.CanvasResize_FromCenter}}</strong>(켜면 중심은 그대로 두고 양쪽 가장자리를 함께 움직임), ⑨ <strong>{{UiStrings.CanvasResize_NineSlice}}</strong>와 가운데 채우기(<strong>{{UiStrings.CanvasResize_FillStretch}} / {{UiStrings.CanvasResize_FillTile}}</strong>), ⑩ 그림 가로/세로, ⑪ <strong>그림 비율 유지</strong>, ⑫ 그림 위치 X/Y, ⑬ <strong>기준점 9방향</strong>(그림을 캔버스의 그 자리에 붙임)을 숫자와 단추로 정합니다. 숫자를 바꾸면 캔버스의 손잡이도 같이 움직입니다.","Set ⑦ canvas width/height, ⑧ <strong>{{UiStrings.CanvasResize_FromCenter}}</strong> (when on, the center stays put and both opposite edges move together), ⑨ <strong>{{UiStrings.CanvasResize_NineSlice}}</strong> and the middle fill (<strong>{{UiStrings.CanvasResize_FillStretch}} / {{UiStrings.CanvasResize_FillTile}}</strong>), ⑩ image width/height, ⑪ <strong>Keep image ratio</strong>, ⑫ image position X/Y and ⑬ the <strong>9-direction anchor</strong> (snaps the image to that spot of the canvas) with numbers and buttons. Changing a number moves the handles on the canvas too."
+tools-canvas-size.h-ctrl,<kbd>Ctrl</kbd>로 그림 크기까지 바꾸기,Resizing the image with <kbd>Ctrl</kbd>
+guide-shot.canvas-ctrl.alt,캔버스 크기 모드에서 Ctrl을 누르고 모서리를 끌어 노란 화살표 손잡이와 노란 점선이 보이는 캔버스,"Canvas size mode during Ctrl+corner drag, showing yellow arrow handles and yellow dashed outline"
+guide-shot.canvas-ctrl.caption,① Ctrl을 누른 손잡이의 노란 화살표와 테두리,① Yellow handle arrow and outline while holding Ctrl
+guide-shot.canvas-ctrl.body,"① 손잡이를 누르기 전이나 끄는 동안에도 <kbd>Ctrl</kbd>(macOS는 ⌘)을 누르면 하늘색 점선과 크기 글씨가 노란색으로, 흰 네모 손잡이가 바깥 방향 노란 화살표로 바뀝니다. 이때 끌면 여백뿐 아니라 그림 크기도 함께 바뀝니다. <kbd>Ctrl</kbd>을 떼거나 창이 비활성화되면 원래 표시로 돌아옵니다.","① Holding <kbd>Ctrl</kbd> (⌘ on macOS), even before dragging a handle, turns the light-blue dashed outline and size label yellow and the white square handles into outward yellow arrows. Dragging then resizes the image as well as the margin. Releasing <kbd>Ctrl</kbd> or deactivating the window restores the normal cues."
+tools-canvas-size.h-apply,적용 결과,What applying does
+tools-canvas-size.16,"모든 프레임·레이어에 적용되고, 부위 자리도 함께 맞춰집니다. 줄여서 잘린 부분은 지워지지 않고 <a href=""#tools-move"">캔버스 밖 그림</a>으로 남아, 다시 키우면 돌아옵니다. 그림 크기를 바꾸면(<kbd>Ctrl</kbd>+끌기·그림 가로/세로) 캔버스 안과 밖 그림이 원래 캔버스 기준의 같은 배율로 이음매 없이 함께 늘거나 줄고(9-slice면 캔버스 밖은 1:1), 캔버스 뒤집기·회전도 캔버스 밖 그림까지 따라갑니다.","Applies to all frames and layers, and part positions are adjusted as well. Parts cut off by shrinking are not deleted but kept as <a href=""#tools-move"">pixels outside the canvas</a>, so they come back when you enlarge it again. Resizing the image (<kbd>Ctrl</kbd>+drag or image width/height) scales pixels inside and outside the canvas together by the same ratio relative to the original canvas, without seams (1:1 outside the canvas with 9-slice), and flipping or rotating the canvas also carries the pixels outside the canvas."
+tools-canvas-size.pivot,"모드 중에는 피벗 표시가 적용 뒤 프레임 피벗이 놓일 자리에 보입니다. 피벗은 그림의 같은 지점을 따라가므로, 그림을 옮기거나 늘이면 피벗 표시도 같이 움직이고 적용하면 그 자리로 바뀝니다. 손잡이로 여백만 바꿔 그림이 제자리면 피벗도 그림 위 같은 자리에 남습니다.","During the mode, the pivot mark shows where the frame pivot will land after applying. The pivot follows the same point of the image, so moving or resizing the image moves the pivot mark with it, and applying puts the pivot there. If you only change the margin with the handles and the image stays put, the pivot stays at the same spot on the image."
+tools-canvas-size.20,9-slice로 늘리기,Stretch with 9-slice
+tools-canvas-size.25.alt,"9-slice 도구로 초록 선을 정한 뒤 캔버스 크기 모드에서 손잡이를 끌어 9-slice로 늘이고 줄이며, 가운데 채우기를 되풀이로 바꿔 가운데 무늬가 반복되는 모습","Setting the green lines with the 9-slice tool, then stretching and shrinking with 9-slice in canvas size mode, and switching the middle fill to Tile so the middle pattern repeats"
+tools-canvas-size.21,"프레임(또는 부위)에 <a href=""#tools-nine-slice"">9-slice</a> 테두리가 있으면 ⑨ <strong>{{UiStrings.CanvasResize_NineSlice}}</strong>가 기본으로 켜져 있습니다. 조작은 위 표와 같고(그냥 끌기 = 여백, <kbd>Ctrl</kbd>+끌기·그림 가로/세로 = 그림 크기), 그림 크기를 바꿀 때 모서리는 그대로, 가장자리는 한 방향으로만, 가운데만 늘어나 Unity UI의 Image Type = Sliced처럼 됩니다. 끄거나 테두리가 없으면 그림 전체를 최근접으로 늘입니다.","When the frame (or a part) has <a href=""#tools-nine-slice"">9-slice</a> borders, ⑨ <strong>{{UiStrings.CanvasResize_NineSlice}}</strong> is on by default. The controls are the same as in the table above (plain drag = margin, <kbd>Ctrl</kbd>+drag or image width/height = image size); when the image is resized, corners stay as they are, edges stretch in one direction only and only the middle grows, like a Unity UI image with Image Type = Sliced. When it is off or there are no borders, the whole image is stretched with nearest neighbor."
+tools-canvas-size.22,"가운데 채우기: <strong>{{UiStrings.CanvasResize_FillStretch}}</strong> = 최근접으로 늘이거나 줄임(Unity Sliced), <strong>{{UiStrings.CanvasResize_FillTile}}</strong> = 원래 무늬를 크기 그대로 반복(Unity Tiled — 무늬가 있는 가운데에 알맞음).","Middle fill: <strong>{{UiStrings.CanvasResize_FillStretch}}</strong> = nearest-neighbor stretch or shrink (Unity Sliced), <strong>{{UiStrings.CanvasResize_FillTile}}</strong> = repeat the original pattern at its size (Unity Tiled — good for patterned middles)."
+tools-canvas-size.23,"끄는 동안 테두리 자리가 초록 점선으로 보이고, 그림은 두 테두리 + 1px보다 작아지지 않습니다.","While dragging, the borders are shown as green dotted lines, and the image can't get smaller than both borders plus one pixel."
+tools-canvas-size.24,"적용하면 L·T·R·B 값은 그림 가장자리에서 같은 픽셀 수로 남아(여백을 두었으면 그만큼 더함) Unity Sprite Border도 그대로 맞습니다. 자기 테두리가 있는 부위는 그 테두리로 늘어나고, 피벗도 같은 방식으로 따라갑니다.","After applying, the L, T, R and B values stay the same number of pixels from the image edges (plus any margin you left), so the Unity Sprite Border still matches. Parts with their own borders are stretched with those, and pivots follow the same mapping."
+tools-layer-size.1,레이어 크기 모드,Layer size mode
+tools-layer-size.intro,"캔버스는 그대로 두고 지금 레이어 하나의 자리와 그림 크기를 캔버스 위에서 바꿉니다. 편집 메뉴 <strong>{{MainStrings.Menu_Edit_BeginLayerResize}}</strong>({{key:편집/레이어 크기…}})로 들어가며, 손잡이·숫자 조작은 <a href=""#tools-canvas-size"">캔버스 크기 모드</a>와 같습니다. 적용은 실행취소 한 단계입니다.","Changes the area and image size of the current layer on the canvas while the canvas stays the same. Enter with <strong>{{MainStrings.Menu_Edit_BeginLayerResize}}</strong> in the Edit menu ({{key:편집/레이어 크기…}}); the handles and numbers work as in <a href=""#tools-canvas-size"">canvas size mode</a>. Applying is one undo step."
+guide-shot.layer-size.alt,레이어 크기 모드에서 부위 영역을 줄여 잘릴 그림이 흐리게 보이고 오른쪽에 레이어 크기 도구 설정이 보이는 화면,"Layer size mode with a shrunken part area, faded cropped pixels and Layer size options on the right"
+guide-shot.layer-size.caption,① 잘릴 픽셀과 손잡이 · ② 레이어 크기 설정,① Cropped pixels and handles · ② Layer size options
+tools-layer-size.start,"시작 자리는 일반 레이어면 모든 프레임에서 칠한 픽셀을 감싸는 사각형(캔버스 밖 그림 포함), 부위면 지금 프레임의 부위 영역입니다. 그 자리가 화면 가운데에 크게 맞춰지고(둘레에 손잡이 여백 1/8), 모드를 끝내면 이전 확대율·위치로 돌아옵니다. 그룹, 잠긴 레이어, 어느 프레임에도 그림이 없는 일반 레이어에서는 들어가지 않고 상태 표시줄에 까닭이 나옵니다.","The starting area is the rectangle around the painted pixels of all frames (including pixels outside the canvas) for a normal layer, and the part area in the current frame for a part. That area is fitted large in the middle of the view (with 1/8 margin for the handles), and the previous zoom and position return when the mode ends. It doesn't start for a group, a locked layer or a normal layer with nothing drawn in any frame; the status bar explains why."
+tools-layer-size.h-use,조작,Controls
+tools-layer-size.th-action,조작,Action
+tools-layer-size.th-result,결과,Result
+tools-layer-size.handle,① 하늘색 손잡이 끌기,① Drag a light-blue handle
+tools-layer-size.handle-r,레이어 자리만 바뀌고 그림은 제자리입니다. 좁힌 자리 밖 픽셀은 잘릴 예정으로 흐리게 보입니다.,Only the layer area changes; the image stays in place. Pixels outside a narrowed area are shown faded as about to be cropped.
+tools-layer-size.ctrl,<kbd>Ctrl</kbd>(macOS는 ⌘)+손잡이 끌기,<kbd>Ctrl</kbd> (⌘ on macOS)+drag a handle
+tools-layer-size.ctrl-r,노란 테두리·화살표와 함께 그림 자체를 최근접으로 늘이거나 줄입니다(9-slice는 쓰지 않음).,"With a yellow outline and arrows, scales the image itself with nearest neighbor (9-slice is not used)."
+tools-layer-size.mods,모서리 손잡이+<kbd>Shift</kbd> / +<kbd>Alt</kbd>,Corner handle+<kbd>Shift</kbd> / +<kbd>Alt</kbd>
+tools-layer-size.mods-r,비율 유지 / 가운데 기준,Keep ratio / from the center
+tools-layer-size.move,"안쪽 끌기, 방향키","Drag inside, arrow keys"
+tools-layer-size.move-r,레이어 자리와 그림을 함께 옮깁니다.,Moves the layer area and the image together.
+tools-layer-size.keys,{{key:편집/선택 내려놓기}} / {{key:편집/선택 해제(캔버스)}},{{key:편집/선택 내려놓기}} / {{key:편집/선택 해제(캔버스)}}
+tools-layer-size.keys-r,적용 / 취소,Apply / cancel
+tools-layer-size.options,"② 도구 설정의 <strong>{{MainStrings.Menu_Edit_BeginLayerResize}}</strong> 묶음에서 레이어 가로·세로(적용 뒤 자리), 그림 가로/세로 %, 비율 유지, 위치 X/Y, 기준점을 숫자로 정합니다. 모드 중의 미리보기 패널도 부위 자리만 크게 맞추지만, 크게 보기 창·미리보기 탭에서 휠로 배율을 정한 뒤에는 전체가 보입니다. 미리보기에는 레이어 효과가 없고 타임라인 썸네일의 자리는 변하지 않습니다.","In the <strong>{{MainStrings.Menu_Edit_BeginLayerResize}}</strong> group of ② Tool options, set the layer width and height (the area after applying), image width/height %, keep ratio, position X/Y and the anchor as numbers. During the mode the preview panel also fits just the part area, but once you set a zoom with the wheel in the enlarged preview or the preview tab, the whole image is shown. The preview has no layer effects, and timeline thumbnails keep their positions."
+tools-layer-size.h-apply,적용 결과,What applying does
+tools-layer-size.th-layer,대상,Target
+tools-layer-size.th-change,바뀌는 것,What changes
+tools-layer-size.normal,일반 레이어,Normal layer
+tools-layer-size.normal-r,모든 프레임에서 레이어 자리 밖 픽셀을 지웁니다(넓히기만 했다면 그림은 그대로). 그림을 옮기거나 늘이면 프레임 피벗(기본 피벗과 프레임마다 따로 둔 피벗)도 그림의 같은 지점을 따라 옮겨집니다. 프레임 피벗은 프레임 전체의 피벗이라 다른 레이어와도 함께 씁니다.,"Removes pixels outside the layer area in all frames (merely widening leaves the image alone). Moving or scaling the image also moves the frame pivots (the default pivot and per-frame pivots) so they stay on the same point of the image. The frame pivot belongs to the whole frame, so other layers share it."
+tools-layer-size.part-resize,부위: 크기를 바꿈,Part: resized
+tools-layer-size.part-resize-r,"바뀐 자리·크기가 모든 프레임의 부위 크기·위치가 되고 그림 변형은 모든 스킨과 링크된 칸에 적용됩니다. 피벗·9-slice는 같은 그림 지점과 경계를 계속 가리키고, 맞지 않게 된 9-slice는 지웁니다.","The new area and size become the part's size and position in all frames, and the image change applies to every skin and linked cel. The pivot and 9-slice keep pointing at the same image points and borders; a 9-slice that no longer fits is removed."
+tools-layer-size.part-move,부위: 크기 그대로 옮기기만 함,Part: moved without resizing
+tools-layer-size.part-move-r,"지금 프레임부터 끝 프레임까지만 옮겨지고(첫 프레임에서 옮기면 모든 프레임), 부위 피벗이 따라갑니다. 그 프레임들은 피벗 도구의 <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong>가 저절로 켜진 상태가 됩니다(<a href=""#parts-frame-position"">프레임마다 부위 위치</a>).","Only the current frame through the last frame move (moving on the first frame moves all frames), and the part pivot follows. Those frames end up with <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong> of the Pivot tool turned on automatically (<a href=""#parts-frame-position"">Part position per frame</a>)."
+tools-layer-size.pivot,"모드 중에는 피벗 표시가 적용 뒤 피벗(부위면 부위 피벗, 일반 레이어면 프레임 피벗)이 놓일 자리에 보이고, 그림을 옮기거나 늘이면 같이 움직입니다. 손잡이로 자리만 바꿔 그림을 그대로 두면 피벗도 그대로입니다. 레이어 크기 모드 밖에서 이동 도구(또는 <kbd>Ctrl</kbd>+끌기)로 그림을 옮기는 것은 셀 안의 픽셀만 옮기며 부위 위치·피벗과는 관계없습니다.","During the mode, the pivot mark shows where the pivot (the part pivot for a part, the frame pivot for a normal layer) will land after applying, and it moves with the image when you move or scale it. If you only change the area with the handles and leave the image alone, the pivot stays the same. Outside layer size mode, moving the image with the Move tool (or <kbd>Ctrl</kbd>+drag) only moves the pixels in the cel and doesn't affect the part position or pivot."
+tools-pivot.1,{{MainStrings.Tool_Pivot_Name}} 도구,{{MainStrings.Tool_Pivot_Name}} tool
+tools-pivot.intro,"피벗은 그림의 기준점입니다. 저장하면 Unity 스프라이트의 Pivot(<code>.meta</code>)으로 들어가고, 변형 모드의 회전 중심, 대칭 그리기의 <strong>{{UiStrings.Mirror_AtPivot}}</strong>, 회전·찌그러지기 같은 효과의 중심에도 쓰입니다. 피벗 도구({{key:도구/피벗}})로 캔버스에서 끌거나 도구 설정의 단추·숫자로 정합니다.","The pivot is the reference point of the image. Saving writes it as the Unity sprite Pivot (<code>.meta</code>), and it is also used as the rotation center of transform mode, <strong>{{UiStrings.Mirror_AtPivot}}</strong> in symmetry drawing, and the center of effects such as rotate and squash. Set it with the Pivot tool ({{key:도구/피벗}}) by dragging on the canvas or with the buttons and numbers in Tool options."
+tools-pivot.shot.alt,"6프레임 예시에서 프레임 3부터 피벗을 발밑으로 옮긴 피벗 도구 화면: 캔버스의 피벗 표시, 도구 설정, 타임라인 프레임 머리의 피벗 표시","Pivot tool on a 6-frame sample with the pivot moved to the feet from frame 3 on: the pivot mark on the canvas, Tool options and pivot marks on the timeline frame headers"
+tools-pivot.shot.caption,① 캔버스의 피벗 표시 · ② 5×5 단추 · ③ X·Y · ④ {{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}} · ⑤ 대상 · ⑥ 따로 둔 피벗이 있는 프레임(프레임 머리의 주황 마름모),① Pivot mark on the canvas · ② 5×5 buttons · ③ X and Y · ④ {{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}} · ⑤ Target · ⑥ Frames with their own pivot (orange diamond on the frame header)
+tools-pivot.h-set,피벗 옮기기,Moving the pivot
+tools-pivot.drag,"① 캔버스를 끌면 피벗 표시(원과 십자)가 따라오고, 놓을 때 반 픽셀 단위로 맞춰 정해집니다(실행취소 한 단계). 피벗 도구를 쓰는 동안 표시는 흰색이고, 다른 도구에서는 보기 메뉴 <strong>{{MainStrings.Menu_View_SetShowPivot_146}}</strong>를 켜면 주황색으로 보입니다.","① Drag on the canvas and the pivot mark (a circle with a cross) follows; on release it is set, snapped to half pixels (one undo step). The mark is white while the Pivot tool is active; with other tools it is shown in orange when <strong>{{MainStrings.Menu_View_SetShowPivot_146}}</strong> is on in the View menu."
+tools-pivot.buttons,"② <strong>5×5 단추</strong>는 가로·세로 각각 0, 1/4, 1/2, 3/4, 끝 지점을 바로 고릅니다. 정수 픽셀에 맞추므로 크기가 홀수면 1/2은 내림합니다(예: 너비 49 → 24).","② The <strong>5×5 buttons</strong> pick 0, 1/4, 1/2, 3/4 or the end, horizontally and vertically. They snap to whole pixels, so 1/2 rounds down for odd sizes (for example width 49 → 24)."
+tools-pivot.xy,"③ <strong>X</strong>는 왼쪽에서, <strong>Y</strong>는 아래에서 잰 픽셀입니다(Unity와 같음). 0.5px 단위로 넣을 수 있고 칸 옆에 대상의 가로·세로가 보입니다.",③ <strong>X</strong> is measured in pixels from the left and <strong>Y</strong> from the bottom (as in Unity). You can enter 0.5px steps; the target's width and height are shown next to the fields.
+tools-pivot.h-target,대상,Target
+tools-pivot.target,⑤ 도구 설정 아래에 지금 바꾸는 피벗이 적혀 있습니다. 어느 피벗이 바뀌는지는 타임라인에서 고른 레이어로 정해집니다.,⑤ The bottom of Tool options names the pivot you are changing. Which pivot changes depends on the layer selected in the timeline.
+tools-pivot.th-layer,고른 레이어,Selected layer
+tools-pivot.th-pivot,바뀌는 피벗,Pivot that changes
+tools-pivot.th-label,대상 글,Target text
+tools-pivot.layer-normal,일반 레이어,Normal layer
+tools-pivot.pivot-frame,프로젝트 기본 피벗(프레임 시트의 모든 칸),The project default pivot (every cell of the frame sheet)
+tools-pivot.layer-part,부위,Part
+tools-pivot.pivot-part,그 부위의 피벗(부위 아틀라스 스프라이트). 부위 크기를 기준으로 잽니다.,"That part's pivot (its part atlas sprite), measured against the part size."
+tools-pivot.layer-group,그룹,Group
+tools-pivot.pivot-group,"그룹 화면에서는 부위마다 피벗이 파란 표시로 보이고, 캔버스를 끌면 피벗 대신 부위가 옮겨집니다(<a href=""#parts-arrange"">배치하기</a>). 부위 피벗은 부위를 고른 뒤 바꿉니다.","In the group view each part's pivot is shown in blue, and dragging on the canvas moves parts instead of the pivot (<a href=""#parts-arrange"">Arranging</a>). Select a part to change its pivot."
+tools-pivot.label-group,-,-
+tools-pivot.h-from,{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}},{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}
+tools-pivot.from-on,"④ <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong>를 켜면 지금 프레임부터 끝 프레임까지 피벗(부위면 부위 위치도)을 다른 프레임과 따로 둡니다. 켜는 순간에는 모습이 바뀌지 않고, 대상 글이 <strong>프레임 N부터 끝까지</strong>로 바뀝니다.","④ Turning on <strong>{{UiStrings.S_ToolOptionsPanel_ToolOptionsPanel_8A93F258A3}}</strong> gives the current frame through the last frame their own pivot (and, for a part, their own position) separate from the other frames. Nothing changes visually when you turn it on, and the target text changes to <strong>frame N to the end</strong>."
+tools-pivot.from-change,"켠 채로 피벗을 숫자·단추·캔버스 끌기로 바꾸면 이 프레임과 뒤 프레임이 모두 같은 만큼 바뀝니다. 프레임마다 달랐던 차이는 그대로 남고, 앞 프레임은 바뀌지 않습니다.","With it on, changing the pivot with the numbers, buttons or a canvas drag shifts this frame and every later frame by the same amount. Differences that already existed between frames are kept, and earlier frames don't change."
+tools-pivot.from-off,끄면 지금 프레임부터 끝까지 따로 둔 피벗·위치를 지워 다시 기본 피벗(부위면 부위 피벗과 기준 위치)을 따릅니다.,"Turning it off removes the separate pivots and positions from the current frame to the end, so those frames follow the default pivot again (the part pivot and base position for a part)."
+tools-pivot.from-auto,"다음 경우에는 저절로 켜집니다: <a href=""#tools-layer-size"">레이어 크기 모드</a>에서 부위를 크기 그대로 옮길 때, <strong>{{UiStrings.Effect_MovePivot}}</strong>를 켠 흔들기·둥실둥실 같은 효과를 부위에 영구 적용할 때(움직임만큼 프레임마다 부위 위치가 옮겨지고 그림은 셀 안 제자리).","It turns on automatically when you move a part without resizing in <a href=""#tools-layer-size"">layer size mode</a>, or when you permanently apply an effect such as shake or float with <strong>{{UiStrings.Effect_MovePivot}}</strong> on to a part (the part position moves per frame by the motion, while the image stays in place in the cel)."
+tools-pivot.from-marks,"⑥ 따로 둔 프레임 피벗이 있는 프레임은 타임라인 프레임 머리에 주황 마름모가, 따로 둔 부위 피벗이나 위치가 있는 부위 칸은 칸 왼쪽 위에 같은 마름모가 보입니다. 부위 위치 메뉴와 상태 표시줄은 지금 프레임의 위치를 보이고, 그 위치를 바꾸면 모든 프레임이 같은 만큼 옮겨집니다.","⑥ Frames with their own frame pivot show an orange diamond on the timeline frame header, and part cels with their own part pivot or position show the same diamond at the top left of the cel. The part position menu and the status bar show the position in the current frame; changing that position moves all frames by the same amount."
+tools-pivot.h-menu,프레임 머리 메뉴,Frame header menu
+tools-pivot.menu,"타임라인 프레임 머리를 우클릭하면 그 프레임 하나만 다룹니다: <strong>{{UiStrings.S_TimelinePanel_AddFrameTail_8439D90B67}}</strong>는 지금 피벗을 그 프레임만의 피벗으로 두고, <strong>{{UiStrings.S_TimelinePanel_AddFrameTail_30B4C69887}}</strong>는 그 프레임의 따로 둔 피벗을 지웁니다.","Right-clicking a timeline frame header handles just that frame: <strong>{{UiStrings.S_TimelinePanel_AddFrameTail_8439D90B67}}</strong> keeps the current pivot as that frame's own pivot, and <strong>{{UiStrings.S_TimelinePanel_AddFrameTail_30B4C69887}}</strong> removes that frame's own pivot."
+tools-pivot.h-effects,효과가 옮긴 피벗,Pivot moved by effects
+tools-pivot.effects,"캔버스에 효과를 보는 동안 흔들기처럼 그림을 옮기는 효과가 있으면, 피벗 표시는 효과가 옮긴 자리(뒤 효과가 실제로 도는 중심)에 보입니다. 피벗 도구에서는 피벗 도구가 고치는 원래 자리가 작은 원과 점선으로 함께 보입니다.","While effects are shown on the canvas, if an effect such as shake moves the image, the pivot mark is drawn where the effect moved it (the center later effects actually use). With the Pivot tool, the original spot that the tool edits is also shown with a small circle and a dotted line."
+tools-nine-slice.intro,"Unity Sprite Border(9-slice 테두리)를 정합니다. 테두리 바깥의 모서리·가장자리는 늘려도 그대로 두고 가운데만 늘이므로, Unity에서 Image Type = Sliced로 쓰는 UI 단추·패널에 알맞습니다. 9-slice 도구({{key:도구/9-slice}})를 고르면 캔버스에 초록 선 4개가 나옵니다.","Sets the Unity Sprite Border (9-slice borders). Corners and edges outside the borders stay the same when stretched and only the middle grows, which suits UI buttons and panels used with Image Type = Sliced in Unity. Choosing the 9-slice tool ({{key:도구/9-slice}}) shows four green lines on the canvas."
+tools-nine-slice.3.alt,예시 UI 단추(32×20)에 9-slice 초록 선 4개를 둔 캔버스와 도구 설정,"Sample UI button (32×20) with the four green 9-slice lines, and the tool options"
+tools-nine-slice.4,① 초록 선 4개(L5·T5·R5·B6) · ② L·T·R·B 값 · ③ 모두 0(All 0) · ④ 적용 대상(프레임 시트 모든 칸),"① Four green lines (L5, T5, R5, B6) · ② L, T, R, B values · ③ All 0 · ④ Target (every cell of the frame sheet)"
+tools-nine-slice.h-set,테두리 정하기,Setting the borders
+tools-nine-slice.1,① <strong>초록 선 4개</strong>를 끌면 가장 가까운 픽셀 경계에 맞춰지고 ② L·T·R·B 값(그림 가장자리에서 잰 픽셀)이 바뀝니다. 선은 맞은편 선을 넘어가지 않습니다. 도구 설정에서 숫자로 넣거나 ③ <strong>모두 0</strong>으로 테두리를 지울 수 있습니다. 선을 놓을 때마다 실행취소 한 단계입니다.,"Dragging ① the <strong>four green lines</strong> snaps them to the nearest pixel boundary and changes ② the L, T, R and B values (pixels measured from the image edges). A line can't cross the opposite line. In Tool options you can enter numbers or clear the borders with ③ <strong>All 0</strong>. Each line release is one undo step."
+tools-nine-slice.h-target,대상,Target
+tools-nine-slice.2,"④ 부위를 골랐으면 그 부위에, 아니면 프레임 시트의 모든 칸에 적용되고 도구 설정에 대상이 나옵니다. 그룹 화면에서는 부위마다 초록 선이 보여, 선을 끌면 그 부위의 테두리가 바뀝니다.","④ With a part selected it applies to that part; otherwise to every cell of the frame sheet, and Tool options shows the target. In the group view each part shows its green lines, and dragging one changes that part's borders."
+tools-nine-slice.h-stretch,늘렸을 때,When stretched
+tools-nine-slice.compare.alt,32×20 예시 단추를 72×28로 늘인 결과를 테두리 없이 늘인 것과 9-slice로 늘인 것으로 나란히 비교한 그림,"The 32×20 sample button stretched to 72×28, compared side by side without borders and with 9-slice"
+tools-nine-slice.compare.caption,32×20 단추를 72×28로 늘인 결과 — 왼쪽: 테두리 없이(그림 전체를 최근접) · 오른쪽: 9-slice(L5·T5·R5·B6),"The 32×20 button stretched to 72×28 — Left: no borders (whole image, nearest neighbor) · Right: 9-slice (L5, T5, R5, B6)"
+tools-nine-slice.stretch,"테두리 없이 늘이면 모서리와 테두리 선까지 함께 두꺼워지지만, 9-slice는 모서리를 그대로 두고 가장자리는 한 방향으로만, 가운데만 늘입니다. Unity에서 늘릴 때뿐 아니라 Chickxel 안에서도 <a href=""#tools-canvas-size"">캔버스 크기 모드</a>의 <strong>{{UiStrings.CanvasResize_NineSlice}}</strong>로 같은 방식으로 그림 크기를 바꿀 수 있습니다.","Stretching without borders thickens the corners and border lines too, while 9-slice keeps the corners as they are, stretches the edges in one direction only and grows only the middle. Besides stretching in Unity, you can resize the image the same way inside Chickxel with <strong>{{UiStrings.CanvasResize_NineSlice}}</strong> in <a href=""#tools-canvas-size"">canvas size mode</a>."
+tools-pivot.label-normal,<code>대상: 프로젝트 기본 피벗(모든 프레임)</code>,<code>Target: project default pivot (all frames)</code>
+tools-pivot.label-part,"<code>대상: 부위 ""이름"" (가로×세로, 부위 아틀라스)</code>","<code>Target: part ""name"" (width×height, part atlas)</code>"
+tools-pivot.uses,"피벗을 쓰는 곳: Unity로 내보낼 때 스프라이트 Pivot, <a href=""#tools-transform"">변형 모드</a>의 처음 회전 중심, <a href=""#tools-brush"">대칭 그리기</a>의 <strong>{{UiStrings.Mirror_AtPivot}}</strong>, 피벗을 중심으로 쓰는 <a href=""#screen-layer-effects"">레이어 효과</a>. <a href=""#tools-canvas-size"">캔버스 크기 모드</a>와 <a href=""#tools-layer-size"">레이어 크기 모드</a>에서는 피벗이 그림을 따라 옮겨집니다.","Where the pivot is used: the sprite Pivot when exporting to Unity, the starting rotation center of <a href=""#tools-transform"">transform mode</a>, <strong>{{UiStrings.Mirror_AtPivot}}</strong> in <a href=""#tools-brush"">symmetry drawing</a>, and <a href=""#screen-layer-effects"">layer effects</a> that use the pivot as their center. In <a href=""#tools-canvas-size"">canvas size mode</a> and <a href=""#tools-layer-size"">layer size mode</a> the pivot moves along with the image."
+term.lasso,자유 선택,lasso select|lasso
+term.lasso.to,tools-select,
+term.lasso.def,테두리를 그려 그 안을 고르는 선택 도구입니다.,A selection tool that selects the inside of an outline you draw.
+term.magic-wand,스마트 선택,magic wand
+term.magic-wand.to,tools-select,
+term.magic-wand.def,클릭한 곳과 비슷한 색 영역을 고르는 선택 도구입니다(채우기와 같은 설정).,A selection tool that selects the area of similar color around the click (same settings as Fill).
+term.floating,떠 있는 선택,floating selection
+term.floating.to,tools-select,
+term.floating.def,떼어 옮기거나 붙여 넣은 뒤 아직 내려놓지 않은 선택 내용입니다.,Selected pixels that were lifted or pasted and not yet dropped.
+term.move-tool,이동 도구,Move tool
+term.move-tool.to,tools-move,
+term.move-tool.def,선택 내용이나 셀 전체를 옮기는 도구입니다. 다른 도구에서도 Ctrl을 누르는 동안 쓸 수 있습니다.,The tool that moves the selection or the whole cel; Ctrl turns any tool into it while held.
+term.move-wrap,순환,wrap around
+term.move-wrap.to,tools-move,
+term.move-wrap.def,이동 도구로 셀을 밀 때 밖으로 나간 픽셀이 반대편으로 돌아오게 하는 옵션입니다.,A Move tool option that brings pixels pushed off one side back on the other side.
+term.resampling,리샘플링,resampling
+term.resampling.to,tools-transform,
+term.resampling.def,돌리거나 늘린 픽셀의 색을 원본에서 집는 방법입니다(RotSprite / 최근접).,How rotated or scaled pixels take their colors from the original (RotSprite / Nearest).
+term.rotsprite,RotSprite,RotSprite
+term.rotsprite.to,tools-transform,
+term.rotsprite.def,8배로 키운 그림에서 집어 돌린 선이 덜 깨지게 하는 픽셀 아트 회전 방식입니다(새 색 없음).,A pixel-art rotation method that samples an 8× enlarged copy so rotated lines break less (no new colors).
+term.nearest,최근접,nearest neighbor
+term.nearest.to,tools-transform,
+term.nearest.def,색을 섞지 않고 가장 가까운 원본 픽셀을 그대로 쓰는 크기 바꾸기·회전 방식입니다.,A scaling and rotation method that uses the nearest original pixel without blending colors.
+term.rotation-center,회전 중심,rotation center
+term.rotation-center.to,tools-transform,
+term.rotation-center.def,변형 모드에서 그림이 도는 축입니다. 처음에는 피벗 자리에 놓입니다.,The point transform mode rotates around; it starts at the pivot.
+term.middle-fill,가운데 채우기,middle fill
+term.middle-fill.to,tools-canvas-size,
+term.middle-fill.def,9-slice로 늘릴 때 가운데를 늘일지(늘이기) 무늬를 반복할지(되풀이) 정하는 설정입니다.,Chooses whether the middle is stretched (Stretch) or its pattern repeated (Tile) when stretching with 9-slice.
+term.pivot-tool,피벗 도구,Pivot tool
+term.pivot-tool.to,tools-pivot,
+term.pivot-tool.def,피벗을 캔버스에서 끌거나 단추·숫자로 정하는 도구입니다.,The tool for setting the pivot by dragging on the canvas or with buttons and numbers.
+term.frame-pivot,프레임 피벗|기본 피벗,frame pivot|default pivot
+term.frame-pivot.to,tools-pivot,
+term.frame-pivot.def,"프레임 시트 칸의 피벗입니다. 모든 프레임이 기본 피벗을 쓰고, 프레임마다 따로 둘 수 있습니다.",The pivot of a frame sheet cell; all frames use the default pivot unless a frame has its own.
+term.part-pivot,부위 피벗,part pivot
+term.part-pivot.to,tools-pivot,
+term.part-pivot.def,부위 아틀라스 스프라이트의 피벗입니다. 부위 크기를 기준으로 잽니다.,"The pivot of a part's atlas sprite, measured against the part size."
+term.per-frame-pivot,프레임별 피벗|따로 둔 피벗,per-frame pivot
+term.per-frame-pivot.to,tools-pivot,
+term.per-frame-pivot.def,'현재 프레임부터'로 어느 프레임부터 끝까지 따로 둔 피벗(부위면 위치도)입니다.,"A pivot (and for parts, position) kept separately from a given frame to the end with 'From current frame on'."

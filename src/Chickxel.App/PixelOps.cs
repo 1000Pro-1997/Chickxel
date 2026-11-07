@@ -3,7 +3,7 @@ using Chickxel.Core.Model;
 
 namespace Chickxel.App;
 
-/// <summary>편집기 전용 픽셀 연산: 외곽선, 영역 밀기(순환), 밝게/어둡게.</summary>
+/// <summary>편집기 전용 픽셀 연산: 외곽선, 영역 밀기(순환).</summary>
 public static class PixelOps
 {
     /// <summary>
@@ -56,18 +56,4 @@ public static class PixelOps
     }
 
     public static int Mod(int a, int m) => ((a % m) + m) % m;
-
-    /// <summary>명도를 <paramref name="amount"/>(0~1, 예: 0.1 = 10%)만큼 올리거나 내린 색. 투명은 그대로. 이미 가장 밝으면 채도를 내린다.</summary>
-    public static Color32 Dodge(Color32 c, bool lighten, float amount)
-    {
-        if (c.A == 0) return c;
-        var (h, s, v) = c.ToHsv();
-        if (lighten)
-        {
-            if (v >= 0.999f) s = Math.Max(0, s - amount);
-            else v = Math.Min(1, v + amount);
-        }
-        else v = Math.Max(0, v - amount);
-        return Color32.FromHsv(h, s, v, c.A);
-    }
 }

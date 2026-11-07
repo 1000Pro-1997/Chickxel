@@ -332,6 +332,98 @@ public class PartsTests
     }
 
     [Fact]
+    public void MovePartFrom_MovesThatFrameToTheEnd_PivotFollows_KeepsThroughBaseMoveUndoSave()
+    {
+        var p = new SpriteProject(10, 10);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 2, 2, new Point(1, 1));
+        int pi = p.IndexOf(part);
+        p.AddFrame();
+        p.AddFrame();
+        for (int f = 0; f < 3; f++) Paint(p, pi, f, 0, 0, Red);
+        Point[] Offsets(SpriteProject sp, Layer l) => [.. Enumerable.Range(0, 3).Select(f => sp.GetPartOffset(l, f))];
+
+        p.MovePartFrom(pi, 1, 3, 2);
+        Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(4, 3)], Offsets(p, part));
+        Assert.Equal(Red, p.Flatten(0).Get(1, 1));
+        Assert.Equal(Red, p.Flatten(1).Get(4, 3));
+        Assert.Equal(Color32.Transparent, p.Flatten(1).Get(1, 1));
+        Assert.Equal([false, true, true], Enumerable.Range(0, 3).Select(f => p.HasPartFrameOverride(part, f)));
+        // 피벗은 부위 기준 비율 그대로라 캔버스에서는 부위와 같이 옮겨 간다
+        Assert.Equal(p.GetPartPivot(part, 0), p.GetPartPivot(part, 1));
+
+        // 기준 위치를 옮기면 프레임마다 옮긴 거리는 그대로 따라간다
+        p.SetPartOffset(pi, new Point(2, 1));
+        Assert.Equal([new Point(2, 1), new Point(5, 3), new Point(5, 3)], Offsets(p, part));
+        // 첫 프레임부터 옮기면 모든 프레임
+        p.MovePartFrom(pi, 0, -1, 0);
+        Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(4, 3)], Offsets(p, part));
+        Assert.False(p.HasPartFrameOverride(part, 0));
+
+        using (var stream = new MemoryStream())
+        {
+            ProjectIO.Save(p, stream);
+            stream.Position = 0;
+            var loaded = ProjectIO.Load(stream);
+            Assert.Equal(Offsets(p, part), Offsets(loaded, loaded.Layers[pi]));
+        }
+
+        // 끄면 그 프레임부터 끝까지 기준 위치로(앞 프레임은 그대로)
+        p.SetPartFramesFrom(pi, 2, own: false);
+        Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(1, 1)], Offsets(p, part));
+        p.Undo();
+        Assert.Equal([new Point(1, 1), new Point(4, 3), new Point(4, 3)], Offsets(p, part));
+    }
+
+    [Fact]
+    public void PivotFrom_MovesThatFrameToTheEnd_BySameAmount_KeepingPerFrameDifferences()
+    {
+        var p = new SpriteProject(8, 8);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "팔", 4, 4, new Point(0, 0));
+        int pi = p.IndexOf(part);
+        p.AddFrame();
+        p.AddFrame();
+        p.SetPartFramePivot(pi, 2, new Pivot(0.25f, 0.5f));
+        p.SetPartPivotFrom(pi, 1, new Pivot(0.5f, 0.75f));
+        Assert.Equal([Pivot.Center, new Pivot(0.5f, 0.75f), new Pivot(0.25f, 0.75f)], Enumerable.Range(0, 3).Select(f => p.GetPartPivot(part, f)));
+
+        // 프로젝트(프레임) 피벗도 같은 규칙: 켜면 그 프레임부터 끝까지 지금 피벗을 따로 두고, 바꾸면 같은 만큼
+        p.SetFramePivotsFrom(1, own: true);
+        Assert.Equal([null, Pivot.Center, Pivot.Center], p.Frames.Select(f => f.Pivot));
+        p.SetFramePivotFrom(2, new Pivot(0.5f, 0f));
+        Assert.Equal([p.Sprite.DefaultPivot, Pivot.Center, new Pivot(0.5f, 0f)], Enumerable.Range(0, 3).Select(p.GetFramePivot));
+        p.SetFramePivotsFrom(1, own: false);
+        Assert.All(p.Frames, f => Assert.Null(f.Pivot));
+    }
+
+    [Fact]
+    public void Bake_PivotMovingEffectOnPart_MovesPartPerFrame_InsteadOfPixels()
+    {
+        var p = new SpriteProject(12, 12);
+        var g = p.AddGroup();
+        var part = p.AddPart(g, "몸", 2, 2, new Point(5, 5));
+        int pi = p.IndexOf(part);
+        for (int i = 0; i < 7; i++) p.AddFrame();
+        for (int f = 0; f < 8; f++) Paint(p, pi, f, 0, 0, Red);
+        p.SetLayerEffects(pi, [new BobEffect { Height = 2 }]);
+        var before = Enumerable.Range(0, 8).Select(f => p.Flatten(f)).ToList();
+
+        var result = p.BakeLayerEffects(pi, [0]);
+
+        Assert.False(result.Grown);
+        Assert.Equal(new Size(2, 2), part.PartSize);
+        for (int f = 0; f < 8; f++)
+        {
+            Assert.True(before[f].ContentEquals(p.Flatten(f)), $"frame {f}");
+            Assert.Equal(Red, p.GetCel(pi, f)!.Get(0, 0)); // 그림은 셀 안 제자리
+        }
+        Assert.Contains(Enumerable.Range(0, 8), f => p.GetPartOffset(part, f) != part.PartOffset && p.HasPartFrameOverride(part, f));
+        p.Undo();
+        Assert.All(Enumerable.Range(0, 8), f => Assert.Equal(new Point(5, 5), p.GetPartOffset(part, f)));
+    }
+
+    [Fact]
     public void ScaleLayer_Part_MovesAndScalesPartArea_AllFrames_BorderScaled_PivotRelative()
     {
         var p = new SpriteProject(10, 10);

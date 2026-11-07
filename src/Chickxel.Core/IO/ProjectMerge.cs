@@ -685,8 +685,9 @@ public static class ProjectMerge
         {
             for (int i = 0; i < src.Frames.Count; i++)
             {
-                // 그 프레임만의 부위 피벗(먼저 넣은 파일의 것)
+                // 그 프레임만의 부위 피벗·옮긴 거리(먼저 넣은 파일의 것)
                 if (src.Frames[i].PartPivots.TryGetValue(srcPart, out var framePivot)) frameMap[i].PartPivots.TryAdd(dstPart, framePivot);
+                if (src.Frames[i].PartShifts.TryGetValue(srcPart, out var frameShift)) frameMap[i].PartShifts.TryAdd(dstPart, frameShift);
                 var cel = src.GetCelRaw(srcPart, src.Frames[i], srcSkin);
                 if (HasContent(cel)) _p.SetCelRaw(dstPart, frameMap[i], cel!.Clone(), dstSkin);
             }
